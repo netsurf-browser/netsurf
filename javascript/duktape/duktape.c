@@ -21005,6 +21005,7 @@ DUK_LOCAL duk_int_t duk__get_local_tzoffset(duk_double_t d) {
 #endif  /* DUK_USE_DATE_TZO_WINDOWS */
 
 #ifdef DUK_USE_DATE_PRS_STRPTIME
+#ifdef HAVE_STRPTIME
 DUK_LOCAL duk_bool_t duk__parse_string_strptime(duk_context *ctx, const char *str) {
 	struct tm tm;
 	time_t t;
@@ -21037,6 +21038,30 @@ DUK_LOCAL duk_bool_t duk__parse_string_strptime(duk_context *ctx, const char *st
 
 	return 0;
 }
+#else
+#include "utils/config.h"
+#include "utils/errors.h"
+#include "utils/time.h"
+DUK_LOCAL duk_bool_t duk__parse_string_strptime(duk_context *ctx, const char *str) {
+	time_t t;
+	char buf[DUK__STRPTIME_BUF_SIZE];
+
+	/* copy to buffer with spare to avoid Valgrind gripes from strptime */
+	DUK_ASSERT(str != NULL);
+	DUK_MEMZERO(buf, sizeof(buf));  /* valgrind whine without this */
+	DUK_SNPRINTF(buf, sizeof(buf), "%s", (const char *) str);
+	buf[sizeof(buf) - 1] = (char) 0;
+
+	DUK_DDD(DUK_DDDPRINT("parsing: '%s'", (const char *) buf));
+
+	if (nsc_snptimet(buf, strlen(buf), &t) == NSERROR_OK) {
+		duk_push_number(ctx, ((duk_double_t) t) * 1000.0);
+		return 1;
+	}
+
+	return 0;
+}
+#endif /* HAVE_STRPTIME */
 #endif  /* DUK_USE_DATE_PRS_STRPTIME */
 
 #ifdef DUK_USE_DATE_PRS_GETDATE
