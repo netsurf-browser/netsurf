@@ -498,6 +498,7 @@ include Makefile.defaults
 $(eval $(call feature_switch,JPEG,JPEG (libjpeg),-DWITH_JPEG,-ljpeg,-UWITH_JPEG,))
 $(eval $(call feature_switch,HARU_PDF,PDF export (haru),-DWITH_PDF_EXPORT,-lhpdf -lpng,-UWITH_PDF_EXPORT,))
 $(eval $(call feature_switch,LIBICONV_PLUG,glibc internal iconv,-DLIBICONV_PLUG,,-ULIBICONV_PLUG,-liconv))
+$(eval $(call feature_switch,DUKTAPE,Javascript (Duktape),,,,,))
 
 # Common libraries with pkgconfig
 $(eval $(call pkg_config_find_and_add,libcss,CSS))
@@ -526,17 +527,17 @@ CXXFLAGS += -DNETSURF_HOMEPAGE=\"$(NETSURF_HOMEPAGE)\"
 
 $(OBJROOT)/created:
 	$(VQ)echo "   MKDIR: $(OBJROOT)"
-	$(Q)$(MKDIR) $(OBJROOT)
+	$(Q)$(MKDIR) -p $(OBJROOT)
 	$(Q)$(TOUCH) $(OBJROOT)/created
 
 $(DEPROOT)/created: $(OBJROOT)/created
 	$(VQ)echo "   MKDIR: $(DEPROOT)"
-	$(Q)$(MKDIR) $(DEPROOT)
+	$(Q)$(MKDIR) -p $(DEPROOT)
 	$(Q)$(TOUCH) $(DEPROOT)/created
 
 $(TOOLROOT)/created: $(OBJROOT)/created
 	$(VQ)echo "   MKDIR: $(TOOLROOT)"
-	$(Q)$(MKDIR) $(TOOLROOT)
+	$(Q)$(MKDIR) -p $(TOOLROOT)
 	$(Q)$(TOUCH) $(TOOLROOT)/created
 
 CLEANS :=
@@ -782,7 +783,6 @@ $(eval $(foreach SOURCE,$(filter %.m,$(SOURCES)), \
 
 ifeq ($(filter $(MAKECMDGOALS),clean test coverage),)
 -include $(sort $(addprefix $(DEPROOT)/,$(DEPFILES)))
--include $(D_JSAPI_BINDING)
 endif
 
 # And rules to build the objects themselves...
