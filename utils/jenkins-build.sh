@@ -350,17 +350,23 @@ if [ "${BUILD_JS}" = "json" ];then
     case ${HOST} in
         "arm-unknown-riscos")
 	    BUILD_MOZJS=NO
-	    BUILD_JS=YES
+	    BUILD_JS=NO
+	    #BUILD_JS=YES
+            BUILD_DUKTAPE=YES
 	    ;;
 
         "amd64-unknown-openbsd5.4")
 	    BUILD_MOZJS=NO
-	    BUILD_JS=YES
+	    BUILD_JS=NO
+	    #BUILD_JS=YES
+            BUILD_DUKTAPE=YES
             ;;
 
 	*)
-	    BUILD_MOZJS=YES
+	    #BUILD_MOZJS=YES
+	    BUILD_MOZJS=NO
 	    BUILD_JS=NO
+            BUILD_DUKTAPE=YES
 	;;
 
     esac
@@ -368,6 +374,7 @@ if [ "${BUILD_JS}" = "json" ];then
 else
     BUILD_JS=NO
     BUILD_MOZJS=NO
+    BUILD_DUKTAPE=NO
 fi
 
 
@@ -376,10 +383,10 @@ fi
 ########### Build from source ##################
 
 # Clean first
-${MAKE} NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} clean
+${MAKE} NETSURF_USE_DUKTAPE=${BUILD_DUKTAPE} NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} clean
 
 # Do the Build
-${MAKE} -k NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} CI_BUILD=${BUILD_NUMBER} ATARIARCH=${ATARIARCH} Q=
+${MAKE} -k NETSURF_USE_DUKTAPE=${BUILD_DUKTAPE} NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} CI_BUILD=${BUILD_NUMBER} ATARIARCH=${ATARIARCH} Q=
 
 
 
@@ -387,7 +394,7 @@ ${MAKE} -k NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} CI_BUILD=
 ############ Package artifact construction ################
 
 # build the package file
-${MAKE} -k NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} CI_BUILD=${BUILD_NUMBER} ATARIARCH=${ATARIARCH} package Q=
+${MAKE} -k NETSURF_USE_DUKTAPE=${BUILD_DUKTAPE} NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} CI_BUILD=${BUILD_NUMBER} ATARIARCH=${ATARIARCH} package Q=
 
 if [ ! -f "${PKG_SRC}${PKG_SFX}" ]; then
     # unable to find package file
