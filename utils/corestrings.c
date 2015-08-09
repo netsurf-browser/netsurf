@@ -260,6 +260,9 @@ dom_string *corestring_dom_BUTTON;
 dom_string *corestring_dom_INPUT;
 dom_string *corestring_dom_SELECT;
 dom_string *corestring_dom_TEXTAREA;
+dom_string *corestring_dom_BODY;
+dom_string *corestring_dom_HEAD;
+dom_string *corestring_dom_html_namespace;
 dom_string *corestring_dom_button;
 dom_string *corestring_dom_image;
 dom_string *corestring_dom_radio;
@@ -270,6 +273,7 @@ dom_string *corestring_dom___ns_key_box_node_data;
 dom_string *corestring_dom___ns_key_libcss_node_data;
 dom_string *corestring_dom___ns_key_file_name_node_data;
 dom_string *corestring_dom___ns_key_image_coords_node_data;
+dom_string *corestring_dom___ns_key_html_content_data;
 
 /* nsurl URLs */
 nsurl *corestring_nsurl_about_blank;
@@ -530,6 +534,10 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(INPUT);
 	CSS_DOM_STRING_UNREF(SELECT);
 	CSS_DOM_STRING_UNREF(TEXTAREA);
+	CSS_DOM_STRING_UNREF(BODY);
+	CSS_DOM_STRING_UNREF(HEAD);
+	/* DOM namespaces, not really CSS */
+	CSS_DOM_STRING_UNREF(html_namespace);
 	/* DOM input types, not really CSS */
 	CSS_DOM_STRING_UNREF(button);
 	CSS_DOM_STRING_UNREF(image);
@@ -542,6 +550,7 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(__ns_key_libcss_node_data);
 	CSS_DOM_STRING_UNREF(__ns_key_file_name_node_data);
 	CSS_DOM_STRING_UNREF(__ns_key_image_coords_node_data);
+	CSS_DOM_STRING_UNREF(__ns_key_html_content_data);
 #undef CSS_DOM_STRING_UNREF
 
 	/* nsurl URLs */
@@ -846,6 +855,8 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(INPUT);
 	CSS_DOM_STRING_INTERN(SELECT);
 	CSS_DOM_STRING_INTERN(TEXTAREA);
+	CSS_DOM_STRING_INTERN(BODY);
+	CSS_DOM_STRING_INTERN(HEAD);
 	/* DOM input types, not really CSS */
 	CSS_DOM_STRING_INTERN(button);
 	CSS_DOM_STRING_INTERN(image);
@@ -858,6 +869,7 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(__ns_key_libcss_node_data);
 	CSS_DOM_STRING_INTERN(__ns_key_file_name_node_data);
 	CSS_DOM_STRING_INTERN(__ns_key_image_coords_node_data);
+	CSS_DOM_STRING_INTERN(__ns_key_html_content_data);
 #undef CSS_DOM_STRING_INTERN
 
 	exc = dom_string_create_interned((const uint8_t *) "text/javascript",
@@ -872,6 +884,14 @@ nserror corestrings_init(void)
 			SLEN("http-equiv"),
 			&corestring_dom_http_equiv);
 	if ((exc != DOM_NO_ERR) || (corestring_dom_http_equiv == NULL)) {
+		error = NSERROR_NOMEM;
+		goto error;
+	}
+
+	exc = dom_string_create_interned((const uint8_t *) "http://www.w3.org/1999/xhtml",
+					 SLEN("http://www.w3.org/1999/xhtml"),
+					 &corestring_dom_html_namespace);
+	if ((exc != DOM_NO_ERR) || (corestring_dom_html_namespace == NULL)) {
 		error = NSERROR_NOMEM;
 		goto error;
 	}

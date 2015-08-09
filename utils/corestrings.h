@@ -272,6 +272,10 @@ extern struct dom_string *corestring_dom_BUTTON;
 extern struct dom_string *corestring_dom_INPUT;
 extern struct dom_string *corestring_dom_SELECT;
 extern struct dom_string *corestring_dom_TEXTAREA;
+extern struct dom_string *corestring_dom_BODY;
+extern struct dom_string *corestring_dom_HEAD;
+/* DOM namespaces */
+extern struct dom_string *corestring_dom_html_namespace;
 /* DOM input node types */
 extern struct dom_string *corestring_dom_button;
 /* extern struct dom_string *corestring_dom_submit; */
@@ -286,6 +290,7 @@ extern struct dom_string *corestring_dom___ns_key_box_node_data;
 extern struct dom_string *corestring_dom___ns_key_libcss_node_data;
 extern struct dom_string *corestring_dom___ns_key_file_name_node_data;
 extern struct dom_string *corestring_dom___ns_key_image_coords_node_data;
+extern struct dom_string *corestring_dom___ns_key_html_content_data;
 
 /* URLs */
 extern struct nsurl *corestring_nsurl_about_blank;
