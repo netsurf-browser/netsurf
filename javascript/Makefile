@@ -58,8 +58,35 @@ S_JAVASCRIPT += content.c jsapi.c fetcher.c $(addprefix jsapi/,$(S_JSAPI))
 
 $(eval $(foreach V,$(filter JSAPI_BINDING_%,$(.VARIABLES)),$(call convert_jsapi_binding,$($(V)),$(OBJROOT)/$(patsubst JSAPI_BINDING_%,%,$(V)).c,$(OBJROOT)/$(patsubst JSAPI_BINDING_%,%,$(V)).h,$(patsubst JSAPI_BINDING_%,%,$(V))_jsapi)))
 
+ifeq ($(filter $(MAKECMDGOALS),clean test coverage),)
+-include $(D_JSAPI_BINDING)
+endif
+
+else
+ifeq ($(NETSURF_USE_DUKTAPE),YES)
+
+javascript/dukky.c: $(OBJROOT)/duktape/binding.h
+
+BINDINGS := $(wildcard javascript/duktape/*.bnd)
+
+$(OBJROOT)/duktape/binding.h $(OBJROOT)/duktape/Makefile: javascript/duktape/netsurf.bnd $(BINDINGS)
+	$(Q)mkdir -p $(OBJROOT)/duktape
+	$(VQ)echo " GENBIND: $<"
+	$(Q)nsgenbind -I javascript/WebIDL $< $(OBJROOT)/duktape
+
+ifeq ($(filter $(MAKECMDGOALS),clean test coverage),)
+-include $(OBJROOT)/duktape/Makefile
+endif
+
+S_JSAPI_BINDING:=$(addprefix $(OBJROOT)/duktape/,$(NSGENBIND_SOURCES))
+
+$(S_JSAPI_BINDING): $(BINDINGS)
+
+S_JAVASCRIPT += dukky.c content.c fetcher.c duktape/duktape.c
+
 else
 S_JAVASCRIPT += none.c fetcher.c
+endif
 endif
 
 S_JAVASCRIPT := $(addprefix javascript/,$(S_JAVASCRIPT)) $(S_JSAPI_BINDING)
