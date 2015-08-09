@@ -247,7 +247,27 @@ dukky_push_node(duk_context *ctx, struct dom_node *node)
 	return dukky_push_node_stacked(ctx);
 }
 
+static duk_ret_t
+dukky_bad_constructor(duk_context *ctx)
+{
+	duk_error(ctx, DUK_ERR_ERROR, "Bad constructor");
+	return 0;
+}
 
+void
+dukky_inject_not_ctr(duk_context *ctx, int idx, const char *name)
+{
+	/* ... p[idx] ... proto */
+	duk_push_c_function(ctx, dukky_bad_constructor, 0);
+	/* ... p[idx] ... proto cons */
+	duk_insert(ctx, -2);
+	/* ... p[idx] ... cons proto */
+	duk_put_prop_string(ctx, -2, "prototype");
+	/* ... p[idx] ... cons[proto] */
+	duk_put_prop_string(ctx, idx, name);
+	/* ... p ... */
+	return;
+}
 
 /**************************************** js.h ******************************/
 struct jscontext {

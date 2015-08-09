@@ -31,9 +31,14 @@ init Window("struct browser_window *" win, "struct html_content *" htmlc)
 
 prototype Window()
 %{
+#define EXPOSE(v) \
+	duk_get_global_string(ctx, #v); \
+	duk_put_prop_string(ctx, 0, #v)
 	/* steal undefined */
-	duk_get_global_string(ctx, "undefined");
-	duk_put_prop_string(ctx, 0, "undefined");
+	EXPOSE(undefined);
+	EXPOSE(eval);
+	EXPOSE(Object);
+#undef EXPOSE
 %}
 
 getter Window::document()
