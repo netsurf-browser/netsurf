@@ -44,9 +44,8 @@ getter Window::document()
 	return 1;
 %}
 
-
-getter Window::document()
+getter Window::window()
 %{
-	duk_dup(ctx, 0);
+	duk_push_this(ctx);
 	return 1;
 %}
