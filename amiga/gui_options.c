@@ -644,7 +644,6 @@ void ami_gui_opts_open(void)
 											LABEL_Text, gadlab[GID_OPTS_HISTORY],
 										LabelEnd,
 									LayoutEnd, // history
-#if defined(WITH_JS) || defined(WITH_MOZJS)
 									LAYOUT_AddChild, LayoutVObj,
 										LAYOUT_SpaceOuter, TRUE,
 										LAYOUT_BevelStyle, BVS_GROUP, 
@@ -656,7 +655,6 @@ void ami_gui_opts_open(void)
          	           						GA_Selected, nsoption_bool(enable_javascript),
             	    					CheckBoxEnd,
 									LayoutEnd, // scripting
-#endif
 								LayoutEnd,
 								CHILD_WeightedHeight, 0,
 								LAYOUT_AddChild, LayoutVObj,
@@ -1573,14 +1571,12 @@ static void ami_gui_opts_use(bool save)
 		nsoption_set_bool(send_referer, false);
 	}
 
-#if defined(WITH_JS) || defined(WITH_MOZJS)
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_JAVASCRIPT],(ULONG *)&data);
 	if (data) {
 		nsoption_set_bool(enable_javascript, true);
 	} else {
 		nsoption_set_bool(enable_javascript, false);
 	}
-#endif
 	
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_DONOTTRACK],(ULONG *)&data);
 	if (data) {

@@ -81,9 +81,7 @@ enum {
 	 M_IMAGES,
 	  M_IMGFORE,
 	  M_IMGBACK,
-#if defined(WITH_JS) || defined(WITH_MOZJS)
 	 M_JS,
-#endif
 	 M_BAR_B4,
 	 M_REDRAW,
 	/* Hotlist menu */
