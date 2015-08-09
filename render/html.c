@@ -718,6 +718,40 @@ dom_event_fetcher(dom_string *type,
 	return NULL;
 }
 
+static void
+html_document_user_data_handler(dom_node_operation operation,
+				dom_string *key, void *data,
+				struct dom_node *src,
+				struct dom_node *dst)
+{
+	if (dom_string_isequal(corestring_dom___ns_key_html_content_data,
+			       key) == false || data == NULL) {
+		return;
+	}
+
+	switch (operation) {
+	case DOM_NODE_CLONED:
+		LOG("Cloned");
+		break;
+	case DOM_NODE_RENAMED:
+		LOG("Renamed");
+		break;
+	case DOM_NODE_IMPORTED:
+		LOG("imported");
+		break;
+	case DOM_NODE_ADOPTED:
+		LOG("Adopted");
+		break;
+	case DOM_NODE_DELETED:
+		/* This is the only path I expect */
+		break;
+	default:
+		LOG("User data operation not handled.");
+		assert(0);
+	}
+}
+
+
 static nserror
 html_create_html_data(html_content *c, const http_parameter *params)
 {
@@ -725,6 +759,8 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	nserror nerror;
 	dom_hubbub_parser_params parse_params;
 	dom_hubbub_error error;
+	dom_exception err;
+	void *old_node_data;
 
 	c->parser = NULL;
 	c->parse_completed = false;
@@ -821,6 +857,23 @@ html_create_html_data(html_content *c, const http_parameter *params)
 
 		return libdom_hubbub_error_to_nserror(error);
 	}
+
+	err = dom_node_set_user_data(c->document,
+				     corestring_dom___ns_key_html_content_data,
+				     c, html_document_user_data_handler,
+				     (void *) &old_node_data);
+	if (err != DOM_NO_ERR) {
+		dom_hubbub_parser_destroy(c->parser);
+		nsurl_unref(c->base_url);
+		c->base_url = NULL;
+
+		lwc_string_unref(c->universal);
+		c->universal = NULL;
+
+		return libdom_hubbub_error_to_nserror(err);
+	}
+
+	assert(old_node_data == NULL);
 
 	return NSERROR_OK;
 
