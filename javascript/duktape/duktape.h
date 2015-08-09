@@ -281,6 +281,11 @@ static __inline__ unsigned long long duk_rdtsc(void) {
 #define DUK_F_M68K
 #endif
 
+/* PowerPC */
+#if defined(__powerpc) || defined(__powerpc__) || defined(__PPC__)
+#define DUK_F_PPC
+#endif
+
 /* Linux */
 #if defined(__linux) || defined(__linux__) || defined(linux)
 #define DUK_F_LINUX
@@ -576,8 +581,19 @@ static __inline__ unsigned long long duk_rdtsc(void) {
 #define DUK_USE_DATE_FMT_STRFTIME
 #include <limits.h>
 #include <time.h>
+#elif defined(DUK_F_PPC)
+/* AmigaOS on PowerPC */
+#define DUK_USE_DATE_NOW_GETTIMEOFDAY
+#define DUK_USE_DATE_TZO_GMTIME_R
+#define DUK_USE_DATE_PRS_STRPTIME
+#define DUK_USE_DATE_FMT_STRFTIME
+#include <limits.h>
+#include <time.h>
+#ifndef UINTPTR_MAX
+#define UINTPTR_MAX UINT_MAX
+#endif
 #else
-#error AmigaOS but not M68K, not supported now
+#error AmigaOS but not M68K/PPC, not supported now
 #endif
 #elif defined(DUK_F_WINDOWS)
 /* Windows 32-bit and 64-bit are currently the same. */
@@ -1502,7 +1518,7 @@ typedef double duk_double_t;
 
 /* AmigaOS on M68k */
 #if !defined(DUK_F_BYTEORDER) && defined(DUK_F_AMIGAOS)
-#if defined(DUK_F_M68K)
+#if defined(DUK_F_M68K) || defined(DUK_F_PPC)
 #define DUK_F_BYTEORDER 3
 #endif
 #endif
@@ -1600,6 +1616,11 @@ typedef double duk_double_t;
 
 /* M68K: packed always possible */
 #if !defined(DUK_USE_PACKED_TVAL_POSSIBLE) && defined(DUK_F_M68K)
+#define DUK_USE_PACKED_TVAL_POSSIBLE
+#endif
+
+/* PPC: packed always possible */
+#if !defined(DUK_USE_PACKED_TVAL_POSSIBLE) && defined(DUK_F_PPC)
 #define DUK_USE_PACKED_TVAL_POSSIBLE
 #endif
 
@@ -2255,6 +2276,8 @@ typedef FILE duk_file;
 #define DUK_USE_ARCH_STRING "sh"
 #elif defined(DUK_F_M68K)
 #define DUK_USE_ARCH_STRING "m68k"
+#elif defined(DUK_F_PPC)
+#define DUK_USE_ARCH_STRING "ppc"
 #elif defined(DUK_F_FLASHPLAYER)
 #define DUK_USE_ARCH_STRING "flashplayer"
 #elif defined(DUK_F_EMSCRIPTEN)
