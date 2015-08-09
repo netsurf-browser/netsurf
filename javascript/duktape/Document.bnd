@@ -1,0 +1,205 @@
+/* document binding for browser using duktape and libdom
+ *
+ * Copyright 2015 Vincent Sanders <vince@netsurf-browser.org>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * Released under the terms of the MIT License,
+ *         http://www.opensource.org/licenses/mit-license
+ */
+
+class Document {
+	prologue %{
+#include "utils/corestrings.h"
+#include "render/html_internal.h"
+#include "utils/libdom.h"
+%};
+}
+
+init Document("struct dom_document *" document::node);
+
+method Document::write()
+%{
+	struct html_content *htmlc;
+	duk_size_t text_len;
+	const char *text = duk_safe_to_lstring(ctx, 0, &text_len);
+	LOG("Writing %*s", (int)text_len, text);
+	dom_exception err;
+	err = dom_node_get_user_data(priv->parent.node,
+				     corestring_dom___ns_key_html_content_data,
+				     &htmlc);
+	if (err == DOM_NO_ERR && htmlc->parser != NULL) {
+		dom_hubbub_parser_insert_chunk(htmlc->parser, (uint8_t *)text, text_len);
+	}
+	return 0;
+%}
+
+method Document::createTextNode()
+%{
+	dom_node *newnode;
+	dom_exception err;
+	duk_size_t text_len;
+	const char *text = duk_safe_to_lstring(ctx, 0, &text_len);
+	dom_string *text_str;
+
+	err = dom_string_create((const uint8_t*)text, text_len, &text_str);
+	if (err != DOM_NO_ERR) return 0; /* coerced to undefined */
+
+	err = dom_document_create_text_node(priv->parent.node,
+					    text_str,
+					    &newnode);
+	if (err != DOM_NO_ERR) {
+		dom_string_unref(text_str);
+		return 0; /* coerced to undefined */
+	}
+
+	dom_string_unref(text_str);
+
+	dukky_push_node(ctx, newnode);
+
+	dom_node_unref(newnode);
+
+	return 1;
+%}
+
+method Document::createElement()
+%{
+	dom_node *newnode;
+	dom_exception err;
+	duk_size_t text_len;
+	const char *text = duk_safe_to_lstring(ctx, 0, &text_len);
+	dom_string *text_str;
+
+	err = dom_string_create((const uint8_t*)text, text_len, &text_str);
+	if (err != DOM_NO_ERR) return 0; /* coerced to undefined */
+
+	err = dom_document_create_element_ns(priv->parent.node,
+					     corestring_dom_html_namespace,
+					     text_str,
+					     &newnode);
+	if (err != DOM_NO_ERR) {
+		dom_string_unref(text_str);
+		return 0; /* coerced to undefined */
+	}
+
+	dom_string_unref(text_str);
+
+	dukky_push_node(ctx, newnode);
+
+	dom_node_unref(newnode);
+
+	return 1;
+%}
+
+getter Document::head()
+%{
+	struct dom_nodelist *nodes;
+	struct dom_node *retnode;
+	dom_exception err;
+	err = dom_document_get_elements_by_tag_name(priv->parent.node,
+						    corestring_dom_HEAD,
+						    &nodes);
+	if (err != DOM_NO_ERR) return 0; /* coerced to undefined */
+
+	err = dom_nodelist_item(nodes, 0, &retnode);
+
+	if (err != DOM_NO_ERR) {
+		dom_nodelist_unref(nodes);
+		return 0; /* coerced to undefined */
+	}
+
+	dom_nodelist_unref(nodes);
+
+	if (retnode == NULL) return 0; /* coerced to undefined */
+
+	dukky_push_node(ctx, retnode);
+
+	dom_node_unref(retnode);
+
+	return 1;
+%}
+
+getter Document::body()
+%{
+	struct dom_nodelist *nodes;
+	struct dom_node *retnode;
+	dom_exception err;
+	err = dom_document_get_elements_by_tag_name(priv->parent.node,
+						    corestring_dom_BODY,
+						    &nodes);
+	if (err != DOM_NO_ERR) {
+		return 0; /* coerced to undefined */
+	}
+
+	err = dom_nodelist_item(nodes, 0, &retnode);
+
+	if (err != DOM_NO_ERR) {
+		dom_nodelist_unref(nodes);
+		return 0; /* coerced to undefined */
+	}
+
+	dom_nodelist_unref(nodes);
+
+	if (retnode != NULL) {
+		dukky_push_node(ctx, retnode);
+
+		dom_node_unref(retnode);
+
+		return 1;
+	}
+
+	return 0; /* coerced to undefined */
+%}
+
+method Document::getElementById()
+%{
+	dom_string *elementId_dom;
+	dom_element *element;
+	dom_exception exc;
+	duk_size_t text_len;
+	const char *text = duk_safe_to_lstring(ctx, 0, &text_len);
+
+	exc = dom_string_create((uint8_t*)text, text_len, &elementId_dom);
+	if (exc != DOM_NO_ERR) {
+		return 0;
+	}
+
+	exc = dom_document_get_element_by_id(((node_private_t *)priv)->node,
+					     elementId_dom, &element);
+	dom_string_unref(elementId_dom);
+	if (exc != DOM_NO_ERR) {
+		return 0;
+	}
+
+	if (element != NULL) {
+		dukky_push_node(ctx, (dom_node *)element);
+		return 1;
+	}
+
+	return 0;
+%}
+
+method Document::getElementsByTagName()
+%{
+	dom_nodelist *nodes;
+	dom_exception err;
+	duk_size_t text_len;
+	const char *text = duk_safe_to_lstring(ctx, 0, &text_len);
+	dom_string *tag;
+
+	err = dom_string_create((uint8_t*)text, text_len, &tag);
+
+	if (err != DOM_NO_ERR) return 0; /* coerced to undefined */
+
+	err = dom_document_get_elements_by_tag_name(((node_private_t *)priv)->node,
+						    tag, &nodes);
+	dom_string_unref(tag);
+	if (err != DOM_NO_ERR) return 0; /* coerced to undefined */
+
+	if (nodes == NULL) return 0; /* coerced to undefined */
+
+	duk_push_pointer(ctx, nodes);
+	dukky_create_object(ctx, PROTO_NAME(NODELIST), 1);
+	dom_nodelist_unref(nodes);
+	return 1;
+%}

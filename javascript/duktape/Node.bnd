@@ -1,0 +1,60 @@
+/* Node binding for browser using duktape and libdom
+ *
+ * Copyright 2015 Vincent Sanders <vince@netsurf-browser.org>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * Released under the terms of the MIT License,
+ *         http://www.opensource.org/licenses/mit-license
+ */
+
+class Node {
+	private "dom_node *" node;
+}
+
+init Node("struct dom_node *" node)
+%{
+	priv->node = node;
+	dom_node_ref(node);
+%}
+
+fini Node()
+%{
+	dom_node_unref(priv->node);
+%}
+
+method Node::appendChild()
+%{
+	if (!dukky_instanceof(ctx, PROTO_NAME(NODE))) return 0;
+
+	duk_get_prop_string(ctx, 0, PRIVATE_MAGIC);
+	node_private_t *other = duk_get_pointer(ctx, -1);
+	duk_pop(ctx);
+
+	dom_exception err;
+	dom_node *spare;
+
+	err = dom_node_append_child(priv->node, other->node, &spare);
+	if (err != DOM_NO_ERR) return 0;
+	dom_node_unref(spare);
+
+	return 0;
+%}
+
+getter Node::textContent()
+%{
+	dom_exception exc;
+	dom_string *content;
+
+	exc = dom_node_get_text_content(priv->node, &content);
+	if (exc != DOM_NO_ERR) {
+		return 0;
+	}
+
+	if (content != NULL) {
+		duk_push_lstring(ctx, dom_string_data(content), dom_string_length(content));
+		dom_string_unref(content);
+		return 1;
+	}
+	return 0;
+%}
