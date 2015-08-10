@@ -50,6 +50,7 @@ struct dom_html_br_element;
 
 }
 
+#include "Console.bnd"
 #include "Window.bnd"
 #include "Document.bnd"
 #include "Node.bnd"

@@ -38,6 +38,8 @@ prototype Window()
 	EXPOSE(undefined);
 	EXPOSE(eval);
 	EXPOSE(Object);
+	EXPOSE(parseInt);
+	EXPOSE(parseFloat);
 #undef EXPOSE
 %}
 
@@ -52,5 +54,21 @@ getter Window::document()
 getter Window::window()
 %{
 	duk_push_this(ctx);
+	return 1;
+%}
+
+getter Window::console()
+%{
+	duk_push_this(ctx);
+	duk_get_prop_string(ctx, -1, MAGIC(Console));
+	if (duk_is_undefined(ctx, -1)) {
+		duk_pop(ctx);
+		if (dukky_create_object(ctx, PROTO_NAME(CONSOLE), 0) != DUK_EXEC_SUCCESS) {
+			duk_error(ctx, DUK_ERR_ERROR, "Unable to create console object");
+			return 0;
+		}
+		duk_dup(ctx, -1);
+		duk_put_prop_string(ctx, -3, MAGIC(Console));
+	}
 	return 1;
 %}

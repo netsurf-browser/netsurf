@@ -1,0 +1,177 @@
+/* Console binding for browser using duktape and libdom
+ *
+ * Copyright 2015 Vincent Sanders <vince@netsurf-browser.org>
+ * Copyright 2015 Daniel Silverstone <dsilvers@netsurf-browser.org>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * Released under the terms of the MIT License,
+ *         http://www.opensource.org/licenses/mit-license
+ */
+
+class Console {
+      private "unsigned int" group;
+      prologue %{
+#include <nsutils/time.h>
+
+#define CONSOLE_TIMERS MAGIC(ConsoleTimers)
+
+static void
+write_log_entry(duk_context *ctx, unsigned int group, char logtype)
+{
+	/* objs... */
+	for (int i = 0; i < duk_get_top(ctx); ++i) {
+		(void)duk_safe_to_string(ctx, i);
+	}
+	/* strs... */
+	duk_push_sprintf(ctx, "%c: ", logtype);
+	duk_insert(ctx, 0);
+	/* pfx strs... */
+	for (unsigned int u = 0; u < group; ++u) {
+		duk_push_lstring(ctx, " ", 1);
+		duk_insert(ctx, 0);
+	}
+	/* spcs... pfx strs... */
+	duk_concat(ctx, duk_get_top(ctx));
+	/* str */
+	LOG("%s", duk_safe_to_string(ctx, 0));
+}
+
+%};
+}
+
+init Console ()
+%{
+	priv->group = 0;
+	duk_push_object(ctx);
+	duk_put_prop_string(ctx, 0, CONSOLE_TIMERS);
+%}
+
+method Console::group ()
+%{
+	priv->group ++;
+	return 0;
+%}
+
+method Console::groupCollapsed ()
+%{
+	priv->group ++;
+	return 0;
+%}
+
+method Console::groupEnd ()
+%{
+	if (priv->group)
+		priv->group --;
+	return 0;
+%}
+
+method Console::info()
+%{
+	write_log_entry(ctx, priv->group, 'I');
+	return 0;
+%}
+
+method Console::debug()
+%{
+	write_log_entry(ctx, priv->group, 'D');
+	return 0;
+%}
+
+method Console::error()
+%{
+	write_log_entry(ctx, priv->group, 'E');
+	return 0;
+%}
+
+method Console::log()
+%{
+	write_log_entry(ctx, priv->group, 'L');
+	return 0;
+%}
+
+method Console::warn()
+%{
+	write_log_entry(ctx, priv->group, 'W');
+	return 0;
+%}
+
+method Console::dir()
+%{
+	write_log_entry(ctx, priv->group, 'd');
+	return 0;
+%}
+
+method Console::time()
+%{
+	uint64_t time_ms = 0;
+
+	if (nsu_getmonotonic_ms(&time_ms) != NSUERROR_OK)
+		return 0;
+
+	if (!duk_is_string(ctx, 0)) {
+		duk_error(ctx, DUK_ERR_ERROR, "Console.time() takes a string");
+	}
+
+	duk_set_top(ctx, 1);
+
+	duk_push_uint(ctx, (duk_uint_t)time_ms);
+
+	duk_push_this(ctx);
+	duk_get_prop_string(ctx, -1, CONSOLE_TIMERS);
+	duk_insert(ctx, 0);
+	duk_pop(ctx);
+
+	duk_put_prop(ctx, 0);
+
+	return 0;
+%}
+
+method Console::timeEnd()
+%{
+	uint64_t time_ms = 0;
+	uint64_t old_time_ms = 0;
+
+	if (nsu_getmonotonic_ms(&time_ms) != NSUERROR_OK)
+		return 0;
+
+	if (!duk_is_string(ctx, 0)) {
+		duk_error(ctx, DUK_ERR_ERROR, "Console.time() takes a string");
+	}
+
+	duk_set_top(ctx, 1);
+
+	duk_push_this(ctx);
+	duk_get_prop_string(ctx, -1, CONSOLE_TIMERS);
+	duk_insert(ctx, 0);
+	duk_pop(ctx);
+
+	duk_dup(ctx, -1);
+	duk_get_prop(ctx, 0);
+	if (duk_is_undefined(ctx, -1)) {
+		duk_pop(ctx);
+		duk_push_uint(ctx, (duk_uint_t)time_ms);
+	}
+	/* timers timername oldval */
+	old_time_ms = duk_to_uint32(ctx, -1);
+	duk_pop(ctx);
+	duk_dup(ctx, -1);
+	duk_insert(ctx, 0);
+	duk_del_prop(ctx, 0);
+	duk_push_string(ctx, "Timer elapsed: ");
+	duk_insert(ctx, 0);
+	duk_push_sprintf(ctx, "%lu ms", (duk_uint_t)(time_ms - old_time_ms));
+	write_log_entry(ctx, priv->group, 'T');
+	return 0;
+%}
+
+method Console::trace ()
+%{
+	duk_idx_t i = duk_push_error_object(ctx, DUK_ERR_ERROR, "Dummy Error");
+	duk_get_prop_string(ctx, i, "stack");
+	duk_safe_to_string(ctx, -1);
+	duk_insert(ctx, 0);
+	duk_set_top(ctx, 1);
+	write_log_entry(ctx, priv->group, 'S');
+	return 0;
+%}
