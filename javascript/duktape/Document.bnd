@@ -22,6 +22,9 @@ method Document::write()
 %{
 	struct html_content *htmlc;
 	duk_size_t text_len;
+	for (int i = 0; i < duk_get_top(ctx); ++i)
+		duk_safe_to_string(ctx, i);
+	duk_concat(ctx, duk_get_top(ctx));
 	const char *text = duk_safe_to_lstring(ctx, 0, &text_len);
 	LOG("Writing %*s", (int)text_len, text);
 	dom_exception err;
