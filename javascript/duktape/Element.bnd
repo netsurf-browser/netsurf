@@ -183,7 +183,7 @@ method Element::getElementsByTagName ()
 	duk_size_t len;
 	const char *str = duk_to_lstring(ctx, 0, &len);
 
-	exc = dom_string_create(str, len, &tagname);
+	exc = dom_string_create((const uint8_t *)str, len, &tagname);
 
 	if (exc != DOM_NO_ERR) return 0;
 
