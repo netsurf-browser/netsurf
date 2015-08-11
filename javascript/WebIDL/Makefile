@@ -21,6 +21,7 @@ all: dom.idl html.idl uievents.idl
 .INTERMEDIATE:dom-spec.html dom-spec.xml dom-idl.html 
 .INTERMEDIATE:html-spec.html html-spec.xml html-idl.html
 .INTERMEDIATE:uievents-spec.html uievents-spec.xml uievents-idl.html
+.INTERMEDIATE:urlutils-spec.html urlutils-spec.xml urlutils-idl.html
 
 dom-spec.html:
 	curl -s https://dom.spec.whatwg.org/ -o $@
@@ -30,6 +31,9 @@ html-spec.html:
 
 uievents-spec.html:
 	curl -s http://www.w3.org/TR/uievents/ -o $@
+
+urlutils-spec.html:
+	curl -s https://url.spec.whatwg.org/ -o $@
 
 %-spec.xml: %-spec.html
 	-tidy -q -f $@.errors --new-blocklevel-tags header,hgroup,figure,time,main,nav,svg,rect,text,image,mark,figcaption,section -o $@ -asxml $<
