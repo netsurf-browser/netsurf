@@ -28,5 +28,6 @@ duk_ret_t dukky_create_object(duk_context *ctx, const char *name, int args);
 duk_bool_t dukky_push_node_stacked(duk_context *ctx);
 duk_bool_t dukky_push_node(duk_context *ctx, struct dom_node *node);
 void dukky_inject_not_ctr(duk_context *ctx, int idx, const char *name);
+duk_bool_t dukky_instanceof_at(duk_context *ctx, duk_idx_t _idx, const char *klass);
 
 #endif
