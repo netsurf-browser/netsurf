@@ -174,3 +174,26 @@ getter Element::childElementCount()
 	duk_push_uint(ctx, jsret);
 	return 1;
 %}
+
+method Element::getElementsByTagName ()
+%{
+	dom_nodelist *nlist = NULL;
+	dom_exception exc;
+	dom_string *tagname;
+	duk_size_t len;
+	const char *str = duk_to_lstring(ctx, 0, &len);
+
+	exc = dom_string_create(str, len, &tagname);
+
+	if (exc != DOM_NO_ERR) return 0;
+
+	exc = dom_element_get_elements_by_tag_name(priv->parent.node,
+						   tagname, &nlist);
+	dom_string_unref(tagname);
+	if (exc != DOM_NO_ERR) return 0;
+	duk_push_pointer(ctx, nlist);
+	dukky_create_object(ctx, PROTO_NAME(NODELIST), 1);
+	dom_nodelist_unref(nlist);
+
+	return 1;
+%}
