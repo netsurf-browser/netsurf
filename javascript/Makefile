@@ -84,6 +84,7 @@ $(S_JSAPI_BINDING): $(BINDINGS)
 
 S_JAVASCRIPT += dukky.c content.c fetcher.c duktape/duktape.c
 
+CFLAGS += -DDUK_OPT_HAVE_CUSTOM_H
 else
 S_JAVASCRIPT += none.c fetcher.c
 endif

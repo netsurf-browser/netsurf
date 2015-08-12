@@ -2988,6 +2988,18 @@ typedef FILE duk_file;
 #endif
 
 /*
+ *  Alternative customization header
+ *
+ *  If you want to modify the final DUK_USE_xxx flags directly (without
+ *  using the available DUK_OPT_xxx flags), define DUK_OPT_HAVE_CUSTOM_H
+ *  and tweak the final flags there.
+ */
+
+#if defined(DUK_OPT_HAVE_CUSTOM_H)
+#include "duk_custom.h"
+#endif
+
+/*
  *  Date provider selection
  *
  *  User may define DUK_USE_DATE_GET_NOW() etc directly, in which case we'll
@@ -3069,18 +3081,6 @@ DUK_INTERNAL_DECL duk_bool_t duk_bi_date_format_parts_strftime(duk_context *ctx,
 #define DUK_USE_JSON_EATWHITE_FASTPATH
 #define DUK_USE_JSON_QUOTESTRING_FASTPATH
 #undef DUK_USE_JSON_STRINGIFY_FASTPATH
-
-/*
- *  Alternative customization header
- *
- *  If you want to modify the final DUK_USE_xxx flags directly (without
- *  using the available DUK_OPT_xxx flags), define DUK_OPT_HAVE_CUSTOM_H
- *  and tweak the final flags there.
- */
-
-#if defined(DUK_OPT_HAVE_CUSTOM_H)
-#include "duk_custom.h"
-#endif
 
 /*
  *  You may add overriding #define/#undef directives below for
