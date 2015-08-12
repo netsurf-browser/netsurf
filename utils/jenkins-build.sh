@@ -381,10 +381,11 @@ fi
 
 DISTCC=distcc
 PARALLEL=1
-${DISTCC} --version >/dev/null 2>&1
-if [ $? -eq 0 ];then
+HAVE_DISTCC=$(${DISTCC} --version >/dev/null 2>&1 && echo "true" || echo "false")
+if [ ${HAVE_DISTCC} = "true" ];then
     PARALLEL=$(${DISTCC} -j)
     export PATH=/usr/lib/distcc:${PATH}
+    export DISTCC_DIR=${JENKINS_HOME}
 fi
 
 
