@@ -870,7 +870,8 @@ html_create_html_data(html_content *c, const http_parameter *params)
 		lwc_string_unref(c->universal);
 		c->universal = NULL;
 
-		return libdom_hubbub_error_to_nserror(err);
+		LOG("Unable to set user data.");
+		return NSERROR_DOM;
 	}
 
 	assert(old_node_data == NULL);
