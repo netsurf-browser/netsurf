@@ -396,11 +396,11 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 		duk_get_prop_string(CTX, 0, "fileName");
 		duk_get_prop_string(CTX, 0, "lineNumber");
 		duk_get_prop_string(CTX, 0, "stack");
-		LOG("JAVASCRIPT WENT BANG: %s: %s", duk_safe_to_string(CTX, 1),
+		LOG("Uncaught error in JS: %s: %s", duk_safe_to_string(CTX, 1),
 		    duk_safe_to_string(CTX, 2));
-		LOG("Explosion was at %s line %s", duk_safe_to_string(CTX, 3),
+		LOG("              was at: %s line %s", duk_safe_to_string(CTX, 3),
 		    duk_safe_to_string(CTX, 4));
-		LOG("Stack trace:\n%s", duk_safe_to_string(CTX, 5));
+		LOG("         Stack trace: %s", duk_safe_to_string(CTX, 5));
 		return false;
 	}
 	if (duk_get_top(CTX) == 0) duk_push_boolean(CTX, false);
