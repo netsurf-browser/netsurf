@@ -176,6 +176,7 @@ method Document::getElementById()
 
 	if (element != NULL) {
 		dukky_push_node(ctx, (dom_node *)element);
+		dom_node_unref(element);
 		return 1;
 	}
 
