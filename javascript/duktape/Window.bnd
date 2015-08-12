@@ -40,6 +40,9 @@ prototype Window()
 	EXPOSE(Object);
 	EXPOSE(parseInt);
 	EXPOSE(parseFloat);
+	EXPOSE(Array);
+	EXPOSE(Date);
+	EXPOSE(RegExp);
 #undef EXPOSE
 %}
 
