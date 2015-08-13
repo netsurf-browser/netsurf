@@ -854,11 +854,10 @@ nserror browser_window_initialise_common(enum browser_window_create_flags flags,
 	assert(bw);
 
 	/* new javascript context for each window/(i)frame */
-	bw->jsctx = js_newcontext(nsoption_int(script_timeout),
-				  slow_script,
-				  NULL);
-	/* If bw->jsctx == NULL, it might be because we built with no JS.
-	 * TODO: Error handling in the with JS case. */
+	err = js_newcontext(nsoption_int(script_timeout),
+				  slow_script, NULL, &bw->jsctx);
+	if (err != NSERROR_OK)
+		return err;
 
 	if (flags & BW_CREATE_CLONE) {
 		assert(existing != NULL);

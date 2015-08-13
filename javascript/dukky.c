@@ -325,14 +325,16 @@ void js_finalise(void)
 #define DUKKY_NEW_PROTOTYPE(klass, uklass, klass_name)			\
 	dukky_create_prototype(ctx, dukky_##klass##___proto, PROTO_NAME(uklass), klass_name)
 
-jscontext *js_newcontext(int timeout, jscallback *cb, void *cbctx)
+nserror js_newcontext(int timeout, jscallback *cb, void *cbctx,
+		jscontext **jsctx)
 {
 	duk_context *ctx;
 	jscontext *ret = calloc(1, sizeof(*ret));
+	*jsctx = NULL;
 	LOG("Creating new duktape javascript context");
-	if (ret == NULL) return NULL;
+	if (ret == NULL) return NSERROR_NOMEM;
 	ctx = ret->ctx = duk_create_heap_default();
-	if (ret->ctx == NULL) { free(ret); return NULL; }
+	if (ret->ctx == NULL) { free(ret); return NSERROR_NOMEM; }
 	/* Create the prototype stuffs */
 	duk_push_global_object(ctx);
 	duk_push_boolean(ctx, true);
@@ -341,7 +343,8 @@ jscontext *js_newcontext(int timeout, jscallback *cb, void *cbctx)
 	/* Create prototypes here */
 	dukky_create_prototypes(ctx);
 
-	return ret;
+	*jsctx = ret;
+	return NSERROR_OK;
 }
 
 void js_destroycontext(jscontext *ctx)

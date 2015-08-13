@@ -313,17 +313,19 @@ disable_heartbeat(struct heartbeat *hb)
 
 #endif
 
-jscontext *js_newcontext(int timeout, jscallback *cb, void *cbctx)
+nserror js_newcontext(int timeout, jscallback *cb, void *cbctx,
+		jscontext **jsctx)
 {
 	JSContext *cx;
+	*jsctx = NULL;
 
 	if (rt == NULL) {
-		return NULL;
+		return NSERROR_OK;
 	}
 
 	cx = JS_NewContext(rt, 8192);
 	if (cx == NULL) {
-		return NULL;
+		return NSERROR_NOMEM;
 	}
 
 	/* set options on context */
@@ -339,7 +341,8 @@ jscontext *js_newcontext(int timeout, jscallback *cb, void *cbctx)
 
 	JSLOG("New Context %p", cx);
 
-	return (jscontext *)cx;
+	r*jsctx = (jscontext *)cx;
+	return NSERROR_OK;
 }
 
 void js_destroycontext(jscontext *ctx)

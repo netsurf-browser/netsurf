@@ -35,9 +35,11 @@ void js_finalise(void)
 {
 }
 
-jscontext *js_newcontext(int timeout, jscallback *cb, void *cbctx)
+nserror js_newcontext(int timeout, jscallback *cb, void *cbctx,
+		jscontext **jsctx)
 {
-	return NULL;
+	*jsctx = NULL;
+	return NSERROR_OK;
 }
 
 void js_destroycontext(jscontext *ctx)

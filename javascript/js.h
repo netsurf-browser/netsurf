@@ -23,6 +23,9 @@
 #ifndef _NETSURF_JAVASCRIPT_JS_H_
 #define _NETSURF_JAVASCRIPT_JS_H_
 
+#include "utils/errors.h"
+
+
 typedef struct jscontext jscontext;
 typedef struct jsobject jsobject;
 
@@ -45,8 +48,11 @@ void js_finalise(void);
  * \param timeout elapsed wallclock time (in seconds)  before \a callback is called
  * \param cb the callback when the runtime exceeds the timeout
  * \param cbctx The context to pass to the callback
+ * \param jsctx Updated to the created JS context
+ * \return NSERROR_OK on success, appropriate error otherwise.
  */
-jscontext *js_newcontext(int timeout, jscallback *cb, void *cbctx);
+nserror js_newcontext(int timeout, jscallback *cb, void *cbctx,
+		jscontext **jsctx);
 
 /** Destroy a previously created context */
 void js_destroycontext(jscontext *ctx);
