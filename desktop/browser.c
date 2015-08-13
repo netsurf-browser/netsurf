@@ -853,8 +853,7 @@ nserror browser_window_initialise_common(enum browser_window_create_flags flags,
 	nserror err;
 	assert(bw);
 
-	/* new javascript context for each window/frame
-	 * TODO: is this correct? */
+	/* new javascript context for each window/(i)frame */
 	bw->jsctx = js_newcontext(nsoption_int(script_timeout),
 				  slow_script,
 				  NULL);
