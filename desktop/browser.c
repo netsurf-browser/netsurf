@@ -794,11 +794,6 @@ nserror browser_window_create(enum browser_window_create_flags flags,
 		return NSERROR_NOMEM;
 	}
 
-	/* new javascript context for window */
-	ret->jsctx = js_newcontext(nsoption_int(script_timeout),
-				  slow_script,
-				  NULL);
-
 	/* Initialise common parts */
 	err = browser_window_initialise_common(flags, ret, existing);
 	if (err != NSERROR_OK) {
@@ -857,6 +852,12 @@ nserror browser_window_initialise_common(enum browser_window_create_flags flags,
 {
 	nserror err;
 	assert(bw);
+
+	/* new javascript context for each window/frame
+	 * TODO: is this correct? */
+	bw->jsctx = js_newcontext(nsoption_int(script_timeout),
+				  slow_script,
+				  NULL);
 
 	if (flags & BW_CREATE_CLONE) {
 		assert(existing != NULL);
