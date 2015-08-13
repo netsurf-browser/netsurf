@@ -341,7 +341,7 @@ nserror js_newcontext(int timeout, jscallback *cb, void *cbctx,
 
 	JSLOG("New Context %p", cx);
 
-	r*jsctx = (jscontext *)cx;
+	*jsctx = (jscontext *)cx;
 	return NSERROR_OK;
 }
 
