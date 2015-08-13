@@ -857,6 +857,9 @@ nserror browser_window_initialise_common(enum browser_window_create_flags flags,
 	bw->jsctx = js_newcontext(nsoption_int(script_timeout),
 				  slow_script,
 				  NULL);
+	if (bw->jsctx == NULL) {
+		return NSERROR_NOMEM;
+	}
 
 	if (flags & BW_CREATE_CLONE) {
 		assert(existing != NULL);
