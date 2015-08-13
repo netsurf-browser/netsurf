@@ -353,6 +353,7 @@ void js_destroycontext(jscontext *ctx)
 
 jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 {
+	assert(ctx != NULL);
 	/* Pop any active thread off */
 	LOG("Yay, new compartment, win_priv=%p, doc_priv=%p", win_priv, doc_priv);
 	duk_set_top(ctx->ctx, 0);
