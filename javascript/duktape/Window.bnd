@@ -43,6 +43,7 @@ prototype Window()
 	EXPOSE(Array);
 	EXPOSE(Date);
 	EXPOSE(RegExp);
+	EXPOSE(Math);
 #undef EXPOSE
 %}
 
