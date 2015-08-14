@@ -36,7 +36,6 @@
 #define nsList List
 #define NewnsList NewList
 #endif
-/****/
 
 /* Slightly abstract MinList initialisation */
 void ami_NewMinList(struct MinList *list)

@@ -742,6 +742,7 @@ static void ami_openscreen(void)
 		if(screen_signal == -1) screen_signal = AllocSignal(-1);
 		LOG("Screen signal %d", screen_signal);
 		scrn = OpenScreenTags(NULL,
+					/**\todo specify screen depth */
 					SA_DisplayID, id,
 					SA_Title, ami_gui_get_screen_title(),
 					SA_Type, PUBLICSCREEN,
