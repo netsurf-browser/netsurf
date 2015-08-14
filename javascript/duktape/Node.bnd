@@ -285,15 +285,104 @@ method Node::isEqualNode()
 	return 1;
 %}
 
-/*** @todo method compareDocumentPosition */
+method Node::compareDocumentPosition()
+%{
+	dom_exception exc;
+	uint16_t ret;
 
-/*** @todo method contains */
+	if (!dukky_instanceof_at(ctx, 0, PROTO_NAME(NODE))) return 0;
 
-/*** @todo method lookupPrefix */
+	duk_get_prop_string(ctx, 0, PRIVATE_MAGIC);
+	node_private_t *other = duk_get_pointer(ctx, -1);
+	duk_pop(ctx);
 
-/*** @todo method lookupNamespaceURI */
+	exc = dom_node_compare_document_position(priv->node, other->node,
+			&ret);
 
-/*** @todo method isDefaultNamespace */
+	if (exc != DOM_NO_ERR) return 0;
+
+	duk_push_uint(ctx, ret);
+
+	return 1;
+%}
+
+method Node::contains()
+%{
+	dom_exception exc;
+	uint16_t ret;
+
+	if (!dukky_instanceof_at(ctx, 0, PROTO_NAME(NODE))) return 0;
+
+	duk_get_prop_string(ctx, 0, PRIVATE_MAGIC);
+	node_private_t *other = duk_get_pointer(ctx, -1);
+	duk_pop(ctx);
+
+	/* Note that inclusive descendant says *IS* or *CONTAINED_BY* */
+	if (priv->node == other->node) {
+		duk_push_boolean(ctx, true);
+		return 1;
+	}
+
+	exc = dom_node_compare_document_position(priv->node, other->node,
+			&ret);
+
+	if (exc != DOM_NO_ERR) return 0;
+
+	duk_push_boolean(ctx, ret == DOM_DOCUMENT_POSITION_CONTAINED_BY);
+
+	return 1;
+%}
+
+method Node::lookupPrefix()
+%{
+	dom_exception exc;
+	dom_string *ns, *pfx;
+	duk_size_t size;
+	const char *s = duk_safe_to_lstring(ctx, 0, &size);
+	exc = dom_string_create((const uint8_t *)s, size, &ns);
+	if (exc != DOM_NO_ERR) return 0;
+	exc = dom_node_lookup_prefix(priv->node, ns, &pfx);
+	dom_string_unref(ns);
+	if (exc != DOM_NO_ERR) return 0;
+	if (pfx == NULL) return 0;
+	duk_push_lstring(ctx, dom_string_data(pfx), dom_string_length(pfx));
+	dom_string_unref(pfx);
+	return 0;
+%}
+
+method Node::lookupNamespaceURI()
+%{
+	dom_exception exc;
+	dom_string *ns, *pfx;
+	duk_size_t size;
+	const char *s = duk_safe_to_lstring(ctx, 0, &size);
+	exc = dom_string_create((const uint8_t *)s, size, &pfx);
+	if (exc != DOM_NO_ERR) return 0;
+	exc = dom_node_lookup_namespace(priv->node, pfx, &ns);
+	dom_string_unref(pfx);
+	if (exc != DOM_NO_ERR) return 0;
+	if (ns == NULL) return 0;
+	duk_push_lstring(ctx, dom_string_data(ns), dom_string_length(ns));
+	dom_string_unref(ns);
+	return 0;
+%}
+
+
+method Node::isDefaultNamespace()
+%{
+	dom_exception exc;
+	dom_string *ns;
+	duk_size_t size;
+	const char *s = duk_safe_to_lstring(ctx, 0, &size);
+	bool ret;
+	exc = dom_string_create((const uint8_t *)s, size, &ns);
+	if (exc != DOM_NO_ERR) return 0;
+	exc = dom_node_is_default_namespace(priv->node, ns, &ret);
+	dom_string_unref(ns);
+	if (exc != DOM_NO_ERR) return 0;
+	duk_push_boolean(ctx, ret);
+	return 1;
+%}
 
 method Node::insertBefore()
 %{
