@@ -2746,6 +2746,8 @@ node_presentational_hint_float(nscss_select_ctx *ctx,
 
 	/** \todo input[type=image][align=*] - $11.3.3 */
 	if (!dom_string_caseless_lwc_isequal(node_name,
+			corestring_lwc_table) &&
+	    !dom_string_caseless_lwc_isequal(node_name,
 			corestring_lwc_applet) &&
 	    !dom_string_caseless_lwc_isequal(node_name,
 	    		corestring_lwc_embed) &&
