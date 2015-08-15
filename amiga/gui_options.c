@@ -210,6 +210,9 @@ struct ami_gui_opts_window {
 	struct nsObject *node;
 	struct Window *win;
 	Object *objects[GID_OPTS_LAST];
+#ifndef __amigaos4__
+	struct List clicktablist;
+#endif
 };
 
 static struct ami_gui_opts_window *gow = NULL;
@@ -223,7 +226,7 @@ CONST_STRPTR fontopts[6];
 CONST_STRPTR gadlab[OPTS_LAST];
 struct List *websearch_list;
 
-static void ami_gui_opts_setup(void)
+static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 {
 	tabs[0] = (char *)ami_utf8_easy((char *)messages_get("con_general"));
 	tabs[1] = (char *)ami_utf8_easy((char *)messages_get("Display"));
@@ -238,6 +241,19 @@ static void ami_gui_opts_setup(void)
 	tabs[9] = NULL;
 #else
 	tabs[8] = NULL;
+#endif
+
+#ifndef __amigaos4__
+	int i = 0;
+	struct Node *node;
+
+	NewList(&gow->clicktablist);
+
+	do {
+		node = AllocClickTabNode(TNA_Text, tabs[i], TNA_Number, i, TAG_DONE);
+		AddTail(&gow->clicktablist, node);
+		i++;
+	} while (tabs[i] != 0);
 #endif
 
 	screenopts[0] = (char *)ami_utf8_easy((char *)messages_get("ScreenOwn"));
@@ -377,7 +393,7 @@ static void ami_gui_opts_setup(void)
 	fontopts[5] = NULL;
 }
 
-static void ami_gui_opts_free(void)
+static void ami_gui_opts_free(struct ami_gui_opts_window *gow)
 {
 	int i;
 
@@ -397,6 +413,19 @@ static void ami_gui_opts_free(void)
 		if(nativebmopts[i]) free((APTR)nativebmopts[i]);
 
 	ami_gui_opts_websearch_free(websearch_list);
+
+#ifndef __amigaos4__
+	struct Node *node;
+	struct Node *nnode;
+
+	if(IsListEmpty((struct List *)&gow->clicktablist)) return;
+	node = GetHead((struct List *)&gow->clicktablist);
+
+	do {
+		nnode = GetSucc(node);
+		if(node) FreeClickTabNode(node);
+	} while((node = nnode));
+#endif
 }
 
 void ami_gui_opts_open(void)
@@ -527,9 +556,10 @@ void ami_gui_opts_open(void)
 
 	if(!gow)
 	{
-		ami_gui_opts_setup();
-
 		gow = ami_misc_allocvec_clear(sizeof(struct ami_gui_opts_window), 0);
+		if(gow == NULL) return;
+
+		ami_gui_opts_setup(gow);
 
 		gow->objects[OID_MAIN] = WindowObj,
 			WA_ScreenTitle, ami_gui_get_screen_title(),
@@ -548,7 +578,11 @@ void ami_gui_opts_open(void)
 			WINDOW_ParentGroup, gow->objects[GID_OPTS_MAIN] = LayoutVObj,
 				LAYOUT_AddChild, ClickTabObj,
 					GA_RelVerify, TRUE,
+#ifdef __amigaos4__
 					GA_Text, tabs,
+#else
+					CLICKTAB_Labels, &gow->clicktablist,
+#endif
 					CLICKTAB_PageGroup, PageObj,
 						/*
 						** General
@@ -1915,8 +1949,9 @@ void ami_gui_opts_close(void)
 {
 	DisposeObject(gow->objects[OID_MAIN]);
 	DelObject(gow->node);
+	ami_gui_opts_free(gow);
+	FreeVec(gow);
 	gow = NULL;
-	ami_gui_opts_free();
 }
 
 BOOL ami_gui_opts_event(void)
