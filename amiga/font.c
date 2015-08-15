@@ -596,7 +596,7 @@ static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPo
 #endif
 
 #ifdef __amigaos4__
-	if (__builtin_expect(aa == false, 0)) {
+	if (__builtin_expect(aa == false), 0) {
 #endif
 		glyphmaptag = OT_GlyphMap;
 #ifdef __amigaos4__
