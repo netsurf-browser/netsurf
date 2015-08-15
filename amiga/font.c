@@ -595,17 +595,17 @@ static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPo
 	}
 #endif
 
-	if(aa == true) {
 #ifdef __amigaos4__
+	if(__builtin_expect(aa == true, 1)) {
 		glyphmaptag = OT_GlyphMap8Bit;
 		template_type = BLITT_ALPHATEMPLATE;
-#endif
 	} else {
+#endif
 		glyphmaptag = OT_GlyphMap;
 #ifdef __amigaos4__
 		template_type = BLITT_TEMPLATE;
-#endif
 	}
+#endif
  
 	long_char_1 = amiga_nsfont_decode_surrogate(char1);
 	long_char_2 = amiga_nsfont_decode_surrogate(char2);
