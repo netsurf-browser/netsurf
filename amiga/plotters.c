@@ -122,9 +122,15 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	gg->areabuf = AllocVecTagList(AREA_SIZE, NULL);
 	gg->tmprasbuf = AllocVecTagList(width * height, NULL);
 
+	/* Friend BitMaps are weird.
+	 * For OS4, we shouldn't use a friend BitMap here (see below).
+	 * For OS3 AGA, we get no display blitted if we use a friend BitMap,
+	 * however on RTG it seems to be a benefit.  Hence this user-adjustable option.
+	 */
 #ifndef __amigaos4__
-	/* If you're wondering why this is #ifdeffed, see the note about OS4 friend bitmaps below */
-	friend = scrn->RastPort.BitMap;
+	if(nsoption_bool(friend_bitmap) == true) {
+		friend = scrn->RastPort.BitMap;
+	}
 #endif
 
 	if(palette_mapped == true) {
@@ -133,7 +139,9 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 #ifdef __amigaos4__
 		/* Screen depth is reported as 24 even when it's actually 32-bit.
 		 * We get freezes and other problems on OS4 if we befriend at any
-		 * other depths, hence this check. */
+		 * other depths, hence this check.
+		 * Note that this is forced on, the option is only used under OS3.
+		 */
 		if(depth >= 24) friend = scrn->RastPort.BitMap;
 #endif
 		gg->bm = ami_rtg_allocbitmap(width, height, 32, 0, friend, RGBFB_A8R8G8B8);
