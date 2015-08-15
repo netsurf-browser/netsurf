@@ -97,6 +97,7 @@ const char *fetch_filetype(const char *unix_path)
 
 	if (objtype == osfile_IS_DIR) {
 		sprintf(type_buf, "application/x-netsurf-directory");
+		free(path);
 		return (const char *)type_buf;
 	}
 
