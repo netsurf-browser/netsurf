@@ -1948,9 +1948,8 @@ static void ami_gui_opts_use(bool save)
 void ami_gui_opts_close(void)
 {
 	DisposeObject(gow->objects[OID_MAIN]);
-	DelObject(gow->node);
 	ami_gui_opts_free(gow);
-	FreeVec(gow);
+	DelObject(gow->node);
 	gow = NULL;
 }
 
