@@ -76,7 +76,6 @@ const char *fetch_filetype(const char *unix_path)
 		warn_user("NoMemory", 0);
 		return "application/riscos";
 	}
-	LOG("unix_path = '%s'", unix_path);
 
 	/* convert path to RISC OS format and read file type */
 	r = __riscosify(unix_path, 0, __RISCOSIFY_NO_SUFFIX, path, len, 0);
@@ -85,7 +84,6 @@ const char *fetch_filetype(const char *unix_path)
 		free(path);
 		return "application/riscos";
 	}
-	LOG("riscos path '%s'", path);
 
 	error = xosfile_read_stamped_no_path(path, &objtype, 0, 0, 0, 0,
 			&file_type);
