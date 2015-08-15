@@ -1094,6 +1094,7 @@ static nserror gui_init(int argc, char** argv)
 		void (*sigint)(int);
 		void (*sigsegv)(int);
 		void (*sigterm)(int);
+		void (*sigoserror)(int);
 	} prev_sigs;
 	char path[40];
 	os_error *error;
@@ -1142,12 +1143,14 @@ static nserror gui_init(int argc, char** argv)
 	prev_sigs.sigint = signal(SIGINT, ro_gui_signal);
 	prev_sigs.sigsegv = signal(SIGSEGV, ro_gui_signal);
 	prev_sigs.sigterm = signal(SIGTERM, ro_gui_signal);
+	prev_sigs.sigoserror = signal(SIGOSERROR, ro_gui_signal);
 
 	if (prev_sigs.sigabrt == SIG_ERR || prev_sigs.sigfpe == SIG_ERR ||
 			prev_sigs.sigill == SIG_ERR ||
 			prev_sigs.sigint == SIG_ERR ||
 			prev_sigs.sigsegv == SIG_ERR ||
-			prev_sigs.sigterm == SIG_ERR)
+			prev_sigs.sigterm == SIG_ERR ||
+			prev_sigs.sigoserror == SIG_ERR)
 		die("Failed registering signal handlers");
 
 	/* Load in UI sprites */
