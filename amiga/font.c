@@ -595,18 +595,18 @@ static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPo
 	}
 #endif
 
+	if(aa == true) {
 #ifdef __amigaos4__
-	if (__builtin_expect(aa == false), 0) {
+		glyphmaptag = OT_GlyphMap8Bit;
+		template_type = BLITT_ALPHATEMPLATE;
 #endif
+	} else {
 		glyphmaptag = OT_GlyphMap;
 #ifdef __amigaos4__
 		template_type = BLITT_TEMPLATE;
-	} else {
-		glyphmaptag = OT_GlyphMap8Bit;
-		template_type = BLITT_ALPHATEMPLATE;
-	}
 #endif
-
+	}
+ 
 	long_char_1 = amiga_nsfont_decode_surrogate(char1);
 	long_char_2 = amiga_nsfont_decode_surrogate(char2);
 	/**\todo use OT_GlyphCode_32 so we get an error for old font engines */
@@ -792,7 +792,7 @@ ULONG ami_font_unicode_text(struct RastPort *rp, const char *string, ULONG lengt
 		else tempx = 0;
 
 		if(tempx == 0) {
-			tempx = (ofont, rp, utf16, utf16next,
+			tempx = ami_font_plot_glyph(ofont, rp, utf16, utf16next,
 								dx + x, dy, emwidth, aa);
 		}
 
