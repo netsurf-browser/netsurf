@@ -517,19 +517,15 @@ void ami_free_menulabs(struct gui_window_2 *gwin)
 {
 	int i;
 
-	for(i=0;i<=AMI_MENU_AREXX_MAX;i++)
-	{
-		if(gwin->menulab[i] && (gwin->menulab[i] != NM_BARLABEL))
-		{
-			if(gwin->menutype[i] & MENU_IMAGE)
-			{
-				DisposeObject(gwin->menuobj[i]);
+	for(i=0;i<=AMI_MENU_AREXX_MAX;i++) {
+		if(gwin->menulab[i] && (gwin->menulab[i] != NM_BARLABEL)) {
+			if(gwin->menutype[i] & MENU_IMAGE) {
+				if(gwin->menuobj[i]) DisposeObject(gwin->menuobj[i]);
 			}
 
 			ami_utf8_free(gwin->menulab[i]);
 
-			if(i >= AMI_MENU_AREXX)
-			{
+			if(i >= AMI_MENU_AREXX) {
 				if(gwin->menu_hook[i].h_Data) free(gwin->menu_hook[i].h_Data);
 			}
 		}
@@ -888,7 +884,7 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 		if(gwin->menukey[i]) gwin->menu[i].nm_CommKey = &gwin->menukey[i];
 		gwin->menu[i].nm_Flags = 0;
 		if(gwin->menu_hook[i].h_Entry) gwin->menu[i].nm_UserData = &gwin->menu_hook[i];
-		
+
 		if(gwin->menuicon[i]) {
 			free(gwin->menuicon[i]);
 			gwin->menuicon[i] = NULL;
