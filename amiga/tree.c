@@ -889,22 +889,23 @@ void ami_tree_close(struct treeview_window *twin)
 	ami_free_layers(&twin->globals);
 	ami_plot_release_pens(&twin->shared_pens);
 
-	for(i=0;i<AMI_TREE_MENU_ITEMS;i++)
-	{
-		if(twin->menu_name[i] && (twin->menu_name[i] != NM_BARLABEL)) ami_utf8_free(twin->menu_name[i]);
+	for(i=0;i<AMI_TREE_MENU_ITEMS;i++) {
+		if(twin->menu_name[i] && (twin->menu_name[i] != NM_BARLABEL))
+			ami_utf8_free(twin->menu_name[i]);
 	}
+
 	FreeVec(twin->menu);
 	twin->menu = NULL;
 	ami_utf8_free(twin->wintitle);
-	if(twin->type == AMI_TREE_SSLCERT) 
-	{
+	if(twin->type == AMI_TREE_SSLCERT) {
 		ami_utf8_free(twin->sslerr);
 		ami_utf8_free(twin->sslaccept);
 		ami_utf8_free(twin->sslreject);
 		ami_ssl_free(twin);
 	}
-	
-	ami_gui_hotlist_update_all();
+
+	if(twin->type == AMI_TREE_SSLCERT)
+		ami_gui_hotlist_update_all();
 }
 
 static void ami_tree_update_quals(struct treeview_window *twin)
