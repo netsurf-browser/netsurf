@@ -119,8 +119,15 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	gg->height = height;
 
 	gg->layerinfo = NewLayerInfo();
+
+#ifdef __amigaos4__
 	gg->areabuf = AllocVecTagList(AREA_SIZE, NULL);
 	gg->tmprasbuf = AllocVecTagList(width * height, NULL);
+#else
+	/* OS3/AGA requries these to be in chip mem */
+	gg->areabuf = AllocVec(AREA_SIZE, MEMF_CHIP);
+	gg->tmprasbuf = AllocVec(width * height, MEMF_CHIP);
+#endif
 
 	/* Friend BitMaps are weird.
 	 * For OS4, we shouldn't use a friend BitMap here (see below).
@@ -163,17 +170,11 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	InstallLayerHook(gg->rp->Layer,LAYERS_NOBACKFILL);
 
 	gg->rp->AreaInfo = AllocVecTagList(sizeof(struct AreaInfo), NULL);
-
 	if((!gg->areabuf) || (!gg->rp->AreaInfo))	warn_user("NoMemory","");
 
 	InitArea(gg->rp->AreaInfo,gg->areabuf, AREA_SIZE/5);
-#ifdef __amigaos4__
-	gg->rp->TmpRas = AllocVecTagList(sizeof(struct TmpRas), NULL);
-#else
-	/* TmpRas needs to be in chip mem on OS3 */
-	gg->rp->TmpRas = AllocVec(sizeof(struct TmpRas), MEMF_CHIP);
-#endif
 
+	gg->rp->TmpRas = AllocVecTagList(sizeof(struct TmpRas), NULL);
 	if((!gg->tmprasbuf) || (!gg->rp->TmpRas))	warn_user("NoMemory","");
 
 	InitTmpRas(gg->rp->TmpRas, gg->tmprasbuf, width*height);
