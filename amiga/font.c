@@ -638,8 +638,13 @@ static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPo
 					BLITA_SrcBytesPerRow, glyph->glm_BMModulo,
 					TAG_DONE);
 #else
-				BltTemplate(glyphbm + (glyph->glm_BMModulo * glyph->glm_BlackTop),
-					glyph->glm_BlackLeft, glyph->glm_BMModulo, rp,
+				/* On OS3 the glyph needs to be in chip RAM */
+				void *chip_glyph = AllocVec(glyph->glm_BMModulo * glyph->glm_BMRows, MEMF_CHIP);
+				CopyMem(glyphbm, chip_glyph, glyph->glm_BMModulo * glyph->glm_BMRows);
+
+				BltTemplate(chip_glyph + (glyph->glm_BMModulo * glyph->glm_BlackTop) +
+					((glyph->glm_BlackLeft >> 4) << 1),
+					glyph->glm_BlackLeft & 0xF, glyph->glm_BMModulo, rp,
 					x - glyph->glm_X0 + glyph->glm_BlackLeft,
 					y - glyph->glm_Y0 + glyph->glm_BlackTop,
 					glyph->glm_BlackWidth, glyph->glm_BlackHeight);
