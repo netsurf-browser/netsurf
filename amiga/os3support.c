@@ -67,7 +67,7 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 		/*\todo we should be opening the .font file too and checking
 		 * for the magic bytes to indicate this is an outline font.
 		 */
-		LOG("Unable to open %s", otagpath);
+		LOG("Unable to open OTAG %s", otagpath);
 		FreeVec(otagpath);
 		return NULL;
 	}
@@ -114,7 +114,7 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	BulletBase = OpenLibrary(fname, 0L);
 
 	if(BulletBase == NULL) {
-		LOG("Unable to open %s", fname);
+		LOG("Unable to open font engine %s", fname);
 		FreeVec(buffer);
 		FreeVec(fname);
 		FreeVec(otagpath);
