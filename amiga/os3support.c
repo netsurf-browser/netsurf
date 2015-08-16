@@ -49,14 +49,39 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	int64 size = 0;
 	struct TagItem *ti;
 	UBYTE *buffer;
-	STRPTR fname, otagpath;
+	STRPTR fname, otagpath, fontpath;
 	struct BulletBase *BulletBase;
 	struct OutlineFont *of = NULL;
 	struct GlyphEngine *gengine;
 	char *p = 0;
+	struct FontContentsHeader fch;
 
 	if(p = strrchr(fileName, '.'))
 		*p = '\0';
+
+	fontpath = (STRPTR)ASPrintf("FONTS:%s.font", fileName);
+	fh = Open(fontpath, MODE_OLDFILE);
+
+	if(fh == 0) {
+		LOG("Unable to open FONT %s", fontpath);
+		FreeVec(fontpath);
+		return NULL;
+	}
+
+	if(Read(fh, &magic, sizeof(struct FontContentsHeader)) != sizeof(struct FontContentsHeader)) {
+		LOG("Unable to read FONT %s", fontpath);
+		FreeVec(fontpath);
+		Close(fh);
+		return NULL;
+	}
+
+	Close(fh);
+
+	if(fch.fch_FileID != OFCH_ID) {
+		LOG("%s is not an outline font!", fontpath);
+		FreeVec(fontpath);
+		return NULL;
+	}
 
 	otagpath = (STRPTR)ASPrintf("FONTS:%s.otag", fileName);
 	fh = Open(otagpath, MODE_OLDFILE);
@@ -64,9 +89,6 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	if(p) *p = '.';
 
 	if(fh == 0) {
-		/*\todo we should be opening the .font file too and checking
-		 * for the magic bytes to indicate this is an outline font.
-		 */
 		LOG("Unable to open OTAG %s", otagpath);
 		FreeVec(otagpath);
 		return NULL;
