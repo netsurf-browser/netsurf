@@ -167,7 +167,12 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	if((!gg->areabuf) || (!gg->rp->AreaInfo))	warn_user("NoMemory","");
 
 	InitArea(gg->rp->AreaInfo,gg->areabuf, AREA_SIZE/5);
+#ifdef __amigaos4__
 	gg->rp->TmpRas = AllocVecTagList(sizeof(struct TmpRas), NULL);
+#else
+	/* TmpRas needs to be in chip mem on OS3 */
+	gg->rp->TmpRas = AllocVec(sizeof(struct TmpRas), MEMF_CHIP);
+#endif
 
 	if((!gg->tmprasbuf) || (!gg->rp->TmpRas))	warn_user("NoMemory","");
 
