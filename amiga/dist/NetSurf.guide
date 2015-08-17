@@ -63,35 +63,44 @@ Project Browser Edit @{"Hotlist" link Hotlist} @{"ARexx" link arexx}
 
 @node Prefs-General "Prefs - General"
 @toc Prefs
+@remark todo
 @endnode
 
 @node Prefs-Display "Prefs - Display"
 @toc Prefs
+@remark todo
+@{"Themes" link Themes}
 @endnode
 
 @node Prefs-Connection "Prefs - Connection"
 @toc Prefs
+@remark todo
 @endnode
 
 @node Prefs-Rendering "Prefs - Rendering"
 @toc Prefs
+@remark todo
 @endnode
 
 @node Prefs-Fonts "Prefs - Fonts"
 @toc Prefs
+@remark todo
 See @{"Fonts" link Fonts}
 @endnode
 
 @node Prefs-Cache "Prefs - Cache"
 @toc Prefs
+@remark todo
 @endnode
 
 @node Prefs-Tabs "Prefs - Tabs"
 @toc Prefs
+@remark todo
 @endnode
 
 @node Prefs-Advanced "Prefs - Advanced"
 @toc Prefs
+@remark todo
 @endnode
 
 @node Prefs-Export "Prefs - Export"
@@ -323,7 +332,7 @@ The Installer script will set the MIMETYPE tooltype on basic relevant default fi
 2. The icon ENVARC:Sys/def_<filetype> contains the MIMETYPE tooltype.
 @endnode
 
-@node Keyboard Controls "Keyboard"
+@node Keyboard "Keyboard Controls"
 This is a list of the keyboard shortcuts used in NetSurf
 
 - RAmiga + R or F5   (reload the current page)
@@ -362,22 +371,22 @@ Keyboard shortcuts used in NetSurf menu
 @node Speed "Optimising for speed"
 There are a number of options which can be changed that will affect the speed of NetSurf's rendering.  Here are a list of the fastest settings which may help decrease rendering time on slower platforms:
 
-@{lindent 2}* Ensure NetSurf is running on a @{b}32-bit screen@{ub} if possible.  NetSurf down-converts from 32-bit ARGB for display, which can impact performance.@{lindent}
+@{lindent 2}* Ensure NetSurf is running on a @{b}32-bit screen@{ub} if possible.  NetSurf down-converts from 32-bit ARGB for display, which can impact performance.@{lindent 0}
 
-@{lindent 2}* In preferences, General tab, enable @{b}Fast scrolling@{ub}.@{lindent}
+@{lindent 2}* In preferences, General tab, enable @{b}Fast scrolling@{ub}.@{lindent 0}
 
 @{lindent 2}* In preferences, Rendering tab set:
 @{b}Cache native versions@{ub} to @{b}Scaled@{ub} (or preferably @{b}All@{ub}, but this will use more graphics mem, and scaling images is a bigger performance hit)
-Deselect @{b}Higher quality scaling@{ub}, this will be very slow if not done in hardware.@{lindent}
+Deselect @{b}Higher quality scaling@{ub}, this will be very slow if not done in hardware.@{lindent 0}
 
-@{lindent 2}* In @{"Options" link Options}, increase redraw_tile_size_x/y (increasing this value uses more graphics mem)@{lindent}
+@{lindent 2}* In @{"Options" link Options}, increase redraw_tile_size_x/y (increasing this value uses more graphics mem)@{lindent 0}
 
-@{lindent 2}* In @{"Options" link Options}, set font_antialiasing:0@{lindent}
+@{lindent 2}* In @{"Options" link Options}, set font_antialiasing:0@{lindent 0}
 @endnode
 
 @node contact "Credits"
 NetSurf was ported to AmigaOS 4 by Chris Young
-chris@unsatisfactorysoftware.co.uk
+chris\@unsatisfactorysoftware.co.uk
 
 The pointer images, AISS theme icon and Throbber were drawn by Martin 'Mason' Merz.
 http://www.masonicons.de
@@ -387,5 +396,5 @@ The default theme icon was adapted from the NetSurf logo by Marko K. Seppänen.
 All other code and files are the same for all platforms and credited in the files and/or on the NetSurf website.
 http://www.netsurf-browser.org
 
-The source code can be obtained from http://source.netsurf-browser.org or (in the event the service is unavailable) chris@unsatisfactorysoftware.co.uk or any other of the NetSurf developers.
+The source code can be obtained from http://source.netsurf-browser.org or (in the event the service is unavailable) chris\@unsatisfactorysoftware.co.uk or any other of the NetSurf developers.
 @endnode
