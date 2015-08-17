@@ -609,6 +609,10 @@ static void gui_init(int argc, char** argv)
 
 	nsbeos_options_init();
 
+	/* We don't yet have an implementation of "select" form elements (they should use a popup menu)
+	 * So we use the cross-platform code instead. */
+	nsoption_set_bool(core_select_menu, true);
+
 	if (nsoption_charp(cookie_file) == NULL) {
 		find_resource(buf, "Cookies", "%/Cookies");
 		LOG("Using '%s' as Cookies file", buf);
