@@ -80,9 +80,9 @@ NS_BROWSER="netsurf"
 case "${HOST}" in
     i586-pc-haiku)
         # tools required to build the browser for haiku (beos)
-        NS_TOOLS=""
+        NS_TOOLS="nsgenbind"
         # libraries required for the haiku target abi
-        NS_FRONTEND_LIBS=""
+        NS_FRONTEND_LIBS="libsvgtiny"
         ;;
     *arwin*)
         # tools required to build the browser for OS X
@@ -161,9 +161,9 @@ ns-yum-install()
 # Haiku secondary arch suffix:
 # empty for primary (gcc2 on x86),
 # "_x86" for gcc4 secondary.
-HA=
+HA=_x86
 # Haiku packages
-NS_DEV_HPKG="curl${HA}_devel libpng${HA}_devel jpeg${HA}_devel openssl${HA}_devel libiconv${HA}_devel expat${HA}_devel pkgconfig${HA} gperf${HA}"
+NS_DEV_HPKG="devel:libcurl${HA} devel:libpng${HA} devel:libjpeg${HA} devel:libcrypto${HA} devel:libiconv${HA} devel:libexpat${HA} cmd:pkg_config${HA} cmd:gperf html_parser"
 
 # pkgman commandline to install necessary dev packages
 ns-pkgman-install()
