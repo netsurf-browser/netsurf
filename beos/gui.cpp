@@ -38,6 +38,7 @@
 #include <Mime.h>
 #include <Path.h>
 #include <PathFinder.h>
+#include <Resources.h>
 #include <Roster.h>
 #include <Screen.h>
 #include <String.h>
@@ -80,8 +81,6 @@ extern "C" {
 #include "beos/fetch_rsrc.h"
 #include "beos/scaffolding.h"
 #include "beos/bitmap.h"
-
-static void *myrealloc(void *ptr, size_t len, void *pw);
 
 //TODO: use resources
 // enable using resources instead of files
@@ -550,7 +549,7 @@ static void gui_init(int argc, char** argv)
 #define STROF(n) #n
 #define FIND_THROB(n) filenames[(n)] = \
 				"throbber/throbber" STROF(n) ".png";
-		char *filenames[9];
+		const char *filenames[9];
 		FIND_THROB(0);
 		FIND_THROB(1);
 		FIND_THROB(2);
@@ -695,9 +694,7 @@ void nsbeos_pipe_message(BMessage *message, BView *_this, struct gui_window *gui
 		message->AddPointer("View", _this);
 	if (gui)
 		message->AddPointer("gui_window", gui);
-	int len = write(sEventPipe[1], &message, sizeof(void *));
-	//LOG("nsbeos_pipe_message: %d written", len);
-	//printf("nsbeos_pipe_message: %d written\n", len);
+	write(sEventPipe[1], &message, sizeof(void *));
 }
 
 
@@ -711,9 +708,7 @@ void nsbeos_pipe_message_top(BMessage *message, BWindow *_this, struct beos_scaf
 		message->AddPointer("Window", _this);
 	if (scaffold)
 		message->AddPointer("scaffolding", scaffold);
-	int len = write(sEventPipe[1], &message, sizeof(void *));
-	//LOG("nsbeos_pipe_message: %d written", len);
-	//printf("nsbeos_pipe_message: %d written\n", len);
+	write(sEventPipe[1], &message, sizeof(void *));
 }
 
 
@@ -952,33 +947,17 @@ void die(const char * const error)
 	exit(EXIT_FAILURE);
 }
 
-static void nsbeos_create_ssl_verify_window(struct browser_window *bw,
-		hlcache_handle *c, const struct ssl_cert_info *certs,
-		unsigned long num)
-{
-	CALLED();
-}
-
-static void *myrealloc(void *ptr, size_t len, void *pw)
-{
-	if (len == 0) {
-		free(ptr);
-		return NULL;
-	}
-
-	return realloc(ptr, len);
-}
-
-
 static struct gui_clipboard_table beos_clipboard_table = {
 	gui_get_clipboard,
 	gui_set_clipboard,
 };
 
 static struct gui_fetch_table beos_fetch_table = {
-        fetch_filetype,
-        gui_get_resource_url,
-        NULL //fetch_mimetype
+	fetch_filetype,
+	gui_get_resource_url,
+	NULL, // ???
+	NULL, // release_resource_data
+	NULL, // fetch_mimetype
 };
 
 static struct gui_browser_table beos_browser_table = {
@@ -986,7 +965,9 @@ static struct gui_browser_table beos_browser_table = {
 	gui_quit,
 	gui_launch_url,
 	NULL, //cert_verify
-	gui_401login_open
+	gui_401login_open,
+	NULL, // warning
+	NULL, // pdf_password (if we have Haru support)
 };
 
 
@@ -1038,8 +1019,21 @@ int main(int argc, char** argv)
 	nsoption_commandline(&argc, argv, NULL);
 
 	/* common initialisation */
-	BPath messages = get_messages_path();
+	BResources resources;
+	resources.SetToImage((const void*)main);
+	size_t size = 0;
+	
+	char path[12];
+	sprintf(path,"%.2s/Messages", getenv("LC_MESSAGES"));
+	fprintf(stderr, "Loading messages from resource %s\n", path);
+
+	const uint8_t* res = (const uint8_t*)resources.LoadResource('data', path, &size);
+	if (size > 0 && res != NULL) {
+		ret = messages_add_from_inline(res, size);
+	} else {
+		BPath messages = get_messages_path();
         ret = messages_add_from_file(messages.Path());
+	}
 
         ret = netsurf_init(NULL);
 	if (ret != NSERROR_OK) {

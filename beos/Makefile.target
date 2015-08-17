@@ -114,6 +114,7 @@ EXETARGET := NetSurf
 
 # The filter and target for split messages
 MESSAGES_FILTER=beos
+MESSAGES_TARGET=beos/res
 
 # ----------------------------------------------------------------------------
 # Resources

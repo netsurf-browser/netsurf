@@ -943,7 +943,6 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			break;
 		case B_NETPOSITIVE_OPEN_URL:
 		{
-			int32 i;
 			BString url;
 			if (message->FindString("be:url", &url) < B_OK)
 				break;
@@ -1723,10 +1722,11 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		menu = new BMenu(messages_get("NetSurf"));
 		g->menu_bar->AddItem(menu);
 
-		message = new BMessage(NO_ACTION);
-		item = make_menu_item("Info", message);
+		message = new BMessage(B_ABOUT_REQUESTED);
+		item = make_menu_item("Info", message, true);
 		menu->AddItem(item);
 
+#if 0
 		message = new BMessage(NO_ACTION);
 		item = make_menu_item("AppHelp", message);
 		menu->AddItem(item);
@@ -1741,6 +1741,7 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		message = new BMessage(CHOICES_SHOW);
 		item = make_menu_item("Choices", message);
 		menu->AddItem(item);
+#endif
 
 		message = new BMessage(APPLICATION_QUIT);
 		item = make_menu_item("Quit", message, true);
@@ -1751,16 +1752,17 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		menu = new BMenu(messages_get("Page"));
 		g->menu_bar->AddItem(menu);
 
+#if 0
 		message = new BMessage(BROWSER_PAGE_INFO);
 		item = make_menu_item("PageInfo", message);
 		menu->AddItem(item);
 
 		message = new BMessage(BROWSER_SAVE);
-		item = make_menu_item("Save", message);
+		item = make_menu_item("SaveAsNS", message);
 		menu->AddItem(item);
 
 		message = new BMessage(BROWSER_SAVE_COMPLETE);
-		item = make_menu_item("SaveComp", message);
+		item = make_menu_item("SaveCompNS", message);
 		menu->AddItem(item);
 
 		submenu = new BMenu(messages_get("Export"));
@@ -1773,7 +1775,7 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		*/
 
 		message = new BMessage(BROWSER_EXPORT_TEXT);
-		item = make_menu_item("Text", message);
+		item = make_menu_item("LinkText", message);
 		submenu->AddItem(item);
 
 
@@ -1787,17 +1789,19 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 
 
 		message = new BMessage(BROWSER_PRINT);
-		item = make_menu_item("Print", message);
+		item = make_menu_item("PrintNS", message);
 		menu->AddItem(item);
+#endif
 
 		message = new BMessage(BROWSER_NEW_WINDOW);
-		item = make_menu_item("NewWindow", message, true);
+		item = make_menu_item("NewWindowNS", message, true);
 		menu->AddItem(item);
 
 		message = new BMessage(BROWSER_VIEW_SOURCE);
 		item = make_menu_item("ViewSrc", message, true);
 		menu->AddItem(item);
 
+#if 0 // FIXME This is supposed to be a popup menu!
 		// Object menu
 
 		menu = new BMenu(messages_get("Object"));
@@ -1815,6 +1819,7 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		message = new BMessage(BROWSER_OBJECT_RELOAD);
 		item = make_menu_item("ObjReload", message);
 		menu->AddItem(item);
+#endif
 
 		// Navigate menu
 
@@ -1845,6 +1850,7 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		item = make_menu_item("Stop", message, true);
 		menu->AddItem(item);
 
+#if 0
 		// View menu
 
 		menu = new BMenu(messages_get("View"));
@@ -1916,7 +1922,7 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		submenu->AddItem(item);
 
 		message = new BMessage(HOTLIST_SHOW);
-		item = make_menu_item("HotlistShow", message);
+		item = make_menu_item("HotlistShowNS", message);
 		submenu->AddItem(item);
 
 
@@ -1992,6 +1998,7 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		message = new BMessage(HELP_LAUNCH_INTERACTIVE);
 		item = make_menu_item("HelpInter", message);
 		menu->AddItem(item);
+#endif
 
 		// the base view that receives the toolbar, statusbar and top-level view.
 		rect = frame.OffsetToCopy(0,0);
