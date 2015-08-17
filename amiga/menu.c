@@ -566,14 +566,18 @@ static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 	if(func) gwin->menu_hook[num].h_Entry = (HOOKFUNC)func;
 	if(hookdata) gwin->menu_hook[num].h_Data = hookdata;
 
-	if(icon) {
-		if(ami_locate_resource(menu_icon, icon) == true) {
-			gwin->menuicon[num] = (char *)strdup(menu_icon);
-		} else {
-			/* If the requested icon can't be found, put blank space in instead */
-			gwin->menuicon[num] = (char *)strdup(NSA_SPACE);
+#ifdef __amigaos4__
+	if(LIB_IS_AT_LEAST((struct Library *)GadToolsBase, 53, 7)) {
+		if(icon) {
+			if(ami_locate_resource(menu_icon, icon) == true) {
+				gwin->menuicon[num] = (char *)strdup(menu_icon);
+			} else {
+				/* If the requested icon can't be found, put blank space in instead */
+				gwin->menuicon[num] = (char *)strdup(NSA_SPACE);
+			}
 		}
 	}
+#endif
 }
 
 static void ami_init_menulabs(struct gui_window_2 *gwin)
@@ -728,38 +732,42 @@ void ami_menu_refresh(struct gui_window_2 *gwin)
 static void ami_menu_load_glyphs(struct DrawInfo *dri)
 {
 #ifdef __amigaos4__
-	for(int i = 0; i < NSA_GLYPH_MAX; i++)
-		menu_glyph[i] = NULL;
+	if(LIB_IS_AT_LEAST((struct Library *)GadToolsBase, 53, 7)) {
+		for(int i = 0; i < NSA_GLYPH_MAX; i++)
+			menu_glyph[i] = NULL;
 
-	menu_glyph[NSA_GLYPH_SUBMENU] = NewObject(NULL, "sysiclass",
-										SYSIA_Which, MENUSUB,
-										SYSIA_DrawInfo, dri,
-									TAG_DONE);
-	menu_glyph[NSA_GLYPH_AMIGAKEY] = NewObject(NULL, "sysiclass",
-										SYSIA_Which, AMIGAKEY,
-										SYSIA_DrawInfo, dri,
-									TAG_DONE);
-	GetAttr(IA_Width, menu_glyph[NSA_GLYPH_SUBMENU],
-		(ULONG *)&menu_glyph_width[NSA_GLYPH_SUBMENU]);
-	GetAttr(IA_Width, menu_glyph[NSA_GLYPH_AMIGAKEY],
-		(ULONG *)&menu_glyph_width[NSA_GLYPH_AMIGAKEY]);
+		menu_glyph[NSA_GLYPH_SUBMENU] = NewObject(NULL, "sysiclass",
+											SYSIA_Which, MENUSUB,
+											SYSIA_DrawInfo, dri,
+										TAG_DONE);
+		menu_glyph[NSA_GLYPH_AMIGAKEY] = NewObject(NULL, "sysiclass",
+											SYSIA_Which, AMIGAKEY,
+											SYSIA_DrawInfo, dri,
+										TAG_DONE);
+		GetAttr(IA_Width, menu_glyph[NSA_GLYPH_SUBMENU],
+			(ULONG *)&menu_glyph_width[NSA_GLYPH_SUBMENU]);
+		GetAttr(IA_Width, menu_glyph[NSA_GLYPH_AMIGAKEY],
+			(ULONG *)&menu_glyph_width[NSA_GLYPH_AMIGAKEY]);
 	
-	menu_glyphs_loaded = true;
+		menu_glyphs_loaded = true;
+	}
 #endif
 }
 
 void ami_menu_free_glyphs(void)
 {
 #ifdef __amigaos4__
-	int i;
-	if(menu_glyphs_loaded == false) return;
+	if(LIB_IS_AT_LEAST((struct Library *)GadToolsBase, 53, 7)) {
+		int i;
+		if(menu_glyphs_loaded == false) return;
+
+		for(i = 0; i < NSA_GLYPH_MAX; i++) {
+			if(menu_glyph[i]) DisposeObject(menu_glyph[i]);
+			menu_glyph[i] = NULL;
+		};
 	
-	for(i = 0; i < NSA_GLYPH_MAX; i++) {
-		if(menu_glyph[i]) DisposeObject(menu_glyph[i]);
-		menu_glyph[i] = NULL;
-	};
-	
-	menu_glyphs_loaded = false;
+		menu_glyphs_loaded = false;
+	}
 #endif
 }
 

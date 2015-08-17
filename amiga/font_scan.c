@@ -215,7 +215,7 @@ static void ami_font_scan_gui_close(struct ami_font_scan_window *fsw)
 static ULONG ami_font_scan_font(const char *fontname, lwc_string **glypharray)
 {
 	struct OutlineFont *ofont;
-	struct MinList *widthlist;
+	struct MinList *widthlist = NULL;
 	struct GlyphWidthEntry *gwnode;
 	ULONG foundglyphs = 0;
 	lwc_error lerror;
@@ -482,6 +482,7 @@ void ami_font_scan_init(const char *filename, bool force_scan, bool save,
 		found = ami_font_scan_load(filename, glypharray);
 
 	if(found == 0) {
+		LOG("Creating new font glyph cache");
 		if((list = NewObjList())) {
 
 			/* add preferred fonts list */
