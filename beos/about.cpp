@@ -32,7 +32,7 @@ extern "C" {
 #include "beos/scaffolding.h"
 #include "beos/window.h"
 
-#include <Alert.h>
+#include <private/interface/AboutWindow.h>
 #include <Application.h>
 #include <Invoker.h>
 #include <String.h>
@@ -50,30 +50,8 @@ void nsbeos_about(struct gui_window *gui)
 	text << "Date     : " << WT_COMPILEDATE << "\n";
 	text << "cURL     : " << LIBCURL_VERSION << "\n";
 
-	BAlert *alert = new BAlert("about", text.String(), "Credits", "Licence", "Ok");
-
-	BHandler *target = be_app;
-	BMessage *message = new BMessage(ABOUT_BUTTON);
-	BInvoker *invoker = NULL;
-	if (gui) {
-		nsbeos_scaffolding *s = nsbeos_get_scaffold(gui);
-		if (s) {
-			NSBrowserWindow *w = nsbeos_get_bwindow_for_scaffolding(s);
-			if (w) {
-				alert->SetFeel(B_MODAL_SUBSET_WINDOW_FEEL);
-				alert->AddToSubset(w);
-			}
-			NSBaseView *v = nsbeos_get_baseview_for_scaffolding(s);
-			if (v) {
-				if (w)
-					message->AddPointer("Window", w);
-				target = v;
-			}
-		}
-	}
-	invoker = new BInvoker(message, target);
-
+	BAboutWindow *alert = new BAboutWindow("About NetSurf", "application/x-vnd.NetSurf");
+	alert->AddExtraInfo(text);
+	alert->Show();
 	//TODO: i18n-ize
-
-	alert->Go(invoker);
 }
