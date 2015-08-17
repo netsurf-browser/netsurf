@@ -538,19 +538,19 @@ static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 
 
 static struct gui_bitmap_table bitmap_table = {
-        .create = bitmap_create,
-        .destroy = bitmap_destroy,
-        .set_opaque = bitmap_set_opaque,
-        .get_opaque = bitmap_get_opaque,
-        .test_opaque = bitmap_test_opaque,
-        .get_buffer = bitmap_get_buffer,
-        .get_rowstride = bitmap_get_rowstride,
-        .get_width = bitmap_get_width,
-        .get_height = bitmap_get_height,
-        .get_bpp = bitmap_get_bpp,
-        .save = bitmap_save,
-        .modified = bitmap_modified,
-        .render = bitmap_render,
+        /*.create =*/ bitmap_create,
+        /*.destroy =*/ bitmap_destroy,
+        /*.set_opaque =*/ bitmap_set_opaque,
+        /*.get_opaque =*/ bitmap_get_opaque,
+        /*.test_opaque =*/ bitmap_test_opaque,
+        /*.get_buffer =*/ bitmap_get_buffer,
+        /*.get_rowstride =*/ bitmap_get_rowstride,
+        /*.get_width =*/ bitmap_get_width,
+        /*.get_height =*/ bitmap_get_height,
+        /*.get_bpp =*/ bitmap_get_bpp,
+        /*.save =*/ bitmap_save,
+        /*.modified =*/ bitmap_modified,
+        /*.render =*/ bitmap_render,
 };
 
 struct gui_bitmap_table *beos_bitmap_table = &bitmap_table;

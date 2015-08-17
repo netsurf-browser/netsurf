@@ -16,8 +16,8 @@ LDFLAGS += -lexpat -lcurl
 COMMON_WARNFLAGS += -Wno-multichar
 
 # compiler flags
-CFLAGS += -Dnsbeos -D_BSD_SOURCE -D_POSIX_C_SOURCE -Drestrict="" -g -O0
-CXXFLAGS += -Dnsbeos -D_BSD_SOURCE -D_POSIX_C_SOURCE -Drestrict="" -g -O0
+CFLAGS += -std=c99 -Dnsbeos -D_BSD_SOURCE -D_POSIX_C_SOURCE -Drestrict="" -g
+CXXFLAGS += -Dnsbeos -D_BSD_SOURCE -D_POSIX_C_SOURCE -Drestrict="" -g
 
 BEOS_BERES := beres
 BEOS_RC := rc
