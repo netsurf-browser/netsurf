@@ -87,6 +87,7 @@ typedef enum {
 	HELP_OPEN_GUIDE,
 	HELP_OPEN_INFORMATION,
 	HELP_OPEN_ABOUT,
+	HELP_OPEN_LICENCE,
 	HELP_LAUNCH_INTERACTIVE,
 
 	/* history actions */
@@ -176,7 +177,6 @@ typedef enum {
 
 	/* misc actions */
 	CHOICES_SHOW,
-	ABOUT_BUTTON,
 	APPLICATION_QUIT,
 } menu_action;
 

@@ -484,6 +484,7 @@ NSBaseView::MessageReceived(BMessage *message)
 		case HELP_OPEN_GUIDE:
 		case HELP_OPEN_INFORMATION:
 		case HELP_OPEN_ABOUT:
+		case HELP_OPEN_LICENCE:
 		case HELP_LAUNCH_INTERACTIVE:
 		case HISTORY_SHOW_LOCAL:
 		case HISTORY_SHOW_GLOBAL:
@@ -551,7 +552,6 @@ NSBaseView::MessageReceived(BMessage *message)
 		case TOOLBAR_THROBBER:
 		case TOOLBAR_EDIT:
 		case CHOICES_SHOW:
-		case ABOUT_BUTTON:
 		case APPLICATION_QUIT:
 			if (Window())
 				Window()->DetachCurrentMessage();
@@ -1102,6 +1102,40 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		case HELP_OPEN_INFORMATION:
 			break;
 		case HELP_OPEN_ABOUT:
+		{
+			const char *goto_url = "about:credits";
+			nserror nserr;
+			nsurl *url;
+			nserr = nsurl_create(goto_url, &url);
+			if (nserr == NSERROR_OK) {
+				nserr = browser_window_navigate(bw,
+		    			url, NULL,
+						(browser_window_nav_flags)(BW_NAVIGATE_HISTORY),
+					    NULL, NULL, NULL);
+				nsurl_unref(url);
+			}
+			if (nserr != NSERROR_OK) {
+				warn_user(messages_get_errorcode(nserr), 0);
+			}
+		}
+			break;
+		case HELP_OPEN_LICENCE:
+		{
+			const char *goto_url = "about:licence";
+			nserror nserr;
+			nsurl *url;
+			nserr = nsurl_create(goto_url, &url);
+			if (nserr == NSERROR_OK) {
+				nserr = browser_window_navigate(bw,
+		    			url, NULL,
+						(browser_window_nav_flags)(BW_NAVIGATE_HISTORY),
+					    NULL, NULL, NULL);
+				nsurl_unref(url);
+			}
+			if (nserr != NSERROR_OK) {
+				warn_user(messages_get_errorcode(nserr), 0);
+			}
+		}
 			break;
 		case HELP_LAUNCH_INTERACTIVE:
 			break;
@@ -1246,43 +1280,6 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		case TOOLBAR_EDIT:
 			break;
 		case CHOICES_SHOW:
-			break;
-		case ABOUT_BUTTON:
-						/* XXX: doesn't work yet! bug in rsrc:/
-			BString url("rsrc:/about.en.html,text/html");
-			browser_window_create(url.String(), NULL, NULL, true, false);
-			*/
-		{
-			int32 button;
-			if (message->FindInt32("which", &button) == B_OK) {
-				const char *goto_url = NULL;
-				nserror nserr;
-				nsurl *url;
-				switch (button) {
-					case 0:
-						goto_url = "about:credits";
-						break;
-					case 1:
-						goto_url = "about:licence";
-						break;
-					default:
-						break;
-				}
-				if (goto_url == NULL)
-					break;
-				nserr = nsurl_create(goto_url, &url);
-				if (nserr == NSERROR_OK) {
-					nserr = browser_window_navigate(bw,
-			    			url, NULL,
-							(browser_window_nav_flags)(BW_NAVIGATE_HISTORY),
-						    NULL, NULL, NULL);
-					nsurl_unref(url);
-				}
-				if (nserr != NSERROR_OK) {
-					warn_user(messages_get_errorcode(nserr), 0);
-				}
-			}
-		}
 			break;
 		case APPLICATION_QUIT:
 			nsbeos_done = true;
@@ -1713,7 +1710,6 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		g->window->AddChild(g->menu_bar);
 
 		BMenu *menu;
-		BMenu *submenu;
 		BMenuItem *item;
 
 		// App menu
@@ -1972,6 +1968,7 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		message = new BMessage(BROWSER_WINDOW_RESET);
 		item = make_menu_item("WindowReset", message);
 		submenu->AddItem(item);
+#endif
 
 
 		// Help menu
@@ -1979,6 +1976,7 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		menu = new BMenu(messages_get("Help"));
 		g->menu_bar->AddItem(menu);
 
+#if 0
 		message = new BMessage(HELP_OPEN_CONTENTS);
 		item = make_menu_item("HelpContent", message);
 		menu->AddItem(item);
@@ -1990,11 +1988,17 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		message = new BMessage(HELP_OPEN_INFORMATION);
 		item = make_menu_item("HelpInfo", message);
 		menu->AddItem(item);
+#endif
 
 		message = new BMessage(HELP_OPEN_ABOUT);
-		item = make_menu_item("HelpAbout", message);
+		item = make_menu_item("HelpCredits", message, true);
 		menu->AddItem(item);
 
+		message = new BMessage(HELP_OPEN_LICENCE);
+		item = make_menu_item("HelpLicence", message, true);
+		menu->AddItem(item);
+
+#if 0
 		message = new BMessage(HELP_LAUNCH_INTERACTIVE);
 		item = make_menu_item("HelpInter", message);
 		menu->AddItem(item);
