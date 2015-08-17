@@ -98,7 +98,9 @@ struct beos_scaffolding {
 
 	BPopUpMenu		*popup_menu;
 
+#ifdef ENABLE_DRAGGER
 	BDragger		*dragger;
+#endif
 
 	BView			*tool_bar;
 
@@ -670,7 +672,9 @@ NSBaseView::AllAttached()
 	g->throbber->SetViewColor(c);
 	g->scroll_view->SetViewColor(c);
 
+#ifdef ENABLE_DRAGGER
 	g->dragger->SetViewColor(c);
+#endif
 
 	g->status_bar->SetViewColor(c);
 	g->status_bar->SetLowColor(c);
@@ -805,7 +809,9 @@ static void nsbeos_scaffolding_update_colors(nsbeos_scaffolding *g)
 	g->throbber->SetViewColor(c);
 	g->scroll_view->SetViewColor(c);
 
+#ifdef ENABLE_DRAGGER
 	g->dragger->SetViewColor(c);
+#endif
 
 	g->status_bar->SetViewColor(c);
 	g->status_bar->SetLowColor(c);
@@ -2005,6 +2011,7 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	g->popup_menu = new BPopUpMenu("");
 
 
+#ifdef ENABLE_DRAGGER
 	// the dragger to allow replicating us
 	// XXX: try to stuff it in the status bar at the bottom
 	// (BDragger *must* be a parent, sibiling or direct child of NSBaseView!)
@@ -2016,6 +2023,7 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	g->top_view->AddChild(g->dragger);
 	g->dragger->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 	g->dragger->SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR)) ;
+#endif
 
 	// tool_bar
 	// the toolbar is also the dragger for now
@@ -2025,7 +2033,11 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	// but causes flicker
 	rect = g->top_view->Bounds();
 	rect.bottom = rect.top + TOOLBAR_HEIGHT - 1;
+#ifdef ENABLE_DRAGGER
 	rect.right = rect.right - DRAGGER_WIDTH;
+#else
+	rect.right = rect.right + 1;
+#endif
 	g->tool_bar = new BBox(rect, "Toolbar", 
 		B_FOLLOW_LEFT_RIGHT | B_FOLLOW_TOP, B_WILL_DRAW | B_FRAME_EVENTS
 		| B_FULL_UPDATE_ON_RESIZE | B_NAVIGABLE_JUMP, B_PLAIN_BORDER);
