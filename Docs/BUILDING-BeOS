@@ -5,18 +5,23 @@
   This document provides instructions for building the BeOS and Haiku version 
   of NetSurf and provides guidance on obtaining NetSurf's build dependencies.
 
-  BeOS NetSurf has been tested on Zeta only for now. There are still some 
+  BeOS NetSurf has been tested on Zeta and Haiku only for now. There are still some
   issues to sort out for other BeOS versions.
 
+  Quick Start
+=============
 
-  There are still pending fixes against SVN before it can be build from BeOS 
-  or Haiku.
+  See the QUICK-START document, which provides a simple environment with
+  which you can fetch, build and install NetSurf and its dependencies.
+
+  The QUICK-START is the recommended way to build NetSurf for Haiku. BeOS needs too much manual
+  hacking to be built this way.
 
 
-  Building and executing NetSurf
+  Manual building
 ================================
 
-  To build NetSurf on a BeOS or Haiku, provided you have the relevant
+  To build NetSurf on a BeOS, provided you have the relevant
   build dependencies installed, simply run:
 
       $ make
@@ -38,8 +43,19 @@
 ---------------------------------
 
   The NetSurf project has developed several libraries which are required by
-  the browser.  To fetch each of these libraries, run the appropriate commands
-  from the Docs/LIBRARIES file.
+  the browser. These are:
+
+  BuildSystem     --  Shared build system, needed to build the other libraries
+  LibParserUtils  --  Parser building utility functions
+  LibWapcaplet    --  String internment
+  Hubbub          --  HTML5 compliant HTML parser
+  LibCSS          --  CSS parser and selection engine
+  LibNSGIF        --  GIF format image decoder
+  LibNSBMP        --  BMP and ICO format image decoder
+  LibROSprite     --  RISC OS Sprite format image decoder
+
+  To fetch each of these libraries, run the appropriate commands from the
+  Docs/LIBRARIES file, from within your workspace directory.
 
   To build and install these libraries, simply enter each of their directories
   and run:
@@ -56,6 +72,13 @@
   |       For more information, consult the libparserutils README file.
 
   TODO: add some more here.
+
+  Additional requirements for BeOS
+==================================
+
+  On Haiku, other libraries and tools are either shipped with the system or available through the
+  package repositories. For BeOS based systems, you will need to install and update all the
+  required tools, as described below.
 
   rc
 ----
@@ -121,7 +144,3 @@
 
   NetSurf might build on BeOS R5 but probably won't work on anything else than 
   BONE. 
-
-  This will pull in loads of things, like all the GTK dev libraries, the PNG
-  and JPEG libraries, colour management libraries, zlib, OpenSSL etc that
-  NetSurf also depends on.
