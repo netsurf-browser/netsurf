@@ -33,6 +33,7 @@
 #include <proto/dos.h>
 #include <proto/utility.h>
 
+#include <diskfont/diskfont.h>
 #include <diskfont/diskfonttag.h>
 #include <intuition/gadgetclass.h>
 
@@ -68,7 +69,7 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 		return NULL;
 	}
 
-	if(Read(fh, &magic, sizeof(struct FontContentsHeader)) != sizeof(struct FontContentsHeader)) {
+	if(Read(fh, &fch, sizeof(struct FontContentsHeader)) != sizeof(struct FontContentsHeader)) {
 		LOG("Unable to read FONT %s", fontpath);
 		FreeVec(fontpath);
 		Close(fh);
