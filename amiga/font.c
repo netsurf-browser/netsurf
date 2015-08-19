@@ -362,7 +362,7 @@ static inline bool amiga_nsfont_split(const plot_font_style_t *fstyle,
 /**
  * Search for a font in the list and load from disk if not present
  */
-static struct ami_font_node *ami_font_open(const char *font)
+static struct ami_font_node *ami_font_open(const char *font, bool critical)
 {
 	struct nsObject *node;
 	struct ami_font_node *nodedata;
@@ -383,7 +383,7 @@ static struct ami_font_node *ami_font_open(const char *font)
 	if(!nodedata->font)
 	{
 		LOG("Requested font not found: %s", font);
-		warn_user("CompError", font);
+		if(critical == true) warn_user("CompError", font);
 		FreeVec(nodedata);
 		return NULL;
 	}
@@ -429,6 +429,7 @@ static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle
 		const uint16 *codepoint)
 {
 	struct ami_font_node *node;
+	struct ami_font_node *designed_node = NULL;
 	struct OutlineFont *ofont;
 	char *fontname;
 	ULONG ysize;
@@ -471,7 +472,7 @@ static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle
 		break;
 	}
 
-	node = ami_font_open(fontname);
+	node = ami_font_open(fontname, true);
 	if(!node) return NULL;
 
 	if (fstyle->flags & FONTF_OBLIQUE)
@@ -486,13 +487,9 @@ static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle
 	switch(tstyle)
 	{
 		case NSA_ITALIC:
-			if(node->italic)
-			{
-				node = ami_font_open(node->italic);
-				if(!node) return NULL;
-			}
-			else
-			{
+			if(node->italic) designed_node = ami_font_open(node->italic, false);
+
+			if(designed_node == NULL) {
 				shearsin = NSA_VALUE_SHEARSIN;
 				shearcos = NSA_VALUE_SHEARCOS;
 			}
@@ -504,13 +501,9 @@ static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle
 		break;
 
 		case NSA_BOLD:
-			if(node->bold)
-			{
-				node = ami_font_open(node->bold);
-				if(!node) return NULL;
-			}
-			else
-			{
+			if(node->bold) designed_node = ami_font_open(node->bold, false);
+
+			if(designed_node == NULL) {
 				emboldenx = NSA_VALUE_BOLDX;
 				emboldeny = NSA_VALUE_BOLDY;
 			}
@@ -520,26 +513,18 @@ static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle
 			shearsin = NSA_VALUE_SHEARSIN;
 			shearcos = NSA_VALUE_SHEARCOS;
 
-			if(node->bold)
-			{
-				node = ami_font_open(node->bold);
-				if(!node) return NULL;
-			}
-			else
-			{
+			if(node->bold) designed_node = ami_font_open(node->bold, false);
+
+			if(designed_node == NULL) {
 				emboldenx = NSA_VALUE_BOLDX;
 				emboldeny = NSA_VALUE_BOLDY;
 			}
 		break;
 
 		case NSA_BOLDITALIC:
-			if(node->bolditalic)
-			{
-				node = ami_font_open(node->bolditalic);
-				if(!node) return NULL;
-			}
-			else
-			{
+			if(node->bolditalic) designed_node = ami_font_open(node->bolditalic, false);
+
+			if(designed_node == NULL) {
 				emboldenx = NSA_VALUE_BOLDX;
 				emboldeny = NSA_VALUE_BOLDY;
 				shearsin = NSA_VALUE_SHEARSIN;
@@ -551,7 +536,12 @@ static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle
 	/* Scale to 16.16 fixed point */
 	ysize = fstyle->size * ((1 << 16) / FONT_SIZE_SCALE);
 
-	ofont = node->font;
+	if(designed_node == NULL) {
+		ofont = node->font;
+	} else {
+		ofont = designed_node->font;
+	}
+
 #ifndef __amigaos4__
 	struct BulletBase *BulletBase = ofont->BulletBase;
 #endif
