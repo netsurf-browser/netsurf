@@ -676,6 +676,7 @@ static inline int32 ami_font_width_glyph(struct OutlineFont *ofont,
 	struct GlyphWidthEntry *gwnode;
 	bool skip_c2 = false;
 	uint32 long_char_1 = 0;
+	uint32 long_char_2;
 #ifndef __amigaos4__
 	struct BulletBase *BulletBase = ofont->BulletBase;
 #endif
@@ -712,9 +713,10 @@ static inline int32 ami_font_width_glyph(struct OutlineFont *ofont,
 			kern = 0;
 
 			if(!skip_c2) {
+				long_char_2 = amiga_nsfont_decode_surrogate(char2);
 				if(ESetInfo(AMI_OFONT_ENGINE,
-						OT_GlyphCode, *char1,
-						OT_GlyphCode2, *char2,
+						OT_GlyphCode, long_char_1,
+						OT_GlyphCode2, long_char_2,
 						TAG_END) == OTERR_Success)
 				{
 					EObtainInfo(AMI_OFONT_ENGINE,
