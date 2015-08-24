@@ -346,13 +346,14 @@ bool ami_locate_resource(char *fullpath, const char *file)
 
 	/* Check NetSurf user data area first */
 
-	strcpy(fullpath, current_user_dir);
-	found = ami_gui_check_resource(fullpath, file);
-	if(found) return true;
+	if(current_user_dir != NULL) {
+		strcpy(fullpath, current_user_dir);
+		found = ami_gui_check_resource(fullpath, file);
+		if(found) return true;
+	}
 
 	/* Check current theme directory */
-	if(nsoption_charp(theme))
-	{
+	if(nsoption_charp(theme)) {
 		strcpy(fullpath, nsoption_charp(theme));
 		found = ami_gui_check_resource(fullpath, file);
 		if(found) return true;
@@ -362,28 +363,23 @@ bool ami_locate_resource(char *fullpath, const char *file)
 
 	locale = OpenLocale(NULL);
 
-	for(i=0;i<10;i++)
-	{
+	for(i=0;i<10;i++) {
 		strcpy(fullpath,"PROGDIR:Resources/");
 
-		if(locale->loc_PrefLanguages[i])
-		{
+		if(locale->loc_PrefLanguages[i]) {
 			ami_gui_map_filename(&remapped, "PROGDIR:Resources",
 				locale->loc_PrefLanguages[i], "LangNames");
 			netsurf_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped);
 
 			found = ami_gui_check_resource(fullpath, file);
-		}
-		else
-		{
+		} else {
 			continue;
 		}
 
 		if(found) break;
 	}
 
-	if(!found)
-	{
+	if(!found) {
 		/* If not found yet, check in PROGDIR:Resources/en,
 		 * might not be in user's preferred languages */
 
@@ -393,8 +389,7 @@ bool ami_locate_resource(char *fullpath, const char *file)
 
 	CloseLocale(locale);
 
-	if(!found)
-	{
+	if(!found) {
 		/* Lastly check directly in PROGDIR:Resources */
 
 		strcpy(fullpath, "PROGDIR:Resources/");
