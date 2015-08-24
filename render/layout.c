@@ -67,8 +67,8 @@
 
 #define AUTO INT_MIN
 
-/* Fixed point value percentage of an integer, to an integer */
-#define FPCT_OF_INT_TOINT(a, b) FIXTOINT(FMUL(FDIV(a, F_100), INTTOFIX(b)))
+/* Fixed point percentage (a) of an integer (b), to an integer */
+#define FPCT_OF_INT_TOINT(a, b) (FIXTOINT(FDIV((a * b), F_100)))
 
 
 static bool layout_block_context(struct box *block, int viewport_height,
