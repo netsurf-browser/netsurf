@@ -53,6 +53,8 @@
 #include "amiga/object.h"
 #include "amiga/schedule.h"
 
+#define NSA_USE_SPLAY_TREE LIB_IS_AT_LEAST((struct Library *)UtilityBase, 53, 5)
+
 #define NSA_UNICODE_FONT PLOT_FONT_FAMILY_COUNT
 
 #define NSA_NORMAL 0
@@ -71,6 +73,9 @@
 
 struct ami_font_node
 {
+#ifdef __amigaos4__
+	struct SplayNode *splay_node;
+#endif
 	struct OutlineFont *font;
 	char *bold;
 	char *italic;
@@ -145,12 +150,15 @@ const uint16 sc_table[] = {
 #endif
 		0, 0};
 
-
+#ifdef __amigaos4__
+struct SplayTree *ami_font_stree = NULL;
+#endif
 struct MinList *ami_font_list = NULL;
 struct List ami_diskfontlib_list;
 lwc_string *glypharray[0xffff + 1];
 ULONG ami_devicedpi;
 ULONG ami_xdpi;
+static struct Hook ami_font_cache_hook;
 
 static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 		uint16 *char1, uint16 *char2, uint32 x, uint32 y, uint32 emwidth, bool aa);
@@ -365,21 +373,35 @@ static inline bool amiga_nsfont_split(const plot_font_style_t *fstyle,
 static struct ami_font_node *ami_font_open(const char *font, bool critical)
 {
 	struct nsObject *node;
-	struct ami_font_node *nodedata;
+	struct ami_font_node *nodedata = NULL;
 
-	node = (struct nsObject *)FindIName((struct List *)ami_font_list, font);
-	if(node)
-	{
-		nodedata = node->objstruct;
+	if(NSA_USE_SPLAY_TREE) {
+		nodedata = FindSplayNode(ami_font_stree, font);		
+	} else {
+		node = (struct nsObject *)FindIName((struct List *)ami_font_list, font);
+		if(node) nodedata = node->objstruct;
+	}
+
+	if(nodedata) {
 		GetSysTime(&nodedata->lastused);
 		return nodedata;
 	}
 
 	LOG("Font cache miss: %s", font);
 
-	nodedata = AllocVecTagList(sizeof(struct ami_font_node), NULL);
-	nodedata->font = OpenOutlineFont(font, &ami_diskfontlib_list, OFF_OPEN);
+	if(NSA_USE_SPLAY_TREE) {
+		nodedata = InsertSplayNode(ami_font_stree, font, sizeof(struct ami_font_node));
+	} else {
+		nodedata = AllocVecTagList(sizeof(struct ami_font_node), NULL);
+	}
 
+	if(nodedata == NULL) {
+		warn_user("NoMemory", "");
+		return NULL;
+	}
+
+	nodedata->font = OpenOutlineFont(font, &ami_diskfontlib_list, OFF_OPEN);
+	
 	if(!nodedata->font)
 	{
 		LOG("Requested font not found: %s", font);
@@ -408,11 +430,12 @@ static struct ami_font_node *ami_font_open(const char *font, bool critical)
 
 	GetSysTime(&nodedata->lastused);
 
-	node = AddObject(ami_font_list, AMINS_FONT);
-	if(node)
-	{
-		node->objstruct = nodedata;
-		node->dtz_Node.ln_Name = strdup(font);
+	if(!NSA_USE_SPLAY_TREE) {
+		node = AddObject(ami_font_list, AMINS_FONT);
+		if(node) {
+			node->objstruct = nodedata;
+			node->dtz_Node.ln_Name = strdup(font);
+		}
 	}
 
 	return nodedata;
@@ -893,24 +916,42 @@ void ami_font_savescanner(void)
 	ami_font_scan_save(nsoption_charp(font_unicode_file), glypharray);
 }
 
+static LONG ami_font_cache_sort(struct Hook *hook, APTR key1, APTR key2)
+{
+	return stricmp(key1, key2);
+}
+
 void ami_init_fonts(void)
 {
 	/* Initialise Unicode font scanner */
 	ami_font_initscanner(false, true);
 
 	/* Initialise font caching etc lists */
-	ami_font_list = NewObjList();
+	if(NSA_USE_SPLAY_TREE) {
+		ami_font_cache_hook.h_Entry = (HOOKFUNC)ami_font_cache_sort;
+		ami_font_cache_hook.h_Data = 0;
+		ami_font_stree = CreateSplayTree(&ami_font_cache_hook);
+	} else {
+		ami_font_list = NewObjList();
+	}
+
 	NewList(&ami_diskfontlib_list);
 
 	/* run first cleanup in ten minutes */
-	ami_schedule(600000, (void *)ami_font_cleanup, ami_font_list);
+	if(!NSA_USE_SPLAY_TREE)
+		ami_schedule(600000, (void *)ami_font_cleanup, ami_font_list);
 }
 
 void ami_close_fonts(void)
 {
 	LOG("Cleaning up font cache");
-	FreeObjList(ami_font_list);
-	ami_font_list = NULL;
+	if(NSA_USE_SPLAY_TREE) {
+		DeleteSplayTree(ami_font_stree); /** TODO: CLOSEFONTS **/
+		ami_font_stree = NULL;
+	} else {
+		FreeObjList(ami_font_list);
+		ami_font_list = NULL;
+	}
 	ami_font_finiscanner();
 }
 
@@ -927,6 +968,12 @@ static void ami_font_cleanup(struct MinList *ami_font_list)
 	struct nsObject *nnode;
 	struct ami_font_node *fnode;
 	struct TimeVal curtime;
+
+	/** TODO **/
+	if(NSA_USE_SPLAY_TREE) {
+		return;
+	}
+	/****/
 
 	if(IsMinListEmpty(ami_font_list)) return;
 
