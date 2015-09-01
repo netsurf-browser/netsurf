@@ -56,7 +56,7 @@ void ami_rtg_writepixelarray(UBYTE *pixdata, struct BitMap *bm,
 	if(P96Base == NULL) {
 #ifdef __amigaos4__
 		if(GfxBase->LibNode.lib_Version >= 54) {
-			WritePixelArray(pixdata, 0, 0, bpr, format, &trp, 0, 0, width, height);
+			WritePixelArray(pixdata, 0, 0, bpr, PIXF_R8G8B8A8, &trp, 0, 0, width, height);
 		}
 #endif
 	} else {
