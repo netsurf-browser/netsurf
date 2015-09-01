@@ -47,19 +47,26 @@ void ami_rtg_freebitmap(struct BitMap *bm)
 void ami_rtg_writepixelarray(UBYTE *pixdata, struct BitMap *bm,
 	ULONG width, ULONG height, ULONG bpr, ULONG format)
 {
-	struct RenderInfo ri;
 	struct RastPort trp;
-
-	/* This requires P96 currently */
-	if(P96Base == NULL) return;
-
-	ri.Memory = pixdata;
-	ri.BytesPerRow = bpr;
-	ri.RGBFormat = format;
 
 	InitRastPort(&trp);
 	trp.BitMap = bm;
 
-	p96WritePixelArray((struct RenderInfo *)&ri, 0, 0, &trp, 0, 0, width, height);
+	/* This requires P96 or gfx.lib v54 currently */
+	if(P96Base == NULL) {
+#ifdef __amigaos4__
+		if(GfxBase->LibNode.lib_Version >= 54) {
+			WritePixelArray(pixdata, 0, 0, bpr, format, &trp, 0, 0, width, height);
+		}
+#endif
+	} else {
+		struct RenderInfo ri;
+
+		ri.Memory = pixdata;
+		ri.BytesPerRow = bpr;
+		ri.RGBFormat = format;
+
+		p96WritePixelArray((struct RenderInfo *)&ri, 0, 0, &trp, 0, 0, width, height);
+	}
 }
 
