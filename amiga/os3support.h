@@ -119,6 +119,9 @@
 #define GetFontEnd End
 #define GetScreenModeEnd End
 
+/* MinTerm stuff */
+#define MINTERM_SRCMASK (ABC|ABNC|ANBC)
+
 /* Easy compat macros */
 /* application */
 #define Notify(...) (void)0

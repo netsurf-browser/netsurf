@@ -1689,7 +1689,7 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 			} else {
 				tag = BLITA_MaskPlane;
 				tag_data = (ULONG)ami_bitmap_get_mask(icon_bitmap, 16, 16, bm);
-				minterm = (ABC|ABNC|ANBC);
+				minterm = MINTERM_SRCMASK;
 			}
 
 			if(ami_gui_get_space_box((Object *)g->shared->objects[GID_ICON], &bbox) != NSERROR_OK) {

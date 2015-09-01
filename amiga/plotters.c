@@ -558,7 +558,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 		} else {
 			tag = BLITA_MaskPlane;
 			if((tag_data = (ULONG)ami_bitmap_get_mask(bitmap, width, height, tbm)))
-				minterm = (ABC|ABNC|ANBC);
+				minterm = MINTERM_SRCMASK;
 		}
 #ifdef __amigaos4__
 		BltBitMapTags(BLITA_Width,width,
@@ -759,7 +759,7 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 				} else {
 					tag = BLITA_MaskPlane;
 					if((tag_data = (ULONG)bfbm->mask))
-						minterm = (ABC|ABNC|ANBC);
+						minterm = MINTERM_SRCMASK;
 				}
 		
 				BltBitMapTags(BLITA_Width, bfbm->width,
