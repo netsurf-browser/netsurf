@@ -28,6 +28,7 @@
 #include <proto/utility.h>
 #ifdef __amigaos4__
 #include <dos/anchorpath.h>
+#include <dos/obsolete.h> /* Needed for ExAll() */
 #endif
 
 #include <libraries/gadtools.h>
@@ -948,6 +949,7 @@ struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 
 void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 {
+	/**\todo Rewrite this to not use ExAll() **/
 	int item = AMI_MENU_AREXX;
 	BPTR lock = 0;
 	UBYTE *buffer;
