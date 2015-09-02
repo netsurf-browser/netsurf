@@ -77,8 +77,8 @@
 	if(PREFIX##Base) CloseLibrary((struct Library *)PREFIX##Base);
 
 #define AMINS_LIB_STRUCT(PREFIX)	\
-	struct PREFIX##Base *PREFIX##Base;	\
-	struct PREFIX##IFace *I##PREFIX;
+	struct PREFIX##Base *PREFIX##Base = NULL;	\
+	struct PREFIX##IFace *I##PREFIX = NULL;
 
 #define AMINS_CLASS_OPEN(CLASS, CLASSVER, PREFIX, CLASSGET, NEEDINTERFACE)	\
 	LOG("Opening %s v%d", CLASS, CLASSVER); \
@@ -125,7 +125,7 @@
 	if(PREFIX##Base) CloseLibrary((struct Library *)PREFIX##Base);
 
 #define AMINS_LIB_STRUCT(PREFIX)	\
-	struct PREFIX##Base *PREFIX##Base;
+	struct PREFIX##Base *PREFIX##Base = NULL;
 
 #define AMINS_CLASS_OPEN(CLASS, CLASSVER, PREFIX, CLASSGET, NEEDINTERFACE)	\
 	LOG("Opening %s v%d", CLASS, CLASSVER); \
@@ -215,10 +215,10 @@ bool ami_libs_open(void)
 	AMINS_LIB_OPEN("locale.library",       38, Locale,      "main",        1, true)
 	AMINS_LIB_OPEN("workbench.library",    37, Workbench,   "main",        1, true)
 
-	/*\todo This is down here as we need to check the graphics.library version
-	 * before opening.  If it is sufficiently new enough we can avoid using P96
+	/* This is down here as we need to check the graphics.library version
+	 * before opening.  If it is sufficiently new enough we can avoid using P96.
 	 */
-	if(GfxBase->LibNode.lib_Version >= 54)
+	if(GfxBase->LibNode.lib_Version < 54)
 		AMINS_LIB_OPEN("Picasso96API.library",  0, P96,         "main",        1, false)
 
 	/* NB: timer.device is opened in schedule.c (ultimately by the scheduler process).
