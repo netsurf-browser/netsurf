@@ -554,6 +554,8 @@ void ami_context_menu_free(void)
 
 BOOL ami_context_menu_mouse_trap(struct gui_window_2 *gwin, BOOL trap)
 {
+	return FALSE;
+
 	if(nsoption_bool(context_menu) == false) return FALSE;
 
 	if((nsoption_bool(kiosk_mode) == false) && (trap == FALSE))

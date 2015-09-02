@@ -2265,104 +2265,10 @@ static void ami_handle_msg(void)
 
 					if((ie->ie_Qualifier & IEQUALIFIER_RCOMMAND) &&
 						((31 < nskey) && (nskey < 127))) {
-					/* We are duplicating the menu shortcuts here, as if RMBTRAP is
-					 * active (ie. when context menus are enabled and the mouse is over
-					 * the browser rendering area), Intuition also does not catch the
-					 * menu shortcut key presses.  Context menus possibly need to be
-					 * changed to use MENUVERIFY not RMBTRAP.
-					 * NB: Some keypresses are converted to generic keypresses above
-					 * rather than being "menu-emulated" here.
-					 */
+					/* NB: Some keypresses are converted to generic keypresses above
+					 * rather than being "menu-emulated" here. */
 						switch(nskey)
 						{
-							case 'n':
-								if ((nsoption_bool(kiosk_mode) == false)) {
-									nsurl *urlns;
-									nserror error;
-
-									error = nsurl_create(nsoption_charp(homepage_url), &urlns);
-									if (error == NSERROR_OK) {
-										error = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY,
-													      urlns,
-													      NULL,
-													      gwin->gw->bw,
-													      NULL);
-										nsurl_unref(urlns);
-									}
-									if (error != NSERROR_OK) {
-										warn_user(messages_get_errorcode(error), 0);
-									}
-
-								}
-							break;
-
-							case 't':
-								if((nsoption_bool(kiosk_mode) == false)) {
-									nsurl *urlns;
-									nserror error;
-
-									error = nsurl_create(nsoption_charp(homepage_url), &urlns);
-									if (error == NSERROR_OK) {
-										error = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY |
-													      BW_CREATE_TAB,
-													      urlns,
-													      NULL,
-													      gwin->gw->bw,
-													      NULL);
-										nsurl_unref(urlns);
-									}
-									if (error != NSERROR_OK) {
-										warn_user(messages_get_errorcode(error), 0);
-									}
-
-								}
-							break;
-
-							case 'k':
-								if((nsoption_bool(kiosk_mode) == false))
-									browser_window_destroy(gwin->gw->bw);
-							break;
-
-							case 'o':
-								ami_file_open(gwin);
-							break;
-
-							case 's':
-								ami_file_save_req(AMINS_SAVE_SOURCE, gwin,
-									browser_window_get_content(gwin->gw->bw));
-							break;
-
-							case 'p':
-								ami_print_ui(browser_window_get_content(gwin->gw->bw));
-							break;
-
-							case 'q':
-								if((nsoption_bool(kiosk_mode) == false))
-									ami_quit_netsurf();
-							break;
-
-							case 'f':
-								ami_search_open(gwin->gw);
-							break;
-
-							case 'h':
-								if((nsoption_bool(kiosk_mode) == false))
-									ami_tree_open(hotlist_window, AMI_TREE_HOTLIST);
-							break;
-
-							case '-':
-								if(gwin->gw->scale > 0.1)
-									ami_gui_set_scale(gwin->gw, gwin->gw->scale - 0.1);
-							break;
-							
-							case '=':
-								ami_gui_set_scale(gwin->gw, 1.0);
-							break;
-
-							case '+':
-								ami_gui_set_scale(gwin->gw, gwin->gw->scale + 0.1);
-							break;
-							
 							/* The following aren't available from the menu at the moment */
 
 							case 'r': // reload
