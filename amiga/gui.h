@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2015 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -18,15 +18,16 @@
 
 #ifndef AMIGA_GUI_H
 #define AMIGA_GUI_H
-
+#include <stdbool.h>
 #include <graphics/rastport.h>
-#include "amiga/object.h"
 #include <intuition/classusr.h>
 #include <dos/dos.h>
 #include <devices/inputevent.h>
+#include "amiga/menu.h"
+#include "amiga/object.h"
 #include "amiga/os3support.h"
 #include "amiga/plotters.h"
-#include "amiga/menu.h"
+#include "desktop/gui_window.h"
 
 #ifdef __amigaos4__
 #define HOOKF(ret,func,type,ptr,msgtype) static ret func(struct Hook *hook, type ptr, msgtype msg)

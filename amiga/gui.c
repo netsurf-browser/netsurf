@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2015 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -121,6 +121,7 @@
 #include "amiga/clipboard.h"
 #include "amiga/context_menu.h"
 #include "amiga/cookies.h"
+#include "amiga/ctxmenu.h"
 #include "amiga/datatypes.h"
 #include "amiga/download.h"
 #include "amiga/drag.h"
@@ -2944,6 +2945,7 @@ static void gui_quit(void)
 
 	LOG("Freeing menu items");
 	ami_context_menu_free();
+	ami_ctxmenu_free();
 	ami_menu_free_glyphs();
 
 	LOG("Freeing mouse pointers");
@@ -3755,7 +3757,7 @@ gui_window_create(struct browser_window *bw,
 	}
 
 	ami_NewMinList(&g->shared->shared_pens);
-	
+
 	g->shared->scrollerhook.h_Entry = (void *)ami_scroller_hook;
 	g->shared->scrollerhook.h_Data = g->shared;
 
@@ -3930,6 +3932,7 @@ gui_window_create(struct browser_window *bw,
 			WA_ReportMouse,TRUE,
 			refresh_mode, TRUE,
 			WA_SizeBBottom, TRUE,
+			WA_ContextMenuHook, ami_ctxmenu_get_hook(),
 			WA_IDCMP, IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
 				IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 				IDCMP_RAWKEY | idcmp_sizeverify |
@@ -5430,6 +5433,7 @@ int main(int argc, char** argv)
 	ami_amiupdate(); /* set env-vars for AmiUpdate */
 	ami_init_fonts();
 	ami_context_menu_init();
+	ami_ctxmenu_init();
 	save_complete_init();
 	ami_theme_init();
 	ami_init_mouse_pointers();

@@ -63,6 +63,7 @@ struct hlcache_handle;
 struct nsurl;
 
 enum gui_pointer_shape;
+enum nserror;
 
 /**
  * Graphical user interface window function table.
