@@ -1103,6 +1103,10 @@ static void ami_update_buttons(struct gui_window_2 *gwin)
 			SetGadgetAttrs((struct Gadget *)gwin->objects[GID_CLOSETAB],
 				gwin->win, NULL, GA_Disabled, tabclose, TAG_DONE);
 	}
+
+	/* Update the back/forward buttons history context menu */
+	ami_ctxmenu_history_create(AMI_CTXMENU_HISTORY_BACK, gwin);
+	ami_ctxmenu_history_create(AMI_CTXMENU_HISTORY_FORWARD, gwin);
 }
 
 void ami_gui_history(struct gui_window_2 *gwin, bool back)
@@ -3771,6 +3775,8 @@ gui_window_create(struct browser_window *bw,
 	newprefs_hook.h_Data = 0;
 	
 	g->shared->ctxmenu_hook = ami_ctxmenu_get_hook(g->shared);
+	g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_BACK] = NULL;
+	g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_FORWARD] = NULL;
 
 	if(nsoption_bool(window_simple_refresh) == true) {
 		refresh_mode = WA_SimpleRefresh;
@@ -3962,9 +3968,10 @@ gui_window_create(struct browser_window *bw,
 				LAYOUT_AddChild, g->shared->objects[GID_TOOLBARLAYOUT] = LayoutHObj,
 					LAYOUT_VertAlignment, LALIGN_CENTER,
 					LAYOUT_AddChild, g->shared->objects[GID_BACK] = ButtonObj,
-						GA_ID,GID_BACK,
-						GA_RelVerify,TRUE,
-						GA_Disabled,TRUE,
+						GA_ID, GID_BACK,
+						GA_RelVerify, TRUE,
+						GA_Disabled, TRUE,
+						GA_ContextMenu, ami_ctxmenu_history_create(AMI_CTXMENU_HISTORY_BACK, g->shared),
 						GA_HintInfo, g->shared->helphints[GID_BACK],
 						BUTTON_RenderImage,BitMapObj,
 							BITMAP_SourceFile,nav_west,
@@ -3977,9 +3984,10 @@ gui_window_create(struct browser_window *bw,
 					CHILD_WeightedWidth,0,
 					CHILD_WeightedHeight,0,
 					LAYOUT_AddChild, g->shared->objects[GID_FORWARD] = ButtonObj,
-						GA_ID,GID_FORWARD,
-						GA_RelVerify,TRUE,
-						GA_Disabled,TRUE,
+						GA_ID, GID_FORWARD,
+						GA_RelVerify, TRUE,
+						GA_Disabled, TRUE,
+						GA_ContextMenu, ami_ctxmenu_history_create(AMI_CTXMENU_HISTORY_FORWARD, g->shared),
 						GA_HintInfo, g->shared->helphints[GID_FORWARD],
 						BUTTON_RenderImage,BitMapObj,
 							BITMAP_SourceFile,nav_east,
@@ -4391,6 +4399,8 @@ static void gui_window_destroy(struct gui_window *g)
 	ami_gui_opts_websearch_free(g->shared->web_search_list);
 	if(g->shared->search_bm) DisposeObject(g->shared->search_bm);
 
+	DisposeObject((Object *)g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_BACK]);
+	DisposeObject((Object *)g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_FORWARD]);
 	ami_ctxmenu_release_hook(g->shared->ctxmenu_hook);
 	ami_free_menulabs(g->shared);
 #ifndef __amigaos4__

@@ -133,6 +133,7 @@ struct gui_window_2 {
 	struct Hook favicon_hook;
 	struct Hook throbber_hook;
 	struct Hook *ctxmenu_hook;
+	Object *history_ctxmenu[2];
 	gui_drag_type drag_op;
 	struct IBox *ptr_lock;
 	struct AppWindow *appwin;
