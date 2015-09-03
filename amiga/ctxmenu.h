@@ -26,7 +26,8 @@
 struct Hook;
 
 /**
- * Initialise context menus code
+ * Initialise context menus code (allocate label text, etc)
+ * Must be called *after* NetSurf's screen pointer is obtained.
  */
 void ami_ctxmenu_init(void);
 
@@ -38,8 +39,20 @@ void ami_ctxmenu_free(void);
 /**
  * Get a Hook for WA_ContextMenuHook
  *
+ * \param data ptr for the hook to use (struct gui_window_2 *)
  * \returns pointer to a struct Hook
  */
-struct Hook *ami_ctxmenu_get_hook(void);
-#endif
+struct Hook *ami_ctxmenu_get_hook(APTR data);
 
+/**
+ * Release a Hook for WA_ContextMenuHook
+ *
+ * \param hook ptr to hook
+ */
+void ami_ctxmenu_release_hook(struct Hook *hook);
+#else
+inline void ami_ctxmenu_init(void) {}
+inline void ami_ctxmenu_free(void) {}
+inline struct Hook *ami_ctxmenu_get_hook(APTR data) {return NULL;}
+inline void ami_ctxmenu_release_hook(struct Hook *hook) {}
+#endif

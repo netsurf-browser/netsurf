@@ -132,6 +132,7 @@ struct gui_window_2 {
 	struct DiskObject *dobj; /* iconify appicon */
 	struct Hook favicon_hook;
 	struct Hook throbber_hook;
+	struct Hook *ctxmenu_hook;
 	gui_drag_type drag_op;
 	struct IBox *ptr_lock;
 	struct AppWindow *appwin;
@@ -174,6 +175,8 @@ void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw);
 STRPTR ami_locale_langs(void);
 int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie);
 bool ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y);
+bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
+	int mouse_x, int mouse_y);
 BOOL ami_gadget_hit(Object *obj, int x, int y);
 void ami_gui_history(struct gui_window_2 *gwin, bool back);
 void ami_gui_hotlist_update_all(void);

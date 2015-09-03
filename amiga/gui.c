@@ -1318,7 +1318,7 @@ static bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 	return true;	
 }
 
-static bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
+bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 	int mouse_x, int mouse_y)
 {
 	int ns_x, ns_y;
@@ -3769,6 +3769,8 @@ gui_window_create(struct browser_window *bw,
 
 	newprefs_hook.h_Entry = (void *)ami_gui_newprefs_hook;
 	newprefs_hook.h_Data = 0;
+	
+	g->shared->ctxmenu_hook = ami_ctxmenu_get_hook(g->shared);
 
 	if(nsoption_bool(window_simple_refresh) == true) {
 		refresh_mode = WA_SimpleRefresh;
@@ -3932,7 +3934,7 @@ gui_window_create(struct browser_window *bw,
 			WA_ReportMouse,TRUE,
 			refresh_mode, TRUE,
 			WA_SizeBBottom, TRUE,
-			WA_ContextMenuHook, ami_ctxmenu_get_hook(),
+			WA_ContextMenuHook, g->shared->ctxmenu_hook,
 			WA_IDCMP, IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
 				IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 				IDCMP_RAWKEY | idcmp_sizeverify |
@@ -4376,7 +4378,6 @@ static void gui_window_destroy(struct gui_window *g)
 	DisposeObject(g->shared->objects[OID_MAIN]);
 	ami_gui_appicon_remove(g->shared);
 	if(g->shared->appwin) RemoveAppWindow(g->shared->appwin);
-
 	ami_gui_hotlist_toolbar_free(g->shared, &g->shared->hotlist_toolbar_list);
 
 	/* These aren't freed by the above.
@@ -4390,6 +4391,7 @@ static void gui_window_destroy(struct gui_window *g)
 	ami_gui_opts_websearch_free(g->shared->web_search_list);
 	if(g->shared->search_bm) DisposeObject(g->shared->search_bm);
 
+	ami_ctxmenu_release_hook(g->shared->ctxmenu_hook);
 	ami_free_menulabs(g->shared);
 #ifndef __amigaos4__
 	ami_menu_free_os3(g->shared);
@@ -5433,7 +5435,6 @@ int main(int argc, char** argv)
 	ami_amiupdate(); /* set env-vars for AmiUpdate */
 	ami_init_fonts();
 	ami_context_menu_init();
-	ami_ctxmenu_init();
 	save_complete_init();
 	ami_theme_init();
 	ami_init_mouse_pointers();
@@ -5448,6 +5449,8 @@ int main(int argc, char** argv)
 	urldb_load_cookies(nsoption_charp(cookie_file));
 
 	gui_init2(argc, argv);
+
+	ami_ctxmenu_init(); /* Requires screen pointer */
 
 	ami_gui_splash_close(splash_window);
 
