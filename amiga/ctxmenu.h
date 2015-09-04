@@ -59,17 +59,22 @@ struct Hook *ami_ctxmenu_get_hook(APTR data);
 void ami_ctxmenu_release_hook(struct Hook *hook);
 
 /**
- * Create history context menu.  First run sets up the menu, next creates entries.
+ * Create history context menu
+ * The first time this is run it will create an empty menu,
+ * Subsequent runs will (re-)populate with the history.
+ * This is to allow  the pointer to be obtained before the browser_winodw is opened.
  *
+ * \param direction AMI_CTXMENU_HISTORY_(BACK|FORWARD)
  * \param gwin struct gui_window_2 *
- * \returns pointer to menu
+ * \returns pointer to menu (for convenience, is also stored in gwin structure)
+ * The returned pointer MUST be disposed of with DisposeObject before program exit.
  */
 struct Menu *ami_ctxmenu_history_create(int direction, struct gui_window_2 *gwin);
-
 
 #else
 inline void ami_ctxmenu_init(void) {}
 inline void ami_ctxmenu_free(void) {}
 inline struct Hook *ami_ctxmenu_get_hook(APTR data) {return NULL;}
 inline void ami_ctxmenu_release_hook(struct Hook *hook) {}
+inline struct Menu *ami_ctxmenu_history_create(int direction, struct gui_window_2 *gwin) {return NULL;}
 #endif

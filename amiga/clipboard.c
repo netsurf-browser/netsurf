@@ -327,7 +327,7 @@ void ami_drag_selection(struct gui_window *g)
 	}
 }
 
-bool ami_easy_clipboard(char *text)
+bool ami_easy_clipboard(const char *text)
 {
 	gui_set_clipboard(text, strlen(text), NULL, 0);
 	return true;

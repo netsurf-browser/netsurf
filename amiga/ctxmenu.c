@@ -34,6 +34,7 @@
 #include <intuition/menuclass.h>
 #include <reaction/reaction_macros.h>
 
+#include "amiga/clipboard.h"
 #include "amiga/ctxmenu.h"
 #include "amiga/gui.h"
 #include "amiga/libs.h"
@@ -49,31 +50,19 @@
 #include "utils/nsoption.h"
 
 enum {
-	AMI_CTX_ID_TEST = 1,
-	AMI_CTX_ID_URLOPEN,
-	AMI_CTX_ID_URLOPENWIN,
+	AMI_CTX_ID_DUMMY = 0,
+
+	/* Links */
 	AMI_CTX_ID_URLOPENTAB,
+	AMI_CTX_ID_URLOPENWIN,
+	AMI_CTX_ID_URLDOWNLOAD,
+	AMI_CTX_ID_URLCOPY,
+
+	/* History */
 	AMI_CTX_ID_HISTORY,
 	AMI_CTX_ID_HISTORY0,
-	AMI_CTX_ID_HISTORY1,
-	AMI_CTX_ID_HISTORY2,
-	AMI_CTX_ID_HISTORY3,
-	AMI_CTX_ID_HISTORY4,
-	AMI_CTX_ID_HISTORY5,
-	AMI_CTX_ID_HISTORY6,
-	AMI_CTX_ID_HISTORY7,
-	AMI_CTX_ID_HISTORY8,
-	AMI_CTX_ID_HISTORY9,
-	AMI_CTX_ID_HISTORY0F,
-	AMI_CTX_ID_HISTORY1F,
-	AMI_CTX_ID_HISTORY2F,
-	AMI_CTX_ID_HISTORY3F,
-	AMI_CTX_ID_HISTORY4F,
-	AMI_CTX_ID_HISTORY5F,
-	AMI_CTX_ID_HISTORY6F,
-	AMI_CTX_ID_HISTORY7F,
-	AMI_CTX_ID_HISTORY8F,
-	AMI_CTX_ID_HISTORY9F,
+	AMI_CTX_ID_HISTORY9F = AMI_CTX_ID_HISTORY0 + 19,
+
 	AMI_CTX_ID_MAX
 };
 
@@ -82,6 +71,10 @@ static Object *ctxmenu_obj = NULL;
 static struct Hook ctxmenu_item_hook[AMI_CTX_ID_MAX];
 static char *ctxmenu_item_label[AMI_CTX_ID_MAX];
 static Object *ctxmenu_item_image[AMI_CTX_ID_MAX];
+
+/****************************
+ * Menu item hook functions *
+ ****************************/
 
 /** Menu functions - called automatically by RA_HandleInput **/
 HOOKF(void, ami_ctxmenu_item_urlopentab, APTR, window, struct IntuiMessage *)
@@ -118,6 +111,29 @@ HOOKF(void, ami_ctxmenu_item_urlopenwin, APTR, window, struct IntuiMessage *)
 		warn_user(messages_get_errorcode(error), 0);		
 }
 
+HOOKF(void, ami_ctxmenu_item_urldownload, APTR, window, struct IntuiMessage *)
+{
+	nsurl *url = (nsurl *)hook->h_Data;
+	struct gui_window_2 *gwin;
+
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	browser_window_navigate(gwin->gw->bw,
+		url,
+		browser_window_get_url(gwin->gw->bw),
+		BW_NAVIGATE_DOWNLOAD,
+		NULL,
+		NULL,
+		NULL);		
+}
+
+HOOKF(void, ami_ctxmenu_item_urlcopy, APTR, window, struct IntuiMessage *)
+{
+	nsurl *url = (nsurl *)hook->h_Data;
+	ami_easy_clipboard(nsurl_access(url));		
+}
+
+/** Hook for history context menu entries **/
 HOOKF(void, ami_ctxmenu_item_history, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
@@ -128,6 +144,9 @@ HOOKF(void, ami_ctxmenu_item_history, APTR, window, struct IntuiMessage *)
 }
 
 
+/*************************
+ * Browser context menus *
+ *************************/
 
 /** Add an initialised item to a context menu **/
 static void ami_ctxmenu_add_item(Object *root_menu, int id, APTR data)
@@ -181,6 +200,8 @@ static uint32 ami_ctxmenu_hook_func(struct Hook *hook, struct Window *window, st
 	if(ccdata.link) {
 		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_URLOPENTAB, ccdata.link);
 		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_URLOPENWIN, ccdata.link);
+		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_URLDOWNLOAD, ccdata.link);
+		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_URLCOPY, ccdata.link);
 		ctxmenu_has_content = true;
 	}
 
@@ -230,13 +251,6 @@ void ami_ctxmenu_release_hook(struct Hook *hook)
 }
 
 /** Exported interface documented in ctxmenu.h **/
-void ami_ctxmenu_init(void)
-{
-	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLOPENWIN, "LinkNewWin", "TBImages:list_app", ami_ctxmenu_item_urlopenwin);
-	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLOPENTAB, "LinkNewTab", "TBImages:list_add", ami_ctxmenu_item_urlopentab);
-}
-
-/** Exported interface documented in ctxmenu.h **/
 void ami_ctxmenu_free(void)
 {
 	for(int i = 1; i < AMI_CTX_ID_MAX; i++) {
@@ -255,7 +269,23 @@ void ami_ctxmenu_free(void)
 	ctxmenu_obj = NULL;
 }
 
+/** Exported interface documented in ctxmenu.h **/
+void ami_ctxmenu_init(void)
+{
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLOPENTAB, 	"LinkNewTab",	"TBImages:list_tab",
+		ami_ctxmenu_item_urlopentab);
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLOPENWIN, 	"LinkNewWin",	"TBImages:list_app",
+		ami_ctxmenu_item_urlopenwin);
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLDOWNLOAD, 	"LinkDload",	"TBImages:list_saveas",
+		ami_ctxmenu_item_urldownload);
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLCOPY, 		"CopyURL",		"TBImages:list_copy",
+		ami_ctxmenu_item_urlcopy);
 
+}
+
+/********************************
+ * History button context menus *
+ ********************************/
 
 /** Create menu entries from browser history **/
 static bool ami_ctxmenu_history(int direction, struct gui_window_2 *gwin, const struct history_entry *entry)
