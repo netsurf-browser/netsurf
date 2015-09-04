@@ -34,8 +34,10 @@
 #include <intuition/menuclass.h>
 #include <reaction/reaction_macros.h>
 
+#include "amiga/bitmap.h"
 #include "amiga/clipboard.h"
 #include "amiga/ctxmenu.h"
+#include "amiga/filetype.h"
 #include "amiga/gui.h"
 #include "amiga/libs.h"
 #include "amiga/theme.h"
@@ -50,13 +52,17 @@
 #include "utils/nsoption.h"
 
 enum {
-	AMI_CTX_ID_DUMMY = 0,
+	AMI_CTX_ID_NONE = 0,
 
 	/* Links */
 	AMI_CTX_ID_URLOPENTAB,
 	AMI_CTX_ID_URLOPENWIN,
 	AMI_CTX_ID_URLDOWNLOAD,
 	AMI_CTX_ID_URLCOPY,
+
+	/* Objects */
+	AMI_CTX_ID_OBJSHOW,
+	AMI_CTX_ID_OBJCOPY,
 
 	/* History */
 	AMI_CTX_ID_HISTORY,
@@ -133,6 +139,41 @@ HOOKF(void, ami_ctxmenu_item_urlcopy, APTR, window, struct IntuiMessage *)
 	ami_easy_clipboard(nsurl_access(url));		
 }
 
+HOOKF(void, ami_ctxmenu_item_objshow, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	browser_window_navigate(gwin->gw->bw,
+							hlcache_handle_get_url(hook->h_Data),
+							browser_window_get_url(gwin->gw->bw),
+							BW_NAVIGATE_HISTORY,
+							NULL,
+							NULL,
+							NULL);	
+}
+
+HOOKF(void, ami_ctxmenu_item_objcopy, APTR, window, struct IntuiMessage *)
+{
+	struct bitmap *bm;
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	struct hlcache_handle *object = (struct hlcache_handle *)hook->h_Data;
+	if((bm = content_get_bitmap(object)))
+	{
+		bm->url = (char *)nsurl_access(hlcache_handle_get_url(object));
+		bm->title = (char *)content_get_title(object);
+		ami_easy_clipboard_bitmap(bm);
+	}
+#ifdef WITH_NS_SVG
+	else if(ami_mime_compare(object, "svg") == true)
+	{
+		ami_easy_clipboard_svg(object);
+	}
+#endif
+}
+
 /** Hook for history context menu entries **/
 HOOKF(void, ami_ctxmenu_item_history, APTR, window, struct IntuiMessage *)
 {
@@ -205,6 +246,17 @@ static uint32 ami_ctxmenu_hook_func(struct Hook *hook, struct Window *window, st
 		ctxmenu_has_content = true;
 	}
 
+	if(ccdata.object) {
+		if(ctxmenu_has_content == true) {
+			ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_NONE, NULL);
+		}
+
+		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_OBJSHOW, ccdata.object);
+		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_OBJCOPY, ccdata.object);
+
+		ctxmenu_has_content = true;
+	}
+
 	if(ctxmenu_has_content == true) {
 		msg->Menu = ctxmenu_obj;
 		ami_set_pointer(gwin, GUI_POINTER_DEFAULT, false);
@@ -216,7 +268,11 @@ static uint32 ami_ctxmenu_hook_func(struct Hook *hook, struct Window *window, st
 /** Initial menu item creation **/
 static void ami_ctxmenu_alloc_item(int id, const char *label, const char *image, void *func)
 {
-	ctxmenu_item_label[id] = ami_utf8_easy(messages_get(label));
+	if(label == ML_SEPARATOR) {
+		ctxmenu_item_label[id] = ML_SEPARATOR;
+	} else {
+		ctxmenu_item_label[id] = ami_utf8_easy(messages_get(label));
+	}
 
 	if(image != NULL) {
 		ctxmenu_item_image[id] = BitMapObj,
@@ -272,6 +328,8 @@ void ami_ctxmenu_free(void)
 /** Exported interface documented in ctxmenu.h **/
 void ami_ctxmenu_init(void)
 {
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_NONE, 		ML_SEPARATOR,	NULL, NULL);
+
 	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLOPENTAB, 	"LinkNewTab",	"TBImages:list_tab",
 		ami_ctxmenu_item_urlopentab);
 	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLOPENWIN, 	"LinkNewWin",	"TBImages:list_app",
@@ -280,6 +338,11 @@ void ami_ctxmenu_init(void)
 		ami_ctxmenu_item_urldownload);
 	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLCOPY, 		"CopyURL",		"TBImages:list_copy",
 		ami_ctxmenu_item_urlcopy);
+
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_OBJSHOW, 		"ObjShow",		"TBImages:list_preview",
+		ami_ctxmenu_item_objshow);
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_OBJCOPY, 		"CopyClip",		"TBImages:list_copy",
+		ami_ctxmenu_item_objcopy);
 
 }
 

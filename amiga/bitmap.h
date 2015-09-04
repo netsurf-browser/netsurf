@@ -19,6 +19,7 @@
 #ifndef AMIGA_BITMAP_H
 #define AMIGA_BITMAP_H
 
+#include <stdbool.h>
 #include <exec/types.h>
 #include <proto/graphics.h>
 #include <intuition/classusr.h>
