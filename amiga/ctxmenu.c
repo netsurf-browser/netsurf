@@ -66,6 +66,9 @@ enum {
 	AMI_CTX_ID_OBJCOPY,
 	AMI_CTX_ID_OBJCMD,
 
+	/* Frames */
+	AMI_CTX_ID_FRAMESHOW,
+
 	/* History */
 	AMI_CTX_ID_HISTORY,
 	AMI_CTX_ID_HISTORY0,
@@ -181,6 +184,19 @@ HOOKF(void, ami_ctxmenu_item_objcmd, APTR, window, struct IntuiMessage *)
 	amiga_plugin_hack_execute((struct hlcache_handle *)hook->h_Data);
 }
 
+HOOKF(void, ami_ctxmenu_item_frameshow, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	browser_window_navigate(gwin->gw->bw,
+							hlcache_handle_get_url(hook->h_Data),
+							browser_window_get_url(gwin->gw->bw),
+							BW_NAVIGATE_HISTORY,
+							NULL,
+							NULL,
+							NULL);	
+}
 
 /** Hook for history context menu entries **/
 HOOKF(void, ami_ctxmenu_item_history, APTR, window, struct IntuiMessage *)
@@ -270,6 +286,14 @@ static uint32 ami_ctxmenu_hook_func(struct Hook *hook, struct Window *window, st
 		ctxmenu_has_content = true;
 	}
 
+	if(ccdata.main && (ccdata.main != cc)) {
+		if(ctxmenu_has_content == true) {
+			ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_NONE, NULL);
+		}
+
+		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_FRAMESHOW, ccdata.main);
+	}
+
 	if(ctxmenu_has_content == true) {
 		msg->Menu = ctxmenu_obj;
 		ami_set_pointer(gwin, GUI_POINTER_DEFAULT, false);
@@ -347,7 +371,7 @@ void ami_ctxmenu_init(void)
 		ami_ctxmenu_item_urlopentab);
 	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLOPENWIN, 	"LinkNewWin",	"TBImages:list_app",
 		ami_ctxmenu_item_urlopenwin);
-	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLDOWNLOAD, 	"LinkDload",	"TBImages:list_saveas",
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLDOWNLOAD, 	"LinkDload",	"TBImages:list_save",
 		ami_ctxmenu_item_urldownload);
 	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLCOPY, 		"CopyURL",		"TBImages:list_copy",
 		ami_ctxmenu_item_urlcopy);
@@ -358,6 +382,9 @@ void ami_ctxmenu_init(void)
 		ami_ctxmenu_item_objcopy);
 	ami_ctxmenu_alloc_item(AMI_CTX_ID_OBJCMD, 		"ExternalApp",	"TBImages:list_tool",
 		ami_ctxmenu_item_objcmd);
+
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_FRAMESHOW, 	"FrameOnly",	"TBImages:list_preview",
+		ami_ctxmenu_item_frameshow);
 
 }
 
