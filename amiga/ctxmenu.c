@@ -40,6 +40,7 @@
 #include "amiga/filetype.h"
 #include "amiga/gui.h"
 #include "amiga/libs.h"
+#include "amiga/plugin_hack.h"
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
 
@@ -63,6 +64,7 @@ enum {
 	/* Objects */
 	AMI_CTX_ID_OBJSHOW,
 	AMI_CTX_ID_OBJCOPY,
+	AMI_CTX_ID_OBJCMD,
 
 	/* History */
 	AMI_CTX_ID_HISTORY,
@@ -174,6 +176,12 @@ HOOKF(void, ami_ctxmenu_item_objcopy, APTR, window, struct IntuiMessage *)
 #endif
 }
 
+HOOKF(void, ami_ctxmenu_item_objcmd, APTR, window, struct IntuiMessage *)
+{
+	amiga_plugin_hack_execute((struct hlcache_handle *)hook->h_Data);
+}
+
+
 /** Hook for history context menu entries **/
 HOOKF(void, ami_ctxmenu_item_history, APTR, window, struct IntuiMessage *)
 {
@@ -252,7 +260,12 @@ static uint32 ami_ctxmenu_hook_func(struct Hook *hook, struct Window *window, st
 		}
 
 		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_OBJSHOW, ccdata.object);
-		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_OBJCOPY, ccdata.object);
+
+		if(content_get_type(ccdata.object) == CONTENT_IMAGE)
+			ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_OBJCOPY, ccdata.object);
+
+		if(ami_mime_content_to_cmd(ccdata.object))
+			ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_OBJCMD, ccdata.object);
 
 		ctxmenu_has_content = true;
 	}
@@ -343,6 +356,8 @@ void ami_ctxmenu_init(void)
 		ami_ctxmenu_item_objshow);
 	ami_ctxmenu_alloc_item(AMI_CTX_ID_OBJCOPY, 		"CopyClip",		"TBImages:list_copy",
 		ami_ctxmenu_item_objcopy);
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_OBJCMD, 		"ExternalApp",	"TBImages:list_tool",
+		ami_ctxmenu_item_objcmd);
 
 }
 
