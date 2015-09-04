@@ -47,6 +47,7 @@
 #include "desktop/browser.h"
 #include "desktop/browser_history.h"
 #include "desktop/mouse.h"
+#include "desktop/textinput.h"
 
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -54,6 +55,9 @@
 
 enum {
 	AMI_CTX_ID_NONE = 0,
+
+	/* Text selection */
+	AMI_CTX_ID_SELCOPY,
 
 	/* Links */
 	AMI_CTX_ID_URLOPENTAB,
@@ -82,12 +86,21 @@ static Object *ctxmenu_obj = NULL;
 static struct Hook ctxmenu_item_hook[AMI_CTX_ID_MAX];
 static char *ctxmenu_item_label[AMI_CTX_ID_MAX];
 static Object *ctxmenu_item_image[AMI_CTX_ID_MAX];
+static char ctxmenu_item_shortcut[AMI_CTX_ID_MAX];
 
 /****************************
  * Menu item hook functions *
  ****************************/
 
 /** Menu functions - called automatically by RA_HandleInput **/
+HOOKF(void, ami_ctxmenu_item_selcopy, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin = (struct gui_window_2 *)hook->h_Data;
+
+	browser_window_key_press(gwin->gw->bw, NS_KEY_COPY_SELECTION);
+	browser_window_key_press(gwin->gw->bw, NS_KEY_CLEAR_SELECTION);
+}
+
 HOOKF(void, ami_ctxmenu_item_urlopentab, APTR, window, struct IntuiMessage *)
 {
 	struct browser_window *bw;
@@ -224,6 +237,7 @@ static void ami_ctxmenu_add_item(Object *root_menu, int id, APTR data)
 							MA_ID, id,
 							MA_Image, ctxmenu_item_image[id],
 							MA_UserData, &ctxmenu_item_hook[id],
+							MA_Key, &ctxmenu_item_shortcut[id],
 						MEnd);
 }
 
@@ -262,7 +276,18 @@ static uint32 ami_ctxmenu_hook_func(struct Hook *hook, struct Window *window, st
 
 	browser_window_get_features(gwin->gw->bw, x, y, &ccdata);
 
+	if((browser_window_can_select(gwin->gw->bw)) &&
+		((browser_window_get_editor_flags(gwin->gw->bw) & BW_EDITOR_CAN_COPY))) {
+
+		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_SELCOPY, gwin);
+
+		ctxmenu_has_content = true;
+	}
+
 	if(ccdata.link) {
+		if(ctxmenu_has_content == true)
+			ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_NONE, NULL);
+
 		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_URLOPENTAB, ccdata.link);
 		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_URLOPENWIN, ccdata.link);
 		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_URLDOWNLOAD, ccdata.link);
@@ -271,9 +296,8 @@ static uint32 ami_ctxmenu_hook_func(struct Hook *hook, struct Window *window, st
 	}
 
 	if(ccdata.object) {
-		if(ctxmenu_has_content == true) {
+		if(ctxmenu_has_content == true)
 			ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_NONE, NULL);
-		}
 
 		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_OBJSHOW, ccdata.object);
 
@@ -287,11 +311,12 @@ static uint32 ami_ctxmenu_hook_func(struct Hook *hook, struct Window *window, st
 	}
 
 	if(ccdata.main && (ccdata.main != cc)) {
-		if(ctxmenu_has_content == true) {
+		if(ctxmenu_has_content == true)
 			ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_NONE, NULL);
-		}
 
 		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_FRAMESHOW, ccdata.main);
+
+		ctxmenu_has_content = true;
 	}
 
 	if(ctxmenu_has_content == true) {
@@ -303,13 +328,15 @@ static uint32 ami_ctxmenu_hook_func(struct Hook *hook, struct Window *window, st
 }
 
 /** Initial menu item creation **/
-static void ami_ctxmenu_alloc_item(int id, const char *label, const char *image, void *func)
+static void ami_ctxmenu_alloc_item(int id, const char *label, char key, const char *image, void *func)
 {
 	if(label == ML_SEPARATOR) {
 		ctxmenu_item_label[id] = ML_SEPARATOR;
 	} else {
 		ctxmenu_item_label[id] = ami_utf8_easy(messages_get(label));
 	}
+
+	ctxmenu_item_shortcut[id] = key;
 
 	if(image != NULL) {
 		ctxmenu_item_image[id] = BitMapObj,
@@ -365,25 +392,28 @@ void ami_ctxmenu_free(void)
 /** Exported interface documented in ctxmenu.h **/
 void ami_ctxmenu_init(void)
 {
-	ami_ctxmenu_alloc_item(AMI_CTX_ID_NONE, 		ML_SEPARATOR,	NULL, NULL);
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_NONE, 		ML_SEPARATOR, 0, NULL, NULL);
 
-	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLOPENTAB, 	"LinkNewTab",	"TBImages:list_tab",
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_SELCOPY, 		"CopyNS",	'C',	"TBImages:list_copy",
+		ami_ctxmenu_item_selcopy);
+
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLOPENTAB, 	"LinkNewTab",	0,	"TBImages:list_tab",
 		ami_ctxmenu_item_urlopentab);
-	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLOPENWIN, 	"LinkNewWin",	"TBImages:list_app",
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLOPENWIN, 	"LinkNewWin",	0,	"TBImages:list_app",
 		ami_ctxmenu_item_urlopenwin);
-	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLDOWNLOAD, 	"LinkDload",	"TBImages:list_save",
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLDOWNLOAD, 	"LinkDload",	0,	"TBImages:list_save",
 		ami_ctxmenu_item_urldownload);
-	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLCOPY, 		"CopyURL",		"TBImages:list_copy",
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLCOPY, 		"CopyURL",		0,	"TBImages:list_copy",
 		ami_ctxmenu_item_urlcopy);
 
-	ami_ctxmenu_alloc_item(AMI_CTX_ID_OBJSHOW, 		"ObjShow",		"TBImages:list_preview",
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_OBJSHOW, 		"ObjShow",		0,	"TBImages:list_preview",
 		ami_ctxmenu_item_objshow);
-	ami_ctxmenu_alloc_item(AMI_CTX_ID_OBJCOPY, 		"CopyClip",		"TBImages:list_copy",
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_OBJCOPY, 		"CopyClip",		0,	"TBImages:list_copy",
 		ami_ctxmenu_item_objcopy);
-	ami_ctxmenu_alloc_item(AMI_CTX_ID_OBJCMD, 		"ExternalApp",	"TBImages:list_tool",
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_OBJCMD, 		"ExternalApp",	0,	"TBImages:list_tool",
 		ami_ctxmenu_item_objcmd);
 
-	ami_ctxmenu_alloc_item(AMI_CTX_ID_FRAMESHOW, 	"FrameOnly",	"TBImages:list_preview",
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_FRAMESHOW, 	"FrameOnly",	0,	"TBImages:list_preview",
 		ami_ctxmenu_item_frameshow);
 
 }
