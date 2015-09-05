@@ -34,9 +34,6 @@
 #include <proto/intuition.h>
 #include <proto/keymap.h>
 #include <proto/locale.h>
-#ifdef __amigaos4__
-#include <proto/popupmenu.h>
-#endif
 #include <proto/utility.h>
 #include <proto/wb.h>
 
@@ -119,7 +116,6 @@
 #include "amiga/arexx.h"
 #include "amiga/bitmap.h"
 #include "amiga/clipboard.h"
-#include "amiga/context_menu.h"
 #include "amiga/cookies.h"
 #include "amiga/ctxmenu.h"
 #include "amiga/datatypes.h"
@@ -145,6 +141,7 @@
 #include "amiga/print.h"
 #include "amiga/schedule.h"
 #include "amiga/search.h"
+#include "amiga/selectmenu.h"
 #include "amiga/theme.h"
 #include "amiga/tree.h"
 #include "amiga/utf8.h"
@@ -542,9 +539,8 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 	STRPTR tempacceptlangs;
 	char temp[1024];
 
-	/* The following line disables the popupmenu.class select menu
-	** This will become a user option when/if popupmenu.class is
-	** updated to show more items than can fit in one column vertically
+	/* The following line disables the popupmenu.class select menu.
+	** It's not recommended to use it!
 	*/
 
 	nsoption_set_bool(core_select_menu, true);
@@ -626,9 +622,6 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 					   (char *)strdup("Symbola"));
 		}
 	}
-
-	if(popupmenu_lib_ok == FALSE)
-		nsoption_set_bool(context_menu, false);
 
 #ifndef __amigaos4__
 	nsoption_set_bool(download_notify, false);
@@ -1923,7 +1916,6 @@ static void ami_handle_msg(void)
 					if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))
 					{
 						ami_update_quals(gwin);
-						ami_context_menu_mouse_trap(gwin, TRUE);
 
 						if(gwin->mouse_state & BROWSER_MOUSE_PRESS_1)
 						{
@@ -1939,11 +1931,7 @@ static void ami_handle_msg(void)
 						{
 							browser_window_mouse_track(gwin->gw->bw,gwin->mouse_state | gwin->key_state,x,y);
 						}
-					}
-					else
-					{
-						ami_context_menu_mouse_trap(gwin, FALSE);
-
+					} else {
 						if(!gwin->mouse_state) ami_set_pointer(gwin, GUI_POINTER_DEFAULT, true);
 					}
 				break;
@@ -1993,10 +1981,6 @@ static void ami_handle_msg(void)
 
 					switch(code)
 					{
-						case MENUDOWN:
-							ami_context_menu_show(gwin,x,y);
-						break;
-
 						case SELECTUP:
 							if(gwin->mouse_state & BROWSER_MOUSE_PRESS_1)
 							{
@@ -2948,7 +2932,6 @@ static void gui_quit(void)
 	if(nsscreentitle) FreeVec(nsscreentitle);
 
 	LOG("Freeing menu items");
-	ami_context_menu_free();
 	ami_ctxmenu_free();
 	ami_menu_free_glyphs();
 
@@ -5369,19 +5352,6 @@ int main(int argc, char** argv)
 	/* Open splash window */
 	Object *splash_window = ami_gui_splash_open();
 
-	/* Open popupmenu.library just to check the version.
-	 * Versions older than 53.11 are dangerous, so we
-	 * forcibly disable context menus if these are in use.
-	 */
-	popupmenu_lib_ok = FALSE;
-#ifdef __amigaos4__
-	if((PopupMenuBase = OpenLibrary("popupmenu.library", 53))) {
-		LOG("popupmenu.library v%d.%d", PopupMenuBase->lib_Version, PopupMenuBase->lib_Revision);
-		if(LIB_IS_AT_LEAST((struct Library *)PopupMenuBase, 53, 11))
-			popupmenu_lib_ok = TRUE;
-		CloseLibrary(PopupMenuBase);
-	}
-#endif
 	if (ami_open_resources() == false) { /* alloc message ports */
 		ami_misc_fatal_error("Unable to allocate resources");
 		return RETURN_FAIL;
@@ -5446,7 +5416,6 @@ int main(int argc, char** argv)
 	ami_openurl_open();
 	ami_amiupdate(); /* set env-vars for AmiUpdate */
 	ami_init_fonts();
-	ami_context_menu_init();
 	save_complete_init();
 	ami_theme_init();
 	ami_init_mouse_pointers();

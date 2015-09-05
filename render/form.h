@@ -26,6 +26,7 @@
 #define _NETSURF_RENDER_FORM_H_
 
 struct form_control;
+struct rect;
 
 /** Option in a select. */
 struct form_option {
