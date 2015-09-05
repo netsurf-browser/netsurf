@@ -25,6 +25,7 @@
 #include <reaction/reaction_macros.h>
 
 #include "utils/errors.h"
+#include "utils/log.h"
 #include "render/form.h"
 #include "desktop/mouse.h"
 
@@ -33,7 +34,21 @@
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
 
+/** Exported interface documented in selectmenu.h **/
+BOOL ami_selectmenu_is_safe(void)
+{
+	struct Library *PopupMenuBase;
+	BOOL popupmenu_lib_ok = FALSE;
 
+	if((PopupMenuBase = OpenLibrary("popupmenu.library", 53))) {
+		LOG("popupmenu.library v%d.%d", PopupMenuBase->lib_Version, PopupMenuBase->lib_Revision);
+		if(LIB_IS_AT_LEAST((struct Library *)PopupMenuBase, 53, 11))
+			popupmenu_lib_ok = TRUE;
+		CloseLibrary(PopupMenuBase);
+	}
+
+	return popupmenu_lib_ok;
+}
 
 HOOKF(uint32, ami_popup_hook, Object *, item, APTR)
 {
@@ -57,8 +72,8 @@ void gui_create_form_select_menu(struct gui_window *g,
 	struct form_option *opt = form_select_get_option(control, 0);
 	ULONG i = 0;
 
-	/**\todo Open popupmenu.library to check the version.
-	 * Versions older than 53.11 are dangerous! */
+	if(ami_selectmenu_is_safe() == FALSE) return;
+
 	if((PopupMenuBase = OpenLibrary("popupmenu.class", 0))) {
 		IPopupMenu = (struct PopupMenuIFace *)GetInterface(PopupMenuBase, "main", 1, NULL);
 	}
@@ -72,8 +87,6 @@ void gui_create_form_select_menu(struct gui_window *g,
 	g->shared->control = control;
 
 	/**\todo PMIA_Title memory leaks as we don't free the strings.
-	 * We use the core menu anyway, but in future when popupmenu.class
-	 * improves we will probably start using this again.
 	 */
 
 	selectmenuobj = PMMENU(ami_utf8_easy(form_control_get_name(control))),
@@ -97,7 +110,7 @@ void gui_create_form_select_menu(struct gui_window *g,
 
 	IDoMethod(selectmenuobj, PM_OPEN, g->shared->win);
 
-	/* I believe PM_OPEN is blocking, so dispose menu immediately... */
+	/* PM_OPEN is blocking, so dispose menu immediately... */
 	if(selectmenuobj) DisposeObject(selectmenuobj);
 
 	/* ...and get rid of popupmenu.class ASAP */

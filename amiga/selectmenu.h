@@ -22,7 +22,16 @@
 struct gui_window;
 struct form_control;
 
+BOOL popupmenu_lib_ok;
+
 void gui_create_form_select_menu(struct gui_window *g, struct form_control *control);
 
+/**
+ * Opens popupmenu.library to check the version.
+ * Versions older than 53.11 are dangerous!
+ *
+ * \returns TRUE if popupmenu is safe, FALSE otherwise.
+ */
+BOOL ami_selectmenu_is_safe(void);
 #endif
 

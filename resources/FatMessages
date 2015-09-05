@@ -6159,6 +6159,11 @@ de.ami.OptionDocky:In AmiDock zeigen
 fr.ami.OptionDocky:Afficher dans AmiDock
 it.ami.OptionDocky:Mostra icona di NetSurf su AmiDock
 nl.ami.OptionDocky:Show in AmiDock
+en.ami.PopupMenu:Use popupmenu for forms
+de.ami.PopupMenu:Use popupmenu for forms
+fr.ami.PopupMenu:Use popupmenu for forms
+it.ami.PopupMenu:Use popupmenu for forms
+nl.ami.PopupMenu:Use popupmenu for forms
 en.all.Clipboard:Clipboard
 de.all.Clipboard:Clipboard
 fr.all.Clipboard:Presse-papiers

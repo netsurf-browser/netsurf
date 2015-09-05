@@ -71,6 +71,7 @@
 #include "amiga/libs.h"
 #include "amiga/misc.h"
 #include "amiga/object.h"
+#include "amiga/selectmenu.h"
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
 
@@ -132,6 +133,7 @@ enum
 	GID_OPTS_TAB_CLOSE,
 	GID_OPTS_SEARCH_PROV,
 	GID_OPTS_CLIPBOARD,
+	GID_OPTS_SELECTMENU,
 	GID_OPTS_STARTUP_NO_WIN,
 	GID_OPTS_CLOSE_NO_QUIT,
 	GID_OPTS_DOCKY,
@@ -327,6 +329,7 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	gadlab[GID_OPTS_TAB_CLOSE] = (char *)ami_utf8_easy((char *)messages_get("TabClose"));
 	gadlab[GID_OPTS_SEARCH_PROV] = (char *)ami_utf8_easy((char *)messages_get("SearchProvider"));
 	gadlab[GID_OPTS_CLIPBOARD] = (char *)ami_utf8_easy((char *)messages_get("ClipboardUTF8"));
+	gadlab[GID_OPTS_SELECTMENU] = (char *)ami_utf8_easy((char *)messages_get("PopupMenu"));
 	gadlab[GID_OPTS_STARTUP_NO_WIN] = (char *)ami_utf8_easy((char *)messages_get("OptionNoWindow"));
 	gadlab[GID_OPTS_CLOSE_NO_QUIT] = (char *)ami_utf8_easy((char *)messages_get("OptionNoQuit"));
 	gadlab[GID_OPTS_DOCKY] = (char *)ami_utf8_easy((char *)messages_get("OptionDocky"));
@@ -1364,7 +1367,16 @@ void ami_gui_opts_open(void)
          	           					GA_Text, gadlab[GID_OPTS_FASTSCROLL],
          	           					GA_Selected, nsoption_bool(faster_scroll),
             	    				CheckBoxEnd,
-								LayoutEnd, // context menus
+#ifdef __amigaos4__
+	        	        			LAYOUT_AddChild, gow->objects[GID_OPTS_SELECTMENU] = CheckBoxObj,
+										GA_ID, GID_OPTS_SELECTMENU,
+										GA_RelVerify, TRUE,
+										GA_Text, gadlab[GID_OPTS_SELECTMENU],
+										GA_Selected, nsoption_bool(core_select_menu),
+										GA_Disabled, !ami_selectmenu_is_safe(),
+           	    					CheckBoxEnd,
+#endif
+								LayoutEnd, // misc
 								CHILD_WeightedHeight, 0,
 
 							LayoutEnd, // page vgroup
@@ -1842,6 +1854,13 @@ static void ami_gui_opts_use(bool save)
 		nsoption_set_bool(clipboard_write_utf8, true);
 	} else {
 		nsoption_set_bool(clipboard_write_utf8, false);
+	}
+
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_SELECTMENU],(ULONG *)&data);
+	if (data) {
+		nsoption_set_bool(core_select_menu, true);
+	} else {
+		nsoption_set_bool(core_select_menu, false);
 	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_STARTUP_NO_WIN],(ULONG *)&data);
