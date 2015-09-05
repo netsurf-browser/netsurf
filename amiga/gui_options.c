@@ -1372,7 +1372,7 @@ void ami_gui_opts_open(void)
 										GA_ID, GID_OPTS_SELECTMENU,
 										GA_RelVerify, TRUE,
 										GA_Text, gadlab[GID_OPTS_SELECTMENU],
-										GA_Selected, nsoption_bool(core_select_menu),
+										GA_Selected, !nsoption_bool(core_select_menu),
 										GA_Disabled, !ami_selectmenu_is_safe(),
            	    					CheckBoxEnd,
 #endif
@@ -1858,9 +1858,9 @@ static void ami_gui_opts_use(bool save)
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_SELECTMENU],(ULONG *)&data);
 	if (data) {
-		nsoption_set_bool(core_select_menu, true);
-	} else {
 		nsoption_set_bool(core_select_menu, false);
+	} else {
+		nsoption_set_bool(core_select_menu, true);
 	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_STARTUP_NO_WIN],(ULONG *)&data);

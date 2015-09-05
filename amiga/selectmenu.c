@@ -67,7 +67,7 @@ void gui_create_form_select_menu(struct gui_window *g,
 {
 	struct Library *PopupMenuBase = NULL;
 	struct PopupMenuIFace *IPopupMenu = NULL;
-	struct Hook ctxmenuhook;
+	struct Hook selectmenuhook;
 	Object *selectmenuobj;
 	struct form_option *opt = form_select_get_option(control, 0);
 	ULONG i = 0;
@@ -80,17 +80,17 @@ void gui_create_form_select_menu(struct gui_window *g,
 
 	if(IPopupMenu == NULL) return;
 
-	ctxmenuhook.h_Entry = ami_popup_hook;
-	ctxmenuhook.h_SubEntry = NULL;
-	ctxmenuhook.h_Data = g;
+	selectmenuhook.h_Entry = ami_popup_hook;
+	selectmenuhook.h_SubEntry = NULL;
+	selectmenuhook.h_Data = g;
 
 	g->shared->control = control;
 
 	/**\todo PMIA_Title memory leaks as we don't free the strings.
 	 */
 
-	selectmenuobj = PMMENU(ami_utf8_easy(form_control_get_name(control))),
-                        PMA_MenuHandler, &ctxmenuhook, End;
+	selectmenuobj = PMMENU(form_control_get_name(control)),
+                        PMA_MenuHandler, &selectmenuhook, End;
 
 	while(opt) {
 		IDoMethod(selectmenuobj, PM_INSERT,
@@ -122,6 +122,11 @@ void gui_create_form_select_menu(struct gui_window *g,
 #include "amiga/selectmenu.h"
 void gui_create_form_select_menu(struct gui_window *g, struct form_control *control)
 {
+}
+
+BOOL ami_selectmenu_is_safe()
+{
+	return FALSE;
 }
 #endif
 
