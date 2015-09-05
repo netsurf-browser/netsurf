@@ -3226,6 +3226,7 @@ static void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 					GA_ID, GID_TABS,
 					GA_RelVerify, TRUE,
 					GA_Underscore, 13, // disable kb shortcuts
+					GA_ContextMenu, ami_ctxmenu_clicktab_create(gwin),
 					CLICKTAB_Labels, &gwin->tab_list,
 					CLICKTAB_LabelTruncate, TRUE,
 					CLICKTAB_CloseImage, gwin->objects[GID_CLOSETAB_BM],
@@ -3777,6 +3778,7 @@ gui_window_create(struct browser_window *bw,
 	g->shared->ctxmenu_hook = ami_ctxmenu_get_hook(g->shared);
 	g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_BACK] = NULL;
 	g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_FORWARD] = NULL;
+	g->shared->clicktab_ctxmenu = NULL;
 
 	if(nsoption_bool(window_simple_refresh) == true) {
 		refresh_mode = WA_SimpleRefresh;
@@ -4342,8 +4344,7 @@ static void gui_window_destroy(struct gui_window *g)
 
 	cur_gw = NULL;
 
-	if(g->shared->tabs > 1)
-	{
+	if(g->shared->tabs > 1) {
 		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],g->shared->win,NULL,
 						CLICKTAB_Labels,~0,
 						TAG_DONE);
@@ -4399,6 +4400,8 @@ static void gui_window_destroy(struct gui_window *g)
 	ami_gui_opts_websearch_free(g->shared->web_search_list);
 	if(g->shared->search_bm) DisposeObject(g->shared->search_bm);
 
+	/* This appears to be disposed along with the ClickTab object
+	if(g->shared->clicktab_ctxmenu) DisposeObject((Object *)g->shared->clicktab_ctxmenu); */
 	DisposeObject((Object *)g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_BACK]);
 	DisposeObject((Object *)g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_FORWARD]);
 	ami_ctxmenu_release_hook(g->shared->ctxmenu_hook);
@@ -4414,8 +4417,7 @@ static void gui_window_destroy(struct gui_window *g)
 		free(g->shared->helphints[gid]);
 
 	DelObject(g->shared->node);
-	if(g->tab_node)
-	{
+	if(g->tab_node) {
 		Remove(g->tab_node);
 		FreeClickTabNode(g->tab_node);
 	}
