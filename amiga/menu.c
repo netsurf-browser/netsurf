@@ -561,7 +561,7 @@ static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 			gwin->menulab[num] = ami_utf8_easy(messages_get(label));
 		}
 	}
-	
+
 	gwin->menuicon[num] = NULL;
 	if(key) gwin->menukey[num] = key;
 	if(func) gwin->menu_hook[num].h_Entry = (HOOKFUNC)func;

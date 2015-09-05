@@ -16,20 +16,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef AMIGA_CONTEXT_MENU_H
-#define AMIGA_CONTEXT_MENU_H
+#ifndef AMIGA_SELECTMENU_H
+#define AMIGA_SELECTMENU_H
 
-struct tree;
 struct gui_window;
-struct gui_window_2;
 struct form_control;
 
-void ami_context_menu_init(void);
-void ami_context_menu_free(void);
-BOOL ami_context_menu_mouse_trap(struct gui_window_2 *gwin, BOOL trap);
-void ami_context_menu_show(struct gui_window_2 *gwin, int x, int y);
+BOOL popupmenu_lib_ok;
 
 void gui_create_form_select_menu(struct gui_window *g, struct form_control *control);
 
+/**
+ * Opens popupmenu.library to check the version.
+ * Versions older than 53.11 are dangerous!
+ *
+ * \returns TRUE if popupmenu is safe, FALSE otherwise.
+ */
+BOOL ami_selectmenu_is_safe(void);
 #endif
 

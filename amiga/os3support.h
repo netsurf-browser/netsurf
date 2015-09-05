@@ -73,6 +73,7 @@
 #define GETFONT_ScalableOnly	TAG_IGNORE
 #define PDTA_PromoteMask	TAG_IGNORE
 #define RPTAG_APenColor		TAG_IGNORE
+#define GA_ContextMenu		TAG_IGNORE
 #define GA_HintInfo			TAG_IGNORE
 #define GAUGEIA_Level		TAG_IGNORE
 #define IA_InBorder			TAG_IGNORE
@@ -81,6 +82,7 @@
 #define SBNA_Text			TAG_IGNORE
 #define TNA_CloseGadget		TAG_IGNORE
 #define TNA_HintInfo		TAG_IGNORE
+#define WA_ContextMenuHook		TAG_IGNORE
 #define WA_ToolBox			TAG_IGNORE
 #define WINDOW_BuiltInScroll	TAG_IGNORE
 #define WINDOW_NewMenu		TAG_IGNORE

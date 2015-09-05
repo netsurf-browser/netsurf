@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2015 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -34,9 +34,6 @@
 #include <proto/intuition.h>
 #include <proto/keymap.h>
 #include <proto/locale.h>
-#ifdef __amigaos4__
-#include <proto/popupmenu.h>
-#endif
 #include <proto/utility.h>
 #include <proto/wb.h>
 
@@ -119,8 +116,8 @@
 #include "amiga/arexx.h"
 #include "amiga/bitmap.h"
 #include "amiga/clipboard.h"
-#include "amiga/context_menu.h"
 #include "amiga/cookies.h"
+#include "amiga/ctxmenu.h"
 #include "amiga/datatypes.h"
 #include "amiga/download.h"
 #include "amiga/drag.h"
@@ -144,6 +141,7 @@
 #include "amiga/print.h"
 #include "amiga/schedule.h"
 #include "amiga/search.h"
+#include "amiga/selectmenu.h"
 #include "amiga/theme.h"
 #include "amiga/tree.h"
 #include "amiga/utf8.h"
@@ -541,9 +539,8 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 	STRPTR tempacceptlangs;
 	char temp[1024];
 
-	/* The following line disables the popupmenu.class select menu
-	** This will become a user option when/if popupmenu.class is
-	** updated to show more items than can fit in one column vertically
+	/* The following line disables the popupmenu.class select menu.
+	** It's not recommended to use it!
 	*/
 
 	nsoption_set_bool(core_select_menu, true);
@@ -625,9 +622,6 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 					   (char *)strdup("Symbola"));
 		}
 	}
-
-	if(popupmenu_lib_ok == FALSE)
-		nsoption_set_bool(context_menu, false);
 
 #ifndef __amigaos4__
 	nsoption_set_bool(download_notify, false);
@@ -1102,6 +1096,10 @@ static void ami_update_buttons(struct gui_window_2 *gwin)
 			SetGadgetAttrs((struct Gadget *)gwin->objects[GID_CLOSETAB],
 				gwin->win, NULL, GA_Disabled, tabclose, TAG_DONE);
 	}
+
+	/* Update the back/forward buttons history context menu */
+	ami_ctxmenu_history_create(AMI_CTXMENU_HISTORY_BACK, gwin);
+	ami_ctxmenu_history_create(AMI_CTXMENU_HISTORY_FORWARD, gwin);
 }
 
 void ami_gui_history(struct gui_window_2 *gwin, bool back)
@@ -1317,7 +1315,7 @@ static bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 	return true;	
 }
 
-static bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
+bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 	int mouse_x, int mouse_y)
 {
 	int ns_x, ns_y;
@@ -1918,7 +1916,6 @@ static void ami_handle_msg(void)
 					if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))
 					{
 						ami_update_quals(gwin);
-						ami_context_menu_mouse_trap(gwin, TRUE);
 
 						if(gwin->mouse_state & BROWSER_MOUSE_PRESS_1)
 						{
@@ -1934,11 +1931,7 @@ static void ami_handle_msg(void)
 						{
 							browser_window_mouse_track(gwin->gw->bw,gwin->mouse_state | gwin->key_state,x,y);
 						}
-					}
-					else
-					{
-						ami_context_menu_mouse_trap(gwin, FALSE);
-
+					} else {
 						if(!gwin->mouse_state) ami_set_pointer(gwin, GUI_POINTER_DEFAULT, true);
 					}
 				break;
@@ -1988,10 +1981,6 @@ static void ami_handle_msg(void)
 
 					switch(code)
 					{
-						case MENUDOWN:
-							ami_context_menu_show(gwin,x,y);
-						break;
-
 						case SELECTUP:
 							if(gwin->mouse_state & BROWSER_MOUSE_PRESS_1)
 							{
@@ -2265,104 +2254,10 @@ static void ami_handle_msg(void)
 
 					if((ie->ie_Qualifier & IEQUALIFIER_RCOMMAND) &&
 						((31 < nskey) && (nskey < 127))) {
-					/* We are duplicating the menu shortcuts here, as if RMBTRAP is
-					 * active (ie. when context menus are enabled and the mouse is over
-					 * the browser rendering area), Intuition also does not catch the
-					 * menu shortcut key presses.  Context menus possibly need to be
-					 * changed to use MENUVERIFY not RMBTRAP.
-					 * NB: Some keypresses are converted to generic keypresses above
-					 * rather than being "menu-emulated" here.
-					 */
+					/* NB: Some keypresses are converted to generic keypresses above
+					 * rather than being "menu-emulated" here. */
 						switch(nskey)
 						{
-							case 'n':
-								if ((nsoption_bool(kiosk_mode) == false)) {
-									nsurl *urlns;
-									nserror error;
-
-									error = nsurl_create(nsoption_charp(homepage_url), &urlns);
-									if (error == NSERROR_OK) {
-										error = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY,
-													      urlns,
-													      NULL,
-													      gwin->gw->bw,
-													      NULL);
-										nsurl_unref(urlns);
-									}
-									if (error != NSERROR_OK) {
-										warn_user(messages_get_errorcode(error), 0);
-									}
-
-								}
-							break;
-
-							case 't':
-								if((nsoption_bool(kiosk_mode) == false)) {
-									nsurl *urlns;
-									nserror error;
-
-									error = nsurl_create(nsoption_charp(homepage_url), &urlns);
-									if (error == NSERROR_OK) {
-										error = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY |
-													      BW_CREATE_TAB,
-													      urlns,
-													      NULL,
-													      gwin->gw->bw,
-													      NULL);
-										nsurl_unref(urlns);
-									}
-									if (error != NSERROR_OK) {
-										warn_user(messages_get_errorcode(error), 0);
-									}
-
-								}
-							break;
-
-							case 'k':
-								if((nsoption_bool(kiosk_mode) == false))
-									browser_window_destroy(gwin->gw->bw);
-							break;
-
-							case 'o':
-								ami_file_open(gwin);
-							break;
-
-							case 's':
-								ami_file_save_req(AMINS_SAVE_SOURCE, gwin,
-									browser_window_get_content(gwin->gw->bw));
-							break;
-
-							case 'p':
-								ami_print_ui(browser_window_get_content(gwin->gw->bw));
-							break;
-
-							case 'q':
-								if((nsoption_bool(kiosk_mode) == false))
-									ami_quit_netsurf();
-							break;
-
-							case 'f':
-								ami_search_open(gwin->gw);
-							break;
-
-							case 'h':
-								if((nsoption_bool(kiosk_mode) == false))
-									ami_tree_open(hotlist_window, AMI_TREE_HOTLIST);
-							break;
-
-							case '-':
-								if(gwin->gw->scale > 0.1)
-									ami_gui_set_scale(gwin->gw, gwin->gw->scale - 0.1);
-							break;
-							
-							case '=':
-								ami_gui_set_scale(gwin->gw, 1.0);
-							break;
-
-							case '+':
-								ami_gui_set_scale(gwin->gw, gwin->gw->scale + 0.1);
-							break;
-							
 							/* The following aren't available from the menu at the moment */
 
 							case 'r': // reload
@@ -3037,7 +2932,7 @@ static void gui_quit(void)
 	if(nsscreentitle) FreeVec(nsscreentitle);
 
 	LOG("Freeing menu items");
-	ami_context_menu_free();
+	ami_ctxmenu_free();
 	ami_menu_free_glyphs();
 
 	LOG("Freeing mouse pointers");
@@ -3314,6 +3209,7 @@ static void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 					GA_ID, GID_TABS,
 					GA_RelVerify, TRUE,
 					GA_Underscore, 13, // disable kb shortcuts
+					GA_ContextMenu, ami_ctxmenu_clicktab_create(gwin),
 					CLICKTAB_Labels, &gwin->tab_list,
 					CLICKTAB_LabelTruncate, TRUE,
 					CLICKTAB_CloseImage, gwin->objects[GID_CLOSETAB_BM],
@@ -3849,7 +3745,7 @@ gui_window_create(struct browser_window *bw,
 	}
 
 	ami_NewMinList(&g->shared->shared_pens);
-	
+
 	g->shared->scrollerhook.h_Entry = (void *)ami_scroller_hook;
 	g->shared->scrollerhook.h_Data = g->shared;
 
@@ -3861,6 +3757,11 @@ gui_window_create(struct browser_window *bw,
 
 	newprefs_hook.h_Entry = (void *)ami_gui_newprefs_hook;
 	newprefs_hook.h_Data = 0;
+	
+	g->shared->ctxmenu_hook = ami_ctxmenu_get_hook(g->shared);
+	g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_BACK] = NULL;
+	g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_FORWARD] = NULL;
+	g->shared->clicktab_ctxmenu = NULL;
 
 	if(nsoption_bool(window_simple_refresh) == true) {
 		refresh_mode = WA_SimpleRefresh;
@@ -4024,6 +3925,7 @@ gui_window_create(struct browser_window *bw,
 			WA_ReportMouse,TRUE,
 			refresh_mode, TRUE,
 			WA_SizeBBottom, TRUE,
+			WA_ContextMenuHook, g->shared->ctxmenu_hook,
 			WA_IDCMP, IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
 				IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 				IDCMP_RAWKEY | idcmp_sizeverify |
@@ -4051,9 +3953,10 @@ gui_window_create(struct browser_window *bw,
 				LAYOUT_AddChild, g->shared->objects[GID_TOOLBARLAYOUT] = LayoutHObj,
 					LAYOUT_VertAlignment, LALIGN_CENTER,
 					LAYOUT_AddChild, g->shared->objects[GID_BACK] = ButtonObj,
-						GA_ID,GID_BACK,
-						GA_RelVerify,TRUE,
-						GA_Disabled,TRUE,
+						GA_ID, GID_BACK,
+						GA_RelVerify, TRUE,
+						GA_Disabled, TRUE,
+						GA_ContextMenu, ami_ctxmenu_history_create(AMI_CTXMENU_HISTORY_BACK, g->shared),
 						GA_HintInfo, g->shared->helphints[GID_BACK],
 						BUTTON_RenderImage,BitMapObj,
 							BITMAP_SourceFile,nav_west,
@@ -4066,9 +3969,10 @@ gui_window_create(struct browser_window *bw,
 					CHILD_WeightedWidth,0,
 					CHILD_WeightedHeight,0,
 					LAYOUT_AddChild, g->shared->objects[GID_FORWARD] = ButtonObj,
-						GA_ID,GID_FORWARD,
-						GA_RelVerify,TRUE,
-						GA_Disabled,TRUE,
+						GA_ID, GID_FORWARD,
+						GA_RelVerify, TRUE,
+						GA_Disabled, TRUE,
+						GA_ContextMenu, ami_ctxmenu_history_create(AMI_CTXMENU_HISTORY_FORWARD, g->shared),
 						GA_HintInfo, g->shared->helphints[GID_FORWARD],
 						BUTTON_RenderImage,BitMapObj,
 							BITMAP_SourceFile,nav_east,
@@ -4423,8 +4327,7 @@ static void gui_window_destroy(struct gui_window *g)
 
 	cur_gw = NULL;
 
-	if(g->shared->tabs > 1)
-	{
+	if(g->shared->tabs > 1) {
 		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],g->shared->win,NULL,
 						CLICKTAB_Labels,~0,
 						TAG_DONE);
@@ -4467,7 +4370,6 @@ static void gui_window_destroy(struct gui_window *g)
 	DisposeObject(g->shared->objects[OID_MAIN]);
 	ami_gui_appicon_remove(g->shared);
 	if(g->shared->appwin) RemoveAppWindow(g->shared->appwin);
-
 	ami_gui_hotlist_toolbar_free(g->shared, &g->shared->hotlist_toolbar_list);
 
 	/* These aren't freed by the above.
@@ -4481,6 +4383,11 @@ static void gui_window_destroy(struct gui_window *g)
 	ami_gui_opts_websearch_free(g->shared->web_search_list);
 	if(g->shared->search_bm) DisposeObject(g->shared->search_bm);
 
+	/* This appears to be disposed along with the ClickTab object
+	if(g->shared->clicktab_ctxmenu) DisposeObject((Object *)g->shared->clicktab_ctxmenu); */
+	DisposeObject((Object *)g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_BACK]);
+	DisposeObject((Object *)g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_FORWARD]);
+	ami_ctxmenu_release_hook(g->shared->ctxmenu_hook);
 	ami_free_menulabs(g->shared);
 #ifndef __amigaos4__
 	ami_menu_free_os3(g->shared);
@@ -4493,8 +4400,7 @@ static void gui_window_destroy(struct gui_window *g)
 		free(g->shared->helphints[gid]);
 
 	DelObject(g->shared->node);
-	if(g->tab_node)
-	{
+	if(g->tab_node) {
 		Remove(g->tab_node);
 		FreeClickTabNode(g->tab_node);
 	}
@@ -5446,19 +5352,6 @@ int main(int argc, char** argv)
 	/* Open splash window */
 	Object *splash_window = ami_gui_splash_open();
 
-	/* Open popupmenu.library just to check the version.
-	 * Versions older than 53.11 are dangerous, so we
-	 * forcibly disable context menus if these are in use.
-	 */
-	popupmenu_lib_ok = FALSE;
-#ifdef __amigaos4__
-	if((PopupMenuBase = OpenLibrary("popupmenu.library", 53))) {
-		LOG("popupmenu.library v%d.%d", PopupMenuBase->lib_Version, PopupMenuBase->lib_Revision);
-		if(LIB_IS_AT_LEAST((struct Library *)PopupMenuBase, 53, 11))
-			popupmenu_lib_ok = TRUE;
-		CloseLibrary(PopupMenuBase);
-	}
-#endif
 	if (ami_open_resources() == false) { /* alloc message ports */
 		ami_misc_fatal_error("Unable to allocate resources");
 		return RETURN_FAIL;
@@ -5523,7 +5416,6 @@ int main(int argc, char** argv)
 	ami_openurl_open();
 	ami_amiupdate(); /* set env-vars for AmiUpdate */
 	ami_init_fonts();
-	ami_context_menu_init();
 	save_complete_init();
 	ami_theme_init();
 	ami_init_mouse_pointers();
@@ -5538,6 +5430,8 @@ int main(int argc, char** argv)
 	urldb_load_cookies(nsoption_charp(cookie_file));
 
 	gui_init2(argc, argv);
+
+	ami_ctxmenu_init(); /* Requires screen pointer */
 
 	ami_gui_splash_close(splash_window);
 
