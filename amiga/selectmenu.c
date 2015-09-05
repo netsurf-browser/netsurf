@@ -22,6 +22,7 @@
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/popupmenu.h>
+#include <proto/utility.h>
 #include <reaction/reaction_macros.h>
 
 #include "utils/errors.h"
@@ -33,6 +34,11 @@
 #include "amiga/selectmenu.h"
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
+
+/* Maximum number of items for a popupmenu.class select menu.
+ * 50 is about the limit for my screen, and popupmenu doesn't scroll.
+ */
+#define AMI_SELECTMENU_MAX 50
 
 /** Exported interface documented in selectmenu.h **/
 BOOL ami_selectmenu_is_safe(void)
@@ -69,6 +75,7 @@ void gui_create_form_select_menu(struct gui_window *g,
 	struct PopupMenuIFace *IPopupMenu = NULL;
 	struct Hook selectmenuhook;
 	Object *selectmenuobj;
+	char *selectmenu_item[AMI_SELECTMENU_MAX];
 	struct form_option *opt = form_select_get_option(control, 0);
 	ULONG i = 0;
 
@@ -80,22 +87,23 @@ void gui_create_form_select_menu(struct gui_window *g,
 
 	if(IPopupMenu == NULL) return;
 
+	ClearMem(selectmenu_item, AMI_SELECTMENU_MAX * 4);
+
 	selectmenuhook.h_Entry = ami_popup_hook;
 	selectmenuhook.h_SubEntry = NULL;
 	selectmenuhook.h_Data = g;
 
 	g->shared->control = control;
 
-	/**\todo PMIA_Title memory leaks as we don't free the strings.
-	 */
-
 	selectmenuobj = PMMENU(form_control_get_name(control)),
                         PMA_MenuHandler, &selectmenuhook, End;
 
 	while(opt) {
+		selectmenu_item[i] = ami_utf8_easy(opt->text);
+
 		IDoMethod(selectmenuobj, PM_INSERT,
 			NewObject(POPUPMENU_GetItemClass(), NULL,
-				PMIA_Title, (ULONG)ami_utf8_easy(opt->text),
+				PMIA_Title, (ULONG)selectmenu_item[i],
 				PMIA_ID, i,
 				PMIA_CheckIt, TRUE,
 				PMIA_Checked, opt->selected,
@@ -104,6 +112,8 @@ void gui_create_form_select_menu(struct gui_window *g,
 
 		opt = opt->next;
 		i++;
+
+		if(i >= AMI_SELECTMENU_MAX) break;
 	}
 
 	ami_set_pointer(g->shared, GUI_POINTER_DEFAULT, false); // Clear the menu-style pointer
@@ -116,6 +126,14 @@ void gui_create_form_select_menu(struct gui_window *g,
 	/* ...and get rid of popupmenu.class ASAP */
 	if(IPopupMenu) DropInterface((struct Interface *)IPopupMenu);
 	if(PopupMenuBase) CloseLibrary(PopupMenuBase);
+
+	/* Free the menu labels */
+	for(i = 0; i < AMI_SELECTMENU_MAX; i++) {
+		if(selectmenu_item[i] != NULL) {
+			ami_utf8_free(selectmenu_item[i]);
+			selectmenu_item[i] = NULL;
+		}
+	}
 }
 
 #else
