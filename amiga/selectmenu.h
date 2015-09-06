@@ -19,6 +19,8 @@
 #ifndef AMIGA_SELECTMENU_H
 #define AMIGA_SELECTMENU_H
 
+#include <exec/types.h>
+
 struct gui_window;
 struct form_control;
 

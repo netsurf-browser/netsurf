@@ -22,7 +22,6 @@
 
 #ifndef AMIGA_CTXMENU_H
 #define AMIGA_CTXMENU_H 1
-
 struct Hook;
 struct Menu;
 struct gui_window_2;
@@ -32,6 +31,7 @@ enum {
 	AMI_CTXMENU_HISTORY_FORWARD = 1
 };
 
+#ifdef __amigaos4__
 /**
  * Initialise context menus code (allocate label text, etc)
  * Must be called *after* NetSurf's screen pointer is obtained.
@@ -80,10 +80,13 @@ struct Menu *ami_ctxmenu_history_create(int direction, struct gui_window_2 *gwin
  */
 struct Menu *ami_ctxmenu_clicktab_create(struct gui_window_2 *gwin);
 
-#else
+#else //__amigaos4__
 inline void ami_ctxmenu_init(void) {}
 inline void ami_ctxmenu_free(void) {}
 inline struct Hook *ami_ctxmenu_get_hook(APTR data) {return NULL;}
 inline void ami_ctxmenu_release_hook(struct Hook *hook) {}
 inline struct Menu *ami_ctxmenu_history_create(int direction, struct gui_window_2 *gwin) {return NULL;}
-#endif
+inline struct Menu *ami_ctxmenu_clicktab_create(struct gui_window_2 *gwin) {return NULL;}
+#endif //__amigaos4__
+#endif //AMIGA_CTXMENU_H
+
