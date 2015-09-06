@@ -3781,10 +3781,9 @@ gui_window_create(struct browser_window *bw,
 		    (locked_screen == TRUE) &&
 		    (strcmp(nsoption_charp(pubscreen_name), "Workbench") == 0))
 				iconifygadget = TRUE;
-		ami_create_menu(g->shared);
-#ifndef __amigaos4__
-		struct Menu *menu = ami_menu_create_os3(g->shared, g->shared->menu);
-#endif
+
+		struct Menu *menu = ami_menu_create(g->shared);
+
 		NewList(&g->shared->tab_list);
 		g->tab_node = AllocClickTabNode(TNA_Text,messages_get("NetSurf"),
 											TNA_Number, 0,
@@ -3933,11 +3932,7 @@ gui_window_create(struct browser_window *bw,
 				IDCMP_REFRESHWINDOW |
 				IDCMP_ACTIVEWINDOW | IDCMP_EXTENDEDMOUSE,
 			WINDOW_IconifyGadget, iconifygadget,
-#ifdef __amigaos4__
-			WINDOW_NewMenu, g->shared->menu,
-#else
 			WINDOW_MenuStrip, menu,
-#endif
 			WINDOW_MenuUserData, WGUD_HOOK,
 			WINDOW_NewPrefsHook, &newprefs_hook,
 			WINDOW_IDCMPHook, &g->shared->scrollerhook,
@@ -4389,9 +4384,8 @@ static void gui_window_destroy(struct gui_window *g)
 	DisposeObject((Object *)g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_FORWARD]);
 	ami_ctxmenu_release_hook(g->shared->ctxmenu_hook);
 	ami_free_menulabs(g->shared);
-#ifndef __amigaos4__
-	ami_menu_free_os3(g->shared);
-#endif
+	ami_menu_free(g->shared);
+
 	free(g->shared->wintitle);
 	ami_utf8_free(g->shared->status);
 	FreeVec(g->shared->svbuffer);
