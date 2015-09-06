@@ -4200,11 +4200,15 @@ gui_window_create(struct browser_window *bw,
 				"frbuttonclass", /**\todo find appropriate class which works on OS3 */
 				GA_ID, GID_STATUS,
 				GA_Left, scrn->WBorLeft + 2,
+#ifdef __amigaos4__
 				GA_RelBottom, -((2 + height + scrn->WBorBottom - scrn->RastPort.TxHeight)/2),
+				GA_BottomBorder, TRUE,
+#else
+				GA_Top, g->shared->win->Height,
+#endif
 				GA_Width, width,
 				GA_Height, 1 + height - scrn->WBorBottom,
 				GA_DrawInfo, dri,
-				GA_BottomBorder, TRUE,
 				GA_ReadOnly, TRUE,
 				GA_Disabled, TRUE,
 				GA_Image, (struct Image *)NewObject(
