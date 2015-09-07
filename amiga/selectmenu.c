@@ -27,6 +27,7 @@
 
 #include "utils/errors.h"
 #include "utils/log.h"
+#include "utils/messages.h"
 #include "render/form.h"
 #include "desktop/mouse.h"
 
@@ -37,8 +38,18 @@
 
 /* Maximum number of items for a popupmenu.class select menu.
  * 50 is about the limit for my screen, and popupmenu doesn't scroll.
+ * We may need to calculate a value for this based on screen/font size.
+ *
+ * Additional entries will be added to a "More" menu...
  */
-#define AMI_SELECTMENU_MAX 50
+#define AMI_SELECTMENU_PAGE_MAX 40
+
+/* ...limited to the number of menus defined here... */
+#define AMI_SELECTMENU_MENU_MAX 10
+
+/* ...and resulting in this total number of entries. */
+#define AMI_SELECTMENU_MAX (AMI_SELECTMENU_PAGE_MAX * AMI_SELECTMENU_MENU_MAX)
+
 
 /** Exported interface documented in selectmenu.h **/
 BOOL ami_selectmenu_is_safe(void)
@@ -75,9 +86,14 @@ void gui_create_form_select_menu(struct gui_window *g,
 	struct PopupMenuIFace *IPopupMenu = NULL;
 	struct Hook selectmenuhook;
 	Object *selectmenuobj;
+	Object *smenu = NULL;
+	Object *currentmenu;
+	Object *submenu = NULL;
 	char *selectmenu_item[AMI_SELECTMENU_MAX];
+	char *more_label;
 	struct form_option *opt = form_select_get_option(control, 0);
-	ULONG i = 0;
+	int i = 0;
+	int n = 0;
 
 	if(ami_selectmenu_is_safe() == FALSE) return;
 
@@ -88,6 +104,7 @@ void gui_create_form_select_menu(struct gui_window *g,
 	if(IPopupMenu == NULL) return;
 
 	ClearMem(selectmenu_item, AMI_SELECTMENU_MAX * 4);
+	more_label = ami_utf8_easy(messages_get("More"));
 
 	selectmenuhook.h_Entry = ami_popup_hook;
 	selectmenuhook.h_SubEntry = NULL;
@@ -98,10 +115,12 @@ void gui_create_form_select_menu(struct gui_window *g,
 	selectmenuobj = PMMENU(form_control_get_name(control)),
                         PMA_MenuHandler, &selectmenuhook, End;
 
+	currentmenu = selectmenuobj;
+
 	while(opt) {
 		selectmenu_item[i] = ami_utf8_easy(opt->text);
 
-		IDoMethod(selectmenuobj, PM_INSERT,
+		IDoMethod(currentmenu, PM_INSERT,
 			NewObject(POPUPMENU_GetItemClass(), NULL,
 				PMIA_Title, (ULONG)selectmenu_item[i],
 				PMIA_ID, i,
@@ -112,8 +131,38 @@ void gui_create_form_select_menu(struct gui_window *g,
 
 		opt = opt->next;
 		i++;
+		n++;
+
+		if(n == AMI_SELECTMENU_PAGE_MAX) {
+			if(submenu != NULL) {
+				/* attach the previous submenu */
+				IDoMethod(smenu, PM_INSERT,
+					NewObject(NULL, "popupmenuitem.class",
+						PMIA_Title, more_label,
+						PMIA_CheckIt, TRUE,
+						PMIA_SubMenu, submenu,
+					TAG_DONE),
+				~0);
+			}
+
+			submenu = NewObject(NULL, "popupmenu.class", TAG_DONE);
+			smenu = currentmenu;
+			currentmenu = submenu;
+			n = 0;
+		}
 
 		if(i >= AMI_SELECTMENU_MAX) break;
+	}
+
+	if((submenu != NULL) && (n != 0)) {
+		/* attach the previous submenu */
+		IDoMethod(smenu, PM_INSERT,
+			NewObject(NULL, "popupmenuitem.class",
+				PMIA_Title, more_label,
+				PMIA_CheckIt, TRUE,
+				PMIA_SubMenu, submenu,
+			TAG_DONE),
+		~0);
 	}
 
 	ami_set_pointer(g->shared, GUI_POINTER_DEFAULT, false); // Clear the menu-style pointer
@@ -128,6 +177,7 @@ void gui_create_form_select_menu(struct gui_window *g,
 	if(PopupMenuBase) CloseLibrary(PopupMenuBase);
 
 	/* Free the menu labels */
+	if(more_label) ami_utf8_free(more_label);
 	for(i = 0; i < AMI_SELECTMENU_MAX; i++) {
 		if(selectmenu_item[i] != NULL) {
 			ami_utf8_free(selectmenu_item[i]);

@@ -3831,6 +3831,12 @@ de.all.OK:OK
 fr.all.OK:OK
 it.all.OK:OK
 nl.all.OK:OK
+en.ami.More:More
+de.ami.More:More
+fr.ami.More:More
+it.ami.More:More
+nl.ami.More:More
+
 
 # Interactive help
 # ================
