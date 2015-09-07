@@ -76,3 +76,22 @@ getter Window::console()
 	}
 	return 1;
 %}
+
+getter Window::location()
+%{
+	duk_push_this(ctx);
+	duk_get_prop_string(ctx, -1, MAGIC(Location));
+	if (duk_is_undefined(ctx, -1)) {
+		duk_pop(ctx);
+
+		duk_push_pointer(ctx, llcache_handle_get_url(priv->htmlc->base.llcache));
+
+		if (dukky_create_object(ctx, PROTO_NAME(LOCATION), 1) != DUK_EXEC_SUCCESS) {
+			duk_error(ctx, DUK_ERR_ERROR, "Unable to create location object");
+			return 0;
+		}
+		duk_dup(ctx, -1);
+		duk_put_prop_string(ctx, -3, MAGIC(Location));
+	}
+	return 1;
+%}

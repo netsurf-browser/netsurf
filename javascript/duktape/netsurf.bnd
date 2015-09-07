@@ -27,6 +27,7 @@ binding duk_libdom {
 #include <dom/dom.h>
 
 #include "utils/log.h"
+#include "utils/nsurl.h"
 
 #include "javascript/duktape/duktape.h"
 
@@ -58,6 +59,7 @@ struct dom_html_br_element;
 #include "NodeList.bnd"
 #include "Element.bnd"
 #include "HTMLCollection.bnd"
+#include "Location.bnd"
 
 /* specialisations of html_element */
 init HTMLUnknownElement("struct dom_html_element *" html_unknown_element::html_element);

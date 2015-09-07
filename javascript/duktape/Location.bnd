@@ -1,0 +1,206 @@
+/* Location binding for browser using duktape and libdom
+ *
+ * Copyright 2015 Vincent Sanders <vince@netsurf-browser.org>
+ * Copyright 2015 Daniel Silverstone <dsilvers@netsurf-browser.org>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * Released under the terms of the MIT License,
+ *         http://www.opensource.org/licenses/mit-license
+ */
+
+class Location {
+      private "nsurl *" url;
+}
+
+init Location("nsurl *" url)
+%{
+	priv->url = url;
+	nsurl_ref(url);
+%}
+
+fini Location()
+%{
+	nsurl_unref(priv->url);
+%}
+
+getter Location::href()
+%{
+	char *url_s = NULL;
+	size_t url_l;
+
+	nsurl_get(priv->url, NSURL_COMPLETE, &url_s, &url_l);
+	if (url_s == NULL) {
+		return 0;
+	}
+
+	duk_push_lstring(ctx, url_s, url_l);
+
+	free(url_s);
+
+	return 1;
+%}
+
+
+getter Location::protocol()
+%{
+	char *url_s = NULL;
+	size_t url_l;
+
+	nsurl_get(priv->url, NSURL_SCHEME, &url_s, &url_l);
+	if (url_s == NULL) {
+		return 0;
+	}
+
+	duk_push_lstring(ctx, url_s, url_l);
+
+	free(url_s);
+
+	return 1;
+%}
+
+
+getter Location::username()
+%{
+	char *url_s = NULL;
+	size_t url_l;
+
+	nsurl_get(priv->url, NSURL_USERNAME, &url_s, &url_l);
+	if (url_s == NULL) {
+		return 0;
+	}
+
+	duk_push_lstring(ctx, url_s, url_l);
+
+	free(url_s);
+
+	return 1;
+%}
+
+
+getter Location::password()
+%{
+	char *url_s = NULL;
+	size_t url_l;
+
+	nsurl_get(priv->url, NSURL_PASSWORD, &url_s, &url_l);
+	if (url_s == NULL) {
+		return 0;
+	}
+
+	duk_push_lstring(ctx, url_s, url_l);
+
+	free(url_s);
+
+	return 1;
+%}
+
+
+getter Location::host()
+%{
+	char *url_s = NULL;
+	size_t url_l;
+
+	nsurl_get(priv->url, NSURL_HOST, &url_s, &url_l);
+	if (url_s == NULL) {
+		return 0;
+	}
+
+	duk_push_lstring(ctx, url_s, url_l);
+
+	free(url_s);
+
+	return 1;
+%}
+
+
+getter Location::hostname()
+%{
+	char *url_s = NULL;
+	size_t url_l;
+
+	nsurl_get(priv->url, NSURL_COMPLETE, &url_s, &url_l);
+	if (url_s == NULL) {
+		return 0;
+	}
+
+	duk_push_lstring(ctx, url_s, url_l);
+
+	free(url_s);
+
+	return 1;
+%}
+
+
+getter Location::port()
+%{
+	char *url_s = NULL;
+	size_t url_l;
+
+	nsurl_get(priv->url, NSURL_PORT, &url_s, &url_l);
+	if (url_s == NULL) {
+		return 0;
+	}
+
+	duk_push_lstring(ctx, url_s, url_l);
+
+	free(url_s);
+
+	return 1;
+%}
+
+
+getter Location::pathname()
+%{
+	char *url_s = NULL;
+	size_t url_l;
+
+	nsurl_get(priv->url, NSURL_PATH, &url_s, &url_l);
+	if (url_s == NULL) {
+		return 0;
+	}
+
+	duk_push_lstring(ctx, url_s, url_l);
+
+	free(url_s);
+
+	return 1;
+%}
+
+
+getter Location::search()
+%{
+	char *url_s = NULL;
+	size_t url_l;
+
+	nsurl_get(priv->url, NSURL_QUERY, &url_s, &url_l);
+	if (url_s == NULL) {
+		return 0;
+	}
+
+	duk_push_lstring(ctx, url_s, url_l);
+
+	free(url_s);
+
+	return 1;
+%}
+
+
+getter Location::hash()
+%{
+	char *url_s = NULL;
+	size_t url_l;
+
+	nsurl_get(priv->url, NSURL_FRAGMENT, &url_s, &url_l);
+	if (url_s == NULL) {
+		return 0;
+	}
+
+	duk_push_lstring(ctx, url_s, url_l);
+
+	free(url_s);
+
+	return 1;
+%}
+
+
