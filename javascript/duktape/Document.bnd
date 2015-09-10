@@ -154,6 +154,19 @@ getter Document::body()
 	return 0; /* coerced to undefined */
 %}
 
+getter Document::location()
+%{
+	/* retrieve the location object from the root object (window) */
+	duk_push_global_object(ctx);
+	duk_get_prop_string(ctx, -1, "location");
+	if (duk_is_undefined(ctx, -1)) {
+		duk_pop(ctx);
+		return 0;
+	}
+	return 1;
+%}
+
+
 method Document::getElementById()
 %{
 	dom_string *elementId_dom;
