@@ -9,10 +9,10 @@
  */
 
 class HTMLCollection {
-	private "struct dom_html_collection *" coll;
-}
+	private struct dom_html_collection *coll;
+};
 
-init HTMLCollection("struct dom_html_collection *" coll)
+init HTMLCollection(struct dom_html_collection *coll)
 %{
 	priv->coll = coll;
 	dom_html_collection_ref(coll);

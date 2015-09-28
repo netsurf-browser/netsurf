@@ -9,10 +9,10 @@
  */
 
 class NodeList {
-	private "struct dom_nodelist *" nodes;
-}
+	private struct dom_nodelist *nodes;
+};
 
-init NodeList("struct dom_nodelist *" nodes)
+init NodeList(struct dom_nodelist *nodes)
 %{
 	priv->nodes = nodes;
 	dom_nodelist_ref(nodes);

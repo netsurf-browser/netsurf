@@ -10,13 +10,15 @@
  */
 
 class Location {
-	private "nsurl *" url;
-	prologue %{
-#include "desktop/browser.h"
-%};
-}
+	private nsurl *url;
+};
 
-init Location("nsurl *" url)
+prologue Location()
+%{
+#include "desktop/browser.h"
+%}
+
+init Location(nsurl *url)
 %{
 	priv->url = url;
 	nsurl_ref(url);

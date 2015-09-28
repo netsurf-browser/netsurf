@@ -14,9 +14,9 @@ class Document {
 #include "render/html_internal.h"
 #include "utils/libdom.h"
 %};
-}
+};
 
-init Document("struct dom_document *" document::node);
+init Document(struct dom_document *document::node);
 
 method Document::write()
 %{

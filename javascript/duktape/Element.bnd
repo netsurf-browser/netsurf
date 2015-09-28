@@ -11,9 +11,9 @@
 class Element {
 	prologue %{
 %};
-}
+};
 
-init Element("struct dom_element *" element::node);
+init Element(struct dom_element *element::node);
 
 getter Element::firstElementChild()
 %{

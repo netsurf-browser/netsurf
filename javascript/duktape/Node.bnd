@@ -9,10 +9,10 @@
  */
 
 class Node {
-	private "dom_node *" node;
-}
+	private dom_node *node;
+};
 
-init Node("struct dom_node *" node)
+init Node(struct dom_node *node)
 %{
 	priv->node = node;
 	dom_node_ref(node);

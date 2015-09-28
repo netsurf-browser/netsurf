@@ -10,7 +10,7 @@
  */
 
 class Console {
-      private "unsigned int" group;
+      private unsigned int group;
       prologue %{
 #include <nsutils/time.h>
 
@@ -38,7 +38,7 @@ write_log_entry(duk_context *ctx, unsigned int group, char logtype)
 }
 
 %};
-}
+};
 
 init Console ()
 %{

@@ -9,17 +9,17 @@
  */
 
 class Window {
-	private "struct browser_window *" win;
-	private "struct html_content *" htmlc;
+	private struct browser_window * win;
+	private struct html_content * htmlc;
 	prologue %{
 #include "utils/nsurl.h"
 #include "desktop/browser.h"
 #include "render/html.h"
 #include "render/html_internal.h"
 %};
-}
+};
 
-init Window("struct browser_window *" win, "struct html_content *" htmlc)
+init Window(struct browser_window *win, struct html_content *htmlc)
 %{
 	/* element window */
 	priv->win = win;
