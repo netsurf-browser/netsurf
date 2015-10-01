@@ -13,6 +13,7 @@ class Document {
 #include "utils/corestrings.h"
 #include "render/html_internal.h"
 #include "utils/libdom.h"
+#include "utils/utils.h"
 %};
 };
 
@@ -34,6 +35,27 @@ method Document::write()
 	assert(htmlc != NULL);
 	if (err == DOM_NO_ERR && htmlc->parser != NULL) {
 		dom_hubbub_parser_insert_chunk(htmlc->parser, (uint8_t *)text, text_len);
+	}
+	return 0;
+%}
+
+method Document::writeln()
+%{
+	const char nl[] = "\n";
+	struct html_content *htmlc;
+	duk_size_t text_len;
+	for (int i = 0; i < duk_get_top(ctx); ++i)
+		duk_safe_to_string(ctx, i);
+	duk_concat(ctx, duk_get_top(ctx));
+	const char *text = duk_safe_to_lstring(ctx, 0, &text_len);
+	LOG("Writeln %*s", (int)text_len, text);
+	dom_exception err;
+	err = dom_node_get_user_data(priv->parent.node,
+				     corestring_dom___ns_key_html_content_data,
+				     &htmlc);
+	if (err == DOM_NO_ERR && htmlc->parser != NULL) {
+		dom_hubbub_parser_insert_chunk(htmlc->parser, (uint8_t *)text, text_len);
+		dom_hubbub_parser_insert_chunk(htmlc->parser, (uint8_t *)nl, SLEN(nl));
 	}
 	return 0;
 %}
