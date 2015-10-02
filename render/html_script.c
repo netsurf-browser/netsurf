@@ -183,6 +183,13 @@ convert_script_async_cb(hlcache_handle *script,
 		break;
 	}
 
+	/* if there are no active fetches remaining begin post parse
+	 * conversion
+	 */
+	if (html_can_begin_conversion(parent)) {
+		html_begin_conversion(parent);
+	}
+
 	return NSERROR_OK;
 }
 
