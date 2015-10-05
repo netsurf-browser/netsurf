@@ -1,6 +1,6 @@
 // HTML web IDL
 // Retrived from https://html.spec.whatwg.org/
-// Sat Jul 18 2015
+// Mon Oct  5 2015
 
 
 typedef (Int8Array or Uint8Array or Uint8ClampedArray or
@@ -9,16 +9,16 @@ typedef (Int8Array or Uint8Array or Uint8ClampedArray or
          Float32Array or Float64Array or
          DataView) ArrayBufferView;
 
-interface HTMLAllCollection : HTMLCollection {
-  // inherits length and 'getter'
-  Element? item(unsigned long index);
+interface HTMLAllCollection {
+  readonly attribute unsigned long length;
+  getter Element? item(unsigned long index);
   (HTMLCollection or Element)? item(DOMString name);
-  legacycaller getter (HTMLCollection or Element)? namedItem(DOMString name); // shadows inherited namedItem()
+  legacycaller getter (HTMLCollection or Element)? namedItem(DOMString name);
 };
 
 interface HTMLFormControlsCollection : HTMLCollection {
   // inherits length and item()
-  legacycaller getter (RadioNodeList or Element)? namedItem(DOMString name); // shadows inherited namedItem()
+  getter (RadioNodeList or Element)? namedItem(DOMString name); // shadows inherited namedItem()
 };
 
 interface RadioNodeList : NodeList {
@@ -26,37 +26,24 @@ interface RadioNodeList : NodeList {
 };
 
 interface HTMLOptionsCollection : HTMLCollection {
-  // inherits item()
+  // inherits item(), namedItem()
   attribute unsigned long length; // shadows inherited length
-  legacycaller HTMLOptionElement? (DOMString name);
-  setter creator void (unsigned long index, HTMLOptionElement? option);
+  setter void (unsigned long index, HTMLOptionElement? option);
   void add((HTMLOptionElement or HTMLOptGroupElement) element, optional (HTMLElement or long)? before = null);
   void remove(long index);
   attribute long selectedIndex;
 };
 
-interface HTMLPropertiesCollection : HTMLCollection {
-  // inherits length and item()
-  getter PropertyNodeList? namedItem(DOMString name); // shadows inherited namedItem()
-  [SameObject] readonly attribute DOMString[] names;
-};
-
-typedef sequence<any> PropertyValueArray;
-
-interface PropertyNodeList : NodeList {
-  PropertyValueArray getValues();
-};
-
 [OverrideBuiltins, Exposed=(Window,Worker)]
 interface DOMStringMap {
   getter DOMString (DOMString name);
-  setter creator void (DOMString name, DOMString value);
+  setter void (DOMString name, DOMString value);
   deleter void (DOMString name);
 };
 
 interface DOMElementMap {
   getter Element (DOMString name);
-  setter creator void (DOMString name, Element value);
+  setter void (DOMString name, Element value);
   deleter void (DOMString name);
 };
 
@@ -89,7 +76,6 @@ partial /*sealed*/ interface Document {
   [SameObject] readonly attribute HTMLCollection forms;
   [SameObject] readonly attribute HTMLCollection scripts;
   NodeList getElementsByName(DOMString elementName);
-  NodeList getItems(optional DOMString typeNames = ""); // microdata
   [SameObject] readonly attribute DOMElementMap cssElementMap;
   readonly attribute HTMLScriptElement? currentScript;
 
@@ -131,15 +117,6 @@ interface HTMLElement : Element {
   attribute boolean translate;
   attribute DOMString dir;
   [SameObject] readonly attribute DOMStringMap dataset;
-
-  // microdata
-  attribute boolean itemScope;
-  [PutForwards=value] readonly attribute DOMSettableTokenList itemType;
-  attribute DOMString itemId;
-  [PutForwards=value] readonly attribute DOMSettableTokenList itemRef;
-  [PutForwards=value] readonly attribute DOMSettableTokenList itemProp;
-  readonly attribute HTMLPropertiesCollection properties;
-  attribute any itemValue; // acts as DOMString on setting
 
   // user interaction
   attribute boolean hidden;
@@ -207,6 +184,7 @@ interface HTMLMetaElement : HTMLElement {
 
 interface HTMLStyleElement : HTMLElement {
   attribute DOMString media;
+  attribute DOMString nonce;
   attribute DOMString type;
   attribute boolean scoped;
 };
@@ -267,7 +245,7 @@ interface HTMLDivElement : HTMLElement {
 interface HTMLAnchorElement : HTMLElement {
   attribute DOMString target;
   attribute DOMString download;
-  [PutForwards=value] attribute DOMSettableTokenList ping;
+  [PutForwards=value] readonly attribute DOMSettableTokenList ping;
   attribute DOMString rel;
   readonly attribute DOMTokenList relList;
   attribute DOMString hreflang;
@@ -634,7 +612,6 @@ dictionary TrackEventInit : EventInit {
 interface HTMLMapElement : HTMLElement {
   attribute DOMString name;
   readonly attribute HTMLCollection areas;
-  readonly attribute HTMLCollection images;
 };
 
 interface HTMLAreaElement : HTMLElement {
@@ -643,7 +620,7 @@ interface HTMLAreaElement : HTMLElement {
   attribute DOMString shape;
   attribute DOMString target;
   attribute DOMString download;
-  [PutForwards=value] attribute DOMSettableTokenList ping;
+  [PutForwards=value] readonly attribute DOMSettableTokenList ping;
   attribute DOMString rel;
   readonly attribute DOMTokenList relList;
   attribute DOMString hreflang;
@@ -861,7 +838,7 @@ interface HTMLSelectElement : HTMLElement {
   void add((HTMLOptionElement or HTMLOptGroupElement) element, optional (HTMLElement or long)? before = null);
   void remove(); // ChildNode overload
   void remove(long index);
-  setter creator void (unsigned long index, HTMLOptionElement? option);
+  setter void (unsigned long index, HTMLOptionElement? option);
 
   readonly attribute HTMLCollection selectedOptions;
   attribute long selectedIndex;
@@ -1097,6 +1074,7 @@ interface HTMLScriptElement : HTMLElement {
   attribute boolean defer;
   attribute DOMString? crossOrigin;
   attribute DOMString text;
+  attribute DOMString nonce;
 
   // also has obsolete members
 };
@@ -1139,6 +1117,8 @@ dictionary CanvasRenderingContext2DSettings {
   boolean alpha = true;
 };
 
+enum ImageSmoothingQuality { "low", "medium", "high" };
+
 [Constructor(),
  Constructor(unsigned long width, unsigned long height),
  Exposed=(Window,Worker)]
@@ -1159,7 +1139,7 @@ interface CanvasRenderingContext2D {
   void restore(); // pop state stack and restore state
 
   // transformations (default transform is the identity matrix)
-  attribute SVGMatrix currentTransform;
+  attribute DOMMatrix currentTransform;
   void scale(unrestricted double x, unrestricted double y);
   void rotate(unrestricted double angle);
   void translate(unrestricted double x, unrestricted double y);
@@ -1173,6 +1153,7 @@ interface CanvasRenderingContext2D {
 
   // image smoothing
   attribute boolean imageSmoothingEnabled; // (default true)
+  attribute ImageSmoothingQuality imageSmoothingQuality; // (default low)
 
   // colours and styles (see also the CanvasDrawingStyles interface)
   attribute (DOMString or CanvasGradient or CanvasPattern) strokeStyle; // (default black)
@@ -1279,7 +1260,7 @@ interface CanvasGradient {
 [Exposed=(Window,Worker)]
 interface CanvasPattern {
   // opaque object
-  void setTransform(SVGMatrix transform);
+  void setTransform(DOMMatrix transform);
 };
 
 [Exposed=(Window,Worker)]
@@ -1329,15 +1310,15 @@ DrawingStyle implements CanvasDrawingStyles;
 
 [Constructor,
  Constructor(Path2D path),
- Constructor(Path2D[] paths, optional CanvasFillRule fillRule = "nonzero"),
+ Constructor(sequence<Path2D> paths, optional CanvasFillRule fillRule = "nonzero"),
  Constructor(DOMString d), Exposed=(Window,Worker)]
 interface Path2D {
-  void addPath(Path2D path, optional SVGMatrix? transformation = null);
-  void addPathByStrokingPath(Path2D path, CanvasDrawingStyles styles, optional SVGMatrix? transformation = null);
-  void addText(DOMString text, CanvasDrawingStyles styles, SVGMatrix? transformation, unrestricted double x, unrestricted double y, optional unrestricted double maxWidth);
-  void addPathByStrokingText(DOMString text, CanvasDrawingStyles styles, SVGMatrix? transformation, unrestricted double x, unrestricted double y, optional unrestricted double maxWidth);
-  void addText(DOMString text, CanvasDrawingStyles styles, SVGMatrix? transformation, Path2D path, optional unrestricted double maxWidth);
-  void addPathByStrokingText(DOMString text, CanvasDrawingStyles styles, SVGMatrix? transformation, Path2D path, optional unrestricted double maxWidth);
+  void addPath(Path2D path, optional DOMMatrix? transformation = null);
+  void addPathByStrokingPath(Path2D path, CanvasDrawingStyles styles, optional DOMMatrix? transformation = null);
+  void addText(DOMString text, CanvasDrawingStyles styles, DOMMatrix? transformation, unrestricted double x, unrestricted double y, optional unrestricted double maxWidth);
+  void addPathByStrokingText(DOMString text, CanvasDrawingStyles styles, DOMMatrix? transformation, unrestricted double x, unrestricted double y, optional unrestricted double maxWidth);
+  void addText(DOMString text, CanvasDrawingStyles styles, DOMMatrix? transformation, Path2D path, optional unrestricted double maxWidth);
+  void addPathByStrokingText(DOMString text, CanvasDrawingStyles styles, DOMMatrix? transformation, Path2D path, optional unrestricted double maxWidth);
 };
 Path2D implements CanvasPathMethods;
 
@@ -1399,7 +1380,7 @@ interface DragEvent : MouseEvent {
 };
 
 dictionary DragEventInit : MouseEventInit {
-  DataTransfer? dataTransfer;
+  DataTransfer? dataTransfer = null;
 };
 
 [PrimaryGlobal]
@@ -1448,8 +1429,8 @@ dictionary DragEventInit : MouseEventInit {
   void print();
   any showModalDialog(DOMString url, optional any argument); // deprecated
 
-  long requestAnimationFrame(FrameRequestCallback callback);
-  void cancelAnimationFrame(long handle);
+  unsigned long requestAnimationFrame(FrameRequestCallback callback);
+  void cancelAnimationFrame(unsigned long handle);
 
   void postMessage(any message, DOMString targetOrigin, optional sequence<Transferable> transfer);
 
@@ -1458,14 +1439,16 @@ dictionary DragEventInit : MouseEventInit {
 Window implements GlobalEventHandlers;
 Window implements WindowEventHandlers;
 
+callback FrameRequestCallback = void (DOMHighResTimeStamp time);
+
 interface BarProp {
-  attribute boolean visible;
+  readonly attribute boolean visible;
 };
 
 interface History {
-  readonly attribute long length;
+  readonly attribute unsigned long length;
   readonly attribute any state;
-  void go(optional long delta);
+  void go(optional long delta = 0);
   void back();
   void forward();
   void pushState(any data, DOMString title, optional DOMString? url = null);
@@ -1620,7 +1603,7 @@ interface GlobalEventHandlers {
   attribute EventHandler onmouseout;
   attribute EventHandler onmouseover;
   attribute EventHandler onmouseup;
-  attribute EventHandler onmousewheel;
+  attribute EventHandler onwheel;
   attribute EventHandler onpause;
   attribute EventHandler onplay;
   attribute EventHandler onplaying;
@@ -1666,6 +1649,7 @@ interface WindowBase64 {
   DOMString atob(DOMString atob);
 };
 Window implements WindowBase64;
+WorkerGlobalScope implements WindowBase64;
 
 [NoInterfaceObject, Exposed=(Window,Worker)]
 interface WindowTimers {
@@ -1677,6 +1661,7 @@ interface WindowTimers {
   void clearInterval(optional long handle = 0);
 };
 Window implements WindowTimers;
+WorkerGlobalScope implements WindowTimers;
 
 [NoInterfaceObject]
 interface WindowModal {
@@ -1696,14 +1681,21 @@ Navigator implements NavigatorPlugins;
 
 [NoInterfaceObject, Exposed=(Window,Worker)]
 interface NavigatorID {
-  readonly attribute DOMString appCodeName; // constant "Mozilla"
-  readonly attribute DOMString appName;
+  [Exposed=Window] readonly attribute DOMString appCodeName; // constant "Mozilla"
+  readonly attribute DOMString appName; // constant "Netscape"
   readonly attribute DOMString appVersion;
   readonly attribute DOMString platform;
-  readonly attribute DOMString product; // constant "Gecko"
-  boolean taintEnabled(); // constant false
+  [Exposed=Window] readonly attribute DOMString product; // constant "Gecko"
+  [Exposed=Window] readonly attribute DOMString productSub;
   readonly attribute DOMString userAgent;
-  readonly attribute DOMString vendorSub;
+  [Exposed=Window] readonly attribute DOMString vendor;
+  [Exposed=Window] readonly attribute DOMString vendorSub; // constant ""
+
+  // also has obsolete members
+};
+
+partial interface NavigatorID {
+  [Exposed=Window] boolean taintEnabled(); // constant false
 };
 
 [NoInterfaceObject, Exposed=(Window,Worker)]
@@ -1800,7 +1792,7 @@ interface MessageEvent : Event {
   readonly attribute (WindowProxy or MessagePort)? source;
   readonly attribute MessagePort[]? ports;
 
-  void initMessageEvent(DOMString typeArg, boolean canBubbleArg, boolean cancelableArg, any dataArg, DOMString originArg, DOMString lastEventIdArg, (WindowProxy or MessagePort) sourceArg, sequence<MessagePort>? portsArg);
+  void initMessageEvent(DOMString type, boolean bubbles, boolean cancelable, any data, DOMString origin, DOMString lastEventId, (WindowProxy or MessagePort)? source, sequence<MessagePort>? ports);
 };
 
 dictionary MessageEventInit : EventInit {
@@ -1808,7 +1800,7 @@ dictionary MessageEventInit : EventInit {
   DOMString origin;
   DOMString lastEventId;
   (WindowProxy or MessagePort)? source;
-  sequence<MessagePort> ports;
+  sequence<MessagePort>? ports;
 };
 
 [Constructor(DOMString url, optional EventSourceInit eventSourceInitDict), Exposed=(Window,Worker)]
@@ -1834,7 +1826,7 @@ dictionary EventSourceInit {
 };
 
 enum BinaryType { "blob", "arraybuffer" };
-[Constructor(DOMString url, optional (DOMString or DOMString[]) protocols), Exposed=(Window,Worker)]
+[Constructor(DOMString url, optional (DOMString or sequence<DOMString>) protocols), Exposed=(Window,Worker)]
 interface WebSocket : EventTarget {
   readonly attribute DOMString url;
 
@@ -1893,17 +1885,7 @@ interface MessagePort : EventTarget {
 };
 // MessagePort implements Transferable;
 
-[Constructor, Exposed=(Window,Worker)]
-interface PortCollection {
-  void add(MessagePort port);
-  void remove(MessagePort port);
-  void clear();
-  void iterate(PortCollectionCallback callback);
-};
-
-callback PortCollectionCallback = void (MessagePort port);
-
-[Constructor(DOMString channel), Exposed=(Window,Worker)]
+[Constructor(DOMString name), Exposed=(Window,Worker)]
 interface BroadcastChannel : EventTarget {
   readonly attribute DOMString name;
   void postMessage(any message);
@@ -1915,14 +1897,14 @@ interface BroadcastChannel : EventTarget {
 interface WorkerGlobalScope : EventTarget {
   readonly attribute WorkerGlobalScope self;
   readonly attribute WorkerLocation location;
+  readonly attribute WorkerNavigator navigator;
+  void importScripts(DOMString... urls);
 
   void close();
   attribute OnErrorEventHandler onerror;
   attribute EventHandler onlanguagechange;
   attribute EventHandler onoffline;
   attribute EventHandler ononline;
-
-  // also has additional members in a partial interface
 };
 
 [Global=(Worker,DedicatedWorker),Exposed=DedicatedWorker]
@@ -1952,19 +1934,11 @@ interface Worker : EventTarget {
 };
 Worker implements AbstractWorker;
 
-[Constructor(DOMString scriptURL, optional DOMString name), Exposed=(Window,Worker)]
+[Constructor(DOMString scriptURL, optional DOMString name = ""), Exposed=(Window,Worker)]
 interface SharedWorker : EventTarget {
   readonly attribute MessagePort port;
 };
 SharedWorker implements AbstractWorker;
-
-[Exposed=Worker]
-partial interface WorkerGlobalScope { // not obsolete
-  void importScripts(DOMString... urls);
-  readonly attribute WorkerNavigator navigator;
-};
-WorkerGlobalScope implements WindowTimers;
-WorkerGlobalScope implements WindowBase64;
 
 [Exposed=Worker]
 interface WorkerNavigator {};
@@ -1973,14 +1947,23 @@ WorkerNavigator implements NavigatorLanguage;
 WorkerNavigator implements NavigatorOnLine;
 
 [Exposed=Worker]
-interface WorkerLocation { };
-WorkerLocation implements URLUtilsReadOnly;
+interface WorkerLocation {
+  stringifier readonly attribute USVString href;
+  readonly attribute USVString origin;
+  readonly attribute USVString protocol;
+  readonly attribute USVString host;
+  readonly attribute USVString hostname;
+  readonly attribute USVString port;
+  readonly attribute USVString pathname;
+  readonly attribute USVString search;
+  readonly attribute USVString hash;
+};
 
 interface Storage {
   readonly attribute unsigned long length;
   DOMString? key(unsigned long index);
   getter DOMString? getItem(DOMString key);
-  setter creator void setItem(DOMString key, DOMString value);
+  setter void setItem(DOMString key, DOMString value);
   deleter void removeItem(DOMString key);
   void clear();
 };
