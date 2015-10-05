@@ -32,9 +32,15 @@ method Document::write()
 	err = dom_node_get_user_data(priv->parent.node,
 				     corestring_dom___ns_key_html_content_data,
 				     &htmlc);
-	assert(htmlc != NULL);
-	if (err == DOM_NO_ERR && htmlc->parser != NULL) {
-		dom_hubbub_parser_insert_chunk(htmlc->parser, (uint8_t *)text, text_len);
+	if ((err == DOM_NO_ERR) &&
+	    (htmlc != NULL) &&
+	    (htmlc->parser != NULL)) {
+		dom_hubbub_parser_insert_chunk(htmlc->parser,
+					       (uint8_t *)text,
+					       text_len);
+	} else {
+		LOG("error getting htmlc. parent node:%p htmlc:%p",
+		    priv->parent.node, htmlc);
 	}
 	return 0;
 %}
