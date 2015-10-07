@@ -78,6 +78,7 @@ $(OBJROOT)/duktape/binding.h $(OBJROOT)/duktape/Makefile: javascript/duktape/net
 Docs/UnimplementedJavascript.txt: javascript/duktape/netsurf.bnd $(BINDINGS)
 	$(Q)mkdir -p $(OBJROOT)/duktape
 	$(VQ)echo "/** \page unimplemented Unimplemented javascript bindings" > $@
+	$(VQ)echo "This is a list of all the binding methods, getters and setters without an implementation in a binding." >> $@
 	$(VQ)echo "" >> $@
 	$(VQ)echo " GENBIND: $<"
 	$(Q)nsgenbind -Wunimplemented -I javascript/WebIDL $< $(OBJROOT)/duktape 2>&1 >/dev/null | grep "Unimplemented" | cut -d' ' -f4- | sort -k 2 | awk '{print $$0"\\n" }' >> $@
