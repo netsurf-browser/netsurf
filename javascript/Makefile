@@ -72,7 +72,7 @@ BINDINGS := $(wildcard javascript/duktape/*.bnd)
 $(OBJROOT)/duktape/binding.h $(OBJROOT)/duktape/Makefile: javascript/duktape/netsurf.bnd $(BINDINGS)
 	$(Q)mkdir -p $(OBJROOT)/duktape
 	$(VQ)echo " GENBIND: $<"
-	$(Q)nsgenbind -D -g -I javascript/WebIDL $< $(OBJROOT)/duktape
+	$(Q)nsgenbind -D -I javascript/WebIDL $< $(OBJROOT)/duktape
 
 # create unimplemented report for doxygen
 Docs/UnimplementedJavascript.txt: javascript/duktape/netsurf.bnd $(BINDINGS)
