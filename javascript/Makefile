@@ -72,7 +72,16 @@ BINDINGS := $(wildcard javascript/duktape/*.bnd)
 $(OBJROOT)/duktape/binding.h $(OBJROOT)/duktape/Makefile: javascript/duktape/netsurf.bnd $(BINDINGS)
 	$(Q)mkdir -p $(OBJROOT)/duktape
 	$(VQ)echo " GENBIND: $<"
-	$(Q)nsgenbind -I javascript/WebIDL $< $(OBJROOT)/duktape
+	$(Q)nsgenbind -D -g -I javascript/WebIDL $< $(OBJROOT)/duktape
+
+# create unimplemented report for doxygen
+Docs/UnimplementedJavascript.txt: javascript/duktape/netsurf.bnd $(BINDINGS)
+	$(Q)mkdir -p $(OBJROOT)/duktape
+	$(VQ)echo "/** \page unimplemented Unimplemented javascript bindings" > $@
+	$(VQ)echo "" >> $@
+	$(VQ)echo " GENBIND: $<"
+	$(Q)nsgenbind -Wunimplemented -I javascript/WebIDL $< $(OBJROOT)/duktape 2>&1 >/dev/null | grep "Unimplemented" | cut -d' ' -f4- | sort -k 2 | awk '{print $$0"\\n" }' >> $@
+	$(VQ)echo "*/" >> $@
 
 ifeq ($(filter $(MAKECMDGOALS),clean test coverage),)
 -include $(OBJROOT)/duktape/Makefile
