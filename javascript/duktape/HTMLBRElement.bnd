@@ -1,0 +1,50 @@
+/* HTML br element binding using duktape and libdom
+ *
+ * Copyright 2015 Vincent Sanders <vince@netsurf-browser.org>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * Released under the terms of the MIT License,
+ *         http://www.opensource.org/licenses/mit-license
+ */
+
+init HTMLBRElement(struct dom_html_element *html_br_element::html_element);
+
+getter HTMLBRElement::clear()
+%{
+	dom_exception exc;
+	dom_string *str;
+
+	exc = dom_html_br_element_get_clear(((node_private_t*)priv)->node, &str);
+	if (exc != DOM_NO_ERR) {
+		return 0;
+	}
+
+	duk_push_lstring(ctx, dom_string_data(str), dom_string_length(str));
+	dom_string_unref(str);
+
+	return 1;
+
+%}
+
+setter HTMLBRElement::clear()
+%{
+	dom_exception exc;
+	dom_string *content;
+	duk_size_t slen;
+	const char *s;
+	s = duk_safe_to_lstring(ctx, 0, &slen);
+
+	exc = dom_string_create((const uint8_t *)s, slen, &content);
+	if (exc != DOM_NO_ERR) {
+		return 0;
+	}
+
+	exc = dom_html_br_element_set_clear(((node_private_t*)priv)->node, content);
+	dom_string_unref(content);
+	if (exc != DOM_NO_ERR) {
+		return 0;
+	}
+
+	return 0;
+%}

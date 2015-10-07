@@ -693,8 +693,6 @@ getter HTMLBodyElement::text();\n
 setter HTMLBodyElement::text();\n
 getter HTMLBodyElement::vLink();\n
 setter HTMLBodyElement::vLink();\n
-getter HTMLBRElement::clear();\n
-setter HTMLBRElement::clear();\n
 getter HTMLButtonElement::autofocus();\n
 setter HTMLButtonElement::autofocus();\n
 method HTMLButtonElement::checkValidity();\n
