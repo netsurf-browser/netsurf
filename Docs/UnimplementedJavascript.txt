@@ -1024,16 +1024,8 @@ getter HTMLFrameSetElement::rows();\n
 setter HTMLFrameSetElement::rows();\n
 getter HTMLHeadingElement::align();\n
 setter HTMLHeadingElement::align();\n
-getter HTMLHRElement::align();\n
-setter HTMLHRElement::align();\n
 getter HTMLHRElement::color();\n
 setter HTMLHRElement::color();\n
-getter HTMLHRElement::noShade();\n
-setter HTMLHRElement::noShade();\n
-getter HTMLHRElement::size();\n
-setter HTMLHRElement::size();\n
-getter HTMLHRElement::width();\n
-setter HTMLHRElement::width();\n
 getter HTMLHtmlElement::version();\n
 setter HTMLHtmlElement::version();\n
 getter HTMLIFrameElement::align();\n

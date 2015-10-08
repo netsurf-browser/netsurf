@@ -62,6 +62,7 @@ struct dom_html_br_element;
 #include "Location.bnd"
 #include "Navigator.bnd"
 #include "HTMLBRElement.bnd"
+#include "HTMLHRElement.bnd"
 
 /* specialisations of html_element */
 init HTMLUnknownElement(struct dom_html_element *html_unknown_element::html_element);
@@ -122,7 +123,6 @@ init HTMLUListElement(struct dom_html_element *html_u_list_element::html_element
 init HTMLOListElement(struct dom_html_element *html_o_list_element::html_element);
 init HTMLQuoteElement(struct dom_html_element *html_quote_element::html_element);
 init HTMLPreElement(struct dom_html_element *html_pre_element::html_element);
-init HTMLHRElement(struct dom_html_element *html_hr_element::html_element);
 init HTMLParagraphElement(struct dom_html_element *html_paragraph_element::html_element);
 init HTMLHeadingElement(struct dom_html_element *html_heading_element::html_element);
 init HTMLBodyElement(struct dom_html_element *html_body_element::html_element);
