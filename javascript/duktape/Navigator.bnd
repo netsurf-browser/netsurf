@@ -8,6 +8,11 @@
  *         http://www.opensource.org/licenses/mit-license
  */
 
+prologue Navigator()
+%{
+#include "utils/useragent.h"
+%}
+
 method Navigator::taintEnabled()
 %{
 	duk_push_boolean(ctx, false);
@@ -72,5 +77,11 @@ getter Navigator::cookieEnabled()
 getter Navigator::javaEnabled()
 %{
 	duk_push_boolean(ctx, false);
+	return 1;
+%}
+
+getter Navigator::userAgent()
+%{
+	duk_push_string(ctx, user_agent_string());
 	return 1;
 %}
