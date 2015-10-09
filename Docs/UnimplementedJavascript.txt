@@ -575,10 +575,6 @@ getter HTMLAppletElement::hspace(long);\n
 setter HTMLAppletElement::hspace(long);\n
 getter HTMLAppletElement::vspace(long);\n
 setter HTMLAppletElement::vspace(long);\n
-getter HTMLAreaElement::alt(string);\n
-setter HTMLAreaElement::alt(string);\n
-getter HTMLAreaElement::coords(string);\n
-setter HTMLAreaElement::coords(string);\n
 getter HTMLAreaElement::download(string);\n
 setter HTMLAreaElement::download(string);\n
 getter HTMLAreaElement::hash(user);\n
@@ -591,8 +587,6 @@ getter HTMLAreaElement::hreflang(string);\n
 setter HTMLAreaElement::hreflang(string);\n
 getter HTMLAreaElement::href(user);\n
 setter HTMLAreaElement::href(user);\n
-getter HTMLAreaElement::noHref(boolean);\n
-setter HTMLAreaElement::noHref(boolean);\n
 getter HTMLAreaElement::origin(user);\n
 getter HTMLAreaElement::password(user);\n
 setter HTMLAreaElement::password(user);\n
@@ -608,10 +602,6 @@ getter HTMLAreaElement::rel(string);\n
 setter HTMLAreaElement::rel(string);\n
 getter HTMLAreaElement::search(user);\n
 setter HTMLAreaElement::search(user);\n
-getter HTMLAreaElement::shape(string);\n
-setter HTMLAreaElement::shape(string);\n
-getter HTMLAreaElement::target(string);\n
-setter HTMLAreaElement::target(string);\n
 getter HTMLAreaElement::type(string);\n
 setter HTMLAreaElement::type(string);\n
 getter HTMLAreaElement::username(user);\n

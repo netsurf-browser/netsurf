@@ -64,6 +64,7 @@ struct dom_html_br_element;
 
 #include "HTMLAnchorElement.bnd"
 #include "HTMLAppletElement.bnd"
+#include "HTMLAreaElement.bnd"
 #include "HTMLBRElement.bnd"
 #include "HTMLHRElement.bnd"
 
@@ -102,7 +103,6 @@ init HTMLTableSectionElement(struct dom_html_element *html_table_section_element
 init HTMLTableColElement(struct dom_html_element *html_table_col_element::html_element);
 init HTMLTableCaptionElement(struct dom_html_element *html_table_caption_element::html_element);
 init HTMLTableElement(struct dom_html_element *html_table_element::html_element);
-init HTMLAreaElement(struct dom_html_element *html_area_element::html_element);
 init HTMLMapElement(struct dom_html_element *html_map_element::html_element);
 init HTMLMediaElement(struct dom_html_element *html_media_element::html_element);
 init HTMLTrackElement(struct dom_html_element *html_track_element::html_element);
