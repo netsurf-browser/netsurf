@@ -61,9 +61,11 @@ struct dom_html_br_element;
 #include "HTMLCollection.bnd"
 #include "Location.bnd"
 #include "Navigator.bnd"
+
+#include "HTMLAnchorElement.bnd"
+#include "HTMLAppletElement.bnd"
 #include "HTMLBRElement.bnd"
 #include "HTMLHRElement.bnd"
-#include "HTMLAnchorElement.bnd"
 
 /* specialisations of html_element */
 init HTMLUnknownElement(struct dom_html_element *html_unknown_element::html_element);
@@ -72,7 +74,6 @@ init HTMLDirectoryElement(struct dom_html_element *html_directory_element::html_
 init HTMLFrameElement(struct dom_html_element *html_frame_element::html_element);
 init HTMLFrameSetElement(struct dom_html_element *html_frame_set_element::html_element);
 init HTMLMarqueeElement(struct dom_html_element *html_marquee_element::html_element);
-init HTMLAppletElement(struct dom_html_element *html_applet_element::html_element);
 init HTMLCanvasElement(struct dom_html_element *html_canvas_element::html_element);
 init HTMLTemplateElement(struct dom_html_element *html_template_element::html_element);
 init HTMLScriptElement(struct dom_html_element *html_script_element::html_element);
