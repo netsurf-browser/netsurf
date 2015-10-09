@@ -37,38 +37,6 @@
 
 #include <dom/dom.h>
 
-
-duk_bool_t
-dukky_instanceof_at(duk_context *ctx, duk_idx_t _idx, const char *klass)
-{
-	duk_idx_t idx = duk_normalize_index(ctx, _idx);
-	/* ... ??? ... */
-	if (!duk_check_type(ctx, idx, DUK_TYPE_OBJECT)) {
-		return false;
-	}
-	/* ... obj ... */
-	duk_get_global_string(ctx, "\xFF\xFFNETSURF_DUKTAPE_PROTOTYPES");
-	/* ... obj ... protos */
-	duk_get_prop_string(ctx, -1, klass);
-	/* ... obj ... protos goalproto */
-	duk_get_prototype(ctx, idx);
-	/* ... obj ... protos goalproto proto? */
-	while (!duk_is_undefined(ctx, -1)) {
-		if (duk_strict_equals(ctx, -1, -2)) {
-			duk_pop_3(ctx);
-			/* ... obj ... */
-			return true;
-		}
-		duk_get_prototype(ctx, -1);
-		/* ... obj ... protos goalproto proto proto? */
-		duk_replace(ctx, -2);
-		/* ... obj ... protos goalproto proto? */
-	}
-	duk_pop_3(ctx);
-	/* ... obj ... */
-	return false;
-}
-
 static duk_ret_t dukky_populate_object(duk_context *ctx)
 {
 	/* ... obj args protoname nargs */
