@@ -65,6 +65,7 @@ struct dom_html_br_element;
 #include "HTMLAnchorElement.bnd"
 #include "HTMLAppletElement.bnd"
 #include "HTMLAreaElement.bnd"
+#include "HTMLBaseElement.bnd"
 #include "HTMLBRElement.bnd"
 #include "HTMLHRElement.bnd"
 
@@ -130,7 +131,6 @@ init HTMLBodyElement(struct dom_html_element *html_body_element::html_element);
 init HTMLStyleElement(struct dom_html_element *html_style_element::html_element);
 init HTMLMetaElement(struct dom_html_element *html_meta_element::html_element);
 init HTMLLinkElement(struct dom_html_element *html_link_element::html_element);
-init HTMLBaseElement(struct dom_html_element *html_base_element::html_element);
 init HTMLTitleElement(struct dom_html_element *html_title_element::html_element);
 init HTMLHeadElement(struct dom_html_element *html_head_element::html_element);
 init HTMLHtmlElement(struct dom_html_element *html_html_element::html_element);

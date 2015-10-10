@@ -606,10 +606,6 @@ getter HTMLAreaElement::type(string);\n
 setter HTMLAreaElement::type(string);\n
 getter HTMLAreaElement::username(user);\n
 setter HTMLAreaElement::username(user);\n
-getter HTMLBaseElement::href(string);\n
-setter HTMLBaseElement::href(string);\n
-getter HTMLBaseElement::target(string);\n
-setter HTMLBaseElement::target(string);\n
 getter HTMLBodyElement::aLink(string);\n
 setter HTMLBodyElement::aLink(string);\n
 getter HTMLBodyElement::background(string);\n
