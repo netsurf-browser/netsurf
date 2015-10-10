@@ -1,0 +1,24 @@
+/* HTML body element binding using duktape and libdom
+ *
+ * Copyright 2015 Vincent Sanders <vince@netsurf-browser.org>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * Released under the terms of the MIT License,
+ *         http://www.opensource.org/licenses/mit-license
+ */
+
+init HTMLBodyElement(struct dom_html_element *html_body_element::html_element);
+
+getter HTMLBodyElement::aLink();
+setter HTMLBodyElement::aLink();
+getter HTMLBodyElement::background();
+setter HTMLBodyElement::background();
+getter HTMLBodyElement::bgColor();
+setter HTMLBodyElement::bgColor();
+getter HTMLBodyElement::link();
+setter HTMLBodyElement::link();
+getter HTMLBodyElement::text();
+setter HTMLBodyElement::text();
+getter HTMLBodyElement::vLink();
+setter HTMLBodyElement::vLink();

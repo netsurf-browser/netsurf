@@ -66,6 +66,8 @@ struct dom_html_br_element;
 #include "HTMLAppletElement.bnd"
 #include "HTMLAreaElement.bnd"
 #include "HTMLBaseElement.bnd"
+#include "HTMLBodyElement.bnd"
+#include "HTMLButtonElement.bnd"
 #include "HTMLBRElement.bnd"
 #include "HTMLHRElement.bnd"
 
@@ -94,7 +96,6 @@ init HTMLOptionElement(struct dom_html_element *html_option_element::html_elemen
 init HTMLOptGroupElement(struct dom_html_element *html_opt_group_element::html_element);
 init HTMLDataListElement(struct dom_html_element *html_data_list_element::html_element);
 init HTMLSelectElement(struct dom_html_element *html_select_element::html_element);
-init HTMLButtonElement(struct dom_html_element *html_button_element::html_element);
 init HTMLInputElement(struct dom_html_element *html_input_element::html_element);
 init HTMLLabelElement(struct dom_html_element *html_label_element::html_element);
 init HTMLFormElement(struct dom_html_element *html_form_element::html_element);
@@ -127,7 +128,6 @@ init HTMLQuoteElement(struct dom_html_element *html_quote_element::html_element)
 init HTMLPreElement(struct dom_html_element *html_pre_element::html_element);
 init HTMLParagraphElement(struct dom_html_element *html_paragraph_element::html_element);
 init HTMLHeadingElement(struct dom_html_element *html_heading_element::html_element);
-init HTMLBodyElement(struct dom_html_element *html_body_element::html_element);
 init HTMLStyleElement(struct dom_html_element *html_style_element::html_element);
 init HTMLMetaElement(struct dom_html_element *html_meta_element::html_element);
 init HTMLLinkElement(struct dom_html_element *html_link_element::html_element);
