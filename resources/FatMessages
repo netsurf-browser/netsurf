@@ -550,11 +550,11 @@ de.ro.Launch:Öffnen  RETURN
 fr.ro.Launch:Lancer  RETURN
 it.ro.Launch:Avvia  INVIO
 nl.ro.Launch:Open  RETURN
-en.ro.Delete:Delete  ^X
-de.ro.Delete:Löschen  ^X
-fr.ro.Delete:Supprimer  ^X
-it.ro.Delete:Cancella  ^X
-nl.ro.Delete:Verwijder  ^X
+en.ro.Delete:Delete  Del
+de.ro.Delete:Löschen  Entf
+fr.ro.Delete:Supprimer  Suppr
+it.ro.Delete:Cancella  Canc
+nl.ro.Delete:Verwijder  Del
 en.all.ResetUsage:Reset statistics
 de.all.ResetUsage:Statistik zurücksetzen
 fr.all.ResetUsage:RAZ des statistiques
