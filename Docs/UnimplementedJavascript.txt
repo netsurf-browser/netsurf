@@ -703,8 +703,6 @@ setter HTMLElement::contentEditable(string);\n
 getter HTMLElement::contextMenu(user);\n
 setter HTMLElement::contextMenu(user);\n
 getter HTMLElement::dataset(user);\n
-getter HTMLElement::dir(string);\n
-setter HTMLElement::dir(string);\n
 getter HTMLElement::draggable(boolean);\n
 setter HTMLElement::draggable(boolean);\n
 getter HTMLElement::dropzone(user);\n
@@ -713,8 +711,6 @@ method HTMLElement::forceSpellCheck();\n
 getter HTMLElement::hidden(boolean);\n
 setter HTMLElement::hidden(boolean);\n
 getter HTMLElement::isContentEditable(boolean);\n
-getter HTMLElement::lang(string);\n
-setter HTMLElement::lang(string);\n
 getter HTMLElement::onabort(user);\n
 setter HTMLElement::onabort(user);\n
 getter HTMLElement::onautocompleteerror(user);\n
@@ -845,8 +841,6 @@ getter HTMLElement::spellcheck(boolean);\n
 setter HTMLElement::spellcheck(boolean);\n
 getter HTMLElement::tabIndex(long);\n
 setter HTMLElement::tabIndex(long);\n
-getter HTMLElement::title(string);\n
-setter HTMLElement::title(string);\n
 getter HTMLElement::translate(boolean);\n
 setter HTMLElement::translate(boolean);\n
 getter HTMLEmbedElement::align(string);\n

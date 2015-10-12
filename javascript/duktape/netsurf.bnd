@@ -69,6 +69,7 @@ struct dom_html_br_element;
 #include "HTMLBodyElement.bnd"
 #include "HTMLButtonElement.bnd"
 #include "HTMLBRElement.bnd"
+#include "HTMLElement.bnd"
 #include "HTMLHRElement.bnd"
 
 /* specialisations of html_element */
@@ -133,7 +134,6 @@ init HTMLMetaElement(struct dom_html_element *html_meta_element::html_element);
 init HTMLLinkElement(struct dom_html_element *html_link_element::html_element);
 init HTMLTitleElement(struct dom_html_element *html_title_element::html_element);
 init HTMLHeadElement(struct dom_html_element *html_head_element::html_element);
-init HTMLHtmlElement(struct dom_html_element *html_html_element::html_element);
 
 /* specialisations of HTMLTableCellElement */
 init HTMLTableHeaderCellElement(struct dom_html_element *html_table_header_cell_element::html_table_cell_element);
