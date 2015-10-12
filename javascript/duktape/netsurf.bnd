@@ -71,6 +71,7 @@ struct dom_html_br_element;
 #include "HTMLBRElement.bnd"
 #include "HTMLElement.bnd"
 #include "HTMLFontElement.bnd"
+#include "HTMLFormElement.bnd"
 #include "HTMLHRElement.bnd"
 
 /* specialisations of html_element */
@@ -99,7 +100,6 @@ init HTMLDataListElement(struct dom_html_element *html_data_list_element::html_e
 init HTMLSelectElement(struct dom_html_element *html_select_element::html_element);
 init HTMLInputElement(struct dom_html_element *html_input_element::html_element);
 init HTMLLabelElement(struct dom_html_element *html_label_element::html_element);
-init HTMLFormElement(struct dom_html_element *html_form_element::html_element);
 init HTMLTableCellElement(struct dom_html_element *html_table_cell_element::html_element);
 init HTMLTableRowElement(struct dom_html_element *html_table_row_element::html_element);
 init HTMLTableSectionElement(struct dom_html_element *html_table_section_element::html_element);
