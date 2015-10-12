@@ -70,11 +70,11 @@ struct dom_html_br_element;
 #include "HTMLButtonElement.bnd"
 #include "HTMLBRElement.bnd"
 #include "HTMLElement.bnd"
+#include "HTMLFontElement.bnd"
 #include "HTMLHRElement.bnd"
 
 /* specialisations of html_element */
 init HTMLUnknownElement(struct dom_html_element *html_unknown_element::html_element);
-init HTMLFontElement(struct dom_html_element *html_font_element::html_element);
 init HTMLDirectoryElement(struct dom_html_element *html_directory_element::html_element);
 init HTMLFrameElement(struct dom_html_element *html_frame_element::html_element);
 init HTMLFrameSetElement(struct dom_html_element *html_frame_set_element::html_element);

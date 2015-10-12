@@ -869,12 +869,6 @@ getter HTMLFieldSetElement::type(string);\n
 getter HTMLFieldSetElement::validationMessage(string);\n
 getter HTMLFieldSetElement::validity(user);\n
 getter HTMLFieldSetElement::willValidate(boolean);\n
-getter HTMLFontElement::color(string);\n
-setter HTMLFontElement::color(string);\n
-getter HTMLFontElement::face(string);\n
-setter HTMLFontElement::face(string);\n
-getter HTMLFontElement::size(string);\n
-setter HTMLFontElement::size(string);\n
 method HTMLFormControlsCollection::namedItem();\n
 getter HTMLFormElement::acceptCharset(string);\n
 setter HTMLFormElement::acceptCharset(string);\n
