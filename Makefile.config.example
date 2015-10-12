@@ -34,3 +34,5 @@
 # override NETSURF_USE_MOZJS := NO
 # override NETSURF_USE_MOZJS := YES
 
+### To change flags to javascript binding generator
+# GBFLAGS:=-g
