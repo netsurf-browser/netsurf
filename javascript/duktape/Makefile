@@ -8,10 +8,13 @@ javascript/dukky.c: $(OBJROOT)/duktape/binding.h
 
 BINDINGS := $(wildcard javascript/duktape/*.bnd)
 
+GBFLAGS:=-D
+#GBFLAGS+=-g
+
 $(OBJROOT)/duktape/binding.h $(OBJROOT)/duktape/Makefile: javascript/duktape/netsurf.bnd $(BINDINGS)
 	$(Q)mkdir -p $(OBJROOT)/duktape
 	$(VQ)echo " GENBIND: $<"
-	$(Q)nsgenbind -D -g -I javascript/WebIDL $< $(OBJROOT)/duktape
+	$(Q)nsgenbind $(GBFLAGS) -I javascript/WebIDL $< $(OBJROOT)/duktape
 	$(VQ)echo " GENBIND: completed"
 
 # create unimplemented report for doxygen
