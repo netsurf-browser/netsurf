@@ -32,7 +32,7 @@
 
 #include "duktape/binding.h"
 
-#include "duktape/duktape.h"
+#include "duktape.h"
 #include "dukky.h"
 
 #include <dom/dom.h>
@@ -143,16 +143,16 @@ dukky_push_node_klass(duk_context *ctx, struct dom_node *node)
 {
 	dom_node_type nodetype;
 	dom_exception err;
-	
+
 	err = dom_node_get_node_type(node, &nodetype);
 	if (err != DOM_NO_ERR) {
 		/* Oh bum, just node then */
 		duk_push_string(ctx, PROTO_NAME(NODE));
 		return;
 	}
-	
+
 	switch(nodetype) {
-        case DOM_ELEMENT_NODE: {
+	case DOM_ELEMENT_NODE: {
 		dom_string *namespace, *tag;
 		err = dom_node_get_namespace(node, &namespace);
 		if (err != DOM_NO_ERR) {
@@ -167,7 +167,7 @@ dukky_push_node_klass(duk_context *ctx, struct dom_node *node)
 			duk_push_string(ctx, PROTO_NAME(ELEMENT));
 			break;
 		}
-		
+
 		if (dom_string_isequal(namespace, corestring_dom_html_namespace) == false) {
 			/* definitely not an HTML element of some kind */
 			duk_push_string(ctx, PROTO_NAME(ELEMENT));
@@ -175,13 +175,13 @@ dukky_push_node_klass(duk_context *ctx, struct dom_node *node)
 			break;
 		}
 		dom_string_unref(namespace);
-		
+
 		err = dom_node_get_node_name(node, &tag);
 		if (err != DOM_NO_ERR) {
 			duk_push_string(ctx, PROTO_NAME(HTMLUNKNOWNELEMENT));
 			break;
 		}
-		
+
 		duk_push_string(ctx, PROTO_NAME(HTML));
 		duk_push_lstring(ctx, dom_string_data(tag), dom_string_length(tag));
 		dom_string_unref(tag);
@@ -190,23 +190,23 @@ dukky_push_node_klass(duk_context *ctx, struct dom_node *node)
 
 		break;
 	}
-        case DOM_TEXT_NODE:
+	case DOM_TEXT_NODE:
 		duk_push_string(ctx, PROTO_NAME(TEXT));
 		break;
-        case DOM_COMMENT_NODE:
+	case DOM_COMMENT_NODE:
 		duk_push_string(ctx, PROTO_NAME(COMMENT));
 		break;
-        case DOM_DOCUMENT_NODE:
+	case DOM_DOCUMENT_NODE:
 		duk_push_string(ctx, PROTO_NAME(DOCUMENT));
 		break;
-        case DOM_ATTRIBUTE_NODE:
-        case DOM_PROCESSING_INSTRUCTION_NODE:
+	case DOM_ATTRIBUTE_NODE:
+	case DOM_PROCESSING_INSTRUCTION_NODE:
 	case DOM_DOCUMENT_TYPE_NODE:
-        case DOM_DOCUMENT_FRAGMENT_NODE:
-        case DOM_NOTATION_NODE:
+	case DOM_DOCUMENT_FRAGMENT_NODE:
+	case DOM_NOTATION_NODE:
 	case DOM_ENTITY_REFERENCE_NODE:
-        case DOM_ENTITY_NODE:
-        case DOM_CDATA_SECTION_NODE:
+	case DOM_ENTITY_NODE:
+	case DOM_CDATA_SECTION_NODE:
 	default:
 		/* Oh bum, just node then */
 		duk_push_string(ctx, PROTO_NAME(NODE));
@@ -342,11 +342,11 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 	duk_push_global_object(CTX);
 	duk_put_prop_string(CTX, -2, PROTO_MAGIC);
 	duk_set_global_object(CTX);
-	
+
 	/* Now we need to prepare our node mapping table */
 	duk_push_object(CTX);
 	duk_put_global_string(CTX, NODE_MAGIC);
-	
+
 	return (jsobject *)ctx;
 }
 

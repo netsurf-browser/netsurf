@@ -47,7 +47,7 @@ struct dom_html_br_element;
 %};
 
 	prologue %{
-#include "javascript/dukky.h"
+#include "javascript/duktape/dukky.h"
 %};
 
 };
