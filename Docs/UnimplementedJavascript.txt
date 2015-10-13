@@ -1049,8 +1049,6 @@ setter HTMLLinkElement::crossOrigin(string);\n
 getter HTMLLinkElement::relList(user);\n
 getter HTMLLinkElement::sizes(user);\n
 getter HTMLMapElement::areas(user);\n
-getter HTMLMapElement::name(string);\n
-setter HTMLMapElement::name(string);\n
 getter HTMLMarqueeElement::behavior(string);\n
 setter HTMLMarqueeElement::behavior(string);\n
 getter HTMLMarqueeElement::bgColor(string);\n
