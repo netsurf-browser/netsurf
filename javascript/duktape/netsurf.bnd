@@ -84,6 +84,7 @@ struct dom_html_br_element;
 #include "HTMLInputElement.bnd"
 #include "HTMLLabelElement.bnd"
 #include "HTMLLegendElement.bnd"
+#include "HTMLLIElement.bnd"
 
 init HTMLUnknownElement(struct dom_html_element *html_unknown_element::html_element);
 init HTMLDirectoryElement(struct dom_html_element *html_directory_element::html_element);
@@ -125,7 +126,6 @@ init HTMLTimeElement(struct dom_html_element *html_time_element::html_element);
 init HTMLDataElement(struct dom_html_element *html_data_element::html_element);
 init HTMLDivElement(struct dom_html_element *html_div_element::html_element);
 init HTMLDListElement(struct dom_html_element *html_d_list_element::html_element);
-init HTMLLIElement(struct dom_html_element *html_li_element::html_element);
 init HTMLUListElement(struct dom_html_element *html_u_list_element::html_element);
 init HTMLOListElement(struct dom_html_element *html_o_list_element::html_element);
 init HTMLQuoteElement(struct dom_html_element *html_quote_element::html_element);

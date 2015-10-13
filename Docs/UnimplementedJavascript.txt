@@ -1042,8 +1042,6 @@ getter HTMLKeygenElement::willValidate(boolean);\n
 getter HTMLLabelElement::control(user);\n
 getter HTMLLabelElement::form(user);\n
 getter HTMLLegendElement::form(user);\n
-getter HTMLLIElement::type(string);\n
-setter HTMLLIElement::type(string);\n
 getter HTMLLIElement::value(long);\n
 setter HTMLLIElement::value(long);\n
 getter HTMLLinkElement::charset(string);\n
