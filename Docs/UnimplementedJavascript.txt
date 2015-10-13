@@ -887,8 +887,6 @@ method HTMLFormElement::reset();\n
 method HTMLFormElement::submit();\n
 getter HTMLFrameElement::contentDocument(user);\n
 getter HTMLFrameElement::contentWindow(user);\n
-getter HTMLFrameSetElement::cols(string);\n
-setter HTMLFrameSetElement::cols(string);\n
 getter HTMLFrameSetElement::onafterprint(user);\n
 setter HTMLFrameSetElement::onafterprint(user);\n
 getter HTMLFrameSetElement::onbeforeprint(user);\n
@@ -915,8 +913,6 @@ getter HTMLFrameSetElement::onstorage(user);\n
 setter HTMLFrameSetElement::onstorage(user);\n
 getter HTMLFrameSetElement::onunload(user);\n
 setter HTMLFrameSetElement::onunload(user);\n
-getter HTMLFrameSetElement::rows(string);\n
-setter HTMLFrameSetElement::rows(string);\n
 getter HTMLHeadingElement::align(string);\n
 setter HTMLHeadingElement::align(string);\n
 getter HTMLHRElement::color(string);\n
