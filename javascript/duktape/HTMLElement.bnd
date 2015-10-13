@@ -8,7 +8,7 @@
  *         http://www.opensource.org/licenses/mit-license
  */
 
-init HTMLHtmlElement(struct dom_html_element *html_html_element::html_element);
+init HTMLElement(struct dom_html_element *html_element::element);
 
 getter HTMLElement::dir();
 setter HTMLElement::dir();

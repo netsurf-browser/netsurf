@@ -915,8 +915,6 @@ getter HTMLFrameSetElement::onunload(user);\n
 setter HTMLFrameSetElement::onunload(user);\n
 getter HTMLHRElement::color(string);\n
 setter HTMLHRElement::color(string);\n
-getter HTMLHtmlElement::version(string);\n
-setter HTMLHtmlElement::version(string);\n
 getter HTMLIFrameElement::align(string);\n
 setter HTMLIFrameElement::align(string);\n
 getter HTMLIFrameElement::allowFullscreen(boolean);\n

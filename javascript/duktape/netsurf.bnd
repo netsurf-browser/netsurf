@@ -76,6 +76,7 @@ struct dom_html_br_element;
 #include "HTMLFrameSetElement.bnd"
 #include "HTMLHeadingElement.bnd"
 #include "HTMLHRElement.bnd"
+#include "HTMLHTMLElement.bnd"
 
 /* specialisations of html_element */
 init HTMLUnknownElement(struct dom_html_element *html_unknown_element::html_element);
@@ -142,8 +143,6 @@ init HTMLTableDataCellElement(struct dom_html_element *html_table_data_cell_elem
 /* specialisations of html_media_element */
 init HTMLAudioElement(struct dom_html_element *html_audio_element::html_media_element);
 init HTMLVideoElement(struct dom_html_element *html_video_element::html_media_element);
-
-init HTMLElement(struct dom_html_element *html_element::element);
 
 init Text(struct dom_node_text *text::character_data);
 init Comment(struct dom_node_comment *comment::character_data);
