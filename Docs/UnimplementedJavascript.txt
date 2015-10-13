@@ -1130,8 +1130,6 @@ getter HTMLMediaElement::textTracks(user);\n
 getter HTMLMediaElement::videoTracks(user);\n
 getter HTMLMediaElement::volume(double);\n
 setter HTMLMediaElement::volume(double);\n
-getter HTMLMenuElement::compact(boolean);\n
-setter HTMLMenuElement::compact(boolean);\n
 getter HTMLMenuElement::label(string);\n
 setter HTMLMenuElement::label(string);\n
 getter HTMLMenuElement::type(string);\n

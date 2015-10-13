@@ -88,6 +88,8 @@ struct dom_html_br_element;
 #include "HTMLLinkElement.bnd"
 #include "HTMLMapElement.bnd"
 #include "HTMLMarqueeElement.bnd"
+#include "HTMLMenuElement.bnd"
+#include "HTMLMetaElement.bnd"
 
 init HTMLUnknownElement(struct dom_html_element *html_unknown_element::html_element);
 init HTMLDirectoryElement(struct dom_html_element *html_directory_element::html_element);
@@ -96,7 +98,6 @@ init HTMLTemplateElement(struct dom_html_element *html_template_element::html_el
 init HTMLScriptElement(struct dom_html_element *html_script_element::html_element);
 init HTMLDialogElement(struct dom_html_element *html_dialog_element::html_element);
 init HTMLMenuItemElement(struct dom_html_element *html_menu_item_element::html_element);
-init HTMLMenuElement(struct dom_html_element *html_menu_element::html_element);
 init HTMLDetailsElement(struct dom_html_element *html_details_element::html_element);
 init HTMLFieldSetElement(struct dom_html_element *html_field_set_element::html_element);
 init HTMLMeterElement(struct dom_html_element *html_meter_element::html_element);
@@ -133,7 +134,6 @@ init HTMLQuoteElement(struct dom_html_element *html_quote_element::html_element)
 init HTMLPreElement(struct dom_html_element *html_pre_element::html_element);
 init HTMLParagraphElement(struct dom_html_element *html_paragraph_element::html_element);
 init HTMLStyleElement(struct dom_html_element *html_style_element::html_element);
-init HTMLMetaElement(struct dom_html_element *html_meta_element::html_element);
 init HTMLTitleElement(struct dom_html_element *html_title_element::html_element);
 init HTMLHeadElement(struct dom_html_element *html_head_element::html_element);
 
