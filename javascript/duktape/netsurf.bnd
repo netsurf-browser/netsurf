@@ -78,6 +78,7 @@ struct dom_html_br_element;
 #include "HTMLHRElement.bnd"
 #include "HTMLHTMLElement.bnd"
 #include "HTMLIFrameElement.bnd"
+#include "HTMLImageElement.bnd"
 
 /* specialisations of html_element */
 init HTMLUnknownElement(struct dom_html_element *html_unknown_element::html_element);
@@ -115,7 +116,6 @@ init HTMLTrackElement(struct dom_html_element *html_track_element::html_element)
 init HTMLParamElement(struct dom_html_element *html_param_element::html_element);
 init HTMLObjectElement(struct dom_html_element *html_object_element::html_element);
 init HTMLEmbedElement(struct dom_html_element *html_embed_element::html_element);
-init HTMLImageElement(struct dom_html_element *html_image_element::html_element);
 init HTMLSourceElement(struct dom_html_element *html_source_element::html_element);
 init HTMLPictureElement(struct dom_html_element *html_picture_element::html_element);
 init HTMLModElement(struct dom_html_element *html_mod_element::html_element);

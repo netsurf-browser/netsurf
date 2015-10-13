@@ -1,0 +1,35 @@
+/* HTML image element binding using duktape and libdom
+ *
+ * Copyright 2015 Vincent Sanders <vince@netsurf-browser.org>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * Released under the terms of the MIT License,
+ *         http://www.opensource.org/licenses/mit-license
+ */
+
+init HTMLImageElement(struct dom_html_element *html_image_element::html_element);
+
+getter HTMLImageElement::align();
+setter HTMLImageElement::align();
+
+getter HTMLImageElement::alt();
+setter HTMLImageElement::alt();
+
+getter HTMLImageElement::border();
+setter HTMLImageElement::border();
+
+getter HTMLImageElement::isMap();
+setter HTMLImageElement::isMap();
+
+getter HTMLImageElement::longDesc();
+setter HTMLImageElement::longDesc();
+
+getter HTMLImageElement::name();
+setter HTMLImageElement::name();
+
+getter HTMLImageElement::src();
+setter HTMLImageElement::src();
+
+getter HTMLImageElement::useMap();
+setter HTMLImageElement::useMap();
