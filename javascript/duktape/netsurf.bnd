@@ -79,6 +79,7 @@ struct dom_html_br_element;
 #include "HTMLHTMLElement.bnd"
 #include "HTMLIFrameElement.bnd"
 #include "HTMLImageElement.bnd"
+#include "HTMLInputElement.bnd"
 
 /* specialisations of html_element */
 init HTMLUnknownElement(struct dom_html_element *html_unknown_element::html_element);
@@ -102,7 +103,6 @@ init HTMLOptionElement(struct dom_html_element *html_option_element::html_elemen
 init HTMLOptGroupElement(struct dom_html_element *html_opt_group_element::html_element);
 init HTMLDataListElement(struct dom_html_element *html_data_list_element::html_element);
 init HTMLSelectElement(struct dom_html_element *html_select_element::html_element);
-init HTMLInputElement(struct dom_html_element *html_input_element::html_element);
 init HTMLLabelElement(struct dom_html_element *html_label_element::html_element);
 init HTMLTableCellElement(struct dom_html_element *html_table_cell_element::html_element);
 init HTMLTableRowElement(struct dom_html_element *html_table_row_element::html_element);
