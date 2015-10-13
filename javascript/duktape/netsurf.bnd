@@ -85,6 +85,7 @@ struct dom_html_br_element;
 #include "HTMLLabelElement.bnd"
 #include "HTMLLegendElement.bnd"
 #include "HTMLLIElement.bnd"
+#include "HTMLLinkElement.bnd"
 
 init HTMLUnknownElement(struct dom_html_element *html_unknown_element::html_element);
 init HTMLDirectoryElement(struct dom_html_element *html_directory_element::html_element);
@@ -133,7 +134,6 @@ init HTMLPreElement(struct dom_html_element *html_pre_element::html_element);
 init HTMLParagraphElement(struct dom_html_element *html_paragraph_element::html_element);
 init HTMLStyleElement(struct dom_html_element *html_style_element::html_element);
 init HTMLMetaElement(struct dom_html_element *html_meta_element::html_element);
-init HTMLLinkElement(struct dom_html_element *html_link_element::html_element);
 init HTMLTitleElement(struct dom_html_element *html_title_element::html_element);
 init HTMLHeadElement(struct dom_html_element *html_head_element::html_element);
 
