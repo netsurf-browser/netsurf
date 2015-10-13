@@ -1151,14 +1151,6 @@ getter HTMLMenuItemElement::radiogroup(string);\n
 setter HTMLMenuItemElement::radiogroup(string);\n
 getter HTMLMenuItemElement::type(string);\n
 setter HTMLMenuItemElement::type(string);\n
-getter HTMLMetaElement::content(string);\n
-setter HTMLMetaElement::content(string);\n
-getter HTMLMetaElement::httpEquiv(string);\n
-setter HTMLMetaElement::httpEquiv(string);\n
-getter HTMLMetaElement::name(string);\n
-setter HTMLMetaElement::name(string);\n
-getter HTMLMetaElement::scheme(string);\n
-setter HTMLMetaElement::scheme(string);\n
 getter HTMLMeterElement::high(double);\n
 setter HTMLMeterElement::high(double);\n
 getter HTMLMeterElement::labels(user);\n
