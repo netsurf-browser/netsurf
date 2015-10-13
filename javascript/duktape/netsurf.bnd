@@ -90,6 +90,7 @@ struct dom_html_br_element;
 #include "HTMLMarqueeElement.bnd"
 #include "HTMLMenuElement.bnd"
 #include "HTMLMetaElement.bnd"
+#include "HTMLObjectElement.bnd"
 
 init HTMLUnknownElement(struct dom_html_element *html_unknown_element::html_element);
 init HTMLDirectoryElement(struct dom_html_element *html_directory_element::html_element);
@@ -118,7 +119,6 @@ init HTMLTableElement(struct dom_html_element *html_table_element::html_element)
 init HTMLMediaElement(struct dom_html_element *html_media_element::html_element);
 init HTMLTrackElement(struct dom_html_element *html_track_element::html_element);
 init HTMLParamElement(struct dom_html_element *html_param_element::html_element);
-init HTMLObjectElement(struct dom_html_element *html_object_element::html_element);
 init HTMLEmbedElement(struct dom_html_element *html_embed_element::html_element);
 init HTMLSourceElement(struct dom_html_element *html_source_element::html_element);
 init HTMLPictureElement(struct dom_html_element *html_picture_element::html_element);
