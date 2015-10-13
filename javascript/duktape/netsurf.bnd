@@ -74,6 +74,7 @@ struct dom_html_br_element;
 #include "HTMLFormElement.bnd"
 #include "HTMLFrameElement.bnd"
 #include "HTMLFrameSetElement.bnd"
+#include "HTMLHeadingElement.bnd"
 #include "HTMLHRElement.bnd"
 
 /* specialisations of html_element */
@@ -128,7 +129,6 @@ init HTMLOListElement(struct dom_html_element *html_o_list_element::html_element
 init HTMLQuoteElement(struct dom_html_element *html_quote_element::html_element);
 init HTMLPreElement(struct dom_html_element *html_pre_element::html_element);
 init HTMLParagraphElement(struct dom_html_element *html_paragraph_element::html_element);
-init HTMLHeadingElement(struct dom_html_element *html_heading_element::html_element);
 init HTMLStyleElement(struct dom_html_element *html_style_element::html_element);
 init HTMLMetaElement(struct dom_html_element *html_meta_element::html_element);
 init HTMLLinkElement(struct dom_html_element *html_link_element::html_element);

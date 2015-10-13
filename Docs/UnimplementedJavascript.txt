@@ -913,8 +913,6 @@ getter HTMLFrameSetElement::onstorage(user);\n
 setter HTMLFrameSetElement::onstorage(user);\n
 getter HTMLFrameSetElement::onunload(user);\n
 setter HTMLFrameSetElement::onunload(user);\n
-getter HTMLHeadingElement::align(string);\n
-setter HTMLHeadingElement::align(string);\n
 getter HTMLHRElement::color(string);\n
 setter HTMLHRElement::color(string);\n
 getter HTMLHtmlElement::version(string);\n
