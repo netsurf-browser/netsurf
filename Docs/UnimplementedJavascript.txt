@@ -1315,17 +1315,9 @@ method HTMLTableRowElement::deleteCell();\n
 method HTMLTableRowElement::insertCell();\n
 getter HTMLTableRowElement::rowIndex(long);\n
 getter HTMLTableRowElement::sectionRowIndex(long);\n
-getter HTMLTableSectionElement::align(string);\n
-setter HTMLTableSectionElement::align(string);\n
-getter HTMLTableSectionElement::chOff(string);\n
-setter HTMLTableSectionElement::chOff(string);\n
-getter HTMLTableSectionElement::ch(string);\n
-setter HTMLTableSectionElement::ch(string);\n
 method HTMLTableSectionElement::deleteRow();\n
 method HTMLTableSectionElement::insertRow();\n
 getter HTMLTableSectionElement::rows(user);\n
-getter HTMLTableSectionElement::vAlign(string);\n
-setter HTMLTableSectionElement::vAlign(string);\n
 getter HTMLTemplateElement::content(user);\n
 getter HTMLTextAreaElement::autocomplete(string);\n
 setter HTMLTextAreaElement::autocomplete(string);\n
