@@ -95,12 +95,12 @@ struct dom_html_br_element;
 #include "HTMLParagraphElement.bnd"
 #include "HTMLParamElement.bnd"
 #include "HTMLQuoteElement.bnd"
+#include "HTMLScriptElement.bnd"
 
 init HTMLUnknownElement(struct dom_html_element *html_unknown_element::html_element);
 init HTMLDirectoryElement(struct dom_html_element *html_directory_element::html_element);
 init HTMLCanvasElement(struct dom_html_element *html_canvas_element::html_element);
 init HTMLTemplateElement(struct dom_html_element *html_template_element::html_element);
-init HTMLScriptElement(struct dom_html_element *html_script_element::html_element);
 init HTMLDialogElement(struct dom_html_element *html_dialog_element::html_element);
 init HTMLMenuItemElement(struct dom_html_element *html_menu_item_element::html_element);
 init HTMLDetailsElement(struct dom_html_element *html_details_element::html_element);
