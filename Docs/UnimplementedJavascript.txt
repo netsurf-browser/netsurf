@@ -1361,8 +1361,6 @@ getter HTMLTextAreaElement::wrap(string);\n
 setter HTMLTextAreaElement::wrap(string);\n
 getter HTMLTimeElement::dateTime(string);\n
 setter HTMLTimeElement::dateTime(string);\n
-getter HTMLTitleElement::text(string);\n
-setter HTMLTitleElement::text(string);\n
 getter HTMLTrackElement::default(boolean);\n
 setter HTMLTrackElement::default(boolean);\n
 getter HTMLTrackElement::kind(string);\n
