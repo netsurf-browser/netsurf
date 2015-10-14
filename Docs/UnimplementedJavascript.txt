@@ -1326,12 +1326,8 @@ setter HTMLTextAreaElement::autofocus(boolean);\n
 method HTMLTextAreaElement::checkValidity();\n
 getter HTMLTextAreaElement::cols(long);\n
 setter HTMLTextAreaElement::cols(long);\n
-getter HTMLTextAreaElement::defaultValue(string);\n
-setter HTMLTextAreaElement::defaultValue(string);\n
 getter HTMLTextAreaElement::dirName(string);\n
 setter HTMLTextAreaElement::dirName(string);\n
-getter HTMLTextAreaElement::disabled(boolean);\n
-setter HTMLTextAreaElement::disabled(boolean);\n
 getter HTMLTextAreaElement::form(user);\n
 getter HTMLTextAreaElement::inputMode(string);\n
 setter HTMLTextAreaElement::inputMode(string);\n
@@ -1340,12 +1336,8 @@ getter HTMLTextAreaElement::maxLength(long);\n
 setter HTMLTextAreaElement::maxLength(long);\n
 getter HTMLTextAreaElement::minLength(long);\n
 setter HTMLTextAreaElement::minLength(long);\n
-getter HTMLTextAreaElement::name(string);\n
-setter HTMLTextAreaElement::name(string);\n
 getter HTMLTextAreaElement::placeholder(string);\n
 setter HTMLTextAreaElement::placeholder(string);\n
-getter HTMLTextAreaElement::readOnly(boolean);\n
-setter HTMLTextAreaElement::readOnly(boolean);\n
 method HTMLTextAreaElement::reportValidity();\n
 getter HTMLTextAreaElement::required(boolean);\n
 setter HTMLTextAreaElement::required(boolean);\n
@@ -1362,11 +1354,8 @@ method HTMLTextAreaElement::setCustomValidity();\n
 method HTMLTextAreaElement::setRangeText();\n
 method HTMLTextAreaElement::setSelectionRange();\n
 getter HTMLTextAreaElement::textLength(long);\n
-getter HTMLTextAreaElement::type(string);\n
 getter HTMLTextAreaElement::validationMessage(string);\n
 getter HTMLTextAreaElement::validity(user);\n
-getter HTMLTextAreaElement::value(string);\n
-setter HTMLTextAreaElement::value(string);\n
 getter HTMLTextAreaElement::willValidate(boolean);\n
 getter HTMLTextAreaElement::wrap(string);\n
 setter HTMLTextAreaElement::wrap(string);\n
