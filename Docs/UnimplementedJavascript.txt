@@ -1219,8 +1219,6 @@ getter HTMLOutputElement::validity(user);\n
 getter HTMLOutputElement::value(string);\n
 setter HTMLOutputElement::value(string);\n
 getter HTMLOutputElement::willValidate(boolean);\n
-getter HTMLParagraphElement::align(string);\n
-setter HTMLParagraphElement::align(string);\n
 getter HTMLParamElement::name(string);\n
 setter HTMLParamElement::name(string);\n
 getter HTMLParamElement::type(string);\n

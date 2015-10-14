@@ -92,6 +92,7 @@ struct dom_html_br_element;
 #include "HTMLMetaElement.bnd"
 #include "HTMLObjectElement.bnd"
 #include "HTMLOptionElement.bnd"
+#include "HTMLParagraphElement.bnd"
 
 init HTMLUnknownElement(struct dom_html_element *html_unknown_element::html_element);
 init HTMLDirectoryElement(struct dom_html_element *html_directory_element::html_element);
@@ -132,7 +133,6 @@ init HTMLUListElement(struct dom_html_element *html_u_list_element::html_element
 init HTMLOListElement(struct dom_html_element *html_o_list_element::html_element);
 init HTMLQuoteElement(struct dom_html_element *html_quote_element::html_element);
 init HTMLPreElement(struct dom_html_element *html_pre_element::html_element);
-init HTMLParagraphElement(struct dom_html_element *html_paragraph_element::html_element);
 init HTMLStyleElement(struct dom_html_element *html_style_element::html_element);
 init HTMLTitleElement(struct dom_html_element *html_title_element::html_element);
 init HTMLHeadElement(struct dom_html_element *html_head_element::html_element);
