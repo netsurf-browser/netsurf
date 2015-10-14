@@ -96,6 +96,7 @@ struct dom_html_br_element;
 #include "HTMLParamElement.bnd"
 #include "HTMLQuoteElement.bnd"
 #include "HTMLScriptElement.bnd"
+#include "HTMLSelectElement.bnd"
 
 init HTMLUnknownElement(struct dom_html_element *html_unknown_element::html_element);
 init HTMLDirectoryElement(struct dom_html_element *html_directory_element::html_element);
@@ -112,7 +113,6 @@ init HTMLKeygenElement(struct dom_html_element *html_keygen_element::html_elemen
 init HTMLTextAreaElement(struct dom_html_element *html_text_area_element::html_element);
 init HTMLOptGroupElement(struct dom_html_element *html_opt_group_element::html_element);
 init HTMLDataListElement(struct dom_html_element *html_data_list_element::html_element);
-init HTMLSelectElement(struct dom_html_element *html_select_element::html_element);
 init HTMLTableCellElement(struct dom_html_element *html_table_cell_element::html_element);
 init HTMLTableRowElement(struct dom_html_element *html_table_row_element::html_element);
 init HTMLTableSectionElement(struct dom_html_element *html_table_section_element::html_element);
