@@ -1269,14 +1269,10 @@ getter HTMLSourceElement::src(string);\n
 setter HTMLSourceElement::src(string);\n
 getter HTMLSourceElement::type(string);\n
 setter HTMLSourceElement::type(string);\n
-getter HTMLStyleElement::media(string);\n
-setter HTMLStyleElement::media(string);\n
 getter HTMLStyleElement::nonce(string);\n
 setter HTMLStyleElement::nonce(string);\n
 getter HTMLStyleElement::scoped(boolean);\n
 setter HTMLStyleElement::scoped(boolean);\n
-getter HTMLStyleElement::type(string);\n
-setter HTMLStyleElement::type(string);\n
 getter HTMLTableCaptionElement::align(string);\n
 setter HTMLTableCaptionElement::align(string);\n
 getter HTMLTableCellElement::align(string);\n
