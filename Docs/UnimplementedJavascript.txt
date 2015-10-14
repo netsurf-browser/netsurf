@@ -1219,14 +1219,6 @@ getter HTMLOutputElement::validity(user);\n
 getter HTMLOutputElement::value(string);\n
 setter HTMLOutputElement::value(string);\n
 getter HTMLOutputElement::willValidate(boolean);\n
-getter HTMLParamElement::name(string);\n
-setter HTMLParamElement::name(string);\n
-getter HTMLParamElement::type(string);\n
-setter HTMLParamElement::type(string);\n
-getter HTMLParamElement::value(string);\n
-setter HTMLParamElement::value(string);\n
-getter HTMLParamElement::valueType(string);\n
-setter HTMLParamElement::valueType(string);\n
 getter HTMLPreElement::width(long);\n
 setter HTMLPreElement::width(long);\n
 getter HTMLProgressElement::labels(user);\n
