@@ -100,6 +100,7 @@ struct dom_html_br_element;
 #include "HTMLStyleElement.bnd"
 #include "HTMLTableCaptionElement.bnd"
 #include "HTMLTableCellElement.bnd"
+#include "HTMLTableColElement.bnd"
 
 init HTMLUnknownElement(struct dom_html_element *html_unknown_element::html_element);
 init HTMLDirectoryElement(struct dom_html_element *html_directory_element::html_element);
@@ -118,7 +119,6 @@ init HTMLOptGroupElement(struct dom_html_element *html_opt_group_element::html_e
 init HTMLDataListElement(struct dom_html_element *html_data_list_element::html_element);
 init HTMLTableRowElement(struct dom_html_element *html_table_row_element::html_element);
 init HTMLTableSectionElement(struct dom_html_element *html_table_section_element::html_element);
-init HTMLTableColElement(struct dom_html_element *html_table_col_element::html_element);
 init HTMLTableElement(struct dom_html_element *html_table_element::html_element);
 init HTMLMediaElement(struct dom_html_element *html_media_element::html_element);
 init HTMLTrackElement(struct dom_html_element *html_track_element::html_element);
