@@ -91,6 +91,7 @@ struct dom_html_br_element;
 #include "HTMLMenuElement.bnd"
 #include "HTMLMetaElement.bnd"
 #include "HTMLObjectElement.bnd"
+#include "HTMLOptionElement.bnd"
 
 init HTMLUnknownElement(struct dom_html_element *html_unknown_element::html_element);
 init HTMLDirectoryElement(struct dom_html_element *html_directory_element::html_element);
@@ -106,7 +107,6 @@ init HTMLProgressElement(struct dom_html_element *html_progress_element::html_el
 init HTMLOutputElement(struct dom_html_element *html_output_element::html_element);
 init HTMLKeygenElement(struct dom_html_element *html_keygen_element::html_element);
 init HTMLTextAreaElement(struct dom_html_element *html_text_area_element::html_element);
-init HTMLOptionElement(struct dom_html_element *html_option_element::html_element);
 init HTMLOptGroupElement(struct dom_html_element *html_opt_group_element::html_element);
 init HTMLDataListElement(struct dom_html_element *html_data_list_element::html_element);
 init HTMLSelectElement(struct dom_html_element *html_select_element::html_element);
