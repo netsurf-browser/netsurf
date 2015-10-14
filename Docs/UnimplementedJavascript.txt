@@ -1273,8 +1273,6 @@ getter HTMLStyleElement::nonce(string);\n
 setter HTMLStyleElement::nonce(string);\n
 getter HTMLStyleElement::scoped(boolean);\n
 setter HTMLStyleElement::scoped(boolean);\n
-getter HTMLTableCaptionElement::align(string);\n
-setter HTMLTableCaptionElement::align(string);\n
 getter HTMLTableCellElement::align(string);\n
 setter HTMLTableCellElement::align(string);\n
 getter HTMLTableCellElement::axis(string);\n
