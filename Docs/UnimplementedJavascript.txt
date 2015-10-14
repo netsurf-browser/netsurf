@@ -1227,8 +1227,6 @@ setter HTMLProgressElement::max(double);\n
 getter HTMLProgressElement::position(double);\n
 getter HTMLProgressElement::value(double);\n
 setter HTMLProgressElement::value(double);\n
-getter HTMLQuoteElement::cite(string);\n
-setter HTMLQuoteElement::cite(string);\n
 getter HTMLScriptElement::async(boolean);\n
 setter HTMLScriptElement::async(boolean);\n
 getter HTMLScriptElement::charset(string);\n
