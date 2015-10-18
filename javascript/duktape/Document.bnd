@@ -245,6 +245,28 @@ method Document::getElementById()
 	return 0;
 %}
 
+getter Document::documentElement()
+%{
+	dom_exception exc;
+	dom_element *element;
+
+	exc = dom_document_get_document_element(((node_private_t *)priv)->node,
+						&element);
+	if (exc != DOM_NO_ERR) {
+		return 0;
+	}
+
+	if (element == NULL) {
+		return 0;
+	}
+
+	dukky_push_node(ctx, (dom_node *)element);
+	dom_node_unref(element);
+
+	return 1;
+
+%}
+
 method Document::getElementsByTagName()
 %{
 	dom_nodelist *nodes;
