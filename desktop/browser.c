@@ -106,7 +106,6 @@ static inline void browser_window_get_scrollbar_pos(struct browser_window *bw,
  * \param  horizontal	Whether to get length of horizontal scrollbar
  * \return the scrollbar's length
  */
-
 static inline int browser_window_get_scrollbar_len(struct browser_window *bw,
 		bool horizontal)
 {
@@ -114,6 +113,42 @@ static inline int browser_window_get_scrollbar_len(struct browser_window *bw,
 		return bw->width - (bw->scroll_y != NULL ? SCROLLBAR_WIDTH : 0);
 	else
 		return bw->height;
+}
+
+
+/* exported interface, documented in browser.h */
+nserror
+browser_window_get_name(struct browser_window *bw, const char **out_name)
+{
+	assert(bw != NULL);
+
+	*out_name = bw->name;
+
+	return NSERROR_OK;
+}
+
+/* exported interface, documented in browser.h */
+nserror 
+browser_window_set_name(struct browser_window *bw, const char *name)
+{
+	char *nname = NULL;
+
+	assert(bw != NULL);
+
+	if (name != NULL) {
+		nname = strdup(name);
+		if (nname == NULL) {
+			return NSERROR_NOMEM;
+		}
+	}
+	
+	if (bw->name != NULL) {
+		free(bw->name);
+	}
+
+	bw->name = nname;
+
+	return NSERROR_OK;
 }
 
 /* exported interface, documented in browser.h */

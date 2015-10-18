@@ -677,11 +677,39 @@ int browser_get_dpi(void);
 nserror browser_window_debug_dump(struct browser_window *bw, FILE *f, enum content_debug op);
 
 /**
- * set debug options on a window
+ * Set debug options on a window
+ *
  * \param bw The browser window.
  * \param op The debug operation type.
  * \return NSERROR_OK on success or error code on faliure.
  */
 nserror browser_window_debug(struct browser_window *bw, enum content_debug op);
+
+/**
+ * Obtain a browsing contexts name.
+ *
+ * The returned pointer is owned bu the browsing context and is only
+ *  valid untill the next operation on that context.
+ * The returned name may be NULL if no name has been set.
+ * \todo This does not consider behaviour wrt frames
+ *
+ * \param bw The browser window.
+ * \param name recives result string.
+ * \return NSERROR_OK
+ */
+nserror browser_window_get_name(struct browser_window *bw, const char **name);
+
+/**
+ * Set a browsing contexts name.
+ *
+ * Changes a browsing contexts name to a copy of that passed and the
+ *  value is not subsequently referenced.
+ *
+ * \param bw The browser window.
+ * \param name The name string to set.
+ * \return NSERROR_OK and the name is updated or NSERROR_NOMEM and the
+ *         original name is untouched.
+ */
+nserror browser_window_set_name(struct browser_window *bw, const char *name);
 
 #endif

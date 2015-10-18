@@ -116,3 +116,19 @@ getter Window::navigator()
 	}
 	return 1;
 %}
+
+getter Window::name()
+%{
+	const char *name;
+	browser_window_get_name(priv->win, &name);
+	duk_push_string(ctx, name);
+	return 1;
+%}
+
+setter Window::name()
+%{
+	const char *name;
+	name = duk_to_string(ctx, -1);
+	browser_window_set_name(priv->win, name);
+	return 0;
+%}
