@@ -31,9 +31,7 @@ getter Element::firstElementChild()
 		exc = dom_node_get_node_type(element, &node_type);
 		if ((exc == DOM_NO_ERR) && (node_type == DOM_ELEMENT_NODE)) {
 			/* found it */
-			dukky_push_node(ctx, (dom_node *)element);
-			dom_node_unref(element);
-			return 1;
+			break;
 		}
 
 		exc = dom_node_get_next_sibling(element, &next_node);
@@ -44,7 +42,12 @@ getter Element::firstElementChild()
 			element = NULL;
 		}
 	}
-	return 0;
+	if (dukky_push_node(ctx, (dom_node *)element) == false) {
+		dom_node_unref(element);
+		return 0;
+	}
+	dom_node_unref(element);
+	return 1;
 %}
 
 getter Element::lastElementChild()
@@ -63,9 +66,7 @@ getter Element::lastElementChild()
 		exc = dom_node_get_node_type(element, &node_type);
 		if ((exc == DOM_NO_ERR) && (node_type == DOM_ELEMENT_NODE)) {
 			/* found it */
-			dukky_push_node(ctx, (dom_node *)element);
-			dom_node_unref(element);
-			return 1;
+			break;
 		}
 
 		exc = dom_node_get_previous_sibling(element, &next_node);
@@ -76,7 +77,12 @@ getter Element::lastElementChild()
 			element = NULL;
 		}
 	}
-	return 0;
+	if (dukky_push_node(ctx, (dom_node *)element) == false) {
+		dom_node_unref(element);
+		return 0;
+	}
+	dom_node_unref(element);
+	return 1;
 %}
 
 getter Element::previousElementSibling()
@@ -95,9 +101,7 @@ getter Element::previousElementSibling()
 		exc = dom_node_get_node_type(element, &node_type);
 		if ((exc == DOM_NO_ERR) && (node_type == DOM_ELEMENT_NODE)) {
 			/* found it */
-			dukky_push_node(ctx, (dom_node *)element);
-			dom_node_unref(element);
-			return 1;
+			break;
 		}
 
 		exc = dom_node_get_previous_sibling(element, &sib_node);
@@ -108,7 +112,12 @@ getter Element::previousElementSibling()
 			element = NULL;
 		}
 	}
-	return 0;
+	if (dukky_push_node(ctx, (dom_node *)element) == false) {
+		dom_node_unref(element);
+		return 0;
+	}
+	dom_node_unref(element);
+	return 1;
 %}
 
 getter Element::nextElementSibling()
@@ -127,9 +136,7 @@ getter Element::nextElementSibling()
 		exc = dom_node_get_node_type(element, &node_type);
 		if ((exc == DOM_NO_ERR) && (node_type == DOM_ELEMENT_NODE)) {
 			/* found it */
-			dukky_push_node(ctx, (dom_node *)element);
-			dom_node_unref(element);
-			return 1;
+			break;
 		}
 
 		exc = dom_node_get_next_sibling(element, &sib_node);
@@ -140,7 +147,12 @@ getter Element::nextElementSibling()
 			element = NULL;
 		}
 	}
-	return 0;
+	if (dukky_push_node(ctx, (dom_node *)element) == false) {
+		dom_node_unref(element);
+		return 0;
+	}
+	dom_node_unref(element);
+	return 1;
 %}
 
 getter Element::childElementCount()
