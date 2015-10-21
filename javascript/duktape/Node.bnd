@@ -73,7 +73,6 @@ getter Node::parentNode()
 	dom_node *pnode = NULL;
 	exc = dom_node_get_parent_node(priv->node, &pnode);
 	if (exc != DOM_NO_ERR) return 0;
-	if (pnode == NULL) return 0;
 	dukky_push_node(ctx, pnode);
 	dom_node_unref(pnode);
 	return 1;
@@ -83,15 +82,16 @@ getter Node::parentElement()
 %{
 	dom_exception exc;
 	dom_node *pnode = NULL;
-	dom_node_type ntype;
+	dom_node_type ntype = DOM_NODE_TYPE_COUNT + 1;
 	exc = dom_node_get_parent_node(priv->node, &pnode);
 	if (exc != DOM_NO_ERR) return 0;
-	if (pnode == NULL) return 0;
-	exc = dom_node_get_node_type(pnode, &ntype);
-	if (exc != DOM_NO_ERR) { dom_node_unref(pnode); return 0; }
-	dukky_push_node(ctx, pnode);
+	if (pnode != NULL) {
+		exc = dom_node_get_node_type(pnode, &ntype);
+		if (exc != DOM_NO_ERR) { dom_node_unref(pnode); return 0; }
+	}
+	dukky_push_node(ctx, (ntype == DOM_ELEMENT_NODE) ? pnode : NULL);
 	dom_node_unref(pnode);
-	return (ntype == DOM_ELEMENT_NODE) ? 1 : 0;
+	return 1;
 %}
 
 method Node::hasChildNodes()
