@@ -345,6 +345,9 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 
 	/* Now we need to prepare our node mapping table */
 	duk_push_object(CTX);
+	duk_push_pointer(CTX, NULL);
+	duk_push_null(CTX);
+	duk_put_prop(CTX, -3);
 	duk_put_global_string(CTX, NODE_MAGIC);
 
 	return (jsobject *)ctx;
