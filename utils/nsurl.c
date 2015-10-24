@@ -1700,6 +1700,57 @@ const char *nsurl_access(const nsurl *url)
 
 
 /* exported interface, documented in nsurl.h */
+nserror nsurl_access_utf8(const nsurl *url, char **url_s, size_t *url_l)
+{
+	nserror err;
+	lwc_string *host;
+	char *idna_host;
+	size_t idna_host_len;
+	char *scheme;
+	size_t scheme_len;
+	char *path;
+	size_t path_len;
+
+	assert(url != NULL);
+
+	host = nsurl_get_component(url, NSURL_HOST);
+
+	if(host == NULL)
+		return NSERROR_BAD_URL;
+
+	err = idna_decode(lwc_string_data(host), lwc_string_length(host),
+						&idna_host, &idna_host_len);
+
+	lwc_string_unref(host);
+
+	if (err != NSERROR_OK)
+		return err;
+
+	err = nsurl_get(url, NSURL_SCHEME | NSURL_CREDENTIALS,
+					&scheme, &scheme_len);
+
+	if (err != NSERROR_OK)
+		return err;
+
+	err = nsurl_get(url, NSURL_PORT | NSURL_PATH | NSURL_QUERY | NSURL_FRAGMENT,
+					&path, &path_len);
+
+	if (err != NSERROR_OK)
+		return err;
+
+	*url_l = scheme_len + idna_host_len + path_len + 1; /* +1 for \0 */
+	*url_s = malloc(*url_l); 
+
+	if (*url_s == NULL)
+		return NSERROR_NOMEM;
+
+	snprintf(*url_s, *url_l, "%s%s%s", scheme, idna_host, path);
+
+	return NSERROR_OK;
+}
+
+
+/* exported interface, documented in nsurl.h */
 const char *nsurl_access_leaf(const nsurl *url)
 {
 	size_t path_len;

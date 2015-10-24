@@ -185,6 +185,9 @@ NSOPTION_UINT(min_reflow_period, DEFAULT_REFLOW_PERIOD)
 /* use core selection menu */
 NSOPTION_BOOL(core_select_menu, false)
 
+/* display decoded international domain names */
+NSOPTION_BOOL(display_decoded_idn, false)
+
 /******** Fetcher options ********/
 
 /** Maximum simultaneous active fetchers */
