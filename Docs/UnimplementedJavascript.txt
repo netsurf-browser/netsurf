@@ -1197,8 +1197,6 @@ getter HTMLOutputElement::validity(user);\n
 getter HTMLOutputElement::value(string);\n
 setter HTMLOutputElement::value(string);\n
 getter HTMLOutputElement::willValidate(boolean);\n
-getter HTMLPreElement::width(long);\n
-setter HTMLPreElement::width(long);\n
 getter HTMLProgressElement::labels(user);\n
 getter HTMLProgressElement::max(double);\n
 setter HTMLProgressElement::max(double);\n

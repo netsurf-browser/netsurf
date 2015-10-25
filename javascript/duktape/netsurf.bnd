@@ -95,6 +95,7 @@ struct dom_html_br_element;
 #include "HTMLOListElement.bnd"
 #include "HTMLParagraphElement.bnd"
 #include "HTMLParamElement.bnd"
+#include "HTMLPreElement.bnd"
 #include "HTMLQuoteElement.bnd"
 #include "HTMLScriptElement.bnd"
 #include "HTMLSelectElement.bnd"
@@ -134,7 +135,6 @@ init HTMLDataElement(struct dom_html_element *html_data_element::html_element);
 init HTMLDivElement(struct dom_html_element *html_div_element::html_element);
 init HTMLDListElement(struct dom_html_element *html_d_list_element::html_element);
 init HTMLUListElement(struct dom_html_element *html_u_list_element::html_element);
-init HTMLPreElement(struct dom_html_element *html_pre_element::html_element);
 init HTMLHeadElement(struct dom_html_element *html_head_element::html_element);
 
 /* specialisations of HTMLTableCellElement */
