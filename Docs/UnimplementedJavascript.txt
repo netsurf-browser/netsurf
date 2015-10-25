@@ -963,8 +963,6 @@ getter HTMLInputElement::inputMode(string);\n
 setter HTMLInputElement::inputMode(string);\n
 getter HTMLInputElement::labels(user);\n
 getter HTMLInputElement::list(user);\n
-getter HTMLInputElement::maxLength(long);\n
-setter HTMLInputElement::maxLength(long);\n
 getter HTMLInputElement::max(string);\n
 setter HTMLInputElement::max(string);\n
 getter HTMLInputElement::minLength(long);\n
@@ -990,13 +988,10 @@ setter HTMLInputElement::selectionStart(unsigned long);\n
 method HTMLInputElement::setCustomValidity();\n
 method HTMLInputElement::setRangeText();\n
 method HTMLInputElement::setSelectionRange();\n
-getter HTMLInputElement::size(unsigned long);\n
-setter HTMLInputElement::size(unsigned long);\n
 method HTMLInputElement::stepDown();\n
 getter HTMLInputElement::step(string);\n
 setter HTMLInputElement::step(string);\n
 method HTMLInputElement::stepUp();\n
-getter HTMLInputElement::type(string);\n
 setter HTMLInputElement::type(string);\n
 getter HTMLInputElement::validationMessage(string);\n
 getter HTMLInputElement::validity(user);\n

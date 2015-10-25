@@ -55,4 +55,10 @@ setter HTMLInputElement::valueLow();
 getter HTMLInputElement::value();
 setter HTMLInputElement::value();
 
+getter HTMLInputElement::maxLength();
+setter HTMLInputElement::maxLength();
 
+getter HTMLInputElement::size();
+setter HTMLInputElement::size();
+
+getter HTMLInputElement::type();
