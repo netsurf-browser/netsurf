@@ -36,3 +36,11 @@ setter HTMLTableCellElement::vAlign();
 
 getter HTMLTableCellElement::width();
 setter HTMLTableCellElement::width();
+
+getter HTMLTableCellElement::cellIndex();
+
+getter HTMLTableCellElement::colSpan();
+setter HTMLTableCellElement::colSpan();
+
+getter HTMLTableCellElement::rowSpan();
+setter HTMLTableCellElement::rowSpan();
