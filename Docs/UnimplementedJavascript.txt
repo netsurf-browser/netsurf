@@ -1028,8 +1028,6 @@ getter HTMLKeygenElement::willValidate(boolean);\n
 getter HTMLLabelElement::control(user);\n
 getter HTMLLabelElement::form(user);\n
 getter HTMLLegendElement::form(user);\n
-getter HTMLLIElement::value(long);\n
-setter HTMLLIElement::value(long);\n
 getter HTMLLinkElement::crossOrigin(string);\n
 setter HTMLLinkElement::crossOrigin(string);\n
 getter HTMLLinkElement::relList(user);\n
