@@ -2349,7 +2349,7 @@ nserror gui_window_set_url(struct gui_window *gw, nsurl *url)
 	g = nsgtk_get_scaffold(gw);
 	if (g->top_level == gw) {
 		if (nsoption_bool(display_decoded_idn) == true) {
-			if (nsurl_access_utf8(url, &idn_url_s, &idn_url_l) != NSERROR_OK)
+			if (nsurl_get_utf8(url, &idn_url_s, &idn_url_l) != NSERROR_OK)
 				idn_url_s = NULL;
 		}
 

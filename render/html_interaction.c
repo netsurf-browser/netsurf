@@ -817,7 +817,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		}
 	} else if (url) {
 		if (nsoption_bool(display_decoded_idn) == true) {
-			if (nsurl_access_utf8(url, &url_s, &url_l) != NSERROR_OK) {
+			if (nsurl_get_utf8(url, &url_s, &url_l) != NSERROR_OK) {
 				/* Unable to obtain a decoded IDN.  This is not a fatal error.
 				 * Ensure the string pointer is NULL so we use the encoded version. */
 				url_s = NULL;

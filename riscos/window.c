@@ -1043,7 +1043,7 @@ nserror ro_gui_window_set_url(struct gui_window *g, nsurl *url)
 
 	if (g->toolbar) {
 		if (nsoption_bool(display_decoded_idn) == true) {
-			if (nsurl_access_utf8(url, &idn_url_s, &idn_url_l) != NSERROR_OK)
+			if (nsurl_get_utf8(url, &idn_url_s, &idn_url_l) != NSERROR_OK)
 				idn_url_s = NULL;
 		}
 

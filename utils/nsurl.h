@@ -181,7 +181,7 @@ const char *nsurl_access(const nsurl *url);
 
 
 /**
- * Access a NetSurf URL object as a UTF-8 string (for human readable IDNs)
+ * Get a UTF-8 string (for human readable IDNs) from a NetSurf URL object
  *
  * \param url	  NetSurf URL object
  * \param url_s	  Returns a url string
@@ -195,7 +195,7 @@ const char *nsurl_access(const nsurl *url);
  *
  * The length returned in url_l excludes the trailing '\0'.
  */
-nserror nsurl_access_utf8(const nsurl *url, char **url_s, size_t *url_l);
+nserror nsurl_get_utf8(const nsurl *url, char **url_s, size_t *url_l);
 
 
 /**

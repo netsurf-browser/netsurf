@@ -4900,7 +4900,7 @@ static nserror gui_window_set_url(struct gui_window *g, nsurl *url)
 
 	if(g == g->shared->gw) {
 		if(nsoption_bool(display_decoded_idn) == true) {
-			if (nsurl_access_utf8(url, &idn_url_s, &idn_url_l) == NSERROR_OK) {
+			if (nsurl_get_utf8(url, &idn_url_s, &idn_url_l) == NSERROR_OK) {
 				url_lc = ami_utf8_easy(idn_url_s);
 			}
 		}

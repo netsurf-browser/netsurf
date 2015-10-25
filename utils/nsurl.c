@@ -1700,7 +1700,7 @@ const char *nsurl_access(const nsurl *url)
 
 
 /* exported interface, documented in nsurl.h */
-nserror nsurl_access_utf8(const nsurl *url, char **url_s, size_t *url_l)
+nserror nsurl_get_utf8(const nsurl *url, char **url_s, size_t *url_l)
 {
 	nserror err;
 	lwc_string *host;
