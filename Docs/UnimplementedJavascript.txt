@@ -18,7 +18,7 @@ getter ApplicationCache::onprogress(user);\n
 setter ApplicationCache::onprogress(user);\n
 getter ApplicationCache::onupdateready(user);\n
 setter ApplicationCache::onupdateready(user);\n
-getter ApplicationCache::status(short);\n
+getter ApplicationCache::status(unsigned short);\n
 method ApplicationCache::swapCache();\n
 method ApplicationCache::update();\n
 getter Attr::localName(string);\n
@@ -40,7 +40,7 @@ getter AudioTrack::kind(string);\n
 getter AudioTrack::label(string);\n
 getter AudioTrack::language(string);\n
 method AudioTrackList::getTrackById();\n
-getter AudioTrackList::length(long);\n
+getter AudioTrackList::length(unsigned long);\n
 getter AudioTrackList::onaddtrack(user);\n
 setter AudioTrackList::onaddtrack(user);\n
 getter AudioTrackList::onchange(user);\n
@@ -94,8 +94,8 @@ getter CanvasRenderingContext2D::globalAlpha(double);\n
 setter CanvasRenderingContext2D::globalAlpha(double);\n
 getter CanvasRenderingContext2D::globalCompositeOperation(string);\n
 setter CanvasRenderingContext2D::globalCompositeOperation(string);\n
-getter CanvasRenderingContext2D::height(long);\n
-setter CanvasRenderingContext2D::height(long);\n
+getter CanvasRenderingContext2D::height(unsigned long);\n
+setter CanvasRenderingContext2D::height(unsigned long);\n
 getter CanvasRenderingContext2D::imageSmoothingEnabled(boolean);\n
 setter CanvasRenderingContext2D::imageSmoothingEnabled(boolean);\n
 getter CanvasRenderingContext2D::imageSmoothingQuality(user);\n
@@ -147,8 +147,8 @@ getter CanvasRenderingContext2D::textBaseline(string);\n
 setter CanvasRenderingContext2D::textBaseline(string);\n
 method CanvasRenderingContext2D::transform();\n
 method CanvasRenderingContext2D::translate();\n
-getter CanvasRenderingContext2D::width(long);\n
-setter CanvasRenderingContext2D::width(long);\n
+getter CanvasRenderingContext2D::width(unsigned long);\n
+setter CanvasRenderingContext2D::width(unsigned long);\n
 method CharacterData::after();\n
 method CharacterData::appendData();\n
 method CharacterData::before();\n
@@ -156,14 +156,14 @@ getter CharacterData::data(string);\n
 setter CharacterData::data(string);\n
 method CharacterData::deleteData();\n
 method CharacterData::insertData();\n
-getter CharacterData::length(long);\n
+getter CharacterData::length(unsigned long);\n
 getter CharacterData::nextElementSibling(user);\n
 getter CharacterData::previousElementSibling(user);\n
 method CharacterData::remove();\n
 method CharacterData::replaceData();\n
 method CharacterData::replaceWith();\n
 method CharacterData::substringData();\n
-getter CloseEvent::code(short);\n
+getter CloseEvent::code(unsigned short);\n
 getter CloseEvent::reason(string);\n
 getter CloseEvent::wasClean(boolean);\n
 getter CompositionEvent::data(string);\n
@@ -182,7 +182,7 @@ method DataTransferItem::getAsString();\n
 getter DataTransferItem::kind(string);\n
 method DataTransferItemList::add();\n
 method DataTransferItemList::clear();\n
-getter DataTransferItemList::length(long);\n
+getter DataTransferItemList::length(unsigned long);\n
 method DataTransferItemList::remove();\n
 getter DataTransfer::items(user);\n
 getter DataTransferItem::type(string);\n
@@ -205,7 +205,7 @@ setter Document::bgColor(string);\n
 setter Document::body(user);\n
 method Document::captureEvents();\n
 getter Document::characterSet(string);\n
-getter Document::childElementCount(long);\n
+getter Document::childElementCount(unsigned long);\n
 getter Document::children(user);\n
 method Document::clear();\n
 method Document::close();\n
@@ -231,7 +231,6 @@ setter Document::designMode(string);\n
 getter Document::dir(string);\n
 setter Document::dir(string);\n
 getter Document::doctype(user);\n
-getter Document::documentElement(user);\n
 getter Document::documentURI(string);\n
 getter Document::domain(string);\n
 setter Document::domain(string);\n
@@ -242,7 +241,7 @@ setter Document::fgColor(string);\n
 getter Document::firstElementChild(user);\n
 getter Document::forms(user);\n
 method DocumentFragment::append();\n
-getter DocumentFragment::childElementCount(long);\n
+getter DocumentFragment::childElementCount(unsigned long);\n
 getter DocumentFragment::children(user);\n
 getter DocumentFragment::firstElementChild(user);\n
 method DocumentFragment::getElementById();\n
@@ -431,7 +430,7 @@ setter DOMSettableTokenList::value(string);\n
 method DOMTokenList::add();\n
 method DOMTokenList::contains();\n
 method DOMTokenList::item();\n
-getter DOMTokenList::length(long);\n
+getter DOMTokenList::length(unsigned long);\n
 method DOMTokenList::remove();\n
 method DOMTokenList::toggle();\n
 getter DragEvent::dataTransfer(user);\n
@@ -494,16 +493,16 @@ method Element::setAttributeNode();\n
 method Element::setAttributeNodeNS();\n
 method Element::setAttributeNS();\n
 getter Element::tagName(string);\n
-getter ErrorEvent::colno(long);\n
+getter ErrorEvent::colno(unsigned long);\n
 getter ErrorEvent::error(any);\n
 getter ErrorEvent::filename(string);\n
-getter ErrorEvent::lineno(long);\n
+getter ErrorEvent::lineno(unsigned long);\n
 getter ErrorEvent::message(string);\n
 getter Event::bubbles(boolean);\n
 getter Event::cancelable(boolean);\n
 getter Event::currentTarget(user);\n
 getter Event::defaultPrevented(boolean);\n
-getter Event::eventPhase(short);\n
+getter Event::eventPhase(unsigned short);\n
 method Event::initEvent();\n
 getter Event::isTrusted(boolean);\n
 method EventListener::handleEvent();\n
@@ -515,7 +514,7 @@ getter EventSource::onmessage(user);\n
 setter EventSource::onmessage(user);\n
 getter EventSource::onopen(user);\n
 setter EventSource::onopen(user);\n
-getter EventSource::readyState(short);\n
+getter EventSource::readyState(unsigned short);\n
 getter EventSource::url(string);\n
 getter EventSource::withCredentials(boolean);\n
 method Event::stopImmediatePropagation();\n
@@ -535,12 +534,12 @@ getter HashChangeEvent::oldURL(string);\n
 method History::back();\n
 method History::forward();\n
 method History::go();\n
-getter History::length(long);\n
+getter History::length(unsigned long);\n
 method History::pushState();\n
 method History::replaceState();\n
 getter History::state(any);\n
 method HTMLAllCollection::item();\n
-getter HTMLAllCollection::length(long);\n
+getter HTMLAllCollection::length(unsigned long);\n
 method HTMLAllCollection::namedItem();\n
 getter HTMLAnchorElement::download(string);\n
 setter HTMLAnchorElement::download(string);\n
@@ -571,10 +570,10 @@ getter HTMLAnchorElement::type(string);\n
 setter HTMLAnchorElement::type(string);\n
 getter HTMLAnchorElement::username(user);\n
 setter HTMLAnchorElement::username(user);\n
-getter HTMLAppletElement::hspace(long);\n
-setter HTMLAppletElement::hspace(long);\n
-getter HTMLAppletElement::vspace(long);\n
-setter HTMLAppletElement::vspace(long);\n
+getter HTMLAppletElement::hspace(unsigned long);\n
+setter HTMLAppletElement::hspace(unsigned long);\n
+getter HTMLAppletElement::vspace(unsigned long);\n
+setter HTMLAppletElement::vspace(unsigned long);\n
 getter HTMLAreaElement::download(string);\n
 setter HTMLAreaElement::download(string);\n
 getter HTMLAreaElement::hash(user);\n
@@ -657,17 +656,17 @@ getter HTMLButtonElement::validationMessage(string);\n
 getter HTMLButtonElement::validity(user);\n
 getter HTMLButtonElement::willValidate(boolean);\n
 method HTMLCanvasElement::getContext();\n
-getter HTMLCanvasElement::height(long);\n
-setter HTMLCanvasElement::height(long);\n
+getter HTMLCanvasElement::height(unsigned long);\n
+setter HTMLCanvasElement::height(unsigned long);\n
 method HTMLCanvasElement::probablySupportsContext();\n
 method HTMLCanvasElement::setContext();\n
 method HTMLCanvasElement::toBlob();\n
 method HTMLCanvasElement::toDataURL();\n
 method HTMLCanvasElement::transferControlToProxy();\n
-getter HTMLCanvasElement::width(long);\n
-setter HTMLCanvasElement::width(long);\n
+getter HTMLCanvasElement::width(unsigned long);\n
+setter HTMLCanvasElement::width(unsigned long);\n
 method HTMLCollection::item();\n
-getter HTMLCollection::length(long);\n
+getter HTMLCollection::length(unsigned long);\n
 method HTMLCollection::namedItem();\n
 getter HTMLDataElement::value(string);\n
 setter HTMLDataElement::value(string);\n
@@ -929,22 +928,14 @@ getter HTMLImageElement::complete(boolean);\n
 getter HTMLImageElement::crossOrigin(string);\n
 setter HTMLImageElement::crossOrigin(string);\n
 getter HTMLImageElement::currentSrc(string);\n
-getter HTMLImageElement::height(long);\n
-setter HTMLImageElement::height(long);\n
-getter HTMLImageElement::hspace(long);\n
-setter HTMLImageElement::hspace(long);\n
 getter HTMLImageElement::lowsrc(string);\n
 setter HTMLImageElement::lowsrc(string);\n
-getter HTMLImageElement::naturalHeight(long);\n
-getter HTMLImageElement::naturalWidth(long);\n
+getter HTMLImageElement::naturalHeight(unsigned long);\n
+getter HTMLImageElement::naturalWidth(unsigned long);\n
 getter HTMLImageElement::sizes(string);\n
 setter HTMLImageElement::sizes(string);\n
 getter HTMLImageElement::srcset(string);\n
 setter HTMLImageElement::srcset(string);\n
-getter HTMLImageElement::vspace(long);\n
-setter HTMLImageElement::vspace(long);\n
-getter HTMLImageElement::width(long);\n
-setter HTMLImageElement::width(long);\n
 getter HTMLInputElement::autocomplete(string);\n
 setter HTMLInputElement::autocomplete(string);\n
 getter HTMLInputElement::autofocus(boolean);\n
@@ -964,8 +955,8 @@ setter HTMLInputElement::formNoValidate(boolean);\n
 getter HTMLInputElement::formTarget(string);\n
 setter HTMLInputElement::formTarget(string);\n
 getter HTMLInputElement::form(user);\n
-getter HTMLInputElement::height(long);\n
-setter HTMLInputElement::height(long);\n
+getter HTMLInputElement::height(unsigned long);\n
+setter HTMLInputElement::height(unsigned long);\n
 getter HTMLInputElement::indeterminate(boolean);\n
 setter HTMLInputElement::indeterminate(boolean);\n
 getter HTMLInputElement::inputMode(string);\n
@@ -992,15 +983,15 @@ setter HTMLInputElement::required(boolean);\n
 method HTMLInputElement::select();\n
 getter HTMLInputElement::selectionDirection(string);\n
 setter HTMLInputElement::selectionDirection(string);\n
-getter HTMLInputElement::selectionEnd(long);\n
-setter HTMLInputElement::selectionEnd(long);\n
-getter HTMLInputElement::selectionStart(long);\n
-setter HTMLInputElement::selectionStart(long);\n
+getter HTMLInputElement::selectionEnd(unsigned long);\n
+setter HTMLInputElement::selectionEnd(unsigned long);\n
+getter HTMLInputElement::selectionStart(unsigned long);\n
+setter HTMLInputElement::selectionStart(unsigned long);\n
 method HTMLInputElement::setCustomValidity();\n
 method HTMLInputElement::setRangeText();\n
 method HTMLInputElement::setSelectionRange();\n
-getter HTMLInputElement::size(long);\n
-setter HTMLInputElement::size(long);\n
+getter HTMLInputElement::size(unsigned long);\n
+setter HTMLInputElement::size(unsigned long);\n
 method HTMLInputElement::stepDown();\n
 getter HTMLInputElement::step(string);\n
 setter HTMLInputElement::step(string);\n
@@ -1017,8 +1008,8 @@ getter HTMLInputElement::valueHigh(double);\n
 setter HTMLInputElement::valueHigh(double);\n
 getter HTMLInputElement::valueLow(double);\n
 setter HTMLInputElement::valueLow(double);\n
-getter HTMLInputElement::width(long);\n
-setter HTMLInputElement::width(long);\n
+getter HTMLInputElement::width(unsigned long);\n
+setter HTMLInputElement::width(unsigned long);\n
 getter HTMLInputElement::willValidate(boolean);\n
 getter HTMLKeygenElement::autofocus(boolean);\n
 setter HTMLKeygenElement::autofocus(boolean);\n
@@ -1057,8 +1048,8 @@ getter HTMLMarqueeElement::direction(string);\n
 setter HTMLMarqueeElement::direction(string);\n
 getter HTMLMarqueeElement::height(string);\n
 setter HTMLMarqueeElement::height(string);\n
-getter HTMLMarqueeElement::hspace(long);\n
-setter HTMLMarqueeElement::hspace(long);\n
+getter HTMLMarqueeElement::hspace(unsigned long);\n
+setter HTMLMarqueeElement::hspace(unsigned long);\n
 getter HTMLMarqueeElement::loop(long);\n
 setter HTMLMarqueeElement::loop(long);\n
 getter HTMLMarqueeElement::onbounce(user);\n
@@ -1067,16 +1058,16 @@ getter HTMLMarqueeElement::onfinish(user);\n
 setter HTMLMarqueeElement::onfinish(user);\n
 getter HTMLMarqueeElement::onstart(user);\n
 setter HTMLMarqueeElement::onstart(user);\n
-getter HTMLMarqueeElement::scrollAmount(long);\n
-setter HTMLMarqueeElement::scrollAmount(long);\n
-getter HTMLMarqueeElement::scrollDelay(long);\n
-setter HTMLMarqueeElement::scrollDelay(long);\n
+getter HTMLMarqueeElement::scrollAmount(unsigned long);\n
+setter HTMLMarqueeElement::scrollAmount(unsigned long);\n
+getter HTMLMarqueeElement::scrollDelay(unsigned long);\n
+setter HTMLMarqueeElement::scrollDelay(unsigned long);\n
 method HTMLMarqueeElement::start();\n
 method HTMLMarqueeElement::stop();\n
 getter HTMLMarqueeElement::trueSpeed(boolean);\n
 setter HTMLMarqueeElement::trueSpeed(boolean);\n
-getter HTMLMarqueeElement::vspace(long);\n
-setter HTMLMarqueeElement::vspace(long);\n
+getter HTMLMarqueeElement::vspace(unsigned long);\n
+setter HTMLMarqueeElement::vspace(unsigned long);\n
 getter HTMLMarqueeElement::width(string);\n
 setter HTMLMarqueeElement::width(string);\n
 method HTMLMediaElement::addTextTrack();\n
@@ -1110,7 +1101,7 @@ getter HTMLMediaElement::mediaGroup(string);\n
 setter HTMLMediaElement::mediaGroup(string);\n
 getter HTMLMediaElement::muted(boolean);\n
 setter HTMLMediaElement::muted(boolean);\n
-getter HTMLMediaElement::networkState(short);\n
+getter HTMLMediaElement::networkState(unsigned short);\n
 method HTMLMediaElement::pause();\n
 getter HTMLMediaElement::paused(boolean);\n
 method HTMLMediaElement::play();\n
@@ -1119,7 +1110,7 @@ setter HTMLMediaElement::playbackRate(double);\n
 getter HTMLMediaElement::played(user);\n
 getter HTMLMediaElement::preload(string);\n
 setter HTMLMediaElement::preload(string);\n
-getter HTMLMediaElement::readyState(short);\n
+getter HTMLMediaElement::readyState(unsigned short);\n
 getter HTMLMediaElement::seekable(user);\n
 getter HTMLMediaElement::seeking(boolean);\n
 getter HTMLMediaElement::srcObject(user);\n
@@ -1171,25 +1162,19 @@ getter HTMLObjectElement::contentDocument(user);\n
 getter HTMLObjectElement::contentWindow(user);\n
 getter HTMLObjectElement::form(user);\n
 method HTMLObjectElement::getSVGDocument();\n
-getter HTMLObjectElement::hspace(long);\n
-setter HTMLObjectElement::hspace(long);\n
+getter HTMLObjectElement::hspace(unsigned long);\n
+setter HTMLObjectElement::hspace(unsigned long);\n
 method HTMLObjectElement::reportValidity();\n
 method HTMLObjectElement::setCustomValidity();\n
 getter HTMLObjectElement::typeMustMatch(boolean);\n
 setter HTMLObjectElement::typeMustMatch(boolean);\n
 getter HTMLObjectElement::validationMessage(string);\n
 getter HTMLObjectElement::validity(user);\n
-getter HTMLObjectElement::vspace(long);\n
-setter HTMLObjectElement::vspace(long);\n
+getter HTMLObjectElement::vspace(unsigned long);\n
+setter HTMLObjectElement::vspace(unsigned long);\n
 getter HTMLObjectElement::willValidate(boolean);\n
-getter HTMLOListElement::compact(boolean);\n
-setter HTMLOListElement::compact(boolean);\n
 getter HTMLOListElement::reversed(boolean);\n
 setter HTMLOListElement::reversed(boolean);\n
-getter HTMLOListElement::start(long);\n
-setter HTMLOListElement::start(long);\n
-getter HTMLOListElement::type(string);\n
-setter HTMLOListElement::type(string);\n
 getter HTMLOptGroupElement::disabled(boolean);\n
 setter HTMLOptGroupElement::disabled(boolean);\n
 getter HTMLOptGroupElement::label(string);\n
@@ -1198,8 +1183,8 @@ getter HTMLOptionElement::form(user);\n
 getter HTMLOptionElement::index(long);\n
 setter HTMLOptionElement::text(string);\n
 method HTMLOptionsCollection::add();\n
-getter HTMLOptionsCollection::length(long);\n
-setter HTMLOptionsCollection::length(long);\n
+getter HTMLOptionsCollection::length(unsigned long);\n
+setter HTMLOptionsCollection::length(unsigned long);\n
 method HTMLOptionsCollection::remove();\n
 getter HTMLOptionsCollection::selectedIndex(long);\n
 setter HTMLOptionsCollection::selectedIndex(long);\n
@@ -1242,8 +1227,8 @@ method HTMLSelectElement::checkValidity();\n
 getter HTMLSelectElement::form(user);\n
 method HTMLSelectElement::item();\n
 getter HTMLSelectElement::labels(user);\n
-getter HTMLSelectElement::length(long);\n
-setter HTMLSelectElement::length(long);\n
+getter HTMLSelectElement::length(unsigned long);\n
+setter HTMLSelectElement::length(unsigned long);\n
 method HTMLSelectElement::namedItem();\n
 getter HTMLSelectElement::options(user);\n
 method HTMLSelectElement::remove();\n
@@ -1254,8 +1239,8 @@ getter HTMLSelectElement::selectedIndex(long);\n
 setter HTMLSelectElement::selectedIndex(long);\n
 getter HTMLSelectElement::selectedOptions(user);\n
 method HTMLSelectElement::setCustomValidity();\n
-getter HTMLSelectElement::size(long);\n
-setter HTMLSelectElement::size(long);\n
+getter HTMLSelectElement::size(unsigned long);\n
+setter HTMLSelectElement::size(unsigned long);\n
 getter HTMLSelectElement::validationMessage(string);\n
 getter HTMLSelectElement::validity(user);\n
 getter HTMLSelectElement::willValidate(boolean);\n
@@ -1274,13 +1259,13 @@ setter HTMLStyleElement::nonce(string);\n
 getter HTMLStyleElement::scoped(boolean);\n
 setter HTMLStyleElement::scoped(boolean);\n
 getter HTMLTableCellElement::cellIndex(long);\n
-getter HTMLTableCellElement::colSpan(long);\n
-setter HTMLTableCellElement::colSpan(long);\n
+getter HTMLTableCellElement::colSpan(unsigned long);\n
+setter HTMLTableCellElement::colSpan(unsigned long);\n
 getter HTMLTableCellElement::headers(user);\n
-getter HTMLTableCellElement::rowSpan(long);\n
-setter HTMLTableCellElement::rowSpan(long);\n
-getter HTMLTableColElement::span(long);\n
-setter HTMLTableColElement::span(long);\n
+getter HTMLTableCellElement::rowSpan(unsigned long);\n
+setter HTMLTableCellElement::rowSpan(unsigned long);\n
+getter HTMLTableColElement::span(unsigned long);\n
+setter HTMLTableColElement::span(unsigned long);\n
 getter HTMLTableDataCellElement::abbr(string);\n
 setter HTMLTableDataCellElement::abbr(string);\n
 getter HTMLTableElement::caption(user);\n
@@ -1324,8 +1309,8 @@ setter HTMLTextAreaElement::autocomplete(string);\n
 getter HTMLTextAreaElement::autofocus(boolean);\n
 setter HTMLTextAreaElement::autofocus(boolean);\n
 method HTMLTextAreaElement::checkValidity();\n
-getter HTMLTextAreaElement::cols(long);\n
-setter HTMLTextAreaElement::cols(long);\n
+getter HTMLTextAreaElement::cols(unsigned long);\n
+setter HTMLTextAreaElement::cols(unsigned long);\n
 getter HTMLTextAreaElement::dirName(string);\n
 setter HTMLTextAreaElement::dirName(string);\n
 getter HTMLTextAreaElement::form(user);\n
@@ -1341,19 +1326,19 @@ setter HTMLTextAreaElement::placeholder(string);\n
 method HTMLTextAreaElement::reportValidity();\n
 getter HTMLTextAreaElement::required(boolean);\n
 setter HTMLTextAreaElement::required(boolean);\n
-getter HTMLTextAreaElement::rows(long);\n
-setter HTMLTextAreaElement::rows(long);\n
+getter HTMLTextAreaElement::rows(unsigned long);\n
+setter HTMLTextAreaElement::rows(unsigned long);\n
 method HTMLTextAreaElement::select();\n
 getter HTMLTextAreaElement::selectionDirection(string);\n
 setter HTMLTextAreaElement::selectionDirection(string);\n
-getter HTMLTextAreaElement::selectionEnd(long);\n
-setter HTMLTextAreaElement::selectionEnd(long);\n
-getter HTMLTextAreaElement::selectionStart(long);\n
-setter HTMLTextAreaElement::selectionStart(long);\n
+getter HTMLTextAreaElement::selectionEnd(unsigned long);\n
+setter HTMLTextAreaElement::selectionEnd(unsigned long);\n
+getter HTMLTextAreaElement::selectionStart(unsigned long);\n
+setter HTMLTextAreaElement::selectionStart(unsigned long);\n
 method HTMLTextAreaElement::setCustomValidity();\n
 method HTMLTextAreaElement::setRangeText();\n
 method HTMLTextAreaElement::setSelectionRange();\n
-getter HTMLTextAreaElement::textLength(long);\n
+getter HTMLTextAreaElement::textLength(unsigned long);\n
 getter HTMLTextAreaElement::validationMessage(string);\n
 getter HTMLTextAreaElement::validity(user);\n
 getter HTMLTextAreaElement::willValidate(boolean);\n
@@ -1367,7 +1352,7 @@ getter HTMLTrackElement::kind(string);\n
 setter HTMLTrackElement::kind(string);\n
 getter HTMLTrackElement::label(string);\n
 setter HTMLTrackElement::label(string);\n
-getter HTMLTrackElement::readyState(short);\n
+getter HTMLTrackElement::readyState(unsigned short);\n
 getter HTMLTrackElement::srclang(string);\n
 setter HTMLTrackElement::srclang(string);\n
 getter HTMLTrackElement::src(string);\n
@@ -1377,33 +1362,33 @@ getter HTMLUListElement::compact(boolean);\n
 setter HTMLUListElement::compact(boolean);\n
 getter HTMLUListElement::type(string);\n
 setter HTMLUListElement::type(string);\n
-getter HTMLVideoElement::height(long);\n
-setter HTMLVideoElement::height(long);\n
+getter HTMLVideoElement::height(unsigned long);\n
+setter HTMLVideoElement::height(unsigned long);\n
 getter HTMLVideoElement::poster(string);\n
 setter HTMLVideoElement::poster(string);\n
-getter HTMLVideoElement::videoHeight(long);\n
-getter HTMLVideoElement::videoWidth(long);\n
-getter HTMLVideoElement::width(long);\n
-setter HTMLVideoElement::width(long);\n
-getter ImageBitmap::height(long);\n
-getter ImageBitmap::width(long);\n
+getter HTMLVideoElement::videoHeight(unsigned long);\n
+getter HTMLVideoElement::videoWidth(unsigned long);\n
+getter HTMLVideoElement::width(unsigned long);\n
+setter HTMLVideoElement::width(unsigned long);\n
+getter ImageBitmap::height(unsigned long);\n
+getter ImageBitmap::width(unsigned long);\n
 getter ImageData::data(user);\n
-getter ImageData::height(long);\n
-getter ImageData::width(long);\n
+getter ImageData::height(unsigned long);\n
+getter ImageData::width(unsigned long);\n
 getter KeyboardEvent::altKey(boolean);\n
-getter KeyboardEvent::charCode(long);\n
+getter KeyboardEvent::charCode(unsigned long);\n
 getter KeyboardEvent::code(string);\n
 getter KeyboardEvent::ctrlKey(boolean);\n
 method KeyboardEvent::getModifierState();\n
 method KeyboardEvent::initKeyboardEvent();\n
 getter KeyboardEvent::isComposing(boolean);\n
-getter KeyboardEvent::keyCode(long);\n
+getter KeyboardEvent::keyCode(unsigned long);\n
 getter KeyboardEvent::key(string);\n
-getter KeyboardEvent::location(long);\n
+getter KeyboardEvent::location(unsigned long);\n
 getter KeyboardEvent::metaKey(boolean);\n
 getter KeyboardEvent::repeat(boolean);\n
 getter KeyboardEvent::shiftKey(boolean);\n
-getter KeyboardEvent::which(long);\n
+getter KeyboardEvent::which(unsigned long);\n
 getter Location::ancestorOrigins(string);\n
 setter Location::hash(user);\n
 setter Location::hostname(user);\n
@@ -1457,12 +1442,12 @@ getter MediaController::playbackRate(double);\n
 setter MediaController::playbackRate(double);\n
 getter MediaController::playbackState(user);\n
 getter MediaController::played(user);\n
-getter MediaController::readyState(short);\n
+getter MediaController::readyState(unsigned short);\n
 getter MediaController::seekable(user);\n
 method MediaController::unpause();\n
 getter MediaController::volume(double);\n
 setter MediaController::volume(double);\n
-getter MediaError::code(short);\n
+getter MediaError::code(unsigned short);\n
 getter MessageChannel::port1(user);\n
 getter MessageChannel::port2(user);\n
 getter MessageEvent::data(any);\n
@@ -1477,7 +1462,7 @@ setter MessagePort::onmessage(user);\n
 method MessagePort::postMessage();\n
 method MessagePort::start();\n
 method MimeTypeArray::item();\n
-getter MimeTypeArray::length(long);\n
+getter MimeTypeArray::length(unsigned long);\n
 method MimeTypeArray::namedItem();\n
 getter MimeType::description(string);\n
 getter MimeType::enabledPlugin(user);\n
@@ -1485,7 +1470,7 @@ getter MimeType::suffixes(string);\n
 getter MimeType::type(string);\n
 getter MouseEvent::altKey(boolean);\n
 getter MouseEvent::button(short);\n
-getter MouseEvent::buttons(short);\n
+getter MouseEvent::buttons(unsigned short);\n
 getter MouseEvent::clientX(long);\n
 getter MouseEvent::clientY(long);\n
 getter MouseEvent::ctrlKey(boolean);\n
@@ -1497,7 +1482,7 @@ getter MouseEvent::relatedTarget(user);\n
 getter MouseEvent::screenX(long);\n
 getter MouseEvent::screenY(long);\n
 getter MouseEvent::shiftKey(boolean);\n
-getter MutationEvent::attrChange(short);\n
+getter MutationEvent::attrChange(unsigned short);\n
 getter MutationEvent::attrName(string);\n
 method MutationEvent::initMutationEvent();\n
 getter MutationEvent::newValue(string);\n
@@ -1518,7 +1503,7 @@ getter MutationRecord::type(string);\n
 method NamedNodeMap::getNamedItem();\n
 method NamedNodeMap::getNamedItemNS();\n
 method NamedNodeMap::item();\n
-getter NamedNodeMap::length(long);\n
+getter NamedNodeMap::length(unsigned long);\n
 method NamedNodeMap::removeNamedItem();\n
 method NamedNodeMap::removeNamedItemNS();\n
 method NamedNodeMap::setNamedItem();\n
@@ -1543,7 +1528,7 @@ getter NodeIterator::pointerBeforeReferenceNode(boolean);\n
 method NodeIterator::previousNode();\n
 getter NodeIterator::referenceNode(user);\n
 getter NodeIterator::root(user);\n
-getter NodeIterator::whatToShow(long);\n
+getter NodeIterator::whatToShow(unsigned long);\n
 getter PageTransitionEvent::persisted(boolean);\n
 method Path2D::addPath();\n
 method Path2D::addPathByStrokingPath();\n
@@ -1559,13 +1544,13 @@ method Path2D::moveTo();\n
 method Path2D::quadraticCurveTo();\n
 method Path2D::rect();\n
 method PluginArray::item();\n
-getter PluginArray::length(long);\n
+getter PluginArray::length(unsigned long);\n
 method PluginArray::namedItem();\n
 method PluginArray::refresh();\n
 getter Plugin::description(string);\n
 getter Plugin::filename(string);\n
 method Plugin::item();\n
-getter Plugin::length(long);\n
+getter Plugin::length(unsigned long);\n
 method Plugin::namedItem();\n
 getter Plugin::name(string);\n
 getter PopStateEvent::state(any);\n
@@ -1582,7 +1567,7 @@ method Range::comparePoint();\n
 method Range::deleteContents();\n
 method Range::detach();\n
 getter Range::endContainer(user);\n
-getter Range::endOffset(long);\n
+getter Range::endOffset(unsigned long);\n
 method Range::extractContents();\n
 method Range::insertNode();\n
 method Range::intersectsNode();\n
@@ -1596,7 +1581,7 @@ method Range::setStart();\n
 method Range::setStartAfter();\n
 method Range::setStartBefore();\n
 getter Range::startContainer(user);\n
-getter Range::startOffset(long);\n
+getter Range::startOffset(unsigned long);\n
 method Range::surroundContents();\n
 getter RelatedEvent::relatedTarget(user);\n
 getter SharedWorkerGlobalScope::applicationCache(user);\n
@@ -1614,7 +1599,7 @@ getter StorageEvent::storageArea(user);\n
 getter StorageEvent::url(string);\n
 method Storage::getItem();\n
 method Storage::key();\n
-getter Storage::length(long);\n
+getter Storage::length(unsigned long);\n
 method Storage::removeItem();\n
 method Storage::setItem();\n
 getter TextMetrics::actualBoundingBoxAscent(double);\n
@@ -1637,7 +1622,7 @@ setter TextTrackCue::endTime(double);\n
 getter TextTrackCue::id(string);\n
 setter TextTrackCue::id(string);\n
 method TextTrackCueList::getCueById();\n
-getter TextTrackCueList::length(long);\n
+getter TextTrackCueList::length(unsigned long);\n
 getter TextTrackCue::onenter(user);\n
 setter TextTrackCue::onenter(user);\n
 getter TextTrackCue::onexit(user);\n
@@ -1654,7 +1639,7 @@ getter TextTrack::kind(user);\n
 getter TextTrack::label(string);\n
 getter TextTrack::language(string);\n
 method TextTrackList::getTrackById();\n
-getter TextTrackList::length(long);\n
+getter TextTrackList::length(unsigned long);\n
 getter TextTrackList::onaddtrack(user);\n
 setter TextTrackList::onaddtrack(user);\n
 getter TextTrackList::onchange(user);\n
@@ -1668,7 +1653,7 @@ setter TextTrack::oncuechange(user);\n
 method TextTrack::removeCue();\n
 getter Text::wholeText(string);\n
 method TimeRanges::end();\n
-getter TimeRanges::length(long);\n
+getter TimeRanges::length(unsigned long);\n
 method TimeRanges::start();\n
 getter Touch::region(string);\n
 getter TrackEvent::track(user);\n
@@ -1683,7 +1668,7 @@ method TreeWalker::parentNode();\n
 method TreeWalker::previousNode();\n
 method TreeWalker::previousSibling();\n
 getter TreeWalker::root(user);\n
-getter TreeWalker::whatToShow(long);\n
+getter TreeWalker::whatToShow(unsigned long);\n
 getter UIEvent::detail(long);\n
 method UIEvent::initUIEvent();\n
 getter UIEvent::view(user);\n
@@ -1734,7 +1719,7 @@ getter VideoTrack::kind(string);\n
 getter VideoTrack::label(string);\n
 getter VideoTrack::language(string);\n
 method VideoTrackList::getTrackById();\n
-getter VideoTrackList::length(long);\n
+getter VideoTrackList::length(unsigned long);\n
 getter VideoTrackList::onaddtrack(user);\n
 setter VideoTrackList::onaddtrack(user);\n
 getter VideoTrackList::onchange(user);\n
@@ -1746,7 +1731,7 @@ getter VideoTrack::selected(boolean);\n
 setter VideoTrack::selected(boolean);\n
 getter WebSocket::binaryType(user);\n
 setter WebSocket::binaryType(user);\n
-getter WebSocket::bufferedAmount(long);\n
+getter WebSocket::bufferedAmount(unsigned long);\n
 method WebSocket::close();\n
 getter WebSocket::extensions(string);\n
 getter WebSocket::onclose(user);\n
@@ -1758,10 +1743,10 @@ setter WebSocket::onmessage(user);\n
 getter WebSocket::onopen(user);\n
 setter WebSocket::onopen(user);\n
 getter WebSocket::protocol(string);\n
-getter WebSocket::readyState(short);\n
+getter WebSocket::readyState(unsigned short);\n
 method WebSocket::send();\n
 getter WebSocket::url(string);\n
-getter WheelEvent::deltaMode(long);\n
+getter WheelEvent::deltaMode(unsigned long);\n
 getter WheelEvent::deltaX(double);\n
 getter WheelEvent::deltaY(double);\n
 getter WheelEvent::deltaZ(double);\n
@@ -1784,12 +1769,10 @@ method Window::focus();\n
 getter Window::frameElement(user);\n
 getter Window::frames(user);\n
 getter Window::history(user);\n
-getter Window::length(long);\n
+getter Window::length(unsigned long);\n
 getter Window::localStorage(user);\n
 getter Window::locationbar(user);\n
 getter Window::menubar(user);\n
-getter Window::name(string);\n
-setter Window::name(string);\n
 getter Window::onabort(user);\n
 setter Window::onabort(user);\n
 getter Window::onafterprint(user);\n

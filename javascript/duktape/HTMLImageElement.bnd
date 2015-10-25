@@ -33,3 +33,15 @@ setter HTMLImageElement::src();
 
 getter HTMLImageElement::useMap();
 setter HTMLImageElement::useMap();
+
+getter HTMLImageElement::height();
+setter HTMLImageElement::height();
+
+getter HTMLImageElement::hspace();
+setter HTMLImageElement::hspace();
+
+getter HTMLImageElement::vspace();
+setter HTMLImageElement::vspace();
+
+getter HTMLImageElement::width();
+setter HTMLImageElement::width();
