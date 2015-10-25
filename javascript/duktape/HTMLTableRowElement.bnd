@@ -24,3 +24,7 @@ setter HTMLTableRowElement::ch();
 
 getter HTMLTableRowElement::vAlign();
 setter HTMLTableRowElement::vAlign();
+
+getter HTMLTableRowElement::rowIndex();
+
+getter HTMLTableRowElement::sectionRowIndex();

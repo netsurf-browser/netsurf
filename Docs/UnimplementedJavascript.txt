@@ -460,8 +460,6 @@ getter Element::attributes(user);\n
 method Element::before();\n
 getter Element::children(user);\n
 getter Element::classList(user);\n
-getter Element::className(string);\n
-setter Element::className(string);\n
 method Element::closest();\n
 method Element::getAttribute();\n
 method Element::getAttributeNode();\n
@@ -472,8 +470,6 @@ method Element::getElementsByTagNameNS();\n
 method Element::hasAttribute();\n
 method Element::hasAttributeNS();\n
 method Element::hasAttributes();\n
-getter Element::id(string);\n
-setter Element::id(string);\n
 getter Element::localName(string);\n
 method Element::matches();\n
 getter Element::namespaceURI(string);\n
@@ -1249,12 +1245,7 @@ getter HTMLStyleElement::nonce(string);\n
 setter HTMLStyleElement::nonce(string);\n
 getter HTMLStyleElement::scoped(boolean);\n
 setter HTMLStyleElement::scoped(boolean);\n
-getter HTMLTableCellElement::cellIndex(long);\n
-getter HTMLTableCellElement::colSpan(unsigned long);\n
-setter HTMLTableCellElement::colSpan(unsigned long);\n
 getter HTMLTableCellElement::headers(user);\n
-getter HTMLTableCellElement::rowSpan(unsigned long);\n
-setter HTMLTableCellElement::rowSpan(unsigned long);\n
 getter HTMLTableColElement::span(unsigned long);\n
 setter HTMLTableColElement::span(unsigned long);\n
 getter HTMLTableDataCellElement::abbr(string);\n
@@ -1289,8 +1280,6 @@ setter HTMLTableHeaderCellElement::sorted(string);\n
 getter HTMLTableRowElement::cells(user);\n
 method HTMLTableRowElement::deleteCell();\n
 method HTMLTableRowElement::insertCell();\n
-getter HTMLTableRowElement::rowIndex(long);\n
-getter HTMLTableRowElement::sectionRowIndex(long);\n
 method HTMLTableSectionElement::deleteRow();\n
 method HTMLTableSectionElement::insertRow();\n
 getter HTMLTableSectionElement::rows(user);\n
