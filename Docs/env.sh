@@ -222,7 +222,7 @@ ns-package-install()
 # git pull in all repos parameters are passed to git pull
 ns-pull()
 {
-    for REPO in ${NS_BUILDSYSTEM} ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_TOOLS} ${NS_BROWSER} ; do 
+    for REPO in $(echo ${NS_BUILDSYSTEM} ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_TOOLS} ${NS_BROWSER}) ; do 
 	echo -n "     GIT: Pulling ${REPO}: "
 	if [ -f "${TARGET_WORKSPACE}/${REPO}/.git/config" ]; then
 	    (cd ${TARGET_WORKSPACE}/${REPO} && git pull $*; )
