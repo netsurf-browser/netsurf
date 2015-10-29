@@ -248,6 +248,23 @@ setter Element::id ()
 	return 0;
 %}
 
+
+method Element::removeAttribute()
+%{
+	dom_string *attr = NULL;
+	dom_exception exc;
+	duk_size_t slen;
+	const char *s = duk_safe_to_lstring(ctx, 0, &slen);
+
+	exc = dom_string_create((const uint8_t *)s, slen, &attr);
+	if (exc != DOM_NO_ERR) return 0;
+
+	exc = dom_element_remove_attribute(priv->parent.node, attr);
+	dom_string_unref(attr);
+	if (exc != DOM_NO_ERR) return 0;
+	return 0;
+%}
+
 method Element::setAttribute()
 %{
 	dom_exception exc;

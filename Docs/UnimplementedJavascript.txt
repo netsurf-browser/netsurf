@@ -480,7 +480,6 @@ method Element::queryAll();\n
 method Element::querySelector();\n
 method Element::querySelectorAll();\n
 method Element::remove();\n
-method Element::removeAttribute();\n
 method Element::removeAttributeNode();\n
 method Element::removeAttributeNS();\n
 method Element::replaceWith();\n
