@@ -2070,11 +2070,11 @@ de.gtk.gtkDownloads:_Downloads...
 fr.gtk.gtkDownloads:_Téléchargements...
 it.gtk.gtkDownloads:_Trasferimenti...
 nl.gtk.gtkDownloads:_Downloads...
-en.gtk.gtkDownloadsAccel:<ctrl>d
-de.gtk.gtkDownloadsAccel:<ctrl>d
-fr.gtk.gtkDownloadsAccel:<ctrl>d
-it.gtk.gtkDownloadsAccel:<ctrl>d
-nl.gtk.gtkDownloadsAccel:<ctrl>d
+en.gtk.gtkDownloadsAccel:<ctrl>j
+de.gtk.gtkDownloadsAccel:<ctrl>j
+fr.gtk.gtkDownloadsAccel:<ctrl>j
+it.gtk.gtkDownloadsAccel:<ctrl>j
+nl.gtk.gtkDownloadsAccel:<ctrl>j
 en.gtk.gtkSaveWindowSize:S_ave Window Size
 de.gtk.gtkSaveWindowSize:Fenstergröße _speichern
 fr.gtk.gtkSaveWindowSize:E_nregistrer la taille de la fenêtre
@@ -2156,6 +2156,11 @@ de.gtk.gtkAddBookMarks:_Lesezeichen hinzufügen..
 fr.gtk.gtkAddBookMarks:_Ajouter un marque-page..
 it.gtk.gtkAddBookMarks:_Aggiungi ai segnalibri...
 nl.gtk.gtkAddBookMarks:_Aan bladwijzers toevoegen...
+en.gtk.gtkAddBookMarksAccel:<ctrl>d
+de.gtk.gtkGlobalHistoryAccel:<ctrl>d
+fr.gtk.gtkGlobalHistoryAccel:<ctrl>d
+it.gtk.gtkGlobalHistoryAccel:<ctrl>d
+nl.gtk.gtkGlobalHistoryAccel:<ctrl>d
 en.gtk.gtkShowBookMarks:_Show Bookmarks…
 de.gtk.gtkShowBookMarks:Le_sezeichen anzeigen..
 fr.gtk.gtkShowBookMarks:_Montrer les marques-pages...
