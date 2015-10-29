@@ -262,7 +262,7 @@ method Element::setAttribute()
 	exc = dom_string_create((const uint8_t *)value, value_len, &value_str);
 	if (exc != DOM_NO_ERR) {
 		dom_string_unref(attr_str);
-		 return 0;
+		return 0;
 	}
 
 	exc = dom_element_set_attribute(priv->parent.node,
