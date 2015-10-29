@@ -484,7 +484,6 @@ method Element::removeAttribute();\n
 method Element::removeAttributeNode();\n
 method Element::removeAttributeNS();\n
 method Element::replaceWith();\n
-method Element::setAttribute();\n
 method Element::setAttributeNode();\n
 method Element::setAttributeNodeNS();\n
 method Element::setAttributeNS();\n

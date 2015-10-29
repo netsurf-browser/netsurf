@@ -248,6 +248,31 @@ setter Element::id ()
 	return 0;
 %}
 
+method Element::setAttribute()
+%{
+	dom_exception exc;
+	dom_string *attr_str, *value_str;
+	duk_size_t attr_len, value_len;
+	const char *attr = duk_safe_to_lstring(ctx, 0, &attr_len);
+	const char *value = duk_safe_to_lstring(ctx, 1, &value_len);
+
+	exc = dom_string_create((const uint8_t *)attr, attr_len, &attr_str);
+	if (exc != DOM_NO_ERR) return 0;
+
+	exc = dom_string_create((const uint8_t *)value, value_len, &value_str);
+	if (exc != DOM_NO_ERR) {
+		dom_string_unref(attr_str);
+		 return 0;
+	}
+
+	exc = dom_element_set_attribute(priv->parent.node,
+			attr_str, value_str);
+	dom_string_unref(attr_str);
+	dom_string_unref(value_str);
+	if (exc != DOM_NO_ERR) return 0;
+	return 0;
+%}
+
 getter Element::className ()
 %{
 	dom_string *classstr = NULL;
