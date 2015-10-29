@@ -678,8 +678,6 @@ method HTMLDialogElement::show();\n
 method HTMLDialogElement::showModal();\n
 getter HTMLDirectoryElement::compact(boolean);\n
 setter HTMLDirectoryElement::compact(boolean);\n
-getter HTMLDivElement::align(string);\n
-setter HTMLDivElement::align(string);\n
 getter HTMLDListElement::compact(boolean);\n
 setter HTMLDListElement::compact(boolean);\n
 getter HTMLElement::accessKeyLabel(string);\n
