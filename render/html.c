@@ -70,6 +70,30 @@ static const char *html_types[] = {
 	"text/html"
 };
 
+/* Exported interface, see html_internal.h */
+bool fire_dom_event(dom_string *type, dom_node *target,
+		    bool bubbles, bool cancelable)
+{
+	dom_exception exc;
+	dom_event *evt;
+	bool result;
+
+	exc = dom_event_create(&evt);
+	if (exc != DOM_NO_ERR) return false;
+	exc = dom_event_init(evt, type, bubbles, cancelable);
+	if (exc != DOM_NO_ERR) {
+		dom_event_unref(evt);
+		return false;
+	}
+	LOG("Dispatching '%*s' against %p",
+	    dom_string_length(type), dom_string_data(type), target);
+	exc = dom_event_target_dispatch_event(target, evt, &result);
+	if (exc != DOM_NO_ERR) {
+		result = false;
+	}
+	dom_event_unref(evt);
+	return result;
+}
 
 /**
  * Perform post-box-creation conversion of a document
@@ -644,6 +668,16 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 				}
 
 				dom_string_unref(name);
+			}
+			/* ensure javascript context is available */
+			if (htmlc->jscontext == NULL) {
+				union content_msg_data msg_data;
+
+				msg_data.jscontext = &htmlc->jscontext;
+				content_broadcast(&htmlc->base,
+						  CONTENT_MSG_GETCTX,
+						  msg_data);
+				LOG("javascript context %p ", htmlc->jscontext);
 			}
 			if (htmlc->jscontext != NULL) {
 				js_handle_new_element(htmlc->jscontext,

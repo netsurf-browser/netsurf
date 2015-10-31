@@ -352,6 +352,14 @@ nserror html_object_close_objects(html_content *html);
 nserror html_object_open_objects(html_content *html, struct browser_window *bw);
 nserror html_object_abort_objects(html_content *html);
 
+/* Events */
+/**
+ * Construct an event and fire it at the DOM
+ *
+ */
+bool fire_dom_event(dom_string *type, dom_node *target,
+		    bool bubbles, bool cancelable);
+
 /* Useful dom_string pointers */
 struct dom_string;
 
