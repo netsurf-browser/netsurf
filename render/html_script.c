@@ -278,7 +278,7 @@ convert_script_sync_cb(hlcache_handle *script,
 
 		/* attempt to execute script */
 		script_handler = select_script_handler(content_get_type(s->data.handle));
-		if (script_handler != NULL) {
+		if (script_handler != NULL && parent->jscontext != NULL) {
 			/* script has a handler */
 			const char *data;
 			unsigned long size;
