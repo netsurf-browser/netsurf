@@ -1727,7 +1727,6 @@ getter WheelEvent::deltaX(double);\n
 getter WheelEvent::deltaY(double);\n
 getter WheelEvent::deltaZ(double);\n
 method WheelEvent::initWheelEvent();\n
-method Window::alert();\n
 getter Window::applicationCache(user);\n
 method Window::atob();\n
 method Window::blur();\n

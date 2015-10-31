@@ -132,3 +132,11 @@ setter Window::name()
 	browser_window_set_name(priv->win, name);
 	return 0;
 %}
+
+method Window::alert()
+%{
+	duk_size_t msg_len;
+	const char *msg = duk_safe_to_lstring(ctx, 0, &msg_len);
+	LOG("JS ALERT: %*s", (int)msg_len, msg);
+	return 0;
+%}
