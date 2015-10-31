@@ -644,6 +644,9 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 				}
 
 				dom_string_unref(name);
+				if (htmlc->jscontext != NULL)
+					js_handle_new_element(htmlc->jscontext,
+							(dom_element *) node);
 			}
 		}
 		dom_node_unref(node);
@@ -688,6 +691,15 @@ dom_default_action_DOMSubtreeModified_cb(struct dom_event *evt, void *pw)
 	}
 }
 
+static void
+dom_default_action_finished_cb(struct dom_event *evt, void *pw)
+{
+	html_content *htmlc = pw;
+
+	if (htmlc->jscontext != NULL)
+		js_event_cleanup(htmlc->jscontext, evt);
+}
+
 /* callback function selector
  *
  * selects a callback function for libdom to call based on the type and phase.
@@ -714,6 +726,8 @@ dom_event_fetcher(dom_string *type,
 		} else if (dom_string_isequal(type, corestring_dom_DOMSubtreeModified)) {
 			return dom_default_action_DOMSubtreeModified_cb;
 		}
+	} else if (phase == DOM_DEFAULT_ACTION_FINISHED) {
+		return dom_default_action_finished_cb;
 	}
 	return NULL;
 }

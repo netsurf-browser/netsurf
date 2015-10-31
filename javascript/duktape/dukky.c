@@ -37,6 +37,9 @@
 
 #include <dom/dom.h>
 
+#define EVENT_MAGIC MAGIC(EVENT_MAP)
+#define HANDLER_LISTENER_MAGIC MAGIC(HANDLER_LISTENER_MAP)
+
 static duk_ret_t dukky_populate_object(duk_context *ctx)
 {
 	/* ... obj args protoname nargs */
@@ -78,6 +81,10 @@ duk_ret_t dukky_create_object(duk_context *ctx, const char *name, int args)
 	/* ... args */
 	duk_push_object(ctx);
 	/* ... args obj */
+	duk_push_object(ctx);
+	/* ... args obj handlers */
+	duk_put_prop_string(ctx, -2, HANDLER_LISTENER_MAGIC);
+	/* ... args obj */
 	duk_insert(ctx, -(args+1));
 	/* ... obj args */
 	duk_push_string(ctx, name);
@@ -109,6 +116,10 @@ dukky_push_node_stacked(duk_context *ctx)
 		duk_pop(ctx);
 		/* ... nodeptr klass nodes */
 		duk_push_object(ctx);
+		/* ... nodeptr klass nodes obj */
+		duk_push_object(ctx);
+		/* ... nodeptr klass nodes obj handlers */
+		duk_put_prop_string(ctx, -2, HANDLER_LISTENER_MAGIC);
 		/* ... nodeptr klass nodes obj */
 		duk_dup(ctx, -4);
 		/* ... nodeptr klass nodes obj nodeptr */
@@ -350,6 +361,10 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 	duk_put_prop(CTX, -3);
 	duk_put_global_string(CTX, NODE_MAGIC);
 
+	/* And now the event mapping table */
+	duk_push_object(CTX);
+	duk_put_global_string(CTX, EVENT_MAGIC);
+
 	return (jsobject *)ctx;
 }
 
@@ -389,4 +404,133 @@ bool js_fire_event(jscontext *ctx, const char *type, struct dom_document *doc, s
 	/* La La La */
 	LOG("Oh dear, an event: %s", type);
 	return true;
+}
+
+/*** New style event handling ***/
+
+static void dukky_generic_event_handler(dom_event *evt, void *pw)
+{
+	duk_context *ctx = (duk_context *)pw;
+	dom_string *name;
+	dom_exception exc;
+	/* ... */
+	LOG("WOOP WOOP, An event:");
+	exc = dom_event_get_type(evt, &name);
+	if (exc != DOM_NO_ERR) {
+		LOG("Unable to find the event name");
+		return;
+	}
+	LOG("Event's name is %*s",
+	    dom_string_length(name), dom_string_data(name));
+	dom_string_unref(name);
+	LOG("TODO: Maybe do something with this?");
+}
+
+void dukky_register_event_listener_for(duk_context *ctx,
+				       struct dom_element *ele,
+				       dom_string *name)
+{
+	dom_event_listener *listen = NULL;
+	dom_exception exc;
+
+	/* ... */
+	if (dukky_push_node(ctx, (struct dom_node *)ele) == false)
+		return;
+	/* ... node */
+	duk_get_prop_string(ctx, -1, HANDLER_LISTENER_MAGIC);
+	/* ... node handlers */
+	duk_push_lstring(ctx, dom_string_data(name), dom_string_length(name));
+	/* ... node handlers name */
+	if (duk_has_prop(ctx, -2)) {
+		/* ... node handlers */
+		duk_pop_2(ctx);
+		/* ... */
+		return;
+	}
+	/* ... node handlers */
+	duk_push_lstring(ctx, dom_string_data(name), dom_string_length(name));
+	/* ... node handlers name */
+	duk_push_boolean(ctx, true);
+	/* ... node handlers name true */
+	duk_put_prop(ctx, -3);
+	/* ... node handlers */
+	duk_pop_2(ctx);
+	/* ... */
+	exc = dom_event_listener_create(dukky_generic_event_handler, ctx,
+					&listen);
+	if (exc != DOM_NO_ERR) return;
+	exc = dom_event_target_add_event_listener(
+		ele, name, listen, false);
+	if (exc != DOM_NO_ERR) {
+		LOG("Unable to register listener for %p.%*s",
+		    ele, dom_string_length(name), dom_string_data(name));
+	}
+	dom_event_listener_unref(listen);
+}
+
+
+void js_handle_new_element(jscontext *ctx, struct dom_element *node)
+{
+	assert(ctx);
+	assert(node);
+	dom_namednodemap *map;
+	dom_exception exc;
+	dom_ulong idx;
+	dom_ulong siz;
+	dom_attr *attr = NULL;
+	dom_string *key = NULL;
+
+	exc = dom_node_get_attributes(node, &map);
+	if (exc != DOM_NO_ERR) return;
+	if (map == NULL) return;
+
+	exc = dom_namednodemap_get_length(map, &siz);
+	if (exc != DOM_NO_ERR) goto out;
+
+	for (idx = 0; idx < siz; idx++) {
+		exc = dom_namednodemap_item(map, idx, &attr);
+		if (exc != DOM_NO_ERR) goto out;
+		exc = dom_attr_get_name(attr, &key);
+		if (exc != DOM_NO_ERR) goto out;
+		if (dom_string_length(key) > 2) {
+			/* Can be on* */
+			const uint8_t *data = (const uint8_t *)dom_string_data(key);
+			if (data[0] == 'o' && data[1] == 'n') {
+				dom_string *sub = NULL;
+				exc = dom_string_substr(
+					key, 2, dom_string_length(key) - 2,
+					&sub);
+				if (exc == DOM_NO_ERR) {
+					dukky_register_event_listener_for(
+						CTX, node, sub);
+					dom_string_unref(sub);
+				}
+			}
+		}
+		dom_string_unref(key); key = NULL;
+		dom_node_unref(attr); attr = NULL;
+	}
+
+out:
+	if (key != NULL)
+		dom_string_unref(key);
+
+	if (attr != NULL)
+		dom_node_unref(attr);
+
+	dom_namednodemap_unref(map);
+}
+
+void js_event_cleanup(jscontext *ctx, struct dom_event *evt)
+{
+	assert(ctx);
+	/* ... */
+	duk_get_global_string(CTX, EVENT_MAGIC);
+	/* ... EVENT_MAP */
+	duk_push_pointer(CTX, evt);
+	/* ... EVENT_MAP eventptr */
+	duk_del_prop(CTX, -2);
+	/* ... EVENT_MAP */
+	duk_pop(CTX);
+	/* ... */
 }

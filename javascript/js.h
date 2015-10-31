@@ -31,8 +31,10 @@ typedef struct jsobject jsobject;
 
 typedef bool(jscallback)(void *ctx);
 
+struct dom_event;
 struct dom_document;
 struct dom_node;
+struct dom_element;
 struct dom_string;
 
 /** Initialise javascript interpreter */
@@ -78,5 +80,23 @@ js_dom_event_add_listener(jscontext *ctx,
 			  struct dom_string *event_type_dom,
 			  void *js_funcval);
 
+/*** New Events ***/
+
+/** Handle a new element being created.
+ *
+ * This is called once an element is inserted into the DOM document handled
+ * by the context provided.  The JS implementation must then scan the element
+ * for on* attributes and register appropriate listeners for those handlers.
+ */
+void js_handle_new_element(jscontext *ctx, struct dom_element *node);
+
+/** Handle an event propagation finished callback.
+ *
+ * This is called once an event finishes propagating, no matter how it
+ * finishes.  The intent here is that the JS context can perform any cleanups
+ * it may need to perform before the DOM finishes and the event may end up
+ * freed.
+ */
+void js_event_cleanup(jscontext *ctx, struct dom_event *evt);
 
 #endif /* _NETSURF_JAVASCRIPT_JS_H_ */

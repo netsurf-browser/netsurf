@@ -60,3 +60,11 @@ bool js_fire_event(jscontext *ctx, const char *type, struct dom_document *doc, s
 {
 	return true;
 }
+
+void js_handle_new_element(jscontext *ctx, struct dom_element *node)
+{
+}
+
+void js_event_cleanup(jscontext *ctx, struct dom_event *evt)
+{
+}
