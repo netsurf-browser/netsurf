@@ -1704,11 +1704,11 @@ nserror nsurl_get_utf8(const nsurl *url, char **url_s, size_t *url_l)
 {
 	nserror err;
 	lwc_string *host;
-	char *idna_host;
+	char *idna_host = NULL;
 	size_t idna_host_len;
-	char *scheme;
+	char *scheme = NULL;
 	size_t scheme_len;
-	char *path;
+	char *path = NULL;
 	size_t path_len;
 
 	assert(url != NULL);
@@ -1721,33 +1721,41 @@ nserror nsurl_get_utf8(const nsurl *url, char **url_s, size_t *url_l)
 	err = idna_decode(lwc_string_data(host), lwc_string_length(host),
 			&idna_host, &idna_host_len);
 	if (err != NSERROR_OK) {
-		return err;
+		goto cleanup;
 	}
 
 	err = nsurl_get(url,
 			NSURL_SCHEME | NSURL_CREDENTIALS,
 			&scheme, &scheme_len);
 	if (err != NSERROR_OK) {
-		return err;
+		goto cleanup;
 	}
 
 	err = nsurl_get(url,
 			NSURL_PORT | NSURL_PATH | NSURL_QUERY | NSURL_FRAGMENT,
 			&path, &path_len);
 	if (err != NSERROR_OK) {
-		return err;
+		goto cleanup;
 	}
 
 	*url_l = scheme_len + idna_host_len + path_len + 1; /* +1 for \0 */
 	*url_s = malloc(*url_l); 
 
 	if (*url_s == NULL) {
-		return NSERROR_NOMEM;
+		err = NSERROR_NOMEM;
+		goto cleanup;
 	}
 
 	snprintf(*url_s, *url_l, "%s%s%s", scheme, idna_host, path);
 
-	return NSERROR_OK;
+	err = NSERROR_OK;
+
+cleanup:
+	free(idna_host);
+	free(scheme);
+	free(path);
+
+	return err;
 }
 
 
