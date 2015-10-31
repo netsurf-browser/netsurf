@@ -1008,7 +1008,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	/* fire dom click event */
 	if ((mouse & BROWSER_MOUSE_CLICK_1) ||
 	    (mouse & BROWSER_MOUSE_CLICK_2)) {
-		js_fire_event(html->jscontext, "click", html->document, node);
+		fire_dom_event(corestring_dom_click, node, true, true);
 	}
 
 	/* deferred actions that can cause this browser_window to be destroyed
