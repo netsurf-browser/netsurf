@@ -445,6 +445,47 @@ static void dukky_push_event(duk_context *ctx, dom_event *evt)
 	/* ... event */
 }
 
+static void dukky_push_handler_code(duk_context *ctx, dom_event *evt)
+{
+	dom_string *name, *onname, *val;
+	dom_element *ele;
+	dom_exception exc;
+
+	exc = dom_event_get_type(evt, &name);
+	if (exc != DOM_NO_ERR) {
+		duk_push_lstring(ctx, "", 0);
+		return;
+	}
+
+	exc = dom_string_concat(corestring_dom_on, name, &onname);
+	if (exc != DOM_NO_ERR) {
+		dom_string_unref(name);
+		duk_push_lstring(ctx, "", 0);
+		return;
+	}
+	dom_string_unref(name);
+
+	exc = dom_event_get_target(evt, &ele);
+	if (exc != DOM_NO_ERR) {
+		dom_string_unref(onname);
+		duk_push_lstring(ctx, "", 0);
+		return;
+	}
+
+	exc = dom_element_get_attribute(ele, onname, &val);
+	if (exc != DOM_NO_ERR) {
+		dom_string_unref(onname);
+		dom_node_unref(ele);
+		duk_push_lstring(ctx, "", 0);
+		return;
+	}
+	dom_node_unref(ele);
+	dom_string_unref(onname);
+	duk_push_lstring(ctx, dom_string_data(val), dom_string_length(val));
+	dom_string_unref(val);
+}
+
+
 static void dukky_generic_event_handler(dom_event *evt, void *pw)
 {
 	duk_context *ctx = (duk_context *)pw;
@@ -475,6 +516,7 @@ static void dukky_generic_event_handler(dom_event *evt, void *pw)
 		LOG("Unable to push JS node representation?!");
 		return;
 	}
+	dom_node_unref(targ);
 	/* ... node */
 	duk_get_prop_string(ctx, -1, HANDLER_MAGIC);
 	/* ... node handlers */
@@ -484,16 +526,40 @@ static void dukky_generic_event_handler(dom_event *evt, void *pw)
 	/* ... node handlers handler? */
 	if (duk_is_undefined(ctx, -1)) {
 		/* ... node handlers undefined */
-		duk_pop(ctx);
+		duk_pop_2(ctx);
+		/* ... node */
+		dukky_push_handler_code(ctx, evt);
+		/* ... node handlercode */
+		/** @todo This is entirely wrong, but it's hard to get right */
+		duk_push_string(ctx, "function (event) {");
+		/* ... node handlercode prefix */
+		duk_insert(ctx, -2);
+		/* ... node prefix handlercode */
+		duk_push_string(ctx, "}");
+		/* ... node prefix handlercode suffix */
+		duk_concat(ctx, 3);
+		/* ... node fullhandlersrc */
+		duk_push_string(ctx, "internal raw uncompiled handler");
+		/* ... node fullhandlersrc filename */
+		if (duk_pcompile(ctx, DUK_COMPILE_FUNCTION) != 0) {
+			/* ... node err */
+			LOG("Unable to proceed with handler, could not compile");
+			dom_string_unref(name);
+			duk_pop_2(ctx);
+			return ;
+		}
 		/* ... node handler */
-		/* @todo deal with uncompiled badgers */
+		duk_insert(ctx, -2);
+		/* ... handler node */
+	} else {
+		/* ... node handlers handler */
+		duk_insert(ctx, -2);
+		/* ... handler node handlers */
+		duk_pop(ctx);
+		/* ... handler node */
 	}
-	dom_string_unref(name);
 	/** @todo handle other kinds of event than the generic case */
-	/* ... node handlers handler */
-	duk_insert(ctx, -2);
-	/* ... handler node handlers */
-	duk_pop(ctx);
+	dom_string_unref(name);
 	/* ... handler node */
 	dukky_push_event(ctx, evt);
 	/* ... handler node event */
@@ -555,6 +621,9 @@ void dukky_register_event_listener_for(duk_context *ctx,
 	if (exc != DOM_NO_ERR) {
 		LOG("Unable to register listener for %p.%*s",
 		    ele, dom_string_length(name), dom_string_data(name));
+	} else {
+		LOG("have registered listener for %p.%*s",
+		    ele, dom_string_length(name), dom_string_data(name));
 	}
 	dom_event_listener_unref(listen);
 }
@@ -589,7 +658,7 @@ void js_handle_new_element(jscontext *ctx, struct dom_element *node)
 			if (data[0] == 'o' && data[1] == 'n') {
 				dom_string *sub = NULL;
 				exc = dom_string_substr(
-					key, 2, dom_string_length(key) - 2,
+					key, 2, dom_string_length(key),
 					&sub);
 				if (exc == DOM_NO_ERR) {
 					dukky_register_event_listener_for(
