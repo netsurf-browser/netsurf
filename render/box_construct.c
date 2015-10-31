@@ -2217,6 +2217,11 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 		}
 	}
 
+	/* If the last child wasn't a frame, we still need to unref it */
+	if (c != NULL) {
+		dom_node_unref(c);
+	}
+
 	return true;
 }
 
