@@ -644,9 +644,10 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 				}
 
 				dom_string_unref(name);
-				if (htmlc->jscontext != NULL)
-					js_handle_new_element(htmlc->jscontext,
-							(dom_element *) node);
+			}
+			if (htmlc->jscontext != NULL) {
+				js_handle_new_element(htmlc->jscontext,
+						      (dom_element *) node);
 			}
 		}
 		dom_node_unref(node);
