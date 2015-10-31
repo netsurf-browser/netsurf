@@ -1713,17 +1713,13 @@ nserror nsurl_get_utf8(const nsurl *url, char **url_s, size_t *url_l)
 
 	assert(url != NULL);
 
-	host = nsurl_get_component(url, NSURL_HOST);
+	if (url->components.host == NULL) {
+		return nsurl_get(url, NSURL_WITH_FRAGMENT, url_s, url_l);
+	}
 
-	if (host == NULL)
-		return NSERROR_BAD_URL;
-
+	host = url->components.host;
 	err = idna_decode(lwc_string_data(host), lwc_string_length(host),
 			&idna_host, &idna_host_len);
-
-	lwc_string_unref(host);
-
-	if (err != NSERROR_OK)
 	if (err != NSERROR_OK) {
 		return err;
 	}
