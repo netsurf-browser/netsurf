@@ -8,6 +8,12 @@
  *         http://www.opensource.org/licenses/mit-license
  */
 
+prologue HTMLElement ()
+%{
+#include <utils/corestrings.h>
+#define HANDLER_MAGIC MAGIC(HANDLER_MAP)
+%}
+
 init HTMLElement(struct dom_html_element *html_element::element);
 
 getter HTMLElement::dir();
@@ -18,3 +24,44 @@ setter HTMLElement::lang();
 
 getter HTMLElement::title();
 setter HTMLElement::title();
+
+setter HTMLElement::onclick()
+%{
+	/* handlerfn */
+	duk_push_this(ctx);
+	/* handlerfn this */
+	duk_get_prop_string(ctx, -1, HANDLER_MAGIC);
+	/* handlerfn this handlers */
+	duk_push_lstring(ctx, "click", 5);
+	/* handlerfn this handlers click */
+	duk_dup(ctx, -4);
+	/* handlerfn this handlers click handlerfn */
+	duk_put_prop(ctx, -3);
+	/* handlerfn this handlers */
+	dukky_register_event_listener_for(ctx,
+			(dom_element *)((node_private_t *)priv)->node,
+			corestring_dom_click);
+	return 0;
+%}
+
+getter HTMLElement::onclick()
+%{
+	dom_event_target *et = (dom_event_target *)(((node_private_t *)priv)->node);
+	dom_string *name;
+	dom_exception exc;
+
+	exc = dom_string_create((const uint8_t *)"click", 5, &name);
+	if (exc != DOM_NO_ERR) return 0;
+
+	duk_push_this(ctx);
+	/* ... node */
+	if (dukky_get_current_value_of_event_handler(ctx, name, et) == false) {
+		dom_string_unref(name);
+		return 0;
+	}
+	dom_string_unref(name);
+	/* ... handler node */
+	duk_pop(ctx);
+	/* ... handler */
+	return 1;
+%}
