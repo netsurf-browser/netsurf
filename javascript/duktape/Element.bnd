@@ -265,6 +265,31 @@ method Element::removeAttribute()
 	return 0;
 %}
 
+method Element::getAttribute()
+%{
+	dom_string *attr_name = NULL;
+	dom_string *attr_value = NULL;
+	dom_exception exc;
+	duk_size_t slen;
+
+	const char *s = duk_safe_to_lstring(ctx, 0, &slen);
+	exc = dom_string_create((const uint8_t *)s, slen, &attr_name);
+	duk_pop(ctx);
+
+	exc = dom_element_get_attribute(priv->parent.node,
+			attr_name, &attr_value);
+	dom_string_unref(attr_name);
+	if (exc != DOM_NO_ERR) return 0;
+	if (attr_value == NULL) {
+		duk_push_lstring(ctx, "", 0);
+	} else {
+		duk_push_lstring(ctx, dom_string_data(attr_value),
+				 dom_string_length(attr_value));
+		dom_string_unref(attr_value);
+	}
+	return 1;
+%}
+
 method Element::setAttribute()
 %{
 	dom_exception exc;

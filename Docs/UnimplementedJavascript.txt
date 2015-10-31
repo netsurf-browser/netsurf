@@ -461,7 +461,6 @@ method Element::before();\n
 getter Element::children(user);\n
 getter Element::classList(user);\n
 method Element::closest();\n
-method Element::getAttribute();\n
 method Element::getAttributeNode();\n
 method Element::getAttributeNodeNS();\n
 method Element::getAttributeNS();\n
