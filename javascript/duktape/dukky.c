@@ -39,6 +39,7 @@
 
 #define EVENT_MAGIC MAGIC(EVENT_MAP)
 #define HANDLER_LISTENER_MAGIC MAGIC(HANDLER_LISTENER_MAP)
+#define HANDLER_MAGIC MAGIC(HANDLER_MAP)
 
 static duk_ret_t dukky_populate_object(duk_context *ctx)
 {
@@ -85,6 +86,10 @@ duk_ret_t dukky_create_object(duk_context *ctx, const char *name, int args)
 	/* ... args obj handlers */
 	duk_put_prop_string(ctx, -2, HANDLER_LISTENER_MAGIC);
 	/* ... args obj */
+	duk_push_object(ctx);
+	/* ... args obj handlers */
+	duk_put_prop_string(ctx, -2, HANDLER_MAGIC);
+	/* ... args obj */
 	duk_insert(ctx, -(args+1));
 	/* ... obj args */
 	duk_push_string(ctx, name);
@@ -120,6 +125,10 @@ dukky_push_node_stacked(duk_context *ctx)
 		duk_push_object(ctx);
 		/* ... nodeptr klass nodes obj handlers */
 		duk_put_prop_string(ctx, -2, HANDLER_LISTENER_MAGIC);
+		/* ... nodeptr klass nodes obj */
+		duk_push_object(ctx);
+		/* ... nodeptr klass nodes obj handlers */
+		duk_put_prop_string(ctx, -2, HANDLER_MAGIC);
 		/* ... nodeptr klass nodes obj */
 		duk_dup(ctx, -4);
 		/* ... nodeptr klass nodes obj nodeptr */
@@ -408,12 +417,41 @@ bool js_fire_event(jscontext *ctx, const char *type, struct dom_document *doc, s
 
 /*** New style event handling ***/
 
+static void dukky_push_event(duk_context *ctx, dom_event *evt)
+{
+	/* ... */
+	duk_get_global_string(ctx, EVENT_MAGIC);
+	/* ... events */
+	duk_push_pointer(ctx, evt);
+	/* ... events eventptr */
+	duk_get_prop(ctx, -2);
+	/* ... events event? */
+	if (duk_is_undefined(ctx, -1)) {
+		/* ... events undefined */
+		duk_pop(ctx);
+		/* ... events */
+		duk_push_object(ctx);
+		/* ... events eobj */
+		/** @todo fill out the event object */
+		duk_push_pointer(ctx, evt);
+		/* ... events eobj eventptr */
+		duk_dup(ctx, -2);
+		/* ... events eobj eventptr eobj */
+		duk_put_prop(ctx, -4);
+		/* ... events eobj */
+	}
+	/* ... events event */
+	duk_replace(ctx, -2);
+	/* ... event */
+}
+
 static void dukky_generic_event_handler(dom_event *evt, void *pw)
 {
 	duk_context *ctx = (duk_context *)pw;
 	dom_string *name;
 	dom_exception exc;
-	/* ... */
+	dom_event_target *targ;
+
 	LOG("WOOP WOOP, An event:");
 	exc = dom_event_get_type(evt, &name);
 	if (exc != DOM_NO_ERR) {
@@ -422,8 +460,61 @@ static void dukky_generic_event_handler(dom_event *evt, void *pw)
 	}
 	LOG("Event's name is %*s",
 	    dom_string_length(name), dom_string_data(name));
+
+	exc = dom_event_get_target(evt, &targ);
+	if (exc != DOM_NO_ERR) {
+		dom_string_unref(name);
+		LOG("Unable to find the event target");
+		return;
+	}
+
+	/* ... */
+	if (dukky_push_node(ctx, (dom_node *)targ) == false) {
+		dom_string_unref(name);
+		dom_node_unref(targ);
+		LOG("Unable to push JS node representation?!");
+		return;
+	}
+	/* ... node */
+	duk_get_prop_string(ctx, -1, HANDLER_MAGIC);
+	/* ... node handlers */
+	duk_push_lstring(ctx, dom_string_data(name), dom_string_length(name));
+	/* ... node handlers name */
+	duk_get_prop(ctx, -2);
+	/* ... node handlers handler? */
+	if (duk_is_undefined(ctx, -1)) {
+		/* ... node handlers undefined */
+		duk_pop(ctx);
+		/* ... node handler */
+		/* @todo deal with uncompiled badgers */
+	}
 	dom_string_unref(name);
-	LOG("TODO: Maybe do something with this?");
+	/** @todo handle other kinds of event than the generic case */
+	/* ... node handlers handler */
+	duk_insert(ctx, -2);
+	/* ... handler node handlers */
+	duk_pop(ctx);
+	/* ... handler node */
+	dukky_push_event(ctx, evt);
+	/* ... handler node event */
+	if (duk_pcall_method(ctx, 1) != 0) {
+		/* Failed to run the method */
+		/* ... err */
+		LOG("OH NOES! An error running a callback.  Meh.");
+		exc = dom_event_stop_immediate_propagation(evt);
+		if (exc != DOM_NO_ERR)
+			LOG("WORSE! could not stop propagation");
+		duk_pop(ctx);
+		/* ... */
+		return;
+	}
+	/* ... result */
+	if (duk_is_boolean(ctx, -1) &&
+	    duk_to_boolean(ctx, -1) == 0) {
+		dom_event_prevent_default(evt);
+	}
+	duk_pop(ctx);
+	/* ... */
 }
 
 void dukky_register_event_listener_for(duk_context *ctx,
