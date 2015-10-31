@@ -170,6 +170,11 @@ static __inline__ unsigned long long duk_rdtsc(void) {
 /* PowerPC */
 #if defined(__powerpc) || defined(__powerpc__) || defined(__PPC__)
 #define DUK_F_PPC
+#if defined(__PPC64__)
+#define DUK_F_PPC64
+#else
+#define DUK_F_PPC32
+#endif
 #endif
 
 /* Linux */
@@ -478,7 +483,9 @@ static __inline__ unsigned long long duk_rdtsc(void) {
  * there is no platform specific date parsing/formatting but there is still
  * the ISO 8601 standard format.
  */
+#if defined(DUK_COMPILING_DUKTAPE)
 #include <windows.h>
+#endif
 #include <limits.h>
 #elif defined(DUK_F_FLASHPLAYER)
 /* Crossbridge */
@@ -1082,6 +1089,11 @@ typedef duk_int_t duk_idx_t;
 #define DUK_IDX_MIN               DUK_INT_MIN
 #define DUK_IDX_MAX               DUK_INT_MAX
 
+/* Unsigned index variant. */
+typedef duk_uint_t duk_uidx_t;
+#define DUK_UIDX_MIN              DUK_UINT_MIN
+#define DUK_UIDX_MAX              DUK_UINT_MAX
+
 /* Array index values, could be exact 32 bits.
  * Currently no need for signed duk_arridx_t.
  */
@@ -1495,8 +1507,8 @@ typedef struct duk_hthread duk_context;
 #define DUK_USE_PACKED_TVAL_POSSIBLE
 #endif
 
-/* PPC: packed always possible */
-#if !defined(DUK_USE_PACKED_TVAL_POSSIBLE) && defined(DUK_F_PPC)
+/* PPC32: packed always possible */
+#if !defined(DUK_USE_PACKED_TVAL_POSSIBLE) && defined(DUK_F_PPC32)
 #define DUK_USE_PACKED_TVAL_POSSIBLE
 #endif
 
@@ -2018,6 +2030,18 @@ typedef FILE duk_file;
 #define DUK_ALWAYS_INLINE  /*nop*/
 #endif
 
+/* Temporary workaround for GH-323: avoid inlining control when
+ * compiling from multiple sources, as it causes compiler trouble.
+ */
+#if !defined(DUK_SINGLE_FILE)
+#undef DUK_NOINLINE
+#undef DUK_INLINE
+#undef DUK_ALWAYS_INLINE
+#define DUK_NOINLINE       /*nop*/
+#define DUK_INLINE         /*nop*/
+#define DUK_ALWAYS_INLINE  /*nop*/
+#endif
+
 /*
  *  Symbol visibility macros
  *
@@ -2228,6 +2252,16 @@ typedef FILE duk_file;
 #endif
 
 /*
+ *  Target info string
+ */
+
+#if defined(DUK_OPT_TARGET_INFO)
+#define DUK_USE_TARGET_INFO DUK_OPT_TARGET_INFO
+#else
+#define DUK_USE_TARGET_INFO "unknown"
+#endif
+
+/*
  *  Long control transfer, setjmp/longjmp or alternatives
  *
  *  Signal mask is not saved (when that can be communicated to the platform)
@@ -2264,16 +2298,6 @@ typedef FILE duk_file;
 #endif
 
 /*
- *  Target info string
- */
-
-#if defined(DUK_OPT_TARGET_INFO)
-#define DUK_USE_TARGET_INFO DUK_OPT_TARGET_INFO
-#else
-#define DUK_USE_TARGET_INFO "unknown"
-#endif
-
-/*
  *  Speed/size and other performance options
  */
 
@@ -2294,10 +2318,16 @@ typedef FILE duk_file;
  * where a speed-size tradeoff exists (e.g. lookup tables).  When it really
  * matters, specific use flags may be appropriate.
  */
-#define DUK_USE_PREFER_SIZE
+#undef DUK_USE_PREFER_SIZE
 
 /* Use a sliding window for lexer; slightly larger footprint, slightly faster. */
 #define DUK_USE_LEXER_SLIDING_WINDOW
+
+/* Transparent JSON.stringify() fastpath. */
+#undef DUK_USE_JSON_STRINGIFY_FASTPATH
+#if defined(DUK_OPT_JSON_STRINGIFY_FASTPATH)
+#define DUK_USE_JSON_STRINGIFY_FASTPATH
+#endif
 
 /*
  *  Tagged type representation (duk_tval)
@@ -2445,6 +2475,16 @@ typedef FILE duk_file;
 #undef DUK_USE_DEBUGGER_DUMPHEAP
 #if defined(DUK_OPT_DEBUGGER_DUMPHEAP)
 #define DUK_USE_DEBUGGER_DUMPHEAP
+#endif
+
+#define DUK_USE_DEBUGGER_THROW_NOTIFY
+#if defined(DUK_OPT_NO_DEBUGGER_THROW_NOTIFY)
+#undef DUK_USE_DEBUGGER_THROW_NOTIFY
+#endif
+
+#undef DUK_USE_DEBUGGER_PAUSE_UNCAUGHT
+#if defined(DUK_OPT_DEBUGGER_PAUSE_UNCAUGHT)
+#define DUK_USE_DEBUGGER_PAUSE_UNCAUGHT
 #endif
 
 /* Debugger transport read/write torture. */
@@ -2681,6 +2721,12 @@ typedef FILE duk_file;
 #undef DUK_USE_NONSTD_ARRAY_WRITE
 #endif
 
+/* Node.js Buffer and Khronos/ES6 typed array support. */
+#define DUK_USE_BUFFEROBJECT_SUPPORT
+#if defined(DUK_OPT_NO_BUFFEROBJECT_SUPPORT)
+#undef DUK_USE_BUFFEROBJECT_SUPPORT
+#endif
+
 /*
  *  Optional C API options
  */
@@ -2701,20 +2747,6 @@ typedef FILE duk_file;
 #define DUK_USE_TAILCALL
 #if defined(DUK_USE_NONSTD_FUNC_CALLER_PROPERTY)
 #undef DUK_USE_TAILCALL
-#endif
-
-/*
- *  Deep vs. shallow stack.
- *
- *  Some embedded platforms have very shallow stack (e.g. 64kB); default to
- *  a shallow stack on unknown platforms or known embedded platforms.
- */
-
-#if defined(DUK_F_LINUX) || defined(DUK_F_BSD) || defined(DUK_F_WINDOWS) || \
-    defined(DUK_F_APPLE) || defined(DUK_OPT_DEEP_C_STACK)
-#define DUK_USE_DEEP_C_STACK
-#else
-#undef DUK_USE_DEEP_C_STACK
 #endif
 
 /*
@@ -2930,10 +2962,6 @@ typedef FILE duk_file;
 #define DUK_USE_PROVIDE_DEFAULT_ALLOC_FUNCTIONS
 #undef DUK_USE_EXPLICIT_NULL_INIT
 
-#if !defined(DUK_USE_PACKED_TVAL)
-#define DUK_USE_EXPLICIT_NULL_INIT
-#endif
-
 #define DUK_USE_ZERO_BUFFER_DATA
 #if defined(DUK_OPT_NO_ZERO_BUFFER_DATA)
 #undef DUK_USE_ZERO_BUFFER_DATA
@@ -2988,6 +3016,42 @@ typedef FILE duk_file;
 #endif
 
 /*
+ *  User declarations
+ */
+
+#if defined(DUK_OPT_DECLARE)
+#define DUK_USE_USER_DECLARE() DUK_OPT_DECLARE
+#else
+#define DUK_USE_USER_DECLARE() /* no user declarations */
+#endif
+
+/*
+ *  Autogenerated defaults
+ */
+
+#define DUK_USE_COMPILER_RECLIMIT 2500
+#undef DUK_USE_DATE_FORMAT_STRING
+#undef DUK_USE_DATE_GET_LOCAL_TZOFFSET
+#undef DUK_USE_DATE_GET_NOW
+#undef DUK_USE_DATE_PARSE_STRING
+#undef DUK_USE_DATE_PRS_GETDATE
+#undef DUK_USE_EXEC_FUN_LOCAL
+#undef DUK_USE_INTEGER_ME
+#undef DUK_USE_INTERRUPT_DEBUG_FIXUP
+#define DUK_USE_JSON_DECNUMBER_FASTPATH
+#define DUK_USE_JSON_DECSTRING_FASTPATH
+#define DUK_USE_JSON_DEC_RECLIMIT 1000
+#define DUK_USE_JSON_EATWHITE_FASTPATH
+#define DUK_USE_JSON_ENC_RECLIMIT 1000
+#define DUK_USE_JSON_QUOTESTRING_FASTPATH
+#undef DUK_USE_MARKANDSWEEP_FINALIZER_TORTURE
+#define DUK_USE_MARK_AND_SWEEP_RECLIMIT 256
+#define DUK_USE_NATIVE_CALL_RECLIMIT 1000
+#undef DUK_USE_REFZERO_FINALIZER_TORTURE
+#define DUK_USE_REGEXP_COMPILER_RECLIMIT 10000
+#define DUK_USE_REGEXP_EXECUTOR_RECLIMIT 10000
+
+/*
  *  Alternative customization header
  *
  *  If you want to modify the final DUK_USE_xxx flags directly (without
@@ -2998,6 +3062,14 @@ typedef FILE duk_file;
 #if defined(DUK_OPT_HAVE_CUSTOM_H)
 #include "duk_custom.h"
 #endif
+
+/*
+ *  You may add overriding #define/#undef directives below for
+ *  customization.  You of course cannot un-#include or un-typedef
+ *  anything; these require direct changes above.
+ */
+
+/* __OVERRIDE_DEFINES__ */
 
 /*
  *  Date provider selection
@@ -3059,36 +3131,6 @@ DUK_INTERNAL_DECL duk_bool_t duk_bi_date_format_parts_strftime(duk_context *ctx,
 #endif
 
 #endif  /* DUK_COMPILING_DUKTAPE */
-
-/*
- *  User declarations
- */
-
-#if defined(DUK_OPT_DECLARE)
-#define DUK_USE_USER_DECLARE() DUK_OPT_DECLARE
-#else
-#define DUK_USE_USER_DECLARE() /* no user declarations */
-#endif
-
-/*
- *  Autogenerated defaults
- */
-
-#undef DUK_USE_DATE_PRS_GETDATE
-#undef DUK_USE_INTEGER_ME
-#define DUK_USE_JSON_DECNUMBER_FASTPATH
-#define DUK_USE_JSON_DECSTRING_FASTPATH
-#define DUK_USE_JSON_EATWHITE_FASTPATH
-#define DUK_USE_JSON_QUOTESTRING_FASTPATH
-#undef DUK_USE_JSON_STRINGIFY_FASTPATH
-
-/*
- *  You may add overriding #define/#undef directives below for
- *  customization.  You of course cannot un-#include or un-typedef
- *  anything; these require direct changes above.
- */
-
-/* __OVERRIDE_DEFINES__ */
 
 /*
  *  Sanity check for the final effective internal defines.  Also
