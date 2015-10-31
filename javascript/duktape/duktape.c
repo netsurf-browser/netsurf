@@ -56243,7 +56243,7 @@ duk_int_t duk_handle_call(duk_hthread *thr,
 	duk_instr_t **entry_ptr_curr_pc;
 	volatile duk_bool_t need_setjmp;
 	duk_jmpbuf * volatile old_jmpbuf_ptr = NULL;    /* ptr is volatile (not the target) */
-	duk_idx_t idx_func;         /* valstack index of 'func' and retval (relative to entry valstack_bottom) */
+	volatile duk_idx_t idx_func;         /* valstack index of 'func' and retval (relative to entry valstack_bottom) */
 	duk_idx_t idx_args;         /* valstack index of start of args (arg1) (relative to entry valstack_bottom) */
 	duk_idx_t nargs;            /* # argument registers target function wants (< 0 => "as is") */
 	duk_idx_t nregs;            /* # total registers target function wants on entry (< 0 => "as is") */
