@@ -40,8 +40,12 @@
 
 /** Absent from OSLib
 */
+#ifndef osspriteop_TYPEEXPANSION
 #define osspriteop_TYPEEXPANSION ((osspriteop_mode_word) 0xFu)
+#endif
+#ifndef osspriteop_TYPE16BPP4K
 #define osspriteop_TYPE16BPP4K   ((osspriteop_mode_word) 0x10u)
+#endif
 
 static void ro_gui_buffer_free(void);
 
