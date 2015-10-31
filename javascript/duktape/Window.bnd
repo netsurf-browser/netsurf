@@ -44,6 +44,9 @@ prototype Window()
 	EXPOSE(Date);
 	EXPOSE(RegExp);
 	EXPOSE(Math);
+	EXPOSE(Function);
+	EXPOSE(Proxy);
+	EXPOSE(String);
 #undef EXPOSE
 %}
 
