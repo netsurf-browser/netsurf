@@ -38,6 +38,11 @@
 #define BUFFER_EXCLUSIVE_USER_REDRAW "Only support pure user redraw (faster)"
 //#define BUFFER_EMULATE_32BPP "Redirect to a 32bpp sprite and plot with Tinct"
 
+/** Absent from OSLib
+*/
+#define osspriteop_TYPEEXPANSION ((osspriteop_mode_word) 0xFu)
+#define osspriteop_TYPE16BPP4K   ((osspriteop_mode_word) 0x10u)
+
 static void ro_gui_buffer_free(void);
 
 
@@ -151,28 +156,117 @@ void ro_gui_buffer_open(wimp_draw *redraw)
 		static const ns_os_vdu_var_list vars = {
 			os_MODEVAR_LOG2_BPP,
 			{
+				os_MODEVAR_MODE_FLAGS,
+				os_MODEVAR_NCOLOUR,
 				os_MODEVAR_XEIG_FACTOR,
 				os_MODEVAR_YEIG_FACTOR,
 				os_VDUVAR_END_LIST
 			}
 		};
-		int xeig, yeig;
-		int vals[4];
+		struct {
+			int log2bpp;
+			int flags;
+			int ncolour;
+			int xeig, yeig;
+		} vals;
 		int type;
 
-		error = xos_read_vdu_variables(PTR_OS_VDU_VAR_LIST(&vars), vals);
+		error = xos_read_vdu_variables(PTR_OS_VDU_VAR_LIST(&vars), (int *)&vals);
 		if (error) {
 			LOG("Error reading mode properties '%s'", error->errmess);
 			ro_gui_buffer_free();
 			return;
 		}
 
-		type = 1 + vals[0];
-		xeig = vals[1];
-		yeig = vals[2];
-
-		mode = (os_mode)((type << 27) | ((180 >> yeig) << 14) |
-					((180 >> xeig) << 1) | 1);
+		switch (vals.ncolour) {
+		case 1:
+		case 3:
+		case 15:
+		case 63:
+		case 255:
+			/* Paletted modes are pixel packing order agnostic */
+			type = 1 + vals.log2bpp;
+			mode = (os_mode)((type << osspriteop_TYPE_SHIFT) |
+					osspriteop_NEW_STYLE |
+					((180 >> vals.yeig) << osspriteop_YRES_SHIFT) |
+					((180 >> vals.xeig) << osspriteop_XRES_SHIFT));
+			break;
+		case 4095:
+			/* 16bpp 4k colours */
+			type = osspriteop_TYPE16BPP4K;
+			mode = (os_mode)((osspriteop_TYPEEXPANSION << osspriteop_TYPE_SHIFT) |
+					osspriteop_NEW_STYLE |
+					(vals.yeig << 6) |
+					(vals.xeig << 4) |
+					(type << 20) |
+					(vals.flags & 0xFF00));
+			break;
+		case 65535:
+			switch ((vals.flags & 0x3000) >> os_MODE_FLAG_DATA_FORMAT_SHIFT) {
+			case os_MODE_FLAG_DATA_FORMAT_RGB:
+				if (vals.flags & 0xC000) {
+					/* Non VIDC packing order */
+					if (vals.flags & os_MODE_FLAG_FULL_PALETTE)
+						type = osspriteop_TYPE16BPP64K;
+					else
+						type = osspriteop_TYPE16BPP;
+					mode = (os_mode)((osspriteop_TYPEEXPANSION << osspriteop_TYPE_SHIFT) |
+							osspriteop_NEW_STYLE |
+							(vals.yeig << 6) |
+							(vals.xeig << 4) |
+							(type << 20) |
+							(vals.flags & 0xFF00));
+				} else {
+					/* VIDC packing order */
+					if (vals.flags & os_MODE_FLAG_FULL_PALETTE)
+						type = osspriteop_TYPE16BPP64K;
+					else
+						type = osspriteop_TYPE16BPP;
+					mode = (os_mode)((type << osspriteop_TYPE_SHIFT) |
+							osspriteop_NEW_STYLE |
+							((180 >> vals.yeig) << osspriteop_YRES_SHIFT) |
+							((180 >> vals.xeig) << osspriteop_XRES_SHIFT));
+				}
+				break;
+			default:
+				LOG("Unhandled 16bpp format from flags %d", vals.flags);
+				ro_gui_buffer_free();
+				return;
+			}
+			break;
+		case -1:
+			/* 16M colours */
+			switch ((vals.flags & 0x3000) >> os_MODE_FLAG_DATA_FORMAT_SHIFT) {
+			case os_MODE_FLAG_DATA_FORMAT_RGB:
+				if (vals.flags & 0xC000) {
+					/* Non VIDC packing order */
+					type = osspriteop_TYPE32BPP;
+					mode = (os_mode)((osspriteop_TYPEEXPANSION << osspriteop_TYPE_SHIFT) |
+							osspriteop_NEW_STYLE |
+							(vals.yeig << 6) |
+							(vals.xeig << 4) |
+							(type << 20) |
+							(vals.flags & 0xFF00));
+				} else {
+					/* VIDC packing order */
+					type = osspriteop_TYPE32BPP;
+					mode = (os_mode)((type << osspriteop_TYPE_SHIFT) |
+							osspriteop_NEW_STYLE |
+							((180 >> vals.yeig) << osspriteop_YRES_SHIFT) |
+							((180 >> vals.xeig) << osspriteop_XRES_SHIFT));
+				}
+				break;
+			default:
+				LOG("Unhandled 32bpp data format from flags %d", vals.flags);
+				ro_gui_buffer_free();
+				return;
+			}
+			break;
+		default:
+			LOG("Unhandled NCOLOUR value %d", vals.ncolour);
+			ro_gui_buffer_free();
+			return;
+		}
 	}
 #endif
 
