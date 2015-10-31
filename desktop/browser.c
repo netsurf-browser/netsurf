@@ -1749,6 +1749,15 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 		browser_window_destroy_children(bw);
 	}
 
+	/* Destroy scrollbars */
+	if (bw->scroll_x != NULL) {
+		scrollbar_destroy(bw->scroll_x);
+	}
+
+	if (bw->scroll_y != NULL) {
+		scrollbar_destroy(bw->scroll_y);
+	}
+
 	/* clear any pending callbacks */
 	guit->browser->schedule(-1, browser_window_refresh, bw);
 	/* The ugly cast here is so the reformat function can be
