@@ -3222,6 +3222,8 @@ fr.all.DirectoryError:répertoire '%s' existe déjà
 it.all.DirectoryError:La directory '%s' è già esistente
 nl.all.DirectoryError:map '%s' bestaat reeds
 
+en.ro.SprIsNull:Unable to convert image to sprite
+
 # Error messages for Amiga version only
 en.ami.CompError:Unable to open
 de.ami.CompError:Nicht zu öffnen

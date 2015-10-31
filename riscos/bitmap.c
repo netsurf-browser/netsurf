@@ -43,6 +43,7 @@
 #include "utils/filename.h"
 #include "utils/log.h"
 #include "utils/utils.h"
+#include "utils/messages.h"
 #include "desktop/plotters.h"
 #include "content/content.h"
 #include "image/bitmap.h"
@@ -271,6 +272,11 @@ bool riscos_bitmap_save(void *vbitmap, const char *path, unsigned flags)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	os_error *error;
+
+	if (bitmap == NULL) {
+		warn_user("SaveError", messages_get("SprIsNull"));
+		return false;
+	}
 
 	if (!bitmap->sprite_area) {
 		riscos_bitmap_get_buffer(bitmap);
