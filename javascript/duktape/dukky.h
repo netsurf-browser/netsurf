@@ -31,5 +31,8 @@ void dukky_inject_not_ctr(duk_context *ctx, int idx, const char *name);
 void dukky_register_event_listener_for(duk_context *ctx,
 				       struct dom_element *ele,
 				       dom_string *name);
+bool dukky_get_current_value_of_event_handler(duk_context *ctx,
+					      dom_string *name,
+					      dom_event_target *et);
 
 #endif

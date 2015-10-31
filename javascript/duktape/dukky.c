@@ -445,29 +445,15 @@ static void dukky_push_event(duk_context *ctx, dom_event *evt)
 	/* ... event */
 }
 
-static void dukky_push_handler_code(duk_context *ctx, dom_event *evt)
+static void dukky_push_handler_code_(duk_context *ctx, dom_string *name,
+				     dom_event_target *et)
 {
-	dom_string *name, *onname, *val;
-	dom_element *ele;
+	dom_string *onname, *val;
+	dom_element *ele = (dom_element *)et;
 	dom_exception exc;
-
-	exc = dom_event_get_type(evt, &name);
-	if (exc != DOM_NO_ERR) {
-		duk_push_lstring(ctx, "", 0);
-		return;
-	}
 
 	exc = dom_string_concat(corestring_dom_on, name, &onname);
 	if (exc != DOM_NO_ERR) {
-		dom_string_unref(name);
-		duk_push_lstring(ctx, "", 0);
-		return;
-	}
-	dom_string_unref(name);
-
-	exc = dom_event_get_target(evt, &ele);
-	if (exc != DOM_NO_ERR) {
-		dom_string_unref(onname);
 		duk_push_lstring(ctx, "", 0);
 		return;
 	}
@@ -475,16 +461,64 @@ static void dukky_push_handler_code(duk_context *ctx, dom_event *evt)
 	exc = dom_element_get_attribute(ele, onname, &val);
 	if (exc != DOM_NO_ERR) {
 		dom_string_unref(onname);
-		dom_node_unref(ele);
 		duk_push_lstring(ctx, "", 0);
 		return;
 	}
-	dom_node_unref(ele);
+
 	dom_string_unref(onname);
 	duk_push_lstring(ctx, dom_string_data(val), dom_string_length(val));
 	dom_string_unref(val);
 }
 
+bool dukky_get_current_value_of_event_handler(duk_context *ctx,
+					      dom_string *name,
+					      dom_event_target *et)
+{
+	/* Must be entered as:
+	 * ... node(et)
+	 */
+	duk_get_prop_string(ctx, -1, HANDLER_MAGIC);
+	/* ... node handlers */
+	duk_push_lstring(ctx, dom_string_data(name), dom_string_length(name));
+	/* ... node handlers name */
+	duk_get_prop(ctx, -2);
+	/* ... node handlers handler? */
+	if (duk_is_undefined(ctx, -1)) {
+		/* ... node handlers undefined */
+		duk_pop_2(ctx);
+		/* ... node */
+		dukky_push_handler_code_(ctx, name, et);
+		/* ... node handlercode */
+		/** @todo This is entirely wrong, but it's hard to get right */
+		duk_push_string(ctx, "function (event) {");
+		/* ... node handlercode prefix */
+		duk_insert(ctx, -2);
+		/* ... node prefix handlercode */
+		duk_push_string(ctx, "}");
+		/* ... node prefix handlercode suffix */
+		duk_concat(ctx, 3);
+		/* ... node fullhandlersrc */
+		duk_push_string(ctx, "internal raw uncompiled handler");
+		/* ... node fullhandlersrc filename */
+		if (duk_pcompile(ctx, DUK_COMPILE_FUNCTION) != 0) {
+			/* ... node err */
+			LOG("Unable to proceed with handler, could not compile");
+			duk_pop_2(ctx);
+			return false;
+		}
+		/* ... node handler */
+		duk_insert(ctx, -2);
+		/* ... handler node */
+	} else {
+		/* ... node handlers handler */
+		duk_insert(ctx, -3);
+		/* ... handler node handlers */
+		duk_pop(ctx);
+		/* ... handler node */
+	}
+	/* ... handler node */
+	return true;
+}
 
 static void dukky_generic_event_handler(dom_event *evt, void *pw)
 {
@@ -516,49 +550,15 @@ static void dukky_generic_event_handler(dom_event *evt, void *pw)
 		LOG("Unable to push JS node representation?!");
 		return;
 	}
-	dom_node_unref(targ);
 	/* ... node */
-	duk_get_prop_string(ctx, -1, HANDLER_MAGIC);
-	/* ... node handlers */
-	duk_push_lstring(ctx, dom_string_data(name), dom_string_length(name));
-	/* ... node handlers name */
-	duk_get_prop(ctx, -2);
-	/* ... node handlers handler? */
-	if (duk_is_undefined(ctx, -1)) {
-		/* ... node handlers undefined */
-		duk_pop_2(ctx);
-		/* ... node */
-		dukky_push_handler_code(ctx, evt);
-		/* ... node handlercode */
-		/** @todo This is entirely wrong, but it's hard to get right */
-		duk_push_string(ctx, "function (event) {");
-		/* ... node handlercode prefix */
-		duk_insert(ctx, -2);
-		/* ... node prefix handlercode */
-		duk_push_string(ctx, "}");
-		/* ... node prefix handlercode suffix */
-		duk_concat(ctx, 3);
-		/* ... node fullhandlersrc */
-		duk_push_string(ctx, "internal raw uncompiled handler");
-		/* ... node fullhandlersrc filename */
-		if (duk_pcompile(ctx, DUK_COMPILE_FUNCTION) != 0) {
-			/* ... node err */
-			LOG("Unable to proceed with handler, could not compile");
-			dom_string_unref(name);
-			duk_pop_2(ctx);
-			return ;
-		}
-		/* ... node handler */
-		duk_insert(ctx, -2);
-		/* ... handler node */
-	} else {
-		/* ... node handlers handler */
-		duk_insert(ctx, -2);
-		/* ... handler node handlers */
-		duk_pop(ctx);
-		/* ... handler node */
+	if (dukky_get_current_value_of_event_handler(
+		    ctx, name, (dom_event_target *)targ) == false) {
+		dom_node_unref(targ);
+		dom_string_unref(name);
+		return;
 	}
 	/** @todo handle other kinds of event than the generic case */
+	dom_node_unref(targ);
 	dom_string_unref(name);
 	/* ... handler node */
 	dukky_push_event(ctx, evt);
@@ -570,7 +570,19 @@ static void dukky_generic_event_handler(dom_event *evt, void *pw)
 		exc = dom_event_stop_immediate_propagation(evt);
 		if (exc != DOM_NO_ERR)
 			LOG("WORSE! could not stop propagation");
-		duk_pop(ctx);
+		duk_get_prop_string(ctx, -1, "name");
+		duk_get_prop_string(ctx, -2, "message");
+		duk_get_prop_string(ctx, -3, "fileName");
+		duk_get_prop_string(ctx, -4, "lineNumber");
+		duk_get_prop_string(ctx, -5, "stack");
+		/* ... err name message fileName lineNumber stack */
+		LOG("Uncaught error in JS: %s: %s", duk_safe_to_string(ctx, -5),
+		    duk_safe_to_string(ctx, -4));
+		LOG("              was at: %s line %s", duk_safe_to_string(ctx, -3),
+		    duk_safe_to_string(ctx, -2));
+		LOG("         Stack trace: %s", duk_safe_to_string(ctx, -1));
+
+		duk_pop_n(ctx, 6);
 		/* ... */
 		return;
 	}
