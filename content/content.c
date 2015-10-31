@@ -670,6 +670,9 @@ bool content_add_user(struct content *c,
 	user->next = c->user_list->next;
 	c->user_list->next = user;
 
+	if (c->handler->add_user != NULL)
+		c->handler->add_user(c);
+
 	return true;
 }
 
@@ -699,6 +702,10 @@ void content_remove_user(struct content *c,
 		assert(0);
 		return;
 	}
+
+	if (c->handler->remove_user != NULL)
+		c->handler->remove_user(c);
+
 	next = user->next;
 	user->next = next->next;
 	free(next);

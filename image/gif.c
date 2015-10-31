@@ -392,6 +392,31 @@ static nserror nsgif_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
+static void nsgif_add_user(struct content *c)
+{
+	nsgif_content *gif = (nsgif_content *) c;
+
+	/* Ensure this content has already been converted.
+	 * If it hasn't, the animation will start at the conversion phase instead. */
+	if (gif->gif == NULL) return;
+
+	if (content_count_users(c) == 1) {
+		/* First user, and content already converted, so start the animation. */
+		if (gif->gif->frame_count_partial > 1) {
+			guit->browser->schedule(gif->gif->frames[0].frame_delay * 10,
+				nsgif_animate, c);
+		}
+	}
+}
+
+static void nsgif_remove_user(struct content *c)
+{
+	if (content_count_users(c) == 1) {
+		/* Last user is about to be removed from this content, so stop the animation. */
+		guit->browser->schedule(-1, nsgif_animate, c);
+	}
+}
+
 static void *nsgif_get_internal(const struct content *c, void *context)
 {
 	nsgif_content *gif = (nsgif_content *) c;
@@ -415,6 +440,8 @@ static const content_handler nsgif_content_handler = {
 	.destroy = nsgif_destroy,
 	.redraw = nsgif_redraw,
 	.clone = nsgif_clone,
+	.add_user = nsgif_add_user,
+	.remove_user = nsgif_remove_user,
 	.get_internal = nsgif_get_internal,
 	.type = nsgif_content_type,
 	.no_share = false,

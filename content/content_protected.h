@@ -82,6 +82,8 @@ struct content_handler {
 	bool (*matches_quirks)(const struct content *c, bool quirks);
 	const char *(*get_encoding)(const struct content *c, enum content_encoding_type op);
 	content_type (*type)(void);
+	void (*add_user)(struct content *c);
+	void (*remove_user)(struct content *c);
 
         /** handler dependant content sensitive internal data interface. */
 	void * (*get_internal)(const struct content *c, void *context);
