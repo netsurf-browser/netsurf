@@ -62,6 +62,38 @@ struct dom_html_br_element;
 #include "Location.bnd"
 #include "Navigator.bnd"
 
+/* events */
+
+#include "Event.bnd"
+
+init MutationEvent(struct dom_mutation_event *evt::evt);
+init UIEvent(struct dom_ui_event *evt::evt);
+init TextEvent(struct dom_text_event *evt::evt);
+init MutationNameEvent(struct dom_mutation_name_event *evt::evt);
+init MouseWheelEvent(struct dom_mouse_wheel_event *evt::evt);
+init MouseMultiWheelEvent(struct dom_mouse_multi_wheel_event *evt::evt);
+init MouseEvent(struct dom_mouse_event *evt::evt);
+init KeyboardEvent(struct dom_keyboard_event *evt::evt);
+init DocumentEvent(struct dom_document_event *evt::evt);
+init CustomEvent(struct dom_custom_event *evt::evt);
+init CompositionEvent(struct dom_ui_event *evt::evt);
+init WheelEvent(struct dom_mouse_event *evt::evt);
+init FocusEvent(struct dom_ui_event *evt::evt);
+init StorageEvent(struct dom_event *evt::evt);
+init CloseEvent(struct dom_event *evt::evt);
+init MessageEvent(struct dom_event *evt::evt);
+init ErrorEvent(struct dom_event *evt::evt);
+init BeforeUnloadEvent(struct dom_event *evt::evt);
+init PageTransitionEvent(struct dom_event *evt::evt);
+init HashChangeEvent(struct dom_event *evt::evt);
+init PopStateEvent(struct dom_event *evt::evt);
+init DragEvent(struct dom_mouse_event *evt::evt);
+init RelatedEvent(struct dom_event *evt::evt);
+init AutocompleteErrorEvent(struct dom_event *evt::evt);
+init TrackEvent(struct dom_event *evt::evt);
+
+
+/* html elements */
 #include "HTMLElement.bnd"
 
 /* specialisations of html_element */
