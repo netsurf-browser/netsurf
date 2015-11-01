@@ -430,9 +430,15 @@ static void dukky_push_event(duk_context *ctx, dom_event *evt)
 		/* ... events undefined */
 		duk_pop(ctx);
 		/* ... events */
-		duk_push_object(ctx);
+		duk_push_pointer(ctx, evt);
+		if (dukky_create_object(ctx, PROTO_NAME(EVENT), 1) != DUK_EXEC_SUCCESS) {
+			/* ... events err */
+			duk_pop(ctx);
+			/* ... events */
+			duk_push_object(ctx);
+			/* ... events eobj[meh] */
+		}
 		/* ... events eobj */
-		/** @todo fill out the event object */
 		duk_push_pointer(ctx, evt);
 		/* ... events eobj eventptr */
 		duk_dup(ctx, -2);
