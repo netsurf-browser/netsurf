@@ -547,7 +547,7 @@ static void dukky_generic_event_handler(dom_event *evt, void *pw)
 	    phase == DOM_BUBBLING_PHASE ? "bubbling" :
 	    "unknown", (int)phase);
 
-	exc = dom_event_get_target(evt, &targ);
+	exc = dom_event_get_current_target(evt, &targ);
 	if (exc != DOM_NO_ERR) {
 		dom_string_unref(name);
 		LOG("Unable to find the event target");
