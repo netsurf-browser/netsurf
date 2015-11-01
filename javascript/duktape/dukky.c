@@ -526,6 +526,7 @@ static void dukky_generic_event_handler(dom_event *evt, void *pw)
 	dom_string *name;
 	dom_exception exc;
 	dom_event_target *targ;
+	dom_event_flow_phase phase;
 
 	LOG("WOOP WOOP, An event:");
 	exc = dom_event_get_type(evt, &name);
@@ -535,6 +536,16 @@ static void dukky_generic_event_handler(dom_event *evt, void *pw)
 	}
 	LOG("Event's name is %*s",
 	    dom_string_length(name), dom_string_data(name));
+	exc = dom_event_get_event_phase(evt, &phase);
+	if (exc != DOM_NO_ERR) {
+		LOG("Unable to get event phase");
+		return;
+	}
+	LOG("Event phase is: %s (%d)",
+	    phase == DOM_CAPTURING_PHASE ? "capturing" :
+	    phase == DOM_AT_TARGET ? "at-target" :
+	    phase == DOM_BUBBLING_PHASE ? "bubbling" :
+	    "unknown", (int)phase);
 
 	exc = dom_event_get_target(evt, &targ);
 	if (exc != DOM_NO_ERR) {
