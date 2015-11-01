@@ -466,7 +466,6 @@ method Element::getAttributeNodeNS();\n
 method Element::getAttributeNS();\n
 method Element::getElementsByClassName();\n
 method Element::getElementsByTagNameNS();\n
-method Element::hasAttribute();\n
 method Element::hasAttributeNS();\n
 method Element::hasAttributes();\n
 getter Element::localName(string);\n
