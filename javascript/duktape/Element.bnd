@@ -279,9 +279,12 @@ method Element::getAttribute()
 	exc = dom_element_get_attribute(priv->parent.node,
 			attr_name, &attr_value);
 	dom_string_unref(attr_name);
-	if (exc != DOM_NO_ERR) return 0;
+	if (exc != DOM_NO_ERR) {
+		return 0;
+	}
+
 	if (attr_value == NULL) {
-		duk_push_lstring(ctx, "", 0);
+		duk_push_null(ctx);
 	} else {
 		duk_push_lstring(ctx, dom_string_data(attr_value),
 				 dom_string_length(attr_value));
