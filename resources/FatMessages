@@ -284,12 +284,12 @@ en.ro.Reload:Reload this page  ^F5
 de.ro.Reload:Seite erneut laden  ^F5
 fr.ro.Reload:Recharger cette page  ^F5
 it.ro.Reload:Ricarica  ^F5
-nl.ro.Reload:Laad pag. opnieuw  ^F5
+nl.ro.Reload:Herlaad pagina  ^F5
 en.beos.Reload:Reload this page
 de.beos.Reload:Seite erneut laden
 fr.beos.Reload:Recharger cette page
 it.beos.Reload:Ricarica
-nl.beos.Reload:Laad pag. opnieuw
+nl.beos.Reload:Herlaad pagina
 en.all.Stop:Stop loading this page
 de.all.Stop:Ladevorgang abbrechen
 fr.all.Stop:Arrêter le chargement de la page
@@ -662,7 +662,7 @@ en.all.ProxyBasic:Basic authentication
 de.all.ProxyBasic:mit Authentifizierung
 fr.all.ProxyBasic:Authentification de base
 it.all.ProxyBasic:Autentificato di base
-nl.all.ProxyBasic:Basis-authenticatie
+nl.all.ProxyBasic:Basisauthenticatie
 en.all.ProxyNTLM:NTLM authentication
 de.all.ProxyNTLM:NTLM Authentifizierung
 fr.all.ProxyNTLM:Authentification NTLM
@@ -816,12 +816,12 @@ en.ami.Undo:Undo
 de.ami.Undo:Undo
 fr.ami.Undo:Annuler
 it.ami.Undo:Annulla
-nl.ami.Undo:Undo
+nl.ami.Undo:Maak ongedaan
 en.ami.Redo:Redo
 de.ami.Redo:Redo
 fr.ami.Redo:Rétablir
 it.ami.Redo:Ripristina
-nl.ami.Redo:Redo
+nl.ami.Redo:Opnieuw
 
 # Browser menu
 #
@@ -918,7 +918,7 @@ en.ami.ARexxExecute:Execute script...
 de.ami.ARexxExecute:Script ausführen...
 fr.ami.ARexxExecute:Executer script...
 it.ami.ARexxExecute:Esegui script...
-nl.ami.ARexxExecute:Execute script...
+nl.ami.ARexxExecute:Voer script uit...
 
 # Context menu
 #
@@ -956,7 +956,7 @@ en.ami.SaveIFF:Save as IFF...
 de.ami.SaveIFF:Speichern als IFF...
 fr.ami.SaveIFF:Enregistrer sous IFF...
 it.ami.SaveIFF:Salva come IFF...
-nl.ami.SaveIFF:Save as IFF...
+nl.ami.SaveIFF:Bewaar als IFF...
 en.all.SaveComplete:Save complete...
 de.all.SaveComplete:Speichern abgeschlossen...
 fr.all.SaveComplete:Enregistrement terminé...
@@ -1152,7 +1152,7 @@ en.ami.TreeEdit:Edit title
 de.ami.TreeEdit:Edit title
 fr.ami.TreeEdit:Modifier le titre
 it.ami.TreeEdit:Modifica titolo
-nl.ami.TreeEdit:Edit title
+nl.ami.TreeEdit:Wijzig titel
 
 # Treeview field labels
 #
@@ -1329,10 +1329,12 @@ nl.all.TreeHotlist:NetSurf-favorieten
 en.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
 fr.ami.NetSurfDesc:Petit comme une souris, rapide comme un guépard. NetSurf est un navigateur Web multi-plate-forme libre.
 it.ami.NetSurfDesc:Piccolo come un mouse, veloce come un ghepardo. NetSurf è un browser web opensource e multi-piattaforma.
+nl.ami.NetSurfDesc:Klein als een muis, snel als een cheetah en gratis beschikbaar. NetSurf is een multi-platform webbrowser.
 
 en.gtk.AboutDesc:NetSurf is a small and fast web browser.
 fr.gtk.AboutDesc:NetSurf est un navigateur Web multi-plate-forme libre.
 it.gtk.AboutDesc:NetSurf è un browser web opensource e multi-piattaforma.
+nl.gtk.AboutDesc:NetSurf is een kleine, snelle webbrowser met open broncode.
 
 # Hotlist user interface tokens
 # =============================
@@ -1398,12 +1400,12 @@ en.ami.HotlistMenu:Hotlist menu
 de.ami.HotlistMenu:Hotlist menu
 fr.ami.HotlistMenu:Hotlist menu
 it.ami.HotlistMenu:Menu segnalibri
-nl.ami.HotlistMenu:Hotlist menu
+nl.ami.HotlistMenu:Favorietenmenu
 en.ami.HotlistToolbar:Hotlist toolbar
 de.ami.HotlistToolbar:Hotlist toolbar
 fr.ami.HotlistToolbar:Hotlist toolbar
 it.ami.HotlistToolbar:Barra segnalibri
-nl.ami.HotlistToolbar:Hotlist toolbar
+nl.ami.HotlistToolbar:Favorietenwerkbalk
 
 
 # Global history user interface tokens
@@ -1551,17 +1553,17 @@ en.ami.amiDownload:%ld of %ld bytes downloaded
 de.ami.amiDownload:%ld von %ld Bytes heruntergeladen
 fr.ami.amiDownload:%ld of %ld bytes downloaded
 it.ami.amiDownload:%ld di %ld byte scaricati
-nl.ami.amiDownload:%ld of %ld bytes downloaded
+nl.ami.amiDownload:%ld van %ld bytes opgehaald
 en.ami.amiDownloadU:%ld bytes downloaded
 de.ami.amiDownloadU:%ld Bytes heruntergeladen
 fr.ami.amiDownloadU:%ld bytes downloaded
 it.ami.amiDownloadU:%ld byte scaricati
-nl.ami.amiDownloadU:%ld bytes downloaded
+nl.ami.amiDownloadU:%ld bytes opgehaald
 en.ami.amiDownloadComplete:NetSurf: Download completed
 de.ami.amiDownloadComplete:NetSurf: Download vollständig
 fr.ami.amiDownloadComplete:NetSurf: Download completed
 it.ami.amiDownloadComplete:NetSurf: Download completato
-nl.ami.amiDownloadComplete:NetSurf: Download completed
+nl.ami.amiDownloadComplete:NetSurf: Download voltooid
 
 # Requesters
 #
@@ -1569,12 +1571,12 @@ en.ami.amiSizeExisting:Existing file size:
 de.ami.amiSizeExisting:Größe der vorhandenen Datei:
 fr.ami.amiSizeExisting:Existing file size:
 it.ami.amiSizeExisting:Dimensione del file esistente:
-nl.ami.amiSizeExisting:Existing file size:
+nl.ami.amiSizeExisting:Bestaande bestandsgrootte:
 en.ami.amiSizeNew:New file size:
 de.ami.amiSizeNew:Größe der neuen Datei:
 fr.ami.amiSizeNew:New file size:
 it.ami.amiSizeNew:Nuova dimensione del file:
-nl.ami.amiSizeNew:New file size:
+nl.ami.amiSizeNew:Nieuwe bestandsgrootte:
 
 # GTK download window tokens
 #
@@ -2157,10 +2159,10 @@ fr.gtk.gtkAddBookMarks:_Ajouter un marque-page..
 it.gtk.gtkAddBookMarks:_Aggiungi ai segnalibri...
 nl.gtk.gtkAddBookMarks:_Aan bladwijzers toevoegen...
 en.gtk.gtkAddBookMarksAccel:<ctrl>d
-de.gtk.gtkGlobalHistoryAccel:<ctrl>d
-fr.gtk.gtkGlobalHistoryAccel:<ctrl>d
-it.gtk.gtkGlobalHistoryAccel:<ctrl>d
-nl.gtk.gtkGlobalHistoryAccel:<ctrl>d
+de.gtk.gtkAddBookMarksAccel:<ctrl>d
+fr.gtk.gtkAddBookMarksAccel:<ctrl>d
+it.gtk.gtkAddBookMarksAccel:<ctrl>d
+nl.gtk.gtkAddBookMarksAccel:<ctrl>d
 en.gtk.gtkShowBookMarks:_Show Bookmarks…
 de.gtk.gtkShowBookMarks:Le_sezeichen anzeigen..
 fr.gtk.gtkShowBookMarks:_Montrer les marques-pages...
@@ -2448,170 +2450,242 @@ nl.gtk.preferencesButtonTypeText:Alleen tekst
 # content tab
 en.gtk.preferencesContentTabtitle:Content
 fr.gtk.preferencesContentTabtitle:Contenu
+nl.gtk.preferencesContentTabtitle:Inhoud
 en.gtk.preferencesControl:<b>Control</b>
 fr.gtk.preferencesControl:<b>Contrôle</b>
+nl.gtk.preferencesControl:<b>Opties</b>
 en.gtk.preferencesControlPrevent:Prevent pop-up windows
 fr.gtk.preferencesControlPrevent:Empêcher fenêtres pop-up
+nl.gtk.preferencesControlPrevent:Pop-upvensters blokkeren
 en.gtk.preferencesControlHide:Hide Adverts
 fr.gtk.preferencesControlHide:Cacher les publicités
+nl.gtk.preferencesControlHide:Advertenties verbergen
 en.gtk.preferencesControlEnable:Enable JavaScript
 fr.gtk.preferencesControlEnable:Activer JavaScript
+nl.gtk.preferencesControlEnable:JavaScript inschakelen
 en.gtk.preferencesControlDisable:Disable plug-ins
 fr.gtk.preferencesControlDisable:Désactiver modules externes
+nl.gtk.preferencesControlDisable:Plug-ins uitschakelen
 en.gtk.preferencesControlHigh:High quality image scaling
 fr.gtk.preferencesControlHigh:Haute qualité d'image redimensionnée
+nl.gtk.preferencesControlHigh:Schalen op hoge beeldkwaliteit
 en.gtk.preferencesControlLoad:Load and display
 fr.gtk.preferencesControlLoad:Charger et visualiser
+nl.gtk.preferencesControlLoad:Laad en toon
 en.gtk.preferencesAnimation:<b>Animation</b>
 fr.gtk.preferencesAnimation:<b>Animation</b>
+nl.gtk.preferencesAnimation:<b>Animaties</b>
 en.gtk.preferencesAnimationEnable:Enable
 fr.gtk.preferencesAnimationEnable:Activer
+nl.gtk.preferencesAnimationEnable:Ingeschakeld
 en.gtk.preferencesAnimationMinimum:Minimum time between frames:
 fr.gtk.preferencesAnimationMinimum:Temps minimal entre cadres/frames/images/photo :
+nl.gtk.preferencesAnimationMinimum:Minimum tijd tussen opeenvolgende animatiebeelden:
 en.gtk.preferencesAnimationMinimumTooltip:Do not update animations any more often than this.
 fr.gtk.preferencesAnimationMinimumTooltip:Ne pas mettre à jour les animations plus souvent que cela.
+nl.gtk.preferencesAnimationMinimumTooltip:Animaties niet vaker actualiseren dan dit.
 en.gtk.preferencesFonts:<b>Fonts</b>
 fr.gtk.preferencesFonts:<b>Fontes/Polices</b>
+nl.gtk.preferencesFonts:<b>Lettertypen</b>
 en.gtk.preferencesFontsDefault:Default
 fr.gtk.preferencesFontsDefault:Défaut
+nl.gtk.preferencesFontsDefault:Standaard
 en.gtk.preferencesFontsSize:Size
 fr.gtk.preferencesFontsSize:Taille
+nl.gtk.preferencesFontsSize:Grootte
 en.gtk.preferencesFontsSizeTooltip:The base-line font size to use.
 fr.gtk.preferencesFontsSizeTooltip:La taille de la fonte/police de base à utiliser.
+nl.gtk.preferencesFontsSizeTooltip:Het standaardlettertype te gebruiken voor webpagina's.
 en.gtk.preferencesFontsPreview:_Preview
 fr.gtk.preferencesFontsPreview:A_perçu
+nl.gtk.preferencesFontsPreview:_Voorbeeld
 en.gtk.preferencesLanguage:<b>Language</b>
 fr.gtk.preferencesLanguage:<b>Langue</b>
+nl.gtk.preferencesLanguage:<b>Talen</b>
 en.gtk.preferencesLanguagePreferred:Preferred language:
 fr.gtk.preferencesLanguagePreferred:Langue préférée :
+nl.gtk.preferencesLanguagePreferred:Voorkeurtaal:
 en.gtk.preferencesLanguagePreferredTooltip:The preferred language for web pages
 fr.gtk.preferencesLanguagePreferredTooltip:La langue préférée pour les pages Web
+nl.gtk.preferencesLanguagePreferredTooltip:De voorkeurtaal voor webpagina's
 # Image loading list
 en.gtk.preferencesImageLoadBoth:foreground and background images
 fr.gtk.preferencesImageLoadBoth:Images d'avant-plan et d'arrière-plan
+nl.gtk.preferencesImageLoadBoth:voorgrond- en achtergrondafbeeldingen
 en.gtk.preferencesImageLoadFore:foreground images
 fr.gtk.preferencesImageLoadFore:Images d'avant-plan
+nl.gtk.preferencesImageLoadFore:voorgrondafbeeldingen
 en.gtk.preferencesImageLoadBack:background images
 fr.gtk.preferencesImageLoadBack:Images d'arrière-plan
+nl.gtk.preferencesImageLoadBack:achtergrondafbeeldingen
 en.gtk.preferencesImageLoadNone:no images
 fr.gtk.preferencesImageLoadNone:pas d'images
+nl.gtk.preferencesImageLoadNone:geen afbeeldingen
 # font type list
 en.gtk.preferencesFonttypeSans:Sans-serif
 fr.gtk.preferencesFonttypeSans:Sans-serif
+nl.gtk.preferencesFonttypeSans:Schreefloos
 en.gtk.preferencesFonttypeSerif:Serif
 fr.gtk.preferencesFonttypeSerif:Serif
+nl.gtk.preferencesFonttypeSerif:Met schreef
 en.gtk.preferencesFonttypeMonospace:Monospace
 fr.gtk.preferencesFonttypeMonospace:Monospace
+nl.gtk.preferencesFonttypeMonospace:Monospace
 en.gtk.preferencesFonttypeCursive:Cursive
 fr.gtk.preferencesFonttypeCursive:Cursive
+nl.gtk.preferencesFonttypeCursive:Cursief
 en.gtk.preferencesFonttypeFantasy:Fantasy
 fr.gtk.preferencesFonttypeFantasy:Fantasy
-
+nl.gtk.preferencesFonttypeFantasy:Fantasie
 en.gtk.preferencesPrivacyTabtitle:Privacy
 fr.gtk.preferencesPrivacyTabtitle:Confidentialité
+nl.gtk.preferencesPrivacyTabtitle:Privacy
 en.gtk.preferencesGeneral:<b>General</b>
 fr.gtk.preferencesGeneral:<b>Général</b>
+nl.gtk.preferencesGeneral:<b>Algemeen</b>
 en.gtk.preferencesGeneralReferral:Enable referral submission
 fr.gtk.preferencesGeneralReferral:Permettre l'envoi du referer en entête
+nl.gtk.preferencesGeneralReferral:Referentie versturen inschakelen
 en.gtk.preferencesGeneralDNT:Enable sending "Do Not Track" request
 fr.gtk.preferencesGeneralDNT:Activer l'envoi d'une requête "Ne pas suivre à la trace"
+nl.gtk.preferencesGeneralDNT:Websites laten weten dat gebruiker niet gevolgd wil worden
 en.gtk.preferencesHistory:<b>History</b>
 fr.gtk.preferencesHistory:<b>Historque</b>
+nl.gtk.preferencesHistory:<b>Geschiedenis</b>
 en.gtk.preferencesHistoryShow:Local history shows URL in tooltip
 fr.gtk.preferencesHistoryShow:Historique local dans une infobulle
+nl.gtk.preferencesHistoryShow:Venstergeschiedenis toont webadres in een tipkader
 en.gtk.preferencesHistoryRemember:Remember browsing history for up to
 fr.gtk.preferencesHistoryRemember:Conserver l'historique de navigation pendant
+nl.gtk.preferencesHistoryRemember:Browsergeschiedenis onthouden voor
 en.gtk.preferencesHistoryDays:days
 fr.gtk.preferencesHistoryDays:jours
+nl.gtk.preferencesHistoryDays:dag(en)
 en.gtk.preferencesCache:<b>Cache</b>
 fr.gtk.preferencesCache:<b>Cache</b>
+nl.gtk.preferencesCache:<b>Buffer</b>
 en.gtk.preferencesCacheMemory:Memory cache size
 fr.gtk.preferencesCacheMemory:Taille du cache mémoire
+nl.gtk.preferencesCacheMemory:Grootte geheugenbuffer
 en.gtk.preferencesCacheDisc:Disc cache size
 fr.gtk.preferencesCacheDisc:Taille du cache disque
+nl.gtk.preferencesCacheDisc:Grootte schijfbuffer
 en.gtk.preferencesCacheExpire:Expire cache entries after
 fr.gtk.preferencesCacheExpire:Les entrées du cache expirent après un délai de
+nl.gtk.preferencesCacheExpire:Buffergegevens vervallen na
 en.gtk.preferencesCacheMaintenance:Maintenance
 fr.gtk.preferencesCacheMaintenance:Maintenance
+nl.gtk.preferencesCacheMaintenance:Onderhoud
 en.gtk.preferencesCacheDays:days
 fr.gtk.preferencesCacheDays:jours
-
+nl.gtk.preferencesCacheDays:dag(en)
 en.gtk.preferencesNetworkTabtitle:Network
 fr.gtk.preferencesNetworkTabtitle:Réseau
+nl.gtk.preferencesNetworkTabtitle:Netwerk
 en.gtk.preferencesProxy:<b>HTTP Proxy</b>
 fr.gtk.preferencesProxy:<b>Proxy HTTP</b>
+nl.gtk.preferencesProxy:<b>HTTP-proxy</b>
 en.gtk.preferencesProxyType:Proxy type
 fr.gtk.preferencesProxyType:Type de Proxy
+nl.gtk.preferencesProxyType:Proxy-type
 en.gtk.preferencesProxyHost:Host
 fr.gtk.preferencesProxyHost:Hôte
+nl.gtk.preferencesProxyHost:Proxy-server
 en.gtk.preferencesProxyUsername:Username
 fr.gtk.preferencesProxyUsername:Nom d'utilisateur
+nl.gtk.preferencesProxyUsername:Gebruikersnaam
 en.gtk.preferencesProxyPassword:Password
 fr.gtk.preferencesProxyPassword:Mot de passe
+nl.gtk.preferencesProxyPassword:Wachtwoord
 en.gtk.preferencesProxyNoproxy:No Proxy For
 fr.gtk.preferencesProxyNoproxy:Pas de proxy pour
+nl.gtk.preferencesProxyNoproxy:Geen proxy voor
 en.gtk.preferencesProxyTypeTooltip:The type of HTTP proxy server.
 fr.gtk.preferencesProxyTypeTooltip:Le type de serveur proxy HTTP.
+nl.gtk.preferencesProxyTypeTooltip:Het type van de HTTP-proxy-server.
 en.gtk.preferencesProxyHostTooltip:Host name of your proxy server.
 fr.gtk.preferencesProxyHostTooltip:Nom d'hôte du serveur proxy.
+nl.gtk.preferencesProxyHostTooltip:Adres van de proxy-server.
 en.gtk.preferencesProxyPortTooltip:Port number to connect to on proxy server.
 fr.gtk.preferencesProxyPortTooltip:Le numéro de port pour se connecter au serveur proxy.
+nl.gtk.preferencesProxyPortTooltip:Poortnummer om te verbinden met de proxy-server.
 en.gtk.preferencesProxyUsernameTooltip:Username to access the proxy.
 fr.gtk.preferencesProxyUsernameTooltip:Nom d'utilisateur pour accéder au proxy.
+nl.gtk.preferencesProxyUsernameTooltip:Gebruikersnaam voor toegang tot de proxy.
 en.gtk.preferencesProxyNoproxyTooltip:Comma separated list of host names that should not be proxied.
 fr.gtk.preferencesProxyNoproxyTooltip:Liste des noms d'hôtes séparés par des virgules qui ne devraient pas être traitées par le proxy.
+nl.gtk.preferencesProxyNoproxyTooltip:Lijst van ip-adressen of servernamen die niet via de proxy mogen lopen, gescheiden door komma's.
 
 en.gtk.preferencesFetching:<b>Fetching</b>
 fr.gtk.preferencesFetching:<b>Connexions</b>
+nl.gtk.preferencesFetching:<b>Verbindingen</b>
 en.gtk.preferencesFetchingMax:Maximum fetchers
 fr.gtk.preferencesFetchingMax:Nombre maximum de connexions
+nl.gtk.preferencesFetchingMax:Maximum aantal
 en.gtk.preferencesFetchingPerhost:Fetches per host
 fr.gtk.preferencesFetchingPerhost:Nombre de connexions par hôte
+nl.gtk.preferencesFetchingPerhost:Aantal verbindingen per server
 en.gtk.preferencesFetchingCached:Cached connections
 fr.gtk.preferencesFetchingCached:Connexions en cache
+nl.gtk.preferencesFetchingCached:Gebufferde verbindingen
 en.gtk.preferencesFetchingMaxTooltip:Maximum number of concurrent items to fetch at once.
 fr.gtk.preferencesFetchingMaxTooltip:Nombre maximum d'éléments simultanés à récupérer
+nl.gtk.preferencesFetchingMaxTooltip:Maximum aantal verbindingen die simultaan items ophalen.
 en.gtk.preferencesFetchingPerhostTooltip:Maximum number of item fetches per web server.
 fr.gtk.preferencesFetchingPerhostTooltip:Nombre maximum d'élément à extrair pour chaque serveur Web.
+nl.gtk.preferencesFetchingPerhostTooltip:Maximum aantal verbinden per webserver.
 en.gtk.preferencesFetchingCachedTooltip:Number of connections to keep in case they are needed again.
 fr.gtk.preferencesFetchingCachedTooltip:Nombre de connexions à maintenir dans le cas où elles seront nécessaires à nouveau.
-
+nl.gtk.preferencesFetchingCachedTooltip:Aantal verbindingen te bufferen voor het geval ze zijn weer nodig.
 # Proxy type list
 en.gtk.preferencesProxyTypeDirect:Direct connection
 fr.gtk.preferencesProxyTypeDirect:Connexion directe
+nl.gtk.preferencesProxyTypeDirect:Directe verbinding
 en.gtk.preferencesProxyTypeManual:Manual with no authentication
 fr.gtk.preferencesProxyTypeManual:Manuel sans authentification
+nl.gtk.preferencesProxyTypeManual:Handmatig zonder authenticatie
 en.gtk.preferencesProxyTypeBasic:Manual with basic authentication
 fr.gtk.preferencesProxyTypeBasic:Manuel avec authentification basique
-en.gtk.preferencesProxyTypeNLTM:Manual with NTLM authentication
+nl.gtk.preferencesProxyTypeBasic:Handmatig met basisauthenticatie
+en.gtk.preferencesProxyTypeNLTM:Manual with - authentication
 fr.gtk.preferencesProxyTypeNLTM:Manuel avec l'authentification NTLM
+nl.gtk.preferencesProxyTypeNLTM:Handmatig via NTLM-authenticatie
 en.gtk.preferencesProxyTypeSystem:System settings
 fr.gtk.preferencesProxyTypeSystem:Paramètres du système
-
+nl.gtk.preferencesProxyTypeSystem:Systeeminstellingen
 en.gtk.preferencesPDFTabtitle:PDF
 fr.gtk.preferencesPDFTabtitle:PDF
+nl.gtk.preferencesPDFTabtitle:PDF-uitvoer
 en.gtk.preferencesAppearance:<b>Appearance</b>
 fr.gtk.preferencesAppearance:<b>Apparence</b>
-
+nl.gtk.preferencesAppearance:<b>Opmaak</b>
 en.gtk.preferencesAppearanceImages:No images in output
 fr.gtk.preferencesAppearanceImages:Aucune image de rendu/restituée
+nl.gtk.preferencesAppearanceImages:Geen afbeeldingen in uitvoer
 en.gtk.preferencesAppearanceBackground:No background images in output
 fr.gtk.preferencesAppearanceBackground:Aucune image d'arrière-plan de rendu/restituée
+nl.gtk.preferencesAppearanceBackground:Geen achtergrondafbeeldingen in uitvoer
 en.gtk.preferencesAppearanceScalefit:Scale output to fit page
 fr.gtk.preferencesAppearanceScalefit:Adapter à la page
+nl.gtk.preferencesAppearanceScalefit:Uitvoer passend maken aan pagina
 en.gtk.preferencesAppearanceScale:Scale output
 fr.gtk.preferencesAppearanceScale:Adapter
+nl.gtk.preferencesAppearanceScale:Schaal
 en.gtk.preferencesMargins:<b>Margins</b>
 fr.gtk.preferencesMargins:<b>Marges</b>
+nl.gtk.preferencesMargins:<b>Marges</b>
 en.gtk.preferencesMarginsMeasurements:measurements in mm
 fr.gtk.preferencesMarginsMeasurements:Mesures en mm
+nl.gtk.preferencesMarginsMeasurements:eenheden in millimeters
 en.gtk.preferencesGeneration:<b>Generation</b>
 fr.gtk.preferencesGeneration:<b>Generation</b>
+nl.gtk.preferencesGeneration:<b>Genereren</b>
 en.gtk.preferencesGenerationCompressed:Output is compressed
 fr.gtk.preferencesGenerationCompressed:La restitution est compressée
+nl.gtk.preferencesGenerationCompressed:Uitvoer wordt gecomprimeerd
 en.gtk.preferencesGenerationPassword:Output has a password
 fr.gtk.preferencesGenerationPassword:La restitution possède un mot de passe
-
+nl.gtk.preferencesGenerationPassword:Uitvoer wordt met wachtwoord beveiligd
 
 
 # Printing user interface tokens
@@ -2799,7 +2873,7 @@ en.all.Form_Reset:Reset
 de.all.Form_Reset:Zurücksetzen
 fr.all.Form_Reset:Effacer
 it.all.Form_Reset:Resetta
-nl.all.Form_Reset:Legen
+nl.all.Form_Reset:Opnieuw
 en.all.Form_None:
 de.all.Form_None:
 fr.all.Form_None:
@@ -2812,14 +2886,18 @@ it.all.Form_Many:(Molti)
 nl.all.Form_Many:(Veel)
 en.gtk.Form_Drop:Click to select file
 fr.gtk.Form_Drop:Cliquer pour sélectionner fichier
+nl.gtk.Form_Drop:Klik om bestand te selecteren
 en.ro.Form_Drop:Drop file here
 fr.ro.Form_Drop:Déposer fichier ici
 en.ami.Form_Drop:Click or drop file here
-fr.ami.Form_Drop:Cliquer ou déposer fichier ici
+fr.ami.Form_Drop:Cliquer ou déposer fichier ici]
+nl.ami.Form_Drop:Sleep bestand hierheen
 en.beos.Form_Drop:Drop file here
 fr.beos.Form_Drop:Drop file here
+nl.beos.Form_Drop:Sleep bestand hierheen
 en.fb.Form_Drop:Click to select file
 fr.fb.Form_Drop:Cliquer pour sélectionner fichier
+nl.fb.Form_Drop:Klik om bestand te selecteren
 en.osx.Form_Drop:Click to select file
 fr.osx.Form_Drop:Cliquer pour sélectionner fichier
 de.all.Form_Drop:Datei hier hinziehen
@@ -2943,7 +3021,7 @@ en.ami.DataTypesTitle:%s (%s image %lux%lu pixels)
 de.ami.DataTypesTitle:%s (%s Bild %lux%lu pixels)
 fr.ami.DataTypesTitle:%s (Image %s %lux%lu pixels)
 it.ami.DataTypesTitle:%s (Immagine %s %lux%lu pixel)
-nl.ami.DataTypesTitle:%s (%s image %lux%lu pixels)
+nl.ami.DataTypesTitle:%s (%s afbeelding %lux%lu punten)
 
 # HTML page character set
 #
@@ -3223,28 +3301,29 @@ it.all.DirectoryError:La directory '%s' è già esistente
 nl.all.DirectoryError:map '%s' bestaat reeds
 
 en.ro.SprIsNull:Unable to convert image to sprite
+nl.ro.SprIsNull:Afbeelding kan niet worden omgezet in een sprite.
 
 # Error messages for Amiga version only
 en.ami.CompError:Unable to open
 de.ami.CompError:Nicht zu öffnen
 fr.ami.CompError:Unable to open
 it.ami.CompError:Impossibile aprire
-nl.ami.CompError:Unable to open
+nl.ami.CompError:Niet te openen
 en.ami.MultiTabClose:Are you sure you want to close multiple tabs?
 de.ami.MultiTabClose:Are you sure you want to close multiple tabs?
 fr.ami.MultiTabClose:Are you sure you want to close multiple tabs?
 it.ami.MultiTabClose:Sono rimaste aperte più schede, sei sicuro di voler uscire da NetSurf?
-nl.ami.MultiTabClose:Are you sure you want to close multiple tabs?
+nl.ami.MultiTabClose:Er zijn meerdere tabbladen geopend. Tabbladen allemaal sluiten?
 en.ami.TCPIPShutdown:The TCP/IP stack has signalled that it is about to shutdown and NetSurf must exit.  NetSurf will quit in 5 seconds unless this shutdown is aborted.
 de.ami.TCPIPShutdown:The TCP/IP stack has signalled that it is about to shutdown and NetSurf must exit.  NetSurf will quit in 5 seconds unless this shutdown is aborted.
 fr.ami.TCPIPShutdown:The TCP/IP stack has signalled that it is about to shutdown and NetSurf must exit.  NetSurf will quit in 5 seconds unless this shutdown is aborted.
 it.ami.TCPIPShutdown:Lo stack TCP/IP ha dato segnale di essere in procinto di arresto,  NetSurf verrà chiuso.  NetSurf si chiuderà entro 5 secondi a meno che lo shutdown non venga interrotto.
-nl.ami.TCPIPShutdown:The TCP/IP stack has signalled that it is about to shutdown and NetSurf must exit.  NetSurf will quit in 5 seconds unless this shutdown is aborted.
+nl.ami.TCPIPShutdown:De TCP/IP-stack meldt dat deze wordt afgesloten waardoor NetSurf gestopt moet worden. NetSurf zal stoppen in 5 seconden, tenzij het afsluiten wordt afgebroken.
 en.ami.AbortShutdown:Abort shutdown
 de.ami.AbortShutdown:Abort shutdown
 fr.ami.AbortShutdown:Abort shutdown
 it.ami.AbortShutdown:Interrompi lo shutdown
-nl.ami.AbortShutdown:Abort shutdown
+nl.ami.AbortShutdown:Afsluiten afbreken
 
 
 # Queries
@@ -3857,7 +3936,7 @@ en.ami.More:More
 de.ami.More:More
 fr.ami.More:More
 it.ami.More:More
-nl.ami.More:More
+nl.ami.More:Meer
 
 
 # Interactive help
@@ -5616,42 +5695,42 @@ en.ami.HelpToolbarBack:Back\nLMB: Steps back one page\nRMB: Display a menu of re
 de.ami.HelpToolbarBack:Back\nLMB: Steps back one page\nRMB: Display a menu of recent pages
 fr.ami.HelpToolbarBack:Back\nLMB: Steps back one page\nRMB: Display a menu of recent pages
 it.ami.HelpToolbarBack:Indietro
-nl.ami.HelpToolbarBack:Back\nLMB: Steps back one page\nRMB: Display a menu of recent pages
+nl.ami.HelpToolbarBack:Vorige\nLMB: Springt naar de vorige pagina in de venstergeschiedenis\nRMB: Toon menu met de venstergeschiedenis
 en.ami.HelpToolbarForward:Forward\nLMB: Steps forward one page
 de.ami.HelpToolbarForward:Forward\nLMB: Steps forward one page
 fr.ami.HelpToolbarForward:Forward\nLMB: Steps forward one page
 it.ami.HelpToolbarForward:Avanti
-nl.ami.HelpToolbarForward:Forward\nLMB: Steps forward one page
+nl.ami.HelpToolbarForward:Volgende\nLMB: Springt naar de volgende pagina in de venstergeschiedenis
 en.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
 de.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
 fr.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
 it.ami.HelpToolbarStop:Stoppa
-nl.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
+nl.ami.HelpToolbarStop:Stop\nLMB: Stopt het laden van de pagina
 en.ami.HelpToolbarReload:Reload\nLMB: Reloads the page\nShift+LMB: Reloads the page and all objects
 de.ami.HelpToolbarReload:Reload\nLMB: Reloads the page\nShift+LMB: Reloads the page and all objects
 fr.ami.HelpToolbarReload:Reload\nLMB: Reloads the page\nShift+LMB: Reloads the page and all objects
 it.ami.HelpToolbarReload:Ricarica
-nl.ami.HelpToolbarReload:Reload\nLMB: Reloads the page\nShift+LMB: Reloads the page and all objects
+nl.ami.HelpToolbarReload:Herlaad\nLMB: Herlaad de pagina\nShift+LMB: Herlaad de pagina inclusief alle objecten
 en.ami.HelpToolbarHome:Home\nLMB: Goes to the homepage
 de.ami.HelpToolbarHome:Home\nLMB: Goes to the homepage
 fr.ami.HelpToolbarHome:Home\nLMB: Goes to the homepage
 it.ami.HelpToolbarHome:Pagina iniziale
-nl.ami.HelpToolbarHome:Home\nLMB: Goes to the homepage
+nl.ami.HelpToolbarHome:Startpagina\nLMB: Opent de ingestelde startpagina
 en.ami.HelpToolbarURL:URL bar\nType a URL and press Return\nSuggestions can be selected with up/down
 de.ami.HelpToolbarURL:URL bar\nType a URL and press Return\nSuggestions can be selected with up/down
 fr.ami.HelpToolbarURL:URL bar\nType a URL and press Return\nSuggestions can be selected with up/down
 it.ami.HelpToolbarURL:Barra indirizzi
-nl.ami.HelpToolbarURL:URL bar\nType a URL and press Return\nSuggestions can be selected with up/down
+nl.ami.HelpToolbarURL:Webadresbalk\nVoor een webadres in en druk op Enter\nSuggesties kunnen worden geselecteerd via cursor-omhoog/omlaag
 en.ami.HelpToolbarWebSearch:Web search bar\nType text and press Return to search using your default search provider
 de.ami.HelpToolbarWebSearch:Websuchleiste\nText eingeben und Enter drücken um mit der Standardsuchmaschine zu suchen
 fr.ami.HelpToolbarWebSearch:Web search bar\nType text and press Return to search using your default search provider
 it.ami.HelpToolbarWebSearch:Digita una voce in base al provider scelto e premi invio
-nl.ami.HelpToolbarWebSearch:Web search bar\nType text and press Return to search using your default search provider
+nl.ami.HelpToolbarWebSearch:Web-zoekbalk\nVoer de tekst in en druk op Enter om te zoeken met behulp van de standaard ingestelde zoekmachine
 en.ami.HelpToolbarAddTab:Add tab\nLMB: Adds a new blank tab
 de.ami.HelpToolbarAddTab:Tab hinzufügen.
 fr.ami.HelpToolbarAddTab:Add tab\nLMB: Adds a new blank tab
 it.ami.HelpToolbarAddTab:Apri una nuova scheda
-nl.ami.HelpToolbarAddTab:Add tab\nLMB: Adds a new blank tab
+nl.ami.HelpToolbarAddTab:Tabblad toevoegen\nLMB: Een nieuwe leeg tabblad wordt geopend
 
 
 # Configuration tokens
@@ -5784,7 +5863,7 @@ en.ami.LocaleLang:Get from Locale prefs
 de.ami.LocaleLang:Rechnervorgabe nutzen
 fr.ami.LocaleLang:Get from Locale prefs
 it.ami.LocaleLang:Ottieni da preferenze localizzazione
-nl.ami.LocaleLang:Get from Locale prefs
+nl.ami.LocaleLang:Gebruik computerspecificatie
 en.all.HistoryAge:Keep history for
 de.all.HistoryAge:History behalten für
 fr.all.HistoryAge:Conserver l'historique de navigation pendant
@@ -5824,7 +5903,7 @@ en.ami.DoNotTrack:Send header to tell websites not to track
 de.ami.DoNotTrack:Send header to tell websites not to track
 fr.ami.DoNotTrack:Activer l'envoi d'une requête "Ne pas suivre à la trace"
 it.ami.DoNotTrack:Invia header al sito per la richiesta di non tracciamento
-nl.ami.DoNotTrack:Send header to tell websites not to track
+nl.ami.DoNotTrack:Websites laten weten dat gebruiker niet gevolgd wil worden
 en.all.FastScrolling:Fast scrolling
 de.all.FastScrolling:Schnelles Scrollen
 fr.all.FastScrolling:Défilement rapide
@@ -5848,17 +5927,17 @@ en.ami.ScreenWB:Workbench
 de.ami.ScreenWB:Workbench
 fr.ami.ScreenWB:Plan de travail
 it.ami.ScreenWB:Schermo Workbench
-nl.ami.ScreenWB:Workbench
+nl.ami.ScreenWB:Workbench-scherm
 en.ami.ScreenPublic:Public screen
 de.ami.ScreenPublic:Public Screen
 fr.ami.ScreenPublic:Écran public
 it.ami.ScreenPublic:Schermo pubblico
-nl.ami.ScreenPublic:Public screen
+nl.ami.ScreenPublic:Openbaar scherm
 en.ami.SimpleRefresh:Simple refresh
 de.ami.SimpleRefresh:Simple refresh
 fr.ami.SimpleRefresh:Rafraîchissement simple
 it.ami.SimpleRefresh:Refresh semplice
-nl.ami.SimpleRefresh:Simple refresh
+nl.ami.SimpleRefresh:Eenvoudig verversen
 en.all.Theme:Theme
 de.all.Theme:Thema
 fr.all.Theme:Thème
@@ -5897,7 +5976,7 @@ en.ami.ProxyBypass:Bypass proxy for
 de.ami.ProxyBypass:Bypass proxy for
 fr.ami.ProxyBypass:Contournement du proxy pour
 it.ami.ProxyBypass:Bypassa proxy per
-nl.ami.ProxyBypass:Bypass proxy for
+nl.ami.ProxyBypass:Proxy omleiden voor
 en.all.Fetching:Fetching
 de.all.Fetching:Fetching
 fr.all.Fetching:Connexion
@@ -5936,22 +6015,22 @@ en.ami.DitherQuality:Dither quality
 de.ami.DitherQuality:Dither quality
 fr.ami.DitherQuality:Qualité de tramage
 it.ami.DitherQuality:Qualità dither
-nl.ami.DitherQuality:Dither quality
+nl.ami.DitherQuality:Kwaliteit kleurbenadering
 en.ami.Low:Low
 de.ami.Low:Low
 fr.ami.Low:Faible
 it.ami.Low:Bassa
-nl.ami.Low:Low
+nl.ami.Low:Laag
 en.ami.Medium:Medium
 de.ami.Medium:Medium
 fr.ami.Medium:Moyenne
 it.ami.Medium:Media
-nl.ami.Medium:Medium
+nl.ami.Medium:Gemiddeld
 en.ami.High:High
 de.ami.High:High
 fr.ami.High:Élevée
 it.ami.High:Alta
-nl.ami.High:High
+nl.ami.High:Hoog
 en.all.Animations:Animations
 de.all.Animations:Animationen
 fr.all.Animations:Animations et effets
@@ -6042,7 +6121,7 @@ en.ami.FontFallback:Preferred fallback
 de.ami.FontFallback:Preferred fallback
 fr.ami.FontFallback:Police de caractères de secour préférée
 it.ami.FontFallback:Fallback preferito
-nl.ami.FontFallback:Preferred fallback
+nl.ami.FontFallback:Favoriete reserve lettertype
 en.all.Default:Default
 de.all.Default:Standard
 fr.all.Default:Défaut
@@ -6067,19 +6146,19 @@ en.ami.FontAntialiasing:Use anti-aliasing (when possible)
 de.ami.FontAntialiasing:Use anti-aliasing (when possible)
 fr.ami.FontAntialiasing:Utiliser l'anticrénelage (si possible)
 it.ami.FontAntialiasing:Usa anti-aliasing (quando possibile)
-nl.ami.FontAntialiasing:Use anti-aliasing (when possible)
+nl.ami.FontAntialiasing:Anti-aliasing (indien mogelijk) gebruiken
 
 # Font scanning
 en.ami.FontScanning:Scanning fonts...
 de.ami.FontScanning:Scanning fonts...
 fr.ami.FontScanning:Balayage de polices de caractères...
 it.ami.FontScanning:Scansione dei font in corso...
-nl.ami.FontScanning:Scanning fonts...
+nl.ami.FontScanning:Scannen lettertypen...
 en.ami.FontGlyphs:%ld unique glyphs found
 de.ami.FontGlyphs:%ld unique glyphs found
 fr.ami.FontGlyphs:%ld glyphe(s) unique(s) trouvé
 it.ami.FontGlyphs:%ld glifi unici trovati
-nl.ami.FontGlyphs:%ld unique glyphs found
+nl.ami.FontGlyphs:%ld unieke tekens gevonden
 
 # Cache tab
 #
@@ -6113,7 +6192,7 @@ en.ami.Tabs:Tabs
 de.ami.Tabs:Tabs
 fr.ami.Tabs:Onglets
 it.ami.Tabs:Schede
-nl.ami.Tabs:Tabs
+nl.ami.Tabs:Tabbladen
 en.all.TabbedBrowsing:Tabbed browsing
 de.all.TabbedBrowsing:Registernavigation (Tabs)
 fr.all.TabbedBrowsing:Navigation par onglets
@@ -6138,12 +6217,12 @@ en.ami.TabClose:Warn when closing multiple tabs
 de.ami.TabClose:Warn when closing multiple tabs
 fr.ami.TabClose:Avertir lors de la fermeture de plusieurs onglets
 it.ami.TabClose:Avvisa quando si chiudono più schede
-nl.ami.TabClose:Warn when closing multiple tabs
+nl.ami.TabClose:Waarschuwen wanneer meerdere tabbladen tegelijkertijd worden gesloten
 en.ami.TabAlways:Always show tabs
 de.ami.TabAlways:Always show tabs
 fr.ami.TabAlways:Toujours afficher les onglets
 it.ami.TabAlways:Mostra sempre la barra delle schede
-nl.ami.TabAlways:Always show tabs
+nl.ami.TabAlways:Tabbladen altijd tonen
 
 # Advanced
 #
@@ -6186,12 +6265,12 @@ en.ami.OptionDocky:Show in AmiDock
 de.ami.OptionDocky:In AmiDock zeigen
 fr.ami.OptionDocky:Afficher dans AmiDock
 it.ami.OptionDocky:Mostra icona di NetSurf su AmiDock
-nl.ami.OptionDocky:Show in AmiDock
+nl.ami.OptionDocky:Toon in AmiDock
 en.ami.PopupMenu:Use popupmenu for forms
 de.ami.PopupMenu:Use popupmenu for forms
 fr.ami.PopupMenu:Use popupmenu for forms
 it.ami.PopupMenu:Use popupmenu for forms
-nl.ami.PopupMenu:Use popupmenu for forms
+nl.ami.PopupMenu:Gebruik popup-menu for formulieren
 en.all.Clipboard:Clipboard
 de.all.Clipboard:Clipboard
 fr.all.Clipboard:Presse-papiers
