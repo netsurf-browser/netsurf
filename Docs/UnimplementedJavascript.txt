@@ -168,6 +168,50 @@ getter CloseEvent::reason(string);\n
 getter CloseEvent::wasClean(boolean);\n
 getter CompositionEvent::data(string);\n
 method CompositionEvent::initCompositionEvent();\n
+method CSS::escape();\n
+getter CSSGroupingRule::cssRules(user);\n
+method CSSGroupingRule::deleteRule();\n
+method CSSGroupingRule::insertRule();\n
+getter CSSImportRule::href(string);\n
+getter CSSImportRule::media(user);\n
+getter CSSImportRule::styleSheet(user);\n
+getter CSSMarginRule::name(string);\n
+getter CSSMarginRule::style(user);\n
+getter CSSMediaRule::media(user);\n
+getter CSSNamespaceRule::namespaceURI(string);\n
+getter CSSNamespaceRule::prefix(string);\n
+getter CSSPageRule::selectorText(string);\n
+setter CSSPageRule::selectorText(string);\n
+getter CSSPageRule::style(user);\n
+getter CSSRule::cssText(string);\n
+setter CSSRule::cssText(string);\n
+method CSSRuleList::item();\n
+getter CSSRuleList::length(unsigned long);\n
+getter CSSRule::parentRule(user);\n
+getter CSSRule::parentStyleSheet(user);\n
+getter CSSRule::type(unsigned short);\n
+getter CSSStyleDeclaration::cssFloat(string);\n
+setter CSSStyleDeclaration::cssFloat(string);\n
+getter CSSStyleDeclaration::cssText(string);\n
+setter CSSStyleDeclaration::cssText(string);\n
+getter CSSStyleDeclaration::dashed_attribute(string);\n
+setter CSSStyleDeclaration::dashed_attribute(string);\n
+method CSSStyleDeclaration::getPropertyPriority();\n
+method CSSStyleDeclaration::getPropertyValue();\n
+method CSSStyleDeclaration::item();\n
+getter CSSStyleDeclaration::length(unsigned long);\n
+getter CSSStyleDeclaration::parentRule(user);\n
+method CSSStyleDeclaration::removeProperty();\n
+method CSSStyleDeclaration::setProperty();\n
+method CSSStyleDeclaration::setPropertyPriority();\n
+method CSSStyleDeclaration::setPropertyValue();\n
+getter CSSStyleRule::selectorText(string);\n
+setter CSSStyleRule::selectorText(string);\n
+getter CSSStyleRule::style(user);\n
+getter CSSStyleSheet::cssRules(user);\n
+method CSSStyleSheet::deleteRule();\n
+method CSSStyleSheet::insertRule();\n
+getter CSSStyleSheet::ownerRule(user);\n
 getter CustomEvent::detail(any);\n
 method CustomEvent::initCustomEvent();\n
 method DataTransfer::clearData();\n
@@ -235,6 +279,7 @@ getter Document::documentURI(string);\n
 getter Document::domain(string);\n
 setter Document::domain(string);\n
 getter Document::embeds(user);\n
+method Document::enableStyleSheetsForSet();\n
 method Document::execCommand();\n
 getter Document::fgColor(string);\n
 setter Document::fgColor(string);\n
@@ -261,6 +306,7 @@ method Document::importNode();\n
 getter Document::inputEncoding(string);\n
 getter Document::lastElementChild(user);\n
 getter Document::lastModified(string);\n
+getter Document::lastStyleSheetSet(string);\n
 getter Document::linkColor(string);\n
 setter Document::linkColor(string);\n
 getter Document::links(user);\n
@@ -395,6 +441,7 @@ setter Document::onwheel(user);\n
 method Document::open();\n
 getter Document::origin(string);\n
 getter Document::plugins(user);\n
+getter Document::preferredStyleSheetSet(string);\n
 method Document::prepend();\n
 method Document::query();\n
 method Document::queryAll();\n
@@ -409,6 +456,10 @@ getter Document::readyState(user);\n
 getter Document::referrer(string);\n
 method Document::releaseEvents();\n
 getter Document::scripts(user);\n
+getter Document::selectedStyleSheetSet(string);\n
+setter Document::selectedStyleSheetSet(string);\n
+getter Document::styleSheetSets(string);\n
+getter Document::styleSheets(user);\n
 getter Document::title(string);\n
 setter Document::title(string);\n
 method DocumentType::after();\n
@@ -425,6 +476,7 @@ method DOMImplementation::createDocument();\n
 method DOMImplementation::createDocumentType();\n
 method DOMImplementation::createHTMLDocument();\n
 method DOMImplementation::hasFeature();\n
+method DOMParser::parseFromString();\n
 getter DOMSettableTokenList::value(string);\n
 setter DOMSettableTokenList::value(string);\n
 method DOMTokenList::add();\n
@@ -458,9 +510,11 @@ method Element::after();\n
 method Element::append();\n
 getter Element::attributes(user);\n
 method Element::before();\n
+getter Element::cascadedStyle(user);\n
 getter Element::children(user);\n
 getter Element::classList(user);\n
 method Element::closest();\n
+getter Element::defaultStyle(user);\n
 method Element::getAttributeNode();\n
 method Element::getAttributeNodeNS();\n
 method Element::getAttributeNS();\n
@@ -468,15 +522,22 @@ method Element::getElementsByClassName();\n
 method Element::getElementsByTagNameNS();\n
 method Element::hasAttributeNS();\n
 method Element::hasAttributes();\n
+getter Element::innerHTML(string);\n
+setter Element::innerHTML(string);\n
+method Element::insertAdjacentHTML();\n
 getter Element::localName(string);\n
 method Element::matches();\n
 getter Element::namespaceURI(string);\n
+getter Element::outerHTML(string);\n
+setter Element::outerHTML(string);\n
 getter Element::prefix(string);\n
 method Element::prepend();\n
+method Element::pseudo();\n
 method Element::query();\n
 method Element::queryAll();\n
 method Element::querySelector();\n
 method Element::querySelectorAll();\n
+getter Element::rawComputedStyle(user);\n
 method Element::remove();\n
 method Element::removeAttributeNode();\n
 method Element::removeAttributeNS();\n
@@ -485,20 +546,15 @@ method Element::setAttributeNode();\n
 method Element::setAttributeNodeNS();\n
 method Element::setAttributeNS();\n
 getter Element::tagName(string);\n
+getter Element::usedStyle(user);\n
 getter ErrorEvent::colno(unsigned long);\n
 getter ErrorEvent::error(any);\n
 getter ErrorEvent::filename(string);\n
 getter ErrorEvent::lineno(unsigned long);\n
 getter ErrorEvent::message(string);\n
-getter Event::bubbles(boolean);\n
-getter Event::cancelable(boolean);\n
-getter Event::currentTarget(user);\n
-getter Event::defaultPrevented(boolean);\n
-getter Event::eventPhase(unsigned short);\n
 method Event::initEvent();\n
 getter Event::isTrusted(boolean);\n
 method EventListener::handleEvent();\n
-method Event::preventDefault();\n
 method EventSource::close();\n
 getter EventSource::onerror(user);\n
 setter EventSource::onerror(user);\n
@@ -509,14 +565,10 @@ setter EventSource::onopen(user);\n
 getter EventSource::readyState(unsigned short);\n
 getter EventSource::url(string);\n
 getter EventSource::withCredentials(boolean);\n
-method Event::stopImmediatePropagation();\n
-method Event::stopPropagation();\n
 method EventTarget::addEventListener();\n
 method EventTarget::dispatchEvent();\n
 method EventTarget::removeEventListener();\n
-getter Event::target(user);\n
 getter Event::timeStamp(user);\n
-getter Event::type(string);\n
 method External::AddSearchProvider();\n
 method External::IsSearchProviderInstalled();\n
 method FocusEvent::initFocusEvent();\n
@@ -716,8 +768,6 @@ getter HTMLElement::oncanplay(user);\n
 setter HTMLElement::oncanplay(user);\n
 getter HTMLElement::onchange(user);\n
 setter HTMLElement::onchange(user);\n
-getter HTMLElement::onclick(user);\n
-setter HTMLElement::onclick(user);\n
 getter HTMLElement::onclose(user);\n
 setter HTMLElement::onclose(user);\n
 getter HTMLElement::oncontextmenu(user);\n
@@ -828,6 +878,7 @@ getter HTMLElement::onwheel(user);\n
 setter HTMLElement::onwheel(user);\n
 getter HTMLElement::spellcheck(boolean);\n
 setter HTMLElement::spellcheck(boolean);\n
+getter HTMLElement::style(user);\n
 getter HTMLElement::tabIndex(long);\n
 setter HTMLElement::tabIndex(long);\n
 getter HTMLElement::translate(boolean);\n
@@ -1021,6 +1072,7 @@ getter HTMLLegendElement::form(user);\n
 getter HTMLLinkElement::crossOrigin(string);\n
 setter HTMLLinkElement::crossOrigin(string);\n
 getter HTMLLinkElement::relList(user);\n
+getter HTMLLinkElement::sheet(user);\n
 getter HTMLLinkElement::sizes(user);\n
 getter HTMLMapElement::areas(user);\n
 getter HTMLMarqueeElement::behavior(string);\n
@@ -1239,6 +1291,7 @@ getter HTMLStyleElement::nonce(string);\n
 setter HTMLStyleElement::nonce(string);\n
 getter HTMLStyleElement::scoped(boolean);\n
 setter HTMLStyleElement::scoped(boolean);\n
+getter HTMLStyleElement::sheet(user);\n
 getter HTMLTableCellElement::headers(user);\n
 getter HTMLTableColElement::span(unsigned long);\n
 setter HTMLTableColElement::span(unsigned long);\n
@@ -1422,6 +1475,12 @@ method MediaController::unpause();\n
 getter MediaController::volume(double);\n
 setter MediaController::volume(double);\n
 getter MediaError::code(unsigned short);\n
+method MediaList::appendMedium();\n
+method MediaList::deleteMedium();\n
+method MediaList::item();\n
+getter MediaList::length(unsigned long);\n
+getter MediaList::mediaText(string);\n
+setter MediaList::mediaText(string);\n
 getter MessageChannel::port1(user);\n
 getter MessageChannel::port2(user);\n
 getter MessageEvent::data(any);\n
@@ -1528,7 +1587,12 @@ getter Plugin::length(unsigned long);\n
 method Plugin::namedItem();\n
 getter Plugin::name(string);\n
 getter PopStateEvent::state(any);\n
+getter ProcessingInstruction::sheet(user);\n
 getter ProcessingInstruction::target(string);\n
+getter PseudoElement::cascadedStyle(user);\n
+getter PseudoElement::defaultStyle(user);\n
+getter PseudoElement::rawComputedStyle(user);\n
+getter PseudoElement::usedStyle(user);\n
 getter RadioNodeList::value(string);\n
 setter RadioNodeList::value(string);\n
 method Range::cloneContents();\n
@@ -1538,6 +1602,7 @@ getter Range::collapsed(boolean);\n
 getter Range::commonAncestorContainer(user);\n
 method Range::compareBoundaryPoints();\n
 method Range::comparePoint();\n
+method Range::createContextualFragment();\n
 method Range::deleteContents();\n
 method Range::detach();\n
 getter Range::endContainer(user);\n
@@ -1576,6 +1641,17 @@ method Storage::key();\n
 getter Storage::length(unsigned long);\n
 method Storage::removeItem();\n
 method Storage::setItem();\n
+getter StyleSheet::disabled(boolean);\n
+setter StyleSheet::disabled(boolean);\n
+getter StyleSheet::href(string);\n
+method StyleSheetList::item();\n
+getter StyleSheetList::length(unsigned long);\n
+getter StyleSheet::media(user);\n
+getter StyleSheet::ownerNode(user);\n
+getter StyleSheet::parentStyleSheet(user);\n
+getter StyleSheet::title(string);\n
+getter StyleSheet::type(string);\n
+getter SVGElement::style(user);\n
 getter TextMetrics::actualBoundingBoxAscent(double);\n
 getter TextMetrics::actualBoundingBoxDescent(double);\n
 getter TextMetrics::actualBoundingBoxLeft(double);\n
@@ -1741,6 +1817,7 @@ getter Window::external(user);\n
 method Window::focus();\n
 getter Window::frameElement(user);\n
 getter Window::frames(user);\n
+method Window::getComputedStyle();\n
 getter Window::history(user);\n
 getter Window::length(unsigned long);\n
 getter Window::localStorage(user);\n
@@ -1969,4 +2046,5 @@ setter Worker::onmessage(user);\n
 method Worker::postMessage();\n
 method Worker::terminate();\n
 method XMLDocument::load();\n
+method XMLSerializer::serializeToString();\n
 */

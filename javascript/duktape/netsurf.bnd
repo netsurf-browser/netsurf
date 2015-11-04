@@ -10,7 +10,9 @@
 
 binding duk_libdom {
 	webidl "dom.idl";
+	webidl "dom-parsing.idl";
 	webidl "html.idl";
+	webidl "cssom.idl";
 	webidl "uievents.idl";
 	webidl "urlutils.idl";
 	webidl "console.idl";

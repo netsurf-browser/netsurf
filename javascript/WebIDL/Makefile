@@ -16,12 +16,13 @@
 
 .PHONY:all clean
 
-all: dom.idl html.idl uievents.idl
+all: dom.idl html.idl uievents.idl cssom.idl
 
-.INTERMEDIATE:dom-spec.html dom-spec.xml dom-idl.html 
+.INTERMEDIATE:dom-spec.html dom-spec.xml dom-idl.html
 .INTERMEDIATE:html-spec.html html-spec.xml html-idl.html
 .INTERMEDIATE:uievents-spec.html uievents-spec.xml uievents-idl.html
 .INTERMEDIATE:urlutils-spec.html urlutils-spec.xml urlutils-idl.html
+.INTERMEDIATE:cssom-spec.html cssom-spec.xml cssom-idl.html
 
 dom-spec.html:
 	curl -s https://dom.spec.whatwg.org/ -o $@
@@ -35,8 +36,11 @@ uievents-spec.html:
 urlutils-spec.html:
 	curl -s https://url.spec.whatwg.org/ -o $@
 
+cssom-spec.html:
+	curl -s https://drafts.csswg.org/cssom-1/ -o $@
+
 %-spec.xml: %-spec.html
-	-tidy -q -f $@.errors --new-blocklevel-tags header,hgroup,figure,time,main,nav,svg,rect,text,image,mark,figcaption,section -o $@ -asxml $<
+	-tidy -q -f $@.errors --new-blocklevel-tags header,hgroup,figure,time,main,nav,svg,rect,text,image,mark,figcaption,section,g,path,circle -o $@ -asxml $<
 
 %-idl.html: %-spec.xml
 	hxselect 'pre[class="idl"]' < $< > $@
