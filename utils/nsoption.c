@@ -16,7 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Option reading and saving (implementation).
  *
  * Options are stored in the format key:value, one per line.
@@ -232,6 +233,8 @@ nsoption_is_set(const struct nsoption_s *opts,
 		 */
 		if (((defs[entry].value.s == NULL) &&
 		     (opts[entry].value.s != NULL)) ||
+		    ((defs[entry].value.s != NULL) &&
+		     (opts[entry].value.s == NULL)) ||
 		    ((defs[entry].value.s != opts[entry].value.s) &&
 		     (strcmp(opts[entry].value.s, defs[entry].value.s) != 0))) {
 			ret = true;
