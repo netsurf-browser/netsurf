@@ -8,7 +8,7 @@
  *         http://www.opensource.org/licenses/mit-license
  */
 
-prologue HTMLElement ()
+prologue HTMLElement()
 %{
 #include <utils/corestrings.h>
 #define HANDLER_MAGIC MAGIC(HANDLER_MAP)

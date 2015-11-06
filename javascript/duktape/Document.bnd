@@ -8,16 +8,18 @@
  *         http://www.opensource.org/licenses/mit-license
  */
 
-class Document {
-	prologue %{
+prologue Document()
+%{
 #include "utils/corestrings.h"
 #include "utils/libdom.h"
 #include "utils/utils.h"
 
 #include "render/html_internal.h"
 #include "content/urldb.h"
-%};
-};
+
+#define HANDLER_MAGIC MAGIC(HANDLER_MAP)
+%}
+
 
 init Document(struct dom_document *document::node);
 
@@ -314,3 +316,130 @@ getter Document::cookie()
 	}
 	return 0;
 %}
+
+getter Document::onabort();
+setter Document::onabort();
+getter Document::onautocompleteerror();
+setter Document::onautocompleteerror();
+getter Document::onautocomplete();
+setter Document::onautocomplete();
+getter Document::onblur();
+setter Document::onblur();
+getter Document::oncancel();
+setter Document::oncancel();
+getter Document::oncanplaythrough();
+setter Document::oncanplaythrough();
+getter Document::oncanplay();
+setter Document::oncanplay();
+getter Document::onchange();
+setter Document::onchange();
+getter Document::onclick();
+setter Document::onclick();
+getter Document::onclose();
+setter Document::onclose();
+getter Document::oncontextmenu();
+setter Document::oncontextmenu();
+getter Document::oncuechange();
+setter Document::oncuechange();
+getter Document::ondblclick();
+setter Document::ondblclick();
+getter Document::ondragend();
+setter Document::ondragend();
+getter Document::ondragenter();
+setter Document::ondragenter();
+getter Document::ondragexit();
+setter Document::ondragexit();
+getter Document::ondragleave();
+setter Document::ondragleave();
+getter Document::ondragover();
+setter Document::ondragover();
+getter Document::ondragstart();
+setter Document::ondragstart();
+getter Document::ondrag();
+setter Document::ondrag();
+getter Document::ondrop();
+setter Document::ondrop();
+getter Document::ondurationchange();
+setter Document::ondurationchange();
+getter Document::onemptied();
+setter Document::onemptied();
+getter Document::onended();
+setter Document::onended();
+getter Document::onfocus();
+setter Document::onfocus();
+getter Document::oninput();
+setter Document::oninput();
+getter Document::oninvalid();
+setter Document::oninvalid();
+getter Document::onkeydown();
+setter Document::onkeydown();
+getter Document::onkeypress();
+setter Document::onkeypress();
+getter Document::onkeyup();
+setter Document::onkeyup();
+getter Document::onloadeddata();
+setter Document::onloadeddata();
+getter Document::onloadedmetadata();
+setter Document::onloadedmetadata();
+getter Document::onloadstart();
+setter Document::onloadstart();
+getter Document::onload();
+setter Document::onload();
+getter Document::onmousedown();
+setter Document::onmousedown();
+getter Document::onmouseenter();
+setter Document::onmouseenter();
+getter Document::onmouseleave();
+setter Document::onmouseleave();
+getter Document::onmousemove();
+setter Document::onmousemove();
+getter Document::onmouseout();
+setter Document::onmouseout();
+getter Document::onmouseover();
+setter Document::onmouseover();
+getter Document::onmouseup();
+setter Document::onmouseup();
+getter Document::onpause();
+setter Document::onpause();
+getter Document::onplaying();
+setter Document::onplaying();
+getter Document::onplay();
+setter Document::onplay();
+getter Document::onprogress();
+setter Document::onprogress();
+getter Document::onratechange();
+setter Document::onratechange();
+getter Document::onreadystatechange();
+setter Document::onreadystatechange();
+getter Document::onreset();
+setter Document::onreset();
+getter Document::onresize();
+setter Document::onresize();
+getter Document::onscroll();
+setter Document::onscroll();
+getter Document::onseeked();
+setter Document::onseeked();
+getter Document::onseeking();
+setter Document::onseeking();
+getter Document::onselect();
+setter Document::onselect();
+getter Document::onshow();
+setter Document::onshow();
+getter Document::onsort();
+setter Document::onsort();
+getter Document::onstalled();
+setter Document::onstalled();
+getter Document::onsubmit();
+setter Document::onsubmit();
+getter Document::onsuspend();
+setter Document::onsuspend();
+getter Document::ontimeupdate();
+setter Document::ontimeupdate();
+getter Document::ontoggle();
+setter Document::ontoggle();
+getter Document::onvolumechange();
+setter Document::onvolumechange();
+getter Document::onwaiting();
+setter Document::onwaiting();
+getter Document::onwheel();
+setter Document::onwheel();
