@@ -242,7 +242,7 @@ nl.all.LinkSave:Bewaar
 en.all.LinkDload:Download target
 de.all.LinkDload:Ziel speichern
 fr.all.LinkDload:Téléchargement cible
-it.all.LinkDload:Salva file in
+it.all.LinkDload:Scarica file
 nl.all.LinkDload:Haal op
 
 en.all.LinkNew:New window
@@ -930,17 +930,17 @@ nl.all.Link:Koppeling
 en.all.LinkNewTab:Open in new tab
 de.all.LinkNewTab:Öffnen in Tab
 fr.all.LinkNewTab:Ouvrir dans un nouvel onglet
-it.all.LinkNewTab:Apri in una nuova scheda
+it.all.LinkNewTab:Apri in nuova scheda
 nl.all.LinkNewTab:Open in nieuw tabblad
 en.all.LinkNewWin:Open in new window
 de.all.LinkNewWin:Öffnen in Fenster
 fr.all.LinkNewWin:Ouvrir dans une nouvelle fenêtre
-it.all.LinkNewWin:Apri in una nuova finestra
+it.all.LinkNewWin:Apri in nuova finestra
 nl.all.LinkNewWin:Open in nieuw venster
 en.all.CopyURL:Copy URL to clipboard
 de.all.CopyURL:URL ins Clipboard
 fr.all.CopyURL:Copy URL dans le presse papier
-it.all.CopyURL:Copia URL nella clipboard
+it.all.CopyURL:Copia indirizzo link
 nl.all.CopyURL:Kopieer adres naar klembord
 en.all.CopyClip:Copy to clipboard
 de.all.CopyClip:Inhalt ins Clipboard
@@ -970,7 +970,7 @@ nl.all.Close:Sluit
 en.all.ObjShow:Show object
 de.all.ObjShow:Zeige Objekt
 fr.all.ObjShow:Afficher l'objet
-it.all.ObjShow:Mostra
+it.all.ObjShow:Mostra file
 nl.all.ObjShow:Toon object
 en.all.Frame:Frame
 de.all.Frame:Frame
@@ -2255,12 +2255,12 @@ nl.gtk.gtkCustomize:Aanpassen...
 en.gtk.gtkOpentab:Open Link in New _Tab
 de.gtk.gtkOpentab:Link in neuem _Tab öffnen
 fr.gtk.gtkOpentab:Ouvrir dans un nouvel _Onglet
-it.gtk.gtkOpentab:Apri in una nuova _scheda
+it.gtk.gtkOpentab:Apri in nuova _scheda
 nl.gtk.gtkOpentab:Koppeling openen in nieuw _tabblad
 en.gtk.gtkOpenwin:Open Link in New _Window
 de.gtk.gtkOpenwin:Link in neuem _Fenster öffnen
 fr.gtk.gtkOpenwin:Ouvrir dans une nouvelle _Fenêtre
-it.gtk.gtkOpenwin:Apri in una nuova _finestra
+it.gtk.gtkOpenwin:Apri in nuova _finestra
 nl.gtk.gtkOpenwin:Koppeling openen in nieuw _venster
 en.gtk.gtkSavelink:Save Lin_k
 de.gtk.gtkSavelink:Lin_k speichern..
@@ -4044,12 +4044,12 @@ nl.ro.HelpStatus1:Dit is statusbalk.|MHet toont informatie over wat het browserv
 en.ro.HelpIconMenu0:\Rview information about this software.
 de.ro.HelpIconMenu0:Zeigt Informationen zu dieser Software.
 fr.ro.HelpIconMenu0:\Rvoir des informations sur ce logiciel.
-it.ro.HelpIconMenu0:\Rmostra le informazioni su NetSurf
+it.ro.HelpIconMenu0:\Rmostra informazioni su NetSurf
 nl.ro.HelpIconMenu0:Verplaats de muispijl naar rechts om het informatievenster over dit programma te openen.
 en.ro.HelpIconMenu1:\Sview NetSurf's documentation.
 de.ro.HelpIconMenu1:Lädt die NetSurf Dokumentation in einem neuen Browserfenster.
 fr.ro.HelpIconMenu1:\Svoir la documentation de NetSurf.
-it.ro.HelpIconMenu1:\Smostra la documentazione di NetSurf
+it.ro.HelpIconMenu1:\Smostra documentazione di NetSurf
 nl.ro.HelpIconMenu1:Klik met KIES om de documentatie van NetSurf te openen.
 en.ro.HelpIconMenu2:\Ropen a window.
 de.ro.HelpIconMenu2:Mauszeiger nach rechts bewegen, um ein Fenster zu öffnen.
@@ -4069,7 +4069,7 @@ nl.ro.HelpIconMenu2-1:Klik met KIES om de favorietenlijst te openen.
 en.ro.HelpIconMenu2-2:\Sopen the global history \w.
 de.ro.HelpIconMenu2-2:Klicken mit AUSWAHL öffnet das Fenster mit der globalen History.
 fr.ro.HelpIconMenu2-2:\Souvrir la fenêtre d'historique global.
-it.ro.HelpIconMenu2-2:\Smostra la cronologia globale
+it.ro.HelpIconMenu2-2:\Smostra cronologia globale
 nl.ro.HelpIconMenu2-2:Klik met KIES om de browsergeschiedenis te openen.
 en.ro.HelpIconMenu2-3:\Sopen the cookie management \w.
 de.ro.HelpIconMenu2-3:Klicken mit AUSWAHL öffnet die Cookie Verwaltung.
@@ -4090,12 +4090,12 @@ nl.ro.HelpIconMenu4:Klik met KIES om het programma NetSurf te stoppen.
 en.ro.HelpBrowserMenu0:\Rsee the options relating to the current page.
 de.ro.HelpBrowserMenu0:Untermenü Seite.|MMenüpunkte beziehen sich auf die angezeigte Seite.
 fr.ro.HelpBrowserMenu0:\Rvoir les options en rapport avec la page en cours.
-it.ro.HelpBrowserMenu0:\Rmostra le opzioni relative a questa pagina
+it.ro.HelpBrowserMenu0:\Rmostra opzioni relative a questa pagina
 nl.ro.HelpBrowserMenu0:Verplaats de muispijl naar rechts om de mogelijkheden bij deze pagina te tonen.
 en.ro.HelpBrowserMenu0-0:\Rsee information about the current page.
 de.ro.HelpBrowserMenu0-0:Zeigt Informationen zur aktuellen Seite.
 fr.ro.HelpBrowserMenu0-0:\Rvoir les informations concernant la page en cours.
-it.ro.HelpBrowserMenu0-0:\Rmostra le informazioni di questa pagina
+it.ro.HelpBrowserMenu0-0:\Rmostra informazioni di questa pagina
 nl.ro.HelpBrowserMenu0-0:Verplaats de muispijl naar rechts om informatie over deze pagina te tonen.
 en.ro.HelpBrowserMenu0-1:\Rsave the current page as an HTML file.
 de.ro.HelpBrowserMenu0-1:Abspeichern der Seite als HTML Datei.|MGespeichert wird nur der HTML Quellcode (keine Bilder etc.).
@@ -4110,7 +4110,7 @@ nl.ro.HelpBrowserMenu0-2:Verplaats de muispijl naar rechts om deze pagina te bew
 en.ro.HelpBrowserMenu0-3:\Rsee the export options.
 de.ro.HelpBrowserMenu0-3:Abspeichern der Seite in verschiedenen Formaten.
 fr.ro.HelpBrowserMenu0-3:\Rvoir les options d'exportation.
-it.ro.HelpBrowserMenu0-3:\Rmostra le opzioni di esportazione
+it.ro.HelpBrowserMenu0-3:\Rmostra opzioni di esportazione
 nl.ro.HelpBrowserMenu0-3:Verplaats de muispijl naar rechts om de exporteermogelijkheden te tonen.
 en.ro.HelpBrowserMenu0-3-0:\Rexport the current page as a Drawfile.
 de.ro.HelpBrowserMenu0-3-0:Exportieren der Seite als Draw Datei.
@@ -4160,17 +4160,17 @@ nl.ro.HelpBrowserMenu0-7:Verplaats de muispijl naar rechts om een stuk tekst bin
 en.ro.HelpBrowserMenu0-8:\Sview the source code of the current page in a text editor.
 de.ro.HelpBrowserMenu0-8:Lädt den Quellcode der Seite in einen Editor.
 fr.ro.HelpBrowserMenu0-8:\Svoir le code source de la page courante dans un éditeur de texte.
-it.ro.HelpBrowserMenu0-8:\Smostra il sorgente della pagina
+it.ro.HelpBrowserMenu0-8:\Smostra sorgente della pagina
 nl.ro.HelpBrowserMenu0-8:Klik met KIES om de broncode van deze pagina in een tekstbewerker te openen.
 en.ro.HelpBrowserMenu1:\Rsee the options relating to the current item.
 de.ro.HelpBrowserMenu1:Untermenü Objekt.|MMenöpunkte beziehen sich auf das aktuelle Objekt.
 fr.ro.HelpBrowserMenu1:\Rvoir les options correspondant à l'objet courant.
-it.ro.HelpBrowserMenu1:\Rmostra le opzioni relative al corrente oggetto
+it.ro.HelpBrowserMenu1:\Rmostra opzioni relative al corrente oggetto
 nl.ro.HelpBrowserMenu1:Verplaats de muispijl naar rechts om de mogelijkheden bij dit item te tonen.
 en.ro.HelpBrowserMenu1-0-0:\Rsee information about the current item.
 de.ro.HelpBrowserMenu1-0-0:Informationen zum aktuellen Objekt zeigen.
 fr.ro.HelpBrowserMenu1-0-0:\Rvoir les informations sur l'objet en cours.
-it.ro.HelpBrowserMenu1-0-0:\Rmostra le informazioni relative al corrente oggetto
+it.ro.HelpBrowserMenu1-0-0:\Rmostra informazioni relative al corrente oggetto
 nl.ro.HelpBrowserMenu1-0-0:Verplaats de muispijl naar rechts om informatie over dit item te tonen.
 en.ro.HelpBrowserMenu1-0-1:\Rsave the current item.
 de.ro.HelpBrowserMenu1-0-1:Abspeichern des Objektes (Original).
@@ -4180,7 +4180,7 @@ nl.ro.HelpBrowserMenu1-0-1:Verplaats de muispijl naar rechts om dit item te bewa
 en.ro.HelpBrowserMenu1-0-2:\Rsee the export options.
 de.ro.HelpBrowserMenu1-0-2:Optionen zum Export des aktuellen Objektes zeigen.
 fr.ro.HelpBrowserMenu1-0-2:\Rvoir les options d'exportation.
-it.ro.HelpBrowserMenu1-0-2:\Rmostra le opzioni di esportazione
+it.ro.HelpBrowserMenu1-0-2:\Rmostra opzioni di esportazione
 nl.ro.HelpBrowserMenu1-0-2:Verplaats de muispijl naar rechts om de exporteermogelijkheden te tonen.
 en.ro.HelpBrowserMenu1-0-2-0:\Rsave the image as a Sprite.
 de.ro.HelpBrowserMenu1-0-2-0:Abspeichern des Bildes als Sprite Datei.
@@ -4220,7 +4220,7 @@ nl.ro.HelpBrowserMenu1-0-4:Klik met KIES om alle items van deze pagina opnieuw o
 en.ro.HelpBrowserMenu1-1:\Rsee the options relating to the current link.
 de.ro.HelpBrowserMenu1-1:Optionen für den aktuellen Verweis
 fr.ro.HelpBrowserMenu1-1:\Rsee the options relating to the current link.
-it.ro.HelpBrowserMenu1-1:\Rmostra le opzioni relative al corrente link
+it.ro.HelpBrowserMenu1-1:\Rmostra opzioni relative al corrente link
 nl.ro.HelpBrowserMenu1-1:Verplaats de muispijl naar rechts om de mogelijkheden bij deze koppeling te tonen.
 en.ro.HelpBrowserMenu1-1-0:\Rsave the current link.
 de.ro.HelpBrowserMenu1-1-0:Die Adresse des aktuellen Verweises abspeichern.
@@ -4255,7 +4255,7 @@ nl.ro.HelpBrowserMenu1-1-2:Klik met KIES om deze koppeling in een nieuw browserv
 en.ro.HelpBrowserMenu2:\Rsee the selection options.
 de.ro.HelpBrowserMenu2:Optionen für die manuell markierten Webseitenbereiche
 fr.ro.HelpBrowserMenu2:\Rsee the selection options.
-it.ro.HelpBrowserMenu2:\Rmostra le opzioni di selezione
+it.ro.HelpBrowserMenu2:\Rmostra opzioni di selezione
 nl.ro.HelpBrowserMenu2:Verplaats de muispijl naar rechts om de selectiemogelijkheden te tonen.
 en.ro.HelpBrowserMenu2-0:\Rsave the current selection.
 de.ro.HelpBrowserMenu2-0:Die aktuell markierten Bereiche abspeichern.
@@ -4290,7 +4290,7 @@ nl.ro.HelpBrowserMenu2-5:Klik met KIES om alle tekst op de pagina, uitgezonderd 
 en.ro.HelpBrowserMenu3:\Rsee the navigation options.
 de.ro.HelpBrowserMenu3:Untermenü Navigieren.
 fr.ro.HelpBrowserMenu3:\Rvoir les options de navigation.
-it.ro.HelpBrowserMenu3:\Rmostra le opzioni di navigazione
+it.ro.HelpBrowserMenu3:\Rmostra opzioni di navigazione
 nl.ro.HelpBrowserMenu3:Verplaats de muispijl naar rechts om de navigatiemogelijkheden te tonen.
 en.ro.HelpBrowserMenu3-0:\Sreturn to the configured home page.
 de.ro.HelpBrowserMenu3-0:Öffnet die Homepage im aktuellen Fenster.
@@ -4445,7 +4445,7 @@ nl.ro.HelpBrowserMenu5-0-1:Klik met KIES om de favorietenlijst te openen.
 en.ro.HelpBrowserMenu5-1:\Rview the history options.
 de.ro.HelpBrowserMenu5-1:Zugriff auf die History Funktionen.|MIn die History werden bereits besuchte Webseiten eingetragen. Dies erlaubt das einfache Wiederfinden einmal gesehener Web-Inhalte.
 fr.ro.HelpBrowserMenu5-1:\Rview the history options.
-it.ro.HelpBrowserMenu5-1:\Rmostra le opzioni della cronologia
+it.ro.HelpBrowserMenu5-1:\Rmostra opzioni della cronologia
 nl.ro.HelpBrowserMenu5-1:Verplaats de muispijl naar rechts om de geschiedenismogelijkheden te tonen.
 en.ro.HelpBrowserMenu5-1-0:\Sopen the local history \w.
 de.ro.HelpBrowserMenu5-1-0:Anklicken mit AUSWAHL öffnet das Fenster mit der lokalen History.|MIn der lokalen History werden alle Webseiten notiert, die mit dem aktuellen Browserfenster bereits besucht worden waren.
@@ -4475,7 +4475,7 @@ nl.ro.HelpBrowserMenu5-2-1:Klik met KIES om alle opgeslagen cookies te verwijder
 en.ro.HelpBrowserMenu6:\Rsee the help resources available.
 de.ro.HelpBrowserMenu6:Untermenü Hilfe.|MZeigt Informationen zu und über NetSurf.
 fr.ro.HelpBrowserMenu6:\Rvoir l'aide disponible.
-it.ro.HelpBrowserMenu6:\Rmostra la documentazione disponibile
+it.ro.HelpBrowserMenu6:\Rmostra documentazione disponibile
 nl.ro.HelpBrowserMenu6:Verplaats de muispijl naar rechts om extra hulp en informatie te raadplegen, indien deze beschikbaar is.
 en.ro.HelpBrowserMenu6-0:\Sopen the documentation contents page in a new \w.
 de.ro.HelpBrowserMenu6-0:Öffnet die NetSurf Dokumentation in einem neuen Browserfenster.
@@ -4646,7 +4646,7 @@ nl.ro.HelpHotlist1:Klik met KIES om deze map te sluiten en de bijbehorende items
 en.ro.HelpHotlist2:\Sshow the entry details.
 de.ro.HelpHotlist2:Klicken mit AUSWAHL zeigt die Zusatzinformationen zu diesem Eintrag.
 fr.ro.HelpHotlist2:\Smontrer les détails de cette entrée.
-it.ro.HelpHotlist2:\Smostra dettagli di questo elemento.
+it.ro.HelpHotlist2:\Smostra dettagli di questo elemento
 nl.ro.HelpHotlist2:Klik met KIES om de details van dit item te tonen.
 en.ro.HelpHotlist3:\Shide the entry details.
 de.ro.HelpHotlist3:Klicken mit AUSWAHL schließt die Zusatzanzeige.
@@ -4733,7 +4733,7 @@ nl.ro.HelpHotlistMenu0-2:Verplaats de muispijl naar rechts om bepaalde items in 
 en.ro.HelpHotlistMenu0-2-0:\Sopen all directories and show all entry details.
 de.ro.HelpHotlistMenu0-2-0:Öffnet alle Verzeichnisse und zeigt zu Einträgen die Zusatzinformationen an.
 fr.ro.HelpHotlistMenu0-2-0:\Souvrir tous les répertoires et afficher tous les détails connus sur les entrées.
-it.ro.HelpHotlistMenu0-2-0:\Sapri tutte le directory e mostra in dettaglio tutte le immissioni.
+it.ro.HelpHotlistMenu0-2-0:\Sapri tutte le directory e mostra in dettaglio tutte le immissioni
 nl.ro.HelpHotlistMenu0-2-0:Klik met KIES om alle mappen te openen en alle details van de favorieten te tonen.
 en.ro.HelpHotlistMenu0-2-1:\Sopen all directories.
 de.ro.HelpHotlistMenu0-2-1:Öffnet alle Verzeichnisse.
@@ -4743,7 +4743,7 @@ nl.ro.HelpHotlistMenu0-2-1:Klik met KIES om alle mappen te openen en de bijbehor
 en.ro.HelpHotlistMenu0-2-2:\Sshow all entry details.
 de.ro.HelpHotlistMenu0-2-2:Zeigt die Zusatzinformationen zu den Einträgen an.
 fr.ro.HelpHotlistMenu0-2-2:\Smontrer tous les détails sur les entrées.
-it.ro.HelpHotlistMenu0-2-2:\Smostra tutti i dettagli dell'elemento.
+it.ro.HelpHotlistMenu0-2-2:\Smostra tutti i dettagli dell'elemento
 nl.ro.HelpHotlistMenu0-2-2:Klik met KIES om alle details van de favorieten te tonen.
 en.ro.HelpHotlistMenu0-3:\Rcollapse items within the hotlist.
 de.ro.HelpHotlistMenu0-3:Schließen von Verzeichnissen und Ausblenden der Zusatzinformationen.
@@ -4860,7 +4860,7 @@ nl.ro.HelpGHistoryMenu0-1:Verplaats de muispijl naar rechts om bepaalde items in
 en.ro.HelpGHistoryMenu0-1-0:\Sopen all directories and show all entry details.
 de.ro.HelpGHistoryMenu0-1-0:Öffnet alle Verzeichnisse und zeigt die Details der Einträge an.
 fr.ro.HelpGHistoryMenu0-1-0:\Souvrir tous les répertoires et donner le détail de toutes les entrées.
-it.ro.HelpGHistoryMenu0-1-0:\Sapri tutte le directory e mostra in dettaglio tutte le immissioni.
+it.ro.HelpGHistoryMenu0-1-0:\Sapri tutte le directory e mostra in dettaglio tutte le immissioni
 nl.ro.HelpGHistoryMenu0-1-0:Klik met KIES om alle mappen te openen en alle itemdetails te tonen.
 en.ro.HelpGHistoryMenu0-1-1:\Sopen all directories.
 de.ro.HelpGHistoryMenu0-1-1:Öffnet alle Verzeichnisse.
@@ -4870,7 +4870,7 @@ nl.ro.HelpGHistoryMenu0-1-1:Klik met KIES om alle mappen te openen en de bijbeho
 en.ro.HelpGHistoryMenu0-1-2:\Sshow all entry details.
 de.ro.HelpGHistoryMenu0-1-2:Zeigt die Details der sichtbaren Einträge an.
 fr.ro.HelpGHistoryMenu0-1-2:\Smontrer le détail de toutes les entrées.
-it.ro.HelpGHistoryMenu0-1-2:\Smostra tutte le immissioni in dettaglio.
+it.ro.HelpGHistoryMenu0-1-2:\Smostra tutte le immissioni in dettaglio
 nl.ro.HelpGHistoryMenu0-1-2:Klik met KIES om alle itemdetails te tonen.
 en.ro.HelpGHistoryMenu0-2:\Rcollapse items within global history.
 de.ro.HelpGHistoryMenu0-2:Weniger Information anzeigen
@@ -4972,7 +4972,7 @@ nl.ro.HelpCookiesMenu0-0:Verplaats de muispijl naar rechts om bepaalde items in 
 en.ro.HelpCookiesMenu0-0-0:\Sopen all directories and show all cookie details.
 de.ro.HelpCookiesMenu0-0-0:Klicken mit AUSWAHL öffnet alle Verzeichnisse und zeigt Details zu allen angezeigten Cookies.
 fr.ro.HelpCookiesMenu0-0-0:\Souvrir tous les répertoires et montrer le détail de tous les cookies.
-it.ro.HelpCookiesMenu0-0-0:\Sapri tutte le directory e mostra i dettagli di tutti i cookie.
+it.ro.HelpCookiesMenu0-0-0:\Sapri tutte le directory e mostra i dettagli di tutti i cookie
 nl.ro.HelpCookiesMenu0-0-0:Klik met KIES om alle mappen te openen en alle cookiedetails te tonen.
 en.ro.HelpCookiesMenu0-0-1:\Sopen all directories.
 de.ro.HelpCookiesMenu0-0-1:Klicken mit AUSWAHL öffnet alle Verzeichnisse.
@@ -4982,7 +4982,7 @@ nl.ro.HelpCookiesMenu0-0-1:Klik met KIES om alle mappen te openen en de bijbehor
 en.ro.HelpCookiesMenu0-0-2:\Sshow all cookie details.
 de.ro.HelpCookiesMenu0-0-2:Klicken mit AUSWAHL zeigt Details zu allen angezeigten Cookies.
 fr.ro.HelpCookiesMenu0-0-2:\Smontrer le détail de tous les cookies.
-it.ro.HelpCookiesMenu0-0-2:\Smostra tutti i cookie in dettaglio.
+it.ro.HelpCookiesMenu0-0-2:\Smostra tutti i cookie in dettaglio
 nl.ro.HelpCookiesMenu0-0-2:Klik met KIES om alle cookiedetails te tonen.
 en.ro.HelpCookiesMenu0-1:\Rcollapse items within the cookie list.
 de.ro.HelpCookiesMenu0-1:Menü zum Schließen der Einträge der Liste.
@@ -6269,7 +6269,7 @@ nl.ami.OptionDocky:Toon in AmiDock
 en.ami.PopupMenu:Use popupmenu for forms
 de.ami.PopupMenu:Use popupmenu for forms
 fr.ami.PopupMenu:Use popupmenu for forms
-it.ami.PopupMenu:Use popupmenu for forms
+it.ami.PopupMenu:Usa menu popup nei form
 nl.ami.PopupMenu:Gebruik popup-menu for formulieren
 en.all.Clipboard:Clipboard
 de.all.Clipboard:Clipboard
