@@ -319,7 +319,6 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	hlcache_handle *object = NULL;
 	struct box *html_object_box = NULL;
 	struct browser_window *iframe = NULL;
-	struct box *next_box;
 	struct box *drag_candidate = NULL;
 	struct scrollbar *scrollbar = NULL;
 	plot_font_style_t fstyle;
@@ -527,9 +526,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	 * text_box - text box
 	 * text_box_x - text_box
 	 */
-	while ((next_box = box_at_point(box, x, y, &box_x, &box_y)) != NULL) {
-		box = next_box;
-
+	do {
 		if ((box->style != NULL) && 
 		    (css_computed_visibility(box->style) == 
 		     CSS_VISIBILITY_HIDDEN)) {
@@ -635,7 +632,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			text_box = box;
 			text_box_x = box_x;
 		}
-	}
+	} while ((box = box_at_point(box, x, y, &box_x, &box_y)) != NULL);
 
 	/* use of box_x, box_y, or content below this point is probably a
 	 * mistake; they will refer to the last box returned by box_at_point */
