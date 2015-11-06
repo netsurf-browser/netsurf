@@ -1004,8 +1004,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	}
 
 	/* fire dom click event */
-	if ((mouse & BROWSER_MOUSE_CLICK_1) ||
-	    (mouse & BROWSER_MOUSE_CLICK_2)) {
+	if (mouse & BROWSER_MOUSE_CLICK_1) {
 		fire_dom_event(corestring_dom_click, node, true, true);
 	}
 
