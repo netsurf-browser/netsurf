@@ -1074,8 +1074,8 @@ void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
 #ifdef WITH_PDF_EXPORT
 		OnMenu(win,AMI_MENU_SAVEAS_PDF);
 #endif
-		if(browser_window_get_editor_flags(g->bw) & BW_EDITOR_CAN_COPY)
-		{
+#if 0
+		if(browser_window_get_editor_flags(g->bw) & BW_EDITOR_CAN_COPY) {
 			OnMenu(win,AMI_MENU_COPY);
 			OnMenu(win,AMI_MENU_CLEAR);
 		} else {
@@ -1092,7 +1092,12 @@ void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
 			OnMenu(win,AMI_MENU_PASTE);
 		else
 			OffMenu(win,AMI_MENU_PASTE);
-
+#else
+		OnMenu(win,AMI_MENU_CUT);
+		OnMenu(win,AMI_MENU_COPY);
+		OnMenu(win,AMI_MENU_PASTE);
+		OnMenu(win,AMI_MENU_CLEAR);
+#endif
 		OnMenu(win,AMI_MENU_SELECTALL);
 		OnMenu(win,AMI_MENU_FIND);
 		OffMenu(win,AMI_MENU_SAVEAS_IFF);
