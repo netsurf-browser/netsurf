@@ -636,6 +636,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 	/* use of box_x, box_y, or content below this point is probably a
 	 * mistake; they will refer to the last box returned by box_at_point */
+	assert(node != NULL);
 
 	if (scrollbar) {
 		status = scrollbar_mouse_status_to_message(
