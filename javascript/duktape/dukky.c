@@ -465,7 +465,7 @@ static void dukky_push_handler_code_(duk_context *ctx, dom_string *name,
 	}
 
 	exc = dom_element_get_attribute(ele, onname, &val);
-	if (exc != DOM_NO_ERR) {
+	if ((exc != DOM_NO_ERR) || (val == NULL)) {
 		dom_string_unref(onname);
 		duk_push_lstring(ctx, "", 0);
 		return;
