@@ -164,6 +164,9 @@ nserror netsurf_init(const char *store_path)
 		LOG("Setting minimum memory cache size %zd", hlcache_parameters.llcache.limit);
 	} 
 
+	/* Set up the max attempts made to fetch a timing out resource */
+	hlcache_parameters.llcache.fetch_attempts = nsoption_uint(max_retried_fetches);
+
 	/* image cache is 25% of total memory cache size */
 	image_cache_parameters.limit = (hlcache_parameters.llcache.limit * 25) / 100;
 

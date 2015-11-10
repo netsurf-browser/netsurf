@@ -230,6 +230,9 @@ struct llcache_parameters {
 	 */
 	unsigned long time_quantum;
 
+	/** The number of fetches to attempt when timing out */
+	uint32_t fetch_attempts;
+
 	struct llcache_store_parameters store;
 };
 

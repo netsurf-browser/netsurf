@@ -120,6 +120,8 @@ typedef struct {
 
 	uint32_t redirect_count;	/**< Count of redirects followed */
 
+	uint32_t retries_remaining;     /**< Number of times to retry on timeout */
+
 	bool tried_with_auth;		/**< Whether we've tried with auth */
 
 	bool tried_with_tls_downgrade;	/**< Whether we've tried TLS <= 1.0 */
@@ -226,6 +228,9 @@ struct llcache_s {
 
 	/** The target upper bound for the RAM cache size */
 	uint32_t limit;
+
+	/** The number of fetch attempts we make when timing out */
+	uint32_t fetch_attempts;
 
 	/** Whether or not our users are caught up */
 	bool all_caught_up;
@@ -909,6 +914,7 @@ static nserror llcache_object_fetch(llcache_object *object, uint32_t flags,
 	object->fetch.referer = referer_clone;
 	object->fetch.post = post_clone;
 	object->fetch.redirect_count = redirect_count;
+	object->fetch.retries_remaining = llcache->fetch_attempts;
 
 	return llcache_object_refetch(object);
 }
@@ -2653,6 +2659,18 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 		break;
 
 	/* Out-of-band information */
+	case FETCH_TIMEDOUT:
+		/* Timed out while trying to fetch. */
+		/* The fetch has already been cleaned up by the fetcher but
+		 * we would like to retry if we can. */
+		if (object->fetch.retries_remaining > 1) {
+			object->fetch.retries_remaining--;
+			error = llcache_object_refetch(object);
+			break;
+		}
+		/* Otherwise fall through to error, setting the message to
+		 * a timeout
+		 */
 	case FETCH_ERROR:
 		/* An error occurred while fetching */
 		/* The fetch has has already been cleaned up by the fetcher */
@@ -3303,6 +3321,7 @@ llcache_initialise(const struct llcache_parameters *prm)
 	llcache->minimum_bandwidth = prm->minimum_bandwidth;
 	llcache->maximum_bandwidth = prm->maximum_bandwidth;
 	llcache->time_quantum = prm->time_quantum;
+	llcache->fetch_attempts = prm->fetch_attempts;
 	llcache->all_caught_up = true;
 
 	LOG("llcache initialising with a limit of %d bytes", llcache->limit);

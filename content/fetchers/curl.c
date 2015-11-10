@@ -973,11 +973,19 @@ static void fetch_curl_done(CURL *curl_handle, CURLcode result)
 		msg.data.cert_err.num_certs = i;
 		fetch_send_callback(&msg, f->fetch_handle);
 	} else if (error) {
-		if (result != CURLE_SSL_CONNECT_ERROR) {
+		switch (result) {
+		case CURLE_SSL_CONNECT_ERROR:
+			msg.type = FETCH_SSL_ERR;
+			break;
+
+		case CURLE_OPERATION_TIMEDOUT:
+			msg.type = FETCH_TIMEDOUT;
+			msg.data.error = curl_easy_strerror(result);
+			break;
+
+		default:
 			msg.type = FETCH_ERROR;
 			msg.data.error = curl_easy_strerror(result);
-		} else {
-			msg.type = FETCH_SSL_ERR;
 		}
 
 		fetch_send_callback(&msg, f->fetch_handle);
@@ -1302,7 +1310,7 @@ nserror fetch_curl_register(void)
 	SETOPT(CURLOPT_LOW_SPEED_LIMIT, 1L);
 	SETOPT(CURLOPT_LOW_SPEED_TIME, 180L);
 	SETOPT(CURLOPT_NOSIGNAL, 1L);
-	SETOPT(CURLOPT_CONNECTTIMEOUT, 30L);
+	SETOPT(CURLOPT_CONNECTTIMEOUT, nsoption_uint(curl_fetch_timeout));
 
 	if (nsoption_charp(ca_bundle) &&
 	    strcmp(nsoption_charp(ca_bundle), "")) {

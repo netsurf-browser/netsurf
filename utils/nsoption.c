@@ -181,6 +181,20 @@ static void nsoption_validate(struct nsoption_s *opts, struct nsoption_s *defs)
 			opts[cloop].value.c = defs[cloop].value.c;
 		}
 	}
+
+	/* To aid migration and ensure that timeouts don't go crazy,
+	 * ensure that (a) we allow at least 1 attempt and
+	 * (b) the total time that we spend should not exceed 60s
+	 */
+	if (opts[NSOPTION_max_retried_fetches].value.u == 0)
+		opts[NSOPTION_max_retried_fetches].value.u = 1;
+	if (opts[NSOPTION_curl_fetch_timeout].value.u < 5)
+		opts[NSOPTION_max_retried_fetches].value.u = 5;
+	if (opts[NSOPTION_curl_fetch_timeout].value.u > 60)
+		opts[NSOPTION_max_retried_fetches].value.u = 60;
+	while ((opts[NSOPTION_curl_fetch_timeout].value.u *
+		opts[NSOPTION_max_retried_fetches].value.u) > 60)
+		opts[NSOPTION_max_retried_fetches].value.u--;
 }
 
 /**
