@@ -5126,7 +5126,8 @@ void layout_calculate_descendant_bboxes(struct box *box)
 {
 	struct box *child;
 
-	assert((box->width != UNKNOWN_WIDTH) && (box->height != AUTO));
+	assert(box->width != UNKNOWN_WIDTH);
+	assert(box->height != AUTO);
 	/* assert((box->width >= 0) && (box->height >= 0)); */
 
 	/* Initialise box's descendant box to border edge box */
