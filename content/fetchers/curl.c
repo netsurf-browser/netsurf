@@ -1006,6 +1006,44 @@ static void fetch_curl_poll(lwc_string *scheme_ignored)
 	CURLMcode codem;
 	CURLMsg *curl_msg;
 
+	if (nsoption_bool(suppress_curl_debug) == false) {
+		fd_set read_fd_set, write_fd_set, exc_fd_set;
+		int max_fd = -1;
+		int i;
+
+		FD_ZERO(&read_fd_set);
+		FD_ZERO(&write_fd_set);
+		FD_ZERO(&exc_fd_set);
+
+		codem = curl_multi_fdset(fetch_curl_multi,
+				&read_fd_set, &write_fd_set,
+				&exc_fd_set, &max_fd);
+		assert(codem == CURLM_OK);
+
+		LOG("Curl file descriptor states (maxfd=%i):", max_fd);
+		for (i = 0; i <= max_fd; i++) {
+			bool read = false;
+			bool write = false;
+			bool error = false;
+
+			if (FD_ISSET(i, &read_fd_set)) {
+				read = true;
+			}
+			if (FD_ISSET(i, &write_fd_set)) {
+				write = true;
+			}
+			if (FD_ISSET(i, &exc_fd_set)) {
+				error = true;
+			}
+			if (read || write || error) {
+				LOG("  fd %*i: %s %s %s", max_fd / 10 + 1, i,
+						read  ? "read" : "    ",
+						write ? "write" : "     ",
+						error ? "error" : "     ");
+			}
+		}
+	}
+
 	/* do any possible work on the current fetches */
 	do {
 		codem = curl_multi_perform(fetch_curl_multi, &running);
