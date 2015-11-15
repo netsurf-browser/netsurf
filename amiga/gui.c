@@ -4217,7 +4217,7 @@ gui_window_create(struct browser_window *bw,
 				GA_ID, GID_STATUS,
 				GA_Left, scrn->WBorLeft + 2,
 #ifdef __amigaos4__
-				GA_RelBottom, -((2 + height + scrn->WBorBottom - scrn->RastPort.TxHeight)/2),
+				GA_RelBottom, scrn->WBorBottom - (height/2),
 				GA_BottomBorder, TRUE,
 #else
 				GA_Top, g->shared->win->Height,
@@ -4236,7 +4236,7 @@ gui_window_create(struct browser_window *bw,
 					"frameiclass",
 					IA_Recessed, TRUE,
 #endif
-					IA_Top, 2 - (scrn->RastPort.TxHeight),
+					IA_Top, - dri->dri_Font->tf_Baseline - 3,
 					IA_Left, -4,
 					IA_Height, 1 + height - scrn->WBorBottom, 
 					IA_Label, NULL,
