@@ -650,11 +650,13 @@ static void ami_amiupdate(void)
 		char filename[1024];
 		BPTR amiupdatefh;
 
-		DevNameFromLock(lock,(STRPTR)&filename,1024L,DN_FULLPATH);
+		DevNameFromLock(lock, (STRPTR)&filename, 1024L, DN_FULLPATH);
 
-		amiupdatefh = FOpen("ENVARC:AppPaths/NetSurf",MODE_NEWFILE,0);
-		FPuts(amiupdatefh,(CONST_STRPTR)&filename);
-		FClose(amiupdatefh);
+		if(amiupdatefh = FOpen("ENVARC:AppPaths/NetSurf", MODE_NEWFILE, 0)) {
+			FPuts(amiupdatefh, (CONST_STRPTR)&filename);
+			FClose(amiupdatefh);
+		}
+
 		UnLock(lock);
 	}
 }
