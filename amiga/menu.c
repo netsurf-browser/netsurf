@@ -379,8 +379,7 @@ HOOKF(void, ami_menu_item_browser_scale_decrease, APTR, window, struct IntuiMess
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	if(gwin->gw->scale > 0.1)
-		ami_gui_set_scale(gwin->gw, gwin->gw->scale - 0.1);
+	ami_gui_set_scale(gwin->gw, gwin->gw->scale - 0.1);
 }
 
 HOOKF(void, ami_menu_item_browser_scale_normal, APTR, window, struct IntuiMessage *)

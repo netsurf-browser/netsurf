@@ -2337,6 +2337,18 @@ static void ami_handle_msg(void)
 									if(browser_window_reload_available(gwin->gw->bw))
 										browser_window_reload(gwin->gw->bw,false);
 								break;
+
+								case RAWKEY_F8: // scale 100%
+									ami_gui_set_scale(gwin->gw, 1.0);
+								break;
+
+								case RAWKEY_F9: // decrease scale
+									ami_gui_set_scale(gwin->gw, gwin->gw->scale - 0.1);
+								break;
+
+								case RAWKEY_F10: // increase scale
+									ami_gui_set_scale(gwin->gw, gwin->gw->scale + 0.1);
+								break;
 								
 								case RAWKEY_HELP: // help
 									ami_help_open(AMI_HELP_GUI, scrn);
@@ -3334,6 +3346,7 @@ int ami_gui_count_windows(int window, int *tabs)
  */
 void ami_gui_set_scale(struct gui_window *gw, float scale)
 {
+	if(scale <= 0.0) return;
 	gw->scale = scale;
 	browser_window_set_scale(gw->bw, scale, true);
 }
