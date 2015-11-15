@@ -109,14 +109,12 @@ This section contains options for exporting to PDF.  It is not enabled in curren
 @endnode
 
 @node cli "Command line options"
-NetSurf URL/K,FORCE/S
+NetSurf URL/K,FORCE/S,NSOPTS/M
 
 Where:
-
-URL   = Address of page to open on startup
-FORCE = Force new instance of NetSurf to open (has some limitations, use for debugging only)
-
-Note that there may be other generic options which can also be specified.
+URL    = Address of page to open on startup
+FORCE  = Force new instance of NetSurf to open (has some limitations, use for debugging only)
+NSOPTS = Catches everything else and passes it to the NetSurf core command line parser
 @endnode
 
 @node options "Options file"
@@ -278,7 +276,7 @@ Items in the "Hotlist menu" folder node, up to a maximum (currently) of 40 items
 
 Items in folders within the Menu folder node will be converted to subitems in the menu.
 
-Folders more than one level down in the heirarchy will become menu items with no action.  Items deeper will not be included in the menu at all.
+Folders more than one level down in the heirarchy will become menu items with no action.  Items deeper will not be included in the menu at all (until we switch to using menuclass).
 
 Folders with no items in them will show up disabled in the menu.  If they are named "--" they will be displayed as separator bars.
 
