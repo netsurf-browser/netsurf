@@ -652,7 +652,7 @@ static void ami_amiupdate(void)
 
 		DevNameFromLock(lock, (STRPTR)&filename, 1024L, DN_FULLPATH);
 
-		if(amiupdatefh = FOpen("ENVARC:AppPaths/NetSurf", MODE_NEWFILE, 0)) {
+		if((amiupdatefh = FOpen("ENVARC:AppPaths/NetSurf", MODE_NEWFILE, 0))) {
 			FPuts(amiupdatefh, (CONST_STRPTR)&filename);
 			FClose(amiupdatefh);
 		}
@@ -2301,6 +2301,7 @@ static void ami_handle_msg(void)
 								break;
 
 								case NS_KEY_PAGE_DOWN:
+								case ' ':
 									ami_gui_scroll_internal(gwin, 0, SCROLL_PAGE_DOWN);
 								break;
 
