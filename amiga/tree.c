@@ -904,7 +904,7 @@ void ami_tree_close(struct treeview_window *twin)
 		ami_ssl_free(twin);
 	}
 
-	if(twin->type == AMI_TREE_SSLCERT)
+	if(twin->type == AMI_TREE_HOTLIST)
 		ami_gui_hotlist_update_all();
 }
 
