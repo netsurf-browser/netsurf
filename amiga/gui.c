@@ -1211,6 +1211,9 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
 			else nskey = NS_KEY_TAB;
 		break;
 		case RAWKEY_F5:
+		case RAWKEY_F8:
+		case RAWKEY_F9:
+		case RAWKEY_F10:
 		case RAWKEY_HELP:
 			// don't translate
 			nskey = keycode;
@@ -2333,6 +2336,7 @@ static void ami_handle_msg(void)
 									ami_gui_history(gwin, true);
 								break;
 
+								/* RawKeys. NB: These are passthrus in ami_key_to_nskey() */
 								case RAWKEY_F5: // reload
 									if(browser_window_reload_available(gwin->gw->bw))
 										browser_window_reload(gwin->gw->bw,false);
