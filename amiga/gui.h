@@ -117,7 +117,7 @@ struct gui_window_2 {
 	UBYTE *menutype;
 	struct NewMenu *menu;
 	ULONG hotlist_items;
-	char *hotlist_toolbar_lab[AMI_GUI_TOOLBAR_MAX];
+	Object *hotlist_toolbar_lab[AMI_GUI_TOOLBAR_MAX];
 	struct List hotlist_toolbar_list;
 	struct List *web_search_list;
 	Object *search_bm;

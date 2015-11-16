@@ -59,6 +59,7 @@
 #include <proto/button.h>
 #include <proto/chooser.h>
 #include <proto/clicktab.h>
+#include <proto/label.h>
 #include <proto/layout.h>
 #include <proto/scroller.h>
 #include <proto/space.h>
@@ -77,6 +78,7 @@
 #include <gadgets/string.h>
 #include <images/bevel.h>
 #include <images/bitmap.h>
+#include <images/label.h>
 
 #include <reaction/reaction_macros.h>
 
@@ -3038,15 +3040,44 @@ static bool ami_gui_hotlist_add(void *userdata, int level, int item, const char 
 {
 	struct ami_gui_tb_userdata *tb_userdata = (struct ami_gui_tb_userdata *)userdata;
 	struct Node *speed_button_node;
+	char menu_icon[1024];
 
 	if(level != 1) return false;
 	if(item > AMI_GUI_TOOLBAR_MAX) return false;
 	if(is_folder == true) return false;
 
-	tb_userdata->gw->hotlist_toolbar_lab[item] = ami_utf8_easy(title);
+	char *utf8title = ami_utf8_easy(title);
+	if(utf8title == NULL) return false;
+
+	char *iconname = ami_gui_get_cache_favicon_name(url, true);
+	if (iconname == NULL) iconname = ASPrintf("icons/content.png");
+	ami_locate_resource(menu_icon, iconname);
+
+	tb_userdata->gw->hotlist_toolbar_lab[item] = BitMapObj,
+						IA_Scalable, TRUE,
+						BITMAP_Screen, scrn,
+						BITMAP_SourceFile, menu_icon,
+						BITMAP_Masking, TRUE,
+					BitMapEnd;
+
+	/* \todo make this scale the bitmap to these dimensions */
+	SetAttrs(tb_userdata->gw->hotlist_toolbar_lab[item],
+				BITMAP_Width, 16,
+				BITMAP_Height, 16,
+			TAG_DONE);
+
+	Object *lab_item = LabelObj,
+				//		LABEL_DrawInfo, dri,
+						LABEL_DisposeImage, TRUE,
+						LABEL_Image, tb_userdata->gw->hotlist_toolbar_lab[item],
+						LABEL_Text, " ",
+						LABEL_Text, utf8title,
+					LabelEnd;
+
+	free(utf8title);
 
 	speed_button_node = AllocSpeedButtonNode(item,
-					SBNA_Text, tb_userdata->gw->hotlist_toolbar_lab[item],
+					SBNA_Image, lab_item,
 					SBNA_UserData, (void *)url,
 					TAG_DONE);
 			
@@ -3134,7 +3165,7 @@ static void ami_gui_hotlist_toolbar_free(struct gui_window_2 *gwin, struct List 
 
 	for(i = 0; i < AMI_GUI_TOOLBAR_MAX; i++) {
 		if(gwin->hotlist_toolbar_lab[i]) {
-			free(gwin->hotlist_toolbar_lab[i]);
+			DisposeObject(gwin->hotlist_toolbar_lab[i]);
 			gwin->hotlist_toolbar_lab[i] = NULL;
 		}
 	}
