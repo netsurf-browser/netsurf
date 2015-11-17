@@ -52,6 +52,9 @@
 #include "amiga/utf8.h"
 #include "amiga/object.h"
 #include "amiga/schedule.h"
+#ifdef __amigaos4__
+#include <amiga/fnv/fnv.h>
+#endif
 
 #define NSA_UNICODE_FONT PLOT_FONT_FAMILY_COUNT
 
@@ -373,8 +376,10 @@ static struct ami_font_node *ami_font_open(const char *font, bool critical)
 	struct ami_font_node *nodedata = NULL;
 
 #ifdef __amigaos4__
-	nodedata = (struct ami_font_node *)FindSkipNode(ami_font_list, (APTR)font);		
+	Fnv32_t hash = fnv_32a_str(font, FNV1_32A_INIT);
+	nodedata = (struct ami_font_node *)FindSkipNode(ami_font_list, (APTR)hash);		
 #else
+	int hash = 0;
 	struct nsObject *node = (struct nsObject *)FindIName((struct List *)ami_font_list, font);
 	if(node) nodedata = node->objstruct;
 #endif
@@ -384,10 +389,10 @@ static struct ami_font_node *ami_font_open(const char *font, bool critical)
 		return nodedata;
 	}
 
-	LOG("Font cache miss: %s", font);
+	LOG("Font cache miss: %s (%lx)", font, hash);
 
 #ifdef __amigaos4__
-	nodedata = (struct ami_font_node *)InsertSkipNode(ami_font_list, (APTR)font, sizeof(struct ami_font_node));
+	nodedata = (struct ami_font_node *)InsertSkipNode(ami_font_list, (APTR)hash, sizeof(struct ami_font_node));
 #else
 	nodedata = AllocVecTagList(sizeof(struct ami_font_node), NULL);
 #endif
@@ -916,7 +921,9 @@ void ami_font_savescanner(void)
 #ifdef __amigaos4__
 static LONG ami_font_cache_sort(struct Hook *hook, APTR key1, APTR key2)
 {
-	return stricmp(key1, key2);
+	if(key1 == key2) return 0;
+	if(key1 < key2) return -1;
+	return 1;
 }
 #endif
 
@@ -936,7 +943,7 @@ static void ami_font_cleanup(struct SkipList *skiplist)
 		SubTime(&curtime, &node->lastused);
 		if(curtime.Seconds > 300)
 		{
-			LOG("Freeing %s not used for %ld seconds", node->skip_node.sn_Key, curtime.Seconds);
+			LOG("Freeing %ld not used for %ld seconds", node->skip_node.sn_Key, curtime.Seconds);
 			ami_font_close(node);
 			RemoveSkipNode(skiplist, node->skip_node.sn_Key);
 		}
@@ -998,15 +1005,15 @@ void ami_init_fonts(void)
 #ifdef __amigaos4__
 static void ami_font_del_skiplist(struct SkipList *skiplist)
 {
-	struct SkipNode *node;
+	struct ami_font_node *node;
 	struct SkipNode *nnode;
 
-	node = GetFirstSkipNode(skiplist);
+	node = (struct ami_font_node *)GetFirstSkipNode(skiplist);
 	if(node == NULL) return;
 
 	do {
-		nnode = GetNextSkipNode(skiplist, node);
-		ami_font_close((struct ami_font_node *)node);
+		nnode = GetNextSkipNode(skiplist, (struct SkipNode *)node);
+		ami_font_close(node);
 		
 	} while((node = nnode));
 
