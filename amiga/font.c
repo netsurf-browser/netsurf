@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 - 2013 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2015 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -53,7 +53,7 @@
 #include "amiga/object.h"
 #include "amiga/schedule.h"
 #ifdef __amigaos4__
-#include <amiga/fnv/fnv.h>
+#include <amiga/hash/xxhash.h>
 #endif
 
 #define NSA_UNICODE_FONT PLOT_FONT_FAMILY_COUNT
@@ -374,12 +374,12 @@ static inline bool amiga_nsfont_split(const plot_font_style_t *fstyle,
 static struct ami_font_node *ami_font_open(const char *font, bool critical)
 {
 	struct ami_font_node *nodedata = NULL;
+	uint32 hash = 0;
 
 #ifdef __amigaos4__
-	Fnv32_t hash = fnv_32a_str(font, FNV1_32A_INIT);
+	hash = XXH32(font, strlen(font), 0);
 	nodedata = (struct ami_font_node *)FindSkipNode(ami_font_list, (APTR)hash);		
 #else
-	int hash = 0;
 	struct nsObject *node = (struct nsObject *)FindIName((struct List *)ami_font_list, font);
 	if(node) nodedata = node->objstruct;
 #endif
@@ -943,7 +943,7 @@ static void ami_font_cleanup(struct SkipList *skiplist)
 		SubTime(&curtime, &node->lastused);
 		if(curtime.Seconds > 300)
 		{
-			LOG("Freeing %ld not used for %ld seconds", node->skip_node.sn_Key, curtime.Seconds);
+			LOG("Freeing font %lx not used for %ld seconds", node->skip_node.sn_Key, curtime.Seconds);
 			ami_font_close(node);
 			RemoveSkipNode(skiplist, node->skip_node.sn_Key);
 		}
