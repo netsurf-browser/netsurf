@@ -72,7 +72,7 @@ You can contact the author at :
  * to improve speed for Big-endian CPU.
  * This option has no impact on Little_Endian CPU.
  */
-#define XXH_FORCE_NATIVE_FORMAT 0
+#define XXH_FORCE_NATIVE_FORMAT 1
 
 /* XXH_USELESS_ALIGN_BRANCH :
  * This is a minor performance trick, only useful with lots of very small keys.
