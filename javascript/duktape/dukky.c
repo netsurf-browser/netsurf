@@ -726,6 +726,16 @@ void js_handle_new_element(jscontext *ctx, struct dom_element *node)
 	dom_ulong siz;
 	dom_attr *attr = NULL;
 	dom_string *key = NULL;
+	dom_string *nodename;
+	duk_bool_t is_body = false;
+
+	exc = dom_node_get_node_name(node, &nodename);
+	if (exc != DOM_NO_ERR) return;
+
+	if (nodename == corestring_dom_BODY)
+		is_body = true;
+
+	dom_string_unref(nodename);
 
 	exc = dom_node_get_attributes(node, &map);
 	if (exc != DOM_NO_ERR) return;
@@ -739,6 +749,19 @@ void js_handle_new_element(jscontext *ctx, struct dom_element *node)
 		if (exc != DOM_NO_ERR) goto out;
 		exc = dom_attr_get_name(attr, &key);
 		if (exc != DOM_NO_ERR) goto out;
+		if (is_body && (
+			    key == corestring_dom_onblur ||
+			    key == corestring_dom_onerror ||
+			    key == corestring_dom_onfocus ||
+			    key == corestring_dom_onload ||
+			    key == corestring_dom_onresize ||
+			    key == corestring_dom_onscroll)) {
+			/* This is a forwarded event, it doesn't matter,
+			 * we should skip registering for it and later
+			 * we will register it for Window itself
+			 */
+			goto skip_register;
+		}
 		if (dom_string_length(key) > 2) {
 			/* Can be on* */
 			const uint8_t *data = (const uint8_t *)dom_string_data(key);
@@ -754,6 +777,7 @@ void js_handle_new_element(jscontext *ctx, struct dom_element *node)
 				}
 			}
 		}
+	skip_register:
 		dom_string_unref(key); key = NULL;
 		dom_node_unref(attr); attr = NULL;
 	}

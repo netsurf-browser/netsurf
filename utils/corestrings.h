@@ -284,7 +284,16 @@ extern struct dom_string *corestring_dom_image;
 extern struct dom_string *corestring_dom_radio;
 extern struct dom_string *corestring_dom_checkbox;
 extern struct dom_string *corestring_dom_file;
+/* Event prefix */
 extern struct dom_string *corestring_dom_on;
+/* These are the event attributes which forward from body to window */
+extern struct dom_string *corestring_dom_onblur;
+extern struct dom_string *corestring_dom_onerror;
+extern struct dom_string *corestring_dom_onfocus;
+extern struct dom_string *corestring_dom_onload;
+extern struct dom_string *corestring_dom_onresize;
+extern struct dom_string *corestring_dom_onscroll;
+
 /* DOM userdata keys */
 extern struct dom_string *corestring_dom___ns_key_box_node_data;
 extern struct dom_string *corestring_dom___ns_key_libcss_node_data;
