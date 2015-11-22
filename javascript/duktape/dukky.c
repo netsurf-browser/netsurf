@@ -457,6 +457,22 @@ static void dukky_push_handler_code_(duk_context *ctx, dom_string *name,
 	dom_string *onname, *val;
 	dom_element *ele = (dom_element *)et;
 	dom_exception exc;
+	dom_node_type ntype;
+
+	/* Currently safe since libdom has no event targets which are not
+	 * nodes.  Reconsider this as and when we work out how to have
+	 * window do stuff
+	 */
+	exc = dom_node_get_node_type(et, &ntype);
+	if (exc != DOM_NO_ERR) {
+		duk_push_lstring(ctx, "", 0);
+		return;
+	}
+
+	if (ntype != DOM_ELEMENT_NODE) {
+		duk_push_lstring(ctx, "", 0);
+		return;
+	}
 
 	exc = dom_string_concat(corestring_dom_on, name, &onname);
 	if (exc != DOM_NO_ERR) {
@@ -494,6 +510,8 @@ bool dukky_get_current_value_of_event_handler(duk_context *ctx,
 		duk_pop_2(ctx);
 		/* ... node */
 		dukky_push_handler_code_(ctx, name, et);
+		/* ... node handlercode? */
+		/* TODO: If this is null, clean up and propagate */
 		/* ... node handlercode */
 		/** @todo This is entirely wrong, but it's hard to get right */
 		duk_push_string(ctx, "function (event) {");
