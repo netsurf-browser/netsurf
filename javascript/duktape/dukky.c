@@ -289,6 +289,41 @@ dukky_inject_not_ctr(duk_context *ctx, int idx, const char *name)
 	return;
 }
 
+/* Duktape heap utility functions */
+
+/* We need to override the defaults because not all platforms are fully ANSI
+ * compatible.  E.g. RISC OS gets upset if we malloc or realloc a zero byte
+ * block, as do debugging tools such as Electric Fence by Bruce Perens.
+ */
+
+static void *dukky_alloc_function(void *udata, duk_size_t size)
+{
+	if (size == 0)
+		return NULL;
+
+	return malloc(size);
+}
+
+static void *dukky_realloc_function(void *udata, void *ptr, duk_size_t size)
+{
+	if (ptr == NULL && size == 0)
+		return NULL;
+
+	if (size == 0) {
+		free(ptr);
+		return NULL;
+	}
+
+	return realloc(ptr, size);
+}
+
+static void dukky_free_function(void *udata, void *ptr)
+{
+	if (ptr != NULL)
+		free(ptr);
+}
+
+
 /**************************************** js.h ******************************/
 struct jscontext {
 	duk_context *ctx;
@@ -322,7 +357,12 @@ nserror js_newcontext(int timeout, jscallback *cb, void *cbctx,
 	*jsctx = NULL;
 	LOG("Creating new duktape javascript context");
 	if (ret == NULL) return NSERROR_NOMEM;
-	ctx = ret->ctx = duk_create_heap_default();
+	ctx = ret->ctx = duk_create_heap(
+		dukky_alloc_function,
+		dukky_realloc_function,
+		dukky_free_function,
+		NULL,
+		NULL);
 	if (ret->ctx == NULL) { free(ret); return NSERROR_NOMEM; }
 	/* Create the prototype stuffs */
 	duk_push_global_object(ctx);
