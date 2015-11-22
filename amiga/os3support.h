@@ -144,6 +144,7 @@
 #define FOpen(A,B,C) Open(A,B)
 #define FClose(A) Close(A)
 #define CreateDirTree(D) CreateDir(D) /*\todo This isn't quite right */
+#define SetCurrentDir(L) CurrentDir(L)
 #define DevNameFromLock(A,B,C,D) NameFromLock(A,B,C)
 
 /* Exec */

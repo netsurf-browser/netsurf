@@ -31,6 +31,7 @@
 #include <proto/dos.h>
 #include <proto/exec.h>
 #include <proto/graphics.h>
+#include <proto/icon.h>
 #include <proto/intuition.h>
 #include <proto/keymap.h>
 #include <proto/locale.h>
@@ -188,7 +189,9 @@ static struct Hook newprefs_hook;
 static STRPTR temp_homepage_url = NULL;
 static bool cli_force = false;
 
-static char *current_user;
+#define USERS_DIR "PROGDIR:Users"
+static char *users_dir = NULL;
+static char *current_user = NULL;
 static char *current_user_dir;
 static char *current_user_faviconcache;
 
@@ -855,6 +858,42 @@ static void ami_gui_commandline(int *argc, char **argv)
 	}
 }
 
+static void ami_gui_read_tooltypes(struct WBArg *wbarg)
+{
+	struct DiskObject *dobj;
+	STRPTR *toolarray;
+	char *s;
+
+	if((*wbarg->wa_Name) && (dobj = GetDiskObject(wbarg->wa_Name))) {
+		toolarray = (STRPTR *)dobj->do_ToolTypes;
+
+		if((s = (char *)FindToolType(toolarray,"USERSDIR"))) users_dir = ASPrintf("%s", s);
+		if((s = (char *)FindToolType(toolarray,"USER"))) current_user = ASPrintf("%s", s);
+
+		FreeDiskObject(dobj);
+	}
+}
+
+static void ami_gui_read_all_tooltypes(int argc, char **argv)
+{
+	struct WBStartup *WBenchMsg;
+	struct WBArg *wbarg;
+	char i;
+	LONG olddir = -1;
+
+	if(argc == 0) { /* Started from WB */
+		WBenchMsg = (struct WBStartup *)argv;
+		for(i = 0, wbarg = WBenchMsg->sm_ArgList; i < WBenchMsg->sm_NumArgs; i++,wbarg++) {
+			olddir =-1;
+			if((wbarg->wa_Lock) && (*wbarg->wa_Name))
+				olddir = SetCurrentDir(wbarg->wa_Lock);
+
+			ami_gui_read_tooltypes(wbarg);
+
+			if(olddir !=-1) SetCurrentDir(olddir);
+		}
+	}
+}
 
 static void gui_init2(int argc, char** argv)
 {
@@ -965,6 +1004,7 @@ static void gui_init2(int argc, char** argv)
 					temp_homepage_url = NULL;
 				}
 			}
+			/* this should be where we read tooltypes, but it's too late for that now */
 		}
 	}
 
@@ -5427,10 +5467,36 @@ int main(int argc, char** argv)
 		return RETURN_FAIL;
 	}
 
-	user = GetVar("user", temp, 1024, GVF_GLOBAL_ONLY);
-	current_user = ASPrintf("%s", (user == -1) ? "Default" : temp);
+	ami_gui_read_all_tooltypes(argc, argv);
+
+	if(current_user == NULL) {
+		user = GetVar("user", temp, 1024, GVF_GLOBAL_ONLY);
+		current_user = ASPrintf("%s", (user == -1) ? "Default" : temp);
+	}
 	LOG("User: %s", current_user);
-	current_user_dir = ASPrintf("PROGDIR:Users/%s", current_user);
+
+	if(users_dir == NULL) {
+		users_dir = ASPrintf("%s", USERS_DIR);
+		if(users_dir == NULL) {
+			ami_misc_fatal_error("Failed to allocate memory");
+			return RETURN_FAIL;
+		}
+	}
+
+	int len = strlen(current_user);
+	len += strlen(users_dir);
+	len += 2; /* for poss path sep and NULL term */
+
+	current_user_dir = AllocVecTags(len, NULL);
+	if(current_user_dir == NULL) {
+		ami_misc_fatal_error("Failed to allocate memory");
+		return RETURN_FAIL;
+	}
+
+	strlcpy(current_user_dir, users_dir, len);
+	AddPart(current_user_dir, current_user, len);
+	FreeVec(users_dir);
+	LOG("User dir: %s", current_user_dir);
 
 	if((lock = CreateDirTree(current_user_dir)))
 		UnLock(lock);

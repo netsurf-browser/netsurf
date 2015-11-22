@@ -117,6 +117,17 @@ FORCE  = Force new instance of NetSurf to open (has some limitations, use for de
 NSOPTS = Catches everything else and passes it to the NetSurf core command line parser
 @endnode
 
+@node tooltypes "ToolTypes"
+Supported tooltypes are:
+
+@{b}USERSDIR@{ub}
+Location of the Users directory.  This should contain the "Users" part of the path, NetSurf will append the username.  Defaults to PROGDIR:Users.
+The user directories contain user-specific preferences and cache data.  Always locate them on fast, non-volatile, writeable media.
+
+@{b}USER@{ub}
+Current user.  Defaults to the value of the USER env-var, or Default.
+@endnode
+
 @node options "Options file"
 The options file is stored in @{"Users/Default/Choices" link Users/Default/Choices/Main} by default.  Most of the settings can be changed from within NetSurf by selecting Edit preferences from the Settings menu.
 
