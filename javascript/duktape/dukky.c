@@ -448,13 +448,6 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 	return duk_get_boolean(CTX, 0);
 }
 
-bool js_fire_event(jscontext *ctx, const char *type, struct dom_document *doc, struct dom_node *target)
-{
-	/* La La La */
-	LOG("Oh dear, an event: %s", type);
-	return true;
-}
-
 /*** New style event handling ***/
 
 static void dukky_push_event(duk_context *ctx, dom_event *evt)
@@ -804,4 +797,107 @@ void js_event_cleanup(jscontext *ctx, struct dom_event *evt)
 	/* ... EVENT_MAP */
 	duk_pop(CTX);
 	/* ... */
+}
+
+bool js_fire_event(jscontext *ctx, const char *type, struct dom_document *doc, struct dom_node *target)
+{
+	dom_exception exc;
+	dom_event *evt;
+	dom_event_target *body;
+
+	LOG("Event: %s (doc=%p, target=%p)", type, doc, target);
+
+	/** @todo Make this more generic, this only handles load and only
+	 * targetting the window, so that we actually stand a chance of
+	 * getting 3.4 out.
+	 */
+
+	if (target != NULL)
+		/* Swallow non-Window-targetted events quietly */
+		return true;
+
+	if (strcmp(type, "load") != 0)
+		/* Swallow non-load events quietly */
+		return true;
+
+	/* Okay, we're processing load, targetted at Window, do the single
+	 * thing which gets us there, which is to find the appropriate event
+	 * handler and call it.  If we have no event handler on Window then
+	 * we divert to the body, and if there's no event handler there
+	 * we swallow the event silently
+	 */
+
+	exc = dom_event_create(&evt);
+	if (exc != DOM_NO_ERR) return true;
+	exc = dom_event_init(evt, corestring_dom_load, false, false);
+	if (exc != DOM_NO_ERR) {
+		dom_event_unref(evt);
+		return true;
+	}
+	/* ... */
+	duk_get_global_string(CTX, HANDLER_MAGIC);
+	/* ... handlers */
+	duk_push_lstring(CTX, "load", 4);
+	/* ... handlers "load" */
+	duk_get_prop(CTX, -2);
+	/* ... handlers handler? */
+	if (duk_is_undefined(CTX, -1)) {
+		/* No handler here, *try* and retrieve a handler from
+		 * the body
+		 */
+		duk_pop(CTX);
+		/* ... handlers */
+		exc = dom_html_document_get_body(doc, &body);
+		if (exc != DOM_NO_ERR) {
+			dom_event_unref(evt);
+			return true;
+		}
+		dukky_push_node(CTX, (struct dom_node *)body);
+		/* ... handlers bodynode */
+		if (dukky_get_current_value_of_event_handler(
+			    CTX, corestring_dom_load, body) == false) {
+			/* ... handlers */
+			duk_pop(CTX);
+			return true;
+		}
+		/* ... handlers handler bodynode */
+		duk_pop(CTX);
+	}
+	/* ... handlers handler */
+	duk_insert(CTX, -2);
+	/* ... handler handlers */
+	duk_pop(CTX);
+	/* ... handler */
+	duk_push_global_object(CTX);
+	/* ... handler Window */
+	dukky_push_event(CTX, evt);
+	/* ... handler Window event */
+	if (duk_pcall_method(CTX, 1) != 0) {
+		/* Failed to run the handler */
+		/* ... err */
+		LOG("OH NOES! An error running a handler.  Meh.");
+		duk_get_prop_string(CTX, -1, "name");
+		duk_get_prop_string(CTX, -2, "message");
+		duk_get_prop_string(CTX, -3, "fileName");
+		duk_get_prop_string(CTX, -4, "lineNumber");
+		duk_get_prop_string(CTX, -5, "stack");
+		/* ... err name message fileName lineNumber stack */
+		LOG("Uncaught error in JS: %s: %s", duk_safe_to_string(CTX, -5),
+		    duk_safe_to_string(CTX, -4));
+		LOG("              was at: %s line %s", duk_safe_to_string(CTX, -3),
+		    duk_safe_to_string(CTX, -2));
+		LOG("         Stack trace: %s", duk_safe_to_string(CTX, -1));
+
+		duk_pop_n(CTX, 6);
+		/* ... */
+		js_event_cleanup(ctx, evt);
+		dom_event_unref(evt);
+		return true;
+	}
+	/* ... result */
+	duk_pop(CTX);
+	/* ... */
+	js_event_cleanup(ctx, evt);
+	dom_event_unref(evt);
+	return true;
 }
