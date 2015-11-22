@@ -19,6 +19,11 @@ init Event (struct dom_event *evt)
 	dom_event_ref(evt);
 %}
 
+fini Event ()
+%{
+	dom_event_unref(priv->evt);
+%}
+
 /* Note: many of these could be automatics once nsgenbind gets there. */
 
 getter Event::type ()
