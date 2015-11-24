@@ -5483,6 +5483,30 @@ int main(int argc, char** argv)
 		}
 	}
 
+#ifdef __amigaos4__
+	if(LIB_IS_AT_LEAST((struct Library *)DOSBase, 51, 96)) {
+		struct InfoData *infodata = AllocDosObject(DOS_INFODATA, 0);
+		if(infodata == NULL) {
+			ami_misc_fatal_error("Failed to allocate memory");
+			return RETURN_FAIL;
+		}
+		GetDiskInfoTags(GDI_StringNameInput, users_dir,
+					GDI_InfoData, infodata,
+					TAG_DONE);
+		if(infodata->id_DiskState == ID_DISKSTATE_WRITE_PROTECTED) {
+			FreeDosObject(DOS_INFODATA, infodata);
+			ami_misc_fatal_error("Cannot run with user dir on a write-protected volume");
+			return RETURN_FAIL;
+		}
+		FreeDosObject(DOS_INFODATA, infodata);
+	} else {
+#else
+//FIXME for OS3 and older OS4
+#endif
+#ifdef __amigaos4__
+	}
+#endif
+
 	int len = strlen(current_user);
 	len += strlen(users_dir);
 	len += 2; /* for poss path sep and NULL term */
