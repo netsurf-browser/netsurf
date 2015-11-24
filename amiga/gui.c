@@ -5459,11 +5459,15 @@ int main(int argc, char** argv)
 
 	if (ami_open_resources() == false) { /* alloc message ports */
 		ami_misc_fatal_error("Unable to allocate resources");
+		ami_gui_splash_close(splash_window);
+		ami_libs_close();
 		return RETURN_FAIL;
 	}
 
 	if(ami_scheduler_process_create(schedulermsgport) != NSERROR_OK) {
 		ami_misc_fatal_error("Failed to initialise scheduler");
+		ami_gui_splash_close(splash_window);
+		ami_libs_close();
 		return RETURN_FAIL;
 	}
 
@@ -5479,6 +5483,9 @@ int main(int argc, char** argv)
 		users_dir = ASPrintf("%s", USERS_DIR);
 		if(users_dir == NULL) {
 			ami_misc_fatal_error("Failed to allocate memory");
+			ami_scheduler_process_delete();
+			ami_gui_splash_close(splash_window);
+			ami_libs_close();
 			return RETURN_FAIL;
 		}
 	}
@@ -5488,6 +5495,9 @@ int main(int argc, char** argv)
 		struct InfoData *infodata = AllocDosObject(DOS_INFODATA, 0);
 		if(infodata == NULL) {
 			ami_misc_fatal_error("Failed to allocate memory");
+			ami_scheduler_process_delete();
+			ami_gui_splash_close(splash_window);
+			ami_libs_close();
 			return RETURN_FAIL;
 		}
 		GetDiskInfoTags(GDI_StringNameInput, users_dir,
@@ -5495,7 +5505,10 @@ int main(int argc, char** argv)
 					TAG_DONE);
 		if(infodata->id_DiskState == ID_DISKSTATE_WRITE_PROTECTED) {
 			FreeDosObject(DOS_INFODATA, infodata);
-			ami_misc_fatal_error("Cannot run with user dir on a write-protected volume");
+			ami_misc_fatal_error("User directory MUST be on a writeable volume");
+			ami_scheduler_process_delete();
+			ami_gui_splash_close(splash_window);
+			ami_libs_close();
 			return RETURN_FAIL;
 		}
 		FreeDosObject(DOS_INFODATA, infodata);
@@ -5514,6 +5527,9 @@ int main(int argc, char** argv)
 	current_user_dir = AllocVecTags(len, NULL);
 	if(current_user_dir == NULL) {
 		ami_misc_fatal_error("Failed to allocate memory");
+		ami_scheduler_process_delete();
+		ami_gui_splash_close(splash_window);
+		ami_libs_close();
 		return RETURN_FAIL;
 	}
 
@@ -5545,6 +5561,9 @@ int main(int argc, char** argv)
 	ret = nsoption_init(ami_set_options, &nsoptions, &nsoptions_default);
 	if (ret != NSERROR_OK) {
 		ami_misc_fatal_error("Options failed to initialise");
+		ami_scheduler_process_delete();
+		ami_gui_splash_close(splash_window);
+		ami_libs_close();
 		return RETURN_FAIL;
 	}
 	nsoption_read(current_user_options, NULL);
@@ -5552,6 +5571,9 @@ int main(int argc, char** argv)
 
 	if (ami_locate_resource(messages, "Messages") == false) {
 		ami_misc_fatal_error("Cannot open Messages file");
+		ami_scheduler_process_delete();
+		ami_gui_splash_close(splash_window);
+		ami_libs_close();
 		return RETURN_FAIL;
 	}
 
@@ -5560,6 +5582,9 @@ int main(int argc, char** argv)
 	ret = netsurf_init(current_user_cache);
 	if (ret != NSERROR_OK) {
 		ami_misc_fatal_error("NetSurf failed to initialise");
+		ami_scheduler_process_delete();
+		ami_gui_splash_close(splash_window);
+		ami_libs_close();
 		return RETURN_FAIL;
 	}
 
