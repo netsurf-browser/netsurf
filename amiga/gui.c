@@ -793,7 +793,7 @@ static void ami_openscreenfirst(void)
 	ami_theme_throbber_setup();
 }
 
-static void ami_gui_commandline(int *argc, char **argv)
+static struct RDArgs *ami_gui_commandline(int *argc, char **argv, int *nargc, char **nargv)
 {
 	int new_argc = 1;
 	struct RDArgs *args;
@@ -806,7 +806,7 @@ static void ami_gui_commandline(int *argc, char **argv)
 		A_FORCE
 	};
 
-	if(*argc == 0) return; // argc==0 is started from wb
+	if(*argc == 0) return NULL; // argc==0 is started from wb
 
 	if((args = ReadArgs(template, rarray, NULL))) {
 		if(rarray[A_URL]) {
@@ -840,22 +840,21 @@ static void ami_gui_commandline(int *argc, char **argv)
 
 			const char *new_argv = malloc(sizeof(char *) * new_argc);
 			const char **new_argvp = &new_argv;
-			*new_argvp = messages_get("NetSurf");
 			p = (char **)rarray[A_NSOPTS];
 
 			do {
-				new_argvp++;
 				*new_argvp = *p;
+				new_argvp++;
 				p++;
 			} while(*p != NULL);
 
-			nsoption_commandline(&new_argc, (char **)&new_argv, NULL);
+			*nargc = new_argc;
+			*nargv = new_argv;
 		}
-
-		FreeArgs(args);
 	} else {
 		LOG("ReadArgs failed to parse command line");
 	}
+	return args;
 }
 
 static void ami_gui_read_tooltypes(struct WBArg *wbarg)
@@ -5471,7 +5470,11 @@ int main(int argc, char** argv)
 		return RETURN_FAIL;
 	}
 
+	int nargc;
+	char *nargv;
+
 	ami_gui_read_all_tooltypes(argc, argv);
+	struct RDArgs *args = ami_gui_commandline(&argc, argv, &nargc, &nargv);
 
 	if(current_user == NULL) {
 		user = GetVar("user", temp, 1024, GVF_GLOBAL_ONLY);
@@ -5567,7 +5570,10 @@ int main(int argc, char** argv)
 		return RETURN_FAIL;
 	}
 	nsoption_read(current_user_options, NULL);
-	ami_gui_commandline(&argc, argv); /* calls nsoption_commandline */
+	if(args != NULL) {
+		nsoption_commandline(&nargc, &nargv, NULL);
+		FreeArgs(args);
+	}
 
 	if (ami_locate_resource(messages, "Messages") == false) {
 		ami_misc_fatal_error("Cannot open Messages file");
