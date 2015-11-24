@@ -1,18 +1,5 @@
 ; Installation script for NetSurf
 
-(procedure p_setmimetype #type #mimetype
-	(transcript "Setting MIME Type " #mimetype " for default " #type " icon")
-
-	(set #fullpath (cat "ENVARC:Sys/def_" #type))
-
-	(tooltype
-		(prompt "Setting MIME type")
-		(help @tooltype-help)
-		(dest #fullpath)
-		(settooltype "MIMETYPE" #mimetype)
-	)
-)
-
 (procedure p_append #filename #text
 	(set #file-path (tackon "ENVARC:launch-handler/URL" #protocol))
 	(set #def-file-path (tackon "ENVARC:launch-handler/URL/defaults" #protocol))
@@ -298,26 +285,6 @@
 
 (complete 80)
 
-(working "Setting MIME types")
-(p_setmimetype "css" "text/css")
-(p_setmimetype "html" "text/html")
-(p_setmimetype "ascii" "text/plain")
-(p_setmimetype "jpeg" "image/jpeg")
-(p_setmimetype "gif" "image/gif")
-(p_setmimetype "png" "image/png")
-(p_setmimetype "jng" "image/jng")
-(p_setmimetype "mng" "image/mng")
-(p_setmimetype "svg" "image/svg")
-(p_setmimetype "bmp" "image/bmp")
-(p_setmimetype "ico" "image/ico")
-(p_setmimetype "sprite" "image/x-riscos-sprite")
-(p_setmimetype "webp" "image/webp")
-(p_setmimetype "lha" "application/x-lha")
-(p_setmimetype "zip" "application/x-zip")
-(p_setmimetype "js" "application/javascript")
-
-(complete 85)
-
 (if (>= osver 53)
 	(if (= (exists "Rexx:NetSurf") 0)
 		(
@@ -364,7 +331,7 @@
 	)
 )
 
-(complete 90)
+(complete 85)
 
 (if (= #addlaunchhandler 1)
 	(
@@ -391,7 +358,7 @@
 	)
 )
 
-(complete 95)
+(complete 90)
 
 (working "Running FixFonts")
 

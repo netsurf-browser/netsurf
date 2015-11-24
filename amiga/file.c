@@ -117,17 +117,13 @@ static void ami_file_set_type(const char *path, lwc_string *mime_type)
 	content_type type = content_factory_type_from_mime_type(mime_type);
 	const char *default_type;
 
-	switch(type)
-	{
-	case CONTENT_HTML:
-		default_type = "html";
-		break;
-	case CONTENT_CSS:
-		default_type = "css";
-		break;
-	default:
-		default_type = NULL;
-		break;
+	switch(type) {
+		case CONTENT_HTML:
+			default_type = "html";
+			break;
+		default:
+			default_type = NULL;
+			break;
 	}
 
 	if (default_type != NULL) {
