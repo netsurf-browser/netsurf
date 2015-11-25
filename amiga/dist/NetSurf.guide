@@ -109,12 +109,13 @@ This section contains options for exporting to PDF.  It is not enabled in curren
 @endnode
 
 @node cli "Command line options"
-NetSurf URL/K,FORCE/S,NSOPTS/M
+NetSurf NSOPTS/M,URL/K,USERSDIR/K,FORCE/S
 
 Where:
-URL    = Address of page to open on startup
-FORCE  = Force new instance of NetSurf to open (has some limitations, use for debugging only)
-NSOPTS = Catches everything else and passes it to the NetSurf core command line parser
+URL      = Address of page to open on startup
+USERSDIR = Locations of user directories (see @{"tooltypes" link tooltypes})
+FORCE    = Force new instance of NetSurf to open (has some limitations, use for debugging only)
+NSOPTS   = Catches everything else and passes it to the NetSurf core command line parser
 @endnode
 
 @node tooltypes "ToolTypes"

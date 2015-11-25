@@ -797,12 +797,13 @@ static struct RDArgs *ami_gui_commandline(int *argc, char **argv, int *nargc, ch
 {
 	int new_argc = 1;
 	struct RDArgs *args;
-	CONST_STRPTR template = "NSOPTS/M,URL/K,FORCE/S";
-	long rarray[] = {0,0,0};
+	CONST_STRPTR template = "NSOPTS/M,URL/K,USERSDIR/K,FORCE/S";
+	long rarray[] = {0,0,0,0};
 	enum
 	{
 		A_NSOPTS, /* ignored */
 		A_URL,
+		A_USERSDIR,
 		A_FORCE
 	};
 
@@ -812,6 +813,11 @@ static struct RDArgs *ami_gui_commandline(int *argc, char **argv, int *nargc, ch
 		if(rarray[A_URL]) {
 			LOG("URL %s specified on command line", rarray[A_URL]);
 			temp_homepage_url = ami_to_utf8_easy((char *)rarray[A_URL]);
+		}
+
+		if(rarray[A_USERSDIR]) {
+			LOG("USERSDIR %s specified on command line", rarray[A_USERSDIR]);
+			users_dir = ASPrintf("%s", rarray[A_USERSDIR]);
 		}
 
 		if(rarray[A_FORCE]) {
@@ -5419,6 +5425,8 @@ int main(int argc, char** argv)
 	BPTR lock = 0;
 	int32 user = 0;
 	nserror ret;
+	int nargc = 0;
+	char *nargv = NULL;
 
 	struct netsurf_table amiga_table = {
 		.browser = &amiga_browser_table,
@@ -5470,9 +5478,6 @@ int main(int argc, char** argv)
 		return RETURN_FAIL;
 	}
 
-	int nargc;
-	char *nargv;
-
 	ami_gui_read_all_tooltypes(argc, argv);
 	struct RDArgs *args = ami_gui_commandline(&argc, argv, &nargc, &nargv);
 
@@ -5493,8 +5498,8 @@ int main(int argc, char** argv)
 		}
 	}
 
-#ifdef __amigaos4__
 	if(LIB_IS_AT_LEAST((struct Library *)DOSBase, 51, 96)) {
+#ifdef __amigaos4__
 		struct InfoData *infodata = AllocDosObject(DOS_INFODATA, 0);
 		if(infodata == NULL) {
 			ami_misc_fatal_error("Failed to allocate memory");
@@ -5515,13 +5520,12 @@ int main(int argc, char** argv)
 			return RETURN_FAIL;
 		}
 		FreeDosObject(DOS_INFODATA, infodata);
-	} else {
 #else
-//FIXME for OS3 and older OS4
+#warning FIXME for OS3 and older OS4
 #endif
-#ifdef __amigaos4__
+	} else {
+//TODO: check volume write status using old API
 	}
-#endif
 
 	int len = strlen(current_user);
 	len += strlen(users_dir);
