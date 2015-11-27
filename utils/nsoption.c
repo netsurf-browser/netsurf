@@ -734,10 +734,8 @@ nsoption_commandline(int *pargc, char **argv, struct nsoption_s *opts)
 
 		/* check we have an option */
 		/* option must start -- and be as long as the shortest option*/
-		if ((arglen < (2+5) ) || (arg[0] != '-') || (arg[1] != '-')) {
-			idx++;
-			continue;
-		}
+		if ((arglen < (2+5) ) || (arg[0] != '-') || (arg[1] != '-'))
+			break;
 
 		arg += 2; /* skip -- */
 
