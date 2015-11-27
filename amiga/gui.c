@@ -797,10 +797,11 @@ static struct RDArgs *ami_gui_commandline(int *argc, char **argv, int *nargc, ch
 {
 	int new_argc = 1;
 	struct RDArgs *args;
-	CONST_STRPTR template = "NSOPTS/M,URL/K,USERSDIR/K,FORCE/S";
+	CONST_STRPTR template = "-v/S,NSOPTS/M,URL/K,USERSDIR/K,FORCE/S";
 	long rarray[] = {0,0,0,0};
 	enum
 	{
+		A_VERBOSE, /* ignored */
 		A_NSOPTS, /* ignored */
 		A_URL,
 		A_USERSDIR,
