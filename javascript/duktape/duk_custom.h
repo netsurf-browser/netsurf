@@ -29,3 +29,4 @@
 #endif
 
 #define DUK_USE_DEEP_C_STACK
+#define DUK_OPT_REGEXP_CANON_WORKAROUND
