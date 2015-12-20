@@ -100,6 +100,9 @@
 #define RAWKEY_CRSRRIGHT	0x4E
 #define RAWKEY_CRSRLEFT	0x4F
 #define RAWKEY_F5	0x54
+#define RAWKEY_F8	0x57
+#define RAWKEY_F9	0x58
+#define RAWKEY_F10	0x59
 #define RAWKEY_HELP	0x5F
 #define RAWKEY_HOME	0x70
 #define RAWKEY_END	0x71
