@@ -250,6 +250,7 @@ method Node::normalize()
 %{
 	dom_exception exc;
 	exc = dom_node_normalize(priv->node);
+	if (exc != DOM_NO_ERR) return 0;
 	return 0;
 %}
 
