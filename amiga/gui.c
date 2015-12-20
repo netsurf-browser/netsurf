@@ -5532,7 +5532,7 @@ int main(int argc, char** argv)
 	len += strlen(users_dir);
 	len += 2; /* for poss path sep and NULL term */
 
-	current_user_dir = AllocVecTags(len, NULL);
+	current_user_dir = AllocVecTagList(len, NULL);
 	if(current_user_dir == NULL) {
 		ami_misc_fatal_error("Failed to allocate memory");
 		ami_scheduler_process_delete();
