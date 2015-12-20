@@ -153,6 +153,9 @@ nsgtk_tab_switch_page_after(GtkNotebook *notebook,
 			gw = g_object_get_data(G_OBJECT(srcpage), "gui_window");
 			if ((gw != NULL) && (nsgtk_get_scaffold(gw) != NULL)) {
 				error = nsgtk_scaffolding_new_tab(gw);
+				if (error != NSERROR_OK) {
+					LOG("Failed to open new tab.");
+				}
 			}
 		}
 	} else {
