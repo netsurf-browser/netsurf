@@ -1341,7 +1341,6 @@ llcache_process_metadata(llcache_object *object)
 	size_t metadatalen = 0;
 	nsurl *metadataurl;
 	unsigned int line;
-	uint8_t *end;
 	char *ln;
 	int lnsize;
 
@@ -1362,8 +1361,6 @@ llcache_process_metadata(llcache_object *object)
 	if (res != NSERROR_OK) {
 		return res;
 	}
-
-	end = metadata + metadatalen;
 
 	LOG("Processing retrived data");
 
