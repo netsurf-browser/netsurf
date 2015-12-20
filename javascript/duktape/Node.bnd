@@ -47,9 +47,10 @@ getter Node::nodeName()
 getter Node::baseURI()
 %{
 	dom_exception exc;
-	dom_string *base;
+	dom_string *base = NULL;
 	exc = dom_node_get_base(priv->node, &base);
 	if (exc != DOM_NO_ERR) return 0;
+	assert(base != NULL);
 	duk_push_lstring(ctx, dom_string_data(base), dom_string_length(base));
 	dom_string_unref(base);
 	return 1;
