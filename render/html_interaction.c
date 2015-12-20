@@ -924,7 +924,6 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 				}
 
 			} else if (mouse & BROWSER_MOUSE_PRESS_1) {
-				union html_selection_owner sel_owner;
 				sel_owner.none = true;
 				selection_clear(&html->sel, true);
 			}
