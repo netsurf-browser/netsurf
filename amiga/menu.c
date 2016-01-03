@@ -659,7 +659,7 @@ static void ami_init_menulabs(struct gui_window_2 *gwin)
 	ami_menu_alloc_item(gwin, M_COOKIES,  NM_ITEM, "ShowCookiesNS",   0, "TBImages:list_internet",
 			ami_menu_item_browser_cookies, NULL);
 	ami_menu_alloc_item(gwin, M_BAR_B3,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL);
-	ami_menu_alloc_item(gwin, M_SCALE,    NM_ITEM, "ScaleNS",       0, NSA_SPACE, NULL, NULL);
+	ami_menu_alloc_item(gwin, M_SCALE,    NM_ITEM, "ScaleNS",       0, "TBImages:list_preview", NULL, NULL);
 	ami_menu_alloc_item(gwin, M_SCALEDEC,  NM_SUB, "ScaleDec",    '-', "TBImages:list_zoom_out",
 			ami_menu_item_browser_scale_decrease, NULL);
 	ami_menu_alloc_item(gwin, M_SCALENRM,  NM_SUB, "ScaleNorm",   '=', "TBImages:list_zoom_100",
