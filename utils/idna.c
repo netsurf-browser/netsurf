@@ -168,7 +168,7 @@ static bool idna__contextj_rule(int32_t *label, int index, size_t len)
 			return false; /* No previous character */
 		}
 		unicode_props = utf8proc_get_property(label[index - 1]);
-		if (unicode_props->combining_class == UTF8PROC_CCC_VIRAMA) {
+		if (unicode_props->combining_class == IDNA_UNICODE_CCC_VIRAMA) {
 			return true;
 		}
 
@@ -207,7 +207,7 @@ static bool idna__contextj_rule(int32_t *label, int index, size_t len)
 			return false; /* No previous character */
 		}
 		unicode_props = utf8proc_get_property(label[index - 1]);
-		if (unicode_props->combining_class == UTF8PROC_CCC_VIRAMA) {
+		if (unicode_props->combining_class == IDNA_UNICODE_CCC_VIRAMA) {
 			return true;
 		}
 		return false;

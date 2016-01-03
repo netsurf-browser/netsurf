@@ -24,6 +24,11 @@
 #define _NETSURF_UTILS_IDNA_H_
 
 /**
+ * Unicode canonical combining class for virama
+ */
+#define IDNA_UNICODE_CCC_VIRAMA 9
+
+/**
  * Convert a hostname to an ACE version suitable for DNS lookup
  *
  * \param host	String containing host
