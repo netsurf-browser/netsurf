@@ -173,6 +173,8 @@ bool ro_gui_search_click(wimp_pointer *pointer)
 		case ICON_SEARCH_CASE_SENSITIVE:
 			flags = SEARCH_FLAG_FORWARDS |
 					ro_gui_search_update_flags();
+			browser_window_search_clear(
+					search_data.search_window);
 			browser_window_search(search_data.search_window, NULL,
 					flags,
 					ro_gui_get_icon_string(dialog_search,
