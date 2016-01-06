@@ -464,10 +464,12 @@ static nserror hlcache_llcache_callback(llcache_handle *handle,
 		 */
 		error = mimesniff_compute_effective_type(handle,
 				NULL, 0, false, false, &effective_type);
-		if (error == NSERROR_OK) {
+		if (error == NSERROR_OK || error == NSERROR_NOT_FOUND) {
 			error = hlcache_migrate_ctx(ctx, effective_type);
 
-			lwc_string_unref(effective_type);
+			if (effective_type != NULL) {
+				lwc_string_unref(effective_type);
+			}
 
 			return error;
 		}
@@ -475,8 +477,8 @@ static nserror hlcache_llcache_callback(llcache_handle *handle,
 		if (ctx->handle->cb != NULL) {
 			hlcache_event hlevent;
 
-			hlevent.type = CONTENT_MSG_ERROR;
-			hlevent.data.error = messages_get("BadType");
+			hlevent.type = CONTENT_MSG_ERRORCODE;
+			hlevent.data.errorcode = error;
 
 			ctx->handle->cb(ctx->handle, &hlevent, ctx->handle->pw);
 		}
