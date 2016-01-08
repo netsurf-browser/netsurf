@@ -1219,6 +1219,12 @@ static struct path_data *urldb_find_url(nsurl *url)
 	if (scheme == NULL)
 		return NULL;
 
+	if (lwc_string_isequal(scheme, corestring_lwc_mailto, &match) ==
+			lwc_error_ok && match == true) {
+		lwc_string_unref(scheme);
+		return NULL;
+	}
+
 	host = nsurl_get_component(url, NSURL_HOST);
 	if (host != NULL) {
 		host_str = lwc_string_data(host);
