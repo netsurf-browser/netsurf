@@ -1210,9 +1210,8 @@ static struct path_data *urldb_find_url(nsurl *url)
 	assert(url);
 
 	if (url_bloom != NULL) {
-		if (bloom_search_hash(url_bloom,
-					nsurl_hash(url)) == false) {
-					return NULL;
+		if (bloom_search_hash(url_bloom, nsurl_hash(url)) == false) {
+			return NULL;
 		}
 	}
 
