@@ -84,6 +84,7 @@ extern lwc_string *corestring_lwc_justify;
 extern lwc_string *corestring_lwc_left;
 extern lwc_string *corestring_lwc_li;
 extern lwc_string *corestring_lwc_link;
+extern lwc_string *corestring_lwc_mailto;
 extern lwc_string *corestring_lwc_meta;
 extern lwc_string *corestring_lwc_middle;
 extern lwc_string *corestring_lwc_multipart_form_data; /* multipart/form-data */
