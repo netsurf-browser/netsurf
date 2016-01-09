@@ -589,11 +589,19 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 	nsoption_setnull_charp(font_cursive, (char *)strdup("DejaVu Sans"));
 	nsoption_setnull_charp(font_fantasy, (char *)strdup("DejaVu Serif"));
 #else
-	nsoption_setnull_charp(font_sans, (char *)strdup("CGTriumvirate"));
-	nsoption_setnull_charp(font_serif, (char *)strdup("CGTimes"));
-	nsoption_setnull_charp(font_mono, (char *)strdup("LetterGothic"));
-	nsoption_setnull_charp(font_cursive, (char *)strdup("CGTriumvirate"));
-	nsoption_setnull_charp(font_fantasy, (char *)strdup("CGTimes"));
+	if(nsoption_bool(use_diskfont) == true) {
+		nsoption_setnull_charp(font_sans, (char *)strdup("helvetica"));
+		nsoption_setnull_charp(font_serif, (char *)strdup("times"));
+		nsoption_setnull_charp(font_mono, (char *)strdup("topaz"));
+		nsoption_setnull_charp(font_cursive, (char *)strdup("garnet"));
+		nsoption_setnull_charp(font_fantasy, (char *)strdup("emerald"));
+	} else {
+		nsoption_setnull_charp(font_sans, (char *)strdup("CGTriumvirate"));
+		nsoption_setnull_charp(font_serif, (char *)strdup("CGTimes"));
+		nsoption_setnull_charp(font_mono, (char *)strdup("LetterGothic"));
+		nsoption_setnull_charp(font_cursive, (char *)strdup("CGTriumvirate"));
+		nsoption_setnull_charp(font_fantasy, (char *)strdup("CGTimes"));
+	}
 #endif
 
 	if (nsoption_charp(font_unicode) == NULL)
