@@ -800,7 +800,9 @@ ULONG ami_font_unicode_text(struct RastPort *rp, const char *string, ULONG lengt
 
 	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != NSERROR_OK) return 0;
 	outf16 = utf16;
-	if(!(ofont = ami_open_outline_font(fstyle, 0))) return 0;
+	if(!(ofont = ami_open_outline_font(fstyle, 0))) {
+		if(!(ofont = ami_open_outline_font(fstyle, 'A'))) return 0;
+	}
 
 	while(*utf16 != 0)
 	{
@@ -861,7 +863,10 @@ static inline ULONG ami_font_unicode_width(const char *string, ULONG length,
 
 	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != NSERROR_OK) return 0;
 	outf16 = utf16;
-	if(!(ofont = ami_open_outline_font(fstyle, 0))) return 0;
+	if(!(ofont = ami_open_outline_font(fstyle, 0))) {
+		if(!(ofont = ami_open_outline_font(fstyle, 'A'))) return 0;
+
+	}
 
 	while(*utf16 != 0)
 	{
