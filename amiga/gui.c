@@ -497,9 +497,10 @@ static void ami_set_screen_defaults(struct Screen *screen)
 	nsoption_default_set_int(window_width, screen->Width);
 	nsoption_default_set_int(window_height, screen->Height - screen->BarHeight - 1);
 
+#ifdef __amigaos4__
 	nsoption_default_set_int(redraw_tile_size_x, screen->Width);
 	nsoption_default_set_int(redraw_tile_size_y, screen->Height);
-#ifdef __amigaos4__
+
 	/* set system colours for amiga ui */
 	colour_option_from_pen(FILLPEN, NSOPTION_sys_colour_ActiveBorder, screen, 0x00000000);
 	colour_option_from_pen(FILLPEN, NSOPTION_sys_colour_ActiveCaption, screen, 0x00dddddd);
@@ -529,6 +530,9 @@ static void ami_set_screen_defaults(struct Screen *screen)
 	colour_option_from_pen(BACKGROUNDPEN, NSOPTION_sys_colour_Window, screen, 0x00aaaaaa);
 	colour_option_from_pen(INACTIVEFILLPEN, NSOPTION_sys_colour_WindowFrame, screen, 0x00000000);
 	colour_option_from_pen(TEXTPEN, NSOPTION_sys_colour_WindowText, screen, 0x00000000);
+#else
+	nsoption_default_set_int(redraw_tile_size_x, 100);
+	nsoption_default_set_int(redraw_tile_size_y, 100);
 #endif
 }
 
@@ -547,8 +551,16 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 	/* The following line disables the popupmenu.class select menu.
 	** It's not recommended to use it!
 	*/
-
 	nsoption_set_bool(core_select_menu, true);
+
+	/* Some AmigaOS3 overrides */
+#ifndef __amigaos4__
+	nsoption_set_bool(download_notify, false);
+	nsoption_set_bool(font_antialiasing, false);
+	nsoption_set_bool(truecolour_mouse_pointers, false);
+	nsoption_set_bool(use_openurl_lib, true);
+	nsoption_set_bool(use_diskfont, true);
+#endif
 
 	if((!nsoption_charp(accept_language)) || 
 	   (nsoption_charp(accept_language)[0] == '\0') ||
@@ -589,19 +601,22 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 	nsoption_setnull_charp(font_cursive, (char *)strdup("DejaVu Sans"));
 	nsoption_setnull_charp(font_fantasy, (char *)strdup("DejaVu Serif"));
 #else
-	if(nsoption_bool(use_diskfont) == true) {
-		nsoption_setnull_charp(font_sans, (char *)strdup("helvetica"));
-		nsoption_setnull_charp(font_serif, (char *)strdup("times"));
-		nsoption_setnull_charp(font_mono, (char *)strdup("topaz"));
-		nsoption_setnull_charp(font_cursive, (char *)strdup("garnet"));
-		nsoption_setnull_charp(font_fantasy, (char *)strdup("emerald"));
-	} else {
-		nsoption_setnull_charp(font_sans, (char *)strdup("CGTriumvirate"));
-		nsoption_setnull_charp(font_serif, (char *)strdup("CGTimes"));
-		nsoption_setnull_charp(font_mono, (char *)strdup("LetterGothic"));
-		nsoption_setnull_charp(font_cursive, (char *)strdup("CGTriumvirate"));
-		nsoption_setnull_charp(font_fantasy, (char *)strdup("CGTimes"));
-	}
+	nsoption_setnull_charp(font_sans, (char *)strdup("helvetica"));
+	nsoption_setnull_charp(font_serif, (char *)strdup("times"));
+	nsoption_setnull_charp(font_mono, (char *)strdup("topaz"));
+	nsoption_setnull_charp(font_cursive, (char *)strdup("garnet"));
+	nsoption_setnull_charp(font_fantasy, (char *)strdup("emerald"));
+/* Default CG fonts for OS3 - these work with use_diskfont both on and off,
+	however they are slow in both cases. The bitmap fonts don't work when
+	use_diskfont is off. The bitmap fonts performance on 68k is far superior,
+	so default to those for now whilst testing.
+	\todo maybe add some buttons to the prefs GUI to toggle?
+	nsoption_setnull_charp(font_sans, (char *)strdup("CGTriumvirate"));
+	nsoption_setnull_charp(font_serif, (char *)strdup("CGTimes"));
+	nsoption_setnull_charp(font_mono, (char *)strdup("LetterGothic"));
+	nsoption_setnull_charp(font_cursive, (char *)strdup("CGTriumvirate"));
+	nsoption_setnull_charp(font_fantasy, (char *)strdup("CGTimes"));
+*/
 #endif
 
 	if (nsoption_charp(font_unicode) == NULL)
@@ -635,12 +650,6 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 					   (char *)strdup("Symbola"));
 		}
 	}
-
-#ifndef __amigaos4__
-	nsoption_set_bool(download_notify, false);
-	nsoption_set_bool(font_antialiasing, false);
-	nsoption_set_bool(truecolour_mouse_pointers, false);
-#endif
 
 	return NSERROR_OK;
 }
