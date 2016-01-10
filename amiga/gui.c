@@ -624,18 +624,22 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 		BPTR lock = 0;
 		/* Search for some likely candidates */
 
-		if((lock = Lock("FONTS:Code2000.otag", ACCESS_READ)))
-		{
+		if((lock = Lock("FONTS:Code2000.otag", ACCESS_READ))) {
 			UnLock(lock);
 			nsoption_set_charp(font_unicode, 
 					   (char *)strdup("Code2000"));
-		}
-		else if((lock = Lock("FONTS:Bitstream Cyberbit.otag", ACCESS_READ)))
-		{
+		} else if((lock = Lock("FONTS:Bitstream Cyberbit.otag", ACCESS_READ))) {
 			UnLock(lock);
 			nsoption_set_charp(font_unicode,
 					   (char *)strdup("Bitstream Cyberbit"));
 		}
+#ifndef __amigaos4__
+		else if((lock = Lock("FONTS:LetterGothic.otag", ACCESS_READ))) {
+			UnLock(lock);
+			nsoption_set_charp(font_unicode,
+					   (char *)strdup("LetterGothic"));
+		}
+#endif
 	}
 
 	if (nsoption_charp(font_surrogate) == NULL) {
