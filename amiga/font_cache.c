@@ -34,10 +34,10 @@
 #endif
 
 #ifdef __amigaos4__
-static struct SkipList *ami_font_list = NULL;
+static struct SkipList *ami_font_cache_list = NULL;
 static struct Hook ami_font_cache_hook;
 #else
-static struct MinList *ami_font_list = NULL;
+static struct MinList *ami_font_cache_list = NULL;
 #endif
 
 
@@ -52,17 +52,17 @@ static LONG ami_font_cache_sort(struct Hook *hook, APTR key1, APTR key2)
 #endif
 
 #ifdef __amigaos4__
-static void ami_font_cleanup(struct SkipList *skiplist)
+static void ami_font_cache_cleanup(struct SkipList *skiplist)
 {
-	struct ami_font_node *node;
-	struct ami_font_node *nnode;
+	struct ami_font_cache_node *node;
+	struct ami_font_cache_node *nnode;
 	struct TimeVal curtime;
 
-	node = (struct ami_font_node *)GetFirstSkipNode(skiplist);
+	node = (struct ami_font_cache_node *)GetFirstSkipNode(skiplist);
 	if(node == NULL) return;
 
 	do {
-		nnode = (struct ami_font_node *)GetNextSkipNode(skiplist, (struct SkipNode *)node);
+		nnode = (struct ami_font_cache_node *)GetNextSkipNode(skiplist, (struct SkipNode *)node);
 		GetSysTime(&curtime);
 		SubTime(&curtime, &node->lastused);
 		if(curtime.Seconds > 300)
@@ -74,19 +74,19 @@ static void ami_font_cleanup(struct SkipList *skiplist)
 	} while((node = nnode));
 
 	/* reschedule to run in five minutes */
-	ami_schedule(300000, (void *)ami_font_cleanup, ami_font_list);
+	ami_schedule(300000, (void *)ami_font_cache_cleanup, ami_font_cache_list);
 }
 #else
-static void ami_font_cleanup(struct MinList *ami_font_list)
+static void ami_font_cache_cleanup(struct MinList *ami_font_cache_list)
 {
 	struct nsObject *node;
 	struct nsObject *nnode;
-	struct ami_font_node *fnode;
+	struct ami_font_cache_node *fnode;
 	struct TimeVal curtime;
 
-	if(IsMinListEmpty(ami_font_list)) return;
+	if(IsMinListEmpty(ami_font_cache_list)) return;
 
-	node = (struct nsObject *)GetHead((struct List *)ami_font_list);
+	node = (struct nsObject *)GetHead((struct List *)ami_font_cache_list);
 
 	do
 	{
@@ -102,17 +102,17 @@ static void ami_font_cleanup(struct MinList *ami_font_list)
 	} while((node=nnode));
 
 	/* reschedule to run in five minutes */
-	ami_schedule(300000, (void *)ami_font_cleanup, ami_font_list);
+	ami_schedule(300000, (void *)ami_font_cache_cleanup, ami_font_cache_list);
 }
 #endif
 
 #ifdef __amigaos4__
-static void ami_font_del_skiplist(struct SkipList *skiplist)
+static void ami_font_cache_del_skiplist(struct SkipList *skiplist)
 {
-	struct ami_font_node *node;
+	struct ami_font_cache_node *node;
 	struct SkipNode *nnode;
 
-	node = (struct ami_font_node *)GetFirstSkipNode(skiplist);
+	node = (struct ami_font_cache_node *)GetFirstSkipNode(skiplist);
 	if(node == NULL) return;
 
 	do {
@@ -126,16 +126,16 @@ static void ami_font_del_skiplist(struct SkipList *skiplist)
 #endif
 
 
-struct ami_font_node *ami_font_cache_locate(const char *font)
+struct ami_font_cache_node *ami_font_cache_locate(const char *font)
 {
-	struct ami_font_node *nodedata;
+	struct ami_font_cache_node *nodedata;
 	uint32 hash = 0;
 
 #ifdef __amigaos4__
 	hash = XXH32(font, strlen(font), 0);
-	nodedata = (struct ami_font_node *)FindSkipNode(ami_font_list, (APTR)hash);		
+	nodedata = (struct ami_font_cache_node *)FindSkipNode(ami_font_cache_list, (APTR)hash);		
 #else
-	struct nsObject *node = (struct nsObject *)FindIName((struct List *)ami_font_list, font);
+	struct nsObject *node = (struct nsObject *)FindIName((struct List *)ami_font_cache_list, font);
 	if(node) nodedata = node->objstruct;
 #endif
 
@@ -148,15 +148,15 @@ struct ami_font_node *ami_font_cache_locate(const char *font)
 	return NULL;
 }
 
-struct ami_font_node *ami_font_cache_alloc_entry(const char *font)
+struct ami_font_cache_node *ami_font_cache_alloc_entry(const char *font)
 {
-	struct ami_font_node *nodedata;
+	struct ami_font_cache_node *nodedata;
 
 #ifdef __amigaos4__
 	uint32 hash = XXH32(font, strlen(font), 0);
-	nodedata = (struct ami_font_node *)InsertSkipNode(ami_font_list, (APTR)hash, sizeof(struct ami_font_node));
+	nodedata = (struct ami_font_cache_node *)InsertSkipNode(ami_font_cache_list, (APTR)hash, sizeof(struct ami_font_cache_node));
 #else
-	nodedata = AllocVecTagList(sizeof(struct ami_font_node), NULL);
+	nodedata = AllocVecTagList(sizeof(struct ami_font_cache_node), NULL);
 #endif
 
 	GetSysTime(&nodedata->lastused);
@@ -164,10 +164,10 @@ struct ami_font_node *ami_font_cache_alloc_entry(const char *font)
 	return nodedata;
 }
 
-void ami_font_cache_insert(struct ami_font_node *nodedata, const char *font)
+void ami_font_cache_insert(struct ami_font_cache_node *nodedata, const char *font)
 {
 #ifndef __amigaos4__
-	struct nsObject *node = AddObject(ami_font_list, AMINS_FONT);
+	struct nsObject *node = AddObject(ami_font_cache_list, AMINS_FONT);
 	if(node) {
 		node->objstruct = nodedata;
 		node->dtz_Node.ln_Name = strdup(font);
@@ -178,13 +178,13 @@ void ami_font_cache_insert(struct ami_font_node *nodedata, const char *font)
 void ami_font_cache_fini(void)
 {
 	LOG("Cleaning up font cache");
-	ami_schedule(-1, (void *)ami_font_cleanup, ami_font_list);
+	ami_schedule(-1, (void *)ami_font_cache_cleanup, ami_font_cache_list);
 #ifdef __amigaos4__
-	ami_font_del_skiplist(ami_font_list);
+	ami_font_cache_del_skiplist(ami_font_cache_list);
 #else
-	FreeObjList(ami_font_list);
+	FreeObjList(ami_font_cache_list);
 #endif
-	ami_font_list = NULL;
+	ami_font_cache_list = NULL;
 }
 
 void ami_font_cache_init(void)
@@ -192,12 +192,12 @@ void ami_font_cache_init(void)
 #ifdef __amigaos4__
 	ami_font_cache_hook.h_Entry = (HOOKFUNC)ami_font_cache_sort;
 	ami_font_cache_hook.h_Data = 0;
-	ami_font_list = CreateSkipList(&ami_font_cache_hook, 8);
+	ami_font_cache_list = CreateSkipList(&ami_font_cache_hook, 8);
 #else
-	ami_font_list = NewObjList();
+	ami_font_cache_list = NewObjList();
 #endif
 
 	/* run first cleanup in ten minutes */
-	ami_schedule(600000, (void *)ami_font_cleanup, ami_font_list);
+	ami_schedule(600000, (void *)ami_font_cache_cleanup, ami_font_cache_list);
 }
 

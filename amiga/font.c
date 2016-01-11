@@ -348,9 +348,9 @@ static inline bool amiga_nsfont_split(const plot_font_style_t *fstyle,
 /**
  * Search for a font in the list and load from disk if not present
  */
-static struct ami_font_node *ami_font_open(const char *font, bool critical)
+static struct ami_font_cache_node *ami_font_open(const char *font, bool critical)
 {
-	struct ami_font_node *nodedata = ami_font_cache_locate(font);
+	struct ami_font_cache_node *nodedata = ami_font_cache_locate(font);
 	if(nodedata) return nodedata;
 
 	nodedata = ami_font_cache_alloc_entry(font);
@@ -402,8 +402,8 @@ static struct ami_font_node *ami_font_open(const char *font, bool critical)
 static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
 		const uint16 *codepoint)
 {
-	struct ami_font_node *node;
-	struct ami_font_node *designed_node = NULL;
+	struct ami_font_cache_node *node;
+	struct ami_font_cache_node *designed_node = NULL;
 	struct OutlineFont *ofont;
 	char *fontname;
 	ULONG ysize;
@@ -891,7 +891,7 @@ void ami_close_fonts(void)
 	ami_font_finiscanner();
 }
 
-void ami_font_close(struct ami_font_node *node)
+void ami_font_close(struct ami_font_cache_node *node)
 {
 	/* Called from FreeObjList if node type is AMINS_FONT */
 

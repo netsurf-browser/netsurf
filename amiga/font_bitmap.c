@@ -37,6 +37,7 @@
 #include "desktop/gui_window.h"
 
 #include "amiga/font.h"
+#include "amiga/font_cache.h"
 #include "amiga/gui.h"
 #include "amiga/utf8.h"
 

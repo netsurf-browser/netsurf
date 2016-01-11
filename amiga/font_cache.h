@@ -18,7 +18,7 @@
 
 #ifndef AMIGA_FONT_CACHE_H
 #define AMIGA_FONT_CACHE_H
-struct ami_font_node
+struct ami_font_cache_node
 {
 #ifdef __amigaos4__
 	struct SkipNode skip_node;
@@ -32,15 +32,18 @@ struct ami_font_node
 
 
 /* locate an entry in the font cache, NULL if not found */
-struct ami_font_node *ami_font_cache_locate(const char *font);
+struct ami_font_cache_node *ami_font_cache_locate(const char *font);
 
 /* allocate a cache entry */
-struct ami_font_node *ami_font_cache_alloc_entry(const char *font);
+struct ami_font_cache_node *ami_font_cache_alloc_entry(const char *font);
 
 /* insert a cache entry into the list (OS3) */
-void ami_font_cache_insert(struct ami_font_node *nodedata, const char *font);
+void ami_font_cache_insert(struct ami_font_cache_node *nodedata, const char *font);
 
+/* initialise the cache */
 void ami_font_cache_init(void);
+
+/* cache clean-up */
 void ami_font_cache_fini(void);
 
 #endif

@@ -23,14 +23,14 @@
 #include <graphics/rastport.h>
 #include <graphics/text.h>
 
-struct ami_font_node;
+struct ami_font_cache_node;
 
 ULONG ami_font_unicode_text(struct RastPort *rp, const char *string,
 	ULONG length, const plot_font_style_t *fstyle, ULONG x, ULONG y, bool aa);
 void ami_font_setdevicedpi(int id);
 void ami_init_fonts(void);
 void ami_close_fonts(void);
-void ami_font_close(struct ami_font_node *node);
+void ami_font_close(struct ami_font_cache_node *node);
 
 /* Alternate entry points into font_scan */
 void ami_font_initscanner(bool force, bool save);
