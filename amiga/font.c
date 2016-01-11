@@ -26,8 +26,6 @@
 #include <proto/diskfont.h>
 #include <proto/exec.h>
 #include <proto/graphics.h>
-#include <proto/Picasso96API.h>
-#include <proto/timer.h>
 #include <proto/utility.h>
 
 #include <diskfont/diskfonttag.h>
@@ -47,14 +45,10 @@
 #include "desktop/gui_window.h"
 
 #include "amiga/font.h"
+#include "amiga/font_cache.h"
 #include "amiga/font_scan.h"
 #include "amiga/gui.h"
 #include "amiga/utf8.h"
-#include "amiga/object.h"
-#include "amiga/schedule.h"
-#ifdef __amigaos4__
-#include <amiga/hash/xxhash.h>
-#endif
 
 #define NSA_UNICODE_FONT PLOT_FONT_FAMILY_COUNT
 
@@ -71,18 +65,6 @@
 #define NSA_VALUE_SHEARCOS (1 << 16)
 
 #define NSA_FONT_EMWIDTH(s) (s / FONT_SIZE_SCALE) * (ami_xdpi / 72.0)
-
-struct ami_font_node
-{
-#ifdef __amigaos4__
-	struct SkipNode skip_node;
-#endif
-	struct OutlineFont *font;
-	char *bold;
-	char *italic;
-	char *bolditalic;
-	struct TimeVal lastused;
-};
 
 const uint16 sc_table[] = {
 		0x0061, 0x1D00, /* a */
@@ -151,16 +133,11 @@ const uint16 sc_table[] = {
 #endif
 		0, 0};
 
-#ifdef __amigaos4__
-struct SkipList *ami_font_list = NULL;
-#else
-struct MinList *ami_font_list = NULL;
-#endif
-struct List ami_diskfontlib_list;
 lwc_string *glypharray[0xffff + 1];
 ULONG ami_devicedpi;
 ULONG ami_xdpi;
-static struct Hook ami_font_cache_hook;
+
+static struct List ami_diskfontlib_list;
 
 static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 		uint16 *char1, uint16 *char2, uint32 x, uint32 y, uint32 emwidth, bool aa);
@@ -373,29 +350,10 @@ static inline bool amiga_nsfont_split(const plot_font_style_t *fstyle,
  */
 static struct ami_font_node *ami_font_open(const char *font, bool critical)
 {
-	struct ami_font_node *nodedata = NULL;
-	uint32 hash = 0;
+	struct ami_font_node *nodedata = ami_font_cache_locate(font);
+	if(nodedata) return nodedata;
 
-#ifdef __amigaos4__
-	hash = XXH32(font, strlen(font), 0);
-	nodedata = (struct ami_font_node *)FindSkipNode(ami_font_list, (APTR)hash);		
-#else
-	struct nsObject *node = (struct nsObject *)FindIName((struct List *)ami_font_list, font);
-	if(node) nodedata = node->objstruct;
-#endif
-
-	if(nodedata) {
-		GetSysTime(&nodedata->lastused);
-		return nodedata;
-	}
-
-	LOG("Font cache miss: %s (%lx)", font, hash);
-
-#ifdef __amigaos4__
-	nodedata = (struct ami_font_node *)InsertSkipNode(ami_font_list, (APTR)hash, sizeof(struct ami_font_node));
-#else
-	nodedata = AllocVecTagList(sizeof(struct ami_font_node), NULL);
-#endif
+	nodedata = ami_font_cache_alloc_entry(font);
 
 	if(nodedata == NULL) {
 		warn_user("NoMemory", "");
@@ -430,16 +388,7 @@ static struct ami_font_node *ami_font_open(const char *font, bool critical)
 	else
 		LOG("Warning: No designed bold-italic font defined for %s", font);
 
-	GetSysTime(&nodedata->lastused);
-
-#ifndef __amigaos4__
-	node = AddObject(ami_font_list, AMINS_FONT);
-	if(node) {
-		node->objstruct = nodedata;
-		node->dtz_Node.ln_Name = strdup(font);
-	}
-#endif
-
+	ami_font_cache_insert(nodedata, font);
 	return nodedata;
 }
 
@@ -924,119 +873,21 @@ void ami_font_savescanner(void)
 	ami_font_scan_save(nsoption_charp(font_unicode_file), glypharray);
 }
 
-#ifdef __amigaos4__
-static LONG ami_font_cache_sort(struct Hook *hook, APTR key1, APTR key2)
-{
-	if(key1 == key2) return 0;
-	if(key1 < key2) return -1;
-	return 1;
-}
-#endif
-
-#ifdef __amigaos4__
-static void ami_font_cleanup(struct SkipList *skiplist)
-{
-	struct ami_font_node *node;
-	struct ami_font_node *nnode;
-	struct TimeVal curtime;
-
-	node = (struct ami_font_node *)GetFirstSkipNode(skiplist);
-	if(node == NULL) return;
-
-	do {
-		nnode = (struct ami_font_node *)GetNextSkipNode(skiplist, (struct SkipNode *)node);
-		GetSysTime(&curtime);
-		SubTime(&curtime, &node->lastused);
-		if(curtime.Seconds > 300)
-		{
-			LOG("Freeing font %lx not used for %ld seconds", node->skip_node.sn_Key, curtime.Seconds);
-			ami_font_close(node);
-			RemoveSkipNode(skiplist, node->skip_node.sn_Key);
-		}
-	} while((node = nnode));
-
-	/* reschedule to run in five minutes */
-	ami_schedule(300000, (void *)ami_font_cleanup, ami_font_list);
-}
-#else
-static void ami_font_cleanup(struct MinList *ami_font_list)
-{
-	struct nsObject *node;
-	struct nsObject *nnode;
-	struct ami_font_node *fnode;
-	struct TimeVal curtime;
-
-	if(IsMinListEmpty(ami_font_list)) return;
-
-	node = (struct nsObject *)GetHead((struct List *)ami_font_list);
-
-	do
-	{
-		nnode=(struct nsObject *)GetSucc((struct Node *)node);
-		fnode = node->objstruct;
-		GetSysTime(&curtime);
-		SubTime(&curtime, &fnode->lastused);
-		if(curtime.Seconds > 300)
-		{
-			LOG("Freeing %s not used for %ld seconds", node->dtz_Node.ln_Name, curtime.Seconds);
-			DelObject(node);
-		}
-	} while((node=nnode));
-
-	/* reschedule to run in five minutes */
-	ami_schedule(300000, (void *)ami_font_cleanup, ami_font_list);
-}
-#endif
-
 void ami_init_fonts(void)
 {
 	/* Initialise Unicode font scanner */
 	ami_font_initscanner(false, true);
 
 	/* Initialise font caching etc lists */
-#ifdef __amigaos4__
-	ami_font_cache_hook.h_Entry = (HOOKFUNC)ami_font_cache_sort;
-	ami_font_cache_hook.h_Data = 0;
-	ami_font_list = CreateSkipList(&ami_font_cache_hook, 8);
-#else
-	ami_font_list = NewObjList();
-#endif
+	ami_font_cache_init();
 
+	/* List for diskfont internal cache */
 	NewList(&ami_diskfontlib_list);
-
-	/* run first cleanup in ten minutes */
-	ami_schedule(600000, (void *)ami_font_cleanup, ami_font_list);
 }
-
-#ifdef __amigaos4__
-static void ami_font_del_skiplist(struct SkipList *skiplist)
-{
-	struct ami_font_node *node;
-	struct SkipNode *nnode;
-
-	node = (struct ami_font_node *)GetFirstSkipNode(skiplist);
-	if(node == NULL) return;
-
-	do {
-		nnode = GetNextSkipNode(skiplist, (struct SkipNode *)node);
-		ami_font_close(node);
-		
-	} while((node = nnode));
-
-	DeleteSkipList(skiplist);
-}
-#endif
 
 void ami_close_fonts(void)
 {
-	LOG("Cleaning up font cache");
-	ami_schedule(-1, (void *)ami_font_cleanup, ami_font_list);
-#ifdef __amigaos4__
-	ami_font_del_skiplist(ami_font_list);
-#else
-	FreeObjList(ami_font_list);
-#endif
-	ami_font_list = NULL;
+	ami_font_cache_fini();
 	ami_font_finiscanner();
 }
 
