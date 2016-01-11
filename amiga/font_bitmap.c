@@ -210,8 +210,6 @@ bool amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 		*char_offset = length;
 	}
 
-	ami_font_bm_close(bmfont);
-
 	return true;
 }
 
@@ -226,6 +224,8 @@ ULONG ami_font_bm_text(struct RastPort *rp, const char *string, ULONG length,
 		Text(rp, localtext, length);
 		free(localtext);
 	}
+
+	ami_font_bm_close(bmfont);
 
 	return 0;
 }
