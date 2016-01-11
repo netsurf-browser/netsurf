@@ -151,7 +151,6 @@
 #include "amiga/sslcert.h"
 
 #define AMINS_SCROLLERPEN NUMDRIPENS
-
 #define NSA_KBD_SCROLL_PX 10
 
 /* Extra mouse button defines to match those in intuition/intuition.h */
@@ -159,6 +158,12 @@
 #define SIDEUP    (IECODE_4TH_BUTTON | IECODE_UP_PREFIX)
 #define EXTRADOWN (IECODE_5TH_BUTTON)
 #define EXTRAUP   (IECODE_5TH_BUTTON | IECODE_UP_PREFIX)
+
+#ifdef __amigaos4__
+#define NSA_STATUS_TEXT GA_Text
+#else
+#define NSA_STATUS_TEXT STRINGA_TextVal
+#endif
 
 static bool ami_quit = false;
 
@@ -176,8 +181,6 @@ static Class *urlStringClass;
 
 static BOOL locked_screen = FALSE;
 static int screen_signal = -1;
-static ULONG sz_gad_width = 0;
-static ULONG sz_gad_height = 0;
 static bool win_destroyed;
 static STRPTR nsscreentitle;
 
@@ -1807,10 +1810,13 @@ static void ami_gui_refresh_favicon(void *p)
 /* Gets the size that border gadget 1 (status) needs to be.
  * Returns the width of the size gadget as a convenience.
  */
+#ifdef __amigaos4__
 static ULONG ami_get_border_gadget_size(struct gui_window_2 *gwin, ULONG *width, ULONG *height)
 {
+	static ULONG sz_gad_width = 0;
+	static ULONG sz_gad_height = 0;
 	ULONG available_width;
-#ifdef __amigaos4__
+
 	if((sz_gad_width == 0) || (sz_gad_height == 0)) {
 		struct DrawInfo *dri = GetScreenDrawInfo(scrn);
 		GetGUIAttrs(NULL, dri,
@@ -1819,7 +1825,6 @@ static ULONG ami_get_border_gadget_size(struct gui_window_2 *gwin, ULONG *width,
 		TAG_DONE);
 		FreeScreenDrawInfo(scrn, dri);
 	}
-#endif
 	available_width = gwin->win->Width - scrn->WBorLeft - sz_gad_width;
 
 	*width = available_width;
@@ -1827,9 +1832,11 @@ static ULONG ami_get_border_gadget_size(struct gui_window_2 *gwin, ULONG *width,
 
 	return sz_gad_width;
 }
+#endif
 
 static void ami_set_border_gadget_size(struct gui_window_2 *gwin)
 {
+#ifdef __amigaos4__
 	/* Reset gadget widths according to new calculation */
 	ULONG size1, size2, sz;
 
@@ -1841,6 +1848,7 @@ static void ami_set_border_gadget_size(struct gui_window_2 *gwin)
 			TAG_DONE);
 
 	RefreshWindowFrame(gwin->win);
+#endif
 }
 
 static void ami_handle_msg(void)
@@ -4228,11 +4236,21 @@ gui_window_create(struct browser_window *bw,
 				LayoutEnd,
 				CHILD_WeightedHeight,0,
 				LAYOUT_AddChild, g->shared->objects[GID_VSCROLLLAYOUT] = LayoutHObj,
-					LAYOUT_AddChild, g->shared->objects[GID_HSCROLLLAYOUT] = LayoutVObj,
-						LAYOUT_AddChild, g->shared->objects[GID_BROWSER] = SpaceObj,
-							GA_ID,GID_BROWSER,
-							SPACE_Transparent,TRUE,
-						SpaceEnd,
+					LAYOUT_AddChild, LayoutVObj,
+						LAYOUT_AddChild, g->shared->objects[GID_HSCROLLLAYOUT] = LayoutVObj,
+							LAYOUT_AddChild, g->shared->objects[GID_BROWSER] = SpaceObj,
+								GA_ID,GID_BROWSER,
+								SPACE_Transparent,TRUE,
+							SpaceEnd,
+						EndGroup,
+#ifndef __amigaos4__
+						LAYOUT_AddChild, g->shared->objects[GID_STATUS] = StringObj,
+							GA_ID, GID_STATUS,
+								GA_ReadOnly, TRUE,
+	             				STRINGA_TextVal, NULL,
+							GA_RelVerify, TRUE,
+						StringEnd,
+#endif
 					EndGroup,
 				EndGroup,
 			EndGroup,
@@ -4303,6 +4321,7 @@ gui_window_create(struct browser_window *bw,
 
 	if(nsoption_bool(kiosk_mode) == false)
 	{
+#ifdef __amigaos4__
 		ULONG sz, width, height;
 		struct DrawInfo *dri = GetScreenDrawInfo(scrn);
 		
@@ -4311,15 +4330,11 @@ gui_window_create(struct browser_window *bw,
 
 		g->shared->objects[GID_STATUS] = NewObject(
 				NULL,
-				"frbuttonclass", /**\todo find appropriate class which works on OS3 */
+				"frbuttonclass",
 				GA_ID, GID_STATUS,
 				GA_Left, scrn->WBorLeft + 2,
-#ifdef __amigaos4__
 				GA_RelBottom, scrn->WBorBottom - (height/2),
 				GA_BottomBorder, TRUE,
-#else
-				GA_Top, g->shared->win->Height,
-#endif
 				GA_Width, width,
 				GA_Height, 1 + height - scrn->WBorBottom,
 				GA_DrawInfo, dri,
@@ -4327,13 +4342,8 @@ gui_window_create(struct browser_window *bw,
 				GA_Disabled, TRUE,
 				GA_Image, (struct Image *)NewObject(
 					NULL,
-#ifdef __amigaos4__
 					"gaugeiclass",
 					GAUGEIA_Level, 0,
-#else
-					"frameiclass",
-					IA_Recessed, TRUE,
-#endif
 					IA_Top, (int)(- ceil((scrn->WBorBottom + height) / 2)),
 					IA_Left, -4,
 					IA_Height, 2 + height - scrn->WBorBottom, 
@@ -4357,7 +4367,7 @@ gui_window_create(struct browser_window *bw,
 				g->shared->win, NULL);
 				
 		FreeScreenDrawInfo(scrn, dri);
-				
+#endif //__amigaos4__				
 		ami_gui_hotlist_toolbar_add(g->shared); /* is this the right place for this? */
 		if(nsoption_bool(tab_always_show)) ami_toggletabbar(g->shared, true);
 	}
@@ -4993,7 +5003,7 @@ static void gui_window_set_status(struct gui_window *g, const char *text)
 
 		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_STATUS],
 			g->shared->win, NULL,
-			GA_Text, utf8text,
+			NSA_STATUS_TEXT, utf8text,
 			TAG_DONE);
 
 		RefreshGList((struct Gadget *)g->shared->objects[GID_STATUS],
