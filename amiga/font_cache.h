@@ -18,6 +18,9 @@
 
 #ifndef AMIGA_FONT_CACHE_H
 #define AMIGA_FONT_CACHE_H
+
+#include <proto/timer.h>
+
 struct ami_font_cache_node
 {
 #ifdef __amigaos4__

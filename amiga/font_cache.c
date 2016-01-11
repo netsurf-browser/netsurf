@@ -17,6 +17,7 @@
  */
 
 #include "amiga/os3support.h"
+#include <string.h>
 
 #include <proto/timer.h>
 #include <proto/utility.h>
