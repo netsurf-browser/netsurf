@@ -211,6 +211,8 @@ bool amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 		*char_offset = length;
 	}
 
+	ami_font_bm_close(bmfont);
+
 	return true;
 }
 
