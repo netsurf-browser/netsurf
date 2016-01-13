@@ -1,5 +1,6 @@
 /*
- * Copyright 2014 vincent Sanders <vince@netsurf-browser.org>
+ * Copyright 2007, 2014 Vincent Sanders <vince@netsurf-browser.org>
+ * Copyright 2007 Rob Kendrick <rjek@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -37,6 +38,9 @@
 #include "gtk/resources.h"
 #include "gtk/fetch.h"
 
+#define HASH_SIZE 117
+#define MAX_LINE_LEN 256
+
 static struct hash_table *mime_hash = NULL;
 
 void gtk_fetch_filetype_init(const char *mimefile)
@@ -44,7 +48,7 @@ void gtk_fetch_filetype_init(const char *mimefile)
 	struct stat statbuf;
 	FILE *fh = NULL;
 
-	mime_hash = hash_create(117);
+	mime_hash = hash_create(HASH_SIZE);
 
 	/* first, check to see if /etc/mime.types in preference */
 
@@ -78,13 +82,13 @@ void gtk_fetch_filetype_init(const char *mimefile)
 		return;
 	}
 
-	while (!feof(fh)) {
-		char line[256], *ptr, *type, *ext;
+	while (feof(fh) == 0) {
+		char line[MAX_LINE_LEN], *ptr, *type, *ext;
 
-		if (fgets(line, 256, fh) == NULL)
+		if (fgets(line, sizeof(line), fh) == NULL)
 			break;
 
-		if (!feof(fh) && line[0] != '#') {
+		if ((feof(fh) == 0) && line[0] != '#') {
 			ptr = line;
 
 			/* search for the first non-whitespace character */
@@ -120,7 +124,7 @@ void gtk_fetch_filetype_init(const char *mimefile)
 				ptr++;
 			}
 
-			while(true) {
+			while (true) {
 				ext = ptr;
 
 				/* search for the first whitespace char or
