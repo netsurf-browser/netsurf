@@ -100,20 +100,38 @@ static void ami_font_bm_close(struct TextFont *bmfont)
 	CloseFont(bmfont);
 }
 
+static size_t ami_font_bm_convert_local_to_utf8_offset(const char *utf8string, int length, size_t offset)
+{
+	size_t chr = 0;
+
+	for(int i = 0; i < offset; i++) {
+		chr = utf8_next(utf8string, length, chr);
+	}
+	
+	return chr;
+}
+
+
 bool amiga_bm_nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
-	*width = length;
+	char *localtext = NULL;
 
 	if((glob == NULL) || (glob->rp == NULL)) return false;
+	*width = length;
 
 	struct TextFont *bmfont = ami_font_bm_open(glob->rp, fstyle);
-
 	if(bmfont == NULL) return false;
 
-// convert to local charset
-	*width = TextLength(glob->rp, string, length);
+	if(utf8_to_local_encoding(string, length, &localtext) != NSERROR_OK) {
+		ami_font_bm_close(bmfont);
+		return false;
+	}
+
+	*width = TextLength(glob->rp, localtext, strlen(localtext));
+	free(localtext);
+
 	ami_font_bm_close(bmfont);
 
 	return true;
@@ -137,19 +155,25 @@ bool amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyle,
 {
 	struct TextExtent extent;
 	struct TextFont *bmfont;
+	char *localtext = NULL;
+	size_t co = 0;
 
 	if((glob == NULL) || (glob->rp == NULL)) return false;
 
 	bmfont = ami_font_bm_open(glob->rp, fstyle);
-
 	if(bmfont == NULL) return false;
 
-	// convert to local charset
-	*char_offset = TextFit(glob->rp, string, length,
-						&extent, NULL, 1, x, 32767);
+	if(utf8_to_local_encoding(string, length, &localtext) != NSERROR_OK) {
+		ami_font_bm_close(bmfont);
+		return false;
+	}
 
+	co = TextFit(glob->rp, localtext, strlen(localtext),
+						&extent, NULL, 1, x, 32767);
+	*char_offset = ami_font_bm_convert_local_to_utf8_offset(string, length, co);
 	*actual_x = extent.te_Extent.MaxX;
 
+	free(localtext);
 	ami_font_bm_close(bmfont);
 
 	return true;
@@ -184,33 +208,50 @@ bool amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 		int x, size_t *char_offset, int *actual_x)
 {
 	struct TextExtent extent;
-	ULONG co;
+	size_t co, offset;
 	char *charp;
+	char *localtext;
 
 	if((glob == NULL) || (glob->rp == NULL)) return false;
 
 	struct TextFont *bmfont = ami_font_bm_open(glob->rp, fstyle);
-
 	if(bmfont == NULL) return false;
 
-	co = TextFit(glob->rp, string, length,
+	if(utf8_to_local_encoding(string, length, &localtext) != NSERROR_OK) {
+		ami_font_bm_close(bmfont);
+		return false;
+	}
+	
+	offset = TextFit(glob->rp, localtext, strlen(localtext),
 				&extent, NULL, 1, x, 32767);
 
-	charp = string + co;
+	co = offset;
+	charp = localtext + co;
+	
 
-	while(((*charp != ' ')) && (charp > string)) {
+	while((*charp != ' ') && (co > 0)) {
 		charp--;
 		co--;
 	}
 
-	if(co > 0) {
-		*actual_x = TextLength(glob->rp, string, co);
-		*char_offset = co;
+	if(co == 0) {
+		co = offset;
+		charp = localtext + co;
+		while((*charp != ' ') && (co < strlen(localtext))) {
+			charp++;
+			co++;
+		}
+	}
+	
+	if((co > 0) && (co < strlen(localtext))) {
+		*actual_x = TextLength(glob->rp, localtext, co);
+		*char_offset = ami_font_bm_convert_local_to_utf8_offset(string, length, co);
 	} else {
 		*actual_x = x;
 		*char_offset = length;
 	}
 
+	free(localtext);
 	ami_font_bm_close(bmfont);
 
 	return true;
@@ -224,7 +265,7 @@ ULONG ami_font_bm_text(struct RastPort *rp, const char *string, ULONG length,
 	if(bmfont == NULL) return 0;
 	if(utf8_to_local_encoding(string, length, &localtext) == NSERROR_OK) {
 		Move(rp, dx, dy);
-		Text(rp, localtext, length);
+		Text(rp, localtext, strlen(localtext));
 		free(localtext);
 	}
 
