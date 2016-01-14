@@ -112,7 +112,7 @@ HOOKF(void, ami_ctxmenu_item_websearch, APTR, window, struct IntuiMessage *)
 	nsurl *url;
 
 	struct gui_window_2 *gwin = (struct gui_window_2 *)hook->h_Data;
-	const char *sel = browser_window_get_selection(gwin->gw->bw);
+	char *sel = browser_window_get_selection(gwin->gw->bw);
 
 	ret = search_web_omni(sel, SEARCH_WEB_OMNI_SEARCHONLY, &url);
 	if (ret == NSERROR_OK) {
@@ -128,6 +128,8 @@ HOOKF(void, ami_ctxmenu_item_websearch, APTR, window, struct IntuiMessage *)
 	if (ret != NSERROR_OK) {
 		warn_user(messages_get_errorcode(ret), 0);
 	}
+
+	free(sel);
 }
 
 HOOKF(void, ami_ctxmenu_item_urlopentab, APTR, window, struct IntuiMessage *)
@@ -290,6 +292,7 @@ static uint32 ami_ctxmenu_hook_func(struct Hook *hook, struct Window *window, st
 	int mx = window->MouseX;
 	int my = window->MouseY;
 	int x, y;
+	char *sel;
 
 	if(msg->State != CM_QUERY) return 0;
 	if(nsoption_bool(kiosk_mode) == true) return 0;
@@ -315,12 +318,14 @@ static uint32 ami_ctxmenu_hook_func(struct Hook *hook, struct Window *window, st
 	browser_window_get_features(gwin->gw->bw, x, y, &ccdata);
 
 	if((browser_window_can_select(gwin->gw->bw)) &&
-		((browser_window_get_editor_flags(gwin->gw->bw) & BW_EDITOR_CAN_COPY))) {
+		((browser_window_get_editor_flags(gwin->gw->bw) & BW_EDITOR_CAN_COPY)) &&
+		(sel = browser_window_get_selection(gwin->gw->bw))) {
 
 		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_SELCOPY, gwin);
 		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_WEBSEARCH, gwin);
 
 		ctxmenu_has_content = true;
+		free(sel);
 	}
 
 	if(ccdata.link) {
