@@ -48,9 +48,7 @@
 #include "amiga/rtg.h"
 #include "amiga/utf8.h"
 
-#ifdef __amigaos4__
-static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct BackFillMessage *bfmsg);
-#endif
+HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage *);
 
 struct bfbitmap {
 	struct BitMap *bm;
@@ -614,7 +612,7 @@ static bool ami_bitmap_tile(int x, int y, int width, int height,
 
 	tbm = ami_bitmap_get_native(bitmap,width,height,glob->rp->BitMap);
 	if(!tbm) return true;
-#ifdef __amigaos4__
+
 	ox = x;
 	oy = y;
 
@@ -650,7 +648,7 @@ static bool ami_bitmap_tile(int x, int y, int width, int height,
 		yf = y + height;
 		ym = y;
 	}
-
+#ifdef __amigaos4__
 	if(bitmap->opaque)
 	{
 		bfh = CreateBackFillHook(BFHA_BitMap,tbm,
@@ -661,6 +659,7 @@ static bool ami_bitmap_tile(int x, int y, int width, int height,
 							TAG_DONE);
 	}
 	else
+#endif
 	{
 		bfbm.bm = tbm;
 		bfbm.width = width;
@@ -668,82 +667,50 @@ static bool ami_bitmap_tile(int x, int y, int width, int height,
 		bfbm.offsetx = ox;
 		bfbm.offsety = oy;
 		bfbm.mask = ami_bitmap_get_mask(bitmap, width, height, tbm);
-		bfh = AllocVecTags(sizeof(struct Hook), AVT_ClearWithValue, 0, TAG_DONE); /* NB: Was not MEMF_PRIVATE */
+		bfh = ami_misc_allocvec_clear(sizeof(struct Hook), 0); /* NB: Was not MEMF_PRIVATE */
 		bfh->h_Entry = (HOOKFUNC)ami_bitmap_tile_hook;
 		bfh->h_SubEntry = 0;
 		bfh->h_Data = &bfbm;
 	}
 
 	InstallLayerHook(glob->rp->Layer,bfh);
-
 	EraseRect(glob->rp,xm,ym,xf,yf);
-
 	InstallLayerHook(glob->rp->Layer,LAYERS_NOBACKFILL);
+
+#ifdef __amigaos4__
 	if(bitmap->opaque) DeleteBackFillHook(bfh);
-		else FreeVec(bfh);
-#else
-	/* get left most tile position */
-	if (repeat_x)
-		for (; x > glob->rect.MinX; x -= width)
-			;
-
-	/* get top most tile position */
-	if (repeat_y)
-		for (; y > glob->rect.MinY; y -= height)
-			;
-
-	/* tile down and across to extents */
-	for (xf = x; xf < glob->rect.MaxX; xf += width) {
-		for (yf = y; yf < glob->rect.MaxY; yf += height) {
-
-			ULONG tag, tag_data = NULL, minterm = 0xc0;
-		
-			if(bitmap->opaque) {
-				minterm = 0xc0;
-			} else {
-				if((tag_data = (ULONG)ami_bitmap_get_mask(bitmap, width, height, tbm)))
-					minterm = (ABC|ABNC|ANBC);
-			}
-
-			if(tag_data) {
-				BltMaskBitMapRastPort(tbm, 0, 0, glob->rp, x, y, width, height, minterm, tag_data);
-			} else {
-				BltBitMapRastPort(tbm, 0, 0, glob->rp, x, y, width, height, 0xc0);
-			}
-		}
-	}
+		else
 #endif
+		FreeVec(bfh);
 
-	if((bitmap->dto == NULL) && (tbm != bitmap->nativebm))
-	{
+	if((bitmap->dto == NULL) && (tbm != bitmap->nativebm)) {
 		ami_rtg_freebitmap(tbm);
 	}
 
 	return true;
 }
 
-#ifdef __amigaos4__
-static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct BackFillMessage *bfmsg)
+HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage *)
 {
 	int xf,yf;
 	struct bfbitmap *bfbm = (struct bfbitmap *)hook->h_Data;
 
-	/* tile down and across to extents  (bfmsg->Bounds.MinX)*/
-	for (xf = -bfbm->offsetx; xf < bfmsg->Bounds.MaxX; xf += bfbm->width) {
-		for (yf = -bfbm->offsety; yf < bfmsg->Bounds.MaxY; yf += bfbm->height) {
+	/* tile down and across to extents  (msg->Bounds.MinX)*/
+	for (xf = -bfbm->offsetx; xf < msg->Bounds.MaxX; xf += bfbm->width) {
+		for (yf = -bfbm->offsety; yf < msg->Bounds.MaxY; yf += bfbm->height) {
 #ifdef __amigaos4__
 			if(__builtin_expect((GfxBase->LibNode.lib_Version >= 53) &&
 				(palette_mapped == false), 1)) {
 				CompositeTags(COMPOSITE_Src_Over_Dest, bfbm->bm, rp->BitMap,
 					COMPTAG_Flags, COMPFLAG_IgnoreDestAlpha,
-					COMPTAG_DestX,bfmsg->Bounds.MinX,
-					COMPTAG_DestY,bfmsg->Bounds.MinY,
-					COMPTAG_DestWidth,bfmsg->Bounds.MaxX - bfmsg->Bounds.MinX + 1,
-					COMPTAG_DestHeight,bfmsg->Bounds.MaxY - bfmsg->Bounds.MinY + 1,
-					COMPTAG_SrcWidth,bfbm->width,
-					COMPTAG_SrcHeight,bfbm->height,
-					COMPTAG_OffsetX,xf,
-					COMPTAG_OffsetY,yf,
+					COMPTAG_DestX, msg->Bounds.MinX,
+					COMPTAG_DestY, msg->Bounds.MinY,
+					COMPTAG_DestWidth, msg->Bounds.MaxX - msg->Bounds.MinX + 1,
+					COMPTAG_DestHeight, msg->Bounds.MaxY - msg->Bounds.MinY + 1,
+					COMPTAG_SrcWidth, bfbm->width,
+					COMPTAG_SrcHeight, bfbm->height,
+					COMPTAG_OffsetX, xf,
+					COMPTAG_OffsetY, yf,
 					COMPTAG_FriendBitMap, scrn->RastPort.BitMap,
 					TAG_DONE);
 			}
@@ -761,7 +728,7 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 					if((tag_data = (ULONG)bfbm->mask))
 						minterm = MINTERM_SRCMASK;
 				}
-		
+#ifdef __amigaos4__
 				BltBitMapTags(BLITA_Width, bfbm->width,
 					BLITA_Height, bfbm->height,
 					BLITA_Source, bfbm->bm,
@@ -773,11 +740,19 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 					BLITA_Minterm, minterm,
 					tag, tag_data,
 					TAG_DONE);
+#else
+				if(tag_data) {
+					BltMaskBitMapRastPort(bfbm->bm, 0, 0, rp, xf, yf,
+						bfbm->width, bfbm->height, minterm, tag_data);
+				} else {
+					BltBitMapRastPort(bfbm->bm, 0, 0, rp, xf, yf,
+						bfbm->width, bfbm->height, minterm);
+				}
+#endif
 			}			
 		}
 	}
 }
-#endif
 
 static void ami_bezier(struct bez_point *a, struct bez_point *b, struct bez_point *c,
 			struct bez_point *d, double t, struct bez_point *p) {

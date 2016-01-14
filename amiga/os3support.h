@@ -198,6 +198,14 @@ struct OutlineFont {
 	struct TagItem *olf_OTagList;
 };
 
+/* BackFillMessage */
+struct BackFillMessage {
+    struct Layer *Layer;
+    struct Rectangle Bounds;
+    LONG OffsetX;
+    LONG OffsetY;
+};
+
 /* icon.library v51 (ie. AfA_OS version) */
 #define ICONCTRLA_SetImageDataFormat        (ICONA_Dummy + 0x67) /*103*/
 #define ICONCTRLA_GetImageDataFormat        (ICONA_Dummy + 0x68) /*104*/
