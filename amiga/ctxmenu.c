@@ -47,6 +47,7 @@
 #include "desktop/browser.h"
 #include "desktop/browser_history.h"
 #include "desktop/mouse.h"
+#include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 
 #include "utils/log.h"
@@ -58,6 +59,7 @@ enum {
 
 	/* Text selection */
 	AMI_CTX_ID_SELCOPY,
+	AMI_CTX_ID_WEBSEARCH,
 
 	/* Links */
 	AMI_CTX_ID_URLOPENTAB,
@@ -102,6 +104,30 @@ HOOKF(void, ami_ctxmenu_item_selcopy, APTR, window, struct IntuiMessage *)
 
 	browser_window_key_press(gwin->gw->bw, NS_KEY_COPY_SELECTION);
 	browser_window_key_press(gwin->gw->bw, NS_KEY_CLEAR_SELECTION);
+}
+
+HOOKF(void, ami_ctxmenu_item_websearch, APTR, window, struct IntuiMessage *)
+{
+	nserror ret = NSERROR_OK;
+	nsurl *url;
+
+	struct gui_window_2 *gwin = (struct gui_window_2 *)hook->h_Data;
+	const char *sel = browser_window_get_selection(gwin->gw->bw);
+
+	ret = search_web_omni(sel, SEARCH_WEB_OMNI_SEARCHONLY, &url);
+	if (ret == NSERROR_OK) {
+			browser_window_navigate(gwin->gw->bw,
+					url,
+					NULL,
+					BW_NAVIGATE_HISTORY,
+					NULL,
+					NULL,
+					NULL);
+		nsurl_unref(url);
+	}
+	if (ret != NSERROR_OK) {
+		warn_user(messages_get_errorcode(ret), 0);
+	}
 }
 
 HOOKF(void, ami_ctxmenu_item_urlopentab, APTR, window, struct IntuiMessage *)
@@ -292,6 +318,7 @@ static uint32 ami_ctxmenu_hook_func(struct Hook *hook, struct Window *window, st
 		((browser_window_get_editor_flags(gwin->gw->bw) & BW_EDITOR_CAN_COPY))) {
 
 		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_SELCOPY, gwin);
+		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_WEBSEARCH, gwin);
 
 		ctxmenu_has_content = true;
 	}
@@ -417,6 +444,8 @@ void ami_ctxmenu_init(void)
 
 	ami_ctxmenu_alloc_item(AMI_CTX_ID_SELCOPY, 		"CopyNS",		"C",	"TBImages:list_copy",
 		ami_ctxmenu_item_selcopy);
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_WEBSEARCH, 	"SearchWeb",	NULL,	"TBImages:list_search",
+		ami_ctxmenu_item_websearch);
 
 	ami_ctxmenu_alloc_item(AMI_CTX_ID_URLOPENTAB, 	"LinkNewTab",	NULL,	"TBImages:list_tab",
 		ami_ctxmenu_item_urlopentab);
