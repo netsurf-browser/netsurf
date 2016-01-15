@@ -142,7 +142,6 @@ bool amiga_icon_convert(struct content *c)
 	ULONG size;
 	int width = 0, height = 0;
 	long format = 0;
-	int err;
 	uint8 r, g, b, a;
 	ULONG offset;
 	char *filename = NULL;
@@ -171,7 +170,7 @@ bool amiga_icon_convert(struct content *c)
 		return false;
 	}
 
-	err = IconControl(dobj,
+	IconControl(dobj,
 			ICONCTRLA_GetImageDataFormat,&format,
 			ICONCTRLA_GetWidth,&width,
 			ICONCTRLA_GetHeight,&height,
@@ -199,7 +198,7 @@ bool amiga_icon_convert(struct content *c)
 		return false;
 	}
 
-	err = IconControl(dobj,
+	IconControl(dobj,
 			ICONCTRLA_GetImageData1, &imagebufptr,
 			TAG_DONE);
 
@@ -365,11 +364,10 @@ void amiga_icon_superimpose_favicon_internal(struct hlcache_handle *icon, struct
 	ULONG *icondata1, *icondata2;
 	ULONG width, height;
 	long format = 0;
-	int err;
 
 	if(dobj == NULL) return;
 
-	err = IconControl(dobj,
+	IconControl(dobj,
                   ICONCTRLA_GetImageDataFormat,&format,
                   ICONCTRLA_GetImageData1,&icondata1,
                   ICONCTRLA_GetImageData2,&icondata2,
@@ -421,7 +419,6 @@ void amiga_icon_superimpose_favicon(char *path, struct hlcache_handle *icon, cha
 	ULONG *icondata1, *icondata2;
 	ULONG width, height;
 	long format = 0;
-	int err;
 	ULONG trans1, pals1;
 	ULONG trans2, pals2;
 	struct ColorRegister *pal1;
@@ -444,7 +441,7 @@ void amiga_icon_superimpose_favicon(char *path, struct hlcache_handle *icon, cha
 
 	if(dobj == NULL) return;
 
-	err = IconControl(dobj,
+	IconControl(dobj,
                   ICONCTRLA_GetImageDataFormat,&format,
                   ICONCTRLA_GetImageData1,&icondata1,
                   ICONCTRLA_GetImageData2,&icondata2,
@@ -469,7 +466,7 @@ void amiga_icon_superimpose_favicon(char *path, struct hlcache_handle *icon, cha
 		icondata2 = amiga_icon_convertcolouricon32((UBYTE *)icondata2,
 						width, height, trans2, pals2, pal2, 0xff);
 
-		err = IconControl(dobj,
+		IconControl(dobj,
                   ICONCTRLA_SetImageDataFormat, IDFMT_DIRECTMAPPED,
                   ICONCTRLA_SetImageData1, icondata1,
                   ICONCTRLA_SetImageData2, icondata2,

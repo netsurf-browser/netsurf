@@ -183,7 +183,7 @@ void ami_drag_save(struct Window *win)
 		break;
 
 		default:
-			LOG("Unsupported drag save operation %ld", drag_save);
+			LOG("Unsupported drag save operation %d", drag_save);
 		break;
 	}
 
@@ -197,7 +197,6 @@ void ami_drag_icon_show(struct Window *win, const char *type)
 {
 	struct DiskObject *dobj = NULL;
 	ULONG width, height;
-	int err;
 	int deftype = WBPROJECT;
 
 	drag_in_progress = TRUE;
@@ -218,7 +217,7 @@ void ami_drag_icon_show(struct Window *win, const char *type)
 					    ICONGETA_GetDefaultType, deftype,
 					    TAG_DONE);
 
-	err = IconControl(dobj,
+	IconControl(dobj,
                   ICONCTRLA_GetWidth,&width,
                   ICONCTRLA_GetHeight,&height,
                   TAG_DONE);

@@ -145,7 +145,7 @@ void ami_arexx_execute(char *script)
 	char full_script_path[1025];
 	BPTR lock;
 
-	if(lock = Lock(script, ACCESS_READ)) {
+	if((lock = Lock(script, ACCESS_READ))) {
 		DevNameFromLock(lock, full_script_path, 1024, DN_FULLPATH);
 		LOG("Executing script: %s", full_script_path);
 		IDoMethod(arexx_obj, AM_EXECUTE, full_script_path, NULL, NULL, NULL, NULL, NULL);
