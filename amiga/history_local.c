@@ -190,7 +190,7 @@ static bool ami_history_click(struct history_window *hw, uint16 code)
 {
 	int x, y;
 	struct IBox *bbox;
-	ULONG width,height,xs,ys;
+	ULONG xs, ys;
 
 	if(ami_gui_get_space_box(hw->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
 		warn_user("NoMemory", "");
@@ -201,9 +201,6 @@ static bool ami_history_click(struct history_window *hw, uint16 code)
 	x = hw->win->MouseX - bbox->Left +xs;
 	GetAttr(SCROLLER_Top,hw->objects[OID_VSCROLL],(ULONG *)&ys);
 	y = hw->win->MouseY - bbox->Top + ys;
-
-	width=bbox->Width;
-	height=bbox->Height;
 
 	ami_gui_free_space_box(bbox);
 

@@ -1838,9 +1838,9 @@ static void ami_set_border_gadget_size(struct gui_window_2 *gwin)
 {
 #ifdef __amigaos4__
 	/* Reset gadget widths according to new calculation */
-	ULONG size1, size2, sz;
+	ULONG size1, size2;
 
-	sz = ami_get_border_gadget_size(gwin, &size1, &size2);
+	ami_get_border_gadget_size(gwin, &size1, &size2);
 
 	RefreshSetGadgetAttrs((struct Gadget *)(APTR)gwin->objects[GID_STATUS],
 			gwin->win, NULL,
@@ -4322,10 +4322,10 @@ gui_window_create(struct browser_window *bw,
 	if(nsoption_bool(kiosk_mode) == false)
 	{
 #ifdef __amigaos4__
-		ULONG sz, width, height;
+		ULONG width, height;
 		struct DrawInfo *dri = GetScreenDrawInfo(scrn);
 		
-		sz = ami_get_border_gadget_size(g->shared,
+		ami_get_border_gadget_size(g->shared,
 				(ULONG *)&width, (ULONG *)&height);
 
 		g->shared->objects[GID_STATUS] = NewObject(

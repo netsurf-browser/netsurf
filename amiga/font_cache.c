@@ -110,7 +110,7 @@ static void ami_font_cache_cleanup(struct MinList *ami_font_cache_list)
 #ifdef __amigaos4__
 static void ami_font_cache_del_skiplist(struct SkipList *skiplist)
 {
-	struct ami_font_cache_node *node;
+	struct SkipNode *node;
 	struct SkipNode *nnode;
 
 	node = (struct ami_font_cache_node *)GetFirstSkipNode(skiplist);

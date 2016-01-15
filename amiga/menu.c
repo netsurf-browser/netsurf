@@ -124,10 +124,9 @@ HOOKF(void, ami_menu_item_project_newwin, APTR, window, struct IntuiMessage *)
 HOOKF(void, ami_menu_item_project_newtab, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
-	nserror error;
 
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-	error = ami_gui_new_blank_tab(gwin);
+	ami_gui_new_blank_tab(gwin);
 }
 
 HOOKF(void, ami_menu_item_project_open, APTR, window, struct IntuiMessage *)
@@ -792,7 +791,7 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 {
 	int i, j;
 	int txtlen = 0;
-	int left_posn;
+	int left_posn = 0;
 	struct RastPort *rp = &scrn->RastPort;
 	struct DrawInfo *dri = GetScreenDrawInfo(scrn);
 	int space_width = TextLength(rp, " ", 1);
