@@ -3016,7 +3016,7 @@ static void gui_quit(void)
 
 	ami_free_layers(&browserglob);
 
-	ami_close_fonts();
+	ami_font_fini();
 	ami_help_free();
 	
 	LOG("Closing screen");
@@ -5633,7 +5633,7 @@ int main(int argc, char** argv)
 	ami_clipboard_init();
 	ami_openurl_open();
 	ami_amiupdate(); /* set env-vars for AmiUpdate */
-	ami_init_fonts();
+	ami_font_init();
 	save_complete_init();
 	ami_theme_init();
 	ami_init_mouse_pointers();

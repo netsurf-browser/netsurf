@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 - 2015 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2016 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -112,7 +112,7 @@ static size_t ami_font_bm_convert_local_to_utf8_offset(const char *utf8string, i
 }
 
 
-bool amiga_bm_nsfont_width(const plot_font_style_t *fstyle,
+static bool amiga_bm_nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
@@ -149,7 +149,7 @@ bool amiga_bm_nsfont_width(const plot_font_style_t *fstyle,
  * \return  true on success, false on error and error reported
  */
 
-bool amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyle,
+static bool amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -203,7 +203,7 @@ bool amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyle,
  * Returning char_offset == length means no split possible
  */
 
-bool amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
+static bool amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -243,7 +243,7 @@ bool amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 		}
 	}
 	
-	if((co > 0) && (co < strlen(localtext))) {
+	if((co > 0) && (co <= strlen(localtext))) {
 		*actual_x = TextLength(glob->rp, localtext, co);
 		*char_offset = ami_font_bm_convert_local_to_utf8_offset(string, length, co);
 	} else {
@@ -257,9 +257,13 @@ bool amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 	return true;
 }
 
-ULONG ami_font_bm_text(struct RastPort *rp, const char *string, ULONG length,
-			const plot_font_style_t *fstyle, ULONG dx, ULONG dy)
+static ULONG amiga_bm_nsfont_text(struct RastPort *rp, const char *string, ULONG length,
+			const plot_font_style_t *fstyle, ULONG dx, ULONG dy, bool aa)
 {
+	if(!string || string[0]=='\0') return 0;
+	if(!length) return 0;
+	if(rp == NULL) return 0;
+
 	struct TextFont *bmfont = ami_font_bm_open(rp, fstyle);
 	char *localtext = NULL;
 	if(bmfont == NULL) return 0;
@@ -272,5 +276,18 @@ ULONG ami_font_bm_text(struct RastPort *rp, const char *string, ULONG length,
 	ami_font_bm_close(bmfont);
 
 	return 0;
+}
+
+const struct ami_font_functions ami_font_diskfont_table = {
+	amiga_bm_nsfont_width,
+	amiga_bm_nsfont_position_in_string,
+	amiga_bm_nsfont_split,
+	amiga_bm_nsfont_text
+};
+
+void ami_font_diskfont_init(void)
+{
+	/* Set up table */
+	ami_nsfont = &ami_font_diskfont_table;
 }
 
