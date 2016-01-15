@@ -104,7 +104,7 @@ static size_t ami_font_bm_convert_local_to_utf8_offset(const char *utf8string, s
 {
 	size_t chr = 0;
 
-	for(WORD i = 0; i < offset; i++) {
+	for(int i = 0; i < offset; i++) {
 		chr = utf8_next(utf8string, length, chr);
 	}
 	
