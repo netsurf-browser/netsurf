@@ -4996,7 +4996,7 @@ static void gui_window_set_status(struct gui_window *g, const char *text)
 		if(utf8text == NULL) return;
 
 		GetAttr(GA_Width, g->shared->objects[GID_STATUS], (ULONG *)&size);
-		chars = TextFit(&scrn->RastPort, utf8text, strlen(utf8text),
+		chars = TextFit(&scrn->RastPort, utf8text, (UWORD)strlen(utf8text),
 					&textex, NULL, 1, size - 4, scrn->RastPort.TxHeight);
 
 		utf8text[chars] = 0;
