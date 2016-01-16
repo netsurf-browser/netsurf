@@ -18,26 +18,20 @@
 
 #include "amiga/os3support.h"
 
-#include <assert.h>
-
 #include <proto/diskfont.h>
 #include <proto/exec.h>
 #include <proto/graphics.h>
-#include <proto/timer.h>
 #include <proto/utility.h>
 
 #include <graphics/rpattr.h>
 
 #include "utils/log.h"
 #include "utils/utf8.h"
-#include "utils/utils.h"
 #include "utils/nsoption.h"
-#include "desktop/browser.h"
 #include "desktop/font.h"
-#include "desktop/gui_window.h"
 
 #include "amiga/font.h"
-#include "amiga/font_cache.h"
+#include "amiga/font_diskfont.h"
 #include "amiga/gui.h"
 #include "amiga/utf8.h"
 

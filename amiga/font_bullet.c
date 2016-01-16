@@ -32,6 +32,7 @@
 #include <diskfont/oterrors.h>
 
 #include "amiga/font.h"
+#include "amiga/font_bullet.h"
 #include "amiga/font_cache.h"
 #include "amiga/font_scan.h"
 
@@ -842,24 +843,9 @@ static inline ULONG ami_font_unicode_width(const char *string, ULONG length,
 	return x;
 }
 
-void ami_font_initscanner(bool force, bool save)
+void ami_font_bullet_close(void *nso)
 {
-	ami_font_scan_init(nsoption_charp(font_unicode_file), force, save, glypharray);
-}
-
-void ami_font_finiscanner(void)
-{
-	ami_font_scan_fini(glypharray);
-}
-
-void ami_font_savescanner(void)
-{
-	ami_font_scan_save(nsoption_charp(font_unicode_file), glypharray);
-}
-
-void ami_font_close(struct ami_font_cache_node *node)
-{
-	/* Called from FreeObjList if node type is AMINS_FONT */
+	struct ami_font_cache_node *node = (struct ami_font_cache_node *)nso;
 	CloseOutlineFont(node->font, &ami_diskfontlib_list);
 }
 
@@ -889,5 +875,21 @@ void ami_font_bullet_fini(void)
 {
 	ami_font_cache_fini();
 	ami_font_finiscanner();
+}
+
+/* Font scanner */
+void ami_font_initscanner(bool force, bool save)
+{
+	ami_font_scan_init(nsoption_charp(font_unicode_file), force, save, glypharray);
+}
+
+void ami_font_finiscanner(void)
+{
+	ami_font_scan_fini(glypharray);
+}
+
+void ami_font_savescanner(void)
+{
+	ami_font_scan_save(nsoption_charp(font_unicode_file), glypharray);
 }
 

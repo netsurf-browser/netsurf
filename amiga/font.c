@@ -18,31 +18,19 @@
 
 #include "amiga/os3support.h"
 
-#include <assert.h>
-
-#ifndef __amigaos4__
-#include <proto/bullet.h>
-#endif
 #include <proto/diskfont.h>
 #include <proto/exec.h>
-
-#include <graphics/rpattr.h>
-
-#ifdef __amigaos4__
-#include <graphics/blitattr.h>
-#endif
+#include <proto/graphics.h>
 
 #include "utils/log.h"
-#include "utils/utils.h"
 #include "utils/nsoption.h"
 #include "desktop/browser.h"
 #include "desktop/font.h"
-#include "desktop/gui_window.h"
 
 #include "amiga/font.h"
+#include "amiga/font_bullet.h"
+#include "amiga/font_diskfont.h"
 #include "amiga/font_scan.h"
-#include "amiga/gui.h"
-#include "amiga/utf8.h"
 
 void ami_font_setdevicedpi(int id)
 {
@@ -51,7 +39,7 @@ void ami_font_setdevicedpi(int id)
 	ULONG ydpi = nsoption_int(screen_ydpi);
 	ULONG xdpi = nsoption_int(screen_ydpi);
 
-	if(nsoption_bool(use_diskfont) == true) {
+	if(nsoption_bool(bitmap_fonts) == true) {
 		LOG("WARNING: Using diskfont.library for text. Forcing DPI to 72.");
 		nsoption_int(screen_ydpi) = 72;
 	}
@@ -103,7 +91,7 @@ void ami_font_close_disk_font(struct TextFont *tfont)
 /* Font initialisation */
 void ami_font_init(void)
 {
-	if(nsoption_bool(use_diskfont) == false) {
+	if(nsoption_bool(bitmap_fonts) == false) {
 		ami_font_bullet_init();
 	} else {
 		ami_font_diskfont_init();
@@ -112,7 +100,7 @@ void ami_font_init(void)
 
 void ami_font_fini(void)
 {
-	if(nsoption_bool(use_diskfont) == false) {
+	if(nsoption_bool(bitmap_fonts) == false) {
 		ami_font_bullet_fini();
 	}
 }

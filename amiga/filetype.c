@@ -164,6 +164,15 @@ const char *ami_content_type_to_file_type(content_type type)
 	}
 }
 
+static void ami_mime_entry_free(void *nso)
+{
+	struct ami_mime_entry *mimeentry = (struct ami_mime_entry *)nso;
+
+	if(mimeentry->mimetype) lwc_string_unref(mimeentry->mimetype);
+	if(mimeentry->datatype) lwc_string_unref(mimeentry->datatype);
+	if(mimeentry->filetype) lwc_string_unref(mimeentry->filetype);
+	if(mimeentry->plugincmd) lwc_string_unref(mimeentry->plugincmd);
+}
 
 nserror ami_mime_init(const char *mimefile)
 {
@@ -205,40 +214,42 @@ nserror ami_mime_init(const char *mimefile)
 
 			if(ReadArgs(template, rarray, rargs))
 			{
-				node = AddObject(ami_mime_list, AMINS_MIME);
-				mimeentry = ami_misc_allocvec_clear(sizeof(struct ami_mime_entry), 0);
-				node->objstruct = mimeentry;
+				if ((node = AddObject(ami_mime_list, AMINS_MIME))) {
+					ObjectCallback(node, ami_mime_entry_free);
+					mimeentry = ami_misc_allocvec_clear(sizeof(struct ami_mime_entry), 0);
+					node->objstruct = mimeentry;
 
-				if(rarray[AMI_MIME_MIMETYPE])
-				{
-					lerror = lwc_intern_string((char *)rarray[AMI_MIME_MIMETYPE],
-								strlen((char *)rarray[AMI_MIME_MIMETYPE]), &mimeentry->mimetype);
-					if (lerror != lwc_error_ok)
-						return NSERROR_NOMEM;
-				}
+					if(rarray[AMI_MIME_MIMETYPE])
+					{
+						lerror = lwc_intern_string((char *)rarray[AMI_MIME_MIMETYPE],
+									strlen((char *)rarray[AMI_MIME_MIMETYPE]), &mimeentry->mimetype);
+						if (lerror != lwc_error_ok)
+							return NSERROR_NOMEM;
+					}
 
-				if(rarray[AMI_MIME_DATATYPE])
-				{
-					lerror = lwc_intern_string((char *)rarray[AMI_MIME_DATATYPE],
-								strlen((char *)rarray[AMI_MIME_DATATYPE]), &mimeentry->datatype);
-					if (lerror != lwc_error_ok)
-						return NSERROR_NOMEM;
-				}
+					if(rarray[AMI_MIME_DATATYPE])
+					{
+						lerror = lwc_intern_string((char *)rarray[AMI_MIME_DATATYPE],
+									strlen((char *)rarray[AMI_MIME_DATATYPE]), &mimeentry->datatype);
+						if (lerror != lwc_error_ok)
+							return NSERROR_NOMEM;
+					}
 
-				if(rarray[AMI_MIME_FILETYPE])
-				{
-					lerror = lwc_intern_string((char *)rarray[AMI_MIME_FILETYPE],
-								strlen((char *)rarray[AMI_MIME_FILETYPE]), &mimeentry->filetype);
-					if (lerror != lwc_error_ok)
-						return NSERROR_NOMEM;
-				}
+					if(rarray[AMI_MIME_FILETYPE])
+					{
+						lerror = lwc_intern_string((char *)rarray[AMI_MIME_FILETYPE],
+									strlen((char *)rarray[AMI_MIME_FILETYPE]), &mimeentry->filetype);
+						if (lerror != lwc_error_ok)
+							return NSERROR_NOMEM;
+					}
 
-				if(rarray[AMI_MIME_PLUGINCMD])
-				{
-					lerror = lwc_intern_string((char *)rarray[AMI_MIME_PLUGINCMD],
-								strlen((char *)rarray[AMI_MIME_PLUGINCMD]), &mimeentry->plugincmd);
-					if (lerror != lwc_error_ok)
-						return NSERROR_NOMEM;
+					if(rarray[AMI_MIME_PLUGINCMD])
+					{
+						lerror = lwc_intern_string((char *)rarray[AMI_MIME_PLUGINCMD],
+									strlen((char *)rarray[AMI_MIME_PLUGINCMD]), &mimeentry->plugincmd);
+						if (lerror != lwc_error_ok)
+							return NSERROR_NOMEM;
+					}
 				}
 				FreeArgs(rargs);
 			}
@@ -255,15 +266,6 @@ void ami_mime_free(void)
 	ami_mime_dump();
 	FreeObjList(ami_mime_list);
 }
-
-void ami_mime_entry_free(struct ami_mime_entry *mimeentry)
-{
-	if(mimeentry->mimetype) lwc_string_unref(mimeentry->mimetype);
-	if(mimeentry->datatype) lwc_string_unref(mimeentry->datatype);
-	if(mimeentry->filetype) lwc_string_unref(mimeentry->filetype);
-	if(mimeentry->plugincmd) lwc_string_unref(mimeentry->plugincmd);
-}
-
 
 /**
  * Return next matching MIME entry
@@ -356,8 +358,13 @@ static APTR ami_mime_guess_add_datatype(struct DataType *dt, lwc_string **lwc_mi
 	char *p;
 
 	node = AddObject(ami_mime_list, AMINS_MIME);
+	if(node == NULL) return NULL;
+
 	mimeentry = ami_misc_allocvec_clear(sizeof(struct ami_mime_entry), 0);
+	if(mimeentry == NULL) return NULL;
+
 	node->objstruct = mimeentry;
+	ObjectCallback(node, ami_mime_entry_free);
 
 	lerror = lwc_intern_string(dth->dth_Name, strlen(dth->dth_Name), &mimeentry->datatype);
 	if (lerror != lwc_error_ok)

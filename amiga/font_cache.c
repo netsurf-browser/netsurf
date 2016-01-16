@@ -25,6 +25,7 @@
 #include "utils/log.h"
 
 #include "amiga/font.h"
+#include "amiga/font_bullet.h"
 #include "amiga/font_cache.h"
 #include "amiga/schedule.h"
 
@@ -69,7 +70,7 @@ static void ami_font_cache_cleanup(struct SkipList *skiplist)
 		if(curtime.Seconds > 300)
 		{
 			LOG("Freeing font %lx not used for %ld seconds", node->skip_node.sn_Key, curtime.Seconds);
-			ami_font_close(node);
+			ami_font_bullet_close(node);
 			RemoveSkipNode(skiplist, node->skip_node.sn_Key);
 		}
 	} while((node = nnode));
@@ -113,12 +114,12 @@ static void ami_font_cache_del_skiplist(struct SkipList *skiplist)
 	struct SkipNode *node;
 	struct SkipNode *nnode;
 
-	node = (struct ami_font_cache_node *)GetFirstSkipNode(skiplist);
+	node = GetFirstSkipNode(skiplist);
 	if(node == NULL) return;
 
 	do {
-		nnode = GetNextSkipNode(skiplist, (struct SkipNode *)node);
-		ami_font_close(node);
+		nnode = GetNextSkipNode(skiplist, node);
+		ami_font_bullet_close((struct ami_font_cache_node *)node);
 		
 	} while((node = nnode));
 
@@ -170,6 +171,7 @@ void ami_font_cache_insert(struct ami_font_cache_node *nodedata, const char *fon
 #ifndef __amigaos4__
 	struct nsObject *node = AddObject(ami_font_cache_list, AMINS_FONT);
 	if(node) {
+		ObjectCallback(ami_font_bullet_close);
 		node->objstruct = nodedata;
 		node->dtz_Node.ln_Name = strdup(font);
 	}

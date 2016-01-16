@@ -65,6 +65,7 @@
 
 #include "amiga/file.h"
 #include "amiga/font.h"
+#include "amiga/font_bullet.h"
 #include "amiga/gui.h"
 #include "amiga/gui_options.h"
 #include "amiga/help.h"

@@ -24,8 +24,6 @@
 #include <exec/lists.h>
 #include <exec/nodes.h>
 
-#include "amiga/filetype.h"
-#include "amiga/font.h"
 #include "amiga/misc.h"
 #include "amiga/object.h"
 
@@ -72,11 +70,15 @@ struct nsObject *AddObject(struct MinList *objlist, ULONG otype)
 	return(dtzo);
 }
 
+void ObjectCallback(struct nsObject *dtzo, void (*callback)(void *nso))
+{
+	dtzo->callback = callback;
+}
+
 static void DelObjectInternal(struct nsObject *dtzo, BOOL free_obj)
 {
 	Remove((struct Node *)dtzo);
-	if(dtzo->Type == AMINS_FONT) ami_font_close(dtzo->objstruct);
-	if(dtzo->Type == AMINS_MIME) ami_mime_entry_free(dtzo->objstruct);
+	if(dtzo->callback != NULL) dtzo->callback(dtzo->objstruct);
 	if(dtzo->objstruct && free_obj) FreeVec(dtzo->objstruct);
 	if(dtzo->dtz_Node.ln_Name) free(dtzo->dtz_Node.ln_Name);
 	FreeVec(dtzo);

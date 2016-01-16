@@ -44,11 +44,13 @@ struct nsObject
 	ULONG Type;
 	void *objstruct;
 	ULONG objstruct_size;
+	void (*callback)(void *nso);
 };
 
 
 struct MinList *NewObjList(void);
 struct nsObject *AddObject(struct MinList *objlist, ULONG otype);
+void ObjectCallback(struct nsObject *dtzo, void (*callback)(void *nso));
 void DelObject(struct nsObject *dtzo);
 void DelObjectNoFree(struct nsObject *dtzo);
 void FreeObjList(struct MinList *objlist);

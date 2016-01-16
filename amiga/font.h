@@ -29,19 +29,6 @@ void ami_font_setdevicedpi(int id);
 void ami_font_init(void);
 void ami_font_fini(void);
 
-/* In font_bitmap.c */
-void ami_font_diskfont_init(void);
-
-/* In font_bullet.c */
-void ami_font_bullet_init(void);
-void ami_font_bullet_fini(void);
-void ami_font_close(struct ami_font_cache_node *node);
-
-/* Alternate entry points into font_scan */
-void ami_font_initscanner(bool force, bool save);
-void ami_font_finiscanner(void);
-void ami_font_savescanner(void);
-
 /* Simple diskfont functions for graphics.library use (not page rendering) */
 struct TextFont *ami_font_open_disk_font(struct TextAttr *tattr);
 void ami_font_close_disk_font(struct TextFont *tfont);
