@@ -562,7 +562,7 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 	nsoption_set_bool(font_antialiasing, false);
 	nsoption_set_bool(truecolour_mouse_pointers, false);
 	nsoption_set_bool(use_openurl_lib, true);
-	nsoption_set_bool(use_diskfont, true);
+	nsoption_set_bool(bitmap_fonts, true);
 #endif
 
 	if((!nsoption_charp(accept_language)) || 

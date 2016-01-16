@@ -171,7 +171,7 @@ void ami_font_cache_insert(struct ami_font_cache_node *nodedata, const char *fon
 #ifndef __amigaos4__
 	struct nsObject *node = AddObject(ami_font_cache_list, AMINS_FONT);
 	if(node) {
-		ObjectCallback(ami_font_bullet_close);
+		ObjectCallback(node, ami_font_bullet_close);
 		node->objstruct = nodedata;
 		node->dtz_Node.ln_Name = strdup(font);
 	}
