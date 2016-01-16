@@ -123,7 +123,7 @@ static bool amiga_bm_nsfont_width(const plot_font_style_t *fstyle,
 		return false;
 	}
 
-	*width = (int)TextLength(glob->rp, localtext, (UWORD)strlen(localtext));
+	*width = TextLength(glob->rp, localtext, (UWORD)strlen(localtext));
 	free(localtext);
 
 	ami_font_bm_close(bmfont);
@@ -238,7 +238,7 @@ static bool amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 	}
 	
 	if((co > 0) && (co < strlen(localtext))) {
-		*actual_x = (int)TextLength(glob->rp, localtext, co);
+		*actual_x = TextLength(glob->rp, localtext, co);
 		*char_offset = ami_font_bm_convert_local_to_utf8_offset(string, length, co);
 	} else {
 		*actual_x = x;
