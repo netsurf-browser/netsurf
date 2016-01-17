@@ -155,7 +155,7 @@ static inline uint32 amiga_nsfont_decode_surrogate(const uint16 *char1)
 	}
 }
 
-static inline bool amiga_nsfont_width(const plot_font_style_t *fstyle,
+static bool amiga_nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
@@ -178,7 +178,7 @@ static inline bool amiga_nsfont_width(const plot_font_style_t *fstyle,
  * \return  true on success, false on error and error reported
  */
 
-static inline bool amiga_nsfont_position_in_string(const plot_font_style_t *fstyle,
+static bool amiga_nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -261,7 +261,7 @@ static inline bool amiga_nsfont_position_in_string(const plot_font_style_t *fsty
  * Returning char_offset == length means no split possible
  */
 
-static inline bool amiga_nsfont_split(const plot_font_style_t *fstyle,
+static bool amiga_nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {

@@ -36,14 +36,14 @@ void ami_font_setdevicedpi(int id)
 {
 	DisplayInfoHandle dih;
 	struct DisplayInfo dinfo;
-	ULONG ydpi = nsoption_int(screen_ydpi);
-	ULONG xdpi = nsoption_int(screen_ydpi);
 
 	if(nsoption_bool(bitmap_fonts) == true) {
 		LOG("WARNING: Using diskfont.library for text. Forcing DPI to 72.");
 		nsoption_set_int(screen_ydpi, 72);
 	}
 
+	ULONG ydpi = nsoption_int(screen_ydpi);
+	ULONG xdpi = nsoption_int(screen_ydpi);
 	browser_set_dpi(nsoption_int(screen_ydpi));
 
 	if(id && (nsoption_int(monitor_aspect_x) != 0) && (nsoption_int(monitor_aspect_y) != 0))

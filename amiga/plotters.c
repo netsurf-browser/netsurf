@@ -94,7 +94,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	 * Height is set to screen width to give enough space for thumbnails *
 	 * Also applies to the further gfx/layers functions and memory below */
  
-	ULONG depth = 32;
+	int depth = 32;
 	struct BitMap *friend = NULL;
 
 	depth = GetBitMapAttr(scrn->RastPort.BitMap, BMA_DEPTH);
@@ -111,6 +111,8 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	palette_mapped = true;
 	if(depth > 8) depth = 8;
 #endif
+
+	if(palette_mapped == true) nsoption_set_bool(font_antialiasing, false);
 
 	if(!width) width = nsoption_int(redraw_tile_size_x);
 	if(!height) height = nsoption_int(redraw_tile_size_y);
@@ -429,13 +431,10 @@ static bool ami_text(int x, int y, const char *text, size_t length,
 	LOG("[ami_plotter] Entered ami_text()");
 	#endif
 
-	bool aa = true;
-	
-	if((nsoption_bool(font_antialiasing) == false) || (palette_mapped == true))
-		aa = false;
+	if(__builtin_expect(ami_nsfont == NULL, 0)) return false;
 	
 	ami_plot_setapen(glob->rp, fstyle->foreground);
-	ami_nsfont->text(glob->rp, text, length, fstyle, x, y, aa);
+	ami_nsfont->text(glob->rp, text, length, fstyle, x, y, nsoption_bool(font_antialiasing));
 	
 	return true;
 }

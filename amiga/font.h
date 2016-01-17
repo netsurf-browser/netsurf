@@ -23,8 +23,6 @@
 #include <graphics/rastport.h>
 #include <graphics/text.h>
 
-struct ami_font_cache_node;
-
 void ami_font_setdevicedpi(int id);
 void ami_font_init(void);
 void ami_font_fini(void);
