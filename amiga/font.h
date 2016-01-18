@@ -23,9 +23,13 @@
 #include <graphics/rastport.h>
 #include <graphics/text.h>
 
-void ami_font_setdevicedpi(int id);
 void ami_font_init(void);
 void ami_font_fini(void);
+
+/* DPI stuff */
+void ami_font_setdevicedpi(int id);
+ULONG ami_font_dpi_get_devicedpi(void);
+ULONG ami_font_dpi_get_xdpi(void);
 
 /* Simple diskfont functions for graphics.library use (not page rendering) */
 struct TextFont *ami_font_open_disk_font(struct TextAttr *tattr);
@@ -49,9 +53,6 @@ struct ami_font_functions {
 			ULONG length, const plot_font_style_t *fstyle,
 			ULONG x, ULONG y, bool aa);
 };
-
-ULONG ami_devicedpi;
-ULONG ami_xdpi;
 
 const struct ami_font_functions *ami_nsfont;
 #endif

@@ -5589,8 +5589,12 @@ int main(int argc, char** argv)
 
 #ifdef __amigaos4__
 	amiga_plugin_hack_init();
-#endif
+
+	/* DataTypes loader needs datatypes.library v45,
+	 * but for some reason that's not in OS3.9.
+	 * Skip it to ensure it isn't causing other problems. */
 	ret = amiga_datatypes_init();
+#endif
 
 	/* user options setup */
 	ret = nsoption_init(ami_set_options, &nsoptions, &nsoptions_default);

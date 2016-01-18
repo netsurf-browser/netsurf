@@ -32,6 +32,19 @@
 #include "amiga/font_diskfont.h"
 #include "amiga/font_scan.h"
 
+static ULONG ami_devicedpi = 72;
+static ULONG ami_xdpi = 72;
+
+ULONG ami_font_dpi_get_devicedpi(void)
+{
+	return ami_devicedpi;
+}
+
+ULONG ami_font_dpi_get_xdpi(void)
+{
+	return ami_xdpi;
+}
+
 void ami_font_setdevicedpi(int id)
 {
 	DisplayInfoHandle dih;
