@@ -43,6 +43,8 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 
 	if(rp == NULL) return NULL;
 
+	tattr.ta_Flags = 0;
+
 	switch(fstyle->family)
 	{
 		case PLOT_FONT_FAMILY_SANS_SERIF:
