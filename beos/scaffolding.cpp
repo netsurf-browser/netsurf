@@ -81,6 +81,7 @@ extern "C" {
 #include "beos/window.h"
 #include "beos/schedule.h"
 //#include "beos/download.h"
+#include "beos/cookies.h"
 
 #define TOOLBAR_HEIGHT 32
 #define DRAGGER_WIDTH 8
@@ -1191,9 +1192,15 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		case HOTLIST_SHOW:
 			break;
 		case COOKIES_SHOW:
+		{
+			nsbeos_cookie_init();
 			break;
+		}
 		case COOKIES_DELETE:
+		{
+			nsbeos_cookie_init();
 			break;
+		}
 		case BROWSER_PAGE:
 			break;
 		case BROWSER_PAGE_INFO:
@@ -1976,18 +1983,9 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		item = make_menu_item("HistGlobal", message);
 		submenu->AddItem(item);
 
-
-		submenu = new BMenu(messages_get("Cookies"));
-		menu->AddItem(submenu);
-
 		message = new BMessage(COOKIES_SHOW);
-		item = make_menu_item("ShowCookies", message);
-		submenu->AddItem(item);
-
-		message = new BMessage(COOKIES_DELETE);
-		item = make_menu_item("DeleteCookies", message);
-		submenu->AddItem(item);
-
+		item = make_menu_item("Cookie manager", message, true);
+		menu->AddItem(item);
 
 		message = new BMessage(BROWSER_FIND_TEXT);
 		item = make_menu_item("FindText", message);
