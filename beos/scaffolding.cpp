@@ -1193,12 +1193,12 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			break;
 		case COOKIES_SHOW:
 		{
-			nsbeos_cookie_init();
+			nsbeos_cookies_init();
 			break;
 		}
 		case COOKIES_DELETE:
 		{
-			nsbeos_cookie_init();
+			nsbeos_cookies_init();
 			break;
 		}
 		case BROWSER_PAGE:
