@@ -24,7 +24,6 @@
 
 #include "utils/config.h"
 #include "utils/nsoption.h"
-#include "utils/container.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -39,6 +38,7 @@
 #include "gtk/scaffolding.h"
 #include "gtk/menu.h"
 #include "gtk/theme.h"
+#include "gtk/theme_container.h"
 #include "gtk/window.h"
 #include "gtk/preferences.h"
 

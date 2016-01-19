@@ -19,9 +19,6 @@
 #ifndef _NETSURF_GTK_THEME_H_
 #define _NETSURF_GTK_THEME_H_
 
-#include <gtk/gtk.h>
-#include "gtk/scaffolding.h"
-
 typedef enum search_buttons {
 	SEARCH_BACK_BUTTON = 0,
 	SEARCH_FORWARD_BUTTON,
