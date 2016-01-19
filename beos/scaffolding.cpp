@@ -1,4 +1,5 @@
 /*
+ * Copyright 2015 Adrián Arroyo Calle <adrian.arroyocalle@gmail.com>
  * Copyright 2008 François Revol <mmu_man@users.sourceforge.net>
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
  *
@@ -56,6 +57,8 @@ extern "C" {
 #include "desktop/browser.h"
 #include "desktop/netsurf.h"
 #include "desktop/version.h"
+#include "desktop/searchweb.h"
+#include "desktop/search.h"
 #include "desktop/plotters.h"
 #include "utils/nsoption.h"
 #include "desktop/textinput.h"
@@ -111,6 +114,7 @@ struct beos_scaffolding {
 	BControl		*home_button;
 
 	NSIconTextControl	*url_bar;
+	NSIconTextControl	*search_bar;
 	//BMenuField	*url_bar_completion;
 
 	NSThrobber		*throbber;
@@ -478,6 +482,7 @@ NSBaseView::MessageReceived(BMessage *message)
 		case 'home':
 		case 'urlc':
 		case 'urle':
+		case 'sear':
 		case 'menu':
 		case NO_ACTION:
 		case HELP_OPEN_CONTENTS:
@@ -653,6 +658,7 @@ NSBaseView::AllAttached()
 	g->home_button->SetTarget(this);
 
 	g->url_bar->SetTarget(this);
+	g->search_bar->SetTarget(this);
 
 	rgb_color c = ui_color(B_PANEL_BACKGROUND_COLOR);
 	SetViewColor(c);
@@ -669,6 +675,7 @@ NSBaseView::AllAttached()
 	g->home_button->SetViewColor(c);
 	g->home_button->SetLowColor(c);
 	g->url_bar->SetViewColor(c);
+	g->search_bar->SetViewColor(c);
 	g->throbber->SetViewColor(c);
 	g->scroll_view->SetViewColor(c);
 
@@ -806,6 +813,7 @@ static void nsbeos_scaffolding_update_colors(nsbeos_scaffolding *g)
 	g->reload_button->SetViewColor(c);
 	g->home_button->SetViewColor(c);
 	g->url_bar->SetViewColor(c);
+	g->search_bar->SetViewColor(c);
 	g->throbber->SetViewColor(c);
 	g->scroll_view->SetViewColor(c);
 
@@ -1071,6 +1079,41 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			text = scaffold->url_bar->Text();
 			scaffold->url_bar->UnlockLooper();
 			//nsbeos_completion_update(text.String());
+			break;
+		}
+		case 'sear':
+		{
+			nserror ret;
+			nsurl* url;
+			BString text;
+			if (!scaffold->search_bar->LockLooper())
+				break;
+			text = scaffold->search_bar->Text();
+			scaffold->search_bar->UnlockLooper();
+
+			char t[PATH_MAX];
+			find_resource(t,"SearchEngines","./beos/res/SearchEngines");
+
+			search_web_init();
+
+			ret = search_web_omni(text.String(),SEARCH_WEB_OMNI_SEARCHONLY
+				,&url);
+			if (ret == NSERROR_OK) {
+				ret = browser_window_create(
+					(browser_window_create_flags)(BW_CREATE_HISTORY | BW_CREATE_TAB),
+					url,
+					NULL,
+					bw,
+					NULL);
+				nsurl_unref(url);
+			}
+
+			if (ret != NSERROR_OK) {
+				warn_user(messages_get_errorcode(ret), 0);
+			}
+
+			search_web_finalise();
+
 			break;
 		}
 /*
@@ -2113,6 +2156,21 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	g->url_bar->TextView()->SetTextRect(rect);
 	g->tool_bar->AddChild(g->url_bar);
 
+	// search bar
+
+	rect = g->tool_bar->Bounds();
+	rect.left += TOOLBAR_HEIGHT * nButtons + (g->url_bar->Bounds().right - g->url_bar->Bounds().left);
+	rect.right -= TOOLBAR_HEIGHT * 1;
+	rect.InsetBy(5,5);
+	message = new BMessage('sear');
+	message->AddPointer("scaffolding", g);
+	g->search_bar = new NSIconTextControl(rect,"search_bar","","Search...",message,
+		B_FOLLOW_RIGHT);
+	g->search_bar->SetDivider(0);
+	rect = g->search_bar->TextView()->TextRect();
+	rect.left += 0;
+	g->search_bar->TextView()->TextRect();
+	g->tool_bar->AddChild(g->search_bar);
 
 	// throbber
 	rect.Set(0, 0, 24, 24);
