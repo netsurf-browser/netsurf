@@ -1095,7 +1095,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			char t[PATH_MAX];
 			find_resource(t,"SearchEngines","./beos/res/SearchEngines");
 
-			search_web_init();
+			search_web_init(&t[0]);
 
 			ret = search_web_omni(text.String(),SEARCH_WEB_OMNI_SEARCHONLY
 				,&url);
