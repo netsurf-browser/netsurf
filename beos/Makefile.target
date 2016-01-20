@@ -57,7 +57,7 @@ else
     NETLDFLAGS := -lnetwork
 endif
 
-LDFLAGS += -lbe -ltranslation -ltracker $(NETLDFLAGS)
+LDFLAGS += -lbe -ltranslation -ltracker -lcolumnlistview $(NETLDFLAGS)
 ifeq ($(CC_MAJOR),2)
     LDFLAGS += -lstdc++.r4
 else
@@ -85,7 +85,8 @@ endif
 # ----------------------------------------------------------------------------
 
 # S_BEOS are sources purely for the BeOS build
-S_BEOS := about.cpp bitmap.cpp download.cpp fetch_rsrc.cpp filetype.cpp \
+S_BEOS := about.cpp bitmap.cpp cookies.cpp \
+	download.cpp fetch_rsrc.cpp filetype.cpp \
 	font.cpp gui.cpp login.cpp gui_options.cpp plotters.cpp		\
 	scaffolding.cpp search.cpp schedule.cpp throbber.cpp window.cpp
 S_BEOS := $(addprefix beos/,$(S_BEOS))
@@ -99,7 +100,7 @@ RDEF_IMP_BEOS := $(addprefix $(OBJROOT)/,$(subst /,_,$(RDEF_IMP_BEOS)))
 RDEP_BEOS := \
 	adblock.css beosdefault.css default.css internal.css quirks.css	\
 	netsurf.png favicon.png ca-bundle.txt \
-	credits.html licence.html welcome.html maps.html
+	credits.html licence.html welcome.html maps.html SearchEngines
 RDEP_BEOS := $(addprefix beos/res/,$(RDEP_BEOS))			\
 	$(wildcard beos/res/icons/*.png)						\
 	$(wildcard beos/res/??/*)								\
@@ -137,17 +138,15 @@ $(RSRC_BEOS): $(RDEF_BEOS) $(RDEF_IMP_BEOS)
 # ----------------------------------------------------------------------------
 
 install-beos:
-#       TODO:HAIKU -- not sure if throbber is needed.  being left out for now.
 	mkdir -p $(DESTDIR)$(NETSURF_BEOS_BIN)
 	mkdir -p $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
-#	mkdir -p $(DESTDIR)$(NETSURF_BEOS_RESOURCES)throbber
 	@copyattr -d $(EXETARGET) $(DESTDIR)$(NETSURF_BEOS_BIN)NetSurf
 	@cp -vRL beos/res/adblock.css $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
 	@cp -vRL beos/res/ca-bundle.txt $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
 	@cp -vRL beos/res/default.css $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
 	@cp -vRL beos/res/beosdefault.css $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
 	@cp -vRL gtk/res/license $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
-#	@cp -vRL beos/res/throbber/*.png $(DESTDIR)$(NETSURF_BEOS_RESOURCES)throbber
+	@cp -vRL beos/res/SearchEngines $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
 
 # ----------------------------------------------------------------------------
 # Package target

@@ -1,4 +1,5 @@
 /*
+ * Copyright 2015 Adrián Arroyo Calle <adrian.arroyocalle@gmail.com>
  * Copyright 2008 François Revol <mmu_man@users.sourceforge.net>
  * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  *
@@ -137,6 +138,7 @@ NSBrowserApplication::MessageReceived(BMessage *message)
 		case 'home':
 		case 'urlc':
 		case 'urle':
+		case 'sear':
 		case 'menu':
 		// NetPositive messages
 		case B_NETPOSITIVE_OPEN_URL:
@@ -254,7 +256,7 @@ image_id nsbeos_find_app_path(char *path)
  * \param  def      default to return if file not found
  * \return path to resource.
  */
-static char *find_resource(char *buf, const char *filename, const char *def)
+char *find_resource(char *buf, const char *filename, const char *def)
 {
 	const char *cdir = NULL;
 	status_t err;

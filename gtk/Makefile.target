@@ -179,12 +179,11 @@ endif
 S_GTK := font_pango.c bitmap.c gui.c schedule.c plotters.c	\
 	treeview.c scaffolding.c gdk.c completion.c login.c throbber.c	\
 	selection.c history.c window.c fetch.c download.c menu.c	\
-	print.c search.c tabs.c theme.c toolbar.c gettext.c		\
+	print.c search.c tabs.c theme.c theme_container.c toolbar.c gettext.c	\
 	compat.c cookies.c hotlist.c viewdata.c viewsource.c		\
 	preferences.c about.c ssl_cert.c resources.c
 
-S_GTK := $(addprefix gtk/,$(S_GTK)) $(addprefix utils/,container.c)
-# code in utils/container.ch is non-universal it seems
+S_GTK := $(addprefix gtk/,$(S_GTK))
 
 # This is the final source build list
 # Note this is deliberately *not* expanded here as common and image

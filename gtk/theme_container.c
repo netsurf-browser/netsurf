@@ -38,11 +38,13 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 #include <arpa/inet.h>
+
 #include "utils/config.h"
-#include "utils/container.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+
+#include "gtk/theme_container.h"
 
 #ifdef WITH_MMAP
 #include <sys/mman.h>

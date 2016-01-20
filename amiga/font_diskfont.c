@@ -35,13 +35,18 @@
 #include "amiga/gui.h"
 #include "amiga/utf8.h"
 
+#define MAX_FONT_NAME_SIZE 33
+
 static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_style_t *fstyle)
 {
 	struct TextFont *bmfont = NULL;
 	struct TextAttr tattr;
-	char *fontname, *font;
+	char *fontname;
+	char font[MAX_FONT_NAME_SIZE];
 
 	if(rp == NULL) return NULL;
+
+	tattr.ta_Flags = 0;
 
 	switch(fstyle->family)
 	{
@@ -76,14 +81,12 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 	if (fstyle->weight >= 700)
 		tattr.ta_Style |= FSF_BOLD;
 
-	if((font = ASPrintf("%s.font", fontname))) {
-		tattr.ta_Name = font;
-		tattr.ta_YSize = fstyle->size / FONT_SIZE_SCALE;
-		LOG("font: %s/%d", tattr.ta_Name, tattr.ta_YSize);
-		if((bmfont = OpenDiskFont(&tattr))) {
-			SetRPAttrs(rp, RPTAG_Font, bmfont, TAG_DONE);
-		}
-		FreeVec(font);
+	snprintf(font, MAX_FONT_NAME_SIZE, "%s.font", fontname);
+	tattr.ta_Name = font;
+	tattr.ta_YSize = fstyle->size / FONT_SIZE_SCALE;
+	LOG("font: %s/%d", tattr.ta_Name, tattr.ta_YSize);
+	if((bmfont = OpenDiskFont(&tattr))) {
+		SetRPAttrs(rp, RPTAG_Font, bmfont, TAG_DONE);
 	}
 
 	return bmfont;

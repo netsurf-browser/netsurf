@@ -1,4 +1,5 @@
 /*
+ * Copyright 2015 Adrián Arroyo Calle <adrian.arroyocalle@gmail.com>
  * Copyright 2008 François Revol <mmu_man@users.sourceforge.net>
  * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  *
@@ -65,6 +66,7 @@ void nsbeos_pipe_message_top(BMessage *message, BWindow *_this, struct beos_scaf
 
 void nsbeos_gui_view_source(struct hlcache_handle *content);
 image_id nsbeos_find_app_path(char *path);
+char *find_resource(char *buf, const char *filename, const char *def);
 
 void nsbeos_update_system_ui_colors(void);
 

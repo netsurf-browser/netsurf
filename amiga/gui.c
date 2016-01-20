@@ -562,7 +562,7 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 	nsoption_set_bool(font_antialiasing, false);
 	nsoption_set_bool(truecolour_mouse_pointers, false);
 	nsoption_set_bool(use_openurl_lib, true);
-	nsoption_set_bool(use_diskfont, true);
+	nsoption_set_bool(bitmap_fonts, true);
 #endif
 
 	if((!nsoption_charp(accept_language)) || 
@@ -5594,8 +5594,12 @@ int main(int argc, char** argv)
 
 #ifdef __amigaos4__
 	amiga_plugin_hack_init();
-#endif
+
+	/* DataTypes loader needs datatypes.library v45,
+	 * but for some reason that's not in OS3.9.
+	 * Skip it to ensure it isn't causing other problems. */
 	ret = amiga_datatypes_init();
+#endif
 
 	/* user options setup */
 	ret = nsoption_init(ami_set_options, &nsoptions, &nsoptions_default);

@@ -227,6 +227,7 @@ bool layout_block_context(struct box *block, int viewport_height,
 	assert(block->width != AUTO);
 
 	block->float_children = NULL;
+	block->cached_place_below_level = 0;
 	block->clear_level = 0;
 
 	/* special case if the block contains an object */
@@ -2062,8 +2063,14 @@ void find_sides(struct box *fl, int y0, int y1,
 
 	*left = *right = 0;
 	for (; fl; fl = fl->next_float) {
-		fy0 = fl->y;
 		fy1 = fl->y + fl->height;
+		if (fy1 < y0) {
+			/* Floats are sorted in order of decreasing bottom pos.
+			 * Past here, all floats will be too high to concern us.
+			 */
+			return;
+		}
+		fy0 = fl->y;
 		if (y0 < fy1 && fy0 <= y1) {
 			if (fl->type == BOX_FLOAT_LEFT) {
 				fx1 = fl->x + fl->width;
@@ -2071,7 +2078,7 @@ void find_sides(struct box *fl, int y0, int y1,
 					*x0 = fx1;
 					*left = fl;
 				}
-			} else if (fl->type == BOX_FLOAT_RIGHT) {
+			} else {
 				fx0 = fl->x;
 				if (fx0 < *x1) {
 					*x1 = fx0;
@@ -2084,6 +2091,44 @@ void find_sides(struct box *fl, int y0, int y1,
 #ifdef LAYOUT_DEBUG
 	LOG("x0 %i, x1 %i, left %p, right %p", *x0, *x1, *left, *right);
 #endif
+}
+
+
+/**
+ * Insert a float into a container.
+ *
+ * \param  cont	  block formatting context block, used to contain float
+ * \param  b      box to add to float
+ *
+ * This sorts floats in order of descending bottom edges.
+ */
+static void add_float_to_container(struct box *cont, struct box *b)
+{
+	struct box *box = cont->float_children;
+	int b_bottom = b->y + b->height;
+
+	assert(b->type == BOX_FLOAT_LEFT || b->type == BOX_FLOAT_RIGHT);
+
+	if (box == NULL) {
+		/* No other float children */
+		b->next_float = NULL;
+		cont->float_children = b;
+		return;
+	} else if (b_bottom >= box->y + box->height) {
+		/* Goes at start of list */
+		b->next_float = cont->float_children;
+		cont->float_children = b;
+	} else {
+		struct box *prev = NULL;
+		while (box != NULL && b_bottom < box->y + box->height) {
+			prev = box;
+			box = box->next_float;
+		}
+		if (prev != NULL) {
+			b->next_float = prev->next_float;
+			prev->next_float = b;
+		}
+	}
 }
 
 
@@ -2693,6 +2738,7 @@ bool layout_line(struct box *first, int *width, int *y,
 
 			d = b->children;
 			d->float_children = 0;
+			d->cached_place_below_level = 0;
 			b->float_container = d->float_container = cont;
 
 			if (!layout_float(d, *width, content))
@@ -2729,7 +2775,8 @@ bool layout_line(struct box *first, int *width, int *y,
 						left == 0 && right == 0)) &&
 					(!place_below ||
 					(left == 0 && right == 0 && x == 0)) &&
-					cy >= cont->clear_level) {
+					cy >= cont->clear_level &&
+					cy >= cont->cached_place_below_level) {
 				/* + not cleared or,
 				 *   cleared and there are no floats to clear
 				 * + fits without needing to be placed below or,
@@ -2754,6 +2801,9 @@ bool layout_line(struct box *first, int *width, int *y,
 				/* place below into next available space */
 				int fcy = (cy > cont->clear_level) ? cy :
 						cont->clear_level;
+				fcy = (fcy > cont->cached_place_below_level) ?
+						fcy :
+						cont->cached_place_below_level;
 				fy = (fy > fcy) ? fy : fcy;
 				fy = (fy == cy) ? fy + height : fy;
 
@@ -2787,16 +2837,7 @@ bool layout_line(struct box *first, int *width, int *y,
 				else
 					right = b;
 			}
-			if (cont->float_children == b) {
-#ifdef LAYOUT_DEBUG
-				LOG("float %p already placed", b);
-#endif
-
-				box_dump(stderr, cont, 0, true);
-				assert(0);
-			}
-			b->next_float = cont->float_children;
-			cont->float_children = b;
+			add_float_to_container(cont, b);
 
 			split_box = 0;
 		}
@@ -3404,9 +3445,12 @@ bool layout_float(struct box *b, int width, html_content *content)
 void place_float_below(struct box *c, int width, int cx, int y,
 		struct box *cont)
 {
-	int x0, x1, yy = y;
+	int x0, x1, yy;
 	struct box *left;
 	struct box *right;
+
+	yy = y > cont->cached_place_below_level ?
+			y : cont->cached_place_below_level;
 
 #ifdef LAYOUT_DEBUG
 	LOG("c %p, width %i, cx %i, y %i, cont %p", c, width, cx, y, cont);
@@ -3436,6 +3480,7 @@ void place_float_below(struct box *c, int width, int cx, int y,
 		c->x = x1 - c->width;
 	}
 	c->y = y;
+	cont->cached_place_below_level = y;
 }
 
 
@@ -3829,6 +3874,7 @@ bool layout_table(struct box *table, int available_width,
 						c->padding[RIGHT] -
 						c->border[RIGHT].width;
 				c->float_children = 0;
+				c->cached_place_below_level = 0;
 
 				c->height = AUTO;
 				if (!layout_block_context(c, -1, content)) {
