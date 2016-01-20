@@ -244,6 +244,9 @@ struct box {
 	 * This is used only for boxes with float_children */
 	int clear_level;
 
+	/* Level below which floats have been placed. */
+	int cached_place_below_level;
+
 	/** List marker box if this is a list-item, or 0. */
 	struct box *list_marker;
 

@@ -227,6 +227,7 @@ bool layout_block_context(struct box *block, int viewport_height,
 	assert(block->width != AUTO);
 
 	block->float_children = NULL;
+	block->cached_place_below_level = 0;
 	block->clear_level = 0;
 
 	/* special case if the block contains an object */
@@ -2737,6 +2738,7 @@ bool layout_line(struct box *first, int *width, int *y,
 
 			d = b->children;
 			d->float_children = 0;
+			d->cached_place_below_level = 0;
 			b->float_container = d->float_container = cont;
 
 			if (!layout_float(d, *width, content))
@@ -3439,9 +3441,12 @@ bool layout_float(struct box *b, int width, html_content *content)
 void place_float_below(struct box *c, int width, int cx, int y,
 		struct box *cont)
 {
-	int x0, x1, yy = y;
+	int x0, x1, yy;
 	struct box *left;
 	struct box *right;
+
+	yy = y > cont->cached_place_below_level ?
+			y : cont->cached_place_below_level;
 
 #ifdef LAYOUT_DEBUG
 	LOG("c %p, width %i, cx %i, y %i, cont %p", c, width, cx, y, cont);
@@ -3471,6 +3476,7 @@ void place_float_below(struct box *c, int width, int cx, int y,
 		c->x = x1 - c->width;
 	}
 	c->y = y;
+	cont->cached_place_below_level = y;
 }
 
 
@@ -3864,6 +3870,7 @@ bool layout_table(struct box *table, int available_width,
 						c->padding[RIGHT] -
 						c->border[RIGHT].width;
 				c->float_children = 0;
+				c->cached_place_below_level = 0;
 
 				c->height = AUTO;
 				if (!layout_block_context(c, -1, content)) {
