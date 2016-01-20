@@ -2775,7 +2775,8 @@ bool layout_line(struct box *first, int *width, int *y,
 						left == 0 && right == 0)) &&
 					(!place_below ||
 					(left == 0 && right == 0 && x == 0)) &&
-					cy >= cont->clear_level) {
+					cy >= cont->clear_level &&
+					cy >= cont->cached_place_below_level) {
 				/* + not cleared or,
 				 *   cleared and there are no floats to clear
 				 * + fits without needing to be placed below or,
@@ -2800,6 +2801,9 @@ bool layout_line(struct box *first, int *width, int *y,
 				/* place below into next available space */
 				int fcy = (cy > cont->clear_level) ? cy :
 						cont->clear_level;
+				fcy = (fcy > cont->cached_place_below_level) ?
+						fcy :
+						cont->cached_place_below_level;
 				fy = (fy > fcy) ? fy : fcy;
 				fy = (fy == cy) ? fy + height : fy;
 
