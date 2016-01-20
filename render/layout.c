@@ -2071,7 +2071,7 @@ void find_sides(struct box *fl, int y0, int y1,
 					*x0 = fx1;
 					*left = fl;
 				}
-			} else if (fl->type == BOX_FLOAT_RIGHT) {
+			} else {
 				fx0 = fl->x;
 				if (fx0 < *x1) {
 					*x1 = fx0;
