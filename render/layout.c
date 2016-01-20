@@ -2062,8 +2062,14 @@ void find_sides(struct box *fl, int y0, int y1,
 
 	*left = *right = 0;
 	for (; fl; fl = fl->next_float) {
-		fy0 = fl->y;
 		fy1 = fl->y + fl->height;
+		if (fy1 < y0) {
+			/* Floats are sorted in order of decreasing bottom pos.
+			 * Past here, all floats will be too high to concern us.
+			 */
+			return;
+		}
+		fy0 = fl->y;
 		if (y0 < fy1 && fy0 <= y1) {
 			if (fl->type == BOX_FLOAT_LEFT) {
 				fx1 = fl->x + fl->width;
