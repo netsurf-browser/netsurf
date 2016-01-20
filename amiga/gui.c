@@ -3796,6 +3796,7 @@ gui_window_create(struct browser_window *bw,
 
 	NewList(&g->dllist);
 	g->deferred_rects = NewObjList();
+	g->deferred_rects_pool = CreatePool(MEMF_PRIVATE, sizeof(struct rect), sizeof(struct rect));
 	g->bw = bw;
 	g->scale = browser_window_get_scale(bw);
 
@@ -4446,6 +4447,7 @@ static void gui_window_destroy(struct gui_window *g)
 
 	ami_free_download_list(&g->dllist);
 	FreeObjList(g->deferred_rects);
+	DeletePool(g->deferred_rects_pool);
 	gui_window_stop_throbber(g);
 
 	cur_gw = NULL;
@@ -4657,17 +4659,18 @@ static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw)
 				rect->x0, rect->y0, rect->x1, rect->y1);
 		}
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
-		DelObject(node);
+		FreePooled(g->deferred_rects_pool, node->objstruct, sizeof(struct rect));
+		DelObjectNoFree(node);
 	} while((node = nnode));
 
 	if(draw == true) ami_reset_pointer(g->shared);
 }
 
 static bool ami_gui_window_update_box_deferred_check(struct MinList *deferred_rects,
-				const struct rect *new_rect)
+				const struct rect *new_rect, APTR mempool)
 {
-struct nsObject *node;
-struct nsObject *nnode;
+	struct nsObject *node;
+	struct nsObject *nnode;
 	struct rect *rect;
 	
 	if(IsMinListEmpty(deferred_rects)) return true;
@@ -4690,7 +4693,8 @@ struct nsObject *nnode;
 			(new_rect->x1 >= rect->x1) &&
 			(new_rect->y1 >= rect->y1)) {
 			LOG("Removing queued redraw that is a subset of new box redraw");
-			DelObject(node);
+			FreePooled(mempool, node->objstruct, sizeof(struct rect));
+			DelObjectNoFree(node);
 			/* Don't return - we might find more */
 		}
 	} while((node = nnode));
@@ -4704,8 +4708,9 @@ static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 	struct rect *deferred_rect;
 	if(!g) return;
 	
-	if(ami_gui_window_update_box_deferred_check(g->deferred_rects, rect)) {
-		deferred_rect = AllocVecTagList(sizeof(struct rect), NULL);
+	if(ami_gui_window_update_box_deferred_check(g->deferred_rects, rect,
+			g->deferred_rects_pool)) {
+		deferred_rect = AllocPooled(g->deferred_rects_pool, sizeof(struct rect));
 		CopyMem(rect, deferred_rect, sizeof(struct rect));
 		nsobj = AddObject(g->deferred_rects, AMINS_RECT);
 		nsobj->objstruct = deferred_rect;

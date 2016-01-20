@@ -215,9 +215,9 @@ static bool amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 		ami_font_bm_close(bmfont);
 		return false;
 	}
-	
+
 	offset = TextFit(glob->rp, localtext, (UWORD)strlen(localtext),
-				&extent, NULL, 1, x, 32767);
+				&extent, NULL, 1, (UWORD)x, 32767);
 
 	co = offset;
 	charp = localtext + co;

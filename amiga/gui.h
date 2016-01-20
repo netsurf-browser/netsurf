@@ -162,6 +162,7 @@ struct gui_window
 	hlcache_handle *favicon;
 	bool throbbing;
 	char *tabtitle;
+	APTR deferred_rects_pool;
 	struct MinList *deferred_rects;
 	struct browser_window *bw;
 	float scale;
