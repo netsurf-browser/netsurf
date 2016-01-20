@@ -2088,6 +2088,19 @@ void find_sides(struct box *fl, int y0, int y1,
 
 
 /**
+ * Insert a float into a container.
+ *
+ * \param  cont	  block formatting context block, used to contain float
+ * \param  b      box to add to float
+ */
+static void add_float_to_container(struct box *cont, struct box *b)
+{
+	b->next_float = cont->float_children;
+	cont->float_children = b;
+}
+
+
+/**
  * Layout lines of text or inline boxes with floats.
  *
  * \param  inline_container inline container box
@@ -2787,16 +2800,7 @@ bool layout_line(struct box *first, int *width, int *y,
 				else
 					right = b;
 			}
-			if (cont->float_children == b) {
-#ifdef LAYOUT_DEBUG
-				LOG("float %p already placed", b);
-#endif
-
-				box_dump(stderr, cont, 0, true);
-				assert(0);
-			}
-			b->next_float = cont->float_children;
-			cont->float_children = b;
+			add_float_to_container(cont, b);
 
 			split_box = 0;
 		}
