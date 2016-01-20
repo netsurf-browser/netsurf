@@ -2092,11 +2092,36 @@ void find_sides(struct box *fl, int y0, int y1,
  *
  * \param  cont	  block formatting context block, used to contain float
  * \param  b      box to add to float
+ *
+ * This sorts floats in order of descending bottom edges.
  */
 static void add_float_to_container(struct box *cont, struct box *b)
 {
-	b->next_float = cont->float_children;
-	cont->float_children = b;
+	struct box *box = cont->float_children;
+	int b_bottom = b->y + b->height;
+
+	assert(b->type == BOX_FLOAT_LEFT || b->type == BOX_FLOAT_RIGHT);
+
+	if (box == NULL) {
+		/* No other float children */
+		b->next_float = NULL;
+		cont->float_children = b;
+		return;
+	} else if (b_bottom >= box->y + box->height) {
+		/* Goes at start of list */
+		b->next_float = cont->float_children;
+		cont->float_children = b;
+	} else {
+		struct box *prev = NULL;
+		while (box != NULL && b_bottom < box->y + box->height) {
+			prev = box;
+			box = box->next_float;
+		}
+		if (prev != NULL) {
+			b->next_float = prev->next_float;
+			prev->next_float = b;
+		}
+	}
 }
 
 
