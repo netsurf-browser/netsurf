@@ -39,10 +39,8 @@ void *ami_misc_allocvec_clear(int size, UBYTE value)
 #ifdef __amigaos4__
 	return AllocVecTags(size, AVT_ClearWithValue, value, TAG_DONE);
 #else
-	void *mem = AllocVec(size, MEMF_CLEAR | MEMF_ANY);
-	if (mem && (value != 0)) {
-		memset(mem, value, size);
-	}
+	void *mem = AllocVec(size, MEMF_ANY);
+	if (mem) memset(mem, value, size);
 	return mem;
 #endif
 }
