@@ -24,6 +24,13 @@ extern struct gui_file_table *amiga_file_table;
 struct Window;
 
 void *ami_misc_allocvec_clear(int size, UBYTE value);
+
+/* Itempool cross-compatibility */
+APTR ami_misc_itempool_create(int size);
+void ami_misc_itempool_delete(APTR pool);
+APTR ami_misc_itempool_alloc(APTR pool, int size);
+void ami_misc_itempool_free(APTR pool, APTR item, int size);
+
 char *translate_escape_chars(const char *s);
 void ami_misc_fatal_error(const char *message);
 int32 ami_warn_user_multi(const char *body,
