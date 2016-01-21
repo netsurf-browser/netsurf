@@ -44,21 +44,28 @@
 #include "amiga/misc.h"
 #include "amiga/rtg.h"
 
+static APTR pool_bitmap = NULL;
+
 /* exported function documented in amiga/bitmap.h */
 void *amiga_bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
-	
-	bitmap = ami_misc_allocvec_clear(sizeof(struct bitmap), 0);
-	if(bitmap)
-	{
-		bitmap->pixdata = ami_misc_allocvec_clear(width*height*4, 0xff);
-		bitmap->width = width;
-		bitmap->height = height;
 
-		if(state & BITMAP_OPAQUE) bitmap->opaque = true;
-			else bitmap->opaque = false;
-	}
+	bitmap = ami_misc_itempool_alloc(pool_bitmap, sizeof(struct bitmap));
+	if(bitmap == NULL) return NULL;
+
+	bitmap->pixdata = ami_misc_allocvec_clear(width*height*4, 0xff);
+	bitmap->width = width;
+	bitmap->height = height;
+
+	if(state & BITMAP_OPAQUE) bitmap->opaque = true;
+		else bitmap->opaque = false;
+
+	bitmap->nativebm = NULL;
+	bitmap->nativebmwidth = 0;
+	bitmap->nativebmheight = 0;
+	bitmap->native_mask = NULL;
+	bitmap->dto = NULL;
 
 	return bitmap;
 }
@@ -109,7 +116,7 @@ void amiga_bitmap_destroy(void *bitmap)
 		bm->native_mask = NULL;
 		bm->dto = NULL;
 	
-		FreeVec(bm);
+		ami_misc_itempool_free(pool_bitmap, bm, sizeof(struct bitmap));
 		bm = NULL;
 	}
 }
@@ -580,6 +587,20 @@ static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 	glob = temp_gg;
 
 	return NSERROR_OK;
+}
+
+void amiga_bitmap_fini(void)
+{
+	if(pool_bitmap) ami_misc_itempool_delete(pool_bitmap);
+}
+
+bool amiga_bitmap_init(void)
+{
+	if((pool_bitmap = ami_misc_itempool_create(sizeof(struct bitmap)))) {
+		return true;
+	} else {
+		return false;
+	}
 }
 
 static struct gui_bitmap_table bitmap_table = {

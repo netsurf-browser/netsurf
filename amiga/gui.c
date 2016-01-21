@@ -405,8 +405,21 @@ bool ami_locate_resource(char *fullpath, const char *file)
 	return found;
 }
 
+/* Frees stuff opened by ami_open_resources() */
+static void ami_resources_free(void)
+{
+	FreeSysObject(ASOT_PORT, appport);
+	FreeSysObject(ASOT_PORT, sport);
+	FreeSysObject(ASOT_PORT, schedulermsgport);
+
+	FreeStringClass(urlStringClass);
+	amiga_bitmap_fini();
+}
+
 static bool ami_open_resources(void)
 {
+	if(!amiga_bitmap_init()) return false;
+
 	urlStringClass = MakeStringClass();
 
     if(!(appport = AllocSysObjectTags(ASOT_PORT,
@@ -3034,13 +3047,10 @@ static void gui_quit(void)
 	LOG("Freeing scheduler resources");
 	ami_schedule_free();
 
-	FreeSysObject(ASOT_PORT, appport);
-	FreeSysObject(ASOT_PORT, sport);
-	FreeSysObject(ASOT_PORT, schedulermsgport);
+	ami_resources_free();
 
 	ami_file_req_free();
 	ami_openurl_close();
-	FreeStringClass(urlStringClass);
 
 	FreeObjList(window_list);
 

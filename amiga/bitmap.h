@@ -53,6 +53,9 @@ PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width,
 Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap);
 struct bitmap *ami_bitmap_from_datatype(char *filename);
 
+void amiga_bitmap_fini(void);
+bool amiga_bitmap_init(void);
+
 #ifndef __amigaos4__
 void ami_bitmap_argb_to_rgba(struct bitmap *bm);
 #endif
