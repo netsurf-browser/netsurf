@@ -517,6 +517,9 @@ html_process_script(void *ctx, dom_node *node)
 	dom_hubbub_error err = DOM_HUBBUB_OK;
 
 	/* ensure javascript context is available */
+	/* We should only ever be here if scripting was enabled for this
+	 * content so it's correct to make a javascript context if there
+	 * isn't one already. */
 	if (c->jscontext == NULL) {
 		union content_msg_data msg_data;
 
