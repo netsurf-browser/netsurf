@@ -337,7 +337,9 @@ void js_initialise(void)
 	/** TODO: Forces JS on for our testing, needs changing before a release
 	 * lest we incur the wrath of others.
 	 */
-	nsoption_set_bool(enable_javascript, true);
+	/* Disabled force-on for forthcoming release */
+	/* nsoption_set_bool(enable_javascript, true);
+	 */
 	javascript_init();
 }
 
