@@ -1627,7 +1627,7 @@ bool box_image(BOX_SPECIAL_PARAMS)
 bool box_noscript(BOX_SPECIAL_PARAMS)
 {
 	/* If scripting is enabled, do not display the contents of noscript */
-	if (nsoption_bool(enable_javascript))
+	if (content->enable_scripting)
 		*convert_children = false;
 
 	return true;
@@ -3025,7 +3025,7 @@ bool box_extract_link(const html_content *content,
 	}
 	s[j] = 0;
 
-	if (nsoption_bool(enable_javascript) == false) {
+	if (content->enable_scripting == false) {
 		/* extract first quoted string out of "javascript:" link */
 		if (strncmp(s, "javascript:", 11) == 0) {
 			apos0 = strchr(s, '\'');

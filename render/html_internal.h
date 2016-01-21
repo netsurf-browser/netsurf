@@ -97,6 +97,9 @@ typedef struct html_content {
 	/** Whether a layout (reflow) is in progress */
 	bool reflowing;
 
+	/** Whether scripts are enabled for this content */
+	bool enable_scripting;
+
 	/* Title element node */
 	dom_node *title;
 

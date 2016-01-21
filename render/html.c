@@ -850,6 +850,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	c->scripts = NULL;
 	c->jscontext = NULL;
 
+	c->enable_scripting = nsoption_bool(enable_javascript);
 	c->base.active = 1; /* The html content itself is active */
 
 	if (lwc_intern_string("*", SLEN("*"), &c->universal) != lwc_error_ok) {
@@ -876,7 +877,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	/* Create the parser binding */
 	parse_params.enc = c->encoding;
 	parse_params.fix_enc = true;
-	parse_params.enable_script = nsoption_bool(enable_javascript);
+	parse_params.enable_script = c->enable_scripting;
 	parse_params.msg = NULL;
 	parse_params.script = html_process_script;
 	parse_params.ctx = c;
@@ -1019,7 +1020,7 @@ html_process_encoding_change(struct content *c,
 
 	parse_params.enc = html->encoding;
 	parse_params.fix_enc = true;
-	parse_params.enable_script = nsoption_bool(enable_javascript);
+	parse_params.enable_script = html->enable_scripting;
 	parse_params.msg = NULL;
 	parse_params.script = html_process_script;
 	parse_params.ctx = html;
