@@ -1036,7 +1036,7 @@ static void fetch_curl_poll(lwc_string *scheme_ignored)
 				error = true;
 			}
 			if (read || write || error) {
-				LOG("  fd %*i: %s %s %s", max_fd / 10 + 1, i,
+				LOG("  fd %i: %s %s %s", i,
 						read  ? "read" : "    ",
 						write ? "write" : "     ",
 						error ? "error" : "     ");
