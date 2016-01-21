@@ -95,6 +95,7 @@
 #include "utils/utils.h"
 #include "utils/nsurl.h"
 #include "utils/file.h"
+#include "content/backing_store.h"
 #include "content/fetchers.h"
 #include "content/fetchers/resource.h"
 #include "content/urldb.h"
@@ -127,7 +128,6 @@
 #include "amiga/file.h"
 #include "amiga/filetype.h"
 #include "amiga/font.h"
-#include "amiga/fs_backing_store.h"
 #include "amiga/gui_options.h"
 #include "amiga/help.h"
 #include "amiga/history.h"
@@ -3031,8 +3031,8 @@ static void gui_quit(void)
 	ami_mouse_pointers_free();
 	LOG("Freeing clipboard");
 	ami_clipboard_free();
-	LOG("Removing scheduler process");
-	ami_scheduler_process_delete();
+	LOG("Freeing scheduler resources");
+	ami_schedule_free();
 
 	FreeSysObject(ASOT_PORT, appport);
 	FreeSysObject(ASOT_PORT, sport);
@@ -5504,7 +5504,7 @@ int main(int argc, char** argv)
 		return RETURN_FAIL;
 	}
 
-	if(ami_scheduler_process_create(schedulermsgport) != NSERROR_OK) {
+	if(ami_schedule_create(schedulermsgport) != NSERROR_OK) {
 		ami_misc_fatal_error("Failed to initialise scheduler");
 		ami_gui_splash_close(splash_window);
 		ami_libs_close();
@@ -5524,7 +5524,7 @@ int main(int argc, char** argv)
 		users_dir = ASPrintf("%s", USERS_DIR);
 		if(users_dir == NULL) {
 			ami_misc_fatal_error("Failed to allocate memory");
-			ami_scheduler_process_delete();
+			ami_schedule_free();
 			ami_gui_splash_close(splash_window);
 			ami_libs_close();
 			return RETURN_FAIL;
@@ -5536,7 +5536,7 @@ int main(int argc, char** argv)
 		struct InfoData *infodata = AllocDosObject(DOS_INFODATA, 0);
 		if(infodata == NULL) {
 			ami_misc_fatal_error("Failed to allocate memory");
-			ami_scheduler_process_delete();
+			ami_schedule_free();
 			ami_gui_splash_close(splash_window);
 			ami_libs_close();
 			return RETURN_FAIL;
@@ -5547,7 +5547,7 @@ int main(int argc, char** argv)
 		if(infodata->id_DiskState == ID_DISKSTATE_WRITE_PROTECTED) {
 			FreeDosObject(DOS_INFODATA, infodata);
 			ami_misc_fatal_error("User directory MUST be on a writeable volume");
-			ami_scheduler_process_delete();
+			ami_schedule_free();
 			ami_gui_splash_close(splash_window);
 			ami_libs_close();
 			return RETURN_FAIL;
@@ -5567,7 +5567,7 @@ int main(int argc, char** argv)
 	current_user_dir = AllocVecTagList(len, NULL);
 	if(current_user_dir == NULL) {
 		ami_misc_fatal_error("Failed to allocate memory");
-		ami_scheduler_process_delete();
+		ami_schedule_free();
 		ami_gui_splash_close(splash_window);
 		ami_libs_close();
 		return RETURN_FAIL;
@@ -5605,7 +5605,7 @@ int main(int argc, char** argv)
 	ret = nsoption_init(ami_set_options, &nsoptions, &nsoptions_default);
 	if (ret != NSERROR_OK) {
 		ami_misc_fatal_error("Options failed to initialise");
-		ami_scheduler_process_delete();
+		ami_schedule_free();
 		ami_gui_splash_close(splash_window);
 		ami_libs_close();
 		return RETURN_FAIL;
@@ -5618,7 +5618,7 @@ int main(int argc, char** argv)
 
 	if (ami_locate_resource(messages, "Messages") == false) {
 		ami_misc_fatal_error("Cannot open Messages file");
-		ami_scheduler_process_delete();
+		ami_schedule_free();
 		ami_gui_splash_close(splash_window);
 		ami_libs_close();
 		return RETURN_FAIL;
@@ -5629,7 +5629,7 @@ int main(int argc, char** argv)
 	ret = netsurf_init(current_user_cache);
 	if (ret != NSERROR_OK) {
 		ami_misc_fatal_error("NetSurf failed to initialise");
-		ami_scheduler_process_delete();
+		ami_schedule_free();
 		ami_gui_splash_close(splash_window);
 		ami_libs_close();
 		return RETURN_FAIL;

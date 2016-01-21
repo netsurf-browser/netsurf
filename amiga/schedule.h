@@ -41,16 +41,17 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p);
 void ami_schedule_handle(struct MsgPort *nsmsgport);
 
 /**
- * Create a new process for the scheduler.
+ * Initialise amiga scheduler
  *
- * \param nsmsgport Message port for the scheduler to send events to.
- * \return NSERROR_OK on success or error code on failure.
+ * \param msgport opened message port
+ *
+ * \return error.
  */
-nserror ami_scheduler_process_create(struct MsgPort *nsmsgport);
+nserror ami_schedule_create(struct MsgPort *msgport);
 
 /**
- * Signal the scheduler process to exit.
+ * Finalise amiga scheduler
  */
-void ami_scheduler_process_delete(void);
+void ami_schedule_free(void);
 #endif
 
