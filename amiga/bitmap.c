@@ -49,16 +49,21 @@ void *amiga_bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
 	
-	bitmap = ami_misc_allocvec_clear(sizeof(struct bitmap), 0);
-	if(bitmap)
-	{
-		bitmap->pixdata = ami_misc_allocvec_clear(width*height*4, 0xff);
-		bitmap->width = width;
-		bitmap->height = height;
+	bitmap = AllocVecTagList(sizeof(struct bitmap), NULL);
+	if(bitmap == NULL) return NULL;
 
-		if(state & BITMAP_OPAQUE) bitmap->opaque = true;
-			else bitmap->opaque = false;
-	}
+	bitmap->pixdata = ami_misc_allocvec_clear(width*height*4, 0xff);
+	bitmap->width = width;
+	bitmap->height = height;
+
+	if(state & BITMAP_OPAQUE) bitmap->opaque = true;
+		else bitmap->opaque = false;
+
+	bitmap->nativebm = NULL;
+	bitmap->nativebmwidth = 0;
+	bitmap->nativebmheight = 0;
+	bitmap->native_mask = NULL;
+	bitmap->dto = NULL;
 
 	return bitmap;
 }
