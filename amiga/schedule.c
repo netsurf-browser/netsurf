@@ -29,6 +29,7 @@
 #include "utils/errors.h"
 #include "utils/log.h"
 
+#include "amiga/misc.h"
 #include "amiga/schedule.h"
 
 #ifdef AMIGA_NS_ASYNC
@@ -39,6 +40,9 @@ struct Device *TimerBase;
 #ifdef __amigaos4__
 struct TimerIFace *ITimer;
 #endif
+
+static APTR pool_nscb = NULL;
+static APTR pool_timereq = NULL;
 
 struct nscallback
 {
@@ -83,7 +87,7 @@ static void ami_schedule_remove_timer_event(struct nscallback *nscb)
    			AbortIO((struct IORequest *)nscb->treq);
 
 		WaitIO((struct IORequest *)nscb->treq);
-		FreeVec(nscb->treq);
+		ami_misc_itempool_free(pool_timereq, nscb->treq, sizeof(struct TimeRequest));
 	}
 }
 
@@ -107,7 +111,7 @@ static nserror ami_schedule_add_timer_event(struct nscallback *nscb, int t)
 	GetSysTime(&tv);
 	AddTime(&nscb->tv,&tv); // now contains time when event occurs
 
-	if((nscb->treq = AllocVecTagList(sizeof(struct TimeRequest), NULL))) {
+	if((nscb->treq = ami_misc_itempool_alloc(pool_timereq, sizeof(struct TimeRequest)))) {
 		*nscb->treq = *tioreq;
 		nscb->treq->Request.io_Command=TR_ADDREQUEST;
 		nscb->treq->Time.Seconds=nscb->tv.Seconds; // secs
@@ -137,7 +141,7 @@ static struct nscallback *ami_schedule_locate(void (*callback)(void *p), void *p
 	bool found_cb = false;
 
 	/* check there is something on the list */
-        if (schedule_list == NULL) return NULL;
+	if (schedule_list == NULL) return NULL;
 	if(pblHeapIsEmpty(schedule_list)) return NULL;
 
 	iterator = pblHeapIterator(schedule_list);
@@ -192,7 +196,7 @@ static nserror schedule_remove(void (*callback)(void *p), void *p)
 
 	if(nscb != NULL) {
 		ami_schedule_remove_timer_event(nscb);
-		FreeVec(nscb);
+		ami_misc_itempool_free(pool_nscb, nscb, sizeof(struct nscallback));
 		pblHeapConstruct(schedule_list);
 	}
 
@@ -212,7 +216,7 @@ static void schedule_remove_all(void)
 	{
 		ami_schedule_remove_timer_event(nscb);
 		pblIteratorRemove(iterator);
-		FreeVec(nscb);
+		ami_misc_itempool_free(pool_nscb, nscb, sizeof(struct nscallback));
 	};
 
 	pblIteratorFree(iterator);
@@ -275,7 +279,7 @@ static void ami_scheduler_run(struct MsgPort *nsmsgport)
 	p = nscb->p;
 	ami_schedule_remove_timer_event(nscb);
 	pblHeapRemoveFirst(schedule_list);
-	FreeVec(nscb);
+	ami_misc_itempool_free(pool_nscb, nscb, sizeof(struct nscallback));
 
 	asmsg->type = AMI_S_RUN;
 	asmsg->callback = callback;
@@ -371,7 +375,7 @@ static nserror ami_scheduler_schedule(struct ami_schedule_message *asmsg)
 		return ami_schedule_reschedule(nscb, asmsg->t);
 	}
 
-	nscb = AllocVecTagList(sizeof(struct nscallback), NULL);
+	nscb = ami_misc_itempool_alloc(pool_nscb, sizeof(struct nscallback));
 	if(!nscb) return NSERROR_NOMEM;
 
 	if (ami_schedule_add_timer_event(nscb, asmsg->t) != NSERROR_OK)
@@ -536,6 +540,9 @@ static int32 ami_scheduler_process(STRPTR args, int32 length, APTR execbase)
  */
 nserror ami_scheduler_process_create(struct MsgPort *nsmsgport)
 {
+	pool_nscb = ami_misc_itempool_create(sizeof(struct nscallback));
+	pool_timereq = ami_misc_itempool_create(sizeof(struct TimeRequest));
+
 #ifndef AMIGA_NS_ASYNC
 	ami_schedule_create(nsmsgport);
 #else
@@ -585,5 +592,8 @@ void ami_scheduler_process_delete(void)
 	PutMsg(smsgport, (struct Message *)asmsg);
 	smsgport = NULL; /* this is freed via another copy of this pointer */
 #endif
+
+	ami_misc_itempool_delete(pool_timereq);
+	ami_misc_itempool_delete(pool_nscb);
 }
 
