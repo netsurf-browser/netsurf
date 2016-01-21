@@ -671,19 +671,22 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 
 				dom_string_unref(name);
 			}
-			/* ensure javascript context is available */
-			if (htmlc->jscontext == NULL) {
-				union content_msg_data msg_data;
+			if (htmlc->enable_scripting) {
+				/* ensure javascript context is available */
+				if (htmlc->jscontext == NULL) {
+					union content_msg_data msg_data;
 
-				msg_data.jscontext = &htmlc->jscontext;
-				content_broadcast(&htmlc->base,
-						  CONTENT_MSG_GETCTX,
-						  msg_data);
-				LOG("javascript context %p ", htmlc->jscontext);
-			}
-			if (htmlc->jscontext != NULL) {
-				js_handle_new_element(htmlc->jscontext,
-						      (dom_element *) node);
+					msg_data.jscontext = &htmlc->jscontext;
+					content_broadcast(&htmlc->base,
+							CONTENT_MSG_GETCTX,
+							msg_data);
+					LOG("javascript context: %p",
+							htmlc->jscontext);
+				}
+				if (htmlc->jscontext != NULL) {
+					js_handle_new_element(htmlc->jscontext,
+							(dom_element *) node);
+				}
 			}
 		}
 		dom_node_unref(node);
