@@ -274,6 +274,7 @@ void imagemap_dump(html_content *c)
 /**
  * Adds an imagemap entry to the list
  *
+ * \param c  The html content that the imagemap belongs to
  * \param n  The xmlNode representing the entry to add
  * \param base_url  Base URL for resolving relative URLs
  * \param entry  Pointer to list of entries
@@ -281,7 +282,7 @@ void imagemap_dump(html_content *c)
  * \return false on memory exhaustion, true otherwise
  */
 static bool
-imagemap_addtolist(dom_node *n, nsurl *base_url,
+imagemap_addtolist(const struct html_content *c, dom_node *n, nsurl *base_url,
 		   struct mapentry **entry, dom_string *tagtype)
 {
 	dom_exception exc;
@@ -346,7 +347,7 @@ imagemap_addtolist(dom_node *n, nsurl *base_url,
 	else
 		goto bad_out;
 
-	if (box_extract_link(dom_string_data(href),
+	if (box_extract_link(c, dom_string_data(href),
 			     base_url, &new_map->url) == false)
 		goto bad_out;
 
@@ -537,7 +538,7 @@ imagemap_extract_map_entries(dom_node *node, html_content *c,
 			dom_nodelist_unref(nlist);
 			return false;
 		}
-		if (imagemap_addtolist(subnode, c->base_url,
+		if (imagemap_addtolist(c, subnode, c->base_url,
 				       entry, tname) == false) {
 			dom_node_unref(subnode);
 			dom_nodelist_unref(nlist);

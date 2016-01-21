@@ -334,7 +334,8 @@ struct box *box_pick_text_box(struct html_content *html,
 struct box *box_find_by_id(struct box *box, lwc_string *id);
 bool box_visible(struct box *box);
 void box_dump(FILE *stream, struct box *box, unsigned int depth, bool style);
-bool box_extract_link(const char *rel, struct nsurl *base, struct nsurl **result);
+bool box_extract_link(const struct html_content *content,
+		const char *rel, struct nsurl *base, struct nsurl **result);
 
 bool box_handle_scrollbars(struct content *c, struct box *box,
 		bool bottom, bool right);
