@@ -1,5 +1,5 @@
 /*
- * Copyright 2005,2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2005, 2008, 2016 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -18,7 +18,9 @@
 
 #include "amiga/os3support.h"
 
+#include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <proto/exec.h>
 #include <exec/lists.h>
@@ -34,6 +36,21 @@
 #define nsList List
 #define NewnsList NewList
 #endif
+
+APTR pool_nsobj = NULL;
+
+bool ami_object_init(void)
+{
+	pool_nsobj = ami_misc_itempool_create(sizeof(struct nsObject));
+
+	if(pool_nsobj == NULL) return false;
+		else return true;
+}
+
+void ami_object_fini(void)
+{
+	ami_misc_itempool_delete(pool_nsobj);
+}
 
 /* Slightly abstract MinList initialisation */
 void ami_NewMinList(struct MinList *list)
@@ -61,8 +78,10 @@ struct nsObject *AddObject(struct MinList *objlist, ULONG otype)
 {
 	struct nsObject *dtzo;
 
-	dtzo = (struct nsObject *)ami_misc_allocvec_clear(sizeof(struct nsObject), 0);
+	dtzo = (struct nsObject *)ami_misc_itempool_alloc(pool_nsobj, sizeof(struct nsObject));
+	if(dtzo == NULL) return NULL;
 
+	memset(dtzo, 0, sizeof(struct nsObject));
 	AddTail((struct List *)objlist,(struct Node *)dtzo);
 
 	dtzo->Type = otype;
@@ -81,7 +100,7 @@ static void DelObjectInternal(struct nsObject *dtzo, BOOL free_obj)
 	if(dtzo->callback != NULL) dtzo->callback(dtzo->objstruct);
 	if(dtzo->objstruct && free_obj) FreeVec(dtzo->objstruct);
 	if(dtzo->dtz_Node.ln_Name) free(dtzo->dtz_Node.ln_Name);
-	FreeVec(dtzo);
+	ami_misc_itempool_free(pool_nsobj, dtzo, sizeof(struct nsObject));
 	dtzo = NULL;
 }
 
@@ -110,3 +129,4 @@ void FreeObjList(struct MinList *objlist)
 
 	FreeVec(objlist);
 }
+

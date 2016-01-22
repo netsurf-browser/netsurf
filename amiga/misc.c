@@ -52,10 +52,10 @@ APTR ami_misc_itempool_create(int size)
 		ASOITEM_MFlags, MEMF_PRIVATE,
 		ASOITEM_ItemSize, size,
 		ASOITEM_GCPolicy, ITEMGC_AFTERCOUNT,
-		ASOITEM_GCParameter, 50,
+		ASOITEM_GCParameter, 100,
 		TAG_DONE);
 #else
-	return CreatePool(MEMF_ANY, 2 * size, size);
+	return CreatePool(MEMF_ANY, 20 * size, size);
 #endif
 }
 

@@ -58,5 +58,9 @@ void FreeObjList(struct MinList *objlist);
 /** List abstraction as OS3 appears to have problems with NewMinList() **/
 struct MinList *ami_AllocMinList(void);
 void ami_NewMinList(struct MinList *list);
+
+/** Initialisation for itempool **/
+bool ami_object_init(void);
+void ami_object_fini(void);
 #endif
 

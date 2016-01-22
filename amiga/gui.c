@@ -3049,6 +3049,8 @@ static void gui_quit(void)
 	FreeVec(current_user_faviconcache);
 	FreeVec(current_user);
 
+	ami_object_fini();
+
 	ami_libs_close();
 }
 
@@ -5496,6 +5498,8 @@ int main(int argc, char** argv)
 
 	/* Open splash window */
 	Object *splash_window = ami_gui_splash_open();
+
+	ami_object_init();
 
 	if (ami_open_resources() == false) { /* alloc message ports */
 		ami_misc_fatal_error("Unable to allocate resources");
