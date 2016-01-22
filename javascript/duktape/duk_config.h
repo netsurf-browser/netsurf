@@ -95,6 +95,11 @@
 #define DUK_F_BSD
 #endif
 
+/* Atari Mint */
+#if defined(__MINT__)
+#define DUK_F_MINT
+#endif
+
 /* Atari ST TOS.  __TOS__ defined by PureC.  No platform define in VBCC
  * apparently, so to use with VBCC user must define __TOS__ manually.
   */
@@ -2091,6 +2096,8 @@ typedef FILE duk_file;
 /* uclibc may be missing these */
 #elif defined(DUK_F_AMIGAOS) && defined(DUK_F_VBCC)
 /* vbcc + AmigaOS may be missing these */
+#elif defined(DUK_F_MINT)
+/* mint clib is missing these*/
 #elif !defined(DUK_F_C99) && !defined(DUK_F_CPP11)
 /* build is not C99 or C++11, play it safe */
 #else
