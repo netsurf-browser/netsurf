@@ -72,13 +72,13 @@ static struct atari_treeview_callbacks atari_hotlist_treeview_callbacks = {
 static nserror atari_hotlist_init_phase2(struct core_window *cw,
 					 struct core_window_callback_table *cb_t)
 {
-	LOG("");
+	LOG("cw:%p", cw);
 	return(hotlist_init(cb_t, cw, hl.path));
 }
 
 static void atari_hotlist_finish(struct core_window *cw)
 {
-	LOG("");
+	LOG("cw:%p", cw);
 	hotlist_fini(hl.path);
 }
 
@@ -123,7 +123,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 	GRECT tb_area;
 	GUIWIN * gemtk_win;
 
-	LOG("");
+	LOG("gw:%p", win);
 
 	tv = (struct atari_treeview_window*) gemtk_wm_get_user_data(win);
 	cw = (struct core_window *)tv;
