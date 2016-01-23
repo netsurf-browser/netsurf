@@ -89,6 +89,6 @@ NSOPTION_INTEGER(monitor_aspect_y, 0)
 NSOPTION_BOOL(accept_lang_locale, true)
 /* Options relevant for OS3 only */
 #ifndef __amigaos4__
-NSOPTION_BOOL(friend_bitmap, true)
+NSOPTION_BOOL(friend_bitmap, false)
 #endif
 
