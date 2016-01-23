@@ -64,6 +64,9 @@ void *amiga_bitmap_create(int width, int height, unsigned int state)
 	bitmap->nativebmheight = 0;
 	bitmap->native_mask = NULL;
 	bitmap->dto = NULL;
+	bitmap->url = NULL;
+	bitmap->title = NULL;
+	bitmap->icondata = NULL;
 
 	return bitmap;
 }
