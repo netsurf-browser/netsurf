@@ -124,7 +124,11 @@ void FreeObjList(struct MinList *objlist)
 
 	do {
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
-		DelObject(node);
+		if(node->Type == AMINS_RECT) {
+			DelObjectNoFree(node);
+		} else {
+			DelObject(node);
+		}
 	} while((node=nnode));
 
 	FreeVec(objlist);
