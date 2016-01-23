@@ -154,9 +154,6 @@
 #define AllocVecTagList(SZ,TAG) AllocVec(SZ,MEMF_ANY) /* AllocVecTagList with no tags */
 #define FindIName FindName
 
-/* Gfx */
-#define SetRPAttrs(...) (void)0 /*\todo Probably need to emulate this */
-
 /* Intuition */
 #define ICoerceMethod CoerceMethod
 #define IDoMethod DoMethod
