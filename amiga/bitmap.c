@@ -248,6 +248,7 @@ static size_t bitmap_get_bpp(void *vbitmap)
 	return 4;
 }
 
+#ifdef __amigaos4__
 static void ami_bitmap_argb_to_rgba(struct bitmap *bm)
 {
 	if(bm == NULL) return;
@@ -257,6 +258,7 @@ static void ami_bitmap_argb_to_rgba(struct bitmap *bm)
 		data[i] = (data[i] << 8) | (data[i] >> 24);
 	}
 }
+#endif
 
 #ifdef BITMAP_DUMP
 void bitmap_dump(struct bitmap *bitmap)
