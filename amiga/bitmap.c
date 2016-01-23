@@ -29,7 +29,9 @@
 #include <proto/dos.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
+#ifdef __amigaos4__
 #include <sys/param.h>
+#endif
 #include "assert.h"
 
 #include "utils/nsoption.h"
