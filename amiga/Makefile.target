@@ -118,6 +118,13 @@ netsurf.lha: $(EXETARGET)
 	$(Q)cp \!NetSurf/Resources/netsurf.png,b60 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/netsurf.png
 	$(Q)cp amiga/pkg/drawer.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf.info
 	$(Q)cp amiga/pkg/AutoInstall $(AMIGA_INSTALL_TARGET_DIR)
+  ifeq ($(SUBTARGET),os3)
+	$(Q)cp amiga/pkg/netsurf_os3.readme $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp amiga/pkg/netsurf_os3.readme.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+  else
+	$(Q)cp amiga/pkg/netsurf.readme $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp amiga/pkg/netsurf.readme.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+  endif
 	$(Q)cd $(AMIGA_INSTALL_TARGET_DIR); \
 	  lha a netsurf.lha NetSurf NetSurf.info AutoInstall
 

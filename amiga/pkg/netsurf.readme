@@ -5,11 +5,13 @@ Type:         comm/www
 Version:      3.4
 Architecture: ppc-amigaos >= 4.0.0
 
-This is NetSurf 3.4 for AmigaOS 4.
+This is NetSurf 3.4 for AmigaOS 4 (native frontend).
 For the latest version, visit http://www.netsurf-browser.org
 
-Please report bugs to chris@unsatisfactorysoftware.co.uk,
-on the Amigans.net forums or on the NetSurf mailing list.
+    *******************************************
+    * Please report bugs on the bugtracker at *
+    *     http://bugs.netsurf-browser.org     *
+    *******************************************
 
 See http://www.netsurf-browser.org for more information about
 NetSurf.
