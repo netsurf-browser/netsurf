@@ -70,7 +70,9 @@ struct bez_point {
 	float y;
 };
 
-bool palette_mapped = false;
+static bool palette_mapped = false;
+static int init_layers_count = 0;
+static APTR pool_pens = NULL;
 
 #ifndef M_PI /* For some reason we don't always get this from math.h */
 #define M_PI		3.14159265358979323846
@@ -181,10 +183,23 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	if((!gg->tmprasbuf) || (!gg->rp->TmpRas))	warn_user("NoMemory","");
 
 	InitTmpRas(gg->rp->TmpRas, gg->tmprasbuf, width*height);
+
+	if((palette_mapped == true) && (pool_pens == NULL)) {
+		pool_pens = ami_misc_itempool_create(sizeof(struct ami_plot_pen));
+	}
+
+	init_layers_count++;
 }
 
 void ami_free_layers(struct gui_globals *gg)
 {
+	init_layers_count--;
+
+	if((init_layers_count == 0) && (pool_pens != NULL)) {
+		ami_misc_itempool_delete(pool_pens);
+		pool_pens = NULL;
+	}
+
 	if(gg->rp) {
 		DeleteLayer(0,gg->rp->Layer);
 		FreeVec(gg->rp->TmpRas);
@@ -226,8 +241,8 @@ static ULONG ami_plot_obtain_pen(struct MinList *shared_pens, ULONG colr)
 	
 	if(pen == -1) LOG("WARNING: Cannot allocate pen for ABGR:%lx", colr);
 
-	if(shared_pens != NULL) {
-		if((node = (struct ami_plot_pen *)AllocVecTagList(sizeof(struct ami_plot_pen), NULL))) {
+	if((shared_pens != NULL) && (pool_pens != NULL)) {
+		if((node = (struct ami_plot_pen *)ami_misc_itempool_alloc(pool_pens, sizeof(struct ami_plot_pen)))) {
 			node->pen = pen;
 			AddTail((struct List *)shared_pens, (struct Node *)node);
 		}
@@ -251,7 +266,7 @@ void ami_plot_release_pens(struct MinList *shared_pens)
 		nnode = (struct ami_plot_pen *)GetSucc((struct Node *)node);
 		ReleasePen(scrn->ViewPort.ColorMap, node->pen);
 		Remove((struct Node *)node);
-		FreeVec(node);
+		ami_misc_itempool_free(pool_pens, node, sizeof(struct ami_plot_pen));
 	} while((node = nnode));
 }
 
