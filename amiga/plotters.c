@@ -142,7 +142,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool for
 	} else {
 		/* Force friend BitMaps on for obvious RTG screens under OS3.
 		 * If we get a bit smarter about this we can lose the user option. */
-		if(depth >= 16) friend = scrn->RastPort.BitMap;
+		if((depth >= 16) && (force32bit == false)) friend = scrn->RastPort.BitMap;
 	}
 #endif
 
@@ -154,7 +154,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool for
 		 * We get freezes and other problems on OS4 if we befriend at any
 		 * other depths, hence this check.
 		 */
-		if(depth >= 24) friend = scrn->RastPort.BitMap;
+		if((depth >= 24) && (force32bit == false)) friend = scrn->RastPort.BitMap;
 #endif
 		gg->bm = ami_rtg_allocbitmap(width, height, 32, 0, friend, RGBFB_A8R8G8B8);
 	}
