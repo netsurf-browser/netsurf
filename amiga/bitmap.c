@@ -558,11 +558,7 @@ struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
 
 static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 {
-<<<<<<< HEAD
 //	if(ami_plot_screen_is_palettemapped() == true) return NSERROR_OK;
-=======
-	if(ami_plot_screen_is_palettemapped() == true) return NSERROR_OK;
->>>>>>> 6847fad65368bab3418eb716af4f9d485dfe30b1
 
 	struct redraw_context ctx = {
 		.interactive = false,
