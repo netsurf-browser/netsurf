@@ -30,7 +30,6 @@
 # TARGET is set to the frontend target to build
 # HOST is set to the identifier of the toolchain doing the building
 # CC is the compiler (gcc or clang)
-# BUILD_JS is the javascript type (json or jsoff)
 # BUILD_NUMBER is the CI build number
 
 #####
@@ -346,36 +345,29 @@ if [ "${CC}" = "clang" ];then
 fi
 
 # convert javascript parameters
-if [ "${BUILD_JS}" = "json" ];then
-    case ${HOST} in
-        "arm-unknown-riscos")
-	    BUILD_MOZJS=NO
-	    BUILD_JS=NO
-	    #BUILD_JS=YES
-            BUILD_DUKTAPE=YES
-	    ;;
-
-        "amd64-unknown-openbsd5.4")
-	    BUILD_MOZJS=NO
-	    BUILD_JS=NO
-	    #BUILD_JS=YES
-            BUILD_DUKTAPE=YES
-            ;;
-
-	*)
-	    #BUILD_MOZJS=YES
-	    BUILD_MOZJS=NO
-	    BUILD_JS=NO
-            BUILD_DUKTAPE=YES
+case ${HOST} in
+    "arm-unknown-riscos")
+        BUILD_MOZJS=NO
+	BUILD_JS=NO
+	#BUILD_JS=YES
+        BUILD_DUKTAPE=YES
 	;;
 
-    esac
+    "amd64-unknown-openbsd5.4")
+        BUILD_MOZJS=NO
+	BUILD_JS=NO
+	#BUILD_JS=YES
+        BUILD_DUKTAPE=YES
+        ;;
 
-else
-    BUILD_JS=NO
-    BUILD_MOZJS=NO
-    BUILD_DUKTAPE=NO
-fi
+    *)
+	#BUILD_MOZJS=YES
+	BUILD_MOZJS=NO
+	BUILD_JS=NO
+        BUILD_DUKTAPE=YES
+	;;
+
+esac
 
 ########### Use distcc if present ######
 
