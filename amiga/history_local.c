@@ -117,7 +117,7 @@ void ami_history_open(struct gui_window *gw)
 	{
 		gw->hw = ami_misc_allocvec_clear(sizeof(struct history_window), 0);
 
-		ami_init_layers(&gw->hw->gg, scrn->Width, scrn->Height);
+		ami_init_layers(&gw->hw->gg, scrn->Width, scrn->Height, false);
 
 		gw->hw->gw = gw;
 		browser_window_history_size(gw->bw, &width, &height);

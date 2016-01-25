@@ -481,7 +481,8 @@ bool ami_print_begin(struct print_settings *ps)
 
 	ami_init_layers(ami_print_info.gg,
 				ami_print_info.PED->ped_MaxXDots,
-				ami_print_info.PED->ped_MaxYDots);
+				ami_print_info.PED->ped_MaxYDots,
+				true);
 
 	ami_print_info.page = 0;
 

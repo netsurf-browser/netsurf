@@ -35,7 +35,7 @@ method Document::write()
 	}
 	duk_concat(ctx, duk_get_top(ctx));
 	text = duk_safe_to_lstring(ctx, 0, &text_len);
-	LOG("Writing %*s", (int)text_len, text);
+	JS_LOG("Writing %*s", (int)text_len, text);
 
 	err = dom_node_get_user_data(priv->parent.node,
 				     corestring_dom___ns_key_html_content_data,
@@ -69,7 +69,7 @@ method Document::writeln()
 	duk_concat(ctx, duk_get_top(ctx));
 	text = duk_safe_to_lstring(ctx, 0, &text_len);
 
-	LOG("Writeln %*s", (int)text_len, text);
+	JS_LOG("Writeln %*s", (int)text_len, text);
 	err = dom_node_get_user_data(priv->parent.node,
 				     corestring_dom___ns_key_html_content_data,
 				     &htmlc);

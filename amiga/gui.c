@@ -809,7 +809,7 @@ static void ami_openscreen(void)
 static void ami_openscreenfirst(void)
 {
 	ami_openscreen();
-	if(!browserglob.bm) ami_init_layers(&browserglob, 0, 0);
+	if(!browserglob.bm) ami_init_layers(&browserglob, 0, 0, false);
 	ami_theme_throbber_setup();
 }
 
@@ -2859,7 +2859,7 @@ void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 		return;
 	}
 
-	ami_plot_release_pens(&gwin->shared_pens);
+	ami_plot_release_pens(gwin->shared_pens);
 	ami_update_buttons(gwin);
 	ami_menu_update_disabled(gwin->gw, browser_window_get_content(gwin->gw->bw));
 
@@ -3495,7 +3495,7 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 	int tile_x_scale = (int)(tile_size_x / gwin->gw->scale);
 	int tile_y_scale = (int)(tile_size_y / gwin->gw->scale);
 
-	browserglob.shared_pens = &gwin->shared_pens; /* do we need this?? */
+	browserglob.shared_pens = gwin->shared_pens; /* do we need this?? */
 	
 	if(top < 0) {
 		height += top;
@@ -3869,7 +3869,7 @@ gui_window_create(struct browser_window *bw,
 		return NULL;
 	}
 
-	ami_NewMinList(&g->shared->shared_pens);
+	g->shared->shared_pens = ami_AllocMinList();
 
 	g->shared->scrollerhook.h_Entry = (void *)ami_scroller_hook;
 	g->shared->scrollerhook.h_Data = g->shared;
@@ -4492,7 +4492,8 @@ static void gui_window_destroy(struct gui_window *g)
 		return;
 	}
 
-	ami_plot_release_pens(&g->shared->shared_pens);
+	ami_plot_release_pens(g->shared->shared_pens);
+	FreeVec(g->shared->shared_pens);
 	ami_schedule_redraw_remove(g->shared);
 	ami_schedule(-1, ami_gui_refresh_favicon, g->shared);
 
@@ -4831,7 +4832,7 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 		}
 		else
 		{
-			browserglob.shared_pens = &gwin->shared_pens;
+			browserglob.shared_pens = gwin->shared_pens;
 			temprp = browserglob.rp;
  			browserglob.rp = gwin->win->RPort;
 			clip.x0 = bbox->Left;
@@ -5202,7 +5203,7 @@ static void gui_window_new_content(struct gui_window *g)
 	g->shared->oldh = 0;
 	g->shared->oldv = 0;
 	g->favicon = NULL;
-	ami_plot_release_pens(&g->shared->shared_pens);
+	ami_plot_release_pens(g->shared->shared_pens);
 	ami_menu_update_disabled(g, c);
 	ami_gui_update_hotlist_button(g->shared);
 	ami_gui_scroller_update(g->shared);
