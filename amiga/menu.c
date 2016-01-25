@@ -209,7 +209,7 @@ HOOKF(void, ami_menu_item_project_about, APTR, window, struct IntuiMessage *)
 		temp2,
 	};
 
-	sel = EasyRequest(NULL, &about_req, NULL, netsurf_version, verdate);
+	sel = EasyRequest(gwin->win, &about_req, NULL, netsurf_version, verdate);
 #endif
 	free(temp2);
 
