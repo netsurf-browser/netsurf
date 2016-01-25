@@ -82,7 +82,7 @@ static void ami_history_redraw(struct history_window *hw)
 
 	glob = &hw->gg;
 
-	SetRPAttrs(glob->rp, RPTAG_APenColor, 0x00ffffff, TAG_DONE);
+	SetRPAttrs(glob->rp, RPTAG_APenColor, 0xffffffff, TAG_DONE);
 	RectFill(glob->rp, 0, 0, bbox->Width - 1, bbox->Height - 1);
 
 	browser_window_history_redraw_rectangle(hw->gw->bw, xs, ys,
