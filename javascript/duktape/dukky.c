@@ -236,7 +236,7 @@ dukky_push_node_klass(duk_context *ctx, struct dom_node *node)
 duk_bool_t
 dukky_push_node(duk_context *ctx, struct dom_node *node)
 {
-	LOG("Pushing node %p", node);
+	JS_LOG("Pushing node %p", node);
 	/* First check if we can find the node */
 	/* ... */
 	duk_get_global_string(ctx, NODE_MAGIC);
@@ -251,7 +251,7 @@ dukky_push_node(duk_context *ctx, struct dom_node *node)
 		/* ... node nodes */
 		duk_pop(ctx);
 		/* ... node */
-		LOG("Found it memoised");
+		JS_LOG("Found it memoised");
 		return true;
 	}
 	/* ... nodes undefined */
