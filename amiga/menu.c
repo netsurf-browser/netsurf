@@ -201,10 +201,15 @@ HOOKF(void, ami_menu_item_project_about, APTR, window, struct IntuiMessage *)
 				TDR_Arg2,verdate,
 				TAG_DONE);
 #else
-	/*\todo proper requester for OS3
-	 * at the moment menus are disabled so won't get here anyway */
-	printf("NetSurf %s\nBuild date %s\n", netsurf_version, verdate);
-	sel = 0;
+	struct EasyStruct about_req = {
+		sizeof(struct EasyStruct),
+		0,
+		"NetSurf",
+		"NetSurf %s\nBuild date %s\n\nhttp://www.netsurf-browser.org",
+		temp2,
+	};
+
+	sel = EasyRequest(NULL, &about_req, NULL, netsurf_version, verdate);
 #endif
 	free(temp2);
 
