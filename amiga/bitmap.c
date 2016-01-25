@@ -558,8 +558,6 @@ struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
 
 static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 {
-//	if(ami_plot_screen_is_palettemapped() == true) return NSERROR_OK;
-
 	struct redraw_context ctx = {
 		.interactive = false,
 		.background_images = true,
@@ -570,14 +568,13 @@ static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 	int plot_height;
 	struct gui_globals bm_globals;
 	struct gui_globals *temp_gg = glob;
-//	struct MinList *shared_pens = ami_AllocMinList();
 
 	plot_width = MIN(content_get_width(content), bitmap->width);
 	plot_height = ((plot_width * bitmap->height) + (bitmap->width / 2)) /
 			bitmap->width;
 
 	ami_init_layers(&bm_globals, bitmap->width, bitmap->height, true);
-//	bm_globals.shared_pens = shared_pens;
+	bm_globals.shared_pens = NULL;
 
 	glob = &bm_globals;
 	ami_clearclipreg(&bm_globals);
@@ -600,15 +597,13 @@ static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 
 	ami_bitmap_argb_to_rgba(bitmap);
 #else
-#warning FIXME for OS3
+#warning FIXME for OS3 (in current state none of bitmap_render can work!)
 #endif
 
 	/**\todo In theory we should be able to move the bitmap to our native area
 		to try to avoid re-conversion (at the expense of memory) */
 
 	ami_free_layers(&bm_globals);
-//	ami_plot_release_pens(shared_pens);
-//	FreeVec(shared_pens);
 	amiga_bitmap_set_opaque(bitmap, true);
 
 	/* Restore previous render area.  This is set when plotting starts,
