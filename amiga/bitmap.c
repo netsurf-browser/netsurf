@@ -46,6 +46,13 @@
 #include "amiga/misc.h"
 #include "amiga/rtg.h"
 
+enum {
+	AMI_NSBM_NONE = 0,
+	AMI_NSBM_TRUECOLOUR,
+	AMI_NSBM_PALETTEMAPPED 
+};
+
+
 /* exported function documented in amiga/bitmap.h */
 void *amiga_bitmap_create(int width, int height, unsigned int state)
 {
@@ -69,6 +76,7 @@ void *amiga_bitmap_create(int width, int height, unsigned int state)
 	bitmap->url = NULL;
 	bitmap->title = NULL;
 	bitmap->icondata = NULL;
+	bitmap->native = AMI_NSBM_NONE;
 
 	return bitmap;
 }
@@ -163,6 +171,7 @@ void amiga_bitmap_modified(void *bitmap)
 	bm->nativebm = NULL;
 	bm->dto = NULL;
 	bm->native_mask = NULL;
+	bm->native = AMI_NSBM_NONE;
 }
 
 
@@ -353,6 +362,10 @@ static inline struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int
 
 	if(!bitmap) return NULL;
 
+	if((bitmap->native != AMI_NSBM_NONE) && (bitmap->native != AMI_NSBM_TRUECOLOUR)) {
+		amiga_bitmap_modified(bitmap);
+	}
+
 	if(bitmap->nativebm)
 	{
 		if((bitmap->nativebmwidth == width) && (bitmap->nativebmheight==height))
@@ -384,6 +397,7 @@ static inline struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int
 			bitmap->nativebm = tbm;
 			bitmap->nativebmwidth = bitmap->width;
 			bitmap->nativebmheight = bitmap->height;
+			bitmap->native = AMI_NSBM_TRUECOLOUR;
 		}
 	}
 
@@ -436,12 +450,14 @@ static inline struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int
 		ami_rtg_freebitmap(tbm);
 		tbm = scaledbm;
 		bitmap->nativebm = NULL;
+		bitmap->native = AMI_NSBM_NONE;
 
 		if(nsoption_int(cache_bitmaps) >= 1)
 		{
 			bitmap->nativebm = tbm;
 			bitmap->nativebmwidth = width;
 			bitmap->nativebmheight = height;
+			bitmap->native = AMI_NSBM_TRUECOLOUR;
 		}
 	}
 
@@ -482,7 +498,11 @@ static inline struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
 					int width, int height)
 {
 	struct BitMap *dtbm;
-	
+
+	if((bitmap->native != AMI_NSBM_NONE) && (bitmap->native != AMI_NSBM_PALETTEMAPPED)) {
+		amiga_bitmap_modified(bitmap);
+	}
+
 	/* Dispose the DataTypes object if we've performed a layout already,
 		and we need to scale, as scaling can only be performed before
 		the first GM_LAYOUT */
@@ -519,6 +539,10 @@ static inline struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
 	bitmap->nativebmwidth = width;
 	bitmap->nativebmheight = height;
 
+	/**\todo Native bitmaps are stored as DataTypes Objects here?
+	   This is sub-optimal and they should be cached as BitMaps according to user
+	   preferences */
+	bitmap->native = AMI_NSBM_PALETTEMAPPED;
 	return dtbm;
 }
 
@@ -534,8 +558,6 @@ struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
 
 static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 {
-	if(ami_plot_screen_is_palettemapped() == true) return NSERROR_OK;
-
 	struct redraw_context ctx = {
 		.interactive = false,
 		.background_images = true,
@@ -546,14 +568,13 @@ static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 	int plot_height;
 	struct gui_globals bm_globals;
 	struct gui_globals *temp_gg = glob;
-//	struct MinList *shared_pens = ami_AllocMinList();
 
 	plot_width = MIN(content_get_width(content), bitmap->width);
 	plot_height = ((plot_width * bitmap->height) + (bitmap->width / 2)) /
 			bitmap->width;
 
 	ami_init_layers(&bm_globals, bitmap->width, bitmap->height, true);
-//	bm_globals.shared_pens = shared_pens;
+	bm_globals.shared_pens = NULL;
 
 	glob = &bm_globals;
 	ami_clearclipreg(&bm_globals);
@@ -576,15 +597,13 @@ static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 
 	ami_bitmap_argb_to_rgba(bitmap);
 #else
-#warning FIXME for OS3
+#warning FIXME for OS3 (in current state none of bitmap_render can work!)
 #endif
 
 	/**\todo In theory we should be able to move the bitmap to our native area
 		to try to avoid re-conversion (at the expense of memory) */
 
 	ami_free_layers(&bm_globals);
-//	ami_plot_release_pens(shared_pens);
-//	FreeVec(shared_pens);
 	amiga_bitmap_set_opaque(bitmap, true);
 
 	/* Restore previous render area.  This is set when plotting starts,

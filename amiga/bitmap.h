@@ -35,6 +35,7 @@ struct bitmap {
 	int height;
 	UBYTE *pixdata;
 	bool opaque;
+	int native;
 	struct BitMap *nativebm;
 	int nativebmwidth;
 	int nativebmheight;
