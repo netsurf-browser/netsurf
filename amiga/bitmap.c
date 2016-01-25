@@ -534,11 +534,7 @@ struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
 
 static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 {
-	int plot_width;
-	int plot_height;
-	struct MinList shared_pens;
-	struct gui_globals bm_globals;
-	struct gui_globals *temp_gg = glob;
+	if(ami_plot_screen_is_palettemapped() == true) return NSERROR_OK;
 
 	struct redraw_context ctx = {
 		.interactive = false,
@@ -546,13 +542,18 @@ static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 		.plot = &amiplot
 	};
 
+	int plot_width;
+	int plot_height;
+	struct gui_globals bm_globals;
+	struct gui_globals *temp_gg = glob;
+//	struct MinList *shared_pens = ami_AllocMinList();
+
 	plot_width = MIN(content_get_width(content), bitmap->width);
 	plot_height = ((plot_width * bitmap->height) + (bitmap->width / 2)) /
 			bitmap->width;
 
-	ami_init_layers(&bm_globals, bitmap->width, bitmap->height);
-	ami_NewMinList(&shared_pens);
-	bm_globals.shared_pens = &shared_pens;
+	ami_init_layers(&bm_globals, bitmap->width, bitmap->height, true);
+//	bm_globals.shared_pens = shared_pens;
 
 	glob = &bm_globals;
 	ami_clearclipreg(&bm_globals);
@@ -582,7 +583,8 @@ static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 		to try to avoid re-conversion (at the expense of memory) */
 
 	ami_free_layers(&bm_globals);
-	ami_plot_release_pens(&shared_pens);
+//	ami_plot_release_pens(shared_pens);
+//	FreeVec(shared_pens);
 	amiga_bitmap_set_opaque(bitmap, true);
 
 	/* Restore previous render area.  This is set when plotting starts,

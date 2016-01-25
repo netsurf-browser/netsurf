@@ -33,13 +33,14 @@ struct gui_globals
 	APTR tmprasbuf;
 	struct Rectangle rect;
 	struct MinList *shared_pens;
+	bool palette_mapped;
 	int width;  /* size of bm and    */
 	int height; /* associated memory */
 };
 
 extern const struct plotter_table amiplot;
 
-void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height);
+void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool force32bit);
 void ami_free_layers(struct gui_globals *gg);
 void ami_clearclipreg(struct gui_globals *gg);
 void ami_plot_clear_bbox(struct RastPort *rp, struct IBox *bbox);

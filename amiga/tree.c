@@ -734,7 +734,7 @@ void ami_tree_open(struct treeview_window *twin,int type)
 	twin->scrollerhook.h_Entry = (void *)ami_tree_scroller_hook;
 	twin->scrollerhook.h_Data = twin;
 
-	ami_init_layers(&twin->globals, 0, 0);
+	ami_init_layers(&twin->globals, 0, 0, false);
 	ami_tree_menu(twin);
 
 	if(type == AMI_TREE_SSLCERT)

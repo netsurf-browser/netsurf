@@ -138,7 +138,7 @@ struct gui_window_2 {
 	gui_drag_type drag_op;
 	struct IBox *ptr_lock;
 	struct AppWindow *appwin;
-	struct MinList shared_pens;
+	struct MinList *shared_pens;
 	gui_pointer_shape mouse_pointer;
 	struct Menu *imenu; /* Intuition menu */
 	struct VisualInfo *vi; /* For GadTools menu */
