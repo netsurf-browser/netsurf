@@ -23,6 +23,7 @@
 #include <proto/diskfont.h>
 #include <diskfont/diskfonttag.h>
 
+#include "utils/nsoption.h"
 #include "utils/utf8.h"
 #include "desktop/gui_utf8.h"
 
@@ -37,6 +38,8 @@ nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 
 	charset = GetDiskFontCtrl(DFCTRL_CHARSET);
 	encname = (const char *) ObtainCharsetInfo(DFCS_NUMBER, charset, DFCS_MIMENAME);
+#else
+	encname = nsoption_charp(local_charset);
 #endif
 	
 	return utf8_from_enc(string,encname,len,result,NULL);
@@ -51,6 +54,8 @@ nserror utf8_to_local_encoding(const char *string, size_t len, char **result)
 
 	charset = GetDiskFontCtrl(DFCTRL_CHARSET);
 	encname = (const char *) ObtainCharsetInfo(DFCS_NUMBER, charset, DFCS_MIMENAME);
+#else
+	encname = nsoption_charp(local_charset);
 #endif
 
 	return utf8_to_enc(string,encname,len,result);
@@ -96,3 +101,4 @@ static struct gui_utf8_table utf8_table = {
 };
 
 struct gui_utf8_table *amiga_utf8_table = &utf8_table;
+

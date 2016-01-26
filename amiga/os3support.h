@@ -140,7 +140,7 @@
 #define ESetInfo SetInfo
 
 /* Only used in one place we haven't ifdeffed, where it returns the charset name */
-#define ObtainCharsetInfo(A,B,C) (const char *)"ISO-8859-1"
+#define ObtainCharsetInfo(A,B,C) (const char *)nsoption_charp(local_charset)
 
 /* DOS */
 #define AllocSysObjectTags(A,B,C,D) CreateMsgPort() /* Assume ASOT_PORT for now */

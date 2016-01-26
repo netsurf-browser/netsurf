@@ -90,5 +90,6 @@ NSOPTION_BOOL(accept_lang_locale, true)
 /* Options relevant for OS3 only */
 #ifndef __amigaos4__
 NSOPTION_BOOL(friend_bitmap, false)
+NSOPTION_STRING(local_charset, "ISO-8859-1")
 #endif
 
