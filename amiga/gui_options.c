@@ -208,6 +208,11 @@ enum
 #define OPTS_MAX_NATIVEBM 4
 #define OPTS_MAX_DITHER 4
 
+enum {
+	NSA_LIST_CLICKTAB = 0,
+	NSA_LIST_RADIO,
+};
+
 struct ami_gui_opts_window {
 	struct nsObject *node;
 	struct Window *win;
@@ -228,6 +233,36 @@ CONST_STRPTR fontopts[6];
 CONST_STRPTR gadlab[OPTS_LAST];
 struct List *websearch_list;
 
+#ifndef __amigaos4__
+static void ami_gui_opts_array_to_list(struct List *list, const char array[], int type)
+{
+	int i = 0;
+	struct Node *node;
+
+	NewList(&gow->clicktablist);
+
+	do {
+		node = AllocClickTabNode(TNA_Text, tabs[i], TNA_Number, i, TAG_DONE);
+		AddTail(&gow->clicktablist, node);
+		i++;
+	} while (tabs[i] != 0);
+}
+
+static void ami_gui_opts_free_list(struct List *list, int type)
+{
+	struct Node *node;
+	struct Node *nnode;
+
+	if(IsListEmpty((struct List *)&gow->clicktablist)) return;
+	node = GetHead((struct List *)&gow->clicktablist);
+
+	do {
+		nnode = GetSucc(node);
+		if(node) FreeClickTabNode(node);
+	} while((node = nnode));
+}
+#endif
+
 static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 {
 	tabs[0] = (char *)ami_utf8_easy((char *)messages_get("con_general"));
@@ -246,16 +281,7 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 #endif
 
 #ifndef __amigaos4__
-	int i = 0;
-	struct Node *node;
-
-	NewList(&gow->clicktablist);
-
-	do {
-		node = AllocClickTabNode(TNA_Text, tabs[i], TNA_Number, i, TAG_DONE);
-		AddTail(&gow->clicktablist, node);
-		i++;
-	} while (tabs[i] != 0);
+	ami_gui_opts_array_to_list(&gow->clicktablist, tabs, NSA_LIST_CLICKTAB);
 #endif
 
 	screenopts[0] = (char *)ami_utf8_easy((char *)messages_get("ScreenOwn"));
@@ -417,16 +443,7 @@ static void ami_gui_opts_free(struct ami_gui_opts_window *gow)
 	ami_gui_opts_websearch_free(websearch_list);
 
 #ifndef __amigaos4__
-	struct Node *node;
-	struct Node *nnode;
-
-	if(IsListEmpty((struct List *)&gow->clicktablist)) return;
-	node = GetHead((struct List *)&gow->clicktablist);
-
-	do {
-		nnode = GetSucc(node);
-		if(node) FreeClickTabNode(node);
-	} while((node = nnode));
+	ami_gui_opts_free_list(&gow->clicktablist, NSA_LIST_CLICKTAB);
 #endif
 }
 
