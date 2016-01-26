@@ -234,16 +234,16 @@ CONST_STRPTR gadlab[OPTS_LAST];
 struct List *websearch_list;
 
 #ifndef __amigaos4__
-static void ami_gui_opts_array_to_list(struct List *list, const char array[], int type)
+static void ami_gui_opts_array_to_list(struct List *list, const char *array[], int type)
 {
 	int i = 0;
 	struct Node *node;
 
-	NewList(&gow->clicktablist);
+	NewList(list);
 
 	do {
-		node = AllocClickTabNode(TNA_Text, tabs[i], TNA_Number, i, TAG_DONE);
-		AddTail(&gow->clicktablist, node);
+		node = AllocClickTabNode(TNA_Text, array[i], TNA_Number, i, TAG_DONE);
+		AddTail(list, node);
 		i++;
 	} while (tabs[i] != 0);
 }
@@ -253,8 +253,8 @@ static void ami_gui_opts_free_list(struct List *list, int type)
 	struct Node *node;
 	struct Node *nnode;
 
-	if(IsListEmpty((struct List *)&gow->clicktablist)) return;
-	node = GetHead((struct List *)&gow->clicktablist);
+	if(IsListEmpty((struct List *)list)) return;
+	node = GetHead((struct List *)list);
 
 	do {
 		nnode = GetSucc(node);
