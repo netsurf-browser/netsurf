@@ -454,8 +454,12 @@ void ami_gui_opts_open(void)
 		return;
 	}
 
+#ifdef __amigaos4__
 	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 53, 42)) ptr_disable = TRUE;
-	
+#else
+	ptr_disable = TRUE;
+#endif
+
 	if(nsoption_charp(pubscreen_name))
 	{
 		if(strcmp(nsoption_charp(pubscreen_name),"Workbench") == 0)
@@ -723,6 +727,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_SCREEN],
+#ifdef __amigaos4__
 									LAYOUT_AddChild, LayoutHObj,
 			                			LAYOUT_AddChild, gow->objects[GID_OPTS_SCREEN] = RadioButtonObj,
     	  	              					GA_ID, GID_OPTS_SCREEN,
@@ -750,6 +755,9 @@ void ami_gui_opts_open(void)
 										LayoutEnd,
 										CHILD_WeightedHeight,0,
 									LayoutEnd,
+#else
+#warning FIXME FOR OS3
+#endif
 								LayoutEnd, // screen
 								CHILD_WeightedHeight,0,
 								LAYOUT_AddChild, LayoutVObj,
@@ -782,7 +790,6 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_MOUSE],
-#ifdef __amigaos4__
 		                			LAYOUT_AddChild, gow->objects[GID_OPTS_PTRTRUE] = CheckBoxObj,
       	              					GA_ID, GID_OPTS_PTRTRUE,
          	           					GA_RelVerify, TRUE,
@@ -790,7 +797,6 @@ void ami_gui_opts_open(void)
          	           					GA_Selected, nsoption_bool(truecolour_mouse_pointers),
 										GA_Disabled, ptr_disable,
             	    				CheckBoxEnd,
-#endif
 		                			LAYOUT_AddChild, gow->objects[GID_OPTS_PTROS] = CheckBoxObj,
       	              					GA_ID, GID_OPTS_PTROS,
          	           					GA_RelVerify, TRUE,
@@ -811,6 +817,7 @@ void ami_gui_opts_open(void)
 						*/
 						PAGE_Add, LayoutVObj,
 							LAYOUT_AddChild, LayoutVObj,
+#ifdef __amigaos4__
 								LAYOUT_AddChild, LayoutVObj,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
@@ -882,6 +889,9 @@ void ami_gui_opts_open(void)
 										LABEL_Text, gadlab[GID_OPTS_PROXY_BYPASS],
 									LabelEnd,
 								LayoutEnd, // proxy
+#else
+#warning FIXME FOR OS3
+#endif
 								CHILD_WeightedHeight, 0,
 								LAYOUT_AddChild, LayoutVObj,
 									LAYOUT_SpaceOuter, TRUE,
@@ -937,6 +947,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_IMAGES],
+#ifdef __amigaos4__
 									LAYOUT_AddChild, gow->objects[GID_OPTS_NATIVEBM] = ChooserObj,
 										GA_ID, GID_OPTS_NATIVEBM,
 										GA_RelVerify, TRUE,
@@ -958,6 +969,9 @@ void ami_gui_opts_open(void)
 									CHILD_Label, LabelObj,
 										LABEL_Text, gadlab[GID_OPTS_DITHERQ],
 									LabelEnd,
+#else
+#warning FIXME FOR OS3
+#endif
 		                			LAYOUT_AddChild, gow->objects[GID_OPTS_SCALEQ] = CheckBoxObj,
       	              					GA_ID, GID_OPTS_SCALEQ,
 										GA_Disabled, scaledisabled,
@@ -1084,6 +1098,7 @@ void ami_gui_opts_open(void)
 									CHILD_Label, LabelObj,
 										LABEL_Text, gadlab[GID_OPTS_FONT_FANTASY],
 									LabelEnd,
+#ifdef __amigaos4__
 									LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_DEFAULT] = ChooserObj,
 										GA_ID, GID_OPTS_FONT_DEFAULT,
 										GA_RelVerify, TRUE,
@@ -1094,6 +1109,9 @@ void ami_gui_opts_open(void)
 									CHILD_Label, LabelObj,
 										LABEL_Text, gadlab[GID_OPTS_FONT_DEFAULT],
 									LabelEnd,
+#else
+#warning FIXME for OS3
+#endif
 								LayoutEnd, // font faces
 								CHILD_WeightedHeight, 0,
 								LAYOUT_AddChild, LayoutHObj,
@@ -1138,7 +1156,6 @@ void ami_gui_opts_open(void)
 											LABEL_Text, gadlab[GID_OPTS_FONT_MINSIZE],
 										LabelEnd,
 									LayoutEnd,
-#ifdef __amigaos4__
 									LAYOUT_AddChild, LayoutVObj,
 										LAYOUT_SpaceOuter, TRUE,
 										LAYOUT_BevelStyle, BVS_GROUP, 
@@ -1148,9 +1165,11 @@ void ami_gui_opts_open(void)
          	           						GA_RelVerify, TRUE,
          	           						GA_Text, gadlab[GID_OPTS_FONT_ANTIALIASING],
          	           						GA_Selected, nsoption_bool(font_antialiasing),
+#ifndef __amigaos4__
+											GA_Disabled, TRUE,
+#endif
             	    					CheckBoxEnd,
 									LayoutEnd,
-#endif
 								LayoutEnd,
 								CHILD_WeightedHeight, 0,
 							LayoutEnd, // page vgroup
@@ -1274,15 +1293,16 @@ void ami_gui_opts_open(void)
          	           						GA_Text, gadlab[GID_OPTS_OVERWRITE],
          	           						GA_Selected, nsoption_bool(ask_overwrite),
     	        	    				CheckBoxEnd,
-#ifdef __amigaos4__
 			                			LAYOUT_AddChild, gow->objects[GID_OPTS_NOTIFY] = CheckBoxObj,
       	    	          					GA_ID, GID_OPTS_NOTIFY,
          	    	       					GA_RelVerify, TRUE,
 											GA_Disabled, download_notify_disabled,
          	           						GA_Text, gadlab[GID_OPTS_NOTIFY],
          	           						GA_Selected, nsoption_bool(download_notify),
-										CheckBoxEnd,
+#ifndef __amigaos4__
+											GA_Disabled, TRUE,
 #endif
+										CheckBoxEnd,
 									LayoutEnd,
 									LAYOUT_AddChild, gow->objects[GID_OPTS_DLDIR] = GetFileObj,
 										GA_ID, GID_OPTS_DLDIR,
@@ -1314,14 +1334,15 @@ void ami_gui_opts_open(void)
 											GA_Text, gadlab[GID_OPTS_CLOSE_NO_QUIT],
 											GA_Selected, nsoption_bool(close_no_quit),
 	        	        				CheckBoxEnd,
-#ifdef __amigaos4__
 		                				LAYOUT_AddChild, gow->objects[GID_OPTS_DOCKY] = CheckBoxObj,
 											GA_ID, GID_OPTS_DOCKY,
         	 	           					GA_RelVerify, TRUE,
          		           					GA_Text, gadlab[GID_OPTS_DOCKY],
          		           					GA_Selected, !nsoption_bool(hide_docky_icon),
-	            		    			CheckBoxEnd,
+#ifndef __amigaos4__
+											GA_Disabled, TRUE,
 #endif
+	            		    			CheckBoxEnd,
 									LayoutEnd, // behaviour
 									CHILD_WeightedHeight, 0,
 								LayoutEnd, // hgroup
@@ -1368,7 +1389,6 @@ void ami_gui_opts_open(void)
          	           					GA_Text, gadlab[GID_OPTS_FASTSCROLL],
          	           					GA_Selected, nsoption_bool(faster_scroll),
             	    				CheckBoxEnd,
-#ifdef __amigaos4__
 	        	        			LAYOUT_AddChild, gow->objects[GID_OPTS_SELECTMENU] = CheckBoxObj,
 										GA_ID, GID_OPTS_SELECTMENU,
 										GA_RelVerify, TRUE,
@@ -1376,7 +1396,6 @@ void ami_gui_opts_open(void)
 										GA_Selected, !nsoption_bool(core_select_menu),
 										GA_Disabled, !ami_selectmenu_is_safe(),
            	    					CheckBoxEnd,
-#endif
 								LayoutEnd, // misc
 								CHILD_WeightedHeight, 0,
 

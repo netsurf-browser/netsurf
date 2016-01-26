@@ -185,6 +185,9 @@ AMINS_CLASS_STRUCT(Label);
 AMINS_CLASS_STRUCT(Layout);
 AMINS_CLASS_STRUCT(ListBrowser);
 AMINS_CLASS_STRUCT(RadioButton);
+#ifndef __amigaos4__
+AMINS_CLASS_STRUCT(Page);
+#endif
 AMINS_CLASS_STRUCT(Scroller);
 AMINS_CLASS_STRUCT(Space);
 AMINS_CLASS_STRUCT(SpeedBar);
@@ -259,6 +262,10 @@ bool ami_libs_open(void)
 	AMINS_CLASS_OPEN("gadgets/speedbar.gadget",      44, SpeedBar,      SPEEDBAR,      true)
 	AMINS_CLASS_OPEN("gadgets/string.gadget",        44, String,        STRING,        false)
 	AMINS_CLASS_OPEN("window.class",                 44, Window,        WINDOW,        false)
+
+#ifndef __amigaos4__
+	PageClass = PAGE_GetClass();
+#endif
 
 	return true;
 }

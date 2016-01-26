@@ -36,6 +36,10 @@ extern Class *IntegerClass;
 extern Class *LabelClass;
 extern Class *LayoutClass;
 extern Class *ListBrowserClass;
+#ifndef __amigaos4__
+/* OS4 uses a public class name instead */
+extern Class *PageClass;
+#endif
 extern Class *RadioButtonClass;
 extern Class *ScrollerClass;
 extern Class *SpaceClass;
@@ -59,7 +63,11 @@ extern Class *WindowClass;
 #define LabelObj			NewObject(LabelClass, NULL
 #define LayoutHObj			NewObject(LayoutClass, NULL, LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ
 #define LayoutVObj			NewObject(LayoutClass, NULL, LAYOUT_Orientation, LAYOUT_ORIENT_VERT
+#ifdef __amigaos4__
 #define PageObj				NewObject(NULL, "page.gadget"
+#else
+#define PageObj				NewObject(PageClass, NULL
+#endif
 #define RadioButtonObj		NewObject(RadioButtonClass, NULL
 #define ScrollerObj			NewObject(ScrollerClass, NULL
 #define SpaceObj			NewObject(SpaceClass, NULL
