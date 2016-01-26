@@ -38,7 +38,7 @@
 struct Library *OpenURLBase = NULL;
 struct OpenURLIFace *IOpenURL = NULL;
 
-struct MinList ami_unsupportedprotocols;
+struct MinList *ami_unsupportedprotocols;
 
 struct ami_protocol
 {
@@ -65,7 +65,7 @@ static struct ami_protocol *ami_openurl_add_protocol(const char *url)
 		return NULL;
 	}
 
-	AddTail((struct List *)&ami_unsupportedprotocols, (struct Node *)ami_p);
+	AddTail((struct List *)ami_unsupportedprotocols, (struct Node *)ami_p);
 	return ami_p;
 }
 
@@ -86,6 +86,8 @@ static void ami_openurl_free_list(struct MinList *list)
 		FreeVec(node);
 		node = NULL;
 	}while((node=nnode));
+
+	FreeVec(list);
 }
 
 static BOOL ami_openurl_check_list(struct MinList *list, nsurl *url)
@@ -132,7 +134,7 @@ void ami_openurl_open(void)
 		}
 	}
 
-	ami_NewMinList(&ami_unsupportedprotocols);
+	ami_unsupportedprotocols = ami_AllocMinList();
 }
 
 void ami_openurl_close(void)
@@ -142,7 +144,7 @@ void ami_openurl_close(void)
 #endif
 	if(OpenURLBase) CloseLibrary(OpenURLBase);
 
-	ami_openurl_free_list(&ami_unsupportedprotocols);
+	ami_openurl_free_list(ami_unsupportedprotocols);
 }
 
 nserror gui_launch_url(struct nsurl *url)
@@ -152,7 +154,7 @@ nserror gui_launch_url(struct nsurl *url)
 #endif
 	char *launchurl = NULL;
 
-	if(ami_openurl_check_list(&ami_unsupportedprotocols, url) == FALSE)
+	if(ami_openurl_check_list(ami_unsupportedprotocols, url) == FALSE)
 	{
 		if(IOpenURL)
 		{
