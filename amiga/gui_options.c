@@ -1646,7 +1646,7 @@ static void ami_gui_opts_use(bool save)
 	} else {
 		nsoption_set_bool(faster_scroll, false);
 	}
-
+#ifdef __amigaos4__
 	GetAttr(RADIOBUTTON_Selected,gow->objects[GID_OPTS_SCREEN],(ULONG *)&data);
 	switch(data)
 	{
@@ -1671,6 +1671,9 @@ static void ami_gui_opts_use(bool save)
 		sprintf(modeid,"0x%lx", id);
 		nsoption_set_charp(screen_modeid, modeid);
 	}
+#else
+#warning FIXME FOR OS3
+#endif
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_WIN_SIMPLE],(ULONG *)&data);
 	if ((data == TRUE) && (nsoption_bool(window_simple_refresh) == false)) {
@@ -1698,6 +1701,7 @@ static void ami_gui_opts_use(bool save)
 		nsoption_set_bool(os_mouse_pointers, false);
 	}
 
+#ifdef __amigaos4__
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_PROXY],(ULONG *)&data);
 	if(data)
 	{
@@ -1722,12 +1726,19 @@ static void ami_gui_opts_use(bool save)
 
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_PROXY_BYPASS],(ULONG *)&data);
 	nsoption_set_charp(http_proxy_noproxy, (char *)strdup((char *)data));
+#else
+#warning FIXME FOR OS3
+#endif
 
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHMAX],(ULONG *)&nsoption_int(max_fetchers));
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHHOST],(ULONG *)&nsoption_int(max_fetchers_per_host));
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHCACHE],(ULONG *)&nsoption_int(max_cached_fetch_handles));
 
+#ifdef __amigaos4__
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_NATIVEBM],(ULONG *)&nsoption_int(cache_bitmaps));
+#else
+#warning FIXME FOR OS3
+#endif
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_SCALEQ],(ULONG *)&data);
 	if (data) {
@@ -1736,7 +1747,11 @@ static void ami_gui_opts_use(bool save)
 		nsoption_set_bool(scale_quality, false);
 	}
 
+#ifdef __amigaos4__
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_DITHERQ],(ULONG *)&nsoption_int(dither_quality));
+#else
+#warning FIXME FOR OS3
+#endif
 
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_ANIMSPEED],(ULONG *)&data);
 	animspeed = strtof((char *)data, NULL);
@@ -1782,8 +1797,12 @@ static void ami_gui_opts_use(bool save)
 	if((dot = strrchr(tattr->ta_Name,'.'))) *dot = '\0';
 	nsoption_set_charp(font_fantasy, (char *)strdup((char *)tattr->ta_Name));
 
+#ifdef __amigaos4__
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_FONT_DEFAULT],(ULONG *)&nsoption_int(font_default));
 	nsoption_set_int(font_default, nsoption_int(font_default) + PLOT_FONT_FAMILY_SANS_SERIF);
+#else
+#warning FIXME FOR OS3
+#endif
 
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FONT_SIZE],(ULONG *)&nsoption_int(font_size));
 	nsoption_set_int(font_size, nsoption_int(font_size) * 10);
