@@ -22,6 +22,10 @@
 #include <proto/exec.h>
 #include <proto/utility.h>
 
+#ifndef __amigaos4__
+#include <proto/intuition.h> // for EasyRequest
+#endif
+
 #include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/file.h"
@@ -100,7 +104,15 @@ static LONG ami_misc_req(const char *message, uint32 type)
 		TDR_Window, cur_gw ? cur_gw->shared->win : NULL,
 		TAG_DONE);
 #else
-	printf("%s\n", message);
+	struct EasyStruct easyreq = {
+		sizeof(struct EasyStruct),
+		0,
+		messages_get("NetSurf"),
+		message,
+		messages_get("OK"),
+	};
+
+	ret = EasyRequest(cur_gw ? cur_gw->shared->win : NULL, &easyreq, NULL);
 #endif
 	return ret;
 }
