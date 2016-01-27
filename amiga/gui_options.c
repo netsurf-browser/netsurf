@@ -210,6 +210,7 @@ enum
 
 enum {
 	NSA_LIST_CLICKTAB = 0,
+	NSA_LIST_CHOOSER,
 	NSA_LIST_RADIO,
 };
 
@@ -242,10 +243,20 @@ static void ami_gui_opts_array_to_list(struct List *list, const char *array[], i
 	NewList(list);
 
 	do {
-		node = AllocClickTabNode(TNA_Text, array[i], TNA_Number, i, TAG_DONE);
+		switch(type) {
+			case NSA_LIST_CLICKTAB:
+				node = AllocClickTabNode(TNA_Text, array[i], TNA_Number, i, TAG_DONE);
+			break;
+			case NSA_LIST_CHOOSER:
+				node = AllocChooserNode(CNA_Text, array[i], TAG_DONE);
+			break;
+			case NSA_LIST_RADIO:
+			default:
+			break;
+		}
 		AddTail(list, node);
 		i++;
-	} while (tabs[i] != 0);
+	} while (array[i] != 0);
 }
 
 static void ami_gui_opts_free_list(struct List *list, int type)
@@ -258,7 +269,20 @@ static void ami_gui_opts_free_list(struct List *list, int type)
 
 	do {
 		nnode = GetSucc(node);
-		if(node) FreeClickTabNode(node);
+		Remove(node);
+		if(node) {
+			switch(type) {
+				case NSA_LIST_CLICKTAB:
+					FreeClickTabNode(node);
+				break;
+				case NSA_LIST_CHOOSER:
+					FreeChooserNode(node);
+				break;
+				case NSA_LIST_RADIO:
+				default:
+				break;
+			}
+		}
 	} while((node = nnode));
 }
 #endif
@@ -2243,6 +2267,7 @@ void ami_gui_opts_websearch_free(struct List *websearchlist)
 	do {
 		nnode = GetSucc(node);
 		Remove(node);
+		FreeChooserNode(node);
 	} while((node = nnode));
 
 	FreeVec(websearchlist);
