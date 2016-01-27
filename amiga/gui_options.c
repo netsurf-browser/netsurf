@@ -220,9 +220,11 @@ struct ami_gui_opts_window {
 	Object *objects[GID_OPTS_LAST];
 #ifndef __amigaos4__
 	struct List clicktablist;
+	struct List screenoptslist;
 	struct List proxyoptslist;
 	struct List nativebmoptslist;
 	struct List ditheroptslist;
+	struct List fontoptslist;
 #endif
 };
 
@@ -254,6 +256,10 @@ static void ami_gui_opts_array_to_list(struct List *list, const char *array[], i
 				node = AllocChooserNode(CNA_Text, array[i], TAG_DONE);
 			break;
 			case NSA_LIST_RADIO:
+				/* Note: RBNA_Labels is RBNA_Label in OS4
+				 * Also note: These labels don't work (FIXME) */
+				node = AllocRadioButtonNode(RBNA_Labels, array[i], TAG_DONE);
+			break;
 			default:
 			break;
 		}
@@ -282,6 +288,8 @@ static void ami_gui_opts_free_list(struct List *list, int type)
 					FreeChooserNode(node);
 				break;
 				case NSA_LIST_RADIO:
+					FreeRadioButtonNode(node);
+				break;
 				default:
 				break;
 			}
@@ -327,13 +335,6 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	ditheropts[1] = (char *)ami_utf8_easy((char *)messages_get("Medium"));
 	ditheropts[2] = (char *)ami_utf8_easy((char *)messages_get("High"));
 	ditheropts[3] = NULL;
-
-#ifndef __amigaos4__
-	ami_gui_opts_array_to_list(&gow->clicktablist, tabs, NSA_LIST_CLICKTAB);
-	ami_gui_opts_array_to_list(&gow->proxyoptslist, proxyopts, NSA_LIST_CHOOSER);
-	ami_gui_opts_array_to_list(&gow->nativebmoptslist, nativebmopts, NSA_LIST_CHOOSER);
-	ami_gui_opts_array_to_list(&gow->ditheroptslist, ditheropts, NSA_LIST_CHOOSER);
-#endif
 
 	websearch_list = ami_gui_opts_websearch();
 
@@ -449,6 +450,15 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	fontopts[3] = gadlab[GID_OPTS_FONT_CURSIVE];
 	fontopts[4] = gadlab[GID_OPTS_FONT_FANTASY];
 	fontopts[5] = NULL;
+
+#ifndef __amigaos4__
+	ami_gui_opts_array_to_list(&gow->clicktablist, tabs, NSA_LIST_CLICKTAB);
+	ami_gui_opts_array_to_list(&gow->screenoptslist, screenopts, NSA_LIST_RADIO);
+	ami_gui_opts_array_to_list(&gow->proxyoptslist, proxyopts, NSA_LIST_CHOOSER);
+	ami_gui_opts_array_to_list(&gow->nativebmoptslist, nativebmopts, NSA_LIST_CHOOSER);
+	ami_gui_opts_array_to_list(&gow->ditheroptslist, ditheropts, NSA_LIST_CHOOSER);
+	ami_gui_opts_array_to_list(&gow->fontoptslist, fontopts, NSA_LIST_CHOOSER);
+#endif
 }
 
 static void ami_gui_opts_free(struct ami_gui_opts_window *gow)
@@ -474,9 +484,11 @@ static void ami_gui_opts_free(struct ami_gui_opts_window *gow)
 
 #ifndef __amigaos4__
 	ami_gui_opts_free_list(&gow->clicktablist, NSA_LIST_CLICKTAB);
+	ami_gui_opts_free_list(&gow->screenoptslist, NSA_LIST_RADIO);
 	ami_gui_opts_free_list(&gow->proxyoptslist, NSA_LIST_CHOOSER);
 	ami_gui_opts_free_list(&gow->nativebmoptslist, NSA_LIST_CHOOSER);
 	ami_gui_opts_free_list(&gow->ditheroptslist, NSA_LIST_CHOOSER);
+	ami_gui_opts_free_list(&gow->fontoptslist, NSA_LIST_CHOOSER);
 #endif
 }
 
@@ -777,12 +789,15 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_SCREEN],
-#ifdef __amigaos4__
 									LAYOUT_AddChild, LayoutHObj,
 			                			LAYOUT_AddChild, gow->objects[GID_OPTS_SCREEN] = RadioButtonObj,
     	  	              					GA_ID, GID_OPTS_SCREEN,
         	 	           					GA_RelVerify, TRUE,
+#ifdef __amigaos4__
          		           					GA_Text, screenopts,
+#else
+											RADIOBUTTON_Labels, &gow->screenoptslist,
+#endif
   					      		            RADIOBUTTON_Selected, screenoptsselected,
             	    					RadioButtonEnd,
 										CHILD_WeightedWidth,0,
@@ -805,9 +820,6 @@ void ami_gui_opts_open(void)
 										LayoutEnd,
 										CHILD_WeightedHeight,0,
 									LayoutEnd,
-#else
-#warning FIXME FOR OS3
-#endif
 								LayoutEnd, // screen
 								CHILD_WeightedHeight,0,
 								LAYOUT_AddChild, LayoutVObj,
@@ -1019,7 +1031,7 @@ void ami_gui_opts_open(void)
 #ifdef __amigaos4__
 										CHOOSER_LabelArray, ditheropts,
 #else
-										CHOOSER_LabelArray, &gow->ditheroptslist,
+										CHOOSER_Labels, &gow->ditheroptslist,
 #endif
 										CHOOSER_Selected, nsoption_int(dither_quality),
 									ChooserEnd,
@@ -1152,20 +1164,20 @@ void ami_gui_opts_open(void)
 									CHILD_Label, LabelObj,
 										LABEL_Text, gadlab[GID_OPTS_FONT_FANTASY],
 									LabelEnd,
-#ifdef __amigaos4__
 									LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_DEFAULT] = ChooserObj,
 										GA_ID, GID_OPTS_FONT_DEFAULT,
 										GA_RelVerify, TRUE,
 										CHOOSER_PopUp, TRUE,
+#ifdef __amigaos4__
 										CHOOSER_LabelArray, fontopts,
+#else
+										CHOOSER_Labels, &gow->fontoptslist,
+#endif
 										CHOOSER_Selected, nsoption_int(font_default) - PLOT_FONT_FAMILY_SANS_SERIF,
 									ChooserEnd,
 									CHILD_Label, LabelObj,
 										LABEL_Text, gadlab[GID_OPTS_FONT_DEFAULT],
 									LabelEnd,
-#else
-#warning FIXME for OS3
-#endif
 								LayoutEnd, // font faces
 								CHILD_WeightedHeight, 0,
 								LAYOUT_AddChild, LayoutHObj,
@@ -1700,7 +1712,7 @@ static void ami_gui_opts_use(bool save)
 	} else {
 		nsoption_set_bool(faster_scroll, false);
 	}
-#ifdef __amigaos4__
+
 	GetAttr(RADIOBUTTON_Selected,gow->objects[GID_OPTS_SCREEN],(ULONG *)&data);
 	switch(data)
 	{
@@ -1725,9 +1737,6 @@ static void ami_gui_opts_use(bool save)
 		sprintf(modeid,"0x%lx", id);
 		nsoption_set_charp(screen_modeid, modeid);
 	}
-#else
-#warning FIXME FOR OS3
-#endif
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_WIN_SIMPLE],(ULONG *)&data);
 	if ((data == TRUE) && (nsoption_bool(window_simple_refresh) == false)) {
@@ -1839,12 +1848,8 @@ static void ami_gui_opts_use(bool save)
 	if((dot = strrchr(tattr->ta_Name,'.'))) *dot = '\0';
 	nsoption_set_charp(font_fantasy, (char *)strdup((char *)tattr->ta_Name));
 
-#ifdef __amigaos4__
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_FONT_DEFAULT],(ULONG *)&nsoption_int(font_default));
 	nsoption_set_int(font_default, nsoption_int(font_default) + PLOT_FONT_FAMILY_SANS_SERIF);
-#else
-#warning FIXME FOR OS3
-#endif
 
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FONT_SIZE],(ULONG *)&nsoption_int(font_size));
 	nsoption_set_int(font_size, nsoption_int(font_size) * 10);
