@@ -221,6 +221,8 @@ struct ami_gui_opts_window {
 #ifndef __amigaos4__
 	struct List clicktablist;
 	struct List proxyoptslist;
+	struct List nativebmoptslist;
+	struct List ditheroptslist;
 #endif
 };
 
@@ -305,10 +307,6 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	tabs[8] = NULL;
 #endif
 
-#ifndef __amigaos4__
-	ami_gui_opts_array_to_list(&gow->clicktablist, tabs, NSA_LIST_CLICKTAB);
-#endif
-
 	screenopts[0] = (char *)ami_utf8_easy((char *)messages_get("ScreenOwn"));
 	screenopts[1] = (char *)ami_utf8_easy((char *)messages_get("ScreenWB"));
 	screenopts[2] = (char *)ami_utf8_easy((char *)messages_get("ScreenPublic"));
@@ -320,10 +318,6 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	proxyopts[3] = (char *)ami_utf8_easy((char *)messages_get("ProxyNTLM"));
 	proxyopts[4] = NULL;
 
-#ifndef __amigaos4__
-	ami_gui_opts_array_to_list(&gow->proxyoptslist, proxyopts, NSA_LIST_CHOOSER);
-#endif
-
 	nativebmopts[0] = (char *)ami_utf8_easy((char *)messages_get("None"));
 	nativebmopts[1] = (char *)ami_utf8_easy((char *)messages_get("Scaled"));
 	nativebmopts[2] = (char *)ami_utf8_easy((char *)messages_get("All"));
@@ -333,7 +327,14 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	ditheropts[1] = (char *)ami_utf8_easy((char *)messages_get("Medium"));
 	ditheropts[2] = (char *)ami_utf8_easy((char *)messages_get("High"));
 	ditheropts[3] = NULL;
-	
+
+#ifndef __amigaos4__
+	ami_gui_opts_array_to_list(&gow->clicktablist, tabs, NSA_LIST_CLICKTAB);
+	ami_gui_opts_array_to_list(&gow->proxyoptslist, proxyopts, NSA_LIST_CHOOSER);
+	ami_gui_opts_array_to_list(&gow->nativebmoptslist, nativebmopts, NSA_LIST_CHOOSER);
+	ami_gui_opts_array_to_list(&gow->ditheroptslist, ditheropts, NSA_LIST_CHOOSER);
+#endif
+
 	websearch_list = ami_gui_opts_websearch();
 
 	gadlab[GID_OPTS_HOMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("HomePageURL"));
@@ -474,6 +475,8 @@ static void ami_gui_opts_free(struct ami_gui_opts_window *gow)
 #ifndef __amigaos4__
 	ami_gui_opts_free_list(&gow->clicktablist, NSA_LIST_CLICKTAB);
 	ami_gui_opts_free_list(&gow->proxyoptslist, NSA_LIST_CHOOSER);
+	ami_gui_opts_free_list(&gow->nativebmoptslist, NSA_LIST_CHOOSER);
+	ami_gui_opts_free_list(&gow->ditheroptslist, NSA_LIST_CHOOSER);
 #endif
 }
 
@@ -994,12 +997,15 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_IMAGES],
-#ifdef __amigaos4__
 									LAYOUT_AddChild, gow->objects[GID_OPTS_NATIVEBM] = ChooserObj,
 										GA_ID, GID_OPTS_NATIVEBM,
 										GA_RelVerify, TRUE,
 										CHOOSER_PopUp, TRUE,
+#ifdef __amigaos4__
 										CHOOSER_LabelArray, nativebmopts,
+#else
+										CHOOSER_Labels, &gow->nativebmoptslist,
+#endif
 										CHOOSER_Selected, nsoption_int(cache_bitmaps),
 									ChooserEnd,
 									CHILD_Label, LabelObj,
@@ -1010,15 +1016,16 @@ void ami_gui_opts_open(void)
 										GA_RelVerify, TRUE,
 										GA_Disabled, ditherdisable,
 										CHOOSER_PopUp, TRUE,
+#ifdef __amigaos4__
 										CHOOSER_LabelArray, ditheropts,
+#else
+										CHOOSER_LabelArray, &gow->ditheroptslist,
+#endif
 										CHOOSER_Selected, nsoption_int(dither_quality),
 									ChooserEnd,
 									CHILD_Label, LabelObj,
 										LABEL_Text, gadlab[GID_OPTS_DITHERQ],
 									LabelEnd,
-#else
-#warning FIXME FOR OS3
-#endif
 		                			LAYOUT_AddChild, gow->objects[GID_OPTS_SCALEQ] = CheckBoxObj,
       	              					GA_ID, GID_OPTS_SCALEQ,
 										GA_Disabled, scaledisabled,
@@ -1777,11 +1784,7 @@ static void ami_gui_opts_use(bool save)
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHHOST],(ULONG *)&nsoption_int(max_fetchers_per_host));
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHCACHE],(ULONG *)&nsoption_int(max_cached_fetch_handles));
 
-#ifdef __amigaos4__
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_NATIVEBM],(ULONG *)&nsoption_int(cache_bitmaps));
-#else
-#warning FIXME FOR OS3
-#endif
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_SCALEQ],(ULONG *)&data);
 	if (data) {
@@ -1790,11 +1793,7 @@ static void ami_gui_opts_use(bool save)
 		nsoption_set_bool(scale_quality, false);
 	}
 
-#ifdef __amigaos4__
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_DITHERQ],(ULONG *)&nsoption_int(dither_quality));
-#else
-#warning FIXME FOR OS3
-#endif
 
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_ANIMSPEED],(ULONG *)&data);
 	animspeed = strtof((char *)data, NULL);
