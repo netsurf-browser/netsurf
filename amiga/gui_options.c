@@ -220,6 +220,7 @@ struct ami_gui_opts_window {
 	Object *objects[GID_OPTS_LAST];
 #ifndef __amigaos4__
 	struct List clicktablist;
+	struct List proxyoptslist;
 #endif
 };
 
@@ -318,6 +319,10 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	proxyopts[2] = (char *)ami_utf8_easy((char *)messages_get("ProxyBasic"));
 	proxyopts[3] = (char *)ami_utf8_easy((char *)messages_get("ProxyNTLM"));
 	proxyopts[4] = NULL;
+
+#ifndef __amigaos4__
+	ami_gui_opts_array_to_list(&gow->proxyoptslist, proxyopts, NSA_LIST_CHOOSER);
+#endif
 
 	nativebmopts[0] = (char *)ami_utf8_easy((char *)messages_get("None"));
 	nativebmopts[1] = (char *)ami_utf8_easy((char *)messages_get("Scaled"));
@@ -468,6 +473,7 @@ static void ami_gui_opts_free(struct ami_gui_opts_window *gow)
 
 #ifndef __amigaos4__
 	ami_gui_opts_free_list(&gow->clicktablist, NSA_LIST_CLICKTAB);
+	ami_gui_opts_free_list(&gow->proxyoptslist, NSA_LIST_CHOOSER);
 #endif
 }
 
@@ -858,7 +864,6 @@ void ami_gui_opts_open(void)
 						*/
 						PAGE_Add, LayoutVObj,
 							LAYOUT_AddChild, LayoutVObj,
-#ifdef __amigaos4__
 								LAYOUT_AddChild, LayoutVObj,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
@@ -867,7 +872,11 @@ void ami_gui_opts_open(void)
 										GA_ID, GID_OPTS_PROXY,
 										GA_RelVerify, TRUE,
 										CHOOSER_PopUp, TRUE,
+#ifdef __amigaos4__
 										CHOOSER_LabelArray, proxyopts,
+#else
+										CHOOSER_Labels, &gow->proxyoptslist,
+#endif
 										CHOOSER_Selected, proxytype,
 									ChooserEnd,
 									CHILD_Label, LabelObj,
@@ -930,9 +939,6 @@ void ami_gui_opts_open(void)
 										LABEL_Text, gadlab[GID_OPTS_PROXY_BYPASS],
 									LabelEnd,
 								LayoutEnd, // proxy
-#else
-#warning FIXME FOR OS3
-#endif
 								CHILD_WeightedHeight, 0,
 								LAYOUT_AddChild, LayoutVObj,
 									LAYOUT_SpaceOuter, TRUE,
@@ -1742,7 +1748,6 @@ static void ami_gui_opts_use(bool save)
 		nsoption_set_bool(os_mouse_pointers, false);
 	}
 
-#ifdef __amigaos4__
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_PROXY],(ULONG *)&data);
 	if(data)
 	{
@@ -1767,9 +1772,6 @@ static void ami_gui_opts_use(bool save)
 
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_PROXY_BYPASS],(ULONG *)&data);
 	nsoption_set_charp(http_proxy_noproxy, (char *)strdup((char *)data));
-#else
-#warning FIXME FOR OS3
-#endif
 
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHMAX],(ULONG *)&nsoption_int(max_fetchers));
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHHOST],(ULONG *)&nsoption_int(max_fetchers_per_host));
