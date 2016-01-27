@@ -122,6 +122,7 @@ enum
 	GID_OPTS_FONT_SIZE,
 	GID_OPTS_FONT_MINSIZE,
 	GID_OPTS_FONT_ANTIALIASING,
+	GID_OPTS_FONT_BITMAP,
 	GID_OPTS_CACHE_MEM,
 	GID_OPTS_CACHE_DISC,
 	GID_OPTS_OVERWRITE,
@@ -375,6 +376,7 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	gadlab[GID_OPTS_FONT_SIZE] = (char *)ami_utf8_easy((char *)messages_get("Default"));
 	gadlab[GID_OPTS_FONT_MINSIZE] = (char *)ami_utf8_easy((char *)messages_get("Minimum"));
 	gadlab[GID_OPTS_FONT_ANTIALIASING] = (char *)ami_utf8_easy((char *)messages_get("FontAntialiasing"));
+	gadlab[GID_OPTS_FONT_BITMAP] = (char *)ami_utf8_easy((char *)messages_get("FontBitmap"));
 	gadlab[GID_OPTS_CACHE_MEM] = (char *)ami_utf8_easy((char *)messages_get("Size"));
 	gadlab[GID_OPTS_CACHE_DISC] = (char *)ami_utf8_easy((char *)messages_get("Size"));
 	gadlab[GID_OPTS_OVERWRITE] = (char *)ami_utf8_easy((char *)messages_get("ConfirmOverwrite"));
@@ -1235,6 +1237,14 @@ void ami_gui_opts_open(void)
 											GA_Disabled, TRUE,
 #endif
             	    					CheckBoxEnd,
+#ifndef __amigaos4__
+										LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_BITMAP] = CheckBoxObj,
+      	              						GA_ID, GID_OPTS_FONT_BITMAP,
+         	           						GA_RelVerify, TRUE,
+         	           						GA_Text, gadlab[GID_OPTS_FONT_BITMAP],
+         	           						GA_Selected, nsoption_bool(bitmap_fonts),
+            	    					CheckBoxEnd,
+#endif
 									LayoutEnd,
 								LayoutEnd,
 								CHILD_WeightedHeight, 0,
@@ -1863,7 +1873,18 @@ static void ami_gui_opts_use(bool save)
 	} else { 
 		nsoption_set_bool(font_antialiasing, false);
 	}
-	
+
+#ifndef __amigaos4__
+	GetAttr(GA_Selected, gow->objects[GID_OPTS_FONT_BITMAP], (ULONG *)&data);
+	ami_font_fini();
+	if(data) {
+		nsoption_set_bool(bitmap_fonts, true);
+	} else { 
+		nsoption_set_bool(bitmap_fonts, false);
+	}
+	ami_font_init();
+#endif
+
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_CACHE_MEM],(ULONG *)&nsoption_int(memory_cache_size));
 	nsoption_set_int(memory_cache_size, nsoption_int(memory_cache_size) * 1048576);
 

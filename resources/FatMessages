@@ -6147,6 +6147,11 @@ de.ami.FontAntialiasing:Use anti-aliasing (when possible)
 fr.ami.FontAntialiasing:Utiliser l'anticrénelage (si possible)
 it.ami.FontAntialiasing:Usa anti-aliasing (quando possibile)
 nl.ami.FontAntialiasing:Anti-aliasing (indien mogelijk) gebruiken
+en.ami.FontBitmap:Allow bitmap fonts
+de.ami.FontBitmap:Allow bitmap fonts
+fr.ami.FontBitmap:Allow bitmap fonts
+it.ami.FontBitmap:Allow bitmap fonts
+nl.ami.FontBitmap:Allow bitmap fonts
 
 # Font scanning
 en.ami.FontScanning:Scanning fonts...
