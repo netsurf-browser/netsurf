@@ -1092,6 +1092,7 @@ void ami_gui_opts_open(void)
 											INTEGER_Minimum, 60,
 											INTEGER_Maximum, 150,
 											INTEGER_Arrows, TRUE,
+											GA_Disabled, nsoption_bool(bitmap_fonts),
 										IntegerEnd,
 										CHILD_WeightedWidth, 0,
 										CHILD_Label, LabelObj,
@@ -2249,7 +2250,12 @@ BOOL ami_gui_opts_event(void)
 						IDoMethod(gow->objects[GID_OPTS_FONT_FANTASY],
 						GFONT_REQUEST,gow->win);
 					break;
-
+#ifndef __amigaos4__
+					case GID_OPTS_FONT_BITMAP:
+						RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_DPI_Y],
+							gow->win, NULL, GA_Disabled, code, TAG_DONE);
+					break;
+#endif
 					case GID_OPTS_DLDIR:
 						IDoMethod(gow->objects[GID_OPTS_DLDIR],
 						GFILE_REQUEST,gow->win);
