@@ -65,7 +65,7 @@ struct box_construct_ctx {
 
 	box_construct_complete_cb cb;	/**< Callback to invoke on completion */
 
-	int *bctx;                      /**< talloc context */
+	int *bctx;			/**< talloc context */
 };
 
 /**
