@@ -112,11 +112,12 @@ void amiga_bitmap_destroy(void *bitmap)
 
 	if(bm)
 	{
-		if((bm->nativebm) && (bm->dto == NULL)) {
+		if((bm->nativebm) && (bm->native == AMI_NSBM_TRUECOLOUR)) {
 			ami_rtg_freebitmap(bm->nativebm);
 		}
-		
+
 		if(bm->dto) {
+			/**\todo find out why this crashes on exit but not during normal program execution */
 			DisposeDTObject(bm->dto);
 		}
 
@@ -163,7 +164,7 @@ void amiga_bitmap_modified(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
-	if((bm->nativebm) && (bm->dto == NULL))
+	if((bm->nativebm) && (bm->native == AMI_NSBM_TRUECOLOUR))
 		ami_rtg_freebitmap(bm->nativebm);
 		
 	if(bm->dto) DisposeDTObject(bm->dto);
@@ -516,7 +517,7 @@ static inline struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
 	
 	if(bitmap->dto == NULL) {
 		bitmap->dto = ami_datatype_object_from_bitmap(bitmap);
-		
+
 		SetDTAttrs(bitmap->dto, NULL, NULL,
 				PDTA_Screen, scrn,
 				PDTA_ScaleQuality, nsoption_bool(scale_quality),

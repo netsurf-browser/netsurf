@@ -168,7 +168,7 @@ void ami_theme_throbber_setup(void)
 
 	bm = ami_bitmap_from_datatype(throbberfile);
 	throbber = ami_bitmap_get_native(bm, bm->width, bm->height, NULL);
-				
+
 	throbber_width = bm->width / throbber_frames;
 	throbber_height = bm->height;
 	throbber_nsbm = bm;
@@ -177,6 +177,7 @@ void ami_theme_throbber_setup(void)
 void ami_theme_throbber_free(void)
 {
 	amiga_bitmap_destroy(throbber_nsbm);
+	throbber_nsbm = NULL;
 	throbber = NULL;
 }
 

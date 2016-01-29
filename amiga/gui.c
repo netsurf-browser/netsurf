@@ -3001,6 +3001,10 @@ void ami_try_quit(void)
 
 static void gui_quit(void)
 {
+	LOG("Closing screen");
+	ami_gui_close_screen(scrn, locked_screen, FALSE);
+	if(nsscreentitle) FreeVec(nsscreentitle);
+
 	ami_theme_throbber_free();
 
 	urldb_save(nsoption_charp(url_file));
@@ -3019,39 +3023,18 @@ static void gui_quit(void)
 	ami_font_fini();
 	ami_help_free();
 	
-	LOG("Closing screen");
-	ami_gui_close_screen(scrn, locked_screen, FALSE);
-	if(nsscreentitle) FreeVec(nsscreentitle);
-
 	LOG("Freeing menu items");
 	ami_ctxmenu_free();
 	ami_menu_free_glyphs();
 
 	LOG("Freeing mouse pointers");
 	ami_mouse_pointers_free();
-	LOG("Freeing clipboard");
-	ami_clipboard_free();
-	LOG("Freeing scheduler resources");
-	ami_schedule_free();
-
-	FreeSysObject(ASOT_PORT, appport);
-	FreeSysObject(ASOT_PORT, sport);
-	FreeSysObject(ASOT_PORT, schedulermsgport);
 
 	ami_file_req_free();
 	ami_openurl_close();
 	FreeStringClass(urlStringClass);
 
 	FreeObjList(window_list);
-
-	FreeVec(current_user_options);
-	FreeVec(current_user_dir);
-	FreeVec(current_user_faviconcache);
-	FreeVec(current_user);
-
-	ami_object_fini();
-
-	ami_libs_close();
 }
 
 char *ami_gui_get_cache_favicon_name(nsurl *url, bool only_if_avail)
@@ -5684,6 +5667,22 @@ int main(int argc, char** argv)
 	ami_mime_free();
 
 	netsurf_exit();
+
+	FreeVec(current_user_options);
+	FreeVec(current_user_dir);
+	FreeVec(current_user_faviconcache);
+	FreeVec(current_user);
+
+	ami_clipboard_free();
+	ami_schedule_free();
+
+	FreeSysObject(ASOT_PORT, appport);
+	FreeSysObject(ASOT_PORT, sport);
+	FreeSysObject(ASOT_PORT, schedulermsgport);
+
+	ami_object_fini();
+	ami_libs_close();
+
 	return RETURN_OK;
 }
 
