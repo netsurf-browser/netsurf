@@ -629,7 +629,6 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 {
 	dom_event_target *node;
 	dom_node_type type;
-	dom_string *name;
 	dom_exception exc;
 	html_content *htmlc = pw;
 
@@ -638,38 +637,39 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 		exc = dom_node_get_node_type(node, &type);
 		if ((exc == DOM_NO_ERR) && (type == DOM_ELEMENT_NODE)) {
 			/* an element node has been inserted */
-			exc = dom_node_get_node_name(node, &name);
-			if ((exc == DOM_NO_ERR) && (name != NULL)) {
+			dom_html_element_type tag_type;
 
-				if (dom_string_caseless_isequal(name,
-						corestring_dom_link)) {
-					/* Handle stylesheet loading */
-					html_css_process_link(htmlc,
-							(dom_node *)node);
-					/* Generic link handling */
-					html_process_link(htmlc,
-							(dom_node *)node);
+			exc = dom_html_element_get_tag_type(node, &tag_type);
+			if (exc != DOM_NO_ERR) {
+				tag_type = DOM_HTML_ELEMENT_TYPE__UNKNOWN;
+			}
 
-				} else if (dom_string_caseless_lwc_isequal(name,
-						corestring_lwc_meta) &&
-						htmlc->refresh == false) {
-					html_meta_refresh_process_element(htmlc,
-							(dom_node *)node);
-				} else if (dom_string_caseless_lwc_isequal(
-						name, corestring_lwc_base)) {
-					html_process_base(htmlc,
-							(dom_node *)node);
-				} else if (dom_string_caseless_lwc_isequal(
-						name, corestring_lwc_title) &&
-						htmlc->title == NULL) {
-					htmlc->title = dom_node_ref(node);
-				} else if (dom_string_caseless_lwc_isequal(
-						name, corestring_lwc_img)) {
-					html_process_img(htmlc,
-							(dom_node *) node);
-				}
-
-				dom_string_unref(name);
+			switch (tag_type) {
+			case DOM_HTML_ELEMENT_TYPE_LINK:
+				/* Handle stylesheet loading */
+				html_css_process_link(htmlc, (dom_node *)node);
+				/* Generic link handling */
+				html_process_link(htmlc, (dom_node *)node);
+				break;
+			case DOM_HTML_ELEMENT_TYPE_META:
+				if (htmlc->refresh)
+					break;
+				html_meta_refresh_process_element(htmlc,
+						(dom_node *)node);
+				break;
+			case DOM_HTML_ELEMENT_TYPE_TITLE:
+				if (htmlc->title != NULL)
+					break;
+				htmlc->title = dom_node_ref(node);
+				break;
+			case DOM_HTML_ELEMENT_TYPE_BASE:
+				html_process_base(htmlc, (dom_node *)node);
+				break;
+			case DOM_HTML_ELEMENT_TYPE_IMG:
+				html_process_img(htmlc, (dom_node *) node);
+				break;
+			default:
+				break;
 			}
 			if (htmlc->enable_scripting) {
 				/* ensure javascript context is available */
