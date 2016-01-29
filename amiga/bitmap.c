@@ -52,13 +52,16 @@ enum {
 	AMI_NSBM_PALETTEMAPPED 
 };
 
+APTR pool_bitmap = NULL;
 
 /* exported function documented in amiga/bitmap.h */
 void *amiga_bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
-	
-	bitmap = AllocVecTagList(sizeof(struct bitmap), NULL);
+
+	if(pool_bitmap == NULL) pool_bitmap = ami_misc_itempool_create(sizeof(struct bitmap));
+
+	bitmap = ami_misc_itempool_alloc(pool_bitmap, sizeof(struct bitmap));
 	if(bitmap == NULL) return NULL;
 
 	bitmap->pixdata = ami_misc_allocvec_clear(width*height*4, 0xff);
@@ -128,7 +131,7 @@ void amiga_bitmap_destroy(void *bitmap)
 		bm->native_mask = NULL;
 		bm->dto = NULL;
 	
-		FreeVec(bm);
+		ami_misc_itempool_free(pool_bitmap, bm, sizeof(struct bitmap));
 		bm = NULL;
 	}
 }
@@ -555,6 +558,12 @@ struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
 	} else {
 		return ami_bitmap_get_truecolour(bitmap, width, height, friendbm);
 	}
+}
+
+void ami_bitmap_fini(void)
+{
+	if(pool_bitmap) ami_misc_itempool_delete(pool_bitmap);
+	pool_bitmap = NULL;
 }
 
 static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)

@@ -55,6 +55,11 @@ Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap);
 struct bitmap *ami_bitmap_from_datatype(char *filename);
 
 /**
+ * Cleanup bitmap allocations
+ */
+void ami_bitmap_fini(void);
+
+/**
  * Create a bitmap.
  *
  * \param  width   width of image in pixels

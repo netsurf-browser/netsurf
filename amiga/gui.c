@@ -5681,6 +5681,7 @@ int main(int argc, char** argv)
 	FreeSysObject(ASOT_PORT, schedulermsgport);
 
 	ami_object_fini();
+	ami_bitmap_fini();
 	ami_libs_close();
 
 	return RETURN_OK;
