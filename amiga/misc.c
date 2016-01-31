@@ -137,7 +137,7 @@ void warn_user(const char *warning, const char *detail)
 int32 ami_warn_user_multi(const char *body, const char *opt1, const char *opt2, struct Window *win)
 {
 	int res = 0;
-#ifdef __amigaos4__
+
 	char *utf8text = ami_utf8_easy(body);
 	char *utf8gadget1 = ami_utf8_easy(messages_get(opt1));
 	char *utf8gadget2 = ami_utf8_easy(messages_get(opt2));
@@ -145,18 +145,28 @@ int32 ami_warn_user_multi(const char *body, const char *opt1, const char *opt2, 
 	free(utf8gadget1);
 	free(utf8gadget2);
 
+#ifdef __amigaos4__
 	res = TimedDosRequesterTags(TDR_ImageType, TDRIMAGE_WARNING,
 		TDR_TitleString, messages_get("NetSurf"),
 		TDR_FormatString, utf8text,
 		TDR_GadgetString, utf8gadgets,
 		TDR_Window, win,
 		TAG_DONE);
+#else
+	struct EasyStruct easyreq = {
+		sizeof(struct EasyStruct),
+		0,
+		messages_get("NetSurf"),
+		utf8text,
+		utf8gadgets,
+	};
+
+	res = EasyRequest(win, &easyreq, NULL);
+#endif
 
 	if(utf8text) free(utf8text);
 	if(utf8gadgets) FreeVec(utf8gadgets);
-#else
-#warning write this for os3
-#endif	
+
 	return res;
 }
 
