@@ -504,7 +504,7 @@ void ami_gui_opts_open(void)
 	BOOL disableanims, animspeeddisabled = FALSE, acceptlangdisabled = FALSE;
 	BOOL scaleselected = nsoption_bool(scale_quality), scaledisabled = FALSE;
 	BOOL ditherdisable = TRUE, nativebm_disable = FALSE;
-	BOOL download_notify_disabled = FALSE;
+	BOOL download_notify_disabled = FALSE, tab_always_show_disabled = FALSE;
 	BOOL ptr_disable = FALSE;
 	char animspeed[10];
 	char *homepage_url_lc = ami_utf8_easy(nsoption_charp(homepage_url));
@@ -600,6 +600,10 @@ void ami_gui_opts_open(void)
 	{
 		download_notify_disabled = TRUE;
 		nsoption_set_bool(download_notify, FALSE);
+	}
+
+	if(ClickTabBase->lib_Version < 53) {
+		tab_always_show_disabled = TRUE;
 	}
 
 	fontsans.ta_Name = ASPrintf("%s.font", nsoption_charp(font_sans));
@@ -1344,6 +1348,7 @@ void ami_gui_opts_open(void)
          	           						GA_RelVerify, TRUE,
          	           						GA_Text, gadlab[GID_OPTS_TAB_ALWAYS],
          	           						GA_Selected, nsoption_bool(tab_always_show),
+											GA_Disabled, tab_always_show_disabled,
             	    					CheckBoxEnd,
 										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_CLOSE] = CheckBoxObj,
       	              						GA_ID, GID_OPTS_TAB_CLOSE,

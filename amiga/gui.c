@@ -556,6 +556,10 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 	*/
 	nsoption_set_bool(core_select_menu, true);
 
+	/* ClickTab < 53 doesn't work with the auto show/hide tab-bar (for reasons forgotten) */
+	if(ClickTabBase->lib_Version < 53)
+		nsoption_set_bool(tab_always_show, true);
+
 	/* Some AmigaOS3 overrides */
 #ifndef __amigaos4__
 	nsoption_set_bool(download_notify, false);
@@ -3985,7 +3989,6 @@ gui_window_create(struct browser_window *bw,
 
 		if(ClickTabBase->lib_Version < 53)
 		{
-//#ifdef __amigaos4__
 			addtabclosegadget = LAYOUT_AddChild;
 			g->shared->objects[GID_CLOSETAB] = ButtonObj,
 					GA_ID, GID_CLOSETAB,
@@ -4007,9 +4010,6 @@ gui_window_create(struct browser_window *bw,
 					GA_Text, "+",
 					BUTTON_RenderImage, g->shared->objects[GID_ADDTAB_BM],
 					ButtonEnd;
-//#else
-//#warning OS3 tab bar permanently disabled!
-//#endif
 		}
 		else
 		{
