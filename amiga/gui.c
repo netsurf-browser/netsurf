@@ -2162,8 +2162,13 @@ static void ami_handle_msg(void)
 					{
 						case GID_TABS:
 							if(gwin->objects[GID_TABS] == NULL) break;
-							GetAttrs(gwin->objects[GID_TABS],
-								CLICKTAB_NodeClosed, &tabnode, TAG_DONE);
+							if(ClickTabBase->lib_Version >= 53) {
+								GetAttrs(gwin->objects[GID_TABS],
+									CLICKTAB_NodeClosed, &tabnode, TAG_DONE);
+							} else {
+								tabnode = NULL;
+							}
+
 							if(tabnode) {
 								struct gui_window *closedgw;
 
@@ -3980,7 +3985,7 @@ gui_window_create(struct browser_window *bw,
 
 		if(ClickTabBase->lib_Version < 53)
 		{
-#ifdef __amigaos4__
+//#ifdef __amigaos4__
 			addtabclosegadget = LAYOUT_AddChild;
 			g->shared->objects[GID_CLOSETAB] = ButtonObj,
 					GA_ID, GID_CLOSETAB,
@@ -4002,9 +4007,9 @@ gui_window_create(struct browser_window *bw,
 					GA_Text, "+",
 					BUTTON_RenderImage, g->shared->objects[GID_ADDTAB_BM],
 					ButtonEnd;
-#else
-#warning OS3 tab bar permanently disabled!
-#endif
+//#else
+//#warning OS3 tab bar permanently disabled!
+//#endif
 		}
 		else
 		{
