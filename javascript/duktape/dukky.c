@@ -21,6 +21,10 @@
  * Duktapeish implementation of javascript engine functions.
  */
 
+#include <inttypes.h>
+
+#include <nsutils/time.h>
+
 #include "content/content.h"
 
 #include "utils/nsoption.h"
@@ -328,6 +332,7 @@ static void dukky_free_function(void *udata, void *ptr)
 struct jscontext {
 	duk_context *ctx;
 	duk_context *thread;
+	uint64_t exec_start_time;
 };
 
 #define CTX (ctx->thread)
@@ -363,7 +368,7 @@ nserror js_newcontext(int timeout, jscallback *cb, void *cbctx,
 		dukky_alloc_function,
 		dukky_realloc_function,
 		dukky_free_function,
-		NULL,
+		ret,
 		NULL);
 	if (ret->ctx == NULL) { free(ret); return NSERROR_NOMEM; }
 	/* Create the prototype stuffs */
@@ -425,6 +430,22 @@ static duk_ret_t eval_top_string(duk_context *ctx)
 	return 0;
 }
 
+duk_bool_t dukky_check_timeout(void *udata)
+{
+#define JS_EXEC_TIMEOUT_MS 10000 /* 10 seconds */
+	jscontext *ctx = (jscontext *) udata;
+	uint64_t now;
+
+	(void) nsu_getmonotonic_ms(&now);
+
+	/* This function may be called during duk heap construction,
+	 * so only test for execution timeout if we've recorded a
+	 * start time.
+	 */
+	return ctx->exec_start_time != 0 &&
+			now > (ctx->exec_start_time + JS_EXEC_TIMEOUT_MS);
+}
+
 bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 {
 	assert(ctx);
@@ -432,6 +453,7 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 	duk_set_top(CTX, 0);
 	duk_push_lstring(CTX, txt, txtlen);
 
+	(void) nsu_getmonotonic_ms(&ctx->exec_start_time);
 	if (duk_safe_call(CTX, eval_top_string, 1, 1) == DUK_EXEC_ERROR) {
 		duk_get_prop_string(CTX, 0, "name");
 		duk_get_prop_string(CTX, 0, "message");
@@ -581,11 +603,17 @@ bool dukky_get_current_value_of_event_handler(duk_context *ctx,
 
 static void dukky_generic_event_handler(dom_event *evt, void *pw)
 {
+	duk_memory_functions funcs;
 	duk_context *ctx = (duk_context *)pw;
+	jscontext *jsctx;
 	dom_string *name;
 	dom_exception exc;
 	dom_event_target *targ;
 	dom_event_flow_phase phase;
+
+	/* Retrieve the JS context from the Duktape context */
+	duk_get_memory_functions(ctx, &funcs);
+	jsctx = funcs.udata;
 
 	LOG("WOOP WOOP, An event:");
 	exc = dom_event_get_type(evt, &name);
@@ -633,6 +661,7 @@ static void dukky_generic_event_handler(dom_event *evt, void *pw)
 	/* ... handler node */
 	dukky_push_event(ctx, evt);
 	/* ... handler node event */
+	(void) nsu_getmonotonic_ms(&jsctx->exec_start_time);
 	if (duk_pcall_method(ctx, 1) != 0) {
 		/* Failed to run the method */
 		/* ... err */
@@ -874,6 +903,7 @@ bool js_fire_event(jscontext *ctx, const char *type, struct dom_document *doc, s
 	/* ... handler Window */
 	dukky_push_event(CTX, evt);
 	/* ... handler Window event */
+	(void) nsu_getmonotonic_ms(&ctx->exec_start_time);
 	if (duk_pcall_method(CTX, 1) != 0) {
 		/* Failed to run the handler */
 		/* ... err */
