@@ -2455,7 +2455,7 @@ static void ami_handle_msg(void)
 				break;
 
 				case WMHI_CLOSEWINDOW:
-					ami_close_all_tabs(gwin);
+					ami_gui_close_window(gwin);
 		        break;
 #ifdef __amigaos4__
 				case WMHI_ICONIFY:
@@ -2524,7 +2524,7 @@ static void ami_handle_msg(void)
 		if(ami_menu_window_close == (void *)AMI_MENU_WINDOW_CLOSE_ALL)
 			ami_quit_netsurf();
 		else
-			ami_close_all_tabs(ami_menu_window_close);
+			ami_gui_close_window(ami_menu_window_close);
 			
 		ami_menu_window_close = NULL;
 	}
@@ -2914,7 +2914,7 @@ void ami_quit_netsurf(void)
 					/* This also closes windows that are attached to the
 					 * gui_window, such as local history and find. */
 					ShowWindow(gwin->win, WINDOW_BACKMOST);
-					ami_close_all_tabs(gwin);
+					ami_gui_close_window(gwin);
 				break;
 
 				case AMINS_GUIOPTSWINDOW:
@@ -4386,36 +4386,46 @@ gui_window_create(struct browser_window *bw,
 	return g;
 }
 
-void ami_close_all_tabs(struct gui_window_2 *gwin)
+static void ami_gui_close_tabs(struct gui_window_2 *gwin, bool other_tabs)
 {
 	struct Node *tab;
 	struct Node *ntab;
-	
+	struct gui_window *gw;
+
 	if((gwin->tabs > 1) && (nsoption_bool(tab_close_warn) == true)) {
 		char *req_body = ami_utf8_easy(messages_get("MultiTabClose"));
 		int32 res = ami_warn_user_multi(req_body, "Yes", "No", gwin->win);
 		free(req_body);
-		
+
 		if(res == 0) return;
 	}
-	
-	if(gwin->tabs)
-	{
+
+	if(gwin->tabs) {
 		tab = GetHead(&gwin->tab_list);
 
-		do
-		{
+		do {
 			ntab=GetSucc(tab);
 			GetClickTabNodeAttrs(tab,
-								TNA_UserData,&gwin->gw,
+								TNA_UserData,&gw,
 								TAG_DONE);
-			browser_window_destroy(gwin->gw->bw);
+
+			if((other_tabs == false) || (gwin->gw != gw)) {
+				browser_window_destroy(gw->bw);
+			}
 		} while((tab=ntab));
+	} else {
+		if(other_tabs == false) browser_window_destroy(gwin->gw->bw);
 	}
-	else
-	{
-			browser_window_destroy(gwin->gw->bw);
-	}
+}
+
+void ami_gui_close_window(struct gui_window_2 *gwin)
+{
+	ami_gui_close_tabs(gwin, false);
+}
+
+void ami_gui_close_inactive_tabs(struct gui_window_2 *gwin)
+{
+	ami_gui_close_tabs(gwin, true);
 }
 
 static void gui_window_destroy(struct gui_window *g)

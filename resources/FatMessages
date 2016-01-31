@@ -967,6 +967,11 @@ de.all.Close:Schließen
 fr.all.Close:Fermer
 it.all.Close:Chiudi
 nl.all.Close:Sluit
+en.ami.CloseInactive:Close inactive tabs
+de.ami.CloseInactive:Close inactive tabs
+fr.ami.CloseInactive:Close inactive tabs
+it.ami.CloseInactive:Close inactive tabs
+nl.ami.CloseInactive:Close inactive tabs
 en.all.ObjShow:Show object
 de.all.ObjShow:Zeige Objekt
 fr.all.ObjShow:Afficher l'objet

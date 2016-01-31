@@ -600,7 +600,7 @@ static void ami_init_menulabs(struct gui_window_2 *gwin)
 	ami_menu_alloc_item(gwin, M_PROJECT, NM_TITLE, "Project",       0, NULL, NULL, NULL);
 	ami_menu_alloc_item(gwin, M_NEWWIN,   NM_ITEM, "NewWindowNS", 'N', "TBImages:list_app",
 			ami_menu_item_project_newwin, NULL);
-	ami_menu_alloc_item(gwin, M_NEWTAB,   NM_ITEM, "NewTab",      'T', "TBImages:list_add",
+	ami_menu_alloc_item(gwin, M_NEWTAB,   NM_ITEM, "NewTab",      'T', "TBImages:list_tab",
 			ami_menu_item_project_newtab, NULL);
 	ami_menu_alloc_item(gwin, M_BAR_P1,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL);
 	ami_menu_alloc_item(gwin, M_OPEN,     NM_ITEM, "OpenFile",    'O', "TBImages:list_folder_misc",

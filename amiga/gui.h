@@ -169,7 +169,6 @@ struct gui_window
 };
 
 void ami_get_msg(void);
-void ami_close_all_tabs(struct gui_window_2 *gwin);
 void ami_try_quit(void);
 void ami_quit_netsurf(void);
 void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw);
@@ -188,6 +187,21 @@ nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin);
 char *ami_gui_get_cache_favicon_name(nsurl *url, bool only_if_avail);
 int ami_gui_count_windows(int window, int *tabs);
 void ami_gui_set_scale(struct gui_window *gw, float scale);
+
+
+/**
+ * Close a window and all tabs attached to it.
+ *
+ * @param gwin gui_window_2 to act upon.
+ */
+void ami_gui_close_window(struct gui_window_2 *gwin);
+
+/**
+ * Close all tabs in a window except the active one.
+ *
+ * @param gwin gui_window_2 to act upon.
+ */
+void ami_gui_close_inactive_tabs(struct gui_window_2 *gwin);
 
 /**
  * Compatibility function to get space.gadget render area.

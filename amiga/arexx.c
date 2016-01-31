@@ -614,7 +614,7 @@ STATIC VOID rx_close(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((un
 		gw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
 	else if(cmd->ac_ArgList[0])
 	{
-		ami_close_all_tabs(gw->shared);
+		ami_gui_close_window(gw->shared);
 		return;
 	}
 

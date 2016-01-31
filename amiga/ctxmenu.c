@@ -82,6 +82,7 @@ enum {
 
 	/* Tabs */
 	AMI_CTX_ID_TABNEW,
+	AMI_CTX_ID_TABCLOSE_OTHER,
 
 	AMI_CTX_ID_MAX
 };
@@ -249,6 +250,14 @@ HOOKF(void, ami_ctxmenu_item_tabnew, APTR, window, struct IntuiMessage *)
 
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 	ami_gui_new_blank_tab(gwin);
+}
+
+HOOKF(void, ami_ctxmenu_item_tabclose_other, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+	ami_gui_close_inactive_tabs(gwin);
 }
 
 /** Hook for history context menu entries **/
@@ -471,8 +480,10 @@ void ami_ctxmenu_init(void)
 	ami_ctxmenu_alloc_item(AMI_CTX_ID_FRAMESHOW, 	"FrameOnly",	NULL,	"TBImages:list_preview",
 		ami_ctxmenu_item_frameshow);
 
-	ami_ctxmenu_alloc_item(AMI_CTX_ID_TABNEW, "NewTab", "T", "TBImages:list_add",
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_TABNEW, "NewTab", "T", "TBImages:list_tab",
 		ami_ctxmenu_item_tabnew);
+	ami_ctxmenu_alloc_item(AMI_CTX_ID_TABCLOSE_OTHER, "CloseInactive", "K", "TBImages:list_cancel",
+		ami_ctxmenu_item_tabclose_other);
 }
 
 /********************************
@@ -582,6 +593,7 @@ struct Menu *ami_ctxmenu_clicktab_create(struct gui_window_2 *gwin)
 				MEnd;
 
 	ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_TABNEW, gwin);
+	ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_TABCLOSE_OTHER, gwin);
 
 	return (struct Menu *)gwin->clicktab_ctxmenu;
 }
