@@ -1163,8 +1163,8 @@ static void ami_update_buttons(struct gui_window_2 *gwin)
 		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_STOP],
 			gwin->win, NULL, GA_Disabled, stop, TAG_DONE);
 
-	if((gwin->tabs) && (ClickTabBase->lib_Version < 53))
-	{
+	if(ClickTabBase->lib_Version < 53) {
+		if(gwin->tabs <= 1) tabclose = TRUE;
 		GetAttr(GA_Disabled, gwin->objects[GID_CLOSETAB], (uint32 *)&storage);
 		if(storage != tabclose)
 			SetGadgetAttrs((struct Gadget *)gwin->objects[GID_CLOSETAB],
