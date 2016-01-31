@@ -151,3 +151,12 @@ getter HTMLElement::onwaiting();
 setter HTMLElement::onwaiting();
 getter HTMLElement::onwheel();
 setter HTMLElement::onwheel();
+
+getter HTMLElement::style()
+%{
+	/* Minimal implementation to avoid infinite-loop in Modernizr (c.f. #2413) */
+	if (dukky_create_object(ctx, PROTO_NAME(CSSSTYLEDECLARATION), 0) != DUK_EXEC_SUCCESS) {
+		return 0;
+	}
+	return 1;
+%}
