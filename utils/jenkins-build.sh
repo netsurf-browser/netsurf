@@ -178,6 +178,9 @@ case ${TARGET} in
 	    "arm-linux-gnueabihf")
 		;;
 
+	    "aarch64-linux-gnu")
+		;;
+
 	    amd64-unknown-openbsd*)
 		MAKE=gmake
 		;;
@@ -206,6 +209,9 @@ case ${TARGET} in
 		;;
 
 	    arm-linux-gnueabihf)
+		;;
+
+	    "aarch64-linux-gnu")
 		;;
 
 	    "i686-apple-darwin10")
@@ -269,6 +275,9 @@ case ${TARGET} in
 		;;
 
 	    arm-linux-gnueabihf)
+		;;
+
+	    "aarch64-linux-gnu")
 		;;
 
 	    "i686-apple-darwin10")
