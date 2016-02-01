@@ -173,9 +173,6 @@ static void dukky_html_element_class_from_tag_type(dom_html_element_type type,
 		const char **html_class, size_t *html_class_len)
 {
 	switch(type) {
-	case DOM_HTML_ELEMENT_TYPE__COUNT:
-		assert(type != DOM_HTML_ELEMENT_TYPE__COUNT);
-		break;
 	case DOM_HTML_ELEMENT_TYPE_HTML:
 		SET_HTML_CLASS(HTML)
 		break;
@@ -343,6 +340,9 @@ static void dukky_html_element_class_from_tag_type(dom_html_element_type type,
 	case DOM_HTML_ELEMENT_TYPE_ISINDEX:
 		SET_HTML_CLASS(ISINDEX)
 		break;
+	case DOM_HTML_ELEMENT_TYPE__COUNT:
+		assert(type != DOM_HTML_ELEMENT_TYPE__COUNT);
+	default:
 	case DOM_HTML_ELEMENT_TYPE__UNKNOWN:
 		SET_HTML_CLASS(UNKNOWN)
 		break;
