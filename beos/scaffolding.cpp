@@ -115,7 +115,7 @@ struct beos_scaffolding {
 	BControl		*home_button;
 
 	NSIconTextControl	*url_bar;
-	NSIconTextControl	*search_bar;
+	BTextControl	*search_bar;
 	//BMenuField	*url_bar_completion;
 
 	NSThrobber		*throbber;
@@ -657,9 +657,6 @@ NSBaseView::AllAttached()
 	g->stop_button->SetTarget(this);
 	g->reload_button->SetTarget(this);
 	g->home_button->SetTarget(this);
-
-	g->url_bar->SetTarget(this);
-	g->search_bar->SetTarget(this);
 
 	rgb_color c = ui_color(B_PANEL_BACKGROUND_COLOR);
 	SetViewColor(c);
@@ -1502,6 +1499,7 @@ void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 	g->home_button->SetTarget(view);
 
 	g->url_bar->SetTarget(view);
+	g->search_bar->SetTarget(view);
 
 	nsbeos_scaffolding_update_colors(g);
 
@@ -1954,12 +1952,14 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		message = new BMessage(NO_ACTION);
 		item = make_menu_item("OptDefault", message);
 		menu->AddItem(item);
+#endif
 
 		// Utilities menu
 
 		menu = new BMenu(messages_get("Utilities"));
 		g->menu_bar->AddItem(menu);
 
+#if 0
 		submenu = new BMenu(messages_get("Hotlist"));
 		menu->AddItem(submenu);
 
@@ -1982,11 +1982,13 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		message = new BMessage(HISTORY_SHOW_GLOBAL);
 		item = make_menu_item("HistGlobal", message);
 		submenu->AddItem(item);
+#endif
 
 		message = new BMessage(COOKIES_SHOW);
 		item = make_menu_item("Cookie manager", message, true);
 		menu->AddItem(item);
 
+#if 0
 		message = new BMessage(BROWSER_FIND_TEXT);
 		item = make_menu_item("FindText", message);
 		menu->AddItem(item);
@@ -2142,7 +2144,7 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	// url bar
 	rect = g->tool_bar->Bounds();
 	rect.left += TOOLBAR_HEIGHT * nButtons;
-	rect.right -= TOOLBAR_HEIGHT * 1;
+	rect.right -= TOOLBAR_HEIGHT * 1 + 100;
 	rect.InsetBySelf(5, 5);
 	message = new BMessage('urle');
 	message->AddPointer("scaffolding", g);
@@ -2157,17 +2159,14 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	// search bar
 
 	rect = g->tool_bar->Bounds();
-	rect.left += TOOLBAR_HEIGHT * nButtons + (g->url_bar->Bounds().right - g->url_bar->Bounds().left);
+	rect.left = g->url_bar->Frame().right;
 	rect.right -= TOOLBAR_HEIGHT * 1;
 	rect.InsetBy(5,5);
 	message = new BMessage('sear');
 	message->AddPointer("scaffolding", g);
-	g->search_bar = new NSIconTextControl(rect,"search_bar","","Search...",message,
-		B_FOLLOW_RIGHT);
+	g->search_bar = new BTextControl(rect, "search_bar", "",
+		"Search" B_UTF8_ELLIPSIS, message, B_FOLLOW_RIGHT | B_FOLLOW_TOP);
 	g->search_bar->SetDivider(0);
-	rect = g->search_bar->TextView()->TextRect();
-	rect.left += 0;
-	g->search_bar->TextView()->TextRect();
 	g->tool_bar->AddChild(g->search_bar);
 
 	// throbber

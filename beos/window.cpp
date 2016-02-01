@@ -158,6 +158,7 @@ NSBrowserFrameView::MessageReceived(BMessage *message)
 		case 'home':
 		case 'urlc':
 		case 'urle':
+		case 'sear':
 		case 'menu':
 		case NO_ACTION:
 		case HELP_OPEN_CONTENTS:

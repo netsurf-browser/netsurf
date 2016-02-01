@@ -145,7 +145,7 @@ CookieWindow::CookieWindow(BRect frame)
 	:
 	BWindow(frame,"Cookie manager", B_TITLED_WINDOW,
 		B_NORMAL_WINDOW_FEEL,
-		B_AUTO_UPDATE_SIZE_LIMITS | B_ASYNCHRONOUS_CONTROLS | B_NOT_ZOOMABLE)
+		B_AUTO_UPDATE_SIZE_LIMITS | B_ASYNCHRONOUS_CONTROLS)
 {
 	BGroupLayout* root = new BGroupLayout(B_HORIZONTAL, 0.0);
 	SetLayout(root);
@@ -410,7 +410,8 @@ CookieWindow::_DeleteCookies()
  */
 void nsbeos_cookies_init(void)
 {
-	CookieWindow* cookWin=new CookieWindow(BRect(100,100,400,400));
+	CookieWindow* cookWin=new CookieWindow(BRect(100,100,700,500));
 	cookWin->Show();
+	cookWin->Activate();
 	urldb_iterate_cookies(&nsbeos_cookie_parser);
 }
