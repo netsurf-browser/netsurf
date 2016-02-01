@@ -162,6 +162,196 @@ dukky_push_node_stacked(duk_context *ctx)
 	return true;
 }
 
+#define SET_HTML_CLASS(CLASS) \
+		*html_class = PROTO_NAME(HTML##CLASS##ELEMENT); \
+		*html_class_len = \
+				SLEN(PROTO_NAME(HTML)) + \
+				SLEN(#CLASS) + \
+				SLEN("ELEMENT");
+
+static void dukky_html_element_class_from_tag_type(dom_html_element_type type,
+		const char **html_class, size_t *html_class_len)
+{
+	switch(type) {
+	case DOM_HTML_ELEMENT_TYPE__COUNT:
+		assert(type != DOM_HTML_ELEMENT_TYPE__COUNT);
+		break;
+	case DOM_HTML_ELEMENT_TYPE_HTML:
+		SET_HTML_CLASS(HTML)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_HEAD:
+		SET_HTML_CLASS(HEAD)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_META:
+		SET_HTML_CLASS(META)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_BASE:
+		SET_HTML_CLASS(BASE)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_TITLE:
+		SET_HTML_CLASS(TITLE)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_BODY:
+		SET_HTML_CLASS(BODY)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_DIV:
+		SET_HTML_CLASS(DIV)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_FORM:
+		SET_HTML_CLASS(FORM)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_LINK:
+		SET_HTML_CLASS(LINK)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_BUTTON:
+		SET_HTML_CLASS(BUTTOM)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_INPUT:
+		SET_HTML_CLASS(INPUT)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_TEXTAREA:
+		SET_HTML_CLASS(TEXTAREA)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_OPTGROUP:
+		SET_HTML_CLASS(OPTGROUP)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_OPTION:
+		SET_HTML_CLASS(OPTION)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_SELECT:
+		SET_HTML_CLASS(SELECT)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_HR:
+		SET_HTML_CLASS(HR)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_DL:
+		SET_HTML_CLASS(DLIST)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_DIR:
+		SET_HTML_CLASS(DIRECTORY)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_MENU:
+		SET_HTML_CLASS(MENU)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_FIELDSET:
+		SET_HTML_CLASS(FIELDSET)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_LEGEND:
+		SET_HTML_CLASS(LEGEND)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_P:
+		SET_HTML_CLASS(PARAGRAPH)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_H1:
+	case DOM_HTML_ELEMENT_TYPE_H2:
+	case DOM_HTML_ELEMENT_TYPE_H3:
+	case DOM_HTML_ELEMENT_TYPE_H4:
+	case DOM_HTML_ELEMENT_TYPE_H5:
+	case DOM_HTML_ELEMENT_TYPE_H6:
+		SET_HTML_CLASS(HEADING)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_BLOCKQUOTE:
+	case DOM_HTML_ELEMENT_TYPE_Q:
+		SET_HTML_CLASS(QUOTE)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_PRE:
+		SET_HTML_CLASS(PRE)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_BR:
+		SET_HTML_CLASS(BR)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_LABEL:
+		SET_HTML_CLASS(LABEL)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_UL:
+		SET_HTML_CLASS(ULIST)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_OL:
+		SET_HTML_CLASS(OLIST)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_LI:
+		SET_HTML_CLASS(LI)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_FONT:
+		SET_HTML_CLASS(FONT)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_DEL:
+	case DOM_HTML_ELEMENT_TYPE_INS:
+		SET_HTML_CLASS(MOD)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_A:
+		SET_HTML_CLASS(ANCHOR)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_BASEFONT:
+		SET_HTML_CLASS(BASEFONT)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_IMG:
+		SET_HTML_CLASS(IMAGE)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_OBJECT:
+		SET_HTML_CLASS(OBJECT)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_PARAM:
+		SET_HTML_CLASS(PARAM)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_APPLET:
+		SET_HTML_CLASS(APPLET)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_MAP:
+		SET_HTML_CLASS(MAP)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_AREA:
+		SET_HTML_CLASS(AREA)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_SCRIPT:
+		SET_HTML_CLASS(SCRIPT)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_CAPTION:
+		SET_HTML_CLASS(TABLECAPTION)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_TD:
+	case DOM_HTML_ELEMENT_TYPE_TH:
+		SET_HTML_CLASS(TABLECELL)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_COL:
+	case DOM_HTML_ELEMENT_TYPE_COLGROUP:
+		SET_HTML_CLASS(TABLECOL)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_THEAD:
+	case DOM_HTML_ELEMENT_TYPE_TBODY:
+	case DOM_HTML_ELEMENT_TYPE_TFOOT:
+		SET_HTML_CLASS(TABLESECTION)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_TABLE:
+		SET_HTML_CLASS(TABLE)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_TR:
+		SET_HTML_CLASS(TABLEROW)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_STYLE:
+		SET_HTML_CLASS(STYLE)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_FRAMESET:
+		SET_HTML_CLASS(FRAMESET)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_FRAME:
+		SET_HTML_CLASS(FRAME)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_IFRAME:
+		SET_HTML_CLASS(IFRAME)
+		break;
+	case DOM_HTML_ELEMENT_TYPE_ISINDEX:
+		SET_HTML_CLASS(ISINDEX)
+		break;
+	case DOM_HTML_ELEMENT_TYPE__UNKNOWN:
+		SET_HTML_CLASS(UNKNOWN)
+		break;
+	}
+	return;
+}
+
+#undef SET_HTML_CLASS
+
 static void
 dukky_push_node_klass(duk_context *ctx, struct dom_node *node)
 {
@@ -177,7 +367,10 @@ dukky_push_node_klass(duk_context *ctx, struct dom_node *node)
 
 	switch(nodetype) {
 	case DOM_ELEMENT_NODE: {
-		dom_string *namespace, *tag;
+		dom_string *namespace;
+		dom_html_element_type type;
+		const char *html_class;
+		size_t html_class_len;
 		err = dom_node_get_namespace(node, &namespace);
 		if (err != DOM_NO_ERR) {
 			/* Feck it, element */
@@ -200,18 +393,15 @@ dukky_push_node_klass(duk_context *ctx, struct dom_node *node)
 		}
 		dom_string_unref(namespace);
 
-		err = dom_node_get_node_name(node, &tag);
+		err = dom_html_element_get_tag_type(node, &type);
 		if (err != DOM_NO_ERR) {
-			duk_push_string(ctx, PROTO_NAME(HTMLUNKNOWNELEMENT));
-			break;
+			type = DOM_HTML_ELEMENT_TYPE__UNKNOWN;
 		}
 
-		duk_push_string(ctx, PROTO_NAME(HTML));
-		duk_push_lstring(ctx, dom_string_data(tag), dom_string_length(tag));
-		dom_string_unref(tag);
-		duk_push_string(ctx, "ELEMENT");
-		duk_concat(ctx, 3);
+		dukky_html_element_class_from_tag_type(type,
+				&html_class, &html_class_len);
 
+		duk_push_lstring(ctx, html_class, html_class_len);
 		break;
 	}
 	case DOM_TEXT_NODE:
