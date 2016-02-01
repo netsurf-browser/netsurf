@@ -342,9 +342,15 @@ static void dukky_html_element_class_from_tag_type(dom_html_element_type type,
 		break;
 	case DOM_HTML_ELEMENT_TYPE__COUNT:
 		assert(type != DOM_HTML_ELEMENT_TYPE__COUNT);
-	default:
 	case DOM_HTML_ELEMENT_TYPE__UNKNOWN:
 		SET_HTML_CLASS(UNKNOWN)
+		break;
+	default:
+		/* Known HTML element without a specialisation */
+		*html_class = PROTO_NAME(HTMLELEMENT);
+		*html_class_len =
+				SLEN(PROTO_NAME(HTML)) +
+				SLEN("ELEMENT");
 		break;
 	}
 	return;
