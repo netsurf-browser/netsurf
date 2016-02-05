@@ -31,6 +31,7 @@
 #include "utils/messages.h"
 
 #include "css/css.h"
+#include "css/hints.h"
 #include "css/internal.h"
 
 /* Define to trace import fetches */
@@ -806,6 +807,7 @@ static void nscss_fini(void)
 		css_stylesheet_destroy(blank_import);
 		blank_import = NULL;
 	}
+	css_hint_fini();
 }
 
 static const content_handler css_content_handler = {
@@ -830,6 +832,10 @@ nserror nscss_init(void)
 	error = content_factory_register_handler("text/css", 
 			&css_content_handler);
 	if (error != NSERROR_OK) 
+		goto error;
+
+	error = css_hint_init();
+	if (error != NSERROR_OK)
 		goto error;
 
 	return NSERROR_OK;
