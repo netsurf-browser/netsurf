@@ -358,7 +358,7 @@ void content__reformat(struct content *c, bool background,
 	assert(c->status == CONTENT_STATUS_READY ||
 			c->status == CONTENT_STATUS_DONE);
 	assert(c->locked == false);
-	LOG("%p %s", c, nsurl_access(llcache_handle_get_url(c->llcache)));
+
 	c->available_width = width;
 	if (c->handler->reformat != NULL) {
 

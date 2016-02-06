@@ -2525,7 +2525,6 @@ nserror browser_window_schedule_reformat(struct browser_window *bw)
 	/* The ugly cast here is so the reformat function can be
 	 * passed a gui window pointer in its API rather than void*
 	 */
-	LOG("Scheduleing %p(%p)", guit->window->reformat, bw->window);
 	guit->browser->schedule(0, (void(*)(void*))guit->window->reformat, bw->window);
 	return NSERROR_OK;
 }
