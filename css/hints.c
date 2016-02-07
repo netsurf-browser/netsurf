@@ -1337,6 +1337,28 @@ static void css_hint_anchor_color(
 	}
 }
 
+static void css_hint_body_color(
+		nscss_select_ctx *ctx,
+		dom_node *node)
+{
+	struct css_hint *hint = &hint_ctx.hints[hint_ctx.len];
+	dom_exception err;
+	dom_string *color;
+
+	err = dom_element_get_attribute(node, corestring_dom_text, &color);
+
+	if (err == DOM_NO_ERR && color != NULL) {
+		if (nscss_parse_colour(
+				(const char *)dom_string_data(color),
+						&hint->data.color)) {
+			hint->prop = CSS_PROP_COLOR;
+			hint->status = CSS_COLOR_COLOR;
+			hint = css_hint_advance(hint);
+		}
+		dom_string_unref(color);
+	}
+}
+
 static void css_hint_color(
 		nscss_select_ctx *ctx,
 		dom_node *node)
@@ -1559,6 +1581,9 @@ css_error node_presentational_hint(void *pw, void *node,
 		break;
 	case DOM_HTML_ELEMENT_TYPE_FONT:
 		css_hint_font_size(pw, node);
+		break;
+	case DOM_HTML_ELEMENT_TYPE_BODY:
+		css_hint_body_color(pw, node);
 		break;
 	default:
 		break;
