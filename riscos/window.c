@@ -1907,6 +1907,7 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 	case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F2:
 		/* Close window. */
 		ro_gui_url_complete_close();
+		gui_window_set_pointer(g, GUI_POINTER_DEFAULT);
 		browser_window_destroy(g->bw);
 		return true;
 
