@@ -106,6 +106,9 @@ case ${TARGET} in
 
     "cocoa")
 	case ${HOST} in
+	    "x86_64-apple-darwin14.5.0")
+		;;
+
 	    "i686-apple-darwin10")
 		;;
 
