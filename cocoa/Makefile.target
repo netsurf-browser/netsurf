@@ -22,7 +22,7 @@ endif
 # for timerisset()
 CFLAGS += -D_DARWIN_C_SOURCE
 
-SDK_PARAM := $(shell xcodebuild -showsdks | awk '/^$/{p=0};p; /OS X SDKs:/{p=1}' | tail -1 | cut -f3)
+SDK_PARAM := $(shell xcodebuild -showsdks | awk '/^$$/{p=0};p; /OS X SDKs:/{p=1}' | tail -1 | cut -f3)
 SDK_PATH ?= $(shell xcodebuild -version $(SDK_PARAM) Path)
 SDK_FLAGS := -isysroot $(SDK_PATH) -mmacosx-version-min=$(MACOSX_VERSION)
 CFLAGS :=  $(SDK_FLAGS) $(CFLAGS)
