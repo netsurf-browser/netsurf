@@ -1562,7 +1562,8 @@ llcache_object_retrieve_from_cache(nsurl *url,
 	llcache_object *obj, *newest = NULL;
 
 	LLCACHE_LOG("Searching cache for %s flags:%x referer:%s post:%p",
-	     nsurl_access(url), flags, referer==NULL?"":nsurl_access(referer), post);
+			nsurl_access(url), flags,
+			referer==NULL?"":nsurl_access(referer), post);
 
 	/* Search for the most recently fetched matching object */
 	for (obj = llcache->cached_objects; obj != NULL; obj = obj->next) {
@@ -1757,11 +1758,12 @@ llcache_object_retrieve(nsurl *url,
 		scheme = nsurl_get_component(defragmented_url, NSURL_SCHEME);
 
 		if (lwc_string_caseless_isequal(scheme, corestring_lwc_http,
-						&match) == lwc_error_ok &&
-		    (match == false)) {
-			if (lwc_string_caseless_isequal(scheme,	corestring_lwc_https,
-							&match) == lwc_error_ok &&
-			    (match == false)) {
+				&match) == lwc_error_ok &&
+				(match == false)) {
+			if (lwc_string_caseless_isequal(scheme,
+					corestring_lwc_https, &match) ==
+					lwc_error_ok &&
+					(match == false)) {
 				uncachable = true;
 			}
 		}
@@ -1845,8 +1847,8 @@ static nserror llcache_object_add_user(llcache_object *object,
  * \param replacement  Pointer to location to receive replacement object
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-static nserror llcache_fetch_redirect(llcache_object *object, const char *target,
-		llcache_object **replacement)
+static nserror llcache_fetch_redirect(llcache_object *object,
+		const char *target, llcache_object **replacement)
 {
 	nserror error;
 	llcache_object *dest;
@@ -2331,7 +2333,8 @@ build_candidate_list(struct llcache_object ***lst_out, int *lst_len_out)
 	for (object = llcache->cached_objects; object != NULL; object = next) {
 		next = object->next;
 
-		remaining_lifetime = llcache_object_rfc2616_remaining_lifetime(&object->cache);
+		remaining_lifetime = llcache_object_rfc2616_remaining_lifetime(
+				&object->cache);
 
 		/* cacehable objects with no pending fetches, not
 		 * already on disc and with sufficient lifetime to
@@ -2525,9 +2528,10 @@ static void llcache_persist(void *p)
 				 *  Schedule a check in the future to see if
 				 *  overall performance is too slow to be useful.
 				 */
-				guit->browser->schedule(llcache->time_quantum * 100,
-							llcache_persist_slowcheck,
-							NULL);
+				guit->browser->schedule(
+						llcache->time_quantum * 100,
+						llcache_persist_slowcheck,
+						NULL);
 				break;
 			} else {
 				if (total_bandwidth > llcache->maximum_bandwidth) {
@@ -2770,7 +2774,8 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
  * \param handle  External cache handle to search for
  * \return Pointer to corresponding user, or NULL if not found
  */
-static llcache_object_user *llcache_object_find_user(const llcache_handle *handle)
+static llcache_object_user *llcache_object_find_user(
+		const llcache_handle *handle)
 {
 	llcache_object_user *user;
 
@@ -2887,7 +2892,8 @@ static nserror llcache_object_notify_users(llcache_object *object)
 				emitted_notify = true;
 			}
 
-			LOG("User %p state: %d Object state: %d", user, handle->state, objstate);
+			LOG("User %p state: %d Object state: %d", user,
+					handle->state, objstate);
 		}
 #endif
 
@@ -3184,7 +3190,8 @@ void llcache_clean(bool purge)
 	     object = next) {
 		next = object->next;
 
-		remaining_lifetime = llcache_object_rfc2616_remaining_lifetime(&object->cache);
+		remaining_lifetime = llcache_object_rfc2616_remaining_lifetime(
+				&object->cache);
 
 		if ((object->users == NULL) &&
 		    (object->candidate_count == 0) &&
@@ -3192,7 +3199,9 @@ void llcache_clean(bool purge)
 		    (object->fetch.outstanding_query == false) &&
 		    (remaining_lifetime <= 0)) {
 			/* object is stale */
-			LLCACHE_LOG("discarding stale cacheable object with no users or pending fetches (%p) %s", object, nsurl_access(object->url));
+			LLCACHE_LOG("discarding stale cacheable object with no "
+					"users or pending fetches (%p) %s",
+					object, nsurl_access(object->url));
 
 				llcache_object_remove_from_list(object,
 						&llcache->cached_objects);
@@ -3256,7 +3265,8 @@ void llcache_clean(bool purge)
 		    (object->fetch.outstanding_query == false) &&
 		    (object->store_state == LLCACHE_STATE_DISC) &&
 		    (object->source_data == NULL)) {
-			LLCACHE_LOG("discarding backed object len:%zd age:%d (%p) %s",
+			LLCACHE_LOG("discarding backed object len:%zd "
+				     "age:%d (%p) %s",
 				     object->source_len,
 				     time(NULL) - object->last_used,
 				     object,
@@ -3385,7 +3395,10 @@ void llcache_finalise(void)
 			llcache->total_elapsed;
 	}
 
-	LOG("Backing store wrote %"PRIu64" bytes in %"PRIu64" ms ""(average %"PRIu64" bytes/second)", llcache->total_written, llcache->total_elapsed, total_bandwidth);
+	LOG("Backing store wrote %"PRIu64" bytes in %"PRIu64" ms "
+			"(average %"PRIu64" bytes/second)",
+			llcache->total_written, llcache->total_elapsed,
+			total_bandwidth);
 
 	free(llcache);
 	llcache = NULL;
