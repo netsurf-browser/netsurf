@@ -6,6 +6,8 @@
 //  Copyright 2005 Positive Spin Media. All rights reserved.
 //
 
+#import <objc/runtime.h>
+
 #import "PSMTabBarControl.h"
 #import "PSMTabBarCell.h"
 #import "PSMOverflowPopUpButton.h"
@@ -67,7 +69,8 @@
 
 #pragma mark -
 #pragma mark Characteristics
-+ (NSBundle *)bundle;
+
++ (NSBundle *)bundle
 {
 	static NSBundle *bundle = nil;
 	if(!bundle) {
@@ -174,7 +177,7 @@
 	}
 }
 
-+ (Class) defaultStyleClass;
++ (Class) defaultStyleClass
 {
 	return [PSMUnifiedTabStyle class];
 }
@@ -350,7 +353,9 @@
 - (void)setStyleNamed:(NSString *)name {
 	
 	Class styleClass = NSClassFromString( [NSString stringWithFormat: @"PSM%@TabStyle", [name capitalizedString]] );
-	if (styleClass == Nil) styleClass = [isa defaultStyleClass];
+	if (styleClass == Nil) {
+		styleClass = object_getClass([PSMTabBarControl defaultStyleClass]);
+	}
 
 	id <PSMTabStyle> newStyle = [[styleClass alloc] init];
 	[self setStyle:newStyle];
@@ -369,7 +374,7 @@
 		_tabBarWidth = 120;
 	}
 
-	if(lastOrientation != _orientation) {
+	if (lastOrientation != _orientation) {
 		[[self style] setOrientation:_orientation];
 
 		[self _positionOverflowMenu]; //move the overflow popup button to the right place

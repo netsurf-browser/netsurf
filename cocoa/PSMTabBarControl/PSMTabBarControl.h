@@ -163,7 +163,8 @@ enum {
 - (PSMTabBarTearOffStyle)tearOffStyle;
 - (void)setTearOffStyle:(PSMTabBarTearOffStyle)tearOffStyle;
 
-+ (Class) defaultStyleClass;
+// Factory for default style
++ (Class)defaultStyleClass;
 
 // accessors
 - (NSTabView *)tabView;
