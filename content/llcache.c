@@ -933,7 +933,8 @@ static nserror llcache_object_destroy(llcache_object *object)
 {
 	size_t i;
 
-	LLCACHE_LOG("Destroying object %p", object);
+	LLCACHE_LOG("Destroying object %p, %s", object,
+			nsurl_access(object->url));
 
 	if (object->source_data != NULL) {
 		if (object->store_state == LLCACHE_STATE_DISC) {
