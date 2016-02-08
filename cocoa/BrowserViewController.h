@@ -24,6 +24,7 @@ struct browser_window;
 @class BrowserWindowController;
 
 @interface BrowserViewController : NSViewController {
+	struct browser_window *browser;
 	NSString *url;
 	BrowserView *browserView;
 	BrowserWindowController *windowController;
