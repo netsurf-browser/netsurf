@@ -250,6 +250,7 @@ bool nsfont_paint(int x, int y, const char *string, size_t length,
 	nsgtk_set_colour(fstyle->foreground);
 	pango_cairo_show_layout_line(current_cr, line);
 
+	g_object_unref(layout);
 	pango_font_description_free(desc);
 
 	return true;
