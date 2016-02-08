@@ -3310,7 +3310,7 @@ void llcache_clean(bool purge)
 		}
 	}
 
-	LLCACHE_LOG("Size: %u", llcache_size);
+	LLCACHE_LOG("Size: %u (limit: %u)", llcache_size, limit);
 }
 
 /* Exported interface documented in content/llcache.h */
