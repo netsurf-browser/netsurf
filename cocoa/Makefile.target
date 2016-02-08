@@ -4,30 +4,38 @@
 
 POSTEXES += NetSurf.app
 
+# shut up zconf.h and zlib.h
+#CFLAGS += -D_LARGEFILE64_SOURCE=1
+
+# add Mac Ports include and library paths for openssl
+ifneq ($(shell test -d /opt/local && echo 'yes'),)
+  LDFLAGS += -L/opt/local/lib
+  CFLAGS += -I/opt/local/include
+endif
+
+ifeq ($(SDK_VERSION),)
+  # if no SDK_VERSION has been specified select one from those available
+  SDK_PARAM := $(shell xcodebuild -showsdks | awk '/^$$/{p=0};p; /OS X SDKs:/{p=1}' | tail -1 | cut -f3)
+  SDK_VERSION := $(MACOSX_VERSION)
+else
+  SDK_PARAM := -sdk macosx$(SDK_VERSION)
+endif
+
+SDK_PATH ?= $(shell xcodebuild -version $(SDK_PARAM) Path)
+SDK_FLAGS := -isysroot $(SDK_PATH) -mmacosx-version-min=$(SDK_VERSION)
+CFLAGS :=  $(SDK_FLAGS) $(CFLAGS)
+LDFLAGS :=  $(SDK_FLAGS) -Wl,-syslibroot,$(SDK_PATH) $(LDFLAGS)
+CXXFLAGS :=  $(SDK_FLAGS) $(CXXFLAGS)
+
+# for timerisset()
+CFLAGS += -D_DARWIN_C_SOURCE
+
 LDFLAGS += -L/usr/lib
 LDFLAGS += -L/usr/X11/lib
 LDFLAGS += -lm -lcurl
 LDFLAGS += -lssl -lcrypto
 
 CFLAGS += -Dnscocoa -D_BSD_SOURCE -D_POSIX_C_SOURCE -std=c99 -g -Os
-
-# shut up zconf.h and zlib.h
-#CFLAGS += -D_LARGEFILE64_SOURCE=1
-
-ifneq ($(WITH_MACPORTS),)
-  LDFLAGS += -L/opt/local/lib
-  CFLAGS += -I/opt/local/include
-endif
-
-# for timerisset()
-CFLAGS += -D_DARWIN_C_SOURCE
-
-SDK_PARAM := $(shell xcodebuild -showsdks | awk '/^$$/{p=0};p; /OS X SDKs:/{p=1}' | tail -1 | cut -f3)
-SDK_PATH ?= $(shell xcodebuild -version $(SDK_PARAM) Path)
-SDK_FLAGS := -isysroot $(SDK_PATH) -mmacosx-version-min=$(MACOSX_VERSION)
-CFLAGS :=  $(SDK_FLAGS) $(CFLAGS)
-LDFLAGS :=  $(SDK_FLAGS) -Wl,-syslibroot,$(SDK_PATH) $(LDFLAGS)
-CXXFLAGS :=  $(SDK_FLAGS) $(CXXFLAGS)
 
 CFLAGS += -I/usr/X11/include
 CFLAGS += -include cocoa/Prefix.pch
@@ -168,7 +176,7 @@ $$(OBJROOT)/$(2).lproj: $$(OBJROOT)/$(2).lproj/$(1:.xib=.nib)
 $$(OBJROOT)/$(2).lproj/$(1:.xib=.nib): cocoa/res/$(1) $$(OBJROOT)/created
 	$(VQ)echo Compiling XIB $(1) for language $(2)
 	$(Q)mkdir -p $$(OBJROOT)/$(2).lproj
-	$(Q)cocoa/compile-xib.sh $(DEVELOPER_PATH) cocoa/res/$(1) $(2) $$@
+	$(Q)cocoa/compile-xib.sh cocoa/res/$(1) $(2) $$@
 
 ifeq ($(wildcard cocoa/res/$(2).lproj/$(1).strings),cocoa/res/$(2).lproj/$(1).strings)
 $$(OBJROOT)/$(2).lproj/$(1:.xib=.nib): cocoa/res/$(2).lproj/$(1).strings

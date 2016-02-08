@@ -24,9 +24,7 @@ NETSURF_USE_PNG := NO
 NETSURF_USE_JPEG := NO
 NETSURF_USE_IMAGEIO := YES
 
-DEVELOPER_PATH := /Developer
-MACOSX_VERSION := 10.6
-SDK_VERSION := $(MACOSX_VERSION)
+MACOSX_VERSION := $(shell sw_vers -productVersion | awk -F '.' '{print $$1 "." $$2}')
 
 # Optimisation levels
 CFLAGS += -O2
