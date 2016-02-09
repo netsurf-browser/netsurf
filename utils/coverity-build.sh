@@ -34,6 +34,8 @@
 #
 # either PREFIX or JENKINS_HOME
 
+COVERITY_PROJECT="NetSurf+Browser"
+
 # build gtk, framebuffer and monkey frontend by default
 TARGETS="gtk framebuffer monkey"
 
@@ -61,8 +63,8 @@ for TARGET in ${TARGETS}; do
     cov-build --dir cov-int make CCACHE= TARGET=${TARGET}
 done
 
-tar cf covns.tar cov-int
+tar cf coverity-scan.tar cov-int
 
-gzip -9 covns.tar
+gzip -9 coverity-scan.tar
 
-curl --form "project=NetSurf Browser" --form "token=${COVERITY_TOKEN}" --form "email=${COVERITY_USER}" --form "file=@covns.tar.gz" --form "version=${COVERITY_VERSION}" --form "description=Git Head build" http://scan5.coverity.com/cgi-bin/upload.py
+curl --form "project=${COVERITY_PROJECT}" --form "token=${COVERITY_TOKEN}" --form "email=${COVERITY_USER}" --form "file=@coverity-scan.tar.gz" --form "version=${COVERITY_VERSION}" --form "description=Git Head build" "https://scan.coverity.com/builds?project=${COVERITY_PROJECT}"
