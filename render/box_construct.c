@@ -852,10 +852,6 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 				props.node_is_root)];
 	}
 
-	/* Handle the :before pseudo element */
-	box_construct_generate(ctx->n, ctx->content, box,
-			box->styles->styles[CSS_PSEUDO_ELEMENT_BEFORE]);
-
 	err = dom_node_get_node_name(ctx->n, &s);
 	if (err != DOM_NO_ERR || s == NULL)
 		return false;
@@ -872,6 +868,12 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 		if (element->convert(ctx->n, ctx->content, box,
 				convert_children) == false)
 			return false;
+	}
+
+	/* Handle the :before pseudo element */
+	if (!(box->flags & IS_REPLACED)) {
+		box_construct_generate(ctx->n, ctx->content, box,
+				box->styles->styles[CSS_PSEUDO_ELEMENT_BEFORE]);
 	}
 
 	if (box->type == BOX_NONE || (css_computed_display(box->style,
@@ -1065,7 +1067,7 @@ void box_construct_element_after(dom_node *n, html_content *content)
 			box->inline_end = inline_end;
 			inline_end->inline_end = box;
 		}
-	} else {
+	} else if (!(box->flags & IS_REPLACED)) {
 		/* Handle the :after pseudo element */
 		box_construct_generate(n, content, box,
 				box->styles->styles[CSS_PSEUDO_ELEMENT_AFTER]);
@@ -1603,6 +1605,7 @@ bool box_image(BOX_SPECIAL_PARAMS)
 		return true;
 
 	/* start fetch */
+	box->flags |= IS_REPLACED;
 	ok = html_fetch_object(content, url, box, image_types,
 			content->base.available_width, 1000, false);
 	nsurl_unref(url);
@@ -1879,6 +1882,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	box->object_params = params;
 
 	/* start fetch (MIME type is ok or not specified) */
+	box->flags |= IS_REPLACED;
 	if (!html_fetch_object(content,
 			params->data ? params->data : params->classid,
 			box, CONTENT_ANY, content->base.available_width, 1000,
@@ -2357,6 +2361,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	/* box */
 	assert(box->style);
 	box->flags |= IFRAME;
+	box->flags |= IS_REPLACED;
 
 	/* Showing iframe, so don't show alternate content */
 	if (convert_children)
@@ -2415,6 +2420,7 @@ bool box_input(BOX_SPECIAL_PARAMS)
 	if (gadget == NULL)
 		goto no_memory;
 	box->gadget = gadget;
+	box->flags |= IS_REPLACED;
 	gadget->box = box;
 	gadget->html = content;
 
@@ -2554,6 +2560,7 @@ bool box_button(BOX_SPECIAL_PARAMS)
 
 	gadget->html = content;
 	box->gadget = gadget;
+	box->flags |= IS_REPLACED;
 	gadget->box = box;
 
 	box->type = BOX_INLINE_BLOCK;
@@ -2676,6 +2683,7 @@ bool box_select(BOX_SPECIAL_PARAMS)
 
 	box->type = BOX_INLINE_BLOCK;
 	box->gadget = gadget;
+	box->flags |= IS_REPLACED;
 	gadget->box = box;
 
 	inline_container = box_create(NULL, 0, false, 0, 0, 0, 0, content->bctx);
@@ -2797,6 +2805,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 	if (box->gadget == NULL)
 		return false;
 
+	box->flags |= IS_REPLACED;
 	box->gadget->html = content;
 	box->gadget->box = box;
 
@@ -2930,6 +2939,7 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 	box->object_params = params;
 
 	/* start fetch */
+	box->flags |= IS_REPLACED;
 	return html_fetch_object(content, params->data, box, CONTENT_ANY,
 			content->base.available_width, 1000, false);
 }

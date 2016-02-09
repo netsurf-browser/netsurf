@@ -132,7 +132,8 @@ typedef enum {
 	NEED_MIN    = 1 << 8,	/* minimum width is required for layout */
 	REPLACE_DIM = 1 << 9,	/* replaced element has given dimensions */
 	IFRAME      = 1 << 10,	/* box contains an iframe */
-	CONVERT_CHILDREN = 1 << 11  /* wanted children converting */
+	CONVERT_CHILDREN = 1 << 11,  /* wanted children converting */
+	IS_REPLACED = 1 << 12	/* box is a replaced element */
 } box_flags;
 
 /* Sides of a box */
