@@ -342,6 +342,7 @@ static void dukky_html_element_class_from_tag_type(dom_html_element_type type,
 		break;
 	case DOM_HTML_ELEMENT_TYPE__COUNT:
 		assert(type != DOM_HTML_ELEMENT_TYPE__COUNT);
+		/* fallthrough */
 	case DOM_HTML_ELEMENT_TYPE__UNKNOWN:
 		SET_HTML_CLASS(UNKNOWN)
 		break;
