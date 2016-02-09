@@ -181,7 +181,8 @@ filepath_generate(char * const *pathv, const char * const *langv)
 
 	respath = calloc(MAX_RESPATH, sizeof(char *));
 
-	while (pathv[pathc] != NULL) {
+	while ((respath != NULL) &&
+	       (pathv[pathc] != NULL)) {
 		if ((stat(pathv[pathc], &dstat) == 0) && 
 		    S_ISDIR(dstat.st_mode)) {
 			/* path element exists and is a directory */
@@ -199,7 +200,6 @@ filepath_generate(char * const *pathv, const char * const *langv)
 		}
 		pathc++;
 	}
-
 	return respath;
 }
 
