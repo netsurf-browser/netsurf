@@ -60,539 +60,562 @@
 static const CGFloat CaretWidth = 1.0;
 static const NSTimeInterval CaretBlinkTime = 0.8;
 
-- initWithFrame: (NSRect) frame;
+- initWithFrame: (NSRect) frame
 {
-	if ((self = [super initWithFrame: frame]) == nil) return nil;
-	
-	[self registerForDraggedTypes: [NSArray arrayWithObjects: NSURLPboardType, @"public.url", nil]];
-	
-	return self;
+        if ((self = [super initWithFrame: frame]) == nil) {
+                return nil;
+        }
+
+        [self registerForDraggedTypes: [NSArray arrayWithObjects: NSURLPboardType, @"public.url", nil]];
+
+        return self;
 }
 
-- (void) dealloc;
+- (void) dealloc
 {
-	[self setCaretTimer: nil];
-	[self setMarkedText: nil];
-	[history release];
-	
-	[super dealloc];
+        [self setCaretTimer: nil];
+        [self setMarkedText: nil];
+        [history release];
+
+        [super dealloc];
 }
 
-- (void) setCaretTimer: (NSTimer *)newTimer;
+- (void) setCaretTimer: (NSTimer *)newTimer
 {
-	if (newTimer != caretTimer) {
-		[caretTimer invalidate];
-		[caretTimer release];
-		caretTimer = [newTimer retain];
-	}
+        if (newTimer != caretTimer) {
+                [caretTimer invalidate];
+                [caretTimer release];
+                caretTimer = [newTimer retain];
+        }
 }
 
-- (void) updateHistory;
+- (void) updateHistory
 {
-	[history redraw];
+        [history redraw];
 }
 
 static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 {
         float bscale = browser_window_get_scale(view->browser);
 
-	NSRect caretRect = {
-		.origin = NSMakePoint( view->caretPoint.x * bscale, view->caretPoint.y * bscale ),
-		.size = NSMakeSize( CaretWidth, view->caretHeight * bscale )
-	};
-	
-	return caretRect;
+        NSRect caretRect = {
+                .origin = NSMakePoint( view->caretPoint.x * bscale, view->caretPoint.y * bscale ),
+                .size = NSMakeSize( CaretWidth, view->caretHeight * bscale )
+        };
+
+        return caretRect;
 }
 
-- (void) removeCaret;
+- (void) removeCaret
 {
-	hasCaret = NO;
-	[self setNeedsDisplayInRect: cocoa_get_caret_rect( self )];
+        hasCaret = NO;
+        [self setNeedsDisplayInRect: cocoa_get_caret_rect( self )];
 
-	[self setCaretTimer: nil];
+        [self setCaretTimer: nil];
 }
 
-- (void) addCaretAt: (NSPoint) point height: (CGFloat) height;
+- (void) addCaretAt: (NSPoint) point height: (CGFloat) height
 {
-	if (hasCaret) {
-		[self setNeedsDisplayInRect: cocoa_get_caret_rect( self )];
-	}
-	
-	caretPoint = point;
-	caretHeight = height;
-	hasCaret = YES;
-	caretVisible = YES;
-	
-	if (nil == caretTimer) {
-		[self setCaretTimer: [NSTimer scheduledTimerWithTimeInterval: CaretBlinkTime target: self selector: @selector(caretBlink:) userInfo: nil repeats: YES]];
-	} else {
-		[caretTimer setFireDate: [NSDate dateWithTimeIntervalSinceNow: CaretBlinkTime]];
-	}
-	
-	[self setNeedsDisplayInRect: cocoa_get_caret_rect( self )];
-}
-		 
-		 
-- (void) caretBlink: (NSTimer *)timer;
-{
-	if (hasCaret) {
-		caretVisible = !caretVisible;
-		[self setNeedsDisplayInRect: cocoa_get_caret_rect( self )];
-	}
+        if (hasCaret) {
+                [self setNeedsDisplayInRect: cocoa_get_caret_rect( self )];
+        }
+
+        caretPoint = point;
+        caretHeight = height;
+        hasCaret = YES;
+        caretVisible = YES;
+
+        if (nil == caretTimer) {
+                [self setCaretTimer: [NSTimer scheduledTimerWithTimeInterval: CaretBlinkTime target: self selector: @selector(caretBlink:) userInfo: nil repeats: YES]];
+        } else {
+                [caretTimer setFireDate: [NSDate dateWithTimeIntervalSinceNow: CaretBlinkTime]];
+        }
+
+        [self setNeedsDisplayInRect: cocoa_get_caret_rect( self )];
 }
 
-- (void)drawRect:(NSRect)dirtyRect; 
+
+- (void) caretBlink: (NSTimer *)timer
 {
-	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-
-	struct redraw_context ctx = {
-		.interactive = true,
-		.background_images = true,
-		.plot = &cocoa_plotters
-	};
-	
-	const NSRect *rects = NULL;
-	NSInteger count = 0;
-	[self getRectsBeingDrawn: &rects count: &count];
-	
-	for (NSInteger i = 0; i < count; i++) {
-		const struct rect clip = {
-			.x0 = cocoa_pt_to_px( NSMinX( rects[i] ) ),
-			.y0 = cocoa_pt_to_px( NSMinY( rects[i] ) ),
-			.x1 = cocoa_pt_to_px( NSMaxX( rects[i] ) ),
-			.y1 = cocoa_pt_to_px( NSMaxY( rects[i] ) )
-		};
-
-		browser_window_redraw(browser, 0, 0, &clip, &ctx);
-	}
-
-	NSRect caretRect = cocoa_get_caret_rect( self );
-	if (hasCaret && caretVisible && [self needsToDrawRect: caretRect]) {
-		[[NSColor blackColor] set];
-		[NSBezierPath fillRect: caretRect];
-	}
-	
-	[pool release];
+        if (hasCaret) {
+                caretVisible = !caretVisible;
+                [self setNeedsDisplayInRect: cocoa_get_caret_rect( self )];
+        }
 }
 
-- (BOOL) isFlipped;
+- (void)drawRect:(NSRect)dirtyRect
 {
-	return YES;
+        NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
+        struct redraw_context ctx = {
+                .interactive = true,
+                .background_images = true,
+                .plot = &cocoa_plotters
+        };
+
+        const NSRect *rects = NULL;
+        NSInteger count = 0;
+        [self getRectsBeingDrawn: &rects count: &count];
+
+        for (NSInteger i = 0; i < count; i++) {
+                const struct rect clip = {
+                        .x0 = cocoa_pt_to_px( NSMinX( rects[i] ) ),
+                        .y0 = cocoa_pt_to_px( NSMinY( rects[i] ) ),
+                        .x1 = cocoa_pt_to_px( NSMaxX( rects[i] ) ),
+                        .y1 = cocoa_pt_to_px( NSMaxY( rects[i] ) )
+                };
+
+                browser_window_redraw(browser, 0, 0, &clip, &ctx);
+        }
+
+        NSRect caretRect = cocoa_get_caret_rect( self );
+        if (hasCaret && caretVisible && [self needsToDrawRect: caretRect]) {
+                [[NSColor blackColor] set];
+                [NSBezierPath fillRect: caretRect];
+        }
+
+        [pool release];
 }
 
-- (void) viewDidMoveToWindow;
+- (BOOL) isFlipped
 {
-	NSTrackingArea *area = [[NSTrackingArea alloc] initWithRect: [self visibleRect]
-														options: NSTrackingMouseMoved | NSTrackingMouseEnteredAndExited | NSTrackingActiveInKeyWindow | NSTrackingInVisibleRect
-														  owner: self
-													   userInfo: nil];
-	[self addTrackingArea: area];
-	[area release];
+        return YES;
+}
+
+- (void) viewDidMoveToWindow
+{
+        NSTrackingArea *area = [[NSTrackingArea alloc] initWithRect: [self visibleRect]
+                                                            options: NSTrackingMouseMoved | NSTrackingMouseEnteredAndExited | NSTrackingActiveInKeyWindow | NSTrackingInVisibleRect
+                                                              owner: self
+                                                           userInfo: nil];
+        [self addTrackingArea: area];
+        [area release];
 }
 
 static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 {
-	browser_mouse_state result = 0;
-	NSUInteger flags = [evt modifierFlags];
-	
-	if (flags & NSShiftKeyMask) result |= BROWSER_MOUSE_MOD_1;
-	if (flags & NSAlternateKeyMask) result |= BROWSER_MOUSE_MOD_2;
-	
-	return result;
+        browser_mouse_state result = 0;
+        NSUInteger flags = [evt modifierFlags];
+
+        if (flags & NSShiftKeyMask) result |= BROWSER_MOUSE_MOD_1;
+        if (flags & NSAlternateKeyMask) result |= BROWSER_MOUSE_MOD_2;
+
+        return result;
 }
 
-- (NSPoint) convertMousePoint: (NSEvent *)event;
+- (NSPoint) convertMousePoint: (NSEvent *)event
 {
-	NSPoint location = [self convertPoint: [event locationInWindow] fromView: nil];
+        NSPoint location = [self convertPoint: [event locationInWindow] fromView: nil];
         float bscale = browser_window_get_scale(browser);
 
         location.x /= bscale;
         location.y /= bscale;
 
-	location.x = cocoa_pt_to_px( location.x );
-	location.y = cocoa_pt_to_px( location.y );
-	return location;
+        location.x = cocoa_pt_to_px( location.x );
+        location.y = cocoa_pt_to_px( location.y );
+        return location;
 }
 
-- (void) mouseDown: (NSEvent *)theEvent;
+- (void) mouseDown: (NSEvent *)theEvent
 {
-	if ([theEvent modifierFlags] & NSControlKeyMask) {
-		[self popUpContextMenuForEvent: theEvent];
-		return;
-	}
-	
-	dragStart = [self convertMousePoint: theEvent];
+        if ([theEvent modifierFlags] & NSControlKeyMask) {
+                [self popUpContextMenuForEvent: theEvent];
+                return;
+        }
 
-	browser_window_mouse_click( browser, BROWSER_MOUSE_PRESS_1 | cocoa_mouse_flags_for_event( theEvent ), dragStart.x, dragStart.y );
+        dragStart = [self convertMousePoint: theEvent];
+
+        browser_window_mouse_click(browser,
+                                   BROWSER_MOUSE_PRESS_1 | cocoa_mouse_flags_for_event( theEvent ),
+                                   dragStart.x,
+                                   dragStart.y );
 }
 
-- (void) rightMouseDown: (NSEvent *)theEvent;
+- (void) rightMouseDown: (NSEvent *)theEvent
 {
-	[self popUpContextMenuForEvent: theEvent];
+        [self popUpContextMenuForEvent: theEvent];
 }
 
-- (void) mouseUp: (NSEvent *)theEvent;
+- (void) mouseUp: (NSEvent *)theEvent
 {
-	if (historyVisible) {
-		[self setHistoryVisible: NO];
-		return;
-	}
-	
-	NSPoint location = [self convertMousePoint: theEvent];
+        if (historyVisible) {
+                [self setHistoryVisible: NO];
+                return;
+        }
 
-	browser_mouse_state modifierFlags = cocoa_mouse_flags_for_event( theEvent );
-	
-	if (isDragging) {
-		isDragging = NO;
-		browser_window_mouse_track( browser, (browser_mouse_state)0, location.x, location.y );
-	} else {
-		modifierFlags |= BROWSER_MOUSE_CLICK_1;
-		if ([theEvent clickCount] == 2) modifierFlags |= BROWSER_MOUSE_DOUBLE_CLICK;
-		browser_window_mouse_click( browser, modifierFlags, location.x, location.y );
-	}
+        NSPoint location = [self convertMousePoint: theEvent];
+
+        browser_mouse_state modifierFlags = cocoa_mouse_flags_for_event( theEvent );
+
+        if (isDragging) {
+                isDragging = NO;
+                browser_window_mouse_track( browser, (browser_mouse_state)0, location.x, location.y );
+        } else {
+                modifierFlags |= BROWSER_MOUSE_CLICK_1;
+                if ([theEvent clickCount] == 2) modifierFlags |= BROWSER_MOUSE_DOUBLE_CLICK;
+                browser_window_mouse_click( browser, modifierFlags, location.x, location.y );
+        }
 }
 
 #define squared(x) ((x)*(x))
 #define MinDragDistance (5.0)
 
-- (void) mouseDragged: (NSEvent *)theEvent;
+- (void) mouseDragged: (NSEvent *)theEvent
 {
-	NSPoint location = [self convertMousePoint: theEvent];
-	browser_mouse_state modifierFlags = cocoa_mouse_flags_for_event( theEvent );
+        NSPoint location = [self convertMousePoint: theEvent];
+        browser_mouse_state modifierFlags = cocoa_mouse_flags_for_event( theEvent );
 
-	if (!isDragging) {
-		const CGFloat distance = squared( dragStart.x - location.x ) + squared( dragStart.y - location.y );
+        if (!isDragging) {
+                const CGFloat distance = squared( dragStart.x - location.x ) + squared( dragStart.y - location.y );
 
-		if (distance >= squared( MinDragDistance)) {
-			isDragging = YES;	
-			browser_window_mouse_click( browser, BROWSER_MOUSE_DRAG_1 | modifierFlags, dragStart.x, dragStart.y );
-		}
-	}
-	
-	if (isDragging) {
-		browser_window_mouse_track( browser, BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON | modifierFlags, location.x, location.y );
-	}
+                if (distance >= squared( MinDragDistance)) {
+                        isDragging = YES;
+                        browser_window_mouse_click(browser,
+                                                   BROWSER_MOUSE_DRAG_1 | modifierFlags,
+                                                   dragStart.x,
+                                                   dragStart.y);
+                }
+        }
+
+        if (isDragging) {
+                browser_window_mouse_track(browser,
+                                           BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON | modifierFlags,
+                                           location.x,
+                                           location.y );
+        }
 }
 
-- (void) mouseMoved: (NSEvent *)theEvent;
+- (void) mouseMoved: (NSEvent *)theEvent
 {
-	if (historyVisible) return;
-	
-	NSPoint location = [self convertMousePoint: theEvent];
+        if (historyVisible) return;
 
-	browser_window_mouse_track( browser, cocoa_mouse_flags_for_event( theEvent ), location.x, location.y );
+        NSPoint location = [self convertMousePoint: theEvent];
+
+        browser_window_mouse_track(browser,
+                                   cocoa_mouse_flags_for_event(theEvent),
+                                   location.x,
+                                   location.y);
 }
 
-- (void) mouseExited: (NSEvent *) theEvent;
+- (void) mouseExited: (NSEvent *) theEvent
 {
-	[[NSCursor arrowCursor] set];
+        [[NSCursor arrowCursor] set];
 }
 
-- (void) keyDown: (NSEvent *)theEvent;
+- (void) keyDown: (NSEvent *)theEvent
 {
-	if (!historyVisible) {
-		[self interpretKeyEvents: [NSArray arrayWithObject: theEvent]];
-	} else {
-		[history keyDown: theEvent];
-	}
+        if (!historyVisible) {
+                [self interpretKeyEvents: [NSArray arrayWithObject: theEvent]];
+        } else {
+                [history keyDown: theEvent];
+        }
 }
 
-- (void) insertText: (id)string;
+- (void) insertText: (id)string
 {
-	for (NSUInteger i = 0, length = [string length]; i < length; i++) {
-		unichar ch = [string characterAtIndex: i];
-		if (!browser_window_key_press( browser, ch )) {
-			if (ch == ' ') [self scrollPageDown: self];
-			break;
-		}
-	}
-	[self setMarkedText: nil];
+        for (NSUInteger i = 0, length = [string length]; i < length; i++) {
+                unichar ch = [string characterAtIndex: i];
+                if (!browser_window_key_press( browser, ch )) {
+                        if (ch == ' ') [self scrollPageDown: self];
+                        break;
+                }
+        }
+        [self setMarkedText: nil];
 }
 
-- (void) moveLeft: (id)sender;
+- (void) moveLeft: (id)sender
 {
-	if (browser_window_key_press( browser, NS_KEY_LEFT )) return;
-	[self scrollHorizontal: -[[self enclosingScrollView] horizontalLineScroll]];
+        if (browser_window_key_press( browser, NS_KEY_LEFT )) return;
+        [self scrollHorizontal: -[[self enclosingScrollView] horizontalLineScroll]];
 }
 
-- (void) moveRight: (id)sender;
+- (void) moveRight: (id)sender
 {
-	if (browser_window_key_press( browser, NS_KEY_RIGHT )) return;
-	[self scrollHorizontal: [[self enclosingScrollView] horizontalLineScroll]];
+        if (browser_window_key_press( browser, NS_KEY_RIGHT )) return;
+        [self scrollHorizontal: [[self enclosingScrollView] horizontalLineScroll]];
 }
 
-- (void) moveUp: (id)sender;
+- (void) moveUp: (id)sender
 {
-	if (browser_window_key_press( browser, NS_KEY_UP )) return;
-	[self scrollVertical: -[[self enclosingScrollView] lineScroll]];
+        if (browser_window_key_press( browser, NS_KEY_UP )) return;
+        [self scrollVertical: -[[self enclosingScrollView] lineScroll]];
 }
 
-- (void) moveDown: (id)sender;
+- (void) moveDown: (id)sender
 {
-	if (browser_window_key_press( browser, NS_KEY_DOWN )) return;
-	[self scrollVertical: [[self enclosingScrollView] lineScroll]];
+        if (browser_window_key_press( browser, NS_KEY_DOWN )) return;
+        [self scrollVertical: [[self enclosingScrollView] lineScroll]];
 }
 
-- (void) deleteBackward: (id)sender;
+- (void) deleteBackward: (id)sender
 {
-	if (!browser_window_key_press( browser, NS_KEY_DELETE_LEFT )) {
-		[NSApp sendAction: @selector( goBack: ) to: nil from: self];
-	}
+        if (!browser_window_key_press( browser, NS_KEY_DELETE_LEFT )) {
+                [NSApp sendAction: @selector( goBack: ) to: nil from: self];
+        }
 }
 
-- (void) deleteForward: (id)sender;
+- (void) deleteForward: (id)sender
 {
-	browser_window_key_press( browser, NS_KEY_DELETE_RIGHT );
+        browser_window_key_press( browser, NS_KEY_DELETE_RIGHT );
 }
 
-- (void) cancelOperation: (id)sender;
+- (void) cancelOperation: (id)sender
 {
-	browser_window_key_press( browser, NS_KEY_ESCAPE );
+        browser_window_key_press( browser, NS_KEY_ESCAPE );
 }
 
-- (void) scrollPageUp: (id)sender;
+- (void) scrollPageUp: (id)sender
 {
-	if (browser_window_key_press( browser, NS_KEY_PAGE_UP )) return;
-	[self scrollVertical: -[self pageScroll]];
+        if (browser_window_key_press( browser, NS_KEY_PAGE_UP )) {
+                return;
+        }
+        [self scrollVertical: -[self pageScroll]];
 }
 
-- (void) scrollPageDown: (id)sender;
+- (void) scrollPageDown: (id)sender
 {
-	if (browser_window_key_press( browser, NS_KEY_PAGE_DOWN )) return;
-	[self scrollVertical: [self pageScroll]];
+        if (browser_window_key_press( browser, NS_KEY_PAGE_DOWN )) {
+                return;
+        }
+        [self scrollVertical: [self pageScroll]];
 }
 
-- (void) insertTab: (id)sender;
+- (void) insertTab: (id)sender
 {
-	browser_window_key_press( browser, NS_KEY_TAB );
+        browser_window_key_press( browser, NS_KEY_TAB );
 }
 
-- (void) insertBacktab: (id)sender;
+- (void) insertBacktab: (id)sender
 {
-	browser_window_key_press( browser, NS_KEY_SHIFT_TAB );
+        browser_window_key_press( browser, NS_KEY_SHIFT_TAB );
 }
 
-- (void) moveToBeginningOfLine: (id)sender;
+- (void) moveToBeginningOfLine: (id)sender
 {
-	browser_window_key_press( browser, NS_KEY_LINE_START );
+        browser_window_key_press( browser, NS_KEY_LINE_START );
 }
 
-- (void) moveToEndOfLine: (id)sender;
+- (void) moveToEndOfLine: (id)sender
 {
-	browser_window_key_press( browser, NS_KEY_LINE_END );
+        browser_window_key_press( browser, NS_KEY_LINE_END );
 }
 
-- (void) moveToBeginningOfDocument: (id)sender;
+- (void) moveToBeginningOfDocument: (id)sender
 {
-	if (browser_window_key_press( browser, NS_KEY_TEXT_START )) return;
+        if (browser_window_key_press( browser, NS_KEY_TEXT_START )) return;
 }
 
-- (void) scrollToBeginningOfDocument: (id) sender;
+- (void) scrollToBeginningOfDocument: (id) sender
 {
-	NSPoint origin = [self visibleRect].origin;
-	origin.y = 0;
-	[self scrollPoint: origin];
+        NSPoint origin = [self visibleRect].origin;
+        origin.y = 0;
+        [self scrollPoint: origin];
 }
 
-- (void) moveToEndOfDocument: (id)sender;
+- (void) moveToEndOfDocument: (id)sender
 {
-	browser_window_key_press( browser, NS_KEY_TEXT_END );
+        browser_window_key_press( browser, NS_KEY_TEXT_END );
 }
 
-- (void) scrollToEndOfDocument: (id) sender;
+- (void) scrollToEndOfDocument: (id) sender
 {
-	NSPoint origin = [self visibleRect].origin;
-	origin.y = NSHeight( [self frame] );
-	[self scrollPoint: origin];
+        NSPoint origin = [self visibleRect].origin;
+        origin.y = NSHeight( [self frame] );
+        [self scrollPoint: origin];
 }
 
-- (void) insertNewline: (id)sender;
+- (void) insertNewline: (id)sender
 {
-	browser_window_key_press( browser, NS_KEY_NL );
+        browser_window_key_press( browser, NS_KEY_NL );
 }
 
-- (void) selectAll: (id)sender;
+- (void) selectAll: (id)sender
 {
-	browser_window_key_press( browser, NS_KEY_SELECT_ALL );
+        browser_window_key_press( browser, NS_KEY_SELECT_ALL );
 }
 
-- (void) copy: (id) sender;
+- (void) copy: (id)sender
 {
-	browser_window_key_press( browser, NS_KEY_COPY_SELECTION );
+        browser_window_key_press( browser, NS_KEY_COPY_SELECTION );
 }
 
-- (void) cut: (id) sender;
+- (void) cut: (id)sender
 {
-	browser_window_key_press( browser, NS_KEY_CUT_SELECTION );
+        browser_window_key_press( browser, NS_KEY_CUT_SELECTION );
 }
 
-- (void) paste: (id) sender;
+- (void) paste: (id)sender
 {
-	browser_window_key_press( browser, NS_KEY_PASTE );
+        browser_window_key_press( browser, NS_KEY_PASTE );
 }
 
-- (BOOL) acceptsFirstResponder;
+- (BOOL) acceptsFirstResponder
 {
-	return YES;
+        return YES;
 }
 
-- (void) adjustFrame;
+- (void) adjustFrame
 {
         browser_window_schedule_reformat(browser);
-	
-	[super adjustFrame];
+
+        [super adjustFrame];
 }
 
-- (BOOL) isHistoryVisible;
+- (BOOL) isHistoryVisible
 {
-	return historyVisible;
+        return historyVisible;
 }
 
-- (void) setHistoryVisible: (BOOL) newVisible;
+- (void) setHistoryVisible: (BOOL)newVisible
 {
-	if (newVisible == historyVisible) return;
-	historyVisible = newVisible;
-	
-	if (historyVisible) {
-		if (nil == history) history = [[LocalHistoryController alloc] initWithBrowser: self];
-		[history attachToView: [(BrowserWindowController *)[[self window] windowController] historyButton]];
-	} else {
-		[history detach];
-	}
+        if (newVisible == historyVisible) return;
+        historyVisible = newVisible;
+
+        if (historyVisible) {
+                if (nil == history) {
+                        history = [[LocalHistoryController alloc] initWithBrowser: self];
+                }
+                [history attachToView: [(BrowserWindowController *)[[self window] windowController] historyButton]];
+        } else {
+                [history detach];
+        }
 }
 
-- (void) scrollHorizontal: (CGFloat) amount;
+- (void) scrollHorizontal: (CGFloat) amount
 {
-	NSPoint currentPoint = [self visibleRect].origin;
-	currentPoint.x += amount;
-	[self scrollPoint: currentPoint];
+        NSPoint currentPoint = [self visibleRect].origin;
+        currentPoint.x += amount;
+        [self scrollPoint: currentPoint];
 }
 
-- (void) scrollVertical: (CGFloat) amount;
+- (void) scrollVertical: (CGFloat) amount
 {
-	NSPoint currentPoint = [self visibleRect].origin;
-	currentPoint.y += amount;
-	[self scrollPoint: currentPoint];
+        NSPoint currentPoint = [self visibleRect].origin;
+        currentPoint.y += amount;
+        [self scrollPoint: currentPoint];
 }
 
-- (CGFloat) pageScroll;
+- (CGFloat) pageScroll
 {
-	return NSHeight( [[self superview] frame] ) - [[self enclosingScrollView] pageScroll];
+        return NSHeight( [[self superview] frame] ) - [[self enclosingScrollView] pageScroll];
 }
 
-- (void) reformat;
+- (void) reformat
 {
-	NSRect size = [[self superview] frame];
-	browser_window_reformat( browser, false, cocoa_pt_to_px( NSWidth( size ) ), cocoa_pt_to_px( NSHeight( size ) ) );
+        NSRect size = [[self superview] frame];
+        browser_window_reformat(browser,
+                                false,
+                                cocoa_pt_to_px( NSWidth( size ) ),
+                                cocoa_pt_to_px( NSHeight( size ) ) );
 }
 
-- (void) popUpContextMenuForEvent: (NSEvent *) event;
+- (void) popUpContextMenuForEvent: (NSEvent *) event
 {
-	NSMenu *popupMenu = [[NSMenu alloc] initWithTitle: @""];
-	NSPoint point = [self convertMousePoint: event];
+        NSMenu *popupMenu = [[NSMenu alloc] initWithTitle: @""];
+        NSPoint point = [self convertMousePoint: event];
 
-	struct browser_window_features cont;
+        struct browser_window_features cont;
 
-	browser_window_get_features(browser, point.x, point.y, &cont);
+        browser_window_get_features(browser, point.x, point.y, &cont);
 
-	if (cont.object != NULL) {
-		NSString *imageURL = [NSString stringWithUTF8String: nsurl_access(hlcache_handle_get_url( cont.object ))];
-		
-		[[popupMenu addItemWithTitle: NSLocalizedString( @"Open image in new tab", @"Context menu" )
-							  action: @selector(cmOpenURLInTab:) 
-					   keyEquivalent: @""] setRepresentedObject: imageURL];
-		[[popupMenu addItemWithTitle: NSLocalizedString( @"Open image in new window", @"Context menu" )
-							  action: @selector(cmOpenURLInWindow:) 
-					   keyEquivalent: @""] setRepresentedObject: imageURL];
-		[[popupMenu addItemWithTitle: NSLocalizedString( @"Save image as", @"Context menu" )
-							  action: @selector(cmDownloadURL:) 
-					   keyEquivalent: @""] setRepresentedObject: imageURL];
-		[[popupMenu addItemWithTitle: NSLocalizedString( @"Copy image", @"Context menu" )
-							  action: @selector(cmImageCopy:) 
-					   keyEquivalent: @""] setRepresentedObject: (id)content_get_bitmap( cont.object )];
-		
-		[popupMenu addItem: [NSMenuItem separatorItem]];
-	}
-	
-	if (cont.link != NULL) {
-          NSString *target = [NSString stringWithUTF8String: nsurl_access(cont.link)];
-		
-		[[popupMenu addItemWithTitle: NSLocalizedString( @"Open link in new tab", @"Context menu" )
-							  action: @selector(cmOpenURLInTab:) 
-					   keyEquivalent: @""] setRepresentedObject: target];
-		[[popupMenu addItemWithTitle: NSLocalizedString( @"Open link in new window", @"Context menu" )
-							  action: @selector(cmOpenURLInWindow:) 
-					   keyEquivalent: @""] setRepresentedObject: target];
-		[[popupMenu addItemWithTitle: NSLocalizedString( @"Save link target", @"Context menu" )
-							  action: @selector(cmDownloadURL:) 
-					   keyEquivalent: @""] setRepresentedObject: target];
-		[[popupMenu addItemWithTitle: NSLocalizedString( @"Copy link", @"Context menu" )
-							  action: @selector(cmLinkCopy:) 
-					   keyEquivalent: @""] setRepresentedObject: target];
-		
-		[popupMenu addItem: [NSMenuItem separatorItem]];
-	}
-	
-	[popupMenu addItemWithTitle: NSLocalizedString( @"Back", @"Context menu" )
-						 action: @selector(goBack:) keyEquivalent: @""];
-	[popupMenu addItemWithTitle: NSLocalizedString( @"Reload", @"Context menu" )
-						 action: @selector(reloadPage:) keyEquivalent: @""];
-	[popupMenu addItemWithTitle: NSLocalizedString( @"Forward", @"Context menu" )
-						 action: @selector(goForward:) keyEquivalent: @""];
-	[popupMenu addItemWithTitle: NSLocalizedString( @"View Source", @"Context menu" )
-						 action: @selector(viewSource:) keyEquivalent: @""];
-	
-	[NSMenu popUpContextMenu: popupMenu withEvent: event forView: self];
-	
-	[popupMenu release];
+        if (cont.object != NULL) {
+                NSString *imageURL = [NSString stringWithUTF8String: nsurl_access(hlcache_handle_get_url( cont.object ))];
+
+                [[popupMenu addItemWithTitle: NSLocalizedString( @"Open image in new tab", @"Context menu" )
+                                      action: @selector(cmOpenURLInTab:)
+                               keyEquivalent: @""] setRepresentedObject: imageURL];
+                [[popupMenu addItemWithTitle: NSLocalizedString( @"Open image in new window", @"Context menu" )
+                                      action: @selector(cmOpenURLInWindow:)
+                               keyEquivalent: @""] setRepresentedObject: imageURL];
+                [[popupMenu addItemWithTitle: NSLocalizedString( @"Save image as", @"Context menu" )
+                                      action: @selector(cmDownloadURL:)
+                               keyEquivalent: @""] setRepresentedObject: imageURL];
+                [[popupMenu addItemWithTitle: NSLocalizedString( @"Copy image", @"Context menu" )
+                                      action: @selector(cmImageCopy:)
+                               keyEquivalent: @""] setRepresentedObject: (id)content_get_bitmap( cont.object )];
+
+                [popupMenu addItem: [NSMenuItem separatorItem]];
+        }
+
+        if (cont.link != NULL) {
+                NSString *target = [NSString stringWithUTF8String: nsurl_access(cont.link)];
+
+                [[popupMenu addItemWithTitle: NSLocalizedString( @"Open link in new tab", @"Context menu" )
+                                      action: @selector(cmOpenURLInTab:)
+                               keyEquivalent: @""] setRepresentedObject: target];
+                [[popupMenu addItemWithTitle: NSLocalizedString( @"Open link in new window", @"Context menu" )
+                                      action: @selector(cmOpenURLInWindow:)
+                               keyEquivalent: @""] setRepresentedObject: target];
+                [[popupMenu addItemWithTitle: NSLocalizedString( @"Save link target", @"Context menu" )
+                                      action: @selector(cmDownloadURL:)
+                               keyEquivalent: @""] setRepresentedObject: target];
+                [[popupMenu addItemWithTitle: NSLocalizedString( @"Copy link", @"Context menu" )
+                                      action: @selector(cmLinkCopy:)
+                               keyEquivalent: @""] setRepresentedObject: target];
+
+                [popupMenu addItem: [NSMenuItem separatorItem]];
+        }
+
+        [popupMenu addItemWithTitle: NSLocalizedString( @"Back", @"Context menu" )
+                             action: @selector(goBack:) keyEquivalent: @""];
+        [popupMenu addItemWithTitle: NSLocalizedString( @"Reload", @"Context menu" )
+                             action: @selector(reloadPage:) keyEquivalent: @""];
+        [popupMenu addItemWithTitle: NSLocalizedString( @"Forward", @"Context menu" )
+                             action: @selector(goForward:) keyEquivalent: @""];
+        [popupMenu addItemWithTitle: NSLocalizedString( @"View Source", @"Context menu" )
+                             action: @selector(viewSource:) keyEquivalent: @""];
+
+        [NSMenu popUpContextMenu: popupMenu withEvent: event forView: self];
+
+        [popupMenu release];
 }
 
-- (IBAction) cmOpenURLInTab: (id) sender;
+- (IBAction) cmOpenURLInTab: (id)sender
 {
-	nsurl *url;
-	nserror error;
+        nsurl *url;
+        nserror error;
 
-	error = nsurl_create([[sender representedObject] UTF8String], &url);
-	if (error == NSERROR_OK) {
-		error = browser_window_create(BW_CREATE_HISTORY |
+        error = nsurl_create([[sender representedObject] UTF8String], &url);
+        if (error == NSERROR_OK) {
+                error = browser_window_create(BW_CREATE_HISTORY |
                                               BW_CREATE_TAB |
                                               BW_CREATE_CLONE,
-					      url,
-					      NULL,
-					      browser,
-					      NULL);
-		nsurl_unref(url);
-	}
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	}
+                                              url,
+                                              NULL,
+                                              browser,
+                                              NULL);
+                nsurl_unref(url);
+        }
+        if (error != NSERROR_OK) {
+                warn_user(messages_get_errorcode(error), 0);
+        }
 }
 
-- (IBAction) cmOpenURLInWindow: (id) sender;
+- (IBAction) cmOpenURLInWindow: (id)sender
 {
-	nsurl *url;
-	nserror error;
+        nsurl *url;
+        nserror error;
 
-	error = nsurl_create([[sender representedObject] UTF8String], &url);
-	if (error == NSERROR_OK) {
-		error = browser_window_create(BW_CREATE_HISTORY |
+        error = nsurl_create([[sender representedObject] UTF8String], &url);
+        if (error == NSERROR_OK) {
+                error = browser_window_create(BW_CREATE_HISTORY |
                                               BW_CREATE_CLONE,
-					      url,
-					      NULL,
-					      browser,
-					      NULL);
-		nsurl_unref(url);
-	}
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	}
+                                              url,
+                                              NULL,
+                                              browser,
+                                              NULL);
+                nsurl_unref(url);
+        }
+        if (error != NSERROR_OK) {
+                warn_user(messages_get_errorcode(error), 0);
+        }
 }
 
-- (IBAction) cmDownloadURL: (id) sender;
+- (IBAction) cmDownloadURL: (id)sender
 {
-	nsurl *url;
+        nsurl *url;
 
-	if (nsurl_create([[sender representedObject] UTF8String], &url) == NSERROR_OK) {
+        if (nsurl_create([[sender representedObject] UTF8String], &url) == NSERROR_OK) {
                 browser_window_navigate(browser,
                                         url,
                                         NULL,
@@ -600,22 +623,22 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
                                         NULL,
                                         NULL,
                                         NULL);
-          nsurl_unref(url);
-	}
+                nsurl_unref(url);
+        }
 }
 
-- (IBAction) cmImageCopy: (id) sender;
+- (IBAction) cmImageCopy: (id)sender
 {
-	NSPasteboard *pb = [NSPasteboard generalPasteboard];
-	[pb declareTypes: [NSArray arrayWithObject: NSTIFFPboardType] owner: nil];
-	[pb setData: [[sender representedObject] TIFFRepresentation] forType: NSTIFFPboardType];
+        NSPasteboard *pb = [NSPasteboard generalPasteboard];
+        [pb declareTypes: [NSArray arrayWithObject: NSTIFFPboardType] owner: nil];
+        [pb setData: [[sender representedObject] TIFFRepresentation] forType: NSTIFFPboardType];
 }
 
-- (IBAction) cmLinkCopy: (id) sender;
+- (IBAction) cmLinkCopy: (id)sender
 {
-	NSPasteboard *pb = [NSPasteboard generalPasteboard];
-	[pb declareTypes: [NSArray arrayWithObject: NSStringPboardType] owner: nil];
-	[pb setString: [sender representedObject] forType: NSStringPboardType];
+        NSPasteboard *pb = [NSPasteboard generalPasteboard];
+        [pb declareTypes: [NSArray arrayWithObject: NSStringPboardType] owner: nil];
+        [pb setString: [sender representedObject] forType: NSStringPboardType];
 }
 
 
@@ -624,109 +647,109 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (NSDragOperation)draggingEntered:(id <NSDraggingInfo>)sender
 {
-    if ((NSDragOperationCopy | NSDragOperationGeneric) & [sender draggingSourceOperationMask]) {
-        return NSDragOperationCopy;
-    }
+        if ((NSDragOperationCopy | NSDragOperationGeneric) & [sender draggingSourceOperationMask]) {
+                return NSDragOperationCopy;
+        }
 
-    return NSDragOperationNone;
+        return NSDragOperationNone;
 }
 
 - (BOOL)prepareForDragOperation:(id <NSDraggingInfo>)sender
 {
-    return YES;
+        return YES;
 }
 
 - (BOOL)performDragOperation:(id <NSDraggingInfo>)sender
 {
-	nsurl *url;
-	nserror error;
+        nsurl *url;
+        nserror error;
 
         NSPasteboard *pb = [sender draggingPasteboard];
 
         NSString *type = [pb availableTypeFromArray:[NSArray arrayWithObjects: @"public.url", NSURLPboardType,  nil]];
 
-	NSString *urlstr = nil;
+        NSString *urlstr = nil;
 
-	if ([type isEqualToString: NSURLPboardType]) {
+        if ([type isEqualToString: NSURLPboardType]) {
                 urlstr = [[NSURL URLFromPasteboard: pb] absoluteString];
-	} else {
+        } else {
                 urlstr = [pb stringForType: type];
         }
-	
-	error = nsurl_create([urlstr UTF8String], &url);
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	} else {
-		browser_window_navigate(browser,
-					url,
-					NULL,
+
+        error = nsurl_create([urlstr UTF8String], &url);
+        if (error != NSERROR_OK) {
+                warn_user(messages_get_errorcode(error), 0);
+        } else {
+                browser_window_navigate(browser,
+                                        url,
+                                        NULL,
                                         BW_NAVIGATE_DOWNLOAD,
-					NULL,
-					NULL,
-					NULL);
-		nsurl_unref(url);
-	}
-	
+                                        NULL,
+                                        NULL,
+                                        NULL);
+                nsurl_unref(url);
+        }
+
         return YES;
 }
 
 // MARK: -
 // MARK: NSTextInput protocol implementation
 
-- (void) setMarkedText: (id) aString selectedRange: (NSRange) selRange 
+- (void) setMarkedText: (id) aString selectedRange: (NSRange) selRange
 {
-	[markedText release];
-	markedText = [aString isEqualToString: @""] ? nil : [aString copy];
+        [markedText release];
+        markedText = [aString isEqualToString: @""] ? nil : [aString copy];
 }
 
-- (void) unmarkText 
+- (void) unmarkText
 {
-	[self setMarkedText: nil];
+        [self setMarkedText: nil];
 }
 
-- (BOOL) hasMarkedText 
+- (BOOL) hasMarkedText
 {
-	return markedText != nil;
+        return markedText != nil;
 }
 
-- (NSInteger) conversationIdentifier 
+- (NSInteger) conversationIdentifier
 {
-	return (NSInteger)self;
+        return (NSInteger)self;
 }
 
-- (NSAttributedString *) attributedSubstringFromRange: (NSRange) theRange 
+- (NSAttributedString *) attributedSubstringFromRange: (NSRange) theRange
 {
-	return [[[NSAttributedString alloc] initWithString: @""] autorelease];
+        return [[[NSAttributedString alloc] initWithString: @""] autorelease];
 }
 
-- (NSRange) markedRange 
+- (NSRange) markedRange
 {
-	return NSMakeRange( NSNotFound, 0 );
+        return NSMakeRange( NSNotFound, 0 );
 }
 
-- (NSRange) selectedRange 
+- (NSRange) selectedRange
 {
-	return NSMakeRange( NSNotFound, 0 );
+        return NSMakeRange( NSNotFound, 0 );
 }
 
-- (NSRect) firstRectForCharacterRange: (NSRange) theRange 
+- (NSRect) firstRectForCharacterRange: (NSRange) theRange
 {
-	return NSZeroRect;
+        return NSZeroRect;
 }
 
-- (NSUInteger) characterIndexForPoint: (NSPoint) thePoint 
+- (NSUInteger) characterIndexForPoint: (NSPoint) thePoint
 {
-	return 0;
+        return 0;
 }
 
-- (NSArray *) validAttributesForMarkedText 
+- (NSArray *) validAttributesForMarkedText
 {
-	return [NSArray array];
+        return [NSArray array];
 }
 
 - (void) doCommandBySelector: (SEL) sel;
 {
-	[super doCommandBySelector: sel];
+        [super doCommandBySelector: sel];
 }
 
 @end

@@ -42,172 +42,181 @@
 
 static const char *cocoa_hotlist_path( void )
 {
-	NSString *path = [[NSUserDefaults standardUserDefaults] stringForKey: kHotlistFileOption];
-	return [path UTF8String];
+        NSString *path = [[NSUserDefaults standardUserDefaults]
+                                 stringForKey: kHotlistFileOption];
+        return [path UTF8String];
 }
 
-- init;
+- (id)init
 {
-	if ((self = [super initWithWindowNibName: @"BookmarksWindow"]) == nil) return nil;
-	tree_hotlist_path = cocoa_hotlist_path();
-	tree = [[Tree alloc] initWithFlags: TREE_HOTLIST];
-	nodeForMenu = NSCreateMapTable( NSNonOwnedPointerMapKeyCallBacks, NSNonOwnedPointerMapValueCallBacks, 0 );
-	
-	[[NSNotificationCenter defaultCenter] addObserver:self 
-											 selector:@selector( noteAppWillTerminate: ) 
-												 name:NSApplicationWillTerminateNotification
-											   object:NSApp];
+        if ((self = [super initWithWindowNibName: @"BookmarksWindow"]) == nil) {
+                return nil;
+        }
+        tree_hotlist_path = cocoa_hotlist_path();
+        tree = [[Tree alloc] initWithFlags: TREE_HOTLIST];
+        nodeForMenu = NSCreateMapTable(NSNonOwnedPointerMapKeyCallBacks,
+                                       NSNonOwnedPointerMapValueCallBacks,
+                                       0);
 
-	return self;
+        [[NSNotificationCenter defaultCenter]
+          addObserver:self
+             selector:@selector(noteAppWillTerminate:)
+                 name:NSApplicationWillTerminateNotification
+               object:NSApp];
+
+        return self;
 }
 
-- (void) noteAppWillTerminate: (NSNotification *) note;
+- (void) noteAppWillTerminate: (NSNotification *)note
 {
-	[self save];
+        [self save];
 }
 
-- (void) save;
+- (void) save
 {
-	hotlist_export( cocoa_hotlist_path(), NULL );
+        hotlist_export( cocoa_hotlist_path(), NULL );
 }
 
-- (void) dealloc;
+- (void) dealloc
 {
-	[self setView: nil];
-	NSFreeMapTable( nodeForMenu );
-	[tree release];
-	
-	[[NSNotificationCenter defaultCenter] removeObserver: self];
-	
-	[super dealloc];
+        [self setView: nil];
+        NSFreeMapTable( nodeForMenu );
+        [tree release];
+
+        [[NSNotificationCenter defaultCenter] removeObserver: self];
+
+        [super dealloc];
 }
 
 - (void) menuNeedsUpdate: (NSMenu *)menu
 {
 #if 0
-	for (NSMenuItem *item in [menu itemArray]) {
-		if ([item hasSubmenu]) NSMapRemove( nodeForMenu, [item submenu] );
-		[menu removeItem: item];
-	}
+        for (NSMenuItem *item in [menu itemArray]) {
+                if ([item hasSubmenu]) NSMapRemove( nodeForMenu, [item submenu] );
+                [menu removeItem: item];
+        }
 
-	bool hasSeparator = true;
-	struct node *node = (struct node *)NSMapGet( nodeForMenu, menu );
-	if (node == NULL) {
-		for (NSMenuItem *item in [defaultMenu itemArray]) {
-			[menu addItem: [[item copy] autorelease]];
-		}
-		hasSeparator = false;
-	}
-	
-	for (struct node *child = tree_node_get_child( node ); 
-		 child != NULL; 
-		 child = tree_node_get_next( child )) {
-		
-		if (tree_node_is_deleted( child )) continue;
-		
-		if (!hasSeparator) {
-			[menu addItem: [NSMenuItem separatorItem]];
-			hasSeparator = true;
-		}
-		
-		NSString *title = [NSString stringWithUTF8String: tree_url_node_get_title( child )];
-		
-		NSMenuItem *item = [menu addItemWithTitle: title action: NULL keyEquivalent: @""];
-		if (tree_node_is_folder( child )) {
-			NSMenu *subMenu = [[[NSMenu alloc] initWithTitle: title] autorelease];
-			NSMapInsert( nodeForMenu, subMenu, child );
-			[subMenu setDelegate: self];
-			[menu setSubmenu: subMenu forItem: item];
-		} else {
-			[item setRepresentedObject: [NSString stringWithUTF8String: tree_url_node_get_url( child )]];
-			[item setTarget: self];
-			[item setAction: @selector( openBookmarkURL: )];
-		}
-	}
+        bool hasSeparator = true;
+        struct node *node = (struct node *)NSMapGet( nodeForMenu, menu );
+        if (node == NULL) {
+                for (NSMenuItem *item in [defaultMenu itemArray]) {
+                        [menu addItem: [[item copy] autorelease]];
+                }
+                hasSeparator = false;
+        }
+
+        for (struct node *child = tree_node_get_child( node );
+             child != NULL;
+             child = tree_node_get_next( child )) {
+
+                if (tree_node_is_deleted( child )) continue;
+
+                if (!hasSeparator) {
+                        [menu addItem: [NSMenuItem separatorItem]];
+                        hasSeparator = true;
+                }
+
+                NSString *title = [NSString stringWithUTF8String: tree_url_node_get_title( child )];
+
+                NSMenuItem *item = [menu addItemWithTitle: title action: NULL keyEquivalent: @""];
+                if (tree_node_is_folder( child )) {
+                        NSMenu *subMenu = [[[NSMenu alloc] initWithTitle: title] autorelease];
+                        NSMapInsert( nodeForMenu, subMenu, child );
+                        [subMenu setDelegate: self];
+                        [menu setSubmenu: subMenu forItem: item];
+                } else {
+                        [item setRepresentedObject: [NSString stringWithUTF8String: tree_url_node_get_url( child )]];
+                        [item setTarget: self];
+                        [item setAction: @selector( openBookmarkURL: )];
+                }
+        }
 #endif
 }
 
-- (IBAction) openBookmarkURL: (id) sender;
+- (IBAction) openBookmarkURL: (id)sender
 {
-	const char *urltxt = [[sender representedObject] UTF8String];
-	NSParameterAssert( urltxt != NULL );
+        const char *urltxt = [[sender representedObject] UTF8String];
+        NSParameterAssert( urltxt != NULL );
 
-	nsurl *url;
-	nserror error;
+        nsurl *url;
+        nserror error;
 
-	error = nsurl_create(urltxt, &url);
-	if (error == NSERROR_OK) {
+        error = nsurl_create(urltxt, &url);
+        if (error == NSERROR_OK) {
                 BrowserViewController *tab = [(NetSurfApp *)NSApp frontTab];
                 if (tab != nil) {
                         error = browser_window_navigate([tab browser],
-                                                url,
-                                                NULL,
-                                                BW_NAVIGATE_HISTORY,
-                                                NULL,
-                                                NULL,
-                                                NULL);
+                                                        url,
+                                                        NULL,
+                                                        BW_NAVIGATE_HISTORY,
+                                                        NULL,
+                                                        NULL,
+                                                        NULL);
                 } else {
                         error = browser_window_create(BW_CREATE_HISTORY,
-					      url,
-					      NULL,
-					      NULL,
-					      NULL);
+                                                      url,
+                                                      NULL,
+                                                      NULL,
+                                                      NULL);
                 }
                 nsurl_unref(url);
-	}
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	}
+        }
+        if (error != NSERROR_OK) {
+                warn_user(messages_get_errorcode(error), 0);
+        }
 }
 
-- (IBAction) addBookmark: (id) sender;
+- (IBAction) addBookmark: (id)sender
 {
-	struct browser_window *bw = [[(NetSurfApp *)NSApp frontTab] browser];
-	if (bw != NULL) {
-		hotlist_add_url(browser_window_get_url(bw));
-	}
+        struct browser_window *bw = [[(NetSurfApp *)NSApp frontTab] browser];
+        if (bw != NULL) {
+                hotlist_add_url(browser_window_get_url(bw));
+        }
 }
 
-- (BOOL) validateUserInterfaceItem: (id) item;
+- (BOOL) validateUserInterfaceItem: (id)item
 {
-	SEL action = [item action];
-	
-	if (action == @selector( addBookmark: )) {
-		return [(NetSurfApp *)NSApp frontTab] != nil;
-	}
-	
-	return YES;
+        SEL action = [item action];
+
+        if (action == @selector( addBookmark: )) {
+                return [(NetSurfApp *)NSApp frontTab] != nil;
+        }
+
+        return YES;
 }
 
-- (void) windowDidLoad;
+- (void) windowDidLoad
 {
-	hotlist_expand(false);
-	hotlist_contract(true);
-	
-	[view setTree: tree];
+        hotlist_expand(false);
+        hotlist_contract(true);
+
+        [view setTree: tree];
 }
 
 
-+ (void) initialize;
++ (void) initialize
 {
-	[[NSUserDefaults standardUserDefaults] registerDefaults: [NSDictionary dictionaryWithObjectsAndKeys:
-															  cocoa_get_user_path( @"Bookmarks.html" ), kHotlistFileOption,
-															  nil]];
+        [[NSUserDefaults standardUserDefaults]
+                registerDefaults:
+                        [NSDictionary
+                                dictionaryWithObjectsAndKeys:cocoa_get_user_path( @"Bookmarks.html" ),
+                                kHotlistFileOption,
+                                nil]];
 }
 
-- (IBAction) editSelected: (id) sender;
+- (IBAction) editSelected: (id)sender
 {
-	hotlist_edit_selection();
+        hotlist_edit_selection();
 }
 
-- (IBAction) deleteSelected: (id) sender;
+- (IBAction) deleteSelected: (id)sender
 {
-	hotlist_keypress(NS_KEY_DELETE_LEFT);
+        hotlist_keypress(NS_KEY_DELETE_LEFT);
 }
 
-- (IBAction) addFolder: (id) sender;
+- (IBAction) addFolder: (id)sender
 {
-	hotlist_add_folder(NULL, false, 0);
+        hotlist_add_folder(NULL, false, 0);
 }
 
 @end

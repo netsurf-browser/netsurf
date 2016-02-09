@@ -27,42 +27,45 @@
 @implementation ScrollableView
 @synthesize minimumSize;
 
-- (void) setMinimumSize: (NSSize)newSize;
+- (void) setMinimumSize: (NSSize)newSize
 {
-	minimumSize = newSize;
-	[self adjustFrame];
+        minimumSize = newSize;
+        [self adjustFrame];
 }
 
-- (void) adjustFrame;
+- (void) adjustFrame
 {
-	NSSize frameSize = [[self superview] frame].size;
-	[self setFrameSize: NSMakeSize( MAX( minimumSize.width, frameSize.width ),
-								   MAX( minimumSize.height, frameSize.height ) )];
+        NSSize frameSize = [[self superview] frame].size;
+        [self setFrameSize: NSMakeSize( MAX( minimumSize.width, frameSize.width ),
+                                        MAX( minimumSize.height, frameSize.height ) )];
 }
 
-- (void) frameChangeNotification: (NSNotification *) note;
+- (void) frameChangeNotification: (NSNotification *) note
 {
-	[self adjustFrame];
+        [self adjustFrame];
 }
 
-- (void) viewDidMoveToSuperview;
+- (void) viewDidMoveToSuperview
 {
-	if (observedSuperview) {
-		[[NSNotificationCenter defaultCenter] removeObserver: self 
-														name: NSViewFrameDidChangeNotification 
-													  object: observedSuperview];
-		observedSuperview = nil;
-	}
-	
-	NSView *newSuperView = [self superview];
-	
-	if (nil != newSuperView) {
-		observedSuperview = newSuperView;
-		[[NSNotificationCenter defaultCenter] addObserver: self selector: @selector(frameChangeNotification:)
-													 name: NSViewFrameDidChangeNotification
-												   object: observedSuperview];
-		[observedSuperview setPostsFrameChangedNotifications: YES];
-	}
+        if (observedSuperview) {
+                [[NSNotificationCenter defaultCenter]
+                        removeObserver: self
+                                  name: NSViewFrameDidChangeNotification
+                                object: observedSuperview];
+                observedSuperview = nil;
+        }
+
+        NSView *newSuperView = [self superview];
+
+        if (nil != newSuperView) {
+                observedSuperview = newSuperView;
+                [[NSNotificationCenter defaultCenter]
+                        addObserver: self
+                           selector: @selector(frameChangeNotification:)
+                               name: NSViewFrameDidChangeNotification
+                             object: observedSuperview];
+                [observedSuperview setPostsFrameChangedNotifications: YES];
+        }
 }
 
 @end

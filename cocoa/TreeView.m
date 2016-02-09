@@ -29,217 +29,221 @@
 
 @synthesize tree;
 
-- (void)drawRect:(NSRect)dirtyRect 
+- (void)drawRect:(NSRect)dirtyRect
 {
-	[tree drawRect: dirtyRect inView: self];
+        [tree drawRect: dirtyRect inView: self];
 }
 
-- (BOOL) isFlipped;
+- (BOOL) isFlipped
 {
-	return YES;
+        return YES;
 }
 
-- (BOOL) acceptsFirstResponder;
+- (BOOL) acceptsFirstResponder
 {
-	return YES;
+        return YES;
 }
 
-- (void) dealloc;
+- (void) dealloc
 {
-	[self setTree: nil];
-	[super dealloc];
+        [self setTree: nil];
+        [super dealloc];
 }
 
-- (void) setTree: (Tree *)newTree;
+- (void) setTree: (Tree *)newTree
 {
-	if (tree != newTree) {
-		[tree setRedrawing: NO];
-		[tree setDelegate: nil];
-		[tree release];
-		
-		tree = [newTree retain];
-		[tree setDelegate: self];
-		[tree setRedrawing: YES];
-		
-		[self setNeedsDisplay: YES];
-	}
+        if (tree != newTree) {
+                [tree setRedrawing: NO];
+                [tree setDelegate: nil];
+                [tree release];
+
+                tree = [newTree retain];
+                [tree setDelegate: self];
+                [tree setRedrawing: YES];
+
+                [self setNeedsDisplay: YES];
+        }
 }
 
 //MARK: -
 //MARK: Event handlers
 
-- (void)mouseDown: (NSEvent *)event;
+- (void)mouseDown: (NSEvent *)event
 {
-	isDragging = NO;
-	dragStart = [self convertPoint: [event locationInWindow] fromView: nil];
-	[tree mouseAction: BROWSER_MOUSE_PRESS_1 atPoint: dragStart];
+        isDragging = NO;
+        dragStart = [self convertPoint: [event locationInWindow] fromView: nil];
+        [tree mouseAction: BROWSER_MOUSE_PRESS_1 atPoint: dragStart];
 }
 
 #define squared(x) ((x)*(x))
 #define MinDragDistance (5.0)
 
-- (void) mouseDragged: (NSEvent *)event;
+- (void) mouseDragged: (NSEvent *)event
 {
-	const NSPoint point = [self convertPoint: [event locationInWindow] fromView: nil];
-	
-	if (!isDragging) {
-		const CGFloat distance = squared( dragStart.x - point.x ) + squared( dragStart.y - point.y );
-		if (distance >= squared( MinDragDistance)) isDragging = YES;
-	}
+        const NSPoint point = [self convertPoint: [event locationInWindow] fromView: nil];
+
+        if (!isDragging) {
+                const CGFloat distance = squared( dragStart.x - point.x ) + squared( dragStart.y - point.y );
+                if (distance >= squared( MinDragDistance)) {
+                        isDragging = YES;
+                }
+        }
 }
 
-- (void) mouseUp: (NSEvent *)event;
+- (void) mouseUp: (NSEvent *)event
 {
-	const NSPoint point = [self convertPoint: [event locationInWindow] fromView: nil];
+        const NSPoint point = [self convertPoint: [event locationInWindow] fromView: nil];
 
-	browser_mouse_state modifierFlags = 0;
-	
-	if (isDragging) {
-		isDragging = NO;
-		[tree mouseDragEnd: modifierFlags fromPoint: dragStart toPoint: point];
-	} else {
-		modifierFlags |= BROWSER_MOUSE_CLICK_1;
-		if ([event clickCount] == 2) modifierFlags |= BROWSER_MOUSE_DOUBLE_CLICK;
-		[tree mouseAction: modifierFlags atPoint: point];
-	}
+        browser_mouse_state modifierFlags = 0;
+
+        if (isDragging) {
+                isDragging = NO;
+                [tree mouseDragEnd: modifierFlags fromPoint: dragStart toPoint: point];
+        } else {
+                modifierFlags |= BROWSER_MOUSE_CLICK_1;
+                if ([event clickCount] == 2) {
+                        modifierFlags |= BROWSER_MOUSE_DOUBLE_CLICK;
+                }
+                [tree mouseAction: modifierFlags atPoint: point];
+        }
 }
 
 //MARK: Keyboard events
 
-- (void) keyDown: (NSEvent *)theEvent;
+- (void) keyDown: (NSEvent *)theEvent
 {
-	[self interpretKeyEvents: [NSArray arrayWithObject: theEvent]];
+        [self interpretKeyEvents: [NSArray arrayWithObject: theEvent]];
 }
 
-- (void) insertText: (id)string;
+- (void) insertText: (id)string
 {
-	for (NSUInteger i = 0, length = [string length]; i < length; i++) {
-		unichar ch = [string characterAtIndex: i];
-		[tree keyPress: ch];
-	}
+        for (NSUInteger i = 0, length = [string length]; i < length; i++) {
+                unichar ch = [string characterAtIndex: i];
+                [tree keyPress: ch];
+        }
 }
 
-- (void) moveLeft: (id)sender;
+- (void) moveLeft: (id)sender
 {
-	[tree keyPress: NS_KEY_LEFT];
+        [tree keyPress: NS_KEY_LEFT];
 }
 
-- (void) moveRight: (id)sender;
+- (void) moveRight: (id)sender
 {
-	[tree keyPress: NS_KEY_RIGHT];
+        [tree keyPress: NS_KEY_RIGHT];
 }
 
-- (void) moveUp: (id)sender;
+- (void) moveUp: (id)sender
 {
-	[tree keyPress: NS_KEY_UP];
+        [tree keyPress: NS_KEY_UP];
 }
 
-- (void) moveDown: (id)sender;
+- (void) moveDown: (id)sender
 {
-	[tree keyPress: NS_KEY_DOWN];
+        [tree keyPress: NS_KEY_DOWN];
 }
 
-- (void) deleteBackward: (id)sender;
+- (void) deleteBackward: (id)sender
 {
-	[tree keyPress: NS_KEY_DELETE_LEFT];
+        [tree keyPress: NS_KEY_DELETE_LEFT];
 }
 
-- (void) deleteForward: (id)sender;
+- (void) deleteForward: (id)sender
 {
-	[tree keyPress: NS_KEY_DELETE_RIGHT];
+        [tree keyPress: NS_KEY_DELETE_RIGHT];
 }
 
-- (void) cancelOperation: (id)sender;
+- (void) cancelOperation: (id)sender
 {
-	[tree keyPress: NS_KEY_ESCAPE];
+        [tree keyPress: NS_KEY_ESCAPE];
 }
 
-- (void) scrollPageUp: (id)sender;
+- (void) scrollPageUp: (id)sender
 {
-	[tree keyPress: NS_KEY_PAGE_UP];
+        [tree keyPress: NS_KEY_PAGE_UP];
 }
 
-- (void) scrollPageDown: (id)sender;
+- (void) scrollPageDown: (id)sender
 {
-	[tree keyPress: NS_KEY_PAGE_DOWN];
+        [tree keyPress: NS_KEY_PAGE_DOWN];
 }
 
-- (void) insertTab: (id)sender;
+- (void) insertTab: (id)sender
 {
-	[tree keyPress: NS_KEY_TAB];
+        [tree keyPress: NS_KEY_TAB];
 }
 
-- (void) insertBacktab: (id)sender;
+- (void) insertBacktab: (id)sender
 {
-	[tree keyPress: NS_KEY_SHIFT_TAB];
+        [tree keyPress: NS_KEY_SHIFT_TAB];
 }
 
-- (void) moveToBeginningOfLine: (id)sender;
+- (void) moveToBeginningOfLine: (id)sender
 {
-	[tree keyPress: NS_KEY_LINE_START];
+        [tree keyPress: NS_KEY_LINE_START];
 }
 
-- (void) moveToEndOfLine: (id)sender;
+- (void) moveToEndOfLine: (id)sender
 {
-	[tree keyPress: NS_KEY_LINE_END];
+        [tree keyPress: NS_KEY_LINE_END];
 }
 
-- (void) moveToBeginningOfDocument: (id)sender;
+- (void) moveToBeginningOfDocument: (id)sender
 {
-	[tree keyPress: NS_KEY_TEXT_START];
+        [tree keyPress: NS_KEY_TEXT_START];
 }
 
-- (void) moveToEndOfDocument: (id)sender;
+- (void) moveToEndOfDocument: (id)sender
 {
-	[tree keyPress: NS_KEY_TEXT_END];
+        [tree keyPress: NS_KEY_TEXT_END];
 }
 
-- (void) insertNewline: (id)sender;
+- (void) insertNewline: (id)sender
 {
-	[tree keyPress: NS_KEY_NL];
+        [tree keyPress: NS_KEY_NL];
 }
 
-- (void) selectAll: (id)sender;
+- (void) selectAll: (id)sender
 {
-	[tree keyPress: NS_KEY_SELECT_ALL];
+        [tree keyPress: NS_KEY_SELECT_ALL];
 }
 
-- (void) copy: (id) sender;
+- (void) copy: (id) sender
 {
-	[tree keyPress: NS_KEY_COPY_SELECTION];
+        [tree keyPress: NS_KEY_COPY_SELECTION];
 }
 
-- (void) cut: (id) sender;
+- (void) cut: (id) sender
 {
-	[tree keyPress: NS_KEY_CUT_SELECTION];
+        [tree keyPress: NS_KEY_CUT_SELECTION];
 }
 
-- (void) paste: (id) sender;
+- (void) paste: (id) sender
 {
-	[tree keyPress: NS_KEY_PASTE];
+        [tree keyPress: NS_KEY_PASTE];
 }
 
 //MARK: -
 //MARK: Tree delegate methods
 
-- (void) tree: (Tree *)t requestedRedrawInRect: (NSRect) rect;
+- (void) tree: (Tree *)t requestedRedrawInRect: (NSRect) rect
 {
-	[self setNeedsDisplayInRect: rect];
+        [self setNeedsDisplayInRect: rect];
 }
 
-- (void) tree: (Tree *)t resized: (NSSize) size;
+- (void) tree: (Tree *)t resized: (NSSize) size
 {
-	[self setMinimumSize: size];
+        [self setMinimumSize: size];
 }
 
-- (void) tree: (Tree *)t scrollPoint: (NSPoint) point;
+- (void) tree: (Tree *)t scrollPoint: (NSPoint) point
 {
-	[self scrollPoint: point];
+        [self scrollPoint: point];
 }
 
-- (NSSize) treeWindowSize: (Tree *)t;
+- (NSSize) treeWindowSize: (Tree *)t
 {
-	return [self frame].size;
+        return [self frame].size;
 }
 
 @end

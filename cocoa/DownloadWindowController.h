@@ -21,19 +21,19 @@
 struct gui_download_table *cocoa_download_table;
 
 @interface DownloadWindowController : NSWindowController {
-	struct download_context *context;
-	unsigned long totalSize;
-	unsigned long receivedSize;
-	
-	NSURL *url;
-	NSString *mimeType;
-	NSURL *saveURL;
-	NSFileHandle *outputFile;
-	NSMutableData *savedData;
-	NSDate *startDate;
-	
-	BOOL canClose;
-	BOOL shouldClose;
+        struct download_context *context;
+        unsigned long totalSize;
+        unsigned long receivedSize;
+
+        NSURL *url;
+        NSString *mimeType;
+        NSURL *saveURL;
+        NSFileHandle *outputFile;
+        NSMutableData *savedData;
+        NSDate *startDate;
+
+        BOOL canClose;
+        BOOL shouldClose;
 }
 
 @property (readwrite, copy, nonatomic) NSURL *URL;
@@ -46,9 +46,8 @@ struct gui_download_table *cocoa_download_table;
 @property (readonly, nonatomic) NSImage *icon;
 @property (readonly, nonatomic) NSString *statusText;
 
-- initWithContext: (struct download_context *)ctx;
+- (id)initWithContext: (struct download_context *)ctx;
 
 - (void) abort;
 
 @end
-

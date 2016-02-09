@@ -47,7 +47,7 @@ struct browser_window;
 @property (readwrite, assign, nonatomic) BOOL canGoBack;
 @property (readwrite, assign, nonatomic) BOOL canGoForward;
 
-- initWithBrowser: (struct browser_window *) bw;
+- (id) initWithBrowser: (struct browser_window *) bw;
 
 - (void) contentUpdated;
 - (void) updateBackForward;

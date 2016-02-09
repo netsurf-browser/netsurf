@@ -29,7 +29,7 @@
 @property (readwrite, assign, nonatomic) BrowserView *browser;
 @property (readwrite, assign, nonatomic) IBOutlet HistoryView *history;
 
-- initWithBrowser: (BrowserView *) bw;
+- (id)initWithBrowser: (BrowserView *) bw;
 
 - (void) attachToView: (NSView *) view;
 - (void) detach;

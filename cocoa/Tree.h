@@ -33,13 +33,13 @@
 
 
 @interface Tree : NSObject {
-	id <TreeDelegate> delegate;
-	struct tree *tree;
+  id <TreeDelegate> delegate;
+  struct tree *tree;
 }
 
 @property (readwrite, assign, nonatomic) id <TreeDelegate> delegate;
 
-- initWithFlags: (unsigned int) flags;
+- (id)initWithFlags: (unsigned int) flags;
 
 - (struct tree *) tree;
 

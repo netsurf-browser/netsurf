@@ -18,16 +18,15 @@
 
 #import <Cocoa/Cocoa.h>
 
-
 @interface FormSelectMenu : NSObject {
-	NSMenu *menu;
-	NSPopUpButtonCell *cell;
-	
-	struct browser_window *browser;
-	struct form_control *control;
+        NSMenu *menu;
+        NSPopUpButtonCell *cell;
+
+        struct browser_window *browser;
+        struct form_control *control;
 }
 
-- initWithControl: (struct form_control *) control forWindow: (struct browser_window *) window;
+- (id)initWithControl: (struct form_control *) control forWindow: (struct browser_window *) window;
 - (void) runInView: (NSView *) view;
 
 @end

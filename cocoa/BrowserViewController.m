@@ -47,91 +47,110 @@
 @synthesize canGoBack;
 @synthesize canGoForward;
 
-- (void) dealloc;
+- (void) dealloc
 {
-	[self setUrl: nil];
-	[self setBrowserView: nil];
-	[self setWindowController: nil];
-	[self setTitle: nil];
-	[self setStatus: nil];
-	[self setFavicon: nil];
-	
-	[super dealloc];
+        [self setUrl: nil];
+        [self setBrowserView: nil];
+        [self setWindowController: nil];
+        [self setTitle: nil];
+        [self setStatus: nil];
+        [self setFavicon: nil];
+
+        [super dealloc];
 }
 
-- initWithBrowser: (struct browser_window *) bw;
+- initWithBrowser: (struct browser_window *) bw
 {
-	if ((self = [super initWithNibName: @"Browser" bundle: nil]) == nil) return nil;
-	
-	browser = bw;
-	
-	return self;
-}
+        if ((self = [super initWithNibName: @"Browser" bundle: nil]) == nil) {
+                return nil;
+        }
 
-- (IBAction) navigate: (id) sender;
-{
-	nsurl *urlns;
-	nserror error;
+        browser = bw;
 
-	error = nsurl_create([url UTF8String], &urlns);
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	} else {
-		browser_window_navigate(browser,
-					urlns,
-					NULL,
-					BW_NAVIGATE_HISTORY,
-					NULL,
-					NULL,
-					NULL);
-		nsurl_unref(urlns);
-	}
-}
-
-- (void) awakeFromNib;
-{
-	[browserView setBrowser: browser];
+        return self;
 }
 
 
-- (IBAction) zoomIn: (id) sender;
+- (IBAction) navigate: (id) sender
 {
-	browser_window_set_scale( browser, browser_window_get_scale(browser) * 1.1, true );
+        nsurl *urlns;
+        nserror error;
+
+        error = nsurl_create([url UTF8String], &urlns);
+        if (error != NSERROR_OK) {
+                warn_user(messages_get_errorcode(error), 0);
+        } else {
+                browser_window_navigate(browser,
+                                        urlns,
+                                        NULL,
+                                        BW_NAVIGATE_HISTORY,
+                                        NULL,
+                                        NULL,
+                                        NULL);
+                nsurl_unref(urlns);
+        }
 }
 
-- (IBAction) zoomOut: (id) sender;
+
+- (void) awakeFromNib
 {
-	browser_window_set_scale( browser, browser_window_get_scale(browser) * 0.9, true );
+        [browserView setBrowser: browser];
 }
 
-- (IBAction) zoomOriginal: (id) sender;
+
+- (IBAction) zoomIn: (id) sender
 {
-	browser_window_set_scale( browser, (float)nsoption_int(scale) / 100.0, true );
+        browser_window_set_scale(browser,
+                                 browser_window_get_scale(browser) * 1.1,
+                                 true);
 }
 
-- (IBAction) backForwardSelected: (id) sender;
+
+- (IBAction) zoomOut: (id) sender
 {
-	if ([sender selectedSegment] == 0) [self goBack: sender];
-	else [self goForward: sender];
+        browser_window_set_scale(browser,
+                                 browser_window_get_scale(browser) * 0.9,
+                                 true);
 }
 
-- (IBAction) goBack: (id) sender;
+
+- (IBAction) zoomOriginal: (id) sender
 {
-	if (browser && browser_window_history_back_available( browser )) {
-		browser_window_history_back(browser, false);
-		[self updateBackForward];
-	}
+        browser_window_set_scale(browser,
+                                 (float)nsoption_int(scale) / 100.0,
+                                 true);
 }
 
-- (IBAction) goForward: (id) sender;
+
+- (IBAction) backForwardSelected: (id) sender
 {
-	if (browser && browser_window_history_forward_available( browser )) {
-		browser_window_history_forward(browser, false);
-		[self updateBackForward];
-	}
+        if ([sender selectedSegment] == 0) {
+                [self goBack: sender];
+        } else {
+                [self goForward: sender];
+        }
 }
 
-- (IBAction) goHome: (id) sender;
+
+- (IBAction) goBack: (id) sender
+{
+        if (browser && browser_window_history_back_available( browser )) {
+                browser_window_history_back(browser, false);
+                [self updateBackForward];
+        }
+}
+
+
+- (IBAction) goForward: (id) sender
+{
+        if (browser && browser_window_history_forward_available( browser )) {
+                browser_window_history_forward(browser, false);
+                [self updateBackForward];
+        }
+}
+
+
+- (IBAction) goHome: (id) sender
 {
         nsurl *urlns;
         nserror error;
@@ -141,7 +160,7 @@
                 error = browser_window_navigate(browser,
                                                 urlns,
                                                 NULL,
-						BW_NAVIGATE_HISTORY,
+                                                BW_NAVIGATE_HISTORY,
                                                 NULL,
                                                 NULL,
                                                 NULL);
@@ -152,186 +171,207 @@
         }
 }
 
-- (IBAction) reloadPage: (id) sender;
+
+- (IBAction) reloadPage: (id) sender
 {
-	browser_window_reload( browser, true );
-}
-
-- (IBAction) stopLoading: (id) sender;
-{
-	browser_window_stop( browser );
-}
-
-- (IBAction) viewSource: (id) sender;
-{
-	struct hlcache_handle *content;
-	size_t size;
-	const char *source;
-	char *path = NULL;
-
-	if (browser == NULL)
-		return;
-	content = browser_window_get_content(browser);
-	if (content == NULL)
-		return;
-	source = content_get_source_data(content, &size);
-	if (source == NULL)
-		return;
-
-	/* try to load local files directly. */
-	netsurf_nsurl_to_path(hlcache_handle_get_url(content), &path);
-
-	if (path == NULL) {
-		/* We cannot release the requested filename until after it
-		 * has finished being used. As we can't easily find out when
-		 * this is, we simply don't bother releasing it and simply
-		 * allow it to be re-used next time NetSurf is started. The
-		 * memory overhead from doing this is under 1 byte per
-		 * filename. */
-		const char *filename = filename_request();
-		const char *extension = "txt";
-		fprintf(stderr, "filename '%p'\n", filename);
-		if (filename == NULL)
-			return;
-		lwc_string *str = content_get_mime_type(content);
-		if (str) {
-			NSString *mime = [NSString stringWithUTF8String:lwc_string_data(str)];
-			NSString *uti = (NSString *)UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, (CFStringRef)mime, NULL);
-			NSString *ext = (NSString *)UTTypeCopyPreferredTagWithClass((CFStringRef)uti, kUTTagClassFilenameExtension);
-			extension = [ext UTF8String];
-			lwc_string_unref(str);
-		}
-
-		NSURL *dataUrl = [NSURL URLWithString:[NSString stringWithFormat:@"%s.%s", filename, extension]
-			relativeToURL:[NSURL fileURLWithPath:@TEMP_FILENAME_PREFIX]];
-
-
-		NSData *data = [NSData dataWithBytes:source length:size];
-		[data writeToURL:dataUrl atomically:NO];
-		path = [[dataUrl path] UTF8String];
-	}
-
-	if (path) {
-		NSString * p = [NSString stringWithUTF8String: path];
-		NSWorkspace * ws = [NSWorkspace sharedWorkspace];
-		[ws openFile:p withApplication:@"Xcode"];	
-	}
-}
-
-static inline bool compare_float( float a, float b )
-{
-	const float epsilon = 0.00001;
-	
-	if (a == b) return true;
-	
-	return fabs( (a - b) / b ) <= epsilon;
-}
-
-- (BOOL) validateUserInterfaceItem: (id) item;
-{
-	SEL action = [item action];
-	
-	if (action == @selector(copy:)) {
-		return browser_window_get_editor_flags( browser ) & BW_EDITOR_CAN_COPY;
-	}
-	
-	if (action == @selector(cut:)) {
-		return browser_window_get_editor_flags( browser ) & BW_EDITOR_CAN_CUT;
-	}
-	
-	if (action == @selector(paste:)) {
-		return browser_window_get_editor_flags( browser ) & BW_EDITOR_CAN_PASTE;
-	}
-	
-	if (action == @selector( stopLoading: )) {
-		return browser_window_stop_available( browser );
-	}
-	
-	if (action == @selector( zoomOriginal: )) {
-		return !compare_float( browser_window_get_scale(browser), (float)nsoption_int(scale) / 100.0 );
-	}
-	
-	if (action == @selector( goBack: )) {
-		return canGoBack;
-	}
-	
-	if (action == @selector( goForward: )) {
-		return canGoForward;
-	}
-	
-	return YES;
+        browser_window_reload( browser, true );
 }
 
 
-- (void) updateBackForward;
+- (IBAction) stopLoading: (id) sender
 {
-	[browserView updateHistory];
-	[self setCanGoBack: browser != NULL && browser_window_history_back_available( browser )];
-	[self setCanGoForward: browser != NULL && browser_window_history_forward_available( browser )];
+        browser_window_stop( browser );
 }
 
-- (void) contentUpdated;
+
+- (IBAction) viewSource: (id) sender
 {
-	[browserView updateHistory];
+        struct hlcache_handle *content;
+        size_t size;
+        const char *source;
+        char *path = NULL;
+
+        if (browser == NULL) {
+                return;
+        }
+        content = browser_window_get_content(browser);
+        if (content == NULL) {
+                return;
+        }
+        source = content_get_source_data(content, &size);
+        if (source == NULL) {
+                return;
+        }
+
+        /* try to load local files directly. */
+        netsurf_nsurl_to_path(hlcache_handle_get_url(content), &path);
+
+        if (path == NULL) {
+                /* We cannot release the requested filename until after it
+                 * has finished being used. As we can't easily find out when
+                 * this is, we simply don't bother releasing it and simply
+                 * allow it to be re-used next time NetSurf is started. The
+                 * memory overhead from doing this is under 1 byte per
+                 * filename. */
+                const char *filename = filename_request();
+                const char *extension = "txt";
+                fprintf(stderr, "filename '%p'\n", filename);
+                if (filename == NULL)
+                        return;
+                lwc_string *str = content_get_mime_type(content);
+                if (str) {
+                        NSString *mime = [NSString stringWithUTF8String:lwc_string_data(str)];
+                        NSString *uti = (NSString *)UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, (CFStringRef)mime, NULL);
+                        NSString *ext = (NSString *)UTTypeCopyPreferredTagWithClass((CFStringRef)uti, kUTTagClassFilenameExtension);
+                        extension = [ext UTF8String];
+                        lwc_string_unref(str);
+                }
+
+                NSURL *dataUrl = [NSURL URLWithString:[NSString stringWithFormat:@"%s.%s", filename, extension]
+                                        relativeToURL:[NSURL fileURLWithPath:@TEMP_FILENAME_PREFIX]];
+
+
+                NSData *data = [NSData dataWithBytes:source length:size];
+                [data writeToURL:dataUrl atomically:NO];
+                path = [[dataUrl path] UTF8String];
+        }
+
+        if (path) {
+                NSString * p = [NSString stringWithUTF8String: path];
+                NSWorkspace * ws = [NSWorkspace sharedWorkspace];
+                [ws openFile:p withApplication:@"Xcode"];
+        }
+}
+
+
+static inline bool
+compare_float( float a, float b )
+{
+        const float epsilon = 0.00001;
+
+        if (a == b) {
+                return true;
+        }
+
+        return fabs( (a - b) / b ) <= epsilon;
+}
+
+- (BOOL) validateUserInterfaceItem: (id) item
+{
+        SEL action = [item action];
+
+        if (action == @selector(copy:)) {
+                return browser_window_get_editor_flags( browser ) & BW_EDITOR_CAN_COPY;
+        }
+
+        if (action == @selector(cut:)) {
+                return browser_window_get_editor_flags( browser ) & BW_EDITOR_CAN_CUT;
+        }
+
+        if (action == @selector(paste:)) {
+                return browser_window_get_editor_flags( browser ) & BW_EDITOR_CAN_PASTE;
+        }
+
+        if (action == @selector( stopLoading: )) {
+                return browser_window_stop_available( browser );
+        }
+
+        if (action == @selector( zoomOriginal: )) {
+                return !compare_float( browser_window_get_scale(browser), (float)nsoption_int(scale) / 100.0 );
+        }
+
+        if (action == @selector( goBack: )) {
+                return canGoBack;
+        }
+
+        if (action == @selector( goForward: )) {
+                return canGoForward;
+        }
+
+        return YES;
+}
+
+
+- (void) updateBackForward
+{
+        [browserView updateHistory];
+        [self setCanGoBack: browser != NULL && browser_window_history_back_available( browser )];
+        [self setCanGoForward: browser != NULL && browser_window_history_forward_available( browser )];
+}
+
+- (void) contentUpdated
+{
+        [browserView updateHistory];
 }
 
 struct history_add_menu_item_data {
-	NSInteger index;
-	NSMenu *menu;
-	id target;
+        NSInteger index;
+        NSMenu *menu;
+        id target;
 };
 
-static bool history_add_menu_item_cb( const struct browser_window *bw, int x0, int y0, int x1, int y1, 
-									 const struct history_entry *page, void *user_data )
+static bool
+history_add_menu_item_cb(const struct browser_window *bw,
+                         int x0, int y0, int x1, int y1,
+                         const struct history_entry *page,
+                         void *user_data )
 {
-	struct history_add_menu_item_data *data = user_data; 
-	
-	NSMenuItem *item = nil;
-	if (data->index < [data->menu numberOfItems]) {
-		item = [data->menu itemAtIndex: data->index];
-	} else {
-		item = [[NSMenuItem alloc] initWithTitle: @"" 
-										  action: @selector( historyItemSelected: ) 
-								   keyEquivalent: @""];
-		[data->menu addItem: item];
-		[item release];
-	}
-	++data->index;
-	
-	[item setTarget: data->target];
-	[item setTitle: [NSString stringWithUTF8String: browser_window_history_entry_get_title( page )]];
-	[item setRepresentedObject: [NSValue valueWithPointer: page]];
-	
-	return true;
+        struct history_add_menu_item_data *data = user_data;
+
+        NSMenuItem *item = nil;
+        if (data->index < [data->menu numberOfItems]) {
+                item = [data->menu itemAtIndex: data->index];
+        } else {
+                item = [[NSMenuItem alloc] initWithTitle: @""
+                                                  action: @selector( historyItemSelected: )
+                                           keyEquivalent: @""];
+                [data->menu addItem: item];
+                [item release];
+        }
+        ++data->index;
+
+        [item setTarget: data->target];
+        [item setTitle: [NSString stringWithUTF8String: browser_window_history_entry_get_title( page )]];
+        [item setRepresentedObject: [NSValue valueWithPointer: page]];
+
+        return true;
 }
 
-- (IBAction) historyItemSelected: (id) sender;
+- (IBAction) historyItemSelected: (id) sender
 {
-	struct history_entry *entry = [[sender representedObject] pointerValue];
-	browser_window_history_go( browser, entry, false );
-	[self updateBackForward];
+        struct history_entry *entry = [[sender representedObject] pointerValue];
+        browser_window_history_go( browser, entry, false );
+        [self updateBackForward];
 }
 
-- (void) buildBackMenu: (NSMenu *)menu;
+- (void) buildBackMenu: (NSMenu *)menu
 {
-	struct history_add_menu_item_data data = {
-		.index = 0,
-		.menu = menu,
-		.target = self
-	};
-	browser_window_history_enumerate_back( browser, history_add_menu_item_cb, &data );
-	while (data.index < [menu numberOfItems]) [menu removeItemAtIndex: data.index];
+        struct history_add_menu_item_data data = {
+                .index = 0,
+                .menu = menu,
+                .target = self
+        };
+        browser_window_history_enumerate_back(browser,
+                                              history_add_menu_item_cb,
+                                              &data);
+        while (data.index < [menu numberOfItems]) {
+                [menu removeItemAtIndex: data.index];
+        }
 }
 
-- (void) buildForwardMenu: (NSMenu *)menu;
+- (void) buildForwardMenu: (NSMenu *)menu
 {
-	struct history_add_menu_item_data data = {
-		.index = 0,
-		.menu = menu,
-		.target = self
-	};
-	browser_window_history_enumerate_forward( browser, history_add_menu_item_cb, &data );
-	while (data.index < [menu numberOfItems]) [menu removeItemAtIndex: data.index];
+        struct history_add_menu_item_data data = {
+                .index = 0,
+                .menu = menu,
+                .target = self
+        };
+        browser_window_history_enumerate_forward(browser,
+                                                 history_add_menu_item_cb,
+                                                 &data);
+        while (data.index < [menu numberOfItems]) {
+                [menu removeItemAtIndex: data.index];
+        }
 }
 
 @end

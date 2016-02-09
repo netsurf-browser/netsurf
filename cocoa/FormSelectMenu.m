@@ -24,9 +24,13 @@
 
 static inline NSRect cocoa_rect_for_control( struct browser_window *bw, struct form_control *control)
 {
-	struct rect r;
-	form_control_bounding_rect(control, &r);
-	return cocoa_scaled_rect(browser_window_get_scale(bw), r.x0, r.y0, r.x1, r.y1 );
+        struct rect r;
+        form_control_bounding_rect(control, &r);
+        return cocoa_scaled_rect(browser_window_get_scale(bw),
+                                 r.x0,
+                                 r.y0,
+                                 r.x1,
+                                 r.y1);
 }
 
 @interface FormSelectMenu ()
@@ -38,69 +42,72 @@ static inline NSRect cocoa_rect_for_control( struct browser_window *bw, struct f
 
 @implementation FormSelectMenu
 
-
-- initWithControl: (struct form_control *) c forWindow: (struct browser_window *) w;
+- (id) initWithControl: (struct form_control *) c forWindow: (struct browser_window *) w
 {
-	if ((self = [super init]) == nil) return nil;
-	
-	control = c;
-	browser = w;
-	
-	menu = [[NSMenu alloc] initWithTitle: @"Select"];
-	if (menu == nil) {
-		[self release];
-		return nil;
-	}
-	
-	[menu addItemWithTitle: @"" action: NULL keyEquivalent: @""];
-	
-	NSInteger currentItemIndex = 0;
+        if ((self = [super init]) == nil) return nil;
+
+        control = c;
+        browser = w;
+
+        menu = [[NSMenu alloc] initWithTitle: @"Select"];
+        if (menu == nil) {
+                [self release];
+                return nil;
+        }
+
+        [menu addItemWithTitle: @"" action: NULL keyEquivalent: @""];
+
+        NSInteger currentItemIndex = 0;
         struct form_option *opt;
-	for (opt = form_select_get_option(control, 0); opt != NULL; opt = opt->next) {
-		NSMenuItem *item = [[NSMenuItem alloc] initWithTitle: [NSString stringWithUTF8String: opt->text] 
-													  action: @selector( itemSelected: ) 
-											   keyEquivalent: @""];
-		if (opt->selected) [item setState: NSOnState];
-		[item setTarget: self];
-		[item setTag: currentItemIndex++];
-		[menu addItem: item];
-		[item release];
-	}
-	
-	[menu setDelegate: self];
-	
-	return self;
+        for (opt = form_select_get_option(control, 0);
+             opt != NULL;
+             opt = opt->next) {
+                NSMenuItem *item = [[NSMenuItem alloc] initWithTitle: [NSString stringWithUTF8String: opt->text]
+                                                              action: @selector( itemSelected: )
+                                                       keyEquivalent: @""];
+                if (opt->selected) {
+                        [item setState: NSOnState];
+                }
+                [item setTarget: self];
+                [item setTag: currentItemIndex++];
+                [menu addItem: item];
+                [item release];
+        }
+
+        [menu setDelegate: self];
+
+        return self;
 }
 
-- (void) dealloc;
+- (void) dealloc
 {
-	[cell release];
-	[menu release];
-	
-	[super dealloc];
+        [cell release];
+        [menu release];
+
+        [super dealloc];
 }
 
-- (void) runInView: (NSView *) view;
+- (void) runInView: (NSView *) view
 {
-	[self retain];
-	
-	cell = [[NSPopUpButtonCell alloc] initTextCell: @"" pullsDown: YES];
-	[cell setMenu: menu];
+        [self retain];
 
-	const NSRect rect = cocoa_rect_for_control(browser, control);
-								   
-	[cell attachPopUpWithFrame: rect inView: view];
-	[cell performClickWithFrame: rect inView: view];
+        cell = [[NSPopUpButtonCell alloc] initTextCell: @"" pullsDown: YES];
+        [cell setMenu: menu];
+
+        const NSRect rect = cocoa_rect_for_control(browser, control);
+
+        [cell attachPopUpWithFrame: rect inView: view];
+        [cell performClickWithFrame: rect inView: view];
 }
 
-- (void) itemSelected: (id) sender;
+- (void) itemSelected: (id) sender
 {
-	form_select_process_selection( control, [sender tag] );
+        form_select_process_selection( control, [sender tag] );
 }
 
-- (void) menuDidClose: (NSMenu *) sender;
+- (void) menuDidClose: (NSMenu *) sender
 {
-	[self release];
+        [self release];
 }
 
 @end

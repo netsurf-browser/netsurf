@@ -21,9 +21,9 @@
 
 @implementation BrowserWindow
 
-- (void) performClose: (id) sender;
+- (void) performClose: (id) sender
 {
-	[[self windowController] closeCurrentTab: sender];
+        [[self windowController] closeCurrentTab: sender];
 }
 
 @end
