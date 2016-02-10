@@ -59,75 +59,85 @@ static bool cocoa_done = false;
  */
 static void die(const char * const error)
 {
-	[NSException raise: @"NetsurfDie" format: @"Error: %s", error];
+        [NSException raise: @"NetsurfDie" format: @"Error: %s", error];
 }
 
-- (void) loadOptions;
+- (void) loadOptions
 {
-	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-	[defaults registerDefaults: [NSDictionary dictionaryWithObjectsAndKeys: 
-								 cocoa_get_user_path( @"Cookies" ), kCookiesFileOption,
-								 cocoa_get_user_path( @"URLs" ), kURLsFileOption,
-								 [NSString stringWithUTF8String: NETSURF_HOMEPAGE], kHomepageURLOption,
-								 nil]];
-	
-	
-	nsoption_setnull_charp(cookie_file, strdup( [[defaults objectForKey: kCookiesFileOption] UTF8String] ));
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        [defaults registerDefaults: [NSDictionary dictionaryWithObjectsAndKeys:
+                                                          cocoa_get_user_path( @"Cookies" ),
+                                                  kCookiesFileOption,
+                                                  cocoa_get_user_path( @"URLs" ),
+                                                  kURLsFileOption,
+                                                [NSString stringWithUTF8String: NETSURF_HOMEPAGE],
+                                                  kHomepageURLOption,
+                                                  nil]];
 
-	nsoption_setnull_charp(cookie_jar, strdup( nsoption_charp(cookie_file) ));
 
-	nsoption_setnull_charp(homepage_url, strdup( [[defaults objectForKey: kHomepageURLOption] UTF8String] ));
+        nsoption_setnull_charp(cookie_file, strdup( [[defaults objectForKey: kCookiesFileOption] UTF8String] ));
 
-	urldb_load( [[defaults objectForKey: kURLsFileOption] UTF8String] );
-	urldb_load_cookies( nsoption_charp(cookie_file) );
-	
-	cocoa_update_scale_factor();
+        nsoption_setnull_charp(cookie_jar, strdup( nsoption_charp(cookie_file) ));
+
+        nsoption_setnull_charp(homepage_url, strdup( [[defaults objectForKey: kHomepageURLOption] UTF8String] ));
+
+        urldb_load( [[defaults objectForKey: kURLsFileOption] UTF8String] );
+        urldb_load_cookies( nsoption_charp(cookie_file) );
+
+        cocoa_update_scale_factor();
+        LOG("done setup");
 }
 
-- (void) saveOptions;
+- (void) saveOptions
 {
-	urldb_save_cookies( nsoption_charp(cookie_file) );
-	urldb_save( [[[NSUserDefaults standardUserDefaults] objectForKey: kURLsFileOption] UTF8String] );
+        urldb_save_cookies( nsoption_charp(cookie_file) );
+        urldb_save( [[[NSUserDefaults standardUserDefaults] objectForKey: kURLsFileOption] UTF8String] );
 }
 
-- (void) run;
+- (void) run
 {
-	[self finishLaunching];
+        NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
-	[self loadOptions];
+        [self finishLaunching];
 
-    while (!cocoa_done) {
-        cocoa_autorelease();
+        [self loadOptions];
 
-        NSEvent *event = [NSApp nextEventMatchingMask: NSAnyEventMask
-                                            untilDate: [NSDate distantFuture]
-                                               inMode: NSDefaultRunLoopMode
-                                              dequeue: YES];
-        if (nil != event) {
-            [NSApp sendEvent: event];
-            [NSApp updateWindows];
+        while (!cocoa_done) {
+                [pool release];
+                pool = [[NSAutoreleasePool alloc] init];
+
+                NSEvent *event =
+                        [self nextEventMatchingMask: NSAnyEventMask
+                                          untilDate: [NSDate distantFuture]
+                                             inMode: NSDefaultRunLoopMode
+                                            dequeue: YES];
+                if (nil != event) {
+                        [self sendEvent: event];
+                        [self updateWindows];
+                }
+
         }
 
-    }
+        [self saveOptions];
 
-	[self saveOptions];
+        [pool release];
 }
 
--(void) terminate: (id)sender;
+-(void) terminate: (id)sender
 {
-	[[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationWillTerminateNotification object:self];
-	
-	cocoa_done = true;
-	[self postEvent: [NSEvent otherEventWithType: NSApplicationDefined
-                                        location: NSZeroPoint
-								   modifierFlags: 0
-                                       timestamp: 0
-                                    windowNumber: 0
-                                         context: NULL
-										 subtype: 0
-                                           data1: 0
-                                           data2: 0]
-			atStart: YES];
+        [[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationWillTerminateNotification object:self];
+
+        cocoa_done = true;
+        [self postEvent: [NSEvent otherEventWithType: NSApplicationDefined
+                                            location: NSZeroPoint
+                                       modifierFlags: 0
+                                           timestamp: 0
+                                        windowNumber: 0
+                                             context: NULL
+                                             subtype: 0
+                                               data1: 0
+                                               data2: 0]
+                atStart: YES];
 }
 
 @end
@@ -136,63 +146,65 @@ static void die(const char * const error)
 
 static NSString *cocoa_get_preferences_path( void )
 {
-	NSArray *paths = NSSearchPathForDirectoriesInDomains( NSApplicationSupportDirectory, NSUserDomainMask, YES );
-	NSCAssert( [paths count] >= 1, @"Where is the application support directory?" );
-	
-	NSString *netsurfPath = [[paths objectAtIndex: 0] stringByAppendingPathComponent: @"NetSurf"];
-	
-	NSFileManager *fm = [NSFileManager defaultManager];
-	BOOL isDirectory = NO;
-	BOOL exists = [fm fileExistsAtPath: netsurfPath isDirectory: &isDirectory];
-	
-	if (!exists) {
-		exists = [fm createDirectoryAtPath: netsurfPath withIntermediateDirectories: YES attributes: nil error: NULL];
-		isDirectory = YES;
-	}
-	if (!(exists && isDirectory)) {
-		die( "Cannot create netsurf preferences directory" );
-	}
-	
-	return netsurfPath;
+        NSArray *paths = NSSearchPathForDirectoriesInDomains( NSApplicationSupportDirectory, NSUserDomainMask, YES );
+        NSCAssert( [paths count] >= 1, @"Where is the application support directory?" );
+
+        NSString *netsurfPath = [[paths objectAtIndex: 0] stringByAppendingPathComponent: @"NetSurf"];
+
+        NSFileManager *fm = [NSFileManager defaultManager];
+        BOOL isDirectory = NO;
+        BOOL exists = [fm fileExistsAtPath: netsurfPath isDirectory: &isDirectory];
+
+        if (!exists) {
+                exists = [fm createDirectoryAtPath: netsurfPath withIntermediateDirectories: YES attributes: nil error: NULL];
+                isDirectory = YES;
+        }
+        if (!(exists && isDirectory)) {
+                die( "Cannot create netsurf preferences directory" );
+        }
+
+        return netsurfPath;
 }
 
-NSString *cocoa_get_user_path( NSString *fileName ) 
+NSString *cocoa_get_user_path( NSString *fileName )
 {
-	return [cocoa_get_preferences_path() stringByAppendingPathComponent: fileName];
+        return [cocoa_get_preferences_path() stringByAppendingPathComponent: fileName];
 }
 
 static const char *cocoa_get_options_file( void )
 {
-	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-	[defaults registerDefaults: [NSDictionary dictionaryWithObjectsAndKeys: 
-								 cocoa_get_user_path( @"Options" ), kOptionsFileOption,
-								 nil]];
-	
-	return [[defaults objectForKey: kOptionsFileOption] UTF8String];
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        [defaults registerDefaults: [NSDictionary dictionaryWithObjectsAndKeys:
+                                                          cocoa_get_user_path( @"Options" ), kOptionsFileOption,
+                                                  nil]];
+
+        return [[defaults objectForKey: kOptionsFileOption] UTF8String];
 }
 
 static NSApplication *cocoa_prepare_app( void )
 {
-	if (NSApp != nil) return NSApp;
-	
-	NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
-	Class principalClass =  NSClassFromString([infoDictionary objectForKey:@"NSPrincipalClass"]);
-	NSCAssert([principalClass respondsToSelector:@selector(sharedApplication)], @"Principal class must implement sharedApplication.");
-	[principalClass sharedApplication];
-	
-	NSString *mainNibName = [infoDictionary objectForKey:@"NSMainNibFile"];
-	NSNib *mainNib = [[NSNib alloc] initWithNibNamed:mainNibName bundle:[NSBundle mainBundle]];
-	[mainNib instantiateNibWithOwner:NSApp topLevelObjects:nil];
-	[mainNib release];
-	
-	return NSApp;
-}
+        /* if application instance has already been created return it */
+        if (NSApp != nil) {
+                return NSApp;
+        }
 
-void cocoa_autorelease( void )
-{
-	static NSAutoreleasePool *pool = nil;
-	[pool release];
-	pool = [[NSAutoreleasePool alloc] init];
+        NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
+
+        /* Obtain principle class of bundle which must implement sharedApplication API */
+        Class principalClass =  NSClassFromString([infoDictionary objectForKey:@"NSPrincipalClass"]);
+        NSCAssert([principalClass respondsToSelector:@selector(sharedApplication)],
+                  @"Principal class must implement sharedApplication.");
+
+        /* create application instance */
+        [principalClass sharedApplication];
+
+        /* load interface nib */
+        NSString *mainNibName = [infoDictionary objectForKey:@"NSMainNibFile"];
+        NSNib *mainNib = [[NSNib alloc] initWithNibNamed:mainNibName bundle:[NSBundle mainBundle]];
+        [mainNib instantiateNibWithOwner:NSApp topLevelObjects:nil];
+        [mainNib release];
+
+        return NSApp;
 }
 
 /**
@@ -203,70 +215,68 @@ void cocoa_autorelease( void )
  */
 static nserror set_defaults(struct nsoption_s *defaults)
 {
-	/* Set defaults for absent option strings */
-	const char * const ca_bundle = [[[NSBundle mainBundle] pathForResource: @"ca-bundle" ofType: @""] UTF8String];
+        /* Set defaults for absent option strings */
+        const char * const ca_bundle = [[[NSBundle mainBundle] pathForResource: @"ca-bundle" ofType: @""] UTF8String];
 
-	nsoption_setnull_charp(ca_bundle, strdup(ca_bundle));
+        nsoption_setnull_charp(ca_bundle, strdup(ca_bundle));
 
         return NSERROR_OK;
 }
 
 int main( int argc, char **argv )
 {
-	nsurl *url;
-	nserror error;
-	struct netsurf_table cocoa_table = {
-		.browser = cocoa_browser_table,
-		.window = cocoa_window_table,
-		.clipboard = cocoa_clipboard_table,
-		.download = cocoa_download_table,
-		.fetch = cocoa_fetch_table,
-		.search = cocoa_search_table,
+        nsurl *url;
+        nserror error;
+        struct netsurf_table cocoa_table = {
+                .browser = cocoa_browser_table,
+                .window = cocoa_window_table,
+                .clipboard = cocoa_clipboard_table,
+                .download = cocoa_download_table,
+                .fetch = cocoa_fetch_table,
+                .search = cocoa_search_table,
                 .bitmap = cocoa_bitmap_table,
-	};
+        };
 
-	cocoa_autorelease();
+        error = netsurf_register(&cocoa_table);
+        if (error != NSERROR_OK) {
+                die("NetSurf operation table failed registration");
+        }
 
-    error = netsurf_register(&cocoa_table);
-    if (error != NSERROR_OK) {
-        die("NetSurf operation table failed registration");
-    }
-		
-	const char * const messages = [[[NSBundle mainBundle] pathForResource: @"Messages" ofType: @""] UTF8String];
-	const char * const options = cocoa_get_options_file();
+        const char * const messages = [[[NSBundle mainBundle] pathForResource: @"Messages" ofType: @""] UTF8String];
+        const char * const options = cocoa_get_options_file();
 
-	/* initialise logging. Not fatal if it fails but not much we
-	 * can do about it either.
-	 */
-	nslog_init(NULL, &argc, argv);
+        /* initialise logging. Not fatal if it fails but not much we
+         * can do about it either.
+         */
+        nslog_init(NULL, &argc, argv);
 
-	/* user options setup */
-	error = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
-	if (error != NSERROR_OK) {
-		die("Options failed to initialise");
-	}
-	nsoption_read(options, NULL);
-	nsoption_commandline(&argc, argv, NULL);
+        /* user options setup */
+        error = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+        if (error != NSERROR_OK) {
+                die("Options failed to initialise");
+        }
+        nsoption_read(options, NULL);
+        nsoption_commandline(&argc, argv, NULL);
 
         error = messages_add_from_file(messages);
 
-	/* common initialisation */
+        /* common initialisation */
         error = netsurf_init(NULL);
-	if (error != NSERROR_OK) {
-		die("NetSurf failed to initialise");
-	}
+        if (error != NSERROR_OK) {
+                die("NetSurf failed to initialise");
+        }
 
-	/* Initialise filename allocator */
-	filename_initialise();
+        /* Initialise filename allocator */
+        filename_initialise();
 
-	(void)apple_image_init();
-	
-	NSApplication *app = cocoa_prepare_app();
-	
-	for (int i = 1; i < argc; i++) {
-		/* skip -psn_* and other possible options */
-		if (argv[i][0] == '-')
-			continue;
+        (void)apple_image_init();
+
+        NSApplication *app = cocoa_prepare_app();
+
+        for (int i = 1; i < argc; i++) {
+                /* skip -psn_* and other possible options */
+                if (argv[i][0] == '-')
+                        continue;
 
                 error = nsurl_create(argv[i], &url);
                 if (error == NSERROR_OK) {
@@ -280,11 +290,11 @@ int main( int argc, char **argv )
                 if (error != NSERROR_OK) {
                         warn_user(messages_get_errorcode(error), 0);
                 }
-	}
+        }
 
-	[app run];
-	
-	netsurf_exit();
-	
-	return 0;
+        [app run];
+
+        netsurf_exit();
+
+        return 0;
 }
