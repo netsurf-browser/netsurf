@@ -165,7 +165,6 @@ static void html_box_convert_done(html_content *c, bool success)
 		content_set_done(&c->base);
 	}
 
-	html_set_status(c, "");
 	dom_node_unref(html);
 }
 
@@ -1350,7 +1349,6 @@ static void html_stop(struct content *c)
 		/* If there are no further active fetches and we're still
  		 * in the READY state, transition to the DONE state. */
 		if (c->status == CONTENT_STATUS_READY && c->active == 0) {
-			html_set_status(htmlc, "");
 			content_set_done(c);
 		}
 
@@ -1604,15 +1602,6 @@ static nserror html_clone(const struct content *old, struct content **newc)
 	assert(0 && "html_clone should never be called");
 
 	return true;
-}
-
-/**
- * Set the content status.
- */
-
-void html_set_status(html_content *c, const char *extra)
-{
-	content_set_status(&c->base, extra);
 }
 
 

@@ -182,8 +182,6 @@ typedef struct html_content {
 /** Render padding and margin box outlines in html_redraw(). */
 extern bool html_redraw_debug;
 
-void html_set_status(html_content *c, const char *extra);
-
 void html__redraw_a_box(html_content *html, struct box *box);
 
 /**

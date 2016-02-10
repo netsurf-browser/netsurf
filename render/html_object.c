@@ -195,21 +195,6 @@ html_object_callback(hlcache_handle *object,
 		}
 		break;
 
-	case CONTENT_MSG_STATUS:
-		if (event->data.explicit_status_text == NULL) {
-			/* Object content's status text updated */
-			union content_msg_data data;
-			data.explicit_status_text =
-					content_get_status_message(object);
-			html_set_status(c, data.explicit_status_text);
-			content_broadcast(&c->base, CONTENT_MSG_STATUS, data);
-		} else {
-			/* Object content wants to set explicit message */
-			content_broadcast(&c->base, CONTENT_MSG_STATUS,
-					event->data);
-		}
-		break;
-
 	case CONTENT_MSG_REDRAW:
 		if (c->base.status != CONTENT_STATUS_LOADING) {
 			union content_msg_data data = event->data;
@@ -455,7 +440,6 @@ html_object_callback(hlcache_handle *object,
 		/* all objects have arrived */
 		content__reformat(&c->base, false, c->base.available_width,
 				c->base.height);
-		html_set_status(c, "");
 		content_set_done(&c->base);
 	}
 

@@ -115,20 +115,6 @@ html_convert_css_callback(hlcache_handle *css,
 		content_add_error(&parent->base, "?", 0);
 		break;
 
-	case CONTENT_MSG_STATUS:
-		if (event->data.explicit_status_text == NULL) {
-			/* Object content's status text updated */
-			html_set_status(parent,
-					content_get_status_message(css));
-			content_broadcast(&parent->base, CONTENT_MSG_STATUS,
-					event->data);
-		} else {
-			/* Object content wants to set explicit message */
-			content_broadcast(&parent->base, CONTENT_MSG_STATUS,
-					event->data);
-		}
-		break;
-
 	case CONTENT_MSG_POINTER:
 		/* Really don't want this to continue after the switch */
 		return NSERROR_OK;
