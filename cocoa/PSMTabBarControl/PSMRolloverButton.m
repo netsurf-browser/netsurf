@@ -94,9 +94,11 @@
 
 	_myTrackingRectTag = [self addTrackingRect:trackRect owner:self userData:nil assumeInside:mouseInside];
 	if(mouseInside) {
-		[self mouseEntered:nil];
+		//[self mouseEntered:nil];
+		[self setImage:_rolloverImage];
 	} else{
-		[self mouseExited:nil];
+		//[self mouseExited:nil];
+		[self setImage:_usualImage];
 	}
 }
 
