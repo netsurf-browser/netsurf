@@ -593,9 +593,10 @@ nserror html_object_abort_objects(html_content *htmlc)
 			hlcache_handle_abort(object->content);
 			hlcache_handle_release(object->content);
 			object->content = NULL;
-
-			htmlc->base.active--;
-			LOG("%d fetches active", htmlc->base.active);
+			if (object->box != NULL) {
+				htmlc->base.active--;
+				LOG("%d fetches active", htmlc->base.active);
+			}
 			break;
 
 		}
