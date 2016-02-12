@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#define _WITH_GETLINE /* necessary for FreeBSD */
 #include <stdio.h>
 #include <unistd.h>
 #include <gtk/gtk.h>

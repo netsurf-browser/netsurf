@@ -95,6 +95,10 @@
 #include <string.h>
 #include <strings.h>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <curl/curl.h>
 
 #include "utils/nsoption.h"
