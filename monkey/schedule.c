@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2007 Daniel Silverstone <dsilvers@digital-scurf.org>
+ * Copyright 2012 Vincent Sanders <vince@netsurf-browser.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,128 +16,208 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <glib.h>
+#include <sys/time.h>
+#include <time.h>
 #include <stdlib.h>
-#include <stdbool.h>
 
-#include "utils/errors.h"
+#include "utils/log.h"
 
 #include "monkey/schedule.h"
 
-#undef DEBUG_MONKEY_SCHEDULE
-
-#ifdef DEBUG_MONKEY_SCHEDULE
-#include "utils/log.h"
+#ifdef DEBUG_SCHEDULER
+#define SRLOG(x...) LOG(x)
 #else
-#define LOG(fmt, args...) ((void) 0)
+#define SRLOG(x...) ((void) 0)
 #endif
 
-/** Killable callback closure embodiment. */
-typedef struct {
-        void (*callback)(void *);	/**< The callback function. */
-        void *context;			/**< The context for the callback. */
-        bool callback_killed;		/**< Whether or not this was killed. */
-} _nsgtk_callback_t;
+/* linked list of scheduled callbacks */
+static struct nscallback *schedule_list = NULL;
 
-/** List of callbacks which have occurred and are pending running. */
-static GList *pending_callbacks = NULL;
-/** List of callbacks which are queued to occur in the future. */
-static GList *queued_callbacks = NULL;
-/** List of callbacks which are about to be run in this ::schedule_run. */
-static GList *this_run = NULL;
-
-static gboolean
-nsgtk_schedule_generic_callback(gpointer data)
+/**
+ * scheduled callback.
+ */
+struct nscallback
 {
-        _nsgtk_callback_t *cb = (_nsgtk_callback_t *)(data);
-        if (cb->callback_killed) {
-                /* This callback instance has been killed. */
-                LOG("CB at %p already dead.", cb);
-        }
-        queued_callbacks = g_list_remove(queued_callbacks, cb);
-        LOG("CB %p(%p) now pending run", cb->callback, cb->context);
-        pending_callbacks = g_list_append(pending_callbacks, cb);
-        return FALSE;
+  struct nscallback *next;
+  struct timeval tv;
+  void (*callback)(void *p);
+  void *p;
+};
+
+/**
+ * Unschedule a callback.
+ *
+ * \param  callback  callback function
+ * \param  p         user parameter, passed to callback function
+ *
+ * All scheduled callbacks matching both callback and p are removed.
+ */
+static nserror schedule_remove(void (*callback)(void *p), void *p)
+{
+  struct nscallback *cur_nscb;
+  struct nscallback *prev_nscb;
+  struct nscallback *unlnk_nscb;
+
+  /* check there is something on the list to remove */
+  if (schedule_list == NULL) {
+    return NSERROR_OK;
+  }
+
+  SRLOG("removing %p, %p", callback, p);
+
+  cur_nscb = schedule_list;
+  prev_nscb = NULL;
+
+  while (cur_nscb != NULL) {
+    if ((cur_nscb->callback ==  callback) &&
+	(cur_nscb->p ==  p)) {
+      /* item to remove */
+
+      SRLOG("callback entry %p removing  %p(%p)",
+	    cur_nscb, cur_nscb->callback, cur_nscb->p);
+
+      /* remove callback */
+      unlnk_nscb = cur_nscb;
+      cur_nscb = unlnk_nscb->next;
+
+      if (prev_nscb == NULL) {
+	schedule_list = cur_nscb;
+      } else {
+	prev_nscb->next = cur_nscb;
+      }
+      free (unlnk_nscb);
+    } else {
+      /* move to next element */
+      prev_nscb = cur_nscb;
+      cur_nscb = prev_nscb->next;
+    }
+  }
+
+  return NSERROR_OK;
 }
 
-static void
-nsgtk_schedule_kill_callback(void *_target, void *_match)
+/* exported function documented in framebuffer/schedule.h */
+nserror monkey_schedule(int tival, void (*callback)(void *p), void *p)
 {
-        _nsgtk_callback_t *target = (_nsgtk_callback_t *)_target;
-        _nsgtk_callback_t *match = (_nsgtk_callback_t *)_match;
-        if ((target->callback == match->callback) &&
-            (target->context == match->context)) {
-                LOG("Found match for %p(%p), killing.", target->callback, target->context);
-                target->callback = NULL;
-                target->context = NULL;
-                target->callback_killed = true;
-        }
+  struct nscallback *nscb;
+  struct timeval tv;
+  nserror ret;
+
+  /* ensure uniqueness of the callback and context */
+  ret = schedule_remove(callback, p);
+  if ((tival < 0) || (ret != NSERROR_OK)) {
+    return ret;
+  }
+
+  SRLOG("Adding %p(%p) in %d", callback, p, tival);
+
+  tv.tv_sec = tival / 1000; /* miliseconds to seconds */
+  tv.tv_usec = (tival % 1000) * 1000; /* remainder to microseconds */
+
+  nscb = calloc(1, sizeof(struct nscallback));
+
+  gettimeofday(&nscb->tv, NULL);
+  timeradd(&nscb->tv, &tv, &nscb->tv);
+
+  nscb->callback = callback;
+  nscb->p = p;
+
+  /* add to list front */
+  nscb->next = schedule_list;
+  schedule_list = nscb;
+
+  return NSERROR_OK;
 }
 
-static void
-schedule_remove(void (*callback)(void *p), void *p)
+/* exported function documented in framebuffer/schedule.h */
+int monkey_schedule_run(void)
 {
-        _nsgtk_callback_t cb_match = {
-                .callback = callback,
-                .context = p,
-        };
+  struct timeval tv;
+  struct timeval nexttime;
+  struct timeval rettime;
+  struct nscallback *cur_nscb;
+  struct nscallback *prev_nscb;
+  struct nscallback *unlnk_nscb;
 
-        g_list_foreach(queued_callbacks,
-                       nsgtk_schedule_kill_callback, &cb_match);
-        g_list_foreach(pending_callbacks,
-                       nsgtk_schedule_kill_callback, &cb_match);
-        g_list_foreach(this_run,
-                       nsgtk_schedule_kill_callback, &cb_match);
+  if (schedule_list == NULL)
+    return -1;
+
+  /* reset enumeration to the start of the list */
+  cur_nscb = schedule_list;
+  prev_nscb = NULL;
+  nexttime = cur_nscb->tv;
+
+  gettimeofday(&tv, NULL);
+
+  while (cur_nscb != NULL) {
+    if (timercmp(&tv, &cur_nscb->tv, >)) {
+      /* scheduled time */
+
+      /* remove callback */
+      unlnk_nscb = cur_nscb;
+
+      if (prev_nscb == NULL) {
+	schedule_list = unlnk_nscb->next;
+      } else {
+	prev_nscb->next = unlnk_nscb->next;
+      }
+
+      unlnk_nscb->callback(unlnk_nscb->p);
+
+      free(unlnk_nscb);
+
+      /* need to deal with callback modifying the list. */
+      if (schedule_list == NULL)
+	return -1; /* no more callbacks scheduled */
+
+      /* reset enumeration to the start of the list */
+      cur_nscb = schedule_list;
+      prev_nscb = NULL;
+      nexttime = cur_nscb->tv;
+    } else {
+      /* if the time to the event is sooner than the
+       * currently recorded soonest event record it
+       */
+      if (timercmp(&nexttime, &cur_nscb->tv, >)) {
+	nexttime = cur_nscb->tv;
+      }
+      /* move to next element */
+      prev_nscb = cur_nscb;
+      cur_nscb = prev_nscb->next;
+    }
+  }
+
+  /* make rettime relative to now */
+  timersub(&nexttime, &tv, &rettime);
+
+  SRLOG("returning time to next event as %ldms",
+	(rettime.tv_sec * 1000) + (rettime.tv_usec / 1000));
+
+  /* return next event time in milliseconds (24days max wait) */
+  return (rettime.tv_sec * 1000) + (rettime.tv_usec / 1000);
 }
 
-nserror monkey_schedule(int t, void (*callback)(void *p), void *p)
+void monkey_schedule_list(void)
 {
-        _nsgtk_callback_t *cb;
+  struct timeval tv;
+  struct nscallback *cur_nscb;
 
-        /* Kill any pending schedule of this kind. */
-        schedule_remove(callback, p);
-	if (t < 0) {
-		return NSERROR_OK;
-	}
+  gettimeofday(&tv, NULL);
 
-	cb = malloc(sizeof(_nsgtk_callback_t));
-        cb->callback = callback;
-        cb->context = p;
-        cb->callback_killed = false;
-        /* Prepend is faster right now. */
-        LOG("queued a callback to %p(%p) for %d msecs time", callback, p, t);
-        queued_callbacks = g_list_prepend(queued_callbacks, cb);
-        g_timeout_add(t, nsgtk_schedule_generic_callback, cb);
+  LOG("schedule list at %ld:%ld", tv.tv_sec, tv.tv_usec);
 
-	return NSERROR_OK;
+  cur_nscb = schedule_list;
 
+  while (cur_nscb != NULL) {
+    LOG("Schedule %p at %ld:%ld",
+	cur_nscb, cur_nscb->tv.tv_sec, cur_nscb->tv.tv_usec);
+    cur_nscb = cur_nscb->next;
+  }
 }
 
-bool
-schedule_run(void)
-{
-        /* Capture this run of pending callbacks into the list. */
-        this_run = pending_callbacks;
-        
-        if (this_run == NULL)
-                return false; /* Nothing to do */
 
-        /* Clear the pending list. */
-        pending_callbacks = NULL;
-
-        LOG("Captured a run of %d callbacks to fire.", g_list_length(this_run));
-
-        /* Run all the callbacks which made it this far. */
-        while (this_run != NULL) {
-                _nsgtk_callback_t *cb = (_nsgtk_callback_t *)(this_run->data);
-                this_run = g_list_remove(this_run, this_run->data);
-                if (!cb->callback_killed) {
-                  LOG("CB DO %p(%p)", cb->callback, cb->context);
-                  cb->callback(cb->context);
-                } else {
-                  LOG("CB %p(%p) already dead, dropping", cb->callback, cb->context);
-                }
-                free(cb);
-        }
-        return true;
-}
+/*
+ * Local Variables:
+ * c-basic-offset:2
+ * End:
+ */

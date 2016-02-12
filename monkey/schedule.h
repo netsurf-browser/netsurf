@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Daniel Silverstone <dsilvers@digital-scurf.org>
+ * Copyright 2008 Vincent Sanders <vince@simtec.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,11 +16,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NETSURF_GTK_CALLBACK_H
-#define NETSURF_GTK_CALLBACK_H 1
+#ifndef NETSURF_MONKEY_SCHEDULE_H
+#define NETSURF_MONKEY_SCHEDULE_H
 
-nserror monkey_schedule(int t, void (*callback)(void *p), void *p);
+/**
+ * Schedule a callback.
+ *
+ * \param  tival     interval before the callback should be made in ms
+ * \param  callback  callback function
+ * \param  p         user parameter, passed to callback function
+ *
+ * The callback function will be called as soon as possible after t ms have
+ * passed.
+ */
 
-bool schedule_run(void);
+nserror monkey_schedule(int tival, void (*callback)(void *p), void *p);
 
-#endif /* NETSURF_GTK_CALLBACK_H */
+/**
+ * Process scheduled callbacks up to current time.
+ *
+ * @return The number of milliseconds untill the next scheduled event
+ * or -1 for no event.
+ */
+int monkey_schedule_run(void);
+
+/**
+ * Log a list of all scheduled callbacks.
+ */
+void monkey_schedule_list(void);
+
+#endif

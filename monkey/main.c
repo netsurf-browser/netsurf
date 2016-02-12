@@ -19,6 +19,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <sys/select.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "utils/config.h"
 #include "utils/log.h"
@@ -26,12 +30,12 @@
 #include "utils/filepath.h"
 #include "utils/nsoption.h"
 #include "content/urldb.h"
+#include "content/fetchers.h"
 #include "content/fetchers/resource.h"
 #include "content/hlcache.h"
 #include "desktop/gui_misc.h"
 #include "desktop/netsurf.h"
 
-#include "monkey/poll.h"
 #include "monkey/dispatch.h"
 #include "monkey/browser.h"
 #include "monkey/cert.h"
@@ -238,6 +242,70 @@ static struct gui_browser_table monkey_browser_table = {
   .login = gui_401login_open,
 };
 
+static void monkey_run(void)
+{
+  fd_set read_fd_set, write_fd_set, exc_fd_set;
+  int max_fd;
+  int rdy_fd;
+  int schedtm;
+  struct timeval tv;
+  struct timeval* timeout;
+
+  while (!monkey_done) {
+
+    /* clears fdset */
+    fetcher_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
+
+    /* add stdin to the set */
+    if (max_fd < 0) {
+      max_fd = 0;
+    }
+    FD_SET(0, &read_fd_set);
+    FD_SET(0, &exc_fd_set);
+
+    /* discover the next scheduled event time */
+    schedtm = monkey_schedule_run();
+
+    /* setup timeout */
+    switch (schedtm) {
+    case -1:
+      LOG("Iterate blocking");
+      fprintf(stdout, "GENERIC POLL BLOCKING\n");
+      timeout = NULL;
+      break;
+
+    case 0:
+      LOG("Iterate immediate");
+      tv.tv_sec = 0;
+      tv.tv_usec = 0;
+      timeout = &tv;
+      break;
+
+    default:
+      LOG("Iterate non-blocking");
+      fprintf(stdout, "GENERIC POLL TIMED\n");
+      tv.tv_sec = schedtm / 1000; /* miliseconds to seconds */
+      tv.tv_usec = (schedtm % 1000) * 1000; /* remainder to microseconds */
+      timeout = &tv;
+      break;
+    }
+
+    rdy_fd = select(max_fd + 1,
+		    &read_fd_set,
+		    &write_fd_set,
+		    &exc_fd_set,
+		    timeout);
+    if (rdy_fd < 0) {
+      monkey_done = true;
+    } else if (rdy_fd > 0) {
+      if (FD_ISSET(0, &read_fd_set)) {
+	monkey_process_command();
+      }
+    }
+  }
+
+}
+
 int
 main(int argc, char **argv)
 {
@@ -300,8 +368,6 @@ main(int argc, char **argv)
   urldb_load(nsoption_charp(url_file));
   urldb_load_cookies(nsoption_charp(cookie_file));
 
-  monkey_prepare_input();
-
   ret = monkey_register_handler("QUIT", quit_handler);
   if (ret != NSERROR_OK) {
     die("quit handler failed to register");
@@ -313,10 +379,7 @@ main(int argc, char **argv)
   }
 
   fprintf(stdout, "GENERIC STARTED\n");
-
-  while (!monkey_done) {
-    monkey_poll();
-  }
+  monkey_run();
 
   fprintf(stdout, "GENERIC CLOSING_DOWN\n");
   monkey_kill_browser_windows();

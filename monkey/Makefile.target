@@ -33,7 +33,6 @@ LDFLAGS += -lm
 # non optional pkg-configed libs
 $(eval $(call pkg_config_find_and_add,libcurl,Curl ))
 $(eval $(call pkg_config_find_and_add,openssl,OpenSSL))
-$(eval $(call pkg_config_find_and_add,glib-2.0,GLib2))
 
 # optional pkg-config configured libraries
 $(eval $(call pkg_config_find_and_add_enabled,NSSVG,libsvgtiny,SVG))
@@ -58,7 +57,7 @@ endif
 
 # S_MONKEY are sources purely for the MONKEY build
 S_MONKEY := main.c utils.c filetype.c schedule.c bitmap.c plot.c browser.c \
-	download.c 401login.c cert.c font.c poll.c dispatch.c fetch.c
+	download.c 401login.c cert.c font.c dispatch.c fetch.c
 
 S_MONKEY := $(addprefix monkey/,$(S_MONKEY))
 

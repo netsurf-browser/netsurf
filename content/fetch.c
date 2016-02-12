@@ -379,7 +379,7 @@ fetcher_add(lwc_string *scheme, const struct fetcher_operation_table *ops)
 	return NSERROR_OK;
 }
 
-/* exported interface documented in content/fetch.h */
+/* exported interface documented in content/fetchers.h */
 nserror fetcher_fdset(fd_set *read_fd_set,
 		      fd_set *write_fd_set,
 		      fd_set *except_fd_set,
