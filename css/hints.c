@@ -1487,7 +1487,7 @@ static void css_hint_bg_image(
 				(const char *)dom_string_data(attr), &url);
 		dom_string_unref(attr);
 
-		if (error != NSERROR_OK) {
+		if (error == NSERROR_OK) {
 			lwc_string *iurl;
 			lwc_error lerror = lwc_intern_string(nsurl_access(url),
 					nsurl_length(url), &iurl);
