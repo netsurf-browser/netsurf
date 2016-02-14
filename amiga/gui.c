@@ -4377,7 +4377,10 @@ gui_window_create(struct browser_window *bw,
 
 	glob = &browserglob;
 
-	if(locked_screen) UnlockPubScreen(NULL,scrn);
+	if(locked_screen) {
+		UnlockPubScreen(NULL,scrn);
+		locked_screen = FALSE;
+	}
 
 	ami_schedule(0, ami_gui_search_ico_refresh, NULL);
 
