@@ -4365,7 +4365,6 @@ gui_window_create(struct browser_window *bw,
 		if(nsoption_bool(tab_always_show)) ami_toggletabbar(g->shared, true);
 	}
 
-	g->shared->rmbtrapped = FALSE;
 	g->shared->gw = g;
 	cur_gw = g;
 
