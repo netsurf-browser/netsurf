@@ -152,6 +152,7 @@
 
 #define AMINS_SCROLLERPEN NUMDRIPENS
 #define NSA_KBD_SCROLL_PX 10
+#define NSA_MAX_HOTLIST_BUTTON_LEN 20
 
 /* Extra mouse button defines to match those in intuition/intuition.h */
 #define SIDEDOWN  (IECODE_4TH_BUTTON)
@@ -3106,13 +3107,16 @@ static bool ami_gui_hotlist_add(void *userdata, int level, int item, const char 
 	struct ami_gui_tb_userdata *tb_userdata = (struct ami_gui_tb_userdata *)userdata;
 	struct Node *speed_button_node;
 	char menu_icon[1024];
+	char *utf8title = NULL;
 
 	if(level != 1) return false;
 	if(item > AMI_GUI_TOOLBAR_MAX) return false;
 	if(is_folder == true) return false;
 
-	char *utf8title = ami_utf8_easy(title);
-	if(utf8title == NULL) return false;
+	if(utf8_from_local_encoding(title,
+		(strlen(title) < NSA_MAX_HOTLIST_BUTTON_LEN) ? strlen(title) : NSA_MAX_HOTLIST_BUTTON_LEN,
+		&utf8title) != NSERROR_OK)
+		return false;
 
 	char *iconname = ami_gui_get_cache_favicon_name(url, true);
 	if (iconname == NULL) iconname = ASPrintf("icons/content.png");
