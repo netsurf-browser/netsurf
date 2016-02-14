@@ -79,6 +79,7 @@
 /**/
 
 #define NSA_SPACE "blankspace.png"
+#define NSA_MAX_HOTLIST_MENU_LEN 100
 
 enum {
 	NSA_GLYPH_SUBMENU,
@@ -557,7 +558,9 @@ static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 		gwin->menulab[num] = NM_BARLABEL;
 	} else {
 		if((num >= AMI_MENU_HOTLIST) && (num <= AMI_MENU_HOTLIST_MAX)) {
-			gwin->menulab[num] = ami_utf8_easy(label);
+			utf8_from_local_encoding(label,
+			(strlen(label) < NSA_MAX_HOTLIST_MENU_LEN) ? strlen(label) : NSA_MAX_HOTLIST_MENU_LEN,
+			&gwin->menulab[num]);
 		} else if((num >= AMI_MENU_AREXX) && (num <= AMI_MENU_AREXX_MAX)) {
 			gwin->menulab[num] = strdup(label);		
 		} else {
@@ -993,9 +996,9 @@ static bool ami_menu_hotlist_add(void *userdata, int level, int item, const char
 	UBYTE type;
 	STRPTR icon;
 	struct gui_window_2 *gw = (struct gui_window_2 *)userdata;
-	
+
 	if(item >= AMI_MENU_HOTLIST_MAX) return false;
-	
+
 	switch(level) {
 		case 1:
 			type = NM_ITEM;
@@ -1005,7 +1008,7 @@ static bool ami_menu_hotlist_add(void *userdata, int level, int item, const char
 		break;
 		default:
 			/* entries not at level 1 or 2 are not able to be added
-			 * \todo apparently this is possible with 4.1FE, need SDK! */
+			 * \todo construct menus using menuclass instead! */
 			return false;
 		break;
 	}
