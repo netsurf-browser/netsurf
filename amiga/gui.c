@@ -3147,6 +3147,7 @@ static bool ami_gui_hotlist_add(void *userdata, int level, int item, const char 
 
 	speed_button_node = AllocSpeedButtonNode(item,
 					SBNA_Image, lab_item,
+					SBNA_HintInfo, nsurl_access(url),
 					SBNA_UserData, (void *)url,
 					TAG_DONE);
 			

@@ -80,6 +80,7 @@
 #define IA_Label			TAG_IGNORE
 #define SA_Compositing		TAG_IGNORE
 #define SBNA_Text			TAG_IGNORE
+#define SBNA_HintInfo		TAG_IGNORE
 #define TNA_CloseGadget		TAG_IGNORE
 #define TNA_HintInfo		TAG_IGNORE
 #define WA_ContextMenuHook		TAG_IGNORE
