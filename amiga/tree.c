@@ -130,6 +130,7 @@ static void ami_tree_get_window_dimensions(int *width, int *height, void *data);
 void ami_tree_destroy(struct treeview_window *twin)
 {
 	tree_delete(twin->tree);
+	FreeVec(twin->shared_pens);
 	FreeVec(twin);
 }
 
@@ -733,8 +734,6 @@ void ami_tree_open(struct treeview_window *twin,int type)
 	twin->scrollerhook.h_Entry = (void *)ami_tree_scroller_hook;
 	twin->scrollerhook.h_Data = twin;
 
-	twin->shared_pens = ami_AllocMinList();
-	twin->globals.shared_pens = twin->shared_pens;
 	ami_init_layers(&twin->globals, 0, 0, false);
 	ami_tree_menu(twin);
 
@@ -889,7 +888,6 @@ void ami_tree_close(struct treeview_window *twin)
 	DelObjectNoFree(twin->node);
 	ami_plot_release_pens(twin->shared_pens);
 	ami_free_layers(&twin->globals);
-	FreeVec(twin->shared_pens);
 
 	for(i=0;i<AMI_TREE_MENU_ITEMS;i++) {
 		if(twin->menu_name[i] && (twin->menu_name[i] != NM_BARLABEL))
@@ -1459,9 +1457,12 @@ struct treeview_window *ami_tree_create(int flags,
 		return NULL;
 	}
 
+	twin->shared_pens = ami_AllocMinList();
+	twin->globals.shared_pens = twin->shared_pens;
+
 	twin->ssl_data = ssl_data;
 	twin->tree = tree_create(flags, &ami_tree_callbacks, twin);
-	
+
 	return twin;
 }
 

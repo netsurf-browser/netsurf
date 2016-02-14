@@ -53,7 +53,7 @@ void ami_object_fini(void)
 }
 
 /* Slightly abstract MinList initialisation */
-void ami_NewMinList(struct MinList *list)
+static void ami_NewMinList(struct MinList *list)
 {
 	if(list == NULL) return;
 	NewnsList((struct nsList *)list);
