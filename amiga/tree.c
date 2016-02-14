@@ -733,6 +733,8 @@ void ami_tree_open(struct treeview_window *twin,int type)
 	twin->scrollerhook.h_Entry = (void *)ami_tree_scroller_hook;
 	twin->scrollerhook.h_Data = twin;
 
+	twin->shared_pens = ami_AllocMinList();
+	twin->globals.shared_pens = twin->shared_pens;
 	ami_init_layers(&twin->globals, 0, 0, false);
 	ami_tree_menu(twin);
 
@@ -1459,9 +1461,6 @@ struct treeview_window *ami_tree_create(int flags,
 
 	twin->ssl_data = ssl_data;
 	twin->tree = tree_create(flags, &ami_tree_callbacks, twin);
-
-	twin->shared_pens = ami_AllocMinList();
-	twin->globals.shared_pens = twin->shared_pens;
 	
 	return twin;
 }
