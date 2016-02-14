@@ -886,8 +886,8 @@ void ami_tree_close(struct treeview_window *twin)
 	twin->win = NULL;
 	DisposeObject(twin->objects[OID_MAIN]);
 	DelObjectNoFree(twin->node);
-	ami_free_layers(&twin->globals);
 	ami_plot_release_pens(twin->shared_pens);
+	ami_free_layers(&twin->globals);
 	FreeVec(twin->shared_pens);
 
 	for(i=0;i<AMI_TREE_MENU_ITEMS;i++) {
