@@ -104,7 +104,6 @@ struct treeview_window {
 	int max_height;
 	struct gui_globals globals;
 	struct sslcert_session_data *ssl_data;
-	BOOL rmbtrapped;
 	char *wintitle;
 	char *sslerr;
 	char *sslaccept;
@@ -978,31 +977,6 @@ BOOL ami_tree_event(struct treeview_window *twin)
 				if(ami_gui_get_space_box(twin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
 					warn_user("NoMemory", "");
 					break;
-				}
-
-				if((twin->win->MouseX - bbox->Left >=0) &&
-					(twin->win->MouseX - bbox->Width - bbox->Left <=0) &&
-					(twin->win->MouseY - bbox->Top >=0) &&
-					(twin->win->MouseY - bbox->Height - bbox->Top <=0))
-				{
-					if((twin->type != AMI_TREE_SSLCERT) &&
-						(twin->rmbtrapped == FALSE))
-					{
-#ifdef __amigaos4__
-						SetWindowAttr(twin->win, WA_RMBTrap, (APTR)(BOOL)TRUE, sizeof(BOOL));
-#endif
-						twin->rmbtrapped = TRUE;
-					}
-				}
-				else
-				{
-					if(twin->rmbtrapped == TRUE)
-					{
-#ifdef __amigaos4__
-						SetWindowAttr(twin->win, WA_RMBTrap, (APTR)(BOOL)FALSE, sizeof(BOOL));
-#endif
-						twin->rmbtrapped = FALSE;
-					}
 				}
 
 				GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&xs);
