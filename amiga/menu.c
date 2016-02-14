@@ -72,12 +72,6 @@
 #include "amiga/utf8.h"
 #include "amiga/schedule.h"
 
-/* This is here temporarily until we get a new SDK */
-#define LABEL_MenuMode          (LABEL_Dummy+12)
-    /* (BOOL) Use highlighting that fits in better visually in a
-       menu. Defaults to FALSE. */
-/**/
-
 #define NSA_SPACE "blankspace.png"
 #define NSA_MAX_HOTLIST_MENU_LEN 100
 
