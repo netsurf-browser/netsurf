@@ -329,6 +329,9 @@ OBJROOT = build-$(HOST)-$(TARGET)$(SUBTARGET)
 DEPROOT := $(OBJROOT)/deps
 TOOLROOT := $(OBJROOT)/tools
 
+# keep C flags from environment
+CFLAGS_ENV := $(CFLAGS)
+CXXFLAGS_ENV := $(CXXFLAGS)
 
 # A macro that conditionaly adds flags to the build when a feature is enabled.
 #
@@ -470,14 +473,17 @@ endef
 #   Makefile.config
 COMMON_WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wcast-align \
 	-Wwrite-strings -Wmissing-declarations -Wuninitialized
+
 ifneq ($(CC_MAJOR),2)
   COMMON_WARNFLAGS += -Wno-unused-parameter
 endif
+
 # deal with lots of unwanted warnings from javascript
 ifeq ($(call cc_ver_ge,4,6),1)
-	COMMON_WARNFLAGS += -Wno-unused-but-set-variable
+  COMMON_WARNFLAGS += -Wno-unused-but-set-variable
 endif
-# deal with chaging warning flags on differing HOST systems
+
+# deal with chaging warning flags for different platforms
 ifeq ($(HOST),OpenBSD)
   # OpenBSD headers are not compatible with redundant declaration warning
   COMMON_WARNFLAGS += -Wno-redundant-decls
@@ -723,7 +729,7 @@ $$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
 		    > $$(DEPROOT)/$(3)
 	$$(VQ)echo " COMPILE: $(1)"
 	$$(Q)$$(RM) $$(OBJROOT)/$(2)
-	$$(Q)$$(CC) $$(CFLAGS) $$(COMMON_WARNFLAGS) $$(CWARNFLAGS) -o $$(OBJROOT)/$(2) -c $(1)
+	$$(Q)$$(CC) $$(COMMON_WARNFLAGS) $$(CWARNFLAGS) $$(CFLAGS) $(CFLAGS_ENV) -o $$(OBJROOT)/$(2) -c $(1)
 
 endef
 else
@@ -732,7 +738,7 @@ $$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
 	$$(VQ)echo " COMPILE: $(1)"
 	$$(Q)$$(RM) $$(DEPROOT)/$(3)
 	$$(Q)$$(RM) $$(OBJROOT)/$(2)
-	$$(Q)$$(CC) $$(CFLAGS) $$(COMMON_WARNFLAGS) $$(CWARNFLAGS) \
+	$$(Q)$$(CC) $$(COMMON_WARNFLAGS) $$(CWARNFLAGS) $$(CFLAGS) $(CFLAGS_ENV) \
 		    -MMD -MT '$$(DEPROOT)/$(3) $$(OBJROOT)/$(2)' \
 		    -MF $$(DEPROOT)/$(3) -o $$(OBJROOT)/$(2) -c $(1)
 
@@ -748,7 +754,7 @@ $$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
 		    > $$(DEPROOT)/$(3)
 	$$(VQ)echo " COMPILE: $(1)"
 	$$(Q)$$(RM) $$(OBJROOT)/$(2)
-	$$(Q)$$(CXX) $$(CXXFLAGS) $$(COMMON_WARNFLAGS) $$(CXXWARNFLAGS) -o $$(OBJROOT)/$(2) -c $(1)
+	$$(Q)$$(CXX) $$(COMMON_WARNFLAGS) $$(CXXWARNFLAGS) $$(CXXFLAGS) $(CXXFLAGS_ENV) -o $$(OBJROOT)/$(2) -c $(1)
 
 endef
 
