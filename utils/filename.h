@@ -21,7 +21,7 @@
 
 #include <stdbool.h>
 
-#ifdef riscos
+#ifdef __riscos__
 #define TEMP_FILENAME_PREFIX "<Wimp$ScrapDir>/WWW/NetSurf/Misc"
 #else
 #define TEMP_FILENAME_PREFIX "/tmp/WWW/NetSurf/Misc"
