@@ -209,12 +209,12 @@ NSOPTION_INTEGER(max_fetchers_per_host, 5)
 NSOPTION_INTEGER(max_cached_fetch_handles, 6)
 
 /** Number of times to retry timed-out fetches before giving up. */
-NSOPTION_UINT(max_retried_fetches, 3)
+NSOPTION_UINT(max_retried_fetches, 1)
 
 /** Number of seconds to allow for a DNS-resolution+connect() before timing out
  * the cURL socket.
  */
-NSOPTION_UINT(curl_fetch_timeout, 10)
+NSOPTION_UINT(curl_fetch_timeout, 30)
 
 /** Suppress debug output from cURL. */
 NSOPTION_BOOL(suppress_curl_debug, true)
