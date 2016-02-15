@@ -286,6 +286,9 @@ case ${TARGET} in
 	    "arm-unknown-riscos")
 		export GCCSDK_INSTALL_ENV=/opt/netsurf/${HOST}/env
 		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${HOST}/cross/bin
+		# headers and compiler combination throw these warnings
+		export CFLAGS="-Wno-redundant-decls -Wno-parentheses"
+                export LDFLAGS=-lcares
 		;;
 
 	    "m68k-atari-mint")
