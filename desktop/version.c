@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Vincent Sanders <vince@netsurf-browser.org>
+ * Copyright 2016 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -20,7 +20,7 @@
 
 #include "desktop/version.h"
 
-const char * const netsurf_version = "3.4 (Dev"
+const char * const netsurf_version = "3.5 (Dev"
 #if defined(CI_BUILD)
 	" CI #" CI_BUILD
 #endif
