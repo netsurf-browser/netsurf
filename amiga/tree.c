@@ -892,11 +892,13 @@ void ami_tree_close(struct treeview_window *twin)
 	for(i=0;i<AMI_TREE_MENU_ITEMS;i++) {
 		if(twin->menu_name[i] && (twin->menu_name[i] != NM_BARLABEL))
 			ami_utf8_free(twin->menu_name[i]);
+		twin->menu_name[i] = NULL;
 	}
 
 	FreeVec(twin->menu);
 	twin->menu = NULL;
 	ami_utf8_free(twin->wintitle);
+	twin->wintitle = NULL;
 	if(twin->type == AMI_TREE_SSLCERT) {
 		ami_utf8_free(twin->sslerr);
 		ami_utf8_free(twin->sslaccept);

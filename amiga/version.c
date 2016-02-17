@@ -28,7 +28,7 @@
 #if defined(CI_BUILD)
 #define NETSURF_VERSION_MINOR CI_BUILD
 #else
-#define NETSURF_VERSION_MINOR "6000" "4"
+#define NETSURF_VERSION_MINOR "6000" "5"
 #endif
 
 static const __attribute__((used)) char *verstag = "\0$VER: NetSurf " NETSURF_VERSION_MAJOR "." NETSURF_VERSION_MINOR " (" WT_COMPILEDATE ")\0";
