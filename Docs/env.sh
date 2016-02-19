@@ -129,7 +129,7 @@ export MAKE
 ################ OS Package installation ################
 
 # deb packages for dpkg based systems
-NS_DEV_DEB="build-essential pkg-config git gperf libcurl3-dev libssl-dev libpng-dev libjpeg-dev libmozjs185-dev"
+NS_DEV_DEB="build-essential pkg-config git gperf libcurl3-dev libssl-dev libpng-dev libjpeg-dev"
 NS_TOOL_DEB="flex bison libhtml-parser-perl"
 if [ "x${NETSURF_GTK_MAJOR}" = "x3" ]; then
     NS_GTK_DEB="libgtk-3-dev librsvg2-dev"
@@ -144,7 +144,7 @@ ns-apt-get-install()
 }
 
 # RPM packages for rpm based systems (tested on fedora 20)
-NS_DEV_RPM="git gcc pkgconfig libexpat-devel openssl-devel js-devel-1.8.5 libcurl-devel perl-Digest-MD5-File libjpeg-devel libpng-devel"
+NS_DEV_RPM="git gcc pkgconfig libexpat-devel openssl-devel libcurl-devel perl-Digest-MD5-File libjpeg-devel libpng-devel"
 NS_TOOL_RPM="flex bison"
 if [ "x${NETSURF_GTK_MAJOR}" = "x3" ]; then
     NS_GTK_RPM="gtk3-devel librsvg2-devel"
@@ -188,7 +188,7 @@ ns-freebsdpkg-install()
 }
 
 # generic for help text
-NS_DEV_GEN="git, gcc, pkgconfig, expat library, openssl library, spidermonkey-1.8.5 library, libcurl, perl, perl MD5 digest, libjpeg library, libpng library"
+NS_DEV_GEN="git, gcc, pkgconfig, expat library, openssl library, libcurl, perl, perl MD5 digest, libjpeg library, libpng library"
 NS_TOOL_GEN="flex tool, bison tool"
 if [ "x${NETSURF_GTK_MAJOR}" = "x3" ]; then
     NS_GTK_GEN="gtk+ 3 toolkit library, librsvg2 library"
