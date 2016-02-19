@@ -2966,23 +2966,28 @@ void ami_quit_netsurf_delayed(void)
 static void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen, BOOL donotwait)
 {
 	if(scrn == NULL) return;
+
+	if(locked_screen) {
+		UnlockPubScreen(NULL,scrn);
+		locked_screen = FALSE;
+	}
+
 	if(CloseScreen(scrn) == TRUE) {
-		if(locked_screen == FALSE) {
+		if(screen_signal != -1) {
 			FreeSignal(screen_signal);
 			screen_signal = -1;
 			scrn = NULL;
 		}
 		return;
 	}
-	if(locked_screen == TRUE) return;
 	if(donotwait == TRUE) return;
 
 	/* If this is our own screen, wait for visitor windows to close */
-	if(screen_signal != -1) {
-		ULONG scrnsig = 1 << screen_signal;
-		LOG("Waiting for visitor windows to close... (signal)");
-		Wait(scrnsig);
-	}
+	if(screen_signal == -1) return;
+
+	ULONG scrnsig = 1 << screen_signal;
+	LOG("Waiting for visitor windows to close... (signal)");
+	Wait(scrnsig);
 
 	while (CloseScreen(scrn) == FALSE) {
 		LOG("Waiting for visitor windows to close... (polling)");
@@ -3011,10 +3016,6 @@ void ami_try_quit(void)
 
 static void gui_quit(void)
 {
-	LOG("Closing screen");
-	ami_gui_close_screen(scrn, locked_screen, FALSE);
-	if(nsscreentitle) FreeVec(nsscreentitle);
-
 	ami_theme_throbber_free();
 
 	urldb_save(nsoption_charp(url_file));
@@ -5704,6 +5705,11 @@ int main(int argc, char** argv)
 
 	ami_object_fini();
 	ami_bitmap_fini();
+
+	LOG("Closing screen");
+	ami_gui_close_screen(scrn, locked_screen, FALSE);
+	if(nsscreentitle) FreeVec(nsscreentitle);
+
 	ami_libs_close();
 
 	return RETURN_OK;
