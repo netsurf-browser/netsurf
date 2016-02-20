@@ -116,7 +116,7 @@ nsgtk_init_resource_path(const char *config_home)
 
 	if (config_home != NULL) {
 		resource_path_len = snprintf(NULL, 0,
-					     "%s:${NETSURFRES}:%s:./gtk/res",
+					     "%s:${NETSURFRES}:%s",
 					     config_home,
 					     GTK_RESPATH);
 		resource_path = malloc(resource_path_len + 1);
@@ -124,12 +124,12 @@ nsgtk_init_resource_path(const char *config_home)
 			return NULL;
 		}
 		snprintf(resource_path, resource_path_len + 1,
-			 "%s:${NETSURFRES}:%s:./gtk/res",
+			 "%s:${NETSURFRES}:%s",
 			 config_home,
 			 GTK_RESPATH);
 	} else {
 		resource_path_len = snprintf(NULL, 0,
-					     "${NETSURFRES}:%s:./gtk/res",
+					     "${NETSURFRES}:%s",
 					     GTK_RESPATH);
 		resource_path = malloc(resource_path_len + 1);
 		if (resource_path == NULL) {
@@ -137,7 +137,7 @@ nsgtk_init_resource_path(const char *config_home)
 		}
 		snprintf(resource_path,
 			 resource_path_len + 1,
-			 "${NETSURFRES}:%s:./gtk/res",
+			 "${NETSURFRES}:%s",
 			 GTK_RESPATH);
 	}
 
