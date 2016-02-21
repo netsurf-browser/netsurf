@@ -161,6 +161,7 @@ netsurf.zip: $(EXETARGET)
 	$(eval $@_TMPDIR := $(shell mktemp -d))
 	$(Q) $(RM) $@
 	$(Q) rsync --archive --verbose $(CURDIR)/!NetSurf $($@_TMPDIR)
+	$(Q) $(CURDIR)/utils/git-date.sh $(CURDIR)/riscos/distribution
 	$(Q) rsync --archive --verbose $(CURDIR)/riscos/distribution/!Boot $($@_TMPDIR)
 	$(Q) rsync --archive --verbose $(CURDIR)/riscos/distribution/!System $($@_TMPDIR)
 	$(Q) rsync --archive --verbose $(CURDIR)/riscos/distribution/3rdParty $($@_TMPDIR)
