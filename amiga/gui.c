@@ -1116,6 +1116,9 @@ static void gui_init2(int argc, char** argv)
 
 static void ami_update_buttons(struct gui_window_2 *gwin)
 {
+#ifndef __amigaos4__
+#warning these buttons aren't updating on OS3
+#endif
 	long back=FALSE,forward=TRUE,tabclose=FALSE,stop=FALSE,reload=FALSE;
 	long storage = FALSE;
 
