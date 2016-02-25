@@ -568,6 +568,7 @@ void ami_bitmap_fini(void)
 
 static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 {
+#ifdef __amigaos4__
 	struct redraw_context ctx = {
 		.interactive = false,
 		.background_images = true,
@@ -591,7 +592,6 @@ static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 
 	content_scaled_redraw(content, plot_width, plot_height, &ctx);
 
-#ifdef __amigaos4__
 	BltBitMapTags(	BLITA_SrcX, 0,
 					BLITA_SrcY, 0,
 					BLITA_Width, bitmap->width,
@@ -606,9 +606,6 @@ static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 					TAG_DONE);
 
 	ami_bitmap_argb_to_rgba(bitmap);
-#else
-#warning FIXME for OS3 (in current state none of bitmap_render can work!)
-#endif
 
 	/**\todo In theory we should be able to move the bitmap to our native area
 		to try to avoid re-conversion (at the expense of memory) */
@@ -621,6 +618,9 @@ static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 	 * having an invalid pointer here causes NetSurf to crash.
 	 */
 	glob = temp_gg;
+#else
+#warning FIXME for OS3 (in current state none of bitmap_render can work!)
+#endif
 
 	return NSERROR_OK;
 }
