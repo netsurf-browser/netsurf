@@ -39,8 +39,27 @@
 ;;; Script execution starts here ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(set osver (getversion))
+(set osver (/ osver 65536))
+
 (if (= @app-name "NetSurfAutoInstall") (set #AutoInstall 1))
 (set @app-name "NetSurf")
+
+(set #netsurf-readme "NetSurf.readme")
+(if (= (exists #netsurf-readme) 0)
+	(
+		(set #netsurf-readme "NetSurf_os3.readme")
+		(if (OR (>= osver 50) (< osver 44))
+			(abort "This archive is for AmigaOS 3.5 or 3.9 ONLY.")
+		)
+	)
+	;else
+	(
+		(if (< osver 50)
+			(abort "This archive is for AmigaOS 4.0 and higher ONLY.")
+		)
+	)
+)
 
 (if (<> #AutoInstall 1) (welcome))
 
@@ -80,8 +99,6 @@
 
 (working "Checking existing installation...")
 (set #icon-exists (exists (tackon @default-dest "NetSurf.info")))
-(set osver (getversion))
-(set osver (/ osver 65536))
 
 (complete 10)
 
@@ -203,7 +220,7 @@
 (copyfiles
 	(prompt "Copying files")
 	(source "")
-	(choices "Resources" "Rexx" "NetSurf.guide" "NetSurf.readme")
+	(choices "Resources" "Rexx" "NetSurf.guide" #netsurf-readme)
 	(help @copyfiles-help)
 	(dest @default-dest)
 	(infos)
