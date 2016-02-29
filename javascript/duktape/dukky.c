@@ -1,6 +1,8 @@
 /*
  * Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>
- * Copyright 2015 All of us.
+ * Copyright 2015 Daniel Dilverstone <dsilvers@netsurf-browser.org>
+ * Copyright 2016 Michael Drake <tlsa@netsurf-browser.org>
+ * Copyright 2016 John-Mark Bell <jmb@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
