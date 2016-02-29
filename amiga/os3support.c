@@ -273,6 +273,10 @@ ULONG RefreshSetGadgetAttrs(struct Gadget *g, struct Window *w, struct Requester
 	return RefreshSetGadgetAttrsA(g,w,r,(struct TagItem *) &tag1);
 }
 
+APTR NewObject(struct IClass * classPtr, CONST_STRPTR classID, ULONG tagList, ...)
+{
+	return NewObjectA(classPtr, classID, (const struct TagItem *) &tagList);
+}
 
 /* Utility */
 struct FormatContext

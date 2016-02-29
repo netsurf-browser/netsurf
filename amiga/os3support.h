@@ -242,6 +242,7 @@ struct Node *GetSucc(struct Node *node);
 uint32 GetAttrs(Object *obj, Tag tag1, ...);
 ULONG RefreshSetGadgetAttrs(struct Gadget *g, struct Window *w, struct Requester *r, Tag tag1, ...);
 ULONG RefreshSetGadgetAttrsA(struct Gadget *g, struct Window *w, struct Requester *r, struct TagItem *tags);
+APTR NewObject(struct IClass * classPtr, CONST_STRPTR classID, ULONG tagList, ...);
 
 /* Utility */
 char *ASPrintf(const char *fmt, ...);
