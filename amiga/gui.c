@@ -166,6 +166,12 @@
 #define NSA_STATUS_TEXT STRINGA_TextVal
 #endif
 
+#ifdef __amigaos4__
+#define BOOL_MISMATCH(a,b) ((a == FALSE) && (b != FALSE)) || ((a != FALSE) && (b == FALSE))
+#else
+#define BOOL_MISMATCH(a,b) (1)
+#endif
+
 static bool ami_quit = false;
 
 extern struct gui_utf8_table *amiga_utf8_table;
@@ -1116,17 +1122,14 @@ static void gui_init2(int argc, char** argv)
 
 static void ami_update_buttons(struct gui_window_2 *gwin)
 {
-#ifndef __amigaos4__
-#warning these buttons aren't updating on OS3
-#endif
-	long back=FALSE,forward=TRUE,tabclose=FALSE,stop=FALSE,reload=FALSE;
-	long storage = FALSE;
+	long back=FALSE, forward=FALSE, tabclose=FALSE, stop=FALSE, reload=FALSE;
+	long s_back, s_forward, s_tabclose, s_stop, s_reload;
 
 	if(!browser_window_back_available(gwin->gw->bw))
 		back=TRUE;
 
-	if(browser_window_forward_available(gwin->gw->bw))
-		forward=FALSE;
+	if(!browser_window_forward_available(gwin->gw->bw))
+		forward=TRUE;
 
 	if(!browser_window_stop_available(gwin->gw->bw))
 		stop=TRUE;
@@ -1147,30 +1150,35 @@ static void ami_update_buttons(struct gui_window_2 *gwin)
 		}
 	}
 
-	GetAttr(GA_Disabled, gwin->objects[GID_BACK], (uint32 *)&storage);
-	if(storage != back)
+#ifdef __amigaos4__
+	GetAttr(GA_Disabled, gwin->objects[GID_BACK], (long *)&s_back);
+	GetAttr(GA_Disabled, gwin->objects[GID_FORWARD], (long *)&s_forward);
+	GetAttr(GA_Disabled, gwin->objects[GID_RELOAD], (long *)&s_reload);
+	GetAttr(GA_Disabled, gwin->objects[GID_STOP], (long *)&s_stop);
+#endif
+
+	if(BOOL_MISMATCH(storage, back))
 		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_BACK],
 			gwin->win, NULL, GA_Disabled, back, TAG_DONE);
 
-	GetAttr(GA_Disabled, gwin->objects[GID_FORWARD], (uint32 *)&storage);
-	if(storage != forward)
+	if(BOOL_MISMATCH(storage, forward))
 		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_FORWARD],
 			gwin->win, NULL, GA_Disabled, forward, TAG_DONE);
 
-	GetAttr(GA_Disabled, gwin->objects[GID_RELOAD], (uint32 *)&storage);
-	if(storage != reload)
+	if(BOOL_MISMATCH(storage, reload))
 		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_RELOAD],
 			gwin->win, NULL, GA_Disabled, reload, TAG_DONE);
 
-	GetAttr(GA_Disabled, gwin->objects[GID_STOP], (uint32 *)&storage);
-	if(storage != stop)
+	if(BOOL_MISMATCH(storage, stop))
 		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_STOP],
 			gwin->win, NULL, GA_Disabled, stop, TAG_DONE);
 
 	if(ClickTabBase->lib_Version < 53) {
 		if(gwin->tabs <= 1) tabclose = TRUE;
-		GetAttr(GA_Disabled, gwin->objects[GID_CLOSETAB], (uint32 *)&storage);
-		if(storage != tabclose)
+#ifdef __amigaos4__
+		GetAttr(GA_Disabled, gwin->objects[GID_CLOSETAB], (long *)&s_tabclose);
+#endif
+		if(BOOL_MISMATCH(storage, tabclose))
 			SetGadgetAttrs((struct Gadget *)gwin->objects[GID_CLOSETAB],
 				gwin->win, NULL, GA_Disabled, tabclose, TAG_DONE);
 	}
@@ -3766,6 +3774,8 @@ gui_window_create(struct browser_window *bw,
 	ULONG refresh_mode = WA_SmartRefresh;
 	ULONG defer_layout = TRUE;
 	ULONG idcmp_sizeverify = IDCMP_SIZEVERIFY;
+
+	LOG("Creating window");
 
 	if (!scrn) ami_openscreenfirst();
 

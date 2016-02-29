@@ -189,6 +189,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool for
 	}
 
 	init_layers_count++;
+	LOG("Layer initialised (total: %d)", init_layers_count);
 }
 
 void ami_free_layers(struct gui_globals *gg)
