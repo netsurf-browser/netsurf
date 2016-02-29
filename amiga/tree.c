@@ -672,12 +672,14 @@ static void ami_tree_menu(struct treeview_window *twin)
 		twin->menu[24].nm_Label = twin->menu_name[24];
 
 		twin->menu[25].nm_Type = NM_END;
+		twin->menu_name[25] = NULL;
 	}
 }
 
 static void ami_tree_update_buttons(struct treeview_window *twin)
 {
 	if(twin->type == AMI_TREE_SSLCERT) return;
+	if(twin->menu == NULL) return;
 
 	if(twin->type != AMI_TREE_HOTLIST) {
 		OffMenu(twin->win, AMI_TREE_MENU_NEWDIR);

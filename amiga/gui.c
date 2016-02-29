@@ -3739,7 +3739,7 @@ HOOKF(void, ami_scroller_hook, Object *, object, struct IntuiMessage *)
 		break;
 
 		default:
-			LOG("IDCMP hook unhandled event: %d\n", msg->Class);
+			LOG("IDCMP hook unhandled event: %ld\n", msg->Class);
 		break;
 	}
 //	ReplyMsg((struct Message *)msg);

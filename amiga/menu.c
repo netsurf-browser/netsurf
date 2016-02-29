@@ -43,6 +43,7 @@
 
 #include "utils/nsoption.h"
 #include "utils/messages.h"
+#include "utils/log.h"
 
 #include "desktop/hotlist.h"
 #include "desktop/browser.h"
@@ -516,7 +517,7 @@ void ami_free_menulabs(struct gui_window_2 *gwin)
 {
 	int i;
 
-	for(i=0;i<=AMI_MENU_AREXX_MAX;i++) {
+	for(i=0;i<AMI_MENU_AREXX_MAX;i++) {
 		if(gwin->menulab[i] && (gwin->menulab[i] != NM_BARLABEL)) {
 			if(gwin->menutype[i] & MENU_IMAGE) {
 				if(gwin->menuobj[i]) DisposeObject(gwin->menuobj[i]);
@@ -526,6 +527,7 @@ void ami_free_menulabs(struct gui_window_2 *gwin)
 
 			if(i >= AMI_MENU_AREXX) {
 				if(gwin->menu_hook[i].h_Data) free(gwin->menu_hook[i].h_Data);
+				gwin->menu_hook[i].h_Data = NULL;
 			}
 		}
 
@@ -535,10 +537,7 @@ void ami_free_menulabs(struct gui_window_2 *gwin)
 	}
 
 	FreeVec(gwin->menutype);
-	FreeVec(gwin->menu);
-
 	gwin->menutype = NULL;
-	gwin->menu = NULL;
 }
 
 static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
@@ -555,7 +554,7 @@ static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 			utf8_from_local_encoding(label,
 			(strlen(label) < NSA_MAX_HOTLIST_MENU_LEN) ? strlen(label) : NSA_MAX_HOTLIST_MENU_LEN,
 			&gwin->menulab[num]);
-		} else if((num >= AMI_MENU_AREXX) && (num <= AMI_MENU_AREXX_MAX)) {
+		} else if((num >= AMI_MENU_AREXX) && (num < AMI_MENU_AREXX_MAX)) {
 			gwin->menulab[num] = strdup(label);		
 		} else {
 			gwin->menulab[num] = ami_utf8_easy(messages_get(label));
@@ -585,13 +584,14 @@ static void ami_init_menulabs(struct gui_window_2 *gwin)
 {
 	int i;
 
-	gwin->menutype = ami_misc_allocvec_clear(AMI_MENU_AREXX_MAX + 1, 0);
+	gwin->menutype = ami_misc_allocvec_clear(sizeof(UBYTE) * (AMI_MENU_AREXX_MAX + 1), 0);
 
 	for(i=0;i <= AMI_MENU_AREXX_MAX;i++)
 	{
 		gwin->menutype[i] = NM_IGNORE;
 		gwin->menulab[i] = NULL;
 		gwin->menuobj[i] = NULL;
+		gwin->menuicon[i] = NULL;
 	}
 
 	ami_menu_alloc_item(gwin, M_PROJECT, NM_TITLE, "Project",       0, NULL, NULL, NULL);
@@ -704,17 +704,25 @@ static void ami_init_menulabs(struct gui_window_2 *gwin)
 /* Menu refresh for hotlist */
 void ami_menu_refresh(struct gui_window_2 *gwin)
 {
+	return; /**\todo fix this after migrating to menuclass */
+
 	struct Menu *menu;
 
+	LOG("Clearing MenuStrip");
 	SetAttrs(gwin->objects[OID_MAIN],
 			WINDOW_MenuStrip, NULL,
 			TAG_DONE);
 
+	LOG("Freeing menu");
 	ami_menu_free(gwin);
+
+	LOG("Freeing menu labels");
 	ami_free_menulabs(gwin);
 
+	LOG("Creating new menu");
 	menu = ami_menu_create(gwin);
 
+	LOG("Attaching MenuStrip %p to %p", menu, gwin->objects[OID_MAIN]);
 	SetAttrs(gwin->objects[OID_MAIN],
 			WINDOW_MenuStrip, menu,
 			TAG_DONE);
@@ -801,7 +809,7 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 	if(menu_glyphs_loaded == false)
 		ami_menu_load_glyphs(dri);
 
-	for(i=0; i <= AMI_MENU_AREXX_MAX; i++)
+	for(i=0; i < AMI_MENU_AREXX_MAX; i++)
 	{
 		if(gwin->menutype[i] == NM_TITLE) {
 			j = i + 1;
@@ -926,8 +934,8 @@ struct Menu *ami_menu_create(struct gui_window_2 *gwin)
 	gwin->imenu = CreateMenus(gwin->menu, TAG_DONE);
 	LayoutMenus(gwin->imenu, gwin->vi,
 		GTMN_NewLookMenus, TRUE, TAG_DONE);
-
-	/**\todo do we even need to store/keep gwin->menu? **/
+	FreeVec(gwin->menu); /**\todo this should be local to this function */
+	gwin->menu = NULL;
 
 	return gwin->imenu;
 }
