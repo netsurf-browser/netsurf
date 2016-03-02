@@ -334,8 +334,6 @@ static bool ami_gui_check_resource(char *fullpath, const char *file)
 	ami_gui_map_filename(&remapped, fullpath, file, "Resource.map");
 	netsurf_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped);
 
-	LOG("Checking for %s", fullpath);
-	
 	lock = Lock(fullpath, ACCESS_READ);
 	if(lock)
 	{
