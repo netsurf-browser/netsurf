@@ -1365,13 +1365,14 @@ static void ami_update_quals(struct gui_window_2 *gwin)
 /* exported interface documented in amiga/gui.h */
 nserror ami_gui_get_space_box(Object *obj, struct IBox **bbox)
 {
-	if(LIB_IS_AT_LEAST((struct Library *)SpaceBase, 53, 6)) {
 #ifdef __amigaos4__
+	if(LIB_IS_AT_LEAST((struct Library *)SpaceBase, 53, 6)) {
 		*bbox = AllocVecTagList(sizeof(struct IBox), NULL);
 		if(*bbox == NULL) return NSERROR_NOMEM;
 		GetAttr(SPACE_RenderBox, obj, (ULONG *)*bbox);
+	} else
 #endif
-	} else {
+	{
 		GetAttr(SPACE_AreaBox, obj, (ULONG *)bbox);
 	}
 
@@ -1381,9 +1382,11 @@ nserror ami_gui_get_space_box(Object *obj, struct IBox **bbox)
 /* exported interface documented in amiga/gui.h */
 void ami_gui_free_space_box(struct IBox *bbox)
 {
+#ifdef __amigaos4__
 	if(LIB_IS_AT_LEAST((struct Library *)SpaceBase, 53, 6)) {
 		FreeVec(bbox);
 	}
+#endif
 }
 
 static bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
