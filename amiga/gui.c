@@ -1151,34 +1151,34 @@ static void ami_update_buttons(struct gui_window_2 *gwin)
 	}
 
 #ifdef __amigaos4__
-	GetAttr(GA_Disabled, gwin->objects[GID_BACK], (long *)&s_back);
-	GetAttr(GA_Disabled, gwin->objects[GID_FORWARD], (long *)&s_forward);
-	GetAttr(GA_Disabled, gwin->objects[GID_RELOAD], (long *)&s_reload);
-	GetAttr(GA_Disabled, gwin->objects[GID_STOP], (long *)&s_stop);
+	GetAttr(GA_Disabled, gwin->objects[GID_BACK], (uint32 *)&s_back);
+	GetAttr(GA_Disabled, gwin->objects[GID_FORWARD], (uint32 *)&s_forward);
+	GetAttr(GA_Disabled, gwin->objects[GID_RELOAD], (uint32 *)&s_reload);
+	GetAttr(GA_Disabled, gwin->objects[GID_STOP], (uint32 *)&s_stop);
 #endif
 
-	if(BOOL_MISMATCH(storage, back))
+	if(BOOL_MISMATCH(s_back, back))
 		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_BACK],
 			gwin->win, NULL, GA_Disabled, back, TAG_DONE);
 
-	if(BOOL_MISMATCH(storage, forward))
+	if(BOOL_MISMATCH(s_forward, forward))
 		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_FORWARD],
 			gwin->win, NULL, GA_Disabled, forward, TAG_DONE);
 
-	if(BOOL_MISMATCH(storage, reload))
+	if(BOOL_MISMATCH(s_reload, reload))
 		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_RELOAD],
 			gwin->win, NULL, GA_Disabled, reload, TAG_DONE);
 
-	if(BOOL_MISMATCH(storage, stop))
+	if(BOOL_MISMATCH(s_stop, stop))
 		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_STOP],
 			gwin->win, NULL, GA_Disabled, stop, TAG_DONE);
 
 	if(ClickTabBase->lib_Version < 53) {
 		if(gwin->tabs <= 1) tabclose = TRUE;
 #ifdef __amigaos4__
-		GetAttr(GA_Disabled, gwin->objects[GID_CLOSETAB], (long *)&s_tabclose);
+		GetAttr(GA_Disabled, gwin->objects[GID_CLOSETAB], (uint32 *)&s_tabclose);
 #endif
-		if(BOOL_MISMATCH(storage, tabclose))
+		if(BOOL_MISMATCH(s_tabclose, tabclose))
 			SetGadgetAttrs((struct Gadget *)gwin->objects[GID_CLOSETAB],
 				gwin->win, NULL, GA_Disabled, tabclose, TAG_DONE);
 	}
