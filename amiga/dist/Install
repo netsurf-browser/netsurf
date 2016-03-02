@@ -39,7 +39,7 @@
 ;;; Script execution starts here ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(set osver (getversion))
+(set osver (getversion "libs:version.library"))
 (set osver (/ osver 65536))
 
 (if (= @app-name "NetSurfAutoInstall") (set #AutoInstall 1))
