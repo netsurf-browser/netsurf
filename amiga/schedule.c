@@ -27,6 +27,7 @@
 #include <pbl.h>
 
 #include "utils/errors.h"
+#include "utils/log.h"
 
 #include "amiga/misc.h"
 #include "amiga/schedule.h"
@@ -243,6 +244,7 @@ static void ami_scheduler_run(void)
 	pblHeapRemoveFirst(schedule_list);
 	ami_misc_itempool_free(pool_nscb, nscb, sizeof(struct nscallback));
 
+	LOG("Running scheduled callback %p with arg %p", callback, p);
 	callback(p);
 
 	return;

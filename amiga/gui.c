@@ -2777,6 +2777,7 @@ void ami_get_msg(void)
 			(max_fd != -1)) {
 		/* max_fd is the highest fd in use, but waitselect() needs to know how many
 		 * are in use, so we add 1. */
+
 		if (waitselect(max_fd + 1, &read_fd_set, &write_fd_set, &except_fd_set,
 				NULL, (unsigned int *)&signalmask) != -1) {
 			signal = signalmask;
@@ -4751,6 +4752,8 @@ static void amiga_window_reformat(struct gui_window *gw)
 {
 	struct IBox *bbox;
 
+	LOG("reformat window %p", gw);
+
 	if (gw != NULL) {
 		if(ami_gui_get_space_box((Object *)gw->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
 			warn_user("NoMemory", "");
@@ -5691,6 +5694,8 @@ int main(int argc, char** argv)
 	strlcpy(script, nsoption_charp(arexx_dir), 1024);
 	AddPart(script, nsoption_charp(arexx_startup), 1024);
 	ami_arexx_execute(script);
+
+	LOG("Entering main loop");
 
 	while (!ami_quit) {
 		ami_get_msg();

@@ -36,6 +36,7 @@
 #include <intuition/pointerclass.h>
 #include <workbench/icon.h>
 
+#include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
 #include "utils/utils.h"
@@ -462,6 +463,8 @@ void gui_window_stop_throbber(struct gui_window *g)
 
 static void ami_throbber_update(void *p)
 {
+	LOG("Update throbber %p", p);
+
 	struct gui_window *g = (struct gui_window *)p;
 	struct IBox *bbox;
 	int frame = 0;
