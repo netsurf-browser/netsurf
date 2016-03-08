@@ -68,8 +68,5 @@ NSOPTION_STRING(hotlist_path, NULL)
 /* Developer information viewer display method */
 NSOPTION_INTEGER(developer_view, 0)
 
-/* currently selected theme */
-NSOPTION_INTEGER(current_theme, 0)
-
 /* where tabs are positioned */
 NSOPTION_INTEGER(position_tab, 0)

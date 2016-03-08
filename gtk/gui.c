@@ -271,7 +271,7 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 					      &arrow_down_pixbuf);
 	if (error != NSERROR_OK) {
 		arrow_down_pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB,
-						false, 8, 16, 16);
+						   false, 8, 8, 32);
 	}
 
 	/* Toolbar inicies file */

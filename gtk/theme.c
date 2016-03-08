@@ -185,8 +185,7 @@ nsgtk_theme_image_default(nsgtk_toolbar_button tbbutton, GtkIconSize iconsize)
 #undef BUTTON_IMAGE
 
 	case HISTORY_BUTTON:
-		image = GTK_IMAGE(nsgtk_image_new_from_pixbuf_icon(arrow_down_pixbuf,
-								   iconsize));
+		image = GTK_IMAGE(gtk_image_new_from_pixbuf(arrow_down_pixbuf));
 		break;
 
 	default:
