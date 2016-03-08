@@ -36,6 +36,9 @@ extern char *nsgtk_config_home;
 /** favicon default pixbuf */
 extern GdkPixbuf *favicon_pixbuf;
 
+/** arrow down pixbuf */
+extern GdkPixbuf *arrow_down_pixbuf;
+
 /** resource search path vector */
 extern char **respaths;
 

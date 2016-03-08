@@ -2290,8 +2290,7 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	gs->prev = NULL;
 	scaf_list = gs;
 
-	/* call functions that need access from the list */
-	nsgtk_theme_init();
+	/* set icon images */
 	nsgtk_theme_implement(gs);
 
 	/* set web search provider */

@@ -33,7 +33,6 @@
 #include "gtk/window.h"
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
-#include "gtk/theme.h"
 #include "gtk/resources.h"
 #include "gtk/preferences.h"
 
@@ -53,7 +52,6 @@ struct ppref {
 	GtkSpinButton *spinProxyPort;
 
 	/* dynamic list stores */
-	GtkListStore *themes;
 	GtkListStore *content_language;
 	GtkListStore *search_providers;
 };
@@ -165,9 +163,6 @@ G_MODULE_EXPORT void nsgtk_preferences_comboDefault_realize(GtkWidget *widget, s
 G_MODULE_EXPORT void nsgtk_preferences_fontPreview_clicked(GtkButton *button, struct ppref *priv);
 G_MODULE_EXPORT void nsgtk_preferences_comboboxLanguage_changed(GtkComboBox *combo, struct ppref *priv);
 G_MODULE_EXPORT void nsgtk_preferences_comboboxLanguage_realize(GtkWidget *widget, struct ppref *priv);
-G_MODULE_EXPORT void nsgtk_preferences_comboTheme_changed(GtkComboBox *combo, struct ppref *priv);
-G_MODULE_EXPORT void nsgtk_preferences_comboTheme_realize(GtkWidget *widget, struct ppref *priv);
-G_MODULE_EXPORT void nsgtk_preferences_buttonAddTheme_clicked(GtkButton *button, struct ppref *priv);
 G_MODULE_EXPORT void nsgtk_preferences_checkShowSingleTab_toggled(GtkToggleButton *togglebutton, struct ppref *priv);
 G_MODULE_EXPORT void nsgtk_preferences_checkShowSingleTab_realize(GtkWidget *widget, struct ppref *priv);
 G_MODULE_EXPORT void nsgtk_preferences_comboTabPosition_changed(GtkComboBox *widget, struct ppref *priv);
@@ -709,168 +704,6 @@ nsgtk_preferences_comboboxLanguage_realize(GtkWidget *widget,
 
 /********* Apperance **********/
 
-/* Themes */
-
-/* select theme */
-G_MODULE_EXPORT void
-nsgtk_preferences_comboTheme_changed(GtkComboBox *combo, struct ppref *priv)
-{
-	struct nsgtk_scaffolding *current;
-	int theme = 0;
-	gchar *name;
-	GtkTreeIter iter;
-	GtkTreeModel *model;
-
-	/* Obtain currently selected item from combo box.
-	 * If nothing is selected, do nothing.
-	 */
-	if (gtk_combo_box_get_active_iter(combo, &iter)) {
-		/* get the row number for the config */
-		theme = gtk_combo_box_get_active(combo);
-
-		nsoption_set_int(current_theme, theme);
-
-		/* retrive the theme name if it is not the default */
-		if (theme != 0) {
-			/* Obtain data model from combo box. */
-			model = gtk_combo_box_get_model(combo);
-
-			/* Obtain string from model. */
-			gtk_tree_model_get(model, &iter, 0, &name, -1);
-		} else {
-			name = NULL;
-		}
-
-		nsgtk_theme_set_name(name);
-
-		if (name != NULL) {
-			g_free(name);
-		}
-
-		current = nsgtk_scaffolding_iterate(NULL);
-		while (current != NULL)	{
-			nsgtk_theme_implement(current);
-			current = nsgtk_scaffolding_iterate(current);
-		}
-	}
-}
-
-G_MODULE_EXPORT void
-nsgtk_preferences_comboTheme_realize(GtkWidget *widget, struct ppref *priv)
-{
-	/* Fill theme list store */
-	FILE *fp;
-	GtkTreeIter iter;
-	char buf[50];
-	int combo_row_count = 0;
-	int selected_theme = 0;
-
-	if ((priv->themes != NULL) &&
-	    (themelist_file_location != NULL) &&
-	    ((fp = fopen(themelist_file_location, "r")) != NULL)) {
-		gtk_list_store_clear(priv->themes);
-
-		LOG("Used %s for themelist", themelist_file_location);
-
-		while (fgets(buf, sizeof(buf), fp)) {
-			/* Ignore blank lines */
-			if (buf[0] == '\0')
-				continue;
-
-			/* Remove trailing \n */
-			buf[strlen(buf) - 1] = '\0';
-
-			gtk_list_store_append(priv->themes, &iter);
-			gtk_list_store_set(priv->themes, &iter, 0, buf, -1);
-
-			combo_row_count++;
-		}
-
-		fclose(fp);
-	} else {
-		LOG("Failed opening themes file");
-	}
-
-	/* get configured theme and sanity check value */
-	selected_theme = nsoption_int(current_theme);
-	if (selected_theme > combo_row_count) {
-		selected_theme = combo_row_count;
-	}
-	if (selected_theme < 0) {
-		selected_theme = 0;
-	}
-
-	gtk_combo_box_set_active(GTK_COMBO_BOX(widget), selected_theme);
-}
-
-/* add theme */
-G_MODULE_EXPORT void
-nsgtk_preferences_buttonAddTheme_clicked(GtkButton *button, struct ppref *priv)
-{
-	char *filename, *directory;
-	size_t len;
-	GtkWidget *fc;
-	char *themesfolder;
-	gint res;
-
-	fc  = gtk_file_chooser_dialog_new(messages_get("gtkAddThemeTitle"),
-					  GTK_WINDOW(priv->dialog),
-					  GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
-					  NSGTK_STOCK_OK,
-					  GTK_RESPONSE_ACCEPT,
-					  NSGTK_STOCK_CANCEL,
-					  GTK_RESPONSE_CANCEL,
-					  NULL);
-	len = SLEN("themes") + strlen(res_dir_location) + 1;
-
-	themesfolder = malloc(len);
-
-	snprintf(themesfolder, len, "%sthemes", res_dir_location);
-
-	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(fc), themesfolder);
-
-	res = gtk_dialog_run(GTK_DIALOG(fc));
-	if (res == GTK_RESPONSE_ACCEPT) {
-		filename = gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(fc));
-		if (filename != NULL) {
-			if (strcmp(filename, themesfolder) != 0) {
-				directory = strrchr(filename, '/');
-				*directory = '\0';
-				if (strcmp(filename, themesfolder) != 0) {
-					warn_user(messages_get(
-							  "gtkThemeFolderInstructions"),
-						  0);
-
-					if (filename != NULL)
-						g_free(filename);
-
-				} else {
-					directory++;
-					nsgtk_theme_add(directory);
-				}
-			} else {
-				g_free(filename);
-
-				filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(fc));
-
-				if (strcmp(filename, themesfolder) == 0) {
-					warn_user(messages_get("gtkThemeFolderSub"),
-						  0);
-				} else {
-					directory = strrchr(filename, '/') + 1;
-					nsgtk_theme_add(directory);
-				}
-			}
-
-			g_free(filename);
-		}
-	}
-
-	free(themesfolder);
-
-	gtk_widget_destroy(fc);
-}
-
 /* Tabs */
 
 /* always show tab bar */
@@ -1174,7 +1007,6 @@ GtkWidget* nsgtk_preferences(struct browser_window *bw, GtkWindow *parent)
 	 */
 #define GB(TYPE, NAME) GTK_##TYPE(gtk_builder_get_object(preferences_builder, #NAME))
 	priv->entryHomePageURL = GB(ENTRY, entryHomePageURL);
-	priv->themes = GB(LIST_STORE, liststore_themes);
 	priv->content_language = GB(LIST_STORE, liststore_content_language);
 	priv->search_providers = GB(LIST_STORE, liststore_search_provider);
 	priv->entryProxyHost = GB(ENTRY, entryProxyHost);
@@ -1196,12 +1028,3 @@ GtkWidget* nsgtk_preferences(struct browser_window *bw, GtkWindow *parent)
 	return GTK_WIDGET(priv->dialog);
 }
 
-/* exported interface documented in gtk/preferences.h */
-void nsgtk_preferences_theme_add(const char *themename)
-{
-	struct ppref *priv = &ppref;
-	GtkTreeIter iter;
-
-	gtk_list_store_append(priv->themes, &iter);
-	gtk_list_store_set(priv->themes, &iter, 0, themename, -1 );
-}

@@ -33,11 +33,6 @@ struct nsgtk_theme {
 };
 
 struct nsgtk_theme *nsgtk_theme_load(GtkIconSize s);
-void nsgtk_theme_add(const char *themename);
-void nsgtk_theme_init(void);
-void nsgtk_theme_prepare(void);
 void nsgtk_theme_implement(struct nsgtk_scaffolding *g);
-char *nsgtk_theme_name(void);
-void nsgtk_theme_set_name(const char *name);
 
 #endif
