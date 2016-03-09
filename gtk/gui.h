@@ -24,12 +24,6 @@ struct nsurl;
 /** toolbar arrangement file path. */
 extern char *toolbar_indices_file_location;
 
-/** Resource directory path. */
-extern char *res_dir_location;
-
-/** Theme location. */
-extern char *themelist_file_location;
-
 /** Directory where all configuration files are held. */
 extern char *nsgtk_config_home;
 
