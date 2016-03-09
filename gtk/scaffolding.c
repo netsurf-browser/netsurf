@@ -67,7 +67,6 @@
 #include "gtk/window.h"
 #include "gtk/gdk.h"
 #include "gtk/scaffolding.h"
-#include "gtk/theme.h"
 #include "gtk/tabs.h"
 #include "gtk/schedule.h"
 #include "gtk/viewdata.h"
