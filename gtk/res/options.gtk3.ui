@@ -3034,17 +3034,6 @@
       </row>
     </data>
   </object>
-  <object class="GtkListStore" id="liststore_themes">
-    <columns>
-      <!-- column-name Theme -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">preferencesThemeTypeDefault</col>
-      </row>
-    </data>
-  </object>
   <object class="GtkListStore" id="liststore_toolbar_buttontype">
     <columns>
       <!-- column-name Type -->
