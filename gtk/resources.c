@@ -95,6 +95,7 @@ static struct nsgtk_resource_s pixbuf_resource[] = {
 	RES_ENTRY("favicon.png"),
 	RES_ENTRY("netsurf.xpm"),
 	RES_ENTRY("menu_cursor.png"),
+	RES_ENTRY("arrow_down_8x32.png"),
 	RES_ENTRY("throbber/throbber0.png"),
 	RES_ENTRY("throbber/throbber1.png"),
 	RES_ENTRY("throbber/throbber2.png"),

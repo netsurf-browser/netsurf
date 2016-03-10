@@ -67,7 +67,6 @@
 #include "gtk/window.h"
 #include "gtk/gdk.h"
 #include "gtk/scaffolding.h"
-#include "gtk/theme.h"
 #include "gtk/tabs.h"
 #include "gtk/schedule.h"
 #include "gtk/viewdata.h"
@@ -2290,8 +2289,7 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	gs->prev = NULL;
 	scaf_list = gs;
 
-	/* call functions that need access from the list */
-	nsgtk_theme_init();
+	/* set icon images */
 	nsgtk_theme_implement(gs);
 
 	/* set web search provider */

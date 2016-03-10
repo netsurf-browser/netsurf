@@ -146,11 +146,6 @@ int scandir(const char *dir, struct dirent ***namelist,
     #define WITH_MMAP
 #endif
 
-/* gtk */
-#if defined(gtk)
-	#define WITH_THEME_INSTALL
-#endif
-
 /* amiga */
 #if defined(__amigaos4__) || defined(__AMIGA__) || \
 		defined(nsatari)

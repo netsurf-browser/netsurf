@@ -24,17 +24,14 @@ struct nsurl;
 /** toolbar arrangement file path. */
 extern char *toolbar_indices_file_location;
 
-/** Resource directory path. */
-extern char *res_dir_location;
-
-/** Theme location. */
-extern char *themelist_file_location;
-
 /** Directory where all configuration files are held. */
 extern char *nsgtk_config_home;
 
 /** favicon default pixbuf */
 extern GdkPixbuf *favicon_pixbuf;
+
+/** arrow down pixbuf */
+extern GdkPixbuf *arrow_down_pixbuf;
 
 /** resource search path vector */
 extern char **respaths;

@@ -73,13 +73,12 @@
 bool nsgtk_complete = false;
 
 char *toolbar_indices_file_location;
-char *res_dir_location;
-char *themelist_file_location;
 
 char *nsgtk_config_home; /* exported global defined in gtk/gui.h */
 
 GdkPixbuf *favicon_pixbuf; /** favicon default pixbuf */
 GdkPixbuf *win_default_icon_pixbuf; /** default window icon pixbuf */
+GdkPixbuf *arrow_down_pixbuf; /** arrow down pixbuf */
 
 GtkBuilder *warning_builder;
 
@@ -236,30 +235,6 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	nsurl *url;
 	nserror error;
 
-
-	/* find the theme list file */
-	themelist_file_location = filepath_find(respath, "themelist");
-	if ((themelist_file_location != NULL) &&
-		(strlen(themelist_file_location) < 10)) {
-		free(themelist_file_location);
-		themelist_file_location = NULL;
-	}
-	if (themelist_file_location == NULL) {
-		LOG("Unable to find themelist - disabling themes");
-		res_dir_location = NULL;
-	} else {
-		/* Obtain resources path location.
-		 *
-		 * Uses the directory the theme file was found in,
-		 * @todo find and slaughter all references to this!
-		 */
-		res_dir_location = calloc(1, strlen(themelist_file_location) - 8);
-		memcpy(res_dir_location,
-		       themelist_file_location,
-		       strlen(themelist_file_location) - 9);
-		LOG("Using '%s' for resource path", res_dir_location);
-	}
-
 	error = nsgtk_builder_new_from_resname("warning", &warning_builder);
 	if (error != NSERROR_OK) {
 		LOG("Unable to initialise warning dialog");
@@ -288,7 +263,15 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	error = nsgdk_pixbuf_new_from_resname("favicon.png", &favicon_pixbuf);
 	if (error != NSERROR_OK) {
 		favicon_pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB,
-						false, 8, 16,16);
+						false, 8, 16, 16);
+	}
+
+	/* arrow down icon */
+	error = nsgdk_pixbuf_new_from_resname("arrow_down_8x32.png",
+					      &arrow_down_pixbuf);
+	if (error != NSERROR_OK) {
+		arrow_down_pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB,
+						   false, 8, 8, 32);
 	}
 
 	/* Toolbar inicies file */

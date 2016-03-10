@@ -25,8 +25,4 @@
  */
 GtkWidget* nsgtk_preferences(struct browser_window *bw, GtkWindow *parent);
 
-/** Theme added
- */
-void nsgtk_preferences_theme_add(const char *themename);
-
 #endif

@@ -23,6 +23,11 @@
 
 #include "gtk/scaffolding.h"
 
+/**
+ * sets up the images for scaffolding.
+ */
+void nsgtk_theme_implement(struct nsgtk_scaffolding *g);
+
 void nsgtk_toolbar_customization_init(struct nsgtk_scaffolding *g);
 void nsgtk_toolbar_init(struct nsgtk_scaffolding *g);
 void nsgtk_toolbar_customization_load(struct nsgtk_scaffolding *g);

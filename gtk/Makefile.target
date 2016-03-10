@@ -179,7 +179,7 @@ endif
 S_GTK := font_pango.c bitmap.c gui.c schedule.c plotters.c	\
 	treeview.c scaffolding.c gdk.c completion.c login.c throbber.c	\
 	selection.c history.c window.c fetch.c download.c menu.c	\
-	print.c search.c tabs.c theme.c theme_container.c toolbar.c gettext.c	\
+	print.c search.c tabs.c toolbar.c gettext.c	\
 	compat.c cookies.c hotlist.c viewdata.c viewsource.c		\
 	preferences.c about.c ssl_cert.c resources.c
 
@@ -195,7 +195,7 @@ SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_RESOURCE) $(S_GTK)
 # ----------------------------------------------------------------------------
 
 GTK_RESOURCES_LIST := \
-	languages themelist SearchEngines toolbarIndices ca-bundle.txt \
+	languages SearchEngines toolbarIndices ca-bundle.txt \
 	default.css adblock.css quirks.css internal.css \
 	credits.html licence.html welcome.html maps.html Messages \
 	default.ico favicon.png netsurf.png netsurf.xpm netsurf-16x16.xpm \
@@ -215,7 +215,6 @@ install-gtk:
 	$(Q)install -m 0644 gtk/res/icons/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/icons
 	$(Q)mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
 	$(Q)install -m 0644 gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/throbber
-	$(Q)tar -c -h -C gtk/res -f - themes | tar -xv -C $(DESTDIR)$(NETSURF_GTK_RESOURCES) -f -
 	$(Q)tar -c -h -C gtk/res -f - $(GTK_TRANSLATIONS_HTML) | tar -xv -C $(DESTDIR)$(NETSURF_GTK_RESOURCES) -f -
 	$(Q)install -m 0644 $(GTK_RESOURCES_LIST) $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 
