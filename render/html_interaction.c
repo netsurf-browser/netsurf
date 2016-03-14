@@ -235,14 +235,26 @@ void html_mouse_track(struct content *c, struct browser_window *bw,
 	html_mouse_action(c, bw, mouse, x, y);
 }
 
-/** Helper for file gadgets to store their filename unencoded on the
- * dom node associated with the gadget.
+/**
+ * Helper for file gadgets to store their filename.
+ *
+ * Stores the filename unencoded on the dom node associated with the
+ * gadget.
  *
  * \todo Get rid of this crap eventually
+ *
+ * \param operation DOM operation
+ * \param key DOM node key being considerd
+ * \param _data The data assocated with the key
+ * \param src The source DOM node.
+ * \param dst The destination DOM node.
  */
-static void html__image_coords_dom_user_data_handler(dom_node_operation operation,
-		dom_string *key, void *_data, struct dom_node *src,
-		struct dom_node *dst)
+static void
+html__image_coords_dom_user_data_handler(dom_node_operation operation,
+					 dom_string *key,
+					 void *_data,
+					 struct dom_node *src,
+					 struct dom_node *dst)
 {
 	struct image_input_coords *oldcoords, *coords = _data, *newcoords;
 
@@ -254,13 +266,20 @@ static void html__image_coords_dom_user_data_handler(dom_node_operation operatio
 	switch (operation) {
 	case DOM_NODE_CLONED:
 		newcoords = calloc(1, sizeof(*newcoords));
-		*newcoords = *coords;
-		if (dom_node_set_user_data(dst,
-					   corestring_dom___ns_key_image_coords_node_data,
-					   newcoords, html__image_coords_dom_user_data_handler,
-					   &oldcoords) == DOM_NO_ERR) {
-			free(oldcoords);
+		if (newcoords != NULL) {
+			*newcoords = *coords;
+			if (dom_node_set_user_data(dst,
+				 corestring_dom___ns_key_image_coords_node_data,
+				 newcoords,
+				 html__image_coords_dom_user_data_handler,
+				 &oldcoords) == DOM_NO_ERR) {
+				free(oldcoords);
+			}
 		}
+		break;
+
+	case DOM_NODE_DELETED:
+		free(coords);
 		break;
 
 	case DOM_NODE_RENAMED:
@@ -268,9 +287,6 @@ static void html__image_coords_dom_user_data_handler(dom_node_operation operatio
 	case DOM_NODE_ADOPTED:
 		break;
 
-	case DOM_NODE_DELETED:
-		free(coords);
-		break;
 	default:
 		LOG("User data operation not handled.");
 		assert(0);
