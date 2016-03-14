@@ -21,9 +21,14 @@
  * NetSurf URL handling implementation.
  *
  * This is the common implementation of all URL handling within the
- * browser. This implemntation is based upon RFC3986 although this has
+ * browser. This implementation is based upon RFC3986 although this has
  * been superceeded by https://url.spec.whatwg.org/ which is based on
  * actual contemporary implementations.
+ *
+ * Care must be taken with character encodings within this module as
+ * the specifications work with specific ascii ranges and must not be
+ * affected by locale. Hence the c library character type functions
+ * are not used.
  */
 
 #include <assert.h>
@@ -40,107 +45,34 @@
 #include "utils/nsurl.h"
 #include "utils/utils.h"
 
-
 /* Define to enable NSURL debugging */
 #undef NSURL_DEBUG
 
+/** ascii character codes */
+enum ascii_codepoints {
+	ASCII_NUL = 0,
+	ASCII_SPC = 0x20,
+	ASCII_FF = 0x0C,
+	ASCII_NL = 0x0A,
+	ASCII_CR = 0x0D,
+	ASCII_HT = 0x09,
+	ASCII_VT = 0x0B,
+	ASCII_PLUS = 0x2b,
+	ASCII_MINUS = 0x2d,
+	ASCII_FULLSTOP = 0x2e,
+	ASCII_SLASH = 0x2F,
+	ASCII_0 = 0x30,
+	ASCII_9 = 0x39,
+	ASCII_COLON = 0x3A,
+	ASCII_A = 0x41,
+	ASCII_Z = 0x5A,
+	ASCII_a = 0x61,
+	ASCII_z = 0x7A
+};
+
 /**
- * Return a hex digit for the given numerical value.
- *
- * \param digit the value to get the hex digit for.
- * \return character in range 0-9A-F
+ * nsurl scheme type
  */
-inline static char digit2uppercase_hex(unsigned char digit) {
-	assert(digit < 16);
-	return "0123456789ABCDEF"[digit];
-}
-
-static bool nsurl__is_unreserved(unsigned char c)
-{
-	/* From RFC3986 section 2.3 (unreserved characters) 
-	 *
-	 *      unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
-	 *
-	 */
-	static const bool unreserved[256] = {
-		false, false, false, false, false, false, false, false, /* 00 */
-		false, false, false, false, false, false, false, false, /* 08 */
-		false, false, false, false, false, false, false, false, /* 10 */
-		false, false, false, false, false, false, false, false, /* 18 */
-		false, false, false, false, false, false, false, false, /* 20 */
-		false, false, false, false, false, true,  true,  false, /* 28 */
-		true,  true,  true,  true,  true,  true,  true,  true,  /* 30 */
-		true,  true,  false, false, false, false, false, false, /* 38 */
-		false, true,  true,  true,  true,  true,  true,  true,  /* 40 */
-		true,  true,  true,  true,  true,  true,  true,  true,  /* 48 */
-		true,  true,  true,  true,  true,  true,  true,  true,  /* 50 */
-		true,  true,  true,  false, false, false, false, true,  /* 58 */
-		false, true,  true,  true,  true,  true,  true,  true,  /* 60 */
-		true,  true,  true,  true,  true,  true,  true,  true,  /* 68 */
-		true,  true,  true,  true,  true,  true,  true,  true,  /* 70 */
-		true,  true,  true,  false, false, false, true,  false, /* 78 */
-		false, false, false, false, false, false, false, false, /* 80 */
-		false, false, false, false, false, false, false, false, /* 88 */
-		false, false, false, false, false, false, false, false, /* 90 */
-		false, false, false, false, false, false, false, false, /* 98 */
-		false, false, false, false, false, false, false, false, /* A0 */
-		false, false, false, false, false, false, false, false, /* A8 */
-		false, false, false, false, false, false, false, false, /* B0 */
-		false, false, false, false, false, false, false, false, /* B8 */
-		false, false, false, false, false, false, false, false, /* C0 */
-		false, false, false, false, false, false, false, false, /* C8 */
-		false, false, false, false, false, false, false, false, /* D0 */
-		false, false, false, false, false, false, false, false, /* D8 */
-		false, false, false, false, false, false, false, false, /* E0 */
-		false, false, false, false, false, false, false, false, /* E8 */
-		false, false, false, false, false, false, false, false, /* F0 */
-		false, false, false, false, false, false, false, false  /* F8 */
-	};
-	return unreserved[c];
-}
-
-/* The ASCII codes which should not be percent escaped */
-static bool nsurl__is_no_escape(unsigned char c)
-{
-	static const bool no_escape[256] = {
-		false, false, false, false, false, false, false, false, /* 00 */
-		false, false, false, false, false, false, false, false, /* 08 */
-		false, false, false, false, false, false, false, false, /* 10 */
-		false, false, false, false, false, false, false, false, /* 18 */
-		false, true,  false, true,  true,  false, true,  true,  /* 20 */
-		true,  true,  true,  true,  true,  true,  true,  true,  /* 28 */
-		true,  true,  true,  true,  true,  true,  true,  true,  /* 30 */
-		true,  true,  true,  true,  false, true,  false, true,  /* 38 */
-		true,  true,  true,  true,  true,  true,  true,  true,  /* 40 */
-		true,  true,  true,  true,  true,  true,  true,  true,  /* 48 */
-		true,  true,  true,  true,  true,  true,  true,  true,  /* 50 */
-		true,  true,  true,  true,  false, true,  false, true,  /* 58 */
-		false, true,  true,  true,  true,  true,  true,  true,  /* 60 */
-		true,  true,  true,  true,  true,  true,  true,  true,  /* 68 */
-		true,  true,  true,  true,  true,  true,  true,  true,  /* 70 */
-		true,  true,  true,  false, true,  false, true,  false, /* 78 */
-		false, false, false, false, false, false, false, false, /* 80 */
-		false, false, false, false, false, false, false, false, /* 88 */
-		false, false, false, false, false, false, false, false, /* 90 */
-		false, false, false, false, false, false, false, false, /* 98 */
-		false, false, false, false, false, false, false, false, /* A0 */
-		false, false, false, false, false, false, false, false, /* A8 */
-		false, false, false, false, false, false, false, false, /* B0 */
-		false, false, false, false, false, false, false, false, /* B8 */
-		false, false, false, false, false, false, false, false, /* C0 */
-		false, false, false, false, false, false, false, false, /* C8 */
-		false, false, false, false, false, false, false, false, /* D0 */
-		false, false, false, false, false, false, false, false, /* D8 */
-		false, false, false, false, false, false, false, false, /* E0 */
-		false, false, false, false, false, false, false, false, /* E8 */
-		false, false, false, false, false, false, false, false, /* F0 */
-		false, false, false, false, false, false, false, false, /* F8 */
-	};
-	return no_escape[c];
-}
-
-
-/** nsurl scheme type */
 enum scheme_type {
 	NSURL_SCHEME_OTHER,
 	NSURL_SCHEME_HTTP,
@@ -148,7 +80,6 @@ enum scheme_type {
 	NSURL_SCHEME_FTP,
 	NSURL_SCHEME_MAILTO
 };
-
 
 /**
  * nsurl components
@@ -265,6 +196,187 @@ enum url_sections {
 		*match = false;					\
 	}
 
+/**
+ * Return a hex digit for the given numerical value.
+ *
+ * \param digit the value to get the hex digit for.
+ * \return character in range 0-9A-F
+ */
+inline static char digit2uppercase_hex(unsigned char digit) {
+	assert(digit < 16);
+	return "0123456789ABCDEF"[digit];
+}
+
+/**
+ * determines if a character is a whitespace in the ascii character encoding
+ *
+ * whitespace characters are space, form feed, new line, carrige
+ * return, horizontal tab and vertical tab.
+ *
+ * \param c character to classify
+ * \return zero if the character is not whitespace else 1
+ */
+inline static int is_ascii_space(int c)
+{
+	if (c == ASCII_SPC ||
+	    c == ASCII_FF ||
+	    c == ASCII_NL ||
+	    c == ASCII_CR ||
+	    c == ASCII_HT ||
+	    c == ASCII_VT) {
+		return 1;
+	}
+	return 0;
+}
+
+/**
+ * determine if a character is alphabetical in the ascii character encoding
+ *
+ * characters in the range A-Z and a-z are considered alphabetical.
+ *
+ * \param c character to classify
+ * \return zero if the character is not alphabetical else 1
+ */
+inline static int is_ascii_alpha(int c)
+{
+	if (((c >= ASCII_A) && (c <= ASCII_Z)) ||
+	    ((c >= ASCII_a) && (c <= ASCII_z))) {
+		return 1;
+	}
+	return 0;
+}
+
+/**
+ * determine if a character is a number in the ascii character encoding
+ *
+ * characters in the range 0-9 are considered numbers.
+ *
+ * \param c character to classify
+ * \return 1 if the character is a number else 0
+ */
+inline static int is_ascii_digit(int c)
+{
+	if ((c >= ASCII_0) && (c <= ASCII_9)) {
+		return 1;
+	}
+	return 0;
+}
+
+/**
+ * determine if a character is alphanumerical in the ascii character encoding
+ *
+ * characters in the range A-Z, a-z and 0-9 are considered alphanumeric.
+ *
+ * \param c character to classify
+ * \return zero if the character is not alphanumerical else 1
+ */
+inline static int is_ascii_alnum(int c)
+{
+	if (((c >= ASCII_0) && (c <= ASCII_9)) ||
+	    ((c >= ASCII_A) && (c <= ASCII_Z)) ||
+	    ((c >= ASCII_a) && (c <= ASCII_z))) {
+		return 1;
+	}
+	return 0;
+}
+
+/**
+ * determine if a character is unreserved
+ *
+ * \param c character to classify.
+ * \return true if the character is unreserved else false.
+ */
+static bool nsurl__is_unreserved(unsigned char c)
+{
+	/* From RFC3986 section 2.3 (unreserved characters)
+	 *
+	 *      unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
+	 *
+	 */
+	static const bool unreserved[256] = {
+		false, false, false, false, false, false, false, false, /* 00 */
+		false, false, false, false, false, false, false, false, /* 08 */
+		false, false, false, false, false, false, false, false, /* 10 */
+		false, false, false, false, false, false, false, false, /* 18 */
+		false, false, false, false, false, false, false, false, /* 20 */
+		false, false, false, false, false, true,  true,  false, /* 28 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 30 */
+		true,  true,  false, false, false, false, false, false, /* 38 */
+		false, true,  true,  true,  true,  true,  true,  true,  /* 40 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 48 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 50 */
+		true,  true,  true,  false, false, false, false, true,  /* 58 */
+		false, true,  true,  true,  true,  true,  true,  true,  /* 60 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 68 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 70 */
+		true,  true,  true,  false, false, false, true,  false, /* 78 */
+		false, false, false, false, false, false, false, false, /* 80 */
+		false, false, false, false, false, false, false, false, /* 88 */
+		false, false, false, false, false, false, false, false, /* 90 */
+		false, false, false, false, false, false, false, false, /* 98 */
+		false, false, false, false, false, false, false, false, /* A0 */
+		false, false, false, false, false, false, false, false, /* A8 */
+		false, false, false, false, false, false, false, false, /* B0 */
+		false, false, false, false, false, false, false, false, /* B8 */
+		false, false, false, false, false, false, false, false, /* C0 */
+		false, false, false, false, false, false, false, false, /* C8 */
+		false, false, false, false, false, false, false, false, /* D0 */
+		false, false, false, false, false, false, false, false, /* D8 */
+		false, false, false, false, false, false, false, false, /* E0 */
+		false, false, false, false, false, false, false, false, /* E8 */
+		false, false, false, false, false, false, false, false, /* F0 */
+		false, false, false, false, false, false, false, false  /* F8 */
+	};
+	return unreserved[c];
+}
+
+/**
+ * determine if a character should be percent escaped.
+ *
+ * The ASCII codes which should not be percent escaped
+ *
+ * \param c character to classify.
+ * \return true if the character should not be escaped else false.
+ */
+static bool nsurl__is_no_escape(unsigned char c)
+{
+	static const bool no_escape[256] = {
+		false, false, false, false, false, false, false, false, /* 00 */
+		false, false, false, false, false, false, false, false, /* 08 */
+		false, false, false, false, false, false, false, false, /* 10 */
+		false, false, false, false, false, false, false, false, /* 18 */
+		false, true,  false, true,  true,  false, true,  true,  /* 20 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 28 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 30 */
+		true,  true,  true,  true,  false, true,  false, true,  /* 38 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 40 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 48 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 50 */
+		true,  true,  true,  true,  false, true,  false, true,  /* 58 */
+		false, true,  true,  true,  true,  true,  true,  true,  /* 60 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 68 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 70 */
+		true,  true,  true,  false, true,  false, true,  false, /* 78 */
+		false, false, false, false, false, false, false, false, /* 80 */
+		false, false, false, false, false, false, false, false, /* 88 */
+		false, false, false, false, false, false, false, false, /* 90 */
+		false, false, false, false, false, false, false, false, /* 98 */
+		false, false, false, false, false, false, false, false, /* A0 */
+		false, false, false, false, false, false, false, false, /* A8 */
+		false, false, false, false, false, false, false, false, /* B0 */
+		false, false, false, false, false, false, false, false, /* B8 */
+		false, false, false, false, false, false, false, false, /* C0 */
+		false, false, false, false, false, false, false, false, /* C8 */
+		false, false, false, false, false, false, false, false, /* D0 */
+		false, false, false, false, false, false, false, false, /* D8 */
+		false, false, false, false, false, false, false, false, /* E0 */
+		false, false, false, false, false, false, false, false, /* E8 */
+		false, false, false, false, false, false, false, false, /* F0 */
+		false, false, false, false, false, false, false, false, /* F8 */
+	};
+	return no_escape[c];
+}
+
 
 /**
  * Obtains a set of markers delimiting sections in a URL string
@@ -285,7 +397,7 @@ static void nsurl__get_string_markers(const char * const url_s,
 				      0, 0, 0,   0, NSURL_SCHEME_OTHER };
 
 	/* Skip any leading whitespace in url_s */
-	while (isspace(*pos))
+	while (is_ascii_space(*pos))
 		pos++;
 
 	/* Record start point */
@@ -294,7 +406,7 @@ static void nsurl__get_string_markers(const char * const url_s,
 	marker.scheme_end = marker.authority = marker.colon_first = marker.at =
 			marker.colon_last = marker.path = marker.start;
 
-	if (*pos == '\0') {
+	if (*pos == ASCII_NUL) {
 		/* Nothing but whitespace, early exit */
 		marker.query = marker.fragment = marker.end = marker.path;
 		*markers = marker;
@@ -302,12 +414,14 @@ static void nsurl__get_string_markers(const char * const url_s,
 	}
 
 	/* Get scheme */
-	if (isalpha(*pos)) {
+	if (is_ascii_alpha(*pos)) {
 		pos++;
 
-		while (*pos != ':' && *pos != '\0') {
-			if (!isalnum(*pos) && *pos != '+' &&
-					*pos != '-' && *pos != '.') {
+		while (*pos != ASCII_COLON && *pos != ASCII_NUL) {
+			if (!is_ascii_alnum(*pos) &&
+			    (*pos != ASCII_PLUS) &&
+			    (*pos != ASCII_MINUS) &&
+			    (*pos != ASCII_FULLSTOP)) {
 				/* This character is not valid in the
 				 * scheme */
 				break;
@@ -315,7 +429,7 @@ static void nsurl__get_string_markers(const char * const url_s,
 			pos++;
 		}
 
-		if (*pos == ':') {
+		if (*pos == ASCII_COLON) {
 			/* This delimits the end of the scheme */
 			size_t off;
 
@@ -493,9 +607,9 @@ static void nsurl__get_string_markers(const char * const url_s,
 	/* We got to the end of url_s.
 	 * Need to skip back over trailing whitespace to find end of URL */
 	pos--;
-	if (pos >= url_s && isspace(*pos)) {
+	if (pos >= url_s && is_ascii_space(*pos)) {
 		trailing_whitespace = true;
-		while (pos >= url_s && isspace(*pos))
+		while (pos >= url_s && is_ascii_space(*pos))
 			pos--;
 	}
 
@@ -676,7 +790,7 @@ static inline int nsurl__get_ascii_offset(char c1, char c2)
 	int offset;
 
 	/* Use 1st char as most significant hex digit */
-	if (isdigit(c1))
+	if (is_ascii_digit(c1))
 		offset = 16 * (c1 - '0');
 	else if (c1 >= 'a' && c1 <= 'f')
 		offset = 16 * (c1 - 'a' + 10);
@@ -687,7 +801,7 @@ static inline int nsurl__get_ascii_offset(char c1, char c2)
 		return -1;
 
 	/* Use 2nd char as least significant hex digit and sum */
-	if (isdigit(c2))
+	if (is_ascii_digit(c2))
 		offset += c2 - '0';
 	else if (c2 >= 'a' && c2 <= 'f')
 		offset += c2 - 'a' + 10;
@@ -944,7 +1058,7 @@ static nserror nsurl__create_from_section(const char * const url_s,
 				 */
 				sec_start += colon - pegs->at;
 				while (++sec_start < norm_start + length) {
-					if (!isdigit(*sec_start)) {
+					if (!is_ascii_digit(*sec_start)) {
 						/* Character after port isn't a
 						 * digit; not a port separator
 						 */
