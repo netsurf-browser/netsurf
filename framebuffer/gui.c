@@ -16,12 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
 #include <limits.h>
-#include <unistd.h>
 #include <getopt.h>
 #include <assert.h>
 #include <string.h>
