@@ -16,19 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <gtk/gtk.h>
 
 #include "utils/log.h"
-#include "content/content.h"
-#include "content/hlcache.h"
+#include "utils/nsurl.h"
 #include "content/urldb.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
-#include "desktop/browser.h"
 
 #include "gtk/resources.h"
 #include "gtk/login.h"
