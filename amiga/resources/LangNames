@@ -61,3 +61,14 @@ turkish:tr
 ukrainian:uk
 welsh:cy
 
+# Native language names for AmigaOS 3 compatibility
+dansk:da
+deutsch:de
+español:es
+français:fr
+italiano:it
+nederlands:nl
+norsk:nb
+português:pt
+svenska:sv
+
