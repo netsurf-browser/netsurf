@@ -374,7 +374,7 @@ image_cache_init(const struct image_cache_parameters *image_cache_parameters)
 				image_cache__background_update,
 				image_cache);
 
-	LOG("Image cache initilised with a limit of %zd hysteresis of %zd",
+	LOG("Image cache initilised with a limit of %" PRIsizet " hysteresis of %"PRIsizet,
 	    image_cache->params.limit, image_cache->params.hysteresis);
 
 	return NSERROR_OK;
@@ -387,7 +387,7 @@ nserror image_cache_fini(void)
 
 	guit->browser->schedule(-1, image_cache__background_update, image_cache);
 
-	LOG("Size at finish %zd (in %d)",
+	LOG("Size at finish %" PRIsizet " (in %d)",
 	    image_cache->total_bitmap_size, image_cache->bitmap_count);
 
 	while (image_cache->entries != NULL) {
@@ -399,9 +399,9 @@ nserror image_cache_fini(void)
 		image_cache->fail_count;
 
 	LOG("Age %ds", image_cache->current_age / 1000);
-	LOG("Peak size %zd (in %d)",
+	LOG("Peak size %" PRIsizet " (in %d)",
 	    image_cache->max_bitmap_size, image_cache->max_bitmap_size_count);
-	LOG("Peak image count %d (size %zd)",
+	LOG("Peak image count %d (size %" PRIsizet ")",
 	    image_cache->max_bitmap_count, image_cache->max_bitmap_count_size);
 
 	if (op_count > 0) {
@@ -570,15 +570,15 @@ case chr :					\
 				slen++;
 				break;
 
-			FMTCHR('a', SSIZET_FMT, params.limit);
-			FMTCHR('b', SSIZET_FMT, params.hysteresis);
-			FMTCHR('c', SSIZET_FMT, total_bitmap_size);
+			FMTCHR('a', PRIssizet, params.limit);
+			FMTCHR('b', PRIssizet, params.hysteresis);
+			FMTCHR('c', PRIssizet, total_bitmap_size);
 			FMTCHR('d', "d", bitmap_count);
 			FMTCHR('e', "d", current_age / 1000);
-			FMTCHR('f', SSIZET_FMT, max_bitmap_size);
+			FMTCHR('f', PRIssizet, max_bitmap_size);
 			FMTCHR('g', "d", max_bitmap_size_count);
 			FMTCHR('h', "d", max_bitmap_count);
-			FMTCHR('i', SSIZET_FMT, max_bitmap_count_size);
+			FMTCHR('i', PRIssizet, max_bitmap_count_size);
 
 
 			case 'j':
@@ -705,7 +705,7 @@ int image_cache_snentryf(char *string, size_t size, unsigned int entryn,
 				if (centry->bitmap != NULL) {
 					slen += snprintf(string + slen,
 							 size - slen,
-							 "%"SSIZET_FMT,
+							 "%" PRIssizet,
 							 centry->bitmap_size);
 				} else {
 					slen += snprintf(string + slen,

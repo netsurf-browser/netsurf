@@ -263,7 +263,8 @@ static void fetch_data_poll(lwc_string *scheme)
 			char header[64];
 
 			fetch_set_http_code(c->parent_fetch, 200);
-			LOG("setting data: MIME type to %s, length to %zd", c->mimetype, c->datalen);
+			LOG("setting data: MIME type to %s, length to %" PRIsizet,
+			    c->mimetype, c->datalen);
 			/* Any callback can result in the fetch being aborted.
 			 * Therefore, we _must_ check for this after _every_
 			 * call to fetch_data_send_callback().
@@ -277,8 +278,8 @@ static void fetch_data_poll(lwc_string *scheme)
 
 			if (c->aborted == false) {
 				snprintf(header, sizeof header, 
-					"Content-Length: %"SSIZET_FMT,
-					c->datalen);
+					 "Content-Length: %" PRIsizet,
+					 c->datalen);
 				msg.type = FETCH_HEADER;
 				msg.data.header_or_data.buf = 
 						(const uint8_t *) header;

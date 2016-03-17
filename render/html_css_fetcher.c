@@ -215,7 +215,7 @@ static void html_css_fetcher_poll(lwc_string *scheme)
 
 			if (c->aborted == false) {
 				snprintf(header, sizeof header, 
-					"Content-Length: %"SSIZET_FMT,
+					"Content-Length: %"PRIsizet,
 					dom_string_byte_length(c->item->data));
 				msg.type = FETCH_HEADER;
 				msg.data.header_or_data.buf = 

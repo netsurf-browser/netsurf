@@ -313,18 +313,21 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 
 	/* content type */
 	if (fetch_file_send_header(ctx, "Content-Type: %s", 
-			guit->fetch->filetype(ctx->path)))
+				   guit->fetch->filetype(ctx->path))) {
 		goto fetch_file_process_aborted;
+	}
 
 	/* content length */
-	if (fetch_file_send_header(ctx, "Content-Length: %"SSIZET_FMT, fdstat->st_size))
+	if (fetch_file_send_header(ctx, "Content-Length: %" PRIsizet,
+				   fdstat->st_size)) {
 		goto fetch_file_process_aborted;
+	}
 
 	/* create etag */
 	if (fetch_file_send_header(ctx, "ETag: \"%10" PRId64 "\"",
-			(int64_t) fdstat->st_mtime))
+				   (int64_t) fdstat->st_mtime)) {
 		goto fetch_file_process_aborted;
-
+	}
 
 	msg.type = FETCH_DATA;
 	msg.data.header_or_data.buf = (const uint8_t *) buf;
@@ -393,17 +396,21 @@ fetch_file_process_aborted:
 
 	/* content type */
 	if (fetch_file_send_header(ctx, "Content-Type: %s", 
-			guit->fetch->filetype(ctx->path)))
+				   guit->fetch->filetype(ctx->path))) {
 		goto fetch_file_process_aborted;
+	}
 
 	/* content length */
-	if (fetch_file_send_header(ctx, "Content-Length: %"SSIZET_FMT, fdstat->st_size))
+	if (fetch_file_send_header(ctx, "Content-Length: %" PRIsizet,
+				   fdstat->st_size)) {
 		goto fetch_file_process_aborted;
+	}
 
 	/* create etag */
 	if (fetch_file_send_header(ctx, "ETag: \"%10" PRId64 "\"", 
-			(int64_t) fdstat->st_mtime))
+				   (int64_t) fdstat->st_mtime)) {
 		goto fetch_file_process_aborted;
+	}
 
 	/* main data loop */
 	while (tot_read < fdstat->st_size) {

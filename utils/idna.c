@@ -453,14 +453,14 @@ static bool idna__is_valid(int32_t *label, size_t len)
 
 		/* 4. Check characters not DISALLOWED by RFC5892 */
 		if (idna_prop == IDNA_P_DISALLOWED) {
-			LOG("Check failed: character %zd (%x) is DISALLOWED", i, label[i]);
+			LOG("Check failed: character %" PRIsizet " (%x) is DISALLOWED", i, label[i]);
 			return false;
 		}
 
 		/* 5. Check CONTEXTJ characters conform to defined rules */
 		if (idna_prop == IDNA_P_CONTEXTJ) {
 			if (idna__contextj_rule(label, i, len) == false) {
-				LOG("Check failed: character %zd (%x) does not conform to CONTEXTJ rule", i, label[i]);
+				LOG("Check failed: character %" PRIsizet " (%x) does not conform to CONTEXTJ rule", i, label[i]);
 				return false;
 			}
 		}
@@ -469,14 +469,14 @@ static bool idna__is_valid(int32_t *label, size_t len)
 		/** \todo optionally we can check conformance to this rule */
 		if (idna_prop == IDNA_P_CONTEXTO) {
 			if (idna__contexto_rule(label[i]) == false) {
-				LOG("Check failed: character %zd (%x) has no CONTEXTO rule defined", i, label[i]);
+				LOG("Check failed: character %" PRIsizet " (%x) has no CONTEXTO rule defined", i, label[i]);
 				return false;
 			}
 		}
 
 		/* 7. Check characters are not UNASSIGNED */
 		if (idna_prop == IDNA_P_UNASSIGNED) {
-			LOG("Check failed: character %zd (%x) is UNASSIGNED", i, label[i]);
+			LOG("Check failed: character %" PRIsizet " (%x) is UNASSIGNED", i, label[i]);
 			return false;
 		}
 

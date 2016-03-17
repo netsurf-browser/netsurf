@@ -1239,7 +1239,7 @@ llcache_serialise_metadata(llcache_object *object,
 	datasize -= use;
 
 	/* object size */
-	use = snprintf(op, datasize, "%zu", object->source_len);
+	use = snprintf(op, datasize, "%" PRIsizet, object->source_len);
 	if (use < 0) {
 		goto operror;
 	}
@@ -1274,7 +1274,7 @@ llcache_serialise_metadata(llcache_object *object,
 	datasize -= use;
 
 	/* number of headers */
-	use = snprintf(op, datasize, "%zu", object->num_headers);
+	use = snprintf(op, datasize, "%" PRIsizet, object->num_headers);
 	if (use < 0) {
 		goto operror;
 	}
@@ -1386,7 +1386,8 @@ llcache_process_metadata(llcache_object *object)
 		 * by simply skipping caching of this object.
 		 */
 
-		LOG("Got metadata for %s instead of %s", nsurl_access(metadataurl), nsurl_access(object->url));
+		LOG("Got metadata for %s instead of %s",
+		    nsurl_access(metadataurl), nsurl_access(object->url));
 
 		nsurl_unref(metadataurl);
 
@@ -1402,7 +1403,7 @@ llcache_process_metadata(llcache_object *object)
 	ln += lnsize + 1;
 	lnsize = strlen(ln);
 
-	if ((lnsize < 1) || (sscanf(ln, "%zu", &source_length) != 1)) {
+	if ((lnsize < 1) || (sscanf(ln, "%" PRIsizet, &source_length) != 1)) {
 		res = NSERROR_INVALID;
 		goto format_error;
 	}
@@ -1443,7 +1444,7 @@ llcache_process_metadata(llcache_object *object)
 	ln += lnsize + 1;
 	lnsize = strlen(ln);
 
-	if ((lnsize < 1) || (sscanf(ln, "%zu", &num_headers) != 1)) {
+	if ((lnsize < 1) || (sscanf(ln, "%" PRIsizet, &num_headers) != 1)) {
 		res = NSERROR_INVALID;
 		goto format_error;
 	}
@@ -2461,7 +2462,7 @@ static void llcache_persist_slowcheck(void *p)
 		total_bandwidth = (llcache->total_written * 1000) / llcache->total_elapsed;
 
 		if (total_bandwidth < llcache->minimum_bandwidth) {
-			LOG("Current bandwidth %"PRIu64" less than minimum %zd",
+			LOG("Current bandwidth %" PRIu64 " less than minimum %" PRIsizet,
 			    total_bandwidth, llcache->minimum_bandwidth);
 			guit->llcache->finalise();
 		}

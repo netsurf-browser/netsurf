@@ -77,12 +77,22 @@ struct dirent;
 #define PRId64 "lld"
 #endif
 
-/* Windows does not have POSIX formating codes or mkdir so work around that */
+/* Windows does not have sizet formating codes or POSIX mkdir so work
+ * around that
+ */
 #if defined(_WIN32)
-#define SSIZET_FMT "Iu"
+/** windows printf formatting for size_t type */
+#define PRIsizet "Iu"
+/** windows printf formatting for ssize_t type */
+#define PRIssizet "Id"
+/** windows mkdir function */
 #define nsmkdir(dir, mode) mkdir((dir))
 #else
-#define SSIZET_FMT "zd"
+/** c99 standard printf formatting for size_t type */
+#define PRIsizet "zu"
+/** c99 standard printf formatting for ssize_t type */
+#define PRIssizet "zd"
+/** POSIX mkdir function */
 #define nsmkdir(dir, mode) mkdir((dir), (mode))
 #endif
 

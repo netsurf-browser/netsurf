@@ -1451,16 +1451,16 @@ win32_window_update_box(struct gui_window *gw, const struct rect *rect)
 
 
 
-static void win32_window_get_dimensions(struct gui_window *w, int *width, int *height,
+static void win32_window_get_dimensions(struct gui_window *gw, int *width, int *height,
 			       bool scaled)
 {
-	if (w == NULL)
+	if (gw == NULL)
 		return;
 
-	LOG("get dimensions %p w=%d h=%d", w, w->width, w->height);
+	LOG("get dimensions %p w=%d h=%d", gw, gw->width, gw->height);
 
-	*width = w->width;
-	*height = w->height;
+	*width = gw->width;
+	*height = gw->height;
 }
 
 static void win32_window_update_extent(struct gui_window *w)

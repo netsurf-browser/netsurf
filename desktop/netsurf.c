@@ -161,7 +161,8 @@ nserror netsurf_init(const char *store_path)
 
 	if (hlcache_parameters.llcache.limit < MINIMUM_MEMORY_CACHE_SIZE) {
 		hlcache_parameters.llcache.limit = MINIMUM_MEMORY_CACHE_SIZE;
-		LOG("Setting minimum memory cache size %zd", hlcache_parameters.llcache.limit);
+		LOG("Setting minimum memory cache size %" PRIsizet,
+		    hlcache_parameters.llcache.limit);
 	} 
 
 	/* Set up the max attempts made to fetch a timing out resource */

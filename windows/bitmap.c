@@ -57,6 +57,7 @@ void *win32_bitmap_create(int width, int height, unsigned int state)
 	if (pbmi == NULL) {
 		return NULL;
 	}
+
 	pbmi->bV5Size = sizeof(BITMAPV5HEADER);
 	pbmi->bV5Width = width;
 	pbmi->bV5Height = -height;
@@ -70,7 +71,6 @@ void *win32_bitmap_create(int width, int height, unsigned int state)
 	pbmi->bV5AlphaMask = 0xff000000; /* alpha mask */
 
 	windib = CreateDIBSection(NULL, (BITMAPINFO *)pbmi, DIB_RGB_COLORS, (void **)&pixdata, NULL, 0);
-
 
 	if (windib == NULL) {
 		free(pbmi);
@@ -286,11 +286,13 @@ struct bitmap *bitmap_scale(struct bitmap *prescale, int width, int height)
 					   * transfer */
 	if (ret == NULL)
 		return NULL;
+
 	retpixdata = malloc(width * height * 4);
 	if (retpixdata == NULL) {
 		free(ret);
 		return NULL;
 	}
+
 	inpixdata = (uint32_t *)prescale->pixdata;
 	ret->pixdata = (uint8_t *)retpixdata;
 	ret->height = height;
@@ -307,8 +309,11 @@ struct bitmap *bitmap_scale(struct bitmap *prescale, int width, int height)
 
 }
 
-struct bitmap *bitmap_pretile(struct bitmap *untiled, int width, int height,
-			      bitmap_flags_t flags)
+struct bitmap *
+bitmap_pretile(struct bitmap *untiled,
+	       int width,
+	       int height,
+	       bitmap_flags_t flags)
 {
 	struct bitmap *ret = malloc(sizeof(struct bitmap));
 	if (ret == NULL)
@@ -352,7 +357,8 @@ struct bitmap *bitmap_pretile(struct bitmap *untiled, int width, int height,
 	return ret;
 }
 
-static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *content)
+static nserror
+bitmap_render(struct bitmap *bitmap, struct hlcache_handle *content)
 {
 	int width;
 	int height;
@@ -368,7 +374,8 @@ static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *conte
 	height = ((width * bitmap->height) + (bitmap->width / 2)) /
 		bitmap->width;
 
-	LOG("bitmap %p for content %p width %d, height %d", bitmap, content, width, height);
+	LOG("bitmap %p for content %p width %d, height %d",
+	    bitmap, content, width, height);
 
 	/* create two memory device contexts to put the bitmaps in */
 	bufferdc = CreateCompatibleDC(NULL);

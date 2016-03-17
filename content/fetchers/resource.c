@@ -16,7 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* resource: URL handling. Based on the data fetcher by Rob Kendrick */
+/**
+ * \file
+ * resource scheme URL handling. Based on the data fetcher by Rob Kendrick
+ */
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -187,20 +190,21 @@ static bool fetch_resource_data_handler(struct fetch_resource_context *ctx)
 
 	/* content type */
 	if (fetch_resource_send_header(ctx, "Content-Type: %s",
-			guit->fetch->filetype(lwc_string_data(ctx->entry->path))))
+				       guit->fetch->filetype(lwc_string_data(ctx->entry->path)))) {
 		goto fetch_resource_data_aborted;
+	}
 
 	/* content length */
-	if (fetch_resource_send_header(ctx,
-				   "Content-Length: %"SSIZET_FMT,
-				   ctx->entry->data_len))
+	if (fetch_resource_send_header(ctx, "Content-Length: %" PRIsizet,
+				       ctx->entry->data_len)) {
 		goto fetch_resource_data_aborted;
+	}
 
 	/* create etag */
-	if (fetch_resource_send_header(ctx,
-				   "ETag: \"%10" PRId64 "\"",
-				   (int64_t) DIRECT_ETAG_VALUE))
+	if (fetch_resource_send_header(ctx, "ETag: \"%10" PRId64 "\"",
+				       (int64_t) DIRECT_ETAG_VALUE)) {
 		goto fetch_resource_data_aborted;
+	}
 
 
 	msg.type = FETCH_DATA;
