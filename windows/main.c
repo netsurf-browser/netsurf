@@ -98,6 +98,33 @@ static nserror set_defaults(struct nsoption_s *defaults)
 {
 	/* Set defaults for absent option strings */
 
+	/* locate CA bundle and set as default, cannot rely on curl
+	 * compiled in default on windows.
+	 */
+	DWORD res_len;
+	DWORD buf_tchar_size = PATH_MAX + 1;
+	DWORD buf_bytes_size = sizeof(TCHAR) * buf_tchar_size;
+	char *ptr = NULL;
+
+	char *buf;
+
+	buf = malloc(buf_bytes_size);
+	if (buf== NULL) {
+		return NSERROR_NOMEM;
+	}
+	buf[0] = '\0';
+
+	res_len = SearchPathA(NULL,
+			      "ca-bundle.crt",
+			      NULL,
+			      buf_tchar_size,
+			      buf,
+			      &ptr);
+	if (res_len > 0) {
+		nsoption_setnull_charp(ca_bundle, strdup(buf));
+	}
+	free(buf);
+	
 	/* ensure homepage option has a default */
 	nsoption_setnull_charp(homepage_url, strdup(NETSURF_HOMEPAGE));
 
