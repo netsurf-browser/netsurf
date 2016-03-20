@@ -858,6 +858,36 @@ void win32_window_set_scroll(struct gui_window *w, int sx, int sy)
 
 }
 
+/**
+ * Create a new window due to menu selection
+ *
+ * \param gw frontends graphical window.
+ * \return NSERROR_OK on success else appropriate error code.
+ */
+static nserror win32_open_new_window(struct gui_window *gw)
+{
+	const char *addr;
+	nsurl *url;
+	nserror ret;
+
+	if (nsoption_charp(homepage_url) != NULL) {
+		addr = nsoption_charp(homepage_url);
+	} else {
+		addr = NETSURF_HOMEPAGE;
+	}
+
+	ret = nsurl_create(addr, &url);
+	if (ret == NSERROR_OK) {
+		ret = browser_window_create(BW_CREATE_HISTORY,
+					    url,
+					    NULL,
+					    gw->bw,
+					    NULL);
+		nsurl_unref(url);
+	}
+
+	return ret;
+}
 
 static LRESULT
 nsws_window_command(HWND hwnd,
@@ -868,7 +898,8 @@ nsws_window_command(HWND hwnd,
 {
 	nserror ret;
 
-	LOG("notification_code %x identifier %x ctrl_window %p", notification_code, identifier, ctrl_window);
+	LOG("notification_code %x identifier %x ctrl_window %p",
+	    notification_code, identifier, ctrl_window);
 
 	switch(identifier) {
 
@@ -888,11 +919,7 @@ nsws_window_command(HWND hwnd,
 		break;
 
 	case IDM_FILE_OPEN_WINDOW:
-		ret = browser_window_create(BW_CREATE_NONE,
-				      NULL,
-				      NULL,
-				      gw->bw,
-				      NULL);
+		ret = win32_open_new_window(gw);
 		if (ret != NSERROR_OK) {
 			warn_user(messages_get_errorcode(ret), 0);
 		}
