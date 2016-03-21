@@ -226,9 +226,8 @@ static bool nsfont_split(const plot_font_style_t *style,
 			(*char_offset)++;
 		}
 	}
-	nsfont_position_in_string(style, string, *char_offset, x, char_offset,
-			actual_x);
-	return true;
+
+	return nsfont_width(style, string, *char_offset, actual_x);
 }
 
 const struct font_functions nsfont = {
