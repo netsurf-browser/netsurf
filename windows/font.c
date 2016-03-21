@@ -27,6 +27,7 @@
 #include <assert.h>
 #include <windows.h>
 
+#include "utils/log.h"
 #include "utils/nsoption.h"
 #include "utils/utf8.h"
 #include "desktop/font.h"
@@ -148,6 +149,7 @@ static bool nsfont_width(const plot_font_style_t *style,
 		ReleaseDC(NULL, hdc);
 		return true;
 	}
+	LOG("nsfont_width failed");
 	font = SelectObject(hdc, fontbak);
 	DeleteObject(font);
 	ReleaseDC(NULL, hdc);
