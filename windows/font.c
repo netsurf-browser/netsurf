@@ -214,7 +214,6 @@ static bool nsfont_split(const plot_font_style_t *style,
 			actual_x);
 	c_off = *char_offset;
 	if (*char_offset == length) {
-		printf("%s %d\n",string, (int)(*char_offset));
 		return true;
 	}
 	while ((string[*char_offset] != ' ') && (*char_offset > 0))
