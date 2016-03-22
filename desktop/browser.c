@@ -1301,7 +1301,7 @@ static void browser_window_convert_to_download(struct browser_window *bw,
 
 
 /**
- * Callback handler for content event messages.
+ * Browser window content event callback handler.
  */
 static nserror browser_window_callback(hlcache_handle *c,
 		const hlcache_event *event, void *pw)

@@ -42,11 +42,11 @@ struct font_functions
 	/**
 	 * Measure the width of a string.
 	 *
-	 * \param  fstyle  plot style for this text
-	 * \param  string  UTF-8 string to measure
-	 * \param  length  length of string, in bytes
-	 * \param  width   updated to width of string[0..length)
-	 * \return  true on success, false on error and error reported
+	 * \param[in] fstyle plot style for this text
+	 * \param[in] string UTF-8 string to measure
+	 * \param[in] length length of string, in bytes
+	 * \param[out] width updated to width of string[0..length)
+	 * \return true on success and width updated else false.
 	 */
 	bool (*font_width)(const plot_font_style_t *fstyle,
 			const char *string, size_t length,
@@ -54,12 +54,12 @@ struct font_functions
 	/**
 	 * Find the position in a string where an x coordinate falls.
 	 *
-	 * \param  fstyle       style for this text
-	 * \param  string       UTF-8 string to measure
-	 * \param  length       length of string, in bytes
-	 * \param  x            x coordinate to search for
-	 * \param  char_offset  updated to offset in string of actual_x, [0..length]
-	 * \param  actual_x     updated to x coordinate of character closest to x
+	 * \param[in] fstyle style for this text
+	 * \param[in] string UTF-8 string to measure
+	 * \param[in] length length of string, in bytes
+	 * \param[in] x coordinate to search for
+	 * \param[out] char_offset updated to offset in string of actual_x, [0..length]
+	 * \param[out] actual_x updated to x coordinate of character closest to x
 	 * \return  true on success, false on error and error reported
 	 */
 	bool (*font_position_in_string)(const plot_font_style_t *fstyle,
