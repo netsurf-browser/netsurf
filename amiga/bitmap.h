@@ -46,7 +46,8 @@ struct bitmap *ami_bitmap_from_datatype(char *filename);
  * \param  bm  a bitmap, as returned by bitmap_create()
  * \param  title  a pointer to a title string
  *
- * It is assumed that this is freed elsewhere after the bitmap is destroyed.
+ * A reference will be kept by the bitmap object.
+ * The URL can only ever be set once for a bitmap.
  */
 void ami_bitmap_set_url(struct bitmap *bm, struct nsurl *url);
 
@@ -56,7 +57,8 @@ void ami_bitmap_set_url(struct bitmap *bm, struct nsurl *url);
  * \param  bm  a bitmap, as returned by bitmap_create()
  * \param  title  a pointer to a title string
  *
- * It is assumed that this is freed elsewhere after the bitmap is destroyed.
+ * This is copied by the bitmap object.
+ * The title can only ever be set once for a bitmap.
  */
 void ami_bitmap_set_title(struct bitmap *bm, const char *title);
 

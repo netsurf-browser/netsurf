@@ -59,7 +59,7 @@ struct bitmap {
 	PLANEPTR native_mask;
 	Object *dto;
 	struct nsurl *url;   /* temporary storage space */
-	const char *title; /* temporary storage space */
+	char *title; /* temporary storage space */
 	ULONG *icondata; /* for appicons */
 };
 
@@ -143,10 +143,16 @@ void amiga_bitmap_destroy(void *bitmap)
 
 		if(bm->native_mask) FreeRaster(bm->native_mask, bm->width, bm->height);
 		FreeVec(bm->pixdata);
+
+		if(bm->url) nsurl_unref(bm->url);
+		if(bm->title) free(bm->title);
+
 		bm->pixdata = NULL;
 		bm->nativebm = NULL;
 		bm->native_mask = NULL;
 		bm->dto = NULL;
+		bm->url = NULL;
+		bm->title = NULL;
 	
 		ami_misc_itempool_free(pool_bitmap, bm, sizeof(struct bitmap));
 		bm = NULL;
@@ -644,12 +650,14 @@ static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 
 void ami_bitmap_set_url(struct bitmap *bm, struct nsurl *url)
 {
-	bm->url = url;
+	if(bm->url != NULL) return;
+	bm->url = nsurl_ref(url);
 }
 
 void ami_bitmap_set_title(struct bitmap *bm, const char *title)
 {
-	bm->title = title;
+	if(bm->title != NULL) return;
+	bm->title = strdup(title);
 }
 
 ULONG *ami_bitmap_get_icondata(struct bitmap *bm)
