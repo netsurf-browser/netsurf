@@ -38,14 +38,14 @@
 HWND font_hwnd;
 
 nserror utf8_to_font_encoding(const struct font_desc* font,
-				       const char *string, 
+				       const char *string,
 				       size_t len,
 				       char **result)
 {
 	return utf8_to_enc(string, font->encoding, len, result);
 }
 
-static nserror utf8_to_local_encoding(const char *string, 
+static nserror utf8_to_local_encoding(const char *string,
 				       size_t len,
 				       char **result)
 {
@@ -131,30 +131,47 @@ HFONT get_font(const plot_font_style_t *style)
 	return font;
 }
 
-static bool nsfont_width(const plot_font_style_t *style,
-			 const char *string, size_t length,
-			 int *width)
+/**
+ * Measure the width of a string.
+ *
+ * \param[in] style plot style for this text
+ * \param[in] string UTF-8 string to measure
+ * \param[in] length length of string, in bytes
+ * \param[out] width updated to width of string[0..length)
+ * \return true on success and width updated else false
+ */
+static bool
+nsfont_width(const plot_font_style_t *style,
+	     const char *string,
+	     size_t length,
+	     int *width)
 {
-	HDC hdc = GetDC(NULL);
-	HFONT font = get_font(style);
-	HFONT fontbak = SelectObject(hdc, font);
+	HDC hdc;
+	HFONT font;
+	HFONT fontbak;
 	SIZE s;
-	if (length < 8192) { /* win 95/98/ME */
+	bool ret = true;
+
+	if (length == 0) {
+		*width = 0;
+	} else {
+		hdc = GetDC(NULL);
+		font = get_font(style);
+		fontbak = SelectObject(hdc, font);
+
 		/* may well need to convert utf-8 to lpctstr */
-		GetTextExtentPoint32(hdc, string,
-				utf8_bounded_length(string, length), &s);
-		*width = s.cx;
+		if (GetTextExtentPoint32A(hdc, string, length, &s) != 0) {
+			*width = s.cx;
+		} else {
+			ret = false;
+		}
 		font = SelectObject(hdc, fontbak);
 		DeleteObject(font);
 		ReleaseDC(NULL, hdc);
-		return true;
 	}
-	LOG("nsfont_width failed");
-	font = SelectObject(hdc, fontbak);
-	DeleteObject(font);
-	ReleaseDC(NULL, hdc);
-	return false;
+	return ret;
 }
+
 
 /**
  * Find the position in a string where an x coordinate falls.
@@ -168,25 +185,42 @@ static bool nsfont_width(const plot_font_style_t *style,
  * \param  actual_x	updated to x coordinate of character closest to x
  * \return  true on success, false on error and error reported
  */
-
-static bool nsfont_position_in_string(const plot_font_style_t *style,
-		const char *string, size_t length,
-		int x, size_t *char_offset, int *actual_x)
+static bool
+nsfont_position_in_string(const plot_font_style_t *style,
+			  const char *string,
+			  size_t length,
+			  int x,
+			  size_t *char_offset,
+			  int *actual_x)
 {
-	HDC hdc = GetDC(NULL);
-	HFONT font = get_font(style);
-	HFONT fontbak = SelectObject(hdc, font);
+	HDC hdc;
+	HFONT font;
+	HFONT fontbak;
 	SIZE s;
 	int offset;
-	GetTextExtentExPoint(hdc, string, length, x, &offset, NULL, &s);
-	*char_offset = (size_t)offset;
-	nsfont_width(style, string, *char_offset, actual_x);
+	bool ret = true;
 
-	font = SelectObject(hdc, fontbak);
-	DeleteObject(font);
-	ReleaseDC(NULL, hdc);
-	
-	return true;
+	if ((length == 0) || (x < 1)) {
+		*char_offset = 0;
+		*actual_x = 0;
+	} else {
+		hdc = GetDC(NULL);
+		font = get_font(style);
+		fontbak = SelectObject(hdc, font);
+
+		if ((GetTextExtentExPointA(hdc, string, length, x, &offset, NULL,&s) != 0) &&
+		    (GetTextExtentPoint32A(hdc, string, offset, &s) != 0)) {
+				*char_offset = (size_t)offset;
+				*actual_x = s.cx;
+		} else {
+			ret = false;
+		}
+		font = SelectObject(hdc, fontbak);
+		DeleteObject(font);
+		ReleaseDC(NULL, hdc);
+	}
+
+	return ret;
 }
 
 
@@ -206,28 +240,52 @@ static bool nsfont_position_in_string(const plot_font_style_t *style,
  *	   string[char_offset] == ' ' ||
  *	   char_offset == length]
  */
-
-static bool nsfont_split(const plot_font_style_t *style,
-		const char *string, size_t length,
-		int x, size_t *char_offset, int *actual_x)
+static bool
+nsfont_split(const plot_font_style_t *style,
+	     const char *string,
+	     size_t length,
+	     int x,
+	     size_t *char_offset,
+	     int *actual_x)
 {
 	int c_off;
-	nsfont_position_in_string(style, string, length, x, char_offset, 
-			actual_x);
-	c_off = *char_offset;
-	if (*char_offset == length) {
-		return true;
-	}
-	while ((string[*char_offset] != ' ') && (*char_offset > 0))
-		(*char_offset)--;
-	if (*char_offset == 0) {
-		*char_offset = c_off;
-		while (*char_offset < length && string[*char_offset] != ' ') {
-			(*char_offset)++;
+	bool ret = false;
+
+	if (nsfont_position_in_string(style,
+				      string,
+				      length,
+				      x,
+				      char_offset,
+				      actual_x)) {
+		c_off = *char_offset;
+		if (*char_offset == length) {
+			ret = true;
+		} else {
+			while ((string[*char_offset] != ' ') &&
+			       (*char_offset > 0)) {
+				(*char_offset)--;
+			}
+
+			if (*char_offset == 0) {
+				*char_offset = c_off;
+				while ((*char_offset < length) &&
+				       (string[*char_offset] != ' ')) {
+					(*char_offset)++;
+				}
+			}
+
+			ret = nsfont_width(style,
+					   string,
+					   *char_offset,
+					   actual_x);
 		}
 	}
 
-	return nsfont_width(style, string, *char_offset, actual_x);
+/*
+	LOG("ret %d Split %u chars at %ipx: Split at char %i (%ipx) - %.*s",
+	    ret, length, x, *char_offset, *actual_x, *char_offset, string);
+*/
+	return ret;
 }
 
 const struct font_functions nsfont = {
