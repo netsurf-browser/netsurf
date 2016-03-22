@@ -212,8 +212,8 @@ HOOKF(void, ami_ctxmenu_item_objcopy, APTR, window, struct IntuiMessage *)
 	struct hlcache_handle *object = (struct hlcache_handle *)hook->h_Data;
 	if((bm = content_get_bitmap(object)))
 	{
-		bm->url = (char *)nsurl_access(hlcache_handle_get_url(object));
-		bm->title = (char *)content_get_title(object);
+		ami_bitmap_set_url(bm, hlcache_handle_get_url(object));
+		ami_bitmap_set_title(bm, content_get_title(object));
 		ami_easy_clipboard_bitmap(bm);
 	}
 #ifdef WITH_NS_SVG

@@ -35,6 +35,7 @@
 #include "assert.h"
 
 #include "utils/nsoption.h"
+#include "utils/nsurl.h"
 #include "utils/messages.h"
 #include "desktop/mouse.h"
 #include "desktop/gui_window.h"
@@ -45,6 +46,22 @@
 #include "amiga/download.h"
 #include "amiga/misc.h"
 #include "amiga/rtg.h"
+
+struct bitmap {
+	int width;
+	int height;
+	UBYTE *pixdata;
+	bool opaque;
+	int native;
+	struct BitMap *nativebm;
+	int nativebmwidth;
+	int nativebmheight;
+	PLANEPTR native_mask;
+	Object *dto;
+	struct nsurl *url;   /* temporary storage space */
+	const char *title; /* temporary storage space */
+	ULONG *icondata; /* for appicons */
+};
 
 enum {
 	AMI_NSBM_NONE = 0,
@@ -218,7 +235,7 @@ bool amiga_bitmap_get_opaque(void *bitmap)
 /**
  * get width of a bitmap.
  */
-static int bitmap_get_width(void *bitmap)
+int bitmap_get_width(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
@@ -235,7 +252,7 @@ static int bitmap_get_width(void *bitmap)
 /**
  * get height of a bitmap.
  */
-static int bitmap_get_height(void *bitmap)
+int bitmap_get_height(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
@@ -315,7 +332,7 @@ Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap)
 		}
 
 		SetDTAttrs(dto,NULL,NULL,
-					DTA_ObjName,bitmap->url,
+					DTA_ObjName,nsurl_access(bitmap->url),
 					DTA_ObjAnnotation,bitmap->title,
 					DTA_ObjAuthor,messages_get("NetSurf"),
 					DTA_NominalHoriz,bitmap_get_width(bitmap),
@@ -624,6 +641,34 @@ static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 
 	return NSERROR_OK;
 }
+
+void ami_bitmap_set_url(struct bitmap *bm, struct nsurl *url)
+{
+	bm->url = url;
+}
+
+void ami_bitmap_set_title(struct bitmap *bm, const char *title)
+{
+	bm->title = title;
+}
+
+ULONG *ami_bitmap_get_icondata(struct bitmap *bm)
+{
+	return bm->icondata;
+}
+
+bool ami_bitmap_has_dto(struct bitmap *bm)
+{
+	if(bm->dto) return true;
+		else return false;
+}
+
+bool ami_bitmap_is_nativebm(struct bitmap *bm, struct BitMap *nbm)
+{
+	if(bm->nativebm == nbm) return true;
+		else return false;
+}
+
 
 static struct gui_bitmap_table bitmap_table = {
 	.create = amiga_bitmap_create,

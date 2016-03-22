@@ -581,7 +581,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 		
 		if(glob->palette_mapped == false) {
 			tag = BLITA_UseSrcAlpha;
-			tag_data = !bitmap->opaque;
+			tag_data = !amiga_bitmap_get_opaque(bitmap);
 			minterm = 0xc0;
 		} else {
 			tag = BLITA_MaskPlane;
@@ -609,7 +609,8 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 #endif
 	}
 
-	if((bitmap->dto == NULL) && (tbm != bitmap->nativebm)) {
+	if((ami_bitmap_has_dto(bitmap) == false) && (ami_bitmap_is_nativebm(bitmap, tbm) == false)) {
+		/**\todo is this logic logical? */
 		ami_rtg_freebitmap(tbm);
 	}
 
@@ -637,7 +638,8 @@ static bool ami_bitmap_tile(int x, int y, int width, int height,
 		return ami_bitmap(x, y, width, height, bitmap);
 
 	/* If it is a one pixel transparent image, we are wasting our time */
-	if((bitmap->opaque == false) && (bitmap->width == 1) && (bitmap->height == 1))
+	if((amiga_bitmap_get_opaque(bitmap) == false) &&
+		(bitmap_get_width(bitmap) == 1) && (bitmap_get_height(bitmap) == 1))
 		return true;
 
 	tbm = ami_bitmap_get_native(bitmap,width,height,glob->rp->BitMap);
@@ -679,7 +681,7 @@ static bool ami_bitmap_tile(int x, int y, int width, int height,
 		ym = y;
 	}
 #ifdef __amigaos4__
-	if(bitmap->opaque)
+	if(amiga_bitmap_get_opaque(bitmap))
 	{
 		bfh = CreateBackFillHook(BFHA_BitMap,tbm,
 							BFHA_Width,width,
@@ -708,12 +710,13 @@ static bool ami_bitmap_tile(int x, int y, int width, int height,
 	InstallLayerHook(glob->rp->Layer,LAYERS_NOBACKFILL);
 
 #ifdef __amigaos4__
-	if(bitmap->opaque) DeleteBackFillHook(bfh);
+	if(amiga_bitmap_get_opaque(bitmap)) DeleteBackFillHook(bfh);
 		else
 #endif
 		FreeVec(bfh);
 
-	if((bitmap->dto == NULL) && (tbm != bitmap->nativebm)) {
+	if((ami_bitmap_has_dto(bitmap) == false) && (ami_bitmap_is_nativebm(bitmap, tbm) == false)) {
+		/**\todo is this logic logical? */
 		ami_rtg_freebitmap(tbm);
 	}
 

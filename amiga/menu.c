@@ -260,8 +260,8 @@ HOOKF(void, ami_menu_item_edit_copy, APTR, window, struct IntuiMessage *)
 		 * the objects containing the values returned (and the
 		 * constness cast away) is safe.
 		 */
-		bm->url = (char *)nsurl_access(browser_window_get_url(gwin->gw->bw));
-		bm->title = (char *)browser_window_get_title(gwin->gw->bw);
+		ami_bitmap_set_url(bm, browser_window_get_url(gwin->gw->bw));
+		ami_bitmap_set_title(bm, browser_window_get_title(gwin->gw->bw));
 		ami_easy_clipboard_bitmap(bm);
 	}
 #ifdef WITH_NS_SVG

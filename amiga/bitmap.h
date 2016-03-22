@@ -29,22 +29,8 @@
 #define AMI_BITMAP_SCALE_ICON 0xFF
 
 struct gui_bitmap_table *amiga_bitmap_table;
-
-struct bitmap {
-	int width;
-	int height;
-	UBYTE *pixdata;
-	bool opaque;
-	int native;
-	struct BitMap *nativebm;
-	int nativebmwidth;
-	int nativebmheight;
-	PLANEPTR native_mask;
-	Object *dto;
-	char *url;   /* temporary storage space */
-	char *title; /* temporary storage space */
-	ULONG *icondata; /* for appicons */
-};
+struct bitmap;
+struct nsurl;
 
 struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
 				int width, int height, struct BitMap *friendbm);
@@ -53,6 +39,15 @@ PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width,
 
 Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap);
 struct bitmap *ami_bitmap_from_datatype(char *filename);
+
+void ami_bitmap_set_url(struct bitmap *bm, struct nsurl *url);
+void ami_bitmap_set_title(struct bitmap *bm, const char *title);
+ULONG *ami_bitmap_get_icondata(struct bitmap *bm);
+bool ami_bitmap_has_dto(struct bitmap *bm);
+bool ami_bitmap_is_nativebm(struct bitmap *bm, struct BitMap *nbm);
+
+int bitmap_get_width(void *bitmap);
+int bitmap_get_height(void *bitmap);
 
 /**
  * Cleanup bitmap allocations

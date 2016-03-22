@@ -167,10 +167,10 @@ void ami_theme_throbber_setup(void)
 	if(throbber_update_interval == 0) throbber_update_interval = 250;
 
 	bm = ami_bitmap_from_datatype(throbberfile);
-	throbber = ami_bitmap_get_native(bm, bm->width, bm->height, NULL);
+	throbber = ami_bitmap_get_native(bm, bitmap_get_width(bm), bitmap_get_height(bm), NULL);
 
-	throbber_width = bm->width / throbber_frames;
-	throbber_height = bm->height;
+	throbber_width = bitmap_get_width(bm) / throbber_frames;
+	throbber_height = bitmap_get_height(bm);
 	throbber_nsbm = bm;
 }
 

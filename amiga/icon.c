@@ -493,12 +493,16 @@ struct DiskObject *amiga_icon_from_bitmap(struct bitmap *bm)
 {
 	struct DiskObject *dobj;
 	struct BitMap *bitmap;
+	ULONG *icondata;
+
 #ifdef __amigaos4__
 	if(bm)
 	{
+		icondata = ami_bitmap_get_icondata(bm);
+
 		bitmap = ami_bitmap_get_native(bm, THUMBNAIL_WIDTH,
 									THUMBNAIL_HEIGHT, NULL);
-		bm->icondata = AllocVecTagList(THUMBNAIL_WIDTH * 4 * THUMBNAIL_HEIGHT, NULL);
+		icondata = AllocVecTagList(THUMBNAIL_WIDTH * 4 * THUMBNAIL_HEIGHT, NULL);
 
 		BltBitMapTags(BLITA_Width, THUMBNAIL_WIDTH,
 					BLITA_Height, THUMBNAIL_HEIGHT,
@@ -506,7 +510,7 @@ struct DiskObject *amiga_icon_from_bitmap(struct bitmap *bm)
 					BLITA_Source, bitmap,
 					BLITA_DestType, BLITT_ARGB32,
 					BLITA_DestBytesPerRow, THUMBNAIL_WIDTH * 4,
-					BLITA_Dest, bm->icondata,
+					BLITA_Dest, icondata,
 					TAG_DONE);
 	}
 #endif
@@ -520,7 +524,7 @@ struct DiskObject *amiga_icon_from_bitmap(struct bitmap *bm)
 			ICONCTRLA_SetImageDataFormat, IDFMT_DIRECTMAPPED,
 			ICONCTRLA_SetWidth, THUMBNAIL_WIDTH,
 			ICONCTRLA_SetHeight, THUMBNAIL_HEIGHT,
-			ICONCTRLA_SetImageData1, bm->icondata,
+			ICONCTRLA_SetImageData1, icondata,
 			ICONCTRLA_SetImageData2, NULL,
 			TAG_DONE);
 	}
@@ -537,5 +541,6 @@ void amiga_icon_free(struct DiskObject *dobj)
 	struct bitmap *bm = dobj->do_Gadget.UserData;
 
 	FreeDiskObject(dobj);
-	if(bm) FreeVec(bm->icondata);
+	if(bm) FreeVec(ami_bitmap_get_icondata(bm));
 }
+

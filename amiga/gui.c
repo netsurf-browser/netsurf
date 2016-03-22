@@ -1772,7 +1772,7 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 
 			if(ami_plot_screen_is_palettemapped() == false) {
 				tag = BLITA_UseSrcAlpha;
-				tag_data = !icon_bitmap->opaque;
+				tag_data = !amiga_bitmap_get_opaque(icon_bitmap);
 				minterm = 0xc0;
 			} else {
 				tag = BLITA_MaskPlane;
