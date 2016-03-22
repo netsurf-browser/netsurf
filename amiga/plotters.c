@@ -188,6 +188,9 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool for
 		pool_pens = ami_misc_itempool_create(sizeof(struct ami_plot_pen));
 	}
 
+	gg->apen = 0x00000000;
+	gg->open = 0x00000000;
+
 	init_layers_count++;
 	LOG("Layer initialised (total: %d)", init_layers_count);
 }
@@ -269,10 +272,15 @@ void ami_plot_release_pens(struct MinList *shared_pens)
 		Remove((struct Node *)node);
 		ami_misc_itempool_free(pool_pens, node, sizeof(struct ami_plot_pen));
 	} while((node = nnode));
+
+	glob->apen = 0x00000000;
+	glob->open = 0x00000000;
 }
 
 static void ami_plot_setapen(struct RastPort *rp, ULONG colr)
 {
+	if(glob->apen == colr) return;
+
 #ifdef __amigaos4__
 	if(glob->palette_mapped == false) {
 		SetRPAttrs(rp, RPTAG_APenColor,
@@ -284,10 +292,14 @@ static void ami_plot_setapen(struct RastPort *rp, ULONG colr)
 		LONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
 		if(pen != -1) SetAPen(rp, pen);
 	}
+
+	glob->apen = colr;
 }
 
 static void ami_plot_setopen(struct RastPort *rp, ULONG colr)
 {
+	if(glob->open == colr) return;
+
 #ifdef __amigaos4__
 	if(glob->palette_mapped == false) {
 		SetRPAttrs(rp, RPTAG_OPenColor,
@@ -299,6 +311,8 @@ static void ami_plot_setopen(struct RastPort *rp, ULONG colr)
 		LONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
 		if(pen != -1) SetOPen(rp, pen);
 	}
+
+	glob->open = colr;
 }
 
 void ami_plot_clear_bbox(struct RastPort *rp, struct IBox *bbox)
