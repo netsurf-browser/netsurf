@@ -498,11 +498,10 @@ struct DiskObject *amiga_icon_from_bitmap(struct bitmap *bm)
 #ifdef __amigaos4__
 	if(bm)
 	{
-		icondata = ami_bitmap_get_icondata(bm);
-
 		bitmap = ami_bitmap_get_native(bm, THUMBNAIL_WIDTH,
 									THUMBNAIL_HEIGHT, NULL);
 		icondata = AllocVecTagList(THUMBNAIL_WIDTH * 4 * THUMBNAIL_HEIGHT, NULL);
+		ami_bitmap_set_icondata(bm, icondata);
 
 		BltBitMapTags(BLITA_Width, THUMBNAIL_WIDTH,
 					BLITA_Height, THUMBNAIL_HEIGHT,

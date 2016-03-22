@@ -657,6 +657,11 @@ ULONG *ami_bitmap_get_icondata(struct bitmap *bm)
 	return bm->icondata;
 }
 
+void ami_bitmap_set_icondata(struct bitmap *bm, ULONG *icondata)
+{
+	bm->icondata = icondata;
+}
+
 bool ami_bitmap_has_dto(struct bitmap *bm)
 {
 	if(bm->dto) return true;

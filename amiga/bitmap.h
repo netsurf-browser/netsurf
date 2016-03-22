@@ -40,14 +40,64 @@ PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width,
 Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap);
 struct bitmap *ami_bitmap_from_datatype(char *filename);
 
+/**
+ * Set bitmap URL
+ *
+ * \param  bm  a bitmap, as returned by bitmap_create()
+ * \param  title  a pointer to a title string
+ *
+ * It is assumed that this is freed elsewhere after the bitmap is destroyed.
+ */
 void ami_bitmap_set_url(struct bitmap *bm, struct nsurl *url);
-void ami_bitmap_set_title(struct bitmap *bm, const char *title);
-ULONG *ami_bitmap_get_icondata(struct bitmap *bm);
-bool ami_bitmap_has_dto(struct bitmap *bm);
-bool ami_bitmap_is_nativebm(struct bitmap *bm, struct BitMap *nbm);
 
-int bitmap_get_width(void *bitmap);
-int bitmap_get_height(void *bitmap);
+/**
+ * Set bitmap title
+ *
+ * \param  bm  a bitmap, as returned by bitmap_create()
+ * \param  title  a pointer to a title string
+ *
+ * It is assumed that this is freed elsewhere after the bitmap is destroyed.
+ */
+void ami_bitmap_set_title(struct bitmap *bm, const char *title);
+
+/**
+ * Get an icondata pointer
+ *
+ * \param  bm  a bitmap, as returned by bitmap_create()
+ * \return pointer to the icondata area
+ *
+ * This function probably shouldn't be here!
+ */
+ULONG *ami_bitmap_get_icondata(struct bitmap *bm);
+
+/**
+ * Set an icondata pointer
+ *
+ * \param  bm  a bitmap, as returned by bitmap_create()
+ * \param  icondata  a pointer to memory
+ *
+ * This function probably shouldn't be here!
+ */
+void ami_bitmap_set_icondata(struct bitmap *bm, ULONG *icondata);
+
+/**
+ * Test if a bitmap has an associated DataTypes object.
+ *
+ * \param  bm  a bitmap, as returned by bitmap_create()
+ * \return true if the BitMap has a DataTypes object
+ *
+ * This function probably shouldn't be used!
+ */
+bool ami_bitmap_has_dto(struct bitmap *bm);
+
+/**
+ * Test if a BitMap is owned by a bitmap.
+ *
+ * \param  bm  a bitmap, as returned by bitmap_create()
+ * \param  nbm a BitMap, as created by AllocBitMap()
+ * \return true if the BitMap is owned by the bitmap
+ */
+bool ami_bitmap_is_nativebm(struct bitmap *bm, struct BitMap *nbm);
 
 /**
  * Cleanup bitmap allocations
@@ -82,6 +132,22 @@ unsigned char *amiga_bitmap_get_buffer(void *bitmap);
  * \return width of a pixel row in the bitmap
  */
 size_t amiga_bitmap_get_rowstride(void *bitmap);
+
+/**
+ * Return the width of a bitmap.
+ *
+ * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \return width in pixels
+ */
+int bitmap_get_width(void *bitmap);
+
+/**
+ * Return the height of a bitmap.
+ *
+ * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \return height in pixels
+ */
+int bitmap_get_height(void *bitmap);
 
 /**
  * Free a bitmap.
