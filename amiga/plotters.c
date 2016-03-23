@@ -190,6 +190,8 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool for
 
 	gg->apen = 0x00000000;
 	gg->open = 0x00000000;
+	gg->apen_num = -1;
+	gg->open_num = -1;
 
 	init_layers_count++;
 	LOG("Layer initialised (total: %d)", init_layers_count);
@@ -275,6 +277,8 @@ void ami_plot_release_pens(struct MinList *shared_pens)
 
 	glob->apen = 0x00000000;
 	glob->open = 0x00000000;
+	glob->apen_num = -1;
+	glob->open_num = -1;
 }
 
 static void ami_plot_setapen(struct RastPort *rp, ULONG colr)
@@ -290,7 +294,7 @@ static void ami_plot_setapen(struct RastPort *rp, ULONG colr)
 #endif
 	{
 		LONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
-		if(pen != -1) SetAPen(rp, pen);
+		if((pen != -1) && (pen != glob->apen_num)) SetAPen(rp, pen);
 	}
 
 	glob->apen = colr;
@@ -309,7 +313,7 @@ static void ami_plot_setopen(struct RastPort *rp, ULONG colr)
 #endif
 	{
 		LONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
-		if(pen != -1) SetOPen(rp, pen);
+		if((pen != -1) && (pen != glob->open_num)) SetOPen(rp, pen);
 	}
 
 	glob->open = colr;
