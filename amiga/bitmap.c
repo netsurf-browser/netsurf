@@ -338,7 +338,7 @@ Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap)
 		}
 
 		SetDTAttrs(dto,NULL,NULL,
-					DTA_ObjName,nsurl_access(bitmap->url),
+					DTA_ObjName, bitmap->url ? nsurl_access(bitmap->url) : "",
 					DTA_ObjAnnotation,bitmap->title,
 					DTA_ObjAuthor,messages_get("NetSurf"),
 					DTA_NominalHoriz,bitmap_get_width(bitmap),
