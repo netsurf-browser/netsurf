@@ -40,9 +40,7 @@ CFLAGS += -Dnscocoa -D_BSD_SOURCE -D_POSIX_C_SOURCE -std=c99 -g -Os
 CFLAGS += -I/usr/X11/include
 CFLAGS += -include cocoa/Prefix.pch
 
-#  VERSION_FULL := $(shell sed -n '/\"/{s/.*"\(.*\)\".*/\1/;p;}' desktop/version.c)
-# TODO: this needs fixing properly everywhere
-VERSION_FULL := "3.4 (Dev)"
+VERSION_FULL := $(shell sed -n '/_version.*=.*"/{s/.*"\(.*\)".*/\1/;p;}' desktop/version.c)
 VERSION_MAJ := $(shell sed -n '/_major/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
 VERSION_MIN := $(shell sed -n '/_minor/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
 

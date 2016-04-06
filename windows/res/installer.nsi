@@ -8,7 +8,7 @@
 !define DESCRIPTION "Web Browser"
 # These three must be integers
 !define VERSIONMAJOR 3
-!define VERSIONMINOR 4
+!define VERSIONMINOR 6
 !define VERSIONBUILD 1
 # These will be displayed by the "Click here for support information" link in "Add/Remove Programs"
 # It is possible to use "mailto:" links in here to open the email client

@@ -2,10 +2,10 @@ Short:        Fast CSS capable web browser
 Uploader:     chris@unsatisfactorysoftware.co.uk (Chris Young)
 Author:       NetSurf contributors (OS4 port by Chris Young)
 Type:         comm/www
-Version:      3.5 BETA
+Version:      3.6 BETA
 Architecture: m68k-amigaos >= 3.5.0
 
-This is NetSurf 3.5 BETA for AmigaOS 3.
+This is NetSurf 3.6 BETA for AmigaOS 3.
 It is built off of the OS4 (Reaction) frontend.
 
 Requirements are AmigaOS 3.5 or 3.9, 32MB RAM.

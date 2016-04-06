@@ -2,10 +2,10 @@ Short:        Fast CSS capable web browser
 Uploader:     chris@unsatisfactorysoftware.co.uk (Chris Young)
 Author:       NetSurf contributors (OS4 port by Chris Young)
 Type:         comm/www
-Version:      3.5
+Version:      3.6
 Architecture: ppc-amigaos >= 4.0.0
 
-This is NetSurf 3.5 for AmigaOS 4 (native frontend).
+This is NetSurf 3.6 for AmigaOS 4 (native frontend).
 For the latest version, visit http://www.netsurf-browser.org
 
     *******************************************
