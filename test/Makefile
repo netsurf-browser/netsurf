@@ -35,15 +35,45 @@ hashtable_SRCS := utils/hashtable.c test/log.c test/hashtable.c
 
 # Coverage builds need additional flags
 ifeq ($(MAKECMDGOALS),coverage)
-  COVCFLAGS ?= -fprofile-arcs -ftest-coverage -O0
-  COVCXXFLAGS ?= -fprofile-arcs -ftest-coverage -O0
-  COVLDFLAGS ?= -lgcov -fprofile-arcs
+  COV_CFLAGS ?= -fprofile-arcs -ftest-coverage -O0
+  COV_CXXFLAGS ?= -fprofile-arcs -ftest-coverage -O0
+  COV_LDFLAGS ?= -lgcov -fprofile-arcs
   TESTROOT := build-$(HOST)-coverage
 else
-  COVCFLAGS ?= -O0
-  COVCXXFLAGS ?= -O0
+  COV_CFLAGS ?= -O0
+  COV_CXXFLAGS ?= -O0
   TESTROOT := build-$(HOST)-test
 endif
+
+
+# Extend flags with appropriate values from pkg-config for enabled features
+#
+# 1: pkg-config required modules for feature
+# 2: Human-readable name for the feature
+define pkg_cfg_detect_lib
+  ifeq ($$(PKG_CONFIG),)
+    $$(error pkg-config is required to auto-detect feature availability)
+  endif
+
+  PKG_CONFIG_$(1)_EXISTS := $$(shell $$(PKG_CONFIG) --exists $(1) && echo yes)
+
+  ifeq ($$(PKG_CONFIG_$(1)_EXISTS),yes)
+      LIB_CFLAGS += $$(shell $$(PKG_CONFIG) --cflags $(1))
+      LIB_CXXFLAGS += $$(shell $$(PKG_CONFIG) --cflags $(1))
+      LIB_LDFLAGS += $$(shell $$(PKG_CONFIG) --libs $(1))
+      ifneq ($(MAKECMDGOALS),clean)
+        $$(info PKG.CNFG: $(2) ($(1))	enabled)
+      endif
+  else
+    ifneq ($(MAKECMDGOALS),clean)
+      $$(info PKG.CNFG: $(2) ($(1))	disabled)
+    endif
+  endif
+endef
+
+
+$(eval $(call pkg_cfg_detect_lib,check,Check))
+
 
 TESTCFLAGS := -std=c99 -g -Wall \
 		-D_BSD_SOURCE \
@@ -51,10 +81,13 @@ TESTCFLAGS := -std=c99 -g -Wall \
 		-D_XOPEN_SOURCE=600 \
 		-Itest -I. -I.. \
 		-Dnsgtk \
-		$(shell pkg-config --cflags libcurl check libparserutils libwapcaplet libdom libnsutils libutf8proc libidn) \
-		$(COVCFLAGS)
-TESTLDFLAGS := $(shell pkg-config --libs libcurl check libparserutils libwapcaplet libdom libnsutils libutf8proc libidn) -lz \
-		$(COVLDFLAGS)
+		$(shell pkg-config --cflags libcurl libparserutils libwapcaplet libdom libnsutils libutf8proc libidn) \
+		$(LIB_CFLAGS) \
+		$(COV_CFLAGS)
+
+TESTLDFLAGS := $(shell pkg-config --libs libcurl libparserutils libwapcaplet libdom libnsutils libutf8proc libidn) -lz \
+		$(LIB_LDFLAGS)\
+		$(COV_LDFLAGS)
 
 
 # Source files for all tests being compiled
