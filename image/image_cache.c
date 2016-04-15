@@ -288,7 +288,7 @@ static void image_cache__background_update(void *p)
 
 	image_cache__clean(icache);
 
-	guit->browser->schedule(icache->params.bg_clean_time,
+	guit->misc->schedule(icache->params.bg_clean_time,
 				image_cache__background_update,
 				icache);
 }
@@ -370,7 +370,7 @@ image_cache_init(const struct image_cache_parameters *image_cache_parameters)
 
 	image_cache->params = *image_cache_parameters;
 
-	guit->browser->schedule(image_cache->params.bg_clean_time,
+	guit->misc->schedule(image_cache->params.bg_clean_time,
 				image_cache__background_update,
 				image_cache);
 
@@ -385,7 +385,7 @@ nserror image_cache_fini(void)
 {
 	unsigned int op_count;
 
-	guit->browser->schedule(-1, image_cache__background_update, image_cache);
+	guit->misc->schedule(-1, image_cache__background_update, image_cache);
 
 	LOG("Size at finish %" PRIsizet " (in %d)",
 	    image_cache->total_bitmap_size, image_cache->bitmap_count);

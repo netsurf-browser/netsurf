@@ -36,7 +36,7 @@ struct nsurl;
  * function table implementing GUI interface to miscelaneous browser
  * functionality
  */
-struct gui_browser_table {
+struct gui_misc_table {
 	/* Mandantory entries */
 
 	/**

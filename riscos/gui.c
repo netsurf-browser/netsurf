@@ -2383,7 +2383,7 @@ static struct gui_fetch_table riscos_fetch_table = {
 	.mimetype = fetch_mimetype,
 };
 
-static struct gui_browser_table riscos_browser_table = {
+static struct gui_misc_table riscos_misc_table = {
 	.schedule = riscos_schedule,
 
 	.quit = gui_quit,
@@ -2424,7 +2424,7 @@ int main(int argc, char** argv)
 	os_error *error;
 	nserror ret;
 	struct netsurf_table riscos_table = {
-		.browser = &riscos_browser_table,
+		.misc = &riscos_misc_table,
 		.window = riscos_window_table,
 		.clipboard = riscos_clipboard_table,
 		.download = riscos_download_table,

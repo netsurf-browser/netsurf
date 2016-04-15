@@ -132,7 +132,7 @@ static nserror set_defaults(struct nsoption_s *defaults)
 }
 
 
-static struct gui_browser_table win32_browser_table = {
+static struct gui_misc_table win32_misc_table = {
 	.schedule = win32_schedule,
 };
 
@@ -152,7 +152,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	const char *addr;
 	nsurl *url;
 	struct netsurf_table win32_table = {
-		.browser = &win32_browser_table,
+		.misc = &win32_misc_table,
 		.window = win32_window_table,
 		.clipboard = win32_clipboard_table,
 		.download = win32_download_table,

@@ -155,7 +155,7 @@ static void nsgif_animate(void *p)
 		delay = gif->gif->frames[gif->current_frame].frame_delay;
 		if (delay < nsoption_int(minimum_gif_delay))
 			delay = nsoption_int(minimum_gif_delay);
-		guit->browser->schedule(delay * 10, nsgif_animate, gif);
+		guit->misc->schedule(delay * 10, nsgif_animate, gif);
 	}
 
 	if ((!nsoption_bool(animate_images)) ||
@@ -288,7 +288,7 @@ static bool nsgif_convert(struct content *c)
 	/* Schedule the animation if we have one */
 	gif->current_frame = 0;
 	if (gif->gif->frame_count_partial > 1)
-		guit->browser->schedule(gif->gif->frames[0].frame_delay * 10,
+		guit->misc->schedule(gif->gif->frames[0].frame_delay * 10,
 					nsgif_animate,
 					c);
 
@@ -351,7 +351,7 @@ static void nsgif_destroy(struct content *c)
 	nsgif_content *gif = (nsgif_content *) c;
 
 	/* Free all the associated memory buffers */
-	guit->browser->schedule(-1, nsgif_animate, c);
+	guit->misc->schedule(-1, nsgif_animate, c);
 	gif_finalise(gif->gif);
 	free(gif->gif);
 }
@@ -403,7 +403,7 @@ static void nsgif_add_user(struct content *c)
 	if (content_count_users(c) == 1) {
 		/* First user, and content already converted, so start the animation. */
 		if (gif->gif->frame_count_partial > 1) {
-			guit->browser->schedule(gif->gif->frames[0].frame_delay * 10,
+			guit->misc->schedule(gif->gif->frames[0].frame_delay * 10,
 				nsgif_animate, c);
 		}
 	}
@@ -413,7 +413,7 @@ static void nsgif_remove_user(struct content *c)
 {
 	if (content_count_users(c) == 1) {
 		/* Last user is about to be removed from this content, so stop the animation. */
-		guit->browser->schedule(-1, nsgif_animate, c);
+		guit->misc->schedule(-1, nsgif_animate, c);
 	}
 }
 

@@ -1010,7 +1010,7 @@ static nserror nsgtk_option_init(int *pargc, char** argv)
 	return NSERROR_OK;
 }
 
-static struct gui_browser_table nsgtk_browser_table = {
+static struct gui_misc_table nsgtk_misc_table = {
 	.schedule = nsgtk_schedule,
 
 	.quit = gui_quit,
@@ -1049,7 +1049,7 @@ int main(int argc, char** argv)
 	char *cache_home = NULL;
 	nserror ret;
 	struct netsurf_table nsgtk_table = {
-		.browser = &nsgtk_browser_table,
+		.misc = &nsgtk_misc_table,
 		.window = nsgtk_window_table,
 		.clipboard = nsgtk_clipboard_table,
 		.download = nsgtk_download_table,

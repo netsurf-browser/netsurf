@@ -1094,7 +1094,7 @@ static struct gui_fetch_table atari_fetch_table = {
     .get_resource_url = gui_get_resource_url,
 };
 
-static struct gui_browser_table atari_browser_table = {
+static struct gui_misc_table atari_misc_table = {
     .schedule = atari_schedule,
 
     .quit = gui_quit,
@@ -1121,7 +1121,7 @@ int main(int argc, char** argv)
     nserror ret;
 
     struct netsurf_table atari_table = {
-	.browser = &atari_browser_table,
+	.misc = &atari_misc_table,
 	.window = &atari_window_table,
 	.clipboard = &atari_clipboard_table,
 	.download = atari_download_table,

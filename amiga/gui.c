@@ -5466,7 +5466,7 @@ static struct gui_search_web_table amiga_search_web_table = {
 	.provider_update = gui_search_web_provider_update,
 };
 
-static struct gui_browser_table amiga_browser_table = {
+static struct gui_misc_table amiga_misc_table = {
 	.schedule = ami_schedule,
 
 	.quit = gui_quit,
@@ -5490,7 +5490,7 @@ int main(int argc, char** argv)
 	char *nargv = NULL;
 
 	struct netsurf_table amiga_table = {
-		.browser = &amiga_browser_table,
+		.misc = &amiga_misc_table,
 		.window = &amiga_window_table,
 		.clipboard = amiga_clipboard_table,
 		.download = amiga_download_table,

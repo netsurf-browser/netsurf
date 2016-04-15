@@ -187,7 +187,7 @@ nserror dom_to_box(dom_node *n, html_content *c, box_construct_complete_cb cb)
 	ctx->cb = cb;
 	ctx->bctx = c->bctx;
 
-	return guit->browser->schedule(0, (void *)convert_xml_to_box, ctx);
+	return guit->misc->schedule(0, (void *)convert_xml_to_box, ctx);
 }
 
 /* mapping from CSS display to box type
@@ -448,7 +448,7 @@ void convert_xml_to_box(struct box_construct_ctx *ctx)
 	} while (++num_processed < max_processed_before_yield);
 
 	/* More work to do: schedule a continuation */
-	guit->browser->schedule(0, (void *)convert_xml_to_box, ctx);
+	guit->misc->schedule(0, (void *)convert_xml_to_box, ctx);
 }
 
 /**

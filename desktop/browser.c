@@ -958,7 +958,7 @@ browser_window_download(struct browser_window *bw,
 					NULL, NULL, &l);
 	if (error == NSERROR_NO_FETCH_HANDLER) {
 		/* no internal handler for this type, call out to frontend */
-		error = guit->browser->launch_url(url);
+		error = guit->misc->launch_url(url);
 	} else if (error != NSERROR_OK) {
 		LOG("Failed to fetch download: %d", error);
 	} else {
@@ -1440,7 +1440,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 		hotlist_update_url(hlcache_handle_get_url(c));
 
 		if (bw->refresh_interval != -1) {
-			guit->browser->schedule(bw->refresh_interval * 10,
+			guit->misc->schedule(bw->refresh_interval * 10,
 					browser_window_refresh, bw);
 		}
 		break;
@@ -1759,12 +1759,12 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 	}
 
 	/* clear any pending callbacks */
-	guit->browser->schedule(-1, browser_window_refresh, bw);
+	guit->misc->schedule(-1, browser_window_refresh, bw);
 	/* The ugly cast here is so the reformat function can be
 	 * passed a gui window pointer in its API rather than void*
 	 */
 	LOG("Clearing schedule %p(%p)", guit->window->reformat, bw->window);
-	guit->browser->schedule(-1, (void(*)(void*))guit->window->reformat, bw->window);
+	guit->misc->schedule(-1, (void(*)(void*))guit->window->reformat, bw->window);
 
 	/* If this brower window is not the root window, and has focus, unset
 	 * the root browser window's focus pointer. */
@@ -2061,7 +2061,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 		/** \todo does this always try and download even
 		 * unverifiable content?
 		 */
-		error = guit->browser->launch_url(url);
+		error = guit->misc->launch_url(url);
 		break;
 
 	default: /* report error to user */
@@ -2383,7 +2383,7 @@ void browser_window_stop(struct browser_window *bw)
 		assert(error == NSERROR_OK);
 	}
 
-	guit->browser->schedule(-1, browser_window_refresh, bw);
+	guit->misc->schedule(-1, browser_window_refresh, bw);
 
 	if (bw->children) {
 		children = bw->rows * bw->cols;
@@ -2525,7 +2525,7 @@ nserror browser_window_schedule_reformat(struct browser_window *bw)
 	/* The ugly cast here is so the reformat function can be
 	 * passed a gui window pointer in its API rather than void*
 	 */
-	guit->browser->schedule(0, (void(*)(void*))guit->window->reformat, bw->window);
+	guit->misc->schedule(0, (void(*)(void*))guit->window->reformat, bw->window);
 	return NSERROR_OK;
 }
 

@@ -2050,7 +2050,7 @@ static struct gui_window_table framebuffer_window_table = {
 };
 
 
-static struct gui_browser_table framebuffer_browser_table = {
+static struct gui_misc_table framebuffer_misc_table = {
 	.schedule = framebuffer_schedule,
 
 	.quit = gui_quit,
@@ -2072,7 +2072,7 @@ main(int argc, char** argv)
 	nserror ret;
 	nsfb_t *nsfb;
 	struct netsurf_table framebuffer_table = {
-		.browser = &framebuffer_browser_table,
+		.misc = &framebuffer_misc_table,
 		.window = &framebuffer_window_table,
 		.clipboard = framebuffer_clipboard_table,
 		.fetch = framebuffer_fetch_table,

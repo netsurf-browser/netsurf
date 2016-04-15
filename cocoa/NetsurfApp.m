@@ -228,7 +228,7 @@ int main( int argc, char **argv )
         nsurl *url;
         nserror error;
         struct netsurf_table cocoa_table = {
-                .browser = cocoa_browser_table,
+                .misc = cocoa_misc_table,
                 .window = cocoa_window_table,
                 .clipboard = cocoa_clipboard_table,
                 .download = cocoa_download_table,

@@ -962,7 +962,7 @@ static struct gui_fetch_table beos_fetch_table = {
 	NULL, // fetch_mimetype
 };
 
-static struct gui_browser_table beos_browser_table = {
+static struct gui_misc_table beos_misc_table = {
 	beos_schedule,
 	gui_quit,
 	gui_launch_url,
@@ -979,7 +979,7 @@ int main(int argc, char** argv)
 	nserror ret;
 	BPath options;
 	struct netsurf_table beos_table = {
-		&beos_browser_table,
+		&beos_misc_table,
 		beos_window_table,
 		beos_download_table,
 		&beos_clipboard_table,

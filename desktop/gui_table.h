@@ -27,7 +27,7 @@
 #ifndef _NETSURF_DESKTOP_GUI_TABLE_H_
 #define _NETSURF_DESKTOP_GUI_TABLE_H_
 
-struct gui_browser_table;
+struct gui_misc_table;
 struct gui_window_table;
 struct gui_download_table;
 struct gui_clipboard_table;
@@ -52,7 +52,7 @@ struct netsurf_table {
 	 * Provides miscellaneous browser functionality. The table
 	 * is mandantory and must be provided.
 	 */
-	struct gui_browser_table *browser;
+	struct gui_misc_table *misc;
 
 	/**
 	 * Window table.

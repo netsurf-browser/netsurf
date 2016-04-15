@@ -676,34 +676,34 @@ gui_default_pdf_password(char **owner_pass, char **user_pass, char *path)
 	save_pdf(path);
 }
 
-/** verify browser table is valid */
-static nserror verify_browser_register(struct gui_browser_table *gbt)
+/** verify misc table is valid */
+static nserror verify_misc_register(struct gui_misc_table *gmt)
 {
 	/* check table is present */
-	if (gbt == NULL) {
+	if (gmt == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
 
 	/* check the mandantory fields are set */
-	if (gbt->schedule == NULL) {
+	if (gmt->schedule == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
 
 	/* fill in the optional entries with defaults */
-	if (gbt->quit == NULL) {
-		gbt->quit = gui_default_quit;
+	if (gmt->quit == NULL) {
+		gmt->quit = gui_default_quit;
 	}
-	if (gbt->launch_url == NULL) {
-		gbt->launch_url = gui_default_launch_url;
+	if (gmt->launch_url == NULL) {
+		gmt->launch_url = gui_default_launch_url;
 	}
-	if (gbt->cert_verify == NULL) {
-		gbt->cert_verify = gui_default_cert_verify;
+	if (gmt->cert_verify == NULL) {
+		gmt->cert_verify = gui_default_cert_verify;
 	}
-	if (gbt->login == NULL) {
-		gbt->login = gui_default_401login_open;
+	if (gmt->login == NULL) {
+		gmt->login = gui_default_401login_open;
 	}
-	if (gbt->pdf_password == NULL) {
-		gbt->pdf_password = gui_default_pdf_password;
+	if (gmt->pdf_password == NULL) {
+		gmt->pdf_password = gui_default_pdf_password;
 	}
 	return NSERROR_OK;
 }
@@ -724,8 +724,8 @@ nserror netsurf_register(struct netsurf_table *gt)
 		return NSERROR_BAD_PARAMETER;
 	}
 
-	/* browser table */
-	err = verify_browser_register(gt->browser);
+	/* miscellaneous table */
+	err = verify_misc_register(gt->misc);
 	if (err != NSERROR_OK) {
 		return err;
 	}

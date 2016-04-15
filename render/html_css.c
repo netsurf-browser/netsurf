@@ -292,7 +292,7 @@ static void html_css_process_modified_styles(void *pw)
 
 	/* If we failed to process any sheet, schedule a retry */
 	if (all_done == false) {
-		guit->browser->schedule(1000, html_css_process_modified_styles, c);
+		guit->misc->schedule(1000, html_css_process_modified_styles, c);
 	}
 }
 
@@ -316,7 +316,7 @@ bool html_css_update_style(html_content *c, dom_node *style)
 
 	s->modified = true;
 
-	guit->browser->schedule(0, html_css_process_modified_styles, c);
+	guit->misc->schedule(0, html_css_process_modified_styles, c);
 
 	return true;
 }
@@ -445,7 +445,7 @@ nserror html_css_free_stylesheets(html_content *html)
 {
 	unsigned int i;
 
-	guit->browser->schedule(-1, html_css_process_modified_styles, html);
+	guit->misc->schedule(-1, html_css_process_modified_styles, html);
 
 	for (i = 0; i != html->stylesheet_count; i++) {
 		if (html->stylesheets[i].sheet != NULL) {

@@ -2529,7 +2529,7 @@ static void llcache_persist(void *p)
 				 *  Schedule a check in the future to see if
 				 *  overall performance is too slow to be useful.
 				 */
-				guit->browser->schedule(
+				guit->misc->schedule(
 						llcache->time_quantum * 100,
 						llcache_persist_slowcheck,
 						NULL);
@@ -2582,7 +2582,7 @@ static void llcache_persist(void *p)
 	     total_written, total_elapsed, total_bandwidth);
 
 	LLCACHE_LOG("Rescheduling writeout in %dms", next);
-	guit->browser->schedule(next, llcache_persist, NULL);
+	guit->misc->schedule(next, llcache_persist, NULL);
 }
 
 
@@ -2657,7 +2657,7 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 		/* record when the fetch finished */
 		object->cache.fin_time = time(NULL);
 
-		guit->browser->schedule(5000, llcache_persist, NULL);
+		guit->misc->schedule(5000, llcache_persist, NULL);
 	}
 		break;
 
@@ -3440,7 +3440,7 @@ static void llcache_users_not_caught_up(void)
 {
 	if (llcache->all_caught_up) {
 		llcache->all_caught_up = false;
-		guit->browser->schedule(0, llcache_catch_up_all_users, NULL);
+		guit->misc->schedule(0, llcache_catch_up_all_users, NULL);
 	}
 }
 

@@ -233,7 +233,7 @@ static bool nslog_stream_configure(FILE *fptr)
   return true;
 }
 
-static struct gui_browser_table monkey_browser_table = {
+static struct gui_misc_table monkey_misc_table = {
   .schedule = monkey_schedule,
 
   .quit = monkey_quit,
@@ -314,7 +314,7 @@ main(int argc, char **argv)
   char buf[PATH_MAX];
   nserror ret;
   struct netsurf_table monkey_table = {
-    .browser = &monkey_browser_table,
+    .misc = &monkey_misc_table,
     .window = monkey_window_table,
     .download = monkey_download_table,
     .fetch = monkey_fetch_table,

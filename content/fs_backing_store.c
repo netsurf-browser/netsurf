@@ -911,7 +911,7 @@ get_store_entry(struct store_state *state, nsurl *url, struct store_entry **bse)
 
 	state->entries_dirty = true;
 
-	guit->browser->schedule(CONTROL_MAINT_TIME, control_maintinance, state);
+	guit->misc->schedule(CONTROL_MAINT_TIME, control_maintinance, state);
 
 	return NSERROR_OK;
 }
@@ -1052,7 +1052,7 @@ set_store_entry(struct store_state *state,
 
 	/* ensure control maintinance scheduled. */
 	state->entries_dirty = true;
-	guit->browser->schedule(CONTROL_MAINT_TIME, control_maintinance, state);
+	guit->misc->schedule(CONTROL_MAINT_TIME, control_maintinance, state);
 
 	*bse = se;
 
@@ -1587,7 +1587,7 @@ finalise(void)
 	unsigned int op_count;
 
 	if (storestate != NULL) {
-		guit->browser->schedule(-1, control_maintinance, storestate);
+		guit->misc->schedule(-1, control_maintinance, storestate);
 		write_entries(storestate);
 		write_blocks(storestate);
 

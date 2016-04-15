@@ -146,7 +146,7 @@ static void hlcache_clean(void *ignored)
 	llcache_clean(false);
 
 	/* Re-schedule ourselves */
-	guit->browser->schedule(hlcache->params.bg_clean_time, hlcache_clean, NULL);
+	guit->misc->schedule(hlcache->params.bg_clean_time, hlcache_clean, NULL);
 }
 
 /**
@@ -537,7 +537,7 @@ hlcache_initialise(const struct hlcache_parameters *hlcache_parameters)
 	hlcache->params = *hlcache_parameters;
 
 	/* Schedule the cache cleanup */
-	guit->browser->schedule(hlcache->params.bg_clean_time, hlcache_clean, NULL);
+	guit->misc->schedule(hlcache->params.bg_clean_time, hlcache_clean, NULL);
 
 	return NSERROR_OK;
 }
@@ -546,7 +546,7 @@ hlcache_initialise(const struct hlcache_parameters *hlcache_parameters)
 void hlcache_stop(void)
 {
 	/* Remove the hlcache_clean schedule */
-	guit->browser->schedule(-1, hlcache_clean, NULL);
+	guit->misc->schedule(-1, hlcache_clean, NULL);
 }
 
 /* See hlcache.h for documentation */
