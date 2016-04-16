@@ -95,7 +95,6 @@
 #include <string.h>
 #include <strings.h>
 #include <time.h>
-#include <curl/curl.h>
 
 #include "utils/nsoption.h"
 #include "utils/log.h"
@@ -103,6 +102,7 @@
 #include "utils/url.h"
 #include "utils/utils.h"
 #include "utils/bloom.h"
+#include "utils/time.h"
 #include "image/bitmap.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/gui_internal.h"
@@ -1587,22 +1587,21 @@ static bool urldb_parse_avpair(struct cookie_internal_data *c, char *n,
 	} else if (strcasecmp(n, "Expires") == 0) {
 		char *datenoday;
 		time_t expires;
+		nserror res;
 
-		/* Strip dayname from date (these are hugely
-		 * variable and liable to break the parser.
-		 * They also serve no useful purpose) */
+		/* Strip dayname from date (these are hugely variable
+		 * and liable to break the parser.  They also serve no
+		 * useful purpose) */
 		for (datenoday = v; *datenoday && !isdigit(*datenoday);
 				datenoday++)
 			; /* do nothing */
 
-		expires = curl_getdate(datenoday, NULL);
-		if (expires == -1) {
-			/* assume we have an unrepresentable
-			 * date => force it to the maximum
-			 * possible value of a 32bit time_t
-			 * (this may break in 2038. We'll
-			 * deal with that once we come to
-			 * it) */
+                res = nsc_strntimet(datenoday, strlen(datenoday), &expires);
+		if (res != NSERROR_OK) {
+			/* assume we have an unrepresentable date =>
+			 * force it to the maximum possible value of a
+			 * 32bit time_t (this may break in 2038. We'll
+			 * deal with that once we come to it) */
 			expires = (time_t)0x7fffffff;
 		}
 		c->expires = expires;

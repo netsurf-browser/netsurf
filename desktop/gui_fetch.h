@@ -91,8 +91,8 @@ struct gui_fetch_table {
 	/**
 	 * Find a MIME type for a local file
 	 *
-	 * @note only used in curl fetcher on RISC OS otherwise its a
-	 * strdup of filetype.
+	 * @note only used in curl fetcher in form file controls on
+	 * RISC OS otherwise its a strdup of a filetype call.
 	 *
 	 * \param ro_path RISC OS style path to file on disk
 	 * \return MIME type string (on heap, caller should free), or NULL

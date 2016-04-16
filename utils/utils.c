@@ -32,6 +32,7 @@
 #include <regex.h>
 #include <time.h>
 #include <errno.h>
+#include <curl/curl.h>
 
 #include "utils/config.h"
 #include "utils/log.h"
@@ -47,13 +48,15 @@ char *remove_underscores(const char *s, bool replacespace)
 	char *ret;
 	len = strlen(s);
 	ret = malloc(len + 1);
-	if (ret == NULL)
+	if (ret == NULL) {
 		return NULL;
+        }
 	for (i = 0, ii = 0; i < len; i++) {
-		if (s[i] != '_')
+		if (s[i] != '_') {
 			ret[ii++] = s[i];
-		else if (replacespace)
+                } else if (replacespace) {
 			ret[ii++] = ' ';
+                }
 	}
 	ret[ii] = '\0';
 	return ret;
@@ -94,11 +97,14 @@ char *cnv_space2nbsp(const char *s)
 	char *d, *d0;
 	unsigned int numNBS;
 	/* Convert space & TAB into non breaking space character (0xA0) */
-	for (numNBS = 0, srcP = (const char *)s; *srcP != '\0'; ++srcP)
-		if (*srcP == ' ' || *srcP == '\t')
+	for (numNBS = 0, srcP = (const char *)s; *srcP != '\0'; ++srcP) {
+		if (*srcP == ' ' || *srcP == '\t') {
 			++numNBS;
-	if ((d = (char *)malloc((srcP - s) + numNBS + 1)) == NULL)
+                }
+        }
+	if ((d = (char *)malloc((srcP - s) + numNBS + 1)) == NULL) {
 		return NULL;
+        }
 	for (d0 = d, srcP = (const char *)s; *srcP != '\0'; ++srcP) {
 		if (*srcP == ' ' || *srcP == '\t') {
 			*d0++ = 0xC2;
@@ -116,8 +122,9 @@ bool is_dir(const char *path)
 {
 	struct stat s;
 
-	if (stat(path, &s))
+	if (stat(path, &s)) {
 		return false;
+        }
 
 	return S_ISDIR(s.st_mode) ? true : false;
 }
@@ -227,7 +234,7 @@ nserror regcomp_wrapper(regex_t *preg, const char *regex, int cflags)
  * The size of buffers within human_friendly_bytesize.
  *
  * We can have a fairly good estimate of how long the buffer needs to
- * be.  The unsigned long can store a value representing a maximum
+ * be.	The unsigned long can store a value representing a maximum
  * size of around 4 GB.  Therefore the greatest space required is to
  * represent 1023MB.  Currently that would be represented as "1023MB"
  * so 12 including a null terminator.  Ideally we would be able to
@@ -500,7 +507,7 @@ int uname(struct utsname *buf) {
 	strcpy(buf->release,"release");
 	strcpy(buf->version,"version");
 	strcpy(buf->machine,"pc");
-	
+
 	return 0;
 }
 #endif
@@ -526,7 +533,7 @@ int inet_aton(const char *cp, struct in_addr *inp)
 	unsigned int b1, b2, b3, b4;
 	unsigned char c;
 
-	if (strspn(cp, "0123456789.") < strlen(cp)) 
+	if (strspn(cp, "0123456789.") < strlen(cp))
 		return 0;
 
 	if (sscanf(cp, "%3u.%3u.%3u.%3u%c", &b1, &b2, &b3, &b4, &c) != 4)
@@ -550,17 +557,17 @@ int inet_pton(int af, const char *src, void *dst)
 
 	if (af == AF_INET) {
 		ret = inet_aton(src, dst);
-	} 
+	}
 #if !defined(NO_IPV6)
 	else if (af == AF_INET6) {
 		/* TODO: implement v6 address support */
 		ret = -1;
-		errno = EAFNOSUPPORT; 
-	} 
+		errno = EAFNOSUPPORT;
+	}
 #endif
 	else {
 		ret = -1;
-		errno = EAFNOSUPPORT; 
+		errno = EAFNOSUPPORT;
 	}
 
 	return ret;
@@ -588,10 +595,11 @@ int nsc_sntimet(char *str, size_t size, time_t *timep)
 	}
 
 	return strftime(str, size, "%s", ltm);
-#endif 
+#endif
 }
 
-nserror nsc_snptimet(char *str, size_t size, time_t *timep)
+/* exported function documented in utils/time.h */
+nserror nsc_snptimet(const char *str, size_t size, time_t *timep)
 {
 	time_t time_out;
 
@@ -627,4 +635,21 @@ nserror nsc_snptimet(char *str, size_t size, time_t *timep)
 	*timep = time_out;
 
 	return NSERROR_OK;
+}
+
+
+/* exported function documented in utils/time.h */
+nserror nsc_strntimet(const char *str, size_t size, time_t *timep)
+{
+	time_t result;
+
+	result = curl_getdate(str, NULL);
+
+	if (result == -1) {
+		return NSERROR_INVALID;
+        }
+
+        *timep = result;
+
+        return NSERROR_OK;
 }

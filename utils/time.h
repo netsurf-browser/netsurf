@@ -48,6 +48,28 @@ int nsc_sntimet(char *str, size_t size, time_t *timep);
  * @param timep Pointer to result.
  * @return NSERROR_OK on success or error code on faliure.
  */
-nserror nsc_snptimet(char *str, size_t size, time_t *timep);
+nserror nsc_snptimet(const char *str, size_t size, time_t *timep);
+
+
+/**
+ * Converts a date string to a number of seconds since epoch
+ *
+ * returns the number of seconds since the Epoch, January 1st 1970
+ * 00:00:00 in the UTC time zone, for the date and time that the
+ * \a str parameter specifies.
+ *
+ * datetime strings passed must be in one of the formats specified in:
+ *  - RFC 822 (updated in RFC 1123) using time zone name or time zone delta
+ *  - RFC 850 (obsoleted by RFC 1036)
+ *  - ANSI C's asctime() format.
+ *
+ * @param[in] str The datetime string to parse
+ * @param[in] size The length of the source string
+ * @param[out] timep Pointer to result on success unmodified on error.
+ * @return NSERROR_OK on success and timep updated else
+ *          NSERROR_INVALID if the string parsing failed otherwise a suitable
+ *          error code
+ */
+nserror nsc_strntimet(const char *str, size_t size, time_t *timep);
 
 #endif

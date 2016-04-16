@@ -37,7 +37,6 @@
 #include <strings.h>
 #include <inttypes.h>
 
-#include <curl/curl.h>
 #include <nsutils/time.h>
 
 #include "utils/config.h"
@@ -590,59 +589,79 @@ static nserror llcache_fetch_split_header(const uint8_t *data, size_t len,
 static nserror llcache_fetch_parse_header(llcache_object *object,
 		const uint8_t *data, size_t len, char **name, char **value)
 {
-	nserror error;
+	nserror res;
 
 	/* Set fetch response time if not already set */
-	if (object->cache.res_time == 0)
+	if (object->cache.res_time == 0) {
 		object->cache.res_time = time(NULL);
+        }
 
 	/* Decompose header into name-value pair */
-	error = llcache_fetch_split_header(data, len, name, value);
-	if (error != NSERROR_OK)
-		return error;
+	res = llcache_fetch_split_header(data, len, name, value);
+	if (res != NSERROR_OK) {
+		return res;
+        }
 
 	/* Parse cache headers to populate cache control data */
-#define SKIP_ST(p) while (*p != '\0' && (*p == ' ' || *p == '\t')) p++
 
-	if (5 < len && strcasecmp(*name, "Date") == 0) {
+	if ((5 < len) &&
+            strcasecmp(*name, "Date") == 0) {
 		/* extract Date header */
-		object->cache.date = curl_getdate(*value, NULL);
-	} else if (4 < len && strcasecmp(*name, "Age") == 0) {
+                nsc_strntimet(*value,
+                              strlen(*value),
+                              &object->cache.date);
+	} else if ((4 < len) &&
+                   strcasecmp(*name, "Age") == 0) {
 		/* extract Age header */
-		if ('0' <= **value && **value <= '9')
+		if ('0' <= **value && **value <= '9') {
 			object->cache.age = atoi(*value);
-	} else if (8 < len && strcasecmp(*name, "Expires") == 0) {
+                }
+	} else if ((8 < len) &&
+                   strcasecmp(*name, "Expires") == 0) {
 		/* extract Expires header */
-		object->cache.expires = curl_getdate(*value, NULL);
-	} else if (14 < len && strcasecmp(*name, "Cache-Control") == 0) {
+                res = nsc_strntimet(*value,
+                                    strlen(*value),
+                                    &object->cache.expires);
+                if (res != NSERROR_OK) {
+                        object->cache.expires = (time_t)0x7fffffff;
+                }
+	} else if ((14 < len) &&
+                   strcasecmp(*name, "Cache-Control") == 0) {
 		/* extract and parse Cache-Control header */
 		const char *start = *value;
 		const char *comma = *value;
 
 		while (*comma != '\0') {
-			while (*comma != '\0' && *comma != ',')
+			while (*comma != '\0' && *comma != ',') {
 				comma++;
+                        }
 
-			if (8 < comma - start && (strncasecmp(start,
-					"no-cache", 8) == 0 ||
-					strncasecmp(start, "no-store", 8) == 0))
-				/* When we get a disk cache we should
-				 * distinguish between these two */
+			if ((8 < comma - start) &&
+                            (strncasecmp(start,	"no-cache", 8) == 0 ||
+                             strncasecmp(start, "no-store", 8) == 0)) {
+				/**
+                                 * \todo When we get a disk cache we should
+                                 *  distinguish between these two.
+                                 */
 				object->cache.no_cache = LLCACHE_VALIDATE_ALWAYS;
-			else if (7 < comma - start &&
-					strncasecmp(start, "max-age", 7) == 0) {
+			} else if ((7 < comma - start) &&
+                                   strncasecmp(start, "max-age", 7) == 0) {
 				/* Find '=' */
-				while (start < comma && *start != '=')
+				while (start < comma && *start != '=') {
 					start++;
+                                }
 
 				/* Skip over it */
 				start++;
 
+#define SKIP_ST(p) while (*p != '\0' && (*p == ' ' || *p == '\t')) p++
+
 				/* Skip whitespace */
 				SKIP_ST(start);
 
-				if (start < comma)
+				if (start < comma) {
 					object->cache.max_age = atoi(start);
+                                }
 			}
 
 			if (*comma != '\0') {
@@ -652,10 +671,13 @@ static nserror llcache_fetch_parse_header(llcache_object *object,
 				SKIP_ST(comma);
 			}
 
+#undef SKIP_ST
+
 			/* Set start for next token */
 			start = comma;
 		}
-	} else if (5 < len && strcasecmp(*name, "ETag") == 0) {
+	} else if ((5 < len) &&
+                   (strcasecmp(*name, "ETag") == 0)) {
 		/* extract ETag header */
 		free(object->cache.etag);
 		object->cache.etag = strdup(*value);
@@ -664,12 +686,14 @@ static nserror llcache_fetch_parse_header(llcache_object *object,
 			free(*value);
 			return NSERROR_NOMEM;
 		}
-	} else if (14 < len && strcasecmp(*name, "Last-Modified") == 0) {
+	} else if ((14 < len) &&
+                   (strcasecmp(*name, "Last-Modified") == 0)) {
 		/* extract Last-Modified header */
-		object->cache.last_modified = curl_getdate(*value, NULL);
+                nsc_strntimet(*value,
+                              strlen(*value),
+                              &object->cache.last_modified);
 	}
 
-#undef SKIP_ST
 
 	return NSERROR_OK;
 }
