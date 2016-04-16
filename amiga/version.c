@@ -25,14 +25,15 @@
  * they are higher than CI builds, and make this (slightly) less confusing.
  */
 #define NETSURF_VERSION_MAJOR "3"
+#define NETSURF_VERSION_MINOR_EXTERNAL "6"
 #if defined(CI_BUILD)
 #define NETSURF_VERSION_MINOR CI_BUILD
 #else
-#define NETSURF_VERSION_MINOR "6000" "5"
+#define NETSURF_VERSION_MINOR "6000" NETSURF_VERSION_MINOR_EXTERNAL
 #endif
 
 static const __attribute__((used)) char *verstag = "\0$VER: NetSurf " NETSURF_VERSION_MAJOR "." NETSURF_VERSION_MINOR " (" WT_COMPILEDATE ")\0";
 const char * const verdate = WT_COMPILEDATE;
-const char * const verarexx = NETSURF_VERSION_MAJOR "." NETSURF_VERSION_MINOR;
+const char * const verarexx = NETSURF_VERSION_MAJOR "." NETSURF_VERSION_MINOR_EXTERNAL;
 const char * const wt_revid = WT_REVID;
 
