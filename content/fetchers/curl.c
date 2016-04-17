@@ -27,7 +27,8 @@
  * The CURL handles are cached in the curl_handle_ring.
  */
 
-#include "utils/config.h"
+/* must come first to ensure winsock2.h vs windows.h ordering issues */
+#include "utils/inet.h"
 
 #include <assert.h>
 #include <errno.h>

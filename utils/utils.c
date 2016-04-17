@@ -39,6 +39,7 @@
 #include "utils/messages.h"
 #include "utils/utf8.h"
 #include "utils/time.h"
+#include "utils/inet.h"
 #include "utils/utils.h"
 
 /* exported interface documented in utils/utils.h */

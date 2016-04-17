@@ -61,24 +61,16 @@ char *strchrnul(const char *s, int c);
 
 #define HAVE_SYS_SELECT
 #define HAVE_INETATON
+#define HAVE_POSIX_INET_HEADERS
 #if (defined(_WIN32))
 #undef HAVE_INETATON
 #undef HAVE_SYS_SELECT
-#include <winsock2.h>
-#ifndef EAFNOSUPPORT
-#define EAFNOSUPPORT WSAEAFNOSUPPORT
-#endif
-int inet_aton(const char *cp, struct in_addr *inp);
-#else
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/select.h>
+#undef HAVE_POSIX_INET_HEADERS
 #endif
 
 #define HAVE_INETPTON
 #if (defined(_WIN32))
 #undef HAVE_INETPTON
-int inet_pton(int af, const char *src, void *dst);
 #endif
 
 #define HAVE_UTSNAME

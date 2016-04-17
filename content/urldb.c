@@ -96,7 +96,7 @@
 #include <strings.h>
 #include <time.h>
 
-#include "utils/config.h"
+#include "utils/inet.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/corestrings.h"

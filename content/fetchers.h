@@ -25,7 +25,7 @@
 #ifndef _NETSURF_DESKTOP_FETCHERS_H_
 #define _NETSURF_DESKTOP_FETCHERS_H_
 
-#include "utils/config.h"
+#include "utils/inet.h" /* this is necessary for the fd_set definition */
 #include <libwapcaplet/libwapcaplet.h>
 
 struct nsurl;
