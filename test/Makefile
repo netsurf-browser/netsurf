@@ -11,6 +11,7 @@ nsurl_SRCS := utils/corestrings.c utils/nsurl.c utils/idna.c \
 urldbtest_SRCS := content/urldb.c \
 		utils/idna.c utils/bloom.c utils/nsoption.c utils/nsurl.c \
 		utils/corestrings.c \
+		utils/hashtable.c utils/messages.c utils/utils.c \
 		test/log.c test/urldbtest.c
 
 # low level cache sources
