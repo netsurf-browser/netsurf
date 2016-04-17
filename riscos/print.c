@@ -29,6 +29,7 @@
 #include <oslib/pdriver.h>
 #include <oslib/wimp.h>
 #include <rufl.h>
+#include <limits.h>
 
 #include "utils/config.h"
 #include "utils/log.h"
