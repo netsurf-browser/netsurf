@@ -1059,7 +1059,7 @@ int gui_init_replicant(int argc, char** argv)
 	nserror ret;
 	BPath options;
 	struct netsurf_table beos_table = {
-		&beos_browser_table,
+		&beos_misc_table,
 		beos_window_table,
 		beos_download_table,
 		&beos_clipboard_table,
