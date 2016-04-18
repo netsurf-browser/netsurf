@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "utils/config.h"
 #include "utils/errors.h"
 #include "utils/file.h"
 #include "image/bitmap.h"

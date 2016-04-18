@@ -26,6 +26,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdlib.h>
 #include <cairo.h>
 #include <gtk/gtk.h>
 

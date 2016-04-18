@@ -21,6 +21,9 @@
  * \brief core web search facilities implementation.
  */
 
+#include <stdlib.h>
+
+#include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/nsoption.h"

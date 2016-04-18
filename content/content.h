@@ -26,19 +26,14 @@
 #ifndef _NETSURF_CONTENT_CONTENT_H_
 #define _NETSURF_CONTENT_CONTENT_H_
 
-#include <stdbool.h>
-#include <stdio.h>
-
 #include <libwapcaplet/libwapcaplet.h>
 
-#include "utils/config.h"
 #include "utils/errors.h"
-#include "utils/http.h"
 #include "content/content_factory.h"
 #include "content/content_type.h"
-#include "desktop/search.h"
-#include "desktop/mouse.h"
-#include "desktop/plot_style.h"
+#include "desktop/search.h" /* search flags enum */
+#include "desktop/mouse.h" /* mouse state enums */
+#include "desktop/plot_style.h" /* color typedef */
 
 struct browser_window;
 struct browser_window_features;
@@ -316,15 +311,6 @@ bool content_drop_file_at_point(struct hlcache_handle *h,
 void content_search(struct hlcache_handle *h, void *context,
 		search_flags_t flags, const char *string);
 void content_search_clear(struct hlcache_handle *h);
-
-/**
- * Dump debug information to file.
- *
- * \param h content handle to debug.
- * \param f File to write output to.
- * \param op Debug operation type.
- */
-nserror content_debug_dump(struct hlcache_handle *h, FILE *f, enum content_debug op);
 
 /**
  * Control debug con a content.

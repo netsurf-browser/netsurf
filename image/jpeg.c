@@ -61,7 +61,7 @@ static unsigned char nsjpeg_eoi[] = { 0xff, JPEG_EOI };
  * Content create entry point.
  */
 static nserror nsjpeg_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
+		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
 {

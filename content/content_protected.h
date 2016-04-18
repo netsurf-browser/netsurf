@@ -28,6 +28,8 @@
 
 #include <stdint.h>
 #include <time.h>
+#include <stdio.h>
+
 #include "utils/config.h"
 #include "content/content.h"
 #include "content/content_factory.h"
@@ -38,15 +40,17 @@ struct bitmap;
 struct content;
 struct rect;
 struct redraw_context;
+struct http_parameter;
 
 struct content_handler {
 	void (*fini)(void);
 
 	nserror (*create)(const content_handler *handler,
-			lwc_string *imime_type, const http_parameter *params,
-			llcache_handle *llcache, 
-			const char *fallback_charset, bool quirks, 
-			struct content **c);
+                          lwc_string *imime_type,
+                          const struct http_parameter *params,
+                          llcache_handle *llcache,
+                          const char *fallback_charset, bool quirks,
+                          struct content **c);
 
 	bool (*process_data)(struct content *c, 
 			const char *data, unsigned int size);
@@ -157,7 +161,7 @@ extern const char * const content_type_name[];
 extern const char * const content_status_name[];
 
 nserror content__init(struct content *c, const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
+		lwc_string *imime_type, const struct http_parameter *params,
 		struct llcache_handle *llcache, const char *fallback_charset,
 		bool quirks);
 nserror content__clone(const struct content *c, struct content *nc);

@@ -32,6 +32,7 @@
 #include "image/bitmap.h"
 
 #include "content/content_protected.h"
+#include "content/content_debug.h"
 #include "content/hlcache.h"
 
 #define URL_FMT_SPC "%.140s"
@@ -62,7 +63,7 @@ static void content_convert(struct content *c);
  */
 
 nserror content__init(struct content *c, const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
+		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset, 
 		bool quirks)
 {

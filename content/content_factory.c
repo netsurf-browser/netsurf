@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "utils/http.h"
+
 #include "content/content.h"
 #include "content/content_factory.h"
 #include "content/content_protected.h"

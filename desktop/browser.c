@@ -47,6 +47,7 @@
 #include "utils/utf8.h"
 #include "utils/nsoption.h"
 #include "content/content.h"
+#include "content/content_debug.h"
 #include "content/fetch.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
