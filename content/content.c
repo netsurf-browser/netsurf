@@ -16,33 +16,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Content handling implementation.
  */
 
-#include <assert.h>
 #include <inttypes.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-#include <time.h>
 
-#include "utils/config.h"
-#include "content/content_protected.h"
-#include "content/hlcache.h"
-#include "image/bitmap.h"
-#include "desktop/knockout.h"
-#include "desktop/browser.h"
-#include "desktop/plotters.h"
-#include "desktop/gui_internal.h"
-#include "utils/nsoption.h"
-
-#include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/utils.h"
+#include "desktop/plotters.h"
+#include "desktop/knockout.h"
+#include "desktop/gui_internal.h"
+#include "desktop/browser.h"
+#include "image/bitmap.h"
+
+#include "content/content_protected.h"
+#include "content/hlcache.h"
 
 #define URL_FMT_SPC "%.140s"
 
