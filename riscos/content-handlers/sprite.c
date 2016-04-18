@@ -46,7 +46,7 @@ typedef struct sprite_content {
 } sprite_content;
 
 static nserror sprite_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
+		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c);
 static bool sprite_convert(struct content *c);
@@ -73,7 +73,7 @@ static const char *sprite_types[] = {
 CONTENT_FACTORY_REGISTER_TYPES(sprite, sprite_types, sprite_content_handler)
 
 nserror sprite_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
+		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
 {

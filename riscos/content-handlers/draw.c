@@ -44,7 +44,7 @@ typedef struct draw_content {
 } draw_content;
 
 static nserror draw_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
+		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c);
 static bool draw_convert(struct content *c);
@@ -74,7 +74,7 @@ static const char *draw_types[] = {
 CONTENT_FACTORY_REGISTER_TYPES(draw, draw_types, draw_content_handler)
 
 nserror draw_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
+		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
 {

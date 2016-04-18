@@ -61,7 +61,7 @@ typedef struct amiga_dt_anim_content {
 APTR ami_colormap_to_clut(struct ColorMap *cmap);
 
 static nserror amiga_dt_anim_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
+		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c);
 static bool amiga_dt_anim_convert(struct content *c);
@@ -135,7 +135,7 @@ nserror amiga_dt_anim_init(void)
 }
 
 nserror amiga_dt_anim_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
+		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
 {

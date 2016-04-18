@@ -48,7 +48,7 @@ static void *apple_image_get_internal(const struct content *c, void *context)
 }
 
 static nserror apple_image_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
+		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
 {

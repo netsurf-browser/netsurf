@@ -40,7 +40,7 @@ typedef struct amiga_plugin_hack_content {
 } amiga_plugin_hack_content;
 
 static nserror amiga_plugin_hack_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
+		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c);
 static bool amiga_plugin_hack_convert(struct content *c);
@@ -95,7 +95,7 @@ nserror amiga_plugin_hack_init(void)
 }
 
 nserror amiga_plugin_hack_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
+		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
 {

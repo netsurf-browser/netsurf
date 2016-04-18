@@ -104,7 +104,7 @@ extern os_error *awrender_render(const char *doc,
 		void *workspace);
 
 static nserror artworks_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
+		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c);
 static bool artworks_convert(struct content *c);
@@ -132,7 +132,7 @@ CONTENT_FACTORY_REGISTER_TYPES(artworks, artworks_types,
 		artworks_content_handler)
 
 nserror artworks_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
+		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
 {

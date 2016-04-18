@@ -45,7 +45,7 @@ typedef struct amiga_dt_sound_content {
 } amiga_dt_sound_content;
 
 static nserror amiga_dt_sound_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
+		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c);
 static bool amiga_dt_sound_convert(struct content *c);
@@ -115,7 +115,7 @@ nserror amiga_dt_sound_init(void)
 }
 
 nserror amiga_dt_sound_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
+		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
 {

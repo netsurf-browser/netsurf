@@ -65,7 +65,7 @@ typedef struct amiga_icon_content {
 } amiga_icon_content;
 
 static nserror amiga_icon_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
+		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c);
 static bool amiga_icon_convert(struct content *c);
@@ -103,7 +103,7 @@ CONTENT_FACTORY_REGISTER_TYPES(amiga_icon, amiga_icon_types,
 		amiga_icon_content_handler)
 
 nserror amiga_icon_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
+		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
 {

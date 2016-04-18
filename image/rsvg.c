@@ -77,7 +77,7 @@ static nserror rsvg_create_svg_data(rsvg_content *c)
 
 
 static nserror rsvg_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
+		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
 {
