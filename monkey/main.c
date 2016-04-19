@@ -20,11 +20,11 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <sys/select.h>
-#include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
 
 #include "utils/config.h"
+#include "utils/sys_time.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/filepath.h"

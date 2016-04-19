@@ -19,9 +19,9 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
 #include <time.h>
 
+#include "utils/sys_time.h"
 #include "utils/errors.h"
 
 #include "atari/schedule.h"

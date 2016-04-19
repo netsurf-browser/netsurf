@@ -16,9 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sys/time.h>
 #include <time.h>
 
+#include "utils/sys_time.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/errors.h"

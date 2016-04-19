@@ -16,10 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sys/time.h>
 #include <time.h>
 #include <stdlib.h>
 
+#include "utils/sys_time.h"
 #include "utils/log.h"
 
 #include "monkey/schedule.h"

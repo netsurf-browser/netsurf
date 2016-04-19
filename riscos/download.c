@@ -32,7 +32,6 @@
 
 #include <assert.h>
 #include <string.h>
-#include <sys/time.h>
 #include <time.h>
 #include <curl/curl.h>
 #include <libwapcaplet/libwapcaplet.h>
@@ -46,6 +45,7 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 
+#include "utils/sys_time.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"

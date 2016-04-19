@@ -31,7 +31,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <sys/time.h>
 #include <regex.h>
 #include <assert.h>
 #include <stdarg.h>
@@ -117,32 +116,6 @@ struct dirent;
  * \return The length of C string without its terminator.
  */
 #define SLEN(x) (sizeof((x)) - 1)
-
-
-#ifndef timeradd
-#define timeradd(a, aa, result)						\
-	do {								\
-		(result)->tv_sec = (a)->tv_sec + (aa)->tv_sec;		\
-		(result)->tv_usec = (a)->tv_usec + (aa)->tv_usec;	\
-		if ((result)->tv_usec >= 1000000) {			\
-			++(result)->tv_sec;				\
-			(result)->tv_usec -= 1000000;			\
-		}							\
-	} while (0)
-#endif
-
-#ifndef timersub
-#define timersub(a, aa, result)						\
-	do {								\
-		(result)->tv_sec = (a)->tv_sec - (aa)->tv_sec;		\
-		(result)->tv_usec = (a)->tv_usec - (aa)->tv_usec;	\
-		if ((result)->tv_usec < 0) {				\
-			--(result)->tv_sec;				\
-			(result)->tv_usec += 1000000;			\
-		}							\
-	} while (0)
-#endif
-
 
 
 /**

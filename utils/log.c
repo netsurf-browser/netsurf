@@ -22,9 +22,9 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-#include <sys/time.h>
 
 #include "utils/config.h"
+#include "utils/sys_time.h"
 #include "utils/utsname.h"
 #include "desktop/version.h"
 

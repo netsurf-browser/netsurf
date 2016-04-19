@@ -17,13 +17,13 @@
  */
 
 #include <limits.h>
-#include <sys/time.h>
 
 #include "utils/config.h"
 
 #include <shlobj.h>
 #include <windows.h>
 
+#include "utils/sys_time.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
