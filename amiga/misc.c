@@ -26,6 +26,7 @@
 #include <proto/intuition.h> // for EasyRequest
 #endif
 
+#include "utils/utils.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/file.h"

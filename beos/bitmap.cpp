@@ -34,6 +34,7 @@
 #include <TranslatorFormats.h>
 #include <TranslatorRoster.h>
 #include <View.h>
+#include <stdlib.h>
 
 extern "C" {
 #include "utils/log.h"
