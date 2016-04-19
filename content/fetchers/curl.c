@@ -41,6 +41,7 @@
 #include <openssl/ssl.h>
 
 #include <libwapcaplet/libwapcaplet.h>
+#include <nsutils/time.h>
 
 #include "utils/corestrings.h"
 #include "utils/nsoption.h"
@@ -58,6 +59,8 @@
 #include "content/fetchers/curl.h"
 #include "content/urldb.h"
 
+/** maximum number of progress notifications per second */
+#define UPDATES_PER_SECOND 2
 
 /** SSL certificate info */
 struct cert_info {
@@ -86,7 +89,7 @@ struct curl_fetch_info {
 	struct curl_httppost *post_multipart;	/**< Multipart post data, or 0. */
 #define MAX_CERTS 10
 	struct cert_info cert_data[MAX_CERTS];	/**< HTTPS certificate data */
-	unsigned int last_progress_update;	/**< Time of last progress update */
+	uint64_t last_progress_update;	/**< Time of last progress update */
 };
 
 struct cache_handle {
@@ -757,8 +760,7 @@ static bool fetch_curl_process_headers(struct curl_fetch_info *f)
 
 	f->had_headers = true;
 
-	if (!f->http_code)
-	{
+	if (!f->http_code) {
 		code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE,
 					 &f->http_code);
 		fetch_set_http_code(f->fetch_handle, f->http_code);
@@ -1082,24 +1084,24 @@ static int fetch_curl_progress(void *clientp, double dltotal, double dlnow,
 {
 	static char fetch_progress_buffer[256]; /**< Progress buffer for cURL */
 	struct curl_fetch_info *f = (struct curl_fetch_info *) clientp;
-	unsigned int time_now_cs;
+	uint64_t time_now_ms;
 	fetch_msg msg;
 
-	if (f->abort)
+	if (f->abort) {
 		return 0;
+        }
 
 	msg.type = FETCH_PROGRESS;
 	msg.data.progress = fetch_progress_buffer;
 
-	/* Rate limit each fetch's progress notifications to 2 a second */
-#define UPDATES_PER_SECOND 2
-#define UPDATE_DELAY_CS (100 / UPDATES_PER_SECOND)
-	time_now_cs = wallclock();
-	if (time_now_cs - f->last_progress_update < UPDATE_DELAY_CS)
+	/* Rate limit each fetch's progress notifications */
+        nsu_getmonotonic_ms(&time_now_ms);
+#define UPDATE_DELAY_MS (1000 / UPDATES_PER_SECOND)
+	if (time_now_ms - f->last_progress_update < UPDATE_DELAY_MS) {
 		return 0;
-	f->last_progress_update = time_now_cs;
-#undef UPDATE_DELAY_CS
-#undef UPDATES_PERS_SECOND
+        }
+#undef UPDATE_DELAY_MS
+	f->last_progress_update = time_now_ms;
 
 	if (dltotal > 0) {
 		snprintf(fetch_progress_buffer, 255,
