@@ -231,17 +231,6 @@ nserror vsnstrjoin(char **str, size_t *size, char sep, size_t nelm, va_list ap);
  */
 nserror snstrjoin(char **str, size_t *size, char sep, size_t nelm, ...);
 
-/**
- * Comparison function for sorting directories.
- *
- * Correctly orders non zero-padded numerical parts.
- * ie. produces "file1, file2, file10" rather than "file1, file10, file2".
- *
- * d1	first directory entry
- * d2	second directory entry
- */
-int dir_sort_alpha(const struct dirent **d1, const struct dirent **d2);
-
 /* Platform specific functions */
 void warn_user(const char *warning, const char *detail);
 
