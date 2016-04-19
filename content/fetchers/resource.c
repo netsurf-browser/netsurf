@@ -33,13 +33,12 @@
 #include <strings.h>
 #include <time.h>
 #include <stdio.h>
-#include <dirent.h>
 #include <limits.h>
 #include <stdarg.h>
 
 #include <libwapcaplet/libwapcaplet.h>
 
-#include "utils/config.h"
+#include "utils/dirent.h"
 #include "utils/errors.h"
 #include "utils/corestrings.h"
 #include "utils/nsoption.h"

@@ -34,7 +34,6 @@
 #include <strings.h>
 #include <time.h>
 #include <stdio.h>
-#include <dirent.h>
 #include <limits.h>
 #include <stdarg.h>
 

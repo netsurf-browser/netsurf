@@ -19,7 +19,6 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <dirent.h>
 #include <fcntl.h>
 #include <time.h>
 #include <limits.h>
@@ -29,6 +28,7 @@
 #include <cflib.h>
 #include <gem.h>
 
+#include "utils/dirent.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "desktop/plot_style.h"

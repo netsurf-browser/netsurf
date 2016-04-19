@@ -38,7 +38,9 @@
 #include "utils/messages.h"
 #include "utils/utf8.h"
 #include "utils/time.h"
+#include "utils/sys_time.h"
 #include "utils/inet.h"
+#include "utils/dirent.h"
 #include "utils/utils.h"
 
 /* exported interface documented in utils/utils.h */
@@ -399,11 +401,14 @@ int dir_sort_alpha(const struct dirent **d1, const struct dirent **d2)
 
 
 #ifndef HAVE_SCANDIR
+
+/* exported function documented in utils/dirent.h */
 int alphasort(const struct dirent **d1, const struct dirent **d2)
 {
 	return strcasecmp((*d1)->d_name, (*d2)->d_name);
 }
 
+/* exported function documented in utils/dirent.h */
 int scandir(const char *dir, struct dirent ***namelist,
 		int (*sel)(const struct dirent *),
 		int (*compar)(const struct dirent **, const struct dirent **))

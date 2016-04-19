@@ -24,7 +24,6 @@
 
 #include <assert.h>
 #include <sys/types.h>
-#include <dirent.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
@@ -33,7 +32,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "utils/config.h"
+#include "utils/dirent.h"
 #include "utils/filename.h"
 #include "utils/log.h"
 #include "utils/utils.h"

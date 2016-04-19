@@ -21,6 +21,7 @@
 #include <limits.h>
 #include <stdbool.h>
 #include <windows.h>
+#include <io.h>
 
 #include "utils/utils.h"
 #include "utils/log.h"
