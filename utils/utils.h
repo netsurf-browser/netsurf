@@ -177,14 +177,6 @@ nserror regcomp_wrapper(regex_t *preg, const char *regex, int cflags);
 char *human_friendly_bytesize(unsigned long bytesize);
 
 /**
- * Create an RFC 1123 compliant date string from a Unix timestamp
- *
- * \param t The timestamp to consider
- * \return Pointer to buffer containing string - invalidated by next call.
- */
-const char *rfc1123_date(time_t t);
-
-/**
  * Returns a number of centiseconds, that increases in real time, for the
  * purposes of measuring how long something takes in wall-clock terms.
  *

@@ -72,4 +72,12 @@ nserror nsc_snptimet(const char *str, size_t size, time_t *timep);
  */
 nserror nsc_strntimet(const char *str, size_t size, time_t *timep);
 
+/**
+ * Create an RFC 1123 compliant date string from a Unix timestamp
+ *
+ * \param t The timestamp to consider
+ * \return Pointer to buffer containing string - invalidated by next call.
+ */
+const char *rfc1123_date(time_t t);
+
 #endif
