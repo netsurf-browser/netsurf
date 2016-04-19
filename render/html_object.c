@@ -27,6 +27,7 @@
 #include <strings.h>
 #include <stdlib.h>
 
+#include "utils/utils.h"
 #include "utils/corestrings.h"
 #include "utils/config.h"
 #include "utils/log.h"

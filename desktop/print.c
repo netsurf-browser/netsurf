@@ -26,6 +26,7 @@
 #include <string.h>
 #include <dom/dom.h>
 
+#include "utils/utils.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/talloc.h"

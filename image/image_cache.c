@@ -21,7 +21,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdlib.h>
 
+#include "utils/utils.h"
 #include "utils/log.h"
 #include "content/content_protected.h"
 #include "desktop/gui_misc.h"

@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <libnsbmp.h>
 
+#include "utils/utils.h"
 #include "utils/messages.h"
 #include "content/content_protected.h"
 #include "desktop/gui_internal.h"

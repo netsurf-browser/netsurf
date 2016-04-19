@@ -66,6 +66,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/errors.h"
 #include "image/bitmap.h"

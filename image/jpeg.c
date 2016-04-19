@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <setjmp.h>
 
+#include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "content/content_protected.h"

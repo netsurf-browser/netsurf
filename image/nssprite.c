@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <librosprite.h>
 
+#include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "content/content_protected.h"

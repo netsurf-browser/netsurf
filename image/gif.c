@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <libnsgif.h>
 
+#include "utils/utils.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
 #include "content/content_protected.h"

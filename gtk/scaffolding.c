@@ -26,7 +26,7 @@
 #include <gtk/gtk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
-#include "utils/config.h"
+#include "utils/utils.h"
 #include "utils/dirent.h"
 #include "utils/messages.h"
 #include "utils/corestrings.h"
