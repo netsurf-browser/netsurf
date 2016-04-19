@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <mint/osbind.h>
 
+#include "utils/dirent.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/cookie_manager.h"

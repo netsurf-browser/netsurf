@@ -27,6 +27,7 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
 #include "utils/config.h"
+#include "utils/dirent.h"
 #include "utils/messages.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"
