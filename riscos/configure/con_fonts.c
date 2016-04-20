@@ -17,6 +17,7 @@
  */
 
 #include <stdbool.h>
+#include <stddef.h>
 
 #include "utils/nsoption.h"
 #include "utils/messages.h"
