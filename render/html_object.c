@@ -26,8 +26,8 @@
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
+#include <nsutils/time.h>
 
-#include "utils/utils.h"
 #include "utils/corestrings.h"
 #include "utils/config.h"
 #include "utils/log.h"
@@ -434,32 +434,40 @@ html_object_callback(hlcache_handle *object,
 		break;
 	}
 
-	if (c->base.status == CONTENT_STATUS_READY && c->base.active == 0 &&
-			(event->type == CONTENT_MSG_LOADING ||
-			event->type == CONTENT_MSG_DONE ||
-			event->type == CONTENT_MSG_ERROR)) {
+	if (c->base.status == CONTENT_STATUS_READY &&
+            c->base.active == 0 &&
+            (event->type == CONTENT_MSG_LOADING ||
+             event->type == CONTENT_MSG_DONE ||
+             event->type == CONTENT_MSG_ERROR)) {
 		/* all objects have arrived */
 		content__reformat(&c->base, false, c->base.available_width,
 				c->base.height);
 		content_set_done(&c->base);
-	}
-
-	/* If  1) the configuration option to reflow pages while objects are
-	 *        fetched is set
-	 *     2) an object is newly fetched & converted,
-	 *     3) the box's dimensions need to change due to being replaced
-	 *     4) the object's parent HTML is ready for reformat,
-	 *     5) the time since the previous reformat is more than the
-	 *        configured minimum time between reformats
-	 * then reformat the page to display newly fetched objects */
-	else if (nsoption_bool(incremental_reflow) &&
-			event->type == CONTENT_MSG_DONE &&
-			box != NULL && !(box->flags & REPLACE_DIM) &&
-			(c->base.status == CONTENT_STATUS_READY ||
-			 c->base.status == CONTENT_STATUS_DONE) &&
-			(wallclock() > c->base.reformat_time)) {
-		content__reformat(&c->base, false, c->base.available_width,
-				c->base.height);
+	} else if (nsoption_bool(incremental_reflow) &&
+                   event->type == CONTENT_MSG_DONE &&
+                   box != NULL &&
+                   !(box->flags & REPLACE_DIM) &&
+                   (c->base.status == CONTENT_STATUS_READY ||
+                    c->base.status == CONTENT_STATUS_DONE)) {
+                /* 1) the configuration option to reflow pages while
+                 *      objects are fetched is set
+                 * 2) an object is newly fetched & converted,
+                 * 3) the box's dimensions need to change due to being replaced
+                 * 4) the object's parent HTML is ready for reformat,
+                 */
+                uint64_t ms_now;
+                nsu_getmonotonic_ms(&ms_now);
+                if (ms_now > c->base.reformat_time) {
+                        /* The time since the previous reformat is
+                         *  more than the configured minimum time
+                         *  between reformats so reformat the page to
+                         *  display newly fetched objects
+                         */
+                        content__reformat(&c->base,
+                                          false,
+                                          c->base.available_width,
+                                          c->base.height);
+                }
 	}
 
 	return NSERROR_OK;

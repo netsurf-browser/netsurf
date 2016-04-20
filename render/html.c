@@ -27,6 +27,7 @@
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
+#include <nsutils/time.h>
 
 #include "utils/config.h"
 #include "utils/corestrings.h"
@@ -1373,9 +1374,11 @@ static void html_reformat(struct content *c, int width, int height)
 {
 	html_content *htmlc = (html_content *) c;
 	struct box *layout;
-	unsigned int time_before, time_taken;
+        uint64_t ms_before;
+        uint64_t ms_after;
+        uint64_t ms_next;
 
-	time_before = wallclock();
+	nsu_getmonotonic_ms(&ms_before);
 
 	htmlc->reflowing = true;
 
@@ -1400,10 +1403,14 @@ static void html_reformat(struct content *c, int width, int height)
 
 	htmlc->reflowing = false;
 
-	time_taken = wallclock() - time_before;
-	c->reformat_time = wallclock() +
-		((time_taken * 3 < nsoption_uint(min_reflow_period) ?
-		  nsoption_uint(min_reflow_period) : time_taken * 3));
+        /* calculate next reflow time at three times what it took to reflow */
+        nsu_getmonotonic_ms(&ms_after);
+
+        ms_next = (ms_before - ms_after) * 3;
+        if (ms_next < (nsoption_uint(min_reflow_period) * 10)) {
+                ms_next = nsoption_uint(min_reflow_period) * 10;
+        }
+        c->reformat_time = ms_after + ms_next;
 }
 
 

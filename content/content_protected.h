@@ -130,9 +130,9 @@ struct content {
 					  if LOADING or READY,
 					  otherwise total time. */
 
-	unsigned int reformat_time;	/**< Earliest time to attempt a
-					  period reflow while fetching a
-					  page's objects. */
+	uint64_t reformat_time;	/**< Earliest time to attempt a period
+                                 * reflow while fetching a page's objects.
+                                 */
 
 	unsigned int size;		/**< Estimated size of all data
 					  associated with this content */
