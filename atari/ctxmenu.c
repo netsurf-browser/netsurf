@@ -16,33 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <limits.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdbool.h>
-#include <assert.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <mint/osbind.h>
-#include <cflib.h>
-
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/utils.h"
+#include "utils/nsoption.h"
 #include "desktop/browser.h"
-#include "desktop/mouse.h"
 #include "desktop/textinput.h"
-#include "content/content.h"
 #include "content/hlcache.h"
-#include "content/urldb.h"
 
 #include "atari/gui.h"
 #include "atari/rootwin.h"
-#include "atari/misc.h"
 #include "atari/clipboard.h"
-#include "utils/nsoption.h"
+#include "atari/gemtk/gemtk.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/ctxmenu.h"
 

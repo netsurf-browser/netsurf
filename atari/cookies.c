@@ -16,29 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <ctype.h>
-#include <string.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/utils.h"
-#include "utils/nsoption.h"
-#include "content/content.h"
-#include "content/hlcache.h"
-#include "content/urldb.h"
+#include "desktop/mouse.h"
+#include "desktop/plotters.h"
 #include "desktop/cookie_manager.h"
-#include "desktop/tree.h"
 #include "desktop/core_window.h"
 
-#include "atari/gui.h"
-#include "atari/misc.h"
 #include "atari/treeview.h"
 #include "atari/cookies.h"
-#include "atari/findfile.h"
 #include "atari/gemtk/gemtk.h"
 #include "atari/res/netsurf.rsh"
 

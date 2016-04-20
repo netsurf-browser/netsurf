@@ -16,29 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <ctype.h>
-#include <string.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+#include <inttypes.h>
 
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/utils.h"
-#include "utils/nsoption.h"
-#include "content/content.h"
-#include "content/hlcache.h"
-#include "content/urldb.h"
+#include "desktop/mouse.h"
 #include "desktop/global_history.h"
-#include "desktop/tree.h"
 #include "desktop/core_window.h"
 
-#include "atari/gui.h"
-#include "atari/misc.h"
 #include "atari/treeview.h"
 #include "atari/history.h"
-#include "atari/findfile.h"
 #include "atari/gemtk/gemtk.h"
 #include "atari/res/netsurf.rsh"
 
@@ -47,38 +34,18 @@ extern GRECT desk_area;
 struct atari_global_history_s atari_global_history;
 
 /* Setup Atari Treeview Callbacks: */
-static nserror atari_global_history_init_phase2(struct core_window *cw,
-						struct core_window_callback_table * default_callbacks);
-static void atari_global_history_finish(struct core_window *cw);
-static void atari_global_history_keypress(struct core_window *cw,
-					  uint32_t ucs4);
-static void atari_global_history_mouse_action(struct core_window *cw,
-					      browser_mouse_state mouse,
-					      int x, int y);
-static void atari_global_history_draw(struct core_window *cw, int x,
-				      int y, struct rect *clip,
-				      const struct redraw_context *ctx);
-static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8]);
 
-static struct atari_treeview_callbacks atari_global_history_treeview_callbacks = {
-	.init_phase2 = atari_global_history_init_phase2,
-	.finish = atari_global_history_finish,
-	.draw = atari_global_history_draw,
-	.keypress = atari_global_history_keypress,
-	.mouse_action = atari_global_history_mouse_action,
-	.gemtk_user_func = handle_event
-};
-
-static nserror atari_global_history_init_phase2(struct core_window *cw,
-						struct core_window_callback_table *cb_t)
+static nserror
+atari_global_history_init_phase2(struct core_window *cw,
+				 struct core_window_callback_table *cb_t)
 {
-	LOG("");
+	LOG("cw %p", cw);
 	return(global_history_init(cb_t, cw));
 }
 
 static void atari_global_history_finish(struct core_window *cw)
 {
-	LOG("");
+	LOG("cw %p", cw);
 	global_history_fini();
 }
 
@@ -91,27 +58,31 @@ static void atari_global_history_draw(struct core_window *cw, int x,
 
 static void atari_global_history_keypress(struct core_window *cw, uint32_t ucs4)
 {
-	LOG("ucs4: %lu\n", ucs4);
+	LOG("ucs4: %"PRIu32, ucs4);
 	global_history_keypress(ucs4);
 }
 
-static void atari_global_history_mouse_action(struct core_window *cw,
-					      browser_mouse_state mouse,
-					      int x, int y)
+static void
+atari_global_history_mouse_action(struct core_window *cw,
+				  browser_mouse_state mouse,
+				  int x, int y)
 {
 	LOG("x:  %d, y: %d\n", x, y);
 
 	global_history_mouse_action(mouse, x, y);
-
 }
 
+void atari_global_history_close(void)
+{
+	atari_treeview_close(atari_global_history.tv);
+}
 
 
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
 	short retval = 0;
 
-	LOG("");
+	LOG("win %p", win);
 
 	if (ev_out->emo_events & MU_MESAG) {
 		switch (msg[0]) {
@@ -127,7 +98,14 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 	return(retval);
 }
 
-
+static struct atari_treeview_callbacks atari_global_history_treeview_callbacks = {
+	.init_phase2 = atari_global_history_init_phase2,
+	.finish = atari_global_history_finish,
+	.draw = atari_global_history_draw,
+	.keypress = atari_global_history_keypress,
+	.mouse_action = atari_global_history_mouse_action,
+	.gemtk_user_func = handle_event
+};
 
 void atari_global_history_init(void)
 {
@@ -186,10 +164,6 @@ void atari_global_history_open(void)
 	}
 }
 
-void atari_global_history_close(void)
-{
-	atari_treeview_close(atari_global_history.tv);
-}
 
 void atari_global_history_destroy(void)
 {
