@@ -23,6 +23,7 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
+#include <nsutils/time.h>
 
 #include "utils/utils.h"
 #include "utils/log.h"
@@ -96,7 +97,7 @@ nserror content__init(struct content *c, const content_handler *handler,
 	c->available_width = 0;
 	c->quirks = quirks;
 	c->refresh = 0;
-	c->time = wallclock();
+	nsu_getmonotonic_ms(&c->time);
 	c->size = 0;
 	c->title = NULL;
 	c->active = 0;
@@ -215,10 +216,9 @@ static void content_update_status(struct content *c)
 				c->sub_status[0] != '\0' ? ", " : " ",
 				c->sub_status);
 	} else {
-		unsigned int time = c->time;
 		snprintf(c->status_message, sizeof (c->status_message),
 				"%s (%.1fs)", messages_get("Done"),
-				(float) time / 100);
+				(float) c->time / 1000);
 	}
 }
 
@@ -311,9 +311,12 @@ void content_set_ready(struct content *c)
 void content_set_done(struct content *c)
 {
 	union content_msg_data msg_data;
+	uint64_t now_ms;
+
+	nsu_getmonotonic_ms(&now_ms);
 
 	c->status = CONTENT_STATUS_DONE;
-	c->time = wallclock() - c->time;
+	c->time = now_ms - c->time;
 	content_update_status(c);
 	content_broadcast(c, CONTENT_MSG_DONE, msg_data);
 }

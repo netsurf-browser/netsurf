@@ -126,9 +126,10 @@ struct content {
 
 	struct content_rfc5988_link *links; /**< list of metadata links */
 
-	unsigned int time;		/**< Creation time,
-					  if LOADING or READY,
-					  otherwise total time. */
+	/** Creation timestamp when LOADING or READY.
+	 * Total time in ms when DONE.
+	 */
+	uint64_t time;
 
 	uint64_t reformat_time;	/**< Earliest time to attempt a period
                                  * reflow while fetching a page's objects.
