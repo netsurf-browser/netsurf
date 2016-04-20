@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdlib.h>
 #include <proto/iffparse.h>
 #include <proto/intuition.h>
 #include <proto/exec.h>
@@ -28,6 +29,8 @@
 
 #include "utils/nsoption.h"
 #include "utils/utf8.h"
+#include "utils/nsurl.h"
+#include "content/hlcache.h"
 #include "desktop/browser.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"

@@ -29,12 +29,14 @@
 #include <gadgets/clicktab.h>
 #include <reaction/reaction_macros.h>
 
+#include "utils/utils.h"
+#include "utils/log.h"
+#include "utils/nsoption.h"
+#include "utils/nsurl.h"
+#include "content/hlcache.h"
 #include "desktop/browser.h"
 #include "desktop/gui_window.h"
 #include "desktop/version.h"
-
-#include "utils/log.h"
-#include "utils/nsoption.h"
 
 #include "amiga/arexx.h"
 #include "amiga/download.h"

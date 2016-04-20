@@ -22,6 +22,8 @@
 
 #include "amiga/os3support.h"
 
+#include <stdlib.h>
+
 #include "amiga/filetype.h"
 #include "amiga/plugin_hack.h"
 #include "content/content_protected.h"

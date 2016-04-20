@@ -18,6 +18,8 @@
 
 #include "amiga/os3support.h"
 
+#include <stdlib.h>
+#include <string.h>
 #include <proto/diskfont.h>
 #include <proto/exec.h>
 #include <proto/graphics.h>

@@ -95,6 +95,7 @@
 #include "utils/utils.h"
 #include "utils/nsurl.h"
 #include "utils/file.h"
+#include "content/hlcache.h"
 #include "content/backing_store.h"
 #include "content/fetchers.h"
 #include "content/fetchers/resource.h"

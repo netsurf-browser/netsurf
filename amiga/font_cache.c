@@ -69,7 +69,7 @@ static void ami_font_cache_cleanup(struct SkipList *skiplist)
 		SubTime(&curtime, &node->lastused);
 		if(curtime.Seconds > 300)
 		{
-			LOG("Freeing font %lx not used for %ld seconds", node->skip_node.sn_Key, curtime.Seconds);
+			LOG("Freeing font %p not used for %ld seconds", node->skip_node.sn_Key, curtime.Seconds);
 			ami_font_bullet_close(node);
 			RemoveSkipNode(skiplist, node->skip_node.sn_Key);
 		}

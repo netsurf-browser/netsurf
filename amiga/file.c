@@ -22,9 +22,11 @@
 #include <proto/icon.h>
 #include <workbench/icon.h>
 
+#include "utils/utils.h"
 #include "utils/nsoption.h"
 #include "utils/file.h"
 #include "utils/messages.h"
+#include "content/hlcache.h"
 #include "content/content.h"
 #include "content/fetch.h"
 #include "desktop/browser.h"

@@ -18,6 +18,7 @@
 
 #include <stdbool.h>
 #include <string.h>
+#include <stdlib.h>
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
@@ -57,6 +58,7 @@
 #include <reaction/reaction.h>
 #include <reaction/reaction_macros.h>
 
+#include "utils/nsurl.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
 #include "desktop/browser.h"

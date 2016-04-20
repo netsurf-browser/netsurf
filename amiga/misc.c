@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
 #include <sys/stat.h>
 
 #include <proto/dos.h>
@@ -31,6 +32,7 @@
 #include "utils/log.h"
 #include "utils/file.h"
 #include "utils/messages.h"
+#include "utils/nsurl.h"
 #include "utils/url.h"
 
 #include "desktop/gui_window.h"

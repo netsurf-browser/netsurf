@@ -18,6 +18,7 @@
 
 #include "amiga/os3support.h"
 
+#include <stdlib.h>
 #include <proto/exec.h>
 #ifdef __amigaos4__
 #include <graphics/blitattr.h>
@@ -37,6 +38,7 @@
 #include "utils/nsoption.h"
 #include "utils/nsurl.h"
 #include "utils/messages.h"
+#include "content/hlcache.h"
 #include "desktop/mouse.h"
 #include "desktop/gui_window.h"
 #include "image/bitmap.h"

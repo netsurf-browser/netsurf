@@ -23,6 +23,7 @@
 #ifdef __amigaos4__
 #include <string.h>
 
+#include <stdlib.h>
 #include <proto/exec.h>
 #include <proto/intuition.h>
 
@@ -34,6 +35,18 @@
 #include <intuition/menuclass.h>
 #include <reaction/reaction_macros.h>
 
+#include "utils/utils.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/nsoption.h"
+#include "utils/nsurl.h"
+#include "content/hlcache.h"
+#include "desktop/browser.h"
+#include "desktop/browser_history.h"
+#include "desktop/mouse.h"
+#include "desktop/searchweb.h"
+#include "desktop/textinput.h"
+
 #include "amiga/bitmap.h"
 #include "amiga/clipboard.h"
 #include "amiga/ctxmenu.h"
@@ -44,15 +57,6 @@
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
 
-#include "desktop/browser.h"
-#include "desktop/browser_history.h"
-#include "desktop/mouse.h"
-#include "desktop/searchweb.h"
-#include "desktop/textinput.h"
-
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/nsoption.h"
 
 enum {
 	AMI_CTX_ID_NONE = 0,

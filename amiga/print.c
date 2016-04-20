@@ -18,6 +18,7 @@
 
 #include "amiga/os3support.h"
 
+#include <string.h>
 #include <proto/utility.h>
 #include <proto/iffparse.h>
 #include <proto/dos.h>
@@ -52,6 +53,7 @@
 #include "desktop/font.h"
 #include "desktop/mouse.h"
 #include "desktop/gui_window.h"
+#include "content/hlcache.h"
 
 #include "amiga/plotters.h"
 #include "amiga/gui.h"

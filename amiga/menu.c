@@ -19,6 +19,7 @@
 #include "amiga/os3support.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 #include <proto/dos.h>
 #include <proto/asl.h>
@@ -44,7 +45,9 @@
 #include "utils/nsoption.h"
 #include "utils/messages.h"
 #include "utils/log.h"
-
+#include "utils/utils.h"
+#include "utils/nsurl.h"
+#include "content/hlcache.h"
 #include "desktop/hotlist.h"
 #include "desktop/browser.h"
 #include "desktop/mouse.h"

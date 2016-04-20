@@ -18,18 +18,20 @@
 
 #ifndef AMIGA_MENU_H
 #define AMIGA_MENU_H
+
 #include <exec/types.h>
 #include <intuition/intuition.h>
 #include <libraries/gadtools.h>
-#include "content/hlcache.h"
 
-/* Maximum number of hotlist items (somewhat arbitrary value) */
+struct hlcache_handle;
+
+/** Maximum number of hotlist items (somewhat arbitrary value) */
 #define AMI_HOTLIST_ITEMS 60
 
-/* Maximum number of ARexx menu items (somewhat arbitrary value) */
+/** Maximum number of ARexx menu items (somewhat arbitrary value) */
 #define AMI_MENU_AREXX_ITEMS 20
 
-/* enum menu structure, has to be here as we need it below. */
+/** enum menu structure, has to be here as we need it below. */
 enum {
 	/* Project menu */
 	M_PROJECT = 0,
@@ -127,7 +129,7 @@ enum {
 #define AMI_MENU_BACKIMG FULLMENUNUM(2,8,1)
 #define AMI_MENU_JS FULLMENUNUM(2,9,0)
 
-/* A special value for ami_menu_window_close */
+/** A special value for ami_menu_window_close */
 #define AMI_MENU_WINDOW_CLOSE_ALL (void *)1
 
 struct gui_window;
@@ -140,7 +142,7 @@ void ami_free_menulabs(struct gui_window_2 *gwin);
 struct Menu *ami_menu_create(struct gui_window_2 *gwin);
 void ami_menu_refresh(struct gui_window_2 *gwin);
 void ami_menu_update_checked(struct gui_window_2 *gwin);
-void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c);
+void ami_menu_update_disabled(struct gui_window *g, struct hlcache_handle *c);
 void ami_menu_free_glyphs(void);
 void ami_menu_free(struct gui_window_2 *gwin);
 

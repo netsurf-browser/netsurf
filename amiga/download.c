@@ -42,6 +42,7 @@
 #include <reaction/reaction_macros.h>
 
 #include "utils/errors.h"
+#include "utils/nsurl.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"

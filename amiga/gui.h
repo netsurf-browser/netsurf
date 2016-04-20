@@ -18,16 +18,20 @@
 
 #ifndef AMIGA_GUI_H
 #define AMIGA_GUI_H
+
 #include <stdbool.h>
 #include <graphics/rastport.h>
 #include <intuition/classusr.h>
 #include <dos/dos.h>
 #include <devices/inputevent.h>
+
+#include "desktop/gui_window.h"
+#include "desktop/mouse.h"
+
 #include "amiga/menu.h"
 #include "amiga/object.h"
 #include "amiga/os3support.h"
 #include "amiga/plotters.h"
-#include "desktop/gui_window.h"
 
 #ifdef __amigaos4__
 #define HOOKF(ret,func,type,ptr,msgtype) static ret func(struct Hook *hook, type ptr, msgtype msg)
@@ -158,7 +162,7 @@ struct gui_window
 	int scrolly;
 	struct history_window *hw;
 	struct List dllist;
-	hlcache_handle *favicon;
+	struct hlcache_handle *favicon;
 	bool throbbing;
 	char *tabtitle;
 	APTR deferred_rects_pool;
@@ -183,7 +187,7 @@ void ami_gui_tabs_toggle_all(void);
 bool ami_locate_resource(char *fullpath, const char *file);
 void ami_gui_update_hotlist_button(struct gui_window_2 *gwin);
 nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin);
-char *ami_gui_get_cache_favicon_name(nsurl *url, bool only_if_avail);
+char *ami_gui_get_cache_favicon_name(struct nsurl *url, bool only_if_avail);
 int ami_gui_count_windows(int window, int *tabs);
 void ami_gui_set_scale(struct gui_window *gw, float scale);
 
