@@ -128,15 +128,6 @@ struct dirent;
 char * squash_whitespace(const char * s);
 
 /**
- * returns a string without its underscores
- *
- * \param s The string to change.
- * \param replacespace true to insert a space where there was an underscore
- * \return The altered string
- */
-char *remove_underscores(const char *s, bool replacespace);
-
-/**
  * Converts NUL terminated UTF-8 encoded string s containing zero or more
  * spaces (char 32) or TABs (char 9) to non-breaking spaces
  * (0xC2 + 0xA0 in UTF-8 encoding).

@@ -43,28 +43,6 @@
 #include "utils/utils.h"
 
 /* exported interface documented in utils/utils.h */
-char *remove_underscores(const char *s, bool replacespace)
-{
-	size_t i, ii, len;
-	char *ret;
-	len = strlen(s);
-	ret = malloc(len + 1);
-	if (ret == NULL) {
-		return NULL;
-        }
-	for (i = 0, ii = 0; i < len; i++) {
-		if (s[i] != '_') {
-			ret[ii++] = s[i];
-                } else if (replacespace) {
-			ret[ii++] = ' ';
-                }
-	}
-	ret[ii] = '\0';
-	return ret;
-}
-
-
-/* exported interface documented in utils/utils.h */
 char *squash_whitespace(const char *s)
 {
 	char *c;

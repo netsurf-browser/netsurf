@@ -91,6 +91,34 @@ struct nsgtk_theme {
 };
 
 /**
+ * returns a string without its underscores
+ *
+ * \param s The string to change.
+ * \param replacespace true to insert a space where there was an underscore
+ * \return The altered string
+ */
+static char *remove_underscores(const char *s, bool replacespace)
+{
+	size_t i, ii, len;
+	char *ret;
+	len = strlen(s);
+	ret = malloc(len + 1);
+	if (ret == NULL) {
+		return NULL;
+        }
+	for (i = 0, ii = 0; i < len; i++) {
+		if (s[i] != '_') {
+			ret[ii++] = s[i];
+                } else if (replacespace) {
+			ret[ii++] = ' ';
+                }
+	}
+	ret[ii] = '\0';
+	return ret;
+}
+
+
+/**
  * get default image for buttons / menu items from gtk stock items.
  *
  * \param tbbutton button reference
