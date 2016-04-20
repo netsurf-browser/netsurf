@@ -17,7 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Content for text/html (implementation).
  */
 
@@ -1374,9 +1375,9 @@ static void html_reformat(struct content *c, int width, int height)
 {
 	html_content *htmlc = (html_content *) c;
 	struct box *layout;
-        uint64_t ms_before;
-        uint64_t ms_after;
-        uint64_t ms_next;
+	uint64_t ms_before;
+	uint64_t ms_after;
+	uint64_t ms_interval;
 
 	nsu_getmonotonic_ms(&ms_before);
 
@@ -1387,11 +1388,11 @@ static void html_reformat(struct content *c, int width, int height)
 
 	/* width and height are at least margin box of document */
 	c->width = layout->x + layout->padding[LEFT] + layout->width +
-			layout->padding[RIGHT] + layout->border[RIGHT].width +
-			layout->margin[RIGHT];
+		layout->padding[RIGHT] + layout->border[RIGHT].width +
+		layout->margin[RIGHT];
 	c->height = layout->y + layout->padding[TOP] + layout->height +
-			layout->padding[BOTTOM] + layout->border[BOTTOM].width +
-			layout->margin[BOTTOM];
+		layout->padding[BOTTOM] + layout->border[BOTTOM].width +
+		layout->margin[BOTTOM];
 
 	/* if boxes overflow right or bottom edge, expand to contain it */
 	if (c->width < layout->x + layout->descendant_x1)
@@ -1403,14 +1404,14 @@ static void html_reformat(struct content *c, int width, int height)
 
 	htmlc->reflowing = false;
 
-        /* calculate next reflow time at three times what it took to reflow */
-        nsu_getmonotonic_ms(&ms_after);
+	/* calculate next reflow time at three times what it took to reflow */
+	nsu_getmonotonic_ms(&ms_after);
 
-        ms_next = (ms_before - ms_after) * 3;
-        if (ms_next < (nsoption_uint(min_reflow_period) * 10)) {
-                ms_next = nsoption_uint(min_reflow_period) * 10;
-        }
-        c->reformat_time = ms_after + ms_next;
+	ms_interval = (ms_before - ms_after) * 3;
+	if (ms_interval < (nsoption_uint(min_reflow_period) * 10)) {
+		ms_interval = nsoption_uint(min_reflow_period) * 10;
+	}
+	c->reformat_time = ms_after + ms_interval;
 }
 
 
