@@ -25,6 +25,8 @@
 struct gui_window;
 struct browser_window;
 
+#include "desktop/search.h"
+
 struct s_search_form_state {
 	char text[32];
 	uint32_t flags;

@@ -16,20 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <limits.h>
 #include <unistd.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <curl/curl.h>
 
 #include "utils/log.h"
 #include "utils/corestrings.h"
+
 #include "atari/gemtk/gemtk.h"
 #include "atari/findfile.h"
-#include "atari/misc.h"
+#include "atari/gui.h"
 #include "atari/osspec.h"
 
 char * local_file_to_url( const char * filename )

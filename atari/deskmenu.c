@@ -20,10 +20,12 @@
 #include <cflib.h>
 
 #include "utils/log.h"
+#include "utils/nsurl.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
 #include "desktop/browser.h"
 #include "desktop/save_complete.h"
+#include "desktop/textinput.h"
 
 #include "atari/res/netsurf.rsh"
 #include "atari/gemtk/gemtk.h"
@@ -659,7 +661,8 @@ static void register_menu_str( struct s_menu_item_evnt * mi )
 			}
 		}
 
-		LOG("Registered keyboard shortcut for \"%s\" => mod: %d, ""keycode: %d, ascii: %c\n", str, accel->mod, accel->keycode, accel->ascii);
+		LOG("Registered keyboard shortcut for \"%s\" => mod: %d, ""keycode: %ld, ascii: %c\n",
+                    str, accel->mod, accel->keycode, accel->ascii);
 	}
 }
 

@@ -19,11 +19,6 @@
 #ifndef NS_ATARI_MISC_H
 #define NS_ATARI_MISC_H
 
-#include "cflib.h"
-#include "content/content.h"
-#include "content/hlcache.h"
-#include "desktop/textinput.h"
-#include "atari/gui.h"
 
 #define SBUF8_TO_LBUF8(sbuf,lbuf)\
 	lbuf[0] = (long)sbuf[0];\
@@ -47,23 +42,42 @@
 #define BY_WINDOM_HANDLE 0x0
 #define BY_GEM_HANDLE    0x1
 
+/**
+ */
 typedef int (*scan_process_callback)(int pid, void *data);
 
+/**
+ */
 struct gui_window * find_guiwin_by_aes_handle(short handle);
+
+/**
+ */
 bool is_process_running(const char * name);
+
+/**
+ */
 void gem_set_cursor( MFORM_EX * cursor );
-hlcache_handle *load_icon( const char *name, hlcache_handle_callback cb,
-                           void * pw );
+
+/**
+ */
 void dbg_grect(const char * str, GRECT * r);
+
+/**
+ */
 void dbg_pxy(const char * str, short * pxy);
+
+/**
+ */
 void dbg_rect(const char * str, int * pxy);
 
+/**
+ */
 const char * file_select(const char * title, const char * name);
 
 /**
  * Convert NKC (atari normalized key code) to netsurf
  * Input key code and/or to ucs4 (depends on keycode).
-*/
+ */
 long nkc_to_input_key(short nkc, long * ucs4_out);
 
 /**

@@ -33,6 +33,7 @@
 #include "curl/curlver.h"
 
 #include "cflib.h"
+#include "atari/gui.h"
 #include "atari/misc.h"
 #include "atari/plot/plot.h"
 #include "atari/gemtk/gemtk.h"

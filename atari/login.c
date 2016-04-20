@@ -32,6 +32,7 @@
 #include "content/urldb.h"
 #include "content/fetch.h"
 
+#include "atari/gui.h"
 #include "atari/misc.h"
 #include "atari/login.h"
 #include "atari/res/netsurf.rsh"

@@ -32,6 +32,7 @@
 #include "desktop/plotters.h"
 #include "desktop/mouse.h"
 
+#include "atari/gui.h"
 #include "atari/osspec.h"
 #include "atari/misc.h"
 #include "atari/bitmap.h"

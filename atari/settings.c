@@ -33,6 +33,7 @@
 #include "utils/log.h"
 #include "desktop/plot_style.h"
 
+#include "atari/gui.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/settings.h"
 #include "atari/deskmenu.h"

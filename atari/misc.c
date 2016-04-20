@@ -202,60 +202,6 @@ static nserror load_icon_callback(hlcache_handle *handle,
 }
 
 
-/**
- * utility function. Copied from NetSurf tree API.
- *
- * \param name the name of the loaded icon, if it's not a full path
- *	       the icon is looked for in the directory specified by
- *	       icons_dir.
- * \param cb callback function to deal with hlcache callback.
- * \param pw Context pointer to be passed to callback.
- * \return the icon in form of a content or NULL on failure
- */
-hlcache_handle *
-load_icon(const char *name, hlcache_handle_callback cb,	void *pw)
-{
-	hlcache_handle *c;
-	nserror err;
-	nsurl *icon_nsurl;
-	char * icons_dir = nsoption_charp(tree_icons_path);
-
-	/** @todo something like bitmap_from_disc is needed here */
-
-	if (!strncmp(name, "file://", 7)) {
-		err = nsurl_create(name, &icon_nsurl);
-	} else {
-		char *native_path = NULL;
-
-		if (icons_dir == NULL)
-			return NULL;
-
-		err = netsurf_mkpath(&native_path, NULL, 2, icons_dir, name);
-		if (err == NSERROR_OK) {
-			/* Convert native path to URL */
-			err = netsurf_path_to_nsurl(native_path, &icon_nsurl);
-			free(native_path);
-		}
-	}
-
-	if (err != NSERROR_OK) {
-		warn_user(messages_get_errorcode(err), 0);
-		return NULL;
-	}
-
-	/* Fetch the icon */
-	err = hlcache_handle_retrieve(icon_nsurl, 0, 0, 0,
-				      ((cb != NULL) ? cb : load_icon_callback), pw, 0,
-				      CONTENT_IMAGE, &c);
-
-	nsurl_unref(icon_nsurl);
-
-	if (err != NSERROR_OK) {
-		return NULL;
-	}
-
-	return c;
-}
 
 void gem_set_cursor( MFORM_EX * cursor )
 {

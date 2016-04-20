@@ -24,27 +24,15 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <time.h>
-#include <limits.h>
 #include <unistd.h>
-#include <string.h>
-#include <stdbool.h>
-#include <hubbub/hubbub.h>
 
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/utils.h"
-#include "utils/nsoption.h"
 #include "utils/corestrings.h"
 #include "content/urldb.h"
-#include "content/fetch.h"
-#include "content/fetchers/resource.h"
+#include "content/content.h"
 #include "content/backing_store.h"
-#include "desktop/mouse.h"
-#include "desktop/plotters.h"
-#include "desktop/save_complete.h"
-#include "desktop/textinput.h"
+#include "content/hlcache.h"
 #include "desktop/treeview.h"
 #include "desktop/browser.h"
 #include "desktop/font.h"
@@ -766,19 +754,19 @@ static void gui_set_clipboard(const char *buffer, size_t length,
 static void gui_401login_open(nsurl *url, const char *realm,
 			      nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
-    bool bres;
-    char * out = NULL;
-    bres = login_form_do( url, (char*)realm, &out);
-    if (bres) {
-	LOG("url: %s, realm: %s, auth: %s\n", url, realm, out);
-	urldb_set_auth_details(url, realm, out);
-    }
-    if (out != NULL) {
-	free( out );
-    }
-    if (cb != NULL) {
-	cb(bres, cbpw);
-    }
+        bool bres;
+        char * out = NULL;
+        bres = login_form_do( url, (char*)realm, &out);
+        if (bres) {
+                LOG("url: %s, realm: %s, auth: %s\n", nsurl_access(url), realm, out);
+                urldb_set_auth_details(url, realm, out);
+        }
+        if (out != NULL) {
+                free( out );
+        }
+        if (cb != NULL) {
+                cb(bres, cbpw);
+        }
 
 }
 
@@ -787,25 +775,25 @@ gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 		unsigned long num, nserror (*cb)(bool proceed, void *pw),
 		void *cbpw)
 {
-    struct sslcert_session_data *data;
-    LOG("");
+        struct sslcert_session_data *data;
+        LOG("url %s", nsurl_access(url));
 
-    // TODO: localize string
-    int b = form_alert(1, "[2][SSL Verify failed, continue?][Continue|Abort|Details...]");
-    if(b == 1){
-	// Accept
-	urldb_set_cert_permissions(url, true);
-	cb(true, cbpw);
-    } else if(b == 2) {
-    	// Reject
-	urldb_set_cert_permissions(url, false);
-	cb(false, cbpw);
-    } else if(b == 3) {
-    	// Inspect
-    	sslcert_viewer_create_session_data(num, url, cb, cbpw, certs,
-					   &data);
-	atari_sslcert_viewer_open(data);
-    }
+        // TODO: localize string
+        int b = form_alert(1, "[2][SSL Verify failed, continue?][Continue|Abort|Details...]");
+        if(b == 1){
+                // Accept
+                urldb_set_cert_permissions(url, true);
+                cb(true, cbpw);
+        } else if(b == 2) {
+                // Reject
+                urldb_set_cert_permissions(url, false);
+                cb(false, cbpw);
+        } else if(b == 3) {
+                // Inspect
+                sslcert_viewer_create_session_data(num, url, cb, cbpw, certs,
+                                                   &data);
+                atari_sslcert_viewer_open(data);
+        }
 
 }
 
@@ -822,10 +810,10 @@ struct gui_window * gui_get_input_window(void)
 
 static void gui_quit(void)
 {
-    LOG("");
+    LOG("quitting");
 
-    struct gui_window * gw = window_list;
-    struct gui_window * tmp = window_list;
+    struct gui_window *gw = window_list;
+    struct gui_window *tmp = window_list;
 
     /* Destroy all remaining browser windows: */
     while (gw) {

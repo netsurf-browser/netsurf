@@ -58,12 +58,12 @@ static void atari_sslcert_viewer_draw(struct core_window *cw, int x,
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8]);
 
 static struct atari_treeview_callbacks atari_sslcert_viewer_treeview_callbacks = {
-	.init_phase2 = 		atari_sslcert_viewer_init_phase2,
-	.finish = 			atari_sslcert_viewer_finish,
-	.draw = 			atari_sslcert_viewer_draw,
-	.keypress = 		atari_sslcert_viewer_keypress,
-	.mouse_action = 	atari_sslcert_viewer_mouse_action,
-	.gemtk_user_func = 	handle_event
+	.init_phase2 = atari_sslcert_viewer_init_phase2,
+	.finish = atari_sslcert_viewer_finish,
+	.draw = atari_sslcert_viewer_draw,
+	.keypress = atari_sslcert_viewer_keypress,
+	.mouse_action = atari_sslcert_viewer_mouse_action,
+	.gemtk_user_func = handle_event
 };
 
 /* static functions */
@@ -84,7 +84,7 @@ static nserror atari_sslcert_viewer_init_phase2(struct core_window *cw,
 
 	assert(ssl_d);
 
-	LOG("");
+	LOG("cw %p", cw);
 
 	return(sslcert_viewer_init(cb_t, cw, ssl_d));
 }
@@ -100,7 +100,7 @@ static void atari_sslcert_viewer_finish(struct core_window *cw)
 	/* This will also free the session data: */
 	sslcert_viewer_fini(cvwin->ssl_session_data);
 
-	LOG("");
+	LOG("cw %p", cw);
 }
 
 static void atari_sslcert_viewer_draw(struct core_window *cw, int x,
@@ -126,7 +126,7 @@ static void atari_sslcert_viewer_keypress(struct core_window *cw, uint32_t ucs4)
 
 	cvwin = (struct atari_sslcert_viewer_s *)atari_treeview_get_user_data(cw);
 
-	LOG("ucs4: %lu\n", ucs4);
+	LOG("ucs4: %"PRIu32, ucs4);
 	sslcert_viewer_keypress(cvwin->ssl_session_data, ucs4);
 }
 
@@ -153,7 +153,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 	short retval = 0;
 	OBJECT *toolbar;
 
-	LOG("");
+	LOG("win %p", win);
 
 	if(ev_out->emo_events & MU_MESAG){
 		switch (msg[0]) {
@@ -283,7 +283,7 @@ static void atari_sslcert_viewer_destroy(struct atari_sslcert_viewer_s * cvwin)
 	assert(cvwin->init);
 	assert(cvwin->window);
 
-	LOG("");
+	LOG("cvwin %p", cvwin);
 
 	if (atari_treeview_is_open(cvwin->tv))
 		atari_treeview_close(cvwin->tv);

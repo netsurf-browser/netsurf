@@ -405,26 +405,26 @@ void window_restore_active_gui_window(ROOTWIN *rootwin)
 	GRECT tb_area;
 	struct gui_window *gw;
 
-	LOG("");
+	LOG("rootwin %p", rootwin);
 
 	assert(rootwin->active_gui_window);
 
 	gw = rootwin->active_gui_window;
 
-    window_set_icon(rootwin, gw->icon);
-    window_set_stauts(rootwin, gw->status);
-    window_set_title(rootwin, gw->title);
+        window_set_icon(rootwin, gw->icon);
+        window_set_stauts(rootwin, gw->status);
+        window_set_title(rootwin, gw->title);
 
 	if (gw->search != NULL) {
 		// TODO: update search session (especially browser window)
-    }
+        }
 
 	toolbar_get_grect(rootwin->toolbar, 0, &tb_area);
 	gemtk_wm_set_toolbar_size(rootwin->win, tb_area.g_h);
 
 	window_update_back_forward(rootwin);
 
-    toolbar_set_url(rootwin->toolbar, gw->url);
+        toolbar_set_url(rootwin->toolbar, gw->url);
 }
 
 
@@ -564,14 +564,14 @@ void window_set_active_gui_window(ROOTWIN *rootwin, struct gui_window *gw)
 {
 	struct gui_window *old_gw = rootwin->active_gui_window;
 
-	LOG("");
+	LOG("gw %p",gw);
 
-    if (rootwin->active_gui_window != NULL) {
-        if(rootwin->active_gui_window == gw) {
-        	LOG("nothing to do...");
-            return;
+        if (rootwin->active_gui_window != NULL) {
+                if(rootwin->active_gui_window == gw) {
+                        LOG("nothing to do...");
+                        return;
+                }
         }
-    }
 
 	// TODO: when the window isn't on top, initiate WM_TOPPED.
 
@@ -652,7 +652,7 @@ void window_open_search(ROOTWIN *rootwin, bool reformat)
 	GRECT area;
 	OBJECT *obj;
 
-	LOG("");
+	LOG("rootwin %p", rootwin);
 
 	gw = rootwin->active_gui_window;
 	bw = gw->browser->bw;
@@ -1469,7 +1469,7 @@ static void on_file_dropped(ROOTWIN *rootwin, short msg[8])
 
                 buff[size] = 0;
 
-                LOG("file: %s, ext: %s, size: %d dropped at: %d,%d\n", (char *)buff, (char *)&ext, size, mx, my);
+                LOG("file: %s, ext: %s, size: %ld dropped at: %d,%d\n", (char *)buff, (char *)&ext, size, mx, my);
 
                 gui_window_get_scroll(gw, &sx, &sy);
 
