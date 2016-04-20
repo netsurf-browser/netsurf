@@ -28,7 +28,6 @@
 #include <strings.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <regex.h>
 #include <time.h>
 #include <errno.h>
 #include <curl/curl.h>
@@ -214,21 +213,6 @@ nserror snstrjoin(char **str, size_t *size, char sep, size_t nelm, ...)
 	va_end(ap);
 
 	return ret;
-}
-
-
-/* exported interface documented in utils/utils.h */
-nserror regcomp_wrapper(regex_t *preg, const char *regex, int cflags)
-{
-	int r;
-	r = regcomp(preg, regex, cflags);
-	if (r) {
-		char errbuf[200];
-		regerror(r, preg, errbuf, sizeof errbuf);
-		LOG("Failed to compile regexp '%s': %s\n", regex, errbuf);
-		return NSERROR_INIT_FAILED;
-	}
-	return NSERROR_OK;
 }
 
 

@@ -31,7 +31,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <regex.h>
 #include <assert.h>
 #include <stdarg.h>
 
@@ -151,13 +150,6 @@ char *cnv_space2nbsp(const char *s);
  * Check if a directory exists.
  */
 bool is_dir(const char *path);
-
-/**
- * Compile a regular expression, handling errors.
- *
- * Parameters as for regcomp(), see man regex.
- */
-nserror regcomp_wrapper(regex_t *preg, const char *regex, int cflags);
 
 /**
  * Create a human redable representation of a size in bytes.

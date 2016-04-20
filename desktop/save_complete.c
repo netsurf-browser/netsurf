@@ -1158,6 +1158,25 @@ static bool save_complete_inventory(save_complete_ctx *ctx)
 	return true;
 }
 
+/**
+ * Compile a regular expression, handling errors.
+ *
+ * Parameters as for regcomp(), see man regex.
+ */
+static nserror regcomp_wrapper(regex_t *preg, const char *regex, int cflags)
+{
+	int r;
+	r = regcomp(preg, regex, cflags);
+	if (r) {
+		char errbuf[200];
+		regerror(r, preg, errbuf, sizeof errbuf);
+		LOG("Failed to compile regexp '%s': %s\n", regex, errbuf);
+		return NSERROR_INIT_FAILED;
+	}
+	return NSERROR_OK;
+}
+
+
 /* Documented in save_complete.h */
 void save_complete_init(void)
 {
