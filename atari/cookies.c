@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <assert.h>
+
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "desktop/mouse.h"

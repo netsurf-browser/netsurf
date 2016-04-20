@@ -21,6 +21,7 @@
  * NetSurf international domain name handling implementation.
  */
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>

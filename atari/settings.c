@@ -17,6 +17,7 @@
  *
  */
 
+#include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -978,7 +979,7 @@ void open_settings(void)
 
 void close_settings(void)
 {
-    LOG("");
+    LOG("closing");
     gemtk_wm_remove(settings_guiwin);
     settings_guiwin = NULL;
     wind_close(h_aes_win);

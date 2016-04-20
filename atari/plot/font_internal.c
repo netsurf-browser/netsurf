@@ -19,6 +19,7 @@
 
 #ifdef WITH_INTERNAL_FONT_DRIVER
 
+#include <assert.h>
 #include <unistd.h>
 
 #include "utils/utf8.h"

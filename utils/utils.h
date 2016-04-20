@@ -18,7 +18,7 @@
  */
 
 /**
- * \file utils/utils.h
+ * \file
  * \brief Interface to a number of general purpose functionality.
  * \todo Many of these functions and macros should have their own headers.
  */
@@ -28,10 +28,7 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdlib.h>
-#include <sys/types.h>
-#include <assert.h>
 #include <stdarg.h>
 
 #include "utils/errors.h"
