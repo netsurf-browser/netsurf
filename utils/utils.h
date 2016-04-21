@@ -94,6 +94,7 @@ struct dirent;
 #endif
 
 #if defined(__HAIKU__) || defined(__BEOS__)
+#include <stdlib.h>
 #define strtof(s,p) ((float)(strtod((s),(p))))
 #endif
 
