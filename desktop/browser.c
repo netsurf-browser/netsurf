@@ -38,6 +38,7 @@
 #include <string.h>
 #include <strings.h>
 #include <math.h>
+#include <nsutils/time.h>
 
 #include "utils/corestrings.h"
 #include "utils/log.h"

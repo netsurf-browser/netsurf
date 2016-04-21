@@ -16,12 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdint.h>
 #include <limits.h>
 #include <getopt.h>
 #include <assert.h>
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <nsutils/time.h>
 
 #include <libnsfb.h>
 #include <libnsfb_plot.h>
@@ -611,10 +613,10 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	float scale = browser_window_get_scale(gw->bw);
 	int x = (cbi->x + bwidget->scrollx) / scale;
 	int y = (cbi->y + bwidget->scrolly) / scale;
-	unsigned int time_now;
+	uint64_t time_now;
 	static struct {
 		enum { CLICK_SINGLE, CLICK_DOUBLE, CLICK_TRIPLE } type;
-		unsigned int time;
+		uint64_t time;
 	} last_click;
 
 	if (cbi->event->type != NSFB_EVENT_KEY_DOWN &&
@@ -667,7 +669,7 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	case NSFB_EVENT_KEY_UP:
 
 		mouse = 0;
-		time_now = wallclock();
+		nsu_getmonotonic_ms(&time_now);
 
 		switch (cbi->event->value.keycode) {
 		case NSFB_KEY_MOUSE_1:
@@ -719,10 +721,11 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 		}
 
 		/* Determine if it's a double or triple click, allowing
-		 * 0.5 seconds (50cs) between clicks */
-		if (time_now < last_click.time + 50 &&
-				cbi->event->value.keycode != NSFB_KEY_MOUSE_4 &&
-				cbi->event->value.keycode != NSFB_KEY_MOUSE_5) {
+		 * 0.5 seconds (500ms) between clicks
+		 */
+		if ((time_now < (last_click.time + 500)) &&
+		    (cbi->event->value.keycode != NSFB_KEY_MOUSE_4) &&
+		    (cbi->event->value.keycode != NSFB_KEY_MOUSE_5)) {
 			if (last_click.type == CLICK_SINGLE) {
 				/* Set double click */
 				mouse |= BROWSER_MOUSE_DOUBLE_CLICK;
@@ -740,8 +743,9 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 			last_click.type = CLICK_SINGLE;
 		}
 
-		if (mouse)
+		if (mouse) {
 			browser_window_mouse_click(gw->bw, mouse, x, y);
+		}
 
 		last_click.time = time_now;
 
