@@ -156,16 +156,6 @@ bool is_dir(const char *path);
  */
 char *human_friendly_bytesize(unsigned long bytesize);
 
-/**
- * Returns a number of centiseconds, that increases in real time, for the
- * purposes of measuring how long something takes in wall-clock terms.
- *
- * The implementation uses gettimeofday() for this.  Should the call
- * to gettimeofday() fail, it returns zero.
- *
- * \return number of centiseconds that increases monotonically
- */
-unsigned int wallclock(void);
 
 /**
  * Generate a string from one or more component elemnts separated with

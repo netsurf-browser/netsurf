@@ -265,17 +265,6 @@ const char *rfc1123_date(time_t t)
 }
 
 
-/* exported interface documented in utils/utils.h */
-unsigned int wallclock(void)
-{
-	struct timeval tv;
-
-	if (gettimeofday(&tv, NULL) == -1)
-		return 0;
-
-	return ((tv.tv_sec * 100) + (tv.tv_usec / 10000));
-}
-
 #ifndef HAVE_STRCASESTR
 
 /**
