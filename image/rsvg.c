@@ -27,6 +27,7 @@
  * function to render it for redraw requests.
  */
 
+#include <stdlib.h>
 #include <stdbool.h>
 #include <assert.h>
 #include <string.h>
