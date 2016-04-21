@@ -119,7 +119,7 @@ static inline void nsbeos_rgba_to_bgra(void *src,
  * \param  state   a flag word indicating the initial state
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
-void *bitmap_create(int width, int height, unsigned int state)
+static void *bitmap_create(int width, int height, unsigned int state)
 {
         struct bitmap *bmp = (struct bitmap *)malloc(sizeof(struct bitmap));
         if (bmp == NULL)
@@ -148,7 +148,7 @@ void *bitmap_create(int width, int height, unsigned int state)
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \param  opaque   whether the bitmap should be plotted opaque
  */
-void bitmap_set_opaque(void *vbitmap, bool opaque)
+static void bitmap_set_opaque(void *vbitmap, bool opaque)
 {
         struct bitmap *bitmap = (struct bitmap *)vbitmap;
         assert(bitmap);
@@ -162,7 +162,7 @@ void bitmap_set_opaque(void *vbitmap, bool opaque)
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \return whether  the bitmap is opaque
  */
-bool bitmap_test_opaque(void *vbitmap)
+static bool bitmap_test_opaque(void *vbitmap)
 {
         struct bitmap *bitmap = (struct bitmap *)vbitmap;
         assert(bitmap);
@@ -176,7 +176,7 @@ bool bitmap_test_opaque(void *vbitmap)
  *
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  */
-bool bitmap_get_opaque(void *vbitmap)
+static bool bitmap_get_opaque(void *vbitmap)
 {
         struct bitmap *bitmap = (struct bitmap *)vbitmap;
         assert(bitmap);
@@ -194,7 +194,7 @@ bool bitmap_get_opaque(void *vbitmap)
  * of rows. The width of a row in bytes is given by bitmap_get_rowstride().
  */
 
-unsigned char *bitmap_get_buffer(void *vbitmap)
+static unsigned char *bitmap_get_buffer(void *vbitmap)
 {
         struct bitmap *bitmap = (struct bitmap *)vbitmap;
         assert(bitmap);
@@ -208,7 +208,7 @@ unsigned char *bitmap_get_buffer(void *vbitmap)
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \return width of a pixel row in the bitmap
  */
-size_t bitmap_get_rowstride(void *vbitmap)
+static size_t bitmap_get_rowstride(void *vbitmap)
 {
         struct bitmap *bitmap = (struct bitmap *)vbitmap;
         assert(bitmap);
@@ -222,7 +222,7 @@ size_t bitmap_get_rowstride(void *vbitmap)
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \return bytes per pixels of the bitmap
  */
-size_t bitmap_get_bpp(void *vbitmap)
+static size_t bitmap_get_bpp(void *vbitmap)
 {
         struct bitmap *bitmap = (struct bitmap *)vbitmap;
         assert(bitmap);
@@ -250,7 +250,7 @@ static void nsbeos_bitmap_free_pretiles(struct bitmap *bitmap)
  *
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  */
-void bitmap_destroy(void *vbitmap)
+static void bitmap_destroy(void *vbitmap)
 {
         struct bitmap *bitmap = (struct bitmap *)vbitmap;
         assert(bitmap);
@@ -269,7 +269,7 @@ void bitmap_destroy(void *vbitmap)
  * \param  flags    modify the behaviour of the save
  * \return true on success, false on error and error reported
  */
-bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
+static bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
 {
         struct bitmap *bitmap = (struct bitmap *)vbitmap;
         BTranslatorRoster *roster = BTranslatorRoster::Default();
@@ -304,14 +304,14 @@ void bitmap_modified(void *vbitmap)
 }
 
 
-int bitmap_get_width(void *vbitmap)
+static int bitmap_get_width(void *vbitmap)
 {
         struct bitmap *bitmap = (struct bitmap *)vbitmap;
         return bitmap->primary->Bounds().Width() + 1;
 }
 
 
-int bitmap_get_height(void *vbitmap)
+static int bitmap_get_height(void *vbitmap)
 {
         struct bitmap *bitmap = (struct bitmap *)vbitmap;
         return bitmap->primary->Bounds().Height() + 1;
