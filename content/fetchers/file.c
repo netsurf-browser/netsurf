@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <string.h>
+#include <strings.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdarg.h>
