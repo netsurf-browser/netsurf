@@ -22,8 +22,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Browser window handling (implementation).
+/**
+ * \file
+ * Implementation of RISC OS browser window handling.
  */
 
 #include <assert.h>
@@ -34,12 +35,13 @@
 #include <stdbool.h>
 #include <time.h>
 #include <string.h>
-#include "oslib/colourtrans.h"
-#include "oslib/osbyte.h"
-#include "oslib/osfile.h"
-#include "oslib/osspriteop.h"
-#include "oslib/wimp.h"
-#include "oslib/wimpspriteop.h"
+#include <oslib/colourtrans.h>
+#include <oslib/osbyte.h>
+#include <oslib/osfile.h>
+#include <oslib/osspriteop.h>
+#include <oslib/wimp.h>
+#include <oslib/wimpspriteop.h>
+#include <nsutils/time.h>
 
 #include "utils/config.h"
 #include "utils/nsoption.h"
@@ -4800,7 +4802,7 @@ browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons,
 	browser_mouse_state state = 0; /* Blank state with nothing set */
 	static struct {
 		enum { CLICK_SINGLE, CLICK_DOUBLE, CLICK_TRIPLE } type;
-		unsigned int time;
+		uint64_t time;
 	} last_click;
 
 	switch (type) {
@@ -4850,7 +4852,10 @@ browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons,
 			 * it a triple click */
 
 			if (last_click.type == CLICK_DOUBLE) {
-				if (wallclock() < last_click.time + 50) {
+				uint64_t ms_now;
+				nsu_getmonotonic_ms(&ms_now);
+
+				if (ms_now < (last_click.time + 500)) {
 					/* Triple click!  Fire PRESS, CLICK, and
 					 * TRIPLE_CLICK events together for
 					 * "action on 3nd press" behaviour. */
@@ -4878,7 +4883,7 @@ browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons,
 				last_click.type = CLICK_SINGLE;
 			} else {
 				last_click.type = CLICK_DOUBLE;
-				last_click.time = wallclock();
+				nsu_getmonotonic_ms(&last_click.time);
 			}
 		} else {
 			last_click.type = CLICK_SINGLE;
