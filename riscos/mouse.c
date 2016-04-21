@@ -35,11 +35,13 @@
  *    - when the pointer leaves the window.
  */
 
-#include "oslib/wimp.h"
+#include <assert.h>
+#include <oslib/wimp.h>
 
-#include "riscos/mouse.h"
 #include "utils/log.h"
 #include "utils/utils.h"
+
+#include "riscos/mouse.h"
 
 /* Data for the wimp drag handler. */
 
