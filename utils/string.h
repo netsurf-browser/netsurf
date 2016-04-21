@@ -24,6 +24,10 @@
 #ifndef _NETSURF_UTILS_STRING_H_
 #define _NETSURF_UTILS_STRING_H_
 
+#if defined(__HAIKU__) || defined(__BEOS__)
+#include <stdbool.h>
+#endif
+
 #include <stdlib.h>
 #include <stdarg.h>
 
