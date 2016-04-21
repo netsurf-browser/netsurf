@@ -16,31 +16,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* data: URL handling.  See http://tools.ietf.org/html/rfc2397 */
+/**
+ * \file
+ * data scheme handling.  See http://tools.ietf.org/html/rfc2397
+ */
 
-#include <assert.h>
-#include <errno.h>
 #include <stdbool.h>
 #include <string.h>
-#include <strings.h>
-#include <time.h>
-
-#include <curl/curl.h>		/* for URL unescaping functions */
-
+#include <stdlib.h>
+#include <curl/curl.h> /* for URL unescaping functions */
 #include <libwapcaplet/libwapcaplet.h>
 
-#include "utils/config.h"
-#include "content/fetch.h"
-#include "content/fetchers.h"
-#include "content/fetchers/data.h"
-#include "content/urldb.h"
+#include "utils/nsurl.h"
 #include "utils/corestrings.h"
-#include "utils/nsoption.h"
 #include "utils/log.h"
-#include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
 #include "utils/base64.h"
+
+#include "content/fetch.h"
+#include "content/fetchers.h"
+#include "content/fetchers/data.h"
 
 struct fetch_data_context {
 	struct fetch *parent_fetch;

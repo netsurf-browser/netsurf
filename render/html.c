@@ -39,6 +39,7 @@
 #include "utils/talloc.h"
 #include "utils/utf8.h"
 #include "utils/nsoption.h"
+#include "utils/string.h"
 #include "content/content_protected.h"
 #include "content/fetch.h"
 #include "content/hlcache.h"

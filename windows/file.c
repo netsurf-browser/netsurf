@@ -34,6 +34,7 @@
 #include "utils/corestrings.h"
 #include "utils/url.h"
 #include "utils/file.h"
+#include "utils/string.h"
 #include "desktop/browser.h"
 
 #include "windows/file.h"

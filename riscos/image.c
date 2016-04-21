@@ -18,6 +18,7 @@
 
 #include <stdbool.h>
 #include <swis.h>
+#include <stdlib.h>
 #include <oslib/colourtrans.h>
 #include <oslib/osspriteop.h>
 

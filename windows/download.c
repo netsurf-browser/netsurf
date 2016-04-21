@@ -29,6 +29,7 @@
 #include "utils/url.h"
 #include "utils/nsurl.h"
 #include "utils/utils.h"
+#include "utils/string.h"
 #include "content/fetch.h"
 #include "desktop/gui_download.h"
 #include "desktop/download.h"

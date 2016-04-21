@@ -23,8 +23,9 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include "oslib/osfile.h"
-#include "oslib/wimp.h"
+#include <stdlib.h>
+#include <oslib/osfile.h>
+#include <oslib/wimp.h>
 
 #include "utils/log.h"
 #include "utils/utf8.h"

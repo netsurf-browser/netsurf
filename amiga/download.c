@@ -47,6 +47,7 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"
+#include "utils/string.h"
 #include "desktop/download.h"
 #include "desktop/save_complete.h"
 #include "desktop/browser.h"

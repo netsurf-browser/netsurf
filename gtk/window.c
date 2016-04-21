@@ -22,6 +22,7 @@
  * Implementation of gtk windowing.
  */
 
+#include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
 #include <limits.h>

@@ -18,6 +18,7 @@
 
 #include "amiga/os3support.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #include <proto/clicktab.h>

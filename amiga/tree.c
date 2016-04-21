@@ -18,6 +18,7 @@
 
 #include "amiga/os3support.h"
 
+#include <stdlib.h>
 #include <proto/window.h>
 #include <proto/layout.h>
 #include <proto/space.h>

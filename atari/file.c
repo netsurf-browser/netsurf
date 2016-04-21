@@ -29,6 +29,7 @@
 #include "utils/url.h"
 #include "utils/nsurl.h"
 #include "utils/file.h"
+#include "utils/string.h"
 
 /**
  * \file

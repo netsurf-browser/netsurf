@@ -22,6 +22,7 @@
  * Implementation of gtk about dialog.
  */
 
+#include <stdlib.h>
 #include <stdint.h>
 
 #include "utils/utils.h"

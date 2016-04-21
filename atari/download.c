@@ -29,6 +29,7 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"
+#include "utils/string.h"
 #include "content/urldb.h"
 #include "content/fetch.h"
 #include "desktop/save_complete.h"

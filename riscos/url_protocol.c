@@ -29,8 +29,9 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#include "oslib/inetsuite.h"
-#include "oslib/wimp.h"
+#include <stdlib.h>
+#include <oslib/inetsuite.h>
+#include <oslib/wimp.h>
 
 #include "utils/log.h"
 #include "utils/messages.h"

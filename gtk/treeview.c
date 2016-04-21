@@ -21,6 +21,7 @@
  * Generic tree handling (implementation).
  */
 
+#include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
 #include <limits.h>

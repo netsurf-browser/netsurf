@@ -52,6 +52,7 @@
 #include "utils/nsurl.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "utils/string.h"
 #include "utils/corestrings.h"
 #include "desktop/gui_download.h"
 #include "desktop/download.h"

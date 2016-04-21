@@ -40,6 +40,7 @@
 #include "utils/sys_time.h"
 #include "utils/inet.h"
 #include "utils/dirent.h"
+#include "utils/string.h"
 #include "utils/utils.h"
 
 /* exported interface documented in utils/utils.h */

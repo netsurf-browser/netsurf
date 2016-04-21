@@ -24,33 +24,26 @@
 
 #include "utils/config.h"
 
+#include <stdlib.h>
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
-#include <inttypes.h>
 #include <string.h>
-#include <strings.h>
 #include <time.h>
 #include <stdio.h>
-#include <limits.h>
 #include <stdarg.h>
-
 #ifdef HAVE_MMAP
 #include <sys/mman.h>
 #endif
-
 #include <libwapcaplet/libwapcaplet.h>
 
+#include "utils/nsurl.h"
 #include "utils/dirent.h"
 #include "utils/corestrings.h"
-#include "utils/nsoption.h"
-#include "utils/errors.h"
-#include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
@@ -61,7 +54,6 @@
 #include "content/dirlist.h"
 #include "content/fetch.h"
 #include "content/fetchers.h"
-#include "content/urldb.h"
 #include "content/fetchers/file.h"
 
 /* Maximum size of read buffer */

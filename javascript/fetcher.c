@@ -22,36 +22,17 @@
  * This fetcher implements http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#javascript-protocol
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <assert.h>
-#include <errno.h>
 #include <stdbool.h>
-#include <inttypes.h>
-#include <string.h>
-#include <strings.h>
-#include <time.h>
-#include <stdio.h>
-#include <limits.h>
-#include <stdarg.h>
-
+#include <stdlib.h>
 #include <libwapcaplet/libwapcaplet.h>
 
-#include "utils/config.h"
-#include "utils/errors.h"
+#include "utils/nsurl.h"
 #include "utils/corestrings.h"
-#include "utils/nsoption.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
 #include "utils/ring.h"
-
 #include "content/fetch.h"
 #include "content/fetchers.h"
+
 #include "javascript/fetcher.h"
-#include "content/urldb.h"
 
 /** Context for an resource fetch */
 struct fetch_javascript_context {
@@ -62,7 +43,7 @@ struct fetch_javascript_context {
 	bool aborted; /**< Flag indicating fetch has been aborted */
 	bool locked; /**< Flag indicating entry is already entered */
 
-	nsurl *url;
+	nsurl *url; /**< The URL being fetched */
 };
 
 static struct fetch_javascript_context *ring = NULL;

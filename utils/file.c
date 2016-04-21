@@ -33,6 +33,7 @@
 #include "utils/corestrings.h"
 #include "utils/url.h"
 #include "utils/nsurl.h"
+#include "utils/string.h"
 #include "utils/file.h"
 
 /**

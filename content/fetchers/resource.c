@@ -21,27 +21,15 @@
  * resource scheme URL handling. Based on the data fetcher by Rob Kendrick
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <assert.h>
-#include <errno.h>
+#include <stdlib.h>
 #include <stdbool.h>
-#include <inttypes.h>
 #include <string.h>
-#include <strings.h>
-#include <time.h>
 #include <stdio.h>
-#include <limits.h>
 #include <stdarg.h>
-
 #include <libwapcaplet/libwapcaplet.h>
 
-#include "utils/dirent.h"
-#include "utils/errors.h"
+#include "utils/nsurl.h"
 #include "utils/corestrings.h"
-#include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -52,7 +40,6 @@
 #include "content/fetch.h"
 #include "content/fetchers.h"
 #include "content/fetchers/resource.h"
-#include "content/urldb.h"
 
 #define DIRECT_ETAG_VALUE 123456
 

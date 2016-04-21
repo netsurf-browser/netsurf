@@ -23,6 +23,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <string.h>
+#include <stdlib.h>
 #include <oslib/osbyte.h>
 #include <oslib/territory.h>
 

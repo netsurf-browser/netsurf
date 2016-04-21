@@ -16,7 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file content/fetchers/about.c
+/**
+ * \file
  *
  * URL handling for the "about" scheme.
  *
@@ -25,38 +26,23 @@
  * information from the browser from a known, fixed URL.
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <assert.h>
-#include <errno.h>
-#include <stdbool.h>
-#include <inttypes.h>
+#include <stdlib.h>
 #include <string.h>
-#include <strings.h>
-#include <time.h>
 #include <stdio.h>
-#include <limits.h>
 #include <stdarg.h>
 
-#include <libwapcaplet/libwapcaplet.h>
-
 #include "testament.h"
+#include "utils/corestrings.h"
+#include "utils/nsoption.h"
+#include "utils/utils.h"
+#include "utils/ring.h"
 
-#include "utils/config.h"
-#include "utils/dirent.h"
 #include "content/fetch.h"
 #include "content/fetchers.h"
 #include "content/fetchers/about.h"
-#include "content/urldb.h"
-#include "utils/nsoption.h"
-#include "utils/corestrings.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
-#include "utils/ring.h"
+#include "content/content_type.h"
 #include "image/image_cache.h"
+
 
 struct fetch_about_context;
 

@@ -19,6 +19,7 @@
 /* Browser-related callbacks */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "utils/utils.h"
 #include "utils/ring.h"

@@ -22,7 +22,7 @@
 
 /**
  * \file
- * Conversion of XML tree to box tree (implementation).
+ * Implementation of conversion from DOM tree to box tree.
  */
 
 #include <assert.h>
@@ -34,11 +34,6 @@
 #include <strings.h>
 
 #include "utils/config.h"
-#include "content/content_protected.h"
-#include "css/css.h"
-#include "css/hints.h"
-#include "css/select.h"
-#include "css/utils.h"
 #include "utils/nsoption.h"
 #include "utils/corestrings.h"
 #include "utils/locale.h"
@@ -46,6 +41,12 @@
 #include "utils/messages.h"
 #include "utils/talloc.h"
 #include "utils/utils.h"
+#include "utils/string.h"
+#include "content/content_protected.h"
+#include "css/css.h"
+#include "css/hints.h"
+#include "css/select.h"
+#include "css/utils.h"
 #include "desktop/gui_misc.h"
 #include "desktop/gui_internal.h"
 
