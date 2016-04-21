@@ -141,7 +141,7 @@ struct browser_window {
 	struct browser_window *focus;
 
 	/** Last time a link was followed in this window */
-	unsigned int last_action;
+	uint64_t last_action;
 
 	/** Current selection */
 	struct {

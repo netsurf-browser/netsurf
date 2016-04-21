@@ -842,8 +842,10 @@ nserror browser_window_create(enum browser_window_create_flags flags,
 	ret->scrolling = BW_SCROLLING_YES;
 	ret->border = true;
 	ret->no_resize = true;
-	ret->last_action = wallclock();
 	ret->focus = ret;
+
+	/* initialise last action with creation time */
+	nsu_getmonotonic_ms(&ret->last_action);
 
 	/* The existing gui_window is on the top-level existing
 	 * browser_window. */
@@ -2079,7 +2081,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 	}
 
 	/* Record time */
-	bw->last_action = wallclock();
+	nsu_getmonotonic_ms(&bw->last_action);
 
 	return error;
 }
@@ -2492,25 +2494,29 @@ void browser_window_set_pointer(struct browser_window *bw,
 	struct browser_window *root = browser_window_get_root(bw);
 	gui_pointer_shape gui_shape;
 	bool loading;
+	uint64_t ms_now;
 
 	assert(root);
 	assert(root->window);
 
-	loading = (bw->loading_content != NULL || (bw->current_content &&
-			content_get_status(bw->current_content) ==
-			CONTENT_STATUS_READY));
+	loading = ((bw->loading_content != NULL) ||
+		   ((bw->current_content != NULL) &&
+		    (content_get_status(bw->current_content) == CONTENT_STATUS_READY)));
 
-	if (wallclock() - bw->last_action < 100 && loading) {
+	nsu_getmonotonic_ms(&ms_now);
+
+	if (loading && ((ms_now - bw->last_action) < 1000)) {
 		/* If loading and less than 1 second since last link followed,
 		 * force progress indicator pointer */
 		gui_shape = GUI_POINTER_PROGRESS;
 
 	} else if (shape == BROWSER_POINTER_AUTO) {
 		/* Up to browser window to decide */
-		if (loading)
+		if (loading) {
 			gui_shape = GUI_POINTER_PROGRESS;
-		else
+		} else {
 			gui_shape = GUI_POINTER_DEFAULT;
+		}
 
 	} else {
 		/* Use what we were told */
