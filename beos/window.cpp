@@ -19,6 +19,7 @@
  */
 
 #define __STDBOOL_H__	1
+#include <stdlib.h>
 #include <assert.h>
 extern "C" {
 #include "content/content.h"

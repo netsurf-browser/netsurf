@@ -19,6 +19,7 @@
 #define __STDBOOL_H__	1
 #include <stdbool.h>
 #include <sys/types.h>
+#include <stdlib.h>
 
 extern "C" {
 #include "desktop/download.h"

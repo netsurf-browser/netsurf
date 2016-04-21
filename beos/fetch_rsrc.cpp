@@ -20,6 +20,7 @@
 /* rsrc: URL handling. */
 
 #define __STDBOOL_H__	1
+#include <stdlib.h>
 #include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
