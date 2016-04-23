@@ -47,7 +47,8 @@
 #include "desktop/search.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
-#include "desktop/font.h"
+#include "desktop/gui_layout.h"
+#include "desktop/gui_internal.h"
 
 #include "render/search.h"
 #include "render/textplain.h"
@@ -466,13 +467,20 @@ void textplain_reformat(struct content *c, int width, int height)
 	size_t columns = 80;
 	int character_width;
 	size_t line_start;
+	nserror res;
 
 	LOG("content %p w:%d h:%d", c, width, height);
 
 	/* compute available columns (assuming monospaced font) - use 8
-	 * characters for better accuracy */
-	if (!nsfont.font_width(&textplain_style, "ABCDEFGH", 8, &character_width))
+	 * characters for better accuracy
+	 */
+	res = guit->layout->width(&textplain_style,
+				  "ABCDEFGH", 8,
+				  &character_width);
+	if (res != NSERROR_OK) {
 		return;
+	}
+
 	columns = (width - MARGIN - MARGIN) * 8 / character_width;
 	textplain_tab_width = (TAB_WIDTH * character_width) / 8;
 
@@ -933,9 +941,12 @@ bool textplain_redraw(struct content *c, struct content_redraw_data *data,
 				break;
 
 			/* locate end of string and align to next tab position */
-			if (nsfont.font_width(&textplain_style, &text_d[offset],
-					next_offset - offset, &width))
+			if (guit->layout->width(&textplain_style,
+						&text_d[offset],
+						next_offset - offset,
+						&width)) {
 				tx += (int)(width * data->scale);
+			}
 
 			ntx = x + ((1 + (tx - x) / tab_width) * tab_width);
 
@@ -1105,16 +1116,20 @@ size_t textplain_offset_from_coords(struct content *c, int x, int y, int dir)
 		while (next_offset < length && text[next_offset] != '\t')
 			next_offset = utf8_next(text, length, next_offset);
 
-		if (next_offset < length)
-			nsfont.font_width(&textplain_style, text, next_offset, &width);
+		if (next_offset < length) {
+			guit->layout->width(&textplain_style,
+					    text,
+					    next_offset,
+					    &width);
+		}
 
 		if (x <= width) {
 			int pixel_offset;
 			size_t char_offset;
 
-			nsfont.font_position_in_string(&textplain_style,
-				text, next_offset, x,
-				&char_offset, &pixel_offset);
+			guit->layout->position(&textplain_style,
+					       text, next_offset, x,
+					       &char_offset, &pixel_offset);
 
 			idx += char_offset;
 			break;
@@ -1192,10 +1207,12 @@ int textplain_coord_from_offset(const char *text, size_t offset, size_t length)
 		size_t next_offset = 0;
 		int tx;
 
-		while (next_offset < offset && text[next_offset] != '\t')
+		while (next_offset < offset && text[next_offset] != '\t') {
 			next_offset = utf8_next(text, length, next_offset);
+		}
 
-		nsfont.font_width(&textplain_style, text, next_offset, &tx);
+		guit->layout->width(&textplain_style, text, next_offset, &tx);
+
 		x += tx;
 
 		if (next_offset >= offset)

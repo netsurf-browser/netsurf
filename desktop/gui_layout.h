@@ -1,7 +1,5 @@
 /*
- * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
- * Copyright 2004 John Tytgat <joty@netsurf-browser.org>
+ * Copyright 2016 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -18,26 +16,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Font handling interface.
+/**
+ * \file
  *
- * These functions provide font related services. They all work on
- * UTF-8 strings with lengths given.
+ * Interface to platform-specific layout operation table.
  *
- * Note that an interface to painting is not defined here. Painting is
- * redirected through platform-dependent plotters anyway, so there is
- * no gain in abstracting it here.
+ * This table is part of the layout used to measure glyphs before
+ * rendering, previously referred to as font functions.
+ *
+ * \note This is an old interface within the browser, it has been
+ * broken out purely to make the API obvious not as an indication this
+ * is the correct approach.
  */
 
-#ifndef _NETSURF_DESKTOP_FONT_H_
-#define _NETSURF_DESKTOP_FONT_H_
+#ifndef _NETSURF_DESKTOP_GUI_LAYOUT_H_
+#define _NETSURF_DESKTOP_GUI_LAYOUT_H_
 
-#include <stdbool.h>
-#include <stddef.h>
+struct plot_font_style;
 
-#include "desktop/plot_style.h"
-
-struct font_functions
+struct gui_layout_table
 {
 	/**
 	 * Measure the width of a string.
@@ -46,11 +43,12 @@ struct font_functions
 	 * \param[in] string UTF-8 string to measure
 	 * \param[in] length length of string, in bytes
 	 * \param[out] width updated to width of string[0..length)
-	 * \return true on success and width updated else false.
+	 * \return NSERROR_OK and width updated or appropriate error
+	 *          code on faliure
 	 */
-	bool (*font_width)(const plot_font_style_t *fstyle,
-			const char *string, size_t length,
-			int *width);
+	nserror (*width)(const struct plot_font_style *fstyle, const char *string, size_t length, int *width);
+
+
 	/**
 	 * Find the position in a string where an x coordinate falls.
 	 *
@@ -60,25 +58,25 @@ struct font_functions
 	 * \param[in] x coordinate to search for
 	 * \param[out] char_offset updated to offset in string of actual_x, [0..length]
 	 * \param[out] actual_x updated to x coordinate of character closest to x
-	 * \return  true on success, false on error and error reported
+	 * \return NSERROR_OK and char_offset and actual_x updated or appropriate error code on faliure
 	 */
-	bool (*font_position_in_string)(const plot_font_style_t *fstyle,
-			const char *string, size_t length,
-			int x, size_t *char_offset, int *actual_x);
+	nserror (*position)(const struct plot_font_style *fstyle, const char *string, size_t length, int x, size_t *char_offset, int *actual_x);
+
+
 	/**
 	 * Find where to split a string to make it fit a width.
 	 *
-	 * \param  fstyle       style for this text
-	 * \param  string       UTF-8 string to measure
-	 * \param  length       length of string, in bytes
-	 * \param  x            width available
-	 * \param  char_offset  updated to offset in string of actual_x, [1..length]
-	 * \param  actual_x     updated to x coordinate of character closest to x
-	 * \return  true on success, false on error and error reported
+	 * \param[in] fstyle       style for this text
+	 * \param[in] string       UTF-8 string to measure
+	 * \param[in] length       length of string, in bytes
+	 * \param[in] x            width available
+	 * \param[out] char_offset updated to offset in string of actual_x, [1..length]
+	 * \param[out] actual_x updated to x coordinate of character closest to x
+	 * \return NSERROR_OK or appropriate error code on faliure
 	 *
 	 * On exit, char_offset indicates first character after split point.
 	 *
-	 * Note: char_offset of 0 should never be returned.
+	 * \note char_offset of 0 must never be returned.
 	 *
 	 *   Returns:
 	 *     char_offset giving split point closest to x, where actual_x <= x
@@ -87,11 +85,7 @@ struct font_functions
 	 *
 	 * Returning char_offset == length means no split possible
 	 */
-	bool (*font_split)(const plot_font_style_t *fstyle,
-			const char *string, size_t length,
-			int x, size_t *char_offset, int *actual_x);
+	nserror (*split)(const struct plot_font_style *fstyle, const char *string, size_t length, int x, size_t *char_offset, int *actual_x);
 };
-
-extern const struct font_functions nsfont;
 
 #endif

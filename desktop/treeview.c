@@ -32,8 +32,8 @@
 #include "desktop/plotters.h"
 #include "desktop/textarea.h"
 #include "desktop/treeview.h"
-#include "desktop/font.h"
 #include "desktop/gui_clipboard.h"
+#include "desktop/gui_layout.h"
 #include "desktop/gui_internal.h"
 
 /** @todo get rid of REDRAW_MAX -- need to be able to know window size */
@@ -540,10 +540,10 @@ static inline void treeview_insert_node(treeview_node *a,
 		/* Parent is expanded, so inserted node will be visible and
 		 * affect layout */
 		if (a->text.width == 0) {
-			nsfont.font_width(&plot_style_odd.text,
-					a->text.data,
-					a->text.len,
-					&(a->text.width));
+			guit->layout->width(&plot_style_odd.text,
+					    a->text.data,
+					    a->text.len,
+					    &(a->text.width));
 		}
 
 		do {
@@ -644,7 +644,7 @@ nserror treeview_update_node_folder(treeview *tree,
 
 	if (folder->parent->flags & TV_NFLAGS_EXPANDED) {
 		/* Text will be seen, get its width */
-		nsfont.font_width(&plot_style_odd.text,
+		guit->layout->width(&plot_style_odd.text,
 				folder->text.data,
 				folder->text.len,
 				&(folder->text.width));
@@ -694,7 +694,7 @@ nserror treeview_update_node_entry(treeview *tree,
 
 	if (entry->parent->flags & TV_NFLAGS_EXPANDED) {
 		/* Text will be seen, get its width */
-		nsfont.font_width(&plot_style_odd.text,
+		guit->layout->width(&plot_style_odd.text,
 				entry->text.data,
 				entry->text.len,
 				&(entry->text.width));
@@ -714,7 +714,7 @@ nserror treeview_update_node_entry(treeview *tree,
 
 		if (entry->flags & TV_NFLAGS_EXPANDED) {
 			/* Text will be seen, get its width */
-			nsfont.font_width(&plot_style_odd.text,
+			guit->layout->width(&plot_style_odd.text,
 					e->fields[i - 1].value.data,
 					e->fields[i - 1].value.len,
 					&(e->fields[i - 1].value.width));
@@ -1311,7 +1311,7 @@ nserror treeview_create(treeview **tree,
 		f->value.data = lwc_string_data(fields[i].field);
 		f->value.len = lwc_string_length(fields[i].field);
 
-		nsfont.font_width(&plot_style_odd.text, f->value.data,
+		guit->layout->width(&plot_style_odd.text, f->value.data,
 				f->value.len, &(f->value.width));
 
 		if (f->flags & TREE_FLAG_SHOW_NAME)
@@ -1411,7 +1411,7 @@ static nserror treeview_node_expand_internal(treeview *tree,
 		do {
 			assert((child->flags & TV_NFLAGS_EXPANDED) == false);
 			if (child->text.width == 0) {
-				nsfont.font_width(&plot_style_odd.text,
+				guit->layout->width(&plot_style_odd.text,
 						child->text.data,
 						child->text.len,
 						&(child->text.width));
@@ -1432,7 +1432,7 @@ static nserror treeview_node_expand_internal(treeview *tree,
 		for (i = 0; i < tree->n_fields - 1; i++) {
 
 			if (e->fields[i].value.width == 0) {
-				nsfont.font_width(&plot_style_odd.text,
+				guit->layout->width(&plot_style_odd.text,
 						e->fields[i].value.data,
 						e->fields[i].value.len,
 						&(e->fields[i].value.width));

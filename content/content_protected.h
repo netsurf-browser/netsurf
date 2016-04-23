@@ -108,7 +108,7 @@ struct content_user
 
 /** Corresponds to a single URL. */
 struct content {
-	llcache_handle *llcache;	/**< Low-level cache object */
+	llcache_handle *llcache; /**< Low-level cache object */
 
 	lwc_string *mime_type;	/**< Original MIME type of data */
 

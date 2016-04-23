@@ -37,6 +37,7 @@
 #include "desktop/gui_search.h"
 #include "desktop/gui_clipboard.h"
 #include "desktop/gui_utf8.h"
+#include "desktop/gui_layout.h"
 #include "desktop/netsurf.h"
 
 /**
@@ -644,6 +645,35 @@ static nserror verify_bitmap_register(struct gui_bitmap_table *gbt)
 	return NSERROR_OK;
 }
 
+/**
+ * verify layout table is valid
+ *
+ * \param glt The layout table to verify.
+ * \return NSERROR_OK if the table is valid else NSERROR_BAD_PARAMETER.
+ */
+static nserror verify_layout_register(struct gui_layout_table *glt)
+{
+	/* check table is present */
+	if (glt == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* check the mandantory fields are set */
+	if (glt->width == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (glt->position == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (glt->split == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	return NSERROR_OK;
+}
+
 static void gui_default_quit(void)
 {
 }
@@ -725,6 +755,8 @@ nserror netsurf_register(struct netsurf_table *gt)
 		return NSERROR_BAD_PARAMETER;
 	}
 
+	/* mandantory tables */
+
 	/* miscellaneous table */
 	err = verify_misc_register(gt->misc);
 	if (err != NSERROR_OK) {
@@ -748,6 +780,14 @@ nserror netsurf_register(struct netsurf_table *gt)
 	if (err != NSERROR_OK) {
 		return err;
 	}
+
+	/* layout table */
+	err = verify_layout_register(gt->layout);
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
+	/* optional tables */
 
 	/* file table */
 	if (gt->file == NULL) {

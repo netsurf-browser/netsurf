@@ -37,8 +37,8 @@
 #include "desktop/textinput.h"
 #include "desktop/plotters.h"
 #include "desktop/scrollbar.h"
-#include "desktop/font.h"
 #include "desktop/gui_clipboard.h"
+#include "desktop/gui_layout.h"
 #include "desktop/gui_internal.h"
 
 #define CARET_COLOR 0x0000FF
@@ -404,7 +404,7 @@ static bool textarea_set_caret_internal(struct textarea *ta, int caret_b)
 		/* find byte offset of caret position */
 		b_off = index;
 
-		nsfont.font_width(&ta->fstyle,
+		guit->layout->width(&ta->fstyle,
 				ta->show->data +
 				ta->lines[ta->caret_pos.line].b_start,
 				b_off - ta->lines[ta->caret_pos.line].b_start,
@@ -873,12 +873,12 @@ static bool textarea_reflow_singleline(struct textarea *ta, size_t b_off,
 	}
 
 	/* Measure new width */
-	nsfont.font_width(&ta->fstyle, ta->show->data,
+	guit->layout->width(&ta->fstyle, ta->show->data,
 			ta->show->len - 1, &x);
 
 	/* Get width of retained text */
 	if (b_off != ta->lines[0].b_length) {
-		nsfont.font_width(&ta->fstyle, ta->show->data,
+		guit->layout->width(&ta->fstyle, ta->show->data,
 				b_off, &retained_width);
 	} else {
 		retained_width = ta->lines[0].width;
@@ -1019,7 +1019,7 @@ static bool textarea_reflow_multiline(struct textarea *ta,
 			}
 
 			/* Wrap current line in paragraph */
-			nsfont.font_split(&ta->fstyle, text, para_end - text,
+			guit->layout->split(&ta->fstyle, text, para_end - text,
 					avail_width, &b_off, &x);
 			/* b_off now marks space, or end of paragraph */
 
@@ -1201,7 +1201,7 @@ static bool textarea_reflow_multiline(struct textarea *ta,
 						ta->lines[start].b_start;
 				text = ta->text.data + ta->lines[start].b_start;
 
-				nsfont.font_width(&ta->fstyle, text,
+				guit->layout->width(&ta->fstyle, text,
 						retain_end, &retained_width);
 
 				r->x0 = max(r->x0,
@@ -1252,7 +1252,7 @@ static size_t textarea_get_b_off_xy(struct textarea *ta, int x, int y,
 		line = 0;
 
 	/* Get byte position */
-	nsfont.font_position_in_string(&ta->fstyle,
+	guit->layout->position(&ta->fstyle,
 			ta->show->data + ta->lines[line].b_start,
 			ta->lines[line].b_length, x, &bpos, &x);
 
@@ -2303,7 +2303,7 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 			/* find clip left/right for this part of line */
 			left = right;
 			if (b_len_part != b_len) {
-				nsfont.font_width(&fstyle, line_text, b_end,
+				guit->layout->width(&fstyle, line_text, b_end,
 						&right);
 			} else {
 				right = ta->lines[line].width;

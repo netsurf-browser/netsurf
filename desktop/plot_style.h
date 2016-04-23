@@ -150,7 +150,7 @@ typedef unsigned long plot_font_flags_t;
 /**
  * Font style for plotting
  */
-typedef struct {
+typedef struct plot_font_style {
 	plot_font_generic_family_t family; /**< Generic family to plot with */
 	int size; /**< Font size, in points * FONT_SIZE_SCALE */
 	int weight; /**< Font weight: value in range [100,900] as per CSS */

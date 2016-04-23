@@ -49,8 +49,8 @@
 #include "image/bitmap.h"
 #include "javascript/js.h"
 #include "desktop/browser.h"
-#include "desktop/font.h"
 #include "desktop/gui_utf8.h"
+#include "desktop/gui_layout.h"
 #include "desktop/gui_internal.h"
 
 #include "render/box.h"
@@ -844,7 +844,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	c->frameset = NULL;
 	c->iframe = NULL;
 	c->page = NULL;
-	c->font_func = &nsfont;
+	c->font_func = guit->layout;
 	c->drag_type = HTML_DRAG_NONE;
 	c->drag_owner.no_owner = true;
 	c->selection_type = HTML_SELECTION_NONE;

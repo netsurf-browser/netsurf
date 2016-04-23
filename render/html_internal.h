@@ -27,6 +27,8 @@
 #include "desktop/selection.h"
 #include "render/html.h"
 
+struct gui_layout_table;
+
 typedef enum {
 	HTML_DRAG_NONE,			/** No drag */
 	HTML_DRAG_SELECTION,		/** Own; Text selection */
@@ -36,6 +38,7 @@ typedef enum {
 	HTML_DRAG_CONTENT_SELECTION,	/** Not own; drag in child content */
 	HTML_DRAG_CONTENT_SCROLL	/** Not own; drag in child content */
 } html_drag_type;
+
 union html_drag_owner {
 	bool no_owner;
 	struct box *content;
@@ -109,8 +112,9 @@ typedef struct html_content {
 	struct box *layout;
 	/** Document background colour. */
 	colour background_colour;
+
 	/** Font callback table */
-	const struct font_functions *font_func;
+	const struct gui_layout_table *font_func;
 
 	/** Number of entries in scripts */
 	unsigned int scripts_count;

@@ -19,7 +19,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * User interaction with a CONTENT_HTML (implementation).
  */
 
@@ -42,9 +43,9 @@
 #include "desktop/selection.h"
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
-#include "desktop/font.h"
 #include "javascript/js.h"
 #include "desktop/gui_misc.h"
+#include "desktop/gui_layout.h"
 #include "desktop/gui_internal.h"
 
 #include "render/box.h"
@@ -209,8 +210,8 @@ static size_t html_selection_drag_end(struct html_content *html,
 
 		font_plot_style_from_css(box->style, &fstyle);
 
-		nsfont.font_position_in_string(&fstyle, box->text, box->length,
-				dx, &idx, &pixel_offset);
+		guit->layout->position(&fstyle, box->text, box->length,
+				       dx, &idx, &pixel_offset);
 
 		idx += box->byte_offset;
 	}
@@ -416,9 +417,9 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 			font_plot_style_from_css(box->style, &fstyle);
 
-			nsfont.font_position_in_string(&fstyle,
-					box->text, box->length,
-					dx, &idx, &pixel_offset);
+			guit->layout->position(&fstyle,
+					       box->text, box->length,
+					       dx, &idx, &pixel_offset);
 
 			selection_track(&html->sel, mouse,
 					box->byte_offset + idx);
@@ -910,12 +911,12 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 				font_plot_style_from_css(text_box->style,
 						&fstyle);
 
-				nsfont.font_position_in_string(&fstyle,
-					text_box->text,
-					text_box->length,
-					x - text_box_x,
-					&idx,
-					&pixel_offset);
+				guit->layout->position(&fstyle,
+						       text_box->text,
+						       text_box->length,
+						       x - text_box_x,
+						       &idx,
+						       &pixel_offset);
 
 				if (selection_click(&html->sel, mouse,
 						text_box->byte_offset + idx)) {

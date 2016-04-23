@@ -37,11 +37,11 @@
 #include "css/css.h"
 #include "image/bitmap.h"
 
+#include "desktop/gui_layout.h"
 #include "desktop/gui_internal.h"
 #include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
 #include "desktop/plotters.h"
-#include "desktop/font.h"
 
 #define WIDTH 100
 #define HEIGHT 86
@@ -273,6 +273,7 @@ browser_window_history__redraw_entry(struct history *history,
             .stroke_width = entry == history->current ? 3 : 1,
         };
 	plot_font_style_t fstyle = *plot_style_font;
+	nserror res;
 
 	if (clip) {
 		struct rect rect;
@@ -292,17 +293,21 @@ browser_window_history__redraw_entry(struct history *history,
 			     WIDTH, HEIGHT,
 			     entry->bitmap, 0xffffff, 0);
 	}
+
 	if (!plot->rectangle(entry->x - 1 + xoffset, 
                             entry->y - 1 + yoffset,
                             entry->x + xoffset + WIDTH, 
                             entry->y + yoffset + HEIGHT,
-                            &pstyle_history_rect))
+			     &pstyle_history_rect)) {
 		return false;
+	}
 
-	if (!nsfont.font_position_in_string(plot_style_font, entry->page.title,
-			strlen(entry->page.title), WIDTH,
-			&char_offset, &actual_x))
+	res = guit->layout->position(plot_style_font, entry->page.title,
+				     strlen(entry->page.title), WIDTH,
+				     &char_offset, &actual_x);
+	if (res != NSERROR_OK) {
 		return false;
+	}
 
 	fstyle.background = HISTORY_COLOUR_BACKGROUND;
 	fstyle.foreground = c;

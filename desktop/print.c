@@ -246,7 +246,7 @@ bool print_cleanup(hlcache_handle *content, const struct printer *printer,
  *                        configuration or lack of memory.
  */
 struct print_settings *print_make_settings(print_configuration configuration,
-		const char *filename, const struct font_functions *font_func)
+		const char *filename, const struct gui_layout_table *font_func)
 {
 	struct print_settings *settings;
 	css_fixed length = 0;

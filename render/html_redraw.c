@@ -49,8 +49,9 @@
 #include "desktop/print.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"
-#include "desktop/font.h"
 #include "image/bitmap.h"
+#include "desktop/gui_layout.h"
+#include "desktop/gui_internal.h"
 
 #include "render/box.h"
 #include "render/font.h"
@@ -194,6 +195,7 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 			int startx, endx;
 			plot_style_t pstyle_fill_hback = *plot_style_fill_white;
 			plot_font_style_t fstyle_hback = plot_fstyle;
+			nserror res;
 
 			if (end_idx > utf8_len) {
 				/* adjust for trailing space, not present in
@@ -202,13 +204,19 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 				endtxt_idx = utf8_len;
 			}
 
-			if (!nsfont.font_width(fstyle, utf8_text, start_idx,
-					&startx))
+			res = guit->layout->width(fstyle,
+						  utf8_text, start_idx,
+						  &startx);
+			if (res != NSERROR_OK) {
 				startx = 0;
+			}
 
-			if (!nsfont.font_width(fstyle, utf8_text, endtxt_idx,
-					&endx))
+			res = guit->layout->width(fstyle,
+						  utf8_text, endtxt_idx,
+						  &endx);
+			if (res != NSERROR_OK) {
 				endx = 0;
+			}
 
 			/* is there a trailing space that should be highlighted
 			 * as well? */
@@ -1262,6 +1270,7 @@ static bool html_redraw_file(int x, int y, int width, int height,
 	const char *text;
 	size_t length;
 	plot_font_style_t fstyle;
+	nserror res;
 
 	font_plot_style_from_css(box->style, &fstyle);
 	fstyle.background = background_colour;
@@ -1272,13 +1281,16 @@ static bool html_redraw_file(int x, int y, int width, int height,
 		text = messages_get("Form_Drop");
 	length = strlen(text);
 
-	if (!nsfont.font_width(&fstyle, text, length, &text_width))
+	res = guit->layout->width(&fstyle, text, length, &text_width);
+	if (res != NSERROR_OK) {
 		return false;
+	}
 	text_width *= scale;
-	if (width < text_width + 8)
+	if (width < text_width + 8) {
 		x = x + width - text_width - 4;
-	else
+	} else {
 		x = x + 4;
+	}
 
 	return ctx->plot->text(x, y + height * 0.75, text, length, &fstyle);
 }
@@ -2425,17 +2437,25 @@ bool html_redraw_box(const html_content *html, struct box *box,
 			const char *obj = "\xef\xbf\xbc";
 			int obj_width;
 			int obj_x = x + padding_left;
+			nserror res;
+
 			if (!plot->rectangle(x + padding_left,
 					y + padding_top,
 					x + padding_left + width - 1,
 					y + padding_top + height - 1,
-					plot_style_broken_object))
+					     plot_style_broken_object)) {
 				return false;
-			if (!nsfont.font_width(plot_fstyle_broken_object, obj,
-					sizeof(obj) - 1, &obj_width))
+			}
+
+			res = guit->layout->width(plot_fstyle_broken_object,
+						  obj,
+						  sizeof(obj) - 1,
+						  &obj_width);
+			if (res != NSERROR_OK) {
 				obj_x += 1;
-			else
+			} else {
 				obj_x += width / 2 - obj_width / 2;
+			}
 
 			if (!plot->text(obj_x, y + padding_top + (int)
 						(height * 0.75),

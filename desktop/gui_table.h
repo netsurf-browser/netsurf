@@ -38,6 +38,7 @@ struct gui_search_table;
 struct gui_search_web_table;
 struct gui_llcache_table;
 struct gui_bitmap_table;
+struct gui_layout_table;
 
 /**
  * NetSurf operation function table
@@ -49,8 +50,9 @@ struct netsurf_table {
 	/**
 	 * Browser table.
 	 *
-	 * Provides miscellaneous browser functionality. The table
-	 * is mandantory and must be provided.
+	 * Provides miscellaneous browser functionality.
+	 *
+	 * The table is mandantory and must be provided.
 	 */
 	struct gui_misc_table *misc;
 
@@ -58,6 +60,8 @@ struct netsurf_table {
 	 * Window table.
 	 *
 	 * Provides all operations which affect a frontends display window.
+	 *
+	 * The table is mandantory and must be provided.
 	 */
 	struct gui_window_table *window;
 
@@ -75,15 +79,18 @@ struct netsurf_table {
 
 	/**
 	 * Fetcher table
+	 *
+	 * The table is mandantory and must be provided.
 	 */
 	struct gui_fetch_table *fetch;
 
 	/**
 	 * File table
 	 *
-	 * Provides file and filename operations to the core. The
-	 * table is optional and may be NULL in which case the default
-	 * posix compliant operations will be used.
+	 * Provides file and filename operations to the core.
+	 *
+	 * The table is optional and may be NULL in which case the
+	 * default posix compliant operations will be used.
 	 */
 	struct gui_file_table *file;
 
@@ -91,8 +98,10 @@ struct netsurf_table {
 	 * UTF8 table.
 	 *
 	 * Provides for conversion between the gui local character
-	 * encoding and utf8. The table optional and may be NULL which
-	 * implies the local encoding is utf8.
+	 * encoding and utf8.
+	 *
+	 * The table optional and may be NULL which implies the local
+	 * encoding is utf8.
 	 */
 	struct gui_utf8_table *utf8;
 
@@ -106,9 +115,10 @@ struct netsurf_table {
 	/**
 	 * Web search table.
 	 *
-	 * Used by the web search provider system. The table is
-	 * optional and may be NULL which uses the default empty
-	 * implementation.
+	 * Used by the web search provider system.
+	 *
+	 * The table is optional and may be NULL which uses the
+	 * default empty implementation.
 	 */
 	struct gui_search_web_table *search_web;
 
@@ -116,8 +126,10 @@ struct netsurf_table {
 	 * Low level cache table.
 	 *
 	 * Used by the low level cache to push objects to persistant
-	 * storage. The table is optional and may be NULL which
-	 * uses the default implementation.
+	 * storage.
+	 *
+	 * The table is optional and may be NULL which uses the
+	 * default implementation.
 	 */
 	struct gui_llcache_table *llcache;
 
@@ -125,10 +137,21 @@ struct netsurf_table {
 	 * Bitmap table.
 	 *
 	 * Used by the image convertors as a generic interface to
-	 * native platform-specific image formats. The table
-	 * is mandantory and must be provided.
+	 * native platform-specific image formats.
+	 *
+	 * The table is mandantory and must be provided.
 	 */
 	struct gui_bitmap_table *bitmap;
+
+	/**
+	 * Layout table
+	 *
+	 * Used by the layout process to measure glyphs in a frontend
+	 * specific manner.
+	 *
+	 * The table is mandantory and must be provided.
+	 */
+	struct gui_layout_table *layout;
 };
 
 #endif
