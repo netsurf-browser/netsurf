@@ -17,13 +17,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Target independent plotting (GDK / GTK+ and Cairo implementation).
- * Can use either GDK drawing primitives (which are mostly passed straight
- * to X to process, and thus accelerated) or Cairo drawing primitives (much
- * higher quality, not accelerated).  Cairo's fast enough, so it defaults
- * to using it if it is available.  It does this by checking for the
- * CAIRO_VERSION define that the cairo headers set.
+/**
+ * \file
+ * GTK and Cairo plotter implementations.
+ *
+ * Uses Cairo drawing primitives to render browser output.
+ * \todo remove the use of the gdk structure for clipping
  */
 
 #include <math.h>
@@ -36,7 +35,7 @@
 #include "desktop/plotters.h"
 #include "utils/nsoption.h"
 
-#include "gtk/font_pango.h"
+#include "gtk/layout_pango.h"
 #include "gtk/plotters.h"
 #include "gtk/scaffolding.h"
 #include "gtk/bitmap.h"
@@ -272,7 +271,7 @@ static bool nsgtk_plot_polygon(const int *p, unsigned int n, const plot_style_t 
 
 
 static bool nsgtk_plot_text(int x, int y, const char *text, size_t length,
-		const plot_font_style_t *fstyle)
+		const struct plot_font_style *fstyle)
 {
 	return nsfont_paint(x, y, text, length, fstyle);
 }

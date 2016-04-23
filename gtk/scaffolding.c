@@ -46,7 +46,6 @@
 #include "desktop/save_text.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
-#include "desktop/font.h"
 #include "content/hlcache.h"
 
 #include "gtk/compat.h"
@@ -73,6 +72,7 @@
 #include "gtk/schedule.h"
 #include "gtk/viewdata.h"
 #include "gtk/resources.h"
+#include "gtk/layout_pango.h"
 
 /** Macro to define a handler for menu, button and activate events. */
 #define MULTIHANDLER(q)\
@@ -874,7 +874,7 @@ MULTIHANDLER(print)
 	}
 	gtk_print_operation_set_default_page_setup(print_op, page_setup);
 
-	nssettings = print_make_settings(PRINT_DEFAULT, NULL, &nsfont);
+	nssettings = print_make_settings(PRINT_DEFAULT, NULL, nsgtk_layout_table);
 
 	g_signal_connect(print_op, "begin_print",
 			G_CALLBACK(gtk_print_signal_begin_print), nssettings);

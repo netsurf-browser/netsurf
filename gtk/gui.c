@@ -1,6 +1,6 @@
 /*
  * Copyright 2004-2010 James Bursa <bursa@users.sourceforge.net>
- * Copyright 2010 Vincent Sanders <vince@debian.org>
+ * Copyright 2010-2016 Vincent Sanders <vince@netsurf-browser.org>
  * Copyright 2004-2009 John-Mark Bell <jmb@netsurf-browser.org>
  * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net>
  * Copyright 2006-2009 Daniel Silverstone <dsilvers@netsurf-browser.org>
@@ -69,6 +69,7 @@
 #include "gtk/bitmap.h"
 #include "gtk/resources.h"
 #include "gtk/login.h"
+#include "gtk/layout_pango.h"
 
 bool nsgtk_complete = false;
 
@@ -1058,6 +1059,7 @@ int main(int argc, char** argv)
 		.search = nsgtk_search_table,
 		.search_web = nsgtk_search_web_table,
 		.bitmap = nsgtk_bitmap_table,
+		.layout = nsgtk_layout_table,
 	};
 
 	ret = netsurf_register(&nsgtk_table);

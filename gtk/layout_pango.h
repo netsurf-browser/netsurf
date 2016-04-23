@@ -16,22 +16,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Font handling (GTK interface).
+/**
+ * \file
+ * Interface to GTK layout handling using pango.
  */
 
-#ifndef _NETSURF_GTK_FONT_PANGO_H_
-#define _NETSURF_GTK_FONT_PANGO_H_
+#ifndef _NETSURF_GTK_LAYOUT_PANGO_H_
+#define _NETSURF_GTK_LAYOUT_PANGO_H_
 
 #include <stdbool.h>
 
-#include "desktop/plot_style.h"
+struct plot_font_style;
 
-bool nsfont_paint(int x, int y, const char *string, size_t length,
-		const plot_font_style_t *fstyle);
+extern struct gui_layout_table *nsgtk_layout_table;
 
-PangoFontDescription *nsfont_style_to_description(
-		const plot_font_style_t *fstyle);
-		
-		
+bool nsfont_paint(int x, int y, const char *string, size_t length, const struct plot_font_style *fstyle);
+
+/**
+ * Convert a plot style to a PangoFontDescription.
+ *
+ * \param fstyle plot style for this text
+ * \return A new Pango font description
+ */
+PangoFontDescription *nsfont_style_to_description(const struct plot_font_style *fstyle);
+
 #endif
