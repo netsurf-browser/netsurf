@@ -25,7 +25,7 @@
 #include "utils/nsoption.h"
 #include "utils/utf8.h"
 #include "desktop/gui_utf8.h"
-#include "desktop/font.h"
+#include "desktop/gui_layout.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/font.h"
@@ -343,9 +343,12 @@ static nserror utf8_from_local(const char *string,
 }
 
 
-static bool nsfont_width(const plot_font_style_t *fstyle,
-                         const char *string, size_t length,
-                         int *width)
+/* exported interface documented in framebuffer/freetype_font.h */
+nserror
+fb_font_width(const plot_font_style_t *fstyle,
+	      const char *string,
+	      size_t length,
+	      int *width)
 {
         size_t nxtchr = 0;
 
@@ -364,21 +367,15 @@ static bool nsfont_width(const plot_font_style_t *fstyle,
 	return true;
 }
 
-/**
- * Find the position in a string where an x coordinate falls.
- *
- * \param  fstyle       style for this text
- * \param  string       UTF-8 string to measure
- * \param  length       length of string
- * \param  x            x coordinate to search for
- * \param  char_offset  updated to offset in string of actual_x, [0..length]
- * \param  actual_x     updated to x coordinate of character closest to x
- * \return  true on success, false on error and error reported
- */
 
-static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
-		const char *string, size_t length,
-		int x, size_t *char_offset, int *actual_x)
+/* exported interface documented in framebuffer/freetype_font.h */
+nserror
+fb_font_position(const plot_font_style_t *fstyle,
+		 const char *string,
+		 size_t length,
+		 int x,
+		 size_t *char_offset,
+		 int *actual_x)
 {
         const int width = fb_get_font_size(fstyle) * FB_FONT_WIDTH;
         size_t nxtchr = 0;
@@ -404,7 +401,6 @@ static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 }
 
 
-
 /**
  * Find where to split a string to make it fit a width.
  *
@@ -427,10 +423,13 @@ static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
  *
  * Returning char_offset == length means no split possible
  */
-
-static bool nsfont_split(const plot_font_style_t *fstyle,
-		const char *string, size_t length,
-		int x, size_t *char_offset, int *actual_x)
+static nserror
+fb_font_split(const plot_font_style_t *fstyle,
+	      const char *string,
+	      size_t length,
+	      int x,
+	      size_t *char_offset,
+	      int *actual_x)
 {
         const int width = fb_get_font_size(fstyle) * FB_FONT_WIDTH;
         size_t nxtchr = 0;
@@ -467,11 +466,15 @@ static bool nsfont_split(const plot_font_style_t *fstyle,
 	return true;
 }
 
-const struct font_functions nsfont = {
-	nsfont_width,
-	nsfont_position_in_string,
-	nsfont_split
+
+static struct gui_layout_table layout_table = {
+	.width = fb_font_width,
+	.position = fb_font_position,
+	.split = fb_font_split,
 };
+
+struct gui_layout_table *framebuffer_layout_table = &layout_table;
+
 
 static struct gui_utf8_table utf8_table = {
 	.utf8_to_local = utf8_to_local,

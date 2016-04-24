@@ -2082,6 +2082,7 @@ main(int argc, char** argv)
 		.fetch = framebuffer_fetch_table,
 		.utf8 = framebuffer_utf8_table,
 		.bitmap = framebuffer_bitmap_table,
+		.layout = framebuffer_layout_table,
 	};
 
         ret = netsurf_register(&framebuffer_table);

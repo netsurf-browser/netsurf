@@ -29,7 +29,6 @@
 
 #include "utils/log.h"
 #include "desktop/browser.h"
-#include "desktop/font.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"
@@ -342,7 +341,7 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 		widget->u.text.len--;
 		widget->u.text.text[widget->u.text.len] = 0;
 
-		nsfont.font_width(&font_style, widget->u.text.text,
+		fb_font_width(&font_style, widget->u.text.text,
 				widget->u.text.len, &widget->u.text.width);
 
 		caret_moved = true;
@@ -428,14 +427,14 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 		widget->u.text.len++;
 		widget->u.text.text[widget->u.text.len] = '\0';
 
-		nsfont.font_width(&font_style, widget->u.text.text,
+		fb_font_width(&font_style, widget->u.text.text,
 				widget->u.text.len, &widget->u.text.width);
 		caret_moved = true;
 		break;
 	}
 
 	if (caret_moved) {
-		nsfont.font_width(&font_style, widget->u.text.text,
+		fb_font_width(&font_style, widget->u.text.text,
 				widget->u.text.idx, &widget->u.text.idx_offset);
 		fbtk_set_caret(widget, true,
 				widget->u.text.idx_offset + border,
@@ -467,7 +466,7 @@ text_input_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 
 	widget->u.text.idx = widget->u.text.len;
 
-	nsfont.font_position_in_string(&font_style, widget->u.text.text,
+	fb_font_position(&font_style, widget->u.text.text,
 			widget->u.text.len, cbi->x - border,
 			&idx,
 			&widget->u.text.idx_offset);
@@ -529,9 +528,9 @@ fbtk_set_text(fbtk_widget_t *widget, const char *text)
 
 
 	fb_text_font_style(widget, &fh, &border, &font_style);
-	nsfont.font_width(&font_style, widget->u.text.text,
+	fb_font_width(&font_style, widget->u.text.text,
 			widget->u.text.len, &widget->u.text.width);
-	nsfont.font_width(&font_style, widget->u.text.text,
+	fb_font_width(&font_style, widget->u.text.text,
 			widget->u.text.idx, &widget->u.text.idx_offset);
 
 	if (fbtk_get_caret(widget, &c_x, &c_y, &c_h)) {

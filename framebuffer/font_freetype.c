@@ -28,7 +28,7 @@
 #include "utils/log.h"
 #include "utils/nsoption.h"
 #include "desktop/gui_utf8.h"
-#include "desktop/font.h"
+#include "desktop/gui_layout.h"
 #include "desktop/browser.h"
 
 #include "framebuffer/gui.h"
@@ -74,8 +74,14 @@ enum fb_face_e {
 
 static fb_faceid_t *fb_faces[FB_FACE_COUNT];
 
-/* map cache manager handle to face id */
-static FT_Error ft_face_requester(FTC_FaceID face_id, FT_Library  library, FT_Pointer request_data, FT_Face *face )
+/**
+ * map cache manager handle to face id
+ */
+static FT_Error
+ft_face_requester(FTC_FaceID face_id,
+		  FT_Library  library,
+		  FT_Pointer request_data,
+		  FT_Face *face )
 {
         FT_Error error;
         fb_faceid_t *fb_face = (fb_faceid_t *)face_id;
@@ -103,7 +109,9 @@ static FT_Error ft_face_requester(FTC_FaceID face_id, FT_Library  library, FT_Po
         return error;
 }
 
-/* create new framebuffer face and cause it to be loaded to check its ok */
+/**
+ * create new framebuffer face and cause it to be loaded to check its ok
+ */
 static fb_faceid_t *
 fb_new_face(const char *option, const char *resname, const char *fontname)
 {
@@ -132,7 +140,7 @@ fb_new_face(const char *option, const char *resname, const char *fontname)
         return newf;
 }
 
-/* initialise font handling */
+/* exported interface documented in framebuffer/font.h */
 bool fb_font_init(void)
 {
         FT_Error error;
@@ -298,6 +306,7 @@ bool fb_font_init(void)
         return true;
 }
 
+/* exported interface documented in framebuffer/font.h */
 bool fb_font_finalise(void)
 {
 	int i, j;
@@ -324,6 +333,9 @@ bool fb_font_finalise(void)
         return true;
 }
 
+/**
+ * fill freetype scalar
+ */
 static void fb_fill_scalar(const plot_font_style_t *fstyle, FTC_Scaler srec)
 {
         int selected_face = FB_FACE_DEFAULT;
@@ -380,6 +392,7 @@ static void fb_fill_scalar(const plot_font_style_t *fstyle, FTC_Scaler srec)
 	srec->x_res = srec->y_res = browser_get_dpi();
 }
 
+/* exported interface documented in framebuffer/freetype_font.h */
 FT_Glyph fb_getglyph(const plot_font_style_t *fstyle, uint32_t ucs4)
 {
         FT_UInt glyph_index;
@@ -410,16 +423,9 @@ FT_Glyph fb_getglyph(const plot_font_style_t *fstyle, uint32_t ucs4)
 }
 
 
-/**
- * Measure the width of a string.
- *
- * \param  fstyle  style for this text
- * \param  string  UTF-8 string to measure
- * \param  length  length of string
- * \param  width   updated to width of string[0..length)
- * \return  true on success, false on error and error reported
- */
-static bool nsfont_width(const plot_font_style_t *fstyle,
+/* exported interface documented in framebuffer/freetype_font.h */
+nserror
+fb_font_width(const plot_font_style_t *fstyle,
                          const char *string, size_t length,
                          int *width)
 {
@@ -442,19 +448,10 @@ static bool nsfont_width(const plot_font_style_t *fstyle,
 	return true;
 }
 
-/**
- * Find the position in a string where an x coordinate falls.
- *
- * \param  fstyle       style for this text
- * \param  string       UTF-8 string to measure
- * \param  length       length of string
- * \param  x            x coordinate to search for
- * \param  char_offset  updated to offset in string of actual_x, [0..length]
- * \param  actual_x     updated to x coordinate of character closest to x
- * \return  true on success, false on error and error reported
- */
 
-static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
+/* exported interface documented in framebuffer/freetype_font.h */
+nserror
+fb_font_position(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -510,8 +507,8 @@ static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
  *
  * Returning char_offset == length means no split possible
  */
-
-static bool nsfont_split(const plot_font_style_t *fstyle,
+static nserror
+fb_font_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -551,11 +548,14 @@ static bool nsfont_split(const plot_font_style_t *fstyle,
 	return true;
 }
 
-const struct font_functions nsfont = {
-	nsfont_width,
-	nsfont_position_in_string,
-	nsfont_split
+static struct gui_layout_table layout_table = {
+	.width = fb_font_width,
+	.position = fb_font_position,
+	.split = fb_font_split,
 };
+
+struct gui_layout_table *framebuffer_layout_table = &layout_table;
+
 
 struct gui_utf8_table *framebuffer_utf8_table = NULL;
 
