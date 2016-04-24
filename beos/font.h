@@ -28,4 +28,6 @@ bool nsfont_paint(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, int y);
 
-void nsbeos_style_to_font(BFont &font, const plot_font_style_t *fstyle);
+void nsbeos_style_to_font(BFont &font, const struct plot_font_style *fstyle);
+
+struct gui_layout_table *beos_layout_table;

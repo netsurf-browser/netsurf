@@ -82,6 +82,7 @@ extern "C" {
 #include "beos/fetch_rsrc.h"
 #include "beos/scaffolding.h"
 #include "beos/bitmap.h"
+#include "beos/font.h"
 
 //TODO: use resources
 // enable using resources instead of files
@@ -989,7 +990,8 @@ int main(int argc, char** argv)
                 NULL, /* default search */
                 NULL, /* default web search */
                 NULL, /* default low level cache persistant storage */
-                beos_bitmap_table
+                beos_bitmap_table,
+                beos_layout_table
 	};
 
         ret = netsurf_register(&beos_table);
@@ -1069,7 +1071,8 @@ int gui_init_replicant(int argc, char** argv)
                 NULL, /* default search */
                 NULL, /* default web search */
                 NULL, /* default low level cache persistant storage */
-                beos_bitmap_table
+                beos_bitmap_table,
+                beos_layout_table
 	};
 
         ret = netsurf_register(&beos_table);
