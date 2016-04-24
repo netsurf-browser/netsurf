@@ -32,7 +32,6 @@
 #include <Shape.h>
 extern "C" {
 #include "desktop/plotters.h"
-#include "desktop/font.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"

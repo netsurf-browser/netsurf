@@ -62,7 +62,6 @@ extern "C" {
 #include "desktop/plotters.h"
 #include "utils/nsoption.h"
 #include "desktop/textinput.h"
-#include "desktop/font.h"
 #include "render/form.h"
 #include "utils/messages.h"
 #include "utils/utils.h"

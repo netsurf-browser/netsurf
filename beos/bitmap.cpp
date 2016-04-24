@@ -42,7 +42,6 @@ extern "C" {
 #include "content/urldb.h"
 #include "desktop/plotters.h"
 #include "desktop/browser.h"
-#include "desktop/font.h"
 #include "image/bitmap.h"
 }
 

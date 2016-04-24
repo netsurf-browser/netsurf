@@ -36,7 +36,6 @@ extern "C" {
 #include "utils/log.h"
 #include "utils/nsoption.h"
 #include "utils/nsurl.h"
-
 #include "desktop/gui_layout.h"
 }
 
@@ -287,7 +286,7 @@ static nserror beos_font_split(const plot_font_style_t *fstyle,
 		if (x < current && last_space != 0) {
 			*actual_x = (int)last_x;
 			*char_offset = last_space;
-			return true;
+			return NSERROR_OK;;
 		}
 		esc += escapements[i];
 		current = font.Size() * esc;
@@ -367,9 +366,9 @@ bool nsfont_paint(const plot_font_style_t *fstyle,
 
 
 static struct gui_layout_table layout_table = {
-	.width = beos_font_width,
-	.position = beos_font_position,
-	.split = beos_font_split,
+  /*.width = */beos_font_width,
+  /*.position = */beos_font_position,
+  /*.split = */beos_font_split
 };
 
 struct gui_layout_table *beos_layout_table = &layout_table;
