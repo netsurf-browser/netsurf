@@ -35,7 +35,7 @@
 #include "content/hlcache.h"
 #include "desktop/treeview.h"
 #include "desktop/browser.h"
-#include "desktop/font.h"
+#include "desktop/gui_layout.h"
 #include "desktop/gui_window.h"
 #include "desktop/gui_clipboard.h"
 #include "desktop/gui_fetch.h"
@@ -66,6 +66,7 @@
 #include "atari/file.h"
 #include "atari/filetype.h"
 #include "atari/bitmap.h"
+#include "atari/font.h"
 #include "cflib.h"
 
 static bool atari_quit = false;
@@ -1118,7 +1119,8 @@ int main(int argc, char** argv)
 	.utf8 = atari_utf8_table,
 	.search = atari_search_table,
 	.llcache = filesystem_llcache_table,
-	.bitmap = atari_bitmap_table
+	.bitmap = atari_bitmap_table,
+	.layout = atari_layout_table
     };
 
     ret = netsurf_register(&atari_table);

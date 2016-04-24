@@ -19,6 +19,7 @@
 #ifndef NS_ATARI_FONT_H
 #define NS_ATARI_FONT_H
 
+struct gui_layout_table *atari_layout_table;
 
 #endif /* NETSURF_FB_FONT_H */
 
