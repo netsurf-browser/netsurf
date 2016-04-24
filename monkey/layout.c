@@ -16,16 +16,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "utils/nsoption.h"
-#include "utils/utf8.h"
-#include "desktop/font.h"
+/**
+ * \file
+ * monkey implementation of font layout.
+ */
 
-static bool nsfont_width(const plot_font_style_t *fstyle,
+#include <stddef.h>
+
+#include "utils/utf8.h"
+#include "desktop/plot_style.h"
+#include "desktop/gui_layout.h"
+
+#include "monkey/layout.h"
+
+static nserror nsfont_width(const plot_font_style_t *fstyle,
                          const char *string, size_t length,
                          int *width)
 {
   *width = (fstyle->size * utf8_bounded_length(string, length)) / FONT_SIZE_SCALE;
-  return true;
+  return NSERROR_OK;
 }
 
 /**
@@ -40,7 +49,7 @@ static bool nsfont_width(const plot_font_style_t *fstyle,
  * \return  true on success, false on error and error reported
  */
 
-static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
+static nserror nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -48,7 +57,7 @@ static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
   if (*char_offset > length)
     *char_offset = length;
   *actual_x = *char_offset * (fstyle->size / FONT_SIZE_SCALE);
-  return true;
+  return NSERROR_OK;
 }
 
 
@@ -75,7 +84,7 @@ static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
  * Returning char_offset == length means no split possible
  */
 
-static bool nsfont_split(const plot_font_style_t *fstyle,
+static nserror nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -96,11 +105,13 @@ static bool nsfont_split(const plot_font_style_t *fstyle,
     }
   }
   *actual_x = *char_offset * (fstyle->size / FONT_SIZE_SCALE);
-  return true;
+  return NSERROR_OK;
 }
 
-const struct font_functions nsfont = {
-	nsfont_width,
-	nsfont_position_in_string,
-	nsfont_split
+static struct gui_layout_table layout_table = {
+	.width = nsfont_width,
+	.position = nsfont_position_in_string,
+	.split = nsfont_split,
 };
+
+struct gui_layout_table *monkey_layout_table = &layout_table;

@@ -44,6 +44,7 @@
 #include "monkey/fetch.h"
 #include "monkey/schedule.h"
 #include "monkey/bitmap.h"
+#include "monkey/layout.h"
 
 /** maximum number of languages in language vector */
 #define LANGV_SIZE 32
@@ -319,6 +320,7 @@ main(int argc, char **argv)
     .download = monkey_download_table,
     .fetch = monkey_fetch_table,
     .bitmap = monkey_bitmap_table,
+    .layout = monkey_layout_table,
   };
 
   ret = netsurf_register(&monkey_table);
