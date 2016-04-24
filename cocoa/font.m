@@ -22,7 +22,7 @@
 #import "cocoa/font.h"
 
 #import "utils/nsoption.h"
-#import "desktop/font.h"
+#import "desktop/gui_layout.h"
 #import "desktop/plotters.h"
 
 
@@ -102,8 +102,8 @@ static nserror cocoa_font_split(const plot_font_style_t *style,
 
 static struct gui_layout_table layout_table = {
 	.width = cocoa_font_width,
-	.position = fb_font_position,
-	.split = fb_font_split,
+	.position = cocoa_font_position,
+	.split = cocoa_font_split,
 };
 
 struct gui_layout_table *cocoa_layout_table = &layout_table;
