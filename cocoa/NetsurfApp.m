@@ -25,6 +25,7 @@
 #import "cocoa/selection.h"
 #import "cocoa/fetch.h"
 #import "cocoa/bitmap.h"
+#import "cocoa/font.h"
 
 #import "utils/filename.h"
 #import "utils/log.h"
@@ -235,6 +236,7 @@ int main( int argc, char **argv )
                 .fetch = cocoa_fetch_table,
                 .search = cocoa_search_table,
                 .bitmap = cocoa_bitmap_table,
+                .layout = cocoa_layout_table,
         };
 
         error = netsurf_register(&cocoa_table);

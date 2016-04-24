@@ -38,21 +38,24 @@ static NSDictionary *cocoa_font_attributes( const plot_font_style_t *style );
 static NSTextStorage *cocoa_text_storage = nil;
 static NSTextContainer *cocoa_text_container = nil;
 
-static bool nsfont_width(const plot_font_style_t *style,
-						 const char *string, size_t length,
-						 int *width)
+static nserror cocoa_font_width(const plot_font_style_t *style,
+                            const char *string, size_t length,
+                            int *width)
 {
-	NSLayoutManager *layout = cocoa_prepare_layout_manager( string, length, style );
+	NSLayoutManager *layout;
+        layout = cocoa_prepare_layout_manager( string, length, style );
 	*width = cocoa_layout_width( layout );
-	return true;
+	return NSERROR_OK;
 }
 
-static bool nsfont_position_in_string(const plot_font_style_t *style,
-									  const char *string, size_t length,
-									  int x, size_t *char_offset, int *actual_x)
+static nserror cocoa_font_position(const plot_font_style_t *style,
+                                   const char *string, size_t length,
+                                   int x, size_t *char_offset, int *actual_x)
 {
 	NSLayoutManager *layout = cocoa_prepare_layout_manager( string, length, style );
-	if (layout == nil) return false;
+	if (layout == nil) {
+                return NSERROR_BAD_PARAMETER;
+        }
 	
 	NSUInteger glyphIndex = cocoa_glyph_for_location( layout, x );
 	NSUInteger chars = [layout characterIndexForGlyphAtIndex: glyphIndex];
@@ -61,17 +64,17 @@ static bool nsfont_position_in_string(const plot_font_style_t *style,
 	else *char_offset = cocoa_bytes_for_characters( string, chars );
 	
 	*actual_x = cocoa_pt_to_px( NSMaxX( [layout boundingRectForGlyphRange: NSMakeRange( glyphIndex - 1, 1 ) 
-										  inTextContainer: cocoa_text_container] ) );
+                                                              inTextContainer: cocoa_text_container] ) );
 	
-	return true;
+	return NSERROR_OK;
 }
 
-static bool nsfont_split(const plot_font_style_t *style,
-						 const char *string, size_t length,
-						 int x, size_t *char_offset, int *actual_x)
+static nserror cocoa_font_split(const plot_font_style_t *style,
+                                const char *string, size_t length,
+                                int x, size_t *char_offset, int *actual_x)
 {
 	NSLayoutManager *layout = cocoa_prepare_layout_manager( string, length, style );
-	if (layout == nil) return false;
+	if (layout == nil) return NSERROR_BAD_PARAMETER;
 
 	NSUInteger glyphIndex = cocoa_glyph_for_location( layout, x );
 	NSUInteger chars = [layout characterIndexForGlyphAtIndex: glyphIndex];
@@ -79,7 +82,7 @@ static bool nsfont_split(const plot_font_style_t *style,
 	if (chars >= [cocoa_text_storage length]) {
 		*char_offset = length;
 		*actual_x = cocoa_layout_width( layout );
-		return true;
+		return NSERROR_OK;
 	}
 	
 
@@ -87,20 +90,24 @@ static bool nsfont_split(const plot_font_style_t *style,
 	if (chars == NSNotFound) {
 		*char_offset = 0;
 		*actual_x = 0;
-		return true;
+		return NSERROR_OK;
 	}
 	
 	*char_offset = cocoa_bytes_for_characters( string, chars );
 	*actual_x = cocoa_layout_width_chars( layout, chars );
 	
-	return true;
+	return NSERROR_OK;
 }
 
-const struct font_functions nsfont = {
-	nsfont_width,
-	nsfont_position_in_string,
-	nsfont_split
+
+static struct gui_layout_table layout_table = {
+	.width = cocoa_font_width,
+	.position = fb_font_position,
+	.split = fb_font_split,
 };
+
+struct gui_layout_table *cocoa_layout_table = &layout_table;
+
 
 #pragma mark -
 
