@@ -161,6 +161,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 		.file = win32_file_table,
 		.utf8 = win32_utf8_table,
 		.bitmap = win32_bitmap_table,
+		.layout = win32_layout_table,
 	};
 	win32_fetch_table->get_resource_url = gui_get_resource_url;
 

@@ -33,6 +33,7 @@ struct font_desc {
     const char *encoding;
 };
 
+struct gui_layout_table *win32_layout_table;
 struct gui_utf8_table *win32_utf8_table;
 
 extern nserror utf8_to_font_encoding(const struct font_desc* font,

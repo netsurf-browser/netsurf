@@ -30,7 +30,7 @@
 #include "utils/log.h"
 #include "utils/nsoption.h"
 #include "utils/utf8.h"
-#include "desktop/font.h"
+#include "desktop/gui_layout.h"
 #include "desktop/gui_utf8.h"
 
 #include "windows/font.h"
@@ -140,8 +140,8 @@ HFONT get_font(const plot_font_style_t *style)
  * \param[out] width updated to width of string[0..length)
  * \return true on success and width updated else false
  */
-static bool
-nsfont_width(const plot_font_style_t *style,
+static nserror
+win32_font_width(const plot_font_style_t *style,
 	     const char *string,
 	     size_t length,
 	     int *width)
@@ -185,8 +185,8 @@ nsfont_width(const plot_font_style_t *style,
  * \param  actual_x	updated to x coordinate of character closest to x
  * \return  true on success, false on error and error reported
  */
-static bool
-nsfont_position_in_string(const plot_font_style_t *style,
+static nserror
+win32_font_position(const plot_font_style_t *style,
 			  const char *string,
 			  size_t length,
 			  int x,
@@ -240,8 +240,8 @@ nsfont_position_in_string(const plot_font_style_t *style,
  *	   string[char_offset] == ' ' ||
  *	   char_offset == length]
  */
-static bool
-nsfont_split(const plot_font_style_t *style,
+static nserror
+win32_font_split(const plot_font_style_t *style,
 	     const char *string,
 	     size_t length,
 	     int x,
@@ -251,12 +251,7 @@ nsfont_split(const plot_font_style_t *style,
 	int c_off;
 	bool ret = false;
 
-	if (nsfont_position_in_string(style,
-				      string,
-				      length,
-				      x,
-				      char_offset,
-				      actual_x)) {
+	if (win32_font_position(style, string, length, x, char_offset, actual_x)) {
 		c_off = *char_offset;
 		if (*char_offset == length) {
 			ret = true;
@@ -274,10 +269,7 @@ nsfont_split(const plot_font_style_t *style,
 				}
 			}
 
-			ret = nsfont_width(style,
-					   string,
-					   *char_offset,
-					   actual_x);
+			ret = win32_font_width(style, string, *char_offset, actual_x);
 		}
 	}
 
@@ -288,11 +280,15 @@ nsfont_split(const plot_font_style_t *style,
 	return ret;
 }
 
-const struct font_functions nsfont = {
-	nsfont_width,
-	nsfont_position_in_string,
-	nsfont_split
+
+static struct gui_layout_table layout_table = {
+	.width = win32_font_width,
+	.position = win32_font_position,
+	.split = win32_font_split,
 };
+
+struct gui_layout_table *win32_layout_table = &layout_table;
+
 
 static struct gui_utf8_table utf8_table = {
 	.utf8_to_local = utf8_to_local_encoding,
