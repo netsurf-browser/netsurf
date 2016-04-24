@@ -25,7 +25,7 @@
 #include "utils/log.h"
 #include "utils/nsoption.h"
 #include "desktop/browser.h"
-#include "desktop/font.h"
+#include "desktop/gui_layout.h"
 
 #include "amiga/font.h"
 #include "amiga/font_bullet.h"
@@ -119,7 +119,7 @@ void ami_font_fini(void)
 }
 
 /* Stub entry points */
-static bool nsfont_width(const plot_font_style_t *fstyle,
+static nserror ami_font_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
@@ -127,7 +127,7 @@ static bool nsfont_width(const plot_font_style_t *fstyle,
 	return ami_nsfont->width(fstyle, string, length, width);
 }
 
-static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
+static nserror ami_font_position(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -135,7 +135,7 @@ static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	return ami_nsfont->posn(fstyle, string, length, x, char_offset, actual_x);
 }
 
-static bool nsfont_split(const plot_font_style_t *fstyle,
+static nserror ami_font_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -143,9 +143,10 @@ static bool nsfont_split(const plot_font_style_t *fstyle,
 	return ami_nsfont->split(fstyle, string, length, x, char_offset, actual_x);
 }
 
-const struct font_functions nsfont = {
-	nsfont_width,
-	nsfont_position_in_string,
-	nsfont_split
+static struct gui_layout_table layout_table = {
+	.width = ami_font_width,
+	.position = ami_font_position,
+	.split = ami_font_split,
 };
 
+struct gui_layout_table *ami_layout_table = &layout_table;

@@ -50,12 +50,13 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "desktop/printer.h"
-#include "desktop/font.h"
+#include "desktop/gui_layout.h"
 #include "desktop/mouse.h"
 #include "desktop/gui_window.h"
 #include "content/hlcache.h"
 
 #include "amiga/plotters.h"
+#include "amiga/font.h"
 #include "amiga/gui.h"
 #include "amiga/libs.h"
 #include "amiga/misc.h"
@@ -414,7 +415,7 @@ void ami_print(struct hlcache_handle *c, int copies)
 	ami_print_info.PD = (struct PrinterData *)ami_print_info.PReq->io_Device;
 	ami_print_info.PED = &ami_print_info.PD->pd_SegmentData->ps_PED;
 
-	ami_print_info.ps = print_make_settings(PRINT_DEFAULT, nsurl_access(hlcache_handle_get_url(c)), &nsfont);
+	ami_print_info.ps = print_make_settings(PRINT_DEFAULT, nsurl_access(hlcache_handle_get_url(c)), ami_layout_table);
 	ami_print_info.ps->page_width = ami_print_info.PED->ped_MaxXDots;
 	ami_print_info.ps->page_height = ami_print_info.PED->ped_MaxYDots;
 	ami_print_info.ps->scale = scale;
