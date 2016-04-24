@@ -5502,6 +5502,7 @@ int main(int argc, char** argv)
 		.search_web = &amiga_search_web_table,
 		.llcache = filesystem_llcache_table,
 		.bitmap = amiga_bitmap_table,
+		.layout = ami_layout_table,
 	};
 
 #ifdef __amigaos4__
