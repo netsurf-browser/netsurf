@@ -2434,6 +2434,7 @@ int main(int argc, char** argv)
 		.search = riscos_search_table,
 		.llcache = filesystem_llcache_table,
 		.bitmap = riscos_bitmap_table,
+		.layout = riscos_layout_table,
 	};
 
 	ret = netsurf_register(&riscos_table);

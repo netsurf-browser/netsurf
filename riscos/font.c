@@ -16,7 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * RISC OS implementation of Font handling.
  *
  * The RUfl is used to handle and render fonts.
@@ -33,26 +34,11 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-#include "desktop/font.h"
+#include "desktop/gui_layout.h"
 
 #include "riscos/gui.h"
 #include "riscos/font.h"
 
-static void nsfont_check_option(char **option, const char *family,
-		const char *fallback);
-static int nsfont_list_cmp(const void *keyval, const void *datum);
-static void nsfont_check_fonts(void);
-static void ro_gui_wimp_desktop_font(char *family, size_t bufsize, int *psize,
-		rufl_style *pstyle);
-static bool nsfont_width(const plot_font_style_t *fstyle,
-		const char *string, size_t length,
-		int *width);
-static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
-		const char *string, size_t length,
-		int x, size_t *char_offset, int *actual_x);
-static bool nsfont_split(const plot_font_style_t *fstyle,
-		const char *string, size_t length,
-		int x, size_t *char_offset, int *actual_x);
 
 /** desktop font, size and style being used */
 char ro_gui_desktop_font_family[80];
@@ -60,18 +46,70 @@ int ro_gui_desktop_font_size = 12;
 rufl_style ro_gui_desktop_font_style = rufl_WEIGHT_400;
 bool no_font_blending = false;
 
-const struct font_functions nsfont = {
-	nsfont_width,
-	nsfont_position_in_string,
-	nsfont_split
-};
+
+/**
+ * Check that at least Homerton.Medium is available.
+ */
+static void nsfont_check_fonts(void)
+{
+	char s[252];
+	font_f font;
+	os_error *error;
+
+	error = xfont_find_font("Homerton.Medium\\ELatin1",
+			160, 160, 0, 0, &font, 0, 0);
+	if (error) {
+		if (error->errnum == error_FILE_NOT_FOUND) {
+			xwimp_start_task("TaskWindow -wimpslot 200K -quit "
+					"<NetSurf$Dir>.FixFonts", 0);
+			die("FontBadInst");
+		} else {
+			LOG("xfont_find_font: 0x%x: %s", error->errnum, error->errmess);
+			snprintf(s, sizeof s, messages_get("FontError"),
+					error->errmess);
+			die(s);
+		}
+	}
+
+	error = xfont_lose_font(font);
+	if (error) {
+		LOG("xfont_lose_font: 0x%x: %s", error->errnum, error->errmess);
+		snprintf(s, sizeof s, messages_get("FontError"),
+				error->errmess);
+		die(s);
+	}
+}
+
+
+/**
+ * Check that a font option is valid, and fix it if not.
+ *
+ * \param  option    pointer to option, as used by options.[ch]
+ * \param  family    font family to use if option is not set, or the set
+ *                   family is not available
+ * \param  fallback  font family to use if family is not available either
+ */
+static void nsfont_check_option(char **option, const char *family,
+		const char *fallback)
+{
+	if (*option && !nsfont_exists(*option)) {
+		free(*option);
+		*option = 0;
+	}
+	if (!*option) {
+		if (nsfont_exists(family))
+			*option = strdup(family);
+		else
+			*option = strdup(fallback);
+	}
+}
+
 
 /**
  * Initialize font handling.
  *
  * Exits through die() on error.
  */
-
 void nsfont_init(void)
 {
 	const char *fallback;
@@ -133,28 +171,15 @@ const char *nsfont_fallback_font(void)
 	return fallback;
 }
 
-/**
- * Check that a font option is valid, and fix it if not.
- *
- * \param  option    pointer to option, as used by options.[ch]
- * \param  family    font family to use if option is not set, or the set
- *                   family is not available
- * \param  fallback  font family to use if family is not available either
- */
 
-void nsfont_check_option(char **option, const char *family,
-		const char *fallback)
+/**
+ * bsearch comparison routine
+ */
+static int nsfont_list_cmp(const void *keyval, const void *datum)
 {
-	if (*option && !nsfont_exists(*option)) {
-		free(*option);
-		*option = 0;
-	}
-	if (!*option) {
-		if (nsfont_exists(family))
-			*option = strdup(family);
-		else
-			*option = strdup(fallback);
-	}
+	const char *key = keyval;
+	const char * const *entry = datum;
+	return strcasecmp(key, *entry);
 }
 
 
@@ -164,7 +189,6 @@ void nsfont_check_option(char **option, const char *family,
  * \param  font_family  name of font family
  * \return  true if the family is available
  */
-
 bool nsfont_exists(const char *font_family)
 {
 	if (bsearch(font_family, rufl_family_list,
@@ -172,49 +196,6 @@ bool nsfont_exists(const char *font_family)
 			nsfont_list_cmp))
 		return true;
 	return false;
-}
-
-
-int nsfont_list_cmp(const void *keyval, const void *datum)
-{
-	const char *key = keyval;
-	const char * const *entry = datum;
-	return strcasecmp(key, *entry);
-}
-
-
-/**
- * Check that at least Homerton.Medium is available.
- */
-
-void nsfont_check_fonts(void)
-{
-	char s[252];
-	font_f font;
-	os_error *error;
-
-	error = xfont_find_font("Homerton.Medium\\ELatin1",
-			160, 160, 0, 0, &font, 0, 0);
-	if (error) {
-		if (error->errnum == error_FILE_NOT_FOUND) {
-			xwimp_start_task("TaskWindow -wimpslot 200K -quit "
-					"<NetSurf$Dir>.FixFonts", 0);
-			die("FontBadInst");
-		} else {
-			LOG("xfont_find_font: 0x%x: %s", error->errnum, error->errmess);
-			snprintf(s, sizeof s, messages_get("FontError"),
-					error->errmess);
-			die(s);
-		}
-	}
-
-	error = xfont_lose_font(font);
-	if (error) {
-		LOG("xfont_lose_font: 0x%x: %s", error->errnum, error->errmess);
-		snprintf(s, sizeof s, messages_get("FontError"),
-				error->errmess);
-		die(s);
-	}
 }
 
 
@@ -227,8 +208,8 @@ void nsfont_check_fonts(void)
  * \param  width   updated to width of string[0..length)
  * \return  true on success, false on error and error reported
  */
-
-bool nsfont_width(const plot_font_style_t *fstyle,
+static nserror
+ro_font_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
@@ -272,8 +253,8 @@ bool nsfont_width(const plot_font_style_t *fstyle,
  * \param  actual_x     updated to x coordinate of character closest to x
  * \return  true on success, false on error and error reported
  */
-
-bool nsfont_position_in_string(const plot_font_style_t *fstyle,
+static nserror
+ro_font_position(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -330,8 +311,8 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
  *
  * Returning char_offset == length means no split possible
  */
-
-bool nsfont_split(const plot_font_style_t *fstyle,
+static nserror
+ro_font_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -407,7 +388,6 @@ bool nsfont_split(const plot_font_style_t *fstyle,
  * \param  y       y coordinate
  * \return  true on success, false on error and error reported
  */
-
 bool nsfont_paint(const plot_font_style_t *fstyle, const char *string,
 		size_t length, int x, int y)
 {
@@ -445,7 +425,6 @@ bool nsfont_paint(const plot_font_style_t *fstyle, const char *string,
  * \param  font_size    updated to font size
  * \param  font_style   updated to font style
  */
-
 void nsfont_read_style(const plot_font_style_t *fstyle,
 		const char **font_family, unsigned int *font_size,
 		rufl_style *font_style)
@@ -506,9 +485,11 @@ void nsfont_read_style(const plot_font_style_t *fstyle,
  * \param  psize	receives the font size in 1/16 points
  * \param  pstyle	receives the style settings to be passed to rufl
  */
-
-void ro_gui_wimp_desktop_font(char *family, size_t family_size, int *psize,
-		rufl_style *pstyle)
+static void
+ro_gui_wimp_desktop_font(char *family,
+			 size_t family_size,
+			 int *psize,
+			 rufl_style *pstyle)
 {
 	rufl_style style = rufl_WEIGHT_400;
 	os_error *error;
@@ -591,7 +572,6 @@ failsafe:
  * Retrieve the current desktop font family, size and style from
  * the WindowManager in a form suitable for passing to rufl
  */
-
 void ro_gui_wimp_get_desktop_font(void)
 {
 	ro_gui_wimp_desktop_font(ro_gui_desktop_font_family,
@@ -599,3 +579,12 @@ void ro_gui_wimp_get_desktop_font(void)
 		&ro_gui_desktop_font_size,
 		&ro_gui_desktop_font_style);
 }
+
+
+static struct gui_layout_table layout_table = {
+	.width = ro_font_width,
+	.position = ro_font_position,
+	.split = ro_font_split,
+};
+
+struct gui_layout_table *riscos_layout_table = &layout_table;

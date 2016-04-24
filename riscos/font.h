@@ -25,6 +25,8 @@
 
 #include <rufl.h>
 
+struct gui_layout_table *riscos_layout_table;
+
 /** desktop font, size and style being used */
 extern char ro_gui_desktop_font_family[];
 extern int ro_gui_desktop_font_size;
