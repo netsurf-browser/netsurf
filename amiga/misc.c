@@ -126,7 +126,8 @@ void ami_misc_fatal_error(const char *message)
 	ami_misc_req(message, TDRIMAGE_ERROR);
 }
 
-void warn_user(const char *warning, const char *detail)
+/* exported interface documented in amiga/misc.h */
+nserror amiga_warn_user(const char *warning, const char *detail)
 {
 	char *utf8warning = ami_utf8_easy(messages_get(warning));
 	STRPTR bodytext = ASPrintf("\33b%s\33n\n%s",
@@ -136,6 +137,8 @@ void warn_user(const char *warning, const char *detail)
 
 	if(bodytext) FreeVec(bodytext);
 	if(utf8warning) free(utf8warning);
+
+	return NSERROR_OK;
 }
 
 int32 ami_warn_user_multi(const char *body, const char *opt1, const char *opt2, struct Window *win)

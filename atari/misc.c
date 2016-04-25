@@ -53,7 +53,8 @@ struct is_process_running_callback_data {
 	bool found;
 };
 
-void warn_user(const char *warning, const char *detail)
+/* exported function documented in atari/misc/h */
+nserror atari_warn_user(const char *warning, const char *detail)
 {
 	size_t len = 1 + ((warning != NULL) ? strlen(messages_get(warning)) :
 			0) + ((detail != 0) ? strlen(detail) : 0);
@@ -62,6 +63,8 @@ void warn_user(const char *warning, const char *detail)
 
 	printf("%s\n", message);
 	gemtk_msg_box_show(GEMTK_MSG_BOX_ALERT, message);
+
+	return NSERROR_OK;
 }
 
 void die(const char *error)

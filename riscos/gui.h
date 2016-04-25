@@ -118,6 +118,7 @@ void ro_gui_dump_browser_window(struct browser_window *bw);
 void ro_gui_drag_box_start(wimp_pointer *pointer);
 bool ro_gui_prequit(void);
 const char *ro_gui_default_language(void);
+nserror ro_warn_user(const char *warning, const char *detail);
 
 /**
  * Cause an abnormal program termination.

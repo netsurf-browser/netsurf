@@ -174,7 +174,7 @@ $(eval $(foreach V,$(filter FB_FONT_$(NETSURF_FB_FONTLIB)_%,$(.VARIABLES)),$(cal
 # ----------------------------------------------------------------------------
 
 # S_FRAMEBUFFER are sources purely for the framebuffer build
-S_FRAMEBUFFER := gui.c framebuffer.c schedule.c misc.c bitmap.c fetch.c	\
+S_FRAMEBUFFER := gui.c framebuffer.c schedule.c bitmap.c fetch.c	\
 	findfile.c localhistory.c clipboard.c
 
 S_FRAMEBUFFER_FBTK := fbtk.c event.c fill.c bitmap.c user.c window.c 	\

@@ -52,6 +52,17 @@ NSString * const kAlwaysCloseMultipleTabs = @"AlwaysCloseMultipleTabs";
 
 struct browser_window;
 
+static nserror cocoa_warn_user(const char *warning, const char *detail)
+{
+	NSRunAlertPanel( NSLocalizedString( @"Warning", @"Warning title" ), 
+					NSLocalizedString( @"Warning %s%s%s", @"Warning message" ), 
+					NSLocalizedString( @"OK", @"" ), nil, nil, 
+					warning, detail != NULL ? ": " : "",
+					detail != NULL ? detail : "" );
+        return NSERROR_OK;
+}
+
+
 static struct gui_window *
 gui_window_create(struct browser_window *bw,
                   struct gui_window *existing,
@@ -299,6 +310,7 @@ struct gui_window_table *cocoa_window_table = &window_table;
 
 static struct gui_misc_table browser_table = {
 	.schedule = cocoa_schedule,
+        .warning = cocoa_warn_user,
 
 	.launch_url = gui_launch_url,
 	.cert_verify = gui_cert_verify,

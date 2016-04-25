@@ -480,7 +480,15 @@ static nserror gui_launch_url(struct nsurl *url)
 	return NSERROR_NO_FETCH_HANDLER;
 }
 
-void warn_user(const char *warning, const char *detail)
+/**
+ * Warn the user of an event.
+ *
+ * \param[in] warning A warning looked up in the message translation table
+ * \param[in] detail Additional text to be displayed or NULL.
+ * \return NSERROR_OK on success or error code if there was a
+ *           faliure displaying the message to the user.
+ */
+static nserror nsgtk_warning(const char *warning, const char *detail)
 {
 	char buf[300];	/* 300 is the size the RISC OS GUI uses */
 	static GtkWindow *nsgtk_warning_window;
@@ -500,6 +508,8 @@ void warn_user(const char *warning, const char *detail)
 	gtk_label_set_text(WarningLabel, buf);
 
 	gtk_widget_show_all(GTK_WIDGET(nsgtk_warning_window));
+
+	return NSERROR_OK;
 }
 
 
@@ -1013,6 +1023,7 @@ static nserror nsgtk_option_init(int *pargc, char** argv)
 
 static struct gui_misc_table nsgtk_misc_table = {
 	.schedule = nsgtk_schedule,
+	.warning = nsgtk_warning,
 
 	.quit = gui_quit,
 	.launch_url = gui_launch_url,

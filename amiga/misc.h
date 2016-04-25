@@ -18,10 +18,23 @@
 
 #ifndef AMIGA_MISC_H
 #define AMIGA_MISC_H
+
 #include <exec/types.h>
+
+#include "utils/errors.h"
 
 extern struct gui_file_table *amiga_file_table;
 struct Window;
+
+/**
+ * Warn the user of an event.
+ *
+ * \param[in] message A warning looked up in the message translation table
+ * \param[in] detail Additional text to be displayed or NULL.
+ * \return NSERROR_OK on success or error code if there was a
+ *           faliure displaying the message to the user.
+ */
+nserror amiga_warn_user(const char *warning, const char *detail);
 
 void *ami_misc_allocvec_clear(int size, UBYTE value);
 

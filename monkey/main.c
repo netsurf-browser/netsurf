@@ -223,6 +223,13 @@ static nserror set_defaults(struct nsoption_s *defaults)
   return NSERROR_OK;
 }
 
+static nserror monkey_warn_user(const char *warning, const char *detail)
+{
+  fprintf(stderr, "WARN %s %s\n", warning, detail);
+  return NSERROR_OK;
+}
+
+
 /**
  * Ensures output logging stream is correctly configured
  */
@@ -236,6 +243,7 @@ static bool nslog_stream_configure(FILE *fptr)
 
 static struct gui_misc_table monkey_misc_table = {
   .schedule = monkey_schedule,
+  .warning = monkey_warn_user,
 
   .quit = monkey_quit,
   .launch_url = gui_launch_url,

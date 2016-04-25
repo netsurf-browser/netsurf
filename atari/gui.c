@@ -1085,6 +1085,7 @@ static struct gui_fetch_table atari_fetch_table = {
 
 static struct gui_misc_table atari_misc_table = {
     .schedule = atari_schedule,
+    .warning = atari_warn_user,
 
     .quit = gui_quit,
     .cert_verify = gui_cert_verify,
@@ -1193,7 +1194,7 @@ int main(int argc, char** argv)
 	nsurl_unref(url);
     }
     if (ret != NSERROR_OK) {
-	warn_user(messages_get_errorcode(ret), 0);
+	atari_warn_user(messages_get_errorcode(ret), 0);
     } else {
 	LOG("Entering Atari event mainloop...");
 	while (!atari_quit) {

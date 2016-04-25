@@ -117,7 +117,15 @@ struct dirent;
 bool is_dir(const char *path);
 
 
-/* Platform specific functions */
-void warn_user(const char *warning, const char *detail);
+/**
+ * Warn the user of an event.
+ *
+ * \warning depricated interface, this calls the warning entry in the
+ *            miscellaneous gui table and discards the return code.
+ *
+ * \param[in] message A warning looked up in the message translation table
+ * \param[in] detail Additional text to be displayed or NULL.
+ */
+void warn_user(const char *message, const char *detail);
 
 #endif

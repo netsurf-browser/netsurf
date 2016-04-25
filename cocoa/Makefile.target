@@ -94,7 +94,6 @@ S_COCOA := \
 	plotter.m \
 	schedule.m \
 	selection.m \
-	utils.m \
 	ArrowBox.m \
 	ArrowWindow.m \
 	BlackScroller.m \

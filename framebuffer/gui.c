@@ -108,6 +108,21 @@ static void die(const char *error)
 	exit(1);
 }
 
+
+/**
+ * Warn the user of an event.
+ *
+ * \param[in] message A warning looked up in the message translation table
+ * \param[in] detail Additional text to be displayed or NULL.
+ * \return NSERROR_OK on success or error code if there was a
+ *           faliure displaying the message to the user.
+ */
+static nserror fb_warn_user(const char *warning, const char *detail)
+{
+	LOG("%s %s", warning, detail);
+	return NSERROR_OK;
+}
+
 /* queue a redraw operation, co-ordinates are relative to the window */
 static void
 fb_queue_redraw(struct fbtk_widget_s *widget, int x0, int y0, int x1, int y1)
@@ -1103,7 +1118,7 @@ fb_url_enter(void *pw, char *text)
 
 	error = nsurl_create(text, &url);
 	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+		fb_warn_user(messages_get_errorcode(error), 0);
 	} else {
 		browser_window_navigate(bw, url, NULL, BW_NAVIGATE_HISTORY,
 				NULL, NULL, NULL);
@@ -2056,6 +2071,7 @@ static struct gui_window_table framebuffer_window_table = {
 
 static struct gui_misc_table framebuffer_misc_table = {
 	.schedule = framebuffer_schedule,
+	.warning = fb_warn_user,
 
 	.quit = gui_quit,
 };
@@ -2156,7 +2172,7 @@ main(int argc, char** argv)
 		nsurl_unref(url);
 	}
 	if (ret != NSERROR_OK) {
-		warn_user(messages_get_errorcode(ret), 0);
+		fb_warn_user(messages_get_errorcode(ret), 0);
 	} else {
 		framebuffer_run();
 

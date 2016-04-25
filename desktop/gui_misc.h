@@ -57,6 +57,18 @@ struct gui_misc_table {
 	 */
 	nserror (*schedule)(int t, void (*callback)(void *p), void *p);
 
+	/**
+	 * Warn the user of an event.
+	 *
+	 * \param[in] message A warning looked up in the message
+	 *                      translation table
+	 * \param[in] detail Additional text to be displayed or NULL.
+	 * \return NSERROR_OK on success or error code if there was a
+	 *           faliure displaying the message to the user.
+	 */
+	nserror (*warning)(const char *message, const char *detail);
+
+
 	/* Optional entries */
 
 	/**
@@ -85,11 +97,6 @@ struct gui_misc_table {
 	 */
 	void (*login)(struct nsurl *url, const char *realm,
 			nserror (*cb)(bool proceed, void *pw), void *cbpw);
-
-	/**
-	 * Warn the user of an event.
-	 */
-	void (*warning)(const char *warning, const char *detail);
 
 	/**
 	 * Prompt the user for a password for a PDF.

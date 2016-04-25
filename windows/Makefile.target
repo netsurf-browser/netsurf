@@ -57,7 +57,7 @@ S_RESOURCES := windows_resource.o
 # ----------------------------------------------------------------------------
 
 # S_WINDOWS are sources purely for the windows build
-S_WINDOWS := main.c window.c gui.c drawable.c misc.c plot.c findfile.c	\
+S_WINDOWS := main.c window.c gui.c drawable.c plot.c findfile.c	\
 	  font.c bitmap.c about.c prefs.c download.c filetype.c file.c	\
 	  localhistory.c schedule.c windbg.c pointers.c
 S_WINDOWS := $(addprefix windows/,$(S_WINDOWS)) 

@@ -975,7 +975,7 @@ static void gui_init2(int argc, char** argv)
 			nsurl_unref(url);
 		}
 		if (error != NSERROR_OK) {
-			warn_user(messages_get_errorcode(error), 0);
+			amiga_warn_user(messages_get_errorcode(error), 0);
 		}
 		free(temp_homepage_url);
 	}
@@ -1034,7 +1034,7 @@ static void gui_init2(int argc, char** argv)
 
 					}
 					if (error != NSERROR_OK) {
-						warn_user(messages_get_errorcode(error), 0);
+						amiga_warn_user(messages_get_errorcode(error), 0);
 					}
 					free(temp_homepage_url);
 					temp_homepage_url = NULL;
@@ -1114,7 +1114,7 @@ static void gui_init2(int argc, char** argv)
 			nsurl_unref(url);
 		}
 		if (error != NSERROR_OK) {
-			warn_user(messages_get_errorcode(error), 0);
+			amiga_warn_user(messages_get_errorcode(error), 0);
 		}
 	}
 }
@@ -1424,7 +1424,7 @@ bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 
 		ami_gui_free_space_box(bbox);
 	} else {
-		warn_user("NoMemory", "");
+		amiga_warn_user("NoMemory", "");
 		return false;
 	}
 
@@ -1448,7 +1448,7 @@ static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 				&gwin->gw->scrolly);
 
 			if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-				warn_user("NoMemory", "");
+				amiga_warn_user("NoMemory", "");
 				return;
 			}
 
@@ -1515,7 +1515,7 @@ static struct IBox *ami_ns_rect_to_ibox(struct gui_window_2 *gwin, const struct 
 	if(ibox == NULL) return NULL;
 
 	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
+		amiga_warn_user("NoMemory", "");
 		return NULL;
 	}
 
@@ -1590,7 +1590,7 @@ static void gui_window_get_dimensions(struct gui_window *g, int *width, int *hei
 	if(!g) return;
 
 	if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
+		amiga_warn_user("NoMemory", "");
 		return;
 	}
 
@@ -1782,7 +1782,7 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 			}
 
 			if(ami_gui_get_space_box((Object *)g->shared->objects[GID_ICON], &bbox) != NSERROR_OK) {
-				warn_user("NoMemory", "");
+				amiga_warn_user("NoMemory", "");
 				return;
 			}
 
@@ -1971,7 +1971,7 @@ static void ami_handle_msg(void)
 					drag_y_move = 0;
 
 					if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-						warn_user("NoMemory", "");
+						amiga_warn_user("NoMemory", "");
 						break;
 					}
 
@@ -2034,7 +2034,7 @@ static void ami_handle_msg(void)
 
 				case WMHI_MOUSEBUTTONS:
 					if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-						warn_user("NoMemory", "");
+						amiga_warn_user("NoMemory", "");
 						return;
 					}
 
@@ -2230,7 +2230,7 @@ static void ami_handle_msg(void)
 									nsurl_unref(url);
 							}
 							if (ret != NSERROR_OK) {
-								warn_user(messages_get_errorcode(ret), 0);
+								amiga_warn_user(messages_get_errorcode(ret), 0);
 							}
 						}
 						break;
@@ -2269,7 +2269,7 @@ static void ami_handle_msg(void)
 								nsurl_unref(url);
 							}
 							if (ret != NSERROR_OK) {
-								warn_user(messages_get_errorcode(ret), 0);
+								amiga_warn_user(messages_get_errorcode(ret), 0);
 							}
 
 						}
@@ -2278,7 +2278,7 @@ static void ami_handle_msg(void)
 						case GID_HOME:
 							{
 								if (nsurl_create(nsoption_charp(homepage_url), &url) != NSERROR_OK) {
-									warn_user("NoMemory", 0);
+									amiga_warn_user("NoMemory", 0);
 								} else {
 									browser_window_navigate(gwin->gw->bw,
 											url,
@@ -2599,7 +2599,7 @@ static void ami_handle_appmsg(void)
 							nsurl *url;
 
 							if (netsurf_path_to_nsurl(filename, &url) != NSERROR_OK) {
-								warn_user("NoMemory", 0);
+								amiga_warn_user("NoMemory", 0);
 							}
 							else
 							{
@@ -2634,7 +2634,7 @@ static void ami_handle_appmsg(void)
 								nsurl *url;
 
 								if (netsurf_path_to_nsurl(filename, &url) != NSERROR_OK) {
-									warn_user("NoMemory", 0);
+									amiga_warn_user("NoMemory", 0);
 								}
 								else
 								{
@@ -2701,7 +2701,7 @@ static void ami_handle_applib(void)
 					nsurl_unref(url);
 				}
 				if (error != NSERROR_OK) {
-					warn_user(messages_get_errorcode(error), 0);
+					amiga_warn_user(messages_get_errorcode(error), 0);
 				}
 			}
 			break;
@@ -2721,7 +2721,7 @@ static void ami_handle_applib(void)
 					nsurl_unref(url);
 				}
 				if (error != NSERROR_OK) {
-					warn_user(messages_get_errorcode(error), 0);
+					amiga_warn_user(messages_get_errorcode(error), 0);
 				}
 			}
 			break;
@@ -2870,7 +2870,7 @@ void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 	cur_gw = gwin->gw;
 
 	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
+		amiga_warn_user("NoMemory", "");
 		return;
 	}
 
@@ -3488,7 +3488,7 @@ nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
 		nsurl_unref(url);
 	}
 	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+		amiga_warn_user(messages_get_errorcode(error), 0);
 		return error;
 	}
 
@@ -3618,7 +3618,7 @@ static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw
 	if(g != g->shared->gw) return;
 
 	if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
+		amiga_warn_user("NoMemory", "");
 		return;
 	}
 
@@ -3644,7 +3644,7 @@ static void ami_refresh_window(struct gui_window_2 *gwin)
 	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
 
 	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
+		amiga_warn_user("NoMemory", "");
 		return;
 	}
 	
@@ -3806,7 +3806,7 @@ gui_window_create(struct browser_window *bw,
 
 	if(!g)
 	{
-		warn_user("NoMemory","");
+		amiga_warn_user("NoMemory","");
 		return NULL;
 	}
 
@@ -3879,7 +3879,7 @@ gui_window_create(struct browser_window *bw,
 
 	if(!g->shared)
 	{
-		warn_user("NoMemory","");
+		amiga_warn_user("NoMemory","");
 		return NULL;
 	}
 
@@ -4328,7 +4328,7 @@ gui_window_create(struct browser_window *bw,
 
 	if(!g->shared->win)
 	{
-		warn_user("NoMemory","");
+		amiga_warn_user("NoMemory","");
 		FreeVec(g->shared);
 		FreeVec(g);
 		return NULL;
@@ -4758,7 +4758,7 @@ static void amiga_window_reformat(struct gui_window *gw)
 
 	if (gw != NULL) {
 		if(ami_gui_get_space_box((Object *)gw->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-			warn_user("NoMemory", "");
+			amiga_warn_user("NoMemory", "");
 			return;
 		}
 		browser_window_reformat(gw->bw, false, bbox->Width, bbox->Height);
@@ -4783,7 +4783,7 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 	gwin->gw->scrolly = vcurrent;
 
 	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
+		amiga_warn_user("NoMemory", "");
 		return;
 	}
 
@@ -4930,7 +4930,7 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	if(!g->bw || browser_window_has_content(g->bw) == false) return;
 
 	if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
+		amiga_warn_user("NoMemory", "");
 		return;
 	}
 
@@ -4985,7 +4985,7 @@ static void gui_window_update_extent(struct gui_window *g)
 	if(g == g->shared->gw) {
 		int width, height;
 		if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-			warn_user("NoMemory", "");
+			amiga_warn_user("NoMemory", "");
 			return;
 		}
 
@@ -5170,7 +5170,7 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 	SetAPen(g->shared->win->RPort,3);
 
 	if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
+		amiga_warn_user("NoMemory", "");
 		return;
 	}
 
@@ -5265,7 +5265,7 @@ bool ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y)
 	struct browser_window_features data;
 
 	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
+		amiga_warn_user("NoMemory", "");
 		return false;
 	}
 
@@ -5469,6 +5469,7 @@ static struct gui_search_web_table amiga_search_web_table = {
 
 static struct gui_misc_table amiga_misc_table = {
 	.schedule = ami_schedule,
+	.warning = amiga_warn_user,
 
 	.quit = gui_quit,
 	.launch_url = gui_launch_url,
