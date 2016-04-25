@@ -2067,7 +2067,7 @@ static void ro_gui_choose_language(void)
  * \param  warning  message key for warning message
  * \param  detail   additional message, or 0
  */
-nserror ro_ro_warn_user(const char *warning, const char *detail)
+nserror ro_warn_user(const char *warning, const char *detail)
 {
 	LOG("%s %s", warning, detail);
 
@@ -2083,8 +2083,7 @@ nserror ro_ro_warn_user(const char *warning, const char *detail)
 				wimp_ICON_DELETED, wimp_ICON_DELETED);
 		ro_gui_dialog_open(dialog_warning);
 		xos_bell();
-	}
-	else {
+	} else {
 		/* probably haven't initialised (properly), use a
 		   non-multitasking error box */
 		os_error error;
