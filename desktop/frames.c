@@ -291,14 +291,8 @@ void browser_window_recalculate_iframes(struct browser_window *bw)
 }
 
 
-/**
- * Create and open a frameset for a browser window.
- *
- * \param bw       The browser window to create the frameset for
- * \param frameset The frameset to create
- */
-
-void browser_window_create_frameset(struct browser_window *bw,
+/* exported interface documented in desktop/frames.h */
+nserror browser_window_create_frameset(struct browser_window *bw,
 		struct content_html_frames *frameset)
 {
 	int row, col, index;
@@ -313,8 +307,10 @@ void browser_window_create_frameset(struct browser_window *bw,
 	assert(frameset->cols + frameset->rows != 0);
 
 	bw->children = calloc((frameset->cols * frameset->rows), sizeof(*bw));
-	if (!bw->children)
-		return;
+	if (!bw->children) {
+		return NSERROR_NOMEM;
+	}
+
 	bw->cols = frameset->cols;
 	bw->rows = frameset->rows;
 	for (row = 0; row < bw->rows; row++) {
@@ -344,8 +340,11 @@ void browser_window_create_frameset(struct browser_window *bw,
 			window->margin_height = frame->margin_height;
 			if (frame->name) {
 				window->name = strdup(frame->name);
-				if (!window->name)
-					warn_user("NoMemory", 0);
+				if (!window->name) {
+					free(bw->children);
+					bw->children = NULL;
+					return NSERROR_NOMEM;
+				}
 			}
 
 			window->scale = bw->scale;
@@ -406,6 +405,8 @@ void browser_window_create_frameset(struct browser_window *bw,
 			}
 		}
 	}
+
+	return NSERROR_OK;
 }
 
 

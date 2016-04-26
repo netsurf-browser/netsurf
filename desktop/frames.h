@@ -35,8 +35,17 @@ struct scrollbar_msg_data;
 nserror browser_window_create_iframes(struct browser_window *bw,
 		struct content_html_iframe *iframe);
 void browser_window_recalculate_iframes(struct browser_window *bw);
-void browser_window_create_frameset(struct browser_window *bw,
+
+/**
+ * Create and open a frameset for a browser window.
+ *
+ * \param[in,out] bw The browser window to create the frameset for
+ * \param[in] frameset The frameset to create
+ * \return NSERROR_OK or error code on faliure
+ */
+nserror browser_window_create_frameset(struct browser_window *bw,
 		struct content_html_frames *frameset);
+
 void browser_window_recalculate_frameset(struct browser_window *bw);
 bool browser_window_frame_resize_start(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y,

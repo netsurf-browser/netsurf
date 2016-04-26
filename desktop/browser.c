@@ -1311,6 +1311,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 		const hlcache_event *event, void *pw)
 {
 	struct browser_window *bw = pw;
+	nserror res = NSERROR_OK;
 
 	switch (event->type) {
 	case CONTENT_MSG_DOWNLOAD:
@@ -1414,10 +1415,11 @@ static nserror browser_window_callback(hlcache_handle *c,
 		}
 
 		/* frames */
-		if (content_get_type(c) == CONTENT_HTML &&
-				html_get_frameset(c) != NULL)
-			browser_window_create_frameset(bw,
+		if ((content_get_type(c) == CONTENT_HTML) &&
+		    (html_get_frameset(c) != NULL)) {
+			res = browser_window_create_frameset(bw,
 					html_get_frameset(c));
+		}
 		if (content_get_type(c) == CONTENT_HTML &&
 				html_get_iframe(c) != NULL)
 			browser_window_create_iframes(bw, html_get_iframe(c));
@@ -1704,7 +1706,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 		break;
 	}
 
-	return NSERROR_OK;
+	return res;
 }
 
 
