@@ -28,6 +28,7 @@
 #include "utils/utils.h"
 
 #include "gtk/gui.h"
+#include "gtk/warn.h"
 #include "gtk/scaffolding.h"
 #include "gtk/search.h"
 #include "gtk/throbber.h"
@@ -219,7 +220,7 @@ static struct nsgtk_theme *nsgtk_theme_load(GtkIconSize iconsize)
 	int btnloop;
 
 	if (theme == NULL) {
-		warn_user("NoMemory", 0);
+		nsgtk_warning("NoMemory", 0);
 		return NULL;
 	}
 
@@ -431,7 +432,7 @@ nsgtk_toolbar_make_widget(struct nsgtk_scaffolding *g,
 		w = GTK_WIDGET(gtk_tool_item_new());
 
 		if ((entry == NULL) || (w == NULL)) {
-			warn_user(messages_get("NoMemory"), 0);
+			nsgtk_warning(messages_get("NoMemory"), 0);
 			return NULL;
 		}
 
@@ -486,7 +487,7 @@ nsgtk_toolbar_make_widget(struct nsgtk_scaffolding *g,
 		w = GTK_WIDGET(gtk_tool_item_new());
 
 		if ((entry == NULL) || (w == NULL)) {
-			warn_user(messages_get("NoMemory"), 0);
+			nsgtk_warning(messages_get("NoMemory"), 0);
 			return NULL;
 		}
 
@@ -582,7 +583,7 @@ nsgtk_toolbar_data(GtkWidget *widget,
 	struct nsgtk_theme *theme =
 			nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR);
 	if (theme == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		return TRUE;
 	}
 	if (nsgtk_scaffolding_button(g, window->currentbutton)->location
@@ -613,7 +614,7 @@ nsgtk_toolbar_data(GtkWidget *widget,
 	free(theme);
 	if (nsgtk_scaffolding_button(g, window->currentbutton)->button
 			== NULL) {
-		warn_user("NoMemory", 0);
+		nsgtk_warning("NoMemory", 0);
 		return TRUE;
 	}
 	/* update logical schema */
@@ -735,7 +736,7 @@ static void nsgtk_toolbar_close(struct nsgtk_scaffolding *g)
 	while (list) {
 		theme =	nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR);
 		if (theme == NULL) {
-			warn_user(messages_get("NoMemory"), 0);
+			nsgtk_warning(messages_get("NoMemory"), 0);
 			continue;
 		}
 		/* clear toolbar */
@@ -810,7 +811,7 @@ static bool nsgtk_toolbar_add_store_widget(GtkWidget *widget)
 	if (window->numberh >= NSGTK_STORE_WIDTH) {
 		window->currentbar = gtk_toolbar_new();
 		if (window->currentbar == NULL) {
-			warn_user("NoMemory", 0);
+			nsgtk_warning("NoMemory", 0);
 			return false;
 		}
 		gtk_toolbar_set_style(GTK_TOOLBAR(window->currentbar),
@@ -840,7 +841,7 @@ static void nsgtk_toolbar_customization_save(struct nsgtk_scaffolding *g)
 	int i;
 	FILE *f = fopen(toolbar_indices_file_location, "w");
 	if (f == NULL){
-		warn_user("gtkFileError", toolbar_indices_file_location);
+		nsgtk_warning("gtkFileError", toolbar_indices_file_location);
 		return;
 	}
 	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
@@ -996,7 +997,7 @@ static void nsgtk_toolbar_window_open(struct nsgtk_scaffolding *g)
 
 	theme =	nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR);
 	if (theme == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		nsgtk_toolbar_cancel_clicked(NULL, g);
 		return;
 	}
@@ -1004,7 +1005,7 @@ static void nsgtk_toolbar_window_open(struct nsgtk_scaffolding *g)
 	res = nsgtk_builder_new_from_resname("toolbar", &window->builder);
 	if (res != NSERROR_OK) {
 		LOG("Toolbar UI builder init failed");
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		nsgtk_toolbar_cancel_clicked(NULL, g);
 		free(theme);
 		return;
@@ -1015,7 +1016,7 @@ static void nsgtk_toolbar_window_open(struct nsgtk_scaffolding *g)
 	window->window = GTK_WIDGET(gtk_builder_get_object(window->builder,
 							   "toolbarwindow"));
 	if (window->window == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		nsgtk_toolbar_cancel_clicked(NULL, g);
 		free(theme);
 		return;
@@ -1024,7 +1025,7 @@ static void nsgtk_toolbar_window_open(struct nsgtk_scaffolding *g)
 	window->widgetvbox = GTK_WIDGET(gtk_builder_get_object(window->builder,
 							       "widgetvbox"));
 	if (window->widgetvbox == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		nsgtk_toolbar_cancel_clicked(NULL, g);
 		free(theme);
 		return;
@@ -1042,7 +1043,7 @@ static void nsgtk_toolbar_window_open(struct nsgtk_scaffolding *g)
 		window->store_buttons[i] =
 			nsgtk_toolbar_make_widget(g, i, theme);
 		if (window->store_buttons[i] == NULL) {
-			warn_user(messages_get("NoMemory"), 0);
+			nsgtk_warning(messages_get("NoMemory"), 0);
 			continue;
 		}
 		nsgtk_toolbar_add_store_widget(window->store_buttons[i]);
@@ -1189,7 +1190,7 @@ void nsgtk_toolbar_set_physical(struct nsgtk_scaffolding *g)
 	struct nsgtk_theme *theme =
 			nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR);
 	if (theme == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		return;
 	}
 	/* simplest is to clear the toolbar then reload it from memory */
@@ -1389,7 +1390,7 @@ void nsgtk_toolbar_customization_load(struct nsgtk_scaffolding *g)
 		(i <= THROBBER_ITEM) ? i : -1;
 	FILE *f = fopen(toolbar_indices_file_location, "r");
 	if (f == NULL) {
-		warn_user(messages_get("gtkFileError"),
+		nsgtk_warning(messages_get("gtkFileError"),
 				toolbar_indices_file_location);
 		return;
 	}

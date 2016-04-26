@@ -45,6 +45,7 @@
 #include "content/hlcache.h"
 #include "content/content.h"
 
+#include "gtk/warn.h"
 #include "gtk/about.h"
 #include "gtk/fetch.h"
 #include "gtk/compat.h"
@@ -544,7 +545,7 @@ tab_init(const char *title,
 	/* save data to temporary file */
 	f = fopen(fname, "w");
 	if (f == NULL) {
-		warn_user(messages_get("gtkSourceTabError"), 0);
+		nsgtk_warning(messages_get("gtkSourceTabError"), 0);
 		g_free(fname);
 		return NSERROR_SAVE_FAILED;
 	}
@@ -907,7 +908,7 @@ editor_init(const char *title,
 	/* save data to temporary file */
 	f = fopen(fname, "w");
 	if (f == NULL) {
-		warn_user(messages_get("gtkSourceTabError"), 0);
+		nsgtk_warning(messages_get("gtkSourceTabError"), 0);
 		g_free(fname);
 		return NSERROR_SAVE_FAILED;
 	}

@@ -31,6 +31,7 @@
 #include "desktop/searchweb.h"
 #include "desktop/browser.h"
 
+#include "gtk/warn.h"
 #include "gtk/window.h"
 #include "gtk/completion.h"
 
@@ -99,7 +100,7 @@ nsgtk_completion_match_select(GtkEntryCompletion *widget,
 		nsurl_unref(url);
 	}
 	if (ret != NSERROR_OK) {
-		warn_user(messages_get_errorcode(ret), 0);
+		nsgtk_warning(messages_get_errorcode(ret), 0);
 	}
 
 	return TRUE;

@@ -26,6 +26,7 @@
 
 #include "gtk/compat.h"
 #include "gtk/menu.h"
+#include "gtk/warn.h"
 
 /**
  * Adds image menu item to a menu.
@@ -135,12 +136,12 @@ static struct nsgtk_export_submenu *nsgtk_menu_export_submenu(GtkAccelGroup *gro
 	struct nsgtk_export_submenu *ret = malloc(sizeof(struct
 			nsgtk_export_submenu));
 	if (ret == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		return NULL;
 	}
 	ret->export_menu = GTK_MENU(gtk_menu_new());
 	if (ret->export_menu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		free(ret);
 		return NULL;
 	}
@@ -162,12 +163,12 @@ static struct nsgtk_scaleview_submenu *nsgtk_menu_scaleview_submenu(
 	struct nsgtk_scaleview_submenu *ret =
 			malloc(sizeof(struct nsgtk_scaleview_submenu));
 	if (ret == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		return NULL;
 	}
 	ret->scaleview_menu = GTK_MENU(gtk_menu_new());
 	if (ret->scaleview_menu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		free(ret);
 		return NULL;
 	}
@@ -186,12 +187,12 @@ static struct nsgtk_tabs_submenu *nsgtk_menu_tabs_submenu(GtkAccelGroup *group)
 {
 	struct nsgtk_tabs_submenu *ret = malloc(sizeof(struct nsgtk_tabs_submenu));
 	if (ret == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		return NULL;
 	}
 	ret->tabs_menu = GTK_MENU(gtk_menu_new());
 	if (ret->tabs_menu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		free(ret);
 		return NULL;
 	}
@@ -212,12 +213,12 @@ static struct nsgtk_images_submenu *nsgtk_menu_images_submenu(GtkAccelGroup *gro
 	struct nsgtk_images_submenu *ret =
 			malloc(sizeof(struct nsgtk_images_submenu));
 	if (ret == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		return NULL;
 	}
 	ret->images_menu = GTK_MENU(gtk_menu_new());
 	if (ret->images_menu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		free(ret);
 		return NULL;
 	}
@@ -237,12 +238,12 @@ static struct nsgtk_toolbars_submenu *nsgtk_menu_toolbars_submenu(
 	struct nsgtk_toolbars_submenu *ret =
 			malloc(sizeof(struct nsgtk_toolbars_submenu));
 	if (ret == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		return NULL;
 	}
 	ret->toolbars_menu = GTK_MENU(gtk_menu_new());
 	if (ret->toolbars_menu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		free(ret);
 		return NULL;
 	}
@@ -266,12 +267,12 @@ static struct nsgtk_developer_submenu *nsgtk_menu_developer_submenu(
 	struct nsgtk_developer_submenu *dmenu =
 			malloc(sizeof(struct nsgtk_developer_submenu));
 	if (dmenu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		return NULL;
 	}
 	dmenu->developer_menu = GTK_MENU(gtk_menu_new());
 	if (dmenu->developer_menu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		free(dmenu);
 		return NULL;
 	}
@@ -296,13 +297,13 @@ static struct nsgtk_file_menu *nsgtk_menu_file_submenu(GtkAccelGroup *group)
 
 	fmenu = malloc(sizeof(struct nsgtk_file_menu));
 	if (fmenu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		return NULL;
 	}
 
 	fmenu->file_menu = GTK_MENU(gtk_menu_new());
 	if (fmenu->file_menu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		free(fmenu);
 		return NULL;
 	}
@@ -333,12 +334,12 @@ static struct nsgtk_edit_menu *nsgtk_menu_edit_submenu(GtkAccelGroup *group)
 {
 	struct nsgtk_edit_menu *ret = malloc(sizeof(struct nsgtk_edit_menu));
 	if (ret == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		return NULL;
 	}
 	ret->edit_menu = GTK_MENU(gtk_menu_new());
 	if (ret->edit_menu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		free(ret);
 		return NULL;
 	}
@@ -365,12 +366,12 @@ static struct nsgtk_view_menu *nsgtk_menu_view_submenu(GtkAccelGroup *group)
 {
 	struct nsgtk_view_menu *ret = malloc(sizeof(struct nsgtk_view_menu));
 	if (ret == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		return NULL;
 	}
 	ret->view_menu = GTK_MENU(gtk_menu_new());
 	if (ret->view_menu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		free(ret);
 		return NULL;
 	}
@@ -403,12 +404,12 @@ static struct nsgtk_nav_menu *nsgtk_menu_nav_submenu(GtkAccelGroup *group)
 {
 	struct nsgtk_nav_menu *ret = malloc(sizeof(struct nsgtk_nav_menu));
 	if (ret == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		return NULL;
 	}
 	ret->nav_menu = GTK_MENU(gtk_menu_new());
 	if (ret->nav_menu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		free(ret);
 		return NULL;
 	}
@@ -437,12 +438,12 @@ static struct nsgtk_tools_menu *nsgtk_menu_tools_submenu(GtkAccelGroup *group)
 {
 	struct nsgtk_tools_menu *ret = malloc(sizeof(struct nsgtk_tools_menu));
 	if (ret == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		return NULL;
 	}
 	ret->tools_menu = GTK_MENU(gtk_menu_new());
 	if (ret->tools_menu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		free(ret);
 		return NULL;
 	}
@@ -463,12 +464,12 @@ static struct nsgtk_help_menu *nsgtk_menu_help_submenu(GtkAccelGroup *group)
 {
 	struct nsgtk_help_menu *ret = malloc(sizeof(struct nsgtk_help_menu));
 	if (ret == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		return NULL;
 	}
 	ret->help_menu = GTK_MENU(gtk_menu_new());
 	if (ret->help_menu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		free(ret);
 		return NULL;
 	}

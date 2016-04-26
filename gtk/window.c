@@ -47,6 +47,7 @@
 #include "desktop/plotters.h"
 #include "render/form.h"
 
+#include "gtk/warn.h"
 #include "gtk/compat.h"
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
@@ -753,7 +754,7 @@ gui_window_create(struct browser_window *bw,
 
 	g = calloc(1, sizeof(*g));
 	if (!g) {
-		warn_user("NoMemory", 0);
+		nsgtk_warning("NoMemory", 0);
 		g_object_unref(tab_builder);
 		return NULL;
 	}
@@ -777,7 +778,7 @@ gui_window_create(struct browser_window *bw,
 		g->scaffold = nsgtk_new_scaffolding(g);
 	}
 	if (g->scaffold == NULL) {
-		warn_user("NoMemory", 0);
+		nsgtk_warning("NoMemory", 0);
 		free(g);
 		g_object_unref(tab_builder);
 		return NULL;

@@ -32,6 +32,7 @@
 #include "desktop/download.h"
 #include "desktop/gui_download.h"
 
+#include "gtk/warn.h"
 #include "gtk/scaffolding.h"
 #include "gtk/window.h"
 #include "gtk/compat.h"
@@ -637,7 +638,7 @@ static gchar* nsgtk_download_dialog_show (const gchar *filename, const gchar *do
 		destination = malloc(strlen(nsoption_charp(downloads_directory))
 				     + strlen(filename) + SLEN("/") + 1);
 		if (destination == NULL) {
-			warn_user(messages_get("NoMemory"), 0);
+			nsgtk_warning(messages_get("NoMemory"), 0);
 			break;
 		}
 		sprintf(destination, "%s/%s",

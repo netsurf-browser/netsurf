@@ -36,6 +36,7 @@
 #include "desktop/searchweb.h"
 #include "desktop/gui_search.h"
 
+#include "gtk/warn.h"
 #include "gtk/compat.h"
 #include "gtk/search.h"
 #include "gtk/scaffolding.h"
@@ -214,7 +215,7 @@ gboolean nsgtk_websearch_activate(GtkWidget *widget, gpointer data)
 		nsurl_unref(url);
 	}
 	if (ret != NSERROR_OK) {
-		warn_user(messages_get_errorcode(ret), 0);
+		nsgtk_warning(messages_get_errorcode(ret), 0);
 	}
 
 	return TRUE;

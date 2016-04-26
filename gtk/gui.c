@@ -52,6 +52,7 @@
 #include "desktop/netsurf.h"
 
 #include "gtk/compat.h"
+#include "gtk/warn.h"
 #include "gtk/completion.h"
 #include "gtk/cookies.h"
 #include "gtk/download.h"
@@ -474,21 +475,14 @@ static nserror gui_launch_url(struct nsurl *url)
 	}
 
 	if (error) {
-		warn_user(messages_get("URIOpenError"), error->message);
+		nsgtk_warning(messages_get("URIOpenError"), error->message);
 		g_error_free(error);
 	}
 	return NSERROR_NO_FETCH_HANDLER;
 }
 
-/**
- * Warn the user of an event.
- *
- * \param[in] warning A warning looked up in the message translation table
- * \param[in] detail Additional text to be displayed or NULL.
- * \return NSERROR_OK on success or error code if there was a
- *           faliure displaying the message to the user.
- */
-static nserror nsgtk_warning(const char *warning, const char *detail)
+/* exported function documented in gtk/warn.h */
+nserror nsgtk_warning(const char *warning, const char *detail)
 {
 	char buf[300];	/* 300 is the size the RISC OS GUI uses */
 	static GtkWindow *nsgtk_warning_window;

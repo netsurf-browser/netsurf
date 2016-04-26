@@ -49,6 +49,7 @@
 #include "content/hlcache.h"
 
 #include "gtk/compat.h"
+#include "gtk/warn.h"
 #include "gtk/cookies.h"
 #include "gtk/completion.h"
 #include "gtk/preferences.h"
@@ -409,7 +410,7 @@ gboolean nsgtk_window_url_activate_event(GtkWidget *widget, gpointer data)
 		nsurl_unref(url);
 	}
 	if (ret != NSERROR_OK) {
-		warn_user(messages_get_errorcode(ret), 0);
+		nsgtk_warning(messages_get_errorcode(ret), 0);
 	}
 
 	return TRUE;
@@ -510,7 +511,7 @@ static void nsgtk_openfile_open(const char *filename)
 
 		error = nsurl_create(urltxt, &url);
 		if (error != NSERROR_OK) {
-			warn_user(messages_get_errorcode(error), 0);
+			nsgtk_warning(messages_get_errorcode(error), 0);
 		} else {
 			browser_window_navigate(bw,
 						url,
@@ -550,7 +551,7 @@ MULTIHANDLER(newwindow)
 		nsurl_unref(url);
 	}
 	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+		nsgtk_warning(messages_get_errorcode(error), 0);
 	}
 
 	return TRUE;
@@ -571,7 +572,7 @@ nserror nsgtk_scaffolding_new_tab(struct gui_window *gw)
 		}
 		error = nsurl_create(addr, &url);
 		if (error != NSERROR_OK) {
-			warn_user(messages_get_errorcode(error), 0);
+			nsgtk_warning(messages_get_errorcode(error), 0);
 		}
 	}
 
@@ -593,7 +594,7 @@ MULTIHANDLER(newtab)
 
 	error = nsgtk_scaffolding_new_tab(g->top_level);
 	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+		nsgtk_warning(messages_get_errorcode(error), 0);
 	}
 	return TRUE;
 }
@@ -661,7 +662,7 @@ MULTIHANDLER(savepage)
 	if (res != NSERROR_OK) {
 		path = strdup(messages_get("SaveText"));
 		if (path == NULL) {
-			warn_user("NoMemory", 0);
+			nsgtk_warning("NoMemory", 0);
 			return FALSE;
 		}
 	}
@@ -683,9 +684,9 @@ MULTIHANDLER(savepage)
 	if (d == NULL) {
  		LOG("Unable to open directory %s for complete save: %s", path, strerror(errno));
 		if (errno == ENOTDIR)
-			warn_user("NoDirError", path);
+			nsgtk_warning("NoDirError", path);
 		else
-			warn_user("gtkFileError", path);
+			nsgtk_warning("gtkFileError", path);
 		gtk_widget_destroy(fc);
 		g_free(path);
 		return TRUE;
@@ -717,7 +718,7 @@ MULTIHANDLER(pdf)
 
 	res = nsurl_nice(browser_window_get_url(bw), &url_name, true);
 	if (res != NSERROR_OK) {
-		warn_user(messages_get_errorcode(res), 0);
+		nsgtk_warning(messages_get_errorcode(res), 0);
 		return TRUE;
 	}
 
@@ -757,7 +758,7 @@ MULTIHANDLER(pdf)
 		g_free(filename);
 
 		if (settings == NULL) {
-			warn_user(messages_get("NoMemory"), 0);
+			nsgtk_warning(messages_get("NoMemory"), 0);
 			gtk_widget_destroy(save_dialog);
 			return TRUE;
 		}
@@ -794,7 +795,7 @@ MULTIHANDLER(plaintext)
 	if (res != NSERROR_OK) {
 		filename = strdup(messages_get("SaveText"));
 		if (filename == NULL) {
-			warn_user("NoMemory", 0);
+			nsgtk_warning("NoMemory", 0);
 			return FALSE;
 		}
 	}
@@ -846,7 +847,7 @@ MULTIHANDLER(print)
 
 	print_op = gtk_print_operation_new();
 	if (print_op == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		return TRUE;
 	}
 
@@ -867,7 +868,7 @@ MULTIHANDLER(print)
 
 	page_setup = gtk_print_run_page_setup_dialog(g->window, NULL, NULL);
 	if (page_setup == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_warning(messages_get("NoMemory"), 0);
 		free(settings_fname);
 		g_object_unref(print_op);
 		return TRUE;
@@ -951,7 +952,7 @@ MENUHANDLER(savelink)
 				NULL,
 				NULL);
 	if (err != NSERROR_OK) {
-		warn_user(messages_get_errorcode(err), 0);
+		nsgtk_warning(messages_get_errorcode(err), 0);
 	}
 
 	return TRUE;
@@ -973,7 +974,7 @@ MENUHANDLER(link_openwin)
 	err = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY,
 				current_menu_features.link, NULL, bw, NULL);
 	if (err != NSERROR_OK) {
-		warn_user(messages_get_errorcode(err), 0);
+		nsgtk_warning(messages_get_errorcode(err), 0);
 	}
 
 	return TRUE;
@@ -999,7 +1000,7 @@ MENUHANDLER(link_opentab)
 				    BW_CREATE_TAB,
 				    current_menu_features.link, NULL, bw, NULL);
 	if (err != NSERROR_OK) {
-		warn_user(messages_get_errorcode(err), 0);
+		nsgtk_warning(messages_get_errorcode(err), 0);
 	}
 
 	temp_open_background = -1;
@@ -1174,7 +1175,7 @@ MULTIHANDLER(viewsource)
 
 	ret = nsgtk_viewsource(g->window, nsgtk_get_browser_window(g->top_level));
 	if (ret != NSERROR_OK) {
-		warn_user(messages_get_errorcode(ret), 0);
+		nsgtk_warning(messages_get_errorcode(ret), 0);
 	}
 
 	return TRUE;
@@ -1317,7 +1318,7 @@ MULTIHANDLER(debugboxtree)
 	/* save data to temporary file */
 	f = fopen(fname, "w");
 	if (f == NULL) {
-		warn_user("Error saving box tree dump.",
+		nsgtk_warning("Error saving box tree dump.",
 			  "Unable to open file for writing.");
 		unlink(fname);
 		return TRUE;
@@ -1352,7 +1353,7 @@ MULTIHANDLER(debugdomtree)
 	/* save data to temporary file */
 	f = fopen(fname, "w");
 	if (f == NULL) {
-		warn_user("Error saving box tree dump.",
+		nsgtk_warning("Error saving box tree dump.",
 			  "Unable to open file for writing.");
 		unlink(fname);
 		return TRUE;
@@ -1444,7 +1445,7 @@ MULTIHANDLER(home)
 
 	error = nsurl_create(addr, &url);
 	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+		nsgtk_warning(messages_get_errorcode(error), 0);
 	} else {
 		browser_window_navigate(bw,
 					url,
@@ -1561,7 +1562,7 @@ MULTIHANDLER(contents)
 
 	error = nsurl_create("http://www.netsurf-browser.org/documentation/", &url);
 	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+		nsgtk_warning(messages_get_errorcode(error), 0);
 	} else {
 		browser_window_navigate(bw,
 					url,
@@ -1582,7 +1583,7 @@ MULTIHANDLER(guide)
 	nsurl *url;
 
 	if (nsurl_create("http://www.netsurf-browser.org/documentation/guide", &url) != NSERROR_OK) {
-		warn_user("NoMemory", 0);
+		nsgtk_warning("NoMemory", 0);
 	} else {
 		browser_window_navigate(bw,
 					url,
@@ -1603,7 +1604,7 @@ MULTIHANDLER(info)
 	nsurl *url;
 
 	if (nsurl_create("http://www.netsurf-browser.org/documentation/info", &url) != NSERROR_OK) {
-		warn_user("NoMemory", 0);
+		nsgtk_warning("NoMemory", 0);
 	} else {
 		browser_window_navigate(bw,
 					url,

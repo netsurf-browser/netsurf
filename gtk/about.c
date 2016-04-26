@@ -32,6 +32,7 @@
 #include "desktop/browser.h"
 #include "desktop/version.h"
 
+#include "gtk/warn.h"
 #include "gtk/compat.h"
 #include "gtk/about.h"
 
@@ -61,7 +62,7 @@ static void about_open(const char *url_text)
 	}
 
 	if (ret != NSERROR_OK) {
-		warn_user(messages_get_errorcode(ret), 0);
+		nsgtk_warning(messages_get_errorcode(ret), 0);
 	}
 }
 
