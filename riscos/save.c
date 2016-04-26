@@ -191,7 +191,7 @@ wimp_w ro_gui_saveas_create(const char *template_name)
 		error = xosspriteop_clear_sprites(osspriteop_USER_AREA, saveas_area);
 		if (error) {
 			LOG("xosspriteop_clear_sprites: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("MiscError", error->errmess);
+			ro_warn_user("MiscError", error->errmess);
 
 			xosmodule_free(saveas_area);
 			saveas_area = NULL;
@@ -228,7 +228,7 @@ void ro_gui_saveas_quit(void)
 		os_error *error = xosmodule_free(saveas_area);
 		if (error) {
 			LOG("xosmodule_free: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("MiscError", error->errmess);
+			ro_warn_user("MiscError", error->errmess);
 		}
 		saveas_area = NULL;
 	}
@@ -337,7 +337,7 @@ bool ro_gui_save_ok(wimp_w w)
 	char path[256];
 
 	if (!strrchr(name, '.')) {
-		warn_user("NoPathError", NULL);
+		ro_warn_user("NoPathError", NULL);
 		return false;
 	}
 
@@ -383,7 +383,7 @@ void gui_drag_save_object(struct gui_window *g, hlcache_handle *c,
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
 		LOG("xwimp_get_pointer_info: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -421,7 +421,7 @@ void gui_drag_save_selection(struct gui_window *g, const char *selection)
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
 		LOG("xwimp_get_pointer_info: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -474,7 +474,7 @@ void ro_gui_drag_save_link(gui_save_type save_type, const nsurl *url,
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
 		LOG("xwimp_get_pointer_info: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -512,7 +512,7 @@ void ro_gui_drag_icon(int x, int y, const char *sprite)
 			if (error) {
 				if (error->errnum != error_SPRITE_OP_DOESNT_EXIST) {
 					LOG("xosspriteop_select_sprite: 0x%x: %s", error->errnum, error->errmess);
-					warn_user("MiscError", error->errmess);
+					ro_warn_user("MiscError", error->errmess);
 				}
 			}
 			else
@@ -545,7 +545,7 @@ void ro_gui_drag_icon(int x, int y, const char *sprite)
 
 	if (error) {
 		LOG("xwimp_drag_box: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("DragError", error->errmess);
+		ro_warn_user("DragError", error->errmess);
 	}
 	else
 		dragbox_active = true;
@@ -584,14 +584,14 @@ void ro_gui_drag_box_cancel(void)
 			error = xdragasprite_stop();
 			if (error) {
 				LOG("xdragasprite_stop: 0x%x: %s", error->errnum, error->errmess);
-				warn_user("WimpError", error->errmess);
+				ro_warn_user("WimpError", error->errmess);
 			}
 		}
 		else {
 			error = xwimp_drag_box(NULL);
 			if (error) {
 				LOG("xwimp_drag_box: 0x%x: %s", error->errnum, error->errmess);
-				warn_user("WimpError", error->errmess);
+				ro_warn_user("WimpError", error->errmess);
 			}
 		}
 		dragbox_active = false;
@@ -621,7 +621,7 @@ static void ro_gui_save_drag_end(wimp_dragged *drag, void *data)
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
 		LOG("xwimp_get_pointer_info: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -808,7 +808,7 @@ bool ro_gui_save_content(hlcache_handle *h, char *path, bool force_overwrite)
 				NULL, NULL, NULL, NULL, NULL);
 		if (error) {
 			LOG("xosfile_read_stamped: 0x%x:%s", error->errnum, error->errmess);
-			warn_user("SaveError", error->errmess);
+			ro_warn_user("SaveError", error->errmess);
 			return false;
 		}
 
@@ -825,7 +825,7 @@ bool ro_gui_save_content(hlcache_handle *h, char *path, bool force_overwrite)
 			default:
 				error = xosfile_make_error(path, obj_type);
 				assert(error);
-				warn_user("SaveError", error->errmess);
+				ro_warn_user("SaveError", error->errmess);
 				return false;
 		}
 	}
@@ -865,7 +865,7 @@ bool ro_gui_save_content(hlcache_handle *h, char *path, bool force_overwrite)
 					(byte *) source_data + source_size);
 			if (error) {
 				LOG("xosfile_save_stamped: 0x%x: %s", error->errnum, error->errmess);
-				warn_user("SaveError", error->errmess);
+				ro_warn_user("SaveError", error->errmess);
 				return false;
 			}
 			break;
@@ -941,7 +941,7 @@ void ro_gui_save_done(void)
 				message->sender);
 		if (error) {
 			LOG("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("SaveError", error->errmess);
+			ro_warn_user("SaveError", error->errmess);
 		}
 	}
 
@@ -981,7 +981,7 @@ void ro_gui_save_done(void)
 			error = xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
 			if (error) {
 				LOG("xwimp_create_menu: 0x%x: %s", error->errnum, error->errmess);
-				warn_user("MenuError", error->errmess);
+				ro_warn_user("MenuError", error->errmess);
 			}
 		}
 	}
@@ -1025,7 +1025,7 @@ bool ro_gui_save_complete(hlcache_handle *h, char *path)
 	error = xosfile_create_dir(path, 0);
 	if (error) {
 		LOG("xosfile_create_dir: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("SaveError", error->errmess);
+		ro_warn_user("SaveError", error->errmess);
 		return false;
 	}
 
@@ -1034,7 +1034,7 @@ bool ro_gui_save_complete(hlcache_handle *h, char *path)
 	fp = fopen(buf, "w");
 	if (!fp) {
 		LOG("fopen(): errno = %i", errno);
-		warn_user("SaveError", strerror(errno));
+		ro_warn_user("SaveError", strerror(errno));
 		return false;
 	}
 	fprintf(fp, "IconSprites <Obey$Dir>.!Sprites\n");
@@ -1043,7 +1043,7 @@ bool ro_gui_save_complete(hlcache_handle *h, char *path)
 	error = xosfile_set_type(buf, 0xfeb);
 	if (error) {
 		LOG("xosfile_set_type: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("SaveError", error->errmess);
+		ro_warn_user("SaveError", error->errmess);
 		return false;
 	}
 
@@ -1078,7 +1078,7 @@ bool ro_gui_save_complete(hlcache_handle *h, char *path)
 	error = xosspriteop_save_sprite_file(osspriteop_NAME, saveas_area, buf);
 	if (error) {
 		LOG("xosspriteop_save_sprite_file: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("SaveError", error->errmess);
+		ro_warn_user("SaveError", error->errmess);
 	        return false;
 	}
 
@@ -1110,7 +1110,7 @@ bool ro_gui_save_object_native(hlcache_handle *h, char *path)
 				(byte *) source_data + source_size);
 		if (error != NULL) {
 			LOG("xosfile_save_stamped: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("SaveError", error->errmess);
+			ro_warn_user("SaveError", error->errmess);
 			return false;
 		}
 	} else {
@@ -1151,7 +1151,7 @@ bool ro_gui_save_link(const char *url, const char *title, link_format format,
 	FILE *fp = fopen(path, "w");
 
 	if (!fp) {
-		warn_user("SaveError", strerror(errno));
+		ro_warn_user("SaveError", strerror(errno));
 		return false;
 	}
 
@@ -1309,7 +1309,7 @@ void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 
 		if (error) {
 			LOG("ro_gui_wimp_get_sprite: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("MiscError", error->errmess);
+			ro_warn_user("MiscError", error->errmess);
 		} else {
 			/* the sprite area should always be large enough for
 			 * file_xxx sprites */

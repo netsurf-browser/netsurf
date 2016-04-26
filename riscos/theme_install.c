@@ -63,7 +63,7 @@ void theme_install_start(hlcache_handle *c)
 	assert(content_get_type(c) == CONTENT_THEME);
 
 	if (ro_gui_dialog_open_top(dialog_theme_install, NULL, 0, 0)) {
-		warn_user("ThemeInstActive", 0);
+		ro_warn_user("ThemeInstActive", 0);
 		return;
 	}
 
@@ -102,7 +102,7 @@ nserror theme_install_callback(hlcache_handle *handle,
 		source_data = content_get_source_data(handle, &source_size);
 
 		if (!theme_install_read(source_data, source_size)) {
-			warn_user("ThemeInvalid", 0);
+			ro_warn_user("ThemeInvalid", 0);
 			theme_install_close(dialog_theme_install);
 			break;
 		}
@@ -126,7 +126,7 @@ nserror theme_install_callback(hlcache_handle *handle,
 
 	case CONTENT_MSG_ERROR:
 		theme_install_close(dialog_theme_install);
-		warn_user(event->data.error, 0);
+		ro_warn_user(event->data.error, 0);
 		break;
 
 	default:
@@ -185,7 +185,7 @@ bool ro_gui_theme_install_apply(wimp_w w)
 	theme_file = strdup(theme_install_descriptor.name);
 	if (!theme_file) {
 	  	LOG("malloc failed");
-	  	warn_user("NoMemory", 0);
+	  	ro_warn_user("NoMemory", 0);
 		return false;
 	}
 	for (fix = theme_file; *fix != '\0'; fix++)
@@ -206,7 +206,7 @@ bool ro_gui_theme_install_apply(wimp_w w)
 			(byte *) source_data + source_size);
 	if (error) {
 		LOG("xosfile_save_stamped: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("ThemeInstallErr", 0);
+		ro_warn_user("ThemeInstallErr", 0);
 		free(theme_file);
 		return false;
 	}
@@ -215,7 +215,7 @@ bool ro_gui_theme_install_apply(wimp_w w)
 	ro_gui_theme_get_available();
 	theme_install = ro_gui_theme_find(theme_file);
 	if (!theme_install || !ro_gui_theme_apply(theme_install)) {
-		warn_user("ThemeApplyErr", 0);
+		ro_warn_user("ThemeApplyErr", 0);
 	} else {
             nsoption_set_charp(theme, strdup(theme_install->leafname));
 	}

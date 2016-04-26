@@ -336,12 +336,12 @@ void ro_gui_cert_release_window(struct ro_sslcert *s)
 	error = xwimp_delete_window(s->window);
 	if (error) {
 		LOG("xwimp_delete_window: 0x%x:%s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 	}
 	error = xwimp_delete_window(s->pane);
 	if (error) {
 		LOG("xwimp_delete_window: 0x%x:%s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 	}
 
 	free(s);

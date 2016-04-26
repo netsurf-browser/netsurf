@@ -103,7 +103,7 @@ bool save_as_draw(hlcache_handle *h, const char *path)
 
 	ro_save_draw_diagram = pencil_create();
 	if (!ro_save_draw_diagram) {
-		warn_user("NoMemory", 0);
+		ro_warn_user("NoMemory", 0);
 		return false;
 	}
 
@@ -132,7 +132,7 @@ bool save_as_draw(hlcache_handle *h, const char *path)
 	code = pencil_save_drawfile(ro_save_draw_diagram, "NetSurf",
 			&drawfile_buffer, &drawfile_size);
 	if (code != pencil_OK) {
-		warn_user("SaveError", 0);
+		ro_warn_user("SaveError", 0);
 		pencil_free(ro_save_draw_diagram);
 		return false;
 	}
@@ -143,7 +143,7 @@ bool save_as_draw(hlcache_handle *h, const char *path)
 			(byte *) drawfile_buffer + drawfile_size);
 	if (error) {
 		LOG("xosfile_save_stamped failed: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("SaveError", error->errmess);
+		ro_warn_user("SaveError", error->errmess);
 		pencil_free(ro_save_draw_diagram);
 		return false;
 	}
@@ -401,7 +401,7 @@ bool ro_save_draw_bitmap(int x, int y, int width, int height,
 
 	buffer = riscos_bitmap_get_buffer(bitmap);
 	if (!buffer) {
-		warn_user("NoMemory", 0);
+		ro_warn_user("NoMemory", 0);
 		return false;
 	}
 
@@ -456,15 +456,15 @@ bool ro_save_draw_error(pencil_code code)
 		assert(0);
 		break;
 	case pencil_OUT_OF_MEMORY:
-		warn_user("NoMemory", 0);
+		ro_warn_user("NoMemory", 0);
 		break;
 	case pencil_FONT_MANAGER_ERROR:
-		warn_user("SaveError", rufl_fm_error->errmess);
+		ro_warn_user("SaveError", rufl_fm_error->errmess);
 		break;
 	case pencil_FONT_NOT_FOUND:
 	case pencil_IO_ERROR:
 	case pencil_IO_EOF:
-		warn_user("SaveError", "generating the DrawFile failed");
+		ro_warn_user("SaveError", "generating the DrawFile failed");
 		break;
 	}
 

@@ -25,10 +25,11 @@
 #include <stdlib.h>
 #include "oslib/os.h"
 #include "oslib/wimp.h"
+
 #include "riscos/message.h"
 #include "utils/log.h"
 #include "utils/utils.h"
-
+#include "riscos/gui.h"
 
 struct active_message {
 	unsigned int message_code;
@@ -64,7 +65,7 @@ bool ro_message_send_message(wimp_event_no event, wimp_message *message,
 	error = xwimp_send_message(event, message, task);
 	if (error) {
 		LOG("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
 
@@ -101,7 +102,7 @@ bool ro_message_send_message_to_window(wimp_event_no event, wimp_message *messag
 	error = xwimp_send_message_to_window(event, message, to_w, to_i, to_t);
 	if (error) {
 		LOG("xwimp_send_message_to_window: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
 

@@ -156,7 +156,7 @@ query_id query_user_xy(const char *query, const char *detail,
 
 	qw = malloc(sizeof(struct gui_query_window));
 	if (!qw) {
-		warn_user("NoMemory", NULL);
+		ro_warn_user("NoMemory", NULL);
 		return QUERY_INVALID;
 	}
 
@@ -232,7 +232,7 @@ query_id query_user_xy(const char *query, const char *detail,
 
 	error = xwimp_create_window(query_template, &qw->window);
 	if (error) {
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		free(qw);
 		return QUERY_INVALID;
 	}
@@ -264,7 +264,7 @@ query_id query_user_xy(const char *query, const char *detail,
 	error = xwimp_set_caret_position(qw->window, (wimp_i)-1, 0, 0, 1 << 25, -1);
 	if (error) {
 		LOG("xwimp_get_caret_position: 0x%x : %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 	}
 
 	/* put this query window at the head of our list */
@@ -308,7 +308,7 @@ void ro_gui_query_window_bring_to_front(query_id id)
 		error = xwimp_set_caret_position(qw->window, (wimp_i)-1, 0, 0, 1 << 25, -1);
 		if (error) {
 			LOG("xwimp_get_caret_position: 0x%x : %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 		}
 	}
 }
@@ -328,7 +328,7 @@ void ro_gui_query_close(wimp_w w)
 	error = xwimp_delete_window(qw->window);
 	if (error) {
 		LOG("xwimp_delete_window: 0x%x:%s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 	}
 	ro_gui_wimp_event_finalise(w);
 

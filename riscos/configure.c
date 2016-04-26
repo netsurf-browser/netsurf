@@ -185,7 +185,7 @@ void ro_gui_configure_open_window(wimp_open *open)
 	struct configure_tool *tool;
 
 	if (!ro_gui_configure_translate()) {
-		warn_user("ro_gui_configure_translate failed", 0);
+		ro_warn_user("ro_gui_configure_translate failed", 0);
 		return;
 	}
 
@@ -226,7 +226,7 @@ void ro_gui_configure_open_window(wimp_open *open)
 				0, -16384, 16384, 0);
 		if (error) {
 			LOG("xwimp_force_redraw: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 		}
 	}
 
@@ -249,7 +249,7 @@ void ro_gui_configure_open_window(wimp_open *open)
 		error = xwimp_set_extent(open->w, &extent);
 		if (error) {
 			LOG("xwimp_set_extent: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			return;
 		}
 		configure_height = height;
@@ -260,7 +260,7 @@ void ro_gui_configure_open_window(wimp_open *open)
 	error = xwimp_open_window(open);
 	if (error) {
 		LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 }

@@ -35,6 +35,7 @@
 #include "riscos/wimp.h"
 #include "utils/log.h"
 #include "utils/utils.h"
+#include "riscos/gui.h"
 
 #define THROBBER_SPRITE_NAME_LENGTH 12
 #define THROBBER_ANIMATE_INTERVAL 10
@@ -247,7 +248,7 @@ bool ro_gui_throbber_icon_update(struct throbber *throbber)
 		error = xwimp_create_icon(&icon, &throbber->icon);
 		if (error != NULL) {
 			LOG("xwimp_create_icon: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			throbber->icon = -1;
 			return false;
 		}
@@ -258,7 +259,7 @@ bool ro_gui_throbber_icon_update(struct throbber *throbber)
 		error = xwimp_delete_icon(throbber->window, throbber->icon);
 		if (error != NULL) {
 			LOG("xwimp_delete_icon: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			return false;
 		}
 
@@ -294,7 +295,7 @@ bool ro_gui_throbber_icon_resize(struct throbber *throbber)
 				throbber->extent.x1, throbber->extent.y1);
 		if (error != NULL) {
 			LOG("xwimp_resize_icon: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			throbber->icon = -1;
 			return false;
 		}

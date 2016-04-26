@@ -21,6 +21,7 @@
 #include <unixlib/local.h>
 #include "oslib/mimemap.h"
 #include "oslib/osfile.h"
+
 #include "content/content.h"
 #include "content/fetch.h"
 #include "content/hlcache.h"
@@ -28,6 +29,7 @@
 #include "utils/config.h"
 #include "utils/log.h"
 #include "utils/utils.h"
+#include "riscos/gui.h"
 
 /* type_map must be in sorted order by file_type */
 struct type_entry {
@@ -73,7 +75,7 @@ const char *fetch_filetype(const char *unix_path)
 
 	if (!path) {
 		LOG("Insufficient memory for calloc");
-		warn_user("NoMemory", 0);
+		ro_warn_user("NoMemory", 0);
 		return "application/riscos";
 	}
 
@@ -156,7 +158,7 @@ char *fetch_mimetype(const char *ro_path)
 
 	if (!mime) {
 		LOG("Insufficient memory for calloc");
-		warn_user("NoMemory", 0);
+		ro_warn_user("NoMemory", 0);
 		return 0;
 	}
 
@@ -323,7 +325,7 @@ bits ro_filetype_from_unix_path(const char *unix_path)
 
 	if (!path) {
 		LOG("Insufficient memory for calloc");
-		warn_user("NoMemory", 0);
+		ro_warn_user("NoMemory", 0);
 		return osfile_TYPE_DATA;
 	}
 

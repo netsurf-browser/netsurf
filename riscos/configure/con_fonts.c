@@ -194,7 +194,7 @@ bool ro_gui_options_fonts_init_menu(void)
 
 	default_menu = malloc(wimp_SIZEOF_MENU(5));
 	if (!default_menu) {
-		warn_user("NoMemory", 0);
+		ro_warn_user("NoMemory", 0);
 		return false;
 	}
 	default_menu->title_data.indirected_text.text =

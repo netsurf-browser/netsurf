@@ -232,7 +232,7 @@ ro_font_width(const plot_font_style_t *fstyle,
 			LOG("rufl_width: rufl_FONT_MANAGER_ERROR: 0x%x: %s", rufl_fm_error->errnum, rufl_fm_error->errmess);
 		else
 			LOG("rufl_width: 0x%x", code);
-/* 		warn_user("MiscError", "font error"); */
+/* 		ro_warn_user("MiscError", "font error"); */
 		*width = 0;
 		return false;
 	}
@@ -278,7 +278,7 @@ ro_font_position(const plot_font_style_t *fstyle,
 			LOG("rufl_x_to_offset: rufl_FONT_MANAGER_ERROR: ""0x%x: %s", rufl_fm_error->errnum, rufl_fm_error->errmess);
 		else
 			LOG("rufl_x_to_offset: 0x%x", code);
-/* 		warn_user("MiscError", "font error"); */
+/* 		ro_warn_user("MiscError", "font error"); */
 		*char_offset = 0;
 		*actual_x = 0;
 		return false;
@@ -336,7 +336,7 @@ ro_font_split(const plot_font_style_t *fstyle,
 			LOG("rufl_split: rufl_FONT_MANAGER_ERROR: ""0x%x: %s", rufl_fm_error->errnum, rufl_fm_error->errmess);
 		else
 			LOG("rufl_split: 0x%x", code);
-/* 		warn_user("MiscError", "font error"); */
+/* 		ro_warn_user("MiscError", "font error"); */
 		*char_offset = 0;
 		*actual_x = 0;
 		return false;
@@ -367,7 +367,7 @@ ro_font_split(const plot_font_style_t *fstyle,
 			LOG("rufl_width: rufl_FONT_MANAGER_ERROR: 0x%x: %s", rufl_fm_error->errnum, rufl_fm_error->errmess);
 		else
 			LOG("rufl_width: 0x%x", code);
-/* 		warn_user("MiscError", "font error"); */
+/* 		ro_warn_user("MiscError", "font error"); */
 		*char_offset = 0;
 		*actual_x = 0;
 		return false;
@@ -505,7 +505,7 @@ ro_gui_wimp_desktop_font(char *family,
 	error = xwimpreadsysinfo_font(&font_handle, NULL);
 	if (error) {
 		LOG("xwimpreadsysinfo_font: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		goto failsafe;
 	}
 
@@ -517,7 +517,7 @@ ro_gui_wimp_desktop_font(char *family,
 	error = xfont_read_identifier(font_handle, NULL, &used);
 	if (error) {
 		LOG("xfont_read_identifier: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("MiscError", error->errmess);
+		ro_warn_user("MiscError", error->errmess);
 		goto failsafe;
 	}
 
@@ -530,7 +530,7 @@ ro_gui_wimp_desktop_font(char *family,
 			&ptx, &pty, NULL, NULL, NULL, NULL);
 	if (error) {
 		LOG("xfont_read_defn: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("MiscError", error->errmess);
+		ro_warn_user("MiscError", error->errmess);
 		goto failsafe;
 	}
 

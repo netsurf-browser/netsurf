@@ -144,7 +144,7 @@ bool ro_gui_iconbar_click(wimp_pointer *pointer)
 			nsurl_unref(url);
 		}
 		if (error != NSERROR_OK) {
-			warn_user(messages_get_errorcode(error), 0);
+			ro_warn_user(messages_get_errorcode(error), 0);
 		}
 		break;
 
@@ -215,7 +215,7 @@ bool ro_gui_iconbar_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 			nsurl_unref(url);
 		}
 		if (error != NSERROR_OK) {
-			warn_user(messages_get_errorcode(error), 0);
+			ro_warn_user(messages_get_errorcode(error), 0);
 		}
 		return true;
 	

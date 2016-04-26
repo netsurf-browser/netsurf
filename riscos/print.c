@@ -335,7 +335,7 @@ void print_send_printsave(hlcache_handle *h)
 			(wimp_message *)&m, 0);
 	if (e) {
 		LOG("xwimp_send_message: 0x%x: %s", e->errnum, e->errmess);
-		warn_user("WimpError", e->errmess);
+		ro_warn_user("WimpError", e->errmess);
 		ro_print_cleanup();
 	}
 	print_prev_message = m.my_ref;
@@ -359,7 +359,7 @@ bool print_send_printtypeknown(wimp_message *m)
 	e = xwimp_send_message(wimp_USER_MESSAGE, m, m->sender);
 	if (e) {
 		LOG("xwimp_send_message: 0x%x: %s", e->errnum, e->errmess);
-		warn_user("WimpError", e->errmess);
+		ro_warn_user("WimpError", e->errmess);
 		return false;
 	}
 
@@ -399,9 +399,9 @@ void ro_print_error(wimp_message *m)
 		return;
 
 	if (m->size == 20)
-		warn_user("PrintErrorRO2", 0);
+		ro_warn_user("PrintErrorRO2", 0);
 	else
-		warn_user("PrintError", p->errmess);
+		ro_warn_user("PrintError", p->errmess);
 
 	ro_print_cleanup();
 }
@@ -465,7 +465,7 @@ bool ro_print_ack(wimp_message *m)
 	error = xpdriver_info(&info_type, 0, 0, 0, 0, 0, 0, 0);
 	if (error) {
 		LOG("xpdriver_info: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("PrintError", error->errmess);
+		ro_warn_user("PrintError", error->errmess);
 		ro_print_cleanup();
 		return true;
 	}
@@ -490,7 +490,7 @@ bool ro_print_ack(wimp_message *m)
 	error = xwimp_send_message(wimp_USER_MESSAGE_RECORDED, m, m->sender);
 	if (error) {
 		LOG("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		/* and delete temporary file */
 		xosfile_delete(m->data.data_xfer.file_name,
 				0, 0, 0, 0, 0);
@@ -554,7 +554,7 @@ bool print_document(struct gui_window *g, const char *filename)
 
 	/* no point printing a blank page */
 	if (!h) {
-		warn_user("PrintError", "nothing to print");
+		ro_warn_user("PrintError", "nothing to print");
 		return false;
 	}
 
@@ -562,7 +562,7 @@ bool print_document(struct gui_window *g, const char *filename)
 	error = xpdriver_info(0, 0, 0, &features, 0, 0, 0, 0);
 	if (error) {
 		LOG("xpdriver_info: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("PrintError", error->errmess);
+		ro_warn_user("PrintError", error->errmess);
 		return false;
 	}
 
@@ -570,7 +570,7 @@ bool print_document(struct gui_window *g, const char *filename)
 	error = xpdriver_page_size(0, 0, &left, &bottom, &right, &top);
 	if (error) {
 		LOG("xpdriver_page_size: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("PrintError", error->errmess);
+		ro_warn_user("PrintError", error->errmess);
 		return false;
 	}
 
@@ -593,7 +593,7 @@ bool print_document(struct gui_window *g, const char *filename)
 			osfind_ERROR_IF_ABSENT, filename, 0, &fhandle);
 	if (error) {
 		LOG("xosfind_openoutw: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("PrintError", error->errmess);
+		ro_warn_user("PrintError", error->errmess);
 		return false;
 	}
 
@@ -601,7 +601,7 @@ bool print_document(struct gui_window *g, const char *filename)
 	error = xpdriver_select_jobw(fhandle, "NetSurf", &old_job);
 	if (error) {
 		LOG("xpdriver_select_jobw: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("PrintError", error->errmess);
+		ro_warn_user("PrintError", error->errmess);
 		xosfind_closew(fhandle);
 		return false;
 	}
@@ -737,7 +737,7 @@ bool print_document(struct gui_window *g, const char *filename)
 	error = xosfind_closew(fhandle);
 	if (error) {
 		LOG("xosfind_closew: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("PrintError", error->errmess);
+		ro_warn_user("PrintError", error->errmess);
 		return false;
 	}
 
@@ -745,7 +745,7 @@ bool print_document(struct gui_window *g, const char *filename)
 		error = xpdriver_select_jobw(old_job, 0, 0);
 		if (error) {
 			LOG("xpdriver_select_jobw: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("PrintError", error->errmess);
+			ro_warn_user("PrintError", error->errmess);
 			/* the printing succeeded anyway */
 			return true;
 		}
@@ -769,7 +769,7 @@ error:
 	print_active = false;
 	ro_gui_current_redraw_gui = 0;
 
-	warn_user("PrintError", error_message);
+	ro_warn_user("PrintError", error_message);
 
 	rufl_invalidate_cache();
 

@@ -226,7 +226,7 @@ void ro_gui_search_add_recent(const char *search, void *p)
 
 	tmp = strdup(search);
 	if (!tmp) {
-		warn_user("NoMemory", 0);
+		ro_warn_user("NoMemory", 0);
 		return;
 	}
 	free(search_data.recent_searches[RECENT_SEARCHES - 1]);

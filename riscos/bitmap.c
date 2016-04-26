@@ -274,7 +274,7 @@ bool riscos_bitmap_save(void *vbitmap, const char *path, unsigned flags)
 	os_error *error;
 
 	if (bitmap == NULL) {
-		warn_user("SaveError", messages_get("SprIsNull"));
+		ro_warn_user("SaveError", messages_get("SprIsNull"));
 		return false;
 	}
 
@@ -289,7 +289,7 @@ bool riscos_bitmap_save(void *vbitmap, const char *path, unsigned flags)
 				(bitmap->sprite_area), path);
 		if (error) {
 			LOG("xosspriteop_save_sprite_file: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("SaveError", error->errmess);
+			ro_warn_user("SaveError", error->errmess);
 			return false;
 		}
 		return true;
@@ -319,7 +319,7 @@ bool riscos_bitmap_save(void *vbitmap, const char *path, unsigned flags)
 
 		chunk_buf = malloc(SAVE_CHUNK_SIZE);
 		if (!chunk_buf) {
-			warn_user("NoMemory", NULL);
+			ro_warn_user("NoMemory", NULL);
 			return false;
 		}
 
@@ -350,7 +350,7 @@ bool riscos_bitmap_save(void *vbitmap, const char *path, unsigned flags)
 		if (error) {
 			LOG("xosfind_openoutw: 0x%x: %s", error->errnum, error->errmess);
 			free(chunk_buf);
-			warn_user("SaveError", error->errmess);
+			ro_warn_user("SaveError", error->errmess);
 			return false;
 		}
 
@@ -365,7 +365,7 @@ bool riscos_bitmap_save(void *vbitmap, const char *path, unsigned flags)
 			LOG("xosgbpb_writew: 0x%x: %s", error->errnum, error->errmess);
 			free(chunk_buf);
 			xosfind_closew(fw);
-			warn_user("SaveError", error->errmess);
+			ro_warn_user("SaveError", error->errmess);
 			return false;
 		}
 
@@ -410,7 +410,7 @@ bool riscos_bitmap_save(void *vbitmap, const char *path, unsigned flags)
 				LOG("xosgbpb_writew: 0x%x: %s", error->errnum, error->errmess);
 				free(chunk_buf);
 				xosfind_closew(fw);
-				warn_user("SaveError", error->errmess);
+				ro_warn_user("SaveError", error->errmess);
 				return false;
 			}
 		}
@@ -418,13 +418,13 @@ bool riscos_bitmap_save(void *vbitmap, const char *path, unsigned flags)
 		error = xosfind_closew(fw);
 		if (error) {
 			LOG("xosfind_closew: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("SaveError", error->errmess);
+			ro_warn_user("SaveError", error->errmess);
 		}
 
 		error = xosfile_set_type(path, osfile_TYPE_SPRITE);
 		if (error) {
 			LOG("xosfile_set_type: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("SaveError", error->errmess);
+			ro_warn_user("SaveError", error->errmess);
 		}
 
 		free(chunk_buf);

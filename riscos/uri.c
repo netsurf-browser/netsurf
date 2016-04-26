@@ -82,7 +82,7 @@ void ro_uri_message_received(wimp_message *msg)
 		nsurl_unref(url);
 	}
 	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+		ro_warn_user(messages_get_errorcode(error), 0);
 	}
 }
 

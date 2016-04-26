@@ -578,7 +578,7 @@ bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
 	error = xwimp_get_icon_state(&ic);
 	if (error) {
 		LOG("xwimp_get_icon_state: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
 	button_type = (ic.icon.flags & wimp_ICON_BUTTON_TYPE) >> wimp_ICON_BUTTON_TYPE_SHIFT;
@@ -588,7 +588,7 @@ bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
 	error = xwimp_get_caret_position(&caret);
 	if (error) {
 		LOG("xwimp_get_caret_position: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
 	if ((caret.w != window->w) || (caret.i != event->data.menu_gright.field)) {
@@ -596,7 +596,7 @@ bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
 				-1, -1, -1, strlen(menu_entry->data.indirected_text.text));
 		if (error) {
 			LOG("xwimp_set_caret_position: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 		}
 	}
 	if (window->keypress) {
@@ -705,13 +705,13 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 				error = xwimp_get_window_state(&open);
 				if (error) {
 					LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-					warn_user("WimpError", error->errmess);
+					ro_warn_user("WimpError", error->errmess);
 					return false;
 				}
 				error = xwimp_get_caret_position(&caret);
 				if (error) {
 					LOG("xwimp_get_caret_position: 0x%x: %s", error->errnum, error->errmess);
-					warn_user("WimpError", error->errmess);
+					ro_warn_user("WimpError", error->errmess);
 					return false;
 				}
 				ro_gui_dialog_add_persistent(current_menu_window,
@@ -720,7 +720,7 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 				error = xwimp_open_window(PTR_WIMP_OPEN(&open));
 				if (error) {
 					LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
-					warn_user("WimpError", error->errmess);
+					ro_warn_user("WimpError", error->errmess);
 					return false;
 				}
 				if (caret.w == pointer->w) {
@@ -730,7 +730,7 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 							-1, caret.index);
 					if (error) {
 						LOG("xwimp_set_caret_position: 0x%x: %s", error->errnum, error->errmess);
-						warn_user("WimpError", error->errmess);
+						ro_warn_user("WimpError", error->errmess);
 					}
 				}
 			}
@@ -798,7 +798,7 @@ void ro_gui_wimp_event_prepare_gright_menu(wimp_w w, struct icon_event *event)
 	error = xwimp_get_icon_state(&ic);
 	if (error) {
 		LOG("xwimp_get_icon_state: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 	button_type = (ic.icon.flags & wimp_ICON_BUTTON_TYPE)

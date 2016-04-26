@@ -540,7 +540,7 @@ bool ro_gui_button_bar_icon_update(struct button_bar *button_bar)
 			error = xwimp_create_icon(&icon, &button->icon);
 			if (error) {
 				LOG("xwimp_create_icon: 0x%x: %s", error->errnum, error->errmess);
-				warn_user("WimpError", error->errmess);
+				ro_warn_user("WimpError", error->errmess);
 				button->icon = -1;
 				return false;
 			}
@@ -550,7 +550,7 @@ bool ro_gui_button_bar_icon_update(struct button_bar *button_bar)
 					button->icon);
 			if (error != NULL) {
 				LOG("xwimp_delete_icon: 0x%x: %s", error->errnum, error->errmess);
-				warn_user("WimpError", error->errmess);
+				ro_warn_user("WimpError", error->errmess);
 				return false;
 			}
 
@@ -600,7 +600,7 @@ bool ro_gui_button_bar_icon_resize(struct button_bar *button_bar)
 						button->y_size);
 			if (error != NULL) {
 				LOG("xwimp_resize_icon: 0x%x: %s", error->errnum, error->errmess);
-				warn_user("WimpError", error->errmess);
+				ro_warn_user("WimpError", error->errmess);
 				button->icon = -1;
 				return false;
 			}
@@ -872,7 +872,7 @@ void ro_gui_button_bar_drag_end(wimp_dragged *drag, void *data)
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
 		LOG("xwimp_get_pointer_info: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -882,7 +882,7 @@ void ro_gui_button_bar_drag_end(wimp_dragged *drag, void *data)
 	error = xwimp_get_window_state(&state);
 	if (error) {
 		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -1070,7 +1070,7 @@ char *ro_gui_button_bar_get_config(struct button_bar *button_bar)
 	config = malloc(size);
 	if (config == NULL) {
 		LOG("No memory for malloc()");
-		warn_user("NoMemory", 0);
+		ro_warn_user("NoMemory", 0);
 		return NULL;
 	}
 

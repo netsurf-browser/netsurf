@@ -99,7 +99,7 @@ void ro_gui_401login_open(nsurl *url, lwc_string *host, const char *realm,
 
 	session = calloc(1, sizeof(struct session_401));
 	if (!session) {
-		warn_user("NoMemory", 0);
+		ro_warn_user("NoMemory", 0);
 		return;
 	}
 
@@ -133,7 +133,7 @@ void ro_gui_401login_open(nsurl *url, lwc_string *host, const char *realm,
 		nsurl_unref(session->url);
 		lwc_string_unref(session->host);
 		free(session);
-		warn_user("NoMemory", 0);
+		ro_warn_user("NoMemory", 0);
 		return;
 	}
 
@@ -195,7 +195,7 @@ void ro_gui_401login_close(wimp_w w)
 	error = xwimp_delete_window(w);
 	if (error) {
 		LOG("xwimp_delete_window: 0x%x:%s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 	}
 	ro_gui_wimp_event_finalise(w);
 }
@@ -216,7 +216,7 @@ bool ro_gui_401login_apply(wimp_w w)
 	auth = malloc(strlen(session->uname) + strlen(session->pwd) + 2);
 	if (!auth) {
 		LOG("calloc failed");
-		warn_user("NoMemory", 0);
+		ro_warn_user("NoMemory", 0);
 		return false;
 	}
 

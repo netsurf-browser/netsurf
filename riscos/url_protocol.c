@@ -65,7 +65,7 @@ void ro_url_message_received(wimp_message *message)
 	if (url_message->indirect.tag != 0) {
 		url = strndup(url_message->url, 236);
 		if (!url) {
-			warn_user("NoMemory", 0);
+			ro_warn_user("NoMemory", 0);
 			return;
 		}
 		/* terminate at first control character */
@@ -96,7 +96,7 @@ void ro_url_message_received(wimp_message *message)
 				url_message->indirect.url.offset,
 				236 - url_message->indirect.url.offset);
 		if (!url) {
-			warn_user("NoMemory", 0);
+			ro_warn_user("NoMemory", 0);
 			return;
 		}
 		for (i = 0; !iscntrl(url[i]); i++)
@@ -123,7 +123,7 @@ void ro_url_message_received(wimp_message *message)
 			message->sender);
 	if (error) {
 		LOG("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 	}
 
 	/* create new browser window */
@@ -136,7 +136,7 @@ void ro_url_message_received(wimp_message *message)
 
 	nsurl_unref(nsurl);
 	if (errorns != NSERROR_OK) {
-		warn_user(messages_get_errorcode(errorns), 0);
+		ro_warn_user(messages_get_errorcode(errorns), 0);
 	}
 }
 
@@ -166,7 +166,7 @@ void ro_url_broadcast(const char *url)
 			(wimp_message *) &message, 0);
 	if (error) {
 		LOG("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 	}
 }
 
@@ -190,7 +190,7 @@ void ro_url_load(const char *url)
 
 	command = malloc(40 + (colon - url) + strlen(url));
 	if (!command) {
-		warn_user("NoMemory", 0);
+		ro_warn_user("NoMemory", 0);
 		return;
 	}
 
@@ -205,7 +205,7 @@ void ro_url_load(const char *url)
 	error = xwimp_start_task(command, 0);
 	if (error) {
 		LOG("xwimp_start_task: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 	}
 
 	free(command);

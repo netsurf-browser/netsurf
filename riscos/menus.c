@@ -224,7 +224,7 @@ void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w)
 	definition = ro_gui_menu_find_menu(menu);
 	if (definition) {
 		if (!ro_gui_menu_translate(definition)) {
-			warn_user("NoMemory", 0);
+			ro_warn_user("NoMemory", 0);
 			return;
 		}
 	}
@@ -239,7 +239,7 @@ void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w)
 	error = xwimp_create_menu(menu, x - 64, y);
 	if (error) {
 		LOG("xwimp_create_menu: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("MenuError", error->errmess);
+		ro_warn_user("MenuError", error->errmess);
 		ro_gui_menu_closed();
 	}
 }
@@ -265,14 +265,14 @@ void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i)
 	error = xwimp_get_window_state(&state);
 	if (error) {
 		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("MenuError", error->errmess);
+		ro_warn_user("MenuError", error->errmess);
 		return;
 	}
 
 	error = xwimp_get_icon_state(&icon_state);
 	if (error) {
 		LOG("xwimp_get_icon_state: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("MenuError", error->errmess);
+		ro_warn_user("MenuError", error->errmess);
 		return;
 	}
 
@@ -298,7 +298,7 @@ void ro_gui_menu_destroy(void)
 	error = xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
 	if (error) {
 		LOG("xwimp_create_menu: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("MenuError", error->errmess);
+		ro_warn_user("MenuError", error->errmess);
 	}
 
 	ro_gui_menu_closed();
@@ -361,7 +361,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
 		LOG("xwimp_get_pointer_info: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		ro_gui_menu_closed();
 		return;
 	}
@@ -427,7 +427,7 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 			warning->pos.x, warning->pos.y);
 	if (error) {
 		LOG("xwimp_create_sub_menu: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("MenuError", error->errmess);
+		ro_warn_user("MenuError", error->errmess);
 	}
 }
 
@@ -492,7 +492,7 @@ void ro_gui_menu_refresh(wimp_menu *menu)
 		error = xwimp_create_menu(current_menu, 0, 0);
 		if (error) {
 			LOG("xwimp_create_menu: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("MenuError", error->errmess);
+			ro_warn_user("MenuError", error->errmess);
 		}
 	}
 }
@@ -858,7 +858,7 @@ int ro_gui_menu_get_checksum(void)
 			&menu_tree, 0, 0);
 	if (error) {
 		LOG("xwimp_get_menu_state: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("MenuError", error->errmess);
+		ro_warn_user("MenuError", error->errmess);
 		return 0;
 	}
 

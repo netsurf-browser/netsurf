@@ -235,7 +235,7 @@ static bool ro_gui_url_bar_icon_resize(struct url_bar *url_bar, bool full)
 				x0, y0, x1, y1);
 		if (error != NULL) {
 			LOG("xwimp_resize_icon: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			url_bar->container_icon = -1;
 			return false;
 		}
@@ -255,7 +255,7 @@ static bool ro_gui_url_bar_icon_resize(struct url_bar *url_bar, bool full)
 				x0, y0, x1, y1);
 		if (error != NULL) {
 			LOG("xwimp_resize_icon: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			url_bar->suggest_icon = -1;
 			return false;
 		}
@@ -276,7 +276,7 @@ static bool ro_gui_url_bar_icon_resize(struct url_bar *url_bar, bool full)
 				x0, y0, x1, y1);
 		if (error != NULL) {
 			LOG("xwimp_resize_icon: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			url_bar->text_icon = -1;
 			return false;
 		}
@@ -357,7 +357,7 @@ static bool ro_gui_url_bar_icon_update(struct url_bar *url_bar)
 		error = xwimp_create_icon(&icon, &url_bar->container_icon);
 		if (error != NULL) {
 			LOG("xwimp_create_icon: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			url_bar->container_icon = -1;
 			return false;
 		}
@@ -368,7 +368,7 @@ static bool ro_gui_url_bar_icon_update(struct url_bar *url_bar)
 				url_bar->container_icon);
 		if (error != NULL) {
 			LOG("xwimp_delete_icon: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			return false;
 		}
 
@@ -394,7 +394,7 @@ static bool ro_gui_url_bar_icon_update(struct url_bar *url_bar)
 		error = xwimp_create_icon(&icon, &url_bar->text_icon);
 		if (error) {
 			LOG("xwimp_create_icon: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			url_bar->text_icon = -1;
 			return false;
 		}
@@ -405,7 +405,7 @@ static bool ro_gui_url_bar_icon_update(struct url_bar *url_bar)
 				url_bar->text_icon);
 		if (error != NULL) {
 			LOG("xwimp_delete_icon: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			return false;
 		}
 
@@ -425,7 +425,7 @@ static bool ro_gui_url_bar_icon_update(struct url_bar *url_bar)
 		error = xwimp_create_icon(&icon, &url_bar->suggest_icon);
 		if (error) {
 			LOG("xwimp_create_icon: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			return false;
 		}
 
@@ -445,7 +445,7 @@ static bool ro_gui_url_bar_icon_update(struct url_bar *url_bar)
 				url_bar->suggest_icon);
 		if (error != NULL) {
 			LOG("xwimp_delete_icon: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			return false;
 		}
 
@@ -856,7 +856,7 @@ bool ro_gui_url_bar_menu_select(struct url_bar *url_bar, wimp_i i,
 
 		error = nsurl_create(urltxt, &url);
 		if (error != NSERROR_OK) {
-			warn_user(messages_get_errorcode(error), 0);
+			ro_warn_user(messages_get_errorcode(error), 0);
 		} else {
 			ro_gui_window_set_url(g, url);
 
@@ -935,7 +935,7 @@ bool ro_gui_url_bar_take_caret(struct url_bar *url_bar)
 			-1, -1, -1, 0);
 	if (error) {
 		LOG("xwimp_set_caret_position: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 
 		return false;
 	}
@@ -986,7 +986,7 @@ void ro_gui_url_bar_set_url(struct url_bar *url_bar, const char *url,
 
 	if (strlen(local_url) >= url_bar->text_size) {
 		url_bar->text_buffer[0] = '\0';
-		warn_user("LongURL", NULL);
+		ro_warn_user("LongURL", NULL);
 		LOG("Long URL (%zu chars): %s", strlen(url), url);
 	} else {
 		strncpy(url_bar->text_buffer, local_url,
@@ -1016,7 +1016,7 @@ void ro_gui_url_bar_set_url(struct url_bar *url_bar, const char *url,
 	error = xwimp_get_caret_position(&caret);
 	if (error) {
 		LOG("xwimp_get_caret_position: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -1029,7 +1029,7 @@ void ro_gui_url_bar_set_url(struct url_bar *url_bar, const char *url,
 				url_bar->text_icon, 0, 0, -1, strlen(set_url));
 		if (error) {
 			LOG("xwimp_set_caret_position: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 		}
 	}
 }
@@ -1118,7 +1118,7 @@ bool ro_gui_url_bar_get_url_extent(struct url_bar *url_bar, os_box *extent)
 	error = xwimp_get_icon_state(&state);
 	if (error) {
 		LOG("xwimp_get_icon_state: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
 

@@ -19,11 +19,17 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include "oslib/osspriteop.h"
-#include "oslib/wimp.h"
-#include "oslib/wimpspriteop.h"
+#include <oslib/osspriteop.h>
+#include <oslib/wimp.h>
+#include <oslib/wimpspriteop.h>
+
 #include "utils/config.h"
 #include "utils/nsoption.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+
+#include "riscos/gui.h"
 #include "riscos/configure/configure.h"
 #include "riscos/configure.h"
 #include "riscos/dialog.h"
@@ -34,9 +40,6 @@
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
 
 
 #define THEME_PANE_AREA 0
@@ -175,7 +178,7 @@ void ro_gui_options_theme_finalise(wimp_w w)
 		error = xwimp_delete_window(theme_pane);
 		if (error) {
 			LOG("xwimp_delete_window: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 		}
 		theme_pane = 0;
 	}
@@ -268,7 +271,7 @@ void ro_gui_options_theme_load(void)
 			toolbar_display = calloc(sizeof(struct toolbar_display), 1);
 			if (!toolbar_display) {
 				LOG("No memory for calloc()");
-				warn_user("NoMemory", 0);
+				ro_warn_user("NoMemory", 0);
 				return;
 			}
 			toolbar_display->toolbar = toolbar;
@@ -290,7 +293,7 @@ void ro_gui_options_theme_load(void)
 	error = xwimp_get_window_state(&state);
 	if (error) {
 		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 

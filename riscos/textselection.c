@@ -98,7 +98,7 @@ void gui_start_selection(struct gui_window *g)
 	error = xwimp_get_window_state(&state);
 	if (error) {
 		LOG("xwimp_get_window_state 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -112,7 +112,7 @@ void gui_start_selection(struct gui_window *g)
 			(wimp_message*)&msg, wimp_BROADCAST);
 	if (error) {
 		LOG("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 	}
 	owns_caret_and_selection = true;
 
@@ -142,7 +142,7 @@ void gui_start_selection(struct gui_window *g)
 	error = xwimp_drag_box(&drag);
 	if (error) {
 		LOG("xwimp_drag_box: 0x%x : %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 	}
 	last_start_window = g;
 }
@@ -171,13 +171,13 @@ static void ro_gui_selection_drag_end(wimp_dragged *drag, void *data)
 	error = xwimp_drag_box((wimp_drag*)-1);
 	if (error) {
 		LOG("xwimp_drag_box: 0x%x : %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 	}
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
 		LOG("xwimp_get_pointer_info 0x%x : %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -228,7 +228,7 @@ static void gui_set_clipboard(const char *buffer, size_t length,
 				(wimp_message*)&msg, wimp_BROADCAST);
 		if (error) {
 			LOG("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 		}
 		owns_clipboard = true;
 	}
@@ -513,7 +513,7 @@ bool ro_gui_save_clipboard(const char *path)
 
 	ret = utf8_to_local_encoding(clipboard, clip_length, &local_cb);
 	if (ret != NSERROR_OK) {
-		warn_user("SaveError", "Could not convert");
+		ro_warn_user("SaveError", "Could not convert");
 		return false;
 	}
 
@@ -525,7 +525,7 @@ bool ro_gui_save_clipboard(const char *path)
 
 	if (error) {
 		LOG("xosfile_save_stamped: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("SaveError", error->errmess);
+		ro_warn_user("SaveError", error->errmess);
 		return false;
 	}
 

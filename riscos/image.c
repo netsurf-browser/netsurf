@@ -184,7 +184,7 @@ bool image_redraw_os(osspriteop_id header, int x, int y, int req_width,
 	table = calloc(size, sizeof(char));
 	if (!table) {
 		LOG("malloc failed");
-		warn_user("NoMemory", 0);
+		ro_warn_user("NoMemory", 0);
 		return false;
 	}
 

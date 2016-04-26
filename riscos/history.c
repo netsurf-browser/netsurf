@@ -101,7 +101,7 @@ void ro_gui_history_open(struct gui_window *g, bool at_pointer)
 	error = xwimp_set_extent(history_window, &box);
 	if (error) {
 		LOG("xwimp_set_extent: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -110,7 +110,7 @@ void ro_gui_history_open(struct gui_window *g, bool at_pointer)
 	error = xwimp_get_window_state(&state);
 	if (error) {
 		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 	state.visible.x0 = 0;
@@ -121,7 +121,7 @@ void ro_gui_history_open(struct gui_window *g, bool at_pointer)
 	error = xwimp_open_window(PTR_WIMP_OPEN(&state));
 	if (error) {
 		LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -146,7 +146,7 @@ void ro_gui_history_redraw(wimp_draw *redraw)
 	error = xwimp_redraw_window(redraw, &more);
 	if (error) {
 		LOG("xwimp_redraw_window: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 	while (more) {
@@ -156,7 +156,7 @@ void ro_gui_history_redraw(wimp_draw *redraw)
 		error = xwimp_get_rectangle(redraw, &more);
 		if (error) {
 			LOG("xwimp_get_rectangle: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			return;
 		}
 	}
@@ -220,7 +220,7 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer, void *data)
 	error = xwimp_get_window_state(&state);
 	if (error) {
 		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -232,7 +232,7 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer, void *data)
 		error = xwimp_close_window(dialog_tooltip);
 		if (error) {
 			LOG("xwimp_close_window: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			return;
 		}
 		return;
@@ -244,7 +244,7 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer, void *data)
 			&width);
 	if (error) {
 		LOG("xwimptextop_string_width: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -256,7 +256,7 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer, void *data)
 	error = xwimp_get_icon_state(&ic);
 	if (error) {
 		LOG("xwimp_get_icon_state: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 	error = xwimp_resize_icon(dialog_tooltip, 0,
@@ -264,7 +264,7 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer, void *data)
 			width + 16, ic.icon.extent.y1);
 	if (error) {
 		LOG("xwimp_resize_icon: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -272,7 +272,7 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer, void *data)
 	error = xwimp_get_window_state(&state);
 	if (error) {
 		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -282,7 +282,7 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer, void *data)
 	error = xwimp_set_extent(dialog_tooltip, &box);
 	if (error) {
 		LOG("xwimp_set_extent: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -296,7 +296,7 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer, void *data)
 	error = xwimp_open_window(PTR_WIMP_OPEN(&state));
 	if (error) {
 		LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 }
@@ -323,7 +323,7 @@ bool ro_gui_history_click(wimp_pointer *pointer)
 	error = xwimp_get_window_state(&state);
 	if (error) {
 		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return true;
 	}
 

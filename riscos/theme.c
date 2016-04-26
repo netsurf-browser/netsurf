@@ -186,7 +186,7 @@ static void ro_gui_theme_get_available_in_dir(const char *directory)
 				error->errnum, error->errmess);
 			if (error->errnum == 0xd6)	/* no such dir */
 				return;
-			warn_user("MiscError", error->errmess);
+			ro_warn_user("MiscError", error->errmess);
 			break;
 		}
 
@@ -367,7 +367,7 @@ bool ro_gui_theme_add_descriptor(const char *folder, const char *leafname)
 	filename = malloc(strlen(folder) + strlen(leafname) + 2);
 	if (!filename) {
 	  	LOG("No memory for malloc");
-	  	warn_user("NoMemory", 0);
+	  	ro_warn_user("NoMemory", 0);
 	  	return false;
 	}
 	sprintf(filename, "%s.%s", folder, leafname);
@@ -377,7 +377,7 @@ bool ro_gui_theme_add_descriptor(const char *folder, const char *leafname)
 			&file_handle);
 	if (error) {
 		LOG("xosfind_openinw: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("FileError", error->errmess);
+		ro_warn_user("FileError", error->errmess);
 		free(filename);
 		return false;
 	}
@@ -392,7 +392,7 @@ bool ro_gui_theme_add_descriptor(const char *folder, const char *leafname)
 	xosfind_closew(file_handle);
 	if (error) {
 		LOG("xosbgpb_read_atw: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("FileError", error->errmess);
+		ro_warn_user("FileError", error->errmess);
 		free(filename);
 		return false;
 	}
@@ -406,7 +406,7 @@ bool ro_gui_theme_add_descriptor(const char *folder, const char *leafname)
 			sizeof(struct theme_descriptor));
 	if (!current) {
 		LOG("calloc failed");
-		warn_user("NoMemory", 0);
+		ro_warn_user("NoMemory", 0);
 		free(filename);
 		return false;
 	}
@@ -524,7 +524,7 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list)
 				sizeof(struct theme));
 		if (!descriptor->theme) {
 			LOG("calloc() failed");
-			warn_user("NoMemory", 0);
+			ro_warn_user("NoMemory", 0);
 			continue;
 		}
 		descriptor->theme->users = 1;
@@ -534,7 +534,7 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list)
 				&obj_type, 0, 0, &file_size, 0, 0);
 		if (error) {
 			LOG("xosfile_read_stamped_no_path: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("FileError", error->errmess);
+			ro_warn_user("FileError", error->errmess);
 			continue;
 		}
 		if (obj_type != fileswitch_IS_FILE)
@@ -542,7 +542,7 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list)
 		raw_data = malloc(file_size);
 		if (!raw_data) {
 			LOG("malloc() failed");
-			warn_user("NoMemory", 0);
+			ro_warn_user("NoMemory", 0);
 			continue;
 		}
 		error = xosfile_load_stamped_no_path(descriptor->filename,
@@ -550,7 +550,7 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list)
 		if (error) {
 			free(raw_data);
 			LOG("xosfile_load_stamped_no_path: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("FileError", error->errmess);
+			ro_warn_user("FileError", error->errmess);
 			continue;
 		}
 
@@ -559,7 +559,7 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list)
 		if (error) {
 			free(raw_data);
 			LOG("xsquash_decompress_return_sizes: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("MiscError", error->errmess);
+			ro_warn_user("MiscError", error->errmess);
 			continue;
 		}
 		decompressed = (osspriteop_area *)malloc(
@@ -569,7 +569,7 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list)
 			free(decompressed);
 			free(raw_data);
 			LOG("malloc() failed");
-			warn_user("NoMemory", 0);
+			ro_warn_user("NoMemory", 0);
 			continue;
 		}
 		error = xsquash_decompress(squash_INPUT_ALL_PRESENT, workspace,
@@ -584,7 +584,7 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list)
 		if (error) {
 			free(decompressed);
 			LOG("xsquash_decompress: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("MiscError", error->errmess);
+			ro_warn_user("MiscError", error->errmess);
 			continue;
 		}
 		if (status != 0) {
@@ -602,7 +602,7 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list)
 					sprite_name, 16, i, 0);
 			if (error) {
 				LOG("xosspriteop_return_name: 0x%x: %s", error->errnum, error->errmess);
-				warn_user("MiscError", error->errmess);
+				ro_warn_user("MiscError", error->errmess);
 				continue;
 			}
 			if (strncmp(sprite_name, "throbber", 8))
@@ -617,7 +617,7 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list)
 					(osbool *) 0, &mode);
 			if (error) {
 				LOG("xosspriteop_read_sprite_info: 0x%x: %s", error->errnum, error->errmess);
-				warn_user("MiscError", error->errmess);
+				ro_warn_user("MiscError", error->errmess);
 				continue;
 			}
 			ro_convert_pixels_to_os_units(&dimensions, mode);

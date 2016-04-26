@@ -234,7 +234,7 @@ void ro_gui_hotlist_open(void)
 			return;
 
 		LOG("xos_cli: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("Failed to launch external hotlist: %s",
+		ro_warn_user("Failed to launch external hotlist: %s",
 				error->errmess);
 	}
 

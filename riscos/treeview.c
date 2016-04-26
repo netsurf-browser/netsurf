@@ -312,7 +312,7 @@ void ro_treeview_redraw_request(int x, int y, int width, int height,
 		error = xwimp_update_window(&update, &more);
 		if (error) {
 			LOG("xwimp_update_window: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			return;
 		}
 		ro_treeview_redraw_loop(&update, tv, more);
@@ -343,7 +343,7 @@ void ro_treeview_redraw(wimp_draw *redraw)
 	error = xwimp_redraw_window(redraw, &more);
 	if (error) {
 		LOG("xwimp_redraw_window: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -457,7 +457,7 @@ void ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv, osbool more)
 		error = xwimp_get_rectangle(redraw, &more);
 		if (error) {
 			LOG("xwimp_redraw_window: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			return;
 		}
 	}
@@ -510,7 +510,7 @@ void ro_treeview_scroll_visible(int y, int height, void *pw)
 		error = xwimp_get_window_state(&state);
 		if (error) {
 			LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			return;
 		}
 
@@ -548,7 +548,7 @@ void ro_treeview_scroll_visible(int y, int height, void *pw)
 		 	error = xwimp_open_window((wimp_open *) &state);
 		 	if (error) {
 				LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
-				warn_user("WimpError", error->errmess);
+				ro_warn_user("WimpError", error->errmess);
 				return;
 			}
 		}
@@ -575,7 +575,7 @@ void ro_treeview_get_window_dimensions(int *width, int *height,
 		error = xwimp_get_window_state(&state);
 		if (error) {
 			LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			return;
 		}
 
@@ -617,7 +617,7 @@ void ro_treeview_set_window_extent(ro_treeview *tv, int width, int height)
 		error = xwimp_get_window_state(&state);
 		if (error) {
 			LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			return;
 		}
 
@@ -676,7 +676,7 @@ void ro_treeview_set_window_extent(ro_treeview *tv, int width, int height)
 			error = xwimp_open_window((wimp_open *) &state);
 			if (error) {
 				LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-				warn_user("WimpError", error->errmess);
+				ro_warn_user("WimpError", error->errmess);
 				return;
 			}
 
@@ -700,7 +700,7 @@ void ro_treeview_set_window_extent(ro_treeview *tv, int width, int height)
 		error = xwimp_set_extent(tv->w, &extent);
 		if (error) {
 			LOG("xwimp_set_extent: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			return;
 		}
 
@@ -753,7 +753,7 @@ static void ro_treeview_open(wimp_open *open)
 		error = xwimp_set_extent(tv->w, &extent);
 		if (error) {
 			LOG("xwimp_set_extent: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			return;
 		}
 
@@ -766,7 +766,7 @@ static void ro_treeview_open(wimp_open *open)
 	error = xwimp_open_window(open);
 	if (error) {
 		LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 	}
 
 	if (tv->tb)
@@ -800,7 +800,7 @@ static bool ro_treeview_mouse_click(wimp_pointer *pointer)
 	error = xwimp_get_window_state(&state);
 	if (error) {
 		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
 
@@ -938,7 +938,7 @@ void ro_treeview_mouse_at(wimp_pointer *pointer, void *data)
 	error = xwimp_get_window_state(&state);
 	if (error) {
 		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -1022,7 +1022,7 @@ static void ro_treeview_drag_start(ro_treeview *tv, wimp_pointer *pointer,
 			wimp_DRAG_BOX_KEEP_IN_LINE | wimp_DRAG_BOX_CLIP);
 	if (error) {
 		LOG("xwimp_drag_box: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 	} else {
 		auto_scroll.w = tv->w;
 		auto_scroll.pause_zone_sizes.x0 = 80;
@@ -1037,7 +1037,7 @@ static void ro_treeview_drag_start(ro_treeview *tv, wimp_pointer *pointer,
 				&auto_scroll, NULL);
 		if (error) {
 			LOG("xwimp_auto_scroll: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 		}
 		
 		ro_mouse_drag_start(ro_treeview_drag_end, ro_treeview_mouse_at,
@@ -1061,13 +1061,13 @@ static void ro_treeview_drag_end(wimp_dragged *drag, void *data)
 	error = xwimp_drag_box((wimp_drag *) -1);
 	if (error) {
 		LOG("xwimp_drag_box: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 	}
 
 	error = xwimp_auto_scroll(0, NULL, NULL);
 	if (error) {
 		LOG("xwimp_auto_scroll: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 	}
 }
 

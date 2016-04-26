@@ -168,7 +168,7 @@ void ro_gui_interactive_help_request(wimp_message *message)
 				&menu_tree, window, icon);
 	if (error) {
 		LOG("xwimp_get_menu_state: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 	if (menu_tree.items[0] == -1)
@@ -271,7 +271,7 @@ static void ro_gui_interactive_help_broadcast(wimp_message *message,
 			reply->sender);
 	if (error) {
 		LOG("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess);
-		warn_user("WimpError", error->errmess);
+		ro_warn_user("WimpError", error->errmess);
 	}
 }
 
@@ -299,7 +299,7 @@ bool ro_gui_interactive_help_available(void)
 				sizeof(taskmanager_task), &context, 0);
 		if (error) {
 			LOG("xtaskmanager_enumerate_tasks: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("MiscError", error->errmess);
+			ro_warn_user("MiscError", error->errmess);
 		}
 
 		/* we can't just use strcmp due to string termination issues */
@@ -336,7 +336,7 @@ void ro_gui_interactive_help_start(void)
 		error = xwimp_start_task("<Help$Start>", &task);
 		if (error) {
 			LOG("xwimp_start_tast: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			return;
 		}
 	}
@@ -346,7 +346,7 @@ void ro_gui_interactive_help_start(void)
 		error = xwimp_start_task("Resources:$.Apps.!Help", &task);
 		if (error) {
 			LOG("xwimp_start_tast: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 			return;
 		}
 	}
@@ -356,7 +356,7 @@ void ro_gui_interactive_help_start(void)
 		error = xos_read_monotonic_time(&help_time);
 		if (error) {
 			LOG("xwimp_read_monotonic_time: 0x%x: %s", error->errnum, error->errmess);
-			warn_user("WimpError", error->errmess);
+			ro_warn_user("WimpError", error->errmess);
 		}
 	}
 }
