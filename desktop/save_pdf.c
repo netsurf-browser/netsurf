@@ -784,9 +784,9 @@ void pdf_end(void)
 }
 
 /** saves the pdf with optional encryption */
-void save_pdf(const char *path)
+nserror save_pdf(const char *path)
 {
-	bool success = false;
+	nserror res = NSERROR_OK;
 
 	if (option_enable_PDF_password && owner_pass != NULL ) {
 		HPDF_SetPassword(pdf_doc, owner_pass, user_pass);
@@ -796,17 +796,16 @@ void save_pdf(const char *path)
 	}
 
 	if (path != NULL) {
-		if (HPDF_SaveToFile(pdf_doc, path) != HPDF_OK)
+		if (HPDF_SaveToFile(pdf_doc, path) != HPDF_OK) {
 			remove(path);
-		else
-			success = true;
+			res = NSERROR_SAVE_FAILED;
+		}
 	}
-
-	if (!success)
-		warn_user("Unable to save PDF file.", 0);
 
 	HPDF_Free(pdf_doc);
 	pdf_doc = NULL;
+
+	return res;
 }
 
 
@@ -982,7 +981,8 @@ void pdfw_gs_dash(HPDF_Page page, DashPattern_e dash)
 }
 
 #else
-void save_pdf(const char *path)
+nserror save_pdf(const char *path)
 {
+	return NSERROR_NOT_IMPLEMENTED;
 }
 #endif /* WITH_PDF_EXPORT */
