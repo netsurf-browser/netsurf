@@ -147,10 +147,11 @@ void browser_window_handle_scrollbars(struct browser_window *bw)
 
 		if (bw->scroll_y == NULL) {
 			/* create vertical scrollbar */
-			if (!scrollbar_create(false, length, c_height, visible,
-					bw, browser_window_scroll_callback,
-					&(bw->scroll_y)))
+			if (scrollbar_create(false, length, c_height, visible,
+					     bw, browser_window_scroll_callback,
+					     &(bw->scroll_y)) != NSERROR_OK) {
 				return;
+			}
 		} else {
 			/* update vertical scrollbar */
 			scrollbar_set_extents(bw->scroll_y, length,
@@ -164,10 +165,11 @@ void browser_window_handle_scrollbars(struct browser_window *bw)
 
 		if (bw->scroll_x == NULL) {
 			/* create horizontal scrollbar */
-			if (!scrollbar_create(true, length, c_width, visible,
-					bw, browser_window_scroll_callback,
-					&(bw->scroll_x)))
+			if (scrollbar_create(true, length, c_width, visible,
+					     bw, browser_window_scroll_callback,
+					     &(bw->scroll_x)) != NSERROR_OK) {
 				return;
+			}
 		} else {
 			/* update horizontal scrollbar */
 			scrollbar_set_extents(bw->scroll_x, length,

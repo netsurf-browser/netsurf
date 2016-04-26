@@ -1131,13 +1131,13 @@ bool form_open_select_menu(void *client_data,
 		}
 		menu->client_data = client_data;
 		menu->callback = callback;
-		if (!scrollbar_create(false,
+		if (scrollbar_create(false,
 				menu->height,
     				total_height,
 				menu->height,
 				control,
 				form_select_menu_scroll_callback,
-				&(menu->scrollbar))) {
+				&(menu->scrollbar)) != NSERROR_OK) {
 			free(menu);
 			return false;
 		}

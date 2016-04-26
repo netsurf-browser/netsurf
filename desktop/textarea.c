@@ -1029,10 +1029,11 @@ static bool textarea_reflow_multiline(struct textarea *ta,
 			if (x > avail_width && ta->bar_x == NULL) {
 				/* We need to insert a horizontal scrollbar */
 				int w = ta->vis_width - 2 * ta->border_width;
-				if (!scrollbar_create(true, w, w, w,
+				if (scrollbar_create(true, w, w, w,
 						ta, textarea_scrollbar_callback,
-						&(ta->bar_x)))
+						     &(ta->bar_x)) != NSERROR_OK) {
 					return false;
+				}
 				if (ta->bar_y != NULL)
 					scrollbar_make_pair(ta->bar_x,
 							ta->bar_y);
@@ -1120,10 +1121,11 @@ static bool textarea_reflow_multiline(struct textarea *ta,
 		if (line > scroll_lines && ta->bar_y == NULL) {
 			/* Add vertical scrollbar */
 			int h = ta->vis_height - 2 * ta->border_width;
-			if (!scrollbar_create(false, h, h, h,
-					ta, textarea_scrollbar_callback,
-					&(ta->bar_y)))
+			if (scrollbar_create(false, h, h, h,
+					     ta, textarea_scrollbar_callback,
+					     &(ta->bar_y)) != NSERROR_OK) {
 				return false;
+			}
 			if (ta->bar_x != NULL)
 				scrollbar_make_pair(ta->bar_x,
 						ta->bar_y);

@@ -70,9 +70,9 @@ struct scrollbar {
 
 
 /*
- * Exported function.  Documented in scrollbar.h
+ * Exported function.  Documented in desktop/scrollbar.h
  */
-bool scrollbar_create(bool horizontal, int length, int full_size,
+nserror scrollbar_create(bool horizontal, int length, int full_size,
 		int visible_size, void *client_data,
 		scrollbar_client_callback client_callback,
 		struct scrollbar **s)
@@ -82,10 +82,8 @@ bool scrollbar_create(bool horizontal, int length, int full_size,
 
 	scrollbar = malloc(sizeof(struct scrollbar));
 	if (scrollbar == NULL) {
-		LOG("malloc failed");
-		warn_user("NoMemory", 0);
 		*s = NULL;
-		return false;
+		return NSERROR_NOMEM;
 	}
 
 	scrollbar->horizontal = horizontal;
@@ -109,7 +107,7 @@ bool scrollbar_create(bool horizontal, int length, int full_size,
 
 	*s = scrollbar;
 
-	return true;
+	return NSERROR_OK;
 }
 
 
