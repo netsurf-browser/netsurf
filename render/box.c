@@ -28,19 +28,23 @@
 #include <stdio.h>
 #include <string.h>
 #include <dom/dom.h>
+
+#include "utils/nsoption.h"
+#include "utils/log.h"
+#include "utils/talloc.h"
+#include "utils/utils.h"
 #include "content/content_protected.h"
 #include "content/hlcache.h"
 #include "css/css.h"
 #include "css/utils.h"
 #include "css/dump.h"
 #include "desktop/scrollbar.h"
-#include "utils/nsoption.h"
+#include "desktop/gui_misc.h"
+#include "desktop/gui_internal.h"
+
 #include "render/box.h"
 #include "render/form_internal.h"
 #include "render/html_internal.h"
-#include "utils/log.h"
-#include "utils/talloc.h"
-#include "utils/utils.h"
 
 #define box_is_float(box) (box->type == BOX_FLOAT_LEFT || \
 		box->type == BOX_FLOAT_RIGHT)
@@ -1146,7 +1150,7 @@ bool box_handle_scrollbars(struct content *c, struct box *box,
 			data = malloc(sizeof(struct html_scrollbar_data));
 			if (data == NULL) {
 				LOG("malloc failed");
-				warn_user("NoMemory", 0);
+				guit->misc->warning("NoMemory", 0);
 				return false;
 			}
 			data->c = c;
@@ -1167,7 +1171,7 @@ bool box_handle_scrollbars(struct content *c, struct box *box,
 			data = malloc(sizeof(struct html_scrollbar_data));
 			if (data == NULL) {
 				LOG("malloc failed");
-				warn_user("NoMemory", 0);
+				guit->misc->warning("NoMemory", 0);
 				return false;
 			}
 			data->c = c;

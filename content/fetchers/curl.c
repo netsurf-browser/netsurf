@@ -53,6 +53,7 @@
 #include "utils/file.h"
 #include "utils/string.h"
 #include "desktop/gui_fetch.h"
+#include "desktop/gui_misc.h"
 #include "desktop/gui_internal.h"
 
 #include "content/fetch.h"
@@ -1053,7 +1054,7 @@ static void fetch_curl_poll(lwc_string *scheme_ignored)
 		codem = curl_multi_perform(fetch_curl_multi, &running);
 		if (codem != CURLM_OK && codem != CURLM_CALL_MULTI_PERFORM) {
 			LOG("curl_multi_perform: %i %s", codem, curl_multi_strerror(codem));
-			warn_user("MiscError", curl_multi_strerror(codem));
+			guit->misc->warning("MiscError", curl_multi_strerror(codem));
 			return;
 		}
 	} while (codem == CURLM_CALL_MULTI_PERFORM);

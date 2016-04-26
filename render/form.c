@@ -51,6 +51,8 @@
 #include "desktop/plotters.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"
+#include "desktop/gui_misc.h"
+#include "desktop/gui_internal.h"
 
 #include "render/box.h"
 #include "render/font.h"
@@ -1095,7 +1097,7 @@ bool form_open_select_menu(void *client_data,
 
 		menu = calloc(1, sizeof (struct form_select_menu));
 		if (menu == NULL) {
-			warn_user("NoMemory", 0);
+			guit->misc->warning("NoMemory", 0);
 			return false;
 		}
 
@@ -1710,7 +1712,7 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 	assert(form != NULL);
 
 	if (form_successful_controls_dom(form, submit_button, &success) == false) {
-		warn_user("NoMemory", 0);
+		guit->misc->warning("NoMemory", 0);
 		return;
 	}
 
@@ -1718,7 +1720,7 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 	if (nsurl_create(form->action, &action_url) != NSERROR_OK) {
 		free(data);
 		fetch_multipart_data_destroy(success);
-		warn_user("NoMemory", 0);
+		guit->misc->warning("NoMemory", 0);
 		return;
 	}
 
@@ -1727,7 +1729,7 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 		data = form_url_encode(form, success, true);
 		if (data == NULL) {
 			fetch_multipart_data_destroy(success);
-			warn_user("NoMemory", 0);
+			guit->misc->warning("NoMemory", 0);
 			return;
 		}
 
@@ -1737,7 +1739,7 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 			nsurl_unref(action_query);
 			free(data);
 			fetch_multipart_data_destroy(success);
-			warn_user(messages_get_errorcode(error), 0);
+			guit->misc->warning(messages_get_errorcode(error), 0);
 			return;
 		}
 
@@ -1757,7 +1759,7 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 		data = form_url_encode(form, success, false);
 		if (data == NULL) {
 			fetch_multipart_data_destroy(success);
-			warn_user("NoMemory", 0);
+			guit->misc->warning("NoMemory", 0);
 			nsurl_unref(action_url);
 			return;
 		}

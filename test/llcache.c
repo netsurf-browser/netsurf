@@ -37,20 +37,6 @@
 bool verbose_log;
 
 /* utils/utils.h */
-void die(const char * const error)
-{
-	fprintf(stderr, "%s\n", error);
-
-	exit(1);
-}
-
-/* utils/utils.h */
-void warn_user(const char *warning, const char *detail)
-{
-	fprintf(stderr, "%s %s\n", warning, detail);
-}
-
-/* utils/utils.h */
 char *filename_from_path(char *path)
 {
 	char *leafname;

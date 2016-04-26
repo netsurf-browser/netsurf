@@ -34,6 +34,7 @@
 #include "content/hlcache.h"
 #include "desktop/selection.h"
 #include "desktop/gui_search.h"
+#include "desktop/gui_misc.h"
 #include "desktop/gui_internal.h"
 
 #include "render/box.h"
@@ -85,13 +86,13 @@ struct search_context * search_create_context(struct content *c,
 
 	context = malloc(sizeof(struct search_context));
 	if (context == NULL) {
-		warn_user("NoMemory", 0);
+		guit->misc->warning("NoMemory", 0);
 		return NULL;
 	}
 
 	search_head = malloc(sizeof(struct list_entry));
 	if (search_head == NULL) {
-		warn_user("NoMemory", 0);
+		guit->misc->warning("NoMemory", 0);
 		free(context);
 		return NULL;
 	}
@@ -282,7 +283,7 @@ static struct list_entry *add_entry(unsigned start_idx, unsigned end_idx,
 	/* found string in box => add to list */
 	entry = calloc(1, sizeof(*entry));
 	if (!entry) {
-		warn_user("NoMemory", 0);
+		guit->misc->warning("NoMemory", 0);
 		return NULL;
 	}
 
@@ -548,7 +549,7 @@ void search_step(struct search_context *context, search_flags_t flags,
 	int i = 0;
 
 	if (context == NULL) {
-		warn_user("SearchError", 0);
+		guit->misc->warning("SearchError", 0);
 		return;
 	}
 

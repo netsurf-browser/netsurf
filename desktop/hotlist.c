@@ -25,16 +25,19 @@
 #include <dom/dom.h>
 #include <dom/bindings/hubbub/parser.h>
 
-#include "content/urldb.h"
-#include "desktop/hotlist.h"
-#include "desktop/treeview.h"
-#include "desktop/browser.h"
 #include "utils/corestrings.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/utf8.h"
 #include "utils/libdom.h"
 #include "utils/log.h"
+#include "content/urldb.h"
+
+#include "desktop/gui_misc.h"
+#include "desktop/gui_internal.h"
+#include "desktop/hotlist.h"
+#include "desktop/treeview.h"
+#include "desktop/browser.h"
 
 #define N_DAYS 28
 #define N_SEC_PER_DAY (60 * 60 * 24)
@@ -799,7 +802,7 @@ static nserror hotlist_load(const char *path, bool *loaded)
 			corestring_lwc_html);
 	if (html == NULL) {
 		dom_node_unref(document);
-		warn_user("TreeLoadError", "(<html> not found)");
+		guit->misc->warning("TreeLoadError", "(<html> not found)");
 		return NSERROR_OK;
 	}
 
@@ -808,7 +811,7 @@ static nserror hotlist_load(const char *path, bool *loaded)
 	if (body == NULL) {
 		dom_node_unref(html);
 		dom_node_unref(document);
-		warn_user("TreeLoadError", "(<html>...<body> not found)");
+		guit->misc->warning("TreeLoadError", "(<html>...<body> not found)");
 		return NSERROR_OK;
 	}
 
@@ -818,7 +821,7 @@ static nserror hotlist_load(const char *path, bool *loaded)
 		dom_node_unref(body);
 		dom_node_unref(html);
 		dom_node_unref(document);
-		warn_user("TreeLoadError",
+		guit->misc->warning("TreeLoadError",
 					"(<html>...<body>...<ul> not found.)");
 		return NSERROR_OK;
 	}
@@ -843,7 +846,7 @@ static nserror hotlist_load(const char *path, bool *loaded)
 	dom_node_unref(document);
 
 	if (err != NSERROR_OK) {
-		warn_user("TreeLoadError", "(Failed building tree.)");
+		guit->misc->warning("TreeLoadError", "(Failed building tree.)");
 		return NSERROR_OK;
 	}
 

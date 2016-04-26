@@ -51,6 +51,7 @@
 #include "desktop/browser.h"
 #include "desktop/gui_utf8.h"
 #include "desktop/gui_layout.h"
+#include "desktop/gui_misc.h"
 #include "desktop/gui_internal.h"
 
 #include "render/box.h"
@@ -2078,7 +2079,7 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 			assert(ret != NSERROR_BAD_ENCODING);
 			LOG("local to utf8 encoding failed");
 			free(buffer);
-			warn_user("NoMemory", NULL);
+			guit->misc->warning("NoMemory", NULL);
 			return true;
 		}
 

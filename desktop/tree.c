@@ -45,6 +45,8 @@ struct tree {
 	void *client_data;	/* User assigned data for the callbacks */
 };
 
+#include "desktop/gui_misc.h"
+#include "desktop/gui_internal.h"
 #include "desktop/treeview.h"
 #include "desktop/hotlist.h"
 #include "desktop/cookie_manager.h"
@@ -139,24 +141,24 @@ static bool treeview_test_init(struct tree *tree)
 			"sslcert viewers");
 		err = cookie_manager_init(&cw_t, (struct core_window *)tree);
 		if (err != NSERROR_OK)
-			warn_user("Couldn't init new cookie manager.", 0);
+			guit->misc->warning("Couldn't init new cookie manager.", 0);
 		break;
 	case TREE_HISTORY:
 		err = global_history_init(&cw_t, (struct core_window *)tree);
 		if (err != NSERROR_OK)
-			warn_user("Couldn't init new global history.", 0);
+			guit->misc->warning("Couldn't init new global history.", 0);
 		break;
 	case TREE_HOTLIST:
 		err = hotlist_init(&cw_t, (struct core_window *)tree,
 				tree_hotlist_path);
 		if (err != NSERROR_OK)
-			warn_user("Couldn't init new hotlist.", 0);
+			guit->misc->warning("Couldn't init new hotlist.", 0);
 		break;
 	case TREE_SSLCERT:
 		err = sslcert_viewer_init(&cw_t, (struct core_window *)tree,
 				ssl_current_session);
 		if (err != NSERROR_OK)
-			warn_user("Couldn't init new sslcert viewer.", 0);
+			guit->misc->warning("Couldn't init new sslcert viewer.", 0);
 		break;
 	}
 
@@ -171,17 +173,17 @@ static bool treeview_test_fini(struct tree *tree)
 	case TREE_COOKIES:
 		err = cookie_manager_fini();
 		if (err != NSERROR_OK)
-			warn_user("Couldn't finalise cookie manager.", 0);
+			guit->misc->warning("Couldn't finalise cookie manager.", 0);
 		break;
 	case TREE_HISTORY:
 		err = global_history_fini();
 		if (err != NSERROR_OK)
-			warn_user("Couldn't finalise cookie manager.", 0);
+			guit->misc->warning("Couldn't finalise cookie manager.", 0);
 		break;
 	case TREE_HOTLIST:
 		err = hotlist_fini(tree_hotlist_path);
 		if (err != NSERROR_OK)
-			warn_user("Couldn't finalise hotlist.", 0);
+			guit->misc->warning("Couldn't finalise hotlist.", 0);
 		break;
 	case TREE_SSLCERT:
 		assert(ssl_current_session != NULL &&
@@ -189,7 +191,7 @@ static bool treeview_test_fini(struct tree *tree)
 		err = sslcert_viewer_fini(ssl_current_session);
 		ssl_current_session = NULL;
 		if (err != NSERROR_OK)
-			warn_user("Couldn't finalise sslcert viewer.", 0);
+			guit->misc->warning("Couldn't finalise sslcert viewer.", 0);
 		break;
 	}
 
@@ -287,7 +289,7 @@ struct tree *tree_create(unsigned int flags,
 	tree = calloc(sizeof(struct tree), 1);
 	if (tree == NULL) {
 		LOG("calloc failed");
-		warn_user(messages_get_errorcode(NSERROR_NOMEM), 0);
+		guit->misc->warning(messages_get_errorcode(NSERROR_NOMEM), 0);
 		return NULL;
 	}
 

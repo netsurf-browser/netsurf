@@ -73,10 +73,10 @@ typedef void(*scrollbar_client_callback)(void *client_data,
  * \param client_data		data for the client callback
  * \param client_callback	client callback for scrollbar events
  * \param s			updated to point at the newly created scrollbar
- * \return	true if scrollbar has been created succesfully or false on
- *		memory exhaustion
+ * \return NSERROR_OK and s updated if scrollbar has been created
+ *           succesfully or eror code and s set to NULL on faliure;
  */
-bool scrollbar_create(bool horizontal, int length, int full_size,
+nserror scrollbar_create(bool horizontal, int length, int full_size,
 		int visible_size, void *client_data,
 		scrollbar_client_callback client_callback,
 		struct scrollbar **s);

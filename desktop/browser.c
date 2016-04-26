@@ -1205,7 +1205,7 @@ browser_window_callback_errorcode(hlcache_handle *c,
 
 	/* Only warn the user about errors in top-level windows */
 	if (bw->browser_window_type == BROWSER_WINDOW_NORMAL) {
-		warn_user(message, 0);
+		guit->misc->warning(message, NULL);
 	}
 
 	if (c == bw->loading_content) {
@@ -1459,8 +1459,9 @@ static nserror browser_window_callback(hlcache_handle *c,
 		browser_window_set_status(bw, event->data.error);
 
 		/* Only warn the user about errors in top-level windows */
-		if (bw->browser_window_type == BROWSER_WINDOW_NORMAL)
-			warn_user(event->data.error, 0);
+		if (bw->browser_window_type == BROWSER_WINDOW_NORMAL) {
+			guit->misc->warning(event->data.error, NULL);
+		}
 
 		if (c == bw->loading_content)
 			bw->loading_content = NULL;
@@ -2073,7 +2074,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 	default: /* report error to user */
 		browser_window_set_status(bw, messages_get_errorcode(error));
 		/** @todo should the caller report the error? */
-		warn_user(messages_get_errorcode(error), 0);
+		guit->misc->warning(messages_get_errorcode(error), NULL);
 		break;
 
 	}
@@ -2814,7 +2815,7 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 	if (target[0] != '_') {
 		bw_target->name = strdup(target);
 		if (!bw_target->name)
-			warn_user("NoMemory", 0);
+			guit->misc->warning("NoMemory", NULL);
 	}
 	return bw_target;
 }

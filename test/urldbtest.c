@@ -62,17 +62,6 @@ void cookie_manager_remove(const struct cookie_data *data)
 {
 }
 
-void die(const char *error)
-{
-	printf("die: %s\n", error);
-	exit(1);
-}
-
-
-void warn_user(const char *warning, const char *detail)
-{
-	printf("WARNING: %s %s\n", warning, detail);
-}
 
 void bitmap_destroy(void *bitmap)
 {

@@ -45,6 +45,8 @@
 #include "render/box.h"
 #include "render/html.h"
 
+#include "desktop/gui_misc.h"
+#include "desktop/gui_internal.h"
 #include "desktop/save_complete.h"
 
 regex_t save_complete_import_re;
@@ -150,7 +152,7 @@ static bool save_complete_save_buffer(save_complete_ctx *ctx,
 
 	ret = netsurf_mkpath(&fname, NULL, 2, ctx->path, leafname);
 	if (ret != NSERROR_OK) {
-		warn_user(messages_get_errorcode(ret), 0);
+		guit->misc->warning(messages_get_errorcode(ret), 0);
 		return false;
 	}
 
@@ -158,7 +160,7 @@ static bool save_complete_save_buffer(save_complete_ctx *ctx,
 	if (fp == NULL) {
 		free(fname);
 		LOG("fopen(): errno = %i", errno);
-		warn_user("SaveError", strerror(errno));
+		guit->misc->warning("SaveError", strerror(errno));
 		return false;
 	}
 
@@ -316,7 +318,7 @@ static bool save_complete_save_stylesheet(save_complete_ctx *ctx,
 		return true;
 
 	if (save_complete_ctx_add_content(ctx, css) == false) {
-		warn_user("NoMemory", 0);
+		guit->misc->warning("NoMemory", 0);
 		return false;
 	}
 
@@ -329,7 +331,7 @@ static bool save_complete_save_stylesheet(save_complete_ctx *ctx,
 	source = save_complete_rewrite_stylesheet_urls(ctx, css_data, css_size,
 			hlcache_handle_get_url(css), &source_len);
 	if (source == NULL) {
-		warn_user("NoMemory", 0);
+		guit->misc->warning("NoMemory", 0);
 		return false;
 	}
 
@@ -412,7 +414,7 @@ static bool save_complete_save_html_object(save_complete_ctx *ctx,
 		return true;
 
 	if (save_complete_ctx_add_content(ctx, obj) == false) {
-		warn_user("NoMemory", 0);
+		guit->misc->warning("NoMemory", 0);
 		return false;
 	}
 
@@ -1056,7 +1058,7 @@ static bool save_complete_save_html_document(save_complete_ctx *ctx,
 
 	ret = netsurf_mkpath(&fname, NULL, 2, ctx->path, filename);
 	if (ret != NSERROR_OK) {
-		warn_user(messages_get_errorcode(ret), NULL);
+		guit->misc->warning(messages_get_errorcode(ret), NULL);
 		return false;
 	}
 
@@ -1064,7 +1066,7 @@ static bool save_complete_save_html_document(save_complete_ctx *ctx,
 	if (fp == NULL) {
 		free(fname);
 		LOG("fopen(): errno = %i", errno);
-		warn_user("SaveError", strerror(errno));
+		guit->misc->warning("SaveError", strerror(errno));
 		return false;
 	}
 
@@ -1077,7 +1079,7 @@ static bool save_complete_save_html_document(save_complete_ctx *ctx,
 	if (save_complete_libdom_treewalk((dom_node *) doc,
 			save_complete_node_handler, ctx) == false) {
 		free(fname);
-		warn_user("NoMemory", 0);
+		guit->misc->warning("NoMemory", 0);
 		fclose(fp);
 		return false;
 	}
@@ -1143,7 +1145,7 @@ static bool save_complete_inventory(save_complete_ctx *ctx)
 	free(fname);
 	if (fp == NULL) {
 		LOG("fopen(): errno = %i", errno);
-		warn_user("SaveError", strerror(errno));
+		guit->misc->warning("SaveError", strerror(errno));
 		return false;
 	}
 
