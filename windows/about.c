@@ -27,11 +27,12 @@
 
 #include <windows.h>
 
+#include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
 #include "desktop/version.h"
-#include "utils/log.h"
 
+#include "windows/gui.h"
 #include "windows/window.h"
 #include "windows/about.h"
 #include "windows/resourceid.h"
@@ -144,7 +145,7 @@ void nsws_about_dialog_init(HINSTANCE hinst, HWND parent)
 	int ret = DialogBox(hinst, MAKEINTRESOURCE(IDD_DLG_ABOUT), parent,
 			nsws_about_event_callback);
 	if (ret == -1) {
-		warn_user(messages_get("NoMemory"), 0);
+		win32_warning(messages_get("NoMemory"), 0);
 		return;
 	}
 }

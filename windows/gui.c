@@ -30,6 +30,7 @@
 #include "utils/corestrings.h"
 #include "utils/url.h"
 #include "utils/file.h"
+#include "utils/messages.h"
 #include "desktop/browser.h"
 #include "desktop/gui_clipboard.h"
 
@@ -90,8 +91,17 @@ void win32_run(void)
 }
 
 
+/* exported function documented in windows/gui.h */
+nserror win32_warning(const char *warning, const char *detail)
+{
+	size_t len = 1 + ((warning != NULL) ? strlen(messages_get(warning)) :
+			0) + ((detail != 0) ? strlen(detail) : 0);
+	char message[len];
+	snprintf(message, len, messages_get(warning), detail);
+	MessageBox(NULL, message, "Warning", MB_ICONWARNING);
 
-
+	return NSERROR_OK;
+}
 
 
 /**

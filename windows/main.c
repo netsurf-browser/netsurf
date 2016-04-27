@@ -65,25 +65,6 @@ static void die(const char *error)
 }
 
 
-/**
- * Warn the user of an event.
- *
- * \param[in] message A warning looked up in the message translation table
- * \param[in] detail Additional text to be displayed or NULL.
- * \return NSERROR_OK on success or error code if there was a
- *           faliure displaying the message to the user.
- */
-static nserror win32_warn_user(const char *warning, const char *detail)
-{
-	size_t len = 1 + ((warning != NULL) ? strlen(messages_get(warning)) :
-			0) + ((detail != 0) ? strlen(detail) : 0);
-	char message[len];
-	snprintf(message, len, messages_get(warning), detail);
-	MessageBox(NULL, message, "Warning", MB_ICONWARNING);
-
-	return NSERROR_OK;
-}
-
 static nsurl *gui_get_resource_url(const char *path)
 {
 	char buf[PATH_MAX];
@@ -155,7 +136,7 @@ static nserror set_defaults(struct nsoption_s *defaults)
 
 static struct gui_misc_table win32_misc_table = {
 	.schedule = win32_schedule,
-	.warning = win32_warn_user,
+	.warning = win32_warning,
 };
 
 
@@ -277,7 +258,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 
 	}
 	if (ret != NSERROR_OK) {
-		win32_warn_user(messages_get_errorcode(ret), 0);
+		win32_warning(messages_get_errorcode(ret), 0);
 	} else {
 		win32_run();
 	}

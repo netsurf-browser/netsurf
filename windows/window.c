@@ -921,7 +921,7 @@ nsws_window_command(HWND hwnd,
 	case IDM_FILE_OPEN_WINDOW:
 		ret = win32_open_new_window(gw);
 		if (ret != NSERROR_OK) {
-			warn_user(messages_get_errorcode(ret), 0);
+			win32_warning(messages_get_errorcode(ret), 0);
 		}
 		break;
 
@@ -1027,7 +1027,7 @@ nsws_window_command(HWND hwnd,
 		nsurl *url;
 
 		if (nsurl_create(nsoption_charp(homepage_url), &url) != NSERROR_OK) {
-			warn_user("NoMemory", 0);
+			win32_warning("NoMemory", 0);
 		} else {
 			browser_window_navigate(gw->bw,
 						url,
@@ -1110,7 +1110,7 @@ nsws_window_command(HWND hwnd,
 			gw->fullscreen = malloc(sizeof(RECT));
 			if ((desktop == NULL) ||
 			    (gw->fullscreen == NULL)) {
-				warn_user("NoMemory", 0);
+				win32_warning("NoMemory", 0);
 				break;
 			}
 			GetWindowRect(desktop, &rdesk);
@@ -1191,7 +1191,7 @@ nsws_window_command(HWND hwnd,
 		LOG("launching %s\n", addr);
 
 		if (nsurl_create(addr, &url) != NSERROR_OK) {
-			warn_user("NoMemory", 0);
+			win32_warning("NoMemory", 0);
 		} else {
 			browser_window_navigate(gw->bw,
 						url,
@@ -1522,7 +1522,7 @@ static void win32_window_set_title(struct gui_window *w, const char *title)
 	char *fulltitle = malloc(strlen(title) +
 				 SLEN("  -  NetSurf") + 1);
 	if (fulltitle == NULL) {
-		warn_user("NoMemory", 0);
+		win32_warning("NoMemory", 0);
 		return;
 	}
 	strcpy(fulltitle, title);
@@ -1707,7 +1707,7 @@ bool nsws_window_go(HWND hwnd, const char *urltxt)
 		return false;
 
 	if (nsurl_create(urltxt, &url) != NSERROR_OK) {
-		warn_user("NoMemory", 0);
+		win32_warning("NoMemory", 0);
 	} else {
 		browser_window_navigate(gw->bw,
 					url,

@@ -86,14 +86,14 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 {
 	if (downloading) {
 		/* initial implementation */
-		warn_user("1 download at a time please", 0);
+		win32_warning("1 download at a time please", 0);
 		return NULL;
 	}
 	downloading = true;
 	struct gui_download_window *w = 
 			malloc(sizeof(struct gui_download_window));
 	if (w == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		win32_warning(messages_get("NoMemory"), 0);
 		return NULL;
 	}
 	int total_size = download_context_get_total_length(ctx);
@@ -108,7 +108,7 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 		filename = strdup(messages_get("UnknownFile"));
 	}
 	if (filename == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		win32_warning(messages_get("NoMemory"), 0);
 		free(w);
 		return NULL;
 	}
@@ -119,14 +119,14 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 		domain = strdup(messages_get("UnknownHost"));
 	}
 	if (domain == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		win32_warning(messages_get("NoMemory"), 0);
 		free(filename);
 		free(w);
 		return NULL;
 	}
 	destination = malloc(PATH_MAX);
 	if (destination == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		win32_warning(messages_get("NoMemory"), 0);
 		free(domain);
 		free(filename);
 		free(w);
@@ -144,7 +144,7 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 	w->size = total_size;
 	w->total_size = strdup(size);
 	if (w->total_size == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
+		win32_warning(messages_get("NoMemory"), 0);
 		free(destination);
 		free(domain);
 		free(filename);
@@ -163,7 +163,7 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 	w->window = gui;
 	w->file = fopen(destination, "wb");
 	if (w->file == NULL) {
-		warn_user(messages_get("FileOpenWriteError"), destination);
+		win32_warning(messages_get("FileOpenWriteError"), destination);
 		free(destination);
 		free(domain);
 		free(filename);
@@ -175,7 +175,7 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 	download1 = w;
 
 	if (nsws_download_window_up(w) == false) {
-		warn_user(messages_get("NoMemory"), 0);
+		win32_warning(messages_get("NoMemory"), 0);
 		free(destination);
 		free(domain);
 		free(filename);

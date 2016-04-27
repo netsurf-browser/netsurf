@@ -37,12 +37,12 @@ static CHOOSEFONT *nsws_prefs_font_prepare(int fontfamily, HWND parent)
 {
 	CHOOSEFONT *cf = malloc(sizeof(CHOOSEFONT));
 	if (cf == NULL) {
-		warn_user(messages_get("NoMemory"),0);
+		win32_warning(messages_get("NoMemory"),0);
 		return NULL;
 	}
 	LOGFONT *lf = malloc(sizeof(LOGFONT));
 	if (lf == NULL) {
-		warn_user(messages_get("NoMemory"),0);
+		win32_warning(messages_get("NoMemory"),0);
 		free(cf);
 		return NULL;
 	}

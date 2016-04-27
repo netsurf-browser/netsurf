@@ -25,6 +25,8 @@ struct gui_clipboard_table *win32_clipboard_table;
 
 extern HINSTANCE hInstance;
 
+extern char *options_file_location;
+
 /* bounding box */
 typedef struct bbox_s {
         int x0;
@@ -33,19 +35,24 @@ typedef struct bbox_s {
         int y1;
 } bbox_t;
 
-
-
-extern char *options_file_location;
-
-
-
-
 /**
  * Run the win32 message loop with scheduling
  */
 void win32_run(void);
 
-/** cause the main message loop to exit */
+/**
+ * cause the main message loop to exit
+ */
 void win32_set_quit(bool q);
+
+/**
+ * Warn the user of an event.
+ *
+ * \param[in] message A warning looked up in the message translation table
+ * \param[in] detail Additional text to be displayed or NULL.
+ * \return NSERROR_OK on success or error code if there was a
+ *           faliure displaying the message to the user.
+ */
+nserror win32_warning(const char *warning, const char *detail);
 
 #endif 
