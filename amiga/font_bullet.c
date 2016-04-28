@@ -155,7 +155,7 @@ static inline uint32 amiga_nsfont_decode_surrogate(const uint16 *char1)
 	}
 }
 
-static bool amiga_nsfont_width(const plot_font_style_t *fstyle,
+static nserror amiga_nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
@@ -163,7 +163,7 @@ static bool amiga_nsfont_width(const plot_font_style_t *fstyle,
 
 	if(*width <= 0) *width == length; // fudge
 
-	return true;
+	return NSERROR_OK;
 }
 
 /**
@@ -178,7 +178,7 @@ static bool amiga_nsfont_width(const plot_font_style_t *fstyle,
  * \return  true on success, false on error and error reported
  */
 
-static bool amiga_nsfont_position_in_string(const plot_font_style_t *fstyle,
+static nserror amiga_nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -191,9 +191,9 @@ static bool amiga_nsfont_position_in_string(const plot_font_style_t *fstyle,
 	ULONG emwidth = (ULONG)NSA_FONT_EMWIDTH(fstyle->size);
 	int32 tempx;
 
-	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != NSERROR_OK) return false;
+	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != NSERROR_OK) return NSERROR_INVALID;
 	outf16 = utf16;
-	if(!(ofont = ami_open_outline_font(fstyle, 0))) return false;
+	if(!(ofont = ami_open_outline_font(fstyle, 0))) return NSERROR_INVALID;
 
 	*char_offset = 0;
 	*actual_x = 0;
@@ -226,7 +226,7 @@ static bool amiga_nsfont_position_in_string(const plot_font_style_t *fstyle,
 				*char_offset = utf8_pos;
 			}
 			free(outf16);
-			return true;
+			return NSERROR_OK;
 		}
 	}
 
@@ -234,7 +234,7 @@ static bool amiga_nsfont_position_in_string(const plot_font_style_t *fstyle,
 	*char_offset = length;
 
 	free(outf16);
-	return true;
+	return NSERROR_OK;
 }
 
 
@@ -261,7 +261,7 @@ static bool amiga_nsfont_position_in_string(const plot_font_style_t *fstyle,
  * Returning char_offset == length means no split possible
  */
 
-static bool amiga_nsfont_split(const plot_font_style_t *fstyle,
+static nserror amiga_nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -277,11 +277,11 @@ static bool amiga_nsfont_split(const plot_font_style_t *fstyle,
 	/* Get utf16 conversion of string for glyph measuring routines */
 	if (utf8_to_enc(string, "UTF-16", length, (char **)&utf16_str) !=
 			NSERROR_OK)
-		return false;
+		return NSERROR_INVALID;
 
 	utf16 = utf16_str;
 	if (!(ofont = ami_open_outline_font(fstyle, 0)))
-		return false;
+		return NSERROR_INVALID;
 
 	*char_offset = 0;
 	*actual_x = 0;
@@ -317,7 +317,7 @@ static bool amiga_nsfont_split(const plot_font_style_t *fstyle,
 			/* Reached available width, and a space was found;
 			 * split there. */
 			free(utf16_str);
-			return true;
+			return NSERROR_OK;
 		}
 
 		utf16 = utf16next;
@@ -331,7 +331,7 @@ static bool amiga_nsfont_split(const plot_font_style_t *fstyle,
 
 	*char_offset = length;
 	*actual_x = tx;
-	return true;
+	return NSERROR_OK;
 }
 
 /**

@@ -20,6 +20,7 @@
 #define AMIGA_FONT_H
 
 #include "desktop/plotters.h"
+#include "utils/errors.h"
 #include <graphics/rastport.h>
 #include <graphics/text.h>
 
@@ -37,15 +38,15 @@ void ami_font_close_disk_font(struct TextFont *tfont);
 
 /* Font engine tables */
 struct ami_font_functions {
-	bool (*width)(const plot_font_style_t *fstyle,
+	nserror (*width)(const plot_font_style_t *fstyle,
 			const char *string, size_t length,
 			int *width);
 
-	bool (*posn)(const plot_font_style_t *fstyle,
+	nserror (*posn)(const plot_font_style_t *fstyle,
 			const char *string, size_t length,
 			int x, size_t *char_offset, int *actual_x);
 
-	bool (*split)(const plot_font_style_t *fstyle,
+	nserror (*split)(const plot_font_style_t *fstyle,
 			const char *string, size_t length,
 			int x, size_t *char_offset, int *actual_x);
 

@@ -111,21 +111,21 @@ static size_t ami_font_bm_convert_local_to_utf8_offset(const char *utf8string, s
 }
 
 
-static bool amiga_bm_nsfont_width(const plot_font_style_t *fstyle,
+static nserror amiga_bm_nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
 	char *localtext = NULL;
 
-	if((glob == NULL) || (glob->rp == NULL)) return false;
+	if((glob == NULL) || (glob->rp == NULL)) return NSERROR_INVALID;
 	*width = length;
 
 	struct TextFont *bmfont = ami_font_bm_open(glob->rp, fstyle);
-	if(bmfont == NULL) return false;
+	if(bmfont == NULL) return NSERROR_INVALID;
 
 	if(utf8_to_local_encoding(string, length, &localtext) != NSERROR_OK) {
 		ami_font_bm_close(bmfont);
-		return false;
+		return NSERROR_INVALID;
 	}
 
 	*width = TextLength(glob->rp, localtext, (UWORD)strlen(localtext));
@@ -133,7 +133,7 @@ static bool amiga_bm_nsfont_width(const plot_font_style_t *fstyle,
 
 	ami_font_bm_close(bmfont);
 
-	return true;
+	return NSERROR_OK;
 }
 
 /**
@@ -148,7 +148,7 @@ static bool amiga_bm_nsfont_width(const plot_font_style_t *fstyle,
  * \return  true on success, false on error and error reported
  */
 
-static bool amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyle,
+static nserror amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -157,14 +157,14 @@ static bool amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyle,
 	char *localtext = NULL;
 	UWORD co = 0;
 
-	if((glob == NULL) || (glob->rp == NULL)) return false;
+	if((glob == NULL) || (glob->rp == NULL)) return NSERROR_INVALID;
 
 	bmfont = ami_font_bm_open(glob->rp, fstyle);
-	if(bmfont == NULL) return false;
+	if(bmfont == NULL) return NSERROR_INVALID;
 
 	if(utf8_to_local_encoding(string, length, &localtext) != NSERROR_OK) {
 		ami_font_bm_close(bmfont);
-		return false;
+		return NSERROR_INVALID;
 	}
 
 	co = TextFit(glob->rp, localtext, (UWORD)strlen(localtext),
@@ -175,7 +175,7 @@ static bool amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyle,
 	free(localtext);
 	ami_font_bm_close(bmfont);
 
-	return true;
+	return NSERROR_OK;
 }
 
 
@@ -202,7 +202,7 @@ static bool amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyle,
  * Returning char_offset == length means no split possible
  */
 
-static bool amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
+static nserror amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -211,14 +211,14 @@ static bool amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 	char *charp;
 	char *localtext;
 
-	if((glob == NULL) || (glob->rp == NULL)) return false;
+	if((glob == NULL) || (glob->rp == NULL)) return NSERROR_INVALID;
 
 	struct TextFont *bmfont = ami_font_bm_open(glob->rp, fstyle);
-	if(bmfont == NULL) return false;
+	if(bmfont == NULL) return NSERROR_INVALID;
 
 	if(utf8_to_local_encoding(string, length, &localtext) != NSERROR_OK) {
 		ami_font_bm_close(bmfont);
-		return false;
+		return NSERROR_INVALID;
 	}
 
 	offset = TextFit(glob->rp, localtext, (UWORD)strlen(localtext),
@@ -253,7 +253,7 @@ static bool amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 	free(localtext);
 	ami_font_bm_close(bmfont);
 
-	return true;
+	return NSERROR_OK;
 }
 
 static ULONG amiga_bm_nsfont_text(struct RastPort *rp, const char *string, ULONG length,
