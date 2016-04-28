@@ -221,7 +221,7 @@ ro_font_width(const plot_font_style_t *fstyle,
 	nsfont_read_style(fstyle, &font_family, &font_size, &font_style);
 	if (font_size == 0) {
 		*width = 0;
-		return true;
+		return NSERROR_OK;
 	}
 
 	code = rufl_width(font_family, font_style, font_size,
@@ -234,11 +234,11 @@ ro_font_width(const plot_font_style_t *fstyle,
 			LOG("rufl_width: 0x%x", code);
 /* 		ro_warn_user("MiscError", "font error"); */
 		*width = 0;
-		return false;
+		return NSERROR_INVALID;
 	}
 
 	*width /= 2;
-	return true;
+	return NSERROR_OK;
 }
 
 
@@ -267,7 +267,7 @@ ro_font_position(const plot_font_style_t *fstyle,
 	if (font_size == 0) {
 		*char_offset = 0;
 		*actual_x = 0;
-		return true;
+		return NSERROR_OK;
 	}
 
 	code = rufl_x_to_offset(font_family, font_style, font_size,
@@ -281,11 +281,12 @@ ro_font_position(const plot_font_style_t *fstyle,
 /* 		ro_warn_user("MiscError", "font error"); */
 		*char_offset = 0;
 		*actual_x = 0;
-		return false;
+		return NSERROR_INVALID;
 	}
 
 	*actual_x /= 2;
-	return true;
+
+	return NSERROR_OK;
 }
 
 
@@ -325,21 +326,23 @@ ro_font_split(const plot_font_style_t *fstyle,
 	if (font_size == 0) {
 		*char_offset = 0;
 		*actual_x = 0;
-		return true;
+		return NSERROR_OK;
 	}
 
 	code = rufl_split(font_family, font_style, font_size,
 			string, length,
 			x * 2, char_offset, actual_x);
 	if (code != rufl_OK) {
-		if (code == rufl_FONT_MANAGER_ERROR)
-			LOG("rufl_split: rufl_FONT_MANAGER_ERROR: ""0x%x: %s", rufl_fm_error->errnum, rufl_fm_error->errmess);
-		else
+		if (code == rufl_FONT_MANAGER_ERROR) {
+			LOG("rufl_split: rufl_FONT_MANAGER_ERROR: ""0x%x: %s",
+			    rufl_fm_error->errnum, rufl_fm_error->errmess);
+		} else {
 			LOG("rufl_split: 0x%x", code);
+		}
 /* 		ro_warn_user("MiscError", "font error"); */
 		*char_offset = 0;
 		*actual_x = 0;
-		return false;
+		return NSERROR_INVALID;
 	}
 
 	if (*char_offset != length) {
@@ -347,15 +350,17 @@ ro_font_split(const plot_font_style_t *fstyle,
 		size_t orig = *char_offset;
 
 		/* ensure a space at <= the split point we found */
-		while (*char_offset && string[*char_offset] != ' ')
+		while (*char_offset && string[*char_offset] != ' ') {
 			(*char_offset)--;
+		}
 
 		/* nothing valid found <= split point, advance to next space */
 		if (*char_offset == 0) {
 			*char_offset = orig;
-			while (*char_offset != length &&
-					string[*char_offset] != ' ')
+			while ((*char_offset != length) &&
+			       (string[*char_offset] != ' ')) {
 				(*char_offset)++;
+			}
 		}
 	}
 
@@ -363,18 +368,20 @@ ro_font_split(const plot_font_style_t *fstyle,
 			string, *char_offset,
 			actual_x);
 	if (code != rufl_OK) {
-		if (code == rufl_FONT_MANAGER_ERROR)
-			LOG("rufl_width: rufl_FONT_MANAGER_ERROR: 0x%x: %s", rufl_fm_error->errnum, rufl_fm_error->errmess);
-		else
+		if (code == rufl_FONT_MANAGER_ERROR) {
+			LOG("rufl_width: rufl_FONT_MANAGER_ERROR: 0x%x: %s",
+			    rufl_fm_error->errnum, rufl_fm_error->errmess);
+		} else {
 			LOG("rufl_width: 0x%x", code);
+		}
 /* 		ro_warn_user("MiscError", "font error"); */
 		*char_offset = 0;
 		*actual_x = 0;
-		return false;
+		return NSERROR_INVALID;
 	}
 
 	*actual_x /= 2;
-	return true;
+	return NSERROR_OK;
 }
 
 
@@ -407,10 +414,11 @@ bool nsfont_paint(const plot_font_style_t *fstyle, const char *string,
 	code = rufl_paint(font_family, font_style, font_size,
 			string, length, x, y, flags);
 	if (code != rufl_OK) {
-		if (code == rufl_FONT_MANAGER_ERROR)
+		if (code == rufl_FONT_MANAGER_ERROR) {
 			LOG("rufl_paint: rufl_FONT_MANAGER_ERROR: 0x%x: %s", rufl_fm_error->errnum, rufl_fm_error->errmess);
-		else
+		} else {
 			LOG("rufl_paint: 0x%x", code);
+		}
 	}
 
 	return true;
