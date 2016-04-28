@@ -545,6 +545,10 @@ static void ami_set_screen_defaults(struct Screen *screen)
 	nsoption_default_set_int(redraw_tile_size_x, screen->Width);
 	nsoption_default_set_int(redraw_tile_size_y, screen->Height);
 
+	if((screen != NULL) && (GetBitMapAttr(screen->RastPort.BitMap, BMA_DEPTH) < 24)) {
+		nsoption_set_bool(use_extmem, false);
+	}
+
 	/* set system colours for amiga ui */
 	colour_option_from_pen(FILLPEN, NSOPTION_sys_colour_ActiveBorder, screen, 0x00000000);
 	colour_option_from_pen(FILLPEN, NSOPTION_sys_colour_ActiveCaption, screen, 0x00dddddd);
