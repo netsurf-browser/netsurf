@@ -924,6 +924,7 @@ bool textplain_redraw(struct content *c, struct content_redraw_data *data,
 			size_t next_offset = offset;
 			int width;
 			int ntx;
+			nserror res;
 
 			while (next_offset < length && text_d[next_offset] != '\t')
 				next_offset = utf8_next(text_d, length, next_offset);
@@ -940,11 +941,12 @@ bool textplain_redraw(struct content *c, struct content_redraw_data *data,
 			if (next_offset >= length)
 				break;
 
-			/* locate end of string and align to next tab position */
-			if (guit->layout->width(&textplain_style,
+			res = guit->layout->width(&textplain_style,
 						&text_d[offset],
 						next_offset - offset,
-						&width)) {
+						  &width);
+			/* locate end of string and align to next tab position */
+			if (res == NSERROR_OK) {
 				tx += (int)(width * data->scale);
 			}
 
