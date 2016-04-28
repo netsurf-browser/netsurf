@@ -169,6 +169,8 @@ AMINS_LIB_STRUCT(Locale);
 AMINS_LIB_STRUCT(P96);
 AMINS_LIB_STRUCT(Workbench);
 
+AMINS_LIB_STRUCT(GuiGFX);
+
 AMINS_CLASS_STRUCT(ARexx);
 AMINS_CLASS_STRUCT(Bevel);
 AMINS_CLASS_STRUCT(BitMap);
@@ -224,14 +226,16 @@ bool ami_libs_open(void)
 	if(GfxBase->LibNode.lib_Version < 54)
 		AMINS_LIB_OPEN("Picasso96API.library",  0, P96,         "main",        1, false)
 
+	/* Non-OS provided libraries */
+	AMINS_LIB_OPEN("guigfx.library",    9, GuiGFX,   "main",        1, true)
+
 	/* NB: timer.device is opened in schedule.c (ultimately by the scheduler process).
 	 * The library base and interface are obtained there, rather than here, due to
 	 * the additional complexities of opening devices, which aren't important here
 	 * (as we only need the library interface), but are important for the scheduler
 	 * (as it also uses the device interface).  We trust that the scheduler has
-	 * initialised before any other code requires the timer's library interface
-	 * (this is ensured by waiting for the scheduler to start up) and that it is
-	 * OK to use a child process' timer interface, to avoid opening it twice.
+	 * initialised before any other code requires the timer's library interface,
+	 * to avoid opening it twice.
 	 */
 
 	/* BOOPSI classes.
@@ -298,6 +302,8 @@ void ami_libs_close(void)
 	AMINS_CLASS_CLOSE(Window)
 
 	/* Libraries */
+	AMINS_LIB_CLOSE(GuiGFX)
+
 	AMINS_LIB_CLOSE(Asl)
 	AMINS_LIB_CLOSE(DataTypes)
 	AMINS_LIB_CLOSE(Diskfont)

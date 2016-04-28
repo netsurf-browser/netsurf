@@ -50,10 +50,10 @@ else
   LDFLAGS += $(shell $(PKG_CONFIG) --libs tre)
   LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
 
+  LDFLAGS += -lpbl -liconv
+
   ifeq ($(SUBTARGET),os3)
-    LDFLAGS += -lpbl -liconv -lamiga
-  else
-    LDFLAGS += -lpbl -liconv
+    LDFLAGS += -lamiga -lm
   endif
 endif
 

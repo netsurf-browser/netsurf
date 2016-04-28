@@ -505,7 +505,7 @@ void ami_gui_opts_open(void)
 	BOOL proxyhostdisabled = TRUE, proxyauthdisabled = TRUE, proxybypassdisabled = FALSE;
 	BOOL disableanims, animspeeddisabled = FALSE, acceptlangdisabled = FALSE;
 	BOOL scaleselected = nsoption_bool(scale_quality), scaledisabled = FALSE;
-	BOOL ditherdisable = TRUE, nativebm_disable = FALSE;
+	BOOL ditherdisable = TRUE;
 	BOOL download_notify_disabled = FALSE, tab_always_show_disabled = FALSE;
 	BOOL ptr_disable = FALSE;
 	char animspeed[10];
@@ -554,7 +554,6 @@ void ami_gui_opts_open(void)
 
 	if(ami_plot_screen_is_palettemapped() == true) {
 		ditherdisable = FALSE;
-		nativebm_disable = TRUE;
 	}
 
 	if(nsoption_bool(http_proxy) == true)
@@ -1022,7 +1021,6 @@ void ami_gui_opts_open(void)
 									LAYOUT_AddChild, gow->objects[GID_OPTS_NATIVEBM] = ChooserObj,
 										GA_ID, GID_OPTS_NATIVEBM,
 										GA_RelVerify, TRUE,
-										GA_Disabled, nativebm_disable,
 										CHOOSER_PopUp, TRUE,
 #ifdef __amigaos4__
 										CHOOSER_LabelArray, nativebmopts,

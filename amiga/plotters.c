@@ -49,6 +49,8 @@
 #include "amiga/rtg.h"
 #include "amiga/utf8.h"
 
+//#define AMI_PLOTTER_DEBUG 1
+
 HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage *);
 
 struct bfbitmap {
@@ -153,6 +155,8 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool for
 		/* Screen depth is reported as 24 even when it's actually 32-bit.
 		 * We get freezes and other problems on OS4 if we befriend at any
 		 * other depths, hence this check.
+		 * \todo use friend BitMaps but avoid CompositeTags() at non-32-bit
+		 * as that seems to be the cause of the problems.
 		 */
 		if((depth >= 24) && (force32bit == false)) friend = scrn->RastPort.BitMap;
 #endif
@@ -613,8 +617,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 #endif
 	}
 
-	if((ami_bitmap_has_dto(bitmap) == false) && (ami_bitmap_is_nativebm(bitmap, tbm) == false)) {
-		/**\todo is this logic logical? */
+	if((ami_bitmap_is_nativebm(bitmap, tbm) == false)) {
 		ami_rtg_freebitmap(tbm);
 	}
 
@@ -719,7 +722,7 @@ static bool ami_bitmap_tile(int x, int y, int width, int height,
 #endif
 		FreeVec(bfh);
 
-	if((ami_bitmap_has_dto(bitmap) == false) && (ami_bitmap_is_nativebm(bitmap, tbm) == false)) {
+	if((ami_bitmap_is_nativebm(bitmap, tbm) == false)) {
 		/**\todo is this logic logical? */
 		ami_rtg_freebitmap(tbm);
 	}

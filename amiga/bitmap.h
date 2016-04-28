@@ -83,16 +83,6 @@ ULONG *ami_bitmap_get_icondata(struct bitmap *bm);
 void ami_bitmap_set_icondata(struct bitmap *bm, ULONG *icondata);
 
 /**
- * Test if a bitmap has an associated DataTypes object.
- *
- * \param  bm  a bitmap, as returned by bitmap_create()
- * \return true if the BitMap has a DataTypes object
- *
- * This function probably shouldn't be used!
- */
-bool ami_bitmap_has_dto(struct bitmap *bm);
-
-/**
  * Test if a BitMap is owned by a bitmap.
  *
  * \param  bm  a bitmap, as returned by bitmap_create()

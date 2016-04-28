@@ -3921,6 +3921,7 @@ gui_window_create(struct browser_window *bw,
 		    (strcmp(nsoption_charp(pubscreen_name), "Workbench") == 0))
 				iconifygadget = TRUE;
 
+		LOG("Creating menu");
 		struct Menu *menu = ami_menu_create(g->shared);
 
 		NewList(&g->shared->tab_list);

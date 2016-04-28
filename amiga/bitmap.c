@@ -1,5 +1,5 @@
 /*
- * Copyright 2008, 2009, 2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008, 2009, 2012, 2016 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -30,11 +30,20 @@
 #include <proto/dos.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
+
+#include <proto/guigfx.h>
+#include <guigfx/guigfx.h>
+#include <render/render.h>
+#ifndef __amigaos4__
+#include <inline/guigfx.h>
+#endif
+
 #ifdef __amigaos4__
 #include <sys/param.h>
 #endif
 #include "assert.h"
 
+#include "utils/log.h"
 #include "utils/nsoption.h"
 #include "utils/nsurl.h"
 #include "utils/messages.h"
@@ -60,6 +69,8 @@ struct bitmap {
 	int nativebmheight;
 	PLANEPTR native_mask;
 	Object *dto;
+	APTR drawhandle;
+	APTR psm;
 	struct nsurl *url;   /* temporary storage space */
 	char *title; /* temporary storage space */
 	ULONG *icondata; /* for appicons */
@@ -94,7 +105,8 @@ void *amiga_bitmap_create(int width, int height, unsigned int state)
 	bitmap->nativebmwidth = 0;
 	bitmap->nativebmheight = 0;
 	bitmap->native_mask = NULL;
-	bitmap->dto = NULL;
+	bitmap->drawhandle = NULL;
+	bitmap->psm = NULL;
 	bitmap->url = NULL;
 	bitmap->title = NULL;
 	bitmap->icondata = NULL;
@@ -134,16 +146,13 @@ void amiga_bitmap_destroy(void *bitmap)
 
 	if(bm)
 	{
-		if((bm->nativebm) && (bm->native == AMI_NSBM_TRUECOLOUR)) {
+		if((bm->nativebm)) { // && (bm->native == AMI_NSBM_TRUECOLOUR)) {
 			ami_rtg_freebitmap(bm->nativebm);
 		}
 
-		if(bm->dto) {
-			/**\todo find out why this crashes on exit but not during normal program execution */
-			DisposeDTObject(bm->dto);
-		}
-
 		if(bm->native_mask) FreeRaster(bm->native_mask, bm->width, bm->height);
+		if(bm->drawhandle) ReleaseDrawHandle(bm->drawhandle);
+		if(bm->psm) DeletePenShareMap(bm->psm);
 		FreeVec(bm->pixdata);
 
 		if(bm->url) nsurl_unref(bm->url);
@@ -152,7 +161,8 @@ void amiga_bitmap_destroy(void *bitmap)
 		bm->pixdata = NULL;
 		bm->nativebm = NULL;
 		bm->native_mask = NULL;
-		bm->dto = NULL;
+		bm->drawhandle = NULL;
+		bm->psm = NULL;
 		bm->url = NULL;
 		bm->title = NULL;
 	
@@ -192,13 +202,15 @@ void amiga_bitmap_modified(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
-	if((bm->nativebm) && (bm->native == AMI_NSBM_TRUECOLOUR))
+	if((bm->nativebm)) // && (bm->native == AMI_NSBM_TRUECOLOUR))
 		ami_rtg_freebitmap(bm->nativebm);
 		
-	if(bm->dto) DisposeDTObject(bm->dto);
+	if(bm->drawhandle) ReleaseDrawHandle(bm->drawhandle);
+	if(bm->psm) DeletePenShareMap(bm->psm);
 	if(bm->native_mask) FreeRaster(bm->native_mask, bm->width, bm->height);
 	bm->nativebm = NULL;
-	bm->dto = NULL;
+	bm->drawhandle = NULL;
+	bm->psm = NULL;
 	bm->native_mask = NULL;
 	bm->native = AMI_NSBM_NONE;
 }
@@ -288,17 +300,25 @@ static size_t bitmap_get_bpp(void *vbitmap)
 	return 4;
 }
 
-#ifdef __amigaos4__
 static void ami_bitmap_argb_to_rgba(struct bitmap *bm)
 {
 	if(bm == NULL) return;
 	
 	ULONG *data = (ULONG *)amiga_bitmap_get_buffer(bm);
-	for(int i = 0; i < ((amiga_bitmap_get_rowstride(bm) / sizeof(ULONG)) * bm->height); i++) { 
+	for(int i = 0; i < (bm->width * bm->height); i++) {
 		data[i] = (data[i] << 8) | (data[i] >> 24);
 	}
 }
-#endif
+
+static void ami_bitmap_rgba_to_argb(struct bitmap *bm)
+{
+	if(bm == NULL) return;
+	
+	ULONG *data = (ULONG *)amiga_bitmap_get_buffer(bm);
+	for(int i = 0; i < (bm->width * bm->height); i++) {
+		data[i] = (data[i] >> 8) | (data[i] << 24);
+	}
+}
 
 #ifdef BITMAP_DUMP
 void bitmap_dump(struct bitmap *bitmap)
@@ -385,41 +405,64 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 	return bm;
 }
 
-static inline struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,int height,struct BitMap *friendbm)
+static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap, int width, int height, struct BitMap *friendbm, int type)
 {
 	struct BitMap *tbm = NULL;
 
-	if(!bitmap) return NULL;
-
-	if((bitmap->native != AMI_NSBM_NONE) && (bitmap->native != AMI_NSBM_TRUECOLOUR)) {
-		amiga_bitmap_modified(bitmap);
-	}
-
 	if(bitmap->nativebm)
 	{
-		if((bitmap->nativebmwidth == width) && (bitmap->nativebmheight==height))
-		{
+		if((bitmap->nativebmwidth == width) && (bitmap->nativebmheight == height)) {
 			tbm = bitmap->nativebm;
 			return tbm;
-		}
-		else if((bitmap->nativebmwidth == bitmap->width) && (bitmap->nativebmheight==bitmap->height))
-		{
+		} else if((bitmap->nativebmwidth == bitmap->width) &&
+				(bitmap->nativebmheight == bitmap->height)) { // >= width/height ?
 			tbm = bitmap->nativebm;
-		}
-		else
-		{
-			if(bitmap->nativebm) ami_rtg_freebitmap(bitmap->nativebm);
-			bitmap->nativebm = NULL;
+		} else {
+			if(bitmap->nativebm) amiga_bitmap_modified(bitmap);
 		}
 	}
 
-	if(!tbm)
-	{
-		if((tbm = ami_rtg_allocbitmap(bitmap->width, bitmap->height, 32, 0,
-								friendbm, AMI_BITMAP_FORMAT))) {
-			ami_rtg_writepixelarray(amiga_bitmap_get_buffer(bitmap),
-								tbm, bitmap->width, bitmap->height,
-								bitmap->width * 4, AMI_BITMAP_FORMAT);
+	if(tbm == NULL) {
+		if(type == AMI_NSBM_TRUECOLOUR) {
+			if((tbm = ami_rtg_allocbitmap(bitmap->width, bitmap->height, 32, 0,
+										friendbm, AMI_BITMAP_FORMAT))) {
+				ami_rtg_writepixelarray(amiga_bitmap_get_buffer(bitmap),
+										tbm, bitmap->width, bitmap->height,
+										bitmap->width * 4, AMI_BITMAP_FORMAT);
+			}
+		} else {
+			if((tbm = ami_rtg_allocbitmap(bitmap->width, bitmap->height,
+										8, 0, friendbm, AMI_BITMAP_FORMAT))) {
+
+				struct RastPort rp;
+				InitRastPort(&rp);
+				rp.BitMap = tbm;
+				ULONG dithermode = DITHERMODE_NONE;
+
+				if(nsoption_int(dither_quality) == 1) {
+					dithermode = DITHERMODE_EDD;
+				} else if(nsoption_int(dither_quality) == 2) {
+					dithermode = DITHERMODE_FS;
+				}
+
+				ami_bitmap_rgba_to_argb(bitmap);
+				bitmap->psm = CreatePenShareMap(TAG_DONE);
+				AddPixelArray(bitmap->psm, (ULONG *)amiga_bitmap_get_buffer(bitmap),
+								bitmap->width, bitmap->height,
+								GGFX_PixelFormat, PIXFMT_0RGB_32, TAG_DONE);
+
+				bitmap->drawhandle = ObtainDrawHandle(bitmap->psm, &rp, scrn->ViewPort.ColorMap,
+										GGFX_DitherMode, dithermode,
+										TAG_DONE);
+
+				APTR ddh = CreateDirectDrawHandle(bitmap->drawhandle,
+										bitmap->width, bitmap->height,
+										bitmap->width, bitmap->height, NULL);
+
+				DirectDrawTrueColor(ddh, (ULONG *)amiga_bitmap_get_buffer(bitmap), 0, 0, TAG_DONE);
+				DeleteDirectDrawHandle(ddh);
+				ami_bitmap_argb_to_rgba(bitmap);
+			}
 		}
 
 		if(nsoption_int(cache_bitmaps) == 2)
@@ -427,7 +470,7 @@ static inline struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int
 			bitmap->nativebm = tbm;
 			bitmap->nativebmwidth = bitmap->width;
 			bitmap->nativebmheight = bitmap->height;
-			bitmap->native = AMI_NSBM_TRUECOLOUR;
+			bitmap->native = type;
 		}
 	}
 
@@ -435,25 +478,29 @@ static inline struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int
 	{
 		struct BitMap *scaledbm;
 		struct BitScaleArgs bsa;
+		int depth = 32;
+		if(type == AMI_NSBM_PALETTEMAPPED) depth = 8;
 
-		scaledbm = ami_rtg_allocbitmap(width, height, 32, 0,
+		scaledbm = ami_rtg_allocbitmap(width, height, depth, 0,
 									friendbm, AMI_BITMAP_FORMAT);
 #ifdef __amigaos4__
-		if(__builtin_expect(GfxBase->LibNode.lib_Version >= 53, 1)) {
-		/* AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1) */
+		if(__builtin_expect(((GfxBase->LibNode.lib_Version >= 53) &&
+			(type == AMI_NSBM_TRUECOLOUR)), 1)) {
+			/* AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
+			 * Additionally, when we use friend BitMaps in non 32-bit modes it freezes the OS */
 			uint32 flags = 0;
 			if(nsoption_bool(scale_quality)) flags |= COMPFLAG_SrcFilter;
 			
 			CompositeTags(COMPOSITE_Src, tbm, scaledbm,
-						COMPTAG_ScaleX,COMP_FLOAT_TO_FIX((float)width/bitmap->width),
-						COMPTAG_ScaleY,COMP_FLOAT_TO_FIX((float)height/bitmap->height),
+						COMPTAG_ScaleX, COMP_FLOAT_TO_FIX((float)width/bitmap->width),
+						COMPTAG_ScaleY, COMP_FLOAT_TO_FIX((float)height/bitmap->height),
 						COMPTAG_Flags, flags,
-						COMPTAG_DestX,0,
-						COMPTAG_DestY,0,
-						COMPTAG_DestWidth,width,
-						COMPTAG_DestHeight,height,
-						COMPTAG_OffsetX,0,
-						COMPTAG_OffsetY,0,
+						COMPTAG_DestX, 0,
+						COMPTAG_DestY, 0,
+						COMPTAG_DestWidth, width,
+						COMPTAG_DestHeight, height,
+						COMPTAG_OffsetX, 0,
+						COMPTAG_OffsetY, 0,
 						COMPTAG_FriendBitMap, scrn->RastPort.BitMap,
 						TAG_DONE);
 		} else /* Do it the old-fashioned way.  This is pretty slow, even on OS4.1 */
@@ -487,11 +534,21 @@ static inline struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int
 			bitmap->nativebm = tbm;
 			bitmap->nativebmwidth = width;
 			bitmap->nativebmheight = height;
-			bitmap->native = AMI_NSBM_TRUECOLOUR;
+			bitmap->native = type;
 		}
 	}
 
 	return tbm;
+}
+
+
+static inline struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,int height,struct BitMap *friendbm)
+{
+	if((bitmap->native != AMI_NSBM_NONE) && (bitmap->native != AMI_NSBM_TRUECOLOUR)) {
+		amiga_bitmap_modified(bitmap);
+	}
+
+	return ami_bitmap_get_generic(bitmap, width, height, friendbm, AMI_NSBM_TRUECOLOUR);
 }
 
 PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width,
@@ -525,62 +582,22 @@ PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width,
 }
 
 static inline struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
-					int width, int height)
+					int width, int height, struct BitMap *friendbm)
 {
-	struct BitMap *dtbm;
-
 	if((bitmap->native != AMI_NSBM_NONE) && (bitmap->native != AMI_NSBM_PALETTEMAPPED)) {
 		amiga_bitmap_modified(bitmap);
 	}
 
-	/* Dispose the DataTypes object if we've performed a layout already,
-		and we need to scale, as scaling can only be performed before
-		the first GM_LAYOUT */
-	
-	if(bitmap->dto &&
-			((bitmap->nativebmwidth != width) ||
-			(bitmap->nativebmheight != height))) {
-		DisposeDTObject(bitmap->dto);
-		bitmap->dto = NULL;
-	}
-	
-	if(bitmap->dto == NULL) {
-		bitmap->dto = ami_datatype_object_from_bitmap(bitmap);
-
-		SetDTAttrs(bitmap->dto, NULL, NULL,
-				PDTA_Screen, scrn,
-				PDTA_ScaleQuality, nsoption_bool(scale_quality),
-				PDTA_DitherQuality, nsoption_int(dither_quality),
-				PDTA_FreeSourceBitMap, TRUE,
-				TAG_DONE);
-
-		if((bitmap->width != width) || (bitmap->height != height)) {
-			IDoMethod(bitmap->dto, PDTM_SCALE, width, height, 0);
-		}
-		
-		if((DoDTMethod(bitmap->dto, 0, 0, DTM_PROCLAYOUT, 0, 1)) == 0)
-			return NULL;
-	}
-	
-	GetDTAttrs(bitmap->dto, 
-		PDTA_DestBitMap, &dtbm,
-		TAG_END);
-	
-	bitmap->nativebmwidth = width;
-	bitmap->nativebmheight = height;
-
-	/**\todo Native bitmaps are stored as DataTypes Objects here?
-	   This is sub-optimal and they should be cached as BitMaps according to user
-	   preferences */
-	bitmap->native = AMI_NSBM_PALETTEMAPPED;
-	return dtbm;
+	return ami_bitmap_get_generic(bitmap, width, height, friendbm, AMI_NSBM_PALETTEMAPPED);
 }
 
 struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
 				int width, int height, struct BitMap *friendbm)
 {
+	if(bitmap == NULL) return NULL;
+
 	if(__builtin_expect(ami_plot_screen_is_palettemapped() == true, 0)) {
-		return ami_bitmap_get_palettemapped(bitmap, width, height);
+		return ami_bitmap_get_palettemapped(bitmap, width, height, friendbm);
 	} else {
 		return ami_bitmap_get_truecolour(bitmap, width, height, friendbm);
 	}
@@ -671,12 +688,6 @@ ULONG *ami_bitmap_get_icondata(struct bitmap *bm)
 void ami_bitmap_set_icondata(struct bitmap *bm, ULONG *icondata)
 {
 	bm->icondata = icondata;
-}
-
-bool ami_bitmap_has_dto(struct bitmap *bm)
-{
-	if(bm->dto) return true;
-		else return false;
 }
 
 bool ami_bitmap_is_nativebm(struct bitmap *bm, struct BitMap *nbm)
