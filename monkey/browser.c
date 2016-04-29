@@ -37,6 +37,13 @@ static uint32_t win_ctr = 0;
 
 static struct gui_window *gw_ring = NULL;
 
+/* exported function documented in monkey/browser.h */
+nserror monkey_warn_user(const char *warning, const char *detail)
+{
+  fprintf(stderr, "WARN %s %s\n", warning, detail);
+  return NSERROR_OK;
+}
+
 struct gui_window *
 monkey_find_window_by_num(uint32_t win_num)
 {
@@ -366,6 +373,9 @@ static void
 monkey_window_handle_go(int argc, char **argv)
 {
   struct gui_window *gw;
+  nsurl *url;
+  nsurl *ref_url = NULL;
+  nserror error;
   
   if (argc < 4 || argc > 5) {
     fprintf(stdout, "ERROR WINDOW GO ARGS BAD\n");
@@ -376,31 +386,32 @@ monkey_window_handle_go(int argc, char **argv)
   
   if (gw == NULL) {
     fprintf(stdout, "ERROR WINDOW NUM BAD\n");
-  } else {
-    nsurl *url;
-    nsurl *ref_url = NULL;
-    nserror error;
+    return;
+  }
 
-    error = nsurl_create(argv[3], &url);
-    if (error != NSERROR_OK) {
-      warn_user(messages_get_errorcode(error), 0);
-    } else {
-      if (argc == 5) {
-	error = nsurl_create(argv[4], &ref_url);
-      }
+  error = nsurl_create(argv[3], &url);
+  if (error == NSERROR_OK) {
+    if (argc == 5) {
+      error = nsurl_create(argv[4], &ref_url);
+    }
 
-      browser_window_navigate(gw->bw,
-			      url,
-			      ref_url,
-			      BW_NAVIGATE_HISTORY,
-			      NULL,
-			      NULL,
-			      NULL);
-      nsurl_unref(url);
+    if (error == NSERROR_OK) {
+      error = browser_window_navigate(gw->bw,
+				      url,
+				      ref_url,
+				      BW_NAVIGATE_HISTORY,
+				      NULL,
+				      NULL,
+				      NULL);
       if (ref_url != NULL) {
 	nsurl_unref(ref_url);
       }
     }
+    nsurl_unref(url);
+  }
+
+  if (error != NSERROR_OK) {
+    monkey_warn_user(messages_get_errorcode(error), 0);
   }
 }
 

@@ -43,4 +43,6 @@ void monkey_window_process_reformats(void);
 void monkey_window_handle_command(int argc, char **argv);
 void monkey_kill_browser_windows(void);
 
+nserror monkey_warn_user(const char *warning, const char *detail);
+
 #endif /* NETSURF_MONKEY_BROWSER_H */

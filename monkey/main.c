@@ -223,12 +223,6 @@ static nserror set_defaults(struct nsoption_s *defaults)
   return NSERROR_OK;
 }
 
-static nserror monkey_warn_user(const char *warning, const char *detail)
-{
-  fprintf(stderr, "WARN %s %s\n", warning, detail);
-  return NSERROR_OK;
-}
-
 
 /**
  * Ensures output logging stream is correctly configured
