@@ -285,10 +285,7 @@ char *messages_get_buff(const char *key, ...)
 
 	buff = malloc(buff_len + 1);
 
-	if (buff == NULL) {
-		LOG("malloc failed");
-		warn_user("NoMemory", 0);
-	} else {
+	if (buff != NULL) {
 		va_start(ap, key);
 		vsnprintf(buff, buff_len + 1, msg_fmt, ap);
 		va_end(ap);
