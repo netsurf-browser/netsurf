@@ -350,7 +350,7 @@ monkey_window_handle_new(int argc, char **argv)
     }
   }
   if (error != NSERROR_OK) {
-    warn_user(messages_get_errorcode(error), 0);
+    monkey_warn_user(messages_get_errorcode(error), 0);
   }
 }
 
