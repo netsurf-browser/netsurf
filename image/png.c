@@ -246,7 +246,6 @@ static nserror nspng_create_png_data(nspng_content *png_c)
 	if (png_c->png == NULL) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(&png_c->base, CONTENT_MSG_ERROR, msg_data);
-		warn_user("NoMemory", 0);
 		return NSERROR_NOMEM;
 	}
 
@@ -258,7 +257,6 @@ static nserror nspng_create_png_data(nspng_content *png_c)
 
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(&png_c->base, CONTENT_MSG_ERROR, msg_data);
-		warn_user("NoMemory", 0);
 		return NSERROR_NOMEM;
 	}
 
