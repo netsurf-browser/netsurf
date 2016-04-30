@@ -168,7 +168,7 @@ static char **read_locales(void)
     fp_locales = fopen(buf, "r");
 
     if (fp_locales == NULL) {
-        warn_user("Failed to load locales: %s",buf);
+        atari_warn_user("Failed to load locales: %s",buf);
         return(NULL);
     } else {
         LOG("Reading locales from: %s...", buf);

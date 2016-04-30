@@ -24,6 +24,7 @@
 #include "content/hlcache.h"
 
 #include "atari/gui.h"
+#include "atari/misc.h"
 #include "atari/rootwin.h"
 #include "atari/clipboard.h"
 #include "atari/gemtk/gemtk.h"
@@ -237,7 +238,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 					NULL);
 
 				if (error != NSERROR_OK) {
-					warn_user(messages_get_errorcode(error), 0);
+					atari_warn_user(messages_get_errorcode(error), 0);
 				}
 			}
 
@@ -271,7 +272,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 					gw->browser->bw,
 					NULL);
 				if (error != NSERROR_OK) {
-					warn_user(messages_get_errorcode(error), 0);
+					atari_warn_user(messages_get_errorcode(error), 0);
 				}
 			}
 		break;

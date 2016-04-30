@@ -699,7 +699,7 @@ bool toolbar_key_input(struct s_toolbar *tb, short nkc)
 		if ( textarea_get_text( tb->url.textarea, tmp_url, PATH_MAX) > 0 ) {
 			window_set_focus(tb->owner, BROWSER, gw->browser);
 			if (nsurl_create((const char*)&tmp_url, &url) != NSERROR_OK) {
-				warn_user("NoMemory", 0);
+				atari_warn_user("NoMemory", 0);
 			} else {
 				browser_window_navigate(gw->browser->bw, url, NULL,
 							BW_NAVIGATE_HISTORY,
@@ -977,7 +977,7 @@ void toolbar_home_click(struct s_toolbar *tb)
 	}
 
 	if (nsurl_create(use_url, &url) != NSERROR_OK) {
-		warn_user("NoMemory", 0);
+		atari_warn_user("NoMemory", 0);
 	} else {
 		browser_window_navigate(bw,
 					url,

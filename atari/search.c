@@ -224,7 +224,7 @@ void nsatari_search_restore_form( struct s_search_form_session *s, OBJECT *obj)
 void nsatari_search_session_destroy(struct s_search_form_session *s)
 {
 	if (s != NULL) {
-		LOG("");
+		LOG("session %p", s);
 		browser_window_search_clear(s->g->browser->bw);
 		free(s);
 	}

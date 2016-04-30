@@ -75,8 +75,12 @@ void dbg_rect(const char * str, int * pxy);
 const char * file_select(const char * title, const char * name);
 
 /**
- * Convert NKC (atari normalized key code) to netsurf
- * Input key code and/or to ucs4 (depends on keycode).
+ * Convert NKC to netsurf input key code and/or to ucs4 (depends on keycode).
+ *
+ * \param[in] nkc atari normalized key code
+ * \param[out] ucs4_out The ucs4 converted keycode
+ * \return The netsurf input keycode or 0 and ucs4_out updated with
+ *          the NKC converted to UC4 encoding.
  */
 long nkc_to_input_key(short nkc, long * ucs4_out);
 

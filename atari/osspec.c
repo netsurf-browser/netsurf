@@ -40,7 +40,7 @@ NS_ATARI_SYSINFO atari_sysinfo;
 void init_os_info(void)
 {
 	int16_t out[4];
-	unsigned long cookie_FSMC = 0;
+	long cookie_FSMC = 0;
 
 	atari_sysinfo.gemdos_version = Sversion();
 
@@ -71,6 +71,8 @@ void init_os_info(void)
 	}
 }
 
+
+/* exported interface documented in atari/osspec.h */
 int tos_getcookie(long tag, long * value)
 {
 	COOKIE * cptr;

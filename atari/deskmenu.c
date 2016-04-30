@@ -195,7 +195,7 @@ static void __CDECL menu_about(short item, short title, void *data)
 	  nsurl_unref(url);
 	  }
 	  if (error != NSERROR_OK) {
-	  warn_user(messages_get_errorcode(error), 0);
+	  atari_warn_user(messages_get_errorcode(error), 0);
 	  }
 	*/
 	atari_about_show();
@@ -227,7 +227,7 @@ static void __CDECL menu_new_win(short item, short title, void *data)
 
 	}
 	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+		atari_warn_user(messages_get_errorcode(error), 0);
 	}
 }
 
@@ -270,7 +270,7 @@ static void __CDECL menu_open_file(short item, short title, void *data)
 
 			}
 			if (error != NSERROR_OK) {
-				warn_user(messages_get_errorcode(error), 0);
+				atari_warn_user(messages_get_errorcode(error), 0);
 			}
 			free( urltxt );
 		}

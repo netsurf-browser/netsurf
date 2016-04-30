@@ -287,7 +287,7 @@ gui_download_window_create(download_context *ctx, struct gui_window *parent)
 
 	gdw = calloc(1, sizeof(struct gui_download_window));
 	if( gdw == NULL ){
-		warn_user(NULL, "Out of memory!");
+		atari_warn_user(NULL, "Out of memory!");
 		free( destination );
 		return( NULL );
 	}

@@ -177,7 +177,7 @@ void atari_about_show(void)
 			nsurl_unref(url);
 		}
 		if (nserr != NSERROR_OK) {
-			warn_user(messages_get_errorcode(nserr), 0);
+			atari_warn_user(messages_get_errorcode(nserr), 0);
 		}
 	}
 /*

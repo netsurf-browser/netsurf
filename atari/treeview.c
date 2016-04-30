@@ -528,7 +528,7 @@ atari_treeview_create(GUIWIN *win, struct atari_treeview_callbacks * callbacks,
 	tv = calloc(1, sizeof(struct atari_treeview_window));
 	if (tv == NULL) {
 		LOG("calloc failed");
-		warn_user(messages_get_errorcode(NSERROR_NOMEM), 0);
+		atari_warn_user(messages_get_errorcode(NSERROR_NOMEM), 0);
 		return NULL;
 	}
 

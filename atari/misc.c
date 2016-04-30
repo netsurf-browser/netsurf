@@ -194,18 +194,6 @@ bool is_process_running(const char * name)
 }
 
 
-/**
- * Callback for load_icon(). Should be removed once bitmaps get loaded directly
- * from disc
- */
-static nserror load_icon_callback(hlcache_handle *handle,
-		const hlcache_event *event, void *pw)
-{
-	return NSERROR_OK;
-}
-
-
-
 void gem_set_cursor( MFORM_EX * cursor )
 {
 	static unsigned char flags = 255;
@@ -221,13 +209,8 @@ void gem_set_cursor( MFORM_EX * cursor )
 	flags = cursor->flags;
 }
 
-/**
- * Convert NKC (atari normalized key code) to netsurf
- * Input key code and/or to ucs4 (depends on keycode).
- * When the input key can not be found for the NKC,
- * the function will return 0 and fill ucs4_out with
- * the NKC converted to UC4 encoding.
-*/
+
+/* exported interface documented in atari/misc.h */
 long nkc_to_input_key(short nkc, long * ucs4_out)
 {
 	unsigned char ascii = (nkc & 0xFF);

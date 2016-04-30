@@ -93,7 +93,7 @@ static void atari_hotlist_keypress(struct core_window *cw, uint32_t ucs4)
 {
 	GUIWIN *gemtk_win;
 	GRECT area;
-	LOG("ucs4: %lu\n", ucs4);
+	LOG("ucs4: %"PRIu32 , ucs4);
 	hotlist_keypress(ucs4);
 	gemtk_win = atari_treeview_get_gemtk_window(cw);
 	atari_treeview_get_grect(cw, TREEVIEW_AREA_CONTENT, &area);
