@@ -702,6 +702,7 @@ struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
 				int width, int height, struct BitMap *friendbm)
 {
 	if(bitmap == NULL) return NULL;
+	LOG("Getting native BitMap for %p", bitmap);
 
 	if(__builtin_expect(ami_plot_screen_is_palettemapped() == true, 0)) {
 		return ami_bitmap_get_palettemapped(bitmap, width, height, friendbm);
@@ -719,6 +720,8 @@ void ami_bitmap_fini(void)
 static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *content)
 {
 #ifdef __amigaos4__
+	LOG("Entering bitmap_render");
+
 	struct redraw_context ctx = {
 		.interactive = false,
 		.background_images = true,
