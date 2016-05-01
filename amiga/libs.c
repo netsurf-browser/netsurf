@@ -65,7 +65,7 @@
 	} else {	\
 		LOG("Failed to open %s v%d", LIB, LIBVER);	\
 		if(FAIL == true) {	\
-			STRPTR error = ASPrintf("Unable to open %s v%d (fatal error)", LIB, LIBVER);	\
+			STRPTR error = ASPrintf("Unable to open %s v%ld (fatal error)", LIB, LIBVER);	\
 			ami_misc_fatal_error(error);	\
 			FreeVec(error);	\
 			return false;	\
