@@ -113,13 +113,8 @@ static int sEventPipe[2];
 // #pragma mark - class NSBrowserFrameView
 
 
-/**
- * Display a warning for a serious problem (eg memory exhaustion).
- *
- * \param  warning  message key for warning message
- * \param  detail   additional message, or 0
- */
-static nserror beos_warn_user(const char *warning, const char *detail)
+/* exported function defined in beos/gui.h */
+nserror beos_warn_user(const char *warning, const char *detail)
 {
 	LOG("warn_user: %s (%s)", warning, detail);
 	BAlert *alert;

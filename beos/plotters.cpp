@@ -40,8 +40,6 @@ extern "C" {
 #include "beos/font.h"
 #include "beos/gui.h"
 #include "beos/plotters.h"
-//#include "beos/scaffolding.h"
-//#include "beos/options.h"
 #include "beos/bitmap.h"
 
 #warning MAKE ME static
@@ -128,7 +126,7 @@ bool nsbeos_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *s
 
 		view = nsbeos_current_gc/*_lock*/();
 		if (view == NULL) {
-			warn_user("No GC", 0);
+			beos_warn_user("No GC", 0);
 			return false;
 		}
 
@@ -162,7 +160,7 @@ bool nsbeos_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *s
 
 		view = nsbeos_current_gc/*_lock*/();
 		if (view == NULL) {
-			warn_user("No GC", 0);
+			beos_warn_user("No GC", 0);
 			return false;
 		}
 
@@ -207,7 +205,7 @@ bool nsbeos_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 
 	view = nsbeos_current_gc/*_lock*/();
 	if (view == NULL) {
-		warn_user("No GC", 0);
+		beos_warn_user("No GC", 0);
 		return false;
 	}
 
@@ -235,7 +233,7 @@ bool nsbeos_plot_polygon(const int *p, unsigned int n, const plot_style_t *style
 
 	view = nsbeos_current_gc/*_lock*/();
 	if (view == NULL) {
-		warn_user("No GC", 0);
+		beos_warn_user("No GC", 0);
 		return false;
 	}
 
@@ -265,7 +263,7 @@ bool nsbeos_plot_clip(const struct rect *ns_clip)
 
 	view = nsbeos_current_gc/*_lock*/();
 	if (view == NULL) {
-		warn_user("No GC", 0);
+		beos_warn_user("No GC", 0);
 		return false;
 	}
 
@@ -296,7 +294,7 @@ bool nsbeos_plot_disc(int x, int y, int radius, const plot_style_t *style)
 
 	view = nsbeos_current_gc/*_lock*/();
 	if (view == NULL) {
-		warn_user("No GC", 0);
+		beos_warn_user("No GC", 0);
 		return false;
 	}
 
@@ -319,7 +317,7 @@ bool nsbeos_plot_arc(int x, int y, int radius, int angle1, int angle2, const plo
 
 	view = nsbeos_current_gc/*_lock*/();
 	if (view == NULL) {
-		warn_user("No GC", 0);
+		beos_warn_user("No GC", 0);
 		return false;
 	}
 
@@ -349,7 +347,7 @@ static bool nsbeos_plot_bbitmap(int x, int y, int width, int height,
 
 	view = nsbeos_current_gc/*_lock*/();
 	if (view == NULL) {
-		warn_user("No GC", 0);
+		beos_warn_user("No GC", 0);
 		return false;
 	}
 
@@ -419,7 +417,7 @@ bool nsbeos_plot_bitmap(int x, int y, int width, int height,
 
 	view = nsbeos_current_gc/*_lock*/();
 	if (view == NULL) {
-		warn_user("No GC", 0);
+		beos_warn_user("No GC", 0);
 		return false;
 	}
 

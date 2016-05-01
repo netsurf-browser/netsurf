@@ -78,3 +78,11 @@ void nsbeos_update_system_ui_colors(void);
  * \param error The message to display to the user.
  */
 void die(const char * const error) __attribute__ ((noreturn));
+
+/**
+ * Display a warning for a serious problem (eg memory exhaustion).
+ *
+ * \param warning  message key for warning message
+ * \param detail   additional message, or 0
+ */
+nserror beos_warn_user(const char *warning, const char *detail)

@@ -38,6 +38,7 @@ extern "C" {
 }
 
 #include "beos/filetype.h"
+#include "beos/gui.h"
 
 static struct {
 	const char *type;
@@ -68,7 +69,7 @@ void beos_fetch_filetype_init(void)
 			continue;
 		err = m.Install();
 		if (err < B_OK) {
-			warn_user("Mime", strerror(err));
+			beos_warn_user("Mime", strerror(err));
 			continue;
 		}
 		// the mime db doesn't know about it yet
@@ -79,7 +80,7 @@ void beos_fetch_filetype_init(void)
 			extensions.AddString("extensions", default_types[i].ext2);
 		err = m.SetFileExtensions(&extensions);
 		if (err < B_OK) {
-			warn_user("Mime", strerror(err));
+			beos_warn_user("Mime", strerror(err));
 		}
 	}
 }

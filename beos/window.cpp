@@ -348,7 +348,7 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 
 	g = (struct gui_window *)malloc(sizeof(*g));
 	if (!g) {
-		warn_user("NoMemory", 0);
+		beos_warn_user("NoMemory", 0);
 		return 0;
 	}
 

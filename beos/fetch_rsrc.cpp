@@ -374,7 +374,7 @@ void fetch_rsrc_register(void)
 	err = find_app_resources();
 
 	if (err < B_OK) {
-		warn_user("Resources", strerror(err));
+		beos_warn_user("Resources", strerror(err));
 		return;
 	}
 

@@ -439,7 +439,7 @@ NSBaseView::NSBaseView(BMessage *archive)
 
 NSBaseView::~NSBaseView()
 {
-	//warn_user ("~NSBaseView()", NULL);
+	//beos_warn_user("~NSBaseView()", NULL);
 	if (replicated) {
 		BMessage *message = new BMessage(B_QUIT_REQUESTED);
 		nsbeos_pipe_message_top(message, NULL, fScaffolding);
@@ -914,7 +914,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 					nsurl_unref(nsurl);
 				}
 				if (error != NSERROR_OK) {
-					warn_user(messages_get_errorcode(error), 0);
+					beos_warn_user(messages_get_errorcode(error), 0);
 				}
 			}
 			break;
@@ -937,7 +937,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
                                         nsurl_unref(url);
                                 }
                                 if (error != NSERROR_OK) {
-                                        warn_user(messages_get_errorcode(error), 0);
+                                        beos_warn_user(messages_get_errorcode(error), 0);
                                 }
 			}
 			break;
@@ -957,7 +957,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 
 			error = nsurl_create(url.String(), &nsurl);
 			if (error != NSERROR_OK) {
-				warn_user(messages_get_errorcode(error), 0);
+				beos_warn_user(messages_get_errorcode(error), 0);
 			} else {
 				browser_window_navigate(bw,
 						nsurl,
@@ -1027,7 +1027,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 
 			error = nsurl_create(addr, &url);
 			if (error != NSERROR_OK) {
-				warn_user(messages_get_errorcode(error), 0);
+				beos_warn_user(messages_get_errorcode(error), 0);
 			} else {
 				browser_window_navigate(bw,
 					url,
@@ -1055,7 +1055,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 
                         error = nsurl_create(text.String(), &url);
                         if (error != NSERROR_OK) {
-                                warn_user(messages_get_errorcode(error), 0);
+                                beos_warn_user(messages_get_errorcode(error), 0);
                         } else {
                                 browser_window_navigate(bw,
 					url,
@@ -1106,7 +1106,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			}
 
 			if (ret != NSERROR_OK) {
-				warn_user(messages_get_errorcode(ret), 0);
+				beos_warn_user(messages_get_errorcode(ret), 0);
 			}
 
 			search_web_finalise();
@@ -1155,7 +1155,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 				nsurl_unref(url);
 			}
 			if (nserr != NSERROR_OK) {
-				warn_user(messages_get_errorcode(nserr), 0);
+				beos_warn_user(messages_get_errorcode(nserr), 0);
 			}
 		}
 			break;
@@ -1173,7 +1173,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 				nsurl_unref(url);
 			}
 			if (nserr != NSERROR_OK) {
-				warn_user(messages_get_errorcode(nserr), 0);
+				beos_warn_user(messages_get_errorcode(nserr), 0);
 			}
 		}
 			break;
@@ -1226,7 +1226,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
                                 nsurl_unref(url);
                         }
                         if (error != NSERROR_OK) {
-                                warn_user(messages_get_errorcode(error), 0);
+                                beos_warn_user(messages_get_errorcode(error), 0);
                         }
 			break;
 		}
@@ -1715,7 +1715,7 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	g->menu_bar = NULL;
 
 	if (replicated && !replicant_view) {
-		warn_user("Error: No subwindow allowed when replicated.", NULL);
+		beos_warn_user("Error: No subwindow allowed when replicated.", NULL);
 		return NULL;
 	}
 

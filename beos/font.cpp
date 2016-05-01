@@ -332,7 +332,7 @@ bool nsfont_paint(const plot_font_style_t *fstyle,
 
 	view = nsbeos_current_gc/*_lock*/();
 	if (view == NULL) {
-		warn_user("No GC", 0);
+		beos_warn_user("No GC", 0);
 		return false;
 	}
 
