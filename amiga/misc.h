@@ -46,7 +46,7 @@ void ami_misc_itempool_free(APTR pool, APTR item, int size);
 
 char *translate_escape_chars(const char *s);
 void ami_misc_fatal_error(const char *message);
-int32 ami_warn_user_multi(const char *body,
+int32 amiga_warn_user_multi(const char *body,
 	const char *opt1, const char *opt2, struct Window *win);
 #endif
 

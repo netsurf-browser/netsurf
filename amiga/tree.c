@@ -151,7 +151,7 @@ static void ami_tree_resized(struct tree *tree, int width, int height, void *dat
 	if(twin->win)
 	{
 		if(ami_gui_get_space_box(twin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-			warn_user("NoMemory", "");
+			amiga_warn_user("NoMemory", "");
 			return;
 		}
 
@@ -193,7 +193,7 @@ static void ami_tree_get_window_dimensions(int *width, int *height, void *data)
 	struct IBox *bbox;
 
 	if(ami_gui_get_space_box(twin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
+		amiga_warn_user("NoMemory", "");
 		return;
 	}
 
@@ -232,7 +232,7 @@ static void ami_tree_redraw_req_dr(void *p)
 	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&pos_y);
 
 	if(ami_gui_get_space_box(twin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
+		amiga_warn_user("NoMemory", "");
 		return;
 	}
 
@@ -291,7 +291,7 @@ static void ami_tree_redraw_req(void *p)
 	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&pos_y);
 
 	if(ami_gui_get_space_box(twin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
+		amiga_warn_user("NoMemory", "");
 		return;
 	}
 
@@ -377,7 +377,7 @@ static void ami_tree_draw(struct treeview_window *twin)
 	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&y);
 
 	if(ami_gui_get_space_box(twin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
+		amiga_warn_user("NoMemory", "");
 		return;
 	}
 
@@ -401,7 +401,7 @@ static void ami_tree_scroll_visible(int y, int height, void *data)
 
 	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&sy);
 	if(ami_gui_get_space_box(twin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
+		amiga_warn_user("NoMemory", "");
 		return;
 	}
 
@@ -980,7 +980,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 				drag_y_move = 0;
 
 				if(ami_gui_get_space_box(twin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-					warn_user("NoMemory", "");
+					amiga_warn_user("NoMemory", "");
 					break;
 				}
 
@@ -1046,7 +1046,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 
 			case WMHI_MOUSEBUTTONS:
 				if(ami_gui_get_space_box((Object *)twin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-					warn_user("NoMemory", "");
+					amiga_warn_user("NoMemory", "");
 					break;
 				}
 
@@ -1458,7 +1458,7 @@ struct treeview_window *ami_tree_create(int flags,
 
 	if(!twin)
 	{
-		warn_user("NoMemory", 0);
+		amiga_warn_user("NoMemory", 0);
 		return NULL;
 	}
 

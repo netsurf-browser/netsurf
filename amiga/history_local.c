@@ -76,7 +76,7 @@ static void ami_history_redraw(struct history_window *hw)
 	GetAttr(SCROLLER_Top,hw->objects[OID_HSCROLL],(ULONG *)&xs);
 	GetAttr(SCROLLER_Top,hw->objects[OID_VSCROLL],(ULONG *)&ys);
 	if(ami_gui_get_space_box(hw->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
+		amiga_warn_user("NoMemory", "");
 		return;
 	}
 
@@ -193,7 +193,7 @@ static bool ami_history_click(struct history_window *hw, uint16 code)
 	ULONG xs, ys;
 
 	if(ami_gui_get_space_box(hw->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
+		amiga_warn_user("NoMemory", "");
 		return false;
 	}
 
@@ -259,7 +259,7 @@ BOOL ami_history_event(struct history_window *hw)
 				GetAttr(SCROLLER_Top, hw->objects[OID_VSCROLL], (ULONG *)&ys);
 
 				if(ami_gui_get_space_box(hw->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-					warn_user("NoMemory", "");
+					amiga_warn_user("NoMemory", "");
 					break;
 				}
 
@@ -299,7 +299,7 @@ void ami_history_update_extent(struct history_window *hw)
 
 	browser_window_history_size(hw->gw->bw, &width, &height);
 	if(ami_gui_get_space_box(hw->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
+		amiga_warn_user("NoMemory", "");
 		return;
 	}
 

@@ -4419,7 +4419,7 @@ static void ami_gui_close_tabs(struct gui_window_2 *gwin, bool other_tabs)
 
 	if((gwin->tabs > 1) && (nsoption_bool(tab_close_warn) == true)) {
 		char *req_body = ami_utf8_easy(messages_get("MultiTabClose"));
-		int32 res = ami_warn_user_multi(req_body, "Yes", "No", gwin->win);
+		int32 res = amiga_warn_user_multi(req_body, "Yes", "No", gwin->win);
 		free(req_body);
 
 		if(res == 0) return;

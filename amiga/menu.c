@@ -116,7 +116,7 @@ HOOKF(void, ami_menu_item_project_newwin, APTR, window, struct IntuiMessage *)
 		nsurl_unref(url);
 	}
 	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+		amiga_warn_user(messages_get_errorcode(error), 0);
 	}
 }
 
@@ -228,7 +228,7 @@ HOOKF(void, ami_menu_item_project_about, APTR, window, struct IntuiMessage *)
 			nsurl_unref(url);
 		}
 		if (error != NSERROR_OK) {
-			warn_user(messages_get_errorcode(error), 0);
+			amiga_warn_user(messages_get_errorcode(error), 0);
 		}
 	}
 

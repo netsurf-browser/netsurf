@@ -97,7 +97,7 @@ void ami_file_open(struct gui_window_2 *gwin)
 			AddPart(temp, filereq->fr_File, 1024);
 
 			if (netsurf_path_to_nsurl(temp, &url) != NSERROR_OK) {
-				warn_user("NoMemory", 0);
+				amiga_warn_user("NoMemory", 0);
 			} else {
 				browser_window_navigate(gwin->gw->bw,
 					url,

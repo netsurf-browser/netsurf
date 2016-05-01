@@ -141,7 +141,7 @@ nserror amiga_warn_user(const char *warning, const char *detail)
 	return NSERROR_OK;
 }
 
-int32 ami_warn_user_multi(const char *body, const char *opt1, const char *opt2, struct Window *win)
+int32 amiga_warn_user_multi(const char *body, const char *opt1, const char *opt2, struct Window *win)
 {
 	int res = 0;
 

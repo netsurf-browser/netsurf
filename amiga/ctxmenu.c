@@ -131,7 +131,7 @@ HOOKF(void, ami_ctxmenu_item_websearch, APTR, window, struct IntuiMessage *)
 		nsurl_unref(url);
 	}
 	if (ret != NSERROR_OK) {
-		warn_user(messages_get_errorcode(ret), 0);
+		amiga_warn_user(messages_get_errorcode(ret), 0);
 	}
 
 	free(sel);
@@ -151,7 +151,7 @@ HOOKF(void, ami_ctxmenu_item_urlopentab, APTR, window, struct IntuiMessage *)
 								      &bw);
 
 	if (error != NSERROR_OK)
-		warn_user(messages_get_errorcode(error), 0);		
+		amiga_warn_user(messages_get_errorcode(error), 0);		
 }
 
 HOOKF(void, ami_ctxmenu_item_urlopenwin, APTR, window, struct IntuiMessage *)
@@ -168,7 +168,7 @@ HOOKF(void, ami_ctxmenu_item_urlopenwin, APTR, window, struct IntuiMessage *)
 								      &bw);
 
 	if (error != NSERROR_OK)
-		warn_user(messages_get_errorcode(error), 0);		
+		amiga_warn_user(messages_get_errorcode(error), 0);		
 }
 
 HOOKF(void, ami_ctxmenu_item_urldownload, APTR, window, struct IntuiMessage *)

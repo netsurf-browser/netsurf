@@ -408,7 +408,7 @@ void ami_print(struct hlcache_handle *c, int copies)
 	if(OpenDevice("printer.device", nsoption_int(printer_unit),
 			(struct IORequest *)ami_print_info.PReq, 0))
 	{
-		warn_user("CompError","printer.device");
+		amiga_warn_user("CompError","printer.device");
 		return;
 	}
 
@@ -422,7 +422,7 @@ void ami_print(struct hlcache_handle *c, int copies)
 
 	if(!print_set_up(c, &amiprinter, ami_print_info.ps, &height))
 	{
-		warn_user("PrintError","print_set_up() returned false");
+		amiga_warn_user("PrintError","print_set_up() returned false");
 		ami_print_close_device();
 		return;
 	}

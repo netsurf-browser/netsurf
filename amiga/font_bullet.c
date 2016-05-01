@@ -345,7 +345,7 @@ static struct ami_font_cache_node *ami_font_open(const char *font, bool critical
 	nodedata = ami_font_cache_alloc_entry(font);
 
 	if(nodedata == NULL) {
-		warn_user("NoMemory", "");
+		amiga_warn_user("NoMemory", "");
 		return NULL;
 	}
 
@@ -354,7 +354,7 @@ static struct ami_font_cache_node *ami_font_open(const char *font, bool critical
 	if(!nodedata->font)
 	{
 		LOG("Requested font not found: %s", font);
-		if(critical == true) warn_user("CompError", font);
+		if(critical == true) amiga_warn_user("CompError", font);
 		FreeVec(nodedata);
 		return NULL;
 	}

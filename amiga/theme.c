@@ -140,7 +140,7 @@ void ami_theme_init(void)
 
 	if(!lock)
 	{
-		warn_user("ThemeApplyErr",nsoption_charp(theme));
+		amiga_warn_user("ThemeApplyErr",nsoption_charp(theme));
 		strcpy(themefile,"PROGDIR:Resources/Themes/Default/Theme");
 		nsoption_set_charp(theme, (char *)strdup("PROGDIR:Resources/Themes/Default"));
 	}
@@ -447,7 +447,7 @@ void gui_window_stop_throbber(struct gui_window *g)
 
 	if(g == g->shared->gw) {
 		if(ami_gui_get_space_box(g->shared->objects[GID_THROBBER], &bbox) != NSERROR_OK) {
-			warn_user("NoMemory", "");
+			amiga_warn_user("NoMemory", "");
 			return;
 		}
 
@@ -479,7 +479,7 @@ static void ami_throbber_update(void *p)
 
 	if(g->shared->gw == g) {
 		if(ami_gui_get_space_box(g->shared->objects[GID_THROBBER], &bbox) != NSERROR_OK) {
-			warn_user("NoMemory", "");
+			amiga_warn_user("NoMemory", "");
 			return;
 		}
 #ifdef __amigaos4__

@@ -163,10 +163,10 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool for
 		gg->bm = ami_rtg_allocbitmap(width, height, 32, 0, friend, RGBFB_A8R8G8B8);
 	}
 
-	if(!gg->bm) warn_user("NoMemory","");
+	if(!gg->bm) amiga_warn_user("NoMemory","");
 
 	gg->rp = AllocVecTagList(sizeof(struct RastPort), NULL);
-	if(!gg->rp) warn_user("NoMemory","");
+	if(!gg->rp) amiga_warn_user("NoMemory","");
 
 	InitRastPort(gg->rp);
 	gg->rp->BitMap = gg->bm;
@@ -179,12 +179,12 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool for
 	InstallLayerHook(gg->rp->Layer,LAYERS_NOBACKFILL);
 
 	gg->rp->AreaInfo = AllocVecTagList(sizeof(struct AreaInfo), NULL);
-	if((!gg->areabuf) || (!gg->rp->AreaInfo))	warn_user("NoMemory","");
+	if((!gg->areabuf) || (!gg->rp->AreaInfo))	amiga_warn_user("NoMemory","");
 
 	InitArea(gg->rp->AreaInfo,gg->areabuf, AREA_SIZE/5);
 
 	gg->rp->TmpRas = AllocVecTagList(sizeof(struct TmpRas), NULL);
-	if((!gg->tmprasbuf) || (!gg->rp->TmpRas))	warn_user("NoMemory","");
+	if((!gg->tmprasbuf) || (!gg->rp->TmpRas))	amiga_warn_user("NoMemory","");
 
 	InitTmpRas(gg->rp->TmpRas, gg->tmprasbuf, width*height);
 

@@ -274,7 +274,7 @@ static void gui_download_window_done(struct gui_download_window *dw)
 	if(queuedl) {
 		nsurl *url;
 		if (nsurl_create(dln2->node.ln_Name, &url) != NSERROR_OK) {
-			warn_user("NoMemory", 0);
+			amiga_warn_user("NoMemory", 0);
 		} else {
 			browser_window_navigate(bw,
 				url,
@@ -292,7 +292,7 @@ static void gui_download_window_done(struct gui_download_window *dw)
 static void gui_download_window_error(struct gui_download_window *dw,
 		const char *error_msg)
 {
-	warn_user("Unwritten","");
+	amiga_warn_user("Unwritten","");
 	dw->result = AMINS_DLOAD_ERROR;
 	gui_download_window_done(dw);
 }
@@ -432,7 +432,7 @@ BOOL ami_download_check_overwrite(const char *file, struct Window *win, ULONG si
 			overwritetext = ASPrintf(messages_get("OverwriteFile"));
 		}
 
-		res = ami_warn_user_multi(overwritetext, "Replace", "DontReplace", win);
+		res = amiga_warn_user_multi(overwritetext, "Replace", "DontReplace", win);
 		FreeVec(overwritetext);
 	}
 	else return TRUE;

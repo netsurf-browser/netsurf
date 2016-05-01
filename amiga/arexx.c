@@ -245,7 +245,7 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 		gw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[4], *(ULONG *)cmd->ac_ArgList[5]);
 
 	if (nsurl_create((char *)cmd->ac_ArgList[0], &url) != NSERROR_OK) {
-		warn_user("NoMemory", 0);
+		amiga_warn_user("NoMemory", 0);
 		return;
 	}
 
@@ -513,7 +513,7 @@ STATIC VOID rx_home(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	if(gw == NULL) return;
 
 	if (nsurl_create(nsoption_charp(homepage_url), &url) != NSERROR_OK) {
-		warn_user("NoMemory", 0);
+		amiga_warn_user("NoMemory", 0);
 	} else {
 		browser_window_navigate(gw->bw,
 					url,
