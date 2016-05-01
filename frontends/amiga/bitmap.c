@@ -161,6 +161,7 @@ static void amiga_bitmap_unmap_buffer(void *p)
 	struct bitmap *bm = p;
 
 	if((nsoption_bool(use_extmem) == true) && (bm->pixdata != NULL)) {
+		LOG("Unmapping ExtMem object %p for bitmap %p", bm->iextmem, bm);
 		bm->iextmem->Unmap(bm->pixdata, bm->size);
 		bm->pixdata = NULL;
 	}
@@ -174,6 +175,7 @@ unsigned char *amiga_bitmap_get_buffer(void *bitmap)
 
 #ifdef __amigaos4__
 	if((nsoption_bool(use_extmem) == true) && (bm->pixdata == NULL)) {
+		LOG("Mapping ExtMem object %p for bitmap %p", bm->iextmem, bm);
 		bm->pixdata = bm->iextmem->Map(NULL, bm->size, 0LL, 0);
 
 		/* unmap the buffer after one second */
