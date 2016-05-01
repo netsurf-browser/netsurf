@@ -85,4 +85,4 @@ void die(const char * const error) __attribute__ ((noreturn));
  * \param warning  message key for warning message
  * \param detail   additional message, or 0
  */
-nserror beos_warn_user(const char *warning, const char *detail)
+nserror beos_warn_user(const char *warning, const char *detail);
