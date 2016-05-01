@@ -58,6 +58,7 @@
 #include "amiga/memory.h"
 #include "amiga/misc.h"
 #include "amiga/rtg.h"
+#include "amiga/schedule.h"
 
 // disable use of "triangle mode" for scaling
 #ifdef AMI_NS_TRIANGLE_SCALING
@@ -154,9 +155,11 @@ void *amiga_bitmap_create(int width, int height, unsigned int state)
 	return bitmap;
 }
 
-static inline void amiga_bitmap_unmap_buffer(struct bitmap *bm)
+static void amiga_bitmap_unmap_buffer(void *p)
 {
 #ifdef __amigaos4__
+	struct bitmap *bm = p;
+
 	if((nsoption_bool(use_extmem) == true) && (bm->pixdata != NULL)) {
 		bm->iextmem->Unmap(bm->pixdata, bm->size);
 		bm->pixdata = NULL;
@@ -172,6 +175,9 @@ unsigned char *amiga_bitmap_get_buffer(void *bitmap)
 #ifdef __amigaos4__
 	if((nsoption_bool(use_extmem) == true) && (bm->pixdata == NULL)) {
 		bm->pixdata = bm->iextmem->Map(NULL, bm->size, 0LL, 0);
+
+		/* unmap the buffer after one second */
+		ami_schedule(1000, amiga_bitmap_unmap_buffer, bm);
 	}
 #endif
 
@@ -209,6 +215,7 @@ void amiga_bitmap_destroy(void *bitmap)
 
 #ifdef __amigaos4__
 		if(nsoption_bool(use_extmem) == true) {
+			ami_schedule(-1, amiga_bitmap_unmap_buffer, bm);
 			amiga_bitmap_unmap_buffer(bm);
 			FreeSysObject(ASOT_EXTMEM, bm->iextmem);
 		} else
@@ -268,9 +275,7 @@ void amiga_bitmap_modified(void *bitmap)
 	amiga_bitmap_unmap_buffer(bm);
 #endif
 
-	if((bm->nativebm))
-		ami_rtg_freebitmap(bm->nativebm);
-		
+	if(bm->nativebm) ami_rtg_freebitmap(bm->nativebm);
 	if(bm->drawhandle) ReleaseDrawHandle(bm->drawhandle);
 	if(bm->native_mask) FreeRaster(bm->native_mask, bm->width, bm->height);
 	bm->nativebm = NULL;
@@ -437,10 +442,6 @@ Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap)
 					bitmap_get_width(bitmap), bitmap_get_height(bitmap));
 	}
 
-#ifdef __amigaos4__
-	amiga_bitmap_unmap_buffer(bitmap);
-#endif
-
 	return dto;
 }
 
@@ -469,10 +470,6 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 		}
 		DisposeDTObject(dto);
 	}
-
-#ifdef __amigaos4__
-	amiga_bitmap_unmap_buffer(bm);
-#endif
 
 	return bm;
 }
@@ -645,10 +642,6 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 		}
 	}
 
-#ifdef __amigaos4__
-	amiga_bitmap_unmap_buffer(bitmap);
-#endif
-
 	return tbm;
 }
 
@@ -767,10 +760,6 @@ static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *conte
 
 	ami_free_layers(&bm_globals);
 	amiga_bitmap_set_opaque(bitmap, true);
-
-#ifdef __amigaos4__
-	amiga_bitmap_unmap_buffer(bitmap);
-#endif
 
 	/* Restore previous render area.  This is set when plotting starts,
 	 * but if bitmap_render is called *during* a browser render then
