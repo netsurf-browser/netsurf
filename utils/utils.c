@@ -32,12 +32,6 @@
 #include <errno.h>
 #include <curl/curl.h>
 
-/* required for depricated warn_user interface */
-#include <stdbool.h>
-#include "utils/errors.h"
-#include "desktop/gui_misc.h"
-#include "desktop/gui_internal.h"
-
 #include "utils/config.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -580,10 +574,4 @@ nserror nsc_strntimet(const char *str, size_t size, time_t *timep)
         *timep = result;
 
         return NSERROR_OK;
-}
-
-/* exported interface documented in utils/utils.h */
-void warn_user(const char *message, const char *detail)
-{
-	guit->misc->warning(message, detail);
 }
