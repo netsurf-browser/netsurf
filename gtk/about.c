@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "utils/utils.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
 #include "utils/nsurl.h"

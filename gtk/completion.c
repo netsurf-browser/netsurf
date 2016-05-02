@@ -23,11 +23,10 @@
 
 #include <gtk/gtk.h>
 
-#include "content/urldb.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/utils.h"
 #include "utils/nsoption.h"
+#include "content/urldb.h"
 #include "desktop/searchweb.h"
 #include "desktop/browser.h"
 

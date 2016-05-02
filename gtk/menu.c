@@ -17,12 +17,12 @@
  */
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
 
 #include "utils/messages.h"
-#include "utils/utils.h"
 
 #include "gtk/compat.h"
 #include "gtk/menu.h"

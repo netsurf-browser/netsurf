@@ -20,7 +20,6 @@
 #include <string.h>
 
 #include "utils/nsoption.h"
-#include "utils/utils.h"
 #include "utils/messages.h"
 #include "desktop/browser.h"
 #include "content/content.h"

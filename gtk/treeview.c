@@ -32,7 +32,6 @@
 
 #include "utils/log.h"
 #include "utils/utf8.h"
-#include "utils/utils.h"
 #include "desktop/tree.h"
 #include "desktop/plotters.h"
 

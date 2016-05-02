@@ -21,7 +21,6 @@
 #include <math.h>
 #include <string.h>
 
-#include "utils/utils.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
 #include "utils/file.h"

@@ -21,7 +21,6 @@
 #include <gtk/gtk.h>
 
 #include "utils/log.h"
-#include "utils/utils.h"
 #include "desktop/global_history.h"
 #include "desktop/plotters.h"
 #include "desktop/tree.h"

@@ -28,7 +28,6 @@
 #include <stdio.h>
 #include <gtk/gtk.h>
 
-#include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/nsoption.h"
 #include "desktop/gui_layout.h"
