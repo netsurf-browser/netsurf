@@ -28,10 +28,12 @@
 #ifndef AMIGA_DR2D_STANDALONE
 #include "amiga/os3support.h"
 #include "amiga/iff_dr2d.h"
+#include "amiga/misc.h"
 #include "content/hlcache.h"
 #else
 #include "os3support.h"
 #include "iff_dr2d.h"
+#include "misc.h"
 #endif
 
 struct ColorRegister cm[1000];
@@ -123,9 +125,9 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 			PopChunk(iffh);
 		}
 
-		if(!(PushChunk(iffh,0,ID_ANNO,18)))
+		if(!(PushChunk(iffh,0,ID_ANNO,19)))
 		{
-			WriteChunkBytes(iffh,"Created by NetSurf",18);
+			WriteChunkBytes(iffh,"Created by NetSurf\0",19);
 			PopChunk(iffh);
 		}
 
@@ -170,7 +172,7 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 		}
 
 	for (i = 0; i != diagram->shape_count; i++) {
-		attr = AllocVecTagList(sizeof(struct attr_struct), NULL);
+		attr = ami_misc_allocvec_clear(sizeof(struct attr_struct), 0);
 		if (diagram->shape[i].fill == svgtiny_TRANSPARENT)
 			attr->FillType = FT_NONE;
 		else
@@ -271,13 +273,13 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 					PopChunk(iffh);
 				}
 			} else if (diagram->shape[i].text) {
-				stxt = AllocVecTagList(sizeof(struct stxt_struct), NULL);
+				stxt = ami_misc_allocvec_clear(sizeof(struct stxt_struct), 0);
 				stxt->BaseX = diagram->shape[i].text_x;
 				stxt->BaseY = diagram->shape[i].text_y;
 				stxt->NumChars = strlen(diagram->shape[i].text);
 				if(!fons_written)
 				{
-					fons = AllocVecTagList(sizeof(struct fons_struct), NULL);
+					fons = ami_misc_allocvec_clear(sizeof(struct fons_struct), 0);
 					if(!(PushChunk(iffh,0,ID_FONS,IFFSIZE_UNKNOWN)))
 					{
 						WriteChunkBytes(iffh, fons, sizeof(struct fons_struct));
