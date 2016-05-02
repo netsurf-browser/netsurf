@@ -587,7 +587,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
                 nsurl_unref(url);
         }
         if (error != NSERROR_OK) {
-                warn_user(messages_get_errorcode(error), 0);
+                cocoa_warning(messages_get_errorcode(error), 0);
         }
 }
 
@@ -607,7 +607,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
                 nsurl_unref(url);
         }
         if (error != NSERROR_OK) {
-                warn_user(messages_get_errorcode(error), 0);
+                cocoa_warning(messages_get_errorcode(error), 0);
         }
 }
 
@@ -678,7 +678,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
         error = nsurl_create([urlstr UTF8String], &url);
         if (error != NSERROR_OK) {
-                warn_user(messages_get_errorcode(error), 0);
+                cocoa_warning(messages_get_errorcode(error), 0);
         } else {
                 browser_window_navigate(browser,
                                         url,

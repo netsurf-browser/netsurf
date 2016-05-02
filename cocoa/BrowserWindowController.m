@@ -171,7 +171,7 @@
                 nsurl_unref(url);
         }
         if (error != NSERROR_OK) {
-                warn_user(messages_get_errorcode(error), 0);
+                cocoa_warning(messages_get_errorcode(error), 0);
         }
 }
 

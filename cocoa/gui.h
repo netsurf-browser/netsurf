@@ -31,3 +31,5 @@ extern NSString * const kAlwaysCancelDownload;
 extern NSString * const kAlwaysCloseMultipleTabs;
 
 void cocoa_autorelease( void );
+
+nserror cocoa_warning(const char *warning, const char *detail);

@@ -78,7 +78,7 @@
 
         error = nsurl_create([url UTF8String], &urlns);
         if (error != NSERROR_OK) {
-                warn_user(messages_get_errorcode(error), 0);
+                cocoa_warning(messages_get_errorcode(error), 0);
         } else {
                 browser_window_navigate(browser,
                                         urlns,
@@ -167,7 +167,7 @@
                 nsurl_unref(urlns);
         }
         if (error != NSERROR_OK) {
-                warn_user(messages_get_errorcode(error), 0);
+                cocoa_warning(messages_get_errorcode(error), 0);
         }
 }
 

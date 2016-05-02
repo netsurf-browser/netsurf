@@ -52,13 +52,16 @@ NSString * const kAlwaysCloseMultipleTabs = @"AlwaysCloseMultipleTabs";
 
 struct browser_window;
 
-static nserror cocoa_warn_user(const char *warning, const char *detail)
+/* exported function docuemnted in cocoa/gui.h */
+nserror cocoa_warning(const char *warning, const char *detail)
 {
-	NSRunAlertPanel( NSLocalizedString( @"Warning", @"Warning title" ), 
-					NSLocalizedString( @"Warning %s%s%s", @"Warning message" ), 
-					NSLocalizedString( @"OK", @"" ), nil, nil, 
-					warning, detail != NULL ? ": " : "",
-					detail != NULL ? detail : "" );
+	NSRunAlertPanel( NSLocalizedString( @"Warning",
+                                            @"Warning title" ),
+                         NSLocalizedString( @"Warning %s%s%s",
+                                            @"Warning message" ),
+                         NSLocalizedString( @"OK", @"" ), nil, nil,
+                         warning, detail != NULL ? ": " : "",
+                         detail != NULL ? detail : "" );
         return NSERROR_OK;
 }
 
@@ -69,13 +72,14 @@ gui_window_create(struct browser_window *bw,
                   gui_window_create_flags flags)
 {
 	BrowserWindowController *window = nil;
+	BrowserViewController *result;
 
 	browser_window_set_scale(bw, (float)nsoption_int(scale) / 100, false);
 	if (existing != NULL) {
 		window = [(BrowserViewController *)(existing) windowController];
 	}
 
-	BrowserViewController *result = [[BrowserViewController alloc] initWithBrowser: bw];
+        result = [[BrowserViewController alloc] initWithBrowser: bw];
 
 	if (!(flags & GW_CREATE_TAB) || nil == window) {
 		window = [[[BrowserWindowController alloc] init] autorelease];
@@ -162,7 +166,8 @@ static void gui_window_update_extent(struct gui_window *g)
 
         browser_window_get_extents(browser, false, &width, &height);
 	
-	[[window browserView] setMinimumSize: cocoa_scaled_size( browser_window_get_scale(browser), width, height )];
+	[[window browserView] setMinimumSize:
+                                cocoa_scaled_size( browser_window_get_scale(browser), width, height )];
 }
 
 static void gui_window_set_status(struct gui_window *g, const char *text)
@@ -205,7 +210,7 @@ static void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape
 
 static nserror gui_window_set_url(struct gui_window *g, struct nsurl *url)
 {
-  [(BrowserViewController *)g setUrl: [NSString stringWithUTF8String: nsurl_access(url)]];
+        [(BrowserViewController *)g setUrl: [NSString stringWithUTF8String: nsurl_access(url)]];
         return NSERROR_OK;
 }
 
@@ -223,9 +228,13 @@ static void gui_window_stop_throbber(struct gui_window *g)
 
 static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
-	NSBitmapImageRep *bmp = icon != NULL ? (NSBitmapImageRep *)content_get_bitmap( icon ) : NULL;
-
+	NSBitmapImageRep *bmp = NULL;
 	NSImage *image = nil;
+
+	if (icon != NULL) {
+		bmp = (NSBitmapImageRep *)content_get_bitmap( icon );
+	}
+
 	if (bmp != nil) {
 		image = [[NSImage alloc] initWithSize: NSMakeSize( 32, 32 )];
 		[image addRepresentation: bmp];
@@ -238,11 +247,13 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 	[image release];
 }
 
-static void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
-		const struct rect *clip)
+static void
+gui_window_place_caret(struct gui_window *g, int x, int y, int height,
+                       const struct rect *clip)
 {
-	[[(BrowserViewController *)g browserView] addCaretAt: cocoa_point( x, y ) 
-												  height: cocoa_px_to_pt( height )];
+	[[(BrowserViewController *)g browserView]
+                addCaretAt: cocoa_point( x, y )
+                    height: cocoa_px_to_pt( height )];
 }
 
 static void gui_window_remove_caret(struct gui_window *g)
@@ -257,10 +268,12 @@ static void gui_window_new_content(struct gui_window *g)
 
 
 static void gui_create_form_select_menu(struct gui_window *g,
-								 struct form_control *control)
+                                        struct form_control *control)
 {
 	BrowserViewController * const window = (BrowserViewController *)g;
-	FormSelectMenu  *menu = [[FormSelectMenu alloc] initWithControl: control forWindow: [window browser]];
+	FormSelectMenu *menu = [[FormSelectMenu alloc]
+                                        initWithControl: control
+                                              forWindow: [window browser]];
 	[menu runInView: [window browserView]];
 	[menu release];
 }
@@ -273,9 +286,11 @@ static nserror gui_launch_url(nsurl *url)
 
 struct ssl_cert_info;
 
-static void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs, 
-					 unsigned long num, nserror (*cb)(bool proceed, void *pw),
-					 void *cbpw)
+static void
+gui_cert_verify(nsurl *url,
+                const struct ssl_cert_info *certs,
+                unsigned long num,
+                nserror (*cb)(bool proceed,void *pw), void *cbpw)
 {
 	cb( false, cbpw );
 }
@@ -310,7 +325,7 @@ struct gui_window_table *cocoa_window_table = &window_table;
 
 static struct gui_misc_table browser_table = {
 	.schedule = cocoa_schedule,
-        .warning = cocoa_warn_user,
+	.warning = cocoa_warning,
 
 	.launch_url = gui_launch_url,
 	.cert_verify = gui_cert_verify,

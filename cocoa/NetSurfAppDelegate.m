@@ -60,7 +60,7 @@
 		nsurl_unref(url);
 	}
 	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+		cocoa_warning(messages_get_errorcode(error), 0);
 	}
 }
 
@@ -83,7 +83,7 @@
                                 nsurl_unref(u);
                         }
                         if (error != NSERROR_OK) {
-                                warn_user(messages_get_errorcode(error), 0);
+                                cocoa_warning(messages_get_errorcode(error), 0);
                         }
 		}
 	}
@@ -105,7 +105,7 @@
 		nsurl_unref(url);
 	}
 	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+		cocoa_warning(messages_get_errorcode(error), 0);
 	}
 }
 
@@ -188,7 +188,7 @@
 		nsurl_unref(url);
 	}
 	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+		cocoa_warning(messages_get_errorcode(error), 0);
 	}
 
         return YES;
