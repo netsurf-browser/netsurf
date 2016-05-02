@@ -18,15 +18,6 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "cocoa/gui.h"
-#import "cocoa/plotter.h"
-#import "cocoa/BrowserView.h"
-#import "cocoa/BrowserViewController.h"
-#import "cocoa/BrowserWindowController.h"
-#import "cocoa/FormSelectMenu.h"
-#import "cocoa/fetch.h"
-#import "cocoa/schedule.h"
-
 #import "utils/nsoption.h"
 #import "utils/utils.h"
 #import "utils/log.h"
@@ -39,6 +30,16 @@
 #import "content/fetchers/resource.h"
 #import "content/hlcache.h"
 #import "content/content.h"
+
+#import "cocoa/gui.h"
+#import "cocoa/plotter.h"
+#import "cocoa/BrowserView.h"
+#import "cocoa/BrowserViewController.h"
+#import "cocoa/BrowserWindowController.h"
+#import "cocoa/FormSelectMenu.h"
+#import "cocoa/fetch.h"
+#import "cocoa/schedule.h"
+
 
 NSString * const kCookiesFileOption = @"CookiesFile";
 NSString * const kURLsFileOption = @"URLsFile";

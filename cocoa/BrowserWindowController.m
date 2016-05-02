@@ -16,6 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#import "desktop/browser.h"
+#import "utils/nsoption.h"
+#import "utils/messages.h"
+#import "utils/utils.h"
+#import "utils/nsurl.h"
+
 #import "cocoa/BrowserWindowController.h"
 
 #import "cocoa/BrowserViewController.h"
@@ -25,11 +31,6 @@
 #import "cocoa/gui.h"
 #import "cocoa/NetsurfApp.h"
 
-#import "desktop/browser.h"
-#import "utils/nsoption.h"
-#import "utils/messages.h"
-#import "utils/utils.h"
-#import "utils/nsurl.h"
 
 @interface BrowserWindowController ()
 

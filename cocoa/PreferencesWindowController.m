@@ -16,16 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#import "utils/nsoption.h"
+#import "desktop/browser.h"
+#import "content/content.h"
+#import "content/hlcache.h"
 
 #import "cocoa/PreferencesWindowController.h"
 #import "cocoa/NetsurfApp.h"
 #import "cocoa/gui.h"
 #import "cocoa/BrowserViewController.h"
-
-#import "desktop/browser.h"
-#import "content/content.h"
-#import "utils/nsoption.h"
-#import "content/hlcache.h"
 
 @implementation PreferencesWindowController
 

@@ -16,6 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#import "utils/messages.h"
+#import "utils/utils.h"
+#import "desktop/browser.h"
+#import "desktop/hotlist.h"
+#import "desktop/tree.h"
+#import "content/hlcache.h"
+
 #import "cocoa/BookmarksController.h"
 #import "cocoa/Tree.h"
 #import "cocoa/TreeView.h"
@@ -23,12 +30,6 @@
 #import "cocoa/BrowserViewController.h"
 #import "cocoa/gui.h"
 
-#import "desktop/browser.h"
-#import "desktop/hotlist.h"
-#import "desktop/tree.h"
-#import "utils/messages.h"
-#import "utils/utils.h"
-#import "content/hlcache.h"
 
 @interface BookmarksController ()
 - (void) noteAppWillTerminate: (NSNotification *) note;

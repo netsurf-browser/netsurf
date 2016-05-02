@@ -16,13 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#import "cocoa/DownloadWindowController.h"
-#import "cocoa/gui.h"
-
 #import "utils/log.h"
 #import "utils/nsurl.h"
 #import "desktop/download.h"
 #import "desktop/gui_download.h"
+
+#import "cocoa/DownloadWindowController.h"
+#import "cocoa/gui.h"
 
 @interface DownloadWindowController ()
 
