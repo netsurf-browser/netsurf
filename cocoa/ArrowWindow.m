@@ -156,12 +156,6 @@ static NSRect ScreenRectForView( NSView *view )
         NSPoint arrowPoint;
 
         switch ([box arrowEdge]) {
-        case ArrowNone:
-        case ArrowTopEdge:
-                arrowPoint = NSMakePoint( NSMidX( viewRect ),
-                                          NSMinY( viewRect ) );
-                break;
-
         case ArrowLeftEdge:
                 arrowPoint = NSMakePoint( NSMaxX( viewRect ),
                                           NSMidY( viewRect ) );
@@ -176,6 +170,14 @@ static NSRect ScreenRectForView( NSView *view )
                 arrowPoint = NSMakePoint( NSMinX( viewRect ),
                                           NSMidY( viewRect ) );
                 break;
+
+        case ArrowNone:
+        case ArrowTopEdge:
+        default:
+                arrowPoint = NSMakePoint( NSMidX( viewRect ),
+                                          NSMinY( viewRect ) );
+                break;
+
         }
         attachedWindow = [view window];
         [self moveToPoint: arrowPoint];

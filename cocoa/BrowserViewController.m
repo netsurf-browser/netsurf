@@ -16,22 +16,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#import "cocoa/BrowserViewController.h"
-#import "cocoa/BrowserView.h"
-#import "cocoa/BrowserWindowController.h"
-#import "cocoa/fetch.h"
-
-#import "desktop/browser_history.h"
-#import "desktop/browser.h"
-#import "desktop/textinput.h"
 #import "utils/nsoption.h"
-
 #import "utils/corestrings.h"
 #import "utils/filename.h"
 #import "utils/file.h"
 #import "utils/messages.h"
 #import "utils/url.h"
+#import "desktop/browser_history.h"
+#import "desktop/browser.h"
+#import "desktop/textinput.h"
 #import "content/hlcache.h"
+
+#import "cocoa/gui.h"
+#import "cocoa/BrowserViewController.h"
+#import "cocoa/BrowserView.h"
+#import "cocoa/BrowserWindowController.h"
+#import "cocoa/fetch.h"
+
 
 
 @implementation BrowserViewController

@@ -16,16 +16,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#import "utils/nsoption.h"
+#import "utils/messages.h"
+#import "utils/utils.h"
+#import "utils/nsurl.h"
+#import "desktop/browser.h"
+
+#import "cocoa/gui.h"
 #import "cocoa/NetSurfAppDelegate.h"
 #import "cocoa/SearchWindowController.h"
 #import "cocoa/PreferencesWindowController.h"
 #import "cocoa/HistoryWindowController.h"
 
-#import "desktop/browser.h"
-#import "utils/nsoption.h"
-#import "utils/messages.h"
-#import "utils/utils.h"
-#import "utils/nsurl.h"
 
 @interface NetSurfAppDelegate ()
 

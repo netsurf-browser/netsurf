@@ -16,6 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#import "utils/nsoption.h"
+#import "utils/messages.h"
+#import "desktop/browser.h"
+#import "desktop/plotters.h"
+#import "desktop/textinput.h"
+#import "content/hlcache.h"
+
+#import "cocoa/gui.h"
 #import "cocoa/BrowserView.h"
 #import "cocoa/HistoryView.h"
 #import "cocoa/font.h"
@@ -23,12 +31,6 @@
 #import "cocoa/LocalHistoryController.h"
 #import "cocoa/BrowserWindowController.h"
 
-#import "desktop/browser.h"
-#import "desktop/plotters.h"
-#import "desktop/textinput.h"
-#import "utils/nsoption.h"
-#import "utils/messages.h"
-#import "content/hlcache.h"
 
 @interface BrowserView ()
 
