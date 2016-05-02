@@ -30,12 +30,13 @@
 #include "oslib/os.h"
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
+
+#include "utils/log.h"
+#include "riscos/gui.h"
+
 #include "riscos/gui/throbber.h"
 #include "riscos/theme.h"
 #include "riscos/wimp.h"
-#include "utils/log.h"
-#include "utils/utils.h"
-#include "riscos/gui.h"
 
 #define THROBBER_SPRITE_NAME_LENGTH 12
 #define THROBBER_ANIMATE_INTERVAL 10

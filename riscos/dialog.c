@@ -38,7 +38,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsurl.h"
-#include "utils/utils.h"
 #include "desktop/version.h"
 #include "desktop/browser.h"
 

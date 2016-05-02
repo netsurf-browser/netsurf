@@ -26,16 +26,18 @@
 #include <string.h>
 #include <stdlib.h>
 #include "oslib/osspriteop.h"
+
 #include "utils/config.h"
-#include "content/content_protected.h"
-#include "desktop/plotters.h"
-#include "riscos/gui.h"
-#include "riscos/image.h"
-#include "riscos/content-handlers/sprite.h"
 #include "utils/config.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "content/content_protected.h"
+#include "desktop/plotters.h"
+
+#include "riscos/gui.h"
+#include "riscos/image.h"
+#include "riscos/content-handlers/sprite.h"
 
 #ifdef WITH_SPRITE
 

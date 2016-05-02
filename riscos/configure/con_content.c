@@ -20,7 +20,6 @@
 
 #include "utils/nsoption.h"
 #include "utils/messages.h"
-#include "utils/utils.h"
 
 #include "riscos/gui.h"
 #include "riscos/wimp.h"

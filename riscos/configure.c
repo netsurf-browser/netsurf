@@ -16,7 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * RISC OS option setting (implementation).
  */
 
@@ -31,7 +32,6 @@
 #include <oslib/wimp.h>
 
 #include "utils/log.h"
-#include "utils/utils.h"
 #include "utils/messages.h"
 
 #include "riscos/gui.h"

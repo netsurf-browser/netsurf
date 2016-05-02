@@ -22,13 +22,13 @@
 #include "oslib/mimemap.h"
 #include "oslib/osfile.h"
 
+#include "utils/config.h"
+#include "utils/log.h"
 #include "content/content.h"
 #include "content/fetch.h"
 #include "content/hlcache.h"
+
 #include "riscos/filetype.h"
-#include "utils/config.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 #include "riscos/gui.h"
 
 /* type_map must be in sorted order by file_type */

@@ -33,7 +33,6 @@
 
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/utils.h"
 #include "utils/nsoption.h"
 #include "content/content.h"
 #include "content/hlcache.h"

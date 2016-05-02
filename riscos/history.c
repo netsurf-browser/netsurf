@@ -27,18 +27,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include "oslib/wimp.h"
+
+#include "utils/nsoption.h"
+#include "utils/log.h"
 #include "desktop/browser_history.h"
 #include "desktop/plotters.h"
+
 #include "riscos/dialog.h"
-#include "utils/nsoption.h"
 #include "riscos/gui.h"
 #include "riscos/mouse.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
-#include "utils/log.h"
-#include "utils/utils.h"
-
 
 static struct browser_window *history_bw;
 /* Last position of mouse in window. */

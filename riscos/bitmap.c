@@ -42,7 +42,6 @@
 #include "utils/nsoption.h"
 #include "utils/filename.h"
 #include "utils/log.h"
-#include "utils/utils.h"
 #include "utils/messages.h"
 #include "desktop/plotters.h"
 #include "content/content.h"

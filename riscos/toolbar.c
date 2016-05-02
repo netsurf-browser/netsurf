@@ -39,7 +39,6 @@
 #include "oslib/wimpspriteop.h"
 
 #include "utils/log.h"
-#include "utils/utils.h"
 #include "utils/nsoption.h"
 #include "content/content.h"
 #include "desktop/plotters.h"

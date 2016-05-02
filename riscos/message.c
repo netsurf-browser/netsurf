@@ -26,9 +26,9 @@
 #include "oslib/os.h"
 #include "oslib/wimp.h"
 
-#include "riscos/message.h"
 #include "utils/log.h"
-#include "utils/utils.h"
+
+#include "riscos/message.h"
 #include "riscos/gui.h"
 
 struct active_message {

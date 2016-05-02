@@ -29,21 +29,22 @@
 #include <time.h>
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
+
+#include "utils/nsoption.h"
+#include "utils/messages.h"
+#include "utils/log.h"
 #include "content/urldb.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/tree.h"
 #include "desktop/textinput.h"
+
 #include "riscos/cookies.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
-#include "utils/nsoption.h"
 #include "riscos/toolbar.h"
 #include "riscos/treeview.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
-#include "utils/messages.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 
 static void ro_gui_cookies_toolbar_update_buttons(void);
 static void ro_gui_cookies_toolbar_save_buttons(char *config);

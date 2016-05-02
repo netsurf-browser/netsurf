@@ -31,15 +31,17 @@
 #include "swis.h"
 #include "oslib/os.h"
 #include "oslib/wimp.h"
+
 #include "utils/config.h"
-#include "content/content_protected.h"
-#include "desktop/plotters.h"
-#include "riscos/content-handlers/artworks.h"
-#include "riscos/gui.h"
-#include "riscos/wimputils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "content/content_protected.h"
+#include "desktop/plotters.h"
+
+#include "riscos/content-handlers/artworks.h"
+#include "riscos/gui.h"
+#include "riscos/wimputils.h"
 
 #define AWRender_FileInitAddress 0x46080
 #define AWRender_RenderAddress   0x46081

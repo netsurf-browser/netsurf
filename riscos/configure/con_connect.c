@@ -20,15 +20,16 @@
 #include "swis.h"
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
+
 #include "utils/nsoption.h"
+#include "utils/log.h"
+
 #include "riscos/configure/configure.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
 #include "riscos/tinct.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 
 
 #define CONNECTION_PROXY_FIELD 3

@@ -21,7 +21,6 @@
 
 #include <stdbool.h>
 #include "oslib/wimp.h"
-#include "utils/utils.h"
 
 enum query_response {
   QUERY_CONTINUE,

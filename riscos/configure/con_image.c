@@ -23,7 +23,6 @@
 
 #include "utils/nsoption.h"
 #include "utils/log.h"
-#include "utils/utils.h"
 
 #include "riscos/gui.h"
 #include "riscos/configure/configure.h"

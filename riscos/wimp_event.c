@@ -33,7 +33,6 @@
 #include "oslib/wimp.h"
 
 #include "utils/log.h"
-#include "utils/utils.h"
 
 #include "riscos/gui.h"
 #include "riscos/dialog.h"

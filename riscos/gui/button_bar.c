@@ -33,7 +33,6 @@
 #include <oslib/wimpspriteop.h>
 
 #include "utils/log.h"
-#include "utils/utils.h"
 
 #include "riscos/gui/button_bar.h"
 #include "riscos/gui.h"

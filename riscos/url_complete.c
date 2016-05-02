@@ -29,7 +29,6 @@
 
 #include "utils/log.h"
 #include "utils/nsoption.h"
-#include "utils/utils.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
 

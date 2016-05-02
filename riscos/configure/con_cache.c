@@ -22,7 +22,6 @@
 #include "utils/nsoption.h"
 #include "utils/filename.h"
 #include "utils/messages.h"
-#include "utils/utils.h"
 
 #include "riscos/gui.h"
 #include "riscos/wimp.h"

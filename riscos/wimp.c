@@ -36,7 +36,6 @@
 
 #include "utils/log.h"
 #include "utils/utf8.h"
-#include "utils/utils.h"
 
 #include "riscos/gui.h"
 #include "riscos/oslib_pre7.h"

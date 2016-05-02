@@ -24,7 +24,6 @@
 
 #include "utils/nsoption.h"
 #include "utils/log.h"
-#include "utils/utils.h"
 
 #include "riscos/image.h"
 #include "riscos/gui.h"

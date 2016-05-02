@@ -39,7 +39,6 @@
 
 #include "utils/nsoption.h"
 #include "utils/log.h"
-#include "utils/utils.h"
 #include "content/content.h"
 
 #include "riscos/cookies.h"

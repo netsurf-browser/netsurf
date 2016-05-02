@@ -34,7 +34,6 @@
 #include "utils/nsoption.h"
 #include "utils/messages.h"
 #include "utils/log.h"
-#include "utils/utils.h"
 #include "desktop/global_history.h"
 #include "desktop/tree.h"
 #include "desktop/gui_window.h"

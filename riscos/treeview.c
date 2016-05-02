@@ -35,11 +35,16 @@
 #include "oslib/osbyte.h"
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
+
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
+
 #include "riscos/bitmap.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
@@ -53,9 +58,6 @@
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
 
 #ifndef wimp_KEY_END
 #define wimp_KEY_END wimp_KEY_COPY
