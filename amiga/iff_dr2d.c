@@ -214,14 +214,14 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 			for (j = 0;
 					j != diagram->shape[i].path_length; ) {
 				switch ((int) diagram->shape[i].path[j]) {
-				case svgtiny_PATH_MOVE:
-					if(j != 0)
-					{
-						poly[NumPoints*2].val = INDICATOR;
-						poly[(NumPoints*2)+1].val = IND_MOVETO;
-						NumPoints++;
-					}
-					poly[(NumPoints*2)].PolyPoints = diagram->shape[i].path[j + 1];
+					case svgtiny_PATH_MOVE:
+						if(j != 0)
+						{
+							poly[NumPoints*2].val = INDICATOR;
+							poly[(NumPoints*2)+1].val = IND_MOVETO;
+							NumPoints++;
+						}
+						poly[(NumPoints*2)].PolyPoints = diagram->shape[i].path[j + 1];
 						poly[(NumPoints*2)+1].PolyPoints = diagram->shape[i].path[j + 2];
 						NumPoints++;
 						curx = (float) diagram->shape[i].path[j + 1];
@@ -260,7 +260,7 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 						cury = poly[(NumPoints*2)+1].PolyPoints;
 						NumPoints++;
 						j += 7;
-						break;
+					break;
 					default:
 						printf("error\n");
 						j += 1;
