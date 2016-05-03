@@ -948,10 +948,6 @@ void die(const char * const error)
 	exit(EXIT_FAILURE);
 }
 
-static struct gui_clipboard_table beos_clipboard_table = {
-	gui_get_clipboard,
-	gui_set_clipboard,
-};
 
 static struct gui_fetch_table beos_fetch_table = {
 	fetch_filetype,
@@ -981,7 +977,7 @@ int main(int argc, char** argv)
 		&beos_misc_table,
 		beos_window_table,
 		beos_download_table,
-		&beos_clipboard_table,
+		beos_clipboard_table,
                 &beos_fetch_table,
                 NULL, /* use POSIX file */
                 NULL, /* default utf8 */

@@ -407,7 +407,7 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 	return g;
 }
 
-
+/* exported interface documented in beos/window.h */
 void nsbeos_dispatch_event(BMessage *message)
 {
 	struct gui_window *gui = NULL;
@@ -1266,7 +1266,7 @@ static void gui_start_selection(struct gui_window *g)
 	g->view->UnlockLooper();
 }
 
-void gui_get_clipboard(char **buffer, size_t *length)
+static void gui_get_clipboard(char **buffer, size_t *length)
 {
 	BMessage *clip;
 	*length = 0;
@@ -1288,7 +1288,7 @@ void gui_get_clipboard(char **buffer, size_t *length)
 	}
 }
 
-void gui_set_clipboard(const char *buffer, size_t length,
+static void gui_set_clipboard(const char *buffer, size_t length,
 	nsclipboard_styles styles[], int n_styles)
 {
 	BMessage *clip;
@@ -1319,6 +1319,13 @@ void gui_set_clipboard(const char *buffer, size_t length,
 		be_clipboard->Unlock();
 	}
 }
+
+static struct gui_clipboard_table clipboard_table = {
+	gui_get_clipboard,
+	gui_set_clipboard,
+};
+
+struct gui_clipboard_table *beos_clipboard_table = &clipboard_table;
 
 static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 			       bool scaled)
