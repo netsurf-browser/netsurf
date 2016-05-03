@@ -49,6 +49,7 @@
 #include "amiga/bitmap.h"
 #include "amiga/schedule.h"
 #include "amiga/theme.h"
+#include "amiga/misc.h"
 
 struct BitMap *throbber = NULL;
 struct bitmap *throbber_nsbm = NULL;
