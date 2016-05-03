@@ -70,7 +70,6 @@ struct bitmap {
 	PLANEPTR native_mask;
 	Object *dto;
 	APTR drawhandle;
-	APTR psm;
 	struct nsurl *url;   /* temporary storage space */
 	char *title; /* temporary storage space */
 	ULONG *icondata; /* for appicons */
@@ -106,7 +105,6 @@ void *amiga_bitmap_create(int width, int height, unsigned int state)
 	bitmap->nativebmheight = 0;
 	bitmap->native_mask = NULL;
 	bitmap->drawhandle = NULL;
-	bitmap->psm = NULL;
 	bitmap->url = NULL;
 	bitmap->title = NULL;
 	bitmap->icondata = NULL;
@@ -152,7 +150,6 @@ void amiga_bitmap_destroy(void *bitmap)
 
 		if(bm->native_mask) FreeRaster(bm->native_mask, bm->width, bm->height);
 		if(bm->drawhandle) ReleaseDrawHandle(bm->drawhandle);
-		if(bm->psm) DeletePenShareMap(bm->psm);
 		FreeVec(bm->pixdata);
 
 		if(bm->url) nsurl_unref(bm->url);
@@ -162,7 +159,6 @@ void amiga_bitmap_destroy(void *bitmap)
 		bm->nativebm = NULL;
 		bm->native_mask = NULL;
 		bm->drawhandle = NULL;
-		bm->psm = NULL;
 		bm->url = NULL;
 		bm->title = NULL;
 	
@@ -206,11 +202,9 @@ void amiga_bitmap_modified(void *bitmap)
 		ami_rtg_freebitmap(bm->nativebm);
 		
 	if(bm->drawhandle) ReleaseDrawHandle(bm->drawhandle);
-	if(bm->psm) DeletePenShareMap(bm->psm);
 	if(bm->native_mask) FreeRaster(bm->native_mask, bm->width, bm->height);
 	bm->nativebm = NULL;
 	bm->drawhandle = NULL;
-	bm->psm = NULL;
 	bm->native_mask = NULL;
 	bm->native = AMI_NSBM_NONE;
 }
@@ -446,12 +440,8 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap, int w
 				}
 
 				ami_bitmap_rgba_to_argb(bitmap);
-				bitmap->psm = CreatePenShareMap(TAG_DONE);
-				AddPixelArray(bitmap->psm, (ULONG *)amiga_bitmap_get_buffer(bitmap),
-								bitmap->width, bitmap->height,
-								GGFX_PixelFormat, PIXFMT_0RGB_32, TAG_DONE);
-
-				bitmap->drawhandle = ObtainDrawHandle(bitmap->psm, &rp, scrn->ViewPort.ColorMap,
+				bitmap->drawhandle = ObtainDrawHandle(NULL,
+										&rp, scrn->ViewPort.ColorMap,
 										GGFX_DitherMode, dithermode,
 										TAG_DONE);
 
