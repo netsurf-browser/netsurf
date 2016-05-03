@@ -19,6 +19,10 @@
 #ifndef NETSURF_BEOS_WINDOW_H
 #define NETSURF_BEOS_WINDOW_H 1
 
+#include <View.h>
+#include <Window.h>
+#include <NetPositive.h>
+
 extern struct gui_window_table *beos_window_table;
 extern struct gui_clipboard_table *beos_clipboard_table;
 

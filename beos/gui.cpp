@@ -1058,7 +1058,7 @@ int gui_init_replicant(int argc, char** argv)
 		&beos_misc_table,
 		beos_window_table,
 		beos_download_table,
-		&beos_clipboard_table,
+		beos_clipboard_table,
                 &beos_fetch_table,
                 NULL, /* use POSIX file */
                 NULL, /* default utf8 */
