@@ -16,18 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Printer interface.
  *
- * Interface to generic plotters, initialization, handling pages and
- * cleaning up.
+ * Printer interface to generic plotters, initialization, handling
+ * pages and cleaning up.
  */
 
 #ifndef NETSURF_DESKTOP_PRINTER_H
 #define NETSURF_DESKTOP_PRINTER_H
 
-#include "desktop/plotters.h"
-#include "desktop/print.h"
+struct plotter_table;
+struct print_settings;
 
 /** Printer interface */
 struct printer{

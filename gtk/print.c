@@ -36,6 +36,7 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "utils/nsoption.h"
+#include "desktop/plotters.h"
 #include "desktop/print.h"
 #include "desktop/printer.h"
 

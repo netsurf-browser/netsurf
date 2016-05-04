@@ -35,6 +35,7 @@
 #include "css/utils.h"
 #include "render/box.h"
 
+#include "desktop/plotters.h"
 #include "desktop/print.h"
 #include "desktop/printer.h"
 
