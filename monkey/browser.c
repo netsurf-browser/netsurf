@@ -28,6 +28,7 @@
 #include "desktop/mouse.h"
 #include "desktop/gui_window.h"
 #include "desktop/browser.h"
+#include "desktop/plotters.h"
 #include "content/hlcache.h"
 
 #include "monkey/browser.h"
@@ -423,7 +424,7 @@ monkey_window_handle_redraw(int argc, char **argv)
   struct redraw_context ctx = {
     .interactive = true,
     .background_images = true,
-    .plot = &monkey_plotters
+    .plot = monkey_plotters
   };
   
   if (argc != 3 && argc != 7) {
