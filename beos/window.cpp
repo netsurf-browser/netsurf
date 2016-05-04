@@ -21,27 +21,28 @@
 #define __STDBOOL_H__	1
 #include <stdlib.h>
 #include <assert.h>
+
 extern "C" {
+#include "utils/nsoption.h"
+#include "utils/log.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
 #include "content/content.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
 #include "desktop/mouse.h"
-#include "utils/nsoption.h"
 #include "desktop/textinput.h"
-#include "utils/log.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
-#include "desktop/mouse.h"
+#include "desktop/plotters.h"
 #include "desktop/gui_window.h"
 #include "desktop/gui_clipboard.h"
 }
+
 #include "beos/about.h"
 #include "beos/window.h"
 #include "beos/font.h"
 #include "beos/gui.h"
 #include "beos/scaffolding.h"
 #include "beos/plotters.h"
-//#include "beos/schedule.h"
 
 #include <AppDefs.h>
 #include <BeBuild.h>
@@ -1092,7 +1093,10 @@ static void gui_window_update_extent(struct gui_window *g)
 	float y_prop = g->view->Bounds().Height() / y_max;
 	x_max -= g->view->Bounds().Width() + 1;
 	y_max -= g->view->Bounds().Height() + 1;
-	LOG("x_max = %f y_max = %f x_prop = %f y_prop = %f\n", x_max, y_max, x_prop, y_prop);
+
+	LOG("x_max = %d y_max = %d x_prop = %f y_prop = %f\n",
+            x_max, y_max, x_prop, y_prop);
+
 	if (g->view->ScrollBar(B_HORIZONTAL)) {
 		g->view->ScrollBar(B_HORIZONTAL)->SetRange(0, x_max);
 		g->view->ScrollBar(B_HORIZONTAL)->SetProportion(x_prop);

@@ -199,7 +199,7 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 		uint8 c1, c2, c3, c4;
 		if (sscanf(params, "%c%c%c%c", &c1, &c2, &c3, &c4) > 3) {
 			type = c1 << 24 | c2 << 16 | c3 << 8 | c4;
-			LOG("fetch_rsrc: type:%4.4s\n", &type);
+			LOG("fetch_rsrc: type:%4.4s\n", (char *)&type);
 		}
 	}
 

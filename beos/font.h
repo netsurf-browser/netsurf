@@ -16,16 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Beos font layout handling interface.
  */
 
 #ifndef NS_BEOS_FONT_H
 #define NS_BEOS_FONT_H
 
-#include <stdbool.h>
-
-#include "desktop/plotters.h"
+#include "desktop/plot_style.h"
 
 bool nsfont_paint(const plot_font_style_t *fstyle,
 		const char *string, size_t length,

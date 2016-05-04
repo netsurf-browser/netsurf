@@ -25,11 +25,8 @@
 #include <NetPositive.h>
 
 extern "C" {
-#include "desktop/plotters.h"
-
 struct hlcache_handle;
 struct nsurl;
-
 }
 
 typedef struct beos_scaffolding nsbeos_scaffolding;
