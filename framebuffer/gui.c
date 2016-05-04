@@ -41,6 +41,8 @@
 #include "desktop/gui_window.h"
 #include "desktop/gui_misc.h"
 #include "desktop/netsurf.h"
+#include "content/urldb.h"
+#include "content/fetch.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"
@@ -53,8 +55,6 @@
 #include "framebuffer/fetch.h"
 #include "framebuffer/bitmap.h"
 
-#include "content/urldb.h"
-#include "content/fetch.h"
 
 #define NSFB_TOOLBAR_DEFAULT_LAYOUT "blfsrutc"
 

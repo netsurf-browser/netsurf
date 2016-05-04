@@ -29,6 +29,7 @@
 
 #include "utils/log.h"
 #include "desktop/browser.h"
+#include "desktop/plotters.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"
