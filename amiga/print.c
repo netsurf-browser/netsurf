@@ -51,6 +51,7 @@
 #include "utils/utils.h"
 #include "desktop/plotters.h"
 #include "desktop/printer.h"
+#include "desktop/print.h"
 #include "desktop/gui_layout.h"
 #include "desktop/mouse.h"
 #include "desktop/gui_window.h"
