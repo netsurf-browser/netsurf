@@ -22,7 +22,6 @@
 #include "utils/log.h"
 #include "utils/nsoption.h"
 #include "desktop/hotlist.h"
-#include "desktop/plotters.h"
 #include "desktop/tree.h"
 
 #include "gtk/plotters.h"

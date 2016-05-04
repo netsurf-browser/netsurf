@@ -22,7 +22,7 @@
 
 #include "utils/log.h"
 #include "desktop/global_history.h"
-#include "desktop/plotters.h"
+#include "desktop/plot_style.h"
 #include "desktop/tree.h"
 #include "desktop/textinput.h"
 

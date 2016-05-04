@@ -24,7 +24,7 @@
 
 #include "utils/log.h"
 #include "desktop/cookie_manager.h"
-#include "desktop/plotters.h"
+#include "desktop/plot_style.h"
 #include "desktop/tree.h"
 #include "desktop/textinput.h"
 
