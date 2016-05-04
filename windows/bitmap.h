@@ -20,8 +20,6 @@
 #ifndef _NETSURF_WINDOWS_BITMAP_H_
 #define _NETSURF_WINDOWS_BITMAP_H_
 
-#include "desktop/plotters.h"
-
 struct gui_bitmap_table *win32_bitmap_table;
 
 struct bitmap {
@@ -34,10 +32,9 @@ struct bitmap {
 };
 
 struct bitmap *bitmap_scale(struct bitmap *prescale, int width, int height);
-struct bitmap *bitmap_pretile(struct bitmap *untiled, int width, int height,
-		bitmap_flags_t flags);
 
 void *win32_bitmap_create(int width, int height, unsigned int state);
+
 void win32_bitmap_destroy(void *bitmap);
 
 #endif

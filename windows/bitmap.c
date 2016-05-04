@@ -31,6 +31,7 @@
 
 #include "utils/log.h"
 #include "image/bitmap.h"
+#include "desktop/plotters.h"
 #include "content/content.h"
 
 #include "windows/plot.h"
@@ -309,53 +310,6 @@ struct bitmap *bitmap_scale(struct bitmap *prescale, int width, int height)
 
 }
 
-struct bitmap *
-bitmap_pretile(struct bitmap *untiled,
-	       int width,
-	       int height,
-	       bitmap_flags_t flags)
-{
-	struct bitmap *ret = malloc(sizeof(struct bitmap));
-	if (ret == NULL)
-		return NULL;
-	int i, hrepeat, vrepeat, repeat;
-	vrepeat = ((flags & BITMAPF_REPEAT_Y) != 0) ?
-		((height + untiled->height - 1) / untiled->height) : 1;
-	hrepeat = ((flags & BITMAPF_REPEAT_X) != 0) ?
-		((width + untiled->width - 1) / untiled->width) : 1;
-	width = untiled->width * hrepeat;
-	height = untiled->height * vrepeat;
-	uint8_t *indata = untiled->pixdata;
-	uint8_t *newdata = malloc(4 * width * height);
-	if (newdata == NULL) {
-		free(ret);
-		return NULL;
-	}
-	ret->pixdata = newdata;
-	size_t stride = untiled->width * 4;
-
-	/* horizontal tiling */
-	for (i = 0; i < untiled->height; i++) {
-		for (repeat = 0; repeat < hrepeat; repeat ++) {
-			memcpy(newdata, indata, stride);
-			newdata += stride;
-		}
-		indata += stride;
-	}
-
-	/* vertical tiling */
-	stride = untiled->height * width * 4;
-	newdata = ret->pixdata + stride;
-	indata = ret->pixdata;
-
-	for (repeat = 1; repeat < vrepeat; repeat++) {
-		memcpy(newdata, indata, stride);
-		newdata += stride;
-	}
-	ret->width = width;
-	ret->height = height;
-	return ret;
-}
 
 static nserror
 bitmap_render(struct bitmap *bitmap, struct hlcache_handle *content)
