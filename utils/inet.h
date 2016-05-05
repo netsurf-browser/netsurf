@@ -17,7 +17,8 @@
  */
 
 /**
- * \file internet structures and defines
+ * \file
+ * internet structures and defines
  *
  * This allows the obtaining of standard bsd sockets and associated
  * functions in a uniform way despite any oddities in headers and

@@ -30,10 +30,10 @@ void css_hint_fini(void);
 /**
  * Callback to retrieve presentational hints for a node
  *
- * \param pw        HTML document
- * \param node      DOM node
- * \param property  CSS property to retrieve
- * \param hint      Pointer to hint object to populate
+ * \param[in] pw HTML document
+ * \param[in] node DOM node
+ * \param[out] nhints number of hints retrived 
+ * \param[out] hints retrived hints
  * \return CSS_OK               on success,
  *         CSS_PROPERTY_NOT_SET if there is no hint for the requested property,
  *         CSS_NOMEM            on memory exhaustion.

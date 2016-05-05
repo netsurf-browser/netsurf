@@ -17,7 +17,8 @@
  */
 
 /**
- * \file directory traversal and entry
+ * \file
+ * directory traversal and entry
  *
  * This allows the obtaining of standard directory entry routines
  * functions in a uniform way despite any oddities in headers and
