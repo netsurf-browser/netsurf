@@ -511,13 +511,36 @@ $(eval $(call pkg_config_find_and_add,libcss,CSS))
 $(eval $(call pkg_config_find_and_add,libdom,DOM))
 $(eval $(call pkg_config_find_and_add,libnsutils,nsutils))
 $(eval $(call pkg_config_find_and_add,libutf8proc,utf8proc))
+$(eval $(call pkg_config_find_and_add,openssl,OpenSSL))
+# freemint does not support pkg-config for libcurl
+ifeq ($(HOST),mint)
+    CFLAGS += $(shell curl-config --cflags)
+    LDFLAGS += $(shell curl-config --libs)
+else
+    $(eval $(call pkg_config_find_and_add,libcurl,Curl))
+endif
 
 # Common libraries without pkg-config support
 LDFLAGS += -lz
 
+# Optional libraries with pkgconfig
+
+# define additional CFLAGS and LDFLAGS requirements for pkg-configed libs
+NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
+NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
+NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
+NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
+NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
+
+$(eval $(call pkg_config_find_and_add_enabled,PNG,libpng,PNG))
+$(eval $(call pkg_config_find_and_add_enabled,BMP,libnsbmp,BMP))
+$(eval $(call pkg_config_find_and_add_enabled,GIF,libnsgif,GIF))
+$(eval $(call pkg_config_find_and_add_enabled,NSSVG,libsvgtiny,SVG))
+$(eval $(call pkg_config_find_and_add_enabled,ROSPRITE,librosprite,Sprite))
+
 # add top level and build directory to include search path
-CFLAGS += -I. -I$(OBJROOT)
-CXXFLAGS += -I. -I$(OBJROOT)
+CFLAGS += -I. -Ifrontends -I$(OBJROOT)
+CXXFLAGS += -I. -Ifrontends -I$(OBJROOT)
 
 # export the user agent format
 CFLAGS += -DNETSURF_UA_FORMAT_STRING=\"$(NETSURF_UA_FORMAT_STRING)\"
@@ -553,7 +576,7 @@ POSTEXES :=
 # Target specific setup
 # ----------------------------------------------------------------------------
 
-include $(TARGET)/Makefile.target
+include frontends/Makefile
 
 # ----------------------------------------------------------------------------
 # General source file setup
@@ -647,10 +670,10 @@ else
 	$(Q)$(RM) $(EXETARGET:,ff8=,e1f)
 endif
 ifeq ($(TARGET),windows)
-	$(Q)$(TOUCH) windows/res/preferences
+	$(Q)$(TOUCH) frontends/windows/res/preferences
 endif
 ifeq ($(TARGET),gtk)
-	$(Q)$(TOUCH) gtk/res/toolbarIndices
+	$(Q)$(TOUCH) frontends/gtk/res/toolbarIndices
 endif
 ifeq ($(NETSURF_STRIP_BINARY),YES)
 	$(VQ)echo "   STRIP: $(EXETARGET)"

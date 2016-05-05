@@ -1,6 +1,4 @@
 *~
-gtk/res/toolbarIndices
-windows/res/preferences
 \!NetSurf/!Run,feb
 \!NetSurf/!RunImage,ff8
 \!NetSurf/!Help,feb
@@ -13,11 +11,13 @@ windows/res/preferences
 \!NetSurf/Resources/nl/Templates,fec
 \!NetSurf/Resources/nl/Messages
 \!NetSurf/Resources/it/Messages
-gtk/res/en/Messages
-gtk/res/fr/Messages
-gtk/res/de/Messages
-gtk/res/nl/Messages
-gtk/res/it/Messages
+frontends/windows/res/preferences
+frontends/gtk/res/toolbarIndices
+frontends/gtk/res/en/Messages
+frontends/gtk/res/fr/Messages
+frontends/gtk/res/de/Messages
+frontends/gtk/res/nl/Messages
+frontends/gtk/res/it/Messages
 test/nsoption
 test/nsurl
 test/urldbtest
