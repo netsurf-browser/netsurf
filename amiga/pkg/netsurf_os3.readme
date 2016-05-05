@@ -3,6 +3,7 @@ Uploader:     chris@unsatisfactorysoftware.co.uk (Chris Young)
 Author:       NetSurf contributors (OS4 port by Chris Young)
 Type:         comm/www
 Version:      3.6 BETA
+Requires:     dev/misc/guigfxlib.lha
 Architecture: m68k-amigaos >= 3.5.0
 
 This is NetSurf 3.6 BETA for AmigaOS 3.
