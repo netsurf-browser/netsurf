@@ -7891,9 +7891,11 @@ DUK_INTERNAL_DECL duk_bool_t duk_fb_is_full(duk_fixedbuffer *fb);
 #define DUK_ERROR_UNSUPPORTED(thr,msg) do { \
 		DUK_ERROR((thr), DUK_ERR_UNSUPPORTED_ERROR, (msg)); \
 	} while (0)
+#ifndef DUK_USE_BYTECODE_DUMP_SUPPORT
 #define DUK_ERROR_UNSUPPORTED_DEFMSG(thr) do { \
 		duk_err_unsupported_defmsg((thr), DUK_FILE_MACRO, (duk_int_t) DUK_LINE_MACRO); \
 	} while (0)
+#endif
 #define DUK_ERROR_INTERNAL(thr,msg) do { \
 		duk_err_internal((thr), DUK_FILE_MACRO, (duk_int_t) DUK_LINE_MACRO, (msg)); \
 	} while (0)
@@ -8011,7 +8013,9 @@ DUK_NORETURN(DUK_INTERNAL_DECL void duk_err_api_index(duk_hthread *thr, const ch
 DUK_NORETURN(DUK_INTERNAL_DECL void duk_err_api(duk_hthread *thr, const char *filename, duk_int_t linenumber, const char *message));
 DUK_NORETURN(DUK_INTERNAL_DECL void duk_err_range(duk_hthread *thr, const char *filename, duk_int_t linenumber, const char *message));
 DUK_NORETURN(DUK_INTERNAL_DECL void duk_err_unimplemented_defmsg(duk_hthread *thr, const char *filename, duk_int_t linenumber));
+#ifndef DUK_USE_BYTECODE_DUMP_SUPPORT
 DUK_NORETURN(DUK_INTERNAL_DECL void duk_err_unsupported_defmsg(duk_hthread *thr, const char *filename, duk_int_t linenumber));
+#endif
 DUK_NORETURN(DUK_INTERNAL_DECL void duk_err_internal_defmsg(duk_hthread *thr, const char *filename, duk_int_t linenumber));
 DUK_NORETURN(DUK_INTERNAL_DECL void duk_err_internal(duk_hthread *thr, const char *filename, duk_int_t linenumber, const char *message));
 DUK_NORETURN(DUK_INTERNAL_DECL void duk_err_alloc(duk_hthread *thr, const char *filename, duk_int_t linenumber, const char *message));
@@ -9834,9 +9838,11 @@ DUK_INTERNAL void duk_err_api(duk_hthread *thr, const char *filename, duk_int_t 
 DUK_INTERNAL void duk_err_unimplemented_defmsg(duk_hthread *thr, const char *filename, duk_int_t linenumber) {
 	DUK_ERROR_RAW(thr, filename, linenumber, DUK_ERR_UNIMPLEMENTED_ERROR, DUK_STR_UNIMPLEMENTED);
 }
+#ifndef DUK_USE_BYTECODE_DUMP_SUPPORT
 DUK_INTERNAL void duk_err_unsupported_defmsg(duk_hthread *thr, const char *filename, duk_int_t linenumber) {
 	DUK_ERROR_RAW(thr, filename, linenumber, DUK_ERR_UNSUPPORTED_ERROR, DUK_STR_UNSUPPORTED);
 }
+#endif
 DUK_INTERNAL void duk_err_internal_defmsg(duk_hthread *thr, const char *filename, duk_int_t linenumber) {
 	DUK_ERROR_RAW(thr, filename, linenumber, DUK_ERR_INTERNAL_ERROR, DUK_STR_INTERNAL_ERROR);
 }
