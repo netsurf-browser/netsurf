@@ -2,6 +2,13 @@
 # BeOS target setup
 # ----------------------------------------------------------------------------
 
+# Beos build tools
+BEOS_BERES := beres
+BEOS_RC := rc
+BEOS_XRES := xres
+BEOS_SETVER := setversion
+BEOS_MIMESET := mimeset
+
 # Linker flags
 LDFLAGS += -L/boot/home/config/lib
 LDFLAGS += -L/boot/common/lib
@@ -11,18 +18,16 @@ ifeq ($(CC_MAJOR),2)
 else
     LDFLAGS += -lstdc++ -lsupc++
 endif
+LDFLAGS += -L$(PREFIX)/lib
 
 COMMON_WARNFLAGS += -Wno-multichar
 
 # compiler flags
 CFLAGS += -std=c99 -Dnsbeos -D_BSD_SOURCE -D_POSIX_C_SOURCE -Drestrict="" -g
-CXXFLAGS += -Dnsbeos -D_BSD_SOURCE -D_POSIX_C_SOURCE -Drestrict="" -g
+CFLAGS += -I$(PREFIX)/include
 
-BEOS_BERES := beres
-BEOS_RC := rc
-BEOS_XRES := xres
-BEOS_SETVER := setversion
-BEOS_MIMESET := mimeset
+CXXFLAGS += -Dnsbeos -D_BSD_SOURCE -D_POSIX_C_SOURCE -Drestrict="" -g
+CXXFLAGS += -I$(PREFIX)/include
 
 VERSION_FULL := $(shell sed -n '/_version.*=.*"/{s/.*"\(.*\)".*/\1/;p;}' desktop/version.c)
 VERSION_MAJ := $(shell sed -n '/_major/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
@@ -73,7 +78,7 @@ RESOURCES = $(RSRC_BEOS)
 
 $(RDEF_IMP_BEOS): $(RDEP_BEOS)
 	$(VQ)echo "     GEN: $@"
-	$(Q)n=5000; for f in $^; do echo "resource($$n,\"$${f#$(FRONTEND_RESOURCES_DIR)/}\") #'data' import \"$${f#beos/}\";"; n=$$(($$n+1)); done > $@
+	$(Q)n=5000; for f in $^; do echo "resource($$n,\"$${f#$(FRONTEND_RESOURCES_DIR)/}\") #'data' import \"$${f#$(FRONTEND_SOURCE_DIR)/}\";"; n=$$(($$n+1)); done > $@
 
 $(RSRC_BEOS): $(RDEF_BEOS) $(RDEF_IMP_BEOS)
 	$(VQ)echo "      RC: $<"
