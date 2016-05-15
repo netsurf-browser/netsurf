@@ -182,7 +182,7 @@ $$(OBJROOT)/$(2).lproj: $$(OBJROOT)/$(2).lproj/$(1:.xib=.nib)
 $$(OBJROOT)/$(2).lproj/$(1:.xib=.nib): $(FRONTEND_RESOURCES_DIR)/$(1) $$(OBJROOT)/created
 	$(VQ)echo Compiling XIB $(1) for language $(2)
 	$(Q)mkdir -p $$(OBJROOT)/$(2).lproj
-	$(Q)cocoa/compile-xib.sh $(FRONTEND_RESOURCES_DIR)/$(1) $(2) $$@
+	$(Q)$(FRONTEND_SOURCE_DIR)/compile-xib.sh $(FRONTEND_RESOURCES_DIR)/$(1) $(2) $$@
 
 ifeq ($(wildcard $(FRONTEND_RESOURCES_DIR)/$(2).lproj/$(1).strings),$(FRONTEND_RESOURCES_DIR)/$(2).lproj/$(1).strings)
 $$(OBJROOT)/$(2).lproj/$(1:.xib=.nib): $(FRONTEND_RESOURCES_DIR)/$(2).lproj/$(1).strings
