@@ -93,6 +93,7 @@ AMIGA_PLATFORM_RESOURCES := Pointers Themes default.css default.css.info favicon
 AMIGA_GENERIC_RESOURCES := $(AMIGA_LANGUAGES) ca-bundle Icons
 AMIGA_RESOURCES := $(addprefix $(FRONTEND_SOURCE_DIR)/resources/,$(AMIGA_PLATFORM_RESOURCES)) $(addprefix \!NetSurf/Resources/,$(AMIGA_GENERIC_RESOURCES))
 AMIGA_DISTRIBUTION_FILES := $(FRONTEND_SOURCE_DIR)/dist/*
+AMIGA_PKG_DIR := $(FRONTEND_SOURCE_DIR)/pkg
 AMIGA_INSTALL_TARGET_DIR := NetSurf_Amiga
 
 netsurf.lha: $(EXETARGET)
@@ -108,14 +109,14 @@ netsurf.lha: $(EXETARGET)
 	$(Q)cp \!NetSurf/Resources/internal.css,f79 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/internal.css
 	$(Q)cp \!NetSurf/Resources/Quirks,f79 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/quirks.css
 	$(Q)cp \!NetSurf/Resources/netsurf.png,b60 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/netsurf.png
-	$(Q)cp amiga/pkg/drawer.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf.info
-	$(Q)cp amiga/pkg/AutoInstall $(AMIGA_INSTALL_TARGET_DIR)
+	$(Q)cp $(AMIGA_PKG_DIR)/drawer.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf.info
+	$(Q)cp $(AMIGA_PKG_DIR)/AutoInstall $(AMIGA_INSTALL_TARGET_DIR)
   ifeq ($(SUBTARGET),os3)
-	$(Q)cp amiga/pkg/netsurf_os3.readme $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
-	$(Q)cp amiga/pkg/netsurf_os3.readme.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp $(AMIGA_PKG_DIR)/netsurf_os3.readme $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp $(AMIGA_PKG_DIR)/netsurf_os3.readme.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
   else
-	$(Q)cp amiga/pkg/netsurf.readme $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
-	$(Q)cp amiga/pkg/netsurf.readme.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp $(AMIGA_PKG_DIR)/netsurf.readme $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp $(AMIGA_PKG_DIR)/netsurf.readme.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
   endif
 	$(Q)cd $(AMIGA_INSTALL_TARGET_DIR); \
 	  lha a netsurf.lha NetSurf NetSurf.info AutoInstall
