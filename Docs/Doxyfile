@@ -655,28 +655,28 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = windows \
-                         atari \
-                         atari/plot \
-                         gtk \
+INPUT                  = frontends/amiga \
+                         frontends/amiga/stringview \
+                         frontends/atari \
+                         frontends/atari/plot \
+                         frontends/beos \
+                         frontends/cocoa \
+                         frontends/framebuffer \
+                         frontends/framebuffer/fbtk \
+                         frontends/gtk \
+                         frontends/monkey \
+                         frontends/riscos \
+                         frontends/riscos/configure \
+                         frontends/riscos/gui \
+                         frontends/riscos/content-handlers \
+                         frontends/riscos/templates \
+                         frontends/riscos/scripts \
+                         frontends/windows \
                          css \
-                         cocoa \
-                         monkey \
                          render \
                          desktop \
-                         amiga \
-                         amiga/stringview \
                          content \
                          content/fetchers \
-                         framebuffer \
-                         framebuffer/fbtk \
-                         riscos \
-                         riscos/configure \
-                         riscos/gui \
-                         riscos/content-handlers \
-                         riscos/templates \
-                         riscos/scripts \
-                         beos \
                          javascript \
                          javascript/jsapi \
                          utils \
