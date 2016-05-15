@@ -156,9 +156,9 @@ TABBAR_RESOURCES := \
 	overflowImagePressed.png		\
 	pi.png
 
-R_RESOURCES += $(addprefix PSMTabBarControl/Images/,$(TABBAR_RESOURCES))
-
 R_RESOURCES := $(addprefix $(FRONTEND_RESOURCES_DIR)/,$(R_RESOURCES))
+
+R_RESOURCES += $(addprefix $(FRONTEND_SOURCE_DIR)/PSMTabBarControl/Images/,$(TABBAR_RESOURCES))
 
 LANGUAGES := de en fr it nl
 LOCALIZED_RESOURCES := Localizable.strings
