@@ -190,7 +190,7 @@ endif
 
 endef
 
-$(foreach lang,$(LANGUAGES),$(eval $(call make_lproj,$(lang),$(addprefix cocoa/res/$(lang).lproj/,$(LOCALIZED_RESOURCES)))))
+$(foreach lang,$(LANGUAGES),$(eval $(call make_lproj,$(lang),$(addprefix $(FRONTEND_RESOURCES_DIR)/$(lang).lproj/,$(LOCALIZED_RESOURCES)))))
 $(foreach lang,$(LANGUAGES),$(foreach xib,$(S_XIBS),$(eval $(call compile_xib,$(xib),$(lang)))))
 
 # ----------------------------------------------------------------------------
