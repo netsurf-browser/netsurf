@@ -74,8 +74,6 @@
 
 bool nsgtk_complete = false;
 
-char *toolbar_indices_file_location;
-
 char *nsgtk_config_home; /* exported global defined in gtk/gui.h */
 
 GdkPixbuf *favicon_pixbuf; /** favicon default pixbuf */
@@ -276,12 +274,6 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 						   false, 8, 8, 32);
 	}
 
-	/* Toolbar inicies file */
-	toolbar_indices_file_location = filepath_find(respath,
-						      "toolbarIndices");
-	LOG("Using '%s' as custom toolbar settings file",
-	    toolbar_indices_file_location);
-
 	/* initialise throbber */
 	error = nsgtk_throbber_init();
 	if (error != NSERROR_OK) {
@@ -456,8 +448,6 @@ static void gui_quit(void)
 	nsgtk_cookies_destroy();
 	nsgtk_history_destroy();
 	nsgtk_hotlist_destroy();
-
-	free(toolbar_indices_file_location);
 
 	free(nsgtk_config_home);
 

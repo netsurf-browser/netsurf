@@ -38,6 +38,9 @@
 #include "utils/utils.h"
 #include "utils/nsoption.h"
 
+/** Length of buffer used to read lines from input file */
+#define NSOPTION_MAX_LINE_LEN 1024
+
 struct nsoption_s *nsoptions = NULL;
 struct nsoption_s *nsoptions_default = NULL;
 
@@ -597,11 +600,12 @@ nserror nsoption_finalise(struct nsoption_s *opts, struct nsoption_s *defs)
 	return NSERROR_OK;
 }
 
+
 /* exported interface documented in utils/nsoption.h */
 nserror
 nsoption_read(const char *path, struct nsoption_s *opts)
 {
-	char s[100];
+	char s[NSOPTION_MAX_LINE_LEN];
 	FILE *fp;
 	struct nsoption_s *defs;
 
@@ -625,7 +629,7 @@ nsoption_read(const char *path, struct nsoption_s *opts)
 
 	LOG("Successfully opened '%s' for Options file", path);
 
-	while (fgets(s, 100, fp)) {
+	while (fgets(s, NSOPTION_MAX_LINE_LEN, fp)) {
 		char *colon, *value;
 		unsigned int idx;
 

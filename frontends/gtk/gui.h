@@ -21,9 +21,6 @@
 
 struct nsurl;
 
-/** toolbar arrangement file path. */
-extern char *toolbar_indices_file_location;
-
 /** Directory where all configuration files are held. */
 extern char *nsgtk_config_home;
 

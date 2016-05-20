@@ -26,10 +26,10 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "utils/nsoption.h"
 
 #include "gtk/gui.h"
 #include "gtk/warn.h"
-#include "gtk/scaffolding.h"
 #include "gtk/search.h"
 #include "gtk/throbber.h"
 #include "gtk/window.h"
@@ -833,22 +833,6 @@ static bool nsgtk_toolbar_add_store_widget(GtkWidget *widget)
 	return true;
 }
 
-/**
- * save toolbar settings to file
- */
-static void nsgtk_toolbar_customization_save(struct nsgtk_scaffolding *g)
-{
-	int i;
-	FILE *f = fopen(toolbar_indices_file_location, "w");
-	if (f == NULL){
-		nsgtk_warning("gtkFileError", toolbar_indices_file_location);
-		return;
-	}
-	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
-		fprintf(f, "%d;%d|", i, nsgtk_scaffolding_button(g, i)->location);
-	}
-	fclose(f);
-}
 
 /**
  * cast toolbar settings to all scaffoldings referenced from the global linked
@@ -877,6 +861,93 @@ static void nsgtk_toolbar_cast(struct nsgtk_scaffolding *g)
 		list = nsgtk_scaffolding_iterate(list);
 	}
 }
+
+
+/**
+ * load toolbar settings from file; file is a set of fields arranged as
+ * [itemreference];[itemlocation]|[itemreference];[itemlocation]| etc
+ */
+void nsgtk_toolbar_customization_load(struct nsgtk_scaffolding *g)
+{
+	int i, ii;
+	char *buffer;
+	char *buffer1, *subbuffer, *ptr = NULL, *pter = NULL;
+
+	/* default toolbar button order */
+	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
+		nsgtk_scaffolding_button(g, i)->location =
+		(i <= THROBBER_ITEM) ? i : -1;
+	}
+
+	/* ensure the option is actually set */
+	if (nsoption_charp(toolbar_order) == NULL) {
+		return;
+	}
+	buffer = strdup(nsoption_charp(toolbar_order));
+
+	i = BACK_BUTTON;
+	ii = BACK_BUTTON;
+	buffer1 = strtok_r(buffer, "|", &ptr);
+	while (buffer1 != NULL) {
+		subbuffer = strtok_r(buffer1, ";", &pter);
+		if (subbuffer != NULL) {
+			i = atoi(subbuffer);
+			subbuffer = strtok_r(NULL, ";", &pter);
+			if (subbuffer != NULL) {
+				ii = atoi(subbuffer);
+				if ((i >= BACK_BUTTON) &&
+				    (i < PLACEHOLDER_BUTTON) &&
+				    (ii >= -1) &&
+				    (ii < PLACEHOLDER_BUTTON)) {
+					nsgtk_scaffolding_button(g, i)->location = ii;
+				}
+			}
+		}
+		buffer1 = strtok_r(NULL, "|", &ptr);
+	}
+
+	free(buffer);
+}
+
+
+/**
+ * save toolbar settings to file
+ */
+static nserror nsgtk_toolbar_customization_save(struct nsgtk_scaffolding *g)
+{
+	char *order;
+	int order_len = PLACEHOLDER_BUTTON * 12; /* length of order buffer */
+	int tbidx;
+	char *cur;
+	int plen;
+
+	order = malloc(order_len);
+
+	if (order == NULL) {
+		return NSERROR_NOMEM;
+	}
+	cur = order;
+
+	for (tbidx = BACK_BUTTON; tbidx < PLACEHOLDER_BUTTON; tbidx++) {
+		plen = snprintf(cur,
+				order_len,
+				"%d;%d|",
+				tbidx,
+				nsgtk_scaffolding_button(g, tbidx)->location);
+		if (plen == order_len) {
+			/* ran out of space, bail early */
+			LOG("toolbar ordering exceeded available space");
+			break;
+		}
+		cur += plen;
+		order_len -= plen;
+	}
+
+	nsoption_set_charp(toolbar_order, order);
+
+	return NSERROR_OK;
+}
+
 
 /**
  * when 'save settings' button is clicked
@@ -1187,8 +1258,9 @@ void nsgtk_toolbar_customization_init(struct nsgtk_scaffolding *g)
 void nsgtk_toolbar_set_physical(struct nsgtk_scaffolding *g)
 {
 	int i;
-	struct nsgtk_theme *theme =
-			nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR);
+	struct nsgtk_theme *theme;
+
+	theme =	nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR);
 	if (theme == NULL) {
 		nsgtk_warning(messages_get("NoMemory"), 0);
 		return;
@@ -1196,8 +1268,9 @@ void nsgtk_toolbar_set_physical(struct nsgtk_scaffolding *g)
 	/* simplest is to clear the toolbar then reload it from memory */
 	gtk_container_foreach(GTK_CONTAINER(nsgtk_scaffolding_toolbar(g)),
 			nsgtk_toolbar_clear_toolbar, g);
-	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++)
+	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
 		nsgtk_toolbar_add_item_to_toolbar(g, i, theme);
+	}
 	gtk_widget_show_all(GTK_WIDGET(nsgtk_scaffolding_toolbar(g)));
 	free(theme);
 }
@@ -1374,43 +1447,3 @@ DATAHANDLER(websearch, WEBSEARCH, window)
 #undef DATAHANDLER
 
 
-/**
- * load toolbar settings from file; file is a set of fields arranged as
- * [itemreference];[itemlocation]|[itemreference];[itemlocation]| etc
- */
-void nsgtk_toolbar_customization_load(struct nsgtk_scaffolding *g)
-{
-	int i, ii;
-	char *val;
-	char buffer[SLEN("11;|") * 2 * PLACEHOLDER_BUTTON]; /* numbers 0-99 */
-	buffer[0] = '\0';
-	char *buffer1, *subbuffer, *ptr = NULL, *pter = NULL;
-	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++)
-		nsgtk_scaffolding_button(g, i)->location =
-		(i <= THROBBER_ITEM) ? i : -1;
-	FILE *f = fopen(toolbar_indices_file_location, "r");
-	if (f == NULL) {
-		nsgtk_warning(messages_get("gtkFileError"),
-				toolbar_indices_file_location);
-		return;
-	}
-	val = fgets(buffer, sizeof buffer, f);
-	if (val == NULL) {
-		LOG("empty read toolbar settings");
-	}
-	fclose(f);
-	i = BACK_BUTTON;
-	ii = BACK_BUTTON;
-	buffer1 = strtok_r(buffer, "|", &ptr);
-	while (buffer1 != NULL) {
-		subbuffer = strtok_r(buffer1, ";", &pter);
-		i = atoi(subbuffer);
-		subbuffer = strtok_r(NULL, ";", &pter);
-		ii = atoi(subbuffer);
-		if ((i >= BACK_BUTTON) && (i < PLACEHOLDER_BUTTON) &&
-				(ii >= -1) && (ii < PLACEHOLDER_BUTTON)) {
-			nsgtk_scaffolding_button(g, i)->location = ii;
-		}
-		buffer1 = strtok_r(NULL, "|", &ptr);
-	}
-}

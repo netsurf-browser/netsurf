@@ -672,9 +672,6 @@ endif
 ifeq ($(TARGET),windows)
 	$(Q)$(TOUCH) frontends/windows/res/preferences
 endif
-ifeq ($(TARGET),gtk)
-	$(Q)$(TOUCH) frontends/gtk/res/toolbarIndices
-endif
 ifeq ($(NETSURF_STRIP_BINARY),YES)
 	$(VQ)echo "   STRIP: $(EXETARGET)"
 	$(Q)$(STRIP) $(EXETARGET)

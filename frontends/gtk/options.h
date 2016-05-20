@@ -70,3 +70,6 @@ NSOPTION_INTEGER(developer_view, 0)
 
 /* where tabs are positioned */
 NSOPTION_INTEGER(position_tab, 0)
+
+/* Toolbar customisation */
+NSOPTION_STRING(toolbar_order, NULL)
