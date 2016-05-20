@@ -80,7 +80,7 @@ TESTCFLAGS := -std=c99 -g -Wall \
 		-D_BSD_SOURCE \
 		-D_POSIX_C_SOURCE=200809L \
 		-D_XOPEN_SOURCE=600 \
-		-Itest -I. -I.. \
+		-Itest -Ifrontends -I. -I.. \
 		-Dnsgtk \
 		$(shell pkg-config --cflags libcurl libparserutils libwapcaplet libdom libnsutils libutf8proc libidn) \
 		$(LIB_CFLAGS) \
