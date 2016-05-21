@@ -31,6 +31,7 @@
 #include "desktop/browser.h"
 
 #include "gtk/warn.h"
+#include "gtk/scaffolding.h"
 #include "gtk/window.h"
 #include "gtk/completion.h"
 

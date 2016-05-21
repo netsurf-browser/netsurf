@@ -62,6 +62,7 @@
 #include "gtk/hotlist.h"
 #include "gtk/throbber.h"
 #include "gtk/treeview.h"
+#include "gtk/scaffolding.h"
 #include "gtk/window.h"
 #include "gtk/schedule.h"
 #include "gtk/selection.h"

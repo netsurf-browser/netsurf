@@ -32,6 +32,7 @@
 #include "gtk/warn.h"
 #include "gtk/search.h"
 #include "gtk/throbber.h"
+#include "gtk/scaffolding.h"
 #include "gtk/window.h"
 #include "gtk/compat.h"
 #include "gtk/resources.h"

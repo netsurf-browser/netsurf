@@ -19,10 +19,6 @@
 #ifndef _NETSURF_GTK_TOOLBAR_H_
 #define _NETSURF_GTK_TOOLBAR_H_
 
-#include <gtk/gtk.h>
-
-#include "gtk/scaffolding.h"
-
 /**
  * sets up the images for scaffolding.
  */

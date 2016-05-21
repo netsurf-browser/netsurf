@@ -26,6 +26,7 @@
 #include "desktop/search.h"
 
 #include "gtk/compat.h"
+#include "gtk/scaffolding.h"
 #include "gtk/window.h"
 #include "gtk/search.h"
 #include "gtk/tabs.h"

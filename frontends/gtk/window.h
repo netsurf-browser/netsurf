@@ -19,8 +19,6 @@
 #ifndef NETSURF_GTK_WINDOW_H
 #define NETSURF_GTK_WINDOW_H 1
 
-#include "gtk/scaffolding.h"
-
 extern struct gui_window_table *nsgtk_window_table;
 
 typedef enum nsgtk_window_signals {
