@@ -129,7 +129,7 @@ void *amiga_bitmap_create(int width, int height, unsigned int state)
 
 		bitmap->pixdata = NULL;
 		UBYTE *pixdata = amiga_bitmap_get_buffer(bitmap);
-		memset(pixdata, 0xff, bitmap->size);
+		memset(bitmap->pixdata, 0xff, bitmap->size);
 	} else
 #endif
 	{
@@ -222,6 +222,7 @@ void amiga_bitmap_destroy(void *bitmap)
 			ami_schedule(-1, amiga_bitmap_unmap_buffer, bm);
 			amiga_bitmap_unmap_buffer(bm);
 			FreeSysObject(ASOT_EXTMEM, bm->iextmem);
+			bm->iextmem = NULL;
 		} else
 #endif
 		{
