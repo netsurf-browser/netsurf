@@ -129,7 +129,7 @@ void *amiga_bitmap_create(int width, int height, unsigned int state)
 
 		bitmap->pixdata = NULL;
 		UBYTE *pixdata = amiga_bitmap_get_buffer(bitmap);
-		memset(bitmap->pixdata, 0xff, bitmap->size);
+		memset(pixdata, 0xff, bitmap->size);
 	} else
 #endif
 	{
@@ -230,6 +230,11 @@ void amiga_bitmap_destroy(void *bitmap)
 			ami_memory_clear_free(bm->pixdata);
 		}
 
+<<<<<<< HEAD
+=======
+		if(bm->drawhandle) ReleaseDrawHandle(bm->drawhandle);
+
+>>>>>>> Fix merge error
 		if(bm->url) nsurl_unref(bm->url);
 		if(bm->title) free(bm->title);
 
