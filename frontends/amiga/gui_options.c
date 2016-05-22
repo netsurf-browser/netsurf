@@ -2302,6 +2302,7 @@ void ami_gui_opts_websearch_free(struct List *websearchlist)
 	struct Node *node;
 	struct Node *nnode;
 
+	if(websearchlist == NULL) return;
 	if(IsListEmpty(websearchlist)) return;
 	node = GetHead(websearchlist);
 
