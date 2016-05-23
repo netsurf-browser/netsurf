@@ -100,7 +100,7 @@
 #include "content/fetchers.h"
 #include "content/fetchers/resource.h"
 #include "content/urldb.h"
-#include "image/ico.h"
+#include "content/handlers/image/ico.h"
 #include "desktop/browser_history.h"
 #include "desktop/browser.h"
 #include "desktop/hotlist.h"

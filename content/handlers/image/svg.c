@@ -32,7 +32,7 @@
 #include "css/css.h"
 #include "desktop/plotters.h"
 
-#include "image/svg.h"
+#include "svg.h"
 
 typedef struct svg_content {
 	struct content base;

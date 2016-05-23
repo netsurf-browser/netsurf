@@ -33,7 +33,7 @@
 #include "utils/utf8.h"
 #include "desktop/browser.h"
 #include "desktop/plotters.h"
-#include "image/bitmap.h"
+#include "content/handlers/image/bitmap.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"

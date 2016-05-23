@@ -49,7 +49,7 @@
 #include "desktop/save_complete.h"
 #include "desktop/save_text.h"
 #include "desktop/gui_window.h"
-#include "image/bitmap.h"
+#include "content/handlers/image/bitmap.h"
 #include "render/form.h"
 
 #include "riscos/bitmap.h"

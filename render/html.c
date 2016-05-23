@@ -46,7 +46,7 @@
 #include "desktop/selection.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"
-#include "image/bitmap.h"
+#include "content/handlers/image/bitmap.h"
 #include "javascript/js.h"
 #include "desktop/browser.h"
 #include "desktop/gui_utf8.h"

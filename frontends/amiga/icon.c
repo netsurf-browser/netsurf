@@ -42,7 +42,7 @@
 #include "utils/utils.h"
 #include "utils/file.h"
 #include "desktop/plotters.h"
-#include "image/bitmap.h"
+#include "content/handlers/image/bitmap.h"
 #include "content/content_protected.h"
 
 #include "amiga/os3support.h"

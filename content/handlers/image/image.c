@@ -26,16 +26,16 @@
 #include "desktop/plotters.h"
 #include "desktop/gui_internal.h"
 
-#include "image/bitmap.h"
-#include "image/bmp.h"
-#include "image/gif.h"
-#include "image/ico.h"
-#include "image/jpeg.h"
-#include "image/nssprite.h"
-#include "image/png.h"
-#include "image/rsvg.h"
-#include "image/svg.h"
-#include "image/image.h"
+#include "bitmap.h"
+#include "bmp.h"
+#include "gif.h"
+#include "ico.h"
+#include "jpeg.h"
+#include "nssprite.h"
+#include "png.h"
+#include "rsvg.h"
+#include "svg.h"
+#include "image.h"
 
 /**
  * Initialise image content handlers

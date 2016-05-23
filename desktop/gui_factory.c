@@ -23,7 +23,7 @@
 #include "utils/config.h"
 #include "utils/errors.h"
 #include "utils/file.h"
-#include "image/bitmap.h"
+#include "content/handlers/image/bitmap.h"
 #include "content/hlcache.h"
 #include "content/backing_store.h"
 

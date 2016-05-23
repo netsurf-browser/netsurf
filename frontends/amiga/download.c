@@ -54,7 +54,7 @@
 #include "desktop/mouse.h"
 #include "desktop/gui_window.h"
 #include "desktop/gui_download.h"
-#include "image/ico.h"
+#include "content/handlers/image/ico.h"
 
 #include "amiga/gui.h"
 #include "amiga/download.h"

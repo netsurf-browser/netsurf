@@ -29,9 +29,9 @@
 #include "desktop/gui_misc.h"
 #include "desktop/gui_internal.h"
 
-#include "image/bitmap.h"
-#include "image/image_cache.h"
-#include "image/image.h"
+#include "bitmap.h"
+#include "image_cache.h"
+#include "image.h"
 
 /** Age of an entry within the cache
  *

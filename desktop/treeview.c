@@ -24,7 +24,7 @@
 
 #include "utils/log.h"
 #include "css/utils.h"
-#include "image/bitmap.h"
+#include "content/handlers/image/bitmap.h"
 #include "content/hlcache.h"
 
 #include "desktop/system_colour.h"

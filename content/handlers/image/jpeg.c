@@ -33,12 +33,12 @@
 #include "content/content_protected.h"
 #include "desktop/gui_internal.h"
 
-#include "image/image_cache.h"
-#include "image/bitmap.h"
+#include "image_cache.h"
+#include "bitmap.h"
 
 #define JPEG_INTERNAL_OPTIONS
 #include "jpeglib.h"
-#include "image/jpeg.h"
+#include "jpeg.h"
 
 /** absolute minimum size of a jpeg below which it is not even worth
  * trying to read header data

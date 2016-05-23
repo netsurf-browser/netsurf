@@ -9,3 +9,9 @@ ifeq ($(NETSURF_FS_BACKING_STORE),YES)
 endif
 
 S_CONTENT := $(addprefix content/,$(S_CONTENT))
+
+# Content fetchers sources
+include content/fetchers/Makefile
+
+# Content handlers
+include content/handlers/Makefile

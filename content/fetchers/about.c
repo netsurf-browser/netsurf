@@ -41,7 +41,7 @@
 #include "content/fetchers.h"
 #include "content/fetchers/about.h"
 #include "content/content_type.h"
-#include "image/image_cache.h"
+#include "content/handlers/image/image_cache.h"
 
 
 struct fetch_about_context;

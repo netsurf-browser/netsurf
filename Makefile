@@ -585,9 +585,6 @@ include frontends/Makefile
 # Content sources
 include content/Makefile
 
-# Content fetchers sources
-include content/fetchers/Makefile
-
 # CSS sources
 include css/Makefile
 
@@ -605,9 +602,6 @@ include desktop/Makefile
 
 # Javascript source
 include javascript/Makefile
-
-# Image content handler sources
-include image/Makefile
 
 # S_COMMON are sources common to all builds
 S_COMMON := $(S_CONTENT) $(S_FETCHERS) $(S_CSS)	$(S_RENDER) $(S_UTILS) \

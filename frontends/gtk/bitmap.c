@@ -33,7 +33,7 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "content/content.h"
-#include "image/bitmap.h"
+#include "content/handlers/image/bitmap.h"
 #include "desktop/plotters.h"
 
 #include "gtk/scaffolding.h"

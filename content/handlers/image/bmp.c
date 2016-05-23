@@ -32,8 +32,8 @@
 #include "desktop/gui_internal.h"
 #include "desktop/plotters.h"
 
-#include "image/bitmap.h"
-#include "image/bmp.h"
+#include "bitmap.h"
+#include "bmp.h"
 
 /** bmp context. */
 typedef struct nsbmp_content {

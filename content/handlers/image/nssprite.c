@@ -32,8 +32,8 @@
 #include "desktop/gui_internal.h"
 #include "desktop/plotters.h"
 
-#include "image/bitmap.h"
-#include "image/nssprite.h"
+#include "bitmap.h"
+#include "nssprite.h"
 
 typedef struct nssprite_content {
 	struct content base;

@@ -45,8 +45,8 @@
 #include "desktop/plotters.h"
 #include "desktop/gui_internal.h"
 
-#include "image/bitmap.h"
-#include "image/rsvg.h"
+#include "bitmap.h"
+#include "rsvg.h"
 
 typedef struct rsvg_content {
 	struct content base;

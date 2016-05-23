@@ -20,7 +20,8 @@
 
 #include "content/content_factory.h"
 #include "content/content_protected.h"
-#include "image/video.h"
+
+#include "video.h"
 
 typedef struct nsvideo_content {
 	struct content base;

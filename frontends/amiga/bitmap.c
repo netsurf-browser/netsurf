@@ -50,7 +50,7 @@
 #include "content/hlcache.h"
 #include "desktop/mouse.h"
 #include "desktop/gui_window.h"
-#include "image/bitmap.h"
+#include "content/handlers/image/bitmap.h"
 
 #include "amiga/gui.h"
 #include "amiga/bitmap.h"

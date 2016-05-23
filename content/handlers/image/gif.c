@@ -43,9 +43,9 @@
 #include "desktop/gui_misc.h"
 #include "desktop/gui_internal.h"
 
-#include "image/image.h"
-#include "image/bitmap.h"
-#include "image/gif.h"
+#include "image.h"
+#include "bitmap.h"
+#include "gif.h"
 
 typedef struct nsgif_content {
 	struct content base;

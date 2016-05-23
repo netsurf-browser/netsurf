@@ -30,7 +30,7 @@
 #include <windows.h>
 
 #include "utils/log.h"
-#include "image/bitmap.h"
+#include "content/handlers/image/bitmap.h"
 #include "desktop/plotters.h"
 #include "content/content.h"
 

@@ -35,7 +35,7 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "css/css.h"
-#include "image/bitmap.h"
+#include "content/handlers/image/bitmap.h"
 
 #include "desktop/gui_layout.h"
 #include "desktop/gui_internal.h"

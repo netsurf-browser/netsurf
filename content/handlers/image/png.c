@@ -28,9 +28,9 @@
 #include "content/content_protected.h"
 #include "desktop/gui_internal.h"
 
-#include "image/image_cache.h"
-#include "image/bitmap.h"
-#include "image/png.h"
+#include "image_cache.h"
+#include "bitmap.h"
+#include "png.h"
 
 /* accommodate for old versions of libpng (beware security holes!) */
 

@@ -60,7 +60,7 @@
 #include "desktop/plotters.h"
 #include "desktop/print.h"
 #include "desktop/printer.h"
-#include "image/bitmap.h"
+#include "content/handlers/image/bitmap.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/useragent.h"

@@ -30,9 +30,9 @@
 #include "content/content_protected.h"
 #include "desktop/gui_internal.h"
 
-#include "image/image.h"
-#include "image/bitmap.h"
-#include "image/ico.h"
+#include "image.h"
+#include "bitmap.h"
+#include "ico.h"
 
 typedef struct nsico_content {
 	struct content base;

@@ -39,7 +39,7 @@
 #include "utils/messages.h"
 #include "content/content_protected.h"
 #include "desktop/plotters.h"
-#include "image/bitmap.h"
+#include "content/handlers/image/bitmap.h"
 
 #include "amiga/bitmap.h"
 #include "amiga/filetype.h"
