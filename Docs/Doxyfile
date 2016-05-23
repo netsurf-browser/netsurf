@@ -677,11 +677,11 @@ INPUT                  = frontends/amiga \
                          desktop \
                          content \
                          content/fetchers \
+                         content/handlers/image \
                          javascript \
                          javascript/jsapi \
                          utils \
                          utils/http \
-			 image \
 			 Docs/UnimplementedJavascript.txt
 
 # This tag can be used to specify the character encoding of the source files
