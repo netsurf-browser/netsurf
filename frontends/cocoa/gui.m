@@ -26,7 +26,7 @@
 #import "desktop/gui_misc.h"
 #import "desktop/browser.h"
 #import "desktop/textinput.h"
-#import "image/ico.h"
+#import "content/handlers/image/ico.h"
 #import "content/fetchers/resource.h"
 #import "content/hlcache.h"
 #import "content/content.h"
