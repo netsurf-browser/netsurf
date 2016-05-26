@@ -31,7 +31,6 @@
 #include <dom/bindings/hubbub/parser.h>
 
 #include "content/content_type.h"
-#include "css/css.h"
 #include "desktop/browser.h"
 #include "desktop/mouse.h"
 #include "desktop/plot_style.h"

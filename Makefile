@@ -539,8 +539,8 @@ $(eval $(call pkg_config_find_and_add_enabled,NSSVG,libsvgtiny,SVG))
 $(eval $(call pkg_config_find_and_add_enabled,ROSPRITE,librosprite,Sprite))
 
 # add top level and build directory to include search path
-CFLAGS += -I. -Ifrontends -I$(OBJROOT)
-CXXFLAGS += -I. -Ifrontends -I$(OBJROOT)
+CFLAGS += -I. -Iinclude -Ifrontends -I$(OBJROOT)
+CXXFLAGS += -I. -Iinclude -Ifrontends -I$(OBJROOT)
 
 # export the user agent format
 CFLAGS += -DNETSURF_UA_FORMAT_STRING=\"$(NETSURF_UA_FORMAT_STRING)\"
@@ -584,9 +584,6 @@ include frontends/Makefile
 
 # Content sources
 include content/Makefile
-
-# CSS sources
-include css/Makefile
 
 # render sources
 include render/Makefile

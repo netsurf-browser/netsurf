@@ -17,19 +17,105 @@
  */
 
 #include <stdio.h>
+#include <libcss/libcss.h>
 
-#include "css/dump.h"
-
-static void dump_css_fixed(FILE *stream, css_fixed f);
-static void dump_css_number(FILE *stream, css_fixed val);
-static void dump_css_unit(FILE *stream, css_fixed val, css_unit unit);
+#include "dump.h"
 
 /**
- * Dump a computed style \a style to the give file handle \a stream.
+ * Dump a fixed point value to the stream in a textual form.
  *
  * \param stream  Stream to write to
- * \param style   Computed style to dump
+ * \param f       Value to write
  */
+static void dump_css_fixed(FILE *stream, css_fixed f)
+{
+#define NSCSS_ABS(x) (uint32_t)((x) < 0 ? -(x) : (x))
+	uint32_t uintpart = FIXTOINT(NSCSS_ABS(f));
+	/* + 500 to ensure round to nearest (division will truncate) */
+	uint32_t fracpart = ((NSCSS_ABS(f) & 0x3ff) * 1000 + 500) / (1 << 10);
+#undef NSCSS_ABS
+
+	fprintf(stream, "%s%d.%03d", f < 0 ? "-" : "", uintpart, fracpart);
+}
+
+/**
+ * Dump a numeric value to the stream in a textual form.
+ *
+ * \param stream  Stream to write to
+ * \param val     Value to write
+ */
+static void dump_css_number(FILE *stream, css_fixed val)
+{
+	if (INTTOFIX(FIXTOINT(val)) == val)
+		fprintf(stream, "%d", FIXTOINT(val));
+	else
+		dump_css_fixed(stream, val);
+}
+
+/**
+ * Dump a dimension to the stream in a textual form.
+ *
+ * \param stream  Stream to write to
+ * \param val     Value to write
+ * \param unit    Unit to write
+ */
+static void dump_css_unit(FILE *stream, css_fixed val, css_unit unit)
+{
+	dump_css_number(stream, val);
+
+	switch (unit) {
+	case CSS_UNIT_PX:
+		fprintf(stream, "px");
+		break;
+	case CSS_UNIT_EX:
+		fprintf(stream, "ex");
+		break;
+	case CSS_UNIT_EM:
+		fprintf(stream, "em");
+		break;
+	case CSS_UNIT_IN:
+		fprintf(stream, "in");
+		break;
+	case CSS_UNIT_CM:
+		fprintf(stream, "cm");
+		break;
+	case CSS_UNIT_MM:
+		fprintf(stream, "mm");
+		break;
+	case CSS_UNIT_PT:
+		fprintf(stream, "pt");
+		break;
+	case CSS_UNIT_PC:
+		fprintf(stream, "pc");
+		break;
+	case CSS_UNIT_PCT:
+		fprintf(stream, "%%");
+		break;
+	case CSS_UNIT_DEG:
+		fprintf(stream, "deg");
+		break;
+	case CSS_UNIT_GRAD:
+		fprintf(stream, "grad");
+		break;
+	case CSS_UNIT_RAD:
+		fprintf(stream, "rad");
+		break;
+	case CSS_UNIT_MS:
+		fprintf(stream, "ms");
+		break;
+	case CSS_UNIT_S:
+		fprintf(stream, "s");
+		break;
+	case CSS_UNIT_HZ:
+		fprintf(stream, "Hz");
+		break;
+	case CSS_UNIT_KHZ:
+		fprintf(stream, "kHz");
+		break;
+	}
+}
+
+/* exported interface documented in content/handlers/css/dump.h */
 void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 {
 	uint8_t val;
@@ -74,7 +160,7 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	val = css_computed_background_image(style, &url);
 	if (val == CSS_BACKGROUND_IMAGE_IMAGE && url != NULL) {
 		fprintf(stream, "background-image: url('%.*s') ",
-				(int) lwc_string_length(url), 
+				(int) lwc_string_length(url),
 				lwc_string_data(url));
 	} else if (val == CSS_BACKGROUND_IMAGE_NONE) {
 		fprintf(stream, "background-image: none ");
@@ -1008,7 +1094,7 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	val = css_computed_list_style_image(style, &url);
 	if (url != NULL) {
 		fprintf(stream, "list-style-image: url('%.*s') ",
-				(int) lwc_string_length(url), 
+				(int) lwc_string_length(url),
 				lwc_string_data(url));
 	} else if (val == CSS_LIST_STYLE_IMAGE_NONE) {
 		fprintf(stream, "list-style-image: none ");
@@ -1705,102 +1791,3 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 
 	fprintf(stream, "}");
 }
-
-/******************************************************************************
- * Helper functions for nscss_dump_computed_style                             *
- ******************************************************************************/
-
-/**
- * Dump a fixed point value to the stream in a textual form.
- *
- * \param stream  Stream to write to
- * \param f       Value to write
- */
-void dump_css_fixed(FILE *stream, css_fixed f)
-{
-#define NSCSS_ABS(x) (uint32_t)((x) < 0 ? -(x) : (x))
-	uint32_t uintpart = FIXTOINT(NSCSS_ABS(f));
-	/* + 500 to ensure round to nearest (division will truncate) */
-	uint32_t fracpart = ((NSCSS_ABS(f) & 0x3ff) * 1000 + 500) / (1 << 10);
-#undef NSCSS_ABS
-
-	fprintf(stream, "%s%d.%03d", f < 0 ? "-" : "", uintpart, fracpart);
-}
-
-/**
- * Dump a numeric value to the stream in a textual form.
- *
- * \param stream  Stream to write to
- * \param val     Value to write
- */
-void dump_css_number(FILE *stream, css_fixed val)
-{
-	if (INTTOFIX(FIXTOINT(val)) == val)
-		fprintf(stream, "%d", FIXTOINT(val));
-	else
-		dump_css_fixed(stream, val);
-}
-
-/**
- * Dump a dimension to the stream in a textual form.
- *
- * \param stream  Stream to write to
- * \param val     Value to write
- * \param unit    Unit to write
- */
-void dump_css_unit(FILE *stream, css_fixed val, css_unit unit)
-{
-	dump_css_number(stream, val);
-
-	switch (unit) {
-	case CSS_UNIT_PX:
-		fprintf(stream, "px");
-		break;
-	case CSS_UNIT_EX:
-		fprintf(stream, "ex");
-		break;
-	case CSS_UNIT_EM:
-		fprintf(stream, "em");
-		break;
-	case CSS_UNIT_IN:
-		fprintf(stream, "in");
-		break;
-	case CSS_UNIT_CM:
-		fprintf(stream, "cm");
-		break;
-	case CSS_UNIT_MM:
-		fprintf(stream, "mm");
-		break;
-	case CSS_UNIT_PT:
-		fprintf(stream, "pt");
-		break;
-	case CSS_UNIT_PC:
-		fprintf(stream, "pc");
-		break;
-	case CSS_UNIT_PCT:
-		fprintf(stream, "%%");
-		break;
-	case CSS_UNIT_DEG:
-		fprintf(stream, "deg");
-		break;
-	case CSS_UNIT_GRAD:
-		fprintf(stream, "grad");
-		break;
-	case CSS_UNIT_RAD:
-		fprintf(stream, "rad");
-		break;
-	case CSS_UNIT_MS:
-		fprintf(stream, "ms");
-		break;
-	case CSS_UNIT_S:
-		fprintf(stream, "s");
-		break;
-	case CSS_UNIT_HZ:
-		fprintf(stream, "Hz");
-		break;
-	case CSS_UNIT_KHZ:
-		fprintf(stream, "kHz");
-		break;
-	}
-}
-

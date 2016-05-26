@@ -672,12 +672,13 @@ INPUT                  = frontends/amiga \
                          frontends/riscos/templates \
                          frontends/riscos/scripts \
                          frontends/windows \
-                         css \
+                         include/netsurf \
                          render \
                          desktop \
                          content \
                          content/fetchers \
                          content/handlers/image \
+                         content/handlers/css \
                          javascript \
                          javascript/jsapi \
                          utils \

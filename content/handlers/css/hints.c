@@ -25,8 +25,8 @@
 #include "utils/nsurl.h"
 #include "utils/utils.h"
 
-#include "css/hints.h"
-#include "css/select.h"
+#include "hints.h"
+#include "select.h"
 
 #define LOG_STATS
 #undef LOG_STATS
@@ -445,13 +445,7 @@ static bool parse_named_colour(const char *name, css_color *result)
 	return entry != NULL;
 }
 
-/**
- * Parser for colours specified in attribute values.
- *
- * \param data    Data to parse (NUL-terminated)
- * \param result  Pointer to location to receive resulting css_color
- * \return true on success, false on invalid input
- */
+/* exported interface documented in content/handlers/css/hints.h */
 bool nscss_parse_colour(const char *data, css_color *result)
 {
 	size_t len = strlen(data);
@@ -512,7 +506,7 @@ bool nscss_parse_colour(const char *data, css_color *result)
  * \param unit  Pointer to location to receive unit
  * \return True on success, false on failure
  */
-static bool parse_font_size(const char *size, uint8_t *val, 
+static bool parse_font_size(const char *size, uint8_t *val,
 		css_fixed *len, css_unit *unit)
 {
 	static const uint8_t size_map[] = {
@@ -564,7 +558,7 @@ static bool parse_font_size(const char *size, uint8_t *val,
 
 	if (value == 7) {
 		/* Manufacture xxx-large */
-	  *len = FDIV(FMUL(INTTOFIX(3), INTTOFIX(nsoption_int(font_size))), 
+	  *len = FDIV(FMUL(INTTOFIX(3), INTTOFIX(nsoption_int(font_size))),
 				F_10);
 	} else {
 		/* Len is irrelevant */
@@ -1608,4 +1602,3 @@ css_error node_presentational_hint(void *pw, void *node,
 
 	return CSS_OK;
 }
-

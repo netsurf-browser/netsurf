@@ -22,9 +22,8 @@
  * Renderer internal font handling implementation.
  */
 
-#include "css/css.h"
-#include "css/utils.h"
 #include "utils/nsoption.h"
+#include "content/handlers/css/utils.h"
 
 #include "render/font.h"
 

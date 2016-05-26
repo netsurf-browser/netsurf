@@ -43,10 +43,9 @@
 #include "utils/utils.h"
 #include "utils/string.h"
 #include "content/content_protected.h"
-#include "css/css.h"
-#include "css/hints.h"
-#include "css/select.h"
-#include "css/utils.h"
+#include "content/handlers/css/hints.h"
+#include "content/handlers/css/select.h"
+#include "netsurf/css.h"
 #include "desktop/gui_misc.h"
 #include "desktop/gui_internal.h"
 

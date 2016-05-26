@@ -16,11 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NETSURF_CSS_DUMP_H_
-#define NETSURF_CSS_DUMP_H_
+#ifndef NETSURF_CSS_INTERNAL_H_
+#define NETSURF_CSS_INTERNAL_H_
 
-#include "css/css.h"
-
-void nscss_dump_computed_style(FILE *stream, const css_computed_style *style);
+/**
+ * URL resolution callback for libcss
+ *
+ * \param pw    Resolution context
+ * \param base  Base URI
+ * \param rel   Relative URL
+ * \param abs   Pointer to location to receive resolved URL
+ * \return CSS_OK       on success,
+ *         CSS_NOMEM    on memory exhaustion,
+ *         CSS_INVALID  if resolution failed.
+ */
+css_error nscss_resolve_url(void *pw, const char *base, lwc_string *rel, lwc_string **abs);
 
 #endif

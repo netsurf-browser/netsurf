@@ -23,7 +23,7 @@
 
 #include <dom/dom.h>
 
-#include "css/css.h"
+#include <libcss/libcss.h>
 
 struct content;
 struct nsurl;
@@ -52,6 +52,7 @@ css_computed_style *nscss_get_blank_style(nscss_select_ctx *ctx,
 
 css_error named_ancestor_node(void *pw, void *node,
 		const css_qname *qname, void **ancestor);
+
 css_error node_is_visited(void *pw, void *node, bool *match);
 
 #endif

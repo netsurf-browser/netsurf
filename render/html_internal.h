@@ -16,12 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Content for text/html (private data).
  */
 
 #ifndef NETSURF_RENDER_HTML_INTERNAL_H_
 #define NETSURF_RENDER_HTML_INTERNAL_H_
+
+#include <libcss/libcss.h>
 
 #include "content/content_protected.h"
 #include "desktop/selection.h"

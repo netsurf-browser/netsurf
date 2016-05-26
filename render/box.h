@@ -89,8 +89,7 @@
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
-
-#include "css/css.h"
+#include <libcss/libcss.h>
 
 struct content;
 struct box;

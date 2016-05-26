@@ -17,23 +17,14 @@
  */
 
 #include <string.h>
-
-#include "css/internal.h"
+#include <libcss/libcss.h>
 
 #include "utils/nsurl.h"
 
-/**
- * URL resolution callback for libcss
- *
- * \param pw    Resolution context
- * \param base  Base URI
- * \param rel   Relative URL
- * \param abs   Pointer to location to receive resolved URL
- * \return CSS_OK       on success,
- *         CSS_NOMEM    on memory exhaustion,
- *         CSS_INVALID  if resolution failed.
- */
-css_error nscss_resolve_url(void *pw, const char *base, 
+#include "internal.h"
+
+/* exported interface documented in content/handlers/css/internal.h */
+css_error nscss_resolve_url(void *pw, const char *base,
 		lwc_string *rel, lwc_string **abs)
 {
 	lwc_error lerror;
@@ -70,4 +61,3 @@ css_error nscss_resolve_url(void *pw, const char *base,
 
 	return CSS_OK;
 }
-

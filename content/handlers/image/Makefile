@@ -12,4 +12,4 @@ S_IMAGE_$(NETSURF_USE_NSSVG) += svg.c
 S_IMAGE_$(NETSURF_USE_RSVG) += rsvg.c
 S_IMAGE_$(NETSURF_USE_VIDEO) += video.c
 
-S_IMAGE := $(addprefix image/,$(S_IMAGE_YES))
+S_IMAGE := $(S_IMAGE_YES)

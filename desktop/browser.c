@@ -52,11 +52,11 @@
 #include "content/fetch.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
+#include "content/handlers/css/utils.h"
 #include "render/form_internal.h"
 #include "render/html.h"
 #include "render/box.h"
 #include "curl/curl.h"
-#include "css/utils.h"
 #include "javascript/js.h"
 
 #include "desktop/browser_history.h"

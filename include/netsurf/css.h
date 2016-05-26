@@ -16,14 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NETSURF_CSS_UTILS_H_
-#define NETSURF_CSS_UTILS_H_
+/**
+ * \file
+ * Netsurf core css API
+ */
 
-#include "css/css.h"
-#include "desktop/plot_style.h"
-
-/* DPI of the screen, in fixed point units */
-extern css_fixed nscss_screen_dpi;
+#ifndef NETSURF_CSS_H_
+#define NETSURF_CSS_H_
 
 /**
  * Convert a CSS color to a NetSurf colour primitive
@@ -62,9 +61,5 @@ extern css_fixed nscss_screen_dpi;
  */
 #define nscss_color_is_transparent(color) \
 		(((color) >> 24) == 0)
-
-css_fixed nscss_len2pt(css_fixed length, css_unit unit);
-css_fixed nscss_len2px(css_fixed length, css_unit unit, 
-		const css_computed_style *style);
 
 #endif

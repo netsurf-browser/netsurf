@@ -28,6 +28,7 @@
 #include <stdlib.h>
 
 #include "content/hlcache.h"
+#include "content/handlers/css/css.h"
 #include "utils/nsoption.h"
 #include "utils/corestrings.h"
 #include "utils/config.h"

@@ -26,12 +26,14 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
-#include "css/css.h"
-#include "css/select.h"
+
+#include "utils/log.h"
+#include "utils/errors.h"
+#include "content/handlers/css/select.h"
+
 #include "render/box.h"
 #include "render/html_internal.h"
 #include "render/table.h"
-#include "utils/log.h"
 
 /* Define to enable box normalise debug */
 #undef BOX_NORMALISE_DEBUG

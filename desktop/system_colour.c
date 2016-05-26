@@ -26,10 +26,10 @@
 #include "utils/config.h"
 #include "utils/utils.h"
 #include "utils/log.h"
-#include "css/utils.h"
-#include "desktop/system_colour.h"
 #include "utils/nsoption.h"
+#include "netsurf/css.h"
 
+#include "desktop/system_colour.h"
 
 #define colour_list_len ((NSOPTION_SYS_COLOUR_END - NSOPTION_SYS_COLOUR_START) + 1)
 

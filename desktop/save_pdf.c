@@ -44,6 +44,7 @@
  */
 
 #include "utils/config.h"
+#include "utils/errors.h"
 
 #include "desktop/save_pdf.h"
 
@@ -52,18 +53,18 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <hpdf.h>
 
-#include "content/hlcache.h"
-#include "utils/nsoption.h"
-#include "desktop/plotters.h"
-#include "desktop/print.h"
-#include "desktop/printer.h"
-#include "content/handlers/image/bitmap.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/useragent.h"
+#include "content/hlcache.h"
+#include "utils/nsoption.h"
+#include "content/handlers/image/bitmap.h"
+
+#include "desktop/plotters.h"
+#include "desktop/print.h"
+#include "desktop/printer.h"
 
 #include "font_haru.h"
 

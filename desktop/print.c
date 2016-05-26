@@ -32,7 +32,7 @@
 #include "utils/talloc.h"
 #include "content/content.h"
 #include "content/hlcache.h"
-#include "css/utils.h"
+#include "content/handlers/css/utils.h"
 #include "render/box.h"
 
 #include "desktop/plotters.h"

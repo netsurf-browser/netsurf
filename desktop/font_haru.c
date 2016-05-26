@@ -36,9 +36,6 @@
 
 #include <hpdf.h>
 
-#include "css/css.h"
-#include "css/utils.h"
-
 #include "utils/nsoption.h"
 #include "desktop/save_pdf/font_haru.h"
 #include "desktop/font.h"

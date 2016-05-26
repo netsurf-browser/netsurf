@@ -33,8 +33,7 @@
 #define NETSURF_DESKTOP_PRINT_H
 
 #include <stdbool.h>
-
-#include "css/css.h"
+#include <libcss/libcss.h>
 
 struct hlcache_handle;
 struct printer;

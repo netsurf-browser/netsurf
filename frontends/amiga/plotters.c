@@ -37,7 +37,7 @@
 #include "utils/nsoption.h"
 #include "utils/utils.h"
 #include "utils/log.h"
-#include "css/utils.h"
+#include "netsurf/css.h"
 #include "desktop/mouse.h"
 #include "desktop/gui_window.h"
 

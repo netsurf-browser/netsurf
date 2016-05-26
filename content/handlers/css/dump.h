@@ -16,12 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NETSURF_CSS_INTERNAL_H_
-#define NETSURF_CSS_INTERNAL_H_
+#ifndef NETSURF_CSS_DUMP_H_
+#define NETSURF_CSS_DUMP_H_
 
-#include "css/css.h"
-
-css_error nscss_resolve_url(void *pw, const char *base, 
-		lwc_string *rel, lwc_string **abs);
+/**
+ * Dump a computed style \a style to the give file handle \a stream.
+ *
+ * \param stream  Stream to write to
+ * \param style   Computed style to dump
+ */
+void nscss_dump_computed_style(FILE *stream, const css_computed_style *style);
 
 #endif

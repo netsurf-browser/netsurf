@@ -35,10 +35,28 @@ struct nscss_import {
 	uint64_t media;		/**< Media types that sheet applies to */
 };
 
+/**
+ * Initialise the CSS content handler
+ *
+ * \return NSERROR_OK on success or error code on faliure
+ */
 nserror nscss_init(void);
 
+/**
+ * Retrieve the stylesheet object associated with a CSS content
+ *
+ * \param h Stylesheet content
+ * \return Pointer to stylesheet object
+ */
 css_stylesheet *nscss_get_stylesheet(struct hlcache_handle *h);
+
+/**
+ * Retrieve imported stylesheets
+ *
+ * \param h  Stylesheet containing imports
+ * \param n  Pointer to location to receive number of imports
+ * \return Pointer to array of imported stylesheets
+ */
 struct nscss_import *nscss_get_imports(struct hlcache_handle *h, uint32_t *n);
 
 #endif
-

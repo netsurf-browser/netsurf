@@ -30,9 +30,9 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 
-#include "css/css.h"
-#include "css/hints.h"
-#include "css/internal.h"
+#include "css.h"
+#include "hints.h"
+#include "internal.h"
 
 /* Define to trace import fetches */
 #undef NSCSS_IMPORT_TRACE
@@ -76,11 +76,11 @@ typedef struct nscss_content
  */
 typedef struct {
 	struct content_css_data *css;		/**< Object containing import */
-	uint32_t index;				/**< Index into parent sheet's 
+	uint32_t index;				/**< Index into parent sheet's
 						 *   imports array */
 } nscss_import_ctx;
 
-static bool nscss_process_data(struct content *c, const char *data, 
+static bool nscss_process_data(struct content *c, const char *data,
 		unsigned int size);
 static bool nscss_convert(struct content *c);
 static void nscss_destroy(struct content *c);
@@ -91,13 +91,13 @@ static content_type nscss_content_type(void);
 static nserror nscss_create_css_data(struct content_css_data *c,
 		const char *url, const char *charset, bool quirks,
 		nscss_done_callback done, void *pw);
-static css_error nscss_process_css_data(struct content_css_data *c, const char *data, 
+static css_error nscss_process_css_data(struct content_css_data *c, const char *data,
 		unsigned int size);
 static css_error nscss_convert_css_data(struct content_css_data *c);
 static void nscss_destroy_css_data(struct content_css_data *c);
 
 static void nscss_content_done(struct content_css_data *css, void *pw);
-static css_error nscss_handle_import(void *pw, css_stylesheet *parent, 
+static css_error nscss_handle_import(void *pw, css_stylesheet *parent,
 		lwc_string *url, uint64_t media);
 static nserror nscss_import(hlcache_handle *handle,
 		const hlcache_event *event, void *pw);
@@ -151,7 +151,7 @@ nscss_create(const content_handler *handler,
 	}
 
 	/* Find charset specified on HTTP layer, if any */
-	error = http_parameter_list_find_item(params, corestring_lwc_charset, 
+	error = http_parameter_list_find_item(params, corestring_lwc_charset,
 			&charset_value);
 	if (error != NSERROR_OK || lwc_string_length(charset_value) == 0) {
 		/* No charset specified, use fallback, if any */
@@ -167,8 +167,8 @@ nscss_create(const content_handler *handler,
 		xnsbase = nsurl_access(content_get_url(&result->base));
 	}
 
-	error = nscss_create_css_data(&result->data, 
-			xnsbase, charset, result->base.quirks, 
+	error = nscss_create_css_data(&result->data,
+			xnsbase, charset, result->base.quirks,
 			nscss_content_done, result);
 	if (error != NSERROR_OK) {
 		msg_data.error = messages_get("NoMemory");
@@ -273,7 +273,7 @@ bool nscss_process_data(struct content *c, const char *data, unsigned int size)
 static css_error nscss_process_css_data(struct content_css_data *c,
 		const char *data, unsigned int size)
 {
-	return css_stylesheet_append_data(c->sheet, 
+	return css_stylesheet_append_data(c->sheet,
 			(const uint8_t *) data, size);
 }
 
@@ -316,7 +316,7 @@ static css_error nscss_convert_css_data(struct content_css_data *c)
 		/* We must not have registered any imports yet */
 		assert(c->next_to_register == (uint32_t) -1);
 
-		/* Start registering, until we find one that 
+		/* Start registering, until we find one that
 		 * hasn't finished fetching */
 		c->next_to_register = 0;
 		error = nscss_register_imports(c);
@@ -396,7 +396,7 @@ nserror nscss_clone(const struct content *old, struct content **newc)
 	/* Simply replay create/process/convert */
 	error = nscss_create_css_data(&new_css->data,
 			nsurl_access(content_get_url(&new_css->base)),
-			old_css->data.charset, 
+			old_css->data.charset,
 			new_css->base.quirks,
 			nscss_content_done, new_css);
 	if (error != NSERROR_OK) {
@@ -430,12 +430,7 @@ bool nscss_matches_quirks(const struct content *c, bool quirks)
 	return c->quirks == quirks;
 }
 
-/**
- * Retrieve the stylesheet object associated with a CSS content
- *
- * \param h  Stylesheet content
- * \return Pointer to stylesheet object
- */
+/* exported interface documented in netsurf/css.h */
 css_stylesheet *nscss_get_stylesheet(struct hlcache_handle *h)
 {
 	nscss_content *c = (nscss_content *) hlcache_handle_get_content(h);
@@ -445,13 +440,7 @@ css_stylesheet *nscss_get_stylesheet(struct hlcache_handle *h)
 	return c->data.sheet;
 }
 
-/**
- * Retrieve imported stylesheets
- *
- * \param h  Stylesheet containing imports
- * \param n  Pointer to location to receive number of imports
- * \return Pointer to array of imported stylesheets
- */
+/* exported interface documented in netsurf/css.h */
 struct nscss_import *nscss_get_imports(hlcache_handle *h, uint32_t *n)
 {
 	nscss_content *c = (nscss_content *) hlcache_handle_get_content(h);
@@ -562,7 +551,7 @@ css_error nscss_handle_import(void *pw, css_stylesheet *parent,
 	ctx->index = c->import_count;
 
 	/* Increase space in table */
-	imports = realloc(c->imports, (c->import_count + 1) * 
+	imports = realloc(c->imports, (c->import_count + 1) *
 			sizeof(struct nscss_import));
 	if (imports == NULL) {
 		free(ctx);
@@ -710,12 +699,12 @@ css_error nscss_register_imports(struct content_css_data *c)
 
 	/* Register imported sheets */
 	for (index = c->next_to_register; index < c->import_count; index++) {
-		/* Stop registering if we encounter one whose fetch hasn't 
-		 * completed yet. We'll resume at this point when it has 
+		/* Stop registering if we encounter one whose fetch hasn't
+		 * completed yet. We'll resume at this point when it has
 		 * completed.
 		 */
-		if (c->imports[index].c != NULL && 
-			content_get_status(c->imports[index].c) != 
+		if (c->imports[index].c != NULL &&
+			content_get_status(c->imports[index].c) !=
 				CONTENT_STATUS_DONE) {
 			break;
 		}
@@ -751,7 +740,7 @@ css_error nscss_register_import(struct content_css_data *c,
 	css_error error;
 
 	if (import != NULL) {
-		nscss_content *s = 
+		nscss_content *s =
 			(nscss_content *) hlcache_handle_get_content(import);
 		sheet = s->data.sheet;
 	} else {
@@ -822,16 +811,14 @@ static const content_handler css_content_handler = {
 	.no_share = false,
 };
 
-/**
- * Initialise the CSS content handler
- */
+/* exported interface documented in netsurf/css.h */
 nserror nscss_init(void)
 {
 	nserror error;
 
-	error = content_factory_register_handler("text/css", 
+	error = content_factory_register_handler("text/css",
 			&css_content_handler);
-	if (error != NSERROR_OK) 
+	if (error != NSERROR_OK)
 		goto error;
 
 	error = css_hint_init();

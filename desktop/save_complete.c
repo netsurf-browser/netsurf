@@ -41,7 +41,7 @@
 #include "utils/messages.h"
 #include "content/content.h"
 #include "content/hlcache.h"
-#include "css/css.h"
+#include "content/handlers/css/css.h"
 #include "render/box.h"
 #include "render/html.h"
 

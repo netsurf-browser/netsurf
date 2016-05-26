@@ -32,7 +32,6 @@
 #include "utils/utils.h"
 #include "content/content.h"
 #include "content/hlcache.h"
-#include "css/utils.h"
 #include "utils/nsoption.h"
 
 #include "desktop/browser.h"

@@ -21,18 +21,17 @@
 
 #include <stdint.h>
 
-#include "css/css.h"
+#include <libcss/libcss.h>
 
 nserror css_hint_init(void);
 void css_hint_fini(void);
-
 
 /**
  * Callback to retrieve presentational hints for a node
  *
  * \param[in] pw HTML document
  * \param[in] node DOM node
- * \param[out] nhints number of hints retrived 
+ * \param[out] nhints number of hints retrived
  * \param[out] hints retrived hints
  * \return CSS_OK               on success,
  *         CSS_PROPERTY_NOT_SET if there is no hint for the requested property,
@@ -44,6 +43,13 @@ css_error node_presentational_hint(
 		uint32_t *nhints,
 		css_hint **hints);
 
+/**
+ * Parser for colours specified in attribute values.
+ *
+ * \param data    Data to parse (NUL-terminated)
+ * \param result  Pointer to location to receive resulting css_color
+ * \return true on success, false on invalid input
+ */
 bool nscss_parse_colour(const char *data, css_color *result);
 
 #endif

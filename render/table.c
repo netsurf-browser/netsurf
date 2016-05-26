@@ -22,15 +22,14 @@
  */
 
 #include <assert.h>
-
 #include <dom/dom.h>
 
-#include "css/css.h"
-#include "css/utils.h"
-#include "render/box.h"
-#include "render/table.h"
 #include "utils/log.h"
 #include "utils/talloc.h"
+#include "content/handlers/css/utils.h"
+
+#include "render/box.h"
+#include "render/table.h"
 
 /* Define to enable verbose table debug */
 #undef TABLE_DEBUG

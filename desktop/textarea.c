@@ -26,10 +26,10 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "css/utils.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "content/handlers/css/utils.h"
 
 #include "desktop/browser.h"
 #include "desktop/mouse.h"

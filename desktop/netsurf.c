@@ -37,7 +37,7 @@
 #include "content/hlcache.h"
 #include "content/mimesniff.h"
 #include "content/urldb.h"
-#include "css/css.h"
+#include "content/handlers/css/css.h"
 #include "content/handlers/image/image.h"
 #include "content/handlers/image/image_cache.h"
 #include "javascript/js.h"

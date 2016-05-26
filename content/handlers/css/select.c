@@ -26,9 +26,9 @@
 #include "utils/corestrings.h"
 #include "utils/log.h"
 
-#include "css/internal.h"
-#include "css/hints.h"
-#include "css/select.h"
+#include "internal.h"
+#include "hints.h"
+#include "select.h"
 
 static css_error node_name(void *pw, void *node, css_qname *qname);
 static css_error node_classes(void *pw, void *node,
@@ -265,7 +265,7 @@ css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
 		return NULL;
 	}
 
-	/* If there's a parent style, compose with partial to obtain 
+	/* If there's a parent style, compose with partial to obtain
 	 * complete computed style for element */
 	if (ctx->parent_style != NULL) {
 		/* Complete the computed style, by composing with the parent
@@ -498,7 +498,7 @@ css_error node_name(void *pw, void *node, css_qname *qname)
  *       be allocated using the same allocator as used by libcss during style
  *       selection.
  */
-css_error node_classes(void *pw, void *node, 
+css_error node_classes(void *pw, void *node,
 		lwc_string ***classes, uint32_t *n_classes)
 {
 	dom_node *n = node;
@@ -697,7 +697,7 @@ css_error named_generic_sibling_node(void *pw, void *node,
 				return CSS_OK;
 			}
 
-			if (dom_string_caseless_lwc_isequal(name, 
+			if (dom_string_caseless_lwc_isequal(name,
 					qname->name)) {
 				dom_string_unref(name);
 				dom_node_unref(n);
@@ -844,7 +844,7 @@ css_error node_has_class(void *pw, void *node,
 	dom_node *n = node;
 	dom_exception err;
 
-	/** \todo: Ensure that libdom performs case-insensitive 
+	/** \todo: Ensure that libdom performs case-insensitive
 	 * matching in quirks mode */
 	err = dom_element_has_class(n, name, match);
 
@@ -907,7 +907,7 @@ css_error node_has_attribute(void *pw, void *node,
 	dom_exception err;
 
 	err = dom_string_create_interned(
-			(const uint8_t *) lwc_string_data(qname->name), 
+			(const uint8_t *) lwc_string_data(qname->name),
 			lwc_string_length(qname->name), &name);
 	if (err != DOM_NO_ERR)
 		return CSS_NOMEM;
@@ -953,7 +953,7 @@ css_error node_has_attribute_equal(void *pw, void *node,
 	}
 
 	err = dom_string_create_interned(
-		(const uint8_t *) lwc_string_data(qname->name), 
+		(const uint8_t *) lwc_string_data(qname->name),
 		lwc_string_length(qname->name), &name);
 	if (err != DOM_NO_ERR)
 		return CSS_NOMEM;
@@ -1005,7 +1005,7 @@ css_error node_has_attribute_dashmatch(void *pw, void *node,
 	}
 
 	err = dom_string_create_interned(
-		(const uint8_t *) lwc_string_data(qname->name), 
+		(const uint8_t *) lwc_string_data(qname->name),
 		lwc_string_length(qname->name), &name);
 	if (err != DOM_NO_ERR)
 		return CSS_NOMEM;
@@ -1073,7 +1073,7 @@ css_error node_has_attribute_includes(void *pw, void *node,
 	}
 
 	err = dom_string_create_interned(
-		(const uint8_t *) lwc_string_data(qname->name), 
+		(const uint8_t *) lwc_string_data(qname->name),
 		lwc_string_length(qname->name), &name);
 	if (err != DOM_NO_ERR)
 		return CSS_NOMEM;
@@ -1141,7 +1141,7 @@ css_error node_has_attribute_prefix(void *pw, void *node,
 	}
 
 	err = dom_string_create_interned(
-		(const uint8_t *) lwc_string_data(qname->name), 
+		(const uint8_t *) lwc_string_data(qname->name),
 		lwc_string_length(qname->name), &name);
 	if (err != DOM_NO_ERR)
 		return CSS_NOMEM;
@@ -1163,7 +1163,7 @@ css_error node_has_attribute_prefix(void *pw, void *node,
 		const char *data = (const char *) dom_string_data(atr_val);
 		size_t len = dom_string_byte_length(atr_val);
 
-		if ((len >= vlen) && 
+		if ((len >= vlen) &&
 		    (strncasecmp(data, lwc_string_data(value), vlen) == 0)) {
 			*match = true;
 		}
@@ -1205,7 +1205,7 @@ css_error node_has_attribute_suffix(void *pw, void *node,
 	}
 
 	err = dom_string_create_interned(
-		(const uint8_t *) lwc_string_data(qname->name), 
+		(const uint8_t *) lwc_string_data(qname->name),
 		lwc_string_length(qname->name), &name);
 	if (err != DOM_NO_ERR)
 		return CSS_NOMEM;
@@ -1226,10 +1226,10 @@ css_error node_has_attribute_suffix(void *pw, void *node,
 	if (*match == false) {
 		const char *data = (const char *) dom_string_data(atr_val);
 		size_t len = dom_string_byte_length(atr_val);
-		
+
 		const char *start = (char *) data + len - vlen;
 
-		if ((len >= vlen) && 
+		if ((len >= vlen) &&
 		    (strncasecmp(start, lwc_string_data(value), vlen) == 0)) {
 			*match = true;
 		}
@@ -1273,7 +1273,7 @@ css_error node_has_attribute_substring(void *pw, void *node,
 	}
 
 	err = dom_string_create_interned(
-		(const uint8_t *) lwc_string_data(qname->name), 
+		(const uint8_t *) lwc_string_data(qname->name),
 		lwc_string_length(qname->name), &name);
 	if (err != DOM_NO_ERR)
 		return CSS_NOMEM;
@@ -1299,7 +1299,7 @@ css_error node_has_attribute_substring(void *pw, void *node,
 
 		if (len >= vlen) {
 			while (start <= last_start) {
-				if (strncasecmp(start, vdata, 
+				if (strncasecmp(start, vdata,
 						vlen) == 0) {
 					*match = true;
 					break;
@@ -1348,38 +1348,38 @@ css_error node_is_root(void *pw, void *node, bool *match)
 		if (type != DOM_DOCUMENT_NODE) {
 			*match = false;
 			return CSS_OK;
-		} 
+		}
 	}
-	
+
 	*match = true;
 
 	return CSS_OK;
 }
 
-static int 
-node_count_siblings_check(dom_node *node, 
-			  bool check_name, 
+static int
+node_count_siblings_check(dom_node *node,
+			  bool check_name,
 			  dom_string *name)
 {
 	dom_node_type type;
 	int ret = 0;
 	dom_exception exc;
 
-	if (node == NULL) 
+	if (node == NULL)
 		return 0;
 
 	exc = dom_node_get_node_type(node, &type);
 	if ((exc != DOM_NO_ERR) || (type != DOM_ELEMENT_NODE)) {
 		return 0;
 	}
-	
+
 	if (check_name) {
 		dom_string *node_name = NULL;
 		exc = dom_node_get_node_name(node, &node_name);
 
 		if ((exc == DOM_NO_ERR) && (node_name != NULL)) {
 
-			if (dom_string_caseless_isequal(name, 
+			if (dom_string_caseless_isequal(name,
 							node_name)) {
 				ret = 1;
 			}
@@ -1388,10 +1388,10 @@ node_count_siblings_check(dom_node *node,
 	} else {
 		ret = 1;
 	}
-	
+
 	return ret;
 }
-			
+
 /**
  * Callback to count a node's siblings.
  *
@@ -1418,16 +1418,16 @@ css_error node_count_siblings(void *pw, void *n, bool same_name,
 			return CSS_NOMEM;
 		}
 	}
-	
+
 	if (after) {
 		dom_node *node = dom_node_ref(n);
 		dom_node *next;
-		
+
 		do {
 			exc = dom_node_get_next_sibling(node, &next);
 			if ((exc != DOM_NO_ERR))
 				break;
-			
+
 			dom_node_unref(node);
 			node = next;
 
@@ -1436,12 +1436,12 @@ css_error node_count_siblings(void *pw, void *n, bool same_name,
 	} else {
 		dom_node *node = dom_node_ref(n);
 		dom_node *next;
-		
+
 		do {
 			exc = dom_node_get_previous_sibling(node, &next);
 			if ((exc != DOM_NO_ERR))
 				break;
-			
+
 			dom_node_unref(node);
 			node = next;
 
@@ -1451,7 +1451,7 @@ css_error node_count_siblings(void *pw, void *n, bool same_name,
 	}
 
 	if (node_name != NULL) {
-		dom_string_unref(node_name);	
+		dom_string_unref(node_name);
 	}
 
 	*count = cnt;
@@ -1472,14 +1472,14 @@ css_error node_is_empty(void *pw, void *node, bool *match)
 {
 	dom_node *n = node, *next;
 	dom_exception err;
-	
+
 	*match = true;
-	
+
 	err = dom_node_get_first_child(n, &n);
 	if (err != DOM_NO_ERR) {
 		return CSS_BADPARM;
 	}
-	
+
 	while (n != NULL) {
 		dom_node_type ntype;
 		err = dom_node_get_node_type(n, &ntype);
@@ -1487,14 +1487,14 @@ css_error node_is_empty(void *pw, void *node, bool *match)
 			dom_node_unref(n);
 			return CSS_BADPARM;
 		}
-		
+
 		if (ntype == DOM_ELEMENT_NODE ||
 		    ntype == DOM_TEXT_NODE) {
 			*match = false;
 			dom_node_unref(n);
 			break;
 		}
-		
+
 		err = dom_node_get_next_sibling(n, &next);
 		if (err != DOM_NO_ERR) {
 			dom_node_unref(n);
@@ -1503,7 +1503,7 @@ css_error node_is_empty(void *pw, void *node, bool *match)
 		dom_node_unref(n);
 		n = next;
 	}
-	
+
 	return CSS_OK;
 }
 
@@ -1531,7 +1531,7 @@ css_error node_is_link(void *pw, void *n, bool *match)
 	if (dom_string_caseless_lwc_isequal(node_name, corestring_lwc_a)) {
 		bool has_href;
 		exc = dom_element_has_attribute(node, corestring_dom_href,
-				&has_href); 
+				&has_href);
 		if ((exc == DOM_NO_ERR) && (has_href)) {
 			*match = true;
 		} else {
