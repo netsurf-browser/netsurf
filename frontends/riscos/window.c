@@ -65,7 +65,7 @@
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
 #include "desktop/gui_window.h"
-#include "content/handlers/image/bitmap.h"
+#include "netsurf/bitmap.h"
 #include "render/form.h"
 
 #include "riscos/bitmap.h"

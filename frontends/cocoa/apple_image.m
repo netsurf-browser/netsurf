@@ -22,7 +22,7 @@
 
 #include "utils/config.h"
 #include "content/content_protected.h"
-#include "content/handlers/image/bitmap.h"
+#include "netsurf/bitmap.h"
 #include "desktop/plotters.h"
 #include "utils/utils.h"
 

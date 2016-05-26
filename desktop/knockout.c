@@ -69,7 +69,7 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/errors.h"
-#include "content/handlers/image/bitmap.h"
+#include "netsurf/bitmap.h"
 #include "content/content.h"
 
 #include "desktop/gui_internal.h"

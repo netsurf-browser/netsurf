@@ -23,7 +23,7 @@
  */
 
 #include "utils/log.h"
-#include "content/handlers/image/bitmap.h"
+#include "netsurf/bitmap.h"
 #include "content/hlcache.h"
 #include "content/handlers/css/utils.h"
 

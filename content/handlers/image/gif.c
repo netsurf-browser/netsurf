@@ -42,9 +42,9 @@
 #include "content/content_protected.h"
 #include "desktop/gui_misc.h"
 #include "desktop/gui_internal.h"
+#include "netsurf/bitmap.h"
 
 #include "image.h"
-#include "bitmap.h"
 #include "gif.h"
 
 typedef struct nsgif_content {

@@ -27,9 +27,9 @@
 #include "utils/messages.h"
 #include "content/content_protected.h"
 #include "desktop/gui_internal.h"
+#include "netsurf/bitmap.h"
 
 #include "image_cache.h"
-#include "bitmap.h"
 #include "png.h"
 
 /* accommodate for old versions of libpng (beware security holes!) */

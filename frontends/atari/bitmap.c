@@ -24,7 +24,7 @@
 
 #include "utils/nsoption.h"
 #include "utils/log.h"
-#include "content/handlers/image/bitmap.h"
+#include "netsurf/bitmap.h"
 #include "desktop/mouse.h"
 
 #include "atari/bitmap.h"

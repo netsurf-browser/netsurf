@@ -104,7 +104,7 @@
 #include "utils/utils.h"
 #include "utils/bloom.h"
 #include "utils/time.h"
-#include "content/handlers/image/bitmap.h"
+#include "netsurf/bitmap.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/gui_internal.h"
 

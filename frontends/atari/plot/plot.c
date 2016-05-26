@@ -29,7 +29,7 @@
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
-#include "content/handlers/image/bitmap.h"
+#include "netsurf/bitmap.h"
 #include "desktop/plotters.h"
 #include "desktop/mouse.h"
 

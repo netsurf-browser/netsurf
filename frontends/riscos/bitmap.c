@@ -45,7 +45,7 @@
 #include "utils/messages.h"
 #include "desktop/plotters.h"
 #include "content/content.h"
-#include "content/handlers/image/bitmap.h"
+#include "netsurf/bitmap.h"
 
 #include "riscos/gui.h"
 #include "riscos/image.h"

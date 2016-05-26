@@ -60,7 +60,7 @@
 #include "utils/useragent.h"
 #include "content/hlcache.h"
 #include "utils/nsoption.h"
-#include "content/handlers/image/bitmap.h"
+#include "netsurf/bitmap.h"
 
 #include "desktop/plotters.h"
 #include "desktop/print.h"

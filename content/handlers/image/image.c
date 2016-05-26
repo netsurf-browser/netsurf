@@ -25,8 +25,8 @@
 #include "content/content.h"
 #include "desktop/plotters.h"
 #include "desktop/gui_internal.h"
+#include "netsurf/bitmap.h"
 
-#include "bitmap.h"
 #include "bmp.h"
 #include "gif.h"
 #include "ico.h"

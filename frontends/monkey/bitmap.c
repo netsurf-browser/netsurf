@@ -21,7 +21,7 @@
 #include <stdlib.h>
 
 #include "utils/errors.h"
-#include "content/handlers/image/bitmap.h"
+#include "netsurf/bitmap.h"
 
 #include "monkey/bitmap.h"
 

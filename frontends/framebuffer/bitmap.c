@@ -30,7 +30,7 @@
 
 #include "utils/log.h"
 #include "utils/utils.h"
-#include "content/handlers/image/bitmap.h"
+#include "netsurf/bitmap.h"
 #include "desktop/plotters.h"
 #include "content/content.h"
 

@@ -35,7 +35,7 @@
 #include "utils/messages.h"
 #include "content/content_protected.h"
 #include "desktop/plotters.h"
-#include "content/handlers/image/bitmap.h"
+#include "netsurf/bitmap.h"
 #include "content/handlers/image/image_cache.h"
 
 #include "amiga/bitmap.h"

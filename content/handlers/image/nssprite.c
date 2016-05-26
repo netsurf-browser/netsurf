@@ -31,8 +31,8 @@
 #include "content/content_protected.h"
 #include "desktop/gui_internal.h"
 #include "desktop/plotters.h"
+#include "netsurf/bitmap.h"
 
-#include "bitmap.h"
 #include "nssprite.h"
 
 typedef struct nssprite_content {

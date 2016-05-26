@@ -33,7 +33,7 @@
 #include "desktop/gui_internal.h"
 #include "desktop/browser.h"
 
-#include "content/handlers/image/bitmap.h"
+#include "netsurf/bitmap.h"
 #include "content/content_protected.h"
 #include "content/content_debug.h"
 #include "content/hlcache.h"

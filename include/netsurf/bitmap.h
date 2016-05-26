@@ -51,8 +51,8 @@
  *    }
  */
 
-#ifndef _NETSURF_IMAGE_BITMAP_H_
-#define _NETSURF_IMAGE_BITMAP_H_
+#ifndef _NETSURF_BITMAP_H_
+#define _NETSURF_BITMAP_H_
 
 #define BITMAP_NEW		0
 #define BITMAP_OPAQUE		(1 << 0) /**< image is opaque */

@@ -48,7 +48,7 @@
 #include "desktop/print.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"
-#include "content/handlers/image/bitmap.h"
+#include "netsurf/bitmap.h"
 #include "desktop/gui_layout.h"
 #include "desktop/gui_internal.h"
 

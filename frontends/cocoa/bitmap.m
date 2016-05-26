@@ -25,7 +25,7 @@
 
 #import "desktop/browser.h"
 #import "desktop/plotters.h"
-#import "content/handlers/image/bitmap.h"
+#import "netsurf/bitmap.h"
 #import "content/urldb.h"
 #import "content/content.h"
 

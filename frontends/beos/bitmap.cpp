@@ -42,7 +42,7 @@ extern "C" {
 #include "content/urldb.h"
 #include "desktop/plotters.h"
 #include "desktop/browser.h"
-#include "content/handlers/image/bitmap.h"
+#include "netsurf/bitmap.h"
 }
 
 #include "beos/bitmap.h"

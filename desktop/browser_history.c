@@ -34,7 +34,7 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "content/handlers/image/bitmap.h"
+#include "netsurf/bitmap.h"
 
 #include "desktop/gui_layout.h"
 #include "desktop/gui_internal.h"
