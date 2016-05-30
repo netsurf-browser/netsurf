@@ -20,7 +20,7 @@
 #import "utils/messages.h"
 #import "utils/utils.h"
 #import "utils/nsurl.h"
-#import "desktop/browser.h"
+#import "netsurf/browser_window.h"
 
 #import "cocoa/gui.h"
 #import "cocoa/NetSurfAppDelegate.h"

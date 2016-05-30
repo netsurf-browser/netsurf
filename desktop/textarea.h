@@ -29,7 +29,11 @@
 
 #include "utils/utils.h"
 
+#include "desktop/plot_style.h"
+#include "netsurf/mouse.h"
+
 struct textarea;
+struct redraw_context;
 
 /* Text area flags */
 typedef enum {

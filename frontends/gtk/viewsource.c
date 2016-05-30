@@ -23,7 +23,7 @@
 #include "utils/utf8.h"
 #include "utils/nsurl.h"
 #include "utils/messages.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "content/content.h"
 
 #include "gtk/viewdata.h"

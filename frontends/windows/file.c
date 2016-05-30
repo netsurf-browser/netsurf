@@ -35,7 +35,7 @@
 #include "utils/url.h"
 #include "utils/file.h"
 #include "utils/string.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 
 #include "windows/file.h"
 

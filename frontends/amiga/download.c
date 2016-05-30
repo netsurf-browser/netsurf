@@ -50,7 +50,7 @@
 #include "utils/string.h"
 #include "desktop/download.h"
 #include "desktop/save_complete.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
 #include "netsurf/window.h"
 #include "netsurf/download.h"

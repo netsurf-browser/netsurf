@@ -52,7 +52,7 @@
 #include "desktop/save_complete.h"
 #include "desktop/treeview.h"
 #include "netsurf/netsurf.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "content/urldb.h"
 #include "content/hlcache.h"
 #include "content/backing_store.h"

@@ -17,7 +17,7 @@
  */
 
 #import "utils/nsoption.h"
-#import "desktop/browser.h"
+#import "netsurf/browser_window.h"
 #import "content/content.h"
 #import "content/hlcache.h"
 

@@ -20,7 +20,7 @@
 #define COCOA_COORDINATES_H
 
 #include "utils/utils.h"
-#import "desktop/browser.h"
+#import "netsurf/browser_window.h"
 
 extern CGFloat cocoa_scale_factor;
 

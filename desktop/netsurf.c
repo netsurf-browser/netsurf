@@ -44,7 +44,7 @@
 #include "render/html.h"
 #include "render/textplain.h"
 
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/system_colour.h"
 #include "desktop/searchweb.h"
 #include "netsurf/misc.h"

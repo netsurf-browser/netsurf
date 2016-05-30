@@ -24,7 +24,7 @@
 #include <libnsfb.h>
 #include <libnsfb_plot.h>
 
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"

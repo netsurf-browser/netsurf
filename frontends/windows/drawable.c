@@ -23,7 +23,7 @@
 #include <windows.h>
 #include <windowsx.h>
 
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/textinput.h"
 #include "desktop/plotters.h"
 #include "utils/errors.h"

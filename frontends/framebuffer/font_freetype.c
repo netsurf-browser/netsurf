@@ -29,7 +29,7 @@
 #include "utils/nsoption.h"
 #include "netsurf/utf8.h"
 #include "netsurf/layout.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/font.h"

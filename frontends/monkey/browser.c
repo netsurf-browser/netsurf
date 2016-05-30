@@ -27,7 +27,7 @@
 #include "utils/messages.h"
 #include "netsurf/mouse.h"
 #include "netsurf/window.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/plotters.h"
 #include "content/hlcache.h"
 

@@ -41,7 +41,7 @@
 #include "utils/file.h"
 #include "utils/filepath.h"
 
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "content/hlcache.h"
 #include "content/content.h"
 

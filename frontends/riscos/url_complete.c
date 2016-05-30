@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * GUI URL auto-completion (implementation).
+/**
+ * \file
+ * GUI URL auto-completion implementation.
  */
 
 #include <assert.h>
@@ -30,7 +31,7 @@
 #include "utils/log.h"
 #include "utils/nsoption.h"
 #include "content/urldb.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 
 #include "riscos/global_history.h"
 #include "riscos/gui.h"

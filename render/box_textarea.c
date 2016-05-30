@@ -22,7 +22,6 @@
 
 #include <dom/dom.h>
 
-#include "desktop/browser.h"
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
 #include "utils/log.h"

@@ -31,7 +31,7 @@
 #include "utils/utils.h"
 #include "content/handlers/css/utils.h"
 
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"

@@ -43,7 +43,7 @@
 #include "content/fetch.h"
 #include "content/hlcache.h"
 #include "content/handlers/css/utils.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
 #include "desktop/knockout.h"
 #include "desktop/plot_style.h"

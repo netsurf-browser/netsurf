@@ -28,7 +28,7 @@
 #include "utils/nsoption.h"
 #include "content/urldb.h"
 #include "desktop/searchweb.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 
 #include "gtk/warn.h"
 #include "gtk/scaffolding.h"

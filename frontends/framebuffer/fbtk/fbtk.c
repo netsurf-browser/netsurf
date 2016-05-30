@@ -34,7 +34,7 @@
 
 #include "utils/utils.h"
 #include "utils/log.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/plotters.h"
 
 #include "framebuffer/gui.h"

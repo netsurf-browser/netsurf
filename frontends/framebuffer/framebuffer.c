@@ -31,7 +31,7 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/plotters.h"
 #include "netsurf/bitmap.h"
 

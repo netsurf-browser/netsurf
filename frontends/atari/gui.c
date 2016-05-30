@@ -34,7 +34,7 @@
 #include "content/backing_store.h"
 #include "content/hlcache.h"
 #include "desktop/treeview.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/layout.h"
 #include "netsurf/window.h"
 #include "netsurf/clipboard.h"

@@ -23,7 +23,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "desktop/browser.h"
+#import "netsurf/browser_window.h"
 #import "desktop/plotters.h"
 #import "netsurf/bitmap.h"
 #import "content/urldb.h"

@@ -18,7 +18,7 @@
 
 #import "utils/nsoption.h"
 #import "utils/messages.h"
-#import "desktop/browser.h"
+#import "netsurf/browser_window.h"
 #import "desktop/plotters.h"
 #import "desktop/textinput.h"
 #import "content/hlcache.h"

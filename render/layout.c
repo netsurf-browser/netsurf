@@ -49,7 +49,7 @@
 #include "utils/nsoption.h"
 #include "content/content_protected.h"
 #include "content/handlers/css/utils.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"
 #include "netsurf/layout.h"

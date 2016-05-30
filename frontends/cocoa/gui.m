@@ -24,7 +24,7 @@
 #import "netsurf/mouse.h"
 #import "netsurf/window.h"
 #import "netsurf/misc.h"
-#import "desktop/browser.h"
+#import "netsurf/browser_window.h"
 #import "desktop/textinput.h"
 #import "content/handlers/image/ico.h"
 #import "content/fetchers/resource.h"

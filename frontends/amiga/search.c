@@ -48,7 +48,7 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "content/content.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/search.h"
 #include "netsurf/mouse.h"
 #include "netsurf/window.h"

@@ -48,7 +48,7 @@
 #include "desktop/textarea.h"
 #include "netsurf/bitmap.h"
 #include "javascript/js.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/utf8.h"
 #include "netsurf/layout.h"
 #include "netsurf/misc.h"

@@ -18,7 +18,7 @@
 
 #import "utils/messages.h"
 #import "utils/utils.h"
-#import "desktop/browser.h"
+#import "netsurf/browser_window.h"
 #import "desktop/hotlist.h"
 #import "desktop/tree.h"
 #import "content/hlcache.h"

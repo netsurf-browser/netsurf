@@ -17,8 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Browser window creation and manipulation (interface).
+/**
+ * \file
+ * Browser window creation and manipulation interface.
  */
 
 #ifndef _NETSURF_DESKTOP_BROWSER_H_
@@ -28,8 +29,6 @@
 #include <stdio.h>
 
 #include "utils/errors.h"
-#include "desktop/plot_style.h"
-#include "desktop/frame_types.h"
 #include "netsurf/mouse.h"
 
 struct browser_window;

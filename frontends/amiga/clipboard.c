@@ -31,7 +31,7 @@
 #include "utils/utf8.h"
 #include "utils/nsurl.h"
 #include "content/hlcache.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
 #include "netsurf/window.h"

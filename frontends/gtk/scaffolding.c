@@ -34,7 +34,7 @@
 #include "utils/nsoption.h"
 #include "utils/file.h"
 #include "desktop/browser_history.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/hotlist.h"
 #include "desktop/plotters.h"
 #include "desktop/print.h"

@@ -28,7 +28,7 @@
 #include "utils/nsurl.h"
 #include "utils/messages.h"
 #include "desktop/version.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 
 #include "curl/curlver.h"
 

@@ -40,7 +40,6 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "content/urldb.h"
-#include "desktop/browser.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"

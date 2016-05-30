@@ -102,7 +102,7 @@
 #include "content/urldb.h"
 #include "content/handlers/image/ico.h"
 #include "desktop/browser_history.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/hotlist.h"
 #include "netsurf/mouse.h"
 #include "netsurf/netsurf.h"

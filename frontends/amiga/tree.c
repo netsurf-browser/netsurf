@@ -55,7 +55,7 @@
 #include "utils/messages.h"
 #include "content/urldb.h"
 #include "content/llcache.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/global_history.h"
 #include "desktop/hotlist.h"

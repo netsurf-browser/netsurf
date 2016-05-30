@@ -29,7 +29,7 @@
 #include "content/hlcache.h"
 #include "content/content.h"
 #include "content/fetch.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/save_complete.h"
 #include "desktop/save_pdf.h"
 #include "desktop/save_text.h"

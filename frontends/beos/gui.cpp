@@ -62,7 +62,7 @@ extern "C" {
 #include "content/fetchers/resource.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/misc.h"
 #include "netsurf/clipboard.h"
 #include "netsurf/search.h"

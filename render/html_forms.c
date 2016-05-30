@@ -19,8 +19,6 @@
 #include "utils/corestrings.h"
 #include "utils/log.h"
 
-#include "desktop/browser.h"
-
 #include "render/form_internal.h"
 #include "render/html_internal.h"
 

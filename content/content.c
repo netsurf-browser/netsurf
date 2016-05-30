@@ -31,7 +31,7 @@
 #include "desktop/plotters.h"
 #include "desktop/knockout.h"
 #include "desktop/gui_internal.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 
 #include "netsurf/bitmap.h"
 #include "content/content_protected.h"

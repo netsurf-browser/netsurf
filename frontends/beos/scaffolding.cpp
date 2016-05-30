@@ -54,7 +54,7 @@
 extern "C" {
 #include "content/content.h"
 #include "desktop/browser_history.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/netsurf.h"
 #include "desktop/version.h"
 #include "desktop/searchweb.h"

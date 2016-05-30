@@ -13,7 +13,7 @@ class Window {
 	private struct html_content * htmlc;
 	prologue %{
 #include "utils/nsurl.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "render/html.h"
 #include "render/html_internal.h"
 %};

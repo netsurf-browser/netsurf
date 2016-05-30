@@ -30,7 +30,7 @@ extern "C" {
 #include "utils/log.h"
 #include "content/content.h"
 #include "content/urldb.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "utils/messages.h"
 #include "utils/url.h"
 #include "utils/utils.h"

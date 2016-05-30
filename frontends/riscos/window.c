@@ -56,7 +56,7 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/browser_history.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/scrollbar.h"
 #include "desktop/frames.h"

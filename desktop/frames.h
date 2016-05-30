@@ -24,6 +24,8 @@
 #define _NETSURF_DESKTOP_FRAMES_H_
 
 struct scrollbar_msg_data;
+struct content_html_iframe;
+struct content_html_frames;
 
 /**
  * Create and open iframes for a browser window.

@@ -19,7 +19,7 @@
 #import "cocoa/FormSelectMenu.h"
 #import "cocoa/coordinates.h"
 
-#import "desktop/browser.h"
+#import "netsurf/browser_window.h"
 #import "render/form.h"
 
 static inline NSRect cocoa_rect_for_control( struct browser_window *bw, struct form_control *control)

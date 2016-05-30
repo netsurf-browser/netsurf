@@ -19,7 +19,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/textinput.h"
 #include "content/hlcache.h"
 

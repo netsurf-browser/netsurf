@@ -30,7 +30,7 @@
 #include "utils/messages.h"
 #include "content/content.h"
 #include "content/hlcache.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/search.h"
 #include "desktop/searchweb.h"
 #include "netsurf/search.h"

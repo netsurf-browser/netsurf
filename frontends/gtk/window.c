@@ -39,7 +39,7 @@
 #include "content/hlcache.h"
 #include "gtk/window.h"
 #include "gtk/selection.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"

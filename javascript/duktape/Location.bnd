@@ -15,7 +15,7 @@ class Location {
 
 prologue Location()
 %{
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 %}
 
 init Location(nsurl *url)

@@ -21,7 +21,7 @@
 
 #include "utils/nsoption.h"
 #include "utils/messages.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "content/content.h"
 #include "desktop/search.h"
 

@@ -39,7 +39,7 @@
 #include "utils/messages.h"
 #include "utils/nsurl.h"
 #include "desktop/version.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 
 #include "riscos/configure.h"
 #include "riscos/cookies.h"

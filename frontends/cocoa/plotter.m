@@ -20,7 +20,7 @@
 
 #import "utils/log.h"
 #import "utils/utils.h"
-#import "desktop/browser.h"
+#import "netsurf/browser_window.h"
 #import "desktop/plotters.h"
 #import "desktop/plot_style.h"
 

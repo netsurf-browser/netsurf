@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Browser window creation and manipulation (interface).
+/**
+ * \file
+ * Interface to browser frames.
  */
 
 #ifndef _NETSURF_DESKTOP_FRAME_TYPES_H_

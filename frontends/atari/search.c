@@ -27,7 +27,7 @@
 
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/search.h"
 #include "netsurf/search.h"
 

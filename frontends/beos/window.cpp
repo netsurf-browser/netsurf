@@ -29,7 +29,7 @@ extern "C" {
 #include "utils/utils.h"
 #include "content/content.h"
 #include "content/urldb.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
 #include "desktop/textinput.h"
 #include "desktop/plotters.h"

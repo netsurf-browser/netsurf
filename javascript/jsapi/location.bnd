@@ -17,7 +17,7 @@ hdrcomment "        http://www.opensource.org/licenses/mit-license";
 
 preamble %{
 
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
         
 #include "utils/config.h"
 #include "utils/log.h"

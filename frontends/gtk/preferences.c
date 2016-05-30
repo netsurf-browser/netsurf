@@ -26,7 +26,7 @@
 #include "utils/file.h"
 #include "utils/log.h"
 #include "utils/nsurl.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/searchweb.h"
 
 #include "gtk/compat.h"

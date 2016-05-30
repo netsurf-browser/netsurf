@@ -42,7 +42,7 @@
 #include "utils/nsoption.h"
 #include "content/content_protected.h"
 #include "content/handlers/css/utils.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/plotters.h"
 #include "desktop/selection.h"
 #include "desktop/print.h"

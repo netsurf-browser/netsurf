@@ -30,7 +30,7 @@
 #include "utils/utils.h"
 #include "utils/nsoption.h"
 
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/system_colour.h"
 #include "netsurf/mouse.h"
 #include "desktop/scrollbar.h"

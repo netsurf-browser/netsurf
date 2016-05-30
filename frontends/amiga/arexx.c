@@ -34,7 +34,7 @@
 #include "utils/nsoption.h"
 #include "utils/nsurl.h"
 #include "content/hlcache.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/window.h"
 #include "desktop/version.h"
 

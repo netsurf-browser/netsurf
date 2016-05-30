@@ -49,7 +49,7 @@
 #include "utils/nsurl.h"
 #include "content/hlcache.h"
 #include "desktop/hotlist.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
 #include "netsurf/window.h"
 #include "desktop/textinput.h"

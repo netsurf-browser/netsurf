@@ -18,8 +18,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * ANT URL launching protocol (implementation).
+/**
+ * \file
+ * ANT URL launching protocol implementation.
  *
  * See http://www.vigay.com/inet/inet_url.html
  */
@@ -38,7 +39,7 @@
 #include "utils/nsurl.h"
 #include "utils/config.h"
 #include "content/fetch.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 
 #include "riscos/gui.h"
 #include "riscos/uri.h"

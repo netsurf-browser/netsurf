@@ -34,7 +34,7 @@
 #include "utils/filepath.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/textinput.h"
 #include "desktop/browser_history.h"
 #include "desktop/plotters.h"

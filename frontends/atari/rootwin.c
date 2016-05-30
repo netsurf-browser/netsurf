@@ -37,7 +37,7 @@
 #include <mt_gem.h>
 
 #include "utils/log.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"

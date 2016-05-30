@@ -29,7 +29,7 @@
 
 #include "desktop/global_history.h"
 #include "desktop/treeview.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 
 #define N_DAYS 28
 #define N_SEC_PER_DAY (60 * 60 * 24)

@@ -16,6 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * RISC OS URI message handling implementation.
+ */
+
 #include "utils/config.h"
 
 #include <stdbool.h>
@@ -29,7 +34,7 @@
 #include "utils/messages.h"
 #include "utils/nsurl.h"
 #include "content/fetch.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 
 #include "riscos/gui.h"
 #include "riscos/uri.h"

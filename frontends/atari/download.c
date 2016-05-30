@@ -35,7 +35,7 @@
 #include "desktop/save_complete.h"
 #include "desktop/textinput.h"
 #include "desktop/download.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/download.h"
 
 #include "atari/gui.h"

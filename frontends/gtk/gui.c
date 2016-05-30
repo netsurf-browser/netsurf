@@ -42,7 +42,7 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "content/backing_store.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/save_complete.h"
 #include "desktop/save_pdf.h"
 #include "desktop/searchweb.h"

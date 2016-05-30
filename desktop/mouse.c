@@ -20,7 +20,7 @@
  * Browser window creation and manipulation (implementation).
  */
 
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "utils/log.h"
 
 /**

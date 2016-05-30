@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Iconbar icon and menus (implementation).
+/**
+ * \file
+ * Iconbar icon and menus implementation.
  */
 
 #include <assert.h>
@@ -36,7 +37,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsurl.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 
 #include "riscos/gui.h"
 #include "riscos/configure.h"

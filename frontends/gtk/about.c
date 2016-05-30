@@ -28,7 +28,7 @@
 #include "utils/messages.h"
 #include "utils/nsoption.h"
 #include "utils/nsurl.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/version.h"
 
 #include "gtk/warn.h"

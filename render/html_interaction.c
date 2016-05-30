@@ -35,7 +35,7 @@
 #include "utils/log.h"
 #include "content/content.h"
 #include "content/hlcache.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/frames.h"
 #include "netsurf/mouse.h"
 #include "utils/nsoption.h"

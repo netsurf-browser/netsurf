@@ -30,7 +30,7 @@
 #include "utils/nsurl.h"
 #include "utils/messages.h"
 #include "content/content.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/window.h"
 #include "desktop/browser_history.h"
 #include "desktop/textinput.h"

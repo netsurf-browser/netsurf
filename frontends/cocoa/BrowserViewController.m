@@ -23,7 +23,7 @@
 #import "utils/messages.h"
 #import "utils/url.h"
 #import "desktop/browser_history.h"
-#import "desktop/browser.h"
+#import "netsurf/browser_window.h"
 #import "desktop/textinput.h"
 #import "content/hlcache.h"
 

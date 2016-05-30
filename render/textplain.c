@@ -40,7 +40,7 @@
 #include "content/content_protected.h"
 #include "content/hlcache.h"
 #include "content/handlers/css/utils.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "desktop/search.h"

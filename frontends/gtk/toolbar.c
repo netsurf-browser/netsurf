@@ -21,7 +21,7 @@
 #include <unistd.h>
 #include <gtk/gtk.h>
 
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/searchweb.h"
 #include "utils/log.h"
 #include "utils/messages.h"

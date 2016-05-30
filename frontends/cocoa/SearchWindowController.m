@@ -21,7 +21,7 @@
 #import "cocoa/BrowserViewController.h"
 
 #import "netsurf/search.h"
-#import "desktop/browser.h"
+#import "netsurf/browser_window.h"
 #import "desktop/search.h"
 
 static void cocoa_search_set_back( bool active, void *p );

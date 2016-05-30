@@ -29,7 +29,7 @@
 #include "utils/corestrings.h"
 #include "utils/url.h"
 #include "utils/file.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/clipboard.h"
 
 #include "windows/schedule.h"

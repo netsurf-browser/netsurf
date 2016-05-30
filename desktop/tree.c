@@ -34,7 +34,7 @@
 #include "content/hlcache.h"
 #include "utils/nsoption.h"
 
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 #include "desktop/tree.h"
 
 struct tree {

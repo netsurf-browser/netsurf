@@ -16,9 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
-  * Text selection code (platform-dependent implementation)
-  */
+/**
+ * \file
+ * RISC OS text selection implementation.
+ */
 
 #include <assert.h>
 #include <stdio.h>
@@ -34,7 +35,7 @@
 #include "netsurf/clipboard.h"
 #include "netsurf/window.h"
 #include "desktop/textinput.h"
-#include "desktop/browser.h"
+#include "netsurf/browser_window.h"
 
 #include "riscos/gui.h"
 #include "riscos/menus.h"

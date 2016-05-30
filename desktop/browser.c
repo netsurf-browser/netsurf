@@ -497,7 +497,7 @@ char * browser_window_get_selection(struct browser_window *bw)
 	return content_get_selection(bw->selection.bw->current_content);
 }
 
-/* exported interface, documented in desktop/browser.h */
+/* exported interface, documented in netsurf/browser_window.h */
 bool browser_window_can_search(struct browser_window *bw)
 {
 	if (bw == NULL || bw->current_content == NULL)
@@ -515,14 +515,14 @@ bool browser_window_can_search(struct browser_window *bw)
 }
 
 
-/* exported interface, documented in desktop/browser.h */
+/* exported interface, documented in netsurf/browser_window.h */
 bool browser_window_is_frameset(struct browser_window *bw)
 {
 	return (bw->children != NULL);
 }
 
 
-/* exported interface, documented in desktop/browser.h */
+/* exported interface, documented in netsurf/browser_window.h */
 nserror browser_window_get_scrollbar_type(struct browser_window *bw,
 		browser_scrolling *h, browser_scrolling *v)
 {
@@ -762,7 +762,7 @@ bool browser_window_drop_file_at_point(struct browser_window *bw,
 	return false;
 }
 
-/* exported interface, documented in desktop/browser.h */
+/* exported interface, documented in netsurf/browser_window.h */
 void browser_window_set_gadget_filename(struct browser_window *bw,
 		struct form_control *gadget, const char *fn)
 {
@@ -802,7 +802,7 @@ static bool slow_script(void *ctx)
 	return true;
 }
 
-/* exported interface, documented in desktop/browser.h */
+/* exported interface, documented in netsurf/browser_window.h */
 nserror browser_window_create(enum browser_window_create_flags flags,
 		nsurl *url, nsurl *referrer,
 		struct browser_window *existing,
@@ -1872,7 +1872,7 @@ browser_window_refresh_url_bar_internal(struct browser_window *bw, nsurl *url)
 }
 
 
-/* exported interface, documented in desktop/browser.h */
+/* exported interface, documented in netsurf/browser_window.h */
 void browser_window_destroy(struct browser_window *bw)
 {
 	/* can't destoy child windows on their own */
@@ -1883,7 +1883,7 @@ void browser_window_destroy(struct browser_window *bw)
 	free(bw);
 }
 
-/* exported interface, documented in desktop/browser.h */
+/* exported interface, documented in netsurf/browser_window.h */
 nserror browser_window_refresh_url_bar(struct browser_window *bw)
 {
 	nserror ret;
@@ -1919,7 +1919,7 @@ nserror browser_window_refresh_url_bar(struct browser_window *bw)
 }
 
 
-/* exported interface documented in desktop/browser.h */
+/* exported interface documented in netsurf/browser_window.h */
 nserror browser_window_navigate(struct browser_window *bw,
 			     nsurl *url,
 			     nsurl *referrer,
@@ -2343,7 +2343,7 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 	}
 }
 
-/* Exported interface, documented in desktop/browser.h */
+/* Exported interface, documented in netsurf/browser_window.h */
 void browser_window_update_box(struct browser_window *bw, struct rect *rect)
 {
 	int pos_x;
@@ -2370,7 +2370,7 @@ void browser_window_update_box(struct browser_window *bw, struct rect *rect)
 	}
 }
 
-/* Exported interface, documented in desktop/browser.h */
+/* Exported interface, documented in netsurf/browser_window.h */
 void browser_window_stop(struct browser_window *bw)
 {
 	int children, index;
@@ -2411,7 +2411,7 @@ void browser_window_stop(struct browser_window *bw)
 }
 
 
-/* Exported interface, documented in desktop/browser.h */
+/* Exported interface, documented in netsurf/browser_window.h */
 void browser_window_reload(struct browser_window *bw, bool all)
 {
 	hlcache_handle *c;
@@ -2457,7 +2457,7 @@ void browser_window_reload(struct browser_window *bw, bool all)
 }
 
 
-/* Exported interface, documented in desktop/browser.h */
+/* Exported interface, documented in netsurf/browser_window.h */
 void browser_window_set_status(struct browser_window *bw, const char *text)
 {
 	int text_len;
@@ -2491,7 +2491,7 @@ void browser_window_set_status(struct browser_window *bw, const char *text)
 }
 
 
-/* Exported interface, documented in desktop/browser.h */
+/* Exported interface, documented in netsurf/browser_window.h */
 void browser_window_set_pointer(struct browser_window *bw,
 		browser_pointer_shape shape)
 {
@@ -2530,7 +2530,7 @@ void browser_window_set_pointer(struct browser_window *bw,
 	guit->window->set_pointer(root->window, gui_shape);
 }
 
-/* exported function documented in desktop/browser.h */
+/* exported function documented in netsurf/browser_window.h */
 nserror browser_window_schedule_reformat(struct browser_window *bw)
 {
 	/* The ugly cast here is so the reformat function can be
@@ -2541,7 +2541,7 @@ nserror browser_window_schedule_reformat(struct browser_window *bw)
 }
 
 
-/* exported function documented in desktop/browser.h */
+/* exported function documented in netsurf/browser_window.h */
 void browser_window_reformat(struct browser_window *bw, bool background,
 		int width, int height)
 {
@@ -2601,7 +2601,7 @@ static void browser_window_set_scale_internal(struct browser_window *bw,
 }
 
 
-/* exported interface documented in desktop/browser.h */
+/* exported interface documented in netsurf/browser_window.h */
 void browser_window_set_scale(struct browser_window *bw, float scale, bool all)
 {
 	while (bw->parent && all)
@@ -2616,7 +2616,7 @@ void browser_window_set_scale(struct browser_window *bw, float scale, bool all)
 }
 
 
-/* exported interface documented in desktop/browser.h */
+/* exported interface documented in netsurf/browser_window.h */
 float browser_window_get_scale(struct browser_window *bw)
 {
 	if (bw == NULL) {
@@ -2681,7 +2681,7 @@ static void browser_window_find_target_internal(struct browser_window *bw,
 }
 
 
-/* exported interface documented in desktop/browser.h */
+/* exported interface documented in netsurf/browser_window.h */
 struct browser_window *browser_window_find_target(struct browser_window *bw,
 		const char *target, browser_mouse_state mouse)
 {
@@ -2875,7 +2875,7 @@ static void browser_window_mouse_drag_end(struct browser_window *bw,
 }
 
 
-/* exported interface documented in desktop/browser.h */
+/* exported interface documented in netsurf/browser_window.h */
 void browser_window_mouse_track(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
@@ -3023,7 +3023,7 @@ void browser_window_mouse_track(struct browser_window *bw,
 }
 
 
-/* exported interface documented in desktop/browser.h */
+/* exported interface documented in netsurf/browser_window.h */
 void browser_window_mouse_click(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
@@ -3148,7 +3148,7 @@ void browser_window_mouse_click(struct browser_window *bw,
 
 
 
-/* exported interface documented in desktop/browser.h */
+/* exported interface documented in netsurf/browser_window.h */
 void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 		int width, int height)
 {
@@ -3156,7 +3156,7 @@ void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 }
 
 
-/* exported interface documented in desktop/browser.h */
+/* exported interface documented in netsurf/browser_window.h */
 void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 {
 	assert(bw != NULL);
@@ -3181,7 +3181,7 @@ void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 
 
 
-/* exported interface documented in desktop/browser.h */
+/* exported interface documented in netsurf/browser_window.h */
 bool browser_window_back_available(struct browser_window *bw)
 {
 	return (bw && bw->history &&
@@ -3190,21 +3190,21 @@ bool browser_window_back_available(struct browser_window *bw)
 
 
 
-/* exported interface documented in desktop/browser.h */
+/* exported interface documented in netsurf/browser_window.h */
 bool browser_window_forward_available(struct browser_window *bw)
 {
 	return (bw && bw->history &&
 			browser_window_history_forward_available(bw));
 }
 
-/* exported interface documented in desktop/browser.h */
+/* exported interface documented in netsurf/browser_window.h */
 bool browser_window_reload_available(struct browser_window *bw)
 {
 	return (bw && bw->current_content && !bw->loading_content);
 }
 
 
-/* exported interface documented in desktop/browser.h */
+/* exported interface documented in netsurf/browser_window.h */
 bool browser_window_stop_available(struct browser_window *bw)
 {
 	return (bw && (bw->loading_content ||
