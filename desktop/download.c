@@ -30,7 +30,7 @@
 #include "utils/http.h"
 #include "utils/utils.h"
 #include "desktop/download.h"
-#include "desktop/gui_download.h"
+#include "netsurf/download.h"
 #include "desktop/gui_internal.h"
 
 /**

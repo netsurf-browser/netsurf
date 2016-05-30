@@ -53,7 +53,7 @@
 #include "desktop/browser.h"
 #include "desktop/mouse.h"
 #include "netsurf/window.h"
-#include "desktop/gui_download.h"
+#include "netsurf/download.h"
 #include "content/handlers/image/ico.h"
 
 #include "amiga/gui.h"

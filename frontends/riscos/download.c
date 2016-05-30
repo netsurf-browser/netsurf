@@ -22,7 +22,7 @@
  * \file
  * RISC OS download windows implementation.
  *
- * This file implements the interface given by desktop/gui_download.h
+ * This file implements the interface given by netsurf/download.h
  * for download windows. Each download window has an associated
  * fetch. Downloads start by writing received data to a temporary
  * file. At some point the user chooses a destination (by drag &
@@ -54,7 +54,7 @@
 #include "utils/utils.h"
 #include "utils/string.h"
 #include "utils/corestrings.h"
-#include "desktop/gui_download.h"
+#include "netsurf/download.h"
 #include "desktop/download.h"
 
 #include "riscos/gui.h"

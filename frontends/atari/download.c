@@ -36,7 +36,7 @@
 #include "desktop/textinput.h"
 #include "desktop/download.h"
 #include "desktop/browser.h"
-#include "desktop/gui_download.h"
+#include "netsurf/download.h"
 
 #include "atari/gui.h"
 #include "atari/misc.h"

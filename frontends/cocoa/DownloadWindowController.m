@@ -19,7 +19,7 @@
 #import "utils/log.h"
 #import "utils/nsurl.h"
 #import "desktop/download.h"
-#import "desktop/gui_download.h"
+#import "netsurf/download.h"
 
 #import "cocoa/DownloadWindowController.h"
 #import "cocoa/gui.h"

@@ -30,7 +30,7 @@
 #include "desktop/save_pdf.h"
 #include "desktop/download.h"
 #include "desktop/searchweb.h"
-#include "desktop/gui_download.h"
+#include "netsurf/download.h"
 #include "desktop/gui_fetch.h"
 #include "desktop/gui_misc.h"
 #include "netsurf/window.h"

@@ -23,7 +23,7 @@
 
 extern "C" {
 #include "desktop/download.h"
-#include "desktop/gui_download.h"
+#include "netsurf/download.h"
 #include "utils/utils.h"
 #include "utils/string.h"
 }

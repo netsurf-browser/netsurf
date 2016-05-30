@@ -22,7 +22,7 @@
 
 #include "utils/errors.h"
 #include "utils/ring.h"
-#include "desktop/gui_download.h"
+#include "netsurf/download.h"
 #include "desktop/download.h"
 #include "content/hlcache.h"
 

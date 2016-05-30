@@ -30,7 +30,7 @@
 #include "utils/nsoption.h"
 #include "utils/string.h"
 #include "desktop/download.h"
-#include "desktop/gui_download.h"
+#include "netsurf/download.h"
 
 #include "gtk/warn.h"
 #include "gtk/scaffolding.h"
