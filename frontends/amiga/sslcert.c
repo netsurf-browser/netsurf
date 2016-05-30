@@ -21,7 +21,7 @@
 #include "utils/nsurl.h"
 #include "content/llcache.h"
 #include "desktop/mouse.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "desktop/sslcert_viewer.h"
 
 #include "amiga/tree.h"

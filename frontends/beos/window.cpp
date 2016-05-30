@@ -33,7 +33,7 @@ extern "C" {
 #include "desktop/mouse.h"
 #include "desktop/textinput.h"
 #include "desktop/plotters.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "desktop/gui_clipboard.h"
 }
 

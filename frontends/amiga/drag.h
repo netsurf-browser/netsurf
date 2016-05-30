@@ -20,7 +20,7 @@
 #define AMIGA_DRAG_H
 #include <exec/types.h>
 #include "desktop/browser.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 
 #define AMI_DRAG_THRESHOLD 10
 

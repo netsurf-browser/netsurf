@@ -49,7 +49,7 @@
 #include "utils/messages.h"
 #include "content/hlcache.h"
 #include "desktop/mouse.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "netsurf/bitmap.h"
 
 #include "amiga/gui.h"

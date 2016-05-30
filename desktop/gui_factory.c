@@ -33,7 +33,7 @@
 #include "desktop/gui_download.h"
 #include "desktop/gui_fetch.h"
 #include "desktop/gui_misc.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "netsurf/search.h"
 #include "desktop/gui_clipboard.h"
 #include "desktop/gui_utf8.h"

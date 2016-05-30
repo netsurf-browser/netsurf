@@ -52,7 +52,7 @@
 #include "desktop/save_complete.h"
 #include "desktop/browser.h"
 #include "desktop/mouse.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "desktop/gui_download.h"
 #include "content/handlers/image/ico.h"
 

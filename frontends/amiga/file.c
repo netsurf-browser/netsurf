@@ -33,7 +33,7 @@
 #include "desktop/save_complete.h"
 #include "desktop/save_pdf.h"
 #include "desktop/save_text.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 
 #include "amiga/gui.h"
 #include "amiga/bitmap.h"

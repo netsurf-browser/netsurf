@@ -48,7 +48,7 @@
 #include "desktop/version.h"
 #include "desktop/save_complete.h"
 #include "desktop/save_text.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "netsurf/bitmap.h"
 #include "render/form.h"
 

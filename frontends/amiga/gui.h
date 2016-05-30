@@ -25,7 +25,7 @@
 #include <dos/dos.h>
 #include <devices/inputevent.h>
 
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "desktop/mouse.h"
 
 #include "amiga/menu.h"

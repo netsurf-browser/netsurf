@@ -112,7 +112,7 @@
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "desktop/gui_fetch.h"
 #include "desktop/gui_misc.h"
 

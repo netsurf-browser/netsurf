@@ -54,7 +54,7 @@
 #include "desktop/print.h"
 #include "desktop/gui_layout.h"
 #include "desktop/mouse.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "content/hlcache.h"
 
 #include "amiga/plotters.h"

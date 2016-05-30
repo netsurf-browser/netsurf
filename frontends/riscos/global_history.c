@@ -36,7 +36,7 @@
 #include "utils/log.h"
 #include "desktop/global_history.h"
 #include "desktop/tree.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 
 #include "riscos/dialog.h"
 #include "riscos/global_history.h"

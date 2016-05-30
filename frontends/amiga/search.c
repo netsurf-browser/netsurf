@@ -51,7 +51,7 @@
 #include "desktop/browser.h"
 #include "desktop/search.h"
 #include "desktop/mouse.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "netsurf/search.h"
 
 #include "amiga/libs.h"

@@ -38,7 +38,7 @@
 #include "desktop/textinput.h"
 #include "desktop/browser_history.h"
 #include "desktop/plotters.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "desktop/gui_misc.h"
 #include "desktop/netsurf.h"
 #include "content/urldb.h"

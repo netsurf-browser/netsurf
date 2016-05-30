@@ -47,7 +47,7 @@
 #include "desktop/browser_history.h"
 #include "desktop/browser.h"
 #include "desktop/plotters.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "graphics/rpattr.h"
 
 #include "amiga/libs.h"

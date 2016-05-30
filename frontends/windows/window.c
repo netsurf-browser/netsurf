@@ -31,7 +31,7 @@
 #include "utils/messages.h"
 #include "content/content.h"
 #include "desktop/browser.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "desktop/browser_history.h"
 #include "desktop/textinput.h"
 

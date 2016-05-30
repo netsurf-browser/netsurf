@@ -64,7 +64,7 @@
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "netsurf/bitmap.h"
 #include "render/form.h"
 

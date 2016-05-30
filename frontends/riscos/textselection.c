@@ -32,7 +32,7 @@
 #include "utils/utils.h"
 #include "content/hlcache.h"
 #include "desktop/gui_clipboard.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "desktop/textinput.h"
 #include "desktop/browser.h"
 

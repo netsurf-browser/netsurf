@@ -41,7 +41,7 @@
 #include "desktop/mouse.h"
 #include "desktop/browser_private.h"
 #include "desktop/textinput.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "desktop/gui_internal.h"
 
 /* Define to enable textinput debug */

@@ -36,7 +36,7 @@
 #include "utils/nsurl.h"
 #include "utils/url.h"
 
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 
 #include "amiga/gui.h"
 #include "amiga/misc.h"

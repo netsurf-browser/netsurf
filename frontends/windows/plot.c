@@ -29,7 +29,7 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 #include "desktop/mouse.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "desktop/plotters.h"
 
 #include "windows/bitmap.h"

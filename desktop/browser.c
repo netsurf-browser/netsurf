@@ -71,7 +71,7 @@
 #include "desktop/plotters.h"
 #include "desktop/theme.h"
 #include "desktop/gui_misc.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "desktop/gui_internal.h"
 
 

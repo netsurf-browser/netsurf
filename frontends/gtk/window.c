@@ -43,7 +43,7 @@
 #include "desktop/mouse.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "desktop/plotters.h"
 #include "render/form.h"
 

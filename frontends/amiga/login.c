@@ -42,7 +42,7 @@
 #include "utils/errors.h"
 #include "content/urldb.h"
 #include "desktop/mouse.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 
 #include "amiga/gui.h"
 #include "amiga/libs.h"

@@ -51,7 +51,7 @@
 #include "desktop/hotlist.h"
 #include "desktop/browser.h"
 #include "desktop/mouse.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "desktop/textinput.h"
 #include "desktop/version.h"
 

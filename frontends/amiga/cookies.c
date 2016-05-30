@@ -20,7 +20,7 @@
 
 #include "desktop/cookie_manager.h"
 #include "desktop/mouse.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 
 #include "amiga/cookies.h"
 #include "amiga/tree.h"

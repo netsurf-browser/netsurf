@@ -36,7 +36,7 @@
 #include "desktop/treeview.h"
 #include "desktop/browser.h"
 #include "desktop/gui_layout.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "desktop/gui_clipboard.h"
 #include "desktop/gui_fetch.h"
 #include "desktop/gui_misc.h"

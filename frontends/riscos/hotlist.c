@@ -39,7 +39,7 @@
 #include "content/urldb.h"
 #include "desktop/hotlist.h"
 #include "desktop/tree.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 
 #include "riscos/gui.h"
 #include "riscos/dialog.h"

@@ -43,7 +43,7 @@
 #include "desktop/save_text.h"
 #include "desktop/selection.h"
 #include "desktop/gui_clipboard.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "desktop/gui_internal.h"
 
 /**

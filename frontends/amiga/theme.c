@@ -42,7 +42,7 @@
 #include "utils/utils.h"
 #include "desktop/searchweb.h"
 #include "desktop/mouse.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 
 #include "amiga/gui.h"
 #include "amiga/drag.h"

@@ -35,7 +35,7 @@
 #include "utils/nsurl.h"
 #include "content/hlcache.h"
 #include "desktop/browser.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "desktop/version.h"
 
 #include "amiga/arexx.h"

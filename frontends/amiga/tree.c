@@ -59,7 +59,7 @@
 #include "desktop/cookie_manager.h"
 #include "desktop/global_history.h"
 #include "desktop/hotlist.h"
-#include "desktop/gui_window.h"
+#include "netsurf/window.h"
 #include "desktop/sslcert_viewer.h"
 
 #include "amiga/gui.h"
