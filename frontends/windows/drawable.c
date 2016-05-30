@@ -25,7 +25,7 @@
 
 #include "netsurf/browser_window.h"
 #include "desktop/textinput.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "utils/errors.h"
 #include "utils/log.h"
 #include "utils/utils.h"

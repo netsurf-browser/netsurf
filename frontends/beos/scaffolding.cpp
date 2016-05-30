@@ -59,7 +59,7 @@ extern "C" {
 #include "desktop/version.h"
 #include "desktop/searchweb.h"
 #include "desktop/search.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "utils/nsoption.h"
 #include "desktop/textinput.h"
 #include "render/form.h"

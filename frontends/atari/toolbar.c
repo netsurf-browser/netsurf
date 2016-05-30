@@ -35,7 +35,7 @@
 #include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
 #include "desktop/plot_style.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "desktop/tree.h"
 #include "desktop/hotlist.h"
 #include "desktop/textarea.h"

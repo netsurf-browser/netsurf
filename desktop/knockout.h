@@ -23,7 +23,7 @@
 #ifndef _NETSURF_DESKTOP_KNOCKOUT_H_
 #define _NETSURF_DESKTOP_KNOCKOUT_H_
 
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 
 
 bool knockout_plot_start(const struct redraw_context *ctx,

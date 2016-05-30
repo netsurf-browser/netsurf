@@ -23,7 +23,7 @@
 #include "utils/config.h"
 #include "content/content_protected.h"
 #include "netsurf/bitmap.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "utils/utils.h"
 
 #import "cocoa/schedule.h"

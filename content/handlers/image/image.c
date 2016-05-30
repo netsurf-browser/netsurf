@@ -23,7 +23,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "content/content.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "desktop/gui_internal.h"
 #include "netsurf/bitmap.h"
 

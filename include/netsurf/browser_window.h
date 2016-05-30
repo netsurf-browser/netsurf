@@ -22,8 +22,8 @@
  * Browser window creation and manipulation interface.
  */
 
-#ifndef _NETSURF_DESKTOP_BROWSER_H_
-#define _NETSURF_DESKTOP_BROWSER_H_
+#ifndef _NETSURF_BROWSER_WINDOW_H_
+#define _NETSURF_BROWSER_WINDOW_H_
 
 #include <stdbool.h>
 #include <stdio.h>

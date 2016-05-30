@@ -74,7 +74,7 @@
 
 #include "desktop/gui_internal.h"
 #include "desktop/knockout.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 
 /* Define to enable knockout debug */
 #undef KNOCKOUT_DEBUG

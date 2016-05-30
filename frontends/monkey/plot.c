@@ -19,7 +19,7 @@
 #include <stdio.h>
 
 #include "utils/utils.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 
 static bool
 monkey_plot_disc(int x, int y, int radius, const plot_style_t *style)

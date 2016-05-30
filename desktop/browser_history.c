@@ -40,7 +40,7 @@
 #include "desktop/gui_internal.h"
 #include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 
 #define WIDTH 100
 #define HEIGHT 86

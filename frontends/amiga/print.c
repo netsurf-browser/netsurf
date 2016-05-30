@@ -49,7 +49,7 @@
 #include "utils/nsoption.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "desktop/printer.h"
 #include "desktop/print.h"
 #include "netsurf/layout.h"

@@ -39,7 +39,7 @@
 
 #include "netsurf/mouse.h"
 #include "desktop/browser_private.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "desktop/save_text.h"
 #include "desktop/selection.h"
 #include "netsurf/clipboard.h"

@@ -32,7 +32,7 @@
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "netsurf/browser_window.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "netsurf/bitmap.h"
 
 #include "framebuffer/gui.h"

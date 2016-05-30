@@ -25,7 +25,7 @@
 #include <libnsfb_event.h>
 
 #include "desktop/browser_history.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"

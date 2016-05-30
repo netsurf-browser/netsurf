@@ -32,7 +32,7 @@ extern "C" {
 #include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
 #include "desktop/textinput.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "netsurf/window.h"
 #include "netsurf/clipboard.h"
 }

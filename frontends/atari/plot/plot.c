@@ -30,7 +30,7 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 #include "netsurf/bitmap.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "netsurf/mouse.h"
 
 #include "atari/gui.h"

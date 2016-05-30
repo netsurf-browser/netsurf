@@ -32,7 +32,7 @@
 
 #include "utils/log.h"
 #include "utils/utils.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "utils/nsoption.h"
 
 #include "gtk/layout_pango.h"

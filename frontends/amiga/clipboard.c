@@ -32,7 +32,7 @@
 #include "utils/nsurl.h"
 #include "content/hlcache.h"
 #include "netsurf/browser_window.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "desktop/textinput.h"
 #include "netsurf/window.h"
 #include "netsurf/clipboard.h"

@@ -24,7 +24,7 @@
 #import "cocoa/BrowserView.h"
 
 #import "desktop/browser_history.h"
-#import "desktop/plotters.h"
+#import "netsurf/plotters.h"
 
 @implementation HistoryView
 

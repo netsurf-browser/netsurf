@@ -30,7 +30,7 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "content/content_protected.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 
 #include "svg.h"
 

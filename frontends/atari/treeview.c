@@ -28,7 +28,7 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "content/urldb.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "netsurf/mouse.h"
 #include "desktop/treeview.h"
 

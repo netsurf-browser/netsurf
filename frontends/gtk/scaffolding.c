@@ -36,7 +36,7 @@
 #include "desktop/browser_history.h"
 #include "netsurf/browser_window.h"
 #include "desktop/hotlist.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "desktop/print.h"
 #include "desktop/save_complete.h"
 #ifdef WITH_PDF_EXPORT

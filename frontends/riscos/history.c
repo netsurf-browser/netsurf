@@ -31,7 +31,7 @@
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "desktop/browser_history.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 
 #include "riscos/dialog.h"
 #include "riscos/gui.h"

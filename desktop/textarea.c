@@ -35,7 +35,7 @@
 #include "netsurf/mouse.h"
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "desktop/scrollbar.h"
 #include "netsurf/clipboard.h"
 #include "netsurf/layout.h"

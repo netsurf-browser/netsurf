@@ -42,7 +42,7 @@
 #include "content/handlers/css/utils.h"
 #include "netsurf/browser_window.h"
 #include "utils/nsoption.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "desktop/search.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"

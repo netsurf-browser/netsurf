@@ -46,7 +46,7 @@
 #include "utils/messages.h"
 #include "desktop/browser_history.h"
 #include "netsurf/browser_window.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "netsurf/window.h"
 #include "graphics/rpattr.h"
 

@@ -34,7 +34,7 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "content/content_protected.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 
 #include "riscos/content-handlers/draw.h"
 #include "riscos/gui.h"

@@ -34,7 +34,7 @@
 #include "desktop/system_colour.h"
 #include "netsurf/mouse.h"
 #include "desktop/scrollbar.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "desktop/plot_style.h"
 
 

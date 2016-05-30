@@ -31,7 +31,7 @@
 
 #include "utils/log.h"
 #include "netsurf/bitmap.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "content/content.h"
 
 #include "windows/plot.h"

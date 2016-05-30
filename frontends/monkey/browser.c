@@ -28,7 +28,7 @@
 #include "netsurf/mouse.h"
 #include "netsurf/window.h"
 #include "netsurf/browser_window.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "content/hlcache.h"
 
 #include "monkey/browser.h"

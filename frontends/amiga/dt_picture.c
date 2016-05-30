@@ -34,7 +34,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "content/content_protected.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "netsurf/bitmap.h"
 #include "content/handlers/image/image_cache.h"
 

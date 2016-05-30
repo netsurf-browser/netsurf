@@ -41,7 +41,7 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/file.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "netsurf/bitmap.h"
 #include "content/content_protected.h"
 

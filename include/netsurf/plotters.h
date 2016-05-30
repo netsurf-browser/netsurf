@@ -16,12 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Target independent plotting (interface).
+/**
+ * \file
+ * Target independent plotting interface.
  */
 
-#ifndef _NETSURF_DESKTOP_PLOTTERS_H_
-#define _NETSURF_DESKTOP_PLOTTERS_H_
+#ifndef _NETSURF_PLOTTERS_H_
+#define _NETSURF_PLOTTERS_H_
 
 #include <stdbool.h>
 #include <stdio.h>

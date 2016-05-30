@@ -26,7 +26,7 @@
 #include "utils/nsoption.h"
 #include "netsurf/layout.h"
 #include "netsurf/mouse.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 
 #include "atari/gui.h"
 #include "atari/plot/fontplot.h"

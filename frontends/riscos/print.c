@@ -39,7 +39,7 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "netsurf/browser_window.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 
 #include "riscos/gui.h"
 #include "riscos/dialog.h"

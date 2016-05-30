@@ -24,7 +24,7 @@
 #import <Cocoa/Cocoa.h>
 
 #import "netsurf/browser_window.h"
-#import "desktop/plotters.h"
+#import "netsurf/plotters.h"
 #import "netsurf/bitmap.h"
 #import "content/urldb.h"
 #import "content/content.h"

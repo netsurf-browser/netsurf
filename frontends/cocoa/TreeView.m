@@ -19,7 +19,7 @@
 #import "cocoa/TreeView.h"
 #import "cocoa/Tree.h"
 
-#import "desktop/plotters.h"
+#import "netsurf/plotters.h"
 #import "desktop/textinput.h"
 
 @interface TreeView () <TreeDelegate>

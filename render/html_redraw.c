@@ -43,7 +43,7 @@
 #include "content/content_protected.h"
 #include "content/handlers/css/utils.h"
 #include "netsurf/browser_window.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "desktop/selection.h"
 #include "desktop/print.h"
 #include "desktop/scrollbar.h"

@@ -43,7 +43,7 @@
 #include "utils/filename.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "content/content.h"
 #include "netsurf/bitmap.h"
 

@@ -33,7 +33,7 @@
 #import "utils/utils.h"
 #import "content/urldb.h"
 #import "utils/nsoption.h"
-#import "desktop/plotters.h"
+#import "netsurf/plotters.h"
 #import "desktop/save_complete.h"
 #import "desktop/textinput.h"
 #import "desktop/tree.h"

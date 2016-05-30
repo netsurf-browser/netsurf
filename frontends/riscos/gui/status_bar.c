@@ -28,7 +28,7 @@
 #include "oslib/os.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 

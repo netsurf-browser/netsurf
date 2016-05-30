@@ -21,7 +21,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "netsurf/mouse.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/core_window.h"
 

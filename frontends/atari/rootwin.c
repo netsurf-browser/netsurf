@@ -39,7 +39,7 @@
 #include "utils/log.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "desktop/textinput.h"
 #include "content/content.h"
 #include "content/hlcache.h"

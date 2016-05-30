@@ -33,7 +33,7 @@
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "desktop/tree.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 
 #include "gtk/warn.h"
 #include "gtk/compat.h"

@@ -18,7 +18,7 @@
 
 #ifndef AMIGA_PLOTTERS_H
 #define AMIGA_PLOTTERS_H
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include <proto/layers.h>
 #include <proto/graphics.h>
 

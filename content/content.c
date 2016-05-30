@@ -28,7 +28,6 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "desktop/plotters.h"
 #include "desktop/knockout.h"
 #include "desktop/gui_internal.h"
 #include "netsurf/browser_window.h"

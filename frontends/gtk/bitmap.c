@@ -34,7 +34,7 @@
 #include "utils/log.h"
 #include "content/content.h"
 #include "netsurf/bitmap.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 
 #include "gtk/scaffolding.h"
 #include "gtk/plotters.h"

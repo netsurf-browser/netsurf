@@ -29,7 +29,7 @@
 
 #include "utils/log.h"
 #include "netsurf/browser_window.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"

@@ -29,7 +29,7 @@
 
 #include "desktop/system_colour.h"
 #include "desktop/knockout.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "desktop/textarea.h"
 #include "desktop/treeview.h"
 #include "netsurf/clipboard.h"

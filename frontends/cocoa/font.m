@@ -23,7 +23,7 @@
 
 #import "utils/nsoption.h"
 #import "netsurf/layout.h"
-#import "desktop/plotters.h"
+#import "netsurf/plotters.h"
 
 
 static NSLayoutManager *cocoa_prepare_layout_manager( const char *string, size_t length, 

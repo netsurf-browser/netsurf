@@ -62,7 +62,7 @@
 #include "utils/nsoption.h"
 #include "netsurf/bitmap.h"
 
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "desktop/print.h"
 #include "desktop/printer.h"
 

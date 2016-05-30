@@ -68,7 +68,7 @@
 #include "desktop/knockout.h"
 #include "desktop/scrollbar.h"
 #include "desktop/selection.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "desktop/theme.h"
 #include "netsurf/misc.h"
 #include "netsurf/window.h"

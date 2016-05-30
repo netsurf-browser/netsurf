@@ -44,7 +44,7 @@
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 #include "netsurf/window.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "render/form.h"
 
 #include "gtk/warn.h"

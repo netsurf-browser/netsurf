@@ -38,7 +38,7 @@
 #include "content/hlcache.h"
 #include "content/content.h"
 #include "netsurf/browser_window.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 
 #include "riscos/gui.h"
 #include "riscos/hotlist.h"

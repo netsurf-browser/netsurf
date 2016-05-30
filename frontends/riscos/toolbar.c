@@ -41,7 +41,6 @@
 #include "utils/log.h"
 #include "utils/nsoption.h"
 #include "content/content.h"
-#include "desktop/plotters.h"
 
 #include "riscos/cookies.h"
 #include "riscos/dialog.h"

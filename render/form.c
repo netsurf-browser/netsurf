@@ -47,7 +47,7 @@
 #include "netsurf/mouse.h"
 #include "desktop/knockout.h"
 #include "desktop/plot_style.h"
-#include "desktop/plotters.h"
+#include "netsurf/plotters.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"
 #include "netsurf/misc.h"
