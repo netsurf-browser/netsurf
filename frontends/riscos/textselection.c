@@ -31,7 +31,7 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 #include "content/hlcache.h"
-#include "desktop/gui_clipboard.h"
+#include "netsurf/clipboard.h"
 #include "netsurf/window.h"
 #include "desktop/textinput.h"
 #include "desktop/browser.h"

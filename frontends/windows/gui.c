@@ -32,7 +32,7 @@
 #include "utils/file.h"
 #include "utils/messages.h"
 #include "desktop/browser.h"
-#include "desktop/gui_clipboard.h"
+#include "netsurf/clipboard.h"
 
 #include "windows/schedule.h"
 #include "windows/window.h"

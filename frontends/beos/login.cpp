@@ -34,7 +34,7 @@ extern "C" {
 #include "utils/messages.h"
 #include "utils/url.h"
 #include "utils/utils.h"
-#include "desktop/gui_clipboard.h"
+#include "netsurf/clipboard.h"
 }
 #include "beos/gui.h"
 #include "beos/scaffolding.h"

@@ -64,7 +64,7 @@ extern "C" {
 #include "content/urldb.h"
 #include "desktop/browser.h"
 #include "desktop/gui_misc.h"
-#include "desktop/gui_clipboard.h"
+#include "netsurf/clipboard.h"
 #include "netsurf/search.h"
 #include "desktop/gui_fetch.h"
 #include "desktop/netsurf.h"

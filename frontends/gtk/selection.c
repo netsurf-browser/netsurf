@@ -22,7 +22,7 @@
 
 #include "utils/log.h"
 #include "desktop/browser.h"
-#include "desktop/gui_clipboard.h"
+#include "netsurf/clipboard.h"
 
 #include "gtk/window.h"
  

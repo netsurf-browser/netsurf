@@ -34,7 +34,7 @@ extern "C" {
 #include "desktop/textinput.h"
 #include "desktop/plotters.h"
 #include "netsurf/window.h"
-#include "desktop/gui_clipboard.h"
+#include "netsurf/clipboard.h"
 }
 
 #include "beos/about.h"

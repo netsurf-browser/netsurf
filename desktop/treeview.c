@@ -32,7 +32,7 @@
 #include "desktop/plotters.h"
 #include "desktop/textarea.h"
 #include "desktop/treeview.h"
-#include "desktop/gui_clipboard.h"
+#include "netsurf/clipboard.h"
 #include "desktop/gui_layout.h"
 #include "desktop/gui_internal.h"
 
