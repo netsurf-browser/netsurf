@@ -54,6 +54,8 @@
 #define ERR_NO_MEM 2			/* Not enough memory for requested operation */
 #define ERR_PLOTTER_NOT_AVAILABLE 3	/* invalid plotter driver name passed */
 
+struct plot_style_s;
+
 struct s_vdi_sysinfo {
 	short vdi_handle;          /**< vdi handle */
 	short scr_w;		   /**< resolution horz. */
@@ -104,8 +106,8 @@ void plot_get_clip_grect(GRECT * out);
 bool plot_clip(const struct rect *clip);
 VdiHdl plot_get_vdi_handle(void);
 long plot_get_flags(void);
-bool plot_rectangle( int x0, int y0, int x1, int y1,const plot_style_t *style );
-bool plot_line( int x0, int y0, int x1, int y1, const plot_style_t *style );
+bool plot_rectangle( int x0, int y0, int x1, int y1,const struct plot_style_s *style );
+bool plot_line( int x0, int y0, int x1, int y1, const struct plot_style_s *style );
 bool plot_blit_bitmap(struct bitmap * bmp, int x, int y,
                       unsigned long bg, unsigned long flags);
 bool plot_blit_mfdb(GRECT * loc, MFDB * insrc, short fgcolor, uint32_t flags);

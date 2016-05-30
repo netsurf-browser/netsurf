@@ -17,18 +17,19 @@
  */
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "utils/config.h"
 
 #include <windows.h>
 #include <windowsx.h>
 
-#include "netsurf/browser_window.h"
-#include "desktop/textinput.h"
-#include "netsurf/plotters.h"
 #include "utils/errors.h"
 #include "utils/log.h"
 #include "utils/utils.h"
+#include "netsurf/browser_window.h"
+#include "netsurf/plotters.h"
+#include "desktop/textinput.h"
 
 #include "windows/windbg.h"
 #include "windows/plot.h"

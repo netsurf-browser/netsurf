@@ -113,7 +113,7 @@ typedef enum {
 /**
  * Plot style for stroke/fill plotters
  */
-typedef struct {
+typedef struct plot_style_s {
 	plot_operation_type_t stroke_type; /**< Stroke plot type */
 	int stroke_width; /**< Width of stroke, in pixels */
 	colour stroke_colour; /**< Colour of stroke */
