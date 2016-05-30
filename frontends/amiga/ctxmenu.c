@@ -43,7 +43,7 @@
 #include "content/hlcache.h"
 #include "desktop/browser.h"
 #include "desktop/browser_history.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 

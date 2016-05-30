@@ -53,7 +53,7 @@
 #include "desktop/printer.h"
 #include "desktop/print.h"
 #include "netsurf/layout.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "netsurf/window.h"
 #include "content/hlcache.h"
 

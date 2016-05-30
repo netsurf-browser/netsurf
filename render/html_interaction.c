@@ -37,7 +37,7 @@
 #include "content/hlcache.h"
 #include "desktop/browser.h"
 #include "desktop/frames.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "utils/nsoption.h"
 #include "desktop/scrollbar.h"
 #include "desktop/selection.h"

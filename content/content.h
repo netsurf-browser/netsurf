@@ -32,7 +32,7 @@
 #include "content/content_factory.h"
 #include "content/content_type.h"
 #include "desktop/search.h" /* search flags enum */
-#include "desktop/mouse.h" /* mouse state enums */
+#include "netsurf/mouse.h" /* mouse state enums */
 #include "desktop/plot_style.h" /* color typedef */
 
 struct browser_window;

@@ -60,7 +60,7 @@
 #include "desktop/cookie_manager.h"
 #include "desktop/scrollbar.h"
 #include "desktop/frames.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"

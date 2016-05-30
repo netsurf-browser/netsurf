@@ -48,7 +48,7 @@
 #include "utils/nsurl.h"
 #include "utils/messages.h"
 #include "content/hlcache.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "netsurf/window.h"
 #include "netsurf/bitmap.h"
 

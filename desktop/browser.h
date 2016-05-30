@@ -30,7 +30,7 @@
 #include "utils/errors.h"
 #include "desktop/plot_style.h"
 #include "desktop/frame_types.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 
 struct browser_window;
 struct hlcache_handle;

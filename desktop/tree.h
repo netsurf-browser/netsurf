@@ -27,7 +27,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 
 struct sslcert_session_data;
 struct tree;

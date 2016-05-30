@@ -33,7 +33,7 @@
 #include "utils/utf8.h"
 #include "desktop/browser_history.h"
 #include "desktop/browser.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "desktop/plot_style.h"
 #include "desktop/plotters.h"
 #include "desktop/tree.h"

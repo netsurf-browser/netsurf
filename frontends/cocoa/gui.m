@@ -21,7 +21,7 @@
 #import "utils/nsoption.h"
 #import "utils/utils.h"
 #import "utils/log.h"
-#import "desktop/mouse.h"
+#import "netsurf/mouse.h"
 #import "netsurf/window.h"
 #import "netsurf/misc.h"
 #import "desktop/browser.h"

@@ -20,7 +20,7 @@
 #include <proto/exec.h>
 
 #include "utils/errors.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "netsurf/window.h"
 
 #include "amiga/history.h"

@@ -41,7 +41,7 @@
 #include "utils/nsoption.h"
 #include "utils/utils.h"
 #include "desktop/searchweb.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "netsurf/window.h"
 
 #include "amiga/gui.h"

@@ -28,7 +28,7 @@
 #include <math.h>
 
 #include "utils/log.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "desktop/plotters.h"
 
 #include "atari/gui.h"

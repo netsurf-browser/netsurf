@@ -28,7 +28,7 @@
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "netsurf/window.h"
 #include "desktop/plotters.h"
 

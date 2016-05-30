@@ -30,7 +30,7 @@ extern "C" {
 #include "content/content.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "desktop/textinput.h"
 #include "desktop/plotters.h"
 #include "netsurf/window.h"

@@ -19,7 +19,7 @@
 #include <proto/exec.h>
 
 #include "desktop/cookie_manager.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "netsurf/window.h"
 
 #include "amiga/cookies.h"

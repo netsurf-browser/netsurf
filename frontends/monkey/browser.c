@@ -25,7 +25,7 @@
 #include "utils/ring.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "netsurf/window.h"
 #include "desktop/browser.h"
 #include "desktop/plotters.h"

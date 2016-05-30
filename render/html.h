@@ -32,7 +32,7 @@
 
 #include "content/content_type.h"
 #include "desktop/browser.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "desktop/plot_style.h"
 #include "desktop/frame_types.h"
 

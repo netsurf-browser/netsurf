@@ -29,7 +29,7 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/cookie_manager.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "desktop/tree.h"
 #include "utils/nsoption.h"
 #include "utils/messages.h"

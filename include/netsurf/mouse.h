@@ -18,12 +18,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Core mouse state.
+/**
+ * \file
+ *
+ * Core mouse and pointer states.
  */
 
-#ifndef _NETSURF_DESKTOP_MOUSE_H_
-#define _NETSURF_DESKTOP_MOUSE_H_
+#ifndef _NETSURF_MOUSE_H_
+#define _NETSURF_MOUSE_H_
 
 /* Mouse state.	1 is    primary mouse button (e.g. Select on RISC OS).
  *		2 is  secondary mouse button (e.g. Adjust on RISC OS). */
@@ -79,13 +81,26 @@ typedef enum browser_mouse_state {
 
 
 typedef enum gui_pointer_shape {
-	GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
-	GUI_POINTER_MENU, GUI_POINTER_UP, GUI_POINTER_DOWN,
-	GUI_POINTER_LEFT, GUI_POINTER_RIGHT, GUI_POINTER_RU,
-	GUI_POINTER_LD, GUI_POINTER_LU, GUI_POINTER_RD,
-	GUI_POINTER_CROSS, GUI_POINTER_MOVE, GUI_POINTER_WAIT,
-	GUI_POINTER_HELP, GUI_POINTER_NO_DROP, GUI_POINTER_NOT_ALLOWED,
-	GUI_POINTER_PROGRESS } gui_pointer_shape;
+	GUI_POINTER_DEFAULT,
+	GUI_POINTER_POINT,
+	GUI_POINTER_CARET,
+	GUI_POINTER_MENU,
+	GUI_POINTER_UP,
+	GUI_POINTER_DOWN,
+	GUI_POINTER_LEFT,
+	GUI_POINTER_RIGHT,
+	GUI_POINTER_RU,
+	GUI_POINTER_LD,
+	GUI_POINTER_LU,
+	GUI_POINTER_RD,
+	GUI_POINTER_CROSS,
+	GUI_POINTER_MOVE,
+	GUI_POINTER_WAIT,
+	GUI_POINTER_HELP,
+	GUI_POINTER_NO_DROP,
+	GUI_POINTER_NOT_ALLOWED,
+	GUI_POINTER_PROGRESS
+} gui_pointer_shape;
 
 /** Mouse pointer type */
 typedef enum {

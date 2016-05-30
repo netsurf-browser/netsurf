@@ -37,7 +37,7 @@
 #include "render/font.h"
 #include "render/textplain.h"
 
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "desktop/browser_private.h"
 #include "desktop/plotters.h"
 #include "desktop/save_text.h"

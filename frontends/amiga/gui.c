@@ -104,7 +104,7 @@
 #include "desktop/browser_history.h"
 #include "desktop/browser.h"
 #include "desktop/hotlist.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "netsurf/netsurf.h"
 #include "desktop/version.h"
 #include "desktop/save_complete.h"

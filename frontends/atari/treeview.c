@@ -29,7 +29,7 @@
 #include "utils/utils.h"
 #include "content/urldb.h"
 #include "desktop/plotters.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "desktop/treeview.h"
 
 #include "atari/gui.h"

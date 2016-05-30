@@ -27,7 +27,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utf8.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "netsurf/window.h"
 
 #include "riscos/treeview.h"

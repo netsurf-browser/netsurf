@@ -22,7 +22,7 @@
 #include <stdbool.h>
 #include <mt_gem.h>
 
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 
 #include "atari/redrawslots.h"
 #include "atari/gemtk/gemtk.h"

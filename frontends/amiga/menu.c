@@ -50,7 +50,7 @@
 #include "content/hlcache.h"
 #include "desktop/hotlist.h"
 #include "desktop/browser.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "netsurf/window.h"
 #include "desktop/textinput.h"
 #include "desktop/version.h"

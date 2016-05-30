@@ -20,7 +20,7 @@
 
 #include "utils/nsurl.h"
 #include "content/llcache.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "netsurf/window.h"
 #include "desktop/sslcert_viewer.h"
 

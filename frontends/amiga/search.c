@@ -50,7 +50,7 @@
 #include "content/content.h"
 #include "desktop/browser.h"
 #include "desktop/search.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "netsurf/window.h"
 #include "netsurf/search.h"
 

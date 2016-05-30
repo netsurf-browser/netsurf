@@ -44,7 +44,7 @@
 #include "content/hlcache.h"
 #include "content/handlers/css/utils.h"
 #include "desktop/browser.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "desktop/knockout.h"
 #include "desktop/plot_style.h"
 #include "desktop/plotters.h"

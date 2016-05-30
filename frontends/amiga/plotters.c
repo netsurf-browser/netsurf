@@ -38,7 +38,7 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "netsurf/css.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "netsurf/window.h"
 
 #include "amiga/plotters.h"

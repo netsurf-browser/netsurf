@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <mt_gem.h>
 
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "desktop/plot_style.h"
 
 #include "atari/bitmap.h"

@@ -31,7 +31,7 @@
 #include "utils/utils.h"
 #include "netsurf/bitmap.h"
 #include "desktop/plotters.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 
 #include "atari/gui.h"
 #include "atari/osspec.h"

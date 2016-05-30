@@ -24,7 +24,7 @@
 
 #include "utils/log.h"
 #include "utils/nsoption.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "desktop/plot_style.h"
 
 #include "atari/gui.h"

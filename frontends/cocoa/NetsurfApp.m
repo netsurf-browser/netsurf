@@ -38,7 +38,7 @@
 #import "desktop/textinput.h"
 #import "desktop/tree.h"
 #import "render/html.h"
-#import "desktop/mouse.h"
+#import "netsurf/mouse.h"
 #import "netsurf/netsurf.h"
 
 #ifndef NETSURF_HOMEPAGE

@@ -32,7 +32,7 @@
 
 #include "desktop/browser.h"
 #include "desktop/system_colour.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "desktop/scrollbar.h"
 #include "desktop/plotters.h"
 #include "desktop/plot_style.h"

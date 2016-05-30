@@ -24,7 +24,7 @@
 #define _NETSURF_DESKTOP_SELECTION_H_
 
 #include <stdbool.h>
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 
 struct box;
 

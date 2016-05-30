@@ -20,7 +20,7 @@
 
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "desktop/plotters.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/core_window.h"

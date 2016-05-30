@@ -38,7 +38,7 @@
 
 #include "utils/log.h"
 #include "desktop/browser.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
 #include "content/content.h"

@@ -26,7 +26,7 @@
 #include <devices/inputevent.h>
 
 #include "netsurf/window.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 
 #include "amiga/menu.h"
 #include "amiga/object.h"

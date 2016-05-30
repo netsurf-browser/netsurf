@@ -25,7 +25,7 @@
 #define _NETSURF_RENDER_TEXTPLAIN_H_
 
 #include <stddef.h>
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 
 struct content;
 struct hlcache_handle;

@@ -40,7 +40,7 @@
 #include "gtk/window.h"
 #include "gtk/selection.h"
 #include "desktop/browser.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 #include "netsurf/window.h"

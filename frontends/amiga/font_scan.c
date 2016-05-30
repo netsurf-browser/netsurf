@@ -48,7 +48,7 @@
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "desktop/mouse.h"
+#include "netsurf/mouse.h"
 #include "netsurf/window.h"
 
 #include "amiga/font_scan.h"
