@@ -20,7 +20,7 @@
 
 #import "utils/log.h"
 #import "utils/nsurl.h"
-#import "desktop/gui_fetch.h"
+#import "netsurf/fetch.h"
 
 #import "cocoa/fetch.h"
 

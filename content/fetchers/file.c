@@ -49,7 +49,7 @@
 #include "utils/utils.h"
 #include "utils/ring.h"
 #include "utils/file.h"
-#include "desktop/gui_fetch.h"
+#include "netsurf/fetch.h"
 #include "desktop/gui_internal.h"
 
 #include "content/dirlist.h"

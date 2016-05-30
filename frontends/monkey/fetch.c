@@ -26,7 +26,7 @@
 #include "utils/file.h"
 #include "utils/nsurl.h"
 #include "utils/filepath.h"
-#include "desktop/gui_fetch.h"
+#include "netsurf/fetch.h"
 
 #include "monkey/filetype.h"
 #include "monkey/fetch.h"

@@ -52,7 +52,7 @@
 #include "utils/useragent.h"
 #include "utils/file.h"
 #include "utils/string.h"
-#include "desktop/gui_fetch.h"
+#include "netsurf/fetch.h"
 #include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
 

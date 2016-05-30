@@ -113,7 +113,7 @@
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
 #include "netsurf/window.h"
-#include "desktop/gui_fetch.h"
+#include "netsurf/fetch.h"
 #include "netsurf/misc.h"
 
 /* NetSurf Amiga platform includes */

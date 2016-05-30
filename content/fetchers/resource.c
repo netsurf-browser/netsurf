@@ -35,7 +35,7 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
-#include "desktop/gui_fetch.h"
+#include "netsurf/fetch.h"
 #include "desktop/gui_internal.h"
 
 #include "content/fetch.h"

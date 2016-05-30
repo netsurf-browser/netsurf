@@ -31,7 +31,7 @@
 #include "utils/nsurl.h"
 #include "utils/nsoption.h"
 #include "desktop/browser.h"
-#include "desktop/gui_fetch.h"
+#include "netsurf/fetch.h"
 #include "netsurf/misc.h"
 #include "desktop/netsurf.h"
 

@@ -38,7 +38,7 @@
 #include "desktop/gui_layout.h"
 #include "netsurf/window.h"
 #include "netsurf/clipboard.h"
-#include "desktop/gui_fetch.h"
+#include "netsurf/fetch.h"
 #include "netsurf/misc.h"
 #include "desktop/netsurf.h"
 

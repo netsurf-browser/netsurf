@@ -22,7 +22,7 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "content/fetch.h"
-#include "desktop/gui_fetch.h"
+#include "netsurf/fetch.h"
 
 #include "windows/filetype.h"
 

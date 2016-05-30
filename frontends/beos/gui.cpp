@@ -66,7 +66,7 @@ extern "C" {
 #include "netsurf/misc.h"
 #include "netsurf/clipboard.h"
 #include "netsurf/search.h"
-#include "desktop/gui_fetch.h"
+#include "netsurf/fetch.h"
 #include "desktop/netsurf.h"
 
 }
