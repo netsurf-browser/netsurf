@@ -29,7 +29,7 @@
 #include "utils/messages.h"
 #include "desktop/browser.h"
 #include "desktop/search.h"
-#include "desktop/gui_search.h"
+#include "netsurf/search.h"
 
 #include "atari/gui.h"
 #include "atari/rootwin.h"

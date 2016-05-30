@@ -33,7 +33,7 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/selection.h"
-#include "desktop/gui_search.h"
+#include "netsurf/search.h"
 #include "desktop/gui_misc.h"
 #include "desktop/gui_internal.h"
 

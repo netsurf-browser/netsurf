@@ -34,7 +34,7 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/browser.h"
-#include "desktop/gui_search.h"
+#include "netsurf/search.h"
 #include "desktop/browser.h"
 #include "desktop/search.h"
 

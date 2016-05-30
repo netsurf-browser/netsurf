@@ -33,7 +33,7 @@
 #include "desktop/browser.h"
 #include "desktop/search.h"
 #include "desktop/searchweb.h"
-#include "desktop/gui_search.h"
+#include "netsurf/search.h"
 
 #include "gtk/warn.h"
 #include "gtk/compat.h"

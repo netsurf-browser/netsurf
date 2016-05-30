@@ -65,7 +65,7 @@ extern "C" {
 #include "desktop/browser.h"
 #include "desktop/gui_misc.h"
 #include "desktop/gui_clipboard.h"
-#include "desktop/gui_search.h"
+#include "netsurf/search.h"
 #include "desktop/gui_fetch.h"
 #include "desktop/netsurf.h"
 
