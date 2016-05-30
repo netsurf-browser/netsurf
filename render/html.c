@@ -49,7 +49,7 @@
 #include "netsurf/bitmap.h"
 #include "javascript/js.h"
 #include "desktop/browser.h"
-#include "desktop/gui_utf8.h"
+#include "netsurf/utf8.h"
 #include "desktop/gui_layout.h"
 #include "desktop/gui_misc.h"
 #include "desktop/gui_internal.h"

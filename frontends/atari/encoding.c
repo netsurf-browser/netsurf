@@ -19,7 +19,7 @@
 #include <stdlib.h>
 
 #include "utils/errors.h"
-#include "desktop/gui_utf8.h"
+#include "netsurf/utf8.h"
 
 #include "atari/encoding.h"
 

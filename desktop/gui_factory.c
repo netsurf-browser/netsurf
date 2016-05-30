@@ -36,7 +36,7 @@
 #include "netsurf/window.h"
 #include "netsurf/search.h"
 #include "netsurf/clipboard.h"
-#include "desktop/gui_utf8.h"
+#include "netsurf/utf8.h"
 #include "desktop/gui_layout.h"
 #include "desktop/netsurf.h"
 

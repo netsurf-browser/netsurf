@@ -24,7 +24,7 @@
 
 #include "utils/nsoption.h"
 #include "utils/utf8.h"
-#include "desktop/gui_utf8.h"
+#include "netsurf/utf8.h"
 #include "desktop/gui_layout.h"
 
 #include "framebuffer/gui.h"

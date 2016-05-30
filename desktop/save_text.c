@@ -36,7 +36,7 @@
 #include "render/box.h"
 #include "render/html.h"
 
-#include "desktop/gui_utf8.h"
+#include "netsurf/utf8.h"
 #include "desktop/gui_internal.h"
 #include "desktop/save_text.h"
 
