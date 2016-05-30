@@ -32,7 +32,7 @@
 #include "utils/nsoption.h"
 #include "desktop/browser.h"
 #include "desktop/gui_fetch.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "desktop/netsurf.h"
 
 #include "windows/findfile.h"

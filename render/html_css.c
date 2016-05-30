@@ -33,7 +33,7 @@
 #include "utils/corestrings.h"
 #include "utils/config.h"
 #include "utils/log.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
 
 #include "render/html_internal.h"

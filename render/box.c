@@ -38,7 +38,7 @@
 #include "content/handlers/css/utils.h"
 #include "content/handlers/css/dump.h"
 #include "desktop/scrollbar.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
 
 #include "render/box.h"

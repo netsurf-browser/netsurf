@@ -34,7 +34,7 @@
 #include "content/hlcache.h"
 #include "desktop/selection.h"
 #include "netsurf/search.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
 
 #include "render/box.h"

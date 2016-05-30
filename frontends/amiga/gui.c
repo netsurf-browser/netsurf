@@ -114,7 +114,7 @@
 #include "desktop/tree.h"
 #include "netsurf/window.h"
 #include "desktop/gui_fetch.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 
 /* NetSurf Amiga platform includes */
 #include "amiga/gui.h"

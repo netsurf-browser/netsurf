@@ -49,7 +49,7 @@
 #include "utils/nsurl.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
 
 #include "content/fetch.h"

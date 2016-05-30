@@ -50,7 +50,7 @@
 #include "utils/utils.h"
 #include "utils/messages.h"
 #include "desktop/gui_internal.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 
 #include "content/backing_store.h"
 

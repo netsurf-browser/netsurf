@@ -29,7 +29,7 @@
 #include "utils/messages.h"
 #include "utils/ring.h"
 #include "utils/utils.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
 
 #include "content/content.h"

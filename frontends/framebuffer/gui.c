@@ -39,7 +39,7 @@
 #include "desktop/browser_history.h"
 #include "desktop/plotters.h"
 #include "netsurf/window.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "desktop/netsurf.h"
 #include "content/urldb.h"
 #include "content/fetch.h"

@@ -48,7 +48,7 @@
 #include "utils/url.h"
 #include "utils/corestrings.h"
 #include "desktop/gui_fetch.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "desktop/save_complete.h"
 #include "desktop/treeview.h"
 #include "desktop/netsurf.h"

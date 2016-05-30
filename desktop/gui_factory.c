@@ -32,7 +32,7 @@
 #include "desktop/searchweb.h"
 #include "netsurf/download.h"
 #include "desktop/gui_fetch.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "netsurf/window.h"
 #include "netsurf/search.h"
 #include "netsurf/clipboard.h"

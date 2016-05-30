@@ -26,7 +26,7 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "content/content_protected.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
 #include "netsurf/bitmap.h"
 

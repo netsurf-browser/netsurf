@@ -44,7 +44,7 @@ struct tree {
 	void *client_data;	/* User assigned data for the callbacks */
 };
 
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
 #include "desktop/treeview.h"
 #include "desktop/hotlist.h"

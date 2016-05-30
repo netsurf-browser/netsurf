@@ -47,7 +47,7 @@
 #include "desktop/browser.h"
 #include "desktop/system_colour.h"
 #include "desktop/searchweb.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
 #include "desktop/netsurf.h"
 

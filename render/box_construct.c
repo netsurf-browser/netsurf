@@ -46,7 +46,7 @@
 #include "content/handlers/css/hints.h"
 #include "content/handlers/css/select.h"
 #include "netsurf/css.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
 
 #include "render/box.h"

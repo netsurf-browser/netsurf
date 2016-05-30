@@ -45,7 +45,7 @@
 #include "render/box.h"
 #include "render/html.h"
 
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
 #include "desktop/save_complete.h"
 

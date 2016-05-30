@@ -47,7 +47,7 @@
 #include "utils/nsurl.h"
 #include "utils/utils.h"
 #include "utils/time.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
 
 #include "content/fetch.h"

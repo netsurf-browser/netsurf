@@ -63,7 +63,7 @@ extern "C" {
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "netsurf/clipboard.h"
 #include "netsurf/search.h"
 #include "desktop/gui_fetch.h"

@@ -40,7 +40,7 @@
 #include "utils/messages.h"
 #include "utils/nsoption.h"
 #include "content/content_protected.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
 #include "netsurf/bitmap.h"
 

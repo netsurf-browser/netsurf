@@ -70,7 +70,7 @@
 #include "desktop/selection.h"
 #include "desktop/plotters.h"
 #include "desktop/theme.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "netsurf/window.h"
 #include "desktop/gui_internal.h"
 

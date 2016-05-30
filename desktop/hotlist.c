@@ -33,7 +33,7 @@
 #include "utils/log.h"
 #include "content/urldb.h"
 
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
 #include "desktop/hotlist.h"
 #include "desktop/treeview.h"

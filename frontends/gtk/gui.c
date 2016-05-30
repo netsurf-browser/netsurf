@@ -48,7 +48,7 @@
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "desktop/netsurf.h"
 
 #include "gtk/compat.h"

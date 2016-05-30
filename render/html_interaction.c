@@ -44,7 +44,7 @@
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
 #include "javascript/js.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "desktop/gui_layout.h"
 #include "desktop/gui_internal.h"
 

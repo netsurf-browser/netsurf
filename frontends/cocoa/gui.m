@@ -23,7 +23,7 @@
 #import "utils/log.h"
 #import "desktop/mouse.h"
 #import "netsurf/window.h"
-#import "desktop/gui_misc.h"
+#import "netsurf/misc.h"
 #import "desktop/browser.h"
 #import "desktop/textinput.h"
 #import "content/handlers/image/ico.h"

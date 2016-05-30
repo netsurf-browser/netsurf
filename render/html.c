@@ -51,7 +51,7 @@
 #include "desktop/browser.h"
 #include "netsurf/utf8.h"
 #include "desktop/gui_layout.h"
-#include "desktop/gui_misc.h"
+#include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
 
 #include "render/box.h"
