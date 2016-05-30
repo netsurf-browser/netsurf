@@ -45,7 +45,7 @@
 #include "desktop/textinput.h"
 #include "javascript/js.h"
 #include "netsurf/misc.h"
-#include "desktop/gui_layout.h"
+#include "netsurf/layout.h"
 #include "desktop/gui_internal.h"
 
 #include "render/box.h"

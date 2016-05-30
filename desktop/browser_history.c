@@ -36,7 +36,7 @@
 #include "content/urldb.h"
 #include "netsurf/bitmap.h"
 
-#include "desktop/gui_layout.h"
+#include "netsurf/layout.h"
 #include "desktop/gui_internal.h"
 #include "desktop/browser_history.h"
 #include "desktop/browser_private.h"

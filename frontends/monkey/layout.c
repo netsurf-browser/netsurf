@@ -25,7 +25,7 @@
 
 #include "utils/utf8.h"
 #include "desktop/plot_style.h"
-#include "desktop/gui_layout.h"
+#include "netsurf/layout.h"
 
 #include "monkey/layout.h"
 

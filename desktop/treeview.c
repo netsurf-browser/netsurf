@@ -33,7 +33,7 @@
 #include "desktop/textarea.h"
 #include "desktop/treeview.h"
 #include "netsurf/clipboard.h"
-#include "desktop/gui_layout.h"
+#include "netsurf/layout.h"
 #include "desktop/gui_internal.h"
 
 /** @todo get rid of REDRAW_MAX -- need to be able to know window size */

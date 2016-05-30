@@ -35,7 +35,7 @@
 #include "content/hlcache.h"
 #include "desktop/treeview.h"
 #include "desktop/browser.h"
-#include "desktop/gui_layout.h"
+#include "netsurf/layout.h"
 #include "netsurf/window.h"
 #include "netsurf/clipboard.h"
 #include "netsurf/fetch.h"

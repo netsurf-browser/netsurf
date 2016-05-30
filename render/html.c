@@ -50,7 +50,7 @@
 #include "javascript/js.h"
 #include "desktop/browser.h"
 #include "netsurf/utf8.h"
-#include "desktop/gui_layout.h"
+#include "netsurf/layout.h"
 #include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
 

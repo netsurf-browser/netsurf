@@ -28,7 +28,7 @@
 #include "utils/log.h"
 #include "utils/nsoption.h"
 #include "netsurf/utf8.h"
-#include "desktop/gui_layout.h"
+#include "netsurf/layout.h"
 #include "desktop/browser.h"
 
 #include "framebuffer/gui.h"

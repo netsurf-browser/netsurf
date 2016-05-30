@@ -24,7 +24,7 @@
 #include "utils/utf8.h"
 #include "utils/log.h"
 #include "utils/nsoption.h"
-#include "desktop/gui_layout.h"
+#include "netsurf/layout.h"
 #include "desktop/mouse.h"
 #include "desktop/plotters.h"
 

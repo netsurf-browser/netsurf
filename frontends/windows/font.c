@@ -30,7 +30,7 @@
 #include "utils/log.h"
 #include "utils/nsoption.h"
 #include "utils/utf8.h"
-#include "desktop/gui_layout.h"
+#include "netsurf/layout.h"
 #include "netsurf/utf8.h"
 
 #include "windows/font.h"

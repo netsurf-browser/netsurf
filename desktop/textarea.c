@@ -38,7 +38,7 @@
 #include "desktop/plotters.h"
 #include "desktop/scrollbar.h"
 #include "netsurf/clipboard.h"
-#include "desktop/gui_layout.h"
+#include "netsurf/layout.h"
 #include "desktop/gui_internal.h"
 
 #define CARET_COLOR 0x0000FF

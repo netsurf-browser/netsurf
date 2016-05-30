@@ -30,7 +30,7 @@
 
 #include "utils/log.h"
 #include "utils/nsoption.h"
-#include "desktop/gui_layout.h"
+#include "netsurf/layout.h"
 
 #include "gtk/layout_pango.h"
 #include "gtk/plotters.h"

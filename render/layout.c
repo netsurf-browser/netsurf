@@ -52,7 +52,7 @@
 #include "desktop/browser.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"
-#include "desktop/gui_layout.h"
+#include "netsurf/layout.h"
 
 #include "render/box.h"
 #include "render/font.h"

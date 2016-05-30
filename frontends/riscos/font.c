@@ -34,7 +34,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-#include "desktop/gui_layout.h"
+#include "netsurf/layout.h"
 
 #include "riscos/gui.h"
 #include "riscos/font.h"
