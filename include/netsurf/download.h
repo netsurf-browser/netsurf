@@ -22,8 +22,8 @@
  * Interface to platform-specific download operations.
  */
 
-#ifndef _NETSURF_DESKTOP_GUI_DOWNLOAD_H_
-#define _NETSURF_DESKTOP_GUI_DOWNLOAD_H_
+#ifndef _NETSURF_DOWNLOAD_H_
+#define _NETSURF_DOWNLOAD_H_
 
 struct gui_window;
 struct download_context;

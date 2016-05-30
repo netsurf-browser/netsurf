@@ -22,8 +22,8 @@
  * Interface to platform-specific miscellaneous browser operation table.
  */
 
-#ifndef _NETSURF_DESKTOP_GUI_MISC_H_
-#define _NETSURF_DESKTOP_GUI_MISC_H_
+#ifndef _NETSURF_MISC_H_
+#define _NETSURF_MISC_H_
 
 struct form_control;
 struct gui_window;

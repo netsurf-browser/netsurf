@@ -39,7 +39,7 @@
 #import "desktop/tree.h"
 #import "render/html.h"
 #import "desktop/mouse.h"
-#import "desktop/netsurf.h"
+#import "netsurf/netsurf.h"
 
 #ifndef NETSURF_HOMEPAGE
 #define NETSURF_HOMEPAGE "http://www.netsurf-browser.org/welcome/"

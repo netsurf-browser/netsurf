@@ -33,7 +33,7 @@
 #include "desktop/browser.h"
 #include "netsurf/fetch.h"
 #include "netsurf/misc.h"
-#include "desktop/netsurf.h"
+#include "netsurf/netsurf.h"
 
 #include "windows/findfile.h"
 #include "windows/file.h"

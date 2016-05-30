@@ -22,8 +22,8 @@
  * Interface to platform-specific fetcher operations.
  */
 
-#ifndef _NETSURF_DESKTOP_GUI_FETCH_H_
-#define _NETSURF_DESKTOP_GUI_FETCH_H_
+#ifndef _NETSURF_FETCH_H_
+#define _NETSURF_FETCH_H_
 
 struct nsurl;
 

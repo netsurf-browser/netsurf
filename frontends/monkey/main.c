@@ -34,7 +34,7 @@
 #include "content/fetchers/resource.h"
 #include "content/hlcache.h"
 #include "netsurf/misc.h"
-#include "desktop/netsurf.h"
+#include "netsurf/netsurf.h"
 
 #include "monkey/dispatch.h"
 #include "monkey/browser.h"

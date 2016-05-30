@@ -22,8 +22,8 @@
  * Interface to platform-specific clipboard operations.
  */
 
-#ifndef _NETSURF_DESKTOP_GUI_CLIPBOARD_H_
-#define _NETSURF_DESKTOP_GUI_CLIPBOARD_H_
+#ifndef _NETSURF_CLIPBOARD_H_
+#define _NETSURF_CLIPBOARD_H_
 
 #include <stddef.h>
 

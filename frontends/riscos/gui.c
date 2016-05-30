@@ -51,7 +51,7 @@
 #include "netsurf/misc.h"
 #include "desktop/save_complete.h"
 #include "desktop/treeview.h"
-#include "desktop/netsurf.h"
+#include "netsurf/netsurf.h"
 #include "desktop/browser.h"
 #include "content/urldb.h"
 #include "content/hlcache.h"

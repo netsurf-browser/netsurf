@@ -22,8 +22,8 @@
  * NetSurf core interface registration, construction and destruction.
  */
 
-#ifndef _NETSURF_DESKTOP_NETSURF_H_
-#define _NETSURF_DESKTOP_NETSURF_H_
+#ifndef _NETSURF_NETSURF_H_
+#define _NETSURF_NETSURF_H_
 
 #include "utils/errors.h"
 #include "desktop/gui_table.h"

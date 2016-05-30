@@ -40,7 +40,7 @@
 #include "desktop/plotters.h"
 #include "netsurf/window.h"
 #include "netsurf/misc.h"
-#include "desktop/netsurf.h"
+#include "netsurf/netsurf.h"
 #include "content/urldb.h"
 #include "content/fetch.h"
 

@@ -38,7 +38,7 @@
 #include "netsurf/clipboard.h"
 #include "netsurf/utf8.h"
 #include "netsurf/layout.h"
-#include "desktop/netsurf.h"
+#include "netsurf/netsurf.h"
 
 /**
  * The global interface table.
@@ -743,7 +743,7 @@ static nserror verify_misc_register(struct gui_misc_table *gmt)
 }
 
 
-/* exported interface documented in desktop/netsurf.h */
+/* exported interface documented in netsurf/netsurf.h */
 nserror netsurf_register(struct netsurf_table *gt)
 {
 	nserror err;

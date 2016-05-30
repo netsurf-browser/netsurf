@@ -49,7 +49,7 @@
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
 #include "netsurf/misc.h"
-#include "desktop/netsurf.h"
+#include "netsurf/netsurf.h"
 
 #include "gtk/compat.h"
 #include "gtk/warn.h"

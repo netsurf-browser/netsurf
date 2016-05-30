@@ -22,8 +22,8 @@
  * Interface to platform-specific utf8 operations.
  */
 
-#ifndef _NETSURF_DESKTOP_GUI_UTF8_H_
-#define _NETSURF_DESKTOP_GUI_UTF8_H_
+#ifndef _NETSURF_UTF8_H_
+#define _NETSURF_UTF8_H_
 
 /**
  * User interface utf8 characterset conversion routines.

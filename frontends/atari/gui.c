@@ -40,7 +40,7 @@
 #include "netsurf/clipboard.h"
 #include "netsurf/fetch.h"
 #include "netsurf/misc.h"
-#include "desktop/netsurf.h"
+#include "netsurf/netsurf.h"
 
 #include "atari/gemtk/gemtk.h"
 #include "atari/gui.h"

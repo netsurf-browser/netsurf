@@ -49,7 +49,7 @@
 #include "desktop/searchweb.h"
 #include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
-#include "desktop/netsurf.h"
+#include "netsurf/netsurf.h"
 
 /** speculative pre-conversion small image size
  *
@@ -121,7 +121,7 @@ static nserror netsurf_llcache_query_handler(const llcache_query *query,
 	return NSERROR_OK;
 }
 
-/* exported interface documented in desktop/netsurf.h */
+/* exported interface documented in netsurf/netsurf.h */
 nserror netsurf_init(const char *store_path)
 {
 	nserror ret;

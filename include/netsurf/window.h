@@ -23,8 +23,8 @@
  * operations.
  */
 
-#ifndef _NETSURF_DESKTOP_GUI_WINDOW_H_
-#define _NETSURF_DESKTOP_GUI_WINDOW_H_
+#ifndef _NETSURF_WINDOW_H_
+#define _NETSURF_WINDOW_H_
 
 typedef enum gui_save_type {
 	GUI_SAVE_SOURCE,

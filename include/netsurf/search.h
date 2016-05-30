@@ -22,8 +22,8 @@
  * Interface to platform-specific search operations.
  */
 
-#ifndef _NETSURF_DESKTOP_GUI_SEARCH_H_
-#define _NETSURF_DESKTOP_GUI_SEARCH_H_
+#ifndef _NETSURF_SEARCH_H_
+#define _NETSURF_SEARCH_H_
 
 /**
  * function table for page text search.

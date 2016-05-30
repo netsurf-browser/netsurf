@@ -29,8 +29,8 @@
  * is the correct approach.
  */
 
-#ifndef _NETSURF_DESKTOP_GUI_LAYOUT_H_
-#define _NETSURF_DESKTOP_GUI_LAYOUT_H_
+#ifndef _NETSURF_LAYOUT_H_
+#define _NETSURF_LAYOUT_H_
 
 struct plot_font_style;
 

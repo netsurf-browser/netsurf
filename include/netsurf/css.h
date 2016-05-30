@@ -21,8 +21,8 @@
  * Netsurf core css API
  */
 
-#ifndef NETSURF_CSS_H_
-#define NETSURF_CSS_H_
+#ifndef _NETSURF_CSS_H_
+#define _NETSURF_CSS_H_
 
 /**
  * Convert a CSS color to a NetSurf colour primitive
