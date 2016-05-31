@@ -16,6 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * Amiga font handling implementation
+ */
+
 #include "amiga/os3support.h"
 
 #include <stdlib.h>
@@ -31,15 +36,17 @@
 #include <diskfont/diskfonttag.h>
 #include <diskfont/oterrors.h>
 
+#include "utils/log.h"
+#include "utils/nsoption.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
+
+#include "amiga/misc.h"
 #include "amiga/font.h"
 #include "amiga/font_bullet.h"
 #include "amiga/font_cache.h"
 #include "amiga/font_scan.h"
 
-#include "utils/log.h"
-#include "utils/nsoption.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
 
 #define NSA_UNICODE_FONT PLOT_FONT_FAMILY_COUNT
 

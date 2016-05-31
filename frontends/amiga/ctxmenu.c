@@ -56,7 +56,7 @@
 #include "amiga/plugin_hack.h"
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
-
+#include "amiga/misc.h"
 
 enum {
 	AMI_CTX_ID_NONE = 0,
