@@ -47,10 +47,11 @@
 #include "amiga/theme.h"
 
 
-struct Window *drag_icon = NULL;
-ULONG drag_icon_width;
-ULONG drag_icon_height;
-BOOL drag_in_progress = FALSE;
+static struct Window *drag_icon = NULL;
+static ULONG drag_icon_width;
+static ULONG drag_icon_height;
+static BOOL drag_in_progress = FALSE;
+static bool ami_autoscroll = false;
 
 void gui_drag_save_object(struct gui_window *g, struct hlcache_handle *c,
 		gui_save_type type)
@@ -97,7 +98,7 @@ void gui_drag_save_selection(struct gui_window *g, const char *selection)
 {
 	ami_drag_icon_show(g->shared->win, "ascii");
 
-	ami_autoscroll = TRUE;
+	ami_autoscroll = true;
 	drag_save_data = g;
 	drag_save = GUI_SAVE_TEXT_SELECTION;
 }
@@ -108,7 +109,7 @@ void ami_drag_save(struct Window *win)
 	char path[1025], dpath[1025];
 
 	ami_drag_icon_close(NULL);
-	ami_autoscroll = FALSE;
+	ami_autoscroll = true;
 
 	if(nsoption_charp(pubscreen_name) && (strcmp(nsoption_charp(pubscreen_name),"Workbench") == 0))
 	{
@@ -246,13 +247,15 @@ void ami_drag_icon_show(struct Window *win, const char *type)
 		TAG_DONE);
 }
 
-void ami_drag_icon_move(void)
+bool ami_drag_icon_move(void)
 {
-	if(drag_icon == NULL) return;
+	if(drag_icon == NULL) return FALSE;
 
 	ChangeWindowBox(drag_icon, scrn->MouseX - (drag_icon_width / 2),
 		scrn->MouseY - (drag_icon_height / 2),
 		drag_icon_width, drag_icon_height);
+
+	return ami_autoscroll;
 }
 
 /**
@@ -335,7 +338,7 @@ void ami_drag_icon_close(struct Window *win)
 {
 }
 
-void ami_drag_icon_move(void)
+bool ami_drag_icon_move(void)
 {
 }
 

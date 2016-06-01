@@ -1989,9 +1989,7 @@ static void ami_handle_msg(void)
 
 					if(gwin->mouse_state & BROWSER_MOUSE_DRAG_ON)
 					{
-						ami_drag_icon_move();
-
-						if(ami_autoscroll == TRUE) {
+						if(ami_drag_icon_move() == TRUE) {
 							if((gwin->win->MouseX < bbox->Left) &&
 								((gwin->win->MouseX - bbox->Left) > -AMI_DRAG_THRESHOLD))
 								drag_x_move = gwin->win->MouseX - bbox->Left;

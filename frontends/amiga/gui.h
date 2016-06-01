@@ -174,7 +174,6 @@ struct MinList *window_list;
 struct Screen *scrn;
 struct MsgPort *sport;
 struct gui_window *cur_gw;
-BOOL ami_autoscroll;
 
 void ami_get_msg(void);
 void ami_try_quit(void);

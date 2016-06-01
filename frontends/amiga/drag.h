@@ -36,7 +36,7 @@ void gui_drag_save_object(struct gui_window *g, struct hlcache_handle *c, gui_sa
 void ami_drag_save(struct Window *win);
 void ami_drag_icon_show(struct Window *win, const char *type);
 void ami_drag_icon_close(struct Window *win);
-void ami_drag_icon_move(void);
+bool ami_drag_icon_move(void);
 BOOL ami_drag_in_progress(void);
 
 void *ami_window_at_pointer(int type);
