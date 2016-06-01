@@ -73,6 +73,7 @@
 #include "amiga/theme.h" /* pointers */
 #include "amiga/filetype.h"
 #include "amiga/schedule.h"
+#include "amiga/plotters.h"
 
 #define AMI_TREE_MENU_ITEMS 26
 #define AMI_TREE_MENU_NEWDIR FULLMENUNUM(1,0,0)

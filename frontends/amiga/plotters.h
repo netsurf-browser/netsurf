@@ -45,7 +45,8 @@ struct gui_globals
 
 extern const struct plotter_table amiplot;
 
-struct gui_globals *glob;
+extern struct gui_globals *glob;
+extern struct gui_globals browserglob;
 
 void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool force32bit);
 void ami_free_layers(struct gui_globals *gg);

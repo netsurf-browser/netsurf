@@ -72,6 +72,9 @@ struct bez_point {
 	float y;
 };
 
+struct gui_globals browserglob;
+struct gui_globals *glob;
+
 static int init_layers_count = 0;
 static APTR pool_pens = NULL;
 

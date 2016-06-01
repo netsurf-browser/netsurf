@@ -53,6 +53,7 @@
 #include "amiga/libs.h"
 #include "amiga/misc.h"
 #include "amiga/object.h"
+#include "amiga/plotters.h"
 #include "amiga/gui.h"
 #include "amiga/history_local.h"
 
@@ -80,7 +81,7 @@ static void ami_history_redraw(struct history_window *hw)
 		return;
 	}
 
-	glob = &hw->gg;
+	glob = hw->gg;
 
 	SetRPAttrs(glob->rp, RPTAG_APenColor, 0xffffffff, TAG_DONE);
 	RectFill(glob->rp, 0, 0, bbox->Width - 1, bbox->Height - 1);
@@ -90,10 +91,10 @@ static void ami_history_redraw(struct history_window *hw)
 
 	glob = &browserglob;
 
-	ami_clearclipreg(&hw->gg);
+	ami_clearclipreg(hw->gg);
 	ami_history_update_extent(hw);
 
-	BltBitMapRastPort(hw->gg.bm, 0, 0, hw->win->RPort,
+	BltBitMapRastPort(hw->gg->bm, 0, 0, hw->win->RPort,
 				bbox->Left, bbox->Top, bbox->Width, bbox->Height, 0x0C0);
 
 	ami_gui_free_space_box(bbox);
@@ -116,8 +117,9 @@ void ami_history_open(struct gui_window *gw)
 	if(!gw->hw)
 	{
 		gw->hw = ami_misc_allocvec_clear(sizeof(struct history_window), 0);
+		gw->hw->gg = ami_misc_allocvec_clear(sizeof(struct gui_globals), 0);
 
-		ami_init_layers(&gw->hw->gg, scrn->Width, scrn->Height, false);
+		ami_init_layers(gw->hw->gg, scrn->Width, scrn->Height, false);
 
 		gw->hw->gw = gw;
 		browser_window_history_size(gw->bw, &width, &height);
@@ -223,7 +225,8 @@ static bool ami_history_click(struct history_window *hw, uint16 code)
 
 void ami_history_close(struct history_window *hw)
 {
-	ami_free_layers(&hw->gg);
+	ami_free_layers(hw->gg);
+	FreeVec(hw->gg);
 	hw->gw->hw = NULL;
 	DisposeObject(hw->objects[OID_MAIN]);
 	DelObject(hw->node);

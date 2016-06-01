@@ -31,7 +31,6 @@
 #include "amiga/menu.h"
 #include "amiga/object.h"
 #include "amiga/os3support.h"
-#include "amiga/plotters.h"
 
 #ifdef __amigaos4__
 #define HOOKF(ret,func,type,ptr,msgtype) static ret func(struct Hook *hook, type ptr, msgtype msg)
@@ -175,7 +174,6 @@ struct MinList *window_list;
 struct Screen *scrn;
 struct MsgPort *sport;
 struct gui_window *cur_gw;
-struct gui_globals browserglob;
 BOOL ami_autoscroll;
 
 void ami_get_msg(void);

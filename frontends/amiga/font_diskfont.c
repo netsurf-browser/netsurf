@@ -34,6 +34,7 @@
 #include "amiga/font.h"
 #include "amiga/font_diskfont.h"
 #include "amiga/gui.h"
+#include "amiga/plotters.h"
 #include "amiga/utf8.h"
 
 #define MAX_FONT_NAME_SIZE 33

@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <proto/exec.h>
+#include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
 #ifdef __amigaos4__

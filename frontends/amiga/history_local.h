@@ -23,6 +23,7 @@
 #include <intuition/classusr.h>
 
 struct gui_window;
+struct gui_globals;
 
 struct history_window {
 	struct nsObject *node;
@@ -30,7 +31,7 @@ struct history_window {
 	Object *objects[GID_LAST];
 	struct gui_window *gw;
 	struct Hook scrollerhook;
-	struct gui_globals gg;
+	struct gui_globals *gg;
 };
 
 /**
