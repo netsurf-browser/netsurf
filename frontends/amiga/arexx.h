@@ -22,11 +22,9 @@
 #include <proto/arexx.h>
 #include <classes/arexx.h>
 
-BOOL ami_arexx_init(void);
+bool ami_arexx_init(ULONG *rxsig);
 void ami_arexx_handle(void);
 void ami_arexx_execute(char *);
 void ami_arexx_command(const char *cmd);
 void ami_arexx_cleanup(void);
-
-ULONG rxsig;
 #endif

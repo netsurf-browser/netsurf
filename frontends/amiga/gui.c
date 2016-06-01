@@ -198,8 +198,9 @@ static bool win_destroyed;
 static STRPTR nsscreentitle;
 
 static struct MsgPort *applibport = NULL;
-static ULONG applibsig = 0;
 static uint32 ami_appid = 0;
+static ULONG applibsig = 0;
+static ULONG rxsig = 0;
 static struct Hook newprefs_hook;
 
 static STRPTR temp_homepage_url = NULL;
@@ -944,7 +945,7 @@ static void gui_init2(int argc, char** argv)
 	nserror error;
 	struct browser_window *bw = NULL;
 
-	notalreadyrunning = ami_arexx_init();
+	notalreadyrunning = ami_arexx_init(&rxsig);
 
 	/* Treeview init code ends up calling a font function which needs this */
 	glob = &browserglob;

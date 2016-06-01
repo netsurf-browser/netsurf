@@ -109,7 +109,7 @@ STATIC struct ARexxCmd Commands[] =
 	{ NULL, 		0, 				NULL, 		NULL, 		0, 	NULL, 	0, 	0, 	NULL }
 };
 
-BOOL ami_arexx_init(void)
+bool ami_arexx_init(ULONG *rxsig)
 {
 	if((arexx_obj = ARexxObj,
 			AREXX_HostName,"NETSURF",
@@ -119,7 +119,7 @@ BOOL ami_arexx_init(void)
 			AREXX_DefExtension,"nsrx",
 			End))
 	{
-		GetAttr(AREXX_SigMask, arexx_obj, &rxsig);
+		GetAttr(AREXX_SigMask, arexx_obj, rxsig);
 		return true;
 	}
 	else
