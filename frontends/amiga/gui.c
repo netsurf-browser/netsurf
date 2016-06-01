@@ -173,8 +173,6 @@
 #define BOOL_MISMATCH(a,b) (1)
 #endif
 
-static bool ami_quit = false;
-
 extern struct gui_utf8_table *amiga_utf8_table;
 
 struct ami_gui_tb_userdata {
@@ -182,6 +180,13 @@ struct ami_gui_tb_userdata {
 	struct gui_window_2 *gw;
 	int items;
 };
+
+struct MinList *window_list = NULL;
+struct Screen *scrn = NULL;
+struct MsgPort *sport = NULL;
+struct gui_window *cur_gw = NULL;
+
+static bool ami_quit = false;
 
 static struct MsgPort *schedulermsgport = NULL;
 static struct MsgPort *appport;

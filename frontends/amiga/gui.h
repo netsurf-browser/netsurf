@@ -170,10 +170,10 @@ struct gui_window
 	float scale;
 };
 
-struct MinList *window_list;
-struct Screen *scrn;
-struct MsgPort *sport;
-struct gui_window *cur_gw;
+extern struct MinList *window_list;
+extern struct Screen *scrn;
+extern struct MsgPort *sport;
+extern struct gui_window *cur_gw;
 
 void ami_get_msg(void);
 void ami_try_quit(void);
