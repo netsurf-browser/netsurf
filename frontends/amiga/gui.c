@@ -1055,16 +1055,13 @@ static void gui_init2(int argc, char** argv)
 	{
 		STRPTR sendcmd = NULL;
 
-		if(temp_homepage_url)
-		{
+		if(temp_homepage_url) {
 			sendcmd = ASPrintf("OPEN \"%s\" NEW",temp_homepage_url);
 			free(temp_homepage_url);
-		}
-		else
-		{
+		} else {
 			sendcmd = ASPrintf("OPEN \"%s\" NEW",nsoption_charp(homepage_url));
 		}
-		IDoMethod(arexx_obj,AM_EXECUTE,sendcmd,"NETSURF",NULL,NULL,NULL,NULL);
+		ami_arexx_command(sendcmd);
 		FreeVec(sendcmd);
 
 		ami_quit=true;

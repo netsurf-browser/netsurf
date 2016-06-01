@@ -68,6 +68,7 @@ enum
 	RX_HOTLIST
 };
 
+Object *arexx_obj = NULL;
 STATIC char result[100];
 
 STATIC VOID rx_open(struct ARexxCmd *, struct RexxMsg *);
@@ -141,6 +142,12 @@ void ami_arexx_handle(void)
 	RA_HandleRexx(arexx_obj);
 }
 
+void ami_arexx_command(const char *cmd)
+{
+	if(arexx_obj == NULL) return;
+	IDoMethod(arexx_obj, AM_EXECUTE, cmd, NULL, NULL, NULL, NULL, NULL);
+}
+
 void ami_arexx_execute(char *script)
 {
 	char full_script_path[1025];
@@ -149,7 +156,7 @@ void ami_arexx_execute(char *script)
 	if((lock = Lock(script, ACCESS_READ))) {
 		DevNameFromLock(lock, full_script_path, 1024, DN_FULLPATH);
 		LOG("Executing script: %s", full_script_path);
-		IDoMethod(arexx_obj, AM_EXECUTE, full_script_path, NULL, NULL, NULL, NULL, NULL);
+		ami_arexx_command(full_script_path);
 		UnLock(lock);
 	}
 }

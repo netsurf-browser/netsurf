@@ -25,8 +25,8 @@
 BOOL ami_arexx_init(void);
 void ami_arexx_handle(void);
 void ami_arexx_execute(char *);
+void ami_arexx_command(const char *cmd);
 void ami_arexx_cleanup(void);
 
-Object *arexx_obj;
 ULONG rxsig;
 #endif
