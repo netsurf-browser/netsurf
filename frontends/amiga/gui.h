@@ -171,6 +171,13 @@ struct gui_window
 	float scale;
 };
 
+struct MinList *window_list;
+struct Screen *scrn;
+struct MsgPort *sport;
+struct gui_window *cur_gw;
+struct gui_globals browserglob;
+BOOL ami_autoscroll;
+
 void ami_get_msg(void);
 void ami_try_quit(void);
 void ami_quit_netsurf(void);
@@ -236,11 +243,5 @@ uint32 ami_gui_get_app_id(void);
  */
 STRPTR ami_gui_get_screen_title(void);
 
-struct MinList *window_list;
-struct Screen *scrn;
-struct MsgPort *sport;
-struct gui_window *cur_gw;
-struct gui_globals browserglob;
-BOOL ami_autoscroll;
 #endif
 

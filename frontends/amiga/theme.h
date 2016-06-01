@@ -19,6 +19,11 @@
 #ifndef AMIGA_THEME_H
 #define AMIGA_THEME_H
 
+#include "netsurf/mouse.h"
+
+struct gui_window_2;
+struct gui_window;
+
 #define AMI_GUI_POINTER_BLANK GUI_POINTER_PROGRESS+1
 #define AMI_GUI_POINTER_DRAG  GUI_POINTER_PROGRESS+2
 #define AMI_LASTPOINTER AMI_GUI_POINTER_DRAG

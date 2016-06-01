@@ -62,7 +62,6 @@
 #include "amiga/bitmap.h"
 #include "amiga/icon.h"
 #include "amiga/file.h"
-#include "amiga/drag.h"
 #include "amiga/iff_dr2d.h"
 #include "amiga/libs.h"
 #include "amiga/misc.h"

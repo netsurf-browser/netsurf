@@ -55,6 +55,7 @@
 #include "netsurf/search.h"
 
 #include "amiga/libs.h"
+#include "amiga/gui.h"
 #include "amiga/misc.h"
 #include "amiga/search.h"
 #include "amiga/object.h"
@@ -65,6 +66,13 @@
 #endif
 
 static bool search_insert;
+
+struct find_window {
+	struct nsObject *node;
+	struct Window *win;
+	Object *objects[GID_LAST];
+	struct gui_window *gwin;
+};
 
 static struct find_window *fwin = NULL;
 
@@ -85,6 +93,14 @@ static struct gui_search_table search_table = {
 };
 
 struct gui_search_table *amiga_search_table = &search_table;
+
+struct gui_window *ami_search_get_gwin(struct find_window *fw)
+{
+	if (fw != NULL) {
+		return fw->gwin;
+	}
+	return NULL;
+}
 
 /**
  * Change the displayed search status.

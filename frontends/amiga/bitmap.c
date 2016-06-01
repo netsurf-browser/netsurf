@@ -43,18 +43,15 @@
 #endif
 #include "assert.h"
 
-#include "utils/log.h"
 #include "utils/nsoption.h"
 #include "utils/nsurl.h"
 #include "utils/messages.h"
 #include "content/hlcache.h"
-#include "netsurf/mouse.h"
-#include "netsurf/window.h"
 #include "netsurf/bitmap.h"
 
 #include "amiga/gui.h"
 #include "amiga/bitmap.h"
-#include "amiga/download.h"
+#include "amiga/plotters.h"
 #include "amiga/misc.h"
 #include "amiga/rtg.h"
 

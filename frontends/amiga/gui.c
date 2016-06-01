@@ -4460,7 +4460,7 @@ static void gui_window_destroy(struct gui_window *g)
 
 	if(!g) return;
 
-	if(g->shared->searchwin && (g->shared->searchwin->gwin == g))
+	if (ami_search_get_gwin(g->shared->searchwin) == g)
 	{
 		ami_search_close();
 		win_destroyed = true;

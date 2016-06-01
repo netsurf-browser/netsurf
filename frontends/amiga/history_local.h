@@ -21,7 +21,8 @@
 
 #include <exec/types.h>
 #include <intuition/classusr.h>
-#include "amiga/gui.h"
+
+struct gui_window;
 
 struct history_window {
 	struct nsObject *node;
@@ -41,5 +42,6 @@ void ami_history_open(struct gui_window *gw);
 
 void ami_history_close(struct history_window *hw);
 BOOL ami_history_event(struct history_window *hw);
+
 #endif
 

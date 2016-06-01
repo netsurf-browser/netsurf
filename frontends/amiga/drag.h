@@ -18,14 +18,13 @@
 
 #ifndef AMIGA_DRAG_H
 #define AMIGA_DRAG_H
+
 #include <exec/types.h>
-#include "netsurf/browser_window.h"
 #include "netsurf/window.h"
 
-#define AMI_DRAG_THRESHOLD 10
-
-struct hlcache_handle;
 struct Window;
+
+#define AMI_DRAG_THRESHOLD 10
 
 int drag_save;
 void *drag_save_data;
@@ -41,5 +40,6 @@ void ami_drag_icon_move(void);
 BOOL ami_drag_in_progress(void);
 
 void *ami_window_at_pointer(int type);
+
 #endif
 

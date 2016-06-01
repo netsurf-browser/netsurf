@@ -19,19 +19,31 @@
 #ifndef AMIGA_SEARCH_H
 #define AMIGA_SEARCH_H
 
-#include "amiga/gui.h"
-
-struct find_window {
-	struct nsObject *node;
-	struct Window *win;
-	Object *objects[GID_LAST];
-	struct gui_window *gwin;
-};
+struct gui_search_table;
+struct gui_window;
 
 struct gui_search_table *amiga_search_table;
 
+/**
+ * Change the displayed search status.
+ *
+ * \param gwin gui window to open search for.
+ */
 void ami_search_open(struct gui_window *gwin);
+
+/**
+ * Process search events
+ */
 BOOL ami_search_event(void);
+
+/**
+ * Close search
+ */
 void ami_search_close(void);
+
+/**
+ * Obtain gui window associated with find window.
+ */
+struct gui_window *ami_search_get_gwin(struct find_window *fw);
 
 #endif

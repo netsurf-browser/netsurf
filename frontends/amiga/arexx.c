@@ -29,19 +29,18 @@
 #include <gadgets/clicktab.h>
 #include <reaction/reaction_macros.h>
 
-#include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/nsoption.h"
 #include "utils/nsurl.h"
 #include "content/hlcache.h"
 #include "netsurf/browser_window.h"
-#include "netsurf/window.h"
 #include "desktop/version.h"
 
 #include "amiga/arexx.h"
-#include "amiga/download.h"
 #include "amiga/gui.h"
+#include "amiga/download.h"
 #include "amiga/hotlist.h"
+#include "amiga/tree.h"
 #include "amiga/libs.h"
 #include "amiga/misc.h"
 #include "amiga/theme.h"
