@@ -46,7 +46,9 @@
 #include "amiga/gui.h"
 #include "amiga/theme.h"
 
-
+static void *drag_save_data;
+static int drag_save;
+static struct gui_window *drag_save_gui;
 static struct Window *drag_icon = NULL;
 static ULONG drag_icon_width;
 static ULONG drag_icon_height;
@@ -275,6 +277,12 @@ void ami_drag_icon_close(struct Window *win)
 BOOL ami_drag_in_progress(void)
 {
 	return drag_in_progress;
+}
+
+bool ami_drag_has_data(void)
+{
+	if(drag_save_data != NULL) return true;
+		else return false;
 }
 
 static void *ami_find_gwin_by_id(struct Window *win, uint32 type)

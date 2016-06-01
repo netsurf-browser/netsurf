@@ -221,7 +221,7 @@ void ami_reset_pointer(struct gui_window_2 *gwin)
 
 void ami_update_pointer(struct Window *win, gui_pointer_shape shape)
 {
-	if(drag_save_data) return;
+	if(ami_drag_has_data()) return; /**\todo check this shouldn't be drag_in_progress */
 
 	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 53, 42)) {
 #ifdef __amigaos4__

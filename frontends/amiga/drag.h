@@ -26,18 +26,14 @@ struct Window;
 
 #define AMI_DRAG_THRESHOLD 10
 
-int drag_save;
-void *drag_save_data;
-struct gui_window *drag_save_gui;
-
 void gui_drag_save_selection(struct gui_window *g, const char *selection);
 void gui_drag_save_object(struct gui_window *g, struct hlcache_handle *c, gui_save_type type);
-
 void ami_drag_save(struct Window *win);
 void ami_drag_icon_show(struct Window *win, const char *type);
 void ami_drag_icon_close(struct Window *win);
 bool ami_drag_icon_move(void);
 BOOL ami_drag_in_progress(void);
+bool ami_drag_has_data(void);
 
 void *ami_window_at_pointer(int type);
 

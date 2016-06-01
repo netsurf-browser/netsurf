@@ -2169,7 +2169,7 @@ static void ami_handle_msg(void)
 #endif
 					}
 
-					if(drag_save_data && !gwin->mouse_state)
+					if(ami_drag_has_data() && !gwin->mouse_state)
 						ami_drag_save(gwin->win);
 				break;
 
