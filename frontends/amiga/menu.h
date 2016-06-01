@@ -135,8 +135,8 @@ enum {
 struct gui_window;
 struct gui_window_2;
 
-struct gui_window_2 *ami_menu_window_close;
-bool ami_menu_check_toggled;
+extern struct gui_window_2 *ami_menu_window_close;
+extern bool ami_menu_check_toggled;
 
 void ami_free_menulabs(struct gui_window_2 *gwin);
 struct Menu *ami_menu_create(struct gui_window_2 *gwin);

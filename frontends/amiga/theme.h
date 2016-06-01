@@ -28,7 +28,8 @@ struct gui_window;
 #define AMI_GUI_POINTER_DRAG  GUI_POINTER_PROGRESS+2
 #define AMI_LASTPOINTER AMI_GUI_POINTER_DRAG
 
-ULONG throbber_width, throbber_height;
+extern ULONG throbber_width;
+extern ULONG throbber_height;
 
 void ami_theme_init(void);
 void ami_get_theme_filename(char *filename, const char *themestring, bool protocol);

@@ -23,8 +23,8 @@
 /* AmigaGuide class */
 #include "amiga/agclass/amigaguide_class.h"
 
-Class *AmigaGuideClass = NULL;
-Object *AmigaGuideObject = NULL;
+static Class *AmigaGuideClass = NULL;
+static Object *AmigaGuideObject = NULL;
 
 /* This array needs to match the enum in help.h */
 CONST_STRPTR context_nodes[] = {

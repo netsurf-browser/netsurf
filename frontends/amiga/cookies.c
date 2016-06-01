@@ -25,6 +25,8 @@
 #include "amiga/cookies.h"
 #include "amiga/tree.h"
 
+struct treeview_window *cookies_window;
+
 void ami_cookies_initialise(void)
 {
 	cookies_window = ami_tree_create(TREE_COOKIES, NULL);

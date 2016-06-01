@@ -37,6 +37,7 @@ struct ami_hotlist_ctx {
 	bool (*cb)(void *userdata, int level, int item, const char *title, nsurl *url, bool folder);
 };
 
+struct treeview_window *hotlist_window = NULL;
 
 void ami_hotlist_initialise(const char *hotlist_file)
 {

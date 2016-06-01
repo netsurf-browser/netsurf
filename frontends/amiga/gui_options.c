@@ -232,16 +232,18 @@ struct ami_gui_opts_window {
 #endif
 };
 
+char *current_user_options = NULL;
+
 static struct ami_gui_opts_window *gow = NULL;
 
-CONST_STRPTR tabs[OPTS_MAX_TABS];
+static CONST_STRPTR tabs[OPTS_MAX_TABS];
 static STRPTR screenopts[OPTS_MAX_SCREEN];
-CONST_STRPTR proxyopts[OPTS_MAX_PROXY];
-CONST_STRPTR nativebmopts[OPTS_MAX_NATIVEBM];
-CONST_STRPTR ditheropts[OPTS_MAX_DITHER];
-CONST_STRPTR fontopts[6];
-CONST_STRPTR gadlab[OPTS_LAST];
-struct List *websearch_list;
+static CONST_STRPTR proxyopts[OPTS_MAX_PROXY];
+static CONST_STRPTR nativebmopts[OPTS_MAX_NATIVEBM];
+static CONST_STRPTR ditheropts[OPTS_MAX_DITHER];
+static CONST_STRPTR fontopts[6];
+static CONST_STRPTR gadlab[OPTS_LAST];
+static struct List *websearch_list;
 
 #ifndef __amigaos4__
 static void ami_gui_opts_array_to_list(struct List *list, const char *array[], int type)

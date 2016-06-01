@@ -57,7 +57,7 @@ struct ami_font_functions {
 
 const struct ami_font_functions *ami_nsfont;
 
-struct gui_layout_table *ami_layout_table;
+extern struct gui_layout_table *ami_layout_table;
 
 #endif
 

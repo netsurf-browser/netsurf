@@ -50,7 +50,7 @@
 
 #define ID_UTF8  MAKE_ID('U','T','F','8')
 
-struct IFFHandle *iffh = NULL;
+static struct IFFHandle *iffh = NULL;
 
 static struct IFFHandle *ami_clipboard_init_internal(int unit)
 {

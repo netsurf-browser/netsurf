@@ -24,8 +24,6 @@
 struct gui_window;
 struct form_control;
 
-BOOL popupmenu_lib_ok;
-
 void gui_create_form_select_menu(struct gui_window *g, struct form_control *control);
 
 /**

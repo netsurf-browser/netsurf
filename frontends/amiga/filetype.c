@@ -37,7 +37,7 @@
  * filetype -- determine the MIME type of a local file
  */
 
-struct MinList *ami_mime_list = NULL;
+static struct MinList *ami_mime_list = NULL;
 
 struct ami_mime_entry
 {

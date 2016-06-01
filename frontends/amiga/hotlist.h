@@ -22,7 +22,7 @@
 struct nsurl;
 struct treeview_window;
 
-struct treeview_window *hotlist_window;
+extern struct treeview_window *hotlist_window;
 
 void ami_hotlist_initialise(const char *hotlist_file);
 

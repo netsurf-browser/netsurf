@@ -25,5 +25,5 @@
 void ami_global_history_initialise(void);
 void ami_global_history_free(void);
 
-struct treeview_window *global_history_window;
+extern struct treeview_window *global_history_window;
 #endif

@@ -57,7 +57,7 @@
 #include "amiga/gui.h"
 #include "amiga/history_local.h"
 
-void ami_history_update_extent(struct history_window *hw);
+static void ami_history_update_extent(struct history_window *hw);
 HOOKF(void, ami_history_scroller_hook, Object *, object, struct IntuiMessage *);
 
 /**
@@ -295,7 +295,7 @@ BOOL ami_history_event(struct history_window *hw)
 	return FALSE;
 }
 
-void ami_history_update_extent(struct history_window *hw)
+static void ami_history_update_extent(struct history_window *hw)
 {
 	struct IBox *bbox;
 	int width, height;

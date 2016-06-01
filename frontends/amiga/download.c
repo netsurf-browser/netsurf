@@ -89,7 +89,7 @@ enum {
 	AMINS_DLOAD_ABORT,
 };
 
-int downloads_in_progress = 0;
+static int downloads_in_progress = 0;
 
 static struct gui_download_window *gui_download_window_create(download_context *ctx,
 		struct gui_window *gui)

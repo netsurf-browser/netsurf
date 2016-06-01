@@ -51,9 +51,12 @@
 #include "amiga/theme.h"
 #include "amiga/misc.h"
 
-struct BitMap *throbber = NULL;
-struct bitmap *throbber_nsbm = NULL;
-int throbber_frames, throbber_update_interval;
+ULONG throbber_width;
+ULONG throbber_height;
+
+static struct BitMap *throbber = NULL;
+static struct bitmap *throbber_nsbm = NULL;
+static int throbber_frames, throbber_update_interval;
 static Object *mouseptrobj[AMI_LASTPOINTER+1];
 static struct BitMap *mouseptrbm[AMI_LASTPOINTER+1];
 

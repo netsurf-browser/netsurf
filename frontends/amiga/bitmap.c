@@ -78,7 +78,7 @@ enum {
 	AMI_NSBM_PALETTEMAPPED 
 };
 
-APTR pool_bitmap = NULL;
+static APTR pool_bitmap = NULL;
 
 /* exported function documented in amiga/bitmap.h */
 void *amiga_bitmap_create(int width, int height, unsigned int state)

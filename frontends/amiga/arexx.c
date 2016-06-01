@@ -68,7 +68,7 @@ enum
 	RX_HOTLIST
 };
 
-Object *arexx_obj = NULL;
+static Object *arexx_obj = NULL;
 STATIC char result[100];
 
 STATIC VOID rx_open(struct ARexxCmd *, struct RexxMsg *);

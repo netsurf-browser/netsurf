@@ -38,7 +38,7 @@
 struct Library *OpenURLBase = NULL;
 struct OpenURLIFace *IOpenURL = NULL;
 
-struct MinList *ami_unsupportedprotocols;
+static struct MinList *ami_unsupportedprotocols;
 
 struct ami_protocol
 {

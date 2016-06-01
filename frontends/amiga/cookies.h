@@ -24,5 +24,5 @@
 void ami_cookies_initialise(void);
 void ami_cookies_free(void);
 
-struct treeview_window *cookies_window;
+extern struct treeview_window *cookies_window;
 #endif

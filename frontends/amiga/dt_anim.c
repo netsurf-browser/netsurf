@@ -59,7 +59,7 @@ typedef struct amiga_dt_anim_content {
 	int h;
 } amiga_dt_anim_content;
 
-APTR ami_colormap_to_clut(struct ColorMap *cmap);
+static APTR ami_colormap_to_clut(struct ColorMap *cmap);
 
 static nserror amiga_dt_anim_create(const content_handler *handler,
 		lwc_string *imime_type, const struct http_parameter *params,
@@ -339,7 +339,7 @@ content_type amiga_dt_anim_content_type(void)
 	return CONTENT_IMAGE;
 }
 
-APTR ami_colormap_to_clut(struct ColorMap *cmap)
+static APTR ami_colormap_to_clut(struct ColorMap *cmap)
 {
 	int i;
 	UBYTE *clut = ami_misc_allocvec_clear(256 * 4, 0); /* NB: Was not MEMF_PRIVATE */

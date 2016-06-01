@@ -53,7 +53,7 @@
 #define THUMBNAIL_WIDTH 100 /* Icon sizes for thumbnails, usually the same as */
 #define THUMBNAIL_HEIGHT 86 /* WIDTH/HEIGHT in desktop/thumbnail.c */
 
-ULONG *amiga_icon_convertcolouricon32(UBYTE *icondata, ULONG width, ULONG height,
+static ULONG *amiga_icon_convertcolouricon32(UBYTE *icondata, ULONG width, ULONG height,
 		ULONG trans, ULONG pals1, struct ColorRegister *pal1, int alpha);
 
 #ifdef WITH_AMIGA_ICON
@@ -314,7 +314,7 @@ content_type amiga_icon_content_type(void)
 
 #endif /* WITH_AMIGA_ICON */
 
-ULONG *amiga_icon_convertcolouricon32(UBYTE *icondata, ULONG width, ULONG height,
+static ULONG *amiga_icon_convertcolouricon32(UBYTE *icondata, ULONG width, ULONG height,
 		ULONG trans, ULONG pals1, struct ColorRegister *pal1, int alpha)
 {
 	ULONG *argbicon;

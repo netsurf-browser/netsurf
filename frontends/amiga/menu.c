@@ -87,12 +87,16 @@ enum {
 	NSA_GLYPH_MAX
 };
 
-BOOL menualreadyinit;
+struct gui_window_2 *ami_menu_window_close = NULL;
+bool ami_menu_check_toggled = false;
+
+static BOOL menualreadyinit;
+static Object *menu_glyph[NSA_GLYPH_MAX];
+static int menu_glyph_width[NSA_GLYPH_MAX];
+static bool menu_glyphs_loaded = false;
+
 const char * const netsurf_version;
 const char * const verdate;
-Object *menu_glyph[NSA_GLYPH_MAX];
-int menu_glyph_width[NSA_GLYPH_MAX];
-bool menu_glyphs_loaded = false;
 
 static nserror ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin);
 void ami_menu_arexx_scan(struct gui_window_2 *gwin);

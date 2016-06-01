@@ -37,7 +37,7 @@
 #define NewnsList NewList
 #endif
 
-APTR pool_nsobj = NULL;
+static APTR pool_nsobj = NULL;
 
 bool ami_object_init(void)
 {

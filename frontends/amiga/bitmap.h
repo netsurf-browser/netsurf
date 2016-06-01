@@ -28,7 +28,7 @@
 #define AMI_BITMAP_FORMAT RGBFB_R8G8B8A8
 #define AMI_BITMAP_SCALE_ICON 0xFF
 
-struct gui_bitmap_table *amiga_bitmap_table;
+extern struct gui_bitmap_table *amiga_bitmap_table;
 struct bitmap;
 struct nsurl;
 

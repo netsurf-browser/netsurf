@@ -27,6 +27,8 @@
 #include "amiga/tree.h"
 #include "amiga/tree.h"
 
+struct treeview_window *global_history_window = NULL;
+
 void ami_global_history_initialise(void)
 {
 	global_history_window = ami_tree_create(TREE_HISTORY, NULL);

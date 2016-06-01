@@ -131,7 +131,7 @@ const uint16 sc_table[] = {
 #endif
 		0, 0};
 
-lwc_string *glypharray[0xffff + 1];
+static lwc_string *glypharray[0xffff + 1];
 
 static struct List ami_diskfontlib_list;
 

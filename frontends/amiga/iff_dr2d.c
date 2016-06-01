@@ -36,8 +36,8 @@
 #include "misc.h"
 #endif
 
-struct ColorRegister cm[1000];
-ULONG numcols;
+static struct ColorRegister cm[1000];
+static ULONG numcols;
 
 static ULONG findcolour(ULONG newcol)
 {
