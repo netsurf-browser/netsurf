@@ -323,6 +323,7 @@ void *ami_window_at_pointer(int type)
 }
 
 #else
+#include "utils/errors.h"
 #include "amiga/drag.h"
 
 void gui_drag_save_object(struct gui_window *g, struct hlcache_handle *c,
@@ -348,11 +349,17 @@ void ami_drag_icon_close(struct Window *win)
 
 bool ami_drag_icon_move(void)
 {
+	return false;
 }
 
 BOOL ami_drag_in_progress(void)
 {
 	return FALSE;
+}
+
+bool ami_drag_has_data(void)
+{
+	return false;
 }
 
 void *ami_window_at_pointer(int type)

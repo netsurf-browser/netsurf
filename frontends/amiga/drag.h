@@ -19,6 +19,7 @@
 #ifndef AMIGA_DRAG_H
 #define AMIGA_DRAG_H
 
+#include <stdbool.h>
 #include <exec/types.h>
 #include "netsurf/window.h"
 
