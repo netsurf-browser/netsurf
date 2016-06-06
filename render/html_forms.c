@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "utils/config.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"
 

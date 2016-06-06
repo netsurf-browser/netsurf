@@ -30,7 +30,7 @@
 #include <dom/dom.h>
 #include <dom/bindings/hubbub/parser.h>
 
-#include "content/content_type.h"
+#include "netsurf/content_type.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
 #include "desktop/plot_style.h"

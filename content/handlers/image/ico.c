@@ -27,9 +27,11 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "netsurf/bitmap.h"
+#include "netsurf/content.h"
+#include "content/llcache.h"
 #include "content/content_protected.h"
 #include "desktop/gui_internal.h"
-#include "netsurf/bitmap.h"
 
 #include "image.h"
 #include "ico.h"

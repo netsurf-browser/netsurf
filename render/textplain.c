@@ -37,6 +37,7 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/utf8.h"
+#include "netsurf/content.h"
 #include "content/content_protected.h"
 #include "content/hlcache.h"
 #include "content/handlers/css/utils.h"

@@ -31,8 +31,7 @@
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
-#include "content/content.h"
-#include "content/hlcache.h"
+#include "netsurf/content.h"
 #include "render/box.h"
 #include "render/html.h"
 
@@ -55,7 +54,7 @@ static bool save_text_add_to_buffer(const char *text, size_t length,
  * \param  path		Path to save text file too.
  */
 
-void save_as_text(hlcache_handle *c, char *path)
+void save_as_text(struct hlcache_handle *c, char *path)
 {
 	FILE *out;
 	struct save_text_state save = { NULL, 0, 0 };

@@ -28,11 +28,12 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "netsurf/browser_window.h"
+#include "netsurf/bitmap.h"
+#include "netsurf/content.h"
 #include "desktop/knockout.h"
 #include "desktop/gui_internal.h"
-#include "netsurf/browser_window.h"
 
-#include "netsurf/bitmap.h"
 #include "content/content_protected.h"
 #include "content/content_debug.h"
 #include "content/hlcache.h"
@@ -542,12 +543,8 @@ void content__request_redraw(struct content *c,
 	content_broadcast(c, CONTENT_MSG_REDRAW, data);
 }
 
-/**
- * Display content on screen with optional tiling.
- *
- * Calls the redraw function for the content.
- */
 
+/* exported interface, documented in content/content.h */
 bool content_redraw(hlcache_handle *h, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
@@ -1050,12 +1047,7 @@ bool content__add_rfc5988_link(struct content *c,
 
 
 
-/**
- * Retrieve URL associated with content
- *
- * \param c  Content to retrieve URL from
- * \return Pointer to URL, or NULL if not found.
- */
+/* exported interface documented in content/content.h */
 nsurl *content_get_url(struct content *c)
 {
 	if (c == NULL)

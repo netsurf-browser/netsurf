@@ -17,8 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * URL bars (implementation).
+/**
+ * \file
+ * RISC OS URL bar implementation.
  */
 
 #include <alloca.h>
@@ -35,15 +36,14 @@
 #include "utils/messages.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
-#include "content/hlcache.h"
-#include "content/content.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/plotters.h"
+#include "netsurf/content.h"
+#include "content/hlcache.h"
 
 #include "riscos/gui.h"
 #include "riscos/hotlist.h"
 #include "riscos/gui/url_bar.h"
-#include "riscos/theme.h"
 #include "riscos/url_suggest.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"

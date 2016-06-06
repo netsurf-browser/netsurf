@@ -17,8 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Content handling (interface).
+/**
+ * \file
+ * Content handling interface.
  *
  * The content functions manipulate struct contents, which correspond to URLs.
  */
@@ -30,10 +31,8 @@
 
 #include "utils/errors.h"
 #include "content/content_factory.h"
-#include "content/content_type.h"
 #include "desktop/search.h" /* search flags enum */
 #include "netsurf/mouse.h" /* mouse state enums */
-#include "desktop/plot_style.h" /* color typedef */
 
 struct browser_window;
 struct browser_window_features;
@@ -81,18 +80,6 @@ typedef enum {
 	CONTENT_MSG_GADGETCLICK/**< A gadget has been clicked on (mainly for file) */
 } content_msg;
 
-/** Debugging dump operations */
-enum content_debug {
-	CONTENT_DEBUG_RENDER, /** Debug the contents rendering. */
-	CONTENT_DEBUG_DOM,    /** Debug the contents Document Object. */
-	CONTENT_DEBUG_REDRAW  /** Debug redraw operations. */
-};
-
-/** Content encoding informstion types */
-enum content_encoding_type {
-	CONTENT_ENCODING_NORMAL, /** The content encoding */
-	CONTENT_ENCODING_SOURCE  /** The content encoding source */
-};
 
 /** RFC5988 metadata link */
 struct content_rfc5988_link {
@@ -208,44 +195,35 @@ union content_msg_data {
 	} gadget_click;
 };
 
-/** parameters to content redraw */
-struct content_redraw_data {
-	int x; /**< coordinate for top-left of redraw */
-	int y; /**< coordinate for top-left of redraw */
-
-	/** dimensions to render content at
-	 *  (for scaling contents with intrinsic dimensions) */
-	int width; /**< horizontal dimension */
-	int height; /**< vertical dimension */
-
-	/** The background colour */
-	colour background_colour;
-
-	/** Scale for redraw
-	 *  (for scaling contents without intrinsic dimensions) */
-	float scale; /**< Scale factor for redraw */
-
-	bool repeat_x; /**< whether content is tiled in x direction */
-	bool repeat_y; /**< whether content is tiled in y direction */
-};
 
 /* The following are for hlcache */
 void content_destroy(struct content *c);
 
-bool content_add_user(struct content *h,
-		void (*callback)(struct content *c, content_msg msg,
-			union content_msg_data data, void *pw),
-		void *pw);
-void content_remove_user(struct content *c,
-		void (*callback)(struct content *c, content_msg msg,
-			union content_msg_data data, void *pw),
-		void *pw);
+
+bool content_add_user(struct content *h, void (*callback)(struct content *c, content_msg msg, union content_msg_data data, void *pw), void *pw);
+
+
+void content_remove_user(struct content *c, void (*callback)(struct content *c, content_msg msg, union content_msg_data data, void *pw), void *pw);
+
 
 uint32_t content_count_users(struct content *c);
+
+
 bool content_matches_quirks(struct content *c, bool quirks);
+
+
 bool content_is_shareable(struct content *c);
 
+/* only used by cocoa apple image handling and for getting nsurl of content */
 const struct llcache_handle *content_get_llcache_handle(struct content *c);
+
+
+/**
+ * Retrieve URL associated with content
+ *
+ * \param c  Content to retrieve URL from
+ * \return Pointer to URL, or NULL if not found.
+ */
 struct nsurl *content_get_url(struct content *c);
 
 struct content *content_clone(struct content *c);
@@ -254,42 +232,29 @@ nserror content_abort(struct content *c);
 
 /* Client functions */
 bool content_can_reformat(struct hlcache_handle *h);
+
 void content_reformat(struct hlcache_handle *h, bool background,
 		int width, int height);
+
 void content_request_redraw(struct hlcache_handle *h,
 		int x, int y, int width, int height);
+
 void content_mouse_track(struct hlcache_handle *h, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
+
 void content_mouse_action(struct hlcache_handle *h, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
+
 bool content_keypress(struct hlcache_handle *h, uint32_t key);
-bool content_redraw(struct hlcache_handle *h, struct content_redraw_data *data,
-		const struct rect *clip, const struct redraw_context *ctx);
 
-
-/**
- * Redraw a content with scale set for horizontal fit.
- *
- * Redraws the content at a specified width and height with the
- * content drawing scaled to fit within the area.
- *
- * \param content The content to redraw
- * \param width The target width
- * \param height The target height
- * \param ctx current redraw context
- * \return true if successful, false otherwise
- *
- * The thumbnail is guaranteed to be filled to its width/height extents, so
- * there is no need to render a solid background first.
- *
- * Units for width and height are pixels.
- */
-bool content_scaled_redraw(struct hlcache_handle *content, int width, int height, const struct redraw_context *ctx);
 
 void content_open(struct hlcache_handle *h, struct browser_window *bw,
 		struct content *page, struct object_params *params);
+
 void content_close(struct hlcache_handle *h);
+
 void content_clear_selection(struct hlcache_handle *h);
+
 char * content_get_selection(struct hlcache_handle *h);
 
 /**
@@ -305,12 +270,15 @@ nserror content_get_contextual_content(struct hlcache_handle *h,
 
 bool content_scroll_at_point(struct hlcache_handle *h,
 		int x, int y, int scrx, int scry);
+
 bool content_drop_file_at_point(struct hlcache_handle *h,
 		int x, int y, char *file);
 
 void content_search(struct hlcache_handle *h, void *context,
 		search_flags_t flags, const char *string);
+
 void content_search_clear(struct hlcache_handle *h);
+
 
 /**
  * Control debug con a content.
@@ -320,6 +288,7 @@ void content_search_clear(struct hlcache_handle *h);
  */
 nserror content_debug(struct hlcache_handle *h, enum content_debug op);
 
+
 /**
  * find link in content that matches the rel string.
  *
@@ -328,34 +297,8 @@ nserror content_debug(struct hlcache_handle *h, enum content_debug op);
  * \return A matching rfc5988 link or NULL if none is found.
  *
  */
-struct content_rfc5988_link *content_find_rfc5988_link(struct hlcache_handle *h,
-		lwc_string *rel);
+struct content_rfc5988_link *content_find_rfc5988_link(struct hlcache_handle *h, lwc_string *rel);
 
-/* Member accessors */
-
-/**
- * Retrieve computed type of content
- *
- * \param h handle to the content to retrieve tyoe of.
- * \return Computed content type
- */
-content_type content_get_type(struct hlcache_handle *h);
-
-/**
- * Retrieve mime-type of content
- *
- * \param h handle to the content to retrieve mime type from
- * \return Pointer to referenced mime type, or NULL if not found.
- */
-lwc_string *content_get_mime_type(struct hlcache_handle *h);
-
-/**
- * Retrieve title associated with content
- *
- * \param h handle to the content to retrieve title from
- * \return Pointer to title, or NULL if not found.
- */
-const char *content_get_title(struct hlcache_handle *h);
 
 /**
  * Retrieve status of content
@@ -365,6 +308,7 @@ const char *content_get_title(struct hlcache_handle *h);
  */
 content_status content_get_status(struct hlcache_handle *h);
 
+
 /**
  * Retrieve status of content
  *
@@ -372,6 +316,7 @@ content_status content_get_status(struct hlcache_handle *h);
  * \return Content status
  */
 content_status content__get_status(struct content *c);
+
 
 /**
  * Retrieve status message associated with content
@@ -381,21 +326,6 @@ content_status content__get_status(struct content *c);
  */
 const char *content_get_status_message(struct hlcache_handle *h);
 
-/**
- * Retrieve width of content
- *
- * \param h handle to the content to get width of.
- * \return Content width
- */
-int content_get_width(struct hlcache_handle *h);
-
-/**
- * Retrieve height of content
- *
- * \param h handle to the content to get height of.
- * \return Content height
- */
-int content_get_height(struct hlcache_handle *h);
 
 /**
  * Retrieve available width of content
@@ -405,26 +335,6 @@ int content_get_height(struct hlcache_handle *h);
  */
 int content_get_available_width(struct hlcache_handle *h);
 
-/**
- * Retrieve source of content
- *
- * \param h Content handle to retrieve source of
- * \param size Pointer to location to receive byte size of source
- * \return Pointer to source data
- */
-const char *content_get_source_data(struct hlcache_handle *h,
-		unsigned long *size);
-
-/**
- * Invalidate content reuse data.
- *
- * causes subsequent requests for content URL to query server to
- * determine if content can be reused. This is required behaviour for
- * forced reloads etc.
- *
- * \param h Content handle to invalidate.
- */
-void content_invalidate_reuse_data(struct hlcache_handle *h);
 
 /**
  * Retrieve the refresh URL for a content
@@ -434,13 +344,6 @@ void content_invalidate_reuse_data(struct hlcache_handle *h);
  */
 struct nsurl *content_get_refresh_url(struct hlcache_handle *h);
 
-/**
- * Retrieve the bitmap contained in an image content
- *
- * \param h handle to the content.
- * \return Pointer to bitmap, or NULL if none.
- */
-struct bitmap *content_get_bitmap(struct hlcache_handle *h);
 
 /**
  * Determine if a content is opaque from handle
@@ -451,6 +354,7 @@ struct bitmap *content_get_bitmap(struct hlcache_handle *h);
  */
 bool content_get_opaque(struct hlcache_handle *h);
 
+
 /**
  * Retrieve quirkiness of a content
  *
@@ -459,14 +363,6 @@ bool content_get_opaque(struct hlcache_handle *h);
  */
 bool content_get_quirks(struct hlcache_handle *h);
 
-/**
- * Retrieve the encoding of a content
- *
- * \param h handle to the content.
- * \param op encoding operation.
- * \return Pointer to content info or NULL if none.
- */
-const char *content_get_encoding(struct hlcache_handle *h, enum content_encoding_type op);
 
 /**
  * Return whether a content is currently locked
@@ -475,5 +371,8 @@ const char *content_get_encoding(struct hlcache_handle *h, enum content_encoding
  * \return true iff locked, else false
  */
 bool content_is_locked(struct hlcache_handle *h);
+
+
+
 
 #endif

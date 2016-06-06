@@ -43,7 +43,6 @@
 #include <oslib/wimpspriteop.h>
 #include <nsutils/time.h>
 
-#include "utils/config.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/talloc.h"
@@ -52,20 +51,17 @@
 #include "utils/utils.h"
 #include "utils/messages.h"
 #include "utils/string.h"
-#include "content/content.h"
+#include "netsurf/content.h"
+#include "netsurf/browser_window.h"
+#include "netsurf/plotters.h"
+#include "netsurf/window.h"
+#include "netsurf/bitmap.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/browser_history.h"
-#include "netsurf/browser_window.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/scrollbar.h"
-#include "desktop/frames.h"
-#include "netsurf/mouse.h"
-#include "netsurf/plotters.h"
 #include "desktop/textinput.h"
-#include "desktop/tree.h"
-#include "netsurf/window.h"
-#include "netsurf/bitmap.h"
 #include "render/form.h"
 
 #include "riscos/bitmap.h"

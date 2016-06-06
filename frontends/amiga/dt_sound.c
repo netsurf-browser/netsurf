@@ -23,19 +23,23 @@
 #ifdef WITH_AMIGA_DATATYPES
 #include "amiga/os3support.h"
 
-#include "amiga/filetype.h"
-#include "amiga/datatypes.h"
-#include "content/content_protected.h"
-#include "netsurf/plotters.h"
-#include "render/box.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-
 #include <proto/datatypes.h>
 #include <proto/dos.h>
 #include <proto/intuition.h>
 #include <datatypes/soundclass.h>
 #include <intuition/classusr.h>
+
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "netsurf/plotters.h"
+#include "netsurf/content.h"
+#include "render/box.h"
+#include "content/llcache.h"
+#include "content/content_protected.h"
+
+#include "amiga/filetype.h"
+#include "amiga/datatypes.h"
+
 
 typedef struct amiga_dt_sound_content {
 	struct content base;

@@ -86,6 +86,7 @@
 /* newlib includes */
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
 
 /* NetSurf core includes */
 #include "utils/log.h"
@@ -95,26 +96,24 @@
 #include "utils/utils.h"
 #include "utils/nsurl.h"
 #include "utils/file.h"
-#include "content/hlcache.h"
-#include "content/backing_store.h"
-#include "content/fetchers.h"
-#include "content/fetchers/resource.h"
-#include "content/urldb.h"
-#include "content/handlers/image/ico.h"
-#include "desktop/browser_history.h"
-#include "netsurf/browser_window.h"
-#include "desktop/hotlist.h"
+#include "netsurf/window.h"
+#include "netsurf/fetch.h"
+#include "netsurf/misc.h"
 #include "netsurf/mouse.h"
 #include "netsurf/netsurf.h"
+#include "netsurf/content.h"
+#include "netsurf/browser_window.h"
+#include "content/backing_store.h"
+#include "content/fetchers.h"
+#include "content/urldb.h"
+#include "desktop/browser_history.h"
+#include "desktop/hotlist.h"
 #include "desktop/version.h"
 #include "desktop/save_complete.h"
 #include "desktop/scrollbar.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
-#include "netsurf/window.h"
-#include "netsurf/fetch.h"
-#include "netsurf/misc.h"
 
 /* NetSurf Amiga platform includes */
 #include "amiga/gui.h"
@@ -848,12 +847,14 @@ static struct RDArgs *ami_gui_commandline(int *argc, char **argv, int *nargc, ch
 
 	if((args = ReadArgs(template, rarray, NULL))) {
 		if(rarray[A_URL]) {
-			LOG("URL %s specified on command line", rarray[A_URL]);
+			LOG("URL %s specified on command line",
+			    (char *)rarray[A_URL]);
 			temp_homepage_url = ami_to_utf8_easy((char *)rarray[A_URL]);
 		}
 
 		if(rarray[A_USERSDIR]) {
-			LOG("USERSDIR %s specified on command line", rarray[A_USERSDIR]);
+			LOG("USERSDIR %s specified on command line",
+			    (char *)rarray[A_USERSDIR]);
 			users_dir = ASPrintf("%s", rarray[A_USERSDIR]);
 		}
 
@@ -1751,7 +1752,7 @@ static void ami_gui_scroller_update(struct gui_window_2 *gwin)
 /**
  * function to add retrieved favicon to gui
  */
-static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
+static void gui_window_set_icon(struct gui_window *g, struct hlcache_handle *icon)
 {
 	struct BitMap *bm = NULL;
 	struct IBox *bbox;
@@ -5216,7 +5217,7 @@ static void gui_window_remove_caret(struct gui_window *g)
 
 static void gui_window_new_content(struct gui_window *g)
 {
-	hlcache_handle *c;
+	struct hlcache_handle *c;
 
 	if(g && g->shared && g->bw && browser_window_has_content(g->bw))
 		c = browser_window_get_content(g->bw);
@@ -5399,7 +5400,7 @@ void ami_gui_splash_close(Object *win_obj)
 	DisposeObject(win_obj);
 }
 
-static void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
+static void gui_file_gadget_open(struct gui_window *g, struct hlcache_handle *hl, 
 	struct form_control *gadget)
 {
 	LOG("File open dialog request for %p/%p", g, gadget);

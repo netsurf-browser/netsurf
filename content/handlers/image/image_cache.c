@@ -25,10 +25,11 @@
 
 #include "utils/utils.h"
 #include "utils/log.h"
-#include "content/content_protected.h"
 #include "netsurf/misc.h"
-#include "desktop/gui_internal.h"
 #include "netsurf/bitmap.h"
+#include "content/llcache.h"
+#include "content/content_protected.h"
+#include "desktop/gui_internal.h"
 
 #include "image_cache.h"
 #include "image.h"

@@ -38,11 +38,11 @@
 
 extern "C" {
 #include "utils/log.h"
-#include "content/content.h"
-#include "content/urldb.h"
 #include "netsurf/plotters.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/bitmap.h"
+#include "netsurf/content.h"
+#include "content/urldb.h"
 }
 
 #include "beos/bitmap.h"

@@ -31,10 +31,9 @@
 
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "content/content.h"
-#include "content/hlcache.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/search.h"
+#include "netsurf/content.h"
 #include "desktop/search.h"
 
 #include "riscos/gui.h"
@@ -269,7 +268,7 @@ bool ro_gui_search_prepare_menu(void)
  */
 static bool ro_gui_search_bw_searchable(struct browser_window *bw)
 {
-	hlcache_handle *h;
+	struct hlcache_handle *h;
 
 	assert(bw != NULL);
 

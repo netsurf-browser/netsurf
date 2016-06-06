@@ -16,21 +16,41 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Declaration of content_type enum.
+/**
+ * \file
+ * Declaration of content type enumerations.
  *
- * The content_type enum is defined here to prevent cyclic dependencies.
+ * The content enumerations are defined here.
  */
 
-#ifndef _NETSURF_DESKTOP_CONTENT_TYPE_H_
-#define _NETSURF_DESKTOP_CONTENT_TYPE_H_
+#ifndef _NETSURF_CONTENT_TYPE_H_
+#define _NETSURF_CONTENT_TYPE_H_
+
+/** Debugging dump operations */
+enum content_debug {
+	CONTENT_DEBUG_RENDER, /** Debug the contents rendering. */
+	CONTENT_DEBUG_DOM,    /** Debug the contents Document Object. */
+	CONTENT_DEBUG_REDRAW  /** Debug redraw operations. */
+};
+
+/** Content encoding information types */
+enum content_encoding_type {
+	CONTENT_ENCODING_NORMAL, /** The content encoding */
+	CONTENT_ENCODING_SOURCE  /** The content encoding source */
+};
 
 /** The type of a content. */
 typedef enum {
+	/** no type for content */
 	CONTENT_NONE		= 0x00,
 
+	/** content is HTML */
 	CONTENT_HTML		= 0x01,
+
+	/** content is plain text */
 	CONTENT_TEXTPLAIN	= 0x02,
+
+	/** content is CSS */
 	CONTENT_CSS		= 0x04,
 
 	/** All images */
@@ -39,11 +59,12 @@ typedef enum {
 	/** Navigator API Plugins */
 	CONTENT_PLUGIN		= 0x10,
 
-	/** Themes (only GTK and RISC OS) */
+	/** RISC OS themes content */
 	CONTENT_THEME		= 0x20,
 
 	/** Javascript */
 	CONTENT_JS		= 0x40,
+
 	/** All script types. */
 	CONTENT_SCRIPT		= 0x40,
 

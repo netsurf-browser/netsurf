@@ -30,12 +30,12 @@
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/talloc.h"
-#include "content/content.h"
+#include "netsurf/content.h"
+#include "netsurf/plotters.h"
 #include "content/hlcache.h"
 #include "content/handlers/css/utils.h"
 #include "render/box.h"
 
-#include "netsurf/plotters.h"
 #include "desktop/print.h"
 #include "desktop/printer.h"
 
@@ -44,11 +44,8 @@
 #define DEFAULT_PAGE_HEIGHT 840
 #define DEFAULT_COPIES 1
 
-static hlcache_handle *print_init(hlcache_handle *, struct print_settings *);
-static bool print_apply_settings(hlcache_handle *, struct print_settings *);
-
 static float page_content_width, page_content_height;
-static hlcache_handle *printed_content;
+static struct hlcache_handle *printed_content;
 static float done_height;
 
 bool html_redraw_printing = false;
@@ -71,7 +68,7 @@ bool print_basic_run(hlcache_handle *content,
 	bool ret = true;
 
 	assert(content != NULL && printer != NULL && settings != NULL);
-	
+
 	if (print_set_up(content, printer, settings, NULL))
 		return false;
 
@@ -80,9 +77,61 @@ bool print_basic_run(hlcache_handle *content,
 	}
 
 	print_cleanup(content, printer, settings);
-	
+
 	return ret;
 }
+
+
+/**
+ * The content passed to the function is duplicated with its boxes, font
+ * measuring functions are being set.
+ *
+ * \param content The content to be printed
+ * \param settings The settings for printing to use
+ * \return true if successful, false otherwise
+ */
+static struct hlcache_handle *
+print_init(struct hlcache_handle *content, struct print_settings *settings)
+{
+	struct hlcache_handle* printed_content;
+
+	hlcache_handle_clone(content, &printed_content);
+
+	return printed_content;
+}
+
+
+/**
+ * The content is resized to fit page width.
+ *
+ * \param content The content to be printed
+ * \param settings The settings for printing to use
+ * \return true if successful, false otherwise
+ */
+static bool
+print_apply_settings(hlcache_handle *content, struct print_settings *settings)
+{
+	if (settings == NULL)
+		return false;
+
+	/* Apply settings - adjust page size etc */
+
+	page_content_width = (settings->page_width -
+			FIXTOFLT(FSUB(settings->margins[MARGINLEFT],
+			settings->margins[MARGINRIGHT]))) / settings->scale;
+
+	page_content_height = (settings->page_height -
+			FIXTOFLT(FSUB(settings->margins[MARGINTOP],
+			settings->margins[MARGINBOTTOM]))) / settings->scale;
+
+	content_reformat(content, false, page_content_width, 0);
+
+	LOG("New layout applied.New height = %d ; New width = %d ",
+	    content_get_height(content), content_get_width(content));
+
+	return true;
+}
+
 
 /**
  * This function prepares the content to be printed. The current browser content
@@ -99,20 +148,20 @@ bool print_set_up(hlcache_handle *content,
 		double *height)
 {
 	printed_content = print_init(content, settings);
-	
+
 	if (printed_content == NULL)
 		return false;
-	
+
 	print_apply_settings(printed_content, settings);
 
 	if (height)
 		*height = content_get_height(printed_content);
-	
+
 	printer->print_begin(settings);
 
 	done_height = 0;
-	
-	return true;	
+
+	return true;
 }
 
 /**
@@ -158,59 +207,12 @@ bool print_draw_next_page(const struct printer *printer,
 
 	done_height += page_content_height -
 			(html_redraw_printing_top_cropped != INT_MAX ?
-			clip.y1 - html_redraw_printing_top_cropped : 0) / 
+			clip.y1 - html_redraw_printing_top_cropped : 0) /
 			settings->scale;
 
 	return true;
 }
 
-/**
- * The content passed to the function is duplicated with its boxes, font
- * measuring functions are being set.
- *
- * \param content The content to be printed
- * \param settings The settings for printing to use
- * \return true if successful, false otherwise
- */
-hlcache_handle *print_init(hlcache_handle *content,
-		struct print_settings *settings)
-{
-	hlcache_handle* printed_content;
-	
-	hlcache_handle_clone(content, &printed_content);
-			
-	return printed_content;
-}
-
-/**
- * The content is resized to fit page width.
- *
- * \param content The content to be printed
- * \param settings The settings for printing to use
- * \return true if successful, false otherwise
- */
-bool print_apply_settings(hlcache_handle *content,
-			  struct print_settings *settings)
-{
-	if (settings == NULL)
-		return false;
-	
-	/* Apply settings - adjust page size etc */
-
-	page_content_width = (settings->page_width - 
-			FIXTOFLT(FSUB(settings->margins[MARGINLEFT],
-			settings->margins[MARGINRIGHT]))) / settings->scale;
-	
-	page_content_height = (settings->page_height - 
-			FIXTOFLT(FSUB(settings->margins[MARGINTOP],
-			settings->margins[MARGINBOTTOM]))) / settings->scale;
-	
-	content_reformat(content, false, page_content_width, 0);
-
-	LOG("New layout applied.New height = %d ; New width = %d ", content_get_height(content), content_get_width(content));
-	
-	return true;
-}
 
 /**
  * Memory allocated during printing is being freed here.
@@ -224,16 +226,16 @@ bool print_cleanup(hlcache_handle *content, const struct printer *printer,
 		struct print_settings *settings)
 {
 	printer->print_end();
-	
+
 	html_redraw_printing = false;
-	
+
 	if (printed_content) {
 		hlcache_handle_release(printed_content);
 	}
-	
+
 	free((void *)settings->output);
 	free(settings);
-	
+
 	return true;
 }
 
@@ -252,57 +254,57 @@ struct print_settings *print_make_settings(print_configuration configuration,
 	struct print_settings *settings;
 	css_fixed length = 0;
 	css_unit unit = CSS_UNIT_MM;
-	
+
 	switch (configuration){
-		case PRINT_DEFAULT:	
-			settings = (struct print_settings*) 
+		case PRINT_DEFAULT:
+			settings = (struct print_settings*)
 					malloc(sizeof(struct print_settings));
 			if (settings == NULL)
 				return NULL;
-			
+
 			settings->page_width  = DEFAULT_PAGE_WIDTH;
 			settings->page_height = DEFAULT_PAGE_HEIGHT;
 			settings->copies = DEFAULT_COPIES;
 
 			settings->scale = DEFAULT_EXPORT_SCALE;
-			
+
 			length = INTTOFIX(DEFAULT_MARGIN_LEFT_MM);
-			settings->margins[MARGINLEFT] = 
+			settings->margins[MARGINLEFT] =
 					nscss_len2px(length, unit, NULL);
 			length = INTTOFIX(DEFAULT_MARGIN_RIGHT_MM);
-			settings->margins[MARGINRIGHT] = 
+			settings->margins[MARGINRIGHT] =
 					nscss_len2px(length, unit, NULL);
 			length = INTTOFIX(DEFAULT_MARGIN_TOP_MM);
-			settings->margins[MARGINTOP] = 
+			settings->margins[MARGINTOP] =
 					nscss_len2px(length, unit, NULL);
 			length = INTTOFIX(DEFAULT_MARGIN_BOTTOM_MM);
-			settings->margins[MARGINBOTTOM] = 
+			settings->margins[MARGINBOTTOM] =
 					nscss_len2px(length, unit, NULL);
 			break;
 		/* use settings from the Export options tab */
 		case PRINT_OPTIONS:
-			settings = (struct print_settings*) 
+			settings = (struct print_settings*)
 					malloc(sizeof(struct print_settings));
 			if (settings == NULL)
 				return NULL;
-			
+
 			settings->page_width  = DEFAULT_PAGE_WIDTH;
 			settings->page_height = DEFAULT_PAGE_HEIGHT;
 			settings->copies = DEFAULT_COPIES;
-			
+
 			settings->scale = (float)nsoption_int(export_scale) / 100;
-			
+
 			length = INTTOFIX(nsoption_int(margin_left));
-			settings->margins[MARGINLEFT] = 
+			settings->margins[MARGINLEFT] =
 					nscss_len2px(length, unit, NULL);
 			length = INTTOFIX(nsoption_int(margin_right));
-			settings->margins[MARGINRIGHT] = 
+			settings->margins[MARGINRIGHT] =
 					nscss_len2px(length, unit, NULL);
 			length = INTTOFIX(nsoption_int(margin_top));
-			settings->margins[MARGINTOP] = 
+			settings->margins[MARGINTOP] =
 					nscss_len2px(length, unit, NULL);
 			length = INTTOFIX(nsoption_int(margin_bottom));
-			settings->margins[MARGINBOTTOM] = 
+			settings->margins[MARGINBOTTOM] =
 					nscss_len2px(length, unit, NULL);
 			break;
 		default:
@@ -319,9 +321,9 @@ struct print_settings *print_make_settings(print_configuration configuration,
 			free(settings);
 			return NULL;
 		}
-	} else 
+	} else {
 		settings->output = NULL;
+	}
 
-	return settings;	
+	return settings;
 }
-

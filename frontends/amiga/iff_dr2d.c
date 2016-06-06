@@ -26,10 +26,11 @@
 #include <proto/dos.h>
 
 #ifndef AMIGA_DR2D_STANDALONE
+#include "utils/nsurl.h"
+#include "netsurf/content.h"
 #include "amiga/os3support.h"
 #include "amiga/iff_dr2d.h"
 #include "amiga/misc.h"
-#include "content/hlcache.h"
 #else
 #include "os3support.h"
 #include "iff_dr2d.h"

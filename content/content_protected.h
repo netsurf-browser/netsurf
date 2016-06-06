@@ -26,29 +26,22 @@
 #ifndef _NETSURF_CONTENT_CONTENT_PROTECTED_H_
 #define _NETSURF_CONTENT_CONTENT_PROTECTED_H_
 
-#include <stdint.h>
-#include <time.h>
 #include <stdio.h>
 
-#include "utils/config.h"
+#include "utils/nsurl.h"
+#include "netsurf/content_type.h"
 #include "content/content.h"
-#include "content/content_factory.h"
-#include "content/llcache.h"
-#include "utils/errors.h"
 
-struct bitmap;
-struct content;
-struct rect;
-struct redraw_context;
+struct content_redraw_data;
 struct http_parameter;
 
 struct content_handler {
 	void (*fini)(void);
 
-	nserror (*create)(const content_handler *handler,
+	nserror (*create)(const struct content_handler *handler,
                           lwc_string *imime_type,
                           const struct http_parameter *params,
-                          llcache_handle *llcache,
+                          struct llcache_handle *llcache,
                           const char *fallback_charset, bool quirks,
                           struct content **c);
 
@@ -108,11 +101,11 @@ struct content_user
 
 /** Corresponds to a single URL. */
 struct content {
-	llcache_handle *llcache; /**< Low-level cache object */
+	struct llcache_handle *llcache; /**< Low-level cache object */
 
 	lwc_string *mime_type;	/**< Original MIME type of data */
 
-	const content_handler *handler;	/**< Handler for content */
+	const struct content_handler *handler;	/**< Handler for content */
 
 	content_status status;	/**< Current status. */
 
@@ -161,7 +154,7 @@ struct content {
 extern const char * const content_type_name[];
 extern const char * const content_status_name[];
 
-nserror content__init(struct content *c, const content_handler *handler,
+nserror content__init(struct content *c, const struct content_handler *handler,
 		lwc_string *imime_type, const struct http_parameter *params,
 		struct llcache_handle *llcache, const char *fallback_charset,
 		bool quirks);

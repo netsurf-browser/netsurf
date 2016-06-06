@@ -32,10 +32,12 @@
 #include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "netsurf/content.h"
 #include "javascript/js.h"
 #include "content/content_protected.h"
 #include "content/fetch.h"
 #include "content/hlcache.h"
+
 #include "render/html_internal.h"
 
 typedef bool (script_handler_t)(struct jscontext *jscontext, const char *data, size_t size) ;

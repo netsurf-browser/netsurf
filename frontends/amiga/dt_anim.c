@@ -37,9 +37,11 @@
 
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "content/content_protected.h"
 #include "netsurf/plotters.h"
 #include "netsurf/bitmap.h"
+#include "netsurf/content.h"
+#include "content/content_protected.h"
+#include "content/llcache.h"
 
 #include "amiga/bitmap.h"
 #include "amiga/filetype.h"

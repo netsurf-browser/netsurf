@@ -19,9 +19,10 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
+#include "utils/nsurl.h"
 #include "netsurf/browser_window.h"
+#include "netsurf/content.h"
 #include "desktop/textinput.h"
-#include "content/hlcache.h"
 
 #include "atari/gui.h"
 #include "atari/misc.h"
@@ -50,7 +51,7 @@ struct s_context_info ctxinfo;
 
 static struct s_context_info * get_context_info( struct gui_window * gw, short mx, short my )
 {
-	hlcache_handle *h;
+	struct hlcache_handle *h;
 	GRECT area;
 	struct browser_window * bw = gw->browser->bw;
 	int sx, sy;

@@ -25,6 +25,8 @@
 
 #include "utils/errors.h"
 
+struct content_redraw_data;
+
 /** Initialise the content handlers for image types.
  */
 nserror image_init(void);

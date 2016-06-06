@@ -49,12 +49,12 @@
 #include "utils/corestrings.h"
 #include "netsurf/fetch.h"
 #include "netsurf/misc.h"
-#include "desktop/save_complete.h"
-#include "desktop/treeview.h"
+#include "netsurf/content.h"
 #include "netsurf/netsurf.h"
 #include "netsurf/browser_window.h"
+#include "desktop/save_complete.h"
+#include "desktop/treeview.h"
 #include "content/urldb.h"
-#include "content/hlcache.h"
 #include "content/backing_store.h"
 
 #include "riscos/gui.h"
@@ -1935,7 +1935,7 @@ static void ro_gui_view_source_bounce(wimp_message *message)
 /**
  * Send the source of a content to a text editor.
  */
-void ro_gui_view_source(hlcache_handle *c)
+void ro_gui_view_source(struct hlcache_handle *c)
 {
 	os_error *error;
 	char *temp_name;

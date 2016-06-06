@@ -27,13 +27,14 @@
 #include <strings.h>
 #include <stdlib.h>
 
-#include "content/hlcache.h"
-#include "content/handlers/css/css.h"
 #include "utils/nsoption.h"
 #include "utils/corestrings.h"
 #include "utils/config.h"
 #include "utils/log.h"
 #include "netsurf/misc.h"
+#include "netsurf/content.h"
+#include "content/hlcache.h"
+#include "content/handlers/css/css.h"
 #include "desktop/gui_internal.h"
 
 #include "render/html_internal.h"

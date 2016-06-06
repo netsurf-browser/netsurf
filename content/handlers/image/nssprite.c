@@ -28,10 +28,12 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "content/content_protected.h"
-#include "desktop/gui_internal.h"
 #include "netsurf/plotters.h"
 #include "netsurf/bitmap.h"
+#include "netsurf/content.h"
+#include "content/llcache.h"
+#include "content/content_protected.h"
+#include "desktop/gui_internal.h"
 
 #include "nssprite.h"
 
@@ -62,7 +64,7 @@ typedef struct nssprite_content {
 
 static nserror nssprite_create(const content_handler *handler,
 		lwc_string *imime_type, const struct http_parameter *params,
-		llcache_handle *llcache, const char *fallback_charset,
+		struct llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
 {
 	nssprite_content *sprite;

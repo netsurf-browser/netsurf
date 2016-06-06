@@ -17,8 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Save HTML document with dependencies (implementation).
+/**
+ * \file
+ * Save HTML document with dependencies implementation.
  */
 
 #include <assert.h>
@@ -39,7 +40,7 @@
 #include "utils/utils.h"
 #include "utils/file.h"
 #include "utils/messages.h"
-#include "content/content.h"
+#include "netsurf/content.h"
 #include "content/hlcache.h"
 #include "content/handlers/css/css.h"
 #include "render/box.h"
@@ -53,7 +54,7 @@ regex_t save_complete_import_re;
 
 /** An entry in save_complete_list. */
 typedef struct save_complete_entry {
-	hlcache_handle *content;
+	struct hlcache_handle *content;
 	struct save_complete_entry *next; /**< Next entry in list */
 } save_complete_entry;
 
@@ -73,7 +74,7 @@ typedef enum {
 } save_complete_event_type;
 
 
-static bool save_complete_save_html(save_complete_ctx *ctx, hlcache_handle *c,
+static bool save_complete_save_html(save_complete_ctx *ctx, struct hlcache_handle *c,
 		bool index);
 static bool save_complete_save_imported_sheets(save_complete_ctx *ctx,
 		struct nscss_import *imports, uint32_t import_count);
@@ -99,7 +100,7 @@ static void save_complete_ctx_finalise(save_complete_ctx *ctx)
 }
 
 static bool save_complete_ctx_add_content(save_complete_ctx *ctx,
-		hlcache_handle *content)
+		struct hlcache_handle *content)
 {
 	save_complete_entry *entry;
 
@@ -114,24 +115,32 @@ static bool save_complete_ctx_add_content(save_complete_ctx *ctx,
 	return true;
 }
 
-
-static hlcache_handle *save_complete_ctx_find_content(save_complete_ctx *ctx,
-		const nsurl *url)
+/**
+ * find handle to content for url
+ *
+ * \param ctx The save context
+ * \param url The url to find content handle for
+ * \return The content handle or NULL if not found.
+ */
+static struct hlcache_handle *
+save_complete_ctx_find_content(save_complete_ctx *ctx, const nsurl *url)
 {
 	save_complete_entry *entry;
 
-	for (entry = ctx->list; entry != NULL; entry = entry->next)
+	for (entry = ctx->list; entry != NULL; entry = entry->next) {
 		if (nsurl_compare(url,
-				hlcache_handle_get_url(entry->content),
-				NSURL_COMPLETE))
+				  hlcache_handle_get_url(entry->content),
+				  NSURL_COMPLETE)) {
 			return entry->content;
+		}
+	}
 
 	return NULL;
 }
 
 
 static bool save_complete_ctx_has_content(save_complete_ctx *ctx,
-		hlcache_handle *content)
+		struct hlcache_handle *content)
 {
 	save_complete_entry *entry;
 

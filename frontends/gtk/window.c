@@ -36,17 +36,17 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"
-#include "content/hlcache.h"
-#include "gtk/window.h"
-#include "gtk/selection.h"
+#include "netsurf/content.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
-#include "desktop/searchweb.h"
-#include "desktop/textinput.h"
 #include "netsurf/window.h"
 #include "netsurf/plotters.h"
+#include "desktop/searchweb.h"
+#include "desktop/textinput.h"
 #include "render/form.h"
 
+#include "gtk/window.h"
+#include "gtk/selection.h"
 #include "gtk/warn.h"
 #include "gtk/compat.h"
 #include "gtk/gui.h"
@@ -947,7 +947,7 @@ static void gui_window_destroy(struct gui_window *g)
  * \param gw gtk gui window to set favicon on.
  * \param icon A handle to the new favicon content.
  */
-static void gui_window_set_icon(struct gui_window *gw, hlcache_handle *icon)
+static void gui_window_set_icon(struct gui_window *gw, struct hlcache_handle *icon)
 {
 	struct bitmap *icon_bitmap = NULL;
 
@@ -1277,7 +1277,7 @@ static void gui_window_create_form_select_menu(struct gui_window *g,
 
 static void
 gui_window_file_gadget_open(struct gui_window *g,
-			    hlcache_handle *hl,
+			    struct hlcache_handle *hl,
 			    struct form_control *gadget)
 {
 	GtkWidget *dialog;

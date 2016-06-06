@@ -43,6 +43,7 @@
 #include "utils/file.h"
 #include "netsurf/plotters.h"
 #include "netsurf/bitmap.h"
+#include "netsurf/content.h"
 #include "content/content_protected.h"
 
 #include "amiga/os3support.h"
@@ -66,7 +67,7 @@ typedef struct amiga_icon_content {
 
 static nserror amiga_icon_create(const content_handler *handler,
 		lwc_string *imime_type, const struct http_parameter *params,
-		llcache_handle *llcache, const char *fallback_charset,
+		struct llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c);
 static bool amiga_icon_convert(struct content *c);
 static void amiga_icon_destroy(struct content *c);
@@ -104,7 +105,7 @@ CONTENT_FACTORY_REGISTER_TYPES(amiga_icon, amiga_icon_types,
 
 nserror amiga_icon_create(const content_handler *handler,
 		lwc_string *imime_type, const struct http_parameter *params,
-		llcache_handle *llcache, const char *fallback_charset,
+		struct llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
 {
 	amiga_icon_content *ai_content;

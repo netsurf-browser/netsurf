@@ -30,7 +30,7 @@
 #include "utils/nsoption.h"
 #include "utils/utf8.h"
 #include "utils/nsurl.h"
-#include "content/hlcache.h"
+#include "netsurf/content.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/plotters.h"
 #include "desktop/textinput.h"

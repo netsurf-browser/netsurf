@@ -29,17 +29,16 @@
 #include <time.h>
 #include <math.h>
 
-#include "utils/config.h"
+#include "utils/log.h"
+#include "utils/utils.h"
+#include "netsurf/content.h"
 #include "content/hlcache.h"
+#include "render/html.h"
+#include "render/box.h"
+
 #include "desktop/browser_private.h"
 #include "desktop/frames.h"
 #include "desktop/scrollbar.h"
-#include "desktop/selection.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
-#include "render/html.h"
-#include "render/box.h"
 
 /** maximum frame resize margin */
 #define FRAME_RESIZE 6
@@ -98,7 +97,7 @@ void browser_window_scroll_callback(void *client_data,
 /* exported interface, documented in browser.h */
 void browser_window_handle_scrollbars(struct browser_window *bw)
 {
-	hlcache_handle *h = bw->current_content;
+	struct hlcache_handle *h = bw->current_content;
 	bool scroll_x;
 	bool scroll_y;
 	int c_width = 0;
@@ -380,8 +379,8 @@ nserror browser_window_create_frameset(struct browser_window *bw,
 	/* Use the URL of the first ancestor window containing html content
 	 * as the referer */
 	for (window = bw; window->parent; window = window->parent) {
-		if (window->current_content && 
-				content_get_type(window->current_content) == 
+		if (window->current_content &&
+				content_get_type(window->current_content) ==
 				CONTENT_HTML)
 			break;
 	}

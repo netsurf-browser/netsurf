@@ -32,7 +32,7 @@
 #include "utils/utils.h"
 #include "netsurf/bitmap.h"
 #include "netsurf/plotters.h"
-#include "content/content.h"
+#include "netsurf/content.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"

@@ -17,6 +17,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <gtk/gtk.h>
 
 #include "utils/utils.h"
@@ -24,7 +25,7 @@
 #include "utils/nsurl.h"
 #include "utils/messages.h"
 #include "netsurf/browser_window.h"
-#include "content/content.h"
+#include "netsurf/content.h"
 
 #include "gtk/viewdata.h"
 #include "gtk/viewsource.h"

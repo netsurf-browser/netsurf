@@ -47,7 +47,10 @@
 #include "utils/utils.h"
 #include "utils/utf8.h"
 #include "utils/nsoption.h"
-#include "content/content.h"
+#include "netsurf/misc.h"
+#include "netsurf/window.h"
+#include "netsurf/content.h"
+#include "netsurf/plotters.h"
 #include "content/content_debug.h"
 #include "content/fetch.h"
 #include "content/hlcache.h"
@@ -68,10 +71,7 @@
 #include "desktop/knockout.h"
 #include "desktop/scrollbar.h"
 #include "desktop/selection.h"
-#include "netsurf/plotters.h"
 #include "desktop/theme.h"
-#include "netsurf/misc.h"
-#include "netsurf/window.h"
 #include "desktop/gui_internal.h"
 
 

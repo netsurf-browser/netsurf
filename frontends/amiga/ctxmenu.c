@@ -40,10 +40,10 @@
 #include "utils/messages.h"
 #include "utils/nsoption.h"
 #include "utils/nsurl.h"
-#include "content/hlcache.h"
+#include "netsurf/content.h"
 #include "netsurf/browser_window.h"
-#include "desktop/browser_history.h"
 #include "netsurf/mouse.h"
+#include "desktop/browser_history.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 

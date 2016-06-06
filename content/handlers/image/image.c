@@ -22,10 +22,10 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "content/content.h"
 #include "netsurf/plotters.h"
-#include "desktop/gui_internal.h"
 #include "netsurf/bitmap.h"
+#include "netsurf/content.h"
+#include "desktop/gui_internal.h"
 
 #include "bmp.h"
 #include "gif.h"

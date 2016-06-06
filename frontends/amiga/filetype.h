@@ -18,11 +18,13 @@
 
 #ifndef AMIGA_FILETYPE_H
 #define AMIGA_FILETYPE_H
+
 #include <stdbool.h>
 #include <libwapcaplet/libwapcaplet.h>
-#include "content/content_type.h"
-#include "utils/errors.h"
 #include <datatypes/datatypes.h>
+
+#include "netsurf/content_type.h"
+#include "utils/errors.h"
 
 struct hlcache_handle;
 struct ami_mime_entry;

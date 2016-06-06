@@ -32,10 +32,11 @@
 #include "utils/config.h"
 #include "utils/log.h"
 #include "utils/nsoption.h"
+#include "netsurf/content.h"
+#include "netsurf/misc.h"
 #include "content/hlcache.h"
 #include "content/handlers/css/utils.h"
 #include "desktop/scrollbar.h"
-#include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
 
 #include "render/box.h"

@@ -30,9 +30,9 @@
 #include "utils/ring.h"
 #include "utils/utils.h"
 #include "netsurf/misc.h"
+#include "netsurf/content.h"
 #include "desktop/gui_internal.h"
 
-#include "content/content.h"
 #include "content/mimesniff.h"
 #include "content/hlcache.h"
 

@@ -175,12 +175,5 @@ struct content *hlcache_handle_get_content(const hlcache_handle *handle);
  */
 nserror hlcache_handle_clone(hlcache_handle *handle, hlcache_handle **result);
 
-/**
- * Retrieve the URL associated with a high level cache handle
- *
- * \param handle  The handle to inspect
- * \return  Pointer to URL.
- */
-nsurl *hlcache_handle_get_url(const hlcache_handle *handle);
 
 #endif

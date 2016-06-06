@@ -23,7 +23,7 @@
 #ifndef _NETSURF_RISCOS_FILETYPE_H_
 #define _NETSURF_RISCOS_FILETYPE_H_
 
-#include "content/content_type.h"
+#include "netsurf/content_type.h"
 
 #ifndef FILETYPE_ACORN_URI
 #define FILETYPE_ACORN_URI 0xf91

@@ -38,6 +38,7 @@
 #define NETSURF_IMAGE_IMAGE_CACHE_H_
 
 #include "utils/errors.h"
+#include "netsurf/content_type.h"
 
 struct content_redraw_data;
 struct redraw_context;

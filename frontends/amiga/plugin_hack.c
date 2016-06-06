@@ -23,19 +23,20 @@
 #include "amiga/os3support.h"
 
 #include <stdlib.h>
-
-#include "amiga/filetype.h"
-#include "amiga/plugin_hack.h"
-#include "content/content_protected.h"
-#include "content/hlcache.h"
-#include "netsurf/plotters.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-
 #include <proto/dos.h>
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
+
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "netsurf/plotters.h"
+#include "netsurf/content.h"
+#include "amiga/filetype.h"
+#include "amiga/plugin_hack.h"
+#include "content/content_protected.h"
+#include "content/llcache.h"
+
 
 typedef struct amiga_plugin_hack_content {
 	struct content base;

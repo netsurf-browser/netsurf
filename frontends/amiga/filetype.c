@@ -20,18 +20,19 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "amiga/filetype.h"
-#include "amiga/misc.h"
-#include "amiga/object.h"
-#include "content/fetch.h"
-#include "content/content.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 #include <proto/icon.h>
 #include <proto/dos.h>
 #include <proto/datatypes.h>
 #include <proto/exec.h>
 #include <workbench/icon.h>
+
+#include "netsurf/content.h"
+#include "utils/log.h"
+#include "utils/utils.h"
+
+#include "amiga/filetype.h"
+#include "amiga/misc.h"
+#include "amiga/object.h"
 
 /**
  * filetype -- determine the MIME type of a local file

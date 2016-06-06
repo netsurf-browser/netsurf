@@ -34,8 +34,8 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"
-#include "content/hlcache.h"
 #include "netsurf/mouse.h"
+#include "netsurf/content.h"
 
 #include "amiga/bitmap.h"
 #include "amiga/clipboard.h"
@@ -178,7 +178,7 @@ void ami_drag_save(struct Window *win)
 
 		case GUI_SAVE_OBJECT_NATIVE:
 		{
-			hlcache_handle *c = drag_save_data;
+			struct hlcache_handle *c = drag_save_data;
 			AddPart(path, content_get_title(c), 1024);
 
 			ami_file_save(AMINS_SAVE_IFF, path, win, c, NULL, NULL);

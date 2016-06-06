@@ -27,6 +27,7 @@
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/nsoption.h"
+#include "netsurf/content.h"
 #include "content/hlcache.h"
 
 #include "desktop/searchweb.h"

@@ -28,7 +28,7 @@
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "content/content.h"
+#include "netsurf/content.h"
 #include "content/hlcache.h"
 #include "desktop/theme.h"
 

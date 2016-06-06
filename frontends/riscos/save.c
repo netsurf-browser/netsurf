@@ -40,8 +40,8 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utf8.h"
-#include "content/content.h"
-#include "content/hlcache.h"
+#include "utils/nsurl.h"
+#include "netsurf/content.h"
 #include "netsurf/browser_window.h"
 #include "desktop/hotlist.h"
 #include "desktop/global_history.h"
@@ -81,7 +81,7 @@
           now since we could have multiple saves outstanding */
 
 static gui_save_type gui_save_current_type;
-static hlcache_handle *gui_save_content = NULL;
+static struct hlcache_handle *gui_save_content = NULL;
 static char *gui_save_selection = NULL;
 static const char *gui_save_url = NULL;
 static const char *gui_save_title = NULL;
@@ -105,17 +105,17 @@ static size_t save_dir_len;
 
 typedef enum { LINK_ACORN, LINK_ANT, LINK_TEXT } link_format;
 
-static bool ro_gui_save_complete(hlcache_handle *h, char *path);
-static bool ro_gui_save_content(hlcache_handle *h, char *path, bool force_overwrite);
+static bool ro_gui_save_complete(struct hlcache_handle *h, char *path);
+static bool ro_gui_save_content(struct hlcache_handle *h, char *path, bool force_overwrite);
 static void ro_gui_save_done(void);
 static void ro_gui_save_bounced(wimp_message *message);
-static bool ro_gui_save_object_native(hlcache_handle *h, char *path);
+static bool ro_gui_save_object_native(struct hlcache_handle *h, char *path);
 static bool ro_gui_save_link(const char *url, const char *title, link_format format, char *path);
-static void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
+static void ro_gui_save_set_state(struct hlcache_handle *h, gui_save_type save_type,
 		const nsurl *url, char *leaf_buf, size_t leaf_len,
 		char *icon_buf, size_t icon_len);
 static void ro_gui_save_drag_end(wimp_dragged *drag, void *data);
-static bool ro_gui_save_create_thumbnail(hlcache_handle *h, const char *name);
+static bool ro_gui_save_create_thumbnail(struct hlcache_handle *h, const char *name);
 static void ro_gui_save_overwrite_confirmed(query_id, enum query_response res, void *p);
 static void ro_gui_save_overwrite_cancelled(query_id, enum query_response res, void *p);
 
@@ -247,7 +247,7 @@ void ro_gui_saveas_quit(void)
  * \param  title      title (if any), when saving links
  */
 
-void ro_gui_save_prepare(gui_save_type save_type, hlcache_handle *h,
+void ro_gui_save_prepare(gui_save_type save_type, struct hlcache_handle *h,
 		char *s, const nsurl *url, const char *title)
 {
 	char name_buf[FILENAME_MAX];
@@ -364,7 +364,7 @@ bool ro_gui_save_ok(wimp_w w)
  * \param  g          gui window
  */
 
-void gui_drag_save_object(struct gui_window *g, hlcache_handle *c,
+void gui_drag_save_object(struct gui_window *g, struct hlcache_handle *c,
 		gui_save_type save_type)
 {
 	wimp_pointer pointer;
@@ -741,7 +741,7 @@ void ro_gui_save_bounced(wimp_message *message)
 void ro_gui_save_datasave_ack(wimp_message *message)
 {
 	char *path = message->data.data_xfer.file_name;
-	hlcache_handle *h = gui_save_content;
+	struct hlcache_handle *h = gui_save_content;
 	bool force_overwrite;
 
 	switch (gui_save_current_type) {
@@ -793,7 +793,7 @@ void ro_gui_save_datasave_ack(wimp_message *message)
  *               or (ii) deferred awaiting user confirmation
  */
 
-bool ro_gui_save_content(hlcache_handle *h, char *path, bool force_overwrite)
+bool ro_gui_save_content(struct hlcache_handle *h, char *path, bool force_overwrite)
 {
 	os_error *error;
 	const char *source_data;
@@ -1008,7 +1008,7 @@ static void ro_gui_save_set_file_type(const char *path, lwc_string *mime_type)
  * \return  true on success, false on error and error reported
  */
 
-bool ro_gui_save_complete(hlcache_handle *h, char *path)
+bool ro_gui_save_complete(struct hlcache_handle *h, char *path)
 {
 	void *spr = ((byte *) saveas_area) + saveas_area->first;
 	osspriteop_header *sprite = (osspriteop_header *) spr;
@@ -1093,7 +1093,7 @@ bool ro_gui_save_complete(hlcache_handle *h, char *path)
 	return save_complete(h, path, ro_gui_save_set_file_type);
 }
 
-bool ro_gui_save_object_native(hlcache_handle *h, char *path)
+bool ro_gui_save_object_native(struct hlcache_handle *h, char *path)
 {
 	int file_type = ro_content_filetype(h);
 
@@ -1200,7 +1200,7 @@ bool ro_gui_save_link(const char *url, const char *title, link_format format,
  * \param  icon_len   size of buffer to receive icon name.
  */
 
-void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
+void ro_gui_save_set_state(struct hlcache_handle *h, gui_save_type save_type,
 		const nsurl *url, char *leaf_buf, size_t leaf_len,
 		char *icon_buf, size_t icon_len)
 {
@@ -1338,7 +1338,7 @@ void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
  * \return true iff successful
  */
 
-bool ro_gui_save_create_thumbnail(hlcache_handle *h, const char *name)
+bool ro_gui_save_create_thumbnail(struct hlcache_handle *h, const char *name)
 {
 	osspriteop_header *sprite_header;
 	struct bitmap *bitmap;

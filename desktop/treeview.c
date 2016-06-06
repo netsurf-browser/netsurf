@@ -23,7 +23,9 @@
  */
 
 #include "utils/log.h"
+#include "utils/nsurl.h"
 #include "netsurf/bitmap.h"
+#include "netsurf/content.h"
 #include "content/hlcache.h"
 #include "content/handlers/css/utils.h"
 
@@ -3634,8 +3636,10 @@ static void treeview_init_plot_styles(int font_pt_size)
 /**
  * Callback for hlcache.
  */
-static nserror treeview_res_cb(hlcache_handle *handle,
-		const hlcache_event *event, void *pw)
+static nserror
+treeview_res_cb(struct hlcache_handle *handle,
+		const hlcache_event *event,
+		void *pw)
 {
 	struct treeview_resource *r = pw;
 

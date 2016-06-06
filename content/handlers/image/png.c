@@ -25,9 +25,10 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "netsurf/bitmap.h"
+#include "content/llcache.h"
 #include "content/content_protected.h"
 #include "desktop/gui_internal.h"
-#include "netsurf/bitmap.h"
 
 #include "image_cache.h"
 #include "png.h"
@@ -277,10 +278,14 @@ static nserror nspng_create_png_data(nspng_content *png_c)
 	return NSERROR_OK;
 }
 
-static nserror nspng_create(const content_handler *handler,
-		lwc_string *imime_type, const struct http_parameter *params,
-		llcache_handle *llcache, const char *fallback_charset,
-		bool quirks, struct content **c)
+static nserror
+nspng_create(const content_handler *handler,
+	     lwc_string *imime_type,
+	     const struct http_parameter *params,
+	     struct llcache_handle *llcache,
+	     const char *fallback_charset,
+	     bool quirks,
+	     struct content **c)
 {
 	nspng_content *png_c;
 	nserror error;

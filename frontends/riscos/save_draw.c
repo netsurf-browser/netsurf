@@ -32,9 +32,8 @@
 
 #include "utils/log.h"
 #include "utils/utils.h"
-#include "content/content.h"
-#include "content/hlcache.h"
 #include "netsurf/plotters.h"
+#include "netsurf/content.h"
 
 #include "riscos/bitmap.h"
 #include "riscos/gui.h"
@@ -87,7 +86,7 @@ static int ro_save_draw_height;
  * \return  true on success, false on error and error reported
  */
 
-bool save_as_draw(hlcache_handle *h, const char *path)
+bool save_as_draw(struct hlcache_handle *h, const char *path)
 {
 	pencil_code code;
 	char *drawfile_buffer;

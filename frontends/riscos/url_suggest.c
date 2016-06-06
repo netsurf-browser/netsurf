@@ -23,14 +23,13 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <oslib/wimp.h>
 
-#include "oslib/wimp.h"
-#include "content/content_type.h"
+#include "utils/messages.h"
 #include "content/urldb.h"
 
 #include "riscos/menus.h"
 #include "riscos/url_suggest.h"
-#include "utils/messages.h"
 
 struct url_suggest_item {
 	const char		*url;	/*< The URL being stored.         */

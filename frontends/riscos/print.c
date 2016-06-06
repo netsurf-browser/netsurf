@@ -36,10 +36,10 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"
-#include "content/content.h"
-#include "content/hlcache.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/plotters.h"
+#include "netsurf/content.h"
+#include "content/content.h"
 
 #include "riscos/gui.h"
 #include "riscos/dialog.h"
@@ -101,10 +101,10 @@ void gui_window_redraw_window(struct gui_window *g);
 static bool ro_gui_print_click(wimp_pointer *pointer);
 static bool ro_gui_print_apply(wimp_w w);
 static void print_update_sheets_shaded_state(bool on);
-static void print_send_printsave(hlcache_handle *h);
+static void print_send_printsave(struct hlcache_handle *h);
 static bool print_send_printtypeknown(wimp_message *m);
 static bool print_document(struct gui_window *g, const char *filename);
-static const char *print_declare_fonts(hlcache_handle *h);
+static const char *print_declare_fonts(struct hlcache_handle *h);
 static bool print_fonts_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool print_fonts_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool print_fonts_plot_polygon(const int *p, unsigned int n, const plot_style_t *style);
@@ -312,7 +312,7 @@ void print_update_sheets_shaded_state(bool on)
  * \param h handle to content to print.
  */
 
-void print_send_printsave(hlcache_handle *h)
+void print_send_printsave(struct hlcache_handle *h)
 {
 	wimp_full_message_data_xfer m;
 	os_error *e;
@@ -546,7 +546,7 @@ bool print_document(struct gui_window *g, const char *filename)
 	int left, right, top, bottom, width, height;
 	int saved_width, saved_height;
 	int yscroll = 0, sheets = print_max_sheets;
-	hlcache_handle *h = browser_window_get_content(g->bw);
+	struct hlcache_handle *h = browser_window_get_content(g->bw);
 	const char *error_message;
 	pdriver_features features;
 	os_fw fhandle, old_job = 0;
@@ -788,7 +788,7 @@ error:
  * \return 0 on success, error message on error
  */
 
-const char *print_declare_fonts(hlcache_handle *h)
+const char *print_declare_fonts(struct hlcache_handle *h)
 {
 	unsigned int i;
 	struct rect clip;

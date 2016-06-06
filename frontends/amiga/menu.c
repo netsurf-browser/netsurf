@@ -47,11 +47,11 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/nsurl.h"
-#include "content/hlcache.h"
-#include "desktop/hotlist.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
 #include "netsurf/window.h"
+#include "netsurf/content.h"
+#include "desktop/hotlist.h"
 #include "desktop/textinput.h"
 #include "desktop/version.h"
 
@@ -1076,7 +1076,7 @@ void ami_menu_update_checked(struct gui_window_2 *gwin)
 	ResetMenuStrip(gwin->win, menustrip);
 }
 
-void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
+void ami_menu_update_disabled(struct gui_window *g, struct hlcache_handle *c)
 {
 	struct Window *win = g->shared->win;
 

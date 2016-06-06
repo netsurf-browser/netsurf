@@ -22,9 +22,10 @@
 
 #include <dom/dom.h>
 
+#include "utils/config.h"
+#include "utils/log.h"
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
-#include "utils/log.h"
 
 #include "render/box_textarea.h"
 #include "render/font.h"

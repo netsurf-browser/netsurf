@@ -40,7 +40,6 @@
 #include "content/fetch.h"
 #include "content/fetchers.h"
 #include "content/fetchers/about.h"
-#include "content/content_type.h"
 #include "content/handlers/image/image_cache.h"
 
 

@@ -19,6 +19,7 @@
 #include "amiga/os3support.h"
 
 #include <stdlib.h>
+#include <string.h>
 #include <proto/exec.h>
 #ifdef __amigaos4__
 #include <graphics/blitattr.h>
@@ -46,8 +47,8 @@
 #include "utils/nsoption.h"
 #include "utils/nsurl.h"
 #include "utils/messages.h"
-#include "content/hlcache.h"
 #include "netsurf/bitmap.h"
+#include "netsurf/content.h"
 
 #include "amiga/gui.h"
 #include "amiga/bitmap.h"
@@ -596,7 +597,7 @@ void ami_bitmap_fini(void)
 	pool_bitmap = NULL;
 }
 
-static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
+static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *content)
 {
 #ifdef __amigaos4__
 	struct redraw_context ctx = {

@@ -32,7 +32,7 @@
 #include "utils/log.h"
 #include "netsurf/bitmap.h"
 #include "netsurf/plotters.h"
-#include "content/content.h"
+#include "netsurf/content.h"
 
 #include "windows/plot.h"
 #include "windows/bitmap.h"

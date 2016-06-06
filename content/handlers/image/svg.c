@@ -29,8 +29,9 @@
 
 #include "utils/messages.h"
 #include "utils/utils.h"
-#include "content/content_protected.h"
 #include "netsurf/plotters.h"
+#include "netsurf/content.h"
+#include "content/content_protected.h"
 
 #include "svg.h"
 
@@ -71,7 +72,7 @@ no_memory:
 
 static nserror svg_create(const content_handler *handler,
 		lwc_string *imime_type, const struct http_parameter *params,
-		llcache_handle *llcache, const char *fallback_charset,
+		struct llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
 {
 	svg_content *svg;

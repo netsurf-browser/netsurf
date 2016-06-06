@@ -32,8 +32,10 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-#include "content/content_protected.h"
 #include "netsurf/plotters.h"
+#include "netsurf/content.h"
+#include "content/llcache.h"
+#include "content/content_protected.h"
 
 #include "riscos/gui.h"
 #include "riscos/image.h"

@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <gtk/gtk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
@@ -33,6 +34,8 @@
 #include "utils/log.h"
 #include "utils/nsoption.h"
 #include "utils/file.h"
+#include "utils/nsurl.h"
+#include "netsurf/content.h"
 #include "desktop/browser_history.h"
 #include "netsurf/browser_window.h"
 #include "desktop/hotlist.h"
@@ -46,7 +49,7 @@
 #include "desktop/save_text.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
-#include "content/hlcache.h"
+#include "desktop/search.h"
 
 #include "gtk/compat.h"
 #include "gtk/warn.h"

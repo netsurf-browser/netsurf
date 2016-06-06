@@ -24,9 +24,7 @@
 
 #include "utils/config.h"
 #include "utils/log.h"
-#include "content/content.h"
-#include "content/fetch.h"
-#include "content/hlcache.h"
+#include "netsurf/content.h"
 
 #include "riscos/filetype.h"
 #include "riscos/gui.h"
@@ -232,7 +230,7 @@ int cmp_type(const void *x, const void *y)
 }
 
 /* exported interface documented in riscos/filetype.h */
-int ro_content_filetype(hlcache_handle *c)
+int ro_content_filetype(struct hlcache_handle *c)
 {
 	lwc_string *mime_type;
 	int file_type;
@@ -252,7 +250,7 @@ int ro_content_filetype(hlcache_handle *c)
 
 
 /* exported interface documented in riscos/filetype.h */
-int ro_content_native_type(hlcache_handle *c)
+int ro_content_native_type(struct hlcache_handle *c)
 {
 	switch (ro_content_filetype(c)) {
 	case FILETYPE_JPEG: /* jpeg */

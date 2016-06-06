@@ -78,6 +78,7 @@
 #include "amiga/selectmenu.h"
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
+#include "amiga/plotters.h"
 
 enum
 {
