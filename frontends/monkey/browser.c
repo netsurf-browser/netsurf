@@ -20,16 +20,17 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "utils/utils.h"
 #include "utils/ring.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/nsurl.h"
 #include "netsurf/mouse.h"
 #include "netsurf/window.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/plotters.h"
-#include "content/hlcache.h"
 
 #include "monkey/browser.h"
 #include "monkey/plot.h"
@@ -140,7 +141,7 @@ gui_window_new_content(struct gui_window *g)
 }
 
 static void
-gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
+gui_window_set_icon(struct gui_window *g, struct hlcache_handle *icon)
 {
   fprintf(stdout, "WINDOW NEW_ICON WIN %u\n", g->win_num);
 }

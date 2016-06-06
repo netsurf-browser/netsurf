@@ -27,7 +27,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "content/fetch.h"
 #include "utils/log.h"
 #include "utils/hashtable.h"
 

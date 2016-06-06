@@ -19,6 +19,8 @@
 #ifndef NETSURF_MONKEY_BROWSER_H
 #define NETSURF_MONKEY_BROWSER_H
 
+struct hlcache_handle;
+
 extern struct gui_window_table *monkey_window_table;
 extern struct gui_download_table *monkey_download_table;
 
@@ -37,7 +39,7 @@ struct gui_window {
 };
 
 struct gui_window *monkey_find_window_by_num(uint32_t win_num);
-struct gui_window *monkey_find_window_by_content(hlcache_handle *content);
+struct gui_window *monkey_find_window_by_content(struct hlcache_handle *content);
 void monkey_window_process_reformats(void);
 
 void monkey_window_handle_command(int argc, char **argv);

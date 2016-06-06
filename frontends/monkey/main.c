@@ -22,6 +22,7 @@
 #include <sys/select.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "utils/config.h"
 #include "utils/sys_time.h"
@@ -29,12 +30,11 @@
 #include "utils/messages.h"
 #include "utils/filepath.h"
 #include "utils/nsoption.h"
-#include "content/urldb.h"
-#include "content/fetchers.h"
-#include "content/fetchers/resource.h"
-#include "content/hlcache.h"
+#include "utils/nsurl.h"
 #include "netsurf/misc.h"
 #include "netsurf/netsurf.h"
+#include "content/urldb.h"
+#include "content/fetchers.h"
 
 #include "monkey/dispatch.h"
 #include "monkey/browser.h"

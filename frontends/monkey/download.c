@@ -24,7 +24,6 @@
 #include "utils/ring.h"
 #include "netsurf/download.h"
 #include "desktop/download.h"
-#include "content/hlcache.h"
 
 #include "monkey/browser.h"
 
