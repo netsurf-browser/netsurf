@@ -68,6 +68,7 @@ extern "C" {
 #include "utils/log.h"
 #include "utils/nsurl.h"
 #include "netsurf/clipboard.h"
+#include "netsurf/content.h"
 }
 #include "beos/about.h"
 #include "beos/bitmap.h"
