@@ -35,7 +35,7 @@
 #include "content/content_protected.h"
 #include "desktop/gui_internal.h"
 
-#include "bmp.h"
+#include "image/bmp.h"
 
 /** bmp context. */
 typedef struct nsbmp_content {

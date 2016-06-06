@@ -29,7 +29,7 @@
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
-#include "content/handlers/css/utils.h"
+#include "css/utils.h"
 
 #include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"

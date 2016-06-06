@@ -35,7 +35,7 @@
 #include "content/content_protected.h"
 #include "desktop/gui_internal.h"
 
-#include "nssprite.h"
+#include "image/nssprite.h"
 
 typedef struct nssprite_content {
 	struct content base;

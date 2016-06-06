@@ -27,7 +27,7 @@
 #include "netsurf/bitmap.h"
 #include "netsurf/content.h"
 #include "content/hlcache.h"
-#include "content/handlers/css/utils.h"
+#include "css/utils.h"
 
 #include "desktop/system_colour.h"
 #include "desktop/knockout.h"

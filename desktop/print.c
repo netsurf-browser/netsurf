@@ -33,7 +33,7 @@
 #include "netsurf/content.h"
 #include "netsurf/plotters.h"
 #include "content/hlcache.h"
-#include "content/handlers/css/utils.h"
+#include "css/utils.h"
 #include "render/box.h"
 
 #include "desktop/print.h"

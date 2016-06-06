@@ -42,7 +42,7 @@
 #include "utils/messages.h"
 #include "netsurf/content.h"
 #include "content/hlcache.h"
-#include "content/handlers/css/css.h"
+#include "css/css.h"
 #include "render/box.h"
 #include "render/html.h"
 

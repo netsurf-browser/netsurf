@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <libcss/libcss.h>
 
-#include "dump.h"
+#include "css/dump.h"
 
 /**
  * Dump a fixed point value to the stream in a textual form.

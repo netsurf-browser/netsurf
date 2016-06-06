@@ -29,7 +29,7 @@
 
 #include "utils/log.h"
 #include "utils/errors.h"
-#include "content/handlers/css/select.h"
+#include "css/select.h"
 
 #include "render/box.h"
 #include "render/html_internal.h"

@@ -30,9 +30,9 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 
-#include "css.h"
-#include "hints.h"
-#include "internal.h"
+#include "css/css.h"
+#include "css/hints.h"
+#include "css/internal.h"
 
 /* Define to trace import fetches */
 #undef NSCSS_IMPORT_TRACE

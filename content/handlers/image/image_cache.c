@@ -31,8 +31,8 @@
 #include "content/content_protected.h"
 #include "desktop/gui_internal.h"
 
-#include "image_cache.h"
-#include "image.h"
+#include "image/image_cache.h"
+#include "image/image.h"
 
 /** Age of an entry within the cache
  *

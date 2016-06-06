@@ -7,3 +7,5 @@ FRONTEND_RESOURCES_DIR := frontends/$(TARGET)/res
 include frontends/$(TARGET)/Makefile
 
 S_FRONTEND := $(addprefix frontends/$(TARGET)/,$(S_FRONTEND))
+
+INCLUDE_DIRS += frontends

@@ -21,7 +21,7 @@
 
 #include "utils/nsurl.h"
 
-#include "internal.h"
+#include "css/internal.h"
 
 /* exported interface documented in content/handlers/css/internal.h */
 css_error nscss_resolve_url(void *pw, const char *base,

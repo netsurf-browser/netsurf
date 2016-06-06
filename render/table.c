@@ -26,7 +26,7 @@
 
 #include "utils/log.h"
 #include "utils/talloc.h"
-#include "content/handlers/css/utils.h"
+#include "css/utils.h"
 
 #include "render/box.h"
 #include "render/table.h"

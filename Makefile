@@ -538,9 +538,8 @@ $(eval $(call pkg_config_find_and_add_enabled,GIF,libnsgif,GIF))
 $(eval $(call pkg_config_find_and_add_enabled,NSSVG,libsvgtiny,SVG))
 $(eval $(call pkg_config_find_and_add_enabled,ROSPRITE,librosprite,Sprite))
 
-# add top level and build directory to include search path
-CFLAGS += -I. -Iinclude -Ifrontends -I$(OBJROOT)
-CXXFLAGS += -I. -Iinclude -Ifrontends -I$(OBJROOT)
+# List of directories in which headers are searched for
+INCLUDE_DIRS :=. include $(OBJROOT)
 
 # export the user agent format
 CFLAGS += -DNETSURF_UA_FORMAT_STRING=\"$(NETSURF_UA_FORMAT_STRING)\"
@@ -604,6 +603,9 @@ include javascript/Makefile
 S_COMMON := $(S_CONTENT) $(S_FETCHERS) $(S_CSS)	$(S_RENDER) $(S_UTILS) \
 	$(S_HTTP) $(S_DESKTOP) $(S_JAVASCRIPT)
 
+
+# Include directory flags
+IFLAGS = $(addprefix -I,$(INCLUDE_DIRS))
 
 # ----------------------------------------------------------------------------
 # Message targets
@@ -735,12 +737,12 @@ define compile_target_c
 $$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
 	$$(VQ)echo "     DEP: $(1)"
 	$$(Q)$$(RM) $$(DEPROOT)/$(3)
-	$$(Q)$$(CC) $$(CFLAGS) -MM  \
+	$$(Q)$$(CC) $$(IFLAGS) $$(CFLAGS) -MM  \
 		    $(1) | sed 's,^.*:,$$(DEPROOT)/$(3) $$(OBJROOT)/$(2):,' \
 		    > $$(DEPROOT)/$(3)
 	$$(VQ)echo " COMPILE: $(1)"
 	$$(Q)$$(RM) $$(OBJROOT)/$(2)
-	$$(Q)$$(CC) $$(COMMON_WARNFLAGS) $$(CWARNFLAGS) $$(CFLAGS) $(CFLAGS_ENV) -o $$(OBJROOT)/$(2) -c $(1)
+	$$(Q)$$(CC) $$(COMMON_WARNFLAGS) $$(CWARNFLAGS) $$(IFLAGS) $$(CFLAGS) $(CFLAGS_ENV) -o $$(OBJROOT)/$(2) -c $(1)
 
 endef
 else
@@ -749,7 +751,7 @@ $$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
 	$$(VQ)echo " COMPILE: $(1)"
 	$$(Q)$$(RM) $$(DEPROOT)/$(3)
 	$$(Q)$$(RM) $$(OBJROOT)/$(2)
-	$$(Q)$$(CC) $$(COMMON_WARNFLAGS) $$(CWARNFLAGS) $$(CFLAGS) $(CFLAGS_ENV) \
+	$$(Q)$$(CC) $$(COMMON_WARNFLAGS) $$(CWARNFLAGS) $$(IFLAGS) $$(CFLAGS) $(CFLAGS_ENV) \
 		    -MMD -MT '$$(DEPROOT)/$(3) $$(OBJROOT)/$(2)' \
 		    -MF $$(DEPROOT)/$(3) -o $$(OBJROOT)/$(2) -c $(1)
 
@@ -760,12 +762,12 @@ define compile_target_cpp
 $$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
 	$$(VQ)echo "     DEP: $(1)"
 	$$(Q)$$(RM) $$(DEPROOT)/$(3)
-	$$(Q)$$(CC) $$(CFLAGS) $$(COMMON_WARNFLAGS) $$(CXXWARNFLAGS) -MM  \
+	$$(Q)$$(CC) $$(IFLAGS) $$(CXXFLAGS) $$(COMMON_WARNFLAGS) $$(CXXWARNFLAGS) -MM  \
 		    $(1) | sed 's,^.*:,$$(DEPROOT)/$(3) $$(OBJROOT)/$(2):,' \
 		    > $$(DEPROOT)/$(3)
 	$$(VQ)echo " COMPILE: $(1)"
 	$$(Q)$$(RM) $$(OBJROOT)/$(2)
-	$$(Q)$$(CXX) $$(COMMON_WARNFLAGS) $$(CXXWARNFLAGS) $$(CXXFLAGS) $(CXXFLAGS_ENV) -o $$(OBJROOT)/$(2) -c $(1)
+	$$(Q)$$(CXX) $$(COMMON_WARNFLAGS) $$(CXXWARNFLAGS) $$(IFLAGS) $$(CXXFLAGS) $(CXXFLAGS_ENV) -o $$(OBJROOT)/$(2) -c $(1)
 
 endef
 

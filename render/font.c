@@ -23,7 +23,7 @@
  */
 
 #include "utils/nsoption.h"
-#include "content/handlers/css/utils.h"
+#include "css/utils.h"
 
 #include "render/font.h"
 

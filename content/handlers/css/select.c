@@ -20,15 +20,15 @@
 #include <string.h>
 #include <strings.h>
 
-#include "content/urldb.h"
-#include "desktop/system_colour.h"
 #include "utils/nsoption.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"
+#include "content/urldb.h"
+#include "desktop/system_colour.h"
 
-#include "internal.h"
-#include "hints.h"
-#include "select.h"
+#include "css/internal.h"
+#include "css/hints.h"
+#include "css/select.h"
 
 static css_error node_name(void *pw, void *node, css_qname *qname);
 static css_error node_classes(void *pw, void *node,

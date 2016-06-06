@@ -42,7 +42,7 @@
 #include "utils/utils.h"
 #include "content/fetch.h"
 #include "content/hlcache.h"
-#include "content/handlers/css/utils.h"
+#include "css/utils.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
 #include "desktop/knockout.h"

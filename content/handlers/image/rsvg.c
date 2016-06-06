@@ -48,7 +48,7 @@
 #include "content/content_protected.h"
 #include "desktop/gui_internal.h"
 
-#include "rsvg.h"
+#include "image/rsvg.h"
 
 typedef struct rsvg_content {
 	struct content base;

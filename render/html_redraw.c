@@ -46,7 +46,7 @@
 #include "netsurf/bitmap.h"
 #include "netsurf/layout.h"
 #include "content/content_protected.h"
-#include "content/handlers/css/utils.h"
+#include "css/utils.h"
 #include "desktop/selection.h"
 #include "desktop/print.h"
 #include "desktop/scrollbar.h"

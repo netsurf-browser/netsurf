@@ -35,7 +35,7 @@
 #include "content/content_protected.h"
 #include "desktop/gui_internal.h"
 
-#include "image_cache.h"
+#include "image/image_cache.h"
 
 #define JPEG_INTERNAL_OPTIONS
 #include "jpeglib.h"

@@ -30,8 +30,8 @@
 #include "content/content_protected.h"
 #include "desktop/gui_internal.h"
 
-#include "image_cache.h"
-#include "png.h"
+#include "image/image_cache.h"
+#include "image/png.h"
 
 /* accommodate for old versions of libpng (beware security holes!) */
 

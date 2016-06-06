@@ -33,7 +33,7 @@
 #include "netsurf/content.h"
 #include "content/content_protected.h"
 
-#include "svg.h"
+#include "image/svg.h"
 
 typedef struct svg_content {
 	struct content base;

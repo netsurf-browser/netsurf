@@ -36,8 +36,8 @@
 #include "netsurf/misc.h"
 #include "netsurf/content.h"
 #include "netsurf/mouse.h"
-#include "content/handlers/css/utils.h"
-#include "content/handlers/css/dump.h"
+#include "css/utils.h"
+#include "css/dump.h"
 #include "desktop/scrollbar.h"
 #include "desktop/gui_internal.h"
 

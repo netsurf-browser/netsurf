@@ -35,7 +35,7 @@
 #include "netsurf/content.h"
 #include "netsurf/misc.h"
 #include "content/hlcache.h"
-#include "content/handlers/css/utils.h"
+#include "css/utils.h"
 #include "desktop/scrollbar.h"
 #include "desktop/gui_internal.h"
 

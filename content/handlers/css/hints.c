@@ -25,8 +25,8 @@
 #include "utils/nsurl.h"
 #include "utils/utils.h"
 
-#include "hints.h"
-#include "select.h"
+#include "css/hints.h"
+#include "css/select.h"
 
 #define LOG_STATS
 #undef LOG_STATS

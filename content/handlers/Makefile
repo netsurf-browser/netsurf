@@ -7,3 +7,5 @@ S_IMAGE := $(addprefix content/handlers/image/,$(S_IMAGE))
 include content/handlers/css/Makefile
 
 S_CSS := $(addprefix content/handlers/css/,$(S_CSS))
+
+INCLUDE_DIRS += content/handlers

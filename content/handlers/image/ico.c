@@ -33,8 +33,8 @@
 #include "content/content_protected.h"
 #include "desktop/gui_internal.h"
 
-#include "image.h"
-#include "ico.h"
+#include "image/image.h"
+#include "image/ico.h"
 
 typedef struct nsico_content {
 	struct content base;

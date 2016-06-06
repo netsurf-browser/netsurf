@@ -46,8 +46,8 @@
 #include "content/content_protected.h"
 #include "desktop/gui_internal.h"
 
-#include "image.h"
-#include "gif.h"
+#include "image/image.h"
+#include "image/gif.h"
 
 typedef struct nsgif_content {
 	struct content base;
