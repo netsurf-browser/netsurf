@@ -37,7 +37,7 @@ struct fetch_multipart_data;
 typedef struct llcache_handle llcache_handle;
 
 /** POST data object for low-level cache requests */
-typedef struct {
+typedef struct llcache_post_data {
 	enum {
 		LLCACHE_POST_URL_ENCODED,
 		LLCACHE_POST_MULTIPART

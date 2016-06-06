@@ -22,7 +22,6 @@
 #include "utils/nsoption.h"
 #include "utils/messages.h"
 #include "netsurf/browser_window.h"
-#include "content/content.h"
 #include "desktop/search.h"
 
 #include "gtk/compat.h"

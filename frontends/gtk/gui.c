@@ -39,7 +39,6 @@
 #include "utils/file.h"
 #include "utils/nsoption.h"
 #include "content/fetchers.h"
-#include "content/hlcache.h"
 #include "content/urldb.h"
 #include "content/backing_store.h"
 #include "netsurf/browser_window.h"

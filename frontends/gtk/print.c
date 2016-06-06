@@ -33,8 +33,6 @@
 
 #include "utils/log.h"
 #include "utils/utils.h"
-#include "content/content.h"
-#include "content/hlcache.h"
 #include "utils/nsoption.h"
 #include "netsurf/plotters.h"
 #include "desktop/print.h"
@@ -48,7 +46,7 @@
 /* Globals */
 cairo_t *gtk_print_current_cr;
 static struct print_settings* settings;
-hlcache_handle *content_to_print;
+struct hlcache_handle *content_to_print;
 static GdkRectangle cliprect;
 
 static inline void nsgtk_print_set_colour(colour c)

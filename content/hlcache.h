@@ -39,7 +39,7 @@ typedef struct hlcache_child_context {
 } hlcache_child_context;
 
 /** High-level cache event */
-typedef struct {
+typedef struct hlcache_event {
 	content_msg type;		/**< Event type */
 	union content_msg_data data;	/**< Event data */
 } hlcache_event;

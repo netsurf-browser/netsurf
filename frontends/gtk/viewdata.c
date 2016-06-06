@@ -40,10 +40,8 @@
 #include "utils/utils.h"
 #include "utils/file.h"
 #include "utils/filepath.h"
-
+#include "utils/nsurl.h"
 #include "netsurf/browser_window.h"
-#include "content/hlcache.h"
-#include "content/content.h"
 
 #include "gtk/warn.h"
 #include "gtk/about.h"
