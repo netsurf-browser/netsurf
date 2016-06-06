@@ -39,6 +39,7 @@
 extern "C" {
 #include "utils/log.h"
 #include "netsurf/plotters.h"
+#include "netsurf/content_type.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/bitmap.h"
 #include "netsurf/content.h"
