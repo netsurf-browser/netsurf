@@ -21,10 +21,12 @@
 #import "cocoa/apple_image.h"
 
 #include "utils/config.h"
-#include "content/content_protected.h"
+#include "utils/utils.h"
 #include "netsurf/bitmap.h"
 #include "netsurf/plotters.h"
-#include "utils/utils.h"
+#include "netsurf/content.h"
+#include "content/llcache.h"
+#include "content/content_protected.h"
 
 #import "cocoa/schedule.h"
 #import "cocoa/bitmap.h"
