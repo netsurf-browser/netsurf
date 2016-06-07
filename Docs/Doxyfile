@@ -679,8 +679,8 @@ INPUT                  = frontends/amiga \
                          content/fetchers \
                          content/handlers/image \
                          content/handlers/css \
-                         javascript \
-                         javascript/jsapi \
+                         content/handlers/javascript \
+                         content/handlers/javascript/duktape \
                          utils \
                          utils/http \
 			 Docs/UnimplementedJavascript.txt

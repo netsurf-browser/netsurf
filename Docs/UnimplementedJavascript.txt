@@ -630,7 +630,6 @@ getter HTMLElement::onerror(user);\n
 setter HTMLElement::onerror(user);\n
 getter HTMLElement::spellcheck(boolean);\n
 setter HTMLElement::spellcheck(boolean);\n
-getter HTMLElement::style(user);\n
 getter HTMLElement::tabIndex(long);\n
 setter HTMLElement::tabIndex(long);\n
 getter HTMLElement::translate(boolean);\n

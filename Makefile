@@ -596,16 +596,10 @@ include utils/http/Makefile
 # Desktop sources
 include desktop/Makefile
 
-# Javascript source
-include javascript/Makefile
-
 # S_COMMON are sources common to all builds
-S_COMMON := $(S_CONTENT) $(S_FETCHERS) $(S_CSS)	$(S_RENDER) $(S_UTILS) \
-	$(S_HTTP) $(S_DESKTOP) $(S_JAVASCRIPT)
+S_COMMON := $(S_CONTENT) $(S_FETCHERS) $(S_RENDER) $(S_UTILS) $(S_HTTP) \
+	$(S_DESKTOP) $(S_JAVASCRIPT_BINDING)
 
-
-# Include directory flags
-IFLAGS = $(addprefix -I,$(INCLUDE_DIRS))
 
 # ----------------------------------------------------------------------------
 # Message targets
@@ -630,7 +624,7 @@ MESSAGES += $$(MESSAGES_TARGET)/$(1)/Messages
 
 endef
 
-# geenrate the message file rules
+# generate the message file rules
 $(eval $(foreach LANG,$(MESSAGES_LANGUAGES), \
 	$(call split_messages,$(LANG))))
 
@@ -652,6 +646,9 @@ $(error Unable to build NetSurf, could not determine set of sources to build)
 endif
 
 OBJECTS := $(sort $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(patsubst %.m,%.o,$(patsubst %.s,%.o,$(SOURCES))))))))
+
+# Include directory flags
+IFLAGS = $(addprefix -I,$(INCLUDE_DIRS))
 
 $(EXETARGET): $(OBJECTS) $(RESOURCES) $(MESSAGES)
 	$(VQ)echo "    LINK: $(EXETARGET)"
