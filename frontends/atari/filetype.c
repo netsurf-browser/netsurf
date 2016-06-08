@@ -24,7 +24,6 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/log.h"
-#include "content/fetch.h"
 
 #include "atari/filetype.h"
 

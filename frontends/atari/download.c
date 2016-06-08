@@ -24,14 +24,13 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdbool.h>
+#include <time.h>
 
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"
 #include "utils/string.h"
-#include "content/urldb.h"
-#include "content/fetch.h"
 #include "desktop/save_complete.h"
 #include "desktop/textinput.h"
 #include "desktop/download.h"

@@ -36,7 +36,6 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/file.h"
-#include "content/fetch.h"
 
 #include "atari/gui.h"
 #include "atari/toolbar.h"

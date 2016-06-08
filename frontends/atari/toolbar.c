@@ -40,7 +40,6 @@
 #include "desktop/hotlist.h"
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
-#include "content/hlcache.h"
 
 #include "atari/clipboard.h"
 #include "atari/gui.h"
@@ -72,7 +71,7 @@ struct s_toolbar;
 struct s_tb_button {
 	short rsc_id;
 	void (*cb_click)(struct s_toolbar *tb);
-	hlcache_handle *icon[TOOLBAR_BUTTON_NUM_STATES];
+	struct hlcache_handle *icon[TOOLBAR_BUTTON_NUM_STATES];
 	struct s_toolbar *owner;
 	enum e_toolbar_button_states state;
 	short index;

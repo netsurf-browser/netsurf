@@ -27,10 +27,6 @@
 #include "utils/utils.h"
 #include "utils/messages.h"
 #include "utils/log.h"
-#include "content/content.h"
-#include "content/hlcache.h"
-#include "content/urldb.h"
-#include "content/fetch.h"
 
 #include "atari/gui.h"
 #include "atari/misc.h"

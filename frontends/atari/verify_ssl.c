@@ -27,8 +27,7 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "content/urldb.h"
-#include "content/fetch.h"
+
 #include "atari/res/netsurf.rsh"
 #include "atari/verify_ssl.h"
 

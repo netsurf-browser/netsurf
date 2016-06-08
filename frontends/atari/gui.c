@@ -39,7 +39,6 @@
 #include "netsurf/content.h"
 #include "content/urldb.h"
 #include "content/backing_store.h"
-#include "content/hlcache.h"
 #include "desktop/treeview.h"
 
 #include "atari/gemtk/gemtk.h"
@@ -663,7 +662,7 @@ gui_window_remove_caret(struct gui_window *w)
  * \param icon handle to object to use as icon.
  */
 static void
-gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
+gui_window_set_icon(struct gui_window *g, struct hlcache_handle *icon)
 {
     struct bitmap *bmp_icon;
 

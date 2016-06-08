@@ -25,6 +25,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <libwapcaplet/libwapcaplet.h>
 
 #include "netsurf/mouse.h"
 #include "desktop/core_window.h"

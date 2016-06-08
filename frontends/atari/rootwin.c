@@ -37,13 +37,11 @@
 #include <mt_gem.h>
 
 #include "utils/log.h"
+#include "utils/nsurl.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
 #include "netsurf/plotters.h"
 #include "desktop/textinput.h"
-#include "content/content.h"
-#include "content/hlcache.h"
-#include "content/urldb.h"
 
 #include "atari/res/netsurf.rsh"
 #include "atari/gemtk/gemtk.h"
