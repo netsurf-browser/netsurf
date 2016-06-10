@@ -17,8 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Global history (implementation).
+/**
+ * \file
+ * Global history implementation for RISC OS.
  */
 
 #include <assert.h>
@@ -30,7 +31,6 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 
-#include "content/urldb.h"
 #include "utils/nsoption.h"
 #include "utils/messages.h"
 #include "utils/log.h"

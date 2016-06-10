@@ -56,7 +56,6 @@
 #include "netsurf/plotters.h"
 #include "netsurf/window.h"
 #include "netsurf/bitmap.h"
-#include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/browser_history.h"
 #include "desktop/cookie_manager.h"
@@ -120,10 +119,10 @@ static void ro_gui_window_scroll_action(struct gui_window *g,
 static void ro_gui_window_toolbar_click(void *data,
 		toolbar_action_type action_type, union toolbar_action action);
 
-static bool ro_gui_window_content_export_types(hlcache_handle *h,
+static bool ro_gui_window_content_export_types(struct hlcache_handle *h,
 		bool *export_draw, bool *export_sprite);
 static void ro_gui_window_prepare_pageinfo(struct gui_window *g);
-static void ro_gui_window_prepare_objectinfo(hlcache_handle *object,
+static void ro_gui_window_prepare_objectinfo(struct hlcache_handle *object,
 		nsurl *target_url);
 
 static void ro_gui_window_launch_url(struct gui_window *g, const char *url);
@@ -186,9 +185,9 @@ static wimp_menu		*ro_gui_browser_window_menu = NULL;
 /** Menu of options for form select controls. */
 static wimp_menu		*gui_form_select_menu = NULL;
 /** Main content object under menu, or 0 if none. */
-static hlcache_handle		*current_menu_main = 0;
+static struct hlcache_handle		*current_menu_main = 0;
 /** Object under menu, or 0 if no object. */
-static hlcache_handle		*current_menu_object = 0;
+static struct hlcache_handle		*current_menu_object = 0;
 /** URL of link under menu, or 0 if no link. */
 static nsurl			*current_menu_url = 0;
 
@@ -1094,7 +1093,7 @@ static void gui_window_stop_throbber(struct gui_window *g)
  * set favicon
  */
 
-static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
+static void gui_window_set_icon(struct gui_window *g, struct hlcache_handle *icon)
 {
 	if (g == NULL || g->toolbar == NULL)
 		return;
@@ -2388,7 +2387,7 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 		wimp_selection *selection, menu_action action)
 {
 	struct gui_window	*g;
-	hlcache_handle		*h;
+	struct hlcache_handle		*h;
 	struct toolbar		*toolbar;
 	bool			export;
 
@@ -2594,7 +2593,7 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 {
 	struct gui_window	*g;
 	struct browser_window	*bw;
-	hlcache_handle		*h;
+	struct hlcache_handle		*h;
 	struct toolbar		*toolbar;
 	wimp_window_state	state;
 	nsurl *url;
@@ -3356,7 +3355,7 @@ void ro_gui_window_iconise(struct gui_window *g,
 	struct bitmap *bitmap;
 	osspriteop_area *area;
 	int width = 34, height = 34;
-	hlcache_handle *h;
+	struct hlcache_handle *h;
 	os_error *error;
 	int len, id;
 
@@ -3727,7 +3726,7 @@ bool ro_gui_window_check_menu(wimp_menu *menu)
  * \return true if valid data is returned; else false.
  */
 
-bool ro_gui_window_content_export_types(hlcache_handle *h,
+bool ro_gui_window_content_export_types(struct hlcache_handle *h,
 		bool *export_draw, bool *export_sprite)
 {
 	bool	found_type = false;
@@ -3768,7 +3767,7 @@ bool ro_gui_window_content_export_types(hlcache_handle *h,
 
 void ro_gui_window_prepare_pageinfo(struct gui_window *g)
 {
-	hlcache_handle *h = browser_window_get_content(g->bw);
+	struct hlcache_handle *h = browser_window_get_content(g->bw);
 	char icon_buf[20] = "file_xxx";
 	char enc_buf[40];
 	const char *icon = icon_buf;
@@ -3823,7 +3822,7 @@ void ro_gui_window_prepare_pageinfo(struct gui_window *g)
  * \param *target_url	corresponding url, if any
  */
 
-void ro_gui_window_prepare_objectinfo(hlcache_handle *object, nsurl *target_url)
+void ro_gui_window_prepare_objectinfo(struct hlcache_handle *object, nsurl *target_url)
 {
 	char icon_buf[20] = "file_xxx";
 	const char *url;
@@ -3974,7 +3973,7 @@ void ro_gui_window_action_local_history(struct gui_window *g)
 
 void ro_gui_window_action_save(struct gui_window *g, gui_save_type save_type)
 {
-	hlcache_handle *h;
+	struct hlcache_handle *h;
 
 	if (g == NULL || g->bw == NULL || !browser_window_has_content(g->bw))
 		return;

@@ -27,6 +27,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 #include "oslib/os.h"
 #include "oslib/osbyte.h"
 #include "oslib/osgbpb.h"
@@ -36,9 +37,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utf8.h"
-#include "content/content.h"
-#include "content/hlcache.h"
-#include "content/urldb.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/textinput.h"
 

@@ -39,13 +39,13 @@
 #include "riscos/wimp_event.h"
 
 
-static hlcache_handle *theme_install_content = NULL;
+static struct hlcache_handle *theme_install_content = NULL;
 static struct theme_descriptor theme_install_descriptor;
 wimp_w dialog_theme_install;
 
 
 static void theme_install_close(wimp_w w);
-static nserror theme_install_callback(hlcache_handle *handle,
+static nserror theme_install_callback(struct hlcache_handle *handle,
 		const hlcache_event *event, void *pw);
 static bool theme_install_read(const char *source_data, 
 		unsigned long source_size);
@@ -55,7 +55,7 @@ static bool theme_install_read(const char *source_data,
  * Handle a CONTENT_THEME that has started loading.
  */
 
-void theme_install_start(hlcache_handle *c)
+void theme_install_start(struct hlcache_handle *c)
 {
 	assert(c != NULL);
 	assert(content_get_type(c) == CONTENT_THEME);
@@ -83,7 +83,7 @@ void theme_install_start(hlcache_handle *c)
  * Callback for fetchcache() for theme install fetches.
  */
 
-nserror theme_install_callback(hlcache_handle *handle,
+nserror theme_install_callback(struct hlcache_handle *handle,
 		const hlcache_event *event, void *pw)
 {
 	switch (event->type) {

@@ -17,8 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Hotlist (implementation).
+/**
+ * \file
+ * Hotlist implementation for RISC OS.
  */
 
 #include <ctype.h>
@@ -27,15 +28,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "oslib/osfile.h"
-#include "oslib/osmodule.h"
-#include "oslib/wimp.h"
+#include <oslib/osfile.h>
+#include <oslib/osmodule.h>
+#include <oslib/wimp.h>
 
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
-#include "content/content.h"
-#include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/hotlist.h"
 #include "desktop/tree.h"

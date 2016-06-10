@@ -20,6 +20,9 @@
 /**
  * \file
  * RISC OS URL bar implementation.
+ *
+ * The treeview resources are retrived from resource url necessitating
+ * the use of the hlcache content interface.
  */
 
 #include <alloca.h>
@@ -36,6 +39,7 @@
 #include "utils/messages.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "utils/nsurl.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/plotters.h"
 #include "netsurf/content.h"
@@ -104,28 +108,31 @@ static char suggest_icon[] = "gright";
 static char suggest_validation[] = "R5;Sgright,pgright";
 static char null_text_string[] = "";
 
+/** Treeview content resource data */
 struct url_bar_resource {
 	const char *url;
 	struct hlcache_handle *c;
 	int height;
 	bool ready;
-}; /**< Treeview content resource data */
+};
+
 enum url_bar_resource_id {
 	URLBAR_RES_HOTLIST_ADD = 0,
 	URLBAR_RES_HOTLIST_REMOVE,
 	URLBAR_RES_LAST
 };
+
+/** Treeview content resources */
 static struct url_bar_resource url_bar_res[URLBAR_RES_LAST] = {
 	{ "resource:icons/hotlist-add.png", NULL, 0, false },
 	{ "resource:icons/hotlist-rmv.png", NULL, 0, false }
-}; /**< Treeview content resources */
+};
 
 
 static void ro_gui_url_bar_set_hotlist(struct url_bar *url_bar, bool set);
 
 
 /* This is an exported interface documented in url_bar.h */
-
 struct url_bar *ro_gui_url_bar_create(struct theme_descriptor *theme)
 {
 	struct url_bar		*url_bar;
@@ -1233,8 +1240,8 @@ bool ro_gui_url_bar_set_site_favicon(struct url_bar *url_bar,
 bool ro_gui_url_bar_set_content_favicon(struct url_bar *url_bar,
 		struct gui_window *g)
 {
-	int	type = 0;
-	char	sprite[URLBAR_FAVICON_NAME_LENGTH];
+	int type = 0;
+	char sprite[URLBAR_FAVICON_NAME_LENGTH];
 	struct hlcache_handle *h;
 
 	if (url_bar == NULL || g == NULL)

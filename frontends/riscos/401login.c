@@ -25,8 +25,7 @@
 
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "content/content.h"
-#include "content/hlcache.h"
+#include "utils/nsurl.h"
 #include "content/urldb.h"
 
 #include "riscos/gui.h"

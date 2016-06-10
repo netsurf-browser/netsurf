@@ -33,7 +33,6 @@
 #include "utils/nsoption.h"
 #include "utils/messages.h"
 #include "utils/log.h"
-#include "content/urldb.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/tree.h"
 #include "desktop/textinput.h"

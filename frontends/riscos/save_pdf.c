@@ -25,14 +25,14 @@
 
 #include <stdbool.h>
 #include "oslib/osfile.h"
-#include "content/content.h"
-#include "content/hlcache.h"
+
+#include "utils/log.h"
+#include "utils/config.h"
 #include "desktop/print.h"
 #include "desktop/save_pdf/font_haru.h"
 #include "desktop/save_pdf/pdf_plotters.h"
+
 #include "riscos/save_pdf.h"
-#include "utils/log.h"
-#include "utils/config.h"
 
 /**
  * Export a content as a PDF file.

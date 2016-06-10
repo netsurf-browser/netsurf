@@ -30,10 +30,6 @@
 #include "oslib/wimp.h"
 
 #include "utils/log.h"
-#include "content/content.h"
-#include "content/hlcache.h"
-#include "content/fetch.h"
-#include "content/urldb.h"
 #include "desktop/sslcert_viewer.h"
 #include "desktop/tree.h"
 
