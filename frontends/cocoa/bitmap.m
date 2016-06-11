@@ -27,7 +27,6 @@
 #import "netsurf/plotters.h"
 #import "netsurf/bitmap.h"
 #import "netsurf/content.h"
-#import "content/urldb.h"
 
 #import "cocoa/plotter.h"
 #import "cocoa/bitmap.h"

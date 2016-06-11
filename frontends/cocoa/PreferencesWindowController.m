@@ -17,9 +17,8 @@
  */
 
 #import "utils/nsoption.h"
+#import "utils/nsurl.h"
 #import "netsurf/browser_window.h"
-#import "content/content.h"
-#import "content/hlcache.h"
 
 #import "cocoa/PreferencesWindowController.h"
 #import "cocoa/NetsurfApp.h"

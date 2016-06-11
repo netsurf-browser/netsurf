@@ -21,15 +21,13 @@
 #import "utils/nsoption.h"
 #import "utils/utils.h"
 #import "utils/log.h"
+#import "utils/nsurl.h"
 #import "netsurf/mouse.h"
 #import "netsurf/window.h"
 #import "netsurf/misc.h"
 #import "netsurf/browser_window.h"
+#import "netsurf/content.h"
 #import "desktop/textinput.h"
-#import "content/handlers/image/ico.h"
-#import "content/fetchers/resource.h"
-#import "content/hlcache.h"
-#import "content/content.h"
 
 #import "cocoa/gui.h"
 #import "cocoa/plotter.h"
@@ -227,7 +225,7 @@ static void gui_window_stop_throbber(struct gui_window *g)
 	[(BrowserViewController *)g updateBackForward];
 }
 
-static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
+static void gui_window_set_icon(struct gui_window *g, struct hlcache_handle *icon)
 {
 	NSBitmapImageRep *bmp = NULL;
 	NSImage *image = nil;

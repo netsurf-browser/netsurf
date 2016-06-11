@@ -31,15 +31,14 @@
 #import "utils/log.h"
 #import "utils/messages.h"
 #import "utils/utils.h"
-#import "content/urldb.h"
 #import "utils/nsoption.h"
 #import "netsurf/plotters.h"
+#import "netsurf/mouse.h"
+#import "netsurf/netsurf.h"
+#import "content/urldb.h"
 #import "desktop/save_complete.h"
 #import "desktop/textinput.h"
 #import "desktop/tree.h"
-#import "render/html.h"
-#import "netsurf/mouse.h"
-#import "netsurf/netsurf.h"
 
 #ifndef NETSURF_HOMEPAGE
 #define NETSURF_HOMEPAGE "http://www.netsurf-browser.org/welcome/"

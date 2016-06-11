@@ -18,10 +18,11 @@
 
 #import "utils/nsoption.h"
 #import "utils/messages.h"
+#import "utils/nsurl.h"
 #import "netsurf/browser_window.h"
 #import "netsurf/plotters.h"
+#import "netsurf/content.h"
 #import "desktop/textinput.h"
-#import "content/hlcache.h"
 
 #import "cocoa/gui.h"
 #import "cocoa/BrowserView.h"

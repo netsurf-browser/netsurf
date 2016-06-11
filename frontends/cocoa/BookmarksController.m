@@ -18,10 +18,10 @@
 
 #import "utils/messages.h"
 #import "utils/utils.h"
+#import "utils/nsurl.h"
 #import "netsurf/browser_window.h"
 #import "desktop/hotlist.h"
 #import "desktop/tree.h"
-#import "content/hlcache.h"
 
 #import "cocoa/BookmarksController.h"
 #import "cocoa/Tree.h"
