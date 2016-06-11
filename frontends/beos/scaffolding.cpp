@@ -51,26 +51,27 @@
 #endif
 
 #include <fs_attr.h>
+
 extern "C" {
-#include "content/content.h"
-#include "desktop/browser_history.h"
-#include "netsurf/browser_window.h"
-#include "netsurf/netsurf.h"
-#include "desktop/version.h"
-#include "desktop/searchweb.h"
-#include "desktop/search.h"
-#include "netsurf/plotters.h"
-#include "utils/nsoption.h"
-#include "desktop/textinput.h"
-#include "render/form.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/nsurl.h"
+#include "netsurf/netsurf.h"
+#include "netsurf/plotters.h"
 #include "netsurf/clipboard.h"
 #include "netsurf/content.h"
 #include "netsurf/content_type.h"
+#include "desktop/browser_history.h"
+#include "netsurf/browser_window.h"
+#include "desktop/version.h"
+#include "desktop/searchweb.h"
+#include "desktop/search.h"
+#include "utils/nsoption.h"
+#include "desktop/textinput.h"
+#include "render/form.h"
 }
+
 #include "beos/about.h"
 #include "beos/bitmap.h"
 #include "beos/gui.h"

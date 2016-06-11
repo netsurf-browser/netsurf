@@ -31,7 +31,6 @@
 #include <String.h>
 
 extern "C" {
-#include "content/fetch.h"
 #include "utils/log.h"
 #include "utils/hashtable.h"
 #include "utils/utils.h"
@@ -91,7 +90,7 @@ void beos_fetch_filetype_fin(void)
 
 const char *fetch_filetype(const char *unix_path)
 {
-	struct stat statbuf;
+	// struct stat statbuf;
 	status_t err;
 	int i;
 	// NOT THREADSAFE

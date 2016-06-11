@@ -30,26 +30,27 @@
 #include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/utsname.h>
-#include <curl/curl.h>		/* for URL unescaping functions */
+#include <image.h>
+#include <Resources.h>
+#include <String.h>
+#include <libwapcaplet/libwapcaplet.h>
+
 extern "C" {
 #include "utils/config.h"
-#include "content/fetch.h"
-#include "content/fetchers.h"
-#include "content/urldb.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
 #include "utils/base64.h"
+#include "content/fetch.h"
+#include "content/fetchers.h"
 }
+
 #include "beos/fetch_rsrc.h"
 #include "beos/filetype.h"
 #include "beos/gui.h"
 
-#include <image.h>
-#include <Resources.h>
-#include <String.h>
 
 struct fetch_rsrc_context {
 	struct fetch *parent_fetch;
@@ -151,10 +152,10 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 {
 	fetch_msg msg;
 	char *params;
-	char *at = NULL;
+	//char *at = NULL;
 	char *slash;
-	char *comma = NULL;
-	char *unescaped;
+	//char *comma = NULL;
+	//char *unescaped;
 	uint32 type = 'data'; // default for embeded files
 	int32 id = 0;
 	

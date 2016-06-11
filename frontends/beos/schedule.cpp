@@ -25,7 +25,7 @@
 extern "C" {
 #include "utils/errors.h"
 #include "beos/schedule.h"
-#include "content/content.h"
+#include "netsurf/content_type.h"
 #include "netsurf/browser_window.h"
 
 #ifdef DEBUG_BEOS_SCHEDULE

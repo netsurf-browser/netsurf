@@ -21,29 +21,6 @@
 #define __STDBOOL_H__	1
 #include <stdlib.h>
 #include <assert.h>
-
-extern "C" {
-#include "utils/nsoption.h"
-#include "utils/log.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
-#include "content/content.h"
-#include "content/urldb.h"
-#include "netsurf/browser_window.h"
-#include "netsurf/mouse.h"
-#include "desktop/textinput.h"
-#include "netsurf/plotters.h"
-#include "netsurf/window.h"
-#include "netsurf/clipboard.h"
-}
-
-#include "beos/about.h"
-#include "beos/window.h"
-#include "beos/font.h"
-#include "beos/gui.h"
-#include "beos/scaffolding.h"
-#include "beos/plotters.h"
-
 #include <AppDefs.h>
 #include <BeBuild.h>
 #include <Clipboard.h>
@@ -56,6 +33,29 @@ extern "C" {
 #include <TextView.h>
 #include <View.h>
 #include <Window.h>
+
+extern "C" {
+#include "utils/nsoption.h"
+#include "utils/log.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
+#include "netsurf/content_type.h"
+#include "netsurf/browser_window.h"
+#include "netsurf/mouse.h"
+#include "netsurf/plotters.h"
+#include "netsurf/window.h"
+#include "netsurf/clipboard.h"
+#include "content/urldb.h"
+#include "desktop/textinput.h"
+}
+
+#include "beos/about.h"
+#include "beos/window.h"
+#include "beos/font.h"
+#include "beos/gui.h"
+#include "beos/scaffolding.h"
+#include "beos/plotters.h"
+
 
 class NSBrowserFrameView;
 
@@ -680,7 +680,7 @@ void nsbeos_dispatch_event(BMessage *message)
 void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 {
 	BRect updateRect;
-	float scale = g->scale;
+	//float scale = g->scale;
 	struct rect clip;
 
 	struct redraw_context ctx = { true, true, &nsbeos_plotters };

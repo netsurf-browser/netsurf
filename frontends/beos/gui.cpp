@@ -61,12 +61,7 @@ extern "C" {
 #include "netsurf/netsurf.h"
 #include "netsurf/content.h"
 #include "netsurf/browser_window.h"
-#include "content/content.h"
-#include "content/content_protected.h"
-#include "content/fetch.h"
 #include "content/fetchers.h"
-#include "content/fetchers/resource.h"
-#include "content/hlcache.h"
 #include "content/urldb.h"
 
 }

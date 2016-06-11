@@ -26,40 +26,42 @@
 #include <TextControl.h>
 #include <View.h>
 #include <Window.h>
+
 extern "C" {
 #include "utils/log.h"
-#include "content/content.h"
-#include "content/urldb.h"
-#include "netsurf/browser_window.h"
 #include "utils/messages.h"
 #include "utils/url.h"
 #include "utils/utils.h"
+#include "utils/nsurl.h"
+#include "netsurf/content_type.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/clipboard.h"
 }
+
 #include "beos/gui.h"
 #include "beos/scaffolding.h"
 #include "beos/window.h"
 
 class LoginAlert : public BAlert {
 public:
-			LoginAlert(nserror (*callback)(bool proceed, void *pw),
-				void *callbaclpw,
-				nsurl *url,
-				const char *host,
-				const char *realm,
-				const char *text);
-	virtual	~LoginAlert();
-	void	MessageReceived(BMessage *message);
+        LoginAlert(nserror (*callback)(bool proceed, void *pw),
+                   void *callbaclpw,
+                   nsurl *url,
+                   const char *host,
+                   const char *realm,
+                   const char *text);
+        virtual ~LoginAlert();
+        void MessageReceived(BMessage *message);
 
 private:
-	nsurl*	 	fUrl;				/**< URL being fetched */
-	BString		fHost;				/**< Host for user display */
-	BString		fRealm;				/**< Authentication realm */
-	nserror		(*fCallback)(bool proceed, void *pw);
-	void		*fCallbackPw;
+        nsurl* fUrl;				/**< URL being fetched */
+        BString fHost;				/**< Host for user display */
+        BString fRealm;				/**< Authentication realm */
+        nserror (*fCallback)(bool proceed, void *pw);
+        void *fCallbackPw;
 
-	BTextControl	*fUserControl;
-	BTextControl	*fPassControl;
+        BTextControl *fUserControl;
+        BTextControl *fPassControl;
 };
 
 static void create_login_window(nsurl *host,

@@ -21,13 +21,13 @@
 #include <stdlib.h>
 #include <string.h>
 extern "C" {
-#include "netsurf/mouse.h"
 #include "utils/log.h"
-#include "desktop/cookie_manager.h"
+#include "netsurf/mouse.h"
 #include "netsurf/plotters.h"
+#include "content/urldb.h"
+#include "desktop/cookie_manager.h"
 #include "desktop/tree.h"
 #include "desktop/textinput.h"
-#include "content/urldb.h"
 }
 #include "beos/cookies.h"
 
