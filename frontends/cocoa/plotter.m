@@ -25,6 +25,7 @@
 #import "desktop/plot_style.h"
 
 #import "cocoa/font.h"
+#import "cocoa/coordinates.h"
 #import "cocoa/plotter.h"
 #import "cocoa/bitmap.h"
 

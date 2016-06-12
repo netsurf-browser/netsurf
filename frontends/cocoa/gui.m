@@ -30,6 +30,7 @@
 #import "desktop/textinput.h"
 
 #import "cocoa/gui.h"
+#import "cocoa/coordinates.h"
 #import "cocoa/plotter.h"
 #import "cocoa/BrowserView.h"
 #import "cocoa/BrowserViewController.h"

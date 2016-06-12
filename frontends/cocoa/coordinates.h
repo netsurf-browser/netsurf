@@ -19,9 +19,6 @@
 #ifndef COCOA_COORDINATES_H
 #define COCOA_COORDINATES_H
 
-#include "utils/utils.h"
-#import "netsurf/browser_window.h"
-
 extern CGFloat cocoa_scale_factor;
 
 static inline CGFloat cocoa_px_to_pt( int location ) __attribute__((always_inline,pure));

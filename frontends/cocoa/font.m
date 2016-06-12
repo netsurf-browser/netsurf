@@ -18,13 +18,13 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "cocoa/plotter.h"
-#import "cocoa/font.h"
-
 #import "utils/nsoption.h"
 #import "netsurf/layout.h"
 #import "netsurf/plotters.h"
 
+#import "cocoa/coordinates.h"
+#import "cocoa/plotter.h"
+#import "cocoa/font.h"
 
 static NSLayoutManager *cocoa_prepare_layout_manager( const char *string, size_t length, 
 													 const plot_font_style_t *style );

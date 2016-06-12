@@ -35,6 +35,7 @@
 #import "netsurf/plotters.h"
 #import "netsurf/mouse.h"
 #import "netsurf/netsurf.h"
+#import "netsurf/browser_window.h"
 #import "content/urldb.h"
 #import "desktop/save_complete.h"
 #import "desktop/textinput.h"
