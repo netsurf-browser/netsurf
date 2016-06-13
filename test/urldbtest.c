@@ -30,6 +30,7 @@
 #include <curl/curl.h>
 
 #include "utils/errors.h"
+#include "utils/nsurl.h"
 #include "netsurf/bitmap.h"
 #include "content/content.h"
 #include "content/urldb.h"
