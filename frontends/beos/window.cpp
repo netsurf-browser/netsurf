@@ -39,13 +39,14 @@ extern "C" {
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "utils/nsurl.h"
 #include "netsurf/content_type.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
 #include "netsurf/plotters.h"
 #include "netsurf/window.h"
 #include "netsurf/clipboard.h"
-#include "content/urldb.h"
+#include "netsurf/url_db.h"
 #include "desktop/textinput.h"
 }
 

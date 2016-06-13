@@ -31,6 +31,7 @@
 #include "utils/utf8.h"
 #include "utils/libdom.h"
 #include "utils/log.h"
+#include "utils/nsurl.h"
 #include "content/urldb.h"
 
 #include "netsurf/misc.h"

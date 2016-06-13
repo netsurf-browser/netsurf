@@ -26,9 +26,10 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
-#include "content/urldb.h"
-#include "desktop/searchweb.h"
+#include "utils/nsurl.h"
+#include "netsurf/url_db.h"
 #include "netsurf/browser_window.h"
+#include "desktop/searchweb.h"
 
 #include "gtk/warn.h"
 #include "gtk/scaffolding.h"

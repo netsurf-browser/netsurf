@@ -26,10 +26,11 @@
 
 #include "amiga/os3support.h"
 
-#include "urlhistory.h"
-
-#include "content/urldb.h"
 #include "utils/nsoption.h"
+#include "utils/nsurl.h"
+#include "netsurf/url_db.h"
+
+#include "urlhistory.h"
 
 static struct List PageList;
 

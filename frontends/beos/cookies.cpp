@@ -24,7 +24,7 @@ extern "C" {
 #include "utils/log.h"
 #include "netsurf/mouse.h"
 #include "netsurf/plotters.h"
-#include "content/urldb.h"
+#include "netsurf/cookie_db.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/tree.h"
 #include "desktop/textinput.h"

@@ -37,7 +37,8 @@
 #include "netsurf/misc.h"
 #include "netsurf/netsurf.h"
 #include "netsurf/content.h"
-#include "content/urldb.h"
+#include "netsurf/cookie_db.h"
+#include "netsurf/url_db.h"
 #include "content/backing_store.h"
 #include "desktop/treeview.h"
 

@@ -41,7 +41,7 @@
 #include "netsurf/window.h"
 #include "netsurf/misc.h"
 #include "netsurf/netsurf.h"
-#include "content/urldb.h"
+#include "netsurf/cookie_db.h"
 #include "content/fetch.h"
 
 #include "framebuffer/gui.h"

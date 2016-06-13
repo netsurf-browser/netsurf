@@ -23,7 +23,8 @@
 #include "utils/nsoption.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"
-#include "content/urldb.h"
+#include "utils/nsurl.h"
+#include "netsurf/url_db.h"
 #include "desktop/system_colour.h"
 
 #include "css/internal.h"

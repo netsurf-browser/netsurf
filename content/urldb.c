@@ -104,6 +104,7 @@
 #include "utils/utils.h"
 #include "utils/bloom.h"
 #include "utils/time.h"
+#include "utils/nsurl.h"
 #include "netsurf/bitmap.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/gui_internal.h"
@@ -112,6 +113,9 @@
 #include "content/urldb.h"
 
 struct cookie_internal_data {
+	struct cookie_internal_data *prev;	/**< Previous in list */
+	struct cookie_internal_data *next;	/**< Next in list */
+
 	char *name;		/**< Cookie name */
 	char *value;		/**< Cookie value */
 	bool value_was_quoted;	/**< Value was quoted in Set-Cookie: */
@@ -124,12 +128,10 @@ struct cookie_internal_data {
 	time_t last_used;	/**< Last used time */
 	bool secure;		/**< Only send for HTTPS requests */
 	bool http_only;		/**< Only expose to HTTP(S) requests */
-	cookie_version version;	/**< Specification compliance */
+	enum cookie_version version;	/**< Specification compliance */
 	bool no_destroy;	/**< Never destroy this cookie,
 				 * unless it's expired */
 
-	struct cookie_internal_data *prev;	/**< Previous in list */
-	struct cookie_internal_data *next;	/**< Next in list */
 };
 
 /* A protection space is defined as a tuple canonical_root_url and realm.

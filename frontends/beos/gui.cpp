@@ -54,6 +54,7 @@ extern "C" {
 #include "utils/corestrings.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "utils/nsurl.h"
 #include "netsurf/misc.h"
 #include "netsurf/clipboard.h"
 #include "netsurf/search.h"
@@ -61,8 +62,9 @@ extern "C" {
 #include "netsurf/netsurf.h"
 #include "netsurf/content.h"
 #include "netsurf/browser_window.h"
+#include "netsurf/cookie_db.h"
+#include "netsurf/url_db.h"
 #include "content/fetchers.h"
-#include "content/urldb.h"
 
 }
 

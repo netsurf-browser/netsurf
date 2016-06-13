@@ -19,12 +19,14 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/utf8.h"
 #include "utils/libdom.h"
 #include "utils/log.h"
+#include "utils/nsurl.h"
 #include "content/urldb.h"
 
 #include "desktop/global_history.h"

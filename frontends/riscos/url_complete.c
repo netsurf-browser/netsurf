@@ -30,7 +30,8 @@
 
 #include "utils/log.h"
 #include "utils/nsoption.h"
-#include "content/urldb.h"
+#include "utils/nsurl.h"
+#include "netsurf/url_db.h"
 #include "netsurf/browser_window.h"
 
 #include "riscos/global_history.h"

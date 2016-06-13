@@ -26,7 +26,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsurl.h"
-#include "content/urldb.h"
+#include "netsurf/url_db.h"
 
 #include "riscos/gui.h"
 #include "riscos/dialog.h"

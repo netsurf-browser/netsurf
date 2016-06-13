@@ -35,10 +35,11 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
-#include "content/urldb.h"
+#include "utils/nsurl.h"
+#include "netsurf/url_db.h"
+#include "netsurf/window.h"
 #include "desktop/hotlist.h"
 #include "desktop/tree.h"
-#include "netsurf/window.h"
 
 #include "riscos/gui.h"
 #include "riscos/dialog.h"

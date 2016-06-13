@@ -39,10 +39,10 @@
 #include <reaction/reaction_macros.h>
 
 #include "utils/messages.h"
-#include "utils/errors.h"
-#include "content/urldb.h"
+#include "utils/nsurl.h"
 #include "netsurf/mouse.h"
 #include "netsurf/window.h"
+#include "netsurf/url_db.h"
 
 #include "amiga/gui.h"
 #include "amiga/libs.h"

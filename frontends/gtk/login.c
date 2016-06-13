@@ -22,7 +22,7 @@
 
 #include "utils/log.h"
 #include "utils/nsurl.h"
-#include "content/urldb.h"
+#include "netsurf/url_db.h"
 
 #include "gtk/resources.h"
 #include "gtk/login.h"

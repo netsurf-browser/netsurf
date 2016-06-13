@@ -26,7 +26,8 @@
 #include <oslib/wimp.h>
 
 #include "utils/messages.h"
-#include "content/urldb.h"
+#include "utils/nsurl.h"
+#include "netsurf/url_db.h"
 
 #include "riscos/menus.h"
 #include "riscos/url_suggest.h"

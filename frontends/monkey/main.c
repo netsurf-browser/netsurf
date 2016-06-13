@@ -33,7 +33,8 @@
 #include "utils/nsurl.h"
 #include "netsurf/misc.h"
 #include "netsurf/netsurf.h"
-#include "content/urldb.h"
+#include "netsurf/url_db.h"
+#include "netsurf/cookie_db.h"
 #include "content/fetchers.h"
 
 #include "monkey/dispatch.h"

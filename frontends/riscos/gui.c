@@ -52,9 +52,10 @@
 #include "netsurf/content.h"
 #include "netsurf/netsurf.h"
 #include "netsurf/browser_window.h"
+#include "netsurf/cookie_db.h"
+#include "netsurf/url_db.h"
 #include "desktop/save_complete.h"
 #include "desktop/treeview.h"
-#include "content/urldb.h"
 #include "content/backing_store.h"
 
 #include "riscos/gui.h"

@@ -18,7 +18,8 @@
 
 #import "cocoa/URLFieldCell.h"
 
-#import "content/urldb.h"
+#import "utils/nsurl.h"
+#import "netsurf/url_db.h"
 
 @interface URLFieldCell ()
 
