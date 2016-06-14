@@ -41,9 +41,9 @@
 #include "netsurf/mouse.h"
 #include "netsurf/window.h"
 #include "netsurf/plotters.h"
+#include "netsurf/form.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
-#include "render/form.h"
 
 #include "gtk/window.h"
 #include "gtk/selection.h"

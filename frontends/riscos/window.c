@@ -58,11 +58,11 @@
 #include "netsurf/window.h"
 #include "netsurf/bitmap.h"
 #include "netsurf/url_db.h"
+#include "netsurf/form.h"
 #include "desktop/browser_history.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textinput.h"
-#include "render/form.h"
 
 #include "riscos/bitmap.h"
 #include "riscos/buffer.h"

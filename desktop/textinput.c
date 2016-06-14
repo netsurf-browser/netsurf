@@ -33,8 +33,8 @@
 #include "utils/talloc.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "netsurf/form.h"
 #include "render/box.h"
-#include "render/form.h"
 #include "render/html_internal.h"
 #include "render/layout.h"
 

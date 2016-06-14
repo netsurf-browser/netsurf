@@ -24,9 +24,9 @@
 #ifndef _NETSURF_RENDER_FORM_INTERNAL_H_
 #define _NETSURF_RENDER_FORM_INTERNAL_H_
 
-#include "render/form.h"
-
 #include <stdbool.h>
+
+#include "netsurf/form.h"
 
 struct box;
 struct form_control;

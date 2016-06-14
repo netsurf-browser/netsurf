@@ -46,12 +46,12 @@
 #include "netsurf/window.h"
 #include "netsurf/bitmap.h"
 #include "netsurf/content.h"
+#include "netsurf/form.h"
 #include "desktop/hotlist.h"
 #include "desktop/global_history.h"
 #include "desktop/version.h"
 #include "desktop/save_complete.h"
 #include "desktop/save_text.h"
-#include "render/form.h"
 
 #include "riscos/bitmap.h"
 #include "riscos/dialog.h"

@@ -1,7 +1,7 @@
 /*
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
- * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net> 
+ * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -18,12 +18,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Form handling functions (interface).
+/**
+ * \file
+ * Form handling public interface.
  */
 
-#ifndef _NETSURF_RENDER_FORM_H_
-#define _NETSURF_RENDER_FORM_H_
+#ifndef _NETSURF_FORM_H_
+#define _NETSURF_FORM_H_
 
 struct form_control;
 struct rect;

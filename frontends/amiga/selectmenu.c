@@ -28,7 +28,7 @@
 #include "utils/errors.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "render/form.h"
+#include "netsurf/form.h"
 #include "netsurf/mouse.h"
 
 #include "amiga/gui.h"

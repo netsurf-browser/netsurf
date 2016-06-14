@@ -1402,7 +1402,7 @@ static nserror form__select_process_selection(html_content *html,
 	return ret;
 }
 
-/* exported interface documented in render/form.h */
+/* exported interface documented in netsurf/form.h */
 nserror form_select_process_selection(struct form_control *control, int item)
 {
 	assert(control != NULL);
@@ -1410,7 +1410,7 @@ nserror form_select_process_selection(struct form_control *control, int item)
 	return form__select_process_selection(control->html, control, item);
 }
 
-/* exported interface documented in render/form.h */
+/* exported interface documented in netsurf/form.h */
 struct form_option *
 form_select_get_option(struct form_control *control, int item)
 {
@@ -1424,13 +1424,13 @@ form_select_get_option(struct form_control *control, int item)
 	return opt;
 }
 
-/* exported interface documented in render/form.h */
+/* exported interface documented in netsurf/form.h */
 char *form_control_get_name(struct form_control *control)
 {
 	return control->name;
 }
 
-/* exported interface documented in render/form.h */
+/* exported interface documented in netsurf/form.h */
 nserror form_control_bounding_rect(struct form_control *control, struct rect *r)
 {
 	box_bounds( control->box, r );
