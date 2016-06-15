@@ -352,7 +352,7 @@ static APTR ami_mime_guess_add_datatype(struct DataType *dt, lwc_string **lwc_mi
 {
 	struct nsObject *node;
 	char mimetype[100];
-	char *dt_name_lwr;
+	char *dt_name_lwr = NULL;
 	struct ami_mime_entry *mimeentry;
 	lwc_error lerror;
 	struct DataTypeHeader *dth = dt->dtn_Header;

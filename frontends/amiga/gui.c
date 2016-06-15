@@ -251,7 +251,7 @@ STRPTR ami_locale_langs(void)
 {
 	struct Locale *locale;
 	STRPTR acceptlangs = NULL;
-	char *remapped;
+	char *remapped = NULL;
 
 	if((locale = OpenLocale(NULL)))
 	{
