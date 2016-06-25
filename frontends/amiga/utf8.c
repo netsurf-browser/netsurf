@@ -19,9 +19,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <proto/exec.h>
-#include <proto/diskfont.h>
-#include <diskfont/diskfonttag.h>
 
 #include "utils/nsoption.h"
 #include "utils/utf8.h"
@@ -31,34 +28,12 @@
 
 nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 {
-	const char *encname = "ISO-8859-1";
-
-#ifdef __amigaos4__
-	LONG charset;
-
-	charset = GetDiskFontCtrl(DFCTRL_CHARSET);
-	encname = (const char *) ObtainCharsetInfo(DFCS_NUMBER, charset, DFCS_MIMENAME);
-#else
-	encname = nsoption_charp(local_charset);
-#endif
-	
-	return utf8_from_enc(string,encname,len,result,NULL);
+	return utf8_from_enc(string, nsoption_charp(local_charset), len, result, NULL);
 }
 
 nserror utf8_to_local_encoding(const char *string, size_t len, char **result)
 {
-	const char *encname = "ISO-8859-1";
-
-#ifdef __amigaos4__
-	LONG charset;
-
-	charset = GetDiskFontCtrl(DFCTRL_CHARSET);
-	encname = (const char *) ObtainCharsetInfo(DFCS_NUMBER, charset, DFCS_MIMENAME);
-#else
-	encname = nsoption_charp(local_charset);
-#endif
-
-	return utf8_to_enc(string,encname,len,result);
+	return utf8_to_enc(string, nsoption_charp(local_charset), len, result);
 }
 
 void ami_utf8_free(char *ptr)
@@ -70,12 +45,9 @@ char *ami_utf8_easy(const char *string)
 {
 	char *localtext;
 
-	if(utf8_to_local_encoding(string,strlen(string),&localtext) == NSERROR_OK)
-	{
+	if(utf8_to_local_encoding(string, strlen(string), &localtext) == NSERROR_OK) {
 		return localtext;
-	}
-	else
-	{
+	} else {
 		return strdup(string);
 	}
 }
@@ -84,12 +56,9 @@ char *ami_to_utf8_easy(const char *string)
 {
 	char *localtext;
 
-	if(utf8_from_local_encoding(string,strlen(string),&localtext) == NSERROR_OK)
-	{
+	if(utf8_from_local_encoding(string, strlen(string), &localtext) == NSERROR_OK) {
 		return localtext;
-	}
-	else
-	{
+	} else {
 		return strdup(string);
 	}
 }

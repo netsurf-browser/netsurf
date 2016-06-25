@@ -2140,7 +2140,7 @@ BOOL ami_gui_opts_event(void)
 						RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_CONTENTLANG],
 							gow->win, NULL, GA_Disabled, code, TAG_DONE);
 
-						if(code && (text = ami_locale_langs()))
+						if(code && (text = ami_locale_langs(NULL)))
 						{
 							RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_CONTENTLANG],
 								gow->win, NULL, STRINGA_TextVal, text, TAG_DONE);

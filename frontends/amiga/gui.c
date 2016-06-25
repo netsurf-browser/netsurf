@@ -28,6 +28,7 @@
 #endif
 #include <proto/asl.h>
 #include <proto/datatypes.h>
+#include <proto/diskfont.h>
 #include <proto/dos.h>
 #include <proto/exec.h>
 #include <proto/graphics.h>
@@ -44,6 +45,7 @@
 #include <graphics/gfxbase.h>
 #include <graphics/rpattr.h>
 #ifdef __amigaos4__
+#include <diskfont/diskfonttag.h>
 #include <graphics/blitattr.h>
 #include <intuition/gui.h>
 #include <libraries/application.h>
@@ -247,7 +249,7 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 
 
 
-STRPTR ami_locale_langs(void)
+STRPTR ami_locale_langs(int *codeset)
 {
 	struct Locale *locale;
 	STRPTR acceptlangs = NULL;
@@ -255,6 +257,8 @@ STRPTR ami_locale_langs(void)
 
 	if((locale = OpenLocale(NULL)))
 	{
+		if(codeset != NULL) *codeset = locale->loc_CodeSet;
+
 		for(int i = 0; i < 10; i++)
 		{
 			if(locale->loc_PrefLanguages[i])
@@ -562,6 +566,7 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 {
 	STRPTR tempacceptlangs;
 	char temp[1024];
+	int codeset = 0;
 
 	/* The following line disables the popupmenu.class select menu.
 	** It's not recommended to use it!
@@ -572,26 +577,31 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 	if(ClickTabBase->lib_Version < 53)
 		nsoption_set_bool(tab_always_show, true);
 
-	/* Some AmigaOS3 overrides */
-#ifndef __amigaos4__
-	nsoption_set_bool(download_notify, false);
-	nsoption_set_bool(font_antialiasing, false);
-	nsoption_set_bool(truecolour_mouse_pointers, false);
-	nsoption_set_bool(use_openurl_lib, true);
-	nsoption_set_bool(bitmap_fonts, true);
-#endif
-
 	if((!nsoption_charp(accept_language)) || 
 	   (nsoption_charp(accept_language)[0] == '\0') ||
 	   (nsoption_bool(accept_lang_locale) == true))
 	{
-		if((tempacceptlangs = ami_locale_langs()))
+		if((tempacceptlangs = ami_locale_langs(&codeset)))
 		{
 			nsoption_set_charp(accept_language,
 					   (char *)strdup(tempacceptlangs));
 			FreeVec(tempacceptlangs);
 		}
 	}
+
+	/* Some OS-specific overrides */
+#ifdef __amigaos4__
+	if(codeset == 0) codeset = 4; /* ISO-8859-1 */
+	const char *encname = (const char *)ObtainCharsetInfo(DFCS_NUMBER, codeset,
+							DFCS_MIMENAME);
+	nsoption_set_charp(local_charset, strdup(encname));
+#else
+	nsoption_set_bool(download_notify, false);
+	nsoption_set_bool(font_antialiasing, false);
+	nsoption_set_bool(truecolour_mouse_pointers, false);
+	nsoption_set_bool(use_openurl_lib, true);
+	nsoption_set_bool(bitmap_fonts, true);
+#endif
 
 	sprintf(temp, "%s/Cookies", current_user_dir);
 	nsoption_setnull_charp(cookie_file, 

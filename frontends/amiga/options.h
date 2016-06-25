@@ -87,9 +87,9 @@ NSOPTION_INTEGER(redraw_tile_size_y, 0)
 NSOPTION_INTEGER(monitor_aspect_x, 0)
 NSOPTION_INTEGER(monitor_aspect_y, 0)
 NSOPTION_BOOL(accept_lang_locale, true)
+NSOPTION_STRING(local_charset, "ISO-8859-1")
 /* Options relevant for OS3 only */
 #ifndef __amigaos4__
 NSOPTION_BOOL(friend_bitmap, false)
-NSOPTION_STRING(local_charset, "ISO-8859-1")
 #endif
 
