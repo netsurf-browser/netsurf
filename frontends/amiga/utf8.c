@@ -16,9 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "amiga/os3support.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+
+#include <proto/exec.h>
+#include <proto/utility.h>
 
 #include "utils/nsoption.h"
 #include "utils/utf8.h"
@@ -33,7 +38,13 @@ nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 
 nserror utf8_to_local_encoding(const char *string, size_t len, char **result)
 {
-	return utf8_to_enc(string, nsoption_charp(local_charset), len, result);
+	nserror err = NSERROR_NOMEM;
+	char *local_charset = ASPrintf("%s//IGNORE", nsoption_charp(local_charset));
+	if(local_charset) {
+		err = utf8_to_enc(string, local_charset, len, result);
+		FreeVec(local_charset);
+	}
+	return err;
 }
 
 void ami_utf8_free(char *ptr)
@@ -44,7 +55,6 @@ void ami_utf8_free(char *ptr)
 char *ami_utf8_easy(const char *string)
 {
 	char *localtext;
-
 	if(utf8_to_local_encoding(string, strlen(string), &localtext) == NSERROR_OK) {
 		return localtext;
 	} else {
