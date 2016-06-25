@@ -10,44 +10,20 @@ else
   CFLAGS += -msoft-float -m68020-60 -O2 -DPATH_MAX=1024 -D__m68k__
 endif
 
-NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
-NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
-NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
-NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
-NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
-NETSURF_FEATURE_VIDEO_CFLAGS := -DWITH_VIDEO
+$(eval $(call feature_enabled,AMIGA_ICON,-DWITH_AMIGA_ICON,,Amiga icon))
+$(eval $(call feature_enabled,AMIGA_DATATYPES,-DWITH_AMIGA_DATATYPES,,DataTypes))
 
-ifeq ($(HOST),amiga)
-  $(eval $(call feature_enabled,ROSPRITE,-DWITH_NSSPRITE,-lrosprite,Sprite (librosprite)))
-  $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,BMP (libnsbmp)))
-  $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,GIF (libnsgif)))
-  $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
-  $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
-  $(eval $(call feature_enabled,VIDEO,-DWITH_VIDEO -I /SDK/local/newlib/include/glib-2.0,-lgstreamer-0.10 -lglib-2.0 -lgobject-2.0 -lgmodule-2.0 -lgthread-2.0 -lintl -lffi,Video (libgstreamer)))
-  $(eval $(call feature_enabled,JS,-DXP_UNIX -DWITH_JS -DJS_VERSION=185,-lstdc++ -lmozjs185,JavaScript))
-  $(eval $(call feature_enabled,MOZJS,-DXP_AMIGA -DWITH_MOZJS -DJS_VERSION=170 -DJSVERSION_LATEST=170 -DJSOPTION_JIT=0 -DJSCLASS_GLOBAL_FLAGS=0,-ljs -lfdlibm,JavaScript))
-  $(eval $(call feature_enabled,AMIGA_ICON,-DWITH_AMIGA_ICON,,Amiga icon))
-  $(eval $(call feature_enabled,AMIGA_DATATYPES,-DWITH_AMIGA_DATATYPES,,DataTypes))
+CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include
+CFLAGS += $(shell $(PKG_CONFIG) --cflags tre)
 
-  CFLAGS += -I /SDK/local/common/include/libpng12
-  LDFLAGS += -lcurl -lrtmp -lpthread -ltre -lintl -lpbl
-  LDFLAGS += -lssl -lcrypto -ldom -lhubbub -lcss -lparserutils -lwapcaplet
-else
-  $(eval $(call feature_enabled,AMIGA_ICON,-DWITH_AMIGA_ICON,,Amiga icon))
-  $(eval $(call feature_enabled,AMIGA_DATATYPES,-DWITH_AMIGA_DATATYPES,,DataTypes))
+LDFLAGS += $(shell $(PKG_CONFIG) --static --libs libcurl openssl)
+LDFLAGS += $(shell $(PKG_CONFIG) --libs tre)
+LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
 
-  CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include
-  CFLAGS += $(shell $(PKG_CONFIG) --cflags tre)
+LDFLAGS += -lpbl -liconv
 
-  LDFLAGS += $(shell $(PKG_CONFIG) --static --libs libcurl openssl)
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs tre)
-  LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
-
-  LDFLAGS += -lpbl -liconv
-
-  ifeq ($(SUBTARGET),os3)
-    LDFLAGS += -lamiga -lm
-  endif
+ifeq ($(SUBTARGET),os3)
+  LDFLAGS += -lamiga -lm
 endif
 
 EXETARGET := NetSurf
