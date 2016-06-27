@@ -369,6 +369,7 @@ void fetch_rsrc_register(void)
 		fetch_rsrc_abort,
 		fetch_rsrc_free,
 		fetch_rsrc_poll,
+		NULL,
 		fetch_rsrc_finalise
 	};
 
