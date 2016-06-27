@@ -23,12 +23,11 @@
 #ifndef _NETSURF_DESKTOP_FETCH_H_
 #define _NETSURF_DESKTOP_FETCH_H_
 
-#include <sys/select.h>
-
 #include <stdbool.h>
 
 #include "utils/config.h"
 #include "utils/nsurl.h"
+#include "utils/inet.h"
 
 struct content;
 struct fetch;
