@@ -64,7 +64,7 @@ extern "C" {
 #include "netsurf/browser_window.h"
 #include "netsurf/cookie_db.h"
 #include "netsurf/url_db.h"
-#include "content/fetchers.h"
+#include "content/fetch.h"
 
 }
 
@@ -739,7 +739,7 @@ void nsbeos_gui_poll(void)
 	bigtime_t next_schedule = 0;
 
         /* get any active fetcher fd */
-	fetcher_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
+	fetch_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
 
         /* run the scheduler */
 	schedule_run();

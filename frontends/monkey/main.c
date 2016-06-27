@@ -35,7 +35,7 @@
 #include "netsurf/netsurf.h"
 #include "netsurf/url_db.h"
 #include "netsurf/cookie_db.h"
-#include "content/fetchers.h"
+#include "content/fetch.h"
 
 #include "monkey/dispatch.h"
 #include "monkey/browser.h"
@@ -258,7 +258,7 @@ static void monkey_run(void)
   while (!monkey_done) {
 
     /* clears fdset */
-    fetcher_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
+    fetch_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
 
     /* add stdin to the set */
     if (max_fd < 0) {

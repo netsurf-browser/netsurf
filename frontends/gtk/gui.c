@@ -38,7 +38,7 @@
 #include "utils/utils.h"
 #include "utils/file.h"
 #include "utils/nsoption.h"
-#include "content/fetchers.h"
+#include "content/fetch.h"
 #include "netsurf/url_db.h"
 #include "netsurf/cookie_db.h"
 #include "content/backing_store.h"
@@ -401,7 +401,7 @@ static void nsgtk_main(void)
 		FD_ZERO(&write_fd_set);
 		FD_ZERO(&exc_fd_set);
 
-		fetcher_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
+		fetch_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
 		for (int i = 0; i <= max_fd; i++) {
 			if (FD_ISSET(i, &read_fd_set)) {
 				GPollFD *fd = malloc(sizeof *fd);

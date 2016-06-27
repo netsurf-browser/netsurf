@@ -129,30 +129,4 @@ nserror fetcher_init(void);
 void fetcher_quit(void);
 
 
-/**
- * Get the set of file descriptors the fetchers are currently using.
- *
- * This obtains the file descriptors the fetch system is using to
- * obtain data. It will cause the fetchers to make progress, if
- * possible, potentially completing fetches before requiring activity
- * on file descriptors.
- *
- * If a set of descriptors is returned (maxfd is not -1) The caller is
- * expected to wait on them (with select etc.) and continue to obtain
- * the fdset with this call. This will switch the fetchers from polled
- * mode to waiting for network activity which is much more efficient.
- *
- * \note If the caller does not subsequently obtain the fdset again
- * the fetchers will fall back to the less efficient polled
- * operation. The fallback to polled operation will only occour after
- * a timeout which introduces additional delay.
- *
- * \param[out] read_fd_set The fd set for read.
- * \param[out] write_fd_set The fd set for write.
- * \param[out] except_fd_set The fd set for exceptions.
- * \param[out] maxfd The highest fd number in the set or -1 if no fd available.
- * \return NSERROR_OK on success or appropriate error code.
- */
-nserror fetcher_fdset(fd_set *read_fd_set, fd_set *write_fd_set, fd_set *except_fd_set, int *maxfd);
-
 #endif

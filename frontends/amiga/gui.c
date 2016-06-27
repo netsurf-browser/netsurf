@@ -108,7 +108,7 @@
 #include "netsurf/cookie_db.h"
 #include "netsurf/url_db.h"
 #include "content/backing_store.h"
-#include "content/fetchers.h"
+#include "content/fetch.h"
 #include "desktop/browser_history.h"
 #include "desktop/hotlist.h"
 #include "desktop/version.h"
@@ -2788,7 +2788,7 @@ void ami_get_msg(void)
 	uint32 signalmask = winsignal | appsig | schedulesig | rxsig |
 				printsig | applibsig | helpsignal;
 
-	if ((fetcher_fdset(&read_fd_set, &write_fd_set, &except_fd_set, &max_fd) == NSERROR_OK) &&
+	if ((fetch_fdset(&read_fd_set, &write_fd_set, &except_fd_set, &max_fd) == NSERROR_OK) &&
 			(max_fd != -1)) {
 		/* max_fd is the highest fd in use, but waitselect() needs to know how many
 		 * are in use, so we add 1. */
