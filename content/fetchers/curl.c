@@ -1374,6 +1374,23 @@ fetch_curl_header(char *data, size_t size, size_t nmemb, void *_f)
 #undef SKIP_ST
 }
 
+static int fetch_curl_fdset(lwc_string *scheme, fd_set *read_set,
+			    fd_set *write_set, fd_set *error_set)
+{
+	CURLMcode code;
+	int maxfd = -1;
+
+	code = curl_multi_fdset(fetch_curl_multi,
+				read_set,
+				write_set,
+				error_set,
+				&maxfd);
+	assert(code == CURLM_OK);
+
+	return maxfd;
+}
+
+
 
 /* exported function documented in content/fetchers/curl.h */
 nserror fetch_curl_register(void)
@@ -1390,6 +1407,7 @@ nserror fetch_curl_register(void)
 		.abort = fetch_curl_abort,
 		.free = fetch_curl_free,
 		.poll = fetch_curl_poll,
+		.fdset = fetch_curl_fdset,
 		.finalise = fetch_curl_finalise
 	};
 

@@ -91,6 +91,12 @@ struct fetcher_operation_table {
 	void (*poll)(lwc_string *scheme);
 
 	/**
+	 * update an fdset with the FDs needed to poll cleanly
+	 */
+	int (*fdset)(lwc_string *scheme, fd_set *read_set, fd_set *write_set,
+		     fd_set *error_set);
+
+	/**
 	 * Finalise the fetcher.
 	 */
 	void (*finalise)(lwc_string *scheme);

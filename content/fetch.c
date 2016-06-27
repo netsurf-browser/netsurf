@@ -39,7 +39,6 @@
 #include <strings.h>
 #include <time.h>
 #include <libwapcaplet/libwapcaplet.h>
-#include <curl/curl.h>
 
 #include "utils/config.h"
 #include "utils/corestrings.h"
@@ -386,8 +385,7 @@ nserror fetcher_fdset(fd_set *read_fd_set,
 		      fd_set *except_fd_set,
 		      int *maxfd_out)
 {
-	CURLMcode code;
-	int maxfd;
+	int maxfd = -1;
 	int fetcherd; /* fetcher index */
 
 	if (!fetch_dispatch_jobs()) {
@@ -408,12 +406,19 @@ nserror fetcher_fdset(fd_set *read_fd_set,
 	FD_ZERO(read_fd_set);
 	FD_ZERO(write_fd_set);
 	FD_ZERO(except_fd_set);
-	code = curl_multi_fdset(fetch_curl_multi,
-				read_fd_set,
-				write_fd_set,
-				except_fd_set,
-				&maxfd);
-	assert(code == CURLM_OK);
+
+	for (fetcherd = 0; fetcherd < MAX_FETCHERS; fetcherd++) {
+		if ((fetchers[fetcherd].refcount > 0) &&
+		    (fetchers[fetcherd].ops.fdset != NULL)) {
+			/* fetcher present */
+			int fetcher_maxfd;
+			fetcher_maxfd = fetchers[fetcherd].ops.fdset(
+				fetchers[fetcherd].scheme, read_fd_set,
+				write_fd_set, except_fd_set);
+			if (fetcher_maxfd > maxfd)
+				maxfd = fetcher_maxfd;
+		}
+	}
 
 	if (maxfd >= 0) {
 		/* change the scheduled poll to happen is a 1000ms as
