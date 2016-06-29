@@ -217,7 +217,7 @@ static nserror amiga_nsurl_to_path(struct nsurl *url, char **path_out)
 		return NSERROR_BAD_PARAMETER;
 	}
 
-	res = url_unescape(lwc_string_data(urlpath) + 1, &path);
+	res = url_unescape(lwc_string_data(urlpath) + 1, 0, &path);
 	lwc_string_unref(urlpath);
 	if (res != NSERROR_OK) {
 		return res;

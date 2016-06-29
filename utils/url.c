@@ -33,12 +33,12 @@
 
 
 /* exported interface documented in utils/url.h */
-nserror url_unescape(const char *str, char **result)
+nserror url_unescape(const char *str, int length, char **result)
 {
 	char *curlstr;
 	char *retstr;
 
-	curlstr = curl_unescape(str, 0);
+	curlstr = curl_unescape(str, length);
 	if (curlstr == NULL) {
 		return NSERROR_NOMEM;
 	}

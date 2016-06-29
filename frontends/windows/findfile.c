@@ -27,9 +27,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-#include <curl/curl.h>
-
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/utils.h"

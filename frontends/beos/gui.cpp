@@ -30,7 +30,6 @@
 #include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <curl/curl.h>
 
 #include <Alert.h>
 #include <Application.h>
@@ -795,12 +794,14 @@ static void gui_quit(void)
 
 static char *url_to_path(const char *url)
 {
-	char *url_path = curl_unescape(url, 0);
-	char *path;
+	char *url_path;
+	char *path = NULL;
 
-	/* return the absolute path including leading / */
-	path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
-	curl_free(url_path);
+	if (url_unescape(url, 0, &url_path) == NSERROR_OK) {
+		/* return the absolute path including leading / */
+		path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
+		free(url_path);
+	}
 
 	return path;
 }

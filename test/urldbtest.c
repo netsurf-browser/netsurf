@@ -27,8 +27,6 @@
 #include <strings.h>
 #include <time.h>
 
-#include <curl/curl.h>
-
 #include "utils/errors.h"
 #include "utils/nsurl.h"
 #include "netsurf/bitmap.h"

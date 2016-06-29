@@ -20,8 +20,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <curl/curl.h>
-
 #include "content/fetch.h"
 #include "content/llcache.h"
 #include "utils/ring.h"
@@ -94,12 +92,14 @@ char *path_to_url(const char *path)
 /* utils/url.h */
 char *url_to_path(const char *url)
 {
-	char *url_path = curl_unescape(url, 0);
-	char *path;
+	char *url_path;
+	char *path = NULL;
 
-	/* return the absolute path including leading / */
-	path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
-	curl_free(url_path);
+	if (url_unescape(url, 0, &url_path) == NSERROR_OK) {
+		/* return the absolute path including leading / */
+		path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
+		free(url_path);
+	}
 
 	return path;
 }

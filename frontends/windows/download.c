@@ -17,9 +17,7 @@
  */
 
 #include <limits.h>
-
-#include "utils/config.h"
-
+#include "utils/inet.h" /* get correct winsock ordering */
 #include <shlobj.h>
 #include <windows.h>
 

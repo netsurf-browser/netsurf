@@ -33,7 +33,6 @@
 #include <assert.h>
 #include <string.h>
 #include <time.h>
-#include <curl/curl.h>
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "oslib/mimemap.h"
@@ -53,6 +52,7 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 #include "utils/string.h"
+#include "utils/url.h"
 #include "utils/corestrings.h"
 #include "netsurf/download.h"
 #include "desktop/download.h"
@@ -239,11 +239,11 @@ static nserror download_ro_filetype(download_context *ctx, bits *ftype_out)
 			lwc_string *path = nsurl_get_component(url, NSURL_PATH);
 			if (path != NULL && lwc_string_length(path) != 0) {
 				char *raw_path;
-				raw_path = curl_unescape(lwc_string_data(path),
-						lwc_string_length(path));
-				if (raw_path != NULL) {
+				if (url_unescape(lwc_string_data(path),
+						 lwc_string_length(path),
+						 &raw_path) == NSERROR_OK) {
 					ftype =	ro_filetype_from_unix_path(raw_path);
-					curl_free(raw_path);
+					free(raw_path);
 				}
 			}
 		}

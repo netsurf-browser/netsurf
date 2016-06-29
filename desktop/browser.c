@@ -59,7 +59,6 @@
 #include "render/form_internal.h"
 #include "render/html.h"
 #include "render/box.h"
-#include "curl/curl.h"
 #include "javascript/js.h"
 
 #include "desktop/browser_history.h"
