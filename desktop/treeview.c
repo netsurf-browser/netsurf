@@ -26,17 +26,19 @@
 #include "utils/nsurl.h"
 #include "netsurf/bitmap.h"
 #include "netsurf/content.h"
+#include "netsurf/plotters.h"
+#include "netsurf/clipboard.h"
+#include "netsurf/layout.h"
 #include "content/hlcache.h"
 #include "css/utils.h"
 
 #include "desktop/system_colour.h"
 #include "desktop/knockout.h"
-#include "netsurf/plotters.h"
 #include "desktop/textarea.h"
 #include "desktop/treeview.h"
-#include "netsurf/clipboard.h"
-#include "netsurf/layout.h"
 #include "desktop/gui_internal.h"
+#include "desktop/textinput.h"
+#include "desktop/core_window.h"
 
 /** @todo get rid of REDRAW_MAX -- need to be able to know window size */
 #define REDRAW_MAX 8000

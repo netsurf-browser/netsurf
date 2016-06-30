@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Treeview handling (interface).
+/**
+ * \file
+ * Treeview handling interface.
  */
 
 #ifndef _NETSURF_DESKTOP_TREEVIEW_H_
@@ -28,10 +29,10 @@
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "netsurf/mouse.h"
-#include "desktop/core_window.h"
-#include "desktop/textinput.h"
 
 struct redraw_context;
+struct core_window;
+struct core_window_callback_table;
 
 typedef struct treeview treeview;
 typedef struct treeview_node treeview_node;
