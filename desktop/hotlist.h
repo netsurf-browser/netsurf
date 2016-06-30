@@ -22,14 +22,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "desktop/core_window.h"
-#include "desktop/textinput.h"
 #include "utils/errors.h"
+#include "netsurf/mouse.h"
 
+struct core_window_callback_table;
 struct redraw_context;
 struct nsurl;
-
-enum browser_mouse_state;
+struct rect;
 
 /**
  * Initialise the hotlist.

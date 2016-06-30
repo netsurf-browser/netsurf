@@ -40,6 +40,7 @@
 #include "netsurf/window.h"
 #include "desktop/hotlist.h"
 #include "desktop/tree.h"
+#include "desktop/textinput.h"
 
 #include "riscos/gui.h"
 #include "riscos/dialog.h"

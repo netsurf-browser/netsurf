@@ -23,6 +23,7 @@
 #include "utils/nsoption.h"
 #include "desktop/hotlist.h"
 #include "desktop/tree.h"
+#include "desktop/textinput.h"
 
 #include "gtk/plotters.h"
 #include "gtk/scaffolding.h"
