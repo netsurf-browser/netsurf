@@ -23,7 +23,6 @@
 #include "netsurf/mouse.h"
 #include "netsurf/plotters.h"
 #include "desktop/cookie_manager.h"
-#include "desktop/core_window.h"
 
 #include "atari/treeview.h"
 #include "atari/cookies.h"

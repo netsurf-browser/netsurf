@@ -31,7 +31,6 @@
 #include "content/content.h"
 #include "desktop/hotlist.h"
 #include "desktop/tree.h"
-#include "desktop/core_window.h"
 #include "desktop/textinput.h"
 
 #include "atari/gui.h"

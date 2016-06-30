@@ -19,9 +19,10 @@
 #ifndef NSATARI_TREEVIEW_H
 #define NSATARI_TREEVIEW_H
 
-#include "desktop/core_window.h"
 #include "atari/gui.h"
 #include "atari/gemtk/gemtk.h"
+
+struct core_window_callback_table;
 
 /**
  * Default AES Window widgets for a treeview window, can be passed to

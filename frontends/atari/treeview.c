@@ -30,6 +30,7 @@
 #include "netsurf/plotters.h"
 #include "netsurf/mouse.h"
 #include "desktop/treeview.h"
+#include "desktop/core_window.h"
 
 #include "atari/gui.h"
 #include "atari/plot/plot.h"

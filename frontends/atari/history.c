@@ -23,7 +23,6 @@
 #include "utils/messages.h"
 #include "netsurf/mouse.h"
 #include "desktop/global_history.h"
-#include "desktop/core_window.h"
 
 #include "atari/treeview.h"
 #include "atari/history.h"

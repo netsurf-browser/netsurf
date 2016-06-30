@@ -28,7 +28,6 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "desktop/sslcert_viewer.h"
-#include "desktop/core_window.h"
 
 #include "atari/gui.h"
 #include "atari/misc.h"
