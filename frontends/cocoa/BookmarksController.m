@@ -22,6 +22,7 @@
 #import "netsurf/browser_window.h"
 #import "desktop/hotlist.h"
 #import "desktop/tree.h"
+#import "desktop/textinput.h"
 
 #import "cocoa/BookmarksController.h"
 #import "cocoa/Tree.h"
