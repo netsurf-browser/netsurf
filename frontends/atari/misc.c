@@ -25,17 +25,18 @@
 #include <sys/types.h>
 #include <mint/osbind.h>
 
-#include "utils/dirent.h"
-#include "content/content.h"
-#include "content/hlcache.h"
-#include "desktop/cookie_manager.h"
-#include "netsurf/mouse.h"
-#include "desktop/tree.h"
 #include "utils/nsoption.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/file.h"
+#include "utils/dirent.h"
+#include "netsurf/mouse.h"
+#include "content/content.h"
+#include "content/hlcache.h"
+#include "desktop/textinput.h"
+#include "desktop/cookie_manager.h"
+#include "desktop/tree.h"
 
 #include "atari/gui.h"
 #include "atari/toolbar.h"
