@@ -22,14 +22,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "desktop/core_window.h"
-#include "desktop/textinput.h"
 #include "utils/errors.h"
+#include "netsurf/mouse.h"
 
+struct core_window_callback_table;
 struct redraw_context;
 struct nsurl;
-
-enum browser_mouse_state;
+struct rect;
 
 /**
  * Initialise the global history.
@@ -67,7 +66,7 @@ nserror global_history_fini(void);
  */
 nserror global_history_add(struct nsurl *url);
 
-/*
+/**
  * Save global history to file (html)
  *
  * \param path		The path to save history to

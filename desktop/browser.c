@@ -72,6 +72,7 @@
 #include "desktop/selection.h"
 #include "desktop/theme.h"
 #include "desktop/gui_internal.h"
+#include "desktop/textinput.h"
 
 
 /** maximum frame depth */

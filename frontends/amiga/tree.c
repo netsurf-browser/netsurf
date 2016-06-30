@@ -60,6 +60,7 @@
 #include "desktop/global_history.h"
 #include "desktop/hotlist.h"
 #include "desktop/sslcert_viewer.h"
+#include "desktop/textinput.h"
 
 #include "amiga/gui.h"
 #include "amiga/tree.h"
