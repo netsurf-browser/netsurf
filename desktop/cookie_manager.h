@@ -26,14 +26,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "desktop/core_window.h"
-#include "desktop/textinput.h"
 #include "utils/errors.h"
+#include "netsurf/mouse.h"
 
 struct redraw_context;
 struct cookie_data;
-
-enum browser_mouse_state;
+struct core_window_callback_table;
+struct rect;
 
 /**
  * Initialise the cookie manager.
