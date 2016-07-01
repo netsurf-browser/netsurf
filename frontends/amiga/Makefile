@@ -65,7 +65,7 @@ install-amiga:
 package-amiga: netsurf.lha
 
 AMIGA_LANGUAGES := de en it ja nl
-AMIGA_PLATFORM_RESOURCES := Pointers Themes default.css default.css.info favicon.png LangNames mimetypes Resource.map SearchEngines splash.png
+AMIGA_PLATFORM_RESOURCES := Pointers Themes default.css default.css.info favicon.png LangNames mimetypes Resource.map splash.png
 AMIGA_GENERIC_RESOURCES := $(AMIGA_LANGUAGES) ca-bundle Icons
 AMIGA_RESOURCES := $(addprefix $(FRONTEND_SOURCE_DIR)/resources/,$(AMIGA_PLATFORM_RESOURCES)) $(addprefix \!NetSurf/Resources/,$(AMIGA_GENERIC_RESOURCES))
 AMIGA_DISTRIBUTION_FILES := $(FRONTEND_SOURCE_DIR)/dist/*
@@ -80,6 +80,7 @@ netsurf.lha: $(EXETARGET)
 	$(Q)mkdir $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources
 	$(Q)cp -r $(AMIGA_RESOURCES) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources
 	$(Q)cp -r $(AMIGA_DISTRIBUTION_FILES) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cat resources/SearchEngines $(AMIGA_PKG_DIR)/SearchEngines >$(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/SearchEngines
 	$(Q)cp \!NetSurf/Resources/AdBlock,f79 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/adblock.css
 	$(Q)cp \!NetSurf/Resources/CSS,f79 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/nsdefault.css
 	$(Q)cp \!NetSurf/Resources/internal.css,f79 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/internal.css
