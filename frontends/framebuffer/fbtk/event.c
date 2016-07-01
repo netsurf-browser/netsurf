@@ -32,7 +32,7 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "netsurf/browser_window.h"
-#include "desktop/textinput.h"
+#include "netsurf/keypress.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"

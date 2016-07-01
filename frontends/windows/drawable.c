@@ -29,7 +29,7 @@
 #include "utils/utils.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/plotters.h"
-#include "desktop/textinput.h"
+#include "netsurf/keypress.h"
 
 #include "windows/windbg.h"
 #include "windows/plot.h"

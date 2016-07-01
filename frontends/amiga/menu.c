@@ -51,8 +51,8 @@
 #include "netsurf/mouse.h"
 #include "netsurf/window.h"
 #include "netsurf/content.h"
+#include "netsurf/keypress.h"
 #include "desktop/hotlist.h"
-#include "desktop/textinput.h"
 #include "desktop/version.h"
 
 #include "amiga/arexx.h"

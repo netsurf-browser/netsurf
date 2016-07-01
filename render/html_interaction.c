@@ -39,12 +39,12 @@
 #include "netsurf/mouse.h"
 #include "netsurf/misc.h"
 #include "netsurf/layout.h"
+#include "netsurf/keypress.h"
 #include "content/hlcache.h"
 #include "desktop/frames.h"
 #include "desktop/scrollbar.h"
 #include "desktop/selection.h"
 #include "desktop/textarea.h"
-#include "desktop/textinput.h"
 #include "javascript/js.h"
 #include "desktop/gui_internal.h"
 

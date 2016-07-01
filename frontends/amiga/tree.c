@@ -55,12 +55,12 @@
 #include "utils/messages.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/window.h"
+#include "netsurf/keypress.h"
 #include "content/llcache.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/global_history.h"
 #include "desktop/hotlist.h"
 #include "desktop/sslcert_viewer.h"
-#include "desktop/textinput.h"
 
 #include "amiga/gui.h"
 #include "amiga/tree.h"

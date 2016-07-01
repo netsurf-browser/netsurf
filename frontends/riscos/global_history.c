@@ -35,9 +35,9 @@
 #include "utils/messages.h"
 #include "utils/log.h"
 #include "netsurf/window.h"
+#include "netsurf/keypress.h"
 #include "desktop/global_history.h"
 #include "desktop/tree.h"
-#include "desktop/textinput.h"
 
 #include "riscos/dialog.h"
 #include "riscos/global_history.h"

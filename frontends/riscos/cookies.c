@@ -33,9 +33,9 @@
 #include "utils/nsoption.h"
 #include "utils/messages.h"
 #include "utils/log.h"
+#include "netsurf/keypress.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/tree.h"
-#include "desktop/textinput.h"
 
 #include "riscos/cookies.h"
 #include "riscos/dialog.h"

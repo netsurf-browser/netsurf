@@ -33,7 +33,6 @@
 #include "utils/utils.h"
 #include "netsurf/clipboard.h"
 #include "netsurf/window.h"
-#include "desktop/textinput.h"
 #include "netsurf/browser_window.h"
 
 #include "riscos/gui.h"

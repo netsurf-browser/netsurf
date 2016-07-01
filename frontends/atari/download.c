@@ -31,11 +31,10 @@
 #include "utils/utils.h"
 #include "utils/nsoption.h"
 #include "utils/string.h"
-#include "desktop/save_complete.h"
-#include "desktop/textinput.h"
-#include "desktop/download.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/download.h"
+#include "desktop/save_complete.h"
+#include "desktop/download.h"
 
 #include "atari/gui.h"
 #include "atari/misc.h"

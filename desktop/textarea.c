@@ -29,16 +29,16 @@
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
-#include "css/utils.h"
-
 #include "netsurf/browser_window.h"
-#include "netsurf/mouse.h"
-#include "desktop/textarea.h"
-#include "desktop/textinput.h"
 #include "netsurf/plotters.h"
-#include "desktop/scrollbar.h"
+#include "netsurf/mouse.h"
+#include "netsurf/keypress.h"
 #include "netsurf/clipboard.h"
 #include "netsurf/layout.h"
+#include "css/utils.h"
+
+#include "desktop/textarea.h"
+#include "desktop/scrollbar.h"
 #include "desktop/gui_internal.h"
 
 #define CARET_COLOR 0x0000FF

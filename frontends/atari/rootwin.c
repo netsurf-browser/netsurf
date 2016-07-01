@@ -14,10 +14,11 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Module Description:
- *
- * This File implements the NetSurf Browser window, or passed functionality to
+ */
+
+/**
+ * \file
+ * Implements the NetSurf Browser window, or passed functionality to
  * the appropriate widget's.
  *
  */
@@ -41,7 +42,7 @@
 #include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
 #include "netsurf/plotters.h"
-#include "desktop/textinput.h"
+#include "netsurf/keypress.h"
 
 #include "atari/res/netsurf.rsh"
 #include "atari/gemtk/gemtk.h"

@@ -38,9 +38,9 @@
 #include "utils/nsurl.h"
 #include "netsurf/url_db.h"
 #include "netsurf/window.h"
+#include "netsurf/keypress.h"
 #include "desktop/hotlist.h"
 #include "desktop/tree.h"
-#include "desktop/textinput.h"
 
 #include "riscos/gui.h"
 #include "riscos/dialog.h"

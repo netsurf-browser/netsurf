@@ -21,12 +21,13 @@
  */
 
 #include <gtk/gtk.h>
+#include <stdint.h>
 
 #include "utils/log.h"
+#include "netsurf/keypress.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/plot_style.h"
 #include "desktop/tree.h"
-#include "desktop/textinput.h"
 
 #include "gtk/cookies.h"
 #include "gtk/plotters.h"

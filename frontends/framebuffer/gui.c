@@ -35,7 +35,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "netsurf/browser_window.h"
-#include "desktop/textinput.h"
+#include "netsurf/keypress.h"
 #include "desktop/browser_history.h"
 #include "netsurf/plotters.h"
 #include "netsurf/window.h"

@@ -40,7 +40,6 @@
 #import "netsurf/cookie_db.h"
 #import "netsurf/url_db.h"
 #import "desktop/save_complete.h"
-#import "desktop/textinput.h"
 #import "desktop/tree.h"
 
 #ifndef NETSURF_HOMEPAGE

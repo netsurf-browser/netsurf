@@ -47,7 +47,7 @@ extern "C" {
 #include "netsurf/window.h"
 #include "netsurf/clipboard.h"
 #include "netsurf/url_db.h"
-#include "desktop/textinput.h"
+#include "netsurf/keypress.h"
 }
 
 #include "beos/about.h"

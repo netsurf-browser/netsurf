@@ -42,6 +42,8 @@
 #include "netsurf/window.h"
 #include "netsurf/plotters.h"
 #include "netsurf/form.h"
+#include "netsurf/keypress.h"
+#include "desktop/textarea.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 

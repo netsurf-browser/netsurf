@@ -24,8 +24,8 @@
 
 #include "utils/config.h"
 #include "utils/log.h"
+#include "netsurf/keypress.h"
 #include "desktop/textarea.h"
-#include "desktop/textinput.h"
 
 #include "render/box_textarea.h"
 #include "render/font.h"

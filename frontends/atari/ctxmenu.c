@@ -22,7 +22,7 @@
 #include "utils/nsurl.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/content.h"
-#include "desktop/textinput.h"
+#include "netsurf/keypress.h"
 
 #include "atari/gui.h"
 #include "atari/misc.h"

@@ -23,7 +23,7 @@
 #import "netsurf/browser_window.h"
 #import "netsurf/plotters.h"
 #import "netsurf/content.h"
-#import "desktop/textinput.h"
+#import "netsurf/keypress.h"
 
 #import "cocoa/gui.h"
 #import "cocoa/BrowserView.h"

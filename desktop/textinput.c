@@ -33,15 +33,16 @@
 #include "utils/talloc.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "netsurf/mouse.h"
 #include "netsurf/form.h"
+#include "netsurf/window.h"
+#include "netsurf/keypress.h"
 #include "render/box.h"
 #include "render/html_internal.h"
 #include "render/layout.h"
 
-#include "netsurf/mouse.h"
 #include "desktop/browser_private.h"
 #include "desktop/textinput.h"
-#include "netsurf/window.h"
 #include "desktop/gui_internal.h"
 
 /* Define to enable textinput debug */
@@ -101,7 +102,7 @@ void browser_window_remove_caret(struct browser_window *bw, bool only_hide)
 	}
 }
 
-/* exported interface documented in desktop/textinput.h */
+/* exported interface documented in netsurf/keypress.h */
 bool browser_window_key_press(struct browser_window *bw, uint32_t key)
 {
 	struct browser_window *focus = bw->focus;

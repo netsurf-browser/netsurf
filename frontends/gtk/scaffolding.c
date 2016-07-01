@@ -36,10 +36,11 @@
 #include "utils/file.h"
 #include "utils/nsurl.h"
 #include "netsurf/content.h"
-#include "desktop/browser_history.h"
+#include "netsurf/keypress.h"
 #include "netsurf/browser_window.h"
-#include "desktop/hotlist.h"
 #include "netsurf/plotters.h"
+#include "desktop/browser_history.h"
+#include "desktop/hotlist.h"
 #include "desktop/print.h"
 #include "desktop/save_complete.h"
 #ifdef WITH_PDF_EXPORT
@@ -48,7 +49,6 @@
 #endif
 #include "desktop/save_text.h"
 #include "desktop/searchweb.h"
-#include "desktop/textinput.h"
 #include "desktop/search.h"
 
 #include "gtk/compat.h"

@@ -27,7 +27,6 @@
 #import "netsurf/misc.h"
 #import "netsurf/browser_window.h"
 #import "netsurf/content.h"
-#import "desktop/textinput.h"
 
 #import "cocoa/gui.h"
 #import "cocoa/coordinates.h"

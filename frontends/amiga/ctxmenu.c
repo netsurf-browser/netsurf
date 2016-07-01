@@ -43,9 +43,9 @@
 #include "netsurf/content.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
+#include "netsurf/keypress.h"
 #include "desktop/browser_history.h"
 #include "desktop/searchweb.h"
-#include "desktop/textinput.h"
 
 #include "amiga/bitmap.h"
 #include "amiga/clipboard.h"

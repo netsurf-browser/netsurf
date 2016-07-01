@@ -24,8 +24,8 @@
 #include "utils/messages.h"
 #include "utils/nsoption.h"
 #include "netsurf/browser_window.h"
+#include "netsurf/keypress.h"
 #include "desktop/save_complete.h"
-#include "desktop/textinput.h"
 
 #include "atari/res/netsurf.rsh"
 #include "atari/gemtk/gemtk.h"

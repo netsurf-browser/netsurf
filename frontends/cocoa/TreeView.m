@@ -20,7 +20,7 @@
 #import "cocoa/Tree.h"
 
 #import "netsurf/plotters.h"
-#import "desktop/textinput.h"
+#import "netsurf/keypress.h"
 
 @interface TreeView () <TreeDelegate>
 @end

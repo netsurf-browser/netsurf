@@ -65,11 +65,11 @@ extern "C" {
 #include "netsurf/content_type.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/form.h"
+#include "netsurf/keypress.h"
 #include "desktop/browser_history.h"
 #include "desktop/version.h"
 #include "desktop/searchweb.h"
 #include "desktop/search.h"
-#include "desktop/textinput.h"
 }
 
 #include "beos/about.h"

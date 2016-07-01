@@ -18,13 +18,14 @@
  */
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <gtk/gtk.h>
 
 #include "utils/log.h"
+#include "netsurf/keypress.h"
 #include "desktop/global_history.h"
 #include "desktop/plot_style.h"
 #include "desktop/tree.h"
-#include "desktop/textinput.h"
 
 #include "gtk/plotters.h"
 #include "gtk/scaffolding.h"

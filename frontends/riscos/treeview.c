@@ -40,7 +40,7 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "netsurf/plotters.h"
-#include "desktop/textinput.h"
+#include "netsurf/keypress.h"
 #include "desktop/tree.h"
 
 #include "riscos/bitmap.h"

@@ -38,7 +38,6 @@
 #include "utils/messages.h"
 #include "utils/utf8.h"
 #include "desktop/cookie_manager.h"
-#include "desktop/textinput.h"
 
 #include "riscos/dialog.h"
 #include "riscos/configure.h"

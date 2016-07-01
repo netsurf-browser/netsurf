@@ -25,7 +25,6 @@
 #import "netsurf/content.h"
 #import "netsurf/browser_window.h"
 #import "desktop/browser_history.h"
-#import "desktop/textinput.h"
 
 #import "cocoa/gui.h"
 #import "cocoa/BrowserViewController.h"

@@ -107,6 +107,7 @@
 #include "netsurf/browser_window.h"
 #include "netsurf/cookie_db.h"
 #include "netsurf/url_db.h"
+#include "netsurf/keypress.h"
 #include "content/backing_store.h"
 #include "content/fetch.h"
 #include "desktop/browser_history.h"
@@ -115,7 +116,6 @@
 #include "desktop/save_complete.h"
 #include "desktop/scrollbar.h"
 #include "desktop/searchweb.h"
-#include "desktop/textinput.h"
 #include "desktop/tree.h"
 
 /* NetSurf Amiga platform includes */

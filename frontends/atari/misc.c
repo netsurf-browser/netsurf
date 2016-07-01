@@ -32,9 +32,9 @@
 #include "utils/file.h"
 #include "utils/dirent.h"
 #include "netsurf/mouse.h"
+#include "netsurf/keypress.h"
 #include "content/content.h"
 #include "content/hlcache.h"
-#include "desktop/textinput.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/tree.h"
 

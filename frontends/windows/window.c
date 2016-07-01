@@ -32,8 +32,8 @@
 #include "content/content.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/window.h"
+#include "netsurf/keypress.h"
 #include "desktop/browser_history.h"
-#include "desktop/textinput.h"
 
 #include "windows/gui.h"
 #include "windows/pointers.h"

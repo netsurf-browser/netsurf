@@ -21,9 +21,9 @@
 
 #include "utils/log.h"
 #include "utils/nsoption.h"
+#include "netsurf/keypress.h"
 #include "desktop/hotlist.h"
 #include "desktop/tree.h"
-#include "desktop/textinput.h"
 
 #include "gtk/plotters.h"
 #include "gtk/scaffolding.h"

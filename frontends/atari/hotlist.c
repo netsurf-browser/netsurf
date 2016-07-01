@@ -28,10 +28,10 @@
 #include "utils/utils.h"
 #include "utils/nsoption.h"
 #include "utils/nsurl.h"
+#include "netsurf/keypress.h"
 #include "content/content.h"
 #include "desktop/hotlist.h"
 #include "desktop/tree.h"
-#include "desktop/textinput.h"
 
 #include "atari/gui.h"
 #include "atari/misc.h"
