@@ -504,14 +504,16 @@ struct DiskObject *amiga_icon_from_bitmap(struct bitmap *bm)
 		icondata = AllocVecTagList(THUMBNAIL_WIDTH * 4 * THUMBNAIL_HEIGHT, NULL);
 		ami_bitmap_set_icondata(bm, icondata);
 
-		BltBitMapTags(BLITA_Width, THUMBNAIL_WIDTH,
-					BLITA_Height, THUMBNAIL_HEIGHT,
-					BLITA_SrcType, BLITT_BITMAP,
-					BLITA_Source, bitmap,
-					BLITA_DestType, BLITT_ARGB32,
-					BLITA_DestBytesPerRow, THUMBNAIL_WIDTH * 4,
-					BLITA_Dest, icondata,
+		if(bitmap) {
+			BltBitMapTags(BLITA_Width, THUMBNAIL_WIDTH,
+						BLITA_Height, THUMBNAIL_HEIGHT,
+						BLITA_SrcType, BLITT_BITMAP,
+						BLITA_Source, bitmap,
+						BLITA_DestType, BLITT_ARGB32,
+						BLITA_DestBytesPerRow, THUMBNAIL_WIDTH * 4,
+						BLITA_Dest, icondata,
 					TAG_DONE);
+		}
 	}
 #endif
 	dobj = GetIconTags(NULL, ICONGETA_GetDefaultType, WBPROJECT,

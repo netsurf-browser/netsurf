@@ -455,9 +455,10 @@ void gui_window_stop_throbber(struct gui_window *g)
 			return;
 		}
 
-		BltBitMapRastPort(throbber, 0, 0, g->shared->win->RPort, bbox->Left,
-			bbox->Top, throbber_width, throbber_height, 0x0C0);
-
+		if(throbber != NULL) {
+			BltBitMapRastPort(throbber, 0, 0, g->shared->win->RPort, bbox->Left,
+				bbox->Top, throbber_width, throbber_height, 0x0C0);
+		}
 		ami_gui_free_space_box(bbox);
 	}
 
@@ -486,23 +487,26 @@ static void ami_throbber_update(void *p)
 			amiga_warn_user("NoMemory", "");
 			return;
 		}
+
+		if(throbber != NULL) {
 #ifdef __amigaos4__
-		BltBitMapTags(BLITA_SrcX, throbber_width * frame,
-					BLITA_SrcY, 0,
-					BLITA_DestX, bbox->Left,
-					BLITA_DestY, bbox->Top,
-					BLITA_Width, throbber_width,
-					BLITA_Height, throbber_height,
-					BLITA_Source, throbber,
-					BLITA_Dest, g->shared->win->RPort,
-					BLITA_SrcType, BLITT_BITMAP,
-					BLITA_DestType, BLITT_RASTPORT,
-				//	BLITA_UseSrcAlpha, TRUE,
+			BltBitMapTags(BLITA_SrcX, throbber_width * frame,
+						BLITA_SrcY, 0,
+						BLITA_DestX, bbox->Left,
+						BLITA_DestY, bbox->Top,
+						BLITA_Width, throbber_width,
+						BLITA_Height, throbber_height,
+						BLITA_Source, throbber,
+						BLITA_Dest, g->shared->win->RPort,
+						BLITA_SrcType, BLITT_BITMAP,
+						BLITA_DestType, BLITT_RASTPORT,
+					//	BLITA_UseSrcAlpha, TRUE,
 					TAG_DONE);
 #else
-		BltBitMapRastPort(throbber, throbber_width * frame, 0, g->shared->win->RPort,
-			bbox->Left, bbox->Top, throbber_width, throbber_height, 0xC0);
+			BltBitMapRastPort(throbber, throbber_width * frame, 0, g->shared->win->RPort,
+				bbox->Left, bbox->Top, throbber_width, throbber_height, 0xC0);
 #endif
+		}
 		ami_gui_free_space_box(bbox);
 	}
 
