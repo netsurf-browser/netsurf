@@ -3314,6 +3314,11 @@ de.ami.CompError:Nicht zu öffnen
 fr.ami.CompError:Unable to open
 it.ami.CompError:Impossibile aprire
 nl.ami.CompError:Niet te openen
+en.ami.BMConvErr:NetSurf requires guigfx.library to display images in this mode
+de.ami.BMConvErr:NetSurf requires guigfx.library to display images in this mode
+fr.ami.BMConvErr:NetSurf requires guigfx.library to display images in this mode
+it.ami.BMConvErr:NetSurf requires guigfx.library to display images in this mode
+nl.ami.BMConvErr:NetSurf requires guigfx.library to display images in this mode
 en.ami.MultiTabClose:Are you sure you want to close multiple tabs?
 de.ami.MultiTabClose:Are you sure you want to close multiple tabs?
 fr.ami.MultiTabClose:Are you sure you want to close multiple tabs?

@@ -80,6 +80,7 @@ enum {
 };
 
 static APTR pool_bitmap = NULL;
+static bool guigfx_warned = false;
 
 /* exported function documented in amiga/bitmap.h */
 void *amiga_bitmap_create(int width, int height, unsigned int state)
@@ -416,16 +417,19 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap, int w
 
 	if(tbm == NULL) {
 		if(type == AMI_NSBM_TRUECOLOUR) {
-			if((tbm = ami_rtg_allocbitmap(bitmap->width, bitmap->height, 32, 0,
-										friendbm, AMI_BITMAP_FORMAT))) {
-				ami_rtg_writepixelarray(amiga_bitmap_get_buffer(bitmap),
+			tbm = ami_rtg_allocbitmap(bitmap->width, bitmap->height, 32, 0,
+										friendbm, AMI_BITMAP_FORMAT);
+			if(tbm == NULL) return NULL;
+
+			ami_rtg_writepixelarray(amiga_bitmap_get_buffer(bitmap),
 										tbm, bitmap->width, bitmap->height,
 										bitmap->width * 4, AMI_BITMAP_FORMAT);
-			}
 		} else {
-			if((tbm = ami_rtg_allocbitmap(bitmap->width, bitmap->height,
-										8, 0, friendbm, AMI_BITMAP_FORMAT))) {
+			tbm = ami_rtg_allocbitmap(bitmap->width, bitmap->height,
+										8, 0, friendbm, AMI_BITMAP_FORMAT);
+			if(tbm == NULL) return NULL;
 
+			if(GuiGFXBase != NULL) {
 				struct RastPort rp;
 				InitRastPort(&rp);
 				rp.BitMap = tbm;
@@ -450,6 +454,11 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap, int w
 				DirectDrawTrueColor(ddh, (ULONG *)amiga_bitmap_get_buffer(bitmap), 0, 0, TAG_DONE);
 				DeleteDirectDrawHandle(ddh);
 				ami_bitmap_argb_to_rgba(bitmap);
+			} else {
+				if(guigfx_warned == false) {
+					amiga_warn_user("BMConvErr", NULL);
+					guigfx_warned = true;
+				}
 			}
 		}
 
