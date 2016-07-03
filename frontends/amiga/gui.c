@@ -862,7 +862,7 @@ static struct RDArgs *ami_gui_commandline(int *restrict argc, char ** argv,
 		if(rarray[A_URL]) {
 			LOG("URL %s specified on command line",
 			    (char *)rarray[A_URL]);
-			temp_homepage_url = ami_to_utf8_easy((char *)rarray[A_URL]);
+			temp_homepage_url = strdup((char *)rarray[A_URL]); /**\todo allow IDNs */
 		}
 
 		if(rarray[A_USERSDIR]) {
