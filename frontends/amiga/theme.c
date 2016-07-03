@@ -51,9 +51,6 @@
 #include "amiga/theme.h"
 #include "amiga/misc.h"
 
-ULONG throbber_width;
-ULONG throbber_height;
-
 static struct BitMap *throbber = NULL;
 static struct bitmap *throbber_nsbm = NULL;
 static int throbber_frames, throbber_update_interval;
@@ -161,6 +158,16 @@ void ami_theme_init(void)
 	}
 }
 
+int ami_theme_throbber_get_width(void)
+{
+	return bitmap_get_width(throbber_nsbm) / throbber_frames;
+}
+
+int ami_theme_throbber_get_height(void)
+{
+	return bitmap_get_height(throbber_nsbm);
+}
+
 void ami_theme_throbber_setup(void)
 {
 	char throbberfile[1024];
@@ -174,8 +181,6 @@ void ami_theme_throbber_setup(void)
 	bm = ami_bitmap_from_datatype(throbberfile);
 	throbber = ami_bitmap_get_native(bm, bitmap_get_width(bm), bitmap_get_height(bm), NULL);
 
-	throbber_width = bitmap_get_width(bm) / throbber_frames;
-	throbber_height = bitmap_get_height(bm);
 	throbber_nsbm = bm;
 }
 
@@ -456,8 +461,10 @@ void gui_window_stop_throbber(struct gui_window *g)
 		}
 
 		if(throbber != NULL) {
-			BltBitMapRastPort(throbber, 0, 0, g->shared->win->RPort, bbox->Left,
-				bbox->Top, throbber_width, throbber_height, 0x0C0);
+			BltBitMapRastPort(throbber, 0, 0, g->shared->win->RPort,
+				bbox->Left, bbox->Top, 
+				ami_theme_throbber_get_width(), ami_theme_throbber_get_height(),
+				0x0C0);
 		}
 		ami_gui_free_space_box(bbox);
 	}
@@ -490,12 +497,12 @@ static void ami_throbber_update(void *p)
 
 		if(throbber != NULL) {
 #ifdef __amigaos4__
-			BltBitMapTags(BLITA_SrcX, throbber_width * frame,
+			BltBitMapTags(BLITA_SrcX, ami_theme_throbber_get_width() * frame,
 						BLITA_SrcY, 0,
 						BLITA_DestX, bbox->Left,
 						BLITA_DestY, bbox->Top,
-						BLITA_Width, throbber_width,
-						BLITA_Height, throbber_height,
+						BLITA_Width, ami_theme_throbber_get_width(),
+						BLITA_Height, ami_theme_throbber_get_height(),
 						BLITA_Source, throbber,
 						BLITA_Dest, g->shared->win->RPort,
 						BLITA_SrcType, BLITT_BITMAP,
@@ -503,8 +510,11 @@ static void ami_throbber_update(void *p)
 					//	BLITA_UseSrcAlpha, TRUE,
 					TAG_DONE);
 #else
-			BltBitMapRastPort(throbber, throbber_width * frame, 0, g->shared->win->RPort,
-				bbox->Left, bbox->Top, throbber_width, throbber_height, 0xC0);
+			BltBitMapRastPort(throbber, ami_theme_throbber_get_width() * frame,
+				0, g->shared->win->RPort,
+				bbox->Left, bbox->Top,
+				ami_theme_throbber_get_width(), ami_theme_throbber_get_height(),
+				0xC0);
 #endif
 		}
 		ami_gui_free_space_box(bbox);
