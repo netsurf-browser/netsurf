@@ -85,7 +85,7 @@ APTR ami_misc_itempool_alloc(APTR pool, int size)
 #endif
 }
 
-void ami_misc_itempool_free(APTR pool, APTR item, int size)
+void ami_misc_itempool_free(APTR restrict pool, APTR restrict item, int size)
 {
 #ifdef __amigaos4__
 	ItemPoolFree(pool, item);

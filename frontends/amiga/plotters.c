@@ -797,8 +797,9 @@ HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage 
 	}
 }
 
-static void ami_bezier(struct bez_point *a, struct bez_point *b, struct bez_point *c,
-			struct bez_point *d, double t, struct bez_point *p) {
+static void ami_bezier(struct bez_point *restrict a, struct bez_point *restrict b,
+				struct bez_point *restrict c, struct bez_point *restrict d,
+				double t, struct bez_point *restrict p) {
     p->x = pow((1 - t), 3) * a->x + 3 * t * pow((1 -t), 2) * b->x + 3 * (1-t) * pow(t, 2)* c->x + pow (t, 3)* d->x;
     p->y = pow((1 - t), 3) * a->y + 3 * t * pow((1 -t), 2) * b->y + 3 * (1-t) * pow(t, 2)* c->y + pow (t, 3)* d->y;
 }

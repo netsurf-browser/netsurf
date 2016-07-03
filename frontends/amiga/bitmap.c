@@ -398,9 +398,10 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 	return bm;
 }
 
-static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap, int width, int height, struct BitMap *friendbm, int type)
+static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
+			int width, int height, struct BitMap *restrict friendbm, int type)
 {
-	struct BitMap *tbm = NULL;
+	struct BitMap *restrict tbm = NULL;
 
 	if(bitmap->nativebm)
 	{
@@ -473,7 +474,7 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap, int w
 
 	if((bitmap->width != width) || (bitmap->height != height))
 	{
-		struct BitMap *scaledbm;
+		struct BitMap *restrict scaledbm;
 		struct BitScaleArgs bsa;
 		int depth = 32;
 		if(type == AMI_NSBM_PALETTEMAPPED) depth = 8;
@@ -539,7 +540,8 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap, int w
 }
 
 
-static inline struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,int height,struct BitMap *friendbm)
+static inline struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,
+			int width, int height, struct BitMap *friendbm)
 {
 	if((bitmap->native != AMI_NSBM_NONE) && (bitmap->native != AMI_NSBM_TRUECOLOUR)) {
 		amiga_bitmap_modified(bitmap);

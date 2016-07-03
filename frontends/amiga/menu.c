@@ -564,7 +564,8 @@ void ami_free_menulabs(struct gui_window_2 *gwin)
 }
 
 static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
-			const char *label, char key, const char *icon, void *func, void *hookdata)
+			const char *restrict label, char key, const char *restrict icon,
+			void *restrict func, void *restrict hookdata)
 {
 	char menu_icon[1024];
 

@@ -136,9 +136,9 @@ static lwc_string *glypharray[0xffff + 1];
 static struct List ami_diskfontlib_list;
 
 static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
-		uint16 *char1, uint16 *char2, uint32 x, uint32 y, uint32 emwidth, bool aa);
+		uint16 *restrict char1, uint16 *restrict char2, uint32 x, uint32 y, uint32 emwidth, bool aa);
 static inline int32 ami_font_width_glyph(struct OutlineFont *ofont, 
-		const uint16 *char1, const uint16 *char2, uint32 emwidth);
+		const uint16 *restrict char1, const uint16 *restrict char2, uint32 emwidth);
 static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
 		const uint16 *codepoint);
 static inline ULONG ami_font_unicode_width(const char *string, ULONG length,
@@ -530,7 +530,8 @@ static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle
 }
 
 static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
-		uint16 *char1, uint16 *char2, uint32 x, uint32 y, uint32 emwidth, bool aa)
+		uint16 *restrict char1, uint16 *restrict char2, uint32 x, uint32 y,
+		uint32 emwidth, bool aa)
 {
 	struct GlyphMap *glyph;
 	UBYTE *glyphbm;
@@ -637,7 +638,7 @@ static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPo
 }
 
 static inline int32 ami_font_width_glyph(struct OutlineFont *ofont, 
-		const uint16 *char1, const uint16 *char2, uint32 emwidth)
+		const uint16 *restrict char1, const uint16 *restrict char2, uint32 emwidth)
 {
 	int32 char_advance = 0;
 	FIXED kern = 0;

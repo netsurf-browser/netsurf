@@ -219,7 +219,7 @@ static const __attribute__((used)) char *stack_cookie = "\0$STACK:196608\0";
 const char * const versvn;
 const char * const verdate;
 
-void ami_switch_tab(struct gui_window_2 *gwin,bool redraw);
+void ami_switch_tab(struct gui_window_2 *gwin, bool redraw);
 void ami_change_tab(struct gui_window_2 *gwin, int direction);
 void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs);
 void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys);
@@ -228,13 +228,13 @@ Object *ami_gui_splash_open(void);
 void ami_gui_splash_close(Object *win_obj);
 HOOKF(uint32, ami_set_favicon_render_hook, APTR, space, struct gpRender *);
 HOOKF(uint32, ami_set_throbber_render_hook, APTR, space, struct gpRender *);
-bool ami_gui_map_filename(char **remapped, const char *path, const char *file,
-	const char *map);
+bool ami_gui_map_filename(char **remapped, const char *restrict path, const char *restrict file,
+	const char *restrict map);
 static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw);
 static void ami_do_redraw(struct gui_window_2 *g);
 static void ami_schedule_redraw_remove(struct gui_window_2 *gwin);
 
-static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy);
+static bool gui_window_get_scroll(struct gui_window *g, int *restrict sx, int *restrict sy);
 static void gui_window_set_scroll(struct gui_window *g, int sx, int sy);
 static void gui_window_remove_caret(struct gui_window *g);
 static void gui_window_place_caret(struct gui_window *g, int x, int y, int height, const struct rect *clip);
@@ -289,13 +289,14 @@ STRPTR ami_locale_langs(int *codeset)
 	return acceptlangs;
 }
 
-bool ami_gui_map_filename(char **remapped, const char *path, const char *file, const char *map)
+bool ami_gui_map_filename(char **remapped, const char *restrict path,
+		const char *restrict file, const char *restrict map)
 {
 	BPTR fh = 0;
 	char *mapfile = NULL;
 	size_t mapfile_size = 0;
 	char buffer[1024];
-	char *realfname;
+	char *restrict realfname;
 	bool found = false;
 
 	netsurf_mkpath(&mapfile, &mapfile_size, 2, path, map);
@@ -386,7 +387,7 @@ bool ami_locate_resource(char *fullpath, const char *file)
 	locale = OpenLocale(NULL);
 
 	for(i=0;i<10;i++) {
-		strcpy(fullpath,"PROGDIR:Resources/");
+		strcpy(fullpath, "PROGDIR:Resources/");
 
 		if(locale->loc_PrefLanguages[i]) {
 			ami_gui_map_filename(&remapped, "PROGDIR:Resources",
@@ -839,7 +840,8 @@ static void ami_openscreenfirst(void)
 	ami_theme_throbber_setup();
 }
 
-static struct RDArgs *ami_gui_commandline(int *argc, char **argv, int *nargc, char **nargv)
+static struct RDArgs *ami_gui_commandline(int *restrict argc, char ** argv,
+		int *restrict nargc, char ** nargv)
 {
 	int new_argc = 1;
 	struct RDArgs *args;
@@ -1403,8 +1405,8 @@ void ami_gui_free_space_box(struct IBox *bbox)
 #endif
 }
 
-static bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
-	int space_x, int space_y)
+static bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin,
+		int *restrict x, int *restrict y, int space_x, int space_y)
 {
 	int ns_x = space_x;
 	int ns_y = space_y;
@@ -1421,7 +1423,7 @@ static bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 	return true;	
 }
 
-bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
+bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *restrict x, int *restrict y,
 	int mouse_x, int mouse_y)
 {
 	int ns_x, ns_y;
@@ -1598,8 +1600,8 @@ static void ami_gui_menu_update_all(void)
 	} while((node = nnode));
 }
 
-static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
-		bool scaled)
+static void gui_window_get_dimensions(struct gui_window *g,
+		int *restrict width, int *restrict height, bool scaled)
 {
 	struct IBox *bbox;
 	if(!g) return;
@@ -1844,7 +1846,8 @@ static void ami_gui_refresh_favicon(void *p)
  * Returns the width of the size gadget as a convenience.
  */
 #ifdef __amigaos4__
-static ULONG ami_get_border_gadget_size(struct gui_window_2 *gwin, ULONG *width, ULONG *height)
+static ULONG ami_get_border_gadget_size(struct gui_window_2 *gwin,
+		ULONG *restrict width, ULONG *restrict height)
 {
 	static ULONG sz_gad_width = 0;
 	static ULONG sz_gad_height = 0;
@@ -3127,7 +3130,8 @@ void ami_gui_update_hotlist_button(struct gui_window_2 *gwin)
 	}
 }
 
-static bool ami_gui_hotlist_add(void *userdata, int level, int item, const char *title, nsurl *url, bool is_folder)
+static bool ami_gui_hotlist_add(void *userdata, int level, int item,
+		const char *title, nsurl *url, bool is_folder)
 {
 	struct ami_gui_tb_userdata *tb_userdata = (struct ami_gui_tb_userdata *)userdata;
 	struct Node *speed_button_node;
@@ -4577,10 +4581,10 @@ static void gui_window_destroy(struct gui_window *g)
 	win_destroyed = true;
 }
 
-static void gui_window_set_title(struct gui_window *g, const char *title)
+static void gui_window_set_title(struct gui_window *g, const char *restrict title)
 {
 	struct Node *node;
-	char *utf8title;
+	char *restrict utf8title;
 
 	if(!g) return;
 	if(!title) return;
@@ -4705,11 +4709,11 @@ static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw)
 }
 
 static bool ami_gui_window_update_box_deferred_check(struct MinList *deferred_rects,
-				const struct rect *new_rect, APTR mempool)
+				const struct rect *restrict new_rect, APTR mempool)
 {
 	struct nsObject *node;
 	struct nsObject *nnode;
-	struct rect *rect;
+	struct rect *restrict rect;
 	
 	if(IsMinListEmpty(deferred_rects)) return true;
 
@@ -4740,10 +4744,10 @@ static bool ami_gui_window_update_box_deferred_check(struct MinList *deferred_re
 	return true;
 }
 
-static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
+static void gui_window_update_box(struct gui_window *g, const struct rect *restrict rect)
 {
 	struct nsObject *nsobj;
-	struct rect *deferred_rect;
+	struct rect *restrict deferred_rect;
 	if(!g) return;
 	
 	if(ami_gui_window_update_box_deferred_check(g->deferred_rects, rect,
@@ -4924,7 +4928,7 @@ void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys)
 	*ys /= gwin->gw->scale;
 }
 
-static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
+static bool gui_window_get_scroll(struct gui_window *g, int *restrict sx, int *restrict sy)
 {
 	ami_get_hscroll_pos(g->shared, (ULONG *)sx);
 	ami_get_vscroll_pos(g->shared, (ULONG *)sy);
@@ -5269,7 +5273,7 @@ static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 /* return the text box at posn x,y in window coordinates
    x,y are updated to be document co-ordinates */
 
-bool ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y)
+bool ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *restrict x, ULONG *restrict y)
 {
 	struct IBox *bbox;
 	ULONG xs, ys;
@@ -5314,7 +5318,7 @@ BOOL ami_gadget_hit(Object *obj, int x, int y)
 
 Object *ami_gui_splash_open(void)
 {
-	Object *win_obj, *bm_obj;
+	Object *restrict win_obj, *restrict bm_obj;
 	struct Window *win;
 	struct Screen *wbscreen = LockPubScreen("Workbench");
 	uint32 top = 0, left = 0;
