@@ -27,9 +27,9 @@ struct ami_font_cache_node
 	struct SkipNode skip_node;
 #endif
 	struct OutlineFont *font;
-	char *bold;
-	char *italic;
-	char *bolditalic;
+	char *restrict bold;
+	char *restrict italic;
+	char *restrict bolditalic;
 	struct TimeVal lastused;
 };
 
