@@ -144,6 +144,7 @@ struct gui_window_2 {
 	gui_pointer_shape mouse_pointer;
 	struct Menu *imenu; /* Intuition menu */
 	struct VisualInfo *vi; /* For GadTools menu */
+	bool closed; /* Window has been closed (via menu) */
 };
 
 struct gui_window

@@ -87,8 +87,7 @@ enum {
 	NSA_GLYPH_MAX
 };
 
-struct gui_window_2 *ami_menu_window_close = NULL;
-
+static bool menu_quit = false;
 static bool ami_menu_check_toggled = false;
 static BOOL menualreadyinit;
 static Object *menu_glyph[NSA_GLYPH_MAX];
@@ -111,6 +110,11 @@ bool ami_menu_get_check_toggled(void)
 	bool check_toggled = ami_menu_check_toggled;
 	ami_menu_check_toggled = false;
 	return check_toggled;
+}
+
+bool ami_menu_quit_selected(void)
+{
+	return menu_quit;
 }
 
 /*
@@ -175,7 +179,7 @@ HOOKF(void, ami_menu_item_project_closewin, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	ami_menu_window_close = gwin;
+	gwin->closed = true;
 }
 
 HOOKF(void, ami_menu_item_project_print, APTR, window, struct IntuiMessage *)
@@ -253,7 +257,7 @@ HOOKF(void, ami_menu_item_project_about, APTR, window, struct IntuiMessage *)
 
 HOOKF(void, ami_menu_item_project_quit, APTR, window, struct IntuiMessage *)
 {
-	ami_menu_window_close = AMI_MENU_WINDOW_CLOSE_ALL;
+	menu_quit = true;
 }
 
 HOOKF(void, ami_menu_item_edit_cut, APTR, window, struct IntuiMessage *)

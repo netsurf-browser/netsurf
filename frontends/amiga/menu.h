@@ -129,13 +129,8 @@ enum {
 #define AMI_MENU_BACKIMG FULLMENUNUM(2,8,1)
 #define AMI_MENU_JS FULLMENUNUM(2,9,0)
 
-/** A special value for ami_menu_window_close */
-#define AMI_MENU_WINDOW_CLOSE_ALL (void *)1
-
 struct gui_window;
 struct gui_window_2;
-
-extern struct gui_window_2 *ami_menu_window_close;
 
 void ami_free_menulabs(struct gui_window_2 *gwin);
 struct Menu *ami_menu_create(struct gui_window_2 *gwin);
@@ -158,5 +153,12 @@ void ami_menu_set_check_toggled(void);
  * \return true if the menus need refreshing
  */
 bool ami_menu_get_check_toggled(void);
+
+/**
+ * Gets if NetSurf has been quit from the menu
+ *
+ * \return true if NetSurf has been quit
+ */
+bool ami_menu_quit_selected(void);
 #endif
 

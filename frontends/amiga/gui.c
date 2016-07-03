@@ -2544,16 +2544,14 @@ static void ami_handle_msg(void)
 //	ReplyMsg((struct Message *)message);
 		}
 
+		if(gwin->closed == true) {
+			ami_gui_close_window(gwin);
+		}
+
 	} while((node = nnode));
 
-	if(ami_menu_window_close)
-	{
-		if(ami_menu_window_close == (void *)AMI_MENU_WINDOW_CLOSE_ALL)
-			ami_quit_netsurf();
-		else
-			ami_gui_close_window(ami_menu_window_close);
-			
-		ami_menu_window_close = NULL;
+	if(ami_menu_quit_selected() == true){
+		ami_quit_netsurf();
 	}
 	
 	if(ami_menu_get_check_toggled() == true) {
