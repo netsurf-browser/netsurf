@@ -1076,7 +1076,8 @@ static void gui_init2(int argc, char** argv)
 		} else {
 			sendcmd = ASPrintf("OPEN \"%s\" NEW",nsoption_charp(homepage_url));
 		}
-		ami_arexx_command(sendcmd);
+		ami_arexx_self(sendcmd);
+
 		FreeVec(sendcmd);
 
 		ami_quit=true;

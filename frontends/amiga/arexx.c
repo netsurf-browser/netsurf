@@ -133,6 +133,7 @@ bool ami_arexx_init(ULONG *rxsig)
 			AREXX_ReplyHook,NULL,
 			AREXX_DefExtension,"nsrx",
 			End;
+
 		return false;
 	}
 }
@@ -142,10 +143,15 @@ void ami_arexx_handle(void)
 	RA_HandleRexx(arexx_obj);
 }
 
-void ami_arexx_command(const char *cmd)
+static void ami_arexx_command(const char *cmd, const char *port)
 {
 	if(arexx_obj == NULL) return;
-	IDoMethod(arexx_obj, AM_EXECUTE, cmd, NULL, NULL, NULL, NULL, NULL);
+	IDoMethod(arexx_obj, AM_EXECUTE, cmd, port, NULL, NULL, NULL, NULL);
+}
+
+void ami_arexx_self(const char *cmd)
+{
+	ami_arexx_command(cmd, "NETSURF");
 }
 
 void ami_arexx_execute(char *script)
@@ -156,7 +162,7 @@ void ami_arexx_execute(char *script)
 	if((lock = Lock(script, ACCESS_READ))) {
 		DevNameFromLock(lock, full_script_path, 1024, DN_FULLPATH);
 		LOG("Executing script: %s", full_script_path);
-		ami_arexx_command(full_script_path);
+		ami_arexx_command(full_script_path, NULL);
 		UnLock(lock);
 	}
 }
