@@ -136,7 +136,6 @@ struct gui_window;
 struct gui_window_2;
 
 extern struct gui_window_2 *ami_menu_window_close;
-extern bool ami_menu_check_toggled;
 
 void ami_free_menulabs(struct gui_window_2 *gwin);
 struct Menu *ami_menu_create(struct gui_window_2 *gwin);
@@ -146,5 +145,18 @@ void ami_menu_update_disabled(struct gui_window *g, struct hlcache_handle *c);
 void ami_menu_free_glyphs(void);
 void ami_menu_free(struct gui_window_2 *gwin);
 
+/**
+ * Sets that an item linked to a toggle menu item has been changed.
+ */
+void ami_menu_set_check_toggled(void);
+
+/**
+ * Gets if the menu needs updating because an item linked
+ * to a toggle menu item has been changed.
+ * NB: This also *clears* the state
+ *
+ * \return true if the menus need refreshing
+ */
+bool ami_menu_get_check_toggled(void);
 #endif
 

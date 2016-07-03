@@ -2556,9 +2556,8 @@ static void ami_handle_msg(void)
 		ami_menu_window_close = NULL;
 	}
 	
-	if(ami_menu_check_toggled) {
+	if(ami_menu_get_check_toggled() == true) {
 		ami_gui_menu_update_all();
-		ami_menu_check_toggled = false;
 	}
 }
 

@@ -88,8 +88,8 @@ enum {
 };
 
 struct gui_window_2 *ami_menu_window_close = NULL;
-bool ami_menu_check_toggled = false;
 
+static bool ami_menu_check_toggled = false;
 static BOOL menualreadyinit;
 static Object *menu_glyph[NSA_GLYPH_MAX];
 static int menu_glyph_width[NSA_GLYPH_MAX];
@@ -100,6 +100,18 @@ const char * const verdate;
 
 static nserror ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin);
 void ami_menu_arexx_scan(struct gui_window_2 *gwin);
+
+void ami_menu_set_check_toggled(void)
+{
+	ami_menu_check_toggled = true;
+}
+
+bool ami_menu_get_check_toggled(void)
+{
+	bool check_toggled = ami_menu_check_toggled;
+	ami_menu_check_toggled = false;
+	return check_toggled;
+}
 
 /*
  * The below functions are called automatically by window.class when menu items are selected.
@@ -354,7 +366,7 @@ HOOKF(void, ami_menu_item_browser_foreimg, APTR, window, struct IntuiMessage *)
 	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
 	
 	nsoption_set_bool(foreground_images, checked);
-	ami_menu_check_toggled = true;
+	ami_menu_set_check_toggled();
 }
 
 HOOKF(void, ami_menu_item_browser_backimg, APTR, window, struct IntuiMessage *)
@@ -366,7 +378,7 @@ HOOKF(void, ami_menu_item_browser_backimg, APTR, window, struct IntuiMessage *)
 	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
 	
 	nsoption_set_bool(background_images, checked);
-	ami_menu_check_toggled = true;
+	ami_menu_set_check_toggled();
 }
 
 HOOKF(void, ami_menu_item_browser_enablejs, APTR, window, struct IntuiMessage *)
@@ -378,7 +390,7 @@ HOOKF(void, ami_menu_item_browser_enablejs, APTR, window, struct IntuiMessage *)
 	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
 	
 	nsoption_set_bool(enable_javascript, checked);
-	ami_menu_check_toggled = true;
+	ami_menu_set_check_toggled();
 }
 
 HOOKF(void, ami_menu_item_browser_scale_decrease, APTR, window, struct IntuiMessage *)
