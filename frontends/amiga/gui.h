@@ -94,7 +94,7 @@ struct history_window;
 struct gui_window_2 {
 	struct nsObject *node;
 	struct Window *win;
-	Object *objects[GID_LAST];
+	Object *restrict objects[GID_LAST];
 	struct gui_window *gw; /* currently-displayed gui_window */
 	bool redraw_required;
 	int throbber_frame;
@@ -112,22 +112,22 @@ struct gui_window_2 {
 	int temp;
 	bool redraw_scroll;
 	bool new_content;
-	char *menulab[AMI_MENU_AREXX_MAX + 1];
-	Object *menuobj[AMI_MENU_AREXX_MAX + 1];
+	char *restrict menulab[AMI_MENU_AREXX_MAX + 1];
+	Object *restrict menuobj[AMI_MENU_AREXX_MAX + 1];
 	char menukey[AMI_MENU_AREXX_MAX + 1];
-	char *menuicon[AMI_MENU_AREXX_MAX + 1];
+	char *restrict menuicon[AMI_MENU_AREXX_MAX + 1];
 	struct Hook menu_hook[AMI_MENU_AREXX_MAX + 1];
 	UBYTE *menutype;
 	struct NewMenu *menu;
 	ULONG hotlist_items;
-	Object *hotlist_toolbar_lab[AMI_GUI_TOOLBAR_MAX];
+	Object *restrict hotlist_toolbar_lab[AMI_GUI_TOOLBAR_MAX];
 	struct List hotlist_toolbar_list;
 	struct List *web_search_list;
 	Object *search_bm;
-	char *svbuffer;
-	char *status;
-	char *wintitle;
-	char *helphints[GID_LAST];
+	char *restrict svbuffer;
+	char *restrict status;
+	char *restrict wintitle;
+	char *restrict helphints[GID_LAST];
 	browser_mouse_state prev_mouse_state;
 	struct timeval lastclick;
 	struct AppIcon *appicon; /* iconify appicon */
@@ -135,8 +135,8 @@ struct gui_window_2 {
 	struct Hook favicon_hook;
 	struct Hook throbber_hook;
 	struct Hook *ctxmenu_hook;
-	Object *history_ctxmenu[2];
-	Object *clicktab_ctxmenu;
+	Object *restrict history_ctxmenu[2];
+	Object *restrict clicktab_ctxmenu;
 	gui_drag_type drag_op;
 	struct IBox *ptr_lock;
 	struct AppWindow *appwin;

@@ -89,8 +89,7 @@ enum {
 
 static bool menu_quit = false;
 static bool ami_menu_check_toggled = false;
-static BOOL menualreadyinit;
-static Object *menu_glyph[NSA_GLYPH_MAX];
+static Object *restrict menu_glyph[NSA_GLYPH_MAX];
 static int menu_glyph_width[NSA_GLYPH_MAX];
 static bool menu_glyphs_loaded = false;
 
@@ -577,7 +576,7 @@ static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 		if((num >= AMI_MENU_HOTLIST) && (num <= AMI_MENU_HOTLIST_MAX)) {
 			utf8_from_local_encoding(label,
 			(strlen(label) < NSA_MAX_HOTLIST_MENU_LEN) ? strlen(label) : NSA_MAX_HOTLIST_MENU_LEN,
-			&gwin->menulab[num]);
+			(char **)&gwin->menulab[num]);
 		} else if((num >= AMI_MENU_AREXX) && (num < AMI_MENU_AREXX_MAX)) {
 			gwin->menulab[num] = strdup(label);		
 		} else {
@@ -856,8 +855,8 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 				using label.image if there's a bitmap associated with the item. */
 			if((gwin->menuicon[i] != NULL) && (gwin->menulab[i] != NM_BARLABEL)) {
 				int icon_width = 0;
-				Object *submenuarrow = NULL;
-				Object *icon = 	BitMapObj,
+				Object *restrict submenuarrow = NULL;
+				Object *restrict icon = BitMapObj,
 						IA_Scalable, TRUE,
 						BITMAP_Screen, scrn,
 						BITMAP_SourceFile, gwin->menuicon[i],
