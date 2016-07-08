@@ -727,11 +727,11 @@ static const uint16 *ami_font_translate_smallcaps(uint16 *utf16char)
 static ULONG amiga_nsfont_text(struct RastPort *rp, const char *string, ULONG length,
 			const plot_font_style_t *fstyle, ULONG dx, ULONG dy, bool aa)
 {
-	uint16 *utf16 = NULL, *outf16 = NULL;
-	uint16 *utf16charsc = 0, *utf16nextsc = 0;
-	uint16 *utf16next = 0;
+	uint16 *restrict utf16 = NULL, *restrict outf16 = NULL;
+	uint16 *restrict utf16charsc = 0, *restrict utf16nextsc = 0;
+	uint16 *restrict utf16next = 0;
 	int utf16charlen;
-	struct OutlineFont *ofont, *ufont = NULL;
+	struct OutlineFont *restrict ofont, *restrict ufont = NULL;
 	uint32 x=0;
 	int32 tempx = 0;
 	ULONG emwidth = (ULONG)NSA_FONT_EMWIDTH(fstyle->size);
@@ -792,11 +792,11 @@ static ULONG amiga_nsfont_text(struct RastPort *rp, const char *string, ULONG le
 static inline ULONG ami_font_unicode_width(const char *string, ULONG length,
 			const plot_font_style_t *fstyle, ULONG dx, ULONG dy, bool aa)
 {
-	uint16 *utf16 = NULL, *outf16 = NULL;
-	uint16 *utf16charsc = 0, *utf16nextsc = 0;
-	uint16 *utf16next = 0;
+	uint16 *restrict utf16 = NULL, *restrict outf16 = NULL;
+	uint16 *restrict utf16charsc = 0, *restrict utf16nextsc = 0;
+	uint16 *restrict utf16next = 0;
 	int utf16charlen;
-	struct OutlineFont *ofont, *ufont = NULL;
+	struct OutlineFont *restrict ofont, *restrict ufont = NULL;
 	uint32 x=0;
 	int32 tempx = 0;
 	ULONG emwidth = (ULONG)NSA_FONT_EMWIDTH(fstyle->size);
