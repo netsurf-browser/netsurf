@@ -106,17 +106,30 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool for
 	if(force32bit == false) depth = GetBitMapAttr(scrn->RastPort.BitMap, BMA_DEPTH);
 	LOG("Screen depth = %d", depth);
 
+#ifdef __amigaos4__
 	if(depth < 16) {
 		gg->palette_mapped = true;
 	} else {
 		gg->palette_mapped = false;
 	}
-
-#ifndef __amigaos4__
+#else
+	/* Friend BitMaps are weird.
+	 * For OS4, we shouldn't use a friend BitMap here (see below).
+	 * For OS3 AGA, we get no display blitted if we use a friend BitMap,
+	 * however on RTG it seems to be a benefit.
+	 */
+	if(nsoption_bool(friend_bitmap) == true) {
+		friend = scrn->RastPort.BitMap;
+	} else {
+		/* Force friend BitMaps on for obvious RTG screens under OS3.
+		 * If we get a bit smarter about this we can lose the user option. */
+		if((depth > 8) && (force32bit == false)) friend = scrn->RastPort.BitMap;
+	}
 #warning OS3 locked to palette-mapped modes
 	gg->palette_mapped = true;
 	if(depth > 8) depth = 8;
 #endif
+
 
 	/* Probably need to fix this next line */
 	if(gg->palette_mapped == true) nsoption_set_bool(font_antialiasing, false);
@@ -134,21 +147,6 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool for
 #else
 	/* OS3/AGA requires this to be in chip mem.  RTG would probably rather it wasn't. */
 	gg->tmprasbuf = AllocVec(width * height, MEMF_CHIP);
-#endif
-
-	/* Friend BitMaps are weird.
-	 * For OS4, we shouldn't use a friend BitMap here (see below).
-	 * For OS3 AGA, we get no display blitted if we use a friend BitMap,
-	 * however on RTG it seems to be a benefit.
-	 */
-#ifndef __amigaos4__
-	if(nsoption_bool(friend_bitmap) == true) {
-		friend = scrn->RastPort.BitMap;
-	} else {
-		/* Force friend BitMaps on for obvious RTG screens under OS3.
-		 * If we get a bit smarter about this we can lose the user option. */
-		if((depth >= 16) && (force32bit == false)) friend = scrn->RastPort.BitMap;
-	}
 #endif
 
 	if(gg->palette_mapped == true) {
