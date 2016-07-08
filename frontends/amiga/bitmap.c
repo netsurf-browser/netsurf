@@ -477,10 +477,12 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 			}
 			bitmap->native = type;
 		}
+
+		if(type == AMI_NSBM_PALETTEMAPPED)
+			return tbm;
 	}
 
-	if(((bitmap->width != width) || (bitmap->height != height)) &&
-		(type == AMI_NSBM_TRUECOLOUR)) {
+	if((bitmap->width != width) || (bitmap->height != height)) {
 		struct BitMap *restrict scaledbm;
 		struct BitScaleArgs bsa;
 		int depth = 32;
