@@ -5544,6 +5544,19 @@ int main(int argc, char** argv)
 	/* Open splash window */
 	Object *splash_window = ami_gui_splash_open();
 
+#ifdef __amigaos4__
+	/* Check for AltiVec */
+	uint32 altivec = 0;
+	GetCPUInfoTags(GCIT_VectorUnit, &altivec);
+
+	if(altivec == VECTORTYPE_ALTIVEC) {
+		LOG("AltiVec detected");
+	} else {
+		LOG("AltiVec NOT detected");
+		SetVar("JSIMD_FORCENONE", "0", 1, GVF_LOCAL_ONLY);
+	}
+#endif
+
 	ami_object_init();
 
 	if (ami_open_resources() == false) { /* alloc message ports */
