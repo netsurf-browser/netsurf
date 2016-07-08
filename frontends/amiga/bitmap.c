@@ -309,7 +309,7 @@ static void ami_bitmap_rgba_to_argb(struct bitmap *bm)
 	
 	ULONG *data = (ULONG *)amiga_bitmap_get_buffer(bm);
 	for(int i = 0; i < (bm->width * bm->height); i++) {
-		data[i] = (data[i] >> 8) | (data[i] << 24);
+		data[i] = (data[ i] >> 8) | (data[i] << 24);
 	}
 }
 
@@ -426,7 +426,7 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 										tbm, bitmap->width, bitmap->height,
 										bitmap->width * 4, AMI_BITMAP_FORMAT);
 		} else {
-			tbm = ami_rtg_allocbitmap(bitmap->width, bitmap->height,
+			tbm = ami_rtg_allocbitmap(width, height,
 										8, 0, friendbm, AMI_BITMAP_FORMAT);
 			if(tbm == NULL) return NULL;
 
@@ -450,7 +450,7 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 
 				APTR ddh = CreateDirectDrawHandle(bitmap->drawhandle,
 										bitmap->width, bitmap->height,
-										bitmap->width, bitmap->height, NULL);
+										width, height, NULL);
 
 				DirectDrawTrueColor(ddh, (ULONG *)amiga_bitmap_get_buffer(bitmap), 0, 0, TAG_DONE);
 				DeleteDirectDrawHandle(ddh);
@@ -466,14 +466,19 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 		if(nsoption_int(cache_bitmaps) == 2)
 		{
 			bitmap->nativebm = tbm;
-			bitmap->nativebmwidth = bitmap->width;
-			bitmap->nativebmheight = bitmap->height;
+			if(type == AMI_NSBM_TRUECOLOUR) {
+				bitmap->nativebmwidth = bitmap->width;
+				bitmap->nativebmheight = bitmap->height;
+			} else {
+				bitmap->nativebmwidth = width;
+				bitmap->nativebmheight = height;
+			}
 			bitmap->native = type;
 		}
 	}
 
-	if((bitmap->width != width) || (bitmap->height != height))
-	{
+	if(((bitmap->width != width) || (bitmap->height != height)) &&
+		(type == AMI_NSBM_TRUECOLOUR)) {
 		struct BitMap *restrict scaledbm;
 		struct BitScaleArgs bsa;
 		int depth = 32;
