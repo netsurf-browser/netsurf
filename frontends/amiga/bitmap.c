@@ -463,8 +463,10 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 			}
 		}
 
-		if(nsoption_int(cache_bitmaps) == 2)
-		{
+		if(((type == AMI_NSBM_TRUECOLOUR) && (nsoption_int(cache_bitmaps) == 2)) ||
+				((type == AMI_NSBM_PALETTEMAPPED) && (((bitmap->width == width) &&
+				(bitmap->height == height) && (nsoption_int(cache_bitmaps) == 2)) ||
+				(nsoption_int(cache_bitmaps) >= 1)))) {
 			bitmap->nativebm = tbm;
 			if(type == AMI_NSBM_TRUECOLOUR) {
 				bitmap->nativebmwidth = bitmap->width;
