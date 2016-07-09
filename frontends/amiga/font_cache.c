@@ -130,7 +130,7 @@ static void ami_font_cache_del_skiplist(struct SkipList *skiplist)
 
 struct ami_font_cache_node *ami_font_cache_locate(const char *font)
 {
-	struct ami_font_cache_node *nodedata;
+	struct ami_font_cache_node *nodedata = NULL;
 	uint32 hash = 0;
 
 #ifdef __amigaos4__

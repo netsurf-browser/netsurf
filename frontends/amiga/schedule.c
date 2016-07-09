@@ -38,14 +38,14 @@ struct Device *TimerBase;
 struct TimerIFace *ITimer;
 #endif
 
-static APTR pool_nscb = NULL;
-static APTR pool_timereq = NULL;
+static APTR restrict pool_nscb = NULL;
+static APTR restrict pool_timereq = NULL;
 
 struct nscallback
 {
 	struct TimeVal tv;
-	void *callback;
-	void *p;
+	void *restrict callback;
+	void *restrict p;
 	struct TimeRequest *treq;
 };
 

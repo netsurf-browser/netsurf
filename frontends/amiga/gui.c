@@ -935,13 +935,12 @@ static void ami_gui_read_all_tooltypes(int argc, char **argv)
 {
 	struct WBStartup *WBenchMsg;
 	struct WBArg *wbarg;
-	char i;
-	LONG olddir = -1;
+	char i = 0;
 
 	if(argc == 0) { /* Started from WB */
 		WBenchMsg = (struct WBStartup *)argv;
 		for(i = 0, wbarg = WBenchMsg->sm_ArgList; i < WBenchMsg->sm_NumArgs; i++,wbarg++) {
-			olddir =-1;
+			LONG olddir =-1;
 			if((wbarg->wa_Lock) && (*wbarg->wa_Name))
 				olddir = SetCurrentDir(wbarg->wa_Lock);
 
@@ -3080,12 +3079,12 @@ static void gui_quit(void)
 char *ami_gui_get_cache_favicon_name(nsurl *url, bool only_if_avail)
 {
 	STRPTR filename = NULL;
-	BPTR lock = 0;
 
 	if ((filename = ASPrintf("%s/%x", current_user_faviconcache, nsurl_hash(url)))) {
 		LOG("favicon cache location: %s", filename);
 
 		if (only_if_avail == true) {
+			BPTR lock = 0;
 			if((lock = Lock(filename, ACCESS_READ))) {
 				UnLock(lock);
 				return filename;
@@ -5563,7 +5562,7 @@ int main(int argc, char** argv)
 			LOG("WARNING: JSIMD_FORCENONE NOT SET");
 			SetVar("JSIMD_FORCENONE", "1", 1, GVF_GLOBAL_ONLY | GVF_SAVE_VAR);
 		} else {
-			LOG("JSIMDFORCENONE = %s (NB: Should be '1' for this architecture)", jsimd_forcenone);
+			LOG("JSIMD_FORCENONE = %s (NB: Should be '1' for this architecture)", jsimd_forcenone);
 		}
 	}
 #endif

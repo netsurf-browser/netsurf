@@ -78,8 +78,6 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 {
 	struct svgtiny_diagram *diagram;
 	svgtiny_code code;
-	unsigned int i;
-	unsigned int j;
 	BOOL fons_written = FALSE;
 	struct fons_struct *fons;
 	struct stxt_struct *stxt;
@@ -156,7 +154,7 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 
 		if(!(PushChunk(iffh,0,ID_CMAP,IFFSIZE_UNKNOWN)))
 		{
-			for (i = 0; i != diagram->shape_count; i++) {
+			for (unsigned int i = 0; i != diagram->shape_count; i++) {
 				if(diagram->shape[i].fill != svgtiny_TRANSPARENT)
 				{
 					addcolour(diagram->shape[i].fill);
@@ -172,7 +170,7 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 			PopChunk(iffh);
 		}
 
-	for (i = 0; i != diagram->shape_count; i++) {
+	for (unsigned int i = 0; i != diagram->shape_count; i++) {
 		attr = ami_misc_allocvec_clear(sizeof(struct attr_struct), 0);
 		if (diagram->shape[i].fill == svgtiny_TRANSPARENT)
 			attr->FillType = FT_NONE;
@@ -212,7 +210,7 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 			NumPoints = 0;
 			type = ID_OPLY;
 
-			for (j = 0;
+			for (unsigned int j = 0;
 					j != diagram->shape[i].path_length; ) {
 				switch ((int) diagram->shape[i].path[j]) {
 					case svgtiny_PATH_MOVE:
