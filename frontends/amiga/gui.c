@@ -5548,13 +5548,23 @@ int main(int argc, char** argv)
 #ifdef __amigaos4__
 	/* Check for AltiVec */
 	uint32 altivec = 0;
+
 	GetCPUInfoTags(GCIT_VectorUnit, &altivec);
 
 	if(altivec == VECTORTYPE_ALTIVEC) {
 		LOG("AltiVec detected");
 	} else {
+		char jsimd_forcenone[10];
+
 		LOG("AltiVec NOT detected");
-		SetVar("JSIMD_FORCENONE", "1", 1, GVF_GLOBAL_ONLY | GVF_SAVE_VAR);
+		int32 len = GetVar("JSIMD_FORCENONE", jsimd_forcenone, 10, GVF_GLOBAL_ONLY);
+
+		if(len == -1) {
+			LOG("WARNING: JSIMD_FORCENONE NOT SET");
+			SetVar("JSIMD_FORCENONE", "1", 1, GVF_GLOBAL_ONLY | GVF_SAVE_VAR);
+		} else {
+			LOG("JSIMDFORCENONE = %s (NB: Should be '1' for this architecture)", jsimd_forcenone);
+		}
 	}
 #endif
 
