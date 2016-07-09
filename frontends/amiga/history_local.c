@@ -89,7 +89,7 @@ static void ami_history_redraw(struct history_window *hw)
 	browser_window_history_redraw_rectangle(hw->gw->bw, xs, ys,
 			bbox->Width + xs, bbox->Height + ys, 0, 0, &ctx);
 
-	glob = &browserglob;
+	ami_gui_set_default_gg();
 
 	ami_clearclipreg(hw->gg);
 	ami_history_update_extent(hw);

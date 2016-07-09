@@ -262,7 +262,7 @@ static void ami_tree_redraw_req_dr(void *p)
 	ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
 	ami_clearclipreg(glob);
 	glob->rp = temprp;
-	glob = &browserglob;
+	ami_gui_set_default_gg();
 }
 
 static void ami_tree_redraw_req(void *p)
@@ -345,7 +345,7 @@ static void ami_tree_redraw_req(void *p)
 	ami_gui_free_space_box(bbox);
 	ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
 	ami_clearclipreg(glob);
-	glob = &browserglob;
+	ami_gui_set_default_gg();
 }
 
 static void ami_tree_redraw_request(int x, int y, int width, int height, void *data)

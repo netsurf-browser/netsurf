@@ -241,5 +241,9 @@ uint32 ami_gui_get_app_id(void);
  */
 STRPTR ami_gui_get_screen_title(void);
 
+/**
+ * Set gui_globals back to the default for the browser context
+ */
+void ami_gui_set_default_gg(void);
 #endif
 

@@ -199,6 +199,7 @@ static BOOL locked_screen = FALSE;
 static int screen_signal = -1;
 static bool win_destroyed;
 static STRPTR nsscreentitle;
+static struct gui_globals browserglob;
 
 static struct MsgPort *applibport = NULL;
 static uint32 ami_appid = 0;
@@ -951,6 +952,11 @@ static void ami_gui_read_all_tooltypes(int argc, char **argv)
 	}
 }
 
+void ami_gui_set_default_gg(void)
+{
+	glob = &browserglob;
+}
+
 static void gui_init2(int argc, char** argv)
 {
 	struct Screen *screen;
@@ -962,7 +968,7 @@ static void gui_init2(int argc, char** argv)
 	notalreadyrunning = ami_arexx_init(&rxsig);
 
 	/* Treeview init code ends up calling a font function which needs this */
-	glob = &browserglob;
+	ami_gui_set_default_gg();
 
 	/* ...and this ensures the treeview at least gets the WB colour palette to work with */
 	if(scrn == NULL) {
@@ -4412,7 +4418,7 @@ gui_window_create(struct browser_window *bw,
 	g->shared->node = AddObject(window_list,AMINS_WINDOW);
 	g->shared->node->objstruct = g->shared;
 
-	glob = &browserglob;
+	ami_gui_set_default_gg();
 
 	if(locked_screen) {
 		UnlockPubScreen(NULL,scrn);
@@ -4864,7 +4870,7 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 			.plot = &amiplot
 		};
 
-		glob = &browserglob;
+		ami_gui_set_default_gg();
 
 		if(nsoption_bool(direct_render) == false)
 		{

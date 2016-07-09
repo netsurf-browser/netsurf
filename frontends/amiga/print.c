@@ -448,7 +448,7 @@ bool ami_print_cont(void)
 		glob = ami_print_info.gg;
 		print_draw_next_page(&amiprinter, ami_print_info.ps);
 		ami_print_dump();
-		glob = &browserglob;
+		ami_gui_set_default_gg();
 		ret = true;
 	}
 	else 
@@ -511,7 +511,7 @@ void ami_print_end(void)
 	ami_free_layers(ami_print_info.gg);
 	FreeVec(ami_print_info.gg);
 	DisposeObject(ami_print_info.objects[OID_MAIN]);
-	glob = &browserglob;
+	ami_gui_set_default_gg();
 
 	ami_print_close_device();
 	ami_print_free();
