@@ -26,7 +26,5 @@ void ami_gui_opts_close(void);
 /* Web search list */
 struct List *ami_gui_opts_websearch(void);
 void ami_gui_opts_websearch_free(struct List *websearchlist);
-
-extern char *current_user_options;
 #endif
 

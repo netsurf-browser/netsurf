@@ -776,7 +776,7 @@ static void ami_openscreen(void)
 					id = screenmodereq->sm_DisplayID;
 					sprintf(modeid, "0x%lx", id);
 					nsoption_set_charp(screen_modeid, modeid);
-					nsoption_write(current_user_options, NULL, NULL);
+					ami_nsoption_write();
 				}
 				FreeAslRequest(screenmodereq);
 			}
@@ -5643,7 +5643,7 @@ int main(int argc, char** argv)
 	if((lock = CreateDirTree(current_user_dir)))
 		UnLock(lock);
 
-	current_user_options = ASPrintf("%s/Choices", current_user_dir);
+	ami_nsoption_set_location(current_user_dir);
 	current_user_cache = ASPrintf("%s/Cache", current_user_dir);
 	current_user_faviconcache = ASPrintf("%s/IconCache", current_user_dir);
 
@@ -5672,7 +5672,7 @@ int main(int argc, char** argv)
 		ami_libs_close();
 		return RETURN_FAIL;
 	}
-	nsoption_read(current_user_options, NULL);
+	ami_nsoption_read();
 	if(args != NULL) {
 		nsoption_commandline(&nargc, &nargv, NULL);
 		FreeArgs(args);
@@ -5742,7 +5742,7 @@ int main(int argc, char** argv)
 
 	netsurf_exit();
 
-	FreeVec(current_user_options);
+	ami_nsoption_free();
 	FreeVec(current_user_dir);
 	FreeVec(current_user_faviconcache);
 	FreeVec(current_user);

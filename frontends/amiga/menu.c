@@ -69,6 +69,7 @@
 #include "amiga/libs.h"
 #include "amiga/menu.h"
 #include "amiga/misc.h"
+#include "amiga/nsoption.h"
 #include "amiga/print.h"
 #include "amiga/search.h"
 #include "amiga/theme.h"
@@ -484,7 +485,7 @@ HOOKF(void, ami_menu_item_settings_snapshot, APTR, window, struct IntuiMessage *
 
 HOOKF(void, ami_menu_item_settings_save, APTR, window, struct IntuiMessage *)
 {
-	nsoption_write(current_user_options, NULL, NULL);
+	ami_nsoption_write();
 }
 
 HOOKF(void, ami_menu_item_arexx_execute, APTR, window, struct IntuiMessage *)

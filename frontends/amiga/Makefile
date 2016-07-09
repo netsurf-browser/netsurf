@@ -45,7 +45,7 @@ S_FRONTEND := gui.c tree.c history.c hotlist.c schedule.c file.c	\
 	datatypes.c dt_picture.c dt_anim.c dt_sound.c plugin_hack.c	\
 	stringview/stringview.c stringview/urlhistory.c rtg.c		\
 	agclass/amigaguide_class.c os3support.c font_diskfont.c		\
-	selectmenu.c hash/xxhash.c font_cache.c font_bullet.c
+	selectmenu.c hash/xxhash.c font_cache.c font_bullet.c nsoption.c
 
 # This is the final source build list
 # Note this is deliberately *not* expanded here as common and image

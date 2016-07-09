@@ -74,6 +74,7 @@
 #include "amiga/help.h"
 #include "amiga/libs.h"
 #include "amiga/misc.h"
+#include "amiga/nsoption.h"
 #include "amiga/object.h"
 #include "amiga/selectmenu.h"
 #include "amiga/theme.h"
@@ -232,8 +233,6 @@ struct ami_gui_opts_window {
 	struct List fontoptslist;
 #endif
 };
-
-char *current_user_options = NULL;
 
 static struct ami_gui_opts_window *gow = NULL;
 
@@ -2057,7 +2056,7 @@ static void ami_gui_opts_use(bool save)
 	}
 
 	if(save == true) {
-		nsoption_write(current_user_options, NULL, NULL);
+		ami_nsoption_write();
 		ami_font_savescanner(); /* just in case it has changed and been used only */
 	}
 
