@@ -5553,7 +5553,7 @@ int main(int argc, char** argv)
 		LOG("AltiVec detected");
 	} else {
 		LOG("AltiVec NOT detected");
-		SetVar("JSIMD_FORCENONE", "0", 1, GVF_LOCAL_ONLY);
+		SetVar("JSIMD_FORCENONE", "1", 1, GVF_LOCAL_ONLY);
 	}
 #endif
 
