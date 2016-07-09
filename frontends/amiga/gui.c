@@ -142,6 +142,7 @@
 #include "amiga/login.h"
 #include "amiga/menu.h"
 #include "amiga/misc.h"
+#include "amiga/nsoption.h"
 #include "amiga/plotters.h"
 #include "amiga/plugin_hack.h"
 #include "amiga/print.h"
