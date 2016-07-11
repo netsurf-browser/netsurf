@@ -25,10 +25,15 @@
 #define __NSGTK_TREEVIEW_H__
 
 struct nsgtk_treeview;
+struct sslcert_session_data;
 
-struct nsgtk_treeview *nsgtk_treeview_create(unsigned int flags,
-		GtkWindow *window, GtkScrolledWindow *scrolled,
- 		GtkDrawingArea *drawing_area);
+/**
+ * Create a treeview within a gtk widget.
+ *
+ * \param flags type of treeview.
+ */
+struct nsgtk_treeview *nsgtk_treeview_create(unsigned int flags, GtkWindow *window, GtkScrolledWindow *scrolled, GtkDrawingArea *drawing_area, struct sslcert_session_data *ssl_data);
+
 void nsgtk_treeview_destroy(struct nsgtk_treeview *tv);
 
 struct tree *nsgtk_treeview_get_tree(struct nsgtk_treeview *tv);

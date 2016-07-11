@@ -129,7 +129,8 @@ nserror nsgtk_cookies_init(void)
 	cookies_treeview = nsgtk_treeview_create(TREE_COOKIES,
 						 wndCookies,
 						 scrolled,
-						 drawing_area);
+						 drawing_area,
+						 NULL);
 	if (cookies_treeview == NULL) {
 		return NSERROR_INIT_FAILED;
 	}

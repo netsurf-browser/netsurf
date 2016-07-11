@@ -96,7 +96,6 @@ void gtk_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 	gtk_builder_connect_signals(builder, NULL);
 
 	sslcert_viewer_create_session_data(num, url, cb, cbpw, certs, &data);
-	ssl_current_session = data;
 
 	dlg = GTK_DIALOG(gtk_builder_get_object(builder, "wndSSLProblem"));
 
@@ -107,9 +106,11 @@ void gtk_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 	scrolled = GTK_SCROLLED_WINDOW(gtk_builder_get_object(builder, "SSLScrolled"));
 	drawing_area = GTK_DRAWING_AREA(gtk_builder_get_object(builder, "SSLDrawingArea"));
 
-	ssl_window = nsgtk_treeview_create(TREE_SSLCERT, GTK_WINDOW(dlg), scrolled,
-			drawing_area);
-
+	ssl_window = nsgtk_treeview_create(TREE_SSLCERT,
+					   GTK_WINDOW(dlg),
+					   scrolled,
+					   drawing_area,
+					   data);
 	if (ssl_window == NULL) {
 		free(session);
 		g_object_unref(G_OBJECT(dlg));

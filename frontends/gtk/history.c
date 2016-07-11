@@ -144,7 +144,8 @@ nserror nsgtk_history_init(void)
 	global_history_window = nsgtk_treeview_create(TREE_HISTORY,
 						      window,
 						      scrolled,
-						      drawing_area);
+						      drawing_area,
+						      NULL);
 	if (global_history_window == NULL) {
 		return NSERROR_INIT_FAILED;
 	}

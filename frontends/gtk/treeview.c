@@ -52,10 +52,16 @@ struct nsgtk_treeview {
 	int last_x, last_y;
 	browser_mouse_state mouse_state;
 	struct tree *tree;
+	unsigned int tree_flags; /* flags used with tree creation */
+	struct sslcert_session_data *ssl_data; /**< SSL data when tree_flags are TREE_SSLCERT */
 };
 
 void nsgtk_treeview_destroy(struct nsgtk_treeview *tv)
 {
+	if (tv->tree_flags == TREE_SSLCERT) {
+		ssl_current_session = tv->ssl_data;
+	}
+
 	tree_delete(tv->tree);
 	g_object_unref(tv->input_method);
 	gtk_widget_destroy(GTK_WIDGET(tv->window));
@@ -156,7 +162,7 @@ static void nsgtk_tree_get_window_dimensions(int *width, int *height, void *data
 static gboolean 
 nsgtk_tree_window_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 {
-	struct tree *tree = (struct tree *)data;
+	struct nsgtk_treeview *tv = (struct nsgtk_treeview *)data;
 	struct redraw_context ctx = {
 		.interactive = true,
 		.background_images = true,
@@ -172,7 +178,11 @@ nsgtk_tree_window_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 	
 	cairo_clip_extents(cr, &x1, &y1, &x2, &y2);
 
-	tree_draw(tree, 0, 0, x1, y1, x2 - x1, y2 - y1, &ctx);
+	if (tv->tree_flags == TREE_SSLCERT) {
+		ssl_current_session = tv->ssl_data;
+	}
+
+	tree_draw(tv->tree, 0, 0, x1, y1, x2 - x1, y2 - y1, &ctx);
 	
 	current_widget = NULL;
 	
@@ -183,9 +193,11 @@ nsgtk_tree_window_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 
 /* signal handler functions for a tree window */
 static gboolean 
-nsgtk_tree_window_draw_event(GtkWidget *widget, GdkEventExpose *event, gpointer g)
+nsgtk_tree_window_draw_event(GtkWidget *widget,
+			     GdkEventExpose *event,
+			     gpointer g)
 {
-	struct tree *tree = (struct tree *) g;
+	struct nsgtk_treeview *tv = (struct nsgtk_treeview *)g;
 	struct redraw_context ctx = {
 		.interactive = true,
 		.background_images = true,
@@ -201,7 +213,11 @@ nsgtk_tree_window_draw_event(GtkWidget *widget, GdkEventExpose *event, gpointer 
 	current_widget = widget;
 	current_cr = gdk_cairo_create(nsgtk_widget_get_window(widget));
 	
-	tree_draw(tree, 0, 0, x, y, width, height, &ctx);
+	if (tv->tree_flags == TREE_SSLCERT) {
+		ssl_current_session = tv->ssl_data;
+	}
+
+	tree_draw(tv->tree, 0, 0, x, y, width, height, &ctx);
 	
 	current_widget = NULL;
 	cairo_destroy(current_cr);
@@ -220,8 +236,7 @@ nsgtk_tree_window_button_press_event(GtkWidget *widget,
 		GdkEventButton *event, gpointer g)
 {	
 	struct nsgtk_treeview *tw = g;
-	struct tree *tree = tw->tree;
-	
+
 	gtk_im_context_reset(tw->input_method);
 	gtk_widget_grab_focus(GTK_WIDGET(tw->drawing_area));
 
@@ -229,8 +244,9 @@ nsgtk_tree_window_button_press_event(GtkWidget *widget,
 	tw->mouse_pressed_x = event->x;
 	tw->mouse_pressed_y = event->y;
 
-	if (event->type == GDK_2BUTTON_PRESS)
+	if (event->type == GDK_2BUTTON_PRESS) {
 		tw->mouse_state = BROWSER_MOUSE_DOUBLE_CLICK;
+	}
 	
 	switch (event->button) {
 		case 1: tw->mouse_state |= BROWSER_MOUSE_PRESS_1; break;
@@ -249,7 +265,11 @@ nsgtk_tree_window_button_press_event(GtkWidget *widget,
 	tw->last_x = event->x;
 	tw->last_y = event->y;
 
-	tree_mouse_action(tree, tw->mouse_state, event->x, event->y);
+	if (tw->tree_flags == TREE_SSLCERT) {
+		ssl_current_session = tw->ssl_data;
+	}
+
+	tree_mouse_action(tw->tree, tw->mouse_state, event->x, event->y);
 	
 	return TRUE;
 }
@@ -299,6 +319,9 @@ nsgtk_tree_window_button_release_event(GtkWidget *widget,
 	if (tw->mouse_state & BROWSER_MOUSE_MOD_3 && !alt)
 		tw->mouse_state ^= BROWSER_MOUSE_MOD_3;
 
+	if (tw->tree_flags == TREE_SSLCERT) {
+		ssl_current_session = tw->ssl_data;
+	}
 
 	if (tw->mouse_state &
 			~(BROWSER_MOUSE_MOD_1 |
@@ -345,7 +368,11 @@ nsgtk_tree_window_motion_notify_event(GtkWidget *widget,
 		tw->last_x = INT_MIN;
 		tw->last_y = INT_MIN;
 	}
-	
+
+	if (tw->tree_flags == TREE_SSLCERT) {
+		ssl_current_session = tw->ssl_data;
+	}
+
 	if (tw->mouse_state & BROWSER_MOUSE_PRESS_1) {
 		/* Start button 1 drag */
 		tree_mouse_action(tree, BROWSER_MOUSE_DRAG_1,
@@ -402,8 +429,13 @@ nsgtk_tree_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 
 	nskey = gtk_gui_gdkkey_to_nskey(event);
 
-	if (tree_keypress(tree, nskey) == true)
+	if (tw->tree_flags == TREE_SSLCERT) {
+		ssl_current_session = tw->ssl_data;
+	}
+
+	if (tree_keypress(tree, nskey) == true) {
 		return TRUE;
+	}
 			
 	vscroll = gtk_scrolled_window_get_vadjustment(tw->scrolled);
 	hscroll =  gtk_scrolled_window_get_hadjustment(tw->scrolled);
@@ -508,6 +540,10 @@ nsgtk_tree_window_input_method_commit(GtkIMContext *ctx,
 	struct nsgtk_treeview *tw = (struct nsgtk_treeview *) data;
 	size_t len = strlen(str), offset = 0;
 
+	if (tw->tree_flags == TREE_SSLCERT) {
+		ssl_current_session = tw->ssl_data;
+	}
+
 	while (offset < len) {
 		uint32_t nskey = utf8_to_ucs4(str + offset, len - offset);
 
@@ -525,11 +561,14 @@ static const struct treeview_table nsgtk_tree_callbacks = {
 	.get_window_dimensions = nsgtk_tree_get_window_dimensions
 };
 
-struct nsgtk_treeview *nsgtk_treeview_create(unsigned int flags,
-		GtkWindow *window, GtkScrolledWindow *scrolled,
- 		GtkDrawingArea *drawing_area)
+struct nsgtk_treeview *
+nsgtk_treeview_create(unsigned int flags,
+		      GtkWindow *window,
+		      GtkScrolledWindow *scrolled,
+		      GtkDrawingArea *drawing_area,
+		      struct sslcert_session_data *ssl_data)
 {
-	struct nsgtk_treeview *tv;	
+	struct nsgtk_treeview *tv;
 	
 	assert(drawing_area != NULL);
 
@@ -538,6 +577,12 @@ struct nsgtk_treeview *nsgtk_treeview_create(unsigned int flags,
 		LOG("malloc failed");
 		nsgtk_warning("NoMemory", 0);
 		return NULL;
+	}
+
+	tv->tree_flags = flags;
+	if (tv->tree_flags == TREE_SSLCERT) {
+		tv->ssl_data = ssl_data;
+		ssl_current_session = tv->ssl_data;
 	}
 	
 	tv->window = window;
@@ -552,7 +597,7 @@ struct nsgtk_treeview *nsgtk_treeview_create(unsigned int flags,
 					       GTK_STATE_NORMAL,
 					       0, 0xffff, 0xffff, 0xffff);
 
-	nsgtk_connect_draw_event(GTK_WIDGET(drawing_area), G_CALLBACK(nsgtk_tree_window_draw_event), tv->tree);
+	nsgtk_connect_draw_event(GTK_WIDGET(drawing_area), G_CALLBACK(nsgtk_tree_window_draw_event), tv);
 	
 #define CONNECT(obj, sig, callback, ptr) \
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))

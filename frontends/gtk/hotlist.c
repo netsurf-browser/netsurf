@@ -140,7 +140,7 @@ nserror nsgtk_hotlist_init(void)
 	
 	tree_hotlist_path = nsoption_charp(hotlist_path);
 	hotlist_treeview = nsgtk_treeview_create(TREE_HOTLIST, window,
-			scrolled, drawing_area);
+						 scrolled, drawing_area, NULL);
 	
 	if (hotlist_treeview == NULL) {
 		return NSERROR_INIT_FAILED;
