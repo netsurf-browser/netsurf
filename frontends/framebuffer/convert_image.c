@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <png.h>
 #include <stdlib.h>
+#include <string.h>
 
 #if PNG_LIBPNG_VER < 10209
 #define png_set_expand_gray_1_2_4_to_8(png) png_set_gray_1_2_4_to_8(png)
