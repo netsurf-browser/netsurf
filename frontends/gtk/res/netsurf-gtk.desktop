@@ -63,6 +63,6 @@ X-MultipleArgs=false
 Type=Application
 Icon=netsurf.png
 Categories=Network;
-MimeType=text/html;text/xml;application/xhtml+xml;application/xml;image/gif;image/jpeg;image/png
+MimeType=text/html;text/xml;application/xhtml+xml;application/xml;image/gif;image/jpeg;image/png;x-scheme-handler/http;x-scheme-handler/https
 StartupWMClass=NetSurf-bin
 StartupNotify=true
