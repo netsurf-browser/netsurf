@@ -1405,7 +1405,7 @@ static nserror ro_path_to_nsurl(const char *path, struct nsurl **url_out)
 	int spare;
 	char *canonical_path; /* canonicalised RISC OS path */
 	char *unix_path; /* unix path */
-	char *escurl;
+	char *escaped_path;
 	os_error *error;
 	nserror ret;
 	int urllen;
@@ -1443,31 +1443,34 @@ static nserror ro_path_to_nsurl(const char *path, struct nsurl **url_out)
 	}
 	free(canonical_path);
 
-	/* convert the unix path into a url */
-	urllen = strlen(unix_path) + FILE_SCHEME_PREFIX_LEN + 1;
-	url = malloc(urllen);
-	if (url == NULL) {
-		LOG("Unable to allocate url");
+	/* url escape the unix path */
+	ret = url_escape(unix_path, false, "/", &escaped_path);
+	if (ret != NSERROR_OK) {
 		free(unix_path);
-		return NSERROR_NOMEM;
-	}
-
-	if (*unix_path == '/') {
-		snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, unix_path + 1);
-	} else {
-		snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, unix_path);
+		return ret;
 	}
 	free(unix_path);
 
-	/* We don't want '/' to be escaped.  */
-	ret = url_escape(url, FILE_SCHEME_PREFIX_LEN, false, "/", &escurl);
-	free(url);
-	if (ret != NSERROR_OK) {
-		return ret;
+	/* convert the escaped unix path into a url */
+	urllen = strlen(escaped_path) + FILE_SCHEME_PREFIX_LEN + 1;
+	url = malloc(urllen);
+	if (url == NULL) {
+		LOG("Unable to allocate url");
+		free(escaped_path);
+		return NSERROR_NOMEM;
 	}
 
-	ret = nsurl_create(escurl, url_out);
-	free(escurl);
+	if (*escaped_path == '/') {
+		snprintf(url, urllen, "%s%s",
+				FILE_SCHEME_PREFIX, escaped_path + 1);
+	} else {
+		snprintf(url, urllen, "%s%s",
+				FILE_SCHEME_PREFIX, escaped_path);
+	}
+	free(escaped_path);
+
+	ret = nsurl_create(url, url_out);
+	free(url);
 
 	return ret;
 }

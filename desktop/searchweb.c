@@ -240,7 +240,7 @@ make_search_nsurl(struct search_provider *provider,
 	size_t urlstr_len;
 
 	/* escape the search term and join it to the search url */
-	ret = url_escape(term, 0, true, NULL, &eterm);
+	ret = url_escape(term, true, NULL, &eterm);
 	if (ret != NSERROR_OK) {
 		return ret;
 	}

@@ -32,13 +32,12 @@
  * Escape a string suitable for inclusion in an URL.
  *
  * \param  unescaped      the unescaped string
- * \param  toskip         number of bytes to skip in unescaped string
  * \param  sptoplus       true iff spaces should be converted to +
  * \param  escexceptions  NULL or a string of characters excluded to be escaped
  * \param  result         pointer to pointer to buffer to hold escaped string
  * \return  NSERROR_OK on success
  */
-nserror url_escape(const char *unescaped, size_t toskip, bool sptoplus,
+nserror url_escape(const char *unescaped, bool sptoplus,
 		const char *escexceptions, char **result);
 
 

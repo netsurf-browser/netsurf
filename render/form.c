@@ -912,7 +912,7 @@ static char *form_url_encode(struct form *form,
 	}
 
 	for (; control; control = control->next) {
-		url_err = url_escape(control->name, 0, true, NULL, &name);
+		url_err = url_escape(control->name, true, NULL, &name);
 		if (url_err == NSERROR_NOMEM) {
 			free(s);
 			return NULL;
@@ -920,7 +920,7 @@ static char *form_url_encode(struct form *form,
 
 		assert(url_err == NSERROR_OK);
 
-		url_err = url_escape(control->value, 0, true, NULL, &value);
+		url_err = url_escape(control->value, true, NULL, &value);
 		if (url_err == NSERROR_NOMEM) {
 			free(name);
 			free(s);

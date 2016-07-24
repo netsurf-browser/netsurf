@@ -193,7 +193,7 @@ static nserror atari_path_to_nsurl(const char *path, struct nsurl **url_out)
 	}
 
 	/* escape the path so it can be placed in a url */
-	ret = url_escape(path, 0, false, "/", &escpath);
+	ret = url_escape(path, false, "/", &escpath);
 	if (ret != NSERROR_OK) {
 		return ret;
 	}

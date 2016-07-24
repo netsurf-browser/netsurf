@@ -113,63 +113,60 @@ nserror url_unescape(const char *str, size_t length,
 
 
 /* exported interface documented in utils/url.h */
-nserror url_escape(const char *unescaped, size_t toskip,
-		bool sptoplus, const char *escexceptions, char **result)
+nserror url_escape(const char *unescaped, bool sptoplus,
+		const char *escexceptions, char **result)
 {
-	size_t len;
-	char *escaped, *d, *tmpres;
+	size_t len, new_len;
+	char *escaped, *pos;
 	const char *c;
 
-	if (!unescaped || !result)
+	if (unescaped == NULL || result == NULL) {
 		return NSERROR_NOT_FOUND;
-
-	*result = NULL;
+	}
 
 	len = strlen(unescaped);
-	if (len < toskip)
-		return NSERROR_NOT_FOUND;
-	len -= toskip;
 
 	escaped = malloc(len * 3 + 1);
-	if (!escaped)
+	if (escaped == NULL) {
 		return NSERROR_NOMEM;
+	}
+	pos = escaped;
 
-	for (c = unescaped + toskip, d = escaped; *c; c++) {
+	for (c = unescaped; *c != '\0'; c++) {
 		/* Check if we should escape this byte.
 		 * '~' is unreserved and should not be percent encoded, if
 		 * you believe the spec; however, leaving it unescaped
 		 * breaks a bunch of websites, so we escape it anyway. */
-		if (!isascii(*c)
-			|| (strchr(":/?#[]@" /* gen-delims */
-				  "!$&'()*+,;=" /* sub-delims */
-				  "<>%\"{}|\\^`~" /* others */,	*c)
-				&& (!escexceptions || !strchr(escexceptions, *c)))
-			|| *c <= 0x20 || *c == 0x7f) {
+		if (!isascii(*c) ||
+				(strchr(":/?#[]@" /* gen-delims */
+				 "!$&'()*+,;=" /* sub-delims */
+				 "<>%\"{}|\\^`~" /* others */, *c) &&
+				 (!escexceptions ||
+				  !strchr(escexceptions, *c))) ||
+				*c <= 0x20 || *c == 0x7f) {
 			if (*c == 0x20 && sptoplus) {
-				*d++ = '+';
+				*pos++ = '+';
 			} else {
-				*d++ = '%';
-				*d++ = "0123456789ABCDEF"[((*c >> 4) & 0xf)];
-				*d++ = "0123456789ABCDEF"[(*c & 0xf)];
+				*pos++ = '%';
+				*pos++ = "0123456789ABCDEF"[(*c >> 4) & 0xf];
+				*pos++ = "0123456789ABCDEF"[*c & 0xf];
 			}
 		} else {
 			/* unreserved characters: [a-zA-Z0-9-._] */
-			*d++ = *c;
+			*pos++ = *c;
 		}
 	}
-	*d++ = '\0';
+	*pos = '\0';
+	new_len = pos - escaped;
 
-	tmpres = malloc(d - escaped + toskip);
-	if (!tmpres) {
-		free(escaped);
-		return NSERROR_NOMEM;
+	if (new_len != len) {
+		/* Shrink wrap the allocation around the escaped string */
+		char *tmp = realloc(escaped, new_len + 1);
+		if (tmp != NULL) {
+			escaped = tmp;
+		}
 	}
 
-	memcpy(tmpres, unescaped, toskip); 
-	memcpy(tmpres + toskip, escaped, d - escaped);
-	*result = tmpres;
-
-	free(escaped);
-
+	*result = escaped;
 	return NSERROR_OK;
 }
