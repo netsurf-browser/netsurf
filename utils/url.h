@@ -31,10 +31,12 @@
 /**
  * Escape a string suitable for inclusion in an URL.
  *
- * \param  unescaped      the unescaped string
- * \param  sptoplus       true iff spaces should be converted to +
- * \param  escexceptions  NULL or a string of characters excluded to be escaped
- * \param  result         pointer to pointer to buffer to hold escaped string
+ * \param[in]  unescaped      the unescaped string
+ * \param[in]  sptoplus       true iff spaces should be converted to +
+ * \param[in]  escexceptions  NULL or a string of characters to be excluded
+ *                            from escaping.
+ * \param[out] result         Returns pointer to buffer to escaped string.
+ *                            Returned string is '\0' terminated.
  * \return  NSERROR_OK on success
  */
 nserror url_escape(const char *unescaped, bool sptoplus,
