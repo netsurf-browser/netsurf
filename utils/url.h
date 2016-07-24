@@ -50,6 +50,6 @@ nserror url_escape(const char *unescaped, size_t toskip, bool sptoplus,
  * \param[out] result unescaped string owned by caller must be freed with free()
  * \return NSERROR_OK on success
  */
-nserror url_unescape(const char *str, int length, char **result);
+nserror url_unescape(const char *str, size_t length, char **result);
 
 #endif
