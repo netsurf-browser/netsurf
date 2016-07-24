@@ -24,9 +24,9 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
-#include <curl/curl.h> /* for URL unescaping functions */
 #include <libwapcaplet/libwapcaplet.h>
 
+#include "utils/url.h"
 #include "utils/nsurl.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"
@@ -54,21 +54,16 @@ struct fetch_data_context {
 
 static struct fetch_data_context *ring = NULL;
 
-static CURL *curl;
-
 static bool fetch_data_initialise(lwc_string *scheme)
 {
 	LOG("fetch_data_initialise called for %s", lwc_string_data(scheme));
-	if ( (curl = curl_easy_init()) == NULL)
-		return false;
-	else
-		return true;
+
+	return true;
 }
 
 static void fetch_data_finalise(lwc_string *scheme)
 {
 	LOG("fetch_data_finalise called for %s", lwc_string_data(scheme));
-	curl_easy_cleanup(curl);
 }
 
 static bool fetch_data_can_fetch(const nsurl *url)
@@ -138,6 +133,7 @@ static void fetch_data_send_callback(const fetch_msg *msg,
 
 static bool fetch_data_process(struct fetch_data_context *c)
 {
+	nserror res;
 	fetch_msg msg;
 	char *params;
 	char *comma;
@@ -197,13 +193,14 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	/* URL unescape the data first, just incase some insane page
 	 * decides to nest URL and base64 encoding.  Like, say, Acid2.
 	 */
-	unescaped = curl_easy_unescape(curl, comma + 1, 0, &unescaped_len);
-	if (unescaped == NULL) {
+	res = url_unescape(comma + 1, 0, &unescaped);
+	if (res != NSERROR_OK) {
 		msg.type = FETCH_ERROR;
 		msg.data.error = "Unable to URL decode data: URL";
 		fetch_data_send_callback(&msg, c);
 		return false;
 	}
+	unescaped_len = strlen(unescaped);
 	
 	if (c->base64) {
 		base64_decode_alloc(unescaped, unescaped_len, &c->data,	&c->datalen);
@@ -211,7 +208,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 			msg.type = FETCH_ERROR;
 			msg.data.error = "Unable to Base64 decode data: URL";
 			fetch_data_send_callback(&msg, c);
-			curl_free(unescaped);
+			free(unescaped);
 			return false;
 		}
 	} else {
@@ -221,14 +218,14 @@ static bool fetch_data_process(struct fetch_data_context *c)
 			msg.data.error =
 				"Unable to allocate memory for data: URL";
 			fetch_data_send_callback(&msg, c);
-			curl_free(unescaped);
+			free(unescaped);
 			return false;
 		}
 		c->datalen = unescaped_len;
 		memcpy(c->data, unescaped, unescaped_len);
 	}
 	
-	curl_free(unescaped);
+	free(unescaped);
 	
 	return true;
 }
