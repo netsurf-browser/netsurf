@@ -23,6 +23,7 @@
  */
 
 #include <ctype.h>
+#include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 #include <curl/curl.h>
@@ -32,25 +33,80 @@
 #include "utils/url.h"
 
 
-/* exported interface documented in utils/url.h */
-nserror url_unescape(const char *str, size_t length, char **result)
+/**
+ * Convert a hex digit to a hex value
+ *
+ * Must be called with valid hex char, results undefined otherwise.
+ *
+ * \param[in]  c  char to convert yo value
+ * \return the value of c
+ */
+static inline char xdigit_to_hex(char c)
 {
-	char *curlstr;
-	char *retstr;
+	if (c >= '0' && c <= '9') {
+		return c - '0';
+	} else if (c >= 'A' && c <= 'F') {
+		return c - 'A' + 10;
+	} else {
+		return c - 'a' + 10;
+	}
+}
 
-	curlstr = curl_unescape(str, length);
-	if (curlstr == NULL) {
+
+/* exported interface documented in utils/url.h */
+nserror url_unescape(const char *str, size_t length, char **result_out)
+{
+	const char *str_end;
+	size_t new_len;
+	char *res_pos;
+	char *result;
+
+	if (length == 0) {
+		length = strlen(str);
+	}
+
+	result = malloc(length + 1);
+	if (result == NULL) {
 		return NSERROR_NOMEM;
 	}
 
-	retstr = strdup(curlstr);
-	curl_free(curlstr);
+	new_len = length;
 
-	if (retstr == NULL) {
-		return NSERROR_NOMEM;
+	res_pos = result;
+	str_end = str + length;
+	if (length >= 3) {
+		str_end -= 2;
+		while (str < str_end) {
+			char c = *str;
+			char c1 = *(str + 1);
+			char c2 = *(str + 2);
+
+			if (c == '%' && isxdigit(c1) && isxdigit(c2)) {
+				c = xdigit_to_hex(c1) << 4 | xdigit_to_hex(c2);
+				str += 2;
+				new_len -= 2;
+			}
+			*res_pos++ = c;
+			str++;
+		}
+		str_end += 2;
 	}
 
-	*result = retstr;
+	while (str < str_end) {
+		*res_pos++ = *str++;
+	}
+
+	*res_pos++ = '\0';
+
+	if (new_len != length) {
+		/* Shrink wrap the allocaiton around the string */
+		char *tmp = realloc(result, new_len + 1);
+		if (tmp != NULL) {
+			result = tmp;
+		}
+	}
+
+	*result_out = result;
 	return NSERROR_OK;
 }
 
