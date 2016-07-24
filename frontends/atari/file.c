@@ -112,6 +112,7 @@ static nserror atari_basename(const char *path, char **str, size_t *size)
 static nserror atari_nsurl_to_path(struct nsurl *url, char **path_out)
 {
 	lwc_string *urlpath;
+	size_t path_len;
 	char *path;
 	bool match;
 	lwc_string *scheme;
@@ -140,6 +141,7 @@ static nserror atari_nsurl_to_path(struct nsurl *url, char **path_out)
 
 	res = url_unescape(lwc_string_data(urlpath),
 			   lwc_string_length(urlpath),
+			   &path_len,
 			   &path);
 	lwc_string_unref(urlpath);
 	if (res != NSERROR_OK) {
@@ -153,7 +155,7 @@ static nserror atari_nsurl_to_path(struct nsurl *url, char **path_out)
 		 * strlen is *not* copying too much data as we are
 		 * moving the null too!
 		 */
-		memmove(path, path + 1, strlen(path));
+		memmove(path, path + 1, path_len);
 	}
 	/* if the path does not have a drive letter we return the
 	 * complete path.

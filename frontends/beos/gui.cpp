@@ -797,7 +797,7 @@ static char *url_to_path(const char *url)
 	char *url_path;
 	char *path = NULL;
 
-	if (url_unescape(url, 0, &url_path) == NSERROR_OK) {
+	if (url_unescape(url, 0, NULL, &url_path) == NSERROR_OK) {
 		/* return the absolute path including leading / */
 		path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
 		free(url_path);

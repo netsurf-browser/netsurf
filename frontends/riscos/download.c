@@ -241,6 +241,7 @@ static nserror download_ro_filetype(download_context *ctx, bits *ftype_out)
 				char *raw_path;
 				if (url_unescape(lwc_string_data(path),
 						 lwc_string_length(path),
+						 NULL,
 						 &raw_path) == NSERROR_OK) {
 					ftype =	ro_filetype_from_unix_path(raw_path);
 					free(raw_path);

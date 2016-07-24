@@ -45,11 +45,15 @@ nserror url_escape(const char *unescaped, size_t toskip, bool sptoplus,
 /**
  * Convert an escaped string to plain.
  *
- * \param[in] str String to unescape.
- * \param[in] length Length of string or 0 to use strlen
- * \param[out] result unescaped string owned by caller must be freed with free()
+ * \param[in]  str         String to unescape.
+ * \param[in]  length      Length of string or 0 to use strlen.
+ * \param[out] length_out  Iff non-NULL, value updated to length of returned
+ *                         result_out string.
+ * \param[out] result_out  Returns unescaped string, owned by caller.
+ *                         Must be freed with free().
  * \return NSERROR_OK on success
  */
-nserror url_unescape(const char *str, size_t length, char **result);
+nserror url_unescape(const char *str, size_t length,
+		size_t *length_out, char **result_out);
 
 #endif

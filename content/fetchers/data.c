@@ -138,7 +138,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	char *params;
 	char *comma;
 	char *unescaped;
-	int unescaped_len;
+	size_t unescaped_len;
 	
 	/* format of a data: URL is:
 	 *   data:[<mimetype>][;base64],<data>
@@ -193,14 +193,13 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	/* URL unescape the data first, just incase some insane page
 	 * decides to nest URL and base64 encoding.  Like, say, Acid2.
 	 */
-	res = url_unescape(comma + 1, 0, &unescaped);
+	res = url_unescape(comma + 1, 0, &unescaped_len, &unescaped);
 	if (res != NSERROR_OK) {
 		msg.type = FETCH_ERROR;
 		msg.data.error = "Unable to URL decode data: URL";
 		fetch_data_send_callback(&msg, c);
 		return false;
 	}
-	unescaped_len = strlen(unescaped);
 	
 	if (c->base64) {
 		base64_decode_alloc(unescaped, unescaped_len, &c->data,	&c->datalen);

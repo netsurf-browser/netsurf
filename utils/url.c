@@ -54,7 +54,8 @@ static inline char xdigit_to_hex(char c)
 
 
 /* exported interface documented in utils/url.h */
-nserror url_unescape(const char *str, size_t length, char **result_out)
+nserror url_unescape(const char *str, size_t length,
+		size_t *length_out, char **result_out)
 {
 	const char *str_end;
 	size_t new_len;
@@ -106,6 +107,9 @@ nserror url_unescape(const char *str, size_t length, char **result_out)
 		}
 	}
 
+	if (length_out != NULL) {
+		*length_out = new_len;
+	}
 	*result_out = result;
 	return NSERROR_OK;
 }

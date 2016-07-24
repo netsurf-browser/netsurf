@@ -143,6 +143,7 @@ static nserror windows_nsurl_to_path(struct nsurl *url, char **path_out)
 
 	res = url_unescape(lwc_string_data(urlpath),
 			   lwc_string_length(urlpath),
+			   NULL,
 			   &path);
 	lwc_string_unref(urlpath);
 	if (res != NSERROR_OK) {

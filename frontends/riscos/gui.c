@@ -1485,6 +1485,7 @@ static nserror ro_path_to_nsurl(const char *path, struct nsurl **url_out)
 static nserror ro_nsurl_to_path(struct nsurl *url, char **path_out)
 {
 	lwc_string *urlpath;
+	size_t unpath_len;
 	char *unpath;
 	char *path;
 	bool match;
@@ -1515,6 +1516,7 @@ static nserror ro_nsurl_to_path(struct nsurl *url, char **path_out)
 
 	res = url_unescape(lwc_string_data(urlpath),
 			   lwc_string_length(urlpath),
+			   &unpath_len,
 			   &unpath);
 	lwc_string_unref(urlpath);
 	if (res != NSERROR_OK) {
@@ -1522,14 +1524,14 @@ static nserror ro_nsurl_to_path(struct nsurl *url, char **path_out)
 	}
 
 	/* RISC OS path should not be more than 100 characters longer */
-	path = malloc(strlen(unpath) + 100);
+	path = malloc(unpath_len + 100);
 	if (path == NULL) {
 		free(unpath);
 		return NSERROR_NOMEM;
 	}
 
 	r = __riscosify(unpath, 0, __RISCOSIFY_NO_SUFFIX,
-			path, strlen(unpath) + 100, 0);
+			path, unpath_len + 100, 0);
 	free(unpath);
 	if (r == NULL) {
 		free(path);

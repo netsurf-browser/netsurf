@@ -189,6 +189,7 @@ int32 amiga_warn_user_multi(const char *body, const char *opt1, const char *opt2
 static nserror amiga_nsurl_to_path(struct nsurl *url, char **path_out)
 {
 	lwc_string *urlpath;
+	size_t path_len;
 	char *path;
 	bool match;
 	lwc_string *scheme;
@@ -217,7 +218,7 @@ static nserror amiga_nsurl_to_path(struct nsurl *url, char **path_out)
 		return NSERROR_BAD_PARAMETER;
 	}
 
-	res = url_unescape(lwc_string_data(urlpath) + 1, 0, &path);
+	res = url_unescape(lwc_string_data(urlpath) + 1, 0, &path_len, &path);
 	lwc_string_unref(urlpath);
 	if (res != NSERROR_OK) {
 		return res;
@@ -233,9 +234,10 @@ static nserror amiga_nsurl_to_path(struct nsurl *url, char **path_out)
 		}
 		else
 		{
-			int len = strlen(path);
-			path[len] = ':';
-			path[len + 1] = '\0';
+			path[path_len] = ':';
+			/* TODO: Looks like we are writing past the end of
+			 * path's allocation here. */
+			path[path_len + 1] = '\0';
 		}
 	}
 
