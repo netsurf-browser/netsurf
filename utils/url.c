@@ -71,8 +71,6 @@ nserror url_unescape(const char *str, size_t length,
 		return NSERROR_NOMEM;
 	}
 
-	new_len = length;
-
 	res_pos = result;
 	str_end = str + length;
 	if (length >= 3) {
@@ -85,7 +83,6 @@ nserror url_unescape(const char *str, size_t length,
 			if (c == '%' && isxdigit(c1) && isxdigit(c2)) {
 				c = xdigit_to_hex(c1) << 4 | xdigit_to_hex(c2);
 				str += 2;
-				new_len -= 2;
 			}
 			*res_pos++ = c;
 			str++;
@@ -97,7 +94,8 @@ nserror url_unescape(const char *str, size_t length,
 		*res_pos++ = *str++;
 	}
 
-	*res_pos++ = '\0';
+	*res_pos = '\0';
+	new_len = res_pos - result;
 
 	if (new_len != length) {
 		/* Shrink wrap the allocaiton around the string */
