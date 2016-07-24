@@ -46,7 +46,7 @@ nserror url_escape(const char *unescaped, size_t toskip, bool sptoplus,
  * Convert an escaped string to plain.
  *
  * \param[in] str String to unescape.
- * \parm[in] length Length of string or 0 to use strlen
+ * \param[in] length Length of string or 0 to use strlen
  * \param[out] result unescaped string owned by caller must be freed with free()
  * \return NSERROR_OK on success
  */
