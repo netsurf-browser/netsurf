@@ -26,7 +26,6 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-#include <curl/curl.h>
 
 #include "utils/config.h"
 #include "utils/log.h"
