@@ -97,7 +97,7 @@ nserror url_unescape(const char *str, size_t length,
 	new_len = res_pos - result;
 
 	if (new_len != length) {
-		/* Shrink wrap the allocaiton around the string */
+		/* Shrink wrap the allocation around the string */
 		char *tmp = realloc(result, new_len + 1);
 		if (tmp != NULL) {
 			result = tmp;

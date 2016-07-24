@@ -48,9 +48,10 @@ nserror url_escape(const char *unescaped, size_t toskip, bool sptoplus,
  * \param[in]  str         String to unescape.
  * \param[in]  length      Length of string or 0 to use strlen.
  * \param[out] length_out  Iff non-NULL, value updated to length of returned
- *                         result_out string.
+ *                         result_out string (excluding trailing '\0'`).
  * \param[out] result_out  Returns unescaped string, owned by caller.
  *                         Must be freed with free().
+ *                         Returned string has trailing '\0'.
  * \return NSERROR_OK on success
  */
 nserror url_unescape(const char *str, size_t length,
