@@ -225,18 +225,19 @@ static nserror amiga_nsurl_to_path(struct nsurl *url, char **path_out)
 	}
 
 	colon = strchr(path, ':');
-	if(colon == NULL)
-	{
+	if(colon == NULL) {
 		slash = strchr(path, '/');
-		if(slash)
-		{
+		if(slash) {
 			*slash = ':';
-		}
-		else
-		{
+		} else {
+			char *tmp_path = malloc(path_len + 2);
+			if(tmp_path == NULL) return NSERROR_NOMEM;
+
+			strncpy(tmp_path, path, path_len);
+			free(path);
+
+			path = tmp_path;
 			path[path_len] = ':';
-			/* TODO: Looks like we are writing past the end of
-			 * path's allocation here. */
 			path[path_len + 1] = '\0';
 		}
 	}
