@@ -1523,9 +1523,11 @@ MULTIHANDLER(showbookmarks)
 
 MULTIHANDLER(showcookies)
 {
-	gtk_widget_show(GTK_WIDGET(wndCookies));
-	gdk_window_raise(nsgtk_widget_get_window(GTK_WIDGET(wndCookies)));
-
+	nserror res;
+	res = nsgtk_cookies_present();
+	if (res != NSERROR_OK) {
+		LOG("Unable to initialise cookies window.");
+	}
 	return TRUE;
 }
 

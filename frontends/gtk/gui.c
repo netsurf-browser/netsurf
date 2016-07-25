@@ -313,12 +313,6 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 		return error;
 	}
 
-	error = nsgtk_cookies_init();
-	if (error != NSERROR_OK) {
-		LOG("Unable to initialise cookies window.");
-		return error;
-	}
-
 	error = nsgtk_hotlist_init();
 	if (error != NSERROR_OK) {
 		LOG("Unable to initialise hotlist window.");

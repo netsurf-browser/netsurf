@@ -35,7 +35,11 @@
 #include "gtk/treeview.h"
 #include "gtk/resources.h"
 
-#define MENUPROTO(x) static gboolean nsgtk_on_##x##_activate( \
+static struct nsgtk_treeview *cookies_treeview;
+static GtkBuilder *cookie_builder;
+static GtkWindow *wndCookies = NULL;
+
+#define MENUPROTO(x) static gboolean nsgtk_on_##x##_activate(	\
 		GtkMenuItem *widget, gpointer g)
 #define MENUEVENT(x) { #x, G_CALLBACK(nsgtk_on_##x##_activate) }
 #define MENUHANDLER(x) gboolean nsgtk_on_##x##_activate(GtkMenuItem *widget, \
@@ -80,9 +84,7 @@ static struct menu_events menu_events[] = {
 	{NULL, NULL}
 };
 
-static struct nsgtk_treeview *cookies_treeview;
-static GtkBuilder *cookie_builder;
-GtkWindow *wndCookies;
+
 
 /**
  * Connects menu events in the cookies window.
@@ -102,12 +104,20 @@ static void nsgtk_cookies_init_menu(void)
 	}
 }
 
-/* exported interface documented in gtk/cookies.h */
-nserror nsgtk_cookies_init(void)
+/**
+ * Creates the window for the cookies tree.
+ *
+ * \return NSERROR_OK on success else appropriate error code on faliure.
+ */
+static nserror nsgtk_cookies_init(void)
 {
 	GtkScrolledWindow *scrolled;
 	GtkDrawingArea *drawing_area;
 	nserror res;
+
+	if (wndCookies != NULL) {
+		return NSERROR_OK;
+	}
 
 	res = nsgtk_builder_new_from_resname("cookies", &cookie_builder);
 	if (res != NSERROR_OK) {
@@ -147,14 +157,6 @@ nserror nsgtk_cookies_init(void)
 }
 
 
-/**
- * Destroys the cookies window and performs any other necessary cleanup actions.
- */
-void nsgtk_cookies_destroy(void)
-{
-	/** \todo what about cookie_builder? */
-	nsgtk_treeview_destroy(cookies_treeview);
-}
 
 
 /* edit menu */
@@ -218,4 +220,25 @@ MENUHANDLER(collapse_cookies)
 {
 	cookie_manager_contract(false);
 	return TRUE;
+}
+
+/* exported function documented gtk/cookies.h */
+nserror nsgtk_cookies_present(void)
+{
+	nserror res;
+
+	res = nsgtk_cookies_init();
+	if (res == NSERROR_OK) {
+		gtk_window_present(wndCookies);
+	}
+	return res;
+}
+
+/* exported function documented gtk/cookies.h */
+void nsgtk_cookies_destroy(void)
+{
+	/** \todo what about cookie_builder? */
+	if (wndCookies != NULL) {
+		nsgtk_treeview_destroy(cookies_treeview);
+	}
 }

@@ -23,15 +23,19 @@
 #ifndef __NSGTK_COOKIES_H__
 #define __NSGTK_COOKIES_H__
 
-extern GtkWindow *wndCookies;
-
 /**
- * Creates the window for the cookies tree.
+ * make the cookie window visible.
  *
  * \return NSERROR_OK on success else appropriate error code on faliure.
  */
-nserror nsgtk_cookies_init(void);
+nserror nsgtk_cookies_present(void);
 
+/**
+ * Free any resources allocated for the cookie window.
+ *
+ * \return NSERROR_OK on success else appropriate error code on faliure.
+ */
 void nsgtk_cookies_destroy(void);
+
 
 #endif /* __NSGTK_COOKIES_H__ */
