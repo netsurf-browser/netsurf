@@ -5329,7 +5329,6 @@ Object *ami_gui_splash_open(void)
 	struct Window *win;
 	struct Screen *wbscreen = LockPubScreen("Workbench");
 	uint32 top = 0, left = 0;
-	STRPTR ver_string;
 	struct TextAttr tattr;
 	struct TextFont *tfont;
 
@@ -5398,12 +5397,9 @@ Object *ami_gui_splash_open(void)
 	if((tfont = ami_font_open_disk_font(&tattr)))
 		SetFont(win->RPort, tfont);
 
-	ver_string = ASPrintf("%s", netsurf_version);
-
 	Move(win->RPort, left + 185, top + 220);
-	Text(win->RPort, ver_string, strlen(ver_string));
+	Text(win->RPort, netsurf_version, strlen(netsurf_version));
 
-	if(ver_string) FreeVec(ver_string);
 	if(tfont) ami_font_close_disk_font(tfont);
 
 	UnlockPubScreen(NULL, wbscreen);
