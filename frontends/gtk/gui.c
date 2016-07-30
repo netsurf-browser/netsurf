@@ -434,13 +434,21 @@ static void nsgtk_main(void)
 
 static void gui_quit(void)
 {
+	nserror res;
+
 	LOG("Quitting GUI");
 
 	/* Ensure all scaffoldings are destroyed before we go into exit */
 	nsgtk_download_destroy();
 	urldb_save_cookies(nsoption_charp(cookie_jar));
 	urldb_save(nsoption_charp(url_file));
-	nsgtk_cookies_destroy();
+
+	res = nsgtk_cookies_destroy();
+	if (res != NSERROR_OK) {
+		LOG("Error finalising cookie viewer: %s",
+		    messages_get_errorcode(res));
+	}
+
 	nsgtk_history_destroy();
 	nsgtk_hotlist_destroy();
 

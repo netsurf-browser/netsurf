@@ -35,7 +35,7 @@ nserror nsgtk_cookies_present(void);
  *
  * \return NSERROR_OK on success else appropriate error code on faliure.
  */
-void nsgtk_cookies_destroy(void);
+nserror nsgtk_cookies_destroy(void);
 
 
 #endif /* __NSGTK_COOKIES_H__ */
