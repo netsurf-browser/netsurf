@@ -27,56 +27,59 @@
 #ifndef _NETSURF_MOUSE_H_
 #define _NETSURF_MOUSE_H_
 
-/* Mouse state.	1 is    primary mouse button (e.g. Select on RISC OS).
- *		2 is  secondary mouse button (e.g. Adjust on RISC OS). */
+/**
+ * Mouse state.	1 is primary mouse button (e.g. Select on RISC OS).
+ *		2 is secondary mouse button (e.g. Adjust on RISC OS).
+ *
+ * \note click meaning is different for different front ends. On RISC
+ *       OS, it is standard to act on press, so a click is fired at
+ *       the same time as a mouse button is pressed. With GTK, it is
+ *       standard to act on release, so a click is fired when the
+ *       mouse button is released, if the operation wasn't a drag.
+ *
+ * \note double and triple clicks are fired alongside a
+ *       BROWSER_MOUSE_CLICK_[1|2] to indicate which button is used.
+ */
 typedef enum browser_mouse_state {
-	BROWSER_MOUSE_HOVER = 0,		/* No mouse buttons pressed,
-						 * May be used to indicate
-						 * hover or end of drag. */
+	/** No mouse buttons pressed, May be used to indicate hover or
+	 * end of drag.
+	 */
+	BROWSER_MOUSE_HOVER = 0,
 
-	BROWSER_MOUSE_PRESS_1   = (1 <<  0),	/* button 1 pressed */
-	BROWSER_MOUSE_PRESS_2   = (1 <<  1),	/* button 2 pressed */
+	/** button 1 pressed */
+	BROWSER_MOUSE_PRESS_1 = (1 <<  0),
+	/** button 2 pressed */
+	BROWSER_MOUSE_PRESS_2 = (1 <<  1),
 
-					/* note: click meaning is different for
-					 * different front ends. On RISC OS, it
-					 * is standard to act on press, so a
-					 * click is fired at the same time as a
-					 * mouse button is pressed. With GTK, it
-					 * is standard to act on release, so a
-					 * click is fired when the mouse button
-					 * is released, if the operation wasn't
-					 * a drag. */
+	/** button 1 clicked. */
+	BROWSER_MOUSE_CLICK_1 = (1 <<  2),
+	/** button 2 clicked. */
+	BROWSER_MOUSE_CLICK_2 = (1 <<  3),
 
-	BROWSER_MOUSE_CLICK_1   = (1 <<  2),	/* button 1 clicked. */
-	BROWSER_MOUSE_CLICK_2   = (1 <<  3),	/* button 2 clicked. */
+	/** button double clicked */
+	BROWSER_MOUSE_DOUBLE_CLICK = (1 << 4),
+	/** button triple clicked */
+	BROWSER_MOUSE_TRIPLE_CLICK = (1 << 5),
 
-	BROWSER_MOUSE_DOUBLE_CLICK = (1 << 4),	/* button double clicked */
-	BROWSER_MOUSE_TRIPLE_CLICK = (1 << 5),	/* button triple clicked */
+	/** start of button 1 drag */
+	BROWSER_MOUSE_DRAG_1 = (1 << 6),
+	/** start of button 2 drag */
+	BROWSER_MOUSE_DRAG_2 = (1 << 7),
 
-					/* note: double and triple clicks are
-					 *       fired alongside a
-					 *       BROWSER_MOUSE_CLICK_[1|2]
-					 *       to indicate which button
-					 *       is used.
-					 */
+	/** a drag operation was started and a mouse button is still pressed */
+	BROWSER_MOUSE_DRAG_ON = (1 << 8),
 
-	BROWSER_MOUSE_DRAG_1    = (1 <<  6),	/* start of button 1 drag */
-	BROWSER_MOUSE_DRAG_2    = (1 <<  7),	/* start of button 2 drag */
+	/** during button 1 drag */
+	BROWSER_MOUSE_HOLDING_1 = (1 << 9),
+	/** during button 2 drag */
+	BROWSER_MOUSE_HOLDING_2 = (1 << 10),
 
-	BROWSER_MOUSE_DRAG_ON   = (1 <<  8),	/* a drag operation was started
-						 * and a mouse button is still
-						 * pressed */
-
-	BROWSER_MOUSE_HOLDING_1 = (1 <<  9),	/* during button 1 drag */
-	BROWSER_MOUSE_HOLDING_2 = (1 << 10),	/* during button 2 drag */
-
-
-	BROWSER_MOUSE_MOD_1     = (1 << 11),	/* 1st modifier key pressed
-						 * (eg. Shift) */
-	BROWSER_MOUSE_MOD_2     = (1 << 12),	/* 2nd modifier key pressed
-						 * (eg. Ctrl) */
-	BROWSER_MOUSE_MOD_3     = (1 << 13)	/* 3rd modifier key pressed
-						 * (eg. Alt) */
+	/** 1st modifier key pressed (eg. Shift) */
+	BROWSER_MOUSE_MOD_1 = (1 << 11),
+	/** 2nd modifier key pressed (eg. Ctrl) */
+	BROWSER_MOUSE_MOD_2 = (1 << 12),
+	/** 3rd modifier key pressed (eg. Alt) */
+	BROWSER_MOUSE_MOD_3 = (1 << 13)
 } browser_mouse_state;
 
 
