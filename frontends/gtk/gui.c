@@ -631,60 +631,93 @@ uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
 			return NS_KEY_DELETE_LINE_START;
 		else
 			return NS_KEY_DELETE_LEFT;
+
 	case GDK_KEY(Delete):
 		if (key->state & GDK_SHIFT_MASK)
 			return NS_KEY_DELETE_LINE_END;
 		else
 			return NS_KEY_DELETE_RIGHT;
-	case GDK_KEY(Linefeed):	return 13;
-	case GDK_KEY(Return):	return 10;
-	case GDK_KEY(Left):		return NS_KEY_LEFT;
-	case GDK_KEY(Right):		return NS_KEY_RIGHT;
-	case GDK_KEY(Up):		return NS_KEY_UP;
-	case GDK_KEY(Down):		return NS_KEY_DOWN;
+
+	case GDK_KEY(Linefeed):
+		return 13;
+
+	case GDK_KEY(Return):
+		return 10;
+
+	case GDK_KEY(Left):
+	case GDK_KEY(KP_Left):
+		return NS_KEY_LEFT;
+
+	case GDK_KEY(Right):
+	case GDK_KEY(KP_Right):
+		return NS_KEY_RIGHT;
+
+	case GDK_KEY(Up):
+	case GDK_KEY(KP_Up):
+		return NS_KEY_UP;
+
+	case GDK_KEY(Down):
+	case GDK_KEY(KP_Down):
+		return NS_KEY_DOWN;
+
 	case GDK_KEY(Home):
+	case GDK_KEY(KP_Home):
 		if (key->state & GDK_CONTROL_MASK)
-			return NS_KEY_TEXT_START;
-		else
 			return NS_KEY_LINE_START;
-	case GDK_KEY(End):
-		if (key->state & GDK_CONTROL_MASK)
-			return NS_KEY_TEXT_END;
 		else
+			return NS_KEY_TEXT_START;
+
+	case GDK_KEY(End):
+	case GDK_KEY(KP_End):
+		if (key->state & GDK_CONTROL_MASK)
 			return NS_KEY_LINE_END;
+		else
+			return NS_KEY_TEXT_END;
+
 	case GDK_KEY(Page_Up):
+	case GDK_KEY(KP_Page_Up):
 		return NS_KEY_PAGE_UP;
+
 	case GDK_KEY(Page_Down):
+	case GDK_KEY(KP_Page_Down):
 		return NS_KEY_PAGE_DOWN;
+
 	case 'a':
 		if (key->state & GDK_CONTROL_MASK)
 			return NS_KEY_SELECT_ALL;
 		return gdk_keyval_to_unicode(key->keyval);
+
 	case 'u':
 		if (key->state & GDK_CONTROL_MASK)
 			return NS_KEY_DELETE_LINE;
 		return gdk_keyval_to_unicode(key->keyval);
+
 	case 'c':
 		if (key->state & GDK_CONTROL_MASK)
 			return NS_KEY_COPY_SELECTION;
 		return gdk_keyval_to_unicode(key->keyval);
+
 	case 'v':
 		if (key->state & GDK_CONTROL_MASK)
 			return NS_KEY_PASTE;
 		return gdk_keyval_to_unicode(key->keyval);
+
 	case 'x':
 		if (key->state & GDK_CONTROL_MASK)
 			return NS_KEY_CUT_SELECTION;
 		return gdk_keyval_to_unicode(key->keyval);
+
 	case 'Z':
 	case 'y':
 		if (key->state & GDK_CONTROL_MASK)
 			return NS_KEY_REDO;
 		return gdk_keyval_to_unicode(key->keyval);
+
 	case 'z':
 		if (key->state & GDK_CONTROL_MASK)
 			return NS_KEY_UNDO;
 		return gdk_keyval_to_unicode(key->keyval);
+
 	case GDK_KEY(Escape):
 		return NS_KEY_ESCAPE;
 
@@ -705,9 +738,8 @@ uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
 	case GDK_KEY(Hyper_R):
 		return 0;
 
-	default:
-		return gdk_keyval_to_unicode(key->keyval);
 	}
+	return gdk_keyval_to_unicode(key->keyval);
 }
 
 
