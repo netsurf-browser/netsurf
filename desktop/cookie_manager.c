@@ -844,9 +844,9 @@ void cookie_manager_mouse_action(enum browser_mouse_state mouse, int x, int y)
 
 
 /* Exported interface, documented in cookie_manager.h */
-void cookie_manager_keypress(uint32_t key)
+bool cookie_manager_keypress(uint32_t key)
 {
-	treeview_keypress(cm_ctx.tree, key);
+	return treeview_keypress(cm_ctx.tree, key);
 }
 
 
