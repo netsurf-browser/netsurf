@@ -35,15 +35,14 @@ typedef struct monkey_cert {
 static monkey_cert_t *cert_ring = NULL;
 static uint32_t cert_ctr = 0;
 
-void 
+nserror
 gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs, 
                 unsigned long num, nserror (*cb)(bool proceed, void *pw),
                 void *cbpw)
 {
   monkey_cert_t *m4t = calloc(sizeof(*m4t), 1);
   if (m4t == NULL) {
-    cb(false, cbpw);
-    return;
+    return NSERROR_NOMEM;
   }
   m4t->cb = cb;
   m4t->pw = cbpw;
@@ -53,6 +52,8 @@ gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
   
   fprintf(stdout, "SSLCERT VERIFY CERT %u URL %s\n",
           m4t->num, nsurl_access(url));
+
+  return NSERROR_OK;
 }
 
 

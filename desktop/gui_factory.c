@@ -685,13 +685,13 @@ static nserror gui_default_launch_url(struct nsurl *url)
 }
 
 
-static void gui_default_cert_verify(nsurl *url,
+static nserror gui_default_cert_verify(nsurl *url,
 				    const struct ssl_cert_info *certs,
 				    unsigned long num,
 				    nserror (*cb)(bool proceed, void *pw),
 				    void *cbpw)
 {
-	cb(false, cbpw);
+	return NSERROR_NOT_IMPLEMENTED;
 }
 
 static void gui_default_401login_open(nsurl *url, const char *realm,

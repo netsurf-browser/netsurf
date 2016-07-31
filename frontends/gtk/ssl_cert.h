@@ -31,6 +31,6 @@ struct ssl_cert_info;
  * \param cb Callback upon user decision.
  * \param cbpw Context pointer passed to cb
  */
-void gtk_cert_verify(struct nsurl *url, const struct ssl_cert_info *certs, unsigned long num, nserror (*cb)(bool proceed, void *pw), void *cbpw);
+nserror gtk_cert_verify(struct nsurl *url, const struct ssl_cert_info *certs, unsigned long num, nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 #endif

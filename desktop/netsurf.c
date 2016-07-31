@@ -104,21 +104,25 @@ static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 static nserror netsurf_llcache_query_handler(const llcache_query *query,
 		void *pw, llcache_query_response cb, void *cbpw)
 {
+	nserror res = NSERROR_OK;
+
 	switch (query->type) {
 	case LLCACHE_QUERY_AUTH:
 		guit->misc->login(query->url, query->data.auth.realm, cb, cbpw);
 		break;
+
 	case LLCACHE_QUERY_REDIRECT:
 		/** \todo Need redirect query dialog */
 		/* For now, do nothing, as this query type isn't emitted yet */
 		break;
+
 	case LLCACHE_QUERY_SSL:
-		guit->misc->cert_verify(query->url, query->data.ssl.certs,
+		res = guit->misc->cert_verify(query->url, query->data.ssl.certs,
 				query->data.ssl.num, cb, cbpw);
 		break;
 	}
 
-	return NSERROR_OK;
+	return res;
 }
 
 /* exported interface documented in netsurf/netsurf.h */

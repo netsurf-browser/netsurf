@@ -101,7 +101,7 @@ void ro_gui_cert_postinitialise(void)
  * \param cb Callback upon user decision.
  * \param cbpw Context pointer passed to cb
  */
-void gui_cert_verify(nsurl *url,
+nserror gui_cert_verify(nsurl *url,
 		const struct ssl_cert_info *certs, unsigned long num,
 		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
@@ -117,7 +117,7 @@ void gui_cert_verify(nsurl *url,
 	sslcert_window = malloc(sizeof(struct ro_sslcert));
 	if (sslcert_window == NULL) {
 		LOG("Failed to allocate memory for SSL Cert Dialog");
-		return;
+		return NSERROR_NOMEM;
 	}
 
 	/* Create the SSL window and its pane. */
@@ -127,7 +127,7 @@ void gui_cert_verify(nsurl *url,
 	if (error) {
 		LOG("xwimp_create_window: 0x%x: %s", error->errnum, error->errmess);
 		free(sslcert_window);
-		return;
+		return NSERROR_INIT_FAILED;
 	}
 
 	error = xwimp_create_window(ro_gui_cert_tree_template,
@@ -135,7 +135,7 @@ void gui_cert_verify(nsurl *url,
 	if (error) {
 		LOG("xwimp_create_window: 0x%x: %s", error->errnum, error->errmess);
 		free(sslcert_window);
-		return;
+		return NSERROR_INIT_FAILED;
 	}
 
 	/* Create the SSL data and build a tree from it. */
@@ -148,7 +148,7 @@ void gui_cert_verify(nsurl *url,
 	if (sslcert_window->tv == NULL) {
 		LOG("Failed to allocate treeview");
 		free(sslcert_window);
-		return;
+		return NSERROR_NOMEM;
 	}
 
 	/* Set up the certificate window event handling.
@@ -182,7 +182,7 @@ void gui_cert_verify(nsurl *url,
 	if (error) {
 		ro_gui_cert_release_window(sslcert_window);
 		LOG("xwimp_get_window_info: 0x%x: %s", error->errnum, error->errmess);
-		return;
+		return NSERROR_INIT_FAILED;
 	}
 
 	state.w = sslcert_window->window;
@@ -190,7 +190,7 @@ void gui_cert_verify(nsurl *url,
 	if (error) {
 		ro_gui_cert_release_window(sslcert_window);
 		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-		return;
+		return NSERROR_INIT_FAILED;
 	}
 
 	istate.w = sslcert_window->window;
@@ -199,7 +199,7 @@ void gui_cert_verify(nsurl *url,
 	if (error) {
 		ro_gui_cert_release_window(sslcert_window);
 		LOG("xwimp_get_icon_state: 0x%x: %s", error->errnum, error->errmess);
-		return;
+		return NSERROR_INIT_FAILED;
 	}
 
 	state.w = sslcert_window->pane;
@@ -230,7 +230,7 @@ void gui_cert_verify(nsurl *url,
 		if (error) {
 			ro_gui_cert_release_window(sslcert_window);
 			LOG("xwimp_set_extent: 0x%x: %s", error->errnum, error->errmess);
-			return;
+			return NSERROR_INIT_FAILED;
 		}
 	}
 
@@ -248,10 +248,12 @@ void gui_cert_verify(nsurl *url,
 		ro_gui_cert_release_window(sslcert_window);
 		LOG("xwimp_open_window_nested: 0x%x: %s", error->errnum, error->errmess);
 		ro_gui_cert_release_window(sslcert_window);
-		return;
+		return NSERROR_INIT_FAILED;
 	}
 
 	ro_treeview_set_origin(sslcert_window->tv, 0, 0);
+
+	return NSERROR_OK;
 }
 
 /**

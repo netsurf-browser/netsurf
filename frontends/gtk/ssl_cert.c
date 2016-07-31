@@ -64,7 +64,7 @@ static gboolean nsgtk_ssl_delete_event(GtkWidget *w, GdkEvent  *event, gpointer 
 	return FALSE;
 }
 
-void gtk_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
+nserror gtk_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 		unsigned long num, nserror (*cb)(bool proceed, void *pw),
 		void *cbpw)
 {
@@ -82,15 +82,14 @@ void gtk_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 	/* state while dlg is open */
 	session = calloc(sizeof(void *), 3);
 	if (session == NULL) {
-		return;
+		return NSERROR_NOMEM;
 	}
 
 	res = nsgtk_builder_new_from_resname("ssl", &builder);
 	if (res != NSERROR_OK) {
 		LOG("SSL UI builder init failed");
 		free(session);
-		cb(false, cbpw);
-		return;
+		return NSERROR_INIT_FAILED;
 	}
 
 	gtk_builder_connect_signals(builder, NULL);
@@ -114,7 +113,7 @@ void gtk_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 	if (ssl_window == NULL) {
 		free(session);
 		g_object_unref(G_OBJECT(dlg));
-		return;
+		return NSERROR_INIT_FAILED;
 	}
 
 	accept = GTK_BUTTON(gtk_builder_get_object(builder, "sslaccept"));
@@ -133,4 +132,6 @@ void gtk_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 			(gpointer)session);
 
 	gtk_widget_show(GTK_WIDGET(dlg));
+
+	return NSERROR_OK;
 }

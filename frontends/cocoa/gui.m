@@ -285,13 +285,13 @@ static nserror gui_launch_url(nsurl *url)
 
 struct ssl_cert_info;
 
-static void
+static nserror
 gui_cert_verify(nsurl *url,
                 const struct ssl_cert_info *certs,
                 unsigned long num,
                 nserror (*cb)(bool proceed,void *pw), void *cbpw)
 {
-	cb( false, cbpw );
+	return NSERROR_NOT_IMPLEMENTED;
 }
 
 

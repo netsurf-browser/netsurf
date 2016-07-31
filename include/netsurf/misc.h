@@ -89,8 +89,9 @@ struct gui_misc_table {
 	 * \param num The number of certificates to be verified.
 	 * \param cb Callback upon user decision.
 	 * \param cbpw Context pointer passed to cb
+	 * \return NSERROR_OK on sucess else error and cb never called
 	 */
-	void (*cert_verify)(struct nsurl *url, const struct ssl_cert_info *certs, unsigned long num, nserror (*cb)(bool proceed, void *pw), void *cbpw);
+	nserror (*cert_verify)(struct nsurl *url, const struct ssl_cert_info *certs, unsigned long num, nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 	/**
 	 * Prompt user for login

@@ -212,7 +212,7 @@ extern int ro_plot_origin_y;
 bool ro_gui_theme_install_apply(wimp_w w);
 
 /* in sslcert.c */
-void gui_cert_verify(struct nsurl *url,
+nserror gui_cert_verify(struct nsurl *url,
 		const struct ssl_cert_info *certs, unsigned long num,
 		     nserror (*cb)(bool proceed, void *pw), void *cbpw);
 

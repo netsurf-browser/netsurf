@@ -771,7 +771,7 @@ static void gui_401login_open(nsurl *url, const char *realm,
 
 }
 
-static void
+static nserror
 gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 		unsigned long num, nserror (*cb)(bool proceed, void *pw),
 		void *cbpw)
@@ -795,7 +795,7 @@ gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
                                                    &data);
                 atari_sslcert_viewer_open(data);
         }
-
+	return NSERROR_OK;
 }
 
 void gui_set_input_gui_window(struct gui_window *gw)

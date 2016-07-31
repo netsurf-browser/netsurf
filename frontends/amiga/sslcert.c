@@ -27,7 +27,7 @@
 #include "amiga/tree.h"
 #include "amiga/sslcert.h"
 
-void gui_cert_verify(nsurl *url, 
+nserror gui_cert_verify(nsurl *url, 
 		const struct ssl_cert_info *certs, unsigned long num,
 		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
@@ -39,9 +39,13 @@ void gui_cert_verify(nsurl *url,
 	ssl_current_session = data;
 
 	ssl_window = ami_tree_create(TREE_SSLCERT, data);
-	if(!ssl_window) return;
+	if (!ssl_window) {
+		return NSERROR_INIT_FAILED;
+	}
 
 	ami_tree_open(ssl_window, AMI_TREE_SSLCERT);
+
+	return NSERROR_OK;
 }
 
 void ami_ssl_free(struct treeview_window *twin)

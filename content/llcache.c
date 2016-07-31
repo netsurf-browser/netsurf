@@ -2214,6 +2214,11 @@ static nserror llcache_fetch_auth(llcache_object *object, const char *realm)
 
 			error = llcache->query_cb(&query, llcache->query_cb_pw,
 					llcache_query_handle_response, object);
+			if (error != NSERROR_OK) {
+				/* do not continue if error querying user */
+				error = llcache_query_handle_response(false,
+								      object);
+			}
 		} else {
 			llcache_event event;
 
@@ -2269,6 +2274,10 @@ static nserror llcache_fetch_cert_error(llcache_object *object,
 
 		error = llcache->query_cb(&query, llcache->query_cb_pw,
 				llcache_query_handle_response, object);
+		if (error != NSERROR_OK) {
+			/* do not continue if error querying user */
+			error = llcache_query_handle_response(false, object);
+		}
 	} else {
 		llcache_event event;
 
