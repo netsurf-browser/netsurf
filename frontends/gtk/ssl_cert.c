@@ -16,122 +16,250 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * Implementation of gtk certificate viewing using gtk core windows.
+ */
+
+#include <stdint.h>
 #include <stdlib.h>
 #include <gtk/gtk.h>
 
 #include "utils/log.h"
-#include "utils/nsurl.h"
-#include "desktop/tree.h"
+#include "netsurf/keypress.h"
+#include "netsurf/plotters.h"
 #include "desktop/sslcert_viewer.h"
+#include "desktop/treeview.h"
 
-#include "gtk/treeview.h"
+#include "gtk/plotters.h"
 #include "gtk/scaffolding.h"
 #include "gtk/resources.h"
 #include "gtk/ssl_cert.h"
+#include "gtk/corewindow.h"
 
 
-static void nsgtk_ssl_accept(GtkButton *w, gpointer data)
+/**
+ * GTK certificate viewing window context
+ */
+struct nsgtk_crtvrfy_window {
+	/** GTK core window context */
+	struct nsgtk_corewindow core;
+	/** GTK builder for window */
+	GtkBuilder *builder;
+	/** GTK dialog window being shown */
+	GtkDialog *dlg;
+	/** SSL certificate viewer context data */
+	struct sslcert_session_data *ssl_data;
+};
+
+/**
+ * destroy a previously created certificate view
+ */
+static nserror nsgtk_crtvrfy_destroy(struct nsgtk_crtvrfy_window *crtvrfy_win)
 {
-	void **session = data;
-	GtkBuilder *x = session[0];
-	struct nsgtk_treeview *wnd = session[1];
-	struct sslcert_session_data *ssl_data = session[2];
+	nserror res;
 
-	sslcert_viewer_accept(ssl_data);
-
-	nsgtk_treeview_destroy(wnd);
-	g_object_unref(G_OBJECT(x));
-	free(session);
+	res = sslcert_viewer_fini(crtvrfy_win->ssl_data);
+	if (res == NSERROR_OK) {
+		res = nsgtk_corewindow_fini(&crtvrfy_win->core);
+		gtk_widget_destroy(GTK_WIDGET(crtvrfy_win->dlg));
+		g_object_unref(G_OBJECT(crtvrfy_win->builder));
+		free(crtvrfy_win);
+	}
+	return res;
 }
 
-static void nsgtk_ssl_reject(GtkWidget *w, gpointer data)
+static void
+nsgtk_crtvrfy_accept(GtkButton *w, gpointer data)
 {
-	void **session = data;
-	GtkBuilder *x = session[0];
-	struct nsgtk_treeview *wnd = session[1];
-	struct sslcert_session_data *ssl_data = session[2];
+	struct nsgtk_crtvrfy_window *crtvrfy_win;
+	crtvrfy_win = (struct nsgtk_crtvrfy_window *)data;
 
-	sslcert_viewer_reject(ssl_data);
+	sslcert_viewer_accept(crtvrfy_win->ssl_data);
 
-	nsgtk_treeview_destroy(wnd);
-	g_object_unref(G_OBJECT(x));
-	free(session);
+	nsgtk_crtvrfy_destroy(crtvrfy_win);
 }
 
-static gboolean nsgtk_ssl_delete_event(GtkWidget *w, GdkEvent  *event, gpointer data)
+static void
+nsgtk_crtvrfy_reject(GtkWidget *w, gpointer data)
 {
-	nsgtk_ssl_reject(w, data);
+	struct nsgtk_crtvrfy_window *crtvrfy_win;
+	crtvrfy_win = (struct nsgtk_crtvrfy_window *)data;
+
+	sslcert_viewer_reject(crtvrfy_win->ssl_data);
+
+	nsgtk_crtvrfy_destroy(crtvrfy_win);
+}
+
+static gboolean
+nsgtk_crtvrfy_delete_event(GtkWidget *w, GdkEvent  *event, gpointer data)
+{
+	nsgtk_crtvrfy_reject(w, data);
 	return FALSE;
 }
 
-nserror gtk_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
-		unsigned long num, nserror (*cb)(bool proceed, void *pw),
-		void *cbpw)
+/**
+ * callback for mouse action for certificate verify on core window
+ *
+ * \param nsgtk_cw The nsgtk core window structure.
+ * \param mouse_state netsurf mouse state on event
+ * \param x location of event
+ * \param y location of event
+ * \return NSERROR_OK on success otherwise apropriate error code
+ */
+static nserror
+nsgtk_crtvrfy_mouse(struct nsgtk_corewindow *nsgtk_cw,
+		    browser_mouse_state mouse_state,
+		    int x, int y)
 {
-	static struct nsgtk_treeview *ssl_window;
-	struct sslcert_session_data *data;
-	GtkButton *accept, *reject;
-	void **session;
-	GtkDialog *dlg;
-	GtkScrolledWindow *scrolled;
-	GtkDrawingArea *drawing_area;
-	GtkBuilder *builder;
-	GtkWindow *gtk_parent;
+	struct nsgtk_crtvrfy_window *crtvrfy_win;
+	/* technically degenerate container of */
+	crtvrfy_win = (struct nsgtk_crtvrfy_window *)nsgtk_cw;
+
+	sslcert_viewer_mouse_action(crtvrfy_win->ssl_data, mouse_state, x, y);
+
+	return NSERROR_OK;
+}
+
+/**
+ * callback for keypress for certificate verify on core window
+ *
+ * \param nsgtk_cw The nsgtk core window structure.
+ * \param nskey The netsurf key code
+ * \return NSERROR_OK on success otherwise apropriate error code
+ */
+static nserror
+nsgtk_crtvrfy_key(struct nsgtk_corewindow *nsgtk_cw, uint32_t nskey)
+{
+	struct nsgtk_crtvrfy_window *crtvrfy_win;
+
+	/* technically degenerate container of */
+	crtvrfy_win = (struct nsgtk_crtvrfy_window *)nsgtk_cw;
+
+	if (sslcert_viewer_keypress(crtvrfy_win->ssl_data, nskey)) {
+		return NSERROR_OK;
+	}
+	return NSERROR_NOT_IMPLEMENTED;
+}
+
+/**
+ * callback on draw event for certificate verify on core window
+ *
+ * \param nsgtk_cw The nsgtk core window structure.
+ * \param r The rectangle of the window that needs updating.
+ * \return NSERROR_OK on success otherwise apropriate error code
+ */
+static nserror
+nsgtk_crtvrfy_draw(struct nsgtk_corewindow *nsgtk_cw, struct rect *r)
+{
+	struct redraw_context ctx = {
+		.interactive = true,
+		.background_images = true,
+		.plot = &nsgtk_plotters
+	};
+	struct nsgtk_crtvrfy_window *crtvrfy_win;
+
+	/* technically degenerate container of */
+	crtvrfy_win = (struct nsgtk_crtvrfy_window *)nsgtk_cw;
+
+	sslcert_viewer_redraw(crtvrfy_win->ssl_data, 0, 0, r, &ctx);
+
+	return NSERROR_OK;
+}
+
+/* exported interface documented in gtk/ssl_cert.h */
+nserror gtk_cert_verify(struct nsurl *url,
+			const struct ssl_cert_info *certs,
+			unsigned long num,
+			nserror (*cb)(bool proceed, void *pw),
+			void *cbpw)
+{
+	struct nsgtk_crtvrfy_window *ncwin;
 	nserror res;
 
-	/* state while dlg is open */
-	session = calloc(sizeof(void *), 3);
-	if (session == NULL) {
+	res = treeview_init(0);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	ncwin = malloc(sizeof(struct nsgtk_crtvrfy_window));
+	if (ncwin == NULL) {
 		return NSERROR_NOMEM;
 	}
 
-	res = nsgtk_builder_new_from_resname("ssl", &builder);
+	res = nsgtk_builder_new_from_resname("ssl", &ncwin->builder);
 	if (res != NSERROR_OK) {
 		LOG("SSL UI builder init failed");
-		free(session);
-		return NSERROR_INIT_FAILED;
+		free(ncwin);
+		return res;
 	}
 
-	gtk_builder_connect_signals(builder, NULL);
+	gtk_builder_connect_signals(ncwin->builder, NULL);
 
-	sslcert_viewer_create_session_data(num, url, cb, cbpw, certs, &data);
-
-	dlg = GTK_DIALOG(gtk_builder_get_object(builder, "wndSSLProblem"));
+	ncwin->dlg = GTK_DIALOG(gtk_builder_get_object(ncwin->builder,
+						       "wndSSLProblem"));
 
 	/* set parent for transient dialog */
-	gtk_parent = nsgtk_scaffolding_window(nsgtk_current_scaffolding());
-	gtk_window_set_transient_for(GTK_WINDOW(dlg), gtk_parent);
+	gtk_window_set_transient_for(GTK_WINDOW(ncwin->dlg),
+		     nsgtk_scaffolding_window(nsgtk_current_scaffolding()));
 
-	scrolled = GTK_SCROLLED_WINDOW(gtk_builder_get_object(builder, "SSLScrolled"));
-	drawing_area = GTK_DRAWING_AREA(gtk_builder_get_object(builder, "SSLDrawingArea"));
+	ncwin->core.scrolled = GTK_SCROLLED_WINDOW(
+		gtk_builder_get_object(ncwin->builder, "SSLScrolled"));
 
-	ssl_window = nsgtk_treeview_create(TREE_SSLCERT,
-					   GTK_WINDOW(dlg),
-					   scrolled,
-					   drawing_area,
-					   data);
-	if (ssl_window == NULL) {
-		free(session);
-		g_object_unref(G_OBJECT(dlg));
-		return NSERROR_INIT_FAILED;
+	ncwin->core.drawing_area = GTK_DRAWING_AREA(
+		gtk_builder_get_object(ncwin->builder, "SSLDrawingArea"));
+
+	/* make the delete event call our destructor */
+	g_signal_connect(G_OBJECT(ncwin->dlg),
+			 "delete_event",
+			 G_CALLBACK(nsgtk_crtvrfy_delete_event),
+			 ncwin);
+
+	/* accept button */
+	g_signal_connect(G_OBJECT(gtk_builder_get_object(ncwin->builder,
+							 "sslaccept")),
+			 "clicked",
+			 G_CALLBACK(nsgtk_crtvrfy_accept),
+			 ncwin);
+
+	/* reject button */
+	g_signal_connect(G_OBJECT(gtk_builder_get_object(ncwin->builder,
+							 "sslreject")),
+			 "clicked",
+			 G_CALLBACK(nsgtk_crtvrfy_reject),
+			 ncwin);
+
+	/* initialise GTK core window */
+	ncwin->core.draw = nsgtk_crtvrfy_draw;
+	ncwin->core.key = nsgtk_crtvrfy_key;
+	ncwin->core.mouse = nsgtk_crtvrfy_mouse;
+
+	res = nsgtk_corewindow_init(&ncwin->core);
+	if (res != NSERROR_OK) {
+		g_object_unref(G_OBJECT(ncwin->dlg));
+		free(ncwin);
+		return res;
 	}
 
-	accept = GTK_BUTTON(gtk_builder_get_object(builder, "sslaccept"));
-	reject = GTK_BUTTON(gtk_builder_get_object(builder, "sslreject"));
+	/* initialise certificate viewing interface */
+	res = sslcert_viewer_create_session_data(num, url, cb, cbpw, certs,
+					   &ncwin->ssl_data);
+	if (res != NSERROR_OK) {
+		g_object_unref(G_OBJECT(ncwin->dlg));
+		free(ncwin);
+		return res;
+	}
 
-	session[0] = builder;
-	session[1] = ssl_window;
-	session[2] = data;
+	res = sslcert_viewer_init(ncwin->core.cb_table,
+				  (struct core_window *)ncwin,
+				  ncwin->ssl_data);
+	if (res != NSERROR_OK) {
+		g_object_unref(G_OBJECT(ncwin->dlg));
+		free(ncwin);
+		return res;
+	}
 
-#define CONNECT(obj, sig, callback, ptr) \
-	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
-
-	CONNECT(accept, "clicked", nsgtk_ssl_accept, session);
-	CONNECT(reject, "clicked", nsgtk_ssl_reject, session);
- 	CONNECT(dlg, "delete_event", G_CALLBACK(nsgtk_ssl_delete_event),
-			(gpointer)session);
-
-	gtk_widget_show(GTK_WIDGET(dlg));
+	gtk_widget_show(GTK_WIDGET(ncwin->dlg));
 
 	return NSERROR_OK;
 }

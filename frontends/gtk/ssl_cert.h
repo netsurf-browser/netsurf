@@ -30,6 +30,7 @@ struct ssl_cert_info;
  * \param num The number of certificates to be verified.
  * \param cb Callback upon user decision.
  * \param cbpw Context pointer passed to cb
+ * \return NSERROR_OK or error code if prompt creation failed.
  */
 nserror gtk_cert_verify(struct nsurl *url, const struct ssl_cert_info *certs, unsigned long num, nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
