@@ -1,7 +1,7 @@
 #
 # NetSurf unit tests
 
-TESTS := nsurl urldbtest nsoption bloom hashtable #llcache
+TESTS := nsurl urldbtest nsoption bloom hashtable urlescape #llcache
 
 # nsurl sources
 nsurl_SRCS := utils/corestrings.c utils/nsurl.c utils/idna.c \
@@ -33,6 +33,9 @@ bloom_SRCS := utils/bloom.c test/bloom.c
 
 # hash table test sources
 hashtable_SRCS := utils/hashtable.c test/log.c test/hashtable.c
+
+# url escape test sources
+urlescape_SRCS := utils/url.c test/log.c test/urlescape.c
 
 # Coverage builds need additional flags
 ifeq ($(MAKECMDGOALS),coverage)
