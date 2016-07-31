@@ -516,8 +516,7 @@ void sslcert_viewer_mouse_action(struct sslcert_session_data *ssl_d,
 
 
 /* Exported interface, documented in sslcert_viewer.h */
-void sslcert_viewer_keypress(struct sslcert_session_data *ssl_d,
-		uint32_t key)
+bool sslcert_viewer_keypress(struct sslcert_session_data *ssl_d, uint32_t key)
 {
-	treeview_keypress(ssl_d->tree, key);
+	return treeview_keypress(ssl_d->tree, key);
 }

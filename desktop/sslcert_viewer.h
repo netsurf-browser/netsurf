@@ -119,7 +119,6 @@ void sslcert_viewer_mouse_action(struct sslcert_session_data *ssl_d,
  * \param key		The ucs4 character codepoint
  * \return true if the keypress is dealt with, false otherwise.
  */
-void sslcert_viewer_keypress(struct sslcert_session_data *ssl_d,
-		uint32_t key);
+bool sslcert_viewer_keypress(struct sslcert_session_data *ssl_d, uint32_t key);
 
 #endif
