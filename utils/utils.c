@@ -43,11 +43,13 @@
 #include "utils/string.h"
 #include "utils/utils.h"
 
-/* exported interface documented in utils/utils.h */
+/* exported interface documented in utils/string.h */
 char *squash_whitespace(const char *s)
 {
 	char *c;
 	int i = 0, j = 0;
+
+	assert(s != NULL);
 
 	c = malloc(strlen(s) + 1);
 	if (c != NULL) {
@@ -208,7 +210,7 @@ nserror snstrjoin(char **str, size_t *size, char sep, size_t nelm, ...)
  */
 #define BYTESIZE_BUFFER_SIZE 20
 
-/* exported interface documented in utils/utils.h */
+/* exported interface documented in utils/string.h */
 char *human_friendly_bytesize(unsigned long bsize) {
 	static char buffer1[BYTESIZE_BUFFER_SIZE];
 	static char buffer2[BYTESIZE_BUFFER_SIZE];
