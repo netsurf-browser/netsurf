@@ -167,6 +167,7 @@ static const struct test_pairs url_unescape_test_vec[] = {
 	{ "%0G", 3, "%0G", 3 }, /* single character with bad hex value */
 	{ "%20%0G%20", 9, " %0G ", 5 }, /* three src chars with bad hex value */
 	{ "%20%00%20", 9, " ", 3 }, /* three src chars with null hex value */
+	{ "%@@%[[%__%||%//%::", 18, "%@@%[[%__%||%//%::", 18 }, /* four garbage encoded chars */
 	{ &simple_string[0], SLEN(simple_string),
 	  &simple_string[0], SLEN(simple_string) }, /* normal string with no percent encoded characters */
 	{ &most_escaped_upper[0], SLEN(most_escaped_upper),
