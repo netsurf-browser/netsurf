@@ -18,8 +18,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * \brief Implementation of URL parsing and joining operations.
+/**
+ * \file
+ * \brief Implementation of URI percent escaping.
+ *
+ * Percent encoding of URI is subject to RFC3986 however this is not
+ * implementing URI behaviour purely the percent encoding so only the
+ * unreserved set is not encoded and arbitrary binary data may be
+ * unescaped.
+ *
+ * \note Earlier RFC (2396, 1738 and 1630) list the tilde ~ character
+ * as special so its handling is ambiguious
  */
 
 #include <ctype.h>
@@ -37,7 +46,7 @@
  *
  * Must be called with valid hex char, results undefined otherwise.
  *
- * \param[in]  c  char to convert yo value
+ * \param[in] c character to convert to value
  * \return the value of c
  */
 static inline char xdigit_to_hex(char c)
@@ -60,6 +69,10 @@ nserror url_unescape(const char *str, size_t length,
 	size_t new_len;
 	char *res_pos;
 	char *result;
+
+	if ((str == NULL) || (result_out == NULL)) {
+		return NSERROR_BAD_PARAMETER;
+	}
 
 	if (length == 0) {
 		length = strlen(str);
@@ -121,7 +134,7 @@ nserror url_escape(const char *unescaped, bool sptoplus,
 	const char *c;
 
 	if (unescaped == NULL || result == NULL) {
-		return NSERROR_NOT_FOUND;
+		return NSERROR_BAD_PARAMETER;
 	}
 
 	len = strlen(unescaped);
