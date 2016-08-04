@@ -33,7 +33,6 @@
 
 #include "gtk/cookies.h"
 #include "gtk/plotters.h"
-#include "gtk/scaffolding.h"
 #include "gtk/resources.h"
 #include "gtk/corewindow.h"
 

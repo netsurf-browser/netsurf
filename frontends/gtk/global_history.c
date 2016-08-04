@@ -33,11 +33,10 @@
 #include "desktop/treeview.h"
 
 #include "gtk/compat.h"
-#include "gtk/history.h"
 #include "gtk/plotters.h"
-#include "gtk/scaffolding.h"
 #include "gtk/resources.h"
 #include "gtk/corewindow.h"
+#include "gtk/global_history.h"
 
 struct nsgtk_global_history_window {
 	struct nsgtk_corewindow core;

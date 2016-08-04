@@ -60,7 +60,7 @@
 #include "gtk/viewsource.h"
 #include "gtk/bitmap.h"
 #include "gtk/gui.h"
-#include "gtk/history.h"
+#include "gtk/global_history.h"
 #include "gtk/hotlist.h"
 #include "gtk/download.h"
 #include "gtk/menu.h"

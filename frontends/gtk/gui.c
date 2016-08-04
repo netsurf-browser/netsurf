@@ -58,7 +58,7 @@
 #include "gtk/download.h"
 #include "gtk/fetch.h"
 #include "gtk/gui.h"
-#include "gtk/history.h"
+#include "gtk/global_history.h"
 #include "gtk/hotlist.h"
 #include "gtk/throbber.h"
 #include "gtk/treeview.h"
