@@ -1496,9 +1496,11 @@ MULTIHANDLER(localhistory)
 
 MULTIHANDLER(globalhistory)
 {
-	gtk_widget_show(GTK_WIDGET(wndHistory));
-	gdk_window_raise(nsgtk_widget_get_window(GTK_WIDGET(wndHistory)));
-
+	nserror res;
+	res = nsgtk_global_history_present();
+	if (res != NSERROR_OK) {
+		LOG("Unable to initialise global history window.");
+	}
 	return TRUE;
 }
 

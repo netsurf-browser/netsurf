@@ -301,12 +301,6 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	LOG("Set CSS DPI to %d", browser_get_dpi());
 
 	/* Initialise top level UI elements */
-	error = nsgtk_history_init();
-	if (error != NSERROR_OK) {
-		LOG("Unable to initialise global history window.");
-		return error;
-	}
-
 	error = nsgtk_download_init();
 	if (error != NSERROR_OK) {
 		LOG("Unable to initialise download window.");
@@ -449,7 +443,12 @@ static void gui_quit(void)
 		    messages_get_errorcode(res));
 	}
 
-	nsgtk_history_destroy();
+	res = nsgtk_global_history_destroy();
+	if (res != NSERROR_OK) {
+		LOG("Error finalising global history viewer: %s",
+		    messages_get_errorcode(res));
+	}
+
 	nsgtk_hotlist_destroy();
 
 	free(nsgtk_config_home);

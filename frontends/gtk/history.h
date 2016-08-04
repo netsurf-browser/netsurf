@@ -17,23 +17,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * Interface to GTK global history manager
+ */
+
 #ifndef __NSGTK_HISTORY_H__
 #define __NSGTK_HISTORY_H__
 
-#include <gtk/gtk.h>
-
-extern GtkWindow *wndHistory;
-
 /**
- * Creates the window for the global history tree.
+ * make the global history window visible.
  *
- * \return NSERROR_OK on sucess else appropriate error code.
+ * \return NSERROR_OK on success else appropriate error code on faliure.
  */
-nserror nsgtk_history_init(void);
+nserror nsgtk_global_history_present(void);
 
 /**
- * Free global resources associated with the gtk history window.
+ * Destroys the global history window and performs any other necessary cleanup
+ * actions.
  */
-void nsgtk_history_destroy(void);
+nserror nsgtk_global_history_destroy(void);
 
-#endif /* __NSGTK_HISTORY_H__ */
+#endif
