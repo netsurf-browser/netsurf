@@ -101,7 +101,7 @@ void global_history_mouse_action(enum browser_mouse_state mouse, int x, int y);
  * \param key		The ucs4 character codepoint
  * \return true if the keypress is dealt with, false otherwise.
  */
-void global_history_keypress(uint32_t key);
+bool global_history_keypress(uint32_t key);
 
 /**
  * Determine whether there is a selection
