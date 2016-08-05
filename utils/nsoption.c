@@ -583,21 +583,32 @@ nsoption_init(nsoption_set_default_t *set_defaults,
 /* exported interface documented in utils/nsoption.h */
 nserror nsoption_finalise(struct nsoption_s *opts, struct nsoption_s *defs)
 {
+	nserror res;
+
 	/* check to see if global table selected */
 	if (opts == NULL) {
-		opts = nsoptions;
+		res = nsoption_free(nsoptions);
+		if (res == NSERROR_OK) {
+			nsoptions = NULL;
+		}
+	} else {
+		res = nsoption_free(opts);
 	}
-
-	nsoption_free(opts);
+	if (res != NSERROR_OK) {
+		return res;
+	}
 
 	/* check to see if global table selected */
 	if (defs == NULL) {
-		defs = nsoptions_default;
+		res = nsoption_free(nsoptions_default);
+		if (res == NSERROR_OK) {
+			nsoptions_default = NULL;
+		}
+	} else {
+		res = nsoption_free(defs);
 	}
 
-	nsoption_free(defs);
-
-	return NSERROR_OK;
+	return res;
 }
 
 
@@ -620,6 +631,10 @@ nsoption_read(const char *path, struct nsoption_s *opts)
 
 	/** @todo is this and API bug not being a parameter */
 	defs = nsoptions_default;
+
+	if ((opts == NULL) || (defs == NULL)) {
+		return NSERROR_BAD_PARAMETER;
+	}
 
 	fp = fopen(path, "r");
 	if (!fp) {
@@ -687,6 +702,10 @@ nsoption_write(const char *path,
 		defs = nsoptions_default;
 	}
 
+	if ((opts == NULL) || (defs == NULL)) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
 	fp = fopen(path, "w");
 	if (!fp) {
 		LOG("failed to open file '%s' for writing", path);
@@ -708,9 +727,12 @@ nsoption_dump(FILE *outf, struct nsoption_s *opts)
 		return NSERROR_BAD_PARAMETER;
 	}
 
-	/* check to see if global table selected */
+	/* check to see if global table selected and available */
 	if (opts == NULL) {
 		opts = nsoptions;
+	}
+	if (opts == NULL) {
+		return NSERROR_BAD_PARAMETER;
 	}
 
 	return nsoption_output(outf, opts, NULL, true);
@@ -728,9 +750,16 @@ nsoption_commandline(int *pargc, char **argv, struct nsoption_s *opts)
 	int mv_loop;
 	unsigned int entry_loop;
 
-	/* check to see if global table selected */
+	if ((pargc == NULL) || (argv == NULL)) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* check to see if global table selected and available */
 	if (opts == NULL) {
 		opts = nsoptions;
+	}
+	if (opts == NULL) {
+		return NSERROR_BAD_PARAMETER;
 	}
 
 	while (idx < *pargc) {
