@@ -37,6 +37,7 @@ const char *test_choices_path = "test/data/Choices";
 const char *test_choices_short_path = "test/data/Choices-short";
 const char *test_choices_all_path = "test/data/Choices-all";
 const char *test_choices_full_path = "test/data/Choices-full";
+const char *test_choices_missing_path = "test/data/Choices-missing";
 
 
 nserror gui_options_init_defaults(struct nsoption_s *defaults)
@@ -94,6 +95,37 @@ static int cmp(const char *f1, const char *f2)
 	return res;
 }
 
+/** option create fixture */
+static void nsoption_create(void)
+{
+	nserror res;
+
+	res = nsoption_init(NULL, NULL, NULL);
+	ck_assert_int_eq(res, NSERROR_OK);
+}
+
+/** option create fixture for format case */
+static void nsoption_format_create(void)
+{
+	nserror res;
+
+	res = nsoption_init(NULL, NULL, NULL);
+	ck_assert_int_eq(res, NSERROR_OK);
+
+	/* read from file */
+	res = nsoption_read(test_choices_path, NULL);
+	ck_assert_int_eq(res, NSERROR_OK);
+}
+
+/** option teardown fixture */
+static void nsoption_teardown(void)
+{
+	nserror res;
+
+	res = nsoption_finalise(NULL, NULL);
+	ck_assert_int_eq(res, NSERROR_OK);
+}
+
 
 /**
  * Test full options session from start to finish
@@ -116,8 +148,14 @@ START_TEST(nsoption_session_test)
 	res = nsoption_commandline(&argc, &argv[0], NULL);
 	ck_assert_int_eq(res, NSERROR_OK);
 
-	/* change an option */
+	/* change a string option */
 	nsoption_set_charp(http_proxy_host, strdup("bar"));
+
+	/* change an uint option */
+	nsoption_set_uint(disc_cache_size, 42);
+
+	/* change a colour */
+	nsoption_set_colour(sys_colour_ActiveBorder, 0x00d0000d);
 
 	/* write options out */
 	outnam = tmpnam(NULL);
@@ -141,6 +179,92 @@ TCase *nsoption_session_case_create(void)
 	tc = tcase_create("Full session");
 
 	tcase_add_test(tc, nsoption_session_test);
+
+	return tc;
+}
+
+
+
+struct format_test_vec_s {
+	int opt_idx;
+	const char *res_html;
+	const char *res_text;
+};
+
+struct format_test_vec_s format_test_vec[] = {
+	{
+		NSOPTION_http_proxy,
+		"<tr><th>http_proxy</th><td>boolean</td><td>default</td><td>false</td></tr>",
+		"http_proxy:0"
+	},
+	{
+		NSOPTION_cookie_file,
+		"<tr><th>cookie_file</th><td>string</td><td>user</td><td>/home/vince/.netsurf/Cookies</td></tr>",
+		"cookie_file:/home/vince/.netsurf/Cookies"
+	},
+	{
+		NSOPTION_disc_cache_size,
+		"<tr><th>disc_cache_size</th><td>unsigned integer</td><td>default</td><td>1073741824</td></tr>",
+		"disc_cache_size:1073741824"
+	},
+	{
+		NSOPTION_sys_colour_ActiveBorder,
+		"<tr><th>sys_colour_ActiveBorder</th><td>colour</td><td>default</td><td><span style=\"background-color: #d3d3d3; color: #000000; font-family:Monospace; \">#D3D3D3</span></td></tr>",
+		"sys_colour_ActiveBorder:d3d3d3"
+	},
+};
+
+/**
+ * Test formatting of html output
+ */
+START_TEST(nsoption_format_html_test)
+{
+	int ret;
+	char buffer[1024];
+	struct format_test_vec_s *tst = &format_test_vec[_i];
+
+	ret = nsoption_snoptionf(buffer, sizeof buffer, tst->opt_idx,
+		"<tr><th>%k</th><td>%t</td><td>%p</td><td>%V</td></tr>");
+	ck_assert_int_gt(ret, 0);
+	ck_assert_str_eq(buffer, tst->res_html);
+}
+END_TEST
+
+/**
+ * Test formatting of text output
+ */
+START_TEST(nsoption_format_text_test)
+{
+	int ret;
+	char buffer[1024];
+	struct format_test_vec_s *tst = &format_test_vec[_i];
+
+	ret = nsoption_snoptionf(buffer, sizeof buffer, tst->opt_idx,
+				 "%k:%v");
+	ck_assert_int_gt(ret, 0);
+	ck_assert_str_eq(buffer, tst->res_text);
+}
+END_TEST
+
+#define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
+
+TCase *nsoption_format_case_create(void)
+{
+	TCase *tc;
+	tc = tcase_create("Formatted output");
+
+	/* ensure options are initialised and finalised for every test */
+	tcase_add_unchecked_fixture(tc,
+				    nsoption_format_create,
+				    nsoption_teardown);
+
+	tcase_add_loop_test(tc,
+			    nsoption_format_html_test,
+			    0, NELEMS(format_test_vec));
+
+	tcase_add_loop_test(tc,
+			    nsoption_format_text_test,
+			    0, NELEMS(format_test_vec));
 
 	return tc;
 }
@@ -208,6 +332,18 @@ START_TEST(nsoption_read_test)
 }
 END_TEST
 
+
+/**
+ * Test reading missing option file
+ */
+START_TEST(nsoption_read_missing_test)
+{
+	nserror res;
+	res = nsoption_read(test_choices_missing_path, NULL);
+	ck_assert_int_eq(res, NSERROR_NOT_FOUND);
+}
+END_TEST
+
 /**
  * Test commandline string value setting
  */
@@ -226,21 +362,6 @@ START_TEST(nsoption_commandline_test)
 }
 END_TEST
 
-static void nsoption_create(void)
-{
-	nserror res;
-	res = nsoption_init(NULL, NULL, NULL);
-	ck_assert_int_eq(res, NSERROR_OK);
-}
-
-static void nsoption_teardown(void)
-{
-	nserror res;
-
-	res = nsoption_finalise(NULL, NULL);
-	ck_assert_int_eq(res, NSERROR_OK);
-}
-
 TCase *nsoption_case_create(void)
 {
 	TCase *tc;
@@ -253,6 +374,7 @@ TCase *nsoption_case_create(void)
 
 	tcase_add_test(tc, nsoption_commandline_test);
 	tcase_add_test(tc, nsoption_read_test);
+	tcase_add_test(tc, nsoption_read_missing_test);
 	tcase_add_test(tc, nsoption_write_test);
 	tcase_add_test(tc, nsoption_dump_test);
 
@@ -425,6 +547,37 @@ START_TEST(nsoption_api_init_def_test)
 }
 END_TEST
 
+/**
+ * Test default initialisation and finalisation with parameters
+ */
+START_TEST(nsoption_api_init_param_test)
+{
+	nserror res;
+	res = nsoption_init(NULL, &nsoptions, &nsoptions_default);
+	ck_assert_int_eq(res, NSERROR_OK);
+
+	res = nsoption_finalise(nsoptions, nsoptions_default);
+	ck_assert_int_eq(res, NSERROR_OK);
+}
+END_TEST
+
+static nserror failing_init_cb(struct nsoption_s *defaults)
+{
+	return NSERROR_INIT_FAILED;
+}
+
+/**
+ * Test default initialisation waith failing callback
+ */
+START_TEST(nsoption_api_init_failcb_test)
+{
+	nserror res;
+	res = nsoption_init(failing_init_cb, NULL, NULL);
+	ck_assert_int_eq(res, NSERROR_INIT_FAILED);
+}
+END_TEST
+
+
 TCase *nsoption_api_case_create(void)
 {
 	TCase *tc;
@@ -441,6 +594,8 @@ TCase *nsoption_api_case_create(void)
 	tcase_add_test(tc, nsoption_api_commandline_no_init_test);
 	tcase_add_test(tc, nsoption_api_init_def_test);
 	tcase_add_test(tc, nsoption_api_fini_twice_test);
+	tcase_add_test(tc, nsoption_api_init_param_test);
+	tcase_add_test(tc, nsoption_api_init_failcb_test);
 
 	return tc;
 }
@@ -453,6 +608,7 @@ Suite *nsoption_suite_create(void)
 
 	suite_add_tcase(s, nsoption_api_case_create());
 	suite_add_tcase(s, nsoption_case_create());
+	suite_add_tcase(s, nsoption_format_case_create());
 	suite_add_tcase(s, nsoption_session_case_create());
 
 	return s;

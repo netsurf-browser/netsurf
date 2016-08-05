@@ -1,3 +1,8 @@
+# this is test choices file
+
+broken
+badkey:
+badkey:badvalue
 http_proxy:0
 http_proxy_port:8080
 http_proxy_auth:0
