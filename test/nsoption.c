@@ -629,7 +629,7 @@ END_TEST
 START_TEST(nsoption_api_snoptionf_no_init_test)
 {
 	int ret;
-	ret = nsoption_snoptionf(NULL, 0, 0, NULL);
+	ret = nsoption_snoptionf(NULL, 0, 0, "");
 	ck_assert_int_eq(ret, -1);
 }
 END_TEST
