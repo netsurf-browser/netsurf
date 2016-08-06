@@ -1572,9 +1572,9 @@ void hotlist_mouse_action(browser_mouse_state mouse, int x, int y)
 
 
 /* Exported interface, documented in hotlist.h */
-void hotlist_keypress(uint32_t key)
+bool hotlist_keypress(uint32_t key)
 {
-	treeview_keypress(hl_ctx.tree, key);
+	return treeview_keypress(hl_ctx.tree, key);
 }
 
 

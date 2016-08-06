@@ -189,10 +189,10 @@ void hotlist_mouse_action(enum browser_mouse_state mouse, int x, int y);
 /**
  * Key press handling.
  *
- * \param key		The ucs4 character codepoint
+ * \param key The ucs4 character codepoint
  * \return true if the keypress is dealt with, false otherwise.
  */
-void hotlist_keypress(uint32_t key);
+bool hotlist_keypress(uint32_t key);
 
 /**
  * Determine whether there is a selection
