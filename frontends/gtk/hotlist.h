@@ -16,25 +16,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * GTK hotlist (interface).
+/**
+ * \file
+ * Interface to GTK bookmarks (hotlist).
  */
 
 #ifndef __NSGTK_HOTLIST_H__
 #define __NSGTK_HOTLIST_H__
 
-#include <gtk/gtk.h>
-
-extern GtkWindow *wndHotlist;
-
 /**
- * Initialise the gtk specific hotlist (bookmarks) display.
+ * make the hotlist window visible.
  *
  * \return NSERROR_OK on success else appropriate error code on faliure.
  */
-nserror nsgtk_hotlist_init(void);
+nserror nsgtk_hotlist_present(void);
 
-
-void nsgtk_hotlist_destroy(void);
+/**
+ * Free any resources allocated for the hotlist window.
+ *
+ * \return NSERROR_OK on success else appropriate error code on faliure.
+ */
+nserror nsgtk_hotlist_destroy(void);
 
 #endif /* __NSGTK_HOTLIST_H__ */

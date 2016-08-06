@@ -307,12 +307,6 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 		return error;
 	}
 
-	error = nsgtk_hotlist_init();
-	if (error != NSERROR_OK) {
-		LOG("Unable to initialise hotlist window.");
-		return error;
-	}
-
 	/* If there is a url specified on the command line use it */
 	if (argc > 1) {
 		struct stat fs;
@@ -449,7 +443,11 @@ static void gui_quit(void)
 		    messages_get_errorcode(res));
 	}
 
-	nsgtk_hotlist_destroy();
+	res = nsgtk_hotlist_destroy();
+	if (res != NSERROR_OK) {
+		LOG("Error finalising hotlist viewer: %s",
+		    messages_get_errorcode(res));
+	}
 
 	free(nsgtk_config_home);
 

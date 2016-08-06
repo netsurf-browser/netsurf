@@ -1516,10 +1516,11 @@ MULTIHANDLER(addbookmarks)
 
 MULTIHANDLER(showbookmarks)
 {
-	gtk_widget_show(GTK_WIDGET(wndHotlist));
-	gdk_window_raise(nsgtk_widget_get_window(GTK_WIDGET(wndHotlist)));
-	gtk_window_set_focus(wndHotlist, NULL);
-
+	nserror res;
+	res = nsgtk_hotlist_present();
+	if (res != NSERROR_OK) {
+		LOG("Unable to initialise bookmark window.");
+	}
 	return TRUE;
 }
 

@@ -1,6 +1,6 @@
 /*
- * Copyright 2006 Rob Kendrick <rjek@rjek.com>
- * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net>
+ * Copyright 2010 John Mark Bell <jmb@netsurf-browser.org>
+ * Copyright 2016 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
