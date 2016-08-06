@@ -1,7 +1,7 @@
 #
 # NetSurf unit tests
 
-TESTS := nsurl urldbtest nsoption bloom hashtable urlescape utils #llcache
+TESTS := nsurl urldbtest nsoption bloom hashtable urlescape utils messages #llcache
 
 # nsurl sources
 nsurl_SRCS := utils/corestrings.c utils/nsurl.c utils/idna.c \
@@ -24,6 +24,9 @@ llcache_SRCS := content/fetch.c content/fetchers/curl.c \
 		utils/nsurl.c utils/messages.c utils/url.c utils/useragent.c \
 		utils/utils.c \
 		test/log.c test/llcache.c
+
+# messages test sources
+messages_SRCS := utils/messages.c utils/hashtable.c test/log.c test/messages.c
 
 # nsoption test sources
 nsoption_SRCS := utils/nsoption.c test/log.c test/nsoption.c
