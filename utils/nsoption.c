@@ -826,7 +826,7 @@ nsoption_snoptionf(char *string,
 		return -1;
 	}
 
-	if ((option_idx < 0) || (option_idx >= NSOPTION_LISTEND)) {
+	if (option_idx >= NSOPTION_LISTEND) {
 		return -1;
 	}
 

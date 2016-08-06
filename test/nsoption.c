@@ -615,8 +615,6 @@ END_TEST
 START_TEST(nsoption_api_snoptionf_param_test)
 {
 	int ret;
-	ret = nsoption_snoptionf(NULL, 0, -1, "");
-	ck_assert_int_eq(ret, -1);
 
 	ret = nsoption_snoptionf(NULL, 0, NSOPTION_LISTEND, "");
 	ck_assert_int_eq(ret, -1);
