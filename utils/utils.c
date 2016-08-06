@@ -571,9 +571,9 @@ nserror nsc_strntimet(const char *str, size_t size, time_t *timep)
 
 	if (result == -1) {
 		return NSERROR_INVALID;
-        }
+	}
 
-        *timep = result;
+	*timep = result;
 
-        return NSERROR_OK;
+	return NSERROR_OK;
 }
