@@ -49,7 +49,6 @@
 #include "desktop/save_complete.h"
 #include "desktop/save_pdf.h"
 #include "desktop/searchweb.h"
-#include "desktop/tree.h"
 
 #include "gtk/compat.h"
 #include "gtk/warn.h"
@@ -61,7 +60,6 @@
 #include "gtk/global_history.h"
 #include "gtk/hotlist.h"
 #include "gtk/throbber.h"
-#include "gtk/treeview.h"
 #include "gtk/scaffolding.h"
 #include "gtk/window.h"
 #include "gtk/schedule.h"

@@ -159,7 +159,7 @@ endif
 
 # S_FRONTEND are sources purely for the GTK frontend
 S_FRONTEND := gui.c schedule.c layout_pango.c bitmap.c plotters.c	\
-	treeview.c scaffolding.c gdk.c completion.c login.c throbber.c	\
+	scaffolding.c gdk.c completion.c login.c throbber.c	\
 	selection.c global_history.c window.c fetch.c download.c menu.c	\
 	print.c search.c tabs.c toolbar.c gettext.c			\
 	compat.c cookies.c hotlist.c viewdata.c viewsource.c		\
