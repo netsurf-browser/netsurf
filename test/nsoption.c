@@ -198,6 +198,21 @@ struct format_test_vec_s format_test_vec[] = {
 		"http_proxy:0"
 	},
 	{
+		NSOPTION_enable_javascript,
+		"<tr><th>enable_javascript</th><td>boolean</td><td>user</td><td>true</td></tr>",
+		"enable_javascript:1"
+	},
+	{
+		NSOPTION_http_proxy_port,
+		"<tr><th>http_proxy_port</th><td>integer</td><td>default</td><td>8080</td></tr>",
+		"http_proxy_port:8080"
+	},
+	{
+		NSOPTION_http_proxy_host,
+		"<tr><th>http_proxy_host</th><td>string</td><td>default</td><td><span class=\"null-content\">NULL</span></td></tr>",
+		"http_proxy_host:"
+	},
+	{
 		NSOPTION_cookie_file,
 		"<tr><th>cookie_file</th><td>string</td><td>user</td><td>/home/vince/.netsurf/Cookies</td></tr>",
 		"cookie_file:/home/vince/.netsurf/Cookies"
@@ -350,8 +365,14 @@ END_TEST
 START_TEST(nsoption_commandline_test)
 {
 	nserror res;
-	int argc = 2;
-	char *argv[] = { "nsoption", "--http_proxy_host=fooo", NULL};
+	int argc = 4;
+	char *argv[] = {
+		"nsoption",
+		"--http_proxy_host=fooo",
+		"--http_proxy_port",
+		"not-option",
+		NULL
+	};
 
 	/* commandline */
 	res = nsoption_commandline(&argc, &argv[0], NULL);
@@ -577,6 +598,42 @@ START_TEST(nsoption_api_init_failcb_test)
 }
 END_TEST
 
+/**
+ * Test snoptionf format
+ */
+START_TEST(nsoption_api_snoptionf_badfmt_test)
+{
+	int ret;
+	ret = nsoption_snoptionf(NULL, 0, -1, NULL);
+	ck_assert_int_eq(ret, -1);
+}
+END_TEST
+
+/**
+ * Test snoptionf range
+ */
+START_TEST(nsoption_api_snoptionf_param_test)
+{
+	int ret;
+	ret = nsoption_snoptionf(NULL, 0, -1, "");
+	ck_assert_int_eq(ret, -1);
+
+	ret = nsoption_snoptionf(NULL, 0, NSOPTION_LISTEND, "");
+	ck_assert_int_eq(ret, -1);
+}
+END_TEST
+
+/**
+ * Test snoptionf with no initialisation
+ */
+START_TEST(nsoption_api_snoptionf_no_init_test)
+{
+	int ret;
+	ret = nsoption_snoptionf(NULL, 0, 0, NULL);
+	ck_assert_int_eq(ret, -1);
+}
+END_TEST
+
 
 TCase *nsoption_api_case_create(void)
 {
@@ -596,6 +653,9 @@ TCase *nsoption_api_case_create(void)
 	tcase_add_test(tc, nsoption_api_fini_twice_test);
 	tcase_add_test(tc, nsoption_api_init_param_test);
 	tcase_add_test(tc, nsoption_api_init_failcb_test);
+	tcase_add_test(tc, nsoption_api_snoptionf_no_init_test);
+	tcase_add_test(tc, nsoption_api_snoptionf_badfmt_test);
+	tcase_add_test(tc, nsoption_api_snoptionf_param_test);
 
 	return tc;
 }

@@ -822,14 +822,22 @@ nsoption_snoptionf(char *string,
 	int fmtc = 0; /* current index into format string */
 	struct nsoption_s *option;
 
-	if (option_idx >= NSOPTION_LISTEND) {
+	if (fmt == NULL) {
+		return -1;
+	}
+
+	if ((option_idx < 0) || (option_idx >= NSOPTION_LISTEND)) {
+		return -1;
+	}
+
+	if (nsoptions == NULL) {
 		return -1;
 	}
 
 	option = &nsoptions[option_idx]; /* assume the global table */
-	if (option == NULL || option->key == NULL)
+	if (option == NULL || option->key == NULL) {
 		return -1;
-
+	}
 
 	while ((slen < size) && (fmt[fmtc] != 0)) {
 		if (fmt[fmtc] == '%') {
