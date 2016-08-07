@@ -21,24 +21,12 @@
  */
 
 #include <assert.h>
-#include <ctype.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
 #include <sys/stat.h>
-#include <sys/types.h>
-#include <time.h>
-#include <errno.h>
-#include <curl/curl.h>
 
-#include "utils/config.h"
-#include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/utf8.h"
-#include "utils/time.h"
-#include "utils/sys_time.h"
-#include "utils/inet.h"
 #include "utils/dirent.h"
 #include "utils/string.h"
 #include "utils/utils.h"
@@ -246,25 +234,6 @@ char *human_friendly_bytesize(unsigned long bsize) {
 	snprintf(curbuffer, BYTESIZE_BUFFER_SIZE, "%3.2f%s", bytesize, messages_get(units[unit]));
 
 	return curbuffer;
-}
-
-
-/* exported interface documented in utils/utils.h */
-const char *rfc1123_date(time_t t)
-{
-	static char ret[30];
-
-	struct tm *tm = gmtime(&t);
-	const char *days[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" },
-		*months[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-				"Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
-
-	snprintf(ret, sizeof ret, "%s, %02d %s %d %02d:%02d:%02d GMT",
-			days[tm->tm_wday], tm->tm_mday, months[tm->tm_mon],
-			tm->tm_year + 1900, tm->tm_hour, tm->tm_min,
-			tm->tm_sec);
-
-	return ret;
 }
 
 
@@ -501,79 +470,3 @@ int inet_pton(int af, const char *src, void *dst)
 
 
 #endif
-
-/* exported function documented in utils/time.h */
-int nsc_sntimet(char *str, size_t size, time_t *timep)
-{
-#ifndef HAVE_STRFTIME
-	long long val;
-	val = (long long)*timep;
-
-	return snprintf(str, size, "%lld", val);
-#else
-	struct tm *ltm;
-
-	ltm = localtime(timep);
-	if (ltm == NULL) {
-		return -1;
-	}
-
-	return strftime(str, size, "%s", ltm);
-#endif
-}
-
-/* exported function documented in utils/time.h */
-nserror nsc_snptimet(const char *str, size_t size, time_t *timep)
-{
-	time_t time_out;
-
-#ifndef HAVE_STRPTIME
-	char *rstr;
-
-	if (size < 1) {
-		return NSERROR_BAD_PARAMETER;
-	}
-
-	errno = 0;
-	time_out = (time_t)strtoll(str, &rstr, 10);
-
-	/* The conversion may have a range faliure or no digits were found */
-	if ((errno != 0) || (rstr == str)) {
-		return NSERROR_BAD_PARAMETER;
-	}
-
-#else
-	struct tm ltm;
-
-	if (size < 1) {
-		return NSERROR_BAD_PARAMETER;
-	}
-
-	if (strptime(str, "%s", &ltm) == NULL) {
-		return NSERROR_BAD_PARAMETER;
-	}
-
-	time_out = mktime(&ltm);
-
-#endif
-	*timep = time_out;
-
-	return NSERROR_OK;
-}
-
-
-/* exported function documented in utils/time.h */
-nserror nsc_strntimet(const char *str, size_t size, time_t *timep)
-{
-	time_t result;
-
-	result = curl_getdate(str, NULL);
-
-	if (result == -1) {
-		return NSERROR_INVALID;
-	}
-
-	*timep = result;
-
-	return NSERROR_OK;
-}
