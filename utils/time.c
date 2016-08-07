@@ -35,20 +35,86 @@
 #include "utils/time.h"
 
 
+
+/**
+ * Weekdays
+ *
+ * Must be calender order.
+ */
+enum nsc_time_weekdays {
+	NSC_TIME_WEEKDAY_SUN,
+	NSC_TIME_WEEKDAY_MON,
+	NSC_TIME_WEEKDAY_TUE,
+	NSC_TIME_WEEKDAY_WED,
+	NSC_TIME_WEEKDAY_THU,
+	NSC_TIME_WEEKDAY_FRI,
+	NSC_TIME_WEEKDAY_SAT,
+	NSC_TIME_WEEKDAY__COUNT
+};
+/**
+ * Months
+ *
+ * Must be calender order.
+ */
+enum nsc_time_months {
+	NSC_TIME_MONTH_JAN,
+	NSC_TIME_MONTH_FEB,
+	NSC_TIME_MONTH_MAR,
+	NSC_TIME_MONTH_APR,
+	NSC_TIME_MONTH_MAY,
+	NSC_TIME_MONTH_JUN,
+	NSC_TIME_MONTH_JUL,
+	NSC_TIME_MONTH_AUG,
+	NSC_TIME_MONTH_SEP,
+	NSC_TIME_MONTH_OCT,
+	NSC_TIME_MONTH_NOV,
+	NSC_TIME_MONTH_DEC,
+	NSC_TIME_MONTH__COUNT,
+};
+
+
+/**
+ * Array of short weekday names.
+ */
+static const char * const weekdays_short[NSC_TIME_WEEKDAY__COUNT] = {
+	[NSC_TIME_WEEKDAY_SUN] = "Sun",
+	[NSC_TIME_WEEKDAY_MON] = "Mon",
+	[NSC_TIME_WEEKDAY_TUE] = "Tue",
+	[NSC_TIME_WEEKDAY_WED] = "Wed",
+	[NSC_TIME_WEEKDAY_THU] = "Thu",
+	[NSC_TIME_WEEKDAY_FRI] = "Fri",
+	[NSC_TIME_WEEKDAY_SAT] = "Sat"
+};
+/**
+ * Array of month names.
+ */
+static const char * const months[NSC_TIME_MONTH__COUNT] = {
+	[NSC_TIME_MONTH_JAN] = "Jan",
+	[NSC_TIME_MONTH_FEB] = "Feb",
+	[NSC_TIME_MONTH_MAR] = "Mar",
+	[NSC_TIME_MONTH_APR] = "Apr",
+	[NSC_TIME_MONTH_MAY] = "May",
+	[NSC_TIME_MONTH_JUN] = "Jun",
+	[NSC_TIME_MONTH_JUL] = "Jul",
+	[NSC_TIME_MONTH_AUG] = "Aug",
+	[NSC_TIME_MONTH_SEP] = "Sep",
+	[NSC_TIME_MONTH_OCT] = "Oct",
+	[NSC_TIME_MONTH_NOV] = "Nov",
+	[NSC_TIME_MONTH_DEC] = "Dec"
+};
+
+
 /* exported interface documented in utils/time.h */
 const char *rfc1123_date(time_t t)
 {
 	static char ret[30];
 
 	struct tm *tm = gmtime(&t);
-	const char *days[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" },
-		*months[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-				"Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
 	snprintf(ret, sizeof ret, "%s, %02d %s %d %02d:%02d:%02d GMT",
-			days[tm->tm_wday], tm->tm_mday, months[tm->tm_mon],
-			tm->tm_year + 1900, tm->tm_hour, tm->tm_min,
-			tm->tm_sec);
+			weekdays_short[tm->tm_wday], tm->tm_mday,
+			months[tm->tm_mon], tm->tm_year + 1900,
+			tm->tm_hour, tm->tm_min, tm->tm_sec);
 
 	return ret;
 }
