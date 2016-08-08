@@ -126,6 +126,19 @@ static void urldb_create(void)
 	ck_assert_int_eq(res, NSERROR_OK);
 }
 
+/** urldb create pre-loaded db fixture */
+static void urldb_create_loaded(void)
+{
+	nserror res;
+
+	res = corestrings_init();
+	ck_assert_int_eq(res, NSERROR_OK);
+
+	res = urldb_load(test_urldb_path);
+	ck_assert_int_eq(res, NSERROR_OK);
+
+}
+
 static void urldb_lwc_iterator(lwc_string *str, void *pw)
 {
 	int *scount = pw;
@@ -136,10 +149,13 @@ static void urldb_lwc_iterator(lwc_string *str, void *pw)
 	(*scount)++;
 }
 
-/** urldb teardown fixture */
+
+/** urldb teardown fixture with destroy */
 static void urldb_teardown(void)
 {
 	int scount = 0;
+
+	urldb_destroy();
 
 	corestrings_fini();
 
@@ -147,6 +163,10 @@ static void urldb_teardown(void)
 	lwc_iterate_strings(urldb_lwc_iterator, &scount);
 	ck_assert_int_eq(scount, 0);
 }
+
+
+
+
 
 START_TEST(urldb_original_test)
 {
@@ -160,24 +180,16 @@ START_TEST(urldb_original_test)
 	char *path_query;
 
 	h = urldb_add_host("127.0.0.1");
-	if (!h) {
-		LOG("failed adding host");
-		return 1;
-	}
+	ck_assert_msg(h != NULL, "failed adding host");
 
 	h = urldb_add_host("intranet");
-	if (!h) {
-		LOG("failed adding host");
-		return 1;
-	}
+	ck_assert_msg(h != NULL, "failed adding host");
 
 	url = make_url("http://intranet/");
 	scheme = nsurl_get_component(url, NSURL_SCHEME);
 	p = urldb_add_path(scheme, 0, h, strdup("/"), NULL, url);
-	if (!p) {
-		LOG("failed adding path");
-		return 1;
-	}
+	ck_assert_msg(p != NULL, "failed adding path");
+
 	lwc_string_unref(scheme);
 
 	urldb_set_url_title(url, "foo");
@@ -188,10 +200,7 @@ START_TEST(urldb_original_test)
 
 	/* Get host entry */
 	h = urldb_add_host("netsurf.strcprstskrzkrk.co.uk");
-	if (!h) {
-		LOG("failed adding host");
-		return 1;
-	}
+	ck_assert_msg(h != NULL, "failed adding host");
 
 	/* Get path entry */
 	url = make_url("http://netsurf.strcprstskrzkrk.co.uk/path/to/resource.htm?a=b");
@@ -199,26 +208,20 @@ START_TEST(urldb_original_test)
 	path_query = make_path_query(url);
 	fragment = make_lwc("zz");
 	p = urldb_add_path(scheme, 0, h, strdup(path_query), fragment, url);
-	if (!p) {
-		LOG("failed adding path");
-		return 1;
-	}
+	ck_assert_msg(p != NULL, "failed adding path");
+
 	lwc_string_unref(fragment);
 
 	fragment = make_lwc("aa");
 	p = urldb_add_path(scheme, 0, h, strdup(path_query), fragment, url);
-	if (!p) {
-		LOG("failed adding path");
-		return 1;
-	}
+	ck_assert_msg(p != NULL, "failed adding path");
+
 	lwc_string_unref(fragment);
 
 	fragment = make_lwc("yy");
 	p = urldb_add_path(scheme, 0, h, strdup(path_query), fragment, url);
-	if (!p) {
-		LOG("failed adding path");
-		return 1;
-	}
+	ck_assert_msg(p != NULL, "failed adding path");
+
 	free(path_query);
 	lwc_string_unref(fragment);
 	lwc_string_unref(scheme);
@@ -366,11 +369,10 @@ START_TEST(urldb_original_test)
 	ck_assert(test_urldb_get_cookie("http://expires.com/") == NULL);
 
 	urldb_dump();
-	urldb_destroy();
 }
 END_TEST
 
-TCase *urldb_original_case_create(void)
+static TCase *urldb_original_case_create(void)
 {
 	TCase *tc;
 	tc = tcase_create("Original_tests");
@@ -402,16 +404,16 @@ START_TEST(urldb_session_test)
 	res = urldb_save(outnam);
 	ck_assert_int_eq(res, NSERROR_OK);
 
-	urldb_destroy();
-
 	/* finalise options */
 	res = nsoption_finalise(NULL, NULL);
 	ck_assert_int_eq(res, NSERROR_OK);
 
+	/* remove test output */
+	unlink(outnam);
 }
 END_TEST
 
-TCase *urldb_session_case_create(void)
+static TCase *urldb_session_case_create(void)
 {
 	TCase *tc;
 	tc = tcase_create("Full_session");
@@ -422,6 +424,46 @@ TCase *urldb_session_case_create(void)
 				  urldb_teardown);
 
 	tcase_add_test(tc, urldb_session_test);
+
+	return tc;
+}
+
+bool urldb_iterate_entries_cb(nsurl *url, const struct url_data *data)
+{
+	LOG("url: %s", nsurl_access(url));
+
+	return true;
+}
+
+START_TEST(urldb_iterate_entries_test)
+{
+	urldb_iterate_entries(urldb_iterate_entries_cb);
+}
+END_TEST
+
+bool urldb_iterate_cookies_cb(const struct cookie_data *data)
+{
+	LOG("%p", data);
+}
+
+START_TEST(urldb_iterate_cookies_test)
+{
+	urldb_iterate_cookies(urldb_iterate_cookies_cb);
+}
+END_TEST
+
+static TCase *urldb_case_create(void)
+{
+	TCase *tc;
+	tc = tcase_create("General");
+
+	/* ensure corestrings are initialised and finalised for every test */
+	tcase_add_checked_fixture(tc,
+				  urldb_create_loaded,
+				  urldb_teardown);
+
+	tcase_add_test(tc, urldb_iterate_entries_test);
+	tcase_add_test(tc, urldb_iterate_cookies_test);
 
 	return tc;
 }
@@ -438,7 +480,7 @@ START_TEST(urldb_api_add_host_assert_test)
 END_TEST
 
 
-TCase *urldb_api_case_create(void)
+static TCase *urldb_api_case_create(void)
 {
 	TCase *tc;
 	tc = tcase_create("API_checks");
@@ -451,13 +493,14 @@ TCase *urldb_api_case_create(void)
 }
 
 
-Suite *urldb_suite_create(void)
+static Suite *urldb_suite_create(void)
 {
 	Suite *s;
 	s = suite_create("URLDB");
 
 	suite_add_tcase(s, urldb_api_case_create());
 	suite_add_tcase(s, urldb_session_case_create());
+	suite_add_tcase(s, urldb_case_create());
 	suite_add_tcase(s, urldb_original_case_create());
 
 	return s;

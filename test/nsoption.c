@@ -167,6 +167,7 @@ START_TEST(nsoption_session_test)
 	/* check for the correct answer */
 	ck_assert_int_eq(cmp(outnam, test_choices_full_path), 0);
 
+	/* remove test output */
 	unlink(outnam);
 
 	res = nsoption_finalise(NULL, NULL);
