@@ -1,6 +1,6 @@
 /*
- * Copyright 2006 John M Bell <jmb202@ecs.soton.ac.uk>
- * Copyright 2009 John Tytgat <joty@netsurf-browser.org>
+ * Copyright 2015 Vincent Sanders <vince@netsurf-browser.org>
+ * Copyright 2011 John Mark Bell <jmb@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -17,40 +17,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * Test nsurl operations.
+ */
 
 #include <assert.h>
-#include <ctype.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
-#include <time.h>
+#include <check.h>
 
-#include "utils/errors.h"
-#include "utils/nsurl.h"
-#include "netsurf/bitmap.h"
-#include "content/content.h"
-#include "content/urldb.h"
-#include "desktop/cookie_manager.h"
-#include "utils/nsoption.h"
-#ifdef riscos
-/** \todo lose this */
-#include "riscos/bitmap.h"
-#endif
+#include <libwapcaplet/libwapcaplet.h>
+
+#include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/corestrings.h"
-#include "utils/filename.h"
-#include "utils/url.h"
-#include "utils/utils.h"
+#include "utils/nsurl.h"
+#include "netsurf/url_db.h"
+#include "content/urldb.h"
 
-int option_expire_url = 0;
+const char *test_urldb_path = "test/data/urldb";
+
 struct netsurf_table *guit = NULL;
 
-static void netsurf_lwc_iterator(lwc_string *str, void *pw)
-{
-	LOG("[%3u] %.*s", str->refcnt, (int)lwc_string_length(str), lwc_string_data(str));
-}
+/*************** original test helpers ************/
 
 bool cookie_manager_add(const struct cookie_data *data)
 {
@@ -59,21 +50,6 @@ bool cookie_manager_add(const struct cookie_data *data)
 
 void cookie_manager_remove(const struct cookie_data *data)
 {
-}
-
-
-void bitmap_destroy(void *bitmap)
-{
-}
-
-char *path_to_url(const char *path)
-{
-	char *r = malloc(strlen(path) + 7 + 1);
-
-	strcpy(r, "file://");
-	strcat(r, path);
-
-	return r;
 }
 
 nsurl *make_url(const char *url)
@@ -108,7 +84,6 @@ lwc_string *make_lwc(const char *str)
 	return lwc;
 }
 
-
 bool test_urldb_set_cookie(const char *header, const char *url,
 		const char *referer)
 {
@@ -139,7 +114,40 @@ char *test_urldb_get_cookie(const char *url)
 	return ret;
 }
 
-int main(void)
+
+/*************************************************/
+
+/** urldb create fixture */
+static void urldb_create(void)
+{
+	nserror res;
+	res = corestrings_init();
+	ck_assert_int_eq(res, NSERROR_OK);
+}
+
+static void urldb_lwc_iterator(lwc_string *str, void *pw)
+{
+	int *scount = pw;
+
+	LOG("[%3u] %.*s", str->refcnt,
+	    (int)lwc_string_length(str),
+	    lwc_string_data(str));
+	(*scount)++;
+}
+
+/** urldb teardown fixture */
+static void urldb_teardown(void)
+{
+	int scount = 0;
+
+	corestrings_fini();
+
+	LOG("Remaining lwc strings:");
+	lwc_iterate_strings(urldb_lwc_iterator, &scount);
+	ck_assert_int_eq(scount, 0);
+}
+
+START_TEST(urldb_original_test)
 {
 	struct host_part *h;
 	struct path_data *p;
@@ -149,9 +157,6 @@ int main(void)
 	nsurl *url;
 	nsurl *urlr;
 	char *path_query;
-
-
-	corestrings_init();
 
 	h = urldb_add_host("127.0.0.1");
 	if (!h) {
@@ -254,19 +259,19 @@ int main(void)
 	urldb_get_cookie(url, true);
 	nsurl_unref(url);
 
-	/* 1563546 */
+	/* Mantis bug #993 */
 	url = make_url("http:moodle.org");
 	assert(urldb_add_url(url) == true);
 	assert(urldb_get_url(url) != NULL);
 	nsurl_unref(url);
 
-	/* also 1563546 */
+	/* Mantis bug #993 */
 	url = make_url("http://a_a/");
 	assert(urldb_add_url(url));
 	assert(urldb_get_url(url));
 	nsurl_unref(url);
 
-	/* 1597646 */
+	/* Mantis bug #996 */
 	url = make_url("http://foo@moose.com/");
 	if (urldb_add_url(url)) {
 		LOG("added %s", nsurl_access(url));
@@ -274,7 +279,7 @@ int main(void)
 	}
 	nsurl_unref(url);
 
-	/* 1535120 */
+	/* Mantis bug #913 */
 	url = make_url("http://www2.2checkout.com/");
 	assert(urldb_add_url(url));
 	assert(urldb_get_url(url));
@@ -312,7 +317,7 @@ int main(void)
 
 	/* Invalid path (contains different leafname) */
 	assert(test_urldb_set_cookie("name=value;Path=/index.html\r\n", "http://example.org/index.htm", NULL) == false);
-	
+
 	/* Invalid path (contains leafname in different directory) */
 	assert(test_urldb_set_cookie("name=value;Path=/foo/index.html\r\n", "http://www.example.org/bar/index.html", NULL) == false);
 
@@ -361,13 +366,98 @@ int main(void)
 
 	urldb_dump();
 	urldb_destroy();
+}
+END_TEST
 
-	printf("PASS\n");
+TCase *urldb_original_case_create(void)
+{
+	TCase *tc;
+	tc = tcase_create("Original urldb tests");
 
-	corestrings_fini();
-	LOG("Remaining lwc strings:");
-	lwc_iterate_strings(netsurf_lwc_iterator, NULL);
+	/* ensure corestrings are initialised and finalised for every test */
+	tcase_add_checked_fixture(tc,
+				  urldb_create,
+				  urldb_teardown);
 
-	return 0;
+	tcase_add_test(tc, urldb_original_test);
+
+	return tc;
 }
 
+START_TEST(urldb_session_test)
+{
+	nserror res;
+
+	res = urldb_load(test_urldb_path);
+	ck_assert_int_eq(res, NSERROR_OK);
+
+	urldb_destroy();
+}
+END_TEST
+
+TCase *urldb_session_case_create(void)
+{
+	TCase *tc;
+	tc = tcase_create("Full session");
+
+	/* ensure corestrings are initialised and finalised for every test */
+	tcase_add_checked_fixture(tc,
+				  urldb_create,
+				  urldb_teardown);
+
+	tcase_add_test(tc, urldb_session_test);
+
+	return tc;
+}
+
+/**
+ * Test urldb_add_host asserting on NULL.
+ */
+START_TEST(urldb_api_add_host_assert_test)
+{
+	struct host_part *res;
+	res = urldb_add_host(NULL);
+	ck_assert(res == NULL);
+}
+END_TEST
+
+
+TCase *urldb_api_case_create(void)
+{
+	TCase *tc;
+	tc = tcase_create("API checks");
+
+	tcase_add_test_raise_signal(tc,
+				    urldb_api_add_host_assert_test,
+				    6);
+
+	return tc;
+}
+
+
+Suite *urldb_suite_create(void)
+{
+	Suite *s;
+	s = suite_create("URLDB");
+
+	suite_add_tcase(s, urldb_api_case_create());
+	suite_add_tcase(s, urldb_session_case_create());
+	suite_add_tcase(s, urldb_original_case_create());
+
+	return s;
+}
+
+int main(int argc, char **argv)
+{
+	int number_failed;
+	SRunner *sr;
+
+	sr = srunner_create(urldb_suite_create());
+
+	srunner_run_all(sr, CK_ENV);
+
+	number_failed = srunner_ntests_failed(sr);
+	srunner_free(sr);
+
+	return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+}
