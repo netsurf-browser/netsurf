@@ -28,6 +28,7 @@
 
 #include "utils/messages.h"
 #include "utils/dirent.h"
+#include "utils/inet.h"
 #include "utils/string.h"
 #include "utils/utils.h"
 
