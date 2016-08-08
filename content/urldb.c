@@ -1343,25 +1343,36 @@ static void urldb_dump_hosts(struct host_part *parent)
 static void urldb_dump_search(struct search_node *parent, int depth)
 {
 	const struct host_part *h;
-	int i;
+	int i; /* index into string */
+	char s[1024];
+	int r;
 
 	if (parent == &empty)
 		return;
 
 	urldb_dump_search(parent->left, depth + 1);
 
-	for (i = 0; i != depth; i++)
-			fputc(' ', stderr);
-
-	for (h = parent->data; h; h = h->parent) {
-		if (h->part)
-			fprintf(stderr, "%s", h->part);
-
-		if (h->parent && h->parent->parent)
-			fputc('.', stderr);
+	for (i = 0; i != depth; i++) {
+		s[i] = ' ';
 	}
 
-	fputc('\n', stderr);
+	for (h = parent->data; h; h = h->parent) {
+		if (h->part) {
+			r = snprintf(&s[i], (sizeof(s) - 2) - i, "%s", h->part);
+			if ((i + r) > (sizeof(s) - 2)) {
+				break;
+			}
+			i += r;
+		}
+
+		if (h->parent && h->parent->parent) {
+			s[i]='.';
+			i++;
+		}
+	}
+	s[i]= 0;
+
+	LOG("%s", s);
 
 	urldb_dump_search(parent->right, depth + 1);
 }
