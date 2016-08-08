@@ -1346,7 +1346,8 @@ static void urldb_dump_search(struct search_node *parent, int depth)
 	int i; /* index into string */
 	char s[1024];
 	int r;
-
+	int sl = sizeof(s) - 2;
+	
 	if (parent == &empty)
 		return;
 
@@ -1358,8 +1359,8 @@ static void urldb_dump_search(struct search_node *parent, int depth)
 
 	for (h = parent->data; h; h = h->parent) {
 		if (h->part) {
-			r = snprintf(&s[i], (sizeof(s) - 2) - i, "%s", h->part);
-			if ((i + r) > (sizeof(s) - 2)) {
+			r = snprintf(&s[i], sl - i, "%s", h->part);
+			if ((i + r) > sl) {
 				break;
 			}
 			i += r;

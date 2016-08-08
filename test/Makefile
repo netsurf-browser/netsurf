@@ -11,7 +11,7 @@ nsurl_SRCS := utils/corestrings.c utils/nsurl.c utils/idna.c \
 urldbtest_SRCS := content/urldb.c \
 		utils/idna.c utils/bloom.c utils/nsoption.c utils/nsurl.c \
 		utils/corestrings.c \
-		utils/hashtable.c utils/messages.c utils/utils.c \
+		utils/hashtable.c utils/messages.c utils/time.c utils/utils.c \
 		test/log.c test/urldbtest.c
 
 # low level cache sources
@@ -85,8 +85,15 @@ endef
 
 $(eval $(call pkg_cfg_detect_lib,check,Check))
 
+COMMON_WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wcast-align \
+	-Wwrite-strings -Wmissing-declarations -Wuninitialized
 
-TESTCFLAGS := -std=c99 -g -Wall \
+ifneq ($(CC_MAJOR),2)
+  COMMON_WARNFLAGS += -Wno-unused-parameter
+endif
+
+TESTCFLAGS := -std=c99 -g \
+		$(COMMON_WARNFLAGS) \
 		-D_BSD_SOURCE \
 		-D_POSIX_C_SOURCE=200809L \
 		-D_XOPEN_SOURCE=600 \
