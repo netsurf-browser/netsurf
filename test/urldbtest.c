@@ -37,10 +37,12 @@
 #include "utils/nsurl.h"
 #include "utils/nsoption.h"
 #include "netsurf/url_db.h"
+#include "netsurf/cookie_db.h"
 #include "content/urldb.h"
 #include "desktop/cookie_manager.h"
 
 const char *test_urldb_path = "test/data/urldb";
+const char *test_cookies_path = "test/data/cookies";
 
 struct netsurf_table *guit = NULL;
 
@@ -139,6 +141,7 @@ static void urldb_create_loaded(void)
 	res = urldb_load(test_urldb_path);
 	ck_assert_int_eq(res, NSERROR_OK);
 
+	urldb_load_cookies(test_cookies_path);
 }
 
 static void urldb_lwc_iterator(lwc_string *str, void *pw)
@@ -401,17 +404,23 @@ START_TEST(urldb_session_test)
 	res = urldb_load(test_urldb_path);
 	ck_assert_int_eq(res, NSERROR_OK);
 
+	urldb_load_cookies(test_cookies_path);
+
 	/* write database out */
 	outnam = tmpnam(NULL);
 	res = urldb_save(outnam);
 	ck_assert_int_eq(res, NSERROR_OK);
 
+	/* remove test output */
+	unlink(outnam);
+
+	/* write cookies out */
+	urldb_save_cookies(outnam);
+
 	/* finalise options */
 	res = nsoption_finalise(NULL, NULL);
 	ck_assert_int_eq(res, NSERROR_OK);
 
-	/* remove test output */
-	unlink(outnam);
 }
 END_TEST
 
@@ -460,7 +469,7 @@ START_TEST(urldb_auth_details_test)
 	nsurl *url;
 	const char *res;
 	const char *auth = "mooooo";
-	
+
 	url = make_url("http://www.wikipedia.org/");
 	urldb_set_auth_details(url, "tree", auth);
 
