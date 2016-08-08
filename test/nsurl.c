@@ -1166,7 +1166,7 @@ static void corestring_teardown(void)
 
 /* suite generation */
 
-Suite *nsurl_suite(void)
+static Suite *nsurl_suite(void)
 {
 	Suite *s;
 	TCase *tc_api_assert;

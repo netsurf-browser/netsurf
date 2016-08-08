@@ -52,7 +52,7 @@ void cookie_manager_remove(const struct cookie_data *data)
 {
 }
 
-nsurl *make_url(const char *url)
+static nsurl *make_url(const char *url)
 {
 	nsurl *nsurl;
 	if (nsurl_create(url, &nsurl) != NSERROR_OK) {
@@ -62,7 +62,7 @@ nsurl *make_url(const char *url)
 	return nsurl;
 }
 
-char *make_path_query(nsurl *url)
+static char *make_path_query(nsurl *url)
 {
 	size_t len;
 	char *path_query;
@@ -74,7 +74,7 @@ char *make_path_query(nsurl *url)
 	return path_query;
 }
 
-lwc_string *make_lwc(const char *str)
+static lwc_string *make_lwc(const char *str)
 {
 	lwc_string *lwc;
 	if (lwc_intern_string(str, strlen(str), &lwc) != lwc_error_ok) {
@@ -84,7 +84,7 @@ lwc_string *make_lwc(const char *str)
 	return lwc;
 }
 
-bool test_urldb_set_cookie(const char *header, const char *url,
+static bool test_urldb_set_cookie(const char *header, const char *url,
 		const char *referer)
 {
 	nsurl *r = NULL;
@@ -103,7 +103,7 @@ bool test_urldb_set_cookie(const char *header, const char *url,
 	return ret;
 }
 
-char *test_urldb_get_cookie(const char *url)
+static char *test_urldb_get_cookie(const char *url)
 {
 	nsurl *nsurl = make_url(url);
 	char *ret;
