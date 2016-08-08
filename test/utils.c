@@ -64,7 +64,7 @@ START_TEST(human_friendly_bytesize_test)
 }
 END_TEST
 
-TCase *human_friendly_bytesize_case_create(void)
+static TCase *human_friendly_bytesize_case_create(void)
 {
 	TCase *tc;
 	tc = tcase_create("Human friendly bytesize");
@@ -115,7 +115,7 @@ START_TEST(squash_whitespace_api_test)
 }
 END_TEST
 
-TCase *squash_whitespace_case_create(void)
+static TCase *squash_whitespace_case_create(void)
 {
 	TCase *tc;
 	tc = tcase_create("Squash whitespace");
@@ -128,7 +128,7 @@ TCase *squash_whitespace_case_create(void)
 	return tc;
 }
 
-Suite *utils_suite_create(void)
+static Suite *utils_suite_create(void)
 {
 	Suite *s;
 	s = suite_create("String utils");
