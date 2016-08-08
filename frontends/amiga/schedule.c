@@ -177,6 +177,7 @@ static nserror schedule_remove(void (*callback)(void *p), void *p)
 	nscb = ami_schedule_locate(callback, p, true);
 
 	if(nscb != NULL) {
+		LOG("Event scheduled for following time was deleted: %ld.%ld", nscb->tv.Seconds, nscb->tv.Microseconds);
 		ami_schedule_remove_timer_event(nscb);
 		ami_misc_itempool_free(pool_nscb, nscb, sizeof(struct nscallback));
 		pblHeapConstruct(schedule_list);
@@ -220,7 +221,7 @@ static int ami_schedule_compare(const void *prev, const void *next)
  * venture to later scheduled events until the next time it is called -
  * immediately afterwards, if we're in a timer signalled loop.
  */
-static void ami_scheduler_run(void)
+static bool ami_scheduler_run(void)
 {
 	struct nscallback *nscb;
 	struct TimeVal tv;
@@ -228,14 +229,20 @@ static void ami_scheduler_run(void)
 	void *p;
 
 	nscb = pblHeapGetFirst(schedule_list);
-	if(nscb == -1) return;
+	if(nscb == -1) {
+		LOG("Scheduler has no tasks to run!");
+		return false;
+	}
 
 	/* Ensure the scheduled event time has passed (CmpTime<=0)
 	 * in case something been deleted between the timer
 	 * signalling us and us responding to it.
 	 */
 	GetSysTime(&tv);
-	if(CmpTime(&tv, &nscb->tv) > 0) return;
+	if(CmpTime(&tv, &nscb->tv) > 0) {
+		LOG("Scheduled time of next event has not passed: %ld.%ld < %ld.%ld", tv.Seconds, tv.Microseconds, nscb->tv.Seconds, nscb->tv.Microseconds);
+		return false;
+	}
 
 	callback = nscb->callback;
 	p = nscb->p;
@@ -247,7 +254,7 @@ static void ami_scheduler_run(void)
 	LOG("Running scheduled callback %p with arg %p", callback, p);
 	callback(p);
 
-	return;
+	return true;
 }
 
 static void ami_schedule_open_timer(struct MsgPort *msgport)
