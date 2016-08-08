@@ -373,7 +373,7 @@ END_TEST
 TCase *urldb_original_case_create(void)
 {
 	TCase *tc;
-	tc = tcase_create("Original urldb tests");
+	tc = tcase_create("Original_tests");
 
 	/* ensure corestrings are initialised and finalised for every test */
 	tcase_add_checked_fixture(tc,
@@ -388,18 +388,33 @@ TCase *urldb_original_case_create(void)
 START_TEST(urldb_session_test)
 {
 	nserror res;
+	char *outnam;
+
+	/* writing output requires options initialising */
+	res = nsoption_init(NULL, NULL, NULL);
+	ck_assert_int_eq(res, NSERROR_OK);
 
 	res = urldb_load(test_urldb_path);
 	ck_assert_int_eq(res, NSERROR_OK);
 
+	/* write database out */
+	outnam = tmpnam(NULL);
+	res = urldb_save(outnam);
+	ck_assert_int_eq(res, NSERROR_OK);
+
 	urldb_destroy();
+
+	/* finalise options */
+	res = nsoption_finalise(NULL, NULL);
+	ck_assert_int_eq(res, NSERROR_OK);
+
 }
 END_TEST
 
 TCase *urldb_session_case_create(void)
 {
 	TCase *tc;
-	tc = tcase_create("Full session");
+	tc = tcase_create("Full_session");
 
 	/* ensure corestrings are initialised and finalised for every test */
 	tcase_add_checked_fixture(tc,
@@ -426,7 +441,7 @@ END_TEST
 TCase *urldb_api_case_create(void)
 {
 	TCase *tc;
-	tc = tcase_create("API checks");
+	tc = tcase_create("API_checks");
 
 	tcase_add_test_raise_signal(tc,
 				    urldb_api_add_host_assert_test,

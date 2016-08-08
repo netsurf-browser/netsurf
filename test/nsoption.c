@@ -592,7 +592,7 @@ static nserror failing_init_cb(struct nsoption_s *defaults)
 }
 
 /**
- * Test default initialisation waith failing callback
+ * Test default initialisation with failing callback
  */
 START_TEST(nsoption_api_init_failcb_test)
 {
