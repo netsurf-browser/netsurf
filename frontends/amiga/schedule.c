@@ -90,6 +90,10 @@ static nserror ami_schedule_add_timer_event(struct nscallback *nscb, int t)
 	nscb->tv.Seconds = time_us / 1000000;
 	nscb->tv.Microseconds = time_us % 1000000;
 
+	if(nscb->tv.Microseconds >= 1000000) {
+		LOG("Microseconds invalid value: %ld", nscb->tv.Microseconds);
+	}
+
 	GetSysTime(&tv);
 	AddTime(&nscb->tv,&tv); // now contains time when event occurs
 
@@ -350,10 +354,6 @@ void ami_schedule_handle(struct MsgPort *nsmsgport)
 	struct TimerRequest *timermsg;
 
 	while((timermsg = (struct TimerRequest *)GetMsg(nsmsgport))) {
-			/* reply first, as we don't need the message contents and
-			 * it crashes if we reply after schedule_run has executed.
-			 */
-			ReplyMsg((struct Message *)timermsg);
 			ami_scheduler_run();
 	}
 }
