@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <check.h>
 
 #include <libwapcaplet/libwapcaplet.h>
@@ -34,6 +35,7 @@
 #include "utils/log.h"
 #include "utils/corestrings.h"
 #include "utils/nsurl.h"
+#include "utils/nsoption.h"
 #include "netsurf/url_db.h"
 #include "content/urldb.h"
 #include "desktop/cookie_manager.h"
@@ -428,7 +430,7 @@ static TCase *urldb_session_case_create(void)
 	return tc;
 }
 
-bool urldb_iterate_entries_cb(nsurl *url, const struct url_data *data)
+static bool urldb_iterate_entries_cb(nsurl *url, const struct url_data *data)
 {
 	LOG("url: %s", nsurl_access(url));
 
@@ -441,14 +443,32 @@ START_TEST(urldb_iterate_entries_test)
 }
 END_TEST
 
-bool urldb_iterate_cookies_cb(const struct cookie_data *data)
+static bool urldb_iterate_cookies_cb(const struct cookie_data *data)
 {
 	LOG("%p", data);
+	return true;
 }
 
 START_TEST(urldb_iterate_cookies_test)
 {
 	urldb_iterate_cookies(urldb_iterate_cookies_cb);
+}
+END_TEST
+
+START_TEST(urldb_auth_details_test)
+{
+	nsurl *url;
+	const char *res;
+	const char *auth = "mooooo";
+	
+	url = make_url("http://www.wikipedia.org/");
+	urldb_set_auth_details(url, "tree", auth);
+
+	res = urldb_get_auth_details(url, "tree");
+	ck_assert_str_eq(res, auth);
+
+	nsurl_unref(url);
+
 }
 END_TEST
 
@@ -464,6 +484,7 @@ static TCase *urldb_case_create(void)
 
 	tcase_add_test(tc, urldb_iterate_entries_test);
 	tcase_add_test(tc, urldb_iterate_cookies_test);
+	tcase_add_test(tc, urldb_auth_details_test);
 
 	return tc;
 }
