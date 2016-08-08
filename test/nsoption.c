@@ -40,7 +40,7 @@ const char *test_choices_full_path = "test/data/Choices-full";
 const char *test_choices_missing_path = "test/data/Choices-missing";
 
 
-nserror gui_options_init_defaults(struct nsoption_s *defaults)
+static nserror gui_options_init_defaults(struct nsoption_s *defaults)
 {
 	/* Set defaults for absent option strings */
 	nsoption_setnull_charp(ca_bundle, strdup("NetSurf:Resources.ca-bundle"));
@@ -134,7 +134,9 @@ START_TEST(nsoption_session_test)
 {
 	nserror res;
 	int argc = 2;
-	char *argv[] = { "nsoption", "--http_proxy_host=fooo", NULL};
+	char arg1[] = "nsoption";
+	char arg2[] = "--http_proxy_host=fooo";
+	char *argv[] = { arg1, arg2, NULL};
 	char *outnam;
 
 	res = nsoption_init(gui_options_init_defaults, NULL, NULL);
@@ -173,7 +175,7 @@ START_TEST(nsoption_session_test)
 }
 END_TEST
 
-TCase *nsoption_session_case_create(void)
+static TCase *nsoption_session_case_create(void)
 {
 	TCase *tc;
 	tc = tcase_create("Full session");
@@ -263,7 +265,7 @@ END_TEST
 
 #define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
 
-TCase *nsoption_format_case_create(void)
+static TCase *nsoption_format_case_create(void)
 {
 	TCase *tc;
 	tc = tcase_create("Formatted output");
@@ -366,13 +368,11 @@ START_TEST(nsoption_commandline_test)
 {
 	nserror res;
 	int argc = 4;
-	char *argv[] = {
-		"nsoption",
-		"--http_proxy_host=fooo",
-		"--http_proxy_port",
-		"not-option",
-		NULL
-	};
+	char arg1[] = "nsoption";
+	char arg2[] = "--http_proxy_host=fooo";
+	char arg3[] = "--http_proxy_port";
+	char arg4[] = "not-option";
+	char *argv[] = { arg1, arg2, arg3, arg4, NULL};
 
 	/* commandline */
 	res = nsoption_commandline(&argc, &argv[0], NULL);
@@ -383,7 +383,7 @@ START_TEST(nsoption_commandline_test)
 }
 END_TEST
 
-TCase *nsoption_case_create(void)
+static TCase *nsoption_case_create(void)
 {
 	TCase *tc;
 	tc = tcase_create("File operations");
@@ -508,7 +508,9 @@ START_TEST(nsoption_api_commandline_no_args_test)
 {
 	nserror res;
 	int argc = 2;
-	char *argv[] = { "nsoption", "--http_proxy_host=fooo", NULL};
+	char arg1[] = "nsoption";
+	char arg2[] = "--http_proxy_host=fooo";
+	char *argv[] = { arg1, arg2, NULL};
 
 	/* commandline with no argument count or init */
 	res = nsoption_commandline(NULL, &argv[0], NULL);
@@ -527,7 +529,9 @@ START_TEST(nsoption_api_commandline_no_init_test)
 {
 	nserror res;
 	int argc = 2;
-	char *argv[] = { "nsoption", "--http_proxy_host=fooo", NULL};
+	char arg1[] = "nsoption";
+	char arg2[] = "--http_proxy_host=fooo";
+	char *argv[] = { arg1, arg2, NULL};
 
 	/* write with path but no init */
 	res = nsoption_commandline(&argc, &argv[0], NULL);
@@ -633,7 +637,7 @@ START_TEST(nsoption_api_snoptionf_no_init_test)
 END_TEST
 
 
-TCase *nsoption_api_case_create(void)
+static TCase *nsoption_api_case_create(void)
 {
 	TCase *tc;
 	tc = tcase_create("API checks");
@@ -659,7 +663,7 @@ TCase *nsoption_api_case_create(void)
 }
 
 
-Suite *nsoption_suite_create(void)
+static Suite *nsoption_suite_create(void)
 {
 	Suite *s;
 	s = suite_create("User options");

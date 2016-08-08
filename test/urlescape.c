@@ -27,7 +27,8 @@
  * \note Earlier RFC (2396, 1738 and 1630) list the tilde ~ character
  * as reserved so its handling is ambiguious
  *
- * \todo The url_escape should be tested for application/x-www-form-urlencoded type operation
+ * \todo The url_escape should be tested for application/x-www-form-urlencoded
+ *       type operation
  */
 
 #include <assert.h>
@@ -148,7 +149,7 @@ START_TEST(url_escape_api_nullparam_test)
 }
 END_TEST
 
-TCase *url_escape_case_create(void)
+static TCase *url_escape_case_create(void)
 {
 	TCase *tc;
 	tc = tcase_create("Escape");
@@ -268,7 +269,7 @@ START_TEST(url_unescape_api_nullparam_test)
 END_TEST
 
 
-TCase *url_unescape_case_create(void)
+static TCase *url_unescape_case_create(void)
 {
 	TCase *tc;
 	tc = tcase_create("Unescape");
@@ -287,7 +288,7 @@ TCase *url_unescape_case_create(void)
 }
 
 
-Suite *urlescape_suite_create(void)
+static Suite *urlescape_suite_create(void)
 {
 	Suite *s;
 	s = suite_create("Percent escaping");

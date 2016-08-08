@@ -145,7 +145,7 @@ END_TEST
 
 /* Suite */
 
-Suite *bloom_suite(void)
+static Suite *bloom_suite(void)
 {
 	Suite *s;
 	TCase *tc_create;

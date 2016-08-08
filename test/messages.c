@@ -41,7 +41,7 @@ const char *test_messages_path = "test/data/Messages";
 
 struct message_test_vec_s {
 	int test;
-	char *res;
+	const char *res;
 };
 
 struct message_test_vec_s message_errorcode_test_vec[] = {
@@ -101,7 +101,7 @@ START_TEST(message_file_load_test)
 }
 END_TEST
 
-TCase *message_session_case_create(void)
+static TCase *message_session_case_create(void)
 {
 	TCase *tc;
 	tc = tcase_create("Message adding");
@@ -115,7 +115,7 @@ TCase *message_session_case_create(void)
 }
 
 
-Suite *message_suite_create(void)
+static Suite *message_suite_create(void)
 {
 	Suite *s;
 	s = suite_create("message");

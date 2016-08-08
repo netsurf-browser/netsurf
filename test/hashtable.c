@@ -56,7 +56,7 @@ static const struct test_pairs match_tests[] = {
 
 static void match_hashtable_create(void)
 {
-	int idx;
+	unsigned int idx;
 
 	match_hash_a = hash_create(79);
 	ck_assert(match_hash_a != NULL);
@@ -246,7 +246,7 @@ END_TEST
 
 /* Suite */
 
-Suite *hashtable_suite(void)
+static Suite *hashtable_suite(void)
 {
 	Suite *s;
 	TCase *tc_create;
