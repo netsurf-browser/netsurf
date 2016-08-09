@@ -46,6 +46,8 @@
 const char *test_urldb_path = "test/data/urldb";
 const char *test_cookies_path = "test/data/cookies";
 
+const char *wikipedia_url = "http://www.wikipedia.org/";
+
 struct netsurf_table *guit = NULL;
 
 /*************** original test helpers ************/
@@ -500,7 +502,7 @@ START_TEST(urldb_auth_details_test)
 	const char *res;
 	const char *auth = "mooooo";
 
-	url = make_url("http://www.wikipedia.org/");
+	url = make_url(wikipedia_url);
 	urldb_set_auth_details(url, "tree", auth);
 
 	res = urldb_get_auth_details(url, "tree");
@@ -519,7 +521,7 @@ START_TEST(urldb_thumbnail_test)
 	struct bitmap *res;
 	bool set;
 
-	url = make_url("http://www.wikipedia.org/");
+	url = make_url(wikipedia_url);
 	bmap = (struct bitmap*)url;
 
 	set = urldb_set_thumbnail(url, bmap);
@@ -538,7 +540,7 @@ START_TEST(urldb_cert_permissions_test)
 	nsurl *url;
 	bool permit;
 
-	url = make_url("http://www.wikipedia.org/");
+	url = make_url(wikipedia_url);
 
 	urldb_set_cert_permissions(url, true); /* permit invalid certs for url */
 
@@ -560,7 +562,11 @@ START_TEST(urldb_update_visit_test)
 {
 	nsurl *url;
 
-	url = make_url("http://www.wikipedia.org/");
+	url = make_url(wikipedia_url);
+
+	urldb_update_url_visit_data(url);
+
+	urldb_add_url(url);
 
 	urldb_update_url_visit_data(url);
 	/** \todo test needs to check results */
@@ -573,7 +579,11 @@ START_TEST(urldb_reset_visit_test)
 {
 	nsurl *url;
 
-	url = make_url("http://www.wikipedia.org/");
+	url = make_url(wikipedia_url);
+
+	urldb_reset_url_visit_data(url);
+
+	urldb_add_url(url);
 
 	urldb_reset_url_visit_data(url);
 	/** \todo test needs to check results */
@@ -586,7 +596,11 @@ START_TEST(urldb_persistence_test)
 {
 	nsurl *url;
 
-	url = make_url("http://www.wikipedia.org/");
+	url = make_url(wikipedia_url);
+
+	urldb_set_url_persistence(url, true);
+
+	urldb_add_url(url);
 
 	urldb_set_url_persistence(url, true);
 
@@ -615,6 +629,7 @@ static TCase *urldb_case_create(void)
 	tcase_add_test(tc, urldb_cert_permissions_test);
 	tcase_add_test(tc, urldb_update_visit_test);
 	tcase_add_test(tc, urldb_reset_visit_test);
+	tcase_add_test(tc, urldb_persistence_test);
 
 	return tc;
 }
