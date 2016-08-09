@@ -111,8 +111,9 @@ bool urldb_get_cert_permissions(struct nsurl *url);
  *
  * \param url Absolute URL to consider
  * \param bitmap Opaque pointer to thumbnail data, or NULL to invalidate
+ * \return true on sucessful setting else false
  */
-void urldb_set_thumbnail(struct nsurl *url, struct bitmap *bitmap);
+bool urldb_set_thumbnail(struct nsurl *url, struct bitmap *bitmap);
 
 
 /**

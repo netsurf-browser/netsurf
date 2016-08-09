@@ -38,7 +38,9 @@
 #include "utils/nsoption.h"
 #include "netsurf/url_db.h"
 #include "netsurf/cookie_db.h"
+#include "netsurf/bitmap.h"
 #include "content/urldb.h"
+#include "desktop/gui_internal.h"
 #include "desktop/cookie_manager.h"
 
 const char *test_urldb_path = "test/data/urldb";
@@ -122,10 +124,27 @@ static char *test_urldb_get_cookie(const char *url)
 
 /*************************************************/
 
+/* mock table callbacks */
+static void destroy_bitmap(void *b)
+{
+}
+
+struct gui_bitmap_table tst_bitmap_table = {
+	.destroy = destroy_bitmap,
+};
+
+struct netsurf_table tst_table = {
+	.bitmap = &tst_bitmap_table,
+};
+
 /** urldb create fixture */
 static void urldb_create(void)
 {
 	nserror res;
+
+	/* mock bitmap interface */
+	guit = &tst_table;
+
 	res = corestrings_init();
 	ck_assert_int_eq(res, NSERROR_OK);
 }
@@ -134,6 +153,9 @@ static void urldb_create(void)
 static void urldb_create_loaded(void)
 {
 	nserror res;
+
+	/* mock bitmap interface */
+	guit = &tst_table;
 
 	res = corestrings_init();
 	ck_assert_int_eq(res, NSERROR_OK);
@@ -440,10 +462,13 @@ static TCase *urldb_session_case_create(void)
 	return tc;
 }
 
+static int cb_count;
+
 static bool urldb_iterate_entries_cb(nsurl *url, const struct url_data *data)
 {
 	LOG("url: %s", nsurl_access(url));
 	/* fprintf(stderr, "url:%s\ntitle:%s\n\n",nsurl_access(url), data->title); */
+	cb_count++;
 	return true;
 }
 
@@ -453,9 +478,19 @@ START_TEST(urldb_iterate_entries_test)
 }
 END_TEST
 
+/**
+ * iterate through partial matches
+ */
 START_TEST(urldb_iterate_partial_test)
 {
+	cb_count = 0;
 	urldb_iterate_partial("www", urldb_iterate_entries_cb);
+	ck_assert_int_eq(cb_count, 7);
+
+	cb_count = 0;
+	urldb_iterate_partial("/", urldb_iterate_entries_cb);
+	ck_assert_int_eq(cb_count, 0);
+
 }
 END_TEST
 
@@ -476,12 +511,23 @@ START_TEST(urldb_auth_details_test)
 }
 END_TEST
 
-START_TEST(urldb_set_thumbnail_test)
+
+START_TEST(urldb_thumbnail_test)
 {
 	nsurl *url;
+	struct bitmap *bmap;
+	struct bitmap *res;
+	bool set;
 
 	url = make_url("http://www.wikipedia.org/");
-	urldb_set_thumbnail(url, NULL);
+	bmap = (struct bitmap*)url;
+
+	set = urldb_set_thumbnail(url, bmap);
+	ck_assert(set == true);
+
+	res = urldb_get_thumbnail(url);
+	ck_assert(res != NULL);
+	ck_assert(res == bmap);
 
 	nsurl_unref(url);
 }
@@ -510,6 +556,47 @@ START_TEST(urldb_cert_permissions_test)
 }
 END_TEST
 
+START_TEST(urldb_update_visit_test)
+{
+	nsurl *url;
+
+	url = make_url("http://www.wikipedia.org/");
+
+	urldb_update_url_visit_data(url);
+	/** \todo test needs to check results */
+
+	nsurl_unref(url);
+}
+END_TEST
+
+START_TEST(urldb_reset_visit_test)
+{
+	nsurl *url;
+
+	url = make_url("http://www.wikipedia.org/");
+
+	urldb_reset_url_visit_data(url);
+	/** \todo test needs to check results */
+
+	nsurl_unref(url);
+}
+END_TEST
+
+START_TEST(urldb_persistence_test)
+{
+	nsurl *url;
+
+	url = make_url("http://www.wikipedia.org/");
+
+	urldb_set_url_persistence(url, true);
+
+	urldb_set_url_persistence(url, false);
+	/** \todo test needs to check results */
+
+	nsurl_unref(url);
+}
+END_TEST
+
 
 static TCase *urldb_case_create(void)
 {
@@ -524,8 +611,10 @@ static TCase *urldb_case_create(void)
 	tcase_add_test(tc, urldb_iterate_entries_test);
 	tcase_add_test(tc, urldb_iterate_partial_test);
 	tcase_add_test(tc, urldb_auth_details_test);
-	tcase_add_test(tc, urldb_set_thumbnail_test);
+	tcase_add_test(tc, urldb_thumbnail_test);
 	tcase_add_test(tc, urldb_cert_permissions_test);
+	tcase_add_test(tc, urldb_update_visit_test);
+	tcase_add_test(tc, urldb_reset_visit_test);
 
 	return tc;
 }

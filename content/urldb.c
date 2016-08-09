@@ -2801,8 +2801,16 @@ bool urldb_add_url(nsurl *url)
 	h = urldb_add_host(host_str);
 
 	/* Get path entry */
-	p = (h != NULL) ? urldb_add_path(scheme, port_int, h, path_query,
-			fragment, url) : NULL;
+	if (h != NULL) {
+		p = urldb_add_path(scheme,
+				   port_int,
+				   h,
+				   path_query,
+				   fragment,
+				   url);
+	} else {
+		p = NULL;
+	}
 
 	lwc_string_unref(scheme);
 	if (fragment != NULL)
@@ -3074,23 +3082,29 @@ bool urldb_get_cert_permissions(nsurl *url)
 
 
 /* exported interface documented in content/urldb.h */
-void urldb_set_thumbnail(nsurl *url, struct bitmap *bitmap)
+bool urldb_set_thumbnail(nsurl *url, struct bitmap *bitmap)
 {
 	struct path_data *p;
 
 	assert(url);
 
+	/* add url, in case it's missing */
+	urldb_add_url(url);
+
 	p = urldb_find_url(url);
-	if (p != NULL) {
-
-		LOG("Setting bitmap on %s", nsurl_access(url));
-
-		if (p->thumb && p->thumb != bitmap) {
-			guit->bitmap->destroy(p->thumb);
-		}
-
-		p->thumb = bitmap;
+	if (p == NULL) {
+		return false;
 	}
+
+	LOG("Setting bitmap on %s", nsurl_access(url));
+
+	if ((p->thumb) && (p->thumb != bitmap)) {
+		guit->bitmap->destroy(p->thumb);
+	}
+
+	p->thumb = bitmap;
+
+	return true;
 }
 
 
