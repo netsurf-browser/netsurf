@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 - 2014 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2016 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -32,22 +32,21 @@
 #include "amiga/misc.h"
 #include "amiga/schedule.h"
 
-static struct TimeRequest *tioreq;
+struct nscallback
+{
+	struct TimeRequest timereq;
+	struct TimeVal tv; /* time we expect the event to occur */
+	void *restrict callback;
+	void *restrict p;
+};
+
+static struct nscallback *tioreq;
 struct Device *TimerBase;
 #ifdef __amigaos4__
 struct TimerIFace *ITimer;
 #endif
 
 static APTR restrict pool_nscb = NULL;
-static APTR restrict pool_timereq = NULL;
-
-struct nscallback
-{
-	struct TimeVal tv;
-	void *restrict callback;
-	void *restrict p;
-	struct TimeRequest *treq;
-};
 
 static PblHeap *schedule_list;
 
@@ -63,14 +62,10 @@ static void ami_schedule_remove_timer_event(struct nscallback *nscb)
 {
 	if(!nscb) return;
 
-	if(nscb->treq)
-	{
-		if(CheckIO((struct IORequest *)nscb->treq)==NULL)
-   			AbortIO((struct IORequest *)nscb->treq);
+	if(CheckIO((struct IORequest *)nscb)==NULL)
+		AbortIO((struct IORequest *)nscb);
 
-		WaitIO((struct IORequest *)nscb->treq);
-		ami_misc_itempool_free(pool_timereq, nscb->treq, sizeof(struct TimeRequest));
-	}
+	WaitIO((struct IORequest *)nscb);
 }
 
 /**
@@ -87,25 +82,20 @@ static nserror ami_schedule_add_timer_event(struct nscallback *nscb, int t)
 	struct TimeVal tv;
 	ULONG time_us = t * 1000; /* t converted to µs */
 
-	nscb->tv.Seconds = time_us / 1000000;
-	nscb->tv.Microseconds = time_us % 1000000;
+	tv.Seconds = time_us / 1000000;
+	tv.Microseconds = time_us % 1000000;
 
-	if(nscb->tv.Microseconds >= 1000000) {
+	if(tv.Microseconds >= 1000000) {
 		LOG("Microseconds invalid value: %ld", nscb->tv.Microseconds);
 	}
 
-	GetSysTime(&tv);
-	AddTime(&nscb->tv,&tv); // now contains time when event occurs
+	GetSysTime(&nscb->tv);
+	AddTime(&nscb->tv, &tv); // now contains time when event occurs (for debug and heap sorting)
 
-	if((nscb->treq = ami_misc_itempool_alloc(pool_timereq, sizeof(struct TimeRequest)))) {
-		*nscb->treq = *tioreq;
-		nscb->treq->Request.io_Command=TR_ADDREQUEST;
-		nscb->treq->Time.Seconds=nscb->tv.Seconds; // secs
-		nscb->treq->Time.Microseconds=nscb->tv.Microseconds; // micro
-		SendIO((struct IORequest *)nscb->treq);
-	} else {
-		return NSERROR_NOMEM;
-	}
+	nscb->timereq.Request.io_Command = TR_ADDREQUEST;
+	nscb->timereq.Time.Seconds = tv.Seconds; // secs
+	nscb->timereq.Time.Microseconds = tv.Microseconds; // micro
+	SendIO((struct IORequest *)nscb);
 
 	return NSERROR_OK;
 }
@@ -181,7 +171,7 @@ static nserror schedule_remove(void (*callback)(void *p), void *p)
 	nscb = ami_schedule_locate(callback, p, true);
 
 	if(nscb != NULL) {
-		LOG("Event scheduled for following time was deleted: %ld.%ld", nscb->tv.Seconds, nscb->tv.Microseconds);
+		LOG("deleted callback %p", nscb);
 		ami_schedule_remove_timer_event(nscb);
 		ami_misc_itempool_free(pool_nscb, nscb, sizeof(struct nscallback));
 		pblHeapConstruct(schedule_list);
@@ -214,50 +204,39 @@ static int ami_schedule_compare(const void *prev, const void *next)
 	struct nscallback *nscb1 = *(struct nscallback **)prev;
 	struct nscallback *nscb2 = *(struct nscallback **)next;
 
+	/**\todo a heap probably isn't the best idea now */
 	return CmpTime(&nscb1->tv, &nscb2->tv);
 }
 
 
 /**
- * Process events up to current time.
+ * Process signalled event
  *
- * This implementation only takes the top entry off the heap, it does not
- * venture to later scheduled events until the next time it is called -
- * immediately afterwards, if we're in a timer signalled loop.
+ * This implementation only processes the callback that arrives in the message from timer.device.
  */
-static bool ami_scheduler_run(void)
+static bool ami_scheduler_run(struct nscallback *nscb)
 {
-	struct nscallback *nscb;
-	struct TimeVal tv;
 	void (*callback)(void *p);
 	void *p;
 
-	nscb = pblHeapGetFirst(schedule_list);
-	if(nscb == -1) {
-		LOG("Scheduler has no tasks to run!");
-		return false;
-	}
-
-	/* Ensure the scheduled event time has passed (CmpTime<=0)
-	 * in case something been deleted between the timer
-	 * signalling us and us responding to it.
-	 */
+	LOG("callback %p", nscb);
+	
+	/*** vvv Debugging vvv ***/
+	struct TimeVal tv;
 	GetSysTime(&tv);
 	if(CmpTime(&tv, &nscb->tv) > 0) {
-		LOG("Scheduled time of next event has not passed: %ld.%ld < %ld.%ld", tv.Seconds, tv.Microseconds, nscb->tv.Seconds, nscb->tv.Microseconds);
-		return false;
+		LOG("Expected scheduled time of event has not passed: %ld.%ld < %ld.%ld", tv.Seconds, tv.Microseconds, nscb->tv.Seconds, nscb->tv.Microseconds);
 	}
-
+	/*** ^^^ Debugging ^^^ ***/
+	
 	callback = nscb->callback;
 	p = nscb->p;
 
-	ami_schedule_remove_timer_event(nscb);
-	pblHeapRemoveFirst(schedule_list);
-	ami_misc_itempool_free(pool_nscb, nscb, sizeof(struct nscallback));
+	schedule_remove(callback, p); /* this does a lookup as we don't know if we're the first item on the heap */
 
 	LOG("Running scheduled callback %p with arg %p", callback, p);
 	callback(p);
-
+	LOG("Callback finished...");
 	return true;
 }
 
@@ -265,17 +244,17 @@ static void ami_schedule_open_timer(struct MsgPort *msgport)
 {
 #ifdef __amigaos4__
 	tioreq = (struct TimeRequest *)AllocSysObjectTags(ASOT_IOREQUEST,
-				ASOIOR_Size,sizeof(struct TimeRequest),
+				ASOIOR_Size,sizeof(struct nscallback),
 				ASOIOR_ReplyPort,msgport,
 				ASO_NoTrack,FALSE,
 				TAG_DONE);
 #else
-	tioreq = (struct TimeRequest *)CreateIORequest(msgport, sizeof(struct TimeRequest));
+	tioreq = (struct nscallback *)CreateIORequest(msgport, sizeof(struct nscallback));
 #endif
 
-	OpenDevice("timer.device", UNIT_WAITUNTIL, (struct IORequest *)tioreq, 0);
+	OpenDevice("timer.device", UNIT_VBLANK, (struct IORequest *)tioreq, 0);
 
-	TimerBase = (struct Device *)tioreq->Request.io_Device;
+	TimerBase = (struct Device *)tioreq->timereq.Request.io_Device;
 #ifdef __amigaos4__
 	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase, "main", 1, NULL);
 #endif
@@ -294,7 +273,7 @@ static void ami_schedule_close_timer(void)
 nserror ami_schedule_create(struct MsgPort *msgport)
 {
 	pool_nscb = ami_misc_itempool_create(sizeof(struct nscallback));
-	pool_timereq = ami_misc_itempool_create(sizeof(struct TimeRequest));
+	if(pool_nscb == NULL) return NSERROR_NOMEM;
 
 	ami_schedule_open_timer(msgport);
 	schedule_list = pblHeapNew();
@@ -314,7 +293,6 @@ void ami_schedule_free(void)
 
 	ami_schedule_close_timer();
 
-	ami_misc_itempool_delete(pool_timereq);
 	ami_misc_itempool_delete(pool_nscb);
 }
 
@@ -322,6 +300,8 @@ void ami_schedule_free(void)
 nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 {
 	struct nscallback *nscb;
+
+	LOG("Scheduling callback %p with arg %p", callback, p);
 
 	if(schedule_list == NULL) return NSERROR_INIT_FAILED;
 	if(t < 0) return schedule_remove(callback, p);
@@ -332,6 +312,10 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 
 	nscb = ami_misc_itempool_alloc(pool_nscb, sizeof(struct nscallback));
 	if(!nscb) return NSERROR_NOMEM;
+
+	LOG("new nscb");
+
+	*nscb = *tioreq;
 
 	if (ami_schedule_add_timer_event(nscb, t) != NSERROR_OK)
 		return NSERROR_NOMEM;
@@ -348,13 +332,14 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 /* exported interface documented in amiga/schedule.h */
 void ami_schedule_handle(struct MsgPort *nsmsgport)
 {
-	/* nsmsgport is the NetSurf message port that the scheduler task
-	 * (or timer.device in no-async mode) is sending messages to. */
+	/* nsmsgport is the NetSurf message port that
+	 * timer.device is sending messages to. */
 
-	struct TimerRequest *timermsg;
+	struct nscallback *timermsg;
 
-	while((timermsg = (struct TimerRequest *)GetMsg(nsmsgport))) {
-			ami_scheduler_run();
+	while((timermsg = (struct nscallback *)GetMsg(nsmsgport))) {
+		LOG("timereq err = %d (should be 0)", timermsg->timereq.Request.io_Error);
+		ami_scheduler_run(timermsg);
 	}
 }
 
