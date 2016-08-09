@@ -301,6 +301,8 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 {
 	struct nscallback *nscb;
 
+	if(t == 0) t = 1;
+
 	LOG("Scheduling callback %p with arg %p at time %d", callback, p, t);
 
 	if(schedule_list == NULL) return NSERROR_INIT_FAILED;
