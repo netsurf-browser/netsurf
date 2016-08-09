@@ -301,7 +301,7 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 {
 	struct nscallback *nscb;
 
-	LOG("Scheduling callback %p with arg %p", callback, p);
+	LOG("Scheduling callback %p with arg %p at time %d", callback, p, t);
 
 	if(schedule_list == NULL) return NSERROR_INIT_FAILED;
 	if(t < 0) return schedule_remove(callback, p);
@@ -313,7 +313,7 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 	nscb = ami_misc_itempool_alloc(pool_nscb, sizeof(struct nscallback));
 	if(!nscb) return NSERROR_NOMEM;
 
-	LOG("new nscb");
+	LOG("new nscb %p", nscb);
 
 	*nscb = *tioreq;
 
@@ -338,6 +338,7 @@ void ami_schedule_handle(struct MsgPort *nsmsgport)
 	struct nscallback *timermsg;
 
 	while((timermsg = (struct nscallback *)GetMsg(nsmsgport))) {
+		LOG("timermsg %p", timermsg);
 		LOG("timereq err = %d (should be 0)", timermsg->timereq.Request.io_Error);
 		ami_scheduler_run(timermsg);
 	}
