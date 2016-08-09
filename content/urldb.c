@@ -2480,8 +2480,10 @@ void urldb_destroy(void)
 
 	/* Clean up search trees */
 	for (i = 0; i < NUM_SEARCH_TREES; i++) {
-		if (search_trees[i] != &empty)
+		if (search_trees[i] != &empty) {
 			urldb_destroy_search_tree(search_trees[i]);
+			search_trees[i] = &empty;
+		}
 	}
 
 	/* And database */
@@ -2489,10 +2491,13 @@ void urldb_destroy(void)
 		b = a->next;
 		urldb_destroy_host_tree(a);
 	}
+	memset(&db_root, 0, sizeof(db_root));
 
 	/* And the bloom filter */
-	if (url_bloom != NULL)
+	if (url_bloom != NULL) {
 		bloom_destroy(url_bloom);
+		url_bloom = NULL;
+	}
 }
 
 
