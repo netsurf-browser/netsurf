@@ -483,15 +483,79 @@ END_TEST
 /**
  * iterate through partial matches
  */
-START_TEST(urldb_iterate_partial_test)
+START_TEST(urldb_iterate_partial_www_test)
 {
 	cb_count = 0;
 	urldb_iterate_partial("www", urldb_iterate_entries_cb);
 	ck_assert_int_eq(cb_count, 7);
 
+}
+END_TEST
+
+/**
+ * iterate through partial matches
+ */
+START_TEST(urldb_iterate_partial_nomatch_test)
+{
 	cb_count = 0;
 	urldb_iterate_partial("/", urldb_iterate_entries_cb);
 	ck_assert_int_eq(cb_count, 0);
+
+}
+END_TEST
+
+/**
+ * iterate through partial matches
+ */
+START_TEST(urldb_iterate_partial_add_test)
+{
+	nsurl *url;
+
+	cb_count = 0;
+	urldb_iterate_partial("wikipedia", urldb_iterate_entries_cb);
+	ck_assert_int_eq(cb_count, 0);
+
+	url = make_url(wikipedia_url);
+	urldb_add_url(url);
+	nsurl_unref(url);
+
+	cb_count = 0;
+	urldb_iterate_partial("wikipedia", urldb_iterate_entries_cb);
+	ck_assert_int_eq(cb_count, 1);
+}
+END_TEST
+
+/**
+ * iterate through partial matches
+ */
+START_TEST(urldb_iterate_partial_path_test)
+{
+
+	cb_count = 0;
+	urldb_iterate_partial("en.wikipedia.org/wiki", urldb_iterate_entries_cb);
+	ck_assert_int_eq(cb_count, 2);
+}
+END_TEST
+
+/**
+ * iterate through partial matches
+ */
+START_TEST(urldb_iterate_partial_numeric_test)
+{
+	nsurl *url;
+
+	cb_count = 0;
+	urldb_iterate_partial("192.168.7.1/", urldb_iterate_entries_cb);
+	ck_assert_int_eq(cb_count, 0);
+
+	url = make_url("http://192.168.7.1/index.html");
+	urldb_add_url(url);
+	nsurl_unref(url);
+
+	cb_count = 0;
+	urldb_iterate_partial("192.168.7.1/", urldb_iterate_entries_cb);
+	ck_assert_int_eq(cb_count, 1);
+
 
 }
 END_TEST
@@ -509,7 +573,6 @@ START_TEST(urldb_auth_details_test)
 	ck_assert_str_eq(res, auth);
 
 	nsurl_unref(url);
-
 }
 END_TEST
 
@@ -623,7 +686,11 @@ static TCase *urldb_case_create(void)
 				  urldb_teardown);
 
 	tcase_add_test(tc, urldb_iterate_entries_test);
-	tcase_add_test(tc, urldb_iterate_partial_test);
+	tcase_add_test(tc, urldb_iterate_partial_www_test);
+	tcase_add_test(tc, urldb_iterate_partial_nomatch_test);
+	tcase_add_test(tc, urldb_iterate_partial_add_test);
+	tcase_add_test(tc, urldb_iterate_partial_path_test);
+	tcase_add_test(tc, urldb_iterate_partial_numeric_test);
 	tcase_add_test(tc, urldb_auth_details_test);
 	tcase_add_test(tc, urldb_thumbnail_test);
 	tcase_add_test(tc, urldb_cert_permissions_test);
@@ -716,6 +783,16 @@ START_TEST(urldb_api_add_host_assert_test)
 END_TEST
 
 /**
+ * test url database finalisation without initialisation.
+ */
+START_TEST(urldb_api_destroy_no_init_test)
+{
+	urldb_destroy();
+}
+END_TEST
+
+
+/**
  * test case for urldb API including error returns and asserts
  */
 static TCase *urldb_api_case_create(void)
@@ -726,6 +803,9 @@ static TCase *urldb_api_case_create(void)
 	tcase_add_test_raise_signal(tc,
 				    urldb_api_add_host_assert_test,
 				    6);
+
+	tcase_add_test(tc, urldb_api_destroy_no_init_test);
+
 
 	return tc;
 }
