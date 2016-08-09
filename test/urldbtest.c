@@ -424,6 +424,7 @@ START_TEST(urldb_session_test)
 }
 END_TEST
 
+
 static TCase *urldb_session_case_create(void)
 {
 	TCase *tc;
@@ -442,7 +443,7 @@ static TCase *urldb_session_case_create(void)
 static bool urldb_iterate_entries_cb(nsurl *url, const struct url_data *data)
 {
 	LOG("url: %s", nsurl_access(url));
-
+	/* fprintf(stderr, "url:%s\ntitle:%s\n\n",nsurl_access(url), data->title); */
 	return true;
 }
 
@@ -452,15 +453,9 @@ START_TEST(urldb_iterate_entries_test)
 }
 END_TEST
 
-static bool urldb_iterate_cookies_cb(const struct cookie_data *data)
+START_TEST(urldb_iterate_partial_test)
 {
-	LOG("%p", data);
-	return true;
-}
-
-START_TEST(urldb_iterate_cookies_test)
-{
-	urldb_iterate_cookies(urldb_iterate_cookies_cb);
+	urldb_iterate_partial("www", urldb_iterate_entries_cb);
 }
 END_TEST
 
@@ -481,6 +476,41 @@ START_TEST(urldb_auth_details_test)
 }
 END_TEST
 
+START_TEST(urldb_set_thumbnail_test)
+{
+	nsurl *url;
+
+	url = make_url("http://www.wikipedia.org/");
+	urldb_set_thumbnail(url, NULL);
+
+	nsurl_unref(url);
+}
+END_TEST
+
+START_TEST(urldb_cert_permissions_test)
+{
+	nsurl *url;
+	bool permit;
+
+	url = make_url("http://www.wikipedia.org/");
+
+	urldb_set_cert_permissions(url, true); /* permit invalid certs for url */
+
+	permit = urldb_get_cert_permissions(url);
+
+	ck_assert(permit == true);
+
+	urldb_set_cert_permissions(url, false); /* do not permit invalid certs for url */
+
+	permit = urldb_get_cert_permissions(url);
+
+	ck_assert(permit == false);
+
+	nsurl_unref(url);
+}
+END_TEST
+
+
 static TCase *urldb_case_create(void)
 {
 	TCase *tc;
@@ -492,11 +522,83 @@ static TCase *urldb_case_create(void)
 				  urldb_teardown);
 
 	tcase_add_test(tc, urldb_iterate_entries_test);
-	tcase_add_test(tc, urldb_iterate_cookies_test);
+	tcase_add_test(tc, urldb_iterate_partial_test);
 	tcase_add_test(tc, urldb_auth_details_test);
+	tcase_add_test(tc, urldb_set_thumbnail_test);
+	tcase_add_test(tc, urldb_cert_permissions_test);
 
 	return tc;
 }
+
+
+static bool urldb_iterate_cookies_cb(const struct cookie_data *data)
+{
+	LOG("%p", data);
+	/* fprintf(stderr, "domain:%s\npath:%s\nname:%s\n\n",data->domain, data->path, data->name);*/
+	return true;
+}
+
+START_TEST(urldb_iterate_cookies_test)
+{
+	urldb_iterate_cookies(urldb_iterate_cookies_cb);
+}
+END_TEST
+
+START_TEST(urldb_cookie_create_test)
+{
+	/* Valid path (includes leafname) */
+	const char *cookie_hdr = "name=value;Version=1;Path=/index.cgi\r\n";
+	const char *cookie = "$Version=1; name=value; $Path=\"/index.cgi\"";
+	char *cdata; /* cookie data */
+
+	ck_assert(test_urldb_set_cookie(cookie_hdr, "http://example.org/index.cgi", NULL));
+	cdata = test_urldb_get_cookie("http://example.org/index.cgi");
+	ck_assert_str_eq(cdata, cookie);
+
+}
+END_TEST
+
+START_TEST(urldb_cookie_delete_test)
+{
+	/* Valid path (includes leafname) */
+	const char *cookie_hdr = "name=value;Version=1;Path=/index.cgi\r\n";
+	const char *cookie = "$Version=1; name=value; $Path=\"/index.cgi\"";
+	char *cdata; /* cookie data */
+
+	ck_assert(test_urldb_set_cookie(cookie_hdr, "http://example.org/index.cgi", NULL));
+	cdata = test_urldb_get_cookie("http://example.org/index.cgi");
+	ck_assert_str_eq(cdata, cookie);
+
+	urldb_delete_cookie("example.org", "/index.cgi", "name");
+
+	cdata = test_urldb_get_cookie("http://example.org/index.cgi");
+	ck_assert(cdata == NULL);
+
+}
+END_TEST
+
+/**
+ * Test case for urldb cookie management
+ */
+static TCase *urldb_cookie_case_create(void)
+{
+	TCase *tc;
+	tc = tcase_create("Cookies");
+
+	/* ensure corestrings are initialised and finalised for every test */
+	tcase_add_checked_fixture(tc,
+				  urldb_create_loaded,
+				  urldb_teardown);
+
+	tcase_add_test(tc, urldb_cookie_create_test);
+	tcase_add_test(tc, urldb_iterate_cookies_test);
+	tcase_add_test(tc, urldb_cookie_delete_test);
+
+	return tc;
+}
+
+
+
 
 /**
  * Test urldb_add_host asserting on NULL.
@@ -509,7 +611,9 @@ START_TEST(urldb_api_add_host_assert_test)
 }
 END_TEST
 
-
+/**
+ * test case for urldb API including error returns and asserts
+ */
 static TCase *urldb_api_case_create(void)
 {
 	TCase *tc;
@@ -531,6 +635,7 @@ static Suite *urldb_suite_create(void)
 	suite_add_tcase(s, urldb_api_case_create());
 	suite_add_tcase(s, urldb_session_case_create());
 	suite_add_tcase(s, urldb_case_create());
+	suite_add_tcase(s, urldb_cookie_case_create());
 	suite_add_tcase(s, urldb_original_case_create());
 
 	return s;
