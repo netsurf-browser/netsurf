@@ -21,6 +21,7 @@
 #include <proto/dos.h>
 #include <proto/exec.h>
 #include <proto/timer.h>
+#include <proto/utility.h> /* For Amiga2Date */
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -45,8 +46,6 @@ struct Device *TimerBase;
 #ifdef __amigaos4__
 struct TimerIFace *ITimer;
 #endif
-
-static APTR restrict pool_nscb = NULL;
 
 static PblHeap *schedule_list;
 
@@ -173,7 +172,7 @@ static nserror schedule_remove(void (*callback)(void *p), void *p)
 	if(nscb != NULL) {
 		LOG("deleted callback %p", nscb);
 		ami_schedule_remove_timer_event(nscb);
-		ami_misc_itempool_free(pool_nscb, nscb, sizeof(struct nscallback));
+		FreeSysObject(ASOT_IOREQUEST, nscb);
 		pblHeapConstruct(schedule_list);
 	}
 
@@ -193,7 +192,7 @@ static void schedule_remove_all(void)
 	{
 		ami_schedule_remove_timer_event(nscb);
 		pblIteratorRemove(iterator);
-		ami_misc_itempool_free(pool_nscb, nscb, sizeof(struct nscallback));
+		FreeSysObject(ASOT_IOREQUEST, nscb);
 	};
 
 	pblIteratorFree(iterator);
@@ -208,6 +207,35 @@ static int ami_schedule_compare(const void *prev, const void *next)
 	return CmpTime(&nscb1->tv, &nscb2->tv);
 }
 
+/* Outputs all scheduled events to the log */
+static void ami_schedule_dump(void)
+{
+	PblIterator *iterator;
+	struct nscallback *nscb;
+	struct ClockData clockdata;
+	
+	if(pblHeapIsEmpty(schedule_list)) return;
+
+	struct TimeVal tv;
+	GetSysTime(&tv);
+	Amiga2Date(tv.Seconds, &clockdata);
+	
+	LOG("Current time = %d-%d-%d %d:%d:%d.%d", clockdata.mday, clockdata.month, clockdata.year,
+		clockdata.hour, clockdata.min, clockdata.sec, tv.Microseconds);
+	LOG("Events remaining in queue:");
+
+	iterator = pblHeapIterator(schedule_list);
+
+	while ((nscb = pblIteratorNext(iterator)) != -1)
+	{
+		Amiga2Date(nscb->tv.Seconds, &clockdata);
+		LOG("nscb: %p, at %d-%d-%d %d:%d:%d.%d, callback: %p, %p",
+			nscb, clockdata.mday, clockdata.month, clockdata.year, clockdata.hour, clockdata.min, clockdata.sec, 
+			nscb->tv.Microseconds, nscb->callback, nscb->p);
+	};
+
+	pblIteratorFree(iterator);
+}
 
 /**
  * Process signalled event
@@ -237,16 +265,18 @@ static bool ami_scheduler_run(struct nscallback *nscb)
 	LOG("Running scheduled callback %p with arg %p", callback, p);
 	callback(p);
 	LOG("Callback finished...");
+	
+	ami_schedule_dump();
 	return true;
 }
 
 static void ami_schedule_open_timer(struct MsgPort *msgport)
 {
 #ifdef __amigaos4__
-	tioreq = (struct TimeRequest *)AllocSysObjectTags(ASOT_IOREQUEST,
-				ASOIOR_Size,sizeof(struct nscallback),
-				ASOIOR_ReplyPort,msgport,
-				ASO_NoTrack,FALSE,
+	tioreq = (struct nscallback *)AllocSysObjectTags(ASOT_IOREQUEST,
+				ASOIOR_Size, sizeof(struct nscallback),
+				ASOIOR_ReplyPort, msgport,
+				ASO_NoTrack, FALSE,
 				TAG_DONE);
 #else
 	tioreq = (struct nscallback *)CreateIORequest(msgport, sizeof(struct nscallback));
@@ -272,9 +302,6 @@ static void ami_schedule_close_timer(void)
 /* exported interface documented in amiga/schedule.h */
 nserror ami_schedule_create(struct MsgPort *msgport)
 {
-	pool_nscb = ami_misc_itempool_create(sizeof(struct nscallback));
-	if(pool_nscb == NULL) return NSERROR_NOMEM;
-
 	ami_schedule_open_timer(msgport);
 	schedule_list = pblHeapNew();
 	if(schedule_list == PBL_ERROR_OUT_OF_MEMORY) return NSERROR_NOMEM;
@@ -287,13 +314,12 @@ nserror ami_schedule_create(struct MsgPort *msgport)
 /* exported interface documented in amiga/schedule.h */
 void ami_schedule_free(void)
 {
+	ami_schedule_dump();
 	schedule_remove_all();
 	pblHeapFree(schedule_list); // this should be empty at this point
 	schedule_list = NULL;
 
 	ami_schedule_close_timer();
-
-	ami_misc_itempool_delete(pool_nscb);
 }
 
 /* exported function documented in amiga/schedule.h */
@@ -312,12 +338,17 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 		return ami_schedule_reschedule(nscb, t);
 	}
 
-	nscb = ami_misc_itempool_alloc(pool_nscb, sizeof(struct nscallback));
+#ifdef __amigaos4__
+	nscb = AllocSysObjectTags(ASOT_IOREQUEST,
+							ASOIOR_Duplicate, tioreq,
+							TAG_DONE);
+#else
+	nscb = (struct nscallback *)CreateIORequest(msgport, sizeof(struct nscallback));
+	*nscb = *tioreq;
+#endif
 	if(!nscb) return NSERROR_NOMEM;
 
 	LOG("new nscb %p", nscb);
-
-	*nscb = *tioreq;
 
 	if (ami_schedule_add_timer_event(nscb, t) != NSERROR_OK)
 		return NSERROR_NOMEM;
@@ -343,6 +374,6 @@ void ami_schedule_handle(struct MsgPort *nsmsgport)
 		LOG("timermsg %p", timermsg);
 		LOG("timereq err = %d (should be 0)", timermsg->timereq.Request.io_Error);
 		ami_scheduler_run(timermsg);
-	}
+	};
 }
 
