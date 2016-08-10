@@ -353,6 +353,11 @@ nserror sslcert_viewer_init(struct core_window_callback_table *cw_t,
 
 	assert(ssl_d != NULL);
 
+	err = treeview_init();
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
 	LOG("Building certificate viewer");
 
 	/* Init. certificate chain treeview entry fields */
@@ -426,6 +431,11 @@ nserror sslcert_viewer_fini(struct sslcert_session_data *ssl_d)
 
 	/* Destroy the sslcert_session_data */
 	sslcert_cleanup_session(ssl_d);
+
+	err = treeview_fini();
+	if (err != NSERROR_OK) {
+		return err;
+	}
 
 	LOG("Finalised ssl certificate viewer");
 

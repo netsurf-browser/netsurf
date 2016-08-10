@@ -724,6 +724,11 @@ nserror global_history_init(struct core_window_callback_table *cw_t,
 {
 	nserror err;
 
+	err = treeview_init();
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
 	LOG("Loading global history");
 
 	/* Init. global history treeview time */
@@ -803,6 +808,11 @@ nserror global_history_fini(void)
 	for (i = 0; i < N_FIELDS; i++)
 		if (gh_ctx.fields[i].field != NULL)
 			lwc_string_unref(gh_ctx.fields[i].field);
+
+	err = treeview_fini();
+	if (err != NSERROR_OK) {
+		return err;
+	}
 
 	LOG("Finalised global history");
 

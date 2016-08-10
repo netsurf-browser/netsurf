@@ -55,7 +55,6 @@ struct tree {
 
 struct sslcert_session_data *ssl_current_session = NULL;
 const char *tree_hotlist_path = NULL;
-int treeview_inits;
 
 static void treeview_test_redraw_request(struct core_window *cw,
 		const struct rect *r)
@@ -128,11 +127,6 @@ static bool treeview_test_init(struct tree *tree)
 {
 	nserror err;
 
-	treeview_inits++;
-
-	if (treeview_inits == 1)
-		treeview_init(0);
-
 	switch (tree->flags) {
 	case TREE_COOKIES:
 		assert(ssl_current_session == NULL &&
@@ -194,10 +188,6 @@ static bool treeview_test_fini(struct tree *tree)
 			guit->misc->warning("Couldn't finalise sslcert viewer.", 0);
 		break;
 	}
-
-	if (treeview_inits == 1)
-		treeview_fini();
-	treeview_inits--;
 
 	return true;
 }

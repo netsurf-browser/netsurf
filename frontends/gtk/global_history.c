@@ -30,7 +30,6 @@
 #include "netsurf/keypress.h"
 #include "netsurf/plotters.h"
 #include "desktop/global_history.h"
-#include "desktop/treeview.h"
 
 #include "gtk/compat.h"
 #include "gtk/plotters.h"
@@ -298,11 +297,6 @@ static nserror nsgtk_global_history_init(void)
 
 	if (global_history_window != NULL) {
 		return NSERROR_OK;
-	}
-
-	res = treeview_init(0);
-	if (res != NSERROR_OK) {
-		return res;
 	}
 
 	ncwin = malloc(sizeof(struct nsgtk_global_history_window));

@@ -1232,6 +1232,11 @@ nserror hotlist_init(struct core_window_callback_table *cw_t,
 {
 	nserror err;
 
+	err = treeview_init();
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
 	LOG("Loading hotlist");
 
 	hl_ctx.tree = NULL;
@@ -1297,6 +1302,11 @@ nserror hotlist_fini(const char *path)
 	for (i = 0; i < HL_N_FIELDS; i++)
 		if (hl_ctx.fields[i].field != NULL)
 			lwc_string_unref(hl_ctx.fields[i].field);
+
+	err = treeview_fini();
+	if (err != NSERROR_OK) {
+		return err;
+	}
 
 	LOG("Finalised hotlist");
 

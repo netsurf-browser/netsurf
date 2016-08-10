@@ -756,6 +756,11 @@ nserror cookie_manager_init(struct core_window_callback_table *cw_t,
 {
 	nserror err;
 
+	err = treeview_init();
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
 	LOG("Generating cookie manager data");
 
 	/* Init. cookie manager treeview entry fields */
@@ -821,6 +826,11 @@ nserror cookie_manager_fini(void)
 	for (i = 0; i < COOKIE_M_N_VALUES; i++)
 		if (cm_ctx.values[i].value != NULL)
 			free((void *) cm_ctx.values[i].value);
+
+	err = treeview_fini();
+	if (err != NSERROR_OK) {
+		return err;
+	}
 
 	LOG("Finalised cookie manager");
 

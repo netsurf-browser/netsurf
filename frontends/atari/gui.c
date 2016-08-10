@@ -40,7 +40,6 @@
 #include "netsurf/cookie_db.h"
 #include "netsurf/url_db.h"
 #include "content/backing_store.h"
-#include "desktop/treeview.h"
 
 #include "atari/gemtk/gemtk.h"
 #include "atari/gui.h"
@@ -828,9 +827,6 @@ static void gui_quit(void)
     atari_hotlist_destroy();
     atari_cookie_manager_destroy();
 
-    /* shutdown netsurf treeview framework: */
-    treeview_fini();
-
     /* shutdown the toolbar framework: */
     toolbar_exit();
 
@@ -1036,9 +1032,6 @@ static void gui_init(int argc, char** argv)
 	menu_register( _AESapid, (char*)"  NetSurf ");
     }
     gemtk_wm_init();
-
-    /* Initialize the netsurf treeview framework with default font size: */
-    treeview_init(0);
 
     /* Initialize the specific treeview windows: */
     atari_global_history_init();

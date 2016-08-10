@@ -29,7 +29,6 @@
 #include "netsurf/keypress.h"
 #include "netsurf/plotters.h"
 #include "desktop/sslcert_viewer.h"
-#include "desktop/treeview.h"
 
 #include "gtk/plotters.h"
 #include "gtk/scaffolding.h"
@@ -176,11 +175,6 @@ nserror gtk_cert_verify(struct nsurl *url,
 {
 	struct nsgtk_crtvrfy_window *ncwin;
 	nserror res;
-
-	res = treeview_init(0);
-	if (res != NSERROR_OK) {
-		return res;
-	}
 
 	ncwin = malloc(sizeof(struct nsgtk_crtvrfy_window));
 	if (ncwin == NULL) {

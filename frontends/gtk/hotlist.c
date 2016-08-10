@@ -31,7 +31,6 @@
 #include "netsurf/keypress.h"
 #include "netsurf/plotters.h"
 #include "desktop/hotlist.h"
-#include "desktop/treeview.h"
 
 #include "gtk/compat.h"
 #include "gtk/plotters.h"
@@ -316,11 +315,6 @@ static nserror nsgtk_hotlist_init(void)
 
 	if (hotlist_window != NULL) {
 		return NSERROR_OK;
-	}
-
-	res = treeview_init(0);
-	if (res != NSERROR_OK) {
-		return res;
 	}
 
 	ncwin = malloc(sizeof(struct nsgtk_hotlist_window));

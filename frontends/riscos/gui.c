@@ -55,7 +55,6 @@
 #include "netsurf/cookie_db.h"
 #include "netsurf/url_db.h"
 #include "desktop/save_complete.h"
-#include "desktop/treeview.h"
 #include "content/backing_store.h"
 
 #include "riscos/gui.h"
@@ -1225,11 +1224,6 @@ static nserror gui_init(int argc, char** argv)
 	if (error) {
 		LOG("xwimp_open_template failed: 0x%x: %s", error->errnum, error->errmess);
 		die(error->errmess);
-	}
-
-	ret = treeview_init(12);
-	if (ret != NSERROR_OK) {
-		die("Failed to initialise treeview");
 	}
 
 	/* Initialise themes before dialogs */

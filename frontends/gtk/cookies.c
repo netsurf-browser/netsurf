@@ -29,7 +29,6 @@
 #include "netsurf/keypress.h"
 #include "netsurf/plotters.h"
 #include "desktop/cookie_manager.h"
-#include "desktop/treeview.h"
 
 #include "gtk/cookies.h"
 #include "gtk/plotters.h"
@@ -245,11 +244,6 @@ static nserror nsgtk_cookies_init(void)
 
 	if (cookie_window != NULL) {
 		return NSERROR_OK;
-	}
-
-	res = treeview_init(0);
-	if (res != NSERROR_OK) {
-		return res;
 	}
 
 	ncwin = malloc(sizeof(struct nsgtk_cookie_window));

@@ -24,6 +24,7 @@
 
 #include "utils/log.h"
 #include "utils/nsurl.h"
+#include "utils/nsoption.h"
 #include "netsurf/bitmap.h"
 #include "netsurf/content.h"
 #include "netsurf/plotters.h"
@@ -44,7 +45,7 @@
 #define REDRAW_MAX 8000
 
 struct treeview_globals {
-	bool initialised;
+	unsigned initialised;
 	int line_height;
 	int furniture_width;
 	int step_width;
@@ -3588,7 +3589,7 @@ static void treeview_init_plot_styles(int font_pt_size)
 
 	/* Text colour */
 	plot_style_even.text.family = PLOT_FONT_FAMILY_SANS_SERIF;
-	plot_style_even.text.size = font_pt_size * FONT_SIZE_SCALE;
+	plot_style_even.text.size = font_pt_size;
 	plot_style_even.text.weight = 400;
 	plot_style_even.text.flags = FONTF_NONE;
 	plot_style_even.text.foreground = ns_system_colour_char("WindowText");
@@ -3948,23 +3949,33 @@ static nserror treeview_init_furniture(void)
 
 
 /* Exported interface, documented in treeview.h */
-nserror treeview_init(int font_pt_size)
+nserror treeview_init(void)
 {
-	int font_px_size;
+	long long font_px_size;
+	long long font_pt_size;
 	nserror err;
 
-	if (tree_g.initialised == true)
+	if (tree_g.initialised > 0) {
+		tree_g.initialised++;
 		return NSERROR_OK;
+	}
 
 	LOG("Initialising treeview module");
 
-	if (font_pt_size <= 0)
-		font_pt_size = 11;
+	/* TODO: Should we add an extra `treeview_font_size` option for
+	 *       treeviews instead of reusing the html rendering default
+	 *       font size?
+	 */
+	font_pt_size = nsoption_int(font_size);
+	if (font_pt_size <= 0) {
+		font_pt_size = 11 * 10;
+	}
 
-	font_px_size = (font_pt_size * FIXTOINT(nscss_screen_dpi) + 36) / 72;
+	font_px_size = (font_pt_size * FIXTOINT(nscss_screen_dpi) /
+			10 + 36) / 72;
 	tree_g.line_height = (font_px_size * 8 + 3) / 6;
 
-	treeview_init_plot_styles(font_pt_size);
+	treeview_init_plot_styles(font_pt_size * FONT_SIZE_SCALE / 10);
 	treeview_init_resources();
 	err = treeview_init_furniture();
 	if (err != NSERROR_OK)
@@ -3976,7 +3987,7 @@ nserror treeview_init(int font_pt_size)
 	tree_g.icon_step = 23;
 	tree_g.move_offset = 18;
 
-	tree_g.initialised = true;
+	tree_g.initialised++;
 
 	LOG("Initialised treeview module");
 
@@ -3988,6 +3999,15 @@ nserror treeview_init(int font_pt_size)
 nserror treeview_fini(void)
 {
 	int i;
+
+	if (tree_g.initialised > 1) {
+		tree_g.initialised--;
+		return NSERROR_OK;
+
+	} else if (tree_g.initialised == 0) {
+		LOG("Warning: tried to finalise uninitialised treeview module");
+		return NSERROR_OK;
+	}
 
 	LOG("Finalising treeview module");
 
@@ -4004,7 +4024,7 @@ nserror treeview_fini(void)
 	guit->bitmap->destroy(plot_style_even.furn[TREE_FURN_CONTRACT].bmp);
 	guit->bitmap->destroy(plot_style_even.furn[TREE_FURN_CONTRACT].sel);
 
-	tree_g.initialised = false;
+	tree_g.initialised--;
 
 	LOG("Finalised treeview module");
 
