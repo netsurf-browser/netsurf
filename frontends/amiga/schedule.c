@@ -375,5 +375,6 @@ void ami_schedule_handle(struct MsgPort *nsmsgport)
 		LOG("timereq err = %d (should be 0)", timermsg->timereq.Request.io_Error);
 		ami_scheduler_run(timermsg);
 	};
+	LOG("timermsg %p (0)", timermsg);
 }
 

@@ -5550,7 +5550,7 @@ int main(int argc, char** argv)
 	/* Check for AltiVec */
 	uint32 altivec = 0;
 
-	GetCPUInfoTags(GCIT_VectorUnit, &altivec);
+	GetCPUInfoTags(GCIT_VectorUnit, &altivec, TAG_DONE);
 
 	if(altivec == VECTORTYPE_ALTIVEC) {
 		LOG("AltiVec detected");
