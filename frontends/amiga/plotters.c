@@ -124,11 +124,17 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool for
 		 * If we get a bit smarter about this we can lose the user option. */
 		if((depth > 8) && (force32bit == false)) friend = scrn->RastPort.BitMap;
 	}
+
+	/* OS3 is locked to using palette-mapped display even on RTG.
+	 * To change this, comment out the below and build with the similar OS4 lines above.
+	 * Various bits of RTG code are OS4-only and OS3 versions will need to be written,
+	 * however a brief test reveals a negative performance benefit, so this lock to a
+	 * palette-mapped display is most likely permanent.
+	 */
 #warning OS3 locked to palette-mapped modes
 	gg->palette_mapped = true;
 	if(depth > 8) depth = 8;
 #endif
-
 
 	/* Probably need to fix this next line */
 	if(gg->palette_mapped == true) nsoption_set_bool(font_antialiasing, false);
