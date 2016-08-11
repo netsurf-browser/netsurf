@@ -202,8 +202,8 @@ jpeg_cache_convert(struct content *c)
 		return bitmap;
 	}
 
-	jpeg_create_decompress(&cinfo);
 	cinfo.client_data = &setjmp_buffer;
+	jpeg_create_decompress(&cinfo);
 
 	/* setup data source */
 	source_mgr.next_input_byte = source_data;
@@ -305,8 +305,8 @@ static bool nsjpeg_convert(struct content *c)
 		return false;
 	}
 
-	jpeg_create_decompress(&cinfo);
 	cinfo.client_data = &setjmp_buffer;
+	jpeg_create_decompress(&cinfo);
 	source_mgr.next_input_byte = (unsigned char *) data;
 	source_mgr.bytes_in_buffer = size;
 	cinfo.src = &source_mgr;
