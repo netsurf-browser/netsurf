@@ -45,6 +45,8 @@ static struct nscallback *tioreq;
 struct Device *TimerBase;
 #ifdef __amigaos4__
 struct TimerIFace *ITimer;
+#else
+static struct MsgPort *schedule_msgport = NULL;
 #endif
 
 static PblHeap *schedule_list;
@@ -290,6 +292,9 @@ static void ami_schedule_close_timer(void)
 nserror ami_schedule_create(struct MsgPort *msgport)
 {
 	ami_schedule_open_timer(msgport);
+#ifndef __amigaos4__
+	schedule_msgport = msgport;
+#endif
 	schedule_list = pblHeapNew();
 	if(schedule_list == PBL_ERROR_OUT_OF_MEMORY) return NSERROR_NOMEM;
 
@@ -328,7 +333,7 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 							ASOIOR_Duplicate, tioreq,
 							TAG_DONE);
 #else
-	nscb = (struct nscallback *)CreateIORequest(msgport, sizeof(struct nscallback));
+	nscb = (struct nscallback *)CreateIORequest(schedule_msgport, sizeof(struct nscallback));
 	*nscb = *tioreq;
 #endif
 	if(!nscb) return NSERROR_NOMEM;
