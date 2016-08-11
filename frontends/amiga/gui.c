@@ -3006,6 +3006,9 @@ static void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen, BOOL d
 		locked_screen = FALSE;
 	}
 
+	/* If this is our own screen, wait for visitor windows to close */
+	if(screen_signal == -1) return;
+
 	if(CloseScreen(scrn) == TRUE) {
 		if(screen_signal != -1) {
 			FreeSignal(screen_signal);
@@ -3015,9 +3018,6 @@ static void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen, BOOL d
 		return;
 	}
 	if(donotwait == TRUE) return;
-
-	/* If this is our own screen, wait for visitor windows to close */
-	if(screen_signal == -1) return;
 
 	ULONG scrnsig = 1 << screen_signal;
 	LOG("Waiting for visitor windows to close... (signal)");
