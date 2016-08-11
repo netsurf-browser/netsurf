@@ -84,10 +84,6 @@ static nserror ami_schedule_add_timer_event(struct nscallback *nscb, int t)
 	tv.Seconds = time_us / 1000000;
 	tv.Microseconds = time_us % 1000000;
 
-	if(tv.Microseconds >= 1000000) {
-		LOG("Microseconds invalid value: %ld", nscb->tv.Microseconds);
-	}
-
 	GetSysTime(&nscb->tv);
 	AddTime(&nscb->tv, &tv); // now contains time when event occurs (for debug and heap sorting)
 
@@ -171,7 +167,6 @@ static nserror schedule_remove(void (*callback)(void *p), void *p, bool abort)
 	nscb = ami_schedule_locate(callback, p, true);
 
 	if(nscb != NULL) {
-		LOG("deleted callback %p", nscb);
 		if(abort == true) ami_schedule_remove_timer_event(nscb);
 		FreeSysObject(ASOT_IOREQUEST, nscb);
 		pblHeapConstruct(schedule_list);
@@ -253,26 +248,12 @@ static bool ami_scheduler_run(struct nscallback *nscb)
 	void (*callback)(void *p);
 	void *p;
 
-	LOG("callback %p", nscb);
-	
-	/*** vvv Debugging vvv ***/
-	struct TimeVal tv;
-	GetSysTime(&tv);
-	if(CmpTime(&tv, &nscb->tv) > 0) {
-		LOG("Expected scheduled time of event has not passed: %ld.%ld < %ld.%ld", tv.Seconds, tv.Microseconds, nscb->tv.Seconds, nscb->tv.Microseconds);
-	}
-	/*** ^^^ Debugging ^^^ ***/
-	
 	callback = nscb->callback;
 	p = nscb->p;
 
 	schedule_remove(callback, p, false); /* this does a lookup as we don't know if we're the first item on the heap */
 
-	LOG("Running scheduled callback %p with arg %p", callback, p);
 	callback(p);
-	LOG("Callback finished...");
-	
-	ami_schedule_dump();
 	return true;
 }
 
@@ -335,8 +316,6 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 
 	if(t == 0) t = 1;
 
-	LOG("Scheduling callback %p with arg %p at time %d", callback, p, t);
-
 	if(schedule_list == NULL) return NSERROR_INIT_FAILED;
 	if(t < 0) return schedule_remove(callback, p, true);
 
@@ -353,8 +332,6 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 	*nscb = *tioreq;
 #endif
 	if(!nscb) return NSERROR_NOMEM;
-
-	LOG("new nscb %p", nscb);
 
 	if (ami_schedule_add_timer_event(nscb, t) != NSERROR_OK)
 		return NSERROR_NOMEM;
@@ -377,10 +354,7 @@ void ami_schedule_handle(struct MsgPort *nsmsgport)
 	struct nscallback *timermsg;
 
 	while((timermsg = (struct nscallback *)GetMsg(nsmsgport))) {
-		LOG("timermsg %p", timermsg);
-		LOG("timereq err = %d (should be 0)", timermsg->timereq.Request.io_Error);
 		ami_scheduler_run(timermsg);
 	};
-	LOG("timermsg %p (0)", timermsg);
 }
 
