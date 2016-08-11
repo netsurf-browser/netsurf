@@ -159,11 +159,12 @@ static nserror ami_schedule_reschedule(struct nscallback *nscb, int t)
  *
  * \param  callback  callback function
  * \param  p         user parameter, passed to callback function
+ * \param  abort     abort pending timer
  *
  * All scheduled callbacks matching both callback and p are removed.
  */
 
-static nserror schedule_remove(void (*callback)(void *p), void *p)
+static nserror schedule_remove(void (*callback)(void *p), void *p, bool abort)
 {
 	struct nscallback *nscb;
 
@@ -171,7 +172,7 @@ static nserror schedule_remove(void (*callback)(void *p), void *p)
 
 	if(nscb != NULL) {
 		LOG("deleted callback %p", nscb);
-		ami_schedule_remove_timer_event(nscb);
+		if(abort == true) ami_schedule_remove_timer_event(nscb);
 		FreeSysObject(ASOT_IOREQUEST, nscb);
 		pblHeapConstruct(schedule_list);
 	}
@@ -232,6 +233,11 @@ static void ami_schedule_dump(void)
 		LOG("nscb: %p, at %d-%d-%d %d:%d:%d.%d, callback: %p, %p",
 			nscb, clockdata.mday, clockdata.month, clockdata.year, clockdata.hour, clockdata.min, clockdata.sec, 
 			nscb->tv.Microseconds, nscb->callback, nscb->p);
+		if(CheckIO((struct IORequest *)nscb) == NULL) {
+			LOG("-> ACTIVE");
+		} else {
+			LOG("-> COMPLETE");
+		}
 	};
 
 	pblIteratorFree(iterator);
@@ -260,7 +266,7 @@ static bool ami_scheduler_run(struct nscallback *nscb)
 	callback = nscb->callback;
 	p = nscb->p;
 
-	schedule_remove(callback, p); /* this does a lookup as we don't know if we're the first item on the heap */
+	schedule_remove(callback, p, false); /* this does a lookup as we don't know if we're the first item on the heap */
 
 	LOG("Running scheduled callback %p with arg %p", callback, p);
 	callback(p);
@@ -332,7 +338,7 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 	LOG("Scheduling callback %p with arg %p at time %d", callback, p, t);
 
 	if(schedule_list == NULL) return NSERROR_INIT_FAILED;
-	if(t < 0) return schedule_remove(callback, p);
+	if(t < 0) return schedule_remove(callback, p, true);
 
 	if ((nscb = ami_schedule_locate(callback, p, false))) {
 		return ami_schedule_reschedule(nscb, t);
