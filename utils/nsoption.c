@@ -144,6 +144,14 @@ static void nsoption_validate(struct nsoption_s *opts, struct nsoption_s *defs)
 	int cloop;
 	bool black = true;
 
+	if (opts[NSOPTION_treeview_font_size].value.i  < 50) {
+		opts[NSOPTION_treeview_font_size].value.i = 50;
+	}
+
+	if (opts[NSOPTION_treeview_font_size].value.i > 1000) {
+		opts[NSOPTION_treeview_font_size].value.i = 1000;
+	}
+
 	if (opts[NSOPTION_font_size].value.i  < 50) {
 		opts[NSOPTION_font_size].value.i = 50;
 	}

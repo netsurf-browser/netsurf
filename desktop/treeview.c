@@ -3962,11 +3962,7 @@ nserror treeview_init(void)
 
 	LOG("Initialising treeview module");
 
-	/* TODO: Should we add an extra `treeview_font_size` option for
-	 *       treeviews instead of reusing the html rendering default
-	 *       font size?
-	 */
-	font_pt_size = nsoption_int(font_size);
+	font_pt_size = nsoption_int(treeview_font_size);
 	if (font_pt_size <= 0) {
 		font_pt_size = 11 * 10;
 	}

@@ -314,6 +314,12 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	 */
 	nsoption_set_uint(disc_cache_size, 0);
 
+	/* Override core default treeview font size with 12 pt.
+	 * TODO: 12 is the normal desktop font size, but users might run
+	 *       with something different.
+	 */
+	nsoption_set_int(treeview_font_size, 12 * 10);
+
 	/* set default system colours for riscos ui */
 	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_ActiveBorder, 0x00000000);
 	set_colour_from_wimp(defaults, wimp_COLOUR_CREAM, NSOPTION_sys_colour_ActiveCaption, 0x00dddddd);
