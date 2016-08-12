@@ -35,7 +35,9 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
+#include "utils/ascii.h"
 #include "utils/config.h"
 #include "utils/log.h"
 #include "utils/url.h"
@@ -92,7 +94,7 @@ nserror url_unescape(const char *str, size_t length,
 			char c1 = *(str + 1);
 			char c2 = *(str + 2);
 
-			if (c == '%' && isxdigit(c1) && isxdigit(c2)) {
+			if (c == '%' && ascii_is_hex(c1) && ascii_is_hex(c2)) {
 				c = xdigit_to_hex(c1) << 4 | xdigit_to_hex(c2);
 				str += 2;
 			}
