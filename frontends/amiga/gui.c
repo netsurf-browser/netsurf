@@ -164,6 +164,10 @@
 #define EXTRADOWN (IECODE_5TH_BUTTON)
 #define EXTRAUP   (IECODE_5TH_BUTTON | IECODE_UP_PREFIX)
 
+/* Left OR Right Shift/Alt keys */
+#define NSA_QUAL_SHIFT (IEQUALIFIER_RSHIFT | IEQUALIFIER_LSHIFT)
+#define NSA_QUAL_ALT (IEQUALIFIER_RALT | IEQUALIFIER_LALT)
+
 #ifdef __amigaos4__
 #define NSA_STATUS_TEXT GA_Text
 #else
@@ -1238,45 +1242,33 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
 	switch(keycode)
 	{
 		case RAWKEY_CRSRUP:
-			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
-			{
+			if(ie->ie_Qualifier & NSA_QUAL_SHIFT) {
 				nskey = NS_KEY_PAGE_UP;
-			}
-			else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
-			{
+			} else if(ie->ie_Qualifier & NSA_QUAL_ALT) {
 				nskey = NS_KEY_TEXT_START;
 			}
 			else nskey = NS_KEY_UP;
 		break;
 		case RAWKEY_CRSRDOWN:
-			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
-			{
+			if(ie->ie_Qualifier & NSA_QUAL_SHIFT) {
 				nskey = NS_KEY_PAGE_DOWN;
-			}
-			else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
-			{
+			} else if(ie->ie_Qualifier & NSA_QUAL_ALT) {
 				nskey = NS_KEY_TEXT_END;
 			}
 			else nskey = NS_KEY_DOWN;
 		break;
 		case RAWKEY_CRSRLEFT:
-			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
-			{
+			if(ie->ie_Qualifier & NSA_QUAL_SHIFT) {
 				nskey = NS_KEY_LINE_START;
-			}
-			else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
-			{
+			}else if(ie->ie_Qualifier & NSA_QUAL_ALT) {
 				nskey = NS_KEY_WORD_LEFT;
 			}
 			else nskey = NS_KEY_LEFT;
 		break;
 		case RAWKEY_CRSRRIGHT:
-			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
-			{
+			if(ie->ie_Qualifier & NSA_QUAL_SHIFT) {
 				nskey = NS_KEY_LINE_END;
-			}
-			else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
-			{
+			}else if(ie->ie_Qualifier & NSA_QUAL_ALT) {
 				nskey = NS_KEY_WORD_RIGHT;
 			}
 			else nskey = NS_KEY_RIGHT;
@@ -1297,25 +1289,25 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
 			nskey = NS_KEY_TEXT_END;
 		break;
 		case RAWKEY_BACKSPACE:
-			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
-			{
+			if(ie->ie_Qualifier & NSA_QUAL_SHIFT) {
 				nskey = NS_KEY_DELETE_LINE_START;
+			} else {
+				nskey = NS_KEY_DELETE_LEFT;
 			}
-			else nskey = NS_KEY_DELETE_LEFT;
 		break;
 		case RAWKEY_DEL:
-			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
-			{
+			if(ie->ie_Qualifier & NSA_QUAL_SHIFT) {
 				nskey = NS_KEY_DELETE_LINE_END;
+			} else {
+				nskey = NS_KEY_DELETE_RIGHT;
 			}
-			else nskey = NS_KEY_DELETE_RIGHT;
 		break;
 		case RAWKEY_TAB:
-			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
-			{
+			if(ie->ie_Qualifier & NSA_QUAL_SHIFT) {
 				nskey = NS_KEY_SHIFT_TAB;
+			} else {
+				nskey = NS_KEY_TAB;
 			}
-			else nskey = NS_KEY_TAB;
 		break;
 		case RAWKEY_F5:
 		case RAWKEY_F8:
@@ -1369,18 +1361,15 @@ static void ami_update_quals(struct gui_window_2 *gwin)
 #endif
 	gwin->key_state = 0;
 
-	if((quals & IEQUALIFIER_LSHIFT) || (quals & IEQUALIFIER_RSHIFT)) 
-	{
+	if(quals & NSA_QUAL_SHIFT) {
 		gwin->key_state |= BROWSER_MOUSE_MOD_1;
 	}
 
-	if(quals & IEQUALIFIER_CONTROL) 
-	{
+	if(quals & IEQUALIFIER_CONTROL) {
 		gwin->key_state |= BROWSER_MOUSE_MOD_2;
 	}
 
-	if((quals & IEQUALIFIER_LALT) || (quals & IEQUALIFIER_RALT)) 
-	{
+	if(quals & NSA_QUAL_ALT) {
 		gwin->key_state |= BROWSER_MOUSE_MOD_3;
 	}
 }
