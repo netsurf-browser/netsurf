@@ -32,12 +32,12 @@
  */
 
 #include <assert.h>
-#include <ctype.h>
 #include <libwapcaplet/libwapcaplet.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 
+#include "utils/ascii.h"
 #include "utils/corestrings.h"
 #include "utils/errors.h"
 #include "utils/idna.h"
@@ -47,28 +47,6 @@
 
 /* Define to enable NSURL debugging */
 #undef NSURL_DEBUG
-
-/** ascii character codes */
-enum ascii_codepoints {
-	ASCII_NUL = 0,
-	ASCII_SPC = 0x20,
-	ASCII_FF = 0x0C,
-	ASCII_NL = 0x0A,
-	ASCII_CR = 0x0D,
-	ASCII_HT = 0x09,
-	ASCII_VT = 0x0B,
-	ASCII_PLUS = 0x2b,
-	ASCII_MINUS = 0x2d,
-	ASCII_FULLSTOP = 0x2e,
-	ASCII_SLASH = 0x2F,
-	ASCII_0 = 0x30,
-	ASCII_9 = 0x39,
-	ASCII_COLON = 0x3A,
-	ASCII_A = 0x41,
-	ASCII_Z = 0x5A,
-	ASCII_a = 0x61,
-	ASCII_z = 0x7A
-};
 
 /**
  * nsurl scheme type
@@ -208,79 +186,6 @@ inline static char digit2uppercase_hex(unsigned char digit) {
 }
 
 /**
- * determines if a character is a whitespace in the ascii character encoding
- *
- * whitespace characters are space, form feed, new line, carrige
- * return, horizontal tab and vertical tab.
- *
- * \param c character to classify
- * \return zero if the character is not whitespace else 1
- */
-inline static int is_ascii_space(int c)
-{
-	if (c == ASCII_SPC ||
-	    c == ASCII_FF ||
-	    c == ASCII_NL ||
-	    c == ASCII_CR ||
-	    c == ASCII_HT ||
-	    c == ASCII_VT) {
-		return 1;
-	}
-	return 0;
-}
-
-/**
- * determine if a character is alphabetical in the ascii character encoding
- *
- * characters in the range A-Z and a-z are considered alphabetical.
- *
- * \param c character to classify
- * \return zero if the character is not alphabetical else 1
- */
-inline static int is_ascii_alpha(int c)
-{
-	if (((c >= ASCII_A) && (c <= ASCII_Z)) ||
-	    ((c >= ASCII_a) && (c <= ASCII_z))) {
-		return 1;
-	}
-	return 0;
-}
-
-/**
- * determine if a character is a number in the ascii character encoding
- *
- * characters in the range 0-9 are considered numbers.
- *
- * \param c character to classify
- * \return 1 if the character is a number else 0
- */
-inline static int is_ascii_digit(int c)
-{
-	if ((c >= ASCII_0) && (c <= ASCII_9)) {
-		return 1;
-	}
-	return 0;
-}
-
-/**
- * determine if a character is alphanumerical in the ascii character encoding
- *
- * characters in the range A-Z, a-z and 0-9 are considered alphanumeric.
- *
- * \param c character to classify
- * \return zero if the character is not alphanumerical else 1
- */
-inline static int is_ascii_alnum(int c)
-{
-	if (((c >= ASCII_0) && (c <= ASCII_9)) ||
-	    ((c >= ASCII_A) && (c <= ASCII_Z)) ||
-	    ((c >= ASCII_a) && (c <= ASCII_z))) {
-		return 1;
-	}
-	return 0;
-}
-
-/**
  * determine if a character is unreserved
  *
  * \param c character to classify.
@@ -397,7 +302,7 @@ static void nsurl__get_string_markers(const char * const url_s,
 				      0, 0, 0,   0, NSURL_SCHEME_OTHER };
 
 	/* Skip any leading whitespace in url_s */
-	while (is_ascii_space(*pos))
+	while (ascii_is_space(*pos))
 		pos++;
 
 	/* Record start point */
@@ -406,7 +311,7 @@ static void nsurl__get_string_markers(const char * const url_s,
 	marker.scheme_end = marker.authority = marker.colon_first = marker.at =
 			marker.colon_last = marker.path = marker.start;
 
-	if (*pos == ASCII_NUL) {
+	if (*pos == '\0') {
 		/* Nothing but whitespace, early exit */
 		marker.query = marker.fragment = marker.end = marker.path;
 		*markers = marker;
@@ -414,14 +319,12 @@ static void nsurl__get_string_markers(const char * const url_s,
 	}
 
 	/* Get scheme */
-	if (is_ascii_alpha(*pos)) {
+	if (ascii_is_alpha(*pos)) {
 		pos++;
 
-		while (*pos != ASCII_COLON && *pos != ASCII_NUL) {
-			if (!is_ascii_alnum(*pos) &&
-			    (*pos != ASCII_PLUS) &&
-			    (*pos != ASCII_MINUS) &&
-			    (*pos != ASCII_FULLSTOP)) {
+		while (*pos != ':' && *pos != '\0') {
+			if (!ascii_is_alphanumerical(*pos) && (*pos != '+') &&
+					(*pos != '-') && (*pos != '.')) {
 				/* This character is not valid in the
 				 * scheme */
 				break;
@@ -429,7 +332,7 @@ static void nsurl__get_string_markers(const char * const url_s,
 			pos++;
 		}
 
-		if (*pos == ASCII_COLON) {
+		if (*pos == ':') {
 			/* This delimits the end of the scheme */
 			size_t off;
 
@@ -607,9 +510,9 @@ static void nsurl__get_string_markers(const char * const url_s,
 	/* We got to the end of url_s.
 	 * Need to skip back over trailing whitespace to find end of URL */
 	pos--;
-	if (pos >= url_s && is_ascii_space(*pos)) {
+	if (pos >= url_s && ascii_is_space(*pos)) {
 		trailing_whitespace = true;
-		while (pos >= url_s && is_ascii_space(*pos))
+		while (pos >= url_s && ascii_is_space(*pos))
 			pos--;
 	}
 
@@ -790,7 +693,7 @@ static inline int nsurl__get_ascii_offset(char c1, char c2)
 	int offset;
 
 	/* Use 1st char as most significant hex digit */
-	if (is_ascii_digit(c1))
+	if (ascii_is_digit(c1))
 		offset = 16 * (c1 - '0');
 	else if (c1 >= 'a' && c1 <= 'f')
 		offset = 16 * (c1 - 'a' + 10);
@@ -801,7 +704,7 @@ static inline int nsurl__get_ascii_offset(char c1, char c2)
 		return -1;
 
 	/* Use 2nd char as least significant hex digit and sum */
-	if (is_ascii_digit(c2))
+	if (ascii_is_digit(c2))
 		offset += c2 - '0';
 	else if (c2 >= 'a' && c2 <= 'f')
 		offset += c2 - 'a' + 10;
@@ -953,7 +856,7 @@ static nserror nsurl__create_from_section(const char * const url_s,
 			length += 2;
 
 		} else if ((section == URL_SCHEME || section == URL_HOST) &&
-				isupper(*pos)) {
+				ascii_is_alpha_upper(*pos)) {
 			/* Lower case this letter */
 
 			if (copy_len > 0) {
@@ -963,7 +866,7 @@ static nserror nsurl__create_from_section(const char * const url_s,
 				copy_len = 0;
 			}
 			/* Copy lower cased letter into normalised URL */
-			*(pos_norm++) = tolower(*pos);
+			*(pos_norm++) = ascii_to_lower(*pos);
 			pos_url_s = pos + 1;
 
 		} else {
@@ -1058,7 +961,7 @@ static nserror nsurl__create_from_section(const char * const url_s,
 				 */
 				sec_start += colon - pegs->at;
 				while (++sec_start < norm_start + length) {
-					if (!is_ascii_digit(*sec_start)) {
+					if (!ascii_is_digit(*sec_start)) {
 						/* Character after port isn't a
 						 * digit; not a port separator
 						 */
