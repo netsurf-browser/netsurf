@@ -31,6 +31,14 @@
 # Options relating to all versions of NetSurf
 # ----------------------------------------------------------------------------
 
+# Enable NetSurf's use of libcurl for fetching over http(s)
+# Valid options: YES, NO
+NETSURF_USE_CURL := YES
+
+# Enable NetSurf's use of openssl for fetching over https
+# Valid options: YES, NO
+NETSURF_USE_OPENSSL := YES
+
 # Enable NetSurf's use of libnsbmp for displaying BMPs and ICOs
 # Valid options: YES, NO
 NETSURF_USE_BMP := YES
