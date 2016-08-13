@@ -290,10 +290,12 @@ nserror fetcher_init(void)
 {
 	nserror ret;
 
+#ifdef WITH_CURL
 	ret = fetch_curl_register();
 	if (ret != NSERROR_OK) {
 		return ret;
 	}
+#endif
 
 	ret = fetch_data_register();
 	if (ret != NSERROR_OK) {

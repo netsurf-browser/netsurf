@@ -511,14 +511,6 @@ $(eval $(call pkg_config_find_and_add,libcss,CSS))
 $(eval $(call pkg_config_find_and_add,libdom,DOM))
 $(eval $(call pkg_config_find_and_add,libnsutils,nsutils))
 $(eval $(call pkg_config_find_and_add,libutf8proc,utf8proc))
-$(eval $(call pkg_config_find_and_add,openssl,OpenSSL))
-# freemint does not support pkg-config for libcurl
-ifeq ($(HOST),mint)
-    CFLAGS += $(shell curl-config --cflags)
-    LDFLAGS += $(shell curl-config --libs)
-else
-    $(eval $(call pkg_config_find_and_add,libcurl,Curl))
-endif
 
 # Common libraries without pkg-config support
 LDFLAGS += -lz
@@ -529,8 +521,19 @@ LDFLAGS += -lz
 NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
 NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
 NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
+NETSURF_FEATURE_CURL_CFLAGS := -DWITH_CURL
 NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
+NETSURF_FEATURE_OPENSSL_CFLAGS := -DWITH_OPENSSL
 NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
+
+$(eval $(call pkg_config_find_and_add_enabled,OPENSSL,openssl,OpenSSL))
+# freemint does not support pkg-config for libcurl
+ifeq ($(HOST),mint)
+    CFLAGS += $(shell curl-config --cflags)
+    LDFLAGS += $(shell curl-config --libs)
+else
+    $(eval $(call pkg_config_find_and_add_enabled,CURL,libcurl,Curl))
+endif
 
 $(eval $(call pkg_config_find_and_add_enabled,PNG,libpng,PNG))
 $(eval $(call pkg_config_find_and_add_enabled,BMP,libnsbmp,BMP))
