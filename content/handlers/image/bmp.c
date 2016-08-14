@@ -166,7 +166,6 @@ static bool nsbmp_convert(struct content *c)
 
 	/* exit as a success */
 	bmp->bitmap = bmp->bmp->bitmap;
-	guit->bitmap->modified(bmp->bitmap);
 
 	content_set_ready(c);
 	content_set_done(c);
@@ -182,11 +181,18 @@ static bool nsbmp_redraw(struct content *c, struct content_redraw_data *data,
 	nsbmp_content *bmp = (nsbmp_content *) c;
 	bitmap_flags_t flags = BITMAPF_NONE;
 
-	if (bmp->bmp->decoded == false)
-		if (bmp_decode(bmp->bmp) != BMP_OK)
+	if (bmp->bmp->decoded == false) {
+		bmp_result res;
+		res = bmp_decode(bmp->bmp);
+		/* allow short or incomplete image data giving a partial image*/
+		if ((res != BMP_OK) &&
+		    (res != BMP_INSUFFICIENT_DATA) &&
+		    (res != BMP_DATA_ERROR)) {
 			return false;
+		}
 
-	bmp->bitmap = bmp->bmp->bitmap;
+		guit->bitmap->modified(bmp->bitmap);
+	}
 
 	if (data->repeat_x)
 		flags |= BITMAPF_REPEAT_X;
