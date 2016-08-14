@@ -570,8 +570,10 @@ void corestrings_fini(void)
 #undef CSS_DOM_STRING_UNREF
 
 	/* nsurl URLs */
-	if (corestring_nsurl_about_blank != NULL)
+	if (corestring_nsurl_about_blank != NULL) {
 		nsurl_unref(corestring_nsurl_about_blank);
+		corestring_nsurl_about_blank = NULL;
+	}
 }
 
 

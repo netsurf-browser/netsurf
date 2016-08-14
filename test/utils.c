@@ -29,6 +29,7 @@
 #include <check.h>
 
 #include "utils/string.h"
+#include "utils/corestrings.h"
 
 #define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
 #define SLEN(x) (sizeof((x)) - 1)
@@ -128,6 +129,58 @@ static TCase *squash_whitespace_case_create(void)
 	return tc;
 }
 
+
+START_TEST(corestrings_init_fini_test)
+{
+	nserror res;
+
+	res = corestrings_init();
+	ck_assert_int_eq(res, NSERROR_OK);
+
+	corestrings_fini();
+}
+END_TEST
+
+START_TEST(corestrings_double_init_test)
+{
+	nserror res;
+
+	res = corestrings_init();
+	ck_assert_int_eq(res, NSERROR_OK);
+
+	res = corestrings_init();
+	ck_assert_int_eq(res, NSERROR_OK);
+
+	corestrings_fini();
+}
+END_TEST
+
+START_TEST(corestrings_double_fini_test)
+{
+	nserror res;
+
+	res = corestrings_init();
+	ck_assert_int_eq(res, NSERROR_OK);
+
+	corestrings_fini();
+
+	corestrings_fini();
+}
+END_TEST
+
+
+static TCase *corestrings_case_create(void)
+{
+	TCase *tc;
+	tc = tcase_create("Corestrings");
+
+	tcase_add_test(tc, corestrings_init_fini_test);
+	tcase_add_test(tc, corestrings_double_init_test);
+	tcase_add_test(tc, corestrings_double_fini_test);
+
+	return tc;
+}
+
 static Suite *utils_suite_create(void)
 {
 	Suite *s;
@@ -135,6 +188,7 @@ static Suite *utils_suite_create(void)
 
 	suite_add_tcase(s, human_friendly_bytesize_case_create());
 	suite_add_tcase(s, squash_whitespace_case_create());
+	suite_add_tcase(s, corestrings_case_create());
 
 	return s;
 }

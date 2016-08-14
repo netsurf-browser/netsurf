@@ -51,6 +51,7 @@ urlescape_SRCS := utils/url.c test/log.c test/urlescape.c
 
 # utility test sources
 utils_SRCS := utils/utils.c utils/messages.c utils/hashtable.c \
+		utils/corestrings.c utils/nsurl.c utils/idna.c \
 		test/log.c test/utils.c
 
 # time test sources
