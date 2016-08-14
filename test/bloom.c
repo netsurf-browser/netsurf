@@ -48,7 +48,7 @@ static struct bloom_filter *dict_bloom;
  */
 static void dict_bloom_create(void)
 {
-	FILE *dictf; 
+	FILE *dictf;
 	char buf[BUFSIZ];
 	int i;
 
@@ -84,6 +84,7 @@ START_TEST(bloom_create_test)
 {
 	struct bloom_filter *b;
 	b = bloom_create(BLOOM_SIZE);
+	ck_assert(b != NULL);
 
 	bloom_insert_str(b, "NetSurf", 7);
 	ck_assert(bloom_search_str(b, "NetSurf", 7));
@@ -95,9 +96,43 @@ START_TEST(bloom_create_test)
 }
 END_TEST
 
+/**
+ * insert empty string test
+ */
+START_TEST(bloom_insert_empty_str_test)
+{
+	struct bloom_filter *b;
+	b = bloom_create(BLOOM_SIZE);
+	ck_assert(b != NULL);
+
+	bloom_insert_str(b, NULL, 7);
+
+	ck_assert(bloom_items(b) == 1);
+
+	bloom_destroy(b);
+}
+END_TEST
+
+
+/**
+ * Basic API creation test case
+ */
+static TCase *bloom_api_case_create(void)
+{
+	TCase *tc;
+
+	tc = tcase_create("Creation");
+
+	tcase_add_test(tc, bloom_create_test);
+	tcase_add_test(tc, bloom_insert_empty_str_test);
+
+	return tc;
+}
+
+
 START_TEST(bloom_match_test)
 {
-	FILE *dictf; 
+	FILE *dictf;
 	char buf[BUFSIZ];
 	int i;
 
@@ -112,9 +147,29 @@ START_TEST(bloom_match_test)
 }
 END_TEST
 
+
+/**
+ * Matching entry test case
+ */
+static TCase *bloom_match_case_create(void)
+{
+	TCase *tc;
+
+	tc = tcase_create("Match");
+
+	tcase_add_checked_fixture(tc,
+				  dict_bloom_create,
+				  dict_bloom_teardown);
+
+	tcase_add_test(tc, bloom_match_test);
+
+	return tc;
+}
+
+
 START_TEST(bloom_falsepositive_test)
 {
-	FILE *dictf; 
+	FILE *dictf;
 	char buf[BUFSIZ];
 	int i;
 	int false_positives = 0;
@@ -135,7 +190,7 @@ START_TEST(bloom_falsepositive_test)
 	}
 	fclose(dictf);
 
-	printf("false positive rate %d%%/%d%%\n", 
+	printf("false positive rate %d%%/%d%%\n",
 	       (false_positives * 100)/BLOOM_SIZE,
 		FALSE_POSITIVE_RATE);
 	ck_assert(false_positives < ((BLOOM_SIZE * FALSE_POSITIVE_RATE) / 100));
@@ -143,47 +198,33 @@ START_TEST(bloom_falsepositive_test)
 END_TEST
 
 
-/* Suite */
+/**
+ * Not matching test case
+ */
+static TCase *bloom_rate_case_create(void)
+{
+	TCase *tc;
+
+	tc = tcase_create("False positive rate");
+
+	tcase_add_checked_fixture(tc,
+				  dict_bloom_create,
+				  dict_bloom_teardown);
+
+	tcase_add_test(tc, bloom_falsepositive_test);
+
+	return tc;
+}
+
 
 static Suite *bloom_suite(void)
 {
 	Suite *s;
-	TCase *tc_create;
-	TCase *tc_match;
-	TCase *tc_falsepositive;
-
 	s = suite_create("Bloom filter");
 
-	/* Basic API creation */
-	tc_create = tcase_create("Creation");
-
-	tcase_add_test(tc_create, bloom_create_test);
-
-	suite_add_tcase(s, tc_create);
-
-
-	/* Matching entry tests */
-	tc_match = tcase_create("Match");
-
-	tcase_add_checked_fixture(tc_match,
-				  dict_bloom_create,
-				  dict_bloom_teardown);
-
-	tcase_add_test(tc_match, bloom_match_test);
-
-	suite_add_tcase(s, tc_match);
-
-
-	/* Not matching tests */
-	tc_falsepositive = tcase_create("False positive rate");
-
-	tcase_add_checked_fixture(tc_falsepositive,
-				  dict_bloom_create,
-				  dict_bloom_teardown);
-
-	tcase_add_test(tc_falsepositive, bloom_falsepositive_test);
-
-	suite_add_tcase(s, tc_falsepositive);
+	suite_add_tcase(s, bloom_api_case_create());
+	suite_add_tcase(s, bloom_match_case_create());
+	suite_add_tcase(s, bloom_rate_case_create());
 
 	return s;
 }
