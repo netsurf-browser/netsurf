@@ -80,11 +80,11 @@ nsgtk_about_dialog_response(GtkDialog *dialog,
 	switch (response_id) {
 
 	case ABOUT_RESPONSE_ID_LICENCE:
-		about_open("about:credits");
+		about_open("about:licence");
 		break;
 
 	case ABOUT_RESPONSE_ID_CREDITS:
-		about_open("about:licence");
+		about_open("about:credits");
 		break;
 	}
 
