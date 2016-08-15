@@ -1079,12 +1079,17 @@ static void gui_init2(int argc, char** argv)
 	if(!notalreadyrunning)
 	{
 		STRPTR sendcmd = NULL;
+		char newtab[4] = "\0";
+
+		if(nsoption_bool(tab_new_session) == true) {
+			strcpy(newtab, "TAB");
+		}
 
 		if(temp_homepage_url) {
-			sendcmd = ASPrintf("OPEN \"%s\" NEW",temp_homepage_url);
+			sendcmd = ASPrintf("OPEN \"%s\" NEW%s", temp_homepage_url, newtab);
 			free(temp_homepage_url);
 		} else {
-			sendcmd = ASPrintf("OPEN \"%s\" NEW",nsoption_charp(homepage_url));
+			sendcmd = ASPrintf("OPEN \"%s\" NEW%s", nsoption_charp(homepage_url), newtab);
 		}
 		ami_arexx_self(sendcmd);
 

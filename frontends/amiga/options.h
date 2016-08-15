@@ -41,6 +41,7 @@ NSOPTION_BOOL(new_tab_is_active, false)
 NSOPTION_BOOL(new_tab_last, false)
 NSOPTION_BOOL(tab_close_warn, true)
 NSOPTION_BOOL(tab_always_show, false)
+NSOPTION_BOOL(tab_new_session, false) /* When NetSurf is already running, open new tab */
 NSOPTION_BOOL(kiosk_mode, false)
 NSOPTION_STRING(search_engines_file, "PROGDIR:Resources/SearchEngines")
 NSOPTION_STRING(arexx_dir, "PROGDIR:Rexx")
