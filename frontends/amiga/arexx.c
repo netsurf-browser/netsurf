@@ -280,12 +280,20 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	}
 	else if(cmd->ac_ArgList[2])
 	{
-		browser_window_create(BW_CREATE_HISTORY |
+		if(gw == NULL) {
+			browser_window_create(BW_CREATE_HISTORY,
+				      url,
+				      NULL,
+				      NULL,
+				      NULL);
+		} else {
+			browser_window_create(BW_CREATE_HISTORY |
 				      BW_CREATE_TAB,
 				      url,
 				      NULL,
 				      gw->bw,
 				      NULL);
+		}
 	}
 	else if(cmd->ac_ArgList[1])
 	{
