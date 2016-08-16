@@ -76,6 +76,7 @@ void gtk_fetch_filetype_init(const char *mimefile)
 	hash_add(mime_hash, "mng", "image/mng");
 	hash_add(mime_hash, "webp", "image/webp");
 	hash_add(mime_hash, "spr", "image/x-riscos-sprite");
+	hash_add(mime_hash, "bmp", "image/bmp");
 
 	if (fh == NULL) {
 		LOG("Unable to open a mime.types file, so using a minimal one for you.");
