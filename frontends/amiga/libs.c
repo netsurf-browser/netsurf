@@ -62,7 +62,7 @@
 		if(I##PREFIX == NULL) {	\
 			LOG("Failed to get %s interface v%d of %s", INTERFACE, INTVER, LIB);	\
 			if(FAIL == true) {	\
-				STRPTR error = ASPrintf("Unable to open interface %s v%d\nof %s v%ld (fatal error)", INTERFACE, INTVER, LIB, LIBVER);	\
+				STRPTR error = ASPrintf("Unable to open interface %s v%d\nof %s v%ld (fatal error - not an OS4 lib?)", INTERFACE, INTVER, LIB, LIBVER);	\
 				ami_misc_fatal_error(error);	\
 				FreeVec(error);	\
 				return false;	\
@@ -80,7 +80,9 @@
 
 #define AMINS_LIB_CLOSE(PREFIX)	\
 	if(I##PREFIX) DropInterface((struct Interface *)I##PREFIX);	\
-	if(PREFIX##Base) CloseLibrary((struct Library *)PREFIX##Base);
+	if(PREFIX##Base) CloseLibrary((struct Library *)PREFIX##Base);	\
+	I##PREFIX = NULL;	\
+	PREFIX##Base = NULL;
 
 #define AMINS_LIB_STRUCT(PREFIX)	\
 	struct PREFIX##Base *PREFIX##Base = NULL;	\
