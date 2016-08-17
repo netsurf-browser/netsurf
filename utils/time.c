@@ -282,10 +282,13 @@ enum nsc_time_zone_offsets {
 /**
  * List of timezones.
  *
- * The order here is the order they appear in the `timezone_mins` array.
- * So there is value in putting the most common timezones first.
+ * The order here is the order they appear in the `timezone_mins` and
+ * `timezones` arrays.  So there is value in putting the most common
+ * timezones first.
  */
 enum nsc_time_zones {
+	/** "GMT" first since its the only one I've seen in the wild. -- tlsa */
+	NSC_TIME_ZONE_GMT,
 	NSC_TIME_ZONE_IDLE,
 	NSC_TIME_ZONE_NZST,
 	NSC_TIME_ZONE_NZT,
@@ -299,7 +302,6 @@ enum nsc_time_zones {
 	NSC_TIME_ZONE_FWT,
 	NSC_TIME_ZONE_MET,
 	NSC_TIME_ZONE_MEWT,
-	NSC_TIME_ZONE_GMT,
 	NSC_TIME_ZONE_UTC,
 	NSC_TIME_ZONE_WET,
 	NSC_TIME_ZONE_WAT,
