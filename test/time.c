@@ -213,6 +213,10 @@ static const struct test_string_pair date_string_tests[] = {
 		.expected = "Mon, 12 Dec 2005 00:00:00 GMT"
 	},
 	{
+		.test     = "20051212     \n",
+		.expected = "Mon, 12 Dec 2005 00:00:00 GMT"
+	},
+	{
 		.test     = "20051212 00:00 UTC",
 		.expected = "Mon, 12 Dec 2005 00:00:00 GMT"
 	},
@@ -230,6 +234,10 @@ static const struct test_string_pair date_string_tests[] = {
 	},
 	{
 		.test     = "Thu, 11 Aug 2016 08:47:30 GMT",
+		.expected = "Thu, 11 Aug 2016 08:47:30 GMT"
+	},
+	{
+		.test     = "Thu, 11 Aug 2016 08:47:30 GMT garbage",
 		.expected = "Thu, 11 Aug 2016 08:47:30 GMT"
 	},
 	{
@@ -338,6 +346,10 @@ static const struct test_bad_string date_bad_string_tests[] = {
 	},
 	{
 		.test = "Foosday, 16 Dec 1977 23:45:12 GMT",
+		.res  = NSERROR_INVALID
+	},
+	{
+		.test = "20051212 garbage",
 		.res  = NSERROR_INVALID
 	},
 };
