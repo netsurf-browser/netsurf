@@ -61,6 +61,12 @@
 		I##PREFIX = (struct PREFIX##IFace *)GetInterface((struct Library *)PREFIX##Base, INTERFACE, INTVER, NULL);	\
 		if(I##PREFIX == NULL) {	\
 			LOG("Failed to get %s interface v%d of %s", INTERFACE, INTVER, LIB);	\
+			if(FAIL == true) {	\
+				STRPTR error = ASPrintf("Unable to open interface %s v%d\nof %s v%ld (fatal error)", INTERFACE, INTVER, LIB, LIBVER);	\
+				ami_misc_fatal_error(error);	\
+				FreeVec(error);	\
+				return false;	\
+			}	\
 		}	\
 	} else {	\
 		LOG("Failed to open %s v%d", LIB, LIBVER);	\
