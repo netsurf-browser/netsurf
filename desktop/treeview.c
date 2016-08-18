@@ -31,6 +31,7 @@
 #include "netsurf/clipboard.h"
 #include "netsurf/layout.h"
 #include "netsurf/keypress.h"
+#include "netsurf/core_window.h"
 #include "content/hlcache.h"
 #include "css/utils.h"
 
@@ -39,7 +40,6 @@
 #include "desktop/textarea.h"
 #include "desktop/treeview.h"
 #include "desktop/gui_internal.h"
-#include "desktop/core_window.h"
 
 /** @todo get rid of REDRAW_MAX -- need to be able to know window size */
 #define REDRAW_MAX 8000

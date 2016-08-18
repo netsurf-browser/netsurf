@@ -16,12 +16,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Core window handling (interface).
+/**
+ * \file
+ * Interface to core window handling.
+ *
+ * This provides a generallised API for frontends to implement which
+ *  allows them to provide a single implementation for general window
+ *  operations on their platform.
+ *
+ * General core implementations (cookie manager, global history,
+ *  hotlist and ssl certificate viewer) use this API to perform
+ *  operations like drawing and user input in a portable way.
  */
 
-#ifndef _NETSURF_DESKTOP_CORE_WINDOW_H_
-#define _NETSURF_DESKTOP_CORE_WINDOW_H_
+#ifndef _NETSURF_CORE_WINDOW_H_
+#define _NETSURF_CORE_WINDOW_H_
 
 struct core_window;
 struct rect;

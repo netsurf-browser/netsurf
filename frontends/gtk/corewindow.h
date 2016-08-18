@@ -19,7 +19,7 @@
 #ifndef GTK_COREWINDOW_H
 #define GTK_COREWINDOW_H
 
-#include "desktop/core_window.h"
+#include "netsurf/core_window.h"
 
 /**
  * nsgtk core window mouse state

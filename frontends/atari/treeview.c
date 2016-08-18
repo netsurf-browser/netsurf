@@ -29,8 +29,8 @@
 #include "utils/utils.h"
 #include "netsurf/plotters.h"
 #include "netsurf/mouse.h"
+#include "netsurf/core_window.h"
 #include "desktop/treeview.h"
-#include "desktop/core_window.h"
 
 #include "atari/gui.h"
 #include "atari/plot/plot.h"
