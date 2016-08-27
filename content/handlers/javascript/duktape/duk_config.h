@@ -2076,7 +2076,7 @@ typedef FILE duk_file;
       defined(FP_SUBNORMAL) && defined(FP_NORMAL))
 /* Missing some obvious constants. */
 #define DUK_F_USE_REPL_ALL
-#elif defined(DUK_F_AMIGAOS) && defined(DUK_F_VBCC)
+#elif defined(DUK_F_AMIGAOS)
 /* VBCC is missing the built-ins even in C99 mode (perhaps a header issue) */
 #define DUK_F_USE_REPL_ALL
 #elif defined(DUK_F_FREEBSD) && defined(DUK_F_CLANG)
