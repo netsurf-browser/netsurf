@@ -26,6 +26,26 @@ if [ "x${HOST}" = "x" ]; then
     else
 	HOST=${TARGET_ABI}
     fi
+else
+    HOST_CC_LIST="${HOST}-cc ${HOST}-gcc /opt/netsurf/${HOST}/cross/bin/${HOST}-cc /opt/netsurf/${HOST}/cross/bin/${HOST}-gcc"
+    for HOST_CC_V in ${HOST_CC_LIST};do
+	HOST_CC=$(/bin/which ${HOST_CC_V})
+	if [ "x${HOST_CC}" != "x" ];then
+	    break
+	fi
+    done
+    if [ "x${HOST_CC}" == "x" ];then
+	echo "Unable to execute host compiler for HOST=${HOST}. is it set correctly?"
+	return 1
+    fi
+
+    HOST_CC_MACHINE=$(${HOST_CC} -dumpmachine 2>/dev/null)
+
+    if [ "${HOST_CC_MACHINE}" != "${HOST}" ];then
+	echo "Compiler dumpmachine differes from HOST setting"
+	return 2
+    fi
+    unset HOST_CC_LIST HOST_CC_V HOST_CC HOST_CC_MACHINE
 fi
 
 if [ "x${TARGET_WORKSPACE}" = "x" ]; then
