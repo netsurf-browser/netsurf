@@ -101,6 +101,7 @@ struct gui_window_2 {
 	struct List tab_list;
 	ULONG tabs;
 	ULONG next_tab;
+	struct Node *last_new_tab;
 	struct Hook scrollerhook;
 	struct form_control *control;
 	browser_mouse_state mouse_state;
@@ -152,7 +153,6 @@ struct gui_window
 	struct gui_window_2 *shared;
 	int tab;
 	struct Node *tab_node;
-	struct Node *last_new_tab;
 	int c_x; /* Caret X posn */
 	int c_y; /* Caret Y posn */
 	int c_w; /* Caret width */

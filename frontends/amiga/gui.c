@@ -2875,7 +2875,7 @@ void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 	struct IBox *bbox;
 
 	/* Clear the last new tab list */
-	gwin->gw->last_new_tab = NULL;
+	gwin->last_new_tab = NULL;
 
 	if(gwin->tabs == 0) return;
 
@@ -3513,6 +3513,16 @@ nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
 		return error;
 	}
 
+	if(nsoption_bool(new_tab_is_active) == false) {
+		/* Because this is a new blank tab, switch to it (if new_tab_is_active, we already did!) */
+		RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_TABS],
+								gwin->win, NULL,
+								CLICKTAB_CurrentNode, gwin->last_new_tab,
+								TAG_DONE);
+
+		ami_switch_tab(gwin, false);
+	}
+
 	return NSERROR_OK;
 }
 
@@ -3863,11 +3873,12 @@ gui_window_create(struct browser_window *bw,
 		} else {
 			struct Node *insert_after = existing->tab_node;
 
-			if(existing->last_new_tab)
-				insert_after = existing->last_new_tab;
+			if(g->shared->last_new_tab)
+				insert_after = g->shared->last_new_tab;
 			Insert(&g->shared->tab_list, g->tab_node, insert_after);
-			existing->last_new_tab = g->tab_node;
 		}
+
+		g->shared->last_new_tab = g->tab_node;
 
 		RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],
 							g->shared->win, NULL,
