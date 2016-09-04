@@ -1092,8 +1092,9 @@ static void gui_init2(int argc, char** argv)
 			sendcmd = ASPrintf("OPEN \"%s\" NEW%s", nsoption_charp(homepage_url), newtab);
 		}
 		ami_arexx_self(sendcmd);
-
 		FreeVec(sendcmd);
+
+		ami_arexx_self("TOFRONT");
 
 		ami_quit=true;
 		return;
