@@ -78,22 +78,22 @@ netsurf.lha: $(EXETARGET)
 	$(Q)mkdir -p $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
 	$(Q)cp -p $(EXETARGET) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
 	$(Q)mkdir $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources
-	$(Q)cp -r $(AMIGA_RESOURCES) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources
-	$(Q)cp -r $(AMIGA_DISTRIBUTION_FILES) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp -rp $(AMIGA_RESOURCES) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources
+	$(Q)cp -rp $(AMIGA_DISTRIBUTION_FILES) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
 	$(Q)cat resources/SearchEngines $(AMIGA_PKG_DIR)/SearchEngines >$(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/SearchEngines
-	$(Q)cp \!NetSurf/Resources/AdBlock,f79 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/adblock.css
-	$(Q)cp \!NetSurf/Resources/CSS,f79 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/nsdefault.css
-	$(Q)cp \!NetSurf/Resources/internal.css,f79 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/internal.css
-	$(Q)cp \!NetSurf/Resources/Quirks,f79 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/quirks.css
-	$(Q)cp \!NetSurf/Resources/netsurf.png,b60 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/netsurf.png
-	$(Q)cp $(AMIGA_PKG_DIR)/drawer.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf.info
-	$(Q)cp $(AMIGA_PKG_DIR)/AutoInstall $(AMIGA_INSTALL_TARGET_DIR)
+	$(Q)cp -p \!NetSurf/Resources/AdBlock,f79 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/adblock.css
+	$(Q)cp -p \!NetSurf/Resources/CSS,f79 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/nsdefault.css
+	$(Q)cp -p \!NetSurf/Resources/internal.css,f79 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/internal.css
+	$(Q)cp -p \!NetSurf/Resources/Quirks,f79 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/quirks.css
+	$(Q)cp -p \!NetSurf/Resources/netsurf.png,b60 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/netsurf.png
+	$(Q)cp -p $(AMIGA_PKG_DIR)/drawer.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf.info
+	$(Q)cp -p $(AMIGA_PKG_DIR)/AutoInstall $(AMIGA_INSTALL_TARGET_DIR)
   ifeq ($(SUBTARGET),os3)
-	$(Q)cp $(AMIGA_PKG_DIR)/netsurf_os3.readme $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
-	$(Q)cp $(AMIGA_PKG_DIR)/netsurf_os3.readme.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp -p $(AMIGA_PKG_DIR)/netsurf_os3.readme $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp -p $(AMIGA_PKG_DIR)/netsurf_os3.readme.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
   else
-	$(Q)cp $(AMIGA_PKG_DIR)/netsurf.readme $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
-	$(Q)cp $(AMIGA_PKG_DIR)/netsurf.readme.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp -p $(AMIGA_PKG_DIR)/netsurf.readme $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp -p $(AMIGA_PKG_DIR)/netsurf.readme.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
   endif
 	$(Q)cd $(AMIGA_INSTALL_TARGET_DIR); \
 	  lha a netsurf.lha NetSurf NetSurf.info AutoInstall
