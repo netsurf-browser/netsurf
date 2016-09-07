@@ -17,20 +17,36 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * file extension to mimetype mapping for the monkey frontend
+ *
+ * allows monkey frontend to map file extension to mime types using a
+ * default builtin list and /etc/mime.types file if present.
+ *
+ * mime type and content type handling is derived from the BNF in
+ * RFC822 section 3.3, RFC2045 section 5.1 and RFC6838 section
+ * 4.2. Upshot is their charset and parsing is all a strict subset of
+ * ASCII hence not using locale dependant ctype functions for parsing.
+ */
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
-#include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
 #include "utils/log.h"
+#include "utils/ascii.h"
 #include "utils/hashtable.h"
 
 #include "monkey/filetype.h"
+
+#define HASH_SIZE 117
+#define MAX_LINE_LEN 256
 
 static struct hash_table *mime_hash = NULL;
 
@@ -39,17 +55,7 @@ void monkey_fetch_filetype_init(const char *mimefile)
 	struct stat statbuf;
 	FILE *fh = NULL;
 
-	mime_hash = hash_create(117);
-
-	/* first, check to see if /etc/mime.types in preference */
-
-	if ((stat("/etc/mime.types", &statbuf) == 0) &&
-			S_ISREG(statbuf.st_mode)) {
-		mimefile = "/etc/mime.types";
-
-	}
-
-	fh = fopen(mimefile, "r");
+	mime_hash = hash_create(HASH_SIZE);
 
 	/* Some OSes (mentioning no Solarises) have a worthlessly tiny
 	 * /etc/mime.types that don't include essential things, so we
@@ -69,20 +75,29 @@ void monkey_fetch_filetype_init(const char *mimefile)
 	hash_add(mime_hash, "webp", "image/webp");
 	hash_add(mime_hash, "spr", "image/x-riscos-sprite");
 
+	/* first, check to see if /etc/mime.types in preference */
+	if ((stat("/etc/mime.types", &statbuf) == 0) &&
+			S_ISREG(statbuf.st_mode)) {
+		mimefile = "/etc/mime.types";
+
+	}
+
+	fh = fopen(mimefile, "r");
+
 	if (fh == NULL) {
 		LOG("Unable to open a mime.types file, so using a minimal one for you.");
 		return;
 	}
 
 	while (!feof(fh)) {
-		char line[256], *ptr, *type, *ext;
-		if (fgets(line, 256, fh) == NULL)
+		char line[MAX_LINE_LEN], *ptr, *type, *ext;
+		if (fgets(line, MAX_LINE_LEN, fh) == NULL)
                 	break;
 		if (!feof(fh) && line[0] != '#') {
 			ptr = line;
 
 			/* search for the first non-whitespace character */
-			while (isspace(*ptr))
+			while (ascii_is_space(*ptr))
 				ptr++;
 
 			/* is this line empty other than leading whitespace? */
@@ -93,7 +108,7 @@ void monkey_fetch_filetype_init(const char *mimefile)
 
 			/* search for the first non-whitespace char or NUL or
 			 * NL */
-			while (*ptr && (!isspace(*ptr)) && *ptr != '\n')
+			while (*ptr && (!ascii_is_space(*ptr)) && *ptr != '\n')
 				ptr++;
 
 			if (*ptr == '\0' || *ptr == '\n') {
@@ -107,7 +122,7 @@ void monkey_fetch_filetype_init(const char *mimefile)
 
 			/* search for the first non-whitespace character which
 			 * will be the first filename extenion */
-			while (isspace(*ptr))
+			while (ascii_is_space(*ptr))
 				ptr++;
 
 			while(true) {
@@ -116,7 +131,7 @@ void monkey_fetch_filetype_init(const char *mimefile)
 				/* search for the first whitespace char or
 				 * NUL or NL which is the end of the ext.
 				 */
-				while (*ptr && (!isspace(*ptr)) &&
+				while (*ptr && (!ascii_is_space(*ptr)) &&
 					*ptr != '\n')
 					ptr++;
 
@@ -135,8 +150,11 @@ void monkey_fetch_filetype_init(const char *mimefile)
 				/* search for the first non-whitespace char or
 				 * NUL or NL, to find start of next ext.
 				 */
-				while (*ptr && (isspace(*ptr)) && *ptr != '\n')
+				while (*ptr &&
+				       (ascii_is_space(*ptr)) &&
+				       *ptr != '\n') {
 					ptr++;
+				}
 			}
 		}
 	}
@@ -203,7 +221,7 @@ const char *monkey_fetch_filetype(const char *unix_path)
 	 */
 	lowerchar = ext;
 	while(*lowerchar) {
-		*lowerchar = tolower(*lowerchar);
+		*lowerchar = ascii_to_lower(*lowerchar);
 		lowerchar++;
 	}
 

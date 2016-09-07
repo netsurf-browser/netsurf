@@ -17,12 +17,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * file extension to mimetype mapping for the GTK frontend
+ *
+ * allows GTK frontend to map file extension to mime types using a
+ * default builtin list and /etc/mime.types file if present.
+ *
+ * mime type and content type handling is derived from the BNF in
+ * RFC822 section 3.3, RFC2045 section 5.1 and RFC6838 section
+ * 4.2. Upshot is their charset and parsing is all a strict subset of
+ * ASCII hence not using locale dependant ctype functions for parsing.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <ctype.h>
 #include <string.h>
 #include <strings.h>
 #include <gtk/gtk.h>
@@ -32,6 +44,7 @@
 #include "utils/filepath.h"
 #include "utils/file.h"
 #include "utils/nsurl.h"
+#include "utils/ascii.h"
 #include "netsurf/fetch.h"
 
 #include "gtk/gui.h"
@@ -49,15 +62,6 @@ void gtk_fetch_filetype_init(const char *mimefile)
 	FILE *fh = NULL;
 
 	mime_hash = hash_create(HASH_SIZE);
-
-	/* first, check to see if /etc/mime.types in preference */
-
-	if ((stat("/etc/mime.types", &statbuf) == 0) &&
-	    S_ISREG(statbuf.st_mode)) {
-		mimefile = "/etc/mime.types";
-	}
-
-	fh = fopen(mimefile, "r");
 
 	/* Some OSes (mentioning no Solarises) have a worthlessly tiny
 	 * /etc/mime.types that don't include essential things, so we
@@ -78,6 +82,13 @@ void gtk_fetch_filetype_init(const char *mimefile)
 	hash_add(mime_hash, "spr", "image/x-riscos-sprite");
 	hash_add(mime_hash, "bmp", "image/bmp");
 
+	/* first, check to see if /etc/mime.types in preference */
+	if ((stat("/etc/mime.types", &statbuf) == 0) &&
+	    S_ISREG(statbuf.st_mode)) {
+		mimefile = "/etc/mime.types";
+	}
+
+	fh = fopen(mimefile, "r");
 	if (fh == NULL) {
 		LOG("Unable to open a mime.types file, so using a minimal one for you.");
 		return;
@@ -93,7 +104,7 @@ void gtk_fetch_filetype_init(const char *mimefile)
 			ptr = line;
 
 			/* search for the first non-whitespace character */
-			while (isspace(*ptr)) {
+			while (ascii_is_space(*ptr)) {
 				ptr++;
 			}
 
@@ -106,7 +117,9 @@ void gtk_fetch_filetype_init(const char *mimefile)
 
 			/* search for the first non-whitespace char or NUL or
 			 * NL */
-			while (*ptr && (!isspace(*ptr)) && *ptr != '\n') {
+			while (*ptr &&
+			       (!ascii_is_space(*ptr)) &&
+			       *ptr != '\n') {
 				ptr++;
 			}
 
@@ -121,7 +134,7 @@ void gtk_fetch_filetype_init(const char *mimefile)
 
 			/* search for the first non-whitespace character which
 			 * will be the first filename extenion */
-			while (isspace(*ptr)) {
+			while (ascii_is_space(*ptr)) {
 				ptr++;
 			}
 
@@ -132,7 +145,7 @@ void gtk_fetch_filetype_init(const char *mimefile)
 				 * NUL or NL which is the end of the ext.
 				 */
 				while (*ptr &&
-				       (!isspace(*ptr)) &&
+				       (!ascii_is_space(*ptr)) &&
 				       *ptr != '\n') {
 					ptr++;
 				}
@@ -153,7 +166,7 @@ void gtk_fetch_filetype_init(const char *mimefile)
 				 * NUL or NL, to find start of next ext.
 				 */
 				while (*ptr &&
-				       (isspace(*ptr)) &&
+				       (ascii_is_space(*ptr)) &&
 				       *ptr != '\n') {
 					ptr++;
 				}
@@ -221,7 +234,7 @@ const char *fetch_filetype(const char *unix_path)
 	 */
 	lowerchar = ext;
 	while (*lowerchar) {
-		*lowerchar = tolower(*lowerchar);
+		*lowerchar = ascii_to_lower(*lowerchar);
 		lowerchar++;
 	}
 
