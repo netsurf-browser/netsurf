@@ -16,8 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Cookie Manager (implementation).
+/**
+ * \file
+ * Implementation of Cookie Management
+ *
+ * This allows users to view and remove their web cookies.
+ *
+ * \todo the viewing of cookies is pretty basic and it would be good
+ * to apply more processing of the values and perhaps top level domain
+ * suffix highlighting to give a better user information as to how the
+ * cookies interact with the users sessions.
+ *
+ * \todo In addition to removing cookies it might be useful to allow
+ * users to edit them, especially to alter expiry times.
  */
 
 
@@ -205,14 +216,54 @@ static void cookie_manager_free_treeview_field_data(
  * \param value		Text to set in field, ownership yielded
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-static inline nserror cookie_manager_field_builder(
-		enum cookie_manager_field field,
-		struct treeview_field_data *data,
-		const char *value)
+static inline nserror
+cookie_manager_field_builder(enum cookie_manager_field field,
+			     struct treeview_field_data *data,
+			     const char *value)
 {
 	data->field = cm_ctx.fields[field].field;
 	data->value = value;
 	data->value_len = (value != NULL) ? strlen(value) : 0;
+
+	return NSERROR_OK;
+}
+
+/**
+ * Build a cookie manager treeview field from given time
+ *
+ * The time should be converted to text in the users locacle
+ *
+ * \todo This should probably generate the user text using localtime
+ * and strftime with the c format specifier. Currently ctime will
+ * always generate output in the C locale.
+ *
+ * \param field Cookie manager treeview field to build
+ * \param fdata Cookie manager entry field data to set
+ * \param value Time to show in field
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+static inline nserror
+cookie_manager_field_builder_time(enum cookie_manager_field field,
+				  struct treeview_field_data *fdata,
+				  const time_t *value)
+{
+	const char *date;
+	char *date2;
+
+	fdata->field = cm_ctx.fields[field].field;
+
+	date = ctime(value);
+	date2 = strdup(date);
+	if (date2 == NULL) {
+		fdata->value = NULL;
+		fdata->value_len = 0;
+	} else {
+		assert(date2[24] == '\n');
+		date2[24] = '\0';
+
+		fdata->value = date2;
+		fdata->value_len = strlen(date2);
+	}
 
 	return NSERROR_OK;
 }
@@ -225,13 +276,10 @@ static inline nserror cookie_manager_field_builder(
  * \param data		Data associated with entry's cookie
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-static nserror cookie_manager_set_treeview_field_data(
-		struct cookie_manager_entry *e,
-		const struct cookie_data *data)
+static nserror
+cookie_manager_set_treeview_field_data(struct cookie_manager_entry *e,
+				       const struct cookie_data *data)
 {
-	const char *date;
-	char *date2;
-
 	assert(e != NULL);
 	assert(data != NULL);
 
@@ -246,53 +294,45 @@ static nserror cookie_manager_set_treeview_field_data(
 			&e->data[COOKIE_M_PATH], strdup(data->path));
 
 	/* Set the Expires date field */
-	date = ctime(&data->expires);
-	date2 = strdup(date);
-	if (date2 != NULL) {
-		assert(date2[24] == '\n');
-		date2[24] = '\0';
-	}
-	cookie_manager_field_builder(COOKIE_M_EXPIRES,
-			&e->data[COOKIE_M_EXPIRES], date2);
+	cookie_manager_field_builder_time(COOKIE_M_EXPIRES,
+			&e->data[COOKIE_M_EXPIRES], &data->expires);
 
 	/* Set the Last used date field */
-	date = ctime(&data->last_used);
-	date2 = strdup(date);
-	if (date2 != NULL) {
-		assert(date2[24] == '\n');
-		date2[24] = '\0';
-	}
-	cookie_manager_field_builder(COOKIE_M_LAST_USED,
-			&e->data[COOKIE_M_LAST_USED], date2);
+	cookie_manager_field_builder_time(COOKIE_M_LAST_USED,
+			&e->data[COOKIE_M_LAST_USED], &data->last_used);
 
 	/* Set the Restrictions text */
-	if (data->secure && data->http_only)
+	if (data->secure && data->http_only) {
 		e->data[COOKIE_M_RESTRICTIONS] = cm_ctx.values[COOKIE_M_HTTPS];
-	else if (data->secure)
+	} else if (data->secure) {
 		e->data[COOKIE_M_RESTRICTIONS] = cm_ctx.values[COOKIE_M_SECURE];
-	else if (data->http_only)
+	} else if (data->http_only) {
 		e->data[COOKIE_M_RESTRICTIONS] = cm_ctx.values[COOKIE_M_HTTP];
-	else
+	} else {
 		e->data[COOKIE_M_RESTRICTIONS] = cm_ctx.values[COOKIE_M_NONE];
+	}
 
 	/* Set the Version text */
 	switch (data->version) {
 	case COOKIE_NETSCAPE:
 		e->data[COOKIE_M_VERSION] = cm_ctx.values[COOKIE_M_NETSCAPE];
 		break;
+
 	case COOKIE_RFC2109:
 		e->data[COOKIE_M_VERSION] = cm_ctx.values[COOKIE_M_RFC2109];
 		break;
+
 	case COOKIE_RFC2965:
 		e->data[COOKIE_M_VERSION] = cm_ctx.values[COOKIE_M_RFC2965];
 		break;
 	}
 
 	/* Set the Persistent text */
-	if (data->no_destroy)
+	if (data->no_destroy) {
 		e->data[COOKIE_M_PERSISTENT] = cm_ctx.values[COOKIE_M_YES];
-	else
+	} else {
 		e->data[COOKIE_M_PERSISTENT] = cm_ctx.values[COOKIE_M_NO];
+	}
 
 	return NSERROR_OK;
 }
@@ -329,10 +369,13 @@ static nserror cookie_manager_create_cookie_node(
 		return err;
 	}
 
-	err = treeview_create_node_entry(cm_ctx.tree, &(cookie->entry),
-			parent->folder, TREE_REL_FIRST_CHILD,
-			cookie->data, cookie,
-			cm_ctx.built ? TREE_OPTION_NONE :
+	err = treeview_create_node_entry(cm_ctx.tree,
+					 &(cookie->entry),
+					 parent->folder,
+					 TREE_REL_FIRST_CHILD,
+					 cookie->data,
+					 cookie,
+					 cm_ctx.built ? TREE_OPTION_NONE :
 					TREE_OPTION_SUPPRESS_RESIZE |
 					TREE_OPTION_SUPPRESS_REDRAW);
 	if (err != NSERROR_OK) {
@@ -677,7 +720,7 @@ static nserror cookie_manager_init_common_values(void)
 /**
  * Delete cookie manager entries (and optionally delete from urldb)
  *
- * \param e		Cookie manager entry to delete.
+ * \param e Cookie manager entry to delete.
  */
 static void cookie_manager_delete_entry(struct cookie_manager_entry *e)
 {
@@ -724,6 +767,8 @@ static nserror cookie_manager_tree_node_folder_cb(
 
 	return NSERROR_OK;
 }
+
+
 static nserror cookie_manager_tree_node_entry_cb(
 		struct treeview_node_msg msg, void *data)
 {
@@ -744,6 +789,8 @@ static nserror cookie_manager_tree_node_entry_cb(
 	}
 	return NSERROR_OK;
 }
+
+
 struct treeview_callback_table cm_tree_cb_t = {
 	.folder = cookie_manager_tree_node_folder_cb,
 	.entry = cookie_manager_tree_node_entry_cb
