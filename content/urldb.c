@@ -88,7 +88,6 @@
  */
 
 #include <assert.h>
-#include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -105,6 +104,7 @@
 #include "utils/bloom.h"
 #include "utils/time.h"
 #include "utils/nsurl.h"
+#include "utils/ascii.h"
 #include "netsurf/bitmap.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/gui_internal.h"
@@ -1023,10 +1023,11 @@ static struct search_node **urldb_get_search_tree_direct(const char *host)
 {
 	assert(host);
 
-	if (urldb__host_is_ip_address(host))
+	if (urldb__host_is_ip_address(host)) {
 		return &search_trees[ST_IP];
-	else if (isalpha(*host))
-		return &search_trees[ST_DN + tolower(*host) - 'a'];
+	} else if (ascii_is_alpha(*host)) {
+		return &search_trees[ST_DN + ascii_to_lower(*host) - 'a'];
+	}
 	return &search_trees[ST_EE];
 }
 
@@ -1607,9 +1608,11 @@ static bool urldb_parse_avpair(struct cookie_internal_data *c, char *n,
 		/* Strip dayname from date (these are hugely variable
 		 * and liable to break the parser.  They also serve no
 		 * useful purpose) */
-		for (datenoday = v; *datenoday && !isdigit(*datenoday);
-				datenoday++)
-			; /* do nothing */
+		for (datenoday = v;
+		     *datenoday && !ascii_is_digit(*datenoday);
+		     datenoday++) {
+			/* do nothing */
+		}
 
                 res = nsc_strntimet(datenoday, strlen(datenoday), &expires);
 		if (res != NSERROR_OK) {
