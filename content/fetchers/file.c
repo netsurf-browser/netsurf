@@ -20,6 +20,8 @@
  * \file
  *
  * file scheme URL handling. Based on the data fetcher by Rob Kendrick
+ *
+ * output dates and directory ordering are affected by the current locale
  */
 
 #include "utils/config.h"
@@ -536,7 +538,9 @@ process_dir_ent(struct fetch_file_context *ctx,
 		datebuf[0] = 0;
 		timebuf[0] = 0;
 	} else {
-		/* Get date in output format */
+		/* Get date in output format. a (day of week) and b
+		 * (month) are both affected by the locale
+		 */
 		if (strftime((char *)&datebuf, sizeof datebuf, "%a %d %b %Y",
 			     localtime(&ent_stat.st_mtime)) == 0) {
 			datebuf[0] = '-';
