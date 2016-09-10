@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2010, 2016 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -71,22 +71,28 @@ enum
 static Object *arexx_obj = NULL;
 STATIC char result[100];
 
-STATIC VOID rx_open(struct ARexxCmd *, struct RexxMsg *);
-STATIC VOID rx_quit(struct ARexxCmd *, struct RexxMsg *);
-STATIC VOID rx_tofront(struct ARexxCmd *, struct RexxMsg *);
-STATIC VOID rx_geturl(struct ARexxCmd *, struct RexxMsg *);
-STATIC VOID rx_gettitle(struct ARexxCmd *, struct RexxMsg *);
-STATIC VOID rx_version(struct ARexxCmd *, struct RexxMsg *);
-STATIC VOID rx_save(struct ARexxCmd *, struct RexxMsg *);
-STATIC VOID rx_pubscreen(struct ARexxCmd *, struct RexxMsg *);
-STATIC VOID rx_back(struct ARexxCmd *, struct RexxMsg *);
-STATIC VOID rx_forward(struct ARexxCmd *, struct RexxMsg *);
-STATIC VOID rx_home(struct ARexxCmd *, struct RexxMsg *);
-STATIC VOID rx_reload(struct ARexxCmd *, struct RexxMsg *);
-STATIC VOID rx_windows(struct ARexxCmd *, struct RexxMsg *);
-STATIC VOID rx_active(struct ARexxCmd *, struct RexxMsg *);
-STATIC VOID rx_close(struct ARexxCmd *, struct RexxMsg *);
-STATIC VOID rx_hotlist(struct ARexxCmd *, struct RexxMsg *);
+#ifdef __amigaos4__
+#define RXHOOKF(func) static VOID func(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+#else
+#define RXHOOKF(func) static ASM VOID func(REG(a0, struct ARexxCmd* cmd), REG(a1, struct RexxMsg* msg))
+#endif
+
+RXHOOKF(rx_open);
+RXHOOKF(rx_quit);
+RXHOOKF(rx_tofront);
+RXHOOKF(rx_geturl);
+RXHOOKF(rx_gettitle);
+RXHOOKF(rx_version);
+RXHOOKF(rx_save);
+RXHOOKF(rx_pubscreen);
+RXHOOKF(rx_back);
+RXHOOKF(rx_forward);
+RXHOOKF(rx_home);
+RXHOOKF(rx_reload);
+RXHOOKF(rx_windows);
+RXHOOKF(rx_active);
+RXHOOKF(rx_close);
+RXHOOKF(rx_hotlist);
 
 STATIC struct ARexxCmd Commands[] =
 {
@@ -245,7 +251,7 @@ static struct gui_window *ami_find_tab(int window, int tab)
 	return NULL;
 }
 
-STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+RXHOOKF(rx_open)
 {
 	struct dlnode *dln;
 	struct gui_window *gw = cur_gw;
@@ -331,7 +337,7 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	nsurl_unref(url);
 }
 
-STATIC VOID rx_save(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+RXHOOKF(rx_save)
 {
 	BPTR fh = 0;
 	ULONG source_size;
@@ -360,19 +366,19 @@ STATIC VOID rx_save(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	ami_reset_pointer(gw->shared);
 }
 
-STATIC VOID rx_quit(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+RXHOOKF(rx_quit)
 {
 	cmd->ac_RC = 0;
 	ami_quit_netsurf();
 }
 
-STATIC VOID rx_tofront(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+RXHOOKF(rx_tofront)
 {
 	cmd->ac_RC = 0;
 	ScreenToFront(scrn);
 }
 
-STATIC VOID rx_geturl(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+RXHOOKF(rx_geturl)
 {
 	struct gui_window *gw = cur_gw;
 
@@ -393,7 +399,7 @@ STATIC VOID rx_geturl(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 	cmd->ac_Result = result;
 }
 
-STATIC VOID rx_gettitle(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+RXHOOKF(rx_gettitle)
 {
 	struct gui_window *gw = cur_gw;
 
@@ -417,7 +423,7 @@ STATIC VOID rx_gettitle(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__(
 	cmd->ac_Result = result;
 }
 
-STATIC VOID rx_version(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+RXHOOKF(rx_version)
 {
 	cmd->ac_RC = 0;
 
@@ -483,7 +489,7 @@ STATIC VOID rx_version(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 	cmd->ac_Result = result;
 }
 
-STATIC VOID rx_pubscreen(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+RXHOOKF(rx_pubscreen)
 {
 	cmd->ac_RC = 0;
 
@@ -499,7 +505,7 @@ STATIC VOID rx_pubscreen(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__
 	cmd->ac_Result = result;
 }
 
-STATIC VOID rx_back(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+RXHOOKF(rx_back)
 {
 	struct gui_window *gw = cur_gw;
 
@@ -511,7 +517,7 @@ STATIC VOID rx_back(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	if(gw) ami_gui_history(gw->shared, true);
 }
 
-STATIC VOID rx_forward(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+RXHOOKF(rx_forward)
 {
 	struct gui_window *gw = cur_gw;
 
@@ -524,7 +530,7 @@ STATIC VOID rx_forward(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 
 }
 
-STATIC VOID rx_home(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+RXHOOKF(rx_home)
 {
 	struct gui_window *gw = cur_gw;
 	nsurl *url;
@@ -550,7 +556,7 @@ STATIC VOID rx_home(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	}
 }
 
-STATIC VOID rx_reload(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+RXHOOKF(rx_reload)
 {
 	struct gui_window *gw = cur_gw;
 
@@ -572,7 +578,7 @@ STATIC VOID rx_reload(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 	}
 }
 
-STATIC VOID rx_windows(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+RXHOOKF(rx_windows)
 {
 	int windows = 0, tabs = 0;
 	int window = 0;
@@ -587,7 +593,7 @@ STATIC VOID rx_windows(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 	cmd->ac_Result = result;
 }
 
-STATIC VOID rx_active(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+RXHOOKF(rx_active)
 {
 	int window = 0, tab = 0;
 	struct gui_window *gw = cur_gw;
@@ -630,7 +636,7 @@ STATIC VOID rx_active(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 	cmd->ac_Result = result;
 }
 
-STATIC VOID rx_close(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+RXHOOKF(rx_close)
 {
 	struct gui_window *gw = cur_gw;
 
@@ -647,7 +653,7 @@ STATIC VOID rx_close(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((un
 	if(gw) browser_window_destroy(gw->bw);
 }
 
-STATIC VOID rx_hotlist(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+RXHOOKF(rx_hotlist)
 {
 	cmd->ac_RC = 0;
 
