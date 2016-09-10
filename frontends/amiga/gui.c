@@ -1063,10 +1063,10 @@ static void gui_init2(int argc, char** argv)
 	if(!notalreadyrunning)
 	{
 		STRPTR sendcmd = NULL;
-		char newtab[4] = "\0";
+		char newtab[11] = "\0";
 
 		if(nsoption_bool(tab_new_session) == true) {
-			strcpy(newtab, "TAB");
+			strcpy(newtab, "TAB ACTIVE");
 		}
 
 		if(temp_homepage_url) {
@@ -1078,12 +1078,8 @@ static void gui_init2(int argc, char** argv)
 		ami_arexx_self(sendcmd);
 		FreeVec(sendcmd);
 
-		if((nsoption_bool(tab_new_session) == true) && (nsoption_bool(new_tab_is_active) == true)) {
-			/* If we're opening a new tab and that tab will be active, bring the screen to the front.
-			 *\todo consider if we should be bringing the window to the front too.
-			 * If we're opening a new window, Intuition brings the screen to the front anyway. */
-			ami_arexx_self("TOFRONT");
-		}
+		/* Bring the screen to the front. Intuition may have already done this, but it doesn't hurt. */
+		ami_arexx_self("TOFRONT");
 
 		ami_quit=true;
 		return;

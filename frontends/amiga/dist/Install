@@ -320,7 +320,7 @@
 				(help @textfile-help)
 				(dest "Rexx:NetSurf")
 				(append "/*\n"
-" * Copyright 2013 Chris Young <chris@unsatisfactorysoftware.co.uk>\n"
+" * Copyright 2013, 2016 Chris Young <chris@unsatisfactorysoftware.co.uk>\n"
 " *\n"
 " * This file is part of NetSurf, http://www.netsurf-browser.org/\n"
 " *\n"
@@ -346,7 +346,7 @@
 "parse arg url\n"
 "\n"
 "if show('P', 'NETSURF') then do\n"
-" address NETSURF 'OPEN' url 'NEWTAB'\n"
+" address NETSURF 'OPEN' url 'NEWTAB ACTIVE'\n"
 " address NETSURF 'TOFRONT'\n"
 "end\n"
 "else do\n"
