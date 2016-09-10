@@ -3476,6 +3476,19 @@ void ami_gui_set_scale(struct gui_window *gw, float scale)
 	browser_window_set_scale(gw->bw, scale, true);
 }
 
+void ami_gui_switch_to_new_tab(struct gui_window_2 *gwin)
+{
+	if(nsoption_bool(new_tab_is_active) == true) return;
+
+	/* Switch to the just-opened tab (if new_tab_is_active, we already did!) */
+	RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_TABS],
+							gwin->win, NULL,
+							CLICKTAB_CurrentNode, gwin->last_new_tab,
+							TAG_DONE);
+
+	ami_switch_tab(gwin, false);
+}
+
 nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
 {
 	nsurl *url;
@@ -3497,15 +3510,7 @@ nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
 		return error;
 	}
 
-	if(nsoption_bool(new_tab_is_active) == false) {
-		/* Because this is a new blank tab, switch to it (if new_tab_is_active, we already did!) */
-		RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_TABS],
-								gwin->win, NULL,
-								CLICKTAB_CurrentNode, gwin->last_new_tab,
-								TAG_DONE);
-
-		ami_switch_tab(gwin, false);
-	}
+	ami_gui_switch_to_new_tab(gwin);
 
 	return NSERROR_OK;
 }
