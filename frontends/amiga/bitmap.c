@@ -44,6 +44,7 @@
 #endif
 #include "assert.h"
 
+#include "utils/log.h"
 #include "utils/nsoption.h"
 #include "utils/nsurl.h"
 #include "utils/messages.h"
@@ -78,6 +79,20 @@ enum {
 	AMI_NSBM_TRUECOLOUR,
 	AMI_NSBM_PALETTEMAPPED 
 };
+
+struct vertex {
+	float x, y;
+	float s, t, w;
+};
+
+#define VTX(I,X,Y,S,T) vtx[I].x = X; vtx[I].y = Y; vtx[I].s = S; vtx[I].t = T; vtx[I].w = 1.0f; 
+#define VTX_RECT(SX,SY,SW,SH,DX,DY,DW,DH) \
+		VTX(0, DX,      DY,      SX,      SY); \
+		VTX(1, DX + DW, DY,      SX + SW, SY); \
+		VTX(2, DX,      DY + DH, SX,      SY + SH); \
+		VTX(3, DX + DW, DY,      SX + SW, SY); \
+		VTX(4, DX,      DY + DH, SX,      SY + SH); \
+		VTX(5, DX + DW, DY + DH, SX + SW, SY + SH);
 
 static APTR pool_bitmap = NULL;
 static bool guigfx_warned = false;
@@ -495,21 +510,35 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 			(type == AMI_NSBM_TRUECOLOUR)), 1)) {
 			/* AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
 			 * Additionally, when we use friend BitMaps in non 32-bit modes it freezes the OS */
-			uint32 flags = 0;
-			if(nsoption_bool(scale_quality)) flags |= COMPFLAG_SrcFilter;
+			struct vertex vtx[6];
+			VTX_RECT(0, 0, bitmap->width, bitmap->height, 0, 0, width, height);
+
+			uint32 flags = COMPFLAG_HardwareOnly;
+			if(nsoption_bool(scale_quality) == true) flags |= COMPFLAG_SrcFilter;
 			
-			CompositeTags(COMPOSITE_Src, tbm, scaledbm,
+			uint32 err = CompositeTags(COMPOSITE_Src, tbm, scaledbm,
+						COMPTAG_VertexArray, vtx,
+						COMPTAG_VertexFormat, COMPVF_STW0_Present,
+						COMPTAG_NumTriangles, 2,
+						COMPTAG_Flags, flags,
+						COMPTAG_FriendBitMap, scrn->RastPort.BitMap,
+						TAG_DONE);
+
+			if (err != COMPERR_Success) {
+				LOG("Composite error %ld - falling back", err);
+				/* If it failed, do it again the way which works in software */
+				flags = 0;
+				if(nsoption_bool(scale_quality) == true) flags |= COMPFLAG_SrcFilter;
+
+				err = CompositeTags(COMPOSITE_Src, tbm, scaledbm,
 						COMPTAG_ScaleX, COMP_FLOAT_TO_FIX((float)width/bitmap->width),
 						COMPTAG_ScaleY, COMP_FLOAT_TO_FIX((float)height/bitmap->height),
 						COMPTAG_Flags, flags,
-						COMPTAG_DestX, 0,
-						COMPTAG_DestY, 0,
-						COMPTAG_DestWidth, width,
-						COMPTAG_DestHeight, height,
-						COMPTAG_OffsetX, 0,
-						COMPTAG_OffsetY, 0,
 						COMPTAG_FriendBitMap, scrn->RastPort.BitMap,
 						TAG_DONE);
+				/* If it still fails... it's non-fatal */
+				LOG("Fallback returned error %ld", err);
+			}
 		} else /* Do it the old-fashioned way.  This is pretty slow, even on OS4.1 */
 #endif
 		{
