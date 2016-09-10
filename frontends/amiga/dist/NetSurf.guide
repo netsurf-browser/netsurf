@@ -198,9 +198,10 @@ NetSurf's ARexx port is called NETSURF.
 
 Commands are:
 
-@{b}OPEN URL/A,NEW=NEWWINDOW/S,NEWTAB/S,SAVEAS/K,W=WINDOW/K/N,T=TAB/K/N@{ub}
+@{b}OPEN URL/A,NEW=NEWWINDOW/S,NEWTAB/S,SAVEAS/K,W=WINDOW/K/N,T=TAB/K/N,ACTIVE/S@{ub}
 Opens URL in current window or a new window/tab if NEWWINDOW/NEWTAB is specified.  Saves the location without displaying if SAVEAS and a filename is specified (SAVEAS available in 2.6325)
 Note that if the URL is non-ASCII it is expected to be encoded in UTF-8 (file: references should always be in local charset due to filesystem limitations). Usually this is not relevant, as all normalised URLs will be in their ASCII form.
+ACTIVE forces a NEWTAB to be switched to even if this wouldn't normally be the case (available in 3.6)
 
 @{b}SAVE FILENAME/A,W=WINDOW/K/N,T=TAB/K/N@{ub} (2.6027)
 Saves current page source to FILENAME
