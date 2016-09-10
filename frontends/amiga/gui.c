@@ -849,7 +849,6 @@ static void ami_openscreenfirst(void)
 static struct RDArgs *ami_gui_commandline(int *restrict argc, char ** argv,
 		int *restrict nargc, char ** nargv)
 {
-	int new_argc = 1;
 	struct RDArgs *args;
 	CONST_STRPTR template = "-v/S,NSOPTS/M,URL/K,USERSDIR/K,FORCE/S";
 	long rarray[] = {0,0,0,0,0};
@@ -892,32 +891,17 @@ static struct RDArgs *ami_gui_commandline(int *restrict argc, char ** argv,
 		 * first, nsoption_commandline() can no longer parse (fetch?)
 		 * the arguments.  If nsoption_commandline() is called first,
 		 * then ReadArgs cannot fetch the arguments.
+		 *\todo this was totally broken so to stop startup crashing
+		 * has been temporarily removed (core cli not called when func
+		 * returns NULL).
 		 */
-			char **p = (char **)rarray[A_NSOPTS];
-
-			do {
-				LOG("Arg [%d] assigned to NSOPTS/M by ReadArgs: %s", new_argc, *p);
-				new_argc++;
-				p++;
-			} while(*p != NULL);
-
-			const char *new_argv = malloc(sizeof(char *) * new_argc);
-			const char **new_argvp = &new_argv;
-			p = (char **)rarray[A_NSOPTS];
-
-			do {
-				*new_argvp = *p;
-				new_argvp++;
-				p++;
-			} while(*p != NULL);
-
-			*nargc = new_argc;
-			*nargv = new_argv;
 		}
 	} else {
 		LOG("ReadArgs failed to parse command line");
 	}
-	return args;
+
+	FreeArgs(args);
+	return NULL;
 }
 
 static void ami_gui_read_tooltypes(struct WBArg *wbarg)
