@@ -23,7 +23,6 @@
  */
 
 #include <assert.h>
-#include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -40,6 +39,7 @@
 #include "utils/utils.h"
 #include "utils/file.h"
 #include "utils/messages.h"
+#include "utils/ascii.h"
 #include "netsurf/content.h"
 #include "content/hlcache.h"
 #include "css/css.h"
@@ -210,13 +210,14 @@ static char *save_complete_rewrite_stylesheet_urls(save_complete_ctx *ctx,
 	for (offset = 0; SLEN("@import") < size &&
 			offset <= size - SLEN("@import"); offset++) {
 		if (source[offset] == '@' &&
-				tolower(source[offset + 1]) == 'i' &&
-				tolower(source[offset + 2]) == 'm' &&
-				tolower(source[offset + 3]) == 'p' &&
-				tolower(source[offset + 4]) == 'o' &&
-				tolower(source[offset + 5]) == 'r' &&
-				tolower(source[offset + 6]) == 't')
+		    ascii_to_lower(source[offset + 1]) == 'i' &&
+		    ascii_to_lower(source[offset + 2]) == 'm' &&
+		    ascii_to_lower(source[offset + 3]) == 'p' &&
+		    ascii_to_lower(source[offset + 4]) == 'o' &&
+		    ascii_to_lower(source[offset + 5]) == 'r' &&
+		    ascii_to_lower(source[offset + 6]) == 't') {
 			imports++;
+		}
 	}
 
 	rewritten = malloc(size + imports * 20);
