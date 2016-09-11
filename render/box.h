@@ -100,6 +100,7 @@ struct object_param;
 struct html_content;
 struct nsurl;
 struct dom_node;
+struct dom_string;
 struct rect;
 
 #define UNKNOWN_WIDTH INT_MAX
@@ -334,8 +335,18 @@ struct box *box_pick_text_box(struct html_content *html,
 struct box *box_find_by_id(struct box *box, lwc_string *id);
 bool box_visible(struct box *box);
 void box_dump(FILE *stream, struct box *box, unsigned int depth, bool style);
-bool box_extract_link(const struct html_content *content,
-		const char *rel, struct nsurl *base, struct nsurl **result);
+
+/**
+ * Extract a URL from a relative link, handling junk like whitespace and
+ * attempting to read a real URL from "javascript:" links.
+ *
+ * \param content html content
+ * \param ds rel relative URL text taken from page
+ * \param base base for relative URLs
+ * \param result updated to target URL on heap, unchanged if extract failed
+ * \return true on success, false on memory exhaustion
+ */
+bool box_extract_link(const struct html_content *content, const struct dom_string *dsrel, struct nsurl *base, struct nsurl **result);
 
 bool box_handle_scrollbars(struct content *c, struct box *box,
 		bool bottom, bool right);

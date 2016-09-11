@@ -1479,8 +1479,7 @@ bool box_a(BOX_SPECIAL_PARAMS)
 
 	err = dom_element_get_attribute(n, corestring_dom_href, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
-		ok = box_extract_link(content, dom_string_data(s),
-				content->base_url, &url);
+		ok = box_extract_link(content, s, content->base_url, &url);
 		dom_string_unref(s);
 		if (!ok)
 			return false;
@@ -1593,8 +1592,7 @@ bool box_image(BOX_SPECIAL_PARAMS)
 	if (err != DOM_NO_ERR || s == NULL)
 		return true;
 
-	if (box_extract_link(content, dom_string_data(s), content->base_url,
-			&url) == false) {
+	if (box_extract_link(content, s, content->base_url, &url) == false) {
 		dom_string_unref(s);
 		return false;
 	}
@@ -1695,8 +1693,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	 * (codebase is the base for the other two) */
 	err = dom_element_get_attribute(n, corestring_dom_codebase, &codebase);
 	if (err == DOM_NO_ERR && codebase != NULL) {
-		if (box_extract_link(content, dom_string_data(codebase),
-				content->base_url,
+		if (box_extract_link(content, codebase,	content->base_url,
 				&params->codebase) == false) {
 			dom_string_unref(codebase);
 			return false;
@@ -1708,7 +1705,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 
 	err = dom_element_get_attribute(n, corestring_dom_classid, &classid);
 	if (err == DOM_NO_ERR && classid != NULL) {
-		if (box_extract_link(content, dom_string_data(classid),
+		if (box_extract_link(content, classid,
 				params->codebase, &params->classid) == false) {
 			dom_string_unref(classid);
 			return false;
@@ -1718,7 +1715,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 
 	err = dom_element_get_attribute(n, corestring_dom_data, &data);
 	if (err == DOM_NO_ERR && data != NULL) {
-		if (box_extract_link(content, dom_string_data(data),
+		if (box_extract_link(content, data,
 				params->codebase, &params->data) == false) {
 			dom_string_unref(data);
 			return false;
@@ -2139,8 +2136,8 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 			url = NULL;
 			err = dom_element_get_attribute(c, corestring_dom_src, &s);
 			if (err == DOM_NO_ERR && s != NULL) {
-				box_extract_link(content, dom_string_data(s),
-						content->base_url, &url);
+				box_extract_link(content, s, content->base_url,
+						 &url);
 				dom_string_unref(s);
 			}
 
@@ -2275,8 +2272,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	err = dom_element_get_attribute(n, corestring_dom_src, &s);
 	if (err != DOM_NO_ERR || s == NULL)
 		return true;
-	if (box_extract_link(content, dom_string_data(s), content->base_url,
-			&url) == false) {
+	if (box_extract_link(content, s, content->base_url, &url) == false) {
 		dom_string_unref(s);
 		return false;
 	}
@@ -2853,8 +2849,8 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 	err = dom_element_get_attribute(n, corestring_dom_src, &src);
 	if (err != DOM_NO_ERR || src == NULL)
 		return true;
-	if (box_extract_link(content, dom_string_data(src), content->base_url,
-			&params->data) == false) {
+	if (box_extract_link(content, src, content->base_url,
+			     &params->data) == false) {
 		dom_string_unref(src);
 		return false;
 	}
@@ -2997,22 +2993,19 @@ bool box_get_attribute(dom_node *n, const char *attribute,
 }
 
 
-/**
- * Extract a URL from a relative link, handling junk like whitespace and
- * attempting to read a real URL from "javascript:" links.
- *
- * \param  rel	   relative URL taken from page
- * \param  base	   base for relative URLs
- * \param  result  updated to target URL on heap, unchanged if extract failed
- * \return  true on success, false on memory exhaustion
- */
-
-bool box_extract_link(const html_content *content,
-		const char *rel, nsurl *base, nsurl **result)
+/* exported function documented in render/box.h */
+bool
+box_extract_link(const html_content *content,
+		 const dom_string *dsrel,
+		 nsurl *base,
+		 nsurl **result)
 {
 	char *s, *s1, *apos0 = 0, *apos1 = 0, *quot0 = 0, *quot1 = 0;
 	unsigned int i, j, end;
 	nserror error;
+	const char *rel;
+
+	rel = dom_string_data(dsrel);
 
 	s1 = s = malloc(3 * strlen(rel) + 1);
 	if (!s)
