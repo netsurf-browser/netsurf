@@ -26,7 +26,6 @@
  */
 
 #include <assert.h>
-#include <ctype.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -42,6 +41,7 @@
 #include "utils/talloc.h"
 #include "utils/utils.h"
 #include "utils/string.h"
+#include "utils/ascii.h"
 #include "content/content_protected.h"
 #include "css/hints.h"
 #include "css/select.h"
@@ -128,8 +128,6 @@ static bool box_pre(BOX_SPECIAL_PARAMS);
 static bool box_iframe(BOX_SPECIAL_PARAMS);
 static bool box_get_attribute(dom_node *n, const char *attribute,
 		void *context, char **value);
-static struct frame_dimension *box_parse_multi_lengths(const char *s,
-		unsigned int *count);
 
 /* element_table must be sorted by name */
 struct element_entry {
@@ -1939,6 +1937,65 @@ static int box_frames_talloc_destructor(struct content_html_frames *f)
 	return 0;
 }
 
+
+/**
+ * Parse a multi-length-list, as defined by HTML 4.01.
+ *
+ * \param ds dom string to parse
+ * \param count updated to number of entries
+ * \return array of struct box_multi_length, or 0 on memory exhaustion
+ */
+static struct frame_dimension *
+box_parse_multi_lengths(const dom_string *ds, unsigned int *count)
+{
+	char *end;
+	unsigned int i, n;
+	struct frame_dimension *length;
+	const char *s;
+
+	s = dom_string_data(ds);
+
+	for (i = 0, n = 1; s[i]; i++)
+		if (s[i] == ',')
+			n++;
+
+	length = calloc(n, sizeof(struct frame_dimension));
+	if (!length)
+		return NULL;
+
+	for (i = 0; i != n; i++) {
+		while (ascii_is_space(*s)) {
+			s++;
+		}
+		length[i].value = strtof(s, &end);
+		if (length[i].value <= 0) {
+			length[i].value = 1;
+		}
+		s = end;
+		switch (*s) {
+			case '%':
+				length[i].unit = FRAME_DIMENSION_PERCENT;
+				break;
+			case '*':
+				length[i].unit = FRAME_DIMENSION_RELATIVE;
+				break;
+			default:
+				length[i].unit = FRAME_DIMENSION_PIXELS;
+				break;
+		}
+		while (*s && *s != ',') {
+			s++;
+		}
+		if (*s == ',') {
+			s++;
+		}
+	}
+
+	*count = n;
+	return length;
+}
+
+
 bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 		html_content *content) {
 	unsigned int row, col, index, i;
@@ -1955,7 +2012,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 	/* parse rows and columns */
 	err = dom_element_get_attribute(n, corestring_dom_rows, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
-		row_height = box_parse_multi_lengths(dom_string_data(s), &rows);
+		row_height = box_parse_multi_lengths(s, &rows);
 		dom_string_unref(s);
 		if (row_height == NULL)
 			return false;
@@ -1969,7 +2026,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 
 	err = dom_element_get_attribute(n, corestring_dom_cols, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
-		col_width = box_parse_multi_lengths(dom_string_data(s), &cols);
+		col_width = box_parse_multi_lengths(s, &cols);
 		dom_string_unref(s);
 		if (col_width == NULL) {
 			free(row_height);
@@ -3012,9 +3069,11 @@ box_extract_link(const html_content *content,
 		return false;
 
 	/* copy to s, removing white space and control characters */
-	for (i = 0; rel[i] && isspace(rel[i]); i++)
+	for (i = 0; rel[i] && ascii_is_space(rel[i]); i++)
 		;
-	for (end = strlen(rel); end != i && isspace(rel[end - 1]); end--)
+	for (end = strlen(rel);
+	     (end != i) && ascii_is_space(rel[end - 1]);
+	     end--)
 		;
 	for (j = 0; i != end; i++) {
 		if ((unsigned char) rel[i] < 0x20) {
@@ -3061,54 +3120,4 @@ box_extract_link(const html_content *content,
 }
 
 
-/**
- * Parse a multi-length-list, as defined by HTML 4.01.
- *
- * \param  s	    string to parse
- * \param  count    updated to number of entries
- * \return  array of struct box_multi_length, or 0 on memory exhaustion
- */
-
-struct frame_dimension *box_parse_multi_lengths(const char *s,
-		unsigned int *count)
-{
-	char *end;
-	unsigned int i, n;
-	struct frame_dimension *length;
-
-	for (i = 0, n = 1; s[i]; i++)
-		if (s[i] == ',')
-			n++;
-
-	length = calloc(n, sizeof(struct frame_dimension));
-	if (!length)
-		return NULL;
-
-	for (i = 0; i != n; i++) {
-		while (isspace(*s))
-			s++;
-		length[i].value = strtof(s, &end);
-		if (length[i].value <= 0)
-			length[i].value = 1;
-		s = end;
-		switch (*s) {
-			case '%':
-				length[i].unit = FRAME_DIMENSION_PERCENT;
-				break;
-			case '*':
-				length[i].unit = FRAME_DIMENSION_RELATIVE;
-				break;
-			default:
-				length[i].unit = FRAME_DIMENSION_PIXELS;
-				break;
-		}
-		while (*s && *s != ',')
-			s++;
-		if (*s == ',')
-			s++;
-	}
-
-	*count = n;
-	return length;
-}
 
