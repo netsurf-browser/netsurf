@@ -743,44 +743,6 @@ static MFDB * snapshot_create_native_mfdb(int x, int y, int w, int h)
     return( &buf_scr );
 }
 
-/**
- * Create an snapshot of the screen image in VDI standard format (8 bit).
- */
-static MFDB * snapshot_create_std_mfdb(int x, int y, int w, int h)
-{
-    /* allocate memory for the snapshot */
-    {
-        int scr_stride = MFDB_STRIDE( w );
-        int scr_size = ( ((scr_stride >> 3) * h) * vdi_sysinfo.scr_bpp );
-        if(size_buf_std == 0 ){
-            /* init screen mfdb */
-            buf_std.fd_addr = malloc( scr_size );
-            size_buf_std = scr_size;
-        } else {
-            if( scr_size >size_buf_std ) {
-                buf_std.fd_addr = realloc(
-                    buf_std.fd_addr, scr_size
-                    );
-                size_buf_std = scr_size;
-            }
-        }
-        if(buf_std.fd_addr == NULL ) {
-            size_buf_std = 0;
-            return( NULL );
-        }
-        buf_std.fd_nplanes = 8;
-        buf_std.fd_w = scr_stride;
-        buf_std.fd_h = h;
-        buf_std.fd_stand = 1;
-        buf_std.fd_wdwidth = scr_stride >> 4;
-        assert(buf_std.fd_addr != NULL );
-    }
-    MFDB * native = snapshot_create_native_mfdb(x,y,w,h );
-    assert( native );
-
-    vr_trnfm(atari_plot_vdi_handle, native, &buf_std);
-    return( &buf_std );
-}
 
 /*
  * Create an snapshot of the screen in netsurf ABGR format
@@ -1002,6 +964,46 @@ inline static bool ablend_bitmap( struct bitmap * img, struct bitmap * bg,
 
 
 #ifdef WITH_8BPP_SUPPORT
+
+/**
+ * Create an snapshot of the screen image in VDI standard format (8 bit).
+ */
+static MFDB * snapshot_create_std_mfdb(int x, int y, int w, int h)
+{
+    /* allocate memory for the snapshot */
+    {
+        int scr_stride = MFDB_STRIDE( w );
+        int scr_size = ( ((scr_stride >> 3) * h) * vdi_sysinfo.scr_bpp );
+        if(size_buf_std == 0 ){
+            /* init screen mfdb */
+            buf_std.fd_addr = malloc( scr_size );
+            size_buf_std = scr_size;
+        } else {
+            if( scr_size >size_buf_std ) {
+                buf_std.fd_addr = realloc(
+                    buf_std.fd_addr, scr_size
+                    );
+                size_buf_std = scr_size;
+            }
+        }
+        if(buf_std.fd_addr == NULL ) {
+            size_buf_std = 0;
+            return( NULL );
+        }
+        buf_std.fd_nplanes = 8;
+        buf_std.fd_w = scr_stride;
+        buf_std.fd_h = h;
+        buf_std.fd_stand = 1;
+        buf_std.fd_wdwidth = scr_stride >> 4;
+        assert(buf_std.fd_addr != NULL );
+    }
+    MFDB * native = snapshot_create_native_mfdb(x,y,w,h );
+    assert( native );
+
+    vr_trnfm(atari_plot_vdi_handle, native, &buf_std);
+    return( &buf_std );
+}
+
 /**
  * Convert an bitmap to an 8 bit device dependant MFDB
  * \param img the bitmap (only tested with 32bit bitmaps)
@@ -1063,16 +1065,18 @@ static bool bitmap_convert_8(struct bitmap * img, int x,
         // the size of the output will match the size of the clipping:
         dststride = MFDB_STRIDE( clip->g_w );
         dstsize = ( ((dststride >> 3) * clip->g_h) * atari_plot_bpp_virt);
-        if( dstsize > size_buf_packed) {
+        if (dstsize > size_buf_packed) {
             int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
-            if( buf_packed == NULL )
-                buf_packed =(void*)malloc( blocks * CONV_BLOCK_SIZE);
-            else
-                buf_packed =(void*)realloc(buf_packed,blocks * CONV_BLOCK_SIZE);
-            assert( buf_packed );
-            if( buf_packed == NULL ) {
+            void *buf;
+            if (buf_packed == NULL) {
+                buf = malloc( blocks * CONV_BLOCK_SIZE);
+            } else {
+                buf = realloc(buf_packed, blocks * CONV_BLOCK_SIZE);
+            }
+            if (buf == NULL) {
                 return( 0-ERR_NO_MEM );
             }
+            buf_packed = buf;
             size_buf_packed = blocks * CONV_BLOCK_SIZE;
         }
         native.fd_addr = buf_packed;
@@ -1083,7 +1087,7 @@ static bool bitmap_convert_8(struct bitmap * img, int x,
         dststride = MFDB_STRIDE( bw );
         dstsize = ( ((dststride >> 3) * bh) * atari_plot_bpp_virt);
         assert( out->fd_addr == NULL );
-        native.fd_addr = (void*)malloc( dstsize );
+        native.fd_addr = malloc( dstsize );
         if (native.fd_addr == NULL){
             if (scrbuf != NULL)
                 atari_bitmap_destroy(scrbuf);
@@ -1104,16 +1108,21 @@ static bool bitmap_convert_8(struct bitmap * img, int x,
         stdform.fd_addr = bg->fd_addr;
         bh = clip->g_h;
     } else {
-        if( dstsize > size_buf_planar) {
+        if (dstsize > size_buf_planar) {
             int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
-            if( buf_planar == NULL )
-                buf_planar =(void*)malloc( blocks * CONV_BLOCK_SIZE );
-            else
-                buf_planar =(void*)realloc(buf_planar, blocks * CONV_BLOCK_SIZE);
-            assert(buf_planar);
-            if( buf_planar == NULL ) {
+            void *buf;
+            if (buf_planar == NULL) {
+                buf = malloc(blocks * CONV_BLOCK_SIZE);
+            } else {
+                buf = realloc(buf_planar, blocks * CONV_BLOCK_SIZE);
+            }
+            if (buf == NULL ) {
+                if (cache) {
+                    free(native.fd_addr);
+                }
                 return( 0-ERR_NO_MEM );
             }
+            buf_planar = buf;
             size_buf_planar = blocks * CONV_BLOCK_SIZE;
         }
         stdform.fd_addr = buf_planar;
@@ -1315,19 +1324,22 @@ static bool bitmap_convert_tc(struct bitmap * img, int x, int y,
     dststride = MFDB_STRIDE(bw);
     dstsize = ( ((dststride >> 3) * bh) * atari_plot_bpp_virt );
     if (cache == false) {
+        /* ensure cache buffer is large enough */
         if (dstsize > size_buf_packed) {
             int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
-            if( buf_packed == NULL )
-                buf_packed =(void*)malloc( blocks * CONV_BLOCK_SIZE );
-             else
-                buf_packed =(void*)realloc(buf_packed,
-                                            blocks * CONV_BLOCK_SIZE);
-            assert( buf_packed );
-            if( buf_packed == NULL ) {
-                if( scrbuf != NULL )
-                    atari_bitmap_destroy( scrbuf );
+            void *buf;
+            if (buf_packed == NULL) {
+                buf = malloc(blocks * CONV_BLOCK_SIZE);
+            } else {
+                buf = realloc(buf_packed, blocks * CONV_BLOCK_SIZE);
+            }
+            if (buf == NULL ) {
+                if (scrbuf != NULL) {
+                    atari_bitmap_destroy(scrbuf);
+                }
                 return( 0-ERR_NO_MEM );
             }
+            buf_packed = buf;
             size_buf_packed = blocks * CONV_BLOCK_SIZE;
         }
         out->fd_addr = buf_packed;
@@ -1384,9 +1396,13 @@ static bool bitmap_convert_tc(struct bitmap * img, int x, int y,
 inline static void convert_bitmap_done(void)
 {
     if (size_buf_packed > CONV_KEEP_LIMIT) {
+        void *buf;
         /* free the mem if it was an large allocation ... */
-        buf_packed = realloc(buf_packed, CONV_KEEP_LIMIT);
-        size_buf_packed = CONV_KEEP_LIMIT;
+        buf = realloc(buf_packed, CONV_KEEP_LIMIT);
+        if (buf != NULL) {
+            buf_packed = buf;
+            size_buf_packed = CONV_KEEP_LIMIT;
+        }
     }
 }
 
@@ -1556,7 +1572,8 @@ int plot_init(char * fdrvrname)
                                 atari_font_flags, &err);
     if(err) {
         const char * desc = plot_err_str(err);
-        die(("Unable to load font plotter %s -> %s", fdrvrname, desc ));
+        LOG("Unable to load font plotter %s -> %s", fdrvrname, desc );
+        die("font plotter");
     }
 
     memset(&view, 0, sizeof(struct s_view));
