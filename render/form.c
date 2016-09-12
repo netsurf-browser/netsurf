@@ -26,7 +26,6 @@
  */
 
 #include <assert.h>
-#include <ctype.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -40,6 +39,7 @@
 #include "utils/url.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "utils/ascii.h"
 #include "content/fetch.h"
 #include "content/hlcache.h"
 #include "css/utils.h"
@@ -980,8 +980,9 @@ char *form_acceptable_charset(struct form *form)
 		return NULL;
 
 	/* make it upper case */
-	for (c = temp; *c; c++)
-		*c = toupper(*c);
+	for (c = temp; *c; c++) {
+		*c = ascii_to_upper(*c);
+	}
 
 	/* is UTF-8 specified? */
 	c = strstr(temp, "UTF-8");
@@ -997,14 +998,14 @@ char *form_acceptable_charset(struct form *form)
 	 * form element contains a space and/or comma separated list */
 	c = form->accept_charsets;
 
-	/* What would be an improvement would be to choose an encoding
+	/** \todo an improvement would be to choose an encoding
 	 * acceptable to the server which covers as much of the input
-	 * values as possible. Additionally, we need to handle the case
-	 * where none of the acceptable encodings cover all the textual
-	 * input values.
-	 * For now, we just extract the first element of the charset list
+	 * values as possible. Additionally, we need to handle the
+	 * case where none of the acceptable encodings cover all the
+	 * textual input values.  For now, we just extract the first
+	 * element of the charset list
 	 */
-	while (*c && !isspace(*c)) {
+	while (*c && !ascii_is_space(*c)) {
 		if (*c == ',')
 			break;
 		c++;
