@@ -23,7 +23,6 @@
  */
 
 #include <assert.h>
-#include <ctype.h>
 #include <stdint.h>
 #include <string.h>
 #include <strings.h>
@@ -40,6 +39,7 @@
 #include "utils/utf8.h"
 #include "utils/nsoption.h"
 #include "utils/string.h"
+#include "utils/ascii.h"
 #include "netsurf/content.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/utf8.h"
@@ -394,7 +394,7 @@ static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
 	url = dom_string_data(content);
 
 	/* *LWS */
-	while (url < end && isspace(*url)) {
+	while (url < end && ascii_is_space(*url)) {
 		url++;
 	}
 
@@ -422,7 +422,7 @@ static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
 	}
 
 	/* *LWS */
-	while (url < end && isspace(*url)) {
+	while (url < end && ascii_is_space(*url)) {
 		url++;
 	}
 
@@ -431,7 +431,7 @@ static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
 		url++;
 
 	/* *LWS */
-	while (url < end && isspace(*url)) {
+	while (url < end && ascii_is_space(*url)) {
 		url++;
 	}
 
@@ -463,7 +463,7 @@ static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
 	}
 
 	/* *LWS */
-	while (url < end && isspace(*url)) {
+	while (url < end && ascii_is_space(*url)) {
 		url++;
 	}
 
@@ -483,7 +483,7 @@ static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
 	}
 
 	/* *LWS */
-	while (url < end && isspace(*url)) {
+	while (url < end && ascii_is_space(*url)) {
 		url++;
 	}
 
@@ -502,7 +502,7 @@ static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
 			url++;
 	} else {
 		/* url-nq */
-		while (url < end && !isspace(*url))
+		while (url < end && !ascii_is_space(*url))
 			url++;
 	}
 
