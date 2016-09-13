@@ -52,7 +52,6 @@ enum cookie_manager_field {
 	COOKIE_M_LAST_USED,
 	COOKIE_M_RESTRICTIONS,
 	COOKIE_M_VERSION,
-	COOKIE_M_PERSISTENT,
 	COOKIE_M_DOMAIN_FOLDER,
 	COOKIE_M_N_FIELDS
 };
@@ -331,13 +330,6 @@ cookie_manager_set_treeview_field_data(struct cookie_manager_entry *e,
 	case COOKIE_RFC2965:
 		e->data[COOKIE_M_VERSION] = cm_ctx.values[COOKIE_M_RFC2965];
 		break;
-	}
-
-	/* Set the Persistent text */
-	if (data->no_destroy) {
-		e->data[COOKIE_M_PERSISTENT] = cm_ctx.values[COOKIE_M_YES];
-	} else {
-		e->data[COOKIE_M_PERSISTENT] = cm_ctx.values[COOKIE_M_NO];
 	}
 
 	return NSERROR_OK;
@@ -638,15 +630,6 @@ static nserror cookie_manager_init_entry_fields(void)
 		goto error;
 	}
 
-	cm_ctx.fields[COOKIE_M_PERSISTENT].flags = TREE_FLAG_SHOW_NAME;
-	label = "TreeviewLabelPersistent";
-	label = messages_get(label);
-	if (lwc_intern_string(label, strlen(label),
-			&cm_ctx.fields[COOKIE_M_PERSISTENT].field) !=
-			lwc_error_ok) {
-		goto error;
-	}
-
 	cm_ctx.fields[COOKIE_M_DOMAIN_FOLDER].flags = TREE_FLAG_DEFAULT;
 	label = "TreeviewLabelDomainFolder";
 	label = messages_get(label);
@@ -709,15 +692,6 @@ static nserror cookie_manager_init_common_values(void)
 	temp = messages_get("TreeVersion2");
 	cookie_manager_field_builder(COOKIE_M_VERSION,
 			&cm_ctx.values[COOKIE_M_RFC2965], strdup(temp));
-
-	/* Set the Persistent value text */
-	temp = messages_get("Yes");
-	cookie_manager_field_builder(COOKIE_M_PERSISTENT,
-			&cm_ctx.values[COOKIE_M_YES], strdup(temp));
-
-	temp = messages_get("No");
-	cookie_manager_field_builder(COOKIE_M_PERSISTENT,
-			&cm_ctx.values[COOKIE_M_NO], strdup(temp));
 
 	return NSERROR_OK;
 }
