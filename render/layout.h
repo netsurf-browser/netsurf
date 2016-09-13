@@ -45,7 +45,7 @@ bool layout_document(struct html_content *content, int width, int height);
 /**
  * Layout lines of text or inline boxes with floats.
  *
- * \param inline_container inline container box
+ * \param box inline container box
  * \param width horizontal space available
  * \param cont ancestor box which defines horizontal space, for floats
  * \param cx box position relative to cont

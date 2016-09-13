@@ -48,7 +48,7 @@ void win32_set_quit(bool q);
 /**
  * Warn the user of an event.
  *
- * \param[in] message A warning looked up in the message translation table
+ * \param[in] warning A warning looked up in the message translation table
  * \param[in] detail Additional text to be displayed or NULL.
  * \return NSERROR_OK on success or error code if there was a
  *           faliure displaying the message to the user.

@@ -148,9 +148,11 @@ void content_invalidate_reuse_data(struct hlcache_handle *h);
 /**
  * Display content on screen with optional tiling.
  *
- * \param h The content to redraw
- * \param ctx current redraw context
- * \return true if successful, false otherwise
+ * \param h The content to redraw.
+ * \param data The contents redraw data.
+ * \param clip The clipping rectangle to use when redrawing the content.
+ * \param ctx current redraw context.
+ * \return true if successful otherwise false.
  *
  * Calls the redraw function for the content.
  */

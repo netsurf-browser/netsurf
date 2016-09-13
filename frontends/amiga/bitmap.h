@@ -43,8 +43,8 @@ struct bitmap *ami_bitmap_from_datatype(char *filename);
 /**
  * Set bitmap URL
  *
- * \param  bm  a bitmap, as returned by bitmap_create()
- * \param  title  a pointer to a title string
+ * \param bm  a bitmap, as returned by bitmap_create()
+ * \param url the url for the bitmap
  *
  * A reference will be kept by the bitmap object.
  * The URL can only ever be set once for a bitmap.

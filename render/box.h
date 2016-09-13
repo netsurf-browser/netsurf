@@ -341,7 +341,7 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth, bool style);
  * attempting to read a real URL from "javascript:" links.
  *
  * \param content html content
- * \param ds rel relative URL text taken from page
+ * \param dsrel relative URL text taken from page
  * \param base base for relative URLs
  * \param result updated to target URL on heap, unchanged if extract failed
  * \return true on success, false on memory exhaustion

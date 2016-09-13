@@ -1305,13 +1305,13 @@ static bool html_redraw_file(int x, int y, int width, int height,
  * \param  scale  scale for redraw
  * \param  clip   current clip rectangle
  * \param  background_colour  current background colour
- * \param  background  box containing background details (usually ::box)
+ * \param  background  box containing background details (usually \a box)
  * \param  ctx	  current redraw context
  * \return true if successful, false otherwise
  *
  * The reason for the presence of ::background is the backwards compatibility
- * mess that is backgrounds on <body>. The background will be drawn relative
- * to ::box, using the background information contained within ::background.
+ * mess that is backgrounds on &lt;body&gt;. The background will be drawn relative
+ * to \a box, using the background information contained within \a background.
  */
 
 static bool html_redraw_background(int x, int y, struct box *box, float scale,

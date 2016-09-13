@@ -57,6 +57,7 @@ nserror messages_add_from_file(const char *path);
  * data may be gzip compressed.
  *
  * \param data The inline message data.
+ * \param data_size The length of the message data.
  * \return NSERROR_OK on success or error code on faliure.
  */
 nserror messages_add_from_inline(const uint8_t *data, size_t data_size);

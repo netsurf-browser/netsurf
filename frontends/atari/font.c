@@ -122,7 +122,7 @@ atari_font_split(const plot_font_style_t *fstyle,
  * Measure the width of a string.
  *
  * \param[in] fstyle plot style for this text
- * \param[in] string UTF-8 string to measure
+ * \param[in] str UTF-8 string to measure
  * \param[in] length length of string, in bytes
  * \param[out] width updated to width of string[0..length)
  * \return NSERROR_OK and width updated or appropriate error code on faliure
@@ -131,7 +131,7 @@ static nserror
 atari_font_width(const plot_font_style_t *fstyle,
 		 const char *str,
 		 size_t length,
-		 int * width)
+		 int *width)
 {
 	float scale = plot_get_scale();
 

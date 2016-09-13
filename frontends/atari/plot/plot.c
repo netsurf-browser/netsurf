@@ -387,7 +387,7 @@ bool plot_copy_rect(GRECT src, GRECT dst)
 /**
  * Fill the screen info structure.
  *
- * \param vdhi The handle
+ * \param vdih The handle
  * \param[out] info The infor structure to fill.
  */
 static void read_vdi_sysinfo(short vdih, struct s_vdi_sysinfo * info) {
