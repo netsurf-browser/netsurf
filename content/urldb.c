@@ -112,6 +112,12 @@
 #include "content/content.h"
 #include "content/urldb.h"
 
+/**
+ * cookie entry.
+ *
+ * \warn This *must* be kept in sync with the public interface in
+ *   netsurf/cookie_db.h
+ */
 struct cookie_internal_data {
 	struct cookie_internal_data *prev;	/**< Previous in list */
 	struct cookie_internal_data *next;	/**< Next in list */

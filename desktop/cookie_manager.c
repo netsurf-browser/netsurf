@@ -294,8 +294,14 @@ cookie_manager_set_treeview_field_data(struct cookie_manager_entry *e,
 			&e->data[COOKIE_M_PATH], strdup(data->path));
 
 	/* Set the Expires date field */
-	cookie_manager_field_builder_time(COOKIE_M_EXPIRES,
+	if (data->expires == -1) {
+		cookie_manager_field_builder(COOKIE_M_EXPIRES,
+			&e->data[COOKIE_M_EXPIRES],
+			strdup(messages_get("CookieManagerSession")));
+	} else {
+		cookie_manager_field_builder_time(COOKIE_M_EXPIRES,
 			&e->data[COOKIE_M_EXPIRES], &data->expires);
+	}
 
 	/* Set the Last used date field */
 	cookie_manager_field_builder_time(COOKIE_M_LAST_USED,

@@ -1273,6 +1273,7 @@ nl.all.TreeviewLabelFolder:Map:
 
 # Cookie Manager field values
 #
+en.all.CookieManagerSession:Session
 en.all.CookieManagerHTTPS:Secure hosts via https only
 de.all.CookieManagerHTTPS:Secure hosts via https only
 fr.all.CookieManagerHTTPS:Hôtes sécurisés via https uniquement
