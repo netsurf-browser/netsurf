@@ -27,6 +27,14 @@
 #include <stdbool.h>
 #include <time.h>
 
+/**
+ * Version of cookie
+ *
+ * RFC2109 and RFC2965 "HTTP State Management Mechanism" defined
+ * alternative versions of cookies. Nothing used them and these RFC
+ * are now obsoleted by RFC6265 which completely removes the
+ * alternative versions.
+ */
 enum cookie_version {
 	COOKIE_NETSCAPE = 0,
 	COOKIE_RFC2109 = 1,
