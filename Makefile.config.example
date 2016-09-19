@@ -28,11 +28,8 @@
 ### following line
 # override NETSURF_FB_FONTLIB := freetype
 
-### To enable/disable JavaScript support, uncomment the appropriate line below.
-# override NETSURF_USE_JS := NO
-# override NETSURF_USE_JS := YES
-# override NETSURF_USE_MOZJS := NO
-# override NETSURF_USE_MOZJS := YES
+### To disable JavaScript support, uncomment the appropriate line below.
+# override NETSURF_USE_DUKTAPE := NO
 
 ### To change flags to javascript binding generator
 # GBFLAGS:=-g

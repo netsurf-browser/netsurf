@@ -22,12 +22,6 @@ NETSURF_USE_AMIGA_DATATYPES := YES
 # Valid options: YES, NO
 NETSURF_USE_NSSVG := YES
 
-# Enable NetSurf's use of Spidermonkey 1.80+
-# Only here to stop the build complaining;
-# enable NETSURF_USE_MOZJS instead for JavaScript support
-# Valid options: NO
-NETSURF_USE_JS := NO
-
 # Enable building the source object cache filesystem based backing store.
 # implementation.
 # Valid options: YES, NO

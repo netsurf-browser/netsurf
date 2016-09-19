@@ -32,7 +32,7 @@
 # ----------------------------------------------------------------------------
 
 # Enable NetSurf's use of libcurl for fetching over http(s)
-# Valid options: YES, NO
+# Valid options: YES, NO				  (highly recommended)
 NETSURF_USE_CURL := YES
 
 # Enable NetSurf's use of openssl for fetching over https
@@ -59,12 +59,8 @@ NETSURF_USE_PNG := YES
 # Valid options: YES, NO
 NETSURF_USE_VIDEO := NO
 
-# Enable NetSurf's use of spidermonkey for javascript
-# Valid options: YES, NO, AUTO
-NETSURF_USE_JS := NO
-# Javascript support in older debian/ubuntu versions
-NETSURF_USE_MOZJS := NO
-# Or use duktape
+# Enable NetSurf's use of duktape for javascript
+# Valid options: YES, NO
 NETSURF_USE_DUKTAPE := YES
 
 # Enable NetSurf's use of libharu for PDF export and GTK printing support.

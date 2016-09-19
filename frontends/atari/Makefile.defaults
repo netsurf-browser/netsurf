@@ -18,10 +18,6 @@ NETSURF_USE_RSVG := AUTO
 # Valid options: YES, NO, AUTO
 NETSURF_USE_NSSVG := AUTO
 
-# Enable Spidermonkey JavaScript engine
-# Valid options: YES, NO
-NETSURF_USE_MOZJS := NO
-
 # Enable building the source object cache filesystem based backing store.
 # implementation.
 # Valid options: YES, NO
