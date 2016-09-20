@@ -525,6 +525,7 @@ NETSURF_FEATURE_CURL_CFLAGS := -DWITH_CURL
 NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
 NETSURF_FEATURE_OPENSSL_CFLAGS := -DWITH_OPENSSL
 NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
+NETSURF_FEATURE_NSPSL_CFLAGS := -DWITH_NSPSL
 
 $(eval $(call pkg_config_find_and_add_enabled,OPENSSL,openssl,OpenSSL))
 # freemint does not support pkg-config for libcurl
@@ -540,6 +541,7 @@ $(eval $(call pkg_config_find_and_add_enabled,BMP,libnsbmp,BMP))
 $(eval $(call pkg_config_find_and_add_enabled,GIF,libnsgif,GIF))
 $(eval $(call pkg_config_find_and_add_enabled,NSSVG,libsvgtiny,SVG))
 $(eval $(call pkg_config_find_and_add_enabled,ROSPRITE,librosprite,Sprite))
+$(eval $(call pkg_config_find_and_add_enabled,NSPSL,libnspsl,PSL))
 
 # List of directories in which headers are searched for
 INCLUDE_DIRS :=. include $(OBJROOT)

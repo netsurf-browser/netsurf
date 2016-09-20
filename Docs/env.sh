@@ -90,7 +90,7 @@ NS_GIT="git://git.netsurf-browser.org"
 NS_BUILDSYSTEM="buildsystem"
 
 # internal libraries all frontends require (order is important)
-NS_INTERNAL_LIBS="libwapcaplet libparserutils libhubbub libdom libcss libnsgif libnsbmp libutf8proc libnsutils"
+NS_INTERNAL_LIBS="libwapcaplet libparserutils libhubbub libdom libcss libnsgif libnsbmp libutf8proc libnsutils libnspsl"
 
 # The browser itself
 NS_BROWSER="netsurf"

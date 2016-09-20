@@ -69,6 +69,9 @@ NETSURF_USE_DUKTAPE := YES
 # Valid options: YES, NO
 NETSURF_USE_HARU_PDF := NO
 
+# Enable the use of the Public suffix library to detect supercookies
+NETSURF_USE_NSPSL := AUTO
+
 # Enable stripping the NetSurf binary
 # Valid options: YES, NO
 NETSURF_STRIP_BINARY := NO

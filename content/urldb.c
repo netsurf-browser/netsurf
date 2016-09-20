@@ -94,6 +94,9 @@
 #include <string.h>
 #include <strings.h>
 #include <time.h>
+#ifdef WITH_NSPSL
+#include <nspsl.h>
+#endif
 
 #include "utils/inet.h"
 #include "utils/nsoption.h"
@@ -3353,6 +3356,7 @@ bool urldb_set_cookie(const char *header, nsurl *url, nsurl *referer)
 
 	do {
 		struct cookie_internal_data *c;
+		const char *suffix;
 		char *dot;
 		size_t len;
 
@@ -3379,6 +3383,19 @@ bool urldb_set_cookie(const char *header, nsurl *url, nsurl *referer)
 			goto error;
 		}
 
+#ifdef WITH_NSPSL
+		/* check domain is not a public suffix */
+		dot = c->domain;
+		if (*dot == '.') {
+			dot++;
+		}
+		suffix = nspsl_getpublicsuffix(dot);
+		if (suffix == NULL) {
+			LOG("domain %s was a public suffix domain", dot);
+			urldb_free_cookie(c);
+			goto error;
+		}
+#else
 		/* 4.3.2:ii Cookie domain must contain embedded dots */
 		dot = strchr(c->domain + 1, '.');
 		if (!dot || *(dot + 1) == '\0') {
@@ -3386,6 +3403,7 @@ bool urldb_set_cookie(const char *header, nsurl *url, nsurl *referer)
 			urldb_free_cookie(c);
 			goto error;
 		}
+#endif
 
 		/* Domain match fetch host with cookie domain */
 		if (strcasecmp(lwc_string_data(host), c->domain) != 0) {
