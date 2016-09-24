@@ -670,6 +670,9 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 			case DOM_HTML_ELEMENT_TYPE_IMG:
 				html_process_img(htmlc, (dom_node *) node);
 				break;
+			case DOM_HTML_ELEMENT_TYPE_STYLE:
+				html_css_process_style(htmlc, (dom_node *) node);
+				break;
 			default:
 				break;
 			}

@@ -321,6 +321,7 @@ nserror html_css_quirks_stylesheets(html_content *c);
 nserror html_css_free_stylesheets(html_content *html);
 
 bool html_css_process_link(html_content *htmlc, dom_node *node);
+bool html_css_process_style(html_content *htmlc, dom_node *node);
 bool html_css_update_style(html_content *c, dom_node *style);
 
 nserror html_css_new_selection_context(html_content *c,

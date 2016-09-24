@@ -60,6 +60,7 @@ struct html_stylesheet {
 	struct dom_node *node; /**< dom node associated with sheet */
 	struct hlcache_handle *sheet;
 	bool modified;
+	bool unused;
 };
 
 /**
