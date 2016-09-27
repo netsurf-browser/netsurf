@@ -129,7 +129,9 @@ static char *remove_underscores(const char *s, bool replacespace)
  * \return default images.
  */
 static GtkImage *
-nsgtk_theme_image_default(nsgtk_toolbar_button tbbutton, GtkIconSize iconsize)
+nsgtk_theme_image_default(nsgtk_toolbar_button tbbutton,
+			  GtkIconSize iconsize,
+			  bool usedef)
 {
 	GtkImage *image; /* The GTK image to return */
 
@@ -175,13 +177,16 @@ nsgtk_theme_image_default(nsgtk_toolbar_button tbbutton, GtkIconSize iconsize)
 		break;
 
 	default:
-		image = GTK_IMAGE(nsgtk_image_new_from_stock("gtk-missing-image",
-							     iconsize));
+		image = NULL;
 		break;
 
 	}
-	return image;
 
+	if (usedef && (image == NULL)) {
+		image = GTK_IMAGE(nsgtk_image_new_from_stock("gtk-missing-image", iconsize));
+	}
+
+	return image;
 }
 
 /**
@@ -194,43 +199,71 @@ nsgtk_theme_image_default(nsgtk_toolbar_button tbbutton, GtkIconSize iconsize)
 
 static GtkImage *
 nsgtk_theme_searchimage_default(nsgtk_search_buttons tbbutton,
-		GtkIconSize iconsize)
+				GtkIconSize iconsize,
+				bool usedef)
 {
+	GtkImage *image;
+
 	switch (tbbutton) {
 
 	case (SEARCH_BACK_BUTTON):
-		return GTK_IMAGE(nsgtk_image_new_from_stock(NSGTK_STOCK_GO_BACK,
-							    iconsize));
+		image = GTK_IMAGE(nsgtk_image_new_from_stock(NSGTK_STOCK_GO_BACK,
+							     iconsize));
+		break;
+
 	case (SEARCH_FORWARD_BUTTON):
-		return GTK_IMAGE(nsgtk_image_new_from_stock(NSGTK_STOCK_GO_FORWARD,
+		image = GTK_IMAGE(nsgtk_image_new_from_stock(NSGTK_STOCK_GO_FORWARD,
 							    iconsize));
+		break;
+
 	case (SEARCH_CLOSE_BUTTON):
-		return GTK_IMAGE(nsgtk_image_new_from_stock(NSGTK_STOCK_CLOSE,
+		image = GTK_IMAGE(nsgtk_image_new_from_stock(NSGTK_STOCK_CLOSE,
 							    iconsize));
+		break;
+
 	default:
-		return NULL;
+		image = NULL;
 	}
+
+	if (usedef && (image == NULL)) {
+		image = GTK_IMAGE(nsgtk_image_new_from_stock("gtk-missing-image", iconsize));
+	}
+
+	return image;
 }
 
 /**
  * initialise a theme structure with gtk images
+ *
+ * \param iconsize The size of icon to load
+ * \param usedef use the default gtk icon if unset
  */
-static struct nsgtk_theme *nsgtk_theme_load(GtkIconSize iconsize)
+static struct nsgtk_theme *nsgtk_theme_load(GtkIconSize iconsize, bool usedef)
 {
-	struct nsgtk_theme *theme = malloc(sizeof(struct nsgtk_theme));
+	struct nsgtk_theme *theme;
 	int btnloop;
 
+	theme = malloc(sizeof(struct nsgtk_theme));
 	if (theme == NULL) {
-		nsgtk_warning("NoMemory", 0);
 		return NULL;
 	}
 
-	for (btnloop = BACK_BUTTON; btnloop < PLACEHOLDER_BUTTON ; btnloop++) {
-		theme->image[btnloop] = nsgtk_theme_image_default(btnloop, iconsize);
+	for (btnloop = BACK_BUTTON;
+	     btnloop < PLACEHOLDER_BUTTON ;
+	     btnloop++) {
+		theme->image[btnloop] = nsgtk_theme_image_default(btnloop,
+								  iconsize,
+								  usedef);
+
 	}
 
-	for (btnloop = SEARCH_BACK_BUTTON; btnloop < SEARCH_BUTTONS_COUNT; btnloop++) {
-		theme->searchimage[btnloop] = nsgtk_theme_searchimage_default(btnloop, iconsize);
+	for (btnloop = SEARCH_BACK_BUTTON;
+	     btnloop < SEARCH_BUTTONS_COUNT;
+	     btnloop++) {
+		theme->searchimage[btnloop] =
+			nsgtk_theme_searchimage_default(btnloop,
+							iconsize,
+							usedef);
 	}
 	return theme;
 }
@@ -245,10 +278,10 @@ void nsgtk_theme_implement(struct nsgtk_scaffolding *g)
 	struct nsgtk_button_connect *button;
 	struct gtk_search *search;
 
-	theme[IMAGE_SET_MAIN_MENU] = nsgtk_theme_load(GTK_ICON_SIZE_MENU);
-	theme[IMAGE_SET_RCLICK_MENU] = nsgtk_theme_load(GTK_ICON_SIZE_MENU);
-	theme[IMAGE_SET_POPUP_MENU] = nsgtk_theme_load(GTK_ICON_SIZE_MENU);
-	theme[IMAGE_SET_BUTTONS] = nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR);
+	theme[IMAGE_SET_MAIN_MENU] = nsgtk_theme_load(GTK_ICON_SIZE_MENU, false);
+	theme[IMAGE_SET_RCLICK_MENU] = nsgtk_theme_load(GTK_ICON_SIZE_MENU, false);
+	theme[IMAGE_SET_POPUP_MENU] = nsgtk_theme_load(GTK_ICON_SIZE_MENU, false);
+	theme[IMAGE_SET_BUTTONS] = nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR, false);
 
 	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
 		if ((i == URL_BAR_ITEM) || (i == THROBBER_ITEM) ||
@@ -582,7 +615,7 @@ nsgtk_toolbar_data(GtkWidget *widget,
 	if (window->currentbutton == -1)
 		return TRUE;
 	struct nsgtk_theme *theme =
-			nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR);
+		nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR, false);
 	if (theme == NULL) {
 		nsgtk_warning(messages_get("NoMemory"), 0);
 		return TRUE;
@@ -735,7 +768,7 @@ static void nsgtk_toolbar_close(struct nsgtk_scaffolding *g)
 
 	list = nsgtk_scaffolding_iterate(NULL);
 	while (list) {
-		theme =	nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR);
+		theme =	nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR, false);
 		if (theme == NULL) {
 			nsgtk_warning(messages_get("NoMemory"), 0);
 			continue;
@@ -1067,7 +1100,7 @@ static void nsgtk_toolbar_window_open(struct nsgtk_scaffolding *g)
 	struct nsgtk_theme *theme;
 	nserror res;
 
-	theme =	nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR);
+	theme =	nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR, true);
 	if (theme == NULL) {
 		nsgtk_warning(messages_get("NoMemory"), 0);
 		nsgtk_toolbar_cancel_clicked(NULL, g);
@@ -1261,7 +1294,7 @@ void nsgtk_toolbar_set_physical(struct nsgtk_scaffolding *g)
 	int i;
 	struct nsgtk_theme *theme;
 
-	theme =	nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR);
+	theme =	nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR, false);
 	if (theme == NULL) {
 		nsgtk_warning(messages_get("NoMemory"), 0);
 		return;
