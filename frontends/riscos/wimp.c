@@ -360,11 +360,7 @@ void ro_gui_set_icon_integer(wimp_w w, wimp_i i, int value)
 {
 	char buffer[20]; // Big enough for 64-bit int
 
-	setlocale(LC_NUMERIC, "");
-
 	sprintf(buffer, "%d", value);
-
-	setlocale(LC_NUMERIC, "C");
 
 	ro_gui_set_icon_string(w, i, buffer, true);
 }
@@ -382,8 +378,6 @@ void ro_gui_set_icon_decimal(wimp_w w, wimp_i i, int value, int decimal_places)
 {
 	char buffer[20]; // Big enough for 64-bit int
 
-	setlocale(LC_NUMERIC, "");
-
 	switch (decimal_places) {
 		case 0:
 			sprintf(buffer, "%d", value);
@@ -398,8 +392,6 @@ void ro_gui_set_icon_decimal(wimp_w w, wimp_i i, int value, int decimal_places)
 			assert(!"Unsupported decimal format");
 			break;
 	}
-
-	setlocale(LC_NUMERIC, "C");
 
 	ro_gui_set_icon_string(w, i, buffer, true);
 }
@@ -421,11 +413,7 @@ int ro_gui_get_icon_decimal(wimp_w w, wimp_i i, int decimal_places)
 	for (; decimal_places > 0; decimal_places--)
 		multiple *= 10;
 
-	setlocale(LC_NUMERIC, "");
-
 	value = atof(ro_gui_get_icon_string(w, i)) * multiple;
-
-	setlocale(LC_NUMERIC, "C");
 
 	return (int)value;
 }

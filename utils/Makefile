@@ -10,7 +10,6 @@ S_UTILS := \
 	hashtable.c \
 	idna.c \
 	libdom.c \
-	locale.c \
 	log.c \
 	messages.c \
 	nsoption.c \

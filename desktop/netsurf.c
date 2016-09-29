@@ -212,12 +212,11 @@ nserror netsurf_init(const char *store_path)
 	if (ret != NSERROR_OK)
 		return ret;
 
-
 	ret = mimesniff_init();
 	if (ret != NSERROR_OK)
 		return ret;
 
-	setlocale(LC_ALL, "C");
+	setlocale(LC_ALL, "");
 
 	/* initialise the fetchers */
 	ret = fetcher_init();
