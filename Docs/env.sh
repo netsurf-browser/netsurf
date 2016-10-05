@@ -128,6 +128,12 @@ case "${HOST}" in
         # default additional internal libraries
         NS_FRONTEND_LIBS="libsvgtiny"
         ;;
+    m68k-unknown-amigaos)
+        # default tools required to build the browser
+        NS_TOOLS="nsgenbind"
+        # default additional internal libraries
+        NS_FRONTEND_LIBS="libsvgtiny"
+        ;;
     *-unknown-freebsd*)
         # tools required to build the browser for freebsd
         NS_TOOLS=""
