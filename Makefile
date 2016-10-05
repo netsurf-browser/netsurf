@@ -117,7 +117,7 @@ ifeq ($(TARGET),)
 endif
 
 # valid values for the TARGET
-VLDTARGET := riscos gtk beos amiga amigaos3 framebuffer windows atari cocoa monkey
+VLDTARGET := riscos gtk gtk3 beos amiga amigaos3 framebuffer windows atari cocoa monkey
 
 # Check for valid TARGET
 ifeq ($(filter $(VLDTARGET),$(TARGET)),)
@@ -287,7 +287,7 @@ else
                 CXX := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*g++)
               endif
 	    else
-              ifeq ($(findstring framebuffer,$(TARGET)),framebuffer)
+	      ifeq ($(TARGET),framebuffer)
                 ifeq ($(origin GCCSDK_INSTALL_ENV),undefined)
                   PKG_CONFIG := pkg-config
                 else
@@ -299,8 +299,25 @@ else
                   CXX := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*g++)
                 endif
               else
-                # All native targets (GTK)
+                # All native targets
                 PKG_CONFIG := pkg-config
+
+                # gtk target processing
+	        ifeq ($(TARGET),gtk3)
+                  override TARGET := gtk
+                  override NETSURF_GTK_MAJOR := 3
+                  SUBTARGET = $(NETSURF_GTK_MAJOR)
+                else
+	          ifeq ($(TARGET),gtk)
+                    ifeq ($(origin NETSURF_GTK_MAJOR),undefined)
+                      override NETSURF_GTK_MAJOR := 2
+                    else
+                      ifneq ($(NETSURF_GTK_MAJOR),2)
+                        SUBTARGET = $(NETSURF_GTK_MAJOR)
+                      endif
+                    endif
+                  endif
+                endif
               endif
             endif
           endif

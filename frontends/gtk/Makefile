@@ -40,7 +40,7 @@ GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk -g \
 		-D_XOPEN_SOURCE=600 \
 		-D_POSIX_C_SOURCE=200809L \
 		-D_NETBSD_SOURCE \
-		-DGTK_RESPATH=\"$(NETSURF_GTK_RESOURCES)\"
+		-DGTK_RESPATH=\"$(NETSURF_GTK_RES_PATH)\"
 
 # non optional pkg-configed libs
 $(eval $(call pkg_config_find_and_add,gtk+-$(NETSURF_GTK_MAJOR).0,GTK-$(NETSURF_GTK_MAJOR)))
@@ -58,8 +58,14 @@ LDFLAGS += -lm
 # Path to GTK resources
 NSGTK_RESOURCES_DIR := $(FRONTEND_RESOURCES_DIR)
 
-# The gtk binary target
-EXETARGET := nsgtk
+# The gtk binary target.
+ifeq ($(NETSURF_GTK_MAJOR),2)
+    # gtk2 builds have no major suffix
+    EXETARGET := nsgtk
+else
+    # gtk3 and later builds use the major version suffix
+    EXETARGET := nsgtk$(NETSURF_GTK_MAJOR)
+endif
 
 # The filter and target for split messages
 MESSAGES_FILTER=gtk
@@ -188,15 +194,18 @@ GTK_RESOURCES_LIST := \
 # translations with more than just Messages files
 GTK_TRANSLATIONS_HTML := de en fr it ja nl
 
+# destination for installed resources is the first entry in the gtk resource path
+NSGTK_RESOURCES_DESTDIR := $(DESTDIR)$(word 1,$(subst :, ,$(NETSURF_GTK_RES_PATH)))
+
 install-gtk:
 	$(Q)mkdir -p $(DESTDIR)$(NETSURF_GTK_BIN)
-	$(Q)install nsgtk $(DESTDIR)$(NETSURF_GTK_BIN)netsurf
-	$(Q)mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)icons
-	$(Q)install -m 0644 $(NSGTK_RESOURCES_DIR)/icons/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/icons
-	$(Q)mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
-	$(Q)install -m 0644 $(NSGTK_RESOURCES_DIR)/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/throbber
-	$(Q)tar -c -h -C $(NSGTK_RESOURCES_DIR) -f - $(GTK_TRANSLATIONS_HTML) | tar -xv -C $(DESTDIR)$(NETSURF_GTK_RESOURCES) -f -
-	$(Q)install -m 0644 $(GTK_RESOURCES_LIST) $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	$(Q)install $(EXETARGET) $(DESTDIR)$(NETSURF_GTK_BIN)netsurf-gtk$(SUBTARGET)
+	$(Q)mkdir -p $(NSGTK_RESOURCES_DESTDIR)/icons
+	$(Q)install -m 0644 $(NSGTK_RESOURCES_DIR)/icons/*.png $(NSGTK_RESOURCES_DESTDIR)/icons
+	$(Q)mkdir -p $(NSGTK_RESOURCES_DESTDIR)/throbber
+	$(Q)install -m 0644 $(NSGTK_RESOURCES_DIR)/throbber/*.png $(NSGTK_RESOURCES_DESTDIR)/throbber
+	$(Q)tar -c -h -C $(NSGTK_RESOURCES_DIR) -f - $(GTK_TRANSLATIONS_HTML) | tar -xv -C $(NSGTK_RESOURCES_DESTDIR) -f -
+	$(Q)install -m 0644 $(GTK_RESOURCES_LIST) $(NSGTK_RESOURCES_DESTDIR)
 
 # ----------------------------------------------------------------------------
 # Package target

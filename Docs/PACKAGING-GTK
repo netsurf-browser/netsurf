@@ -39,19 +39,30 @@
   gtk/res/ (dereferencing the symlinks, obviously) to /usr/share/netsurf (or
   wherever your packaging policy suggests).
 
-  You will need to tell NetSurf where to find its resources.  NetSurf searches
-  three locations by default when trying to load them, in this order:
+  You will need to tell NetSurf where to find its run time loaded
+  resources.  NetSurf searches three locations by default when trying
+  to load them, in this order:
 
     1. ~/.netsurf/
+
+       This entry allows the user some flexibility in changing what
+        resources NetSurf uses by placing resources in their home
+        directory.
+
     2. $NETSURFRES/
-    3. /usr/share/netsurf/
 
-  The second one is how the netsurf launcher script controls it.  The third
-  location is controlled by the NETSURF_GTK_RESOURCES option in
-  Makefile.config, and this is the recommended way for packagers to change
-  the location it searches, as this still allows the user some flexibility in
-  changing what NetSurf uses.
+       This entry allows the user or packager to control resource
+        aquisition through the environment. This entry is how the
+        developer launcher script controls resource location.
 
+    3. NETSURF_GTK_RES_PATH option
+
+       This location is controlled by the option in Makefile.config
+        (defaulting to ${PREFIX}/share/netsurf/ ). This configuration
+        is the recommended way for packagers to change the location
+        NetSurf finds external resources. The first path element of the
+        NETSURF_GTK_RES_PATH option is used in the install target as
+        the destination for installed resources.
 
   User agent string
 ===================
