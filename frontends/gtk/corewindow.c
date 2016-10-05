@@ -444,10 +444,6 @@ nsgtk_cw_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 
 	cairo_clip_extents(cr, &x1, &y1, &x2, &y2);
 
-	if (tv->tree_flags == TREE_SSLCERT) {
-		ssl_current_session = tv->ssl_data;
-	}
-
 	clip.x0 = x1;
 	clip.y0 = y1;
 	clip.x1 = x2;
