@@ -210,6 +210,7 @@ dom_string *corestring_dom_mousewheel;
 dom_string *corestring_dom_name;
 dom_string *corestring_dom_nohref;
 dom_string *corestring_dom_noresize;
+dom_string *corestring_dom_nowrap;
 dom_string *corestring_dom_offline;
 dom_string *corestring_dom_online;
 dom_string *corestring_dom_pagehide;
@@ -490,6 +491,7 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(name);
 	CSS_DOM_STRING_UNREF(nohref);
 	CSS_DOM_STRING_UNREF(noresize);
+	CSS_DOM_STRING_UNREF(nowrap);
 	CSS_DOM_STRING_UNREF(offline);
 	CSS_DOM_STRING_UNREF(online);
 	CSS_DOM_STRING_UNREF(pagehide);
@@ -823,6 +825,7 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(name);
 	CSS_DOM_STRING_INTERN(nohref);
 	CSS_DOM_STRING_INTERN(noresize);
+	CSS_DOM_STRING_INTERN(nowrap);
 	CSS_DOM_STRING_INTERN(offline);
 	CSS_DOM_STRING_INTERN(online);
 	CSS_DOM_STRING_INTERN(pagehide);

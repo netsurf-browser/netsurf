@@ -221,6 +221,7 @@ extern struct dom_string *corestring_dom_mousewheel;
 extern struct dom_string *corestring_dom_name;
 extern struct dom_string *corestring_dom_nohref;
 extern struct dom_string *corestring_dom_noresize;
+extern struct dom_string *corestring_dom_nowrap;
 extern struct dom_string *corestring_dom_offline;
 extern struct dom_string *corestring_dom_online;
 extern struct dom_string *corestring_dom_pagehide;

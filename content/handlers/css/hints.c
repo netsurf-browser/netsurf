@@ -1497,6 +1497,22 @@ static void css_hint_bg_image(
 	}
 }
 
+static void css_hint_white_space_nowrap(
+		nscss_select_ctx *ctx,
+		dom_node *node)
+{
+	struct css_hint *hint = &(hint_ctx.hints[hint_ctx.len]);
+	dom_exception err;
+	bool nowrap;
+
+	err = dom_element_has_attribute(node, corestring_dom_nowrap, &nowrap);
+	if (err == DOM_NO_ERR && nowrap == true) {
+		hint->prop = CSS_PROP_WHITE_SPACE;
+		hint->status = CSS_WHITE_SPACE_NOWRAP;
+		hint = css_hint_advance(hint);
+	}
+}
+
 
 /* Exported function, documeted in css/hints.h */
 css_error node_presentational_hint(void *pw, void *node,
@@ -1517,6 +1533,7 @@ css_error node_presentational_hint(void *pw, void *node,
 	case DOM_HTML_ELEMENT_TYPE_TD:
 		css_hint_width(pw, node);
 		css_hint_table_cell_border_padding(pw, node);
+		css_hint_white_space_nowrap(pw, node);
 		/* fallthrough */
 	case DOM_HTML_ELEMENT_TYPE_TR:
 		css_hint_height(pw, node);
