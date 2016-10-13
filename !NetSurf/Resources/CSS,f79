@@ -102,9 +102,8 @@ small { font-size: .83em; }
 strike, s { text-decoration: line-through; }
 u { text-decoration: underline; }
 
-hr {	display: block; background-color: #000; height: 1px;
-	margin: 4px auto; border: 1px #d9d9d9 inset; }
-hr[noshade] { background-color: #888; height: 2px; border: none; }
+hr { display: block; margin: 0.5em auto; border: 1px inset #888; }
+hr[noshade] { border-style: solid; }
 
 noframes { display: none; }
 
