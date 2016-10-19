@@ -685,9 +685,6 @@ else
 	$(Q)$(ELF2AIF) $(EXETARGET:,ff8=,e1f) $(EXETARGET)
 	$(Q)$(RM) $(EXETARGET:,ff8=,e1f)
 endif
-ifeq ($(TARGET),windows)
-	$(Q)$(TOUCH) frontends/windows/res/preferences
-endif
 ifeq ($(NETSURF_STRIP_BINARY),YES)
 	$(VQ)echo "   STRIP: $(EXETARGET)"
 	$(Q)$(STRIP) $(EXETARGET)
