@@ -32,6 +32,8 @@
 #include "utils/file.h"
 #include "utils/nsurl.h"
 #include "utils/nsoption.h"
+#include "netsurf/url_db.h"
+#include "netsurf/cookie_db.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/fetch.h"
 #include "netsurf/misc.h"
@@ -67,6 +69,7 @@ char *nsw32_config_home; /* exported global defined in windows/gui.h */
 static nserror get_config_home(char **config_home_out)
 {
 	TCHAR adPath[MAX_PATH]; /* appdata path */
+	char nsdir[] = "NetSurf";
 	HRESULT hres;
 
 	hres = SHGetFolderPath(NULL,
@@ -78,8 +81,7 @@ static nserror get_config_home(char **config_home_out)
 		return NSERROR_INVALID;
 	}
 
-	hres = PathAppend(adPath, "NetSurf");
-	if (hres != S_OK) {
+	if (PathAppend(adPath, nsdir) == false) {
 		return NSERROR_NOT_FOUND;
 	}
 
@@ -92,9 +94,9 @@ static nserror get_config_home(char **config_home_out)
 		}
 	}
 
-	LOG("\"%s\"", adPath);
-
 	*config_home_out = strdup(adPath);
+
+	LOG("using config path \"%s\"", *config_home_out);
 
 	return NSERROR_OK;
 }
@@ -155,8 +157,10 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	DWORD buf_tchar_size = PATH_MAX + 1;
 	DWORD buf_bytes_size = sizeof(TCHAR) * buf_tchar_size;
 	char *ptr = NULL;
-
 	char *buf;
+	char *fname;
+	HRESULT hres;
+	char dldir[] = "Downloads";
 
 	buf = malloc(buf_bytes_size);
 	if (buf== NULL) {
@@ -164,6 +168,7 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	}
 	buf[0] = '\0';
 
+	/* locate certificate bundle */
 	res_len = SearchPathA(NULL,
 			      "ca-bundle.crt",
 			      NULL,
@@ -173,10 +178,61 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	if (res_len > 0) {
 		nsoption_setnull_charp(ca_bundle, strdup(buf));
 	}
+
+
+	/* download directory default
+	 *
+	 * unfortunately SHGetKnownFolderPath(FOLDERID_Downloads) is
+	 * not available so use the obsolete method of user prodile
+	 * with downloads suffixed
+	 */
+	buf[0] = '\0';
+
+	hres = SHGetFolderPath(NULL,
+			       CSIDL_PROFILE | CSIDL_FLAG_CREATE,
+			       NULL,
+			       SHGFP_TYPE_CURRENT,
+			       buf);
+	if (hres == S_OK) {
+		if (PathAppend(buf, dldir)) {
+			nsoption_setnull_charp(downloads_directory,
+					       strdup(buf));
+
+		}
+	}
+
 	free(buf);
 	
 	/* ensure homepage option has a default */
 	nsoption_setnull_charp(homepage_url, strdup(NETSURF_HOMEPAGE));
+
+	/* cookie file default */
+	fname = NULL;
+	netsurf_mkpath(&fname, NULL, 2, nsw32_config_home, "Cookies");
+	if (fname != NULL) {
+		nsoption_setnull_charp(cookie_file, fname);
+	}
+
+	/* cookie jar default */
+	fname = NULL;
+	netsurf_mkpath(&fname, NULL, 2, nsw32_config_home, "Cookies");
+	if (fname != NULL) {
+		nsoption_setnull_charp(cookie_jar, fname);
+	}
+
+	/* url database default */
+	fname = NULL;
+	netsurf_mkpath(&fname, NULL, 2, nsw32_config_home, "URLs");
+	if (fname != NULL) {
+		nsoption_setnull_charp(url_file, fname);
+	}
+
+	/* bookmark database default */
+	fname = NULL;
+	netsurf_mkpath(&fname, NULL, 2, nsw32_config_home, "Hotlist");
+	if (fname != NULL) {
+		nsoption_setnull_charp(hotlist_path, fname);
+	}
 
 	return NSERROR_OK;
 }
@@ -306,6 +362,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 		return 1;
 	}
 
+	urldb_load(nsoption_charp(url_file));
+	urldb_load_cookies(nsoption_charp(cookie_file));
+
 	ret = nsws_create_main_class(hInstance);
 	ret = nsws_create_drawable_class(hInstance);
 	ret = nsws_create_localhistory_class(hInstance);
@@ -340,6 +399,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	} else {
 		win32_run();
 	}
+
+	urldb_save_cookies(nsoption_charp(cookie_jar));
+	urldb_save(nsoption_charp(url_file));
 
 	netsurf_exit();
 
