@@ -71,6 +71,8 @@
 #include "atari/options.h"
 #elif defined(nsmonkey)
 #include "monkey/options.h"
+#elif defined(nswin32)
+#include "windows/options.h"
 #endif
 
 #undef NSOPTION_BOOL
@@ -142,6 +144,8 @@ enum nsoption_e {
 #include "atari/options.h"
 #elif defined(nsmonkey)
 #include "monkey/options.h"
+#elif defined(nswin32)
+#include "windows/options.h"
 #endif
 	NSOPTION_LISTEND /* end of list */
 };

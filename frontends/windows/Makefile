@@ -15,6 +15,7 @@ LDFLAGS += -lgnurx -lgdi32 -lcomctl32 -lws2_32 -lmsimg32 -lshlwapi -mwindows
 
 CFLAGS += -U__STRICT_ANSI__ -mwin32
 # only windows versions after XP are supported
+# https://msdn.microsoft.com/en-gb/library/windows/desktop/aa383745
 CFLAGS += '-DWINVER=0x0501'
 CFLAGS += '-D_WIN32_WINNT=0x0501'
 CFLAGS += '-D_WIN32_WINDOWS=0x0501'
@@ -23,7 +24,7 @@ CFLAGS += '-D_WIN32_IE=0x0501'
 #installed resource path
 CFLAGS += '-DNETSURF_WINDOWS_RESPATH="$(NETSURF_WINDOWS_RESPATH)"'
 
-WSCFLAGS := -std=c99 -DCURL_STATICLIB -DCARES_STATICLIB -g
+WSCFLAGS := -std=c99 -Dnswin32 -DCURL_STATICLIB -DCARES_STATICLIB -g
 
 CFLAGS += $(WSCFLAGS)
 LDFLAGS += $(WSCFLAGS)
