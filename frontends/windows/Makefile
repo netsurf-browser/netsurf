@@ -10,8 +10,8 @@ CFLAGS += -I${GCCSDK_INSTALL_ENV}/include/
 $(eval $(call pkg_config_find_and_add,libcares,Cares))
 $(eval $(call pkg_config_find_and_add,zlib,ZLib))
 
-
-LDFLAGS += -lssl -lcrypto -lgnurx -lgdi32 -lcomctl32 -lws2_32 -lmsimg32 -mwindows
+# libraries for windows API
+LDFLAGS += -lgnurx -lgdi32 -lcomctl32 -lws2_32 -lmsimg32 -lshlwapi -mwindows
 
 CFLAGS += -U__STRICT_ANSI__ -mwin32
 # only windows versions after XP are supported

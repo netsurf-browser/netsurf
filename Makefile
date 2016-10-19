@@ -544,7 +544,10 @@ NETSURF_FEATURE_OPENSSL_CFLAGS := -DWITH_OPENSSL
 NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
 NETSURF_FEATURE_NSPSL_CFLAGS := -DWITH_NSPSL
 
-$(eval $(call pkg_config_find_and_add_enabled,OPENSSL,openssl,OpenSSL))
+# libcurl and openssl ordering matters as if libcurl requires ssl it
+#  needs to come first in link order to ensure its symbols can be
+#  resolved by the subsequent openssl
+
 # freemint does not support pkg-config for libcurl
 ifeq ($(HOST),mint)
     CFLAGS += $(shell curl-config --cflags)
@@ -552,6 +555,7 @@ ifeq ($(HOST),mint)
 else
     $(eval $(call pkg_config_find_and_add_enabled,CURL,libcurl,Curl))
 endif
+$(eval $(call pkg_config_find_and_add_enabled,OPENSSL,openssl,OpenSSL))
 
 $(eval $(call pkg_config_find_and_add_enabled,PNG,libpng,PNG))
 $(eval $(call pkg_config_find_and_add_enabled,BMP,libnsbmp,BMP))
