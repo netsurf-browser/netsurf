@@ -21,6 +21,8 @@
 #include <limits.h>
 #include <stdbool.h>
 #include <windows.h>
+#include <shlobj.h>
+#include <shlwapi.h>
 #include <io.h>
 
 #include "utils/utils.h"
@@ -50,7 +52,53 @@
 
 static char **respaths; /** resource search path vector. */
 
-char *options_file_location;
+char *nsw32_config_home; /* exported global defined in windows/gui.h */
+
+/**
+ * Get the path to the config directory.
+ *
+ * This ought to use SHGetKnownFolderPath(FOLDERID_RoamingAppData) and
+ * PathCcpAppend() but uses depricated API because that is what mingw
+ * supports.
+ *
+ * @param config_home_out Path to configuration directory.
+ * @return NSERROR_OK on sucess and \a config_home_out updated else error code.
+ */
+static nserror get_config_home(char **config_home_out)
+{
+	TCHAR adPath[MAX_PATH]; /* appdata path */
+	HRESULT hres;
+
+	hres = SHGetFolderPath(NULL,
+			       CSIDL_APPDATA | CSIDL_FLAG_CREATE,
+			       NULL,
+			       SHGFP_TYPE_CURRENT,
+			       adPath);
+	if (hres != S_OK) {
+		return NSERROR_INVALID;
+	}
+
+	hres = PathAppend(adPath, "NetSurf");
+	if (hres != S_OK) {
+		return NSERROR_NOT_FOUND;
+	}
+
+	/* ensure netsurf directory exists */
+	if (CreateDirectory(adPath, NULL) == 0) {
+		DWORD dw;
+		dw = GetLastError();
+		if (dw != ERROR_ALREADY_EXISTS) {
+			return NSERROR_NOT_DIRECTORY;
+		}
+	}
+
+	LOG("\"%s\"", adPath);
+
+	*config_home_out = strdup(adPath);
+
+	return NSERROR_OK;
+}
+
 
 /**
  * Cause an abnormal program termination.
@@ -134,11 +182,38 @@ static nserror set_defaults(struct nsoption_s *defaults)
 }
 
 
+/**
+ * Initialise user options location and contents
+ */
+static nserror nsw32_option_init(int *pargc, char** argv)
+{
+	nserror ret;
+	char *choices = NULL;
+
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
+
+	/* Attempt to load the user choices */
+	ret = netsurf_mkpath(&choices, NULL, 2, nsw32_config_home, "Choices");
+	if (ret == NSERROR_OK) {
+		nsoption_read(choices, nsoptions);
+		free(choices);
+	}
+
+	/* overide loaded options with those from commandline */
+	nsoption_commandline(pargc, argv, nsoptions);
+
+	return NSERROR_OK;
+}
+
+
 static struct gui_misc_table win32_misc_table = {
 	.schedule = win32_schedule,
 	.warning = win32_warning,
 };
-
 
 /**
  * Entry point from windows
@@ -172,13 +247,13 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 		die("NetSurf operation table registration failed");
 	}
 
+	setbuf(stderr, NULL);
+
+	/* Construct a unix style argc/argv */
 	if (SLEN(lpcli) > 0) {
 		argvw = CommandLineToArgvW(GetCommandLineW(), &argc);
 	}
 
-	setbuf(stderr, NULL);
-
-	/* Construct a unix style argc/argv */
 	argv = malloc(sizeof(char *) * argc);
 	while (argctemp < argc) {
 		len = wcstombs(NULL, argvw[argctemp], 0) + 1;
@@ -197,23 +272,27 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 		argctemp++;
 	}
 
-	respaths = nsws_init_resource("${APPDATA}\\NetSurf:${HOME}\\.netsurf:${NETSURFRES}:${PROGRAMFILES}\\NetSurf\\NetSurf\\:"NETSURF_WINDOWS_RESPATH);
-
-
-	options_file_location = filepath_find(respaths, "preferences");
-
 	/* initialise logging - not fatal if it fails but not much we
 	 * can do about it 
 	 */
 	nslog_init(nslog_ensure, &argc, argv);
 
-	/* user options setup */
-	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	/* Locate the correct user configuration directory path */
+	ret = get_config_home(&nsw32_config_home);
 	if (ret != NSERROR_OK) {
-		die("Options failed to initialise");
+		LOG("Unable to locate a configuration directory.");
+		nsw32_config_home = NULL;
 	}
-	nsoption_read(options_file_location, NULL);
-	nsoption_commandline(&argc, argv, NULL);
+
+	/* Initialise user options */
+	ret = nsw32_option_init(&argc, argv);
+	if (ret != NSERROR_OK) {
+		LOG("Options failed to initialise (%s)\n",
+			messages_get_errorcode(ret));
+		return 1;
+	}
+
+	respaths = nsws_init_resource("${APPDATA}\\NetSurf:${HOME}\\.netsurf:${NETSURFRES}:${PROGRAMFILES}\\NetSurf\\NetSurf\\:"NETSURF_WINDOWS_RESPATH);
 
 	/* message init */
 	messages = filepath_find(respaths, "messages");
@@ -223,7 +302,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	/* common initialisation */
 	ret = netsurf_init(NULL);
 	if (ret != NSERROR_OK) {
-		free(options_file_location);
 		LOG("NetSurf failed to initialise");
 		return 1;
 	}
@@ -265,7 +343,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 
 	netsurf_exit();
 
-	free(options_file_location);
+	/* finalise options */
+	nsoption_finalise(nsoptions, nsoptions_default);
 
 	return 0;
 }

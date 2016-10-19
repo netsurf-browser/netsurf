@@ -25,6 +25,8 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "utils/file.h"
+
 #include "windows/gui.h"
 #include "windows/prefs.h"
 #include "windows/resourceid.h"
@@ -628,6 +630,22 @@ static BOOL CALLBACK options_general_dialog_handler(HWND hwnd,
 	return FALSE;
 }
 
+/* exported interface documented in windows/prefs.h */
+nserror nsws_prefs_save(void)
+{
+	/* user saved changes */
+	char *choices = NULL;
+	nserror res;
+
+	res = netsurf_mkpath(&choices, NULL, 2, nsw32_config_home, "Choices");
+	if (res == NSERROR_OK) {
+		nsoption_write(choices, NULL, NULL);
+		free(choices);
+	}
+	return res;
+}
+
+/* exported interface documented in windows/prefs.h */
 void nsws_prefs_dialog_init(HINSTANCE hinst, HWND parent)
 {
 	int ret;
@@ -674,7 +692,6 @@ void nsws_prefs_dialog_init(HINSTANCE hinst, HWND parent)
 	if (ret == -1) {
 		win_perror("PropertySheet");
 	} else if (ret > 0) {
-		/* user saved changes */
-		nsoption_write(options_file_location, NULL, NULL);
+		nsws_prefs_save();
 	}
 }

@@ -1099,7 +1099,8 @@ nsws_window_command(HWND hwnd,
 		nsoption_set_int(window_y, r.top);
 		nsoption_set_int(window_width, r.right - r.left);
 		nsoption_set_int(window_height, r.bottom - r.top);
-		nsoption_write(options_file_location, NULL, NULL);
+
+		nsws_prefs_save();
 		break;
 	}
 

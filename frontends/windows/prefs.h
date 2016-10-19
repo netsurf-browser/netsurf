@@ -19,6 +19,14 @@
 #ifndef _NETSURF_WINDOWS_PREFS_H_
 #define _NETSURF_WINDOWS_PREFS_H_
 
+/**
+ * open the preferences dialog and respond to user.
+ */
 void nsws_prefs_dialog_init(HINSTANCE hinst, HWND parent);
+
+/**
+ * Save the users preferances.
+ */
+nserror nsws_prefs_save(void);
 
 #endif

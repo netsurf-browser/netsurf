@@ -25,7 +25,8 @@ struct gui_clipboard_table *win32_clipboard_table;
 
 extern HINSTANCE hInstance;
 
-extern char *options_file_location;
+/** Directory where all configuration files are held. */
+extern char *nsw32_config_home;
 
 /* bounding box */
 typedef struct bbox_s {
