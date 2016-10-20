@@ -189,18 +189,18 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 BOOL CALLBACK nsws_download_event_callback(HWND hwnd, UINT msg, WPARAM wparam,
 		LPARAM lparam)
 {
-	HWND sub;
-	switch(msg){
+	switch(msg) {
 	case WM_INITDIALOG:
-		sub = GetDlgItem(hwnd, IDC_DOWNLOAD_LABEL);
 		nsws_download_update_label((void *)download1);
 		nsws_download_update_progress((void *)download1);
 		return TRUE;
+
 	case WM_COMMAND:
 		switch(LOWORD(wparam)) {
 		case IDOK:
 			if (download1->downloaded != download1->size)
 				return TRUE;
+
 		case IDCANCEL:
 			nsws_download_clear_data(download1);
 			download1 = NULL;
