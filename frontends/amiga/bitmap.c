@@ -57,6 +57,11 @@
 #include "amiga/misc.h"
 #include "amiga/rtg.h"
 
+// disable use of "triangle mode" for scaling
+#ifdef AMI_NS_TRIANGLE_SCALING
+#undef AMI_NS_TRIANGLE_SCALING
+#endif
+
 struct bitmap {
 	int width;
 	int height;
@@ -510,13 +515,17 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 			(type == AMI_NSBM_TRUECOLOUR)), 1)) {
 			/* AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
 			 * Additionally, when we use friend BitMaps in non 32-bit modes it freezes the OS */
+
+			uint32 flags = 0;
+			uint32 err = COMPERR_Success;
+#ifdef AMI_NS_TRIANGLE_SCALING
 			struct vertex vtx[6];
 			VTX_RECT(0, 0, bitmap->width, bitmap->height, 0, 0, width, height);
 
-			uint32 flags = COMPFLAG_HardwareOnly;
+			flags = COMPFLAG_HardwareOnly;
 			if(nsoption_bool(scale_quality) == true) flags |= COMPFLAG_SrcFilter;
 			
-			uint32 err = CompositeTags(COMPOSITE_Src, tbm, scaledbm,
+			err = CompositeTags(COMPOSITE_Src, tbm, scaledbm,
 						COMPTAG_VertexArray, vtx,
 						COMPTAG_VertexFormat, COMPVF_STW0_Present,
 						COMPTAG_NumTriangles, 2,
@@ -527,6 +536,9 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 			if (err != COMPERR_Success) {
 				LOG("Composite error %ld - falling back", err);
 				/* If it failed, do it again the way which works in software */
+#else
+			{
+#endif
 				flags = 0;
 				if(nsoption_bool(scale_quality) == true) flags |= COMPFLAG_SrcFilter;
 
