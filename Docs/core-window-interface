@@ -1,0 +1,108 @@
+Core Window Interface
+=====================
+
+The NetSurf core provides an optional API to frontend implementations
+which allows a number of "standard" window content interfaces to be
+provided.
+
+The currently available user interfaces are:
+
+ - Cookies
+ - Global history
+ - Hotlist
+ - SSL certificate view
+
+Although not currently included in future additional user interfaces
+will be available for:
+
+ - local history
+ - browser render
+
+To be clear these are generic implementations of this functionality
+that any frontend may use. Frontends are free to implement these
+interfaces in any manner as they see fit, the corewindow interface
+simply provides a default.
+
+core window API
+---------------
+
+The API is fairly simple and simply involves passing a callback table
+and context pointer to the interface element being constructed.
+
+The header that defines the callback interface is netsurf/core_window.h 
+
+The callback table contains five function pointer interfaces which the
+frontend must implement for the core.
+
+ - redraw_request
+      request a redraw an area of a window
+
+ - update_size
+      Update the limits of the window 
+
+ - scroll_visible
+      Scroll the window to make area visible
+
+ - get_window_dimensions
+      Get window viewport dimensions
+
+ - drag_status
+      Inform corewindow owner of drag status
+
+Each callback will be passed the context pointer for the corewindow
+instance and the relevant additional information necessary to perform
+the operation.
+
+Each exported user interface element wraps this generic interface with
+a concrete implementation. For example the SSL certificate viewer is
+initialised with:
+
+nserror sslcert_viewer_init(struct core_window_callback_table *cw_t,
+                            void *core_window_handle,
+                            struct sslcert_session_data *ssl_d);
+
+This call creates a context which will display and navigate the ssl
+session data passed. The frontend must service the callbacks from the
+core to provide the necessary interactions with the frontend windowing
+system.
+
+These actions should ideally use the standard frontend window
+processing. So for the GTK frontend when the core calls the redraw
+operation it simply marks the area passed as damaged (using
+gtk_widget_queue_draw_area()) and lets the standard expose event cause
+the redraw to occour.
+
+If the frontend needs to redraw an area of a window (perhaps an expose
+event occoured) it must call the corewindoe API wrappers
+implementation e.g in the case of ssl certificate viewer
+
+void sslcert_viewer_redraw(struct sslcert_session_data *ssl_d,
+		           int x, int y, struct rect *clip,
+		           const struct redraw_context *ctx);
+
+which will perform the plot operations required to update an area of
+the window for that SSL data.
+
+Usage
+-----
+
+The usage pattern that is expected is for a frontend to create a core
+window impementation that implements the necessary five API in a
+generic way and allows the frontend to provide the specific
+specialisation for each of the user interface elements it wishes to
+use (cookies, SSL viewer etc).
+
+The GTK frontend for example:
+
+has source corewindow.[ch] which implement the five core callbacks
+using generic GTK operations (redraw_request calls
+gtk_widget_queue_draw_area() etc.) and then provides additional
+operations on a GTK drawing area object to attach expose event
+processing, keypress processing etc.
+
+The GTK corewindow (not to be confused with the core window API
+itself, this is purely the gtk wrapper) is used by ssl_cert.c which
+creates a nsgtk_crtvrfy_window structure containing the
+nsgtk_corewindow structure. It attaches actual GTK window handles to
+this structure and populates elements of nsgtk_corewindow and then
+calls sslcert_viewer_init() directly.
