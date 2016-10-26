@@ -71,7 +71,7 @@ enum gui_pointer_shape;
  */
 struct gui_window_table {
 
-	/* Mandantory entries */
+	/* Mandatory entries */
 
 	/**
 	 * Create and open a gui window for a browsing context.
@@ -161,8 +161,8 @@ struct gui_window_table {
 	 * Reformat a window.
 	 *
 	 * This is used to perform reformats when the page contents
-	 * require reformating. The reformat is requested using
-	 * browser_window_schedule_reformat and occours via a scheduled
+	 * require reformatting. The reformat is requested using
+	 * browser_window_schedule_reformat and occurs via a scheduled
 	 * callback hence from top level context.
 	 *
 	 * \param g gui_window to reformat.
@@ -197,15 +197,18 @@ struct gui_window_table {
 	void (*set_icon)(struct gui_window *gw, struct hlcache_handle *icon);
 
 	/**
-	 * Set the status bar of a browser window.
+	 * Set the status bar message of a browser window.
 	 *
-	 * \param  g	 gui_window to update
-	 * \param  text  new status text
+	 * \param g gui_window to update
+	 * \param text new status text
 	 */
 	void (*set_status)(struct gui_window *g, const char *text);
 
 	/**
 	 * Change mouse pointer shape
+	 *
+	 * \param g The gui window to change pointer shape in.
+	 * \param shape The new shape to change to.
 	 */
 	void (*set_pointer)(struct gui_window *g, enum gui_pointer_shape shape);
 
@@ -227,16 +230,38 @@ struct gui_window_table {
 	 */
 	void (*remove_caret)(struct gui_window *g);
 
-	/** start the navigation throbber. */
+	/**
+	 * start the navigation throbber.
+	 *
+	 * \param g window in which to start throbber.
+	 */
 	void (*start_throbber)(struct gui_window *g);
 
-	/** stop the navigation throbber. */
+	/**
+	 * stop the navigation throbber.
+	 *
+	 * \param g window with throbber to stop
+	 */
 	void (*stop_throbber)(struct gui_window *g);
 
-	/** start a drag operation within a window */
+	/**
+	 * start a drag operation within a window
+	 *
+	 * \param g window to start drag from.
+	 * \param type Type of drag to start
+	 * \param rect Confining rectangle of drag operation.
+	 * \return true if drag started else false.
+	 */
 	bool (*drag_start)(struct gui_window *g, gui_drag_type type, const struct rect *rect);
 
-	/** save link operation */
+	/**
+	 * save link operation
+	 *
+	 * \param g window to save link from.
+	 * \param url The link url.
+	 * \param title The title of the link.
+	 * \return NSERROR_OK on success else appropriate error code.
+	 */
 	nserror (*save_link)(struct gui_window *g, struct nsurl *url, const char *title);
 
 	/**
