@@ -104,7 +104,7 @@ nsgtk_crtvrfy_delete_event(GtkWidget *w, GdkEvent  *event, gpointer data)
  * \param mouse_state netsurf mouse state on event
  * \param x location of event
  * \param y location of event
- * \return NSERROR_OK on success otherwise apropriate error code
+ * \return NSERROR_OK on success otherwise appropriate error code
  */
 static nserror
 nsgtk_crtvrfy_mouse(struct nsgtk_corewindow *nsgtk_cw,
@@ -125,7 +125,7 @@ nsgtk_crtvrfy_mouse(struct nsgtk_corewindow *nsgtk_cw,
  *
  * \param nsgtk_cw The nsgtk core window structure.
  * \param nskey The netsurf key code
- * \return NSERROR_OK on success otherwise apropriate error code
+ * \return NSERROR_OK on success otherwise appropriate error code
  */
 static nserror
 nsgtk_crtvrfy_key(struct nsgtk_corewindow *nsgtk_cw, uint32_t nskey)
@@ -146,7 +146,7 @@ nsgtk_crtvrfy_key(struct nsgtk_corewindow *nsgtk_cw, uint32_t nskey)
  *
  * \param nsgtk_cw The nsgtk core window structure.
  * \param r The rectangle of the window that needs updating.
- * \return NSERROR_OK on success otherwise apropriate error code
+ * \return NSERROR_OK on success otherwise appropriate error code
  */
 static nserror
 nsgtk_crtvrfy_draw(struct nsgtk_corewindow *nsgtk_cw, struct rect *r)

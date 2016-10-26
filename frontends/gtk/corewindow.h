@@ -58,7 +58,7 @@ struct nsgtk_corewindow {
 	 *
 	 * \param nsgtk_cw The nsgtk core window structure.
 	 * \param r The rectangle of the window that needs updating.
-	 * \return NSERROR_OK on success otherwise apropriate error code
+	 * \return NSERROR_OK on success otherwise appropriate error code
 	 */
 	nserror (*draw)(struct nsgtk_corewindow *nsgtk_cw, struct rect *r);
 
@@ -69,7 +69,7 @@ struct nsgtk_corewindow {
 	 * \param nskey The netsurf key code.
 	 * \return NSERROR_OK if key processed,
 	 *         NSERROR_NOT_IMPLEMENTED if key not processed
-	 *         otherwise apropriate error code
+	 *         otherwise appropriate error code
 	 */
 	nserror (*key)(struct nsgtk_corewindow *nsgtk_cw, uint32_t nskey);
 
@@ -80,7 +80,7 @@ struct nsgtk_corewindow {
 	 * \param mouse_state mouse state
 	 * \param x location of event
 	 * \param y location of event
-	 * \return NSERROR_OK on sucess otherwise apropriate error code.
+	 * \return NSERROR_OK on success otherwise appropriate error code.
 	 */
 	nserror (*mouse)(struct nsgtk_corewindow *nsgtk_cw, browser_mouse_state mouse_state, int x, int y);
 };

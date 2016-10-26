@@ -23,7 +23,6 @@
  * Provides interface for core renderers to the gtk toolkit drawable area.
  * \todo should the interface really be called coredrawable?
  *
-
  * This module is an object that must be encapsulated. Client users
  * should embed a struct nsgtk_corewindow at the beginning of their
  * context for this display surface, fill in relevant data and then
@@ -54,6 +53,9 @@
 
 /**
  * Convert GDK mouse event to netsurf mouse state
+ *
+ * \param event The GDK mouse event to convert.
+ * \return The netsurf mouse state.
  */
 static browser_mouse_state nsgtk_cw_gdkbutton_to_nsstate(GdkEventButton *event)
 {
@@ -92,12 +94,16 @@ static browser_mouse_state nsgtk_cw_gdkbutton_to_nsstate(GdkEventButton *event)
 	return ms;
 }
 
+
 /**
  * gtk event on mouse button press.
  *
- * \param widget The gtk widget the event occoured for.
- * \param event The event that occoured.
- * \param g The context pointer passed when teh event was registered.
+ * Service gtk event for a mouse button transition to pressed from
+ * released state.
+ *
+ * \param widget The gtk widget the event occurred for.
+ * \param event The event that occurred.
+ * \param g The context pointer passed when the event was registered.
  */
 static gboolean
 nsgtk_cw_button_press_event(GtkWidget *widget,
@@ -122,6 +128,17 @@ nsgtk_cw_button_press_event(GtkWidget *widget,
 	return TRUE;
 }
 
+
+/**
+ * gtk event on mouse button release.
+ *
+ * Service gtk event for a mouse button transition from pressed to
+ * released state.
+ *
+ * \param widget The gtk widget the event occurred for.
+ * \param event The event that occurred.
+ * \param g The context pointer passed when the event was registered.
+ */
 static gboolean
 nsgtk_cw_button_release_event(GtkWidget *widget,
 			      GdkEventButton *event,
@@ -185,9 +202,20 @@ nsgtk_cw_button_release_event(GtkWidget *widget,
 	return TRUE;
 }
 
+
+/**
+ * gtk event on mouse movement.
+ *
+ * Service gtk motion-notify-event for mouse movement above a widget.
+ *
+ * \param widget The gtk widget the event occurred for.
+ * \param event The motion event that occurred.
+ * \param g The context pointer passed when the event was registered.
+ */
 static gboolean
 nsgtk_cw_motion_notify_event(GtkWidget *widget,
-		GdkEventMotion *event, gpointer g)
+			     GdkEventMotion *event,
+			     gpointer g)
 {
 	struct nsgtk_corewindow *nsgtk_cw = (struct nsgtk_corewindow *)g;
 	struct nsgtk_corewindow_mouse *mouse = &nsgtk_cw->mouse_state;
@@ -265,11 +293,11 @@ nsgtk_cw_motion_notify_event(GtkWidget *widget,
 
 
 /**
- * Deal with keypress events not handled but input method or callback
+ * Deal with keypress events not handled buy input method or callback
  *
  * \param nsgtk_cw nsgtk core window key event happened in.
  * \param nskey The netsurf keycode of the event.
- * \return NSERROR_OK on sucess otherwise an error code.
+ * \return NSERROR_OK on success otherwise an error code.
  */
 static nserror nsgtk_cw_key(struct nsgtk_corewindow *nsgtk_cw, uint32_t nskey)
 {
@@ -359,9 +387,12 @@ static nserror nsgtk_cw_key(struct nsgtk_corewindow *nsgtk_cw, uint32_t nskey)
 /**
  * gtk event on key press.
  *
- * \param widget The gtk widget the event occoured for.
- * \param event The event that occoured.
- * \param g The context pointer passed when teh event was registered.
+ * Service gtk key-press-event for key transition on a widget from
+ * released to pressed.
+ *
+ * \param widget The gtk widget the event occurred for.
+ * \param event The event that occurred.
+ * \param g The context pointer passed when the event was registered.
  */
 static gboolean
 nsgtk_cw_keypress_event(GtkWidget *widget, GdkEventKey *event, gpointer g)
@@ -397,6 +428,16 @@ nsgtk_cw_keypress_event(GtkWidget *widget, GdkEventKey *event, gpointer g)
 }
 
 
+/**
+ * gtk event on key release.
+ *
+ * Service gtk key-release-event for key transition on a widget from
+ * pressed to released.
+ *
+ * \param widget The gtk widget the event occurred for.
+ * \param event The event that occurred.
+ * \param g The context pointer passed when the event was registered.
+ */
 static gboolean
 nsgtk_cw_keyrelease_event(GtkWidget *widget, GdkEventKey *event, gpointer g)
 {
@@ -406,6 +447,15 @@ nsgtk_cw_keyrelease_event(GtkWidget *widget, GdkEventKey *event, gpointer g)
 }
 
 
+/**
+ * gtk event handler for input method commit.
+ *
+ * Service gtk commit for input method commit action.
+ *
+ * \param ctx The gtk input method context the event occurred for.
+ * \param str The resulting string from the input method.
+ * \param g The context pointer passed when the event was registered.
+ */
 static void
 nsgtk_cw_input_method_commit(GtkIMContext *ctx, const gchar *str, gpointer g)
 {
@@ -428,7 +478,15 @@ nsgtk_cw_input_method_commit(GtkIMContext *ctx, const gchar *str, gpointer g)
 
 #if GTK_CHECK_VERSION(3,0,0)
 
-/* signal handler for core window redraw */
+
+/**
+ * handler for gtk draw event on a nsgtk core window for GTK 3
+ *
+ * \param widget The GTK widget to redraw.
+ * \param cr The cairo drawing context of the widget
+ * \param data The context pointer passed when the event was registered.
+ * \return FALSE indicating no error.
+ */
 static gboolean
 nsgtk_cw_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 {
@@ -458,7 +516,15 @@ nsgtk_cw_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 
 #else
 
-/* signal handler for core window redraw */
+
+/**
+ * handler for gtk draw event on a nsgtk core window for GTK 2
+ *
+ * \param widget The GTK widget to redraw.
+ * \param event The GDK expose event
+ * \param g The context pointer passed when the event was registered.
+ * \return FALSE indicating no error.
+ */
 static gboolean
 nsgtk_cw_draw_event(GtkWidget *widget,
 		    GdkEventExpose *event,
@@ -485,8 +551,12 @@ nsgtk_cw_draw_event(GtkWidget *widget,
 
 #endif
 
+
 /**
- * callback from core to request a redraw
+ * redraw window core window callback
+ *
+ * \param cw core window handle.
+ * \param r rectangle that needs redrawing.
  */
 static void
 nsgtk_cw_redraw_request(struct core_window *cw, const struct rect *r)
@@ -499,6 +569,13 @@ nsgtk_cw_redraw_request(struct core_window *cw, const struct rect *r)
 }
 
 
+/**
+ * update window size core window callback
+ *
+ * \param cw core window handle.
+ * \param width New widget width.
+ * \param height New widget height.
+ */
 static void
 nsgtk_cw_update_size(struct core_window *cw, int width, int height)
 {
@@ -509,6 +586,12 @@ nsgtk_cw_update_size(struct core_window *cw, int width, int height)
 }
 
 
+/**
+ * scroll window core window callback
+ *
+ * \param cw core window handle.
+ * \param r rectangle that needs scrolling.
+ */
 static void
 nsgtk_cw_scroll_visible(struct core_window *cw, const struct rect *r)
 {
@@ -536,6 +619,13 @@ nsgtk_cw_scroll_visible(struct core_window *cw, const struct rect *r)
 }
 
 
+/**
+ * get window size core window callback
+ *
+ * \param cw core window handle.
+ * \param[out] width The width value to update
+ * \param[out] height The height value to update
+ */
 static void
 nsgtk_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
 {
@@ -554,9 +644,16 @@ nsgtk_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
 		vadj = gtk_scrolled_window_get_vadjustment(nsgtk_cw->scrolled);
 		g_object_get(vadj, "page-size", &page, NULL);
 		*height = page;
-	}}
+	}
+}
 
 
+/**
+ * update window drag status core window callback
+ *
+ * \param cw core window handle.
+ * \param ds The new drag status.
+ */
 static void
 nsgtk_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
 {
@@ -565,7 +662,10 @@ nsgtk_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
 }
 
 
-struct core_window_callback_table nsgtk_cw_cb_table = {
+/**
+ * core window callback table for nsgtk
+ */
+static struct core_window_callback_table nsgtk_cw_cb_table = {
 	.redraw_request = nsgtk_cw_redraw_request,
 	.update_size = nsgtk_cw_update_size,
 	.scroll_visible = nsgtk_cw_scroll_visible,
@@ -626,6 +726,7 @@ nserror nsgtk_corewindow_init(struct nsgtk_corewindow *nsgtk_cw)
 	return NSERROR_OK;
 }
 
+/* exported interface documented in gtk/corewindow.h */
 nserror nsgtk_corewindow_fini(struct nsgtk_corewindow *nsgtk_cw)
 {
 	g_object_unref(nsgtk_cw->input_method);

@@ -183,7 +183,7 @@ static void nsgtk_cookies_init_menu(struct nsgtk_cookie_window *ncwin)
  * \param mouse_state netsurf mouse state on event
  * \param x location of event
  * \param y location of event
- * \return NSERROR_OK on success otherwise apropriate error code
+ * \return NSERROR_OK on success otherwise appropriate error code
  */
 static nserror
 nsgtk_cookies_mouse(struct nsgtk_corewindow *nsgtk_cw,
@@ -200,7 +200,7 @@ nsgtk_cookies_mouse(struct nsgtk_corewindow *nsgtk_cw,
  *
  * \param nsgtk_cw The nsgtk core window structure.
  * \param nskey The netsurf key code
- * \return NSERROR_OK on success otherwise apropriate error code
+ * \return NSERROR_OK on success otherwise appropriate error code
  */
 static nserror
 nsgtk_cookies_key(struct nsgtk_corewindow *nsgtk_cw, uint32_t nskey)
@@ -216,7 +216,7 @@ nsgtk_cookies_key(struct nsgtk_corewindow *nsgtk_cw, uint32_t nskey)
  *
  * \param nsgtk_cw The nsgtk core window structure.
  * \param r The rectangle of the window that needs updating.
- * \return NSERROR_OK on success otherwise apropriate error code
+ * \return NSERROR_OK on success otherwise appropriate error code
  */
 static nserror
 nsgtk_cookies_draw(struct nsgtk_corewindow *nsgtk_cw, struct rect *r)
@@ -235,7 +235,7 @@ nsgtk_cookies_draw(struct nsgtk_corewindow *nsgtk_cw, struct rect *r)
 /**
  * Creates the window for the cookies tree.
  *
- * \return NSERROR_OK on success else appropriate error code on faliure.
+ * \return NSERROR_OK on success else appropriate error code on failure.
  */
 static nserror nsgtk_cookies_init(void)
 {
