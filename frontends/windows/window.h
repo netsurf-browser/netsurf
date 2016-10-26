@@ -74,7 +74,7 @@ struct gui_window {
 };
 
 
-/** 
+/**
  * Obtain gui window structure from window handle.
  *
  * \param hwnd The window handle.
@@ -92,13 +92,19 @@ bool nsws_window_go(HWND hwnd, const char *urltxt);
 
 void win32_window_set_scroll(struct gui_window *w, int sx, int sy);
 
+/**
+ * Create the main browser window class.
+ *
+ * \param hinstance The application instance
+ * \return NSERROR_OK on success or NSERROR_INIT_FAILED if the class
+ *         creation failed.
+ */
 nserror nsws_create_main_class(HINSTANCE hinstance);
 
 /**
  * Get the main win32 window handle from a gui window
  */
-HWND gui_window_main_window(struct gui_window *);
-
+HWND gui_window_main_window(struct gui_window *gw);
 
 /**
  * Get the localhistory win32 window handle from a gui window

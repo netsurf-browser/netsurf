@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 Vincent Sanders <vince@simtec.co.uk>
+ * Copyright 2011-2016 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -14,6 +14,11 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
+ * \file
+ * Main browser window handling for windows win32 frontend.
  */
 
 #include "utils/config.h"
@@ -216,7 +221,8 @@ nsws_window_toolbar_command(struct gui_window *gw,
 		    int identifier,
 		    HWND ctrl_window)
 {
-	LOG("notification_code %d identifier %d ctrl_window %p", notification_code, identifier, ctrl_window);
+	LOG("notification_code %d identifier %d ctrl_window %p",
+	    notification_code, identifier, ctrl_window);
 
 	switch(identifier) {
 
@@ -858,6 +864,7 @@ void win32_window_set_scroll(struct gui_window *w, int sx, int sy)
 
 }
 
+
 /**
  * Create a new window due to menu selection
  *
@@ -889,6 +896,17 @@ static nserror win32_open_new_window(struct gui_window *gw)
 	return ret;
 }
 
+
+/**
+ * handle command message on main browser window
+ *
+ * \param hwnd The win32 window handle
+ * \param gw win32 gui window
+ * \param notification_code notifiction code
+ * \param identifier notification identifier
+ * \param ctrl_window The win32 control window handle
+ * \return apropriate response for command
+ */
 static LRESULT
 nsws_window_command(HWND hwnd,
 		    struct gui_window *gw,
@@ -1216,6 +1234,15 @@ nsws_window_command(HWND hwnd,
 }
 
 
+/**
+ * handle WM_SIZE message on main browser window
+ *
+ * \param gw win32 gui window
+ * \param hwnd The win32 window handle
+ * \param wparam The w win32 parameter
+ * \param lparam The l win32 parameter
+ * \return apropriate response for resize
+ */
 static LRESULT
 nsws_window_resize(struct gui_window *gw,
 		   HWND hwnd,
@@ -1262,7 +1289,12 @@ nsws_window_resize(struct gui_window *gw,
 
 
 /**
- * callback for window events generally
+ * callback for browser window win32 events
+ *
+ * \param hwnd The win32 window handle
+ * \param msg The win32 message identifier
+ * \param wparam The w win32 parameter
+ * \param lparam The l win32 parameter
  */
 static LRESULT CALLBACK
 nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
@@ -1327,9 +1359,7 @@ nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 }
 
 
-/**
- * Create the main window class.
- */
+/* exported interface documented in windows/window.h */
 nserror
 nsws_create_main_class(HINSTANCE hinstance) {
 	nserror ret = NSERROR_OK;
@@ -1360,10 +1390,6 @@ nsws_create_main_class(HINSTANCE hinstance) {
 }
 
 
-
-
-
-
 /**
  * create a new gui_window to contain a browser_window.
  *
@@ -1374,15 +1400,14 @@ nsws_create_main_class(HINSTANCE hinstance) {
  */
 static struct gui_window *
 win32_window_create(struct browser_window *bw,
-		struct gui_window *existing,
-		gui_window_create_flags flags)
+		    struct gui_window *existing,
+		    gui_window_create_flags flags)
 {
 	struct gui_window *gw;
 
 	LOG("Creating gui window for browser window %p", bw);
 
 	gw = calloc(1, sizeof(struct gui_window));
-
 	if (gw == NULL) {
 		return NULL;
 	}
@@ -1410,8 +1435,9 @@ win32_window_create(struct browser_window *bw,
 	gw->mouse->pressed_y = 0;
 
 	/* add window to list */
-	if (window_list != NULL)
+	if (window_list != NULL) {
 		window_list->prev = gw;
+	}
 	gw->next = window_list;
 	window_list = gw;
 
@@ -1420,7 +1446,8 @@ win32_window_create(struct browser_window *bw,
 	gw->statusbar = nsws_window_create_statusbar(gw);
 	gw->drawingarea = nsws_window_create_drawable(hInstance, gw->main, gw);
 
-	LOG("new window: main:%p toolbar:%p statusbar %p drawingarea %p", gw->main, gw->toolbar, gw->statusbar, gw->drawingarea);
+	LOG("new window: main:%p toolbar:%p statusbar %p drawingarea %p",
+	    gw->main, gw->toolbar, gw->statusbar, gw->drawingarea);
 
 	font_hwnd = gw->drawingarea;
 	open_windows++;
@@ -1431,7 +1458,9 @@ win32_window_create(struct browser_window *bw,
 
 
 /**
- * window cleanup code
+ * Destroy previously created win32 window
+ *
+ * \param w The gui window to destroy.
  */
 static void win32_window_destroy(struct gui_window *w)
 {
@@ -1453,13 +1482,15 @@ static void win32_window_destroy(struct gui_window *w)
 }
 
 
-
-
+/**
+ * Cause redraw of part of a win32 window.
+ *
+ * \param gw win32 gui window
+ * \param rect area to redraw
+ */
 static void
-win32_window_update_box(struct gui_window *gw, const struct rect *rect)
+win32_window_update(struct gui_window *gw, const struct rect *rect)
 {
-	/* LOG("gw:%p %f,%f %f,%f", gw, data->redraw.x, data->redraw.y, data->redraw.width, data->redraw.height); */
-
 	if (gw == NULL)
 		return;
 
@@ -1470,17 +1501,25 @@ win32_window_update_box(struct gui_window *gw, const struct rect *rect)
 	redrawrect.right =(long)rect->x1;
 	redrawrect.bottom = (long)rect->y1;
 
-	RedrawWindow(gw->drawingarea, &redrawrect, NULL,
+	RedrawWindow(gw->drawingarea,
+		     &redrawrect,
+		     NULL,
 		     RDW_INVALIDATE | RDW_NOERASE);
-
 }
 
 
-
-
-
-static void win32_window_get_dimensions(struct gui_window *gw, int *width, int *height,
-			       bool scaled)
+/**
+ * Find the current dimensions of a win32 browser window's content area.
+ *
+ * \param gw gui_window to measure
+ * \param width	 receives width of window
+ * \param height receives height of window
+ * \param scaled whether to return scaled values
+ */
+static void
+win32_window_get_dimensions(struct gui_window *gw,
+			    int *width, int *height,
+			    bool scaled)
 {
 	if (gw == NULL)
 		return;
@@ -1491,13 +1530,21 @@ static void win32_window_get_dimensions(struct gui_window *gw, int *width, int *
 	*height = gw->height;
 }
 
+
+/**
+ * Update the extent of the inside of a browser window to that of the
+ * current content.
+ *
+ * \param w gui_window to update the extent of
+ */
 static void win32_window_update_extent(struct gui_window *w)
 {
 
 }
 
+
 /**
- * callback from core to reformat a window.
+ * callback from core to reformat a win32 window.
  *
  * \param gw The win32 gui window to reformat.
  */
@@ -1510,9 +1557,9 @@ static void win32_window_reformat(struct gui_window *gw)
 
 
 /**
- * set window title
+ * set win32 browser window title
  *
- * \param w the Windows gui window.
+ * \param w the win32 gui window.
  * \param title to set on window
  */
 static void win32_window_set_title(struct gui_window *w, const char *title)
@@ -1533,51 +1580,76 @@ static void win32_window_set_title(struct gui_window *w, const char *title)
 }
 
 
-static nserror win32_window_set_url(struct gui_window *w, nsurl *url)
+/**
+ * Set the navigation url is a win32 browser window.
+ *
+ * \param gw window to update.
+ * \param url The url to use as icon.
+ */
+static nserror win32_window_set_url(struct gui_window *gw, nsurl *url)
 {
-	SendMessage(w->urlbar, WM_SETTEXT, 0, (LPARAM) nsurl_access(url));
+	SendMessage(gw->urlbar, WM_SETTEXT, 0, (LPARAM) nsurl_access(url));
 
 	return NSERROR_OK;
 }
 
 
 /**
- * set the status bar message
+ * Set the status bar of a win32 browser window.
+ *
+ * \param w gui_window to update
+ * \param text new status text
  */
 static void win32_window_set_status(struct gui_window *w, const char *text)
 {
-	if (w == NULL)
+	if (w == NULL) {
 		return;
+	}
 	SendMessage(w->statusbar, WM_SETTEXT, 0, (LPARAM)text);
 }
 
 
 /**
- * set the pointer shape
+ * Change the win32 mouse pointer shape
+ *
+ * \param w The gui window to change pointer shape in.
+ * \param shape The new shape to change to.
  */
-static void win32_window_set_pointer(struct gui_window *w,
-				     gui_pointer_shape shape)
+static void
+win32_window_set_pointer(struct gui_window *w, gui_pointer_shape shape)
 {
 	SetCursor(nsws_get_pointer(shape));
 }
 
 
 /**
- * place caret in window
+ * Give the win32 input focus to a window
+ *
+ * \param w window with caret
+ * \param x coordinates of caret
+ * \param y coordinates of caret
+ * \param height height of caret
+ * \param clip rectangle to clip caret or NULL if none
  */
-static void win32_window_place_caret(struct gui_window *w, int x, int y,
-				   int height, const struct rect *clip)
+static void
+win32_window_place_caret(struct gui_window *w, int x, int y,
+			 int height, const struct rect *clip)
 {
-	if (w == NULL)
+	if (w == NULL) {
 		return;
+	}
+
 	CreateCaret(w->drawingarea, (HBITMAP)NULL, 1, height * w->scale);
 	SetCaretPos(x * w->scale - w->scrollx,
 		    y * w->scale - w->scrolly);
 	ShowCaret(w->drawingarea);
 }
 
+
 /**
- * clear window caret
+ * Remove the win32 input focus from window
+ *
+ * \param g window with caret
  */
 static void win32_window_remove_caret(struct gui_window *w)
 {
@@ -1587,8 +1659,11 @@ static void win32_window_remove_caret(struct gui_window *w)
 }
 
 
-
-
+/**
+ * start a win32 navigation throbber.
+ *
+ * \param w window in which to start throbber.
+ */
 static void win32_window_start_throbber(struct gui_window *w)
 {
 	if (w == NULL)
@@ -1615,7 +1690,11 @@ static void win32_window_start_throbber(struct gui_window *w)
 }
 
 
-
+/**
+ * stop a win32 navigation throbber.
+ *
+ * \param w window with throbber to stop
+ */
 static void win32_window_stop_throbber(struct gui_window *w)
 {
 	if (w == NULL)
@@ -1645,11 +1724,15 @@ static void win32_window_stop_throbber(struct gui_window *w)
 	Animate_Seek(w->throbber, 0);
 }
 
+
+/**
+ * win32 frontend browser window handling operation table
+ */
 static struct gui_window_table window_table = {
 	.create = win32_window_create,
 	.destroy = win32_window_destroy,
 	.redraw = win32_window_redraw_window,
-	.update = win32_window_update_box,
+	.update = win32_window_update,
 	.get_scroll = win32_window_get_scroll,
 	.set_scroll = win32_window_set_scroll,
 	.get_dimensions = win32_window_get_dimensions,
@@ -1667,6 +1750,7 @@ static struct gui_window_table window_table = {
 };
 
 struct gui_window_table *win32_window_table = &window_table;
+
 
 /* exported interface documented in windows/window.h */
 struct gui_window *nsws_get_gui_window(HWND hwnd)
