@@ -37,7 +37,7 @@ struct browser_mouse {
 struct gui_window {
 	/* The front's private data connected to a browser window */
 	/* currently 1<->1 gui_window<->windows window [non-tabbed] */
-	struct browser_window *bw; /** the browser_window */
+	struct browser_window *bw; /**< the browser_window */
 
 	HWND main; /**< handle to the actual window */
 	HWND toolbar; /**< toolbar handle */
@@ -90,6 +90,13 @@ struct gui_window *nsws_get_gui_window(HWND hwnd);
  */
 bool nsws_window_go(HWND hwnd, const char *urltxt);
 
+/**
+ * scroll the window
+ *
+ * \param w The win32 gui window to scroll.
+ * \param sx the new 'absolute' horizontal scroll location
+ * \param sy the new 'absolute' vertical scroll location
+ */
 void win32_window_set_scroll(struct gui_window *w, int sx, int sy);
 
 /**
