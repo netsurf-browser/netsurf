@@ -303,6 +303,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 		die("NetSurf operation table registration failed");
 	}
 
+	/* Save the application-instance handle. */
+	hinst = hInstance;
+
 	setbuf(stderr, NULL);
 
 	/* Construct a unix style argc/argv */

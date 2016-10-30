@@ -23,7 +23,7 @@
 struct gui_window;
 struct gui_clipboard_table *win32_clipboard_table;
 
-extern HINSTANCE hInstance;
+extern HINSTANCE hinst;
 
 /** Directory where all configuration files are held. */
 extern char *nsw32_config_home;

@@ -61,6 +61,9 @@ static const char windowclassname_main[] = "nswsmainwindow";
 /** width of the throbber element */
 #define NSWS_THROBBER_WIDTH 24
 
+/** height of the url entry box */
+#define NSWS_URLBAR_HEIGHT 23
+
 /** Number of open windows */
 static int open_windows = 0;
 
@@ -138,15 +141,14 @@ static void nsws_window_set_accels(struct gui_window *w)
 /**
  * creation of a new full browser window
  *
+ * \param hInstance The application instance handle.
  * \param gw gui window context.
  * \return The newly created window instance.
  */
-static HWND nsws_window_create(struct gui_window *gw)
+static HWND nsws_window_create(HINSTANCE hInstance, struct gui_window *gw)
 {
 	HWND hwnd;
 	INITCOMMONCONTROLSEX icc;
-
-	LOG("GUI window %p", gw);
 
 	icc.dwSize = sizeof(icc);
 	icc.dwICC = ICC_BAR_CLASSES | ICC_WIN95_CLASSES;
@@ -158,11 +160,14 @@ static HWND nsws_window_create(struct gui_window *gw)
 	gw->mainmenu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MENU_MAIN));
 	gw->rclick = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MENU_CONTEXT));
 
-	LOG("creating window for hInstance %p", hInstance);
+	LOG("creating hInstance %p GUI window %p", hInstance, gw);
 	hwnd = CreateWindowEx(0,
 			      windowclassname_main,
 			      "NetSurf Browser",
-			      WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | CS_DBLCLKS,
+			      WS_OVERLAPPEDWINDOW |
+			      WS_CLIPCHILDREN |
+			      WS_CLIPSIBLINGS |
+			      CS_DBLCLKS,
 			      CW_USEDEFAULT,
 			      CW_USEDEFAULT,
 			      gw->width,
@@ -186,10 +191,14 @@ static HWND nsws_window_create(struct gui_window *gw)
 	    (nsoption_int(window_height) >= 100) &&
 	    (nsoption_int(window_x) >= 0) &&
 	    (nsoption_int(window_y) >= 0)) {
-		LOG("Setting Window position %d,%d %d,%d", nsoption_int(window_x), nsoption_int(window_y), nsoption_int(window_width), nsoption_int(window_height));
+		LOG("Setting Window position %d,%d %d,%d",
+		    nsoption_int(window_x), nsoption_int(window_y),
+		    nsoption_int(window_width), nsoption_int(window_height));
 		SetWindowPos(hwnd, HWND_TOP,
-			     nsoption_int(window_x), nsoption_int(window_y),
-			     nsoption_int(window_width), nsoption_int(window_height),
+			     nsoption_int(window_x),
+			     nsoption_int(window_y),
+			     nsoption_int(window_width),
+			     nsoption_int(window_height),
 			     SWP_SHOWWINDOW);
 	}
 
@@ -289,7 +298,7 @@ urlbar_dimensions(HWND hWndParent,
 		  int *height)
 {
 	RECT rc;
-	const int cy_edit = 23;
+	const int cy_edit = NSWS_URLBAR_HEIGHT;
 
 	GetClientRect(hWndParent, &rc);
 	*x = (toolbuttonsize + 1) * (buttonc + 1) + (NSWS_THROBBER_WIDTH>>1);
@@ -338,8 +347,10 @@ nsws_window_toolbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		/* move throbber */
 		if (gw->throbber != NULL) {
 			MoveWindow(gw->throbber,
-				   LOWORD(lparam) - NSWS_THROBBER_WIDTH - 4, 8,
-				   NSWS_THROBBER_WIDTH, NSWS_THROBBER_WIDTH,
+				   LOWORD(lparam) - NSWS_THROBBER_WIDTH - 4,
+				   urly,
+				   NSWS_THROBBER_WIDTH,
+				   NSWS_THROBBER_WIDTH,
 				   true);
 		}
 		break;
@@ -434,12 +445,15 @@ nsws_window_urlbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
  *
  * Create an Edit control for enerting urls
  *
+ * \param hInstance The application instance handle.
+ * \param hWndParent The containing window.
  * \param gw win32 frontends window context.
- * \param hWndParent The main containing window.
  * \return win32 window handle of created window or NULL on error.
  */
 static HWND
-nsws_window_urlbar_create(struct gui_window *gw, HWND hWndParent)
+nsws_window_urlbar_create(HINSTANCE hInstance,
+			  HWND hWndParent,
+			  struct gui_window *gw)
 {
 	int urlx, urly, urlwidth, urlheight;
 	HWND hwnd;
@@ -499,23 +513,33 @@ nsws_window_urlbar_create(struct gui_window *gw, HWND hWndParent)
 /**
  * creation of throbber
  *
+ * \param hInstance The application instance handle.
+ * \param hWndParent The containing window.
  * \param gw win32 frontends window context.
  * \return win32 window handle of created window or NULL on error.
  */
 static HWND
-nsws_window_throbber_create(struct gui_window *gw)
+nsws_window_throbber_create(HINSTANCE hInstance,
+			    HWND hWndParent,
+			    struct gui_window *gw)
 {
 	HWND hwnd;
 	char avi[PATH_MAX];
+	int urlx, urly, urlwidth, urlheight;
+
+	urlbar_dimensions(hWndParent,
+			  gw->toolbuttonsize,
+			  gw->toolbuttonc,
+			  &urlx, &urly, &urlwidth, &urlheight);
 
 	hwnd = CreateWindow(ANIMATE_CLASS,
 			    "",
 			    WS_CHILD | WS_VISIBLE | ACS_TRANSPARENT,
 			    gw->width - NSWS_THROBBER_WIDTH - 4,
-			    8,
+			    urly,
 			    NSWS_THROBBER_WIDTH,
 			    NSWS_THROBBER_WIDTH,
-			    gw->main,
+			    hWndParent,
 			    (HMENU) IDC_MAIN_THROBBER,
 			    hInstance,
 			    NULL);
@@ -537,27 +561,33 @@ nsws_window_throbber_create(struct gui_window *gw)
 /**
  * create a win32 image list for the toolbar.
  *
+ * \param hInstance The application instance handle.
  * \param resid The resource ID of the image.
  * \param bsize The size of the image to load.
  * \param bcnt The number of bitmaps to load into the list.
  * \return The image list or NULL on error.
  */
 static HIMAGELIST
-get_imagelist(int resid, int bsize, int bcnt)
+get_imagelist(HINSTANCE hInstance, int resid, int bsize, int bcnt)
 {
 	HIMAGELIST hImageList;
 	HBITMAP hScrBM;
 
 	LOG("resource id %d, bzize %d, bcnt %d", resid, bsize, bcnt);
 
-	hImageList = ImageList_Create(bsize, bsize, ILC_COLOR24 | ILC_MASK, 0,
+	hImageList = ImageList_Create(bsize, bsize,
+				      ILC_COLOR24 | ILC_MASK, 0,
 				      bcnt);
-	if (hImageList == NULL)
+	if (hImageList == NULL) {
 		return NULL;
+	}
 
-	hScrBM = LoadImage(hInstance, MAKEINTRESOURCE(resid),
-			   IMAGE_BITMAP, 0, 0, LR_DEFAULTCOLOR);
-
+	hScrBM = LoadImage(hInstance,
+			   MAKEINTRESOURCE(resid),
+			   IMAGE_BITMAP,
+			   0,
+			   0,
+			   LR_DEFAULTCOLOR);
 	if (hScrBM == NULL) {
 		win_perror("LoadImage");
 		return NULL;
@@ -577,12 +607,18 @@ get_imagelist(int resid, int bsize, int bcnt)
 /**
  * create win32 main window toolbar and add controls and message handler
  *
+ * Toolbar has buttons on the left, url entry space in the middle and
+ * activity throbber on the right.
+ *
+ * \param hInstance The application instance handle.
+ * \param hWndParent The containing window.
  * \param gw win32 frontends window context.
- * \param hWndParent The main containing window.
  * \return win32 window handle of created window or NULL on error.
  */
 static HWND
-nsws_window_create_toolbar(struct gui_window *gw, HWND hWndParent)
+nsws_window_create_toolbar(HINSTANCE hInstance,
+			   HWND hWndParent,
+			   struct gui_window *gw)
 {
 	HIMAGELIST hImageList;
 	HWND hWndToolbar;
@@ -597,10 +633,15 @@ nsws_window_create_toolbar(struct gui_window *gw, HWND hWndParent)
 	WNDPROC	toolproc;
 
 	/* Create the toolbar window and subclass its message handler. */
-	hWndToolbar = CreateWindowEx(0, TOOLBARCLASSNAME, "Toolbar",
+	hWndToolbar = CreateWindowEx(0,
+				     TOOLBARCLASSNAME,
+				     "Toolbar",
 				     WS_CHILD | WS_VISIBLE | TBSTYLE_FLAT,
 				     0, 0, 0, 0,
-				     hWndParent, NULL, HINST_COMMCTRL, NULL);
+				     hWndParent,
+				     NULL,
+				     HINST_COMMCTRL,
+				     NULL);
 	if (!hWndToolbar) {
 		return NULL;
 	}
@@ -620,28 +661,38 @@ nsws_window_create_toolbar(struct gui_window *gw, HWND hWndParent)
 	gw->toolbuttonc = sizeof(tbButtons) / sizeof(TBBUTTON);
 
 	/* Create the standard image list and assign to toolbar. */
-	hImageList = get_imagelist(IDR_TOOLBAR_BITMAP,
+	hImageList = get_imagelist(hInstance,
+				   IDR_TOOLBAR_BITMAP,
 				   gw->toolbuttonsize,
 				   gw->toolbuttonc);
 	if (hImageList != NULL) {
-		SendMessage(hWndToolbar, TB_SETIMAGELIST, 0, (LPARAM)hImageList);
+		SendMessage(hWndToolbar,
+			    TB_SETIMAGELIST,
+			    0,
+			    (LPARAM)hImageList);
 	}
 
 	/* Create the disabled image list and assign to toolbar. */
-	hImageList = get_imagelist(IDR_TOOLBAR_BITMAP_GREY,
+	hImageList = get_imagelist(hInstance,
+				   IDR_TOOLBAR_BITMAP_GREY,
 				   gw->toolbuttonsize,
 				   gw->toolbuttonc);
 	if (hImageList != NULL) {
-		SendMessage(hWndToolbar, TB_SETDISABLEDIMAGELIST, 0,
+		SendMessage(hWndToolbar,
+			    TB_SETDISABLEDIMAGELIST,
+			    0,
 			    (LPARAM)hImageList);
 	}
 
 	/* Create the hot image list and assign to toolbar. */
-	hImageList = get_imagelist(IDR_TOOLBAR_BITMAP_HOT,
+	hImageList = get_imagelist(hInstance,
+				   IDR_TOOLBAR_BITMAP_HOT,
 				   gw->toolbuttonsize,
 				   gw->toolbuttonc);
 	if (hImageList != NULL) {
-		SendMessage(hWndToolbar, TB_SETHOTIMAGELIST, 0,
+		SendMessage(hWndToolbar,
+			    TB_SETHOTIMAGELIST,
+			    0,
 			    (LPARAM)hImageList);
 	}
 
@@ -655,9 +706,9 @@ nsws_window_create_toolbar(struct gui_window *gw, HWND hWndParent)
 		    (WPARAM)gw->toolbuttonc,
 		    (LPARAM)&tbButtons);
 
-	gw->urlbar = nsws_window_urlbar_create(gw, hWndToolbar);
+	gw->urlbar = nsws_window_urlbar_create(hInstance, hWndToolbar, gw);
 
-	gw->throbber = nsws_window_throbber_create(gw);
+	gw->throbber = nsws_window_throbber_create(hInstance, hWndToolbar, gw);
 
 	return hWndToolbar;
 }
@@ -666,20 +717,28 @@ nsws_window_create_toolbar(struct gui_window *gw, HWND hWndParent)
 /**
  * creation of status bar
  *
+ * \param hInstance The application instance handle.
+ * \param hWndParent The containing window.
  * \param gw win32 frontends window context.
  */
-static HWND nsws_window_create_statusbar(struct gui_window *gw)
+static HWND
+nsws_window_create_statusbar(HINSTANCE hInstance,
+			     HWND hWndParent,
+			     struct gui_window *gw)
 {
-	HWND hwnd = CreateWindowEx(0,
-				   STATUSCLASSNAME,
-				   NULL,
-				   WS_CHILD | WS_VISIBLE,
-				   0, 0, 0, 0,
-				   gw->main,
-				   (HMENU)IDC_MAIN_STATUSBAR,
-				   hInstance,
-				   NULL);
-	SendMessage(hwnd, SB_SETTEXT, 0, (LPARAM)"NetSurf");
+	HWND hwnd;
+	hwnd = CreateWindowEx(0,
+			      STATUSCLASSNAME,
+			      NULL,
+			      WS_CHILD | WS_VISIBLE,
+			      0, 0, 0, 0,
+			      hWndParent,
+			      (HMENU)IDC_MAIN_STATUSBAR,
+			      hInstance,
+			      NULL);
+	if (hwnd != NULL) {
+		SendMessage(hwnd, SB_SETTEXT, 0, (LPARAM)"NetSurf");
+	}
 	return hwnd;
 }
 
@@ -1020,7 +1079,7 @@ nsws_window_command(HWND hwnd,
 		break;
 
 	case IDM_EDIT_PREFERENCES:
-		nsws_prefs_dialog_init(hInstance, gw->main);
+		nsws_prefs_dialog_init(hinst, gw->main);
 		break;
 
 	case IDM_NAV_BACK:
@@ -1172,7 +1231,7 @@ nsws_window_command(HWND hwnd,
 		break;
 
 	case IDM_HELP_ABOUT:
-		nsws_about_dialog_init(hInstance, gw->main);
+		nsws_about_dialog_init(hinst, gw->main);
 		break;
 
 	case IDC_MAIN_LAUNCH_URL:
@@ -1409,10 +1468,10 @@ win32_window_create(struct browser_window *bw,
 	gw->next = window_list;
 	window_list = gw;
 
-	gw->main = nsws_window_create(gw);
-	gw->toolbar = nsws_window_create_toolbar(gw, gw->main);
-	gw->statusbar = nsws_window_create_statusbar(gw);
-	gw->drawingarea = nsws_window_create_drawable(hInstance, gw->main, gw);
+	gw->main = nsws_window_create(hinst, gw);
+	gw->toolbar = nsws_window_create_toolbar(hinst, gw->main, gw);
+	gw->statusbar = nsws_window_create_statusbar(hinst, gw->main, gw);
+	gw->drawingarea = nsws_window_create_drawable(hinst, gw->main, gw);
 
 	LOG("new window: main:%p toolbar:%p statusbar %p drawingarea %p",
 	    gw->main, gw->toolbar, gw->statusbar, gw->drawingarea);
@@ -1860,30 +1919,29 @@ void win32_window_set_scroll(struct gui_window *w, int sx, int sy)
 
 /* exported interface documented in windows/window.h */
 nserror
-nsws_create_main_class(HINSTANCE hinstance) {
+nsws_create_main_class(HINSTANCE hinstance)
+{
 	nserror ret = NSERROR_OK;
-	WNDCLASSEX w;
+	WNDCLASSEX wc;
 
 	/* main window */
-	w.cbSize = sizeof(WNDCLASSEX);
-	w.style	= 0;
-	w.lpfnWndProc = nsws_window_event_callback;
-	w.cbClsExtra = 0;
-	w.cbWndExtra = 0;
-	w.hInstance = hinstance;
-	w.hIcon = LoadIcon(hinstance, MAKEINTRESOURCE(IDR_NETSURF_ICON));
-	w.hCursor = NULL;
-	w.hbrBackground	= (HBRUSH)(COLOR_MENU + 1);
-	w.lpszMenuName = NULL;
-	w.lpszClassName = windowclassname_main;
-	w.hIconSm = LoadIcon(hinstance, MAKEINTRESOURCE(IDR_NETSURF_ICON));
+	wc.cbSize = sizeof(WNDCLASSEX);
+	wc.style = 0;
+	wc.lpfnWndProc = nsws_window_event_callback;
+	wc.cbClsExtra = 0;
+	wc.cbWndExtra = 0;
+	wc.hInstance = hinstance;
+	wc.hIcon = LoadIcon(hinstance, MAKEINTRESOURCE(IDR_NETSURF_ICON));
+	wc.hCursor = NULL;
+	wc.hbrBackground = (HBRUSH)(COLOR_MENU + 1);
+	wc.lpszMenuName = NULL;
+	wc.lpszClassName = windowclassname_main;
+	wc.hIconSm = LoadIcon(hinstance, MAKEINTRESOURCE(IDR_NETSURF_ICON));
 
-	if (RegisterClassEx(&w) == 0) {
-		win_perror("DrawableClass");
+	if (RegisterClassEx(&wc) == 0) {
+		win_perror("MainWindowClass");
 		ret = NSERROR_INIT_FAILED;
 	}
-
-	hInstance = hinstance;
 
 	return ret;
 }

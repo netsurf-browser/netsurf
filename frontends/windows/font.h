@@ -22,8 +22,8 @@
  * The interface to the win32 font and utf8 handling.
  */
 
-#ifndef _NETSURF_WINDOWS_FONT_H_
-#define _NETSURF_WINDOWS_FONT_H_
+#ifndef NETSURF_WINDOWS_FONT_H
+#define NETSURF_WINDOWS_FONT_H
 
 extern HWND font_hwnd;
 

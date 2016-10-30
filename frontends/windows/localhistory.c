@@ -48,7 +48,9 @@ struct nsws_localhistory {
 };
 
 
-static void nsws_localhistory_scroll_check(struct nsws_localhistory *l, struct gui_window *gw)
+static void
+nsws_localhistory_scroll_check(struct nsws_localhistory *l,
+			       struct gui_window *gw)
 {
 	SCROLLINFO si;
 
@@ -76,8 +78,8 @@ static void nsws_localhistory_scroll_check(struct nsws_localhistory *l, struct g
 }
 
 
-
-static void nsws_localhistory_up(struct nsws_localhistory *l, struct gui_window *gw)
+static void
+nsws_localhistory_up(struct nsws_localhistory *l, struct gui_window *gw)
 {
 	HDC tmp_hdc;
 	struct redraw_context ctx = {
@@ -113,6 +115,7 @@ void nsws_localhistory_close(struct gui_window *w)
 	if (l != NULL)
 		CloseWindow(l->hwnd);
 }
+
 
 static LRESULT CALLBACK 
 nsws_localhistory_event_callback(HWND hwnd, UINT msg,
@@ -297,6 +300,7 @@ nsws_localhistory_event_callback(HWND hwnd, UINT msg,
 	return 0;
 }
 
+
 /* exported method documented in windows/localhistory.h */
 struct nsws_localhistory *nsws_window_create_localhistory(struct gui_window *gw)
 {
@@ -347,23 +351,31 @@ struct nsws_localhistory *nsws_window_create_localhistory(struct gui_window *gw)
 #endif
 	InitCommonControlsEx(&icc);
 
-
-	LOG("creating local history window for hInstance %p", hInstance);
+	LOG("creating local history window for hInstance %p", hinst);
 	localhistory->hwnd = CreateWindow(windowclassname_localhistory,
-					 "NetSurf History",
-					 WS_THICKFRAME | WS_HSCROLL |
-					 WS_VSCROLL | WS_CLIPCHILDREN |
-					 WS_CLIPSIBLINGS | WS_SYSMENU | CS_DBLCLKS,
-					 r.left + margin/2,
-					 r.top + margin/2,
-					 localhistory->guiwidth,
-					 localhistory->guiheight,
-					 NULL, NULL, hInstance, NULL);
+					  "NetSurf History",
+					  WS_THICKFRAME |
+					  WS_HSCROLL |
+					  WS_VSCROLL |
+					  WS_CLIPCHILDREN |
+					  WS_CLIPSIBLINGS |
+					  WS_SYSMENU |
+					  CS_DBLCLKS,
+					  r.left + margin/2,
+					  r.top + margin/2,
+					  localhistory->guiwidth,
+					  localhistory->guiheight,
+					  NULL,
+					  NULL,
+					  hinst,
+					  NULL);
 
 	/* set the gui window associated with this browser */
 	SetProp(localhistory->hwnd, TEXT("GuiWnd"), (HANDLE)gw);
 
-	LOG("gui_window %p width %d height %d hwnd %p", gw, localhistory->guiwidth, localhistory->guiheight, localhistory->hwnd);
+	LOG("gui_window %p width %d height %d hwnd %p",
+	    gw, localhistory->guiwidth, localhistory->guiheight,
+	    localhistory->hwnd);
 
 	nsws_localhistory_up(localhistory, gw);
 	UpdateWindow(localhistory->hwnd);
@@ -371,6 +383,7 @@ struct nsws_localhistory *nsws_window_create_localhistory(struct gui_window *gw)
 
 	return localhistory;
 }
+
 
 /* exported method documented in windows/localhistory.h */
 nserror

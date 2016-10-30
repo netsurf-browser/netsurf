@@ -39,10 +39,14 @@
 #include "windows/filetype.h"
 #include "windows/gui.h"
 
+/**
+ * win32 application instance handle.
+ *
+ * This handle is set in the main windows entry point.
+ */
+HINSTANCE hinst;
+
 static bool win32_quit = false;
-
-HINSTANCE hInstance; /** win32 application instance handle. */
-
 
 void win32_set_quit(bool q)
 {
