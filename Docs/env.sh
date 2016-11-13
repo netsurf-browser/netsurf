@@ -28,13 +28,13 @@ if [ "x${HOST}" = "x" ]; then
     fi
 else
     HOST_CC_LIST="${HOST}-cc ${HOST}-gcc /opt/netsurf/${HOST}/cross/bin/${HOST}-cc /opt/netsurf/${HOST}/cross/bin/${HOST}-gcc"
-    for HOST_CC_V in ${HOST_CC_LIST};do
+    for HOST_CC_V in $(echo ${HOST_CC_LIST});do
 	HOST_CC=$(/bin/which ${HOST_CC_V})
 	if [ "x${HOST_CC}" != "x" ];then
 	    break
 	fi
     done
-    if [ "x${HOST_CC}" == "x" ];then
+    if [ "x${HOST_CC}" = "x" ];then
 	echo "Unable to execute host compiler for HOST=${HOST}. is it set correctly?"
 	return 1
     fi
