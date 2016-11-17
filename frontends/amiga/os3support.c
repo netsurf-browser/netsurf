@@ -21,8 +21,6 @@
  */
 
 #ifndef __amigaos4__
-ULONG __slab_max_size = 4096; /* Enable clib2's slab allocator */
-
 #include "os3support.h"
 
 #include <inttypes.h>
@@ -44,6 +42,8 @@ ULONG __slab_max_size = 4096; /* Enable clib2's slab allocator */
 #define SUCCESS (TRUE)
 #define FAILURE (FALSE)
 #define NO      !
+
+ULONG __slab_max_size = 4096; /* Enable clib2's slab allocator */
 
 /* Diskfont */
 struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG flags)
