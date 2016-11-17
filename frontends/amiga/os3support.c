@@ -17,10 +17,12 @@
  */
 
 /** \file
- * Minimal compatibility header for AmigaOS 3
+ * Compatibility functions for AmigaOS 3
  */
 
 #ifndef __amigaos4__
+ULONG __slab_max_size = 4096; /* Enable clib2's slab allocator */
+
 #include "os3support.h"
 
 #include <inttypes.h>
