@@ -5542,29 +5542,6 @@ int main(int argc, char** argv)
 	/* Open splash window */
 	Object *splash_window = ami_gui_splash_open();
 
-#ifdef __amigaos4__
-	/* Check for AltiVec */
-	uint32 altivec = 0;
-
-	GetCPUInfoTags(GCIT_VectorUnit, &altivec, TAG_DONE);
-
-	if(altivec == VECTORTYPE_ALTIVEC) {
-		LOG("AltiVec detected");
-	} else {
-		char jsimd_forcenone[10];
-
-		LOG("AltiVec NOT detected");
-		int32 len = GetVar("JSIMD_FORCENONE", jsimd_forcenone, 10, GVF_GLOBAL_ONLY);
-
-		if(len == -1) {
-			LOG("WARNING: JSIMD_FORCENONE NOT SET");
-			SetVar("JSIMD_FORCENONE", "1", 1, GVF_GLOBAL_ONLY | GVF_SAVE_VAR);
-		} else {
-			LOG("JSIMD_FORCENONE = %s (NB: Should be '1' for this architecture)", jsimd_forcenone);
-		}
-	}
-#endif
-
 	ami_object_init();
 
 	if (ami_open_resources() == false) { /* alloc message ports */

@@ -289,16 +289,6 @@
 
 (complete 75)
 
-; Force disable use of AltiVec if we don't have it
-(if (database "vectorunit" "0")
-	(
-		(textfile
-			(dest "ENVARC:JSIMD_FORCENONE")
-			(append "1")
-		)
-	)
-)
-
 (if (= (exists "ENVARC:Sys/def_css.info") 0)
 	(copyfiles
 		(prompt "Copying default CSS icon")
