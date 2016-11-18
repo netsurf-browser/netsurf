@@ -26,6 +26,9 @@
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <dirent.h>
 
 #include <proto/bullet.h>
 #include <proto/exec.h>
@@ -59,7 +62,7 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	char *p = 0;
 	struct FontContentsHeader fch;
 
-	if(p = strrchr(fileName, '.'))
+	if((p = strrchr(fileName, '.')))
 		*p = '\0';
 
 	fontpath = (STRPTR)ASPrintf("FONTS:%s.font", fileName);
@@ -98,7 +101,7 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	}
 	
 	size = GetFileSize(fh);
-	buffer = (struct TagItem *)AllocVec(size, MEMF_ANY);
+	buffer = (UBYTE *)AllocVec(size, MEMF_ANY);
 	if(buffer == NULL) {
 		LOG("Unable to allocate memory");
 		Close(fh);
@@ -119,9 +122,9 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	}
 
 	/* Relocate all the OT_Indirect tags */
-	while (ti = NextTagItem(&tag)) {
+	while((ti = NextTagItem(&tag))) {
 		if(ti->ti_Tag & OT_Indirect) {
-			ti->ti_Data += buffer;
+			ti->ti_Data += (ULONG)buffer;
 		}
 	}
 
@@ -136,7 +139,7 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 		return NULL;
 	}
 
-	BulletBase = OpenLibrary(fname, 0L);
+	BulletBase = (struct BulletBase *)OpenLibrary(fname, 0L);
 
 	if(BulletBase == NULL) {
 		LOG("Unable to open font engine %s", fname);
@@ -150,8 +153,8 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	gengine = OpenEngine();
 	
 	SetInfo(gengine,
-		OT_OTagPath, otagpath,
-		OT_OTagList, buffer,
+		OT_OTagPath, (ULONG)otagpath,
+		OT_OTagList, (ULONG)buffer,
 		TAG_DONE);
 	
 	of = AllocVec(sizeof(struct OutlineFont), MEMF_CLEAR);
@@ -170,7 +173,7 @@ void CloseOutlineFont(struct OutlineFont *of, struct List *list)
 	struct BulletBase *BulletBase = of->BulletBase;
 	
 	CloseEngine(of->GEngine);
-	CloseLibrary(BulletBase);
+	CloseLibrary((struct Library *)BulletBase);
 	
 	FreeVec(of->OTagPath);
 	FreeVec(of->olf_OTagList);
