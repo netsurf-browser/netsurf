@@ -730,14 +730,15 @@ void ami_bitmap_set_title(struct bitmap *bm, const char *title)
 	bm->title = strdup(title);
 }
 
-ULONG *ami_bitmap_get_icondata(struct bitmap *bm)
-{
-	return bm->icondata;
-}
-
 void ami_bitmap_set_icondata(struct bitmap *bm, ULONG *icondata)
 {
 	bm->icondata = icondata;
+}
+
+void ami_bitmap_free_icondata(struct bitmap *bm)
+{
+	if(bm->icondata) FreeVec(bm->icondata);
+	bm->icondata = NULL;
 }
 
 bool ami_bitmap_is_nativebm(struct bitmap *bm, struct BitMap *nbm)

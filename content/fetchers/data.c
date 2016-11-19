@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <libwapcaplet/libwapcaplet.h>
+#include <nsutils/base64.h>
 
 #include "utils/url.h"
 #include "utils/nsurl.h"
@@ -32,7 +33,6 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
-#include "nsutils/base64.h"
 
 #include "content/fetch.h"
 #include "content/fetchers.h"

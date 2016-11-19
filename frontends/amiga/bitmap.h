@@ -63,16 +63,6 @@ void ami_bitmap_set_url(struct bitmap *bm, struct nsurl *url);
 void ami_bitmap_set_title(struct bitmap *bm, const char *title);
 
 /**
- * Get an icondata pointer
- *
- * \param  bm  a bitmap, as returned by bitmap_create()
- * \return pointer to the icondata area
- *
- * This function probably shouldn't be here!
- */
-ULONG *ami_bitmap_get_icondata(struct bitmap *bm);
-
-/**
  * Set an icondata pointer
  *
  * \param  bm  a bitmap, as returned by bitmap_create()
@@ -81,6 +71,16 @@ ULONG *ami_bitmap_get_icondata(struct bitmap *bm);
  * This function probably shouldn't be here!
  */
 void ami_bitmap_set_icondata(struct bitmap *bm, ULONG *icondata);
+
+/**
+ * Free an icondata pointer
+ *
+ * \param  bm  a bitmap, as returned by bitmap_create()
+ * \param  icondata  a pointer to memory
+ *
+ * This function probably shouldn't be here!
+ */
+void ami_bitmap_free_icondata(struct bitmap *bm);
 
 /**
  * Test if a BitMap is owned by a bitmap.
