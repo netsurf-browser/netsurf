@@ -42,7 +42,6 @@ extern "C" {
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
-#include "utils/base64.h"
 #include "content/fetch.h"
 #include "content/fetchers.h"
 }
