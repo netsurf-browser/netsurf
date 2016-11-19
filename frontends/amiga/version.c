@@ -25,7 +25,7 @@
  * they are higher than CI builds, and make this (slightly) less confusing.
  */
 #define NETSURF_VERSION_MAJOR "3"
-#define NETSURF_VERSION_MINOR_EXTERNAL "6"
+#define NETSURF_VERSION_MINOR_EXTERNAL "7"
 #if defined(CI_BUILD)
 #define NETSURF_VERSION_MINOR CI_BUILD
 #else
