@@ -543,6 +543,6 @@ void amiga_icon_free(struct DiskObject *dobj)
 	struct bitmap *bm = dobj->do_Gadget.UserData;
 
 	FreeDiskObject(dobj);
-	if(bm) FreeVec(ami_bitmap_get_icondata(bm));
+	if(bm) ami_bitmap_free_icondata(bm);
 }
 
