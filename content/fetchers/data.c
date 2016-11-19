@@ -32,7 +32,7 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
-#include "utils/base64.h"
+#include "nsutils/base64.h"
 
 #include "content/fetch.h"
 #include "content/fetchers.h"
@@ -202,8 +202,11 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	}
 	
 	if (c->base64) {
-		base64_decode_alloc(unescaped, unescaped_len, &c->data,	&c->datalen);
-		if (c->data == NULL) {
+		if ((nsu_base64_decode_alloc((uint8_t *)unescaped,
+					     unescaped_len,
+					     (uint8_t **)&c->data,
+					     &c->datalen) != NSUERROR_OK) ||
+		    (c->data == NULL)) {
 			msg.type = FETCH_ERROR;
 			msg.data.error = "Unable to Base64 decode data: URL";
 			fetch_data_send_callback(&msg, c);

@@ -1,7 +1,6 @@
 # utils sources
 
 S_UTILS := \
-	base64.c \
 	bloom.c \
 	corestrings.c \
 	file.c \
