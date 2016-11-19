@@ -69,6 +69,7 @@
 #include "amiga/libs.h"
 #include "amiga/menu.h"
 #include "amiga/memory.h"
+#include "amiga/misc.h"
 #include "amiga/nsoption.h"
 #include "amiga/print.h"
 #include "amiga/search.h"

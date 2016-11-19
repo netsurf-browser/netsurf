@@ -21,6 +21,7 @@
 
 #include <exec/types.h>
 
+/* Standard memory allocation */
 void *ami_misc_allocvec_clear(int size, UBYTE value);
 
 /* Itempool cross-compatibility */

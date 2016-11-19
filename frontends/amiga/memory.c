@@ -21,6 +21,10 @@
 
 #include "amiga/memory.h"
 
+#ifndef __amigaos4__
+ULONG __slab_max_size = 8192; /* Enable clib2's slab allocator */
+#endif
+
 void *ami_misc_allocvec_clear(int size, UBYTE value)
 {
 #ifdef __amigaos4__
