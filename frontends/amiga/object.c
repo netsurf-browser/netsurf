@@ -26,6 +26,7 @@
 #include <exec/lists.h>
 #include <exec/nodes.h>
 
+#include "amiga/memory.h"
 #include "amiga/object.h"
 
 #ifdef __amigaos4__

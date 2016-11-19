@@ -27,6 +27,7 @@
 #include "utils/config.h"
 #include <ctype.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <proto/intuition.h>
 #include <proto/exec.h>
