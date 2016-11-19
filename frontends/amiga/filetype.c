@@ -31,7 +31,7 @@
 #include "utils/utils.h"
 
 #include "amiga/filetype.h"
-#include "amiga/misc.h"
+#include "amiga/memory.h"
 #include "amiga/object.h"
 
 /**

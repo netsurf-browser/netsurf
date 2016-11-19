@@ -41,6 +41,7 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 
+#include "amiga/memory.h"
 #include "amiga/misc.h"
 #include "amiga/font.h"
 #include "amiga/font_bullet.h"

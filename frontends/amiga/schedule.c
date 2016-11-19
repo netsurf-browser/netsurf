@@ -30,7 +30,7 @@
 #include "utils/errors.h"
 #include "utils/log.h"
 
-#include "amiga/misc.h"
+#include "amiga/memory.h"
 #include "amiga/schedule.h"
 
 struct nscallback

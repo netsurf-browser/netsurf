@@ -45,6 +45,7 @@
 #include "amiga/bitmap.h"
 #include "amiga/font.h"
 #include "amiga/gui.h"
+#include "amiga/memory.h"
 #include "amiga/misc.h"
 #include "amiga/rtg.h"
 #include "amiga/utf8.h"

@@ -45,7 +45,7 @@
 #include "amiga/iff_cset.h"
 #include "amiga/iff_dr2d.h"
 #include "amiga/menu.h"
-#include "amiga/misc.h"
+#include "amiga/memory.h"
 #include "amiga/utf8.h"
 
 #define ID_UTF8  MAKE_ID('U','T','F','8')

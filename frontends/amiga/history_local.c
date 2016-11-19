@@ -51,6 +51,7 @@
 #include "graphics/rpattr.h"
 
 #include "amiga/libs.h"
+#include "amiga/memory.h"
 #include "amiga/misc.h"
 #include "amiga/object.h"
 #include "amiga/plotters.h"

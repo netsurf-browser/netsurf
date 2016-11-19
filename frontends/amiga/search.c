@@ -56,7 +56,7 @@
 
 #include "amiga/libs.h"
 #include "amiga/gui.h"
-#include "amiga/misc.h"
+#include "amiga/memory.h"
 #include "amiga/search.h"
 #include "amiga/object.h"
 #include "amiga/theme.h"

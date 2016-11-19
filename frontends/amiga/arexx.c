@@ -42,6 +42,7 @@
 #include "amiga/hotlist.h"
 #include "amiga/tree.h"
 #include "amiga/libs.h"
+#include "amiga/memory.h"
 #include "amiga/misc.h"
 #include "amiga/theme.h"
 

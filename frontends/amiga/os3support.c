@@ -46,8 +46,6 @@
 #define FAILURE (FALSE)
 #define NO      !
 
-ULONG __slab_max_size = 8192; /* Enable clib2's slab allocator */
-
 /* Diskfont */
 struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG flags)
 {

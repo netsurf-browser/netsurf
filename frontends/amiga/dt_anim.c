@@ -46,7 +46,7 @@
 #include "amiga/bitmap.h"
 #include "amiga/filetype.h"
 #include "amiga/datatypes.h"
-#include "amiga/misc.h"
+#include "amiga/memory.h"
 #include "amiga/plotters.h"
 
 typedef struct amiga_dt_anim_content {

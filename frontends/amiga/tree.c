@@ -66,6 +66,7 @@
 #include "amiga/tree.h"
 #include "amiga/file.h"
 #include "amiga/libs.h"
+#include "amiga/memory.h"
 #include "amiga/misc.h"
 #include "amiga/utf8.h"
 #include "amiga/sslcert.h"
