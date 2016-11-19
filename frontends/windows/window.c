@@ -50,6 +50,9 @@
 #include "windows/font.h"
 #include "windows/prefs.h"
 #include "windows/localhistory.h"
+#include "windows/hotlist.h"
+#include "windows/cookies.h"
+#include "windows/global_history.h"
 #include "windows/window.h"
 
 /** List of all our gui windows */
@@ -1130,6 +1133,15 @@ nsws_window_command(HWND hwnd,
 		break;
 
 	case IDM_NAV_GLOBALHISTORY:
+		nsw32_global_history_present(hinst);
+		break;
+
+	case IDM_TOOLS_COOKIES:
+		nsw32_cookies_present(hinst);
+		break;
+
+	case IDM_NAV_BOOKMARKS:
+		nsw32_hotlist_present(hinst);
 		break;
 
 	case IDM_VIEW_ZOOMPLUS:
@@ -1197,7 +1209,7 @@ nsws_window_command(HWND hwnd,
 		break;
 	}
 
-	case IDM_VIEW_DOWNLOADS:
+	case IDM_TOOLS_DOWNLOADS:
 		break;
 
 	case IDM_VIEW_TOGGLE_DEBUG_RENDERING:

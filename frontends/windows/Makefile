@@ -46,7 +46,8 @@ S_RESOURCES := windows_resource.o
 # sources purely for the windows build
 S_FRONTEND := main.c window.c gui.c drawable.c plot.c findfile.c	\
 	  font.c bitmap.c about.c prefs.c download.c filetype.c file.c	\
-	  localhistory.c schedule.c windbg.c pointers.c
+	  localhistory.c schedule.c windbg.c pointers.c \
+	  corewindow.c hotlist.c cookies.c global_history.c ssl_cert.c
 
 # This is the final source build list
 # Note this is deliberately *not* expanded here as common and image
