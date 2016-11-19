@@ -18,14 +18,14 @@
 
 #include "testament.h"
 
-/* NB: AmigaOS revision numbers start at 1 (not 0) and are monotonically
- * incremental (v1.20 is higher than v1.3 and not the same as v1.2).
- * Consequently, this version pair may not match the user-facing one in
- * desktop/version.c.  Release revisions are prepended with 6000 to ensure
- * they are higher than CI builds, and make this (slightly) less confusing.
+/* Release revisions are prepended with 6000 so the version numbers below
+ * are same as NetSurf numbering.
+ * CI builds use themselves as the revision.
+ * This means releases have a higher revision than CI builds, and stops
+ * problems created by "0" not being a valid AmigaOS revision number.
  */
 #define NETSURF_VERSION_MAJOR "3"
-#define NETSURF_VERSION_MINOR_EXTERNAL "8"
+#define NETSURF_VERSION_MINOR_EXTERNAL "7"
 #if defined(CI_BUILD)
 #define NETSURF_VERSION_MINOR CI_BUILD
 #else

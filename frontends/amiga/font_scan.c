@@ -99,7 +99,7 @@ const char *ami_font_scan_lookup(const uint16 *code, lwc_string **glypharray)
 static struct ami_font_scan_window *ami_font_scan_gui_open(int32 fonts)
 {
 	struct ami_font_scan_window *fsw =
-		AllocVecTagList(sizeof(struct ami_font_scan_window), NULL);
+		malloc(sizeof(struct ami_font_scan_window));
 
 	if(fsw == NULL) return NULL;
 
@@ -201,7 +201,7 @@ static void ami_font_scan_gui_close(struct ami_font_scan_window *fsw)
 	if(fsw) {
 		DisposeObject(fsw->objects[FS_OID_MAIN]);
 		ami_utf8_free(fsw->title);
-		FreeVec(fsw);
+		free(fsw);
 	}
 }
 
@@ -317,10 +317,10 @@ static ULONG ami_font_scan_list(struct MinList *list)
 	struct nsObject *node;
 
 	do {
-		if((afh = (struct AvailFontsHeader *)AllocVecTagList(afSize, NULL))) {
+		if((afh = (struct AvailFontsHeader *)malloc(afSize))) {
 			if(((afShortage = AvailFonts((STRPTR)afh, afSize,
 					AFF_DISK | AFF_OTAG | AFF_SCALED)))) {
-				FreeVec(afh);
+				free(afh);
 				afSize += afShortage;
 			}
 		} else {
@@ -350,7 +350,7 @@ static ULONG ami_font_scan_list(struct MinList *list)
 				}
 			}
 		}
-		FreeVec(afh);
+		free(afh);
 	} else {
 		return 0;
 	}

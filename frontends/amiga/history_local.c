@@ -51,7 +51,6 @@
 #include "graphics/rpattr.h"
 
 #include "amiga/libs.h"
-#include "amiga/memory.h"
 #include "amiga/misc.h"
 #include "amiga/object.h"
 #include "amiga/plotters.h"
@@ -117,8 +116,8 @@ void ami_history_open(struct gui_window *gw)
 
 	if(!gw->hw)
 	{
-		gw->hw = ami_misc_allocvec_clear(sizeof(struct history_window), 0);
-		gw->hw->gg = ami_misc_allocvec_clear(sizeof(struct gui_globals), 0);
+		gw->hw = calloc(1, sizeof(struct history_window));
+		gw->hw->gg = calloc(1, sizeof(struct gui_globals));
 
 		ami_init_layers(gw->hw->gg, scrn->Width, scrn->Height, false);
 
@@ -227,7 +226,7 @@ static bool ami_history_click(struct history_window *hw, uint16 code)
 void ami_history_close(struct history_window *hw)
 {
 	ami_free_layers(hw->gg);
-	FreeVec(hw->gg);
+	free(hw->gg);
 	hw->gw->hw = NULL;
 	DisposeObject(hw->objects[OID_MAIN]);
 	DelObject(hw->node);

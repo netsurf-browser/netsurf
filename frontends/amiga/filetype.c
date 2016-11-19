@@ -31,7 +31,6 @@
 #include "utils/utils.h"
 
 #include "amiga/filetype.h"
-#include "amiga/memory.h"
 #include "amiga/object.h"
 
 /**
@@ -217,7 +216,7 @@ nserror ami_mime_init(const char *mimefile)
 			{
 				if ((node = AddObject(ami_mime_list, AMINS_MIME))) {
 					ObjectCallback(node, ami_mime_entry_free);
-					mimeentry = ami_misc_allocvec_clear(sizeof(struct ami_mime_entry), 0);
+					mimeentry = calloc(1, sizeof(struct ami_mime_entry));
 					node->objstruct = mimeentry;
 
 					if(rarray[AMI_MIME_MIMETYPE])
@@ -361,7 +360,7 @@ static APTR ami_mime_guess_add_datatype(struct DataType *dt, lwc_string **lwc_mi
 	node = AddObject(ami_mime_list, AMINS_MIME);
 	if(node == NULL) return NULL;
 
-	mimeentry = ami_misc_allocvec_clear(sizeof(struct ami_mime_entry), 0);
+	mimeentry = calloc(1, sizeof(struct ami_mime_entry));
 	if(mimeentry == NULL) return NULL;
 
 	node->objstruct = mimeentry;

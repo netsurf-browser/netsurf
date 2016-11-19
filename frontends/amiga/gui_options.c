@@ -73,7 +73,6 @@
 #include "amiga/gui_options.h"
 #include "amiga/help.h"
 #include "amiga/libs.h"
-#include "amiga/memory.h"
 #include "amiga/nsoption.h"
 #include "amiga/object.h"
 #include "amiga/selectmenu.h"
@@ -636,7 +635,7 @@ void ami_gui_opts_open(void)
 
 	if(!gow)
 	{
-		gow = ami_misc_allocvec_clear(sizeof(struct ami_gui_opts_window), 0);
+		gow = calloc(1, sizeof(struct ami_gui_opts_window));
 		if(gow == NULL) return;
 
 		ami_gui_opts_setup(gow);
@@ -2284,7 +2283,7 @@ struct List *ami_gui_opts_websearch(void)
 	const char *name;
 	int iter;
 
-	list = AllocVecTagList(sizeof(struct List), NULL);
+	list = malloc(sizeof(struct List));
 	NewList(list);
 
 	if (nsoption_charp(search_engines_file) == NULL) return list;
@@ -2314,6 +2313,6 @@ void ami_gui_opts_websearch_free(struct List *websearchlist)
 		FreeChooserNode(node);
 	} while((node = nnode));
 
-	FreeVec(websearchlist);
+	free(websearchlist);
 }
 

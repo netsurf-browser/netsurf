@@ -50,10 +50,10 @@ static struct ami_protocol *ami_openurl_add_protocol(const char *url)
 {
 	nsurl *ns_url;
 	struct ami_protocol *ami_p =
-		(struct ami_protocol *)AllocVecTagList(sizeof(struct ami_protocol), NULL);
+		(struct ami_protocol *)malloc(sizeof(struct ami_protocol));
 
 	if (nsurl_create(url, &ns_url) != NSERROR_OK) {
-		FreeVec(ami_p);
+		free(ami_p);
 		return NULL;
 	}
 
@@ -61,7 +61,7 @@ static struct ami_protocol *ami_openurl_add_protocol(const char *url)
 	nsurl_unref(ns_url);
 	if (ami_p->protocol == NULL)
 	{
-		FreeVec(ami_p);
+		free(ami_p);
 		return NULL;
 	}
 
@@ -83,11 +83,11 @@ static void ami_openurl_free_list(struct MinList *list)
 
 		Remove((struct Node *)node);
 		if (node->protocol) lwc_string_unref(node->protocol);
-		FreeVec(node);
+		free(node);
 		node = NULL;
 	}while((node=nnode));
 
-	FreeVec(list);
+	free(list);
 }
 
 static BOOL ami_openurl_check_list(struct MinList *list, nsurl *url)

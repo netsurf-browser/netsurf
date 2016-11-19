@@ -140,8 +140,8 @@
 #include "amiga/launch.h"
 #include "amiga/libs.h"
 #include "amiga/login.h"
-#include "amiga/menu.h"
 #include "amiga/memory.h"
+#include "amiga/menu.h"
 #include "amiga/misc.h"
 #include "amiga/nsoption.h"
 #include "amiga/plotters.h"
@@ -1371,7 +1371,7 @@ nserror ami_gui_get_space_box(Object *obj, struct IBox **bbox)
 {
 #ifdef __amigaos4__
 	if(LIB_IS_AT_LEAST((struct Library *)SpaceBase, 53, 6)) {
-		*bbox = AllocVecTagList(sizeof(struct IBox), NULL);
+		*bbox = malloc(sizeof(struct IBox));
 		if(*bbox == NULL) return NSERROR_NOMEM;
 		GetAttr(SPACE_RenderBox, obj, (ULONG *)*bbox);
 	} else
@@ -1388,7 +1388,7 @@ void ami_gui_free_space_box(struct IBox *bbox)
 {
 #ifdef __amigaos4__
 	if(LIB_IS_AT_LEAST((struct Library *)SpaceBase, 53, 6)) {
-		FreeVec(bbox);
+		free(bbox);
 	}
 #endif
 }
@@ -1516,7 +1516,7 @@ static struct IBox *ami_ns_rect_to_ibox(struct gui_window_2 *gwin, const struct 
 {
 	struct IBox *bbox, *ibox;
 
-	ibox = AllocVecTagList(sizeof(struct IBox), NULL);
+	ibox = malloc(sizeof(struct IBox));
 	if(ibox == NULL) return NULL;
 
 	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
@@ -1537,7 +1537,7 @@ static struct IBox *ami_ns_rect_to_ibox(struct gui_window_2 *gwin, const struct 
 		(ibox->Top > (bbox->Top + bbox->Height)) ||
 		(ibox->Width < 0) || (ibox->Height < 0))
 	{
-		FreeVec(ibox);
+		free(ibox);
 		ami_gui_free_space_box(bbox);
 		return NULL;
 	}
@@ -2585,7 +2585,7 @@ static void ami_handle_appmsg(void)
 			{
 				if((appwinargs = &appmsg->am_ArgList[i]))
 				{
-					if((filename = AllocVecTagList(1024, NULL)))
+					if((filename = malloc(1024)))
 					{
 						if(appwinargs->wa_Lock)
 						{
@@ -2666,7 +2666,7 @@ static void ami_handle_appmsg(void)
 								}
 							}
 						}
-						FreeVec(filename);
+						free(filename);
 					}
 				}
 			}
@@ -3819,7 +3819,7 @@ gui_window_create(struct browser_window *bw,
 
 	if(curh > (scrn->Height - cury)) curh = scrn->Height - cury;
 
-	g = ami_misc_allocvec_clear(sizeof(struct gui_window), 0);
+	g = calloc(1, sizeof(struct gui_window));
 
 	if(!g)
 	{
@@ -3893,7 +3893,7 @@ gui_window_create(struct browser_window *bw,
 		return g;
 	}
 
-	g->shared = ami_misc_allocvec_clear(sizeof(struct gui_window_2), 0);
+	g->shared = calloc(1, sizeof(struct gui_window_2));
 
 	if(!g->shared)
 	{
@@ -3956,7 +3956,7 @@ gui_window_create(struct browser_window *bw,
 		g->shared->tabs=1;
 		g->shared->next_tab=1;
 
-		g->shared->svbuffer = ami_misc_allocvec_clear(2000, 0);
+		g->shared->svbuffer = calloc(1, 2000);
 
 		g->shared->helphints[GID_BACK] =
 			translate_escape_chars(messages_get("HelpToolbarBack"));
@@ -4348,8 +4348,8 @@ gui_window_create(struct browser_window *bw,
 	if(!g->shared->win)
 	{
 		amiga_warn_user("NoMemory","");
-		FreeVec(g->shared);
-		FreeVec(g);
+		free(g->shared);
+		free(g);
 		return NULL;
 	}
 
@@ -4529,12 +4529,12 @@ static void gui_window_destroy(struct gui_window *g)
 
 		ami_utf8_free(g->tabtitle);
 
-		FreeVec(g);
+		free(g);
 		return;
 	}
 
 	ami_plot_release_pens(g->shared->shared_pens);
-	FreeVec(g->shared->shared_pens);
+	free(g->shared->shared_pens);
 	ami_schedule_redraw_remove(g->shared);
 	ami_schedule(-1, ami_gui_refresh_favicon, g->shared);
 
@@ -4564,7 +4564,7 @@ static void gui_window_destroy(struct gui_window *g)
 
 	free(g->shared->wintitle);
 	ami_utf8_free(g->shared->status);
-	FreeVec(g->shared->svbuffer);
+	free(g->shared->svbuffer);
 
 	for(gid = 0; gid < GID_LAST; gid++)
 		free(g->shared->helphints[gid]);
@@ -4574,7 +4574,7 @@ static void gui_window_destroy(struct gui_window *g)
 		Remove(g->tab_node);
 		FreeClickTabNode(g->tab_node);
 	}
-	FreeVec(g); // g->shared should be freed by DelObject()
+	free(g); // g->shared should be freed by DelObject()
 
 	if(IsMinListEmpty(window_list))
 	{
@@ -5266,7 +5266,7 @@ static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 
 		if(g->shared->ptr_lock)
 		{
-			FreeVec(g->shared->ptr_lock);
+			free(g->shared->ptr_lock);
 			g->shared->ptr_lock = NULL;
 		}
 	}
@@ -5612,7 +5612,7 @@ int main(int argc, char** argv)
 	len += strlen(users_dir);
 	len += 2; /* for poss path sep and NULL term */
 
-	current_user_dir = AllocVecTagList(len, NULL);
+	current_user_dir = malloc(len);
 	if(current_user_dir == NULL) {
 		ami_misc_fatal_error("Failed to allocate memory");
 		ami_schedule_free();
@@ -5729,7 +5729,7 @@ int main(int argc, char** argv)
 	netsurf_exit();
 
 	ami_nsoption_free();
-	FreeVec(current_user_dir);
+	free(current_user_dir);
 	FreeVec(current_user_faviconcache);
 	FreeVec(current_user);
 

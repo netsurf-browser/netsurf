@@ -46,241 +46,6 @@
 #define FAILURE (FALSE)
 #define NO      !
 
-/* Diskfont */
-struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG flags)
-{
-	BPTR fh = 0;
-	int64 size = 0;
-	struct TagItem *ti;
-	UBYTE *buffer;
-	STRPTR fname, otagpath, fontpath;
-	struct BulletBase *BulletBase;
-	struct OutlineFont *of = NULL;
-	struct GlyphEngine *gengine;
-	char *p = 0;
-	struct FontContentsHeader fch;
-
-	if((p = strrchr(fileName, '.')))
-		*p = '\0';
-
-	fontpath = (STRPTR)ASPrintf("FONTS:%s.font", fileName);
-	fh = Open(fontpath, MODE_OLDFILE);
-
-	if(fh == 0) {
-		LOG("Unable to open FONT %s", fontpath);
-		FreeVec(fontpath);
-		return NULL;
-	}
-
-	if(Read(fh, &fch, sizeof(struct FontContentsHeader)) != sizeof(struct FontContentsHeader)) {
-		LOG("Unable to read FONT %s", fontpath);
-		FreeVec(fontpath);
-		Close(fh);
-		return NULL;
-	}
-
-	Close(fh);
-
-	if(fch.fch_FileID != OFCH_ID) {
-		LOG("%s is not an outline font!", fontpath);
-		FreeVec(fontpath);
-		return NULL;
-	}
-
-	otagpath = (STRPTR)ASPrintf("FONTS:%s.otag", fileName);
-	fh = Open(otagpath, MODE_OLDFILE);
-
-	if(p) *p = '.';
-
-	if(fh == 0) {
-		LOG("Unable to open OTAG %s", otagpath);
-		FreeVec(otagpath);
-		return NULL;
-	}
-	
-	size = GetFileSize(fh);
-	buffer = (UBYTE *)AllocVec(size, MEMF_ANY);
-	if(buffer == NULL) {
-		LOG("Unable to allocate memory");
-		Close(fh);
-		FreeVec(otagpath);
-		return NULL;
-	}
-	
-	Read(fh, buffer, size);
-	Close(fh);
-
-	/* The first tag is supposed to be OT_FileIdent and should equal 'size' */
-	struct TagItem *tag = (struct TagItem *)buffer;
-	if((tag->ti_Tag != OT_FileIdent) || (tag->ti_Data != (ULONG)size)) {
-		LOG("Invalid OTAG file");
-		FreeVec(buffer);
-		FreeVec(otagpath);
-		return NULL;
-	}
-
-	/* Relocate all the OT_Indirect tags */
-	while((ti = NextTagItem(&tag))) {
-		if(ti->ti_Tag & OT_Indirect) {
-			ti->ti_Data += (ULONG)buffer;
-		}
-	}
-
-	/* Find OT_Engine and open the font engine */
-	if(ti = FindTagItem(OT_Engine, buffer)) {
-		LOG("Using font engine %s", ti->ti_Data);
-		fname = ASPrintf("%s.library", ti->ti_Data);
-	} else {
-		LOG("Cannot find OT_Engine tag");
-		FreeVec(buffer);
-		FreeVec(otagpath);
-		return NULL;
-	}
-
-	BulletBase = (struct BulletBase *)OpenLibrary(fname, 0L);
-
-	if(BulletBase == NULL) {
-		LOG("Unable to open font engine %s", fname);
-		FreeVec(buffer);
-		FreeVec(fname);
-		FreeVec(otagpath);
-	}
-
-	FreeVec(fname);
-
-	gengine = OpenEngine();
-	
-	SetInfo(gengine,
-		OT_OTagPath, (ULONG)otagpath,
-		OT_OTagList, (ULONG)buffer,
-		TAG_DONE);
-	
-	of = AllocVec(sizeof(struct OutlineFont), MEMF_CLEAR);
-	if(of == NULL) return NULL;
-
-	of->BulletBase = BulletBase;
-	of->GEngine = gengine;
-	of->OTagPath = otagpath;
-	of->olf_OTagList = buffer;
-
-	return of;
-}
-
-void CloseOutlineFont(struct OutlineFont *of, struct List *list)
-{
-	struct BulletBase *BulletBase = of->BulletBase;
-	
-	CloseEngine(of->GEngine);
-	CloseLibrary((struct Library *)BulletBase);
-	
-	FreeVec(of->OTagPath);
-	FreeVec(of->olf_OTagList);
-	FreeVec(of);
-}
-
-
-/* DOS */
-int64 GetFileSize(BPTR fh)
-{
-	int32 size = 0;
-	struct FileInfoBlock *fib = AllocVec(sizeof(struct FileInfoBlock), MEMF_ANY);
-	if(fib == NULL) return 0;
-
-	ExamineFH(fh, fib);
-	size = fib->fib_Size;
-
-	FreeVec(fib);
-	return (int64)size;
-}
-
-void FreeSysObject(ULONG type, APTR obj)
-{
-	switch(type) {
-		case ASOT_PORT:
-			DeleteMsgPort(obj);
-		break;
-		case ASOT_IOREQUEST:
-			DeleteIORequest(obj);
-		break;
-	}
-}
-
-
-/* Exec */
-struct Node *GetHead(struct List *list)
-{
-	struct Node *res = NULL;
-
-	if ((NULL != list) && (NULL != list->lh_Head->ln_Succ))
-	{
-		res = list->lh_Head;
-	}
-	return res;
-}
-
-struct Node *GetPred(struct Node *node)
-{
-	if (node->ln_Pred->ln_Pred == NULL) return NULL;
-	return node->ln_Pred;
-}
-
-struct Node *GetSucc(struct Node *node)
-{
-	if (node->ln_Succ->ln_Succ == NULL) return NULL;
-	return node->ln_Succ;
-}
-
-
-/* Intuition */
-uint32 GetAttrs(Object *obj, Tag tag1, ...)
-{
-	va_list ap;
-	Tag tag = tag1;
-	ULONG data = 0;
-	int i = 0;
-
-	va_start(ap, tag1);
-
-	while(tag != TAG_DONE) {
-		data = va_arg(ap, ULONG);
-		i += GetAttr(tag, obj, (void *)data);
-		tag = va_arg(ap, Tag);
-	}
-	va_end(ap);
-
-	return i;
-}
-
-ULONG RefreshSetGadgetAttrsA(struct Gadget *g, struct Window *w, struct Requester *r, struct TagItem *tags)
-{
-	ULONG retval;
-	BOOL changedisabled = FALSE;
-	BOOL disabled;
-
-	if (w) {
-		if (FindTagItem(GA_Disabled,tags)) {
-			changedisabled = TRUE;
- 			disabled = g->Flags & GFLG_DISABLED;
- 		}
- 	}
-	retval = SetGadgetAttrsA(g,w,r,tags);
-	if (w && (retval || (changedisabled && disabled != (g->Flags & GFLG_DISABLED)))) {
-		RefreshGList(g,w,r,1);
-		retval = 1;
-	}
-	return retval;
-}
-
-ULONG RefreshSetGadgetAttrs(struct Gadget *g, struct Window *w, struct Requester *r, Tag tag1, ...)
-{
-	return RefreshSetGadgetAttrsA(g,w,r,(struct TagItem *) &tag1);
-}
-
-APTR NewObject(struct IClass * classPtr, CONST_STRPTR classID, ULONG tagList, ...)
-{
-	return NewObjectA(classPtr, classID, (const struct TagItem *) &tagList);
-}
-
 /* Utility */
 struct FormatContext
 {
@@ -430,5 +195,239 @@ long long int strtoll(const char *nptr, char **endptr, int base)
 	return (long long int)strtol(nptr, endptr, base);
 }
 
+/* Diskfont */
+struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG flags)
+{
+	BPTR fh = 0;
+	int64 size = 0;
+	struct TagItem *ti;
+	UBYTE *buffer;
+	STRPTR fname, otagpath, fontpath;
+	struct BulletBase *BulletBase;
+	struct OutlineFont *of = NULL;
+	struct GlyphEngine *gengine;
+	char *p = 0;
+	struct FontContentsHeader fch;
+
+	if((p = strrchr(fileName, '.')))
+		*p = '\0';
+
+	fontpath = (STRPTR)ASPrintf("FONTS:%s.font", fileName);
+	fh = Open(fontpath, MODE_OLDFILE);
+
+	if(fh == 0) {
+		LOG("Unable to open FONT %s", fontpath);
+		FreeVec(fontpath);
+		return NULL;
+	}
+
+	if(Read(fh, &fch, sizeof(struct FontContentsHeader)) != sizeof(struct FontContentsHeader)) {
+		LOG("Unable to read FONT %s", fontpath);
+		FreeVec(fontpath);
+		Close(fh);
+		return NULL;
+	}
+
+	Close(fh);
+
+	if(fch.fch_FileID != OFCH_ID) {
+		LOG("%s is not an outline font!", fontpath);
+		FreeVec(fontpath);
+		return NULL;
+	}
+
+	otagpath = (STRPTR)ASPrintf("FONTS:%s.otag", fileName);
+	fh = Open(otagpath, MODE_OLDFILE);
+
+	if(p) *p = '.';
+
+	if(fh == 0) {
+		LOG("Unable to open OTAG %s", otagpath);
+		FreeVec(otagpath);
+		return NULL;
+	}
+	
+	size = GetFileSize(fh);
+	buffer = (UBYTE *)malloc(size);
+	if(buffer == NULL) {
+		LOG("Unable to allocate memory");
+		Close(fh);
+		FreeVec(otagpath);
+		return NULL;
+	}
+	
+	Read(fh, buffer, size);
+	Close(fh);
+
+	/* The first tag is supposed to be OT_FileIdent and should equal 'size' */
+	struct TagItem *tag = (struct TagItem *)buffer;
+	if((tag->ti_Tag != OT_FileIdent) || (tag->ti_Data != (ULONG)size)) {
+		LOG("Invalid OTAG file");
+		free(buffer);
+		FreeVec(otagpath);
+		return NULL;
+	}
+
+	/* Relocate all the OT_Indirect tags */
+	while((ti = NextTagItem(&tag))) {
+		if(ti->ti_Tag & OT_Indirect) {
+			ti->ti_Data += (ULONG)buffer;
+		}
+	}
+
+	/* Find OT_Engine and open the font engine */
+	if(ti = FindTagItem(OT_Engine, buffer)) {
+		LOG("Using font engine %s", ti->ti_Data);
+		fname = ASPrintf("%s.library", ti->ti_Data);
+	} else {
+		LOG("Cannot find OT_Engine tag");
+		free(buffer);
+		FreeVec(otagpath);
+		return NULL;
+	}
+
+	BulletBase = (struct BulletBase *)OpenLibrary(fname, 0L);
+
+	if(BulletBase == NULL) {
+		LOG("Unable to open font engine %s", fname);
+		free(buffer);
+		FreeVec(fname);
+		FreeVec(otagpath);
+	}
+
+	FreeVec(fname);
+
+	gengine = OpenEngine();
+	
+	SetInfo(gengine,
+		OT_OTagPath, (ULONG)otagpath,
+		OT_OTagList, (ULONG)buffer,
+		TAG_DONE);
+	
+	of = calloc(1, sizeof(struct OutlineFont));
+	if(of == NULL) return NULL;
+
+	of->BulletBase = BulletBase;
+	of->GEngine = gengine;
+	of->OTagPath = otagpath;
+	of->olf_OTagList = buffer;
+
+	return of;
+}
+
+void CloseOutlineFont(struct OutlineFont *of, struct List *list)
+{
+	struct BulletBase *BulletBase = of->BulletBase;
+	
+	CloseEngine(of->GEngine);
+	CloseLibrary((struct Library *)BulletBase);
+	
+	FreeVec(of->OTagPath);
+	free(of->olf_OTagList);
+	free(of);
+}
+
+
+/* DOS */
+int64 GetFileSize(BPTR fh)
+{
+	int32 size = 0;
+	struct FileInfoBlock *fib = malloc(sizeof(struct FileInfoBlock));
+	if(fib == NULL) return 0;
+
+	ExamineFH(fh, fib);
+	size = fib->fib_Size;
+
+	free(fib);
+	return (int64)size;
+}
+
+void FreeSysObject(ULONG type, APTR obj)
+{
+	switch(type) {
+		case ASOT_PORT:
+			DeleteMsgPort(obj);
+		break;
+		case ASOT_IOREQUEST:
+			DeleteIORequest(obj);
+		break;
+	}
+}
+
+
+/* Exec */
+struct Node *GetHead(struct List *list)
+{
+	struct Node *res = NULL;
+
+	if ((NULL != list) && (NULL != list->lh_Head->ln_Succ))
+	{
+		res = list->lh_Head;
+	}
+	return res;
+}
+
+struct Node *GetPred(struct Node *node)
+{
+	if (node->ln_Pred->ln_Pred == NULL) return NULL;
+	return node->ln_Pred;
+}
+
+struct Node *GetSucc(struct Node *node)
+{
+	if (node->ln_Succ->ln_Succ == NULL) return NULL;
+	return node->ln_Succ;
+}
+
+
+/* Intuition */
+uint32 GetAttrs(Object *obj, Tag tag1, ...)
+{
+	va_list ap;
+	Tag tag = tag1;
+	ULONG data = 0;
+	int i = 0;
+
+	va_start(ap, tag1);
+
+	while(tag != TAG_DONE) {
+		data = va_arg(ap, ULONG);
+		i += GetAttr(tag, obj, (void *)data);
+		tag = va_arg(ap, Tag);
+	}
+	va_end(ap);
+
+	return i;
+}
+
+ULONG RefreshSetGadgetAttrsA(struct Gadget *g, struct Window *w, struct Requester *r, struct TagItem *tags)
+{
+	ULONG retval;
+	BOOL changedisabled = FALSE;
+	BOOL disabled;
+
+	if (w) {
+		if (FindTagItem(GA_Disabled,tags)) {
+			changedisabled = TRUE;
+ 			disabled = g->Flags & GFLG_DISABLED;
+ 		}
+ 	}
+	retval = SetGadgetAttrsA(g,w,r,tags);
+	if (w && (retval || (changedisabled && disabled != (g->Flags & GFLG_DISABLED)))) {
+		RefreshGList(g,w,r,1);
+		retval = 1;
+	}
+	return retval;
+}
+
+ULONG RefreshSetGadgetAttrs(struct Gadget *g, struct Window *w, struct Requester *r, Tag tag1, ...)
+{
+	return RefreshSetGadgetAttrsA(g,w,r,(struct TagItem *) &tag1);
+}
+
+APTR NewObject(struct IClass * classPtr, CONST_STRPTR classID, ULONG tagList, ...)
+{
+	return NewObjectA(classPtr, classID, (const struct TagItem *) &tagList);
+}
 #endif
 

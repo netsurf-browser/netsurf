@@ -363,7 +363,7 @@ static struct ami_font_cache_node *ami_font_open(const char *font, bool critical
 	{
 		LOG("Requested font not found: %s", font);
 		if(critical == true) amiga_warn_user("CompError", font);
-		FreeVec(nodedata);
+		free(nodedata);
 		return NULL;
 	}
 
@@ -601,7 +601,7 @@ static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPo
 					TAG_DONE);
 #else
 				/* On OS3 the glyph needs to be in chip RAM */
-				void *chip_glyph = AllocVec(glyph->glm_BMModulo * glyph->glm_BMRows, MEMF_CHIP);
+				void *chip_glyph = ami_memory_chip_alloc(glyph->glm_BMModulo * glyph->glm_BMRows);
 				if(chip_glyph != NULL) {
 					CopyMem(glyphbm, chip_glyph, glyph->glm_BMModulo * glyph->glm_BMRows);
 
@@ -612,7 +612,7 @@ static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPo
 						y - glyph->glm_Y0 + glyph->glm_BlackTop,
 						glyph->glm_BlackWidth, glyph->glm_BlackHeight);
 
-					FreeVec(chip_glyph);
+					ami_memory_chip_free(chip_glyph);
 				}
 #endif
 			}

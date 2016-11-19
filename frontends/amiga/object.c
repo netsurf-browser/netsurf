@@ -62,7 +62,7 @@ static void ami_NewMinList(struct MinList *list)
 /* Allocate and initialise a new MinList */
 struct MinList *ami_AllocMinList(void)
 {
-	struct MinList *objlist = (struct MinList *)AllocVecTagList(sizeof(struct nsList), NULL);
+	struct MinList *objlist = (struct MinList *)malloc(sizeof(struct nsList));
 	if(objlist == NULL) return NULL;
 	ami_NewMinList(objlist);
 	return objlist;
@@ -98,7 +98,7 @@ static void DelObjectInternal(struct nsObject *dtzo, BOOL free_obj)
 {
 	Remove((struct Node *)dtzo);
 	if(dtzo->callback != NULL) dtzo->callback(dtzo->objstruct);
-	if(dtzo->objstruct && free_obj) FreeVec(dtzo->objstruct);
+	if(dtzo->objstruct && free_obj) free(dtzo->objstruct);
 	if(dtzo->dtz_Node.ln_Name) free(dtzo->dtz_Node.ln_Name);
 	ami_misc_itempool_free(pool_nsobj, dtzo, sizeof(struct nsObject));
 	dtzo = NULL;
@@ -131,6 +131,6 @@ void FreeObjList(struct MinList *objlist)
 		}
 	} while((node=nnode));
 
-	FreeVec(objlist);
+	free(objlist);
 }
 

@@ -113,7 +113,7 @@ void *amiga_bitmap_create(int width, int height, unsigned int state)
 	bitmap = ami_misc_itempool_alloc(pool_bitmap, sizeof(struct bitmap));
 	if(bitmap == NULL) return NULL;
 
-	bitmap->pixdata = ami_misc_allocvec_clear(width*height*4, 0xff);
+	bitmap->pixdata = ami_memory_clear_alloc(width*height*4, 0xff);
 	bitmap->width = width;
 	bitmap->height = height;
 
@@ -170,7 +170,7 @@ void amiga_bitmap_destroy(void *bitmap)
 
 		if(bm->native_mask) FreeRaster(bm->native_mask, bm->width, bm->height);
 		if(bm->drawhandle) ReleaseDrawHandle(bm->drawhandle);
-		FreeVec(bm->pixdata);
+		ami_memory_clear_free(bm->pixdata);
 
 		if(bm->url) nsurl_unref(bm->url);
 		if(bm->title) free(bm->title);
@@ -737,7 +737,7 @@ void ami_bitmap_set_icondata(struct bitmap *bm, ULONG *icondata)
 
 void ami_bitmap_free_icondata(struct bitmap *bm)
 {
-	if(bm->icondata) FreeVec(bm->icondata);
+	if(bm->icondata) free(bm->icondata);
 	bm->icondata = NULL;
 }
 

@@ -21,8 +21,18 @@
 
 #include <exec/types.h>
 
-/* Standard memory allocation */
-void *ami_misc_allocvec_clear(int size, UBYTE value);
+/* Alloc/free chip memory */
+#ifdef __amigaos4__
+#define ami_memory_chip_alloc(s) malloc(s)
+#define ami_memory_chip_free(p) free(p)
+#else
+#define ami_memory_chip_alloc(s) AllocVec(s, MEMF_CHIP)
+#define ami_memory_chip_free(p) FreeVec(p)
+#endif
+
+/* Alloc/free a block cleared to non-zero */
+void *ami_memory_clear_alloc(size_t size, UBYTE value);
+void ami_memory_clear_free(void *p);
 
 /* Itempool cross-compatibility */
 APTR ami_misc_itempool_create(int size);

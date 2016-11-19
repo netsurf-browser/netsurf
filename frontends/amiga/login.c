@@ -46,7 +46,6 @@
 
 #include "amiga/gui.h"
 #include "amiga/libs.h"
-#include "amiga/memory.h"
 #include "amiga/object.h"
 #include "amiga/login.h"
 
@@ -67,7 +66,7 @@ void gui_401login_open(nsurl *url, const char *realm,
 		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
 	const char *auth;
-	struct gui_login_window *lw = ami_misc_allocvec_clear(sizeof(struct gui_login_window), 0);
+	struct gui_login_window *lw = calloc(1, sizeof(struct gui_login_window));
 	lwc_string *host = nsurl_get_component(url, NSURL_HOST);
 
 	assert(host != NULL);
