@@ -49,7 +49,6 @@
 #include "amiga/os3support.h"
 #include "amiga/bitmap.h"
 #include "amiga/icon.h"
-#include "amiga/memory.h"
 
 #define THUMBNAIL_WIDTH 100 /* Icon sizes for thumbnails, usually the same as */
 #define THUMBNAIL_HEIGHT 86 /* WIDTH/HEIGHT in desktop/thumbnail.c */
@@ -239,7 +238,7 @@ bool amiga_icon_convert(struct content *c)
 	if(dobj) FreeDiskObject(dobj);
 
 	if(format==IDFMT_PALETTEMAPPED)
-		FreeVec(imagebufptr);
+		free(imagebufptr);
 
 	return true;
 }
@@ -326,7 +325,7 @@ static ULONG *amiga_icon_convertcolouricon32(UBYTE *icondata, ULONG width, ULONG
 
 	if (alpha==0) alpha=0xff;
 
-	argbicon = (ULONG *)AllocVecTagList(width*height*4, NULL);
+	argbicon = (ULONG *)malloc(width * height * 4);
 	if (!argbicon) return(NULL);
 
 	cmap=GetColorMap(pals1);
@@ -485,8 +484,8 @@ void amiga_icon_superimpose_favicon(char *path, struct hlcache_handle *icon, cha
 	if(format == IDFMT_PALETTEMAPPED)
 	{
 		/* Free the 32-bit data we created */
-		FreeVec(icondata1);
-		FreeVec(icondata2);
+		free(icondata1);
+		free(icondata2);
 	}
 }
 
@@ -501,7 +500,7 @@ struct DiskObject *amiga_icon_from_bitmap(struct bitmap *bm)
 	{
 		bitmap = ami_bitmap_get_native(bm, THUMBNAIL_WIDTH,
 									THUMBNAIL_HEIGHT, NULL);
-		icondata = AllocVecTagList(THUMBNAIL_WIDTH * 4 * THUMBNAIL_HEIGHT, NULL);
+		icondata = malloc(THUMBNAIL_WIDTH * 4 * THUMBNAIL_HEIGHT);
 		ami_bitmap_set_icondata(bm, icondata);
 
 		if(bitmap) {
@@ -543,6 +542,6 @@ void amiga_icon_free(struct DiskObject *dobj)
 	struct bitmap *bm = dobj->do_Gadget.UserData;
 
 	FreeDiskObject(dobj);
-	if(bm) FreeVec(ami_bitmap_get_icondata(bm));
+	if(bm) free(ami_bitmap_get_icondata(bm));
 }
 

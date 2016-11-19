@@ -176,11 +176,13 @@ extern struct Screen *scrn;
 extern struct MsgPort *sport;
 extern struct gui_window *cur_gw;
 
+/* The return value must be deallocated using FreeVec() */
+STRPTR ami_locale_langs(int *codeset);
+
 void ami_get_msg(void);
 void ami_try_quit(void);
 void ami_quit_netsurf(void);
 void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw);
-STRPTR ami_locale_langs(int *codeset);
 int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie);
 bool ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *restrict x, ULONG *restrict y);
 bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *restrict x, int *restrict y,
