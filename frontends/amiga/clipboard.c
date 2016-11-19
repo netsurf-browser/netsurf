@@ -127,10 +127,10 @@ static char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codese
 
 			default:
 				if(ci_new) {
-					ci_next->ci_Next = calloc(1, sizeof(struct CollectionItem), 0);
+					ci_next->ci_Next = calloc(1, sizeof(struct CollectionItem));
 					ci_next = ci_next->ci_Next;
 				} else {
-					ci_new = calloc(1, sizeof(struct CollectionItem), 0);
+					ci_new = calloc(1, sizeof(struct CollectionItem));
 					ci_next = ci_new;
 				}
 				

@@ -158,7 +158,7 @@ struct ami_font_cache_node *ami_font_cache_alloc_entry(const char *font)
 	uint32 hash = XXH32(font, strlen(font), 0);
 	nodedata = (struct ami_font_cache_node *)InsertSkipNode(ami_font_cache_list, (APTR)hash, sizeof(struct ami_font_cache_node));
 #else
-	nodedata = AllocVecTagList(sizeof(struct ami_font_cache_node), NULL);
+	nodedata = malloc(sizeof(struct ami_font_cache_node));
 #endif
 
 	GetSysTime(&nodedata->lastused);
