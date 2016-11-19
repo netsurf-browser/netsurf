@@ -122,7 +122,7 @@ void ami_search_open(struct gui_window *gwin)
 		return;
 	}
 
-	fwin = ami_misc_allocvec_clear(sizeof(struct find_window), 0);
+	fwin = calloc(1, sizeof(struct find_window));
 
 	fwin->objects[OID_MAIN] = WindowObj,
       	WA_ScreenTitle, ami_gui_get_screen_title(),

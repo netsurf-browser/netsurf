@@ -146,14 +146,10 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool for
 	gg->height = height;
 
 	gg->layerinfo = NewLayerInfo();
-	gg->areabuf = AllocVecTagList(AREA_SIZE, NULL);
+	gg->areabuf = malloc(AREA_SIZE);
 
-#ifdef __amigaos4__
-	gg->tmprasbuf = AllocVecTagList(width * height, NULL);
-#else
 	/* OS3/AGA requires this to be in chip mem.  RTG would probably rather it wasn't. */
-	gg->tmprasbuf = AllocVec(width * height, MEMF_CHIP);
-#endif
+	gg->tmprasbuf = ami_memory_chip_alloc(width * height);
 
 	if(gg->palette_mapped == true) {
 		gg->bm = AllocBitMap(width, height, depth, 0, friend);
@@ -172,7 +168,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool for
 
 	if(!gg->bm) amiga_warn_user("NoMemory","");
 
-	gg->rp = AllocVecTagList(sizeof(struct RastPort), NULL);
+	gg->rp = malloc(sizeof(struct RastPort));
 	if(!gg->rp) amiga_warn_user("NoMemory","");
 
 	InitRastPort(gg->rp);
@@ -185,12 +181,12 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool for
 
 	InstallLayerHook(gg->rp->Layer,LAYERS_NOBACKFILL);
 
-	gg->rp->AreaInfo = AllocVecTagList(sizeof(struct AreaInfo), NULL);
+	gg->rp->AreaInfo = malloc(sizeof(struct AreaInfo));
 	if((!gg->areabuf) || (!gg->rp->AreaInfo))	amiga_warn_user("NoMemory","");
 
-	InitArea(gg->rp->AreaInfo,gg->areabuf, AREA_SIZE/5);
+	InitArea(gg->rp->AreaInfo, gg->areabuf, AREA_SIZE/5);
 
-	gg->rp->TmpRas = AllocVecTagList(sizeof(struct TmpRas), NULL);
+	gg->rp->TmpRas = malloc(sizeof(struct TmpRas));
 	if((!gg->tmprasbuf) || (!gg->rp->TmpRas))	amiga_warn_user("NoMemory","");
 
 	InitTmpRas(gg->rp->TmpRas, gg->tmprasbuf, width*height);
@@ -219,13 +215,13 @@ void ami_free_layers(struct gui_globals *gg)
 
 	if(gg->rp) {
 		DeleteLayer(0,gg->rp->Layer);
-		FreeVec(gg->rp->TmpRas);
-		FreeVec(gg->rp->AreaInfo);
-		FreeVec(gg->rp);
+		free(gg->rp->TmpRas);
+		free(gg->rp->AreaInfo);
+		free(gg->rp);
 	}
 
-	FreeVec(gg->tmprasbuf);
-	FreeVec(gg->areabuf);
+	ami_memory_chip_free(gg->tmprasbuf);
+	free(gg->areabuf);
 	DisposeLayerInfo(gg->layerinfo);
 	if(gg->palette_mapped == false) {
 		if(gg->bm) ami_rtg_freebitmap(gg->bm);
@@ -713,7 +709,7 @@ static bool ami_bitmap_tile(int x, int y, int width, int height,
 		bfbm.offsetx = ox;
 		bfbm.offsety = oy;
 		bfbm.mask = ami_bitmap_get_mask(bitmap, width, height, tbm);
-		bfh = ami_misc_allocvec_clear(sizeof(struct Hook), 0); /* NB: Was not MEMF_PRIVATE */
+		bfh = calloc(1, sizeof(struct Hook));
 		bfh->h_Entry = (HOOKFUNC)ami_bitmap_tile_hook;
 		bfh->h_SubEntry = 0;
 		bfh->h_Data = &bfbm;
@@ -727,7 +723,7 @@ static bool ami_bitmap_tile(int x, int y, int width, int height,
 	if(amiga_bitmap_get_opaque(bitmap)) DeleteBackFillHook(bfh);
 		else
 #endif
-		FreeVec(bfh);
+		free(bfh);
 
 	if((ami_bitmap_is_nativebm(bitmap, tbm) == false)) {
 		/**\todo is this logic logical? */

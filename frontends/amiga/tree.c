@@ -66,7 +66,6 @@
 #include "amiga/tree.h"
 #include "amiga/file.h"
 #include "amiga/libs.h"
-#include "amiga/memory.h"
 #include "amiga/misc.h"
 #include "amiga/utf8.h"
 #include "amiga/sslcert.h"
@@ -133,8 +132,8 @@ static void ami_tree_get_window_dimensions(int *width, int *height, void *data);
 void ami_tree_destroy(struct treeview_window *twin)
 {
 	tree_delete(twin->tree);
-	FreeVec(twin->shared_pens);
-	FreeVec(twin);
+	free(twin->shared_pens);
+	free(twin);
 }
 
 struct tree *ami_tree_get_tree(struct treeview_window *twin)
@@ -258,7 +257,7 @@ static void ami_tree_redraw_req_dr(void *p)
 				atrr_data->x, atrr_data->y,
                 atrr_data->width, atrr_data->height, &ctx);
 
-	FreeVec(atrr_data);
+	free(atrr_data);
 	ami_gui_free_space_box(bbox);
 	ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
 	ami_clearclipreg(glob);
@@ -342,7 +341,7 @@ static void ami_tree_redraw_req(void *p)
 		}
 	}
 
-	FreeVec(atrr_data);
+	free(atrr_data);
 	ami_gui_free_space_box(bbox);
 	ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
 	ami_clearclipreg(glob);
@@ -351,7 +350,7 @@ static void ami_tree_redraw_req(void *p)
 
 static void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 {
-	struct ami_tree_redraw_req *atrr_data = AllocVecTagList(sizeof(struct ami_tree_redraw_req), NULL);
+	struct ami_tree_redraw_req *atrr_data = malloc(sizeof(struct ami_tree_redraw_req));
 
 	atrr_data->x = x;
 	atrr_data->y = y;
@@ -563,7 +562,7 @@ static void ami_tree_menu(struct treeview_window *twin)
 {
 	if(twin->menu) return;
 
-	if((twin->menu = ami_misc_allocvec_clear(sizeof(struct NewMenu) * AMI_TREE_MENU_ITEMS, 0))) {
+	if((twin->menu = calloc(1, sizeof(struct NewMenu) * AMI_TREE_MENU_ITEMS))) {
 		twin->menu[0].nm_Type = NM_TITLE;
 		twin->menu_name[0] = ami_utf8_easy((char *)messages_get("Tree"));
 		twin->menu[0].nm_Label = twin->menu_name[0];
@@ -900,7 +899,7 @@ void ami_tree_close(struct treeview_window *twin)
 		twin->menu_name[i] = NULL;
 	}
 
-	FreeVec(twin->menu);
+	free(twin->menu);
 	twin->menu = NULL;
 	ami_utf8_free(twin->wintitle);
 	twin->wintitle = NULL;
@@ -1456,7 +1455,7 @@ struct treeview_window *ami_tree_create(int flags,
 {
 	struct treeview_window *twin;
 
-	twin = ami_misc_allocvec_clear(sizeof(struct treeview_window), 0);
+	twin = calloc(1, sizeof(struct treeview_window));
 
 	if(!twin)
 	{

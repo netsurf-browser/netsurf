@@ -22,8 +22,13 @@
 #include <exec/types.h>
 
 /* Alloc/free chip memory */
+#ifdef __amigaos4__
+#define ami_memory_chip_alloc(s) malloc(s)
+#define ami_memory_chip_free(p) free(p)
+#else
 #define ami_memory_chip_alloc(s) AllocVec(s, MEMF_CHIP)
 #define ami_memory_chip_free(p) FreeVec(p)
+#endif
 
 /* Alloc/free a block cleared to non-zero */
 void *ami_memory_clear_alloc(size_t size, UBYTE value);

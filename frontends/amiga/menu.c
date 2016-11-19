@@ -68,7 +68,6 @@
 #include "amiga/hotlist.h"
 #include "amiga/libs.h"
 #include "amiga/menu.h"
-#include "amiga/memory.h"
 #include "amiga/misc.h"
 #include "amiga/nsoption.h"
 #include "amiga/print.h"
@@ -504,11 +503,11 @@ HOOKF(void, ami_menu_item_arexx_execute, APTR, window, struct IntuiMessage *)
 						ASLFR_InitialDrawer, nsoption_charp(arexx_dir),
 						ASLFR_InitialPattern, "#?.nsrx",
 						TAG_DONE)) {
-		if((temp = AllocVecTagList(1024, NULL))) {
+		if((temp = malloc(1024))) {
 			strlcpy(temp, filereq->fr_Drawer, 1024);
 			AddPart(temp, filereq->fr_File, 1024);
 			ami_arexx_execute(temp);
-			FreeVec(temp);
+			free(temp);
 		}
 	}
 }
@@ -521,13 +520,13 @@ HOOKF(void, ami_menu_item_arexx_entries, APTR, window, struct IntuiMessage *)
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
 	if(script) {
-		if((temp = AllocVecTagList(1024, NULL))) {
+		if((temp = malloc(1024))) {
 			BPTR lock;
 			if((lock = Lock(nsoption_charp(arexx_dir), SHARED_LOCK))) {
 				DevNameFromLock(lock, temp, 1024, DN_FULLPATH);
 				AddPart(temp, script, 1024);
 				ami_arexx_execute(temp);
-				FreeVec(temp);
+				free(temp);
 				UnLock(lock);
 			}
 		}
@@ -560,7 +559,7 @@ void ami_free_menulabs(struct gui_window_2 *gwin)
 		gwin->menukey[i] = 0;
 	}
 
-	FreeVec(gwin->menutype);
+	free(gwin->menutype);
 	gwin->menutype = NULL;
 }
 
@@ -609,7 +608,7 @@ static void ami_init_menulabs(struct gui_window_2 *gwin)
 {
 	int i;
 
-	gwin->menutype = ami_misc_allocvec_clear(sizeof(UBYTE) * (AMI_MENU_AREXX_MAX + 1), 0);
+	gwin->menutype = calloc(1, sizeof(UBYTE) * (AMI_MENU_AREXX_MAX + 1));
 
 	for(i=0;i <= AMI_MENU_AREXX_MAX;i++)
 	{
@@ -936,7 +935,7 @@ void ami_menu_free(struct gui_window_2 *gwin)
 
 struct Menu *ami_menu_create(struct gui_window_2 *gwin)
 {
-	gwin->menu = ami_misc_allocvec_clear(sizeof(struct NewMenu) * (AMI_MENU_AREXX_MAX + 1), 0);
+	gwin->menu = calloc(1, sizeof(struct NewMenu) * (AMI_MENU_AREXX_MAX + 1));
 	ami_init_menulabs(gwin);
 	ami_menu_scan(ami_tree_get_tree(hotlist_window), gwin);
 	ami_menu_arexx_scan(gwin);
@@ -959,7 +958,7 @@ struct Menu *ami_menu_create(struct gui_window_2 *gwin)
 	gwin->imenu = CreateMenus(gwin->menu, TAG_DONE);
 	LayoutMenus(gwin->imenu, gwin->vi,
 		GTMN_NewLookMenus, TRUE, TAG_DONE);
-	FreeVec(gwin->menu); /**\todo this should be local to this function */
+	free(gwin->menu); /**\todo this should be local to this function */
 	gwin->menu = NULL;
 
 	return gwin->imenu;
@@ -978,7 +977,7 @@ void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 	char *menu_lab;
 
 	if((lock = Lock(nsoption_charp(arexx_dir), SHARED_LOCK))) {
-		if((buffer = AllocVecTagList(1024, NULL))) {
+		if((buffer = malloc(1024))) {
 			if((ctrl = AllocDosObject(DOS_EXALLCONTROL,NULL))) {
 				ctrl->eac_LastKey = 0;
 
@@ -1009,7 +1008,7 @@ void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 				} while(cont);
 				FreeDosObject(DOS_EXALLCONTROL,ctrl);
 			}
-			FreeVec(buffer);
+			free(buffer);
 		}
 		UnLock(lock);
 	}

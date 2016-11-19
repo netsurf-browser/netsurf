@@ -30,11 +30,9 @@
 #include "netsurf/content.h"
 #include "amiga/os3support.h"
 #include "amiga/iff_dr2d.h"
-#include "amiga/memory.h"
 #else
 #include "os3support.h"
 #include "iff_dr2d.h"
-#include "misc.h"
 #endif
 
 static struct ColorRegister cm[1000];
@@ -171,7 +169,7 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 		}
 
 	for (unsigned int i = 0; i != diagram->shape_count; i++) {
-		attr = ami_misc_allocvec_clear(sizeof(struct attr_struct), 0);
+		attr = calloc(1, sizeof(struct attr_struct));
 		if (diagram->shape[i].fill == svgtiny_TRANSPARENT)
 			attr->FillType = FT_NONE;
 		else
@@ -193,7 +191,7 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 			WriteChunkBytes(iffh,attr,14);
 			PopChunk(iffh);
 		}
-		FreeVec(attr);
+		free(attr);
 
 		if (diagram->shape[i].path) {
 			union {
@@ -272,30 +270,30 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 					PopChunk(iffh);
 				}
 			} else if (diagram->shape[i].text) {
-				stxt = ami_misc_allocvec_clear(sizeof(struct stxt_struct), 0);
+				stxt = calloc(1, sizeof(struct stxt_struct));
 				stxt->BaseX = diagram->shape[i].text_x;
 				stxt->BaseY = diagram->shape[i].text_y;
 				stxt->NumChars = strlen(diagram->shape[i].text);
 				if(!fons_written)
 				{
-					fons = ami_misc_allocvec_clear(sizeof(struct fons_struct), 0);
-					if(!(PushChunk(iffh,0,ID_FONS,IFFSIZE_UNKNOWN)))
+					fons = calloc(1, sizeof(struct fons_struct));
+					if(!(PushChunk(iffh, 0, ID_FONS, IFFSIZE_UNKNOWN)))
 					{
 						WriteChunkBytes(iffh, fons, sizeof(struct fons_struct));
 						WriteChunkBytes(iffh, "Topaz\0", 6);
 						PopChunk(iffh);
 					}
-					FreeVec(fons);
+					free(fons);
 					fons_written = TRUE;
 				}
 
-				if(!(PushChunk(iffh,0,ID_STXT,IFFSIZE_UNKNOWN)))
+				if(!(PushChunk(iffh, 0, ID_STXT, IFFSIZE_UNKNOWN)))
 				{
-					WriteChunkBytes(iffh,stxt,26);
-					WriteChunkBytes(iffh,diagram->shape[i].text,strlen(diagram->shape[i].text));
+					WriteChunkBytes(iffh, stxt, 26);
+					WriteChunkBytes(iffh, diagram->shape[i].text, strlen(diagram->shape[i].text));
 					PopChunk(iffh);
 				}
-				FreeVec(stxt);
+				free(stxt);
 			}
 		}
 
@@ -380,7 +378,7 @@ int main(int argc, char **argv)
 	{
 		size = GetFileSize(fh);	
 
-		buffer = AllocVecTagList((uint32_t)size, NULL);
+		buffer = malloc((uint32_t)size);
 
 		Read(fh,buffer,(uint32_t)size);
 		Close(fh);
@@ -404,7 +402,7 @@ int main(int argc, char **argv)
 
 	ami_svg_to_dr2d(iffh,buffer,size,(char *)rarray[A_SVG]);
 
-	FreeVec(buffer);
+	free(buffer);
 	if(iffh) CloseIFF(iffh);
 	if(iffh->iff_Stream) Close((BPTR)iffh->iff_Stream);
 	if(iffh) FreeIFF(iffh);

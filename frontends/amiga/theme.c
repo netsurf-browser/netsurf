@@ -363,13 +363,13 @@ void ami_init_mouse_pointers(void)
 			if((ptrfile = Open(ptrfname,MODE_OLDFILE)))
 			{
 				int mx,my;
-				UBYTE *pprefsbuf = AllocVecTagList(1061, NULL);
-				Read(ptrfile,pprefsbuf,1061);
+				UBYTE *pprefsbuf = malloc(1061);
+				Read(ptrfile, pprefsbuf, 1061);
 
-				mouseptrbm[i]=AllocVecTagList(sizeof(struct BitMap), NULL);
-				InitBitMap(mouseptrbm[i],2,32,32);
-				mouseptrbm[i]->Planes[0] = AllocRaster(32,32);
-				mouseptrbm[i]->Planes[1] = AllocRaster(32,32);
+				mouseptrbm[i] = malloc(sizeof(struct BitMap));
+				InitBitMap(mouseptrbm[i], 2, 32, 32);
+				mouseptrbm[i]->Planes[0] = AllocRaster(32, 32);
+				mouseptrbm[i]->Planes[1] = AllocRaster(32, 32);
 				mouseptr.BitMap = mouseptrbm[i];
 
 				for(my=0;my<32;my++)
@@ -393,7 +393,7 @@ void ami_init_mouse_pointers(void)
 					POINTERA_YResolution,POINTERYRESN_SCREENRESASPECT,
 					TAG_DONE);
 
-				FreeVec(pprefsbuf);
+				free(pprefsbuf);
 				Close(ptrfile);
 			}
 
@@ -414,7 +414,7 @@ void ami_mouse_pointers_free(void)
 		{
 			FreeRaster(mouseptrbm[i]->Planes[0],32,32);
 			FreeRaster(mouseptrbm[i]->Planes[1],32,32);
-			FreeVec(mouseptrbm[i]);
+			free(mouseptrbm[i]);
 		}
 	}
 }

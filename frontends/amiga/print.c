@@ -62,7 +62,6 @@
 #include "amiga/font.h"
 #include "amiga/gui.h"
 #include "amiga/libs.h"
-#include "amiga/memory.h"
 #include "amiga/misc.h"
 #include "amiga/print.h"
 #include "amiga/utf8.h"
@@ -134,11 +133,11 @@ static void ami_print_ui_free(void)
 	int i;
 
 	for(i = 0; i < PGID_LAST; i++) {
-		if(gadlab[i]) FreeVec((APTR)gadlab[i]);
+		if(gadlab[i]) free((APTR)gadlab[i]);
 	}
 
 	for(i = 0; i < 10; i++) {
-		if(printers[i]) FreeVec(printers[i]);
+		if(printers[i]) free(printers[i]);
 	}
 }
 
@@ -228,21 +227,21 @@ void ami_print_ui(struct hlcache_handle *c)
 	char filename[30];
 	int i;
 
-	struct ami_print_window *pw = ami_misc_allocvec_clear(sizeof(struct ami_print_window), 0);
+	struct ami_print_window *pw = calloc(1, sizeof(struct ami_print_window));
 
 	pw->c = c;
 
-	printers[0] = ami_misc_allocvec_clear(50, 0);
+	printers[0] = calloc(1, 50);
 	ami_print_readunit("ENV:Sys/printer.prefs", printers[0], 50, 0);
 
 	strcpy(filename,"ENV:Sys/printerN.prefs");
 	for (i = 1; i < 10; i++)
 	{
 		filename[15] = '0' + i;
-		printers[i] = AllocVecTagList(50, NULL);
+		printers[i] = malloc(50);
 		if(!ami_print_readunit(filename, printers[i], 50, i))
 		{
-			FreeVec(printers[i]);
+			free(printers[i]);
 			printers[i] = NULL;
 			break;
 		}
@@ -483,7 +482,7 @@ struct MsgPort *ami_print_get_msgport(void)
 
 bool ami_print_begin(struct print_settings *ps)
 {
-	ami_print_info.gg = ami_misc_allocvec_clear(sizeof(struct gui_globals), 0);
+	ami_print_info.gg = calloc(1, sizeof(struct gui_globals));
 	if(!ami_print_info.gg) return false;
 
 	ami_init_layers(ami_print_info.gg,
@@ -510,7 +509,7 @@ bool ami_print_next_page(void)
 void ami_print_end(void)
 {
 	ami_free_layers(ami_print_info.gg);
-	FreeVec(ami_print_info.gg);
+	free(ami_print_info.gg);
 	DisposeObject(ami_print_info.objects[OID_MAIN]);
 	ami_gui_set_default_gg();
 

@@ -737,7 +737,7 @@ void ami_bitmap_set_icondata(struct bitmap *bm, ULONG *icondata)
 
 void ami_bitmap_free_icondata(struct bitmap *bm)
 {
-	if(bm->icondata) FreeVec(bm->icondata);
+	if(bm->icondata) free(bm->icondata);
 	bm->icondata = NULL;
 }
 

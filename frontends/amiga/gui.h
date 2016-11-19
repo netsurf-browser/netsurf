@@ -176,9 +176,11 @@ extern struct Screen *scrn;
 extern struct MsgPort *sport;
 extern struct gui_window *cur_gw;
 
-/* The return value must be deallocated using FreeVec() */
+/* The return value for these functions must be deallocated using FreeVec() */
 STRPTR ami_locale_langs(int *codeset);
+char *ami_gui_get_cache_favicon_name(struct nsurl *url, bool only_if_avail);
 
+/* Functions lacking documentation */
 void ami_get_msg(void);
 void ami_try_quit(void);
 void ami_quit_netsurf(void);
@@ -194,7 +196,6 @@ void ami_gui_tabs_toggle_all(void);
 bool ami_locate_resource(char *fullpath, const char *file);
 void ami_gui_update_hotlist_button(struct gui_window_2 *gwin);
 nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin);
-char *ami_gui_get_cache_favicon_name(struct nsurl *url, bool only_if_avail);
 int ami_gui_count_windows(int window, int *tabs);
 void ami_gui_set_scale(struct gui_window *gw, float scale);
 
