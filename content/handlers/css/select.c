@@ -253,6 +253,7 @@ static void nscss_dom_user_data_handler(dom_node_operation operation,
 css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
 		uint64_t media, const css_stylesheet *inline_style)
 {
+	css_computed_style *composed;
 	css_select_results *styles;
 	int pseudo_element;
 	css_error error;
@@ -274,11 +275,16 @@ css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
 		error = css_computed_style_compose(ctx->parent_style,
 				styles->styles[CSS_PSEUDO_ELEMENT_NONE],
 				nscss_compute_font_size, NULL,
-				styles->styles[CSS_PSEUDO_ELEMENT_NONE]);
+				&composed);
 		if (error != CSS_OK) {
 			css_select_results_destroy(styles);
 			return NULL;
 		}
+
+		/* Replace select_results style with composed style */
+		css_computed_style_destroy(
+				styles->styles[CSS_PSEUDO_ELEMENT_NONE]);
+		styles->styles[CSS_PSEUDO_ELEMENT_NONE] = composed;
 	}
 
 	for (pseudo_element = CSS_PSEUDO_ELEMENT_NONE + 1;
@@ -301,40 +307,20 @@ css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
 				styles->styles[CSS_PSEUDO_ELEMENT_NONE],
 				styles->styles[pseudo_element],
 				nscss_compute_font_size, NULL,
-				styles->styles[pseudo_element]);
+				&composed);
 		if (error != CSS_OK) {
 			/* TODO: perhaps this shouldn't be quite so
 			 * catastrophic? */
 			css_select_results_destroy(styles);
 			return NULL;
 		}
+
+		/* Replace select_results style with composed style */
+		css_computed_style_destroy(styles->styles[pseudo_element]);
+		styles->styles[pseudo_element] = composed;
 	}
 
 	return styles;
-}
-
-/**
- * Get an initial style
- *
- * \param ctx    CSS selection context
- * \return Pointer to partial computed style, or NULL on failure
- */
-static css_computed_style *nscss_get_initial_style(nscss_select_ctx *ctx)
-{
-	css_computed_style *style;
-	css_error error;
-
-	error = css_computed_style_create(&style);
-	if (error != CSS_OK)
-		return NULL;
-
-	error = css_computed_style_initialise(style, &selection_handler, ctx);
-	if (error != CSS_OK) {
-		css_computed_style_destroy(style);
-		return NULL;
-	}
-
-	return style;
 }
 
 /**
@@ -347,21 +333,26 @@ static css_computed_style *nscss_get_initial_style(nscss_select_ctx *ctx)
 css_computed_style *nscss_get_blank_style(nscss_select_ctx *ctx,
 		const css_computed_style *parent)
 {
-	css_computed_style *partial;
+	css_computed_style *partial, *composed;
 	css_error error;
 
-	partial = nscss_get_initial_style(ctx);
-	if (partial == NULL)
-		return NULL;
-
-	error = css_computed_style_compose(parent, partial,
-			nscss_compute_font_size, NULL, partial);
+	error = css_select_default_style(ctx->ctx,
+			&selection_handler, ctx, &partial);
 	if (error != CSS_OK) {
-		css_computed_style_destroy(partial);
 		return NULL;
 	}
 
-	return partial;
+	/* TODO: Do we really need to compose?  Initial style shouldn't
+	 * have any inherited properties. */
+	error = css_computed_style_compose(parent, partial,
+			nscss_compute_font_size, NULL, &composed);
+	css_computed_style_destroy(partial);
+	if (error != CSS_OK) {
+		css_computed_style_destroy(composed);
+		return NULL;
+	}
+
+	return composed;
 }
 
 /**
