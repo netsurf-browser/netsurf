@@ -25,6 +25,28 @@
 ULONG __slab_max_size = 8192; /* Enable clib2's slab allocator */
 #endif
 
+/* Special clear (ie. non-zero), which is different on OS3 and 4 */
+void *ami_memory_clear_alloc(size_t size, UBYTE value)
+{
+#ifdef __amigaos4__
+	return AllocVecTags(size, AVT_ClearWithValue, value, TAG_DONE);
+#else
+	void *mem = malloc(size);
+	if (mem) memset(mem, value, size);
+	return mem;
+#endif
+}
+
+/* Free special clear (ie. non-zero) area, which is different on OS3 and 4 */
+void ami_memory_clear_free(void *p)
+{
+#ifdef __amigaos4__
+	FreeVec(p);
+#else
+	free(p);
+#endif
+}
+
 void *ami_misc_allocvec_clear(int size, UBYTE value)
 {
 #ifdef __amigaos4__

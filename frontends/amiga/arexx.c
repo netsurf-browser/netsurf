@@ -42,7 +42,6 @@
 #include "amiga/hotlist.h"
 #include "amiga/tree.h"
 #include "amiga/libs.h"
-#include "amiga/memory.h"
 #include "amiga/misc.h"
 #include "amiga/theme.h"
 
@@ -272,7 +271,7 @@ RXHOOKF(rx_open)
 	{
 		if(!gw) return;
 
-		dln = ami_misc_allocvec_clear(sizeof(struct dlnode), 0);
+		dln = calloc(1, sizeof(struct dlnode));
 		dln->filename = strdup((char *)cmd->ac_ArgList[3]);
 		dln->node.ln_Name = strdup((char *)cmd->ac_ArgList[0]);
 		dln->node.ln_Type = NT_USER;

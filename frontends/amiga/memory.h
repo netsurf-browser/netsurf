@@ -21,7 +21,11 @@
 
 #include <exec/types.h>
 
-/* Standard memory allocation */
+/* Alloc/free a block cleared to non-zero */
+void *ami_memory_clear_alloc(size_t size, UBYTE value);
+void ami_memory_clear_free(void *p);
+
+/* Standard memory allocation - to be removed */
 void *ami_misc_allocvec_clear(int size, UBYTE value);
 
 /* Itempool cross-compatibility */

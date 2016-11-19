@@ -64,7 +64,6 @@
 #include "amiga/file.h"
 #include "amiga/iff_dr2d.h"
 #include "amiga/libs.h"
-#include "amiga/memory.h"
 #include "amiga/misc.h"
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
@@ -101,7 +100,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 	char *dl_filename = ami_utf8_easy(download_context_get_filename(ctx));
 	APTR va[3];
 
-	dw = ami_misc_allocvec_clear(sizeof(struct gui_download_window), 0);
+	dw = calloc(1, sizeof(struct gui_download_window), 0);
 
 	if(gui && (!IsListEmpty(&gui->dllist)) && (dw->dln = (struct dlnode *)FindName(&gui->dllist,url)))
 	{
@@ -123,13 +122,13 @@ static struct gui_download_window *gui_download_window_create(download_context *
 			AddPart((STRPTR)&dw->fname,savereq->fr_File,1024);
 			if(!ami_download_check_overwrite(dw->fname, gui->shared->win, total_size))
 			{
-				FreeVec(dw);
+				free(dw);
 				return NULL;
 			}
 		}
 		else
 		{
-			FreeVec(dw);
+			free(dw);
 			return NULL;
 		}
 	}
@@ -146,7 +145,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 
 	if(!(dw->fh = FOpen((STRPTR)&dw->fname,MODE_NEWFILE,0)))
 	{
-		FreeVec(dw);
+		free(dw);
 		return NULL;
 	}
 
@@ -261,7 +260,7 @@ static void gui_download_window_done(struct gui_download_window *dw)
 
 		free(dln->filename);
 		Remove((struct Node *)dln);
-		FreeVec(dln);
+		free(dln);
 	}
 
 	FClose(dw->fh);
@@ -344,7 +343,7 @@ void ami_free_download_list(struct List *dllist)
 		free(node->node.ln_Name);
 		free(node->filename);
 		Remove((struct Node *)node);
-		FreeVec((struct Node *)node);
+		free((struct Node *)node);
 	}while((node=nnode));
 }
 
