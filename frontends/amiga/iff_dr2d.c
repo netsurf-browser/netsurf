@@ -30,7 +30,7 @@
 #include "netsurf/content.h"
 #include "amiga/os3support.h"
 #include "amiga/iff_dr2d.h"
-#include "amiga/misc.h"
+#include "amiga/memory.h"
 #else
 #include "os3support.h"
 #include "iff_dr2d.h"

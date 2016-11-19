@@ -49,7 +49,7 @@
 #include "amiga/os3support.h"
 #include "amiga/bitmap.h"
 #include "amiga/icon.h"
-#include "amiga/misc.h"
+#include "amiga/memory.h"
 
 #define THUMBNAIL_WIDTH 100 /* Icon sizes for thumbnails, usually the same as */
 #define THUMBNAIL_HEIGHT 86 /* WIDTH/HEIGHT in desktop/thumbnail.c */

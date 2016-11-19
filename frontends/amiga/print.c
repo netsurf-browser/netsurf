@@ -62,6 +62,7 @@
 #include "amiga/font.h"
 #include "amiga/gui.h"
 #include "amiga/libs.h"
+#include "amiga/memory.h"
 #include "amiga/misc.h"
 #include "amiga/print.h"
 #include "amiga/utf8.h"

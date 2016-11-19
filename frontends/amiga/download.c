@@ -64,6 +64,7 @@
 #include "amiga/file.h"
 #include "amiga/iff_dr2d.h"
 #include "amiga/libs.h"
+#include "amiga/memory.h"
 #include "amiga/misc.h"
 #include "amiga/theme.h"
 #include "amiga/utf8.h"

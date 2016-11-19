@@ -42,58 +42,6 @@
 #include "amiga/misc.h"
 #include "amiga/utf8.h"
 
-void *ami_misc_allocvec_clear(int size, UBYTE value)
-{
-#ifdef __amigaos4__
-	return AllocVecTags(size, AVT_ClearWithValue, value, TAG_DONE);
-#else
-	void *mem = AllocVec(size, MEMF_ANY);
-	if (mem) memset(mem, value, size);
-	return mem;
-#endif
-}
-
-APTR ami_misc_itempool_create(int size)
-{
-#ifdef __amigaos4__
-	return AllocSysObjectTags(ASOT_ITEMPOOL,
-		ASOITEM_MFlags, MEMF_PRIVATE,
-		ASOITEM_ItemSize, size,
-		ASOITEM_GCPolicy, ITEMGC_AFTERCOUNT,
-		ASOITEM_GCParameter, 100,
-		TAG_DONE);
-#else
-	return CreatePool(MEMF_ANY, 20 * size, size);
-#endif
-}
-
-void ami_misc_itempool_delete(APTR pool)
-{
-#ifdef __amigaos4__
-	FreeSysObject(ASOT_ITEMPOOL, pool);
-#else
-	DeletePool(pool);
-#endif
-}
-
-APTR ami_misc_itempool_alloc(APTR pool, int size)
-{
-#ifdef __amigaos4__
-	return ItemPoolAlloc(pool);
-#else
-	return AllocPooled(pool, size);
-#endif
-}
-
-void ami_misc_itempool_free(APTR restrict pool, APTR restrict item, int size)
-{
-#ifdef __amigaos4__
-	ItemPoolFree(pool, item);
-#else
-	FreePooled(pool, item, size);
-#endif
-}
-
 static LONG ami_misc_req(const char *message, uint32 type)
 {
 	LONG ret = 0;

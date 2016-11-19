@@ -54,6 +54,7 @@
 #include "amiga/gui.h"
 #include "amiga/bitmap.h"
 #include "amiga/plotters.h"
+#include "amiga/memory.h"
 #include "amiga/misc.h"
 #include "amiga/rtg.h"
 
