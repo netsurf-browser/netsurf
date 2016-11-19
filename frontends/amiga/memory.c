@@ -47,17 +47,6 @@ void ami_memory_clear_free(void *p)
 #endif
 }
 
-void *ami_misc_allocvec_clear(int size, UBYTE value)
-{
-#ifdef __amigaos4__
-	return AllocVecTags(size, AVT_ClearWithValue, value, TAG_DONE);
-#else
-	void *mem = AllocVec(size, MEMF_ANY);
-	if (mem) memset(mem, value, size);
-	return mem;
-#endif
-}
-
 APTR ami_misc_itempool_create(int size)
 {
 #ifdef __amigaos4__

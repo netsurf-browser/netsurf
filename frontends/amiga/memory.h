@@ -34,9 +34,6 @@
 void *ami_memory_clear_alloc(size_t size, UBYTE value);
 void ami_memory_clear_free(void *p);
 
-/* Standard memory allocation - to be removed */
-void *ami_misc_allocvec_clear(int size, UBYTE value);
-
 /* Itempool cross-compatibility */
 APTR ami_misc_itempool_create(int size);
 void ami_misc_itempool_delete(APTR pool);

@@ -152,7 +152,6 @@
 #define DevNameFromLock(A,B,C,D) NameFromLock(A,B,C)
 
 /* Exec */
-#define AllocVecTagList(SZ,TAG) AllocVec(SZ,MEMF_ANY) /* AllocVecTagList with no tags */
 #define FindIName FindName
 
 /* Intuition */

@@ -46,7 +46,6 @@
 #include "amiga/bitmap.h"
 #include "amiga/filetype.h"
 #include "amiga/datatypes.h"
-#include "amiga/memory.h"
 #include "amiga/plotters.h"
 
 typedef struct amiga_dt_anim_content {
@@ -216,7 +215,7 @@ bool amiga_dt_anim_convert(struct content *c)
 #else
 #warning FIXME: Need to use a different blitter function for OS3!
 #endif
-				FreeVec(clut);
+				free(clut);
 
 				adt_frame.MethodID = ADTM_UNLOADFRAME;
 				IDoMethodA(plugin->dto, (Msg)&adt_frame);
@@ -344,7 +343,7 @@ content_type amiga_dt_anim_content_type(void)
 static APTR ami_colormap_to_clut(struct ColorMap *cmap)
 {
 	int i;
-	UBYTE *clut = ami_misc_allocvec_clear(256 * 4, 0); /* NB: Was not MEMF_PRIVATE */
+	UBYTE *clut = calloc(1, 256 * 4);
 	ULONG colr[256 * 4];
 
 	if(!clut) return NULL;
