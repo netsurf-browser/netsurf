@@ -42,6 +42,8 @@
 #include "windows/findfile.h"
 #include "windows/file.h"
 #include "windows/drawable.h"
+#include "windows/corewindow.h"
+#include "windows/ssl_cert.h"
 #include "windows/download.h"
 #include "windows/localhistory.h"
 #include "windows/window.h"
@@ -269,6 +271,7 @@ static nserror nsw32_option_init(int *pargc, char** argv)
 static struct gui_misc_table win32_misc_table = {
 	.schedule = win32_schedule,
 	.warning = win32_warning,
+	.cert_verify = nsw32_cert_verify,
 };
 
 /**
@@ -371,6 +374,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	ret = nsws_create_main_class(hInstance);
 	ret = nsws_create_drawable_class(hInstance);
 	ret = nsws_create_localhistory_class(hInstance);
+	ret = nsw32_create_corewindow_class(hInstance);
+	ret = nsws_create_cert_verify_class(hInstance);
 
 	nsoption_set_bool(target_blank, false);
 
