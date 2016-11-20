@@ -45,6 +45,10 @@
 #include "amiga/misc.h"
 #include "amiga/theme.h"
 
+#ifndef __amigaos4__
+#include "amiga/memory.h"
+#endif
+
 extern const char * const verarexx;
 extern const char * const wt_revid;
 
@@ -65,7 +69,8 @@ enum
 	RX_WINDOWS,
 	RX_ACTIVE,
 	RX_CLOSE,
-	RX_HOTLIST
+	RX_HOTLIST,
+	RX_SLABSTATS
 };
 
 static Object *arexx_obj = NULL;
@@ -93,6 +98,7 @@ RXHOOKF(rx_windows);
 RXHOOKF(rx_active);
 RXHOOKF(rx_close);
 RXHOOKF(rx_hotlist);
+RXHOOKF(rx_slabstats);
 
 STATIC struct ARexxCmd Commands[] =
 {
@@ -112,6 +118,7 @@ STATIC struct ARexxCmd Commands[] =
 	{"ACTIVE",	RX_ACTIVE,	rx_active,	"T=TAB/S", 		0, 	NULL, 	0, 	0, 	NULL },
 	{"CLOSE",	RX_CLOSE,	rx_close,	"W=WINDOW/K/N,T=TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
 	{"HOTLIST",	RX_HOTLIST,	rx_hotlist,	"A=ACTION/A", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"SLABSTATS",	RX_SLABSTATS,	rx_slabstats,	NULL, 		0, 	NULL, 	0, 	0, 	NULL },
 	{ NULL, 		0, 				NULL, 		NULL, 		0, 	NULL, 	0, 	0, 	NULL }
 };
 
@@ -662,5 +669,12 @@ RXHOOKF(rx_hotlist)
 	} else if(strcasecmp((char *)cmd->ac_ArgList[0], "CLOSE") == 0) {
 		ami_tree_close(hotlist_window);
 	}
+}
+
+RXHOOKF(rx_slabstats)
+{
+#ifndef __amigaos4__
+	ami_memory_slab_dump();
+#endif
 }
 

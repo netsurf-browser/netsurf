@@ -108,9 +108,9 @@ void *amiga_bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
 
-	if(pool_bitmap == NULL) pool_bitmap = ami_misc_itempool_create(sizeof(struct bitmap));
+	if(pool_bitmap == NULL) pool_bitmap = ami_memory_itempool_create(sizeof(struct bitmap));
 
-	bitmap = ami_misc_itempool_alloc(pool_bitmap, sizeof(struct bitmap));
+	bitmap = ami_memory_itempool_alloc(pool_bitmap, sizeof(struct bitmap));
 	if(bitmap == NULL) return NULL;
 
 	bitmap->pixdata = ami_memory_clear_alloc(width*height*4, 0xff);
@@ -182,7 +182,7 @@ void amiga_bitmap_destroy(void *bitmap)
 		bm->url = NULL;
 		bm->title = NULL;
 	
-		ami_misc_itempool_free(pool_bitmap, bm, sizeof(struct bitmap));
+		ami_memory_itempool_free(pool_bitmap, bm, sizeof(struct bitmap));
 		bm = NULL;
 	}
 }
@@ -655,7 +655,7 @@ struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
 
 void ami_bitmap_fini(void)
 {
-	if(pool_bitmap) ami_misc_itempool_delete(pool_bitmap);
+	if(pool_bitmap) ami_memory_itempool_delete(pool_bitmap);
 	pool_bitmap = NULL;
 }
 
