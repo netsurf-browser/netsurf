@@ -22,7 +22,7 @@
  * Low-level resource cache implementation
  *
  * This is the implementation of the low level cache. This cache
- * stores source objects in memory and may use a persistant backing
+ * stores source objects in memory and may use a persistent backing
  * store to extend their lifetime.
  *
  * \todo fix writeout conditions and ordering.
@@ -201,8 +201,8 @@ struct llcache_object {
 	llcache_header *headers;     /**< Fetch headers */
 	size_t num_headers;	     /**< Number of fetch headers */
 
-	/* Instrumentation. These elemnts are strictly for information
-	 * to improve the cache performance and to provide performace
+	/* Instrumentation. These elements are strictly for information
+	 * to improve the cache performance and to provide performance
 	 * metrics. The values are non-authorative and must not be used to
 	 * determine object lifetime etc.
 	 */
@@ -268,7 +268,7 @@ struct llcache_s {
 	uint64_t total_written;
 
 	/**
-	 * Total nuber of miliseconds taken to write to backing store.
+	 * Total number of milliseconds taken to write to backing store.
 	 */
 	uint64_t total_elapsed;
 
@@ -804,7 +804,7 @@ static nserror llcache_fetch_process_header(llcache_object *object,
  *
  * sets up headers and attempts to start an actual fetch from the
  * fetchers system updating the llcache object with the new fetch on
- * sucessful start.
+ * successful start.
  *
  * \pre The fetch parameters in object->fetch must be populated
  *
@@ -876,7 +876,7 @@ static nserror llcache_object_refetch(llcache_object *object)
 	/* Reset fetch state */
 	object->fetch.state = LLCACHE_FETCH_INIT;
 
-	LLCACHE_LOG("Refetching %p", object);
+	LLCACHE_LOG("Re-fetching %p", object);
 
 	/* Kick off fetch */
 	res = fetch_start(object->url,
@@ -1173,27 +1173,27 @@ llcache_object_remove_from_list(llcache_object *object, llcache_object **list)
 }
 
 /**
- * Retrieve source data for an object from persistant store if necessary.
+ * Retrieve source data for an object from persistent store if necessary.
  *
- * If an objects source data has been placed in the persistant store
- * and the in memory copy released this will attempt to retrive the
+ * If an objects source data has been placed in the persistent store
+ * and the in memory copy released this will attempt to retrieve the
  * source data.
  *
  * \param object the object to operate on.
- * \return apropriate error code.
+ * \return appropriate error code.
  */
 static nserror llcache_persist_retrieve(llcache_object *object)
 {
 	/* ensure the source data is present if necessary */
 	if ((object->source_data != NULL) ||
 	    (object->store_state != LLCACHE_STATE_DISC)) {
-		/* source data does not require retriving from
-		 * persistant store.
+		/* source data does not require retrieving from
+		 * persistent store.
 		 */
 		return NSERROR_OK;
 	}
 
-	/* Source data for the object may be in the persiatant store */
+	/* Source data for the object may be in the persistent store */
 	return guit->llcache->fetch(object->url,
 				    BACKING_STORE_NONE,
 				    &object->source_data,
@@ -1205,7 +1205,7 @@ static nserror llcache_persist_retrieve(llcache_object *object)
  *
  * The metadata includes object headers.
  *
- * \param object The cache object to serialise teh metadata of.
+ * \param object The cache object to serialise the metadata of.
  * \param data_out Where the serialised buffer will be placed.
  * \param datasize_out The size of the serialised data.
  * \return NSERROR_OK on success with \a data_out and \a datasize_out
@@ -1347,15 +1347,15 @@ operror:
 /**
  * Deserialisation of an objects metadata.
  *
- * Attempt to retrive and deserialise the metadata for an object from
+ * Attempt to retrieve and deserialise the metadata for an object from
  * the backing store.
  *
- * This must only update object if it is sucessful otherwise difficult
+ * This must only update object if it is successful otherwise difficult
  * to debug crashes happen later by using bad leftover object state.
  *
  * \param object The object to retrieve the metadata for.
- * \return NSERROR_OK if the metatdata was retrived and deserialised
- *         or error code if url is not in persistant storage or in
+ * \return NSERROR_OK if the metatdata was retrieved and deserialised
+ *         or error code if URL is not in persistent storage or in
  *         event of deserialisation error.
  */
 static nserror
@@ -1376,7 +1376,7 @@ llcache_process_metadata(llcache_object *object)
 	size_t num_headers;
 	size_t hloop;
 
-	LOG("Retriving metadata");
+	LOG("Retrieving metadata");
 
 	/* attempt to retrieve object metadata from the backing store */
 	res = guit->llcache->fetch(object->url,
@@ -1387,7 +1387,7 @@ llcache_process_metadata(llcache_object *object)
 		return res;
 	}
 
-	LOG("Processing retrived data");
+	LOG("Processing retrieved data");
 
 	/* metadata line 1 is the url the metadata referrs to */
 	line = 1;
@@ -1405,7 +1405,7 @@ llcache_process_metadata(llcache_object *object)
 
 	if (nsurl_compare(object->url, metadataurl, NSURL_COMPLETE) != true) {
 		/* backing store returned the wrong object for the
-		 * request. This may occour if the backing store had
+		 * request. This may occur if the backing store had
 		 * a collision in its storage method. We cope with this
 		 * by simply skipping caching of this object.
 		 */
@@ -1511,14 +1511,14 @@ format_error:
 }
 
 /**
- * Attempt to retrieve an object from persistant storage.
+ * Attempt to retrieve an object from persistent storage.
  *
- * \param object The object to populate from persistant store.
+ * \param object The object to populate from persistent store.
  * \param flags Fetch flags.
  * \param referer The referring url.
  * \param post Post data for fetch.
  * \param redirect_count how many times this fetch has been redirected.
- * \return NSERROR_OK if the object was sucessfully retrived from the
+ * \return NSERROR_OK if the object was successfully retrieved from the
  *         cache else appropriate error code.
  */
 static nserror
@@ -1572,7 +1572,7 @@ llcache_object_fetch_persistant(llcache_object *object,
  * \param referer	  Referring URL, or NULL if none
  * \param post		  POST data, or NULL for a GET request
  * \param redirect_count  Number of redirects followed so far
- * \param result	  Pointer to location to recieve retrieved object
+ * \param result	  Pointer to location to receive retrieved object
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 static nserror
@@ -1602,7 +1602,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
 	}
 
 	/* No viable object found in cache create one and attempt to
-	 * pull from persistant store.
+	 * pull from persistent store.
 	 */
 	if (newest == NULL) {
 		LLCACHE_LOG("No viable object found in llcache");
@@ -1611,12 +1611,12 @@ llcache_object_retrieve_from_cache(nsurl *url,
 		if (error != NSERROR_OK)
 			return error;
 
-		/* attempt to retrieve object from persistant store */
+		/* attempt to retrieve object from persistent store */
 		error = llcache_object_fetch_persistant(obj, flags, referer, post, redirect_count);
 		if (error == NSERROR_OK) {
-			LLCACHE_LOG("retrived object from persistant store");
+			LLCACHE_LOG("retrieved object from persistent store");
 
-			/* set newest object from persistant store which
+			/* set newest object from persistent store which
 			 * will cause the normal object handling to be used.
 			 */
 			newest = obj;
@@ -1625,7 +1625,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
 			llcache_object_add_to_list(obj, &llcache->cached_objects);
 
 		}
-		/* else no object found and unretrivable from cache,
+		/* else no object found and irretrievable from cache,
 		 * fall through with newest unset to start fetch
 		 */
 	}
@@ -1641,19 +1641,19 @@ llcache_object_retrieve_from_cache(nsurl *url,
 		/* ensure the source data is present */
 		error = llcache_persist_retrieve(newest);
 		if (error == NSERROR_OK) {
-			/* source data was sucessfully retrived from
-			 * persistant store
+			/* source data was successfully retrieved from
+			 * persistent store
 			 */
 			*result = newest;
 
 			return NSERROR_OK;
 		}
 
-		/* retrival of source data from persistant store
+		/* retrieval of source data from persistent store
 		 * failed, destroy cache object and fall though to
 		 * cache miss to re-fetch
 		 */
-		LLCACHE_LOG("Persistant retrival failed for %p", newest);
+		LLCACHE_LOG("Persistent retrieval failed for %p", newest);
 
 		llcache_object_remove_from_list(newest,	&llcache->cached_objects);
 		llcache_object_destroy(newest);
@@ -1704,9 +1704,9 @@ llcache_object_retrieve_from_cache(nsurl *url,
 			return NSERROR_OK;
 		}
 
-		LLCACHE_LOG("Persistant retrival failed for %p", newest);
+		LLCACHE_LOG("Persistent retrieval failed for %p", newest);
 
-		/* retrival of source data from persistant store
+		/* retrieval of source data from persistent store
 		 * failed, destroy cache object and fall though to
 		 * cache miss to re-retch
 		 */
@@ -1743,7 +1743,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
  * \param referer	  Referring URL, or NULL if none
  * \param post		  POST data, or NULL for a GET request
  * \param redirect_count  Number of redirects followed so far
- * \param result	  Pointer to location to recieve retrieved object
+ * \param result	  Pointer to location to receive retrieved object
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 static nserror
@@ -2372,7 +2372,7 @@ build_candidate_list(struct llcache_object ***lst_out, int *lst_len_out)
 
 		/* cacehable objects with no pending fetches, not
 		 * already on disc and with sufficient lifetime to
-		 * make disc cache worthwile
+		 * make disc cache worthwhile
 		 */
 		if ((object->candidate_count == 0) &&
 		    (object->fetch.fetch == NULL) &&
@@ -2526,20 +2526,20 @@ static void llcache_persist(void *p)
 
 	ret = build_candidate_list(&lst, &lst_count);
 	if (ret != NSERROR_OK) {
-		LLCACHE_LOG("Unable to construct candidate list for persisatnt writeout");
+		LLCACHE_LOG("Unable to construct candidate list for persistent writeout");
 		return;
 	}
 
 	write_limit = (llcache->maximum_bandwidth * llcache->time_quantum) / 1000;
 
-	/* obtained a candidate list, make each object persistant in turn */
+	/* obtained a candidate list, make each object persistent in turn */
 	for (idx = 0; idx < lst_count; idx++) {
 		ret = write_backing_store(lst[idx], &written, &elapsed);
 		if (ret != NSERROR_OK) {
 			continue;
 		}
 
-		/* sucessfully wrote object to backing store */
+		/* successfully wrote object to backing store */
 		total_written += written;
 		total_elapsed += elapsed;
 		total_bandwidth = (total_written * 1000) / total_elapsed;
@@ -3138,7 +3138,7 @@ llcache_object_snapshot(llcache_object *object,	llcache_object **snapshot)
 /**
  * total ram usage of object
  *
- * \param object The object to caclulate the total RAM usage of.
+ * \param object The object to calculate the total RAM usage of.
  * \return The total RAM usage in bytes.
  */
 static inline uint32_t
@@ -3253,7 +3253,7 @@ void llcache_clean(bool purge)
 	}
 
 	/* if the cache limit is exceeded try to make some objects
-	 * persistant so their RAM can be reclaimed in the next
+	 * persistent so their RAM can be reclaimed in the next
 	 * step
 	 */
 	if (limit < llcache_size) {
@@ -3261,7 +3261,7 @@ void llcache_clean(bool purge)
 	}
 
 	/* Source data of fresh cacheable objects with no users, no
-	 * pending fetches and pushed to persistant store while the
+	 * pending fetches and pushed to persistent store while the
 	 * cache exceeds the configured size.
 	 */
 	for (object = llcache->cached_objects;
@@ -3286,8 +3286,8 @@ void llcache_clean(bool purge)
 	}
 
 	/* Fresh cacheable objects with no users, no pending fetches
-	 * and pushed to persistant store while the cache exceeds
-	 * the configured size. Efectively just the llcache object metadata.
+	 * and pushed to persistent store while the cache exceeds
+	 * the configured size. Effectively just the llcache object metadata.
 	 */
 	for (object = llcache->cached_objects;
 	     ((limit < llcache_size) && (object != NULL));
@@ -3317,7 +3317,7 @@ void llcache_clean(bool purge)
 
 	/* Fresh cacheable objects with no users or pending fetches
 	 * while the cache exceeds the configured size. These are the
-	 * most valuble objects as replacing them is a full network
+	 * most valuable objects as replacing them is a full network
 	 * fetch
 	 */
 	for (object = llcache->cached_objects;
