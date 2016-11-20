@@ -3829,7 +3829,7 @@ gui_window_create(struct browser_window *bw,
 
 	NewList(&g->dllist);
 	g->deferred_rects = NewObjList();
-	g->deferred_rects_pool = ami_misc_itempool_create(sizeof(struct rect));
+	g->deferred_rects_pool = ami_memory_itempool_create(sizeof(struct rect));
 	g->bw = bw;
 	g->scale = browser_window_get_scale(bw);
 
@@ -4492,7 +4492,7 @@ static void gui_window_destroy(struct gui_window *g)
 
 	ami_free_download_list(&g->dllist);
 	FreeObjList(g->deferred_rects);
-	ami_misc_itempool_delete(g->deferred_rects_pool);
+	ami_memory_itempool_delete(g->deferred_rects_pool);
 	gui_window_stop_throbber(g);
 
 	cur_gw = NULL;
@@ -4705,7 +4705,7 @@ static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw)
 				rect->x0, rect->y0, rect->x1, rect->y1);
 		}
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
-		ami_misc_itempool_free(g->deferred_rects_pool, node->objstruct, sizeof(struct rect));
+		ami_memory_itempool_free(g->deferred_rects_pool, node->objstruct, sizeof(struct rect));
 		DelObjectNoFree(node);
 	} while((node = nnode));
 
@@ -4739,7 +4739,7 @@ static bool ami_gui_window_update_box_deferred_check(struct MinList *deferred_re
 			(new_rect->x1 >= rect->x1) &&
 			(new_rect->y1 >= rect->y1)) {
 			LOG("Removing queued redraw that is a subset of new box redraw");
-			ami_misc_itempool_free(mempool, node->objstruct, sizeof(struct rect));
+			ami_memory_itempool_free(mempool, node->objstruct, sizeof(struct rect));
 			DelObjectNoFree(node);
 			/* Don't return - we might find more */
 		}
@@ -4756,7 +4756,7 @@ static void gui_window_update_box(struct gui_window *g, const struct rect *restr
 	
 	if(ami_gui_window_update_box_deferred_check(g->deferred_rects, rect,
 			g->deferred_rects_pool)) {
-		deferred_rect = ami_misc_itempool_alloc(g->deferred_rects_pool, sizeof(struct rect));
+		deferred_rect = ami_memory_itempool_alloc(g->deferred_rects_pool, sizeof(struct rect));
 		CopyMem(rect, deferred_rect, sizeof(struct rect));
 		nsobj = AddObject(g->deferred_rects, AMINS_RECT);
 		nsobj->objstruct = deferred_rect;

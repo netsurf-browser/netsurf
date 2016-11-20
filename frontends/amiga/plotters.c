@@ -193,7 +193,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool for
 	InitTmpRas(gg->rp->TmpRas, gg->tmprasbuf, width*height);
 
 	if((gg->palette_mapped == true) && (pool_pens == NULL)) {
-		pool_pens = ami_misc_itempool_create(sizeof(struct ami_plot_pen));
+		pool_pens = ami_memory_itempool_create(sizeof(struct ami_plot_pen));
 	}
 
 	gg->apen = 0x00000000;
@@ -210,7 +210,7 @@ void ami_free_layers(struct gui_globals *gg)
 	init_layers_count--;
 
 	if((init_layers_count == 0) && (pool_pens != NULL)) {
-		ami_misc_itempool_delete(pool_pens);
+		ami_memory_itempool_delete(pool_pens);
 		pool_pens = NULL;
 	}
 
@@ -256,7 +256,7 @@ static ULONG ami_plot_obtain_pen(struct MinList *shared_pens, ULONG colr)
 	if(pen == -1) LOG("WARNING: Cannot allocate pen for ABGR:%lx", colr);
 
 	if((shared_pens != NULL) && (pool_pens != NULL)) {
-		if((node = (struct ami_plot_pen *)ami_misc_itempool_alloc(pool_pens, sizeof(struct ami_plot_pen)))) {
+		if((node = (struct ami_plot_pen *)ami_memory_itempool_alloc(pool_pens, sizeof(struct ami_plot_pen)))) {
 			node->pen = pen;
 			AddTail((struct List *)shared_pens, (struct Node *)node);
 		}
@@ -280,7 +280,7 @@ void ami_plot_release_pens(struct MinList *shared_pens)
 		nnode = (struct ami_plot_pen *)GetSucc((struct Node *)node);
 		ReleasePen(scrn->ViewPort.ColorMap, node->pen);
 		Remove((struct Node *)node);
-		ami_misc_itempool_free(pool_pens, node, sizeof(struct ami_plot_pen));
+		ami_memory_itempool_free(pool_pens, node, sizeof(struct ami_plot_pen));
 	} while((node = nnode));
 
 	glob->apen = 0x00000000;

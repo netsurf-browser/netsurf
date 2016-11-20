@@ -41,7 +41,7 @@ static APTR pool_nsobj = NULL;
 
 bool ami_object_init(void)
 {
-	pool_nsobj = ami_misc_itempool_create(sizeof(struct nsObject));
+	pool_nsobj = ami_memory_itempool_create(sizeof(struct nsObject));
 
 	if(pool_nsobj == NULL) return false;
 		else return true;
@@ -49,7 +49,7 @@ bool ami_object_init(void)
 
 void ami_object_fini(void)
 {
-	ami_misc_itempool_delete(pool_nsobj);
+	ami_memory_itempool_delete(pool_nsobj);
 }
 
 /* Slightly abstract MinList initialisation */
@@ -78,7 +78,7 @@ struct nsObject *AddObject(struct MinList *objlist, ULONG otype)
 {
 	struct nsObject *dtzo;
 
-	dtzo = (struct nsObject *)ami_misc_itempool_alloc(pool_nsobj, sizeof(struct nsObject));
+	dtzo = (struct nsObject *)ami_memory_itempool_alloc(pool_nsobj, sizeof(struct nsObject));
 	if(dtzo == NULL) return NULL;
 
 	memset(dtzo, 0, sizeof(struct nsObject));
@@ -100,7 +100,7 @@ static void DelObjectInternal(struct nsObject *dtzo, BOOL free_obj)
 	if(dtzo->callback != NULL) dtzo->callback(dtzo->objstruct);
 	if(dtzo->objstruct && free_obj) free(dtzo->objstruct);
 	if(dtzo->dtz_Node.ln_Name) free(dtzo->dtz_Node.ln_Name);
-	ami_misc_itempool_free(pool_nsobj, dtzo, sizeof(struct nsObject));
+	ami_memory_itempool_free(pool_nsobj, dtzo, sizeof(struct nsObject));
 	dtzo = NULL;
 }
 

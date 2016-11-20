@@ -31,13 +31,31 @@
 #endif
 
 /* Alloc/free a block cleared to non-zero */
+#ifdef __amigaos4__
+#define ami_memory_clear_alloc(s,v) AllocVecTags(s, AVT_ClearWithValue, v, TAG_DONE)
+#define ami_memory_clear_free(p) FreeVec(p)
+#else
 void *ami_memory_clear_alloc(size_t size, UBYTE value);
-void ami_memory_clear_free(void *p);
+#define ami_memory_clear_free(p) free(p)
+#endif
 
 /* Itempool cross-compatibility */
-APTR ami_misc_itempool_create(int size);
-void ami_misc_itempool_delete(APTR pool);
-APTR ami_misc_itempool_alloc(APTR pool, int size);
-void ami_misc_itempool_free(APTR pool, APTR item, int size);
+#ifdef __amigaos4__
+#define ami_memory_itempool_create(s) AllocSysObjectTags(ASOT_ITEMPOOL, \
+		ASOITEM_MFlags, MEMF_PRIVATE, \
+		ASOITEM_ItemSize, s, \
+		ASOITEM_GCPolicy, ITEMGC_AFTERCOUNT, \
+		ASOITEM_GCParameter, 100, \
+		TAG_DONE)
+#define ami_memory_itempool_delete(p) FreeSysObject(ASOT_ITEMPOOL, p)
+#define ami_memory_itempool_alloc(p,s) ItemPoolAlloc(p)
+#define ami_memory_itempool_free(p,i,s) ItemPoolFree(p,i)
+#else
+#define ami_memory_itempool_create(s) CreatePool(MEMF_ANY, 20 * s, s)
+#define ami_memory_itempool_delete(p) DeletePool(p)
+#define ami_memory_itempool_alloc(p,s) AllocPooled(p, s)
+#define ami_memory_itempool_free(p,i,s) FreePooled(p,i,s)
 #endif
+
+#endif //AMIGA_MEMORY_H
 
