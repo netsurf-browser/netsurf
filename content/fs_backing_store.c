@@ -27,9 +27,9 @@
  *
  * \todo Implement mmap retrieval where supported.
  *
- * \todo Implement static retrival for metadata objects as their heap
+ * \todo Implement static retrieval for metadata objects as their heap
  *         lifetime is typically very short, though this may be obsoleted
- *         by a small object storage stratagy.
+ *         by a small object storage strategy.
  *
  */
 
@@ -63,7 +63,7 @@
 /** Backing store file format version */
 #define CONTROL_VERSION 130
 
-/** Number of milliseconds after a update before control data maintinance is performed  */
+/** Number of milliseconds after a update before control data maintenance is performed  */
 #define CONTROL_MAINT_TIME 10000
 
 /** Get address from ident */
@@ -100,7 +100,7 @@
 #define BLOCK_USE_MAP_SIZE (1 << (BLOCK_ENTRY_COUNT - 3))
 
 /**
- * The type used to store index values refering to store entries. Care
+ * The type used to store index values referring to store entries. Care
  * must be taken with this type as it is used to build address to
  * entry mapping so changing the size will have large impacts on
  * memory usage.
@@ -109,7 +109,7 @@ typedef uint16_t entry_index_t;
 
 /**
  * The type used as a binary identifier for each entry derived from
- * the url. A larger identifier will have fewer collisions but
+ * the URL. A larger identifier will have fewer collisions but
  * requires proportionately more storage.
  */
 typedef uint32_t entry_ident_t;
@@ -184,7 +184,7 @@ struct store_entry_element {
  * @note Order is important to avoid excessive structure packing overhead.
  */
 struct store_entry {
-	int64_t last_used; /**< unix time the entry was last used */
+	int64_t last_used; /**< UNIX time the entry was last used */
 	entry_ident_t ident; /**< entry identifier */
 	uint16_t use_count; /**< number of times this entry has been accessed */
 	uint8_t flags; /**< entry flags */
@@ -227,7 +227,7 @@ struct store_state {
 	unsigned int entry_bits; /**< log2 number of bits in entry index. */
 	unsigned int last_entry; /**< index of last usable entry. */
 
-	/** flag indicating if the entries have been made persistant
+	/** flag indicating if the entries have been made persistent
 	 * since they were last changed.
 	 */
 	bool entries_dirty;
@@ -235,9 +235,9 @@ struct store_state {
 	/**
 	 * URL identifier to entry index mapping.
 	 *
-	 * This is an open coded index on the entries url field and
-	 * provides a computationaly inexpensive way to go from the
-	 * url to an entry.
+	 * This is an open coded index on the entries URL field and
+	 * provides a computationally inexpensive way to go from the
+	 * URL to an entry.
 	 */
 	entry_index_t *addrmap;
 
@@ -246,12 +246,12 @@ struct store_state {
 	struct block_file blocks[ENTRY_ELEM_COUNT][BLOCK_FILE_COUNT];
 
 	/** flag indicating if the block file use maps have been made
-	 * persistant since they were last changed.
+	 * persistent since they were last changed.
 	 */
 	bool blocks_dirty;
 
 	/** flag indicating if a block file has been opened for update
-	 * since maintinance was previously done.
+	 * since maintenance was previously done.
 	 */
 	bool blocks_opened;
 
@@ -283,8 +283,8 @@ struct store_state *storestate;
  *
  * @param[in] state The store state to use.
  * @param[in, out] bse Pointer to the entry to be removed.
- * @return NSERROR_OK and \a bse updated on succes or NSERROR_NOT_FOUND
- *         if no entry coresponds to the url.
+ * @return NSERROR_OK and \a bse updated on success or NSERROR_NOT_FOUND
+ *         if no entry corresponds to the URL.
  */
 static nserror
 remove_store_entry(struct store_state *state, struct store_entry **bse)
@@ -460,7 +460,7 @@ store_fname(struct store_state *state,
  * @param state The store state to use.
  * @param bse The entry to invalidate.
  * @param elem_idx The element index to invalidate.
- * @return NSERROR_OK on sucess or error code on failure.
+ * @return NSERROR_OK on success or error code on failure.
  */
 static nserror
 invalidate_element(struct store_state *state,
@@ -500,7 +500,7 @@ invalidate_element(struct store_state *state,
  *
  * @param state The store state to use.
  * @param bse The entry to invalidate.
- * @return NSERROR_OK on sucess or error code on failure.
+ * @return NSERROR_OK on success or error code on failure.
  */
 static nserror
 invalidate_entry(struct store_state *state, struct store_entry *bse)
@@ -554,7 +554,7 @@ static int compar(const void *va, const void *vb)
 	const struct store_entry *b = &BS_ENTRY(*(entry_ident_t *)vb, storestate);
 
 	/* consider the allocation flags - if an entry has an
-	 * allocation it is considered more valuble as it cannot be
+	 * allocation it is considered more valuable as it cannot be
 	 * freed.
 	 */
 	if ((a->elem[ENTRY_ELEM_DATA].flags == ENTRY_ELEM_FLAG_NONE) &&
@@ -670,7 +670,7 @@ static nserror store_evict(struct store_state *state)
  * Serialise entry index out to storage.
  *
  * @param state The backing store state to serialise.
- * @return NSERROR_OK on sucess or error code on faliure.
+ * @return NSERROR_OK on success or error code on failure.
  */
 static nserror write_entries(struct store_state *state)
 {
@@ -735,7 +735,7 @@ static nserror write_entries(struct store_state *state)
  * Serialise block file use map out to storage.
  *
  * \param state The backing store state to serialise.
- * \return NSERROR_OK on sucess or error code on faliure.
+ * \return NSERROR_OK on success or error code on failure.
  */
 static nserror write_blocks(struct store_state *state)
 {
@@ -812,11 +812,11 @@ wr_err:
  * Ensures block files are of the correct extent
  *
  * block files have their extent set to their maximum size to ensure
- * subsequent reads and writes do not need to extend teh file and are
+ * subsequent reads and writes do not need to extend the file and are
  * therefore faster.
  *
  * \param state The backing store state to set block extent for.
- * \return NSERROR_OK on sucess or error code on faliure.
+ * \return NSERROR_OK on success or error code on failure.
  */
 static nserror set_block_extents(struct store_state *state)
 {
@@ -849,7 +849,7 @@ static nserror set_block_extents(struct store_state *state)
 }
 
 /**
- * maintinance of control structures.
+ * maintenance of control structures.
  *
  * callback scheduled when control data has been update. Currently
  * this is for when the entries table is dirty and requires
@@ -959,7 +959,7 @@ static block_index_t alloc_block(struct store_state *state, int elem_idx)
  * @param datalen The length of data in \a data
  * @param bse Pointer used to return value.
  * @return NSERROR_OK and \a bse updated on success or NSERROR_NOT_FOUND
- *         if no entry coresponds to the url.
+ *         if no entry corresponds to the url.
  */
 static nserror
 set_store_entry(struct store_state *state,
@@ -1045,12 +1045,12 @@ set_store_entry(struct store_state *state,
 	elem->size = datalen;
 	state->total_alloc += elem->size;
 
-	/* if the elemnt will fit in a small block attempt to allocate one */
+	/* if the element will fit in a small block attempt to allocate one */
 	if (elem->size <= (1U << log2_block_size[elem_idx])) {
 		elem->block = alloc_block(state, elem_idx);
 	}
 
-	/* ensure control maintinance scheduled. */
+	/* ensure control maintenance scheduled. */
 	state->entries_dirty = true;
 	guit->misc->schedule(CONTROL_MAINT_TIME, control_maintinance, state);
 
@@ -1118,7 +1118,7 @@ store_open(struct store_state *state,
  * we also compute the total storage in use.
  *
  * @param state The backing store global state.
- * @return NSERROR_OK on sucess or NSERROR_NOMEM if the map storage
+ * @return NSERROR_OK on success or NSERROR_NOMEM if the map storage
  *         could not be allocated.
  */
 static nserror
@@ -1163,7 +1163,7 @@ build_entrymap(struct store_state *state)
  * Unlink entries file
  *
  * @param state The backing store state.
- * @return NSERROR_OK on sucess or error code on faliure.
+ * @return NSERROR_OK on success or error code on failure.
  */
 static nserror
 unlink_entries(struct store_state *state)
@@ -1186,7 +1186,7 @@ unlink_entries(struct store_state *state)
  * Read description entries into memory.
  *
  * @param state The backing store state to put the loaded entries in.
- * @return NSERROR_OK on sucess or error code on faliure.
+ * @return NSERROR_OK on success or error code on faliure.
  */
 static nserror
 read_entries(struct store_state *state)
@@ -1236,7 +1236,7 @@ read_entries(struct store_state *state)
  * Read block file usage bitmaps.
  *
  * @param state The backing store state to put the loaded entries in.
- * @return NSERROR_OK on sucess or error code on faliure.
+ * @return NSERROR_OK on success or error code on failure.
  */
 static nserror
 read_blocks(struct store_state *state)
@@ -1275,7 +1275,7 @@ read_blocks(struct store_state *state)
 
 	} else {
 		LOG("Initialising block use map to defaults");
-		/* ensure block 0 (invalid sentinal) is skipped */
+		/* ensure block 0 (invalid sentinel) is skipped */
 		state->blocks[ENTRY_ELEM_DATA][0].use_map[0] = 1;
 		state->blocks[ENTRY_ELEM_META][0].use_map[0] = 1;
 	}
@@ -1293,7 +1293,7 @@ read_blocks(struct store_state *state)
  * Write the cache tag file.
  *
  * @param state The cache state.
- * @return NSERROR_OK on sucess or error code on faliure.
+ * @return NSERROR_OK on success or error code on failure.
  */
 static nserror
 write_cache_tag(struct store_state *state)
@@ -1330,7 +1330,7 @@ write_cache_tag(struct store_state *state)
  * Write the control file for the current state.
  *
  * @param state The state to write to the control file.
- * @return NSERROR_OK on sucess or error code on faliure.
+ * @return NSERROR_OK on success or error code on failure.
  */
 static nserror
 write_control(struct store_state *state)
@@ -1375,7 +1375,7 @@ write_control(struct store_state *state)
  * Read and parse the control file.
  *
  * @param state The state to read from the control file.
- * @return NSERROR_OK on sucess or error code on faliure.
+ * @return NSERROR_OK on success or error code on failure.
  */
 static nserror
 read_control(struct store_state *state)
@@ -1461,7 +1461,7 @@ control_error: /* problem with the control file */
  * Initialise the backing store.
  *
  * @param parameters to configure backing store.
- * @return NSERROR_OK on success or error code on faliure.
+ * @return NSERROR_OK on success or error code on failure.
  */
 static nserror
 initialise(const struct llcache_store_parameters *parameters)
@@ -1732,7 +1732,7 @@ static nserror store_write_file(struct store_state *state,
  * @param bsflags The flags to control how the object is stored.
  * @param data The objects source data.
  * @param datalen The length of the \a data.
- * @return NSERROR_OK on success or error code on faliure.
+ * @return NSERROR_OK on success or error code on failure.
  */
 static nserror
 store(nsurl *url,
@@ -1893,13 +1893,13 @@ static nserror store_read_file(struct store_state *state,
 }
 
 /**
- * Retrive an object from the backing store.
+ * Retrieve an object from the backing store.
  *
  * @param[in] url The url is used as the unique primary key for the data.
  * @param[in] bsflags The flags to control how the object is retrieved.
  * @param[out] data_out The objects data.
  * @param[out] datalen_out The length of the \a data retrieved.
- * @return NSERROR_OK on success or error code on faliure.
+ * @return NSERROR_OK on success or error code on failure.
  */
 static nserror
 fetch(nsurl *url,
@@ -1926,7 +1926,7 @@ fetch(nsurl *url,
 	}
 	storestate->hit_count++;
 
-	LOG("retriving cache data for url:%s", nsurl_access(url));
+	LOG("retrieving cache data for url:%s", nsurl_access(url));
 
 	/* calculate the entry element index */
 	if ((bsflags & BACKING_STORE_META) != 0) {
@@ -1984,7 +1984,7 @@ fetch(nsurl *url,
  *
  * @param[in] url The url is used as the unique primary key to invalidate.
  * @param[in] bsflags The flags to control how the object data is released.
- * @return NSERROR_OK on success or error code on faliure.
+ * @return NSERROR_OK on success or error code on failure.
  */
 static nserror release(nsurl *url, enum backing_store_flags bsflags)
 {
@@ -2032,7 +2032,7 @@ static nserror release(nsurl *url, enum backing_store_flags bsflags)
  * be returned as a result to the fetch or meta operations.
  *
  * @param url The url is used as the unique primary key to invalidate.
- * @return NSERROR_OK on success or error code on faliure.
+ * @return NSERROR_OK on success or error code on failure.
  */
 static nserror
 invalidate(nsurl *url)
