@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * High-level resource cache (implementation)
+/**
+ * \file
+ * High-level resource cache implementation.
  */
 
 #include <assert.h>
@@ -86,7 +87,7 @@ struct hlcache_s {
 	/** Ring of retrieval contexts */
 	hlcache_retrieval_ctx *retrieval_ctx_ring;
 
-	/* statsistics */
+	/* statistics */
 	unsigned int hit_count;
 	unsigned int miss_count;
 };
@@ -665,12 +666,12 @@ nserror hlcache_handle_retrieve(nsurl *url, uint32_t flags,
 			hlcache_llcache_callback, ctx,
 			&ctx->llcache);
 	if (error != NSERROR_OK) {
-		/* error retriving handle so free context and return error */
+		/* error retrieving handle so free context and return error */
 		free((char *) ctx->child.charset);
 		free(ctx->handle);
 		free(ctx);
 	} else {
-		/* successfuly started fetch so add new context to list */
+		/* successfully started fetch so add new context to list */
 		RING_INSERT(hlcache->retrieval_ctx_ring, ctx);
 
 		*result = ctx->handle;
