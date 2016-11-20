@@ -21,7 +21,7 @@
 #include "amiga/memory.h"
 #include "utils/log.h"
 
-ULONG __slab_max_size = 8192; /* Enable clib2's slab allocator */
+ULONG __slab_max_size = 2048; /* Enable clib2's slab allocator */
 
 /* Special clear (ie. non-zero) */
 void *ami_memory_clear_alloc(size_t size, UBYTE value)
