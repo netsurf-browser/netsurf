@@ -5,30 +5,30 @@ Introduction
 ------------
 
 The source object cache provides a system to extend the life of source
-objects (html files, images etc.) after they are no longer immediately
+objects (HTML files, images etc.) after they are no longer immediately
 being used.
 
 Only fetch types where we have well defined rules on caching are
 considered, in practice this limits us to HTTP(S). The section in
 RFC2616 [1] on caching specifies these rules.
 
-To futher extend the objects lifetime they can be pushed into a
+To further extend the objects lifetime they can be pushed into a
 backing store where the objects are available for reuse less quickly
-than from RAM but faster than retriving from the network again.
+than from RAM but faster than retrieving from the network again.
 
 The backing store implementation provides a key:value infrastructure
-with a simple store, retrive and invalidate interface.
+with a simple store, retrieve and invalidate interface.
 
 Generic filesystem backing store
 --------------------------------
 
 Although the backing store interface is fully pluggable a generic
 implementation based on storing objects on the filesystem in a
-heirachy of directories.
+hierarchy of directories.
 
-The option to alter the backing store format exists and is controled
+The option to alter the backing store format exists and is controlled
 by a version field. It is implementation defined what happens if a
-version mis-match occours.
+version mis-match occurs.
 
 As the backing store only holds cache data one should not expect a
 great deal of effort to be expended converting formats (i.e. the cache
@@ -37,23 +37,23 @@ may simply be discarded).
 Layout version 1.1
 ------------------
 
-An object has an identifier value generated from the url (NetSurf
-backing stores uses the url as the unique key). The value used is
+An object has an identifier value generated from the URL (NetSurf
+backing stores uses the URL as the unique key). The value used is
 obtained using nsurl_hash() which is currently a 32 bit FNV so is
 directly usable.
 
 This identifier is adequate to ensure the collision rate for the
-hashed url values (a collision for every 2^16 urls added) is
+hashed URL values (a collision for every 2^16 URLs added) is
 sufficiently low the overhead of returning the wrong object (which
-backing stores are permitted to do) is not significat.
+backing stores are permitted to do) is not significant.
 
 An entry list is maintained which contains all the metadata about a
 given identifier. This list is limited in length to constrain the
-resources necessary to maintain it. It is made persistant to avoid the
+resources necessary to maintain it. It is made persistent to avoid the
 overhead of reconstructing it at initialisation and to keep the data
 used to improve the eviction decisions.
 
-Each object is stored and retrived directly into the filesystem using
+Each object is stored and retrieved directly into the filesystem using
 a filename generated from a RFC4648 base32 encoding of an address
 value. The objects address is derived from the identifier by cropping
 it to a shorter length.
@@ -63,7 +63,7 @@ uses storage directly proportional to the size of the address length.
 
 The cropping length is stored in the control file with the default
 values set at compile time. This allows existing backing stores to
-continue operating with existing data independantly of new default
+continue operating with existing data independently of new default
 setting. This setting gives some ability to tune the default cache
 index size to values suitable for a specific host operating system.
 
@@ -88,7 +88,7 @@ Version 1.0
 
 The version 1 layout was identical to the 1.1 except base64url
 encoding was used, this proved problematic as some systems filesystems
-were case insensitive so upper and lower case letetrs collided.
+were case insensitive so upper and lower case letters collided.
 
 There is no upgrade provision from the previous version simply delete
 the cache directory.
@@ -112,7 +112,7 @@ Each control file table entry is 28 bytes and consists of
  - signed 64 bit value for last use time
 
  - 32bit full url hash allowing for index reconstruction and
-   addiitonal collision detection. Also the possibility of increasing
+   additional collision detection. Also the possibility of increasing
    the ADDRESS_LENGTH although this would require renaming all the
    existing files in the cache and is not currently implemented.
 
@@ -134,8 +134,8 @@ Address to entry index
 An entry index is held in RAM that allows looking up the address to
 map to an entry in the control file.
 
-The index is the only data structure whose size is directly depndant
-on the length of the hash specificaly:
+The index is the only data structure whose size is directly dependant
+on the length of the hash specifically:
 
 (2 ^ (ADDRESS_BITS - 3)) * ENTRY_BITS) in bytes
 
@@ -152,9 +152,9 @@ list is limited to 448kilobytes.
 The typical values for RISC OS would set ADDRESS_BITS to 18. This
 spreads the entries over 262144 hash values which uses 512 kilobytes
 for the index. Limiting the hash space like this reduces the
-efectiveness of the cache.
+effectiveness of the cache.
 
-A small ADDRESS_LENGTH causes a collision (two urls with the same
+A small ADDRESS_LENGTH causes a collision (two URLs with the same
 address) to happen roughly for every 2 ^ (ADDRESS_BITS / 2) = 2 ^ 9 =
 512 objects stored. This roughly translates to a cache miss due to
 collision every ten pages navigated to.
@@ -164,7 +164,7 @@ Larger systems
 
 In general ENTRY_BITS set to 16 as this limits the store to 65536
 objects which given the average size of an object at 8 kilobytes
-yeilds half a gigabyte of disc used which is judged to be sufficient.
+yields half a gigabyte of disc used which is judged to be sufficient.
 
 For larger systems e.g. those using GTK frontend we would most likely
 select ADDRESS_BITS as 22 resulting in a collision every 2048 objects
@@ -176,11 +176,11 @@ Typical values
 Example 1
 ~~~~~~~~~
 
-For a store with 1034 objects genrated from a random navigation of
+For a store with 1034 objects generated from a random navigation of
 pages linked from the about:welcome page.
 
 Metadata total size is 593608 bytes an average of 574 bytes. The
-majority of the storage is used to hold the urls and headers.
+majority of the storage is used to hold the URLs and headers.
 
 Data total size is 9180475 bytes a mean of 8879 bytes 1648726 in the
 largest 10 entries which if excluded gives 7355 bytes average size
