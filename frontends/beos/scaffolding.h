@@ -198,7 +198,7 @@ void nsbeos_scaffolding_destroy(nsbeos_scaffolding *scaffold);
 //void nsbeos_window_destroy_event(NSBrowserWindow *window, nsbeos_scaffolding *g, BMessage *event);
 
 
-void nsbeos_scaffolding_popup_menu(nsbeos_scaffolding *g, BPoint where);
+void nsbeos_scaffolding_popup_menu(nsbeos_scaffolding *scaffold, struct browser_window *bw, BPoint where, BPoint screenWhere);
 
 void gui_window_set_title(struct gui_window *_g, const char *title);
 nserror gui_window_set_url(struct gui_window *_g, struct nsurl *url);

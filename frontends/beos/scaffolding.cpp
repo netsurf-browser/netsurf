@@ -133,6 +133,9 @@ struct beos_scaffolding {
 	int			being_destroyed;
 
 	bool			fullscreen;
+
+	/** Object under menu, or 0 if no object. */
+	struct hlcache_handle		*current_menu_object;
 };
 
 struct beos_history_window {
@@ -1254,6 +1257,11 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		case BROWSER_OBJECT_INFO:
 			break;
 		case BROWSER_OBJECT_RELOAD:
+			if (scaffold->current_menu_object != NULL) {
+				content_invalidate_reuse_data(scaffold->current_menu_object);
+				browser_window_reload(bw, false);
+				scaffold->current_menu_object = NULL;
+			}
 			break;
 		case BROWSER_OBJECT_SAVE:
 			break;
@@ -1514,6 +1522,8 @@ void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 
 	nsbeos_scaffolding_update_colors(g);
 
+	recursively_set_menu_items_target(g->popup_menu, view);
+
 	if (g->window) {
 		recursively_set_menu_items_target(g->menu_bar, view);
 
@@ -1720,6 +1730,7 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 
 	BMessage *message;
 	BRect rect;
+	BMenuItem *item;
 
 	g->window = NULL;
 	g->menu_bar = NULL;
@@ -1767,7 +1778,6 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		g->window->AddChild(g->menu_bar);
 
 		BMenu *menu;
-		BMenuItem *item;
 
 		// App menu
 		//XXX: use icon item ?
@@ -2071,7 +2081,22 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	g->top_view->SetScaffolding(g);
 
 	// build popup menu
-	g->popup_menu = new BPopUpMenu("");
+	g->popup_menu = new BPopUpMenu("popup", false, false);
+
+#if 0
+	message = new BMessage(BROWSER_OBJECT_INFO);
+	item = make_menu_item("ObjInfo", message);
+	g->popup_menu->AddItem(item);
+
+	message = new BMessage(BROWSER_OBJECT_SAVE);
+	item = make_menu_item("ObjSave", message);
+	g->popup_menu->AddItem(item);
+	// XXX: submenu: Sprite ?
+#endif
+
+	message = new BMessage(BROWSER_OBJECT_RELOAD);
+	item = make_menu_item("ObjReload", message, true);
+	g->popup_menu->AddItem(item);
 
 
 #ifdef ENABLE_DRAGGER
@@ -2335,8 +2360,19 @@ void gui_window_set_icon(struct gui_window *_g, hlcache_handle *icon)
 }
 
 
-void nsbeos_scaffolding_popup_menu(nsbeos_scaffolding *g, BPoint where)
+void nsbeos_scaffolding_popup_menu(nsbeos_scaffolding *scaffold, struct browser_window *bw, BPoint where, BPoint screenWhere)
 {
-	g->popup_menu->Go(where);
+	struct browser_window_features cont;
+
+	browser_window_get_features(bw, (int)where.x, (int)where.y, &cont);
+
+	scaffold->current_menu_object = cont.object;
+	bool enabled = !!scaffold->current_menu_object;
+
+	for (int i = 0; scaffold->popup_menu->ItemAt(i); i++) {
+		scaffold->popup_menu->ItemAt(i)->SetEnabled(enabled);
+	}
+
+	scaffold->popup_menu->Go(screenWhere, true, false, true);
 }
 

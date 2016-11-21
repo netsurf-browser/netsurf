@@ -545,8 +545,7 @@ void nsbeos_dispatch_event(BMessage *message)
 
 			if (buttons & B_SECONDARY_MOUSE_BUTTON) {
 				/* 2 == right button on BeOS */
-				
-				nsbeos_scaffolding_popup_menu(gui->scaffold, screenWhere);
+				nsbeos_scaffolding_popup_menu(gui->scaffold, gui->bw, where, screenWhere);
 				break;
 			}
 
