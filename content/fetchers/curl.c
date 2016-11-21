@@ -128,8 +128,10 @@ static char fetch_error_buffer[CURL_ERROR_SIZE];
 static char fetch_proxy_userpwd[100];
 
 
-/* OpenSSL 1.0.x to 1.1.0 certificate reference counting changed */
-#if (OPENSSL_VERSION_NUMBER < 0x1010000fL)
+/* OpenSSL 1.0.x to 1.1.0 certificate reference counting changed
+ * LibreSSL declares its OpenSSL version as 2.1 but only supports the old way
+ */
+#if (defined(LIBRESSL_VERSION_NUMBER) || (OPENSSL_VERSION_NUMBER < 0x1010000fL))
 static int ns_X509_up_ref(X509 *cert)
 {
 	cert->references++;
