@@ -840,13 +840,28 @@ void nsbeos_gui_view_source(struct hlcache_handle *content)
 		 * allow it to be re-used next time NetSurf is started. The
 		 * memory overhead from doing this is under 1 byte per
 		 * filename. */
-		const char *filename = filename_request();
-		if (!filename) {
+		BString filename(filename_request());
+		if (filename.IsEmpty()) {
 			beos_warn_user("NoMemory", 0);
 			return;
 		}
+
+		lwc_string *mime = content_get_mime_type(content);
+
+		/* provide an extension, as Pe still doesn't sniff the MIME */
+		if (mime) {
+			BMimeType type(lwc_string_data(mime));
+			BMessage extensions;
+			if (type.GetFileExtensions(&extensions) == B_OK) {
+				BString ext;
+				if (extensions.FindString("extensions", &ext) == B_OK)
+					filename << "." << ext;
+			}
+			/* we unref(mime) later on, we just leak on error */
+		}
+
 		path.SetTo(TEMP_FILENAME_PREFIX);
-		path.Append(filename);
+		path.Append(filename.String());
 		BFile file(path.Path(), B_WRITE_ONLY | B_CREATE_FILE);
 		err = file.InitCheck();
 		if (err < B_OK) {
@@ -858,7 +873,7 @@ void nsbeos_gui_view_source(struct hlcache_handle *content)
 			beos_warn_user("IOError", strerror(err));
 			return;
 		}
-		lwc_string *mime = content_get_mime_type(content);
+
 		if (mime) {
 			file.WriteAttr("BEOS:TYPE", B_MIME_STRING_TYPE, 0LL, 
 				lwc_string_data(mime), lwc_string_length(mime) + 1);
