@@ -1038,7 +1038,7 @@ int main(int argc, char** argv)
 	
 	char path[12];
 	sprintf(path,"%.2s/Messages", getenv("LC_MESSAGES"));
-	fprintf(stderr, "Loading messages from resource %s\n", path);
+	LOG("Loading messages from resource %s\n", path);
 
 	const uint8_t* res = (const uint8_t*)resources.LoadResource('data', path, &size);
 	if (size > 0 && res != NULL) {
