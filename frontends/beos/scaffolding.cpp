@@ -1566,36 +1566,34 @@ static BMenuItem *make_menu_item(const char *name, BMessage *message, bool enabl
 {
 	BMenuItem *item;
 	BString label(messages_get(name));
-	BString accel;
+	BString accelKey(name);
+	accelKey += "Accel";
+	BString accel(messages_get(accelKey));
+	if (accel == accelKey)
+		accel = "";
 	uint32 mods = 0;
 	char key = 0;
 	// try to understand accelerators
-	int32 start = label.IFindLast(" ");
-	if (start > 0 && (label.Length() - start > 1)
-		&& (label.Length() - start < 7) 
-		&& (label[start + 1] == 'F' 
-		|| !strcmp(label.String() + start + 1, "PRINT")
-		|| label[start + 1] == '\xe2'
-		|| label[start + 1] == '^')) {
-
-		label.MoveInto(accel, start + 1, label.Length());
-		// strip the trailing spaces
-		while (label[label.Length() - 1] == ' ')
-			label.Truncate(label.Length() - 1);
-
+	if (!accel.IsEmpty()) {
 		if (accel.FindFirst("\xe2\x87\x91") > -1) {
 			accel.RemoveFirst("\xe2\x87\x91");
 			mods |= B_SHIFT_KEY;
 		}
 		if (accel.FindFirst("^") > -1) {
 			accel.RemoveFirst("^");
-			mods |= B_CONTROL_KEY; // ALT!!!
+			mods |= B_CONTROL_KEY;
 		}
 		if (accel.FindFirst("PRINT") > -1) {
 			accel.RemoveFirst("PRINT");
 			//mods |= ; // ALT!!!
 			key = B_PRINT_KEY;
 		}
+
+		/* replace UTF-8 glyphs (arrows...) with API codes */
+		accel.ReplaceAll("\xE2\x86\x90", (BString()+=B_LEFT_ARROW).String());
+		accel.ReplaceAll("\xE2\x86\x92", (BString()+=B_RIGHT_ARROW).String());
+		accel.ReplaceAll("\xE2\x86\x91", (BString()+=B_UP_ARROW).String());
+
 		if (accel.Length() > 1 && accel[0] == 'F') { // Function key
 			int num;
 			if (sscanf(accel.String(), "F%d", &num) > 0) {
