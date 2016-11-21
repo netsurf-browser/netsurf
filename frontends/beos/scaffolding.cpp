@@ -729,6 +729,15 @@ NSBrowserWindow::MessageReceived(BMessage *message)
 		case B_ARGV_RECEIVED:
 		case B_REFS_RECEIVED:
 		case B_UI_SETTINGS_CHANGED:
+		// NetPositive messages
+		case B_NETPOSITIVE_OPEN_URL:
+		case B_NETPOSITIVE_BACK:
+		case B_NETPOSITIVE_FORWARD:
+		case B_NETPOSITIVE_HOME:
+		case B_NETPOSITIVE_RELOAD:
+		case B_NETPOSITIVE_STOP:
+		case B_NETPOSITIVE_DOWN:
+		case B_NETPOSITIVE_UP:
 			DetachCurrentMessage();
 			nsbeos_pipe_message_top(message, this, fScaffolding);
 			break;
