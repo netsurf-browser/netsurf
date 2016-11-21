@@ -877,6 +877,7 @@ void nsbeos_gui_view_source(struct hlcache_handle *content)
 
 	// apps to try
 	const char *editorSigs[] = {
+		"text/x-source-code",
 		"application/x-vnd.beunited.pe",
 		"application/x-vnd.XEmacs",
 		"application/x-vnd.Haiku-StyledEdit",
@@ -891,10 +892,11 @@ void nsbeos_gui_view_source(struct hlcache_handle *content)
 			BMessenger msgr(editorSigs[i], team);
 			if (msgr.SendMessage(&m) >= B_OK)
 				break;
+
 		}
 		
 		err = be_roster->Launch(editorSigs[i], (BMessage *)&m, &team);
-		if (err >= B_OK)
+		if (err >= B_OK || err == B_ALREADY_RUNNING)
 			break;
 	}
 }
