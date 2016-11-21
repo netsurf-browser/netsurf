@@ -38,7 +38,7 @@ enum backing_store_flags {
  * low level cache backing store operation table
  *
  * The low level cache (source objects) has the capability to make
- * objects and their metadata (headers etc) persistant by writing to a
+ * objects and their metadata (headers etc) persistent by writing to a
  * backing store using these operations.
  */
 struct gui_llcache_table {
@@ -46,14 +46,14 @@ struct gui_llcache_table {
 	 * Initialise the backing store.
 	 *
 	 * @param parameters to configure backing store.
-	 * @return NSERROR_OK on success or error code on faliure.
+	 * @return NSERROR_OK on success or error code on failure.
 	 */
 	nserror (*initialise)(const struct llcache_store_parameters *parameters);
 
 	/**
 	 * Finalise the backing store.
 	 *
-	 * @return NSERROR_OK on success or error code on faliure.
+	 * @return NSERROR_OK on success or error code on failure.
 	 */
 	nserror (*finalise)(void);
 
@@ -72,16 +72,16 @@ struct gui_llcache_table {
 	 *  been completely written on return.
 	 *
 	 * @param[in] url The url is used as the unique primary key for the data.
-	 * @param[in] flags The flags to control how the obejct is stored.
+	 * @param[in] flags The flags to control how the object is stored.
 	 * @param[in] data The objects data.
 	 * @param[in] datalen The length of the \a data.
-	 * @return NSERROR_OK on success or error code on faliure.
+	 * @return NSERROR_OK on success or error code on failure.
 	 */
 	nserror (*store)(struct nsurl *url, enum backing_store_flags flags,
 			 uint8_t *data, const size_t datalen);
 
 	/**
-	 * Retrive an object from the backing store.
+	 * Retrieve an object from the backing store.
 	 *
 	 * The backing store will manage its own memory and the
 	 * allocations returned in \a data *must* not be altered.
@@ -91,10 +91,10 @@ struct gui_llcache_table {
 	 *  calling the release method.
 	 *
 	 * @param[in] url The url is used as the unique primary key for the data.
-	 * @param[in] flags The flags to control how the object is retrived.
-	 * @param[out] data The retrived objects data.
+	 * @param[in] flags The flags to control how the object is retrieved.
+	 * @param[out] data The retrieved objects data.
 	 * @param[out] datalen The length of the \a data retrieved.
-	 * @return NSERROR_OK on success or error code on faliure.
+	 * @return NSERROR_OK on success or error code on failure.
 	 */
 	nserror (*fetch)(struct nsurl *url, enum backing_store_flags flags,
 			 uint8_t **data, size_t *datalen);
@@ -104,7 +104,7 @@ struct gui_llcache_table {
 	 *
 	 * @param url The url is used as the unique primary key to invalidate.
 	 * @param[in] flags The flags to control how the object data is released.
-	 * @return NSERROR_OK on success or error code on faliure.
+	 * @return NSERROR_OK on success or error code on failure.
 	 */
 	nserror (*release)(struct nsurl *url, enum backing_store_flags flags);
 
@@ -117,7 +117,7 @@ struct gui_llcache_table {
 	 * If the entry had data allocated it will be released.
 	 *
 	 * @param url The url is used as the unique primary key to invalidate.
-	 * @return NSERROR_OK on success or error code on faliure.
+	 * @return NSERROR_OK on success or error code on failure.
 	 */
 	nserror (*invalidate)(struct nsurl *url);
 

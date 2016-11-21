@@ -21,7 +21,7 @@
  * \file
  * RISC OS URL bar implementation.
  *
- * The treeview resources are retrived from resource url necessitating
+ * The treeview resources are retrieved from resource url necessitating
  * the use of the hlcache content interface.
  */
 
@@ -966,7 +966,7 @@ void ro_gui_url_bar_set_url(struct url_bar *url_bar, const char *url,
 		return;
 
 	/* Before we do anything with the URL, get it into local encoding so
-	 * that behaviour is consistant with the rest of the URL Bar module
+	 * that behaviour is consistent with the rest of the URL Bar module
 	 * (which will act on the icon's text buffer, which is always in local
 	 * encoding).
 	 */

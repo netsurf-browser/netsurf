@@ -60,7 +60,7 @@ static const char *default_search_icon_url = "resource:icons/search.png";
 /**
  * Read providers file.
  *
- * Allocates stoage of sufficient size for the providers file and
+ * Allocates storage of sufficient size for the providers file and
  * reads the entire file in.
  *
  * \param fname The filename to read.
@@ -132,7 +132,7 @@ read_providers(const char *fname,
  * \param providers_size The size of the provider data.
  * \param providers_out The resulting provider array.
  * \param providers_count The number of providers in the output array.
- * \return NSERROR_OK on success or error code on faliure.
+ * \return NSERROR_OK on success or error code on failure.
  */
 static nserror
 parse_providers(char *providersd,
@@ -224,7 +224,7 @@ parse_providers(char *providersd,
  * \param provider The provider to use.
  * \param term The term being searched for.
  * \param url_out The resulting url.
- * \return NSERROR_OK on sucess or appropriate error code.
+ * \return NSERROR_OK on success or appropriate error code.
  */
 static nserror
 make_search_nsurl(struct search_provider *provider,
@@ -289,7 +289,7 @@ search_web_ico_callback(hlcache_handle *ico,
 	switch (event->type) {
 
 	case CONTENT_MSG_DONE:
-		LOG("icon '%s' retrived", nsurl_access(hlcache_handle_get_url(ico)));
+		LOG("icon '%s' retrieved", nsurl_access(hlcache_handle_get_url(ico)));
 		guit->search_web->provider_update(provider->name,
 						  content_get_bitmap(ico));
 		break;
@@ -399,7 +399,7 @@ nserror search_web_select_provider(int selection)
 	guit->search_web->provider_update(provider->name, ico_bitmap);
 
 
-	/* if the providers icon has not been retrived get it now */
+	/* if the providers icon has not been retrieved get it now */
 	if (provider->ico_handle == NULL) {
 		nsurl *icon_nsurl;
 		nserror ret;
@@ -438,7 +438,7 @@ default_ico_callback(hlcache_handle *ico,
 	switch (event->type) {
 
 	case CONTENT_MSG_DONE:
-		LOG("default icon '%s' retrived", nsurl_access(hlcache_handle_get_url(ico)));
+		LOG("default icon '%s' retrieved", nsurl_access(hlcache_handle_get_url(ico)));
 
 		/* only set to default icon if providers icon has no handle */
 		if (ctx->providers[search_web_ctx.current].ico_handle == NULL) {

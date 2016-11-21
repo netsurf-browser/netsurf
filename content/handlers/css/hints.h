@@ -31,8 +31,8 @@ void css_hint_fini(void);
  *
  * \param[in] pw HTML document
  * \param[in] node DOM node
- * \param[out] nhints number of hints retrived
- * \param[out] hints retrived hints
+ * \param[out] nhints number of hints retrieved
+ * \param[out] hints retrieved hints
  * \return CSS_OK               on success,
  *         CSS_PROPERTY_NOT_SET if there is no hint for the requested property,
  *         CSS_NOMEM            on memory exhaustion.
