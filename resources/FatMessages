@@ -85,6 +85,7 @@ de.all.Quit:Beenden
 fr.all.Quit:Quitter
 it.all.Quit:Esci
 nl.all.Quit:Stop
+en.beos.QuitAccel:Q
 
 # Iconbar -> Open menu
 #
@@ -162,6 +163,7 @@ de.ro.NewWindow:Neues Fenster  ^N
 fr.ro.NewWindow:Nouvelle fenêtre  ^N
 it.ro.NewWindow:Nuova finestra  ^N
 nl.ro.NewWindow:Nieuw venster  ^N
+en.beos.NewWindowNSAccel:N
 en.ro.ViewSrc:View source...  F8
 de.ro.ViewSrc:Quellcode...  F8
 fr.ro.ViewSrc:Voir le source...  F8
@@ -172,6 +174,7 @@ de.beos.ViewSrc:Quellcode...
 fr.beos.ViewSrc:Voir le source...
 it.beos.ViewSrc:Mostra sorgente...
 nl.beos.ViewSrc:Toon HTML...
+en.beos.ViewSrcAccel:U
 
 # Main -> Page -> Export menu
 #
@@ -265,21 +268,25 @@ de.all.Home:Homepage
 fr.all.Home:Page d'accueil
 it.all.Home:Pagina iniziale
 nl.all.Home:Startpagina
+en.beos.HomeAccel:H
 en.all.Back:Back one page
 de.all.Back:Eine Seite zurück
 fr.all.Back:Retour
 it.all.Back:Indietro
 nl.all.Back:Vorige pagina
+en.beos.BackAccel:←
 en.all.Forward:Forward one page
 de.all.Forward:Eine Seite vor
 fr.all.Forward:Avancer
 it.all.Forward:Avanti
 nl.all.Forward:Volgende pagina
+en.beos.ForwardAccel:→
 en.all.UpLevel:Up one level
 de.all.UpLevel:Eine Ebene hoch
 fr.all.UpLevel:Remonter d'un niveau
 it.all.UpLevel:Livello superiore
 nl.all.UpLevel:Niveau omhoog
+en.beos.UpLevelAccel:↑
 en.ro.Reload:Reload this page  ^F5
 de.ro.Reload:Seite erneut laden  ^F5
 fr.ro.Reload:Recharger cette page  ^F5
@@ -290,11 +297,13 @@ de.beos.Reload:Seite erneut laden
 fr.beos.Reload:Recharger cette page
 it.beos.Reload:Ricarica
 nl.beos.Reload:Herlaad pagina
+en.beos.ReloadAccel:R
 en.all.Stop:Stop loading this page
 de.all.Stop:Ladevorgang abbrechen
 fr.all.Stop:Arrêter le chargement de la page
 it.all.Stop:Interrompi
 nl.all.Stop:Breek ophaalproces af
+en.beos.StopAccel:S
 
 # Main -> Display menu
 #
