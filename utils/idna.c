@@ -250,7 +250,7 @@ idna__utf8_to_ucs4(const char *utf8_label,
 		return NSERROR_NOMEM;
 	}
 
-	nfc_size = utf8proc_normalise(nfc_label, nfc_size,
+	nfc_size = utf8proc_normalize_utf32(nfc_label, nfc_size,
 		UTF8PROC_STABLE | UTF8PROC_COMPOSE);
 	if (nfc_size < 0) {
 		return NSERROR_NOMEM;
@@ -565,7 +565,7 @@ static bool idna__verify(const char *label, size_t len)
 	}
 
 	/* Perform NFC normalisation */
-	ucs4_len = utf8proc_normalise(ucs4, u_ucs4_len,
+	ucs4_len = utf8proc_normalize_utf32(ucs4, u_ucs4_len,
 		UTF8PROC_STABLE | UTF8PROC_COMPOSE);
 	if (ucs4_len < 0) {
 		free(ucs4);
