@@ -44,7 +44,6 @@ HOST := $(shell uname -s)
 # TODO: Ideally, we want the equivalent of s/[^A-Za-z0-9]/_/g here
 HOST := $(subst .,_,$(subst -,_,$(subst /,_,$(HOST))))
 
-
 ifeq ($(HOST),)
   HOST := riscos
   $(warning Build platform determination failed but that's a known problem for RISC OS so we're assuming a native RISC OS build.)
@@ -300,7 +299,21 @@ else
                 endif
               else
                 # All native targets
-                PKG_CONFIG := pkg-config
+
+                # The machine architecture
+                # Possibles: i386 i686 x86_64 ia64 alpha amd64 arm
+                # armeb armel hppa m32r m68k mips mipsel powerpc ppc64
+                # s390 s390x sh3 sh3eb sh4 sh4eb sparc
+                HOST_ARCH := $(shell uname -m)
+
+                # disable duktape use on architectures where it miscompiles
+                NO_DUKTAPE_ARCH := s390 s390x ppc64
+                ifeq ($(filter-out $(NO_DUKTAPE_ARCH),$(HOST_ARCH)),)
+                  override NETSURF_USE_DUKTAPE := NO
+                endif
+
+                # use native package config
+		PKG_CONFIG := pkg-config
 
                 # gtk target processing
 	        ifeq ($(TARGET),gtk3)
