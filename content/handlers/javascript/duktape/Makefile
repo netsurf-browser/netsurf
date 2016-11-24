@@ -15,7 +15,6 @@ $(OBJROOT)/duktape/binding.h $(OBJROOT)/duktape/Makefile: content/handlers/javas
 	$(Q)mkdir -p $(OBJROOT)/duktape
 	$(VQ)echo " GENBIND: $<"
 	$(Q)nsgenbind $(GBFLAGS) -I content/handlers/javascript/WebIDL $< $(OBJROOT)/duktape
-	$(VQ)echo " GENBIND: completed"
 
 # create unimplemented report for doxygen
 Docs/UnimplementedJavascript.txt: content/handlers/javascript/duktape/netsurf.bnd $(BINDINGS)
