@@ -297,20 +297,9 @@ else
                   CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
                   CXX := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*g++)
                 endif
+
               else
                 # All native targets
-
-                # The machine architecture
-                # Possibles: i386 i686 x86_64 ia64 alpha amd64 arm
-                # armeb armel hppa m32r m68k mips mipsel powerpc ppc64
-                # s390 s390x sh3 sh3eb sh4 sh4eb sparc
-                HOST_ARCH := $(shell uname -m)
-
-                # disable duktape use on architectures where it miscompiles
-                NO_DUKTAPE_ARCH := s390 s390x ppc64
-                ifeq ($(filter-out $(NO_DUKTAPE_ARCH),$(HOST_ARCH)),)
-                  override NETSURF_USE_DUKTAPE := NO
-                endif
 
                 # use native package config
 		PKG_CONFIG := pkg-config
