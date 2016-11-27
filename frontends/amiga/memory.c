@@ -74,6 +74,7 @@ static ASM ULONG ami_memory_handler(REG(a0, struct MemHandlerData *mhd), REG(a1,
 struct Interrupt *ami_memory_init(void)
 {
 	struct Interrupt *memhandler = malloc(sizeof(struct Interrupt));
+	if(memhandler == NULL) return NULL; // we're screwed
 
 	memhandler->is_Node.ln_Pri = 1;
 	memhandler->is_Node.ln_Name = "NetSurf slab memory handler";
@@ -86,8 +87,10 @@ struct Interrupt *ami_memory_init(void)
 
 void ami_memory_fini(struct Interrupt *memhandler)
 {
-	RemMemHandler(memhandler);
-	free(memhandler);
+	if(memhandler != NULL) {
+		RemMemHandler(memhandler);
+		free(memhandler);
+	}
 }
 
 #endif
