@@ -118,7 +118,7 @@ STATIC struct ARexxCmd Commands[] =
 	{"ACTIVE",	RX_ACTIVE,	rx_active,	"T=TAB/S", 		0, 	NULL, 	0, 	0, 	NULL },
 	{"CLOSE",	RX_CLOSE,	rx_close,	"W=WINDOW/K/N,T=TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
 	{"HOTLIST",	RX_HOTLIST,	rx_hotlist,	"A=ACTION/A", 		0, 	NULL, 	0, 	0, 	NULL },
-	{"SLABSTATS",	RX_SLABSTATS,	rx_slabstats,	NULL, 		0, 	NULL, 	0, 	0, 	NULL },
+	{"SLABSTATS",	RX_SLABSTATS,	rx_slabstats,	"FILE", 		0, 	NULL, 	0, 	0, 	NULL },
 	{ NULL, 		0, 				NULL, 		NULL, 		0, 	NULL, 	0, 	0, 	NULL }
 };
 
@@ -674,7 +674,14 @@ RXHOOKF(rx_hotlist)
 RXHOOKF(rx_slabstats)
 {
 #ifndef __amigaos4__
-	ami_memory_slab_dump();
+	BPTR fh = 0;
+
+	if(cmd->ac_ArgList[0] != NULL) {
+		fh = Open((char *)cmd->ac_ArgList[0], MODE_NEWFILE);
+	}
+	ami_memory_slab_dump(fh);
+
+	if(fh != 0) Close(fh);
 #endif
 }
 

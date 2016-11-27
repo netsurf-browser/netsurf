@@ -59,7 +59,7 @@ void *ami_memory_clear_alloc(size_t size, UBYTE value);
 
 /* clib2 slab allocator */
 #ifndef __amigaos4__
-void ami_memory_slab_dump(void);
+void ami_memory_slab_dump(BPTR fh);
 struct Interrupt *ami_memory_init(void);
 void ami_memory_fini(struct Interrupt *memhandler);
 #endif

@@ -17,6 +17,7 @@
  */
 
 #ifndef __amigaos4__
+#include <proto/dos.h>
 #include <proto/exec.h>
 #include <exec/interrupts.h>
 #include <stdlib.h>
@@ -46,7 +47,7 @@ void *ami_memory_clear_alloc(size_t size, UBYTE value)
 }
 
 /* clib2 slab allocator stats */
-static int ami_memory_slab_callback(const struct __slab_usage_information * sui)
+static int ami_memory_slab_usage_cb(const struct __slab_usage_information * sui)
 {
 	if(sui->sui_slab_index <= 1) {
 		LOG("clib2 slab usage:");
@@ -70,11 +71,43 @@ static int ami_memory_slab_callback(const struct __slab_usage_information * sui)
 	return 0;
 }
 
-void ami_memory_slab_dump(void)
+static int ami_memory_slab_alloc_cb(const struct __slab_allocation_information *sai)
 {
-	__get_slab_usage(ami_memory_slab_callback);
+	if(sai->sai_allocation_index <= 1) {
+		LOG("clib2 allocation usage:");
+		LOG("  Number of allocations which are not managed by slabs: %ld",
+			sai->sai_num_single_allocations);
+		LOG("  Total number of bytes allocated for memory not managed by slabs: %ld",
+			sai->sai_total_single_allocation_size);
+	}
+	LOG("Alloc %d", sai->sai_allocation_index);
+	LOG("  Size of this allocation, as requested: %ld", sai->sai_allocation_size);
+	LOG("  Total size of this allocation, including management data: %ld",
+		sai->sai_total_allocation_size);
+
+	return 0;
 }
 
+static int ami_memory_slab_stats_cb(void *user_data, const char *line, size_t line_length)
+{
+	BPTR fh = (BPTR)user_data;
+	long err = FPuts(fh, line);
+
+	if(err != 0) {
+		return -1;
+	} else {
+		return 0;
+	}
+}
+
+void ami_memory_slab_dump(BPTR fh)
+{
+	__get_slab_usage(ami_memory_slab_usage_cb);
+	__get_slab_allocations(ami_memory_slab_alloc_cb);
+	__get_slab_stats(fh, ami_memory_slab_stats_cb);
+}
+
+/* Low memory handler */
 static void ami_memory_low_mem_handler(void *p)
 {
 	if(low_mem_status == PURGE_STEP1) {
@@ -115,7 +148,7 @@ struct Interrupt *ami_memory_init(void)
 	struct Interrupt *memhandler = malloc(sizeof(struct Interrupt));
 	if(memhandler == NULL) return NULL; // we're screwed
 
-	memhandler->is_Node.ln_Pri = -100; // low down as will be slow
+	memhandler->is_Node.ln_Pri = -127; // low down as will be slow
 	memhandler->is_Node.ln_Name = "NetSurf low memory handler";
 	memhandler->is_Data = NULL;
 	memhandler->is_Code = (APTR)&ami_memory_handler;
