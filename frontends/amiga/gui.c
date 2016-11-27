@@ -5543,6 +5543,11 @@ int main(int argc, char** argv)
 	/* Open splash window */
 	Object *splash_window = ami_gui_splash_open();
 
+#ifndef __amigaos4__
+	/* OS3 low memory handler */
+	struct Interupt *memhandler = ami_memory_init();
+#endif
+
 	ami_object_init();
 
 	if (ami_open_resources() == false) { /* alloc message ports */
@@ -5742,6 +5747,11 @@ int main(int argc, char** argv)
 
 	ami_object_fini();
 	ami_bitmap_fini();
+
+#ifndef __amigaos4__
+	/* OS3 low memory handler */
+	ami_memory_fini(memhandler);
+#endif
 
 	LOG("Closing screen");
 	ami_gui_close_screen(scrn, locked_screen, FALSE);

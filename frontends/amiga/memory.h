@@ -57,9 +57,11 @@ void *ami_memory_clear_alloc(size_t size, UBYTE value);
 #define ami_memory_itempool_free(p,i,s) FreePooled(p,i,s)
 #endif
 
-/* clib2 slab allocator stats */
+/* clib2 slab allocator */
 #ifndef __amigaos4__
 void ami_memory_slab_dump(void);
+struct Interrupt *ami_memory_init(void);
+void ami_memory_fini(struct Interrupt *memhandler);
 #endif
 
 #endif //AMIGA_MEMORY_H

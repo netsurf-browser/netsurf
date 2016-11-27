@@ -17,8 +17,11 @@
  */
 
 #ifndef __amigaos4__
+#include <proto/exec.h>
+#include <exec/interrupts.h>
 #include <stdlib.h>
 #include "amiga/memory.h"
+#include "amiga/os3support.h"
 #include "utils/log.h"
 
 ULONG __slab_max_size = 2048; /* Enable clib2's slab allocator */
@@ -60,5 +63,32 @@ void ami_memory_slab_dump(void)
 {
 	__get_slab_usage(ami_memory_slab_callback);
 }
+
+static ASM ULONG ami_memory_handler(REG(a0, struct MemHandlerData *mhd), REG(a1, void *userdata), REG(a6, struct ExecBase *execbase))
+{
+	__free_unused_slabs();
+
+	return MEM_ALL_DONE;
+}
+ 
+struct Interrupt *ami_memory_init(void)
+{
+	struct Interrupt *memhandler = malloc(sizeof(struct Interrupt));
+
+	memhandler->is_Node.ln_Pri = 1;
+	memhandler->is_Node.ln_Name = "NetSurf slab memory handler";
+	memhandler->is_Data = NULL;
+	memhandler->is_Code = (APTR)&ami_memory_handler;
+	AddMemHandler(memhandler);
+
+	return memhandler;
+}
+
+void ami_memory_fini(struct Interrupt *memhandler)
+{
+	RemMemHandler(memhandler);
+	free(memhandler);
+}
+
 #endif
 
