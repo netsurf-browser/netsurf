@@ -22,9 +22,20 @@
 #include <stdlib.h>
 #include "amiga/memory.h"
 #include "amiga/os3support.h"
+#include "amiga/schedule.h"
+#include "content/llcache.h"
 #include "utils/log.h"
 
 ULONG __slab_max_size = 2048; /* Enable clib2's slab allocator */
+
+enum {
+	PURGE_NONE = 0,
+	PURGE_STEP1,
+	PURGE_STEP2,
+	PURGE_DONE_STEP1,
+	PURGE_DONE_STEP2
+};
+static int low_mem_status = PURGE_NONE;
 
 /* Special clear (ie. non-zero) */
 void *ami_memory_clear_alloc(size_t size, UBYTE value)
@@ -64,11 +75,39 @@ void ami_memory_slab_dump(void)
 	__get_slab_usage(ami_memory_slab_callback);
 }
 
+static void ami_memory_low_mem_handler(void *p)
+{
+	if(low_mem_status == PURGE_STEP1) {
+		LOG("Purging llcache");
+		llcache_clean(true);
+		low_mem_status = PURGE_DONE_STEP1;
+	}
+
+	if(low_mem_status == PURGE_STEP2) {
+		LOG("Purging unused slabs");
+		__free_unused_slabs();
+		low_mem_status = PURGE_DONE_STEP2;
+	}
+}
+
 static ASM ULONG ami_memory_handler(REG(a0, struct MemHandlerData *mhd), REG(a1, void *userdata), REG(a6, struct ExecBase *execbase))
 {
-	__free_unused_slabs();
+	if(low_mem_status == PURGE_DONE_STEP2) {
+		low_mem_status = PURGE_NONE;
+		return MEM_ALL_DONE;
+	}
 
-	return MEM_ALL_DONE;
+	if(low_mem_status == PURGE_DONE_STEP1) {
+		low_mem_status = PURGE_STEP2;
+	}
+
+	if(low_mem_status == PURGE_NONE) {
+		low_mem_status = PURGE_STEP1;
+	}
+
+	ami_schedule(1, ami_memory_low_mem_handler, NULL);
+
+	return MEM_TRY_AGAIN;
 }
  
 struct Interrupt *ami_memory_init(void)
@@ -76,8 +115,8 @@ struct Interrupt *ami_memory_init(void)
 	struct Interrupt *memhandler = malloc(sizeof(struct Interrupt));
 	if(memhandler == NULL) return NULL; // we're screwed
 
-	memhandler->is_Node.ln_Pri = 1;
-	memhandler->is_Node.ln_Name = "NetSurf slab memory handler";
+	memhandler->is_Node.ln_Pri = -100; // low down as will be slow
+	memhandler->is_Node.ln_Name = "NetSurf low memory handler";
 	memhandler->is_Data = NULL;
 	memhandler->is_Code = (APTR)&ami_memory_handler;
 	AddMemHandler(memhandler);

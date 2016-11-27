@@ -19,6 +19,7 @@
 #ifndef AMIGA_SCHEDULE_H
 #define AMIGA_SCHEDULE_H
 #include "amiga/os3support.h"
+#include "utils/errors.h"
 
 /**
  * Schedule a callback.
