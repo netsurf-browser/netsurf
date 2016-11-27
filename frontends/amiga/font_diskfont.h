@@ -19,5 +19,6 @@
 #ifndef AMIGA_FONT_DISKFONT_H
 #define AMIGA_FONT_DISKFONT_H
 void ami_font_diskfont_init(void);
+void ami_font_diskfont_fini(void);
 #endif
 

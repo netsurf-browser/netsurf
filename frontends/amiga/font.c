@@ -115,6 +115,8 @@ void ami_font_fini(void)
 {
 	if(nsoption_bool(bitmap_fonts) == false) {
 		ami_font_bullet_fini();
+	} else {
+		ami_font_diskfont_fini();
 	}
 }
 
