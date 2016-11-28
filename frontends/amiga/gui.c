@@ -5347,8 +5347,23 @@ Object *ami_gui_splash_open(void)
 				LayoutEnd,
 			EndWindow;
 
+	if(win_obj == NULL) {
+		LOG("Splash window object not created");
+		return NULL;
+	}
+
 	LOG("Attempting to open splash window...");
 	win = RA_OpenWindow(win_obj);
+
+	if(win == NULL) {
+		LOG("Splash window did not open");
+		return NULL;
+	}
+
+	if(bm_obj == NULL) {
+		LOG("BitMap object not created");
+		return NULL;
+	}
 
 	GetAttrs(bm_obj, IA_Top, &top,
 				IA_Left, &left,
