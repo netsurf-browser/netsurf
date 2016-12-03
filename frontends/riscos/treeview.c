@@ -17,8 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Generic tree handling (implementation).
+/**
+ * \file
+ * Generic tree handling implementation.
  */
 
 #include <oslib/os.h>
@@ -86,121 +87,6 @@ struct ro_treeview
 	struct ro_treeview_callbacks *callbacks;	/*< Callback handlers */
 };
 
-static void ro_treeview_redraw_request(int x, int y, int width, int height,
-		void *pw);
-static void ro_treeview_resized(struct tree *tree, int width, int height,
-		void *pw);
-static void ro_treeview_scroll_visible(int y, int height, void *pw);
-static void ro_treeview_get_window_dimensions(int *width, int *height,
-		void *pw);
-
-static void ro_treeview_redraw(wimp_draw *redraw);
-static void ro_treeview_scroll(wimp_scroll *scroll);
-static void ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv,
-		osbool more);
-static void ro_treeview_open(wimp_open *open);
-static bool ro_treeview_mouse_click(wimp_pointer *pointer);
-static void ro_treeview_pointer_entering(wimp_entering *entering);
-static void ro_treeview_drag_start(ro_treeview *tv, wimp_pointer *pointer,
-		wimp_window_state *state);
-static void ro_treeview_drag_end(wimp_dragged *drag, void *data);
-static bool ro_treeview_keypress(wimp_key *key);
-
-static void ro_treeview_set_window_extent(ro_treeview *tv,
-		int width, int height);
-
-static void ro_treeview_update_theme(void *data, bool ok);
-static void ro_treeview_update_toolbar(void *data);
-static void ro_treeview_button_update(void *data);
-static void ro_treeview_save_toolbar_buttons(void *data, char *config);
-static void ro_treeview_button_click(void *data,
-		toolbar_action_type action_type, union toolbar_action action);
-
-static const struct treeview_table ro_tree_callbacks = {
-	ro_treeview_redraw_request,
-	ro_treeview_resized,
-	ro_treeview_scroll_visible,
-	ro_treeview_get_window_dimensions
-};
-
-static const struct toolbar_callbacks ro_treeview_toolbar_callbacks = {
-	ro_treeview_update_theme,
-	ro_treeview_update_toolbar,
-	ro_treeview_button_update,
-	ro_treeview_button_click,
-	NULL,				/* No toolbar keypress handler    */
-	ro_treeview_save_toolbar_buttons
-};
-
-
-/**
- * Create a RISC OS GUI implementation of a treeview tree.
- *
- * \param  window		The window to create the tree in.
- * \param  *toolbar		A toolbar to attach to the window.
- * \param  *callbacks		Callbacks to service the treeview.
- * \param  flags		The treeview flags.
- *
- * \return			The RISC OS treeview pointer.
- */
-
-ro_treeview *ro_treeview_create(wimp_w window, struct toolbar *toolbar,
-		struct ro_treeview_callbacks *callbacks, unsigned int flags)
-{
-	ro_treeview *tv;
-
-	/* Claim memory for the treeview block, and create a tree. */
-
-	tv = malloc(sizeof(ro_treeview));
-	if (tv == NULL)
-		return NULL;
-
-	tv->w = window;
-	tv->tb = toolbar;
-
-	/* Set the tree redraw origin at a default 0,0 RO units. */
-
-	tv->origin.x = 0;
-	tv->origin.y = 0;
-
-	/* Set the tree size as 0,0 to indicate that we don't know. */
-
-	tv->size.x = 0;
-	tv->size.y = 0;
-
-	/* Set the tree window extent to 0,0, to indicate that we
-	 * don't know. */
-
-	tv->extent.x = 0;
-	tv->extent.y = 0;
-
-	/* Set that there is no drag opperation at the moment */
-
-	tv->drag = TREE_NO_DRAG;
-
-	tv->tree = tree_create(flags, &ro_tree_callbacks, tv);
-	if (tv->tree == NULL) {
-		free(tv);
-		return NULL;
-	}
-
-	/* Record the callback info. */
-
-	tv->callbacks = callbacks;
-
-	/* Register wimp events to handle the supplied window. */
-
-	ro_gui_wimp_event_register_redraw_window(tv->w, ro_treeview_redraw);
-	ro_gui_wimp_event_register_scroll_window(tv->w, ro_treeview_scroll);
-	ro_gui_wimp_event_register_pointer_entering_window(tv->w,
-			ro_treeview_pointer_entering);
-	ro_gui_wimp_event_register_open_window(tv->w, ro_treeview_open);
-	ro_gui_wimp_event_register_mouse_click(tv->w, ro_treeview_mouse_click);
-	ro_gui_wimp_event_register_keypress(tv->w, ro_treeview_keypress);
-	ro_gui_wimp_event_set_user_data(tv->w, tv);
-
-	return tv;
-}
 
 /**
  * Delete a RISC OS GUI implementation of a treeview tree.  The window is
@@ -208,7 +94,6 @@ ro_treeview *ro_treeview_create(wimp_w window, struct toolbar *toolbar,
  *
  * \param  tv			The RISC OS treeview to delete.
  */
-
 void ro_treeview_destroy(ro_treeview *tv)
 {
 	ro_gui_wimp_event_finalise(tv->w);
@@ -218,46 +103,6 @@ void ro_treeview_destroy(ro_treeview *tv)
 	free(tv);
 }
 
-/**
- * Return a pointer to a toolbar callbacks structure with the handlers to be
- * used by any treeview window toolbars.
- *
- * \return			A pointer to the callback structure.
- */
-
-const struct toolbar_callbacks *ro_treeview_get_toolbar_callbacks(void)
-{
-	return &ro_treeview_toolbar_callbacks;
-}
-
-/**
- * Change the redraw origin of a treeview tree in RISC OS graphics units.
- *
- * \param  *tv		The ro_treeview object to update.
- * \param  x		The X position, in terms of the RO window work area.
- * \param  y		The Y position, in terms of the RO window work area.
- *
- * \todo -- this probably needs a rework.
- */
-
-void ro_treeview_set_origin(ro_treeview *tv, int x, int y)
-{
-	if (tv != NULL) {
-		tv->origin.x = x;
-		tv->origin.y = y;
-
-		/* Assuming that we know how big the tree currently is, then
-		 * adjust the window work area extent to match.  If we don't,
-		 * then presumably the tree isn't in an open window yet and
-		 * a subsequent Open Window Event should pick it up.
-		 */
-
-		if (tv->size.x != 0 && tv->size.y != 0)
-			ro_treeview_set_window_extent(tv,
-					tv->origin.x + tv->size.x,
-					tv->origin.y + tv->size.y);
-	}
-}
 
 /**
  * Return details of the tree block associated with an ro_treeview object.
@@ -265,11 +110,11 @@ void ro_treeview_set_origin(ro_treeview *tv, int x, int y)
  * \param  *tv		The ro_treeview object of interest.
  * \return		A pointer to the associated tree block.
  */
-
 struct tree *ro_treeview_get_tree(ro_treeview *tv)
 {
 	return (tv != NULL) ? (tv->tree) : (NULL);
 }
+
 
 /**
  * Return details of the RISC OS window handle associated with an
@@ -278,85 +123,18 @@ struct tree *ro_treeview_get_tree(ro_treeview *tv)
  * \param  *tv		The ro_treeview object of interest.
  * \return		The associated RISC OS window handle.
  */
-
 wimp_w ro_treeview_get_window(ro_treeview *tv)
 {
 	return (tv != NULL) ? (tv->w) : (NULL);
 }
 
-/**
- * Callback to force a redraw of part of the treeview window.
- *
- * \param  x		Min X Coordinate of area to be redrawn.
- * \param  y		Min Y Coordinate of area to be redrawn.
- * \param  width	Width of area to be redrawn.
- * \param  height	Height of area to be redrawn.
- * \param  pw		The treeview object to be redrawn.
- */
-
-void ro_treeview_redraw_request(int x, int y, int width, int height,
-		void *pw)
-{
-	if (pw != NULL) {
-		ro_treeview		*tv = (ro_treeview *) pw;
-		os_error		*error;
-		wimp_draw		update;
-		osbool			more;
-
-		update.w = tv->w;
-		update.box.x0 = (2 * x) + tv->origin.x;
-		update.box.y0 = (-2 * (y + height)) + tv->origin.y;
-		update.box.x1 = (2 * (x + width)) + tv->origin.x;
-		update.box.y1 = (-2 * y) + tv->origin.y;
-
-		error = xwimp_update_window(&update, &more);
-		if (error) {
-			LOG("xwimp_update_window: 0x%x: %s", error->errnum, error->errmess);
-			ro_warn_user("WimpError", error->errmess);
-			return;
-		}
-		ro_treeview_redraw_loop(&update, tv, more);
-	}
-}
-
-/**
- * Pass RISC OS redraw events on to the treeview widget.
- *
- * \param  *redraw		Pointer to Redraw Event block.
- */
-
-void ro_treeview_redraw(wimp_draw *redraw)
-{
-	osbool		more;
-	os_error	*error;
-	ro_treeview	*tv;
-
-	tv = (ro_treeview *) ro_gui_wimp_event_get_user_data(redraw->w);
-	if (tv == NULL) {
-		LOG("NULL treeview block for window: 0x%x", (unsigned int)redraw->w);
-		/* Don't return, as not servicing redraw events isn't a good
-		 * idea.  The following code must handle (tv == NULL)
-		 * gracefully while clearing the redraw queue.
-		 */
-	}
-
-	error = xwimp_redraw_window(redraw, &more);
-	if (error) {
-		LOG("xwimp_redraw_window: 0x%x: %s", error->errnum, error->errmess);
-		ro_warn_user("WimpError", error->errmess);
-		return;
-	}
-
-	ro_treeview_redraw_loop(redraw, tv, more);
-}
 
 /**
  * Handle scroll events in treeview windows.
  *
  * \param  *scroll		Pointer to Scroll Event block.
  */
-
-void ro_treeview_scroll(wimp_scroll *scroll)
+static void ro_treeview_scroll(wimp_scroll *scroll)
 {
 	os_error	*error;
 	int		x = scroll->visible.x1 - scroll->visible.x0 - 32;
@@ -420,8 +198,8 @@ void ro_treeview_scroll(wimp_scroll *scroll)
  * /param  *tv			The treeview object being redrawn.
  * /param  more			Flag to show if more actions are required.
  */
-
-void ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv, osbool more)
+static void
+ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv, osbool more)
 {
 	struct redraw_context ctx = {
 		.interactive = true,
@@ -452,7 +230,7 @@ void ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv, osbool more)
 					(redraw->clip.y1 - redraw->clip.y0)/2,
 					&ctx);
 			no_font_blending = false;
-	 	}
+		}
 
 		error = xwimp_get_rectangle(redraw, &more);
 		if (error) {
@@ -463,6 +241,306 @@ void ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv, osbool more)
 	}
 }
 
+
+/**
+ * Pass RISC OS redraw events on to the treeview widget.
+ *
+ * \param  *redraw		Pointer to Redraw Event block.
+ */
+static void ro_treeview_redraw(wimp_draw *redraw)
+{
+	osbool		more;
+	os_error	*error;
+	ro_treeview	*tv;
+
+	tv = (ro_treeview *) ro_gui_wimp_event_get_user_data(redraw->w);
+	if (tv == NULL) {
+		LOG("NULL treeview block for window: 0x%x", (unsigned int)redraw->w);
+		/* Don't return, as not servicing redraw events isn't a good
+		 * idea.  The following code must handle (tv == NULL)
+		 * gracefully while clearing the redraw queue.
+		 */
+	}
+
+	error = xwimp_redraw_window(redraw, &more);
+	if (error) {
+		LOG("xwimp_redraw_window: 0x%x: %s", error->errnum, error->errmess);
+		ro_warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	ro_treeview_redraw_loop(redraw, tv, more);
+}
+
+
+/**
+ * Callback to force a redraw of part of the treeview window.
+ *
+ * \param  x		Min X Coordinate of area to be redrawn.
+ * \param  y		Min Y Coordinate of area to be redrawn.
+ * \param  width	Width of area to be redrawn.
+ * \param  height	Height of area to be redrawn.
+ * \param  pw		The treeview object to be redrawn.
+ */
+static void
+ro_treeview_redraw_request(int x, int y, int width, int height,	void *pw)
+{
+	ro_treeview		*tv = (ro_treeview *) pw;
+	os_error		*error;
+	wimp_draw		update;
+	osbool			more;
+
+	if (pw == NULL) {
+		return;
+	}
+
+	update.w = tv->w;
+	update.box.x0 = (2 * x) + tv->origin.x;
+	update.box.y0 = (-2 * (y + height)) + tv->origin.y;
+	update.box.x1 = (2 * (x + width)) + tv->origin.x;
+	update.box.y1 = (-2 * y) + tv->origin.y;
+
+	error = xwimp_update_window(&update, &more);
+	if (error) {
+		LOG("xwimp_update_window: 0x%x: %s",
+		    error->errnum, error->errmess);
+		ro_warn_user("WimpError", error->errmess);
+		return;
+	}
+	ro_treeview_redraw_loop(&update, tv, more);
+}
+
+
+/**
+ * Callback to request that a section of the tree is scrolled into view.
+ *
+ * \param  y			The Y coordinate of top of the area in NS units.
+ * \param  height		The height of the area in NS units.
+ * \param  *pw			The treeview object affected.
+ */
+static void ro_treeview_scroll_visible(int y, int height, void *pw)
+{
+	ro_treeview		*tv = (ro_treeview *) pw;
+	os_error		*error;
+	wimp_window_state	state;
+	int			visible_t, visible_b;
+	int			request_t, request_b;
+
+	if (pw == NULL) {
+		return;
+	}
+
+	state.w = tv->w;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG("xwimp_get_window_state: 0x%x: %s",
+		    error->errnum, error->errmess);
+		ro_warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	/* Work out top and bottom of both the currently visible and
+	 * the required areas, in terms of the RO work area.
+	 */
+
+	visible_t = state.yscroll;
+	visible_b = state.yscroll
+		- (state.visible.y1 - state.visible.y0);
+
+	request_t = -(2 * y);// - tv->origin.y;
+	request_b = -(2 * (y + height));// - tv->origin.y;
+
+	/* If the area is outside the visible window, then scroll it
+	 * in to view.
+	 */
+
+	if (request_t > visible_t || request_b < visible_b) {
+		if (request_t > visible_t) {
+			state.yscroll = request_t;
+		} else if (request_b < visible_b) {
+			state.yscroll = request_b + tv->origin.y
+				+ (state.visible.y1 - state.visible.y0);
+
+			/* If the required area is bigger than the
+			 * visible extent, then align to the top and
+			 * let the bottom disappear out of view.
+			 */
+
+			if (state.yscroll < request_t)
+				state.yscroll = request_t;
+		}
+
+		error = xwimp_open_window((wimp_open *) &state);
+		if (error) {
+			LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
+			ro_warn_user("WimpError", error->errmess);
+			return;
+		}
+	}
+
+}
+
+
+/**
+ * Callback to return the tree window dimensions to the treeview system.
+ *
+ * \param  *width		Return the window width.
+ * \param  *height		Return the window height.
+ * \param  *pw			The treeview object to use.
+ */
+static void ro_treeview_get_window_dimensions(int *width, int *height,
+		void *pw)
+{
+	if (pw != NULL && (width != NULL || height != NULL)) {
+		ro_treeview		*tv = (ro_treeview *) pw;
+		os_error		*error;
+		wimp_window_state	state;
+
+		state.w = tv->w;
+		error = xwimp_get_window_state(&state);
+		if (error) {
+			LOG("xwimp_get_window_state: 0x%x: %s",
+			    error->errnum, error->errmess);
+			ro_warn_user("WimpError", error->errmess);
+			return;
+		}
+
+		if (width != NULL)
+			*width = (state.visible.x1 - state.visible.x0) / 2;
+
+		if (height != NULL)
+			*height = (state.visible.y1 - state.visible.y0) / 2;
+	}
+}
+
+
+/**
+ * Resize the RISC OS window extent of a treeview.
+ *
+ * \param  *tv			The RISC OS treeview object to resize.
+ * \param  width		The new width of the work area, in RO units.
+ * \param  height		The new height of the work area, in RO units.
+ */
+static void
+ro_treeview_set_window_extent(ro_treeview *tv, int width, int height)
+{
+	os_error		*error;
+	os_box			extent;
+	wimp_window_state	state;
+	int			new_x, new_y;
+	int			visible_x, visible_y;
+
+	if (tv == NULL) {
+		return;
+	}
+
+	/* Calculate the new window extents, in RISC OS units. */
+
+	new_x = width + tv->origin.x;
+	new_y = height + tv->origin.y;
+
+	/* Get details of the existing window, and start to sanity
+	 * check the new extents.
+	 */
+
+	state.w = tv->w;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		ro_warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	/* If the extent is smaller than the current visible area,
+	 * then extend it so that it matches the visible area.
+	 */
+
+	if (new_x < (state.visible.x1 - state.visible.x0))
+		new_x = state.visible.x1 - state.visible.x0;
+
+	if (new_y > (state.visible.y0 - state.visible.y1))
+		new_y = state.visible.y0 - state.visible.y1;
+
+	/* Calculate the maximum visible coordinates of the existing
+	 * window.
+	 */
+
+	visible_x = state.xscroll +
+		(state.visible.x1 - state.visible.x0);
+	visible_y = state.yscroll +
+		(state.visible.y0 - state.visible.y1);
+
+	/* If the window is currently open, and the exising visible
+	 * area is bigger than the new extent, then we need to reopen
+	 * the window in an appropriare position before setting the
+	 * new extent.
+	 */
+
+	if ((state.flags & wimp_WINDOW_OPEN) &&
+	    (visible_x > new_x || visible_y < new_y)) {
+		int new_x_scroll = state.xscroll;
+		int new_y_scroll = state.yscroll;
+
+		if (visible_x > new_x)
+			new_x_scroll = new_x - (state.visible.x1
+						- state.visible.x0);
+
+		if (visible_y < new_y)
+			new_y_scroll = new_y - (state.visible.y0
+						- state.visible.y1);
+
+		if (new_x_scroll < 0) {
+			state.visible.x1 -= new_x_scroll;
+			state.xscroll = 0;
+		} else {
+			state.xscroll = new_x_scroll;
+		}
+
+		if (new_y_scroll > 0) {
+			state.visible.y0 += new_y_scroll;
+			state.yscroll = 0;
+		} else {
+			state.yscroll = new_y_scroll;
+		}
+
+		error = xwimp_open_window((wimp_open *) &state);
+		if (error) {
+			LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+			ro_warn_user("WimpError", error->errmess);
+			return;
+		}
+
+		/* \todo -- Not sure if we need to reattach the
+		 * toolbar here: the nested wimp seems to take care
+		 * of it for us?
+		 */
+	}
+
+	/* Now that the new extent fits into the visible window, we
+	 * can resize the work area.  If we succeed, the values are
+	 * recorded to save having to ask the Wimp for them
+	 * each time.
+	 */
+
+	extent.x0 = 0;
+	extent.y0 = new_y;
+	extent.x1 = new_x;
+	extent.y1 = 0;
+
+	error = xwimp_set_extent(tv->w, &extent);
+	if (error) {
+		LOG("xwimp_set_extent: 0x%x: %s",
+		    error->errnum, error->errmess);
+		ro_warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	tv->extent.x = new_x;
+	tv->extent.y = new_y;
+}
+
+
+
 /**
  * Callback to notify us of a new overall tree size.
  *
@@ -471,9 +549,8 @@ void ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv, osbool more)
  * \param  height	The new height of the window.
  * \param  *pw		The treeview object to be resized.
  */
-
-void ro_treeview_resized(struct tree *tree, int width, int height,
-		void *pw)
+static void
+ro_treeview_resized(struct tree *tree, int width, int height, void *pw)
 {
 	if (pw != NULL) {
 		ro_treeview		*tv = (ro_treeview *) pw;
@@ -489,232 +566,29 @@ void ro_treeview_resized(struct tree *tree, int width, int height,
 	}
 }
 
-/**
- * Callback to request that a section of the tree is scrolled into view.
- *
- * \param  y			The Y coordinate of top of the area in NS units.
- * \param  height		The height of the area in NS units.
- * \param  *pw			The treeview object affected.
- */
-
-void ro_treeview_scroll_visible(int y, int height, void *pw)
-{
-	if (pw != NULL) {
-		ro_treeview		*tv = (ro_treeview *) pw;
-		os_error		*error;
-		wimp_window_state	state;
-		int			visible_t, visible_b;
-		int			request_t, request_b;
-
-		state.w = tv->w;
-		error = xwimp_get_window_state(&state);
-		if (error) {
-			LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-			ro_warn_user("WimpError", error->errmess);
-			return;
-		}
-
-		/* Work out top and bottom of both the currently visible and
-		 * the required areas, in terms of the RO work area.
-		 */
-
-		 visible_t = state.yscroll;
-		 visible_b = state.yscroll
-		 		- (state.visible.y1 - state.visible.y0);
-
-		 request_t = -(2 * y);// - tv->origin.y;
-		 request_b = -(2 * (y + height));// - tv->origin.y;
-
-		 /* If the area is outside the visible window, then scroll it
-		  * in to view.
-		  */
-
-		 if (request_t > visible_t || request_b < visible_b) {
-		 	if (request_t > visible_t) {
-		 		state.yscroll = request_t;
-		 	} else if (request_b < visible_b) {
-		 		state.yscroll = request_b + tv->origin.y
-		 			+ (state.visible.y1 - state.visible.y0);
-
-		 		/* If the required area is bigger than the
-		 		 * visible extent, then align to the top and
-		 		 * let the bottom disappear out of view.
-		 		 */
-
-		 		if (state.yscroll < request_t)
-		 			state.yscroll = request_t;
-		 	}
-
-		 	error = xwimp_open_window((wimp_open *) &state);
-		 	if (error) {
-				LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
-				ro_warn_user("WimpError", error->errmess);
-				return;
-			}
-		}
-	}
-}
 
 /**
- * Callback to return the tree window dimensions to the treeview system.
+ * Handle Pointer Entering Window events for treeview windows.
  *
- * \param  *width		Return the window width.
- * \param  *height		Return the window height.
- * \param  *pw			The treeview object to use.
+ * \param *entering		The Wimp_PointerEnteringWindow block.
  */
-
-void ro_treeview_get_window_dimensions(int *width, int *height,
-		void *pw)
+static void ro_treeview_pointer_entering(wimp_entering *entering)
 {
-	if (pw != NULL && (width != NULL || height != NULL)) {
-		ro_treeview		*tv = (ro_treeview *) pw;
-		os_error		*error;
-		wimp_window_state	state;
+	ro_treeview		*tv;
 
-		state.w = tv->w;
-		error = xwimp_get_window_state(&state);
-		if (error) {
-			LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-			ro_warn_user("WimpError", error->errmess);
-			return;
-		}
+	tv = (ro_treeview *) ro_gui_wimp_event_get_user_data(entering->w);
+	if (tv == NULL)
+		return;
 
-		if (width != NULL)
-			*width = (state.visible.x1 - state.visible.x0) / 2;
-
-		if (height != NULL)
-			*height = (state.visible.y1 - state.visible.y0) / 2;
-	}
+	ro_mouse_track_start(NULL, ro_treeview_mouse_at, NULL);
 }
 
-/**
- * Resize the RISC OS window extent of a treeview.
- *
- * \param  *tv			The RISC OS treeview object to resize.
- * \param  width		The new width of the work area, in RO units.
- * \param  height		The new height of the work area, in RO units.
- */
-
-void ro_treeview_set_window_extent(ro_treeview *tv, int width, int height)
-{
-	if (tv != NULL) {
-		os_error		*error;
-		os_box			extent;
-		wimp_window_state	state;
-		int			new_x, new_y;
-		int			visible_x, visible_y;
-
-		/* Calculate the new window extents, in RISC OS units. */
-
-		new_x = width + tv->origin.x;
-		new_y = height + tv->origin.y;
-
-		/* Get details of the existing window, and start to sanity
-		 * check the new extents.
-		 */
-
-		state.w = tv->w;
-		error = xwimp_get_window_state(&state);
-		if (error) {
-			LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-			ro_warn_user("WimpError", error->errmess);
-			return;
-		}
-
-		/* If the extent is smaller than the current visible area,
-		 * then extend it so that it matches the visible area.
-		 */
-
-		if (new_x < (state.visible.x1 - state.visible.x0))
-			new_x = state.visible.x1 - state.visible.x0;
-
-		if (new_y > (state.visible.y0 - state.visible.y1))
-			new_y = state.visible.y0 - state.visible.y1;
-
-		/* Calculate the maximum visible coordinates of the existing
-		 * window.
-		 */
-
-		visible_x = state.xscroll +
-				(state.visible.x1 - state.visible.x0);
-		visible_y = state.yscroll +
-				(state.visible.y0 - state.visible.y1);
-
-		/* If the window is currently open, and the exising visible
-		 * area is bigger than the new extent, then we need to reopen
-		 * the window in an appropriare position before setting the
-		 * new extent.
-		 */
-
-		if ((state.flags & wimp_WINDOW_OPEN) &&
-				(visible_x > new_x || visible_y < new_y)) {
-			int new_x_scroll = state.xscroll;
-			int new_y_scroll = state.yscroll;
-
-			if (visible_x > new_x)
-				new_x_scroll = new_x - (state.visible.x1
-						- state.visible.x0);
-
-			if (visible_y < new_y)
-				new_y_scroll = new_y - (state.visible.y0
-						- state.visible.y1);
-
-			if (new_x_scroll < 0) {
-				state.visible.x1 -= new_x_scroll;
-				state.xscroll = 0;
-			} else {
-				state.xscroll = new_x_scroll;
-			}
-
-			if (new_y_scroll > 0) {
-				state.visible.y0 += new_y_scroll;
-				state.yscroll = 0;
-			} else {
-				state.yscroll = new_y_scroll;
-			}
-
-			error = xwimp_open_window((wimp_open *) &state);
-			if (error) {
-				LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-				ro_warn_user("WimpError", error->errmess);
-				return;
-			}
-
-			/* \todo -- Not sure if we need to reattach the
-			 * toolbar here: the nested wimp seems to take care
-			 * of it for us?
-			 */
-		}
-
-		/* Now that the new extent fits into the visible window, we
-		 * can resize the work area.  If we succeed, the values are
-		 * recorded to save having to ask the Wimp for them
-		 * each time.
-		 */
-
-		extent.x0 = 0;
-		extent.y0 = new_y;
-		extent.x1 = new_x;
-		extent.y1 = 0;
-
-		error = xwimp_set_extent(tv->w, &extent);
-		if (error) {
-			LOG("xwimp_set_extent: 0x%x: %s", error->errnum, error->errmess);
-			ro_warn_user("WimpError", error->errmess);
-			return;
-		}
-
-		tv->extent.x = new_x;
-		tv->extent.y = new_y;
-	}
-}
 
 /**
  * Handle RISC OS Window Open events for a treeview window.
  *
  * \param  *open		Pointer to the Window Open Event block.
  */
-
 static void ro_treeview_open(wimp_open *open)
 {
 	ro_treeview	*tv;
@@ -724,7 +598,8 @@ static void ro_treeview_open(wimp_open *open)
 
 	tv = (ro_treeview *) ro_gui_wimp_event_get_user_data(open->w);
 	if (tv == NULL) {
-		LOG("NULL treeview block for window: ox%x", (unsigned int)open->w);
+		LOG("NULL treeview block for window: ox%x",
+		    (unsigned int)open->w);
 		return;
 	}
 
@@ -765,7 +640,8 @@ static void ro_treeview_open(wimp_open *open)
 
 	error = xwimp_open_window(open);
 	if (error) {
-		LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
+		LOG("xwimp_open_window: 0x%x: %s",
+		    error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 
@@ -775,12 +651,112 @@ static void ro_treeview_open(wimp_open *open)
 
 
 /**
+ * Process RISC OS User Drag Box events which relate to us: in effect, drags
+ * started by ro_treeview_drag_start().
+ *
+ * \param *drag			Pointer to the User Drag Box Event block.
+ * \param *data			NULL to allow use as a ro_mouse callback.
+ */
+static void ro_treeview_drag_end(wimp_dragged *drag, void *data)
+{
+	os_error		*error;
+
+	error = xwimp_drag_box((wimp_drag *) -1);
+	if (error) {
+		LOG("xwimp_drag_box: 0x%x: %s", error->errnum, error->errmess);
+		ro_warn_user("WimpError", error->errmess);
+	}
+
+	error = xwimp_auto_scroll(0, NULL, NULL);
+	if (error) {
+		LOG("xwimp_auto_scroll: 0x%x: %s",
+		    error->errnum, error->errmess);
+		ro_warn_user("WimpError", error->errmess);
+	}
+}
+
+
+/**
+ * Start a RISC OS drag event to reflect on screen what is happening
+ * during the core tree drag.
+ *
+ * \param *tv		The RO treeview to which the drag is attached.
+ * \param *pointer	The RO pointer event data block starting the drag.
+ * \param *state	The RO window state block for the treeview window.
+ */
+static void ro_treeview_drag_start(ro_treeview *tv, wimp_pointer *pointer,
+		wimp_window_state *state)
+{
+	os_error		*error;
+	wimp_drag		drag;
+	wimp_auto_scroll_info	auto_scroll;
+
+	drag.w = tv->w;
+	drag.bbox.x0 = state->visible.x0;
+	drag.bbox.y0 = state->visible.y0;
+	drag.bbox.x1 = state->visible.x1;
+	drag.bbox.y1 = state->visible.y1 - ro_toolbar_height(tv->tb) - 2;
+
+	switch (tv->drag) {
+	case TREE_SELECT_DRAG:
+		drag.type = wimp_DRAG_USER_RUBBER;
+
+		drag.initial.x0 = pointer->pos.x;
+		drag.initial.y0 = pointer->pos.y;
+		drag.initial.x1 = pointer->pos.x;
+		drag.initial.y1 = pointer->pos.y;
+		break;
+
+	case TREE_MOVE_DRAG:
+		drag.type = wimp_DRAG_USER_POINT;
+
+		drag.initial.x0 = pointer->pos.x - 4;
+		drag.initial.y0 = pointer->pos.y - 48;
+		drag.initial.x1 = pointer->pos.x + 48;
+		drag.initial.y1 = pointer->pos.y + 4;
+		break;
+
+	default:
+		/* No other drag types are supported. */
+		break;
+	}
+
+	LOG("Drag start...");
+
+	error = xwimp_drag_box_with_flags(&drag,
+			wimp_DRAG_BOX_KEEP_IN_LINE | wimp_DRAG_BOX_CLIP);
+	if (error) {
+		LOG("xwimp_drag_box: 0x%x: %s", error->errnum, error->errmess);
+		ro_warn_user("WimpError", error->errmess);
+	} else {
+		auto_scroll.w = tv->w;
+		auto_scroll.pause_zone_sizes.x0 = 80;
+		auto_scroll.pause_zone_sizes.y0 = 80;
+		auto_scroll.pause_zone_sizes.x1 = 80;
+		auto_scroll.pause_zone_sizes.y1 = 80 +
+				ro_toolbar_height(tv->tb);
+		auto_scroll.pause_duration = 0;
+		auto_scroll.state_change = (void *) 1;
+
+		error = xwimp_auto_scroll(wimp_AUTO_SCROLL_ENABLE_VERTICAL,
+				&auto_scroll, NULL);
+		if (error) {
+			LOG("xwimp_auto_scroll: 0x%x: %s", error->errnum, error->errmess);
+			ro_warn_user("WimpError", error->errmess);
+		}
+
+		ro_mouse_drag_start(ro_treeview_drag_end, ro_treeview_mouse_at,
+				NULL, NULL);
+	}
+}
+
+
+/**
  * Pass RISC OS Mouse Click events on to the treeview widget.
  *
  * \param  *pointer		Pointer to the Mouse Click Event block.
  * \return			Return true if click handled; else false.
  */
-
 static bool ro_treeview_mouse_click(wimp_pointer *pointer)
 {
 	os_error		*error;
@@ -887,198 +863,11 @@ static bool ro_treeview_mouse_click(wimp_pointer *pointer)
 
 
 /**
- * Handle Pointer Entering Window events for treeview windows.
- *
- * \param *entering		The Wimp_PointerEnteringWindow block.
- */
-
-void ro_treeview_pointer_entering(wimp_entering *entering)
-{
-	ro_treeview		*tv;
-
-	tv = (ro_treeview *) ro_gui_wimp_event_get_user_data(entering->w);
-	if (tv == NULL)
-		return;
-
-	ro_mouse_track_start(NULL, ro_treeview_mouse_at, NULL);
-} 
-
-/**
- * Track the mouse under Null Polls from the wimp, to support dragging.
- *
- * \param *pointer		Pointer to a Wimp Pointer block.
- * \param *data			NULL to allow use as a ro_mouse callback.
- */
-
-void ro_treeview_mouse_at(wimp_pointer *pointer, void *data)
-{
-	os_error		*error;
-	ro_treeview		*tv;
-	wimp_window_state	state;
-	int			xpos, ypos;
-	browser_mouse_state	mouse;
-
-	if (pointer->buttons & (wimp_CLICK_MENU))
-		return;
-
-	tv = (ro_treeview *) ro_gui_wimp_event_get_user_data(pointer->w);
-	if (tv == NULL) {
-		LOG("NULL treeview block for window: 0x%x", (unsigned int)pointer->w);
-		return;
-	}
-
-	if (tv->drag == TREE_NO_DRAG)
-		return;
-
-	/* We know now that it's not a Menu click and the treeview thinks
-	 * that a drag is in progress.
-	 */
-
-	state.w = tv->w;
-	error = xwimp_get_window_state(&state);
-	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-		ro_warn_user("WimpError", error->errmess);
-		return;
-	}
-
-	/* Convert the returned mouse coordinates into NetSurf's internal
-	 * units.
-	 */
-
-	xpos = ((pointer->pos.x - state.visible.x0) +
-			state.xscroll - tv->origin.x) / 2;
-	ypos = ((state.visible.y1 - pointer->pos.y) -
-			state.yscroll + tv->origin.y) / 2;
-
-	/* Start to process the mouse click. */
-
-	mouse = ro_gui_mouse_drag_state(pointer->buttons,
-			wimp_BUTTON_DOUBLE_CLICK_DRAG);
-
-	tree_mouse_action(tv->tree, mouse, xpos, ypos);
-
-	if (!(mouse & BROWSER_MOUSE_DRAG_ON)) {
-		tree_drag_end(tv->tree, mouse, tv->drag_start.x,
-				tv->drag_start.y, xpos, ypos);
-		tv->drag = TREE_NO_DRAG;
-	}
-
-	if (tv->callbacks != NULL &&
-			tv->callbacks->toolbar_button_update != NULL)
-		tv->callbacks->toolbar_button_update();
-}
-
-
-/**
- * Start a RISC OS drag event to reflect on screen what is happening
- * during the core tree drag.
- *
- * \param *tv		The RO treeview to which the drag is attached.
- * \param *pointer	The RO pointer event data block starting the drag.
- * \param *state	The RO window state block for the treeview window.
- */
-
-static void ro_treeview_drag_start(ro_treeview *tv, wimp_pointer *pointer,
-		wimp_window_state *state)
-{
-	os_error		*error;
-	wimp_drag		drag;
-	wimp_auto_scroll_info	auto_scroll;
-
-	drag.w = tv->w;
-	drag.bbox.x0 = state->visible.x0;
-	drag.bbox.y0 = state->visible.y0;
-	drag.bbox.x1 = state->visible.x1;
-	drag.bbox.y1 = state->visible.y1 - ro_toolbar_height(tv->tb) - 2;
-
-	switch (tv->drag) {
-	case TREE_SELECT_DRAG:
-		drag.type = wimp_DRAG_USER_RUBBER;
-
-		drag.initial.x0 = pointer->pos.x;
-		drag.initial.y0 = pointer->pos.y;
-		drag.initial.x1 = pointer->pos.x;
-		drag.initial.y1 = pointer->pos.y;
-		break;
-
-	case TREE_MOVE_DRAG:
-		drag.type = wimp_DRAG_USER_POINT;
-
-		drag.initial.x0 = pointer->pos.x - 4;
-		drag.initial.y0 = pointer->pos.y - 48;
-		drag.initial.x1 = pointer->pos.x + 48;
-		drag.initial.y1 = pointer->pos.y + 4;
-		break;
-
-	default:
-		/* No other drag types are supported. */
-		break;
-	}
-
-	LOG("Drag start...");
-
-	error = xwimp_drag_box_with_flags(&drag,
-			wimp_DRAG_BOX_KEEP_IN_LINE | wimp_DRAG_BOX_CLIP);
-	if (error) {
-		LOG("xwimp_drag_box: 0x%x: %s", error->errnum, error->errmess);
-		ro_warn_user("WimpError", error->errmess);
-	} else {
-		auto_scroll.w = tv->w;
-		auto_scroll.pause_zone_sizes.x0 = 80;
-		auto_scroll.pause_zone_sizes.y0 = 80;
-		auto_scroll.pause_zone_sizes.x1 = 80;
-		auto_scroll.pause_zone_sizes.y1 = 80 +
-				ro_toolbar_height(tv->tb);
-		auto_scroll.pause_duration = 0;
-		auto_scroll.state_change = (void *) 1;
-
-		error = xwimp_auto_scroll(wimp_AUTO_SCROLL_ENABLE_VERTICAL,
-				&auto_scroll, NULL);
-		if (error) {
-			LOG("xwimp_auto_scroll: 0x%x: %s", error->errnum, error->errmess);
-			ro_warn_user("WimpError", error->errmess);
-		}
-		
-		ro_mouse_drag_start(ro_treeview_drag_end, ro_treeview_mouse_at,
-				NULL, NULL);
-	}
-}
-
-
-/**
- * Process RISC OS User Drag Box events which relate to us: in effect, drags
- * started by ro_treeview_drag_start().
- *
- * \param *drag			Pointer to the User Drag Box Event block.
- * \param *data			NULL to allow use as a ro_mouse callback.
- */
-
-static void ro_treeview_drag_end(wimp_dragged *drag, void *data)
-{
-	os_error		*error;
-
-	error = xwimp_drag_box((wimp_drag *) -1);
-	if (error) {
-		LOG("xwimp_drag_box: 0x%x: %s", error->errnum, error->errmess);
-		ro_warn_user("WimpError", error->errmess);
-	}
-
-	error = xwimp_auto_scroll(0, NULL, NULL);
-	if (error) {
-		LOG("xwimp_auto_scroll: 0x%x: %s", error->errnum, error->errmess);
-		ro_warn_user("WimpError", error->errmess);
-	}
-}
-
-
-/**
  * Pass RISC OS keypress events on to the treeview widget.
  *
  * \param  *key			Pointer to the Key Pressed Event block.
  * \return			Return true if keypress handled; else false.
  */
-
 static bool ro_treeview_keypress(wimp_key *key)
 {
 	ro_treeview		*tv;
@@ -1155,14 +944,203 @@ static bool ro_treeview_keypress(wimp_key *key)
 }
 
 
+static const struct treeview_table ro_tree_callbacks = {
+	ro_treeview_redraw_request,
+	ro_treeview_resized,
+	ro_treeview_scroll_visible,
+	ro_treeview_get_window_dimensions
+};
+
+
+/**
+ * Create a RISC OS GUI implementation of a treeview tree.
+ *
+ * \param  window		The window to create the tree in.
+ * \param  *toolbar		A toolbar to attach to the window.
+ * \param  *callbacks		Callbacks to service the treeview.
+ * \param  flags		The treeview flags.
+ *
+ * \return			The RISC OS treeview pointer.
+ */
+ro_treeview *ro_treeview_create(wimp_w window, struct toolbar *toolbar,
+		struct ro_treeview_callbacks *callbacks, unsigned int flags)
+{
+	ro_treeview *tv;
+
+	/* Claim memory for the treeview block, and create a tree. */
+
+	tv = malloc(sizeof(ro_treeview));
+	if (tv == NULL)
+		return NULL;
+
+	tv->w = window;
+	tv->tb = toolbar;
+
+	/* Set the tree redraw origin at a default 0,0 RO units. */
+
+	tv->origin.x = 0;
+	tv->origin.y = 0;
+
+	/* Set the tree size as 0,0 to indicate that we don't know. */
+
+	tv->size.x = 0;
+	tv->size.y = 0;
+
+	/* Set the tree window extent to 0,0, to indicate that we
+	 * don't know. */
+
+	tv->extent.x = 0;
+	tv->extent.y = 0;
+
+	/* Set that there is no drag opperation at the moment */
+
+	tv->drag = TREE_NO_DRAG;
+
+	tv->tree = tree_create(flags, &ro_tree_callbacks, tv);
+	if (tv->tree == NULL) {
+		free(tv);
+		return NULL;
+	}
+
+	/* Record the callback info. */
+
+	tv->callbacks = callbacks;
+
+	/* Register wimp events to handle the supplied window. */
+
+	ro_gui_wimp_event_register_redraw_window(tv->w, ro_treeview_redraw);
+	ro_gui_wimp_event_register_scroll_window(tv->w, ro_treeview_scroll);
+	ro_gui_wimp_event_register_pointer_entering_window(tv->w,
+			ro_treeview_pointer_entering);
+	ro_gui_wimp_event_register_open_window(tv->w, ro_treeview_open);
+	ro_gui_wimp_event_register_mouse_click(tv->w, ro_treeview_mouse_click);
+	ro_gui_wimp_event_register_keypress(tv->w, ro_treeview_keypress);
+	ro_gui_wimp_event_set_user_data(tv->w, tv);
+
+	return tv;
+}
+
+
+/**
+ * Change the redraw origin of a treeview tree in RISC OS graphics units.
+ *
+ * \param  *tv		The ro_treeview object to update.
+ * \param  x		The X position, in terms of the RO window work area.
+ * \param  y		The Y position, in terms of the RO window work area.
+ *
+ * \todo -- this probably needs a rework.
+ */
+void ro_treeview_set_origin(ro_treeview *tv, int x, int y)
+{
+	if (tv != NULL) {
+		tv->origin.x = x;
+		tv->origin.y = y;
+
+		/* Assuming that we know how big the tree currently is, then
+		 * adjust the window work area extent to match.  If we don't,
+		 * then presumably the tree isn't in an open window yet and
+		 * a subsequent Open Window Event should pick it up.
+		 */
+
+		if (tv->size.x != 0 && tv->size.y != 0)
+			ro_treeview_set_window_extent(tv,
+					tv->origin.x + tv->size.x,
+					tv->origin.y + tv->size.y);
+	}
+}
+
+
+/**
+ * Track the mouse under Null Polls from the wimp, to support dragging.
+ *
+ * \param *pointer		Pointer to a Wimp Pointer block.
+ * \param *data			NULL to allow use as a ro_mouse callback.
+ */
+void ro_treeview_mouse_at(wimp_pointer *pointer, void *data)
+{
+	os_error		*error;
+	ro_treeview		*tv;
+	wimp_window_state	state;
+	int			xpos, ypos;
+	browser_mouse_state	mouse;
+
+	if (pointer->buttons & (wimp_CLICK_MENU))
+		return;
+
+	tv = (ro_treeview *) ro_gui_wimp_event_get_user_data(pointer->w);
+	if (tv == NULL) {
+		LOG("NULL treeview block for window: 0x%x", (unsigned int)pointer->w);
+		return;
+	}
+
+	if (tv->drag == TREE_NO_DRAG)
+		return;
+
+	/* We know now that it's not a Menu click and the treeview thinks
+	 * that a drag is in progress.
+	 */
+
+	state.w = tv->w;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		ro_warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	/* Convert the returned mouse coordinates into NetSurf's internal
+	 * units.
+	 */
+
+	xpos = ((pointer->pos.x - state.visible.x0) +
+			state.xscroll - tv->origin.x) / 2;
+	ypos = ((state.visible.y1 - pointer->pos.y) -
+			state.yscroll + tv->origin.y) / 2;
+
+	/* Start to process the mouse click. */
+
+	mouse = ro_gui_mouse_drag_state(pointer->buttons,
+			wimp_BUTTON_DOUBLE_CLICK_DRAG);
+
+	tree_mouse_action(tv->tree, mouse, xpos, ypos);
+
+	if (!(mouse & BROWSER_MOUSE_DRAG_ON)) {
+		tree_drag_end(tv->tree, mouse, tv->drag_start.x,
+				tv->drag_start.y, xpos, ypos);
+		tv->drag = TREE_NO_DRAG;
+	}
+
+	if (tv->callbacks != NULL &&
+			tv->callbacks->toolbar_button_update != NULL)
+		tv->callbacks->toolbar_button_update();
+}
+
+
+/**
+ * Change the size of a treeview's toolbar and redraw the window.
+ *
+ * \param *data			The treeview to update.
+ */
+static void ro_treeview_update_toolbar(void *data)
+{
+	ro_treeview *tv = (ro_treeview *) data;
+
+	if (tv != NULL && tv->tb != NULL) {
+		ro_treeview_set_origin(tv, 0,
+				-(ro_toolbar_height(tv->tb)));
+
+		xwimp_force_redraw(tv->w, 0, tv->extent.y, tv->extent.x, 0);
+	}
+}
+
+
 /**
  * Update a treeview to use a new theme.
  *
  * \param *data			Pointer to the treeview to update.
  * \param ok			true if the bar still exists; else false.
  */
-
-void ro_treeview_update_theme(void *data, bool ok)
+static void ro_treeview_update_theme(void *data, bool ok)
 {
 	ro_treeview *tv = (ro_treeview *) data;
 
@@ -1177,32 +1155,12 @@ void ro_treeview_update_theme(void *data, bool ok)
 
 
 /**
- * Change the size of a treeview's toolbar and redraw the window.
- *
- * \param *data			The treeview to update.
- */
-
-void ro_treeview_update_toolbar(void *data)
-{
-	ro_treeview *tv = (ro_treeview *) data;
-
-	if (tv != NULL && tv->tb != NULL) {
-		ro_treeview_set_origin(tv, 0,
-				-(ro_toolbar_height(tv->tb)));
-
-		xwimp_force_redraw(tv->w, 0, tv->extent.y, tv->extent.x, 0);
-	}
-}
-
-
-/**
  * Update the toolbar icons in a treeview window's toolbar.  As we're just
  * an intermediate widget, we pass the details on down the chain.
  *
  * \param *data			The treeview owning the toolbar.
  */
-
-void ro_treeview_button_update(void *data)
+static void ro_treeview_button_update(void *data)
 {
 	ro_treeview *tv = (ro_treeview *) data;
 
@@ -1221,8 +1179,7 @@ void ro_treeview_button_update(void *data)
  * \param *data			The treeview owning the toolbar.
  * \param *config		The new button config string.
  */
-
-void ro_treeview_save_toolbar_buttons(void *data, char *config)
+static void ro_treeview_save_toolbar_buttons(void *data, char *config)
 {
 	ro_treeview *tv = (ro_treeview *) data;
 
@@ -1242,8 +1199,7 @@ void ro_treeview_save_toolbar_buttons(void *data, char *config)
  * \param action_type		The action type to be handled.
  * \param action		The action to handle.
  */
-
-void ro_treeview_button_click(void *data,
+static void ro_treeview_button_click(void *data,
 		toolbar_action_type action_type, union toolbar_action action)
 {
 	ro_treeview *tv = (ro_treeview *) data;
@@ -1260,6 +1216,28 @@ void ro_treeview_button_click(void *data,
 }
 
 
+static const struct toolbar_callbacks ro_treeview_toolbar_callbacks = {
+	ro_treeview_update_theme,
+	ro_treeview_update_toolbar,
+	ro_treeview_button_update,
+	ro_treeview_button_click,
+	NULL,				/* No toolbar keypress handler    */
+	ro_treeview_save_toolbar_buttons
+};
+
+
+/**
+ * Return a pointer to a toolbar callbacks structure with the handlers to be
+ * used by any treeview window toolbars.
+ *
+ * \return A pointer to the callback structure.
+ */
+const struct toolbar_callbacks *ro_treeview_get_toolbar_callbacks(void)
+{
+	return &ro_treeview_toolbar_callbacks;
+}
+
+
 /**
  * Return a token identifying the interactive help message for a given cursor
  * position.
@@ -1269,9 +1247,7 @@ void ro_treeview_button_click(void *data,
  * \param  *message_data	Pointer to the Wimp's help message block.
  * \return			Token value (-1 indicates no help available).
  */
-
 int ro_treeview_get_help(help_full_message_request *message_data)
 {
 	return -1;
 }
-
