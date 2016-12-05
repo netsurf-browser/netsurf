@@ -234,6 +234,7 @@ static void ami_tree_redraw_req_dr(void *p)
 
 	if(ami_gui_get_space_box(twin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
 		amiga_warn_user("NoMemory", "");
+		free(atrr_data);
 		return;
 	}
 
@@ -281,6 +282,8 @@ static void ami_tree_redraw_req(void *p)
 		.background_images = true,
 		.plot = &amiplot
 	};
+
+	free(atrr_data);
 
 	if(!twin->win) return;
 
@@ -341,7 +344,6 @@ static void ami_tree_redraw_req(void *p)
 		}
 	}
 
-	free(atrr_data);
 	ami_gui_free_space_box(bbox);
 	ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
 	ami_clearclipreg(glob);
