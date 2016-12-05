@@ -5686,6 +5686,7 @@ int main(int argc, char** argv)
 
 	if (ami_locate_resource(messages, "Messages") == false) {
 		ami_misc_fatal_error("Cannot open Messages file");
+		nsoption_finalise(nsoptions, nsoptions_default);
 		ami_schedule_free();
 		ami_gui_splash_close(splash_window);
 		ami_libs_close();
@@ -5697,6 +5698,7 @@ int main(int argc, char** argv)
 	ret = netsurf_init(current_user_cache);
 	if (ret != NSERROR_OK) {
 		ami_misc_fatal_error("NetSurf failed to initialise");
+		nsoption_finalise(nsoptions, nsoptions_default);
 		ami_schedule_free();
 		ami_gui_splash_close(splash_window);
 		ami_libs_close();
@@ -5749,6 +5751,8 @@ int main(int argc, char** argv)
 	netsurf_exit();
 
 	ami_nsoption_free();
+	nsoption_finalise(nsoptions, nsoptions_default);
+
 	free(current_user_dir);
 	FreeVec(current_user_faviconcache);
 	FreeVec(current_user);
