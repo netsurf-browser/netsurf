@@ -350,18 +350,19 @@ static bool ami_gui_check_resource(char *fullpath, const char *file)
 	BPTR lock = 0;
 	size_t fullpath_len = 1024;
 
-	ami_gui_map_filename(&remapped, fullpath, file, "Resource.map");
-	netsurf_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped);
+	if(ami_gui_map_filename(&remapped, fullpath, file, "Resource.map") == true) {
+		netsurf_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped);
 
-	lock = Lock(fullpath, ACCESS_READ);
-	if(lock)
-	{
-		UnLock(lock);
-		found = true;
+		lock = Lock(fullpath, ACCESS_READ);
+		if(lock)
+		{
+			UnLock(lock);
+			found = true;
+		}
+
+		if(found) LOG("Found %s", fullpath);
+		free(remapped);
 	}
-
-	if(found) LOG("Found %s", fullpath);
-	free(remapped);
 
 	return found;
 }
@@ -371,7 +372,7 @@ bool ami_locate_resource(char *fullpath, const char *file)
 	struct Locale *locale;
 	int i;
 	bool found = false;
-	char *remapped;
+	char *remapped = NULL;
 	size_t fullpath_len = 1024;
 
 	/* Check NetSurf user data area first */
@@ -397,11 +398,12 @@ bool ami_locate_resource(char *fullpath, const char *file)
 		strcpy(fullpath, "PROGDIR:Resources/");
 
 		if(locale->loc_PrefLanguages[i]) {
-			ami_gui_map_filename(&remapped, "PROGDIR:Resources",
-				locale->loc_PrefLanguages[i], "LangNames");
-			netsurf_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped);
-
-			found = ami_gui_check_resource(fullpath, file);
+			if(ami_gui_map_filename(&remapped, "PROGDIR:Resources",
+					locale->loc_PrefLanguages[i], "LangNames") == true) {
+				netsurf_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped);
+				found = ami_gui_check_resource(fullpath, file);
+				free(remapped);
+			}
 		} else {
 			continue;
 		}
