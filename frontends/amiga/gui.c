@@ -350,19 +350,17 @@ static bool ami_gui_check_resource(char *fullpath, const char *file)
 	BPTR lock = 0;
 	size_t fullpath_len = 1024;
 
-	if(ami_gui_map_filename(&remapped, fullpath, file, "Resource.map") == true) {
-		netsurf_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped);
+	ami_gui_map_filename(&remapped, fullpath, file, "Resource.map");
+	netsurf_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped);
 
-		lock = Lock(fullpath, ACCESS_READ);
-		if(lock)
-		{
-			UnLock(lock);
-			found = true;
-		}
-
-		if(found) LOG("Found %s", fullpath);
-		free(remapped);
+	lock = Lock(fullpath, ACCESS_READ);
+	if(lock) {
+		UnLock(lock);
+		found = true;
 	}
+
+	if(found) LOG("Found %s", fullpath);
+	free(remapped);
 
 	return found;
 }
@@ -4499,7 +4497,7 @@ static void gui_window_destroy(struct gui_window *g)
 
 	cur_gw = NULL;
 
-	if(g->tab_node) {
+	if(g->shared->tabs > 1) {
 		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],g->shared->win,NULL,
 						CLICKTAB_Labels,~0,
 						TAG_DONE);
@@ -4529,7 +4527,7 @@ static void gui_window_destroy(struct gui_window *g)
 		if((g->shared->tabs == 1) && (nsoption_bool(tab_always_show) == false))
 			ami_toggletabbar(g->shared, false);
 
-		free(g->tabtitle);
+		if(g->tabtitle) free(g->tabtitle);
 		free(g);
 		return;
 	}
@@ -4575,6 +4573,7 @@ static void gui_window_destroy(struct gui_window *g)
 		Remove(g->tab_node);
 		FreeClickTabNode(g->tab_node);
 	}
+	if(g->tabtitle) free(g->tabtitle);
 	free(g); // g->shared should be freed by DelObject()
 
 	if(IsMinListEmpty(window_list))
@@ -5750,9 +5749,8 @@ int main(int argc, char** argv)
 
 	netsurf_exit();
 
-	ami_nsoption_free();
 	nsoption_finalise(nsoptions, nsoptions_default);
-
+	ami_nsoption_free();
 	free(current_user_dir);
 	FreeVec(current_user_faviconcache);
 	FreeVec(current_user);
