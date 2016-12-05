@@ -4497,7 +4497,7 @@ static void gui_window_destroy(struct gui_window *g)
 
 	cur_gw = NULL;
 
-	if(g->shared->tabs > 1) {
+	if(g->tab_node) {
 		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],g->shared->win,NULL,
 						CLICKTAB_Labels,~0,
 						TAG_DONE);
@@ -4527,8 +4527,7 @@ static void gui_window_destroy(struct gui_window *g)
 		if((g->shared->tabs == 1) && (nsoption_bool(tab_always_show) == false))
 			ami_toggletabbar(g->shared, false);
 
-		ami_utf8_free(g->tabtitle);
-
+		free(g->tabtitle);
 		free(g);
 		return;
 	}
@@ -4595,8 +4594,7 @@ static void gui_window_set_title(struct gui_window *g, const char *restrict titl
 
 	utf8title = ami_utf8_easy((char *)title);
 
-	if(g->tab_node) // && (g->shared->tabs > 1))
-	{
+	if(g->tab_node) {
 		node = g->tab_node;
 
 		if((g->tabtitle == NULL) || (strcmp(utf8title, g->tabtitle)))
@@ -4606,7 +4604,7 @@ static void gui_window_set_title(struct gui_window *g, const char *restrict titl
 							CLICKTAB_Labels, ~0,
 							TAG_DONE);
 
-			if(g->tabtitle) ami_utf8_free(g->tabtitle);
+			if(g->tabtitle) free(g->tabtitle);
 			g->tabtitle = strdup(utf8title);
 
 			SetClickTabNodeAttrs(node, TNA_Text, g->tabtitle,
