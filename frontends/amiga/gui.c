@@ -285,6 +285,7 @@ STRPTR ami_locale_langs(int *codeset)
 						acceptlangs = ASPrintf("%s", remapped);
 					}
 				}
+				if(remapped != NULL) free(remapped);
 			}
 			else
 			{
