@@ -119,18 +119,18 @@ void FreeObjList(struct MinList *objlist)
 	struct nsObject *node;
 	struct nsObject *nnode;
 
-	if(IsMinListEmpty((struct MinList *)objlist)) return;
-	node = (struct nsObject *)GetHead((struct List *)objlist);
+	if(IsMinListEmpty((struct MinList *)objlist) == FALSE) {
+		node = (struct nsObject *)GetHead((struct List *)objlist);
 
-	do {
-		nnode=(struct nsObject *)GetSucc((struct Node *)node);
-		if(node->Type == AMINS_RECT) {
-			DelObjectNoFree(node);
-		} else {
-			DelObject(node);
-		}
-	} while((node=nnode));
-
+		do {
+			nnode = (struct nsObject *)GetSucc((struct Node *)node);
+			if(node->Type == AMINS_RECT) {
+				DelObjectNoFree(node);
+			} else {
+				DelObject(node);
+			}
+		} while((node = nnode));
+	}
 	free(objlist);
 }
 
