@@ -273,20 +273,21 @@ void ami_plot_release_pens(struct MinList *shared_pens)
 	struct ami_plot_pen *nnode;
 
 	if(shared_pens == NULL) return;
-	if(IsMinListEmpty(shared_pens)) return;
-	node = (struct ami_plot_pen *)GetHead((struct List *)shared_pens);
+	if(IsMinListEmpty(shared_pens) == NULL) {
+		node = (struct ami_plot_pen *)GetHead((struct List *)shared_pens);
 
-	do {
-		nnode = (struct ami_plot_pen *)GetSucc((struct Node *)node);
-		ReleasePen(scrn->ViewPort.ColorMap, node->pen);
-		Remove((struct Node *)node);
-		ami_memory_itempool_free(pool_pens, node, sizeof(struct ami_plot_pen));
-	} while((node = nnode));
-
+		do {
+			nnode = (struct ami_plot_pen *)GetSucc((struct Node *)node);
+			ReleasePen(scrn->ViewPort.ColorMap, node->pen);
+			Remove((struct Node *)node);
+			ami_memory_itempool_free(pool_pens, node, sizeof(struct ami_plot_pen));
+		} while((node = nnode));
+	}
 	glob->apen = 0x00000000;
 	glob->open = 0x00000000;
 	glob->apen_num = -1;
 	glob->open_num = -1;
+	free(shared_pens);
 }
 
 static void ami_plot_setapen(struct RastPort *rp, ULONG colr)
