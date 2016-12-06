@@ -51,7 +51,7 @@ void *ami_memory_clear_alloc(size_t size, UBYTE value);
 #define ami_memory_itempool_alloc(p,s) ItemPoolAlloc(p)
 #define ami_memory_itempool_free(p,i,s) ItemPoolFree(p,i)
 #else
-#define ami_memory_itempool_create(s) (NULL)
+#define ami_memory_itempool_create(s) ((APTR)1)
 #define ami_memory_itempool_delete(p) ((void)0)
 #define ami_memory_itempool_alloc(p,s) malloc(s)
 #define ami_memory_itempool_free(p,i,s) free(p)
