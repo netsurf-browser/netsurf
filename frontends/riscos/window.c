@@ -2709,7 +2709,7 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 
 		/* cookies actions */
 	case COOKIES_SHOW:
-		ro_gui_cookies_open();
+		ro_gui_cookies_present();
 		break;
 
 	case COOKIES_DELETE:

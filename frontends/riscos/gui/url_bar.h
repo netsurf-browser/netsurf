@@ -40,6 +40,7 @@ typedef enum {
 
 struct url_bar;
 struct hlcache_handle;
+struct gui_window;
 
 /**
  * Initialise the url bar module.

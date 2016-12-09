@@ -190,7 +190,7 @@ void ro_gui_dialog_init(void)
 	ro_gui_global_history_preinitialise();
 
 	/* cookies window */
-	ro_gui_cookies_preinitialise();
+	ro_gui_cookies_initialise();
 }
 
 

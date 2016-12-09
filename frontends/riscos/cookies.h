@@ -17,22 +17,47 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Cookies (interface).
+/**
+ * \file
+ * Interface to riscos cookie viewing using riscos core window.
+ *
+ * The interface assumes there is only a single cookie window which is
+ * presented (shown) when asked for and hidden by usual toolkit
+ * mechanics.
+ *
+ * The destructor is called once during browser shutdown
  */
 
-#ifndef _NETSURF_RISCOS_COOKIES_H_
-#define _NETSURF_RISCOS_COOKIES_H_
+#ifndef NETSURF_RISCOS_COOKIES_H
+#define NETSURF_RISCOS_COOKIES_H
 
-#include "riscos/menus.h"
+/**
+ * initialise the cookies window template ready for subsequent use.
+ */
+void ro_gui_cookies_initialise(void);
 
-void ro_gui_cookies_preinitialise(void);
-void ro_gui_cookies_postinitialise(void);
-void ro_gui_cookies_destroy(void);
+/**
+ * make the cookie window visible.
+ *
+ * \return NSERROR_OK on success else appropriate error code on faliure.
+ */
+nserror ro_gui_cookies_present(void);
+
+/**
+ * Free any resources allocated for the cookie window.
+ *
+ * \return NSERROR_OK on success else appropriate error code on faliure.
+ */
+nserror ro_gui_cookies_finalise(void);
+
+/**
+ * check if window handle is for the cookies window
+ */
 bool ro_gui_cookies_check_window(wimp_w window);
+
+/**
+ * check if menu handle is for the cookies menu
+ */
 bool ro_gui_cookies_check_menu(wimp_menu *menu);
 
-void ro_gui_cookies_open(void);
-
-#endif
-
+#endif /* NETSURF_RISCOS_COOKIES_H */

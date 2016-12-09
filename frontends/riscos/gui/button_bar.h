@@ -95,13 +95,6 @@ static const struct button_bar_buttons brower_toolbar_buttons[] = {
 	{NULL, TOOLBAR_BUTTON_NONE, TOOLBAR_BUTTON_NONE, '\0', ""}
 };
 
-static const struct button_bar_buttons cookies_toolbar_buttons[] = {
-	{"delete", TOOLBAR_BUTTON_DELETE, TOOLBAR_BUTTON_NONE, '0', "0"},
-	{"expand", TOOLBAR_BUTTON_EXPAND, TOOLBAR_BUTTON_COLLAPSE, '1', "1"},
-	{"open", TOOLBAR_BUTTON_OPEN, TOOLBAR_BUTTON_CLOSE, '2', "2"},
-	{NULL, TOOLBAR_BUTTON_NONE, TOOLBAR_BUTTON_NONE, '\0', ""}
-};
-
 static const struct button_bar_buttons global_history_toolbar_buttons[] = {
 	{"delete", TOOLBAR_BUTTON_DELETE, TOOLBAR_BUTTON_NONE, '0', "0"},
 	{"expand", TOOLBAR_BUTTON_EXPAND, TOOLBAR_BUTTON_COLLAPSE, '1', "1"},
