@@ -429,10 +429,18 @@ bool ami_locate_resource(char *fullpath, const char *file)
 	return found;
 }
 
-static bool ami_open_resources(void)
+static void ami_gui_resources_free(void)
 {
+	ami_schedule_free();
+	ami_object_fini();
 
-	ami_object_init();
+	FreeSysObject(ASOT_PORT, appport);
+	FreeSysObject(ASOT_PORT, sport);
+	FreeSysObject(ASOT_PORT, schedulermsgport);
+}
+
+static bool ami_gui_resources_open(void)
+{
 	urlStringClass = MakeStringClass();
 
     if(!(appport = AllocSysObjectTags(ASOT_PORT,
@@ -451,6 +459,8 @@ static bool ami_open_resources(void)
 		ami_misc_fatal_error("Failed to initialise scheduler");
 		return false;
 	}
+
+	ami_object_init();
 
 	return true;
 }
@@ -3080,12 +3090,7 @@ static void gui_quit(void)
 	FreeObjList(window_list);
 
 	ami_clipboard_free();
-	ami_schedule_free();
-	ami_object_fini();
-
-	FreeSysObject(ASOT_PORT, appport);
-	FreeSysObject(ASOT_PORT, sport);
-	FreeSysObject(ASOT_PORT, schedulermsgport);
+	ami_gui_resources_free();
 
 	LOG("Closing screen");
 	ami_gui_close_screen(scrn, locked_screen, FALSE);
@@ -5530,20 +5535,20 @@ static char *ami_gui_get_user_dir(STRPTR current_user)
 	}
 
 	int len = strlen(current_user);
-	FreeVec(current_user);
-
 	len += strlen(users_dir);
 	len += 2; /* for poss path sep and NULL term */
 
 	current_user_dir = malloc(len);
 	if(current_user_dir == NULL) {
 		ami_misc_fatal_error("Failed to allocate memory");
+		FreeVec(current_user);
 		return NULL;
 	}
 
 	strlcpy(current_user_dir, users_dir, len);
 	AddPart(current_user_dir, current_user, len);
 	FreeVec(users_dir);
+	FreeVec(current_user);
 
 	LOG("User dir: %s", current_user_dir);
 
@@ -5669,7 +5674,7 @@ int main(int argc, char** argv)
 	struct Interupt *memhandler = ami_memory_init();
 #endif
 
-	if (ami_open_resources() == false) { /* alloc message ports */
+	if (ami_gui_resources_open() == false) { /* alloc msgports, objects and other miscelleny */
 		ami_misc_fatal_error("Unable to allocate resources");
 		ami_gui_splash_close(splash_window);
 		ami_libs_close();
@@ -5681,7 +5686,7 @@ int main(int argc, char** argv)
 
 	current_user_dir = ami_gui_get_user_dir(current_user);
 	if(current_user_dir == NULL) {
-		ami_schedule_free();
+		ami_gui_resources_free();
 		ami_gui_splash_close(splash_window);
 		ami_libs_close();
 		return RETURN_FAIL;
@@ -5704,7 +5709,7 @@ int main(int argc, char** argv)
 	ret = nsoption_init(ami_set_options, &nsoptions, &nsoptions_default);
 	if (ret != NSERROR_OK) {
 		ami_misc_fatal_error("Options failed to initialise");
-		ami_schedule_free();
+		ami_gui_resources_free();
 		ami_gui_splash_close(splash_window);
 		ami_libs_close();
 		return RETURN_FAIL;
@@ -5717,8 +5722,9 @@ int main(int argc, char** argv)
 
 	if (ami_locate_resource(messages, "Messages") == false) {
 		ami_misc_fatal_error("Cannot open Messages file");
+		ami_nsoption_free();
 		nsoption_finalise(nsoptions, nsoptions_default);
-		ami_schedule_free();
+		ami_gui_resources_free();
 		ami_gui_splash_close(splash_window);
 		ami_libs_close();
 		return RETURN_FAIL;
@@ -5735,8 +5741,9 @@ int main(int argc, char** argv)
 
 	if (ret != NSERROR_OK) {
 		ami_misc_fatal_error("NetSurf failed to initialise");
+		ami_nsoption_free();
 		nsoption_finalise(nsoptions, nsoptions_default);
-		ami_schedule_free();
+		ami_gui_resources_free();
 		ami_gui_splash_close(splash_window);
 		ami_libs_close();
 		return RETURN_FAIL;
