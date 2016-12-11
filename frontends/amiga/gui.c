@@ -3065,13 +3065,11 @@ static void gui_quit(void)
 
 	ami_clipboard_free();
 	ami_schedule_free();
+	ami_object_fini();
 
 	FreeSysObject(ASOT_PORT, appport);
 	FreeSysObject(ASOT_PORT, sport);
 	FreeSysObject(ASOT_PORT, schedulermsgport);
-
-	ami_object_fini();
-	ami_bitmap_fini();
 
 	LOG("Closing screen");
 	ami_gui_close_screen(scrn, locked_screen, FALSE);
@@ -5775,6 +5773,7 @@ int main(int argc, char** argv)
 	ami_memory_fini(memhandler);
 #endif
 
+	ami_bitmap_fini();
 	ami_libs_close();
 
 	return RETURN_OK;
