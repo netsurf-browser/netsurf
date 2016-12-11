@@ -217,7 +217,6 @@ static bool cli_force = false;
 
 #define USERS_DIR "PROGDIR:Users"
 static char *users_dir = NULL;
-static char *current_user = NULL;
 static char *current_user_dir;
 static char *current_user_faviconcache;
 
@@ -432,6 +431,8 @@ bool ami_locate_resource(char *fullpath, const char *file)
 
 static bool ami_open_resources(void)
 {
+
+	ami_object_init();
 	urlStringClass = MakeStringClass();
 
     if(!(appport = AllocSysObjectTags(ASOT_PORT,
@@ -445,6 +446,11 @@ static bool ami_open_resources(void)
     if(!(schedulermsgport = AllocSysObjectTags(ASOT_PORT,
 							ASO_NoTrack, FALSE,
 							TAG_DONE))) return false;
+
+	if(ami_schedule_create(schedulermsgport) != NSERROR_OK) {
+		ami_misc_fatal_error("Failed to initialise scheduler");
+		return false;
+	}
 
 	return true;
 }
@@ -906,11 +912,12 @@ static struct RDArgs *ami_gui_commandline(int *restrict argc, char ** argv,
 	return NULL;
 }
 
-static void ami_gui_read_tooltypes(struct WBArg *wbarg)
+static char *ami_gui_read_tooltypes(struct WBArg *wbarg)
 {
 	struct DiskObject *dobj;
 	STRPTR *toolarray;
 	char *s;
+	char *current_user = NULL;
 
 	if((*wbarg->wa_Name) && (dobj = GetDiskObject(wbarg->wa_Name))) {
 		toolarray = (STRPTR *)dobj->do_ToolTypes;
@@ -920,13 +927,16 @@ static void ami_gui_read_tooltypes(struct WBArg *wbarg)
 
 		FreeDiskObject(dobj);
 	}
+	return current_user;
 }
 
-static void ami_gui_read_all_tooltypes(int argc, char **argv)
+static STRPTR ami_gui_read_all_tooltypes(int argc, char **argv)
 {
 	struct WBStartup *WBenchMsg;
 	struct WBArg *wbarg;
 	char i = 0;
+	char *current_user = NULL;
+	char *cur_user = NULL;
 
 	if(argc == 0) { /* Started from WB */
 		WBenchMsg = (struct WBStartup *)argv;
@@ -935,11 +945,17 @@ static void ami_gui_read_all_tooltypes(int argc, char **argv)
 			if((wbarg->wa_Lock) && (*wbarg->wa_Name))
 				olddir = SetCurrentDir(wbarg->wa_Lock);
 
-			ami_gui_read_tooltypes(wbarg);
+			cur_user = ami_gui_read_tooltypes(wbarg);
+			if(cur_user != NULL) {
+				if(current_user != NULL) FreeVec(current_user);
+				current_user = cur_user;
+			}
 
 			if(olddir !=-1) SetCurrentDir(olddir);
 		}
 	}
+
+	return current_user;
 }
 
 void ami_gui_set_default_gg(void)
@@ -5464,6 +5480,84 @@ uint32 ami_gui_get_app_id(void)
 	return ami_appid;
 }
 
+/* Get current user directory for user-specific NetSurf data
+ * Returns NULL on error
+ */
+static char *ami_gui_get_user_dir(STRPTR current_user)
+{
+	BPTR lock = 0;
+	char temp[1024];
+	int32 user = 0;
+
+	if(current_user == NULL) {
+		user = GetVar("user", temp, 1024, GVF_GLOBAL_ONLY);
+		current_user = ASPrintf("%s", (user == -1) ? "Default" : temp);
+	}
+	LOG("User: %s", current_user);
+
+	if(users_dir == NULL) {
+		users_dir = ASPrintf("%s", USERS_DIR);
+		if(users_dir == NULL) {
+			ami_misc_fatal_error("Failed to allocate memory");
+			FreeVec(current_user);
+			return NULL;
+		}
+	}
+
+	if(LIB_IS_AT_LEAST((struct Library *)DOSBase, 51, 96)) {
+#ifdef __amigaos4__
+		struct InfoData *infodata = AllocDosObject(DOS_INFODATA, 0);
+		if(infodata == NULL) {
+			ami_misc_fatal_error("Failed to allocate memory");
+			FreeVec(current_user);
+			return NULL;
+		}
+		GetDiskInfoTags(GDI_StringNameInput, users_dir,
+					GDI_InfoData, infodata,
+					TAG_DONE);
+		if(infodata->id_DiskState == ID_DISKSTATE_WRITE_PROTECTED) {
+			FreeDosObject(DOS_INFODATA, infodata);
+			ami_misc_fatal_error("User directory MUST be on a writeable volume");
+			FreeVec(current_user);
+			return NULL;
+		}
+		FreeDosObject(DOS_INFODATA, infodata);
+#else
+#warning FIXME for OS3 and older OS4
+#endif
+	} else {
+//TODO: check volume write status using old API
+	}
+
+	int len = strlen(current_user);
+	FreeVec(current_user);
+
+	len += strlen(users_dir);
+	len += 2; /* for poss path sep and NULL term */
+
+	current_user_dir = malloc(len);
+	if(current_user_dir == NULL) {
+		ami_misc_fatal_error("Failed to allocate memory");
+		return NULL;
+	}
+
+	strlcpy(current_user_dir, users_dir, len);
+	AddPart(current_user_dir, current_user, len);
+	FreeVec(users_dir);
+
+	LOG("User dir: %s", current_user_dir);
+
+	if((lock = CreateDirTree(current_user_dir)))
+		UnLock(lock);
+
+	ami_nsoption_set_location(current_user_dir);
+
+	current_user_faviconcache = ASPrintf("%s/IconCache", current_user_dir);
+	if((lock = CreateDirTree(current_user_faviconcache))) UnLock(lock);
+
+	return current_user_dir;
+}
+
 static struct gui_window_table amiga_window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
@@ -5527,8 +5621,8 @@ int main(int argc, char** argv)
 	char script[1024];
 	char temp[1024];
 	STRPTR current_user_cache = NULL;
+	STRPTR current_user = NULL;
 	BPTR lock = 0;
-	int32 user = 0;
 	nserror ret;
 	int nargc = 0;
 	char *nargv = NULL;
@@ -5575,8 +5669,6 @@ int main(int argc, char** argv)
 	struct Interupt *memhandler = ami_memory_init();
 #endif
 
-	ami_object_init();
-
 	if (ami_open_resources() == false) { /* alloc message ports */
 		ami_misc_fatal_error("Unable to allocate resources");
 		ami_gui_splash_close(splash_window);
@@ -5584,89 +5676,16 @@ int main(int argc, char** argv)
 		return RETURN_FAIL;
 	}
 
-	if(ami_schedule_create(schedulermsgport) != NSERROR_OK) {
-		ami_misc_fatal_error("Failed to initialise scheduler");
-		ami_gui_splash_close(splash_window);
-		ami_libs_close();
-		return RETURN_FAIL;
-	}
-
-	ami_gui_read_all_tooltypes(argc, argv);
+	current_user = ami_gui_read_all_tooltypes(argc, argv);
 	struct RDArgs *args = ami_gui_commandline(&argc, argv, &nargc, &nargv);
 
-	if(current_user == NULL) {
-		user = GetVar("user", temp, 1024, GVF_GLOBAL_ONLY);
-		current_user = ASPrintf("%s", (user == -1) ? "Default" : temp);
-	}
-	LOG("User: %s", current_user);
-
-	if(users_dir == NULL) {
-		users_dir = ASPrintf("%s", USERS_DIR);
-		if(users_dir == NULL) {
-			ami_misc_fatal_error("Failed to allocate memory");
-			ami_schedule_free();
-			ami_gui_splash_close(splash_window);
-			ami_libs_close();
-			return RETURN_FAIL;
-		}
-	}
-
-	if(LIB_IS_AT_LEAST((struct Library *)DOSBase, 51, 96)) {
-#ifdef __amigaos4__
-		struct InfoData *infodata = AllocDosObject(DOS_INFODATA, 0);
-		if(infodata == NULL) {
-			ami_misc_fatal_error("Failed to allocate memory");
-			ami_schedule_free();
-			ami_gui_splash_close(splash_window);
-			ami_libs_close();
-			return RETURN_FAIL;
-		}
-		GetDiskInfoTags(GDI_StringNameInput, users_dir,
-					GDI_InfoData, infodata,
-					TAG_DONE);
-		if(infodata->id_DiskState == ID_DISKSTATE_WRITE_PROTECTED) {
-			FreeDosObject(DOS_INFODATA, infodata);
-			ami_misc_fatal_error("User directory MUST be on a writeable volume");
-			ami_schedule_free();
-			ami_gui_splash_close(splash_window);
-			ami_libs_close();
-			return RETURN_FAIL;
-		}
-		FreeDosObject(DOS_INFODATA, infodata);
-#else
-#warning FIXME for OS3 and older OS4
-#endif
-	} else {
-//TODO: check volume write status using old API
-	}
-
-	int len = strlen(current_user);
-	len += strlen(users_dir);
-	len += 2; /* for poss path sep and NULL term */
-
-	current_user_dir = malloc(len);
+	current_user_dir = ami_gui_get_user_dir(current_user);
 	if(current_user_dir == NULL) {
-		ami_misc_fatal_error("Failed to allocate memory");
 		ami_schedule_free();
 		ami_gui_splash_close(splash_window);
 		ami_libs_close();
 		return RETURN_FAIL;
 	}
-
-	strlcpy(current_user_dir, users_dir, len);
-	AddPart(current_user_dir, current_user, len);
-	FreeVec(users_dir);
-	LOG("User dir: %s", current_user_dir);
-
-	if((lock = CreateDirTree(current_user_dir)))
-		UnLock(lock);
-
-	ami_nsoption_set_location(current_user_dir);
-	current_user_cache = ASPrintf("%s/Cache", current_user_dir);
-	current_user_faviconcache = ASPrintf("%s/IconCache", current_user_dir);
-
-	if((lock = CreateDirTree(current_user_cache))) UnLock(lock);
-	if((lock = CreateDirTree(current_user_faviconcache))) UnLock(lock);
 
 	ami_mime_init("PROGDIR:Resources/mimetypes");
 	sprintf(temp, "%s/mimetypes.user", current_user_dir);
@@ -5707,7 +5726,13 @@ int main(int argc, char** argv)
 
 	ret = messages_add_from_file(messages);
 
+	current_user_cache = ASPrintf("%s/Cache", current_user_dir);
+	if((lock = CreateDirTree(current_user_cache))) UnLock(lock);
+
 	ret = netsurf_init(current_user_cache);
+
+	if(current_user_cache != NULL) FreeVec(current_user_cache);
+
 	if (ret != NSERROR_OK) {
 		ami_misc_fatal_error("NetSurf failed to initialise");
 		nsoption_finalise(nsoptions, nsoptions_default);
@@ -5717,7 +5742,6 @@ int main(int argc, char** argv)
 		return RETURN_FAIL;
 	}
 
-	if(current_user_cache != NULL) FreeVec(current_user_cache);
 	ret = amiga_icon_init();
 
 	search_web_init(nsoption_charp(search_engines_file));
@@ -5766,7 +5790,6 @@ int main(int argc, char** argv)
 	ami_nsoption_free();
 	free(current_user_dir);
 	FreeVec(current_user_faviconcache);
-	FreeVec(current_user);
 
 #ifndef __amigaos4__
 	/* OS3 low memory handler */
