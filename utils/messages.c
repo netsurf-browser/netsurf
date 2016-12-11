@@ -177,6 +177,22 @@ messages_get_ctx(const char *key, struct hash_table *ctx)
 	return r;
 }
 
+
+/**
+ * Free memory used by a messages hash.
+ * The context will not be valid after this function returns.
+ *
+ * \param  ctx  context of messages file to free
+ */
+static void messages_destroy_ctx(struct hash_table *ctx)
+{
+	if (ctx == NULL)
+		return;
+
+	hash_destroy(ctx);
+}
+
+
 /* exported interface documented in messages.h */
 nserror messages_add_from_file(const char *path)
 {
@@ -390,3 +406,12 @@ const char *messages_get_errorcode(nserror code)
 	/* Unknown error */
 	return messages_get_ctx("Unknown", messages_hash);
 }
+
+
+/* exported function documented in utils/messages.h */
+void messages_destroy(void)
+{
+	messages_destroy_ctx(messages_hash);
+	messages_hash = NULL;
+}
+

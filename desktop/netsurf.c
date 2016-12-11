@@ -279,6 +279,9 @@ void netsurf_exit(void)
 	LOG("Destroying System colours");
 	ns_system_colour_finalize();
 
+	LOG("Destroying Messages");
+	messages_destroy();
+
 	corestrings_fini();
 	LOG("Remaining lwc strings:");
 	lwc_iterate_strings(netsurf_lwc_iterator, NULL);
