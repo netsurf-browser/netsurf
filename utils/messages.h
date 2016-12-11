@@ -92,9 +92,6 @@ char *messages_get_buff(const char *key, ...);
 
 /**
  * Free memory used by the standard Messages hash
- *
- * \param code errorcode of message
- * \return message text
  */
 void messages_destroy(void);
 
