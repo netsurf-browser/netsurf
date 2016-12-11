@@ -3062,6 +3062,20 @@ static void gui_quit(void)
 	FreeStringClass(urlStringClass);
 
 	FreeObjList(window_list);
+
+	ami_clipboard_free();
+	ami_schedule_free();
+
+	FreeSysObject(ASOT_PORT, appport);
+	FreeSysObject(ASOT_PORT, sport);
+	FreeSysObject(ASOT_PORT, schedulermsgport);
+
+	ami_object_fini();
+	ami_bitmap_fini();
+
+	LOG("Closing screen");
+	ami_gui_close_screen(scrn, locked_screen, FALSE);
+	if(nsscreentitle) FreeVec(nsscreentitle);
 }
 
 char *ami_gui_get_cache_favicon_name(nsurl *url, bool only_if_avail)
@@ -5756,24 +5770,10 @@ int main(int argc, char** argv)
 	FreeVec(current_user_faviconcache);
 	FreeVec(current_user);
 
-	ami_clipboard_free();
-	ami_schedule_free();
-
-	FreeSysObject(ASOT_PORT, appport);
-	FreeSysObject(ASOT_PORT, sport);
-	FreeSysObject(ASOT_PORT, schedulermsgport);
-
-	ami_object_fini();
-	ami_bitmap_fini();
-
 #ifndef __amigaos4__
 	/* OS3 low memory handler */
 	ami_memory_fini(memhandler);
 #endif
-
-	LOG("Closing screen");
-	ami_gui_close_screen(scrn, locked_screen, FALSE);
-	if(nsscreentitle) FreeVec(nsscreentitle);
 
 	ami_libs_close();
 
