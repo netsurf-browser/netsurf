@@ -2525,6 +2525,7 @@ int main(int argc, char** argv)
 	}
 
 	netsurf_exit();
+	nsoption_finalise(nsoptions, nsoptions_default);
 
 	return 0;
 }
