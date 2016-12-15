@@ -2942,6 +2942,9 @@ void ami_quit_netsurf(void)
 	struct nsObject *nnode;
 	struct gui_window_2 *gwin;
 
+	/* Disable the multiple tabs open warning */
+	nsoption_set_bool(tab_close_warn, false);
+
 	if(!IsMinListEmpty(window_list)) {
 		node = (struct nsObject *)GetHead((struct List *)window_list);
 
@@ -3001,7 +3004,6 @@ void ami_quit_netsurf_delayed(void)
 	free(utf8gadgets);
 #endif
 	if(res == -1) { /* Requester timed out */
-		nsoption_set_bool(tab_close_warn, false);
 		ami_quit_netsurf();
 	}
 }
