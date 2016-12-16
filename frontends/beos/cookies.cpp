@@ -27,7 +27,6 @@ extern "C" {
 #include "netsurf/cookie_db.h"
 #include "netsurf/keypress.h"
 #include "desktop/cookie_manager.h"
-#include "desktop/tree.h"
 }
 #include "beos/cookies.h"
 
