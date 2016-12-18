@@ -129,10 +129,6 @@ static bool treeview_test_init(struct tree *tree)
 
 	switch (tree->flags) {
 	case TREE_COOKIES:
-		assert(ssl_current_session == NULL &&
-			"Call sslcert_viewer_init directly, "
-			"this compat. layer can't cope with simultanious "
-			"sslcert viewers");
 		err = cookie_manager_init(&cw_t, (struct core_window *)tree);
 		if (err != NSERROR_OK)
 			guit->misc->warning("Couldn't init new cookie manager.", 0);
@@ -149,6 +145,10 @@ static bool treeview_test_init(struct tree *tree)
 			guit->misc->warning("Couldn't init new hotlist.", 0);
 		break;
 	case TREE_SSLCERT:
+		assert(ssl_current_session == NULL &&
+			"Call sslcert_viewer_init directly, "
+			"this compat. layer can't cope with simultanious "
+			"sslcert viewers");
 		err = sslcert_viewer_init(&cw_t, (struct core_window *)tree,
 				ssl_current_session);
 		if (err != NSERROR_OK)
