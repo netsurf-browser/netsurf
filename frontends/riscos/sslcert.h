@@ -28,7 +28,6 @@ struct node;
 
 void ro_gui_cert_preinitialise(void);
 void ro_gui_cert_postinitialise(void);
-void ro_gui_cert_open(struct tree *tree, struct node *node);
 
 #endif
 
