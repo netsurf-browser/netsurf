@@ -73,7 +73,7 @@ ifeq ($(HOST),beos)
       TARGET := beos
     endif
     ifeq ($(TARGET),haiku)
-      TARGET := beos
+      override TARGET := beos
     endif
 endif
 
