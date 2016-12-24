@@ -47,34 +47,34 @@ struct core_window_callback_table {
 	/**
 	 * Request a redraw of the window
 	 *
-	 * \param cw		the core window object
-	 * \param r		rectangle to redraw
+	 * \param[in] cw the core window object
+	 * \param[in] r rectangle to redraw
 	 */
 	void (*redraw_request)(struct core_window *cw, const struct rect *r);
 
 	/**
 	 * Update the limits of the window
 	 *
-	 * \param cw		the core window object
-	 * \param width		the width in px, or negative if don't care
-	 * \param height	the height in px, or negative if don't care
+	 * \param[in] cw the core window object
+	 * \param[in] width the width in px, or negative if don't care
+	 * \param[in] height the height in px, or negative if don't care
 	 */
 	void (*update_size)(struct core_window *cw, int width, int height);
 
 	/**
 	 * Scroll the window to make area visible
 	 *
-	 * \param cw		the core window object
-	 * \param r		rectangle to make visible
+	 * \param[in] cw the core window object
+	 * \param[in] r rectangle to make visible
 	 */
 	void (*scroll_visible)(struct core_window *cw, const struct rect *r);
 
 	/**
 	 * Get window viewport dimensions
 	 *
-	 * \param cw		the core window object
-	 * \param width		to be set to viewport width in px, if non NULL
-	 * \param height	to be set to viewport height in px, if non NULL
+	 * \param[in] cw the core window object
+	 * \param[out] width to be set to viewport width in px
+	 * \param[out] height to be set to viewport height in px
 	 */
 	void (*get_window_dimensions)(struct core_window *cw,
 			int *width, int *height);
@@ -82,8 +82,8 @@ struct core_window_callback_table {
 	/**
 	 * Inform corewindow owner of drag status
 	 *
-	 * \param cw		the core window object
-	 * \param ds		the current drag status
+	 * \param[in] cw the core window object
+	 * \param[in] ds the current drag status
 	 */
 	void (*drag_status)(struct core_window *cw,
 			core_window_drag_status ds);
