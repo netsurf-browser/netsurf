@@ -38,6 +38,9 @@
 #include "gtk/corewindow.h"
 #include "gtk/hotlist.h"
 
+/**
+ * hotlist window container for gtk.
+ */
 struct nsgtk_hotlist_window {
 	struct nsgtk_corewindow core;
 	GtkBuilder *builder;
