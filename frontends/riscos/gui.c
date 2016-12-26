@@ -1271,9 +1271,6 @@ static nserror gui_init(int argc, char** argv)
 	/* certificate verification window */
 	ro_gui_cert_postinitialise();
 
-	/* hotlist window */
-	ro_gui_hotlist_postinitialise();
-
 	/* global history window */
 	ro_gui_global_history_postinitialise();
 
@@ -1565,7 +1562,7 @@ static void gui_quit(void)
 	urldb_save(nsoption_charp(url_save));
 	ro_gui_window_quit();
 	ro_gui_global_history_destroy();
-	ro_gui_hotlist_destroy();
+	ro_gui_hotlist_finalise();
 	ro_gui_cookies_finalise();
 	ro_gui_saveas_quit();
 	ro_gui_url_bar_fini();

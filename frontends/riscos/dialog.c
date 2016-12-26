@@ -184,7 +184,7 @@ void ro_gui_dialog_init(void)
 	ro_gui_cert_preinitialise();
 
 	/* hotlist window */
-	ro_gui_hotlist_preinitialise();
+	ro_gui_hotlist_initialise();
 
 	/* global history window */
 	ro_gui_global_history_preinitialise();

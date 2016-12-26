@@ -34,20 +34,65 @@
 #define message_HOTLIST_CHANGED 0x4af82
 #endif
 
-#include "riscos/menus.h"
-
 struct nsurl;
 
-void ro_gui_hotlist_preinitialise(void);
-void ro_gui_hotlist_postinitialise(void);
-void ro_gui_hotlist_destroy(void);
-void ro_gui_hotlist_open(void);
-void ro_gui_hotlist_save(void);
+/**
+ * initialise the hotlist window template ready for subsequent use.
+ */
+void ro_gui_hotlist_initialise(void);
+
+/**
+ * make the cookie window visible.
+ *
+ * \return NSERROR_OK on success else appropriate error code on faliure.
+ */
+nserror ro_gui_hotlist_present(void);
+
+/**
+ * Free any resources allocated for the cookie window.
+ *
+ * \return NSERROR_OK on success else appropriate error code on faliure.
+ */
+nserror ro_gui_hotlist_finalise(void);
+
 bool ro_gui_hotlist_check_window(wimp_w window);
 bool ro_gui_hotlist_check_menu(wimp_menu *menu);
+
+/**
+ * Add a URL to the hotlist.
+ *
+ * This will be passed on to the core hotlist, then
+ * Message_HotlistAddURL will broadcast to any bookmark applications
+ * via the Hotlist Protocol.
+ *
+ * \param *url	The URL to be added.
+ */
 void ro_gui_hotlist_add_page(struct nsurl *url);
+
+/**
+ * Clean up RMA storage used by the Message_HotlistAddURL protocol.
+ */
 void ro_gui_hotlist_add_cleanup(void);
+
+/**
+ * Remove a URL from the hotlist.
+ *
+ * This will be passed on to the core hotlist, unless we're configured
+ * to use external hotlists in which case we ignore it.
+ *
+ * \param *url	The URL to be removed.
+ */
 void ro_gui_hotlist_remove_page(struct nsurl *url);
+
+/**
+ * Report whether the hotlist contains a given URL.
+ *
+ * This will be passed on to the core hotlist, unless we're configured
+ * to use an external hotlist in which case we always report false.
+ *
+ * \param url The URL to be tested.
+ * \return true if the hotlist contains the URL; else false.
+ */
 bool ro_gui_hotlist_has_page(struct nsurl *url);
 
 #endif

@@ -1944,7 +1944,7 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_F6:	/* Hotlist */
-		ro_gui_hotlist_open();
+		ro_gui_hotlist_present();
 		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_F7:	/* Show local history */
@@ -2704,7 +2704,7 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		ro_gui_window_action_add_bookmark(g);
 		break;
 	case HOTLIST_SHOW:
-		ro_gui_hotlist_open();
+		ro_gui_hotlist_present();
 		break;
 
 		/* cookies actions */
@@ -3623,7 +3623,7 @@ void ro_gui_window_toolbar_click(void *data,
 		break;
 
 	case TOOLBAR_BUTTON_BOOKMARK_OPEN:
-		ro_gui_hotlist_open();
+		ro_gui_hotlist_present();
 		break;
 
 	case TOOLBAR_BUTTON_BOOKMARK_ADD:
