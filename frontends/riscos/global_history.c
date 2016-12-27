@@ -1,6 +1,6 @@
 /*
- * Copyright 2005 Richard Wilson <info@tinct.net>
  * Copyright 2010 Stephen Fryatt <stevef@netsurf-browser.org>
+ * Copyright 2016 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -19,183 +19,122 @@
 
 /**
  * \file
- * Global history implementation for RISC OS.
+ * Implementation of RISC OS global history.
  */
 
-#include <assert.h>
-#include <stdbool.h>
-#include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include "oslib/wimp.h"
-#include "oslib/wimpspriteop.h"
+#include <oslib/wimp.h>
 
 #include "utils/nsoption.h"
 #include "utils/messages.h"
 #include "utils/log.h"
 #include "netsurf/window.h"
+#include "netsurf/plotters.h"
 #include "netsurf/keypress.h"
 #include "desktop/global_history.h"
-#include "desktop/tree.h"
 
 #include "riscos/dialog.h"
-#include "riscos/global_history.h"
 #include "riscos/gui.h"
 #include "riscos/menus.h"
 #include "riscos/save.h"
 #include "riscos/toolbar.h"
-#include "riscos/treeview.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
+#include "riscos/corewindow.h"
+#include "riscos/global_history.h"
 
-static void ro_gui_global_history_toolbar_update_buttons(void);
-static void ro_gui_global_history_toolbar_save_buttons(char *config);
-static bool ro_gui_global_history_menu_prepare(wimp_w w, wimp_i i,
-		wimp_menu *menu, wimp_pointer *pointer);
-static void ro_gui_global_history_menu_warning(wimp_w w, wimp_i i,
-		wimp_menu *menu, wimp_selection *selection, menu_action action);
-static bool ro_gui_global_history_menu_select(wimp_w w, wimp_i i,
-		wimp_menu *menu, wimp_selection *selection, menu_action action);
-static void ro_gui_global_history_toolbar_click(button_bar_action action);
-
-struct ro_treeview_callbacks ro_global_history_treeview_callbacks = {
-	ro_gui_global_history_toolbar_click,
-	ro_gui_global_history_toolbar_update_buttons,
-	ro_gui_global_history_toolbar_save_buttons
+struct ro_global_history_window {
+	struct ro_corewindow core;
+	wimp_menu *menu;
 };
 
-/* The RISC OS global history window, toolbar and treeview data */
+/** global_history window is a singleton */
+static struct ro_global_history_window *global_history_window = NULL;
 
-static struct ro_global_history_window {
-	wimp_w		window;
-	struct toolbar	*toolbar;
-	ro_treeview	*tv;
-	wimp_menu	*menu;
-} global_history_window;
+/** riscos template for global_history window */
+static wimp_window *dialog_global_history_template;
+
 
 /**
- * Pre-Initialise the global history tree.  This is called for things that
- * need to be done at the gui_init() stage, such as loading templates.
- */
-
-void ro_gui_global_history_preinitialise(void)
-{
-	/* Create our window. */
-
-	global_history_window.window = ro_gui_dialog_create("tree");
-	ro_gui_set_window_title(global_history_window.window,
-			messages_get("GlobalHistory"));
-}
-
-/**
- * Initialise global history tree, at the gui_init2() stage.
- */
-
-void ro_gui_global_history_postinitialise(void)
-{
-	/* Create our toolbar. */
-
-	global_history_window.toolbar = ro_toolbar_create(NULL,
-			global_history_window.window,
-			THEME_STYLE_GLOBAL_HISTORY_TOOLBAR, TOOLBAR_FLAGS_NONE,
-			ro_treeview_get_toolbar_callbacks(), NULL,
-			"HelpGHistoryToolbar");
-	if (global_history_window.toolbar != NULL) {
-		ro_toolbar_add_buttons(global_history_window.toolbar,
-				global_history_toolbar_buttons,
-				       nsoption_charp(toolbar_history));
-		ro_toolbar_rebuild(global_history_window.toolbar);
-	}
-
-	/* Create the treeview with the window and toolbar. */
-
-	global_history_window.tv =
-			ro_treeview_create(global_history_window.window,
-			global_history_window.toolbar,
-			&ro_global_history_treeview_callbacks,
-			TREE_HISTORY);
-	if (global_history_window.tv == NULL) {
-		LOG("Failed to allocate treeview");
-		return;
-	}
-
-	ro_toolbar_update_client_data(global_history_window.toolbar,
-			global_history_window.tv);
-
-	/* Build the global history window menu. */
-
-	static const struct ns_menu global_history_definition = {
-		"History", {
-			{ "History", NO_ACTION, 0 },
-			{ "_History.Export", HISTORY_EXPORT, &dialog_saveas },
-			{ "History.Expand", TREE_EXPAND_ALL, 0 },
-			{ "History.Expand.All", TREE_EXPAND_ALL, 0 },
-			{ "History.Expand.Folders", TREE_EXPAND_FOLDERS, 0 },
-			{ "History.Expand.Links", TREE_EXPAND_LINKS, 0 },
-			{ "History.Collapse", TREE_COLLAPSE_ALL, 0 },
-			{ "History.Collapse.All", TREE_COLLAPSE_ALL, 0 },
-			{ "History.Collapse.Folders", TREE_COLLAPSE_FOLDERS, 0 },
-			{ "History.Collapse.Links", TREE_COLLAPSE_LINKS, 0 },
-			{ "History.Toolbars", NO_ACTION, 0 },
-			{ "_History.Toolbars.ToolButtons", TOOLBAR_BUTTONS, 0 },
-			{ "History.Toolbars.EditToolbar",TOOLBAR_EDIT, 0 },
-			{ "Selection", TREE_SELECTION, 0 },
-			{ "Selection.Launch", TREE_SELECTION_LAUNCH, 0 },
-			{ "Selection.Delete", TREE_SELECTION_DELETE, 0 },
-			{ "SelectAll", TREE_SELECT_ALL, 0 },
-			{ "Clear", TREE_CLEAR_SELECTION, 0 },
-			{NULL, 0, 0}
-		}
-	};
-	global_history_window.menu = ro_gui_menu_define_menu(
-			&global_history_definition);
-
-	ro_gui_wimp_event_register_menu(global_history_window.window,
-			global_history_window.menu, false, false);
-	ro_gui_wimp_event_register_menu_prepare(global_history_window.window,
-			ro_gui_global_history_menu_prepare);
-	ro_gui_wimp_event_register_menu_selection(global_history_window.window,
-			ro_gui_global_history_menu_select);
-	ro_gui_wimp_event_register_menu_warning(global_history_window.window,
-			ro_gui_global_history_menu_warning);
-}
-
-/**
- * Destroy the global history window.
- */
-
-void ro_gui_global_history_destroy(void)
-{
-	if (global_history_window.tv == NULL)
-		return;
-
-	ro_treeview_destroy(global_history_window.tv);
-}
-
-/**
- * Open the global history window.
- */
-
-void ro_gui_global_history_open(void)
-{
-	ro_gui_global_history_toolbar_update_buttons();
-
-	if (!ro_gui_dialog_open_top(global_history_window.window,
-			global_history_window.toolbar, 600, 800)) {
-		ro_treeview_set_origin(global_history_window.tv, 0,
-				-(ro_toolbar_height(
-				global_history_window.toolbar)));
-	}
-}
-
-/**
- * Handle toolbar button clicks.
+ * callback to draw on drawable area of ro global_history window
  *
- * \param  action		The action to handle
+ * \param ro_cw The riscos core window structure.
+ * \param r The rectangle of the window that needs updating.
+ * \param originx The risc os plotter x origin.
+ * \param originy The risc os plotter y origin.
+ * \return NSERROR_OK on success otherwise apropriate error code
  */
+static nserror
+global_history_draw(struct ro_corewindow *ro_cw,
+	       int originx,
+	       int originy,
+	       struct rect *r)
+{
+	struct redraw_context ctx = {
+		.interactive = true,
+		.background_images = true,
+		.plot = &ro_plotters
+	};
 
-void ro_gui_global_history_toolbar_click(button_bar_action action)
+	ro_plot_origin_x = originx;
+	ro_plot_origin_y = originy;
+	no_font_blending = true;
+	global_history_redraw(0, 0, r, &ctx);
+	no_font_blending = false;
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * callback for keypress on ro coookie window
+ *
+ * \param ro_cw The ro core window structure.
+ * \param nskey The netsurf key code.
+ * \return NSERROR_OK if key processed,
+ *         NSERROR_NOT_IMPLEMENTED if key not processed
+ *         otherwise apropriate error code
+ */
+static nserror global_history_key(struct ro_corewindow *ro_cw, uint32_t nskey)
+{
+	if (global_history_keypress(nskey)) {
+		return NSERROR_OK;
+	}
+	return NSERROR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * callback for mouse event on ro global_history window
+ *
+ * \param ro_cw The ro core window structure.
+ * \param mouse_state mouse state
+ * \param x location of event
+ * \param y location of event
+ * \return NSERROR_OK on sucess otherwise apropriate error code.
+ */
+static nserror
+global_history_mouse(struct ro_corewindow *ro_cw,
+	     browser_mouse_state mouse_state,
+	     int x, int y)
+{
+	global_history_mouse_action(mouse_state, x, y);
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * handle clicks in ro core window toolbar.
+ *
+ * \param ro_cw The ro core window structure.
+ * \param action The button bar action.
+ * \return NSERROR_OK if config saved, otherwise apropriate error code
+ */
+static nserror
+global_history_toolbar_click(struct ro_corewindow *ro_cw,
+			     button_bar_action action)
 {
 	switch (action) {
 	case TOOLBAR_BUTTON_DELETE:
@@ -225,156 +164,194 @@ void ro_gui_global_history_toolbar_click(button_bar_action action)
 	default:
 		break;
 	}
+
+	return NSERROR_OK;
 }
 
 
 /**
- * Update the button state in the global history toolbar.
+ * Handle updating state of buttons in ro core window toolbar.
+ *
+ * \param ro_cw The ro core window structure.
+ * \return NSERROR_OK if config saved, otherwise apropriate error code
  */
-
-void ro_gui_global_history_toolbar_update_buttons(void)
+static nserror global_history_toolbar_update(struct ro_corewindow *ro_cw)
 {
-	ro_toolbar_set_button_shaded_state(global_history_window.toolbar,
+	ro_toolbar_set_button_shaded_state(ro_cw->toolbar,
 			TOOLBAR_BUTTON_DELETE,
 			!global_history_has_selection());
 
-	ro_toolbar_set_button_shaded_state(global_history_window.toolbar,
+	ro_toolbar_set_button_shaded_state(ro_cw->toolbar,
 			TOOLBAR_BUTTON_LAUNCH,
 			!global_history_has_selection());
+	return NSERROR_OK;
 }
 
 
 /**
- * Save a new button arrangement in the global history toolbar.
+ * callback for saving of toolbar state in ro global history window
  *
- * \param *config		The new button configuration string.
+ * \param ro_cw The ro core window structure.
+ * \param config The new toolbar configuration.
+ * \return NSERROR_OK if config saved, otherwise apropriate error code
  */
-
-void ro_gui_global_history_toolbar_save_buttons(char *config)
+static nserror
+global_history_toolbar_save(struct ro_corewindow *ro_cw, char *config)
 {
 	nsoption_set_charp(toolbar_history, config);
 	ro_gui_save_options();
+
+	return NSERROR_OK;
 }
 
 
 /**
- * Prepare the global history menu for opening
+ * Prepare the global_history menu for display
  *
- * \param  w			The window owning the menu.
- * \param  i			The icon owning the menu.
- * \param  *menu		The menu about to be opened.
- * \param  *pointer		Pointer to the relevant wimp event block, or
- *				NULL for an Adjust click.
- * \return			true if the event was handled; else false.
+ * \param w The window owning the menu.
+ * \param i The icon owning the menu.
+ * \param menu	The menu from which the selection was made.
+ * \param pointer The pointer shape
+ * \return true if action accepted; else false.
  */
-
-bool ro_gui_global_history_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
-		wimp_pointer *pointer)
+static bool
+global_history_menu_prepare(wimp_w w,
+		    wimp_i i,
+		    wimp_menu *menu,
+		    wimp_pointer *pointer)
 {
 	bool selection;
+	struct ro_global_history_window *global_historyw;
 
-	if (menu != global_history_window.menu)
+	global_historyw = (struct ro_global_history_window *)ro_gui_wimp_event_get_user_data(w);
+
+	if ((global_historyw == NULL) ||
+	    (menu != global_historyw->menu)) {
 		return false;
+	}
 
 	selection = global_history_has_selection();
 
-	ro_gui_menu_set_entry_shaded(global_history_window.menu,
-			TREE_SELECTION, !selection);
-	ro_gui_menu_set_entry_shaded(global_history_window.menu,
-			TREE_CLEAR_SELECTION, !selection);
+	ro_gui_menu_set_entry_shaded(menu, TREE_SELECTION, !selection);
+	ro_gui_menu_set_entry_shaded(menu, TREE_CLEAR_SELECTION, !selection);
 
 	ro_gui_save_prepare(GUI_SAVE_HISTORY_EXPORT_HTML,
-			NULL, NULL, NULL, NULL);
+			    NULL, NULL, NULL, NULL);
 
 	ro_gui_menu_set_entry_shaded(menu, TOOLBAR_BUTTONS,
-			ro_toolbar_menu_option_shade(
-				global_history_window.toolbar));
+			ro_toolbar_menu_option_shade(global_historyw->core.toolbar));
 	ro_gui_menu_set_entry_ticked(menu, TOOLBAR_BUTTONS,
-			ro_toolbar_menu_buttons_tick(
-				global_history_window.toolbar));
+			ro_toolbar_menu_buttons_tick(global_historyw->core.toolbar));
 
 	ro_gui_menu_set_entry_shaded(menu, TOOLBAR_EDIT,
-			ro_toolbar_menu_edit_shade(
-				global_history_window.toolbar));
+			ro_toolbar_menu_edit_shade(global_historyw->core.toolbar));
 	ro_gui_menu_set_entry_ticked(menu, TOOLBAR_EDIT,
-			ro_toolbar_menu_edit_tick(
-				global_history_window.toolbar));
+			ro_toolbar_menu_edit_tick(global_historyw->core.toolbar));
 
 	return true;
 }
 
-/**
- * Handle submenu warnings for the global_hostory menu
- *
- * \param  w			The window owning the menu.
- * \param  i			The icon owning the menu.
- * \param  *menu		The menu to which the warning applies.
- * \param  *selection		The wimp menu selection data.
- * \param  action		The selected menu action.
- */
 
-void ro_gui_global_history_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
-		wimp_selection *selection, menu_action action)
+/**
+ * Handle submenu warnings for the global_history menu
+ *
+ * \param w The window owning the menu.
+ * \param i The icon owning the menu.
+ * \param menu The menu to which the warning applies.
+ * \param selection The wimp menu selection data.
+ * \param action The selected menu action.
+ */
+static void
+global_history_menu_warning(wimp_w w,
+		    wimp_i i,
+		    wimp_menu *menu,
+		    wimp_selection *selection,
+		    menu_action action)
 {
 	/* Do nothing */
 }
 
-/**
- * Handle selections from the global history menu
- *
- * \param  w			The window owning the menu.
- * \param  i			The icon owning the menu.
- * \param  *menu		The menu from which the selection was made.
- * \param  *selection		The wimp menu selection data.
- * \param  action		The selected menu action.
- * \return			true if action accepted; else false.
- */
 
-bool ro_gui_global_history_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
-		wimp_selection *selection, menu_action action)
+/**
+ * Handle selections from the global_history menu
+ *
+ * \param w The window owning the menu.
+ * \param i The icon owning the menu.
+ * \param menu The menu from which the selection was made.
+ * \param selection The wimp menu selection data.
+ * \param action The selected menu action.
+ * \return true if action accepted; else false.
+ */
+static bool
+global_history_menu_select(wimp_w w,
+		   wimp_i i,
+		   wimp_menu *menu,
+		   wimp_selection *selection,
+		   menu_action action)
 {
+	struct ro_global_history_window *global_historyw;
+
+	global_historyw = (struct ro_global_history_window *)ro_gui_wimp_event_get_user_data(w);
+
+	if ((global_historyw == NULL) ||
+	    (menu != global_historyw->menu)) {
+		return false;
+	}
+
 	switch (action) {
 	case HISTORY_EXPORT:
 		ro_gui_dialog_open_persistent(w, dialog_saveas, true);
 		return true;
+
 	case TREE_EXPAND_ALL:
 		global_history_expand(false);
 		return true;
+
 	case TREE_EXPAND_FOLDERS:
 		global_history_expand(true);
 		return true;
+
 	case TREE_EXPAND_LINKS:
 		global_history_expand(false);
 		return true;
+
 	case TREE_COLLAPSE_ALL:
 		global_history_contract(true);
 		return true;
+
 	case TREE_COLLAPSE_FOLDERS:
 		global_history_contract(true);
 		return true;
+
 	case TREE_COLLAPSE_LINKS:
 		global_history_contract(false);
 		return true;
+
 	case TREE_SELECTION_LAUNCH:
 		global_history_keypress(NS_KEY_CR);
 		return true;
+
 	case TREE_SELECTION_DELETE:
 		global_history_keypress(NS_KEY_DELETE_LEFT);
 		return true;
+
 	case TREE_SELECT_ALL:
 		global_history_keypress(NS_KEY_SELECT_ALL);
 		return true;
+
 	case TREE_CLEAR_SELECTION:
 		global_history_keypress(NS_KEY_CLEAR_SELECTION);
 		return true;
+
 	case TOOLBAR_BUTTONS:
-		ro_toolbar_set_display_buttons(global_history_window.toolbar,
-				!ro_toolbar_get_display_buttons(
-					global_history_window.toolbar));
+		ro_toolbar_set_display_buttons(global_historyw->core.toolbar,
+			!ro_toolbar_get_display_buttons(global_historyw->core.toolbar));
 		return true;
+
 	case TOOLBAR_EDIT:
-		ro_toolbar_toggle_edit(global_history_window.toolbar);
+		ro_toolbar_toggle_edit(global_historyw->core.toolbar);
 		return true;
+
 	default:
 		return false;
 	}
@@ -382,33 +359,178 @@ bool ro_gui_global_history_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 	return false;
 }
 
-/**
- * Check if a particular window handle is the global history window
- *
- * \param window  the window in question
- * \return  true if this window is the global history
- */
 
-bool ro_gui_global_history_check_window(wimp_w window)
+/**
+ * Creates the window for the global_history tree.
+ *
+ * \return NSERROR_OK on success else appropriate error code on faliure.
+ */
+static nserror ro_global_history_init(void)
 {
-	if (global_history_window.window == window)
-		return true;
-	else
-		return false;
+	struct ro_global_history_window *ncwin;
+	nserror res;
+	static const struct ns_menu global_history_menu_def = {
+		"History", {
+			{ "History", NO_ACTION, 0 },
+			{ "_History.Export", HISTORY_EXPORT, &dialog_saveas },
+			{ "History.Expand", TREE_EXPAND_ALL, 0 },
+			{ "History.Expand.All", TREE_EXPAND_ALL, 0 },
+			{ "History.Expand.Folders", TREE_EXPAND_FOLDERS, 0 },
+			{ "History.Expand.Links", TREE_EXPAND_LINKS, 0 },
+			{ "History.Collapse", TREE_COLLAPSE_ALL, 0 },
+			{ "History.Collapse.All", TREE_COLLAPSE_ALL, 0 },
+			{ "History.Collapse.Folders", TREE_COLLAPSE_FOLDERS, 0 },
+			{ "History.Collapse.Links", TREE_COLLAPSE_LINKS, 0 },
+			{ "History.Toolbars", NO_ACTION, 0 },
+			{ "_History.Toolbars.ToolButtons", TOOLBAR_BUTTONS, 0 },
+			{ "History.Toolbars.EditToolbar",TOOLBAR_EDIT, 0 },
+			{ "Selection", TREE_SELECTION, 0 },
+			{ "Selection.Launch", TREE_SELECTION_LAUNCH, 0 },
+			{ "Selection.Delete", TREE_SELECTION_DELETE, 0 },
+			{ "SelectAll", TREE_SELECT_ALL, 0 },
+			{ "Clear", TREE_CLEAR_SELECTION, 0 },
+			{ NULL, 0, 0}
+		}
+	};
+
+	static const struct button_bar_buttons global_history_toolbar_buttons[] = {
+		{ "delete", TOOLBAR_BUTTON_DELETE, TOOLBAR_BUTTON_NONE, '0', "0"},
+		{ "expand", TOOLBAR_BUTTON_EXPAND, TOOLBAR_BUTTON_COLLAPSE, '1', "1"},
+		{ "open", TOOLBAR_BUTTON_OPEN, TOOLBAR_BUTTON_CLOSE, '2', "2"},
+		{ "launch", TOOLBAR_BUTTON_LAUNCH, TOOLBAR_BUTTON_NONE, '3', "3"},
+		{ NULL, TOOLBAR_BUTTON_NONE, TOOLBAR_BUTTON_NONE, '\0', ""}
+	};
+
+	if (global_history_window != NULL) {
+		return NSERROR_OK;
+	}
+
+	ncwin = malloc(sizeof(struct ro_global_history_window));
+	if (ncwin == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	/* create window from template */
+	ncwin->core.wh = wimp_create_window(dialog_global_history_template);
+
+	ro_gui_set_window_title(ncwin->core.wh, messages_get("GlobalHistory"));
+
+	/* initialise callbacks */
+	ncwin->core.draw = global_history_draw;
+	ncwin->core.key = global_history_key;
+	ncwin->core.mouse = global_history_mouse;
+	ncwin->core.toolbar_click = global_history_toolbar_click;
+	ncwin->core.toolbar_save = global_history_toolbar_save;
+	/* update is not valid untill global history is initialised */
+	ncwin->core.toolbar_update = NULL;
+
+	/* initialise core window */
+	res = ro_corewindow_init(&ncwin->core,
+				 global_history_toolbar_buttons,
+				 nsoption_charp(toolbar_history),
+				 THEME_STYLE_GLOBAL_HISTORY_TOOLBAR,
+				 "HelpGHistoryToolbar");
+	if (res != NSERROR_OK) {
+		free(ncwin);
+		return res;
+	}
+
+	res = global_history_init(ncwin->core.cb_table,
+				  (struct core_window *)ncwin);
+	if (res != NSERROR_OK) {
+		free(ncwin);
+		return res;
+	}
+
+	/* setup toolbar update post global_history manager initialisation */
+	ncwin->core.toolbar_update = global_history_toolbar_update;
+	global_history_toolbar_update(&ncwin->core);
+
+	/* Build the global_history window menu. */
+	ncwin->menu = ro_gui_menu_define_menu(&global_history_menu_def);
+
+	ro_gui_wimp_event_register_menu(ncwin->core.wh,
+					ncwin->menu, false, false);
+	ro_gui_wimp_event_register_menu_prepare(ncwin->core.wh,
+						global_history_menu_prepare);
+	ro_gui_wimp_event_register_menu_selection(ncwin->core.wh,
+						  global_history_menu_select);
+	ro_gui_wimp_event_register_menu_warning(ncwin->core.wh,
+						global_history_menu_warning);
+
+	/* memoise window so it can be represented when necessary
+	 * instead of recreating every time.
+	 */
+	global_history_window = ncwin;
+
+	return NSERROR_OK;
 }
 
-/**
- * Check if a particular menu handle is the global history menu
- *
- * \param  *menu		The menu in question.
- * \return			true if this menu is the global history menu
- */
 
+/* exported interface documented in riscos/global_history.h */
+nserror ro_gui_global_history_present(void)
+{
+	nserror res;
+
+	res = ro_global_history_init();
+	if (res == NSERROR_OK) {
+		LOG("Presenting");
+		ro_gui_dialog_open_top(global_history_window->core.wh,
+				       global_history_window->core.toolbar,
+				       600, 800);
+	} else {
+		LOG("Failed presenting code %d", res);
+	}
+
+	return res;
+}
+
+
+/* exported interface documented in riscos/global_history.h */
+void ro_gui_global_history_initialise(void)
+{
+	dialog_global_history_template = ro_gui_dialog_load_template("tree");
+}
+
+
+/* exported interface documented in riscos/global_history.h */
+nserror ro_gui_global_history_finalise(void)
+{
+	nserror res;
+
+	if (global_history_window == NULL) {
+		return NSERROR_OK;
+	}
+
+	res = global_history_fini();
+	if (res == NSERROR_OK) {
+		res = ro_corewindow_fini(&global_history_window->core);
+
+		free(global_history_window);
+		global_history_window = NULL;
+	}
+
+	return res;
+}
+
+
+/* exported interface documented in riscos/global_history.h */
+bool ro_gui_global_history_check_window(wimp_w wh)
+{
+	if ((global_history_window != NULL) &&
+	    (global_history_window->core.wh == wh)) {
+		return true;
+	}
+	return false;
+}
+
+
+/* exported interface documented in riscos/global_history.h */
 bool ro_gui_global_history_check_menu(wimp_menu *menu)
 {
-	if (global_history_window.menu == menu)
+	if ((global_history_window != NULL) &&
+	    (global_history_window->menu == menu)) {
 		return true;
-	else
-		return false;
+	}
+	return false;
 }
-

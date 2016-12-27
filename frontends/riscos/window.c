@@ -1953,7 +1953,7 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 
 	case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F7:
 		/* Show global history */
-		ro_gui_global_history_open();
+		ro_gui_global_history_present();
 		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_F8:	/* View source */
@@ -2696,7 +2696,7 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		ro_gui_window_action_local_history(g);
 		break;
 	case HISTORY_SHOW_GLOBAL:
-		ro_gui_global_history_open();
+		ro_gui_global_history_present();
 		break;
 
 		/* hotlist actions */
@@ -3607,7 +3607,7 @@ void ro_gui_window_toolbar_click(void *data,
 		break;
 
 	case TOOLBAR_BUTTON_HISTORY_GLOBAL:
-		ro_gui_global_history_open();
+		ro_gui_global_history_present();
 		break;
 
 	case TOOLBAR_BUTTON_HOME:
