@@ -46,15 +46,14 @@ endif
 # ----------------------------------------------------------------------------
 
 # S_RISCOS are sources purely for the RISC OS build
-S_FRONTEND := 401login.c assert.c bitmap.c buffer.c cookies.c configure.c \
-	dialog.c download.c filetype.c font.c				\
-	global_history.c gui.c help.c history.c hotlist.c iconbar.c	\
-	image.c menus.c message.c mouse.c palettes.c plotters.c		\
+S_FRONTEND := 401login.c assert.c bitmap.c buffer.c configure.c gui.c	\
+	dialog.c download.c filetype.c font.c help.c history.c image.c	\
+	iconbar.c menus.c message.c mouse.c palettes.c plotters.c	\
 	print.c query.c save.c save_draw.c save_pdf.c schedule.c	\
-	search.c searchweb.c sslcert.c textarea.c			\
-	textselection.c theme.c theme_install.c toolbar.c	\
-	treeview.c ucstables.c uri.c url_complete.c url_protocol.c	\
-	url_suggest.c wimp.c wimp_event.c window.c			\
+	search.c searchweb.c textarea.c	textselection.c theme.c		\
+	theme_install.c toolbar.c url_suggest.c wimp.c wimp_event.c	\
+	ucstables.c uri.c url_complete.c url_protocol.c	window.c	\
+	corewindow.c cookies.c sslcert.c global_history.c hotlist.c	\
 	$(addprefix content-handlers/,artworks.c awrender.s draw.c	\
 	sprite.c)							\
 	$(addprefix gui/,button_bar.c progress_bar.c status_bar.c	\

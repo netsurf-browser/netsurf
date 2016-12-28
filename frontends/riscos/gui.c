@@ -1268,18 +1268,6 @@ static nserror gui_init(int argc, char** argv)
 	/* Finally, check Inet$Resolvers for sanity */
 	ro_gui_check_resolvers();
 
-	/* certificate verification window */
-	ro_gui_cert_postinitialise();
-
-	/* hotlist window */
-	ro_gui_hotlist_postinitialise();
-
-	/* global history window */
-	ro_gui_global_history_postinitialise();
-
-	/* cookies window */
-	ro_gui_cookies_postinitialise();
-
 	open_window = nsoption_bool(open_browser_at_startup);
 
 	/* parse command-line arguments */
@@ -1567,9 +1555,9 @@ static void gui_quit(void)
 	urldb_save_cookies(nsoption_charp(cookie_jar));
 	urldb_save(nsoption_charp(url_save));
 	ro_gui_window_quit();
-	ro_gui_global_history_destroy();
-	ro_gui_hotlist_destroy();
-	ro_gui_cookies_destroy();
+	ro_gui_global_history_finalise();
+	ro_gui_hotlist_finalise();
+	ro_gui_cookies_finalise();
 	ro_gui_saveas_quit();
 	ro_gui_url_bar_fini();
 	rufl_quit();

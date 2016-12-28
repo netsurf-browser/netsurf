@@ -620,11 +620,11 @@ nsgtk_cw_scroll_visible(struct core_window *cw, const struct rect *r)
 
 
 /**
- * get window size core window callback
+ * Callback from the core to obtain the window viewport dimensions
  *
- * \param cw core window handle.
- * \param[out] width The width value to update
- * \param[out] height The height value to update
+ * \param[in] cw the core window object
+ * \param[out] width to be set to viewport width in px
+ * \param[out] height to be set to viewport height in px
  */
 static void
 nsgtk_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
@@ -634,17 +634,13 @@ nsgtk_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
 	GtkAdjustment *hadj;
 	gdouble page;
 
-	if (width != NULL) {
-		hadj = gtk_scrolled_window_get_hadjustment(nsgtk_cw->scrolled);
-		g_object_get(hadj, "page-size", &page, NULL);
-		*width = page;
-	}
+	hadj = gtk_scrolled_window_get_hadjustment(nsgtk_cw->scrolled);
+	g_object_get(hadj, "page-size", &page, NULL);
+	*width = page;
 
-	if (height != NULL) {
-		vadj = gtk_scrolled_window_get_vadjustment(nsgtk_cw->scrolled);
-		g_object_get(vadj, "page-size", &page, NULL);
-		*height = page;
-	}
+	vadj = gtk_scrolled_window_get_vadjustment(nsgtk_cw->scrolled);
+	g_object_get(vadj, "page-size", &page, NULL);
+	*height = page;
 }
 
 

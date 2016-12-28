@@ -36,12 +36,16 @@
 #include "windows/hotlist.h"
 
 
+/**
+ * Hotlist window container for win32.
+ */
 struct nsw32_hotlist_window {
 	struct nsw32_corewindow core;
 
 	const char *path; /**< path to users bookmarks */
 };
 
+/** hotlist window singleton */
 static struct nsw32_hotlist_window *hotlist_window = NULL;
 
 /**

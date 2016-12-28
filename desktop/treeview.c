@@ -3670,6 +3670,8 @@ static void treeview_init_resources(void)
 
 	for (i = 0; i < TREE_RES_LAST; i++) {
 		nsurl *url;
+		treeview_res[i].ready = false;
+		treeview_res[i].height = 0;
 		if (nsurl_create(treeview_res[i].url, &url) == NSERROR_OK) {
 			hlcache_handle_retrieve(url, 0, NULL, NULL,
 					treeview_res_cb,

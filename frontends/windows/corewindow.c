@@ -18,7 +18,7 @@
 
 /**
  * \file
- * win32 generic core window interface.
+ * win32 generic core window implementation.
  *
  * Provides interface for core renderers to a win32 api client area.
  *
@@ -248,7 +248,7 @@ nsw32_corewindow_close(struct nsw32_corewindow *nsw32_cw)
 }
 
 /**
- * callback for hotlist window win32 events
+ * callback for core window win32 events
  *
  * \param hwnd The win32 window handle
  * \param msg The win32 message identifier
@@ -349,6 +349,13 @@ nsw32_cw_scroll_visible(struct core_window *cw, const struct rect *r)
 }
 
 
+/**
+ * Callback from the core to obtain the window viewport dimensions
+ *
+ * \param[in] cw the core window object
+ * \param[out] width to be set to viewport width in px
+ * \param[out] height to be set to viewport height in px
+ */
 static void
 nsw32_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
 {

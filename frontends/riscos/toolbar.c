@@ -53,7 +53,6 @@
 #include "riscos/save.h"
 #include "riscos/theme.h"
 #include "riscos/toolbar.h"
-#include "riscos/treeview.h"
 #include "riscos/url_complete.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
