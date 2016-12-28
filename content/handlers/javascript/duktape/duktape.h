@@ -1,12 +1,12 @@
 /*
- *  Duktape public API for Duktape 1.5.1.
+ *  Duktape public API for Duktape 1.6.0.
  *
  *  See the API reference for documentation on call semantics.
  *  The exposed API is inside the DUK_API_PUBLIC_H_INCLUDED
  *  include guard.  Other parts of the header are Duktape
  *  internal and related to platform/compiler/feature detection.
  *
- *  Git commit 2cc76e9ff1f64869e1146ad7317d8cbe33bbd27e (v1.5.1).
+ *  Git commit 17e3d86cf8b4788bd0d37658f833ab440ce43a1c (v1.6.0).
  *  Git branch HEAD.
  *
  *  See Duktape AUTHORS.rst and LICENSE.txt for copyright and
@@ -163,6 +163,7 @@ extern "C" {
  *  in Duktape web documentation.
  */
 
+struct duk_thread_state;
 struct duk_memory_functions;
 struct duk_function_list_entry;
 struct duk_number_list_entry;
@@ -170,6 +171,7 @@ struct duk_number_list_entry;
 /* duk_context is now defined in duk_config.h because it may also be
  * referenced there by prototypes.
  */
+typedef struct duk_thread_state duk_thread_state;
 typedef struct duk_memory_functions duk_memory_functions;
 typedef struct duk_function_list_entry duk_function_list_entry;
 typedef struct duk_number_list_entry duk_number_list_entry;
@@ -189,6 +191,14 @@ typedef void (*duk_debug_read_flush_function) (void *udata);
 typedef void (*duk_debug_write_flush_function) (void *udata);
 typedef duk_idx_t (*duk_debug_request_function) (duk_context *ctx, void *udata, duk_idx_t nvalues);
 typedef void (*duk_debug_detached_function) (void *udata);
+
+struct duk_thread_state {
+	/* XXX: Enough space to hold internal suspend/resume structure.
+	 * This is rather awkward and to be fixed when the internal
+	 * structure is visible for the public API header.
+	 */
+	char data[128];
+};
 
 struct duk_memory_functions {
 	duk_alloc_function alloc_func;
@@ -218,15 +228,15 @@ struct duk_number_list_entry {
  * have 99 for patch level (e.g. 0.10.99 would be a development version
  * after 0.10.0 but before the next official release).
  */
-#define DUK_VERSION                       10501L
+#define DUK_VERSION                       10600L
 
 /* Git commit, describe, and branch for Duktape build.  Useful for
  * non-official snapshot builds so that application code can easily log
  * which Duktape snapshot was used.  Not available in the Ecmascript
  * environment.
  */
-#define DUK_GIT_COMMIT                    "2cc76e9ff1f64869e1146ad7317d8cbe33bbd27e"
-#define DUK_GIT_DESCRIBE                  "v1.5.1"
+#define DUK_GIT_COMMIT                    "17e3d86cf8b4788bd0d37658f833ab440ce43a1c"
+#define DUK_GIT_DESCRIBE                  "v1.6.0"
 #define DUK_GIT_BRANCH                    "HEAD"
 
 /* Duktape debug protocol version used by this build. */
@@ -396,6 +406,9 @@ duk_context *duk_create_heap(duk_alloc_function alloc_func,
                              void *heap_udata,
                              duk_fatal_function fatal_handler);
 DUK_EXTERNAL_DECL void duk_destroy_heap(duk_context *ctx);
+
+DUK_EXTERNAL_DECL void duk_suspend(duk_context *ctx, duk_thread_state *state);
+DUK_EXTERNAL_DECL void duk_resume(duk_context *ctx, const duk_thread_state *state);
 
 #define duk_create_heap_default() \
 	duk_create_heap(NULL, NULL, NULL, NULL, NULL)
