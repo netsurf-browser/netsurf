@@ -211,11 +211,6 @@ extern int ro_plot_origin_y;
 /* in theme_install.c */
 bool ro_gui_theme_install_apply(wimp_w w);
 
-/* in sslcert.c */
-nserror gui_cert_verify(struct nsurl *url,
-		const struct ssl_cert_info *certs, unsigned long num,
-		     nserror (*cb)(bool proceed, void *pw), void *cbpw);
-
 /* icon numbers */
 #define ICON_STATUS_RESIZE 0
 #define ICON_STATUS_TEXT 1

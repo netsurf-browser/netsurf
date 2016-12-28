@@ -181,7 +181,7 @@ void ro_gui_dialog_init(void)
 	 */
 
 	/* certificate verification window */
-	ro_gui_cert_preinitialise();
+	ro_gui_cert_initialise();
 
 	/* hotlist window */
 	ro_gui_hotlist_initialise();

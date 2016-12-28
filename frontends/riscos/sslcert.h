@@ -17,18 +17,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * SSL certificate viewer (interface).
+/**
+ * \file
+ * RISC OS SSL certificate viewer interface.
  */
 
-#ifndef _NETSURF_RISCOS_SSLCERT_H_
-#define _NETSURF_RISCOS_SSLCERT_H_
+#ifndef NETSURF_RISCOS_SSLCERT_H
+#define NETSURF_RISCOS_SSLCERT_H
 
 struct node;
 
-void ro_gui_cert_preinitialise(void);
-void ro_gui_cert_postinitialise(void);
-void ro_gui_cert_open(struct tree *tree, struct node *node);
+/**
+ * Load and initialise the certificate window template.
+ */
+void ro_gui_cert_initialise(void);
+
+/**
+ * Prompt the user to verify a certificate with issuse.
+ *
+ * \param url The URL being verified.
+ * \param certs The certificate to be verified
+ * \param num The number of certificates to be verified.
+ * \param cb Callback upon user decision.
+ * \param cbpw Context pointer passed to cb
+ */
+nserror gui_cert_verify(struct nsurl *url, const struct ssl_cert_info *certs, unsigned long num, nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 #endif
 

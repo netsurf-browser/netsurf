@@ -1268,9 +1268,6 @@ static nserror gui_init(int argc, char** argv)
 	/* Finally, check Inet$Resolvers for sanity */
 	ro_gui_check_resolvers();
 
-	/* certificate verification window */
-	ro_gui_cert_postinitialise();
-
 	open_window = nsoption_bool(open_browser_at_startup);
 
 	/* parse command-line arguments */
