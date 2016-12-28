@@ -36,7 +36,6 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/cookie_manager.h"
-#include "desktop/tree.h"
 
 #include "atari/gui.h"
 #include "atari/toolbar.h"

@@ -37,7 +37,6 @@
 #include "netsurf/keypress.h"
 #include "desktop/plot_style.h"
 #include "desktop/browser_history.h"
-#include "desktop/tree.h"
 #include "desktop/hotlist.h"
 #include "desktop/textarea.h"
 

@@ -21,7 +21,6 @@
 
 #include <stdbool.h>
 
-#include "desktop/tree.h"
 #include "atari/gemtk/gemtk.h"
 #include "atari/treeview.h"
 

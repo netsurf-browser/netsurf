@@ -31,7 +31,6 @@
 #include "netsurf/keypress.h"
 #include "content/content.h"
 #include "desktop/hotlist.h"
-#include "desktop/tree.h"
 
 #include "atari/gui.h"
 #include "atari/misc.h"
@@ -42,6 +41,8 @@
 #include "atari/res/netsurf.rsh"
 
 extern GRECT desk_area;
+
+const char *tree_hotlist_path;
 
 struct atari_hotlist hl;
 
