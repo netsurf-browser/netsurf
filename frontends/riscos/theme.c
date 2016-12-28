@@ -47,7 +47,7 @@
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
 #include "riscos/theme.h"
-#include "riscos/treeview.h"
+#include "riscos/toolbar.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"

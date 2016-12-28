@@ -21,6 +21,7 @@
  */
 
 #include <oslib/wimp.h>
+#include <oslib/help.h>
 #include <oslib/taskmanager.h>
 
 #include "utils/nsoption.h"
@@ -30,7 +31,6 @@
 #include "netsurf/mouse.h"
 #include "netsurf/window.h"
 
-#include "riscos/treeview.h"
 #include "riscos/help.h"
 #include "riscos/wimp_event.h"
 #include "riscos/hotlist.h"
@@ -132,16 +132,16 @@ void ro_gui_interactive_help_request(wimp_message *message)
 	} else if (window == wimp_ICON_BAR)
 		sprintf(message_token, "HelpIconbar");
 	else if (ro_gui_hotlist_check_window(message->data.data_xfer.w)) {
-		i = ro_treeview_get_help(message_data);
+		i = -1;
 		sprintf(message_token,
 				(i >= 0) ? "HelpTree%i" :"HelpHotlist%i", i);
 	} else if (ro_gui_global_history_check_window(
 			message->data.data_xfer.w)) {
-		i = ro_treeview_get_help(message_data);
+		i = -1;
 		sprintf(message_token,
 				(i >= 0) ? "HelpTree%i" :"HelpGHistory%i", i);
 	} else if (ro_gui_cookies_check_window(message->data.data_xfer.w)) {
-		i = ro_treeview_get_help(message_data);
+		i = -1;
 		sprintf(message_token,
 				(i >= 0) ? "HelpTree%i" :"HelpCookies%i", i);
 	} else if (ro_gui_window_lookup(window) != NULL)

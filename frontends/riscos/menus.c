@@ -51,7 +51,6 @@
 #include "riscos/save.h"
 #include "riscos/tinct.h"
 #include "riscos/toolbar.h"
-#include "riscos/treeview.h"
 #include "riscos/url_suggest.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
