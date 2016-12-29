@@ -41,8 +41,6 @@
  */
 struct nsw32_hotlist_window {
 	struct nsw32_corewindow core;
-
-	const char *path; /**< path to users bookmarks */
 };
 
 /** hotlist window singleton */
@@ -147,11 +145,8 @@ static nserror nsw32_hotlist_init(HINSTANCE hInstance)
 		return res;
 	}
 
-	ncwin->path = nsoption_charp(hotlist_path);
-
-	res = hotlist_init(ncwin->core.cb_table,
-			   (struct core_window *)ncwin,
-			   ncwin->path);
+	res = hotlist_manager_init(ncwin->core.cb_table,
+			   (struct core_window *)ncwin);
 	if (res != NSERROR_OK) {
 		free(ncwin);
 		return res;
@@ -187,7 +182,7 @@ nserror nsw32_hotlist_finalise(void)
 		return NSERROR_OK;
 	}
 
-	res = hotlist_fini(hotlist_window->path);
+	res = hotlist_fini(nsoption_charp(hotlist_path));
 	if (res == NSERROR_OK) {
 		res = nsw32_corewindow_fini(&hotlist_window->core);
 		DestroyWindow(hotlist_window->core.hWnd);
