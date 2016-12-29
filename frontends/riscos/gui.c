@@ -55,6 +55,7 @@
 #include "netsurf/cookie_db.h"
 #include "netsurf/url_db.h"
 #include "desktop/save_complete.h"
+#include "desktop/hotlist.h"
 #include "content/backing_store.h"
 
 #include "riscos/gui.h"
@@ -1178,9 +1179,10 @@ static nserror gui_init(int argc, char** argv)
 	/* Initialise save complete functionality */
 	save_complete_init();
 
-	/* Load in visited URLs and Cookies */
+	/* Load in visited URLs, Cookies, and hostlist */
 	urldb_load(nsoption_charp(url_path));
 	urldb_load_cookies(nsoption_charp(cookie_file));
+	hotlist_init(nsoption_charp(hotlist_path));
 
 	/* Initialise with the wimp */
 	error = xwimp_initialise(wimp_VERSION_RO38, task_name,

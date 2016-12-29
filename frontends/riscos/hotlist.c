@@ -496,9 +496,8 @@ static nserror ro_hotlist_init(void)
 		return res;
 	}
 
-	res = hotlist_init(ncwin->core.cb_table,
-			   (struct core_window *)ncwin,
-			   nsoption_charp(hotlist_path));
+	res = hotlist_manager_init(ncwin->core.cb_table,
+			   (struct core_window *)ncwin);
 	if (res != NSERROR_OK) {
 		free(ncwin);
 		return res;
