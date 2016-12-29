@@ -554,24 +554,25 @@ nserror ro_gui_hotlist_present(void)
 			     error->errmess);
 	}
 
-	res = ro_hotlist_init();
-	if (res == NSERROR_OK) {
-		LOG("Presenting");
-		ro_gui_dialog_open_top(hotlist_window->core.wh,
-				       hotlist_window->core.toolbar,
-				       600, 800);
-	} else {
-		LOG("Failed presenting code %d", res);
-	}
+	LOG("Presenting hotlist");
+	ro_gui_dialog_open_top(hotlist_window->core.wh,
+			hotlist_window->core.toolbar,
+			600, 800);
 
-	return res;
+	return NSERROR_OK;
 }
 
 
 /* exported interface documented in riscos/hotlist.h */
 void ro_gui_hotlist_initialise(void)
 {
+	nserror res;
 	dialog_hotlist_template = ro_gui_dialog_load_template("tree");
+
+	res = ro_hotlist_init();
+	if (res != NSERROR_OK) {
+		LOG("Failed initialising hotlist %d", res);
+	}
 }
 
 
