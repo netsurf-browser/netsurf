@@ -663,7 +663,7 @@ nserror treeview_create_node_folder(treeview *tree,
 	if (n->parent->flags & TV_NFLAGS_EXPANDED) {
 		/* Inform front end of change in dimensions */
 		if (!(flags & TREE_OPTION_SUPPRESS_RESIZE))
-			tree->cw_t->update_size(tree->cw_h, -1,
+			treeview__cw_update_size(tree, -1,
 					tree->root->height);
 
 		/* Redraw */
@@ -673,7 +673,7 @@ nserror treeview_create_node_folder(treeview *tree,
 			r.y0 = treeview_node_y(tree, n);
 			r.x1 = REDRAW_MAX;
 			r.y1 = tree->root->height;
-			tree->cw_t->redraw_request(tree->cw_h, &r);
+			treeview__cw_redraw_request(tree, &r);
 		}
 	}
 
@@ -723,7 +723,7 @@ nserror treeview_update_node_folder(treeview *tree,
 		r.y0 = treeview_node_y(tree, folder);
 		r.x1 = REDRAW_MAX;
 		r.y1 = r.y0 + tree_g.line_height;
-		tree->cw_t->redraw_request(tree->cw_h, &r);
+		treeview__cw_redraw_request(tree, &r);
 	}
 
 	return NSERROR_OK;
@@ -794,7 +794,7 @@ nserror treeview_update_node_entry(treeview *tree,
 		r.y0 = treeview_node_y(tree, entry);
 		r.x1 = REDRAW_MAX;
 		r.y1 = r.y0 + entry->height;
-		tree->cw_t->redraw_request(tree->cw_h, &r);
+		treeview__cw_redraw_request(tree, &r);
 	}
 
 	return NSERROR_OK;
@@ -869,7 +869,7 @@ nserror treeview_create_node_entry(treeview *tree,
 	if (n->parent->flags & TV_NFLAGS_EXPANDED) {
 		/* Inform front end of change in dimensions */
 		if (!(flags & TREE_OPTION_SUPPRESS_RESIZE))
-			tree->cw_t->update_size(tree->cw_h, -1,
+			treeview__cw_update_size(tree, -1,
 					tree->root->height);
 
 		/* Redraw */
@@ -879,7 +879,7 @@ nserror treeview_create_node_entry(treeview *tree,
 			r.y0 = treeview_node_y(tree, n);
 			r.x1 = REDRAW_MAX;
 			r.y1 = tree->root->height;
-			tree->cw_t->redraw_request(tree->cw_h, &r);
+			treeview__cw_redraw_request(tree, &r);
 		}
 	}
 
@@ -1000,7 +1000,7 @@ static void treeview_edit_cancel(treeview *tree, bool redraw)
 		r.y0 = tree->edit.y;
 		r.x1 = tree->edit.x + tree->edit.w;
 		r.y1 = tree->edit.y + tree->edit.h;
-		tree->cw_t->redraw_request(tree->cw_h, &r);
+		treeview__cw_redraw_request(tree, &r);
 	}
 }
 
@@ -1168,7 +1168,7 @@ static nserror treeview_delete_node_internal(treeview *tree, treeview_node *n,
 	if (tree->root != NULL && p != NULL && p->flags & TV_NFLAGS_EXPANDED &&
 			nd.h_reduction > 0 &&
 			!(flags & TREE_OPTION_SUPPRESS_RESIZE)) {
-		tree->cw_t->update_size(tree->cw_h, -1,
+		treeview__cw_update_size(tree, -1,
 				tree->root->height);
 	}
 
@@ -1311,7 +1311,7 @@ nserror treeview_delete_node(treeview *tree, treeview_node *n,
 		if (tree->root->height != h) {
 			r.y0 = 0;
 			if (!(flags & TREE_OPTION_SUPPRESS_RESIZE)) {
-				tree->cw_t->update_size(tree->cw_h, -1,
+				treeview__cw_update_size(tree, -1,
 						tree->root->height);
 			}
 		}
@@ -1321,7 +1321,7 @@ nserror treeview_delete_node(treeview *tree, treeview_node *n,
 	if (visible && !(flags & TREE_OPTION_SUPPRESS_REDRAW)) {
 		r.x0 = 0;
 		r.x1 = REDRAW_MAX;
-		tree->cw_t->redraw_request(tree->cw_h, &r);
+		treeview__cw_redraw_request(tree, &r);
 	}
 
 	return NSERROR_OK;
@@ -1527,7 +1527,7 @@ static nserror treeview_node_expand_internal(treeview *tree,
 
 	/* Inform front end of change in dimensions */
 	if (additional_height != 0)
-		tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
+		treeview__cw_update_size(tree, -1, tree->root->height);
 
 	return NSERROR_OK;
 }
@@ -1549,7 +1549,7 @@ nserror treeview_node_expand(treeview *tree, treeview_node *node)
 	r.y1 = tree->root->height;
 
 	/* Redraw */
-	tree->cw_t->redraw_request(tree->cw_h, &r);
+	treeview__cw_redraw_request(tree, &r);
 
 	return NSERROR_OK;
 }
@@ -1621,7 +1621,7 @@ static nserror treeview_node_contract_internal(treeview *tree,
 		node->flags |= TV_NFLAGS_SELECTED;
 
 	/* Inform front end of change in dimensions */
-	tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
+	treeview__cw_update_size(tree, -1, tree->root->height);
 
 	return NSERROR_OK;
 }
@@ -1645,7 +1645,7 @@ nserror treeview_node_contract(treeview *tree, treeview_node *node)
 		return err;
 
 	/* Redraw */
-	tree->cw_t->redraw_request(tree->cw_h, &r);
+	treeview__cw_redraw_request(tree, &r);
 
 	return NSERROR_OK;
 }
@@ -1688,10 +1688,10 @@ nserror treeview_contract(treeview *tree, bool all)
 	}
 
 	/* Inform front end of change in dimensions */
-	tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
+	treeview__cw_update_size(tree, -1, tree->root->height);
 
 	/* Redraw */
-	tree->cw_t->redraw_request(tree->cw_h, &r);
+	treeview__cw_redraw_request(tree, &r);
 
 	return NSERROR_OK;
 }
@@ -1745,7 +1745,7 @@ nserror treeview_expand(treeview *tree, bool only_folders)
 	r.y1 = tree->root->height;
 
 	/* Redraw */
-	tree->cw_t->redraw_request(tree->cw_h, &r);
+	treeview__cw_redraw_request(tree, &r);
 
 	return NSERROR_OK;
 }
@@ -2532,7 +2532,7 @@ static nserror treeview_move_selection(treeview *tree, struct rect *rect)
 
 	/* Tell window, if height has changed */
 	if (height != tree->root->height)
-		tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
+		treeview__cw_update_size(tree, -1, tree->root->height);
 
 	/* TODO: Deal with redraw area properly */
 	rect->x0 = 0;
@@ -2840,7 +2840,7 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 			/* Inform front end of change in dimensions */
 			if (tree->root->height != h) {
 				r.y0 = 0;
-				tree->cw_t->update_size(tree->cw_h, -1,
+				treeview__cw_update_size(tree, -1,
 						tree->root->height);
 			}
 		}
@@ -2864,7 +2864,7 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 	}
 
 	if (redraw) {
-		tree->cw_t->redraw_request(tree->cw_h, &r);
+		treeview__cw_redraw_request(tree, &r);
 	}
 
 	return true;
@@ -3021,7 +3021,7 @@ static void treeview_textarea_callback(void *data, struct textarea_msg *msg)
 			/* Textarea drag started */
 			tree->drag.type = TV_DRAG_TEXTAREA;
 		}
-		tree->cw_t->drag_status(tree->cw_h, tree->drag.type);
+		treeview__cw_drag_status(tree, tree->drag.type);
 		break;
 
 	case TEXTAREA_MSG_REDRAW_REQUEST:
@@ -3032,7 +3032,7 @@ static void treeview_textarea_callback(void *data, struct textarea_msg *msg)
 		r->y1 += tree->edit.y;
 
 		/* Redraw the textarea */
-		tree->cw_t->redraw_request(tree->cw_h, r);
+		treeview__cw_redraw_request(tree, r);
 		break;
 
 	default:
@@ -3102,7 +3102,7 @@ static bool treeview_edit_node_at_point(treeview *tree, treeview_node *n,
 	}
 
 	/* Get window width/height */
-	tree->cw_t->get_window_dimensions(tree->cw_h, &width, &height);
+	treeview__cw_get_window_dimensions(tree, &width, &height);
 
 	/* Anow textarea width/height */
 	field_x = n->inset + tree_g.step_width + tree_g.icon_step - 3;
@@ -3205,7 +3205,7 @@ void treeview_edit_selection(treeview *tree)
 	rect.y0 = y;
 	rect.x1 = REDRAW_MAX;
 	rect.y1 = y + tree_g.line_height;
-	tree->cw_t->redraw_request(tree->cw_h, &rect);
+	treeview__cw_redraw_request(tree, &rect);
 }
 
 
@@ -3324,7 +3324,7 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 				ma->tree->drag.selected == false &&
 				ma->tree->drag.part == TV_NODE_PART_NONE) {
 			ma->tree->drag.type = TV_DRAG_SELECTION;
-			ma->tree->cw_t->drag_status(ma->tree->cw_h,
+			treeview__cw_drag_status(ma->tree,
 					CORE_WINDOW_DRAG_SELECTION);
 
 		} else if (!(ma->tree->flags & TREEVIEW_NO_MOVES) &&
@@ -3332,13 +3332,13 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 				(ma->tree->drag.selected == true ||
 				ma->tree->drag.part == TV_NODE_PART_ON_NODE)) {
 			ma->tree->drag.type = TV_DRAG_MOVE;
-			ma->tree->cw_t->drag_status(ma->tree->cw_h,
+			treeview__cw_drag_status(ma->tree,
 					CORE_WINDOW_DRAG_MOVE);
 			redraw |= treeview_propagate_selection(ma->tree, &r);
 
 		} else if (ma->mouse & BROWSER_MOUSE_DRAG_2) {
 			ma->tree->drag.type = TV_DRAG_SELECTION;
-			ma->tree->cw_t->drag_status(ma->tree->cw_h,
+			treeview__cw_drag_status(ma->tree,
 					CORE_WINDOW_DRAG_SELECTION);
 		}
 
@@ -3465,7 +3465,7 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 	}
 
 	if (redraw) {
-		ma->tree->cw_t->redraw_request(ma->tree->cw_h, &r);
+		treeview__cw_redraw_request(ma->tree, &r);
 	}
 
 	*end = true; /* Reached line with click; stop walking tree */
@@ -3514,8 +3514,7 @@ void treeview_mouse_action(treeview *tree,
 			tree->drag.type = TV_DRAG_NONE;
 			tree->drag.start_node = NULL;
 
-			tree->cw_t->drag_status(tree->cw_h,
-					CORE_WINDOW_DRAG_NONE);
+			treeview__cw_drag_status(tree, CORE_WINDOW_DRAG_NONE);
 			return;
 		case TV_DRAG_MOVE:
 			treeview_move_selection(tree, &r);
@@ -3525,9 +3524,8 @@ void treeview_mouse_action(treeview *tree,
 			tree->move.target = NULL;
 			tree->move.target_pos = TV_TARGET_NONE;
 
-			tree->cw_t->drag_status(tree->cw_h,
-					CORE_WINDOW_DRAG_NONE);
-			tree->cw_t->redraw_request(tree->cw_h, &r);
+			treeview__cw_drag_status(tree, CORE_WINDOW_DRAG_NONE);
+			treeview__cw_redraw_request(tree, &r);
 			return;
 		default:
 			/* No drag to end */
@@ -3564,11 +3562,11 @@ void treeview_mouse_action(treeview *tree,
 					tree->drag.selected == false &&
 					tree->drag.part == TV_NODE_PART_NONE) {
 				tree->drag.type = TV_DRAG_SELECTION;
-				tree->cw_t->drag_status(tree->cw_h,
+				treeview__cw_drag_status(tree,
 						CORE_WINDOW_DRAG_SELECTION);
 			} else if (mouse & BROWSER_MOUSE_DRAG_2) {
 				tree->drag.type = TV_DRAG_SELECTION;
-				tree->cw_t->drag_status(tree->cw_h,
+				treeview__cw_drag_status(tree,
 						CORE_WINDOW_DRAG_SELECTION);
 			}
 
@@ -3602,7 +3600,7 @@ void treeview_mouse_action(treeview *tree,
 		}
 
 		if (redraw) {
-			tree->cw_t->redraw_request(tree->cw_h, &r);
+			treeview__cw_redraw_request(tree, &r);
 		}
 
 	} else {
@@ -3627,7 +3625,7 @@ int treeview_get_height(treeview *tree)
 	assert(tree != NULL);
 	assert(tree->root != NULL);
 
-	tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
+	treeview__cw_update_size(tree, -1, tree->root->height);
 
 	return tree->root->height;
 }
