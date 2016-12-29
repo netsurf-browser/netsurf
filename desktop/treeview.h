@@ -150,6 +150,28 @@ nserror treeview_create(treeview **tree,
 		struct core_window *cw, treeview_flags flags);
 
 /**
+ * Attach a treeview to a corewindow.
+ *
+ * Treeview must be detached.
+ *
+ * \param tree		Treeview object
+ * \param cw_t		Callback table for core_window containing the treeview
+ * \param cw		The core_window in which the treeview is shown
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror treeview_cw_attach(treeview *tree,
+		const struct core_window_callback_table *cw_t,
+		struct core_window *cw);
+
+/**
+ * Detach a treeview from a corewindow
+ *
+ * \param tree		Treeview object
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror treeview_cw_detach(treeview *tree);
+
+/**
  * Destroy a treeview object
  *
  * \param tree		Treeview object to destroy

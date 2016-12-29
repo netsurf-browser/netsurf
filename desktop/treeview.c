@@ -1422,6 +1422,35 @@ nserror treeview_create(treeview **tree,
 
 
 /* Exported interface, documented in treeview.h */
+nserror treeview_cw_attach(treeview *tree,
+		const struct core_window_callback_table *cw_t,
+		struct core_window *cw)
+{
+	assert(cw_t != NULL);
+	assert(cw != NULL);
+
+	if (tree->cw_t != NULL || tree->cw_h != NULL) {
+		LOG("Treeview already attached.");
+		return NSERROR_UNKNOWN;
+	}
+	tree->cw_t = cw_t;
+	tree->cw_h = cw;
+
+	return NSERROR_OK;
+}
+
+
+/* Exported interface, documented in treeview.h */
+nserror treeview_cw_detach(treeview *tree)
+{
+	tree->cw_t = NULL;
+	tree->cw_h = NULL;
+
+	return NSERROR_OK;
+}
+
+
+/* Exported interface, documented in treeview.h */
 nserror treeview_destroy(treeview *tree)
 {
 	int f;
