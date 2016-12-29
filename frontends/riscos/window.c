@@ -2388,15 +2388,13 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 		wimp_selection *selection, menu_action action)
 {
 	struct gui_window	*g;
-	struct hlcache_handle		*h;
-	struct toolbar		*toolbar;
+	struct hlcache_handle	*h;
 	bool			export;
 
 	if (menu != ro_gui_browser_window_menu)
 		return;
 
 	g = (struct gui_window *) ro_gui_wimp_event_get_user_data(w);
-	toolbar = g->toolbar;
 	h = browser_window_get_content(g->bw);
 
 	switch (action) {
