@@ -409,7 +409,7 @@ static bool ro_cw_mouse_click(wimp_pointer *pointer)
 	os_error *error;
 	wimp_window_state state;
 	int xpos, ypos;
-	browser_mouse_state mouse;
+	browser_mouse_state mouse = 0;
 	bool handled = false;
 	struct ro_corewindow *ro_cw;
 
