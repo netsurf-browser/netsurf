@@ -532,8 +532,6 @@ static nserror ro_hotlist_init(void)
 /* exported interface documented in riscos/hotlist.h */
 nserror ro_gui_hotlist_present(void)
 {
-	nserror res;
-
 	/* deal with external hotlist handler */
 	if (nsoption_bool(external_hotlists) &&
 	    (nsoption_charp(external_hotlist_app) != NULL) &&
