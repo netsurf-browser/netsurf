@@ -1346,8 +1346,7 @@ nserror treeview_create(treeview **tree,
 	nserror error;
 	int i;
 
-	assert(cw_t != NULL);
-	assert(cw != NULL);
+	assert((cw_t == NULL && cw == NULL) || (cw_t != NULL && cw != NULL));
 	assert(callbacks != NULL);
 
 	assert(fields != NULL);
