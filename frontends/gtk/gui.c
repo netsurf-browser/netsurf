@@ -49,6 +49,7 @@
 #include "desktop/save_complete.h"
 #include "desktop/save_pdf.h"
 #include "desktop/searchweb.h"
+#include "desktop/hotlist.h"
 
 #include "gtk/compat.h"
 #include "gtk/warn.h"
@@ -290,6 +291,7 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 
 	urldb_load(nsoption_charp(url_file));
 	urldb_load_cookies(nsoption_charp(cookie_file));
+	hotlist_init(nsoption_charp(hotlist_path));
 
 	/* The tree view system needs to know the screen's DPI, so we
 	 * find that out here, rather than when we create a first browser
