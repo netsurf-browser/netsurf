@@ -139,10 +139,12 @@ static bool treeview_test_init(struct tree *tree)
 			guit->misc->warning("Couldn't init new global history.", 0);
 		break;
 	case TREE_HOTLIST:
-		err = hotlist_init(&cw_t, (struct core_window *)tree,
-				tree_hotlist_path);
+		err = hotlist_init(tree_hotlist_path);
 		if (err != NSERROR_OK)
 			guit->misc->warning("Couldn't init new hotlist.", 0);
+		err = hotlist_manager_init(&cw_t, (struct core_window *)tree);
+		if (err != NSERROR_OK)
+			guit->misc->warning("Couldn't init hotlist manager.", 0);
 		break;
 	case TREE_SSLCERT:
 		assert(ssl_current_session == NULL &&
