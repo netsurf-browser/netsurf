@@ -742,7 +742,7 @@ ro_cw_update_size(struct core_window *cw, int width, int height)
 	LOG("content resize from w:%d h:%d to w:%d h:%d",
 	    ro_cw->content_width, ro_cw->content_height, width, height);
 
-	ro_cw->content_width = width;
+	ro_cw->content_width = width * 2;
 	ro_cw->content_height = -(2 * height);
 
 	state.w = ro_cw->wh;
@@ -753,13 +753,16 @@ ro_cw_update_size(struct core_window *cw, int width, int height)
 		return;
 	}
 
-	open.w = ro_cw->wh;
-	open.visible = state.visible;
-	open.xscroll = state.xscroll;
-	open.yscroll = state.yscroll;
-	open.next = state.next;
+	/* only update the window if it is open */
+	if (state.flags & wimp_WINDOW_OPEN) {
+		open.w = ro_cw->wh;
+		open.visible = state.visible;
+		open.xscroll = state.xscroll;
+		open.yscroll = state.yscroll;
+		open.next = state.next;
 
-	update_scrollbars(ro_cw, &open);
+		update_scrollbars(ro_cw, &open);
+	}
 }
 
 
