@@ -1227,8 +1227,7 @@ static nserror hotlist_populate(const char *path)
 
 
 /* Exported interface, documented in hotlist.h */
-nserror hotlist_init(struct core_window_callback_table *cw_t,
-		void *core_window_handle, const char *path)
+nserror hotlist_init(const char *path)
 {
 	nserror err;
 
@@ -1252,8 +1251,7 @@ nserror hotlist_init(struct core_window_callback_table *cw_t,
 
 	/* Create the hotlist treeview */
 	err = treeview_create(&hl_ctx.tree, &hl_tree_cb_t,
-			HL_N_FIELDS, hl_ctx.fields,
-			cw_t, core_window_handle,
+			HL_N_FIELDS, hl_ctx.fields, NULL, NULL,
 			TREEVIEW_NO_FLAGS);
 	if (err != NSERROR_OK) {
 		hl_ctx.tree = NULL;
@@ -1271,10 +1269,41 @@ nserror hotlist_init(struct core_window_callback_table *cw_t,
 	 * the treeview is built. */
 	hl_ctx.built = true;
 
+	LOG("Loaded hotlist");
+
+	return NSERROR_OK;
+}
+
+
+/* Exported interface, documented in hotlist.h */
+nserror hotlist_manager_init(struct core_window_callback_table *cw_t,
+		void *core_window_handle)
+{
+	nserror err;
+
+	/* Create the hotlist treeview */
+	err = treeview_cw_attach(hl_ctx.tree, cw_t, core_window_handle);
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
 	/* Inform client of window height */
 	treeview_get_height(hl_ctx.tree);
 
-	LOG("Loaded hotlist");
+	return NSERROR_OK;
+}
+
+
+/* Exported interface, documented in hotlist.h */
+nserror hotlist_manager_fini(void)
+{
+	nserror err;
+
+	/* Create the hotlist treeview */
+	err = treeview_cw_detach(hl_ctx.tree);
+	if (err != NSERROR_OK) {
+		return err;
+	}
 
 	return NSERROR_OK;
 }

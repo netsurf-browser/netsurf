@@ -33,18 +33,44 @@ struct rect;
 /**
  * Initialise the hotlist.
  *
- * This opens the hotlist file, generating the hotlist data, and creates a
+ * This opens the hotlist file, construct the hostlist, and creates a
  * treeview.  If there's no hotlist file, it generates a default hotlist.
  *
- * This must be called before any other hotlist_* function.
+ * This must be called before any other hotlist_* function.  It must
+ * be called before URLs can be added to the hotlist, and before the
+ * hotlist can be queried to ask if URLs are present in the hotlist.
  *
- * \param cw_t Callback table for core_window containing the treeview
- * \param core_window_handle The handle in which the treeview is shown
  * \param path The path to hotlist file to load
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror hotlist_init(struct core_window_callback_table *cw_t,
-		void *core_window_handle, const char *path);
+nserror hotlist_init(const char *path);
+
+/**
+ * Initialise the hotlist manager.
+ *
+ * This connects the underlying hotlist treeview to a corewindow for display.
+ *
+ * The provided core window handle must be valid until hotlist_fini is called.
+ *
+ * \param cw_t Callback table for core_window containing the treeview
+ * \param core_window_handle The handle in which the treeview is shown
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror hotlist_manager_init(struct core_window_callback_table *cw_t,
+		void *core_window_handle);
+
+
+/**
+ * Finalise the hotlist manager.
+ *
+ * This simply disconnects the underlying treeview from its corewindow,
+ * allowing destruction of a GUI hotlist window, without finalising the
+ * hotlist module.
+ *
+ * \param path		The path to save hotlist to
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror hotlist_manager_fini(void);
 
 /**
  * Finalise the hotlist.
