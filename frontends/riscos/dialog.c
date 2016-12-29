@@ -646,12 +646,11 @@ void ro_gui_save_options(void)
 	nsoption_write("<NetSurf$ChoicesSave>", NULL, NULL);
 }
 
-bool ro_gui_dialog_zoom_apply(wimp_w w) {
+bool ro_gui_dialog_zoom_apply(wimp_w w)
+{
 	unsigned int scale;
-	bool all;
 
 	scale = atoi(ro_gui_get_icon_string(w, ICON_ZOOM_VALUE));
-	all = ro_gui_get_icon_selected_state(w, ICON_ZOOM_FRAMES);
 	ro_gui_window_set_scale(ro_gui_current_zoom_gui, scale * 0.01);
 	return true;
 }
