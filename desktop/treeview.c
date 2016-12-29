@@ -229,7 +229,9 @@ static inline void treeview__cw_redraw_request(
 		const struct treeview *tree,
 		const struct rect *r)
 {
-	tree->cw_t->redraw_request(tree->cw_h, r);
+	if (tree->cw_t != NULL) {
+		tree->cw_t->redraw_request(tree->cw_h, r);
+	}
 }
 
 
@@ -244,7 +246,9 @@ static inline void treeview__cw_update_size(
 		const struct treeview *tree,
 		int width, int height)
 {
-	tree->cw_t->update_size(tree->cw_h, width, height);
+	if (tree->cw_t != NULL) {
+		tree->cw_t->update_size(tree->cw_h, width, height);
+	}
 }
 
 
@@ -259,7 +263,9 @@ static inline void treeview__cw_get_window_dimensions(
 		const struct treeview *tree,
 		int *width, int *height)
 {
-	tree->cw_t->get_window_dimensions(tree->cw_h, width, height);
+	if (tree->cw_t != NULL) {
+		tree->cw_t->get_window_dimensions(tree->cw_h, width, height);
+	}
 }
 
 
@@ -273,7 +279,9 @@ static inline void treeview__cw_drag_status(
 		const struct treeview *tree,
 		core_window_drag_status ds)
 {
-	tree->cw_t->drag_status(tree->cw_h, ds);
+	if (tree->cw_t != NULL) {
+		tree->cw_t->drag_status(tree->cw_h, ds);
+	}
 }
 
 
