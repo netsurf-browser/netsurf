@@ -107,7 +107,7 @@ struct ami_win_event_table {
 
 struct ami_generic_window {
 	struct nsObject *node;
-	struct ami_win_event_table *tbl;
+	const struct ami_win_event_table *tbl;
 };
 
 struct gui_window_2 {
@@ -276,7 +276,7 @@ void ami_gui_switch_to_new_tab(struct gui_window_2 *gwin);
 /**
  * Add a window to the NetSurf window list (to enable event processing)
  */
-nserror ami_gui_win_list_add(void *win, int type, struct ami_win_event_table *table);
+nserror ami_gui_win_list_add(void *win, int type, const struct ami_win_event_table *table);
 
 /**
  * Remove a window from the NetSurf window list

@@ -89,7 +89,7 @@ enum {
 
 
 struct treeview_window {
-	struct nsObject *node;
+	struct ami_generic_window w;
 	struct Window *win;
 	Object *objects[GID_TREE_LAST];
 	int type;
@@ -119,6 +119,13 @@ struct ami_tree_redraw_req {
 	int width;
 	int height;
 	struct treeview_window *twin;
+};
+
+static BOOL ami_tree_event(void *w);
+
+static const struct ami_win_event_table ami_tree_table = {
+	ami_tree_event,
+	ami_tree_close,
 };
 
 #if 0
@@ -877,21 +884,21 @@ void ami_tree_open(struct treeview_window *twin,int type)
 		ICA_TARGET,ICTARGET_IDCMP,
 		TAG_DONE);
 
-	twin->node = AddObject(window_list,AMINS_TVWINDOW);
-	twin->node->objstruct = twin;
+	ami_gui_win_list_add(twin, AMINS_TVWINDOW, &ami_tree_table);
 
 	ami_tree_update_buttons(twin);
 	ami_tree_resized(twin->tree, twin->max_width, twin->max_height, twin);
 	ami_tree_draw(twin);
 }
 
-void ami_tree_close(struct treeview_window *twin)
+void ami_tree_close(void *w)
 {
+	struct treeview_window *twin = (struct treeview_window *)w;
 	int i;
 
 	twin->win = NULL;
 	DisposeObject(twin->objects[OID_MAIN]);
-	DelObjectNoFree(twin->node);
+	ami_gui_win_list_remove(twin);
 	ami_plot_release_pens(twin->shared_pens);
 	ami_free_layers(&twin->globals);
 
@@ -942,9 +949,10 @@ static void ami_tree_update_quals(struct treeview_window *twin)
 	}
 }
 
-BOOL ami_tree_event(struct treeview_window *twin)
+static BOOL ami_tree_event(void *w)
 {
 	/* return TRUE if window destroyed */
+	struct treeview_window *twin = (struct treeview_window *)w;
 	ULONG result,storage = 0;
 	uint16 code;
 	struct MenuItem *item;

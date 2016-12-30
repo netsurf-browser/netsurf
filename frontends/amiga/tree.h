@@ -40,8 +40,7 @@ void ami_tree_destroy(struct treeview_window *twin);
 struct tree *ami_tree_get_tree(struct treeview_window *twin);
 
 void ami_tree_open(struct treeview_window *twin,int type);
-void ami_tree_close(struct treeview_window *twin);
-BOOL ami_tree_event(struct treeview_window *twin);
+void ami_tree_close(void *w); /* for Arexx interface only */
 
 extern const struct treeview_table ami_tree_callbacks;
 

@@ -1925,7 +1925,7 @@ static void ami_handle_msg(void)
 		w = node->objstruct;
 
 		if(node->Type == AMINS_TVWINDOW) {
-			if(ami_tree_event((struct treeview_window *)w)) {
+			if(w->tbl->event(w)) {
 				ami_try_quit();
 				break;
 			} else {
@@ -2957,7 +2957,7 @@ void ami_quit_netsurf(void)
 {
 	struct nsObject *node;
 	struct nsObject *nnode;
-	struct gui_window_2 *gwin;
+	struct ami_generic_window *w;
 
 	/* Disable the multiple tabs open warning */
 	nsoption_set_bool(tab_close_warn, false);
@@ -2967,18 +2967,18 @@ void ami_quit_netsurf(void)
 
 		do {
 			nnode=(struct nsObject *)GetSucc((struct Node *)node);
-			gwin = node->objstruct;
+			w = node->objstruct;
 
 			switch(node->Type) {
 				case AMINS_TVWINDOW:
-					ami_tree_close((struct treeview_window *)gwin);
+					w->tbl->close(w);
 				break;
 
 				case AMINS_WINDOW:
 					/* This also closes windows that are attached to the
 					 * gui_window, such as local history and find. */
-					ShowWindow(gwin->win, WINDOW_BACKMOST); // do we need this??
-					gwin->w.tbl->close(gwin);
+					//ShowWindow(gwin->win, WINDOW_BACKMOST); // do we need this??
+					w->tbl->close(w);
 				break;
 
 				case AMINS_GUIOPTSWINDOW:
@@ -2986,7 +2986,7 @@ void ami_quit_netsurf(void)
 				break;
 
 				case AMINS_DLWINDOW:
-					ami_download_window_abort((struct gui_download_window *)gwin);
+					ami_download_window_abort((struct gui_download_window *)w);
 				break;
 			}
 		} while((node = nnode));
@@ -3828,7 +3828,7 @@ HOOKF(void, ami_scroller_hook, Object *, object, struct IntuiMessage *)
 } 
 
 /* exported function documented in gui.h */
-nserror ami_gui_win_list_add(void *win, int type, struct ami_win_event_table *table)
+nserror ami_gui_win_list_add(void *win, int type, const struct ami_win_event_table *table)
 {
 	struct nsObject *node = AddObject(window_list, type);
 	if(node == NULL) return NSERROR_NOMEM;
@@ -3846,10 +3846,14 @@ void ami_gui_win_list_remove(void *win)
 {
 	struct ami_generic_window *w = (struct ami_generic_window *)win;
 
-	DelObject(w->node);
+	if(w->node->Type == AMINS_TVWINDOW) {
+		DelObjectNoFree(w->node);
+	} else {
+		DelObject(w->node);
+	}
 }
 
-static struct ami_win_event_table ami_gui_table = {
+static const struct ami_win_event_table ami_gui_table = {
 	ami_gui_event,
 	ami_gui_close_window,
 };

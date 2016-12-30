@@ -94,9 +94,9 @@ static struct gui_search_table search_table = {
 	ami_search_set_back_state,
 };
 
-static struct ami_win_event_table ami_search_table = {
+static const struct ami_win_event_table ami_search_table = {
 	ami_search_event,
-	NULL, /* we don't explicitly close the search window n the frontend */
+	NULL, /* we don't explicitly close the search window on quit */
 };
 
 struct gui_search_table *amiga_search_table = &search_table;
