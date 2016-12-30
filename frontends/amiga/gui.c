@@ -1905,19 +1905,10 @@ static void ami_set_border_gadget_size(struct gui_window_2 *gwin)
 
 static void ami_handle_msg(void)
 {
-	ULONG result,storage = 0,x,y,xs,ys,width=800,height=600;
-	uint16 code;
-	struct IBox *bbox;
+	struct ami_generic_window *w = NULL;
 	struct nsObject *node;
 	struct nsObject *nnode;
 	struct gui_window_2 *gwin = NULL;
-	struct InputEvent *ie;
-	struct Node *tabnode;
-	int nskey;
-	struct timeval curtime;
-	static int drag_x_move = 0, drag_y_move = 0;
-	char *utf8 = NULL;
-	nsurl *url;
 
 	if(IsMinListEmpty(window_list))
 	{
@@ -1928,14 +1919,13 @@ static void ami_handle_msg(void)
 
 	node = (struct nsObject *)GetHead((struct List *)window_list);
 
-	do
-	{
+	do {
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
 
-		gwin = node->objstruct;
+		w = node->objstruct;
 
 		if(node->Type == AMINS_TVWINDOW) {
-			if(ami_tree_event((struct treeview_window *)gwin)) {
+			if(ami_tree_event((struct treeview_window *)w)) {
 				ami_try_quit();
 				break;
 			} else {
@@ -1943,7 +1933,7 @@ static void ami_handle_msg(void)
 				continue;
 			}
 		} else if(node->Type == AMINS_FINDWINDOW) {
-			if(ami_search_event()) {
+			if(w->tbl->event(w)) {
 				ami_try_quit();
 				break;
 			} else {
@@ -1951,7 +1941,7 @@ static void ami_handle_msg(void)
 				continue;
 			}
 		} else if(node->Type == AMINS_HISTORYWINDOW) {
-			if(ami_history_event((struct history_window *)gwin)) {
+			if(ami_history_event((struct history_window *)w)) {
 				ami_try_quit();
 				break;
 			} else {
@@ -1959,7 +1949,7 @@ static void ami_handle_msg(void)
 				continue;
 			}
 		} else if(node->Type == AMINS_PRINTWINDOW) {
-			if(ami_print_event((struct ami_print_window *)gwin)) {
+			if(ami_print_event((struct ami_print_window *)w)) {
 				ami_try_quit();
 				break;
 			} else {
@@ -1976,7 +1966,7 @@ static void ami_handle_msg(void)
 				continue;
 			}
 		} else if(node->Type == AMINS_DLWINDOW) {
-			if(ami_download_window_event((struct gui_download_window *)gwin)) {
+			if(ami_download_window_event((struct gui_download_window *)w)) {
 				ami_try_quit();
 				break;
 			} else {
@@ -1984,7 +1974,7 @@ static void ami_handle_msg(void)
 				continue;
 			}
 		} else if(node->Type == AMINS_LOGINWINDOW) {
-			if(ami_401login_event((struct gui_login_window *)gwin)) {
+			if(ami_401login_event((struct gui_login_window *)w)) {
 				ami_try_quit();
 				break;
 			} else {
@@ -1993,589 +1983,616 @@ static void ami_handle_msg(void)
 			}
 		}
 
+		/* assume this is a normal gui window for now */
+		gwin = (struct gui_window_2 *)w;
 		if((gwin == NULL) || (gwin->objects[OID_MAIN] == NULL)) continue;
-
-		while((result = RA_HandleInput(gwin->objects[OID_MAIN], &code)) != WMHI_LASTMSG) {
-	        switch(result & WMHI_CLASSMASK) // class
-   		   	{
-				case WMHI_MOUSEMOVE:
-					ami_gui_trap_mouse(gwin); /* re-assert mouse area */
-
-					drag_x_move = 0;
-					drag_y_move = 0;
-
-					if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-						amiga_warn_user("NoMemory", "");
-						break;
-					}
-
-					x = (ULONG)((gwin->win->MouseX - bbox->Left) / gwin->gw->scale);
-					y = (ULONG)((gwin->win->MouseY - bbox->Top) / gwin->gw->scale);
-
-					ami_get_hscroll_pos(gwin, (ULONG *)&xs);
-					ami_get_vscroll_pos(gwin, (ULONG *)&ys);
-
-					x += xs;
-					y += ys;
-
-					width=bbox->Width;
-					height=bbox->Height;
-
-					if(gwin->mouse_state & BROWSER_MOUSE_DRAG_ON)
-					{
-						if(ami_drag_icon_move() == TRUE) {
-							if((gwin->win->MouseX < bbox->Left) &&
-								((gwin->win->MouseX - bbox->Left) > -AMI_DRAG_THRESHOLD))
-								drag_x_move = gwin->win->MouseX - bbox->Left;
-							if((gwin->win->MouseX > (bbox->Left + bbox->Width)) &&
-								((gwin->win->MouseX - (bbox->Left + bbox->Width)) < AMI_DRAG_THRESHOLD))
-								drag_x_move = gwin->win->MouseX - (bbox->Left + bbox->Width);
-							if((gwin->win->MouseY < bbox->Top) &&
-								((gwin->win->MouseY - bbox->Top) > -AMI_DRAG_THRESHOLD))
-								drag_y_move = gwin->win->MouseY - bbox->Top;
-							if((gwin->win->MouseY > (bbox->Top + bbox->Height)) &&
-								((gwin->win->MouseY - (bbox->Top + bbox->Height)) < AMI_DRAG_THRESHOLD))
-								drag_y_move = gwin->win->MouseY - (bbox->Top + bbox->Height);
-						}
-					}
-
-					ami_gui_free_space_box(bbox);
-
-					if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))
-					{
-						ami_update_quals(gwin);
-
-						if(gwin->mouse_state & BROWSER_MOUSE_PRESS_1)
-						{
-							browser_window_mouse_track(gwin->gw->bw,BROWSER_MOUSE_DRAG_1 | gwin->key_state,x,y);
-							gwin->mouse_state = BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON;
-						}
-						else if(gwin->mouse_state & BROWSER_MOUSE_PRESS_2)
-						{
-							browser_window_mouse_track(gwin->gw->bw,BROWSER_MOUSE_DRAG_2 | gwin->key_state,x,y);
-							gwin->mouse_state = BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_ON;
-						}
-						else
-						{
-							browser_window_mouse_track(gwin->gw->bw,gwin->mouse_state | gwin->key_state,x,y);
-						}
-					} else {
-						if(!gwin->mouse_state) ami_set_pointer(gwin, GUI_POINTER_DEFAULT, true);
-					}
-				break;
-
-				case WMHI_MOUSEBUTTONS:
-					if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-						amiga_warn_user("NoMemory", "");
-						return;
-					}
-
-					x = (ULONG)((gwin->win->MouseX - bbox->Left) / gwin->gw->scale);
-					y = (ULONG)((gwin->win->MouseY - bbox->Top) / gwin->gw->scale);
-
-					ami_get_hscroll_pos(gwin, (ULONG *)&xs);
-					ami_get_vscroll_pos(gwin, (ULONG *)&ys);
-
-					x += xs;
-					y += ys;
-
-					width=bbox->Width;
-					height=bbox->Height;
-
-					ami_gui_free_space_box(bbox);
-
-					ami_update_quals(gwin);
-
-					if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))
-					{
-						//code = code>>16;
-						switch(code)
-						{
-							case SELECTDOWN:
-								browser_window_mouse_click(gwin->gw->bw,BROWSER_MOUSE_PRESS_1 | gwin->key_state,x,y);
-								gwin->mouse_state=BROWSER_MOUSE_PRESS_1;
-							break;
-							case MIDDLEDOWN:
-								browser_window_mouse_click(gwin->gw->bw,BROWSER_MOUSE_PRESS_2 | gwin->key_state,x,y);
-								gwin->mouse_state=BROWSER_MOUSE_PRESS_2;
-							break;
-						}
-					}
-
-					if(x<xs) x=xs;
-					if(y<ys) y=ys;
-					if(x>=width+xs) x=width+xs-1;
-					if(y>=height+ys) y=height+ys-1;
-
-					switch(code)
-					{
-						case SELECTUP:
-							if(gwin->mouse_state & BROWSER_MOUSE_PRESS_1)
-							{
-								CurrentTime((ULONG *)&curtime.tv_sec, (ULONG *)&curtime.tv_usec);
-
-								gwin->mouse_state = BROWSER_MOUSE_CLICK_1;
-
-								if(gwin->lastclick.tv_sec)
-								{
-									if(DoubleClick(gwin->lastclick.tv_sec,
-												gwin->lastclick.tv_usec,
-												curtime.tv_sec, curtime.tv_usec)) {
-										if(gwin->prev_mouse_state & BROWSER_MOUSE_DOUBLE_CLICK) {
-											gwin->mouse_state |= BROWSER_MOUSE_TRIPLE_CLICK;
-										} else {
-											gwin->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
-										}
-									}
-								}
-
-								browser_window_mouse_click(gwin->gw->bw,
-									gwin->mouse_state | gwin->key_state,x,y);
-
-								if(gwin->mouse_state & BROWSER_MOUSE_TRIPLE_CLICK)
-								{
-									gwin->lastclick.tv_sec = 0;
-									gwin->lastclick.tv_usec = 0;
-								}
-								else
-								{
-									gwin->lastclick.tv_sec = curtime.tv_sec;
-									gwin->lastclick.tv_usec = curtime.tv_usec;
-								}
-							}
-							else
-							{
-								browser_window_mouse_track(gwin->gw->bw, 0, x, y);
-							}
-							gwin->prev_mouse_state = gwin->mouse_state;
-							gwin->mouse_state=0;
-						break;
-
-						case MIDDLEUP:
-							if(gwin->mouse_state & BROWSER_MOUSE_PRESS_2)
-							{
-								CurrentTime((ULONG *)&curtime.tv_sec, (ULONG *)&curtime.tv_usec);
-
-								gwin->mouse_state = BROWSER_MOUSE_CLICK_2;
-
-								if(gwin->lastclick.tv_sec)
-								{
-									if(DoubleClick(gwin->lastclick.tv_sec,
-												gwin->lastclick.tv_usec,
-												curtime.tv_sec, curtime.tv_usec)) {
-										if(gwin->prev_mouse_state & BROWSER_MOUSE_DOUBLE_CLICK) {
-											gwin->mouse_state |= BROWSER_MOUSE_TRIPLE_CLICK;
-										} else {
-											gwin->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
-										}
-									}
-								}
-
-								browser_window_mouse_click(gwin->gw->bw,
-									gwin->mouse_state | gwin->key_state,x,y);
-
-								if(gwin->mouse_state & BROWSER_MOUSE_TRIPLE_CLICK)
-								{
-									gwin->lastclick.tv_sec = 0;
-									gwin->lastclick.tv_usec = 0;
-								}
-								else
-								{
-									gwin->lastclick.tv_sec = curtime.tv_sec;
-									gwin->lastclick.tv_usec = curtime.tv_usec;
-								}
-							}
-							else
-							{
-								browser_window_mouse_track(gwin->gw->bw, 0, x, y);
-							}
-							gwin->prev_mouse_state = gwin->mouse_state;
-							gwin->mouse_state=0;
-						break;
-#ifdef __amigaos4__
-						case SIDEUP:
-							ami_gui_history(gwin, true);
-						break;
-
-						case EXTRAUP:
-							ami_gui_history(gwin, false);
-						break;
-#endif
-					}
-
-					if(ami_drag_has_data() && !gwin->mouse_state)
-						ami_drag_save(gwin->win);
-				break;
-
-				case WMHI_GADGETUP:
-					switch(result & WMHI_GADGETMASK)
-					{
-						case GID_TABS:
-							if(gwin->objects[GID_TABS] == NULL) break;
-							if(ClickTabBase->lib_Version >= 53) {
-								GetAttrs(gwin->objects[GID_TABS],
-									CLICKTAB_NodeClosed, &tabnode, TAG_DONE);
-							} else {
-								tabnode = NULL;
-							}
-
-							if(tabnode) {
-								struct gui_window *closedgw;
-
-								GetClickTabNodeAttrs(tabnode,
-									TNA_UserData, &closedgw,
-									TAG_DONE);
-
-								browser_window_destroy(closedgw->bw);
-							} else {
-								ami_switch_tab(gwin, true);
-							}
-						break;
-
-						case GID_CLOSETAB:
-							browser_window_destroy(gwin->gw->bw);
-						break;
-
-						case GID_ADDTAB:
-							ami_gui_new_blank_tab(gwin);
-						break;
-
-						case GID_URL:
-						{
-							nserror ret;
-							nsurl *url;
-							GetAttr(STRINGA_TextVal,
-								(Object *)gwin->objects[GID_URL],
-								(ULONG *)&storage);
-							utf8 = ami_to_utf8_easy((const char *)storage);
-
-							ret = search_web_omni(utf8, SEARCH_WEB_OMNI_NONE, &url);
-							ami_utf8_free(utf8);
-							if (ret == NSERROR_OK) {
-									browser_window_navigate(gwin->gw->bw,
-											url,
-											NULL,
-											BW_NAVIGATE_HISTORY,
-											NULL,
-											NULL,
-											NULL);
-									nsurl_unref(url);
-							}
-							if (ret != NSERROR_OK) {
-								amiga_warn_user(messages_get_errorcode(ret), 0);
-							}
-						}
-						break;
-
-						case GID_TOOLBARLAYOUT:
-							/* Need fixing: never gets here */
-							search_web_select_provider(-1);
-						break;
-
-						case GID_SEARCH_ICON:
-							GetAttr(CHOOSER_Selected, gwin->objects[GID_SEARCH_ICON], (ULONG *)&storage);
-							search_web_select_provider(storage);
-						break;
-
-						case GID_SEARCHSTRING:
-						{
-							nserror ret;
-							nsurl *url;
-
-							GetAttr(STRINGA_TextVal,
-								(Object *)gwin->objects[GID_SEARCHSTRING],
-								(ULONG *)&storage);
-
-							utf8 = ami_to_utf8_easy((const char *)storage);
-
-							ret = search_web_omni(utf8, SEARCH_WEB_OMNI_SEARCHONLY, &url);
-							ami_utf8_free(utf8);
-							if (ret == NSERROR_OK) {
-									browser_window_navigate(gwin->gw->bw,
-											url,
-											NULL,
-											BW_NAVIGATE_HISTORY,
-											NULL,
-											NULL,
-											NULL);
-								nsurl_unref(url);
-							}
-							if (ret != NSERROR_OK) {
-								amiga_warn_user(messages_get_errorcode(ret), 0);
-							}
-
-						}
-						break;
-
-						case GID_HOME:
-							{
-								if (nsurl_create(nsoption_charp(homepage_url), &url) != NSERROR_OK) {
-									amiga_warn_user("NoMemory", 0);
-								} else {
-									browser_window_navigate(gwin->gw->bw,
-											url,
-											NULL,
-											BW_NAVIGATE_HISTORY,
-											NULL,
-											NULL,
-											NULL);
-									nsurl_unref(url);
-								}
-							}
-						break;
-
-						case GID_STOP:
-							if(browser_window_stop_available(gwin->gw->bw))
-								browser_window_stop(gwin->gw->bw);
-						break;
-
-						case GID_RELOAD:
-							ami_update_quals(gwin);
-
-							if(browser_window_reload_available(gwin->gw->bw))
-							{
-								if(gwin->key_state & BROWSER_MOUSE_MOD_1)
-								{
-									browser_window_reload(gwin->gw->bw, true);
-								}
-								else
-								{
-									browser_window_reload(gwin->gw->bw, false);
-								}
-							}
-						break;
-
-						case GID_BACK:
-							ami_gui_history(gwin, true);
-						break;
-
-						case GID_FORWARD:
-							ami_gui_history(gwin, false);
-						break;
-
-						case GID_FAVE:
-							GetAttr(STRINGA_TextVal,
-								(Object *)gwin->objects[GID_URL],
-								(ULONG *)&storage);
-							if(nsurl_create((const char *)storage, &url) == NSERROR_OK) {
-								if(hotlist_has_url(url)) {
-									hotlist_remove_url(url);
-								} else {
-									hotlist_add_url(url);
-								}
-								nsurl_unref(url);
-							}
-							ami_gui_update_hotlist_button(gwin);
-						break;
-
-						case GID_HOTLIST:
-						default:
-//							printf("GADGET: %ld\n",(result & WMHI_GADGETMASK));
-						break;
-					}
-				break;
-
-				case WMHI_RAWKEY:
-					ami_update_quals(gwin);
-				
-					storage = result & WMHI_GADGETMASK;
-					if(storage >= IECODE_UP_PREFIX) break;
-
-					GetAttr(WINDOW_InputEvent,gwin->objects[OID_MAIN],(ULONG *)&ie);
-
-					nskey = ami_key_to_nskey(storage, ie);
-
-					if((ie->ie_Qualifier & IEQUALIFIER_RCOMMAND) &&
-						((31 < nskey) && (nskey < 127))) {
-					/* NB: Some keypresses are converted to generic keypresses above
-					 * rather than being "menu-emulated" here. */
-						switch(nskey)
-						{
-							/* The following aren't available from the menu at the moment */
-
-							case 'r': // reload
-								if(browser_window_reload_available(gwin->gw->bw))
-									browser_window_reload(gwin->gw->bw, false);
-							break;
-
-							case 'u': // open url
-								if((nsoption_bool(kiosk_mode) == false))
-									ActivateLayoutGadget((struct Gadget *)gwin->objects[GID_MAIN],
-										gwin->win, NULL, (uint32)gwin->objects[GID_URL]);
-							break;
-						}
-					}
-					else
-					{
-						if(!browser_window_key_press(gwin->gw->bw, nskey))
-						{
-							switch(nskey)
-							{
-								case NS_KEY_UP:
-									ami_gui_scroll_internal(gwin, 0, -NSA_KBD_SCROLL_PX);
-								break;
-
-								case NS_KEY_DOWN:
-									ami_gui_scroll_internal(gwin, 0, +NSA_KBD_SCROLL_PX);
-								break;
-
-								case NS_KEY_LEFT:
-									ami_gui_scroll_internal(gwin, -NSA_KBD_SCROLL_PX, 0);
-								break;
-
-								case NS_KEY_RIGHT:
-									ami_gui_scroll_internal(gwin, +NSA_KBD_SCROLL_PX, 0);
-								break;
-
-								case NS_KEY_PAGE_UP:
-									ami_gui_scroll_internal(gwin, 0, SCROLL_PAGE_UP);
-								break;
-
-								case NS_KEY_PAGE_DOWN:
-								case ' ':
-									ami_gui_scroll_internal(gwin, 0, SCROLL_PAGE_DOWN);
-								break;
-
-								case NS_KEY_LINE_START: // page left
-									ami_gui_scroll_internal(gwin, SCROLL_PAGE_UP, 0);
-								break;
-
-								case NS_KEY_LINE_END: // page right
-									ami_gui_scroll_internal(gwin, SCROLL_PAGE_DOWN, 0);
-								break;
-
-								case NS_KEY_TEXT_START: // home
-									ami_gui_scroll_internal(gwin, SCROLL_TOP, SCROLL_TOP);
-								break;
-
-								case NS_KEY_TEXT_END: // end
-									ami_gui_scroll_internal(gwin, SCROLL_BOTTOM, SCROLL_BOTTOM);
-								break;
-
-								case NS_KEY_WORD_RIGHT: // alt+right
-									ami_change_tab(gwin, 1);
-								break;
-
-								case NS_KEY_WORD_LEFT: // alt+left
-									ami_change_tab(gwin, -1);
-								break;
-
-								case NS_KEY_DELETE_LEFT: // backspace
-									ami_gui_history(gwin, true);
-								break;
-
-								/* RawKeys. NB: These are passthrus in ami_key_to_nskey() */
-								case RAWKEY_F5: // reload
-									if(browser_window_reload_available(gwin->gw->bw))
-										browser_window_reload(gwin->gw->bw,false);
-								break;
-
-								case RAWKEY_F8: // scale 100%
-									ami_gui_set_scale(gwin->gw, 1.0);
-								break;
-
-								case RAWKEY_F9: // decrease scale
-									ami_gui_set_scale(gwin->gw, gwin->gw->scale - 0.1);
-								break;
-
-								case RAWKEY_F10: // increase scale
-									ami_gui_set_scale(gwin->gw, gwin->gw->scale + 0.1);
-								break;
-								
-								case RAWKEY_HELP: // help
-									ami_help_open(AMI_HELP_GUI, scrn);
-								break;
-							}
-						} else if(nskey == NS_KEY_COPY_SELECTION) {
-							/* if we've copied a selection we need to clear it - style guide rules */
-							browser_window_key_press(gwin->gw->bw, NS_KEY_CLEAR_SELECTION);
-						}
-					}
-				break;
-
-				case WMHI_NEWSIZE:
-					ami_set_border_gadget_size(gwin);
-					ami_throbber_redraw_schedule(0, gwin->gw);
-					ami_schedule(0, ami_gui_refresh_favicon, gwin);
-					browser_window_schedule_reformat(gwin->gw->bw);
-				break;
-
-				case WMHI_CLOSEWINDOW:
-					ami_gui_close_window(gwin);
-		        break;
-#ifdef __amigaos4__
-				case WMHI_ICONIFY:
-				{
-					struct bitmap *bm;
-
-					bm = urldb_get_thumbnail(browser_window_get_url(gwin->gw->bw));
-					if(!bm) bm = content_get_bitmap(browser_window_get_content(gwin->gw->bw));
-					gwin->dobj = amiga_icon_from_bitmap(bm);
-					amiga_icon_superimpose_favicon_internal(gwin->gw->favicon,
-						gwin->dobj);
-					HideWindow(gwin->win);
-					gwin->appicon = AddAppIcon((ULONG)gwin->objects[OID_MAIN],
-										(ULONG)gwin, gwin->win->Title, appport,
-										0, gwin->dobj, NULL);
-
-					cur_gw = NULL;
-				}
-				break;
-#endif
-				case WMHI_INACTIVE:
-					gwin->gw->c_h_temp = gwin->gw->c_h;
-					gui_window_remove_caret(gwin->gw);
-				break;
-
-				case WMHI_ACTIVE:
-					if(gwin->gw->bw) cur_gw = gwin->gw;
-					if(gwin->gw->c_h_temp)
-						gwin->gw->c_h = gwin->gw->c_h_temp;
-				break;
-
-				case WMHI_INTUITICK:
-				break;
-
-	   	     	default:
-					//printf("class: %ld\n",(result & WMHI_CLASSMASK));
-   	       		break;
-			}
-
-			if(win_destroyed)
-			{
-					/* we can't be sure what state our window_list is in, so let's
-					jump out of the function and start again */
-
-				win_destroyed = false;
-				return;
-			}
-
-			if(drag_x_move || drag_y_move)
-			{
-				gui_window_get_scroll(gwin->gw,
-					&gwin->gw->scrollx, &gwin->gw->scrolly);
-
-				gui_window_set_scroll(gwin->gw,
-					gwin->gw->scrollx + drag_x_move,
-					gwin->gw->scrolly + drag_y_move);
-			}
-
-//	ReplyMsg((struct Message *)message);
+		if(w->tbl->event(w)) {
+			break;
+		} else {
+			node = nnode;
+			continue;
 		}
-
-		if(gwin->closed == true) {
-			ami_gui_close_window(gwin);
-		}
-
 	} while((node = nnode));
 
-	if(ami_menu_quit_selected() == true){
+	if(ami_menu_quit_selected() == true) {
 		ami_quit_netsurf();
 	}
 	
 	if(ami_menu_get_check_toggled() == true) {
 		ami_gui_menu_update_all();
 	}
+}
+
+static BOOL ami_gui_event(void *w)
+{
+	struct gui_window_2 *gwin = (struct gui_window_2 *)w;
+	ULONG result, storage = 0, x, y, xs, ys, width = 800, height = 600;
+	uint16 code;
+	struct IBox *bbox;
+	struct InputEvent *ie;
+	struct Node *tabnode;
+	int nskey;
+	struct timeval curtime;
+	static int drag_x_move = 0, drag_y_move = 0;
+	char *utf8 = NULL;
+	nsurl *url;
+	BOOL win_closed = FALSE;
+
+	while((result = RA_HandleInput(gwin->objects[OID_MAIN], &code)) != WMHI_LASTMSG) {
+        switch(result & WMHI_CLASSMASK) // class
+	   	{
+			case WMHI_MOUSEMOVE:
+				ami_gui_trap_mouse(gwin); /* re-assert mouse area */
+
+				drag_x_move = 0;
+				drag_y_move = 0;
+
+				if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+					amiga_warn_user("NoMemory", "");
+					break;
+				}
+
+				x = (ULONG)((gwin->win->MouseX - bbox->Left) / gwin->gw->scale);
+				y = (ULONG)((gwin->win->MouseY - bbox->Top) / gwin->gw->scale);
+
+				ami_get_hscroll_pos(gwin, (ULONG *)&xs);
+				ami_get_vscroll_pos(gwin, (ULONG *)&ys);
+
+				x += xs;
+				y += ys;
+
+				width=bbox->Width;
+				height=bbox->Height;
+
+				if(gwin->mouse_state & BROWSER_MOUSE_DRAG_ON)
+				{
+					if(ami_drag_icon_move() == TRUE) {
+						if((gwin->win->MouseX < bbox->Left) &&
+							((gwin->win->MouseX - bbox->Left) > -AMI_DRAG_THRESHOLD))
+							drag_x_move = gwin->win->MouseX - bbox->Left;
+						if((gwin->win->MouseX > (bbox->Left + bbox->Width)) &&
+							((gwin->win->MouseX - (bbox->Left + bbox->Width)) < AMI_DRAG_THRESHOLD))
+							drag_x_move = gwin->win->MouseX - (bbox->Left + bbox->Width);
+						if((gwin->win->MouseY < bbox->Top) &&
+							((gwin->win->MouseY - bbox->Top) > -AMI_DRAG_THRESHOLD))
+							drag_y_move = gwin->win->MouseY - bbox->Top;
+						if((gwin->win->MouseY > (bbox->Top + bbox->Height)) &&
+							((gwin->win->MouseY - (bbox->Top + bbox->Height)) < AMI_DRAG_THRESHOLD))
+							drag_y_move = gwin->win->MouseY - (bbox->Top + bbox->Height);
+					}
+				}
+
+				ami_gui_free_space_box(bbox);
+
+				if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))
+				{
+					ami_update_quals(gwin);
+
+					if(gwin->mouse_state & BROWSER_MOUSE_PRESS_1)
+					{
+						browser_window_mouse_track(gwin->gw->bw,BROWSER_MOUSE_DRAG_1 | gwin->key_state,x,y);
+						gwin->mouse_state = BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON;
+					}
+					else if(gwin->mouse_state & BROWSER_MOUSE_PRESS_2)
+					{
+						browser_window_mouse_track(gwin->gw->bw,BROWSER_MOUSE_DRAG_2 | gwin->key_state,x,y);
+						gwin->mouse_state = BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_ON;
+					}
+					else
+					{
+						browser_window_mouse_track(gwin->gw->bw,gwin->mouse_state | gwin->key_state,x,y);
+					}
+				} else {
+					if(!gwin->mouse_state) ami_set_pointer(gwin, GUI_POINTER_DEFAULT, true);
+				}
+			break;
+
+			case WMHI_MOUSEBUTTONS:
+				if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+					amiga_warn_user("NoMemory", "");
+					return FALSE;
+				}
+
+				x = (ULONG)((gwin->win->MouseX - bbox->Left) / gwin->gw->scale);
+				y = (ULONG)((gwin->win->MouseY - bbox->Top) / gwin->gw->scale);
+
+				ami_get_hscroll_pos(gwin, (ULONG *)&xs);
+				ami_get_vscroll_pos(gwin, (ULONG *)&ys);
+
+				x += xs;
+				y += ys;
+
+				width=bbox->Width;
+				height=bbox->Height;
+
+				ami_gui_free_space_box(bbox);
+
+				ami_update_quals(gwin);
+
+				if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))
+				{
+					//code = code>>16;
+					switch(code)
+					{
+						case SELECTDOWN:
+							browser_window_mouse_click(gwin->gw->bw,BROWSER_MOUSE_PRESS_1 | gwin->key_state,x,y);
+							gwin->mouse_state=BROWSER_MOUSE_PRESS_1;
+						break;
+						case MIDDLEDOWN:
+							browser_window_mouse_click(gwin->gw->bw,BROWSER_MOUSE_PRESS_2 | gwin->key_state,x,y);
+							gwin->mouse_state=BROWSER_MOUSE_PRESS_2;
+						break;
+					}
+				}
+
+				if(x<xs) x=xs;
+				if(y<ys) y=ys;
+				if(x>=width+xs) x=width+xs-1;
+				if(y>=height+ys) y=height+ys-1;
+
+				switch(code)
+				{
+					case SELECTUP:
+						if(gwin->mouse_state & BROWSER_MOUSE_PRESS_1)
+						{
+							CurrentTime((ULONG *)&curtime.tv_sec, (ULONG *)&curtime.tv_usec);
+
+							gwin->mouse_state = BROWSER_MOUSE_CLICK_1;
+
+							if(gwin->lastclick.tv_sec)
+							{
+								if(DoubleClick(gwin->lastclick.tv_sec,
+											gwin->lastclick.tv_usec,
+											curtime.tv_sec, curtime.tv_usec)) {
+									if(gwin->prev_mouse_state & BROWSER_MOUSE_DOUBLE_CLICK) {
+										gwin->mouse_state |= BROWSER_MOUSE_TRIPLE_CLICK;
+									} else {
+										gwin->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
+									}
+								}
+							}
+
+							browser_window_mouse_click(gwin->gw->bw,
+								gwin->mouse_state | gwin->key_state,x,y);
+
+							if(gwin->mouse_state & BROWSER_MOUSE_TRIPLE_CLICK)
+							{
+								gwin->lastclick.tv_sec = 0;
+								gwin->lastclick.tv_usec = 0;
+							}
+							else
+							{
+								gwin->lastclick.tv_sec = curtime.tv_sec;
+								gwin->lastclick.tv_usec = curtime.tv_usec;
+							}
+						}
+						else
+						{
+							browser_window_mouse_track(gwin->gw->bw, 0, x, y);
+						}
+						gwin->prev_mouse_state = gwin->mouse_state;
+						gwin->mouse_state=0;
+					break;
+
+					case MIDDLEUP:
+						if(gwin->mouse_state & BROWSER_MOUSE_PRESS_2)
+						{
+							CurrentTime((ULONG *)&curtime.tv_sec, (ULONG *)&curtime.tv_usec);
+
+							gwin->mouse_state = BROWSER_MOUSE_CLICK_2;
+
+							if(gwin->lastclick.tv_sec)
+							{
+								if(DoubleClick(gwin->lastclick.tv_sec,
+											gwin->lastclick.tv_usec,
+											curtime.tv_sec, curtime.tv_usec)) {
+									if(gwin->prev_mouse_state & BROWSER_MOUSE_DOUBLE_CLICK) {
+										gwin->mouse_state |= BROWSER_MOUSE_TRIPLE_CLICK;
+									} else {
+										gwin->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
+									}
+								}
+							}
+
+							browser_window_mouse_click(gwin->gw->bw,
+								gwin->mouse_state | gwin->key_state,x,y);
+
+							if(gwin->mouse_state & BROWSER_MOUSE_TRIPLE_CLICK)
+							{
+								gwin->lastclick.tv_sec = 0;
+								gwin->lastclick.tv_usec = 0;
+							}
+							else
+							{
+								gwin->lastclick.tv_sec = curtime.tv_sec;
+								gwin->lastclick.tv_usec = curtime.tv_usec;
+							}
+						}
+						else
+						{
+							browser_window_mouse_track(gwin->gw->bw, 0, x, y);
+						}
+						gwin->prev_mouse_state = gwin->mouse_state;
+						gwin->mouse_state=0;
+					break;
+#ifdef __amigaos4__
+					case SIDEUP:
+						ami_gui_history(gwin, true);
+					break;
+
+					case EXTRAUP:
+						ami_gui_history(gwin, false);
+					break;
+#endif
+				}
+
+				if(ami_drag_has_data() && !gwin->mouse_state)
+					ami_drag_save(gwin->win);
+			break;
+
+			case WMHI_GADGETUP:
+				switch(result & WMHI_GADGETMASK)
+				{
+					case GID_TABS:
+						if(gwin->objects[GID_TABS] == NULL) break;
+						if(ClickTabBase->lib_Version >= 53) {
+							GetAttrs(gwin->objects[GID_TABS],
+								CLICKTAB_NodeClosed, &tabnode, TAG_DONE);
+						} else {
+							tabnode = NULL;
+						}
+
+						if(tabnode) {
+							struct gui_window *closedgw;
+
+							GetClickTabNodeAttrs(tabnode,
+								TNA_UserData, &closedgw,
+								TAG_DONE);
+
+							browser_window_destroy(closedgw->bw);
+						} else {
+							ami_switch_tab(gwin, true);
+						}
+					break;
+
+					case GID_CLOSETAB:
+						browser_window_destroy(gwin->gw->bw);
+					break;
+
+					case GID_ADDTAB:
+						ami_gui_new_blank_tab(gwin);
+					break;
+
+					case GID_URL:
+					{
+						nserror ret;
+						nsurl *url;
+						GetAttr(STRINGA_TextVal,
+							(Object *)gwin->objects[GID_URL],
+							(ULONG *)&storage);
+						utf8 = ami_to_utf8_easy((const char *)storage);
+
+						ret = search_web_omni(utf8, SEARCH_WEB_OMNI_NONE, &url);
+						ami_utf8_free(utf8);
+						if (ret == NSERROR_OK) {
+								browser_window_navigate(gwin->gw->bw,
+										url,
+										NULL,
+										BW_NAVIGATE_HISTORY,
+										NULL,
+										NULL,
+										NULL);
+								nsurl_unref(url);
+						}
+						if (ret != NSERROR_OK) {
+							amiga_warn_user(messages_get_errorcode(ret), 0);
+						}
+					}
+					break;
+
+					case GID_TOOLBARLAYOUT:
+						/* Need fixing: never gets here */
+						search_web_select_provider(-1);
+					break;
+
+					case GID_SEARCH_ICON:
+						GetAttr(CHOOSER_Selected, gwin->objects[GID_SEARCH_ICON], (ULONG *)&storage);
+						search_web_select_provider(storage);
+					break;
+
+					case GID_SEARCHSTRING:
+					{
+						nserror ret;
+						nsurl *url;
+
+						GetAttr(STRINGA_TextVal,
+							(Object *)gwin->objects[GID_SEARCHSTRING],
+							(ULONG *)&storage);
+
+						utf8 = ami_to_utf8_easy((const char *)storage);
+
+						ret = search_web_omni(utf8, SEARCH_WEB_OMNI_SEARCHONLY, &url);
+						ami_utf8_free(utf8);
+						if (ret == NSERROR_OK) {
+								browser_window_navigate(gwin->gw->bw,
+										url,
+										NULL,
+										BW_NAVIGATE_HISTORY,
+										NULL,
+										NULL,
+										NULL);
+							nsurl_unref(url);
+						}
+						if (ret != NSERROR_OK) {
+							amiga_warn_user(messages_get_errorcode(ret), 0);
+						}
+
+					}
+					break;
+
+					case GID_HOME:
+						{
+							if (nsurl_create(nsoption_charp(homepage_url), &url) != NSERROR_OK) {
+								amiga_warn_user("NoMemory", 0);
+							} else {
+								browser_window_navigate(gwin->gw->bw,
+										url,
+										NULL,
+										BW_NAVIGATE_HISTORY,
+										NULL,
+										NULL,
+										NULL);
+								nsurl_unref(url);
+							}
+						}
+					break;
+
+					case GID_STOP:
+						if(browser_window_stop_available(gwin->gw->bw))
+							browser_window_stop(gwin->gw->bw);
+					break;
+
+					case GID_RELOAD:
+						ami_update_quals(gwin);
+
+						if(browser_window_reload_available(gwin->gw->bw))
+						{
+							if(gwin->key_state & BROWSER_MOUSE_MOD_1)
+							{
+								browser_window_reload(gwin->gw->bw, true);
+							}
+							else
+							{
+								browser_window_reload(gwin->gw->bw, false);
+							}
+						}
+					break;
+
+					case GID_BACK:
+						ami_gui_history(gwin, true);
+					break;
+
+					case GID_FORWARD:
+						ami_gui_history(gwin, false);
+					break;
+
+					case GID_FAVE:
+						GetAttr(STRINGA_TextVal,
+							(Object *)gwin->objects[GID_URL],
+							(ULONG *)&storage);
+						if(nsurl_create((const char *)storage, &url) == NSERROR_OK) {
+							if(hotlist_has_url(url)) {
+								hotlist_remove_url(url);
+							} else {
+								hotlist_add_url(url);
+							}
+							nsurl_unref(url);
+						}
+						ami_gui_update_hotlist_button(gwin);
+					break;
+
+					case GID_HOTLIST:
+					default:
+//							printf("GADGET: %ld\n",(result & WMHI_GADGETMASK));
+					break;
+				}
+			break;
+
+			case WMHI_RAWKEY:
+				ami_update_quals(gwin);
+			
+				storage = result & WMHI_GADGETMASK;
+				if(storage >= IECODE_UP_PREFIX) break;
+
+				GetAttr(WINDOW_InputEvent,gwin->objects[OID_MAIN],(ULONG *)&ie);
+
+				nskey = ami_key_to_nskey(storage, ie);
+
+				if((ie->ie_Qualifier & IEQUALIFIER_RCOMMAND) &&
+					((31 < nskey) && (nskey < 127))) {
+				/* NB: Some keypresses are converted to generic keypresses above
+				 * rather than being "menu-emulated" here. */
+					switch(nskey)
+					{
+						/* The following aren't available from the menu at the moment */
+
+						case 'r': // reload
+							if(browser_window_reload_available(gwin->gw->bw))
+								browser_window_reload(gwin->gw->bw, false);
+						break;
+
+						case 'u': // open url
+							if((nsoption_bool(kiosk_mode) == false))
+								ActivateLayoutGadget((struct Gadget *)gwin->objects[GID_MAIN],
+									gwin->win, NULL, (uint32)gwin->objects[GID_URL]);
+						break;
+					}
+				}
+				else
+				{
+					if(!browser_window_key_press(gwin->gw->bw, nskey))
+					{
+						switch(nskey)
+						{
+							case NS_KEY_UP:
+								ami_gui_scroll_internal(gwin, 0, -NSA_KBD_SCROLL_PX);
+							break;
+
+							case NS_KEY_DOWN:
+								ami_gui_scroll_internal(gwin, 0, +NSA_KBD_SCROLL_PX);
+							break;
+
+							case NS_KEY_LEFT:
+								ami_gui_scroll_internal(gwin, -NSA_KBD_SCROLL_PX, 0);
+							break;
+
+							case NS_KEY_RIGHT:
+								ami_gui_scroll_internal(gwin, +NSA_KBD_SCROLL_PX, 0);
+							break;
+
+							case NS_KEY_PAGE_UP:
+								ami_gui_scroll_internal(gwin, 0, SCROLL_PAGE_UP);
+							break;
+
+							case NS_KEY_PAGE_DOWN:
+							case ' ':
+								ami_gui_scroll_internal(gwin, 0, SCROLL_PAGE_DOWN);
+							break;
+
+							case NS_KEY_LINE_START: // page left
+								ami_gui_scroll_internal(gwin, SCROLL_PAGE_UP, 0);
+							break;
+
+							case NS_KEY_LINE_END: // page right
+								ami_gui_scroll_internal(gwin, SCROLL_PAGE_DOWN, 0);
+							break;
+
+							case NS_KEY_TEXT_START: // home
+								ami_gui_scroll_internal(gwin, SCROLL_TOP, SCROLL_TOP);
+							break;
+
+							case NS_KEY_TEXT_END: // end
+								ami_gui_scroll_internal(gwin, SCROLL_BOTTOM, SCROLL_BOTTOM);
+							break;
+
+							case NS_KEY_WORD_RIGHT: // alt+right
+								ami_change_tab(gwin, 1);
+							break;
+
+							case NS_KEY_WORD_LEFT: // alt+left
+								ami_change_tab(gwin, -1);
+							break;
+
+							case NS_KEY_DELETE_LEFT: // backspace
+								ami_gui_history(gwin, true);
+							break;
+
+							/* RawKeys. NB: These are passthrus in ami_key_to_nskey() */
+							case RAWKEY_F5: // reload
+								if(browser_window_reload_available(gwin->gw->bw))
+									browser_window_reload(gwin->gw->bw,false);
+							break;
+
+							case RAWKEY_F8: // scale 100%
+								ami_gui_set_scale(gwin->gw, 1.0);
+							break;
+
+							case RAWKEY_F9: // decrease scale
+								ami_gui_set_scale(gwin->gw, gwin->gw->scale - 0.1);
+							break;
+
+							case RAWKEY_F10: // increase scale
+								ami_gui_set_scale(gwin->gw, gwin->gw->scale + 0.1);
+							break;
+							
+							case RAWKEY_HELP: // help
+								ami_help_open(AMI_HELP_GUI, scrn);
+							break;
+						}
+					} else if(nskey == NS_KEY_COPY_SELECTION) {
+						/* if we've copied a selection we need to clear it - style guide rules */
+						browser_window_key_press(gwin->gw->bw, NS_KEY_CLEAR_SELECTION);
+					}
+				}
+			break;
+
+			case WMHI_NEWSIZE:
+				ami_set_border_gadget_size(gwin);
+				ami_throbber_redraw_schedule(0, gwin->gw);
+				ami_schedule(0, ami_gui_refresh_favicon, gwin);
+				browser_window_schedule_reformat(gwin->gw->bw);
+			break;
+
+			case WMHI_CLOSEWINDOW:
+				ami_gui_close_window(gwin);
+				win_closed = TRUE;
+	        break;
+#ifdef __amigaos4__
+			case WMHI_ICONIFY:
+			{
+				struct bitmap *bm;
+
+				bm = urldb_get_thumbnail(browser_window_get_url(gwin->gw->bw));
+				if(!bm) bm = content_get_bitmap(browser_window_get_content(gwin->gw->bw));
+				gwin->dobj = amiga_icon_from_bitmap(bm);
+				amiga_icon_superimpose_favicon_internal(gwin->gw->favicon,
+					gwin->dobj);
+				HideWindow(gwin->win);
+				gwin->appicon = AddAppIcon((ULONG)gwin->objects[OID_MAIN],
+									(ULONG)gwin, gwin->win->Title, appport,
+									0, gwin->dobj, NULL);
+
+				cur_gw = NULL;
+			}
+			break;
+#endif
+			case WMHI_INACTIVE:
+				gwin->gw->c_h_temp = gwin->gw->c_h;
+				gui_window_remove_caret(gwin->gw);
+			break;
+
+			case WMHI_ACTIVE:
+				if(gwin->gw->bw) cur_gw = gwin->gw;
+				if(gwin->gw->c_h_temp)
+					gwin->gw->c_h = gwin->gw->c_h_temp;
+			break;
+
+			case WMHI_INTUITICK:
+			break;
+
+   	     	default:
+				//printf("class: %ld\n",(result & WMHI_CLASSMASK));
+       		break;
+		}
+
+		if(win_destroyed)
+		{
+				/* we can't be sure what state our window_list is in, so let's
+				jump out of the function and start again */
+
+			win_destroyed = false;
+			return TRUE;
+		}
+
+		if(drag_x_move || drag_y_move)
+		{
+			gui_window_get_scroll(gwin->gw,
+				&gwin->gw->scrollx, &gwin->gw->scrolly);
+
+			gui_window_set_scroll(gwin->gw,
+				gwin->gw->scrollx + drag_x_move,
+				gwin->gw->scrolly + drag_y_move);
+		}
+
+//	ReplyMsg((struct Message *)message);
+	}
+
+	if(gwin->closed == true) {
+		win_closed = TRUE;
+		ami_gui_close_window(gwin);
+	}
+
+	return win_closed;
 }
 
 static void ami_gui_appicon_remove(struct gui_window_2 *gwin)
@@ -2960,8 +2977,8 @@ void ami_quit_netsurf(void)
 				case AMINS_WINDOW:
 					/* This also closes windows that are attached to the
 					 * gui_window, such as local history and find. */
-					ShowWindow(gwin->win, WINDOW_BACKMOST);
-					ami_gui_close_window(gwin);
+					ShowWindow(gwin->win, WINDOW_BACKMOST); // do we need this??
+					gwin->w.tbl->close(gwin);
 				break;
 
 				case AMINS_GUIOPTSWINDOW:
@@ -3810,6 +3827,33 @@ HOOKF(void, ami_scroller_hook, Object *, object, struct IntuiMessage *)
 //	ReplyMsg((struct Message *)msg);
 } 
 
+/* exported function documented in gui.h */
+nserror ami_gui_win_list_add(void *win, int type, struct ami_win_event_table *table)
+{
+	struct nsObject *node = AddObject(window_list, type);
+	if(node == NULL) return NSERROR_NOMEM;
+	node->objstruct = win;
+
+	struct ami_generic_window *w = (struct ami_generic_window *)win;
+	w->tbl = table;
+	w->node = node;
+
+	return NSERROR_OK;
+}
+
+/* exported function documented in gui.h */
+void ami_gui_win_list_remove(void *win)
+{
+	struct ami_generic_window *w = (struct ami_generic_window *)win;
+
+	DelObject(w->node);
+}
+
+static struct ami_win_event_table ami_gui_table = {
+	ami_gui_event,
+	ami_gui_close_window,
+};
+
 static struct gui_window *
 gui_window_create(struct browser_window *bw,
 		struct gui_window *existing,
@@ -4449,8 +4493,7 @@ gui_window_create(struct browser_window *bw,
 	g->shared->appwin = AddAppWindowA((ULONG)g->shared->objects[OID_MAIN],
 							(ULONG)g->shared, g->shared->win, appport, NULL);
 
-	g->shared->node = AddObject(window_list,AMINS_WINDOW);
-	g->shared->node->objstruct = g->shared;
+	ami_gui_win_list_add(g->shared, AMINS_WINDOW, &ami_gui_table);
 
 	ami_gui_set_default_gg();
 
@@ -4498,8 +4541,9 @@ static void ami_gui_close_tabs(struct gui_window_2 *gwin, bool other_tabs)
 	}
 }
 
-void ami_gui_close_window(struct gui_window_2 *gwin)
+void ami_gui_close_window(void *w)
 {
+	struct gui_window_2 *gwin = (struct gui_window_2 *)w;
 	ami_gui_close_tabs(gwin, false);
 }
 
@@ -4605,7 +4649,7 @@ static void gui_window_destroy(struct gui_window *g)
 	for(gid = 0; gid < GID_LAST; gid++)
 		free(g->shared->helphints[gid]);
 
-	DelObject(g->shared->node);
+	ami_gui_win_list_remove(g->shared);
 	if(g->tab_node) {
 		Remove(g->tab_node);
 		FreeClickTabNode(g->tab_node);

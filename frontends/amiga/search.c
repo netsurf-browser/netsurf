@@ -69,7 +69,7 @@
 static bool search_insert;
 
 struct find_window {
-	struct nsObject *node;
+	struct ami_generic_window w;
 	struct Window *win;
 	Object *objects[GID_LAST];
 	struct gui_window *gwin;
@@ -84,6 +84,7 @@ static void ami_search_set_hourglass(bool active, void *p);
 static void ami_search_add_recent(const char *string, void *p);
 static void ami_search_set_forward_state(bool active, void *p);
 static void ami_search_set_back_state(bool active, void *p);
+static BOOL ami_search_event(void *w);
 
 static struct gui_search_table search_table = {
 	ami_search_set_status,
@@ -91,6 +92,11 @@ static struct gui_search_table search_table = {
 	ami_search_add_recent,
 	ami_search_set_forward_state,
 	ami_search_set_back_state,
+};
+
+static struct ami_win_event_table ami_search_table = {
+	ami_search_event,
+	NULL, /* we don't explicitly close the search window n the frontend */
 };
 
 struct gui_search_table *amiga_search_table = &search_table;
@@ -184,8 +190,7 @@ void ami_search_open(struct gui_window *gwin)
 
 	fwin->win = (struct Window *)RA_OpenWindow(fwin->objects[OID_MAIN]);
 	fwin->gwin = gwin;
-	fwin->node = AddObject(window_list,AMINS_FINDWINDOW);
-	fwin->node->objstruct = fwin;
+	ami_gui_win_list_add(fwin, AMINS_FINDWINDOW, &ami_search_table);
 	gwin->shared->searchwin = fwin;
 	
 	ActivateLayoutGadget((struct Gadget *)fwin->objects[GID_MAIN], fwin->win,
@@ -197,11 +202,11 @@ void ami_search_close(void)
 	browser_window_search_clear(fwin->gwin->bw);
 	fwin->gwin->shared->searchwin = NULL;
 	DisposeObject(fwin->objects[OID_MAIN]);
-	DelObject(fwin->node);
-	fwin=NULL;
+	ami_gui_win_list_remove(fwin);
+	fwin = NULL;
 }
 
-BOOL ami_search_event(void)
+static BOOL ami_search_event(void *w)
 {
 	/* return TRUE if window destroyed */
 	ULONG result;

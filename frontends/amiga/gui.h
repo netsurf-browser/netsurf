@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2015 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2016 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -91,8 +91,27 @@ struct history_window;
 
 #define AMI_GUI_TOOLBAR_MAX 20
 
-struct gui_window_2 {
+struct ami_win_event_table {
+	/* callback to handle events when using a shared msgport
+	 *
+	 * @param pointer to our window structure (must start with ami_generic_window)
+	 * @return TRUE if window was destroyed during event processing
+	 */
+	BOOL (*event)(void *w);
+
+	/* callback for explicit window closure
+	 * some windows are implicitly closed by the browser and should set this to NULL
+	*/
+	void (*close)(void *w);
+};
+
+struct ami_generic_window {
 	struct nsObject *node;
+	struct ami_win_event_table *tbl;
+};
+
+struct gui_window_2 {
+	struct ami_generic_window w;
 	struct Window *win;
 	Object *restrict objects[GID_LAST];
 	struct gui_window *gw; /* currently-displayed gui_window */
@@ -203,9 +222,9 @@ void ami_gui_set_scale(struct gui_window *gw, float scale);
 /**
  * Close a window and all tabs attached to it.
  *
- * @param gwin gui_window_2 to act upon.
+ * @param w gui_window_2 to act upon.
  */
-void ami_gui_close_window(struct gui_window_2 *gwin);
+void ami_gui_close_window(void *w);
 
 /**
  * Close all tabs in a window except the active one.
@@ -253,5 +272,15 @@ void ami_gui_set_default_gg(void);
  * Switch to the most-recently-opened tab
  */
 void ami_gui_switch_to_new_tab(struct gui_window_2 *gwin);
+
+/**
+ * Add a window to the NetSurf window list (to enable event processing)
+ */
+nserror ami_gui_win_list_add(void *win, int type, struct ami_win_event_table *table);
+
+/**
+ * Remove a window from the NetSurf window list
+ */
+void ami_gui_win_list_remove(void *win);
 #endif
 

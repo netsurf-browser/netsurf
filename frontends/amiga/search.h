@@ -32,11 +32,6 @@ struct gui_search_table *amiga_search_table;
 void ami_search_open(struct gui_window *gwin);
 
 /**
- * Process search events
- */
-BOOL ami_search_event(void);
-
-/**
  * Close search
  */
 void ami_search_close(void);
