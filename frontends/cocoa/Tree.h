@@ -18,7 +18,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "desktop/tree.h"
+#import "cocoa/desktop-tree.h"
 
 @class Tree;
 

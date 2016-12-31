@@ -40,7 +40,7 @@
 #import "netsurf/cookie_db.h"
 #import "netsurf/url_db.h"
 #import "desktop/save_complete.h"
-#import "desktop/tree.h"
+#import "cocoa/desktop-tree.h"
 
 #ifndef NETSURF_HOMEPAGE
 #define NETSURF_HOMEPAGE "http://www.netsurf-browser.org/welcome/"

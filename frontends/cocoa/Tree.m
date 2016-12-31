@@ -22,7 +22,7 @@
 #import "cocoa/plotter.h"
 
 #import "netsurf/plotters.h"
-#import "desktop/tree.h"
+#import "cocoa/desktop-tree.h"
 
 @implementation Tree
 

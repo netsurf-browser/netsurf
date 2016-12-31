@@ -22,8 +22,8 @@
 #import "netsurf/browser_window.h"
 #import "netsurf/keypress.h"
 #import "desktop/hotlist.h"
-#import "desktop/tree.h"
 
+#import "cocoa/desktop-tree.h"
 #import "cocoa/BookmarksController.h"
 #import "cocoa/Tree.h"
 #import "cocoa/TreeView.h"

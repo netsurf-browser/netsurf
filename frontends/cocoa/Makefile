@@ -74,6 +74,7 @@ S_FRONTEND := \
 	SearchWindowController.m	\
 	URLFieldCell.m			\
 	Tree.m				\
+	desktop-tree.m			\
 	TreeView.m			\
 	HistoryView.m			\
 	HistoryWindowController.m	\
