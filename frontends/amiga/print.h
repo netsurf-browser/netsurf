@@ -21,18 +21,10 @@
 #include <proto/exec.h>
 
 struct content;
-
-struct ami_print_window {
-	struct nsObject *node;
-	struct Window *win;
-	Object *objects[OID_LAST];
-	Object *gadgets[GID_LAST];
-	struct hlcache_handle *c;
-};
+struct ami_print_window;
 
 void ami_print(struct hlcache_handle *c, int copies);
 void ami_print_ui(struct hlcache_handle *c);
-BOOL ami_print_event(struct ami_print_window *pw);
 bool ami_print_cont(void);
 struct MsgPort *ami_print_init(void);
 void ami_print_free(void);

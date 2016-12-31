@@ -1949,7 +1949,7 @@ static void ami_handle_msg(void)
 				continue;
 			}
 		} else if(node->Type == AMINS_PRINTWINDOW) {
-			if(ami_print_event((struct ami_print_window *)w)) {
+			if(w->tbl->event(w)) {
 				ami_try_quit();
 				break;
 			} else {

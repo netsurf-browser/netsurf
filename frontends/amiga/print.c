@@ -96,6 +96,14 @@ struct ami_printer_info
 	struct Window *win;
 };
 
+struct ami_print_window {
+	struct ami_generic_window w;
+	struct Window *win;
+	Object *objects[OID_LAST];
+	Object *gadgets[GID_LAST];
+	struct hlcache_handle *c;
+};
+
 enum
 {
 	PGID_MAIN=0,
@@ -118,6 +126,13 @@ static struct ami_printer_info ami_print_info;
 
 static CONST_STRPTR gadlab[PGID_LAST];
 static STRPTR printers[11];
+
+static BOOL ami_print_event(void *w);
+
+static const struct ami_win_event_table ami_print_table = {
+	ami_print_event,
+	NULL, /* we don't explicitly close the print window on quit (or at all???) */
+};
 
 static void ami_print_ui_setup(void)
 {
@@ -325,22 +340,21 @@ void ami_print_ui(struct hlcache_handle *c)
 		EndWindow;
 
 	pw->win = (struct Window *)RA_OpenWindow(pw->objects[OID_MAIN]);
-
-	pw->node = AddObject(window_list, AMINS_PRINTWINDOW);
-	pw->node->objstruct = pw;
+	ami_gui_win_list_add(pw, AMINS_PRINTWINDOW, &ami_print_table);
 }
 
 static void ami_print_close(struct ami_print_window *pw)
 {
 	DisposeObject(pw->objects[OID_MAIN]);
-	DelObject(pw->node);
+	ami_gui_win_list_remove(pw);
 
 	ami_print_ui_free();
 }
 
-BOOL ami_print_event(struct ami_print_window *pw)
+static BOOL ami_print_event(void *w)
 {
 	/* return TRUE if window destroyed */
+	struct ami_print_window *pw = (struct ami_print_window *)w;
 	ULONG result;
 	uint16 code;
 	struct hlcache_handle *c;
