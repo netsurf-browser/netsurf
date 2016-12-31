@@ -220,7 +220,7 @@ enum {
 };
 
 struct ami_gui_opts_window {
-	struct nsObject *node;
+	struct ami_generic_window w;
 	struct Window *win;
 	Object *objects[GID_OPTS_LAST];
 #ifndef __amigaos4__
@@ -231,6 +231,14 @@ struct ami_gui_opts_window {
 	struct List ditheroptslist;
 	struct List fontoptslist;
 #endif
+};
+
+static BOOL ami_gui_opts_event(void *w);
+static void ami_gui_opts_close(void *w);
+
+static const struct ami_win_event_table ami_guiopts_table = {
+	ami_gui_opts_event,
+	ami_gui_opts_close,
 };
 
 static struct ami_gui_opts_window *gow = NULL;
@@ -1667,8 +1675,7 @@ void ami_gui_opts_open(void)
 		EndWindow;
 
 		gow->win = (struct Window *)RA_OpenWindow(gow->objects[OID_MAIN]);
-		gow->node = AddObject(window_list,AMINS_GUIOPTSWINDOW);
-		gow->node->objstruct = gow;
+		ami_gui_win_list_add(gow, AMINS_GUIOPTSWINDOW, &ami_guiopts_table);
 	}
 	ami_utf8_free(homepage_url_lc);
 }
@@ -2063,15 +2070,15 @@ static void ami_gui_opts_use(bool save)
 	ami_update_pointer(gow->win, GUI_POINTER_DEFAULT);
 }
 
-void ami_gui_opts_close(void)
+static void ami_gui_opts_close(void *w)
 {
 	DisposeObject(gow->objects[OID_MAIN]);
 	ami_gui_opts_free(gow);
-	DelObject(gow->node);
+	ami_gui_win_list_remove(gow);
 	gow = NULL;
 }
 
-BOOL ami_gui_opts_event(void)
+static BOOL ami_gui_opts_event(void *w)
 {
 	/* return TRUE if window destroyed */
 	ULONG result,data = 0;
@@ -2083,7 +2090,7 @@ BOOL ami_gui_opts_event(void)
        	switch(result & WMHI_CLASSMASK) // class
    		{
 			case WMHI_CLOSEWINDOW:
-				ami_gui_opts_close();
+				ami_gui_opts_close(gow);
 				return TRUE;
 			break;
 
@@ -2102,7 +2109,7 @@ BOOL ami_gui_opts_event(void)
 				{
 					case GID_OPTS_SAVE:
 						ami_gui_opts_use(true);
-						ami_gui_opts_close();
+						ami_gui_opts_close(gow);
 						return TRUE;
 					break;
 
@@ -2111,7 +2118,7 @@ BOOL ami_gui_opts_event(void)
 						// fall through
 
 					case GID_OPTS_CANCEL:
-						ami_gui_opts_close();
+						ami_gui_opts_close(gow);
 						return TRUE;
 					break;
 

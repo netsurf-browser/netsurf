@@ -1957,7 +1957,7 @@ static void ami_handle_msg(void)
 				continue;
 			}
 		} else if(node->Type == AMINS_GUIOPTSWINDOW) {
-			if(ami_gui_opts_event()) {
+			if(w->tbl->event(w)) {
 				/* last window possibly closed, so exit with conditions ;) */
 				if(scrn) ami_try_quit();
 				break;
@@ -2958,6 +2958,7 @@ void ami_quit_netsurf(void)
 	struct nsObject *node;
 	struct nsObject *nnode;
 	struct ami_generic_window *w;
+	struct gui_window_2 *gwin;
 
 	/* Disable the multiple tabs open warning */
 	nsoption_set_bool(tab_close_warn, false);
@@ -2977,12 +2978,13 @@ void ami_quit_netsurf(void)
 				case AMINS_WINDOW:
 					/* This also closes windows that are attached to the
 					 * gui_window, such as local history and find. */
-					//ShowWindow(gwin->win, WINDOW_BACKMOST); // do we need this??
+					gwin = (struct gui_window_2 *)w;
+					ShowWindow(gwin->win, WINDOW_BACKMOST); // do we need this??
 					w->tbl->close(w);
 				break;
 
 				case AMINS_GUIOPTSWINDOW:
-					ami_gui_opts_close();
+					w->tbl->close(w);
 				break;
 
 				case AMINS_DLWINDOW:
