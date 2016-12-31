@@ -24,15 +24,7 @@
 
 struct gui_window;
 struct gui_globals;
-
-struct history_window {
-	struct nsObject *node;
-	struct Window *win;
-	Object *objects[GID_LAST];
-	struct gui_window *gw;
-	struct Hook scrollerhook;
-	struct gui_globals *gg;
-};
+struct history_window;
 
 /**
  * Open history window.
@@ -42,7 +34,5 @@ struct history_window {
 void ami_history_open(struct gui_window *gw);
 
 void ami_history_close(struct history_window *hw);
-BOOL ami_history_event(struct history_window *hw);
-
 #endif
 

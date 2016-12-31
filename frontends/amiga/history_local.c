@@ -57,8 +57,24 @@
 #include "amiga/gui.h"
 #include "amiga/history_local.h"
 
+struct history_window {
+	struct ami_generic_window w;
+	struct Window *win;
+	Object *objects[GID_LAST];
+	struct gui_window *gw;
+	struct Hook scrollerhook;
+	struct gui_globals *gg;
+};
+
 static void ami_history_update_extent(struct history_window *hw);
 HOOKF(void, ami_history_scroller_hook, Object *, object, struct IntuiMessage *);
+
+static BOOL ami_history_event(void *w);
+
+static const struct ami_win_event_table ami_localhistory_table = {
+	ami_history_event,
+	NULL, /* we don't explicitly close the local history window on quit */
+};
 
 /**
  * Redraw history window.
@@ -159,8 +175,7 @@ void ami_history_open(struct gui_window *gw)
 		EndWindow;
 
 		gw->hw->win = (struct Window *)RA_OpenWindow(gw->hw->objects[OID_MAIN]);
-		gw->hw->node = AddObject(window_list,AMINS_HISTORYWINDOW);
-		gw->hw->node->objstruct = gw->hw;
+		ami_gui_win_list_add(gw->hw, AMINS_HISTORYWINDOW, &ami_localhistory_table);
 
 		GetAttr(WINDOW_HorizObject,gw->hw->objects[OID_MAIN],(ULONG *)&gw->hw->objects[OID_HSCROLL]);
 		GetAttr(WINDOW_VertObject,gw->hw->objects[OID_MAIN],(ULONG *)&gw->hw->objects[OID_VSCROLL]);
@@ -229,12 +244,13 @@ void ami_history_close(struct history_window *hw)
 	free(hw->gg);
 	hw->gw->hw = NULL;
 	DisposeObject(hw->objects[OID_MAIN]);
-	DelObject(hw->node);
+	ami_gui_win_list_remove(hw);
 }
 
-BOOL ami_history_event(struct history_window *hw)
+static BOOL ami_history_event(void *w)
 {
 	/* return TRUE if window destroyed */
+	struct history_window *hw = (struct history_window *)w;
 	ULONG result = 0;
 	uint16 code;
 	const char *url;
