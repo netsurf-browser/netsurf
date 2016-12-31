@@ -1903,18 +1903,17 @@ static void ami_set_border_gadget_size(struct gui_window_2 *gwin)
 #endif
 }
 
-static void ami_handle_msg(void)
+static BOOL ami_handle_msg(void)
 {
 	struct ami_generic_window *w = NULL;
 	struct nsObject *node;
 	struct nsObject *nnode;
-	struct gui_window_2 *gwin = NULL;
+	BOOL win_closed = FALSE;
 
-	if(IsMinListEmpty(window_list))
-	{
+	if(IsMinListEmpty(window_list)) {
 		/* no windows in list, so NetSurf should not be running */
 		ami_try_quit();
-		return;
+		return FALSE;
 	}
 
 	node = (struct nsObject *)GetHead((struct List *)window_list);
@@ -1923,74 +1922,19 @@ static void ami_handle_msg(void)
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
 
 		w = node->objstruct;
+		if(w == NULL) continue;
 
-		if(node->Type == AMINS_TVWINDOW) {
-			if(w->tbl->event(w)) {
-				ami_try_quit();
-				break;
+		if(w->tbl->event != NULL) {
+			if((win_closed = w->tbl->event(w))) {
+				if((node->Type != AMINS_GUIOPTSWINDOW) ||
+					((node->Type == AMINS_GUIOPTSWINDOW) && (scrn != NULL))) {
+					ami_try_quit();
+					break;
+				}
 			} else {
 				node = nnode;
 				continue;
 			}
-		} else if(node->Type == AMINS_FINDWINDOW) {
-			if(w->tbl->event(w)) {
-				ami_try_quit();
-				break;
-			} else {
-				node = nnode;
-				continue;
-			}
-		} else if(node->Type == AMINS_HISTORYWINDOW) {
-			if(w->tbl->event(w)) {
-				ami_try_quit();
-				break;
-			} else {
-				node = nnode;
-				continue;
-			}
-		} else if(node->Type == AMINS_PRINTWINDOW) {
-			if(w->tbl->event(w)) {
-				ami_try_quit();
-				break;
-			} else {
-				node = nnode;
-				continue;
-			}
-		} else if(node->Type == AMINS_GUIOPTSWINDOW) {
-			if(w->tbl->event(w)) {
-				/* last window possibly closed, so exit with conditions ;) */
-				if(scrn) ami_try_quit();
-				break;
-			} else {
-				node = nnode;
-				continue;
-			}
-		} else if(node->Type == AMINS_DLWINDOW) {
-			if(w->tbl->event(w)) {
-				ami_try_quit();
-				break;
-			} else {
-				node = nnode;
-				continue;
-			}
-		} else if(node->Type == AMINS_LOGINWINDOW) {
-			if(w->tbl->event(w)) {
-				ami_try_quit();
-				break;
-			} else {
-				node = nnode;
-				continue;
-			}
-		}
-
-		/* assume this is a normal gui window for now */
-		gwin = (struct gui_window_2 *)w;
-		if((gwin == NULL) || (gwin->objects[OID_MAIN] == NULL)) continue;
-		if(w->tbl->event(w)) {
-			break;
-		} else {
-			node = nnode;
-			continue;
 		}
 	} while((node = nnode));
 
@@ -2001,6 +1945,8 @@ static void ami_handle_msg(void)
 	if(ami_menu_get_check_toggled() == true) {
 		ami_gui_menu_update_all();
 	}
+
+	return win_closed;
 }
 
 static BOOL ami_gui_event(void *w)
@@ -2846,7 +2792,7 @@ void ami_get_msg(void)
 	}
 
 	if(signal & winsignal)
-		ami_handle_msg();
+		while(ami_handle_msg());
 
 	if(signal & appsig)
 		ami_handle_appmsg();
