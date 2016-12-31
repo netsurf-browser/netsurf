@@ -18,7 +18,7 @@
 
 #ifndef AMIGA_HISTORY_H
 #define AMIGA_HISTORY_H
-#include "desktop/tree.h"
+#include "amiga/desktop-tree.h"
 
 #define GLOBAL_HISTORY_RECENT_URLS 16
 

@@ -18,7 +18,7 @@
 
 #ifndef AMIGA_COOKIES_H
 #define AMIGA_COOKIES_H
-#include "desktop/tree.h"
+#include "amiga/desktop-tree.h"
 #include "amiga/tree.h"
 
 void ami_cookies_initialise(void);

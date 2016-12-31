@@ -31,12 +31,19 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"
+#include "netsurf/misc.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/core_window.h"
 #include "content/content.h"
 #include "content/hlcache.h"
+#include "desktop/gui_internal.h"
+#include "desktop/treeview.h"
+#include "desktop/hotlist.h"
+#include "desktop/cookie_manager.h"
+#include "desktop/global_history.h"
+#include "desktop/sslcert_viewer.h"
 
-#include "desktop/tree.h"
+#include "amiga/desktop-tree.h"
 
 struct tree {
 	unsigned int flags;	/* Tree flags */
@@ -45,13 +52,6 @@ struct tree {
 	void *client_data;	/* User assigned data for the callbacks */
 };
 
-#include "netsurf/misc.h"
-#include "desktop/gui_internal.h"
-#include "desktop/treeview.h"
-#include "desktop/hotlist.h"
-#include "desktop/cookie_manager.h"
-#include "desktop/global_history.h"
-#include "desktop/sslcert_viewer.h"
 
 struct sslcert_session_data *ssl_current_session = NULL;
 const char *tree_hotlist_path = NULL;

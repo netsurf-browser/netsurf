@@ -116,9 +116,9 @@
 #include "desktop/save_complete.h"
 #include "desktop/scrollbar.h"
 #include "desktop/searchweb.h"
-#include "desktop/tree.h"
 
 /* NetSurf Amiga platform includes */
+#include "amiga/desktop-tree.h"
 #include "amiga/gui.h"
 #include "amiga/arexx.h"
 #include "amiga/bitmap.h"

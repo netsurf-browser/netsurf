@@ -109,7 +109,6 @@ char *url_to_path(const char *url)
  ******************************************************************************/
 
 #include "desktop/cookie_manager.h"
-#include "desktop/tree.h"
 
 /* desktop/cookie_manager.h -- used by urldb 
  *
