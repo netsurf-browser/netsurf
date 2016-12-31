@@ -69,7 +69,7 @@
 #include "amiga/utf8.h"
 
 struct gui_download_window {
-	struct nsObject *node;
+	struct ami_generic_window w;
 	struct Window *win;
 	Object *objects[GID_LAST];
 	BPTR fh;
@@ -87,6 +87,14 @@ enum {
 	AMINS_DLOAD_OK = 0,
 	AMINS_DLOAD_ERROR,
 	AMINS_DLOAD_ABORT,
+};
+
+static void ami_download_window_abort(void *w);
+static BOOL ami_download_window_event(void *w);
+
+static const struct ami_win_event_table ami_download_table = {
+	ami_download_window_event,
+	ami_download_window_abort,
 };
 
 static int downloads_in_progress = 0;
@@ -190,8 +198,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 	dw->win = (struct Window *)RA_OpenWindow(dw->objects[OID_MAIN]);
 	dw->ctx = ctx;
 
-	dw->node = AddObject(window_list,AMINS_DLWINDOW);
-	dw->node->objstruct = dw;
+	ami_gui_win_list_add(dw, AMINS_DLWINDOW, &ami_download_table);
 
 	downloads_in_progress++;
 
@@ -269,7 +276,7 @@ static void gui_download_window_done(struct gui_download_window *dw)
 	downloads_in_progress--;
 
 	DisposeObject(dw->objects[OID_MAIN]);
-	DelObject(dw->node);
+	ami_gui_win_list_remove(dw);
 	if(queuedl) {
 		nsurl *url;
 		if (nsurl_create(dln2->node.ln_Name, &url) != NSERROR_OK) {
@@ -296,16 +303,18 @@ static void gui_download_window_error(struct gui_download_window *dw,
 	gui_download_window_done(dw);
 }
 
-void ami_download_window_abort(struct gui_download_window *dw)
+static void ami_download_window_abort(void *w)
 {
+	struct gui_download_window *dw = (struct gui_download_window *)dw;
 	download_context_abort(dw->ctx);
 	dw->result = AMINS_DLOAD_ABORT;
 	gui_download_window_done(dw);
 }
 
-BOOL ami_download_window_event(struct gui_download_window *dw)
+static BOOL ami_download_window_event(void *w)
 {
 	/* return TRUE if window destroyed */
+	struct gui_download_window *dw = (struct gui_download_window *)w;
 	ULONG result;
 	uint16 code;
 

@@ -1966,7 +1966,7 @@ static void ami_handle_msg(void)
 				continue;
 			}
 		} else if(node->Type == AMINS_DLWINDOW) {
-			if(ami_download_window_event((struct gui_download_window *)w)) {
+			if(w->tbl->event(w)) {
 				ami_try_quit();
 				break;
 			} else {
@@ -2988,7 +2988,7 @@ void ami_quit_netsurf(void)
 				break;
 
 				case AMINS_DLWINDOW:
-					ami_download_window_abort((struct gui_download_window *)w);
+					w->tbl->close(w);
 				break;
 			}
 		} while((node = nnode));
