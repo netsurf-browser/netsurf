@@ -40,6 +40,7 @@
 #endif
 
 #ifdef __amigaos4__
+#include <exec/extmem.h>
 #include <sys/param.h>
 #endif
 #include "assert.h"
@@ -57,6 +58,7 @@
 #include "amiga/memory.h"
 #include "amiga/misc.h"
 #include "amiga/rtg.h"
+#include "amiga/schedule.h"
 
 // disable use of "triangle mode" for scaling
 #ifdef AMI_NS_TRIANGLE_SCALING
@@ -67,6 +69,8 @@ struct bitmap {
 	int width;
 	int height;
 	UBYTE *pixdata;
+	struct ExtMemIFace *iextmem;
+	uint32 size;
 	bool opaque;
 	int native;
 	struct BitMap *nativebm;
@@ -113,7 +117,25 @@ void *amiga_bitmap_create(int width, int height, unsigned int state)
 	bitmap = ami_memory_itempool_alloc(pool_bitmap, sizeof(struct bitmap));
 	if(bitmap == NULL) return NULL;
 
-	bitmap->pixdata = ami_memory_clear_alloc(width*height*4, 0xff);
+	bitmap->size = width * height * 4;
+
+#ifdef __amigaos4__
+	if(nsoption_bool(use_extmem) == true) {
+		uint64 size64 = bitmap->size;
+		bitmap->iextmem = AllocSysObjectTags(ASOT_EXTMEM,
+								ASOEXTMEM_Size, &size64,
+								ASOEXTMEM_AllocationPolicy, EXTMEMPOLICY_IMMEDIATE,
+								TAG_END);
+
+		bitmap->pixdata = NULL;
+		UBYTE *pixdata = amiga_bitmap_get_buffer(bitmap);
+		memset(pixdata, 0xff, bitmap->size);
+	} else
+#endif
+	{
+		bitmap->pixdata = ami_memory_clear_alloc(bitmap->size, 0xff);
+	}
+
 	bitmap->width = width;
 	bitmap->height = height;
 
@@ -133,11 +155,36 @@ void *amiga_bitmap_create(int width, int height, unsigned int state)
 	return bitmap;
 }
 
+static void amiga_bitmap_unmap_buffer(void *p)
+{
+#ifdef __amigaos4__
+	struct bitmap *bm = p;
+
+	if((nsoption_bool(use_extmem) == true) && (bm->pixdata != NULL)) {
+		LOG("Unmapping ExtMem object %p for bitmap %p", bm->iextmem, bm);
+		bm->iextmem->Unmap(bm->pixdata, bm->size);
+		bm->pixdata = NULL;
+	}
+#endif
+}
 
 /* exported function documented in amiga/bitmap.h */
 unsigned char *amiga_bitmap_get_buffer(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
+
+#ifdef __amigaos4__
+	if(nsoption_bool(use_extmem) == true) {
+		if(bm->pixdata == NULL) {
+			LOG("Mapping ExtMem object %p for bitmap %p", bm->iextmem, bm);
+			bm->pixdata = bm->iextmem->Map(NULL, bm->size, 0LL, 0);
+		}
+
+		/* unmap the buffer after one second */
+		ami_schedule(1000, amiga_bitmap_unmap_buffer, bm);
+	}
+#endif
+
 	return bm->pixdata;
 }
 
@@ -169,8 +216,19 @@ void amiga_bitmap_destroy(void *bitmap)
 		}
 
 		if(bm->native_mask) FreeRaster(bm->native_mask, bm->width, bm->height);
-		if(bm->drawhandle) ReleaseDrawHandle(bm->drawhandle);
-		ami_memory_clear_free(bm->pixdata);
+
+#ifdef __amigaos4__
+		if(nsoption_bool(use_extmem) == true) {
+			ami_schedule(-1, amiga_bitmap_unmap_buffer, bm);
+			amiga_bitmap_unmap_buffer(bm);
+			FreeSysObject(ASOT_EXTMEM, bm->iextmem);
+			bm->iextmem = NULL;
+		} else
+#endif
+		{
+			if(bm->drawhandle) ReleaseDrawHandle(bm->drawhandle);
+			ami_memory_clear_free(bm->pixdata);
+		}
 
 		if(bm->url) nsurl_unref(bm->url);
 		if(bm->title) free(bm->title);
@@ -218,9 +276,12 @@ void amiga_bitmap_modified(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
-	if((bm->nativebm)) // && (bm->native == AMI_NSBM_TRUECOLOUR))
-		ami_rtg_freebitmap(bm->nativebm);
-		
+#ifdef __amigaos4__
+		/* unmap the buffer after 0.5s - we might need it imminently */
+		ami_schedule(500, amiga_bitmap_unmap_buffer, bm);
+#endif
+
+	if(bm->nativebm) ami_rtg_freebitmap(bm->nativebm);
 	if(bm->drawhandle) ReleaseDrawHandle(bm->drawhandle);
 	if(bm->native_mask) FreeRaster(bm->native_mask, bm->width, bm->height);
 	bm->nativebm = NULL;
@@ -645,6 +706,7 @@ struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
 				int width, int height, struct BitMap *friendbm)
 {
 	if(bitmap == NULL) return NULL;
+	LOG("Getting native BitMap for %p", bitmap);
 
 	if(__builtin_expect(ami_plot_screen_is_palettemapped() == true, 0)) {
 		return ami_bitmap_get_palettemapped(bitmap, width, height, friendbm);
@@ -662,6 +724,8 @@ void ami_bitmap_fini(void)
 static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *content)
 {
 #ifdef __amigaos4__
+	LOG("Entering bitmap_render");
+
 	struct redraw_context ctx = {
 		.interactive = false,
 		.background_images = true,
