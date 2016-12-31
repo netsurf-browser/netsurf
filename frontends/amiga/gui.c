@@ -1974,7 +1974,7 @@ static void ami_handle_msg(void)
 				continue;
 			}
 		} else if(node->Type == AMINS_LOGINWINDOW) {
-			if(ami_401login_event((struct gui_login_window *)w)) {
+			if(w->tbl->event(w)) {
 				ami_try_quit();
 				break;
 			} else {
