@@ -230,11 +230,6 @@ void amiga_bitmap_destroy(void *bitmap)
 			ami_memory_clear_free(bm->pixdata);
 		}
 
-<<<<<<< HEAD
-=======
-		if(bm->drawhandle) ReleaseDrawHandle(bm->drawhandle);
-
->>>>>>> Fix merge error
 		if(bm->url) nsurl_unref(bm->url);
 		if(bm->title) free(bm->title);
 
