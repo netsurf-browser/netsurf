@@ -2958,7 +2958,6 @@ void ami_quit_netsurf(void)
 	struct nsObject *node;
 	struct nsObject *nnode;
 	struct ami_generic_window *w;
-	struct gui_window_2 *gwin;
 
 	/* Disable the multiple tabs open warning */
 	nsoption_set_bool(tab_close_warn, false);
@@ -2970,26 +2969,12 @@ void ami_quit_netsurf(void)
 			nnode=(struct nsObject *)GetSucc((struct Node *)node);
 			w = node->objstruct;
 
-			switch(node->Type) {
-				case AMINS_TVWINDOW:
-					w->tbl->close(w);
-				break;
-
-				case AMINS_WINDOW:
-					/* This also closes windows that are attached to the
-					 * gui_window, such as local history and find. */
-					gwin = (struct gui_window_2 *)w;
+			if(w->tbl->close != NULL) {
+				if(node->Type == AMINS_WINDOW) {
+					struct gui_window_2 *gwin = (struct gui_window_2 *)w;
 					ShowWindow(gwin->win, WINDOW_BACKMOST); // do we need this??
-					w->tbl->close(w);
-				break;
-
-				case AMINS_GUIOPTSWINDOW:
-					w->tbl->close(w);
-				break;
-
-				case AMINS_DLWINDOW:
-					w->tbl->close(w);
-				break;
+				}
+				w->tbl->close(w);
 			}
 		} while((node = nnode));
 
