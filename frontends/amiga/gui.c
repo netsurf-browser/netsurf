@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2015 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2016 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -616,6 +616,11 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 
 	/* Some OS-specific overrides */
 #ifdef __amigaos4__
+	if(!LIB_IS_AT_LEAST((struct Library *)SysBase, 53, 89)) {
+		/* Disable ExtMem usage pre-OS4.1FEU1 */
+		nsoption_set_bool(use_extmem, false);
+	}
+
 	if(codeset == 0) codeset = 4; /* ISO-8859-1 */
 	const char *encname = (const char *)ObtainCharsetInfo(DFCS_NUMBER, codeset,
 							DFCS_MIMENAME);

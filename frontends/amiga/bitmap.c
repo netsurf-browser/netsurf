@@ -277,7 +277,8 @@ void amiga_bitmap_modified(void *bitmap)
 	struct bitmap *bm = bitmap;
 
 #ifdef __amigaos4__
-	amiga_bitmap_unmap_buffer(bm);
+		/* unmap the buffer after 0.5s - we might need it imminently */
+		ami_schedule(500, amiga_bitmap_unmap_buffer, bm);
 #endif
 
 	if(bm->nativebm) ami_rtg_freebitmap(bm->nativebm);
