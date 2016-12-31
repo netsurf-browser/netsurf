@@ -190,7 +190,7 @@ struct gui_window
 	float scale;
 };
 
-extern struct MinList *window_list;
+extern struct MinList *window_list; /**\todo stop arexx.c poking about in here */
 extern struct Screen *scrn;
 extern struct MsgPort *sport;
 extern struct gui_window *cur_gw;
