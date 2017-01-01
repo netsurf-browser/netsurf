@@ -4741,7 +4741,7 @@ static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw)
 	if(draw == true) ami_reset_pointer(g->shared);
 }
 
-static bool ami_gui_window_update_box_deferred_check(struct MinList *deferred_rects,
+bool ami_gui_window_update_box_deferred_check(struct MinList *deferred_rects,
 				const struct rect *restrict new_rect, APTR mempool)
 {
 	struct nsObject *node;

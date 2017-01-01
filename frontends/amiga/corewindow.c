@@ -45,6 +45,7 @@
 #include "netsurf/mouse.h"
 #include "desktop/plot_style.h"
 
+#include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
 
@@ -55,8 +56,31 @@
 #include <reaction/reaction_macros.h>
 
 #include "amiga/corewindow.h"
+#include "amiga/memory.h"
 #include "amiga/misc.h"
 #include "amiga/object.h"
+#include "amiga/schedule.h"
+
+/**
+ * Convert co-ordinates relative to space.gadget
+ * into document co-ordinates
+ *
+ * @param ami_cw core window
+ * @param x co-ordinate, will be updated to new x co-ordinate
+ * @param y co-ordinate, will be updated to new y co-ordinate
+ */
+static void
+ami_cw_coord_amiga_to_ns(struct ami_corewindow *ami_cw, int *restrict x, int *restrict y)
+{
+	ULONG xs, ys;
+
+	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_HSCROLL], (ULONG *)&xs);
+	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_VSCROLL], (ULONG *)&ys);
+
+	*x = *x + xs;
+	*y = *y + ys;
+}
+
 
 /* get current mouse position in the draw area, adjusted for scroll.
  * only works during OM_NOTIFY! at other times use last stored posn
@@ -64,16 +88,15 @@
 static void
 ami_cw_mouse_pos(struct ami_corewindow *ami_cw, int *restrict x, int *restrict y)
 {
-	ULONG xs, ys;
 	ULONG xm, ym;
 
-	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_HSCROLL], (ULONG *)&xs);
-	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_VSCROLL], (ULONG *)&ys);
 	GetAttr(SPACE_MouseX, ami_cw->objects[GID_CW_DRAW], (ULONG *)&xm);
 	GetAttr(SPACE_MouseY, ami_cw->objects[GID_CW_DRAW], (ULONG *)&ym);
 
-	ami_cw->mouse_x = xm + xs;
-	ami_cw->mouse_y = ym + ys;
+	ami_cw_coord_amiga_to_ns(ami_cw, (int *)&xm, (int *)&ym);
+
+	ami_cw->mouse_x = xm;
+	ami_cw->mouse_y = ym;
 	*x = ami_cw->mouse_x;
 	*y = ami_cw->mouse_y;
 }
@@ -93,6 +116,193 @@ ami_cw_key(struct ami_corewindow *ami_cw, int nskey)
 		/* we may need to deal with scroll-related keys here */
 	}
 }
+
+
+/**
+ * Redraw functions
+ *
+ * This is slightly over-engineered as it was taken from the main browser/old tree redraws
+ * and supports deferred drawing of rectangles and tiling
+ */
+
+/**
+ * Redraw an area of a core window
+ *
+ * \param  g   a struct ami_corewindow 
+ * \param  r  rect (in document co-ordinates)
+ */
+
+static void
+ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
+{
+	struct IBox *bbox;
+	struct RastPort *temprp;
+	ULONG pos_x, pos_y;
+	struct rect draw_rect;
+	int tile_size_x = ami_cw->gg.width;
+	int tile_size_y = ami_cw->gg.height;
+	int tile_x, tile_y, tile_w, tile_h;
+
+	struct redraw_context ctx = {
+		.interactive = true,
+		.background_images = true,
+		.plot = &amiplot
+	};
+
+	if(ami_gui_get_space_box((Object *)ami_cw->objects[GID_CW_DRAW], &bbox) != NSERROR_OK) {
+		amiga_warn_user("NoMemory", "");
+		return;
+	}
+
+	int x0 = bbox->Left;
+	int y0 = bbox->Top;
+	ami_cw_coord_amiga_to_ns(ami_cw, &x0, &y0);
+	int x1 = x0 + bbox->Width;
+	int y1 = y0 + bbox->Height;
+
+	if((r->y1 < y0) || (r->x1 < x0) || (r->x0 > x1) || (r->y0 > y1)) {
+		/* rect not visible */
+		ami_gui_free_space_box(bbox);
+		return;
+	}
+
+	if(r->y0 < y0) r->y0 = y0;
+	if(r->x0 < x0) r->x0 = x0;
+	if(r->y1 > y1) r->y1 = y1;
+	if(r->x1 > x1) r->x1 = x1;
+
+	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_HSCROLL], (ULONG *)&pos_x);
+	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_VSCROLL], (ULONG *)&pos_y);
+
+	glob = &ami_cw->gg;
+	temprp = glob->rp; //??
+ 	glob->rp = ami_cw->win->RPort;
+
+	for(tile_y = r->y0; tile_y < r->y1; tile_y += tile_size_y) {
+		tile_h = tile_size_y;
+		if((r->y1 - tile_y) < tile_size_y)
+			tile_h = r->y1 - tile_y;
+
+		for(tile_x = r->x0; tile_x < r->x1; tile_x += tile_size_x) {
+			tile_w = tile_size_x;
+			if((r->x1 - tile_x) < tile_size_x)
+				tile_w = r->x1 - tile_x;
+
+			draw_rect.x0 = tile_x;
+			draw_rect.y0 = tile_y;
+			draw_rect.x1 = tile_x + tile_w;
+			draw_rect.y1 = tile_y + tile_h;
+
+			ami_cw->draw(ami_cw, &draw_rect, &ctx);
+#ifdef __amigaos4__
+			BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
+					BLITA_Source, ami_cw->gg.bm,
+					BLITA_SrcX, 0,
+					BLITA_SrcY, 0,
+					BLITA_DestType, BLITT_RASTPORT, 
+					BLITA_Dest, ami_cw->win->RPort,
+					BLITA_DestX, bbox->Left + tile_x - pos_x,
+					BLITA_DestY, bbox->Top + tile_y - pos_y,
+					BLITA_Width, tile_w,
+					BLITA_Height, tile_h,
+					TAG_DONE);
+#else
+			BltBitMapRastPort(ami_cw->gg.bm, 0, 0,
+					ami_cw->win->RPort, bbox->Left + tile_x - pos_x, bbox->Top + tile_y - pos_y,
+					tile_w, tile_h, 0xC0);
+#endif
+		}
+	}
+
+	ami_gui_free_space_box(bbox);
+	ami_clearclipreg(glob);
+	glob->rp = temprp;
+	ami_gui_set_default_gg();
+}
+
+
+/**
+ * Draw the deferred rectangles
+ *
+ * @param draw set to false to just delete the queue
+ */
+static void ami_cw_redraw_queue(struct ami_corewindow *ami_cw, bool draw)
+{
+	struct nsObject *node;
+	struct nsObject *nnode;
+	struct rect *rect;
+	
+	if(IsMinListEmpty(ami_cw->deferred_rects)) return;
+
+	if(draw == false) {
+		LOG("Ignoring deferred box redraw queue");
+	} // else should probably show busy pointer
+
+	node = (struct nsObject *)GetHead((struct List *)ami_cw->deferred_rects);
+
+	do {
+		if(draw == true) {
+			rect = (struct rect *)node->objstruct;
+			ami_cw_redraw_rect(ami_cw, rect);
+		}
+		nnode = (struct nsObject *)GetSucc((struct Node *)node);
+		ami_memory_itempool_free(ami_cw->deferred_rects_pool, node->objstruct, sizeof(struct rect));
+		DelObjectNoFree(node);
+	} while((node = nnode));
+}
+
+static void
+ami_cw_redraw_cb(void *p)
+{
+	struct ami_corewindow *ami_cw = (struct ami_corewindow *)p;
+
+	ami_cw_redraw_queue(ami_cw, true);
+}
+
+/**
+ * Queue a redraw of a rectangle
+ *
+ * @param ami_cw the core window to redraw
+ * @param r the rectangle (in doc coords) to redraw, or NULL for full window
+ */
+
+static void
+ami_cw_redraw(struct ami_corewindow *ami_cw, const struct rect *restrict r)
+{
+	struct nsObject *nsobj;
+	struct rect *restrict deferred_rect;
+	struct rect new_rect;
+
+	if(r == NULL) {
+		struct IBox *bbox;
+		if(ami_gui_get_space_box((Object *)ami_cw->objects[GID_CW_DRAW], &bbox) != NSERROR_OK) {
+			amiga_warn_user("NoMemory", "");
+			return;
+		}
+
+		new_rect.x0 = bbox->Left;
+		new_rect.y0 = bbox->Top;
+		ami_cw_coord_amiga_to_ns(ami_cw, &new_rect.x0, &new_rect.y0);
+		new_rect.x1 = new_rect.x0 + bbox->Width;
+		new_rect.y1 = new_rect.y0 + bbox->Height;
+
+		ami_gui_free_space_box(bbox);
+
+		r = &new_rect;
+	}
+
+	if(ami_gui_window_update_box_deferred_check(ami_cw->deferred_rects, r,
+			ami_cw->deferred_rects_pool)) {
+		deferred_rect = ami_memory_itempool_alloc(ami_cw->deferred_rects_pool, sizeof(struct rect));
+		CopyMem(r, deferred_rect, sizeof(struct rect));
+		nsobj = AddObject(ami_cw->deferred_rects, AMINS_RECT);
+		nsobj->objstruct = deferred_rect;
+	} else {
+		LOG("Ignoring duplicate or subset of queued box redraw");
+	}
+	ami_schedule(1, ami_cw_redraw_cb, ami_cw);
+}
+
 
 static void
 ami_cw_close(void *w)
@@ -123,7 +333,7 @@ HOOKF(void, ami_cw_idcmp_hook, Object *, object, struct IntuiMessage *)
 
  				case GID_CW_HSCROLL: 
  				case GID_CW_VSCROLL:
-					/* redraw */
+					ami_cw_redraw(ami_cw, NULL);
  				break; 
 			} 
 		break;
@@ -156,7 +366,7 @@ ami_cw_event(void *w)
 	uint16 code;
 	struct InputEvent *ie;
 	int nskey;
-	int key_state;
+	int key_state = 0;
 	struct timeval curtime;
 
 	while((result = RA_HandleInput(ami_cw->objects[GID_CW_WIN], &code)) != WMHI_LASTMSG) {
@@ -223,7 +433,7 @@ ami_cw_event(void *w)
 			break;
 
 			case WMHI_NEWSIZE:
-				/* redraw */
+				ami_cw_redraw(ami_cw, NULL);
 			break;
 
 			case WMHI_CLOSEWINDOW:
@@ -235,7 +445,7 @@ ami_cw_event(void *w)
 				switch(result & WMHI_GADGETMASK) {
 					case GID_CW_HSCROLL:
 					case GID_CW_VSCROLL:
-						/* redraw */
+						ami_cw_redraw(ami_cw, NULL);
 					break;
 
 					default:
@@ -269,11 +479,7 @@ ami_cw_redraw_request(struct core_window *cw, const struct rect *r)
 {
 	struct ami_corewindow *ami_cw = (struct ami_corewindow *)cw;
 
-/*
-        toolkit_widget_queue_draw_area(example_cw->widget,
-                                       r->x0, r->y0,
-                                       r->x1 - r->x0, r->y1 - r->y0);
-*/
+	ami_cw_redraw(ami_cw, r);
 }
 
 
@@ -353,6 +559,7 @@ ami_cw_scroll_visible(struct core_window *cw, const struct rect *r)
 			TAG_DONE);
 
 	/* probably need to redraw here */
+	ami_cw_redraw(ami_cw, NULL);
 }
 
 
@@ -386,6 +593,9 @@ nserror ami_corewindow_init(struct ami_corewindow *ami_cw)
 	/* allocate drawing area etc */
 	ami_init_layers(&ami_cw->gg, 0, 0, false);
 	ami_cw->gg.shared_pens = ami_AllocMinList();
+
+	ami_cw->deferred_rects = NewObjList();
+	ami_cw->deferred_rects_pool = ami_memory_itempool_create(sizeof(struct rect));
 
 	/* add the core window to our window list so we process events */
 	ami_gui_win_list_add(ami_cw, AMINS_COREWINDOW, &ami_cw_table);
@@ -425,6 +635,11 @@ nserror ami_corewindow_init(struct ami_corewindow *ami_cw)
 /* exported interface documented in example/corewindow.h */
 nserror ami_corewindow_fini(struct ami_corewindow *ami_cw)
 {
+	/* remove any pending redraws */
+	ami_schedule(-1, ami_cw_redraw_cb, ami_cw);
+	FreeObjList(ami_cw->deferred_rects);
+	ami_memory_itempool_delete(ami_cw->deferred_rects_pool);
+
 	/* remove the core window from our window list */
 	ami_gui_win_list_remove(ami_cw);
 

@@ -287,5 +287,12 @@ void ami_gui_win_list_remove(void *win);
  * Get which qualifier keys are being pressed
  */
 int ami_gui_get_quals(Object *win_obj);
+
+/**
+ * Check rect is not already queued for redraw
+ */
+bool ami_gui_window_update_box_deferred_check(struct MinList *deferred_rects,
+				const struct rect *restrict new_rect, APTR mempool);
+
 #endif
 

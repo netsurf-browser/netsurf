@@ -56,6 +56,9 @@ struct ami_corewindow {
 		int mouse_y;
 		int mouse_state;
 
+		APTR deferred_rects_pool;
+		struct MinList *deferred_rects;
+
 		/** stuff for our off-screen render bitmap */
 		struct gui_globals gg;
 		struct MinList *shared_pens;
@@ -73,7 +76,7 @@ struct ami_corewindow {
 		 * \param r The rectangle of the window that needs updating.
 		 * \return NSERROR_OK on success otherwise apropriate error code
 		 */
-		nserror (*draw)(struct ami_corewindow *ami_cw, struct rect *r);
+		nserror (*draw)(struct ami_corewindow *ami_cw, struct rect *r, struct redraw_context *ctx);
 
 		/**
 		 * callback for keypress on Amiga core window
