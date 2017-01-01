@@ -50,12 +50,44 @@
 
 #include <classes/window.h>
 #include <gadgets/scroller.h>
+#include <gadgets/space.h>
 #include <intuition/icclass.h>
 #include <reaction/reaction_macros.h>
 
 #include "amiga/corewindow.h"
 #include "amiga/misc.h"
 #include "amiga/object.h"
+
+/* get current mouse position in the draw area, adjusted for scroll */
+static void
+ami_cw_mouse_pos(struct ami_corewindow *ami_cw, int *x, int *y)
+{
+	ULONG xs, ys;
+	ULONG xm, ym;
+
+	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_HSCROLL], (ULONG *)&xs);
+	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_VSCROLL], (ULONG *)&ys);
+	GetAttr(SPACE_MouseX, ami_cw->objects[GID_CW_DRAW], (ULONG *)&xm);
+	GetAttr(SPACE_MouseY, ami_cw->objects[GID_CW_DRAW], (ULONG *)&ym);
+	*x = xm + xs;
+	*y = ym + ys;
+}
+
+/* handle keypress */
+static void
+ami_cw_key(struct ami_corewindow *ami_cw, int nskey)
+{
+	ami_cw->key(ami_cw, nskey);
+
+	switch(nskey) {
+		case NS_KEY_COPY_SELECTION:
+			/* if we've copied a selection we need to clear it - style guide rules */
+			ami_cw->key(ami_cw, NS_KEY_CLEAR_SELECTION);
+		break;
+
+		/* we may need to deal with scroll-related keys here */
+	}
+}
 
 static void
 ami_cw_close(void *w)
@@ -67,17 +99,23 @@ ami_cw_close(void *w)
 
 HOOKF(void, ami_cw_idcmp_hook, Object *, object, struct IntuiMessage *) 
 {
-	ULONG gid;
 	struct ami_corewindow *ami_cw = hook->h_Data;
 	struct IntuiWheelData *wheel;
+	ULONG gid = GetTagData( GA_ID, 0, msg->IAddress ); 
+	int x, y;
+	int key_state = 0;
 
 	switch(msg->Class)
 	{
 		case IDCMP_IDCMPUPDATE:
-			gid = GetTagData( GA_ID, 0, msg->IAddress ); 
+			switch(gid) 
+			{
+				case GID_CW_DRAW:
+					ami_cw_mouse_pos(ami_cw, &x, &y);
+					key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
+					ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
+				break;
 
-			switch( gid ) 
-			{ 
  				case GID_CW_HSCROLL: 
  				case GID_CW_VSCROLL:
 					/* redraw */
@@ -96,6 +134,7 @@ HOOKF(void, ami_cw_idcmp_hook, Object *, object, struct IntuiMessage *)
 #endif
 	}
 } 
+
 
 /**
  * Main event loop for our core window
@@ -116,6 +155,7 @@ ami_cw_event(void *w)
 	while((result = RA_HandleInput(ami_cw->objects[GID_CW_WIN], &code)) != WMHI_LASTMSG) {
 		switch(result & WMHI_CLASSMASK) {
 			case WMHI_MOUSEMOVE:
+				/* in theory the mouse moves we care about are processed in our hook function... */
 			break;
 
 			case WMHI_MOUSEBUTTONS:
@@ -126,11 +166,8 @@ ami_cw_event(void *w)
 
 				GetAttr(WINDOW_InputEvent, ami_cw->objects[GID_CW_WIN], (ULONG *)&ie);
 				nskey = ami_key_to_nskey(storage, ie);
-				ami_cw->key(ami_cw, nskey);
-				if(nskey == NS_KEY_COPY_SELECTION) {
-					/* if we've copied a selection we need to clear it - style guide rules */
-					ami_cw->key(ami_cw, NS_KEY_CLEAR_SELECTION);
-				}
+
+				ami_cw_key(ami_cw, nskey);
 			break;
 
 			case WMHI_NEWSIZE:
@@ -142,9 +179,24 @@ ami_cw_event(void *w)
 				return TRUE;
 			break;
 
+			case WMHI_GADGETUP:
+				switch(result & WMHI_GADGETMASK) {
+					case GID_CW_HSCROLL:
+					case GID_CW_VSCROLL:
+						/* redraw */
+					break;
+
+					default:
+						/* pass the event to the window owner */
+						if(ami_cw->event != NULL)
+							ami_cw->event(ami_cw, result);
+					break;
+				}
+
 			default:
 				/* pass the event to the window owner */
-				ami_cw->event(ami_cw, result);
+				if(ami_cw->event != NULL)
+					ami_cw->event(ami_cw, result);
 			break;
 		}
 	};
@@ -274,6 +326,9 @@ nserror ami_corewindow_init(struct ami_corewindow *ami_cw)
 	/* setup the core window callback table */
 	ami_cw->cb_table = &ami_cw_cb_table;
 
+	/* clear some vars */
+	ami_cw->mouse_state = 0;
+
 	/* allocate drawing area etc */
 	ami_init_layers(&ami_cw->gg, 0, 0, false);
 	ami_cw->gg.shared_pens = ami_AllocMinList();
@@ -289,7 +344,7 @@ nserror ami_corewindow_init(struct ami_corewindow *ami_cw)
 		WINDOW_IDCMPHook, &ami_cw->idcmp_hook,
 		TAG_DONE); */
 
-	/* attach the scrollbars for event processing if they are in the window border */
+	/* attach the scrollbars for event processing _if they are in the window border_ */
 	if(ami_cw->objects[GID_CW_HSCROLL] == NULL) {
 		GetAttr(WINDOW_HorizObject, ami_cw->objects[GID_CW_WIN],
 					(ULONG *)&ami_cw->objects[GID_CW_HSCROLL]);

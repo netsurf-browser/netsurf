@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2016 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2017 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -282,5 +282,10 @@ nserror ami_gui_win_list_add(void *win, int type, const struct ami_win_event_tab
  * Remove a window from the NetSurf window list
  */
 void ami_gui_win_list_remove(void *win);
+
+/**
+ * Get which qualifier keys are being pressed
+ */
+int ami_gui_get_quals(Object *win_obj);
 #endif
 

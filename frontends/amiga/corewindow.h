@@ -50,6 +50,8 @@ struct ami_corewindow {
 		Object *objects[GID_CW_LAST];
 
 		struct Hook idcmp_hook;
+		struct timeval lastclick;
+		int mouse_state;
 
 		/** stuff for our off-screen render bitmap */
 		struct gui_globals gg;

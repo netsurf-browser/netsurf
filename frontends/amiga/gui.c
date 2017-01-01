@@ -1376,27 +1376,34 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
 	return nskey;
 }
 
-static void ami_update_quals(struct gui_window_2 *gwin)
+int ami_gui_get_quals(Object *win_obj)
 {
 	uint32 quals = 0;
+	int key_state = 0;
 #ifdef __amigaos4__
-	GetAttr(WINDOW_Qualifier,gwin->objects[OID_MAIN],(uint32 *)&quals);
+	GetAttr(WINDOW_Qualifier, win_obj, (uint32 *)&quals);
 #else
 #warning qualifier needs fixing for OS3
 #endif
-	gwin->key_state = 0;
 
 	if(quals & NSA_QUAL_SHIFT) {
-		gwin->key_state |= BROWSER_MOUSE_MOD_1;
+		key_state |= BROWSER_MOUSE_MOD_1;
 	}
 
 	if(quals & IEQUALIFIER_CONTROL) {
-		gwin->key_state |= BROWSER_MOUSE_MOD_2;
+		key_state |= BROWSER_MOUSE_MOD_2;
 	}
 
 	if(quals & NSA_QUAL_ALT) {
-		gwin->key_state |= BROWSER_MOUSE_MOD_3;
+		key_state |= BROWSER_MOUSE_MOD_3;
 	}
+
+	return key_state;
+}
+
+static void ami_update_quals(struct gui_window_2 *gwin)
+{
+	gwin->key_state = ami_gui_get_quals(gwin->objects[OID_MAIN]);
 }
 
 /* exported interface documented in amiga/gui.h */
