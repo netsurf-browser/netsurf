@@ -51,6 +51,7 @@
 #include <classes/window.h>
 #include <gadgets/scroller.h>
 #include <intuition/icclass.h>
+#include <reaction/reaction_macros.h>
 
 #include "amiga/corewindow.h"
 #include "amiga/misc.h"
@@ -98,12 +99,56 @@ HOOKF(void, ami_cw_idcmp_hook, Object *, object, struct IntuiMessage *)
 
 /**
  * Main event loop for our core window
+ *
+ * \return TRUE if window destroyed
  */
 static BOOL
 ami_cw_event(void *w)
 {
 	struct ami_corewindow *ami_cw = (struct ami_corewindow *)w;
-//event loop goes here
+
+	ULONG result;
+	ULONG storage;
+	uint16 code;
+	struct InputEvent *ie;
+	int nskey;
+
+	while((result = RA_HandleInput(ami_cw->objects[GID_CW_WIN], &code)) != WMHI_LASTMSG) {
+		switch(result & WMHI_CLASSMASK) {
+			case WMHI_MOUSEMOVE:
+			break;
+
+			case WMHI_MOUSEBUTTONS:
+			break;
+
+			case WMHI_RAWKEY:
+				storage = result & WMHI_GADGETMASK;
+
+				GetAttr(WINDOW_InputEvent, ami_cw->objects[GID_CW_WIN], (ULONG *)&ie);
+				nskey = ami_key_to_nskey(storage, ie);
+				ami_cw->key(ami_cw, nskey);
+				if(nskey == NS_KEY_COPY_SELECTION) {
+					/* if we've copied a selection we need to clear it - style guide rules */
+					ami_cw->key(ami_cw, NS_KEY_CLEAR_SELECTION);
+				}
+			break;
+
+			case WMHI_NEWSIZE:
+				/* redraw */
+			break;
+
+			case WMHI_CLOSEWINDOW:
+				ami_cw_close(ami_cw);
+				return TRUE;
+			break;
+
+			default:
+				/* pass the event to the window owner */
+				ami_cw->event(ami_cw, result);
+			break;
+		}
+	};
+
 	return FALSE;
 }
 
@@ -178,7 +223,7 @@ ami_cw_scroll_visible(struct core_window *cw, const struct rect *r)
 
 	int scrollsetx;
 	int scrollsety;
-	int win_w, win_h;
+	int win_w = 0, win_h = 0;
 	int win_x0, win_x1;
 	int win_y0, win_y1;
 

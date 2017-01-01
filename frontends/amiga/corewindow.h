@@ -95,9 +95,11 @@ struct ami_corewindow {
 		/**
 		 * callback for unknown events on Amiga core window
 		 * eg. buttons in the ssl cert window
-		 * PROBABLY NEED MORE VARS!
+		 * (result & WMHI_CLASSMASK) gives the class of event (eg. WMHI_GADGETUP)
+		 * (result & WMHI_GADGETMASK) gives the gadget ID (eg. GID_SSLCERT_ACCEPT)
+		 *
 		 * \param ami_cw The Amiga core window structure.
-		 * \param id gadget id
+		 * \param result event as returned by RA_HandleInput()
 		 * \return NSERROR_OK on sucess otherwise apropriate error code.
 		 */
 		nserror (*event)(struct ami_corewindow *ami_cw, ULONG id);
