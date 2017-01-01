@@ -93,6 +93,16 @@ struct ami_corewindow {
 		nserror (*mouse)(struct ami_corewindow *ami_cw, browser_mouse_state mouse_state, int x, int y);
 
 		/**
+		 * callback for unknown events on Amiga core window
+		 * eg. buttons in the ssl cert window
+		 * PROBABLY NEED MORE VARS!
+		 * \param ami_cw The Amiga core window structure.
+		 * \param id gadget id
+		 * \return NSERROR_OK on sucess otherwise apropriate error code.
+		 */
+		nserror (*event)(struct ami_corewindow *ami_cw, ULONG id);
+
+		/**
 		 * callback to close an Amiga core window
 		 *
 		 * \param ami_cw The Amiga core window structure.

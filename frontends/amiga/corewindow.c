@@ -236,7 +236,7 @@ nserror ami_corewindow_init(struct ami_corewindow *ami_cw)
 	/* add the core window to our window list so we process events */
 	ami_gui_win_list_add(ami_cw, AMINS_COREWINDOW, &ami_cw_table);
 
-	/* attach the scrollbars for event processing */
+	/* set up the IDCMP hook for event processing (extended mouse, scrollbars) */
 	ami_cw->idcmp_hook.h_Entry = (void *)ami_cw_idcmp_hook;
 	ami_cw->idcmp_hook.h_Data = ami_cw;
 	/* probably set this when defining the window
@@ -244,20 +244,26 @@ nserror ami_corewindow_init(struct ami_corewindow *ami_cw)
 		WINDOW_IDCMPHook, &ami_cw->idcmp_hook,
 		TAG_DONE); */
 
-	GetAttr(WINDOW_HorizObject, ami_cw->objects[GID_CW_WIN],
-				(ULONG *)&ami_cw->objects[GID_CW_HSCROLL]);
-	GetAttr(WINDOW_VertObject, ami_cw->objects[GID_CW_WIN],
-				(ULONG *)&ami_cw->objects[GID_CW_VSCROLL]);
+	/* attach the scrollbars for event processing if they are in the window border */
+	if(ami_cw->objects[GID_CW_HSCROLL] == NULL) {
+		GetAttr(WINDOW_HorizObject, ami_cw->objects[GID_CW_WIN],
+					(ULONG *)&ami_cw->objects[GID_CW_HSCROLL]);
 
-	RefreshSetGadgetAttrs((APTR)ami_cw->objects[GID_CW_VSCROLL], ami_cw->win, NULL,
-		GA_ID, GID_CW_VSCROLL,
-		ICA_TARGET, ICTARGET_IDCMP,
-		TAG_DONE);
+		RefreshSetGadgetAttrs((APTR)ami_cw->objects[GID_CW_HSCROLL], ami_cw->win, NULL,
+			GA_ID, GID_CW_HSCROLL,
+			ICA_TARGET, ICTARGET_IDCMP,
+			TAG_DONE);
+	}
 
-	RefreshSetGadgetAttrs((APTR)ami_cw->objects[GID_CW_HSCROLL], ami_cw->win, NULL,
-		GA_ID, GID_CW_HSCROLL,
-		ICA_TARGET, ICTARGET_IDCMP,
-		TAG_DONE);
+	if(ami_cw->objects[GID_CW_VSCROLL] == NULL) {
+		GetAttr(WINDOW_VertObject, ami_cw->objects[GID_CW_WIN],
+					(ULONG *)&ami_cw->objects[GID_CW_VSCROLL]);
+
+		RefreshSetGadgetAttrs((APTR)ami_cw->objects[GID_CW_VSCROLL], ami_cw->win, NULL,
+			GA_ID, GID_CW_VSCROLL,
+			ICA_TARGET, ICTARGET_IDCMP,
+			TAG_DONE);
+	}
 
 	return NSERROR_OK;
 }
