@@ -58,9 +58,11 @@
 #include "amiga/misc.h"
 #include "amiga/object.h"
 
-/* get current mouse position in the draw area, adjusted for scroll */
+/* get current mouse position in the draw area, adjusted for scroll.
+ * only works during OM_NOTIFY! at other times use last stored posn
+ */
 static void
-ami_cw_mouse_pos(struct ami_corewindow *ami_cw, int *x, int *y)
+ami_cw_mouse_pos(struct ami_corewindow *ami_cw, int *restrict x, int *restrict y)
 {
 	ULONG xs, ys;
 	ULONG xm, ym;
@@ -69,8 +71,11 @@ ami_cw_mouse_pos(struct ami_corewindow *ami_cw, int *x, int *y)
 	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_VSCROLL], (ULONG *)&ys);
 	GetAttr(SPACE_MouseX, ami_cw->objects[GID_CW_DRAW], (ULONG *)&xm);
 	GetAttr(SPACE_MouseY, ami_cw->objects[GID_CW_DRAW], (ULONG *)&ym);
-	*x = xm + xs;
-	*y = ym + ys;
+
+	ami_cw->mouse_x = xm + xs;
+	ami_cw->mouse_y = ym + ys;
+	*x = ami_cw->mouse_x;
+	*y = ami_cw->mouse_y;
 }
 
 /* handle keypress */
@@ -151,6 +156,8 @@ ami_cw_event(void *w)
 	uint16 code;
 	struct InputEvent *ie;
 	int nskey;
+	int key_state;
+	struct timeval curtime;
 
 	while((result = RA_HandleInput(ami_cw->objects[GID_CW_WIN], &code)) != WMHI_LASTMSG) {
 		switch(result & WMHI_CLASSMASK) {
@@ -159,6 +166,51 @@ ami_cw_event(void *w)
 			break;
 
 			case WMHI_MOUSEBUTTONS:
+				key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
+
+				case SELECTDOWN:
+					ami_cw->mouse_state = BROWSER_MOUSE_PRESS_1;
+				break;
+
+				case MIDDLEDOWN:
+					ami_cw->mouse_state = BROWSER_MOUSE_PRESS_2;
+				break;
+
+				case SELECTUP:
+					if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_1) {
+						CurrentTime((ULONG *)&curtime.tv_sec, (ULONG *)&curtime.tv_usec);
+
+						ami_cw->mouse_state = BROWSER_MOUSE_CLICK_1;
+
+						if(ami_cw->lastclick.tv_sec) {
+							if(DoubleClick(ami_cw->lastclick.tv_sec,
+										ami_cw->lastclick.tv_usec,
+										curtime.tv_sec, curtime.tv_usec))
+								ami_cw->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
+						}
+
+						if(ami_cw->mouse_state & BROWSER_MOUSE_DOUBLE_CLICK) {
+							ami_cw->lastclick.tv_sec = 0;
+							ami_cw->lastclick.tv_usec = 0;
+						} else {
+							ami_cw->lastclick.tv_sec = curtime.tv_sec;
+							ami_cw->lastclick.tv_usec = curtime.tv_usec;
+						}
+					}
+
+					ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, ami_cw->mouse_x, ami_cw->mouse_y);
+					ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
+				break;
+
+				case MIDDLEUP:
+					if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_2)
+						ami_cw->mouse_state = BROWSER_MOUSE_CLICK_2;
+
+					ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, ami_cw->mouse_x, ami_cw->mouse_y);
+					ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
+				break;
+
+				ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, ami_cw->mouse_x, ami_cw->mouse_y);
 			break;
 
 			case WMHI_RAWKEY:
@@ -327,7 +379,9 @@ nserror ami_corewindow_init(struct ami_corewindow *ami_cw)
 	ami_cw->cb_table = &ami_cw_cb_table;
 
 	/* clear some vars */
-	ami_cw->mouse_state = 0;
+	ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
+	ami_cw->lastclick.tv_sec = 0;
+	ami_cw->lastclick.tv_usec = 0;
 
 	/* allocate drawing area etc */
 	ami_init_layers(&ami_cw->gg, 0, 0, false);
