@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2017 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -18,11 +18,21 @@
 
 #ifndef AMIGA_SSLCERT_H
 #define AMIGA_SSLCERT_H
+struct nsurl;
+struct ssl_cert_info;
 
-nserror gui_cert_verify(nsurl *url, 
+/**
+ * Prompt the user to verify a certificate with issues.
+ *
+ * \param url The URL being verified.
+ * \param certs The certificate to be verified
+ * \param num The number of certificates to be verified.
+ * \param cb Callback upon user decision.
+ * \param cbpw Context pointer passed to cb
+ * \return NSERROR_OK or error code if prompt creation failed.
+ */
+nserror ami_cert_verify(struct nsurl *url, 
 		const struct ssl_cert_info *certs, unsigned long num,
-		     nserror (*cb)(bool proceed, void *pw), void *cbpw);
-
-void ami_ssl_free(struct treeview_window *twin);
-
+		nserror (*cb)(bool proceed, void *pw), void *cbpw);
 #endif
+

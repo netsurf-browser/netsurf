@@ -1376,27 +1376,34 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
 	return nskey;
 }
 
-static void ami_update_quals(struct gui_window_2 *gwin)
+int ami_gui_get_quals(Object *win_obj)
 {
 	uint32 quals = 0;
+	int key_state = 0;
 #ifdef __amigaos4__
-	GetAttr(WINDOW_Qualifier,gwin->objects[OID_MAIN],(uint32 *)&quals);
+	GetAttr(WINDOW_Qualifier, win_obj, (uint32 *)&quals);
 #else
 #warning qualifier needs fixing for OS3
 #endif
-	gwin->key_state = 0;
 
 	if(quals & NSA_QUAL_SHIFT) {
-		gwin->key_state |= BROWSER_MOUSE_MOD_1;
+		key_state |= BROWSER_MOUSE_MOD_1;
 	}
 
 	if(quals & IEQUALIFIER_CONTROL) {
-		gwin->key_state |= BROWSER_MOUSE_MOD_2;
+		key_state |= BROWSER_MOUSE_MOD_2;
 	}
 
 	if(quals & NSA_QUAL_ALT) {
-		gwin->key_state |= BROWSER_MOUSE_MOD_3;
+		key_state |= BROWSER_MOUSE_MOD_3;
 	}
+
+	return key_state;
+}
+
+static void ami_update_quals(struct gui_window_2 *gwin)
+{
+	gwin->key_state = ami_gui_get_quals(gwin->objects[OID_MAIN]);
 }
 
 /* exported interface documented in amiga/gui.h */
@@ -1682,7 +1689,7 @@ static bool ami_gui_hscroll_remove(struct gui_window_2 *gwin)
 	IDoMethod(gwin->objects[GID_HSCROLLLAYOUT], LM_REMOVECHILD,
 			gwin->win, gwin->objects[GID_HSCROLL]);
 #else
-	SetAttrs(gwin->objects[GID_HSCROLLLAYOUT], LAYOUT_RemoveChild, gwin->objects[GID_HSCROLL]);
+	SetAttrs(gwin->objects[GID_HSCROLLLAYOUT], LAYOUT_RemoveChild, gwin->objects[GID_HSCROLL], TAG_DONE);
 #endif
 
 	gwin->objects[GID_HSCROLL] = NULL;
@@ -1727,7 +1734,7 @@ static bool ami_gui_vscroll_remove(struct gui_window_2 *gwin)
 	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_REMOVECHILD,
 			gwin->win, gwin->objects[GID_VSCROLL]);
 #else
-	SetAttrs(gwin->objects[GID_VSCROLLLAYOUT], LAYOUT_RemoveChild, gwin->objects[GID_VSCROLL]);
+	SetAttrs(gwin->objects[GID_VSCROLLLAYOUT], LAYOUT_RemoveChild, gwin->objects[GID_VSCROLL], TAG_DONE);
 #endif
 
 	gwin->objects[GID_VSCROLL] = NULL;
@@ -3259,8 +3266,10 @@ static void ami_gui_hotlist_toolbar_remove(struct gui_window_2 *gwin)
 	IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_REMOVECHILD,
 			gwin->win, gwin->objects[GID_HOTLISTSEPBAR]);
 #else
-	SetAttrs(gwin->objects[GID_HOTLISTLAYOUT], LAYOUT_RemoveChild, gwin->objects[GID_HOTLIST]);
-	SetAttrs(gwin->objects[GID_HOTLISTLAYOUT], LAYOUT_RemoveChild, gwin->objects[GID_HOTLISTSEPBAR]);
+	SetAttrs(gwin->objects[GID_HOTLISTLAYOUT],
+		LAYOUT_RemoveChild, gwin->objects[GID_HOTLIST], TAG_DONE);
+	SetAttrs(gwin->objects[GID_HOTLISTLAYOUT],
+		LAYOUT_RemoveChild, gwin->objects[GID_HOTLISTSEPBAR], TAG_DONE);
 #endif
 	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
 
@@ -4734,7 +4743,7 @@ static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw)
 	if(draw == true) ami_reset_pointer(g->shared);
 }
 
-static bool ami_gui_window_update_box_deferred_check(struct MinList *deferred_rects,
+bool ami_gui_window_update_box_deferred_check(struct MinList *deferred_rects,
 				const struct rect *restrict new_rect, APTR mempool)
 {
 	struct nsObject *node;
@@ -5603,7 +5612,7 @@ static struct gui_misc_table amiga_misc_table = {
 
 	.quit = gui_quit,
 	.launch_url = gui_launch_url,
-	.cert_verify = gui_cert_verify,
+	.cert_verify = ami_cert_verify,
 	.login = gui_401login_open,
 };
 
