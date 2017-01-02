@@ -223,12 +223,12 @@ ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 			if(((x + width) - tile_x) < tile_size_x)
 				tile_w = (x + width) - tile_x;
 
-			draw_rect.x0 = - tile_x;
-			draw_rect.y0 = - tile_y;
+			draw_rect.x0 = tile_x; // was -
+			draw_rect.y0 = tile_y; // was -
 			draw_rect.x1 = tile_x + tile_w;
 			draw_rect.y1 = tile_y + tile_h;
 
-			ami_cw->draw(ami_cw, &draw_rect, &ctx);
+			ami_cw->draw(ami_cw, -tile_x, -tile_y, &draw_rect, &ctx);
 
 #ifdef __amigaos4__
 			BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 

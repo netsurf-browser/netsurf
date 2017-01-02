@@ -81,10 +81,14 @@ struct ami_corewindow {
 		 * callback to draw on drawable area of Amiga core window
 		 *
 		 * \param ami_cw The Amiga core window structure.
+		 * \param x Plot origin (X)
+		 * \param r Plot origin (Y)
 		 * \param r The rectangle of the window that needs updating.
+		 * \param ctx Redraw context
 		 * \return NSERROR_OK on success otherwise apropriate error code
 		 */
-		nserror (*draw)(struct ami_corewindow *ami_cw, struct rect *r, struct redraw_context *ctx);
+		nserror (*draw)(struct ami_corewindow *ami_cw, int x, int y, struct rect *r,
+						struct redraw_context *ctx);
 
 		/**
 		 * callback for keypress on Amiga core window

@@ -197,14 +197,14 @@ ami_crtvrfy_key(struct ami_corewindow *ami_cw, uint32_t nskey)
  * \return NSERROR_OK on success otherwise apropriate error code
  */
 static nserror
-ami_crtvrfy_draw(struct ami_corewindow *ami_cw, struct rect *r, struct redraw_context *ctx)
+ami_crtvrfy_draw(struct ami_corewindow *ami_cw, int x, int y, struct rect *r, struct redraw_context *ctx)
 {
 	struct ami_crtvrfy_window *crtvrfy_win;
 
 	/* technically degenerate container of */
 	crtvrfy_win = (struct ami_crtvrfy_window *)ami_cw;
 
-	sslcert_viewer_redraw(crtvrfy_win->ssl_data, 0, 0, r, ctx);
+	sslcert_viewer_redraw(crtvrfy_win->ssl_data, x, y, r, ctx);
 
 	return NSERROR_OK;
 }
