@@ -138,7 +138,7 @@ HFONT get_font(const plot_font_style_t *style)
  * \param[in] string UTF-8 string to measure
  * \param[in] length length of string, in bytes
  * \param[out] width updated to width of string[0..length)
- * \return true on success and width updated else false
+ * \return NSERROR_OK on success otherwise apropriate error code
  */
 static nserror
 win32_font_width(const plot_font_style_t *style,
@@ -150,7 +150,7 @@ win32_font_width(const plot_font_style_t *style,
 	HFONT font;
 	HFONT fontbak;
 	SIZE s;
-	bool ret = true;
+	nserror ret = NSERROR_OK;
 
 	if (length == 0) {
 		*width = 0;
@@ -163,7 +163,7 @@ win32_font_width(const plot_font_style_t *style,
 		if (GetTextExtentPoint32A(hdc, string, length, &s) != 0) {
 			*width = s.cx;
 		} else {
-			ret = false;
+			ret = NSERROR_UNKNOWN;
 		}
 		font = SelectObject(hdc, fontbak);
 		DeleteObject(font);
@@ -183,7 +183,7 @@ win32_font_width(const plot_font_style_t *style,
  * \param  x		x coordinate to search for
  * \param  char_offset	updated to offset in string of actual_x, [0..length]
  * \param  actual_x	updated to x coordinate of character closest to x
- * \return  true on success, false on error and error reported
+ * \return NSERROR_OK on success otherwise apropriate error code
  */
 static nserror
 win32_font_position(const plot_font_style_t *style,
@@ -198,7 +198,7 @@ win32_font_position(const plot_font_style_t *style,
 	HFONT fontbak;
 	SIZE s;
 	int offset;
-	bool ret = true;
+	nserror ret = NSERROR_OK;
 
 	if ((length == 0) || (x < 1)) {
 		*char_offset = 0;
@@ -213,7 +213,7 @@ win32_font_position(const plot_font_style_t *style,
 				*char_offset = (size_t)offset;
 				*actual_x = s.cx;
 		} else {
-			ret = false;
+			ret = NSERROR_UNKNOWN;
 		}
 		font = SelectObject(hdc, fontbak);
 		DeleteObject(font);
@@ -234,7 +234,7 @@ win32_font_position(const plot_font_style_t *style,
  * \param  x		width available
  * \param  char_offset	updated to offset in string of actual_x, [0..length]
  * \param  actual_x	updated to x coordinate of character closest to x
- * \return  true on success, false on error and error reported
+ * \return NSERROR_OK on success otherwise apropriate error code
  *
  * On exit, [char_offset == 0 ||
  *	   string[char_offset] == ' ' ||
@@ -249,13 +249,14 @@ win32_font_split(const plot_font_style_t *style,
 	     int *actual_x)
 {
 	int c_off;
-	bool ret = false;
+	nserror ret = NSERROR_UNKNOWN;
 
 	if (win32_font_position(style, string, length, x, char_offset, actual_x)) {
 		c_off = *char_offset;
 		if (*char_offset == length) {
-			ret = true;
+			ret = NSERROR_OK;
 		} else {
+			bool success;
 			while ((string[*char_offset] != ' ') &&
 			       (*char_offset > 0)) {
 				(*char_offset)--;
@@ -269,7 +270,10 @@ win32_font_split(const plot_font_style_t *style,
 				}
 			}
 
-			ret = win32_font_width(style, string, *char_offset, actual_x);
+			success = win32_font_width(style, string, *char_offset, actual_x);
+			if (success) {
+				ret = NSERROR_OK;
+			}
 		}
 	}
 
