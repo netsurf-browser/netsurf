@@ -444,8 +444,7 @@ fb_font_width(const plot_font_style_t *fstyle,
 
                 *width += glyph->advance.x >> 16;
         }
-
-	return true;
+	return NSERROR_OK;
 }
 
 
@@ -481,7 +480,7 @@ fb_font_position(const plot_font_style_t *fstyle,
                 *actual_x = prev_x;
 
         *char_offset = nxtchr;
-	return true;
+	return NSERROR_OK;
 }
 
 
@@ -537,7 +536,7 @@ fb_font_split(const plot_font_style_t *fstyle,
                          * found a space; return previous space */
                         *actual_x = last_space_x;
                         *char_offset = last_space_idx;
-                        return true;
+                        return NSERROR_OK;
                 }
 
                 nxtchr = utf8_next(string, length, nxtchr);
@@ -545,7 +544,7 @@ fb_font_split(const plot_font_style_t *fstyle,
 
         *char_offset = nxtchr;
 
-	return true;
+	return NSERROR_OK;
 }
 
 static struct gui_layout_table layout_table = {
