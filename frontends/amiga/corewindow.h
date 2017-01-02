@@ -108,16 +108,16 @@ struct ami_corewindow {
 		 *
 		 * \param ami_cw The Amiga core window structure.
 		 * \param result event as returned by RA_HandleInput()
-		 * \return NSERROR_OK on sucess otherwise apropriate error code.
+ 		 * \return TRUE if window closed during event processing
 		 */
-		nserror (*event)(struct ami_corewindow *ami_cw, ULONG id);
+		BOOL (*event)(struct ami_corewindow *ami_cw, ULONG result);
 
 		/**
 		 * callback to close an Amiga core window
 		 *
 		 * \param ami_cw The Amiga core window structure.
 		 */
-		nserror (*close)(struct ami_corewindow *ami_cw);
+		void (*close)(struct ami_corewindow *ami_cw);
 
 };
 

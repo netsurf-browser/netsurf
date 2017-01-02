@@ -916,7 +916,7 @@ void ami_tree_close(void *w)
 		ami_utf8_free(twin->sslerr);
 		ami_utf8_free(twin->sslaccept);
 		ami_utf8_free(twin->sslreject);
-		ami_ssl_free(twin);
+		//ami_ssl_free(twin);
 	}
 
 	if(twin->type == AMI_TREE_HOTLIST)

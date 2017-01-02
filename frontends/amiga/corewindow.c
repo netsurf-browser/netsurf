@@ -451,14 +451,18 @@ ami_cw_event(void *w)
 					default:
 						/* pass the event to the window owner */
 						if(ami_cw->event != NULL)
-							ami_cw->event(ami_cw, result);
+							if(ami_cw->event(ami_cw, result) == TRUE) {
+								return TRUE;
+							}
 					break;
 				}
 
 			default:
 				/* pass the event to the window owner */
 				if(ami_cw->event != NULL)
-					ami_cw->event(ami_cw, result);
+					if(ami_cw->event(ami_cw, result) == TRUE) {
+						return TRUE;
+					}
 			break;
 		}
 	};
@@ -603,10 +607,9 @@ nserror ami_corewindow_init(struct ami_corewindow *ami_cw)
 	/* set up the IDCMP hook for event processing (extended mouse, scrollbars) */
 	ami_cw->idcmp_hook.h_Entry = (void *)ami_cw_idcmp_hook;
 	ami_cw->idcmp_hook.h_Data = ami_cw;
-	/* probably set this when defining the window
-	SetAttrs(ami_cw->objects[GID_CW_WIN],
-		WINDOW_IDCMPHook, &ami_cw->idcmp_hook,
-		TAG_DONE); */
+
+	/* open the window */
+	ami_cw->win = (struct Window *)RA_OpenWindow(ami_cw->objects[GID_CW_WIN]);
 
 	/* attach the scrollbars for event processing _if they are in the window border_ */
 	if(ami_cw->objects[GID_CW_HSCROLL] == NULL) {
