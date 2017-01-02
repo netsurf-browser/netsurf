@@ -52,8 +52,6 @@ struct ami_corewindow {
 		struct Hook idcmp_hook;
 		struct timeval lastclick;
 
-		int mouse_x;
-		int mouse_y;
 		int mouse_state;
 
 		APTR deferred_rects_pool;

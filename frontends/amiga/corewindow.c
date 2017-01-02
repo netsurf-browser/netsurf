@@ -83,22 +83,40 @@ ami_cw_coord_amiga_to_ns(struct ami_corewindow *ami_cw, int *restrict x, int *re
 
 
 /* get current mouse position in the draw area, adjusted for scroll.
- * only works during OM_NOTIFY! at other times use last stored posn
+ * @return true if the mouse was in the draw area and co-ordinates updated
  */
-static void
+static bool
 ami_cw_mouse_pos(struct ami_corewindow *ami_cw, int *restrict x, int *restrict y)
 {
-	ULONG xm, ym;
+	int16 xm, ym;
+	ULONG xs, ys;
+	struct IBox *bbox;
 
-	GetAttr(SPACE_MouseX, ami_cw->objects[GID_CW_DRAW], (ULONG *)&xm);
-	GetAttr(SPACE_MouseY, ami_cw->objects[GID_CW_DRAW], (ULONG *)&ym);
+	xm = ami_cw->win->MouseX;
+	ym = ami_cw->win->MouseY;
 
-	ami_cw_coord_amiga_to_ns(ami_cw, (int *)&xm, (int *)&ym);
+	if(ami_gui_get_space_box((Object *)ami_cw->objects[GID_CW_DRAW], &bbox) != NSERROR_OK) {
+		amiga_warn_user("NoMemory", "");
+		return false;
+	}
 
-	ami_cw->mouse_x = xm;
-	ami_cw->mouse_y = ym;
-	*x = ami_cw->mouse_x;
-	*y = ami_cw->mouse_y;
+	xm -= bbox->Left;
+	ym -= bbox->Top;
+
+	ami_gui_free_space_box(bbox);
+
+	if((xm < 0) || (ym < 0) || (xm > bbox->Width) || (ym > bbox->Height))
+		return false;
+
+	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_HSCROLL], (ULONG *)&xs);
+	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_VSCROLL], (ULONG *)&ys);
+
+	xm += xs;
+	ym += ys;
+	*x = xm;
+	*y = ym;
+
+	return true;
 }
 
 /* handle keypress */
@@ -136,7 +154,6 @@ static void
 ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 {
 	struct IBox *bbox;
-	struct RastPort *temprp;
 	ULONG pos_x, pos_y;
 	struct rect draw_rect;
 	int tile_size_x = ami_cw->gg.width;
@@ -315,20 +332,12 @@ HOOKF(void, ami_cw_idcmp_hook, Object *, object, struct IntuiMessage *)
 	struct ami_corewindow *ami_cw = hook->h_Data;
 	struct IntuiWheelData *wheel;
 	ULONG gid = GetTagData( GA_ID, 0, msg->IAddress ); 
-	int x, y;
-	int key_state = 0;
 
 	switch(msg->Class)
 	{
 		case IDCMP_IDCMPUPDATE:
 			switch(gid) 
 			{
-				case GID_CW_DRAW:
-					ami_cw_mouse_pos(ami_cw, &x, &y);
-					key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
-					ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
-				break;
-
  				case GID_CW_HSCROLL: 
  				case GID_CW_VSCROLL:
 					ami_cw_redraw(ami_cw, NULL);
@@ -366,14 +375,21 @@ ami_cw_event(void *w)
 	int nskey;
 	int key_state = 0;
 	struct timeval curtime;
+	int x, y;
 
 	while((result = RA_HandleInput(ami_cw->objects[GID_CW_WIN], &code)) != WMHI_LASTMSG) {
 		switch(result & WMHI_CLASSMASK) {
 			case WMHI_MOUSEMOVE:
-				/* in theory the mouse moves we care about are processed in our hook function... */
+				if(ami_cw_mouse_pos(ami_cw, &x, &y)) {
+					key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
+					ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
+				}
 			break;
 
 			case WMHI_MOUSEBUTTONS:
+				if(ami_cw_mouse_pos(ami_cw, &x, &y) == false)
+					break;
+
 				key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
 
 				case SELECTDOWN:
@@ -406,7 +422,7 @@ ami_cw_event(void *w)
 						}
 					}
 
-					ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, ami_cw->mouse_x, ami_cw->mouse_y);
+					ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
 					ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
 				break;
 
@@ -414,11 +430,11 @@ ami_cw_event(void *w)
 					if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_2)
 						ami_cw->mouse_state = BROWSER_MOUSE_CLICK_2;
 
-					ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, ami_cw->mouse_x, ami_cw->mouse_y);
+					ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
 					ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
 				break;
 
-				ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, ami_cw->mouse_x, ami_cw->mouse_y);
+				ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
 			break;
 
 			case WMHI_RAWKEY:
@@ -641,9 +657,6 @@ nserror ami_corewindow_fini(struct ami_corewindow *ami_cw)
 	FreeObjList(ami_cw->deferred_rects);
 	ami_memory_itempool_delete(ami_cw->deferred_rects_pool);
 
-	/* remove the core window from our window list */
-	ami_gui_win_list_remove(ami_cw);
-
 	/* destroy the window */
 	ami_cw->win = NULL;
 	DisposeObject(ami_cw->objects[GID_CW_WIN]);
@@ -651,6 +664,9 @@ nserror ami_corewindow_fini(struct ami_corewindow *ami_cw)
 	/* release off-screen bitmap stuff */
 	ami_plot_release_pens(ami_cw->gg.shared_pens);
 	ami_free_layers(&ami_cw->gg);
+
+	/* remove the core window from our window list */
+	ami_gui_win_list_remove(ami_cw);
 
 	return NSERROR_OK;
 }

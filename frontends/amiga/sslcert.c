@@ -25,7 +25,6 @@
 #include <stdlib.h>
 
 #include <proto/intuition.h>
-#include <intuition/icclass.h>
 
 #include <classes/window.h>
 #include <gadgets/button.h>
@@ -84,12 +83,11 @@ ami_crtvrfy_destroy(struct ami_crtvrfy_window *crtvrfy_win)
 
 	res = sslcert_viewer_fini(crtvrfy_win->ssl_data);
 	if (res == NSERROR_OK) {
-		res = ami_corewindow_fini(&crtvrfy_win->core); /* closes the window for us */
 		ami_utf8_free(crtvrfy_win->wintitle);
 		ami_utf8_free(crtvrfy_win->sslerr);
 		ami_utf8_free(crtvrfy_win->sslaccept);
 		ami_utf8_free(crtvrfy_win->sslreject);
-		free(crtvrfy_win);
+		res = ami_corewindow_fini(&crtvrfy_win->core); /* closes the window for us */
 	}
 	return res;
 }
@@ -250,7 +248,6 @@ ami_crtvrfy_create_window(struct ami_crtvrfy_window *crtvrfy_win)
 				SPACE_Transparent, TRUE,
 				SPACE_BevelStyle, BVS_DISPLAY,
 				GA_RelVerify, TRUE,
-				ICA_TARGET, ICTARGET_IDCMP,
    			SpaceEnd,
 			LAYOUT_AddChild, LayoutHObj,
 				LAYOUT_AddChild, crtvrfy_win->sslcert_objects[GID_SSLCERT_ACCEPT] = ButtonObj,
@@ -285,7 +282,7 @@ nserror ami_cert_verify(struct nsurl *url,
 	struct ami_crtvrfy_window *ncwin;
 	nserror res;
 
-	ncwin = malloc(sizeof(struct ami_crtvrfy_window));
+	ncwin = calloc(1, sizeof(struct ami_crtvrfy_window));
 	if (ncwin == NULL) {
 		return NSERROR_NOMEM;
 	}
