@@ -140,60 +140,6 @@ ami_cw_mouse_pos(struct ami_corewindow *ami_cw, int *restrict x, int *restrict y
 	return true;
 }
 
-static void
-ami_cw_toggle_scrollbar(struct ami_corewindow *ami_cw, bool vert, bool visible)
-{
-	Object *scroller;
-	Object *layout;
-	ULONG tag;
-
-	if(vert == true) {
-		if(visible == ami_cw->scroll_y_visible) {
-			return;
-		} else {
-			scroller = ami_cw->objects[GID_CW_VSCROLL];
-			layout = ami_cw->objects[GID_CW_VSCROLLLAYOUT];
-			tag = WINDOW_VertProp;
-			ami_cw->scroll_y_visible = visible;
-		}
-	} else {
-		if(visible == ami_cw->scroll_x_visible) {
-			return;
-		} else {
-			scroller = ami_cw->objects[GID_CW_HSCROLL];
-			layout = ami_cw->objects[GID_CW_HSCROLLLAYOUT];
-			tag = WINDOW_HorizProp;
-			ami_cw->scroll_x_visible = visible;
-		}
-	}
-
-	if(visible == true) {
-		if(ami_cw->in_border_scroll == true) {
-			SetAttrs(ami_cw->objects[GID_CW_WIN],
-				tag, 1,
-				TAG_DONE);
-		} else {
-#ifdef __amigaos4__
-			IDoMethod(layout, LM_ADDCHILD, ami_cw->win, scroller, NULL);
-#else
-			SetAttrs(layout, LAYOUT_AddChild, scroller, TAG_DONE);
-#endif
-		}
-	} else {
-		if(ami_cw->in_border_scroll == true) {
-			SetAttrs(ami_cw->objects[GID_CW_WIN],
-				tag, -1,
-				TAG_DONE);
-		} else {
-#ifdef __amigaos4__
-			IDoMethod(layout, LM_REMOVECHILD, ami_cw->win, scroller);
-#else
-			SetAttrs(layout, LAYOUT_RemoveChild, scroller, TAG_DONE);
-#endif
-		}
-	}
-}
-
 /* handle keypress */
 static void
 ami_cw_key(struct ami_corewindow *ami_cw, int nskey)
@@ -392,6 +338,72 @@ ami_cw_redraw(struct ami_corewindow *ami_cw, const struct rect *restrict r)
 	ami_schedule(1, ami_cw_redraw_cb, ami_cw);
 }
 
+static void
+ami_cw_toggle_scrollbar(struct ami_corewindow *ami_cw, bool vert, bool visible)
+{
+	Object *scroller;
+	Object *layout;
+	ULONG tag;
+
+	if(vert == true) {
+		if(visible == ami_cw->scroll_y_visible) {
+			return;
+		} else {
+			scroller = ami_cw->objects[GID_CW_VSCROLL];
+			layout = ami_cw->objects[GID_CW_VSCROLLLAYOUT];
+			tag = WINDOW_VertProp;
+			ami_cw->scroll_y_visible = visible;
+		}
+	} else {
+		if(visible == ami_cw->scroll_x_visible) {
+			return;
+		} else {
+			scroller = ami_cw->objects[GID_CW_HSCROLL];
+			layout = ami_cw->objects[GID_CW_HSCROLLLAYOUT];
+			tag = WINDOW_HorizProp;
+			ami_cw->scroll_x_visible = visible;
+		}
+	}
+
+	if(visible == true) {
+		if(ami_cw->in_border_scroll == true) {
+			SetAttrs(ami_cw->objects[GID_CW_WIN],
+				tag, 1,
+				TAG_DONE);
+		} else {
+#ifdef __amigaos4__
+			IDoMethod(layout, LM_ADDCHILD, ami_cw->win, scroller, NULL);
+#else
+			SetAttrs(layout, LAYOUT_AddChild, scroller, TAG_DONE);
+#endif
+		}
+	} else {
+		if(ami_cw->in_border_scroll == true) {
+			SetAttrs(ami_cw->objects[GID_CW_WIN],
+				tag, -1,
+				TAG_DONE);
+		} else {
+#ifdef __amigaos4__
+			IDoMethod(layout, LM_REMOVECHILD, ami_cw->win, scroller);
+#else
+			SetAttrs(layout, LAYOUT_RemoveChild, scroller, TAG_DONE);
+#endif
+		}
+	}
+
+#if 0
+	/* in-window scrollbars aren't getting hidden until the window is resized
+	 * this code should fix it, but it isn't working */
+	if(ami_cw->in_border_scroll == false) {
+		FlushLayoutDomainCache((struct Gadget *)ami_cw->objects[GID_CW_WIN]);
+		RethinkLayout((struct Gadget *)ami_cw->objects[GID_CW_WIN],
+					ami_cw->win, NULL, TRUE);
+
+		/* probably need to redraw here */
+		ami_cw_redraw(ami_cw, NULL);
+	}
+#endif
+}
 
 static void
 ami_cw_close(void *w)
@@ -466,48 +478,49 @@ ami_cw_event(void *w)
 
 				key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
 
-				case SELECTDOWN:
-					ami_cw->mouse_state = BROWSER_MOUSE_PRESS_1;
-				break;
+				switch(code) {
+					case SELECTDOWN:
+						ami_cw->mouse_state = BROWSER_MOUSE_PRESS_1;
+					break;
 
-				case MIDDLEDOWN:
-					ami_cw->mouse_state = BROWSER_MOUSE_PRESS_2;
-				break;
+					case MIDDLEDOWN:
+						ami_cw->mouse_state = BROWSER_MOUSE_PRESS_2;
+					break;
 
-				case SELECTUP:
-					if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_1) {
-						CurrentTime((ULONG *)&curtime.tv_sec, (ULONG *)&curtime.tv_usec);
+					case SELECTUP:
+						if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_1) {
+							CurrentTime((ULONG *)&curtime.tv_sec, (ULONG *)&curtime.tv_usec);
 
-						ami_cw->mouse_state = BROWSER_MOUSE_CLICK_1;
+							ami_cw->mouse_state = BROWSER_MOUSE_CLICK_1;
 
-						if(ami_cw->lastclick.tv_sec) {
-							if(DoubleClick(ami_cw->lastclick.tv_sec,
-										ami_cw->lastclick.tv_usec,
-										curtime.tv_sec, curtime.tv_usec))
-								ami_cw->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
+							if(ami_cw->lastclick.tv_sec) {
+								if(DoubleClick(ami_cw->lastclick.tv_sec,
+											ami_cw->lastclick.tv_usec,
+											curtime.tv_sec, curtime.tv_usec))
+									ami_cw->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
+							}
+
+							if(ami_cw->mouse_state & BROWSER_MOUSE_DOUBLE_CLICK) {
+								ami_cw->lastclick.tv_sec = 0;
+								ami_cw->lastclick.tv_usec = 0;
+							} else {
+								ami_cw->lastclick.tv_sec = curtime.tv_sec;
+								ami_cw->lastclick.tv_usec = curtime.tv_usec;
+							}
 						}
 
-						if(ami_cw->mouse_state & BROWSER_MOUSE_DOUBLE_CLICK) {
-							ami_cw->lastclick.tv_sec = 0;
-							ami_cw->lastclick.tv_usec = 0;
-						} else {
-							ami_cw->lastclick.tv_sec = curtime.tv_sec;
-							ami_cw->lastclick.tv_usec = curtime.tv_usec;
-						}
-					}
+						ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
+						ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
+					break;
 
-					ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
-					ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
-				break;
+					case MIDDLEUP:
+						if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_2)
+							ami_cw->mouse_state = BROWSER_MOUSE_CLICK_2;
 
-				case MIDDLEUP:
-					if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_2)
-						ami_cw->mouse_state = BROWSER_MOUSE_CLICK_2;
-
-					ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
-					ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
-				break;
-
+						ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
+						ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
+					break;
+				}
 				ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
 			break;
 
@@ -626,17 +639,6 @@ ami_cw_update_size(struct core_window *cw, int width, int height)
 			SCROLLER_Visible, win_w,
 		TAG_DONE);
 	}
-
-#if 0
-	/* in-window scrollbars aren't getting hidden until the window is resized
-	 * this code should fix it, but it isn't working */
-	FlushLayoutDomainCache((struct Gadget *)ami_cw->objects[GID_CW_WIN]);
-	RethinkLayout((struct Gadget *)ami_cw->objects[GID_CW_WIN],
-				ami_cw->win, NULL, TRUE);
-
-	/* probably need to redraw here */
-	ami_cw_redraw(ami_cw, NULL);
-#endif
 }
 
 
