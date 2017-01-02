@@ -29,6 +29,7 @@
 #include <classes/window.h>
 #include <gadgets/button.h>
 #include <gadgets/layout.h>
+#include <gadgets/scroller.h>
 #include <gadgets/space.h>
 #include <images/label.h>
 
@@ -221,15 +222,13 @@ ami_crtvrfy_create_window(struct ami_crtvrfy_window *crtvrfy_win)
        	WA_DragBar, TRUE,
        	WA_CloseGadget, FALSE,
        	WA_SizeGadget, TRUE,
-		WA_SizeBRight, TRUE,
+		WA_SizeBBottom, TRUE,
 		WA_Height, scrn->Height / 2,
 		WA_PubScreen, scrn,
 		WA_ReportMouse, TRUE,
        	WA_IDCMP, IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 				IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
 				IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY,
-		WINDOW_HorizProp, 1,
-		WINDOW_VertProp, 1,
 		WINDOW_IDCMPHook, &ami_cw->idcmp_hook,
 		WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE,
 		WINDOW_SharedPort, sport,
@@ -241,12 +240,25 @@ ami_crtvrfy_create_window(struct ami_crtvrfy_window *crtvrfy_win)
 			LAYOUT_AddImage, LabelObj,
 				LABEL_Text, crtvrfy_win->sslerr,
 			LabelEnd,
-			LAYOUT_AddChild, ami_cw->objects[GID_CW_DRAW] = SpaceObj,
-				GA_ID, GID_CW_DRAW,
-				SPACE_Transparent, TRUE,
-				SPACE_BevelStyle, BVS_DISPLAY,
-				GA_RelVerify, TRUE,
-   			SpaceEnd,
+			LAYOUT_AddChild, ami_cw->objects[GID_CW_HSCROLLLAYOUT] = LayoutVObj,
+				LAYOUT_AddChild, ami_cw->objects[GID_CW_VSCROLLLAYOUT] = LayoutHObj,
+					LAYOUT_AddChild, ami_cw->objects[GID_CW_DRAW] = SpaceObj,
+						GA_ID, GID_CW_DRAW,
+						SPACE_Transparent, TRUE,
+						SPACE_BevelStyle, BVS_DISPLAY,
+						GA_RelVerify, TRUE,
+		   			SpaceEnd,
+					LAYOUT_AddChild, ami_cw->objects[GID_CW_VSCROLL] = ScrollerObj,
+						GA_ID, GID_CW_VSCROLL,
+						GA_RelVerify, TRUE,
+		   			ScrollerEnd,
+				LayoutEnd,
+				LAYOUT_AddChild, ami_cw->objects[GID_CW_HSCROLL] = ScrollerObj,
+					GA_ID, GID_CW_HSCROLL,
+					GA_RelVerify, TRUE,
+					SCROLLER_Orientation, SORIENT_HORIZ,
+	   			ScrollerEnd,
+			LayoutEnd,
 			LAYOUT_AddChild, LayoutHObj,
 				LAYOUT_AddChild, crtvrfy_win->sslcert_objects[GID_SSLCERT_ACCEPT] = ButtonObj,
 					GA_ID, GID_SSLCERT_ACCEPT,

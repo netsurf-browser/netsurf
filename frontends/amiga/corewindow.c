@@ -47,9 +47,11 @@
 
 #include <proto/exec.h>
 #include <proto/intuition.h>
+#include <proto/layout.h>
 #include <proto/utility.h>
 
 #include <classes/window.h>
+#include <gadgets/layout.h>
 #include <gadgets/scroller.h>
 #include <gadgets/space.h>
 #include <intuition/icclass.h>
@@ -62,6 +64,25 @@
 #include "amiga/schedule.h"
 #include "amiga/utf8.h"
 
+static void
+ami_cw_scroller_top(struct ami_corewindow *ami_cw, ULONG *restrict x, ULONG *restrict y)
+{
+	ULONG xs = 0;
+	ULONG ys = 0;
+
+	if(ami_cw->scroll_x_visible == true) {
+		GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_HSCROLL], (ULONG *)&xs);
+	}
+
+	if(ami_cw->scroll_y_visible == true) {
+		GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_VSCROLL], (ULONG *)&ys);
+	}
+
+	*x = xs;
+	*y = ys;
+}
+
+
 /**
  * Convert co-ordinates relative to space.gadget
  * into document co-ordinates
@@ -73,10 +94,10 @@
 static void
 ami_cw_coord_amiga_to_ns(struct ami_corewindow *ami_cw, int *restrict x, int *restrict y)
 {
-	ULONG xs, ys;
+	ULONG xs = 0;
+	ULONG ys = 0;
 
-	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_HSCROLL], (ULONG *)&xs);
-	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_VSCROLL], (ULONG *)&ys);
+	ami_cw_scroller_top(ami_cw, &xs, &ys);
 
 	*x = *x + xs;
 	*y = *y + ys;
@@ -109,8 +130,7 @@ ami_cw_mouse_pos(struct ami_corewindow *ami_cw, int *restrict x, int *restrict y
 	if((xm < 0) || (ym < 0) || (xm > bbox->Width) || (ym > bbox->Height))
 		return false;
 
-	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_HSCROLL], (ULONG *)&xs);
-	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_VSCROLL], (ULONG *)&ys);
+	ami_cw_scroller_top(ami_cw, &xs, &ys);
 
 	xm += xs;
 	ym += ys;
@@ -118,6 +138,60 @@ ami_cw_mouse_pos(struct ami_corewindow *ami_cw, int *restrict x, int *restrict y
 	*y = ym;
 
 	return true;
+}
+
+static void
+ami_cw_toggle_scrollbar(struct ami_corewindow *ami_cw, bool vert, bool visible)
+{
+	Object *scroller;
+	Object *layout;
+	ULONG tag;
+
+	if(vert == true) {
+		if(visible == ami_cw->scroll_y_visible) {
+			return;
+		} else {
+			scroller = ami_cw->objects[GID_CW_VSCROLL];
+			layout = ami_cw->objects[GID_CW_VSCROLLLAYOUT];
+			tag = WINDOW_VertProp;
+			ami_cw->scroll_y_visible = visible;
+		}
+	} else {
+		if(visible == ami_cw->scroll_x_visible) {
+			return;
+		} else {
+			scroller = ami_cw->objects[GID_CW_HSCROLL];
+			layout = ami_cw->objects[GID_CW_HSCROLLLAYOUT];
+			tag = WINDOW_HorizProp;
+			ami_cw->scroll_x_visible = visible;
+		}
+	}
+
+	if(visible == true) {
+		if(ami_cw->in_border_scroll == true) {
+			SetAttrs(ami_cw->objects[GID_CW_WIN],
+				tag, 1,
+				TAG_DONE);
+		} else {
+#ifdef __amigaos4__
+			IDoMethod(layout, LM_ADDCHILD, ami_cw->win, scroller, NULL);
+#else
+			SetAttrs(layout, LAYOUT_AddChild, scroller, TAG_DONE);
+#endif
+		}
+	} else {
+		if(ami_cw->in_border_scroll == true) {
+			SetAttrs(ami_cw->objects[GID_CW_WIN],
+				tag, -1,
+				TAG_DONE);
+		} else {
+#ifdef __amigaos4__
+			IDoMethod(layout, LM_REMOVECHILD, ami_cw->win, scroller);
+#else
+			SetAttrs(layout, LAYOUT_RemoveChild, scroller, TAG_DONE);
+#endif
+		}
+	}
 }
 
 /* handle keypress */
@@ -176,8 +250,7 @@ ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 		return;
 	}
 
-	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_HSCROLL], (ULONG *)&pos_x);
-	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_VSCROLL], (ULONG *)&pos_y);
+	ami_cw_scroller_top(ami_cw, &pos_x, &pos_y);
 
 	glob = &ami_cw->gg;
 
@@ -376,7 +449,7 @@ ami_cw_event(void *w)
 	int nskey;
 	int key_state = 0;
 	struct timeval curtime;
-	int x, y;
+	int x = 0, y = 0;
 
 	while((result = RA_HandleInput(ami_cw->objects[GID_CW_WIN], &code)) != WMHI_LASTMSG) {
 		switch(result & WMHI_CLASSMASK) {
@@ -524,12 +597,22 @@ static void
 ami_cw_update_size(struct core_window *cw, int width, int height)
 {
 	struct ami_corewindow *ami_cw = (struct ami_corewindow *)cw;
-
-	/* I'm assuming this is telling me the new page size, not wanting the window physically resized */
 	int win_w, win_h;
+
 	ami_cw_get_window_dimensions((struct core_window *)ami_cw, &win_w, &win_h);
 
+	if(width == -1) {
+		ami_cw_toggle_scrollbar(ami_cw, false, false);
+		return;
+	}
+
+	if(height == -1) {
+		ami_cw_toggle_scrollbar(ami_cw, true, false);
+		return;
+	}
+
 	if(ami_cw->objects[GID_CW_VSCROLL]) {
+		ami_cw_toggle_scrollbar(ami_cw, true, true);
 		RefreshSetGadgetAttrs((struct Gadget *)ami_cw->objects[GID_CW_VSCROLL], ami_cw->win, NULL,
 			SCROLLER_Total, (ULONG)height,
 			SCROLLER_Visible, win_h,
@@ -537,11 +620,23 @@ ami_cw_update_size(struct core_window *cw, int width, int height)
 	}
 
 	if(ami_cw->objects[GID_CW_HSCROLL]) {
+		ami_cw_toggle_scrollbar(ami_cw, false, true);
 		RefreshSetGadgetAttrs((struct Gadget *)ami_cw->objects[GID_CW_HSCROLL], ami_cw->win, NULL,
 			SCROLLER_Total, (ULONG)width,
 			SCROLLER_Visible, win_w,
 		TAG_DONE);
 	}
+
+#if 0
+	/* in-window scrollbars aren't getting hidden until the window is resized
+	 * this code should fix it, but it isn't working */
+	FlushLayoutDomainCache((struct Gadget *)ami_cw->objects[GID_CW_WIN]);
+	RethinkLayout((struct Gadget *)ami_cw->objects[GID_CW_WIN],
+				ami_cw->win, NULL, TRUE);
+
+	/* probably need to redraw here */
+	ami_cw_redraw(ami_cw, NULL);
+#endif
 }
 
 
@@ -553,13 +648,12 @@ ami_cw_scroll_visible(struct core_window *cw, const struct rect *r)
 	int scrollsetx;
 	int scrollsety;
 	int win_w = 0, win_h = 0;
-	int win_x0, win_x1;
-	int win_y0, win_y1;
+	ULONG win_x0, win_y0;
+	int win_x1, win_y1;
 
 	ami_cw_get_window_dimensions((struct core_window *)ami_cw, &win_w, &win_h);
 
-	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_VSCROLL], (ULONG *)&win_y0);
-	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_HSCROLL], (ULONG *)&win_x0);
+	ami_cw_scroller_top(ami_cw, &win_x0, &win_y0);
 
 	win_x1 = win_x0 + win_w;
 	win_y1 = win_y0 + win_h;
@@ -569,13 +663,17 @@ ami_cw_scroll_visible(struct core_window *cw, const struct rect *r)
 	if(r->x1 > win_x1) scrollsetx = r->x1 - win_w;
 	if(r->x0 < win_x0) scrollsetx = r->x0;
 
-	RefreshSetGadgetAttrs((APTR)ami_cw->objects[GID_CW_VSCROLL], ami_cw->win, NULL,
-			SCROLLER_Top, scrollsety,
-			TAG_DONE);
+	if(ami_cw->scroll_y_visible == true) {
+		RefreshSetGadgetAttrs((APTR)ami_cw->objects[GID_CW_VSCROLL], ami_cw->win, NULL,
+				SCROLLER_Top, scrollsety,
+				TAG_DONE);
+	}
 
-	RefreshSetGadgetAttrs((APTR)ami_cw->objects[GID_CW_HSCROLL], ami_cw->win, NULL,
-			SCROLLER_Top, scrollsetx,
-			TAG_DONE);
+	if(ami_cw->scroll_x_visible == true) {
+		RefreshSetGadgetAttrs((APTR)ami_cw->objects[GID_CW_HSCROLL], ami_cw->win, NULL,
+				SCROLLER_Top, scrollsetx,
+				TAG_DONE);
+	}
 
 	/* probably need to redraw here */
 	ami_cw_redraw(ami_cw, NULL);
@@ -608,6 +706,9 @@ nserror ami_corewindow_init(struct ami_corewindow *ami_cw)
 	ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
 	ami_cw->lastclick.tv_sec = 0;
 	ami_cw->lastclick.tv_usec = 0;
+	ami_cw->scroll_x_visible = true;
+	ami_cw->scroll_y_visible = true;
+	ami_cw->in_border_scroll = false;
 
 	/* allocate drawing area etc */
 	ami_init_layers(&ami_cw->gg, 0, 0, false);
@@ -635,6 +736,8 @@ nserror ami_corewindow_init(struct ami_corewindow *ami_cw)
 			GA_ID, GID_CW_HSCROLL,
 			ICA_TARGET, ICTARGET_IDCMP,
 			TAG_DONE);
+
+		ami_cw->in_border_scroll = true;
 	}
 
 	if(ami_cw->objects[GID_CW_VSCROLL] == NULL) {
@@ -645,6 +748,8 @@ nserror ami_corewindow_init(struct ami_corewindow *ami_cw)
 			GA_ID, GID_CW_VSCROLL,
 			ICA_TARGET, ICTARGET_IDCMP,
 			TAG_DONE);
+
+		ami_cw->in_border_scroll = true;
 	}
 
 	return NSERROR_OK;
@@ -661,6 +766,20 @@ nserror ami_corewindow_fini(struct ami_corewindow *ami_cw)
 	/* destroy the window */
 	ami_cw->win = NULL;
 	DisposeObject(ami_cw->objects[GID_CW_WIN]);
+
+#if 0
+	/* ensure our scrollbars are destroyed */
+	/* it appears these are disposed anyway,
+	 * even if the gadgets are no longer attached to the window */
+	if(ami_cw->in_border_scroll == false) {
+		if(ami_cw->scroll_x_visible == false) {
+			DisposeObject(ami_cw->objects[GID_CW_HSCROLL]);
+		}
+		if(ami_cw->scroll_y_visible == false) {
+			DisposeObject(ami_cw->objects[GID_CW_VSCROLL]);
+		}
+	}
+#endif
 
 	/* release off-screen bitmap stuff */
 	ami_plot_release_pens(ami_cw->gg.shared_pens);

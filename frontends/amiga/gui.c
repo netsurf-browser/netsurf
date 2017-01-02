@@ -1689,7 +1689,7 @@ static bool ami_gui_hscroll_remove(struct gui_window_2 *gwin)
 	IDoMethod(gwin->objects[GID_HSCROLLLAYOUT], LM_REMOVECHILD,
 			gwin->win, gwin->objects[GID_HSCROLL]);
 #else
-	SetAttrs(gwin->objects[GID_HSCROLLLAYOUT], LAYOUT_RemoveChild, gwin->objects[GID_HSCROLL]);
+	SetAttrs(gwin->objects[GID_HSCROLLLAYOUT], LAYOUT_RemoveChild, gwin->objects[GID_HSCROLL], TAG_DONE);
 #endif
 
 	gwin->objects[GID_HSCROLL] = NULL;
@@ -1734,7 +1734,7 @@ static bool ami_gui_vscroll_remove(struct gui_window_2 *gwin)
 	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_REMOVECHILD,
 			gwin->win, gwin->objects[GID_VSCROLL]);
 #else
-	SetAttrs(gwin->objects[GID_VSCROLLLAYOUT], LAYOUT_RemoveChild, gwin->objects[GID_VSCROLL]);
+	SetAttrs(gwin->objects[GID_VSCROLLLAYOUT], LAYOUT_RemoveChild, gwin->objects[GID_VSCROLL], TAG_DONE);
 #endif
 
 	gwin->objects[GID_VSCROLL] = NULL;
@@ -3266,8 +3266,10 @@ static void ami_gui_hotlist_toolbar_remove(struct gui_window_2 *gwin)
 	IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_REMOVECHILD,
 			gwin->win, gwin->objects[GID_HOTLISTSEPBAR]);
 #else
-	SetAttrs(gwin->objects[GID_HOTLISTLAYOUT], LAYOUT_RemoveChild, gwin->objects[GID_HOTLIST]);
-	SetAttrs(gwin->objects[GID_HOTLISTLAYOUT], LAYOUT_RemoveChild, gwin->objects[GID_HOTLISTSEPBAR]);
+	SetAttrs(gwin->objects[GID_HOTLISTLAYOUT],
+		LAYOUT_RemoveChild, gwin->objects[GID_HOTLIST], TAG_DONE);
+	SetAttrs(gwin->objects[GID_HOTLISTLAYOUT],
+		LAYOUT_RemoveChild, gwin->objects[GID_HOTLISTSEPBAR], TAG_DONE);
 #endif
 	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
 

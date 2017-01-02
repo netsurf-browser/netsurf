@@ -34,6 +34,8 @@ enum {
 	GID_CW_DRAW, /* drawing area (space.gadget) */
 	GID_CW_HSCROLL, /* horizontal scroller */
 	GID_CW_VSCROLL, /* vertical scroller */
+	GID_CW_HSCROLLLAYOUT, /* horizontal scroller container*/
+	GID_CW_VSCROLLLAYOUT, /* vertical scroller container */
 	GID_CW_LAST
 };
 
@@ -56,6 +58,11 @@ struct ami_corewindow {
 
 		APTR deferred_rects_pool;
 		struct MinList *deferred_rects;
+
+		/** keep track of the scrollbar type we're using */
+		bool in_border_scroll;
+		bool scroll_x_visible;
+		bool scroll_y_visible;
 
 		/** window title, must be allocated wth ami_utf8 function */
 		char *wintitle;
