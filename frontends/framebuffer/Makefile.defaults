@@ -47,5 +47,5 @@ NETSURF_FRAMEBUFFER_RESOURCES := $(PREFIX)/share/netsurf/
 NETSURF_FB_RESPATH := $${HOME}/.netsurf/:$${NETSURFRES}:$(NETSURF_FRAMEBUFFER_RESOURCES):./frontends/framebuffer/res
 
 # freetype compiled in font serch path
-NETSURF_FB_FONTPATH := /usr/share/fonts/truetype/ttf-dejavu:/usr/share/fonts/truetype/msttcorefonts
+NETSURF_FB_FONTPATH := /usr/share/fonts/truetype/dejavu:/usr/share/fonts/truetype/msttcorefonts
 
