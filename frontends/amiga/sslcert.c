@@ -64,7 +64,6 @@ struct ami_crtvrfy_window {
 	/** Amiga GUI stuff */
 	Object *sslcert_objects[GID_SSLCERT_LAST]; // technically wasting a few bytes here
 
-	char *wintitle;
 	char *sslerr;
 	char *sslaccept;
 	char *sslreject;
@@ -83,7 +82,6 @@ ami_crtvrfy_destroy(struct ami_crtvrfy_window *crtvrfy_win)
 
 	res = sslcert_viewer_fini(crtvrfy_win->ssl_data);
 	if (res == NSERROR_OK) {
-		ami_utf8_free(crtvrfy_win->wintitle);
 		ami_utf8_free(crtvrfy_win->sslerr);
 		ami_utf8_free(crtvrfy_win->sslaccept);
 		ami_utf8_free(crtvrfy_win->sslreject);
@@ -217,7 +215,7 @@ ami_crtvrfy_create_window(struct ami_crtvrfy_window *crtvrfy_win)
 
 	ami_cw->objects[GID_CW_WIN] = WindowObj,
   	    WA_ScreenTitle, ami_gui_get_screen_title(),
-       	WA_Title, crtvrfy_win->wintitle,
+       	WA_Title, ami_cw->wintitle,
        	WA_Activate, TRUE,
        	WA_DepthGadget, TRUE,
        	WA_DragBar, TRUE,
@@ -287,7 +285,7 @@ nserror ami_cert_verify(struct nsurl *url,
 		return NSERROR_NOMEM;
 	}
 
-	ncwin->wintitle = ami_utf8_easy((char *)messages_get("SSLCerts"));
+	ncwin->core.wintitle = ami_utf8_easy((char *)messages_get("SSLCerts"));
 	ncwin->sslerr = ami_utf8_easy((char *)messages_get("SSLError"));
 	ncwin->sslaccept = ami_utf8_easy((char *)messages_get("SSL_Certificate_Accept"));
 	ncwin->sslreject = ami_utf8_easy((char *)messages_get("SSL_Certificate_Reject"));
@@ -295,7 +293,7 @@ nserror ami_cert_verify(struct nsurl *url,
 	res = ami_crtvrfy_create_window(ncwin);
 	if (res != NSERROR_OK) {
 		LOG("SSL UI builder init failed");
-		ami_utf8_free(ncwin->wintitle);
+		ami_utf8_free(ncwin->core.wintitle);
 		ami_utf8_free(ncwin->sslerr);
 		ami_utf8_free(ncwin->sslaccept);
 		ami_utf8_free(ncwin->sslreject);
@@ -312,7 +310,7 @@ nserror ami_cert_verify(struct nsurl *url,
 
 	res = ami_corewindow_init(&ncwin->core);
 	if (res != NSERROR_OK) {
-		ami_utf8_free(ncwin->wintitle);
+		ami_utf8_free(ncwin->core.wintitle);
 		ami_utf8_free(ncwin->sslerr);
 		ami_utf8_free(ncwin->sslaccept);
 		ami_utf8_free(ncwin->sslreject);
@@ -325,7 +323,7 @@ nserror ami_cert_verify(struct nsurl *url,
 	res = sslcert_viewer_create_session_data(num, url, cb, cbpw, certs,
 									   &ncwin->ssl_data);
 	if (res != NSERROR_OK) {
-		ami_utf8_free(ncwin->wintitle);
+		ami_utf8_free(ncwin->core.wintitle);
 		ami_utf8_free(ncwin->sslerr);
 		ami_utf8_free(ncwin->sslaccept);
 		ami_utf8_free(ncwin->sslreject);
@@ -338,7 +336,7 @@ nserror ami_cert_verify(struct nsurl *url,
 							  (struct core_window *)ncwin,
 							  ncwin->ssl_data);
 	if (res != NSERROR_OK) {
-		ami_utf8_free(ncwin->wintitle);
+		ami_utf8_free(ncwin->core.wintitle);
 		ami_utf8_free(ncwin->sslerr);
 		ami_utf8_free(ncwin->sslaccept);
 		ami_utf8_free(ncwin->sslreject);

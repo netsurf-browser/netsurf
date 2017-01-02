@@ -60,6 +60,7 @@
 #include "amiga/misc.h"
 #include "amiga/object.h"
 #include "amiga/schedule.h"
+#include "amiga/utf8.h"
 
 /**
  * Convert co-ordinates relative to space.gadget
@@ -664,6 +665,9 @@ nserror ami_corewindow_fini(struct ami_corewindow *ami_cw)
 	/* release off-screen bitmap stuff */
 	ami_plot_release_pens(ami_cw->gg.shared_pens);
 	ami_free_layers(&ami_cw->gg);
+
+	/* free the window title */
+	ami_utf8_free(ami_cw->wintitle);
 
 	/* remove the core window from our window list */
 	ami_gui_win_list_remove(ami_cw);

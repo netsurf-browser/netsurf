@@ -57,6 +57,9 @@ struct ami_corewindow {
 		APTR deferred_rects_pool;
 		struct MinList *deferred_rects;
 
+		/** window title, must be allocated wth ami_utf8 function */
+		char *wintitle;
+
 		/** stuff for our off-screen render bitmap */
 		struct gui_globals gg;
 		struct MinList *shared_pens;
