@@ -221,7 +221,7 @@ ami_crtvrfy_create_window(struct ami_crtvrfy_window *crtvrfy_win)
        	WA_Activate, TRUE,
        	WA_DepthGadget, TRUE,
        	WA_DragBar, TRUE,
-       	WA_CloseGadget, TRUE,
+       	WA_CloseGadget, FALSE,
        	WA_SizeGadget, TRUE,
 		WA_SizeBRight, TRUE,
 		WA_Height, scrn->Height / 2,
