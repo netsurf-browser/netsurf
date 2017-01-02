@@ -295,8 +295,8 @@ ami_cw_redraw(struct ami_corewindow *ami_cw, const struct rect *restrict r)
 			return;
 		}
 
-		new_rect.x0 = bbox->Left;
-		new_rect.y0 = bbox->Top;
+		new_rect.x0 = 0;
+		new_rect.y0 = 0;
 		ami_cw_coord_amiga_to_ns(ami_cw, &new_rect.x0, &new_rect.y0);
 		new_rect.x1 = new_rect.x0 + bbox->Width;
 		new_rect.y1 = new_rect.y0 + bbox->Height;
