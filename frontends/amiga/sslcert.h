@@ -33,6 +33,6 @@ struct ssl_cert_info;
  */
 nserror ami_cert_verify(struct nsurl *url, 
 		const struct ssl_cert_info *certs, unsigned long num,
-		     nserror (*cb)(bool proceed, void *pw), void *cbpw);
+		nserror (*cb)(bool proceed, void *pw), void *cbpw);
 #endif
 

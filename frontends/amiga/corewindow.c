@@ -142,6 +142,10 @@ ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 	int tile_size_x = ami_cw->gg.width;
 	int tile_size_y = ami_cw->gg.height;
 	int tile_x, tile_y, tile_w, tile_h;
+	int x = r->x0;
+	int y = r->y0;
+	int width = r->x1 - r->x0;
+	int height = r->y1 - r->y0;
 
 	struct redraw_context ctx = {
 		.interactive = true,
@@ -154,46 +158,41 @@ ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 		return;
 	}
 
-	int x0 = bbox->Left;
-	int y0 = bbox->Top;
-	ami_cw_coord_amiga_to_ns(ami_cw, &x0, &y0);
-	int x1 = x0 + bbox->Width;
-	int y1 = y0 + bbox->Height;
-
-	if((r->y1 < y0) || (r->x1 < x0) || (r->x0 > x1) || (r->y0 > y1)) {
-		/* rect not visible */
-		ami_gui_free_space_box(bbox);
-		return;
-	}
-
-	if(r->y0 < y0) r->y0 = y0;
-	if(r->x0 < x0) r->x0 = x0;
-	if(r->y1 > y1) r->y1 = y1;
-	if(r->x1 > x1) r->x1 = x1;
-
 	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_HSCROLL], (ULONG *)&pos_x);
 	GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_VSCROLL], (ULONG *)&pos_y);
 
 	glob = &ami_cw->gg;
-	temprp = glob->rp; //??
- 	glob->rp = ami_cw->win->RPort;
 
-	for(tile_y = r->y0; tile_y < r->y1; tile_y += tile_size_y) {
+	if(x - pos_x + width > bbox->Width) width = bbox->Width - (x - pos_x);
+	if(y - pos_y + height > bbox->Height) height = bbox->Height - (y - pos_y);
+
+	if(x < pos_x) {
+		width -= pos_x - x;
+		x = pos_x;
+	}
+
+	if(y < pos_y) {
+		height -= pos_y - y;
+		y = pos_y;
+	}
+
+	for(tile_y = y; tile_y < (y + height); tile_y += tile_size_y) {
 		tile_h = tile_size_y;
-		if((r->y1 - tile_y) < tile_size_y)
-			tile_h = r->y1 - tile_y;
+		if(((y + height) - tile_y) < tile_size_y)
+			tile_h = (y + height) - tile_y;
 
-		for(tile_x = r->x0; tile_x < r->x1; tile_x += tile_size_x) {
+		for(tile_x = x; tile_x < (x + width); tile_x += tile_size_x) {
 			tile_w = tile_size_x;
-			if((r->x1 - tile_x) < tile_size_x)
-				tile_w = r->x1 - tile_x;
+			if(((x + width) - tile_x) < tile_size_x)
+				tile_w = (x + width) - tile_x;
 
-			draw_rect.x0 = tile_x;
-			draw_rect.y0 = tile_y;
+			draw_rect.x0 = - tile_x;
+			draw_rect.y0 = - tile_y;
 			draw_rect.x1 = tile_x + tile_w;
 			draw_rect.y1 = tile_y + tile_h;
 
 			ami_cw->draw(ami_cw, &draw_rect, &ctx);
+
 #ifdef __amigaos4__
 			BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
 					BLITA_Source, ami_cw->gg.bm,
@@ -216,7 +215,6 @@ ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 
 	ami_gui_free_space_box(bbox);
 	ami_clearclipreg(glob);
-	glob->rp = temprp;
 	ami_gui_set_default_gg();
 }
 
