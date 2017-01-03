@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#include <proto/gadtools.h>
 #include <proto/intuition.h>
 
 #include <classes/window.h>
@@ -40,10 +41,17 @@
 #include "utils/messages.h"
 #include "utils/nsoption.h"
 
+#include "amiga/cookies.h"
 #include "amiga/corewindow.h"
 #include "amiga/libs.h"
 #include "amiga/utf8.h"
 
+enum {
+	/* Project menu */
+	AMI_COOKIE_M_PROJECT = 0,
+	 AMI_COOKIE_M_TEST,
+	 AMI_COOKIE_M_LAST
+};
 
 /**
  * Amiga cookie viewer window context
@@ -51,27 +59,42 @@
 struct ami_cookie_window {
 	/** Amiga core window context */
 	struct ami_corewindow core;
+
+	struct ami_menu_data *menu_data[AMI_COOKIE_M_LAST + 1];
+	struct Menu *imenu; /* Intuition menu */
 };
 
 static struct ami_cookie_window *cookie_window = NULL;
 
+
+static void
+ami_cookies_menu_free(struct ami_cookie_window *cookie_win)
+{
+	SetAttrs(cookie_win->core.objects[GID_CW_WIN],
+		WINDOW_MenuStrip, NULL,
+	TAG_DONE);
+	
+	ami_menu_free_labs(cookie_win->menu_data, AMI_COOKIE_M_LAST);
+	FreeMenus(cookie_win->imenu);
+}
+
 /**
  * destroy a previously created cookie view
  */
-static nserror
-ami_cookies_destroy(void)
+static void
+ami_cookies_destroy(struct ami_corewindow *ami_cw)
 {
 	nserror res;
 
 	if(cookie_window == NULL)
-		return NSERROR_OK;
+		return;
 
 	res = cookie_manager_fini();
 	if (res == NSERROR_OK) {
-		res = ami_corewindow_fini(&cookie_window->core); /* closes the window for us */
+		ami_cookies_menu_free(cookie_window);
+		res = ami_corewindow_fini(&cookie_window->core); /* closes the window for us, frees cookie_win */
 		cookie_window = NULL;
 	}
-	return res;
 }
 
 
@@ -126,6 +149,39 @@ ami_cookies_draw(struct ami_corewindow *ami_cw, int x, int y, struct rect *r, st
 	return NSERROR_OK;
 }
 
+/**
+ * menu stuff
+ */
+
+ /* menu hook functions */
+ 
+HOOKF(void, ami_cookies_menu_item_project_test, APTR, window, struct IntuiMessage *)
+{
+	
+}
+ 
+/* menu setup */
+
+static void ami_cookies_menulabs(struct ami_menu_data **md)
+{
+	/* not real menu items */
+	ami_menu_alloc_item(md, AMI_COOKIE_M_PROJECT, NM_TITLE, "Project",       0, NULL, NULL, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_TEST,   NM_ITEM, "TEST", 'N', "TBImages:list_app",
+			ami_cookies_menu_item_project_test, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_LAST,   NM_END, NULL,     0, NULL, NULL, NULL, 0);
+}
+
+static struct Menu *
+ami_cookies_menu_create(struct ami_cookie_window *cookie_win)
+{
+	ami_cookies_menulabs(cookie_win->menu_data);
+	cookie_win->imenu = ami_menu_layout(cookie_win->menu_data, AMI_COOKIE_M_LAST);
+	if(cookie_win->imenu == NULL) return NULL;
+
+	return cookie_win->imenu;
+}
+
+
 static nserror
 ami_cookies_create_window(struct ami_cookie_window *cookie_win)
 {
@@ -155,7 +211,7 @@ ami_cookies_create_window(struct ami_cookie_window *cookie_win)
 		WINDOW_HorizProp, 1,
 		WINDOW_VertProp, 1,
 		WINDOW_UserData, cookie_win,
-		/* WINDOW_NewMenu, twin->menu,   -> No menu for SSL Cert */
+		WINDOW_MenuStrip, ami_cookies_menu_create(cookie_win),
 		WINDOW_IconifyGadget, FALSE,
 		WINDOW_Position, WPOS_CENTERSCREEN,
 		WINDOW_ParentGroup, ami_cw->objects[GID_CW_MAIN] = LayoutVObj,
