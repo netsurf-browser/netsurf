@@ -313,7 +313,7 @@ nserror ami_cert_verify(struct nsurl *url,
 		return res;
 	}
 
-	/* initialise example core window */
+	/* initialise Amiga core window */
 	ncwin->core.draw = ami_crtvrfy_draw;
 	ncwin->core.key = ami_crtvrfy_key;
 	ncwin->core.mouse = ami_crtvrfy_mouse;

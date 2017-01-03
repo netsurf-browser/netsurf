@@ -627,7 +627,7 @@ ami_cw_update_size(struct core_window *cw, int width, int height)
 	if(ami_cw->objects[GID_CW_VSCROLL]) {
 		ami_cw_toggle_scrollbar(ami_cw, true, true);
 		RefreshSetGadgetAttrs((struct Gadget *)ami_cw->objects[GID_CW_VSCROLL], ami_cw->win, NULL,
-			SCROLLER_Total, (ULONG)height,
+			SCROLLER_Total, height,
 			SCROLLER_Visible, win_h,
 		TAG_DONE);
 	}
