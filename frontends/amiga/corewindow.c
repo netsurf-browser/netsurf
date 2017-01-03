@@ -403,18 +403,14 @@ ami_cw_toggle_scrollbar(struct ami_corewindow *ami_cw, bool vert, bool visible)
 		}
 	}
 
-#if 0
-	/* in-window scrollbars aren't getting hidden until the window is resized
-	 * this code should fix it, but it isn't working */
 	if(ami_cw->in_border_scroll == false) {
 		FlushLayoutDomainCache((struct Gadget *)ami_cw->objects[GID_CW_WIN]);
 		RethinkLayout((struct Gadget *)ami_cw->objects[GID_CW_WIN],
 					ami_cw->win, NULL, TRUE);
-
-		/* probably need to redraw here */
-		ami_cw_redraw(ami_cw, NULL);
 	}
-#endif
+
+	/* probably need to redraw here */
+	ami_cw_redraw(ami_cw, NULL);
 }
 
 static void
