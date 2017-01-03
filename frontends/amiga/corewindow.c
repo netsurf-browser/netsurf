@@ -34,6 +34,7 @@
 #include "amiga/os3support.h"
 
 #include <assert.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
@@ -103,6 +104,17 @@ ami_cw_coord_amiga_to_ns(struct ami_corewindow *ami_cw, int *restrict x, int *re
 	*y = *y + ys;
 }
 
+/**
+ * check if mouse has moved since position was stored
+ * @return true if it has, false otherwise
+ */
+static bool
+ami_cw_mouse_moved(struct ami_corewindow *ami_cw, int x, int y)
+{
+	if(abs(x - ami_cw->mouse_x_click) > 5) return true;
+	if(abs(y - ami_cw->mouse_y_click) > 5) return true;
+	return false;
+}
 
 /* get current mouse position in the draw area, adjusted for scroll.
  * @return true if the mouse was in the draw area and co-ordinates updated
@@ -494,11 +506,15 @@ ami_cw_event(void *w)
 							ami_cw->mouse_state = BROWSER_MOUSE_CLICK_1;
 
 							if(ami_cw->lastclick.tv_sec) {
-								if(DoubleClick(ami_cw->lastclick.tv_sec,
+								if((ami_cw_mouse_moved(ami_cw, x, y) == false) &&
+										(DoubleClick(ami_cw->lastclick.tv_sec,
 											ami_cw->lastclick.tv_usec,
-											curtime.tv_sec, curtime.tv_usec))
+											curtime.tv_sec, curtime.tv_usec)))
 									ami_cw->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
 							}
+
+							ami_cw->mouse_x_click = x;
+							ami_cw->mouse_y_click = y;
 
 							if(ami_cw->mouse_state & BROWSER_MOUSE_DOUBLE_CLICK) {
 								ami_cw->lastclick.tv_sec = 0;
