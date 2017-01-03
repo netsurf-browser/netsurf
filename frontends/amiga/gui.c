@@ -4599,7 +4599,7 @@ static void gui_window_destroy(struct gui_window *g)
 	DisposeObject((Object *)g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_BACK]);
 	DisposeObject((Object *)g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_FORWARD]);
 	ami_ctxmenu_release_hook(g->shared->ctxmenu_hook);
-	ami_free_menulabs(g->shared);
+	ami_free_menulabs(g->shared->menu_data);
 	ami_menu_free(g->shared);
 
 	free(g->shared->wintitle);

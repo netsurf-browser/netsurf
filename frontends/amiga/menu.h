@@ -24,6 +24,7 @@
 #include <libraries/gadtools.h>
 
 struct hlcache_handle;
+struct ami_menu_data;
 
 /** Maximum number of hotlist items (somewhat arbitrary value) */
 #define AMI_HOTLIST_ITEMS 60
@@ -132,13 +133,18 @@ enum {
 struct gui_window;
 struct gui_window_2;
 
-void ami_free_menulabs(struct gui_window_2 *gwin);
+void ami_free_menulabs(struct ami_menu_data **md); //specific to browser windows
+void ami_menu_free_labs(struct ami_menu_data **md, int max); // generic ver
 struct Menu *ami_menu_create(struct gui_window_2 *gwin);
 void ami_menu_refresh(struct gui_window_2 *gwin);
 void ami_menu_update_checked(struct gui_window_2 *gwin);
 void ami_menu_update_disabled(struct gui_window *g, struct hlcache_handle *c);
 void ami_menu_free_glyphs(void);
 void ami_menu_free(struct gui_window_2 *gwin);
+void ami_menu_alloc_item(struct ami_menu_data **md, int num, UBYTE type,
+			const char *restrict label, char key, const char *restrict icon,
+			void *restrict func, void *restrict hookdata, UWORD flags);
+struct Menu *ami_menu_layout(struct ami_menu_data **md, int max);
 
 /**
  * Sets that an item linked to a toggle menu item has been changed.

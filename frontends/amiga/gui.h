@@ -110,6 +110,8 @@ struct ami_generic_window {
 	const struct ami_win_event_table *tbl;
 };
 
+struct ami_menu_data;
+
 struct gui_window_2 {
 	struct ami_generic_window w;
 	struct Window *win;
@@ -132,13 +134,7 @@ struct gui_window_2 {
 	int temp;
 	bool redraw_scroll;
 	bool new_content;
-	char *restrict menulab[AMI_MENU_AREXX_MAX + 1];
-	Object *restrict menuobj[AMI_MENU_AREXX_MAX + 1];
-	char menukey[AMI_MENU_AREXX_MAX + 1];
-	char *restrict menuicon[AMI_MENU_AREXX_MAX + 1];
-	struct Hook menu_hook[AMI_MENU_AREXX_MAX + 1];
-	UBYTE *menutype;
-	struct NewMenu *menu;
+	struct ami_menu_data *menu_data[AMI_MENU_AREXX_MAX + 1];
 	ULONG hotlist_items;
 	Object *restrict hotlist_toolbar_lab[AMI_GUI_TOOLBAR_MAX];
 	struct List hotlist_toolbar_list;
@@ -163,7 +159,6 @@ struct gui_window_2 {
 	struct MinList *shared_pens;
 	gui_pointer_shape mouse_pointer;
 	struct Menu *imenu; /* Intuition menu */
-	struct VisualInfo *vi; /* For GadTools menu */
 	bool closed; /* Window has been closed (via menu) */
 };
 
