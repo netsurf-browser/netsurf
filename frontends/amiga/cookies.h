@@ -1,5 +1,5 @@
 /*
- * Copyright 2008, 2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2017 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -18,11 +18,8 @@
 
 #ifndef AMIGA_COOKIES_H
 #define AMIGA_COOKIES_H
-#include "amiga/desktop-tree.h"
-#include "amiga/tree.h"
 
-void ami_cookies_initialise(void);
-void ami_cookies_free(void);
-
-extern struct treeview_window *cookies_window;
+/** Open the cookie viewer */
+nserror ami_cookies_present(void);
 #endif
+

@@ -843,6 +843,7 @@ nserror cookie_manager_fini(void)
 
 	/* Destroy the cookie manager treeview */
 	err = treeview_destroy(cm_ctx.tree);
+	cm_ctx.tree = NULL;
 
 	/* Free cookie manager treeview entry fields */
 	for (i = 0; i < COOKIE_M_N_FIELDS; i++)

@@ -34,6 +34,7 @@
 #include "amiga/os3support.h"
 
 #include <assert.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
@@ -103,6 +104,17 @@ ami_cw_coord_amiga_to_ns(struct ami_corewindow *ami_cw, int *restrict x, int *re
 	*y = *y + ys;
 }
 
+/**
+ * check if mouse has moved since position was stored
+ * @return true if it has, false otherwise
+ */
+static bool
+ami_cw_mouse_moved(struct ami_corewindow *ami_cw, int x, int y)
+{
+	if(abs(x - ami_cw->mouse_x_click) > 5) return true;
+	if(abs(y - ami_cw->mouse_y_click) > 5) return true;
+	return false;
+}
 
 /* get current mouse position in the draw area, adjusted for scroll.
  * @return true if the mouse was in the draw area and co-ordinates updated
@@ -391,18 +403,14 @@ ami_cw_toggle_scrollbar(struct ami_corewindow *ami_cw, bool vert, bool visible)
 		}
 	}
 
-#if 0
-	/* in-window scrollbars aren't getting hidden until the window is resized
-	 * this code should fix it, but it isn't working */
 	if(ami_cw->in_border_scroll == false) {
 		FlushLayoutDomainCache((struct Gadget *)ami_cw->objects[GID_CW_WIN]);
 		RethinkLayout((struct Gadget *)ami_cw->objects[GID_CW_WIN],
 					ami_cw->win, NULL, TRUE);
-
-		/* probably need to redraw here */
-		ami_cw_redraw(ami_cw, NULL);
 	}
-#endif
+
+	/* probably need to redraw here */
+	ami_cw_redraw(ami_cw, NULL);
 }
 
 static void
@@ -464,6 +472,11 @@ ami_cw_event(void *w)
 	int x = 0, y = 0;
 
 	while((result = RA_HandleInput(ami_cw->objects[GID_CW_WIN], &code)) != WMHI_LASTMSG) {
+		if(ami_cw->close_window == true) {
+			ami_cw_close(ami_cw);
+			return TRUE;
+		}
+
 		switch(result & WMHI_CLASSMASK) {
 			case WMHI_MOUSEMOVE:
 				if(ami_cw_mouse_pos(ami_cw, &x, &y)) {
@@ -494,11 +507,15 @@ ami_cw_event(void *w)
 							ami_cw->mouse_state = BROWSER_MOUSE_CLICK_1;
 
 							if(ami_cw->lastclick.tv_sec) {
-								if(DoubleClick(ami_cw->lastclick.tv_sec,
+								if((ami_cw_mouse_moved(ami_cw, x, y) == false) &&
+										(DoubleClick(ami_cw->lastclick.tv_sec,
 											ami_cw->lastclick.tv_usec,
-											curtime.tv_sec, curtime.tv_usec))
+											curtime.tv_sec, curtime.tv_usec)))
 									ami_cw->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
 							}
+
+							ami_cw->mouse_x_click = x;
+							ami_cw->mouse_y_click = y;
 
 							if(ami_cw->mouse_state & BROWSER_MOUSE_DOUBLE_CLICK) {
 								ami_cw->lastclick.tv_sec = 0;
@@ -616,28 +633,22 @@ ami_cw_update_size(struct core_window *cw, int width, int height)
 
 	if(width == -1) {
 		ami_cw_toggle_scrollbar(ami_cw, false, false);
-		return;
-	}
-
-	if(height == -1) {
-		ami_cw_toggle_scrollbar(ami_cw, true, false);
-		return;
-	}
-
-	if(ami_cw->objects[GID_CW_VSCROLL]) {
-		ami_cw_toggle_scrollbar(ami_cw, true, true);
-		RefreshSetGadgetAttrs((struct Gadget *)ami_cw->objects[GID_CW_VSCROLL], ami_cw->win, NULL,
-			SCROLLER_Total, (ULONG)height,
-			SCROLLER_Visible, win_h,
-		TAG_DONE);
-	}
-
-	if(ami_cw->objects[GID_CW_HSCROLL]) {
+	} else {
 		ami_cw_toggle_scrollbar(ami_cw, false, true);
 		RefreshSetGadgetAttrs((struct Gadget *)ami_cw->objects[GID_CW_HSCROLL], ami_cw->win, NULL,
 			SCROLLER_Total, (ULONG)width,
 			SCROLLER_Visible, win_w,
-		TAG_DONE);
+		TAG_DONE);		
+	}
+
+	if(height == -1) {
+		ami_cw_toggle_scrollbar(ami_cw, true, false);
+	} else {
+		ami_cw_toggle_scrollbar(ami_cw, true, true);
+		RefreshSetGadgetAttrs((struct Gadget *)ami_cw->objects[GID_CW_VSCROLL], ami_cw->win, NULL,
+			SCROLLER_Total, height,
+			SCROLLER_Visible, win_h,
+		TAG_DONE);		
 	}
 }
 
