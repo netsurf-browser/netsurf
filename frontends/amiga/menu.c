@@ -77,7 +77,6 @@
 #include "amiga/utf8.h"
 #include "amiga/schedule.h"
 
-#define NSA_SPACE "blankspace.png"
 #define NSA_MAX_HOTLIST_MENU_LEN 100
 
 enum {
@@ -545,7 +544,7 @@ HOOKF(void, ami_menu_item_arexx_entries, APTR, window, struct IntuiMessage *)
 
 
 /* menu creation code */
-void ami_menu_free_labs(struct ami_menu_data **md, int max)
+static void ami_menu_free_labs(struct ami_menu_data **md, int max)
 {
 	int i;
 
@@ -982,6 +981,12 @@ struct Menu *ami_menu_layout(struct ami_menu_data **md, int max)
 void ami_menu_free(struct gui_window_2 *gwin)
 {
 	FreeMenus(gwin->imenu);
+}
+
+void ami_menu_free_menu(struct ami_menu_data **md, int max, struct Menu *imenu)
+{
+	ami_menu_free_labs(md, max);
+	FreeMenus(imenu);
 }
 
 struct Menu *ami_menu_create(struct gui_window_2 *gwin)

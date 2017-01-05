@@ -58,6 +58,8 @@ struct ami_corewindow {
 		int mouse_y_click;
 		int mouse_state;
 
+		bool close_window; // set to true to close the window during event loop
+
 		APTR deferred_rects_pool;
 		struct MinList *deferred_rects;
 

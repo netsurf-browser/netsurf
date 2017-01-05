@@ -472,6 +472,11 @@ ami_cw_event(void *w)
 	int x = 0, y = 0;
 
 	while((result = RA_HandleInput(ami_cw->objects[GID_CW_WIN], &code)) != WMHI_LASTMSG) {
+		if(ami_cw->close_window == true) {
+			ami_cw_close(ami_cw);
+			return TRUE;
+		}
+
 		switch(result & WMHI_CLASSMASK) {
 			case WMHI_MOUSEMOVE:
 				if(ami_cw_mouse_pos(ami_cw, &x, &y)) {

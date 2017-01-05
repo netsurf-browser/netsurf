@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include <proto/gadtools.h>
 #include <proto/intuition.h>
 
 #include <classes/window.h>
@@ -49,8 +48,25 @@
 enum {
 	/* Project menu */
 	AMI_COOKIE_M_PROJECT = 0,
-	 AMI_COOKIE_M_TEST,
-	 AMI_COOKIE_M_LAST
+	 AMI_COOKIE_M_EXPAND,
+	  AMI_COOKIE_M_EXPAND_ALL,
+	  AMI_COOKIE_M_EXPAND_DOMAINS,
+	  AMI_COOKIE_M_EXPAND_COOKIES,
+	 AMI_COOKIE_M_COLLAPSE,
+	  AMI_COOKIE_M_COLLAPSE_ALL,
+	  AMI_COOKIE_M_COLLAPSE_DOMAINS,
+	  AMI_COOKIE_M_COLLAPSE_COOKIES,
+	 AMI_COOKIE_M_BAR_P1,
+	 AMI_COOKIE_M_SNAPSHOT,
+	 AMI_COOKIE_M_BAR_P2,
+	 AMI_COOKIE_M_CLOSE,
+	/* Edit menu */
+	AMI_COOKIE_M_EDIT,
+	 AMI_COOKIE_M_SELECTALL,
+	 AMI_COOKIE_M_CLEAR,
+	 AMI_COOKIE_M_BAR_E1,
+	 AMI_COOKIE_M_DELETE,
+	AMI_COOKIE_M_LAST
 };
 
 /**
@@ -74,8 +90,7 @@ ami_cookies_menu_free(struct ami_cookie_window *cookie_win)
 		WINDOW_MenuStrip, NULL,
 	TAG_DONE);
 	
-	ami_menu_free_labs(cookie_win->menu_data, AMI_COOKIE_M_LAST);
-	FreeMenus(cookie_win->imenu);
+	ami_menu_free_menu(cookie_win->menu_data, AMI_COOKIE_M_LAST, cookie_win->imenu);
 }
 
 /**
@@ -155,19 +170,106 @@ ami_cookies_draw(struct ami_corewindow *ami_cw, int x, int y, struct rect *r, st
 
  /* menu hook functions */
  
-HOOKF(void, ami_cookies_menu_item_project_test, APTR, window, struct IntuiMessage *)
+HOOKF(void, ami_cookies_menu_item_project_expand_all, APTR, window, struct IntuiMessage *)
 {
-	
+	cookie_manager_expand(false);
 }
  
+HOOKF(void, ami_cookies_menu_item_project_expand_domains, APTR, window, struct IntuiMessage *)
+{
+	cookie_manager_expand(true);
+}
+
+HOOKF(void, ami_cookies_menu_item_project_expand_cookies, APTR, window, struct IntuiMessage *)
+{
+	cookie_manager_expand(false);
+}
+
+HOOKF(void, ami_cookies_menu_item_project_collapse_all, APTR, window, struct IntuiMessage *)
+{
+	cookie_manager_contract(true);
+}
+ 
+HOOKF(void, ami_cookies_menu_item_project_collapse_domains, APTR, window, struct IntuiMessage *)
+{
+	cookie_manager_contract(true);
+}
+
+HOOKF(void, ami_cookies_menu_item_project_collapse_cookies, APTR, window, struct IntuiMessage *)
+{
+	cookie_manager_contract(false);
+}
+
+HOOKF(void, ami_cookies_menu_item_project_snapshot, APTR, window, struct IntuiMessage *)
+{
+	struct ami_corewindow *ami_cw;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&ami_cw);
+
+	nsoption_set_int(cookies_window_ypos, ami_cw->win->TopEdge);
+	nsoption_set_int(cookies_window_xpos, ami_cw->win->LeftEdge);
+	nsoption_set_int(cookies_window_xsize, ami_cw->win->Width);
+	nsoption_set_int(cookies_window_ysize, ami_cw->win->Height);
+}
+
+HOOKF(void, ami_cookies_menu_item_project_close, APTR, window, struct IntuiMessage *)
+{
+	struct ami_corewindow *ami_cw;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&ami_cw);
+	
+	ami_cw->close_window = true;
+}
+
+HOOKF(void, ami_cookies_menu_item_edit_select_all, APTR, window, struct IntuiMessage *)
+{
+	cookie_manager_keypress(NS_KEY_SELECT_ALL);
+}
+
+HOOKF(void, ami_cookies_menu_item_edit_clear, APTR, window, struct IntuiMessage *)
+{
+	cookie_manager_keypress(NS_KEY_CLEAR_SELECTION);
+}
+
+HOOKF(void, ami_cookies_menu_item_edit_delete, APTR, window, struct IntuiMessage *)
+{
+	cookie_manager_keypress(NS_KEY_DELETE_LEFT);
+}
+
+
 /* menu setup */
 
 static void ami_cookies_menulabs(struct ami_menu_data **md)
 {
-	/* not real menu items */
-	ami_menu_alloc_item(md, AMI_COOKIE_M_PROJECT, NM_TITLE, "Project",       0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, AMI_COOKIE_M_TEST,   NM_ITEM, "TEST", 'N', "TBImages:list_app",
-			ami_cookies_menu_item_project_test, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_PROJECT, NM_TITLE, "Tree",       0, NULL, NULL, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_EXPAND,   NM_ITEM, "Expand", 0, "TBImages:list_folderunfold", NULL, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_EXPAND_ALL,   NM_SUB, "All", '+', NULL,
+		ami_cookies_menu_item_project_expand_all, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_EXPAND_DOMAINS,   NM_SUB, "Domains", 0, NULL,
+		ami_cookies_menu_item_project_expand_domains, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_EXPAND_COOKIES,   NM_SUB, "Cookies", 0, NULL,
+		ami_cookies_menu_item_project_expand_cookies, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_COLLAPSE,   NM_ITEM, "Collapse", 0, "TBImages:list_folderfold", NULL, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_COLLAPSE_ALL,   NM_SUB, "All", '-', NULL,
+		ami_cookies_menu_item_project_collapse_all, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_COLLAPSE_DOMAINS,   NM_SUB, "Domains", 0, NULL,
+		ami_cookies_menu_item_project_collapse_domains, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_COLLAPSE_COOKIES,   NM_SUB, "Cookies", 0, NULL,
+		ami_cookies_menu_item_project_collapse_cookies, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_BAR_P1, NM_ITEM, NM_BARLABEL, 0, NULL, NULL, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_SNAPSHOT,   NM_ITEM, "SnapshotWindow", 0, "TBImages:list_hold",
+		ami_cookies_menu_item_project_snapshot, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_BAR_P2, NM_ITEM, NM_BARLABEL, 0, NULL, NULL, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_CLOSE,   NM_ITEM, "CloseWindow", 0, "TBImages:list_cancel",
+		ami_cookies_menu_item_project_close, NULL, 0);
+
+	ami_menu_alloc_item(md, AMI_COOKIE_M_EDIT, NM_TITLE, "Edit",       0, NULL, NULL, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_SELECTALL,   NM_ITEM, "SelectAllNS", 'A', NSA_SPACE,
+		ami_cookies_menu_item_edit_select_all, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_CLEAR,   NM_ITEM, "ClearNS", 0, NSA_SPACE,
+		ami_cookies_menu_item_edit_clear, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_BAR_E1, NM_ITEM, NM_BARLABEL, 0, NULL, NULL, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_DELETE,   NM_ITEM, "TreeDelete", 0, "TBImages:list_delete",
+		ami_cookies_menu_item_edit_delete, NULL, 0);
+
 	ami_menu_alloc_item(md, AMI_COOKIE_M_LAST,   NM_END, NULL,     0, NULL, NULL, NULL, 0);
 }
 
@@ -212,6 +314,7 @@ ami_cookies_create_window(struct ami_cookie_window *cookie_win)
 		WINDOW_VertProp, 1,
 		WINDOW_UserData, cookie_win,
 		WINDOW_MenuStrip, ami_cookies_menu_create(cookie_win),
+		WINDOW_MenuUserData, WGUD_HOOK,
 		WINDOW_IconifyGadget, FALSE,
 		WINDOW_Position, WPOS_CENTERSCREEN,
 		WINDOW_ParentGroup, ami_cw->objects[GID_CW_MAIN] = LayoutVObj,
