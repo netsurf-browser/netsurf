@@ -344,7 +344,7 @@ endif
 CC := $(CCACHE) $(CC)
 
 # Target paths
-OBJROOT = build-$(HOST)-$(TARGET)$(SUBTARGET)
+OBJROOT = build/$(HOST)-$(TARGET)$(SUBTARGET)
 DEPROOT := $(OBJROOT)/deps
 TOOLROOT := $(OBJROOT)/tools
 

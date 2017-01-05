@@ -58,15 +58,16 @@ utils_SRCS := utils/utils.c utils/messages.c utils/hashtable.c \
 time_SRCS := utils/time.c test/log.c test/time.c
 
 # Coverage builds need additional flags
+COV_ROOT := build/$(HOST)-coverage
 ifeq ($(MAKECMDGOALS),coverage)
   COV_CFLAGS ?= -fprofile-arcs -ftest-coverage -O0
   COV_CXXFLAGS ?= -fprofile-arcs -ftest-coverage -O0
   COV_LDFLAGS ?= -lgcov -fprofile-arcs
-  TESTROOT := build-$(HOST)-coverage
+  TESTROOT := $(COV_ROOT)
 else
   COV_CFLAGS ?= -O0
   COV_CXXFLAGS ?= -O0
-  TESTROOT := build-$(HOST)-test
+  TESTROOT := build/$(HOST)-test
 endif
 
 
@@ -172,6 +173,6 @@ $(TESTROOT)/created:
 
 test-clean:
 	$(VQ)echo "   CLEAN: $(TESTROOT)"
-	$(VQ)echo "   CLEAN: build-$(HOST)-coverage"
-	$(Q)$(RM) -r $(TESTROOT) build-$(HOST)-coverage
+	$(VQ)echo "   CLEAN: $(COV_ROOT)"
+	$(Q)$(RM) -r $(TESTROOT) $(COV_ROOT)
 CLEANS += test-clean

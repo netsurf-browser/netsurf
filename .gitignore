@@ -16,10 +16,6 @@ frontends/gtk/res/fr/Messages
 frontends/gtk/res/de/Messages
 frontends/gtk/res/nl/Messages
 frontends/gtk/res/it/Messages
-test/nsoption
-test/nsurl
-test/urldbtest
-test/llcache
 codedocs
 nsgtk
 nsfb
@@ -34,4 +30,4 @@ NetSurf.dmg
 NetSurf
 core
 nsfb-*
-build-*
+build
