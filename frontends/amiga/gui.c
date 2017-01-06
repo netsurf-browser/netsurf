@@ -547,6 +547,11 @@ static void ami_set_screen_defaults(struct Screen *screen)
 	nsoption_default_set_int(cookies_window_xsize, width);
 	nsoption_default_set_int(cookies_window_ysize, height);
 
+	nsoption_default_set_int(history_window_ypos, top);
+	nsoption_default_set_int(history_window_xpos, left);
+	nsoption_default_set_int(history_window_xsize, width);
+	nsoption_default_set_int(history_window_ysize, height);
+
 	nsoption_default_set_int(window_x, 0);
 	nsoption_default_set_int(window_y, screen->BarHeight + 1);
 	nsoption_default_set_int(window_width, screen->Width);
@@ -1014,7 +1019,6 @@ static void gui_init2(int argc, char** argv)
 	/**/
 
 	ami_hotlist_initialise(nsoption_charp(hotlist_file));
-	ami_global_history_initialise();
 	search_web_select_provider(nsoption_int(search_provider));
 
 	if (notalreadyrunning && 
@@ -3038,7 +3042,6 @@ static void gui_quit(void)
 	urldb_save(nsoption_charp(url_file));
 	urldb_save_cookies(nsoption_charp(cookie_file));
 	ami_hotlist_free(nsoption_charp(hotlist_file));
-	ami_global_history_free();
 #ifdef __amigaos4__
 	if(IApplication && ami_appid)
 		UnregisterApplication(ami_appid, NULL);

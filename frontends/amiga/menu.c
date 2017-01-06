@@ -362,7 +362,7 @@ HOOKF(void, ami_menu_item_browser_localhistory, APTR, window, struct IntuiMessag
 
 HOOKF(void, ami_menu_item_browser_globalhistory, APTR, window, struct IntuiMessage *)
 {
-	ami_tree_open(global_history_window,AMI_TREE_HISTORY);
+	ami_history_global_present();
 }
 
 HOOKF(void, ami_menu_item_browser_cookies, APTR, window, struct IntuiMessage *)

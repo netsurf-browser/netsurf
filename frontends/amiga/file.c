@@ -46,6 +46,9 @@
 
 static struct Hook aslhookfunc;
 
+struct FileRequester *filereq;
+struct FileRequester *savereq;
+
 HOOKF(ULONG, ami_file_asl_mime_hook, struct FileRequester *, fr, struct AnchorPathOld *)
 {
 	char fname[1024];
