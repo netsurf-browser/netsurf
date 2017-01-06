@@ -552,6 +552,12 @@ static void ami_set_screen_defaults(struct Screen *screen)
 	nsoption_default_set_int(history_window_xsize, width);
 	nsoption_default_set_int(history_window_ysize, height);
 
+	nsoption_default_set_int(hotlist_window_ypos, top);
+	nsoption_default_set_int(hotlist_window_xpos, left);
+	nsoption_default_set_int(hotlist_window_xsize, width);
+	nsoption_default_set_int(hotlist_window_ysize, height);
+
+
 	nsoption_default_set_int(window_x, 0);
 	nsoption_default_set_int(window_y, screen->BarHeight + 1);
 	nsoption_default_set_int(window_width, screen->Width);
@@ -1018,7 +1024,7 @@ static void gui_init2(int argc, char** argv)
 	}
 	/**/
 
-	ami_hotlist_initialise(nsoption_charp(hotlist_file));
+	hotlist_init(nsoption_charp(hotlist_file));
 	search_web_select_provider(nsoption_int(search_provider));
 
 	if (notalreadyrunning && 
@@ -3041,7 +3047,7 @@ static void gui_quit(void)
 
 	urldb_save(nsoption_charp(url_file));
 	urldb_save_cookies(nsoption_charp(cookie_file));
-	ami_hotlist_free(nsoption_charp(hotlist_file));
+	hotlist_fini(nsoption_charp(hotlist_file));
 #ifdef __amigaos4__
 	if(IApplication && ami_appid)
 		UnregisterApplication(ami_appid, NULL);
@@ -3185,7 +3191,7 @@ static bool ami_gui_hotlist_add(void *userdata, int level, int item,
 	return true;
 }
 
-static int ami_gui_hotlist_scan(struct tree *tree, struct List *speed_button_list, struct gui_window_2 *gwin)
+static int ami_gui_hotlist_scan(struct List *speed_button_list, struct gui_window_2 *gwin)
 {
 	struct ami_gui_tb_userdata userdata;
 	userdata.gw = gwin;
@@ -3207,7 +3213,7 @@ static void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 
 	NewList(&gwin->hotlist_toolbar_list);
 
-	if(ami_gui_hotlist_scan(ami_tree_get_tree(hotlist_window), &gwin->hotlist_toolbar_list, gwin) > 0) {
+	if(ami_gui_hotlist_scan(&gwin->hotlist_toolbar_list, gwin) > 0) {
 		gwin->objects[GID_HOTLIST] =
 				SpeedBarObj,
 					GA_ID, GID_HOTLIST,
@@ -3306,7 +3312,7 @@ static void ami_gui_hotlist_toolbar_update(struct gui_window_2 *gwin)
 
 	ami_gui_hotlist_toolbar_free(gwin, &gwin->hotlist_toolbar_list);
 
-	if(ami_gui_hotlist_scan(ami_tree_get_tree(hotlist_window), &gwin->hotlist_toolbar_list, gwin) > 0) {
+	if(ami_gui_hotlist_scan(&gwin->hotlist_toolbar_list, gwin) > 0) {
 		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_HOTLIST],
 						gwin->win, NULL,
 						SPEEDBAR_Buttons, &gwin->hotlist_toolbar_list,

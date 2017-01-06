@@ -73,7 +73,6 @@
 #include "amiga/print.h"
 #include "amiga/search.h"
 #include "amiga/theme.h"
-#include "amiga/tree.h"
 #include "amiga/utf8.h"
 #include "amiga/schedule.h"
 
@@ -106,7 +105,7 @@ static bool menu_glyphs_loaded = false;
 const char * const netsurf_version;
 const char * const verdate;
 
-static nserror ami_menu_scan(struct tree *tree, struct ami_menu_data **md);
+static nserror ami_menu_scan(struct ami_menu_data **md);
 void ami_menu_arexx_scan(struct ami_menu_data **md);
 
 void ami_menu_set_check_toggled(void)
@@ -456,7 +455,7 @@ HOOKF(void, ami_menu_item_hotlist_add, APTR, window, struct IntuiMessage *)
 
 HOOKF(void, ami_menu_item_hotlist_show, APTR, window, struct IntuiMessage *)
 {
-	ami_tree_open(hotlist_window, AMI_TREE_HOTLIST);
+	ami_hotlist_present();
 }
 
 HOOKF(void, ami_menu_item_hotlist_entries, APTR, window, struct IntuiMessage *)
@@ -992,7 +991,7 @@ void ami_menu_free_menu(struct ami_menu_data **md, int max, struct Menu *imenu)
 struct Menu *ami_menu_create(struct gui_window_2 *gwin)
 {
 	ami_init_menulabs(gwin->menu_data);
-	ami_menu_scan(ami_tree_get_tree(hotlist_window), gwin->menu_data); //\todo this needs to be MenuClass created
+	ami_menu_scan(gwin->menu_data); //\todo this needs to be MenuClass created
 	ami_menu_arexx_scan(gwin->menu_data);
 	gwin->imenu = ami_menu_layout(gwin->menu_data, AMI_MENU_AREXX_MAX);
 
@@ -1092,7 +1091,7 @@ static bool ami_menu_hotlist_add(void *userdata, int level, int item, const char
 	return true;
 }
 
-static nserror ami_menu_scan(struct tree *tree, struct ami_menu_data **md)
+static nserror ami_menu_scan(struct ami_menu_data **md)
 {
 	return ami_hotlist_scan((void *)md, AMI_MENU_HOTLIST, messages_get("HotlistMenu"), ami_menu_hotlist_add);
 }
