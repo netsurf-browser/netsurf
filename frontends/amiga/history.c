@@ -37,6 +37,7 @@
 #include <reaction/reaction_macros.h>
 
 #include "desktop/global_history.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/keypress.h"
 #include "netsurf/plotters.h"
 #include "utils/log.h"
@@ -44,6 +45,7 @@
 #include "utils/nsoption.h"
 
 #include "amiga/corewindow.h"
+#include "amiga/drag.h"
 #include "amiga/file.h"
 #include "amiga/history.h"
 #include "amiga/libs.h"
@@ -168,6 +170,49 @@ ami_history_global_draw(struct ami_corewindow *ami_cw, int x, int y, struct rect
 {
 	global_history_redraw(x, y, r, ctx);
 
+	return NSERROR_OK;
+}
+
+/**
+ * callback on drag end for history viewer
+ *
+ * \param ami_cw The Amiga core window structure.
+ * \param x mouse x co-ordinate
+ * \param y mouse y co-ordinate
+ * \return NSERROR_OK on success otherwise apropriate error code
+ */
+static nserror
+ami_history_global_drag_end(struct ami_corewindow *ami_cw, int x, int y)
+{
+	struct nsurl *url = NULL;
+	const char *title = NULL;
+	bool ok = false;
+	struct gui_window_2 *gwin;
+	struct ami_corewindow *cw;
+
+	if(ami_cw == ami_window_at_pointer(AMINS_COREWINDOW))
+		return NSERROR_OK;
+
+	if(global_history_has_selection()) {
+		ok = global_history_get_selection(&url, &title);
+	}
+	
+	if((ok == false) || (url == NULL)) {
+		DisplayBeep(scrn);
+	} else if(url) {
+		if((gwin = ami_window_at_pointer(AMINS_WINDOW))) {
+			browser_window_navigate(gwin->gw->bw,
+					url,
+					NULL,
+					BW_NAVIGATE_HISTORY,
+					NULL,
+					NULL,
+					NULL);
+		} else if((cw = (struct ami_corewindow *)ami_window_at_pointer(AMINS_COREWINDOW)) &&
+			(ami_cw->icon_drop != NULL)) {
+			cw->icon_drop(cw, url, title, x, y);
+		}
+	}
 	return NSERROR_OK;
 }
 
@@ -396,6 +441,8 @@ nserror ami_history_global_present(void)
 	ncwin->core.mouse = ami_history_global_mouse;
 	ncwin->core.close = ami_history_global_destroy;
 	ncwin->core.event = NULL;
+	ncwin->core.drag_end = ami_history_global_drag_end;
+	ncwin->core.icon_drop = NULL;
 
 	res = ami_corewindow_init(&ncwin->core);
 	if (res != NSERROR_OK) {

@@ -58,6 +58,10 @@ struct ami_corewindow {
 		int mouse_y_click;
 		int mouse_state;
 
+		bool dragging;
+		int drag_x_start;
+		int drag_y_start;
+
 		bool close_window; // set to true to close the window during event loop
 
 		APTR deferred_rects_pool;
@@ -127,6 +131,31 @@ struct ami_corewindow {
  		 * \return TRUE if window closed during event processing
 		 */
 		BOOL (*event)(struct ami_corewindow *ami_cw, ULONG result);
+
+		/**
+		 * callback for drag end on Amiga core window
+		 * ie. a drag *from* this window to a different window
+		 *
+		 * \param ami_cw The Amiga core window structure.
+		 * \param x mouse x position **in screen co-ordinates**
+		 * \param y mouse y position **in screen co-ordinates**
+		 * \return NSERROR_OK on success otherwise apropriate error code
+		 */
+		nserror (*drag_end)(struct ami_corewindow *ami_cw, int x, int y);
+
+		/**
+		 * callback for icon drop on Amiga core window
+		 * ie. a drag has ended *above* this window
+		 * \todo this may not be very flexible but serves our current purposes
+		 *
+		 * \param ami_cw The Amiga core window structure.
+		 * \param url url of dropped icon
+		 * \param title title of dropped icon
+		 * \param x mouse x position **in screen co-ordinates**
+		 * \param y mouse y position **in screen co-ordinates**
+		 * \return NSERROR_OK on success otherwise apropriate error code
+		 */
+		nserror (*icon_drop)(struct ami_corewindow *ami_cw, struct nsurl *url, const char *title, int x, int y);
 
 		/**
 		 * callback to close an Amiga core window

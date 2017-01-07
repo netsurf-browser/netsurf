@@ -59,6 +59,7 @@
 #include <reaction/reaction_macros.h>
 
 #include "amiga/corewindow.h"
+#include "amiga/drag.h"
 #include "amiga/memory.h"
 #include "amiga/misc.h"
 #include "amiga/object.h"
@@ -451,6 +452,71 @@ HOOKF(void, ami_cw_idcmp_hook, Object *, object, struct IntuiMessage *)
 	}
 } 
 
+/**
+ * Drag start
+ */
+static void
+ami_cw_drag_start(struct ami_corewindow *ami_cw, int x, int y)
+{
+	ami_cw->dragging = true;
+	ami_cw->drag_x_start = x;
+	ami_cw->drag_y_start = y;
+
+	switch(ami_cw->drag_status) {
+		case CORE_WINDOW_DRAG_SELECTION:
+		break;
+
+		case CORE_WINDOW_DRAG_MOVE:
+			ami_drag_icon_show(ami_cw->win, "project");
+		break;
+
+		default:
+		break;
+	}
+}
+
+/**
+ * Drag progress
+ */
+static void
+ami_cw_drag_progress(struct ami_corewindow *ami_cw, int x, int y)
+{
+	switch(ami_cw->drag_status) {
+		case CORE_WINDOW_DRAG_SELECTION:
+		break;
+
+		case CORE_WINDOW_DRAG_MOVE:
+			ami_drag_icon_move();
+		break;
+
+		default:
+		break;
+	}
+}
+
+/**
+ * Drag end
+ */
+static void
+ami_cw_drag_end(struct ami_corewindow *ami_cw, int x, int y)
+{
+	ami_cw->dragging = false;
+	
+	switch(ami_cw->drag_status) {
+		case CORE_WINDOW_DRAG_SELECTION:
+		break;
+
+		case CORE_WINDOW_DRAG_MOVE:
+			ami_drag_icon_close(ami_cw->win);
+			if((ami_cw != ami_window_at_pointer(AMINS_COREWINDOW)) && (ami_cw->drag_end != NULL)) {
+				ami_cw->drag_end(ami_cw, scrn->MouseX, scrn->MouseY);
+			}
+		break;
+
+		default:
+		break;
+	}
+}
 
 /**
  * Main event loop for our core window
@@ -479,9 +545,31 @@ ami_cw_event(void *w)
 
 		switch(result & WMHI_CLASSMASK) {
 			case WMHI_MOUSEMOVE:
-				if(ami_cw_mouse_pos(ami_cw, &x, &y)) {
+				if(ami_cw->dragging == false) {
+					if(ami_cw_mouse_pos(ami_cw, &x, &y)) {
+						if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_1) {
+							/* Start button 1 drag */
+							ami_cw->mouse(ami_cw, BROWSER_MOUSE_DRAG_1, x, y);
+							/* Replace PRESS with HOLDING and declare drag in progress */
+							ami_cw->mouse_state = BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON;
+						} else if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_2) {
+							/* Start button 2 drag */
+							ami_cw->mouse(ami_cw, BROWSER_MOUSE_DRAG_2, x, y);
+							/* Replace PRESS with HOLDING and declare drag in progress */
+							ami_cw->mouse_state = BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_ON;
+						}
+						key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
+						ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
+						
+						if ((ami_cw->drag_status == CORE_WINDOW_DRAG_SELECTION) ||
+							(ami_cw->drag_status == CORE_WINDOW_DRAG_MOVE)) {
+							ami_cw_drag_start(ami_cw, x, y);
+						}
+					}
+				} else {
 					key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
 					ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
+					ami_cw_drag_progress(ami_cw, x, y);
 				}
 			break;
 
@@ -539,6 +627,10 @@ ami_cw_event(void *w)
 					break;
 				}
 				ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
+				
+				if((ami_cw->dragging == true) && (ami_cw->mouse_state & BROWSER_MOUSE_HOVER)) {
+					ami_cw_drag_end(ami_cw, x, y);
+				}
 			break;
 
 			case WMHI_RAWKEY:

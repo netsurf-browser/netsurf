@@ -37,6 +37,7 @@
 #include <reaction/reaction_macros.h>
 
 #include "desktop/hotlist.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/keypress.h"
 #include "netsurf/plotters.h"
 #include "utils/log.h"
@@ -44,6 +45,7 @@
 #include "utils/nsoption.h"
 
 #include "amiga/corewindow.h"
+#include "amiga/drag.h"
 #include "amiga/file.h"
 #include "amiga/hotlist.h"
 #include "amiga/libs.h"
@@ -222,6 +224,68 @@ ami_hotlist_draw(struct ami_corewindow *ami_cw, int x, int y, struct rect *r, st
 	return NSERROR_OK;
 }
 
+/**
+ * callback for drag end on Amiga core window
+ * ie. a drag *from* this window has ended
+ *
+ * \param ami_cw The Amiga core window structure.
+ * \param x mouse x co-ordinate
+ * \param y mouse y co-ordinate
+ * \return NSERROR_OK on success otherwise apropriate error code
+ */
+static nserror
+ami_hotlist_drag_end(struct ami_corewindow *ami_cw, int x, int y)
+{
+	nsurl *url = NULL;
+	const char *title = NULL;
+	bool ok = false;
+	struct gui_window_2 *gwin;
+	struct ami_corewindow *cw;
+
+	if(ami_cw == ami_window_at_pointer(AMINS_COREWINDOW))
+		return NSERROR_OK;
+
+	if(hotlist_has_selection()) {
+		ok = hotlist_get_selection(&url, &title);
+	}
+	
+	if((ok == false) || (url == NULL)) {
+		DisplayBeep(scrn);
+	} else if(url) {
+		if((gwin = ami_window_at_pointer(AMINS_WINDOW))) {
+			browser_window_navigate(gwin->gw->bw,
+					url,
+					NULL,
+					BW_NAVIGATE_HISTORY,
+					NULL,
+					NULL,
+					NULL);
+		} else if((cw = (struct ami_corewindow *)ami_window_at_pointer(AMINS_COREWINDOW)) &&
+			(ami_cw->icon_drop != NULL)) {
+			cw->icon_drop(cw, url, title, x, y);
+		}
+	}
+	return NSERROR_OK;
+}
+		
+/**
+ * callback for icon drop on Amiga core window
+ * ie. a drag has ended *above* this window
+ * \todo this may not be very flexible but serves our current purposes
+ *
+ * \param ami_cw The Amiga core window structure.
+ * \param url url of dropped icon
+ * \param title title of dropped icon
+ * \param x mouse x co-ordinate
+ * \param y mouse y co-ordinate
+ * \return NSERROR_OK on success otherwise apropriate error code
+ */
+static nserror
+ami_hotlist_icon_drop(struct ami_corewindow *ami_cw, struct nsurl *url, const char *title, int x, int y)
+{
+	hotlist_add_entry(url, title, true, y);
+	return NSERROR_OK;
+}
 
 /**
  * menu stuff
@@ -487,7 +551,7 @@ nserror ami_hotlist_present(void)
 		return NSERROR_NOMEM;
 	}
 
-	ncwin->core.wintitle = ami_utf8_easy((char *)messages_get("Cookies"));
+	ncwin->core.wintitle = ami_utf8_easy((char *)messages_get("Hotlist"));
 
 	res = ami_hotlist_create_window(ncwin);
 	if (res != NSERROR_OK) {
@@ -503,6 +567,8 @@ nserror ami_hotlist_present(void)
 	ncwin->core.mouse = ami_hotlist_mouse;
 	ncwin->core.close = ami_hotlist_destroy;
 	ncwin->core.event = NULL;
+	ncwin->core.drag_end = ami_hotlist_drag_end;
+	ncwin->core.icon_drop = ami_hotlist_icon_drop;
 
 	res = ami_corewindow_init(&ncwin->core);
 	if (res != NSERROR_OK) {
