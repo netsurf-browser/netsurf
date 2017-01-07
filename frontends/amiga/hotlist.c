@@ -242,9 +242,6 @@ ami_hotlist_drag_end(struct ami_corewindow *ami_cw, int x, int y)
 	struct gui_window_2 *gwin;
 	struct ami_corewindow *cw;
 
-	if(ami_cw == ami_window_at_pointer(AMINS_COREWINDOW))
-		return NSERROR_OK;
-
 	if(hotlist_has_selection()) {
 		ok = hotlist_get_selection(&url, &title);
 	}

@@ -190,9 +190,6 @@ ami_history_global_drag_end(struct ami_corewindow *ami_cw, int x, int y)
 	struct gui_window_2 *gwin;
 	struct ami_corewindow *cw;
 
-	if(ami_cw == ami_window_at_pointer(AMINS_COREWINDOW))
-		return NSERROR_OK;
-
 	if(global_history_has_selection()) {
 		ok = global_history_get_selection(&url, &title);
 	}
