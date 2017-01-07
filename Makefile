@@ -640,7 +640,7 @@ define split_messages
 
 $$(MESSAGES_TARGET)/$(1)/Messages.tmp: resources/FatMessages
 	$$(VQ)echo "MSGSPLIT: Language: $(1) Filter: $$(MESSAGES_FILTER)"
-	$$(Q)mkdir -p $$(MESSAGES_TARGET)/$(1)
+	$$(Q)$$(MKDIR) -p $$(MESSAGES_TARGET)/$(1)
 	$$(Q)$$(SPLIT_MESSAGES) -l $(1) -p $$(MESSAGES_FILTER) -f messages -o $$@ $$<
 
 $$(MESSAGES_TARGET)/$(1)/Messages: $$(MESSAGES_TARGET)/$(1)/Messages.tmp

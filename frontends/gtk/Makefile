@@ -198,11 +198,11 @@ GTK_TRANSLATIONS_HTML := de en fr it ja nl
 NSGTK_RESOURCES_DESTDIR := $(DESTDIR)$(word 1,$(subst :, ,$(NETSURF_GTK_RES_PATH)))
 
 install-gtk:
-	$(Q)mkdir -p $(DESTDIR)$(NETSURF_GTK_BIN)
+	$(Q)$(MKDIR) -p $(DESTDIR)$(NETSURF_GTK_BIN)
 	$(Q)install $(EXETARGET) $(DESTDIR)$(NETSURF_GTK_BIN)netsurf-gtk$(SUBTARGET)
-	$(Q)mkdir -p $(NSGTK_RESOURCES_DESTDIR)/icons
+	$(Q)$(MKDIR) -p $(NSGTK_RESOURCES_DESTDIR)/icons
 	$(Q)install -m 0644 $(NSGTK_RESOURCES_DIR)/icons/*.png $(NSGTK_RESOURCES_DESTDIR)/icons
-	$(Q)mkdir -p $(NSGTK_RESOURCES_DESTDIR)/throbber
+	$(Q)$(MKDIR) -p $(NSGTK_RESOURCES_DESTDIR)/throbber
 	$(Q)install -m 0644 $(NSGTK_RESOURCES_DIR)/throbber/*.png $(NSGTK_RESOURCES_DESTDIR)/throbber
 	$(Q)tar -c -h -C $(NSGTK_RESOURCES_DIR) -f - $(GTK_TRANSLATIONS_HTML) | tar -xv -C $(NSGTK_RESOURCES_DESTDIR) -f -
 	$(Q)install -m 0644 $(GTK_RESOURCES_LIST) $(NSGTK_RESOURCES_DESTDIR)

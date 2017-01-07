@@ -76,9 +76,9 @@ AMIGA_INSTALL_TARGET_DIR := NetSurf_Amiga
 netsurf.lha: $(EXETARGET)
 	$(VQ)echo Creating netsurf.lha
 	$(Q)rm -rf $(AMIGA_INSTALL_TARGET_DIR)
-	$(Q)mkdir -p $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)$(MKDIR) -p $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
 	$(Q)cp -p $(EXETARGET) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
-	$(Q)mkdir $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources
+	$(Q)$(MKDIR) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources
 	$(Q)cp -rp $(AMIGA_RESOURCES) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources
 	$(Q)cp -rp $(AMIGA_DISTRIBUTION_FILES) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
 	$(Q)cat resources/SearchEngines $(AMIGA_PKG_DIR)/SearchEngines >$(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/SearchEngines

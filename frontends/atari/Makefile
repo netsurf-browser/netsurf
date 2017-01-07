@@ -147,13 +147,13 @@ ifneq ($(strip $(STACK)),)
 endif
 	$(Q)rm -rf $(ATARI_TARGET_DIR)
 	$(Q)rm -rf $(PKGNAME)
-	$(Q)mkdir $(ATARI_TARGET_DIR)
-	$(Q)mkdir $(ATARI_TARGET_DIR)doc
-	$(Q)mkdir $(ATARI_TARGET_DIR)downloads
-	$(Q)mkdir $(ATARI_TARGET_DIR)res
-	$(Q)mkdir $(ATARI_TARGET_DIR)res/fonts
-	$(Q)mkdir $(ATARI_TARGET_DIR)res/icons
-	$(Q)mkdir $(ATARI_TARGET_DIR)res/cache
+	$(Q)$(MKDIR) $(ATARI_TARGET_DIR)
+	$(Q)$(MKDIR) $(ATARI_TARGET_DIR)doc
+	$(Q)$(MKDIR) $(ATARI_TARGET_DIR)downloads
+	$(Q)$(MKDIR) $(ATARI_TARGET_DIR)res
+	$(Q)$(MKDIR) $(ATARI_TARGET_DIR)res/fonts
+	$(Q)$(MKDIR) $(ATARI_TARGET_DIR)res/icons
+	$(Q)$(MKDIR) $(ATARI_TARGET_DIR)res/cache
 	$(Q)touch $(ATARI_TARGET_DIR)cookies
 	$(Q)touch $(ATARI_TARGET_DIR)url.db
 

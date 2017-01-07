@@ -171,7 +171,7 @@ define make_lproj
 R_RESOURCES += $$(OBJROOT)/$(1).lproj
 $$(OBJROOT)/$(1).lproj: $(2)
 	$(VQ)echo Bundling language $(1)
-	$(Q)mkdir -p $$@
+	$(Q)$(MKDIR) -p $$@
 	$(Q)cp -pLR $(2) $$@
 	$(Q)$(SPLIT_MESSAGES) -l $(1) -p cocoa -f messages resources/FatMessages > $$@/Messages
 endef
@@ -182,7 +182,7 @@ $$(OBJROOT)/$(2).lproj: $$(OBJROOT)/$(2).lproj/$(1:.xib=.nib)
 
 $$(OBJROOT)/$(2).lproj/$(1:.xib=.nib): $(FRONTEND_RESOURCES_DIR)/$(1) $$(OBJROOT)/created
 	$(VQ)echo Compiling XIB $(1) for language $(2)
-	$(Q)mkdir -p $$(OBJROOT)/$(2).lproj
+	$(Q)$(MKDIR) -p $$(OBJROOT)/$(2).lproj
 	$(Q)$(FRONTEND_SOURCE_DIR)/compile-xib.sh $(FRONTEND_RESOURCES_DIR)/$(1) $(2) $$@
 
 ifeq ($(wildcard $(FRONTEND_RESOURCES_DIR)/$(2).lproj/$(1).strings),$(FRONTEND_RESOURCES_DIR)/$(2).lproj/$(1).strings)
@@ -202,16 +202,16 @@ install-cocoa: NetSurf.app
 
 NetSurf.app: NetSurf $(FRONTEND_SOURCE_DIR)/Makefile $(R_RESOURCES) NetSurf.app/Contents/Info.plist
 	$(VQ)echo Assembling NetSurf.app bundle
-	$(Q)mkdir -p NetSurf.app/Contents/MacOS
+	$(Q)$(MKDIR) -p NetSurf.app/Contents/MacOS
 	$(Q)cp NetSurf NetSurf.app/Contents/MacOS
 	$(Q)rm -rf NetSurf.app/Contents/Resources
-	$(Q)mkdir -p NetSurf.app/Contents/Resources
+	$(Q)$(MKDIR) -p NetSurf.app/Contents/Resources
 	$(Q)cp -pLR $(R_RESOURCES) NetSurf.app/Contents/Resources
 	$(Q)echo 'APPL????' > NetSurf.app/Contents/PkgInfo
 
 NetSurf.app/Contents/Info.plist: $(FRONTEND_RESOURCES_DIR)/NetSurf-Info.plist $(FRONTEND_SOURCE_DIR)/Makefile
 	$(VQ)echo Generating Info.plist
-	$(Q)mkdir -p NetSurf.app/Contents
+	$(Q)$(MKDIR) -p NetSurf.app/Contents
 	$(Q)sed -e 's/$${EXECUTABLE_NAME}/$(EXETARGET)/' \
 	    -e 's/$${PRODUCT_NAME.*}/$(EXETARGET)/' \
 	    -e 's/$${MACOSX_DEPLOYMENT_TARGET}/$(MACOSX_VERSION)/' \

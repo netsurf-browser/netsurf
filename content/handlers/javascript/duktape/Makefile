@@ -12,13 +12,13 @@ BINDINGS := $(wildcard content/handlers/javascript/duktape/*.bnd)
 GBFLAGS+=-D
 
 $(OBJROOT)/duktape/binding.h $(OBJROOT)/duktape/Makefile: content/handlers/javascript/duktape/netsurf.bnd $(BINDINGS)
-	$(Q)mkdir -p $(OBJROOT)/duktape
+	$(Q)$(MKDIR) -p $(OBJROOT)/duktape
 	$(VQ)echo " GENBIND: $<"
 	$(Q)nsgenbind $(GBFLAGS) -I content/handlers/javascript/WebIDL $< $(OBJROOT)/duktape
 
 # create unimplemented report for doxygen
 Docs/UnimplementedJavascript.txt: content/handlers/javascript/duktape/netsurf.bnd $(BINDINGS)
-	$(Q)mkdir -p $(OBJROOT)/duktape
+	$(Q)$(MKDIR) -p $(OBJROOT)/duktape
 	$(VQ)echo "/** \page unimplemented Unimplemented javascript bindings" > $@
 	$(VQ)echo "This is a list of all the binding methods, getters and setters without an implementation in a binding." >> $@
 	$(VQ)echo "" >> $@

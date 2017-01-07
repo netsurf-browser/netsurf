@@ -166,7 +166,7 @@ coverage: test
 
 $(TESTROOT)/created:
 	$(VQ)echo "   MKDIR: $(TESTROOT)"
-	$(Q)$(MKDIR) $(TESTROOT)
+	$(Q)$(MKDIR) -p $(TESTROOT)
 	$(Q)$(TOUCH) $@
 
 .PHONY: test-clean
