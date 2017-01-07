@@ -3,21 +3,40 @@
  
 # show up in a few places.
 # All the other settings can be tweaked by editing the !defines at the top of this script
+
 !define APPNAME "NetSurf"
 !define COMPANYNAME "NetSurf"
 !define DESCRIPTION "Web Browser"
-# These three must be integers
-!define VERSIONMAJOR 3
-!define VERSIONMINOR 6
-!define VERSIONBUILD 1
+
+# The version values must be simple integers
+!ifndef VERSIONMAJOR
+  !define VERSIONMAJOR 3
+!endif
+!ifndef VERSIONMINOR
+  !define VERSIONMINOR 7
+!endif
+!ifndef VERSIONBUILD
+  !define VERSIONBUILD 0
+!endif
+
 # These will be displayed by the "Click here for support information" link in "Add/Remove Programs"
-# It is possible to use "mailto:" links in here to open the email client
 !define HELPURL "http://www.netsurf-browser.org/" # "Support Information" link
 !define UPDATEURL "http://www.netsurf-browser.org/" # "Product Updates" link
 !define ABOUTURL "http://www.netsurf-browser.org/" # "Publisher" link
 # This is the size (in kB) of all the files copied into "Program Files"
 !define INSTALLSIZE 9000
- 
+
+# output filename
+!ifndef OUTFNAME
+  !define OUTFNAME "netsurf-installer.exe"
+!endif
+
+# path to resources
+!ifndef RESDIR
+  !define RESDIR "frontends/windows/res"
+!endif
+
+
 RequestExecutionLevel admin ;Require admin rights on NT6+ (When UAC is turned on)
  
 InstallDir "$PROGRAMFILES\${COMPANYNAME}\${APPNAME}"
@@ -26,8 +45,8 @@ InstallDir "$PROGRAMFILES\${COMPANYNAME}\${APPNAME}"
 LicenseData "COPYING"
 # This will be in the installer/uninstaller's title bar
 Name "${COMPANYNAME} - ${APPNAME}"
-Icon "frontends\windows\res\NetSurf.ico"
-outFile "netsurf-installer.exe"
+Icon "${RESDIR}\NetSurf.ico"
+outFile "${OUTFNAME}"
 BrandingText "${COMPANYNAME}"
  
 !include LogicLib.nsh
@@ -53,21 +72,23 @@ function .onInit
 functionEnd
  
 section "install"
-	# Files for the install directory - to build the installer, these should be in the same directory as the install script (this file)
+	# Files for the install directory
+
+	# Default output path
 	setOutPath $INSTDIR
-	# Files added here should be removed by the uninstaller (see section "uninstall")
-	file "NetSurf.exe" 
-	file /oname=NetSurf.ico "frontends\windows\res\NetSurf.ico"
-	file /oname=default.css "frontends\windows\res\default.css"
-	file /oname=internal.css "frontends\windows\res\internal.css"
-	file /oname=adblock.css "frontends\windows\res\adblock.css"
-	file /oname=welcome.html "frontends\windows\res\welcome.html"
-	file /oname=credits.html "frontends\windows\res\credits.html"
-	file /oname=licence.html "frontends\windows\res\licence.html"
-	file /oname=netsurf.png "frontends\windows\res\netsurf.png"
-	file /oname=messages "build-Linux-windows\messages"
-	file /oname=ca-bundle.crt "frontends\windows\res\ca-bundle.crt"
-	# Add any other files for the install directory (license files, app data, etc) here
+
+	# Files added here should be removed by the uninstaller section
+	file "NetSurf.exe"
+	file /oname=NetSurf.ico "${RESDIR}\NetSurf.ico"
+	file /oname=default.css "${RESDIR}\default.css"
+	file /oname=internal.css "${RESDIR}\internal.css"
+	file /oname=adblock.css "${RESDIR}\adblock.css"
+	file /oname=welcome.html "${RESDIR}\welcome.html"
+	file /oname=credits.html "${RESDIR}\credits.html"
+	file /oname=licence.html "${RESDIR}\licence.html"
+	file /oname=netsurf.png "${RESDIR}\netsurf.png"
+	file /oname=messages "${OBJROOT}\messages-en"
+	file /oname=ca-bundle.crt "${RESDIR}\ca-bundle.crt"
  
 	# Uninstaller - See function un.onInit and section "uninstall" for configuration
 	writeUninstaller "$INSTDIR\uninstall.exe"
@@ -95,7 +116,7 @@ section "install"
 	# Set the INSTALLSIZE constant (!defined at the top of this script) so Add/Remove Programs can accurately report the size
 	WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${COMPANYNAME} ${APPNAME}" "EstimatedSize" ${INSTALLSIZE}
 sectionEnd
- 
+
 # Uninstaller
  
 function un.onInit

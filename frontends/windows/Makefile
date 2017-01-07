@@ -3,9 +3,13 @@
 #
 # This file is part of NetSurf 
 
+
+VERSION_MAJ := $(shell sed -n '/_major/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
+VERSION_MIN := $(shell sed -n '/_minor/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
+
+
 LDFLAGS += -L${GCCSDK_INSTALL_ENV}/lib 
 CFLAGS += -I${GCCSDK_INSTALL_ENV}/include/
-
 
 $(eval $(call pkg_config_find_and_add,libcares,Cares))
 $(eval $(call pkg_config_find_and_add,zlib,ZLib))
@@ -68,10 +72,25 @@ install-windows:
 package-windows: netsurf-installer.exe
 
 WIN_RES_OBJ := installer.nsi NetSurf.ico netsurf.png welcome.html default.css
-WIN_RES_INS_OBJ := $(addprefix $(FRONTEND_RESOURCES_DIR)/,$(WIN_RES_OBJ)) $(OBJROOT)/messages
+WIN_RES_INS_OBJ := $(addprefix $(FRONTEND_RESOURCES_DIR)/,$(WIN_RES_OBJ)) $(OBJROOT)/messages-en
 
-$(OBJROOT)/messages: resources/FatMessages
-	$(Q)$(SPLIT_MESSAGES) -l en -p win -f messages resources/FatMessages > $@
+# deal with making installer generation verbose
+ifeq ($(Q),)
+NSIS_VERBOSE := 4
+else
+NSIS_VERBOSE := 0
+endif
+
+# installer messages generation
+$(OBJROOT)/messages-en: resources/FatMessages
+	$(VQ)echo "MSGSPLIT: Language: en Filter: win"
+	$(Q)$(SPLIT_MESSAGES) -l en -p win -f messages -o $@ $<
 
 netsurf-installer.exe: $(EXETARGET) $(WIN_RES_INS_OBJ)
-	makensis -V4 -NOCD $(FRONTEND_RESOURCES_DIR)/installer.nsi 
+	$(VQ)echo "MAKENSIS: $@"
+	$(Q)makensis -V$(NSIS_VERBOSE) -NOCD -DOBJROOT=$(OBJROOT) -DRESDIR=$(FRONTEND_RESOURCES_DIR) -DVERSIONMAJOR=$(VERSION_MAJ) -DVERSIONMINOR=$(VERSION_MIN) -DOUTFNAME=$@ $(FRONTEND_RESOURCES_DIR)/installer.nsi
+
+clean-installer:
+	$(VQ)echo "   CLEAN: netsurf-installer.exe"
+	$(Q)$(RM) netsurf-installer.exe
+CLEANS += clean-installer
