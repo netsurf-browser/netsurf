@@ -559,101 +559,97 @@ ami_cw_event(void *w)
 
 		switch(result & WMHI_CLASSMASK) {
 			case WMHI_MOUSEMOVE:
-				if(ami_cw_mouse_pos(ami_cw, &x, &y)) {
-					if(ami_cw->dragging == false) {
-						if(ami_cw_mouse_moved(ami_cw, x, y, false)) {
-							if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_1) {
-								/* Start button 1 drag */
-								ami_cw->mouse(ami_cw, BROWSER_MOUSE_DRAG_1, x, y);
-								/* Replace PRESS with HOLDING and declare drag in progress */
-								ami_cw->mouse_state = BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON;
-							} else if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_2) {
-								/* Start button 2 drag */
-								ami_cw->mouse(ami_cw, BROWSER_MOUSE_DRAG_2, x, y);
-								/* Replace PRESS with HOLDING and declare drag in progress */
-								ami_cw->mouse_state = BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_ON;
-							}
-							key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
-							ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
+				if(ami_cw_mouse_pos(ami_cw, &x, &y) == true) {
+					if(ami_cw_mouse_moved(ami_cw, x, y, false)) {
+						if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_1) {
+							/* Start button 1 drag */
+							ami_cw->mouse(ami_cw, BROWSER_MOUSE_DRAG_1, x, y);
+							/* Replace PRESS with HOLDING and declare drag in progress */
+							ami_cw->mouse_state = BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON;
+						} else if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_2) {
+							/* Start button 2 drag */
+							ami_cw->mouse(ami_cw, BROWSER_MOUSE_DRAG_2, x, y);
+							/* Replace PRESS with HOLDING and declare drag in progress */
+							ami_cw->mouse_state = BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_ON;
+						}
+						key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
+						ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
+						if(ami_cw->dragging == false) {
 							ami_cw_drag_start(ami_cw, x, y);
-						} else {
-							key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
-							ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
 						}
 					} else {
 						key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
 						ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
-						ami_cw_drag_progress(ami_cw, x, y);
 					}
-				} else {
-					if(ami_cw->dragging == true) {
-						ami_cw_drag_progress(ami_cw, x, y);
-					}
+				}
+				if(ami_cw->dragging == true) {
+					ami_cw_drag_progress(ami_cw, x, y);
 				}
 			break;
 
 			case WMHI_MOUSEBUTTONS:
-				ami_cw_mouse_pos(ami_cw, &x, &y);
-				key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
+				if(ami_cw_mouse_pos(ami_cw, &x, &y) == true) {
+					key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
 
-				switch(code) {
-					case SELECTDOWN:
-						ami_cw->mouse_state = BROWSER_MOUSE_PRESS_1;
-						ami_cw->drag_x_start = x;
-						ami_cw->drag_y_start = y;
-					break;
+					switch(code) {
+						case SELECTDOWN:
+							ami_cw->mouse_state = BROWSER_MOUSE_PRESS_1;
+							ami_cw->drag_x_start = x;
+							ami_cw->drag_y_start = y;
+						break;
 
-					case MIDDLEDOWN:
-						ami_cw->mouse_state = BROWSER_MOUSE_PRESS_2;
-						ami_cw->drag_x_start = x;
-						ami_cw->drag_y_start = y;
-					break;
+						case MIDDLEDOWN:
+							ami_cw->mouse_state = BROWSER_MOUSE_PRESS_2;
+							ami_cw->drag_x_start = x;
+							ami_cw->drag_y_start = y;
+						break;
 
-					case SELECTUP:
-						if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_1) {
-							CurrentTime((ULONG *)&curtime.tv_sec, (ULONG *)&curtime.tv_usec);
+						case SELECTUP:
+							if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_1) {
+								CurrentTime((ULONG *)&curtime.tv_sec, (ULONG *)&curtime.tv_usec);
 
-							ami_cw->mouse_state = BROWSER_MOUSE_CLICK_1;
+								ami_cw->mouse_state = BROWSER_MOUSE_CLICK_1;
 
-							if(ami_cw->lastclick.tv_sec) {
-								if((ami_cw_mouse_moved(ami_cw, x, y, true) == false) &&
-										(DoubleClick(ami_cw->lastclick.tv_sec,
-											ami_cw->lastclick.tv_usec,
-											curtime.tv_sec, curtime.tv_usec)))
-									ami_cw->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
+								if(ami_cw->lastclick.tv_sec) {
+									if((ami_cw_mouse_moved(ami_cw, x, y, true) == false) &&
+											(DoubleClick(ami_cw->lastclick.tv_sec,
+												ami_cw->lastclick.tv_usec,
+												curtime.tv_sec, curtime.tv_usec)))
+										ami_cw->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
+								}
+
+								ami_cw->mouse_x_click = x;
+								ami_cw->mouse_y_click = y;
+
+								if(ami_cw->mouse_state & BROWSER_MOUSE_DOUBLE_CLICK) {
+									ami_cw->lastclick.tv_sec = 0;
+									ami_cw->lastclick.tv_usec = 0;
+								} else {
+									ami_cw->lastclick.tv_sec = curtime.tv_sec;
+									ami_cw->lastclick.tv_usec = curtime.tv_usec;
+								}
 							}
 
-							ami_cw->mouse_x_click = x;
-							ami_cw->mouse_y_click = y;
+							ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
+							ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
+						break;
 
-							if(ami_cw->mouse_state & BROWSER_MOUSE_DOUBLE_CLICK) {
-								ami_cw->lastclick.tv_sec = 0;
-								ami_cw->lastclick.tv_usec = 0;
-							} else {
-								ami_cw->lastclick.tv_sec = curtime.tv_sec;
-								ami_cw->lastclick.tv_usec = curtime.tv_usec;
-							}
-						}
+						case MIDDLEUP:
+							if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_2)
+								ami_cw->mouse_state = BROWSER_MOUSE_CLICK_2;
 
-						ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
-						ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
-					break;
+							ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
+							ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
+						break;
+					}
 
-					case MIDDLEUP:
-						if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_2)
-							ami_cw->mouse_state = BROWSER_MOUSE_CLICK_2;
+					if((ami_cw->dragging == true) && (ami_cw->mouse_state & BROWSER_MOUSE_HOVER)) {
+						ami_cw_drag_end(ami_cw, x, y);
+						ami_cw->drag_status = CORE_WINDOW_DRAG_NONE;
+					}
 
-						ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
-						ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
-					break;
+					ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
 				}
-
-				if((ami_cw->dragging == true) && (ami_cw->mouse_state & BROWSER_MOUSE_HOVER)) {
-					ami_cw_drag_end(ami_cw, x, y);
-					ami_cw->drag_status = CORE_WINDOW_DRAG_NONE;
-				}
-
-				ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
 			break;
 
 			case WMHI_RAWKEY:
