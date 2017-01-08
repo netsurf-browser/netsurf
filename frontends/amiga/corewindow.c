@@ -477,8 +477,6 @@ ami_cw_drag_start(struct ami_corewindow *ami_cw, int x, int y)
 	ami_cw->drag_x_start = x;
 	ami_cw->drag_y_start = y;
 
-printf("%ld\n", ami_cw->drag_status);
-
 	switch(ami_cw->drag_status) {
 		case CORE_WINDOW_DRAG_SELECTION:
 		break;
