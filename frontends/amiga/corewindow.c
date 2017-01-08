@@ -59,6 +59,7 @@
 #include <reaction/reaction_macros.h>
 
 #include "amiga/corewindow.h"
+#include "amiga/drag.h"
 #include "amiga/memory.h"
 #include "amiga/misc.h"
 #include "amiga/object.h"
@@ -106,13 +107,27 @@ ami_cw_coord_amiga_to_ns(struct ami_corewindow *ami_cw, int *restrict x, int *re
 
 /**
  * check if mouse has moved since position was stored
+ * @param ami_cw corewindow
+ * @param x current x position
+ * @param y current y position
+ * @param click true to check since last click, false since last drag (press)
  * @return true if it has, false otherwise
  */
 static bool
-ami_cw_mouse_moved(struct ami_corewindow *ami_cw, int x, int y)
+ami_cw_mouse_moved(struct ami_corewindow *ami_cw, int x, int y, bool click)
 {
-	if(abs(x - ami_cw->mouse_x_click) > 5) return true;
-	if(abs(y - ami_cw->mouse_y_click) > 5) return true;
+	int mx, my;
+
+	if(click == true) {
+		mx = ami_cw->mouse_x_click;
+		my = ami_cw->mouse_y_click;
+	} else {
+		mx = ami_cw->drag_x_start;
+		my = ami_cw->drag_y_start;
+	}
+
+	if(abs(x - mx) > 5) return true;
+	if(abs(y - my) > 5) return true;
 	return false;
 }
 
@@ -137,11 +152,10 @@ ami_cw_mouse_pos(struct ami_corewindow *ami_cw, int *restrict x, int *restrict y
 	xm -= bbox->Left;
 	ym -= bbox->Top;
 
-	ami_gui_free_space_box(bbox);
-
 	if((xm < 0) || (ym < 0) || (xm > bbox->Width) || (ym > bbox->Height))
 		return false;
 
+	ami_gui_free_space_box(bbox);
 	ami_cw_scroller_top(ami_cw, &xs, &ys);
 
 	xm += xs;
@@ -451,6 +465,78 @@ HOOKF(void, ami_cw_idcmp_hook, Object *, object, struct IntuiMessage *)
 	}
 } 
 
+/**
+ * Drag start
+ */
+static void
+ami_cw_drag_start(struct ami_corewindow *ami_cw, int x, int y)
+{
+	if(ami_cw->dragging == true) return;
+
+	ami_cw->dragging = true;
+	ami_cw->drag_x_start = x;
+	ami_cw->drag_y_start = y;
+
+	switch(ami_cw->drag_status) {
+		case CORE_WINDOW_DRAG_SELECTION:
+		break;
+
+		case CORE_WINDOW_DRAG_MOVE:
+			ami_drag_icon_show(ami_cw->win, "project");
+		break;
+
+		default:
+		break;
+	}
+}
+
+/**
+ * Drag progress
+ */
+static void
+ami_cw_drag_progress(struct ami_corewindow *ami_cw, int x, int y)
+{
+	if(ami_cw->dragging == false) return;
+
+	switch(ami_cw->drag_status) {
+		case CORE_WINDOW_DRAG_SELECTION:
+		break;
+
+		case CORE_WINDOW_DRAG_MOVE:
+			ami_drag_icon_move();
+		break;
+
+		default:
+		break;
+	}
+}
+
+/**
+ * Drag end
+ */
+static void
+ami_cw_drag_end(struct ami_corewindow *ami_cw, int x, int y)
+{
+	if(ami_cw->dragging == false) return;
+
+	switch(ami_cw->drag_status) {
+		case CORE_WINDOW_DRAG_SELECTION:
+		break;
+
+		case CORE_WINDOW_DRAG_MOVE:
+			ami_drag_icon_close(ami_cw->win);
+			if((ami_cw != ami_window_at_pointer(AMINS_COREWINDOW)) && (ami_cw->drag_end != NULL)) {
+				ami_cw->drag_end(ami_cw, scrn->MouseX, scrn->MouseY);
+			}
+		break;
+
+		default:
+		break;
+	}
+
+	ami_cw->drag_status = CORE_WINDOW_DRAG_NONE;
+	ami_cw->dragging = false;
+}
 
 /**
  * Main event loop for our core window
@@ -479,66 +565,110 @@ ami_cw_event(void *w)
 
 		switch(result & WMHI_CLASSMASK) {
 			case WMHI_MOUSEMOVE:
-				if(ami_cw_mouse_pos(ami_cw, &x, &y)) {
-					key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
-					ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
+				if(ami_cw_mouse_pos(ami_cw, &x, &y) == true) {
+					if(ami_cw_mouse_moved(ami_cw, x, y, false)) {
+						if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_1) {
+							/* Start button 1 drag */
+							ami_cw->mouse(ami_cw, BROWSER_MOUSE_DRAG_1, x, y);
+							/* Replace PRESS with HOLDING and declare drag in progress */
+							ami_cw->mouse_state = BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON;
+						} else if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_2) {
+							/* Start button 2 drag */
+							ami_cw->mouse(ami_cw, BROWSER_MOUSE_DRAG_2, x, y);
+							/* Replace PRESS with HOLDING and declare drag in progress */
+							ami_cw->mouse_state = BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_ON;
+						}
+						key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
+						ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
+						if(ami_cw->mouse_state & BROWSER_MOUSE_DRAG_ON) {
+							ami_cw_drag_start(ami_cw, x, y);
+						}
+					} else {
+						key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
+						ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
+					}
 				}
+				ami_cw_drag_progress(ami_cw, x, y);
 			break;
 
 			case WMHI_MOUSEBUTTONS:
-				if(ami_cw_mouse_pos(ami_cw, &x, &y) == false)
-					break;
+				if(ami_cw_mouse_pos(ami_cw, &x, &y) == true) {
+					key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
+					switch(code) {
+						case SELECTDOWN:
+							ami_cw->mouse_state = BROWSER_MOUSE_PRESS_1;
+							ami_cw->drag_x_start = x;
+							ami_cw->drag_y_start = y;
+						break;
 
-				key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
+						case MIDDLEDOWN:
+							ami_cw->mouse_state = BROWSER_MOUSE_PRESS_2;
+							ami_cw->drag_x_start = x;
+							ami_cw->drag_y_start = y;
+						break;
 
-				switch(code) {
-					case SELECTDOWN:
-						ami_cw->mouse_state = BROWSER_MOUSE_PRESS_1;
-					break;
+						case SELECTUP:
+							if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_1) {
+								CurrentTime((ULONG *)&curtime.tv_sec, (ULONG *)&curtime.tv_usec);
 
-					case MIDDLEDOWN:
-						ami_cw->mouse_state = BROWSER_MOUSE_PRESS_2;
-					break;
+								ami_cw->mouse_state = BROWSER_MOUSE_CLICK_1;
 
-					case SELECTUP:
-						if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_1) {
-							CurrentTime((ULONG *)&curtime.tv_sec, (ULONG *)&curtime.tv_usec);
+								if(ami_cw->lastclick.tv_sec) {
+									if((ami_cw_mouse_moved(ami_cw, x, y, true) == false) &&
+											(DoubleClick(ami_cw->lastclick.tv_sec,
+												ami_cw->lastclick.tv_usec,
+												curtime.tv_sec, curtime.tv_usec)))
+										ami_cw->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
+								}
 
-							ami_cw->mouse_state = BROWSER_MOUSE_CLICK_1;
+								ami_cw->mouse_x_click = x;
+								ami_cw->mouse_y_click = y;
 
-							if(ami_cw->lastclick.tv_sec) {
-								if((ami_cw_mouse_moved(ami_cw, x, y) == false) &&
-										(DoubleClick(ami_cw->lastclick.tv_sec,
-											ami_cw->lastclick.tv_usec,
-											curtime.tv_sec, curtime.tv_usec)))
-									ami_cw->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
+								if(ami_cw->mouse_state & BROWSER_MOUSE_DOUBLE_CLICK) {
+									ami_cw->lastclick.tv_sec = 0;
+									ami_cw->lastclick.tv_usec = 0;
+								} else {
+									ami_cw->lastclick.tv_sec = curtime.tv_sec;
+									ami_cw->lastclick.tv_usec = curtime.tv_usec;
+								}
 							}
 
-							ami_cw->mouse_x_click = x;
-							ami_cw->mouse_y_click = y;
+							ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
+							ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
+						break;
 
-							if(ami_cw->mouse_state & BROWSER_MOUSE_DOUBLE_CLICK) {
-								ami_cw->lastclick.tv_sec = 0;
-								ami_cw->lastclick.tv_usec = 0;
-							} else {
-								ami_cw->lastclick.tv_sec = curtime.tv_sec;
-								ami_cw->lastclick.tv_usec = curtime.tv_usec;
-							}
-						}
+						case MIDDLEUP:
+							if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_2)
+								ami_cw->mouse_state = BROWSER_MOUSE_CLICK_2;
 
-						ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
-						ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
-					break;
+							ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
+							ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
+						break;
+					}
 
-					case MIDDLEUP:
-						if(ami_cw->mouse_state & BROWSER_MOUSE_PRESS_2)
-							ami_cw->mouse_state = BROWSER_MOUSE_CLICK_2;
+					if(ami_cw->mouse_state == BROWSER_MOUSE_HOVER) {
+						ami_cw_drag_end(ami_cw, x, y);
+					}
 
-						ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
-						ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
-					break;
+					ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
+				} else {
+					/* event is happening away from our corewindow area */
+					switch(code) {
+						case SELECTUP:
+						case MIDDLEUP:
+							ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
+						break;
+
+						default:
+						break;
+					}
+
+					if(ami_cw->mouse_state == BROWSER_MOUSE_HOVER) {
+						ami_cw_drag_end(ami_cw, x, y);
+						ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state,
+							ami_cw->drag_x_start, ami_cw->drag_y_start); // placate core
+					}
 				}
-				ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
 			break;
 
 			case WMHI_RAWKEY:
@@ -722,9 +852,10 @@ nserror ami_corewindow_init(struct ami_corewindow *ami_cw)
 	ami_cw->scroll_x_visible = true;
 	ami_cw->scroll_y_visible = true;
 	ami_cw->in_border_scroll = false;
+	ami_cw->dragging = false;
 
 	/* allocate drawing area etc */
-	ami_init_layers(&ami_cw->gg, 0, 0, false);
+	ami_init_layers(&ami_cw->gg, 100, 100, false); // force tiles to save memory
 	ami_cw->gg.shared_pens = ami_AllocMinList();
 
 	ami_cw->deferred_rects = NewObjList();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2017 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,14 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef AMIGA_HISTORY_H
-#define AMIGA_HISTORY_H
-#include "amiga/desktop-tree.h"
+#ifndef AMIGA_HISTORY_GLOBAL_H
+#define AMIGA_HISTORY_GLOBAL_H
 
-#define GLOBAL_HISTORY_RECENT_URLS 16
-
-void ami_global_history_initialise(void);
-void ami_global_history_free(void);
-
-extern struct treeview_window *global_history_window;
+/** Open the global history viewer */
+nserror ami_history_global_present(void);
 #endif
+

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008, 2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2017 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -19,16 +19,18 @@
 #ifndef AMIGA_HOTLIST_H
 #define AMIGA_HOTLIST_H
 
-struct nsurl;
-struct treeview_window;
+#include "utils/nsurl.h"
 
-extern struct treeview_window *hotlist_window;
+/** Open the hotlist viewer */
+nserror ami_hotlist_present(void);
 
-void ami_hotlist_initialise(const char *hotlist_file);
+/** Close the hotlist viewer
+ *  normally this shouldn't be used; only exists for ARexx use
+ */
+void ami_hotlist_close(void);
 
-void ami_hotlist_free(const char *hotlist_file);
-
-nserror ami_hotlist_scan(void *userdata, int first_item, const char *folder, bool (*cb_add_item)(void *userdata, int level, int item, const char *title, struct nsurl *url, bool folder));
-
-
+/** Scan the hotlist */
+nserror ami_hotlist_scan(void *userdata, int first_item, const char *folder,
+	bool (*cb_add_item)(void *userdata, int level, int item, const char *title, nsurl *url, bool folder));
 #endif
+

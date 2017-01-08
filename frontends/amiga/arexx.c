@@ -40,7 +40,6 @@
 #include "amiga/gui.h"
 #include "amiga/download.h"
 #include "amiga/hotlist.h"
-#include "amiga/tree.h"
 #include "amiga/libs.h"
 #include "amiga/misc.h"
 #include "amiga/theme.h"
@@ -665,9 +664,9 @@ RXHOOKF(rx_hotlist)
 	cmd->ac_RC = 0;
 
 	if(strcasecmp((char *)cmd->ac_ArgList[0], "OPEN") == 0) {
-		ami_tree_open(hotlist_window, AMI_TREE_HOTLIST);
+		ami_hotlist_present();
 	} else if(strcasecmp((char *)cmd->ac_ArgList[0], "CLOSE") == 0) {
-		ami_tree_close(hotlist_window);
+		ami_hotlist_close();
 	}
 }
 

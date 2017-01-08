@@ -258,7 +258,7 @@ static void ami_cookies_menulabs(struct ami_menu_data **md)
 	ami_menu_alloc_item(md, AMI_COOKIE_M_SNAPSHOT,   NM_ITEM, "SnapshotWindow", 0, "TBImages:list_hold",
 		ami_cookies_menu_item_project_snapshot, NULL, 0);
 	ami_menu_alloc_item(md, AMI_COOKIE_M_BAR_P2, NM_ITEM, NM_BARLABEL, 0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, AMI_COOKIE_M_CLOSE,   NM_ITEM, "CloseWindow", 0, "TBImages:list_cancel",
+	ami_menu_alloc_item(md, AMI_COOKIE_M_CLOSE,   NM_ITEM, "CloseWindow", 'K', "TBImages:list_cancel",
 		ami_cookies_menu_item_project_close, NULL, 0);
 
 	ami_menu_alloc_item(md, AMI_COOKIE_M_EDIT, NM_TITLE, "Edit",       0, NULL, NULL, NULL, 0);
