@@ -689,22 +689,6 @@ ami_cw_event(void *w)
 				return TRUE;
 			break;
 
-			case WMHI_GADGETUP:
-				switch(result & WMHI_GADGETMASK) {
-					case GID_CW_HSCROLL:
-					case GID_CW_VSCROLL:
-						ami_cw_redraw(ami_cw, NULL);
-					break;
-
-					default:
-						/* pass the event to the window owner */
-						if(ami_cw->event != NULL)
-							if(ami_cw->event(ami_cw, result) == TRUE) {
-								return TRUE;
-							}
-					break;
-				}
-
 			default:
 				/* pass the event to the window owner */
 				if(ami_cw->event != NULL)

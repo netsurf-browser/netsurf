@@ -33,6 +33,7 @@
 #include <gadgets/space.h>
 #include <images/label.h>
 
+#include <intuition/icclass.h>
 #include <reaction/reaction_macros.h>
 
 #include "utils/log.h"
@@ -251,11 +252,13 @@ ami_crtvrfy_create_window(struct ami_crtvrfy_window *crtvrfy_win)
 					LAYOUT_AddChild, ami_cw->objects[GID_CW_VSCROLL] = ScrollerObj,
 						GA_ID, GID_CW_VSCROLL,
 						GA_RelVerify, TRUE,
+						ICA_TARGET, ICTARGET_IDCMP,
 		   			ScrollerEnd,
 				LayoutEnd,
 				LAYOUT_AddChild, ami_cw->objects[GID_CW_HSCROLL] = ScrollerObj,
 					GA_ID, GID_CW_HSCROLL,
 					GA_RelVerify, TRUE,
+					ICA_TARGET, ICTARGET_IDCMP,
 					SCROLLER_Orientation, SORIENT_HORIZ,
 	   			ScrollerEnd,
 			LayoutEnd,
