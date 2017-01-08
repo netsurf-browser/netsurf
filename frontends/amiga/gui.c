@@ -118,7 +118,6 @@
 #include "desktop/searchweb.h"
 
 /* NetSurf Amiga platform includes */
-#include "amiga/desktop-tree.h"
 #include "amiga/gui.h"
 #include "amiga/arexx.h"
 #include "amiga/bitmap.h"
@@ -151,7 +150,6 @@
 #include "amiga/search.h"
 #include "amiga/selectmenu.h"
 #include "amiga/theme.h"
-#include "amiga/tree.h"
 #include "amiga/utf8.h"
 #include "amiga/sslcert.h"
 
