@@ -152,11 +152,10 @@ ami_cw_mouse_pos(struct ami_corewindow *ami_cw, int *restrict x, int *restrict y
 	xm -= bbox->Left;
 	ym -= bbox->Top;
 
-	ami_gui_free_space_box(bbox);
-
 	if((xm < 0) || (ym < 0) || (xm > bbox->Width) || (ym > bbox->Height))
 		return false;
 
+	ami_gui_free_space_box(bbox);
 	ami_cw_scroller_top(ami_cw, &xs, &ys);
 
 	xm += xs;
@@ -472,9 +471,13 @@ HOOKF(void, ami_cw_idcmp_hook, Object *, object, struct IntuiMessage *)
 static void
 ami_cw_drag_start(struct ami_corewindow *ami_cw, int x, int y)
 {
+	if(ami_cw->dragging == true) return;
+
 	ami_cw->dragging = true;
 	ami_cw->drag_x_start = x;
 	ami_cw->drag_y_start = y;
+
+printf("%ld\n", ami_cw->drag_status);
 
 	switch(ami_cw->drag_status) {
 		case CORE_WINDOW_DRAG_SELECTION:
@@ -495,6 +498,8 @@ ami_cw_drag_start(struct ami_corewindow *ami_cw, int x, int y)
 static void
 ami_cw_drag_progress(struct ami_corewindow *ami_cw, int x, int y)
 {
+	if(ami_cw->dragging == false) return;
+
 	switch(ami_cw->drag_status) {
 		case CORE_WINDOW_DRAG_SELECTION:
 		break;
@@ -514,8 +519,8 @@ ami_cw_drag_progress(struct ami_corewindow *ami_cw, int x, int y)
 static void
 ami_cw_drag_end(struct ami_corewindow *ami_cw, int x, int y)
 {
-	ami_cw->dragging = false;
-	
+	if(ami_cw->dragging == false) return;
+
 	switch(ami_cw->drag_status) {
 		case CORE_WINDOW_DRAG_SELECTION:
 		break;
@@ -530,6 +535,9 @@ ami_cw_drag_end(struct ami_corewindow *ami_cw, int x, int y)
 		default:
 		break;
 	}
+
+	ami_cw->drag_status = CORE_WINDOW_DRAG_NONE;
+	ami_cw->dragging = false;
 }
 
 /**
@@ -574,7 +582,7 @@ ami_cw_event(void *w)
 						}
 						key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
 						ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
-						if(ami_cw->dragging == false) {
+						if(ami_cw->mouse_state & BROWSER_MOUSE_DRAG_ON) {
 							ami_cw_drag_start(ami_cw, x, y);
 						}
 					} else {
@@ -582,15 +590,12 @@ ami_cw_event(void *w)
 						ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
 					}
 				}
-				if(ami_cw->dragging == true) {
-					ami_cw_drag_progress(ami_cw, x, y);
-				}
+				ami_cw_drag_progress(ami_cw, x, y);
 			break;
 
 			case WMHI_MOUSEBUTTONS:
 				if(ami_cw_mouse_pos(ami_cw, &x, &y) == true) {
 					key_state = ami_gui_get_quals(ami_cw->objects[GID_CW_WIN]);
-
 					switch(code) {
 						case SELECTDOWN:
 							ami_cw->mouse_state = BROWSER_MOUSE_PRESS_1;
@@ -643,12 +648,28 @@ ami_cw_event(void *w)
 						break;
 					}
 
-					if((ami_cw->dragging == true) && (ami_cw->mouse_state & BROWSER_MOUSE_HOVER)) {
+					if(ami_cw->mouse_state == BROWSER_MOUSE_HOVER) {
 						ami_cw_drag_end(ami_cw, x, y);
-						ami_cw->drag_status = CORE_WINDOW_DRAG_NONE;
 					}
 
 					ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state, x, y);
+				} else {
+					/* event is happening away from our corewindow area */
+					switch(code) {
+						case SELECTUP:
+						case MIDDLEUP:
+							ami_cw->mouse_state = BROWSER_MOUSE_HOVER;
+						break;
+
+						default:
+						break;
+					}
+
+					if(ami_cw->mouse_state == BROWSER_MOUSE_HOVER) {
+						ami_cw_drag_end(ami_cw, x, y);
+						ami_cw->mouse(ami_cw, ami_cw->mouse_state | key_state,
+							ami_cw->drag_x_start, ami_cw->drag_y_start); // placate core
+					}
 				}
 			break;
 
@@ -833,9 +854,10 @@ nserror ami_corewindow_init(struct ami_corewindow *ami_cw)
 	ami_cw->scroll_x_visible = true;
 	ami_cw->scroll_y_visible = true;
 	ami_cw->in_border_scroll = false;
+	ami_cw->dragging = false;
 
 	/* allocate drawing area etc */
-	ami_init_layers(&ami_cw->gg, 0, 0, false);
+	ami_init_layers(&ami_cw->gg, 100, 100, false); // force tiles to save memory
 	ami_cw->gg.shared_pens = ami_AllocMinList();
 
 	ami_cw->deferred_rects = NewObjList();
