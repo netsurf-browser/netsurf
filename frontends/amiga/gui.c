@@ -242,7 +242,7 @@ static bool gui_window_get_scroll(struct gui_window *g, int *restrict sx, int *r
 static void gui_window_set_scroll(struct gui_window *g, int sx, int sy);
 static void gui_window_remove_caret(struct gui_window *g);
 static void gui_window_place_caret(struct gui_window *g, int x, int y, int height, const struct rect *clip);
-
+static void gui_window_update_box(struct gui_window *g, const struct rect *restrict rect);
 
 
 /* accessors for default options - user option is updated if it is set as per default */
@@ -3669,8 +3669,9 @@ static void ami_refresh_window(struct gui_window_2 *gwin)
 	/* simplerefresh only */
 
 	struct IBox *bbox;
-	int x0, x1, y0, y1, sx, sy;
+	int sx, sy;
 	struct RegionRectangle *regrect;
+	struct rect r;
 
 	sx = gwin->gw->scrollx;
 	sy = gwin->gw->scrolly;
@@ -3684,33 +3685,33 @@ static void ami_refresh_window(struct gui_window_2 *gwin)
 	
 	BeginRefresh(gwin->win);
 
-	x0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinX - bbox->Left) /
+	r.x0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinX - bbox->Left) /
 			browser_window_get_scale(gwin->gw->bw)) + sx - 1;
-	x1 = ((gwin->win->RPort->Layer->DamageList->bounds.MaxX - bbox->Left) /
+	r.x1 = ((gwin->win->RPort->Layer->DamageList->bounds.MaxX - bbox->Left) /
 			browser_window_get_scale(gwin->gw->bw)) + sx + 2;
-	y0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinY - bbox->Top) /
+	r.y0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinY - bbox->Top) /
 			browser_window_get_scale(gwin->gw->bw)) + sy - 1;
-	y1 = ((gwin->win->RPort->Layer->DamageList->bounds.MaxY - bbox->Top) /
+	r.y1 = ((gwin->win->RPort->Layer->DamageList->bounds.MaxY - bbox->Top) /
 			browser_window_get_scale(gwin->gw->bw)) + sy + 2;
 
 	regrect = gwin->win->RPort->Layer->DamageList->RegionRectangle;
 
-	ami_do_redraw_limits(gwin->gw, gwin->gw->bw, false, x0, y0, x1, y1);
+	gui_window_update_box(gwin->gw, &r);
 
 	while(regrect)
 	{
-		x0 = ((regrect->bounds.MinX - bbox->Left) /
+		r.x0 = ((regrect->bounds.MinX - bbox->Left) /
 			browser_window_get_scale(gwin->gw->bw)) + sx - 1;
-		x1 = ((regrect->bounds.MaxX - bbox->Left) /
+		r.x1 = ((regrect->bounds.MaxX - bbox->Left) /
 			browser_window_get_scale(gwin->gw->bw)) + sx + 2;
-		y0 = ((regrect->bounds.MinY - bbox->Top) /
+		r.y0 = ((regrect->bounds.MinY - bbox->Top) /
 			browser_window_get_scale(gwin->gw->bw)) + sy - 1;
-		y1 = ((regrect->bounds.MaxY - bbox->Top) /
+		r.y1 = ((regrect->bounds.MaxY - bbox->Top) /
 			browser_window_get_scale(gwin->gw->bw)) + sy + 2;
 
 		regrect = regrect->Next;
 
-		ami_do_redraw_limits(gwin->gw, gwin->gw->bw, false, x0, y0, x1, y1);
+		gui_window_update_box(gwin->gw, &r);
 	}
 
 	EndRefresh(gwin->win, TRUE);
