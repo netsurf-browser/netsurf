@@ -66,8 +66,6 @@
 #include "amiga/schedule.h"
 #include "amiga/utf8.h"
 
-static void ami_cw_get_window_dimensions(struct core_window *cw, int *width, int *height);
-
 static void
 ami_cw_scroller_top(struct ami_corewindow *ami_cw, ULONG *restrict x, ULONG *restrict y)
 {
@@ -84,6 +82,22 @@ ami_cw_scroller_top(struct ami_corewindow *ami_cw, ULONG *restrict x, ULONG *res
 
 	*x = xs;
 	*y = ys;
+}
+
+static void
+ami_cw_window_size(struct ami_corewindow *ami_cw, int *width, int *height)
+{
+	struct IBox *bbox;
+
+	if(ami_gui_get_space_box((Object *)ami_cw->objects[GID_CW_DRAW], &bbox) != NSERROR_OK) {
+		amiga_warn_user("NoMemory", "");
+		return;
+	}
+
+	*width = bbox->Width;
+	*height = bbox->Height;
+
+	ami_gui_free_space_box(bbox);
 }
 
 
@@ -366,6 +380,41 @@ ami_cw_redraw(struct ami_corewindow *ami_cw, const struct rect *restrict r)
 	ami_schedule(1, ami_cw_redraw_cb, ami_cw);
 }
 
+static void ami_cw_simplerefresh(struct ami_corewindow *ami_cw)
+{
+	struct rect r;
+	struct RegionRectangle *regrect;
+
+	BeginRefresh(ami_cw->win);
+
+	r.x0 = ami_cw->win->RPort->Layer->DamageList->bounds.MinX;
+	r.x1 = ami_cw->win->RPort->Layer->DamageList->bounds.MaxX;
+	r.y0 = ami_cw->win->RPort->Layer->DamageList->bounds.MinY;
+	r.y1 = ami_cw->win->RPort->Layer->DamageList->bounds.MaxY;
+
+	ami_cw_coord_amiga_to_ns(ami_cw, &r.x0, &r.y0);
+	ami_cw_coord_amiga_to_ns(ami_cw, &r.y0, &r.y1);
+
+	regrect = ami_cw->win->RPort->Layer->DamageList->RegionRectangle;
+
+	ami_cw_redraw(ami_cw, &r); /* queue redraw */
+
+	while(regrect) {
+		r.x0 = regrect->bounds.MinX;
+		r.x1 = regrect->bounds.MaxX;
+		r.y0 = regrect->bounds.MinY;
+		r.y1 = regrect->bounds.MaxY;
+		ami_cw_coord_amiga_to_ns(ami_cw, &r.x0, &r.y0);
+		ami_cw_coord_amiga_to_ns(ami_cw, &r.y0, &r.y1);
+
+		regrect = regrect->Next;
+
+		ami_cw_redraw(ami_cw, &r); /* queue redraw */
+	}
+
+	EndRefresh(ami_cw->win, TRUE);
+}
+
 static void
 ami_cw_toggle_scrollbar(struct ami_corewindow *ami_cw, bool vert, bool visible)
 {
@@ -464,6 +513,17 @@ HOOKF(void, ami_cw_idcmp_hook, Object *, object, struct IntuiMessage *)
 			}
 		break;
 #endif
+
+		case IDCMP_SIZEVERIFY:
+		break;
+
+		case IDCMP_REFRESHWINDOW:
+			ami_cw_simplerefresh(ami_cw);
+		break;
+
+		default:
+			LOG("IDCMP hook unhandled event: %ld", msg->Class);
+		break;
 	}
 } 
 
@@ -548,7 +608,7 @@ static void
 ami_cw_newsize(struct ami_corewindow *ami_cw)
 {
 	int win_w, win_h;
-	ami_cw_get_window_dimensions(ami_cw, &win_w, &win_h);
+	ami_cw_window_size(ami_cw, &win_w, &win_h);
 
 	if(ami_cw->objects[GID_CW_HSCROLL] != NULL) {
 		RefreshSetGadgetAttrs((struct Gadget *)ami_cw->objects[GID_CW_HSCROLL], ami_cw->win, NULL,
@@ -750,17 +810,8 @@ static void
 ami_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
 {
 	struct ami_corewindow *ami_cw = (struct ami_corewindow *)cw;
-	struct IBox *bbox;
 
-	if(ami_gui_get_space_box((Object *)ami_cw->objects[GID_CW_DRAW], &bbox) != NSERROR_OK) {
-		amiga_warn_user("NoMemory", "");
-		return;
-	}
-
-	*width = bbox->Width;
-	*height = bbox->Height;
-
-	ami_gui_free_space_box(bbox);
+	ami_cw_window_size(ami_cw, width, height);
 }
 
 
@@ -770,7 +821,7 @@ ami_cw_update_size(struct core_window *cw, int width, int height)
 	struct ami_corewindow *ami_cw = (struct ami_corewindow *)cw;
 	int win_w, win_h;
 
-	ami_cw_get_window_dimensions((struct core_window *)ami_cw, &win_w, &win_h);
+	ami_cw_window_size(ami_cw, &win_w, &win_h);
 
 	if(width == -1) {
 		ami_cw_toggle_scrollbar(ami_cw, false, false);
@@ -805,7 +856,7 @@ ami_cw_scroll_visible(struct core_window *cw, const struct rect *r)
 	ULONG win_x0, win_y0;
 	int win_x1, win_y1;
 
-	ami_cw_get_window_dimensions((struct core_window *)ami_cw, &win_w, &win_h);
+	ami_cw_window_size(ami_cw, &win_w, &win_h);
 
 	ami_cw_scroller_top(ami_cw, &win_x0, &win_y0);
 

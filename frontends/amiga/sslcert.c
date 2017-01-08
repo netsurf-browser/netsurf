@@ -41,6 +41,7 @@
 #include "netsurf/plotters.h"
 #include "desktop/sslcert_viewer.h"
 #include "utils/messages.h"
+#include "utils/nsoption.h"
 
 #include "amiga/corewindow.h"
 #include "amiga/libs.h"
@@ -214,6 +215,11 @@ static nserror
 ami_crtvrfy_create_window(struct ami_crtvrfy_window *crtvrfy_win)
 {
 	struct ami_corewindow *ami_cw = (struct ami_corewindow *)&crtvrfy_win->core;
+	ULONG refresh_mode = WA_SmartRefresh;
+
+	if(nsoption_bool(window_simple_refresh) == true) {
+		refresh_mode = WA_SimpleRefresh;
+	}
 
 	ami_cw->objects[GID_CW_WIN] = WindowObj,
   	    WA_ScreenTitle, ami_gui_get_screen_title(),
@@ -227,11 +233,13 @@ ami_crtvrfy_create_window(struct ami_crtvrfy_window *crtvrfy_win)
 		WA_Height, scrn->Height / 2,
 		WA_PubScreen, scrn,
 		WA_ReportMouse, TRUE,
-       	WA_IDCMP, IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
+		refresh_mode, TRUE,
+		WA_IDCMP, IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 				IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
-				IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY,
+				IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY | IDCMP_REFRESHWINDOW,
 		WINDOW_IDCMPHook, &ami_cw->idcmp_hook,
-		WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE,
+		WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE |
+				IDCMP_SIZEVERIFY | IDCMP_REFRESHWINDOW,
 		WINDOW_SharedPort, sport,
 		WINDOW_UserData, crtvrfy_win,
 		/* WINDOW_NewMenu, twin->menu,   -> No menu for SSL Cert */

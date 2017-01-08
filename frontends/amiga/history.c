@@ -360,6 +360,11 @@ static nserror
 ami_history_global_create_window(struct ami_history_global_window *history_win)
 {
 	struct ami_corewindow *ami_cw = (struct ami_corewindow *)&history_win->core;
+	ULONG refresh_mode = WA_SmartRefresh;
+
+	if(nsoption_bool(window_simple_refresh) == true) {
+		refresh_mode = WA_SimpleRefresh;
+	}
 
 	ami_cw->objects[GID_CW_WIN] = WindowObj,
   	    WA_ScreenTitle, ami_gui_get_screen_title(),
@@ -376,11 +381,13 @@ ami_history_global_create_window(struct ami_history_global_window *history_win)
 		WA_Height, nsoption_int(history_window_ysize),
 		WA_PubScreen, scrn,
 		WA_ReportMouse, TRUE,
-       	WA_IDCMP, IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
+		refresh_mode, TRUE,
+		WA_IDCMP, IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 				IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
-				IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY,
+				IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY | IDCMP_REFRESHWINDOW,
 		WINDOW_IDCMPHook, &ami_cw->idcmp_hook,
-		WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE,
+		WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE |
+				IDCMP_SIZEVERIFY | IDCMP_REFRESHWINDOW,
 		WINDOW_SharedPort, sport,
 		WINDOW_HorizProp, 1,
 		WINDOW_VertProp, 1,
