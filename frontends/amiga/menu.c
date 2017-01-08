@@ -547,7 +547,7 @@ static void ami_menu_free_labs(struct ami_menu_data **md, int max)
 {
 	int i;
 
-	for(i = 0; i < max; i++) {
+	for(i = 0; i <= max; i++) {
 		if(md[i] == NULL) continue;
 		if(md[i]->menulab && (md[i]->menulab != NM_BARLABEL)) {
 			if(md[i]->menutype & MENU_IMAGE) {
@@ -569,7 +569,7 @@ void ami_free_menulabs(struct ami_menu_data **md)
 {
 	int i;
 
-	for(i=0;i<AMI_MENU_AREXX_MAX;i++) {
+	for(i=0;i<=AMI_MENU_AREXX_MAX;i++) {
 		if(md[i] == NULL) continue;
 		if(md[i]->menulab && (md[i]->menulab != NM_BARLABEL)) {
 			if(md[i]->menutype & MENU_IMAGE) {
