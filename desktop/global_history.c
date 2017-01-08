@@ -803,6 +803,7 @@ nserror global_history_fini(void)
 
 	/* Destroy the global history treeview */
 	err = treeview_destroy(gh_ctx.tree);
+	gh_ctx.tree = NULL;
 
 	/* Free global history treeview entry fields */
 	for (i = 0; i < N_FIELDS; i++)
