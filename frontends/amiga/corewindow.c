@@ -66,6 +66,8 @@
 #include "amiga/schedule.h"
 #include "amiga/utf8.h"
 
+static void ami_cw_get_window_dimensions(struct core_window *cw, int *width, int *height);
+
 static void
 ami_cw_scroller_top(struct ami_corewindow *ami_cw, ULONG *restrict x, ULONG *restrict y)
 {
@@ -539,6 +541,31 @@ ami_cw_drag_end(struct ami_corewindow *ami_cw, int x, int y)
 }
 
 /**
+ * User has resized window
+ */
+
+static void
+ami_cw_newsize(struct ami_corewindow *ami_cw)
+{
+	int win_w, win_h;
+	ami_cw_get_window_dimensions(ami_cw, &win_w, &win_h);
+
+	if(ami_cw->objects[GID_CW_HSCROLL] != NULL) {
+		RefreshSetGadgetAttrs((struct Gadget *)ami_cw->objects[GID_CW_HSCROLL], ami_cw->win, NULL,
+			SCROLLER_Visible, win_w,
+		TAG_DONE);
+	}	
+
+	if(ami_cw->objects[GID_CW_VSCROLL] != NULL) {
+		RefreshSetGadgetAttrs((struct Gadget *)ami_cw->objects[GID_CW_VSCROLL], ami_cw->win, NULL,
+			SCROLLER_Visible, win_h,
+		TAG_DONE);
+	}
+
+	ami_cw_redraw(ami_cw, NULL);
+}
+
+/**
  * Main event loop for our core window
  *
  * \return TRUE if window destroyed
@@ -681,7 +708,7 @@ ami_cw_event(void *w)
 			break;
 
 			case WMHI_NEWSIZE:
-				ami_cw_redraw(ami_cw, NULL);
+				ami_cw_newsize(ami_cw);
 			break;
 
 			case WMHI_CLOSEWINDOW:
