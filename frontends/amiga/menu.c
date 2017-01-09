@@ -33,6 +33,9 @@
 #endif
 
 #include <libraries/gadtools.h>
+#ifdef __amigaos4__
+#include <intuition/menuclass.h>
+#endif
 
 #include <classes/window.h>
 #include <proto/label.h>
@@ -853,8 +856,60 @@ static int ami_menu_calc_item_width(struct ami_menu_data **md, int j, struct Ras
 	return item_size;
 }
 
+#ifdef __amigaos4__
+static void ami_menu_layout_mc_recursive(Object *menu_parent, struct ami_menu_data **md, int level, int *i, int max)
+{
+	Object *menu_item = menu_parent;
+	ULONG item_type = T_ITEM;
+	
+	if(level == NM_TITLE) {
+		item_type = T_MENU;
+	}
+	
+	while(*i <= max) {
+		/* skip empty entries */
+		if(md[*i] == NULL) continue;
+		if(md[*i]->menutype == NM_IGNORE) continue;
 
-struct Menu *ami_menu_layout(struct ami_menu_data **md, int max)
+		if(md[*i]->menutype == level) {
+			menu_item = NewObject(NULL, "menuclass",
+				MA_Type, item_type,
+				MA_ID, *i,
+				MA_Label, md[*i]->menulab,
+				MA_Image, md[*i]->menuicon,
+				MA_Key, &md[*i]->menukey,
+				MA_PickHook, &md[*i]->menu_hook,
+				MA_Disabled, (md[*i]->flags & NM_ITEMDISABLED),
+				MA_Selected, (md[*i]->flags & CHECKED),
+				MA_Toggle, (md[*i]->flags & MENUTOGGLE),
+				TAG_DONE); 
+			IDoMethod(menu_parent, OM_ADDMEMBER, menu_item);
+		} else if (md[*i]->menutype > level) {
+			ami_menu_layout_mc_recursive(menu_item, md, md[*i]->menutype, i, max);
+		} else {
+			break;
+		}
+		*i++;
+	}
+	return;
+}
+
+static struct Menu *ami_menu_layout_mc(struct ami_menu_data **md, int max)
+{
+	int i = 0;
+
+	Object *menu_root = NewObject(NULL, "menuclass",
+		MA_Type, T_ROOT,
+		MA_FreeImage, FALSE,
+		TAG_DONE);
+
+	ami_menu_layout_mc_recursive(menu_root, md, NM_TITLE, &i, max);
+
+	return (struct Menu *)menu_root;
+}
+#endif
+
+static struct Menu *ami_menu_layout_gt(struct ami_menu_data **md, int max)
 {
 	int i, j;
 	int txtlen = 0;
@@ -977,15 +1032,34 @@ struct Menu *ami_menu_layout(struct ami_menu_data **md, int max)
 	return imenu;
 }
 
+struct Menu *ami_menu_layout(struct ami_menu_data **md, int max)
+{
+	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
+#ifdef __amigaos4__
+		return ami_menu_layout_mc(md, max);
+#endif	
+	} else {
+		return ami_menu_layout_gt(md, max);
+	}
+}
+
 void ami_menu_free(struct gui_window_2 *gwin)
 {
-	FreeMenus(gwin->imenu);
+	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
+		DisposeObject((Object *)gwin->imenu); // if we detach our menu from the window we need to do this manually
+	} else {
+		FreeMenus(gwin->imenu);
+	}
 }
 
 void ami_menu_free_menu(struct ami_menu_data **md, int max, struct Menu *imenu)
 {
 	ami_menu_free_labs(md, max);
-	FreeMenus(imenu);
+	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
+		DisposeObject((Object *)imenu); // if we detach our menu from the window we need to do this manually
+	} else {
+		FreeMenus(imenu);
+	}
 }
 
 struct Menu *ami_menu_create(struct gui_window_2 *gwin)
@@ -1066,9 +1140,12 @@ static bool ami_menu_hotlist_add(void *userdata, int level, int item, const char
 			type = NM_SUB;
 		break;
 		default:
-			/* entries not at level 1 or 2 are not able to be added
-			 * \todo construct menus using menuclass instead! */
-			return false;
+			if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
+				type = NM_SUB + (level - 2);
+			} else {
+				/* entries not at level 1 or 2 are not able to be added */
+				return false;
+			}
 		break;
 	}
 
@@ -1079,8 +1156,10 @@ static bool ami_menu_hotlist_add(void *userdata, int level, int item, const char
 		if (icon == NULL) icon = ASPrintf("icons/content.png");
 	}
 
-	if((is_folder == true) && (type == NM_SUB)) {
-		flags = NM_ITEMDISABLED;
+	if(!LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
+		if((is_folder == true) && (type == NM_SUB)) {
+			flags = NM_ITEMDISABLED;
+		}
 	}
 
 	ami_menu_alloc_item(md, item, type, title,
@@ -1098,6 +1177,11 @@ static nserror ami_menu_scan(struct ami_menu_data **md)
 
 void ami_menu_update_checked(struct gui_window_2 *gwin)
 {
+	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
+		//needs re-writing for MenuClass
+		return;
+	}
+
 	struct Menu *menustrip;
 
 	GetAttr(WINDOW_MenuStrip, gwin->objects[OID_MAIN], (ULONG *)&menustrip);
