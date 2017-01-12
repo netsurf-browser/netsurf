@@ -878,7 +878,7 @@ static void ami_menu_layout_mc_recursive(Object *menu_parent, struct ami_menu_da
 				MA_Label, md[*i]->menulab,
 				MA_Image, md[*i]->menuicon,
 				MA_Key, &md[*i]->menukey,
-				MA_PickHook, &md[*i]->menu_hook,
+				MA_UserData, &md[*i]->menu_hook, /* NB: Intentionally UserData */
 				MA_Disabled, (md[*i]->flags & NM_ITEMDISABLED),
 				MA_Selected, (md[*i]->flags & CHECKED),
 				MA_Toggle, (md[*i]->flags & MENUTOGGLE),
