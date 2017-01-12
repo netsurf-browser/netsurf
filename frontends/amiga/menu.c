@@ -923,7 +923,7 @@ struct Menu *ami_menu_layout(struct ami_menu_data **md, int max)
 					TextLength(rp, md[i]->menulab, strlen(md[i]->menulab)) -
 					icon_width - space_width;
 
-				if((md[i]->menutype == NM_ITEM) && (md[i+1]->menutype == NM_SUB)) {
+				if((md[i]->menutype == NM_ITEM) && md[i+1] && (md[i+1]->menutype == NM_SUB)) {
 					left_posn -= menu_glyph_width[NSA_GLYPH_SUBMENU];
 
 					submenuarrow = NewObject(NULL, "sysiclass",
