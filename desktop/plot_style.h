@@ -24,10 +24,19 @@
 #define _NETSURF_DESKTOP_PLOT_STYLE_H_
 
 #include <stdint.h>
+#include "netsurf/types.h"
 
 /* html widget colours */
+/** light grey widget base colour */
 #define WIDGET_BASEC 0xd9d9d9
+
+/** black blob colour */
 #define WIDGET_BLOBC 0x000000
+
+/**
+ * Transparent value
+ */
+#define NS_TRANSPARENT 0x01000000
 
 /* Darken a colour by taking three quarters of each channel's intensity */
 #define darken_colour(c1)				 		\
@@ -90,15 +99,6 @@
 #define blue_from_colour(c)						\
 	((c >> 16) & 0xff)
 
-/**
- * Colour type: XBGR
- */
-typedef uint32_t colour;
-
-/**
- * Magical transparent value
- */
-#define NS_TRANSPARENT 0x01000000
 
 /**
  * Type of plot operation
@@ -110,6 +110,7 @@ typedef enum {
 	PLOT_OP_TYPE_DASH, /**< Dashed plot */
 } plot_operation_type_t;
 
+
 /**
  * Plot style for stroke/fill plotters
  */
@@ -120,6 +121,7 @@ typedef struct plot_style_s {
 	plot_operation_type_t fill_type; /**< Fill plot type */
 	colour fill_colour; /**< Colour of fill */
 } plot_style_t;
+
 
 /**
  * Generic font family type
@@ -133,6 +135,7 @@ typedef enum {
 	PLOT_FONT_FAMILY_COUNT /**< Number of generic families */
 } plot_font_generic_family_t;
 
+
 /**
  * Font plot flags
  */
@@ -142,10 +145,12 @@ typedef unsigned long plot_font_flags_t;
 #define FONTF_OBLIQUE 2
 #define FONTF_SMALLCAPS 4
 
+
 /**
  * Scaling factor for font sizes
  */
 #define FONT_SIZE_SCALE 1024
+
 
 /**
  * Font style for plotting
@@ -159,15 +164,18 @@ typedef struct plot_font_style {
 	colour foreground; /**< Colour of text */
 } plot_font_style_t;
 
+
 /* global fill styles */
 extern plot_style_t *plot_style_fill_white;
 extern plot_style_t *plot_style_fill_red;
 extern plot_style_t *plot_style_fill_black;
 
+
 /* Box model debug outline styles for content, padding and margin edges */
 extern plot_style_t const * const plot_style_content_edge;
 extern plot_style_t const * const plot_style_padding_edge;
 extern plot_style_t const * const plot_style_margin_edge;
+
 
 /* Broken object replacement styles */
 extern plot_style_t const * const plot_style_broken_object;
@@ -176,7 +184,6 @@ extern plot_font_style_t const * const plot_fstyle_broken_object;
 
 /* other styles */
 extern plot_style_t *plot_style_caret;
-extern plot_style_t *plot_style_stroke_history;
 extern plot_style_t *plot_style_fill_wbasec;
 extern plot_style_t *plot_style_fill_darkwbasec;
 extern plot_style_t *plot_style_fill_lightwbasec;
@@ -185,23 +192,9 @@ extern plot_style_t *plot_style_stroke_wblobc;
 extern plot_style_t *plot_style_stroke_darkwbasec;
 extern plot_style_t *plot_style_stroke_lightwbasec;
 
+
 /* Default font style */
 extern plot_font_style_t const * const plot_style_font;
 
-#ifndef HISTORY_COLOUR_SELECTED
-#define HISTORY_COLOUR_SELECTED 0xFF0000
-#endif
-
-#ifndef HISTORY_COLOUR_FOREGROUND
-#define HISTORY_COLOUR_FOREGROUND 0x333333
-#endif
-
-#ifndef HISTORY_COLOUR_BACKGROUND
-#define HISTORY_COLOUR_BACKGROUND 0xFFFFFF
-#endif
-
-#ifndef HISTORY_COLOUR_LINES
-#define HISTORY_COLOUR_LINES HISTORY_COLOUR_FOREGROUND
-#endif
 
 #endif

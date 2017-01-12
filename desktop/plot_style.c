@@ -152,15 +152,6 @@ static plot_style_t plot_style_stroke_lightwbasec_static = {
 };
 plot_style_t *plot_style_stroke_lightwbasec = &plot_style_stroke_lightwbasec_static;
 
-/* history styles */
-
-/** stroke style for history core. */
-static plot_style_t plot_style_stroke_history_static = {
-	.stroke_type = PLOT_OP_TYPE_SOLID,
-	.stroke_colour = HISTORY_COLOUR_LINES,
-	.stroke_width = 2,
-};
-plot_style_t *plot_style_stroke_history = &plot_style_stroke_history_static;
 
 /* Generic font style */
 static const plot_font_style_t plot_style_font_static = {

@@ -37,6 +37,7 @@
 #include "content/urldb.h"
 #include "netsurf/bitmap.h"
 
+#include "desktop/system_colour.h"
 #include "desktop/gui_internal.h"
 #include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
@@ -235,6 +236,45 @@ static void browser_window_history__layout(struct history *history)
 	history->height += BOTTOM_MARGIN / 2;
 }
 
+/** plot style for drawing lines between nodes */
+static plot_style_t pstyle_line = {
+	.stroke_type = PLOT_OP_TYPE_SOLID,
+	.stroke_width = 2,
+};
+
+/** plot style for drawing background */
+static plot_style_t pstyle_bg = {
+	.fill_type = PLOT_OP_TYPE_SOLID,
+};
+
+/** plot style for drawing rectangle round unselected nodes */
+static plot_style_t pstyle_rect = {
+	.stroke_type = PLOT_OP_TYPE_SOLID,
+	.stroke_width = 1,
+};
+
+/** plot style for drawing rectangle round selected nodes */
+static plot_style_t pstyle_rect_sel = {
+	.stroke_type = PLOT_OP_TYPE_SOLID,
+	.stroke_width = 3,
+};
+
+/** plot style for font on unselected nodes */
+static plot_font_style_t pfstyle_node = {
+	.family = PLOT_FONT_FAMILY_SANS_SERIF,
+	.size = 8 * FONT_SIZE_SCALE,
+	.weight = 400,
+	.flags = FONTF_NONE,
+};
+
+/** plot style for font on unselected nodes */
+static plot_font_style_t pfstyle_node_sel = {
+	.family = PLOT_FONT_FAMILY_SANS_SERIF,
+	.size = 8 * FONT_SIZE_SCALE,
+	.weight = 900,
+	.flags = FONTF_NONE,
+};
+
 /**
  * Recursively redraw a history_entry.
  *
@@ -260,19 +300,25 @@ browser_window_history__redraw_entry(struct history *history,
 	size_t char_offset;
 	int actual_x;
 	struct history_entry *child;
-	colour c = entry == history->current ?
-			HISTORY_COLOUR_SELECTED : HISTORY_COLOUR_FOREGROUND;
 	int tailsize = 5;
 	int xoffset = x - x0;
 	int yoffset = y - y0;
-        plot_style_t pstyle_history_rect = { 
-            .stroke_type = PLOT_OP_TYPE_SOLID,
-            .stroke_colour = c,
-            .stroke_width = entry == history->current ? 3 : 1,
-        };
-	plot_font_style_t fstyle = *plot_style_font;
+
+	plot_style_t *pstyle;
+	plot_font_style_t *pfstyle;
+
 	nserror res;
 
+	/* setup plot styles */
+	if (entry == history->current) {
+		pstyle = &pstyle_rect_sel;
+		pfstyle = &pfstyle_node_sel;
+	} else {
+		pstyle = &pstyle_rect;
+		pfstyle = &pfstyle_node;
+	}
+
+	/* setup clip area */
 	if (clip) {
 		struct rect rect;
 		rect.x0 = x0 + xoffset;
@@ -289,14 +335,16 @@ browser_window_history__redraw_entry(struct history *history,
 		plot->bitmap(entry->x + xoffset,
 			     entry->y + yoffset,
 			     WIDTH, HEIGHT,
-			     entry->bitmap, 0xffffff, 0);
+			     entry->bitmap,
+			     0xffffff,
+			     0);
 	}
 
 	if (!plot->rectangle(entry->x - 1 + xoffset, 
-                            entry->y - 1 + yoffset,
-                            entry->x + xoffset + WIDTH, 
-                            entry->y + yoffset + HEIGHT,
-			     &pstyle_history_rect)) {
+			     entry->y - 1 + yoffset,
+			     entry->x + xoffset + WIDTH,
+			     entry->y + yoffset + HEIGHT,
+			     pstyle)) {
 		return false;
 	}
 
@@ -307,36 +355,42 @@ browser_window_history__redraw_entry(struct history *history,
 		return false;
 	}
 
-	fstyle.background = HISTORY_COLOUR_BACKGROUND;
-	fstyle.foreground = c;
-	fstyle.weight = entry == history->current ? 900 : 400;
 
-	if (!plot->text(entry->x + xoffset, entry->y + HEIGHT + 12 + yoffset,
-			entry->page.title, char_offset, &fstyle))
+	if (!plot->text(entry->x + xoffset,
+			entry->y + HEIGHT + 12 + yoffset,
+			entry->page.title,
+			char_offset,
+			pfstyle)) {
 		return false;
+	}
 
+	/* for each child node draw a line and recurse redraw into it */
 	for (child = entry->forward; child; child = child->next) {
 		if (!plot->line(entry->x + WIDTH + xoffset,
 				entry->y + HEIGHT / 2 + yoffset,
-		      	entry->x + WIDTH + tailsize + xoffset,
-				entry->y + HEIGHT / 2 + yoffset, 
-			       plot_style_stroke_history))
+				entry->x + WIDTH + tailsize + xoffset,
+				entry->y + HEIGHT / 2 + yoffset,
+				&pstyle_line)) {
 			return false;
+		}
 		if (!plot->line(entry->x + WIDTH + tailsize + xoffset,
-			       entry->y + HEIGHT / 2 + yoffset,
-			       child->x - tailsize +xoffset,
-			       child->y + HEIGHT / 2 + yoffset,
-			       plot_style_stroke_history))
+				entry->y + HEIGHT / 2 + yoffset,
+				child->x - tailsize +xoffset,
+				child->y + HEIGHT / 2 + yoffset,
+				&pstyle_line)) {
 			return false;
+		}
 		if (!plot->line(child->x - tailsize + xoffset,
-			       child->y + HEIGHT / 2 + yoffset,
-			       child->x + xoffset, child->y +
+				child->y + HEIGHT / 2 + yoffset,
+				child->x + xoffset, child->y +
 			       			HEIGHT / 2 + yoffset,
-			       plot_style_stroke_history))
+				&pstyle_line)) {
 			return false;
+		}
 		if (!browser_window_history__redraw_entry(history, child,
-				x0, y0, x1, y1, x, y, clip, ctx))
+			x0, y0, x1, y1, x, y, clip, ctx)) {
 			return false;
+		}
 	}
 
 	return true;
@@ -415,6 +469,17 @@ nserror browser_window_history_create(struct browser_window *bw)
 {
 	struct history *history;
 
+	pstyle_bg.fill_colour = ns_system_colour_char("Window");
+	pfstyle_node.background = pstyle_bg.fill_colour;
+	pfstyle_node_sel.background = pstyle_bg.fill_colour;
+
+	pstyle_line.stroke_colour = ns_system_colour_char("GrayText");
+	pstyle_rect.stroke_colour = pstyle_line.stroke_colour;
+	pfstyle_node.foreground = pstyle_line.stroke_colour;
+
+	pstyle_rect_sel.stroke_colour = ns_system_colour_char("Highlight");
+	pfstyle_node_sel.foreground = pstyle_rect_sel.stroke_colour;
+
 	bw->history = NULL;
 
 	history = calloc(1, sizeof *history);
@@ -426,6 +491,7 @@ nserror browser_window_history_create(struct browser_window *bw)
 	history->height = BOTTOM_MARGIN / 2;
 
 	bw->history = history;
+
 	return NSERROR_OK;
 }
 
@@ -709,6 +775,7 @@ bool browser_window_history_redraw(struct browser_window *bw,
 
 	if (!history->start)
 		return true;
+
 	return browser_window_history__redraw_entry(history, history->start,
 			0, 0, 0, 0, 0, 0, false, ctx);
 }
@@ -726,6 +793,7 @@ bool browser_window_history_redraw_rectangle(struct browser_window *bw,
 
 	if (!history->start)
 		return true;
+
 	return browser_window_history__redraw_entry(history, history->start,
 		x0, y0, x1, y1, x, y, true, ctx);
 }
