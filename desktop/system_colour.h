@@ -26,7 +26,7 @@
 #include <libcss/libcss.h>
 
 #include "utils/errors.h"
-#include "desktop/plot_style.h"
+#include "netsurf/types.h"
 
 /** css callback to obtain named system colours. */
 css_error ns_system_colour(void *pw, lwc_string *name, css_color *color);

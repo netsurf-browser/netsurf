@@ -23,6 +23,7 @@
  */
 
 #include "utils/nsoption.h"
+#include "netsurf/plot_style.h"
 #include "css/utils.h"
 
 #include "render/font.h"

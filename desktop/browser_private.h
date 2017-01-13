@@ -26,9 +26,10 @@
 
 #include <libwapcaplet/libwapcaplet.h>
 
+#include "netsurf/types.h"
 #include "netsurf/browser_window.h"
+
 #include "desktop/frame_types.h"
-#include "desktop/plot_style.h"
 
 struct box;
 struct hlcache_handle;

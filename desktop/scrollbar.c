@@ -29,14 +29,12 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"
-
 #include "netsurf/browser_window.h"
-#include "desktop/system_colour.h"
 #include "netsurf/mouse.h"
-#include "desktop/scrollbar.h"
 #include "netsurf/plotters.h"
-#include "desktop/plot_style.h"
 
+#include "desktop/system_colour.h"
+#include "desktop/scrollbar.h"
 
 struct scrollbar {
 	bool horizontal;	/* Horizontal scrollbar if true, else vertical

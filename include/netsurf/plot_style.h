@@ -16,27 +16,87 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Plotter styles.
+/**
+ * \file
+ * plotter style interfaces, generic styles and style colour helpers.
  */
 
-#ifndef _NETSURF_DESKTOP_PLOT_STYLE_H_
-#define _NETSURF_DESKTOP_PLOT_STYLE_H_
+#ifndef NETSURF_PLOT_STYLE_H
+#define NETSURF_PLOT_STYLE_H
 
 #include <stdint.h>
 #include "netsurf/types.h"
 
-/* html widget colours */
 /** light grey widget base colour */
 #define WIDGET_BASEC 0xd9d9d9
 
 /** black blob colour */
 #define WIDGET_BLOBC 0x000000
 
-/**
- * Transparent value
- */
+/** Transparent colour value. */
 #define NS_TRANSPARENT 0x01000000
+
+/** Scaling factor for font sizes */
+#define FONT_SIZE_SCALE 1024
+
+/**
+ * Type of plot operation
+ */
+typedef enum {
+	PLOT_OP_TYPE_NONE = 0, /**< No operation */
+	PLOT_OP_TYPE_SOLID, /**< Solid colour */
+	PLOT_OP_TYPE_DOT, /**< Dotted plot */
+	PLOT_OP_TYPE_DASH, /**< Dashed plot */
+} plot_operation_type_t;
+
+
+/**
+ * Plot style for stroke/fill plotters
+ */
+typedef struct plot_style_s {
+	plot_operation_type_t stroke_type; /**< Stroke plot type */
+	int stroke_width; /**< Width of stroke, in pixels */
+	colour stroke_colour; /**< Colour of stroke */
+	plot_operation_type_t fill_type; /**< Fill plot type */
+	colour fill_colour; /**< Colour of fill */
+} plot_style_t;
+
+
+/**
+ * Generic font family type
+ */
+typedef enum {
+	PLOT_FONT_FAMILY_SANS_SERIF = 0,
+	PLOT_FONT_FAMILY_SERIF,
+	PLOT_FONT_FAMILY_MONOSPACE,
+	PLOT_FONT_FAMILY_CURSIVE,
+	PLOT_FONT_FAMILY_FANTASY,
+	PLOT_FONT_FAMILY_COUNT /**< Number of generic families */
+} plot_font_generic_family_t;
+
+
+/**
+ * Font plot flags
+ */
+typedef enum {
+	FONTF_NONE = 0,
+	FONTF_ITALIC = 1,
+	FONTF_OBLIQUE = 2,
+	FONTF_SMALLCAPS = 4,
+} plot_font_flags_t;
+
+/**
+ * Font style for plotting
+ */
+typedef struct plot_font_style {
+	plot_font_generic_family_t family; /**< Generic family to plot with */
+	int size; /**< Font size, in points * FONT_SIZE_SCALE */
+	int weight; /**< Font weight: value in range [100,900] as per CSS */
+	plot_font_flags_t flags; /**< Font flags */
+	colour background; /**< Background colour to blend to, if appropriate */
+	colour foreground; /**< Colour of text */
+} plot_font_style_t;
+
 
 /* Darken a colour by taking three quarters of each channel's intensity */
 #define darken_colour(c1)				 		\
@@ -98,71 +158,6 @@
 /* Get the blue channel from a colour */
 #define blue_from_colour(c)						\
 	((c >> 16) & 0xff)
-
-
-/**
- * Type of plot operation
- */
-typedef enum {
-	PLOT_OP_TYPE_NONE = 0, /**< No operation */
-	PLOT_OP_TYPE_SOLID, /**< Solid colour */
-	PLOT_OP_TYPE_DOT, /**< Dotted plot */
-	PLOT_OP_TYPE_DASH, /**< Dashed plot */
-} plot_operation_type_t;
-
-
-/**
- * Plot style for stroke/fill plotters
- */
-typedef struct plot_style_s {
-	plot_operation_type_t stroke_type; /**< Stroke plot type */
-	int stroke_width; /**< Width of stroke, in pixels */
-	colour stroke_colour; /**< Colour of stroke */
-	plot_operation_type_t fill_type; /**< Fill plot type */
-	colour fill_colour; /**< Colour of fill */
-} plot_style_t;
-
-
-/**
- * Generic font family type
- */
-typedef enum {
-	PLOT_FONT_FAMILY_SANS_SERIF = 0,
-	PLOT_FONT_FAMILY_SERIF,
-	PLOT_FONT_FAMILY_MONOSPACE,
-	PLOT_FONT_FAMILY_CURSIVE,
-	PLOT_FONT_FAMILY_FANTASY,
-	PLOT_FONT_FAMILY_COUNT /**< Number of generic families */
-} plot_font_generic_family_t;
-
-
-/**
- * Font plot flags
- */
-typedef unsigned long plot_font_flags_t;
-#define FONTF_NONE 0
-#define FONTF_ITALIC 1
-#define FONTF_OBLIQUE 2
-#define FONTF_SMALLCAPS 4
-
-
-/**
- * Scaling factor for font sizes
- */
-#define FONT_SIZE_SCALE 1024
-
-
-/**
- * Font style for plotting
- */
-typedef struct plot_font_style {
-	plot_font_generic_family_t family; /**< Generic family to plot with */
-	int size; /**< Font size, in points * FONT_SIZE_SCALE */
-	int weight; /**< Font weight: value in range [100,900] as per CSS */
-	plot_font_flags_t flags; /**< Font flags */
-	colour background; /**< Background colour to blend to, if appropriate */
-	colour foreground; /**< Colour of text */
-} plot_font_style_t;
 
 
 /* global fill styles */

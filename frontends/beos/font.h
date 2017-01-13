@@ -24,7 +24,7 @@
 #ifndef NS_BEOS_FONT_H
 #define NS_BEOS_FONT_H
 
-#include "desktop/plot_style.h"
+#include "netsurf/plot_style.h"
 
 bool nsfont_paint(const plot_font_style_t *fstyle,
 		const char *string, size_t length,

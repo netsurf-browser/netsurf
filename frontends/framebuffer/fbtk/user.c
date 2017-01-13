@@ -22,7 +22,6 @@
 #include <stdbool.h>
 #include <libnsfb.h>
 
-#include "desktop/plot_style.h"
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"
 

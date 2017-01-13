@@ -30,6 +30,7 @@
 #include "netsurf/utf8.h"
 #include "netsurf/layout.h"
 #include "netsurf/browser_window.h"
+#include "netsurf/plot_style.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/font.h"

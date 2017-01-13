@@ -25,7 +25,7 @@
 #include "utils/utf8.h"
 #include "utils/log.h"
 #include "netsurf/mouse.h"
-#include "desktop/plot_style.h"
+#include "netsurf/plot_style.h"
 
 #include "atari/gui.h"
 #include "atari/bitmap.h"

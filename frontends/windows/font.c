@@ -32,6 +32,7 @@
 #include "utils/utf8.h"
 #include "netsurf/layout.h"
 #include "netsurf/utf8.h"
+#include "netsurf/plot_style.h"
 
 #include "windows/font.h"
 

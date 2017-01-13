@@ -20,7 +20,7 @@
 #define _NETSURF_RISCOS_IMAGE_H_
 
 #include <stdbool.h>
-#include "desktop/plot_style.h"
+#include "netsurf/types.h"
 #include "oslib/osspriteop.h"
 
 struct osspriteop_area;

@@ -32,7 +32,7 @@
 #include <string.h>
 #include <strings.h>
 
-#include "desktop/plot_style.h"
+#include "netsurf/plot_style.h"
 #include "utils/errors.h"
 #include "utils/log.h"
 #include "utils/utils.h"

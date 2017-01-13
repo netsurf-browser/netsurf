@@ -22,7 +22,6 @@
 #import "utils/utils.h"
 #import "netsurf/browser_window.h"
 #import "netsurf/plotters.h"
-#import "desktop/plot_style.h"
 
 #import "cocoa/font.h"
 #import "cocoa/coordinates.h"

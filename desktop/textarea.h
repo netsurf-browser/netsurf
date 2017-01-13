@@ -28,8 +28,7 @@
 #include <stdbool.h>
 
 #include "utils/utils.h"
-
-#include "desktop/plot_style.h"
+#include "netsurf/plot_style.h"
 #include "netsurf/mouse.h"
 
 struct textarea;

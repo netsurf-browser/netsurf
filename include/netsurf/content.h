@@ -28,7 +28,7 @@
 
 #include <libwapcaplet/libwapcaplet.h>
 
-#include "desktop/plot_style.h" /* color typedef */
+#include "netsurf/types.h"
 #include "netsurf/content_type.h"
 
 struct bitmap;

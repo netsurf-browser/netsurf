@@ -44,7 +44,7 @@
 #include "utils/utf8.h"
 #include "netsurf/keypress.h"
 #include "netsurf/mouse.h"
-#include "desktop/plot_style.h"
+#include "netsurf/plot_style.h"
 
 #include <proto/exec.h>
 #include <proto/intuition.h>

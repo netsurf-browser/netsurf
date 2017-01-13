@@ -16,14 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** 
- * \file desktop/plot_style.c
+/**
+ * \file
  * \brief Plotter global styles.
  *
  * These plot styles are globaly available and used in many places.
  */
 
-#include "netsurf/plotters.h"
+#include "netsurf/plot_style.h"
 
 static plot_style_t plot_style_fill_white_static = {
 	.fill_type = PLOT_OP_TYPE_SOLID,
