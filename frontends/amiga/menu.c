@@ -111,6 +111,25 @@ const char * const verdate;
 static nserror ami_menu_scan(struct ami_menu_data **md);
 void ami_menu_arexx_scan(struct ami_menu_data **md);
 
+static bool ami_menu_get_selected(struct Menu *menu, struct IntuiMessage *msg)
+{
+	bool checked = false;
+
+	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
+#ifdef __amigaos4__
+		ULONG state;
+		struct ExtIntuiMessage *emsg = (struct ExtIntuiMessage *)msg;
+
+		state = IDoMethod(menu, MM_GETSTATE, 0, emsg->eim_LongCode, MS_CHECKED);
+		if(state & MS_CHECKED) checked = true;
+#endif	
+	} else {
+		if(ItemAddress(menu, msg->Code)->Flags & CHECKED) checked = true;
+	}
+
+	return checked;
+}
+
 void ami_menu_set_check_toggled(void)
 {
 	ami_menu_check_toggled = true;
@@ -378,8 +397,8 @@ HOOKF(void, ami_menu_item_browser_foreimg, APTR, window, struct IntuiMessage *)
 	bool checked = false;
 
 	GetAttr(WINDOW_MenuStrip, (Object *)window, (ULONG *)&menustrip);
-	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
-	
+	checked = ami_menu_get_selected(menustrip, msg);
+
 	nsoption_set_bool(foreground_images, checked);
 	ami_menu_set_check_toggled();
 }
@@ -390,7 +409,7 @@ HOOKF(void, ami_menu_item_browser_backimg, APTR, window, struct IntuiMessage *)
 	bool checked = false;
 
 	GetAttr(WINDOW_MenuStrip, (Object *)window, (ULONG *)&menustrip);
-	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
+	checked = ami_menu_get_selected(menustrip, msg);
 	
 	nsoption_set_bool(background_images, checked);
 	ami_menu_set_check_toggled();
@@ -402,7 +421,7 @@ HOOKF(void, ami_menu_item_browser_enablejs, APTR, window, struct IntuiMessage *)
 	bool checked = false;
 
 	GetAttr(WINDOW_MenuStrip, (Object *)window, (ULONG *)&menustrip);
-	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
+	checked = ami_menu_get_selected(menustrip, msg);
 	
 	nsoption_set_bool(enable_javascript, checked);
 	ami_menu_set_check_toggled();
