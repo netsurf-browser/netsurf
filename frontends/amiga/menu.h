@@ -115,24 +115,6 @@ enum {
  * only used for freeing the UTF-8 converted menu labels */
 #define AMI_MENU_MAX AMI_MENU_AREXX
 
-/* The Intuition menu numbers of some menus we might need to modify */
-#define AMI_MENU_SAVEAS_TEXT FULLMENUNUM(0,4,1)
-#define AMI_MENU_SAVEAS_COMPLETE FULLMENUNUM(0,4,2)
-#define AMI_MENU_SAVEAS_IFF FULLMENUNUM(0,4,3)
-#define AMI_MENU_SAVEAS_PDF FULLMENUNUM(0,4,4)
-#define AMI_MENU_CLOSETAB FULLMENUNUM(0,8,0)
-#define AMI_MENU_CUT FULLMENUNUM(1,0,0)
-#define AMI_MENU_COPY FULLMENUNUM(1,1,0)
-#define AMI_MENU_PASTE FULLMENUNUM(1,2,0)
-#define AMI_MENU_SELECTALL FULLMENUNUM(1,4,0)
-#define AMI_MENU_CLEAR FULLMENUNUM(1,5,0)
-#define AMI_MENU_UNDO FULLMENUNUM(1,8,0)
-#define AMI_MENU_REDO FULLMENUNUM(1,9,0)
-#define AMI_MENU_FIND FULLMENUNUM(2,0,0)
-#define AMI_MENU_FOREIMG FULLMENUNUM(2,8,0)
-#define AMI_MENU_BACKIMG FULLMENUNUM(2,8,1)
-#define AMI_MENU_JS FULLMENUNUM(2,9,0)
-
 struct gui_window;
 struct gui_window_2;
 
@@ -153,6 +135,11 @@ void ami_menu_refresh(struct gui_window_2 *gwin);
 void ami_menu_update_checked(struct gui_window_2 *gwin);
 void ami_menu_update_disabled(struct gui_window *g, struct hlcache_handle *c);
 void ami_menu_free(struct gui_window_2 *gwin);
+
+/**
+ * Set disabled state of a menu item
+ */
+void ami_menu_set_disabled(struct Window *win, struct Menu *menu, int item, bool disable);
 
 /**
  * Sets that an item linked to a toggle menu item has been changed.

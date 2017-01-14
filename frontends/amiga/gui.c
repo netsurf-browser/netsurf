@@ -1206,16 +1206,12 @@ static void ami_update_buttons(struct gui_window_2 *gwin)
 	if(!browser_window_reload_available(gwin->gw->bw))
 		reload=TRUE;
 
-	if(nsoption_bool(kiosk_mode) == false)
-	{
-		if(gwin->tabs <= 1)
-		{
+	if(nsoption_bool(kiosk_mode) == false) {
+		if(gwin->tabs <= 1) {
 			tabclose=TRUE;
-			OffMenu(gwin->win,AMI_MENU_CLOSETAB);
-		}
-		else
-		{
-			OnMenu(gwin->win,AMI_MENU_CLOSETAB);
+			ami_menu_set_disabled(gwin->win, gwin->imenu, M_CLOSETAB, true);
+		} else {
+			ami_menu_set_disabled(gwin->win, gwin->imenu, M_CLOSETAB, false);
 		}
 	}
 
@@ -5262,7 +5258,7 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 	g->c_h = height;
 
 	if((nsoption_bool(kiosk_mode) == false))
-		OnMenu(g->shared->win, AMI_MENU_PASTE);
+		ami_menu_set_disabled(g->shared->win, g->shared->imenu, M_PASTE, false);
 }
 
 static void gui_window_remove_caret(struct gui_window *g)
@@ -5271,7 +5267,7 @@ static void gui_window_remove_caret(struct gui_window *g)
 	if(g->c_h == 0) return;
 
 	if((nsoption_bool(kiosk_mode) == false))
-		OffMenu(g->shared->win, AMI_MENU_PASTE);
+		ami_menu_set_disabled(g->shared->win, g->shared->imenu, M_PASTE, true);
 
 	ami_do_redraw_limits(g, g->bw, false, g->c_x, g->c_y,
 		g->c_x + g->c_w + 1, g->c_y + g->c_h + 1);

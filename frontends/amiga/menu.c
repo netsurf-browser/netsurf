@@ -1175,6 +1175,120 @@ static nserror ami_menu_scan(struct ami_menu_data **md)
 	return ami_hotlist_scan((void *)md, AMI_MENU_HOTLIST, messages_get("HotlistMenu"), ami_menu_hotlist_add);
 }
 
+#ifdef __amigaos4__
+void ami_menu_set_disabled_mc(struct Window *win, struct Menu *menu, int item, bool disable)
+{
+	ULONG disable_state = MS_DISABLED;
+
+	if(disable == false) {
+		disable_state = 0;
+	}
+
+	IDoMethod(menu, MM_SETSTATE, 0, item, MS_DISABLED, disable_state);
+}
+#endif
+
+static ULONG ami_menu_number(int item)
+{
+	/* horrible, horrible, horrible */
+	ULONG menu_num;
+
+	switch(item) {
+		case M_SAVETXT:
+			menu_num = FULLMENUNUM(0,4,1);
+		break;
+
+		case M_SAVECOMP:
+			menu_num = FULLMENUNUM(0,4,2);
+		break;
+
+		case M_SAVEIFF:
+			menu_num = FULLMENUNUM(0,4,3);
+		break;
+#ifdef WITH_PDF_EXPORT:
+		case M_SAVEPDF:
+			menu_num = FULLMENUNUM(0,4,4);
+		break;
+#endif
+		case M_CLOSETAB:
+			menu_num = FULLMENUNUM(0,8,0);
+		break;
+
+		case M_CUT:
+			menu_num = FULLMENUNUM(1,0,0);
+		break;
+
+		case M_COPY:
+			menu_num = FULLMENUNUM(1,1,0);
+		break;
+
+		case M_PASTE:
+			menu_num = FULLMENUNUM(1,2,0);
+		break;
+
+		case M_SELALL:
+			menu_num = FULLMENUNUM(1,4,0);
+		break;
+
+		case M_CLEAR:
+			menu_num = FULLMENUNUM(1,5,0);
+		break;
+
+		case M_UNDO:
+			menu_num = FULLMENUNUM(1,8,0);
+		break;
+
+		case M_REDO:
+			menu_num = FULLMENUNUM(1,9,0);
+		break;
+
+		case M_FIND:
+			menu_num = FULLMENUNUM(2,0,0);
+		break;
+
+		case M_IMGFORE:
+			menu_num = FULLMENUNUM(2,8,0);
+		break;
+
+		case M_IMGBACK:
+			menu_num = FULLMENUNUM(2,8,1);
+		break;
+
+		case M_JS:
+			menu_num = FULLMENUNUM(2,9,0);
+		break;
+
+		default:
+			LOG("WARNING: Unrecognised menu item %d", item);
+			menu_num = 0;
+		break;
+	}
+
+	return menu_num;
+}
+
+static void ami_menu_set_disabled_gt(struct Window *win, struct Menu *menu, int item, bool disable)
+{
+	ULONG menu_num = ami_menu_number(item);
+
+	if(disable == false) {
+		OnMenu(win, menu_num);
+	} else {
+		OffMenu(win, menu_num);
+	}
+}
+
+void ami_menu_set_disabled(struct Window *win, struct Menu *menu, int item, bool disable)
+{
+	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
+#ifdef __amigaos4__
+		return ami_menu_set_disabled_mc(win, menu, item, disable);
+#endif	
+	} else {
+		return ami_menu_set_disabled_gt(win, menu, item, disable);
+	}
+}
+
 void ami_menu_update_checked(struct gui_window_2 *gwin)
 {
 	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
@@ -1187,26 +1301,26 @@ void ami_menu_update_checked(struct gui_window_2 *gwin)
 	GetAttr(WINDOW_MenuStrip, gwin->objects[OID_MAIN], (ULONG *)&menustrip);
 	if(!menustrip) return;
 	if(nsoption_bool(enable_javascript) == true) {
-		if((ItemAddress(menustrip, AMI_MENU_JS)->Flags & CHECKED) == 0)
-			ItemAddress(menustrip, AMI_MENU_JS)->Flags ^= CHECKED;
+		if((ItemAddress(menustrip, ami_menu_number(M_JS))->Flags & CHECKED) == 0)
+			ItemAddress(menustrip, ami_menu_number(M_JS))->Flags ^= CHECKED;
 	} else {
-		if(ItemAddress(menustrip, AMI_MENU_JS)->Flags & CHECKED)
-			ItemAddress(menustrip, AMI_MENU_JS)->Flags ^= CHECKED;
+		if(ItemAddress(menustrip, ami_menu_number(M_JS))->Flags & CHECKED)
+			ItemAddress(menustrip, ami_menu_number(M_JS))->Flags ^= CHECKED;
 	}
 	if(nsoption_bool(foreground_images) == true) {
-		if((ItemAddress(menustrip, AMI_MENU_FOREIMG)->Flags & CHECKED) == 0)
-			ItemAddress(menustrip, AMI_MENU_FOREIMG)->Flags ^= CHECKED;
+		if((ItemAddress(menustrip, ami_menu_number(M_IMGFORE))->Flags & CHECKED) == 0)
+			ItemAddress(menustrip, ami_menu_number(M_IMGFORE))->Flags ^= CHECKED;
 	} else {
-		if(ItemAddress(menustrip, AMI_MENU_FOREIMG)->Flags & CHECKED)
-			ItemAddress(menustrip, AMI_MENU_FOREIMG)->Flags ^= CHECKED;
+		if(ItemAddress(menustrip, ami_menu_number(M_IMGFORE))->Flags & CHECKED)
+			ItemAddress(menustrip, ami_menu_number(M_IMGFORE))->Flags ^= CHECKED;
 	}
 
 	if(nsoption_bool(background_images) == true) {
-		if((ItemAddress(menustrip, AMI_MENU_BACKIMG)->Flags & CHECKED) == 0)
-			ItemAddress(menustrip, AMI_MENU_BACKIMG)->Flags ^= CHECKED;
+		if((ItemAddress(menustrip, ami_menu_number(M_IMGBACK))->Flags & CHECKED) == 0)
+			ItemAddress(menustrip, ami_menu_number(M_IMGBACK))->Flags ^= CHECKED;
 	} else {
-		if(ItemAddress(menustrip, AMI_MENU_BACKIMG)->Flags & CHECKED)
-			ItemAddress(menustrip, AMI_MENU_BACKIMG)->Flags ^= CHECKED;
+		if(ItemAddress(menustrip, ami_menu_number(M_IMGBACK))->Flags & CHECKED)
+			ItemAddress(menustrip, ami_menu_number(M_IMGBACK))->Flags ^= CHECKED;
 	}
 
 	ResetMenuStrip(gwin->win, menustrip);
@@ -1220,10 +1334,10 @@ void ami_menu_update_disabled(struct gui_window *g, struct hlcache_handle *c)
 
 	if(content_get_type(c) <= CONTENT_CSS)
 	{
-		OnMenu(win,AMI_MENU_SAVEAS_TEXT);
-		OnMenu(win,AMI_MENU_SAVEAS_COMPLETE);
+		ami_menu_set_disabled(win, g->shared->imenu, M_SAVETXT, false);
+		ami_menu_set_disabled(win, g->shared->imenu, M_SAVECOMP, false);
 #ifdef WITH_PDF_EXPORT
-		OnMenu(win,AMI_MENU_SAVEAS_PDF);
+		ami_menu_set_disabled(win, g->shared->imenu, M_SAVEPDF, false);
 #endif
 #if 0
 		if(browser_window_get_editor_flags(g->bw) & BW_EDITOR_CAN_COPY) {
@@ -1244,28 +1358,29 @@ void ami_menu_update_disabled(struct gui_window *g, struct hlcache_handle *c)
 		else
 			OffMenu(win,AMI_MENU_PASTE);
 #else
-		OnMenu(win,AMI_MENU_CUT);
-		OnMenu(win,AMI_MENU_COPY);
-		OnMenu(win,AMI_MENU_PASTE);
-		OnMenu(win,AMI_MENU_CLEAR);
+		ami_menu_set_disabled(win, g->shared->imenu, M_CUT, false);
+		ami_menu_set_disabled(win, g->shared->imenu, M_COPY, false);
+		ami_menu_set_disabled(win, g->shared->imenu, M_PASTE, false);
+		ami_menu_set_disabled(win, g->shared->imenu, M_CLEAR, false);
 #endif
-		OnMenu(win,AMI_MENU_SELECTALL);
-		OnMenu(win,AMI_MENU_FIND);
-		OffMenu(win,AMI_MENU_SAVEAS_IFF);
+		ami_menu_set_disabled(win, g->shared->imenu, M_SELALL, false);
+		ami_menu_set_disabled(win, g->shared->imenu, M_FIND, false);
+		ami_menu_set_disabled(win, g->shared->imenu, M_SAVEIFF, true);
 	}
 	else
 	{
-		OffMenu(win,AMI_MENU_CUT);
-		OffMenu(win,AMI_MENU_PASTE);
-		OffMenu(win,AMI_MENU_CLEAR);
+		ami_menu_set_disabled(win, g->shared->imenu, M_CUT, true);
+		ami_menu_set_disabled(win, g->shared->imenu, M_PASTE, true);
+		ami_menu_set_disabled(win, g->shared->imenu, M_CLEAR, true);
 
-		OffMenu(win,AMI_MENU_SAVEAS_TEXT);
-		OffMenu(win,AMI_MENU_SAVEAS_COMPLETE);
+		ami_menu_set_disabled(win, g->shared->imenu, M_SAVETXT, true);
+		ami_menu_set_disabled(win, g->shared->imenu, M_SAVECOMP, true);
 #ifdef WITH_PDF_EXPORT
-		OffMenu(win,AMI_MENU_SAVEAS_PDF);
+		ami_menu_set_disabled(win, g->shared->imenu, M_SAVEPDF, true);
 #endif
-		OffMenu(win,AMI_MENU_SELECTALL);
-		OffMenu(win,AMI_MENU_FIND);
+
+		ami_menu_set_disabled(win, g->shared->imenu, M_SELALL, true);
+		ami_menu_set_disabled(win, g->shared->imenu, M_FIND, true);
 
 #ifdef WITH_NS_SVG
 		if(content_get_bitmap(c) || (ami_mime_compare(c, "svg") == true))
@@ -1273,13 +1388,13 @@ void ami_menu_update_disabled(struct gui_window *g, struct hlcache_handle *c)
 		if(content_get_bitmap(c))
 #endif
 		{
-			OnMenu(win,AMI_MENU_COPY);
-			OnMenu(win,AMI_MENU_SAVEAS_IFF);
+			ami_menu_set_disabled(win, g->shared->imenu, M_COPY, false);
+			ami_menu_set_disabled(win, g->shared->imenu, M_SAVEIFF, false);
 		}
 		else
 		{
-			OffMenu(win,AMI_MENU_COPY);
-			OffMenu(win,AMI_MENU_SAVEAS_IFF);
+			ami_menu_set_disabled(win, g->shared->imenu, M_COPY, true);
+			ami_menu_set_disabled(win, g->shared->imenu, M_SAVEIFF, true);
 		}
 	}
 }

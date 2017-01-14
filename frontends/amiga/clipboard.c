@@ -89,11 +89,11 @@ void gui_start_selection(struct gui_window *g)
 	if(!g->shared->win) return;
 	if(nsoption_bool(kiosk_mode) == true) return;
 
-	OnMenu(g->shared->win, AMI_MENU_CLEAR);
-	OnMenu(g->shared->win, AMI_MENU_COPY);
+	ami_menu_set_disabled(g->shared->win, g->shared->imenu, M_COPY, false);
+	ami_menu_set_disabled(g->shared->win, g->shared->imenu, M_CLEAR, false);
 
 	if (browser_window_get_editor_flags(g->bw) & BW_EDITOR_CAN_CUT)
-		OnMenu(g->shared->win, AMI_MENU_CUT);
+		ami_menu_set_disabled(g->shared->win, g->shared->imenu, M_CUT, false);
 }
 
 static char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size_t *text_length)
