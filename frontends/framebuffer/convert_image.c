@@ -262,7 +262,7 @@ main(int argc, char **argv)
 	fprintf(f, "#include <stdint.h>\n\n");
 	fprintf(f, "#include <stdbool.h>\n\n");
 	fprintf(f, "#include <libnsfb.h>\n\n");
-	fprintf(f, "#include \"desktop/plot_style.h\"\n");
+	fprintf(f, "#include \"netsurf/plot_style.h\"\n");
 	fprintf(f, "#include \"framebuffer/gui.h\"\n");
 	fprintf(f, "#include \"framebuffer/fbtk.h\"\n\n");
 

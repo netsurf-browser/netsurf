@@ -71,10 +71,10 @@
 #include "utils/errors.h"
 #include "netsurf/bitmap.h"
 #include "content/content.h"
+#include "netsurf/plotters.h"
 
 #include "desktop/gui_internal.h"
 #include "desktop/knockout.h"
-#include "netsurf/plotters.h"
 
 /* Define to enable knockout debug */
 #undef KNOCKOUT_DEBUG

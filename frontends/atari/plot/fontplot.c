@@ -22,7 +22,7 @@
 #include <mt_gem.h>
 
 #include "netsurf/mouse.h"
-#include "desktop/plot_style.h"
+#include "netsurf/plot_style.h"
 
 #include "atari/bitmap.h"
 #include "atari/plot/fontplot.h"

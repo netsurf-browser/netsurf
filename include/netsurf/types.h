@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 François Revol <mmu_man@users.sourceforge.net>
+ * Copyright 2017 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -18,20 +18,20 @@
 
 /**
  * \file
- * Beos font layout handling interface.
+ *
+ * NetSurf types.
+ *
+ * These are convenience types used throughout the browser.
  */
 
-#ifndef NS_BEOS_FONT_H
-#define NS_BEOS_FONT_H
+#ifndef NETSURF_TYPES_H
+#define NETSURF_TYPES_H
 
-#include "netsurf/plot_style.h"
+#include <stdint.h>
 
-bool nsfont_paint(const plot_font_style_t *fstyle,
-		const char *string, size_t length,
-		int x, int y);
-
-void nsbeos_style_to_font(BFont &font, const struct plot_font_style *fstyle);
-
-extern struct gui_layout_table *beos_layout_table;
+/**
+ * Colour type: XBGR
+ */
+typedef uint32_t colour;
 
 #endif

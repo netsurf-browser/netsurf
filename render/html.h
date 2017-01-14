@@ -30,10 +30,10 @@
 #include <dom/dom.h>
 #include <dom/bindings/hubbub/parser.h>
 
+#include "netsurf/types.h"
 #include "netsurf/content_type.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
-#include "desktop/plot_style.h"
 #include "desktop/frame_types.h"
 
 struct fetch_multipart_data;
@@ -52,6 +52,7 @@ struct scrollbar_msg_data;
 struct search_context;
 struct selection;
 struct nsurl;
+struct plot_font_style;
 
 /**
  * Container for stylesheets used by an HTML document
@@ -158,7 +159,7 @@ void html_overflow_scroll_drag_end(struct scrollbar *scrollbar,
 
 bool text_redraw(const char *utf8_text, size_t utf8_len,
 		size_t offset, int space,
-		const plot_font_style_t *fstyle,
+		const struct plot_font_style *fstyle,
 		int x, int y,
 		const struct rect *clip,
 		int height,

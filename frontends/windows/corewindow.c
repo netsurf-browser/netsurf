@@ -43,7 +43,6 @@
 #include "utils/utf8.h"
 #include "netsurf/keypress.h"
 #include "netsurf/mouse.h"
-#include "desktop/plot_style.h"
 
 #include "windows/windbg.h"
 #include "windows/corewindow.h"

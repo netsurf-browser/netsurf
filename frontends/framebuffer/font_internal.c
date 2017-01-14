@@ -26,6 +26,7 @@
 #include "utils/utf8.h"
 #include "netsurf/utf8.h"
 #include "netsurf/layout.h"
+#include "netsurf/plot_style.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/font.h"

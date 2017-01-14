@@ -27,6 +27,8 @@
 #ifndef _NETSURF_RENDER_FONT_H_
 #define _NETSURF_RENDER_FONT_H_
 
+struct plot_font_style;
+
 /**
  * Populate a font style using data from a computed CSS style
  *
@@ -34,6 +36,6 @@
  * \param fstyle  Font style to populate
  */
 void font_plot_style_from_css(const css_computed_style *css,
-			      plot_font_style_t *fstyle);
+			      struct plot_font_style *fstyle);
 
 #endif

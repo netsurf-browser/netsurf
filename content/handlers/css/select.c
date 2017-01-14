@@ -24,6 +24,7 @@
 #include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/nsurl.h"
+#include "netsurf/plot_style.h"
 #include "netsurf/url_db.h"
 #include "desktop/system_colour.h"
 

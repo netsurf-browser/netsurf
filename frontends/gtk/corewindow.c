@@ -42,9 +42,9 @@
 #include "utils/utils.h"
 #include "utils/messages.h"
 #include "utils/utf8.h"
+#include "netsurf/types.h"
 #include "netsurf/keypress.h"
 #include "netsurf/mouse.h"
-#include "desktop/plot_style.h"
 
 #include "gtk/compat.h"
 #include "gtk/gui.h" /* just for gtk_gui_gdkkey_to_nskey */

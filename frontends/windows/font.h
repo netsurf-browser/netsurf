@@ -25,6 +25,8 @@
 #ifndef NETSURF_WINDOWS_FONT_H
 #define NETSURF_WINDOWS_FONT_H
 
+struct plot_font_style;
+
 extern HWND font_hwnd;
 
 struct font_desc {
@@ -47,7 +49,7 @@ extern nserror utf8_to_font_encoding(const struct font_desc* font,
  * \param style The font style.
  * \return The win32 font handle
  */
-HFONT get_font(const plot_font_style_t *style);
+HFONT get_font(const struct plot_font_style *style);
 
 #endif /* NETSURF_WINDOWS_FONT_H */
 

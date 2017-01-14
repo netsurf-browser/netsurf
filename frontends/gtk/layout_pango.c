@@ -31,6 +31,7 @@
 #include "utils/log.h"
 #include "utils/nsoption.h"
 #include "netsurf/layout.h"
+#include "netsurf/plot_style.h"
 
 #include "gtk/layout_pango.h"
 #include "gtk/plotters.h"

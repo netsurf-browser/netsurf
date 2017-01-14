@@ -28,7 +28,7 @@
 #include <stddef.h>
 
 #include "utils/errors.h"
-#include "desktop/plot_style.h"
+#include "netsurf/plot_style.h"
 
 typedef struct nsnsclipboard_styles {
 	size_t start;			/**< Start of run */

@@ -35,6 +35,7 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "netsurf/layout.h"
+#include "netsurf/plot_style.h"
 
 #include "riscos/gui.h"
 #include "riscos/font.h"
