@@ -123,7 +123,7 @@ void ami_menu_free_glyphs(void);
 
 /* generic menu alloc/free/layout */
 void ami_menu_alloc_item(struct ami_menu_data **md, int num, UBYTE type,
-			const char *restrict label, char key, const char *restrict icon,
+			const char *restrict label, const char *restrict key, const char *restrict icon,
 			void *restrict func, void *restrict hookdata, UWORD flags);
 struct Menu *ami_menu_layout(struct ami_menu_data **md, int max);
 void ami_menu_free_menu(struct ami_menu_data **md, int max, struct Menu *imenu);
