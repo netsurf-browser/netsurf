@@ -636,6 +636,7 @@ void ami_menu_alloc_item(struct ami_menu_data **md, int num, UBYTE type,
 
 	if((label == NM_BARLABEL) || (strcmp(label, "--") == 0)) {
 		md[num]->menulab = NM_BARLABEL;
+		icon = NULL;
 	} else { /* horrid non-generic stuff */
 		if((num >= AMI_MENU_HOTLIST) && (num <= AMI_MENU_HOTLIST_MAX)) {
 			utf8_from_local_encoding(label,
@@ -890,7 +891,6 @@ static int ami_menu_layout_mc_recursive(Object *menu_parent, struct ami_menu_dat
 	Object *menu_item = menu_parent;
 	
 	for(j = i; j < max; j++) {
-		LOG("%d/%d", j, max);
 		/* skip empty entries */
 		if(md[j] == NULL) continue;
 		if(md[j]->menutype == NM_IGNORE) continue;
@@ -924,14 +924,11 @@ static int ami_menu_layout_mc_recursive(Object *menu_parent, struct ami_menu_dat
 					TAG_DONE);
 			}
 
-			LOG("Adding item %p ID %d (%s) to parent %p", menu_item, j, md[j]->menulab, menu_parent);
 			IDoMethod(menu_parent, OM_ADDMEMBER, menu_item);
 			continue;
 		} else if (md[j]->menutype > level) {
-LOG("rec");
 			j = ami_menu_layout_mc_recursive(menu_item, md, md[j]->menutype, j, max);
 		} else {
-LOG("brk");
 			break;
 		}
 	}
@@ -942,7 +939,7 @@ static struct Menu *ami_menu_layout_mc(struct ami_menu_data **md, int max)
 {
 	Object *menu_root = NewObject(NULL, "menuclass",
 		MA_Type, T_ROOT,
-		MA_FreeImage, FALSE,
+		MA_EmbeddedKey, FALSE,
 		TAG_DONE);
 
 	ami_menu_layout_mc_recursive(menu_root, md, NM_TITLE, 0, max);
@@ -1109,7 +1106,7 @@ void ami_menu_free_menu(struct ami_menu_data **md, int max, struct Menu *imenu)
 struct Menu *ami_menu_create(struct gui_window_2 *gwin)
 {
 	ami_init_menulabs(gwin->menu_data);
-	ami_menu_scan(gwin->menu_data); //\todo this needs to be MenuClass created
+	ami_menu_scan(gwin->menu_data);
 	ami_menu_arexx_scan(gwin->menu_data);
 	gwin->imenu = ami_menu_layout(gwin->menu_data, AMI_MENU_AREXX_MAX);
 
