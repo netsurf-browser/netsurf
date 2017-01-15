@@ -80,8 +80,11 @@
 #include "amiga/utf8.h"
 #include "amiga/schedule.h"
 
+#ifdef __amigaos4__
 static struct Menu *restrict gui_menu = NULL;
 static int gui_menu_count = 0;
+struct ami_menu_data *gui_menu_data[AMI_MENU_AREXX_MAX + 1];
+#endif
 
 static bool ami_menu_check_toggled = false;
 static bool menu_quit = false;
@@ -900,6 +903,12 @@ static bool ami_menu_hotlist_add(void *userdata, int level, int item, const char
 
 static nserror ami_menu_scan(struct ami_menu_data **md)
 {
+	ami_menu_alloc_item(md, M_HLADD,    NM_ITEM, "HotlistAdd",   "B", "TBImages:list_favouriteadd",
+			ami_menu_item_hotlist_add, NULL, 0);
+	ami_menu_alloc_item(md, M_HLSHOW,   NM_ITEM,"HotlistShowNS", "H", "TBImages:list_favourite",
+			ami_menu_item_hotlist_show, NULL, 0);
+	ami_menu_alloc_item(md, M_BAR_H1,   NM_ITEM, NM_BARLABEL,    NULL, NULL, NULL, NULL, 0);
+
 	return ami_hotlist_scan((void *)md, AMI_MENU_HOTLIST, messages_get("HotlistMenu"), ami_menu_hotlist_add);
 }
 
@@ -1002,11 +1011,7 @@ static void ami_init_menulabs(struct ami_menu_data **md)
 			ami_menu_item_browser_redraw, NULL, 0);
 
 	ami_menu_alloc_item(md, M_HOTLIST, NM_TITLE, "Hotlist",      NULL, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_HLADD,    NM_ITEM, "HotlistAdd",   "B", "TBImages:list_favouriteadd",
-			ami_menu_item_hotlist_add, NULL, 0);
-	ami_menu_alloc_item(md, M_HLSHOW,   NM_ITEM,"HotlistShowNS", "H", "TBImages:list_favourite",
-			ami_menu_item_hotlist_show, NULL, 0);
-	ami_menu_alloc_item(md, M_BAR_H1,   NM_ITEM, NM_BARLABEL,    NULL, NULL, NULL, NULL, 0);
+	/* see ami_menu_scan for the rest of this menu */
 
 	ami_menu_alloc_item(md, M_PREFS,   NM_TITLE, "Settings",     NULL, NULL, NULL, NULL, 0);
 	ami_menu_alloc_item(md, M_PREDIT,   NM_ITEM, "SettingsEdit", NULL, "TBImages:list_prefs",
@@ -1027,21 +1032,25 @@ static void ami_init_menulabs(struct ami_menu_data **md)
 struct Menu *ami_gui_menu_create(struct gui_window_2 *gwin)
 {
 	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
+#ifdef __amigaos4__
 		if(gui_menu != NULL) {
 			gwin->imenu = gui_menu;
 			gui_menu_count++;
 			return gwin->imenu;
 		}
-	}
+		ami_init_menulabs(gui_menu_data);
+		ami_menu_scan(gui_menu_data);
+		ami_menu_arexx_scan(gui_menu_data);
+		gwin->imenu = ami_menu_layout(gui_menu_data, AMI_MENU_AREXX_MAX);
 
-	ami_init_menulabs(gwin->menu_data);
-	ami_menu_scan(gwin->menu_data);
-	ami_menu_arexx_scan(gwin->menu_data);
-	gwin->imenu = ami_menu_layout(gwin->menu_data, AMI_MENU_AREXX_MAX);
-
-	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
 		gui_menu = gwin->imenu;
 		gui_menu_count++;
+#endif
+	} else {
+		ami_init_menulabs(gwin->menu_data);
+		ami_menu_scan(gwin->menu_data);
+		ami_menu_arexx_scan(gwin->menu_data);
+		gwin->imenu = ami_menu_layout(gwin->menu_data, AMI_MENU_AREXX_MAX);
 	}
 
 	return gwin->imenu;
@@ -1081,14 +1090,16 @@ static void ami_free_menulabs(struct ami_menu_data **md)
 void ami_gui_menu_free(struct gui_window_2 *gwin)
 {
 	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
+#ifdef __amigaos4__
 		gui_menu_count--;
 
 		if(gui_menu_count == 0) {
-			ami_free_menulabs(gwin->menu_data);
+			ami_free_menulabs(gui_menu_data);
 			// if we detach our menu from the window we need to do this manually
 			DisposeObject((Object *)gui_menu);
 			gui_menu = NULL;
 		}
+#endif
 	} else {
 		ami_free_menulabs(gwin->menu_data);
 		FreeMenus(gwin->imenu);
@@ -1098,5 +1109,12 @@ void ami_gui_menu_free(struct gui_window_2 *gwin)
 bool ami_gui_menu_quit_selected(void)
 {
 	return menu_quit;
+}
+
+void ami_gui_menu_refresh_hotlist(void)
+{
+#ifdef __amigaos4__
+	ami_menu_refresh(gui_menu, gui_menu_data, M_HOTLIST, AMI_MENU_HOTLIST_MAX, ami_menu_scan);
+#endif
 }
 

@@ -142,6 +142,10 @@ void ami_gui_menu_set_checked(struct Menu *menu, int item, bool check);
  */
 void ami_gui_menu_set_disabled(struct Window *win, struct Menu *menu, int item, bool disable);
 
+/**
+ * Refresh the Hotlist menu
+ */
+void ami_gui_menu_refresh_hotlist(void);
 
 /**
  * Gets if NetSurf has been quit from the menu

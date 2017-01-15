@@ -3327,6 +3327,8 @@ void ami_gui_hotlist_update_all(void)
 
 	if(IsMinListEmpty(window_list))	return;
 
+	ami_gui_menu_refresh_hotlist();
+
 	node = (struct nsObject *)GetHead((struct List *)window_list);
 
 	do {
@@ -3336,7 +3338,6 @@ void ami_gui_hotlist_update_all(void)
 		if(node->Type == AMINS_WINDOW)
 		{
 			ami_gui_hotlist_toolbar_update(gwin);
-			//ami_gui_menu_refresh_hotlist(gwin);
 		}
 	} while((node = nnode));
 }

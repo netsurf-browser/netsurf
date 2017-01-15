@@ -80,7 +80,7 @@ bool ami_menu_get_selected(struct Menu *menu, struct IntuiMessage *msg)
 }
 
 /* menu creation code */
-static void ami_menu_free_lab_item(struct ami_menu_data **md, int i)
+void ami_menu_free_lab_item(struct ami_menu_data **md, int i)
 {
 	if(md[i] == NULL) return;
 	if(md[i]->menulab &&
@@ -433,5 +433,40 @@ void ami_menu_free_menu(struct ami_menu_data **md, int max, struct Menu *imenu)
 	} else {
 		FreeMenus(imenu);
 	}
+}
+
+void ami_menu_refresh(struct Menu *menu, struct ami_menu_data **md, int menu_item, int max,
+	nserror (*cb)(struct ami_menu_data **md))
+{
+#ifdef __amigaos4__
+	Object *restrict obj;
+	Object *restrict menu_item_obj;
+	int i;
+
+	if(menu == NULL) return;
+
+	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
+		/* find the address of the menu */
+		menu_item_obj = (Object *)IDoMethod((Object *)menu, MM_FINDID, 0, menu_item);
+
+		/* remove all children */
+		while((obj = (Object *)IDoMethod(menu_item_obj, MM_NEXTCHILD, 0, NULL)) != NULL) {
+			IDoMethod(menu_item_obj, OM_REMMEMBER, obj);
+			/* do we need to disposeobject? */
+		}
+
+		/* free associated data */
+		for(i = (menu_item + 1); i <= max; i++) {
+			if(md[i] == NULL) continue;
+			ami_menu_free_lab_item(md, i);
+		}
+
+		/* get current data */
+		cb(md);
+
+		/* re-add items to menu */
+		ami_menu_layout_mc_recursive(menu_item_obj, md, NM_ITEM, (menu_item + 1), max);
+	}
+#endif
 }
 
