@@ -28,7 +28,7 @@
 #include "netsurf/window.h"
 #include "netsurf/mouse.h"
 
-#include "amiga/menu.h"
+#include "amiga/gui_menu.h"
 #include "amiga/object.h"
 #include "amiga/os3support.h"
 
@@ -134,7 +134,7 @@ struct gui_window_2 {
 	int temp;
 	bool redraw_scroll;
 	bool new_content;
-	struct ami_menu_data *menu_data[AMI_MENU_AREXX_MAX + 1];
+	struct ami_menu_data *menu_data[AMI_MENU_AREXX_MAX + 1]; /* only for GadTools menus */
 	ULONG hotlist_items;
 	Object *restrict hotlist_toolbar_lab[AMI_GUI_TOOLBAR_MAX];
 	struct List hotlist_toolbar_list;

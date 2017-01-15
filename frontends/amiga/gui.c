@@ -1206,16 +1206,12 @@ static void ami_update_buttons(struct gui_window_2 *gwin)
 	if(!browser_window_reload_available(gwin->gw->bw))
 		reload=TRUE;
 
-	if(nsoption_bool(kiosk_mode) == false)
-	{
-		if(gwin->tabs <= 1)
-		{
+	if(nsoption_bool(kiosk_mode) == false) {
+		if(gwin->tabs <= 1) {
 			tabclose=TRUE;
-			OffMenu(gwin->win,AMI_MENU_CLOSETAB);
-		}
-		else
-		{
-			OnMenu(gwin->win,AMI_MENU_CLOSETAB);
+			ami_gui_menu_set_disabled(gwin->win, gwin->imenu, M_CLOSETAB, true);
+		} else {
+			ami_gui_menu_set_disabled(gwin->win, gwin->imenu, M_CLOSETAB, false);
 		}
 	}
 
@@ -1641,7 +1637,7 @@ static void ami_gui_menu_update_all(void)
 
 		if(node->Type == AMINS_WINDOW)
 		{
-			ami_menu_update_checked(gwin);
+			ami_gui_menu_update_checked(gwin);
 		}
 	} while((node = nnode));
 }
@@ -1968,11 +1964,11 @@ static BOOL ami_handle_msg(void)
 		}
 	} while((node = nnode));
 
-	if(ami_menu_quit_selected() == true) {
+	if(ami_gui_menu_quit_selected() == true) {
 		ami_quit_netsurf();
 	}
 	
-	if(ami_menu_get_check_toggled() == true) {
+	if(ami_gui_menu_get_check_toggled() == true) {
 		ami_gui_menu_update_all();
 	}
 
@@ -2907,7 +2903,7 @@ void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 
 	ami_plot_release_pens(gwin->shared_pens);
 	ami_update_buttons(gwin);
-	ami_menu_update_disabled(gwin->gw, browser_window_get_content(gwin->gw->bw));
+	ami_gui_menu_update_disabled(gwin->gw, browser_window_get_content(gwin->gw->bw));
 
 	if(redraw)
 	{
@@ -3331,16 +3327,16 @@ void ami_gui_hotlist_update_all(void)
 
 	if(IsMinListEmpty(window_list))	return;
 
+	//ami_gui_menu_refresh_hotlist(); /**\todo disabled as menuclass isn't updating correctly */
+
 	node = (struct nsObject *)GetHead((struct List *)window_list);
 
 	do {
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
 		gwin = node->objstruct;
 
-		if(node->Type == AMINS_WINDOW)
-		{
+		if(node->Type == AMINS_WINDOW) {
 			ami_gui_hotlist_toolbar_update(gwin);
-			ami_menu_refresh(gwin);
 		}
 	} while((node = nnode));
 }
@@ -3989,7 +3985,7 @@ gui_window_create(struct browser_window *bw,
 				iconifygadget = TRUE;
 
 		LOG("Creating menu");
-		struct Menu *menu = ami_menu_create(g->shared);
+		struct Menu *menu = ami_gui_menu_create(g->shared);
 
 		NewList(&g->shared->tab_list);
 		g->tab_node = AllocClickTabNode(TNA_Text,messages_get("NetSurf"),
@@ -4607,8 +4603,7 @@ static void gui_window_destroy(struct gui_window *g)
 	DisposeObject((Object *)g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_BACK]);
 	DisposeObject((Object *)g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_FORWARD]);
 	ami_ctxmenu_release_hook(g->shared->ctxmenu_hook);
-	ami_free_menulabs(g->shared->menu_data);
-	ami_menu_free(g->shared);
+	ami_gui_menu_free(g->shared);
 
 	free(g->shared->wintitle);
 	ami_utf8_free(g->shared->status);
@@ -5262,7 +5257,7 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 	g->c_h = height;
 
 	if((nsoption_bool(kiosk_mode) == false))
-		OnMenu(g->shared->win, AMI_MENU_PASTE);
+		ami_gui_menu_set_disabled(g->shared->win, g->shared->imenu, M_PASTE, false);
 }
 
 static void gui_window_remove_caret(struct gui_window *g)
@@ -5271,7 +5266,7 @@ static void gui_window_remove_caret(struct gui_window *g)
 	if(g->c_h == 0) return;
 
 	if((nsoption_bool(kiosk_mode) == false))
-		OffMenu(g->shared->win, AMI_MENU_PASTE);
+		ami_gui_menu_set_disabled(g->shared->win, g->shared->imenu, M_PASTE, true);
 
 	ami_do_redraw_limits(g, g->bw, false, g->c_x, g->c_y,
 		g->c_x + g->c_w + 1, g->c_y + g->c_h + 1);
@@ -5295,7 +5290,7 @@ static void gui_window_new_content(struct gui_window *g)
 	g->shared->oldv = 0;
 	g->favicon = NULL;
 	ami_plot_release_pens(g->shared->shared_pens);
-	ami_menu_update_disabled(g, c);
+	ami_gui_menu_update_disabled(g, c);
 	ami_gui_update_hotlist_button(g->shared);
 	ami_gui_scroller_update(g->shared);
 }

@@ -21,18 +21,14 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <proto/dos.h>
-#include <proto/asl.h>
-#include <proto/exec.h>
 #include <proto/gadtools.h>
+#include <proto/graphics.h>
 #include <proto/intuition.h>
-#include <proto/utility.h>
-#ifdef __amigaos4__
-#include <dos/anchorpath.h>
-#include <dos/obsolete.h> /* Needed for ExAll() */
-#endif
 
 #include <libraries/gadtools.h>
+#ifdef __amigaos4__
+#include <intuition/menuclass.h>
+#endif
 
 #include <classes/window.h>
 #include <proto/label.h>
@@ -42,41 +38,13 @@
 
 #include <reaction/reaction_macros.h>
 
-#include "utils/nsoption.h"
-#include "utils/messages.h"
 #include "utils/log.h"
-#include "utils/utils.h"
-#include "utils/nsurl.h"
-#include "netsurf/browser_window.h"
-#include "netsurf/mouse.h"
-#include "netsurf/window.h"
-#include "netsurf/content.h"
-#include "netsurf/keypress.h"
-#include "desktop/hotlist.h"
-#include "desktop/version.h"
+#include "utils/messages.h"
 
-#include "amiga/arexx.h"
-#include "amiga/bitmap.h"
-#include "amiga/clipboard.h"
-#include "amiga/cookies.h"
-#include "amiga/file.h"
-#include "amiga/filetype.h"
 #include "amiga/gui.h"
-#include "amiga/gui_options.h"
-#include "amiga/history.h"
-#include "amiga/history_local.h"
-#include "amiga/hotlist.h"
 #include "amiga/libs.h"
 #include "amiga/menu.h"
-#include "amiga/misc.h"
-#include "amiga/nsoption.h"
-#include "amiga/print.h"
-#include "amiga/search.h"
-#include "amiga/theme.h"
 #include "amiga/utf8.h"
-#include "amiga/schedule.h"
-
-#define NSA_MAX_HOTLIST_MENU_LEN 100
 
 enum {
 	NSA_GLYPH_SUBMENU,
@@ -86,518 +54,68 @@ enum {
 	NSA_GLYPH_MAX
 };
 
-struct ami_menu_data {
-	char *restrict menulab;
-	Object *restrict menuobj;
-	char menukey;
-	char *restrict menuicon;
-	struct Hook menu_hook;
-	UBYTE menutype;
-	UWORD flags;
-};
+#define NSA_MAX_HOTLIST_MENU_LEN 100
 
-static bool menu_quit = false;
-static bool ami_menu_check_toggled = false;
 static Object *restrict menu_glyph[NSA_GLYPH_MAX];
 static int menu_glyph_width[NSA_GLYPH_MAX];
 static bool menu_glyphs_loaded = false;
 
-const char * const netsurf_version;
-const char * const verdate;
-
-static nserror ami_menu_scan(struct ami_menu_data **md);
-void ami_menu_arexx_scan(struct ami_menu_data **md);
-
-void ami_menu_set_check_toggled(void)
+bool ami_menu_get_selected(struct Menu *menu, struct IntuiMessage *msg)
 {
-	ami_menu_check_toggled = true;
-}
+	bool checked = false;
 
-bool ami_menu_get_check_toggled(void)
-{
-	bool check_toggled = ami_menu_check_toggled;
-	ami_menu_check_toggled = false;
-	return check_toggled;
-}
-
-bool ami_menu_quit_selected(void)
-{
-	return menu_quit;
-}
-
-/*
- * The below functions are called automatically by window.class when menu items are selected.
- */
-
-HOOKF(void, ami_menu_item_project_newwin, APTR, window, struct IntuiMessage *)
-{
-	nsurl *url;
-	nserror error;
-
-	error = nsurl_create(nsoption_charp(homepage_url), &url);
-	if (error == NSERROR_OK) {
-		error = browser_window_create(BW_CREATE_HISTORY,
-					      url,
-					      NULL,
-					      NULL,
-					      NULL);
-		nsurl_unref(url);
-	}
-	if (error != NSERROR_OK) {
-		amiga_warn_user(messages_get_errorcode(error), 0);
-	}
-}
-
-HOOKF(void, ami_menu_item_project_newtab, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-	ami_gui_new_blank_tab(gwin);
-}
-
-HOOKF(void, ami_menu_item_project_open, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_file_open(gwin);
-}
-
-HOOKF(void, ami_menu_item_project_save, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	ULONG type = (ULONG)hook->h_Data;
-
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_file_save_req(type, gwin, browser_window_get_content(gwin->gw->bw));
-}
-
-HOOKF(void, ami_menu_item_project_closetab, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	browser_window_destroy(gwin->gw->bw);
-}
-
-HOOKF(void, ami_menu_item_project_closewin, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	gwin->closed = true;
-}
-
-HOOKF(void, ami_menu_item_project_print, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
-	ami_print_ui(browser_window_get_content(gwin->gw->bw));
-	ami_reset_pointer(gwin);
-}
-
-HOOKF(void, ami_menu_item_project_about, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	char *temp, *temp2;
-	int sel;
-	nsurl *url = NULL;
-	nserror error = NSERROR_OK;
-
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
-
-	temp = ASPrintf("%s|%s|%s", messages_get("OK"),
-								messages_get("HelpCredits"),
-								messages_get("HelpLicence"));
-
-	temp2 = ami_utf8_easy(temp);
-	FreeVec(temp);
+	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
 #ifdef __amigaos4__
-	sel = TimedDosRequesterTags(TDR_ImageType,TDRIMAGE_INFO,
-				TDR_TitleString, messages_get("NetSurf"),
-				TDR_Window, gwin->win,
-				TDR_GadgetString, temp2,
-				TDR_FormatString,"NetSurf %s\nBuild date %s\n\nhttp://www.netsurf-browser.org",
-				TDR_Arg1,netsurf_version,
-				TDR_Arg2,verdate,
-				TAG_DONE);
-#else
-	struct EasyStruct about_req = {
-		sizeof(struct EasyStruct),
-		0,
-		"NetSurf",
-		"NetSurf %s\nBuild date %s\n\nhttp://www.netsurf-browser.org",
-		temp2,
-	};
+		ULONG state;
+		struct ExtIntuiMessage *emsg = (struct ExtIntuiMessage *)msg;
 
-	sel = EasyRequest(gwin->win, &about_req, NULL, netsurf_version, verdate);
-#endif
-	free(temp2);
-
-	if(sel == 2) {
-		error = nsurl_create("about:credits", &url);
-	} else if(sel == 0) {
-		error = nsurl_create("about:licence", &url);
+		state = IDoMethod((Object *)menu, MM_GETSTATE, 0, emsg->eim_LongCode, MS_CHECKED);
+		if(state & MS_CHECKED) checked = true;
+#endif	
+	} else {
+		if(ItemAddress(menu, msg->Code)->Flags & CHECKED) checked = true;
 	}
 
-	if(url) {
-		if (error == NSERROR_OK) {
-			error = browser_window_create(BW_CREATE_HISTORY,
-							  url,
-							  NULL,
-							  NULL,
-							  NULL);
-			nsurl_unref(url);
-		}
-		if (error != NSERROR_OK) {
-			amiga_warn_user(messages_get_errorcode(error), 0);
-		}
-	}
-
-	ami_reset_pointer(gwin);
+	return checked;
 }
-
-HOOKF(void, ami_menu_item_project_quit, APTR, window, struct IntuiMessage *)
-{
-	menu_quit = true;
-}
-
-HOOKF(void, ami_menu_item_edit_cut, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	browser_window_key_press(gwin->gw->bw, NS_KEY_CUT_SELECTION);
-}
-
-HOOKF(void, ami_menu_item_edit_copy, APTR, window, struct IntuiMessage *)
-{
-	struct bitmap *bm;
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	if(browser_window_can_select(gwin->gw->bw)) {
-		browser_window_key_press(gwin->gw->bw, NS_KEY_COPY_SELECTION);
-		browser_window_key_press(gwin->gw->bw, NS_KEY_CLEAR_SELECTION);
-	}
-	else if((bm = content_get_bitmap(browser_window_get_content(gwin->gw->bw)))) {
-		/** @todo It should be checked that the lifetime of
-		 * the objects containing the values returned (and the
-		 * constness cast away) is safe.
-		 */
-		ami_bitmap_set_url(bm, browser_window_get_url(gwin->gw->bw));
-		ami_bitmap_set_title(bm, browser_window_get_title(gwin->gw->bw));
-		ami_easy_clipboard_bitmap(bm);
-	}
-#ifdef WITH_NS_SVG
-	else if(ami_mime_compare(browser_window_get_content(gwin->gw->bw), "svg") == true) {
-		ami_easy_clipboard_svg(browser_window_get_content(gwin->gw->bw));
-	}
-#endif
-}
-
-HOOKF(void, ami_menu_item_edit_paste, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	browser_window_key_press(gwin->gw->bw, NS_KEY_PASTE);
-}
-
-HOOKF(void, ami_menu_item_edit_selectall, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	browser_window_key_press(gwin->gw->bw, NS_KEY_SELECT_ALL);
-	gui_start_selection(gwin->gw);
-}
-
-HOOKF(void, ami_menu_item_edit_clearsel, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	browser_window_key_press(gwin->gw->bw, NS_KEY_CLEAR_SELECTION);
-}
-
-HOOKF(void, ami_menu_item_edit_undo, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	browser_window_key_press(gwin->gw->bw, NS_KEY_UNDO);
-}
-
-HOOKF(void, ami_menu_item_edit_redo, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	browser_window_key_press(gwin->gw->bw, NS_KEY_REDO);
-}
-
-HOOKF(void, ami_menu_item_browser_find, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_search_open(gwin->gw);
-}
-
-HOOKF(void, ami_menu_item_browser_localhistory, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_history_open(gwin->gw);
-}
-
-HOOKF(void, ami_menu_item_browser_globalhistory, APTR, window, struct IntuiMessage *)
-{
-	ami_history_global_present();
-}
-
-HOOKF(void, ami_menu_item_browser_cookies, APTR, window, struct IntuiMessage *)
-{
-	ami_cookies_present();
-}
-
-HOOKF(void, ami_menu_item_browser_foreimg, APTR, window, struct IntuiMessage *)
-{
-	struct Menu *menustrip;
-	bool checked = false;
-
-	GetAttr(WINDOW_MenuStrip, (Object *)window, (ULONG *)&menustrip);
-	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
-	
-	nsoption_set_bool(foreground_images, checked);
-	ami_menu_set_check_toggled();
-}
-
-HOOKF(void, ami_menu_item_browser_backimg, APTR, window, struct IntuiMessage *)
-{
-	struct Menu *menustrip;
-	bool checked = false;
-
-	GetAttr(WINDOW_MenuStrip, (Object *)window, (ULONG *)&menustrip);
-	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
-	
-	nsoption_set_bool(background_images, checked);
-	ami_menu_set_check_toggled();
-}
-
-HOOKF(void, ami_menu_item_browser_enablejs, APTR, window, struct IntuiMessage *)
-{
-	struct Menu *menustrip;
-	bool checked = false;
-
-	GetAttr(WINDOW_MenuStrip, (Object *)window, (ULONG *)&menustrip);
-	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
-	
-	nsoption_set_bool(enable_javascript, checked);
-	ami_menu_set_check_toggled();
-}
-
-HOOKF(void, ami_menu_item_browser_scale_decrease, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_gui_set_scale(gwin->gw, gwin->gw->scale - 0.1);
-}
-
-HOOKF(void, ami_menu_item_browser_scale_normal, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_gui_set_scale(gwin->gw, 1.0);
-}
-
-HOOKF(void, ami_menu_item_browser_scale_increase, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_gui_set_scale(gwin->gw, gwin->gw->scale + 0.1);
-}
-
-HOOKF(void, ami_menu_item_browser_redraw, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_schedule_redraw(gwin, true);
-	gwin->new_content = true;
-}
-
-HOOKF(void, ami_menu_item_hotlist_add, APTR, window, struct IntuiMessage *)
-{
-	struct browser_window *bw;
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	bw = gwin->gw->bw;
-
-	if (bw == NULL || browser_window_has_content(bw) == false)
-		return;
-
-	hotlist_add_url(browser_window_get_url(bw));
-	ami_gui_update_hotlist_button(gwin);
-}
-
-HOOKF(void, ami_menu_item_hotlist_show, APTR, window, struct IntuiMessage *)
-{
-	ami_hotlist_present();
-}
-
-HOOKF(void, ami_menu_item_hotlist_entries, APTR, window, struct IntuiMessage *)
-{
-	nsurl *url = hook->h_Data;
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	if(url == NULL) return;
-
-	browser_window_navigate(gwin->gw->bw,
-					url,
-					NULL,
-					BW_NAVIGATE_HISTORY,
-					NULL,
-					NULL,
-					NULL);
-}
-
-HOOKF(void, ami_menu_item_settings_edit, APTR, window, struct IntuiMessage *)
-{
-	ami_gui_opts_open();
-}
-
-HOOKF(void, ami_menu_item_settings_snapshot, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	nsoption_set_int(window_x, gwin->win->LeftEdge);
-	nsoption_set_int(window_y, gwin->win->TopEdge);
-	nsoption_set_int(window_width, gwin->win->Width);
-	nsoption_set_int(window_height, gwin->win->Height);
-}
-
-HOOKF(void, ami_menu_item_settings_save, APTR, window, struct IntuiMessage *)
-{
-	ami_nsoption_write();
-}
-
-HOOKF(void, ami_menu_item_arexx_execute, APTR, window, struct IntuiMessage *)
-{
-	char *temp;
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	if(AslRequestTags(filereq,
-						ASLFR_Window, gwin->win,
-						ASLFR_SleepWindow, TRUE,
-						ASLFR_TitleText, messages_get("NetSurf"),
-						ASLFR_Screen, scrn,
-						ASLFR_DoSaveMode, FALSE,
-						ASLFR_InitialDrawer, nsoption_charp(arexx_dir),
-						ASLFR_InitialPattern, "#?.nsrx",
-						TAG_DONE)) {
-		if((temp = malloc(1024))) {
-			strlcpy(temp, filereq->fr_Drawer, 1024);
-			AddPart(temp, filereq->fr_File, 1024);
-			ami_arexx_execute(temp);
-			free(temp);
-		}
-	}
-}
-
-HOOKF(void, ami_menu_item_arexx_entries, APTR, window, struct IntuiMessage *)
-{
-	char *script = hook->h_Data;
-	char *temp;
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	if(script) {
-		if((temp = malloc(1024))) {
-			BPTR lock;
-			if((lock = Lock(nsoption_charp(arexx_dir), SHARED_LOCK))) {
-				DevNameFromLock(lock, temp, 1024, DN_FULLPATH);
-				AddPart(temp, script, 1024);
-				ami_arexx_execute(temp);
-				free(temp);
-				UnLock(lock);
-			}
-		}
-	}
-}
-
 
 /* menu creation code */
+void ami_menu_free_lab_item(struct ami_menu_data **md, int i)
+{
+	if(md[i] == NULL) return;
+	if(md[i]->menulab &&
+			(md[i]->menulab != NM_BARLABEL) &&
+			(md[i]->menulab != ML_SEPARATOR)) {
+		if(md[i]->menutype & MENU_IMAGE) {
+			if(md[i]->menuobj) DisposeObject(md[i]->menuobj);
+		}
+
+		ami_utf8_free(md[i]->menulab);
+	}
+
+	if(md[i]->menukey != NULL) free(md[i]->menukey);
+
+	md[i]->menulab = NULL;
+	md[i]->menuobj = NULL;
+	md[i]->menukey = NULL;
+	md[i]->menutype = 0;
+	free(md[i]);
+	md[i] = NULL;
+}
+
 static void ami_menu_free_labs(struct ami_menu_data **md, int max)
 {
 	int i;
 
 	for(i = 0; i <= max; i++) {
-		if(md[i] == NULL) continue;
-		if(md[i]->menulab && (md[i]->menulab != NM_BARLABEL)) {
-			if(md[i]->menutype & MENU_IMAGE) {
-				if(md[i]->menuobj) DisposeObject(md[i]->menuobj);
-			}
-
-			ami_utf8_free(md[i]->menulab);
-		}
-
-		md[i]->menulab = NULL;
-		md[i]->menuobj = NULL;
-		md[i]->menukey = 0;
-		md[i]->menutype = 0;
-		free(md[i]);
-	}
-}
-
-void ami_free_menulabs(struct ami_menu_data **md)
-{
-	int i;
-
-	for(i=0;i<=AMI_MENU_AREXX_MAX;i++) {
-		if(md[i] == NULL) continue;
-		if(md[i]->menulab && (md[i]->menulab != NM_BARLABEL)) {
-			if(md[i]->menutype & MENU_IMAGE) {
-				if(md[i]->menuobj) DisposeObject(md[i]->menuobj);
-			}
-
-			ami_utf8_free(md[i]->menulab);
-
-			if(i >= AMI_MENU_AREXX) {
-				if(md[i]->menu_hook.h_Data) free(md[i]->menu_hook.h_Data);
-				md[i]->menu_hook.h_Data = NULL;
-			}
-		}
-
-		md[i]->menulab = NULL;
-		md[i]->menuobj = NULL;
-		md[i]->menukey = 0;
-		md[i]->menutype = 0;
-		free(md[i]);
+		ami_menu_free_lab_item(md, i);
 	}
 }
 
 void ami_menu_alloc_item(struct ami_menu_data **md, int num, UBYTE type,
-			const char *restrict label, char key, const char *restrict icon,
+			const char *restrict label, const char *restrict key, const char *restrict icon,
 			void *restrict func, void *restrict hookdata, UWORD flags)
 {
-	char menu_icon[1024];
-
 	md[num] = calloc(1, sizeof(struct ami_menu_data));
 	md[num]->menutype = type;
 	md[num]->flags = flags;
@@ -606,12 +124,9 @@ void ami_menu_alloc_item(struct ami_menu_data **md, int num, UBYTE type,
 
 	if((label == NM_BARLABEL) || (strcmp(label, "--") == 0)) {
 		md[num]->menulab = NM_BARLABEL;
+		icon = NULL;
 	} else { /* horrid non-generic stuff */
-		if((num >= AMI_MENU_HOTLIST) && (num <= AMI_MENU_HOTLIST_MAX)) {
-			utf8_from_local_encoding(label,
-			(strlen(label) < NSA_MAX_HOTLIST_MENU_LEN) ? strlen(label) : NSA_MAX_HOTLIST_MENU_LEN,
-			(char **)&md[num]->menulab);
-		} else if((num >= AMI_MENU_AREXX) && (num < AMI_MENU_AREXX_MAX)) {
+		if((num >= AMI_MENU_AREXX) && (num < AMI_MENU_AREXX_MAX)) {
 			md[num]->menulab = strdup(label);		
 		} else {
 			md[num]->menulab = ami_utf8_easy(messages_get(label));
@@ -619,11 +134,13 @@ void ami_menu_alloc_item(struct ami_menu_data **md, int num, UBYTE type,
 	}
 
 	md[num]->menuicon = NULL;
-	if(key) md[num]->menukey = key;
+	if(key) md[num]->menukey = strdup(key);
 	if(func) md[num]->menu_hook.h_Entry = (HOOKFUNC)func;
 	if(hookdata) md[num]->menu_hook.h_Data = hookdata;
 
 #ifdef __amigaos4__
+	char menu_icon[1024];
+
 	if(LIB_IS_AT_LEAST((struct Library *)GadToolsBase, 53, 7)) {
 		if(icon) {
 			if(ami_locate_resource(menu_icon, icon) == true) {
@@ -635,154 +152,6 @@ void ami_menu_alloc_item(struct ami_menu_data **md, int num, UBYTE type,
 		}
 	}
 #endif
-}
-
-static void ami_init_menulabs(struct ami_menu_data **md)
-{
-	UWORD js_flags = CHECKIT | MENUTOGGLE;
-	if(nsoption_bool(enable_javascript) == true)
-		js_flags |= CHECKED;
-
-	UWORD imgfore_flags = CHECKIT | MENUTOGGLE;
-	if(nsoption_bool(foreground_images) == true)
-		imgfore_flags |= CHECKED;
-
-	UWORD imgback_flags = CHECKIT | MENUTOGGLE;
-	if(nsoption_bool(background_images) == true)
-		imgback_flags |= CHECKED;
-
-	ami_menu_alloc_item(md, M_PROJECT, NM_TITLE, "Project",       0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_NEWWIN,   NM_ITEM, "NewWindowNS", 'N', "TBImages:list_app",
-			ami_menu_item_project_newwin, NULL, 0);
-	ami_menu_alloc_item(md, M_NEWTAB,   NM_ITEM, "NewTab",      'T', "TBImages:list_tab",
-			ami_menu_item_project_newtab, NULL, 0);
-	ami_menu_alloc_item(md, M_BAR_P1,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_OPEN,     NM_ITEM, "OpenFile",    'O', "TBImages:list_folder_misc",
-			ami_menu_item_project_open, NULL, 0);
-	ami_menu_alloc_item(md, M_SAVEAS,   NM_ITEM, "SaveAsNS",      0, "TBImages:list_saveas", NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_SAVESRC,   NM_SUB, "Source",      'S', NULL,
-			ami_menu_item_project_save, (void *)AMINS_SAVE_SOURCE, 0);
-	ami_menu_alloc_item(md, M_SAVETXT,   NM_SUB, "TextNS",        0, NULL,
-			ami_menu_item_project_save, (void *)AMINS_SAVE_TEXT, 0);
-	ami_menu_alloc_item(md, M_SAVECOMP,  NM_SUB, "SaveCompNS",    0, NULL,
-			ami_menu_item_project_save, (void *)AMINS_SAVE_COMPLETE, 0);
-#ifdef WITH_PDF_EXPORT
-	ami_menu_alloc_item(md, M_SAVEPDF,   NM_SUB, "PDFNS",         0, NULL,
-			ami_menu_item_project_save, (void *)AMINS_SAVE_PDF, 0);
-#endif
-	ami_menu_alloc_item(md, M_SAVEIFF,   NM_SUB, "IFF",           0, NULL,
-			ami_menu_item_project_save, (void *)AMINS_SAVE_IFF, 0);
-	ami_menu_alloc_item(md, M_BAR_P2,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_PRINT,    NM_ITEM, "PrintNS",     'P', "TBImages:list_print",
-			ami_menu_item_project_print, NULL, NM_ITEMDISABLED);
-	ami_menu_alloc_item(md, M_BAR_P3,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_CLOSETAB, NM_ITEM, "CloseTab",    'K', "TBImages:list_remove",
-			ami_menu_item_project_closetab, NULL, 0);
-	ami_menu_alloc_item(md, M_CLOSEWIN, NM_ITEM, "CloseWindow",   0, "TBImages:list_cancel",
-			ami_menu_item_project_closewin, NULL, 0);
-	ami_menu_alloc_item(md, M_BAR_P4,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL, 0);				
-	ami_menu_alloc_item(md, M_ABOUT,    NM_ITEM, "About",       '?', "TBImages:list_info",
-			ami_menu_item_project_about, NULL, 0);
-	ami_menu_alloc_item(md, M_BAR_P5,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL, 0);				
-	ami_menu_alloc_item(md, M_QUIT,     NM_ITEM, "Quit",        'Q', "TBImages:list_warning",
-			ami_menu_item_project_quit, NULL, 0);
-
-	ami_menu_alloc_item(md, M_EDIT,    NM_TITLE, "Edit",          0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_CUT,      NM_ITEM, "CutNS",       'X', "TBImages:list_cut",
-			ami_menu_item_edit_cut, NULL, 0);
-	ami_menu_alloc_item(md, M_COPY,     NM_ITEM, "CopyNS",      'C', "TBImages:list_copy",
-			ami_menu_item_edit_copy, NULL, 0);
-	ami_menu_alloc_item(md, M_PASTE,    NM_ITEM, "PasteNS",     'V', "TBImages:list_paste",
-			ami_menu_item_edit_paste, NULL, 0);
-	ami_menu_alloc_item(md, M_BAR_E1,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_SELALL,   NM_ITEM, "SelectAllNS", 'A', NSA_SPACE,
-			ami_menu_item_edit_selectall, NULL, 0);
-	ami_menu_alloc_item(md, M_CLEAR,    NM_ITEM, "ClearNS",       0, NSA_SPACE,
-			ami_menu_item_edit_clearsel, NULL, 0);
-	ami_menu_alloc_item(md, M_BAR_E2,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_UNDO,     NM_ITEM, "Undo",        'Z', "TBImages:list_undo",
-			ami_menu_item_edit_undo, NULL, 0);
-	ami_menu_alloc_item(md, M_REDO,     NM_ITEM, "Redo",        'Y', "TBImages:list_redo",
-			ami_menu_item_edit_redo, NULL, 0);
-
-	ami_menu_alloc_item(md, M_BROWSER, NM_TITLE, "Browser",       0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_FIND,     NM_ITEM, "FindTextNS",   'F', "TBImages:list_search",
-			ami_menu_item_browser_find, NULL, 0);
-	ami_menu_alloc_item(md, M_BAR_B1,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_HISTLOCL, NM_ITEM, "HistLocalNS",   0, "TBImages:list_history",
-			ami_menu_item_browser_localhistory, NULL, 0);
-	ami_menu_alloc_item(md, M_HISTGLBL, NM_ITEM, "HistGlobalNS",  0, "TBImages:list_history",
-			ami_menu_item_browser_globalhistory, NULL, 0);
-	ami_menu_alloc_item(md, M_BAR_B2,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_COOKIES,  NM_ITEM, "ShowCookiesNS",   0, "TBImages:list_internet",
-			ami_menu_item_browser_cookies, NULL, 0);
-	ami_menu_alloc_item(md, M_BAR_B3,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_SCALE,    NM_ITEM, "ScaleNS",       0, "TBImages:list_preview", NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_SCALEDEC,  NM_SUB, "ScaleDec",    '-', "TBImages:list_zoom_out",
-			ami_menu_item_browser_scale_decrease, NULL, 0);
-	ami_menu_alloc_item(md, M_SCALENRM,  NM_SUB, "ScaleNorm",   '=', "TBImages:list_zoom_100",
-			ami_menu_item_browser_scale_normal, NULL, 0);
-	ami_menu_alloc_item(md, M_SCALEINC,  NM_SUB, "ScaleInc",    '+', "TBImages:list_zoom_in",
-			ami_menu_item_browser_scale_increase, NULL, 0);
-	ami_menu_alloc_item(md, M_IMAGES,   NM_ITEM, "Images",        0, "TBImages:list_image", NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_IMGFORE,   NM_SUB, "ForeImg",       0, NULL,
-			ami_menu_item_browser_foreimg, NULL, imgfore_flags);
-	ami_menu_alloc_item(md, M_IMGBACK,   NM_SUB, "BackImg",       0, NULL,
-			ami_menu_item_browser_backimg, NULL, imgback_flags);
-	ami_menu_alloc_item(md, M_JS,       NM_ITEM, "EnableJS",      0, NULL,
-			ami_menu_item_browser_enablejs, NULL, js_flags);
-	ami_menu_alloc_item(md, M_BAR_B4,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_REDRAW,   NM_ITEM, "Redraw",        0, "TBImages:list_wand",
-			ami_menu_item_browser_redraw, NULL, 0);
-
-	ami_menu_alloc_item(md, M_HOTLIST, NM_TITLE, "Hotlist",       0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_HLADD,    NM_ITEM, "HotlistAdd",  'B', "TBImages:list_favouriteadd",
-			ami_menu_item_hotlist_add, NULL, 0);
-	ami_menu_alloc_item(md, M_HLSHOW,   NM_ITEM,"HotlistShowNS",'H', "TBImages:list_favourite",
-			ami_menu_item_hotlist_show, NULL, 0);
-	ami_menu_alloc_item(md, M_BAR_H1,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL, 0);
-
-	ami_menu_alloc_item(md, M_PREFS,   NM_TITLE, "Settings",      0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_PREDIT,   NM_ITEM, "SettingsEdit",  0, "TBImages:list_prefs",
-			ami_menu_item_settings_edit, NULL, 0);
-	ami_menu_alloc_item(md, M_BAR_S1,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_SNAPSHOT, NM_ITEM, "SnapshotWindow",0, "TBImages:list_hold",
-			ami_menu_item_settings_snapshot, NULL, 0);
-	ami_menu_alloc_item(md, M_PRSAVE,   NM_ITEM, "SettingsSave",  0, "TBImages:list_use",
-			ami_menu_item_settings_save, NULL, 0);
-
-	ami_menu_alloc_item(md, M_AREXX,   NM_TITLE, "ARexx",         0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_AREXXEX,  NM_ITEM, "ARexxExecute",'E', "TBImages:list_arexx",
-			ami_menu_item_arexx_execute, NULL, 0);
-	ami_menu_alloc_item(md, M_BAR_A1,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, AMI_MENU_AREXX_MAX,   NM_END, NULL,     0, NULL, NULL, NULL, 0);
-}
-
-/* Menu refresh for hotlist */
-void ami_menu_refresh(struct gui_window_2 *gwin)
-{
-	return; /**\todo fix this after migrating to menuclass */
-
-	struct Menu *menu;
-
-	LOG("Clearing MenuStrip");
-	SetAttrs(gwin->objects[OID_MAIN],
-			WINDOW_MenuStrip, NULL,
-			TAG_DONE);
-
-	LOG("Freeing menu");
-	ami_menu_free(gwin);
-
-	LOG("Freeing menu labels");
-	ami_free_menulabs(gwin->menu_data);
-
-	LOG("Creating new menu");
-	menu = ami_menu_create(gwin);
-
-	LOG("Attaching MenuStrip %p to %p", menu, gwin->objects[OID_MAIN]);
-	SetAttrs(gwin->objects[OID_MAIN],
-			WINDOW_MenuStrip, menu,
-			TAG_DONE);
 }
 
 static void ami_menu_load_glyphs(struct DrawInfo *dri)
@@ -836,7 +205,7 @@ static int ami_menu_calc_item_width(struct ami_menu_data **md, int j, struct Ras
 	item_size += space_width;
 
 	if(md[j]->menukey) {
-		item_size += TextLength(rp, &md[j]->menukey, 1);
+		item_size += TextLength(rp, md[j]->menukey, 1);
 		item_size += menu_glyph_width[NSA_GLYPH_AMIGAKEY];
 		/**TODO: take account of the size of other imagery too
 		 */
@@ -853,8 +222,72 @@ static int ami_menu_calc_item_width(struct ami_menu_data **md, int j, struct Ras
 	return item_size;
 }
 
+#ifdef __amigaos4__
+static int ami_menu_layout_mc_recursive(Object *menu_parent, struct ami_menu_data **md, int level, int i, int max)
+{
+	int j;
+	Object *menu_item = menu_parent;
+	
+	for(j = i; j < max; j++) {
+		/* skip empty entries */
+		if(md[j] == NULL) continue;
+		if(md[j]->menutype == NM_IGNORE) continue;
 
-struct Menu *ami_menu_layout(struct ami_menu_data **md, int max)
+		if(md[j]->menutype == level) {
+			if(md[j]->menulab == NM_BARLABEL)
+				md[j]->menulab = ML_SEPARATOR;
+
+			if(level == NM_TITLE) {
+				menu_item = NewObject(NULL, "menuclass",
+					MA_Type, T_MENU,
+					MA_Label, md[j]->menulab,
+					TAG_DONE);
+			} else {
+				menu_item = NewObject(NULL, "menuclass",
+					MA_Type, T_ITEM,
+					MA_ID, j,
+					MA_Label, md[j]->menulab,
+					MA_Image,
+						BitMapObj,
+							IA_Scalable, TRUE,
+							BITMAP_Screen, scrn,
+							BITMAP_SourceFile, md[j]->menuicon,
+							BITMAP_Masking, TRUE,
+						BitMapEnd,
+					MA_Key, md[j]->menukey,
+					MA_UserData, &md[j]->menu_hook, /* NB: Intentionally UserData */
+					MA_Disabled, (md[j]->flags & NM_ITEMDISABLED),
+					MA_Selected, (md[j]->flags & CHECKED),
+					MA_Toggle, (md[j]->flags & MENUTOGGLE),
+					TAG_DONE);
+			}
+
+			//LOG("Adding item %p ID %d (%s) to parent %p", menu_item, j, md[j]->menulab, menu_parent);
+			IDoMethod(menu_parent, OM_ADDMEMBER, menu_item);
+			continue;
+		} else if (md[j]->menutype > level) {
+			j = ami_menu_layout_mc_recursive(menu_item, md, md[j]->menutype, j, max);
+		} else {
+			break;
+		}
+	}
+	return (j - 1);
+}
+
+static struct Menu *ami_menu_layout_mc(struct ami_menu_data **md, int max)
+{
+	Object *menu_root = NewObject(NULL, "menuclass",
+		MA_Type, T_ROOT,
+		MA_EmbeddedKey, FALSE,
+		TAG_DONE);
+
+	ami_menu_layout_mc_recursive(menu_root, md, NM_TITLE, 0, max);
+
+	return (struct Menu *)menu_root;
+}
+#endif
+
+static struct Menu *ami_menu_layout_gt(struct ami_menu_data **md, int max)
 {
 	int i, j;
 	int txtlen = 0;
@@ -955,7 +388,9 @@ struct Menu *ami_menu_layout(struct ami_menu_data **md, int max)
 		else
 			nm[i].nm_Label = md[i]->menulab;
 
-		if(md[i]->menukey) nm[i].nm_CommKey = &md[i]->menukey;
+		if((md[i]->menukey) && (strlen(md[i]->menukey) > 1)) {
+			nm[i].nm_CommKey = md[i]->menukey;
+		}
 		nm[i].nm_Flags = md[i]->flags;
 		if(md[i]->menu_hook.h_Entry) nm[i].nm_UserData = &md[i]->menu_hook;
 
@@ -977,226 +412,59 @@ struct Menu *ami_menu_layout(struct ami_menu_data **md, int max)
 	return imenu;
 }
 
-void ami_menu_free(struct gui_window_2 *gwin)
+struct Menu *ami_menu_layout(struct ami_menu_data **md, int max)
 {
-	FreeMenus(gwin->imenu);
+	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
+#ifdef __amigaos4__
+		return ami_menu_layout_mc(md, max);
+#endif	
+	} else {
+		return ami_menu_layout_gt(md, max);
+	}
 }
 
 void ami_menu_free_menu(struct ami_menu_data **md, int max, struct Menu *imenu)
 {
 	ami_menu_free_labs(md, max);
-	FreeMenus(imenu);
-}
-
-struct Menu *ami_menu_create(struct gui_window_2 *gwin)
-{
-	ami_init_menulabs(gwin->menu_data);
-	ami_menu_scan(gwin->menu_data); //\todo this needs to be MenuClass created
-	ami_menu_arexx_scan(gwin->menu_data);
-	gwin->imenu = ami_menu_layout(gwin->menu_data, AMI_MENU_AREXX_MAX);
-
-	return gwin->imenu;
-}
-
-void ami_menu_arexx_scan(struct ami_menu_data **md)
-{
-	/**\todo Rewrite this to not use ExAll() **/
-	int item = AMI_MENU_AREXX;
-	BPTR lock = 0;
-	UBYTE *buffer;
-	struct ExAllControl *ctrl;
-	char matchpatt[16];
-	LONG cont;
-	struct ExAllData *ead;
-	char *menu_lab;
-
-	if((lock = Lock(nsoption_charp(arexx_dir), SHARED_LOCK))) {
-		if((buffer = malloc(1024))) {
-			if((ctrl = AllocDosObject(DOS_EXALLCONTROL,NULL))) {
-				ctrl->eac_LastKey = 0;
-
-				if(ParsePatternNoCase("#?.nsrx",(char *)&matchpatt,16) != -1) {
-					ctrl->eac_MatchString = (char *)&matchpatt;
-				}
-
-				do {
-					cont = ExAll(lock,(struct ExAllData *)buffer,1024,ED_COMMENT,ctrl);
-					if((!cont) && (IoErr() != ERROR_NO_MORE_ENTRIES)) break;
-					if(!ctrl->eac_Entries) continue;
-
-					for(ead = (struct ExAllData *)buffer; ead; ead = ead->ed_Next) {
-						if(item >= AMI_MENU_AREXX_MAX) continue;
-						if(EAD_IS_FILE(ead)) {
-							if(ead->ed_Comment[0] != '\0')
-								menu_lab = ead->ed_Comment;
-							else
-								menu_lab = ead->ed_Name;
-
-							ami_menu_alloc_item(md, item, NM_ITEM, menu_lab, 0, NSA_SPACE,
-								ami_menu_item_arexx_entries, (void *)strdup(ead->ed_Name), 0);
-
-							item++;
-						}
-					}
-				} while(cont);
-				FreeDosObject(DOS_EXALLCONTROL,ctrl);
-			}
-			free(buffer);
-		}
-		UnLock(lock);
-	}
-
-	ami_menu_alloc_item(md, item, NM_END, NULL, 0, NULL, NULL, NULL, 0);
-}
-
-static bool ami_menu_hotlist_add(void *userdata, int level, int item, const char *title, nsurl *url, bool is_folder)
-{
-	UBYTE type;
-	STRPTR icon;
-	UWORD flags = 0;
-	struct ami_menu_data **md = (struct ami_menu_data **)userdata;
-
-	if(item >= AMI_MENU_HOTLIST_MAX) return false;
-
-	switch(level) {
-		case 1:
-			type = NM_ITEM;
-		break;
-		case 2:
-			type = NM_SUB;
-		break;
-		default:
-			/* entries not at level 1 or 2 are not able to be added
-			 * \todo construct menus using menuclass instead! */
-			return false;
-		break;
-	}
-
-	if(is_folder == true) {
-		icon = ASPrintf("icons/directory.png");
+	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
+		DisposeObject((Object *)imenu); // if we detach our menu from the window we need to do this manually
 	} else {
-		icon = ami_gui_get_cache_favicon_name(url, true);
-		if (icon == NULL) icon = ASPrintf("icons/content.png");
+		FreeMenus(imenu);
 	}
-
-	if((is_folder == true) && (type == NM_SUB)) {
-		flags = NM_ITEMDISABLED;
-	}
-
-	ami_menu_alloc_item(md, item, type, title,
-		0, icon, ami_menu_item_hotlist_entries, (void *)url, flags);
-
-	if(icon) FreeVec(icon);
-
-	return true;
 }
 
-static nserror ami_menu_scan(struct ami_menu_data **md)
+void ami_menu_refresh(struct Menu *menu, struct ami_menu_data **md, int menu_item, int max,
+	nserror (*cb)(struct ami_menu_data **md))
 {
-	return ami_hotlist_scan((void *)md, AMI_MENU_HOTLIST, messages_get("HotlistMenu"), ami_menu_hotlist_add);
-}
+#ifdef __amigaos4__
+	Object *restrict obj;
+	Object *restrict menu_item_obj;
+	int i;
 
-void ami_menu_update_checked(struct gui_window_2 *gwin)
-{
-	struct Menu *menustrip;
+	if(menu == NULL) return;
 
-	GetAttr(WINDOW_MenuStrip, gwin->objects[OID_MAIN], (ULONG *)&menustrip);
-	if(!menustrip) return;
-	if(nsoption_bool(enable_javascript) == true) {
-		if((ItemAddress(menustrip, AMI_MENU_JS)->Flags & CHECKED) == 0)
-			ItemAddress(menustrip, AMI_MENU_JS)->Flags ^= CHECKED;
-	} else {
-		if(ItemAddress(menustrip, AMI_MENU_JS)->Flags & CHECKED)
-			ItemAddress(menustrip, AMI_MENU_JS)->Flags ^= CHECKED;
-	}
-	if(nsoption_bool(foreground_images) == true) {
-		if((ItemAddress(menustrip, AMI_MENU_FOREIMG)->Flags & CHECKED) == 0)
-			ItemAddress(menustrip, AMI_MENU_FOREIMG)->Flags ^= CHECKED;
-	} else {
-		if(ItemAddress(menustrip, AMI_MENU_FOREIMG)->Flags & CHECKED)
-			ItemAddress(menustrip, AMI_MENU_FOREIMG)->Flags ^= CHECKED;
-	}
+	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
+		/* find the address of the menu */
+		menu_item_obj = (Object *)IDoMethod((Object *)menu, MM_FINDID, 0, menu_item);
 
-	if(nsoption_bool(background_images) == true) {
-		if((ItemAddress(menustrip, AMI_MENU_BACKIMG)->Flags & CHECKED) == 0)
-			ItemAddress(menustrip, AMI_MENU_BACKIMG)->Flags ^= CHECKED;
-	} else {
-		if(ItemAddress(menustrip, AMI_MENU_BACKIMG)->Flags & CHECKED)
-			ItemAddress(menustrip, AMI_MENU_BACKIMG)->Flags ^= CHECKED;
-	}
-
-	ResetMenuStrip(gwin->win, menustrip);
-}
-
-void ami_menu_update_disabled(struct gui_window *g, struct hlcache_handle *c)
-{
-	struct Window *win = g->shared->win;
-
-	if(nsoption_bool(kiosk_mode) == true) return;
-
-	if(content_get_type(c) <= CONTENT_CSS)
-	{
-		OnMenu(win,AMI_MENU_SAVEAS_TEXT);
-		OnMenu(win,AMI_MENU_SAVEAS_COMPLETE);
-#ifdef WITH_PDF_EXPORT
-		OnMenu(win,AMI_MENU_SAVEAS_PDF);
-#endif
-#if 0
-		if(browser_window_get_editor_flags(g->bw) & BW_EDITOR_CAN_COPY) {
-			OnMenu(win,AMI_MENU_COPY);
-			OnMenu(win,AMI_MENU_CLEAR);
-		} else {
-			OffMenu(win,AMI_MENU_COPY);
-			OffMenu(win,AMI_MENU_CLEAR);	
+		/* remove all children */
+		while((obj = (Object *)IDoMethod(menu_item_obj, MM_NEXTCHILD, 0, NULL)) != NULL) {
+			IDoMethod(menu_item_obj, OM_REMMEMBER, obj);
+			DisposeObject(obj);
 		}
 
-		if(browser_window_get_editor_flags(g->bw) & BW_EDITOR_CAN_CUT)
-			OnMenu(win,AMI_MENU_CUT);
-		else
-			OffMenu(win,AMI_MENU_CUT);		
-		
-		if(browser_window_get_editor_flags(g->bw) & BW_EDITOR_CAN_PASTE)
-			OnMenu(win,AMI_MENU_PASTE);
-		else
-			OffMenu(win,AMI_MENU_PASTE);
-#else
-		OnMenu(win,AMI_MENU_CUT);
-		OnMenu(win,AMI_MENU_COPY);
-		OnMenu(win,AMI_MENU_PASTE);
-		OnMenu(win,AMI_MENU_CLEAR);
-#endif
-		OnMenu(win,AMI_MENU_SELECTALL);
-		OnMenu(win,AMI_MENU_FIND);
-		OffMenu(win,AMI_MENU_SAVEAS_IFF);
-	}
-	else
-	{
-		OffMenu(win,AMI_MENU_CUT);
-		OffMenu(win,AMI_MENU_PASTE);
-		OffMenu(win,AMI_MENU_CLEAR);
-
-		OffMenu(win,AMI_MENU_SAVEAS_TEXT);
-		OffMenu(win,AMI_MENU_SAVEAS_COMPLETE);
-#ifdef WITH_PDF_EXPORT
-		OffMenu(win,AMI_MENU_SAVEAS_PDF);
-#endif
-		OffMenu(win,AMI_MENU_SELECTALL);
-		OffMenu(win,AMI_MENU_FIND);
-
-#ifdef WITH_NS_SVG
-		if(content_get_bitmap(c) || (ami_mime_compare(c, "svg") == true))
-#else
-		if(content_get_bitmap(c))
-#endif
-		{
-			OnMenu(win,AMI_MENU_COPY);
-			OnMenu(win,AMI_MENU_SAVEAS_IFF);
+		/* free associated data */
+		for(i = (menu_item + 1); i <= max; i++) {
+			if(md[i] == NULL) continue;
+			ami_menu_free_lab_item(md, i);
 		}
-		else
-		{
-			OffMenu(win,AMI_MENU_COPY);
-			OffMenu(win,AMI_MENU_SAVEAS_IFF);
-		}
+
+		/* get current data */
+		cb(md);
+
+		/* re-add items to menu */
+		ami_menu_layout_mc_recursive(menu_item_obj, md, NM_ITEM, (menu_item + 1), max);
 	}
+#endif
 }
 

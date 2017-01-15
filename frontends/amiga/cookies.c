@@ -43,6 +43,7 @@
 #include "amiga/cookies.h"
 #include "amiga/corewindow.h"
 #include "amiga/libs.h"
+#include "amiga/menu.h"
 #include "amiga/utf8.h"
 
 enum {
@@ -239,38 +240,38 @@ HOOKF(void, ami_cookies_menu_item_edit_delete, APTR, window, struct IntuiMessage
 
 static void ami_cookies_menulabs(struct ami_menu_data **md)
 {
-	ami_menu_alloc_item(md, AMI_COOKIE_M_PROJECT, NM_TITLE, "Tree",       0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, AMI_COOKIE_M_EXPAND,   NM_ITEM, "Expand", 0, "TBImages:list_folderunfold", NULL, NULL, 0);
-	ami_menu_alloc_item(md, AMI_COOKIE_M_EXPAND_ALL,   NM_SUB, "All", '+', NULL,
+	ami_menu_alloc_item(md, AMI_COOKIE_M_PROJECT, NM_TITLE, "Tree", NULL, NULL, NULL, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_EXPAND,   NM_ITEM, "Expand", NULL, "TBImages:list_folderunfold", NULL, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_EXPAND_ALL,   NM_SUB, "All", "+", NULL,
 		ami_cookies_menu_item_project_expand_all, NULL, 0);
-	ami_menu_alloc_item(md, AMI_COOKIE_M_EXPAND_DOMAINS,   NM_SUB, "Domains", 0, NULL,
+	ami_menu_alloc_item(md, AMI_COOKIE_M_EXPAND_DOMAINS,   NM_SUB, "Domains", NULL, NULL,
 		ami_cookies_menu_item_project_expand_domains, NULL, 0);
-	ami_menu_alloc_item(md, AMI_COOKIE_M_EXPAND_COOKIES,   NM_SUB, "Cookies", 0, NULL,
+	ami_menu_alloc_item(md, AMI_COOKIE_M_EXPAND_COOKIES,   NM_SUB, "Cookies", NULL, NULL,
 		ami_cookies_menu_item_project_expand_cookies, NULL, 0);
-	ami_menu_alloc_item(md, AMI_COOKIE_M_COLLAPSE,   NM_ITEM, "Collapse", 0, "TBImages:list_folderfold", NULL, NULL, 0);
-	ami_menu_alloc_item(md, AMI_COOKIE_M_COLLAPSE_ALL,   NM_SUB, "All", '-', NULL,
+	ami_menu_alloc_item(md, AMI_COOKIE_M_COLLAPSE,   NM_ITEM, "Collapse", NULL, "TBImages:list_folderfold", NULL, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_COLLAPSE_ALL,   NM_SUB, "All", "-", NULL,
 		ami_cookies_menu_item_project_collapse_all, NULL, 0);
-	ami_menu_alloc_item(md, AMI_COOKIE_M_COLLAPSE_DOMAINS,   NM_SUB, "Domains", 0, NULL,
+	ami_menu_alloc_item(md, AMI_COOKIE_M_COLLAPSE_DOMAINS,   NM_SUB, "Domains", NULL, NULL,
 		ami_cookies_menu_item_project_collapse_domains, NULL, 0);
-	ami_menu_alloc_item(md, AMI_COOKIE_M_COLLAPSE_COOKIES,   NM_SUB, "Cookies", 0, NULL,
+	ami_menu_alloc_item(md, AMI_COOKIE_M_COLLAPSE_COOKIES,   NM_SUB, "Cookies", NULL, NULL,
 		ami_cookies_menu_item_project_collapse_cookies, NULL, 0);
-	ami_menu_alloc_item(md, AMI_COOKIE_M_BAR_P1, NM_ITEM, NM_BARLABEL, 0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, AMI_COOKIE_M_SNAPSHOT,   NM_ITEM, "SnapshotWindow", 0, "TBImages:list_hold",
+	ami_menu_alloc_item(md, AMI_COOKIE_M_BAR_P1, NM_ITEM, NM_BARLABEL, NULL, NULL, NULL, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_SNAPSHOT,   NM_ITEM, "SnapshotWindow", NULL, "TBImages:list_hold",
 		ami_cookies_menu_item_project_snapshot, NULL, 0);
-	ami_menu_alloc_item(md, AMI_COOKIE_M_BAR_P2, NM_ITEM, NM_BARLABEL, 0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, AMI_COOKIE_M_CLOSE,   NM_ITEM, "CloseWindow", 'K', "TBImages:list_cancel",
+	ami_menu_alloc_item(md, AMI_COOKIE_M_BAR_P2, NM_ITEM, NM_BARLABEL, NULL, NULL, NULL, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_CLOSE,   NM_ITEM, "CloseWindow", "K", "TBImages:list_cancel",
 		ami_cookies_menu_item_project_close, NULL, 0);
 
-	ami_menu_alloc_item(md, AMI_COOKIE_M_EDIT, NM_TITLE, "Edit",       0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, AMI_COOKIE_M_SELECTALL,   NM_ITEM, "SelectAllNS", 'A', NSA_SPACE,
+	ami_menu_alloc_item(md, AMI_COOKIE_M_EDIT, NM_TITLE, "Edit", NULL, NULL, NULL, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_SELECTALL,   NM_ITEM, "SelectAllNS", "A", NSA_SPACE,
 		ami_cookies_menu_item_edit_select_all, NULL, 0);
-	ami_menu_alloc_item(md, AMI_COOKIE_M_CLEAR,   NM_ITEM, "ClearNS", 0, NSA_SPACE,
+	ami_menu_alloc_item(md, AMI_COOKIE_M_CLEAR,   NM_ITEM, "ClearNS", NULL, NSA_SPACE,
 		ami_cookies_menu_item_edit_clear, NULL, 0);
-	ami_menu_alloc_item(md, AMI_COOKIE_M_BAR_E1, NM_ITEM, NM_BARLABEL, 0, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, AMI_COOKIE_M_DELETE,   NM_ITEM, "TreeDelete", 0, "TBImages:list_delete",
+	ami_menu_alloc_item(md, AMI_COOKIE_M_BAR_E1, NM_ITEM, NM_BARLABEL, NULL, NULL, NULL, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_DELETE,   NM_ITEM, "TreeDelete", "Del", "TBImages:list_delete",
 		ami_cookies_menu_item_edit_delete, NULL, 0);
 
-	ami_menu_alloc_item(md, AMI_COOKIE_M_LAST,   NM_END, NULL,     0, NULL, NULL, NULL, 0);
+	ami_menu_alloc_item(md, AMI_COOKIE_M_LAST,   NM_END, NULL, NULL, NULL, NULL, NULL, 0);
 }
 
 static struct Menu *
