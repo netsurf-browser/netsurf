@@ -70,6 +70,7 @@
 #include "amiga/font.h"
 #include "amiga/font_bullet.h"
 #include "amiga/gui.h"
+#include "amiga/gui_menu.h"
 #include "amiga/gui_options.h"
 #include "amiga/help.h"
 #include "amiga/libs.h"
@@ -2066,7 +2067,7 @@ static void ami_gui_opts_use(bool save)
 		ami_font_savescanner(); /* just in case it has changed and been used only */
 	}
 
-	ami_menu_set_check_toggled();
+	ami_gui_menu_set_check_toggled();
 	ami_update_pointer(gow->win, GUI_POINTER_DEFAULT);
 }
 

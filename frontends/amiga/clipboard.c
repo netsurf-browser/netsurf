@@ -44,7 +44,7 @@
 #include "amiga/gui.h"
 #include "amiga/iff_cset.h"
 #include "amiga/iff_dr2d.h"
-#include "amiga/menu.h"
+#include "amiga/gui_menu.h"
 #include "amiga/utf8.h"
 
 #define ID_UTF8  MAKE_ID('U','T','F','8')
@@ -89,11 +89,11 @@ void gui_start_selection(struct gui_window *g)
 	if(!g->shared->win) return;
 	if(nsoption_bool(kiosk_mode) == true) return;
 
-	ami_menu_set_disabled(g->shared->win, g->shared->imenu, M_COPY, false);
-	ami_menu_set_disabled(g->shared->win, g->shared->imenu, M_CLEAR, false);
+	ami_gui_menu_set_disabled(g->shared->win, g->shared->imenu, M_COPY, false);
+	ami_gui_menu_set_disabled(g->shared->win, g->shared->imenu, M_CLEAR, false);
 
 	if (browser_window_get_editor_flags(g->bw) & BW_EDITOR_CAN_CUT)
-		ami_menu_set_disabled(g->shared->win, g->shared->imenu, M_CUT, false);
+		ami_gui_menu_set_disabled(g->shared->win, g->shared->imenu, M_CUT, false);
 }
 
 static char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size_t *text_length)

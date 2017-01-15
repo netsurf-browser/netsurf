@@ -43,6 +43,7 @@
 #include "amiga/cookies.h"
 #include "amiga/corewindow.h"
 #include "amiga/libs.h"
+#include "amiga/menu.h"
 #include "amiga/utf8.h"
 
 enum {

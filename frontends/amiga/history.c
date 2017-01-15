@@ -49,6 +49,7 @@
 #include "amiga/file.h"
 #include "amiga/history.h"
 #include "amiga/libs.h"
+#include "amiga/menu.h"
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
 

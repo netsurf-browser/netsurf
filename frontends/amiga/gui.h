@@ -28,7 +28,7 @@
 #include "netsurf/window.h"
 #include "netsurf/mouse.h"
 
-#include "amiga/menu.h"
+#include "amiga/gui_menu.h"
 #include "amiga/object.h"
 #include "amiga/os3support.h"
 
