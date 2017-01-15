@@ -1727,7 +1727,9 @@ static void ami_gui_opts_use(bool save)
 	} else {
 		nsoption_set_bool(enable_javascript, false);
 	}
-	
+
+	ami_gui_menu_set_checked(NULL, M_JS, nsoption_bool(enable_javascript));
+
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_DONOTTRACK],(ULONG *)&data);
 	if (data) {
 		nsoption_set_bool(do_not_track, true);

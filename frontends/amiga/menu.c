@@ -39,7 +39,7 @@
 #include <reaction/reaction_macros.h>
 
 #include "utils/log.h"
-#include "utils/utils.h"
+#include "utils/messages.h"
 
 #include "amiga/gui.h"
 #include "amiga/libs.h"

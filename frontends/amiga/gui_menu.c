@@ -598,12 +598,20 @@ static void ami_gui_menu_set_checked_mc(struct Menu *menu, int item, bool check)
 		check_state = 0;
 	}
 
+	if(menu == NULL) {
+		menu = gui_menu;
+	}
+
 	IDoMethod((Object *)menu, MM_SETSTATE, 0, item, MS_CHECKED, check_state);
 }
 #endif
 
 static void ami_gui_menu_set_checked_gt(struct Menu *menu, int item, bool check)
 {
+	if(menu == NULL) {
+		return;
+	}
+
 	if(check == true) {
 		if((ItemAddress(menu, ami_gui_menu_number(item))->Flags & CHECKED) == 0)
 			ItemAddress(menu, ami_gui_menu_number(item))->Flags ^= CHECKED;
