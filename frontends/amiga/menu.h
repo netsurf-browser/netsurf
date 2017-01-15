@@ -129,7 +129,6 @@ struct Menu *ami_menu_layout(struct ami_menu_data **md, int max);
 void ami_menu_free_menu(struct ami_menu_data **md, int max, struct Menu *imenu);
 
 /* specific to browser windows */
-void ami_free_menulabs(struct ami_menu_data **md);
 struct Menu *ami_menu_create(struct gui_window_2 *gwin);
 void ami_menu_refresh(struct gui_window_2 *gwin);
 void ami_menu_update_checked(struct gui_window_2 *gwin);

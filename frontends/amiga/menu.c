@@ -99,6 +99,9 @@ struct ami_menu_data {
 	UWORD flags;
 };
 
+static struct Menu *restrict gui_menu = NULL;
+static int gui_menu_count = 0;
+
 static bool menu_quit = false;
 static bool ami_menu_check_toggled = false;
 static Object *restrict menu_glyph[NSA_GLYPH_MAX];
@@ -591,7 +594,7 @@ static void ami_menu_free_labs(struct ami_menu_data **md, int max)
 	}
 }
 
-void ami_free_menulabs(struct ami_menu_data **md)
+static void ami_free_menulabs(struct ami_menu_data **md)
 {
 	int i;
 
@@ -1087,8 +1090,16 @@ struct Menu *ami_menu_layout(struct ami_menu_data **md, int max)
 void ami_menu_free(struct gui_window_2 *gwin)
 {
 	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
-		DisposeObject((Object *)gwin->imenu); // if we detach our menu from the window we need to do this manually
+		gui_menu_count--;
+
+		if(gui_menu_count == 0) {
+			ami_free_menulabs(gwin->menu_data);
+			// if we detach our menu from the window we need to do this manually
+			DisposeObject((Object *)gui_menu);
+			gui_menu = NULL;
+		}
 	} else {
+		ami_free_menulabs(gwin->menu_data);
 		FreeMenus(gwin->imenu);
 	}
 }
@@ -1105,10 +1116,23 @@ void ami_menu_free_menu(struct ami_menu_data **md, int max, struct Menu *imenu)
 
 struct Menu *ami_menu_create(struct gui_window_2 *gwin)
 {
+	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
+		if(gui_menu != NULL) {
+			gwin->imenu = gui_menu;
+			gui_menu_count++;
+			return gwin->imenu;
+		}
+	}
+
 	ami_init_menulabs(gwin->menu_data);
 	ami_menu_scan(gwin->menu_data);
 	ami_menu_arexx_scan(gwin->menu_data);
 	gwin->imenu = ami_menu_layout(gwin->menu_data, AMI_MENU_AREXX_MAX);
+
+	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
+		gui_menu = gwin->imenu;
+		gui_menu_count++;
+	}
 
 	return gwin->imenu;
 }
