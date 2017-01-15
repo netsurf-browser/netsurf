@@ -42,61 +42,12 @@
 #include "utils/errors.h"
 #include "utils/idna.h"
 #include "utils/log.h"
+#include "utils/nsurl/private.h"
 #include "utils/nsurl.h"
 #include "utils/utils.h"
 
 /* Define to enable NSURL debugging */
 #undef NSURL_DEBUG
-
-/**
- * nsurl scheme type
- */
-enum scheme_type {
-	NSURL_SCHEME_OTHER,
-	NSURL_SCHEME_HTTP,
-	NSURL_SCHEME_HTTPS,
-	NSURL_SCHEME_FTP,
-	NSURL_SCHEME_MAILTO
-};
-
-/**
- * nsurl components
- *
- * [scheme]://[username]:[password]@[host]:[port][path][?query]#[fragment]
- *
- * Note:
- *   "path" string includes preceding '/', if needed for the scheme
- *   "query" string always includes preceding '?'
- *
- * The other spanned punctuation is to be inserted when building URLs from
- * components.
- */
-struct nsurl_components {
-	lwc_string *scheme;
-	lwc_string *username;
-	lwc_string *password;
-	lwc_string *host;
-	lwc_string *port;
-	lwc_string *path;
-	lwc_string *query;
-	lwc_string *fragment;
-
-	enum scheme_type scheme_type;
-};
-
-
-/**
- * NetSurf URL object
- */
-struct nsurl {
-	struct nsurl_components components;
-
-	int count;	/* Number of references to NetSurf URL object */
-	uint32_t hash;	/* Hash value for nsurl identification */
-
-	size_t length;	/* Length of string */
-	char string[FLEX_ARRAY_LEN_DECL];	/* Full URL as a string */
-};
 
 
 /** Marker set, indicating positions of sections within a URL string */
@@ -115,7 +66,7 @@ struct url_markers {
 
 	size_t end; /** end of URL */
 
-	enum scheme_type scheme_type;
+	enum nsurl_scheme_type scheme_type;
 };
 
 
