@@ -100,6 +100,7 @@ void ami_menu_free_lab_item(struct ami_menu_data **md, int i)
 	md[i]->menukey = NULL;
 	md[i]->menutype = 0;
 	free(md[i]);
+	md[i] = NULL;
 }
 
 static void ami_menu_free_labs(struct ami_menu_data **md, int max)
@@ -115,8 +116,6 @@ void ami_menu_alloc_item(struct ami_menu_data **md, int num, UBYTE type,
 			const char *restrict label, const char *restrict key, const char *restrict icon,
 			void *restrict func, void *restrict hookdata, UWORD flags)
 {
-	char menu_icon[1024];
-
 	md[num] = calloc(1, sizeof(struct ami_menu_data));
 	md[num]->menutype = type;
 	md[num]->flags = flags;
@@ -127,11 +126,7 @@ void ami_menu_alloc_item(struct ami_menu_data **md, int num, UBYTE type,
 		md[num]->menulab = NM_BARLABEL;
 		icon = NULL;
 	} else { /* horrid non-generic stuff */
-		if((num >= AMI_MENU_HOTLIST) && (num <= AMI_MENU_HOTLIST_MAX)) {
-			utf8_from_local_encoding(label,
-			(strlen(label) < NSA_MAX_HOTLIST_MENU_LEN) ? strlen(label) : NSA_MAX_HOTLIST_MENU_LEN,
-			(char **)&md[num]->menulab);
-		} else if((num >= AMI_MENU_AREXX) && (num < AMI_MENU_AREXX_MAX)) {
+		if((num >= AMI_MENU_AREXX) && (num < AMI_MENU_AREXX_MAX)) {
 			md[num]->menulab = strdup(label);		
 		} else {
 			md[num]->menulab = ami_utf8_easy(messages_get(label));
@@ -144,6 +139,8 @@ void ami_menu_alloc_item(struct ami_menu_data **md, int num, UBYTE type,
 	if(hookdata) md[num]->menu_hook.h_Data = hookdata;
 
 #ifdef __amigaos4__
+	char menu_icon[1024];
+
 	if(LIB_IS_AT_LEAST((struct Library *)GadToolsBase, 53, 7)) {
 		if(icon) {
 			if(ami_locate_resource(menu_icon, icon) == true) {
@@ -265,6 +262,7 @@ static int ami_menu_layout_mc_recursive(Object *menu_parent, struct ami_menu_dat
 					TAG_DONE);
 			}
 
+			LOG("Adding item %p ID %d (%s) to parent %p", menu_item, j, md[j]->menulab, menu_parent);
 			IDoMethod(menu_parent, OM_ADDMEMBER, menu_item);
 			continue;
 		} else if (md[j]->menutype > level) {
@@ -452,7 +450,7 @@ void ami_menu_refresh(struct Menu *menu, struct ami_menu_data **md, int menu_ite
 		/* remove all children */
 		while((obj = (Object *)IDoMethod(menu_item_obj, MM_NEXTCHILD, 0, NULL)) != NULL) {
 			IDoMethod(menu_item_obj, OM_REMMEMBER, obj);
-			/* do we need to disposeobject? */
+			DisposeObject(obj);
 		}
 
 		/* free associated data */

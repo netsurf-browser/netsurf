@@ -3335,8 +3335,7 @@ void ami_gui_hotlist_update_all(void)
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
 		gwin = node->objstruct;
 
-		if(node->Type == AMINS_WINDOW)
-		{
+		if(node->Type == AMINS_WINDOW) {
 			ami_gui_hotlist_toolbar_update(gwin);
 		}
 	} while((node = nnode));

@@ -1084,6 +1084,7 @@ static void ami_free_menulabs(struct ami_menu_data **md)
 		md[i]->menukey = NULL;
 		md[i]->menutype = 0;
 		free(md[i]);
+		md[i] = NULL;
 	}
 }
 
@@ -1092,6 +1093,8 @@ void ami_gui_menu_free(struct gui_window_2 *gwin)
 	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
 #ifdef __amigaos4__
 		gui_menu_count--;
+
+		SetAttrs(gwin->objects[OID_MAIN], WINDOW_MenuStrip, NULL, TAG_DONE);
 
 		if(gui_menu_count == 0) {
 			ami_free_menulabs(gui_menu_data);
