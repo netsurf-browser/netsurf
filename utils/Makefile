@@ -12,7 +12,6 @@ S_UTILS := \
 	log.c \
 	messages.c \
 	nsoption.c \
-	nsurl.c \
 	punycode.c \
 	talloc.c \
 	time.c \

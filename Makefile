@@ -621,12 +621,22 @@ include utils/Makefile
 # http utility sources
 include utils/http/Makefile
 
+# nsurl utility sources
+include utils/nsurl/Makefile
+
 # Desktop sources
 include desktop/Makefile
 
 # S_COMMON are sources common to all builds
-S_COMMON := $(S_CONTENT) $(S_FETCHERS) $(S_RENDER) $(S_UTILS) $(S_HTTP) \
-	$(S_DESKTOP) $(S_JAVASCRIPT_BINDING)
+S_COMMON := \
+	$(S_CONTENT) \
+	$(S_FETCHERS) \
+	$(S_RENDER) \
+	$(S_UTILS) \
+	$(S_HTTP) \
+	$(S_NSURL) \
+	$(S_DESKTOP) \
+	$(S_JAVASCRIPT_BINDING)
 
 
 # ----------------------------------------------------------------------------
