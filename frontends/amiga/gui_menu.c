@@ -671,7 +671,7 @@ void ami_gui_menu_set_disabled(struct Window *win, struct Menu *menu, int item, 
 void ami_gui_menu_update_checked(struct gui_window_2 *gwin)
 {
 	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
-		//needs re-writing for MenuClass
+		/* Irrelevant when using MenuClass */
 		return;
 	}
 
@@ -780,11 +780,21 @@ void ami_gui_menu_update_disabled(struct gui_window *g, struct hlcache_handle *c
 
 void ami_gui_menu_set_check_toggled(void)
 {
+	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
+		/* Irrelevant when using MenuClass */
+		return;
+	}
+
 	ami_menu_check_toggled = true;
 }
 
 bool ami_gui_menu_get_check_toggled(void)
 {
+	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
+		/* Irrelevant when using MenuClass */
+		return false;
+	}
+
 	bool check_toggled = ami_menu_check_toggled;
 	ami_menu_check_toggled = false;
 	return check_toggled;
