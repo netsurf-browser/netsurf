@@ -240,6 +240,7 @@ static int ami_menu_layout_mc_recursive(Object *menu_parent, struct ami_menu_dat
 			if(level == NM_TITLE) {
 				menu_item = NewObject(NULL, "menuclass",
 					MA_Type, T_MENU,
+					MA_ID, j,
 					MA_Label, md[j]->menulab,
 					TAG_DONE);
 			} else {
@@ -446,7 +447,7 @@ void ami_menu_refresh(struct Menu *menu, struct ami_menu_data **md, int menu_ite
 	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
 		/* find the address of the menu */
 		menu_item_obj = (Object *)IDoMethod((Object *)menu, MM_FINDID, 0, menu_item);
-
+printf("%lx\n", menu_item_obj);
 		/* remove all children */
 		while((obj = (Object *)IDoMethod(menu_item_obj, MM_NEXTCHILD, 0, NULL)) != NULL) {
 			IDoMethod(menu_item_obj, OM_REMMEMBER, obj);

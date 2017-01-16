@@ -3327,7 +3327,7 @@ void ami_gui_hotlist_update_all(void)
 
 	if(IsMinListEmpty(window_list))	return;
 
-	//ami_gui_menu_refresh_hotlist(); /**\todo disabled as menuclass isn't updating correctly */
+	ami_gui_menu_refresh_hotlist();
 
 	node = (struct nsObject *)GetHead((struct List *)window_list);
 
