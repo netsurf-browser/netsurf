@@ -38,7 +38,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"
-#include "utils/utils.h"
 #include "utils/string.h"
 #include "utils/ascii.h"
 #include "netsurf/css.h"

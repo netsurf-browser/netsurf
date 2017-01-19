@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <nsutils/time.h>
 
-#include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "netsurf/browser_window.h"

@@ -27,7 +27,6 @@
 #include "oslib/os.h"
 
 #include "utils/log.h"
-#include "utils/utils.h"
 #include "netsurf/plotters.h"
 
 #include "riscos/bitmap.h"

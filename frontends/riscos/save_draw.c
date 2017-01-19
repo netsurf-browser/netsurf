@@ -31,7 +31,6 @@
 #include <pencil.h>
 
 #include "utils/log.h"
-#include "utils/utils.h"
 #include "netsurf/plotters.h"
 #include "netsurf/content.h"
 

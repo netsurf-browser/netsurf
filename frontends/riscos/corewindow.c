@@ -34,8 +34,8 @@
 #include <stdint.h>
 #include <oslib/wimp.h>
 
-#include "utils/utils.h"
 #include "utils/log.h"
+#include "netsurf/types.h"
 #include "netsurf/mouse.h"
 #include "netsurf/keypress.h"
 

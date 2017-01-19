@@ -39,7 +39,6 @@
 #include <gtk/gtk.h>
 
 #include "utils/log.h"
-#include "utils/utils.h"
 #include "utils/messages.h"
 #include "utils/utf8.h"
 #include "netsurf/types.h"

@@ -21,7 +21,6 @@
 
 #include "utils/sys_time.h"
 #include "utils/log.h"
-#include "utils/utils.h"
 #include "utils/errors.h"
 
 #include "windows/schedule.h"

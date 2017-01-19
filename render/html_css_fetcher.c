@@ -23,7 +23,6 @@
 #include <string.h>
 
 #include <dom/dom.h>
-
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "utils/config.h"

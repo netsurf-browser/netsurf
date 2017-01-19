@@ -22,7 +22,7 @@
 
 #include <mt_gem.h>
 
-#include "utils/utils.h"
+#include "netsurf/types.h"
 
 /**
  * This is the number of redraw requests that the slotlist can store.
@@ -30,8 +30,6 @@
  *  be merged to one of the existing slots.
  */
 #define MAX_REDRW_SLOTS	32
-
-struct rect;
 
 /**
  * This struct holds scheduled redraw requests.

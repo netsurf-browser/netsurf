@@ -46,7 +46,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsurl.h"
-#include "utils/utils.h"
 #include "utils/ring.h"
 #include "netsurf/misc.h"
 #include "desktop/gui_internal.h"

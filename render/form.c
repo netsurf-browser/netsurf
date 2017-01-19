@@ -21,7 +21,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Form handling functions (implementation).
  */
 
@@ -38,7 +39,6 @@
 #include "utils/talloc.h"
 #include "utils/url.h"
 #include "utils/utf8.h"
-#include "utils/utils.h"
 #include "utils/ascii.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"

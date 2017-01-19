@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <nsutils/time.h>
 
+#include "utils/utils.h"
 #include "utils/config.h"
 #include "utils/corestrings.h"
 #include "utils/http.h"

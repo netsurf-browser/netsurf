@@ -27,14 +27,14 @@
 
 #include <dom/dom.h>
 
+#include "utils/log.h"
+#include "utils/corestrings.h"
 #include "content/content_protected.h"
 #include "content/hlcache.h"
+
 #include "render/box.h"
 #include "render/html_internal.h"
 #include "render/imagemap.h"
-#include "utils/corestrings.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 
 #define HASH_SIZE 31 /* fixed size hash table */
 

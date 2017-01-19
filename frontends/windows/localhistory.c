@@ -24,7 +24,6 @@
 
 #include "desktop/browser_history.h"
 #include "netsurf/plotters.h"
-#include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 

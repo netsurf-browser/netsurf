@@ -27,7 +27,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "utils/utils.h"
 #include "netsurf/plot_style.h"
 #include "netsurf/mouse.h"
 

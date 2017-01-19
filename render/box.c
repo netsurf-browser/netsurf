@@ -19,8 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Box tree manipulation (implementation).
+/**
+ * \file
+ * implementation of box tree manipulation.
  */
 
 #include <assert.h>
@@ -32,7 +33,6 @@
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/talloc.h"
-#include "utils/utils.h"
 #include "netsurf/misc.h"
 #include "netsurf/content.h"
 #include "netsurf/mouse.h"

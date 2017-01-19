@@ -28,7 +28,6 @@
 #include <windows.h>
 
 #include "utils/log.h"
-#include "utils/utils.h"
 #include "utils/messages.h"
 #include "desktop/version.h"
 

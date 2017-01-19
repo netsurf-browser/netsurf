@@ -20,7 +20,6 @@
 #include <string.h>
 
 #include "utils/log.h"
-#include "utils/utils.h"
 #include "content/fetch.h"
 #include "netsurf/fetch.h"
 

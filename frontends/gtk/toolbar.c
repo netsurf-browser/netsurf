@@ -25,7 +25,6 @@
 #include "desktop/searchweb.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/utils.h"
 #include "utils/nsoption.h"
 
 #include "gtk/gui.h"

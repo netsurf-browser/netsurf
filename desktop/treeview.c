@@ -22,6 +22,7 @@
  * Treeview handling implementation.
  */
 
+#include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/nsurl.h"
 #include "utils/nsoption.h"
