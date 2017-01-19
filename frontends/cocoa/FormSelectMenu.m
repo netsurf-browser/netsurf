@@ -19,7 +19,7 @@
 #import "cocoa/FormSelectMenu.h"
 #import "cocoa/coordinates.h"
 
-#import "utils/utils.h"
+#import "netsurf/types.h"
 #import "netsurf/browser_window.h"
 #import "netsurf/form.h"
 
