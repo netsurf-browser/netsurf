@@ -248,29 +248,9 @@ bool nsurl_compare(const nsurl *url1, const nsurl *url2, nsurl_component parts)
 nserror nsurl_get(const nsurl *url, nsurl_component parts,
 		char **url_s, size_t *url_l)
 {
-	struct nsurl_component_lengths str_len = { 0, 0, 0, 0,  0, 0, 0, 0 };
-	enum nsurl_string_flags str_flags = 0;
-
 	assert(url != NULL);
 
-	/* Get the string length and find which parts of url need copied */
-	nsurl__get_string_data(&(url->components), parts, url_l,
-			&str_len, &str_flags);
-
-	if (*url_l == 0) {
-		return NSERROR_BAD_URL;
-	}
-
-	/* Allocate memory for url string */
-	*url_s = malloc(*url_l + 1); /* adding 1 for '\0' */
-	if (*url_s == NULL) {
-		return NSERROR_NOMEM;
-	}
-
-	/* Copy the required parts into the url string */
-	nsurl__get_string(&(url->components), *url_s, &str_len, str_flags);
-
-	return NSERROR_OK;
+	return nsurl__string(&(url->components), parts, 0, url_s, url_l);
 }
 
 

@@ -107,31 +107,21 @@ enum nsurl_string_flags {
 	NSURL_F_FRAGMENT		= (1 << 11)
 };
 
-/**
- * Get nsurl string info; total length, component lengths, & components present
- *
- * \param url		NetSurf URL components
- * \param url_s		Updated to contain the string
- * \param l		Individual component lengths
- * \param flags		String flags
- */
-void nsurl__get_string(const struct nsurl_components *url, char *url_s,
-		struct nsurl_component_lengths *l,
-		enum nsurl_string_flags flags);
 
 /**
- * Get nsurl string info; total length, component lengths, & components present
+ * Convert a set of nsurl components to a single string
  *
- * \param url		NetSurf URL components
- * \param parts		Which parts of the URL are required in the string
- * \param url_l		Updated to total string length
- * \param lengths	Updated with individual component lengths
- * \param pflags	Updated to contain relevant string flags
+ * \param[in]  components  The URL components to stitch together.
+ * \param[in]  parts       The set of parts wanted in the string.
+ * \param[in]  pre_padding Amount in bytes to pad the start of the string by.
+ * \param[out] url_s_out   Returns allocated URL string.
+ * \param[out] url_l_out   Returns byte length of string, excluding pre_padding.
+ * \return NSERROR_OK on success, appropriate error otherwise.
  */
-void nsurl__get_string_data(const struct nsurl_components *url,
-		nsurl_component parts, size_t *url_l,
-		struct nsurl_component_lengths *lengths,
-		enum nsurl_string_flags *pflags);
+nserror nsurl__string(
+		const struct nsurl_components *components,
+		nsurl_component parts, size_t pre_padding,
+		char **url_s_out, size_t *url_l_out);
 
 /**
  * Calculate hash value

@@ -997,8 +997,16 @@ static nserror nsurl__create_from_section(const char * const url_s,
 }
 
 
-/* Exported function, documented in utils/nsurl/private.h */
-void nsurl__get_string_data(const struct nsurl_components *url,
+/**
+ * Get nsurl string info; total length, component lengths, & components present
+ *
+ * \param url		NetSurf URL components
+ * \param parts		Which parts of the URL are required in the string
+ * \param url_l		Updated to total string length
+ * \param lengths	Updated with individual component lengths
+ * \param pflags	Updated to contain relevant string flags
+ */
+static void nsurl__get_string_data(const struct nsurl_components *url,
 		nsurl_component parts, size_t *url_l,
 		struct nsurl_component_lengths *lengths,
 		enum nsurl_string_flags *pflags)
@@ -1095,8 +1103,15 @@ void nsurl__get_string_data(const struct nsurl_components *url,
 }
 
 
-/* Exported function, documented in utils/nsurl/private.h */
-void nsurl__get_string(const struct nsurl_components *url, char *url_s,
+/**
+ * Copy url string into provided buffer
+ *
+ * \param url		NetSurf URL components
+ * \param url_s		Updated to contain the string
+ * \param l		Individual component lengths
+ * \param flags		String flags
+ */
+static void nsurl__get_string(const struct nsurl_components *url, char *url_s,
 		struct nsurl_component_lengths *l,
 		enum nsurl_string_flags flags)
 {
@@ -1163,6 +1178,43 @@ void nsurl__get_string(const struct nsurl_components *url, char *url_s,
 	}
 
 	*pos = '\0';
+}
+
+
+/* exported interface, documented in nsurl.h */
+nserror nsurl__string(
+		const struct nsurl_components *components,
+		nsurl_component parts, size_t pre_padding,
+		char **url_s_out, size_t *url_l_out)
+{
+	struct nsurl_component_lengths str_len = { 0, 0, 0, 0,  0, 0, 0, 0 };
+	enum nsurl_string_flags str_flags = 0;
+	size_t url_l;
+	char *url_s;
+
+	assert(components != NULL);
+
+	/* Get the string length and find which parts of url need copied */
+	nsurl__get_string_data(components, parts, &url_l,
+			&str_len, &str_flags);
+
+	if (url_l == 0) {
+		return NSERROR_BAD_URL;
+	}
+
+	/* Allocate memory for url string */
+	url_s = malloc(pre_padding + url_l + 1); /* adding 1 for '\0' */
+	if (url_s == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	/* Copy the required parts into the url string */
+	nsurl__get_string(components, url_s + pre_padding, &str_len, str_flags);
+
+	*url_s_out = url_s;
+	*url_l_out = url_l;
+
+	return NSERROR_OK;
 }
 
 
@@ -1278,8 +1330,6 @@ nserror nsurl_create(const char * const url_s, nsurl **url)
 	struct nsurl_components c;
 	size_t length;
 	char *buff;
-	struct nsurl_component_lengths str_len = { 0, 0, 0, 0,  0, 0, 0, 0 };
-	enum nsurl_string_flags str_flags = 0;
 	nserror e = NSERROR_OK;
 	bool match;
 
@@ -1327,22 +1377,14 @@ nserror nsurl_create(const char * const url_s, nsurl **url)
 		}
 	}
 
-	/* Get the string length and find which parts of url are present */
-	nsurl__get_string_data(&c, NSURL_WITH_FRAGMENT, &length,
-			&str_len, &str_flags);
-
-	/* Create NetSurf URL object */
-	*url = malloc(sizeof(nsurl) + length + 1); /* Add 1 for \0 */
-	if (*url == NULL) {
-		nsurl_destroy_components(&c);
-		return NSERROR_NOMEM;
+	e = nsurl__string(&c, NSURL_WITH_FRAGMENT,
+			sizeof(nsurl), (char **)url, &length);
+	if (e != NSERROR_OK) {
+		return e;
 	}
 
 	(*url)->components = c;
 	(*url)->length = length;
-
-	/* Fill out the url string */
-	nsurl__get_string(&c, (*url)->string, &str_len, str_flags);
 
 	/* Get the nsurl's hash */
 	nsurl__calc_hash(*url);
@@ -1363,8 +1405,6 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	char *buff;
 	char *buff_pos;
 	char *buff_start;
-	struct nsurl_component_lengths str_len = { 0, 0, 0, 0,  0, 0, 0, 0 };
-	enum nsurl_string_flags str_flags = 0;
 	nserror error = 0;
 	enum {
 		NSURL_F_REL		=  0,
@@ -1575,21 +1615,14 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 		return error;
 	}
 
-	/* Get the string length and find which parts of url are present */
-	nsurl__get_string_data(&c, NSURL_WITH_FRAGMENT, &length,
-			&str_len, &str_flags);
-
-	/* Create NetSurf URL object */
-	*joined = malloc(sizeof(nsurl) + length + 1); /* Add 1 for \0 */
-	if (*joined == NULL) {
-		return NSERROR_NOMEM;
+	error = nsurl__string(&c, NSURL_WITH_FRAGMENT,
+			sizeof(nsurl), (char **)joined, &length);
+	if (error != NSERROR_OK) {
+		return error;
 	}
 
 	(*joined)->components = c;
 	(*joined)->length = length;
-
-	/* Fill out the url string */
-	nsurl__get_string(&c, (*joined)->string, &str_len, str_flags);
 
 	/* Get the nsurl's hash */
 	nsurl__calc_hash(*joined);
