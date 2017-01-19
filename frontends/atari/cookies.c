@@ -17,6 +17,7 @@
  */
 
 #include <assert.h>
+#include <inttypes.h>
 
 #include "utils/log.h"
 #include "utils/messages.h"
