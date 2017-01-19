@@ -32,6 +32,7 @@
 #include "utils/dirent.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
+#include "utils/utils.h"
 #include "netsurf/plot_style.h"
 
 #include "atari/gui.h"
