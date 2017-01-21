@@ -27,6 +27,7 @@
 #include <libwapcaplet/libwapcaplet.h>
 #include <nsutils/base64.h>
 
+#include "netsurf/inttypes.h"
 #include "utils/url.h"
 #include "utils/nsurl.h"
 #include "utils/corestrings.h"

@@ -35,12 +35,10 @@
 #include <stdint.h>
 #include <string.h>
 #include <strings.h>
-#include <inttypes.h>
-
 #include <nsutils/time.h>
 
+#include "netsurf/inttypes.h"
 #include "utils/config.h"
-
 #include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/messages.h"

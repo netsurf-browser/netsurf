@@ -17,12 +17,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
 #include <assert.h>
 
 #include <ft2build.h>
 #include FT_CACHE_H
 
+#include "netsurf/inttypes.h"
 #include "utils/filepath.h"
 #include "utils/utf8.h"
 #include "utils/log.h"

@@ -23,9 +23,8 @@
 #ifndef _NETSURF_RISCOS_URLCOMPLETE_H_
 #define _NETSURF_RISCOS_URLCOMPLETE_H_
 
-#include <inttypes.h>
 #include <stdbool.h>
-#include "oslib/wimp.h"
+#include <oslib/wimp.h>
 
 struct gui_window;
 

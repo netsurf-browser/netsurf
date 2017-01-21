@@ -23,10 +23,10 @@
  */
 
 #include "utils/config.h"
-#include <inttypes.h>
 #include <assert.h>
 #include <windows.h>
 
+#include "netsurf/inttypes.h"
 #include "utils/log.h"
 #include "utils/nsoption.h"
 #include "utils/utf8.h"

@@ -25,12 +25,12 @@
 #include <stdlib.h>
 #include <libwapcaplet/libwapcaplet.h>
 
+#include "netsurf/inttypes.h"
 #include "utils/config.h"
 #include "utils/nsoption.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
-#include "utils/utils.h"
 #include "utils/messages.h"
 #include "content/content_factory.h"
 #include "content/fetchers.h"

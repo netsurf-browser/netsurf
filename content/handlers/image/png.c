@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <png.h>
 
+#include "netsurf/inttypes.h"
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/messages.h"

@@ -22,12 +22,12 @@
  */
 
 #include <assert.h>
-#include <inttypes.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
 
+#include "netsurf/inttypes.h"
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "netsurf/misc.h"

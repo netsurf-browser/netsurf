@@ -21,10 +21,11 @@
  * Content handling implementation.
  */
 
-#include <inttypes.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <nsutils/time.h>
 
+#include "netsurf/inttypes.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "netsurf/browser_window.h"

@@ -16,13 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
 #include <sys/types.h>
 #include <string.h>
 
 #include "assert.h"
 #include "cflib.h"
 
+#include "netsurf/inttypes.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"

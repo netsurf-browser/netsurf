@@ -21,18 +21,19 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <dom/dom.h>
 #include <libwapcaplet/libwapcaplet.h>
 
+#include "netsurf/inttypes.h"
 #include "utils/config.h"
-#include "content/fetch.h"
-#include "content/fetchers.h"
-#include "render/html_internal.h"
 #include "utils/log.h"
 #include "utils/ring.h"
 #include "utils/nsurl.h"
 #include "utils/utils.h"
+#include "content/fetch.h"
+#include "content/fetchers.h"
+
+#include "render/html_internal.h"
 
 typedef struct html_css_fetcher_item {
 	uint32_t key;

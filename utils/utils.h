@@ -23,10 +23,9 @@
  * \todo Many of these functions and macros should have their own headers.
  */
 
-#ifndef _NETSURF_UTILS_UTILS_H_
-#define _NETSURF_UTILS_UTILS_H_
+#ifndef NETSURF_UTILS_UTILS_H
+#define NETSURF_UTILS_UTILS_H
 
-#include <inttypes.h>
 #include <stdbool.h>
 
 #ifndef NOF_ELEMENTS
@@ -52,29 +51,11 @@
 #endif
 #endif
 
-#ifndef PRIxPTR
-#define PRIxPTR "x"
-#endif
-
-#ifndef PRId64
-#define PRId64 "lld"
-#endif
-
-/* Windows does not have sizet formating codes or POSIX mkdir so work
- * around that
- */
+/* Windows does not have POSIX mkdir so work around that */
 #if defined(_WIN32)
-/** windows printf formatting for size_t type */
-#define PRIsizet "Iu"
-/** windows printf formatting for ssize_t type */
-#define PRIssizet "Id"
 /** windows mkdir function */
 #define nsmkdir(dir, mode) mkdir((dir))
 #else
-/** c99 standard printf formatting for size_t type */
-#define PRIsizet "zu"
-/** c99 standard printf formatting for ssize_t type */
-#define PRIssizet "zd"
 /** POSIX mkdir function */
 #define nsmkdir(dir, mode) mkdir((dir), (mode))
 #endif

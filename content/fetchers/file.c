@@ -44,6 +44,7 @@
 #endif
 #include <libwapcaplet/libwapcaplet.h>
 
+#include "netsurf/inttypes.h"
 #include "utils/nsurl.h"
 #include "utils/dirent.h"
 #include "utils/corestrings.h"

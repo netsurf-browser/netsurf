@@ -43,11 +43,11 @@
 #include <stdlib.h>
 #include <nsutils/unistd.h>
 
+#include "netsurf/inttypes.h"
 #include "utils/filepath.h"
 #include "utils/file.h"
 #include "utils/nsurl.h"
 #include "utils/log.h"
-#include "utils/utils.h"
 #include "utils/messages.h"
 #include "desktop/gui_internal.h"
 #include "netsurf/misc.h"

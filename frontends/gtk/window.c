@@ -23,7 +23,6 @@
  */
 
 #include <stdlib.h>
-#include <inttypes.h>
 #include <string.h>
 #include <limits.h>
 #include <assert.h>
@@ -32,6 +31,7 @@
 #include <gdk/gdkkeysyms.h>
 #include <gdk-pixbuf/gdk-pixdata.h>
 
+#include "netsurf/inttypes.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/nsoption.h"

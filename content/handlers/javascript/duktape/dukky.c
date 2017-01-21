@@ -23,16 +23,15 @@
  * Duktapeish implementation of javascript engine functions.
  */
 
-#include <inttypes.h>
-
+#include <stdint.h>
 #include <nsutils/time.h>
 
-#include "content/content.h"
-
+#include "netsurf/inttypes.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/corestrings.h"
+#include "content/content.h"
 
 #include "javascript/js.h"
 #include "javascript/content.h"

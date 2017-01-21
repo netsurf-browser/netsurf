@@ -23,6 +23,7 @@
 #include "utils/nsurl.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
+#include "utils/utils.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/keypress.h"
 #include "desktop/save_complete.h"

@@ -20,12 +20,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <inttypes.h>
 #include <svgtiny.h>
 #include <proto/exec.h>
 #include <string.h>
 #include <proto/dos.h>
 
+#include "netsurf/inttypes.h"
 #ifndef AMIGA_DR2D_STANDALONE
 #include "utils/nsurl.h"
 #include "netsurf/content.h"

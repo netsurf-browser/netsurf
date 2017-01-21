@@ -29,10 +29,10 @@
 
 #include <assert.h>
 #include <ctype.h>
-#include <inttypes.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <time.h>
 #include <string.h>
 #include <oslib/colourtrans.h>
@@ -43,6 +43,7 @@
 #include <oslib/wimpspriteop.h>
 #include <nsutils/time.h>
 
+#include "netsurf/inttypes.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/talloc.h"

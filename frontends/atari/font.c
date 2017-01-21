@@ -16,11 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
 #include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "netsurf/inttypes.h"
 #include "utils/utf8.h"
 #include "utils/log.h"
 #include "utils/nsoption.h"
