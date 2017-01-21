@@ -620,7 +620,7 @@ static nserror store_evict(struct store_state *state)
 		return NSERROR_OK;
 	}
 
-	LOG("Evicting entries to reduce %"PRIu64" by %zd",
+	LOG("Evicting entries to reduce %"PRIu64" by %"PRIsizet,
 	    state->total_alloc, state->hysteresis);
 
 	/* allocate storage for the list */
@@ -658,7 +658,7 @@ static nserror store_evict(struct store_state *state)
 
 	free(elist);
 
-	LOG("removed %zd in %d entries", removed, ent);
+	LOG("removed %"PRIsizet" in %d entries", removed, ent);
 
 	return ret;
 }
@@ -1204,7 +1204,7 @@ read_entries(struct store_state *state)
 
 	entries_size = (1 << state->entry_bits) * sizeof(struct store_entry);
 
-	LOG("Allocating %zd bytes for max of %d entries of %ld length elements %ld length",
+	LOG("Allocating %"PRIsizet" bytes for max of %d entries of %ld length elements %ld length",
 	    entries_size, 1 << state->entry_bits,
 	    sizeof(struct store_entry),
 	    sizeof(struct store_entry_element));
@@ -1560,13 +1560,13 @@ initialise(const struct llcache_store_parameters *parameters)
 
 	LOG("FS backing store init successful");
 
-	LOG("path:%s limit:%zd hyst:%zd addr:%d entries:%d",
+	LOG("path:%s limit:%"PRIsizet" hyst:%"PRIsizet" addr:%d entries:%d",
 	    newstate->path,
 	    newstate->limit,
 	    newstate->hysteresis,
 	    newstate->ident_bits,
 	    newstate->entry_bits);
-	LOG("Using %"PRIu64"/%zd", newstate->total_alloc, newstate->limit);
+	LOG("Using %"PRIu64"/%"PRIsizet, newstate->total_alloc, newstate->limit);
 
 	return NSERROR_OK;
 }
@@ -1605,7 +1605,7 @@ finalise(void)
 
 		/* avoid division by zero */
 		if (op_count > 0) {
-			LOG("Cache total/hit/miss/fail (counts) %d/%zd/%zd/%d (100%%/%zd%%/%zd%%/%d%%)",
+			LOG("Cache total/hit/miss/fail (counts) %d/%"PRIsizet"/%"PRIsizet"/%d (100%%/%"PRIsizet"%%/%"PRIsizet"%%/%d%%)",
 			    op_count,
 			    storestate->hit_count,
 			    storestate->miss_count,
@@ -1661,7 +1661,7 @@ static nserror store_write_block(struct store_state *state,
 		    bse->elem[elem_idx].size,
 		    offst);
 	if (wr != (ssize_t)bse->elem[elem_idx].size) {
-		LOG("Write failed %zd of %d bytes from %p at 0x%jx block %d errno %d",
+		LOG("Write failed %"PRIssizet" of %d bytes from %p at 0x%jx block %d errno %d",
 		    wr,
 		    bse->elem[elem_idx].size,
 		    bse->elem[elem_idx].data,
@@ -1671,7 +1671,7 @@ static nserror store_write_block(struct store_state *state,
 		return NSERROR_SAVE_FAILED;
 	}
 
-	LOG("Wrote %zd bytes from %p at 0x%jx block %d",
+	LOG("Wrote %"PRIssizet" bytes from %p at 0x%jx block %d",
 	    wr,
 	    bse->elem[elem_idx].data,
 	    (uintmax_t)offst,
@@ -1708,7 +1708,7 @@ static nserror store_write_file(struct store_state *state,
 
 	close(fd);
 	if (wr != (ssize_t)bse->elem[elem_idx].size) {
-		LOG("Write failed %zd of %d bytes from %p errno %d",
+		LOG("Write failed %"PRIssizet" of %d bytes from %p errno %d",
 		    wr,
 		    bse->elem[elem_idx].size,
 		    bse->elem[elem_idx].data,
@@ -1718,7 +1718,7 @@ static nserror store_write_file(struct store_state *state,
 		return NSERROR_SAVE_FAILED;
 	}
 
-	LOG("Wrote %zd bytes from %p", wr, bse->elem[elem_idx].data);
+	LOG("Wrote %"PRIssizet" bytes from %p", wr, bse->elem[elem_idx].data);
 
 	return NSERROR_OK;
 }
@@ -1829,7 +1829,7 @@ static nserror store_read_block(struct store_state *state,
 		   bse->elem[elem_idx].size,
 		   offst);
 	if (rd != (ssize_t)bse->elem[elem_idx].size) {
-		LOG("Failed reading %zd of %d bytes into %p from 0x%jx block %d errno %d",
+		LOG("Failed reading %"PRIssizet" of %d bytes into %p from 0x%jx block %d errno %d",
 		    rd,
 		    bse->elem[elem_idx].size,
 		    bse->elem[elem_idx].data,
@@ -1839,7 +1839,7 @@ static nserror store_read_block(struct store_state *state,
 		return NSERROR_SAVE_FAILED;
 	}
 
-	LOG("Read %zd bytes into %p from 0x%jx block %d",
+	LOG("Read %"PRIssizet" bytes into %p from 0x%jx block %d",
 	    rd,
 	    bse->elem[elem_idx].data,
 	    (uintmax_t)offst,
@@ -1878,7 +1878,8 @@ static nserror store_read_file(struct store_state *state,
 			  bse->elem[elem_idx].data + tot,
 			  bse->elem[elem_idx].size - tot);
 		if (rd <= 0) {
-			LOG("read error returned %zd errno %d", rd, errno);
+			LOG("read error returned %"PRIssizet" errno %d",
+			    rd, errno);
 			ret = NSERROR_NOT_FOUND;
 			break;
 		}
@@ -1887,7 +1888,7 @@ static nserror store_read_file(struct store_state *state,
 
 	close(fd);
 
-	LOG("Read %zd bytes into %p", tot, bse->elem[elem_idx].data);
+	LOG("Read %"PRIsizet" bytes into %p", tot, bse->elem[elem_idx].data);
 
 	return ret;
 }
