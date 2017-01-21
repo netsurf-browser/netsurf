@@ -49,6 +49,7 @@ char *gemtk_obj_get_text(OBJECT * tree, short idx)
     return (p);
 }
 
+/*
 static void set_text(OBJECT *obj, short idx, char * text, int len)
 {
     char spare[255];
@@ -63,6 +64,7 @@ static void set_text(OBJECT *obj, short idx, char * text, int len)
 
     set_string(obj, idx, spare);
 }
+*/
 
 char gemtk_obj_set_str_safe(OBJECT * tree, short idx, const char *txt)
 {

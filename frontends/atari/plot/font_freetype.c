@@ -262,13 +262,14 @@ static FT_Glyph ft_getglyph(const plot_font_style_t *fstyle, uint32_t ucs4)
 	FT_UInt glyph_index;
 	FTC_ScalerRec srec;
 	FT_Glyph glyph;
-	FT_Error error;
+	//FT_Error error;
 	ftc_faceid_t *ft_face;
 
 	ft_fill_scalar(fstyle, &srec);
 	ft_face = (ftc_faceid_t *)srec.face_id;
 	glyph_index = FTC_CMapCache_Lookup(ft_cmap_cache, srec.face_id, ft_face->cidx, ucs4);
-	error = FTC_ImageCache_LookupScaler(ft_image_cache,
+	//error =
+	FTC_ImageCache_LookupScaler(ft_image_cache,
 					    &srec,
 					    FT_LOAD_RENDER |
 					    FT_LOAD_FORCE_AUTOHINT |

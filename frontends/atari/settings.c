@@ -593,7 +593,7 @@ static void form_event(int index, int external)
         else
             tmp_option_memory_cache_size += 1;
 
-        if( tmp_option_memory_cache_size < 0 )
+        if( tmp_option_memory_cache_size == 0)
             tmp_option_memory_cache_size = 1;
         if( tmp_option_memory_cache_size > 999 )
             tmp_option_memory_cache_size = 999;
@@ -610,7 +610,7 @@ static void form_event(int index, int external)
         else
             tmp_option_disc_cache_size += 1;
 
-        if( tmp_option_disc_cache_size < 0 )
+        if( tmp_option_disc_cache_size == 0 )
             tmp_option_disc_cache_size = 1;
         if( tmp_option_disc_cache_size > 9999 )
             tmp_option_disc_cache_size = 9999;

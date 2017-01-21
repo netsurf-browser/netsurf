@@ -161,7 +161,7 @@ static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t * fstyle,const 
 static void draw_glyph1(FONT_PLOTTER self, GRECT *inloc, uint8_t *chrp, int pitch, uint32_t colour )
 {
 	size_t bmpstride;
-	GRECT clip;
+	//GRECT clip;
 	uint32_t * fontdata;
 	int xloop,yloop;
 	int stride = pitch / 8;

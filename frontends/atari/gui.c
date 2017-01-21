@@ -386,13 +386,13 @@ static void atari_window_reformat(struct gui_window *gw)
 
 static void gui_window_redraw_window(struct gui_window *gw)
 {
-    CMP_BROWSER b;
-    GRECT rect;
-    if (gw == NULL)
-	return;
-    b = gw->browser;
-    window_get_grect(gw->root, BROWSER_AREA_CONTENT, &rect);
-    window_schedule_redraw_grect(gw->root, &rect);
+	//CMP_BROWSER b;
+	GRECT rect;
+	if (gw == NULL)
+		return;
+	//b = gw->browser;
+	window_get_grect(gw->root, BROWSER_AREA_CONTENT, &rect);
+	window_schedule_redraw_grect(gw->root, &rect);
 }
 
 static void gui_window_update_box(struct gui_window *gw, const struct rect *rect)

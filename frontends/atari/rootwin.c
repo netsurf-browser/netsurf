@@ -680,12 +680,12 @@ void window_close_search(ROOTWIN *rootwin)
 	struct browser_window *bw;
 	struct gui_window *gw;
 	GRECT area;
-	OBJECT *obj;
+	//OBJECT *obj;
 
 
 	gw = rootwin->active_gui_window;
 	bw = gw->browser->bw;
-	obj = gemtk_obj_get_tree(TOOLBAR);
+	//obj = gemtk_obj_get_tree(TOOLBAR);
 
 	if (gw->search != NULL) {
 		nsatari_search_session_destroy(gw->search);

@@ -127,7 +127,7 @@ error:
 */
 static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 {
-    GRECT g, g_ro, g2;
+    GRECT g, g2;
     short retval = 1;
     int val = 1;
     struct gemtk_wm_scroll_info_s *slid;
@@ -169,7 +169,6 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 
             slid = gemtk_wm_get_scroll_info(gw);
             gemtk_wm_get_grect(gw, GEMTK_WM_AREA_CONTENT, &g);
-            g_ro = g;
 
             switch(msg[4]) {
 
@@ -471,67 +470,66 @@ static short preproc_mu_keybd(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 {
 	short retval = 0;
 
-    if ((gw->toolbar != NULL) && (gw->toolbar_edit_obj > -1)) {
+	if ((gw->toolbar != NULL) && (gw->toolbar_edit_obj > -1)) {
 
-        short next_edit_obj = gw->toolbar_edit_obj;
-        short next_char = -1;
-        short edit_idx;
-        short r;
+		short next_edit_obj = gw->toolbar_edit_obj;
+		short next_char = -1;
+		short edit_idx;
 
-		DEBUG_PRINT(("%s, gw: %p, toolbar_edit_obj: %d\n", __FUNCTION__, gw,
-				gw->toolbar_edit_obj));
+		DEBUG_PRINT(("%s, gw: %p, toolbar_edit_obj: %d\n",
+			     __FUNCTION__, gw,
+			     gw->toolbar_edit_obj));
 
-        r = form_wkeybd(gw->toolbar, gw->toolbar_edit_obj, next_edit_obj,
-                       ev_out->emo_kreturn,
-                       &next_edit_obj, &next_char, gw->handle);
+		form_wkeybd(gw->toolbar, gw->toolbar_edit_obj, next_edit_obj,
+				ev_out->emo_kreturn,
+				&next_edit_obj, &next_char, gw->handle);
 
-        if (next_edit_obj != gw->toolbar_edit_obj) {
+		if (next_edit_obj != gw->toolbar_edit_obj) {
 			gemtk_wm_set_toolbar_edit_obj(gw, next_edit_obj,
-											ev_out->emo_kreturn);
-        } else {
-            if (next_char > 13) {
-                r = objc_wedit(gw->toolbar, gw->toolbar_edit_obj,
-                              ev_out->emo_kreturn, &edit_idx,
-                              EDCHAR, gw->handle);
-            }
-        }
-        //retval = 1;
-        /*gemtk_wm_send_msg(gw, GEMTK_WM_WM_FORM_KEY, gw->toolbar_edit_obj,
-						ev_out->emo_kreturn, 0, 0);*/
-    }
+						      ev_out->emo_kreturn);
+		} else {
+			if (next_char > 13) {
+				objc_wedit(gw->toolbar, gw->toolbar_edit_obj,
+					       ev_out->emo_kreturn, &edit_idx,
+					       EDCHAR, gw->handle);
+			}
+		}
+		//retval = 1;
+		/*gemtk_wm_send_msg(gw, GEMTK_WM_WM_FORM_KEY, gw->toolbar_edit_obj,
+		  ev_out->emo_kreturn, 0, 0);*/
+	}
 
-    if((gw->form != NULL) && (gw->form_edit_obj > -1) ) {
+	if ((gw->form != NULL) && (gw->form_edit_obj > -1)) {
 
-        short next_edit_obj = gw->form_edit_obj;
-        short next_char = -1;
-        short edit_idx;
-        short r;
+		short next_edit_obj = gw->form_edit_obj;
+		short next_char = -1;
+		short edit_idx;
 
-        r = form_wkeybd(gw->form, gw->form_edit_obj, next_edit_obj,
-                       ev_out->emo_kreturn,
-                       &next_edit_obj, &next_char, gw->handle);
+		form_wkeybd(gw->form, gw->form_edit_obj, next_edit_obj,
+				ev_out->emo_kreturn,
+				&next_edit_obj, &next_char, gw->handle);
 
-        if (next_edit_obj != gw->form_edit_obj) {
+		if (next_edit_obj != gw->form_edit_obj) {
 
 			if(gw->form_edit_obj != -1) {
 				objc_wedit(gw->form, gw->form_edit_obj,
-                      ev_out->emo_kreturn, &edit_idx,
-                      EDEND, gw->handle);
+					   ev_out->emo_kreturn, &edit_idx,
+					   EDEND, gw->handle);
 			}
 
-            gw->form_edit_obj = next_edit_obj;
+			gw->form_edit_obj = next_edit_obj;
 
-            objc_wedit(gw->form, gw->form_edit_obj,
-                      ev_out->emo_kreturn, &edit_idx,
-                      EDINIT, gw->handle);
-        } else {
-            if(next_char > 13)
-                r = objc_wedit(gw->form, gw->form_edit_obj,
-                              ev_out->emo_kreturn, &edit_idx,
-                              EDCHAR, gw->handle);
-        }
-    }
-    return(retval);
+			objc_wedit(gw->form, gw->form_edit_obj,
+				   ev_out->emo_kreturn, &edit_idx,
+				   EDINIT, gw->handle);
+		} else {
+			if(next_char > 13)
+				objc_wedit(gw->form, gw->form_edit_obj,
+					       ev_out->emo_kreturn, &edit_idx,
+					       EDCHAR, gw->handle);
+		}
+	}
+	return(retval);
 }
 
 /**

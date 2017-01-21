@@ -366,11 +366,11 @@ static void __CDECL on_keybd_event(struct core_window *cw, EVMULT_OUT *ev_out,
 }
 
 
-static void __CDECL on_redraw_event(struct core_window *cw, EVMULT_OUT *ev_out,
-									short msg[8])
+static void __CDECL on_redraw_event(struct core_window *cw,
+				    EVMULT_OUT *ev_out,
+				    short msg[8])
 {
 	GRECT work, clip;
-	struct gemtk_wm_scroll_info_s *slid;
 	struct atari_treeview_window *tv = (struct atari_treeview_window *)cw;
 
 	if (tv == NULL)
@@ -381,7 +381,7 @@ static void __CDECL on_redraw_event(struct core_window *cw, EVMULT_OUT *ev_out,
 
 	atari_treeview_get_grect(cw, TREEVIEW_AREA_CONTENT, &work);
 	//dbg_grect("treeview work: ", &work);
-	slid = gemtk_wm_get_scroll_info(tv->window);
+	gemtk_wm_get_scroll_info(tv->window);
 
 	clip = work;
 
@@ -390,10 +390,10 @@ static void __CDECL on_redraw_event(struct core_window *cw, EVMULT_OUT *ev_out,
 		return;
 	}
 
-    if (atari_treeview_is_iconified(cw) == true) {
-        atari_treeview_redraw_icon(cw, &clip);
-        return;
-    }
+	if (atari_treeview_is_iconified(cw) == true) {
+		atari_treeview_redraw_icon(cw, &clip);
+		return;
+	}
 
 	/* make redraw coords relative to content viewport */
 	clip.g_x -= work.g_x;
@@ -425,8 +425,9 @@ static void __CDECL on_redraw_event(struct core_window *cw, EVMULT_OUT *ev_out,
 	}
 }
 
-static void __CDECL on_mbutton_event(struct core_window *cw, EVMULT_OUT *ev_out,
-									short msg[8])
+static void __CDECL on_mbutton_event(struct core_window *cw,
+				     EVMULT_OUT *ev_out,
+				     short msg[8])
 {
 	struct atari_treeview_window *tv = (struct atari_treeview_window *)cw;
 	struct gemtk_wm_scroll_info_s *slid;
