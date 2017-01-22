@@ -50,8 +50,13 @@
 #undef NSURL_DEBUG
 
 
-#define nsurl__component_copy(c) (c == NULL) ? NULL : lwc_string_ref(c)
-
+/**
+ * Compare two component values.
+ *
+ * Sets match to false if the components are not the same.
+ * Does nothing if the components are the same, so ensure match is
+ * preset to true.
+ */
 #define nsurl__component_compare(c1, c2, match)	      		\
 	if (c1 && c2 && lwc_error_ok ==				\
 			lwc_string_isequal(c1, c2, match)) {	\

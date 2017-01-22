@@ -107,6 +107,11 @@ enum nsurl_string_flags {
 	NSURL_F_FRAGMENT		= (1 << 11)
 };
 
+/**
+ * NULL-safe lwc_string_ref
+ */
+#define nsurl__component_copy(c) (c == NULL) ? NULL : lwc_string_ref(c)
+
 
 /**
  * Convert a set of nsurl components to a single string
