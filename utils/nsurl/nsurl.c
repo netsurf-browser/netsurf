@@ -63,39 +63,6 @@
 	}
 
 
-/**
- * Destroy components
- *
- * \param c	url components
- */
-static void nsurl_destroy_components(struct nsurl_components *c)
-{
-	if (c->scheme)
-		lwc_string_unref(c->scheme);
-
-	if (c->username)
-		lwc_string_unref(c->username);
-
-	if (c->password)
-		lwc_string_unref(c->password);
-
-	if (c->host)
-		lwc_string_unref(c->host);
-
-	if (c->port)
-		lwc_string_unref(c->port);
-
-	if (c->path)
-		lwc_string_unref(c->path);
-
-	if (c->query)
-		lwc_string_unref(c->query);
-
-	if (c->fragment)
-		lwc_string_unref(c->fragment);
-}
-
-
 
 /******************************************************************************
  * NetSurf URL Public API                                                     *
@@ -126,7 +93,7 @@ void nsurl_unref(nsurl *url)
 #endif
 
 	/* Release lwc strings */
-	nsurl_destroy_components(&url->components);
+	nsurl__components_destroy(&url->components);
 
 	/* Free the NetSurf URL */
 	free(url);
@@ -219,7 +186,8 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
 {
 	assert(url != NULL);
 
-	return nsurl__string(&(url->components), parts, 0, url_s, url_l);
+	return nsurl__components_to_string(&(url->components), parts, 0,
+			url_s, url_l);
 }
 
 

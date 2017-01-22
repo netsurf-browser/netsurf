@@ -1169,7 +1169,7 @@ static void nsurl__get_string(const struct nsurl_components *url, char *url_s,
 
 
 /* exported interface, documented in nsurl.h */
-nserror nsurl__string(
+nserror nsurl__components_to_string(
 		const struct nsurl_components *components,
 		nsurl_component parts, size_t pre_padding,
 		char **url_s_out, size_t *url_l_out)
@@ -1239,39 +1239,6 @@ void nsurl__calc_hash(nsurl *url)
 }
 
 
-/**
- * Destroy components
- *
- * \param c	url components
- */
-static void nsurl_destroy_components(struct nsurl_components *c)
-{
-	if (c->scheme)
-		lwc_string_unref(c->scheme);
-
-	if (c->username)
-		lwc_string_unref(c->username);
-
-	if (c->password)
-		lwc_string_unref(c->password);
-
-	if (c->host)
-		lwc_string_unref(c->host);
-
-	if (c->port)
-		lwc_string_unref(c->port);
-
-	if (c->path)
-		lwc_string_unref(c->path);
-
-	if (c->query)
-		lwc_string_unref(c->query);
-
-	if (c->fragment)
-		lwc_string_unref(c->fragment);
-}
-
-
 /******************************************************************************
  * NetSurf URL Public API                                                     *
  ******************************************************************************/
@@ -1314,7 +1281,7 @@ nserror nsurl_create(const char * const url_s, nsurl **url)
 	free(buff);
 
 	if (e != NSERROR_OK) {
-		nsurl_destroy_components(&c);
+		nsurl__components_destroy(&c);
 		return NSERROR_NOMEM;
 	}
 
@@ -1325,12 +1292,12 @@ nserror nsurl_create(const char * const url_s, nsurl **url)
 			&match) == lwc_error_ok && match == true)) {
 		/* http, https must have host */
 		if (c.host == NULL) {
-			nsurl_destroy_components(&c);
+			nsurl__components_destroy(&c);
 			return NSERROR_BAD_URL;
 		}
 	}
 
-	e = nsurl__string(&c, NSURL_WITH_FRAGMENT,
+	e = nsurl__components_to_string(&c, NSURL_WITH_FRAGMENT,
 			sizeof(nsurl), (char **)url, &length);
 	if (e != NSERROR_OK) {
 		return e;
@@ -1568,7 +1535,7 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 		return error;
 	}
 
-	error = nsurl__string(&c, NSURL_WITH_FRAGMENT,
+	error = nsurl__components_to_string(&c, NSURL_WITH_FRAGMENT,
 			sizeof(nsurl), (char **)joined, &length);
 	if (error != NSERROR_OK) {
 		return error;

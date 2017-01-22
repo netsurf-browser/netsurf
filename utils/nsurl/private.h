@@ -128,7 +128,7 @@ enum nsurl_string_flags {
  * \param[out] url_l_out   Returns byte length of string, excluding pre_padding.
  * \return NSERROR_OK on success, appropriate error otherwise.
  */
-nserror nsurl__string(
+nserror nsurl__components_to_string(
 		const struct nsurl_components *components,
 		nsurl_component parts, size_t pre_padding,
 		char **url_s_out, size_t *url_l_out);
@@ -139,6 +139,41 @@ nserror nsurl__string(
  * \param url		NetSurf URL object to set hash value for
  */
 void nsurl__calc_hash(nsurl *url);
+
+
+
+
+/**
+ * Destroy components
+ *
+ * \param c	url components
+ */
+static inline void nsurl__components_destroy(struct nsurl_components *c)
+{
+	if (c->scheme)
+		lwc_string_unref(c->scheme);
+
+	if (c->username)
+		lwc_string_unref(c->username);
+
+	if (c->password)
+		lwc_string_unref(c->password);
+
+	if (c->host)
+		lwc_string_unref(c->host);
+
+	if (c->port)
+		lwc_string_unref(c->port);
+
+	if (c->path)
+		lwc_string_unref(c->path);
+
+	if (c->query)
+		lwc_string_unref(c->query);
+
+	if (c->fragment)
+		lwc_string_unref(c->fragment);
+}
 
 
 
