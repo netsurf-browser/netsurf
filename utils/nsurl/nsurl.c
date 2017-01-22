@@ -46,9 +46,6 @@
 #include "utils/nsurl.h"
 #include "utils/utils.h"
 
-/* Define to enable NSURL debugging */
-#undef NSURL_DEBUG
-
 
 /**
  * Compare two component values.
@@ -99,39 +96,6 @@ static void nsurl_destroy_components(struct nsurl_components *c)
 }
 
 
-#ifdef NSURL_DEBUG
-/**
- * Dump a NetSurf URL's internal components
- *
- * \param url	The NetSurf URL to dump components of
- */
-static void nsurl__dump(const nsurl *url)
-{
-	if (url->components.scheme)
-		LOG("  Scheme: %s", lwc_string_data(url->components.scheme));
-
-	if (url->components.username)
-		LOG("Username: %s", lwc_string_data(url->components.username));
-
-	if (url->components.password)
-		LOG("Password: %s", lwc_string_data(url->components.password));
-
-	if (url->components.host)
-		LOG("    Host: %s", lwc_string_data(url->components.host));
-
-	if (url->components.port)
-		LOG("    Port: %s", lwc_string_data(url->components.port));
-
-	if (url->components.path)
-		LOG("    Path: %s", lwc_string_data(url->components.path));
-
-	if (url->components.query)
-		LOG("   Query: %s", lwc_string_data(url->components.query));
-
-	if (url->components.fragment)
-		LOG("Fragment: %s", lwc_string_data(url->components.fragment));
-}
-#endif
 
 /******************************************************************************
  * NetSurf URL Public API                                                     *
