@@ -158,13 +158,6 @@ void fetch_change_callback(struct fetch *fetch, fetch_callback callback, void *p
  */
 long fetch_http_code(struct fetch *fetch);
 
-/**
- * Determine if a fetch was verifiable
- *
- * \param fetch  Fetch to consider
- * \return Verifiable status of fetch
- */
-bool fetch_get_verifiable(struct fetch *fetch);
 
 /**
  * Free a linked list of fetch_multipart_data.

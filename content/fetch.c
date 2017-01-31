@@ -642,13 +642,6 @@ long fetch_http_code(struct fetch *fetch)
 	return fetch->http_code;
 }
 
-/* exported interface documented in content/fetch.h */
-bool fetch_get_verifiable(struct fetch *fetch)
-{
-	assert(fetch);
-
-	return fetch->verifiable;
-}
 
 /* exported interface documented in content/fetch.h */
 struct fetch_multipart_data *
