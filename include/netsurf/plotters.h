@@ -31,6 +31,7 @@
 
 struct bitmap;
 struct rect;
+struct plotter_table;
 
 typedef unsigned long bitmap_flags_t;
 #define BITMAPF_NONE 0
@@ -44,50 +45,45 @@ enum path_command {
 	PLOTTER_PATH_BEZIER,
 };
 
-/** Set of target specific plotting functions.
- *
- * The functions are:
- *  arc		- Plots an arc, around (x,y), from anticlockwise from angle1 to
- *		  angle2. Angles are measured anticlockwise from horizontal, in
- *		  degrees.
- *  disc	- Plots a circle, centered on (x,y), which is optionally filled.
- *  line	- Plots a line from (x0,y0) to (x1,y1). Coordinates are at
- *		  centre of line width/thickness.
- *  path	- Plots a path consisting of cubic Bezier curves. Line colour is
- *		  given by c and fill colour is given by fill.
- *  polygon	- Plots a filled polygon with straight lines between points.
- *		  The lines around the edge of the ploygon are not plotted. The
- *		  polygon is filled with the non-zero winding rule.
- *  rectangle	- Plots a rectangle outline. The line can be solid, dotted or
- *		  dashed. Top left corner at (x0,y0) and rectangle has given
- *		  width and height.
- *  fill	- Plots a filled rectangle. Top left corner at (x0,y0), bottom
- *		  right corner at (x1,y1). Note: (x0,y0) is inside filled area,
- *		  but (x1,y1) is below and to the right. See diagram below.
- *  clip	- Sets a clip rectangle for subsequent plots.
- *  text	- Plots text. (x,y) is the coordinate of the left hand side of
- *		  the text's baseline. The text is UTF-8 encoded. The colour, c,
- *		  is the colour of the text. Background colour, bg, may be used
- *		  optionally to attempt to provide anti-aliased text without
- *		  screen reads. Font information is provided in the style.
- *  bitmap     	- Tiled plot of a bitmap image. (x,y) gives the top left
- *		  coordinate of an explicitly placed tile. From this tile the
- *		  image can repeat in all four directions -- up, down, left and
- *		  right -- to the extents given by the current clip rectangle.
- *		  The bitmap_flags say whether to tile in the x and y
- *		  directions. If not tiling in x or y directions, the single
- *		  image is plotted. The width and height give the dimensions
- *		  the image is to be scaled to.
- *  group_start	- Start of a group of objects. Used when plotter implements
- *		  export to a vector graphics file format. (Optional.)
- *  group_end	- End of the most recently started group. (Optional.)
- *  flush	- Only used internally by the knockout code. Should be NULL in
- *		  any front end display plotters or export plotters.
- *
- * Plotter options:
- *  option_knockout	- Optimisation particularly for unaccelerated screen
- *			  redraw. It tries to avoid plotting to the same area
- *			  more than once. See desktop/knockout.c
+/**
+ * Redraw context
+ */
+struct redraw_context {
+	/**
+	 * Redraw to show interactive features.
+	 *
+	 * Active features include selections etc.
+	 *
+	 * \note Should be off for printing.
+	 */
+	bool interactive;
+
+	/**
+	 * Render background images.
+	 *
+	 * \note May want it off for printing.
+	 */
+	bool background_images;
+
+	/**
+	 * Current plot operation table
+	 *
+	 * \warning must be assigned before use.
+	 */
+	const struct plotter_table *plot;
+
+	/**
+	 * Private context.
+	 *
+	 * Private context allows callers to pass context through to
+	 *  plot operations without using a global.
+	 */
+	void *priv;
+};
+
+
+/**
+ * Plotter operations table.
  *
  * Coordinates are from top left of canvas and (0,0) is the top left grid
  * denomination. If a "fill" is drawn from (0,0) to (4,3), the result is:
@@ -101,61 +97,189 @@ enum path_command {
  *  2 |#|#|#|#| |
  *    +-+-+-+-+-+-
  *  3 | | | | | |
+ *
  */
 struct plotter_table {
-	/* clipping operations */
-	bool (*clip)(const struct rect *clip);
-
-        /* shape primatives */
-	bool (*arc)(int x, int y, int radius, int angle1, int angle2, const plot_style_t *pstyle);
-	bool (*disc)(int x, int y, int radius, const plot_style_t *pstyle);
-	bool (*line)(int x0, int y0, int x1, int y1, const plot_style_t *pstyle);
-	bool (*rectangle)(int x0, int y0, int x1, int y1, const plot_style_t *pstyle);
-	bool (*polygon)(const int *p, unsigned int n, const plot_style_t *pstyle);
-
-	/* complex path (for SVG) */
-	bool (*path)(const float *p, unsigned int n, colour fill, float width,
-			colour c, const float transform[6]);
-
-        /* Image */
-	bool (*bitmap)(int x, int y, int width, int height,
-			struct bitmap *bitmap, colour bg,
-			bitmap_flags_t flags);
+	/**
+	 * \brief Sets a clip rectangle for subsequent plot operations.
+	 *
+	 * \param ctx The current redraw context.
+	 * \param clip The rectangle to limit all subsequent plot
+	 *              operations within.
+	 * \return NSERROR_OK on success else error code.
+	 */
+	nserror (*clip)(const struct redraw_context *ctx, const struct rect *clip);
 
 	/**
-	 * Text.
+	 * Plots an arc
 	 *
-	 * \param  x       x coordinate
-	 * \param  y       y coordinate
-	 * \param  text    UTF-8 string to plot
-	 * \param  length  length of string, in bytes
-	 * \param  fstyle  plot style for this text
-	 * \return  true on success, false on error and error reported
+	 * plot an arc segment around (x,y), anticlockwise from angle1
+	 *  to angle2. Angles are measured anticlockwise from
+	 *  horizontal, in degrees.
+	 *
+	 * \param ctx The current redraw context.
+	 * \param pstyle Style controlling the arc plot.
+	 * \param x The x coordinate of the arc.
+	 * \param y The y coordinate of the arc.
+	 * \param radius The radius of the arc.
+	 * \param angle1 The start angle of the arc.
+	 * \param angle2 The finish angle of the arc.
+	 * \return NSERROR_OK on success else error code.
 	 */
-	bool (*text)(int x, int y, const char *text, size_t length,
-			const plot_font_style_t *fstyle);
+	nserror (*arc)(const struct redraw_context *ctx, const plot_style_t *pstyle, int x, int y, int radius, int angle1, int angle2);
 
-        /* optional callbacks */
-	bool (*group_start)(const char *name);  /**< optional, may be NULL */
-	bool (*group_end)(void);		/**< optional, may be NULL */
-	bool (*flush)(void);			/**< optional, may be NULL */
+	/**
+	 * Plots a circle
+	 *
+	 * Plot a circle centered on (x,y), which is optionally filled.
+	 *
+	 * \param ctx The current redraw context.
+	 * \param pstyle Style controlling the circle plot.
+	 * \param x The x coordinate of the circle.
+	 * \param y The y coordinate of the circle.
+	 * \param radius The radius of the circle.
+	 * \return NSERROR_OK on success else error code.
+	 */
+	nserror (*disc)(const struct redraw_context *ctx, const plot_style_t *pstyle, int x, int y, int radius);
 
-        /* flags */
-	bool option_knockout;	/**< set if knockout rendering is required */
-};
+	/**
+	 * Plots a line
+	 *
+	 * plot a line from (x0,y0) to (x1,y1). Coordinates are at
+	 *  centre of line width/thickness.
+	 *
+	 * \param ctx The current redraw context.
+	 * \param pstyle Style controlling the line plot.
+	 * \param line A rectangle defining the line to be drawn
+	 * \return NSERROR_OK on success else error code.
+	 */
+	nserror (*line)(const struct redraw_context *ctx, const plot_style_t *pstyle, const struct rect *line);
 
+	/**
+	 * Plots a rectangle.
+	 *
+	 * The rectangle can be filled an outline or both controlled
+	 *  by the plot style The line can be solid, dotted or
+	 *  dashed. Top left corner at (x0,y0) and rectangle has given
+	 *  width and height.
+	 *
+	 * \param ctx The current redraw context.
+	 * \param pstyle Style controlling the rectangle plot.
+	 * \param rect A rectangle defining the line to be drawn
+	 * \return NSERROR_OK on success else error code.
+	 */
+	nserror (*rectangle)(const struct redraw_context *ctx, const plot_style_t *pstyle, const struct rect *rectangle);
 
-/* Redraw context */
-struct redraw_context {
-	/** Redraw to show interactive features, such as active selections
-	 *  etc.  Should be off for printing. */
-	bool interactive;
+	/**
+	 * Plot a polygon
+	 *
+	 * Plots a filled polygon with straight lines between
+	 * points. The lines around the edge of the ploygon are not
+	 * plotted. The polygon is filled with the non-zero winding
+	 * rule.
+	 *
+	 * \param ctx The current redraw context.
+	 * \param pstyle Style controlling the polygon plot.
+	 * \param p verticies of polygon
+	 * \param n number of verticies.
+	 * \return NSERROR_OK on success else error code.
+	 */
+	nserror (*polygon)(const struct redraw_context *ctx, const plot_style_t *pstyle, const int *p, unsigned int n);
 
-	/** Render background images.  May want it off for printing. */
-	bool background_images;
+	/**
+	 * Plots a path.
+	 *
+	 * Path plot consisting of cubic Bezier curves. Line and fill colour is
+	 *  controlled by the plot style.
+	 *
+	 * \param ctx The current redraw context.
+	 * \param pstyle Style controlling the path plot.
+	 * \param p elements of path
+	 * \param n nunber of elements on path
+	 * \param width The width of the path
+	 * \param transform A transform to apply to the path.
+	 * \return NSERROR_OK on success else error code.
+	 */
+	nserror (*path)(const struct redraw_context *ctx, const plot_style_t *pstyle, const float *p, unsigned int n, float width, const float transform[6]);
 
-	/** Current plotters, must be assigned before use. */
-	const struct plotter_table *plot;
+	/**
+	 * Plot a bitmap
+	 *
+	 * Tiled plot of a bitmap image. (x,y) gives the top left
+	 * coordinate of an explicitly placed tile. From this tile the
+	 * image can repeat in all four directions -- up, down, left
+	 * and right -- to the extents given by the current clip
+	 * rectangle.
+	 *
+	 * The bitmap_flags say whether to tile in the x and y
+	 * directions. If not tiling in x or y directions, the single
+	 * image is plotted. The width and height give the dimensions
+	 * the image is to be scaled to.
+	 *
+	 * \param ctx The current redraw context.
+	 * \param bitmap The bitmap to plot
+	 * \param x The x coordinate to plot the bitmap
+	 * \param y The y coordiante to plot the bitmap
+	 * \param width The width of area to plot the bitmap into
+	 * \param height The height of area to plot the bitmap into
+	 * \param bg the background colour to alpha blend into
+	 * \param flags the flags controlling the type of plot operation
+	 * \return NSERROR_OK on success else error code.
+	 */
+	nserror (*bitmap)(const struct redraw_context *ctx, struct bitmap *bitmap, int x, int y, int width, int height, colour bg, bitmap_flags_t flags);
+
+	/**
+	 * Text plotting.
+	 *
+	 * \param ctx The current redraw context.
+	 * \param fstyle plot style for this text
+	 * \param x x coordinate
+	 * \param y y coordinate
+	 * \param text UTF-8 string to plot
+	 * \param length length of string, in bytes
+	 * \return NSERROR_OK on success else error code.
+	 */
+	nserror (*text)(const struct redraw_context *ctx, const plot_font_style_t *fstyle, int x, int y, const char *text, size_t length);
+
+	/**
+	 * Start of a group of objects.
+	 *
+	 * optional, may be NULL. Used when plotter implements export
+	 *  to a vector graphics file format.
+	 *
+	 * \param ctx The current redraw context.
+	 * \return NSERROR_OK on success else error code.
+	 */
+	nserror (*group_start)(const struct redraw_context *ctx, const char *name);
+
+	/**
+	 * End of the most recently started group.
+	 *
+	 * optional, may be NULL
+	 *
+	 * \param ctx The current redraw context.
+	 * \return NSERROR_OK on success else error code.
+	 */
+	nserror (*group_end)(const struct redraw_context *ctx);
+
+	/**
+	 * Only used internally by the knockout code. Must be NULL in
+	 * any front end display plotters or export plotters.
+	 *
+	 * \param ctx The current redraw context.
+	 * \return NSERROR_OK on success else error code.
+	 */
+	nserror (*flush)(const struct redraw_context *ctx);
+
+	/* flags */
+	/**
+	 * flag to enable knockout rendering.
+	 *
+	 * Optimisation particularly for unaccelerated screen
+	 *  redraw. It tries to avoid plotting to the same area more
+	 *  than once. See desktop/knockout.c
+	 */
+	bool option_knockout;
 };
 
 #endif
