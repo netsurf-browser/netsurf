@@ -439,9 +439,6 @@ setter EventSource::onopen(user);\n
 getter EventSource::readyState(unsigned short);\n
 getter EventSource::url(string);\n
 getter EventSource::withCredentials(boolean);\n
-method EventTarget::addEventListener();\n
-method EventTarget::dispatchEvent();\n
-method EventTarget::removeEventListener();\n
 getter Event::timeStamp(user);\n
 method External::AddSearchProvider();\n
 method External::IsSearchProviderInstalled();\n
