@@ -895,7 +895,8 @@ static void dukky_generic_event_handler(dom_event *evt, void *pw)
 
 void dukky_register_event_listener_for(duk_context *ctx,
 				       struct dom_element *ele,
-				       dom_string *name)
+				       dom_string *name,
+				       bool capture)
 {
 	dom_event_listener *listen = NULL;
 	dom_exception exc;
@@ -927,7 +928,7 @@ void dukky_register_event_listener_for(duk_context *ctx,
 					&listen);
 	if (exc != DOM_NO_ERR) return;
 	exc = dom_event_target_add_event_listener(
-		ele, name, listen, false);
+		ele, name, listen, capture);
 	if (exc != DOM_NO_ERR) {
 		LOG("Unable to register listener for %p.%*s",
 		    ele, dom_string_length(name), dom_string_data(name));
@@ -995,7 +996,7 @@ void js_handle_new_element(jscontext *ctx, struct dom_element *node)
 					&sub);
 				if (exc == DOM_NO_ERR) {
 					dukky_register_event_listener_for(
-						CTX, node, sub);
+						CTX, node, sub, false);
 					dom_string_unref(sub);
 				}
 			}

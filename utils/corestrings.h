@@ -295,7 +295,15 @@ extern struct dom_string *corestring_dom_onfocus;
 extern struct dom_string *corestring_dom_onload;
 extern struct dom_string *corestring_dom_onresize;
 extern struct dom_string *corestring_dom_onscroll;
-
+/* Corestrings used by DOM event registration */
+extern struct dom_string *corestring_dom_autocomplete;
+extern struct dom_string *corestring_dom_autocompleteerror;
+extern struct dom_string *corestring_dom_dragexit;
+extern struct dom_string *corestring_dom_mouseenter;
+extern struct dom_string *corestring_dom_mouseleave;
+extern struct dom_string *corestring_dom_wheel;
+extern struct dom_string *corestring_dom_sort;
+extern struct dom_string *corestring_dom_toggle;
 /* DOM userdata keys */
 extern struct dom_string *corestring_dom___ns_key_box_node_data;
 extern struct dom_string *corestring_dom___ns_key_libcss_node_data;

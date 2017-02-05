@@ -277,6 +277,14 @@ dom_string *corestring_dom_onfocus;
 dom_string *corestring_dom_onload;
 dom_string *corestring_dom_onresize;
 dom_string *corestring_dom_onscroll;
+dom_string *corestring_dom_autocomplete;
+dom_string *corestring_dom_autocompleteerror;
+dom_string *corestring_dom_dragexit;
+dom_string *corestring_dom_mouseenter;
+dom_string *corestring_dom_mouseleave;
+dom_string *corestring_dom_wheel;
+dom_string *corestring_dom_sort;
+dom_string *corestring_dom_toggle;
 dom_string *corestring_dom___ns_key_box_node_data;
 dom_string *corestring_dom___ns_key_libcss_node_data;
 dom_string *corestring_dom___ns_key_file_name_node_data;
@@ -563,6 +571,15 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(onload);
 	CSS_DOM_STRING_UNREF(onresize);
 	CSS_DOM_STRING_UNREF(onscroll);
+	/* Corestrings used by DOM event registration */
+	CSS_DOM_STRING_UNREF(autocomplete);
+	CSS_DOM_STRING_UNREF(autocompleteerror);
+	CSS_DOM_STRING_UNREF(dragexit);
+	CSS_DOM_STRING_UNREF(mouseenter);
+	CSS_DOM_STRING_UNREF(mouseleave);
+	CSS_DOM_STRING_UNREF(wheel);
+	CSS_DOM_STRING_UNREF(sort);
+	CSS_DOM_STRING_UNREF(toggle);
 	/* DOM userdata keys, not really CSS */
 	CSS_DOM_STRING_UNREF(__ns_key_box_node_data);
 	CSS_DOM_STRING_UNREF(__ns_key_libcss_node_data);
@@ -894,6 +911,15 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(onload);
 	CSS_DOM_STRING_INTERN(onresize);
 	CSS_DOM_STRING_INTERN(onscroll);
+	/* Corestrings used by DOM event registration */
+	CSS_DOM_STRING_INTERN(autocomplete);
+	CSS_DOM_STRING_INTERN(autocompleteerror);
+	CSS_DOM_STRING_INTERN(dragexit);
+	CSS_DOM_STRING_INTERN(mouseenter);
+	CSS_DOM_STRING_INTERN(mouseleave);
+	CSS_DOM_STRING_INTERN(wheel);
+	CSS_DOM_STRING_INTERN(sort);
+	CSS_DOM_STRING_INTERN(toggle);
 	/* DOM userdata keys, not really CSS */
 	CSS_DOM_STRING_INTERN(__ns_key_box_node_data);
 	CSS_DOM_STRING_INTERN(__ns_key_libcss_node_data);
