@@ -13,13 +13,13 @@ TESTS := \
 	time #llcache
 
 # nsurl sources
-nsurl_SRCS := utils/corestrings.c utils/nsurl.c utils/idna.c \
+nsurl_SRCS := utils/corestrings.c utils/nsurl.c utils/idna.c utils/punycode.c \
 		test/log.c test/nsurl.c
 
 # url database test sources
 urldbtest_SRCS := content/urldb.c \
 		utils/idna.c utils/bloom.c utils/nsoption.c utils/nsurl.c \
-		utils/corestrings.c \
+		utils/corestrings.c utils/punycode.c \
 		utils/hashtable.c utils/messages.c utils/time.c utils/utils.c \
 		test/log.c test/urldbtest.c
 
@@ -51,7 +51,7 @@ urlescape_SRCS := utils/url.c test/log.c test/urlescape.c
 
 # utility test sources
 utils_SRCS := utils/utils.c utils/messages.c utils/hashtable.c \
-		utils/corestrings.c utils/nsurl.c utils/idna.c \
+		utils/corestrings.c utils/nsurl.c utils/idna.c utils/punycode.c \
 		test/log.c test/utils.c
 
 # time test sources
@@ -113,11 +113,11 @@ TESTCFLAGS := -std=c99 -g \
 		-D_XOPEN_SOURCE=600 \
 		-Itest -Iinclude -Icontent/handlers -Ifrontends -I. -I.. \
 		-Dnsgtk \
-		$(shell pkg-config --cflags libcurl libparserutils libwapcaplet libdom libnsutils libutf8proc libidn) \
+		$(shell pkg-config --cflags libcurl libparserutils libwapcaplet libdom libnsutils libutf8proc) \
 		$(LIB_CFLAGS) \
 		$(COV_CFLAGS)
 
-TESTLDFLAGS := $(shell pkg-config --libs libcurl libparserutils libwapcaplet libdom libnsutils libutf8proc libidn) -lz \
+TESTLDFLAGS := $(shell pkg-config --libs libcurl libparserutils libwapcaplet libdom libnsutils libutf8proc) -lz \
 		$(LIB_LDFLAGS)\
 		$(COV_LDFLAGS)
 
