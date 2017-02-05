@@ -46,6 +46,7 @@
 #define EVENT_MAGIC MAGIC(EVENT_MAP)
 #define HANDLER_LISTENER_MAGIC MAGIC(HANDLER_LISTENER_MAP)
 #define HANDLER_MAGIC MAGIC(HANDLER_MAP)
+#define EVENT_LISTENER_JS_MAGIC MAGIC(EVENT_LISTENER_JS_MAP)
 
 static duk_ret_t dukky_populate_object(duk_context *ctx)
 {
@@ -809,6 +810,8 @@ static void dukky_generic_event_handler(dom_event *evt, void *pw)
 	dom_exception exc;
 	dom_event_target *targ;
 	dom_event_flow_phase phase;
+	duk_uarridx_t idx;
+	event_listener_flags flags;
 
 	/* Retrieve the JS context from the Duktape context */
 	duk_get_memory_functions(ctx, &funcs);
@@ -840,6 +843,12 @@ static void dukky_generic_event_handler(dom_event *evt, void *pw)
 		return;
 	}
 
+	/* If we're capturing right now, we skip the 'event handler'
+	 * and go straight to the extras
+	 */
+	if (phase == DOM_CAPTURING_PHASE)
+		goto handle_extras;
+
 	/* ... */
 	if (dukky_push_node(ctx, (dom_node *)targ) == false) {
 		dom_string_unref(name);
@@ -850,13 +859,9 @@ static void dukky_generic_event_handler(dom_event *evt, void *pw)
 	/* ... node */
 	if (dukky_get_current_value_of_event_handler(
 		    ctx, name, (dom_event_target *)targ) == false) {
-		dom_node_unref(targ);
-		dom_string_unref(name);
-		return;
+		/* ... */
+		goto handle_extras;
 	}
-	/** @todo handle other kinds of event than the generic case */
-	dom_node_unref(targ);
-	dom_string_unref(name);
 	/* ... handler node */
 	dukky_push_event(ctx, evt);
 	/* ... handler node event */
@@ -882,7 +887,7 @@ static void dukky_generic_event_handler(dom_event *evt, void *pw)
 
 		duk_pop_n(ctx, 6);
 		/* ... */
-		return;
+		goto handle_extras;
 	}
 	/* ... result */
 	if (duk_is_boolean(ctx, -1) &&
@@ -890,7 +895,107 @@ static void dukky_generic_event_handler(dom_event *evt, void *pw)
 		dom_event_prevent_default(evt);
 	}
 	duk_pop(ctx);
+handle_extras:
 	/* ... */
+	duk_push_lstring(ctx, dom_string_data(name), dom_string_length(name));
+	dukky_push_node(ctx, (dom_node *)targ);
+	/* ... type node */
+	if (dukky_event_target_push_listeners(ctx, true)) {
+		/* Nothing to do */
+		duk_pop(ctx);
+		goto out;
+	}
+	/* ... sublisteners */
+	duk_push_array(ctx);
+	/* ... sublisteners copy */
+	idx = 0;
+	while (duk_get_prop_index(ctx, -2, idx)) {
+		/* ... sublisteners copy handler */
+		duk_get_prop_index(ctx, -1, 1);
+		/* ... sublisteners copy handler flags */
+		if ((event_listener_flags)duk_to_int(ctx, -1) & ELF_ONCE) {
+			duk_dup(ctx, -4);
+			/* ... subl copy handler flags subl */
+			dukky_shuffle_array(ctx, idx);
+			duk_pop(ctx);
+			/* ... subl copy handler flags */
+		}
+		duk_pop(ctx);
+		/* ... sublisteners copy handler */
+		duk_put_prop_index(ctx, -2, idx);
+		/* ... sublisteners copy */
+		idx++;
+	}
+	/* ... sublisteners copy undefined */
+	duk_pop(ctx);
+	/* ... sublisteners copy */
+	duk_insert(ctx, -2);
+	/* ... copy sublisteners */
+	duk_pop(ctx);
+	/* ... copy */
+	idx = 0;
+	while (duk_get_prop_index(ctx, -1, idx++)) {
+		/* ... copy handler */
+		if (duk_get_prop_index(ctx, -1, 2)) {
+			/* ... copy handler meh */
+			duk_pop_2(ctx);
+			continue;
+		}
+		duk_pop(ctx);
+		duk_get_prop_index(ctx, -1, 0);
+		duk_get_prop_index(ctx, -2, 1);
+		/* ... copy handler callback flags */
+		flags = (event_listener_flags)duk_get_int(ctx, -1);
+		duk_pop(ctx);
+		/* ... copy handler callback */
+		if (((phase == DOM_CAPTURING_PHASE) && !(flags & ELF_CAPTURE)) ||
+		    ((phase != DOM_CAPTURING_PHASE) && (flags & ELF_CAPTURE))) {
+			duk_pop_2(ctx);
+			/* ... copy */
+			continue;
+		}
+		/* ... copy handler callback */
+		dukky_push_node(ctx, (dom_node *)targ);
+		/* ... copy handler callback node */
+		dukky_push_event(ctx, evt);
+		/* ... copy handler callback node event */
+		(void) nsu_getmonotonic_ms(&jsctx->exec_start_time);
+		if (duk_pcall_method(ctx, 1) != 0) {
+			/* Failed to run the method */
+			/* ... copy handler err */
+			LOG("OH NOES! An error running a callback.  Meh.");
+			exc = dom_event_stop_immediate_propagation(evt);
+			if (exc != DOM_NO_ERR)
+				LOG("WORSE! could not stop propagation");
+			duk_get_prop_string(ctx, -1, "name");
+			duk_get_prop_string(ctx, -2, "message");
+			duk_get_prop_string(ctx, -3, "fileName");
+			duk_get_prop_string(ctx, -4, "lineNumber");
+			duk_get_prop_string(ctx, -5, "stack");
+			/* ... err name message fileName lineNumber stack */
+			LOG("Uncaught error in JS: %s: %s", duk_safe_to_string(ctx, -5),
+			    duk_safe_to_string(ctx, -4));
+			LOG("              was at: %s line %s", duk_safe_to_string(ctx, -3),
+			    duk_safe_to_string(ctx, -2));
+			LOG("         Stack trace: %s", duk_safe_to_string(ctx, -1));
+
+			duk_pop_n(ctx, 7);
+			/* ... copy */
+			continue;
+		}
+		/* ... copy handler result */
+		if (duk_is_boolean(ctx, -1) &&
+		    duk_to_boolean(ctx, -1) == 0) {
+			dom_event_prevent_default(evt);
+		}
+		duk_pop_2(ctx);
+		/* ... copy */
+	}
+	duk_pop_2(ctx);
+out:
+	/* ... */
+	dom_node_unref(targ);
+	dom_string_unref(name);
 }
 
 void dukky_register_event_listener_for(duk_context *ctx,
@@ -937,6 +1042,71 @@ void dukky_register_event_listener_for(duk_context *ctx,
 		    ele, dom_string_length(name), dom_string_data(name));
 	}
 	dom_event_listener_unref(listen);
+}
+
+/* The sub-listeners are a list of {callback,flags} tuples */
+/* We return true if we created a new sublistener table */
+/* If we're told to not create, but we want to, we still return true */
+bool dukky_event_target_push_listeners(duk_context *ctx, bool dont_create)
+{
+	bool ret = false;
+	/* ... type this */
+	duk_get_prop_string(ctx, -1, EVENT_LISTENER_JS_MAGIC);
+	if (duk_is_undefined(ctx, -1)) {
+		/* ... type this null */
+		duk_pop(ctx);
+		duk_push_object(ctx);
+		duk_dup(ctx, -1);
+		/* ... type this listeners listeners */
+		duk_put_prop_string(ctx, -3, EVENT_LISTENER_JS_MAGIC);
+		/* ... type this listeners */
+	}
+	/* ... type this listeners */
+	duk_insert(ctx, -3);
+	/* ... listeners type this */
+	duk_pop(ctx);
+	/* ... listeners type */
+	duk_dup(ctx, -1);
+	/* ... listeners type type */
+	duk_get_prop(ctx, -3);
+	/* ... listeners type ??? */
+	if (duk_is_undefined(ctx, -1)) {
+		/* ... listeners type ??? */
+		if (dont_create == true) {
+			duk_pop_3(ctx);
+			duk_push_undefined(ctx);
+			return true;
+		}
+		duk_pop(ctx);
+		duk_push_array(ctx);
+		duk_dup(ctx, -2);
+		duk_dup(ctx, -2);
+		/* ... listeners type sublisteners type sublisteners */
+		duk_put_prop(ctx, -5);
+		/* ... listeners type sublisteners */
+		ret = true;
+	}
+	duk_insert(ctx, -3);
+	/* ... sublisteners listeners type */
+	duk_pop_2(ctx);
+	/* ... sublisteners */
+	return ret;
+}
+
+/* Shuffle a duktape array "down" one.  This involves iterating from
+ * the index provided, shuffling elements down, until we reach an
+ * undefined
+ */
+void dukky_shuffle_array(duk_context *ctx, duk_uarridx_t idx)
+{
+	/* ... somearr */
+	while (duk_get_prop_index(ctx, -1, idx + 1)) {
+		duk_put_prop_index(ctx, -2, idx);
+		idx++;
+	}
+	/* ... somearr undefined */
+	duk_del_prop_index(ctx, -2, idx + 1);
+	duk_pop(ctx);
 }
 
 

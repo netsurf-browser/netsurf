@@ -42,5 +42,15 @@ void dukky_register_event_listener_for(duk_context *ctx,
 bool dukky_get_current_value_of_event_handler(duk_context *ctx,
 					      dom_string *name,
 					      dom_event_target *et);
+bool dukky_event_target_push_listeners(duk_context *ctx, bool dont_create);
+
+typedef enum {
+	ELF_CAPTURE = 1 << 0,
+	ELF_PASSIVE = 1 << 1,
+	ELF_ONCE    = 1 << 2,
+	ELF_NONE    = 0
+} event_listener_flags;
+
+void dukky_shuffle_array(duk_context *ctx, duk_uarridx_t idx);
 
 #endif
