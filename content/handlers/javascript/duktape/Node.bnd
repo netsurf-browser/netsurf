@@ -16,6 +16,7 @@ init Node(struct dom_node *node)
 %{
 	priv->node = node;
 	dom_node_ref(node);
+	priv->parent.is_node = true;
 %}
 
 fini Node()
