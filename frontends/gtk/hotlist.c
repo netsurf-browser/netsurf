@@ -398,7 +398,7 @@ nserror nsgtk_hotlist_destroy(void)
 		return NSERROR_OK;
 	}
 
-	res = hotlist_fini(nsoption_charp(hotlist_path));
+	res = hotlist_manager_fini();
 	if (res == NSERROR_OK) {
 		res = nsgtk_corewindow_fini(&hotlist_window->core);
 		gtk_widget_destroy(GTK_WIDGET(hotlist_window->wnd));

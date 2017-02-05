@@ -449,6 +449,12 @@ static void gui_quit(void)
 		    messages_get_errorcode(res));
 	}
 
+	res = hotlist_fini(nsoption_charp(hotlist_path));
+	if (res != NSERROR_OK) {
+		LOG("Error finalising hotlist: %s",
+		    messages_get_errorcode(res));
+	}
+
 	free(nsgtk_config_home);
 
 	gtk_fetch_filetype_fin();
