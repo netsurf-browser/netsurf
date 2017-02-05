@@ -32,6 +32,9 @@
 
 #include "utils/hashtable.h"
 
+/* Limit for hash table tests which use /usr/share/dict/words */
+#define DICT_TEST_WORD_COUNT 100000
+
 #define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
 
 struct test_pairs {
@@ -91,6 +94,7 @@ static void dict_hashtable_create(int dict_hash_size)
 {
 	FILE *dictf;
 	char keybuf[BUFSIZ], valbuf[BUFSIZ];
+	uint32_t counter = 0;
 
 	dictf = fopen("/usr/share/dict/words", "r");
 	ck_assert(dictf != NULL);
@@ -102,6 +106,7 @@ static void dict_hashtable_create(int dict_hash_size)
 		fscanf(dictf, "%s", keybuf);
 		fscanf(dictf, "%s", valbuf);
 		hash_add(dict_hash, keybuf, valbuf);
+		if (counter++ > DICT_TEST_WORD_COUNT) break;
 	}
 
 	fclose(dictf);
@@ -227,6 +232,7 @@ START_TEST(hashtable_dict_test)
 	FILE *dictf;
 	char keybuf[BUFSIZ], valbuf[BUFSIZ];
 	const char *res;
+	uint32_t counter = 0;
 
 	dictf = fopen("/usr/share/dict/words", "r");
 	ck_assert(dictf != NULL);
@@ -238,6 +244,7 @@ START_TEST(hashtable_dict_test)
 		res = hash_get(dict_hash, keybuf);
 		ck_assert(res != NULL);
 		ck_assert_str_eq(res, valbuf);
+		if (counter++ > DICT_TEST_WORD_COUNT) break;
 	}
 
 	fclose(dictf);
