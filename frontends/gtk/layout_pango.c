@@ -222,7 +222,7 @@ nsfont_split(const plot_font_style_t *fstyle,
  * \param  fstyle  plot style for this text
  * \return  true on success, false on error and error reported
  */
-bool nsfont_paint(int x, int y, const char *string, size_t length,
+nserror nsfont_paint(int x, int y, const char *string, size_t length,
 		const plot_font_style_t *fstyle)
 {
 	PangoFontDescription *desc;
@@ -230,7 +230,7 @@ bool nsfont_paint(int x, int y, const char *string, size_t length,
 	PangoLayoutLine *line;
 
 	if (length == 0)
-		return true;
+		return NSERROR_OK;
 
 	layout = pango_cairo_create_layout(current_cr);
 
@@ -247,7 +247,7 @@ bool nsfont_paint(int x, int y, const char *string, size_t length,
 
 	g_object_unref(layout);
 
-	return true;
+	return NSERROR_OK;
 }
 
 

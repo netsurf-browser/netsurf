@@ -17,8 +17,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
- /** \file
-  * GTK printing (implementation).
+
+/**
+ * \file
+  * GTK printing implementation.
   * All the functions and structures necessary for printing( signal handlers,
   * plotters, printer) are here.
   * Most of the plotters have been copied from the gtk_plotters.c file.
@@ -71,7 +73,7 @@ static inline void nsgtk_print_set_colour(colour c)
 
 
 
-static bool gtk_print_font_paint(int x, int y, 
+static nserror gtk_print_font_paint(int x, int y, 
 		const char *string, size_t length,
 		const plot_font_style_t *fstyle)
 {
@@ -81,7 +83,7 @@ static bool gtk_print_font_paint(int x, int y,
 	PangoLayoutLine *line;
 
 	if (length == 0)
-		return true;
+		return NSERROR_OK;
 
 	desc = nsfont_style_to_description(fstyle);
 	size = (gint) ((double) pango_font_description_get_size(desc) * 
@@ -106,7 +108,7 @@ static bool gtk_print_font_paint(int x, int y,
 	g_object_unref(layout);
 	pango_font_description_free(desc);
 
-	return true;
+	return NSERROR_OK;
 }
 
 
@@ -131,10 +133,20 @@ static inline void nsgtk_print_set_dashed(void)
 	cairo_set_dash(gtk_print_current_cr, cdashes, 1, 0);
 }
 
-/** Set clipping area for subsequent plot operations. */
-static bool nsgtk_print_plot_clip(const struct rect *clip)
+
+/**
+ * \brief Sets a clip rectangle for subsequent plot operations.
+ *
+ * \param ctx The current redraw context.
+ * \param clip The rectangle to limit all subsequent plot
+ *              operations within.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+nsgtk_print_plot_clip(const struct redraw_context *ctx, const struct rect *clip)
 {
-	LOG("Clipping. x0: %i ;\t y0: %i ;\t x1: %i ;\t y1: %i", clip->x0, clip->y0, clip->x1, clip->y1);	
+	LOG("Clipping. x0: %i ;\t y0: %i ;\t x1: %i ;\t y1: %i",
+	    clip->x0, clip->y0, clip->x1, clip->y1);	
 	
 	/* Normalize cllipping area - to prevent overflows.
 	 * See comment in pdf_plot_fill. */
@@ -153,10 +165,24 @@ static bool nsgtk_print_plot_clip(const struct rect *clip)
 	cliprect.width = clip_x1 - clip_x0;
 	cliprect.height = clip_y1 - clip_y0;
 	
-	return true;	
+	return NSERROR_OK;
 }
 
-static bool nsgtk_print_plot_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *style)
+
+/**
+ * Plots an arc
+ *
+ * plot an arc segment around (x,y), anticlockwise from angle1
+ *  to angle2. Angles are measured anticlockwise from
+ *  horizontal, in degrees.
+ *
+ * \param ctx The current redraw context.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+nsgtk_print_plot_arc(const struct redraw_context *ctx,
+	       const plot_style_t *style,
+	       int x, int y, int radius, int angle1, int angle2)
 {
 	nsgtk_print_set_colour(style->fill_colour);
 	nsgtk_print_set_solid();
@@ -167,10 +193,23 @@ static bool nsgtk_print_plot_arc(int x, int y, int radius, int angle1, int angle
 			(angle2 + 90) * (M_PI / 180));
 	cairo_stroke(gtk_print_current_cr);
 
-	return true;
+	return NSERROR_OK;
 }
 
-static bool nsgtk_print_plot_disc(int x, int y, int radius, const plot_style_t *style)
+
+/**
+ * Plots a circle
+ *
+ * Plot a circle centered on (x,y), which is optionally filled.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the circle plot.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+nsgtk_print_plot_disc(const struct redraw_context *ctx,
+		const plot_style_t *style,
+		int x, int y, int radius)
 {
 	if (style->fill_type != PLOT_OP_TYPE_NONE) {
 		nsgtk_print_set_colour(style->fill_colour);
@@ -208,10 +247,25 @@ static bool nsgtk_print_plot_disc(int x, int y, int radius, const plot_style_t *
 
 		cairo_stroke(gtk_print_current_cr);
 	}
-	return true;
+	return NSERROR_OK;
 }
 
-static bool nsgtk_print_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
+
+/**
+ * Plots a line
+ *
+ * plot a line from (x0,y0) to (x1,y1). Coordinates are at
+ *  centre of line width/thickness.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the line plot.
+ * \param line A rectangle defining the line to be drawn
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+nsgtk_print_plot_line(const struct redraw_context *ctx,
+		const plot_style_t *style,
+		const struct rect *line)
 {
 	nsgtk_print_set_colour(style->stroke_colour);
 
@@ -235,16 +289,35 @@ static bool nsgtk_print_plot_line(int x0, int y0, int x1, int y1, const plot_sty
 	else
 		cairo_set_line_width(gtk_print_current_cr, style->stroke_width);
 
-	cairo_move_to(gtk_print_current_cr, x0 + 0.5, y0 + 0.5);
-	cairo_line_to(gtk_print_current_cr, x1 + 0.5, y1 + 0.5);
+	cairo_move_to(gtk_print_current_cr, line->x0 + 0.5, line->y0 + 0.5);
+	cairo_line_to(gtk_print_current_cr, line->x1 + 0.5, line->y1 + 0.5);
 	cairo_stroke(gtk_print_current_cr);
 
-	return true;
+	return NSERROR_OK;
 }
 
-static bool nsgtk_print_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
+
+/**
+ * Plots a rectangle.
+ *
+ * The rectangle can be filled an outline or both controlled
+ *  by the plot style The line can be solid, dotted or
+ *  dashed. Top left corner at (x0,y0) and rectangle has given
+ *  width and height.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the rectangle plot.
+ * \param rect A rectangle defining the line to be drawn
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+nsgtk_print_plot_rectangle(const struct redraw_context *ctx,
+		     const plot_style_t *style,
+		     const struct rect *rect)
 {
-	LOG("x0: %i ;\t y0: %i ;\t x1: %i ;\t y1: %i", x0, y0, x1, y1);
+	int x0,y0,x1,y1;
+	LOG("x0: %i ;\t y0: %i ;\t x1: %i ;\t y1: %i",
+	    rect->x0, rect->y0, rect->x1, rect->y1);
 
         if (style->fill_type != PLOT_OP_TYPE_NONE) { 
 
@@ -253,13 +326,15 @@ static bool nsgtk_print_plot_rectangle(int x0, int y0, int x1, int y1, const plo
 	
 		/* Normalize boundaries of the area - to prevent overflows.
 		 * See comment in pdf_plot_fill. */
-		x0 = min(max(x0, 0), settings->page_width);
-		y0 = min(max(y0, 0), settings->page_height);
-		x1 = min(max(x1, 0), settings->page_width);
-		y1 = min(max(y1, 0), settings->page_height);
+		x0 = min(max(rect->x0, 0), settings->page_width);
+		y0 = min(max(rect->y0, 0), settings->page_height);
+		x1 = min(max(rect->x1, 0), settings->page_width);
+		y1 = min(max(rect->y1, 0), settings->page_height);
 
 		cairo_set_line_width(gtk_print_current_cr, 0);
-		cairo_rectangle(gtk_print_current_cr, x0, y0, x1 - x0, y1 - y0);
+		cairo_rectangle(gtk_print_current_cr,
+				x0, y0,
+				x1 - x0, y1 - y0);
 		cairo_fill(gtk_print_current_cr);
 		cairo_stroke(gtk_print_current_cr);
 	}
@@ -291,10 +366,15 @@ static bool nsgtk_print_plot_rectangle(int x0, int y0, int x1, int y1, const plo
 		cairo_stroke(gtk_print_current_cr);
 	}
 	
-	return true;
+	return NSERROR_OK;
 }
 
-static bool nsgtk_print_plot_polygon(const int *p, unsigned int n, const plot_style_t *style)
+
+static nserror
+nsgtk_print_plot_polygon(const struct redraw_context *ctx,
+		   const plot_style_t *style,
+		   const int *p,
+		   unsigned int n)
 {
 	unsigned int i;
 
@@ -316,18 +396,37 @@ static bool nsgtk_print_plot_polygon(const int *p, unsigned int n, const plot_st
 	cairo_fill(gtk_print_current_cr);
 	cairo_stroke(gtk_print_current_cr);
 
-	return true;
+	return NSERROR_OK;
 }
 
 
-static bool nsgtk_print_plot_path(const float *p, unsigned int n, colour fill, 
-		float width, colour c, const float transform[6])
+/**
+ * Plots a path.
+ *
+ * Path plot consisting of cubic Bezier curves. Line and fill colour is
+ *  controlled by the plot style.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the path plot.
+ * \param p elements of path
+ * \param n nunber of elements on path
+ * \param width The width of the path
+ * \param transform A transform to apply to the path.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+nsgtk_print_plot_path(const struct redraw_context *ctx,
+		const plot_style_t *pstyle,
+		const float *p,
+		unsigned int n,
+		float width,
+		const float transform[6])
 {
 	/* Only the internal SVG renderer uses this plot call currently,
 	 * and the GTK version uses librsvg.  Thus, we ignore this complexity,
 	 * and just return true obliviously. */
 
-	return true;
+	return NSERROR_OK;
 }
 
 
@@ -445,9 +544,30 @@ static bool nsgtk_print_plot_pixbuf(int x, int y, int width, int height,
 }
 
 
-static bool nsgtk_print_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg,
-		bitmap_flags_t flags)
+/**
+ * Plot a bitmap
+ *
+ * Tiled plot of a bitmap image. (x,y) gives the top left
+ * coordinate of an explicitly placed tile. From this tile the
+ * image can repeat in all four directions -- up, down, left
+ * and right -- to the extents given by the current clip
+ * rectangle.
+ *
+ * The bitmap_flags say whether to tile in the x and y
+ * directions. If not tiling in x or y directions, the single
+ * image is plotted. The width and height give the dimensions
+ * the image is to be scaled to.
+ *
+ * \param ctx The current redraw context.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+nsgtk_print_plot_bitmap(const struct redraw_context *ctx,
+		  struct bitmap *bitmap,
+		  int x, int y,
+		  int width, int height,
+		  colour bg,
+		  bitmap_flags_t flags)
 {
 	int doneheight = 0, donewidth = 0;
 	bool repeat_x = (flags & BITMAPF_REPEAT_X);
@@ -495,11 +615,18 @@ static bool nsgtk_print_plot_bitmap(int x, int y, int width, int height,
 	return true;
 }
 
-static bool nsgtk_print_plot_text(int x, int y, const char *text, size_t length,
-		const plot_font_style_t *fstyle)
+
+static nserror
+nsgtk_print_plot_text(const struct redraw_context *ctx,
+		const struct plot_font_style *fstyle,
+		int x,
+		int y,
+		const char *text,
+		size_t length)
 {
 	return gtk_print_font_paint(x, y, text, length, fstyle);
 }
+
 
 /** GTK print plotter table */
 static const struct plotter_table nsgtk_print_plotters = {

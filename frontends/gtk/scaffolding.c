@@ -1706,7 +1706,7 @@ nsgtk_history_draw_event(GtkWidget *widget, GdkEventExpose *event, gpointer g)
 	clip.y0 = event->area.y;
 	clip.x1 = event->area.x + event->area.width;
 	clip.y1 = event->area.y + event->area.height;
-	ctx.plot->clip(&clip);
+	ctx.plot->clip(&ctx, &clip);
 
 	browser_window_history_redraw(bw, &ctx);
 
