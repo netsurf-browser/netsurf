@@ -398,7 +398,7 @@ plot_clipped_rectangle(const struct redraw_context *ctx,
  * \return true if successful, false otherwise
  */
 
-static bool
+static nserror
 html_redraw_border_plot(const int side,
 			const int *p,
 			colour c,
@@ -412,11 +412,12 @@ html_redraw_border_plot(const int side,
 	unsigned int light = side;
 	plot_style_t *plot_style_bdr_in;
 	plot_style_t *plot_style_bdr_out;
-	nserror res;
+	nserror res = NSERROR_OK;
 	struct rect rect;
 
-	if (c == NS_TRANSPARENT)
-		return true;
+	if (c == NS_TRANSPARENT) {
+		return res;
+	}
 
 	plot_style_bdr.stroke_type = PLOT_OP_TYPE_DASH;
 	plot_style_bdr.stroke_colour = c;
@@ -437,9 +438,6 @@ html_redraw_border_plot(const int side,
 		rect.x1 = (p[4] + p[6]) / 2;
 		rect.y1 = (p[5] + p[7]) / 2;
 		res = ctx->plot->line(ctx, &plot_style_bdr, &rect);
-		if (res != NSERROR_OK) {
-			return false;
-		}
 		break;
 
 	case CSS_BORDER_STYLE_SOLID:
@@ -469,14 +467,8 @@ html_redraw_border_plot(const int side,
 				}
 			}
 			res = plot_clipped_rectangle(ctx, &plot_style_fillbdr, clip, &rect);
-			if (res != NSERROR_OK) {
-				return false;
-			}
 		} else {
 			res = ctx->plot->polygon(ctx, &plot_style_fillbdr, p, 4);
-			if (res != NSERROR_OK) {
-				return false;
-			}
 		}
 		break;
 
@@ -490,27 +482,22 @@ html_redraw_border_plot(const int side,
 		z[6] = p[6];
 		z[7] = p[7];
 		res = ctx->plot->polygon(ctx, &plot_style_fillbdr, z, 4);
-		if (res != NSERROR_OK) {
-			return false;
-		}
-		z[0] = p[2];
-		z[1] = p[3];
-		z[2] = (p[2] * 2 + p[0]) / 3;
-		z[3] = (p[3] * 2 + p[1]) / 3;
-		z[4] = (p[4] * 2 + p[6]) / 3;
-		z[5] = (p[5] * 2 + p[7]) / 3;
-		z[6] = p[4];
-		z[7] = p[5];
-		res = ctx->plot->polygon(ctx, &plot_style_fillbdr, z, 4);
-		if (res != NSERROR_OK) {
-			return false;
+		if (res == NSERROR_OK) {
+			z[0] = p[2];
+			z[1] = p[3];
+			z[2] = (p[2] * 2 + p[0]) / 3;
+			z[3] = (p[3] * 2 + p[1]) / 3;
+			z[4] = (p[4] * 2 + p[6]) / 3;
+			z[5] = (p[5] * 2 + p[7]) / 3;
+			z[6] = p[4];
+			z[7] = p[5];
+			res = ctx->plot->polygon(ctx, &plot_style_fillbdr, z, 4);
 		}
 		break;
 
 	case CSS_BORDER_STYLE_GROOVE:
 		light = 3 - light;
 		/* fall through */
-
 	case CSS_BORDER_STYLE_RIDGE:
 		/* choose correct colours for each part of the border line */
 		if (light <= 1) {
@@ -523,8 +510,8 @@ html_redraw_border_plot(const int side,
 
 		/* Render border */
 		if ((rectangular || thickness == 2) && thickness != 1) {
-			/* Border made up from two parts and can be plotted
-			 * with rectangles
+			/* Border made up from two parts and can be
+			 * plotted with rectangles
 			 */
 
 			/* First part */
@@ -541,7 +528,7 @@ html_redraw_border_plot(const int side,
 			}
 			res = plot_clipped_rectangle(ctx, plot_style_bdr_in, clip, &rect);
 			if (res != NSERROR_OK) {
-				return false;
+				return res;
 			}
 
 			/* Second part */
@@ -557,12 +544,10 @@ html_redraw_border_plot(const int side,
 				rect.y1 = p[3];
 			}
 			res = plot_clipped_rectangle(ctx, plot_style_bdr_out, clip, &rect);
-			if (res != NSERROR_OK) {
-				return false;
-			}
 		} else if (thickness == 1) {
-			/* Border made up from one part which can be plotted
-			 * as a rectangle */
+			/* Border made up from one part which can be
+			 * plotted as a rectangle
+			 */
 
 			if (side == TOP || side == RIGHT) {
 				rect.x0 = p[2];
@@ -573,9 +558,6 @@ html_redraw_border_plot(const int side,
 					rect.x1 + p[4] - p[6] : rect.x1;
 
 				res = plot_clipped_rectangle(ctx, plot_style_bdr_in, clip, &rect);
-				if (res != NSERROR_OK) {
-					return false;
-				}
 			} else {
 				rect.x0 = p[6];
 				rect.y0 = p[7];
@@ -584,13 +566,10 @@ html_redraw_border_plot(const int side,
 				rect.y1 = ((side == LEFT) && (p[1] - p[3] != 0)) ?
 					rect.y1 + p[1] - p[3] : rect.y1;
 				res = plot_clipped_rectangle(ctx, plot_style_bdr_out, clip, &rect);
-				if (res != NSERROR_OK) {
-					return false;
-				}
 			}
 		} else {
-			/* Border made up from two parts and can't be plotted
-			 * with rectangles
+			/* Border made up from two parts and can't be
+			 * plotted with rectangles
 			 */
 			z[0] = p[0];
 			z[1] = p[1];
@@ -602,16 +581,13 @@ html_redraw_border_plot(const int side,
 			z[7] = p[7];
 			res = ctx->plot->polygon(ctx, plot_style_bdr_in, z, 4);
 			if (res != NSERROR_OK) {
-				return false;
+				return res;
 			}
 			z[0] = p[2];
 			z[1] = p[3];
 			z[6] = p[4];
 			z[7] = p[5];
 			res = ctx->plot->polygon(ctx, plot_style_bdr_out, z, 4);
-			if (res != NSERROR_OK) {
-				return false;
-			}
 		}
 		break;
 
@@ -645,8 +621,8 @@ html_redraw_border_plot(const int side,
 
 		/* Render border */
 		if ((rectangular || thickness == 2) && thickness != 1) {
-			/* Border made up from two parts and can be plotted
-			 * with rectangles
+			/* Border made up from two parts and can be
+			 * plotted with rectangles
 			 */
 
 			/* First part */
@@ -663,7 +639,7 @@ html_redraw_border_plot(const int side,
 			}
 			res = plot_clipped_rectangle(ctx, plot_style_bdr_in, clip, &rect);
 			if (res != NSERROR_OK) {
-				return false;
+				return res;
 			}
 
 			/* Second part */
@@ -679,12 +655,10 @@ html_redraw_border_plot(const int side,
 				rect.y1 = p[3];
 			}
 			res = plot_clipped_rectangle(ctx, plot_style_bdr_out, clip, &rect);
-			if (res != NSERROR_OK) {
-				return false;
-			}
 		} else if (thickness == 1) {
-			/* Border made up from one part which can be plotted
-			 * as a rectangle */
+			/* Border made up from one part which can be
+			 * plotted as a rectangle
+			 */
 
 			if (side == TOP || side == RIGHT) {
 				rect.x0 = p[2];
@@ -694,9 +668,6 @@ html_redraw_border_plot(const int side,
 				rect.x1 = ((side == TOP) && (p[4] - p[6] != 0)) ?
 					rect.x1 + p[4] - p[6] : rect.x1;
 				res = plot_clipped_rectangle(ctx, plot_style_bdr_in, clip, &rect);
-				if (res != NSERROR_OK) {
-					return false;
-				}
 			} else {
 				rect.x0 = p[6];
 				rect.y0 = p[7];
@@ -705,14 +676,12 @@ html_redraw_border_plot(const int side,
 				rect.y1 = ((side == LEFT) && (p[1] - p[3] != 0)) ?
 					rect.y1 + p[1] - p[3] : rect.y1;
 				res = plot_clipped_rectangle(ctx, plot_style_bdr_out, clip, &rect);
-				if (res != NSERROR_OK) {
-					return false;
-				}
 			}
 		} else {
-			/* Border made up from two parts and can't be plotted
-			 * with rectangles
+			/* Border made up from two parts and can't be
+			 * plotted with rectangles
 			 */
+
 			z[0] = p[0];
 			z[1] = p[1];
 			z[2] = (p[0] + p[2]) / 2;
@@ -723,21 +692,18 @@ html_redraw_border_plot(const int side,
 			z[7] = p[7];
 			res = ctx->plot->polygon(ctx, plot_style_bdr_in, z, 4);
 			if (res != NSERROR_OK) {
-				return false;
+				return res;
 			}
 			z[0] = p[2];
 			z[1] = p[3];
 			z[6] = p[4];
 			z[7] = p[5];
 			res = ctx->plot->polygon(ctx, plot_style_bdr_out, z, 4);
-			if (res != NSERROR_OK) {
-				return false;
-			}
 		}
 		break;
 	}
 
-	return true;
+	return res;
 }
 
 
@@ -770,6 +736,7 @@ static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 	int z[8]; /* Border vertices */
 	bool square_end_1 = false;
 	bool square_end_2 = false;
+	nserror res;
 
 	x = x_parent + box->x;
 	y = y_parent + box->y;
@@ -839,13 +806,19 @@ static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 
 			col = nscss_color_to_ns(box->border[side].c);
 
-			if (!html_redraw_border_plot(side, z, col,
-					box->border[side].style,
-					box->border[side].width * scale,
-					square_end_1 && square_end_2,
-					clip, ctx))
+			res = html_redraw_border_plot(side,
+						      z,
+						      col,
+						      box->border[side].style,
+						      box->border[side].width * scale,
+						      square_end_1 && square_end_2,
+						      clip,
+						      ctx);
+			if (res != NSERROR_OK) {
 				return false;
+			}
 			break;
+
 		case RIGHT:
 			square_end_1 = (top == 0);
 			square_end_2 = (bottom == 0);
@@ -876,13 +849,19 @@ static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 
 			col = nscss_color_to_ns(box->border[side].c);
 
-			if (!html_redraw_border_plot(side, z, col,
-					box->border[side].style,
-					box->border[side].width * scale,
-					square_end_1 && square_end_2,
-					clip, ctx))
+			res = html_redraw_border_plot(side,
+						      z,
+						      col,
+						      box->border[side].style,
+						      box->border[side].width * scale,
+						      square_end_1 && square_end_2,
+						      clip,
+						      ctx);
+			if (res != NSERROR_OK) {
 				return false;
+			}
 			break;
+
 		case TOP:
 			if (clip->y0 > p[3])
 				/* clip rectangle is below border; nothing to
@@ -918,13 +897,19 @@ static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 
 			col = nscss_color_to_ns(box->border[side].c);
 
-			if (!html_redraw_border_plot(side, z, col,
-					box->border[side].style,
-					box->border[side].width * scale,
-					square_end_1 && square_end_2,
-					clip, ctx))
+			res = html_redraw_border_plot(side,
+						      z,
+						      col,
+						      box->border[side].style,
+						      box->border[side].width * scale,
+						      square_end_1 && square_end_2,
+						      clip,
+						      ctx);
+			if (res != NSERROR_OK) {
 				return false;
+			}
 			break;
+
 		case BOTTOM:
 			if (clip->y1 < p[5])
 				/* clip rectangle is above border; nothing to
@@ -960,13 +945,19 @@ static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 
 			col = nscss_color_to_ns(box->border[side].c);
 
-			if (!html_redraw_border_plot(side, z, col,
-					box->border[side].style,
-					box->border[side].width * scale,
-					square_end_1 && square_end_2,
-					clip, ctx))
+			res = html_redraw_border_plot(side,
+						      z,
+						      col,
+						      box->border[side].style,
+						      box->border[side].width * scale,
+						      square_end_1 && square_end_2,
+						      clip,
+						      ctx);
+			if (res != NSERROR_OK) {
 				return false;
+			}
 			break;
+
 		default:
 			assert(side == TOP || side == BOTTOM ||
 					side == LEFT || side == RIGHT);
@@ -1004,6 +995,7 @@ static bool html_redraw_inline_borders(struct box *box, struct rect b,
 	int z[8]; /* Border vertices */
 	bool square_end_1;
 	bool square_end_2;
+	nserror res;
 
 	if (scale != 1.0) {
 		top *= scale;
@@ -1060,11 +1052,17 @@ static bool html_redraw_inline_borders(struct box *box, struct rect b,
 			square_end_2 = true;
 		}
 
-		if (!html_redraw_border_plot(LEFT, z, col,
-				box->border[LEFT].style, 
-				left, square_end_1 && square_end_2,
-				clip, ctx))
+		res = html_redraw_border_plot(LEFT,
+					      z,
+					      col,
+					      box->border[LEFT].style,
+					      left,
+					      square_end_1 && square_end_2,
+					      clip,
+					      ctx);
+		if (res != NSERROR_OK) {
 			return false;
+		}
 	}
 
 	/* Right */
@@ -1098,11 +1096,13 @@ static bool html_redraw_inline_borders(struct box *box, struct rect b,
 			square_end_2 = true;
 		}
 
-		if (!html_redraw_border_plot(RIGHT, z, col,
+		res = html_redraw_border_plot(RIGHT, z, col,
 				box->border[RIGHT].style,
 				right, square_end_1 && square_end_2,
-				clip, ctx))
+					      clip, ctx);
+		if (res != NSERROR_OK) {
 			return false;
+		}
 	}
 
 	/* Top */
@@ -1137,11 +1137,13 @@ static bool html_redraw_inline_borders(struct box *box, struct rect b,
 			square_end_2 = true;
 		}
 
-		if (!html_redraw_border_plot(TOP, z, col,
+		res = html_redraw_border_plot(TOP, z, col,
 				box->border[TOP].style, 
 				top, square_end_1 && square_end_2,
-				clip, ctx))
+					      clip, ctx);
+		if (res != NSERROR_OK) {
 			return false;
+		}
 	}
 
 	/* Bottom */
@@ -1176,11 +1178,13 @@ static bool html_redraw_inline_borders(struct box *box, struct rect b,
 			square_end_2 = true;
 		}
 
-		if (!html_redraw_border_plot(BOTTOM, z, col,
+		res = html_redraw_border_plot(BOTTOM, z, col,
 				box->border[BOTTOM].style, 
 				bottom, square_end_1 && square_end_2,
-				clip, ctx))
+					      clip, ctx);
+		if (res != NSERROR_OK) {
 			return false;
+		}
 	}
 
 	return true;
