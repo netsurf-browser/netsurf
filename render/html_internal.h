@@ -258,6 +258,15 @@ bool html_begin_conversion(html_content *htmlc);
 bool html_redraw(struct content *c, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx);
 
+/* in render/html_redraw_border.c */
+bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
+		int p_width, int p_height, const struct rect *clip, float scale,
+		const struct redraw_context *ctx);
+
+bool html_redraw_inline_borders(struct box *box, struct rect b,
+		const struct rect *clip, float scale, bool first, bool last,
+		const struct redraw_context *ctx);
+
 /* in render/html_interaction.c */
 void html_mouse_track(struct content *c, struct browser_window *bw,
 			browser_mouse_state mouse, int x, int y);
