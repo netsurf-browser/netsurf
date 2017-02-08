@@ -30,9 +30,9 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 
-#include "netsurf/plotters.h"
 #include "utils/log.h"
 #include "utils/utils.h"
+#include "netsurf/plotters.h"
 
 #include "riscos/gui.h"
 #include "riscos/tinct.h"
@@ -482,6 +482,11 @@ void ro_gui_progress_bar_redraw_window(wimp_draw *redraw,
 	osbool more = true;
 	struct rect clip;
 	int progress_ymid;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.background_images = true,
+		.plot = &ro_plotters
+	};
 
 	/* initialise the plotters */
   	ro_plot_origin_x = 0;
@@ -513,16 +518,16 @@ void ro_gui_progress_bar_redraw_window(wimp_draw *redraw,
 					redraw->box.y0 + pb->visible.y0) >> 1;
 		  	if ((clip.x0 < clip.x1) && (clip.y0 < clip.y1)) {
 				if (progress_icon) {
-			  		ro_plotters.clip(&clip);
+			  		ctx.plot->clip(&ctx, &clip);
 					_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
 							progress_icon,
 							redraw->box.x0 - pb->offset,
 							progress_ymid - progress_height,
 							tinct_FILL_HORIZONTALLY);
 				} else {
-				  	ro_plotters.rectangle(clip.x0, clip.y0, 
-						       clip.x1, clip.y1,
-						       plot_style_fill_red);
+				  	ctx.plot->rectangle(&ctx,
+							    plot_style_fill_red,
+							    &clip);
 			  	}
 			}
 		}

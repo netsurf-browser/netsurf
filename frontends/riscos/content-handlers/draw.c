@@ -184,7 +184,7 @@ bool draw_redraw(struct content *c, struct content_redraw_data *data,
 	const void *src_data;
 	os_error *error;
 
-	if (ctx->plot->flush && !ctx->plot->flush())
+	if (ctx->plot->flush && (ctx->plot->flush(ctx) != NSERROR_OK))
 		return false;
 
 	if (!c->width || !c->height)

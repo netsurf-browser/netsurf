@@ -180,7 +180,7 @@ bool sprite_redraw(struct content *c, struct content_redraw_data *data,
 {
 	sprite_content *sprite = (sprite_content *) c;
 
-	if (ctx->plot->flush && !ctx->plot->flush())
+	if (ctx->plot->flush && (ctx->plot->flush(ctx) != NSERROR_OK))
 		return false;
 
 	return image_redraw(sprite->data,

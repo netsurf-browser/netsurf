@@ -104,39 +104,12 @@ static void print_send_printsave(struct hlcache_handle *h);
 static bool print_send_printtypeknown(wimp_message *m);
 static bool print_document(struct gui_window *g, const char *filename);
 static const char *print_declare_fonts(struct hlcache_handle *h);
-static bool print_fonts_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
-static bool print_fonts_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style);
-static bool print_fonts_plot_polygon(const int *p, unsigned int n, const plot_style_t *style);
-static bool print_fonts_plot_clip(const struct rect *clip);
-static bool print_fonts_plot_text(int x, int y, const char *text, size_t length,
-		const plot_font_style_t *fstyle);
-static bool print_fonts_plot_disc(int x, int y, int radius, const plot_style_t *style);
-static bool print_fonts_plot_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *style);
-static bool print_fonts_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg,
-		bitmap_flags_t flags);
-static bool print_fonts_plot_path(const float *p, unsigned int n, colour fill, float width,
-		colour c, const float transform[6]);
 static void print_fonts_callback(void *context,
 		const char *font_name, unsigned int font_size,
 		const char *s8, unsigned short *s16, unsigned int n,
 		int x, int y);
 
 
-/** Plotter for print_declare_fonts(). All the functions do nothing except for
- * print_fonts_plot_text, which records the fonts used. */
-static const struct plotter_table print_fonts_plotters = {
-	.rectangle = print_fonts_plot_rectangle,
-	.line = print_fonts_plot_line,
-	.polygon = print_fonts_plot_polygon,
-	.clip = print_fonts_plot_clip,
-	.text = print_fonts_plot_text,
-	.disc = print_fonts_plot_disc,
-	.arc = print_fonts_plot_arc,
-	.bitmap = print_fonts_plot_bitmap,
-	.path = print_fonts_plot_path,
-	.option_knockout = false,
-};
 
 
 /**
@@ -780,6 +753,143 @@ error:
 }
 
 
+
+
+static nserror
+print_fonts_plot_clip(const struct redraw_context *ctx, const struct rect *clip)
+{
+	return NSERROR_OK;
+}
+
+static nserror
+print_fonts_plot_arc(const struct redraw_context *ctx,
+	       const plot_style_t *style,
+	       int x, int y, int radius, int angle1, int angle2)
+{
+	return NSERROR_OK;
+}
+
+static nserror
+print_fonts_plot_disc(const struct redraw_context *ctx,
+		      const plot_style_t *style,
+		      int x, int y, int radius)
+{
+	return NSERROR_OK;
+}
+
+static nserror
+print_fonts_plot_line(const struct redraw_context *ctx,
+		      const plot_style_t *style,
+		      const struct rect *line)
+{
+	return NSERROR_OK;
+}
+
+static nserror
+print_fonts_plot_rectangle(const struct redraw_context *ctx,
+		     const plot_style_t *style,
+		     const struct rect *rect)
+{
+	return NSERROR_OK;
+}
+
+static nserror
+print_fonts_plot_polygon(const struct redraw_context *ctx,
+		   const plot_style_t *style,
+		   const int *p,
+		   unsigned int n)
+{
+	return NSERROR_OK;
+}
+
+static nserror
+print_fonts_plot_path(const struct redraw_context *ctx,
+		const plot_style_t *pstyle,
+		const float *p,
+		unsigned int n,
+		float width,
+		const float transform[6])
+{
+	return NSERROR_OK;
+}
+
+static nserror
+print_fonts_plot_bitmap(const struct redraw_context *ctx,
+	       struct bitmap *bitmap,
+	       int x, int y,
+	       int width,
+	       int height,
+	       colour bg,
+	       bitmap_flags_t flags)
+{
+	return NSERROR_OK;
+}
+
+/**
+ * text plotting during RO print font listing.
+ *
+ * \param ctx The current redraw context.
+ * \param fstyle plot style for this text
+ * \param x x coordinate
+ * \param y y coordinate
+ * \param text UTF-8 string to plot
+ * \param length length of string, in bytes
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+print_fonts_plot_text(const struct redraw_context *ctx,
+		const struct plot_font_style *fstyle,
+		int x,
+		int y,
+		const char *text,
+		size_t length)
+{
+	const char *font_family;
+	unsigned int font_size;
+	rufl_style font_style;
+	rufl_code code;
+
+	nsfont_read_style(fstyle, &font_family, &font_size, &font_style);
+
+	code = rufl_paint_callback(font_family, font_style, font_size,
+			text, length, 0, 0, print_fonts_callback, 0);
+	if (code != rufl_OK) {
+		if (code == rufl_FONT_MANAGER_ERROR) {
+			LOG("rufl_paint_callback: rufl_FONT_MANAGER_ERROR: ""0x%x: %s",
+			    rufl_fm_error->errnum, rufl_fm_error->errmess);
+			print_fonts_error = rufl_fm_error->errmess;
+		} else {
+			LOG("rufl_paint_callback: 0x%x", code);
+		}
+		return NSERROR_INVALID;
+	}
+	if (print_fonts_error)
+		return NSERROR_INVALID;
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * Plotter table for print_declare_fonts().
+ *
+ * All the functions do nothing except for print_fonts_plot_text,
+ * which records the fonts used.
+*/
+static const struct plotter_table print_fonts_plotters = {
+	.rectangle = print_fonts_plot_rectangle,
+	.line = print_fonts_plot_line,
+	.polygon = print_fonts_plot_polygon,
+	.clip = print_fonts_plot_clip,
+	.text = print_fonts_plot_text,
+	.disc = print_fonts_plot_disc,
+	.arc = print_fonts_plot_arc,
+	.bitmap = print_fonts_plot_bitmap,
+	.path = print_fonts_plot_path,
+	.option_knockout = false,
+};
+
+
 /**
  * Declare fonts to the printer driver.
  *
@@ -847,84 +957,6 @@ end:
 	print_fonts_list = 0;
 
 	return error_message;
-}
-
-
-bool print_fonts_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
-{
-	return true;
-}
-
-
-bool print_fonts_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
-{
-	return true;
-}
-
-bool print_fonts_plot_polygon(const int *p, unsigned int n, const plot_style_t *style)
-{
-	return true;
-}
-
-
-bool print_fonts_plot_clip(const struct rect *clip)
-{
-	return true;
-}
-
-bool print_fonts_plot_disc(int x, int y, int radius, const plot_style_t *style)
-{
-	return true;
-}
-
-bool print_fonts_plot_arc(int x, int y, int radius, int angle1, int angle2,
-		const plot_style_t *style)
-{
-	return true;
-}
-
-bool print_fonts_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg, bitmap_flags_t flags)
-{
-	return true;
-}
-
-bool print_fonts_plot_path(const float *p, unsigned int n, colour fill, float width,
-		colour c, const float transform[6])
-{
-	return true;
-}
-
-
-/**
- * Plotter for text plotting during font listing.
- */
-
-bool print_fonts_plot_text(int x, int y, const char *text, size_t length,
-		const plot_font_style_t *fstyle)
-{
-	const char *font_family;
-	unsigned int font_size;
-	rufl_style font_style;
-	rufl_code code;
-
-	nsfont_read_style(fstyle, &font_family, &font_size, &font_style);
-
-	code = rufl_paint_callback(font_family, font_style, font_size,
-			text, length, 0, 0, print_fonts_callback, 0);
-	if (code != rufl_OK) {
-		if (code == rufl_FONT_MANAGER_ERROR) {
-			LOG("rufl_paint_callback: rufl_FONT_MANAGER_ERROR: ""0x%x: %s", rufl_fm_error->errnum, rufl_fm_error->errmess);
-			print_fonts_error = rufl_fm_error->errmess;
-		} else {
-			LOG("rufl_paint_callback: 0x%x", code);
-		}
-		return false;
-	}
-	if (print_fonts_error)
-		return false;
-
-	return true;
 }
 
 
