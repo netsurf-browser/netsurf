@@ -13,12 +13,15 @@ TESTS := \
 	time #llcache
 
 # nsurl sources
-nsurl_SRCS := utils/corestrings.c utils/nsurl.c utils/idna.c utils/punycode.c \
+nsurl_SRCS := utils/corestrings.c utils/nsurl/nsurl.c \
+		utils/nsurl/parse.c \
+		utils/idna.c utils/punycode.c \
 		test/log.c test/nsurl.c
 
 # url database test sources
 urldbtest_SRCS := content/urldb.c \
-		utils/idna.c utils/bloom.c utils/nsoption.c utils/nsurl.c \
+		utils/idna.c utils/bloom.c utils/nsoption.c \
+		utils/nsurl/nsurl.c utils/nsurl/parse.c \
 		utils/corestrings.c utils/punycode.c \
 		utils/hashtable.c utils/messages.c utils/time.c utils/utils.c \
 		test/log.c test/urldbtest.c
@@ -30,7 +33,8 @@ llcache_SRCS := content/fetch.c content/fetchers/curl.c \
 		content/urldb.c \
 		image/image_cache.c \
 		utils/base64.c utils/corestrings.c utils/hashtable.c \
-		utils/nsurl.c utils/messages.c utils/url.c utils/useragent.c \
+		utils/nsurl/nsurl.c utils/nsurl/parse.c \
+		utils/messages.c utils/url.c utils/useragent.c \
 		utils/utils.c \
 		test/log.c test/llcache.c
 
@@ -51,7 +55,8 @@ urlescape_SRCS := utils/url.c test/log.c test/urlescape.c
 
 # utility test sources
 utils_SRCS := utils/utils.c utils/messages.c utils/hashtable.c \
-		utils/corestrings.c utils/nsurl.c utils/idna.c utils/punycode.c \
+		utils/corestrings.c utils/nsurl/nsurl.c \
+		utils/nsurl/parse.c utils/idna.c utils/punycode.c \
 		test/log.c test/utils.c
 
 # time test sources
