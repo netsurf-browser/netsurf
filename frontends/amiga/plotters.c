@@ -51,7 +51,14 @@
 #include "amiga/rtg.h"
 #include "amiga/utf8.h"
 
+/* set AMI_PLOTTER_DEBUG to 0 for no debugging, 1 for debugging */
 //#define AMI_PLOTTER_DEBUG 1
+
+#ifdef AMI_PLOTTER_DEBUG
+#define PLOT_LOG(x...) LOG(x)
+#else
+#define PLOT_LOG(x...) ((void) 0)
+#endif
 
 HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage *);
 
@@ -336,171 +343,6 @@ void ami_plot_clear_bbox(struct RastPort *rp, struct IBox *bbox)
 }
 
 
-static bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
-{
-	#ifdef AMI_PLOTTER_DEBUG
-	LOG("[ami_plotter] Entered ami_rectangle()");
-	#endif
-
-	if (style->fill_type != PLOT_OP_TYPE_NONE) { 
-		ami_plot_setapen(glob->rp, style->fill_colour);
-		RectFill(glob->rp, x0, y0, x1-1, y1-1);
-	}
-
-	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
-		glob->rp->PenWidth = style->stroke_width;
-		glob->rp->PenHeight = style->stroke_width;
-
-		switch (style->stroke_type) {
-			case PLOT_OP_TYPE_SOLID: /**< Solid colour */
-			default:
-				glob->rp->LinePtrn = PATT_LINE;
-			break;
-
-			case PLOT_OP_TYPE_DOT: /**< Dotted plot */
-				glob->rp->LinePtrn = PATT_DOT;
-			break;
-
-			case PLOT_OP_TYPE_DASH: /**< dashed plot */
-				glob->rp->LinePtrn = PATT_DASH;
-			break;
- 		}
-
-		ami_plot_setapen(glob->rp, style->stroke_colour);
-		Move(glob->rp, x0,y0);
-		Draw(glob->rp, x1, y0);
-		Draw(glob->rp, x1, y1);
-		Draw(glob->rp, x0, y1);
-		Draw(glob->rp, x0, y0);
-
-		glob->rp->PenWidth = 1;
-		glob->rp->PenHeight = 1;
-		glob->rp->LinePtrn = PATT_LINE;
-	}
-
-	return true;
-}
-
-static bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
-{
-	#ifdef AMI_PLOTTER_DEBUG
-	LOG("[ami_plotter] Entered ami_line()");
-	#endif
-
-	glob->rp->PenWidth = style->stroke_width;
-	glob->rp->PenHeight = style->stroke_width;
-
-	switch (style->stroke_type) {
-		case PLOT_OP_TYPE_SOLID: /**< Solid colour */
-		default:
-			glob->rp->LinePtrn = PATT_LINE;
-		break;
-
-		case PLOT_OP_TYPE_DOT: /**< Doted plot */
-			glob->rp->LinePtrn = PATT_DOT;
-		break;
-
-		case PLOT_OP_TYPE_DASH: /**< dashed plot */
-			glob->rp->LinePtrn = PATT_DASH;
-		break;
-	}
-
-	ami_plot_setapen(glob->rp, style->stroke_colour);
-	Move(glob->rp,x0,y0);
-	Draw(glob->rp,x1,y1);
-
-	glob->rp->PenWidth = 1;
-	glob->rp->PenHeight = 1;
-	glob->rp->LinePtrn = PATT_LINE;
-
-	return true;
-}
-
-static bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
-{
-	#ifdef AMI_PLOTTER_DEBUG
-	LOG("[ami_plotter] Entered ami_polygon()");
-	#endif
-
-	ami_plot_setapen(glob->rp, style->fill_colour);
-
-	if(AreaMove(glob->rp,p[0],p[1]) == -1)
-		LOG("AreaMove: vector list full");
-			
-	for(uint32 k = 1; k < n; k++) {
-		if(AreaDraw(glob->rp,p[k*2],p[(k*2)+1]) == -1)
-			LOG("AreaDraw: vector list full");
-	}
-
-	if(AreaEnd(glob->rp) == -1)
-		LOG("AreaEnd: error");
-
-	return true;
-}
-
-
-static bool ami_clip(const struct rect *clip)
-{
-	#ifdef AMI_PLOTTER_DEBUG
-	LOG("[ami_plotter] Entered ami_clip()");
-	#endif
-
-	struct Region *reg = NULL;
-
-	if(glob->rp->Layer)
-	{
-		reg = NewRegion();
-
-		glob->rect.MinX = clip->x0;
-		glob->rect.MinY = clip->y0;
-		glob->rect.MaxX = clip->x1-1;
-		glob->rect.MaxY = clip->y1-1;
-
-		OrRectRegion(reg,&glob->rect);
-
-		reg = InstallClipRegion(glob->rp->Layer,reg);
-
-		if(reg) DisposeRegion(reg);
-	}
-
-	return true;
-}
-
-static bool ami_text(int x, int y, const char *text, size_t length,
-		const plot_font_style_t *fstyle)
-{
-	#ifdef AMI_PLOTTER_DEBUG
-	LOG("[ami_plotter] Entered ami_text()");
-	#endif
-
-	if(__builtin_expect(ami_nsfont == NULL, 0)) return false;
-	
-	ami_plot_setapen(glob->rp, fstyle->foreground);
-	ami_nsfont->text(glob->rp, text, length, fstyle, x, y, nsoption_bool(font_antialiasing));
-	
-	return true;
-}
-
-static bool ami_disc(int x, int y, int radius, const plot_style_t *style)
-{
-	#ifdef AMI_PLOTTER_DEBUG
-	LOG("[ami_plotter] Entered ami_disc()");
-	#endif
-
-	if (style->fill_type != PLOT_OP_TYPE_NONE) {
-		ami_plot_setapen(glob->rp, style->fill_colour);
-		AreaCircle(glob->rp,x,y,radius);
-		AreaEnd(glob->rp);
-	}
-
-	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
-		ami_plot_setapen(glob->rp, style->stroke_colour);
-		DrawEllipse(glob->rp,x,y,radius,radius);
-	}
-
-	return true;
-}
-
 static void ami_arc_gfxlib(int x, int y, int radius, int angle1, int angle2)
 {
 	double angle1_r = (double)(angle1) * (M_PI / 180.0);
@@ -526,46 +368,37 @@ static void ami_arc_gfxlib(int x, int y, int radius, int angle1, int angle2)
 	}
 }
 
-static bool ami_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *style)
+/**
+ */
+static nserror
+ami_bitmap(int x, int y, int width, int height, struct bitmap *bitmap)
 {
-	#ifdef AMI_PLOTTER_DEBUG
-	LOG("[ami_plotter] Entered ami_arc()");
-	#endif
-
-	if (angle2 < angle1) angle2 += 360;
-		
-	ami_plot_setapen(glob->rp, style->fill_colour);
-	ami_arc_gfxlib(x, y, radius, angle1, angle2);
-	
-	return true;
-}
-
-static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitmap)
-{
-	#ifdef AMI_PLOTTER_DEBUG
-	LOG("[ami_plotter] Entered ami_bitmap()");
-	#endif
+	PLOT_LOG("[ami_plotter] Entered ami_bitmap()");
 
 	struct BitMap *tbm;
 
-	if(!width || !height) return true;
+	if (!width || !height) {
+		return NSERROR_OK;
+	}
 
-	if(((x + width) < glob->rect.MinX) ||
-		((y + height) < glob->rect.MinY) ||
-		(x > glob->rect.MaxX) ||
-		(y > glob->rect.MaxY))
-		return true;
+	if (((x + width) < glob->rect.MinX) ||
+	    ((y + height) < glob->rect.MinY) ||
+	    (x > glob->rect.MaxX) ||
+	    (y > glob->rect.MaxY)) {
+		return NSERROR_OK;
+	}
 
 	tbm = ami_bitmap_get_native(bitmap, width, height, glob->rp->BitMap);
-	if(!tbm) return true;
+	if (!tbm) {
+		return NSERROR_OK;
+	}
 
-	#ifdef AMI_PLOTTER_DEBUG
-	LOG("[ami_plotter] ami_bitmap() got native bitmap");
-	#endif
+	PLOT_LOG("[ami_plotter] ami_bitmap() got native bitmap");
 
 #ifdef __amigaos4__
-	if(__builtin_expect((GfxBase->LibNode.lib_Version >= 53) && (glob->palette_mapped == false) &&
-		(nsoption_bool(direct_render) == false), 1)) {
+	if (__builtin_expect((GfxBase->LibNode.lib_Version >= 53) &&
+			     (glob->palette_mapped == false) &&
+			     (nsoption_bool(direct_render) == false), 1)) {
 		uint32 comptype = COMPOSITE_Src_Over_Dest;
 		uint32 compflags = COMPFLAG_IgnoreDestAlpha;
 		if(amiga_bitmap_get_opaque(bitmap)) {
@@ -585,19 +418,18 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 					COMPTAG_OffsetY,y,
 					COMPTAG_FriendBitMap, scrn->RastPort.BitMap,
 					TAG_DONE);
-	}
-	else
+	} else
 #endif
 	{
 		ULONG tag, tag_data, minterm = 0xc0;
 		
-		if(glob->palette_mapped == false) {
+		if (glob->palette_mapped == false) {
 			tag = BLITA_UseSrcAlpha;
 			tag_data = !amiga_bitmap_get_opaque(bitmap);
 			minterm = 0xc0;
 		} else {
 			tag = BLITA_MaskPlane;
-			if((tag_data = (ULONG)ami_bitmap_get_mask(bitmap, width, height, tbm)))
+			if ((tag_data = (ULONG)ami_bitmap_get_mask(bitmap, width, height, tbm)))
 				minterm = MINTERM_SRCMASK;
 		}
 #ifdef __amigaos4__
@@ -613,7 +445,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 						tag, tag_data,
 						TAG_DONE);
 #else
-		if(tag_data) {
+		if (tag_data) {
 			BltMaskBitMapRastPort(tbm, 0, 0, glob->rp, x, y, width, height, minterm, tag_data);
 		} else {
 			BltBitMapRastPort(tbm, 0, 0, glob->rp, x, y, width, height, 0xc0);
@@ -621,118 +453,13 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 #endif
 	}
 
-	if((ami_bitmap_is_nativebm(bitmap, tbm) == false)) {
+	if ((ami_bitmap_is_nativebm(bitmap, tbm) == false)) {
 		ami_rtg_freebitmap(tbm);
 	}
 
-	return true;
+	return NSERROR_OK;
 }
 
-static bool ami_bitmap_tile(int x, int y, int width, int height,
-			struct bitmap *bitmap, colour bg,
-			bitmap_flags_t flags)
-{
-	#ifdef AMI_PLOTTER_DEBUG
-	LOG("[ami_plotter] Entered ami_bitmap_tile()");
-	#endif
-
-	int xf,yf,xm,ym,oy,ox;
-	struct BitMap *tbm = NULL;
-	struct Hook *bfh = NULL;
-	struct bfbitmap bfbm;
-	bool repeat_x = (flags & BITMAPF_REPEAT_X);
-	bool repeat_y = (flags & BITMAPF_REPEAT_Y);
-
-	if((width == 0) || (height == 0)) return true;
-
-	if(!(repeat_x || repeat_y))
-		return ami_bitmap(x, y, width, height, bitmap);
-
-	/* If it is a one pixel transparent image, we are wasting our time */
-	if((amiga_bitmap_get_opaque(bitmap) == false) &&
-		(bitmap_get_width(bitmap) == 1) && (bitmap_get_height(bitmap) == 1))
-		return true;
-
-	tbm = ami_bitmap_get_native(bitmap,width,height,glob->rp->BitMap);
-	if(!tbm) return true;
-
-	ox = x;
-	oy = y;
-
-	/* get left most tile position */
-	for (; ox > 0; ox -= width)
-	;
-
-	/* get top most tile position */
-	for (; oy > 0; oy -= height)
-	;
-
-	if(ox<0) ox = -ox;
-	if(oy<0) oy = -oy;
-
-	if(repeat_x)
-	{
-		xf = glob->rect.MaxX;
-		xm = glob->rect.MinX;
-	}
-	else
-	{
-		xf = x + width;
-		xm = x;
-	}
-
-	if(repeat_y)
-	{
-		yf = glob->rect.MaxY;
-		ym = glob->rect.MinY;
-	}
-	else
-	{
-		yf = y + height;
-		ym = y;
-	}
-#ifdef __amigaos4__
-	if(amiga_bitmap_get_opaque(bitmap))
-	{
-		bfh = CreateBackFillHook(BFHA_BitMap,tbm,
-							BFHA_Width,width,
-							BFHA_Height,height,
-							BFHA_OffsetX,ox,
-							BFHA_OffsetY,oy,
-							TAG_DONE);
-	}
-	else
-#endif
-	{
-		bfbm.bm = tbm;
-		bfbm.width = width;
-		bfbm.height = height;
-		bfbm.offsetx = ox;
-		bfbm.offsety = oy;
-		bfbm.mask = ami_bitmap_get_mask(bitmap, width, height, tbm);
-		bfh = calloc(1, sizeof(struct Hook));
-		bfh->h_Entry = (HOOKFUNC)ami_bitmap_tile_hook;
-		bfh->h_SubEntry = 0;
-		bfh->h_Data = &bfbm;
-	}
-
-	InstallLayerHook(glob->rp->Layer,bfh);
-	EraseRect(glob->rp,xm,ym,xf,yf);
-	InstallLayerHook(glob->rp->Layer,LAYERS_NOBACKFILL);
-
-#ifdef __amigaos4__
-	if(amiga_bitmap_get_opaque(bitmap)) DeleteBackFillHook(bfh);
-		else
-#endif
-		free(bfh);
-
-	if((ami_bitmap_is_nativebm(bitmap, tbm) == false)) {
-		/**\todo is this logic logical? */
-		ami_rtg_freebitmap(tbm);
-	}
-
-	return true;
-}
 
 HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage *)
 {
@@ -757,8 +484,7 @@ HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage 
 					COMPTAG_OffsetY, yf,
 					COMPTAG_FriendBitMap, scrn->RastPort.BitMap,
 					TAG_DONE);
-			}
-			else
+			} else
 #endif
 			{
 				ULONG tag, tag_data, minterm = 0xc0;
@@ -805,42 +531,323 @@ static void ami_bezier(struct bez_point *restrict a, struct bez_point *restrict 
     p->y = pow((1 - t), 3) * a->y + 3 * t * pow((1 -t), 2) * b->y + 3 * (1-t) * pow(t, 2)* c->y + pow (t, 3)* d->y;
 }
 
-static bool ami_path(const float *p, unsigned int n, colour fill, float width,
-			colour c, const float transform[6])
+
+bool ami_plot_screen_is_palettemapped(void)
+{
+	return glob->palette_mapped;
+}
+
+
+/**
+ * \brief Sets a clip rectangle for subsequent plot operations.
+ *
+ * \param ctx The current redraw context.
+ * \param clip The rectangle to limit all subsequent plot
+ *              operations within.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+ami_clip(const struct redraw_context *ctx, const struct rect *clip)
+{
+	struct Region *reg = NULL;
+
+	PLOT_LOG("[ami_plotter] Entered ami_clip()");
+
+	if (glob->rp->Layer) {
+		reg = NewRegion();
+
+		glob->rect.MinX = clip->x0;
+		glob->rect.MinY = clip->y0;
+		glob->rect.MaxX = clip->x1-1;
+		glob->rect.MaxY = clip->y1-1;
+
+		OrRectRegion(reg,&glob->rect);
+
+		reg = InstallClipRegion(glob->rp->Layer,reg);
+
+		if(reg) {
+			DisposeRegion(reg);
+		}
+	}
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * Plots an arc
+ *
+ * plot an arc segment around (x,y), anticlockwise from angle1
+ *  to angle2. Angles are measured anticlockwise from
+ *  horizontal, in degrees.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the arc plot.
+ * \param x The x coordinate of the arc.
+ * \param y The y coordinate of the arc.
+ * \param radius The radius of the arc.
+ * \param angle1 The start angle of the arc.
+ * \param angle2 The finish angle of the arc.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+ami_arc(const struct redraw_context *ctx,
+	const plot_style_t *style,
+	int x, int y, int radius, int angle1, int angle2)
+{
+	PLOT_LOG("[ami_plotter] Entered ami_arc()");
+
+	if (angle2 < angle1) {
+		angle2 += 360;
+	}
+
+	ami_plot_setapen(glob->rp, style->fill_colour);
+	ami_arc_gfxlib(x, y, radius, angle1, angle2);
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * Plots a circle
+ *
+ * Plot a circle centered on (x,y), which is optionally filled.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the circle plot.
+ * \param x x coordinate of circle centre.
+ * \param y y coordinate of circle centre.
+ * \param radius circle radius.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+ami_disc(const struct redraw_context *ctx,
+		const plot_style_t *style,
+		int x, int y, int radius)
+{
+	PLOT_LOG("[ami_plotter] Entered ami_disc()");
+
+	if (style->fill_type != PLOT_OP_TYPE_NONE) {
+		ami_plot_setapen(glob->rp, style->fill_colour);
+		AreaCircle(glob->rp,x,y,radius);
+		AreaEnd(glob->rp);
+	}
+
+	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+		ami_plot_setapen(glob->rp, style->stroke_colour);
+		DrawEllipse(glob->rp,x,y,radius,radius);
+	}
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * Plots a line
+ *
+ * plot a line from (x0,y0) to (x1,y1). Coordinates are at
+ *  centre of line width/thickness.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the line plot.
+ * \param line A rectangle defining the line to be drawn
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+ami_line(const struct redraw_context *ctx,
+		const plot_style_t *style,
+		const struct rect *line)
+{
+	PLOT_LOG("[ami_plotter] Entered ami_line()");
+
+	glob->rp->PenWidth = style->stroke_width;
+	glob->rp->PenHeight = style->stroke_width;
+
+	switch (style->stroke_type) {
+		case PLOT_OP_TYPE_SOLID: /**< Solid colour */
+		default:
+			glob->rp->LinePtrn = PATT_LINE;
+		break;
+
+		case PLOT_OP_TYPE_DOT: /**< Doted plot */
+			glob->rp->LinePtrn = PATT_DOT;
+		break;
+
+		case PLOT_OP_TYPE_DASH: /**< dashed plot */
+			glob->rp->LinePtrn = PATT_DASH;
+		break;
+	}
+
+	ami_plot_setapen(glob->rp, style->stroke_colour);
+	Move(glob->rp, line->x0, line->y0);
+	Draw(glob->rp, line->x1, line->y1);
+
+	glob->rp->PenWidth = 1;
+	glob->rp->PenHeight = 1;
+	glob->rp->LinePtrn = PATT_LINE;
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * Plots a rectangle.
+ *
+ * The rectangle can be filled an outline or both controlled
+ *  by the plot style The line can be solid, dotted or
+ *  dashed. Top left corner at (x0,y0) and rectangle has given
+ *  width and height.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the rectangle plot.
+ * \param rect A rectangle defining the line to be drawn
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+ami_rectangle(const struct redraw_context *ctx,
+		     const plot_style_t *style,
+		     const struct rect *rect)
+{
+	PLOT_LOG("[ami_plotter] Entered ami_rectangle()");
+
+	if (style->fill_type != PLOT_OP_TYPE_NONE) {
+		ami_plot_setapen(glob->rp, style->fill_colour);
+		RectFill(glob->rp, rect->x0, rect->y0, rect->x1- 1 , rect->y1 - 1);
+	}
+
+	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+		glob->rp->PenWidth = style->stroke_width;
+		glob->rp->PenHeight = style->stroke_width;
+
+		switch (style->stroke_type) {
+			case PLOT_OP_TYPE_SOLID: /**< Solid colour */
+			default:
+				glob->rp->LinePtrn = PATT_LINE;
+			break;
+
+			case PLOT_OP_TYPE_DOT: /**< Dotted plot */
+				glob->rp->LinePtrn = PATT_DOT;
+			break;
+
+			case PLOT_OP_TYPE_DASH: /**< dashed plot */
+				glob->rp->LinePtrn = PATT_DASH;
+			break;
+ 		}
+
+		ami_plot_setapen(glob->rp, style->stroke_colour);
+		Move(glob->rp, rect->x0, rect->y0);
+		Draw(glob->rp, rect->x1, rect->y0);
+		Draw(glob->rp, rect->x1, rect->y1);
+		Draw(glob->rp, rect->x0, rect->y1);
+		Draw(glob->rp, rect->x0, rect->y0);
+
+		glob->rp->PenWidth = 1;
+		glob->rp->PenHeight = 1;
+		glob->rp->LinePtrn = PATT_LINE;
+	}
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * Plot a polygon
+ *
+ * Plots a filled polygon with straight lines between
+ * points. The lines around the edge of the ploygon are not
+ * plotted. The polygon is filled with the non-zero winding
+ * rule.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the polygon plot.
+ * \param p verticies of polygon
+ * \param n number of verticies.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+ami_polygon(const struct redraw_context *ctx,
+		   const plot_style_t *style,
+		   const int *p,
+		   unsigned int n)
+{
+	PLOT_LOG("[ami_plotter] Entered ami_polygon()");
+
+	ami_plot_setapen(glob->rp, style->fill_colour);
+
+	if (AreaMove(glob->rp,p[0],p[1]) == -1) {
+		LOG("AreaMove: vector list full");
+	}
+
+	for (uint32 k = 1; k < n; k++) {
+		if (AreaDraw(glob->rp,p[k*2],p[(k*2)+1]) == -1) {
+			LOG("AreaDraw: vector list full");
+		}
+	}
+
+	if (AreaEnd(glob->rp) == -1) {
+		LOG("AreaEnd: error");
+	}
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * Plots a path.
+ *
+ * Path plot consisting of cubic Bezier curves. Line and fill colour is
+ *  controlled by the plot style.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the path plot.
+ * \param p elements of path
+ * \param n nunber of elements on path
+ * \param width The width of the path
+ * \param transform A transform to apply to the path.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+ami_path(const struct redraw_context *ctx,
+		const plot_style_t *pstyle,
+		const float *p,
+		unsigned int n,
+		float width,
+		const float transform[6])
 {
 	unsigned int i;
 	struct bez_point start_p = {0, 0}, cur_p = {0, 0}, p_a, p_b, p_c, p_r;
 	
-	#ifdef AMI_PLOTTER_DEBUG
-	LOG("[ami_plotter] Entered ami_path()");
-	#endif
+	PLOT_LOG("[ami_plotter] Entered ami_path()");
 
-	if (n == 0)
-		return true;
+	if (n == 0) {
+		return NSERROR_OK;
+	}
 
 	if (p[0] != PLOTTER_PATH_MOVE) {
 		LOG("Path does not start with move");
-		return false;
+		return NSERROR_INVALID;
 	}
 
-	if (fill != NS_TRANSPARENT) {
-		ami_plot_setapen(glob->rp, fill);
-		if (c != NS_TRANSPARENT)
-			ami_plot_setopen(glob->rp, c);
+	if (pstyle->fill_colour != NS_TRANSPARENT) {
+		ami_plot_setapen(glob->rp, pstyle->fill_colour);
+		if (pstyle->stroke_colour != NS_TRANSPARENT) {
+			ami_plot_setopen(glob->rp, pstyle->stroke_colour);
+		}
 	} else {
-		if (c != NS_TRANSPARENT) {
-			ami_plot_setapen(glob->rp, c);
+		if (pstyle->stroke_colour != NS_TRANSPARENT) {
+			ami_plot_setapen(glob->rp, pstyle->stroke_colour);
 		} else {
-			return true; /* wholly transparent */
+			return NSERROR_OK; /* wholly transparent */
 		}
 	}
 
 	/* Construct path */
 	for (i = 0; i < n; ) {
 		if (p[i] == PLOTTER_PATH_MOVE) {
-			if (fill != NS_TRANSPARENT) {
-				if(AreaMove(glob->rp, p[i+1], p[i+2]) == -1)
+			if (pstyle->fill_colour != NS_TRANSPARENT) {
+				if (AreaMove(glob->rp, p[i+1], p[i+2]) == -1) {
 					LOG("AreaMove: vector list full");
+				}
 			} else {
 				Move(glob->rp, p[i+1], p[i+2]);
 			}
@@ -851,17 +858,19 @@ static bool ami_path(const float *p, unsigned int n, colour fill, float width,
 			cur_p.y = start_p.y;
 			i += 3;
 		} else if (p[i] == PLOTTER_PATH_CLOSE) {
-			if (fill != NS_TRANSPARENT) {
-				if(AreaEnd(glob->rp) == -1)
+			if (pstyle->fill_colour != NS_TRANSPARENT) {
+				if (AreaEnd(glob->rp) == -1) {
 					LOG("AreaEnd: error");
+				}
 			} else {
 				Draw(glob->rp, start_p.x, start_p.y);
 			}
 			i++;
 		} else if (p[i] == PLOTTER_PATH_LINE) {
-			if (fill != NS_TRANSPARENT) {
-				if(AreaDraw(glob->rp, p[i+1], p[i+2]) == -1)
+			if (pstyle->fill_colour != NS_TRANSPARENT) {
+				if (AreaDraw(glob->rp, p[i+1], p[i+2]) == -1) {
 					LOG("AreaDraw: vector list full");
+				}
 			} else {
 				Draw(glob->rp, p[i+1], p[i+2]);
 			}
@@ -876,11 +885,12 @@ static bool ami_path(const float *p, unsigned int n, colour fill, float width,
 			p_c.x = p[i+5];
 			p_c.y = p[i+6];
 
-			for(double t = 0.0; t <= 1.0; t += 0.1) {
+			for (double t = 0.0; t <= 1.0; t += 0.1) {
 				ami_bezier(&cur_p, &p_a, &p_b, &p_c, t, &p_r);
-				if (fill != NS_TRANSPARENT) {
-					if(AreaDraw(glob->rp, p_r.x, p_r.y) == -1)
+				if (pstyle->fill_colour != NS_TRANSPARENT) {
+					if (AreaDraw(glob->rp, p_r.x, p_r.y) == -1) {
 						LOG("AreaDraw: vector list full");
+					}
 				} else {
 					Draw(glob->rp, p_r.x, p_r.y);
 				}
@@ -891,25 +901,187 @@ static bool ami_path(const float *p, unsigned int n, colour fill, float width,
 		} else {
 			LOG("bad path command %f", p[i]);
 			/* End path for safety if using Area commands */
-			if (fill != NS_TRANSPARENT) {
+			if (pstyle->fill_colour != NS_TRANSPARENT) {
 				AreaEnd(glob->rp);
 				BNDRYOFF(glob->rp);
 			}
-			return false;
+			return NSERROR_INVALID;
 		}
 	}
-	if (fill != NS_TRANSPARENT)
+	if (pstyle->fill_colour != NS_TRANSPARENT) {
 		BNDRYOFF(glob->rp);
+	}
 
-	return true;
+	return NSERROR_OK;
 }
 
-bool ami_plot_screen_is_palettemapped(void)
+
+/**
+ * Plot a bitmap
+ *
+ * Tiled plot of a bitmap image. (x,y) gives the top left
+ * coordinate of an explicitly placed tile. From this tile the
+ * image can repeat in all four directions -- up, down, left
+ * and right -- to the extents given by the current clip
+ * rectangle.
+ *
+ * The bitmap_flags say whether to tile in the x and y
+ * directions. If not tiling in x or y directions, the single
+ * image is plotted. The width and height give the dimensions
+ * the image is to be scaled to.
+ *
+ * \param ctx The current redraw context.
+ * \param bitmap The bitmap to plot
+ * \param x The x coordinate to plot the bitmap
+ * \param y The y coordiante to plot the bitmap
+ * \param width The width of area to plot the bitmap into
+ * \param height The height of area to plot the bitmap into
+ * \param bg the background colour to alpha blend into
+ * \param flags the flags controlling the type of plot operation
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+ami_bitmap_tile(const struct redraw_context *ctx,
+		struct bitmap *bitmap,
+		int x, int y,
+		int width,
+		int height,
+		colour bg,
+		bitmap_flags_t flags)
 {
-	return glob->palette_mapped;
+	int xf,yf,xm,ym,oy,ox;
+	struct BitMap *tbm = NULL;
+	struct Hook *bfh = NULL;
+	struct bfbitmap bfbm;
+	bool repeat_x = (flags & BITMAPF_REPEAT_X);
+	bool repeat_y = (flags & BITMAPF_REPEAT_Y);
+
+	PLOT_LOG("[ami_plotter] Entered ami_bitmap_tile()");
+
+	if ((width == 0) || (height == 0)) {
+		return NSERROR_OK;
+	}
+
+	if (!(repeat_x || repeat_y)) {
+		return ami_bitmap(x, y, width, height, bitmap);
+	}
+
+	/* If it is a one pixel transparent image, we are wasting our time */
+	if ((amiga_bitmap_get_opaque(bitmap) == false) &&
+	    (bitmap_get_width(bitmap) == 1) &&
+	    (bitmap_get_height(bitmap) == 1)) {
+		return NSERROR_OK;
+	}
+
+	tbm = ami_bitmap_get_native(bitmap,width,height,glob->rp->BitMap);
+	if (!tbm) {
+		return NSERROR_OK;
+	}
+
+	ox = x;
+	oy = y;
+
+	/* get left most tile position */
+	for (; ox > 0; ox -= width)
+
+	/* get top most tile position */
+	for (; oy > 0; oy -= height);
+
+	if (ox < 0) {
+		ox = -ox;
+	}
+	if (oy < 0) {
+		oy = -oy;
+	}
+	if (repeat_x) {
+		xf = glob->rect.MaxX;
+		xm = glob->rect.MinX;
+	} else {
+		xf = x + width;
+		xm = x;
+	}
+
+	if (repeat_y) {
+		yf = glob->rect.MaxY;
+		ym = glob->rect.MinY;
+	} else {
+		yf = y + height;
+		ym = y;
+	}
+#ifdef __amigaos4__
+	if(amiga_bitmap_get_opaque(bitmap)) {
+		bfh = CreateBackFillHook(BFHA_BitMap,tbm,
+							BFHA_Width,width,
+							BFHA_Height,height,
+							BFHA_OffsetX,ox,
+							BFHA_OffsetY,oy,
+							TAG_DONE);
+	} else
+#endif
+	{
+		bfbm.bm = tbm;
+		bfbm.width = width;
+		bfbm.height = height;
+		bfbm.offsetx = ox;
+		bfbm.offsety = oy;
+		bfbm.mask = ami_bitmap_get_mask(bitmap, width, height, tbm);
+		bfh = calloc(1, sizeof(struct Hook));
+		bfh->h_Entry = (HOOKFUNC)ami_bitmap_tile_hook;
+		bfh->h_SubEntry = 0;
+		bfh->h_Data = &bfbm;
+	}
+
+	InstallLayerHook(glob->rp->Layer,bfh);
+	EraseRect(glob->rp,xm,ym,xf,yf);
+	InstallLayerHook(glob->rp->Layer,LAYERS_NOBACKFILL);
+
+#ifdef __amigaos4__
+	if (amiga_bitmap_get_opaque(bitmap)) {
+		DeleteBackFillHook(bfh);
+	} else
+#endif
+		free(bfh);
+
+	if ((ami_bitmap_is_nativebm(bitmap, tbm) == false)) {
+		/**\todo is this logic logical? */
+		ami_rtg_freebitmap(tbm);
+	}
+
+	return NSERROR_OK;
 }
 
-struct plotter_table plot;
+
+/**
+ * Text plotting.
+ *
+ * \param ctx The current redraw context.
+ * \param fstyle plot style for this text
+ * \param x x coordinate
+ * \param y y coordinate
+ * \param text UTF-8 string to plot
+ * \param length length of string, in bytes
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+ami_text(const struct redraw_context *ctx,
+		const struct plot_font_style *fstyle,
+		int x,
+		int y,
+		const char *text,
+		size_t length)
+{
+	PLOT_LOG("[ami_plotter] Entered ami_text()");
+
+	if (__builtin_expect(ami_nsfont == NULL, 0)) {
+		return NSERROR_OK;
+	}
+	ami_plot_setapen(glob->rp, fstyle->foreground);
+	ami_nsfont->text(glob->rp, text, length, fstyle, x, y, nsoption_bool(font_antialiasing));
+
+	return NSERROR_OK;
+}
+
+
 const struct plotter_table amiplot = {
 	.rectangle = ami_rectangle,
 	.line = ami_line,

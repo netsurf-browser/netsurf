@@ -270,8 +270,11 @@ bool amiga_dt_anim_redraw(struct content *c,
 	if (data->repeat_y)
 		flags |= BITMAPF_REPEAT_Y;
 
-	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			plugin->bitmap, data->background_colour, flags);
+	return (ctx->plot->bitmap(ctx, plugin->bitmap,
+				  data->x, data->y,
+				  data->width, data->height,
+				  data->background_colour,
+				  flags) == NSERROR_OK);
 }
 
 /**

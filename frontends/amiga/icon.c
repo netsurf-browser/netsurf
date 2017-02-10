@@ -16,7 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Content for image/x-amiga-icon (icon.library implementation).
  *
  */
@@ -273,8 +274,14 @@ bool amiga_icon_redraw(struct content *c,
 	if (data->repeat_y)
 		flags |= BITMAPF_REPEAT_Y;
 
-	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			icon_c->bitmap, data->background_colour, flags);
+	return (ctx->plot->bitmap(ctx,
+				  icon_c->bitmap,
+				  data->x,
+				  data->y,
+				  data->width,
+				  data->height,
+				  data->background_colour,
+				  flags) == NSERROR_OK);
 }
 
 
