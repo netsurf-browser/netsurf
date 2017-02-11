@@ -239,6 +239,7 @@ bool box_textarea_create_textarea(html_content *html,
 	textarea_flags ta_flags;
 	plot_font_style_t fstyle;
 	bool read_only = false;
+	bool disabled = false;
 	struct form_control *gadget = box->gadget;
 	const char *text;
 
@@ -257,6 +258,11 @@ bool box_textarea_create_textarea(html_content *html,
 		if (err != DOM_NO_ERR)
 			return false;
 
+		err = dom_html_text_area_element_get_disabled(
+				textarea, &disabled);
+		if (err != DOM_NO_ERR)
+			return false;
+
 		/* Get the textarea's initial content */
 		err = dom_html_text_area_element_get_value(textarea, &dom_text);
 		if (err != DOM_NO_ERR)
@@ -267,6 +273,11 @@ bool box_textarea_create_textarea(html_content *html,
 
 		err = dom_html_input_element_get_read_only(
 				input, &read_only);
+		if (err != DOM_NO_ERR)
+			return false;
+
+		err = dom_html_input_element_get_disabled(
+				input, &disabled);
 		if (err != DOM_NO_ERR)
 			return false;
 
@@ -289,7 +300,7 @@ bool box_textarea_create_textarea(html_content *html,
 		text = "";
 	}
 
-	if (read_only)
+	if (read_only || disabled)
 		ta_flags |= TEXTAREA_READONLY;
 
 	gadget->data.text.data.gadget = gadget;
