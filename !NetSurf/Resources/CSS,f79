@@ -115,7 +115,7 @@ input, button { background-color: #fff; color: #000; text-align: left;
 	font-family: sans-serif; width: auto; height: auto; overflow: hidden;
 	border: 1px solid #444; padding: 2px 3px; line-height: 1.33;
 	margin: 1px; }
-input[readonly] { background-color: #ddd; color: #333; }
+input[disabled] { background-color: #ddd; color: #333; }
 input[type=button], input[type=reset], input[type=submit], button {
 	background-color: #d9d9d9; color: #000; text-align: center;
 	border: 2px outset #d9d9d9; padding: 1px 0.5em; }
@@ -137,7 +137,7 @@ select:after { content: "\25bc"; border-left: 2px ridge #d9d9d9; }
 textarea { background-color: #fff; color: #000; text-align: left;
 	font-family: monospace; width: auto; height: auto; overflow: scroll;
 	margin: 1px; border: 1px solid #333; padding: 1px 3px; }
-textarea[readonly] { background-color: #ddd; color: #333; }
+textarea[disabled] { background-color: #ddd; color: #333; }
 
 fieldset { display: block; border: thin solid #888; margin: 1.12em 0; }
 
