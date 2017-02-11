@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Knockout rendering (implementation).
+/**
+ * \file
+ * Knockout rendering implementation.
  *
  * Knockout rendering is an optimisation which is particularly for
  * unaccelerated screen redraw. It tries to avoid plotting the same area more
@@ -86,47 +87,6 @@
 struct knockout_box;
 struct knockout_entry;
 
-
-static void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *box);
-static bool knockout_plot_fill_recursive(struct knockout_box *box, plot_style_t *plot_style);
-static bool knockout_plot_bitmap_recursive(struct knockout_box *box,
-		struct knockout_entry *entry);
-
-static bool knockout_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle);
-static bool knockout_plot_polygon(const int *p, unsigned int n, const plot_style_t *pstyle);
-static bool knockout_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *plot_style);
-static bool knockout_plot_clip(const struct rect *clip);
-static bool knockout_plot_text(int x, int y, const char *text, size_t length, 
-		const plot_font_style_t *fstyle);
-static bool knockout_plot_disc(int x, int y, int radius, const plot_style_t *pstyle);
-static bool knockout_plot_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *pstyle);
-static bool knockout_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg,
-		bitmap_flags_t flags);
-static bool knockout_plot_flush(void);
-static bool knockout_plot_group_start(const char *name);
-static bool knockout_plot_group_end(void);
-static bool knockout_plot_path(const float *p, unsigned int n, colour fill,
-		float width, colour c, const float transform[6]);
-
-
-const struct plotter_table knockout_plotters = {
-	.rectangle = knockout_plot_rectangle,
-	.line = knockout_plot_line,
-	.polygon = knockout_plot_polygon,
-	.clip = knockout_plot_clip,
-	.text = knockout_plot_text,
-	.disc = knockout_plot_disc,
-	.arc = knockout_plot_arc,
-	.bitmap = knockout_plot_bitmap,
-	.group_start = knockout_plot_group_start,
-	.group_end = knockout_plot_group_end,
-	.flush = knockout_plot_flush,
-	.path = knockout_plot_path,
-	.option_knockout = true,
-};
-
-
 typedef enum {
 	KNOCKOUT_PLOT_RECTANGLE,
 	KNOCKOUT_PLOT_LINE,
@@ -155,17 +115,11 @@ struct knockout_entry {
 	struct knockout_box *box;	/* relating series of knockout clips */
 	union {
 		struct {
-			int x0;
-			int y0;
-			int x1;
-			int y1;
+			struct rect r;
 			plot_style_t plot_style;
 		} rectangle;
 		struct {
-			int x0;
-			int y0;
-			int x1;
-			int y1;
+			struct rect l;
 			plot_style_t plot_style;
 		} line;
 		struct {
@@ -174,10 +128,7 @@ struct knockout_entry {
 			plot_style_t plot_style;
 		} polygon;
 		struct {
-			int x0;
-			int y0;
-			int x1;
-			int y1;
+			struct rect r;
 			plot_style_t plot_style;
 		} fill;
 		struct rect clip;
@@ -231,64 +182,88 @@ static struct plotter_table real_plot;
 static struct rect clip_cur;
 static int nested_depth = 0;
 
+
 /**
- * Start a knockout plotting session
- *
- * \param ctx		the redraw context with real plotter table
- * \param knk_ctx	updated to copy of ctx, with plotter table replaced
- * \return  true on success, false otherwise
+ * fill an area recursively
  */
-bool knockout_plot_start(const struct redraw_context *ctx,
-		struct redraw_context *knk_ctx)
+static nserror
+knockout_plot_fill_recursive(const struct redraw_context *ctx,
+			     struct knockout_box *box,
+			     plot_style_t *plot_style)
 {
-	/* check if we're recursing */
-	if (nested_depth++ > 0) {
-		/* we should already have the knockout renderer as default */
-		assert(ctx->plot->rectangle == knockout_plotters.rectangle);
-		*knk_ctx = *ctx;
-		return true;
+	struct knockout_box *parent;
+	nserror res;
+	nserror ffres = NSERROR_OK; /* first failing result */
+
+	for (parent = box; parent; parent = parent->next) {
+		if (parent->deleted)
+			continue;
+		if (parent->child) {
+			res = knockout_plot_fill_recursive(ctx,
+							   parent->child,
+							   plot_style);
+		} else {
+			res = real_plot.rectangle(ctx, plot_style, &parent->bbox);
+		}
+		/* remember the first error */
+		if ((res != NSERROR_OK) && (ffres == NSERROR_OK)) {
+			ffres = res;
+		}
 	}
-
-	/* end any previous sessions */
-	if (knockout_entry_cur > 0)
-		knockout_plot_end();
-
-	/* get copy of real plotter table */
-	real_plot = *(ctx->plot);
-
-	/* set up knockout rendering context */
-	*knk_ctx = *ctx;
-	knk_ctx->plot = &knockout_plotters;
-	return true;
+	return ffres;
 }
 
 
 /**
- * End a knockout plotting session
- *
- * \return  true on success, false otherwise
+ * bitmap plot recusivley
  */
-bool knockout_plot_end(void)
+static nserror
+knockout_plot_bitmap_recursive(const struct redraw_context *ctx,
+			       struct knockout_box *box,
+			       struct knockout_entry *entry)
 {
-	/* only output when we've finished any nesting */
-	if (--nested_depth == 0)
-		return knockout_plot_flush();
+	nserror res;
+	nserror ffres = NSERROR_OK; /* first failing result */
+	struct knockout_box *parent;
 
-	assert(nested_depth > 0);
-	return true;
+	for (parent = box; parent; parent = parent->next) {
+		if (parent->deleted)
+			continue;
+		if (parent->child) {
+			res = knockout_plot_bitmap_recursive(ctx,
+							     parent->child,
+							     entry);
+		} else {
+			real_plot.clip(ctx, &parent->bbox);
+			res = real_plot.bitmap(ctx,
+					       entry->data.bitmap.bitmap,
+					       entry->data.bitmap.x,
+					       entry->data.bitmap.y,
+					       entry->data.bitmap.width,
+					       entry->data.bitmap.height,
+					       entry->data.bitmap.bg,
+					       entry->data.bitmap.flags);
+		}
+		/* remember the first error */
+		if ((res != NSERROR_OK) && (ffres == NSERROR_OK)) {
+			ffres = res;
+		}
+
+	}
+	return ffres;
 }
-
 
 /**
  * Flush the current knockout session to empty the buffers
  *
  * \return  true on success, false otherwise
  */
-bool knockout_plot_flush(void)
+static nserror knockout_plot_flush(const struct redraw_context *ctx)
 {
 	int i;
-	bool success = true;
 	struct knockout_box *box;
+	nserror res; /* operation result */
+	nserror ffres = NSERROR_OK; /* first failing result */
 
 	/* debugging information */
 #ifdef KNOCKOUT_DEBUG
@@ -298,98 +273,99 @@ bool knockout_plot_flush(void)
 	for (i = 0; i < knockout_entry_cur; i++) {
 		switch (knockout_entries[i].type) {
 		case KNOCKOUT_PLOT_RECTANGLE:
-                        success &= real_plot.rectangle(
-                                knockout_entries[i].data.rectangle.x0,
-                                knockout_entries[i].data.rectangle.y0,
-                                knockout_entries[i].data.rectangle.x1,
-                                knockout_entries[i].data.rectangle.y1,
-                                &knockout_entries[i].data.rectangle.plot_style);
+			res = real_plot.rectangle(ctx,
+				&knockout_entries[i].data.rectangle.plot_style,
+				&knockout_entries[i].data.rectangle.r);
 			break;
+
 		case KNOCKOUT_PLOT_LINE:
-			success &= real_plot.line(
-					knockout_entries[i].data.line.x0,
-					knockout_entries[i].data.line.y0,
-					knockout_entries[i].data.line.x1,
-					knockout_entries[i].data.line.y1,
-					&knockout_entries[i].data.line.plot_style);
+			res = real_plot.line(ctx,
+				&knockout_entries[i].data.line.plot_style,
+				&knockout_entries[i].data.line.l);
 			break;
+
 		case KNOCKOUT_PLOT_POLYGON:
-			success &= real_plot.polygon(
-					knockout_entries[i].data.polygon.p,
-					knockout_entries[i].data.polygon.n,
-					&knockout_entries[i].data.polygon.plot_style);
+			res = real_plot.polygon(ctx,
+				&knockout_entries[i].data.polygon.plot_style,
+				knockout_entries[i].data.polygon.p,
+				knockout_entries[i].data.polygon.n);
 			break;
+
 		case KNOCKOUT_PLOT_FILL:
 			box = knockout_entries[i].box->child;
-			if (box)
-				success &= knockout_plot_fill_recursive(box,
-						&knockout_entries[i].data.fill.plot_style);
-			else if (!knockout_entries[i].box->deleted)
-				success &= real_plot.rectangle(
-						knockout_entries[i].data.fill.x0,
-						knockout_entries[i].data.fill.y0,
-						knockout_entries[i].data.fill.x1,
-						knockout_entries[i].data.fill.y1,
-						&knockout_entries[i].data.fill.plot_style);
+			if (box) {
+				res = knockout_plot_fill_recursive(ctx,
+								   box,
+				      &knockout_entries[i].data.fill.plot_style);
+			} else if (!knockout_entries[i].box->deleted) {
+				res = real_plot.rectangle(ctx,
+				       &knockout_entries[i].data.fill.plot_style,
+				       &knockout_entries[i].data.fill.r);
+			}
 			break;
+
 		case KNOCKOUT_PLOT_CLIP:
-			success &= real_plot.clip(
-					&knockout_entries[i].data.clip);
+			res = real_plot.clip(ctx, &knockout_entries[i].data.clip);
 			break;
+
 		case KNOCKOUT_PLOT_TEXT:
-			success &= real_plot.text(
+			res = real_plot.text(ctx,
+					&knockout_entries[i].data.text.font_style,
 					knockout_entries[i].data.text.x,
 					knockout_entries[i].data.text.y,
 					knockout_entries[i].data.text.text,
-					knockout_entries[i].data.text.length,
-					&knockout_entries[i].data.text.font_style);
+					knockout_entries[i].data.text.length);
 			break;
+
 		case KNOCKOUT_PLOT_DISC:
-			success &= real_plot.disc(
+			res = real_plot.disc(ctx,
+					&knockout_entries[i].data.disc.plot_style,
 					knockout_entries[i].data.disc.x,
 					knockout_entries[i].data.disc.y,
-					knockout_entries[i].data.disc.radius,
-					&knockout_entries[i].data.disc.plot_style);
+					knockout_entries[i].data.disc.radius);
 			break;
+
 		case KNOCKOUT_PLOT_ARC:
-			success &= real_plot.arc(
+			res = real_plot.arc(ctx,
+					&knockout_entries[i].data.arc.plot_style,
 					knockout_entries[i].data.arc.x,
 					knockout_entries[i].data.arc.y,
 					knockout_entries[i].data.arc.radius,
 					knockout_entries[i].data.arc.angle1,
-					knockout_entries[i].data.arc.angle2,
-					&knockout_entries[i].data.arc.plot_style);
+					knockout_entries[i].data.arc.angle2);
 			break;
+
 		case KNOCKOUT_PLOT_BITMAP:
 			box = knockout_entries[i].box->child;
 			if (box) {
-				success &= knockout_plot_bitmap_recursive(box,
+				res = knockout_plot_bitmap_recursive(ctx,
+						box,
 						&knockout_entries[i]);
 			} else if (!knockout_entries[i].box->deleted) {
-				success &= real_plot.bitmap(
-						knockout_entries[i].data.
-								bitmap.x,
-						knockout_entries[i].data.
-								bitmap.y,
-						knockout_entries[i].data.
-								bitmap.width,
-						knockout_entries[i].data.
-								bitmap.height,
-						knockout_entries[i].data.
-								bitmap.bitmap,
-						knockout_entries[i].data.
-								bitmap.bg,
-						knockout_entries[i].data.
-								bitmap.flags);
+				res = real_plot.bitmap(ctx,
+					knockout_entries[i].data.bitmap.bitmap,
+					knockout_entries[i].data.bitmap.x,
+					knockout_entries[i].data.bitmap.y,
+					knockout_entries[i].data.bitmap.width,
+					knockout_entries[i].data.bitmap.height,
+					knockout_entries[i].data.bitmap.bg,
+					knockout_entries[i].data.bitmap.flags);
 			}
 			break;
+
 		case KNOCKOUT_PLOT_GROUP_START:
-			success &= real_plot.group_start(
-					knockout_entries[i].data.group_start.name);
+			res = real_plot.group_start(ctx,
+				knockout_entries[i].data.group_start.name);
 			break;
+
 		case KNOCKOUT_PLOT_GROUP_END:
-			success &= real_plot.group_end();
+			res = real_plot.group_end(ctx);
 			break;
+		}
+
+		/* remember the first error */
+		if ((res != NSERROR_OK) && (ffres == NSERROR_OK)) {
+			ffres = res;
 		}
 	}
 
@@ -398,7 +374,7 @@ bool knockout_plot_flush(void)
 	knockout_polygon_cur = 0;
 	knockout_list = NULL;
 
-	return success;
+	return ffres;
 }
 
 
@@ -410,8 +386,11 @@ bool knockout_plot_flush(void)
  * \param x1    The right edge of the removal box
  * \param y1    The top edge of the removal box
  * \param owner The parent box set to consider, or NULL for top level
-*/
-void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *owner)
+ */
+static void
+knockout_calculate(const struct redraw_context *ctx,
+		   int x0, int y0, int x1, int y1,
+		   struct knockout_box *owner)
 {
 	struct knockout_box *box;
 	struct knockout_box *parent;
@@ -464,11 +443,11 @@ void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *own
 
 		/* has the box been replaced by children? */
 		if (parent->child) {
-			knockout_calculate(x0, y0, x1, y1, parent);
+			knockout_calculate(ctx, x0, y0, x1, y1, parent);
 		} else {
 			/* we need a maximum of 4 child boxes */
 			if (knockout_box_cur + 4 >= KNOCKOUT_BOXES) {
-				knockout_plot_flush();
+				knockout_plot_flush(ctx);
 				return;
 			}
 
@@ -527,136 +506,134 @@ void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *own
 }
 
 
-bool knockout_plot_fill_recursive(struct knockout_box *box, plot_style_t *plot_style)
-{
-	bool success = true;
-	struct knockout_box *parent;
-
-	for (parent = box; parent; parent = parent->next) {
-		if (parent->deleted)
-			continue;
-		if (parent->child)
-			knockout_plot_fill_recursive(parent->child, plot_style);
-		else
-			success &= real_plot.rectangle(parent->bbox.x0,
-                                                  parent->bbox.y0,
-                                                  parent->bbox.x1,
-                                                  parent->bbox.y1,
-                                                  plot_style);
-	}
-	return success;
-}
-
-
-bool knockout_plot_bitmap_recursive(struct knockout_box *box,
-		struct knockout_entry *entry)
-{
-	bool success = true;
-	struct knockout_box *parent;
-
-	for (parent = box; parent; parent = parent->next) {
-		if (parent->deleted)
-			continue;
-		if (parent->child)
-			knockout_plot_bitmap_recursive(parent->child, entry);
-		else {
-			success &= real_plot.clip(&parent->bbox);
-			success &= real_plot.bitmap(entry->data.bitmap.x,
-					entry->data.bitmap.y,
-					entry->data.bitmap.width,
-					entry->data.bitmap.height,
-					entry->data.bitmap.bitmap,
-					entry->data.bitmap.bg,
-					entry->data.bitmap.flags);
-		}
-	}
-	return success;
-}
-
-bool knockout_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *pstyle)
+/**
+ * knockout rectangle plotting.
+ *
+ * The rectangle can be filled an outline or both controlled
+ *  by the plot style The line can be solid, dotted or
+ *  dashed. Top left corner at (x0,y0) and rectangle has given
+ *  width and height.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the rectangle plot.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+knockout_plot_rectangle(const struct redraw_context *ctx,
+			const plot_style_t *pstyle,
+			const struct rect *rect)
 {
 	int kx0, ky0, kx1, ky1;
+	nserror res = NSERROR_OK;
 
-        if (pstyle->fill_type != PLOT_OP_TYPE_NONE) {
+	if (pstyle->fill_type != PLOT_OP_TYPE_NONE) {
 		/* filled draw */
 
 		/* get our bounds */
-		kx0 = (x0 > clip_cur.x0) ? x0 : clip_cur.x0;
-		ky0 = (y0 > clip_cur.y0) ? y0 : clip_cur.y0;
-		kx1 = (x1 < clip_cur.x1) ? x1 : clip_cur.x1;
-		ky1 = (y1 < clip_cur.y1) ? y1 : clip_cur.y1;
+		kx0 = (rect->x0 > clip_cur.x0) ? rect->x0 : clip_cur.x0;
+		ky0 = (rect->y0 > clip_cur.y0) ? rect->y0 : clip_cur.y0;
+		kx1 = (rect->x1 < clip_cur.x1) ? rect->x1 : clip_cur.x1;
+		ky1 = (rect->y1 < clip_cur.y1) ? rect->y1 : clip_cur.y1;
 		if ((kx0 > clip_cur.x1) || (kx1 < clip_cur.x0) ||
-		    (ky0 > clip_cur.y1) || (ky1 < clip_cur.y0))
-			return true;
+		    (ky0 > clip_cur.y1) || (ky1 < clip_cur.y0)) {
+			return NSERROR_OK;
+		}
 
 		/* fills both knock out and get knocked out */
-		knockout_calculate(kx0, ky0, kx1, ky1, NULL);
-		knockout_boxes[knockout_box_cur].bbox.x0 = x0;
-		knockout_boxes[knockout_box_cur].bbox.y0 = y0;
-		knockout_boxes[knockout_box_cur].bbox.x1 = x1;
-		knockout_boxes[knockout_box_cur].bbox.y1 = y1;
+		knockout_calculate(ctx, kx0, ky0, kx1, ky1, NULL);
+		knockout_boxes[knockout_box_cur].bbox = *rect;
 		knockout_boxes[knockout_box_cur].deleted = false;
 		knockout_boxes[knockout_box_cur].child = NULL;
 		knockout_boxes[knockout_box_cur].next = knockout_list;
 		knockout_list = &knockout_boxes[knockout_box_cur];
 		knockout_entries[knockout_entry_cur].box = &knockout_boxes[knockout_box_cur];
-		knockout_entries[knockout_entry_cur].data.fill.x0 = x0;
-		knockout_entries[knockout_entry_cur].data.fill.y0 = y0;
-		knockout_entries[knockout_entry_cur].data.fill.x1 = x1;
-		knockout_entries[knockout_entry_cur].data.fill.y1 = y1;
+		knockout_entries[knockout_entry_cur].data.fill.r = *rect;
 		knockout_entries[knockout_entry_cur].data.fill.plot_style = *pstyle;
 		knockout_entries[knockout_entry_cur].data.fill.plot_style.stroke_type = PLOT_OP_TYPE_NONE; /* ensure we only plot the fill */
 		knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_FILL;
 		if ((++knockout_entry_cur >= KNOCKOUT_ENTRIES) ||
-		    (++knockout_box_cur >= KNOCKOUT_BOXES))
-			knockout_plot_flush();
-        } 
+		    (++knockout_box_cur >= KNOCKOUT_BOXES)) {
+			res = knockout_plot_flush(ctx);
+		}
+	}
 
 	if (pstyle->stroke_type != PLOT_OP_TYPE_NONE) {
 		/* draw outline */
 
-		knockout_entries[knockout_entry_cur].data.rectangle.x0 = x0;
-		knockout_entries[knockout_entry_cur].data.rectangle.y0 = y0;
-		knockout_entries[knockout_entry_cur].data.rectangle.x1 = x1;
-		knockout_entries[knockout_entry_cur].data.rectangle.y1 = y1;
+		knockout_entries[knockout_entry_cur].data.rectangle.r = *rect;
 		knockout_entries[knockout_entry_cur].data.fill.plot_style = *pstyle;
 		knockout_entries[knockout_entry_cur].data.fill.plot_style.fill_type = PLOT_OP_TYPE_NONE; /* ensure we only plot the outline */
 		knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_RECTANGLE;
-		if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-			knockout_plot_flush();
-        }
-	return true;
+		if (++knockout_entry_cur >= KNOCKOUT_ENTRIES) {
+			res = knockout_plot_flush(ctx);
+		}
+	}
+	return res;
 }
 
-bool knockout_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle)
+
+/**
+ * Knockout line plotting.
+ *
+ * plot a line from (x0,y0) to (x1,y1). Coordinates are at centre of
+ *  line width/thickness.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the line plot.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+knockout_plot_line(const struct redraw_context *ctx,
+		   const plot_style_t *pstyle,
+		   const struct rect *line)
 {
-	knockout_entries[knockout_entry_cur].data.line.x0 = x0;
-	knockout_entries[knockout_entry_cur].data.line.y0 = y0;
-	knockout_entries[knockout_entry_cur].data.line.x1 = x1;
-	knockout_entries[knockout_entry_cur].data.line.y1 = y1;
+	knockout_entries[knockout_entry_cur].data.line.l = *line;
 	knockout_entries[knockout_entry_cur].data.line.plot_style = *pstyle;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_LINE;
-	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_flush();
-	return true;
+	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES) {
+		return knockout_plot_flush(ctx);
+	}
+	return NSERROR_OK;
 }
 
 
-bool knockout_plot_polygon(const int *p, unsigned int n, const plot_style_t *pstyle)
+/**
+ * Knockout polygon plotting.
+ *
+ * Plots a filled polygon with straight lines between
+ * points. The lines around the edge of the ploygon are not
+ * plotted. The polygon is filled with the non-zero winding
+ * rule.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the polygon plot.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+knockout_plot_polygon(const struct redraw_context *ctx,
+		      const plot_style_t *pstyle,
+		      const int *p,
+		      unsigned int n)
 {
-	bool success = true;
 	int *dest;
+	nserror res;
+	nserror ffres = NSERROR_OK;
 
 	/* ensure we have sufficient room even when flushed */
 	if (n * 2 >= KNOCKOUT_POLYGONS) {
-		knockout_plot_flush();
-		success = real_plot.polygon(p, n, pstyle);
-		return success;
+		ffres = knockout_plot_flush(ctx);
+		res = real_plot.polygon(ctx, pstyle, p, n);
+		/* return the first error */
+		if ((res != NSERROR_OK) && (ffres == NSERROR_OK)) {
+			ffres = res;
+		}
+		return ffres;
 	}
 
 	/* ensure we have enough room right now */
-	if (knockout_polygon_cur + n * 2 >= KNOCKOUT_POLYGONS)
-		knockout_plot_flush();
+	if (knockout_polygon_cur + n * 2 >= KNOCKOUT_POLYGONS) {
+		ffres = knockout_plot_flush(ctx);
+	}
 
 	/* copy our data */
 	dest = &(knockout_polygons[knockout_polygon_cur]);
@@ -666,27 +643,64 @@ bool knockout_plot_polygon(const int *p, unsigned int n, const plot_style_t *pst
 	knockout_entries[knockout_entry_cur].data.polygon.n = n;
 	knockout_entries[knockout_entry_cur].data.polygon.plot_style = *pstyle;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_POLYGON;
-	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_flush();
-	return true;
+	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES) {
+		res = knockout_plot_flush(ctx);
+	}
+	/* return the first error */
+	if ((res != NSERROR_OK) && (ffres == NSERROR_OK)) {
+		ffres = res;
+	}
+	return ffres;
 }
 
 
-bool knockout_plot_path(const float *p, unsigned int n, colour fill,
-		float width, colour c, const float transform[6])
+/**
+ * knockout path plotting.
+ *
+ * The knockout implementation simply flushes the queue and plots the path
+ *  directly using real plotter.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the path plot.
+ * \param p elements of path
+ * \param n nunber of elements on path
+ * \param width The width of the path
+ * \param transform A transform to apply to the path.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+knockout_plot_path(const struct redraw_context *ctx,
+		   const plot_style_t *pstyle,
+		   const float *p,
+		   unsigned int n,
+		   float width,
+		   const float transform[6])
 {
-	knockout_plot_flush();
-	return real_plot.path(p, n, fill, width, c, transform);
+	nserror res;
+	nserror ffres;
+
+	ffres = knockout_plot_flush(ctx);
+	res = real_plot.path(ctx, pstyle, p, n, width, transform);
+
+	/* return the first error */
+	if ((res != NSERROR_OK) && (ffres == NSERROR_OK)) {
+		ffres = res;
+	}
+	return ffres;
 }
 
 
-bool knockout_plot_clip(const struct rect *clip)
+static nserror
+knockout_plot_clip(const struct redraw_context *ctx, const struct rect *clip)
 {
+	nserror res = NSERROR_OK;
+
 	if (clip->x1 < clip->x0 || clip->y0 > clip->y1) {
 #ifdef KNOCKOUT_DEBUG
-		LOG("bad clip rectangle %i %i %i %i", clip->x0, clip->y0, clip->x1, clip->y1);
+		LOG("bad clip rectangle %i %i %i %i",
+		    clip->x0, clip->y0, clip->x1, clip->y1);
 #endif
-		return false;
+		return NSERROR_BAD_SIZE;
 	}
 
 	/* memorise clip for bitmap tiling */
@@ -694,41 +708,97 @@ bool knockout_plot_clip(const struct rect *clip)
 
 	knockout_entries[knockout_entry_cur].data.clip = *clip;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_CLIP;
-	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_flush();
-	return true;
+	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES) {
+		res = knockout_plot_flush(ctx);
+	}
+	return res;
 }
 
 
-bool knockout_plot_text(int x, int y, const char *text, size_t length, 
-		const plot_font_style_t *fstyle)
+/**
+ * Text plotting.
+ *
+ * \param ctx The current redraw context.
+ * \param fstyle plot style for this text
+ * \param x x coordinate
+ * \param y y coordinate
+ * \param text UTF-8 string to plot
+ * \param length length of string, in bytes
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+knockout_plot_text(const struct redraw_context *ctx,
+		   const plot_font_style_t *fstyle,
+		   int x,
+		   int y,
+		   const char *text,
+		   size_t length)
 {
+	nserror res = NSERROR_OK;
+
 	knockout_entries[knockout_entry_cur].data.text.x = x;
 	knockout_entries[knockout_entry_cur].data.text.y = y;
 	knockout_entries[knockout_entry_cur].data.text.text = text;
 	knockout_entries[knockout_entry_cur].data.text.length = length;
 	knockout_entries[knockout_entry_cur].data.text.font_style = *fstyle;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_TEXT;
-	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_flush();
-	return true;
+	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES) {
+		res = knockout_plot_flush(ctx);
+	}
+	return res;
 }
 
 
-bool knockout_plot_disc(int x, int y, int radius, const plot_style_t *pstyle)
+/**
+ * Plots a circle
+ *
+ * Plot a circle centered on (x,y), which is optionally filled.
+ *
+ * \param ctx The current redraw context.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+knockout_plot_disc(const struct redraw_context *ctx,
+		   const plot_style_t *pstyle,
+		   int x,
+		   int y,
+		   int radius)
 {
+	nserror res = NSERROR_OK;
+
 	knockout_entries[knockout_entry_cur].data.disc.x = x;
 	knockout_entries[knockout_entry_cur].data.disc.y = y;
 	knockout_entries[knockout_entry_cur].data.disc.radius = radius;
 	knockout_entries[knockout_entry_cur].data.disc.plot_style = *pstyle;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_DISC;
-	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_flush();
-	return true;
+	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES) {
+		res = knockout_plot_flush(ctx);
+	}
+	return res;
 }
 
-bool knockout_plot_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *pstyle)
+
+/**
+ * Plots an arc
+ *
+ * plot an arc segment around (x,y), anticlockwise from angle1
+ *  to angle2. Angles are measured anticlockwise from
+ *  horizontal, in degrees.
+ *
+ * \param ctx The current redraw context.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+knockout_plot_arc(const struct redraw_context *ctx,
+		  const plot_style_t *pstyle,
+		  int x,
+		  int y,
+		  int radius,
+		  int angle1,
+		  int angle2)
 {
+	nserror res = NSERROR_OK;
+
 	knockout_entries[knockout_entry_cur].data.arc.x = x;
 	knockout_entries[knockout_entry_cur].data.arc.y = y;
 	knockout_entries[knockout_entry_cur].data.arc.radius = radius;
@@ -736,18 +806,41 @@ bool knockout_plot_arc(int x, int y, int radius, int angle1, int angle2, const p
 	knockout_entries[knockout_entry_cur].data.arc.angle2 = angle2;
 	knockout_entries[knockout_entry_cur].data.arc.plot_style = *pstyle;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_ARC;
-	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_flush();
-	return true;
+	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES) {
+		res = knockout_plot_flush(ctx);
+	}
+	return res;
 }
 
 
-
-bool knockout_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg,
-		bitmap_flags_t flags)
+/**
+ * knockout bitmap plotting.
+ *
+ * Tiled plot of a bitmap image. (x,y) gives the top left
+ * coordinate of an explicitly placed tile. From this tile the
+ * image can repeat in all four directions -- up, down, left
+ * and right -- to the extents given by the current clip
+ * rectangle.
+ *
+ * The bitmap_flags say whether to tile in the x and y
+ * directions. If not tiling in x or y directions, the single
+ * image is plotted. The width and height give the dimensions
+ * the image is to be scaled to.
+ *
+ * \param ctx The current redraw context.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+knockout_plot_bitmap(const struct redraw_context *ctx,
+		     struct bitmap *bitmap,
+		     int x, int y,
+		     int width, int height,
+		     colour bg,
+		     bitmap_flags_t flags)
 {
 	int kx0, ky0, kx1, ky1;
+	nserror res;
+	nserror ffres = NSERROR_OK;
 
 	/* get our bounds */
 	kx0 = clip_cur.x0;
@@ -760,7 +853,7 @@ bool knockout_plot_bitmap(int x, int y, int width, int height,
 		if (x + width < kx1)
 			kx1 = x + width;
 		if ((kx0 > clip_cur.x1) || (kx1 < clip_cur.x0))
-			return true;
+			return NSERROR_OK;
 	}
 	if (!(flags & BITMAPF_REPEAT_Y)) {
 		if (y > ky0)
@@ -768,12 +861,12 @@ bool knockout_plot_bitmap(int x, int y, int width, int height,
 		if (y + height < ky1)
 			ky1 = y + height;
 		if ((ky0 > clip_cur.y1) || (ky1 < clip_cur.y0))
-			return true;
+			return NSERROR_OK;
 	}
 
 	/* tiled bitmaps both knock out and get knocked out */
 	if (guit->bitmap->get_opaque(bitmap)) {
-		knockout_calculate(kx0, ky0, kx1, ky1, NULL);
+		knockout_calculate(ctx, kx0, ky0, kx1, ky1, NULL);
 	}
 	knockout_boxes[knockout_box_cur].bbox.x0 = kx0;
 	knockout_boxes[knockout_box_cur].bbox.y0 = ky0;
@@ -792,33 +885,111 @@ bool knockout_plot_bitmap(int x, int y, int width, int height,
 	knockout_entries[knockout_entry_cur].data.bitmap.bg = bg;
 	knockout_entries[knockout_entry_cur].data.bitmap.flags = flags;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_BITMAP;
+
 	if ((++knockout_entry_cur >= KNOCKOUT_ENTRIES) ||
-			(++knockout_box_cur >= KNOCKOUT_BOXES))
-		knockout_plot_flush();
-	return knockout_plot_clip(&clip_cur);
+	    (++knockout_box_cur >= KNOCKOUT_BOXES)) {
+		ffres = knockout_plot_flush(ctx);
+	}
+	res = knockout_plot_clip(ctx, &clip_cur);
+	/* return the first error */
+	if ((res != NSERROR_OK) && (ffres == NSERROR_OK)) {
+		ffres = res;
+	}
+	return ffres;
 }
 
-bool knockout_plot_group_start(const char *name)
+
+/**
+ * Start of a group of objects.
+ *
+ * Used when plotter implements export to a vector graphics file format.
+ *
+ * \param ctx The current redraw context.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+knockout_plot_group_start(const struct redraw_context *ctx, const char *name)
 {
 	if (real_plot.group_start == NULL) {
-		return true;
+		return NSERROR_OK;
 	}
 
 	knockout_entries[knockout_entry_cur].data.group_start.name = name;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_GROUP_START;
-	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_flush();
-	return true;
+	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES) {
+		return knockout_plot_flush(ctx);
+	}
+	return NSERROR_OK;
 }
 
-bool knockout_plot_group_end(void)
+
+static nserror knockout_plot_group_end(const struct redraw_context *ctx)
 {
 	if (real_plot.group_end == NULL) {
-		return true;
+		return NSERROR_OK;
 	}
 
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_GROUP_END;
-	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_flush();
+	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES) {
+		return knockout_plot_flush(ctx);
+	}
+	return NSERROR_OK;
+}
+
+/* exported functions documented in desktop/knockout.h */
+bool knockout_plot_start(const struct redraw_context *ctx,
+			 struct redraw_context *knk_ctx)
+{
+	/* check if we're recursing */
+	if (nested_depth++ > 0) {
+		/* we should already have the knockout renderer as default */
+		assert(ctx->plot->rectangle == knockout_plotters.rectangle);
+		*knk_ctx = *ctx;
+		return true;
+	}
+
+	/* end any previous sessions */
+	if (knockout_entry_cur > 0)
+		knockout_plot_end(ctx);
+
+	/* get copy of real plotter table */
+	real_plot = *(ctx->plot);
+
+	/* set up knockout rendering context */
+	*knk_ctx = *ctx;
+	knk_ctx->plot = &knockout_plotters;
 	return true;
 }
+
+
+/* exported functions documented in desktop/knockout.h */
+bool knockout_plot_end(const struct redraw_context *ctx)
+{
+	/* only output when we've finished any nesting */
+	if (--nested_depth == 0) {
+		return knockout_plot_flush(ctx);
+	}
+
+	assert(nested_depth > 0);
+	return true;
+}
+
+
+/**
+ * knockout plotter operation table
+ */
+const struct plotter_table knockout_plotters = {
+	.rectangle = knockout_plot_rectangle,
+	.line = knockout_plot_line,
+	.polygon = knockout_plot_polygon,
+	.clip = knockout_plot_clip,
+	.text = knockout_plot_text,
+	.disc = knockout_plot_disc,
+	.arc = knockout_plot_arc,
+	.bitmap = knockout_plot_bitmap,
+	.group_start = knockout_plot_group_start,
+	.group_end = knockout_plot_group_end,
+	.flush = knockout_plot_flush,
+	.path = knockout_plot_path,
+	.option_knockout = true,
+};

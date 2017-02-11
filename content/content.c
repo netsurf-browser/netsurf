@@ -628,7 +628,7 @@ bool content_scaled_redraw(struct hlcache_handle *h,
 	plot_ok &= c->handler->redraw(c, &data, &clip, &new_ctx);
 
 	if (ctx->plot->option_knockout) {
-		knockout_plot_end();
+		knockout_plot_end(ctx);
 	}
 
 	return plot_ok;

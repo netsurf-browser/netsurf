@@ -238,7 +238,7 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 		 */
 		if (bw->window != NULL && ctx->plot->option_knockout) {
 			/* Root browser window: knockout end */
-			knockout_plot_end();
+			knockout_plot_end(ctx);
 		}
 
 		return plot_ok;
@@ -314,7 +314,7 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 
 	if (bw->window != NULL && ctx->plot->option_knockout) {
 		/* Root browser window: end knockout */
-		knockout_plot_end();
+		knockout_plot_end(ctx);
 	}
 
 	return plot_ok;

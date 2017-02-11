@@ -2042,7 +2042,7 @@ void treeview_redraw(treeview *tree, const int x, const int y,
 
 	/* Rendering complete */
 	if (ctx->plot->option_knockout) {
-		knockout_plot_end();
+		knockout_plot_end(ctx);
 	}
 }
 

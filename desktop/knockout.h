@@ -26,9 +26,21 @@
 #include "netsurf/plotters.h"
 
 
+/**
+ * Start a knockout plotting session
+ *
+ * \param ctx the redraw context with real plotter table
+ * \param knk_ctx updated to copy of ctx, with plotter table replaced
+ * \return true on success, false otherwise
+ */
 bool knockout_plot_start(const struct redraw_context *ctx,
 		struct redraw_context *knk_ctx);
-bool knockout_plot_end(void);
+/**
+ * End a knockout plotting session
+ *
+ * \return true on success, false otherwise
+ */
+bool knockout_plot_end(const struct redraw_context *ctx);
 
 extern const struct plotter_table knockout_plotters;
 
