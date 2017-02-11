@@ -116,6 +116,7 @@
 #define BGBACKFILL JAM1
 #define OFF_OPEN 0
 #define AFF_OTAG 0
+#define ML_SEPARATOR NM_BARLABEL
 
 /* Renamed structures */
 #define AnchorPathOld AnchorPath
