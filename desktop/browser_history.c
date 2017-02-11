@@ -287,7 +287,7 @@ static plot_font_style_t pfstyle_node_sel = {
  * \param x window x offset
  * \param y window y offset
  * \param clip clip redraw
- * \param ctx     current redraw context
+ * \param ctx current redraw context
  */
 static bool
 browser_window_history__redraw_entry(struct history *history,
@@ -296,7 +296,6 @@ browser_window_history__redraw_entry(struct history *history,
 		int x, int y, bool clip,
 		const struct redraw_context *ctx)
 {
-	const struct plotter_table *plot = ctx->plot;
 	size_t char_offset;
 	int actual_x;
 	struct history_entry *child;
@@ -306,7 +305,7 @@ browser_window_history__redraw_entry(struct history *history,
 
 	plot_style_t *pstyle;
 	plot_font_style_t *pfstyle;
-
+	struct rect rect;
 	nserror res;
 
 	/* setup plot styles */
@@ -320,31 +319,36 @@ browser_window_history__redraw_entry(struct history *history,
 
 	/* setup clip area */
 	if (clip) {
-		struct rect rect;
 		rect.x0 = x0 + xoffset;
 		rect.y0 = y0 + yoffset;
 		rect.x1 = x1 + xoffset;
 		rect.y1 = y1 + yoffset;
-		if (!plot->clip(&rect)) {
+		res = ctx->plot->clip(ctx, &rect);
+		if (res != NSERROR_OK) {
 			return false;
 		}
 	}
 
 	/* Only attempt to plot bitmap if it is present */
 	if (entry->bitmap != NULL) {
-		plot->bitmap(entry->x + xoffset,
-			     entry->y + yoffset,
-			     WIDTH, HEIGHT,
-			     entry->bitmap,
-			     0xffffff,
-			     0);
+		res = ctx->plot->bitmap(ctx,
+					entry->bitmap,
+					entry->x + xoffset,
+					entry->y + yoffset,
+					WIDTH, HEIGHT,
+					0xffffff,
+					0);
+		if (res != NSERROR_OK) {
+			return false;
+		}
 	}
 
-	if (!plot->rectangle(entry->x - 1 + xoffset, 
-			     entry->y - 1 + yoffset,
-			     entry->x + xoffset + WIDTH,
-			     entry->y + yoffset + HEIGHT,
-			     pstyle)) {
+	rect.x0 = entry->x - 1 + xoffset;
+	rect.y0 = entry->y - 1 + yoffset;
+	rect.x1 = entry->x + xoffset + WIDTH;
+	rect.y1 = entry->y + yoffset + HEIGHT;
+	res = ctx->plot->rectangle(ctx, pstyle, &rect);
+	if (res != NSERROR_OK) {
 		return false;
 	}
 
@@ -355,38 +359,45 @@ browser_window_history__redraw_entry(struct history *history,
 		return false;
 	}
 
-
-	if (!plot->text(entry->x + xoffset,
-			entry->y + HEIGHT + 12 + yoffset,
-			entry->page.title,
-			char_offset,
-			pfstyle)) {
+	res = ctx->plot->text(ctx,
+			      pfstyle,
+			      entry->x + xoffset,
+			      entry->y + HEIGHT + 12 + yoffset,
+			      entry->page.title,
+			      char_offset);
+	if (res != NSERROR_OK) {
 		return false;
 	}
 
 	/* for each child node draw a line and recurse redraw into it */
 	for (child = entry->forward; child; child = child->next) {
-		if (!plot->line(entry->x + WIDTH + xoffset,
-				entry->y + HEIGHT / 2 + yoffset,
-				entry->x + WIDTH + tailsize + xoffset,
-				entry->y + HEIGHT / 2 + yoffset,
-				&pstyle_line)) {
+		rect.x0 = entry->x + WIDTH + xoffset;
+		rect.y0 = entry->y + HEIGHT / 2 + yoffset;
+		rect.x1 = entry->x + WIDTH + tailsize + xoffset;
+		rect.y1 = entry->y + HEIGHT / 2 + yoffset;
+		res = ctx->plot->line(ctx, &pstyle_line, &rect);
+		if (res != NSERROR_OK) {
 			return false;
 		}
-		if (!plot->line(entry->x + WIDTH + tailsize + xoffset,
-				entry->y + HEIGHT / 2 + yoffset,
-				child->x - tailsize +xoffset,
-				child->y + HEIGHT / 2 + yoffset,
-				&pstyle_line)) {
+
+		rect.x0 = entry->x + WIDTH + tailsize + xoffset;
+		rect.y0 = entry->y + HEIGHT / 2 + yoffset;
+		rect.x1 = child->x - tailsize + xoffset;
+		rect.y1 = child->y + HEIGHT / 2 + yoffset;
+		res = ctx->plot->line(ctx, &pstyle_line, &rect);
+		if (res != NSERROR_OK) {
 			return false;
 		}
-		if (!plot->line(child->x - tailsize + xoffset,
-				child->y + HEIGHT / 2 + yoffset,
-				child->x + xoffset, child->y +
-			       			HEIGHT / 2 + yoffset,
-				&pstyle_line)) {
+
+		rect.x0 = child->x - tailsize + xoffset;
+		rect.y0 = child->y + HEIGHT / 2 + yoffset;
+		rect.x1 = child->x + xoffset;
+		rect.y1 = child->y + HEIGHT / 2 + yoffset;
+		res = ctx->plot->line(ctx, &pstyle_line, &rect);
+		if (res != NSERROR_OK) {
 			return false;
 		}
+
 		if (!browser_window_history__redraw_entry(history, child,
 			x0, y0, x1, y1, x, y, clip, ctx)) {
 			return false;

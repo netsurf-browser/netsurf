@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Content for image/svg (implementation).
+/**
+ * \file
+ * implementation of content for image/svg using libsvgtiny.
  */
 
 #include <assert.h>
@@ -154,18 +155,25 @@ static void svg_reformat(struct content *c, int width, int height)
  * Redraw a CONTENT_SVG.
  */
 
-static bool svg_redraw_internal(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		const struct redraw_context *ctx, float scale,
-		colour background_colour)
+static bool
+svg_redraw_internal(struct content *c,
+		    int x,
+		    int y,
+		    int width,
+		    int height,
+		    const struct rect *clip,
+		    const struct redraw_context *ctx,
+		    float scale,
+		    colour background_colour)
 {
 	svg_content *svg = (svg_content *) c;
 	float transform[6];
 	struct svgtiny_diagram *diagram = svg->diagram;
-	bool ok;
 	int px, py;
 	unsigned int i;
 	plot_font_style_t fstyle = *plot_style_font;
+	plot_style_t pstyle;
+	nserror res;
 
 	assert(diagram);
 
@@ -183,14 +191,17 @@ static bool svg_redraw_internal(struct content *c, int x, int y,
 
 	for (i = 0; i != diagram->shape_count; i++) {
 		if (diagram->shape[i].path) {
-			ok = ctx->plot->path(diagram->shape[i].path,
-					diagram->shape[i].path_length,
-					BGR(diagram->shape[i].fill),
-					diagram->shape[i].stroke_width,
-					BGR(diagram->shape[i].stroke),
-					transform);
-			if (!ok)
+			pstyle.stroke_colour = BGR(diagram->shape[i].stroke);
+			pstyle.fill_colour = BGR(diagram->shape[i].fill);
+			res = ctx->plot->path(ctx,
+					     &pstyle,
+					     diagram->shape[i].path,
+					     diagram->shape[i].path_length,
+					     diagram->shape[i].stroke_width,
+					     transform);
+			if (res != NSERROR_OK) {
 				return false;
+			}
 
 		} else if (diagram->shape[i].text) {
 			px = transform[0] * diagram->shape[i].text_x +
@@ -204,12 +215,14 @@ static bool svg_redraw_internal(struct content *c, int x, int y,
 			fstyle.foreground = 0x000000;
 			fstyle.size = (8 * FONT_SIZE_SCALE) * scale;
 
-			ok = ctx->plot->text(px, py,
-					diagram->shape[i].text,
-					strlen(diagram->shape[i].text),
-					&fstyle);
-			if (!ok)
+			res = ctx->plot->text(ctx,
+					      &fstyle,
+					      px, py,
+					      diagram->shape[i].text,
+					      strlen(diagram->shape[i].text));
+			if (res != NSERROR_OK) {
 				return false;
+			}
 		}
         }
 

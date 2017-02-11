@@ -16,9 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Content for image/x-riscos-sprite (librosprite implementation).
- *
+/**
+ * \file
+ * librosprite implementation for content image/x-riscos-sprite
  */
 
 #include <stdbool.h>
@@ -185,19 +185,28 @@ static void nssprite_destroy(struct content *c)
  * Redraw a CONTENT_SPRITE.
  */
 
-static bool nssprite_redraw(struct content *c, struct content_redraw_data *data,
-		const struct rect *clip, const struct redraw_context *ctx)
+static bool
+nssprite_redraw(struct content *c,
+		struct content_redraw_data *data,
+		const struct rect *clip,
+		const struct redraw_context *ctx)
 {
 	nssprite_content *nssprite = (nssprite_content *) c;
 	bitmap_flags_t flags = BITMAPF_NONE;
 
-	if (data->repeat_x)
+	if (data->repeat_x) {
 		flags |= BITMAPF_REPEAT_X;
-	if (data->repeat_y)
+	}
+	if (data->repeat_y) {
 		flags |= BITMAPF_REPEAT_Y;
+	}
 
-	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			nssprite->bitmap, data->background_colour, flags);
+	return (ctx->plot->bitmap(ctx,
+				  nssprite->bitmap,
+				  data->x, data->y,
+				  data->width, data->height,
+				  data->background_colour,
+				  flags) == NSERROR_OK);
 }
 
 

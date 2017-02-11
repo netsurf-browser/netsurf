@@ -137,9 +137,9 @@ bool image_bitmap_plot(struct bitmap *bitmap,
 				fill_style.stroke_type = PLOT_OP_TYPE_NONE;
 				fill_style.fill_type = PLOT_OP_TYPE_SOLID;
 
-				return ctx->plot->rectangle(area.x0, area.y0,
-							    area.x1, area.y1,
-							    &fill_style);
+				return (ctx->plot->rectangle(ctx,
+							     &fill_style,
+							     &area) == NSERROR_OK);
 
 			} else if ((fill_style.fill_colour & 0xff000000) == 0) {
 				/* transparent pixel used as spacer, skip it */
@@ -154,6 +154,10 @@ bool image_bitmap_plot(struct bitmap *bitmap,
 	if (data->repeat_y)
 		flags |= BITMAPF_REPEAT_Y;
 
-	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-				 bitmap, data->background_colour, flags);
+	return (ctx->plot->bitmap(ctx,
+				  bitmap,
+				  data->x, data->y,
+				  data->width, data->height,
+				  data->background_colour,
+				  flags) == NSERROR_OK);
 }

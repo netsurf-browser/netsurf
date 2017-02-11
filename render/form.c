@@ -1167,7 +1167,6 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 		float scale, const struct rect *clip,
 		const struct redraw_context *ctx)
 {
-	const struct plotter_table *plot = ctx->plot;
 	struct box *box;
 	struct form_select_menu *menu = control->data.select.menu;
 	struct form_option *option;
@@ -1181,7 +1180,9 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 	int scroll;
 	int x_cp, y_cp;
 	struct rect r;
-	
+	struct rect rect;
+	nserror res;
+
 	box = control->box;
 	
 	x_cp = x;
@@ -1220,12 +1221,20 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 	r.y0 = y0;
 	r.x1 = x1 + 1;
 	r.y1 = y1 + 1;
-	if (!plot->clip(&r))
+	res = ctx->plot->clip(ctx, &r);
+	if (res != NSERROR_OK) {
 		return false;
-	if (!plot->rectangle(x0, y0, x1, y1 ,plot_style_stroke_darkwbasec))
+	}
+
+	rect.x0 = x0;
+	rect.y0 = y0;
+	rect.x1 = x1;
+	rect.y1 = y1;
+	res = ctx->plot->rectangle(ctx, plot_style_stroke_darkwbasec, &rect);
+	if (res != NSERROR_OK) {
 		return false;
-		
-	
+	}
+
 	x0 = x0 + SELECT_BORDER_WIDTH;
 	y0 = y0 + SELECT_BORDER_WIDTH;
 	x1 = x1 - SELECT_BORDER_WIDTH;
@@ -1236,11 +1245,16 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 	r.y0 = y0;
 	r.x1 = x1 + 1;
 	r.y1 = y1 + 1;
-	if (!plot->clip(&r))
+	res = ctx->plot->clip(ctx, &r);
+	if (res != NSERROR_OK) {
 		return false;
-	if (!plot->rectangle(x0, y0, x1 + 1, y1 + 1,
-			plot_style_fill_lightwbasec))
+	}
+
+	res = ctx->plot->rectangle(ctx, plot_style_fill_lightwbasec, &r);
+	if (res != NSERROR_OK) {
 		return false;
+	}
+
 	option = control->data.select.items;
 	item_y = line_height_with_spacing;
 	
@@ -1256,32 +1270,40 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 	plot_fstyle_entry.size = menu->f_size;
 	
 	while (option && item_y - scroll < height) {
-		
+
  		if (option->selected) {
  			y2 = y + item_y - scroll;
  			y3 = y + item_y + line_height_with_spacing - scroll;
- 			if (!plot->rectangle(x0, (y0 > y2 ? y0 : y2),
-					scrollbar_x + 1,
-     					(y3 < y1 + 1 ? y3 : y1 + 1),
-					&plot_style_fill_selected))
+
+			rect.x0 = x0;
+			rect.y0 = y0 > y2 ? y0 : y2;
+			rect.x1 = scrollbar_x + 1;
+			rect.y1 = y3 < y1 + 1 ? y3 : y1 + 1;
+			res = ctx->plot->rectangle(ctx, &plot_style_fill_selected, &rect);
+			if (res != NSERROR_OK) {
 				return false;
+			}
  		}
-		
+
 		y2 = text_pos_offset + item_y;
-		if (!plot->text(text_x, y2, option->text,
-				strlen(option->text), &plot_fstyle_entry))
+		res = ctx->plot->text(ctx,
+				      &plot_fstyle_entry,
+				      text_x, y2,
+				      option->text, strlen(option->text));
+		if (res != NSERROR_OK) {
 			return false;
-		
+		}
+
 		item_y += line_height_with_spacing;
 		option = option->next;
 	}
-		
+
 	if (!scrollbar_redraw(menu->scrollbar,
 			x_cp + menu->width - SCROLLBAR_WIDTH,
       			y_cp,
 			clip, scale, ctx))
 		return false;
-	
+
 	return true;
 }
 

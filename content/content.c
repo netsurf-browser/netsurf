@@ -600,12 +600,12 @@ bool content_scaled_redraw(struct hlcache_handle *h,
 	clip.x1 = width;
 	clip.y1 = height;
 
-	new_ctx.plot->clip(&clip);
+	new_ctx.plot->clip(&new_ctx, &clip);
 
 	/* Plot white background */
-	plot_ok &= new_ctx.plot->rectangle(clip.x0, clip.y0, clip.x1, clip.y1,
-			plot_style_fill_white);
-
+	plot_ok &= (new_ctx.plot->rectangle(&new_ctx,
+					    plot_style_fill_white,
+					    &clip) == NSERROR_OK);
 
 	/* Set up content redraw data */
 	data.x = 0;

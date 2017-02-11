@@ -1798,10 +1798,11 @@ void treeview_redraw(treeview *tree, const int x, const int y,
 	struct treeview_node_style *style = &plot_style_odd;
 	struct content_redraw_data data;
 	struct rect r;
+	struct rect rect;
 	uint32_t count = 0;
 	int render_y = y;
 	int inset;
-	int x0, y0, y1;
+	int x0;
 	int baseline = (tree_g.line_height * 3 + 2) / 4;
 	enum treeview_resource_id res = TREE_RES_CONTENT;
 	plot_style_t *bg_style;
@@ -1833,7 +1834,7 @@ void treeview_redraw(treeview *tree, const int x, const int y,
 	r.y0 = clip->y0 + y;
 	r.x1 = clip->x1 + x;
 	r.y1 = clip->y1 + y;
-	new_ctx.plot->clip(&r);
+	new_ctx.plot->clip(&new_ctx, &r);
 
 	/* Draw the tree */
 	node = root = tree->root;
@@ -1912,24 +1913,30 @@ void treeview_redraw(treeview *tree, const int x, const int y,
 		}
 
 		/* Render background */
-		y0 = render_y;
-		y1 = render_y + height;
-		new_ctx.plot->rectangle(r.x0, y0, r.x1, y1, bg_style);
+		rect.x0 = r.x0;
+		rect.y0 = render_y;
+		rect.x1 = r.x1;
+		rect.y1 = render_y + height;
+		new_ctx.plot->rectangle(&new_ctx, bg_style, &rect);
 
 		/* Render toggle */
-		new_ctx.plot->bitmap(inset, render_y + tree_g.line_height / 4,
-				style->furn[TREE_FURN_EXPAND].size,
-				style->furn[TREE_FURN_EXPAND].size,
-				furniture,
-				bg_style->fill_colour, BITMAPF_NONE);
+		new_ctx.plot->bitmap(&new_ctx,
+				     furniture,
+				     inset,
+				     render_y + tree_g.line_height / 4,
+				     style->furn[TREE_FURN_EXPAND].size,
+				     style->furn[TREE_FURN_EXPAND].size,
+				     bg_style->fill_colour,
+				     BITMAPF_NONE);
 
 		/* Render icon */
-		if (node->type == TREE_NODE_ENTRY)
+		if (node->type == TREE_NODE_ENTRY) {
 			res = TREE_RES_CONTENT;
-		else if (node->flags & TV_NFLAGS_SPECIAL)
+		} else if (node->flags & TV_NFLAGS_SPECIAL) {
 			res = TREE_RES_FOLDER_SPECIAL;
-		else
+		} else {
 			res = TREE_RES_FOLDER;
+		}
 
 		if (treeview_res[res].ready) {
 			/* Icon resource is available */
@@ -1944,9 +1951,11 @@ void treeview_redraw(treeview *tree, const int x, const int y,
 
 		/* Render text */
 		x0 = inset + tree_g.step_width + tree_g.icon_step;
-		new_ctx.plot->text(x0, render_y + baseline,
-				node->text.data, node->text.len,
-				text_style);
+		new_ctx.plot->text(&new_ctx,
+				   text_style,
+				   x0, render_y + baseline,
+				   node->text.data,
+				   node->text.len);
 
 		/* Rendered the node */
 		render_y += tree_g.line_height;
@@ -1970,25 +1979,25 @@ void treeview_redraw(treeview *tree, const int x, const int y,
 			if (ef->flags & TREE_FLAG_SHOW_NAME) {
 				int max_width = tree->field_width;
 
-				new_ctx.plot->text(x0 + max_width -
-							ef->value.width -
-							tree_g.step_width,
-						render_y + baseline,
-						ef->value.data,
-						ef->value.len,
-						infotext_style);
+				new_ctx.plot->text(&new_ctx,
+						   infotext_style,
+						   x0 + max_width - ef->value.width - tree_g.step_width,
+						   render_y + baseline,
+						   ef->value.data,
+						   ef->value.len);
 
-				new_ctx.plot->text(x0 + max_width,
-						render_y + baseline,
-						entry->fields[i].value.data,
-						entry->fields[i].value.len,
-						infotext_style);
+				new_ctx.plot->text(&new_ctx,
+						   infotext_style,
+						   x0 + max_width,
+						   render_y + baseline,
+						   entry->fields[i].value.data,
+						   entry->fields[i].value.len);
 			} else {
-				new_ctx.plot->text(x0, render_y + baseline,
-						entry->fields[i].value.data,
-						entry->fields[i].value.len,
-						infotext_style);
-
+				new_ctx.plot->text(&new_ctx,
+						   infotext_style,
+						   x0, render_y + baseline,
+						   entry->fields[i].value.data,
+						   entry->fields[i].value.len);
 			}
 
 			/* Rendered the expanded entry field */
@@ -2006,21 +2015,22 @@ void treeview_redraw(treeview *tree, const int x, const int y,
 
 	if (render_y < r.y1) {
 		/* Fill the blank area at the bottom */
-		y0 = render_y;
-		new_ctx.plot->rectangle(r.x0, y0, r.x1, r.y1,
-				&plot_style_even.bg);
+		rect.x0 = r.x0;
+		rect.y0 = render_y;
+		rect.x1 = r.x1;
+		rect.y1 = r.y1;
+		new_ctx.plot->rectangle(&new_ctx, &plot_style_even.bg, &rect);
 	}
 
 	/* All normal treeview rendering is done; render any overlays */
-	if (tree->move.target_pos != TV_TARGET_NONE &&
-			treeview_res[TREE_RES_ARROW].ready) {
+	if ((tree->move.target_pos != TV_TARGET_NONE) &&
+	    (treeview_res[TREE_RES_ARROW].ready)) {
 		/* Got a MOVE drag; render move indicator arrow */
 		data.x = tree->move.target_area.x0 + x;
 		data.y = tree->move.target_area.y0 + y;
 		data.background_colour = plot_style_even.bg.fill_colour;
 
-		content_redraw(treeview_res[TREE_RES_ARROW].c,
-					&data, &r, &new_ctx);
+		content_redraw(treeview_res[TREE_RES_ARROW].c, &data, &r, &new_ctx);
 
 	} else if (tree->edit.textarea != NULL) {
 		/* Edit in progress; render textarea */
@@ -2031,8 +2041,9 @@ void treeview_redraw(treeview *tree, const int x, const int y,
 	}
 
 	/* Rendering complete */
-	if (ctx->plot->option_knockout)
+	if (ctx->plot->option_knockout) {
 		knockout_plot_end();
+	}
 }
 
 struct treeview_selection_walk_data {

@@ -18,8 +18,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Scrollbar widget (implementation).
+/**
+ * \file
+ * implementation of scrollbar widget.
  */
 
 #include <stdbool.h>
@@ -36,10 +37,14 @@
 #include "desktop/system_colour.h"
 #include "desktop/scrollbar.h"
 
+/**
+ * Scrollbar context
+ */
 struct scrollbar {
-	bool horizontal;	/* Horizontal scrollbar if true, else vertical
-				 */
-	int length;		/* Length of the scrollbar widget */
+	/** Horizontal scrollbar if true, else vertical */
+	bool horizontal;
+	/** Length of the scrollbar widget */
+	int length;
 
 	int full_size;		/* Length of the full scrollable area */
 	int visible_size;	/* Length visible part of the scrollable area */
@@ -121,24 +126,27 @@ void scrollbar_destroy(struct scrollbar *s)
 
 
 /**
- * Draw an outline rectangle common to a several scrollbar elements.
+ * Draw an outline rectangle common to several scrollbar elements.
  *
  * \param x0	left border of the outline
  * \param y0	top border of the outline
  * \param x1	right border of the outline
  * \param y1	bottom border of the outline
  * \param c	base colour of the outline, the other colours are created by
- * 		lightening or darkening this one
+ *		lightening or darkening this one
  * \param ctx	current redraw context
  * \param inset true for inset outline, false for an outset one
  * \return
  */
 
-static inline bool scrollbar_redraw_scrollbar_rectangle(int x0, int y0,
-		int x1, int y1, colour c, bool inset,
-		const struct redraw_context *ctx)
+static inline nserror
+scrollbar_rectangle(const struct redraw_context *ctx,
+		    struct rect *area,
+		    colour c,
+		    bool inset)
 {
-	const struct plotter_table *plot = ctx->plot;
+	struct rect line;
+	nserror res;
 
 	static plot_style_t c0 = {
 		.stroke_type = PLOT_OP_TYPE_SOLID,
@@ -165,29 +173,63 @@ static inline bool scrollbar_redraw_scrollbar_rectangle(int x0, int y0,
 	c2.stroke_colour = blend_colour(c0.stroke_colour, c1.stroke_colour);
 
 	/* Plot the outline */
-	if (!plot->line(x0, y0, x1, y0, &c0)) return false;
-	if (!plot->line(x1, y0, x1, y1 + 1, &c1)) return false;
-	if (!plot->line(x1, y0, x1, y0 + 1, &c2)) return false;
-	if (!plot->line(x1, y1, x0, y1, &c1)) return false;
-	if (!plot->line(x0, y1, x0, y0, &c0)) return false;
-	if (!plot->line(x0, y1, x0, y1 + 1, &c2)) return false;
 
-	return true;
+	line.x0 = area->x0; line.y0 = area->y0;
+	line.x1 = area->x1; line.y1 = area->y0;
+	res = ctx->plot->line(ctx, &c0, &line);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	line.x0 = area->x1; line.y0 = area->y0;
+	line.x1 = area->x1; line.y1 = area->y1 + 1;
+	res = ctx->plot->line(ctx, &c1, &line);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	line.x0 = area->x1; line.y0 = area->y0;
+	line.x1 = area->x1; line.y1 = area->y0 + 1;
+	res = ctx->plot->line(ctx, &c2, &line);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	line.x0 = area->x1; line.y0 = area->y1;
+	line.x1 = area->x0; line.y1 = area->y1;
+	res = ctx->plot->line(ctx, &c1, &line);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	line.x0 = area->x0; line.y0 = area->y1;
+	line.x1 = area->x0; line.y1 = area->y0;
+	res = ctx->plot->line(ctx, &c0, &line);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	line.x0 = area->x0; line.y0 = area->y1;
+	line.x1 = area->x0; line.y1 = area->y1 + 1;
+	res = ctx->plot->line(ctx, &c2, &line);
+
+	return res;
 }
 
 
 /*
  * Exported function.  Documented in scrollbar.h
  */
-bool scrollbar_redraw(struct scrollbar *s, int x, int y, 
+bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		const struct rect *clip, float scale,
 		const struct redraw_context *ctx)
 {
-	const struct plotter_table *plot = ctx->plot;
 	int w = SCROLLBAR_WIDTH;
 	int bar_pos, bar_c0, bar_c1;
 	int v[6]; /* array of triangle vertices */
-	int x0, y0, x1, y1;
+	struct rect area;
+	struct rect rect;
+	nserror res;
 
 	colour bg_fill_colour = ns_system_colour_char("Scrollbar");
 	colour fg_fill_colour = ns_system_colour_char("ButtonFace");
@@ -206,176 +248,236 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		.fill_colour = arrow_fill_colour
 	};
 
-	x0 = x;
-	y0 = y;
-	x1 = x + (s->horizontal ? s->length : SCROLLBAR_WIDTH) - 1;
-	y1 = y + (s->horizontal ? SCROLLBAR_WIDTH : s->length) - 1;
+	area.x0 = x;
+	area.y0 = y;
+	area.x1 = x + (s->horizontal ? s->length : SCROLLBAR_WIDTH) - 1;
+	area.y1 = y + (s->horizontal ? SCROLLBAR_WIDTH : s->length) - 1;
 	bar_pos = s->bar_pos;
-	bar_c1 = (s->horizontal ? x0 : y0) + SCROLLBAR_WIDTH +
+	bar_c1 = (s->horizontal ? area.x0 : area.y0) + SCROLLBAR_WIDTH +
 			s->bar_pos + s->bar_len - 1;
 
 	if (scale != 1.0) {
 		w *= scale;
-		x0 *= scale;
-		y0 *= scale;
-		x1 *= scale;
-		y1 *= scale;
+		area.x0 *= scale;
+		area.y0 *= scale;
+		area.x1 *= scale;
+		area.y1 *= scale;
 		bar_pos *= scale;
 		bar_c1 *= scale;
 	}
 
-	bar_c0 = (s->horizontal ? x0 : y0) + w + bar_pos;
+	bar_c0 = (s->horizontal ? area.x0 : area.y0) + w + bar_pos;
 
-	if (x1 < clip->x0 || y1 < clip->y0 || clip->x1 < x0 || clip->y1 < y0)
-		/* scrollbar is outside the clipping rectangle, nothing to
-		 * render */
+	/* if scrollbar is outside the clipping rectangle, nothing to render */
+	if ((area.x1 < clip->x0) ||
+	    (area.y1 < clip->y0) ||
+	    (clip->x1 < area.x0) ||
+	    (clip->y1 < area.y0)) {
 		return true;
+	}
 
-	
 	if (s->horizontal) {
 		/* scrollbar is horizontal */
-		
+
 		/* scrollbar outline */
-		if (!scrollbar_redraw_scrollbar_rectangle(x0, y0, x1, y1,
-				bg_fill_colour, true, ctx))
+		res = scrollbar_rectangle(ctx, &area, bg_fill_colour, true);
+		if (res != NSERROR_OK) {
 			return false;
+		}
+
 		/* left arrow icon border */
-		if (!scrollbar_redraw_scrollbar_rectangle(x0 + 1,
-		     		y0 + 1,
-				x0 + w - 2,
-    				y1 - 1,
-				fg_fill_colour, false, ctx))
+		rect.x0 = area.x0 + 1;
+		rect.y0 = area.y0 + 1;
+		rect.x1 = area.x0 + w - 2;
+		rect.y1 = area.y1 - 1;
+		res = scrollbar_rectangle(ctx, &rect, fg_fill_colour, false);
+		if (res != NSERROR_OK) {
 			return false;
+		}
+
 		/* left arrow icon background */
-		if (!plot->rectangle(x0 + 2,
-		     		y0 + 2,
-				x0 + w - 2,
-    				y1 - 1,
-				&fg_fill_style))
+		rect.x0 = area.x0 + 2;
+		rect.y0 = area.y0 + 2;
+		rect.x1 = area.x0 + w - 2;
+		rect.y1 = area.y1 - 1;
+		res = ctx->plot->rectangle(ctx, &fg_fill_style, &rect);
+		if (res != NSERROR_OK) {
 			return false;
+		}
+
 		/* left arrow */
-		v[0] = x0 + w / 4;
-		v[1] = y0 + w / 2;
-		v[2] = x0 + w * 3 / 4;
-		v[3] = y0 + w / 4;
-		v[4] = x0 + w * 3 / 4;
-		v[5] = y0 + w * 3 / 4;
-		if (!plot->polygon(v, 3, &arrow_fill_style))
+		v[0] = area.x0 + w / 4;
+		v[1] = area.y0 + w / 2;
+		v[2] = area.x0 + w * 3 / 4;
+		v[3] = area.y0 + w / 4;
+		v[4] = area.x0 + w * 3 / 4;
+		v[5] = area.y0 + w * 3 / 4;
+		res = ctx->plot->polygon(ctx, &arrow_fill_style, v, 3);
+		if (res != NSERROR_OK) {
 			return false;
+		}
+
 		/* scrollbar well background */
-		if (!plot->rectangle(x0 + w - 1,
-		     		y0 + 1,
-	 			x1 - w + 2,
-    				y1,
-				&bg_fill_style))
+		rect.x0 = area.x0 + w - 1;
+		rect.y0 = area.y0 + 1;
+		rect.x1 = area.x1 - w + 2;
+		rect.y1 = area.y1;
+		res = ctx->plot->rectangle(ctx, &bg_fill_style, &rect);
+		if (res != NSERROR_OK) {
 			return false;
+		}
+
 		/* scrollbar position indicator bar */
-		if (!scrollbar_redraw_scrollbar_rectangle(bar_c0,
-				y0 + 1,
-				bar_c1,
-				y1 - 1,
-				fg_fill_colour, false, ctx))
+		rect.x0 = bar_c0;
+		rect.y0 = area.y0 + 1;
+		rect.x1 = bar_c1;
+		rect.y1 = area.y1 - 1;
+		res = scrollbar_rectangle(ctx, &rect, fg_fill_colour, false);
+		if (res != NSERROR_OK) {
 			return false;
-		if (!plot->rectangle(bar_c0 + 1,
-		     		y0 + 2,
-				bar_c1,
-    				y1 - 1,
-				&fg_fill_style))
+		}
+
+		rect.x0 = bar_c0 + 1;
+		rect.y0 = area.y0 + 2;
+		rect.x1 = bar_c1;
+		rect.y1 = area.y1 - 1;
+		res = ctx->plot->rectangle(ctx, &fg_fill_style, &rect);
+		if (res != NSERROR_OK) {
 			return false;
+		}
+
 		/* right arrow icon border */
-		if (!scrollbar_redraw_scrollbar_rectangle(x1 - w + 2,
-				y0 + 1,
-				x1 - 1,
-				y1 - 1,
-				fg_fill_colour, false, ctx))
+		rect.x0 = area.x1 - w + 2;
+		rect.y0 = area.y0 + 1;
+		rect.x1 = area.x1 - 1;
+		rect.y1 = area.y1 - 1;
+		res = scrollbar_rectangle(ctx, &rect, fg_fill_colour, false);
+		if (res != NSERROR_OK) {
 			return false;
+		}
+
 		/* right arrow icon background */
-		if (!plot->rectangle(x1 - w + 3,
-		     		y0 + 2,
-				x1 - 1,
-    				y1 - 1,
-				&fg_fill_style))
+		rect.x0 = area.x1 - w + 3;
+		rect.y0 = area.y0 + 2;
+		rect.x1 = area.x1 - 1;
+		rect.y1 = area.y1 - 1;
+		res = ctx->plot->rectangle(ctx, &fg_fill_style, &rect);
+		if (res != NSERROR_OK) {
 			return false;
+		}
+
 		/* right arrow */
-		v[0] = x1 - w / 4 + 1;
-		v[1] = y0 + w / 2;
-		v[2] = x1 - w * 3 / 4 + 1;
-		v[3] = y0 + w / 4;
-		v[4] = x1 - w * 3 / 4 + 1;
-		v[5] = y0 + w * 3 / 4;
-		if (!plot->polygon(v, 3, &arrow_fill_style))
+		v[0] = rect.x1 - w / 4 + 1;
+		v[1] = rect.y0 + w / 2;
+		v[2] = rect.x1 - w * 3 / 4 + 1;
+		v[3] = rect.y0 + w / 4;
+		v[4] = rect.x1 - w * 3 / 4 + 1;
+		v[5] = rect.y0 + w * 3 / 4;
+		res = ctx->plot->polygon(ctx, &arrow_fill_style, v, 3);
+		if (res != NSERROR_OK) {
 			return false;
+		}
 	} else {
 		/* scrollbar is vertical */
-		
+
 		/* outline */
-		if (!scrollbar_redraw_scrollbar_rectangle(x0, y0, x1, y1,
-				bg_fill_colour, true, ctx))
+		res = scrollbar_rectangle(ctx, &area, bg_fill_colour, true);
+		if (res != NSERROR_OK) {
 			return false;
- 		/* top arrow background */
-		if (!scrollbar_redraw_scrollbar_rectangle(x0 + 1,
-				y0 + 1,
-				x1 - 1,
-				y0 + w - 2,
-				fg_fill_colour, false, ctx))
+		}
+
+		/* top arrow border */
+		rect.x0 = area.x0 + 1;
+		rect.y0 = area.y0 + 1;
+		rect.x1 = area.x1 - 1;
+		rect.y1 = area.y0 + w - 2;
+		res = scrollbar_rectangle(ctx, &rect, fg_fill_colour, false);
+		if (res != NSERROR_OK) {
 			return false;
-		if (!plot->rectangle(x0 + 2,
-				y0 + 2,
-				x1 - 1,
-				y0 + w - 2,
-				&fg_fill_style))
+		}
+
+		/* top arrow background */
+		rect.x0 = area.x0 + 2;
+		rect.y0 = area.y0 + 2;
+		rect.x1 = area.x1 - 1;
+		rect.y1 = area.y0 + w - 2;
+		res = ctx->plot->rectangle(ctx, &fg_fill_style, &rect);
+		if (res != NSERROR_OK) {
 			return false;
+		}
+
 		/* up arrow */
-		v[0] = x0 + w / 2;
-		v[1] = y0 + w / 4;
-		v[2] = x0 + w / 4;
-		v[3] = y0 + w * 3 / 4;
-		v[4] = x0 + w * 3 / 4;
-		v[5] = y0 + w * 3 / 4;
-		if (!plot->polygon(v, 3, &arrow_fill_style))
+		v[0] = area.x0 + w / 2;
+		v[1] = area.y0 + w / 4;
+		v[2] = area.x0 + w / 4;
+		v[3] = area.y0 + w * 3 / 4;
+		v[4] = area.x0 + w * 3 / 4;
+		v[5] = area.y0 + w * 3 / 4;
+		res = ctx->plot->polygon(ctx, &arrow_fill_style, v, 3);
+		if (res != NSERROR_OK) {
 			return false;
+		}
+
 		/* scrollbar well background */
-		if (!plot->rectangle(x0 + 1,
-				y0 + w - 1,
-				x1,
-				y1 - w + 2,
-				&bg_fill_style))
+		rect.x0 = area.x0 + 1;
+		rect.y0 = area.y0 + w - 1;
+		rect.x1 = area.x1;
+		rect.y1 = area.y1 - w + 2;
+		res = ctx->plot->rectangle(ctx, &bg_fill_style, &rect);
+		if (res != NSERROR_OK) {
 			return false;
+		}
+
 		/* scrollbar position indicator bar */
-		if (!scrollbar_redraw_scrollbar_rectangle(x0 + 1,
-				bar_c0,
-				x1 - 1,
-				bar_c1,
-				fg_fill_colour, false, ctx))
+		rect.x0 = area.x0 + 1;
+		rect.y0 = bar_c0;
+		rect.x1 = area.x1 - 1;
+		rect.y1 = bar_c1;
+		res = scrollbar_rectangle(ctx, &rect, fg_fill_colour, false);
+		if (res != NSERROR_OK) {
 			return false;
-		if (!plot->rectangle(x0 + 2,
-				bar_c0 + 1,
-				x1 - 1,
-				bar_c1,
-				&fg_fill_style))
+		}
+
+		rect.x0 = area.x0 + 2;
+		rect.y0 = bar_c0 + 1;
+		rect.x1 = area.x1 - 1;
+		rect.y1 = bar_c1;
+		res = ctx->plot->rectangle(ctx, &fg_fill_style, &rect);
+		if (res != NSERROR_OK) {
 			return false;
-		/* bottom arrow background */
-		if (!scrollbar_redraw_scrollbar_rectangle(x0 + 1,
-				y1 - w + 2,
-				x1 - 1,
-				y1 - 1,
-				fg_fill_colour, false, ctx))
+		}
+
+		/* down arrow icon border */
+		rect.x0 = area.x0 + 1;
+		rect.y0 = area.y1 - w + 2;
+		rect.x1 = area.x1 - 1;
+		rect.y1 = area.y1 - 1;
+		res = scrollbar_rectangle(ctx, &rect, fg_fill_colour, false);
+		if (res != NSERROR_OK) {
 			return false;
-		if (!plot->rectangle(x0 + 2,
-				y1 - w + 3,
-				x1 - 1,
-				y1 - 1,
-				&fg_fill_style))
+		}
+
+		/* down arrow icon background */
+		rect.x0 = area.x0 + 2;
+		rect.y0 = area.y1 - w + 3;
+		rect.x1 = area.x1 - 1;
+		rect.y1 = area.y1 - 1;
+		res = ctx->plot->rectangle(ctx, &fg_fill_style, &rect);
+		if (res != NSERROR_OK) {
 			return false;
+		}
+
 		/* down arrow */
-		v[0] = x0 + w / 2;
-		v[1] = y1 - w / 4 + 1;
-		v[2] = x0 + w / 4;
-		v[3] = y1 - w * 3 / 4 + 1;
-		v[4] = x0 + w * 3 / 4;
-		v[5] = y1 - w * 3 / 4 + 1;
-		if (!plot->polygon(v, 3, &arrow_fill_style))
+		v[0] = area.x0 + w / 2;
+		v[1] = area.y1 - w / 4 + 1;
+		v[2] = area.x0 + w / 4;
+		v[3] = area.y1 - w * 3 / 4 + 1;
+		v[4] = area.x0 + w * 3 / 4;
+		v[5] = area.y1 - w * 3 / 4 + 1;
+		res = ctx->plot->polygon(ctx, &arrow_fill_style, v, 3);
+		if (res != NSERROR_OK) {
 			return false;
+		}
 	}
 
 	return true;
@@ -568,7 +670,7 @@ bool scrollbar_is_horizontal(struct scrollbar *s)
  * \param x		the X coordinate of the drag start
  * \param y		the Y coordinate of the drag start
  * \param content_drag	whether this should be a reverse drag (used when the
- * 			user drags the content area, rather than the scrollbar)
+ *			user drags the content area, rather than the scrollbar)
  * \param pair		whether the drag is a '2D' scroll
  */
 
@@ -682,7 +784,7 @@ scrollbar_mouse_status scrollbar_mouse_action(struct scrollbar *s,
 
 	if (val < SCROLLBAR_WIDTH) {
 		/* left/up arrow */
-		
+
 		status = h ? SCROLLBAR_MOUSE_LFT : SCROLLBAR_MOUSE_UP;
 		if (but1)
 			scrollbar_set(s, s->offset - SCROLLBAR_WIDTH, false);
@@ -721,15 +823,15 @@ scrollbar_mouse_status scrollbar_mouse_action(struct scrollbar *s,
 	}
 	else {
 		/* scrollbar position indication bar */
-		
+
 		status = h ? SCROLLBAR_MOUSE_HRZ : SCROLLBAR_MOUSE_VRT;
 	}
 
-	
+
 	if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2) &&
-		   	(val >= SCROLLBAR_WIDTH + s->bar_pos
-		   	&& val < SCROLLBAR_WIDTH + s->bar_pos +
-		   			s->bar_len))
+			(val >= SCROLLBAR_WIDTH + s->bar_pos
+			&& val < SCROLLBAR_WIDTH + s->bar_pos +
+					s->bar_len))
 		/* The mouse event is a drag start on the scrollbar position
 		 * indication bar. */
 		scrollbar_drag_start_internal(s, x, y, false,
@@ -857,4 +959,3 @@ void *scrollbar_get_data(struct scrollbar *s)
 {
 	return s->client_data;
 }
-
