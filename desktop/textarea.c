@@ -2095,13 +2095,13 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
-	const struct plotter_table *plot = ctx->plot;
 	int line0, line1, line, left, right, line_y;
 	int text_y_offset, text_y_offset_baseline;
 	unsigned int b_pos, b_len, b_len_part, b_end;
 	unsigned int sel_start, sel_end;
 	char *line_text;
 	struct rect r, s;
+	struct rect rect;
 	bool selected = false;
 	plot_font_style_t fstyle;
 	int fsize = ta->fstyle.size;
@@ -2162,20 +2162,24 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 			r.y1 = y + ta->vis_height * scale;
 	}
 
-	plot->clip(&r);
+	ctx->plot->clip(ctx, &r);
 	if (ta->border_col != NS_TRANSPARENT &&
 			ta->border_width > 0) {
 		/* Plot border */
-		plot->rectangle(x, y, x + ta->vis_width, y + ta->vis_height,
-				&plot_style_fill_bg);
+		rect.x0 = x;
+		rect.y0 = y;
+		rect.x1 = x + ta->vis_width;
+		rect.y1 = y + ta->vis_height;
+		ctx->plot->rectangle(ctx, &plot_style_fill_bg, &rect);
 	}
 	if (ta->fstyle.background != NS_TRANSPARENT) {
 		/* Plot background */
 		plot_style_fill_bg.fill_colour = ta->fstyle.background;
-		plot->rectangle(x + ta->border_width, y + ta->border_width,
-				x + ta->vis_width - ta->border_width,
-				y + ta->vis_height - ta->border_width,
-				&plot_style_fill_bg);
+		rect.x0 = x + ta->border_width;
+		rect.y0 = y + ta->border_width;
+		rect.x1 = x + ta->vis_width - ta->border_width;
+		rect.y1 = y + ta->vis_height - ta->border_width;
+		ctx->plot->rectangle(ctx, &plot_style_fill_bg, &rect);
 	}
 
 	if (scale == 1.0) {
@@ -2223,16 +2227,16 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 
 	plot_style_fill_bg.fill_colour = ta->sel_fstyle.background;
 
-	for (line = line0; (line <= line1) &&
-			(y + line * ta->line_height <= r.y1 + ta->scroll_y);
-			line++) {
+	for (line = line0;
+	     (line <= line1) &&	(y + line * ta->line_height <= r.y1 + ta->scroll_y);
+	     line++) {
 		if (ta->lines[line].b_length == 0) {
 			b_pos++;
 			continue;
 		}
 
 		/* reset clip rectangle */
-		plot->clip(&r);
+		ctx->plot->clip(ctx, &r);
 
 		b_len = ta->lines[line].b_length;
 
@@ -2256,12 +2260,12 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 			fstyle = ta->fstyle;
 			fstyle.size = fsize;
 
-			plot->text(x + ta->border_width + ta->pad_left -
-					ta->scroll_x,
+			ctx->plot->text(ctx,
+					&fstyle,
+					x + ta->border_width + ta->pad_left - ta->scroll_x,
 					y + line_y + text_y_offset_baseline,
-					ta->show->data +
-							ta->lines[line].b_start,
-					ta->lines[line].b_length, &fstyle);
+					ta->show->data + ta->lines[line].b_start,
+					ta->lines[line].b_length);
 
 			b_pos += b_len;
 
@@ -2338,24 +2342,24 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 				continue;
 			}
 
-			plot->clip(&s);
+			ctx->plot->clip(ctx, &s);
 
 			if (selected) {
 				/* draw selection fill */
-				plot->rectangle(s.x0, y + line_y +
-					text_y_offset,
-					s.x1, y + line_y + line_height +
-							text_y_offset,
-					&plot_style_fill_bg);
+				rect.x0 = s.x0;
+				rect.y0 = y + line_y + text_y_offset;
+				rect.x1 = s.x1;
+				rect.y1 = y + line_y + line_height + text_y_offset;
+				ctx->plot->rectangle(ctx, &plot_style_fill_bg, &rect);
 			}
 
 			/* draw text */
-			plot->text(x + ta->border_width + ta->pad_left -
-					ta->scroll_x,
+			ctx->plot->text(ctx,
+					&fstyle,
+					x + ta->border_width + ta->pad_left - ta->scroll_x,
 					y + line_y + text_y_offset_baseline,
-					ta->show->data +
-							ta->lines[line].b_start,
-					ta->lines[line].b_length, &fstyle);
+					ta->show->data + ta->lines[line].b_start,
+					ta->lines[line].b_length);
 
 			b_pos += b_len_part;
 			b_len -= b_len_part;
@@ -2376,16 +2380,17 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 		/* No native caret, there is no selection, and caret visible */
 		int caret_y = y - ta->scroll_y + ta->caret_y;
 
-		plot->clip(&r);
+		ctx->plot->clip(ctx, &r);
 
 		/* Render our own caret */
-		plot->line(x - ta->scroll_x + ta->caret_x, caret_y,
-				x - ta->scroll_x + ta->caret_x,
-				caret_y + ta->line_height,
-				&pstyle_stroke_caret);
+		rect.x0 = x - ta->scroll_x + ta->caret_x;
+		rect.y0 = caret_y;
+		rect.x1 = x - ta->scroll_x + ta->caret_x;
+		rect.y1 = caret_y + ta->line_height;
+		ctx->plot->line(ctx, &pstyle_stroke_caret, &rect);
 	}
 
-	plot->clip(clip);
+	ctx->plot->clip(ctx, clip);
 
 	if (ta->bar_x != NULL)
 		scrollbar_redraw(ta->bar_x,

@@ -865,7 +865,6 @@ bool textplain_redraw(struct content *c, struct content_redraw_data *data,
 {
 	textplain_content *text = (textplain_content *) c;
 	struct browser_window *bw = text->bw;
-	const struct plotter_table *plot = ctx->plot;
 	char *utf8_data = text->utf8_data;
 	long lineno;
 	int x = data->x;
@@ -878,6 +877,7 @@ bool textplain_redraw(struct content *c, struct content_redraw_data *data,
 	struct textplain_line *line = text->physical_line;
 	size_t length;
 	plot_style_t *plot_style_highlight;
+	nserror res;
 
 	if (line0 < 0)
 		line0 = 0;
@@ -890,9 +890,10 @@ bool textplain_redraw(struct content *c, struct content_redraw_data *data,
 	if (line1 < line0)
 		line1 = line0;
 
-	if (!plot->rectangle(clip->x0, clip->y0, clip->x1, clip->y1,
-			plot_style_fill_white))
+	res = ctx->plot->rectangle(ctx, plot_style_fill_white, clip);
+	if (res != NSERROR_OK) {
 		return false;
+	}
 
 	if (!line)
 		return true;
@@ -979,11 +980,17 @@ bool textplain_redraw(struct content *c, struct content_redraw_data *data,
 				}
 
 				if (highlighted) {
-					int sy = y + (lineno * scaled_line_height);
-					if (!plot->rectangle(tx, sy, 
-							    ntx, sy + scaled_line_height,
-							    plot_style_highlight))
+					struct rect rect;
+					rect.x0 = tx;
+					rect.y0 = y + (lineno * scaled_line_height);
+					rect.x1 = ntx;
+					rect.y1 = rect.y0 + scaled_line_height;
+					res = ctx->plot->rectangle(ctx,
+								   plot_style_highlight,
+								   &rect);
+					if (res != NSERROR_OK) {
 						return false;
+					}
 				}
 			}
 

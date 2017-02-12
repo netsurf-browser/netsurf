@@ -55,6 +55,7 @@
 #define ERR_PLOTTER_NOT_AVAILABLE 3	/* invalid plotter driver name passed */
 
 struct plot_style_s;
+struct redraw_context;
 
 struct s_vdi_sysinfo {
 	short vdi_handle;          /**< vdi handle */
@@ -83,7 +84,15 @@ struct rect;
 
 extern const struct plotter_table atari_plotters;
 
-int plot_init(char *);
+/**
+ * Init screen and font driver objects.
+ *
+ * \param fdrvrname font driver name.
+ * \return value > 1 when the objects could be succesfully created or
+ *          <= 0 to indicate an error.
+ */
+int plot_init(const struct redraw_context *ctx, char *fdrvrname);
+
 int plot_finalise(void);
 
 /**
@@ -93,7 +102,15 @@ const char* plot_err_str(int i) ;
 
 bool plot_lock(void);
 bool plot_unlock(void);
-bool plot_set_dimensions( int x, int y, int w, int h );
+
+/**
+ * Set plot origin and canvas size
+ * \param x the x origin
+ * \param y the y origin
+ * \param w the width of the plot area
+ * \param h the height of the plot area
+ */
+bool plot_set_dimensions(const struct redraw_context *ctx, int x, int y, int w, int h );
 bool plot_get_dimensions(GRECT *dst);
 float plot_get_scale(void);
 float plot_set_scale(float);
@@ -101,13 +118,10 @@ void plot_set_abs_clipping(const GRECT *area);
 void plot_get_abs_clipping(struct rect *dst);
 void plot_get_abs_clipping_grect(GRECT *dst);
 bool plot_get_clip(struct rect * out);
-/* Get clipping for current framebuffer as GRECT */
+/** Get clipping for current framebuffer as GRECT */
 void plot_get_clip_grect(GRECT * out);
-bool plot_clip(const struct rect *clip);
 VdiHdl plot_get_vdi_handle(void);
 long plot_get_flags(void);
-bool plot_rectangle( int x0, int y0, int x1, int y1,const struct plot_style_s *style );
-bool plot_line( int x0, int y0, int x1, int y1, const struct plot_style_s *style );
 bool plot_blit_bitmap(struct bitmap * bmp, int x, int y,
                       unsigned long bg, unsigned long flags);
 bool plot_blit_mfdb(GRECT * loc, MFDB * insrc, short fgcolor, uint32_t flags);

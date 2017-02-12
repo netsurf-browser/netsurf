@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Content handler for image/svg using librsvg (implementation).
+/**
+ * \file
+ * implementation of content handler for image/svg using librsvg.
  *
  * SVG files are rendered to a NetSurf bitmap by creating a Cairo rendering
  * surface (content_rsvg_data.cs) over the bitmap's data, creating a Cairo
@@ -234,8 +235,12 @@ static bool rsvg_redraw(struct content *c, struct content_redraw_data *data,
 	if (data->repeat_y)
 		flags |= BITMAPF_REPEAT_Y;
 
-	return ctx->plot->bitmap(data->x, data->y, data->width, data->height, 
-			rsvgcontent->bitmap, data->background_colour, flags);
+	return (ctx->plot->bitmap(ctx,
+				  rsvgcontent->bitmap,
+				  data->x, data->y,
+				  data->width, data->height,
+				  data->background_colour,
+				  flags) == NSERROR_OK);
 }
 
 static void rsvg_destroy(struct content *c)

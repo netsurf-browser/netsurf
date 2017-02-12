@@ -39,6 +39,7 @@
 #include "netsurf/content.h"
 #include "netsurf/cookie_db.h"
 #include "netsurf/url_db.h"
+#include "netsurf/plotters.h"
 #include "content/backing_store.h"
 
 #include "atari/gemtk/gemtk.h"
@@ -1019,7 +1020,12 @@ static void gui_init(int argc, char** argv)
     nkc_init();
 
     LOG("Initializing plotters...");
-    plot_init(nsoption_charp(atari_font_driver));
+    struct redraw_context ctx = {
+	    .interactive = true,
+	    .background_images = true,
+	    .plot = &atari_plotters
+    };
+    plot_init(&ctx, nsoption_charp(atari_font_driver));
 
     aes_event_in.emi_m1leave = MO_LEAVE;
     aes_event_in.emi_m1.g_w = 1;

@@ -24,6 +24,13 @@
 #include <stdbool.h>
 struct hlcache_handle;
 
+/**
+ * Export a content as a DrawFile.
+ *
+ * \param  h     content to export
+ * \param  path  path to save DrawFile as
+ * \return  true on success, false on error and error reported
+ */
 bool save_as_draw(struct hlcache_handle *h, const char *path);
 
 #endif

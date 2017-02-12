@@ -758,8 +758,11 @@ void window_redraw_favicon(ROOTWIN *rootwin, GRECT *clip_ro)
             xoff = ((work.g_w-work.g_h)/2);
             work.g_w = work.g_h;
         }
-        plot_set_dimensions( work.g_x+xoff, work.g_y, work.g_w,
-							work.g_h);
+        plot_set_dimensions(&rootwin_rdrw_ctx,
+			    work.g_x+xoff,
+			    work.g_y,
+			    work.g_w,
+			    work.g_h);
 
 		wind_get_grect(rootwin->aes_handle, WF_FIRSTXYWH, &visible);
 		while (visible.g_h > 0 && visible.g_w > 0) {
@@ -776,8 +779,14 @@ void window_redraw_favicon(ROOTWIN *rootwin, GRECT *clip_ro)
 				vs_clip(plot_vdi_handle, 1, (short*)&pxy);
 				//dbg_pxy("vdi clip", (short*)&pxy);
 
-				atari_plotters.bitmap(0, 0, work.g_w, work.g_h,
-										rootwin->icon, 0xffffff, 0);
+				rootwin_rdrw_ctx.plot->bitmap(&rootwin_rdrw_ctx,
+							      rootwin->icon,
+							      0,
+							      0,
+							      work.g_w,
+							      work.g_h,
+							      0xffffff,
+							      0);
 			} else {
 				//dbg_grect("redraw vis area outside", &visible);
 			}
@@ -822,7 +831,8 @@ static void window_redraw_content(ROOTWIN *rootwin, GRECT *content_area,
     //dbg_grect("browser redraw, content area", content_area);
     //dbg_grect("browser redraw, content clip", clip);
 
-    plot_set_dimensions(content_area->g_x, content_area->g_y,
+    plot_set_dimensions(&rootwin_rdrw_ctx,
+			content_area->g_x, content_area->g_y,
                         content_area->g_w, content_area->g_h);
     oldscale = plot_set_scale(browser_window_get_scale(rootwin->active_gui_window->browser->bw));
 
@@ -849,7 +859,7 @@ static void window_redraw_content(ROOTWIN *rootwin, GRECT *content_area,
     redraw_area.x1 = content_area_rel.g_x + content_area_rel.g_w;
     redraw_area.y1 = content_area_rel.g_y + content_area_rel.g_h;
 
-    plot_clip(&redraw_area);
+    rootwin_rdrw_ctx.plot->clip(&rootwin_rdrw_ctx, &redraw_area);
 
     //dbg_rect("rdrw area", &redraw_area);
 

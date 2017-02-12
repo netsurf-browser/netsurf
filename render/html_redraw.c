@@ -150,16 +150,26 @@ static struct box *html_redraw_find_bg_box(struct box *box)
  * \return true iff successful and redraw should proceed
  */
 
-bool text_redraw(const char *utf8_text, size_t utf8_len,
-		size_t offset, int space, const plot_font_style_t *fstyle,
-		int x, int y, const struct rect *clip, int height,
-		float scale, bool excluded, struct content *c,
-		const struct selection *sel, struct search_context *search,
-		const struct redraw_context *ctx)
+bool
+text_redraw(const char *utf8_text,
+	    size_t utf8_len,
+	    size_t offset,
+	    int space,
+	    const plot_font_style_t *fstyle,
+	    int x,
+	    int y,
+	    const struct rect *clip,
+	    int height,
+	    float scale,
+	    bool excluded,
+	    struct content *c,
+	    const struct selection *sel,
+	    struct search_context *search,
+	    const struct redraw_context *ctx)
 {
-	const struct plotter_table *plot = ctx->plot;
 	bool highlighted = false;
 	plot_font_style_t plot_fstyle = *fstyle;
+	nserror res;
 
 	/* Need scaled text size to pass to plotters */
 	plot_fstyle.size *= scale;
@@ -195,7 +205,6 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 			int startx, endx;
 			plot_style_t pstyle_fill_hback = *plot_style_fill_white;
 			plot_font_style_t fstyle_hback = plot_fstyle;
-			nserror res;
 
 			if (end_idx > utf8_len) {
 				/* adjust for trailing space, not present in
@@ -230,19 +239,26 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 			}
 
 			/* draw any text preceding highlighted portion */
-			if (start_idx > 0 &&
-				!plot->text(x, y + (int)(height * 0.75 * scale),
-						utf8_text, start_idx,
-						&plot_fstyle))
+			if ((start_idx > 0) &&
+			    (ctx->plot->text(ctx,
+					     &plot_fstyle,
+					     x,
+					     y + (int)(height * 0.75 * scale),
+					     utf8_text,
+					     start_idx) != NSERROR_OK))
 				return false;
 
 			pstyle_fill_hback.fill_colour = fstyle->foreground;
 
 			/* highlighted portion */
-			if (!plot->rectangle(x + startx, y, x + endx,
-					y + height * scale,
-					&pstyle_fill_hback))
+			r.x0 = x + startx;
+			r.y0 = y;
+			r.x1 = x + endx;
+			r.y1 = y + height * scale;
+			res = ctx->plot->rectangle(ctx, &pstyle_fill_hback, &r);
+			if (res != NSERROR_OK) {
 				return false;
+			}
 
 			if (start_idx > 0) {
 				int px0 = max(x + startx, clip->x0);
@@ -253,8 +269,11 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 					r.y0 = clip->y0;
 					r.x1 = px1;
 					r.y1 = clip->y1;
-					if (!plot->clip(&r))
+					res = ctx->plot->clip(ctx, &r);
+					if (res != NSERROR_OK) {
 						return false;
+					}
+
 					clip_changed = true;
 				} else {
 					text_visible = false;
@@ -267,10 +286,14 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 				pstyle_fill_hback.fill_colour);
 
 			if (text_visible &&
-				!plot->text(x, y + (int)(height * 0.75 * scale),
-						utf8_text, endtxt_idx,
-						&fstyle_hback))
+			    (ctx->plot->text(ctx,
+					     &fstyle_hback,
+					     x,
+					     y + (int)(height * 0.75 * scale),
+					     utf8_text,
+					     endtxt_idx) != NSERROR_OK)) {
 				return false;
+			}
 
 			/* draw any text succeeding highlighted portion */
 			if (endtxt_idx < utf8_len) {
@@ -281,858 +304,43 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 					r.y0 = clip->y0;
 					r.x1 = clip->x1;
 					r.y1 = clip->y1;
-					if (!plot->clip(&r))
+					res = ctx->plot->clip(ctx, &r);
+					if (res != NSERROR_OK) {
 						return false;
+					}
 
 					clip_changed = true;
 
-					if (!plot->text(x, y + (int)
-						(height * 0.75 * scale),
-						utf8_text, utf8_len,
-						&plot_fstyle))
+					res = ctx->plot->text(ctx,
+							      &plot_fstyle,
+							      x,
+							      y + (int)(height * 0.75 * scale),
+							      utf8_text,
+							      utf8_len);
+					if (res != NSERROR_OK) {
 						return false;
+					}
 				}
 			}
 
 			if (clip_changed &&
-				!plot->clip(clip))
+			    (ctx->plot->clip(ctx, clip) != NSERROR_OK)) {
 				return false;
+			}
 		}
 	}
 
 	if (!highlighted) {
-		if (!plot->text(x, y + (int) (height * 0.75 * scale),
-				utf8_text, utf8_len,
-				&plot_fstyle))
+		res = ctx->plot->text(ctx,
+				      &plot_fstyle,
+				      x,
+				      y + (int) (height * 0.75 * scale),
+				      utf8_text,
+				      utf8_len);
+		if (res != NSERROR_OK) {
 			return false;
-	}
-	return true;
-}
-
-static plot_style_t plot_style_bdr = {
-	.stroke_type = PLOT_OP_TYPE_DASH,
-};
-static plot_style_t plot_style_fillbdr = {
-	.fill_type = PLOT_OP_TYPE_SOLID,
-};
-static plot_style_t plot_style_fillbdr_dark = {
-	.fill_type = PLOT_OP_TYPE_SOLID,
-};
-static plot_style_t plot_style_fillbdr_light = {
-	.fill_type = PLOT_OP_TYPE_SOLID,
-};
-static plot_style_t plot_style_fillbdr_ddark = {
-	.fill_type = PLOT_OP_TYPE_SOLID,
-};
-static plot_style_t plot_style_fillbdr_dlight = {
-	.fill_type = PLOT_OP_TYPE_SOLID,
-};
-
-/**
- * Draw one border.
- *
- * \param  side		index of border side (TOP, RIGHT, BOTTOM, LEFT)
- * \param  p		array of precomputed border vertices
- * \param  c		colour for border
- * \param  style	border line style
- * \param  thickness	border thickness
- * \param  rectangular	whether border is rectangular
- * \param clip cliping area for redrawing border.
- * \param  ctx		current redraw context
- * \return true if successful, false otherwise
- */
-
-static bool html_redraw_border_plot(const int side, const int *p, colour c,
-		enum css_border_style_e style, int thickness, bool rectangular,
-		const struct rect *clip, const struct redraw_context *ctx)
-{
-	const struct plotter_table *plot = ctx->plot;
-	int z[8]; /* Vertices of border part */
-	unsigned int light = side;
-	plot_style_t *plot_style_bdr_in;
-	plot_style_t *plot_style_bdr_out;
-
-	if (c == NS_TRANSPARENT)
-		return true;
-
-	plot_style_bdr.stroke_type = PLOT_OP_TYPE_DASH;
-	plot_style_bdr.stroke_colour = c;
-	plot_style_bdr.stroke_width = thickness;
-	plot_style_fillbdr.fill_colour = c;
-	plot_style_fillbdr_dark.fill_colour = darken_colour(c);
-	plot_style_fillbdr_light.fill_colour = lighten_colour(c);
-	plot_style_fillbdr_ddark.fill_colour = double_darken_colour(c);
-	plot_style_fillbdr_dlight.fill_colour = double_lighten_colour(c);
-
-	switch (style) {
-	case CSS_BORDER_STYLE_DOTTED:
-		plot_style_bdr.stroke_type = PLOT_OP_TYPE_DOT;
-		/* fall through */
-	case CSS_BORDER_STYLE_DASHED:
-		if (!plot->line((p[0] + p[2]) / 2,
-				(p[1] + p[3]) / 2,
-				(p[4] + p[6]) / 2,
-				(p[5] + p[7]) / 2,
-				&plot_style_bdr))
-			return false;
-		break;
-
-	case CSS_BORDER_STYLE_SOLID:
-		/* fall through to default */
-	default:
-		if (rectangular || thickness == 1) {
-			int x0, y0, x1, y1;
-			if (side == TOP || side == RIGHT) {
-				x0 = p[2];	y0 = p[3];
-				x1 = p[6];	y1 = p[7];
-				x1 = ((side == TOP) && (p[4] - p[6] != 0)) ?
-					x1 + p[4] - p[6] : x1;
-			} else {
-				x0 = p[6];	y0 = p[7];
-				x1 = p[2];	y1 = p[3];
-				y1 = ((side == LEFT) && (p[1] - p[3] != 0)) ?
-					y1 + p[1] - p[3] : y1;
-			}
-			/* find intersection of clip rectangle and border */
-			x0 = (clip->x0 > x0) ? clip->x0 : x0;
-			y0 = (clip->y0 > y0) ? clip->y0 : y0;
-			x1 = (clip->x1 < x1) ? clip->x1 : x1;
-			y1 = (clip->y1 < y1) ? clip->y1 : y1;
-			if ((x0 < x1) && (y0 < y1)) {
-				/* valid clip rectangles only */
-				if (!plot->rectangle(x0, y0, x1, y1,
-						&plot_style_fillbdr))
-					return false;
-			}
-		} else {
-			if (!plot->polygon(p, 4, &plot_style_fillbdr))
-				return false;
-		}
-		break;
-
-	case CSS_BORDER_STYLE_DOUBLE:
-		z[0] = p[0];
-		z[1] = p[1];
-		z[2] = (p[0] * 2 + p[2]) / 3;
-		z[3] = (p[1] * 2 + p[3]) / 3;
-		z[4] = (p[6] * 2 + p[4]) / 3;
-		z[5] = (p[7] * 2 + p[5]) / 3;
-		z[6] = p[6];
-		z[7] = p[7];
-		if (!plot->polygon(z, 4, &plot_style_fillbdr))
-			return false;
-		z[0] = p[2];
-		z[1] = p[3];
-		z[2] = (p[2] * 2 + p[0]) / 3;
-		z[3] = (p[3] * 2 + p[1]) / 3;
-		z[4] = (p[4] * 2 + p[6]) / 3;
-		z[5] = (p[5] * 2 + p[7]) / 3;
-		z[6] = p[4];
-		z[7] = p[5];
-		if (!plot->polygon(z, 4, &plot_style_fillbdr))
-			return false;
-		break;
-
-	case CSS_BORDER_STYLE_GROOVE:
-		light = 3 - light;
-		/* fall through */
-	case CSS_BORDER_STYLE_RIDGE:
-		/* choose correct colours for each part of the border line */
-		if (light <= 1) {
-			plot_style_bdr_in = &plot_style_fillbdr_dark;
-			plot_style_bdr_out = &plot_style_fillbdr_light;
-		} else {
-			plot_style_bdr_in = &plot_style_fillbdr_light;
-			plot_style_bdr_out = &plot_style_fillbdr_dark;
-		}
-
-		/* Render border */
-		if ((rectangular || thickness == 2) && thickness != 1) {
-			/* Border made up from two parts and can be plotted
-			 * with rectangles */
-			int x0, y0, x1, y1;
-
-			/* First part */
-			if (side == TOP || side == RIGHT) {
-				x0 = (p[0] + p[2]) / 2;	y0 = (p[1] + p[3]) / 2;
-				x1 = p[6];		y1 = p[7];
-			} else {
-				x0 = p[6];		y0 = p[7];
-				x1 = (p[0] + p[2]) / 2;	y1 = (p[1] + p[3]) / 2;
-			}
-			/* find intersection of clip rectangle and border */
-			x0 = (clip->x0 > x0) ? clip->x0 : x0;
-			y0 = (clip->y0 > y0) ? clip->y0 : y0;
-			x1 = (clip->x1 < x1) ? clip->x1 : x1;
-			y1 = (clip->y1 < y1) ? clip->y1 : y1;
-			if ((x0 < x1) && (y0 < y1)) {
-				/* valid clip rectangles only */
-				if (!plot->rectangle(x0, y0, x1, y1,
-						plot_style_bdr_in))
-					return false;
-			}
-
-			/* Second part */
-			if (side == TOP || side == RIGHT) {
-				x0 = p[2];		y0 = p[3];
-				x1 = (p[6] + p[4]) / 2;	y1 = (p[7] + p[5]) / 2;
-			} else {
-				x0 = (p[6] + p[4]) / 2;	y0 = (p[7] + p[5]) / 2;
-				x1 = p[2];		y1 = p[3];
-			}
-			/* find intersection of clip rectangle and border */
-			x0 = (clip->x0 > x0) ? clip->x0 : x0;
-			y0 = (clip->y0 > y0) ? clip->y0 : y0;
-			x1 = (clip->x1 < x1) ? clip->x1 : x1;
-			y1 = (clip->y1 < y1) ? clip->y1 : y1;
-			if ((x0 < x1) && (y0 < y1)) {
-				/* valid clip rectangles only */
-				if (!plot->rectangle(x0, y0, x1, y1,
-						plot_style_bdr_out))
-					return false;
-			}
-		} else if (thickness == 1) {
-			/* Border made up from one part which can be plotted
-			 * as a rectangle */
-			int x0, y0, x1, y1;
-			if (side == TOP || side == RIGHT) {
-				x0 = p[2];	y0 = p[3];
-				x1 = p[6];	y1 = p[7];
-				x1 = ((side == TOP) && (p[4] - p[6] != 0)) ?
-					x1 + p[4] - p[6] : x1;
-				/* find intersection of clip rectangle and
-				 * border */
-				x0 = (clip->x0 > x0) ? clip->x0 : x0;
-				y0 = (clip->y0 > y0) ? clip->y0 : y0;
-				x1 = (clip->x1 < x1) ? clip->x1 : x1;
-				y1 = (clip->y1 < y1) ? clip->y1 : y1;
-				if ((x0 < x1) && (y0 < y1)) {
-					/* valid clip rectangles only */
-					if (!plot->rectangle(x0, y0, x1, y1,
-							plot_style_bdr_in))
-						return false;
-				}
-			} else {
-				x0 = p[6];	y0 = p[7];
-				x1 = p[2];	y1 = p[3];
-				y1 = ((side == LEFT) && (p[1] - p[3] != 0)) ?
-					y1 + p[1] - p[3] : y1;
-				/* find intersection of clip rectangle and
-				 * border */
-				x0 = (clip->x0 > x0) ? clip->x0 : x0;
-				y0 = (clip->y0 > y0) ? clip->y0 : y0;
-				x1 = (clip->x1 < x1) ? clip->x1 : x1;
-				y1 = (clip->y1 < y1) ? clip->y1 : y1;
-				if ((x0 < x1) && (y0 < y1)) {
-					/* valid clip rectangles only */
-					if (!plot->rectangle(x0, y0, x1, y1,
-							plot_style_bdr_out))
-						return false;
-				}
-			}
-		} else {
-			/* Border made up from two parts and can't be plotted
-			 * with rectangles */
-			z[0] = p[0];
-			z[1] = p[1];
-			z[2] = (p[0] + p[2]) / 2;
-			z[3] = (p[1] + p[3]) / 2;
-			z[4] = (p[6] + p[4]) / 2;
-			z[5] = (p[7] + p[5]) / 2;
-			z[6] = p[6];
-			z[7] = p[7];
-			if (!plot->polygon(z, 4, plot_style_bdr_in))
-				return false;
-			z[0] = p[2];
-			z[1] = p[3];
-			z[6] = p[4];
-			z[7] = p[5];
-			if (!plot->polygon(z, 4, plot_style_bdr_out))
-				return false;
-		}
-		break;
-
-	case CSS_BORDER_STYLE_INSET:
-		light = (light + 2) % 4;
-		/* fall through */
-	case CSS_BORDER_STYLE_OUTSET:
-		/* choose correct colours for each part of the border line */
-		switch (light) {
-		case 0:
-			plot_style_bdr_in = &plot_style_fillbdr_light;
-			plot_style_bdr_out = &plot_style_fillbdr_dlight;
-			break;
-		case 1:
-			plot_style_bdr_in = &plot_style_fillbdr_ddark;
-			plot_style_bdr_out = &plot_style_fillbdr_dark;
-			break;
-		case 2:
-			plot_style_bdr_in = &plot_style_fillbdr_dark;
-			plot_style_bdr_out = &plot_style_fillbdr_ddark;
-			break;
-		case 3:
-			plot_style_bdr_in = &plot_style_fillbdr_dlight;
-			plot_style_bdr_out = &plot_style_fillbdr_light;
-			break;
-		default:
-			plot_style_bdr_in = &plot_style_fillbdr;
-			plot_style_bdr_out = &plot_style_fillbdr;
-			break;
-		}
-
-		/* Render border */
-		if ((rectangular || thickness == 2) && thickness != 1) {
-			/* Border made up from two parts and can be plotted
-			 * with rectangles */
-			int x0, y0, x1, y1;
-
-			/* First part */
-			if (side == TOP || side == RIGHT) {
-				x0 = (p[0] + p[2]) / 2;	y0 = (p[1] + p[3]) / 2;
-				x1 = p[6];		y1 = p[7];
-			} else {
-				x0 = p[6];		y0 = p[7];
-				x1 = (p[0] + p[2]) / 2;	y1 = (p[1] + p[3]) / 2;
-			}
-			/* find intersection of clip rectangle and border */
-			x0 = (clip->x0 > x0) ? clip->x0 : x0;
-			y0 = (clip->y0 > y0) ? clip->y0 : y0;
-			x1 = (clip->x1 < x1) ? clip->x1 : x1;
-			y1 = (clip->y1 < y1) ? clip->y1 : y1;
-			if ((x0 < x1) && (y0 < y1)) {
-				/* valid clip rectangles only */
-				if (!plot->rectangle(x0, y0, x1, y1,
-						plot_style_bdr_in))
-					return false;
-			}
-
-			/* Second part */
-			if (side == TOP || side == RIGHT) {
-				x0 = p[2];		y0 = p[3];
-				x1 = (p[6] + p[4]) / 2;	y1 = (p[7] + p[5]) / 2;
-			} else {
-				x0 = (p[6] + p[4]) / 2;	y0 = (p[7] + p[5]) / 2;
-				x1 = p[2];		y1 = p[3];
-			}
-			/* find intersection of clip rectangle and border */
-			x0 = (clip->x0 > x0) ? clip->x0 : x0;
-			y0 = (clip->y0 > y0) ? clip->y0 : y0;
-			x1 = (clip->x1 < x1) ? clip->x1 : x1;
-			y1 = (clip->y1 < y1) ? clip->y1 : y1;
-			if ((x0 < x1) && (y0 < y1)) {
-				/* valid clip rectangles only */
-				if (!plot->rectangle(x0, y0, x1, y1,
-						plot_style_bdr_out))
-					return false;
-			}
-		} else if (thickness == 1) {
-			/* Border made up from one part which can be plotted
-			 * as a rectangle */
-			int x0, y0, x1, y1;
-			if (side == TOP || side == RIGHT) {
-				x0 = p[2];	y0 = p[3];
-				x1 = p[6];	y1 = p[7];
-				x1 = ((side == TOP) && (p[4] - p[6] != 0)) ?
-					x1 + p[4] - p[6] : x1;
-				/* find intersection of clip rectangle and
-				 * border */
-				x0 = (clip->x0 > x0) ? clip->x0 : x0;
-				y0 = (clip->y0 > y0) ? clip->y0 : y0;
-				x1 = (clip->x1 < x1) ? clip->x1 : x1;
-				y1 = (clip->y1 < y1) ? clip->y1 : y1;
-				if ((x0 < x1) && (y0 < y1)) {
-					/* valid clip rectangles only */
-					if (!plot->rectangle(x0, y0, x1, y1,
-							plot_style_bdr_in))
-						return false;
-				}
-			} else {
-				x0 = p[6];	y0 = p[7];
-				x1 = p[2];	y1 = p[3];
-				y1 = ((side == LEFT) && (p[1] - p[3] != 0)) ?
-					y1 + p[1] - p[3] : y1;
-				/* find intersection of clip rectangle and
-				 * border */
-				x0 = (clip->x0 > x0) ? clip->x0 : x0;
-				y0 = (clip->y0 > y0) ? clip->y0 : y0;
-				x1 = (clip->x1 < x1) ? clip->x1 : x1;
-				y1 = (clip->y1 < y1) ? clip->y1 : y1;
-				if ((x0 < x1) && (y0 < y1)) {
-					/* valid clip rectangles only */
-					if (!plot->rectangle(x0, y0, x1, y1,
-							plot_style_bdr_out))
-						return false;
-				}
-			}
-		} else {
-			/* Border made up from two parts and can't be plotted
-			 * with rectangles */
-			z[0] = p[0];
-			z[1] = p[1];
-			z[2] = (p[0] + p[2]) / 2;
-			z[3] = (p[1] + p[3]) / 2;
-			z[4] = (p[6] + p[4]) / 2;
-			z[5] = (p[7] + p[5]) / 2;
-			z[6] = p[6];
-			z[7] = p[7];
-			if (!plot->polygon(z, 4, plot_style_bdr_in))
-				return false;
-			z[0] = p[2];
-			z[1] = p[3];
-			z[6] = p[4];
-			z[7] = p[5];
-			if (!plot->polygon(z, 4, plot_style_bdr_out))
-				return false;
-		}
-		break;
-	}
-
-	return true;
-}
-
-
-/**
- * Draw borders for a box.
- *
- * \param  box		box to draw
- * \param  x_parent	coordinate of left padding edge of parent of box
- * \param  y_parent	coordinate of top padding edge of parent of box
- * \param  p_width	width of padding box
- * \param  p_height	height of padding box
- * \param clip cliping area for redrawing border.
- * \param  scale	scale for redraw
- * \param  ctx		current redraw context
- * \return true if successful, false otherwise
- */
-
-static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
-		int p_width, int p_height, const struct rect *clip, float scale,
-		const struct redraw_context *ctx)
-{
-	unsigned int sides[] = { LEFT, RIGHT, TOP, BOTTOM };
-	int top = box->border[TOP].width;
-	int right = box->border[RIGHT].width;
-	int bottom = box->border[BOTTOM].width;
-	int left = box->border[LEFT].width;
-	int x, y;
-	unsigned int i, side;
-	int p[8]; /* Box border vertices */
-	int z[8]; /* Border vertices */
-	bool square_end_1 = false;
-	bool square_end_2 = false;
-
-	x = x_parent + box->x;
-	y = y_parent + box->y;
-
-	if (scale != 1.0) {
-		top *= scale;
-		right *= scale;
-		bottom *= scale;
-		left *= scale;
-		x *= scale;
-		y *= scale;
-	}
-
-	assert(box->style);
-
-	/* Calculate border vertices
-	 *
-	 *    A----------------------+
-	 *    | \                  / |
-	 *    |   B--------------+   |
-	 *    |   |              |   |
-	 *    |   +--------------C   |
-	 *    | /                  \ |
-	 *    +----------------------D
-	 */
-	p[0] = x - left;		p[1] = y - top;			/* A */
-	p[2] = x;			p[3] = y;			/* B */
-	p[4] = x + p_width;		p[5] = y + p_height;		/* C */
-	p[6] = x + p_width + right;	p[7] = y + p_height + bottom;	/* D */
-
-	for (i = 0; i != 4; i++) {
-		colour col = 0;
-		side = sides[i]; /* plot order */
-
-		if (box->border[side].width == 0 || 
-				nscss_color_is_transparent(box->border[side].c))
-			continue;
-
-		switch (side) {
-		case LEFT:
-			square_end_1 = (top == 0);
-			square_end_2 = (bottom == 0);
-
-			z[0] = p[0];	z[1] = p[7];
-			z[2] = p[2];	z[3] = p[5];
-			z[4] = p[2];	z[5] = p[3];
-			z[6] = p[0];	z[7] = p[1];
-
-			if (nscss_color_is_transparent(box->border[TOP].c) == 
-					false &&
-					box->border[TOP].style !=
-					CSS_BORDER_STYLE_DOUBLE) {
-				/* make border overhang top corner fully,
-				 * if top border is opaque */
-				z[5] -= top;
-				square_end_1 = true;
-			}
-			if (nscss_color_is_transparent(box->border[BOTTOM].c) ==
-					false &&
-					box->border[BOTTOM].style !=
-					CSS_BORDER_STYLE_DOUBLE) {
-				/* make border overhang bottom corner fully,
-				 * if bottom border is opaque */
-				z[3] += bottom;
-				square_end_2 = true;
-			}
-
-			col = nscss_color_to_ns(box->border[side].c);
-
-			if (!html_redraw_border_plot(side, z, col,
-					box->border[side].style,
-					box->border[side].width * scale,
-					square_end_1 && square_end_2,
-					clip, ctx))
-				return false;
-			break;
-		case RIGHT:
-			square_end_1 = (top == 0);
-			square_end_2 = (bottom == 0);
-
-			z[0] = p[6];	z[1] = p[1];
-			z[2] = p[4];	z[3] = p[3];
-			z[4] = p[4];	z[5] = p[5];
-			z[6] = p[6];	z[7] = p[7];
-
-			if (nscss_color_is_transparent(box->border[TOP].c) ==
-					false &&
-					box->border[TOP].style !=
-					CSS_BORDER_STYLE_DOUBLE) {
-				/* make border overhang top corner fully,
-				 * if top border is opaque */
-				z[3] -= top;
-				square_end_1 = true;
-			}
-			if (nscss_color_is_transparent(box->border[BOTTOM].c) ==
-					false &&
-					box->border[BOTTOM].style !=
-					CSS_BORDER_STYLE_DOUBLE) {
-				/* make border overhang bottom corner fully,
-				 * if bottom border is opaque */
-				z[5] += bottom;
-				square_end_2 = true;
-			}
-
-			col = nscss_color_to_ns(box->border[side].c);
-
-			if (!html_redraw_border_plot(side, z, col,
-					box->border[side].style,
-					box->border[side].width * scale,
-					square_end_1 && square_end_2,
-					clip, ctx))
-				return false;
-			break;
-		case TOP:
-			if (clip->y0 > p[3])
-				/* clip rectangle is below border; nothing to
-				 * plot */
-				continue;
-
-			square_end_1 = (left == 0);
-			square_end_2 = (right == 0);
-
-			z[0] = p[2];	z[1] = p[3];
-			z[2] = p[0];	z[3] = p[1];
-			z[4] = p[6];	z[5] = p[1];
-			z[6] = p[4];	z[7] = p[3];
-
-			if (box->border[TOP].style ==
-					CSS_BORDER_STYLE_SOLID &&
-					box->border[TOP].c ==
-					box->border[LEFT].c) {
-				/* don't bother overlapping left corner if
-				 * it's the same colour anyway */
-				z[2] += left;
-				square_end_1 = true;
-			}
-			if (box->border[TOP].style ==
-					CSS_BORDER_STYLE_SOLID &&
-					box->border[TOP].c ==
-					box->border[RIGHT].c) {
-				/* don't bother overlapping right corner if
-				 * it's the same colour anyway */
-				z[4] -= right;
-				square_end_2 = true;
-			}
-
-			col = nscss_color_to_ns(box->border[side].c);
-
-			if (!html_redraw_border_plot(side, z, col,
-					box->border[side].style,
-					box->border[side].width * scale,
-					square_end_1 && square_end_2,
-					clip, ctx))
-				return false;
-			break;
-		case BOTTOM:
-			if (clip->y1 < p[5])
-				/* clip rectangle is above border; nothing to
-				 * plot */
-				continue;
-
-			square_end_1 = (left == 0);
-			square_end_2 = (right == 0);
-
-			z[0] = p[4];	z[1] = p[5];
-			z[2] = p[6];	z[3] = p[7];
-			z[4] = p[0];	z[5] = p[7];
-			z[6] = p[2];	z[7] = p[5];
-
-			if (box->border[BOTTOM].style ==
-					CSS_BORDER_STYLE_SOLID &&
-					box->border[BOTTOM].c ==
-					box->border[LEFT].c) {
-				/* don't bother overlapping left corner if
-				 * it's the same colour anyway */
-				z[4] += left;
-				square_end_1 = true;
-			}
-			if (box->border[BOTTOM].style ==
-					CSS_BORDER_STYLE_SOLID &&
-					box->border[BOTTOM].c ==
-					box->border[RIGHT].c) {
-				/* don't bother overlapping right corner if
-				 * it's the same colour anyway */
-				z[2] -= right;
-				square_end_2 = true;
-			}
-
-			col = nscss_color_to_ns(box->border[side].c);
-
-			if (!html_redraw_border_plot(side, z, col,
-					box->border[side].style,
-					box->border[side].width * scale,
-					square_end_1 && square_end_2,
-					clip, ctx))
-				return false;
-			break;
-		default:
-			assert(side == TOP || side == BOTTOM ||
-					side == LEFT || side == RIGHT);
-			break;
 		}
 	}
-
-	return true;
-}
-
-
-/**
- * Draw an inline's borders.
- *
- * \param  box	  BOX_INLINE which created the border
- * \param  b	  coordinates of border edge rectangle
- * \param clip cliping area for redrawing border.
- * \param  scale  scale for redraw
- * \param  first  true if this is the first rectangle associated with the inline
- * \param  last	  true if this is the last rectangle associated with the inline
- * \param  ctx	  current redraw context
- * \return true if successful, false otherwise
- */
-
-static bool html_redraw_inline_borders(struct box *box, struct rect b,
-		const struct rect *clip, float scale, bool first, bool last,
-		const struct redraw_context *ctx)
-{
-	int top = box->border[TOP].width;
-	int right = box->border[RIGHT].width;
-	int bottom = box->border[BOTTOM].width;
-	int left = box->border[LEFT].width;
-	colour col;
-	int p[8]; /* Box border vertices */
-	int z[8]; /* Border vertices */
-	bool square_end_1;
-	bool square_end_2;
-
-	if (scale != 1.0) {
-		top *= scale;
-		right *= scale;
-		bottom *= scale;
-		left *= scale;
-	}
-
-	/* Calculate border vertices
-	 *
-	 *    A----------------------+
-	 *    | \                  / |
-	 *    |   B--------------+   |
-	 *    |   |              |   |
-	 *    |   +--------------C   |
-	 *    | /                  \ |
-	 *    +----------------------D
-	 */
-	p[0] = b.x0;				p[1] = b.y0;		/* A */
-	p[2] = first ? b.x0 + left : b.x0;	p[3] = b.y0 + top;	/* B */
-	p[4] = last ? b.x1 - right : b.x1;	p[5] = b.y1 - bottom;	/* C */
-	p[6] = b.x1;				p[7] = b.y1;		/* D */
-
-	assert(box->style);
-
-	/* Left */
-	square_end_1 = (top == 0);
-	square_end_2 = (bottom == 0);
-	if (left != 0 && first && nscss_color_is_transparent(
-			box->border[LEFT].c) == false) {
-		col = nscss_color_to_ns(box->border[LEFT].c);
-
-		z[0] = p[0];	z[1] = p[7];
-		z[2] = p[2];	z[3] = p[5];
-		z[4] = p[2];	z[5] = p[3];
-		z[6] = p[0];	z[7] = p[1];
-
-		if (nscss_color_is_transparent(box->border[TOP].c) == false &&
-				box->border[TOP].style !=
-				CSS_BORDER_STYLE_DOUBLE) {
-			/* make border overhang top corner fully,
-			 * if top border is opaque */
-			z[5] -= top;
-			square_end_1 = true;
-		}
-
-		if (nscss_color_is_transparent(box->border[BOTTOM].c) == 
-				false &&
-				box->border[BOTTOM].style !=
-				CSS_BORDER_STYLE_DOUBLE) {
-			/* make border overhang bottom corner fully,
-			 * if bottom border is opaque */
-			z[3] += bottom;
-			square_end_2 = true;
-		}
-
-		if (!html_redraw_border_plot(LEFT, z, col,
-				box->border[LEFT].style, 
-				left, square_end_1 && square_end_2,
-				clip, ctx))
-			return false;
-	}
-
-	/* Right */
-	square_end_1 = (top == 0);
-	square_end_2 = (bottom == 0);
-	if (right != 0 && last && nscss_color_is_transparent(
-			box->border[RIGHT].c) == false) {
-		col = nscss_color_to_ns(box->border[RIGHT].c);
-
-		z[0] = p[6];	z[1] = p[1];
-		z[2] = p[4];	z[3] = p[3];
-		z[4] = p[4];	z[5] = p[5];
-		z[6] = p[6];	z[7] = p[7];
-
-		if (nscss_color_is_transparent(box->border[TOP].c) == false &&
-				box->border[TOP].style !=
-				CSS_BORDER_STYLE_DOUBLE) {
-			/* make border overhang top corner fully,
-			 * if top border is opaque */
-			z[3] -= top;
-			square_end_1 = true;
-		}
-
-		if (nscss_color_is_transparent(box->border[BOTTOM].c) == 
-				false &&
-				box->border[BOTTOM].style !=
-				CSS_BORDER_STYLE_DOUBLE) {
-			/* make border overhang bottom corner fully,
-			 * if bottom border is opaque */
-			z[5] += bottom;
-			square_end_2 = true;
-		}
-
-		if (!html_redraw_border_plot(RIGHT, z, col,
-				box->border[RIGHT].style,
-				right, square_end_1 && square_end_2,
-				clip, ctx))
-			return false;
-	}
-
-	/* Top */
-	square_end_1 = (left == 0);
-	square_end_2 = (right == 0);
-	if (top != 0 && nscss_color_is_transparent(
-			box->border[TOP].c) == false) {
-		col = nscss_color_to_ns(box->border[TOP].c);
-
-		z[0] = p[2];	z[1] = p[3];
-		z[2] = p[0];	z[3] = p[1];
-		z[4] = p[6];	z[5] = p[1];
-		z[6] = p[4];	z[7] = p[3];
-
-		if (first && box->border[TOP].style ==
-				CSS_BORDER_STYLE_SOLID &&
-				box->border[TOP].c ==
-				box->border[LEFT].c) {
-			/* don't bother overlapping left corner if
-			 * it's the same colour anyway */
-			z[2] += left;
-			square_end_1 = true;
-		}
-
-		if (last && box->border[TOP].style ==
-				CSS_BORDER_STYLE_SOLID &&
-				box->border[TOP].c ==
-				box->border[RIGHT].c) {
-			/* don't bother overlapping right corner if
-			 * it's the same colour anyway */
-			z[4] -= right;
-			square_end_2 = true;
-		}
-
-		if (!html_redraw_border_plot(TOP, z, col,
-				box->border[TOP].style, 
-				top, square_end_1 && square_end_2,
-				clip, ctx))
-			return false;
-	}
-
-	/* Bottom */
-	square_end_1 = (left == 0);
-	square_end_2 = (right == 0);
-	if (bottom != 0 && nscss_color_is_transparent(
-			box->border[BOTTOM].c) == false) {
-		col = nscss_color_to_ns(box->border[BOTTOM].c);
-
-		z[0] = p[4];	z[1] = p[5];
-		z[2] = p[6];	z[3] = p[7];
-		z[4] = p[0];	z[5] = p[7];
-		z[6] = p[2];	z[7] = p[5];
-
-		if (first && box->border[BOTTOM].style ==
-				CSS_BORDER_STYLE_SOLID &&
-				box->border[BOTTOM].c ==
-				box->border[LEFT].c) {
-			/* don't bother overlapping left corner if
-			 * it's the same colour anyway */
-			z[4] += left;
-			square_end_1 = true;
-		}
-
-		if (last && box->border[BOTTOM].style ==
-				CSS_BORDER_STYLE_SOLID &&
-				box->border[BOTTOM].c ==
-				box->border[RIGHT].c) {
-			/* don't bother overlapping right corner if
-			 * it's the same colour anyway */
-			z[2] -= right;
-			square_end_2 = true;
-		}
-
-		if (!html_redraw_border_plot(BOTTOM, z, col,
-				box->border[BOTTOM].style, 
-				bottom, square_end_1 && square_end_2,
-				clip, ctx))
-			return false;
-	}
-
 	return true;
 }
 
@@ -1152,42 +360,85 @@ static bool html_redraw_inline_borders(struct box *box, struct rect b,
 static bool html_redraw_checkbox(int x, int y, int width, int height,
 		bool selected, const struct redraw_context *ctx)
 {
-	const struct plotter_table *plot = ctx->plot;
-	double z = width * 0.15;
-	if (z == 0)
-		z = 1;
+	double z;
+	nserror res;
+	struct rect rect;
 
-	if (!(plot->rectangle(x, y, x + width, y + height,
-			plot_style_fill_wbasec) &&
-		plot->line(x, y, x + width, y, plot_style_stroke_darkwbasec) &&
-		plot->line(x, y, x, y + height, plot_style_stroke_darkwbasec) &&
-		plot->line(x + width, y, x + width, y + height,
-				plot_style_stroke_lightwbasec) &&
-		plot->line(x, y + height, x + width, y + height,
-				plot_style_stroke_lightwbasec)))
+	z = width * 0.15;
+	if (z == 0) {
+		z = 1;
+	}
+
+	rect.x0 = x;
+	rect.y0 = y ;
+	rect.x1 = x + width;
+	rect.y1 = y + height;
+	res = ctx->plot->rectangle(ctx, plot_style_fill_wbasec, &rect);
+	if (res != NSERROR_OK) {
 		return false;
+	}
+
+	/* dark line across top */
+	rect.y1 = y;
+	res = ctx->plot->line(ctx, plot_style_stroke_darkwbasec, &rect);
+	if (res != NSERROR_OK) {
+		return false;
+	}
+
+	/* dark line across left */
+	rect.x1 = x;
+	rect.y1 = y + height;
+	res = ctx->plot->line(ctx, plot_style_stroke_darkwbasec, &rect);
+	if (res != NSERROR_OK) {
+		return false;
+	}
+
+	/* light line across right */
+	rect.x0 = x + width;
+	rect.x1 = x + width;
+	res = ctx->plot->line(ctx, plot_style_stroke_lightwbasec, &rect);
+	if (res != NSERROR_OK) {
+		return false;
+	}
+
+        /* light line across bottom */
+	rect.x0 = x;
+	rect.y0 = y + height;
+	res = ctx->plot->line(ctx, plot_style_stroke_lightwbasec, &rect);
+	if (res != NSERROR_OK) {
+		return false;
+	}
 
 	if (selected) {
 		if (width < 12 || height < 12) {
 			/* render a solid box instead of a tick */
-			if (!plot->rectangle(x + z + z, y + z + z,
-					x + width - z, y + height - z,
-					plot_style_fill_wblobc))
+			rect.x0 = x + z + z;
+			rect.y0 = y + z + z;
+			rect.x1 = x + width - z;
+			rect.y1 = y + height - z;
+			res = ctx->plot->rectangle(ctx, plot_style_fill_wblobc, &rect);
+			if (res != NSERROR_OK) {
 				return false;
+			}
 		} else {
 			/* render a tick, as it'll fit comfortably */
-			if (!(plot->line(x + width - z,
-					y + z,
-					x + (z * 3),
-					y + height - z,
-					plot_style_stroke_wblobc) &&
-
-				plot->line(x + (z * 3),
-					y + height - z,
-					x + z + z,
-					y + (height / 2),
-					plot_style_stroke_wblobc)))
+			rect.x0 = x + width - z;
+			rect.y0 = y + z;
+			rect.x1 = x + (z * 3);
+			rect.y1 = y + height - z;
+			res = ctx->plot->line(ctx, plot_style_stroke_wblobc, &rect);
+			if (res != NSERROR_OK) {
 				return false;
+			}
+
+			rect.x0 = x + (z * 3);
+			rect.y0 = y + height - z;
+			rect.x1 = x + z + z;
+			rect.y1 = y + (height / 2);
+			res = ctx->plot->line(ctx, plot_style_stroke_wblobc, &rect);
+			if (res != NSERROR_OK) {
+				return false;
+			}
 		}
 	}
 	return true;
@@ -1208,40 +459,52 @@ static bool html_redraw_checkbox(int x, int y, int width, int height,
 static bool html_redraw_radio(int x, int y, int width, int height,
 		bool selected, const struct redraw_context *ctx)
 {
-	const struct plotter_table *plot = ctx->plot;
+	nserror res;
 
 	/* plot background of radio button */
-	if (!plot->disc(x + width * 0.5,
-			y + height * 0.5,
-			width * 0.5 - 1,
-			plot_style_fill_wbasec))
+	res = ctx->plot->disc(ctx,
+			      plot_style_fill_wbasec,
+			      x + width * 0.5,
+			      y + height * 0.5,
+			      width * 0.5 - 1);
+	if (res != NSERROR_OK) {
 		return false;
+	}
 
 	/* plot dark arc */
-	if (!plot->arc(x + width * 0.5,
-			y + height * 0.5,
-			width * 0.5 - 1,
-			45,
-			225,
-			plot_style_fill_darkwbasec))
+	res = ctx->plot->arc(ctx,
+			     plot_style_fill_darkwbasec,
+			     x + width * 0.5,
+			     y + height * 0.5,
+			     width * 0.5 - 1,
+			     45,
+			     225);
+	if (res != NSERROR_OK) {
 		return false;
+	}
 
 	/* plot light arc */
-	if (!plot->arc(x + width * 0.5,
-			y + height * 0.5,
-			width * 0.5 - 1,
-			225,
-			45,
-			plot_style_fill_lightwbasec))
+	res = ctx->plot->arc(ctx,
+			     plot_style_fill_lightwbasec,
+			     x + width * 0.5,
+			     y + height * 0.5,
+			     width * 0.5 - 1,
+			     225,
+			     45);
+	if (res != NSERROR_OK) {
 		return false;
+	}
 
 	if (selected) {
 		/* plot selection blob */
-		if (!plot->disc(x + width * 0.5,
-				y + height * 0.5,
-				width * 0.3 - 1,
-				plot_style_fill_wblobc))
+		res = ctx->plot->disc(ctx,
+				      plot_style_fill_wblobc,
+				      x + width * 0.5,
+				      y + height * 0.5,
+				      width * 0.3 - 1);
+		if (res != NSERROR_OK) {
 			return false;
+		}
 	}
 
 	return true;
@@ -1275,10 +538,11 @@ static bool html_redraw_file(int x, int y, int width, int height,
 	font_plot_style_from_css(box->style, &fstyle);
 	fstyle.background = background_colour;
 
-	if (box->gadget->value)
+	if (box->gadget->value) {
 		text = box->gadget->value;
-	else
+	} else {
 		text = messages_get("Form_Drop");
+	}
 	length = strlen(text);
 
 	res = guit->layout->width(&fstyle, text, length, &text_width);
@@ -1292,7 +556,11 @@ static bool html_redraw_file(int x, int y, int width, int height,
 		x = x + 4;
 	}
 
-	return ctx->plot->text(x, y + height * 0.75, text, length, &fstyle);
+	res = ctx->plot->text(ctx, &fstyle, x, y + height * 0.75, text, length);
+	if (res != NSERROR_OK) {
+		return false;
+	}
+	return true;
 }
 
 
@@ -1318,7 +586,6 @@ static bool html_redraw_background(int x, int y, struct box *box, float scale,
 		const struct rect *clip, colour *background_colour,
 		struct box *background, const struct redraw_context *ctx)
 {
-	const struct plotter_table *plot = ctx->plot;
 	bool repeat_x = false;
 	bool repeat_y = false;
 	bool plot_colour = true;
@@ -1336,6 +603,7 @@ static bool html_redraw_background(int x, int y, struct box *box, float scale,
 		.fill_type = PLOT_OP_TYPE_SOLID,
 		.fill_colour = *background_colour,
 	};
+	nserror res;
 
 	if (ctx->background_images == false)
 		return true;
@@ -1465,10 +733,12 @@ static bool html_redraw_background(int x, int y, struct box *box, float scale,
 		if (nscss_color_is_transparent(bgcol) == false) {
 			*background_colour = nscss_color_to_ns(bgcol);
 			pstyle_fill_bg.fill_colour = *background_colour;
-			if (plot_colour)
-				if (!plot->rectangle(r.x0, r.y0, r.x1, r.y1,
-						&pstyle_fill_bg))
+			if (plot_colour) {
+				res = ctx->plot->rectangle(ctx, &pstyle_fill_bg, &r);
+				if (res != NSERROR_OK) {
 					return false;
+				}
+			}
 		}
 		/* and plot the image */
 		if (plot_content) {
@@ -1492,8 +762,10 @@ static bool html_redraw_background(int x, int y, struct box *box, float scale,
 			if ((r.x0 < r.x1) && (r.y0 < r.y1)) {
 				struct content_redraw_data bg_data;
 
-				if (!plot->clip(&r))
+				res = ctx->plot->clip(ctx, &r);
+				if (res != NSERROR_OK) {
 					return false;
+				}
 
 				bg_data.x = x;
 				bg_data.y = y;
@@ -1539,7 +811,6 @@ static bool html_redraw_inline_background(int x, int y, struct box *box,
 		bool first, bool last, colour *background_colour,
 		const struct redraw_context *ctx)
 {
-	const struct plotter_table *plot = ctx->plot;
 	struct rect r = *clip;
 	bool repeat_x = false;
 	bool repeat_y = false;
@@ -1552,6 +823,7 @@ static bool html_redraw_inline_background(int x, int y, struct box *box,
 		.fill_type = PLOT_OP_TYPE_SOLID,
 		.fill_colour = *background_colour,
 	};
+	nserror res;
 
 	plot_content = (box->background != NULL);
 
@@ -1618,10 +890,12 @@ static bool html_redraw_inline_background(int x, int y, struct box *box,
 		*background_colour = nscss_color_to_ns(bgcol);
 		pstyle_fill_bg.fill_colour = *background_colour;
 
-		if (plot_colour)
-			if (!plot->rectangle(r.x0, r.y0, r.x1, r.y1,
-					&pstyle_fill_bg))
+		if (plot_colour) {
+			res = ctx->plot->rectangle(ctx, &pstyle_fill_bg, &r);
+			if (res != NSERROR_OK) {
 				return false;
+			}
+		}
 	}
 	/* and plot the image */
 	if (plot_content) {
@@ -1644,8 +918,10 @@ static bool html_redraw_inline_background(int x, int y, struct box *box,
 		if ((r.x0 < r.x1) && (r.y0 < r.y1)) {
 			struct content_redraw_data bg_data;
 
-			if (!plot->clip(&r))
+			res = ctx->plot->clip(ctx, &r);
+			if (res != NSERROR_OK) {
 				return false;
+			}
 
 			bg_data.x = x;
 			bg_data.y = y;
@@ -1678,28 +954,36 @@ static bool html_redraw_inline_background(int x, int y, struct box *box,
  * \return true if successful, false otherwise
  */
 
-static bool html_redraw_text_decoration_inline(struct box *box, int x, int y,
-		float scale, colour colour, float ratio,
-		const struct redraw_context *ctx)
+static bool
+html_redraw_text_decoration_inline(struct box *box,
+				   int x, int y,
+				   float scale,
+				   colour colour,
+				   float ratio,
+				   const struct redraw_context *ctx)
 {
-	const struct plotter_table *plot = ctx->plot;
 	struct box *c;
 	plot_style_t plot_style_box = {
 		.stroke_type = PLOT_OP_TYPE_SOLID,
 		.stroke_colour = colour,
 	};
+	nserror res;
+	struct rect rect;
 
 	for (c = box->next;
-			c && c != box->inline_end;
-			c = c->next) {
-		if (c->type != BOX_TEXT)
+	     c && c != box->inline_end;
+	     c = c->next) {
+		if (c->type != BOX_TEXT) {
 			continue;
-		if (!plot->line((x + c->x) * scale,
-				(y + c->y + c->height * ratio) * scale,
-				(x + c->x + c->width) * scale,
-				(y + c->y + c->height * ratio) * scale,
-				&plot_style_box))
+		}
+		rect.x0 = (x + c->x) * scale;
+		rect.y0 = (y + c->y + c->height * ratio) * scale;
+		rect.x1 = (x + c->x + c->width) * scale;
+		rect.y1 = (y + c->y + c->height * ratio) * scale;
+		res = ctx->plot->line(ctx, &plot_style_box, &rect);
+		if (res != NSERROR_OK) {
 			return false;
+		}
 	}
 	return true;
 }
@@ -1718,28 +1002,34 @@ static bool html_redraw_text_decoration_inline(struct box *box, int x, int y,
  * \return true if successful, false otherwise
  */
 
-static bool html_redraw_text_decoration_block(struct box *box, int x, int y,
-		float scale, colour colour, float ratio,
-		const struct redraw_context *ctx)
+static bool
+html_redraw_text_decoration_block(struct box *box,
+				  int x, int y,
+				  float scale,
+				  colour colour,
+				  float ratio,
+				  const struct redraw_context *ctx)
 {
-	const struct plotter_table *plot = ctx->plot;
 	struct box *c;
 	plot_style_t plot_style_box = {
 		.stroke_type = PLOT_OP_TYPE_SOLID,
 		.stroke_colour = colour,
 	};
+	nserror res;
+	struct rect rect;
 
 	/* draw through text descendants */
 	for (c = box->children; c; c = c->next) {
 		if (c->type == BOX_TEXT) {
-			if (!plot->line((x + c->x) * scale,
-					(y + c->y + c->height * ratio) * scale,
-					(x + c->x + c->width) * scale,
-					(y + c->y + c->height * ratio) * scale,
-					&plot_style_box))
+			rect.x0 = (x + c->x) * scale;
+			rect.y0 = (y + c->y + c->height * ratio) * scale;
+			rect.x1 = (x + c->x + c->width) * scale;
+			rect.y1 = (y + c->y + c->height * ratio) * scale;
+			res = ctx->plot->line(ctx, &plot_style_box, &rect);
+			if (res != NSERROR_OK) {
 				return false;
-		} else if (c->type == BOX_INLINE_CONTAINER ||
-				c->type == BOX_BLOCK) {
+			}
+		} else if ((c->type == BOX_INLINE_CONTAINER) || (c->type == BOX_BLOCK)) {
 			if (!html_redraw_text_decoration_block(c,
 					x + c->x, y + c->y,
 					scale, colour, ratio, ctx))
@@ -1924,6 +1214,7 @@ bool html_redraw_box(const html_content *html, struct box *box,
 	int padding_left, padding_top, padding_width, padding_height;
 	int border_left, border_top, border_right, border_bottom;
 	struct rect r;
+	struct rect rect;
 	int x_scrolled, y_scrolled;
 	struct box *bg_box = NULL;
 	bool has_x_scroll, has_y_scroll;
@@ -2069,17 +1360,19 @@ bool html_redraw_box(const html_content *html, struct box *box,
 	/* if visibility is hidden render children only */
 	if (box->style && css_computed_visibility(box->style) == 
 			CSS_VISIBILITY_HIDDEN) {
-		if ((plot->group_start) && (!plot->group_start("hidden box")))
+		if ((ctx->plot->group_start) &&
+		    (ctx->plot->group_start(ctx, "hidden box") != NSERROR_OK))
 			return false;
 		if (!html_redraw_box_children(html, box, x_parent, y_parent,
 				&r, scale, current_background_color, ctx))
 			return false;
-		return ((!plot->group_end) || (plot->group_end()));
+		return ((!ctx->plot->group_end) || (ctx->plot->group_end(ctx) == NSERROR_OK));
 	}
 
-	if ((plot->group_start) && (!plot->group_start("vis box")))
+	if ((ctx->plot->group_start) &&
+	    (ctx->plot->group_start(ctx,"vis box") != NSERROR_OK)) {
 		return false;
-
+	}
 
 	if (box->style != NULL &&
 			css_computed_position(box->style) ==
@@ -2115,9 +1408,10 @@ bool html_redraw_box(const html_content *html, struct box *box,
 		/* Nothing to do for invalid rectangles */
 		if (r.x0 >= r.x1 || r.y0 >= r.y1)
 			/* not an error */
-			return ((!plot->group_end) || (plot->group_end()));
+			return ((!ctx->plot->group_end) ||
+				(ctx->plot->group_end(ctx) == NSERROR_OK));
 		/* clip to it */
-		if (!plot->clip(&r))
+		if (ctx->plot->clip(ctx, &r) != NSERROR_OK)
 			return false;
 
 	} else if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
@@ -2130,14 +1424,15 @@ bool html_redraw_box(const html_content *html, struct box *box,
 		/* no point trying to draw 0-width/height boxes */
 		if (r.x0 == r.x1 || r.y0 == r.y1)
 			/* not an error */
-			return ((!plot->group_end) || (plot->group_end()));
+			return ((!ctx->plot->group_end) ||
+				(ctx->plot->group_end(ctx) == NSERROR_OK));
 		/* clip to it */
-		if (!plot->clip(&r))
+		if (ctx->plot->clip(ctx, &r) != NSERROR_OK)
 			return false;
 	} else {
 		/* clip box is fine, clip to it */
 		r = *clip;
-		if (!plot->clip(&r))
+		if (ctx->plot->clip(ctx, &r) != NSERROR_OK)
 			return false;
 	}
 
@@ -2194,22 +1489,22 @@ bool html_redraw_box(const html_content *html, struct box *box,
 					&current_background_color, bg_box, ctx))
 				return false;
 			/* restore previous graphics window */
-			if (!plot->clip(&r))
+			if (ctx->plot->clip(ctx, &r) != NSERROR_OK)
 				return false;
 		}
 	}
 
 	/* borders for block level content and replaced inlines */
-	if (box->style && box->type != BOX_TEXT &&
-			box->type != BOX_INLINE_END &&
-			(box->type != BOX_INLINE || box->object ||
-			box->flags & IFRAME || box->flags & REPLACE_DIM ||
-			(box->gadget != NULL &&
-			(box->gadget->type == GADGET_TEXTAREA ||
-			box->gadget->type == GADGET_TEXTBOX ||
-			box->gadget->type == GADGET_PASSWORD))) &&
-			(border_top || border_right ||
-			 border_bottom || border_left)) {
+	if (box->style &&
+	    box->type != BOX_TEXT &&
+	    box->type != BOX_INLINE_END &&
+	    (box->type != BOX_INLINE || box->object ||
+	     box->flags & IFRAME || box->flags & REPLACE_DIM ||
+	     (box->gadget != NULL &&
+	      (box->gadget->type == GADGET_TEXTAREA ||
+	       box->gadget->type == GADGET_TEXTBOX ||
+	       box->gadget->type == GADGET_PASSWORD))) &&
+	    (border_top || border_right || border_bottom || border_left)) {
 		if (!html_redraw_borders(box, x_parent, y_parent,
 				padding_width, padding_height, &r,
 				scale, ctx))
@@ -2273,7 +1568,7 @@ bool html_redraw_box(const html_content *html, struct box *box,
 						&current_background_color, ctx))
 					return false;
 				/* restore previous graphics window */
-				if (!plot->clip(&r))
+				if (ctx->plot->clip(ctx, &r) != NSERROR_OK)
 					return false;
 				if (!html_redraw_inline_borders(box, b, &r,
 						scale, first, false, ctx))
@@ -2305,7 +1600,7 @@ bool html_redraw_box(const html_content *html, struct box *box,
 				first, true, &current_background_color, ctx))
 			return false;
 		/* restore previous graphics window */
-		if (!plot->clip(&r))
+		if (ctx->plot->clip(ctx, &r) != NSERROR_OK)
 			return false;
 		if (!html_redraw_inline_borders(box, b, &r, scale, first, true,
 				ctx))
@@ -2330,26 +1625,27 @@ bool html_redraw_box(const html_content *html, struct box *box,
 			margin_bottom = box->margin[BOTTOM] * scale;
 		}
 		/* Content edge -- blue */
-		if (!plot->rectangle(x + padding_left,
-				y + padding_top,
-				x + padding_left + width,
-				y + padding_top + height,
-				plot_style_content_edge))
+		rect.x0 = x + padding_left;
+		rect.y0 = y + padding_top;
+		rect.x1 = x + padding_left + width;
+		rect.y1 = y + padding_top + height;
+		if (ctx->plot->rectangle(ctx, plot_style_content_edge, &rect) != NSERROR_OK)
 			return false;
+
 		/* Padding edge -- red */
-		if (!plot->rectangle(x, y,
-				x + padding_width, y + padding_height,
-				plot_style_padding_edge))
+		rect.x0 = x;
+		rect.y0 = y;
+		rect.x1 = x + padding_width;
+		rect.y1 = y + padding_height;
+		if (ctx->plot->rectangle(ctx, plot_style_padding_edge, &rect) != NSERROR_OK)
 			return false;
+
 		/* Margin edge -- yellow */
-		if (!plot->rectangle(
-				x - border_left - margin_left,
-				y - border_top - margin_top,
-				x + padding_width + border_right +
-						margin_right,
-				y + padding_height + border_bottom +
-						margin_bottom,
-				plot_style_margin_edge))
+		rect.x0 = x - border_left - margin_left;
+		rect.y0 = y - border_top - margin_top;
+		rect.x1 = x + padding_width + border_right + margin_right;
+		rect.y1 = y + padding_height + border_bottom + margin_bottom;
+		if (ctx->plot->rectangle(ctx, plot_style_margin_edge, &rect) != NSERROR_OK)
 			return false;
 	}
 
@@ -2368,8 +1664,10 @@ bool html_redraw_box(const html_content *html, struct box *box,
 			if (r.y0 < clip->y0) r.y0 = clip->y0;
 			if (clip->x1 < r.x1) r.x1 = clip->x1;
 			if (clip->y1 < r.y1) r.y1 = clip->y1;
-			if (r.x1 <= r.x0 || r.y1 <= r.y0)
-				return (!plot->group_end || plot->group_end());
+			if (r.x1 <= r.x0 || r.y1 <= r.y0) {
+				return (!ctx->plot->group_end ||
+					(ctx->plot->group_end(ctx) == NSERROR_OK));
+			}
 			need_clip = true;
 
 		} else if (overflow_x != CSS_OVERFLOW_VISIBLE) {
@@ -2379,8 +1677,10 @@ bool html_redraw_box(const html_content *html, struct box *box,
 			r.y1 = clip->y1;
 			if (r.x0 < clip->x0) r.x0 = clip->x0;
 			if (clip->x1 < r.x1) r.x1 = clip->x1;
-			if (r.x1 <= r.x0)
-				return (!plot->group_end || plot->group_end());
+			if (r.x1 <= r.x0) {
+				return (!ctx->plot->group_end ||
+					(ctx->plot->group_end(ctx) == NSERROR_OK));
+			}
 			need_clip = true;
 
 		} else if (overflow_y != CSS_OVERFLOW_VISIBLE) {
@@ -2390,26 +1690,30 @@ bool html_redraw_box(const html_content *html, struct box *box,
 			r.y1 = y + padding_height;
 			if (r.y0 < clip->y0) r.y0 = clip->y0;
 			if (clip->y1 < r.y1) r.y1 = clip->y1;
-			if (r.y1 <= r.y0)
-				return (!plot->group_end || plot->group_end());
+			if (r.y1 <= r.y0) {
+				return (!ctx->plot->group_end ||
+					(ctx->plot->group_end(ctx) == NSERROR_OK));
+			}
 			need_clip = true;
 		}
 
-		if (need_clip && (box->type == BOX_BLOCK ||
-				box->type == BOX_INLINE_BLOCK ||
-				box->type == BOX_TABLE_CELL || box->object)) {
-			if (!plot->clip(&r))
+		if (need_clip &&
+		    (box->type == BOX_BLOCK ||
+		     box->type == BOX_INLINE_BLOCK ||
+		     box->type == BOX_TABLE_CELL || box->object)) {
+			if (ctx->plot->clip(ctx, &r) != NSERROR_OK)
 				return false;
 		}
 	}
 
 	/* text decoration */
-	if (box->type != BOX_TEXT && box->style &&
-			css_computed_text_decoration(box->style) !=
-			CSS_TEXT_DECORATION_NONE)
+	if ((box->type != BOX_TEXT) &&
+	    box->style &&
+	    css_computed_text_decoration(box->style) !=	CSS_TEXT_DECORATION_NONE) {
 		if (!html_redraw_text_decoration(box, x_parent, y_parent,
 				scale, current_background_color, ctx))
 			return false;
+	}
 
 	if (box->object && width != 0 && height != 0) {
 		struct content_redraw_data obj_data;
@@ -2439,11 +1743,12 @@ bool html_redraw_box(const html_content *html, struct box *box,
 			int obj_x = x + padding_left;
 			nserror res;
 
-			if (!plot->rectangle(x + padding_left,
-					y + padding_top,
-					x + padding_left + width - 1,
-					y + padding_top + height - 1,
-					     plot_style_broken_object)) {
+			rect.x0 = x + padding_left;
+			rect.y0 = y + padding_top;
+			rect.x1 = x + padding_left + width - 1;
+			rect.y1 = y + padding_top + height - 1;
+			res = ctx->plot->rectangle(ctx, plot_style_broken_object, &rect);
+			if (res != NSERROR_OK) {
 				return false;
 			}
 
@@ -2457,10 +1762,10 @@ bool html_redraw_box(const html_content *html, struct box *box,
 				obj_x += width / 2 - obj_width / 2;
 			}
 
-			if (!plot->text(obj_x, y + padding_top + (int)
-						(height * 0.75),
-					obj, sizeof(obj) - 1,
-					plot_fstyle_broken_object))
+			if (ctx->plot->text(ctx,
+					    plot_fstyle_broken_object,
+					    obj_x, y + padding_top + (int)(height * 0.75),
+					    obj, sizeof(obj) - 1) != NSERROR_OK)
 				return false;
 		}
 			
@@ -2507,11 +1812,11 @@ bool html_redraw_box(const html_content *html, struct box *box,
 
 	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 			box->type == BOX_TABLE_CELL || box->type == BOX_INLINE)
-		if (!plot->clip(clip))
+		if (ctx->plot->clip(ctx, clip) != NSERROR_OK)
 			return false;
 
 	/* list marker */
-	if (box->list_marker)
+	if (box->list_marker) {
 		if (!html_redraw_box(html, box->list_marker,
 				x_parent + box->x -
 				scrollbar_get_offset(box->scroll_x),
@@ -2519,6 +1824,7 @@ bool html_redraw_box(const html_content *html, struct box *box,
 				scrollbar_get_offset(box->scroll_y),
 				clip, scale, current_background_color, ctx))
 			return false;
+	}
 
 	/* scrollbars */
 	if (((box->style && box->type != BOX_BR &&
@@ -2552,11 +1858,12 @@ bool html_redraw_box(const html_content *html, struct box *box,
 	}
 
 	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
-			box->type == BOX_TABLE_CELL || box->type == BOX_INLINE)
-		if (!plot->clip(clip))
+	    box->type == BOX_TABLE_CELL || box->type == BOX_INLINE) {
+		if (ctx->plot->clip(ctx, clip) != NSERROR_OK)
 			return false;
+	}
 
-	return ((!plot->group_end) || (plot->group_end()));
+	return ((!plot->group_end) || (ctx->plot->group_end(ctx) == NSERROR_OK));
 }
 
 /**
@@ -2602,14 +1909,12 @@ bool html_redraw(struct content *c, struct content_redraw_data *data,
 	
 	if (!select_only) {
 		/* clear to background colour */
-		result = ctx->plot->clip(clip);
+		result = (ctx->plot->clip(ctx, clip) == NSERROR_OK);
 	
 		if (html->background_colour != NS_TRANSPARENT)
 			pstyle_fill_bg.fill_colour = html->background_colour;
-	
-		result &= ctx->plot->rectangle(clip->x0, clip->y0,
-				clip->x1, clip->y1,
-				&pstyle_fill_bg);
+
+		result &= (ctx->plot->rectangle(ctx, &pstyle_fill_bg, clip) == NSERROR_OK);
 	
 		result &= html_redraw_box(html, box, data->x, data->y, clip,
 				data->scale, pstyle_fill_bg.fill_colour, ctx);

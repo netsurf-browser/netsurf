@@ -98,6 +98,11 @@ fb_redraw_text(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 	int padding;
 	int scroll = 0;
 	bool caret = false;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.background_images = true,
+		.plot = &fb_plotters
+	};
 
 	fb_text_font_style(widget, &fh, &padding, &font_style);
 
@@ -142,8 +147,11 @@ fb_redraw_text(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 		}
 
 		/* Call the fb text plotting, baseline is 3/4 down the font */
-		fb_plotters.text(x, y, widget->u.text.text,
-				widget->u.text.len, &font_style);
+		ctx.plot->text(&ctx,
+			       &font_style,
+			       x, y,
+			       widget->u.text.text,
+			       widget->u.text.len);
 	}
 
 	if (caret) {
@@ -209,6 +217,11 @@ fb_redraw_text_button(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 	int fh;
 	int border;
 	fbtk_widget_t *root = fbtk_get_root_widget(widget);
+	struct redraw_context ctx = {
+		.interactive = true,
+		.background_images = true,
+		.plot = &fb_plotters
+	};
 
 	fb_text_font_style(widget, &fh, &border, &font_style);
 
@@ -256,11 +269,12 @@ fb_redraw_text_button(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 
 	if (widget->u.text.text != NULL) {
 		/* Call the fb text plotting, baseline is 3/4 down the font */
-		fb_plotters.text(bbox.x0 + border,
-				bbox.y0 + ((fh * 3) / 4) + border,
-				widget->u.text.text,
-				widget->u.text.len,
-				&font_style);
+		ctx.plot->text(&ctx,
+			       &font_style,
+			       bbox.x0 + border,
+			       bbox.y0 + ((fh * 3) / 4) + border,
+			       widget->u.text.text,
+			       widget->u.text.len);
 	}
 
 	nsfb_update(root->u.root.fb, &bbox);

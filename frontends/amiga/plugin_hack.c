@@ -152,16 +152,27 @@ bool amiga_plugin_hack_redraw(struct content *c,
 		.stroke_colour = 0x000000,
 		.stroke_width = 1,
 	};
+	struct rect rect;
+	nserror res;
 
 	LOG("amiga_plugin_hack_redraw");
 
-	ctx->plot->rectangle(data->x, data->y, data->x + data->width,
-			data->y + data->height, &pstyle);
+	rect.x0 = data->x;
+	rect.y0 = data->y;
+	rect.x1 = data->x + data->width;
+	rect.y1 = data->y + data->height;
 
-	return ctx->plot->text(data->x, data->y+20,
-			lwc_string_data(content__get_mime_type(c)),
-			lwc_string_length(content__get_mime_type(c)),
-			plot_style_font);
+	ctx->plot->rectangle(ctx, &pstyle, &rect);
+
+	res = ctx->plot->text(ctx,
+			      plot_style_font,
+			      data->x, data->y+20,
+			      lwc_string_data(content__get_mime_type(c)),
+			      lwc_string_length(content__get_mime_type(c)));
+	if (res != NSERROR_OK) {
+		return false;
+	}
+	return true;
 }
 
 /**

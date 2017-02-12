@@ -45,38 +45,31 @@
 void vq_scrninfo(VdiHdl handle, short *work_out);
 
 struct s_view {
-    short x;                /* drawing (screen) offset x                */
-    short y;                /* drawing (screen) offset y                */
-    short w;                /* width of buffer, not in sync with vis_w  */
-    short h;                /* height of buffer, not in sync with vis_w */
-    short vis_x;            /* visible rectangle of the screen buffer   */
-    short vis_y;            /* coords are relative to plot location     */
-    short vis_w;            /* clipped to screen dimensions             */
-    short vis_h;            /* visible width                            */
-    struct rect abs_clipping;   /* The toplevel clipping rectangle      */
-    struct rect clipping;   /* actual clipping rectangle                */
+    short x;                /**< drawing (screen) offset x                */
+    short y;                /**< drawing (screen) offset y                */
+    short w;                /**< width of buffer, not in sync with vis_w  */
+    short h;                /**< height of buffer, not in sync with vis_w */
+    short vis_x;            /**< visible rectangle of the screen buffer   */
+    short vis_y;            /**< coords are relative to plot location     */
+    short vis_w;            /**< clipped to screen dimensions             */
+    short vis_h;            /**< visible width                            */
+    struct rect abs_clipping; /**< The toplevel clipping rectangle        */
+    struct rect clipping;   /**< actual clipping rectangle                */
     float scale;
 };
 
-/*
- * Capture the screen at x,y location
- * param self instance
- * param x absolute screen coords
- * param y absolute screen coords
- * param w width
- * param h height
+/**
+ * Garbage collection of the snapshot routine
  *
- * This creates an snapshot in RGBA format (NetSurf's native format)
- *
+ * this should be called after you are done with the data returned by
+ *  snapshot_create don't access the screenshot after you called this
+ *  function
  */
-static struct bitmap * snapshot_create(int x, int y, int w, int h);
-
-/* Garbage collection of the snapshot routine */
-/* this should be called after you are done with the data returned by snapshot_create */
-/* don't access the screenshot after you called this function */
 static void snapshot_suspend(void);
 
-/* destroy memory used by screenshot */
+/**
+ * destroy memory used by screenshot
+ */
 static void snapshot_destroy(void);
 
 #ifdef WITH_8BPP_SUPPORT
@@ -86,42 +79,78 @@ static char rgb_lookup[256][4];
 short web_std_colors[6] = {0, 51, 102, 153, 204, 255};
 
 unsigned short vdi_web_pal[216][3] = {
-    {0x000,0x000,0x000}, {0x0c8,0x000,0x000}, {0x190,0x000,0x000}, {0x258,0x000,0x000}, {0x320,0x000,0x000}, {0x3e8,0x000,0x000},
-    {0x000,0x0c8,0x000}, {0x0c8,0x0c8,0x000}, {0x190,0x0c8,0x000}, {0x258,0x0c8,0x000}, {0x320,0x0c8,0x000}, {0x3e8,0x0c8,0x000},
-    {0x000,0x190,0x000}, {0x0c8,0x190,0x000}, {0x190,0x190,0x000}, {0x258,0x190,0x000}, {0x320,0x190,0x000}, {0x3e8,0x190,0x000},
-    {0x000,0x258,0x000}, {0x0c8,0x258,0x000}, {0x190,0x258,0x000}, {0x258,0x258,0x000}, {0x320,0x258,0x000}, {0x3e8,0x258,0x000},
-    {0x000,0x320,0x000}, {0x0c8,0x320,0x000}, {0x190,0x320,0x000}, {0x258,0x320,0x000}, {0x320,0x320,0x000}, {0x3e8,0x320,0x000},
-    {0x000,0x3e8,0x000}, {0x0c8,0x3e8,0x000}, {0x190,0x3e8,0x000}, {0x258,0x3e8,0x000}, {0x320,0x3e8,0x000}, {0x3e8,0x3e8,0x000},
-    {0x000,0x000,0x0c8}, {0x0c8,0x000,0x0c8}, {0x190,0x000,0x0c8}, {0x258,0x000,0x0c8}, {0x320,0x000,0x0c8}, {0x3e8,0x000,0x0c8},
-    {0x000,0x0c8,0x0c8}, {0x0c8,0x0c8,0x0c8}, {0x190,0x0c8,0x0c8}, {0x258,0x0c8,0x0c8}, {0x320,0x0c8,0x0c8}, {0x3e8,0x0c8,0x0c8},
-    {0x000,0x190,0x0c8}, {0x0c8,0x190,0x0c8}, {0x190,0x190,0x0c8}, {0x258,0x190,0x0c8}, {0x320,0x190,0x0c8}, {0x3e8,0x190,0x0c8},
-    {0x000,0x258,0x0c8}, {0x0c8,0x258,0x0c8}, {0x190,0x258,0x0c8}, {0x258,0x258,0x0c8}, {0x320,0x258,0x0c8}, {0x3e8,0x258,0x0c8},
-    {0x000,0x320,0x0c8}, {0x0c8,0x320,0x0c8}, {0x190,0x320,0x0c8}, {0x258,0x320,0x0c8}, {0x320,0x320,0x0c8}, {0x3e8,0x320,0x0c8},
-    {0x000,0x3e8,0x0c8}, {0x0c8,0x3e8,0x0c8}, {0x190,0x3e8,0x0c8}, {0x258,0x3e8,0x0c8}, {0x320,0x3e8,0x0c8}, {0x3e8,0x3e8,0x0c8},
-    {0x000,0x000,0x190}, {0x0c8,0x000,0x190}, {0x190,0x000,0x190}, {0x258,0x000,0x190}, {0x320,0x000,0x190}, {0x3e8,0x000,0x190},
-    {0x000,0x0c8,0x190}, {0x0c8,0x0c8,0x190}, {0x190,0x0c8,0x190}, {0x258,0x0c8,0x190}, {0x320,0x0c8,0x190}, {0x3e8,0x0c8,0x190},
-    {0x000,0x190,0x190}, {0x0c8,0x190,0x190}, {0x190,0x190,0x190}, {0x258,0x190,0x190}, {0x320,0x190,0x190}, {0x3e8,0x190,0x190},
-    {0x000,0x258,0x190}, {0x0c8,0x258,0x190}, {0x190,0x258,0x190}, {0x258,0x258,0x190}, {0x320,0x258,0x190}, {0x3e8,0x258,0x190},
-    {0x000,0x320,0x190}, {0x0c8,0x320,0x190}, {0x190,0x320,0x190}, {0x258,0x320,0x190}, {0x320,0x320,0x190}, {0x3e8,0x320,0x190},
-    {0x000,0x3e8,0x190}, {0x0c8,0x3e8,0x190}, {0x190,0x3e8,0x190}, {0x258,0x3e8,0x190}, {0x320,0x3e8,0x190}, {0x3e8,0x3e8,0x190},
-    {0x000,0x000,0x258}, {0x0c8,0x000,0x258}, {0x190,0x000,0x258}, {0x258,0x000,0x258}, {0x320,0x000,0x258}, {0x3e8,0x000,0x258},
-    {0x000,0x0c8,0x258}, {0x0c8,0x0c8,0x258}, {0x190,0x0c8,0x258}, {0x258,0x0c8,0x258}, {0x320,0x0c8,0x258}, {0x3e8,0x0c8,0x258},
-    {0x000,0x190,0x258}, {0x0c8,0x190,0x258}, {0x190,0x190,0x258}, {0x258,0x190,0x258}, {0x320,0x190,0x258}, {0x3e8,0x190,0x258},
-    {0x000,0x258,0x258}, {0x0c8,0x258,0x258}, {0x190,0x258,0x258}, {0x258,0x258,0x258}, {0x320,0x258,0x258}, {0x3e8,0x258,0x258},
-    {0x000,0x320,0x258}, {0x0c8,0x320,0x258}, {0x190,0x320,0x258}, {0x258,0x320,0x258}, {0x320,0x320,0x258}, {0x3e8,0x320,0x258},
-    {0x000,0x3e8,0x258}, {0x0c8,0x3e8,0x258}, {0x190,0x3e8,0x258}, {0x258,0x3e8,0x258}, {0x320,0x3e8,0x258}, {0x3e8,0x3e8,0x258},
-    {0x000,0x000,0x320}, {0x0c8,0x000,0x320}, {0x190,0x000,0x320}, {0x258,0x000,0x320}, {0x320,0x000,0x320}, {0x3e8,0x000,0x320},
-    {0x000,0x0c8,0x320}, {0x0c8,0x0c8,0x320}, {0x190,0x0c8,0x320}, {0x258,0x0c8,0x320}, {0x320,0x0c8,0x320}, {0x3e8,0x0c8,0x320},
-    {0x000,0x190,0x320}, {0x0c8,0x190,0x320}, {0x190,0x190,0x320}, {0x258,0x190,0x320}, {0x320,0x190,0x320}, {0x3e8,0x190,0x320},
-    {0x000,0x258,0x320}, {0x0c8,0x258,0x320}, {0x190,0x258,0x320}, {0x258,0x258,0x320}, {0x320,0x258,0x320}, {0x3e8,0x258,0x320},
-    {0x000,0x320,0x320}, {0x0c8,0x320,0x320}, {0x190,0x320,0x320}, {0x258,0x320,0x320}, {0x320,0x320,0x320}, {0x3e8,0x320,0x320},
-    {0x000,0x3e8,0x320}, {0x0c8,0x3e8,0x320}, {0x190,0x3e8,0x320}, {0x258,0x3e8,0x320}, {0x320,0x3e8,0x320}, {0x3e8,0x3e8,0x320},
-    {0x000,0x000,0x3e8}, {0x0c8,0x000,0x3e8}, {0x190,0x000,0x3e8}, {0x258,0x000,0x3e8}, {0x320,0x000,0x3e8}, {0x3e8,0x000,0x3e8},
-    {0x000,0x0c8,0x3e8}, {0x0c8,0x0c8,0x3e8}, {0x190,0x0c8,0x3e8}, {0x258,0x0c8,0x3e8}, {0x320,0x0c8,0x3e8}, {0x3e8,0x0c8,0x3e8},
-    {0x000,0x190,0x3e8}, {0x0c8,0x190,0x3e8}, {0x190,0x190,0x3e8}, {0x258,0x190,0x3e8}, {0x320,0x190,0x3e8}, {0x3e8,0x190,0x3e8},
-    {0x000,0x258,0x3e8}, {0x0c8,0x258,0x3e8}, {0x190,0x258,0x3e8}, {0x258,0x258,0x3e8}, {0x320,0x258,0x3e8}, {0x3e8,0x258,0x3e8},
-    {0x000,0x320,0x3e8}, {0x0c8,0x320,0x3e8}, {0x190,0x320,0x3e8}, {0x258,0x320,0x3e8}, {0x320,0x320,0x3e8}, {0x3e8,0x320,0x3e8},
-    {0x000,0x3e8,0x3e8}, {0x0c8,0x3e8,0x3e8}, {0x190,0x3e8,0x3e8}, {0x258,0x3e8,0x3e8}, {0x320,0x3e8,0x3e8}, {0x3e8,0x3e8,0x3e8}
+    {0x000,0x000,0x000}, {0x0c8,0x000,0x000}, {0x190,0x000,0x000},
+    {0x258,0x000,0x000}, {0x320,0x000,0x000}, {0x3e8,0x000,0x000},
+    {0x000,0x0c8,0x000}, {0x0c8,0x0c8,0x000}, {0x190,0x0c8,0x000},
+    {0x258,0x0c8,0x000}, {0x320,0x0c8,0x000}, {0x3e8,0x0c8,0x000},
+    {0x000,0x190,0x000}, {0x0c8,0x190,0x000}, {0x190,0x190,0x000},
+    {0x258,0x190,0x000}, {0x320,0x190,0x000}, {0x3e8,0x190,0x000},
+    {0x000,0x258,0x000}, {0x0c8,0x258,0x000}, {0x190,0x258,0x000},
+    {0x258,0x258,0x000}, {0x320,0x258,0x000}, {0x3e8,0x258,0x000},
+    {0x000,0x320,0x000}, {0x0c8,0x320,0x000}, {0x190,0x320,0x000},
+    {0x258,0x320,0x000}, {0x320,0x320,0x000}, {0x3e8,0x320,0x000},
+    {0x000,0x3e8,0x000}, {0x0c8,0x3e8,0x000}, {0x190,0x3e8,0x000},
+    {0x258,0x3e8,0x000}, {0x320,0x3e8,0x000}, {0x3e8,0x3e8,0x000},
+    {0x000,0x000,0x0c8}, {0x0c8,0x000,0x0c8}, {0x190,0x000,0x0c8},
+    {0x258,0x000,0x0c8}, {0x320,0x000,0x0c8}, {0x3e8,0x000,0x0c8},
+    {0x000,0x0c8,0x0c8}, {0x0c8,0x0c8,0x0c8}, {0x190,0x0c8,0x0c8},
+    {0x258,0x0c8,0x0c8}, {0x320,0x0c8,0x0c8}, {0x3e8,0x0c8,0x0c8},
+    {0x000,0x190,0x0c8}, {0x0c8,0x190,0x0c8}, {0x190,0x190,0x0c8},
+    {0x258,0x190,0x0c8}, {0x320,0x190,0x0c8}, {0x3e8,0x190,0x0c8},
+    {0x000,0x258,0x0c8}, {0x0c8,0x258,0x0c8}, {0x190,0x258,0x0c8},
+    {0x258,0x258,0x0c8}, {0x320,0x258,0x0c8}, {0x3e8,0x258,0x0c8},
+    {0x000,0x320,0x0c8}, {0x0c8,0x320,0x0c8}, {0x190,0x320,0x0c8},
+    {0x258,0x320,0x0c8}, {0x320,0x320,0x0c8}, {0x3e8,0x320,0x0c8},
+    {0x000,0x3e8,0x0c8}, {0x0c8,0x3e8,0x0c8}, {0x190,0x3e8,0x0c8},
+    {0x258,0x3e8,0x0c8}, {0x320,0x3e8,0x0c8}, {0x3e8,0x3e8,0x0c8},
+    {0x000,0x000,0x190}, {0x0c8,0x000,0x190}, {0x190,0x000,0x190},
+    {0x258,0x000,0x190}, {0x320,0x000,0x190}, {0x3e8,0x000,0x190},
+    {0x000,0x0c8,0x190}, {0x0c8,0x0c8,0x190}, {0x190,0x0c8,0x190},
+    {0x258,0x0c8,0x190}, {0x320,0x0c8,0x190}, {0x3e8,0x0c8,0x190},
+    {0x000,0x190,0x190}, {0x0c8,0x190,0x190}, {0x190,0x190,0x190},
+    {0x258,0x190,0x190}, {0x320,0x190,0x190}, {0x3e8,0x190,0x190},
+    {0x000,0x258,0x190}, {0x0c8,0x258,0x190}, {0x190,0x258,0x190},
+    {0x258,0x258,0x190}, {0x320,0x258,0x190}, {0x3e8,0x258,0x190},
+    {0x000,0x320,0x190}, {0x0c8,0x320,0x190}, {0x190,0x320,0x190},
+    {0x258,0x320,0x190}, {0x320,0x320,0x190}, {0x3e8,0x320,0x190},
+    {0x000,0x3e8,0x190}, {0x0c8,0x3e8,0x190}, {0x190,0x3e8,0x190},
+    {0x258,0x3e8,0x190}, {0x320,0x3e8,0x190}, {0x3e8,0x3e8,0x190},
+    {0x000,0x000,0x258}, {0x0c8,0x000,0x258}, {0x190,0x000,0x258},
+    {0x258,0x000,0x258}, {0x320,0x000,0x258}, {0x3e8,0x000,0x258},
+    {0x000,0x0c8,0x258}, {0x0c8,0x0c8,0x258}, {0x190,0x0c8,0x258},
+    {0x258,0x0c8,0x258}, {0x320,0x0c8,0x258}, {0x3e8,0x0c8,0x258},
+    {0x000,0x190,0x258}, {0x0c8,0x190,0x258}, {0x190,0x190,0x258},
+    {0x258,0x190,0x258}, {0x320,0x190,0x258}, {0x3e8,0x190,0x258},
+    {0x000,0x258,0x258}, {0x0c8,0x258,0x258}, {0x190,0x258,0x258},
+    {0x258,0x258,0x258}, {0x320,0x258,0x258}, {0x3e8,0x258,0x258},
+    {0x000,0x320,0x258}, {0x0c8,0x320,0x258}, {0x190,0x320,0x258},
+    {0x258,0x320,0x258}, {0x320,0x320,0x258}, {0x3e8,0x320,0x258},
+    {0x000,0x3e8,0x258}, {0x0c8,0x3e8,0x258}, {0x190,0x3e8,0x258},
+    {0x258,0x3e8,0x258}, {0x320,0x3e8,0x258}, {0x3e8,0x3e8,0x258},
+    {0x000,0x000,0x320}, {0x0c8,0x000,0x320}, {0x190,0x000,0x320},
+    {0x258,0x000,0x320}, {0x320,0x000,0x320}, {0x3e8,0x000,0x320},
+    {0x000,0x0c8,0x320}, {0x0c8,0x0c8,0x320}, {0x190,0x0c8,0x320},
+    {0x258,0x0c8,0x320}, {0x320,0x0c8,0x320}, {0x3e8,0x0c8,0x320},
+    {0x000,0x190,0x320}, {0x0c8,0x190,0x320}, {0x190,0x190,0x320},
+    {0x258,0x190,0x320}, {0x320,0x190,0x320}, {0x3e8,0x190,0x320},
+    {0x000,0x258,0x320}, {0x0c8,0x258,0x320}, {0x190,0x258,0x320},
+    {0x258,0x258,0x320}, {0x320,0x258,0x320}, {0x3e8,0x258,0x320},
+    {0x000,0x320,0x320}, {0x0c8,0x320,0x320}, {0x190,0x320,0x320},
+    {0x258,0x320,0x320}, {0x320,0x320,0x320}, {0x3e8,0x320,0x320},
+    {0x000,0x3e8,0x320}, {0x0c8,0x3e8,0x320}, {0x190,0x3e8,0x320},
+    {0x258,0x3e8,0x320}, {0x320,0x3e8,0x320}, {0x3e8,0x3e8,0x320},
+    {0x000,0x000,0x3e8}, {0x0c8,0x000,0x3e8}, {0x190,0x000,0x3e8},
+    {0x258,0x000,0x3e8}, {0x320,0x000,0x3e8}, {0x3e8,0x000,0x3e8},
+    {0x000,0x0c8,0x3e8}, {0x0c8,0x0c8,0x3e8}, {0x190,0x0c8,0x3e8},
+    {0x258,0x0c8,0x3e8}, {0x320,0x0c8,0x3e8}, {0x3e8,0x0c8,0x3e8},
+    {0x000,0x190,0x3e8}, {0x0c8,0x190,0x3e8}, {0x190,0x190,0x3e8},
+    {0x258,0x190,0x3e8}, {0x320,0x190,0x3e8}, {0x3e8,0x190,0x3e8},
+    {0x000,0x258,0x3e8}, {0x0c8,0x258,0x3e8}, {0x190,0x258,0x3e8},
+    {0x258,0x258,0x3e8}, {0x320,0x258,0x3e8}, {0x3e8,0x258,0x3e8},
+    {0x000,0x320,0x3e8}, {0x0c8,0x320,0x3e8}, {0x190,0x320,0x3e8},
+    {0x258,0x320,0x3e8}, {0x320,0x320,0x3e8}, {0x3e8,0x320,0x3e8},
+    {0x000,0x3e8,0x3e8}, {0x0c8,0x3e8,0x3e8}, {0x190,0x3e8,0x3e8},
+    {0x258,0x3e8,0x3e8}, {0x320,0x3e8,0x3e8}, {0x3e8,0x3e8,0x3e8}
 };
 #endif
 
@@ -180,14 +209,15 @@ VdiHdl atari_plot_vdi_handle = -1;
 unsigned long atari_plot_flags;
 unsigned long atari_font_flags;
 
-typedef bool (*bitmap_convert_fnc)( struct bitmap * img, int x, int y,
-                                    GRECT * clip, uint32_t bg, uint32_t flags, MFDB *out  );
+typedef bool (*bitmap_convert_fnc)(struct bitmap * img, int x, int y, GRECT * clip, uint32_t bg, uint32_t flags, MFDB *out  );
 static bitmap_convert_fnc bitmap_convert;
 
+/* exported interface documented in atari/plot.h */
 const char* plot_err_str(int i)
 {
-    return(plot_error_codes[abs(i)]);
+    return (plot_error_codes[abs(i)]);
 }
+
 
 /**
  * Set line drawing color by passing netsurf XBGR "colour" type.
@@ -200,20 +230,21 @@ inline static void vsl_rgbcolor(short vdih, colour cin)
 #ifdef WITH_8BPP_SUPPORT
     if( vdi_sysinfo.scr_bpp > 8 ) {
 #endif
-        RGB1000 c; /* a struct with three (RGB) shorts */
-        rgb_to_vdi1000( (unsigned char*)&cin, &c);
-        vs_color(vdih, OFFSET_CUSTOM_COLOR, (short *)&c);
-        vsl_color(vdih, OFFSET_CUSTOM_COLOR);
+	RGB1000 c; /* a struct with three (RGB) shorts */
+	rgb_to_vdi1000( (unsigned char*)&cin, &c);
+	vs_color(vdih, OFFSET_CUSTOM_COLOR, (short *)&c);
+	vsl_color(vdih, OFFSET_CUSTOM_COLOR);
 #ifdef WITH_8BPP_SUPPORT
     } else {
-        if( vdi_sysinfo.scr_bpp >= 4 ){
-            vsl_color(vdih, RGB_TO_VDI(cin));
-        }
-        else
-            vsl_color(vdih, BLACK);
+	if( vdi_sysinfo.scr_bpp >= 4 ){
+	    vsl_color(vdih, RGB_TO_VDI(cin));
+	}
+	else
+	    vsl_color(vdih, BLACK);
     }
 #endif
 }
+
 
 /**
  * Set fill color by passing netsurf XBGR "colour" type.
@@ -226,21 +257,20 @@ inline static void vsf_rgbcolor(short vdih, colour cin)
 #ifdef WITH_8BPP_SUPPORT
     if( vdi_sysinfo.scr_bpp > 8 ) {
 #endif
-        RGB1000 c; /* a struct with three (RGB) shorts */
-        rgb_to_vdi1000( (unsigned char*)&cin, &c);
-        vs_color( vdih, OFFSET_CUSTOM_COLOR, (short *)&c);
-        vsf_color( vdih, OFFSET_CUSTOM_COLOR );
+	RGB1000 c; /* a struct with three (RGB) shorts */
+	rgb_to_vdi1000( (unsigned char*)&cin, &c);
+	vs_color( vdih, OFFSET_CUSTOM_COLOR, (short *)&c);
+	vsf_color( vdih, OFFSET_CUSTOM_COLOR );
 #ifdef WITH_8BPP_SUPPORT
     } else {
-        if( vdi_sysinfo.scr_bpp >= 4 ){
-            vsf_color( vdih, RGB_TO_VDI(cin) );
-        }
-        else
-            vsf_color( vdih, WHITE );
+	if( vdi_sysinfo.scr_bpp >= 4 ){
+	    vsf_color( vdih, RGB_TO_VDI(cin) );
+	}
+	else
+	    vsf_color( vdih, WHITE );
     }
 #endif
 }
-
 
 
 /**
@@ -253,7 +283,6 @@ inline static void plot_get_visible_grect(GRECT * out)
     out->g_w = view.vis_w;
     out->g_h = view.vis_h;
 }
-
 
 
 /* calculate visible area of framebuffer in coords relative to framebuffer */
@@ -280,24 +309,29 @@ inline static void update_visible_rect(void)
     common.g_h = frame.g_h = view.h;
 
     if (rc_intersect(&screen, &common)) {
-        view.vis_w = common.g_w;
-        view.vis_h = common.g_h;
-        if (view.x < screen.g_x)
-            view.vis_x = frame.g_w - common.g_w;
-        else
-            view.vis_x = 0;
-        if (view.y <screen.g_y)
-            view.vis_y = frame.g_h - common.g_h;
-        else
-            view.vis_y = 0;
+	view.vis_w = common.g_w;
+	view.vis_h = common.g_h;
+	if (view.x < screen.g_x)
+	    view.vis_x = frame.g_w - common.g_w;
+	else
+	    view.vis_x = 0;
+	if (view.y <screen.g_y)
+	    view.vis_y = frame.g_h - common.g_h;
+	else
+	    view.vis_y = 0;
     } else {
-        view.vis_w = view.vis_h = 0;
-        view.vis_x = view.vis_y = 0;
+	view.vis_w = view.vis_h = 0;
+	view.vis_x = view.vis_y = 0;
     }
 }
 
-/* Returns the visible parts of the box (relative coords within framebuffer),*/
-/*              relative to screen coords (normally starting at 0,0 )                            */
+
+/**
+ * Returns the visible parts of the box
+ *
+ * The returned values are relative coords within framebuffer,
+ * relative to screen coords (normally starting at 0,0 )
+ */
 inline static bool fbrect_to_screen(GRECT box, GRECT * ret)
 {
     GRECT out, vis, screen;
@@ -314,14 +348,14 @@ inline static bool fbrect_to_screen(GRECT box, GRECT * ret)
     vis.g_h = view.h;
 
     if ( !rc_intersect( &screen, &vis ) ) {
-        return( false );
+	return( false );
     }
     vis.g_x = view.w - vis.g_w;
     vis.g_y = view.h - vis.g_h;
 
     /* clip box to visible region: */
     if( !rc_intersect(&vis, &box) ) {
-        return( false );
+	return( false );
     }
     out.g_x = box.g_x + view.x;
     out.g_y = box.g_y + view.y;
@@ -331,8 +365,12 @@ inline static bool fbrect_to_screen(GRECT box, GRECT * ret)
     return ( true );
 }
 
-/* copy an rectangle from the plot buffer to screen */
-/* because this is an on-screen plotter, this is an screen to screen copy. */
+
+/**
+ * copy an rectangle from the plot buffer to screen
+ *
+ * because this is an on-screen plotter, this is an screen to screen copy.
+ */
 bool plot_copy_rect(GRECT src, GRECT dst)
 {
     MFDB devmf;
@@ -344,9 +382,9 @@ bool plot_copy_rect(GRECT src, GRECT dst)
     plot_get_visible_grect(&vis );
 
     if( !rc_intersect(&vis, &src) )
-        return(true);
+	return(true);
     if( !rc_intersect(&vis, &dst) )
-        return(true);
+	return(true);
 
     src.g_x = view.x + src.g_x;
     src.g_y = view.y + src.g_y;
@@ -384,23 +422,25 @@ bool plot_copy_rect(GRECT src, GRECT dst)
     return(true);
 }
 
+
 /**
  * Fill the screen info structure.
  *
  * \param vdih The handle
  * \param[out] info The infor structure to fill.
  */
-static void read_vdi_sysinfo(short vdih, struct s_vdi_sysinfo * info) {
-
-    unsigned long cookie_EdDI=0; /** \todo this long is being cast to a pointer */
+static void read_vdi_sysinfo(short vdih, struct s_vdi_sysinfo * info)
+{
+    /** \todo this long is being cast to a pointer */
+    unsigned long cookie_EdDI=0;
     short out[300];
     memset( info, 0, sizeof(struct s_vdi_sysinfo) );
 
     info->vdi_handle = vdih;
     if ( tos_getcookie(C_EdDI, (long *)&cookie_EdDI) == C_NOTFOUND ) {
-        info->EdDiVersion = 0;
+	info->EdDiVersion = 0;
     } else {
-        info->EdDiVersion = EdDI_version( (void *)cookie_EdDI );
+	info->EdDiVersion = EdDI_version( (void *)cookie_EdDI );
     }
 
     memset( &out, 0, sizeof(short)*300 );
@@ -408,10 +448,10 @@ static void read_vdi_sysinfo(short vdih, struct s_vdi_sysinfo * info) {
     info->scr_w = out[0]+1;
     info->scr_h = out[1]+1;
     if( out[39] == 2 ) {
-        info->scr_bpp = 1;
-        info->colors = out[39];
+	info->scr_bpp = 1;
+	info->colors = out[39];
     } else {
-        info->colors = out[39];
+	info->colors = out[39];
     }
 
     memset( &out, 0, sizeof(short)*300 );
@@ -420,31 +460,31 @@ static void read_vdi_sysinfo(short vdih, struct s_vdi_sysinfo * info) {
     info->maxpolycoords = out[14];
     info->maxintin = out[15];
     if( out[30] & 1 ) {
-        info->rasterscale = true;
+	info->rasterscale = true;
     } else {
-        info->rasterscale = false;
+	info->rasterscale = false;
     }
 
     switch( info->scr_bpp ) {
     case 8:
-        info->pixelsize=1;
-        break;
+	info->pixelsize=1;
+	break;
     case 15:
     case 16:
-        info->pixelsize=2;
-        break;
+	info->pixelsize=2;
+	break;
     case 24:
-        info->pixelsize=3;
-        break;
+	info->pixelsize=3;
+	break;
     case 32:
-        info->pixelsize=4;
-        break;
+	info->pixelsize=4;
+	break;
     case 64:
-        info->pixelsize=8;
-        break;
+	info->pixelsize=8;
+	break;
     default:
-        info->pixelsize=1;
-        break;
+	info->pixelsize=1;
+	break;
 
     }
     info->pitch = info->scr_w * info->pixelsize;
@@ -452,75 +492,75 @@ static void read_vdi_sysinfo(short vdih, struct s_vdi_sysinfo * info) {
     info->screensize = ( info->scr_w * info->pixelsize )  * info->scr_h;
 
     if( info->EdDiVersion >= EDDI_10 ) {
-        memset( &out, 0, sizeof(short)*300 );
-        vq_scrninfo(vdih, (short*)&out);
-        info->vdiformat = out[0];
-        info->clut = out[1];
-        info->scr_bpp = out[2];
-        info->hicolors =  *((unsigned long*) &out[3]);
-        if( info->EdDiVersion >= EDDI_11 ) {
-            info->pitch = out[5];
-            info->screen = (void *) *((unsigned long *) &out[6]);
-        }
+	memset( &out, 0, sizeof(short)*300 );
+	vq_scrninfo(vdih, (short*)&out);
+	info->vdiformat = out[0];
+	info->clut = out[1];
+	info->scr_bpp = out[2];
+	info->hicolors =  *((unsigned long*) &out[3]);
+	if( info->EdDiVersion >= EDDI_11 ) {
+	    info->pitch = out[5];
+	    info->screen = (void *) *((unsigned long *) &out[6]);
+	}
 
-        switch( info->clut ) {
+	switch( info->clut ) {
 
-        case VDI_CLUT_HARDWARE: {
+	case VDI_CLUT_HARDWARE:
+	    break;
 
-        }
-            break;
+	case VDI_CLUT_SOFTWARE:
+	{
+	    int component; /* red, green, blue, alpha, overlay */
+	    int num_bit;
+	    unsigned short *tmp_p;
 
-        case VDI_CLUT_SOFTWARE: {
-            int component; /* red, green, blue, alpha, overlay */
-            int num_bit;
-            unsigned short *tmp_p;
+	    /* We can build masks with info here */
+	    tmp_p = (unsigned short *) &out[16];
+	    for (component=0; component<5; component++) {
+		for (num_bit=0; num_bit<16; num_bit++) {
+		    unsigned short val;
 
-            /* We can build masks with info here */
-            tmp_p = (unsigned short *) &out[16];
-            for (component=0; component<5; component++) {
-                for (num_bit=0; num_bit<16; num_bit++) {
-                    unsigned short val;
+		    val = *tmp_p++;
 
-                    val = *tmp_p++;
+		    if (val == 0xffff) {
+			continue;
+		    }
 
-                    if (val == 0xffff) {
-                        continue;
-                    }
+		    switch(component) {
+		    case 0:
+			info->mask_r |= 1<< val;
+			break;
+		    case 1:
+			info->mask_g |= 1<< val;
+			break;
+		    case 2:
+			info->mask_b |= 1<< val;
+			break;
+		    case 3:
+			info->mask_a |= 1<< val;
+			break;
+		    }
+		}
+	    }
+	}
 
-                    switch(component) {
-                    case 0:
-                        info->mask_r |= 1<< val;
-                        break;
-                    case 1:
-                        info->mask_g |= 1<< val;
-                        break;
-                    case 2:
-                        info->mask_b |= 1<< val;
-                        break;
-                    case 3:
-                        info->mask_a |= 1<< val;
-                        break;
-                    }
-                }
-            }
-        }
+	/* Remove lower green bits for Intel endian screen */
+	if ((info->mask_g == ((7<<13)|3)) ||
+	    (info->mask_g == ((7<<13)|7))) {
+	    info->mask_g &= ~(7<<13);
+	}
+	break;
 
-            /* Remove lower green bits for Intel endian screen */
-            if ((info->mask_g == ((7<<13)|3)) || (info->mask_g == ((7<<13)|7))) {
-                info->mask_g &= ~(7<<13);
-            }
-            break;
-
-        case VDI_CLUT_NONE:
-            break;
-        }
+	case VDI_CLUT_NONE:
+	    break;
+	}
     }
 }
 
 
-/*
-  Convert an RGB color to an VDI Color
-*/
+/**
+ *  Convert an RGB color to an VDI Color
+ */
 inline void rgb_to_vdi1000(unsigned char * in, RGB1000 *out)
 {
     double r = ((double)in[3]/255); /* prozentsatz red   */
@@ -531,6 +571,7 @@ inline void rgb_to_vdi1000(unsigned char * in, RGB1000 *out)
     out->blue = 1000 * b + 0.5;
     return;
 }
+
 
 inline void vdi1000_to_rgb(unsigned short * in, unsigned char * out)
 {
@@ -548,7 +589,8 @@ inline void vdi1000_to_rgb(unsigned short * in, unsigned char * out)
 /**
  * Set pixel within an 8 bit VDI standard bitmap.
  */
-inline static void set_stdpx( MFDB * dst, int wdplanesz, int x, int y, unsigned char val )
+inline static void
+set_stdpx( MFDB * dst, int wdplanesz, int x, int y, unsigned char val )
 {
     short * buf;
     short whichbit = (1<<(15-(x%16)));
@@ -580,6 +622,7 @@ inline static void set_stdpx( MFDB * dst, int wdplanesz, int x, int y, unsigned 
     *buf = (val&(1<<7)) ? ((*buf)|(whichbit)) : ((*buf)&~(whichbit));
 }
 
+
 /**
  * Read pixel from an 8 bit VDI standard bitmap.
  */
@@ -593,42 +636,42 @@ inline static unsigned char get_stdpx(MFDB * dst, int wdplanesz, int x, int y)
     buf += ((dst->fd_wdwidth*(y))+(x>>4));
 
     if( *buf & whichbit )
-        ret |= 1;
+	ret |= 1;
 
     buf += wdplanesz;
     if( *buf & whichbit )
-        ret |= 2;
+	ret |= 2;
 
     buf += wdplanesz;
     if( *buf & whichbit )
-        ret |= 4;
+	ret |= 4;
 
     buf += wdplanesz;
     if( *buf & whichbit )
-        ret |= 8;
+	ret |= 8;
 
     buf += wdplanesz;
     if( *buf & whichbit )
-        ret |= 16;
+	ret |= 16;
 
     buf += wdplanesz;
     if( *buf & whichbit )
-        ret |= 32;
+	ret |= 32;
 
     buf += wdplanesz;
     if( *buf & whichbit )
-        ret |= 64;
+	ret |= 64;
 
     buf += wdplanesz;
     if( *buf & whichbit )
-        ret |= 128;
+	ret |= 128;
 
     return( ret );
 }
 
-/*
-  Convert an RGB color into an index into the 216 colors web pallette
-*/
+/**
+ * Convert an RGB color into an index into the 216 colors web pallette
+ */
 inline short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b)
 {
     short i;
@@ -640,24 +683,24 @@ inline short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b)
     diff_b = abs(r-b);
     diff_c = abs(r-b);
     if( diff_a < 2 && diff_b < 2 && diff_c < 2 ) {
-        if( (r!=0XFF) && (g!=0XFF) && (b!=0XFF)  ) {
-            if( ((r&0xF0)>>4) != 0 )
-                //printf("conv gray: %x -> %d\n", ((r&0xF0)>>4) , (OFFSET_CUST_PAL) + ((r&0xF0)>>4) );
-                return( (OFFSET_CUST_PAL - OFFSET_WEB_PAL) + ((r&0xF0)>>4) );
-        }
+	if( (r!=0XFF) && (g!=0XFF) && (b!=0XFF)  ) {
+	    if( ((r&0xF0)>>4) != 0 )
+		//printf("conv gray: %x -> %d\n", ((r&0xF0)>>4) , (OFFSET_CUST_PAL) + ((r&0xF0)>>4) );
+		return( (OFFSET_CUST_PAL - OFFSET_WEB_PAL) + ((r&0xF0)>>4) );
+	}
     }
 
     /* convert each 8bit color to 6bit web color: */
     for( i=0; i<3; i++) {
-        if(0 == rgb[i] % web_std_colors[1] ) {
-            tval[i] = rgb[i] / web_std_colors[1];
-        } else {
-            int pos = ((short)rgb[i] / web_std_colors[1]);
-            if( abs(rgb[i] - web_std_colors[pos]) > abs(rgb[i] - web_std_colors[pos+1]) )
-                tval[i] = pos+1;
-            else
-                tval[i] = pos;
-        }
+	if(0 == rgb[i] % web_std_colors[1] ) {
+	    tval[i] = rgb[i] / web_std_colors[1];
+	} else {
+	    int pos = ((short)rgb[i] / web_std_colors[1]);
+	    if( abs(rgb[i] - web_std_colors[pos]) > abs(rgb[i] - web_std_colors[pos+1]) )
+		tval[i] = pos+1;
+	    else
+		tval[i] = pos;
+	}
     }
     return(tval[2]*36+tval[1]*6+tval[0]);
 }
@@ -692,6 +735,7 @@ static void dump_vdi_info(short vdih)
     printf("};\n");
 }
 
+
 /**
  * Create an snapshot of the screen image in device format.
  */
@@ -702,29 +746,29 @@ static MFDB * snapshot_create_native_mfdb(int x, int y, int w, int h)
 
     /* allocate memory for the snapshot */
     {
-        int scr_stride = MFDB_STRIDE( w );
-        int scr_size = ( ((scr_stride >> 3) * h) * vdi_sysinfo.scr_bpp );
-        if(size_buf_scr == 0 ){
-            /* init screen mfdb */
-            buf_scr.fd_addr = malloc( scr_size );
-            size_buf_scr = scr_size;
-        } else {
-            if( scr_size >size_buf_scr ) {
-                buf_scr.fd_addr = realloc(
-                    buf_scr.fd_addr, scr_size
-                    );
-                size_buf_scr = scr_size;
-            }
-        }
-        if(buf_scr.fd_addr == NULL ) {
-            size_buf_scr = 0;
-            return( NULL );
-        }
-        buf_scr.fd_nplanes = vdi_sysinfo.scr_bpp;
-        buf_scr.fd_w = scr_stride;
-        buf_scr.fd_h = h;
-        buf_scr.fd_wdwidth = scr_stride >> 4;
-        assert(buf_scr.fd_addr != NULL );
+	int scr_stride = MFDB_STRIDE( w );
+	int scr_size = ( ((scr_stride >> 3) * h) * vdi_sysinfo.scr_bpp );
+	if(size_buf_scr == 0 ){
+	    /* init screen mfdb */
+	    buf_scr.fd_addr = malloc( scr_size );
+	    size_buf_scr = scr_size;
+	} else {
+	    if( scr_size >size_buf_scr ) {
+		buf_scr.fd_addr = realloc(
+		    buf_scr.fd_addr, scr_size
+		    );
+		size_buf_scr = scr_size;
+	    }
+	}
+	if(buf_scr.fd_addr == NULL ) {
+	    size_buf_scr = 0;
+	    return( NULL );
+	}
+	buf_scr.fd_nplanes = vdi_sysinfo.scr_bpp;
+	buf_scr.fd_w = scr_stride;
+	buf_scr.fd_h = h;
+	buf_scr.fd_wdwidth = scr_stride >> 4;
+	assert(buf_scr.fd_addr != NULL );
     }
     init_mfdb( 0, w, h, 0, &scr );
     pxy[0] = x;
@@ -736,18 +780,27 @@ static MFDB * snapshot_create_native_mfdb(int x, int y, int w, int h)
     pxy[6] = w-1;
     pxy[7] = h-1;
     vro_cpyfm(
-        atari_plot_vdi_handle, S_ONLY, (short*)&pxy,
-        &scr,  &buf_scr
-        );
+	atari_plot_vdi_handle, S_ONLY, (short*)&pxy,
+	&scr,  &buf_scr
+	);
 
     return( &buf_scr );
 }
 
 
-/*
+/**
  * Create an snapshot of the screen in netsurf ABGR format
+ *
+ * This creates an snapshot in RGBA format (NetSurf's native format)
+ *
+ * Capture the screen at x,y location
+ * \param self instance
+ * \param x absolute screen coords
+ * \param y absolute screen coords
+ * \param w width
+ * \param h height
  */
-static struct bitmap * snapshot_create(int x, int y, int w, int h)
+static struct bitmap *snapshot_create(int x, int y, int w, int h)
 {
     int err;
     MFDB * native;
@@ -764,37 +817,37 @@ static struct bitmap * snapshot_create(int x, int y, int w, int h)
     native = snapshot_create_native_mfdb(x, y, w, h );
 
     if(vfmt.bits == 32 )
-        goto no_copy;
+	goto no_copy;
 
     /* allocate buffer for result bitmap: */
     if(buf_scr_compat == NULL ) {
-        buf_scr_compat = atari_bitmap_create(w, h, 0);
+	buf_scr_compat = atari_bitmap_create(w, h, 0);
     } else {
-        buf_scr_compat = atari_bitmap_realloc( w, h,
-                                               buf_scr_compat->bpp,
-                                               w *buf_scr_compat->bpp,
-                                               BITMAP_GROW,
-                                               buf_scr_compat );
+	buf_scr_compat = atari_bitmap_realloc( w, h,
+					       buf_scr_compat->bpp,
+					       w *buf_scr_compat->bpp,
+					       BITMAP_GROW,
+					       buf_scr_compat );
     }
 
     /* convert screen buffer to ns format: */
     err = Hermes_ConverterRequest( hermes_cnv_h,
-                                   &vfmt,
-                                   &nsfmt
-        );
+				   &vfmt,
+				   &nsfmt
+	);
     assert( err != 0 );
     err = Hermes_ConverterCopy( hermes_cnv_h,
-                                native->fd_addr,
-                                0,                      /* x src coord of top left in pixel coords */
-                                0,                      /* y src coord of top left in pixel coords */
-                                w, h,
-                                native->fd_w * vdi_sysinfo.pixelsize, /* stride as bytes */
-                                buf_scr_compat->pixdata,
-                                0,                      /* x dst coord of top left in pixel coords */
-                                0,                      /* y dst coord of top left in pixel coords */
-                                w, h,
-                                atari_bitmap_get_rowstride(buf_scr_compat) /* stride as bytes */
-        );
+				native->fd_addr,
+				0, /* x src coord of top left in pixel coords */
+				0, /* y src coord of top left in pixel coords */
+				w, h,
+				native->fd_w * vdi_sysinfo.pixelsize, /* stride as bytes */
+				buf_scr_compat->pixdata,
+				0, /* x dst coord of top left in pixel coords */
+				0, /* y dst coord of top left in pixel coords */
+				w, h,
+				atari_bitmap_get_rowstride(buf_scr_compat) /* stride as bytes */
+	);
     assert( err != 0 );
     return( (struct bitmap * )buf_scr_compat );
 
@@ -808,14 +861,15 @@ no_copy:
 
     uint32_t row, col;
     for (row = 0; row<(uint32_t)h; row++) {
-        // fd_w matches stride!
-        uint32_t *rowptr = ((uint32_t*)native->fd_addr + ((row*native->fd_w)));
-        for (col=0; col<(uint32_t)w; col++) {
-            *(rowptr+col) = (*(rowptr+col)<<8);
-        }
+	// fd_w matches stride!
+	uint32_t *rowptr = ((uint32_t*)native->fd_addr + ((row*native->fd_w)));
+	for (col=0; col<(uint32_t)w; col++) {
+	    *(rowptr+col) = (*(rowptr+col)<<8);
+	}
     }
     return( &snapshot );
 }
+
 
 /**
  * Notify the snapshot interface that the last snapshot is no longer in use.
@@ -823,43 +877,44 @@ no_copy:
 static void snapshot_suspend(void)
 {
     if(size_buf_scr > CONV_KEEP_LIMIT  ) {
-        buf_scr.fd_addr = realloc(
-            buf_scr.fd_addr, CONV_KEEP_LIMIT
-            );
-        if(buf_scr.fd_addr != NULL ) {
-            size_buf_scr = CONV_KEEP_LIMIT;
-        } else {
-            size_buf_scr = 0;
-        }
+	buf_scr.fd_addr = realloc(
+	    buf_scr.fd_addr, CONV_KEEP_LIMIT
+	    );
+	if(buf_scr.fd_addr != NULL ) {
+	    size_buf_scr = CONV_KEEP_LIMIT;
+	} else {
+	    size_buf_scr = 0;
+	}
     }
 
 #ifdef WITH_8BPP_SUPPORT
     if(size_buf_std > CONV_KEEP_LIMIT  ) {
-        buf_std.fd_addr = realloc(
-            buf_std.fd_addr, CONV_KEEP_LIMIT
-            );
-        if(buf_std.fd_addr != NULL ) {
-            size_buf_std = CONV_KEEP_LIMIT;
-        } else {
-            size_buf_std = 0;
-        }
+	buf_std.fd_addr = realloc(
+	    buf_std.fd_addr, CONV_KEEP_LIMIT
+	    );
+	if(buf_std.fd_addr != NULL ) {
+	    size_buf_std = CONV_KEEP_LIMIT;
+	} else {
+	    size_buf_std = 0;
+	}
     }
 #endif
 
     if(buf_scr_compat != NULL ) {
-        size_t bs = atari_bitmap_buffer_size(buf_scr_compat );
-        if( bs > CONV_KEEP_LIMIT ) {
-            int w = 0;
-            int h = 1;
-            w = (CONV_KEEP_LIMIT /buf_scr_compat->bpp);
-            assert( CONV_KEEP_LIMIT == w*buf_scr_compat->bpp );
-            buf_scr_compat = atari_bitmap_realloc( w, h,
-                                                   buf_scr_compat->bpp,
-                                                   CONV_KEEP_LIMIT, BITMAP_SHRINK,buf_scr_compat
-                );
-        }
+	size_t bs = atari_bitmap_buffer_size(buf_scr_compat );
+	if( bs > CONV_KEEP_LIMIT ) {
+	    int w = 0;
+	    int h = 1;
+	    w = (CONV_KEEP_LIMIT /buf_scr_compat->bpp);
+	    assert( CONV_KEEP_LIMIT == w*buf_scr_compat->bpp );
+	    buf_scr_compat = atari_bitmap_realloc( w, h,
+						   buf_scr_compat->bpp,
+						   CONV_KEEP_LIMIT, BITMAP_SHRINK,buf_scr_compat
+		);
+	}
     }
 }
+
 
 /**
  * Shut down the snapshot interface.
@@ -869,7 +924,7 @@ static void snapshot_destroy(void)
 
     free(buf_scr.fd_addr);
     if( buf_scr_compat != NULL) {
-        atari_bitmap_destroy(buf_scr_compat);
+	atari_bitmap_destroy(buf_scr_compat);
     }
 
     buf_scr.fd_addr = NULL;
@@ -890,17 +945,19 @@ inline static uint32_t ablend(uint32_t pixel, uint32_t scrpixel)
     pixel >>= 8;
     scrpixel >>= 8;
     rb = ((pixel & 0xFF00FF) * opacity +
-          (scrpixel & 0xFF00FF) * transp) >> 8;
+	  (scrpixel & 0xFF00FF) * transp) >> 8;
     g  = ((pixel & 0x00FF00) * opacity +
-          (scrpixel & 0x00FF00) * transp) >> 8;
+	  (scrpixel & 0x00FF00) * transp) >> 8;
 
     return ((rb & 0xFF00FF) | (g & 0xFF00)) << 8;
 }
 
-/*
-  Alpha blends an image, using one pixel as the background.
-  The bitmap receives the result.
-*/
+
+/**
+ * Alpha blends an image, using one pixel as the background.
+ *
+ * The bitmap receives the result.
+ */
 inline static bool ablend_pixel(struct bitmap * img, uint32_t bg, GRECT * clip)
 {
     uint32_t * imgrow;
@@ -909,22 +966,25 @@ inline static bool ablend_pixel(struct bitmap * img, uint32_t bg, GRECT * clip)
     img_stride= atari_bitmap_get_rowstride(img);
 
     for( img_y = 0; img_y < clip->g_h; img_y++) {
-        imgrow = (uint32_t *)(img->pixdata + (img_stride * img_y));
-        for( img_x = 0; img_x < clip->g_w; img_x++ ) {
-            imgrow[img_x] = ablend( imgrow[img_x], bg );
-        }
+	imgrow = (uint32_t *)(img->pixdata + (img_stride * img_y));
+	for( img_x = 0; img_x < clip->g_w; img_x++ ) {
+	    imgrow[img_x] = ablend( imgrow[img_x], bg );
+	}
     }
     return(true);
 }
 
 
-/*
-  Aplha blends the foreground image (img) onto the
-  background images (bg). The background receives the blended
-  image pixels.
-*/
-inline static bool ablend_bitmap( struct bitmap * img, struct bitmap * bg,
-                                  GRECT * img_clip, GRECT * bg_clip )
+/**
+ * Aplha blends the foreground image onto thebackground images.
+ *
+ * The background receives the blended image pixels.
+ */
+inline static bool
+ablend_bitmap(struct bitmap *img,
+	      struct bitmap *bg,
+	      GRECT *img_clip,
+	      GRECT * bg_clip )
 {
     uint32_t * imgrow;
     uint32_t * screenrow;
@@ -935,29 +995,29 @@ inline static bool ablend_bitmap( struct bitmap * img, struct bitmap * bg,
     bg_stride = atari_bitmap_get_rowstride(bg);
 
     for( img_y = img_clip->g_y, bg_y = 0; bg_y < img_clip->g_h; bg_y++, img_y++) {
-        imgrow = (uint32_t *)(img->pixdata + (img_stride * img_y));
-        screenrow = (uint32_t *)(bg->pixdata + (bg_stride * bg_y));
-        for( img_x = img_clip->g_x, bg_x = 0; bg_x < img_clip->g_w; bg_x++, img_x++ ) {
+	imgrow = (uint32_t *)(img->pixdata + (img_stride * img_y));
+	screenrow = (uint32_t *)(bg->pixdata + (bg_stride * bg_y));
+	for( img_x = img_clip->g_x, bg_x = 0; bg_x < img_clip->g_w; bg_x++, img_x++ ) {
 
-            // when the pixel isn't fully transparent,...:
-            if( (imgrow[img_x] & 0x0FF) != 0 ){
-                screenrow[bg_x] = ablend( imgrow[img_x], screenrow[bg_x]);
-            }
+	    // when the pixel isn't fully transparent,...:
+	    if( (imgrow[img_x] & 0x0FF) != 0 ){
+		screenrow[bg_x] = ablend( imgrow[img_x], screenrow[bg_x]);
+	    }
 
-            // FIXME, maybe this loop would be faster??:
-            // ---
-            //if( (imgrow[img_x] & 0x0FF) != 0xFF ){
-            //  imgrow[bg_x] = ablend( imgrow[img_x], screenrow[bg_x]);
-            //}
+	    // FIXME, maybe this loop would be faster??:
+	    // ---
+	    //if( (imgrow[img_x] & 0x0FF) != 0xFF ){
+	    //  imgrow[bg_x] = ablend( imgrow[img_x], screenrow[bg_x]);
+	    //}
 
-            // or maybe even this???
-            // ---
-            //if(  (imgrow[img_x] & 0x0FF) == 0xFF ){
-            //  screenrow[bg_x] = imgrow[img_x];
-            //} else if( (imgrow[img_x] & 0x0FF) != 0x00 ) {
-            //  screenrow[bg_x] = ablend( imgrow[img_x], screenrow[bg_x]);
-            //}
-        }
+	    // or maybe even this???
+	    // ---
+	    //if(  (imgrow[img_x] & 0x0FF) == 0xFF ){
+	    //  screenrow[bg_x] = imgrow[img_x];
+	    //} else if( (imgrow[img_x] & 0x0FF) != 0x00 ) {
+	    //  screenrow[bg_x] = ablend( imgrow[img_x], screenrow[bg_x]);
+	    //}
+	}
     }
     return(false);
 }
@@ -972,30 +1032,30 @@ static MFDB * snapshot_create_std_mfdb(int x, int y, int w, int h)
 {
     /* allocate memory for the snapshot */
     {
-        int scr_stride = MFDB_STRIDE( w );
-        int scr_size = ( ((scr_stride >> 3) * h) * vdi_sysinfo.scr_bpp );
-        if(size_buf_std == 0 ){
-            /* init screen mfdb */
-            buf_std.fd_addr = malloc( scr_size );
-            size_buf_std = scr_size;
-        } else {
-            if( scr_size >size_buf_std ) {
-                buf_std.fd_addr = realloc(
-                    buf_std.fd_addr, scr_size
-                    );
-                size_buf_std = scr_size;
-            }
-        }
-        if(buf_std.fd_addr == NULL ) {
-            size_buf_std = 0;
-            return( NULL );
-        }
-        buf_std.fd_nplanes = 8;
-        buf_std.fd_w = scr_stride;
-        buf_std.fd_h = h;
-        buf_std.fd_stand = 1;
-        buf_std.fd_wdwidth = scr_stride >> 4;
-        assert(buf_std.fd_addr != NULL );
+	int scr_stride = MFDB_STRIDE( w );
+	int scr_size = ( ((scr_stride >> 3) * h) * vdi_sysinfo.scr_bpp );
+	if(size_buf_std == 0 ){
+	    /* init screen mfdb */
+	    buf_std.fd_addr = malloc( scr_size );
+	    size_buf_std = scr_size;
+	} else {
+	    if( scr_size >size_buf_std ) {
+		buf_std.fd_addr = realloc(
+		    buf_std.fd_addr, scr_size
+		    );
+		size_buf_std = scr_size;
+	    }
+	}
+	if(buf_std.fd_addr == NULL ) {
+	    size_buf_std = 0;
+	    return( NULL );
+	}
+	buf_std.fd_nplanes = 8;
+	buf_std.fd_w = scr_stride;
+	buf_std.fd_h = h;
+	buf_std.fd_stand = 1;
+	buf_std.fd_wdwidth = scr_stride >> 4;
+	assert(buf_std.fd_addr != NULL );
     }
     MFDB * native = snapshot_create_native_mfdb(x,y,w,h );
     assert( native );
@@ -1003,6 +1063,7 @@ static MFDB * snapshot_create_std_mfdb(int x, int y, int w, int h)
     vr_trnfm(atari_plot_vdi_handle, native, &buf_std);
     return( &buf_std );
 }
+
 
 /**
  * Convert an bitmap to an 8 bit device dependant MFDB
@@ -1015,9 +1076,14 @@ static MFDB * snapshot_create_std_mfdb(int x, int y, int w, int h)
  * \param out receives the converted bitmap (still owned by the plot API)
  *
  */
-static bool bitmap_convert_8(struct bitmap * img, int x,
-                             int y, GRECT * clip, uint32_t bg, uint32_t flags,
-                             MFDB *out )
+static bool
+bitmap_convert_8(struct bitmap *img,
+		 int x,
+		 int y,
+		 GRECT *clip,
+		 uint32_t bg,
+		 uint32_t flags,
+		 MFDB *out)
 {
     MFDB native;
     MFDB stdform;
@@ -1029,11 +1095,11 @@ static bool bitmap_convert_8(struct bitmap * img, int x,
     bool opaque = atari_bitmap_get_opaque( img );
 
     if( opaque == false ){
-        if( ( (atari_plot_flags & PLOT_FLAG_TRANS) == 0)
-            &&
-            ((flags & (BITMAPF_MONOGLYPH|BITMAPF_BUFFER_NATIVE))==0) ){
-            opaque = true;
-        }
+	if( ( (atari_plot_flags & PLOT_FLAG_TRANS) == 0)
+	    &&
+	    ((flags & (BITMAPF_MONOGLYPH|BITMAPF_BUFFER_NATIVE))==0) ){
+	    opaque = true;
+	}
     }
 
     assert( clip->g_h > 0 );
@@ -1046,53 +1112,53 @@ static bool bitmap_convert_8(struct bitmap * img, int x,
     // the bitmap is fully opaque
 
     if( (opaque == true) || (flags & BITMAPF_BUFFER_NATIVE ) ){
-        if( img->converted == true ){
-            *out = img->native;
-            return( 0 );
-        }
-        if( ( flags & BITMAPF_MONOGLYPH ) == 0 ){
-            cache = true;
-        }
+	if( img->converted == true ){
+	    *out = img->native;
+	    return( 0 );
+	}
+	if( ( flags & BITMAPF_MONOGLYPH ) == 0 ){
+	    cache = true;
+	}
     }
     if( ( flags & BITMAPF_MONOGLYPH ) != 0 ){
-        assert(cache == false);
+	assert(cache == false);
     }
 
     /* (re)allocate buffer for out image: */
     /* altough the buffer is named "buf_packed" on 8bit systems */
     /* it's not... */
     if( cache == false ){
-        // the size of the output will match the size of the clipping:
-        dststride = MFDB_STRIDE( clip->g_w );
-        dstsize = ( ((dststride >> 3) * clip->g_h) * atari_plot_bpp_virt);
-        if (dstsize > size_buf_packed) {
-            int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
-            void *buf;
-            if (buf_packed == NULL) {
-                buf = malloc( blocks * CONV_BLOCK_SIZE);
-            } else {
-                buf = realloc(buf_packed, blocks * CONV_BLOCK_SIZE);
-            }
-            if (buf == NULL) {
-                return( 0-ERR_NO_MEM );
-            }
-            buf_packed = buf;
-            size_buf_packed = blocks * CONV_BLOCK_SIZE;
-        }
-        native.fd_addr = buf_packed;
+	// the size of the output will match the size of the clipping:
+	dststride = MFDB_STRIDE( clip->g_w );
+	dstsize = ( ((dststride >> 3) * clip->g_h) * atari_plot_bpp_virt);
+	if (dstsize > size_buf_packed) {
+	    int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
+	    void *buf;
+	    if (buf_packed == NULL) {
+		buf = malloc( blocks * CONV_BLOCK_SIZE);
+	    } else {
+		buf = realloc(buf_packed, blocks * CONV_BLOCK_SIZE);
+	    }
+	    if (buf == NULL) {
+		return( 0-ERR_NO_MEM );
+	    }
+	    buf_packed = buf;
+	    size_buf_packed = blocks * CONV_BLOCK_SIZE;
+	}
+	native.fd_addr = buf_packed;
     }
     else {
-        // the output image will be completly saved, so size of the output
-        // image will match the input image size.
-        dststride = MFDB_STRIDE( bw );
-        dstsize = ( ((dststride >> 3) * bh) * atari_plot_bpp_virt);
-        assert( out->fd_addr == NULL );
-        native.fd_addr = malloc( dstsize );
-        if (native.fd_addr == NULL){
-            if (scrbuf != NULL)
-                atari_bitmap_destroy(scrbuf);
-            return( 0-ERR_NO_MEM );
-        }
+	// the output image will be completly saved, so size of the output
+	// image will match the input image size.
+	dststride = MFDB_STRIDE( bw );
+	dstsize = ( ((dststride >> 3) * bh) * atari_plot_bpp_virt);
+	assert( out->fd_addr == NULL );
+	native.fd_addr = malloc( dstsize );
+	if (native.fd_addr == NULL){
+	    if (scrbuf != NULL)
+		atari_bitmap_destroy(scrbuf);
+	    return( 0-ERR_NO_MEM );
+	}
     }
 
 
@@ -1103,29 +1169,29 @@ static bool bitmap_convert_8(struct bitmap * img, int x,
     */
     // realloc mem for stdform
     if( opaque == false ){
-        // point image to snapshot buffer, otherwise allocate mem
-        MFDB * bg = snapshot_create_std_mfdb(x, y, clip->g_w, clip->g_h);
-        stdform.fd_addr = bg->fd_addr;
-        bh = clip->g_h;
+	// point image to snapshot buffer, otherwise allocate mem
+	MFDB * bg = snapshot_create_std_mfdb(x, y, clip->g_w, clip->g_h);
+	stdform.fd_addr = bg->fd_addr;
+	bh = clip->g_h;
     } else {
-        if (dstsize > size_buf_planar) {
-            int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
-            void *buf;
-            if (buf_planar == NULL) {
-                buf = malloc(blocks * CONV_BLOCK_SIZE);
-            } else {
-                buf = realloc(buf_planar, blocks * CONV_BLOCK_SIZE);
-            }
-            if (buf == NULL ) {
-                if (cache) {
-                    free(native.fd_addr);
-                }
-                return( 0-ERR_NO_MEM );
-            }
-            buf_planar = buf;
-            size_buf_planar = blocks * CONV_BLOCK_SIZE;
-        }
-        stdform.fd_addr = buf_planar;
+	if (dstsize > size_buf_planar) {
+	    int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
+	    void *buf;
+	    if (buf_planar == NULL) {
+		buf = malloc(blocks * CONV_BLOCK_SIZE);
+	    } else {
+		buf = realloc(buf_planar, blocks * CONV_BLOCK_SIZE);
+	    }
+	    if (buf == NULL ) {
+		if (cache) {
+		    free(native.fd_addr);
+		}
+		return( 0-ERR_NO_MEM );
+	    }
+	    buf_planar = buf;
+	    size_buf_planar = blocks * CONV_BLOCK_SIZE;
+	}
+	stdform.fd_addr = buf_planar;
     }
     stdform.fd_w = dststride;
     stdform.fd_h = bh;
@@ -1143,67 +1209,67 @@ static bool bitmap_convert_8(struct bitmap * img, int x,
     int wdplanesize = stdform.fd_wdwidth*stdform.fd_h;
 
     if( opaque == false ){
-        // apply transparency and convert to vdi std format
-        unsigned long bgcol = 0;
-        unsigned char prev_col = 0;
-        for( y=0; y<clip->g_h; y++ ){
-            row = (uint32_t *)(img->pixdata + (img_stride * (y+clip->g_y)));
-            for( x=0; x<clip->g_w; x++ ){
-                pixel = row[x+clip->g_x];
-                if( (pixel&0xFF) == 0 ){
-                    continue;
-                }
-                if( (pixel&0xFF) < 0xF0 ){
-                    col = get_stdpx( &stdform, wdplanesize,x,y );
-                    if( (col != prev_col) || (y == 0) )
-                        bgcol = (((rgb_lookup[col][2] << 16) | (rgb_lookup[col][1] << 8) | (rgb_lookup[col][0]))<<8);
-                    if( prev_col != col || prev_pixel != pixel ){
-                        prev_col = col;
-                        pixel = ablend( pixel, bgcol );
-                        prev_pixel = pixel;
-                        pixel = pixel >> 8;
-                        /* convert pixel value to vdi color index: */
-                        col = ( ((pixel&0xFF)<<16)
-                                | (pixel&0xFF00)
-                                | ((pixel&0xFF0000)>>16) );
-                        val = RGB_TO_VDI( col );
-                    }
-                    set_stdpx( &stdform, wdplanesize, x, y, val );
-                } else {
-                    if( pixel != prev_pixel ){
-                        /* convert pixel value to vdi color index: */
-                        pixel = pixel >> 8;
-                        col = ( ((pixel&0xFF)<<16)
-                                | (pixel&0xFF00)
-                                | ((pixel&0xFF0000)>>16) );
-                        val = RGB_TO_VDI( col );
-                        prev_pixel = pixel;
-                    }
-                    set_stdpx( &stdform, wdplanesize, x, y, val );
-                }
-            }
-        }
-        // adjust output position:
-        clip->g_x = 0;
-        clip->g_y = 0;
+	// apply transparency and convert to vdi std format
+	unsigned long bgcol = 0;
+	unsigned char prev_col = 0;
+	for( y=0; y<clip->g_h; y++ ){
+	    row = (uint32_t *)(img->pixdata + (img_stride * (y+clip->g_y)));
+	    for( x=0; x<clip->g_w; x++ ){
+		pixel = row[x+clip->g_x];
+		if( (pixel&0xFF) == 0 ){
+		    continue;
+		}
+		if( (pixel&0xFF) < 0xF0 ){
+		    col = get_stdpx( &stdform, wdplanesize,x,y );
+		    if( (col != prev_col) || (y == 0) )
+			bgcol = (((rgb_lookup[col][2] << 16) | (rgb_lookup[col][1] << 8) | (rgb_lookup[col][0]))<<8);
+		    if( prev_col != col || prev_pixel != pixel ){
+			prev_col = col;
+			pixel = ablend( pixel, bgcol );
+			prev_pixel = pixel;
+			pixel = pixel >> 8;
+			/* convert pixel value to vdi color index: */
+			col = ( ((pixel&0xFF)<<16)
+				| (pixel&0xFF00)
+				| ((pixel&0xFF0000)>>16) );
+			val = RGB_TO_VDI( col );
+		    }
+		    set_stdpx( &stdform, wdplanesize, x, y, val );
+		} else {
+		    if( pixel != prev_pixel ){
+			/* convert pixel value to vdi color index: */
+			pixel = pixel >> 8;
+			col = ( ((pixel&0xFF)<<16)
+				| (pixel&0xFF00)
+				| ((pixel&0xFF0000)>>16) );
+			val = RGB_TO_VDI( col );
+			prev_pixel = pixel;
+		    }
+		    set_stdpx( &stdform, wdplanesize, x, y, val );
+		}
+	    }
+	}
+	// adjust output position:
+	clip->g_x = 0;
+	clip->g_y = 0;
     } else {
-        // convert the whole image data to vdi std format.
-        for( y=0; y < bh; y++ ){
-            row = (uint32_t *)(img->pixdata + (img_stride * y));
-            for( x=0; x < bw; x++ ){
-                pixel = row[x];
-                if( pixel != prev_pixel ){
-                    /* convert pixel value to vdi color index: */
-                    pixel = pixel >> 8;
-                    col = ( ((pixel&0xFF)<<16)
-                            | (pixel&0xFF00)
-                            | ((pixel&0xFF0000)>>16) );
-                    val = RGB_TO_VDI( col );
-                    prev_pixel = pixel;
-                }
-                set_stdpx( &stdform, wdplanesize, x, y, val );
-            }
-        }
+	// convert the whole image data to vdi std format.
+	for( y=0; y < bh; y++ ){
+	    row = (uint32_t *)(img->pixdata + (img_stride * y));
+	    for( x=0; x < bw; x++ ){
+		pixel = row[x];
+		if( pixel != prev_pixel ){
+		    /* convert pixel value to vdi color index: */
+		    pixel = pixel >> 8;
+		    col = ( ((pixel&0xFF)<<16)
+			    | (pixel&0xFF00)
+			    | ((pixel&0xFF0000)>>16) );
+		    val = RGB_TO_VDI( col );
+		    prev_pixel = pixel;
+		}
+		set_stdpx( &stdform, wdplanesize, x, y, val );
+	    }
+	}
     }
 
     // convert into native format:
@@ -1216,8 +1282,8 @@ static bool bitmap_convert_8(struct bitmap * img, int x,
     vr_trnfm(atari_plot_vdi_handle, &stdform, &native );
     *out = native;
     if( cache == true ){
-        img->native = native;
-        img->converted = true;
+	img->native = native;
+	img->converted = true;
     }
 
     return(0);
@@ -1225,24 +1291,30 @@ static bool bitmap_convert_8(struct bitmap * img, int x,
 #endif
 
 
-/*
- *
+/**
  * Convert bitmap to the native screen format
- *   img:    the bitmap
- *   x:      coordinate where the bitmap REGION (described in clip)
+ *
+ * \param img the bitmap
+ * \param x coordinate where the bitmap REGION (described in clip)
  *           shall be drawn (screen coords)
- *   y:      coordinate where the bitmap REGION (described in clip)
+ * \param y coordinate where the bitmap REGION (described in clip)
  *           shall be drawn (screen coords)
- *   clip:   which area of the bitmap shall be drawn
- *   bg:     background color
- *   flags:  blit flags
- *   out:    the result MFDB
+ * \param clip which area of the bitmap shall be drawn
+ * \param bg background color
+ * \param flags blit flags
+ * \param out the result MFDB
  */
-static bool bitmap_convert_tc(struct bitmap * img, int x, int y,
-                              GRECT * clip, uint32_t bg, uint32_t flags, MFDB *out  )
+static bool
+bitmap_convert_tc(struct bitmap *img,
+		  int x,
+		  int y,
+		  GRECT *clip,
+		  uint32_t bg,
+		  uint32_t flags,
+		  MFDB *out)
 {
-    int dststride;                      /* stride of dest. image */
-    int dstsize;                        /* size of dest. in byte */
+    int dststride; /* stride of dest. image */
+    int dstsize; /* size of dest. in byte */
     int err;
     int bw, bh;
     struct bitmap * scrbuf = NULL;
@@ -1250,14 +1322,13 @@ static bool bitmap_convert_tc(struct bitmap * img, int x, int y,
     bool cache =  ( flags & BITMAPF_BUFFER_NATIVE );
     bool opaque = atari_bitmap_get_opaque( img );
 
-    if( opaque == false ){
-        if( ( (atari_plot_flags & PLOT_FLAG_TRANS) == 0)
-            &&
-            ((flags & (BITMAPF_MONOGLYPH|BITMAPF_BUFFER_NATIVE))==0) ){
-            opaque = true;
-        }
+    if (opaque == false ) {
+	if( ( (atari_plot_flags & PLOT_FLAG_TRANS) == 0)
+	    &&
+	    ((flags & (BITMAPF_MONOGLYPH|BITMAPF_BUFFER_NATIVE))==0) ){
+	    opaque = true;
+	}
     }
-
 
     assert( clip->g_h > 0 );
     assert( clip->g_w > 0 );
@@ -1277,80 +1348,80 @@ static bool bitmap_convert_tc(struct bitmap * img, int x, int y,
     // toolbar buttons right now.
 
     if( (opaque == true) || (flags & BITMAPF_BUFFER_NATIVE ) ){
-        if( img->converted == true ){
-            *out = img->native;
-            return( 0 );
-        }
-        if( ( flags & BITMAPF_MONOGLYPH ) == 0 ){
-            cache = true;
-        }
+	if( img->converted == true ){
+	    *out = img->native;
+	    return( 0 );
+	}
+	if( ( flags & BITMAPF_MONOGLYPH ) == 0 ){
+	    cache = true;
+	}
     }
 
     /* rem. if eddi xy is installed, we could directly access the screen! */
     /* apply transparency to the image: */
     if (( opaque == false )) {
-        /* copy the screen to an temp buffer: */
-        if ((flags & BITMAPF_BUFFER_NATIVE) == 0) {
-            scrbuf = snapshot_create(x, y, clip->g_w, clip->g_h);
-            if( scrbuf != NULL ) {
+	/* copy the screen to an temp buffer: */
+	if ((flags & BITMAPF_BUFFER_NATIVE) == 0) {
+	    scrbuf = snapshot_create(x, y, clip->g_w, clip->g_h);
+	    if( scrbuf != NULL ) {
 
-                assert( clip->g_w <= bw );
-                assert( clip->g_h <= bh );
+		assert( clip->g_w <= bw );
+		assert( clip->g_h <= bh );
 
-                // copy blended pixels to the screen buffer:
-                ablend_bitmap( img, scrbuf, clip, NULL );
-                /* adjust size which gets converted: */
-                bw = clip->g_w;
-                bh = clip->g_h;
-                /* adjust output position: */
-                clip->g_x = 0;
-                clip->g_y = 0;
-                /* set the source of conversion: */
-                source = scrbuf;
-            }
-        } else {
-            /*
-              The whole bitmap can be transformed to an mfdb
-              (and get's cached)
-            */
-            GRECT region = { 0, 0, bw, bh };
-            ablend_pixel( img, bg, &region );
-            source = img;
-        }
+		// copy blended pixels to the screen buffer:
+		ablend_bitmap( img, scrbuf, clip, NULL );
+		/* adjust size which gets converted: */
+		bw = clip->g_w;
+		bh = clip->g_h;
+		/* adjust output position: */
+		clip->g_x = 0;
+		clip->g_y = 0;
+		/* set the source of conversion: */
+		source = scrbuf;
+	    }
+	} else {
+	    /*
+	      The whole bitmap can be transformed to an mfdb
+	      (and get's cached)
+	    */
+	    GRECT region = { 0, 0, bw, bh };
+	    ablend_pixel( img, bg, &region );
+	    source = img;
+	}
     } else {
-        source = img;
+	source = img;
     }
     /* (re)allocate buffer for converted image: */
     dststride = MFDB_STRIDE(bw);
     dstsize = ( ((dststride >> 3) * bh) * atari_plot_bpp_virt );
     if (cache == false) {
-        /* ensure cache buffer is large enough */
-        if (dstsize > size_buf_packed) {
-            int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
-            void *buf;
-            if (buf_packed == NULL) {
-                buf = malloc(blocks * CONV_BLOCK_SIZE);
-            } else {
-                buf = realloc(buf_packed, blocks * CONV_BLOCK_SIZE);
-            }
-            if (buf == NULL ) {
-                if (scrbuf != NULL) {
-                    atari_bitmap_destroy(scrbuf);
-                }
-                return( 0-ERR_NO_MEM );
-            }
-            buf_packed = buf;
-            size_buf_packed = blocks * CONV_BLOCK_SIZE;
-        }
-        out->fd_addr = buf_packed;
+	/* ensure cache buffer is large enough */
+	if (dstsize > size_buf_packed) {
+	    int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
+	    void *buf;
+	    if (buf_packed == NULL) {
+		buf = malloc(blocks * CONV_BLOCK_SIZE);
+	    } else {
+		buf = realloc(buf_packed, blocks * CONV_BLOCK_SIZE);
+	    }
+	    if (buf == NULL ) {
+		if (scrbuf != NULL) {
+		    atari_bitmap_destroy(scrbuf);
+		}
+		return( 0-ERR_NO_MEM );
+	    }
+	    buf_packed = buf;
+	    size_buf_packed = blocks * CONV_BLOCK_SIZE;
+	}
+	out->fd_addr = buf_packed;
     } else {
-        assert( out->fd_addr == NULL );
-        out->fd_addr = (void*)malloc( dstsize );
-        if( out->fd_addr == NULL ){
-            if( scrbuf != NULL )
-                atari_bitmap_destroy( scrbuf );
-            return( 0-ERR_NO_MEM );
-        }
+	assert( out->fd_addr == NULL );
+	out->fd_addr = (void*)malloc( dstsize );
+	if( out->fd_addr == NULL ){
+	    if( scrbuf != NULL )
+		atari_bitmap_destroy( scrbuf );
+	    return( 0-ERR_NO_MEM );
+	}
     }
 
     out->fd_w = dststride;
@@ -1361,10 +1432,10 @@ static bool bitmap_convert_tc(struct bitmap * img, int x, int y,
     out->fd_r1 = out->fd_r2 = out->fd_r3 = 0;
 
     err = Hermes_ConverterRequest(
-        hermes_cnv_h,
-        &nsfmt,
-        &vfmt
-        );
+	hermes_cnv_h,
+	&nsfmt,
+	&vfmt
+	);
     assert( err != 0 );
 
     // FIXME: here we can use the same optimization which is used for
@@ -1372,43 +1443,44 @@ static bool bitmap_convert_tc(struct bitmap * img, int x, int y,
 
     /* convert image to virtual format: */
     err = Hermes_ConverterCopy( hermes_cnv_h,
-                                source->pixdata,
-                                0,                  /* x src coord of top left in pixel coords */
-                                0,                  /* y src coord of top left in pixel coords */
-                                bw, bh,
-                                source->rowstride,  /* stride as bytes */
-                                out->fd_addr,
-                                0,                  /* x dst coord of top left in pixel coords */
-                                0,                  /* y dst coord of top left in pixel coords */
-                                bw, bh,
-                                (dststride >> 3) *  atari_plot_bpp_virt             /* stride as bytes */
-        );
+				source->pixdata,
+				0, /* x src coord of top left in pixel coords */
+				0, /* y src coord of top left in pixel coords */
+				bw, bh,
+				source->rowstride,  /* stride as bytes */
+				out->fd_addr,
+				0, /* x dst coord of top left in pixel coords */
+				0,/* y dst coord of top left in pixel coords */
+				bw, bh,
+				(dststride >> 3) *  atari_plot_bpp_virt             /* stride as bytes */
+	);
     assert( err != 0 );
 
     if( cache == true ){
-        img->native = *out;
-        img->converted = true;
+	img->native = *out;
+	img->converted = true;
     }
     return( 0 );
 
 }
 
+
 inline static void convert_bitmap_done(void)
 {
     if (size_buf_packed > CONV_KEEP_LIMIT) {
-        void *buf;
-        /* free the mem if it was an large allocation ... */
-        buf = realloc(buf_packed, CONV_KEEP_LIMIT);
-        if (buf != NULL) {
-            buf_packed = buf;
-            size_buf_packed = CONV_KEEP_LIMIT;
-        }
+	void *buf;
+	/* free the mem if it was an large allocation ... */
+	buf = realloc(buf_packed, CONV_KEEP_LIMIT);
+	if (buf != NULL) {
+	    buf_packed = buf;
+	    size_buf_packed = CONV_KEEP_LIMIT;
+	}
     }
 }
 
 
 bool plot_blit_bitmap(struct bitmap * bmp, int x, int y,
-                      unsigned long bg, unsigned long flags )
+		      unsigned long bg, unsigned long flags )
 {
     MFDB src_mf;
     MFDB scrmf;
@@ -1431,7 +1503,7 @@ bool plot_blit_bitmap(struct bitmap * bmp, int x, int y,
     clip.g_h = view.clipping.y1 - view.clipping.y0;
 
     if( !rc_intersect( &clip, &off) ) {
-        return(true);
+	return(true);
     }
 
     // clip the visible rectangle of the plot area
@@ -1439,7 +1511,7 @@ bool plot_blit_bitmap(struct bitmap * bmp, int x, int y,
     // screen region:
     plot_get_visible_grect(&vis);
     if( !rc_intersect( &vis, &off) ) {
-        return(true);
+	return(true);
     }
 
     screen_x = view.x + off.g_x;
@@ -1453,8 +1525,8 @@ bool plot_blit_bitmap(struct bitmap * bmp, int x, int y,
     /* Convert the Bitmap to native screen format - ready for output.   */
     /* This includes blending transparent pixels:                       */
     if (bitmap_convert(bmp, screen_x, screen_y, &off, bg, flags, &src_mf)
-        != 0 ) {
-        return(true);
+	!= 0 ) {
+	return(true);
     }
 
     // setup the src region:
@@ -1475,8 +1547,9 @@ bool plot_blit_bitmap(struct bitmap * bmp, int x, int y,
     return(true);
 }
 
+
 bool plot_blit_mfdb(GRECT * loc, MFDB * insrc, short fgcolor,
-                    uint32_t flags)
+		    uint32_t flags)
 {
     MFDB screen;
 //  MFDB tran;
@@ -1487,7 +1560,7 @@ bool plot_blit_mfdb(GRECT * loc, MFDB * insrc, short fgcolor,
 
     plot_get_clip_grect(&off);
     if( rc_intersect(loc, &off) == 0 ){
-        return( 1 );
+	return( 1 );
     }
 
     init_mfdb( 0, loc->g_w, loc->g_h, 0, &screen );
@@ -1527,53 +1600,48 @@ bool plot_blit_mfdb(GRECT * loc, MFDB * insrc, short fgcolor,
 
 
     if( flags & PLOT_FLAG_TRANS && src->fd_nplanes == 1){
-        vrt_cpyfm(atari_plot_vdi_handle, MD_REPLACE/*MD_TRANS*/, (short*)pxy, src, &screen, (short*)&c);
+	vrt_cpyfm(atari_plot_vdi_handle, MD_REPLACE/*MD_TRANS*/, (short*)pxy, src, &screen, (short*)&c);
     } else {
-        /* this method only plots transparent bitmaps, right now... */
+	/* this method only plots transparent bitmaps, right now... */
     }
     return( 1 );
 }
 
-/*
-  Init screen and font driver objects.
-  Returns non-zero value > -1 when the objects could be succesfully created.
-  Returns value < 0 to indicate an error
-*/
 
-int plot_init(char * fdrvrname)
+/* exported interface documented in atari/plot.h */
+int plot_init(const struct redraw_context *ctx, char *fdrvrname)
 {
-
-    GRECT loc_pos= {0,0,360,400};
+    GRECT loc_pos = { 0, 0, 360, 400 };
     int err=0;
 
     if( nsoption_int(atari_dither) == 1)
-        atari_plot_flags |= PLOT_FLAG_DITHER;
+	atari_plot_flags |= PLOT_FLAG_DITHER;
     if( nsoption_int(atari_transparency) == 1 )
-        atari_plot_flags |= PLOT_FLAG_TRANS;
+	atari_plot_flags |= PLOT_FLAG_TRANS;
     if( nsoption_int(atari_font_monochrom) == 1 )
-        atari_font_flags |= FONTPLOT_FLAG_MONOGLYPH;
+	atari_font_flags |= FONTPLOT_FLAG_MONOGLYPH;
 
-    if(atari_plot_vdi_handle == -1) {
+    if (atari_plot_vdi_handle == -1) {
 
-        short dummy;
-        short work_in[12] = {Getrez()+2,1,1,1,1,1,1,1,1,1,2,1};
-        short work_out[57];
-        atari_plot_vdi_handle=graf_handle(&dummy, &dummy, &dummy, &dummy);
-        v_opnvwk(work_in, &atari_plot_vdi_handle, work_out);
-        LOG("Plot VDI handle: %d", atari_plot_vdi_handle);
+	short dummy;
+	short work_in[12] = {Getrez()+2,1,1,1,1,1,1,1,1,1,2,1};
+	short work_out[57];
+	atari_plot_vdi_handle=graf_handle(&dummy, &dummy, &dummy, &dummy);
+	v_opnvwk(work_in, &atari_plot_vdi_handle, work_out);
+	LOG("Plot VDI handle: %d", atari_plot_vdi_handle);
     }
     read_vdi_sysinfo(atari_plot_vdi_handle, &vdi_sysinfo);
     if(verbose_log) {
-        dump_vdi_info(atari_plot_vdi_handle) ;
-        dump_font_drivers();
+	dump_vdi_info(atari_plot_vdi_handle) ;
+	dump_font_drivers();
     }
 
     fplotter = new_font_plotter(atari_plot_vdi_handle, fdrvrname,
-                                atari_font_flags, &err);
-    if(err) {
-        const char * desc = plot_err_str(err);
-        LOG("Unable to load font plotter %s -> %s", fdrvrname, desc );
-        die("font plotter");
+				atari_font_flags, &err);
+    if (err) {
+	const char * desc = plot_err_str(err);
+	LOG("Unable to load font plotter %s -> %s", fdrvrname, desc );
+	die("font plotter");
     }
 
     memset(&view, 0, sizeof(struct s_view));
@@ -1587,9 +1655,9 @@ int plot_init(char * fdrvrname)
     buf_packed = NULL;
     buf_planar = NULL;
     if( vdi_sysinfo.vdiformat == VDI_FORMAT_PACK  ) {
-        atari_plot_bpp_virt = vdi_sysinfo.scr_bpp;
+	atari_plot_bpp_virt = vdi_sysinfo.scr_bpp;
     } else {
-        atari_plot_bpp_virt = 8;
+	atari_plot_bpp_virt = 8;
     }
 
     plot_set_scale(1.0);
@@ -1600,7 +1668,7 @@ int plot_init(char * fdrvrname)
     clip.y0 = 0;
     clip.x1 = view.w;
     clip.y1 = view.h;
-    plot_clip(&clip);
+    ctx->plot->clip(ctx, &clip);
 
     assert(Hermes_Init());
 
@@ -1610,38 +1678,38 @@ int plot_init(char * fdrvrname)
     /* Setup color lookup tables and palette */
     unsigned char rgbcol[4];
     if( vdi_sysinfo.scr_bpp <= 8 ){
-        unsigned char graytone=0;
-        int i;
-        for( i=0; i<=255; i++ ) {
+	unsigned char graytone=0;
+	int i;
+	for( i=0; i<=255; i++ ) {
 
-            // get the current color and save it for restore:
-            vq_color(atari_plot_vdi_handle, i, 1, (unsigned short*)&sys_pal[i][0] );
-            if( i<OFFSET_WEB_PAL ) {
-                pal[i][0] = sys_pal[i][0];
-                pal[i][1] = sys_pal[i][1];
-                pal[i][2] = sys_pal[i][2];
-            } else if( vdi_sysinfo.scr_bpp >= 8 ) {
-                if ( i < OFFSET_CUST_PAL ){
-                    pal[i][0] = vdi_web_pal[i-OFFSET_WEB_PAL][0];
-                    pal[i][1] = vdi_web_pal[i-OFFSET_WEB_PAL][1];
-                    pal[i][2] = vdi_web_pal[i-OFFSET_WEB_PAL][2];
-                    //set the new palette color to websafe value:
-                    vs_color(atari_plot_vdi_handle, i, &pal[i][0]);
-                }
-                if( i >= OFFSET_CUST_PAL && i<OFFSET_CUST_PAL+16 ) {
-                    /* here we define 20 additional gray colors... */
-                    rgbcol[1] = rgbcol[2] = rgbcol[3] = ((graytone&0x0F) << 4);
-                    rgb_to_vdi1000( &rgbcol[0], &pal[i][0] );
-                    vs_color(atari_plot_vdi_handle, i, &pal[i][0]);
-                    graytone++;
-                }
+	    // get the current color and save it for restore:
+	    vq_color(atari_plot_vdi_handle, i, 1, (unsigned short*)&sys_pal[i][0] );
+	    if( i<OFFSET_WEB_PAL ) {
+		pal[i][0] = sys_pal[i][0];
+		pal[i][1] = sys_pal[i][1];
+		pal[i][2] = sys_pal[i][2];
+	    } else if( vdi_sysinfo.scr_bpp >= 8 ) {
+		if ( i < OFFSET_CUST_PAL ){
+		    pal[i][0] = vdi_web_pal[i-OFFSET_WEB_PAL][0];
+		    pal[i][1] = vdi_web_pal[i-OFFSET_WEB_PAL][1];
+		    pal[i][2] = vdi_web_pal[i-OFFSET_WEB_PAL][2];
+		    //set the new palette color to websafe value:
+		    vs_color(atari_plot_vdi_handle, i, &pal[i][0]);
+		}
+		if( i >= OFFSET_CUST_PAL && i<OFFSET_CUST_PAL+16 ) {
+		    /* here we define 20 additional gray colors... */
+		    rgbcol[1] = rgbcol[2] = rgbcol[3] = ((graytone&0x0F) << 4);
+		    rgb_to_vdi1000( &rgbcol[0], &pal[i][0] );
+		    vs_color(atari_plot_vdi_handle, i, &pal[i][0]);
+		    graytone++;
+		}
 
-            }
-            vdi1000_to_rgb( &pal[i][0],  &rgb_lookup[i][0] );
-        }
+	    }
+	    vdi1000_to_rgb( &pal[i][0],  &rgb_lookup[i][0] );
+	}
 
     } else {
-        /* no need to change the palette - its application specific */
+	/* no need to change the palette - its application specific */
     }
 #else
     bitmap_convert = bitmap_convert_tc;
@@ -1675,6 +1743,7 @@ int plot_init(char * fdrvrname)
     return( err );
 }
 
+
 int plot_finalise( void )
 {
 
@@ -1682,10 +1751,10 @@ int plot_finalise( void )
 
 #ifdef WITH_8BPP_SUPPORT
     if (vfmt.indexed) {
-        int i;
-        for (i=OFFSET_WEB_PAL; i<OFFSET_CUST_PAL+16; i++) {
-            vs_color(atari_plot_vdi_handle, i, &sys_pal[i][0]);
-        }
+	int i;
+	for (i=OFFSET_WEB_PAL; i<OFFSET_CUST_PAL+16; i++) {
+	    vs_color(atari_plot_vdi_handle, i, &sys_pal[i][0]);
+	}
     }
 #endif
 
@@ -1701,25 +1770,27 @@ int plot_finalise( void )
     return 0;
 }
 
+
 bool plot_lock(void)
 {
     if ((atari_plot_flags & PLOT_FLAG_LOCKED) != 0)
-        return(true);
+	return(true);
     if( !wind_update(BEG_UPDATE|0x100) )
-        return(false);
+	return(false);
     if( !wind_update(BEG_MCTRL|0x100) ){
-        wind_update(END_UPDATE);
-        return(false);
+	wind_update(END_UPDATE);
+	return(false);
     }
     atari_plot_flags |= PLOT_FLAG_LOCKED;
     graf_mouse(M_OFF, NULL);
     return(true);
 }
 
+
 bool plot_unlock(void)
 {
     if( (atari_plot_flags & PLOT_FLAG_LOCKED) == 0 )
-        return(true);
+	return(true);
     wind_update(END_MCTRL);
     wind_update(END_UPDATE);
     graf_mouse(M_ON, NULL);
@@ -1728,214 +1799,40 @@ bool plot_unlock(void)
     return(false);
 }
 
-bool plot_rectangle(int x0, int y0, int x1, int y1,
-                    const plot_style_t *pstyle )
-{
-    short pxy[4];
-    GRECT r, rclip, sclip;
-    int sw = pstyle->stroke_width;
-    uint32_t lt;
 
-    /* current canvas clip: */
-    rclip.g_x = view.clipping.x0;
-    rclip.g_y = view.clipping.y0;
-    rclip.g_w = view.clipping.x1 - view.clipping.x0;
-    rclip.g_h = view.clipping.y1 - view.clipping.y0;
-
-    /* physical clipping: */
-    sclip.g_x = rclip.g_x;
-    sclip.g_y = rclip.g_y;
-    sclip.g_w = view.vis_w;
-    sclip.g_h = view.vis_h;
-
-    rc_intersect(&sclip, &rclip);
-    r.g_x = x0;
-    r.g_y = y0;
-    r.g_w = x1 - x0;
-    r.g_h = y1 - y0;
-
-    if (!rc_intersect( &rclip, &r )) {
-        return(true);
-    }
-    if (pstyle->stroke_type != PLOT_OP_TYPE_NONE) {
-        /*
-          manually draw the line, because we do not need vdi clipping
-          for vertical / horizontal line draws.
-        */
-        if( sw == 0)
-            sw = 1;
-
-        NSLT2VDI(lt, pstyle);
-        vsl_type(atari_plot_vdi_handle, (lt&0x0F));
-        /*
-          if the line style is not available within VDI system,
-          define own style:
-        */
-        if( (lt&0x0F) == 7 ){
-            vsl_udsty(atari_plot_vdi_handle, ((lt&0xFFFF00) >> 8));
-        }
-        vsl_width(atari_plot_vdi_handle, (short)sw );
-        vsl_rgbcolor(atari_plot_vdi_handle, pstyle->stroke_colour);
-        /* top border: */
-        if( r.g_y == y0){
-            pxy[0] = view.x + r.g_x;
-            pxy[1] = view.y + r.g_y ;
-            pxy[2] = view.x + r.g_x + r.g_w;
-            pxy[3] = view.y + r.g_y;
-            v_pline(atari_plot_vdi_handle, 2, (short *)&pxy);
-        }
-
-        /* right border: */
-        if( r.g_x + r.g_w == x1 ){
-            pxy[0] = view.x + r.g_x + r.g_w;
-            pxy[1] = view.y + r.g_y;
-            pxy[2] = view.x + r.g_x + r.g_w;
-            pxy[3] = view.y + r.g_y + r.g_h;
-            v_pline(atari_plot_vdi_handle, 2, (short *)&pxy);
-        }
-
-        /* bottom border: */
-        if( r.g_y+r.g_h == y1 ){
-            pxy[0] = view.x + r.g_x;
-            pxy[1] = view.y + r.g_y+r.g_h;
-            pxy[2] = view.x + r.g_x+r.g_w;
-            pxy[3] = view.y + r.g_y+r.g_h;
-            v_pline(atari_plot_vdi_handle, 2, (short *)&pxy);
-        }
-
-        /* left border: */
-        if( r.g_x == x0 ){
-            pxy[0] = view.x + r.g_x;
-            pxy[1] = view.y + r.g_y;
-            pxy[2] = view.x + r.g_x;
-            pxy[3] = view.y + r.g_y + r.g_h;
-            v_pline(atari_plot_vdi_handle, 2, (short *)&pxy);
-        }
-    }
-
-    if( pstyle->fill_type != PLOT_OP_TYPE_NONE ){
-        short stroke_width = (short)(pstyle->stroke_type != PLOT_OP_TYPE_NONE) ?
-            pstyle->stroke_width : 0;
-
-        vsf_rgbcolor(atari_plot_vdi_handle, pstyle->fill_colour);
-        vsf_perimeter(atari_plot_vdi_handle, 0);
-        vsf_interior(atari_plot_vdi_handle, FIS_SOLID);
-
-
-        pxy[0] = view.x + r.g_x + stroke_width;
-        pxy[1] = view.y + r.g_y + stroke_width;
-        pxy[2] = view.x + r.g_x + r.g_w -1 - stroke_width;
-        pxy[3] = view.y + r.g_y + r.g_h -1 - stroke_width;
-
-        vsf_style(atari_plot_vdi_handle, 1);
-        v_bar(atari_plot_vdi_handle, (short*)&pxy);
-    }
-    return (true);
-}
-
-bool plot_line(int x0, int y0, int x1, int y1,
-               const plot_style_t *pstyle )
-{
-    short pxy[4];
-    uint32_t lt;
-    int sw = pstyle->stroke_width;
-
-    if((x0 < 0 && x1 < 0) || (y0 < 0 && y1 < 0)){
-        return(true);
-    }
-
-    pxy[0] = view.x + MAX(0,x0);
-    pxy[1] = view.y + MAX(0,y0);
-    pxy[2] = view.x + MAX(0,x1);
-    pxy[3] = view.y + MAX(0,y1);
-
-    if((y0 > view.h-1) && (y1 > view.h-1))
-        return(true);
-
-    //printf("view: %d,%d,%d,%d\n", view.x, view.y, view.w, view.h);
-    //printf("line: %d,%d,%d,%d\n", x0,  y0,  x1,  y1);
-
-
-    //plot_vdi_clip(true);
-    if( sw == 0)
-        sw = 1;
-    NSLT2VDI(lt, pstyle)
-        vsl_type(atari_plot_vdi_handle, (lt&0x0F));
-    /* if the line style is not available within VDI system,define own style: */
-    if( (lt&0x0F) == 7 ){
-        vsl_udsty(atari_plot_vdi_handle, ((lt&0xFFFF00) >> 8));
-    }
-    vsl_width(atari_plot_vdi_handle, (short)sw);
-    vsl_rgbcolor(atari_plot_vdi_handle, pstyle->stroke_colour);
-    v_pline(atari_plot_vdi_handle, 2, (short *)&pxy );
-    //plot_vdi_clip(false);
-    return (true);
-}
-
-static bool plot_polygon(const int *p, unsigned int n,
-                         const plot_style_t *pstyle)
-{
-    short pxy[n*2];
-    unsigned int i=0;
-    if (vdi_sysinfo.maxpolycoords > 0)
-        assert( (signed int)n < vdi_sysinfo.maxpolycoords);
-
-    vsf_interior(atari_plot_vdi_handle, FIS_SOLID);
-    vsf_style(atari_plot_vdi_handle, 1);
-    for (i = 0; i<n*2; i=i+2) {
-        pxy[i] = (short)view.x+p[i];
-        pxy[i+1] = (short)view.y+p[i+1];
-    }
-    if (pstyle->fill_type == PLOT_OP_TYPE_SOLID) {
-        vsf_rgbcolor(atari_plot_vdi_handle, pstyle->fill_colour);
-        v_fillarea(atari_plot_vdi_handle, n, (short*)&pxy);
-    } else {
-        pxy[n*2]=pxy[0];
-        pxy[n*2+1]=pxy[1];
-        vsl_rgbcolor(atari_plot_vdi_handle, pstyle->stroke_colour);
-        v_pline(atari_plot_vdi_handle, n+1,  (short *)&pxy);
-    }
-
-    return ( true );
-}
-
-/***
- * Set plot origin and canvas size
- * \param x the x origin
- * \param y the y origin
- * \param w the width of the plot area
- * \param h the height of the plot area
- */
-bool plot_set_dimensions(int x, int y, int w, int h)
+/* exported interface documented in atari/plot.h */
+bool
+plot_set_dimensions(const struct redraw_context *ctx, int x, int y, int w, int h)
 {
     bool doupdate = false;
     struct rect newclip = {0, 0, w, h};
     GRECT absclip = {x, y, w, h};
 
     if (!(w == view.w && h == view.h)) {
-        view.w = (short)w;
-        view.h = (short)h;
-        doupdate = true;
+	view.w = (short)w;
+	view.h = (short)h;
+	doupdate = true;
     }
     if (!(x == view.x && y == view.y)) {
-        view.x = (short)x;
-        view.y = (short)y;
-        doupdate = true;
+	view.x = (short)x;
+	view.y = (short)y;
+	doupdate = true;
     }
     if (doupdate==true)
-        update_visible_rect();
+	update_visible_rect();
 
     //dbg_rect("plot_set_dimensions", &newclip);
 
     plot_set_abs_clipping(&absclip);
-    plot_clip(&newclip);
+    ctx->plot->clip(ctx, &newclip);
     return(true);
 }
 
-/***
+
+/**
  * Get current canvas size
- * \param dst the GRECT * which receives the canvas size
  *
+ * \param dst the GRECT * which receives the canvas size
  */
 bool plot_get_dimensions(GRECT *dst)
 {
@@ -1945,6 +1842,7 @@ bool plot_get_dimensions(GRECT *dst)
     dst->g_h = view.h;
     return(true);
 }
+
 
 /**
  * set scale of plotter.
@@ -1961,6 +1859,7 @@ float plot_set_scale(float scale)
     return(ret);
 }
 
+
 float plot_get_scale(void)
 {
     return(view.scale);
@@ -1968,10 +1867,9 @@ float plot_get_scale(void)
 
 
 /**
- *
  * Subsequent calls to plot_clip will be clipped by the absolute clip.
- * \param area the maximum clipping rectangle (absolute screen coords)
  *
+ * \param area the maximum clipping rectangle (absolute screen coords)
  */
 void plot_set_abs_clipping(const GRECT *area)
 {
@@ -1980,21 +1878,20 @@ void plot_set_abs_clipping(const GRECT *area)
     plot_get_dimensions(&canvas);
 
     if(!rc_intersect(area, &canvas)){
-        view.abs_clipping.x0 = 0;
-        view.abs_clipping.x1 = 0;
-        view.abs_clipping.y0 = 0;
-        view.abs_clipping.y1 = 0;
-    }
-    else {
-        view.abs_clipping.x0 = area->g_x;
-        view.abs_clipping.x1 = area->g_x + area->g_w;
-        view.abs_clipping.y0 = area->g_y;
-        view.abs_clipping.y1 = area->g_y + area->g_h;
+	view.abs_clipping.x0 = 0;
+	view.abs_clipping.x1 = 0;
+	view.abs_clipping.y0 = 0;
+	view.abs_clipping.y1 = 0;
+    } else {
+	view.abs_clipping.x0 = area->g_x;
+	view.abs_clipping.x1 = area->g_x + area->g_w;
+	view.abs_clipping.y0 = area->g_y;
+	view.abs_clipping.y1 = area->g_y + area->g_h;
     }
 }
 
 
-/***
+/**
  * Get the maximum clip extent, in absolute screen coords
  * \param dst the structure that receives the absolute clipping
  */
@@ -2004,7 +1901,7 @@ void plot_get_abs_clipping(struct rect *dst)
 }
 
 
-/***
+/**
  * Get the maximum clip extent, in absolute screen coords
  * \param dst the structure that receives the absolute clipping
  */
@@ -2016,7 +1913,64 @@ void plot_get_abs_clipping_grect(GRECT *dst)
     dst->g_h = view.abs_clipping.y1 - view.abs_clipping.y0;
 }
 
-bool plot_clip(const struct rect *clip)
+
+VdiHdl plot_get_vdi_handle(void)
+{
+    return(atari_plot_vdi_handle);
+}
+
+
+long plot_get_flags(void)
+{
+    return(atari_plot_flags);
+}
+
+
+bool plot_get_clip(struct rect * out)
+{
+    out->x0 = view.clipping.x0;
+    out->y0 = view.clipping.y0;
+    out->x1 = view.clipping.x1;
+    out->y1 = view.clipping.y1;
+    return( true );
+}
+
+
+void plot_get_clip_grect(GRECT * out)
+{
+    struct rect clip={0,0,0,0};
+
+    plot_get_clip(&clip);
+
+    out->g_x = clip.x0;
+    out->g_y = clip.y0;
+    out->g_w = clip.x1 - clip.x0;
+    out->g_h = clip.y1 - clip.y0;
+}
+
+
+FONT_PLOTTER plot_get_text_plotter()
+{
+    return(fplotter);
+}
+
+
+void plot_set_text_plotter(FONT_PLOTTER font_plotter)
+{
+    fplotter = font_plotter;
+}
+
+
+/**
+ * \brief Sets a clip rectangle for subsequent plot operations.
+ *
+ * \param ctx The current redraw context.
+ * \param clip The rectangle to limit all subsequent plot
+ *              operations within.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+plot_clip(const struct redraw_context *ctx, const struct rect *clip)
 {
     GRECT canvas, screen, gclip, maxclip;
     short pxy[4];
@@ -2041,14 +1995,14 @@ bool plot_clip(const struct rect *clip)
     rc_intersect(&canvas, &gclip);
 
     if(gclip.g_h < 0){
-        gclip.g_h = 0;
+	gclip.g_h = 0;
     }
 
     if (!rc_intersect(&screen, &gclip)) {
-        //dbg_rect("cliprect: ", &view.clipping);
-        //dbg_grect("screen: ", &canvas);
-        //dbg_grect("canvas clipped: ", &gclip);
-        //assert(1 == 0);
+	//dbg_rect("cliprect: ", &view.clipping);
+	//dbg_grect("screen: ", &canvas);
+	//dbg_grect("canvas clipped: ", &gclip);
+	//assert(1 == 0);
     }
 
     // When setting VDI clipping, obey to maximum cliping rectangle:
@@ -2064,106 +2018,379 @@ bool plot_clip(const struct rect *clip)
 
     vs_clip(atari_plot_vdi_handle, 1, (short*)&pxy);
 
-    return ( true );
-}
-
-VdiHdl plot_get_vdi_handle(void)
-{
-    return(atari_plot_vdi_handle);
-}
-
-long plot_get_flags(void)
-{
-    return(atari_plot_flags);
+    return NSERROR_OK;
 }
 
 
-bool plot_get_clip(struct rect * out)
+/**
+ * Plots an arc
+ *
+ * plot an arc segment around (x,y), anticlockwise from angle1
+ *  to angle2. Angles are measured anticlockwise from
+ *  horizontal, in degrees.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the arc plot.
+ * \param x The x coordinate of the arc.
+ * \param y The y coordinate of the arc.
+ * \param radius The radius of the arc.
+ * \param angle1 The start angle of the arc.
+ * \param angle2 The finish angle of the arc.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+plot_arc(const struct redraw_context *ctx,
+	 const plot_style_t *pstyle,
+	 int x, int y, int radius, int angle1, int angle2)
 {
-    out->x0 = view.clipping.x0;
-    out->y0 = view.clipping.y0;
-    out->x1 = view.clipping.x1;
-    out->y1 = view.clipping.y1;
-    return( true );
-}
-
-void plot_get_clip_grect(GRECT * out)
-{
-    struct rect clip={0,0,0,0};
-
-    plot_get_clip(&clip);
-
-    out->g_x = clip.x0;
-    out->g_y = clip.y0;
-    out->g_w = clip.x1 - clip.x0;
-    out->g_h = clip.y1 - clip.y0;
-}
-
-FONT_PLOTTER plot_get_text_plotter()
-{
-    return(fplotter);
-}
-
-void plot_set_text_plotter(FONT_PLOTTER font_plotter)
-{
-    fplotter = font_plotter;
-}
-
-static bool plot_text(int x, int y, const char *text, size_t length, const plot_font_style_t *fstyle )
-{
-    if (view.scale != 1.0) {
-        plot_font_style_t newstyle = *fstyle;
-        newstyle.size = (int)((float)fstyle->size*view.scale);
-        fplotter->text(fplotter, x, y, text, length, &newstyle);
-    } else {
-        fplotter->text(fplotter, x, y, text, length, fstyle);
+    vswr_mode(atari_plot_vdi_handle, MD_REPLACE);
+    if (pstyle->fill_type == PLOT_OP_TYPE_NONE) {
+	return NSERROR_OK;
     }
 
-    return ( true );
+    if (pstyle->fill_type != PLOT_OP_TYPE_SOLID) {
+	vsl_rgbcolor(atari_plot_vdi_handle, pstyle->stroke_colour);
+	vsf_perimeter(atari_plot_vdi_handle, 1);
+	vsf_interior(atari_plot_vdi_handle, 1 );
+	v_arc(atari_plot_vdi_handle,
+	      view.x + x,
+	      view.y + y,
+	      radius,
+	      angle1 * 10,
+	      angle2 * 10);
+    } else {
+	vsf_rgbcolor(atari_plot_vdi_handle, pstyle->fill_colour);
+	vsl_width(atari_plot_vdi_handle, 1);
+	vsf_perimeter(atari_plot_vdi_handle, 1);
+	v_arc(atari_plot_vdi_handle,
+	      view.x + x,
+	      view.y + y, radius,
+	      angle1 * 10,
+	      angle2 * 10);
+    }
+
+    return NSERROR_OK;
 }
 
-static bool plot_disc(int x, int y, int radius, const plot_style_t *pstyle)
+
+/**
+ * Plots a circle
+ *
+ * Plot a circle centered on (x,y), which is optionally filled.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the circle plot.
+ * \param x x coordinate of circle centre.
+ * \param y y coordinate of circle centre.
+ * \param radius circle radius.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+plot_disc(const struct redraw_context *ctx,
+	  const plot_style_t *pstyle,
+	  int x, int y, int radius)
 {
     if (pstyle->fill_type != PLOT_OP_TYPE_SOLID) {
-        vsf_rgbcolor(atari_plot_vdi_handle, pstyle->stroke_colour);
-        vsf_perimeter(atari_plot_vdi_handle, 1);
-        vsf_interior(atari_plot_vdi_handle, 0);
-        v_circle(atari_plot_vdi_handle, view.x + x, view.y + y, radius);
+	vsf_rgbcolor(atari_plot_vdi_handle, pstyle->stroke_colour);
+	vsf_perimeter(atari_plot_vdi_handle, 1);
+	vsf_interior(atari_plot_vdi_handle, 0);
+	v_circle(atari_plot_vdi_handle, view.x + x, view.y + y, radius);
     } else {
-        vsf_rgbcolor(atari_plot_vdi_handle, pstyle->fill_colour);
-        vsf_perimeter(atari_plot_vdi_handle, 0);
-        vsf_interior(atari_plot_vdi_handle, FIS_SOLID);
-        v_circle(atari_plot_vdi_handle, view.x + x, view.y + y, radius);
+	vsf_rgbcolor(atari_plot_vdi_handle, pstyle->fill_colour);
+	vsf_perimeter(atari_plot_vdi_handle, 0);
+	vsf_interior(atari_plot_vdi_handle, FIS_SOLID);
+	v_circle(atari_plot_vdi_handle, view.x + x, view.y + y, radius);
     }
-
-    return(true);
+    return NSERROR_OK;
 }
 
-static bool plot_arc(int x, int y, int radius, int angle1, int angle2,
-                     const plot_style_t *pstyle)
+
+/**
+ * Plots a line
+ *
+ * plot a line from (x0,y0) to (x1,y1). Coordinates are at
+ *  centre of line width/thickness.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the line plot.
+ * \param line A rectangle defining the line to be drawn
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+plot_line(const struct redraw_context *ctx,
+	  const plot_style_t *pstyle,
+	  const struct rect *line)
 {
+    short pxy[4];
+    uint32_t lt;
+    int sw = pstyle->stroke_width;
 
-    vswr_mode(atari_plot_vdi_handle, MD_REPLACE );
-    if (pstyle->fill_type == PLOT_OP_TYPE_NONE)
-        return(true);
-    if ( pstyle->fill_type != PLOT_OP_TYPE_SOLID) {
-        vsl_rgbcolor(atari_plot_vdi_handle, pstyle->stroke_colour);
-        vsf_perimeter(atari_plot_vdi_handle, 1);
-        vsf_interior(atari_plot_vdi_handle, 1 );
-        v_arc(atari_plot_vdi_handle, view.x + x, view.y + y, radius, angle1*10, angle2*10);
-    } else {
-        vsf_rgbcolor(atari_plot_vdi_handle, pstyle->fill_colour);
-        vsl_width(atari_plot_vdi_handle, 1 );
-        vsf_perimeter(atari_plot_vdi_handle, 1);
-        v_arc(atari_plot_vdi_handle, view.x + x, view.y + y, radius, angle1*10, angle2*10);
+    if (((line->x0 < 0) && (line->x1 < 0)) ||
+	((line->y0 < 0) && (line->y1 < 0))) {
+	return NSERROR_OK;
     }
 
-    return (true);
+    pxy[0] = view.x + MAX(0, line->x0);
+    pxy[1] = view.y + MAX(0, line->y0);
+    pxy[2] = view.x + MAX(0, line->x1);
+    pxy[3] = view.y + MAX(0, line->y1);
+
+    if ((line->y0 > view.h-1) && (line->y1 > view.h-1)) {
+	return NSERROR_OK;
+    }
+
+    //printf("view: %d,%d,%d,%d\n", view.x, view.y, view.w, view.h);
+    //printf("line: %d,%d,%d,%d\n", x0,  y0,  x1,  y1);
+
+    //plot_vdi_clip(true);
+
+    if (sw == 0) {
+	sw = 1;
+    }
+    NSLT2VDI(lt, pstyle)
+	vsl_type(atari_plot_vdi_handle, (lt&0x0F));
+    /* if the line style is not available within VDI system,define own style: */
+    if ((lt&0x0F) == 7 ) {
+	vsl_udsty(atari_plot_vdi_handle, ((lt&0xFFFF00) >> 8));
+    }
+    vsl_width(atari_plot_vdi_handle, (short)sw);
+    vsl_rgbcolor(atari_plot_vdi_handle, pstyle->stroke_colour);
+    v_pline(atari_plot_vdi_handle, 2, (short *)&pxy );
+    //plot_vdi_clip(false);
+
+    return NSERROR_OK;
 }
 
-static bool plot_bitmap(int x, int y, int width, int height,
-                        struct bitmap *bitmap, colour bg,
-                        bitmap_flags_t flags)
+
+/**
+ * Plots a rectangle.
+ *
+ * The rectangle can be filled an outline or both controlled
+ *  by the plot style The line can be solid, dotted or
+ *  dashed. Top left corner at (x0,y0) and rectangle has given
+ *  width and height.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the rectangle plot.
+ * \param rect A rectangle defining the line to be drawn
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+plot_rectangle(const struct redraw_context *ctx,
+	       const plot_style_t *pstyle,
+	       const struct rect *rect)
+{
+    short pxy[4];
+    GRECT r, rclip, sclip;
+    int sw = pstyle->stroke_width;
+    uint32_t lt;
+
+    /* current canvas clip: */
+    rclip.g_x = view.clipping.x0;
+    rclip.g_y = view.clipping.y0;
+    rclip.g_w = view.clipping.x1 - view.clipping.x0;
+    rclip.g_h = view.clipping.y1 - view.clipping.y0;
+
+    /* physical clipping: */
+    sclip.g_x = rclip.g_x;
+    sclip.g_y = rclip.g_y;
+    sclip.g_w = view.vis_w;
+    sclip.g_h = view.vis_h;
+
+    rc_intersect(&sclip, &rclip);
+    r.g_x = rect->x0;
+    r.g_y = rect->y0;
+    r.g_w = rect->x1 - rect->x0;
+    r.g_h = rect->y1 - rect->y0;
+
+    if (!rc_intersect(&rclip, &r)) {
+	return NSERROR_OK;
+    }
+
+    if (pstyle->stroke_type != PLOT_OP_TYPE_NONE) {
+	/*
+	  manually draw the line, because we do not need vdi clipping
+	  for vertical / horizontal line draws.
+	*/
+	if (sw == 0)
+	    sw = 1;
+
+	NSLT2VDI(lt, pstyle);
+	vsl_type(atari_plot_vdi_handle, (lt&0x0F));
+	/*
+	  if the line style is not available within VDI system,
+	  define own style:
+	*/
+	if ((lt&0x0F) == 7 ) {
+	    vsl_udsty(atari_plot_vdi_handle, ((lt&0xFFFF00) >> 8));
+	}
+	vsl_width(atari_plot_vdi_handle, (short)sw );
+	vsl_rgbcolor(atari_plot_vdi_handle, pstyle->stroke_colour);
+	/* top border: */
+	if (r.g_y == rect->y0) {
+	    pxy[0] = view.x + r.g_x;
+	    pxy[1] = view.y + r.g_y ;
+	    pxy[2] = view.x + r.g_x + r.g_w;
+	    pxy[3] = view.y + r.g_y;
+	    v_pline(atari_plot_vdi_handle, 2, (short *)&pxy);
+	}
+
+	/* right border: */
+	if (r.g_x + r.g_w == rect->x1 ) {
+	    pxy[0] = view.x + r.g_x + r.g_w;
+	    pxy[1] = view.y + r.g_y;
+	    pxy[2] = view.x + r.g_x + r.g_w;
+	    pxy[3] = view.y + r.g_y + r.g_h;
+	    v_pline(atari_plot_vdi_handle, 2, (short *)&pxy);
+	}
+
+	/* bottom border: */
+	if ( r.g_y+r.g_h == rect->y1 ) {
+	    pxy[0] = view.x + r.g_x;
+	    pxy[1] = view.y + r.g_y+r.g_h;
+	    pxy[2] = view.x + r.g_x+r.g_w;
+	    pxy[3] = view.y + r.g_y+r.g_h;
+	    v_pline(atari_plot_vdi_handle, 2, (short *)&pxy);
+	}
+
+	/* left border: */
+	if ( r.g_x == rect->x0 ) {
+	    pxy[0] = view.x + r.g_x;
+	    pxy[1] = view.y + r.g_y;
+	    pxy[2] = view.x + r.g_x;
+	    pxy[3] = view.y + r.g_y + r.g_h;
+	    v_pline(atari_plot_vdi_handle, 2, (short *)&pxy);
+	}
+    }
+
+    if (pstyle->fill_type != PLOT_OP_TYPE_NONE ) {
+	short stroke_width = (short)(pstyle->stroke_type != PLOT_OP_TYPE_NONE) ?
+	    pstyle->stroke_width : 0;
+
+	vsf_rgbcolor(atari_plot_vdi_handle, pstyle->fill_colour);
+	vsf_perimeter(atari_plot_vdi_handle, 0);
+	vsf_interior(atari_plot_vdi_handle, FIS_SOLID);
+
+
+	pxy[0] = view.x + r.g_x + stroke_width;
+	pxy[1] = view.y + r.g_y + stroke_width;
+	pxy[2] = view.x + r.g_x + r.g_w -1 - stroke_width;
+	pxy[3] = view.y + r.g_y + r.g_h -1 - stroke_width;
+
+	vsf_style(atari_plot_vdi_handle, 1);
+	v_bar(atari_plot_vdi_handle, (short*)&pxy);
+    }
+
+    return NSERROR_OK;
+}
+
+
+/**
+ * Plot a polygon
+ *
+ * Plots a filled polygon with straight lines between
+ * points. The lines around the edge of the ploygon are not
+ * plotted. The polygon is filled with the non-zero winding
+ * rule.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the polygon plot.
+ * \param p verticies of polygon
+ * \param n number of verticies.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+plot_polygon(const struct redraw_context *ctx,
+	     const plot_style_t *pstyle,
+	     const int *p,
+	     unsigned int n)
+{
+    short pxy[n*2];
+    unsigned int i = 0;
+
+    if (vdi_sysinfo.maxpolycoords > 0)
+	assert( (signed int)n < vdi_sysinfo.maxpolycoords);
+
+    vsf_interior(atari_plot_vdi_handle, FIS_SOLID);
+    vsf_style(atari_plot_vdi_handle, 1);
+    for (i = 0; i<n*2; i=i+2) {
+	pxy[i] = (short)view.x+p[i];
+	pxy[i+1] = (short)view.y+p[i+1];
+    }
+
+    if (pstyle->fill_type == PLOT_OP_TYPE_SOLID) {
+	vsf_rgbcolor(atari_plot_vdi_handle, pstyle->fill_colour);
+	v_fillarea(atari_plot_vdi_handle, n, (short*)&pxy);
+    } else {
+	pxy[n*2]=pxy[0];
+	pxy[n*2+1]=pxy[1];
+	vsl_rgbcolor(atari_plot_vdi_handle, pstyle->stroke_colour);
+	v_pline(atari_plot_vdi_handle, n+1,  (short *)&pxy);
+    }
+
+    return NSERROR_OK;
+}
+
+
+/**
+ * Plots a path.
+ *
+ * Path plot consisting of cubic Bezier curves. Line and fill colour is
+ *  controlled by the plot style.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the path plot.
+ * \param p elements of path
+ * \param n nunber of elements on path
+ * \param width The width of the path
+ * \param transform A transform to apply to the path.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+plot_path(const struct redraw_context *ctx,
+	  const plot_style_t *pstyle,
+	  const float *p,
+	  unsigned int n,
+	  float width,
+	  const float transform[6])
+{
+    /** \todo Implement atari path plot */
+    return NSERROR_OK;
+}
+
+
+/**
+ * Plot a bitmap
+ *
+ * Tiled plot of a bitmap image. (x,y) gives the top left
+ * coordinate of an explicitly placed tile. From this tile the
+ * image can repeat in all four directions -- up, down, left
+ * and right -- to the extents given by the current clip
+ * rectangle.
+ *
+ * The bitmap_flags say whether to tile in the x and y
+ * directions. If not tiling in x or y directions, the single
+ * image is plotted. The width and height give the dimensions
+ * the image is to be scaled to.
+ *
+ * \param ctx The current redraw context.
+ * \param bitmap The bitmap to plot
+ * \param x The x coordinate to plot the bitmap
+ * \param y The y coordiante to plot the bitmap
+ * \param width The width of area to plot the bitmap into
+ * \param height The height of area to plot the bitmap into
+ * \param bg the background colour to alpha blend into
+ * \param flags the flags controlling the type of plot operation
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+plot_bitmap(const struct redraw_context *ctx,
+	    struct bitmap *bitmap,
+	    int x, int y,
+	    int width,
+	    int height,
+	    colour bg,
+	    bitmap_flags_t flags)
 {
     struct bitmap * bm = NULL;
     bool repeat_x = (flags & BITMAPF_REPEAT_X);
@@ -2175,78 +2402,109 @@ static bool plot_bitmap(int x, int y, int width, int height,
     bmph = atari_bitmap_get_height(bitmap);
 
     if(view.scale != 1.0){
-        width = (int)(((float)width)*view.scale);
-        height = (int)(((float)height)*view.scale);
+	width = (int)(((float)width)*view.scale);
+	height = (int)(((float)height)*view.scale);
     }
 
     if ( repeat_x || repeat_y ) {
-        plot_get_clip(&clip);
-        if( repeat_x && width == 1 && repeat_y && height == 1 ) {
-            width = MAX( width, clip.x1 - x );
-            height = MAX( height,  clip.y1 - y );
-        } else if( repeat_x && width == 1 ) {
-            width = MAX( width, clip.x1 - x);
-        } else if( repeat_y && height == 1) {
-            height = MAX( height, clip.y1 - y );
-        }
+	plot_get_clip(&clip);
+	if (repeat_x && width == 1 && repeat_y && height == 1 ) {
+	    width = MAX( width, clip.x1 - x );
+	    height = MAX( height,  clip.y1 - y );
+	} else if (repeat_x && width == 1 ) {
+	    width = MAX( width, clip.x1 - x);
+	} else if (repeat_y && height == 1) {
+	    height = MAX( height, clip.y1 - y );
+	}
     }
 
-    if(  width != bmpw || height != bmph ) {
-        atari_bitmap_resize(bitmap, hermes_res_h, &nsfmt, width, height );
-        if( bitmap->resized )
-            bm = bitmap->resized;
-        else
-            bm = bitmap;
+    if (width != bmpw || height != bmph) {
+	atari_bitmap_resize(bitmap, hermes_res_h, &nsfmt, width, height );
+	if (bitmap->resized) {
+	    bm = bitmap->resized;
+	} else {
+	    bm = bitmap;
+	}
     } else {
-        bm = bitmap;
+	bm = bitmap;
     }
 
     /* out of memory? */
-    if( bm == NULL ) {
-        printf("plot: out of memory! bmp: %p, bmpres: %p\n", bitmap, bitmap->resized );
-        return( true );
+    if (bm == NULL) {
+	printf("plot: out of memory! bmp: %p, bmpres: %p\n",
+	       bitmap, bitmap->resized );
+	return NSERROR_NOMEM;
     }
 
     if (!(repeat_x || repeat_y) ) {
-        plot_blit_bitmap(bm, x, y, bg, flags );
+	plot_blit_bitmap(bm, x, y, bg, flags);
     } else {
-        int xf,yf;
-        int xoff = x;
-        int yoff = y;
+	int xf,yf;
+	int xoff = x;
+	int yoff = y;
 
-        if (yoff > clip.y0 )
-            yoff = (clip.y0 - height) + ((yoff - clip.y0) % height);
-        if (xoff > clip.x0 )
-            xoff = (clip.x0 - width) + ((xoff - clip.x0) % width);
-        /* for now, repeating just works in the rigth / down direction */
-        /*
-          if( repeat_x == true )
-          xoff = clip.x0;
-          if(repeat_y == true )
-          yoff = clip.y0;
-        */
+	if (yoff > clip.y0) {
+	    yoff = (clip.y0 - height) + ((yoff - clip.y0) % height);
+	}
+	if (xoff > clip.x0) {
+	    xoff = (clip.x0 - width) + ((xoff - clip.x0) % width);
+	}
+	/* for now, repeating just works in the rigth / down direction */
+	/*
+	  if( repeat_x == true )
+	  xoff = clip.x0;
+	  if(repeat_y == true )
+	  yoff = clip.y0;
+	*/
 
-        for( xf = xoff; xf < clip.x1; xf += width ) {
-            for( yf = yoff; yf < clip.y1; yf += height ) {
-                plot_blit_bitmap(bm, xf, yf, bg, flags );
-                if (!repeat_y)
-                    break;
-            }
-            if (!repeat_x)
-                break;
-        }
+	for (xf = xoff; xf < clip.x1; xf += width ) {
+	    for (yf = yoff; yf < clip.y1; yf += height ) {
+		plot_blit_bitmap(bm, xf, yf, bg, flags );
+		if (!repeat_y) {
+		    break;
+		}
+	    }
+	    if (!repeat_x) {
+		break;
+	    }
+	}
     }
-    return ( true );
+
+    return NSERROR_OK;
 }
 
-static bool plot_path(const float *p, unsigned int n, colour fill, float width,
-                      colour c, const float transform[6])
+
+/**
+ * Text plotting.
+ *
+ * \param ctx The current redraw context.
+ * \param fstyle plot style for this text
+ * \param x x coordinate
+ * \param y y coordinate
+ * \param text UTF-8 string to plot
+ * \param length length of string, in bytes
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+plot_text(const struct redraw_context *ctx,
+	  const struct plot_font_style *fstyle,
+	  int x,
+	  int y,
+	  const char *text,
+	  size_t length)
 {
-    return ( true );
+    if (view.scale != 1.0) {
+	plot_font_style_t newstyle = *fstyle;
+	newstyle.size = (int)((float)fstyle->size*view.scale);
+	fplotter->text(fplotter, x, y, text, length, &newstyle);
+    } else {
+	fplotter->text(fplotter, x, y, text, length, fstyle);
+    }
+
+    return NSERROR_OK;
 }
 
-
-
+/** atari plottr operation table */
 const struct plotter_table atari_plotters = {
     .rectangle = plot_rectangle,
     .line = plot_line,

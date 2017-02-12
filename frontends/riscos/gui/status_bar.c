@@ -28,9 +28,10 @@
 #include "oslib/os.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
-#include "netsurf/plotters.h"
+
 #include "utils/log.h"
 #include "utils/utils.h"
+#include "netsurf/plotters.h"
 
 #include "riscos/gui.h"
 #include "riscos/wimp.h"
@@ -436,6 +437,12 @@ void ro_gui_status_bar_redraw(wimp_draw *redraw)
 	os_error *error;
 	osbool more;
 	rufl_code code;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.background_images = true,
+		.plot = &ro_plotters
+	};
+	struct rect rect;
 
 	sb = (struct status_bar *)ro_gui_wimp_event_get_user_data(redraw->w);
 	assert(sb);
@@ -467,18 +474,22 @@ void ro_gui_status_bar_redraw(wimp_draw *redraw)
 					rufl_BLEND_FONT);
 			if (code != rufl_OK) {
 				if (code == rufl_FONT_MANAGER_ERROR)
-					LOG("rufl_FONT_MANAGER_ERROR: 0x%x: %s", rufl_fm_error->errnum, rufl_fm_error->errmess);
+					LOG("rufl_FONT_MANAGER_ERROR: 0x%x: %s",
+					    rufl_fm_error->errnum, rufl_fm_error->errmess);
 				else
 					LOG("rufl_paint: 0x%x", code);
 			}
 		}
 
+		rect.x0 = (redraw->box.x0 + sb->width - WIDGET_WIDTH - 2) >> 1;
+		rect.y0 = -redraw->box.y0 >> 1;
+		rect.x1 = (redraw->box.x0 + sb->width - WIDGET_WIDTH) >> 1;
+		rect.y1 = -redraw->box.y1 >> 1;
+
 		/* separate the widget from the text with a line */
-		ro_plotters.rectangle((redraw->box.x0 + sb->width - WIDGET_WIDTH - 2) >> 1,
-				-redraw->box.y0 >> 1,
-				(redraw->box.x0 + sb->width - WIDGET_WIDTH) >> 1,
-				-redraw->box.y1 >> 1,
-				plot_style_fill_black);
+		ctx.plot->rectangle(&ctx,
+				    plot_style_fill_black,
+				    &rect);
 
 		error = xwimp_get_rectangle(redraw, &more);
 		if (error) {

@@ -170,23 +170,21 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 		return false;
 	}
 
-	if (bw->current_content == NULL && bw->children == NULL) {
+	if ((bw->current_content == NULL) &&
+	    (bw->children == NULL)) {
 		/* Browser window has no content, render blank fill */
-		ctx->plot->clip(clip);
-		return ctx->plot->rectangle(clip->x0, clip->y0,
-				clip->x1, clip->y1,
-				plot_style_fill_white);
+		ctx->plot->clip(ctx, clip);
+		return (ctx->plot->rectangle(ctx, plot_style_fill_white, clip) == NSERROR_OK);
 	}
 
 	/* Browser window has content OR children (frames) */
-
 	if ((bw->window != NULL) &&
 	    (ctx->plot->option_knockout)) {
 		/* Root browser window: start knockout */
 		knockout_plot_start(ctx, &new_ctx);
 	}
 
-	new_ctx.plot->clip(clip);
+	new_ctx.plot->clip(ctx, clip);
 
 	/* Handle redraw of any browser window children */
 	if (bw->children) {
@@ -194,11 +192,12 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 		int cur_child;
 		int children = bw->rows * bw->cols;
 
-		if (bw->window != NULL)
+		if (bw->window != NULL) {
 			/* Root browser window; start with blank fill */
-			plot_ok &= new_ctx.plot->rectangle(clip->x0, clip->y0,
-					clip->x1, clip->y1,
-					plot_style_fill_white);
+			plot_ok &= (new_ctx.plot->rectangle(ctx,
+							    plot_style_fill_white,
+							    clip) == NSERROR_OK);
+		}
 
 		/* Loop through all children of bw */
 		for (cur_child = 0; cur_child < children; cur_child++) {
@@ -225,7 +224,7 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 
 			/* Skip this frame if it lies outside clip rectangle */
 			if (content_clip.x0 >= content_clip.x1 ||
-					content_clip.y0 >= content_clip.y1)
+			    content_clip.y0 >= content_clip.y1)
 				continue;
 
 			/* Redraw frame */
@@ -235,10 +234,11 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 		}
 
 		/* Nothing else to redraw for browser windows with children;
-		 * cleanup and return */
+		 * cleanup and return
+		 */
 		if (bw->window != NULL && ctx->plot->option_knockout) {
 			/* Root browser window: knockout end */
-			knockout_plot_end();
+			knockout_plot_end(ctx);
 		}
 
 		return plot_ok;
@@ -254,8 +254,9 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 
 		/* Non-HTML may not fill viewport to extents, so plot white
 		 * background fill */
-		plot_ok &= new_ctx.plot->rectangle(clip->x0, clip->y0,
-				clip->x1, clip->y1, plot_style_fill_white);
+		plot_ok &= (new_ctx.plot->rectangle(&new_ctx,
+						   plot_style_fill_white,
+						    clip) == NSERROR_OK);
 	}
 
 	/* Set up content redraw data */
@@ -290,7 +291,7 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 			&content_clip, &new_ctx);
 
 	/* Back to full clip rect */
-	new_ctx.plot->clip(clip);
+	new_ctx.plot->clip(&new_ctx, clip);
 
 	if (!bw->window) {
 		/* Render scrollbars */
@@ -313,7 +314,7 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 
 	if (bw->window != NULL && ctx->plot->option_knockout) {
 		/* Root browser window: end knockout */
-		knockout_plot_end();
+		knockout_plot_end(ctx);
 	}
 
 	return plot_ok;

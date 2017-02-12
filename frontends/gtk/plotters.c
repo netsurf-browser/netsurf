@@ -77,8 +77,17 @@ static inline void nsgtk_set_dashed(void)
 	cairo_set_dash(current_cr, cdashes, 2, 0);
 }
 
-/** Set clipping area for subsequent plot operations. */
-static bool nsgtk_plot_clip(const struct rect *clip)
+
+/**
+ * \brief Sets a clip rectangle for subsequent plot operations.
+ *
+ * \param ctx The current redraw context.
+ * \param clip The rectangle to limit all subsequent plot
+ *              operations within.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+nsgtk_plot_clip(const struct redraw_context *ctx, const struct rect *clip)
 {
 	cairo_reset_clip(current_cr);
 	cairo_rectangle(current_cr, clip->x0, clip->y0,
@@ -90,11 +99,30 @@ static bool nsgtk_plot_clip(const struct rect *clip)
 	cliprect.width = clip->x1 - clip->x0;
 	cliprect.height = clip->y1 - clip->y0;
 
-	return true;
+	return NSERROR_OK;
 }
 
 
-static bool nsgtk_plot_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *style)
+/**
+ * Plots an arc
+ *
+ * plot an arc segment around (x,y), anticlockwise from angle1
+ *  to angle2. Angles are measured anticlockwise from
+ *  horizontal, in degrees.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the arc plot.
+ * \param x The x coordinate of the arc.
+ * \param y The y coordinate of the arc.
+ * \param radius The radius of the arc.
+ * \param angle1 The start angle of the arc.
+ * \param angle2 The finish angle of the arc.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+nsgtk_plot_arc(const struct redraw_context *ctx,
+	       const plot_style_t *style,
+	       int x, int y, int radius, int angle1, int angle2)
 {
 	nsgtk_set_colour(style->fill_colour);
 	nsgtk_set_solid();
@@ -105,10 +133,26 @@ static bool nsgtk_plot_arc(int x, int y, int radius, int angle1, int angle2, con
 		  (angle2 + 90) * (M_PI / 180));
 	cairo_stroke(current_cr);
 
-	return true;
+	return NSERROR_OK;
 }
 
-static bool nsgtk_plot_disc(int x, int y, int radius, const plot_style_t *style)
+
+/**
+ * Plots a circle
+ *
+ * Plot a circle centered on (x,y), which is optionally filled.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the circle plot.
+ * \param x x coordinate of circle centre.
+ * \param y y coordinate of circle centre.
+ * \param radius circle radius.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+nsgtk_plot_disc(const struct redraw_context *ctx,
+		const plot_style_t *style,
+		int x, int y, int radius)
 {
 	if (style->fill_type != PLOT_OP_TYPE_NONE) {
 		nsgtk_set_colour(style->fill_colour);
@@ -147,11 +191,25 @@ static bool nsgtk_plot_disc(int x, int y, int radius, const plot_style_t *style)
 		cairo_stroke(current_cr);
 	}
 
-	return true;
+	return NSERROR_OK;
 }
 
-static bool 
-nsgtk_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
+
+/**
+ * Plots a line
+ *
+ * plot a line from (x0,y0) to (x1,y1). Coordinates are at
+ *  centre of line width/thickness.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the line plot.
+ * \param line A rectangle defining the line to be drawn
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+nsgtk_plot_line(const struct redraw_context *ctx,
+		const plot_style_t *style,
+		const struct rect *line)
 {
 	nsgtk_set_colour(style->stroke_colour);
 
@@ -180,17 +238,22 @@ nsgtk_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 		cairo_set_line_width(current_cr, style->stroke_width);
 
 	/* core expects horizontal and vertical lines to be on pixels, not
-	 * between pixels */
-	cairo_move_to(current_cr, (x0 == x1) ? x0 + 0.5 : x0,
-			(y0 == y1) ? y0 + 0.5 : y0);
-	cairo_line_to(current_cr, (x0 == x1) ? x1 + 0.5 : x1,
-			(y0 == y1) ? y1 + 0.5 : y1);
+	 * between pixels
+	 */
+	cairo_move_to(current_cr,
+		      (line->x0 == line->x1) ? line->x0 + 0.5 : line->x0,
+		      (line->y0 == line->y1) ? line->y0 + 0.5 : line->y0);
+	cairo_line_to(current_cr,
+		      (line->x0 == line->x1) ? line->x1 + 0.5 : line->x1,
+		      (line->y0 == line->y1) ? line->y1 + 0.5 : line->y1);
 	cairo_stroke(current_cr);
 
-	return true;
+	return NSERROR_OK;
 }
 
-/** Plot a caret.
+
+/**
+ * Plot a caret.
  *
  * @note It is assumed that the plotters have been set up.
  */
@@ -207,14 +270,35 @@ void nsgtk_plot_caret(int x, int y, int h)
 	cairo_stroke(current_cr);
 }
 
-static bool nsgtk_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
+
+/**
+ * Plots a rectangle.
+ *
+ * The rectangle can be filled an outline or both controlled
+ *  by the plot style The line can be solid, dotted or
+ *  dashed. Top left corner at (x0,y0) and rectangle has given
+ *  width and height.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the rectangle plot.
+ * \param rect A rectangle defining the line to be drawn
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+nsgtk_plot_rectangle(const struct redraw_context *ctx,
+		     const plot_style_t *style,
+		     const struct rect *rect)
 {
 	if (style->fill_type != PLOT_OP_TYPE_NONE) {
 		nsgtk_set_colour(style->fill_colour);
 		nsgtk_set_solid();
 
 		cairo_set_line_width(current_cr, 0);
-		cairo_rectangle(current_cr, x0, y0, x1 - x0, y1 - y0);
+		cairo_rectangle(current_cr,
+				rect->x0,
+				rect->y0,
+				rect->x1 - rect->x0,
+				rect->y1 - rect->y0);
 		cairo_fill(current_cr);
 		cairo_stroke(current_cr);
 	}
@@ -242,13 +326,36 @@ static bool nsgtk_plot_rectangle(int x0, int y0, int x1, int y1, const plot_styl
 		else
 			cairo_set_line_width(current_cr, style->stroke_width);
 
-		cairo_rectangle(current_cr, x0 + 0.5, y0 + 0.5, x1 - x0, y1 - y0);
+		cairo_rectangle(current_cr,
+				rect->x0 + 0.5,
+				rect->y0 + 0.5,
+				rect->x1 - rect->x0,
+				rect->y1 - rect->y0);
 		cairo_stroke(current_cr);
 	}
-	return true;
+	return NSERROR_OK;
 }
 
-static bool nsgtk_plot_polygon(const int *p, unsigned int n, const plot_style_t *style)
+
+/**
+ * Plot a polygon
+ *
+ * Plots a filled polygon with straight lines between
+ * points. The lines around the edge of the ploygon are not
+ * plotted. The polygon is filled with the non-zero winding
+ * rule.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the polygon plot.
+ * \param p verticies of polygon
+ * \param n number of verticies.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+nsgtk_plot_polygon(const struct redraw_context *ctx,
+		   const plot_style_t *style,
+		   const int *p,
+		   unsigned int n)
 {
 	unsigned int i;
 
@@ -263,22 +370,116 @@ static bool nsgtk_plot_polygon(const int *p, unsigned int n, const plot_style_t 
 	cairo_fill(current_cr);
 	cairo_stroke(current_cr);
 
-	return true;
+	return NSERROR_OK;
 }
 
 
-
-
-static bool nsgtk_plot_text(int x, int y, const char *text, size_t length,
-		const struct plot_font_style *fstyle)
+/**
+ * Plots a path.
+ *
+ * Path plot consisting of cubic Bezier curves. Line and fill colour is
+ *  controlled by the plot style.
+ *
+ * \param ctx The current redraw context.
+ * \param pstyle Style controlling the path plot.
+ * \param p elements of path
+ * \param n nunber of elements on path
+ * \param width The width of the path
+ * \param transform A transform to apply to the path.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+nsgtk_plot_path(const struct redraw_context *ctx,
+		const plot_style_t *pstyle,
+		const float *p,
+		unsigned int n,
+		float width,
+		const float transform[6])
 {
-	return nsfont_paint(x, y, text, length, fstyle);
+	unsigned int i;
+	cairo_matrix_t old_ctm, n_ctm;
+
+	if (n == 0)
+		return NSERROR_OK;
+
+	if (p[0] != PLOTTER_PATH_MOVE) {
+		LOG("Path does not start with move");
+		return NSERROR_INVALID;
+	}
+
+	/* Save CTM */
+	cairo_get_matrix(current_cr, &old_ctm);
+
+	/* Set up line style and width */
+	cairo_set_line_width(current_cr, 1);
+	nsgtk_set_solid();
+
+	/* Load new CTM */
+	n_ctm.xx = transform[0];
+	n_ctm.yx = transform[1];
+	n_ctm.xy = transform[2];
+	n_ctm.yy = transform[3];
+	n_ctm.x0 = transform[4];
+	n_ctm.y0 = transform[5];
+
+	cairo_set_matrix(current_cr, &n_ctm);
+
+	/* Construct path */
+	for (i = 0; i < n; ) {
+		if (p[i] == PLOTTER_PATH_MOVE) {
+			cairo_move_to(current_cr, p[i+1], p[i+2]);
+			i += 3;
+		} else if (p[i] == PLOTTER_PATH_CLOSE) {
+			cairo_close_path(current_cr);
+			i++;
+		} else if (p[i] == PLOTTER_PATH_LINE) {
+			cairo_line_to(current_cr, p[i+1], p[i+2]);
+			i += 3;
+		} else if (p[i] == PLOTTER_PATH_BEZIER) {
+			cairo_curve_to(current_cr, p[i+1], p[i+2],
+				       p[i+3], p[i+4],
+				       p[i+5], p[i+6]);
+			i += 7;
+		} else {
+			LOG("bad path command %f", p[i]);
+			/* Reset matrix for safety */
+			cairo_set_matrix(current_cr, &old_ctm);
+			return NSERROR_INVALID;
+		}
+	}
+
+	/* Restore original CTM */
+	cairo_set_matrix(current_cr, &old_ctm);
+
+	/* Now draw path */
+	if (pstyle->fill_colour != NS_TRANSPARENT) {
+		nsgtk_set_colour(pstyle->fill_colour);
+
+		if (pstyle->stroke_colour != NS_TRANSPARENT) {
+			/* Fill & Stroke */
+			cairo_fill_preserve(current_cr);
+			nsgtk_set_colour(pstyle->stroke_colour);
+			cairo_stroke(current_cr);
+		} else {
+			/* Fill only */
+			cairo_fill(current_cr);
+		}
+	} else if (pstyle->stroke_colour != NS_TRANSPARENT) {
+		/* Stroke only */
+		nsgtk_set_colour(pstyle->stroke_colour);
+		cairo_stroke(current_cr);
+	}
+
+	return NSERROR_OK;
 }
 
 
-
-static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
-			      struct bitmap *bitmap, colour bg)
+/**
+ * plot a pixbuf
+ */
+static nserror
+nsgtk_plot_pixbuf(int x, int y, int width, int height,
+		  struct bitmap *bitmap, colour bg)
 {
 	int x0, y0, x1, y1;
 	int dsrcx, dsrcy, dwidth, dheight;
@@ -289,13 +490,13 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 	/* Bail early if we can */
 	if (width == 0 || height == 0)
 		/* Nothing to plot */
-		return true;
+		return NSERROR_OK;
 	if ((x > (cliprect.x + cliprect.width)) ||
 			((x + width) < cliprect.x) ||
 			(y > (cliprect.y + cliprect.height)) ||
 			((y + height) < cliprect.y)) {
 		/* Image completely outside clip region */
-		return true;	
+		return NSERROR_OK;
 	}
 
 	/* Get clip rectangle / image rectangle edge differences */
@@ -332,7 +533,7 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 
 	if (dwidth == 0 || dheight == 0)
 		/* Nothing to plot */
-		return true;
+		return NSERROR_OK;
 
 	bmwidth = cairo_image_surface_get_width(bmsurface);
 	bmheight = cairo_image_surface_get_height(bmsurface);
@@ -388,12 +589,42 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
     
 	}
 
-	return true;
+	return NSERROR_OK;
 }
 
-static bool nsgtk_plot_bitmap(int x, int y, int width, int height,
-			      struct bitmap *bitmap, colour bg,
-			      bitmap_flags_t flags)
+
+/**
+ * Plot a bitmap
+ *
+ * Tiled plot of a bitmap image. (x,y) gives the top left
+ * coordinate of an explicitly placed tile. From this tile the
+ * image can repeat in all four directions -- up, down, left
+ * and right -- to the extents given by the current clip
+ * rectangle.
+ *
+ * The bitmap_flags say whether to tile in the x and y
+ * directions. If not tiling in x or y directions, the single
+ * image is plotted. The width and height give the dimensions
+ * the image is to be scaled to.
+ *
+ * \param ctx The current redraw context.
+ * \param bitmap The bitmap to plot
+ * \param x The x coordinate to plot the bitmap
+ * \param y The y coordiante to plot the bitmap
+ * \param width The width of area to plot the bitmap into
+ * \param height The height of area to plot the bitmap into
+ * \param bg the background colour to alpha blend into
+ * \param flags the flags controlling the type of plot operation
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+nsgtk_plot_bitmap(const struct redraw_context *ctx,
+		  struct bitmap *bitmap,
+		  int x, int y,
+		  int width,
+		  int height,
+		  colour bg,
+		  bitmap_flags_t flags)
 {
 	int doneheight = 0, donewidth = 0;
 	bool repeat_x = (flags & BITMAPF_REPEAT_X);
@@ -402,7 +633,7 @@ static bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 	/* Bail early if we can */
 	if (width == 0 || height == 0)
 		/* Nothing to plot */
-		return true;
+		return NSERROR_OK;
 
 	if (!(repeat_x || repeat_y)) {
 		/* Not repeating at all, so just pass it on */
@@ -435,89 +666,32 @@ static bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 			break;
 	}
 
-	return true;
+	return NSERROR_OK;
 }
 
-static bool nsgtk_plot_path(const float *p, unsigned int n, colour fill, float width,
-			    colour c, const float transform[6])
+
+/**
+ * Text plotting.
+ *
+ * \param ctx The current redraw context.
+ * \param fstyle plot style for this text
+ * \param x x coordinate
+ * \param y y coordinate
+ * \param text UTF-8 string to plot
+ * \param length length of string, in bytes
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+nsgtk_plot_text(const struct redraw_context *ctx,
+		const struct plot_font_style *fstyle,
+		int x,
+		int y,
+		const char *text,
+		size_t length)
 {
-	unsigned int i;
-	cairo_matrix_t old_ctm, n_ctm;
-
-	if (n == 0)
-		return true;
-
-	if (p[0] != PLOTTER_PATH_MOVE) {
-		LOG("Path does not start with move");
-		return false;
-	}
-
-
-	/* Save CTM */
-	cairo_get_matrix(current_cr, &old_ctm);
-
-	/* Set up line style and width */
-	cairo_set_line_width(current_cr, 1);
-	nsgtk_set_solid();
-
-	/* Load new CTM */
-	n_ctm.xx = transform[0];
-	n_ctm.yx = transform[1];
-	n_ctm.xy = transform[2];
-	n_ctm.yy = transform[3];
-	n_ctm.x0 = transform[4];
-	n_ctm.y0 = transform[5];
-
-	cairo_set_matrix(current_cr, &n_ctm);
-
-	/* Construct path */
-	for (i = 0; i < n; ) {
-		if (p[i] == PLOTTER_PATH_MOVE) {
-			cairo_move_to(current_cr, p[i+1], p[i+2]);
-			i += 3;
-		} else if (p[i] == PLOTTER_PATH_CLOSE) {
-			cairo_close_path(current_cr);
-			i++;
-		} else if (p[i] == PLOTTER_PATH_LINE) {
-			cairo_line_to(current_cr, p[i+1], p[i+2]);
-			i += 3;
-		} else if (p[i] == PLOTTER_PATH_BEZIER) {
-			cairo_curve_to(current_cr, p[i+1], p[i+2],
-				       p[i+3], p[i+4],
-				       p[i+5], p[i+6]);
-			i += 7;
-		} else {
-			LOG("bad path command %f", p[i]);
-			/* Reset matrix for safety */
-			cairo_set_matrix(current_cr, &old_ctm);
-			return false;
-		}
-	}
-
-	/* Restore original CTM */
-	cairo_set_matrix(current_cr, &old_ctm);
-
-	/* Now draw path */
-	if (fill != NS_TRANSPARENT) {
-		nsgtk_set_colour(fill);
-
-		if (c != NS_TRANSPARENT) {
-			/* Fill & Stroke */
-			cairo_fill_preserve(current_cr);
-			nsgtk_set_colour(c);
-			cairo_stroke(current_cr);
-		} else {
-			/* Fill only */
-			cairo_fill(current_cr);
-		}
-	} else if (c != NS_TRANSPARENT) {
-		/* Stroke only */
-		nsgtk_set_colour(c);
-		cairo_stroke(current_cr);
-	}
-
-	return true;
+	return nsfont_paint(x, y, text, length, fstyle);
 }
+
 
 /** GTK plotter table */
 const struct plotter_table nsgtk_plotters = {
@@ -532,6 +706,3 @@ const struct plotter_table nsgtk_plotters = {
 	.text = nsgtk_plot_text,
 	.option_knockout = true
 };
-
-
-

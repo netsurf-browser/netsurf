@@ -30,7 +30,7 @@ struct plot_font_style;
 
 extern struct gui_layout_table *nsgtk_layout_table;
 
-bool nsfont_paint(int x, int y, const char *string, size_t length, const struct plot_font_style *fstyle);
+nserror nsfont_paint(int x, int y, const char *string, size_t length, const struct plot_font_style *fstyle);
 
 /**
  * Convert a plot style to a PangoFontDescription.

@@ -199,8 +199,12 @@ static bool nsbmp_redraw(struct content *c, struct content_redraw_data *data,
 	if (data->repeat_y)
 		flags |= BITMAPF_REPEAT_Y;
 
-	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			bmp->bitmap, data->background_colour, flags);
+	return (ctx->plot->bitmap(ctx,
+				  bmp->bitmap,
+				  data->x, data->y,
+				  data->width, data->height,
+				  data->background_colour,
+				  flags) == NSERROR_OK);
 }
 
 

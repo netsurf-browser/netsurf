@@ -317,7 +317,7 @@ bool artworks_redraw(struct content *c, struct content_redraw_data *data,
 	int clip_x1 = clip->x1;
 	int clip_y1 = clip->y1;
 
-	if (ctx->plot->flush && !ctx->plot->flush())
+	if (ctx->plot->flush && (ctx->plot->flush(ctx) != NSERROR_OK))
 		return false;
 
 	/* pick up render addresses again in case they've changed
