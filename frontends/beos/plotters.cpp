@@ -32,11 +32,11 @@
 #include <View.h>
 #include <Shape.h>
 extern "C" {
-#include "netsurf/plotters.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"
 #include "utils/nsurl.h"
+#include "netsurf/plotters.h"
 }
 #include "beos/font.h"
 #include "beos/gui.h"
@@ -400,7 +400,7 @@ nsbeos_plot_line(const struct redraw_context *ctx,
 static nserror
 nsbeos_plot_rectangle(const struct redraw_context *ctx,
                       const plot_style_t *style,
-                      const struct rect *rect)
+                      const struct rect *nsrect)
 {
         if (style->fill_type != PLOT_OP_TYPE_NONE) {
                 BView *view;
@@ -413,7 +413,7 @@ nsbeos_plot_rectangle(const struct redraw_context *ctx,
 
                 nsbeos_set_colour(style->fill_colour);
 
-                BRect rect(rect->x0, rect->y0, rect->x1 - 1, rect->y1 - 1);
+                BRect rect(nsrect->x0, nsrect->y0, nsrect->x1 - 1, nsrect->y1 - 1);
                 view->FillRect(rect);
 
                 //nsbeos_current_gc_unlock();
@@ -449,7 +449,7 @@ nsbeos_plot_rectangle(const struct redraw_context *ctx,
                 float pensize = view->PenSize();
                 view->SetPenSize(style->stroke_width);
 
-                BRect rect(rect->x0, rect->y0, rect->x1, rect->y1);
+                BRect rect(nsrect->x0, nsrect->y0, nsrect->x1, nsrect->y1);
                 view->StrokeRect(rect, pat);
 
                 view->SetPenSize(pensize);

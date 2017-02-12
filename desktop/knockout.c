@@ -262,7 +262,7 @@ static nserror knockout_plot_flush(const struct redraw_context *ctx)
 {
 	int i;
 	struct knockout_box *box;
-	nserror res; /* operation result */
+	nserror res = NSERROR_OK; /* operation result */
 	nserror ffres = NSERROR_OK; /* first failing result */
 
 	/* debugging information */
@@ -616,7 +616,7 @@ knockout_plot_polygon(const struct redraw_context *ctx,
 		      unsigned int n)
 {
 	int *dest;
-	nserror res;
+	nserror res = NSERROR_OK;
 	nserror ffres = NSERROR_OK;
 
 	/* ensure we have sufficient room even when flushed */

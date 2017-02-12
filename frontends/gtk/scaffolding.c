@@ -1673,7 +1673,7 @@ nsgtk_history_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 	clip.x1 = x2;
 	clip.y1 = y2;
 
-	ctx.plot->clip(&clip);
+	ctx.plot->clip(&ctx, &clip);
 
 	browser_window_history_redraw(bw, &ctx);
 
