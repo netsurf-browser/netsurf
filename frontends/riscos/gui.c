@@ -1179,6 +1179,9 @@ static nserror gui_init(int argc, char** argv)
 	/* Initialise save complete functionality */
 	save_complete_init();
 
+	/* Initialise the font subsystem */
+	nsfont_init();
+
 	/* Load in visited URLs, Cookies, and hostlist */
 	urldb_load(nsoption_charp(url_path));
 	urldb_load_cookies(nsoption_charp(cookie_file));
@@ -1211,9 +1214,6 @@ static nserror gui_init(int argc, char** argv)
 			ro_gui_selection_drag_claim);
 	ro_message_register_route(message_WINDOW_INFO,
 			ro_msg_window_info);
-
-	/* Initialise the font subsystem */
-	nsfont_init();
 
 	/* Initialise global information */
 	ro_gui_get_screen_properties();
