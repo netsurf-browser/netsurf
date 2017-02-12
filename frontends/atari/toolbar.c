@@ -435,7 +435,7 @@ void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
 	if (rc_intersect(clip, &area)) {
 		float old_scale;
 
-		plot_set_dimensions(area_ro.g_x, area_ro.g_y, area_ro.g_w, area_ro.g_h);
+		plot_set_dimensions(&toolbar_rdrw_ctx, area_ro.g_x, area_ro.g_y, area_ro.g_w, area_ro.g_h);
 		struct rect r = {
 			.x0 = MAX(0,area.g_x - area_ro.g_x),
 			.y0 = MAX(0,area.g_y - area_ro.g_y),

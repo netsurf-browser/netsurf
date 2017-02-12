@@ -223,7 +223,11 @@ void atari_treeview_redraw(struct core_window *cw)
 				.background_images = true,
 				.plot = &atari_plotters
 			};
-			plot_set_dimensions(work.g_x, work.g_y, work.g_w, work.g_h);
+			plot_set_dimensions(&ctx,
+					    work.g_x,
+					    work.g_y,
+					    work.g_w,
+					    work.g_h);
 			if (plot_lock() == false)
 				return;
 
