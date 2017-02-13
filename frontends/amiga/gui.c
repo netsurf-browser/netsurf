@@ -1810,7 +1810,7 @@ static void gui_window_set_icon(struct gui_window *g, struct hlcache_handle *ico
 
 	if ((icon != NULL) && ((icon_bitmap = content_get_bitmap(icon)) != NULL))
 	{
-		bm = ami_bitmap_get_native(icon_bitmap, 16, 16,
+		bm = ami_bitmap_get_native(icon_bitmap, 16, 16, ami_plot_screen_is_palettemapped(),
 					g->shared->win->RPort->BitMap);
 	}
 
@@ -5135,7 +5135,7 @@ static nserror gui_search_web_provider_update(const char *provider_name,
 	if(nsoption_bool(kiosk_mode) == true) return NSERROR_BAD_PARAMETER;
 
 	if (ico_bitmap != NULL) {
-		bm = ami_bitmap_get_native(ico_bitmap, 16, 16, NULL);
+		bm = ami_bitmap_get_native(ico_bitmap, 16, 16, ami_plot_screen_is_palettemapped(), NULL);
 	}
 
 	if(bm == NULL) return NSERROR_BAD_PARAMETER;

@@ -385,7 +385,7 @@ void amiga_icon_superimpose_favicon_internal(struct hlcache_handle *icon, struct
 	if(format != IDFMT_DIRECTMAPPED) return;
 #ifdef __amigaos4__
 	if ((icon != NULL) && (content_get_bitmap(icon) != NULL)) {
-		bm = ami_bitmap_get_native(content_get_bitmap(icon), 16, 16, NULL);
+		bm = ami_bitmap_get_native(content_get_bitmap(icon), 16, 16, false, NULL);
 	}
 
 	if(bm) {
@@ -506,7 +506,7 @@ struct DiskObject *amiga_icon_from_bitmap(struct bitmap *bm)
 	if(bm)
 	{
 		bitmap = ami_bitmap_get_native(bm, THUMBNAIL_WIDTH,
-									THUMBNAIL_HEIGHT, NULL);
+									THUMBNAIL_HEIGHT, false, NULL);
 		icondata = malloc(THUMBNAIL_WIDTH * 4 * THUMBNAIL_HEIGHT);
 		ami_bitmap_set_icondata(bm, icondata);
 

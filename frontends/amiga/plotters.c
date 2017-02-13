@@ -451,7 +451,7 @@ ami_bitmap(struct gui_globals *glob, int x, int y, int width, int height, struct
 		return NSERROR_OK;
 	}
 
-	tbm = ami_bitmap_get_native(bitmap, width, height, glob->rp->BitMap);
+	tbm = ami_bitmap_get_native(bitmap, width, height, glob->palette_mapped, glob->rp->BitMap);
 	if (!tbm) {
 		return NSERROR_OK;
 	}
@@ -1051,7 +1051,7 @@ ami_bitmap_tile(const struct redraw_context *ctx,
 		return NSERROR_OK;
 	}
 
-	tbm = ami_bitmap_get_native(bitmap, width, height, glob->rp->BitMap);
+	tbm = ami_bitmap_get_native(bitmap, width, height, glob->palette_mapped, glob->rp->BitMap);
 	if (!tbm) {
 		return NSERROR_OK;
 	}

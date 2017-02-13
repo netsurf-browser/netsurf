@@ -47,6 +47,7 @@
 #include "amiga/gui.h"
 #include "amiga/drag.h"
 #include "amiga/bitmap.h"
+#include "amiga/plotters.h"
 #include "amiga/schedule.h"
 #include "amiga/theme.h"
 #include "amiga/misc.h"
@@ -179,7 +180,8 @@ void ami_theme_throbber_setup(void)
 	if(throbber_update_interval == 0) throbber_update_interval = 250;
 
 	bm = ami_bitmap_from_datatype(throbberfile);
-	throbber = ami_bitmap_get_native(bm, bitmap_get_width(bm), bitmap_get_height(bm), NULL);
+	throbber = ami_bitmap_get_native(bm, bitmap_get_width(bm), bitmap_get_height(bm),
+		ami_plot_screen_is_palettemapped(), NULL);
 
 	throbber_nsbm = bm;
 }

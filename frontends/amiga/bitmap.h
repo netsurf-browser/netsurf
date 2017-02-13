@@ -34,7 +34,7 @@ struct nsurl;
 struct gui_globals;
 
 struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
-				int width, int height, struct BitMap *friendbm);
+				int width, int height, bool palette_mapped, struct BitMap *friendbm);
 PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width,
 				int height, struct BitMap *n_bm);
 

@@ -703,11 +703,11 @@ static inline struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
 }
 
 struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
-				int width, int height, struct BitMap *friendbm)
+				int width, int height, bool palette_mapped, struct BitMap *friendbm)
 {
 	if(bitmap == NULL) return NULL;
 
-	if(__builtin_expect(ami_plot_screen_is_palettemapped() == true, 0)) {
+	if(__builtin_expect(palette_mapped == true, 0)) {
 		return ami_bitmap_get_palettemapped(bitmap, width, height, friendbm);
 	} else {
 		return ami_bitmap_get_truecolour(bitmap, width, height, friendbm);
