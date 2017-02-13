@@ -77,6 +77,14 @@ void ami_plot_ra_free(struct gui_globals *gg);
 struct BitMap *ami_plot_ra_get_bitmap(struct gui_globals *gg);
 
 /**
+ * Get size of BitMap associated with a render area
+ * \param gg render area
+ * \param width updated to BitMap width
+ * \param height updated to BitMap height
+ */
+void ami_plot_ra_get_size(struct gui_globals *gg, int *width, int *height);
+
+/**
  * Set a list of shared pens for a render area to use
  * Only relevant for palette-mapped screens
  * \param gg render area

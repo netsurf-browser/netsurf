@@ -265,6 +265,12 @@ struct BitMap *ami_plot_ra_get_bitmap(struct gui_globals *gg)
 	return gg->bm;
 }
 
+void ami_plot_ra_get_size(struct gui_globals *gg, int *width, int *height)
+{
+	*width = gg->width;
+	*height = gg->height;
+}
+
 void ami_plot_ra_set_pen_list(struct gui_globals *gg, struct MinList *pen_list)
 {
 	gg->shared_pens = pen_list;

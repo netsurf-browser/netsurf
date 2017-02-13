@@ -219,8 +219,8 @@ ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 	struct IBox *bbox;
 	ULONG pos_x, pos_y;
 	struct rect draw_rect;
-	int tile_size_x = ami_cw->gg->width;
-	int tile_size_y = ami_cw->gg->height;
+	int tile_size_x;
+	int tile_size_y;
 	int tile_x, tile_y, tile_w, tile_h;
 	int x = r->x0;
 	int y = r->y0;
@@ -253,6 +253,8 @@ ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 		height -= pos_y - y;
 		y = pos_y;
 	}
+
+	ami_plot_ra_get_size(ami_cw->gg, &tile_size_x, &tile_size_y);
 
 	for(tile_y = y; tile_y < (y + height); tile_y += tile_size_y) {
 		tile_h = tile_size_y;

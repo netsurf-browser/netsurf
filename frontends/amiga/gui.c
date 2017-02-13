@@ -3524,8 +3524,10 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
 	int x, y;
 	struct rect clip;
-	int tile_size_x = glob->width;
-	int tile_size_y = glob->height;
+	int tile_size_x;
+	int tile_size_y;
+
+	ami_plot_ra_get_size(glob, &tile_size_x, &tile_size_y);
 
 	int tile_x_scale = (int)(tile_size_x / gwin->gw->scale);
 	int tile_y_scale = (int)(tile_size_y / gwin->gw->scale);
