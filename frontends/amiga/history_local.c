@@ -132,9 +132,7 @@ void ami_history_open(struct gui_window *gw)
 	if(!gw->hw)
 	{
 		gw->hw = calloc(1, sizeof(struct history_window));
-		gw->hw->gg = calloc(1, sizeof(struct gui_globals));
-
-		ami_init_layers(gw->hw->gg, scrn->Width, scrn->Height, false);
+		gw->hw->gg = ami_plot_ra_alloc(scrn->Width, scrn->Height, false);
 
 		gw->hw->gw = gw;
 		browser_window_history_size(gw->bw, &width, &height);
@@ -239,8 +237,7 @@ static bool ami_history_click(struct history_window *hw, uint16 code)
 
 void ami_history_close(struct history_window *hw)
 {
-	ami_free_layers(hw->gg);
-	free(hw->gg);
+	ami_plot_ra_free(hw->gg);
 	hw->gw->hw = NULL;
 	DisposeObject(hw->objects[OID_MAIN]);
 	ami_gui_win_list_remove(hw);

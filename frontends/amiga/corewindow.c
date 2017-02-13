@@ -219,8 +219,8 @@ ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 	struct IBox *bbox;
 	ULONG pos_x, pos_y;
 	struct rect draw_rect;
-	int tile_size_x = ami_cw->gg.width;
-	int tile_size_y = ami_cw->gg.height;
+	int tile_size_x = ami_cw->gg->width;
+	int tile_size_y = ami_cw->gg->height;
 	int tile_x, tile_y, tile_w, tile_h;
 	int x = r->x0;
 	int y = r->y0;
@@ -231,7 +231,7 @@ ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 		.interactive = true,
 		.background_images = true,
 		.plot = &amiplot,
-		.priv = &ami_cw->gg
+		.priv = ami_cw->gg
 	};
 
 	if(ami_gui_get_space_box((Object *)ami_cw->objects[GID_CW_DRAW], &bbox) != NSERROR_OK) {
@@ -273,7 +273,7 @@ ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 
 #ifdef __amigaos4__
 			BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
-					BLITA_Source, ami_cw->gg.bm,
+					BLITA_Source, ami_plot_ra_get_bitmap(ami_cw->gg),
 					BLITA_SrcX, 0,
 					BLITA_SrcY, 0,
 					BLITA_DestType, BLITT_RASTPORT, 
@@ -284,7 +284,7 @@ ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 					BLITA_Height, tile_h,
 					TAG_DONE);
 #else
-			BltBitMapRastPort(ami_cw->gg.bm, 0, 0,
+			BltBitMapRastPort(ami_plot_ra_get_bitmap(ami_cw->gg), 0, 0,
 					ami_cw->win->RPort, bbox->Left + tile_x - pos_x, bbox->Top + tile_y - pos_y,
 					tile_w, tile_h, 0xC0);
 #endif
@@ -292,7 +292,7 @@ ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 	}
 
 	ami_gui_free_space_box(bbox);
-	ami_clearclipreg(&ami_cw->gg);
+	ami_clearclipreg(ami_cw->gg);
 }
 
 
@@ -915,8 +915,8 @@ nserror ami_corewindow_init(struct ami_corewindow *ami_cw)
 	ami_cw->dragging = false;
 
 	/* allocate drawing area etc */
-	ami_init_layers(&ami_cw->gg, 100, 100, false); // force tiles to save memory
-	ami_cw->gg.shared_pens = ami_AllocMinList();
+	ami_cw->gg = ami_plot_ra_alloc(100, 100, false); // force tiles to save memory
+	ami_cw->gg->shared_pens = ami_AllocMinList();
 
 	ami_cw->deferred_rects = NewObjList();
 	ami_cw->deferred_rects_pool = ami_memory_itempool_create(sizeof(struct rect));
@@ -986,8 +986,8 @@ nserror ami_corewindow_fini(struct ami_corewindow *ami_cw)
 #endif
 
 	/* release off-screen bitmap stuff */
-	ami_plot_release_pens(ami_cw->gg.shared_pens);
-	ami_free_layers(&ami_cw->gg);
+	ami_plot_release_pens(ami_cw->gg->shared_pens);
+	ami_plot_ra_free(ami_cw->gg);
 
 	/* free the window title */
 	ami_utf8_free(ami_cw->wintitle);

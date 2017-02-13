@@ -498,8 +498,7 @@ bool ami_print_begin(struct print_settings *ps)
 	ami_print_info.gg = calloc(1, sizeof(struct gui_globals));
 	if(!ami_print_info.gg) return false;
 
-	ami_init_layers(ami_print_info.gg,
-				ami_print_info.PED->ped_MaxXDots,
+	ami_print_info.gg = ami_plot_ra_alloc(ami_print_info.PED->ped_MaxXDots,
 				ami_print_info.PED->ped_MaxYDots,
 				true);
 
@@ -521,8 +520,7 @@ bool ami_print_next_page(void)
 
 void ami_print_end(void)
 {
-	ami_free_layers(ami_print_info.gg);
-	free(ami_print_info.gg);
+	ami_plot_ra_free(ami_print_info.gg);
 	DisposeObject(ami_print_info.objects[OID_MAIN]);
 
 	ami_print_close_device();

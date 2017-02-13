@@ -202,7 +202,7 @@ static BOOL locked_screen = FALSE;
 static int screen_signal = -1;
 static bool win_destroyed;
 static STRPTR nsscreentitle;
-static struct gui_globals browserglob;
+static struct gui_globals *browserglob = NULL;
 
 static struct MsgPort *applibport = NULL;
 static uint32 ami_appid = 0;
@@ -885,7 +885,7 @@ static void ami_openscreen(void)
 static void ami_openscreenfirst(void)
 {
 	ami_openscreen();
-	if(!browserglob.bm) ami_init_layers(&browserglob, 0, 0, false);
+	if(browserglob == NULL) browserglob = ami_plot_ra_alloc(0, 0, false);
 	ami_theme_throbber_setup();
 }
 
@@ -3040,7 +3040,7 @@ static void gui_quit(void)
 #endif
 	ami_arexx_cleanup();
 
-	ami_free_layers(&browserglob);
+	ami_plot_ra_free(browserglob);
 
 	ami_font_fini();
 	ami_help_free();
@@ -3530,7 +3530,7 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 	int tile_x_scale = (int)(tile_size_x / gwin->gw->scale);
 	int tile_y_scale = (int)(tile_size_y / gwin->gw->scale);
 
-	browserglob.shared_pens = gwin->shared_pens; /* do we need this?? */
+	glob->shared_pens = gwin->shared_pens; /* do we need this?? */
 	
 	if(top < 0) {
 		height += top;
@@ -3581,10 +3581,10 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 				clip.y0 - (int)y,
 				&clip, ctx))
 			{
-				ami_clearclipreg(&browserglob);
+				ami_clearclipreg(glob);
 #ifdef __amigaos4__
 				BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
-					BLITA_Source, browserglob.bm,
+					BLITA_Source, ami_plot_ra_get_bitmap(glob),
 					BLITA_SrcX, 0,
 					BLITA_SrcY, 0,
 					BLITA_DestType, BLITT_RASTPORT, 
@@ -3595,7 +3595,7 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 					BLITA_Height, (int)(clip.y1),
 					TAG_DONE);
 #else
-				BltBitMapRastPort(browserglob.bm, 0, 0, gwin->win->RPort,
+				BltBitMapRastPort(ami_plot_ra_get_bitmap(glob), 0, 0, gwin->win->RPort,
 					bbox->Left + (int)((x - sx) * gwin->gw->scale),
 					bbox->Top + (int)((y - sy) * gwin->gw->scale),
 					(int)(clip.x1), (int)(clip.y1), 0xC0);
@@ -3630,7 +3630,7 @@ static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw
 		.interactive = true,
 		.background_images = true,
 		.plot = &amiplot,
-		.priv = &browserglob
+		.priv = browserglob
 	};
 
 	if(!g) return;
@@ -4900,7 +4900,7 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 			.interactive = true,
 			.background_images = true,
 			.plot = &amiplot,
-			.priv = &browserglob
+			.priv = browserglob
 		};
 
 		if(nsoption_bool(direct_render) == false)
@@ -4909,9 +4909,9 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 		}
 		else
 		{
-			browserglob.shared_pens = gwin->shared_pens;
-			temprp = browserglob.rp;
- 			browserglob.rp = gwin->win->RPort;
+			browserglob->shared_pens = gwin->shared_pens;
+			temprp = browserglob->rp;
+ 			browserglob->rp = gwin->win->RPort;
 			clip.x0 = bbox->Left;
 			clip.y0 = bbox->Top;
 			clip.x1 = bbox->Left + bbox->Width;
@@ -4921,8 +4921,8 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 
 			if(browser_window_redraw(gwin->gw->bw, clip.x0 - hcurrent, clip.y0 - vcurrent, &clip, &ctx))
 			{
-				ami_clearclipreg(&browserglob);
-				browserglob.rp = temprp;
+				ami_clearclipreg(browserglob);
+				browserglob->rp = temprp;
 			}
 			
 			ami_reset_pointer(gwin);
@@ -5273,7 +5273,7 @@ static void gui_window_new_content(struct gui_window *g)
 		c = browser_window_get_content(g->bw);
 	else return;
 
-	ami_clearclipreg(&browserglob);
+	ami_clearclipreg(browserglob);
 	g->shared->new_content = true;
 	g->scrollx = 0;
 	g->scrolly = 0;

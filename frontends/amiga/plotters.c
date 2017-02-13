@@ -102,14 +102,13 @@ static bool palette_mapped = true; /* palette-mapped state for the screen */
 /* Define the below to get additional debug */
 #undef AMI_PLOTTER_DEBUG
 
-void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool force32bit)
+struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit)
 {
-	/* init shared bitmaps                                               *
-	 * Height is set to screen width to give enough space for thumbnails *
-	 * Also applies to the further gfx/layers functions and memory below */
- 
-	int depth = 32;
+	/* init shared bitmaps */
+ 	int depth = 32;
 	struct BitMap *friend = NULL;
+
+	struct gui_globals *gg = malloc(sizeof(struct gui_globals));
 
 	if(force32bit == false) depth = GetBitMapAttr(scrn->RastPort.BitMap, BMA_DEPTH);
 	LOG("Screen depth = %d", depth);
@@ -214,9 +213,11 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool for
 
 	init_layers_count++;
 	LOG("Layer initialised (total: %d)", init_layers_count);
+
+	return gg;
 }
 
-void ami_free_layers(struct gui_globals *gg)
+void ami_plot_ra_free(struct gui_globals *gg)
 {
 	init_layers_count--;
 
@@ -240,6 +241,13 @@ void ami_free_layers(struct gui_globals *gg)
 	} else {
 		if(gg->bm) FreeBitMap(gg->bm);
 	}
+
+	free(gg);
+}
+
+struct BitMap *ami_plot_ra_get_bitmap(struct gui_globals *gg)
+{
+	return gg->bm;
 }
 
 void ami_clearclipreg(struct gui_globals *gg)

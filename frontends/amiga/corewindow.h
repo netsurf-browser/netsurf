@@ -76,7 +76,7 @@ struct ami_corewindow {
 		char *wintitle;
 
 		/** stuff for our off-screen render bitmap */
-		struct gui_globals gg;
+		struct gui_globals *gg;
 		struct MinList *shared_pens;
 
 		/** drag status set by core */

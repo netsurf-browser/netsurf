@@ -45,11 +45,13 @@ struct gui_globals
 
 extern const struct plotter_table amiplot;
 
-void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool force32bit);
-void ami_free_layers(struct gui_globals *gg);
 void ami_clearclipreg(struct gui_globals *gg);
 void ami_plot_clear_bbox(struct RastPort *rp, struct IBox *bbox);
 void ami_plot_release_pens(struct MinList *shared_pens);
 bool ami_plot_screen_is_palettemapped(void);
+
+struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit);
+void ami_plot_ra_free(struct gui_globals *gg);
+struct BitMap *ami_plot_ra_get_bitmap(struct gui_globals *gg);
 
 #endif
