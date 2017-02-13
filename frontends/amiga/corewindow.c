@@ -230,7 +230,8 @@ ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 	struct redraw_context ctx = {
 		.interactive = true,
 		.background_images = true,
-		.plot = &amiplot
+		.plot = &amiplot,
+		.priv = &ami_cw->gg
 	};
 
 	if(ami_gui_get_space_box((Object *)ami_cw->objects[GID_CW_DRAW], &bbox) != NSERROR_OK) {
@@ -239,8 +240,6 @@ ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 	}
 
 	ami_cw_scroller_top(ami_cw, &pos_x, &pos_y);
-
-	glob = &ami_cw->gg;
 
 	if(x - pos_x + width > bbox->Width) width = bbox->Width - (x - pos_x);
 	if(y - pos_y + height > bbox->Height) height = bbox->Height - (y - pos_y);
@@ -293,8 +292,7 @@ ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 	}
 
 	ami_gui_free_space_box(bbox);
-	ami_clearclipreg(glob);
-	ami_gui_set_default_gg();
+	ami_clearclipreg(&ami_cw->gg);
 }
 
 

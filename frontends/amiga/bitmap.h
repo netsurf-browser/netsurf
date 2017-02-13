@@ -31,6 +31,7 @@
 extern struct gui_bitmap_table *amiga_bitmap_table;
 struct bitmap;
 struct nsurl;
+struct gui_globals;
 
 struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
 				int width, int height, struct BitMap *friendbm);

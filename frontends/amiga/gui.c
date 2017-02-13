@@ -993,11 +993,6 @@ static STRPTR ami_gui_read_all_tooltypes(int argc, char **argv)
 	return current_user;
 }
 
-void ami_gui_set_default_gg(void)
-{
-	glob = &browserglob;
-}
-
 static void gui_init2(int argc, char** argv)
 {
 	struct Screen *screen;
@@ -1007,9 +1002,6 @@ static void gui_init2(int argc, char** argv)
 	struct browser_window *bw = NULL;
 
 	notalreadyrunning = ami_arexx_init(&rxsig);
-
-	/* Treeview init code ends up calling a font function which needs this */
-	ami_gui_set_default_gg();
 
 	/* ...and this ensures the treeview at least gets the WB colour palette to work with */
 	if(scrn == NULL) {
@@ -3529,6 +3521,7 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 	int left, int top, int width, int height,
 	int sx, int sy, struct IBox *bbox, struct redraw_context *ctx)
 {
+	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
 	int x, y;
 	struct rect clip;
 	int tile_size_x = glob->width;
@@ -3636,7 +3629,8 @@ static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw
 	struct redraw_context ctx = {
 		.interactive = true,
 		.background_images = true,
-		.plot = &amiplot
+		.plot = &amiplot,
+		.priv = &browserglob
 	};
 
 	if(!g) return;
@@ -4459,8 +4453,6 @@ gui_window_create(struct browser_window *bw,
 
 	ami_gui_win_list_add(g->shared, AMINS_WINDOW, &ami_gui_table);
 
-	ami_gui_set_default_gg();
-
 	if(locked_screen) {
 		UnlockPubScreen(NULL,scrn);
 		locked_screen = FALSE;
@@ -4907,10 +4899,9 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 		struct redraw_context ctx = {
 			.interactive = true,
 			.background_images = true,
-			.plot = &amiplot
+			.plot = &amiplot,
+			.priv = &browserglob
 		};
-
-		ami_gui_set_default_gg();
 
 		if(nsoption_bool(direct_render) == false)
 		{

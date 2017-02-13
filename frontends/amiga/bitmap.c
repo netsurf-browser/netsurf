@@ -725,25 +725,22 @@ static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *conte
 #ifdef __amigaos4__
 	LOG("Entering bitmap_render");
 
-	struct redraw_context ctx = {
-		.interactive = false,
-		.background_images = true,
-		.plot = &amiplot
-	};
-
 	int plot_width;
 	int plot_height;
 	struct gui_globals bm_globals;
-	struct gui_globals *temp_gg = glob;
+
+	struct redraw_context ctx = {
+		.interactive = false,
+		.background_images = true,
+		.plot = &amiplot,
+		.priv = &bm_globals
+	};
 
 	plot_width = MIN(content_get_width(content), bitmap->width);
 	plot_height = ((plot_width * bitmap->height) + (bitmap->width / 2)) /
 			bitmap->width;
 
 	ami_init_layers(&bm_globals, bitmap->width, bitmap->height, true);
-	bm_globals.shared_pens = NULL;
-
-	glob = &bm_globals;
 	ami_clearclipreg(&bm_globals);
 
 	content_scaled_redraw(content, plot_width, plot_height, &ctx);
@@ -768,12 +765,6 @@ static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *conte
 
 	ami_free_layers(&bm_globals);
 	amiga_bitmap_set_opaque(bitmap, true);
-
-	/* Restore previous render area.  This is set when plotting starts,
-	 * but if bitmap_render is called *during* a browser render then
-	 * having an invalid pointer here causes NetSurf to crash.
-	 */
-	glob = temp_gg;
 #else
 #warning FIXME for OS3 (in current state none of bitmap_render can work!)
 #endif

@@ -259,11 +259,6 @@ uint32 ami_gui_get_app_id(void);
 STRPTR ami_gui_get_screen_title(void);
 
 /**
- * Set gui_globals back to the default for the browser context
- */
-void ami_gui_set_default_gg(void);
-
-/**
  * Switch to the most-recently-opened tab
  */
 void ami_gui_switch_to_new_tab(struct gui_window_2 *gwin);

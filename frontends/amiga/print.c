@@ -436,6 +436,7 @@ void ami_print(struct hlcache_handle *c, int copies)
 	ami_print_info.ps->page_width = ami_print_info.PED->ped_MaxXDots;
 	ami_print_info.ps->page_height = ami_print_info.PED->ped_MaxYDots;
 	ami_print_info.ps->scale = scale;
+	ami_print_info.ps->priv = ami_print_info.gg;
 
 	if(!print_set_up(c, &amiprinter, ami_print_info.ps, &height))
 	{
@@ -459,10 +460,8 @@ bool ami_print_cont(void)
 
 	if(ami_print_info.page <= ami_print_info.pages)
 	{
-		glob = ami_print_info.gg;
 		print_draw_next_page(&amiprinter, ami_print_info.ps);
 		ami_print_dump();
-		ami_gui_set_default_gg();
 		ret = true;
 	}
 	else 
@@ -525,7 +524,6 @@ void ami_print_end(void)
 	ami_free_layers(ami_print_info.gg);
 	free(ami_print_info.gg);
 	DisposeObject(ami_print_info.objects[OID_MAIN]);
-	ami_gui_set_default_gg();
 
 	ami_print_close_device();
 	ami_print_free();

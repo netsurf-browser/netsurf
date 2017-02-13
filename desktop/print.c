@@ -179,7 +179,8 @@ bool print_draw_next_page(const struct printer *printer,
 	struct redraw_context ctx = {
 		.interactive = false,
 		.background_images = !nsoption_bool(remove_backgrounds),
-		.plot = printer->plotter
+		.plot = printer->plotter,
+		.priv = settings->priv
 	};
 
 	html_redraw_printing_top_cropped = INT_MAX;

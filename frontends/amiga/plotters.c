@@ -69,6 +69,7 @@ struct bfbitmap {
 	int offsetx;
 	int offsety;
 	APTR mask;
+	bool palette_mapped;
 };
 
 struct ami_plot_pen {
@@ -81,10 +82,9 @@ struct bez_point {
 	float y;
 };
 
-struct gui_globals *glob;
-
 static int init_layers_count = 0;
 static APTR pool_pens = NULL;
+static bool palette_mapped = true; /* palette-mapped state for the screen */
 
 #ifndef M_PI /* For some reason we don't always get this from math.h */
 #define M_PI		3.14159265358979323846
@@ -117,8 +117,10 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool for
 #ifdef __amigaos4__
 	if(depth < 16) {
 		gg->palette_mapped = true;
+		if(force32bit == false) palette_mapped = true;
 	} else {
 		gg->palette_mapped = false;
+		if(force32bit == false) palette_mapped = false;
 	}
 #else
 	/* Friend BitMaps are weird.
@@ -142,6 +144,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool for
 	 */
 #warning OS3 locked to palette-mapped modes
 	gg->palette_mapped = true;
+	palette_mapped = true;
 	if(depth > 8) depth = 8;
 #endif
 
@@ -207,6 +210,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height, bool for
 	gg->open = 0x00000000;
 	gg->apen_num = -1;
 	gg->open_num = -1;
+	gg->shared_pens = NULL;
 
 	init_layers_count++;
 	LOG("Layer initialised (total: %d)", init_layers_count);
@@ -289,14 +293,9 @@ void ami_plot_release_pens(struct MinList *shared_pens)
 		Remove((struct Node *)node);
 		ami_memory_itempool_free(pool_pens, node, sizeof(struct ami_plot_pen));
 	} while((node = nnode));
-
-	glob->apen = 0x00000000;
-	glob->open = 0x00000000;
-	glob->apen_num = -1;
-	glob->open_num = -1;
 }
 
-static void ami_plot_setapen(struct RastPort *rp, ULONG colr)
+static void ami_plot_setapen(struct gui_globals *glob, struct RastPort *rp, ULONG colr)
 {
 	if(glob->apen == colr) return;
 
@@ -315,7 +314,7 @@ static void ami_plot_setapen(struct RastPort *rp, ULONG colr)
 	glob->apen = colr;
 }
 
-static void ami_plot_setopen(struct RastPort *rp, ULONG colr)
+static void ami_plot_setopen(struct gui_globals *glob, struct RastPort *rp, ULONG colr)
 {
 	if(glob->open == colr) return;
 
@@ -343,7 +342,7 @@ void ami_plot_clear_bbox(struct RastPort *rp, struct IBox *bbox)
 }
 
 
-static void ami_arc_gfxlib(int x, int y, int radius, int angle1, int angle2)
+static void ami_arc_gfxlib(struct RastPort *rp, int x, int y, int radius, int angle1, int angle2)
 {
 	double angle1_r = (double)(angle1) * (M_PI / 180.0);
 	double angle2_r = (double)(angle2) * (M_PI / 180.0);
@@ -359,19 +358,19 @@ static void ami_arc_gfxlib(int x, int y, int radius, int angle1, int angle2)
 	
 	x1 = (int)(cos(b) * (double)radius);
 	y1 = (int)(sin(b) * (double)radius);
-	Move(glob->rp, x0 + x1, y0 - y1);
+	Move(rp, x0 + x1, y0 - y1);
 		
 	for(angle = (b + step); angle <= c; angle += step) {
 		x1 = (int)(cos(angle) * (double)radius);
 		y1 = (int)(sin(angle) * (double)radius);
-		Draw(glob->rp, x0 + x1, y0 - y1);
+		Draw(rp, x0 + x1, y0 - y1);
 	}
 }
 
 /**
  */
 static nserror
-ami_bitmap(int x, int y, int width, int height, struct bitmap *bitmap)
+ami_bitmap(struct gui_globals *glob, int x, int y, int width, int height, struct bitmap *bitmap)
 {
 	PLOT_LOG("[ami_plotter] Entered ami_bitmap()");
 
@@ -471,7 +470,7 @@ HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage 
 		for (yf = -bfbm->offsety; yf < msg->Bounds.MaxY; yf += bfbm->height) {
 #ifdef __amigaos4__
 			if(__builtin_expect((GfxBase->LibNode.lib_Version >= 53) &&
-				(glob->palette_mapped == false), 1)) {
+				(bfbm->palette_mapped == false), 1)) {
 				CompositeTags(COMPOSITE_Src_Over_Dest, bfbm->bm, rp->BitMap,
 					COMPTAG_Flags, COMPFLAG_IgnoreDestAlpha,
 					COMPTAG_DestX, msg->Bounds.MinX,
@@ -489,7 +488,7 @@ HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage 
 			{
 				ULONG tag, tag_data, minterm = 0xc0;
 		
-				if(glob->palette_mapped == false) {
+				if(bfbm->palette_mapped == false) {
 					tag = BLITA_UseSrcAlpha;
 					tag_data = TRUE;
 					minterm = 0xc0;
@@ -534,7 +533,8 @@ static void ami_bezier(struct bez_point *restrict a, struct bez_point *restrict 
 
 bool ami_plot_screen_is_palettemapped(void)
 {
-	return glob->palette_mapped;
+	/* This may not be entirely correct - previously we returned the state of the current BitMap */
+	return palette_mapped;
 }
 
 
@@ -549,6 +549,7 @@ bool ami_plot_screen_is_palettemapped(void)
 static nserror
 ami_clip(const struct redraw_context *ctx, const struct rect *clip)
 {
+	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
 	struct Region *reg = NULL;
 
 	PLOT_LOG("[ami_plotter] Entered ami_clip()");
@@ -597,12 +598,14 @@ ami_arc(const struct redraw_context *ctx,
 {
 	PLOT_LOG("[ami_plotter] Entered ami_arc()");
 
+	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
+
 	if (angle2 < angle1) {
 		angle2 += 360;
 	}
 
-	ami_plot_setapen(glob->rp, style->fill_colour);
-	ami_arc_gfxlib(x, y, radius, angle1, angle2);
+	ami_plot_setapen(glob, glob->rp, style->fill_colour);
+	ami_arc_gfxlib(glob->rp, x, y, radius, angle1, angle2);
 
 	return NSERROR_OK;
 }
@@ -627,14 +630,16 @@ ami_disc(const struct redraw_context *ctx,
 {
 	PLOT_LOG("[ami_plotter] Entered ami_disc()");
 
+	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
+
 	if (style->fill_type != PLOT_OP_TYPE_NONE) {
-		ami_plot_setapen(glob->rp, style->fill_colour);
+		ami_plot_setapen(glob, glob->rp, style->fill_colour);
 		AreaCircle(glob->rp,x,y,radius);
 		AreaEnd(glob->rp);
 	}
 
 	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
-		ami_plot_setapen(glob->rp, style->stroke_colour);
+		ami_plot_setapen(glob, glob->rp, style->stroke_colour);
 		DrawEllipse(glob->rp,x,y,radius,radius);
 	}
 
@@ -660,6 +665,8 @@ ami_line(const struct redraw_context *ctx,
 {
 	PLOT_LOG("[ami_plotter] Entered ami_line()");
 
+	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
+
 	glob->rp->PenWidth = style->stroke_width;
 	glob->rp->PenHeight = style->stroke_width;
 
@@ -678,7 +685,7 @@ ami_line(const struct redraw_context *ctx,
 		break;
 	}
 
-	ami_plot_setapen(glob->rp, style->stroke_colour);
+	ami_plot_setapen(glob, glob->rp, style->stroke_colour);
 	Move(glob->rp, line->x0, line->y0);
 	Draw(glob->rp, line->x1, line->y1);
 
@@ -710,8 +717,10 @@ ami_rectangle(const struct redraw_context *ctx,
 {
 	PLOT_LOG("[ami_plotter] Entered ami_rectangle()");
 
+	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
+
 	if (style->fill_type != PLOT_OP_TYPE_NONE) {
-		ami_plot_setapen(glob->rp, style->fill_colour);
+		ami_plot_setapen(glob, glob->rp, style->fill_colour);
 		RectFill(glob->rp, rect->x0, rect->y0, rect->x1- 1 , rect->y1 - 1);
 	}
 
@@ -734,7 +743,7 @@ ami_rectangle(const struct redraw_context *ctx,
 			break;
  		}
 
-		ami_plot_setapen(glob->rp, style->stroke_colour);
+		ami_plot_setapen(glob, glob->rp, style->stroke_colour);
 		Move(glob->rp, rect->x0, rect->y0);
 		Draw(glob->rp, rect->x1, rect->y0);
 		Draw(glob->rp, rect->x1, rect->y1);
@@ -772,7 +781,9 @@ ami_polygon(const struct redraw_context *ctx,
 {
 	PLOT_LOG("[ami_plotter] Entered ami_polygon()");
 
-	ami_plot_setapen(glob->rp, style->fill_colour);
+	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
+
+	ami_plot_setapen(glob, glob->rp, style->fill_colour);
 
 	if (AreaMove(glob->rp,p[0],p[1]) == -1) {
 		LOG("AreaMove: vector list full");
@@ -816,8 +827,10 @@ ami_path(const struct redraw_context *ctx,
 {
 	unsigned int i;
 	struct bez_point start_p = {0, 0}, cur_p = {0, 0}, p_a, p_b, p_c, p_r;
-	
+
 	PLOT_LOG("[ami_plotter] Entered ami_path()");
+
+	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
 
 	if (n == 0) {
 		return NSERROR_OK;
@@ -829,13 +842,13 @@ ami_path(const struct redraw_context *ctx,
 	}
 
 	if (pstyle->fill_colour != NS_TRANSPARENT) {
-		ami_plot_setapen(glob->rp, pstyle->fill_colour);
+		ami_plot_setapen(glob, glob->rp, pstyle->fill_colour);
 		if (pstyle->stroke_colour != NS_TRANSPARENT) {
-			ami_plot_setopen(glob->rp, pstyle->stroke_colour);
+			ami_plot_setopen(glob, glob->rp, pstyle->stroke_colour);
 		}
 	} else {
 		if (pstyle->stroke_colour != NS_TRANSPARENT) {
-			ami_plot_setapen(glob->rp, pstyle->stroke_colour);
+			ami_plot_setapen(glob, glob->rp, pstyle->stroke_colour);
 		} else {
 			return NSERROR_OK; /* wholly transparent */
 		}
@@ -958,12 +971,14 @@ ami_bitmap_tile(const struct redraw_context *ctx,
 
 	PLOT_LOG("[ami_plotter] Entered ami_bitmap_tile()");
 
+	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
+
 	if ((width == 0) || (height == 0)) {
 		return NSERROR_OK;
 	}
 
 	if (!(repeat_x || repeat_y)) {
-		return ami_bitmap(x, y, width, height, bitmap);
+		return ami_bitmap(glob, x, y, width, height, bitmap);
 	}
 
 	/* If it is a one pixel transparent image, we are wasting our time */
@@ -973,7 +988,7 @@ ami_bitmap_tile(const struct redraw_context *ctx,
 		return NSERROR_OK;
 	}
 
-	tbm = ami_bitmap_get_native(bitmap,width,height,glob->rp->BitMap);
+	tbm = ami_bitmap_get_native(bitmap, width, height, glob->rp->BitMap);
 	if (!tbm) {
 		return NSERROR_OK;
 	}
@@ -1025,6 +1040,7 @@ ami_bitmap_tile(const struct redraw_context *ctx,
 		bfbm.offsetx = ox;
 		bfbm.offsety = oy;
 		bfbm.mask = ami_bitmap_get_mask(bitmap, width, height, tbm);
+		bfbm.palette_mapped = glob->palette_mapped;
 		bfh = calloc(1, sizeof(struct Hook));
 		bfh->h_Entry = (HOOKFUNC)ami_bitmap_tile_hook;
 		bfh->h_SubEntry = 0;
@@ -1072,10 +1088,12 @@ ami_text(const struct redraw_context *ctx,
 {
 	PLOT_LOG("[ami_plotter] Entered ami_text()");
 
+	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
+
 	if (__builtin_expect(ami_nsfont == NULL, 0)) {
 		return NSERROR_OK;
 	}
-	ami_plot_setapen(glob->rp, fstyle->foreground);
+	ami_plot_setapen(glob, glob->rp, fstyle->foreground);
 	ami_nsfont->text(glob->rp, text, length, fstyle, x, y, nsoption_bool(font_antialiasing));
 
 	return NSERROR_OK;

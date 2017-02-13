@@ -108,6 +108,7 @@ enum {
 struct gui_window;
 struct gui_window_2;
 struct hlcache_handle;
+struct Window;
 
 ULONG ami_gui_menu_number(int item);
 struct Menu *ami_gui_menu_create(struct gui_window_2 *gwin);

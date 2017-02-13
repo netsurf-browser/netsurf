@@ -87,7 +87,8 @@ static void ami_history_redraw(struct history_window *hw)
 	struct redraw_context ctx = {
 		.interactive = true,
 		.background_images = true,
-		.plot = &amiplot
+		.plot = &amiplot,
+		.priv = hw->gg
 	};
 
 	GetAttr(SCROLLER_Top,hw->objects[OID_HSCROLL],(ULONG *)&xs);
@@ -97,15 +98,13 @@ static void ami_history_redraw(struct history_window *hw)
 		return;
 	}
 
-	glob = hw->gg;
-
+/*	core should clear this area for us
 	SetRPAttrs(glob->rp, RPTAG_APenColor, 0xffffffff, TAG_DONE);
 	RectFill(glob->rp, 0, 0, bbox->Width - 1, bbox->Height - 1);
+*/
 
 	browser_window_history_redraw_rectangle(hw->gw->bw, xs, ys,
 			bbox->Width + xs, bbox->Height + ys, 0, 0, &ctx);
-
-	ami_gui_set_default_gg();
 
 	ami_clearclipreg(hw->gg);
 	ami_history_update_extent(hw);

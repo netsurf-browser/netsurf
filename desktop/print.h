@@ -61,6 +61,9 @@ struct print_settings{
 
 	/*the functions used to measure fonts*/
 	const struct gui_layout_table *font_func;
+
+	/* Private data for the plotter context */
+	const void *priv;
 };
 
 
