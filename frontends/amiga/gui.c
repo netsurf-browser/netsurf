@@ -4828,7 +4828,6 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600;
 	struct IBox *bbox;
 	ULONG oldh = gwin->oldh, oldv=gwin->oldv;
-	struct RastPort *temprp;
 
 	if(browser_window_redraw_ready(gwin->gw->bw) == false) return;
 
@@ -4897,7 +4896,6 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 	}
 	else
 	{
-		struct rect clip;
 		struct redraw_context ctx = {
 			.interactive = true,
 			.background_images = true,
@@ -4905,33 +4903,8 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 			.priv = browserglob
 		};
 
-		if(nsoption_bool(direct_render) == false)
-		{
-			ami_do_redraw_tiled(gwin, true, hcurrent, vcurrent, width, height, hcurrent, vcurrent, bbox, &ctx);
-		}
-		else
-		{
-#if 0
-/**FIXME: this is broken, only exists for debugging */
-			ami_plot_ra_set_pen_list(browserglob, gwin->shared_pens);
-			temprp = browserglob->rp;
- 			browserglob->rp = gwin->win->RPort;
-			clip.x0 = bbox->Left;
-			clip.y0 = bbox->Top;
-			clip.x1 = bbox->Left + bbox->Width;
-			clip.y1 = bbox->Top + bbox->Height;
+		ami_do_redraw_tiled(gwin, true, hcurrent, vcurrent, width, height, hcurrent, vcurrent, bbox, &ctx);
 
-			ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
-
-			if(browser_window_redraw(gwin->gw->bw, clip.x0 - hcurrent, clip.y0 - vcurrent, &clip, &ctx))
-			{
-				ami_clearclipreg(browserglob);
-				browserglob->rp = temprp;
-			}
-			
-			ami_reset_pointer(gwin);
-#endif
-		}
 		/* Tell NetSurf not to bother with the next queued box redraw, as we've redrawn everything. */
 		ami_gui_window_update_box_deferred(gwin->gw, false);
 	}

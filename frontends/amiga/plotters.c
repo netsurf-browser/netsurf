@@ -460,8 +460,7 @@ ami_bitmap(struct gui_globals *glob, int x, int y, int width, int height, struct
 
 #ifdef __amigaos4__
 	if (__builtin_expect((GfxBase->LibNode.lib_Version >= 53) &&
-			     (glob->palette_mapped == false) &&
-			     (nsoption_bool(direct_render) == false), 1)) {
+			     (glob->palette_mapped == false), 1)) {
 		uint32 comptype = COMPOSITE_Src_Over_Dest;
 		uint32 compflags = COMPFLAG_IgnoreDestAlpha;
 		if(amiga_bitmap_get_opaque(bitmap)) {
