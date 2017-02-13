@@ -915,8 +915,7 @@ nserror ami_corewindow_init(struct ami_corewindow *ami_cw)
 	ami_cw->dragging = false;
 
 	/* allocate drawing area etc */
-	ami_cw->gg = ami_plot_ra_alloc(100, 100, false); // force tiles to save memory
-	ami_cw->gg->shared_pens = ami_AllocMinList();
+	ami_cw->gg = ami_plot_ra_alloc(100, 100, false, true); // force tiles to save memory
 
 	ami_cw->deferred_rects = NewObjList();
 	ami_cw->deferred_rects_pool = ami_memory_itempool_create(sizeof(struct rect));
@@ -986,7 +985,6 @@ nserror ami_corewindow_fini(struct ami_corewindow *ami_cw)
 #endif
 
 	/* release off-screen bitmap stuff */
-	ami_plot_release_pens(ami_cw->gg->shared_pens);
 	ami_plot_ra_free(ami_cw->gg);
 
 	/* free the window title */

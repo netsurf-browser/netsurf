@@ -885,7 +885,7 @@ static void ami_openscreen(void)
 static void ami_openscreenfirst(void)
 {
 	ami_openscreen();
-	if(browserglob == NULL) browserglob = ami_plot_ra_alloc(0, 0, false);
+	if(browserglob == NULL) browserglob = ami_plot_ra_alloc(0, 0, false, false);
 	ami_theme_throbber_setup();
 }
 
@@ -3530,7 +3530,7 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 	int tile_x_scale = (int)(tile_size_x / gwin->gw->scale);
 	int tile_y_scale = (int)(tile_size_y / gwin->gw->scale);
 
-	glob->shared_pens = gwin->shared_pens; /* do we need this?? */
+	ami_plot_ra_set_pen_list(glob, gwin->shared_pens);
 	
 	if(top < 0) {
 		height += top;
@@ -4909,7 +4909,7 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 		}
 		else
 		{
-			browserglob->shared_pens = gwin->shared_pens;
+			ami_plot_ra_set_pen_list(browserglob, gwin->shared_pens);
 			temprp = browserglob->rp;
  			browserglob->rp = gwin->win->RPort;
 			clip.x0 = bbox->Left;

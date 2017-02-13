@@ -102,7 +102,7 @@ static bool palette_mapped = true; /* palette-mapped state for the screen */
 /* Define the below to get additional debug */
 #undef AMI_PLOTTER_DEBUG
 
-struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit)
+struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit, bool alloc_pen_list)
 {
 	/* init shared bitmaps */
  	int depth = 32;
@@ -201,15 +201,24 @@ struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit
 
 	InitTmpRas(gg->rp->TmpRas, gg->tmprasbuf, width*height);
 
-	if((gg->palette_mapped == true) && (pool_pens == NULL)) {
-		pool_pens = ami_memory_itempool_create(sizeof(struct ami_plot_pen));
+	gg->shared_pens = NULL;
+	gg->managed_pen_list = false;
+
+	if(gg->palette_mapped == true) {
+		if(pool_pens == NULL) {
+			pool_pens = ami_memory_itempool_create(sizeof(struct ami_plot_pen));
+		}
+
+		if(alloc_pen_list == true) {
+			gg->shared_pens = ami_AllocMinList();
+			gg->managed_pen_list = true;
+		}
 	}
 
 	gg->apen = 0x00000000;
 	gg->open = 0x00000000;
 	gg->apen_num = -1;
 	gg->open_num = -1;
-	gg->shared_pens = NULL;
 
 	init_layers_count++;
 	LOG("Layer initialised (total: %d)", init_layers_count);
@@ -242,12 +251,23 @@ void ami_plot_ra_free(struct gui_globals *gg)
 		if(gg->bm) FreeBitMap(gg->bm);
 	}
 
+	if(gg->managed_pen_list == true) {
+		ami_plot_release_pens(gg->shared_pens);
+		free(gg->shared_pens);
+		gg->shared_pens = NULL;
+	}
+
 	free(gg);
 }
 
 struct BitMap *ami_plot_ra_get_bitmap(struct gui_globals *gg)
 {
 	return gg->bm;
+}
+
+void ami_plot_ra_set_pen_list(struct gui_globals *gg, struct MinList *pen_list)
+{
+	gg->shared_pens = pen_list;
 }
 
 void ami_clearclipreg(struct gui_globals *gg)
@@ -261,6 +281,11 @@ void ami_clearclipreg(struct gui_globals *gg)
 	gg->rect.MinY = 0;
 	gg->rect.MaxX = scrn->Width-1;
 	gg->rect.MaxY = scrn->Height-1;
+
+	gg->apen = 0x00000000;
+	gg->open = 0x00000000;
+	gg->apen_num = -1;
+	gg->open_num = -1;
 }
 
 static ULONG ami_plot_obtain_pen(struct MinList *shared_pens, ULONG colr)

@@ -132,7 +132,7 @@ void ami_history_open(struct gui_window *gw)
 	if(!gw->hw)
 	{
 		gw->hw = calloc(1, sizeof(struct history_window));
-		gw->hw->gg = ami_plot_ra_alloc(scrn->Width, scrn->Height, false);
+		gw->hw->gg = ami_plot_ra_alloc(scrn->Width, scrn->Height, false, true);
 
 		gw->hw->gw = gw;
 		browser_window_history_size(gw->bw, &width, &height);
