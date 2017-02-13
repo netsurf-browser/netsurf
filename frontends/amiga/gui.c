@@ -4911,6 +4911,8 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 		}
 		else
 		{
+#if 0
+/**FIXME: this is broken, only exists for debugging */
 			ami_plot_ra_set_pen_list(browserglob, gwin->shared_pens);
 			temprp = browserglob->rp;
  			browserglob->rp = gwin->win->RPort;
@@ -4928,6 +4930,7 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 			}
 			
 			ami_reset_pointer(gwin);
+#endif
 		}
 		/* Tell NetSurf not to bother with the next queued box redraw, as we've redrawn everything. */
 		ami_gui_window_update_box_deferred(gwin->gw, false);

@@ -20,6 +20,8 @@
 
 #include <proto/exec.h>
 #include <proto/intuition.h>
+#include <proto/layers.h>
+#include <proto/graphics.h>
 
 #include <intuition/intuition.h>
 #include <graphics/rpattr.h>
@@ -80,6 +82,24 @@ struct ami_plot_pen {
 struct bez_point {
 	float x;
 	float y;
+};
+
+struct gui_globals {
+	struct BitMap *bm;
+	struct RastPort *rp;
+	struct Layer_Info *layerinfo;
+	APTR areabuf;
+	APTR tmprasbuf;
+	struct Rectangle rect;
+	struct MinList *shared_pens;
+	bool managed_pen_list;
+	bool palette_mapped;
+	ULONG apen;
+	ULONG open;
+	LONG apen_num;
+	LONG open_num;
+	int width;  /* size of bm and    */
+	int height; /* associated memory */
 };
 
 static int init_layers_count = 0;
@@ -258,6 +278,11 @@ void ami_plot_ra_free(struct gui_globals *gg)
 	}
 
 	free(gg);
+}
+
+struct RastPort *ami_plot_ra_get_rastport(struct gui_globals *gg)
+{
+	return gg->rp;
 }
 
 struct BitMap *ami_plot_ra_get_bitmap(struct gui_globals *gg)

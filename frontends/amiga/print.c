@@ -495,12 +495,10 @@ struct MsgPort *ami_print_get_msgport(void)
 
 bool ami_print_begin(struct print_settings *ps)
 {
-	ami_print_info.gg = calloc(1, sizeof(struct gui_globals));
-	if(!ami_print_info.gg) return false;
-
 	ami_print_info.gg = ami_plot_ra_alloc(ami_print_info.PED->ped_MaxXDots,
 				ami_print_info.PED->ped_MaxYDots,
 				true, false);
+	if(!ami_print_info.gg) return false;
 
 	ami_print_info.page = 0;
 
@@ -538,7 +536,7 @@ bool ami_print_dump(void)
 	ami_print_info.PReq->io_Command = PRD_DUMPRPORT;
 	ami_print_info.PReq->io_Flags = 0;
 	ami_print_info.PReq->io_Error = 0;
-	ami_print_info.PReq->io_RastPort = ami_print_info.gg->rp;
+	ami_print_info.PReq->io_RastPort = ami_plot_ra_get_rastport(ami_print_info.gg);
 	ami_print_info.PReq->io_ColorMap = NULL;
 	ami_print_info.PReq->io_Modes = 0;
 	ami_print_info.PReq->io_SrcX = 0;

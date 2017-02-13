@@ -20,29 +20,9 @@
 #define AMIGA_PLOTTERS_H
 
 #include "netsurf/plotters.h"
-#include <proto/layers.h>
-#include <proto/graphics.h>
 
 struct IBox;
-
-struct gui_globals
-{
-	struct BitMap *bm;
-	struct RastPort *rp;
-	struct Layer_Info *layerinfo;
-	APTR areabuf;
-	APTR tmprasbuf;
-	struct Rectangle rect;
-	struct MinList *shared_pens;
-	bool managed_pen_list;
-	bool palette_mapped;
-	ULONG apen;
-	ULONG open;
-	LONG apen_num;
-	LONG open_num;
-	int width;  /* size of bm and    */
-	int height; /* associated memory */
-};
+struct gui_globals;
 
 extern const struct plotter_table amiplot;
 
@@ -68,6 +48,13 @@ struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit
  * \param gg render area to free
  */
 void ami_plot_ra_free(struct gui_globals *gg);
+
+/**
+ * Get RastPort associated with a render area
+ * \param gg render area
+ * \returns pointer to render area BitMap
+ */
+struct RastPort *ami_plot_ra_get_rastport(struct gui_globals *gg);
 
 /**
  * Get a drawing BitMap associated with a render area

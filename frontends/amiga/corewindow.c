@@ -47,6 +47,7 @@
 #include "netsurf/plot_style.h"
 
 #include <proto/exec.h>
+#include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <proto/layout.h>
 #include <proto/utility.h>

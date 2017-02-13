@@ -109,7 +109,7 @@ static void ami_history_redraw(struct history_window *hw)
 	ami_clearclipreg(hw->gg);
 	ami_history_update_extent(hw);
 
-	BltBitMapRastPort(hw->gg->bm, 0, 0, hw->win->RPort,
+	BltBitMapRastPort(ami_plot_ra_get_bitmap(hw->gg), 0, 0, hw->win->RPort,
 				bbox->Left, bbox->Top, bbox->Width, bbox->Height, 0x0C0);
 
 	ami_gui_free_space_box(bbox);
