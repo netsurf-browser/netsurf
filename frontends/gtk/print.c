@@ -177,6 +177,12 @@ nsgtk_print_plot_clip(const struct redraw_context *ctx, const struct rect *clip)
  *  horizontal, in degrees.
  *
  * \param ctx The current redraw context.
+ * \param style Style controlling the arc plot.
+ * \param x The x coordinate of the arc.
+ * \param y The y coordinate of the arc.
+ * \param radius The radius of the arc.
+ * \param angle1 The start angle of the arc.
+ * \param angle2 The finish angle of the arc.
  * \return NSERROR_OK on success else error code.
  */
 static nserror
@@ -203,7 +209,10 @@ nsgtk_print_plot_arc(const struct redraw_context *ctx,
  * Plot a circle centered on (x,y), which is optionally filled.
  *
  * \param ctx The current redraw context.
- * \param pstyle Style controlling the circle plot.
+ * \param style Style controlling the circle plot.
+ * \param x x coordinate of circle centre.
+ * \param y y coordinate of circle centre.
+ * \param radius circle radius.
  * \return NSERROR_OK on success else error code.
  */
 static nserror
@@ -258,7 +267,7 @@ nsgtk_print_plot_disc(const struct redraw_context *ctx,
  *  centre of line width/thickness.
  *
  * \param ctx The current redraw context.
- * \param pstyle Style controlling the line plot.
+ * \param style Style controlling the line plot.
  * \param line A rectangle defining the line to be drawn
  * \return NSERROR_OK on success else error code.
  */
@@ -306,7 +315,7 @@ nsgtk_print_plot_line(const struct redraw_context *ctx,
  *  width and height.
  *
  * \param ctx The current redraw context.
- * \param pstyle Style controlling the rectangle plot.
+ * \param style Style controlling the rectangle plot.
  * \param rect A rectangle defining the line to be drawn
  * \return NSERROR_OK on success else error code.
  */
@@ -559,6 +568,13 @@ static bool nsgtk_print_plot_pixbuf(int x, int y, int width, int height,
  * the image is to be scaled to.
  *
  * \param ctx The current redraw context.
+ * \param bitmap The bitmap to plot
+ * \param x The x coordinate to plot the bitmap
+ * \param y The y coordiante to plot the bitmap
+ * \param width The width of area to plot the bitmap into
+ * \param height The height of area to plot the bitmap into
+ * \param bg the background colour to alpha blend into
+ * \param flags the flags controlling the type of plot operation
  * \return NSERROR_OK on success else error code.
  */
 static nserror

@@ -44,9 +44,11 @@ cairo_t *current_cr;
 
 static GdkRectangle cliprect;
 
-struct plotter_table plot;
-
-/** Set cairo context colour to nsgtk colour. */
+/**
+ * Set cairo context colour to nsgtk colour.
+ *
+ * \param c the netsurf colour to set in cairo
+ */
 void nsgtk_set_colour(colour c)
 {
 	cairo_set_source_rgba(current_cr, 
@@ -56,21 +58,30 @@ void nsgtk_set_colour(colour c)
 			      1.0);
 }
 
-/** Set cairo context to solid plot operation. */
+
+/**
+ * Set cairo context to solid plot operation.
+ */
 static inline void nsgtk_set_solid(void)
 {
 	double dashes = 0;
 	cairo_set_dash(current_cr, &dashes, 0, 0);
 }
 
-/** Set cairo context to dotted plot operation. */
+
+/**
+ * Set cairo context to dotted plot operation.
+ */
 static inline void nsgtk_set_dotted(void)
 {
 	double cdashes[] = { 1.0, 2.0 };
 	cairo_set_dash(current_cr, cdashes, 2, 0);
 }
 
-/** Set cairo context to dashed plot operation. */
+
+/**
+ * Set cairo context to dashed plot operation.
+ */
 static inline void nsgtk_set_dashed(void)
 {
 	double cdashes[] = { 8.0, 2.0 };
@@ -111,7 +122,7 @@ nsgtk_plot_clip(const struct redraw_context *ctx, const struct rect *clip)
  *  horizontal, in degrees.
  *
  * \param ctx The current redraw context.
- * \param pstyle Style controlling the arc plot.
+ * \param style Style controlling the arc plot.
  * \param x The x coordinate of the arc.
  * \param y The y coordinate of the arc.
  * \param radius The radius of the arc.
@@ -143,7 +154,7 @@ nsgtk_plot_arc(const struct redraw_context *ctx,
  * Plot a circle centered on (x,y), which is optionally filled.
  *
  * \param ctx The current redraw context.
- * \param pstyle Style controlling the circle plot.
+ * \param style Style controlling the circle plot.
  * \param x x coordinate of circle centre.
  * \param y y coordinate of circle centre.
  * \param radius circle radius.
@@ -167,16 +178,16 @@ nsgtk_plot_disc(const struct redraw_context *ctx,
 		nsgtk_set_colour(style->stroke_colour);
 
 		switch (style->stroke_type) {
-		case PLOT_OP_TYPE_SOLID: /**< Solid colour */
+		case PLOT_OP_TYPE_SOLID: /* Solid colour */
 		default:
 			nsgtk_set_solid();
 			break;
 
-		case PLOT_OP_TYPE_DOT: /**< Doted plot */
+		case PLOT_OP_TYPE_DOT: /* Doted plot */
 			nsgtk_set_dotted();
 			break;
 
-		case PLOT_OP_TYPE_DASH: /**< dashed plot */
+		case PLOT_OP_TYPE_DASH: /* dashed plot */
 			nsgtk_set_dashed();
 			break;
 		}
@@ -202,7 +213,7 @@ nsgtk_plot_disc(const struct redraw_context *ctx,
  *  centre of line width/thickness.
  *
  * \param ctx The current redraw context.
- * \param pstyle Style controlling the line plot.
+ * \param style Style controlling the line plot.
  * \param line A rectangle defining the line to be drawn
  * \return NSERROR_OK on success else error code.
  */
@@ -214,16 +225,16 @@ nsgtk_plot_line(const struct redraw_context *ctx,
 	nsgtk_set_colour(style->stroke_colour);
 
 	switch (style->stroke_type) {
-	case PLOT_OP_TYPE_SOLID: /**< Solid colour */
+	case PLOT_OP_TYPE_SOLID: /* Solid colour */
 	default:
 		nsgtk_set_solid();
 		break;
 
-	case PLOT_OP_TYPE_DOT: /**< Doted plot */
+	case PLOT_OP_TYPE_DOT: /* Doted plot */
 		nsgtk_set_dotted();
 		break;
 
-	case PLOT_OP_TYPE_DASH: /**< dashed plot */
+	case PLOT_OP_TYPE_DASH: /* dashed plot */
 		nsgtk_set_dashed();
 		break;
 	}
@@ -280,7 +291,7 @@ void nsgtk_plot_caret(int x, int y, int h)
  *  width and height.
  *
  * \param ctx The current redraw context.
- * \param pstyle Style controlling the rectangle plot.
+ * \param style Style controlling the rectangle plot.
  * \param rect A rectangle defining the line to be drawn
  * \return NSERROR_OK on success else error code.
  */
@@ -307,16 +318,16 @@ nsgtk_plot_rectangle(const struct redraw_context *ctx,
 		nsgtk_set_colour(style->stroke_colour);
 
 		switch (style->stroke_type) {
-		case PLOT_OP_TYPE_SOLID: /**< Solid colour */
+		case PLOT_OP_TYPE_SOLID: /* Solid colour */
 		default:
 			nsgtk_set_solid();
 			break;
 
-		case PLOT_OP_TYPE_DOT: /**< Doted plot */
+		case PLOT_OP_TYPE_DOT: /* Doted plot */
 			nsgtk_set_dotted();
 			break;
 
-		case PLOT_OP_TYPE_DASH: /**< dashed plot */
+		case PLOT_OP_TYPE_DASH: /* dashed plot */
 			nsgtk_set_dashed();
 			break;
 		}
@@ -346,7 +357,7 @@ nsgtk_plot_rectangle(const struct redraw_context *ctx,
  * rule.
  *
  * \param ctx The current redraw context.
- * \param pstyle Style controlling the polygon plot.
+ * \param style Style controlling the polygon plot.
  * \param p verticies of polygon
  * \param n number of verticies.
  * \return NSERROR_OK on success else error code.
@@ -476,6 +487,13 @@ nsgtk_plot_path(const struct redraw_context *ctx,
 
 /**
  * plot a pixbuf
+ *
+ * \param x x coordinate to put pixmap
+ * \param y y coordinate to put pixmap
+ * \param width width of pixmap
+ * \param height height of pixmap
+ * \param bitmap The bitmap to plot
+ * \param bg the background colour
  */
 static nserror
 nsgtk_plot_pixbuf(int x, int y, int width, int height,

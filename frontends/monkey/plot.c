@@ -48,7 +48,7 @@ monkey_plot_clip(const struct redraw_context *ctx, const struct rect *clip)
  *  horizontal, in degrees.
  *
  * \param ctx The current redraw context.
- * \param pstyle Style controlling the arc plot.
+ * \param style Style controlling the arc plot.
  * \param x The x coordinate of the arc.
  * \param y The y coordinate of the arc.
  * \param radius The radius of the arc.
@@ -74,7 +74,7 @@ monkey_plot_arc(const struct redraw_context *ctx,
  * Plot a circle centered on (x,y), which is optionally filled.
  *
  * \param ctx The current redraw context.
- * \param pstyle Style controlling the circle plot.
+ * \param style Style controlling the circle plot.
  * \param x x coordinate of circle centre.
  * \param y y coordinate of circle centre.
  * \param radius circle radius.
@@ -99,7 +99,7 @@ monkey_plot_disc(const struct redraw_context *ctx,
  *  centre of line width/thickness.
  *
  * \param ctx The current redraw context.
- * \param pstyle Style controlling the line plot.
+ * \param style Style controlling the line plot.
  * \param line A rectangle defining the line to be drawn
  * \return NSERROR_OK on success else error code.
  */
@@ -124,7 +124,7 @@ monkey_plot_line(const struct redraw_context *ctx,
  *  width and height.
  *
  * \param ctx The current redraw context.
- * \param pstyle Style controlling the rectangle plot.
+ * \param style Style controlling the rectangle plot.
  * \param rect A rectangle defining the line to be drawn
  * \return NSERROR_OK on success else error code.
  */
@@ -149,7 +149,7 @@ monkey_plot_rectangle(const struct redraw_context *ctx,
  * rule.
  *
  * \param ctx The current redraw context.
- * \param pstyle Style controlling the polygon plot.
+ * \param style Style controlling the polygon plot.
  * \param p verticies of polygon
  * \param n number of verticies.
  * \return NSERROR_OK on success else error code.

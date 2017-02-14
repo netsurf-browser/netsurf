@@ -87,6 +87,7 @@ extern const struct plotter_table atari_plotters;
 /**
  * Init screen and font driver objects.
  *
+ * \param ctx The current redraw context.
  * \param fdrvrname font driver name.
  * \return value > 1 when the objects could be succesfully created or
  *          <= 0 to indicate an error.
@@ -105,6 +106,8 @@ bool plot_unlock(void);
 
 /**
  * Set plot origin and canvas size
+ *
+ * \param ctx The current redraw context.
  * \param x the x origin
  * \param y the y origin
  * \param w the width of the plot area

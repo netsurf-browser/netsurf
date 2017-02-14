@@ -223,7 +223,7 @@ static struct treeview_resource treeview_res[TREE_RES_LAST] = {
 /**
  * Corewindow callback wrapper: Request a redraw of the window
  *
- * \param[in] cw the core window object
+ * \param[in] tree The treeview to request redraw on.
  * \param[in] r rectangle to redraw
  */
 static inline void treeview__cw_redraw_request(
@@ -239,7 +239,7 @@ static inline void treeview__cw_redraw_request(
 /**
  * Corewindow callback wrapper: Update the limits of the window
  *
- * \param[in] cw the core window object
+ * \param[in] tree The treeview to update size for.
  * \param[in] width the width in px, or negative if don't care
  * \param[in] height the height in px, or negative if don't care
  */
@@ -256,7 +256,7 @@ static inline void treeview__cw_update_size(
 /**
  * Corewindow callback wrapper: Get window viewport dimensions
  *
- * \param[in] cw the core window object
+ * \param[in] tree The treeview to get dimensions for.
  * \param[out] width to be set to viewport width in px
  * \param[out] height to be set to viewport height in px
  */
@@ -273,7 +273,7 @@ static inline void treeview__cw_get_window_dimensions(
 /**
  * Corewindow callback wrapper: Inform corewindow owner of drag status
  *
- * \param[in] cw the core window object
+ * \param[in] tree The treeview to report status on.
  * \param[in] ds the current drag status
  */
 static inline void treeview__cw_drag_status(

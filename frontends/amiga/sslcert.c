@@ -194,6 +194,8 @@ ami_crtvrfy_key(struct ami_corewindow *ami_cw, uint32_t nskey)
  * callback on draw event for certificate verify on core window
  *
  * \param ami_cw The Amiga core window structure.
+ * \param x the x coordinate to draw
+ * \param y the y coordinate to draw
  * \param r The rectangle of the window that needs updating.
  * \param ctx The drawing context
  * \return NSERROR_OK on success otherwise apropriate error code

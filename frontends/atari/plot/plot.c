@@ -794,7 +794,7 @@ static MFDB * snapshot_create_native_mfdb(int x, int y, int w, int h)
  * This creates an snapshot in RGBA format (NetSurf's native format)
  *
  * Capture the screen at x,y location
- * \param self instance
+ *
  * \param x absolute screen coords
  * \param y absolute screen coords
  * \param w width
