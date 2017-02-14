@@ -63,7 +63,7 @@ struct print_settings{
 	const struct gui_layout_table *font_func;
 
 	/* Private data for the plotter context */
-	const void *priv;
+	void *priv;
 };
 
 
