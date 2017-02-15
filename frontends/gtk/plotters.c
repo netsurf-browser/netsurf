@@ -39,7 +39,6 @@
 #include "gtk/scaffolding.h"
 #include "gtk/bitmap.h"
 
-GtkWidget *current_widget;
 cairo_t *current_cr;
 
 static GdkRectangle cliprect;

@@ -211,7 +211,6 @@ nsgtk_window_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 	assert(z);
 	assert(GTK_WIDGET(gw->layout) == widget);
 
-	current_widget = (GtkWidget *)gw->layout;
 	current_cr = cr;
 
 	GtkAdjustment *vscroll = nsgtk_layout_get_vadjustment(gw->layout);
@@ -233,8 +232,6 @@ nsgtk_window_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 	if (gw->careth != 0) {
 		nsgtk_plot_caret(gw->caretx, gw->carety, gw->careth);
 	}
-
-	current_widget = NULL;
 
 	return FALSE;
 }
@@ -261,7 +258,6 @@ nsgtk_window_draw_event(GtkWidget *widget, GdkEventExpose *event, gpointer data)
 	assert(z);
 	assert(GTK_WIDGET(gw->layout) == widget);
 
-	current_widget = (GtkWidget *)gw->layout;
 	current_cr = gdk_cairo_create(nsgtk_layout_get_bin_window(gw->layout));
 
 	clip.x0 = event->area.x;
@@ -276,8 +272,6 @@ nsgtk_window_draw_event(GtkWidget *widget, GdkEventExpose *event, gpointer data)
 	}
 
 	cairo_destroy(current_cr);
-
-	current_widget = NULL;
 
 	return FALSE;
 }

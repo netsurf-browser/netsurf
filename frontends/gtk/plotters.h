@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Target independent plotting (GDK / GTK+ interface).
+/**
+ * \file
+ * Target independent plotting GTK+ interface.
  */
 
 #ifndef NETSURF_GTK_PLOTTERS_H
@@ -30,7 +31,6 @@ struct plotter_table;
 extern const struct plotter_table nsgtk_plotters;
 
 /* make sure this is NULL if no redraw is in progress */
-extern GtkWidget *current_widget;
 extern cairo_t *current_cr;
 
 void nsgtk_set_colour(colour c);

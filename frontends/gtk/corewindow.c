@@ -496,7 +496,6 @@ nsgtk_cw_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 	double y2;
 	struct rect clip;
 
-	current_widget = widget;
 	current_cr = cr;
 
 	cairo_clip_extents(cr, &x1, &y1, &x2, &y2);
@@ -507,8 +506,6 @@ nsgtk_cw_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 	clip.y1 = y2;
 
 	nsgtk_cw->draw(nsgtk_cw, &clip);
-
-	current_widget = NULL;
 
 	return FALSE;
 }
@@ -537,12 +534,10 @@ nsgtk_cw_draw_event(GtkWidget *widget,
 	clip.x1 = event->area.x + event->area.width;
 	clip.y1 = event->area.y + event->area.height;
 
-	current_widget = widget;
 	current_cr = gdk_cairo_create(nsgtk_widget_get_window(widget));
 
 	nsgtk_cw->draw(nsgtk_cw, &clip);
 
-	current_widget = NULL;
 	cairo_destroy(current_cr);
 
 	return FALSE;

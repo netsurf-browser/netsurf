@@ -1663,7 +1663,6 @@ nsgtk_history_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 	double x2;
 	double y2;
 
-	current_widget = widget;
 	current_cr = cr;
 
 	cairo_clip_extents(cr, &x1, &y1, &x2, &y2);
@@ -1676,8 +1675,6 @@ nsgtk_history_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 	ctx.plot->clip(&ctx, &clip);
 
 	browser_window_history_redraw(bw, &ctx);
-
-	current_widget = NULL;
 
 	return FALSE;
 }
@@ -1698,8 +1695,6 @@ nsgtk_history_draw_event(GtkWidget *widget, GdkEventExpose *event, gpointer g)
 		.plot = &nsgtk_plotters
 	};
 
-	current_widget = widget;
-
 	current_cr = gdk_cairo_create(nsgtk_widget_get_window(widget));
 
 	clip.x0 = event->area.x;
@@ -1711,8 +1706,6 @@ nsgtk_history_draw_event(GtkWidget *widget, GdkEventExpose *event, gpointer g)
 	browser_window_history_redraw(bw, &ctx);
 
 	cairo_destroy(current_cr);
-
-	current_widget = NULL;
 
 	return FALSE;
 }
