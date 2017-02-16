@@ -228,7 +228,7 @@ nsgtk_global_history_init_menu(struct nsgtk_global_history_window *ghwin)
 
 
 /**
- * callback for mouse action on cookie window
+ * callback for mouse action on global history window
  *
  * \param nsgtk_cw The nsgtk core window structure.
  * \param mouse_state netsurf mouse state on event
@@ -248,7 +248,7 @@ nsgtk_global_history_mouse(struct nsgtk_corewindow *nsgtk_cw,
 
 
 /**
- * callback for keypress on cookie window
+ * callback for keypress on global history window
  *
  * \param nsgtk_cw The nsgtk core window structure.
  * \param nskey The netsurf key code
@@ -265,7 +265,7 @@ nsgtk_global_history_key(struct nsgtk_corewindow *nsgtk_cw, uint32_t nskey)
 
 
 /**
- * callback on draw event for cookie window
+ * callback on draw event for global history window
  *
  * \param nsgtk_cw The nsgtk core window structure.
  * \param r The rectangle of the window that needs updating.
@@ -304,7 +304,7 @@ static nserror nsgtk_global_history_init(void)
 		return NSERROR_NOMEM;
 	}
 
-	res = nsgtk_builder_new_from_resname("history", &ncwin->builder);
+	res = nsgtk_builder_new_from_resname("globalhistory", &ncwin->builder);
 	if (res != NSERROR_OK) {
 		LOG("History UI builder init failed");
 		free(ncwin);
