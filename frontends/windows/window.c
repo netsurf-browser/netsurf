@@ -75,7 +75,7 @@ static int open_windows = 0;
  * Obtain the DPI of the display.
  *
  * \param hwnd A win32 window handle to get the DPI for
- * \return The DPI of the device teh window is displayed on.
+ * \return The DPI of the device the window is displayed on.
  */
 static int get_window_dpi(HWND hwnd)
 {
@@ -99,7 +99,7 @@ static int get_window_dpi(HWND hwnd)
  *
  * \param gw gui window context.
  */
-static void nsws_window_set_accels(struct gui_window *w)
+static void nsws_window_set_accels(struct gui_window *gw)
 {
 	int i, nitems = 13;
 	ACCEL accels[nitems];
@@ -137,7 +137,7 @@ static void nsws_window_set_accels(struct gui_window *w)
 	accels[12].fVirt = FVIRTKEY;
 	accels[12].cmd = IDM_VIEW_FULLSCREEN;
 
-	w->acceltable = CreateAcceleratorTable(accels, nitems);
+	gw->acceltable = CreateAcceleratorTable(accels, nitems);
 }
 
 
@@ -223,9 +223,9 @@ static HWND nsws_window_create(HINSTANCE hInstance, struct gui_window *gw)
  */
 static LRESULT
 nsws_window_toolbar_command(struct gui_window *gw,
-		    int notification_code,
-		    int identifier,
-		    HWND ctrl_window)
+			    int notification_code,
+			    int identifier,
+			    HWND ctrl_window)
 {
 	LOG("notification_code %d identifier %d ctrl_window %p",
 	    notification_code, identifier, ctrl_window);
@@ -446,7 +446,7 @@ nsws_window_urlbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 /**
  * create a urlbar and message handler
  *
- * Create an Edit control for enerting urls
+ * Create an Edit control for entering urls
  *
  * \param hInstance The application instance handle.
  * \param hWndParent The containing window.
@@ -491,8 +491,8 @@ nsws_window_urlbar_create(HINSTANCE hInstance,
 
 	/* subclass the message handler */
 	urlproc = (WNDPROC)SetWindowLongPtr(hwnd,
-				GWLP_WNDPROC,
-				(LONG_PTR)nsws_window_urlbar_callback);
+					    GWLP_WNDPROC,
+					    (LONG_PTR)nsws_window_urlbar_callback);
 
 	/* save the real handler  */
 	SetProp(hwnd, TEXT("OrigMsgProc"), (HANDLE)urlproc);
@@ -654,8 +654,8 @@ nsws_window_create_toolbar(HINSTANCE hInstance,
 
 	/* subclass the message handler */
 	toolproc = (WNDPROC)SetWindowLongPtr(hWndToolbar,
-				GWLP_WNDPROC,
-				(LONG_PTR)nsws_window_toolbar_callback);
+					     GWLP_WNDPROC,
+					     (LONG_PTR)nsws_window_toolbar_callback);
 
 	/* save the real handler  */
 	SetProp(hWndToolbar, TEXT("OrigMsgProc"), (HANDLE)toolproc);
@@ -754,7 +754,7 @@ nsws_window_create_statusbar(HINSTANCE hInstance,
 static void nsws_update_edit(struct gui_window *w)
 {
 	browser_editor_flags editor_flags = (w->bw == NULL) ?
-			BW_EDITOR_NONE : browser_window_get_editor_flags(w->bw);
+		BW_EDITOR_NONE : browser_window_get_editor_flags(w->bw);
 	bool paste, copy, del;
 	bool sel = (editor_flags & BW_EDITOR_CAN_COPY);
 
@@ -810,7 +810,7 @@ static void nsws_update_edit(struct gui_window *w)
  * \param gw win32 frontends graphical window.
  * \param hwnd The win32 window handle
  * \param int x The x coordinate of the event.
- * \param y the y cooordiante of the event.
+ * \param y the y coordinate of the event.
  */
 static bool
 nsws_ctx_menu(struct gui_window *w, HWND hwnd, int x, int y)
@@ -963,10 +963,10 @@ static nserror win32_open_new_window(struct gui_window *gw)
  *
  * \param hwnd The win32 window handle
  * \param gw win32 gui window
- * \param notification_code notifiction code
+ * \param notification_code notification code
  * \param identifier notification identifier
  * \param ctrl_window The win32 control window handle
- * \return apropriate response for command
+ * \return appropriate response for command
  */
 static LRESULT
 nsws_window_command(HWND hwnd,
@@ -1286,9 +1286,9 @@ nsws_window_command(HWND hwnd,
 /**
  * Get the scroll position of a win32 browser window.
  *
- * \param  g   gui_window
- * \param  sx  receives x ordinate of point at top-left of window
- * \param  sy  receives y ordinate of point at top-left of window
+ * \param gw gui_window
+ * \param sx receives x ordinate of point at top-left of window
+ * \param sy receives y ordinate of point at top-left of window
  * \return true iff successful
  */
 static bool win32_window_get_scroll(struct gui_window *gw, int *sx, int *sy)
@@ -1311,7 +1311,7 @@ static bool win32_window_get_scroll(struct gui_window *gw, int *sx, int *sy)
  * \param hwnd The win32 window handle
  * \param wparam The w win32 parameter
  * \param lparam The l win32 parameter
- * \return apropriate response for resize
+ * \return appropriate response for resize
  */
 static LRESULT
 nsws_window_resize(struct gui_window *gw,
@@ -1603,24 +1603,29 @@ static void win32_window_reformat(struct gui_window *gw)
  */
 static void win32_window_set_title(struct gui_window *w, const char *title)
 {
-	if (w == NULL)
+	char *fulltitle;
+
+	if (w == NULL) {
 		return;
+	}
+
 	LOG("%p, title %s", w, title);
-	char *fulltitle = malloc(strlen(title) +
-				 SLEN("  -  NetSurf") + 1);
+	fulltitle = malloc(strlen(title) + SLEN("  -  NetSurf") + 1);
 	if (fulltitle == NULL) {
 		win32_warning("NoMemory", 0);
 		return;
 	}
+
 	strcpy(fulltitle, title);
 	strcat(fulltitle, "  -  NetSurf");
+
 	SendMessage(w->main, WM_SETTEXT, 0, (LPARAM)fulltitle);
 	free(fulltitle);
 }
 
 
 /**
- * Set the navigation url is a win32 browser window.
+ * Set the navigation url in a win32 browser window.
  *
  * \param gw window to update.
  * \param url The url to use as icon.
@@ -1797,7 +1802,7 @@ struct gui_window *nsws_get_gui_window(HWND hwnd)
 	struct gui_window *gw = NULL;
 	HWND phwnd = hwnd;
 
-	/* scan the window hierachy for gui window */
+	/* scan the window hierarchy for gui window */
 	while (phwnd != NULL) {
 		gw = GetProp(phwnd, TEXT("GuiWnd"));
 		if (gw != NULL)
@@ -1866,7 +1871,7 @@ void win32_window_set_scroll(struct gui_window *w, int sx, int sy)
 
 	/*LOG("scroll sx,sy:%d,%d x,y:%d,%d w.h:%d,%d",sx,sy,w->scrollx,w->scrolly, width,height);*/
 
-	/* The resulting gui window scroll must remain withn the
+	/* The resulting gui window scroll must remain within the
 	 * windows bounding box.
 	 */
 	if (sx < 0) {

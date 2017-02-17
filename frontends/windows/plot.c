@@ -17,6 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * win32 plotter implementation.
+ */
+
 #include "utils/config.h"
 #include <sys/types.h>
 #include <stdint.h>
@@ -48,7 +53,8 @@
 
 HDC plot_hdc;
 
-static RECT plot_clip; /* currently set clipping rectangle */
+/** currently set clipping rectangle */
+static RECT plot_clip;
 
 
 /**
@@ -111,6 +117,14 @@ plot_block(COLORREF col, int x, int y, int width, int height)
  * plot an alpha blended bitmap
  *
  * blunt force truma way of achiving alpha blended plotting
+ *
+ * \param hdc drawing cotext
+ * \param bitmap bitmap to render
+ * \param x x coordinate to plot at
+ * \param y y coordinate to plot at
+ * \param width The width to plot the bitmap into
+ * \param height The height to plot the bitmap into
+ * \return NSERROR_OK on success else appropriate error code.
  */
 static nserror
 plot_alpha_bitmap(HDC hdc,
@@ -145,8 +159,11 @@ plot_alpha_bitmap(HDC hdc,
 	BITMAPINFO *bmi;
 	HBITMAP MemBMh;
 
-	PLOT_LOG("%p bitmap %d,%d width %d height %d", bitmap, x, y, width, height);
-	PLOT_LOG("clipped %ld,%ld to %ld,%ld",plot_clip.left, plot_clip.top, plot_clip.right, plot_clip.bottom);
+	PLOT_LOG("%p bitmap %d,%d width %d height %d",
+		 bitmap, x, y, width, height);
+	PLOT_LOG("clipped %ld,%ld to %ld,%ld",
+		 plot_clip.left, plot_clip.top,
+		 plot_clip.right, plot_clip.bottom);
 
 	Memhdc = CreateCompatibleDC(hdc);
 	if (Memhdc == NULL) {
@@ -156,7 +173,7 @@ plot_alpha_bitmap(HDC hdc,
 	if ((bitmap->width != width) ||
 	    (bitmap->height != height)) {
 		PLOT_LOG("scaling from %d,%d to %d,%d",
-		     bitmap->width, bitmap->height, width, height);
+			 bitmap->width, bitmap->height, width, height);
 		bitmap = bitmap_scale(bitmap, width, height);
 		if (bitmap == NULL) {
 			return NSERROR_INVALID;
@@ -256,6 +273,14 @@ plot_alpha_bitmap(HDC hdc,
 
 
 /**
+ * Internal bitmap plotting
+ *
+ * \param bitmap The bitmap to plot
+ * \param x x coordinate to plot at
+ * \param y y coordinate to plot at
+ * \param width The width to plot the bitmap into
+ * \param height The height to plot the bitmap into
+ * \return NSERROR_OK on success else appropriate error code.
  */
 static nserror
 plot_bitmap(struct bitmap *bitmap, int x, int y, int width, int height)
@@ -331,8 +356,6 @@ plot_bitmap(struct bitmap *bitmap, int x, int y, int width, int height)
 }
 
 
-
-
 /**
  * \brief Sets a clip rectangle for subsequent plot operations.
  *
@@ -377,7 +400,7 @@ arc(const struct redraw_context *ctx,
     int radius, int angle1, int angle2)
 {
 	PLOT_LOG("arc centre %d,%d radius %d from %d to %d", x, y, radius,
-	     angle1, angle2);
+		 angle1, angle2);
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
@@ -564,8 +587,8 @@ disc(const struct redraw_context *ctx,
  */
 static nserror
 line(const struct redraw_context *ctx,
-		const plot_style_t *style,
-		const struct rect *line)
+     const plot_style_t *style,
+     const struct rect *line)
 {
 	PLOT_LOG("from %d,%d to %d,%d", x0, y0, x1, y1);
 
@@ -582,10 +605,10 @@ line(const struct redraw_context *ctx,
 
 	COLORREF col = (DWORD)(style->stroke_colour & 0x00FFFFFF);
 	/* windows 0x00bbggrr */
-	DWORD penstyle = PS_GEOMETRIC | ((style->stroke_type ==
-					  PLOT_OP_TYPE_DOT) ? PS_DOT :
-					 (style->stroke_type == PLOT_OP_TYPE_DASH) ? PS_DASH:
-					 0);
+	DWORD penstyle = PS_GEOMETRIC |
+		((style->stroke_type == PLOT_OP_TYPE_DOT) ? PS_DOT :
+		 (style->stroke_type == PLOT_OP_TYPE_DASH) ? PS_DASH:
+		 0);
 	LOGBRUSH lb = {BS_SOLID, col, 0};
 	HPEN pen = ExtCreatePen(penstyle, style->stroke_width, &lb, 0, NULL);
 	if (pen == NULL) {
@@ -630,8 +653,8 @@ line(const struct redraw_context *ctx,
  */
 static nserror
 rectangle(const struct redraw_context *ctx,
-		     const plot_style_t *style,
-		     const struct rect *rect)
+	  const plot_style_t *style,
+	  const struct rect *rect)
 {
 	PLOT_LOG("rectangle from %d,%d to %d,%d",
 		 rect->x0, rect->y0, rect->x1, rect->y1);
@@ -713,9 +736,9 @@ rectangle(const struct redraw_context *ctx,
  */
 static nserror
 polygon(const struct redraw_context *ctx,
-		   const plot_style_t *style,
-		   const int *p,
-		   unsigned int n)
+	const plot_style_t *style,
+	const int *p,
+	unsigned int n)
 {
 	PLOT_LOG("polygon %d points", n);
 
@@ -802,11 +825,11 @@ polygon(const struct redraw_context *ctx,
  */
 static nserror
 path(const struct redraw_context *ctx,
-		const plot_style_t *pstyle,
-		const float *p,
-		unsigned int n,
-		float width,
-		const float transform[6])
+     const plot_style_t *pstyle,
+     const float *p,
+     unsigned int n,
+     float width,
+     const float transform[6])
 {
 	PLOT_LOG("path unimplemented");
 	return NSERROR_OK;
@@ -839,12 +862,12 @@ path(const struct redraw_context *ctx,
  */
 static nserror
 bitmap(const struct redraw_context *ctx,
-		  struct bitmap *bitmap,
-		  int x, int y,
-		  int width,
-		  int height,
-		  colour bg,
-		  bitmap_flags_t flags)
+       struct bitmap *bitmap,
+       int x, int y,
+       int width,
+       int height,
+       colour bg,
+       bitmap_flags_t flags)
 {
 	int xf,yf;
 	bool repeat_x = (flags & BITMAPF_REPEAT_X);
@@ -875,7 +898,11 @@ bitmap(const struct redraw_context *ctx,
 			if ((*(bitmap->pixdata + 3) & 0xff) == 0) {
 				return NSERROR_OK;
 			}
-			return plot_block((*(COLORREF *)bitmap->pixdata) & 0xffffff, x, y, x + width, y + height);
+			return plot_block((*(COLORREF *)bitmap->pixdata) & 0xffffff,
+					  x,
+					  y,
+					  x + width,
+					  y + height);
 
 		} else {
 			return plot_bitmap(bitmap, x, y, width, height);
@@ -896,7 +923,8 @@ bitmap(const struct redraw_context *ctx,
 
 	/* Optimise tiled plots of bitmaps scaled to 1x1 by replacing with
 	 * a flat fill of the area.  Can only be done when image is fully
-	 * opaque. */
+	 * opaque.
+	 */
 	if ((width == 1) && (height == 1)) {
 		if (bitmap->opaque) {
 			/** TODO: Currently using top left pixel. Maybe centre
@@ -909,8 +937,10 @@ bitmap(const struct redraw_context *ctx,
 		}
 	}
 
-	PLOT_LOG("Tiled plotting %d,%d by %d,%d",x,y,width,height);
-	PLOT_LOG("clipped %ld,%ld to %ld,%ld",plot_clip.left, plot_clip.top, plot_clip.right, plot_clip.bottom);
+	PLOT_LOG("Tiled plotting %d,%d by %d,%d", x, y, width, height);
+	PLOT_LOG("clipped %ld,%ld to %ld,%ld",
+		 plot_clip.left, plot_clip.top,
+		 plot_clip.right, plot_clip.bottom);
 
 	/* get left most tile position */
 	if (repeat_x) {
@@ -922,7 +952,8 @@ bitmap(const struct redraw_context *ctx,
 		for (; y > plot_clip.top; y -= height);
 	}
 
-	PLOT_LOG("repeat from %d,%d to %ld,%ld", x, y, plot_clip.right, plot_clip.bottom);
+	PLOT_LOG("repeat from %d,%d to %ld,%ld",
+		 x, y, plot_clip.right, plot_clip.bottom);
 
 	/* tile down and across to extents */
 	for (xf = x; xf < plot_clip.right; xf += width) {
@@ -952,11 +983,11 @@ bitmap(const struct redraw_context *ctx,
  */
 static nserror
 text(const struct redraw_context *ctx,
-		const struct plot_font_style *fstyle,
-		int x,
-		int y,
-		const char *text,
-		size_t length)
+     const struct plot_font_style *fstyle,
+     int x,
+     int y,
+     const char *text,
+     size_t length)
 {
 	PLOT_LOG("words %s at %d,%d", text, x, y);
 

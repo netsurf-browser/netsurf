@@ -16,6 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file Fetch operation implementation for win32
+ */
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -26,7 +30,10 @@
 #include "windows/filetype.h"
 
 /**
- * filetype -- determine the MIME type of a local file
+ * determine the MIME type of a local file.
+ *
+ * \param unix_path The unix style path to the file.
+ * \return The mime type of the file.
  */
 static const char *fetch_filetype(const char *unix_path)
 {
@@ -52,6 +59,7 @@ static const char *fetch_filetype(const char *unix_path)
 	return "text/html";
 }
 
+/** win32 fetch operation table */
 static struct gui_fetch_table fetch_table = {
 	.filetype = fetch_filetype,
 };

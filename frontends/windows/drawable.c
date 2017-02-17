@@ -16,6 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * win32 implementation of drawable window showing browser context
+ */
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -37,6 +42,7 @@
 #include "windows/drawable.h"
 
 static const char windowclassname_drawable[] = "nswsdrawablewindow";
+
 
 /**
  * Handle wheel scroll messages.
@@ -65,6 +71,7 @@ nsws_drawable_wheel(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 
 	return 0;
 }
+
 
 /**
  * Handle vertical scroll messages.
@@ -121,8 +128,8 @@ nsws_drawable_vscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 
 	si.fMask = SIF_POS;
 	if ((gw->bw != NULL) &&
-			(browser_window_get_extents(gw->bw, true,
-			&width, &height) == NSERROR_OK)) {
+	    (browser_window_get_extents(gw->bw, true,
+					&width, &height) == NSERROR_OK)) {
 		si.nPos = min(si.nPos, height - gw->height);
 	}
 
@@ -131,7 +138,7 @@ nsws_drawable_vscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 	GetScrollInfo(hwnd, SB_VERT, &si);
 	if (si.nPos != mem) {
 		win32_window_set_scroll(gw, gw->scrollx, gw->scrolly +
-				      gw->requestscrolly + si.nPos - mem);
+					gw->requestscrolly + si.nPos - mem);
 	}
 
 	return 0;
@@ -186,8 +193,8 @@ nsws_drawable_hscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 	si.fMask = SIF_POS;
 
 	if ((gw->bw != NULL) &&
-			(browser_window_get_extents(gw->bw, true,
-			&width, &height) == NSERROR_OK)) {
+	    (browser_window_get_extents(gw->bw, true,
+					&width, &height) == NSERROR_OK)) {
 		si.nPos = min(si.nPos, width - gw->width);
 	}
 	si.nPos = max(si.nPos, 0);
@@ -195,12 +202,13 @@ nsws_drawable_hscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 	GetScrollInfo(hwnd, SB_HORZ, &si);
 	if (si.nPos != mem) {
 		win32_window_set_scroll(gw,
-				gw->scrollx + gw->requestscrollx + si.nPos - mem,
-				gw->scrolly);
+					gw->scrollx + gw->requestscrollx + si.nPos - mem,
+					gw->scrolly);
 	}
 
 	return 0;
 }
+
 
 /**
  * Handle resize events.
@@ -211,6 +219,7 @@ nsws_drawable_resize(struct gui_window *gw)
 	browser_window_schedule_reformat(gw->bw);
 	return 0;
 }
+
 
 /**
  * Handle key press messages.
@@ -289,7 +298,7 @@ nsws_drawable_key(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 		break;
 	}
 
-	if ((i >= 'A') && 
+	if ((i >= 'A') &&
 	    (i <= 'Z') &&
 	    (((!capslock) && (!shift)) || ((capslock) && (shift)))) {
 		i += 'a' - 'A';
@@ -371,7 +380,10 @@ nsws_drawable_mouseup(struct gui_window *gw,
 		gw->mouse->state &= ~BROWSER_MOUSE_MOD_3;
 
 	if ((gw->mouse->state & click) != 0) {
-		LOG("mouse click bw %p, state 0x%x, x %f, y %f", gw->bw, gw->mouse->state, (x + gw->scrollx) / gw->scale, (y + gw->scrolly) / gw->scale);
+		LOG("mouse click bw %p, state 0x%x, x %f, y %f",
+		    gw->bw, gw->mouse->state,
+		    (x + gw->scrollx) / gw->scale,
+		    (y + gw->scrolly) / gw->scale);
 
 		browser_window_mouse_click(gw->bw,
 					   gw->mouse->state,
@@ -415,7 +427,10 @@ nsws_drawable_mousedown(struct gui_window *gw,
 	gw->mouse->pressed_x = (x + gw->scrollx) / gw->scale;
 	gw->mouse->pressed_y = (y + gw->scrolly) / gw->scale;
 
-	LOG("mouse click bw %p, state %x, x %f, y %f", gw->bw, gw->mouse->state, (x + gw->scrollx) / gw->scale, (y + gw->scrolly) / gw->scale);
+	LOG("mouse click bw %p, state %x, x %f, y %f",
+	    gw->bw, gw->mouse->state,
+	    (x + gw->scrollx) / gw->scale,
+	    (y + gw->scrolly) / gw->scale);
 
 	browser_window_mouse_click(gw->bw, gw->mouse->state,
 				   (x + gw->scrollx) / gw->scale,
@@ -423,6 +438,7 @@ nsws_drawable_mousedown(struct gui_window *gw,
 
 	return 0;
 }
+
 
 /**
  * Handle mouse movement messages.
@@ -479,6 +495,7 @@ nsws_drawable_mousemove(struct gui_window *gw, int x, int y)
 
 	return 0;
 }
+
 
 /**
  * Called when activity occours within the drawable window.
@@ -564,12 +581,13 @@ nsws_window_drawable_event_callback(HWND hwnd,
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
+
 /**
  * Create a drawable window.
  */
 HWND
-nsws_window_create_drawable(HINSTANCE hinstance, 
-			    HWND hparent, 
+nsws_window_create_drawable(HINSTANCE hinstance,
+			    HWND hparent,
 			    struct gui_window *gw)
 {
 	HWND hwnd;
@@ -593,6 +611,7 @@ nsws_window_create_drawable(HINSTANCE hinstance,
 
 	return hwnd;
 }
+
 
 /**
  * Create the drawable window class.

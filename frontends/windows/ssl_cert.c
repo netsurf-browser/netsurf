@@ -41,13 +41,18 @@
 /* spacing and sizes for dialog elements from
  * https://msdn.microsoft.com/en-us/library/windows/desktop/dn742486(v=vs.85).aspx#sizingandspacing
  */
+/** dialog margin */
 #define DLG_MRGN 11
+/** warning icon height */
 #define WRN_ICO_H 32
+/** comand button width */
 #define CMD_BTN_W 75
+/** command button height */
 #define CMD_BTN_H 23
 
 static const char windowclassname_sslcert[] = "nswssslcertwindow";
 
+/** win32 ssl certificate view context */
 struct nsw32_sslcert_window {
 	struct nsw32_corewindow core;
 
@@ -65,15 +70,15 @@ struct nsw32_sslcert_window {
 
 	/** warning text  handle */
 	HWND hTxt;
-
 };
 
+
 /**
- * callback for keypress on hotlist window
+ * callback for keypress on ssl certificate window
  *
  * \param nsw32_cw The nsw32 core window structure.
  * \param nskey The netsurf key code
- * \return NSERROR_OK on success otherwise apropriate error code
+ * \return NSERROR_OK on success otherwise appropriate error code
  */
 static nserror
 nsw32_sslcert_viewer_key(struct nsw32_corewindow *nsw32_cw, uint32_t nskey)
@@ -89,19 +94,20 @@ nsw32_sslcert_viewer_key(struct nsw32_corewindow *nsw32_cw, uint32_t nskey)
 	return NSERROR_NOT_IMPLEMENTED;
 }
 
+
 /**
- * callback for mouse action on hotlist window
+ * callback for mouse action on ssl certificate window
  *
  * \param nsw32_cw The nsw32 core window structure.
  * \param mouse_state netsurf mouse state on event
  * \param x location of event
  * \param y location of event
- * \return NSERROR_OK on success otherwise apropriate error code
+ * \return NSERROR_OK on success otherwise appropriate error code
  */
 static nserror
 nsw32_sslcert_viewer_mouse(struct nsw32_corewindow *nsw32_cw,
-		    browser_mouse_state mouse_state,
-		    int x, int y)
+			   browser_mouse_state mouse_state,
+			   int x, int y)
 {
 	struct nsw32_sslcert_window *crtvrfy_win;
 
@@ -113,12 +119,13 @@ nsw32_sslcert_viewer_mouse(struct nsw32_corewindow *nsw32_cw,
 	return NSERROR_OK;
 }
 
+
 /**
- * callback on draw event for hotlist window
+ * callback on draw event for ssl certificate window
  *
  * \param nsw32_cw The nsw32 core window structure.
  * \param r The rectangle of the window that needs updating.
- * \return NSERROR_OK on success otherwise apropriate error code
+ * \return NSERROR_OK on success otherwise appropriate error code
  */
 static nserror
 nsw32_sslcert_viewer_draw(struct nsw32_corewindow *nsw32_cw,
@@ -144,6 +151,12 @@ nsw32_sslcert_viewer_draw(struct nsw32_corewindow *nsw32_cw,
 }
 
 
+/**
+ * callback on close event for ssl certificate window
+ *
+ * \param nsw32_cw The nsw32 core window structure.
+ * \return NSERROR_OK on success otherwise appropriate error code
+ */
 static nserror
 nsw32_sslcert_viewer_close(struct nsw32_corewindow *nsw32_cw)
 {
@@ -155,10 +168,10 @@ nsw32_sslcert_viewer_close(struct nsw32_corewindow *nsw32_cw)
 
 /* exported interface documented in nsw32/ssl_cert.h */
 nserror nsw32_cert_verify(struct nsurl *url,
-			const struct ssl_cert_info *certs,
-			unsigned long num,
-			nserror (*cb)(bool proceed, void *pw),
-			void *cbpw)
+			  const struct ssl_cert_info *certs,
+			  unsigned long num,
+			  nserror (*cb)(bool proceed, void *pw),
+			  void *cbpw)
 {
 	struct nsw32_sslcert_window *ncwin;
 	nserror res;
@@ -260,17 +273,17 @@ nserror nsw32_cert_verify(struct nsurl *url,
 		       NULL,
 		       NULL);
 	ncwin->hTxt = CreateWindowEx(0,
-		       "STATIC",
-		       "NetSurf failed to verify the authenticity of an SSL certificate. Verify the certificate details",
-		       WS_VISIBLE | WS_CHILD | SS_LEFT,
-		       DLG_MRGN + WRN_ICO_H + DLG_MRGN,
-		       DLG_MRGN + 5,
-		       400,
-		       WRN_ICO_H - 5,
-		       ncwin->hWnd,
-		       NULL,
-		       NULL,
-		       NULL);
+				     "STATIC",
+				     "NetSurf failed to verify the authenticity of an SSL certificate. Verify the certificate details",
+				     WS_VISIBLE | WS_CHILD | SS_LEFT,
+				     DLG_MRGN + WRN_ICO_H + DLG_MRGN,
+				     DLG_MRGN + 5,
+				     400,
+				     WRN_ICO_H - 5,
+				     ncwin->hWnd,
+				     NULL,
+				     NULL,
+				     NULL);
 	SendMessage(ncwin->hTxt, WM_SETFONT, (WPARAM)hfDefault, MAKELPARAM(FALSE,0));
 
 	SetProp(ncwin->hWnd, TEXT("CertWnd"), (HANDLE)ncwin);
@@ -280,8 +293,12 @@ nserror nsw32_cert_verify(struct nsurl *url,
 	return NSERROR_OK;
 }
 
+
 /**
  * position and size ssl cert window widgets.
+ *
+ * \param hwnd The win32 handle of the window
+ * \param certwin The certificate viewer context
  */
 static void
 nsw32_window_ssl_cert_size(HWND hwnd, struct nsw32_sslcert_window *certwin)
@@ -318,6 +335,13 @@ nsw32_window_ssl_cert_size(HWND hwnd, struct nsw32_sslcert_window *certwin)
 		   TRUE);
 }
 
+
+/**
+ * Destroy a certificate viewing window
+ *
+ * \param certwin The certificate viewer context
+ * \return NSERROR_OK on success otherwise appropriate error code
+ */
 static nserror nsw32_crtvrfy_destroy(struct nsw32_sslcert_window *crtwin)
 {
 	nserror res;
@@ -331,22 +355,23 @@ static nserror nsw32_crtvrfy_destroy(struct nsw32_sslcert_window *crtwin)
 	return res;
 }
 
+
 /**
- * handle command message on main browser window
+ * handle command message on certificate viewing window
  *
  * \param hwnd The win32 window handle
  * \param gw win32 gui window
- * \param notification_code notifiction code
+ * \param notification_code notification code
  * \param identifier notification identifier
  * \param ctrl_window The win32 control window handle
- * \return apropriate response for command
+ * \return appropriate response for command
  */
 static LRESULT
 nsw32_window_ssl_cert_command(HWND hwnd,
-		    struct nsw32_sslcert_window *crtwin,
-		    int notification_code,
-		    int identifier,
-		    HWND ctrl_window)
+			      struct nsw32_sslcert_window *crtwin,
+			      int notification_code,
+			      int identifier,
+			      HWND ctrl_window)
 {
 	LOG("notification_code %x identifier %x ctrl_window %p",
 	    notification_code, identifier, ctrl_window);
@@ -368,6 +393,7 @@ nsw32_window_ssl_cert_command(HWND hwnd,
 	return 0; /* control message handled */
 }
 
+
 /**
  * callback for SSL certificate window win32 events
  *
@@ -378,9 +404,9 @@ nsw32_window_ssl_cert_command(HWND hwnd,
  */
 static LRESULT CALLBACK
 nsw32_window_ssl_cert_event_callback(HWND hwnd,
-				    UINT msg,
-				    WPARAM wparam,
-				    LPARAM lparam)
+				     UINT msg,
+				     WPARAM wparam,
+				     LPARAM lparam)
 {
 	struct nsw32_sslcert_window *crtwin;
 	crtwin = GetProp(hwnd, TEXT("CertWnd"));
@@ -409,6 +435,7 @@ nsw32_window_ssl_cert_event_callback(HWND hwnd,
 
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 }
+
 
 /* exported interface documented in nsw32/ssl_cert.h */
 nserror nsws_create_cert_verify_class(HINSTANCE hInstance)

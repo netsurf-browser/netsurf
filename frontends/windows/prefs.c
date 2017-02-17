@@ -16,6 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * win32 preferences dialog implementation.
+ */
+
 #include "utils/config.h"
 
 #include <windows.h>
@@ -31,9 +36,19 @@
 #include "windows/resourceid.h"
 #include "windows/windbg.h"
 
+/** Preferences dialog width */
 #define NSWS_PREFS_WINDOW_WIDTH 600
+/** Preferences dialog height */
 #define NSWS_PREFS_WINDOW_HEIGHT 400
 
+
+/**
+ * Prepare preferences dialog font tab
+ *
+ * \param fontfamily The font family
+ * \param parent The parent window win32 handle
+ * \return The selected font or NULL on error
+ */
 static CHOOSEFONT *nsws_prefs_font_prepare(int fontfamily, HWND parent)
 {
 	CHOOSEFONT *cf = malloc(sizeof(CHOOSEFONT));
@@ -81,6 +96,15 @@ static CHOOSEFONT *nsws_prefs_font_prepare(int fontfamily, HWND parent)
 	return cf;
 }
 
+
+/**
+ * Update value in spinner control when it is changed
+ *
+ * \param sub The window handle of the spinner control
+ * \param change The amount the control changed by
+ * \param minval The minimum allowed value of the control
+ * \param maxval The maximum allowed value of the control
+ */
 static void change_spinner(HWND sub, double change, double minval, double maxval)
 {
 	char *temp, number[6];
@@ -90,8 +114,9 @@ static void change_spinner(HWND sub, double change, double minval, double maxval
 	len = SendMessage(sub, WM_GETTEXTLENGTH, 0, 0);
 	temp = malloc(len + 1);
 
-	if (temp == NULL)
+	if (temp == NULL) {
 		return;
+	}
 
 	SendMessage(sub, WM_GETTEXT, (WPARAM)(len + 1), (LPARAM) temp);
 
@@ -101,17 +126,29 @@ static void change_spinner(HWND sub, double change, double minval, double maxval
 	value = max(value, minval);
 	value = min(value, maxval);
 
-	if ((change == 1.0) || (change == -1.0))
+	if ((change == 1.0) || (change == -1.0)) {
 		snprintf(number, 6, "%.0f", value);
-	else
+	} else {
 		snprintf(number, 6, "%.1f", value);
+	}
 
 	SendMessage(sub, WM_SETTEXT, 0, (LPARAM)number);
 }
 
 
+/**
+ * Handle messages to the appearance preference dialog
+ *
+ * \param hwnd The win32 handle of the appearance dialog
+ * \param msg The message code
+ * \param wparam The message w parameter
+ * \param lParam The message l parameter
+ * \return result appropriate for message
+ */
 static BOOL CALLBACK options_appearance_dialog_handler(HWND hwnd,
-		UINT msg, WPARAM wparam, LPARAM lParam)
+						       UINT msg,
+						       WPARAM wparam,
+						       LPARAM lParam)
 {
 	int len;
 	char *temp, number[6];
@@ -192,7 +229,7 @@ static BOOL CALLBACK options_appearance_dialog_handler(HWND hwnd,
 		/* animation */
 		sub = GetDlgItem(hwnd, IDC_PREFS_NOANIMATION);
 		SendMessage(sub, BM_SETCHECK, (WPARAM)((nsoption_bool(animate_images))
-				       ? BST_UNCHECKED : BST_CHECKED),	0);
+						       ? BST_UNCHECKED : BST_CHECKED),	0);
 
 		if (nsoption_int(minimum_gif_delay) != 0) {
 			sub = GetDlgItem(hwnd, IDC_PREFS_ANIMATIONDELAY);
@@ -222,13 +259,13 @@ static BOOL CALLBACK options_appearance_dialog_handler(HWND hwnd,
 			if (temp != NULL) {
 				SendMessage(sub, WM_GETTEXT, (WPARAM)
 					    (len + 1), (LPARAM) temp);
-				nsoption_set_int(font_min_size, 
+				nsoption_set_int(font_min_size,
 						 (int)(10 * strtod(temp, NULL)));
 				free(temp);
 			}
 
 			/* animation */
-			nsoption_set_bool(animate_images, 
+			nsoption_set_bool(animate_images,
 					  (IsDlgButtonChecked(hwnd, IDC_PREFS_NOANIMATION) == BST_CHECKED) ? true : false);
 
 
@@ -259,7 +296,7 @@ static BOOL CALLBACK options_appearance_dialog_handler(HWND hwnd,
 			case IDC_PREFS_ANIMATIONDELAY_SPIN:
 				change_spinner(GetDlgItem(hwnd, IDC_PREFS_ANIMATIONDELAY), 0.1  * ud->iDelta, 0.1, 100.0);
 				return TRUE;
-				
+
 			}
 		}
 			break;
@@ -276,8 +313,8 @@ static BOOL CALLBACK options_appearance_dialog_handler(HWND hwnd,
 					 SendMessage(sub, CB_GETCURSEL, 0, 0) - 1);
 			nsoption_set_bool(http_proxy,
 					  (nsoption_int(http_proxy_auth) != -1));
-			nsoption_set_int(http_proxy_auth,  
-					 nsoption_int(http_proxy_auth) + 
+			nsoption_set_int(http_proxy_auth,
+					 nsoption_int(http_proxy_auth) +
 					 (nsoption_bool(http_proxy)) ? 0 : 1);
 			break;
 
@@ -288,7 +325,7 @@ static BOOL CALLBACK options_appearance_dialog_handler(HWND hwnd,
 			}
 
 			if (ChooseFont(cf) == TRUE) {
-				nsoption_set_charp(font_sans, 
+				nsoption_set_charp(font_sans,
 						   strdup(cf->lpLogFont->lfFaceName));
 			}
 
@@ -390,12 +427,12 @@ static BOOL CALLBACK options_appearance_dialog_handler(HWND hwnd,
 			break;
 		}
 
-		case IDC_PREFS_FONTDEF: 
+		case IDC_PREFS_FONTDEF:
 			sub = GetDlgItem(hwnd, IDC_PREFS_FONTDEF);
 			nsoption_set_int(font_default,
 					 SendMessage(sub, CB_GETCURSEL, 0, 0) + 1);
 			break;
-		
+
 		}
 		break;
 
@@ -403,8 +440,20 @@ static BOOL CALLBACK options_appearance_dialog_handler(HWND hwnd,
 	return FALSE;
 }
 
+
+/**
+ * Handle messages to the connections preference dialog
+ *
+ * \param hwnd The win32 handle of the connections dialog
+ * \param msg The message code
+ * \param wparam The message w parameter
+ * \param lParam The message l parameter
+ * \return result appropriate for message
+ */
 static BOOL CALLBACK options_connections_dialog_handler(HWND hwnd,
-		UINT msg, WPARAM wparam, LPARAM lParam)
+							UINT msg,
+							WPARAM wparam,
+							LPARAM lParam)
 {
 	int len;
 	char *temp, number[6];
@@ -562,8 +611,20 @@ static BOOL CALLBACK options_connections_dialog_handler(HWND hwnd,
 	return FALSE;
 }
 
+
+/**
+ * Handle messages to the general preference dialog
+ *
+ * \param hwnd The win32 handle of the general dialog
+ * \param msg The message code
+ * \param wparam The message w parameter
+ * \param lParam The message l parameter
+ * \return result appropriate for message
+ */
 static BOOL CALLBACK options_general_dialog_handler(HWND hwnd,
-		UINT msg, WPARAM wparam, LPARAM lParam)
+						    UINT msg,
+						    WPARAM wparam,
+						    LPARAM lParam)
 {
 	HWND sub;
 
@@ -577,21 +638,21 @@ static BOOL CALLBACK options_general_dialog_handler(HWND hwnd,
 
 		/* Display images */
 		sub = GetDlgItem(hwnd, IDC_PREFS_IMAGES);
-		SendMessage(sub, BM_SETCHECK, 
-			    (WPARAM) ((nsoption_bool(suppress_images)) ? 
-				  BST_CHECKED : BST_UNCHECKED), 0);
+		SendMessage(sub, BM_SETCHECK,
+			    (WPARAM) ((nsoption_bool(suppress_images)) ?
+				      BST_CHECKED : BST_UNCHECKED), 0);
 
 		/* advert blocking */
 		sub = GetDlgItem(hwnd, IDC_PREFS_ADVERTS);
-		SendMessage(sub, BM_SETCHECK, 
-			    (WPARAM) ((nsoption_bool(block_advertisements)) ? 
-				  BST_CHECKED : BST_UNCHECKED), 0);
+		SendMessage(sub, BM_SETCHECK,
+			    (WPARAM) ((nsoption_bool(block_advertisements)) ?
+				      BST_CHECKED : BST_UNCHECKED), 0);
 
 		/* Referrer sending */
 		sub = GetDlgItem(hwnd, IDC_PREFS_REFERER);
-		SendMessage(sub, BM_SETCHECK, 
+		SendMessage(sub, BM_SETCHECK,
 			    (WPARAM)((nsoption_bool(send_referer)) ?
-				 BST_CHECKED : BST_UNCHECKED), 0);
+				     BST_CHECKED : BST_UNCHECKED), 0);
 		break;
 
 	case WM_NOTIFY:
@@ -602,8 +663,8 @@ static BOOL CALLBACK options_general_dialog_handler(HWND hwnd,
 			if (sub != NULL) {
 				int text_length;
 				char *text;
-				text_length = SendMessage(sub, 
-						  WM_GETTEXTLENGTH, 0, 0);
+				text_length = SendMessage(sub,
+							  WM_GETTEXTLENGTH, 0, 0);
 				text = malloc(text_length + 1);
 				if (text != NULL) {
 					SendMessage(sub, WM_GETTEXT,
@@ -616,18 +677,19 @@ static BOOL CALLBACK options_general_dialog_handler(HWND hwnd,
 			nsoption_set_bool(suppress_images,
 					  (IsDlgButtonChecked(hwnd, IDC_PREFS_IMAGES) == BST_CHECKED) ? true : false);
 
-			nsoption_set_bool(block_advertisements, (IsDlgButtonChecked(hwnd, 
-									 IDC_PREFS_ADVERTS) == BST_CHECKED) ? true : false);
+			nsoption_set_bool(block_advertisements,
+					  (IsDlgButtonChecked(hwnd, IDC_PREFS_ADVERTS) == BST_CHECKED) ? true : false);
 
-			nsoption_set_bool(send_referer, (IsDlgButtonChecked(hwnd, 
-									    IDC_PREFS_REFERER) == BST_CHECKED) ? true : false);
+			nsoption_set_bool(send_referer,
+					  (IsDlgButtonChecked(hwnd, IDC_PREFS_REFERER) == BST_CHECKED) ? true : false);
 
 			break;
-			
+
 		}
 	}
 	return FALSE;
 }
+
 
 /* exported interface documented in windows/prefs.h */
 nserror nsws_prefs_save(void)
@@ -643,6 +705,7 @@ nserror nsws_prefs_save(void)
 	}
 	return res;
 }
+
 
 /* exported interface documented in windows/prefs.h */
 void nsws_prefs_dialog_init(HINSTANCE hinst, HWND parent)

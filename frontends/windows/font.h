@@ -38,10 +38,15 @@ struct font_desc {
 struct gui_layout_table *win32_layout_table;
 struct gui_utf8_table *win32_utf8_table;
 
-extern nserror utf8_to_font_encoding(const struct font_desc* font,
-				       const char *string, 
-				       size_t len,
-				       char **result);
+/**
+ * convert from utf-8 to win32 font encoding.
+ *
+ * \param[in] font font descriptor
+ * \param[in] string source utf-8 string
+ * \param[in] len The length of the utf-8 data
+ * \param[out] result The reencoded string.
+ */
+extern nserror utf8_to_font_encoding(const struct font_desc* font, const char *string, size_t len, char **result);
 
 /**
  * generate a win32 font handle from a generic font style

@@ -17,6 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * win32 gui implementation.
+ */
+
 #include <stdbool.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -47,6 +52,7 @@ HINSTANCE hinst;
 
 static bool win32_quit = false;
 
+/* exported interface documented in gui.h */
 void win32_set_quit(bool q)
 {
 	win32_quit = q;
@@ -98,7 +104,7 @@ void win32_run(void)
 nserror win32_warning(const char *warning, const char *detail)
 {
 	size_t len = 1 + ((warning != NULL) ? strlen(messages_get(warning)) :
-			0) + ((detail != 0) ? strlen(detail) : 0);
+			  0) + ((detail != 0) ? strlen(detail) : 0);
 	char message[len];
 	snprintf(message, len, messages_get(warning), detail);
 	MessageBox(NULL, message, "Warning", MB_ICONWARNING);
@@ -110,8 +116,8 @@ nserror win32_warning(const char *warning, const char *detail)
 /**
  * Core asks front end for clipboard contents.
  *
- * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
- * \param  length  Byte length of UTF-8 text in buffer
+ * \param buffer UTF-8 text, allocated by front end, ownership yeilded to core
+ * \param length Byte length of UTF-8 text in buffer
  */
 static void gui_get_clipboard(char **buffer, size_t *length)
 {
@@ -137,7 +143,7 @@ static void gui_get_clipboard(char **buffer, size_t *length)
  * \param  n_styles  Number of text run styles in array
  */
 static void gui_set_clipboard(const char *buffer, size_t length,
-		nsclipboard_styles styles[], int n_styles)
+			      nsclipboard_styles styles[], int n_styles)
 {
 	/* TODO: Implement this */
 	HANDLE hnew;
@@ -169,5 +175,3 @@ static struct gui_clipboard_table clipboard_table = {
 };
 
 struct gui_clipboard_table *win32_clipboard_table = &clipboard_table;
-
-

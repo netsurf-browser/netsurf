@@ -18,7 +18,7 @@
 
 /**
  * \file
- * Implementation of win32 cookie manager.
+ * Implementation of win32 global history interface.
  */
 
 #include <stdint.h>

@@ -16,6 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * win32 local history viewer implementation.
+ */
+
 #include "utils/config.h"
 
 #include <windows.h>
@@ -36,6 +41,7 @@
 
 static const char windowclassname_localhistory[] = "nswslocalhistorywindow";
 
+/** local history context */
 struct nsws_localhistory {
 	HWND hwnd; /**< the window handle */
 	int width; /**< the width of the memory history */
@@ -47,14 +53,21 @@ struct nsws_localhistory {
 };
 
 
+/**
+ * set the scrollbar sizes and offset
+ *
+ * \param l localhistory context.
+ * \param gw win32 gui window
+ */
 static void
 nsws_localhistory_scroll_check(struct nsws_localhistory *l,
 			       struct gui_window *gw)
 {
 	SCROLLINFO si;
 
-	if ((gw->bw == NULL) || (l->hwnd == NULL))
+	if ((gw->bw == NULL) || (l->hwnd == NULL)) {
 		return;
+	}
 
 	browser_window_history_size(gw->bw, &(l->width), &(l->height));
 
@@ -69,14 +82,22 @@ nsws_localhistory_scroll_check(struct nsws_localhistory *l,
 	si.nMax = l->width;
 	si.nPage = l->guiwidth;
 	SetScrollInfo(l->hwnd, SB_HORZ, &si, TRUE);
-	if (l->guiheight >= l->height)
+	if (l->guiheight >= l->height) {
 		l->vscroll = 0;
-	if (l->guiwidth >= l->width)
+	}
+	if (l->guiwidth >= l->width) {
 		l->hscroll = 0;
+	}
 	SendMessage(l->hwnd, WM_PAINT, 0, 0);
 }
 
 
+/**
+ * redraw local history window
+ *
+ * \param l localhistory context.
+ * \param gw win32 gui window
+ */
 static void
 nsws_localhistory_up(struct nsws_localhistory *l, struct gui_window *gw)
 {
@@ -108,17 +129,34 @@ nsws_localhistory_up(struct nsws_localhistory *l, struct gui_window *gw)
 }
 
 
+/**
+ * close local history window
+ *
+ * \param gw the gui window to close history for
+ */
 void nsws_localhistory_close(struct gui_window *w)
 {
 	struct nsws_localhistory *l = gui_window_localhistory(w);
-	if (l != NULL)
+	if (l != NULL) {
 		CloseWindow(l->hwnd);
+	}
 }
 
 
-static LRESULT CALLBACK 
-nsws_localhistory_event_callback(HWND hwnd, UINT msg,
-				 WPARAM wparam, LPARAM lparam)
+/**
+ * handler for win32 messges on local history window
+ *
+ * \param hwnd The win32 handle of the appearance dialog
+ * \param msg The message code
+ * \param wparam The message w parameter
+ * \param lparam The message l parameter
+ * \return result appropriate for message
+ */
+static LRESULT CALLBACK
+nsws_localhistory_event_callback(HWND hwnd,
+				 UINT msg,
+				 WPARAM wparam,
+				 LPARAM lparam)
 {
 	int x,y;
 	struct gui_window *gw;
@@ -143,7 +181,7 @@ nsws_localhistory_event_callback(HWND hwnd, UINT msg,
 		nsws_localhistory_scroll_check(gw->localhistory, gw);
 		break;
 
-	case WM_LBUTTONUP: 
+	case WM_LBUTTONUP:
 		if (gw->bw == NULL)
 			break;
 
@@ -151,20 +189,20 @@ nsws_localhistory_event_callback(HWND hwnd, UINT msg,
 		y = GET_Y_LPARAM(lparam);
 
 		if (browser_window_history_click(gw->bw,
-				   gw->localhistory->hscroll + x,
-				   gw->localhistory->vscroll + y,
-				   false)) {
+						 gw->localhistory->hscroll + x,
+						 gw->localhistory->vscroll + y,
+						 false)) {
 			DestroyWindow(hwnd);
 		}
-	
+
 		break;
 
-	case WM_MOUSEMOVE: 
+	case WM_MOUSEMOVE:
 		x = GET_X_LPARAM(lparam);
 		y = GET_Y_LPARAM(lparam);
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 		break;
-	
+
 
 	case WM_VSCROLL:
 	{
@@ -268,12 +306,12 @@ nsws_localhistory_event_callback(HWND hwnd, UINT msg,
 			plot_hdc = hdc;
 
 			browser_window_history_redraw_rectangle(gw->bw,
-				 gw->localhistory->hscroll + ps.rcPaint.left,
-				 gw->localhistory->vscroll + ps.rcPaint.top,
-				 gw->localhistory->hscroll + (ps.rcPaint.right - ps.rcPaint.left),
-				 gw->localhistory->vscroll + (ps.rcPaint.bottom - ps.rcPaint.top),
-				 ps.rcPaint.left,
-				 ps.rcPaint.top, &ctx);
+				gw->localhistory->hscroll + ps.rcPaint.left,
+				gw->localhistory->vscroll + ps.rcPaint.top,
+				gw->localhistory->hscroll + (ps.rcPaint.right - ps.rcPaint.left),
+				gw->localhistory->vscroll + (ps.rcPaint.bottom - ps.rcPaint.top),
+				ps.rcPaint.left,
+				ps.rcPaint.top, &ctx);
 
 			plot_hdc = tmp_hdc;
 
@@ -284,7 +322,7 @@ nsws_localhistory_event_callback(HWND hwnd, UINT msg,
 	}
 
 	case WM_CLOSE:
-		DestroyWindow(hwnd);		
+		DestroyWindow(hwnd);
 		return 1;
 
 	case WM_DESTROY:
@@ -316,7 +354,7 @@ struct nsws_localhistory *nsws_window_create_localhistory(struct gui_window *gw)
 		UpdateWindow(gw->localhistory->hwnd);
 		ShowWindow(gw->localhistory->hwnd, SW_SHOWNORMAL);
 		return gw->localhistory;
-	}	
+	}
 
 	localhistory = calloc(1, sizeof(struct nsws_localhistory));
 
@@ -329,19 +367,19 @@ struct nsws_localhistory *nsws_window_create_localhistory(struct gui_window *gw)
 	localhistory->height = 0;
 
 	if (gw->bw != NULL) {
-		browser_window_history_size(gw->bw, 
-			     &(localhistory->width), 
-			     &(localhistory->height));
+		browser_window_history_size(gw->bw,
+					    &(localhistory->width),
+					    &(localhistory->height));
 	}
 
 	GetWindowRect(gw->main, &r);
-	SetWindowPos(gw->main, HWND_NOTOPMOST, 0, 0, 0, 0, 
+	SetWindowPos(gw->main, HWND_NOTOPMOST, 0, 0, 0, 0,
 		     SWP_NOSIZE | SWP_NOMOVE);
 
 	localhistory->guiwidth = min(r.right - r.left - margin,
-				    localhistory->width + margin);
+				     localhistory->width + margin);
 	localhistory->guiheight = min(r.bottom - r.top - margin,
-				     localhistory->height + margin);
+				      localhistory->height + margin);
 
 	icc.dwSize = sizeof(icc);
 	icc.dwICC = ICC_BAR_CLASSES | ICC_WIN95_CLASSES;
@@ -386,7 +424,8 @@ struct nsws_localhistory *nsws_window_create_localhistory(struct gui_window *gw)
 
 /* exported method documented in windows/localhistory.h */
 nserror
-nsws_create_localhistory_class(HINSTANCE hinstance) {
+nsws_create_localhistory_class(HINSTANCE hinstance)
+{
 	nserror ret = NSERROR_OK;
 	WNDCLASSEX w;
 
