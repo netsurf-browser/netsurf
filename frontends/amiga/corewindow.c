@@ -203,15 +203,16 @@ ami_cw_key(struct ami_corewindow *ami_cw, int nskey)
 /**
  * Redraw functions
  *
- * This is slightly over-engineered as it was taken from the main browser/old tree redraws
- * and supports deferred drawing of rectangles and tiling
+ * This is slightly over-engineered as it was taken from the main
+ * browser/old tree redraws and supports deferred drawing of
+ * rectangles and tiling
  */
 
 /**
  * Redraw an area of a core window
  *
- * \param  g   a struct ami_corewindow 
- * \param  r  rect (in document co-ordinates)
+ * \param ami_cw An Amiga core window structure
+ * \param r rect (in document co-ordinates)
  */
 
 static void
@@ -302,7 +303,8 @@ ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 /**
  * Draw the deferred rectangles
  *
- * @param draw set to false to just delete the queue
+ * \param ami_cw An Amiga core window structure to queue redraw
+ * \param draw set to false to just delete the queue
  */
 static void ami_cw_redraw_queue(struct ami_corewindow *ami_cw, bool draw)
 {

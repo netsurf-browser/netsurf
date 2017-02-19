@@ -172,7 +172,7 @@ ami_crtvrfy_mouse(struct ami_corewindow *ami_cw,
 /**
  * callback for keypress for certificate verify on core window
  *
- * \param example_cw The Amiga core window structure.
+ * \param ami_cw The Amiga core window structure.
  * \param nskey The netsurf key code
  * \return NSERROR_OK on success otherwise apropriate error code
  */

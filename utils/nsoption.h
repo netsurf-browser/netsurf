@@ -18,10 +18,10 @@
 
 /**
  * \file
- * Option reading and saving (interface).
+ * Option reading and saving interface.
  *
  * Global options are defined in desktop/options.h
- * Distinct target options are defined in <TARGET>/options.h
+ * Distinct target options are defined in ${TARGET}/options.h
  *
  * The implementation API is slightly compromised because it still has
  * "global" tables for both the default and current option tables.

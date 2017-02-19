@@ -61,6 +61,7 @@
 #include "gtk/bitmap.h"
 #include "gtk/gui.h"
 #include "gtk/global_history.h"
+#include "gtk/local_history.h"
 #include "gtk/hotlist.h"
 #include "gtk/download.h"
 #include "gtk/menu.h"
@@ -108,9 +109,6 @@ struct nsgtk_scaffolding {
 
 	/** currently active gui browsing context */
 	struct gui_window *top_level;
-
-	/** local history window */
-	struct gtk_history_window *history_window;
 
 	/** Builder object scaffold was created from */
 	GtkBuilder *builder;
@@ -247,9 +245,7 @@ static void scaffolding_window_destroy(GtkWidget *widget, gpointer data)
 
 	LOG("scaffold:%p", gs);
 
-	if ((gs->history_window) && (gs->history_window->window)) {
-		gtk_widget_destroy(GTK_WIDGET(gs->history_window->window));
-	}
+	nsgtk_local_history_hide();
 
 	if (gs->prev != NULL) {
 		gs->prev->next = gs->next;
@@ -287,7 +283,6 @@ static gboolean scaffolding_window_delete_event(GtkWidget *widget,
  */
 static void scaffolding_update_context(struct nsgtk_scaffolding *g)
 {
-	int width, height;
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 
 	g->buttons[BACK_BUTTON]->sensitivity =
@@ -300,13 +295,7 @@ static void scaffolding_update_context(struct nsgtk_scaffolding *g)
 	/* update the url bar, particularly necessary when tabbing */
 	browser_window_refresh_url_bar(bw);
 
-	/* update the local history window, as well as queuing a redraw
-	 * for it.
-	 */
-	browser_window_history_size(bw, &width, &height);
-	gtk_widget_set_size_request(GTK_WIDGET(g->history_window->drawing_area),
-			width, height);
-	gtk_widget_queue_draw(GTK_WIDGET(g->history_window->drawing_area));
+	nsgtk_local_history_hide();
 }
 
 /**
@@ -1466,31 +1455,12 @@ MULTIHANDLER(home)
 MULTIHANDLER(localhistory)
 {
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
+	nserror res;
 
-	int x,y, width, height, mainwidth, mainheight, margin = 20;
-	/* if entries of the same url but different frag_ids have been added
-	 * the history needs redrawing (what throbber code normally does)
-	 */
-
-	scaffolding_update_context(g);
-	gtk_window_get_position(g->window, &x, &y);
-	gtk_window_get_size(g->window, &mainwidth, &mainheight);
-	browser_window_history_size(bw, &width, &height);
-	width = (width + g->historybase + margin > mainwidth) ?
-			mainwidth - g->historybase : width + margin;
-	height = (height + g->toolbarbase + margin > mainheight) ?
-			mainheight - g->toolbarbase : height + margin;
-	gtk_window_set_default_size(g->history_window->window, width, height);
-	gtk_widget_set_size_request(GTK_WIDGET(g->history_window->window),
-			-1, -1);
-	gtk_window_resize(g->history_window->window, width, height);
-	gtk_window_set_transient_for(g->history_window->window, g->window);
-	nsgtk_window_set_opacity(g->history_window->window, 0.9);
-	gtk_widget_show(GTK_WIDGET(g->history_window->window));
-	gtk_window_move(g->history_window->window, x + g->historybase, y +
-			g->toolbarbase);
-	gdk_window_raise(nsgtk_widget_get_window(GTK_WIDGET(g->history_window->window)));
-
+	res = nsgtk_local_history_present(g->window, bw);
+	if (res != NSERROR_OK) {
+		LOG("Unable to initialise local history window.");
+	}
 	return TRUE;
 }
 
@@ -1642,91 +1612,6 @@ BUTTONHANDLER(history)
 #undef MULTIHANDLER
 #undef CHECKHANDLER
 #undef BUTTONHANDLER
-
-#if GTK_CHECK_VERSION(3,0,0)
-
-static gboolean
-nsgtk_history_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
-{
-	struct rect clip;
-	struct gtk_history_window *hw = (struct gtk_history_window *)data;
-	struct browser_window *bw =
-			nsgtk_get_browser_window(hw->g->top_level);
-
-	struct redraw_context ctx = {
-		.interactive = true,
-		.background_images = true,
-		.plot = &nsgtk_plotters
-	};
-	double x1;
-	double y1;
-	double x2;
-	double y2;
-
-	current_cr = cr;
-
-	cairo_clip_extents(cr, &x1, &y1, &x2, &y2);
-
-	clip.x0 = x1;
-	clip.y0 = y1;
-	clip.x1 = x2;
-	clip.y1 = y2;
-
-	ctx.plot->clip(&ctx, &clip);
-
-	browser_window_history_redraw(bw, &ctx);
-
-	return FALSE;
-}
-#else
-
-/* signal handler functions for the local history window */
-static gboolean
-nsgtk_history_draw_event(GtkWidget *widget, GdkEventExpose *event, gpointer g)
-{
-	struct rect clip;
-	struct gtk_history_window *hw = (struct gtk_history_window *)g;
-	struct browser_window *bw =
-			nsgtk_get_browser_window(hw->g->top_level);
-
-	struct redraw_context ctx = {
-		.interactive = true,
-		.background_images = true,
-		.plot = &nsgtk_plotters
-	};
-
-	current_cr = gdk_cairo_create(nsgtk_widget_get_window(widget));
-
-	clip.x0 = event->area.x;
-	clip.y0 = event->area.y;
-	clip.x1 = event->area.x + event->area.width;
-	clip.y1 = event->area.y + event->area.height;
-	ctx.plot->clip(&ctx, &clip);
-
-	browser_window_history_redraw(bw, &ctx);
-
-	cairo_destroy(current_cr);
-
-	return FALSE;
-}
-
-#endif /* GTK_CHECK_VERSION(3,0,0) */
-
-static gboolean nsgtk_history_button_press_event(GtkWidget *widget,
-		GdkEventButton *event, gpointer g)
-{
-	struct gtk_history_window *hw = (struct gtk_history_window *)g;
-	struct browser_window *bw =
-			nsgtk_get_browser_window(hw->g->top_level);
-
-	LOG("X=%g, Y=%g", event->x, event->y);
-
-	browser_window_history_click(bw, event->x, event->y, false);
-
-	return TRUE;
-}
-
-
 
 static void nsgtk_attach_menu_handlers(struct nsgtk_scaffolding *g)
 {
@@ -2181,35 +2066,6 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	gtk_widget_set_size_request(GTK_WIDGET(
 			gs->buttons[HISTORY_BUTTON]->button), 20, -1);
 
-	/* create the local history window to be associated with this scaffold */
-	gs->history_window = malloc(sizeof(struct gtk_history_window));
-	gs->history_window->g = gs;
-	gs->history_window->window =
-			GTK_WINDOW(gtk_window_new(GTK_WINDOW_TOPLEVEL));
-	gtk_window_set_transient_for(gs->history_window->window, gs->window);
-	gtk_window_set_title(gs->history_window->window, "NetSurf History");
-	gtk_window_set_type_hint(gs->history_window->window,
-			GDK_WINDOW_TYPE_HINT_UTILITY);
-	gs->history_window->scrolled =
-			GTK_SCROLLED_WINDOW(gtk_scrolled_window_new(0, 0));
-	gtk_container_add(GTK_CONTAINER(gs->history_window->window),
-			GTK_WIDGET(gs->history_window->scrolled));
-
-	gtk_widget_show(GTK_WIDGET(gs->history_window->scrolled));
-	gs->history_window->drawing_area =
-			GTK_DRAWING_AREA(gtk_drawing_area_new());
-
-	gtk_widget_set_events(GTK_WIDGET(gs->history_window->drawing_area),
-			GDK_EXPOSURE_MASK |
-			GDK_POINTER_MOTION_MASK |
-			GDK_BUTTON_PRESS_MASK);
-	nsgtk_widget_override_background_color(GTK_WIDGET(gs->history_window->drawing_area),
-			GTK_STATE_NORMAL,
-			0, 0xffff, 0xffff, 0xffff);
-	nsgtk_scrolled_window_add_with_viewport(gs->history_window->scrolled,
-			GTK_WIDGET(gs->history_window->drawing_area));
-	gtk_widget_show(GTK_WIDGET(gs->history_window->drawing_area));
-
 
 	/* set up URL bar completion */
 	gs->url_bar_completion = nsgtk_url_entry_completion_new(gs);
@@ -2220,17 +2076,6 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 #define CONNECT(obj, sig, callback, ptr) \
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
-
-	/* connect history window signals to their handlers */
-	nsgtk_connect_draw_event(GTK_WIDGET(gs->history_window->drawing_area),
-				 G_CALLBACK(nsgtk_history_draw_event),
-				 gs->history_window);
-	/*CONNECT(gs->history_window->drawing_area, "motion_notify_event",
-			nsgtk_history_motion_notify_event, gs->history_window);*/
-	CONNECT(gs->history_window->drawing_area, "button_press_event",
-			nsgtk_history_button_press_event, gs->history_window);
-	CONNECT(gs->history_window->window, "delete_event",
-			gtk_widget_hide_on_delete, NULL);
 
 	g_signal_connect_after(gs->notebook, "page-added",
 			G_CALLBACK(nsgtk_window_tabs_add), gs);
@@ -2589,13 +2434,6 @@ struct gtk_search *nsgtk_scaffolding_search(struct nsgtk_scaffolding *g)
 GtkMenuBar *nsgtk_scaffolding_menu_bar(struct nsgtk_scaffolding *g)
 {
 	return g->menu_bar->bar_menu;
-}
-
-/* exported interface documented in gtk/scaffolding.h */
-struct gtk_history_window *
-nsgtk_scaffolding_history_window(struct nsgtk_scaffolding *g)
-{
-	return g->history_window;
 }
 
 /* exported interface documented in gtk/scaffolding.h */

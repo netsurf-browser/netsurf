@@ -2,30 +2,32 @@
 <gresources>
   <gresource prefix="/org/netsurf">
     <file>cookies.gtk2.ui</file>
-    <file>history.gtk3.ui</file>  
-    <file>netsurf.gtk2.ui</file>   
-    <file>password.gtk3.ui</file>     
-    <file>toolbar.gtk2.ui</file>   
+    <file>globalhistory.gtk3.ui</file>
+    <file>localhistory.gtk3.ui</file>
+    <file>netsurf.gtk2.ui</file>
+    <file>password.gtk3.ui</file>
+    <file>toolbar.gtk2.ui</file>
     <file>warning.gtk3.ui</file>
-    <file>cookies.gtk3.ui</file>    
-    <file>hotlist.gtk2.ui</file>  
-    <file>netsurf.gtk3.ui</file>   
-    <file>ssl.gtk2.ui</file>          
+    <file>cookies.gtk3.ui</file>
+    <file>hotlist.gtk2.ui</file>
+    <file>netsurf.gtk3.ui</file>
+    <file>ssl.gtk2.ui</file>
     <file>toolbar.gtk3.ui</file>
-    <file>downloads.gtk2.ui</file>  
-    <file>hotlist.gtk3.ui</file>  
-    <file>options.gtk2.ui</file>   
-    <file>ssl.gtk3.ui</file>          
+    <file>downloads.gtk2.ui</file>
+    <file>hotlist.gtk3.ui</file>
+    <file>options.gtk2.ui</file>
+    <file>ssl.gtk3.ui</file>
     <file>viewdata.gtk2.ui</file>
-    <file>downloads.gtk3.ui</file>  
-    <file>login.gtk2.ui</file>    
-    <file>options.gtk3.ui</file>   
-    <file>tabcontents.gtk2.ui</file>  
+    <file>downloads.gtk3.ui</file>
+    <file>login.gtk2.ui</file>
+    <file>options.gtk3.ui</file>
+    <file>tabcontents.gtk2.ui</file>
     <file>viewdata.gtk3.ui</file>
-    <file>history.gtk2.ui</file>    
-    <file>login.gtk3.ui</file>    
-    <file>password.gtk2.ui</file>  
-    <file>tabcontents.gtk3.ui</file>  
+    <file>localhistory.gtk2.ui</file>
+    <file>globalhistory.gtk2.ui</file>
+    <file>login.gtk3.ui</file>
+    <file>password.gtk2.ui</file>
+    <file>tabcontents.gtk3.ui</file>
     <file>warning.gtk2.ui</file>
     <file preprocess="to-pixdata">favicon.png</file>
     <file preprocess="to-pixdata">netsurf.xpm</file>

@@ -52,6 +52,7 @@
 #include "gtk/compat.h"
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
+#include "gtk/local_history.h"
 #include "gtk/plotters.h"
 #include "gtk/schedule.h"
 #include "gtk/tabs.h"
@@ -339,8 +340,7 @@ static gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 
 	gtk_im_context_reset(g->input_method);
 	gtk_widget_grab_focus(GTK_WIDGET(g->layout));
-	gtk_widget_hide(GTK_WIDGET(nsgtk_scaffolding_history_window(
-			g->scaffold)->window));
+	nsgtk_local_history_hide();
 
 	g->mouse.pressed_x = event->x / browser_window_get_scale(g->bw);
 	g->mouse.pressed_y = event->y / browser_window_get_scale(g->bw);

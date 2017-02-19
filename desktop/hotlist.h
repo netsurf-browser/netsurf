@@ -67,7 +67,6 @@ nserror hotlist_manager_init(struct core_window_callback_table *cw_t,
  * allowing destruction of a GUI hotlist window, without finalising the
  * hotlist module.
  *
- * \param path		The path to save hotlist to
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror hotlist_manager_fini(void);

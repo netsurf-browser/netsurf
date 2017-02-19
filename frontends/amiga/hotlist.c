@@ -213,12 +213,15 @@ ami_hotlist_key(struct ami_corewindow *ami_cw, uint32_t nskey)
  * callback on draw event for hotlist viewer on core window
  *
  * \param ami_cw The Amiga core window structure.
+ * \param x The x coordinate of hotlist area to redraw
+ * \param y The y coordinate of hotlist area to redraw
  * \param r The rectangle of the window that needs updating.
  * \param ctx The drawing context
  * \return NSERROR_OK on success otherwise apropriate error code
  */
 static nserror
-ami_hotlist_draw(struct ami_corewindow *ami_cw, int x, int y, struct rect *r, struct redraw_context *ctx)
+ami_hotlist_draw(struct ami_corewindow *ami_cw,
+		 int x, int y, struct rect *r, struct redraw_context *ctx)
 {
 	hotlist_redraw(x, y, r, ctx);
 
