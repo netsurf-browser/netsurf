@@ -171,7 +171,7 @@ struct ami_corewindow {
  *
  * As a pre-requisite the draw, key and mouse callbacks must be defined
  *
- * \param example_cw An Amiga core window structure to initialise
+ * \param ami_cw An Amiga core window structure to initialise
  * \return NSERROR_OK on successful initialisation otherwise error code.
  */
 nserror ami_corewindow_init(struct ami_corewindow *ami_cw);

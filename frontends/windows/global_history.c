@@ -81,6 +81,8 @@ nsw32_global_history_mouse(struct nsw32_corewindow *nsw32_cw,
  * callback on draw event for global_history window
  *
  * \param nsw32_cw The nsw32 core window structure.
+ * \param scrollx The horizontal scroll offset.
+ * \param scrolly The vertical scroll offset.
  * \param r The rectangle of the window that needs updating.
  * \return NSERROR_OK on success otherwise apropriate error code
  */

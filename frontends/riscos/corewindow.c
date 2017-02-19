@@ -378,7 +378,7 @@ ro_cw_drag_start(struct ro_corewindow *ro_cw,
  * The wimp has issued an event to the window because the pointer has
  * entered it.
  *
- * \param open The open event to be processed
+ * \param entering The entering event to be processed
  */
 static void ro_cw_pointer_entering(wimp_entering *entering)
 {
@@ -664,6 +664,8 @@ static void cw_tb_update(void *ctx)
  * Respond to user actions (click) in a corewindow.
  *
  * \param ctx Context as passed to toolbar creation.
+ * \param action_type type of action on toolbar
+ * \param action data for action.
  */
 static void
 cw_tb_click(void *ctx,

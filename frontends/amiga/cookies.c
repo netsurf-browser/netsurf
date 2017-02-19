@@ -136,7 +136,7 @@ ami_cookies_mouse(struct ami_corewindow *ami_cw,
 /**
  * callback for keypress for cookies viewer on core window
  *
- * \param example_cw The Amiga core window structure.
+ * \param ami_cw The Amiga core window structure.
  * \param nskey The netsurf key code
  * \return NSERROR_OK on success otherwise apropriate error code
  */
@@ -153,6 +153,8 @@ ami_cookies_key(struct ami_corewindow *ami_cw, uint32_t nskey)
  * callback on draw event for cookies viewer on core window
  *
  * \param ami_cw The Amiga core window structure.
+ * \param x The x cordinate to plot at
+ * \param y The y cordinate to plot at
  * \param r The rectangle of the window that needs updating.
  * \param ctx The drawing context
  * \return NSERROR_OK on success otherwise apropriate error code

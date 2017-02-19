@@ -58,6 +58,7 @@ nsw32_cookie_key(struct nsw32_corewindow *nsw32_cw, uint32_t nskey)
 	return NSERROR_NOT_IMPLEMENTED;
 }
 
+
 /**
  * callback for mouse action on cookie window
  *
@@ -69,18 +70,21 @@ nsw32_cookie_key(struct nsw32_corewindow *nsw32_cw, uint32_t nskey)
  */
 static nserror
 nsw32_cookie_mouse(struct nsw32_corewindow *nsw32_cw,
-		    browser_mouse_state mouse_state,
-		    int x, int y)
+		   browser_mouse_state mouse_state,
+		   int x, int y)
 {
 	cookie_manager_mouse_action(mouse_state, x, y);
 
 	return NSERROR_OK;
 }
 
+
 /**
  * callback on draw event for cookie window
  *
  * \param nsw32_cw The nsw32 core window structure.
+ * \param scrollx The horizontal scroll offset.
+ * \param scrolly The vertical scroll offset.
  * \param r The rectangle of the window that needs updating.
  * \return NSERROR_OK on success otherwise apropriate error code
  */
@@ -102,6 +106,12 @@ nsw32_cookie_draw(struct nsw32_corewindow *nsw32_cw,
 }
 
 
+/**
+ * callback on close event for cookie window
+ *
+ * \param nsw32_cw The nsw32 core window structure.
+ * \return NSERROR_OK on success otherwise apropriate error code
+ */
 static nserror
 nsw32_cookie_close(struct nsw32_corewindow *nsw32_cw)
 {
@@ -110,9 +120,11 @@ nsw32_cookie_close(struct nsw32_corewindow *nsw32_cw)
 	return NSERROR_OK;
 }
 
+
 /**
  * Creates the window for the cookie tree.
  *
+ * \param hInstance The application instance
  * \return NSERROR_OK on success else appropriate error code on faliure.
  */
 static nserror nsw32_cookie_init(HINSTANCE hInstance)
@@ -168,6 +180,7 @@ nserror nsw32_cookies_present(HINSTANCE hInstance)
 	}
 	return res;
 }
+
 
 /* exported interface documented in windows/cookie.h */
 nserror nsw32_cookies_finalise(void)

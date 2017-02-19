@@ -108,11 +108,13 @@ nsws_localhistory_up(struct nsws_localhistory *l, struct gui_window *gw)
 }
 
 
-void nsws_localhistory_close(struct gui_window *w)
+/* exported interface documented in windows/localhistory.h */
+void nsws_localhistory_close(struct gui_window *gw)
 {
-	struct nsws_localhistory *l = gui_window_localhistory(w);
-	if (l != NULL)
-		CloseWindow(l->hwnd);
+	struct nsws_localhistory *lh = gui_window_localhistory(gw);
+	if (lh != NULL) {
+		CloseWindow(lh->hwnd);
+	}
 }
 
 

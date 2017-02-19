@@ -26,8 +26,8 @@
  * around the fetcher specific methods.
  *
  * Active fetches are held in the circular linked list ::fetch_ring. There may
- * be at most ::option_max_fetchers_per_host active requests per Host: header.
- * There may be at most ::option_max_fetchers active requests overall. Inactive
+ * be at most nsoption max_fetchers_per_host active requests per Host: header.
+ * There may be at most nsoption max_fetchers active requests overall. Inactive
  * fetches are stored in the ::queue_ring waiting for use.
  */
 

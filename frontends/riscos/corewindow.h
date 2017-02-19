@@ -123,6 +123,10 @@ struct ro_corewindow {
  * As a pre-requisite the draw, key and mouse callbacks must be defined
  *
  * \param ro_cw A riscos core window structure to initialise
+ * \param tb_buttons toolbar button bar context
+ * \param tb_order The order of toolbar buttons
+ * \param tb_style The style of toolbar buttons
+ * \param tb_help Thh toolbar help text
  * \return NSERROR_OK on successful initialisation otherwise error code.
  */
 nserror ro_corewindow_init(struct ro_corewindow *ro_cw, const struct button_bar_buttons *tb_buttons, char *tb_order, theme_style tb_style, const char *tb_help);

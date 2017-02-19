@@ -809,11 +809,12 @@ static void nsws_update_edit(struct gui_window *w)
  *
  * \param gw win32 frontends graphical window.
  * \param hwnd The win32 window handle
- * \param int x The x coordinate of the event.
+ * \param x The x coordinate of the event.
  * \param y the y cooordiante of the event.
+ * \return true if menu displayed else false
  */
 static bool
-nsws_ctx_menu(struct gui_window *w, HWND hwnd, int x, int y)
+nsws_ctx_menu(struct gui_window *gw, HWND hwnd, int x, int y)
 {
 	RECT rc; /* client area of window */
 	POINT pt = { x, y }; /* location of mouse click */
@@ -828,7 +829,7 @@ nsws_ctx_menu(struct gui_window *w, HWND hwnd, int x, int y)
 	if (PtInRect(&rc, pt)) {
 		ClientToScreen(hwnd, &pt);
 		nsws_update_edit(w);
-		TrackPopupMenu(GetSubMenu(w->rclick, 0),
+		TrackPopupMenu(GetSubMenu(gw->rclick, 0),
 			       TPM_CENTERALIGN | TPM_TOPALIGN,
 			       x,
 			       y,

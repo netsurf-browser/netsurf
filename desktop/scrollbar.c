@@ -128,15 +128,12 @@ void scrollbar_destroy(struct scrollbar *s)
 /**
  * Draw an outline rectangle common to several scrollbar elements.
  *
- * \param x0	left border of the outline
- * \param y0	top border of the outline
- * \param x1	right border of the outline
- * \param y1	bottom border of the outline
- * \param c	base colour of the outline, the other colours are created by
+ * \param ctx current redraw context
+ * \param area the area of the scrollbar
+ * \param c base colour of the outline, the other colours are created by
  *		lightening or darkening this one
- * \param ctx	current redraw context
  * \param inset true for inset outline, false for an outset one
- * \return
+ * \return NSERROR_OK on success else error code
  */
 
 static inline nserror

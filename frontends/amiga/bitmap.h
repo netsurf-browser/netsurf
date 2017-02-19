@@ -76,8 +76,7 @@ void ami_bitmap_set_icondata(struct bitmap *bm, ULONG *icondata);
 /**
  * Free an icondata pointer
  *
- * \param  bm  a bitmap, as returned by bitmap_create()
- * \param  icondata  a pointer to memory
+ * \param bm a bitmap, as returned by bitmap_create()
  *
  * This function probably shouldn't be here!
  */

@@ -117,6 +117,8 @@ nsw32_sslcert_viewer_mouse(struct nsw32_corewindow *nsw32_cw,
  * callback on draw event for hotlist window
  *
  * \param nsw32_cw The nsw32 core window structure.
+ * \param scrollx The horizontal scroll offset.
+ * \param scrolly The vertical scroll offset.
  * \param r The rectangle of the window that needs updating.
  * \return NSERROR_OK on success otherwise apropriate error code
  */
@@ -332,10 +334,10 @@ static nserror nsw32_crtvrfy_destroy(struct nsw32_sslcert_window *crtwin)
 }
 
 /**
- * handle command message on main browser window
+ * handle command message on ssl certificate window.
  *
- * \param hwnd The win32 window handle
- * \param gw win32 gui window
+ * \param hwnd The win32 window handle.
+ * \param crtwin certificate window context.
  * \param notification_code notifiction code
  * \param identifier notification identifier
  * \param ctrl_window The win32 control window handle

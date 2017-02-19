@@ -16,17 +16,31 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NETSURF_WINDOWS_LOCALHISTORY_H_
-#define _NETSURF_WINDOWS_LOCALHISTORY_H_
+#ifndef NETSURF_WINDOWS_LOCALHISTORY_H
+#define NETSURF_WINDOWS_LOCALHISTORY_H
 
 struct nsws_localhistory;
 
-void nsws_localhistory_open(struct gui_window *gw);
+/**
+ * Close win32 localhistory window.
+ *
+ * \param gw The win32 gui window to close local history for.
+ */
 void nsws_localhistory_close(struct gui_window *gw);
 
-/* creates localhistory window */
+/**
+ * creates localhistory window
+ *
+ * \param gw The win32 gui window to create a local history for.
+ */
 struct nsws_localhistory *nsws_window_create_localhistory(struct gui_window *gw);
 
+/**
+ * Create the win32 window class
+ *
+ * \param hinstance The application instance to create the window class under
+ * \return NSERROR_OK on success else error code.
+ */
 nserror nsws_create_localhistory_class(HINSTANCE hinstance);
 
 #endif
