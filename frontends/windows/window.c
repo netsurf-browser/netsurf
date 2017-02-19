@@ -828,7 +828,7 @@ nsws_ctx_menu(struct gui_window *gw, HWND hwnd, int x, int y)
 	/* If the position is in the client area, display a shortcut menu. */
 	if (PtInRect(&rc, pt)) {
 		ClientToScreen(hwnd, &pt);
-		nsws_update_edit(w);
+		nsws_update_edit(gw);
 		TrackPopupMenu(GetSubMenu(gw->rclick, 0),
 			       TPM_CENTERALIGN | TPM_TOPALIGN,
 			       x,
