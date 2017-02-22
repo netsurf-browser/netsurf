@@ -104,7 +104,7 @@ static gboolean nsgtk_on_##q##_activate(GtkButton *widget, gpointer data)
 
 /** Core scaffolding structure. */
 struct nsgtk_scaffolding {
-	/** global linked list of scaffoldings for gui interface adjustments */
+	/** global linked list of scaffolding for gui interface adjustments */
 	struct nsgtk_scaffolding *next, *prev;
 
 	/** currently active gui browsing context */
@@ -148,7 +148,6 @@ struct nsgtk_scaffolding {
 
 	/** link popup menu */
 	struct nsgtk_link_menu *link_menu;
-
 };
 
 /** current scaffold for model dialogue use */
@@ -157,19 +156,30 @@ static struct nsgtk_scaffolding *scaf_current;
 /** global list for interface changes */
 static struct nsgtk_scaffolding *scaf_list = NULL;
 
-/** holds the context data for what's under the pointer, when the contextual
- *  menu is opened.
+/**
+ * holds the context data for what's under the pointer, when the
+ *  contextual menu is opened.
  */
 static struct browser_window_features current_menu_features;
 
 
 /**
- * Helper to hide popup menu entries by grouping
+ * Helper to hide popup menu entries by grouping.
+ *
+ * \param menu The popup menu to modify.
+ * \param submenu flag to indicate if submenus should be hidden.
+ * \param nav flag to indicate if navigation entries should be hidden.
+ * \param cnp flag to indicate if cut and paste entries should be hidden.
+ * \param custom flag to indicate if menu customisation is hidden.
  */
-static void popup_menu_hide(struct nsgtk_popup_menu *menu, bool submenu,
-		bool nav, bool cnp, bool custom)
+static void
+popup_menu_hide(struct nsgtk_popup_menu *menu,
+		bool submenu,
+		bool nav,
+		bool cnp,
+		bool custom)
 {
-	if (submenu){
+	if (submenu) {
 		gtk_widget_hide(GTK_WIDGET(menu->file_menuitem));
 		gtk_widget_hide(GTK_WIDGET(menu->edit_menuitem));
 		gtk_widget_hide(GTK_WIDGET(menu->view_menuitem));
@@ -198,13 +208,24 @@ static void popup_menu_hide(struct nsgtk_popup_menu *menu, bool submenu,
 
 }
 
+
 /**
- * Helper to show popup menu entries by grouping
+ * Helper to show popup menu entries by grouping.
+ *
+ * \param menu The popup menu to modify.
+ * \param submenu flag to indicate if submenus should be visible.
+ * \param nav flag to indicate if navigation entries should be visible.
+ * \param cnp flag to indicate if cut and paste entries should be visible.
+ * \param custom flag to indicate if menu customisation is visible.
  */
-static void popup_menu_show(struct nsgtk_popup_menu *menu, bool submenu,
-		bool nav, bool cnp, bool custom)
+static void
+popup_menu_show(struct nsgtk_popup_menu *menu,
+		bool submenu,
+		bool nav,
+		bool cnp,
+		bool custom)
 {
-	if (submenu){
+	if (submenu) {
 		gtk_widget_show(GTK_WIDGET(menu->file_menuitem));
 		gtk_widget_show(GTK_WIDGET(menu->edit_menuitem));
 		gtk_widget_show(GTK_WIDGET(menu->view_menuitem));
@@ -230,7 +251,6 @@ static void popup_menu_show(struct nsgtk_popup_menu *menu, bool submenu,
 	if (custom) {
 		gtk_widget_show(GTK_WIDGET(menu->customize_menuitem));
 	}
-
 }
 
 
@@ -238,6 +258,12 @@ static void popup_menu_show(struct nsgtk_popup_menu *menu, bool submenu,
 
 /**
  * resource cleanup function for window destruction.
+ *
+ * gtk event called when window is being destroyed. Need to free any
+ * resources associated with this scaffold,
+ *
+ * \param widget the widget being destroyed
+ * \param data The context pointer passed when the connection was made.
  */
 static void scaffolding_window_destroy(GtkWidget *widget, gpointer data)
 {
@@ -264,11 +290,21 @@ static void scaffolding_window_destroy(GtkWidget *widget, gpointer data)
 	}
 }
 
-/* signal delivered on window delete event, allowing to halt close if
- * download is in progress
+
+/**
+ * gtk event callback on window delete event.
+ *
+ * prevent window close if download is in progress
+ *
+ * \param widget The widget receiving the delete event
+ * \param event The event
+ * \param data The context pointer passed when the connection was made.
+ * \return TRUE to indicate message handled.
  */
-static gboolean scaffolding_window_delete_event(GtkWidget *widget,
-		GdkEvent *event, gpointer data)
+static gboolean
+scaffolding_window_delete_event(GtkWidget *widget,
+				GdkEvent *event,
+				gpointer data)
 {
 	struct nsgtk_scaffolding *g = data;
 
@@ -278,8 +314,13 @@ static gboolean scaffolding_window_delete_event(GtkWidget *widget,
 	return TRUE;
 }
 
+
 /**
- * Update the scaffoling button sensitivity, url bar and local history size
+ * Update the scaffolding controls
+ *
+ * The button sensitivity, url bar and local history visibility are updated
+ *
+ * \param g The scaffolding context to update
  */
 static void scaffolding_update_context(struct nsgtk_scaffolding *g)
 {
@@ -298,25 +339,38 @@ static void scaffolding_update_context(struct nsgtk_scaffolding *g)
 	nsgtk_local_history_hide();
 }
 
+
 /**
  * Make the throbber run.
+ *
+ * scheduled callback to update the throbber
+ *
+ * \param p The context passed when scheduled.
  */
 static void nsgtk_throb(void *p)
 {
 	struct nsgtk_scaffolding *g = p;
 
-	if (g->throb_frame >= (nsgtk_throbber->nframes - 1))
+	if (g->throb_frame >= (nsgtk_throbber->nframes - 1)) {
 		g->throb_frame = 1;
-	else
+	} else {
 		g->throb_frame++;
+	}
 
-	gtk_image_set_from_pixbuf(g->throbber, nsgtk_throbber->framedata[
-							g->throb_frame]);
+	gtk_image_set_from_pixbuf(g->throbber,
+			nsgtk_throbber->framedata[g->throb_frame]);
 
 	nsgtk_schedule(100, nsgtk_throb, p);
 }
 
-static guint nsgtk_scaffolding_update_edit_actions_sensitivity(
+
+/**
+ * edit the sensitivity of focused widget
+ *
+ * \param g The scaffolding context.
+ */
+static guint
+nsgtk_scaffolding_update_edit_actions_sensitivity(
 		struct nsgtk_scaffolding *g)
 {
 	GtkWidget *widget = gtk_window_get_focus(g->window);
@@ -350,7 +404,13 @@ static guint nsgtk_scaffolding_update_edit_actions_sensitivity(
 }
 
 
-static void nsgtk_scaffolding_enable_edit_actions_sensitivity(
+/**
+ * make edit actions sensitive
+ *
+ * \param g The scaffolding context.
+ */
+static void
+nsgtk_scaffolding_enable_edit_actions_sensitivity(
 		struct nsgtk_scaffolding *g)
 {
 
@@ -363,22 +423,46 @@ static void nsgtk_scaffolding_enable_edit_actions_sensitivity(
 }
 
 /* signal handling functions for the toolbar, URL bar, and menu bar */
-static gboolean nsgtk_window_edit_menu_clicked(GtkWidget *widget,
-		struct nsgtk_scaffolding *g)
+
+/**
+ * gtk event for edit menu being show
+ *
+ * \param widget The menu widget
+ * \param g scaffolding handle
+ * \return TRUE to indicate event handled
+ */
+static gboolean
+nsgtk_window_edit_menu_shown(GtkWidget *widget,
+			     struct nsgtk_scaffolding *g)
 {
 	nsgtk_scaffolding_update_edit_actions_sensitivity(g);
 
 	return TRUE;
 }
 
-static gboolean nsgtk_window_edit_menu_hidden(GtkWidget *widget,
-		struct nsgtk_scaffolding *g)
+/**
+ * gtk event handler for edit menu being hidden
+ *
+ * \param widget The menu widget
+ * \param g scaffolding handle
+ * \return TRUE to indicate event handled
+ */
+static gboolean
+nsgtk_window_edit_menu_hidden(GtkWidget *widget,
+			      struct nsgtk_scaffolding *g)
 {
 	nsgtk_scaffolding_enable_edit_actions_sensitivity(g);
 
 	return TRUE;
 }
 
+/**
+ * gtk event handler for popup menu being hidden.
+ *
+ * \param widget The menu widget
+ * \param g scaffolding handle
+ * \return TRUE to indicate event handled
+ */
 static gboolean nsgtk_window_popup_menu_hidden(GtkWidget *widget,
 		struct nsgtk_scaffolding *g)
 {
@@ -386,6 +470,7 @@ static gboolean nsgtk_window_popup_menu_hidden(GtkWidget *widget,
 	return TRUE;
 }
 
+/* exported interface documented in gtk/scaffolding.h */
 gboolean nsgtk_window_url_activate_event(GtkWidget *widget, gpointer data)
 {
 	struct nsgtk_scaffolding *g = data;
@@ -408,8 +493,14 @@ gboolean nsgtk_window_url_activate_event(GtkWidget *widget, gpointer data)
 	return TRUE;
 }
 
+
 /**
  * update handler for URL entry widget
+ *
+ * \param widget The widget receiving the delete event
+ * \param event The event
+ * \param data The context pointer passed when the connection was made.
+ * \return TRUE to indicate signal handled.
  */
 gboolean
 nsgtk_window_url_changed(GtkWidget *widget,
@@ -419,11 +510,23 @@ nsgtk_window_url_changed(GtkWidget *widget,
 	return nsgtk_completion_update(GTK_ENTRY(widget));
 }
 
+
 /**
  * Event handler for popup menu on toolbar.
+ *
+ * \param toolbar The toolbar being clicked
+ * \param x The x coordinate where the click happened
+ * \param y The x coordinate where the click happened
+ * \param button the buttons being pressed
+ * \param data The context pointer passed when the connection was made.
+ * \return TRUE to indicate event handled.
  */
-static gboolean nsgtk_window_tool_bar_clicked(GtkToolbar *toolbar,
-		gint x, gint y,	gint button, gpointer data)
+static gboolean
+nsgtk_window_tool_bar_clicked(GtkToolbar *toolbar,
+			      gint x,
+			      gint y,
+			      gint button,
+			      gpointer data)
 {
 	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 
@@ -437,23 +540,40 @@ static gboolean nsgtk_window_tool_bar_clicked(GtkToolbar *toolbar,
 	return TRUE;
 }
 
+
 /**
  * Update the menus when the number of tabs changes.
+ *
+ * \param notebook The notebook all the tabs are in
+ * \param page The newly added page container widget
+ * \param page_num The index of the newly added page
+ * \param g The scaffolding context containing the notebook
  */
-static void nsgtk_window_tabs_add(GtkNotebook *notebook,
-		GtkWidget *page, guint page_num, struct nsgtk_scaffolding *g)
+static void
+nsgtk_window_tabs_add(GtkNotebook *notebook,
+		      GtkWidget *page,
+		      guint page_num,
+		      struct nsgtk_scaffolding *g)
 {
 	gboolean visible = gtk_notebook_get_show_tabs(g->notebook);
-	g_object_set(g->menu_bar->view_submenu->tabs_menuitem, "visible", visible, NULL);
-	g_object_set(g->menu_popup->view_submenu->tabs_menuitem, "visible", visible, NULL);
+	g_object_set(g->menu_bar->view_submenu->tabs_menuitem,
+		     "visible", visible, NULL);
+	g_object_set(g->menu_popup->view_submenu->tabs_menuitem,
+		     "visible", visible, NULL);
 	g->buttons[NEXTTAB_BUTTON]->sensitivity = visible;
 	g->buttons[PREVTAB_BUTTON]->sensitivity = visible;
 	g->buttons[CLOSETAB_BUTTON]->sensitivity = visible;
 	nsgtk_scaffolding_set_sensitivity(g);
 }
 
+
 /**
  * Update the menus when the number of tabs changes.
+ *
+ * \param notebook The notebook all the tabs are in
+ * \param page The page container widget being removed
+ * \param page_num The index of the removed page
+ * \param gs The scaffolding context containing the notebook
  */
 static void
 nsgtk_window_tabs_remove(GtkNotebook *notebook,
@@ -462,7 +582,7 @@ nsgtk_window_tabs_remove(GtkNotebook *notebook,
 			 struct nsgtk_scaffolding *gs)
 {
 	/* if the scaffold is being destroyed it is not useful to
-	 * update the state, futher many of the widgets may have
+	 * update the state, further many of the widgets may have
 	 * already been destroyed.
 	 */
 	if (gtk_widget_in_destruction(GTK_WIDGET(gs->window)) == TRUE) {
@@ -486,6 +606,8 @@ nsgtk_window_tabs_remove(GtkNotebook *notebook,
 
 /**
  * Handle opening a file path.
+ *
+ * \param filename The filename to open.
  */
 static void nsgtk_openfile_open(const char *filename)
 {
@@ -549,6 +671,7 @@ MULTIHANDLER(newwindow)
 	return TRUE;
 }
 
+/* exported interface documented in gtk/scaffolding.h */
 nserror nsgtk_scaffolding_new_tab(struct gui_window *gw)
 {
 	struct browser_window *bw = nsgtk_get_browser_window(gw);
@@ -618,8 +741,16 @@ MULTIHANDLER(openfile)
 	return TRUE;
 }
 
-static gboolean nsgtk_filter_directory(const GtkFileFilterInfo *info,
-		gpointer data)
+/**
+ * callback to determine if a path is a directory.
+ *
+ * \param info The path information
+ * \param data context pointer set to NULL
+ * \return TRUE if path is a directory else false
+ */
+static gboolean
+nsgtk_filter_directory(const GtkFileFilterInfo *info,
+		       gpointer data)
 {
 	DIR *d = opendir(info->filename);
 	if (d == NULL)
@@ -674,7 +805,7 @@ MULTIHANDLER(savepage)
 	path = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(fc));
 	d = opendir(path);
 	if (d == NULL) {
- 		LOG("Unable to open directory %s for complete save: %s", path, strerror(errno));
+		LOG("Unable to open directory %s for complete save: %s", path, strerror(errno));
 		if (errno == ENOTDIR)
 			nsgtk_warning("NoDirError", path);
 		else
@@ -724,7 +855,7 @@ MULTIHANDLER(pdf)
 	strncat(dirname, "/", PATH_MAX - strlen(dirname));
 	dirname[PATH_MAX - 1] = '\0';
 
-	/* this way the scale used by PDF functions is synchronized with that
+	/* this way the scale used by PDF functions is synchronised with that
 	 * used by the all-purpose print interface
 	 */
 	haru_nsfont_set_scale((float)option_export_scale / 100);
@@ -880,7 +1011,7 @@ MULTIHANDLER(print)
 			CONTENT_TEXTPLAIN) {
 		res = gtk_print_operation_run(print_op,
 				GTK_PRINT_OPERATION_ACTION_PRINT_DIALOG,
-    				g->window,
+				g->window,
 				NULL);
 	}
 
@@ -2090,7 +2221,7 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 	/* toolbar URL bar menu bar search bar signal handlers */
 	CONNECT(gs->menu_bar->edit_submenu->edit, "show",
-		nsgtk_window_edit_menu_clicked, gs);
+		nsgtk_window_edit_menu_shown, gs);
 	CONNECT(gs->menu_bar->edit_submenu->edit, "hide",
 		nsgtk_window_edit_menu_hidden, gs);
 
@@ -2605,7 +2736,7 @@ void nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g,
 			gtk_widget_show(GTK_WIDGET(g->menu_popup->paste_menuitem));
 		}
 
-		/* hide customize */
+		/* hide customise */
 		popup_menu_hide(g->menu_popup, false, false, false, true);
 	}
 

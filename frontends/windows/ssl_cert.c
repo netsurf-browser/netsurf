@@ -341,7 +341,7 @@ nsw32_window_ssl_cert_size(HWND hwnd, struct nsw32_sslcert_window *certwin)
 /**
  * Destroy a certificate viewing window
  *
- * \param certwin The certificate viewer context
+ * \param crtwin The certificate viewer context
  * \return NSERROR_OK on success otherwise appropriate error code
  */
 static nserror nsw32_crtvrfy_destroy(struct nsw32_sslcert_window *crtwin)

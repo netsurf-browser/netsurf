@@ -1694,13 +1694,13 @@ win32_window_place_caret(struct gui_window *w, int x, int y,
 /**
  * Remove the win32 input focus from window
  *
- * \param g window with caret
+ * \param gw window with caret
  */
-static void win32_window_remove_caret(struct gui_window *w)
+static void win32_window_remove_caret(struct gui_window *gw)
 {
-	if (w == NULL)
+	if (gw == NULL)
 		return;
-	HideCaret(w->drawingarea);
+	HideCaret(gw->drawingarea);
 }
 
 

@@ -381,6 +381,7 @@ static nserror knockout_plot_flush(const struct redraw_context *ctx)
 /**
  * Knockout a section of previous rendering
  *
+ * \param ctx The current redraw context.
  * \param x0    The left edge of the removal box
  * \param y0    The bottom edge of the removal box
  * \param x1    The right edge of the removal box
@@ -516,6 +517,7 @@ knockout_calculate(const struct redraw_context *ctx,
  *
  * \param ctx The current redraw context.
  * \param pstyle Style controlling the rectangle plot.
+ * \param rect A rectangle defining the line to be drawn
  * \return NSERROR_OK on success else error code.
  */
 static nserror
@@ -575,11 +577,12 @@ knockout_plot_rectangle(const struct redraw_context *ctx,
 /**
  * Knockout line plotting.
  *
- * plot a line from (x0,y0) to (x1,y1). Coordinates are at centre of
- *  line width/thickness.
+ * plot a line from (x0,y0) to (x1,y1). Coordinates are at
+ *  centre of line width/thickness.
  *
  * \param ctx The current redraw context.
  * \param pstyle Style controlling the line plot.
+ * \param line A rectangle defining the line to be drawn
  * \return NSERROR_OK on success else error code.
  */
 static nserror
@@ -606,7 +609,9 @@ knockout_plot_line(const struct redraw_context *ctx,
  * rule.
  *
  * \param ctx The current redraw context.
- * \param pstyle Style controlling the polygon plot.
+ * \param style Style controlling the polygon plot.
+ * \param p verticies of polygon
+ * \param n number of verticies.
  * \return NSERROR_OK on success else error code.
  */
 static nserror
@@ -750,11 +755,15 @@ knockout_plot_text(const struct redraw_context *ctx,
 
 
 /**
- * Plots a circle
+ * knockout circle plotting
  *
  * Plot a circle centered on (x,y), which is optionally filled.
  *
  * \param ctx The current redraw context.
+ * \param pstyle Style controlling the circle plot.
+ * \param x x coordinate of circle centre.
+ * \param y y coordinate of circle centre.
+ * \param radius circle radius.
  * \return NSERROR_OK on success else error code.
  */
 static nserror
@@ -786,6 +795,12 @@ knockout_plot_disc(const struct redraw_context *ctx,
  *  horizontal, in degrees.
  *
  * \param ctx The current redraw context.
+ * \param pstyle Style controlling the arc plot.
+ * \param x The x coordinate of the arc.
+ * \param y The y coordinate of the arc.
+ * \param radius The radius of the arc.
+ * \param angle1 The start angle of the arc.
+ * \param angle2 The finish angle of the arc.
  * \return NSERROR_OK on success else error code.
  */
 static nserror
@@ -828,6 +843,13 @@ knockout_plot_arc(const struct redraw_context *ctx,
  * the image is to be scaled to.
  *
  * \param ctx The current redraw context.
+ * \param bitmap The bitmap to plot
+ * \param x The x coordinate to plot the bitmap
+ * \param y The y coordiante to plot the bitmap
+ * \param width The width of area to plot the bitmap into
+ * \param height The height of area to plot the bitmap into
+ * \param bg the background colour to alpha blend into
+ * \param flags the flags controlling the type of plot operation
  * \return NSERROR_OK on success else error code.
  */
 static nserror
@@ -905,6 +927,7 @@ knockout_plot_bitmap(const struct redraw_context *ctx,
  * Used when plotter implements export to a vector graphics file format.
  *
  * \param ctx The current redraw context.
+ * \param name The name of the group being started.
  * \return NSERROR_OK on success else error code.
  */
 static nserror
@@ -923,6 +946,14 @@ knockout_plot_group_start(const struct redraw_context *ctx, const char *name)
 }
 
 
+/**
+ * End a group of objects.
+ *
+ * Used when plotter implements export to a vector graphics file format.
+ *
+ * \param ctx The current redraw context.
+ * \return NSERROR_OK on success else error code.
+ */
 static nserror knockout_plot_group_end(const struct redraw_context *ctx)
 {
 	if (real_plot.group_end == NULL) {

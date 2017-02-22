@@ -42,6 +42,7 @@ struct browser_window;
  *
  * \param cw_t Callback table for core_window containing the treeview.
  * \param core_window_handle The core_window in which the treeview is shown.
+ * \param bw browser window to show history of.
  * \param[out] session The created local history session context.
  * \return NSERROR_OK on success and session set, appropriate error code otherwise
  */
@@ -67,8 +68,8 @@ nserror local_history_fini(struct local_history_session *session);
  * Redraw the global history.
  *
  * \param session The local history session context.
- * \param x     X coordinate to render treeview at
- * \param y     Y coordinate to render treeview at
+ * \param x     X coordinate to render history at
+ * \param y     Y coordinate to render history at
  * \param clip  Current clip rectangle (wrt tree origin)
  * \param ctx   Current redraw context
  */
@@ -87,8 +88,8 @@ void local_history_mouse_action(struct local_history_session *session, enum brow
 /**
  * Key press handling.
  *
- * \param key The ucs4 character codepoint
  * \param session The local history session context.
+ * \param key The ucs4 character codepoint
  * \return true if the keypress is dealt with, false otherwise.
  */
 bool local_history_keypress(struct local_history_session *session, uint32_t key);
@@ -97,6 +98,8 @@ bool local_history_keypress(struct local_history_session *session, uint32_t key)
  * Change the browser window to draw local history for.
  *
  * \param session The local history session context.
+ * \param bw browser window to show history of.
+ * \return NSERROR_OK or appropriate error code.
  */
 nserror local_history_set(struct local_history_session *session, struct browser_window *bw);
 
@@ -104,6 +107,9 @@ nserror local_history_set(struct local_history_session *session, struct browser_
  * get size of local history content area
  *
  * \param session The local history session context.
+ * \param[out] width on sucessful return the width of the localhistory content
+ * \param[out] height on sucessful return the height of the localhistory content
+ * \return NSERROR_OK or appropriate error code.
  */
 nserror local_history_get_size(struct local_history_session *session, int *width, int *height);
 
