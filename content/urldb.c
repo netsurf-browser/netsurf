@@ -3356,9 +3356,11 @@ bool urldb_set_cookie(const char *header, nsurl *url, nsurl *referer)
 
 	do {
 		struct cookie_internal_data *c;
-		const char *suffix;
 		char *dot;
 		size_t len;
+#ifdef WITH_NSPSL
+		const char *suffix;
+#endif
 
 		c = urldb_parse_cookie(url, &cur);
 		if (!c) {
