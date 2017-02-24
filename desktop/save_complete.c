@@ -637,9 +637,9 @@ static bool save_complete_handle_attr_value(save_complete_ctx *ctx,
 	 *
 	 * Attribute:      Elements:
 	 *
-	 * 1)   data         <object>
-	 * 2)   href         <a> <area> <link>
-	 * 3)   src          <script> <input> <frame> <iframe> <img>
+	 * 1)   data         object
+	 * 2)   href         a, area, link
+	 * 3)   src          script, input, frame, iframe, img
 	 * 4)   background   any (except those above)
 	 */
 	/* 1 */

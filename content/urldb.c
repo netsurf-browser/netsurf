@@ -118,7 +118,7 @@
 /**
  * cookie entry.
  *
- * \warn This *must* be kept in sync with the public interface in
+ * \warning This *must* be kept in sync with the public interface in
  *   netsurf/cookie_db.h
  */
 struct cookie_internal_data {

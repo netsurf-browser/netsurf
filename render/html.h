@@ -88,7 +88,7 @@ struct html_script {
 };
 
 
-/** An object (<img>, <object>, etc.) in a CONTENT_HTML document. */
+/** An object (img, object, etc. tag) in a CONTENT_HTML document. */
 struct content_html_object {
 	struct content *parent;		/**< Parent document */
 	struct content_html_object *next; /**< Next in chain */
@@ -105,7 +105,7 @@ struct html_scrollbar_data {
 	struct box *box;
 };
 
-/** Frame tree (<frameset>, <frame>) */
+/** Frame tree (frameset or frame tag) */
 struct content_html_frames {
 	int cols;	/** number of columns in frameset */
 	int rows;	/** number of rows in frameset */
@@ -126,7 +126,7 @@ struct content_html_frames {
 	struct content_html_frames *children; /** [cols * rows] children */
 };
 
-/** Inline frame list (<iframe>) */
+/** Inline frame list (iframe tag) */
 struct content_html_iframe {
   	struct box *box;
 

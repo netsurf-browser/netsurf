@@ -17,7 +17,8 @@
  */
 
 /**
- * \file Fetch operation implementation for win32
+ * \file
+ * Fetch operation implementation for win32
  */
 
 #include <stdlib.h>

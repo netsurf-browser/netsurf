@@ -567,6 +567,10 @@ static bool html_redraw_file(int x, int y, int width, int height,
 /**
  * Plot background images.
  *
+ * The reason for the presence of \a background is the backwards compatibility
+ * mess that is backgrounds on &lt;body&gt;. The background will be drawn relative
+ * to \a box, using the background information contained within \a background.
+ *
  * \param  x	  coordinate of box
  * \param  y	  coordinate of box
  * \param  box	  box to draw background image of
@@ -576,10 +580,6 @@ static bool html_redraw_file(int x, int y, int width, int height,
  * \param  background  box containing background details (usually \a box)
  * \param  ctx	  current redraw context
  * \return true if successful, false otherwise
- *
- * The reason for the presence of ::background is the backwards compatibility
- * mess that is backgrounds on &lt;body&gt;. The background will be drawn relative
- * to \a box, using the background information contained within \a background.
  */
 
 static bool html_redraw_background(int x, int y, struct box *box, float scale,

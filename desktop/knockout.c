@@ -609,7 +609,7 @@ knockout_plot_line(const struct redraw_context *ctx,
  * rule.
  *
  * \param ctx The current redraw context.
- * \param style Style controlling the polygon plot.
+ * \param pstyle Style controlling the polygon plot.
  * \param p verticies of polygon
  * \param n number of verticies.
  * \return NSERROR_OK on success else error code.
