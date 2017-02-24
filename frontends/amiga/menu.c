@@ -389,7 +389,7 @@ static struct Menu *ami_menu_layout_gt(struct ami_menu_data **md, int max)
 		else
 			nm[i].nm_Label = md[i]->menulab;
 
-		if((md[i]->menukey) && (strlen(md[i]->menukey) > 1)) {
+		if((md[i]->menukey) && (strlen(md[i]->menukey) == 1)) {
 			nm[i].nm_CommKey = md[i]->menukey;
 		}
 		nm[i].nm_Flags = md[i]->flags;
