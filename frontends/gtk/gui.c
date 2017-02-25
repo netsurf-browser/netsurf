@@ -58,6 +58,7 @@
 #include "gtk/download.h"
 #include "gtk/fetch.h"
 #include "gtk/gui.h"
+#include "gtk/local_history.h"
 #include "gtk/global_history.h"
 #include "gtk/hotlist.h"
 #include "gtk/throbber.h"
@@ -434,6 +435,12 @@ static void gui_quit(void)
 	res = nsgtk_cookies_destroy();
 	if (res != NSERROR_OK) {
 		LOG("Error finalising cookie viewer: %s",
+		    messages_get_errorcode(res));
+	}
+
+	res = nsgtk_local_history_destroy();
+	if (res != NSERROR_OK) {
+		LOG("Error finalising local history viewer: %s",
 		    messages_get_errorcode(res));
 	}
 
