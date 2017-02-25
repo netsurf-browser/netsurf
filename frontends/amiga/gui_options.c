@@ -1898,6 +1898,15 @@ static void ami_gui_opts_use(bool save)
 #ifndef __amigaos4__
 	GetAttr(GA_Selected, gow->objects[GID_OPTS_FONT_BITMAP], (ULONG *)&data);
 	ami_font_fini();
+
+	if((nsoption_bool(bitmap_fonts) == true) && (data == false)) {
+		nsoption_set_charp(font_sans, (char *)strdup("CGTriumvirate"));
+		nsoption_set_charp(font_serif, (char *)strdup("CGTimes"));
+		nsoption_set_charp(font_mono, (char *)strdup("LetterGothic"));
+		nsoption_set_charp(font_cursive, (char *)strdup("CGTriumvirate"));
+		nsoption_set_charp(font_fantasy, (char *)strdup("CGTimes"));
+	}
+
 	if(data) {
 		nsoption_set_bool(bitmap_fonts, true);
 	} else { 
