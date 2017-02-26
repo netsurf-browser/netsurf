@@ -111,24 +111,9 @@ nsgtk_local_history_draw(struct nsgtk_corewindow *nsgtk_cw, struct rect *r)
 		.plot = &nsgtk_plotters
 	};
 	struct nsgtk_local_history_window *lhw;
-	GtkAdjustment *vscroll;
-	GtkAdjustment *hscroll;
-	struct rect c;
-	int vscroll_val;
-	int hscroll_val;
-
-	vscroll = gtk_scrolled_window_get_vadjustment(nsgtk_cw->scrolled);
-	hscroll = gtk_scrolled_window_get_hadjustment(nsgtk_cw->scrolled);
-	vscroll_val = gtk_adjustment_get_value(vscroll);
-	hscroll_val = gtk_adjustment_get_value(hscroll);
-
 
 	/* technically degenerate container of */
 	lhw = (struct nsgtk_local_history_window *)nsgtk_cw;
-	c.x0 = r->x0 + hscroll_val;
-	c.y0 = r->y0 + vscroll_val;
-	c.x1 = r->x1 + hscroll_val;
-	c.y1 = r->y1 + vscroll_val;
 
 	ctx.plot->clip(&ctx, r);
 	local_history_redraw(lhw->session, r->x0, r->y0, r, &ctx);
