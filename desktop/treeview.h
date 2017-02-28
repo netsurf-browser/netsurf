@@ -37,6 +37,10 @@ struct core_window_callback_table;
 typedef struct treeview treeview;
 typedef struct treeview_node treeview_node;
 
+
+/**
+ * treeview node type
+ */
 enum treeview_node_type {
 	TREE_NODE_NONE		= 0,		/**< No node  */
 	TREE_NODE_ROOT		= (1 << 0),	/**< Node is treeview's root */
@@ -44,18 +48,29 @@ enum treeview_node_type {
 	TREE_NODE_ENTRY		= (1 << 2)	/**< Node is an entry */
 };
 
+
+/**
+ * Relationship between nodes
+ */
 enum treeview_relationship {
 	TREE_REL_FIRST_CHILD,
 	TREE_REL_NEXT_SIBLING
-};					/**< Relationship between nodes */
+};
 
+
+/**
+ * Node change handling options
+ */
 typedef enum {
 	TREE_OPTION_NONE		= (0),		/* No flags set */
 	TREE_OPTION_SPECIAL_DIR		= (1 << 0),	/* Special folder */
 	TREE_OPTION_SUPPRESS_RESIZE	= (1 << 1),	/* Suppress callback */
 	TREE_OPTION_SUPPRESS_REDRAW	= (1 << 2)	/* Suppress callback */
-} treeview_node_options_flags;		/**< Node change handling options */
+} treeview_node_options_flags;
 
+/**
+ * treeview control flags
+ */
 typedef enum {
 	TREEVIEW_NO_FLAGS	= (0),		/**< No flags set */
 	TREEVIEW_NO_MOVES	= (1 << 0),	/**< No node drags */
@@ -64,20 +79,28 @@ typedef enum {
 	TREEVIEW_DEL_EMPTY_DIRS	= (1 << 2)	/**< Delete dirs on empty */
 } treeview_flags;
 
+/**
+ * treeview message types
+ */
 enum treeview_msg {
 	TREE_MSG_NODE_DELETE,		/**< Node to be deleted */
 	TREE_MSG_NODE_EDIT,		/**< Node to be edited */
 	TREE_MSG_NODE_LAUNCH		/**< Node to be launched */
 };
+
+
+/**
+ * treeview message
+ */
 struct treeview_node_msg {
 	enum treeview_msg msg; /**< The message type */
 	union {
 		struct {
-			bool user; /* True iff delete by user interaction */
+			bool user; /**< True iff delete by user interaction */
 		} delete;
 		struct {
-			lwc_string *field; /* The field being edited */
-			const char *text;  /* The proposed new value */
+			lwc_string *field; /**< The field being edited */
+			const char *text;  /**< The proposed new value */
 		} node_edit; /* Client may call treeview_update_node_* */
 		struct {
 			browser_mouse_state mouse; /* Button / modifier used */
@@ -85,6 +108,10 @@ struct treeview_node_msg {
 	} data; /**< The message data. */
 };
 
+
+/**
+ * treeview field flags
+ */
 enum treeview_field_flags {
 	TREE_FLAG_NONE		= 0,		/**< No flags set */
 	TREE_FLAG_ALLOW_EDIT	= (1 << 0),	/**< Whether allow edit field */
@@ -92,11 +119,20 @@ enum treeview_field_flags {
 	TREE_FLAG_SHOW_NAME	= (1 << 2),	/**< Whether field name shown */
 	TREE_FLAG_COPY_TEXT	= (1 << 3)	/**< Whether to copy to clipb */
 };
+
+
+/**
+ * Treeview field description
+ */
 struct treeview_field_desc {
 	lwc_string *field;			/**< A treeview field name */
 	enum treeview_field_flags flags;	/**< Flags for field */
-}; /**< Treeview field description */
+};
 
+
+/**
+ * Treeview field data
+ */
 struct treeview_field_data {
 	lwc_string *field;		/**< Field name */
 	const char *value;		/**< Field value */
@@ -104,10 +140,14 @@ struct treeview_field_data {
 };
 
 
+/**
+ * Client callbacks for events concerning nodes
+ */
 struct treeview_callback_table {
 	nserror (*folder)(struct treeview_node_msg msg, void *data);
 	nserror (*entry)(struct treeview_node_msg msg, void *data);
-}; /**< Client callbacks for events concerning nodes */
+};
+
 
 /**
  * Prepare treeview module for treeview usage
@@ -116,6 +156,7 @@ struct treeview_callback_table {
  */
 nserror treeview_init(void);
 
+
 /**
  * Finalise the treeview module (all treeviews must have been destroyed first)
  *
@@ -123,8 +164,17 @@ nserror treeview_init(void);
  */
 nserror treeview_fini(void);
 
+
 /**
  * Create a treeview
+ *
+ * The fields array order is as follows (N = n_fields):
+ *
+ *    fields[0]			Main field for entries (shown when not expanded)
+ *    fields[1]...fields[N-2]	Additional fields for entries
+ *    fields[N-1]		Field for folder nodes
+ *
+ * So fields[0] and fields[N-1] have TREE_FLAG_DEFAULT set.
  *
  * \param tree		Returns created treeview object
  * \param callbacks	Treeview client node event callbacks
@@ -134,20 +184,13 @@ nserror treeview_fini(void);
  * \param cw		The core_window in which the treeview is shown
  * \param flags		Treeview behaviour flags
  * \return NSERROR_OK on success, appropriate error otherwise
- *
- * The fields array order is as follows (N = n_fields):
- *
- *    fields[0]			Main field for entries (shown when not expanded)
- *    fields[1]...fields[N-2]	Additional fields for entries
- *    fields[N-1]		Field for folder nodes
- *
- * So fields[0] and fields[N-1] have TREE_FLAG_DEFAULT set.
  */
 nserror treeview_create(treeview **tree,
-		const struct treeview_callback_table *callbacks,
-		int n_fields, struct treeview_field_desc fields[],
-		const struct core_window_callback_table *cw_t,
-		struct core_window *cw, treeview_flags flags);
+			const struct treeview_callback_table *callbacks,
+			int n_fields, struct treeview_field_desc fields[],
+			const struct core_window_callback_table *cw_t,
+			struct core_window *cw, treeview_flags flags);
+
 
 /**
  * Attach a treeview to a corewindow.
@@ -160,29 +203,38 @@ nserror treeview_create(treeview **tree,
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror treeview_cw_attach(treeview *tree,
-		const struct core_window_callback_table *cw_t,
-		struct core_window *cw);
+			   const struct core_window_callback_table *cw_t,
+			   struct core_window *cw);
+
 
 /**
  * Detach a treeview from a corewindow
  *
- * \param tree		Treeview object
+ * \param tree Treeview object
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror treeview_cw_detach(treeview *tree);
 
+
 /**
  * Destroy a treeview object
  *
- * \param tree		Treeview object to destroy
- * \return NSERROR_OK on success, appropriate error otherwise
- *
  * Will emit folder and entry deletion msg callbacks for all nodes in treeview.
+ *
+ * \param tree Treeview object to destroy
+ * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror treeview_destroy(treeview *tree);
 
+
 /**
  * Find a releation for node creation.
+ *
+ * If at_y is set, we find a relation that will put the created node at that
+ * position.
+ *
+ * If at_y is unset, we find a relation that would put the node below the first
+ * selected node, or at the end of the treeview if no nodes selected.
  *
  * \param tree		Treeview object in which to create folder
  * \param relation	Existing node to insert as relation of, or NULL
@@ -190,15 +242,11 @@ nserror treeview_destroy(treeview *tree);
  * \param at_y		Iff true, insert at y-offest
  * \param y		Y-offset in px from top of hotlist.  Ignored if (!at_y).
  * \return NSERROR_OK on success, appropriate error otherwise
- *
- * If at_y is set, we find a relation that will put the created node at that
- * position.
- *
- * If at_y is unset, we find a relation that would put the node below the first
- * selected node, or at the end of the treeview if no nodes selected.
  */
 nserror treeview_get_relation(treeview *tree, treeview_node **relation,
-		enum treeview_relationship *rel, bool at_y, int y);
+			      enum treeview_relationship *rel,
+			      bool at_y, int y);
+
 
 /**
  * Create a folder node in given treeview
@@ -217,11 +265,13 @@ nserror treeview_get_relation(treeview *tree, treeview_node **relation,
  * If relation is NULL, will insert as child of root node.
  */
 nserror treeview_create_node_folder(treeview *tree,
-		treeview_node **folder,
-		treeview_node *relation,
-		enum treeview_relationship rel,
-		const struct treeview_field_data *field,
-		void *data, treeview_node_options_flags flags);
+				    treeview_node **folder,
+				    treeview_node *relation,
+				    enum treeview_relationship rel,
+				    const struct treeview_field_data *field,
+				    void *data,
+				    treeview_node_options_flags flags);
+
 
 /**
  * Create an entry node in given treeview
@@ -240,11 +290,13 @@ nserror treeview_create_node_folder(treeview *tree,
  * If relation is NULL, will insert as child of root node.
  */
 nserror treeview_create_node_entry(treeview *tree,
-		treeview_node **entry,
-		treeview_node *relation,
-		enum treeview_relationship rel,
-		const struct treeview_field_data fields[],
-		void *data, treeview_node_options_flags flags);
+				   treeview_node **entry,
+				   treeview_node *relation,
+				   enum treeview_relationship rel,
+				   const struct treeview_field_data fields[],
+				   void *data,
+				   treeview_node_options_flags flags);
+
 
 /**
  * Update an folder node in given treeview
@@ -258,9 +310,10 @@ nserror treeview_create_node_entry(treeview *tree,
  * Field name must match name past in treeview_create fields[N-1].
  */
 nserror treeview_update_node_folder(treeview *tree,
-		treeview_node *folder,
-		const struct treeview_field_data *field,
-		void *data);
+				    treeview_node *folder,
+				    const struct treeview_field_data *field,
+				    void *data);
+
 
 /**
  * Update an entry node in given treeview
@@ -274,9 +327,9 @@ nserror treeview_update_node_folder(treeview *tree,
  * Fields array names must match names past in treeview_create fields[0...N-2].
  */
 nserror treeview_update_node_entry(treeview *tree,
-		treeview_node *entry,
-		const struct treeview_field_data fields[],
-		void *data);
+				   treeview_node *entry,
+				   const struct treeview_field_data fields[],
+				   void *data);
 
 
 /**
@@ -289,11 +342,18 @@ nserror treeview_update_node_entry(treeview *tree,
  * \return NSERROR_OK on success, or appropriate error otherwise
  */
 typedef nserror (*treeview_walk_cb)(void *ctx, void *node_data,
-		enum treeview_node_type type, bool *abort);
+				    enum treeview_node_type type, bool *abort);
+
 
 /**
  * Walk (depth first) a treeview subtree, calling a callback at each node of
  * required type.
+ *
+ * Example usage: To export a treeview as XML, XML elements can be opened in
+ * enter_cb, and closed in leave_cb.
+ *
+ * Note, if deleting returned node in enter_cb, the walk must be terminated by
+ * setting abort to true.
  *
  * \param tree		Treeview object to walk
  * \param root		Root node to walk tree from (or NULL for tree root)
@@ -302,16 +362,11 @@ typedef nserror (*treeview_walk_cb)(void *ctx, void *node_data,
  * \param ctx		Client context, passed back to callback function
  * \param type		The node type(s) of interest
  * \return NSERROR_OK on success, or appropriate error otherwise
- *
- * Example usage: To export a treeview as XML, XML elements can be opened in
- * enter_cb, and closed in leave_cb.
- *
- * Note, if deleting returned node in enter_cb, the walk must be terminated by
- * setting abort to true.
  */
 nserror treeview_walk(treeview *tree, treeview_node *root,
-		treeview_walk_cb enter_cb, treeview_walk_cb leave_cb,
-		void *ctx, enum treeview_node_type type);
+		      treeview_walk_cb enter_cb, treeview_walk_cb leave_cb,
+		      void *ctx, enum treeview_node_type type);
+
 
 /**
  * Delete a treeview node
@@ -324,7 +379,8 @@ nserror treeview_walk(treeview *tree, treeview_node *root,
  * Will emit folder or entry deletion msg callback.
  */
 nserror treeview_delete_node(treeview *tree, treeview_node *n,
-		treeview_node_options_flags flags);
+			     treeview_node_options_flags flags);
+
 
 /**
  * Expand a treeview node
@@ -335,6 +391,7 @@ nserror treeview_delete_node(treeview *tree, treeview_node *n,
  */
 nserror treeview_node_expand(treeview *tree, treeview_node *node);
 
+
 /**
  * Contract a treeview node
  *
@@ -343,6 +400,7 @@ nserror treeview_node_expand(treeview *tree, treeview_node *node);
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror treeview_node_contract(treeview *tree, treeview_node *node);
+
 
 /**
  * Expand a treeview's nodes
@@ -353,6 +411,7 @@ nserror treeview_node_contract(treeview *tree, treeview_node *node);
  */
 nserror treeview_expand(treeview *tree, bool only_folders);
 
+
 /**
  * Contract a treeview's nodes
  *
@@ -361,6 +420,7 @@ nserror treeview_expand(treeview *tree, bool only_folders);
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror treeview_contract(treeview *tree, bool all);
+
 
 /**
  * Redraw a treeview object
@@ -372,7 +432,8 @@ nserror treeview_contract(treeview *tree, bool all);
  * \param ctx		Current redraw context
  */
 void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
-		const struct redraw_context *ctx);
+		     const struct redraw_context *ctx);
+
 
 /**
  * Key press handling for treeviews.
@@ -383,6 +444,7 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
  */
 bool treeview_keypress(treeview *tree, uint32_t key);
 
+
 /**
  * Handles all kinds of mouse action
  *
@@ -392,15 +454,17 @@ bool treeview_keypress(treeview *tree, uint32_t key);
  * \param y		Y coordinate
  */
 void treeview_mouse_action(treeview *tree,
-		browser_mouse_state mouse, int x, int y);
+			   browser_mouse_state mouse, int x, int y);
+
 
 /**
  * Determine whether treeview has a selection
  *
- * \param tree		Treeview object to delete node from
+ * \param tree Treeview object to delete node from
  * \return true iff treeview has a selection
  */
 bool treeview_has_selection(treeview *tree);
+
 
 /**
  * Get the first selected node
@@ -410,19 +474,21 @@ bool treeview_has_selection(treeview *tree);
  * \return node type of first selected node.
  */
 enum treeview_node_type treeview_get_selection(treeview *tree,
-		void **node_data);
+					       void **node_data);
+
 
 /**
  * Edit the first selected node
  *
- * \param tree		Treeview object to edit selected node in
+ * \param tree Treeview object to edit selected node in
  */
 void treeview_edit_selection(treeview *tree);
+
 
 /**
  * Find current height of a treeview
  *
- * \param tree		Treeview object to find height of
+ * \param tree Treeview object to find height of
  * \return height of treeview in px
  */
 int treeview_get_height(treeview *tree);
