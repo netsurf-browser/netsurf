@@ -1298,11 +1298,13 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 		option = option->next;
 	}
 
-	if (!scrollbar_redraw(menu->scrollbar,
-			x_cp + menu->width - SCROLLBAR_WIDTH,
-      			y_cp,
-			clip, scale, ctx))
+	res = scrollbar_redraw(menu->scrollbar,
+			       x_cp + menu->width - SCROLLBAR_WIDTH,
+			       y_cp,
+			       clip, scale, ctx);
+	if (res != NSERROR_OK) {
 		return false;
+	}
 
 	return true;
 }

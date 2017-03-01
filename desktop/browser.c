@@ -154,8 +154,11 @@ browser_window_set_name(struct browser_window *bw, const char *name)
 }
 
 /* exported interface, documented in browser.h */
-bool browser_window_redraw(struct browser_window *bw, int x, int y,
-		const struct rect *clip, const struct redraw_context *ctx)
+bool
+browser_window_redraw(struct browser_window *bw,
+		      int x, int y,
+		      const struct rect *clip,
+		      const struct redraw_context *ctx)
 {
 	struct redraw_context new_ctx = *ctx;
 	int width = 0;
@@ -164,6 +167,7 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 	content_type content_type;
 	struct content_redraw_data data;
 	struct rect content_clip;
+	nserror res;
 
 	if (bw == NULL) {
 		LOG("NULL browser window");
@@ -299,16 +303,22 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 		if (bw->scroll_x != NULL) {
 			browser_window_get_scrollbar_pos(bw, true,
 					&off_x, &off_y);
-			plot_ok &= scrollbar_redraw(bw->scroll_x,
+			res = scrollbar_redraw(bw->scroll_x,
 					x + off_x, y + off_y, clip,
 					bw->scale, &new_ctx);
+			if (res != NSERROR_OK) {
+				plot_ok = false;
+			}
 		}
 		if (bw->scroll_y != NULL) {
 			browser_window_get_scrollbar_pos(bw, false,
 					&off_x, &off_y);
-			plot_ok &= scrollbar_redraw(bw->scroll_y,
+			res = scrollbar_redraw(bw->scroll_y,
 					x + off_x, y + off_y, clip,
 					bw->scale, &new_ctx);
+			if (res != NSERROR_OK) {
+				plot_ok = false;
+			}
 		}
 	}
 

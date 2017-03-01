@@ -2392,19 +2392,21 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 
 	ctx->plot->clip(ctx, clip);
 
-	if (ta->bar_x != NULL)
+	if (ta->bar_x != NULL) {
 		scrollbar_redraw(ta->bar_x,
 				x / scale + ta->border_width,
 				y / scale + ta->vis_height - ta->border_width -
 						SCROLLBAR_WIDTH,
 				clip, scale, ctx);
+	}
 
-	if (ta->bar_y != NULL)
+	if (ta->bar_y != NULL) {
 		scrollbar_redraw(ta->bar_y,
 				x / scale + ta->vis_width - ta->border_width -
 						SCROLLBAR_WIDTH,
 				y / scale + ta->border_width,
 				clip, scale, ctx);
+	}
 }
 
 
