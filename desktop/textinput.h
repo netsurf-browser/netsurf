@@ -24,19 +24,19 @@
  * Textual input handling interface
  */
 
-#ifndef _NETSURF_DESKTOP_TEXTINPUT_H_
-#define _NETSURF_DESKTOP_TEXTINPUT_H_
+#ifndef NETSURF_DESKTOP_TEXTINPUT_H
+#define NETSURF_DESKTOP_TEXTINPUT_H
 
 struct browser_window;
 
 /**
  * Position the caret and assign a callback for key presses.
  *
- * \param bw		The browser window in which to place the caret
- * \param x		X coordinate of the caret
- * \param y		Y coordinate
- * \param height	Height of caret
- * \param clip		Clip rectangle for caret, or NULL if none
+ * \param bw The browser window in which to place the caret
+ * \param x X coordinate of the caret
+ * \param y Y coordinate
+ * \param height Height of caret
+ * \param clip Clip rectangle for caret, or NULL if none
  */
 void browser_window_place_caret(struct browser_window *bw, int x, int y,
 		int height, const struct rect *clip);

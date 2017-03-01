@@ -16,9 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * System colour handling
- *
+/**
+ * \file
+ * System colour handling implementation.
  */
 
 #include <string.h>
@@ -38,6 +38,7 @@ static lwc_string *colour_list[colour_list_len];
 static lwc_string **ns_system_colour_pw = NULL;
 
 
+/* exported interface documented in desktop/system_colour.h */
 nserror ns_system_colour_init(void)
 {
 	unsigned int ccount;
@@ -61,6 +62,8 @@ nserror ns_system_colour_init(void)
 	return NSERROR_OK;
 }
 
+
+/* exported interface documented in desktop/system_colour.h */
 void ns_system_colour_finalize(void)
 {
 	unsigned int ccount;
@@ -70,21 +73,25 @@ void ns_system_colour_finalize(void)
 	}
 }
 
-colour ns_system_colour_char(const char *name)
+
+/* exported interface documented in desktop/system_colour.h */
+nserror ns_system_colour_char(const char *name, colour *colour_out)
 {
-	colour ret = 0;
 	unsigned int ccount;
 
 	for (ccount = 0; ccount < colour_list_len; ccount++) {
 		if (strcmp(name,
 			   nsoptions[ccount + NSOPTION_SYS_COLOUR_START].key + SLEN("sys_colour_")) == 0) {
-			ret = nsoptions[ccount + NSOPTION_SYS_COLOUR_START].value.c;
-			break;
+			*colour_out = nsoptions[ccount + NSOPTION_SYS_COLOUR_START].value.c;
+			return NSERROR_OK;
 		}
 	}
-	return ret;
+
+	return NSERROR_INVALID;
 }
 
+
+/* exported interface documented in desktop/system_colour.h */
 css_error ns_system_colour(void *pw, lwc_string *name, css_color *colour)
 {
 	unsigned int ccount;

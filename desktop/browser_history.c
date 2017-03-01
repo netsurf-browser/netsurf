@@ -478,17 +478,27 @@ static bool browser_window_history__enumerate_entry(
 /* exported interface documented in desktop/browser_history.h */
 nserror browser_window_history_create(struct browser_window *bw)
 {
+	nserror res;
 	struct history *history;
 
-	pstyle_bg.fill_colour = ns_system_colour_char("Window");
+	res = ns_system_colour_char("Window", &pstyle_bg.fill_colour);
+	if (res != NSERROR_OK) {
+		return res;
+	}
 	pfstyle_node.background = pstyle_bg.fill_colour;
 	pfstyle_node_sel.background = pstyle_bg.fill_colour;
 
-	pstyle_line.stroke_colour = ns_system_colour_char("GrayText");
+	res = ns_system_colour_char("GrayText", &pstyle_line.stroke_colour);
+	if (res != NSERROR_OK) {
+		return res;
+	}
 	pstyle_rect.stroke_colour = pstyle_line.stroke_colour;
 	pfstyle_node.foreground = pstyle_line.stroke_colour;
 
-	pstyle_rect_sel.stroke_colour = ns_system_colour_char("Highlight");
+	res = ns_system_colour_char("Highlight", &pstyle_rect_sel.stroke_colour);
+	if (res != NSERROR_OK) {
+		return res;
+	}
 	pfstyle_node_sel.foreground = pstyle_rect_sel.stroke_colour;
 
 	bw->history = NULL;

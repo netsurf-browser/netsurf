@@ -1858,7 +1858,7 @@ nserror treeview_node_contract(treeview *tree, treeview_node *node)
 
 	res = treeview_node_contract_internal(tree, node);
 	if (res == NSERROR_OK) {
-		/* sucessful contraction, request redraw */
+		/* successful contraction, request redraw */
 		r.x0 = 0;
 		r.y0 = treeview_node_y(tree, node);
 		r.x1 = REDRAW_MAX;
@@ -1933,7 +1933,7 @@ struct treeview_expand_data {
  * \param ctx node expansion context
  * \param skip_children flag to allow children to be skipped
  * \param end flag to allow iteration to be finished early.
- * \return NSERROR_OK on sucess else error code.
+ * \return NSERROR_OK on success else error code.
  */
 static nserror
 treeview_expand_cb(treeview_node *n,
@@ -1978,7 +1978,7 @@ nserror treeview_expand(treeview *tree, bool only_folders)
 				     treeview_expand_cb,
 				     &data);
 	if (res == NSERROR_OK) {
-		/* expansion suceeded, schedule redraw */
+		/* expansion succeeded, schedule redraw */
 
 		r.x0 = 0;
 		r.y0 = 0;
@@ -2212,7 +2212,7 @@ treeview_redraw(treeview *tree,
 			render_y += tree_g.line_height;
 		}
 
-		/* Finshed rendering expanded entry */
+		/* Finished rendering expanded entry */
 
 		if (render_y > r.y1) {
 			/* Passed the bottom of what's in the clip region.
@@ -2303,7 +2303,7 @@ struct treeview_selection_walk_data {
  * \param ctx node selection context
  * \param skip_children flag to allow children to be skipped
  * \param end flag to allow iteration to be finished early.
- * \return NSERROR_OK on sucess else error code.
+ * \return NSERROR_OK on success else error code.
  */
 static nserror
 treeview_node_selection_walk_cb(treeview_node *n,
@@ -2718,7 +2718,7 @@ static bool treeview_propagate_selection(treeview *tree, struct rect *rect)
  *
  * \param tree Treeview object to move selected nodes in
  * \param rect Redraw rectangle
- * \return NSERROR_OK on sucess else appropriate error code
+ * \return NSERROR_OK on success else appropriate error code
  */
 static nserror treeview_move_selection(treeview *tree, struct rect *rect)
 {
@@ -2850,7 +2850,7 @@ treeview_node_launch_walk_bwd_cb(treeview_node *n, void *ctx, bool *end)
  * \param ctx node launch context
  * \param skip_children flag to allow children to be skipped
  * \param end flag to allow iteration to be finished early.
- * \return NSERROR_OK on sucess else error code.
+ * \return NSERROR_OK on success else error code.
  */
 static nserror
 treeview_node_launch_walk_fwd_cb(treeview_node *n,
@@ -2967,11 +2967,11 @@ struct treeview_nav_state {
 /**
  * Treewalk node callback for handling mouse action.
  *
- * \param n current node
+ * \param node current node
  * \param ctx node context
  * \param skip_children flag to allow children to be skipped
  * \param end flag to allow iteration to be finished early.
- * \return NSERROR_OK on sucess else error code.
+ * \return NSERROR_OK on success else error code.
  */
 static nserror
 treeview_node_nav_cb(treeview_node *node,
@@ -3227,7 +3227,7 @@ treeview_set_move_indicator(treeview *tree,
 			target = target->parent;
 		}
 
-		/* Find top ajdacent selected sibling */
+		/* Find top adjacent selected sibling */
 		while (target->prev_sib &&
 		       target->prev_sib->flags & TV_NFLAGS_SELECTED) {
 			target = target->prev_sib;
@@ -3555,11 +3555,11 @@ struct treeview_mouse_action {
 /**
  * Treewalk node callback for handling mouse action.
  *
- * \param n current node
+ * \param node current node
  * \param ctx node context
  * \param skip_children flag to allow children to be skipped
  * \param end flag to allow iteration to be finished early.
- * \return NSERROR_OK on sucess else error code.
+ * \return NSERROR_OK on success else error code.
  */
 static nserror
 treeview_node_mouse_action_cb(treeview_node *node,
@@ -3988,46 +3988,67 @@ int treeview_get_height(treeview *tree)
  * Initialise the plot styles from CSS system colour values.
  *
  * \param font_pt_size font size to use
+ * \return NSERROR_OK on success else appropriate error code
  */
-static void treeview_init_plot_styles(int font_pt_size)
+static nserror treeview_init_plot_styles(int font_pt_size)
 {
+	nserror res;
+
 	/* Background colour */
 	plot_style_even.bg.stroke_type = PLOT_OP_TYPE_NONE;
 	plot_style_even.bg.stroke_width = 0;
 	plot_style_even.bg.stroke_colour = 0;
 	plot_style_even.bg.fill_type = PLOT_OP_TYPE_SOLID;
-	plot_style_even.bg.fill_colour = ns_system_colour_char("Window");
+	res = ns_system_colour_char("Window", &plot_style_even.bg.fill_colour);
+	if (res != NSERROR_OK) {
+		return res;
+	}
 
 	/* Text colour */
 	plot_style_even.text.family = PLOT_FONT_FAMILY_SANS_SERIF;
 	plot_style_even.text.size = font_pt_size;
 	plot_style_even.text.weight = 400;
 	plot_style_even.text.flags = FONTF_NONE;
-	plot_style_even.text.foreground = ns_system_colour_char("WindowText");
-	plot_style_even.text.background = ns_system_colour_char("Window");
+	res = ns_system_colour_char("WindowText", &plot_style_even.text.foreground);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+	res = ns_system_colour_char("Window", &plot_style_even.text.background);
+	if (res != NSERROR_OK) {
+		return res;
+	}
 
 	/* Entry field text colour */
 	plot_style_even.itext = plot_style_even.text;
 	plot_style_even.itext.foreground = mix_colour(
 		plot_style_even.text.foreground,
-		plot_style_even.text.background, 255 * 10 / 16);
+		plot_style_even.text.background,
+		255 * 10 / 16);
 
 	/* Selected background colour */
 	plot_style_even.sbg = plot_style_even.bg;
-	plot_style_even.sbg.fill_colour = ns_system_colour_char("Highlight");
+	res = ns_system_colour_char("Highlight", &plot_style_even.sbg.fill_colour);
+	if (res != NSERROR_OK) {
+		return res;
+	}
 
 	/* Selected text colour */
 	plot_style_even.stext = plot_style_even.text;
-	plot_style_even.stext.foreground =
-		ns_system_colour_char("HighlightText");
-	plot_style_even.stext.background = ns_system_colour_char("Highlight");
+	res = ns_system_colour_char("HighlightText", &plot_style_even.stext.foreground);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+	res = ns_system_colour_char("Highlight", &plot_style_even.stext.background);
+	if (res != NSERROR_OK) {
+		return res;
+	}
 
 	/* Selected entry field text colour */
 	plot_style_even.sitext = plot_style_even.stext;
 	plot_style_even.sitext.foreground = mix_colour(
 		plot_style_even.stext.foreground,
-		plot_style_even.stext.background, 255 * 25 / 32);
-
+		plot_style_even.stext.background,
+		255 * 25 / 32);
 
 	/* Odd numbered node styles */
 	plot_style_odd.bg = plot_style_even.bg;
@@ -4044,14 +4065,16 @@ static void treeview_init_plot_styles(int font_pt_size)
 	plot_style_odd.sbg = plot_style_even.sbg;
 	plot_style_odd.stext = plot_style_even.stext;
 	plot_style_odd.sitext = plot_style_even.sitext;
+
+	return NSERROR_OK;
 }
 
 
 /**
- * Callback for hlcache retreving resources.
+ * Callback for hlcache retrieving resources.
  *
  * \param handle content hlcache handle
- * \param event The event that occoured on the content
+ * \param event The event that occurred on the content
  * \param pw treeview resource context
  */
 static nserror
@@ -4373,7 +4396,7 @@ nserror treeview_init(void)
 {
 	long long font_px_size;
 	long long font_pt_size;
-	nserror err;
+	nserror res;
 
 	if (tree_g.initialised > 0) {
 		tree_g.initialised++;
@@ -4391,11 +4414,17 @@ nserror treeview_init(void)
 			10 + 36) / 72;
 	tree_g.line_height = (font_px_size * 8 + 3) / 6;
 
-	treeview_init_plot_styles(font_pt_size * FONT_SIZE_SCALE / 10);
+	res = treeview_init_plot_styles(font_pt_size * FONT_SIZE_SCALE / 10);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
 	treeview_init_resources();
-	err = treeview_init_furniture();
-	if (err != NSERROR_OK)
-		return err;
+
+	res = treeview_init_furniture();
+	if (res != NSERROR_OK) {
+		return res;
+	}
 
 	tree_g.step_width = tree_g.furniture_width;
 	tree_g.window_padding = 6;

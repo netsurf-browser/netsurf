@@ -228,22 +228,30 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 	struct rect rect;
 	nserror res;
 
-	colour bg_fill_colour = ns_system_colour_char("Scrollbar");
-	colour fg_fill_colour = ns_system_colour_char("ButtonFace");
-	colour arrow_fill_colour = ns_system_colour_char("ButtonText");
-
 	plot_style_t bg_fill_style = {
 		.fill_type = PLOT_OP_TYPE_SOLID,
-		.fill_colour = bg_fill_colour
 	};
 	plot_style_t fg_fill_style = {
 		.fill_type = PLOT_OP_TYPE_SOLID,
-		.fill_colour = fg_fill_colour
 	};
 	plot_style_t arrow_fill_style = {
 		.fill_type = PLOT_OP_TYPE_SOLID,
-		.fill_colour = arrow_fill_colour
 	};
+
+	res = ns_system_colour_char("Scrollbar", &bg_fill_style.fill_colour);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	res = ns_system_colour_char("ButtonFace", &fg_fill_style.fill_colour);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	res = ns_system_colour_char("ButtonText", &arrow_fill_style.fill_colour);
+	if (res != NSERROR_OK) {
+		return res;
+	}
 
 	area.x0 = x;
 	area.y0 = y;
@@ -277,7 +285,8 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		/* scrollbar is horizontal */
 
 		/* scrollbar outline */
-		res = scrollbar_rectangle(ctx, &area, bg_fill_colour, true);
+		res = scrollbar_rectangle(ctx, &area,
+					  bg_fill_style.fill_colour, true);
 		if (res != NSERROR_OK) {
 			return false;
 		}
@@ -287,7 +296,8 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		rect.y0 = area.y0 + 1;
 		rect.x1 = area.x0 + w - 2;
 		rect.y1 = area.y1 - 1;
-		res = scrollbar_rectangle(ctx, &rect, fg_fill_colour, false);
+		res = scrollbar_rectangle(ctx, &rect,
+					  fg_fill_style.fill_colour, false);
 		if (res != NSERROR_OK) {
 			return false;
 		}
@@ -329,7 +339,7 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		rect.y0 = area.y0 + 1;
 		rect.x1 = bar_c1;
 		rect.y1 = area.y1 - 1;
-		res = scrollbar_rectangle(ctx, &rect, fg_fill_colour, false);
+		res = scrollbar_rectangle(ctx, &rect, fg_fill_style.fill_colour, false);
 		if (res != NSERROR_OK) {
 			return false;
 		}
@@ -348,7 +358,7 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		rect.y0 = area.y0 + 1;
 		rect.x1 = area.x1 - 1;
 		rect.y1 = area.y1 - 1;
-		res = scrollbar_rectangle(ctx, &rect, fg_fill_colour, false);
+		res = scrollbar_rectangle(ctx, &rect, fg_fill_style.fill_colour, false);
 		if (res != NSERROR_OK) {
 			return false;
 		}
@@ -378,7 +388,7 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		/* scrollbar is vertical */
 
 		/* outline */
-		res = scrollbar_rectangle(ctx, &area, bg_fill_colour, true);
+		res = scrollbar_rectangle(ctx, &area, bg_fill_style.fill_colour, true);
 		if (res != NSERROR_OK) {
 			return false;
 		}
@@ -388,7 +398,7 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		rect.y0 = area.y0 + 1;
 		rect.x1 = area.x1 - 1;
 		rect.y1 = area.y0 + w - 2;
-		res = scrollbar_rectangle(ctx, &rect, fg_fill_colour, false);
+		res = scrollbar_rectangle(ctx, &rect, fg_fill_style.fill_colour, false);
 		if (res != NSERROR_OK) {
 			return false;
 		}
@@ -430,7 +440,7 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		rect.y0 = bar_c0;
 		rect.x1 = area.x1 - 1;
 		rect.y1 = bar_c1;
-		res = scrollbar_rectangle(ctx, &rect, fg_fill_colour, false);
+		res = scrollbar_rectangle(ctx, &rect, fg_fill_style.fill_colour, false);
 		if (res != NSERROR_OK) {
 			return false;
 		}
@@ -449,7 +459,7 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		rect.y0 = area.y1 - w + 2;
 		rect.x1 = area.x1 - 1;
 		rect.y1 = area.y1 - 1;
-		res = scrollbar_rectangle(ctx, &rect, fg_fill_colour, false);
+		res = scrollbar_rectangle(ctx, &rect, fg_fill_style.fill_colour, false);
 		if (res != NSERROR_OK) {
 			return false;
 		}

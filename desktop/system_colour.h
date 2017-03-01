@@ -16,25 +16,59 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Interface to system colour values.
+ *
+ * Netsurf has a list of user configurable colours with frontend
+ * specific defaults. These colours are used for the css system
+ * colours and to colour and style internally rendered widgets
+ * (e.g. cookies treeview or local file directory views.
  */
 
-#ifndef _NETSURF_DESKTOP_SYSTEM_COLOUR_H_
-#define _NETSURF_DESKTOP_SYSTEM_COLOUR_H_
+#ifndef NETSURF_DESKTOP_SYSTEM_COLOUR_H
+#define NETSURF_DESKTOP_SYSTEM_COLOUR_H
 
 #include <libcss/libcss.h>
 
 #include "utils/errors.h"
 #include "netsurf/types.h"
 
-/** css callback to obtain named system colours. */
+/**
+ * css callback to obtain named system colour.
+ *
+ * \param[in] pw context unused in implementation
+ * \param[in] name The name of the colour being looked up
+ * \param[out] color The system colour associated with the name.
+ * \return CSS_OK and \a color updated on success else CSS_INVALID if
+ *          the \a name is unrecognised
+ */
 css_error ns_system_colour(void *pw, lwc_string *name, css_color *color);
 
-/** Obtain a named system colour from a frontend. */
-colour ns_system_colour_char(const char *name);
 
+/**
+ * Obtain a system colour from a name.
+ *
+ * \param[in] name The name of the colour being looked up
+ * \param[out] color The system colour associated with the name in the
+ *                     netsurf colour representation.
+ * \return NSERROR_OK and \a color updated on success else appropriate
+ *           error code.
+ */
+nserror ns_system_colour_char(const char *name, colour *color);
+
+
+/**
+ * Initialise the system colours
+ *
+ * \return NSERROR_OK on success else appropriate error code.
+ */
 nserror ns_system_colour_init(void);
+
+
+/**
+ * release any resources associated with the system colours.
+ */
 void ns_system_colour_finalize(void);
 
 #endif

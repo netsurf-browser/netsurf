@@ -228,7 +228,7 @@ nserror treeview_destroy(treeview *tree);
 
 
 /**
- * Find a releation for node creation.
+ * Find a relation for node creation.
  *
  * If at_y is set, we find a relation that will put the created node at that
  * position.
@@ -239,7 +239,7 @@ nserror treeview_destroy(treeview *tree);
  * \param tree		Treeview object in which to create folder
  * \param relation	Existing node to insert as relation of, or NULL
  * \param rel		Folder's relationship to relation
- * \param at_y		Iff true, insert at y-offest
+ * \param at_y		Iff true, insert at y-offset
  * \param y		Y-offset in px from top of hotlist.  Ignored if (!at_y).
  * \return NSERROR_OK on success, appropriate error otherwise
  */
