@@ -17,9 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * SSL Certificate verification UI interface
+ */
 
-#ifndef _NETSURF_DESKTOP_SSLCERT_VIEWER_H_
-#define _NETSURF_DESKTOP_SSLCERT_VIEWER_H_
+#ifndef NETSURF_DESKTOP_SSLCERT_VIEWER_H
+#define NETSURF_DESKTOP_SSLCERT_VIEWER_H
 
 #include "content/llcache.h"
 #include "netsurf/mouse.h"
@@ -48,6 +52,7 @@ nserror sslcert_viewer_create_session_data(
 		void *cbpw, const struct ssl_cert_info *certs,
 		struct sslcert_session_data **ssl_d);
 
+
 /**
  * Initialise a ssl certificate viewer from session data.
  *
@@ -61,6 +66,7 @@ nserror sslcert_viewer_create_session_data(
 nserror sslcert_viewer_init(struct core_window_callback_table *cw_t,
 		void *core_window_handle, struct sslcert_session_data *ssl_d);
 
+
 /**
  * Finalise a ssl certificate viewer.
  *
@@ -72,6 +78,7 @@ nserror sslcert_viewer_init(struct core_window_callback_table *cw_t,
  */
 nserror sslcert_viewer_fini(struct sslcert_session_data *ssl_d);
 
+
 /**
  * Reject a certificate chain.
  *
@@ -80,6 +87,7 @@ nserror sslcert_viewer_fini(struct sslcert_session_data *ssl_d);
  */
 nserror sslcert_viewer_reject(struct sslcert_session_data *ssl_d);
 
+
 /**
  * Accept a certificate chain.
  *
@@ -87,6 +95,7 @@ nserror sslcert_viewer_reject(struct sslcert_session_data *ssl_d);
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror sslcert_viewer_accept(struct sslcert_session_data *ssl_d);
+
 
 /**
  * Redraw the ssl certificate viewer.
@@ -101,6 +110,7 @@ void sslcert_viewer_redraw(struct sslcert_session_data *ssl_d,
 		int x, int y, struct rect *clip,
 		const struct redraw_context *ctx);
 
+
 /**
  * Handles all kinds of mouse action
  *
@@ -111,6 +121,7 @@ void sslcert_viewer_redraw(struct sslcert_session_data *ssl_d,
  */
 void sslcert_viewer_mouse_action(struct sslcert_session_data *ssl_d,
 		browser_mouse_state mouse, int x, int y);
+
 
 /**
  * Key press handling.

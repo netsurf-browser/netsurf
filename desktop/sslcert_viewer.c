@@ -17,8 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * SSL Certificate verification UI (implementation)
+/**
+ * \file
+ * SSL Certificate verification UI implementation
  */
 
 #include <assert.h>
@@ -33,6 +34,9 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 
+/**
+ * ssl certificate viewer data fields
+ */
 enum sslcert_viewer_field {
 	SSLCERT_V_SUBJECT,
 	SSLCERT_V_SERIAL,
@@ -45,7 +49,10 @@ enum sslcert_viewer_field {
 	SSLCERT_V_N_FIELDS
 };
 
-/** ssl certificate verification context. */
+
+/**
+ * ssl certificate verification context.
+ */
 struct sslcert_session_data {
 	struct ssl_cert_info *certs; /**< Certificates */
 	unsigned long num;		/**< Number of certificates in chain */
@@ -57,6 +64,10 @@ struct sslcert_session_data {
 	struct treeview_field_desc fields[SSLCERT_V_N_FIELDS];
 };
 
+
+/**
+ * ssl certificate tree entry
+ */
 struct sslcert_entry {
 	treeview_node *entry;
 	char version[24];
@@ -67,12 +78,11 @@ struct sslcert_entry {
 
 
 /**
- * Free a sll certificate viewer entry's treeview field data.
+ * Free a ssl certificate viewer entry's treeview field data.
  *
- * \param e		Entry to free data from
+ * \param e Entry to free data from
  */
-static void sslcert_viewer_free_treeview_field_data(
-		struct sslcert_entry *e)
+static void sslcert_viewer_free_treeview_field_data(struct sslcert_entry *e)
 {
 }
 
@@ -80,17 +90,17 @@ static void sslcert_viewer_free_treeview_field_data(
 /**
  * Build a sslcert viewer treeview field from given text
  *
- * \param field		SSL certificate treeview field to build
- * \param data		SSL certificate entry field data to set
- * \param value		Text to set in field, ownership yielded
- * \param ssl_d		SSL certificate session data
+ * \param field	SSL certificate treeview field to build
+ * \param data	SSL certificate entry field data to set
+ * \param value	Text to set in field, ownership yielded
+ * \param ssl_d	SSL certificate session data
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-static inline nserror sslcert_viewer_field_builder(
-		enum sslcert_viewer_field field,
-		struct treeview_field_data *data,
-		const char *value,
-		struct sslcert_session_data *ssl_d)
+static inline nserror
+sslcert_viewer_field_builder(enum sslcert_viewer_field field,
+			     struct treeview_field_data *data,
+			     const char *value,
+			     struct sslcert_session_data *ssl_d)
 {
 	data->field = ssl_d->fields[field].field;
 	data->value = value;
@@ -103,15 +113,15 @@ static inline nserror sslcert_viewer_field_builder(
 /**
  * Set a sslcert viewer entry's data from the certificate.
  *
- * \param e		Entry to set up
- * \param cert		Data associated with entry's certificate
- * \param ssl_d		SSL certificate session data
+ * \param e	Entry to set up
+ * \param cert	Data associated with entry's certificate
+ * \param ssl_d	SSL certificate session data
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-static nserror sslcert_viewer_set_treeview_field_data(
-		struct sslcert_entry *e,
-		const struct ssl_cert_info *cert,
-		struct sslcert_session_data *ssl_d)
+static nserror
+sslcert_viewer_set_treeview_field_data(struct sslcert_entry *e,
+				       const struct ssl_cert_info *cert,
+				       struct sslcert_session_data *ssl_d)
 {
 	unsigned int written;
 
@@ -121,39 +131,39 @@ static nserror sslcert_viewer_set_treeview_field_data(
 
 	/* Set the fields up */
 	sslcert_viewer_field_builder(SSLCERT_V_SUBJECT,
-			&e->data[SSLCERT_V_SUBJECT],
-			cert->subject, ssl_d);
+				     &e->data[SSLCERT_V_SUBJECT],
+				     cert->subject, ssl_d);
 
 	written = snprintf(e->serial, sizeof(e->serial), "%li", cert->serial);
 	assert(written < sizeof(e->serial));
 	sslcert_viewer_field_builder(SSLCERT_V_SERIAL,
-			&e->data[SSLCERT_V_SERIAL],
-			e->serial, ssl_d);
+				     &e->data[SSLCERT_V_SERIAL],
+				     e->serial, ssl_d);
 
 	written = snprintf(e->type, sizeof(e->type), "%i", cert->cert_type);
 	assert(written < sizeof(e->type));
 	sslcert_viewer_field_builder(SSLCERT_V_TYPE,
-			&e->data[SSLCERT_V_TYPE],
-			e->type, ssl_d);
+				     &e->data[SSLCERT_V_TYPE],
+				     e->type, ssl_d);
 
 	sslcert_viewer_field_builder(SSLCERT_V_VALID_UNTIL,
-			&e->data[SSLCERT_V_VALID_UNTIL],
-			cert->not_after, ssl_d);
+				     &e->data[SSLCERT_V_VALID_UNTIL],
+				     cert->not_after, ssl_d);
 
 	sslcert_viewer_field_builder(SSLCERT_V_VALID_FROM,
-			&e->data[SSLCERT_V_VALID_FROM],
-			cert->not_before, ssl_d);
+				     &e->data[SSLCERT_V_VALID_FROM],
+				     cert->not_before, ssl_d);
 
 	written = snprintf(e->version, sizeof(e->version),
-			"%li", cert->version);
+			   "%li", cert->version);
 	assert(written < sizeof(e->version));
 	sslcert_viewer_field_builder(SSLCERT_V_VERSION,
-			&e->data[SSLCERT_V_VERSION],
-			e->version, ssl_d);
+				     &e->data[SSLCERT_V_VERSION],
+				     e->version, ssl_d);
 
 	sslcert_viewer_field_builder(SSLCERT_V_ISSUER,
-			&e->data[SSLCERT_V_ISSUER],
-			cert->issuer, ssl_d);
+				     &e->data[SSLCERT_V_ISSUER],
+				     cert->issuer, ssl_d);
 
 	return NSERROR_OK;
 }
@@ -162,12 +172,12 @@ static nserror sslcert_viewer_set_treeview_field_data(
 /**
  * Create a treeview node for a certificate
  *
- * \param ssl_d		SSL certificate session data
- * \param n		Number of SSL certificate in chain, to make node for
- * \return true on success, false on memory exhaustion
+ * \param ssl_d	SSL certificate session data
+ * \param n Number of SSL certificate in chain, to make node for
+ * \return NSERROR_OK on success otherwise error code.
  */
-static nserror sslcert_viewer_create_node(
-		struct sslcert_session_data *ssl_d, int n)
+static nserror
+sslcert_viewer_create_node(struct sslcert_session_data *ssl_d, int n)
 {
 	struct sslcert_entry *e;
 	const struct ssl_cert_info *cert = &(ssl_d->certs[n]);
@@ -187,8 +197,8 @@ static nserror sslcert_viewer_create_node(
 
 	/* Create the new treeview node */
 	err = treeview_create_node_entry(ssl_d->tree, &(e->entry),
-			NULL, TREE_REL_FIRST_CHILD,
-			e->data, e, TREE_OPTION_NONE);
+					 NULL, TREE_REL_FIRST_CHILD,
+					 e->data, e, TREE_OPTION_NONE);
 	if (err != NSERROR_OK) {
 		sslcert_viewer_free_treeview_field_data(e);
 		free(e);
@@ -200,10 +210,10 @@ static nserror sslcert_viewer_create_node(
 
 
 /**
- * Initialise the treeview entry feilds
+ * Initialise the treeview entry fields
  *
- * \param ssl_d		SSL certificate session data
- * \return true on success, false on memory exhaustion
+ * \param ssl_d SSL certificate session data
+ * \return NSERROR_OK on success otherwise error code.
  */
 static nserror sslcert_init_entry_fields(struct sslcert_session_data *ssl_d)
 {
@@ -217,8 +227,8 @@ static nserror sslcert_init_entry_fields(struct sslcert_session_data *ssl_d)
 	label = "TreeviewLabelSubject";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&ssl_d->fields[SSLCERT_V_SUBJECT].field) !=
-			lwc_error_ok) {
+			      &ssl_d->fields[SSLCERT_V_SUBJECT].field) !=
+	    lwc_error_ok) {
 		goto error;
 	}
 
@@ -226,8 +236,8 @@ static nserror sslcert_init_entry_fields(struct sslcert_session_data *ssl_d)
 	label = "TreeviewLabelSerial";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&ssl_d->fields[SSLCERT_V_SERIAL].field) !=
-			lwc_error_ok) {
+			      &ssl_d->fields[SSLCERT_V_SERIAL].field) !=
+	    lwc_error_ok) {
 		goto error;
 	}
 
@@ -235,8 +245,8 @@ static nserror sslcert_init_entry_fields(struct sslcert_session_data *ssl_d)
 	label = "TreeviewLabelType";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&ssl_d->fields[SSLCERT_V_TYPE].field) !=
-			lwc_error_ok) {
+			      &ssl_d->fields[SSLCERT_V_TYPE].field) !=
+	    lwc_error_ok) {
 		goto error;
 	}
 
@@ -244,8 +254,8 @@ static nserror sslcert_init_entry_fields(struct sslcert_session_data *ssl_d)
 	label = "TreeviewLabelValidUntil";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&ssl_d->fields[SSLCERT_V_VALID_UNTIL].field) !=
-			lwc_error_ok) {
+			      &ssl_d->fields[SSLCERT_V_VALID_UNTIL].field) !=
+	    lwc_error_ok) {
 		goto error;
 	}
 
@@ -253,8 +263,8 @@ static nserror sslcert_init_entry_fields(struct sslcert_session_data *ssl_d)
 	label = "TreeviewLabelValidFrom";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&ssl_d->fields[SSLCERT_V_VALID_FROM].field) !=
-			lwc_error_ok) {
+			      &ssl_d->fields[SSLCERT_V_VALID_FROM].field) !=
+	    lwc_error_ok) {
 		goto error;
 	}
 
@@ -262,8 +272,8 @@ static nserror sslcert_init_entry_fields(struct sslcert_session_data *ssl_d)
 	label = "TreeviewLabelVersion";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&ssl_d->fields[SSLCERT_V_VERSION].field) !=
-			lwc_error_ok) {
+			      &ssl_d->fields[SSLCERT_V_VERSION].field) !=
+	    lwc_error_ok) {
 		goto error;
 	}
 
@@ -271,8 +281,8 @@ static nserror sslcert_init_entry_fields(struct sslcert_session_data *ssl_d)
 	label = "TreeviewLabelIssuer";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&ssl_d->fields[SSLCERT_V_ISSUER].field) !=
-			lwc_error_ok) {
+			      &ssl_d->fields[SSLCERT_V_ISSUER].field) !=
+	    lwc_error_ok) {
 		goto error;
 	}
 
@@ -280,8 +290,8 @@ static nserror sslcert_init_entry_fields(struct sslcert_session_data *ssl_d)
 	label = "TreeviewLabelCertificates";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&ssl_d->fields[SSLCERT_V_CERTIFICATES].field) !=
-			lwc_error_ok) {
+			      &ssl_d->fields[SSLCERT_V_CERTIFICATES].field) !=
+	    lwc_error_ok) {
 		return false;
 	}
 
@@ -299,7 +309,7 @@ error:
 /**
  * Delete ssl certificate viewer entries
  *
- * \param e		Entry to delete.
+ * \param e Entry to delete.
  */
 static void sslcert_viewer_delete_entry(struct sslcert_entry *e)
 {
@@ -308,8 +318,15 @@ static void sslcert_viewer_delete_entry(struct sslcert_entry *e)
 }
 
 
-static nserror sslcert_viewer_tree_node_folder_cb(
-		struct treeview_node_msg msg, void *data)
+/**
+ * folder operation callback
+ *
+ * \param msg treeview message
+ * \param data message context
+ * \return NSERROR_OK on success
+ */
+static nserror
+sslcert_viewer_tree_node_folder_cb(struct treeview_node_msg msg, void *data)
 {
 	switch (msg.msg) {
 	case TREE_MSG_NODE_DELETE:
@@ -320,8 +337,17 @@ static nserror sslcert_viewer_tree_node_folder_cb(
 
 	return NSERROR_OK;
 }
-static nserror sslcert_viewer_tree_node_entry_cb(
-		struct treeview_node_msg msg, void *data)
+
+
+/**
+ * node entry callback
+ *
+ * \param msg treeview message
+ * \param data message context
+ * \return NSERROR_OK on success
+ */
+static nserror
+sslcert_viewer_tree_node_entry_cb(struct treeview_node_msg msg, void *data)
 {
 	struct sslcert_entry *e = data;
 
@@ -338,6 +364,11 @@ static nserror sslcert_viewer_tree_node_entry_cb(
 
 	return NSERROR_OK;
 }
+
+
+/**
+ * ssl certificate treeview callbacks
+ */
 struct treeview_callback_table sslv_tree_cb_t = {
 	.folder = sslcert_viewer_tree_node_folder_cb,
 	.entry = sslcert_viewer_tree_node_entry_cb
@@ -345,8 +376,10 @@ struct treeview_callback_table sslv_tree_cb_t = {
 
 
 /* Exported interface, documented in sslcert_viewer.h */
-nserror sslcert_viewer_init(struct core_window_callback_table *cw_t,
-		void *core_window_handle, struct sslcert_session_data *ssl_d)
+nserror
+sslcert_viewer_init(struct core_window_callback_table *cw_t,
+		    void *core_window_handle,
+		    struct sslcert_session_data *ssl_d)
 {
 	nserror err;
 	int cert_loop;
@@ -369,8 +402,8 @@ nserror sslcert_viewer_init(struct core_window_callback_table *cw_t,
 
 	/* Create the certificate treeview */
 	err = treeview_create(&ssl_d->tree, &sslv_tree_cb_t,
-			SSLCERT_V_N_FIELDS, ssl_d->fields,
-			cw_t, core_window_handle, TREEVIEW_READ_ONLY);
+			      SSLCERT_V_N_FIELDS, ssl_d->fields,
+			      cw_t, core_window_handle, TREEVIEW_READ_ONLY);
 	if (err != NSERROR_OK) {
 		ssl_d->tree = NULL;
 		return err;
@@ -393,7 +426,7 @@ nserror sslcert_viewer_init(struct core_window_callback_table *cw_t,
 /**
  * Free SSL certificate session data
  *
- * \param ssl_d		SSL certificate session data
+ * \param ssl_d SSL certificate session data
  */
 static void sslcert_cleanup_session(struct sslcert_session_data *ssl_d)
 {
@@ -444,10 +477,13 @@ nserror sslcert_viewer_fini(struct sslcert_session_data *ssl_d)
 
 
 /* Exported interface, documented in sslcert_viewer.h */
-nserror sslcert_viewer_create_session_data(unsigned long num, nsurl *url,
-		llcache_query_response cb, void *cbpw,
-		const struct ssl_cert_info *certs,
-		struct sslcert_session_data **ssl_d)
+nserror
+sslcert_viewer_create_session_data(unsigned long num,
+				   nsurl *url,
+				   llcache_query_response cb,
+				   void *cbpw,
+				   const struct ssl_cert_info *certs,
+				   struct sslcert_session_data **ssl_d)
 {
 	struct sslcert_session_data *data;
 
@@ -506,9 +542,11 @@ nserror sslcert_viewer_accept(struct sslcert_session_data *ssl_d)
 
 
 /* Exported interface, documented in sslcert_viewer.h */
-void sslcert_viewer_redraw(struct sslcert_session_data *ssl_d,
-		int x, int y, struct rect *clip,
-		const struct redraw_context *ctx)
+void
+sslcert_viewer_redraw(struct sslcert_session_data *ssl_d,
+		      int x, int y,
+		      struct rect *clip,
+		      const struct redraw_context *ctx)
 {
 	assert(ssl_d != NULL &&
 	       "sslcert_viewer_redraw() given bad session data");
@@ -518,8 +556,10 @@ void sslcert_viewer_redraw(struct sslcert_session_data *ssl_d,
 
 
 /* Exported interface, documented in sslcert_viewer.h */
-void sslcert_viewer_mouse_action(struct sslcert_session_data *ssl_d,
-		browser_mouse_state mouse, int x, int y)
+void
+sslcert_viewer_mouse_action(struct sslcert_session_data *ssl_d,
+			    browser_mouse_state mouse,
+			    int x, int y)
 {
 	treeview_mouse_action(ssl_d->tree, mouse, x, y);
 }
