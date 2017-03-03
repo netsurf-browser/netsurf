@@ -37,24 +37,34 @@ struct gui_window;
 struct history;
 struct selection;
 
-/** Browser window data. */
+/**
+ * Browser window data.
+ */
 struct browser_window {
-	/** Page currently displayed, or 0. Must have status READY or DONE. */
+	/**
+	 * Content handle of page currently displayed which must have
+	 *  READY or DONE status or NULL for no content.
+	 */
 	struct hlcache_handle *current_content;
-	/** Page being loaded, or 0. */
+	/** Page being loaded, or NULL. */
 	struct hlcache_handle *loading_content;
 
 	/** Page Favicon */
 	struct hlcache_handle *current_favicon;
 	/** handle for favicon which we started loading early */
 	struct hlcache_handle *loading_favicon;
-	/** favicon fetch already failed - prevents infinite error looping */
+	/**
+	 * flag to indicate favicon fetch already failed which
+	 * prevents infinite error looping.
+	 */
 	bool failed_favicon;
 
-	/** Window history structure. */
+	/** local history handle. */
 	struct history *history;
 
-	/** Platform specific window data. */
+	/**
+	 * Platform specific window data only valid at top level.
+	 */
 	struct gui_window *window;
 
 	/** Busy indicator is active. */
@@ -156,12 +166,13 @@ struct browser_window {
 	struct jscontext *jsctx;
 
 	/** cache of the currently displayed status text. */
-	char *status_text; /**< Current status bar text. */
-	int status_text_len; /**< Length of the browser_window::status_text buffer. */
-	int status_match; /**< Number of times an idempotent status-set operation was performed. */
-	int status_miss; /**< Number of times status was really updated. */
+	struct {
+		char *text; /**< Current status bar text. */
+		int text_len; /**< Length of the status::text buffer. */
+		int match; /**< Number of times an idempotent status-set operation was performed. */
+		int miss; /**< Number of times status was really updated. */
+	} status;
 };
-
 
 
 /**
@@ -174,6 +185,7 @@ struct browser_window {
 nserror browser_window_initialise_common(enum browser_window_create_flags flags,
 		struct browser_window *bw, struct browser_window *existing);
 
+
 /**
  * Get the dimensions of the area a browser window occupies
  *
@@ -185,6 +197,7 @@ nserror browser_window_initialise_common(enum browser_window_create_flags flags,
 void browser_window_get_dimensions(struct browser_window *bw,
 		int *width, int *height, bool scaled);
 
+
 /**
  * Update the extent of the inside of a browser window to that of the current
  * content
@@ -193,6 +206,7 @@ void browser_window_get_dimensions(struct browser_window *bw,
  */
 void browser_window_update_extent(struct browser_window *bw);
 
+
 /**
  * Change the status bar of a browser window.
  *
@@ -200,6 +214,7 @@ void browser_window_update_extent(struct browser_window *bw);
  * \param  text  new status text (copied)
  */
 void browser_window_set_status(struct browser_window *bw, const char *text);
+
 
 /**
  * Get the root level browser window

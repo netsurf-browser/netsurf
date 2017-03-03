@@ -87,7 +87,6 @@
  * \param  x		Updated to x-coord of top left of scrollbar widget
  * \param  y		Updated to y-coord of top left of scrollbar widget
  */
-
 static inline void browser_window_get_scrollbar_pos(struct browser_window *bw,
 		bool horizontal, int *x, int *y)
 {
@@ -129,6 +128,7 @@ browser_window_get_name(struct browser_window *bw, const char **out_name)
 	return NSERROR_OK;
 }
 
+
 /* exported interface, documented in browser.h */
 nserror 
 browser_window_set_name(struct browser_window *bw, const char *name)
@@ -152,6 +152,7 @@ browser_window_set_name(struct browser_window *bw, const char *name)
 
 	return NSERROR_OK;
 }
+
 
 /* exported interface, documented in browser.h */
 bool
@@ -330,6 +331,7 @@ browser_window_redraw(struct browser_window *bw,
 	return plot_ok;
 }
 
+
 /* exported interface, documented in browser.h */
 bool browser_window_redraw_ready(struct browser_window *bw)
 {
@@ -344,6 +346,7 @@ bool browser_window_redraw_ready(struct browser_window *bw)
 	return true;
 }
 
+
 /* exported interface, documented in browser_private.h */
 void browser_window_update_extent(struct browser_window *bw)
 {
@@ -355,9 +358,13 @@ void browser_window_update_extent(struct browser_window *bw)
 		browser_window_handle_scrollbars(bw);
 }
 
+
 /* exported interface, documented in browser.h */
-void browser_window_get_position(struct browser_window *bw, bool root,
-		int *pos_x, int *pos_y)
+void
+browser_window_get_position(struct browser_window *bw,
+			    bool root,
+			    int *pos_x,
+			    int *pos_y)
 {
 	*pos_x = 0;
 	*pos_y = 0;
@@ -396,6 +403,7 @@ void browser_window_get_position(struct browser_window *bw, bool root,
 		}
 	}
 }
+
 
 /* exported interface, documented in browser.h */
 void browser_window_set_position(struct browser_window *bw, int x, int y)
@@ -939,10 +947,10 @@ nserror browser_window_initialise_common(enum browser_window_create_flags flags,
 	bw->focus = NULL;
 
 	/* initialise status text cache */
-	bw->status_text = NULL;
-	bw->status_text_len = 0;
-	bw->status_match = 0;
-	bw->status_miss = 0;
+	bw->status.text = NULL;
+	bw->status.text_len = 0;
+	bw->status.match = 0;
+	bw->status.miss = 0;
 
 	return NSERROR_OK;
 }
@@ -1318,8 +1326,10 @@ static void browser_window_convert_to_download(struct browser_window *bw,
 /**
  * Browser window content event callback handler.
  */
-static nserror browser_window_callback(hlcache_handle *c,
-		const hlcache_event *event, void *pw)
+static nserror
+browser_window_callback(hlcache_handle *c,
+			const hlcache_event *event,
+			void *pw)
 {
 	struct browser_window *bw = pw;
 	nserror res = NSERROR_OK;
@@ -1857,9 +1867,9 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 	browser_window_history_destroy(bw);
 
 	free(bw->name);
-	free(bw->status_text);
-	bw->status_text = NULL;
-	LOG("Status text cache match:miss %d:%d", bw->status_match, bw->status_miss);
+	free(bw->status.text);
+	bw->status.text = NULL;
+	LOG("Status text cache match:miss %d:%d", bw->status.match, bw->status.miss);
 }
 
 /**
@@ -1931,7 +1941,8 @@ nserror browser_window_refresh_url_bar(struct browser_window *bw)
 
 
 /* exported interface documented in netsurf/browser_window.h */
-nserror browser_window_navigate(struct browser_window *bw,
+nserror
+browser_window_navigate(struct browser_window *bw,
 			     nsurl *url,
 			     nsurl *referrer,
 			     enum browser_window_nav_flags flags,
@@ -2289,14 +2300,16 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 
 		browser_window_update_extent(bw);
 
-		if (scroll_to_top)
-			browser_window_set_scroll(bw, 0, 0);
-
 		/* if frag_id exists, then try to scroll to it */
 		/** @todo don't do this if the user has scrolled */
-		if (bw->frag_id && html_get_id_offset(bw->current_content,
-				bw->frag_id, &x, &y)) {
+		if (bw->frag_id &&
+		    html_get_id_offset(bw->current_content,
+				       bw->frag_id, &x, &y)) {
 			browser_window_set_scroll(bw, x, y);
+		} else {
+			if (scroll_to_top) {
+				browser_window_set_scroll(bw, 0, 0);
+			}
 		}
 
 		guit->window->redraw(bw->window);
@@ -2476,10 +2489,10 @@ void browser_window_set_status(struct browser_window *bw, const char *text)
 	while (bw->parent)
 		bw = bw->parent;
 
-	if ((bw->status_text != NULL) &&
-	    (strcmp(text, bw->status_text) == 0)) {
+	if ((bw->status.text != NULL) &&
+	    (strcmp(text, bw->status.text) == 0)) {
 		/* status text is unchanged */
-		bw->status_match++;
+		bw->status.match++;
 		return;
 	}
 
@@ -2487,18 +2500,18 @@ void browser_window_set_status(struct browser_window *bw, const char *text)
 
 	text_len = strlen(text);
 
-	if ((bw->status_text == NULL) || (bw->status_text_len < text_len)) {
+	if ((bw->status.text == NULL) || (bw->status.text_len < text_len)) {
 		/* no current string allocation or it is not long enough */
-		free(bw->status_text);
-		bw->status_text = strdup(text);
-		bw->status_text_len = text_len;
+		free(bw->status.text);
+		bw->status.text = strdup(text);
+		bw->status.text_len = text_len;
 	} else {
 		/* current allocation has enough space */
-		memcpy(bw->status_text, text, text_len + 1);
+		memcpy(bw->status.text, text, text_len + 1);
 	}
 
-	bw->status_miss++;
-	guit->window->set_status(bw->window, bw->status_text);
+	bw->status.miss++;
+	guit->window->set_status(bw->window, bw->status.text);
 }
 
 
