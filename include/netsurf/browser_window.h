@@ -43,6 +43,9 @@ struct rect;
 struct redraw_context;
 enum content_debug;
 
+/**
+ * type of browser window drag in progess
+ */
 typedef enum {
 	DRAGGING_NONE,
 	DRAGGING_SELECTION,

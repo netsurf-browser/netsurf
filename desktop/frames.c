@@ -675,25 +675,31 @@ void browser_window_resize_frame(struct browser_window *bw, int x, int y)
 	assert((col >= 0) && (row >= 0));
 
 	sibling = NULL;
-	if (bw->drag_resize_left)
+	if (bw->drag.resize_left) {
 		sibling = &parent->children[row * parent->cols + (col - 1)];
-	else if (bw->drag_resize_right)
+	} else if (bw->drag.resize_right) {
 		sibling = &parent->children[row * parent->cols + (col + 1)];
-	if (sibling)
+	}
+	if (sibling) {
 		change |= browser_window_resolve_frame_dimension(bw, sibling,
 				x, y, true, false);
+	}
 
 	sibling = NULL;
-	if (bw->drag_resize_up)
+	if (bw->drag.resize_up) {
 		sibling = &parent->children[(row - 1) * parent->cols + col];
-	else if (bw->drag_resize_down)
+	} else if (bw->drag.resize_down) {
 		sibling = &parent->children[(row + 1) * parent->cols + col];
-	if (sibling)
+	}
+
+	if (sibling) {
 		change |= browser_window_resolve_frame_dimension(bw, sibling,
 				x, y, false, true);
+	}
 
-	if (change)
+	if (change) {
 		browser_window_recalculate_frameset(parent);
+	}
 }
 
 
@@ -711,20 +717,22 @@ bool browser_window_resolve_frame_dimension(struct browser_window *bw,
 
 	/* extend/shrink the box to the pointer */
 	if (width) {
-		if (bw->drag_resize_left)
+		if (bw->drag.resize_left) {
 			bw_dimension = bw->x + bw->width - x;
-		else
+		} else {
 			bw_dimension = x - bw->x;
+		}
 		bw_pixels = bw->width;
 		sibling_pixels = sibling->width;
 		bw_d = &bw->frame_width;
 		sibling_d = &sibling->frame_width;
 		frame_size = bw->parent->width;
 	} else {
-		if (bw->drag_resize_up)
+		if (bw->drag.resize_up) {
 			bw_dimension = bw->y + bw->height - y;
-		else
+		} else {
 			bw_dimension = y - bw->y;
+		}
 		bw_pixels = bw->height;
 		sibling_pixels = sibling->height;
 		bw_d = &bw->frame_height;
@@ -919,12 +927,12 @@ static bool browser_window_resize_frames(struct browser_window *bw,
 				 *	 front end to clamp pointer range */
 				browser_window_set_drag_type(bw,
 						DRAGGING_FRAME, NULL);
-				bw->drag_start_x = x;
-				bw->drag_start_y = y;
-				bw->drag_resize_left = left;
-				bw->drag_resize_right = right;
-				bw->drag_resize_up = up;
-				bw->drag_resize_down = down;
+				bw->drag.start_x = x;
+				bw->drag.start_y = y;
+				bw->drag.resize_left = left;
+				bw->drag.resize_right = right;
+				bw->drag.resize_up = up;
+				bw->drag.resize_down = down;
 			}
 			return true;
 		}

@@ -90,23 +90,32 @@ struct browser_window {
 	/** Fragment identifier for current_content. */
 	lwc_string *frag_id;
 
-	/** Current drag status. */
-	browser_drag_type drag_type;
+	/**
+	 * Current drag status.
+	 *
+	 * These values are only vald whle type is not DRAGGING_NONE
+	 */
+	struct {
+		/** the type of drag in progress */
+		browser_drag_type type;
 
-	/** Current drag's browser window, when not in root bw. */
-	struct browser_window *drag_window;
+		/** Current drag's browser window, when not in root bw. */
+		struct browser_window *window;
 
-	/** Mouse position at start of current scroll drag. */
-	int drag_start_x;
-	int drag_start_y;
-	/** Scroll offsets at start of current scroll draw. */
-	int drag_start_scroll_x;
-	int drag_start_scroll_y;
-	/** Frame resize directions for current frame resize drag. */
-	unsigned int drag_resize_left : 1;
-	unsigned int drag_resize_right : 1;
-	unsigned int drag_resize_up : 1;
-	unsigned int drag_resize_down : 1;
+		/** Mouse position at start of current scroll drag. */
+		int start_x;
+		int start_y;
+
+		/** Scroll offsets at start of current scroll draw. */
+		int start_scroll_x;
+		int start_scroll_y;
+
+		/** Frame resize directions for current frame resize drag. */
+		unsigned int resize_left : 1;
+		unsigned int resize_right : 1;
+		unsigned int resize_up : 1;
+		unsigned int resize_down : 1;
+	} drag;
 
 	/** Current fetch is download */
 	bool download;

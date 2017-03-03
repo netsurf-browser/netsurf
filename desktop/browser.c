@@ -421,22 +421,24 @@ void browser_window_set_position(struct browser_window *bw, int x, int y)
 }
 
 /* exported interface, documented in browser.h */
-void browser_window_set_drag_type(struct browser_window *bw,
-		browser_drag_type type, const struct rect *rect)
+void
+browser_window_set_drag_type(struct browser_window *bw,
+			     browser_drag_type type,
+			     const struct rect *rect)
 {
 	struct browser_window *top_bw = browser_window_get_root(bw);
 	gui_drag_type gtype;
 
-	bw->drag_type = type;
+	bw->drag.type = type;
 
 	if (type == DRAGGING_NONE) {
-		top_bw->drag_window = NULL;
+		top_bw->drag.window = NULL;
 	} else {
-		top_bw->drag_window = bw;
+		top_bw->drag.window = bw;
 
 		switch (type) {
 		case DRAGGING_SELECTION:
-			/* TODO: tell front end */
+			/** \todo tell front end */
 			return;
 		case DRAGGING_SCR_X:
 		case DRAGGING_SCR_Y:
@@ -455,7 +457,7 @@ void browser_window_set_drag_type(struct browser_window *bw,
 /* exported interface, documented in browser.h */
 browser_drag_type browser_window_get_drag_type(struct browser_window *bw)
 {
-	return bw->drag_type;
+	return bw->drag.type;
 }
 
 /* exported interface, documented in browser.h */
@@ -939,7 +941,7 @@ nserror browser_window_initialise_common(enum browser_window_create_flags flags,
 	/* window characteristics */
 	bw->refresh_interval = -1;
 
-	bw->drag_type = DRAGGING_NONE;
+	bw->drag.type = DRAGGING_NONE;
 
 	bw->scroll_x = NULL;
 	bw->scroll_y = NULL;
@@ -2879,7 +2881,7 @@ static void browser_window_mouse_drag_end(struct browser_window *bw,
 {
 	int scr_x, scr_y;
 
-	switch (bw->drag_type) {
+	switch (bw->drag.type) {
 	case DRAGGING_SELECTION:
 	case DRAGGING_OTHER:
 	case DRAGGING_CONTENT_SCROLLBAR:
@@ -2895,7 +2897,7 @@ static void browser_window_mouse_drag_end(struct browser_window *bw,
 
 		scrollbar_mouse_drag_end(bw->scroll_x, mouse, scr_x, scr_y);
 
-		bw->drag_type = DRAGGING_NONE;
+		bw->drag.type = DRAGGING_NONE;
 		break;
 
 	case DRAGGING_SCR_Y:
@@ -2907,7 +2909,7 @@ static void browser_window_mouse_drag_end(struct browser_window *bw,
 
 		scrollbar_mouse_drag_end(bw->scroll_y, mouse, scr_x, scr_y);
 
-		bw->drag_type = DRAGGING_NONE;
+		bw->drag.type = DRAGGING_NONE;
 		break;
 
 	default:
@@ -2925,11 +2927,11 @@ void browser_window_mouse_track(struct browser_window *bw,
 	const char *status = NULL;
 	browser_pointer_shape pointer = BROWSER_POINTER_DEFAULT;
 
-	if (bw->window != NULL && bw->drag_window && bw != bw->drag_window) {
+	if (bw->window != NULL && bw->drag.window && bw != bw->drag.window) {
 		/* This is the root browser window and there's an active drag
 		 * in a sub window.
 		 * Pass the mouse action straight on to that bw. */
-		struct browser_window *drag_bw = bw->drag_window;
+		struct browser_window *drag_bw = bw->drag.window;
 		int off_x = 0;
 		int off_y = 0;
 
@@ -2982,25 +2984,27 @@ void browser_window_mouse_track(struct browser_window *bw,
 		return;
 	}
 
-	if (c == NULL && bw->drag_type != DRAGGING_FRAME)
+	if (c == NULL && bw->drag.type != DRAGGING_FRAME) {
 		return;
+	}
 
-	if (bw->drag_type != DRAGGING_NONE && !mouse) {
+	if (bw->drag.type != DRAGGING_NONE && !mouse) {
 		browser_window_mouse_drag_end(bw, mouse, x, y);
 	}
 
 	/* Browser window's horizontal scrollbar */
-	if (bw->scroll_x != NULL && bw->drag_type != DRAGGING_SCR_Y) {
+	if (bw->scroll_x != NULL && bw->drag.type != DRAGGING_SCR_Y) {
 		int scr_x, scr_y;
 		browser_window_get_scrollbar_pos(bw, true, &scr_x, &scr_y);
 		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
 		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
 
-		if ((scr_x > 0 && scr_x < browser_window_get_scrollbar_len(bw,
-						true) &&
-				scr_y > 0 && scr_y < SCROLLBAR_WIDTH &&
-				bw->drag_type == DRAGGING_NONE) ||
-				bw->drag_type == DRAGGING_SCR_X) {
+		if ((bw->drag.type == DRAGGING_SCR_X) ||
+		    (scr_x > 0 &&
+		     scr_x < browser_window_get_scrollbar_len(bw, true) &&
+		     scr_y > 0 &&
+		     scr_y < SCROLLBAR_WIDTH &&
+		     bw->drag.type == DRAGGING_NONE)) {
 			/* Start a scrollbar drag, or continue existing drag */
 			status = scrollbar_mouse_status_to_message(
 					scrollbar_mouse_action(
@@ -3008,8 +3012,9 @@ void browser_window_mouse_track(struct browser_window *bw,
 							scr_x, scr_y));
 			pointer = BROWSER_POINTER_DEFAULT;
 
-			if (status != NULL)
+			if (status != NULL) {
 				browser_window_set_status(bw, status);
+			}
 
 			browser_window_set_pointer(bw, pointer);
 			return;
@@ -3023,11 +3028,12 @@ void browser_window_mouse_track(struct browser_window *bw,
 		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
 		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
 
-		if ((scr_y > 0 && scr_y < browser_window_get_scrollbar_len(bw,
-						false) &&
-				scr_x > 0 && scr_x < SCROLLBAR_WIDTH &&
-				bw->drag_type == DRAGGING_NONE) ||
-				bw->drag_type == DRAGGING_SCR_Y) {
+		if ((bw->drag.type == DRAGGING_SCR_Y) ||
+		    (scr_y > 0 &&
+		     scr_y < browser_window_get_scrollbar_len(bw, false) &&
+		     scr_x > 0 &&
+		     scr_x < SCROLLBAR_WIDTH &&
+		     bw->drag.type == DRAGGING_NONE)) {
 			/* Start a scrollbar drag, or continue existing drag */
 			status = scrollbar_mouse_status_to_message(
 					scrollbar_mouse_action(
@@ -3035,27 +3041,28 @@ void browser_window_mouse_track(struct browser_window *bw,
 							scr_x, scr_y));
 			pointer = BROWSER_POINTER_DEFAULT;
 
-			if (status != NULL)
+			if (status != NULL) {
 				browser_window_set_status(bw, status);
+			}
 
 			browser_window_set_pointer(bw, pointer);
 			return;
 		}
 	}
 
-	if (bw->drag_type == DRAGGING_FRAME) {
+	if (bw->drag.type == DRAGGING_FRAME) {
 		browser_window_resize_frame(bw, bw->x + x, bw->y + y);
-	} else if (bw->drag_type == DRAGGING_PAGE_SCROLL) {
+	} else if (bw->drag.type == DRAGGING_PAGE_SCROLL) {
 		/* mouse movement since drag started */
-		int scrollx = bw->drag_start_x - x;
-		int scrolly = bw->drag_start_y - y;
+		int scrollx = bw->drag.start_x - x;
+		int scrolly = bw->drag.start_y - y;
 
 		/* new scroll offsets */
-		scrollx += bw->drag_start_scroll_x;
-		scrolly += bw->drag_start_scroll_y;
+		scrollx += bw->drag.start_scroll_x;
+		scrolly += bw->drag.start_scroll_y;
 
-		bw->drag_start_scroll_x = scrollx;
-		bw->drag_start_scroll_y = scrolly;
+		bw->drag.start_scroll_x = scrollx;
+		bw->drag.start_scroll_y = scrolly;
 
 		browser_window_set_scroll(bw, scrollx, scrolly);
 	} else {
@@ -3205,19 +3212,20 @@ void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 
 	browser_window_set_drag_type(bw, DRAGGING_PAGE_SCROLL, NULL);
 
-	bw->drag_start_x = x;
-	bw->drag_start_y = y;
+	bw->drag.start_x = x;
+	bw->drag.start_y = y;
 
 	if (bw->window != NULL) {
 		/* Front end window */
-		guit->window->get_scroll(bw->window, &bw->drag_start_scroll_x,
-				&bw->drag_start_scroll_y);
+		guit->window->get_scroll(bw->window,
+					 &bw->drag.start_scroll_x,
+					 &bw->drag.start_scroll_y);
 
 		guit->window->scroll_start(bw->window);
 	} else {
 		/* Core managed browser window */
-		bw->drag_start_scroll_x = scrollbar_get_offset(bw->scroll_x);
-		bw->drag_start_scroll_y = scrollbar_get_offset(bw->scroll_y);
+		bw->drag.start_scroll_x = scrollbar_get_offset(bw->scroll_x);
+		bw->drag.start_scroll_y = scrollbar_get_offset(bw->scroll_y);
 	}
 }
 
