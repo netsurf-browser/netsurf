@@ -46,18 +46,33 @@ struct browser_window {
 	 *  READY or DONE status or NULL for no content.
 	 */
 	struct hlcache_handle *current_content;
-	/** Page being loaded, or NULL. */
+	/**
+	 * Content handle of page in process of being loaded or NULL
+	 * if no page is being loaded.
+	 */
 	struct hlcache_handle *loading_content;
 
-	/** Page Favicon */
-	struct hlcache_handle *current_favicon;
-	/** handle for favicon which we started loading early */
-	struct hlcache_handle *loading_favicon;
 	/**
-	 * flag to indicate favicon fetch already failed which
-	 * prevents infinite error looping.
+	 * Favicon
 	 */
-	bool failed_favicon;
+	struct {
+		/**
+		 * content handle of current page favicon
+		 */
+		struct hlcache_handle *current;
+
+		/**
+		 * content handle for favicon which we started loading
+		 * early
+		 */
+		struct hlcache_handle *loading;
+
+		/**
+		 * flag to indicate favicon fetch already failed which
+		 * prevents infinite error looping.
+		 */
+		bool failed;
+	} favicon;
 
 	/** local history handle. */
 	struct history *history;

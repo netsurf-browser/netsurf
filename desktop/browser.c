@@ -1059,30 +1059,37 @@ static void browser_window_stop_throbber(struct browser_window *bw)
 
 /**
  * Callback for fetchcache() for browser window favicon fetches.
+ *
+ * \param c content handle of favicon
+ * \param event The event to process
+ * \param pw a context containing the browser window
+ * \return NSERROR_OK on success else appropriate error code.
  */
-static nserror browser_window_favicon_callback(hlcache_handle *c,
-		const hlcache_event *event, void *pw)
+static nserror
+browser_window_favicon_callback(hlcache_handle *c,
+				const hlcache_event *event,
+				void *pw)
 {
 	struct browser_window *bw = pw;
 
 	switch (event->type) {
 	case CONTENT_MSG_DONE:
-		if (bw->current_favicon != NULL) {
+		if (bw->favicon.current != NULL) {
 			content_status status =
-					content_get_status(bw->current_favicon);
+					content_get_status(bw->favicon.current);
 
 			if ((status == CONTENT_STATUS_READY) ||
 					(status == CONTENT_STATUS_DONE))
-				content_close(bw->current_favicon);
+				content_close(bw->favicon.current);
 
-			hlcache_handle_release(bw->current_favicon);
+			hlcache_handle_release(bw->favicon.current);
 		}
 
-		bw->current_favicon = c;
-		bw->loading_favicon = NULL;
+		bw->favicon.current = c;
+		bw->favicon.loading = NULL;
 
 		/* content_get_bitmap on the hlcache_handle should give
-		 *   us the favicon bitmap at this point
+		 *   the favicon bitmap at this point
 		 */
 		guit->window->set_icon(bw->window, c);
 		break;
@@ -1090,32 +1097,31 @@ static nserror browser_window_favicon_callback(hlcache_handle *c,
 	case CONTENT_MSG_ERROR:
 
 		/* clean up after ourselves */
-		if (c == bw->loading_favicon)
-			bw->loading_favicon = NULL;
-		else if (c == bw->current_favicon) {
-			bw->current_favicon = NULL;
+		if (c == bw->favicon.loading) {
+			bw->favicon.loading = NULL;
+		} else if (c == bw->favicon.current) {
+			bw->favicon.current = NULL;
 		}
 
 		hlcache_handle_release(c);
 
-		if (bw->failed_favicon == false) {
+		if (bw->favicon.failed == false) {
 			nsurl *nsref = NULL;
 			nsurl *nsurl;
 			nserror error;
 
-			bw->failed_favicon = true;
+			bw->favicon.failed = true;
 
 			error = nsurl_create("resource:favicon.ico", &nsurl);
 			if (error != NSERROR_OK) {
 				LOG("Unable to create default location url");
 			} else {
-
 				hlcache_handle_retrieve(nsurl,
 						HLCACHE_RETRIEVE_SNIFF_TYPE,
 						nsref, NULL,
 						browser_window_favicon_callback,
 						bw, NULL, CONTENT_IMAGE,
-						&bw->loading_favicon);
+						&bw->favicon.loading);
 
 				nsurl_unref(nsurl);
 			}
@@ -1129,8 +1135,18 @@ static nserror browser_window_favicon_callback(hlcache_handle *c,
 	return NSERROR_OK;
 }
 
-static void browser_window_update_favicon(hlcache_handle *c,
-		struct browser_window *bw, struct content_rfc5988_link *link)
+
+/**
+ * update the favicon associated with the browser window
+ *
+ * \param c the page content handle.
+ * \param bw A top level browser window.
+ * \param link A link context or NULL to attempt fallback scanning.
+ */
+static void
+browser_window_update_favicon(hlcache_handle *c,
+			      struct browser_window *bw,
+			      struct content_rfc5988_link *link)
 {
 	nsurl *nsref = NULL;
 	nsurl *nsurl;
@@ -1144,10 +1160,10 @@ static void browser_window_update_favicon(hlcache_handle *c,
 		return;
 
 	/* already fetching the favicon - use that */
-	if (bw->loading_favicon != NULL)
+	if (bw->favicon.loading != NULL)
 		return;
 
-	bw->failed_favicon = false;
+	bw->favicon.failed = false;
 
 	if (link == NULL) {
 		/* Look for "icon" */
@@ -1184,7 +1200,7 @@ static void browser_window_update_favicon(hlcache_handle *c,
 			/* no favicon via link, try for the default location */
 			error = nsurl_join(nsurl, "/favicon.ico", &nsurl);
 		} else {
-			bw->failed_favicon = true;
+			bw->favicon.failed = true;
 			error = nsurl_create("resource:favicon.ico", &nsurl);
 		}
 		if (error != NSERROR_OK) {
@@ -1203,7 +1219,7 @@ static void browser_window_update_favicon(hlcache_handle *c,
 
 	hlcache_handle_retrieve(nsurl, HLCACHE_RETRIEVE_SNIFF_TYPE,
 			nsref, NULL, browser_window_favicon_callback,
-			bw, NULL, CONTENT_IMAGE, &bw->loading_favicon);
+			bw, NULL, CONTENT_IMAGE, &bw->favicon.loading);
 
 	nsurl_unref(nsurl);
 }
@@ -1833,21 +1849,22 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 		bw->current_content = NULL;
 	}
 
-	if (bw->loading_favicon != NULL) {
-		hlcache_handle_abort(bw->loading_favicon);
-		hlcache_handle_release(bw->loading_favicon);
-		bw->loading_favicon = NULL;
+	if (bw->favicon.loading != NULL) {
+		hlcache_handle_abort(bw->favicon.loading);
+		hlcache_handle_release(bw->favicon.loading);
+		bw->favicon.loading = NULL;
 	}
 
-	if (bw->current_favicon != NULL) {
-		content_status status = content_get_status(bw->current_favicon);
+	if (bw->favicon.current != NULL) {
+		content_status status = content_get_status(bw->favicon.current);
 
 		if (status == CONTENT_STATUS_READY ||
-		    status == CONTENT_STATUS_DONE)
-			content_close(bw->current_favicon);
+		    status == CONTENT_STATUS_DONE) {
+			content_close(bw->favicon.current);
+		}
 
-		hlcache_handle_release(bw->current_favicon);
-		bw->current_favicon = NULL;
+		hlcache_handle_release(bw->favicon.current);
+		bw->favicon.current = NULL;
 	}
 
 	if (bw->box != NULL) {
@@ -1861,8 +1878,9 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 
 	/* These simply free memory, so are safe here */
 
-	if (bw->frag_id != NULL)
+	if (bw->frag_id != NULL) {
 		lwc_string_unref(bw->frag_id);
+	}
 
 	browser_window_history_destroy(bw);
 
