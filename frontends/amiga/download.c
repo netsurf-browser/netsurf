@@ -305,7 +305,7 @@ static void gui_download_window_error(struct gui_download_window *dw,
 
 static void ami_download_window_abort(void *w)
 {
-	struct gui_download_window *dw = (struct gui_download_window *)dw;
+	struct gui_download_window *dw = (struct gui_download_window *)w;
 	download_context_abort(dw->ctx);
 	dw->result = AMINS_DLOAD_ABORT;
 	gui_download_window_done(dw);

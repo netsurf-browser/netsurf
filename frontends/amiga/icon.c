@@ -336,7 +336,10 @@ static ULONG *amiga_icon_convertcolouricon32(UBYTE *icondata, ULONG width, ULONG
 	if (!argbicon) return(NULL);
 
 	cmap=GetColorMap(pals1);
-	if(!cmap) return(NULL);
+	if(!cmap) {
+		free(argbicon);
+		return(NULL);
+	}
 
 	for(i=0;i<(width*height);i++)
 	{

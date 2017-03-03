@@ -1035,6 +1035,7 @@ static void gui_init2(int argc, char** argv)
 			amiga_warn_user(messages_get_errorcode(error), 0);
 		}
 		free(temp_homepage_url);
+		temp_homepage_url = NULL;
 	}
 
 	if(cli_force == true) {
@@ -1115,6 +1116,7 @@ static void gui_init2(int argc, char** argv)
 		if(temp_homepage_url) {
 			sendcmd = ASPrintf("OPEN \"%s\" NEW%s", temp_homepage_url, newtab);
 			free(temp_homepage_url);
+			temp_homepage_url = NULL;
 		} else {
 			sendcmd = ASPrintf("OPEN \"%s\" NEW%s", nsoption_charp(homepage_url), newtab);
 		}
@@ -1566,6 +1568,7 @@ static struct IBox *ami_ns_rect_to_ibox(struct gui_window_2 *gwin, const struct 
 	if(ibox == NULL) return NULL;
 
 	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		free(ibox);
 		amiga_warn_user("NoMemory", "");
 		return NULL;
 	}

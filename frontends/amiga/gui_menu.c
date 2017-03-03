@@ -504,9 +504,9 @@ HOOKF(void, ami_menu_item_arexx_entries, APTR, window, struct IntuiMessage *)
 				DevNameFromLock(lock, temp, 1024, DN_FULLPATH);
 				AddPart(temp, script, 1024);
 				ami_arexx_execute(temp);
-				free(temp);
 				UnLock(lock);
 			}
+			free(temp);
 		}
 	}
 }
