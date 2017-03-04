@@ -324,11 +324,11 @@ nsgtk_print_plot_rectangle(const struct redraw_context *ctx,
 		     const plot_style_t *style,
 		     const struct rect *rect)
 {
-	int x0,y0,x1,y1;
 	LOG("x0: %i ;\t y0: %i ;\t x1: %i ;\t y1: %i",
 	    rect->x0, rect->y0, rect->x1, rect->y1);
 
         if (style->fill_type != PLOT_OP_TYPE_NONE) { 
+		int x0,y0,x1,y1;
 
 		nsgtk_print_set_colour(style->fill_colour);
 		nsgtk_print_set_solid();
@@ -349,7 +349,15 @@ nsgtk_print_plot_rectangle(const struct redraw_context *ctx,
 	}
 
         if (style->stroke_type != PLOT_OP_TYPE_NONE) { 
-                nsgtk_print_set_colour(style->stroke_colour);
+		int stroke_width;
+
+		/* ensure minimum stroke width */
+		stroke_width = style->stroke_width;
+                if (stroke_width == 0) {
+			stroke_width = 1;
+                }
+
+		nsgtk_print_set_colour(style->stroke_colour);
 
                 switch (style->stroke_type) {
                 case PLOT_OP_TYPE_SOLID: /**< Solid colour */
@@ -366,12 +374,12 @@ nsgtk_print_plot_rectangle(const struct redraw_context *ctx,
                         break;
                 }
 
-                if (style->stroke_width == 0) 
-                        cairo_set_line_width(gtk_print_current_cr, 1);
-                else
-                        cairo_set_line_width(gtk_print_current_cr, style->stroke_width);
+		cairo_set_line_width(gtk_print_current_cr, stroke_width);
 
-		cairo_rectangle(gtk_print_current_cr, x0, y0, x1 - x0, y1 - y0);
+		cairo_rectangle(gtk_print_current_cr,
+				rect->x0, rect->y0,
+				rect->x1 - rect->x0, rect->y1 - rect->y0);
+
 		cairo_stroke(gtk_print_current_cr);
 	}
 	
