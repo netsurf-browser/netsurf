@@ -608,8 +608,10 @@ NSBaseView::Instantiate(BMessage *archive)
 
 	struct replicant_thread_info *info = new replicant_thread_info;
 	info->url = BString(url);
-	if (nsbeos_find_app_path(info->app) < B_OK)
+	if (nsbeos_find_app_path(info->app) < B_OK) {
+                delete info;
 		return NULL;
+        }
 	info->args[0] = info->app;
 	info->args[1] = (char *)info->url.String();
 	info->args[2] = NULL;
