@@ -182,8 +182,10 @@ static void do_popup( WINDOW *win, int index, int mode, void *data)
 
 
 
-bool verify_ssl_form_do( const char * url, const struct ssl_cert_info * cert_infos_n ,
-	unsigned long num_certs )
+bool
+verify_ssl_form_do(const char * url,
+		   const struct ssl_cert_info * cert_infos_n,
+		   unsigned long num_certs)
 {
 	OBJECT *tree;
 	WINDOW * form;
@@ -191,6 +193,13 @@ bool verify_ssl_form_do( const char * url, const struct ssl_cert_info * cert_inf
 	bool bres = false;
 	bool cont = true;
 	int res = 0;
+
+	RsrcGaddr (h_gem_rsrc , R_TREE, VERIFY, &tree);
+	ObjcString( tree, VERIFY_LBL_HOST, (char*)url );
+	ObjcChange( OC_OBJC, tree, VERIFY_BT_ACCEPT, 0, 0 );
+	ObjcChange( OC_OBJC, tree, VERIFY_BT_REJECT, 0, 0 );
+	form = FormWindBegin( tree, (char*)"SSL Verify failed"  );
+
 	dp.cert_infos_n = (struct ssl_cert_info *)cert_infos_n;
 	dp.num_certs = num_certs;
 	dp.scrollx = 0;
@@ -199,12 +208,6 @@ bool verify_ssl_form_do( const char * url, const struct ssl_cert_info * cert_inf
 	dp.cols = cert_display_width( &dp.cert_infos_n[dp.current] );
 	dp.rows = 8;
 	dp.tree = tree;
-
-	RsrcGaddr (h_gem_rsrc , R_TREE, VERIFY, &tree);
-	ObjcString( tree, VERIFY_LBL_HOST, (char*)url );
-	ObjcChange( OC_OBJC, tree, VERIFY_BT_ACCEPT, 0, 0 );
-	ObjcChange( OC_OBJC, tree, VERIFY_BT_REJECT, 0, 0 );
-	form = FormWindBegin( tree, (char*)"SSL Verify failed"  );
 	EvntDataAdd( form, WM_REDRAW, cert_info_draw, (void*)&dp, EV_BOT );
 	/* this results in some extended objects which can not be freed: :( */
 	/* RsrcUserDraw( OC_FORM, tree, VERIFY_BOX_DETAILS, cert_info_draw,(void*)&dp ) ; */
