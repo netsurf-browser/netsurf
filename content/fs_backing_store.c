@@ -1654,7 +1654,7 @@ static nserror store_write_block(struct store_state *state,
 		state->blocks_opened = true;
 	}
 
-	offst = bi << log2_block_size[elem_idx];
+	offst = (unsigned int)bi << log2_block_size[elem_idx];
 
 	wr = nsu_pwrite(state->blocks[elem_idx][bf].fd,
 		    bse->elem[elem_idx].data,
@@ -1822,7 +1822,7 @@ static nserror store_read_block(struct store_state *state,
 		state->blocks_opened = true;
 	}
 
-	offst = bi << log2_block_size[elem_idx];
+	offst = (unsigned int)bi << log2_block_size[elem_idx];
 
 	rd = nsu_pread(state->blocks[elem_idx][bf].fd,
 		   bse->elem[elem_idx].data,
