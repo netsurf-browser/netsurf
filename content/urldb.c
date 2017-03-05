@@ -3796,7 +3796,7 @@ void urldb_load_cookies(const char *filename)
 	if (!fp)
 		return;
 
-#define FIND_T {							\
+#define FIND_T do {							\
 		for (; *p && *p != '\t'; p++)				\
 			; /* do nothing */				\
 		if (p >= end) {						\
@@ -3804,16 +3804,16 @@ void urldb_load_cookies(const char *filename)
 			continue;					\
 		}							\
 		*p++ = '\0';						\
-}
+	} while(0)
 
-#define SKIP_T {							\
+#define SKIP_T do {							\
 		for (; *p && *p == '\t'; p++)				\
 			; /* do nothing */				\
 		if (p >= end) {						\
 			LOG("Overran input");				\
 			continue;					\
 		}							\
-}
+	} while(0)
 
 	while (fgets(s, sizeof s, fp)) {
 		char *p = s, *end = 0,
