@@ -448,6 +448,54 @@ START_TEST(urldb_session_test)
 }
 END_TEST
 
+START_TEST(urldb_session_add_test)
+{
+	nserror res;
+	char *outnam;
+	struct host_part *h;
+	struct path_data *p;
+	nsurl *url;
+	lwc_string *scheme;
+
+	/* writing output requires options initialising */
+	res = nsoption_init(NULL, NULL, NULL);
+	ck_assert_int_eq(res, NSERROR_OK);
+
+	res = urldb_load(test_urldb_path);
+	ck_assert_int_eq(res, NSERROR_OK);
+
+	urldb_load_cookies(test_cookies_path);
+
+	/* add something to db */
+	h = urldb_add_host("tree.example.com");
+	ck_assert_msg(h != NULL, "failed adding host");
+
+	url = make_url("http://tree.example.com/");
+	scheme = nsurl_get_component(url, NSURL_SCHEME);
+	p = urldb_add_path(scheme, 0, h, strdup("/"), NULL, url);
+	ck_assert_msg(p != NULL, "failed adding path");
+
+	lwc_string_unref(scheme);
+	nsurl_unref(url);
+
+	/* write database out */
+	outnam = tmpnam(NULL);
+	res = urldb_save(outnam);
+	ck_assert_int_eq(res, NSERROR_OK);
+
+	/* remove test output */
+	unlink(outnam);
+
+	/* write cookies out */
+	urldb_save_cookies(outnam);
+
+	/* finalise options */
+	res = nsoption_finalise(NULL, NULL);
+	ck_assert_int_eq(res, NSERROR_OK);
+
+}
+END_TEST
+
 
 static TCase *urldb_session_case_create(void)
 {
@@ -460,6 +508,7 @@ static TCase *urldb_session_case_create(void)
 				  urldb_teardown);
 
 	tcase_add_test(tc, urldb_session_test);
+	tcase_add_test(tc, urldb_session_add_test);
 
 	return tc;
 }
