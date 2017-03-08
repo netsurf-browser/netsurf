@@ -2039,6 +2039,180 @@ urldb_parse_cookie(nsurl *url, const char **cookie)
 
 
 /**
+ * Add a path to the database, creating any intermediate entries
+ *
+ * \param scheme URL scheme associated with path
+ * \param port Port number on host associated with path
+ * \param host Host tree node to attach to
+ * \param path_query Absolute path plus query to add (freed)
+ * \param fragment URL fragment, or NULL
+ * \param url URL (fragment ignored)
+ * \return Pointer to leaf node, or NULL on memory exhaustion
+ */
+static struct path_data *
+urldb_add_path(lwc_string *scheme,
+	       unsigned int port,
+	       const struct host_part *host,
+	       char *path_query,
+	       lwc_string *fragment,
+	       nsurl *url)
+{
+	struct path_data *d, *e;
+	char *buf = path_query;
+	char *segment, *slash;
+	bool match;
+
+	assert(scheme && host && url);
+
+	d = (struct path_data *) &host->paths;
+
+	/* skip leading '/' */
+	segment = buf;
+	if (*segment == '/')
+		segment++;
+
+	/* Process path segments */
+	do {
+		slash = strchr(segment, '/');
+		if (!slash) {
+			/* last segment */
+			/* look for existing entry */
+			for (e = d->children; e; e = e->next)
+				if (strcmp(segment, e->segment) == 0 &&
+				    lwc_string_isequal(scheme,
+						       e->scheme, &match) ==
+				    lwc_error_ok &&
+				    match == true &&
+				    e->port == port)
+					break;
+
+			d = e ? urldb_add_path_fragment(e, fragment) :
+				urldb_add_path_node(scheme, port,
+						    segment, fragment, d);
+			break;
+		}
+
+		*slash = '\0';
+
+		/* look for existing entry */
+		for (e = d->children; e; e = e->next)
+			if (strcmp(segment, e->segment) == 0 &&
+			    lwc_string_isequal(scheme, e->scheme,
+					       &match) == lwc_error_ok &&
+			    match == true &&
+			    e->port == port)
+				break;
+
+		d = e ? e : urldb_add_path_node(scheme, port, segment, NULL, d);
+		if (!d)
+			break;
+
+		segment = slash + 1;
+	} while (1);
+
+	free(path_query);
+
+	if (d && !d->url) {
+		/* Insert defragmented URL */
+		if (nsurl_defragment(url, &d->url) != NSERROR_OK)
+			return NULL;
+	}
+
+	return d;
+}
+
+
+/**
+ * Add a host to the database, creating any intermediate entries
+ *
+ * \param host Hostname to add
+ * \return Pointer to leaf node, or NULL on memory exhaustion
+ */
+static struct host_part *urldb_add_host(const char *host)
+{
+	struct host_part *d = (struct host_part *) &db_root, *e;
+	struct search_node *s;
+	char buf[256]; /* 256 bytes is sufficient - domain names are
+			* limited to 255 chars. */
+	char *part;
+
+	assert(host);
+
+	if (urldb__host_is_ip_address(host)) {
+		/* Host is an IP, so simply add as TLD */
+
+		/* Check for existing entry */
+		for (e = d->children; e; e = e->next)
+			if (strcasecmp(host, e->part) == 0)
+				/* found => return it */
+				return e;
+
+		d = urldb_add_host_node(host, d);
+
+		s = urldb_search_insert(search_trees[ST_IP], d);
+		if (!s) {
+			/* failed */
+			d = NULL;
+		} else {
+			search_trees[ST_IP] = s;
+		}
+
+		return d;
+	}
+
+	/* Copy host string, so we can corrupt it */
+	strncpy(buf, host, sizeof buf);
+	buf[sizeof buf - 1] = '\0';
+
+	/* Process FQDN segments backwards */
+	do {
+		part = strrchr(buf, '.');
+		if (!part) {
+			/* last segment */
+			/* Check for existing entry */
+			for (e = d->children; e; e = e->next)
+				if (strcasecmp(buf, e->part) == 0)
+					break;
+
+			if (e) {
+				d = e;
+			} else {
+				d = urldb_add_host_node(buf, d);
+			}
+
+			/* And insert into search tree */
+			if (d) {
+				struct search_node **r;
+
+				r = urldb_get_search_tree_direct(buf);
+				s = urldb_search_insert(*r, d);
+				if (!s) {
+					/* failed */
+					d = NULL;
+				} else {
+					*r = s;
+				}
+			}
+			break;
+		}
+
+		/* Check for existing entry */
+		for (e = d->children; e; e = e->next)
+			if (strcasecmp(part + 1, e->part) == 0)
+				break;
+
+		d = e ? e : urldb_add_host_node(part + 1, d);
+		if (!d)
+			break;
+
+		*part = '\0';
+	} while (1);
+
+	return d;
+}
+
+
+/**
  * Insert a cookie into the database
  *
  * \param c The cookie to insert
@@ -4161,160 +4335,5 @@ void urldb_dump(void)
 }
 
 
-/* exported interface documented in content/urldb.h */
-struct host_part *urldb_add_host(const char *host)
-{
-	struct host_part *d = (struct host_part *) &db_root, *e;
-	struct search_node *s;
-	char buf[256]; /* 256 bytes is sufficient - domain names are
-			* limited to 255 chars. */
-	char *part;
-
-	assert(host);
-
-	if (urldb__host_is_ip_address(host)) {
-		/* Host is an IP, so simply add as TLD */
-
-		/* Check for existing entry */
-		for (e = d->children; e; e = e->next)
-			if (strcasecmp(host, e->part) == 0)
-				/* found => return it */
-				return e;
-
-		d = urldb_add_host_node(host, d);
-
-		s = urldb_search_insert(search_trees[ST_IP], d);
-		if (!s) {
-			/* failed */
-			d = NULL;
-		} else {
-			search_trees[ST_IP] = s;
-		}
-
-		return d;
-	}
-
-	/* Copy host string, so we can corrupt it */
-	strncpy(buf, host, sizeof buf);
-	buf[sizeof buf - 1] = '\0';
-
-	/* Process FQDN segments backwards */
-	do {
-		part = strrchr(buf, '.');
-		if (!part) {
-			/* last segment */
-			/* Check for existing entry */
-			for (e = d->children; e; e = e->next)
-				if (strcasecmp(buf, e->part) == 0)
-					break;
-
-			if (e) {
-				d = e;
-			} else {
-				d = urldb_add_host_node(buf, d);
-			}
-
-			/* And insert into search tree */
-			if (d) {
-				struct search_node **r;
-
-				r = urldb_get_search_tree_direct(buf);
-				s = urldb_search_insert(*r, d);
-				if (!s) {
-					/* failed */
-					d = NULL;
-				} else {
-					*r = s;
-				}
-			}
-			break;
-		}
-
-		/* Check for existing entry */
-		for (e = d->children; e; e = e->next)
-			if (strcasecmp(part + 1, e->part) == 0)
-				break;
-
-		d = e ? e : urldb_add_host_node(part + 1, d);
-		if (!d)
-			break;
-
-		*part = '\0';
-	} while (1);
-
-	return d;
-}
 
 
-/* exported interface documented in content/urldb.h */
-struct path_data *
-urldb_add_path(lwc_string *scheme,
-	       unsigned int port,
-	       const struct host_part *host,
-	       char *path_query,
-	       lwc_string *fragment,
-	       nsurl *url)
-{
-	struct path_data *d, *e;
-	char *buf = path_query;
-	char *segment, *slash;
-	bool match;
-
-	assert(scheme && host && url);
-
-	d = (struct path_data *) &host->paths;
-
-	/* skip leading '/' */
-	segment = buf;
-	if (*segment == '/')
-		segment++;
-
-	/* Process path segments */
-	do {
-		slash = strchr(segment, '/');
-		if (!slash) {
-			/* last segment */
-			/* look for existing entry */
-			for (e = d->children; e; e = e->next)
-				if (strcmp(segment, e->segment) == 0 &&
-				    lwc_string_isequal(scheme,
-						       e->scheme, &match) ==
-				    lwc_error_ok &&
-				    match == true &&
-				    e->port == port)
-					break;
-
-			d = e ? urldb_add_path_fragment(e, fragment) :
-				urldb_add_path_node(scheme, port,
-						    segment, fragment, d);
-			break;
-		}
-
-		*slash = '\0';
-
-		/* look for existing entry */
-		for (e = d->children; e; e = e->next)
-			if (strcmp(segment, e->segment) == 0 &&
-			    lwc_string_isequal(scheme, e->scheme,
-					       &match) == lwc_error_ok &&
-			    match == true &&
-			    e->port == port)
-				break;
-
-		d = e ? e : urldb_add_path_node(scheme, port, segment, NULL, d);
-		if (!d)
-			break;
-
-		segment = slash + 1;
-	} while (1);
-
-	free(path_query);
-
-	if (d && !d->url) {
-		/* Insert defragmented URL */
-		if (nsurl_defragment(url, &d->url) != NSERROR_OK)
-			return NULL;
-	}
-
-	return d;
-}

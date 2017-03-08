@@ -71,27 +71,6 @@ static nsurl *make_url(const char *url)
 	return nsurl;
 }
 
-static char *make_path_query(nsurl *url)
-{
-	size_t len;
-	char *path_query;
-	if (nsurl_get(url, NSURL_PATH | NSURL_QUERY, &path_query, &len) !=
-			NSERROR_OK) {
-		LOG("failed creating path_query");
-		exit(1);
-	}
-	return path_query;
-}
-
-static lwc_string *make_lwc(const char *str)
-{
-	lwc_string *lwc;
-	if (lwc_intern_string(str, strlen(str), &lwc) != lwc_error_ok) {
-		LOG("failed creating lwc_string");
-		exit(1);
-	}
-	return lwc;
-}
 
 static bool test_urldb_set_cookie(const char *header, const char *url,
 		const char *referer)
@@ -208,58 +187,37 @@ START_TEST(urldb_original_test)
 	nsurl *urlr;
 	char *path_query;
 
-	h = urldb_add_host("127.0.0.1");
-	ck_assert_msg(h != NULL, "failed adding host");
-
-	h = urldb_add_host("intranet");
-	ck_assert_msg(h != NULL, "failed adding host");
-
+	/* ensure title can be set */
 	url = make_url("http://intranet/");
-	scheme = nsurl_get_component(url, NSURL_SCHEME);
-	p = urldb_add_path(scheme, 0, h, strdup("/"), NULL, url);
-	ck_assert_msg(p != NULL, "failed adding path");
-
-	lwc_string_unref(scheme);
-
+	urldb_add_url(url);
 	urldb_set_url_title(url, "foo");
 
 	u = urldb_get_url_data(url);
-	assert(u && strcmp(u->title, "foo") == 0);
+	ck_assert(u && strcmp(u->title, "foo") == 0);
 	nsurl_unref(url);
 
-	/* Get host entry */
-	h = urldb_add_host("netsurf.strcprstskrzkrk.co.uk");
-	ck_assert_msg(h != NULL, "failed adding host");
-
-	/* Get path entry */
+	/* fragments */
 	url = make_url("http://netsurf.strcprstskrzkrk.co.uk/path/to/resource.htm?a=b");
-	scheme = nsurl_get_component(url, NSURL_SCHEME);
-	path_query = make_path_query(url);
-	fragment = make_lwc("zz");
-	p = urldb_add_path(scheme, 0, h, strdup(path_query), fragment, url);
-	ck_assert_msg(p != NULL, "failed adding path");
+	ck_assert(urldb_add_url(url) == true);
+	nsurl_unref(url);
 
-	lwc_string_unref(fragment);
+	url = make_url("http://netsurf.strcprstskrzkrk.co.uk/path/to/resource.htm#zz?a=b");
+	ck_assert(urldb_add_url(url) == true);
+	nsurl_unref(url);
 
-	fragment = make_lwc("aa");
-	p = urldb_add_path(scheme, 0, h, strdup(path_query), fragment, url);
-	ck_assert_msg(p != NULL, "failed adding path");
+	url = make_url("http://netsurf.strcprstskrzkrk.co.uk/path/to/resource.htm#aa?a=b");
+	ck_assert(urldb_add_url(url) == true);
+	nsurl_unref(url);
 
-	lwc_string_unref(fragment);
-
-	fragment = make_lwc("yy");
-	p = urldb_add_path(scheme, 0, h, strdup(path_query), fragment, url);
-	ck_assert_msg(p != NULL, "failed adding path");
-
-	free(path_query);
-	lwc_string_unref(fragment);
-	lwc_string_unref(scheme);
+	url = make_url("http://netsurf.strcprstskrzkrk.co.uk/path/to/resource.htm#yy?a=b");
+	ck_assert(urldb_add_url(url) == true);
 	nsurl_unref(url);
 
 	url = make_url("file:///home/");
-	urldb_add_url(url);
+	ck_assert(urldb_add_url(url) == true);
 	nsurl_unref(url);
 
+	/* set cookies on urls */
 	url = make_url("http://www.minimarcos.org.uk/cgi-bin/forum/Blah.pl?,v=login,p=2");
 	urldb_set_cookie("mmblah=foo; path=/; expires=Thur, 31-Dec-2099 00:00:00 GMT\r\n", url, NULL);
 	nsurl_unref(url);
@@ -416,6 +374,11 @@ static TCase *urldb_original_case_create(void)
 	return tc;
 }
 
+/**
+ * Session basic test case
+ *
+ * The databases are loaded and saved with no manipulation
+ */
 START_TEST(urldb_session_test)
 {
 	nserror res;
@@ -439,7 +402,11 @@ START_TEST(urldb_session_test)
 	unlink(outnam);
 
 	/* write cookies out */
+	outnam = tmpnam(NULL);
 	urldb_save_cookies(outnam);
+
+	/* remove test output */
+	unlink(outnam);
 
 	/* finalise options */
 	res = nsoption_finalise(NULL, NULL);
@@ -448,6 +415,11 @@ START_TEST(urldb_session_test)
 }
 END_TEST
 
+/**
+ * Session more extensive test case
+ *
+ * The databases are loaded and saved with a host and paths added
+ */
 START_TEST(urldb_session_add_test)
 {
 	nserror res;
@@ -467,15 +439,12 @@ START_TEST(urldb_session_add_test)
 	urldb_load_cookies(test_cookies_path);
 
 	/* add something to db */
-	h = urldb_add_host("tree.example.com");
-	ck_assert_msg(h != NULL, "failed adding host");
-
 	url = make_url("http://tree.example.com/");
-	scheme = nsurl_get_component(url, NSURL_SCHEME);
-	p = urldb_add_path(scheme, 0, h, strdup("/"), NULL, url);
-	ck_assert_msg(p != NULL, "failed adding path");
+	urldb_add_url(url);
 
-	lwc_string_unref(scheme);
+	res = urldb_update_url_visit_data(url);
+	ck_assert_int_eq(res, NSERROR_OK);
+
 	nsurl_unref(url);
 
 	/* write database out */
@@ -487,7 +456,11 @@ START_TEST(urldb_session_add_test)
 	unlink(outnam);
 
 	/* write cookies out */
+	outnam = tmpnam(NULL);
 	urldb_save_cookies(outnam);
+
+	/* remove test output */
+	unlink(outnam);
 
 	/* finalise options */
 	res = nsoption_finalise(NULL, NULL);
@@ -496,7 +469,12 @@ START_TEST(urldb_session_add_test)
 }
 END_TEST
 
-
+/**
+ * Test case to check entire session
+ *
+ * These tests define a session as loading a url database and cookie
+ * database and then saving them back to disc.
+ */
 static TCase *urldb_session_case_create(void)
 {
 	TCase *tc;
@@ -818,18 +796,17 @@ static TCase *urldb_cookie_case_create(void)
 }
 
 
-
-
 /**
- * Test urldb_add_host asserting on NULL.
+ * Test urldb_add_url asserting on NULL.
  */
-START_TEST(urldb_api_add_host_assert_test)
+START_TEST(urldb_api_add_url_assert_test)
 {
-	struct host_part *res;
-	res = urldb_add_host(NULL);
-	ck_assert(res == NULL);
+	bool res;
+	res = urldb_add_url(NULL);
+	ck_assert(res == true);
 }
 END_TEST
+
 
 /**
  * test url database finalisation without initialisation.
@@ -850,11 +827,10 @@ static TCase *urldb_api_case_create(void)
 	tc = tcase_create("API_checks");
 
 	tcase_add_test_raise_signal(tc,
-				    urldb_api_add_host_assert_test,
+				    urldb_api_add_url_assert_test,
 				    6);
 
 	tcase_add_test(tc, urldb_api_destroy_no_init_test);
-
 
 	return tc;
 }

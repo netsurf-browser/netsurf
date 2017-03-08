@@ -138,29 +138,4 @@ bool urldb_set_cookie(const char *header, struct nsurl *url, struct nsurl *refer
 char *urldb_get_cookie(struct nsurl *url, bool include_http_only);
 
 
-/**
- * Add a host to the database, creating any intermediate entries
- *
- * \param host Hostname to add
- * \return Pointer to leaf node, or NULL on memory exhaustion
- */
-struct host_part *urldb_add_host(const char *host);
-
-
-/**
- * Add a path to the database, creating any intermediate entries
- *
- * \param scheme URL scheme associated with path
- * \param port Port number on host associated with path
- * \param host Host tree node to attach to
- * \param path_query Absolute path plus query to add (freed)
- * \param fragment URL fragment, or NULL
- * \param url URL (fragment ignored)
- * \return Pointer to leaf node, or NULL on memory exhaustion
- */
-struct path_data *urldb_add_path(lwc_string *scheme, unsigned int port,
-		const struct host_part *host, char *path_query,
-		lwc_string *fragment, struct nsurl *url);
-
-
 #endif
