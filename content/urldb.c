@@ -3033,18 +3033,21 @@ void urldb_set_url_content_type(nsurl *url, content_type type)
 
 
 /* exported interface documented in content/urldb.h */
-void urldb_update_url_visit_data(nsurl *url)
+nserror urldb_update_url_visit_data(nsurl *url)
 {
 	struct path_data *p;
 
 	assert(url);
 
 	p = urldb_find_url(url);
-	if (!p)
-		return;
+	if (!p) {
+		return NSERROR_NOT_FOUND;
+	}
 
 	p->urld.last_visit = time(NULL);
 	p->urld.visits++;
+
+	return NSERROR_OK;
 }
 
 

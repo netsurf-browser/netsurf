@@ -75,8 +75,9 @@ void urldb_set_url_content_type(struct nsurl *url, content_type type);
  * Update an URL's visit data
  *
  * \param url The URL to update
+ * \return NSERROR_OK on success or NSERROR_NOT_FOUND if url not in database
  */
-void urldb_update_url_visit_data(struct nsurl *url);
+nserror urldb_update_url_visit_data(struct nsurl *url);
 
 
 /**
