@@ -312,6 +312,27 @@ static struct bloom_filter *url_bloom;
 
 
 /**
+ * write a time_t to a file portably
+ *
+ * \param fp File to write to
+ * \param val the unix time value to output
+ * \return NSERROR_OK on success
+ */
+static nserror urldb_write_timet(FILE *fp, time_t val)
+{
+	int use;
+	char op[32];
+
+	use = nsc_sntimet(op, 32, &val);
+	if (use == 0) {
+		fprintf(fp, "%i\n", (int)val);
+	} else {
+		fprintf(fp, "%.*s\n", use, op);
+	}
+	return NSERROR_OK;
+}
+
+/**
  * Write paths associated with a host
  *
  * \param parent Root of (sub)tree to write
@@ -383,9 +404,14 @@ urldb_write_paths(const struct path_data *parent,
 
 				/** \todo handle fragments? */
 
-				fprintf(fp, "%i\n%i\n%i\n", p->urld.visits,
-					(int)p->urld.last_visit,
-					(int)p->urld.type);
+				/* number of visits */
+				fprintf(fp, "%i\n", p->urld.visits);
+
+				/* time entry was last used */
+				urldb_write_timet(fp, p->urld.last_visit);
+
+				/* entry type */
+				fprintf(fp, "%i\n", (int)p->urld.type);
 
 				fprintf(fp, "\n");
 
@@ -2806,10 +2832,13 @@ nserror urldb_load(const char *filename)
 			if (p)
 				p->urld.visits = (unsigned int)atoi(s);
 
-			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+			/* entry last use time */
+			if (!fgets(s, MAXIMUM_URL_LENGTH, fp)) {
 				break;
-			if (p)
-				p->urld.last_visit = (time_t)atoi(s);
+			}
+			if (p) {
+				nsc_snptimet(s, strlen(s) - 1, &p->urld.last_visit);
+			}
 
 			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 				break;
