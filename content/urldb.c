@@ -4301,7 +4301,6 @@ void urldb_save_cookies(const char *filename)
 	if (!fp)
 		return;
 
-	fprintf(fp, "# >%s\n", filename);
 	fprintf(fp, "# NetSurf cookies file.\n"
 		"#\n"
 		"# Lines starting with a '#' are comments, "

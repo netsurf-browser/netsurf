@@ -43,12 +43,66 @@
 #include "desktop/gui_internal.h"
 #include "desktop/cookie_manager.h"
 
+/**
+ * url database used as input to test sets
+ */
 const char *test_urldb_path = "test/data/urldb";
+/**
+ * url database used as output reference
+ */
+const char *test_urldb_out_path = "test/data/urldb-out";
+
+/**
+ * cookie database used as input
+ */
 const char *test_cookies_path = "test/data/cookies";
+/**
+ * cookie database used as output reference
+ */
+const char *test_cookies_out_path = "test/data/cookies-out";
 
 const char *wikipedia_url = "http://www.wikipedia.org/";
 
 struct netsurf_table *guit = NULL;
+
+/**
+ * compare two files contents
+ */
+static int cmp(const char *f1, const char *f2)
+{
+	int res = 0;
+	FILE *fp1;
+	FILE *fp2;
+	int ch1;
+	int ch2;
+
+	fp1 = fopen(f1, "r");
+	if (fp1 == NULL) {
+		return -1;
+	}
+	fp2 = fopen(f2, "r");
+	if (fp2 == NULL) {
+		fclose(fp1);
+		return -1;
+	}
+
+	while (res == 0) {
+		ch1 = fgetc(fp1);
+		ch2 = fgetc(fp2);
+
+		if (ch1 != ch2) {
+			res = 1;
+		}
+
+		if (ch1 == EOF) {
+			break;
+		}
+	}
+
+	fclose(fp1);
+	fclose(fp2);
+	return res;
+}
 
 /*************** original test helpers ************/
 
@@ -398,12 +452,18 @@ START_TEST(urldb_session_test)
 	res = urldb_save(outnam);
 	ck_assert_int_eq(res, NSERROR_OK);
 
+	/* check for the correct answer */
+	ck_assert_int_eq(cmp(outnam, test_urldb_out_path), 0);
+
 	/* remove test output */
 	unlink(outnam);
 
 	/* write cookies out */
 	outnam = tmpnam(NULL);
 	urldb_save_cookies(outnam);
+
+	/* check for the correct answer */
+	ck_assert_int_eq(cmp(outnam, test_cookies_out_path), 0);
 
 	/* remove test output */
 	unlink(outnam);
