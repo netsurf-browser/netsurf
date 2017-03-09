@@ -66,6 +66,18 @@ const char *wikipedia_url = "http://www.wikipedia.org/";
 struct netsurf_table *guit = NULL;
 
 /**
+ * generate test output filenames
+ */
+static char *testnam(char *out)
+{
+	static int count = 0;
+	static char name[64];
+	snprintf(name, 64, "/tmp/urldbtest%d", count);
+	count++;
+	return name;
+}
+
+/**
  * compare two files contents
  */
 static int cmp(const char *f1, const char *f2)
@@ -443,7 +455,7 @@ START_TEST(urldb_session_test)
 	urldb_load_cookies(test_cookies_path);
 
 	/* write database out */
-	outnam = tmpnam(NULL);
+	outnam = testnam(NULL);
 	res = urldb_save(outnam);
 	ck_assert_int_eq(res, NSERROR_OK);
 
@@ -454,7 +466,7 @@ START_TEST(urldb_session_test)
 	unlink(outnam);
 
 	/* write cookies out */
-	outnam = tmpnam(NULL);
+	outnam = testnam(NULL);
 	urldb_save_cookies(outnam);
 
 	/* check for the correct answer */
@@ -500,7 +512,7 @@ START_TEST(urldb_session_add_test)
 	nsurl_unref(url);
 
 	/* write database out */
-	outnam = tmpnam(NULL);
+	outnam = testnam(NULL);
 	res = urldb_save(outnam);
 	ck_assert_int_eq(res, NSERROR_OK);
 
@@ -508,7 +520,7 @@ START_TEST(urldb_session_add_test)
 	unlink(outnam);
 
 	/* write cookies out */
-	outnam = tmpnam(NULL);
+	outnam = testnam(NULL);
 	urldb_save_cookies(outnam);
 
 	/* remove test output */

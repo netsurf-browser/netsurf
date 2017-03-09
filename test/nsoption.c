@@ -39,6 +39,17 @@ const char *test_choices_all_path = "test/data/Choices-all";
 const char *test_choices_full_path = "test/data/Choices-full";
 const char *test_choices_missing_path = "test/data/Choices-missing";
 
+/**
+ * generate test output filenames
+ */
+static char *testnam(char *out)
+{
+	static int count = 0;
+	static char name[64];
+	snprintf(name, 64, "/tmp/nsoptiontest%d", count);
+	count++;
+	return name;
+}
 
 static nserror gui_options_init_defaults(struct nsoption_s *defaults)
 {
@@ -160,7 +171,7 @@ START_TEST(nsoption_session_test)
 	nsoption_set_colour(sys_colour_ActiveBorder, 0x00d0000d);
 
 	/* write options out */
-	outnam = tmpnam(NULL);
+	outnam = testnam(NULL);
 	res = nsoption_write(outnam, NULL, NULL);
 	ck_assert_int_eq(res, NSERROR_OK);
 
@@ -300,7 +311,7 @@ START_TEST(nsoption_dump_test)
 	res = nsoption_read(test_choices_path, NULL);
 	ck_assert_int_eq(res, NSERROR_OK);
 
-	outnam = tmpnam(NULL);
+	outnam = testnam(NULL);
 
 	fp = fopen(outnam, "w");
 	res = nsoption_dump(fp, NULL);
@@ -325,7 +336,7 @@ START_TEST(nsoption_write_test)
 	res = nsoption_read(test_choices_path, NULL);
 	ck_assert_int_eq(res, NSERROR_OK);
 
-	outnam = tmpnam(NULL);
+	outnam = testnam(NULL);
 
 	res = nsoption_write(outnam, NULL, NULL);
 	ck_assert_int_eq(res, NSERROR_OK);
