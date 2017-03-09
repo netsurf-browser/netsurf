@@ -232,14 +232,9 @@ static void urldb_teardown(void)
 
 START_TEST(urldb_original_test)
 {
-	struct host_part *h;
-	struct path_data *p;
 	const struct url_data *u;
-	lwc_string *scheme;
-	lwc_string *fragment;
 	nsurl *url;
 	nsurl *urlr;
-	char *path_query;
 
 	/* ensure title can be set */
 	url = make_url("http://intranet/");
@@ -312,8 +307,8 @@ START_TEST(urldb_original_test)
 
 	/* Mantis bug #993 */
 	url = make_url("http://a_a/");
-	ck_assert(urldb_add_url(url));
-	ck_assert(urldb_get_url(url));
+	ck_assert(urldb_add_url(url) == true);
+	ck_assert(urldb_get_url(url) != NULL);
 	nsurl_unref(url);
 
 	/* Mantis bug #996 */
@@ -326,14 +321,14 @@ START_TEST(urldb_original_test)
 
 	/* Mantis bug #913 */
 	url = make_url("http://www2.2checkout.com/");
-	ck_assert(urldb_add_url(url));
-	ck_assert(urldb_get_url(url));
+	ck_assert(urldb_add_url(url) == true);
+	ck_assert(urldb_get_url(url) != NULL);
 	nsurl_unref(url);
 
 	/* Numeric subdomains */
 	url = make_url("http://2.bp.blogspot.com/_448y6kVhntg/TSekubcLJ7I/AAAAAAAAHJE/yZTsV5xT5t4/s1600/covers.jpg");
-	ck_assert(urldb_add_url(url));
-	ck_assert(urldb_get_url(url));
+	ck_assert(urldb_add_url(url) == true);
+	ck_assert(urldb_get_url(url) != NULL);
 	nsurl_unref(url);
 
 	/* Valid path */
@@ -344,16 +339,16 @@ START_TEST(urldb_original_test)
 
 	/* Defaulted path */
 	ck_assert(test_urldb_set_cookie("name=value\r\n", "http://www.example.org/foo/bar/baz/bat.html", NULL));
-	ck_assert(test_urldb_get_cookie("http://www.example.org/foo/bar/baz/quux.htm"));
+	ck_assert(test_urldb_get_cookie("http://www.example.org/foo/bar/baz/quux.htm") != NULL);
 
 	/* Defaulted path with no non-leaf path segments */
 	ck_assert(test_urldb_set_cookie("name=value\r\n", "http://no-non-leaf.example.org/index.html", NULL));
-	ck_assert(test_urldb_get_cookie("http://no-non-leaf.example.org/page2.html"));
-	ck_assert(test_urldb_get_cookie("http://no-non-leaf.example.org/"));
+	ck_assert(test_urldb_get_cookie("http://no-non-leaf.example.org/page2.html") != NULL);
+	ck_assert(test_urldb_get_cookie("http://no-non-leaf.example.org/") != NULL);
 
 	/* Valid path (includes leafname) */
 	ck_assert(test_urldb_set_cookie("name=value;Version=1;Path=/index.cgi\r\n", "http://example.org/index.cgi", NULL));
-	ck_assert(test_urldb_get_cookie("http://example.org/index.cgi"));
+	ck_assert(test_urldb_get_cookie("http://example.org/index.cgi") != NULL);
 
 	/* Valid path (includes leafname in non-root directory) */
 	ck_assert(test_urldb_set_cookie("name=value;Path=/foo/index.html\r\n", "http://www.example.org/foo/index.html", NULL));
@@ -484,10 +479,7 @@ START_TEST(urldb_session_add_test)
 {
 	nserror res;
 	char *outnam;
-	struct host_part *h;
-	struct path_data *p;
 	nsurl *url;
-	lwc_string *scheme;
 
 	/* writing output requires options initialising */
 	res = nsoption_init(NULL, NULL, NULL);
