@@ -750,40 +750,6 @@ START_TEST(nsurl_refragment_test)
 }
 END_TEST
 
-static const struct test_pairs parent_tests[] = {
-	{ "http://www.f.org/a/b/c", "http://www.f.org/a/b/" },
-};
-
-/**
- * generate parent url
- */
-START_TEST(nsurl_parent_test)
-{
-	nserror err;
-	nsurl *url;
-	nsurl *res_url;
-	const struct test_pairs *tst = &parent_tests[_i];
-
-	/* not testing create, this should always succeed */
-	err = nsurl_create(tst->test, &url);
-	ck_assert(err == NSERROR_OK);
-
-	err = nsurl_parent(url, &res_url);
-	if (tst->res == NULL) {
-		/* result must be invalid (bad input) */
-		ck_assert(err != NSERROR_OK);
-	} else {
-		/* result must be valid */
-		ck_assert(err == NSERROR_OK);
-
-		ck_assert_str_eq(nsurl_access(res_url), tst->res);
-
-		nsurl_unref(res_url);
-	}
-	nsurl_unref(url);
-
-}
-END_TEST
 
 
 /**
@@ -1158,6 +1124,7 @@ START_TEST(nsurl_api_assert_nice_test)
 }
 END_TEST
 
+
 /**
  * check parent asserts on NULL parameter
  */
@@ -1170,6 +1137,69 @@ START_TEST(nsurl_api_assert_parent_test)
 	ck_assert(err != NSERROR_OK);
 }
 END_TEST
+
+
+
+
+/* parent test case */
+
+static const struct test_pairs parent_tests[] = {
+	{ "http://www.f.org/a/b/c", "http://www.f.org/a/b/" },
+	{ "https://www.moo.org/", "https://www.moo.org/" },
+	{ "https://www.moo.org/asinglepathelementthatsquitelong/", "https://www.moo.org/" },
+	{ "https://user:pw@www.moo.org/a/b#x?a=b", "https://user:pw@www.moo.org/a/" },
+};
+
+/**
+ * generate parent url
+ */
+START_TEST(nsurl_parent_test)
+{
+	nserror err;
+	nsurl *url;
+	nsurl *res_url;
+	const struct test_pairs *tst = &parent_tests[_i];
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->test, &url);
+	ck_assert(err == NSERROR_OK);
+
+	err = nsurl_parent(url, &res_url);
+	if (tst->res == NULL) {
+		/* result must be invalid (bad input) */
+		ck_assert(err != NSERROR_OK);
+	} else {
+		/* result must be valid */
+		ck_assert(err == NSERROR_OK);
+
+		ck_assert_str_eq(nsurl_access(res_url), tst->res);
+
+		nsurl_unref(res_url);
+	}
+	nsurl_unref(url);
+
+}
+END_TEST
+
+
+/**
+ * test case for parent API
+ */
+static TCase *nsurl_parent_case_create(void)
+{
+	TCase *tc;
+	tc = tcase_create("Parent");
+
+	tcase_add_unchecked_fixture(tc,
+				    corestring_create,
+				    corestring_teardown);
+
+	tcase_add_loop_test(tc,
+			    nsurl_parent_test,
+			    0, NELEMS(parent_tests));
+
+	return tc;
+}
 
 
 /* utf8 test case */
@@ -1250,7 +1280,6 @@ static Suite *nsurl_suite(void)
 	TCase *tc_compare;
 	TCase *tc_fragment;
 	TCase *tc_component;
-	TCase *tc_parent;
 
 	s = suite_create("nsurl");
 
@@ -1419,10 +1448,10 @@ static Suite *nsurl_suite(void)
 
 	tcase_add_loop_test(tc_fragment,
 			    nsurl_defragment_test,
-			    0, NELEMS(parent_tests));
+			    0, NELEMS(fragment_tests));
 	tcase_add_loop_test(tc_fragment,
 			    nsurl_refragment_test,
-			    0, NELEMS(parent_tests));
+			    0, NELEMS(fragment_tests));
 
 	suite_add_tcase(s, tc_fragment);
 
@@ -1445,17 +1474,7 @@ static Suite *nsurl_suite(void)
 
 
 	/* parent */
-	tc_parent = tcase_create("Parent");
-
-	tcase_add_unchecked_fixture(tc_parent,
-				    corestring_create,
-				    corestring_teardown);
-
-	tcase_add_loop_test(tc_parent,
-			    nsurl_parent_test,
-			    0, NELEMS(parent_tests));
-
-	suite_add_tcase(s, tc_parent);
+	suite_add_tcase(s, nsurl_parent_case_create());
 
 	/* UTF-8 output */
 	suite_add_tcase(s, nsurl_utf8_case_create());
