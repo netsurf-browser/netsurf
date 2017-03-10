@@ -53,6 +53,16 @@ struct test_compare {
 	bool res;
 };
 
+/* Fixtures */
+
+static void corestring_create(void)
+{
+	ck_assert(corestrings_init() == NSERROR_OK);
+}
+
+/**
+ * iterator for any remaining strings in teardown fixture
+ */
 static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 {
 	fprintf(stderr,
@@ -61,6 +71,15 @@ static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 		(int)lwc_string_length(str),
 		lwc_string_data(str));
 }
+
+static void corestring_teardown(void)
+{
+	corestrings_fini();
+
+	lwc_iterate_strings(netsurf_lwc_iterator, NULL);
+}
+
+/* tests */
 
 static const char *base_str = "http://a/b/c/d;p?q";
 
@@ -1153,22 +1172,71 @@ START_TEST(nsurl_api_assert_parent_test)
 END_TEST
 
 
-/* Fixtures */
+/* utf8 test case */
 
-static void corestring_create(void)
+/**
+ * utf8 tests
+ */
+static const struct test_pairs utf8_tests[] = {
+	{ "http://a.xn--11b4c3d/a", "http://a.कॉम/a"  },
+	{ "https://smog.xn--3oq18vl8pn36a/test", "https://smog.大众汽车/test"},
+
+};
+
+
+/**
+ * get utf8 test
+ */
+START_TEST(nsurl_get_utf8_test)
 {
-	ck_assert(corestrings_init() == NSERROR_OK);
+	nserror err;
+	nsurl *url;
+	const struct test_pairs *tst = &utf8_tests[_i];
+	char *utf8out;
+	size_t utf8out_len;
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->test, &url);
+	ck_assert(err == NSERROR_OK);
+
+	err = nsurl_get_utf8(url, &utf8out, &utf8out_len);
+	ck_assert(err == NSERROR_OK);
+
+	ck_assert_str_eq(utf8out, tst->res);
+
+	free(utf8out);
+
+	nsurl_unref(url);
+}
+END_TEST
+
+
+/**
+ * test case for utf8 output
+ */
+static TCase *nsurl_utf8_case_create(void)
+{
+	TCase *tc;
+	tc = tcase_create("UTF-8 output");
+
+	tcase_add_unchecked_fixture(tc,
+				    corestring_create,
+				    corestring_teardown);
+
+	tcase_add_loop_test(tc,
+			    nsurl_get_utf8_test,
+			    0, NELEMS(utf8_tests));
+
+	return tc;
 }
 
-static void corestring_teardown(void)
-{
-	corestrings_fini();
 
-	lwc_iterate_strings(netsurf_lwc_iterator, NULL);
-}
 
-/* suite generation */
+/* test suite */
 
+/**
+ * nsurl suite generation
+ */
 static Suite *nsurl_suite(void)
 {
 	Suite *s;
@@ -1389,8 +1457,13 @@ static Suite *nsurl_suite(void)
 
 	suite_add_tcase(s, tc_parent);
 
+	/* UTF-8 output */
+	suite_add_tcase(s, nsurl_utf8_case_create());
+
+
 	return s;
 }
+
 
 int main(int argc, char **argv)
 {
