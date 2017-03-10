@@ -605,6 +605,8 @@ START_TEST(nsurl_compare_test)
 END_TEST
 
 
+/* component test case */
+
 /**
  * url component tests
  *
@@ -613,17 +615,26 @@ END_TEST
  * result is checked against test1 and res as approprite.
  */
 static const struct test_compare component_tests[] = {
-	{ "http://a/b/c/d;p?q",
-	  "http",
-	  NSURL_SCHEME,
-	  true },
+	{ "http://u:p@a:66/b/c/d;p?q#f", "http", NSURL_SCHEME, true },
+	{ "http://u:p@a:66/b/c/d;p?q#f", "u", NSURL_USERNAME, true },
+	{ "http://u:p@a:66/b/c/d;p?q#f", "p", NSURL_PASSWORD, true },
+	{ "http://u:p@a:66/b/c/d;p?q#f", "a", NSURL_HOST, true },
+	{ "http://u:p@a:66/b/c/d;p?q#f", "66", NSURL_PORT, true },
+	{ "http://u:p@a:66/b/c/d;p?q#f", "/b/c/d;p", NSURL_PATH, true },
+	{ "http://u:p@a:66/b/c/d;p?q#f", "?q", NSURL_QUERY, true },
+	{ "http://u:p@a:66/b/c/d;p?q#f", "f", NSURL_FRAGMENT, true },
 
-	{ "file:///",
-	  NULL,
-	  NSURL_HOST,
-	  false },
+	{ "file:", "file", NSURL_SCHEME, true },
+	{ "file:", NULL, NSURL_USERNAME, false },
+	{ "file:", NULL, NSURL_PASSWORD, false },
+	{ "file:", NULL, NSURL_HOST, false },
+	{ "file:", NULL, NSURL_PORT, false },
+	{ "file:", NULL, NSURL_PATH, false },
+	{ "file:", NULL, NSURL_QUERY, false },
+	{ "file:", NULL, NSURL_FRAGMENT, false },
 
 };
+
 
 /**
  * get component
@@ -651,6 +662,7 @@ START_TEST(nsurl_get_component_test)
 }
 END_TEST
 
+
 /**
  * has component
  */
@@ -671,6 +683,30 @@ START_TEST(nsurl_has_component_test)
 	nsurl_unref(url1);
 }
 END_TEST
+
+
+/**
+ * test case for componnet get and has API
+ */
+static TCase *nsurl_component_case_create(void)
+{
+	TCase *tc;
+	tc = tcase_create("Component");
+
+	tcase_add_unchecked_fixture(tc,
+				    corestring_create,
+				    corestring_teardown);
+
+	tcase_add_loop_test(tc,
+			    nsurl_get_component_test,
+			    0, NELEMS(component_tests));
+	tcase_add_loop_test(tc,
+			    nsurl_has_component_test,
+			    0, NELEMS(component_tests));
+
+	return tc;
+}
+
 
 static const struct test_pairs fragment_tests[] = {
 	{ "http://www.f.org/a/b/c#def", "http://www.f.org/a/b/c" },
@@ -1261,7 +1297,6 @@ static TCase *nsurl_utf8_case_create(void)
 }
 
 
-
 /* test suite */
 
 /**
@@ -1279,7 +1314,6 @@ static Suite *nsurl_suite(void)
 	TCase *tc_join;
 	TCase *tc_compare;
 	TCase *tc_fragment;
-	TCase *tc_component;
 
 	s = suite_create("nsurl");
 
@@ -1457,20 +1491,7 @@ static Suite *nsurl_suite(void)
 
 
 	/* component */
-	tc_component = tcase_create("Component");
-
-	tcase_add_unchecked_fixture(tc_component,
-				    corestring_create,
-				    corestring_teardown);
-
-	tcase_add_loop_test(tc_component,
-			    nsurl_get_component_test,
-			    0, NELEMS(component_tests));
-	tcase_add_loop_test(tc_component,
-			    nsurl_has_component_test,
-			    0, NELEMS(component_tests));
-
-	suite_add_tcase(s, tc_component);
+	suite_add_tcase(s, nsurl_component_case_create());
 
 
 	/* parent */
