@@ -115,6 +115,9 @@ static const struct test_pairs create_tests[] = {
 	{ "ftp://a/b",		"ftp://a/b" },
 	{ "FTP://a/b",		"ftp://a/b" },
 
+	/* punycode */
+	{ "http://a.कॉम/a", "http://a.xn--11b4c3d/a" },
+	{ "https://smog.大众汽车/test", "https://smog.xn--3oq18vl8pn36a/test"},
 };
 
 /**
