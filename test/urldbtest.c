@@ -421,6 +421,7 @@ static const struct test_triplets add_set_get_tests[] = {
 	{ "http://www2.2checkout.com/" , "foobar", NULL }, /* Mantis bug #913 */
 	{ "http://2.bp.blogspot.com/_448y6kVhntg/TSekubcLJ7I/AAAAAAAAHJE/yZTsV5xT5t4/s1600/covers.jpg",
 	  "a more complex title" , NULL }, /* Numeric subdomains */
+	{ "http://tree.example.com/this_url_has_a_ridiculously_long_path/made_up_from_a_number_of_inoranately_long_elments_some_of_well_over_forty/characters_in_length/foo.png", NULL, NULL },
 	{ "file:///home/", NULL, NULL}, /* no title */
 	{ "http://foo@moose.com/", NULL, NULL }, /* Mantis bug #996 */
 	{ "http://a.xn--11b4c3d/a", "a title", NULL },
@@ -551,6 +552,7 @@ START_TEST(urldb_session_add_test)
 	nserror res;
 	char *outnam;
 	nsurl *url;
+	int t;
 
 	/* writing output requires options initialising */
 	res = nsoption_init(NULL, NULL, NULL);
@@ -561,28 +563,37 @@ START_TEST(urldb_session_add_test)
 
 	urldb_load_cookies(test_cookies_path);
 
-	/* add something to db */
-	url = make_url("http://tree.example.com/");
-	urldb_add_url(url);
+	/* add to db */
+	for (t = 0; t < NELEMS(add_set_get_tests); t++) {
+		const struct test_triplets *tst = &add_set_get_tests[t];
 
-	res = urldb_update_url_visit_data(url);
-	ck_assert_int_eq(res, NSERROR_OK);
+		/* not testing url creation, this should always succeed */
+		res = nsurl_create(tst->url, &url);
+		ck_assert_int_eq(res, NSERROR_OK);
 
-	nsurl_unref(url);
+		/* add the url to the database */
+		ck_assert(urldb_add_url(url) == true);
+
+		/* update the visit time so it gets serialised */
+		res = urldb_update_url_visit_data(url);
+		ck_assert_int_eq(res, NSERROR_OK);
+
+		nsurl_unref(url);
+	}
 
 	/* write database out */
 	outnam = testnam(NULL);
 	res = urldb_save(outnam);
 	ck_assert_int_eq(res, NSERROR_OK);
 
-	/* remove test output */
+	/* remove urldb test output */
 	unlink(outnam);
 
 	/* write cookies out */
 	outnam = testnam(NULL);
 	urldb_save_cookies(outnam);
 
-	/* remove test output */
+	/* remove cookies test output */
 	unlink(outnam);
 
 	/* finalise options */
@@ -967,10 +978,10 @@ static Suite *urldb_suite_create(void)
 	s = suite_create("URLDB");
 
 	suite_add_tcase(s, urldb_api_case_create());
+	suite_add_tcase(s, urldb_add_get_case_create());
 	suite_add_tcase(s, urldb_session_case_create());
 	suite_add_tcase(s, urldb_case_create());
 	suite_add_tcase(s, urldb_cookie_case_create());
-	suite_add_tcase(s, urldb_add_get_case_create());
 	suite_add_tcase(s, urldb_original_case_create());
 
 	return s;
