@@ -58,8 +58,9 @@ bool urldb_add_url(struct nsurl *url);
  *
  * \param url The URL to look for
  * \param title The title string to use (copied)
+ * \return NSERROR_OK on success otherwise appropriate error code
  */
-void urldb_set_url_title(struct nsurl *url, const char *title);
+nserror urldb_set_url_title(struct nsurl *url, const char *title);
 
 
 /**

@@ -218,9 +218,9 @@ struct path_data {
 
 	struct path_data *next;	/**< Next sibling */
 	struct path_data *prev;	/**< Previous sibling */
-	struct path_data *parent;	/**< Parent path segment */
-	struct path_data *children;	/**< Child path segments */
-	struct path_data *last;		/**< Last child */
+	struct path_data *parent; /**< Parent path segment */
+	struct path_data *children; /**< Child path segments */
+	struct path_data *last; /**< Last child */
 };
 
 struct host_part {
@@ -241,15 +241,15 @@ struct host_part {
 	char *part;
 
 	/**
-	 * Linked list of all known proctection spaces known for his
+	 * Linked list of all known proctection spaces known for this
 	 * host and all its schems and ports.
 	 */
 	struct prot_space_data *prot_space;
 
 	struct host_part *next;	/**< Next sibling */
 	struct host_part *prev;	/**< Previous sibling */
-	struct host_part *parent;	/**< Parent host part */
-	struct host_part *children;	/**< Child host parts */
+	struct host_part *parent; /**< Parent host part */
+	struct host_part *children; /**< Child host parts */
 };
 
 
@@ -3171,23 +3171,32 @@ bool urldb_add_url(nsurl *url)
 
 
 /* exported interface documented in content/urldb.h */
-void urldb_set_url_title(nsurl *url, const char *title)
+nserror urldb_set_url_title(nsurl *url, const char *title)
 {
 	struct path_data *p;
 	char *temp;
 
-	assert(url && title);
+	assert(url);
 
 	p = urldb_find_url(url);
-	if (!p)
-		return;
+	if (p == NULL) {
+		return NSERROR_NOT_FOUND;
+	}
 
-	temp = strdup(title);
-	if (!temp)
-		return;
+	/* copy the parameter if necessary */
+	if (title != NULL) {
+		temp = strdup(title);
+		if (temp == NULL) {
+			return NSERROR_NOMEM;
+		}
+	} else {
+		temp = NULL;
+	}
 
 	free(p->urld.title);
 	p->urld.title = temp;
+
+	return NSERROR_OK;
 }
 
 
