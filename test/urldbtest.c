@@ -445,7 +445,7 @@ static const struct test_urls add_set_get_tests[] = {
 		true
 	}, /* Numeric subdomains */
 	{
-		"http://tree.example.com/this_url_has_a_ridiculously_long_path/made_up_from_a_number_of_inoranately_long_elments_some_of_well_over_forty/characters_in_length/foo.png",
+		"http://tree.example.com/this_url_has_a_ridiculously_long_path/made_up_from_a_number_of_inoranately_long_elments_some_of_well_over_forty/characters_in_length/the_whole_path_comes_out_well_in_excess_of_two_hundred_characters_in_length/this_is_intended_to_try_and_drive/the_serialisation_code_mad/foo.png",
 		NULL,
 		CONTENT_IMAGE,
 		false
@@ -456,6 +456,12 @@ static const struct test_urls add_set_get_tests[] = {
 		CONTENT_HTML,
 		false
 	},
+	{
+		"http://tree.example.com/bar.png",
+		"\t     ",
+		CONTENT_IMAGE,
+		false
+	}, /* silly title */
 	{
 		"http://[2001:db8:1f70::999:de8:7648:6e8]:100/",
 		"ipv6 with port",
@@ -773,9 +779,9 @@ START_TEST(urldb_iterate_partial_path_test)
 END_TEST
 
 /**
- * iterate through partial matches
+ * iterate through partial matches of numeric v4 address
  */
-START_TEST(urldb_iterate_partial_numeric_test)
+START_TEST(urldb_iterate_partial_numeric_v4_test)
 {
 	nsurl *url;
 
@@ -790,10 +796,33 @@ START_TEST(urldb_iterate_partial_numeric_test)
 	cb_count = 0;
 	urldb_iterate_partial("192.168.7.1/", urldb_iterate_entries_cb);
 	ck_assert_int_eq(cb_count, 1);
-
-
 }
 END_TEST
+
+
+/**
+ * iterate through partial matches of numeric v6 address
+ */
+START_TEST(urldb_iterate_partial_numeric_v6_test)
+{
+	nsurl *url;
+
+	cb_count = 0;
+	urldb_iterate_partial("[2001:db8:1f70::999:de8:7648:6e8]/",
+			      urldb_iterate_entries_cb);
+	ck_assert_int_eq(cb_count, 0);
+
+	url = make_url("http://[2001:db8:1f70::999:de8:7648:6e8]/index.html");
+	urldb_add_url(url);
+	nsurl_unref(url);
+
+	cb_count = 0;
+	urldb_iterate_partial("[2001:db8:1f70::999:de8:7648:6e8]/",
+			      urldb_iterate_entries_cb);
+	ck_assert_int_eq(cb_count, 1);
+}
+END_TEST
+
 
 START_TEST(urldb_auth_details_test)
 {
@@ -925,7 +954,8 @@ static TCase *urldb_case_create(void)
 	tcase_add_test(tc, urldb_iterate_partial_nomatch_test);
 	tcase_add_test(tc, urldb_iterate_partial_add_test);
 	tcase_add_test(tc, urldb_iterate_partial_path_test);
-	tcase_add_test(tc, urldb_iterate_partial_numeric_test);
+	tcase_add_test(tc, urldb_iterate_partial_numeric_v4_test);
+	tcase_add_test(tc, urldb_iterate_partial_numeric_v6_test);
 	tcase_add_test(tc, urldb_auth_details_test);
 	tcase_add_test(tc, urldb_thumbnail_test);
 	tcase_add_test(tc, urldb_cert_permissions_test);
