@@ -831,6 +831,18 @@ START_TEST(urldb_iterate_partial_numeric_v6_test)
 			      urldb_iterate_entries_cb);
 	ck_assert_int_eq(cb_count, 1);
 
+	/* double path separators are ignored */
+	cb_count = 0;
+	urldb_iterate_partial("[2001:db8:1f70::999:de8:7648:6e8]//index.html",
+			      urldb_iterate_entries_cb);
+	ck_assert_int_eq(cb_count, 1);
+
+	/* bad ipv6 address inet_pton should fail with this */
+	cb_count = 0;
+	urldb_iterate_partial("[2001::1f70::999::7648:8]",
+			      urldb_iterate_entries_cb);
+	ck_assert_int_eq(cb_count, 0);
+
 }
 END_TEST
 
