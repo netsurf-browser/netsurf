@@ -808,7 +808,7 @@ START_TEST(urldb_iterate_partial_numeric_v6_test)
 	nsurl *url;
 
 	cb_count = 0;
-	urldb_iterate_partial("[2001:db8:1f70::999:de8:7648:6e8]/",
+	urldb_iterate_partial("[2001:db8:1f70::999:de8:7648:6e8]",
 			      urldb_iterate_entries_cb);
 	ck_assert_int_eq(cb_count, 0);
 
@@ -817,9 +817,20 @@ START_TEST(urldb_iterate_partial_numeric_v6_test)
 	nsurl_unref(url);
 
 	cb_count = 0;
-	urldb_iterate_partial("[2001:db8:1f70::999:de8:7648:6e8]/",
+	urldb_iterate_partial("[2001:db8:1f70::999:de8:7648:6e8]/index.wrong",
+			      urldb_iterate_entries_cb);
+	ck_assert_int_eq(cb_count, 0);
+
+	cb_count = 0;
+	urldb_iterate_partial("[2001:db8:1f70::999:de8:7648:6e8]",
 			      urldb_iterate_entries_cb);
 	ck_assert_int_eq(cb_count, 1);
+
+	cb_count = 0;
+	urldb_iterate_partial("[2001:db8:1f70::999:de8:7648:6e8]/in",
+			      urldb_iterate_entries_cb);
+	ck_assert_int_eq(cb_count, 1);
+
 }
 END_TEST
 

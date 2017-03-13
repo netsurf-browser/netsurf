@@ -634,6 +634,7 @@ static bool urldb__host_is_ip_address(const char *host)
 #ifndef NO_IPV6
 	struct in6_addr ipv6;
 	char ipv6_addr[64];
+	unsigned int ipv6_addr_len;
 #endif
 	/**
 	 * @todo FIXME Some parts of urldb.c make confusions between hosts
@@ -660,7 +661,7 @@ static bool urldb__host_is_ip_address(const char *host)
 		char *c = strdup(host);
 		c[slash - host] = '\0';
 		sane_host = c;
-		host_len = slash - host - 1;
+		host_len = slash - host;
 		LOG("WARNING: called with non-host '%s'", host);
 	}
 
@@ -688,11 +689,18 @@ static bool urldb__host_is_ip_address(const char *host)
 	}
 
 #ifndef NO_IPV6
-	if (sane_host[0] != '[' || sane_host[host_len] != ']')
+	if ((host_len < 6) ||
+	    (sane_host[0] != '[') ||
+	    (sane_host[host_len - 1] != ']')) {
 		goto out_false;
+	}
 
-	strncpy(ipv6_addr, sane_host + 1, sizeof(ipv6_addr));
-	ipv6_addr[sizeof(ipv6_addr) - 1] = '\0';
+	ipv6_addr_len = host_len - 2;
+	if (ipv6_addr_len > sizeof(ipv6_addr)) {
+		ipv6_addr_len = sizeof(ipv6_addr);
+	}
+	strncpy(ipv6_addr, sane_host + 1, ipv6_addr_len);
+	ipv6_addr[ipv6_addr_len] = '\0';
 
 	if (inet_pton(AF_INET6, ipv6_addr, &ipv6) == 1)
 		goto out_true;
