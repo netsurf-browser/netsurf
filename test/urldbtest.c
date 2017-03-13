@@ -69,8 +69,8 @@ struct netsurf_table *guit = NULL;
 struct test_urls {
 	const char* url;
 	const char* title;
-	const char* res;
-	bool persistent;
+	const content_type type;
+	const bool persistent;
 };
 
 
@@ -417,73 +417,73 @@ static const struct test_urls add_set_get_tests[] = {
 	{
 		"http://intranet/",
 		"foo",
-		NULL,
+		CONTENT_HTML,
 		false
 	}, /* from legacy tests */
 	{
 		"http:moodle.org",
 		"buggy",
-		NULL,
+		CONTENT_HTML,
 		false
 	}, /* Mantis bug #993 */
 	{
 		"http://a_a/",
 		"buggsy",
-		NULL,
+		CONTENT_HTML,
 		false
 	}, /* Mantis bug #993 */
 	{
 		"http://www2.2checkout.com/",
 		"foobar",
-		NULL,
+		CONTENT_HTML,
 		false
 	}, /* Mantis bug #913 */
 	{
 		"http://2.bp.blogspot.com/_448y6kVhntg/TSekubcLJ7I/AAAAAAAAHJE/yZTsV5xT5t4/s1600/covers.jpg",
 		"a more complex title",
-		NULL,
+		CONTENT_IMAGE,
 		true
 	}, /* Numeric subdomains */
 	{
 		"http://tree.example.com/this_url_has_a_ridiculously_long_path/made_up_from_a_number_of_inoranately_long_elments_some_of_well_over_forty/characters_in_length/foo.png",
 		NULL,
-		NULL,
+		CONTENT_IMAGE,
 		false
 	},
 	{
 		"https://tree.example.com:8080/example.png",
 		"fishy port       ",
-		NULL,
+		CONTENT_HTML,
 		false
 	},
 	{
 		"http://[2001:db8:1f70::999:de8:7648:6e8]:100/",
 		"ipv6 with port",
-		NULL,
+		CONTENT_TEXTPLAIN,
 		false
 	},
 	{
 		"file:///home/",
 		NULL,
-		NULL,
+		CONTENT_HTML,
 		false
 	}, /* no title */
 	{
 		"http://foo@moose.com/",
 		NULL,
-		NULL,
+		CONTENT_HTML,
 		false
 	}, /* Mantis bug #996 */
 	{
 		"http://a.xn--11b4c3d/a",
 		"a title",
-		NULL,
+		CONTENT_HTML,
 		false
 	},
 	{
 		"https://smog.大众汽车/test",
 		"unicode title 大众汽车",
-		NULL,
+		CONTENT_HTML,
 		false
 	},
 };
@@ -511,6 +511,9 @@ START_TEST(urldb_add_set_get_test)
 	err = urldb_set_url_title(url, tst->title);
 	ck_assert(err == NSERROR_OK);
 
+	err = urldb_set_url_content_type(url, tst->type);
+	ck_assert(err == NSERROR_OK);
+
 	/* retrieve the url from the database and check it matches */
 	res_url = urldb_get_url(url);
 	ck_assert(res_url != NULL);
@@ -526,6 +529,9 @@ START_TEST(urldb_add_set_get_test)
 	} else {
 		ck_assert(data->title == NULL);
 	}
+
+	/* ensure type matches */
+	ck_assert(data->type == tst->type);
 
 	/* release test url */
 	nsurl_unref(url);
@@ -1034,7 +1040,7 @@ START_TEST(urldb_api_url_find_test)
 	ck_assert_int_eq(res, NSERROR_OK);
 	ck_assert(nsurl_has_component(url, NSURL_HOST) == false);
 
-	res = urldb_set_url_persistence(url, true);
+	res = urldb_set_url_title(url, NULL);
 	ck_assert_int_eq(res, NSERROR_NOT_FOUND);
 
 	nsurl_unref(url);
@@ -1048,8 +1054,6 @@ START_TEST(urldb_api_url_find_test)
 	ck_assert_int_eq(res, NSERROR_NOT_FOUND);
 
 	nsurl_unref(url);
-
-
 }
 END_TEST
 

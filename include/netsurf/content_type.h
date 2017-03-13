@@ -23,8 +23,8 @@
  * The content enumerations are defined here.
  */
 
-#ifndef _NETSURF_CONTENT_TYPE_H_
-#define _NETSURF_CONTENT_TYPE_H_
+#ifndef NETSURF_CONTENT_TYPE_H
+#define NETSURF_CONTENT_TYPE_H
 
 /** Debugging dump operations */
 enum content_debug {
