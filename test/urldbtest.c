@@ -66,10 +66,11 @@ const char *wikipedia_url = "http://www.wikipedia.org/";
 struct netsurf_table *guit = NULL;
 
 
-struct test_triplets {
+struct test_urls {
 	const char* url;
 	const char* title;
 	const char* res;
+	bool persistent;
 };
 
 
@@ -83,7 +84,7 @@ static char *testnam(char *out)
 {
 	static int count = 0;
 	static char name[64];
-	snprintf(name, 64, "/tmp/urldbtest%d", count);
+	snprintf(name, 64, "/tmp/urldbtest%d-%d", getpid(), count);
 	count++;
 	return name;
 }
@@ -255,10 +256,8 @@ static void urldb_teardown(void)
 
 START_TEST(urldb_original_test)
 {
-	const struct url_data *u;
 	nsurl *url;
 	nsurl *urlr;
-
 
 	/* fragments */
 	url = make_url("http://netsurf.strcprstskrzkrk.co.uk/path/to/resource.htm?a=b");
@@ -414,18 +413,79 @@ static TCase *urldb_original_case_create(void)
 /**
  * add set and get tests
  */
-static const struct test_triplets add_set_get_tests[] = {
-	{ "http://intranet/", "foo", NULL }, /* from legacy tests */
-	{ "http:moodle.org", "buggy", NULL }, /* Mantis bug #993 */
-	{ "http://a_a/", "buggsy", NULL }, /* Mantis bug #993 */
-	{ "http://www2.2checkout.com/" , "foobar", NULL }, /* Mantis bug #913 */
-	{ "http://2.bp.blogspot.com/_448y6kVhntg/TSekubcLJ7I/AAAAAAAAHJE/yZTsV5xT5t4/s1600/covers.jpg",
-	  "a more complex title" , NULL }, /* Numeric subdomains */
-	{ "http://tree.example.com/this_url_has_a_ridiculously_long_path/made_up_from_a_number_of_inoranately_long_elments_some_of_well_over_forty/characters_in_length/foo.png", NULL, NULL },
-	{ "file:///home/", NULL, NULL}, /* no title */
-	{ "http://foo@moose.com/", NULL, NULL }, /* Mantis bug #996 */
-	{ "http://a.xn--11b4c3d/a", "a title", NULL },
-	{ "https://smog.大众汽车/test", "unicode title 大众汽车", NULL},
+static const struct test_urls add_set_get_tests[] = {
+	{
+		"http://intranet/",
+		"foo",
+		NULL,
+		false
+	}, /* from legacy tests */
+	{
+		"http:moodle.org",
+		"buggy",
+		NULL,
+		false
+	}, /* Mantis bug #993 */
+	{
+		"http://a_a/",
+		"buggsy",
+		NULL,
+		false
+	}, /* Mantis bug #993 */
+	{
+		"http://www2.2checkout.com/",
+		"foobar",
+		NULL,
+		false
+	}, /* Mantis bug #913 */
+	{
+		"http://2.bp.blogspot.com/_448y6kVhntg/TSekubcLJ7I/AAAAAAAAHJE/yZTsV5xT5t4/s1600/covers.jpg",
+		"a more complex title",
+		NULL,
+		true
+	}, /* Numeric subdomains */
+	{
+		"http://tree.example.com/this_url_has_a_ridiculously_long_path/made_up_from_a_number_of_inoranately_long_elments_some_of_well_over_forty/characters_in_length/foo.png",
+		NULL,
+		NULL,
+		false
+	},
+	{
+		"https://tree.example.com:8080/example.png",
+		"fishy port       ",
+		NULL,
+		false
+	},
+	{
+		"http://[2001:db8:1f70::999:de8:7648:6e8]:100/",
+		"ipv6 with port",
+		NULL,
+		false
+	},
+	{
+		"file:///home/",
+		NULL,
+		NULL,
+		false
+	}, /* no title */
+	{
+		"http://foo@moose.com/",
+		NULL,
+		NULL,
+		false
+	}, /* Mantis bug #996 */
+	{
+		"http://a.xn--11b4c3d/a",
+		"a title",
+		NULL,
+		false
+	},
+	{
+		"https://smog.大众汽车/test",
+		"unicode title 大众汽车",
+		NULL,
+		false
+	},
 };
 
 
@@ -437,8 +497,8 @@ START_TEST(urldb_add_set_get_test)
 	nserror err;
 	nsurl *url;
 	nsurl *res_url;
-	struct url_data *data;
-	const struct test_triplets *tst = &add_set_get_tests[_i];
+	const struct url_data *data;
+	const struct test_urls *tst = &add_set_get_tests[_i];
 
 	/* not testing create, this should always succeed */
 	err = nsurl_create(tst->url, &url);
@@ -552,7 +612,7 @@ START_TEST(urldb_session_add_test)
 	nserror res;
 	char *outnam;
 	nsurl *url;
-	int t;
+	unsigned int t;
 
 	/* writing output requires options initialising */
 	res = nsoption_init(NULL, NULL, NULL);
@@ -565,7 +625,7 @@ START_TEST(urldb_session_add_test)
 
 	/* add to db */
 	for (t = 0; t < NELEMS(add_set_get_tests); t++) {
-		const struct test_triplets *tst = &add_set_get_tests[t];
+		const struct test_urls *tst = &add_set_get_tests[t];
 
 		/* not testing url creation, this should always succeed */
 		res = nsurl_create(tst->url, &url);
@@ -574,8 +634,16 @@ START_TEST(urldb_session_add_test)
 		/* add the url to the database */
 		ck_assert(urldb_add_url(url) == true);
 
+		/* set title */
+		res = urldb_set_url_title(url, tst->title);
+		ck_assert(res == NSERROR_OK);
+
 		/* update the visit time so it gets serialised */
-		res = urldb_update_url_visit_data(url);
+		if (tst->persistent) {
+			res = urldb_set_url_persistence(url, true);
+		} else {
+			res = urldb_update_url_visit_data(url);
+		}
 		ck_assert_int_eq(res, NSERROR_OK);
 
 		nsurl_unref(url);
@@ -965,6 +1033,7 @@ static TCase *urldb_api_case_create(void)
 				    6);
 
 	tcase_add_test(tc, urldb_api_destroy_no_init_test);
+
 
 	return tc;
 }
