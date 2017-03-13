@@ -3204,17 +3204,20 @@ nserror urldb_set_url_title(nsurl *url, const char *title)
 
 
 /* exported interface documented in content/urldb.h */
-void urldb_set_url_content_type(nsurl *url, content_type type)
+nserror urldb_set_url_content_type(nsurl *url, content_type type)
 {
 	struct path_data *p;
 
 	assert(url);
 
 	p = urldb_find_url(url);
-	if (!p)
-		return;
+	if (!p) {
+		return NSERROR_NOT_FOUND;
+	}
 
 	p->urld.type = type;
+
+	return NSERROR_OK;
 }
 
 

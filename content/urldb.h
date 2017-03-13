@@ -69,8 +69,9 @@ nserror urldb_set_url_title(struct nsurl *url, const char *title);
  *
  * \param url The URL to look for
  * \param type The type to set
+ * \return NSERROR_OK on success or NSERROR_NOT_FOUND if url not in database
  */
-void urldb_set_url_content_type(struct nsurl *url, content_type type);
+nserror urldb_set_url_content_type(struct nsurl *url, content_type type);
 
 
 /**
