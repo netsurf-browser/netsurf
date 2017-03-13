@@ -1011,6 +1011,49 @@ END_TEST
 
 
 /**
+ * Test urldb find failing for differing bad url.
+ */
+START_TEST(urldb_api_url_find_test)
+{
+	nsurl *url;
+	nserror res;
+
+	urldb_create();
+
+	/* search for a url with mailto scheme */
+	res = nsurl_create("mailto:", &url);
+	ck_assert_int_eq(res, NSERROR_OK);
+
+	res = urldb_set_url_persistence(url, true);
+	ck_assert_int_eq(res, NSERROR_NOT_FOUND);
+
+	nsurl_unref(url);
+
+	/* search for a url with odd scheme and no host */
+	res = nsurl_create("fish:///", &url);
+	ck_assert_int_eq(res, NSERROR_OK);
+	ck_assert(nsurl_has_component(url, NSURL_HOST) == false);
+
+	res = urldb_set_url_persistence(url, true);
+	ck_assert_int_eq(res, NSERROR_NOT_FOUND);
+
+	nsurl_unref(url);
+
+	/* search for a url with not found url  */
+	res = nsurl_create("http://no.example.com/", &url);
+	ck_assert_int_eq(res, NSERROR_OK);
+	ck_assert(nsurl_has_component(url, NSURL_HOST) == true);
+
+	res = urldb_set_url_persistence(url, true);
+	ck_assert_int_eq(res, NSERROR_NOT_FOUND);
+
+	nsurl_unref(url);
+
+
+}
+END_TEST
+
+/**
  * test url database finalisation without initialisation.
  */
 START_TEST(urldb_api_destroy_no_init_test)
@@ -1031,6 +1074,8 @@ static TCase *urldb_api_case_create(void)
 	tcase_add_test_raise_signal(tc,
 				    urldb_api_add_url_assert_test,
 				    6);
+
+	tcase_add_test(tc, urldb_api_url_find_test);
 
 	tcase_add_test(tc, urldb_api_destroy_no_init_test);
 
