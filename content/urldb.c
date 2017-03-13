@@ -3070,17 +3070,20 @@ nserror urldb_save(const char *filename)
 
 
 /* exported interface documented in content/urldb.h */
-void urldb_set_url_persistence(nsurl *url, bool persist)
+nserror urldb_set_url_persistence(nsurl *url, bool persist)
 {
 	struct path_data *p;
 
 	assert(url);
 
 	p = urldb_find_url(url);
-	if (!p)
-		return;
+	if (!p) {
+		return NSERROR_NOT_FOUND;
+	}
 
 	p->persistent = persist;
+
+	return NSERROR_OK;
 }
 
 

@@ -21,8 +21,8 @@
  * Unified URL information database internal interface.
  */
 
-#ifndef _NETSURF_CONTENT_URLDB_H_
-#define _NETSURF_CONTENT_URLDB_H_
+#ifndef NETSURF_CONTENT_URLDB_H
+#define NETSURF_CONTENT_URLDB_H
 
 #include <libwapcaplet/libwapcaplet.h>
 
@@ -40,8 +40,9 @@ void urldb_destroy(void);
  *
  * \param url Absolute URL to persist
  * \param persist True to persist, false otherwise
+ * \return NSERROR_OK on success or NSERROR_NOT_FOUND if url not in database
  */
-void urldb_set_url_persistence(struct nsurl *url, bool persist);
+nserror urldb_set_url_persistence(struct nsurl *url, bool persist);
 
 
 /**
@@ -113,7 +114,7 @@ bool urldb_get_cert_permissions(struct nsurl *url);
  *
  * \param url Absolute URL to consider
  * \param bitmap Opaque pointer to thumbnail data, or NULL to invalidate
- * \return true on sucessful setting else false
+ * \return true on successful setting else false
  */
 bool urldb_set_thumbnail(struct nsurl *url, struct bitmap *bitmap);
 
@@ -123,7 +124,7 @@ bool urldb_set_thumbnail(struct nsurl *url, struct bitmap *bitmap);
  *
  * \param header Header to parse, with Set-Cookie: stripped
  * \param url URL being fetched
- * \param referer Referring resource, or 0 for verifiable transaction
+ * \param referrer Referring resource, or 0 for verifiable transaction
  * \return true on success, false otherwise
  */
 bool urldb_set_cookie(const char *header, struct nsurl *url, struct nsurl *referer);
