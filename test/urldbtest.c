@@ -65,6 +65,17 @@ const char *wikipedia_url = "http://www.wikipedia.org/";
 
 struct netsurf_table *guit = NULL;
 
+
+struct test_triplets {
+	const char* url;
+	const char* title;
+	const char* res;
+};
+
+
+#define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
+
+
 /**
  * generate test output filenames
  */
@@ -248,14 +259,6 @@ START_TEST(urldb_original_test)
 	nsurl *url;
 	nsurl *urlr;
 
-	/* ensure title can be set */
-	url = make_url("http://intranet/");
-	urldb_add_url(url);
-	urldb_set_url_title(url, "foo");
-
-	u = urldb_get_url_data(url);
-	ck_assert(u && strcmp(u->title, "foo") == 0);
-	nsurl_unref(url);
 
 	/* fragments */
 	url = make_url("http://netsurf.strcprstskrzkrk.co.uk/path/to/resource.htm?a=b");
@@ -274,9 +277,6 @@ START_TEST(urldb_original_test)
 	ck_assert(urldb_add_url(url) == true);
 	nsurl_unref(url);
 
-	url = make_url("file:///home/");
-	ck_assert(urldb_add_url(url) == true);
-	nsurl_unref(url);
 
 	/* set cookies on urls */
 	url = make_url("http://www.minimarcos.org.uk/cgi-bin/forum/Blah.pl?,v=login,p=2");
@@ -311,37 +311,6 @@ START_TEST(urldb_original_test)
 	urldb_get_cookie(url, true);
 	nsurl_unref(url);
 
-	/* Mantis bug #993 */
-	url = make_url("http:moodle.org");
-	ck_assert(urldb_add_url(url) == true);
-	ck_assert(urldb_get_url(url) != NULL);
-	nsurl_unref(url);
-
-	/* Mantis bug #993 */
-	url = make_url("http://a_a/");
-	ck_assert(urldb_add_url(url) == true);
-	ck_assert(urldb_get_url(url) != NULL);
-	nsurl_unref(url);
-
-	/* Mantis bug #996 */
-	url = make_url("http://foo@moose.com/");
-	if (urldb_add_url(url)) {
-		LOG("added %s", nsurl_access(url));
-		ck_assert(urldb_get_url(url) != NULL);
-	}
-	nsurl_unref(url);
-
-	/* Mantis bug #913 */
-	url = make_url("http://www2.2checkout.com/");
-	ck_assert(urldb_add_url(url) == true);
-	ck_assert(urldb_get_url(url) != NULL);
-	nsurl_unref(url);
-
-	/* Numeric subdomains */
-	url = make_url("http://2.bp.blogspot.com/_448y6kVhntg/TSekubcLJ7I/AAAAAAAAHJE/yZTsV5xT5t4/s1600/covers.jpg");
-	ck_assert(urldb_add_url(url) == true);
-	ck_assert(urldb_get_url(url) != NULL);
-	nsurl_unref(url);
 
 	/* Valid path */
 	ck_assert(test_urldb_set_cookie("name=value;Path=/\r\n", "http://www.google.com/", NULL));
@@ -420,6 +389,12 @@ START_TEST(urldb_original_test)
 }
 END_TEST
 
+/**
+ * test case comprised of tests historicaly found in netsurf
+ *
+ * These tests are carried forward from original open coded tests
+ * found in the url database code.
+ */
 static TCase *urldb_original_case_create(void)
 {
 	TCase *tc;
@@ -431,6 +406,90 @@ static TCase *urldb_original_case_create(void)
 				  urldb_teardown);
 
 	tcase_add_test(tc, urldb_original_test);
+
+	return tc;
+}
+
+
+/**
+ * add set and get tests
+ */
+static const struct test_triplets add_set_get_tests[] = {
+	{ "http://intranet/", "foo", NULL }, /* from legacy tests */
+	{ "http:moodle.org", "buggy", NULL }, /* Mantis bug #993 */
+	{ "http://a_a/", "buggsy", NULL }, /* Mantis bug #993 */
+	{ "http://www2.2checkout.com/" , "foobar", NULL }, /* Mantis bug #913 */
+	{ "http://2.bp.blogspot.com/_448y6kVhntg/TSekubcLJ7I/AAAAAAAAHJE/yZTsV5xT5t4/s1600/covers.jpg",
+	  "a more complex title" , NULL }, /* Numeric subdomains */
+	{ "file:///home/", NULL, NULL}, /* no title */
+	{ "http://foo@moose.com/", NULL, NULL }, /* Mantis bug #996 */
+	{ "http://a.xn--11b4c3d/a", "a title", NULL },
+	{ "https://smog.大众汽车/test", "unicode title 大众汽车", NULL},
+};
+
+
+/**
+ * add set and get test
+ */
+START_TEST(urldb_add_set_get_test)
+{
+	nserror err;
+	nsurl *url;
+	nsurl *res_url;
+	struct url_data *data;
+	const struct test_triplets *tst = &add_set_get_tests[_i];
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->url, &url);
+	ck_assert(err == NSERROR_OK);
+
+	/* add the url to the database */
+	ck_assert(urldb_add_url(url) == true);
+
+	/* set title */
+	err = urldb_set_url_title(url, tst->title);
+	ck_assert(err == NSERROR_OK);
+
+	/* retrieve the url from the database and check it matches */
+	res_url = urldb_get_url(url);
+	ck_assert(res_url != NULL);
+	ck_assert(nsurl_compare(url, res_url, NSURL_COMPLETE) == true);
+
+	/* retrieve url data and check title matches */
+	data = urldb_get_url_data(url);
+	ck_assert(data != NULL);
+
+	/* ensure title matches */
+	if (tst->title != NULL) {
+		ck_assert_str_eq(data->title, tst->title);
+	} else {
+		ck_assert(data->title == NULL);
+	}
+
+	/* release test url */
+	nsurl_unref(url);
+}
+END_TEST
+
+/**
+ * test cases that simply add and then get a url
+ *
+ * these tests exercise the adding and retrival of urls verifying the
+ * data added.
+ */
+static TCase *urldb_add_get_case_create(void)
+{
+	TCase *tc;
+	tc = tcase_create("Add Get tests");
+
+	/* ensure corestrings are initialised and finalised for every test */
+	tcase_add_checked_fixture(tc,
+				  urldb_create,
+				  urldb_teardown);
+
+	tcase_add_loop_test(tc,
+			    urldb_add_set_get_test,
+			    0, NELEMS(add_set_get_tests));
 
 	return tc;
 }
@@ -899,7 +958,9 @@ static TCase *urldb_api_case_create(void)
 	return tc;
 }
 
-
+/**
+ * Test suite for url database
+ */
 static Suite *urldb_suite_create(void)
 {
 	Suite *s;
@@ -909,6 +970,7 @@ static Suite *urldb_suite_create(void)
 	suite_add_tcase(s, urldb_session_case_create());
 	suite_add_tcase(s, urldb_case_create());
 	suite_add_tcase(s, urldb_cookie_case_create());
+	suite_add_tcase(s, urldb_add_get_case_create());
 	suite_add_tcase(s, urldb_original_case_create());
 
 	return s;
