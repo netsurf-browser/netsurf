@@ -110,6 +110,28 @@ START_TEST(message_file_load_test)
 }
 END_TEST
 
+START_TEST(message_get_buff_test)
+{
+	nserror res;
+	char *buf;
+	res = messages_add_from_inline(test_data_Messages,
+				       test_data_Messages_len);
+	ck_assert_int_eq(res, NSERROR_OK);
+
+	buf = messages_get_buff("DefinitelyNotAKey");
+	ck_assert_str_eq(buf, "DefinitelyNotAKey");
+	free(buf);
+
+	buf = messages_get_buff("NoMemory");
+	ck_assert_str_eq(buf, "NetSurf is running out of memory. Please free some memory and try again.");
+	free(buf);
+
+	/* cleanup */
+	messages_destroy();
+}
+END_TEST
+
+
 static TCase *message_session_case_create(void)
 {
 	TCase *tc;
@@ -119,6 +141,7 @@ static TCase *message_session_case_create(void)
 	tcase_add_test(tc, message_inline_load_test);
 	tcase_add_loop_test(tc, messages_errorcode_test,
 			    0, NELEMS(message_errorcode_test_vec));
+	tcase_add_test(tc, message_get_buff_test);
 
 	return tc;
 }
