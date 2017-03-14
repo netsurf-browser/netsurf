@@ -88,6 +88,10 @@ static const struct test_strings squash_whitespace_test_vec[] = {
 	{ " \n\r\t   ", " " },
 	{ " a ", " a " },
 	{ " a   b ", " a b " },
+	{
+		"   A string  with \t  \r \n  \t   lots\tof\nwhitespace\r    ",
+		" A string with lots of whitespace "
+	},
 };
 
 START_TEST(squash_whitespace_test)
@@ -181,16 +185,6 @@ static TCase *corestrings_case_create(void)
 	return tc;
 }
 
-START_TEST(string_utils_squash_whitespace_test)
-{
-	char *res;
-	res = squash_whitespace("   A string  with \t      \t   lots of whitespace    ");
-	ck_assert(res != NULL);
-	ck_assert_str_eq(res, " A string with lots of whitespace ");
-
-	free(res);
-}
-END_TEST
 
 
 START_TEST(string_utils_cnv_space2nbsp_test)
@@ -212,7 +206,55 @@ START_TEST(string_utils_cnv_space2nbsp_test)
 END_TEST
 
 
-START_TEST(string_utils_snstrjoin_test)
+static TCase *string_utils_case_create(void)
+{
+	TCase *tc;
+	tc = tcase_create("String utilities");
+
+	tcase_add_test(tc, string_utils_cnv_space2nbsp_test);
+
+	return tc;
+}
+
+
+/**
+ * api tests
+ */
+START_TEST(string_utils_snstrjoin_api_test)
+{
+	nserror res;
+	char outstr[32];
+	char *resstr = &outstr[0];
+	size_t resstrlen = 32;
+
+	/* bad count parameters */
+	res = snstrjoin(&resstr, &resstrlen, ',', 0, "1");
+	ck_assert_int_eq(res, NSERROR_BAD_PARAMETER);
+
+	res = snstrjoin(&resstr, &resstrlen, ',', 17, "1");
+	ck_assert_int_eq(res, NSERROR_BAD_PARAMETER);
+
+	/* if there is a buffer must set length */
+	res = snstrjoin(&resstr, NULL, ',', 4, "1", "2", "3", "4");
+	ck_assert_int_eq(res, NSERROR_BAD_PARAMETER);
+
+	/* null argument value is bad parameter */
+	res = snstrjoin(&resstr, &resstrlen, ',', 4, "1", NULL, "3", "4");
+	ck_assert_int_eq(res, NSERROR_BAD_PARAMETER);
+
+	/* attempt to use an undersize buffer */
+	resstrlen = 1;
+	res = snstrjoin(&resstr, &resstrlen, ',', 4, "1", "2", "3", "4");
+	ck_assert_int_eq(res, NSERROR_NOSPACE);
+
+}
+END_TEST
+
+
+/**
+ * good four parameter join
+ */
+START_TEST(string_utils_snstrjoin_four_test)
 {
 	nserror res;
 	char *resstr = NULL;
@@ -228,26 +270,68 @@ START_TEST(string_utils_snstrjoin_test)
 END_TEST
 
 
-static TCase *string_utils_case_create(void)
+/**
+ * good three parameter join with no length
+ */
+START_TEST(string_utils_snstrjoin_three_test)
+{
+	nserror res;
+	char *resstr = NULL;
+
+	res = snstrjoin(&resstr, NULL, ',', 3, "1", "2,", "3");
+	ck_assert_int_eq(res, NSERROR_OK);
+	ck_assert(resstr != NULL);
+	ck_assert_str_eq(resstr, "1,2,3");
+	free(resstr);
+}
+END_TEST
+
+/**
+ * good two parameter join into pre allocated buffer
+ */
+START_TEST(string_utils_snstrjoin_two_test)
+{
+	nserror res;
+	char outstr[32];
+	char *resstr = &outstr[0];
+	size_t resstrlen = 32;
+
+	res = snstrjoin(&resstr, &resstrlen, ',', 2, "1", "2");
+	ck_assert_int_eq(res, NSERROR_OK);
+	ck_assert(resstr != NULL);
+	ck_assert_int_eq(resstrlen, 4);
+	ck_assert_str_eq(resstr, "1,2");
+}
+END_TEST
+
+
+static TCase *snstrjoin_case_create(void)
 {
 	TCase *tc;
-	tc = tcase_create("String utilities");
+	tc = tcase_create("snstrjoin utilities");
 
-	tcase_add_test(tc, string_utils_squash_whitespace_test);
-	tcase_add_test(tc, string_utils_cnv_space2nbsp_test);
-	tcase_add_test(tc, string_utils_snstrjoin_test);
+	tcase_add_test(tc, string_utils_snstrjoin_api_test);
+	tcase_add_test(tc, string_utils_snstrjoin_four_test);
+	tcase_add_test(tc, string_utils_snstrjoin_three_test);
+	tcase_add_test(tc, string_utils_snstrjoin_three_test);
+	tcase_add_test(tc, string_utils_snstrjoin_two_test);
 
 	return tc;
 }
 
+
+/*
+ * Utility test suite creation
+ */
 static Suite *utils_suite_create(void)
 {
 	Suite *s;
-	s = suite_create("String utils");
+	s = suite_create("Utility API");
 
 	suite_add_tcase(s, human_friendly_bytesize_case_create());
 	suite_add_tcase(s, squash_whitespace_case_create());
 	suite_add_tcase(s, corestrings_case_create());
+	suite_add_tcase(s, snstrjoin_case_create());
 	suite_add_tcase(s, string_utils_case_create());
 
 	return s;
