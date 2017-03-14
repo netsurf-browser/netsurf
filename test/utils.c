@@ -21,6 +21,8 @@
  * Tests for utility functions.
  */
 
+#include "utils/config.h"
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -230,6 +232,41 @@ START_TEST(string_utils_cnv_space2nbsp_test)
 }
 END_TEST
 
+START_TEST(string_utils_strcasestr_test)
+{
+
+	char *res;
+	const char *haystack = "A big old long haystack string that has a small Needle in the middle of it with a different case";
+
+	res = strcasestr(haystack, "notfound");
+	ck_assert(res == NULL);
+
+	res = strcasestr(haystack, "needle");
+	ck_assert(res != NULL);
+
+	ck_assert_str_eq(res, haystack + 48);
+
+}
+END_TEST
+
+START_TEST(string_utils_strchrnul_test)
+{
+
+	char *res;
+	const char *haystack = "A big old long haystack string that has a small Needle in the middle of it with a different case";
+
+	res = strchrnul(haystack, 'Z');
+	ck_assert(res != NULL);
+	ck_assert(*res == 0);
+
+	res = strchrnul(haystack, 'N');
+	ck_assert(res != NULL);
+
+	ck_assert_str_eq(res, haystack + 48);
+
+}
+END_TEST
+
 
 static TCase *string_utils_case_create(void)
 {
@@ -237,6 +274,8 @@ static TCase *string_utils_case_create(void)
 	tc = tcase_create("String utilities");
 
 	tcase_add_test(tc, string_utils_cnv_space2nbsp_test);
+	tcase_add_test(tc, string_utils_strcasestr_test);
+	tcase_add_test(tc, string_utils_strchrnul_test);
 
 	return tc;
 }
