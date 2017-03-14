@@ -181,6 +181,65 @@ static TCase *corestrings_case_create(void)
 	return tc;
 }
 
+START_TEST(string_utils_squash_whitespace_test)
+{
+	char *res;
+	res = squash_whitespace("   A string  with \t      \t   lots of whitespace    ");
+	ck_assert(res != NULL);
+	ck_assert_str_eq(res, " A string with lots of whitespace ");
+
+	free(res);
+}
+END_TEST
+
+
+START_TEST(string_utils_cnv_space2nbsp_test)
+{
+	char *res;
+	char comparison[64];
+
+	snprintf(comparison, 64,
+		 "%c%cA%c%cstring%c%c%c%cwith%c%c%c%c%c%cwhitespace%c%c",
+		 0xC2, 0xA0, 0xC2, 0xA0, 0xC2, 0xA0, 0xC2, 0xA0,
+		 0xC2, 0xA0, 0xC2, 0xA0, 0xC2, 0xA0, 0xC2, 0xA0);
+
+	res = cnv_space2nbsp(" A string  with \t whitespace ");
+	ck_assert(res != NULL);
+	ck_assert_str_eq(res, comparison);
+
+	free(res);
+}
+END_TEST
+
+
+START_TEST(string_utils_snstrjoin_test)
+{
+	nserror res;
+	char *resstr = NULL;
+	size_t resstrlen;
+
+	res = snstrjoin(&resstr, &resstrlen, ',', 4, "1", "2", "3", "4");
+	ck_assert_int_eq(res, NSERROR_OK);
+	ck_assert(resstr != NULL);
+	ck_assert_int_eq(resstrlen, 8);
+	ck_assert_str_eq(resstr, "1,2,3,4");
+	free(resstr);
+}
+END_TEST
+
+
+static TCase *string_utils_case_create(void)
+{
+	TCase *tc;
+	tc = tcase_create("String utilities");
+
+	tcase_add_test(tc, string_utils_squash_whitespace_test);
+	tcase_add_test(tc, string_utils_cnv_space2nbsp_test);
+	tcase_add_test(tc, string_utils_snstrjoin_test);
+
+	return tc;
+}
+
 static Suite *utils_suite_create(void)
 {
 	Suite *s;
@@ -189,6 +248,7 @@ static Suite *utils_suite_create(void)
 	suite_add_tcase(s, human_friendly_bytesize_case_create());
 	suite_add_tcase(s, squash_whitespace_case_create());
 	suite_add_tcase(s, corestrings_case_create());
+	suite_add_tcase(s, string_utils_case_create());
 
 	return s;
 }
