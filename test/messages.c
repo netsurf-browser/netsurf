@@ -81,6 +81,9 @@ START_TEST(messages_errorcode_test)
 
 	/* ensure result data is correct */
 	ck_assert_str_eq(res_str, tst->res);
+
+	/* cleanup */
+	messages_destroy();
 }
 END_TEST
 
@@ -90,6 +93,9 @@ START_TEST(message_inline_load_test)
 	res = messages_add_from_inline(test_data_Messages,
 				       test_data_Messages_len);
 	ck_assert_int_eq(res, NSERROR_OK);
+
+	/* cleanup */
+	messages_destroy();
 }
 END_TEST
 
@@ -98,6 +104,9 @@ START_TEST(message_file_load_test)
 	nserror res;
 	res = messages_add_from_file(test_messages_path);
 	ck_assert_int_eq(res, NSERROR_OK);
+
+	/* cleanup */
+	messages_destroy();
 }
 END_TEST
 
