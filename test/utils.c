@@ -53,6 +53,9 @@ static const struct test_pairs human_friendly_bytesize_test_vec[] = {
 	{ 4294967295, "4.00GBytes" },
 };
 
+/**
+ * check each response one at a time
+ */
 START_TEST(human_friendly_bytesize_test)
 {
 	char *res_str;
@@ -65,6 +68,26 @@ START_TEST(human_friendly_bytesize_test)
 }
 END_TEST
 
+/**
+ * check each response one after another
+ */
+START_TEST(human_friendly_bytesize_all_test)
+{
+	char *res_str;
+	const struct test_pairs *tst;
+	unsigned int idx;
+
+	for (idx = 0; idx < NELEMS(human_friendly_bytesize_test_vec); idx++) {
+		tst = &human_friendly_bytesize_test_vec[idx];
+
+		res_str = human_friendly_bytesize(tst->test);
+
+		/* ensure result data is correct */
+		ck_assert_str_eq(res_str, tst->res);
+	}
+}
+END_TEST
+
 static TCase *human_friendly_bytesize_case_create(void)
 {
 	TCase *tc;
@@ -72,6 +95,8 @@ static TCase *human_friendly_bytesize_case_create(void)
 
 	tcase_add_loop_test(tc, human_friendly_bytesize_test,
 			    0, NELEMS(human_friendly_bytesize_test_vec));
+
+	tcase_add_test(tc, human_friendly_bytesize_all_test);
 
 	return tc;
 }
