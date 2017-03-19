@@ -421,7 +421,7 @@ static nserror hlcache_llcache_callback(llcache_handle *handle,
 
 	switch (event->type) {
 	case LLCACHE_EVENT_HAD_HEADERS:
-		error = mimesniff_compute_effective_type(handle, NULL, 0,
+		error = mimesniff_compute_effective_type(llcache_handle_get_header(handle, "Content-Type"), NULL, 0,
 				ctx->flags & HLCACHE_RETRIEVE_SNIFF_TYPE,
 				ctx->accepted_types == CONTENT_IMAGE,
 				&effective_type);
@@ -444,7 +444,7 @@ static nserror hlcache_llcache_callback(llcache_handle *handle,
 
 		break;
 	case LLCACHE_EVENT_HAD_DATA:
-		error = mimesniff_compute_effective_type(handle,
+		error = mimesniff_compute_effective_type(llcache_handle_get_header(handle, "Content-Type"),
 				event->data.data.buf, event->data.data.len,
 				ctx->flags & HLCACHE_RETRIEVE_SNIFF_TYPE,
 				ctx->accepted_types == CONTENT_IMAGE,
@@ -463,7 +463,7 @@ static nserror hlcache_llcache_callback(llcache_handle *handle,
 	case LLCACHE_EVENT_DONE:
 		/* DONE event before we could determine the effective MIME type.
 		 */
-		error = mimesniff_compute_effective_type(handle,
+		error = mimesniff_compute_effective_type(llcache_handle_get_header(handle, "Content-Type"),
 				NULL, 0, false, false, &effective_type);
 		if (error == NSERROR_OK || error == NSERROR_NOT_FOUND) {
 			error = hlcache_migrate_ctx(ctx, effective_type);

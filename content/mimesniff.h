@@ -37,7 +37,7 @@ struct llcache_handle;
  * The implementation uses the sniffing algorithm described in
  * http://mimesniff.spec.whatwg.org/
  *
- * \param handle          Source data handle to sniff
+ * \param content_type_header Source content type header
  * \param data            First data chunk, or NULL
  * \param len             Length of \a data, in bytes
  * \param sniff_allowed   Whether MIME type sniffing is allowed
@@ -48,7 +48,7 @@ struct llcache_handle;
  *         NSERROR_NOT_FOUND if sniffing is prohibited and no 
  *                           Content-Type header was found
  */
-nserror mimesniff_compute_effective_type(struct llcache_handle *handle,
+nserror mimesniff_compute_effective_type(const char *content_type_header,
 		const uint8_t *data, size_t len, bool sniff_allowed,
 		bool image_only, lwc_string **effective_type);
 

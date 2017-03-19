@@ -125,12 +125,14 @@ static const content_handler *content_lookup(lwc_string *mime_type)
 
 	for (entry = content_handlers; entry != NULL; entry = entry->next) {
 		if (lwc_string_caseless_isequal(mime_type, entry->mime_type,
-				&match) == lwc_error_ok && match)
+					&match) == lwc_error_ok && match) {
 			break;
+		}
 	}
 
-	if (entry != NULL)
+	if (entry != NULL) {
 		return entry->handler;
+	}
 
 	return NULL;
 }

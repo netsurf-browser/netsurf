@@ -31,7 +31,6 @@
 #include "utils/corestrings.h"
 
 #include "content/content_factory.h"
-#include "content/llcache.h"
 #include "content/mimesniff.h"
 
 struct map_s {
@@ -547,7 +546,7 @@ static nserror mimesniff__compute_feed_or_html(const uint8_t *data,
 }
 
 /* See mimesniff.h for documentation */
-nserror mimesniff_compute_effective_type(llcache_handle *handle,
+nserror mimesniff_compute_effective_type(const char *content_type_header,
 		const uint8_t *data, size_t len, bool sniff_allowed,
 		bool image_only, lwc_string **effective_type)
 {
@@ -564,18 +563,16 @@ nserror mimesniff_compute_effective_type(llcache_handle *handle,
 	};
 #undef S
 
-	const char *content_type_header;
 	size_t content_type_header_len;
 	http_content_type *ct;
 	const struct tt_s *tt;
 	bool match;
 	nserror error;
 
-	content_type_header =
-			llcache_handle_get_header(handle, "Content-Type");
 	if (content_type_header == NULL) {
-		if (sniff_allowed == false)
+		if (sniff_allowed == false) {
 			return NSERROR_NOT_FOUND;
+		}
 
 		/* No official type => unknown */
 		return mimesniff__compute_unknown(data, len, effective_type);
