@@ -212,10 +212,6 @@ nserror netsurf_init(const char *store_path)
 	if (ret != NSERROR_OK)
 		return ret;
 
-	ret = mimesniff_init();
-	if (ret != NSERROR_OK)
-		return ret;
-
 	setlocale(LC_ALL, "");
 
 	/* initialise the fetchers */
@@ -261,8 +257,6 @@ void netsurf_exit(void)
 
 	LOG("Closing fetches");
 	fetcher_quit();
-
-	mimesniff_fini();
 
 	/* dump any remaining cache entries */
 	image_cache_fini();

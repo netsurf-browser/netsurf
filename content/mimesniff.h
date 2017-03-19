@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * MIME type sniffer (interface)
+/**
+ * \file
+ * MIME type sniffer interface
  */
 
 #ifndef NETSURF_CONTENT_MIMESNIFF_H_
@@ -31,8 +32,10 @@
 struct llcache_handle;
 
 /**
- * Compute the effective MIME type for an object using the sniffing
- * algorithm described in http://mimesniff.spec.whatwg.org/
+ * Compute the effective MIME type for an object
+ *
+ * The implementation uses the sniffing algorithm described in
+ * http://mimesniff.spec.whatwg.org/
  *
  * \param handle          Source data handle to sniff
  * \param data            First data chunk, or NULL
@@ -48,8 +51,5 @@ struct llcache_handle;
 nserror mimesniff_compute_effective_type(struct llcache_handle *handle,
 		const uint8_t *data, size_t len, bool sniff_allowed,
 		bool image_only, lwc_string **effective_type);
-
-nserror mimesniff_init(void);
-void mimesniff_fini(void);
 
 #endif
