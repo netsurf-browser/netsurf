@@ -68,6 +68,14 @@
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
 
+#ifndef APPNOTIFY_DisplayTime
+#define APPNOTIFY_DisplayTime   ( TAG_USER + 13 )
+#endif
+
+#ifndef APPNOTIFY_Percentage
+#define APPNOTIFY_Percentage    ( TAG_USER + 14 )
+#endif
+
 struct gui_download_window {
 	struct ami_generic_window w;
 	struct Window *win;
@@ -157,7 +165,15 @@ static struct gui_download_window *gui_download_window_create(download_context *
 		return NULL;
 	}
 
-	dw->objects[OID_MAIN] = WindowObj,
+	if((nsoption_bool(download_notify_progress) == true)) {
+		Notify(ami_gui_get_app_id(), APPNOTIFY_Title, messages_get("NetSurf"),
+				APPNOTIFY_PubScreenName, "FRONT",
+				APPNOTIFY_Text, dw->fname,
+				APPNOTIFY_DisplayTime, TRUE,     
+				APPNOTIFY_Percentage, 0,
+				TAG_DONE);
+	} else {
+		dw->objects[OID_MAIN] = WindowObj,
       	    WA_ScreenTitle, ami_gui_get_screen_title(),
            	WA_Title, dw->url,
            	WA_Activate, TRUE,
@@ -195,7 +211,9 @@ static struct gui_download_window *gui_download_window_create(download_context *
 			EndGroup,
 		EndWindow;
 
-	dw->win = (struct Window *)RA_OpenWindow(dw->objects[OID_MAIN]);
+		dw->win = (struct Window *)RA_OpenWindow(dw->objects[OID_MAIN]);
+	}
+
 	dw->ctx = ctx;
 
 	ami_gui_win_list_add(dw, AMINS_DLWINDOW, &ami_download_table);
@@ -219,21 +237,33 @@ static nserror gui_download_window_data(struct gui_download_window *dw,
 	va[1] = (APTR)dw->size;
 	va[2] = 0;
 
-	if(dw->size)
-	{
-		RefreshSetGadgetAttrs((struct Gadget *)dw->objects[GID_STATUS], dw->win, NULL,
+	if(dw->size) {
+		if((nsoption_bool(download_notify_progress) == true)) {
+			Notify(ami_gui_get_app_id(),
+					APPNOTIFY_Percentage, (dw->downloaded * 100) / dw->size,
+					TAG_DONE);
+		} else {
+			RefreshSetGadgetAttrs((struct Gadget *)dw->objects[GID_STATUS], dw->win, NULL,
 						FUELGAUGE_Level,   dw->downloaded,
 						GA_Text,           messages_get("amiDownload"),
 						FUELGAUGE_VarArgs, va,
 						TAG_DONE);
+		}
 	}
 	else
 	{
-		RefreshSetGadgetAttrs((struct Gadget *)dw->objects[GID_STATUS], dw->win, NULL,
+		if((nsoption_bool(download_notify_progress) == true)) {
+			/* unknown size, not entirely sure how to deal with this atm... */
+			Notify(ami_gui_get_app_id(),
+					APPNOTIFY_Percentage, 0,
+					TAG_DONE);
+		} else {
+			RefreshSetGadgetAttrs((struct Gadget *)dw->objects[GID_STATUS], dw->win, NULL,
 						FUELGAUGE_Level,   dw->downloaded,
 						GA_Text,           messages_get("amiDownloadU"),
 						FUELGAUGE_VarArgs, va,
 						TAG_DONE);
+		}
 	}
 
 	return NSERROR_OK;
@@ -247,6 +277,12 @@ static void gui_download_window_done(struct gui_download_window *dw)
 
 	if(!dw) return;
 	bw = dw->bw;
+
+	if((nsoption_bool(download_notify_progress) == true)) {
+		Notify(ami_gui_get_app_id(),
+				APPNOTIFY_Update, TRUE,
+				TAG_DONE);
+	}
 
 	if((nsoption_bool(download_notify)) && (dw->result == AMINS_DLOAD_OK))
 	{
@@ -275,7 +311,10 @@ static void gui_download_window_done(struct gui_download_window *dw)
 
 	downloads_in_progress--;
 
-	DisposeObject(dw->objects[OID_MAIN]);
+	if(dw->objects[OID_MAIN] != NULL) {
+		DisposeObject(dw->objects[OID_MAIN]);
+	}
+
 	ami_gui_win_list_remove(dw);
 	if(queuedl) {
 		nsurl *url;
