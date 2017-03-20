@@ -546,9 +546,13 @@ static nserror mimesniff__compute_feed_or_html(const uint8_t *data,
 }
 
 /* See mimesniff.h for documentation */
-nserror mimesniff_compute_effective_type(const char *content_type_header,
-		const uint8_t *data, size_t len, bool sniff_allowed,
-		bool image_only, lwc_string **effective_type)
+nserror
+mimesniff_compute_effective_type(const char *content_type_header,
+				 const uint8_t *data,
+				 size_t len,
+				 bool sniff_allowed,
+				 bool image_only,
+				 lwc_string **effective_type)
 {
 #define S(s) { s, SLEN(s) }
 	static const struct tt_s {

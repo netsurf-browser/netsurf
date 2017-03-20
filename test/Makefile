@@ -10,7 +10,8 @@ TESTS := \
 	urlescape \
 	utils \
 	messages \
-	time #llcache
+	time \
+	mimesniff #llcache
 
 # nsurl sources
 nsurl_SRCS := utils/corestrings.c utils/nsurl/nsurl.c \
@@ -61,6 +62,14 @@ utils_SRCS := utils/utils.c utils/messages.c utils/hashtable.c \
 
 # time test sources
 time_SRCS := utils/time.c test/log.c test/time.c
+
+# mimesniff test sources
+mimesniff_SRCS := utils/hashtable.c utils/nsurl/nsurl.c utils/hashtable.c \
+	utils/nsurl/parse.c utils/corestrings.c utils/idna.c utils/punycode.c \
+	utils/http/generics.c utils/http/content-type.c \
+	utils/http/primitives.c utils/messages.c utils/http/parameter.c \
+	content/mimesniff.c \
+	test/log.c test/mimesniff.c
 
 # Coverage builds need additional flags
 COV_ROOT := build/$(HOST)-coverage
