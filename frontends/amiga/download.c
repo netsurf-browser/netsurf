@@ -83,6 +83,7 @@ struct gui_download_window {
 	BPTR fh;
 	uint32 size;
 	uint32 downloaded;
+	uint32 progress;
 	struct dlnode *dln;
 	struct browser_window *bw;
 	struct download_context *ctx;
@@ -166,7 +167,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 	}
 
 	if((nsoption_bool(download_notify_progress) == true)) {
-		Notify(ami_gui_get_app_id(), APPNOTIFY_Title, messages_get("NetSurf"),
+		Notify(ami_gui_get_app_id(), APPNOTIFY_Title, messages_get("amiDownloading"),
 				APPNOTIFY_PubScreenName, "FRONT",
 				APPNOTIFY_Text, dw->fname,
 				APPNOTIFY_DisplayTime, TRUE,     
@@ -238,9 +239,11 @@ static nserror gui_download_window_data(struct gui_download_window *dw,
 	va[2] = 0;
 
 	if(dw->size) {
-		if((nsoption_bool(download_notify_progress) == true)) {
+		if((nsoption_bool(download_notify_progress) == true) &&
+			(((dw->downloaded * 100) / dw->size) > dw->progress)) {
+			dw->progress = (uint32)((dw->downloaded * 100) / dw->size);
 			Notify(ami_gui_get_app_id(),
-					APPNOTIFY_Percentage, (dw->downloaded * 100) / dw->size,
+					APPNOTIFY_Percentage, dw->progress,
 					TAG_DONE);
 		} else {
 			RefreshSetGadgetAttrs((struct Gadget *)dw->objects[GID_STATUS], dw->win, NULL,
@@ -255,7 +258,7 @@ static nserror gui_download_window_data(struct gui_download_window *dw,
 		if((nsoption_bool(download_notify_progress) == true)) {
 			/* unknown size, not entirely sure how to deal with this atm... */
 			Notify(ami_gui_get_app_id(),
-					APPNOTIFY_Percentage, 0,
+					APPNOTIFY_Percentage, 100,
 					TAG_DONE);
 		} else {
 			RefreshSetGadgetAttrs((struct Gadget *)dw->objects[GID_STATUS], dw->win, NULL,
