@@ -772,7 +772,7 @@ END_TEST
 #define SIG(s,m,a) { (const uint8_t *)s, SLEN(s), &corestring_lwc_##m, a }
 static struct test_mimetype text_html_header_tests[] = {
 	SIG("text", text_html, true),
-	SIG("\xef\xbb\xbf\t\n\r <!-- a comment><!DOCTYPE HTML><?pi?><head>", text_html, true),
+	SIG("\xef\xbb\xbf\t\n\r <!-- a comment --><!DOCTYPE HTML><?pi?><head>", text_html, true),
 	SIG("\xef\xbb\xbf\t\n\r <!DOCTYPE HTML><?pi?><rss version=\"2.0\">", application_rss_xml, true),
 	SIG("\t\n\r <? pi ?><feed>", application_atom_xml, true),
 	SIG("<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns=\"http://purl.org/rss/1.0\">", application_rss_xml, true),
