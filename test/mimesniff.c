@@ -43,9 +43,30 @@ struct test_mimetype {
 };
 
 /* helpers */
+
+/**
+ * test implentation of mime type to content type conversion
+ *
+ * in the full implementation this converts a mime type to content
+ * type for content types with handler in the browser. This
+ * implementation provides a minimal version to pretends to support a
+ * couple of image types
+ */
 content_type content_factory_type_from_mime_type(lwc_string *mime_type)
 {
 	content_type type = CONTENT_NONE;
+	bool match;
+	
+	if (lwc_string_caseless_isequal(mime_type,
+					corestring_lwc_image_gif,
+					&match) == lwc_error_ok && match) {
+		type = CONTENT_IMAGE;
+	}
+	if (lwc_string_caseless_isequal(mime_type,
+					corestring_lwc_image_jpeg,
+					&match) == lwc_error_ok && match) {
+		type = CONTENT_IMAGE;
+	}
 	return type;
 }
 
@@ -660,6 +681,93 @@ START_TEST(mimesniff_xml_header_sniff_test)
 }
 END_TEST
 
+
+START_TEST(mimesniff_supported_image_header_sniff_test)
+{
+	nserror err;
+	lwc_string *effective_type;
+	bool match;
+
+	err = mimesniff_compute_effective_type("image/gif",
+					       NULL,
+					       0,
+					       true,
+					       false,
+					       &effective_type);
+	ck_assert_int_eq(err, NSERROR_NEED_DATA);
+
+	err = mimesniff_compute_effective_type("image/gif",
+					       match_unknown_exact_tests[0].data,
+					       match_unknown_exact_tests[0].len,
+					       true,
+					       false,
+					       &effective_type);
+	ck_assert_int_eq(err, NSERROR_OK);
+
+	ck_assert(lwc_string_caseless_isequal(effective_type,
+					      corestring_lwc_image_gif,
+					      &match) == lwc_error_ok && match);
+	lwc_string_unref(effective_type);
+}
+END_TEST
+
+
+START_TEST(mimesniff_html_header_sniff_test)
+{
+	nserror err;
+	lwc_string *effective_type;
+	bool match;
+
+	err = mimesniff_compute_effective_type("text/html",
+					       NULL,
+					       0,
+					       true,
+					       false,
+					       &effective_type);
+	ck_assert_int_eq(err, NSERROR_NEED_DATA);
+
+	err = mimesniff_compute_effective_type("text/html",
+					       "text",
+					       4,
+					       true,
+					       false,
+					       &effective_type);
+	ck_assert_int_eq(err, NSERROR_OK);
+
+	ck_assert(lwc_string_caseless_isequal(effective_type,
+					      corestring_lwc_text_html,
+					      &match) == lwc_error_ok && match);
+	lwc_string_unref(effective_type);
+}
+END_TEST
+
+START_TEST(mimesniff_text_fancy_header_sniff_test)
+{
+	nserror err;
+	lwc_string *effective_type;
+	lwc_string *text_fancy;
+	bool match;
+
+	ck_assert(lwc_intern_string("text/fancy", SLEN("text/fancy"), &text_fancy) == lwc_error_ok);
+
+	err = mimesniff_compute_effective_type("text/fancy",
+					       NULL,
+					       0,
+					       true,
+					       false,
+					       &effective_type);
+	ck_assert_int_eq(err, NSERROR_OK);
+
+	ck_assert(lwc_string_caseless_isequal(effective_type,
+					      text_fancy,
+					      &match) == lwc_error_ok && match);
+
+	lwc_string_unref(effective_type);
+	lwc_string_unref(text_fancy);
+}
+END_TEST
+
+
 /* test cases with header mime type */
 static TCase *mimesniff_header_case_create(void)
 {
@@ -681,6 +789,9 @@ static TCase *mimesniff_header_case_create(void)
 	tcase_add_test(tc, mimesniff_unknown_header_sniff_test);
 	tcase_add_test(tc, mimesniff_plusxml_header_sniff_test);
 	tcase_add_test(tc, mimesniff_xml_header_sniff_test);
+	tcase_add_test(tc, mimesniff_supported_image_header_sniff_test);
+	tcase_add_test(tc, mimesniff_html_header_sniff_test);
+	tcase_add_test(tc, mimesniff_text_fancy_header_sniff_test);
 
 	return tc;
 }
