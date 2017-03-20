@@ -192,8 +192,20 @@ static struct test_mimetype match_unknown_mp4_tests[] = {
 	SIG("\x00\x00\x00\040ftypmp41\x00\x00\x02\x00isomiso2avc1mp41", video_mp4, true),
 };
 
+static struct test_mimetype match_unknown_bad_mp4_tests[] = {
+	SIG("\x00\x00\x00\044ftypisom\x00\x00\x02\x00isomiso2avc1mp41", application_octet_stream, true),
+	SIG("\x00\x00\x00\037ftypmp41\x00\x00\x02\x00isomiso2avc1mp41", application_octet_stream, true),
+	SIG("\x00\x00\x00\040atypmp41\x00\x00\x02\x00isomiso2avc1mp41", application_octet_stream, true),
+	SIG("\x00\x00\x00\040faypmp41\x00\x00\x02\x00isomiso2avc1mp41", application_octet_stream, true),
+	SIG("\x00\x00\x00\040ftapmp41\x00\x00\x02\x00isomiso2avc1mp41", application_octet_stream, true),
+	SIG("\x00\x00\x00\040ftyamp41\x00\x00\x02\x00isomiso2avc1mp41", application_octet_stream, true),
+	SIG("\x00\x00\x00\040ftypmp31\x00\x00\x02\x00isomiso2avc1mp31", application_octet_stream, true),
+	SIG("\x00\x00\x00\040ftypma41\x00\x00\x02\x00isomiso2avc1ma41", application_octet_stream, true),
+};
+
 static struct test_mimetype match_unknown_txtbin_tests[] = {
 	SIG("a\nb\tc  ", text_plain, true),
+	SIG("\x1b\r\f ", text_plain, true),
 	SIG("a\nb\tc \x01", application_octet_stream, true),
 };
 
@@ -302,12 +314,37 @@ START_TEST(mimesniff_match_unknown_ws_test)
 END_TEST
 
 /**
- * ws test
+ * mp4 test
  */
 START_TEST(mimesniff_match_unknown_mp4_test)
 {
 	nserror err;
 	const struct test_mimetype *tst = &match_unknown_mp4_tests[_i];
+	lwc_string *effective_type;
+	bool match;
+
+	err = mimesniff_compute_effective_type(NULL,
+					       tst->data,
+					       tst->len,
+					       true,
+					       false,
+					       &effective_type);
+	ck_assert(err == NSERROR_OK);
+
+	ck_assert(lwc_string_caseless_isequal(effective_type,
+					      *(tst->mime_type),
+					      &match) == lwc_error_ok && match);
+	lwc_string_unref(effective_type);
+}
+END_TEST
+
+/**
+ * mp4 test
+ */
+START_TEST(mimesniff_match_unknown_bad_mp4_test)
+{
+	nserror err;
+	const struct test_mimetype *tst = &match_unknown_bad_mp4_tests[_i];
 	lwc_string *effective_type;
 	bool match;
 
@@ -380,6 +417,10 @@ static TCase *mimesniff_match_unknown_case_create(void)
 	tcase_add_loop_test(tc,
 			    mimesniff_match_unknown_mp4_test,
 			    0, NELEMS(match_unknown_mp4_tests));
+
+	tcase_add_loop_test(tc,
+			    mimesniff_match_unknown_bad_mp4_test,
+			    0, NELEMS(match_unknown_bad_mp4_tests));
 
 	tcase_add_loop_test(tc,
 			    mimesniff_match_unknown_txtbin_test,
@@ -477,11 +518,11 @@ START_TEST(mimesniff_image_header_sniff_imageonly_test)
 
 	/* svg header type, unsniffable data and sniffing allowed images only */
 	err = mimesniff_compute_effective_type("image/jpeg",
-					       "notsniffablejpeg",
-					       12,
-					       true,
-					       true,
-					       &effective_type);
+			(const uint8_t*)"notsniffablejpeg",
+			12,
+			true,
+			true,
+			&effective_type);
 	ck_assert_int_eq(err, NSERROR_OK);
 
 	ck_assert(lwc_string_caseless_isequal(effective_type,
@@ -491,7 +532,7 @@ START_TEST(mimesniff_image_header_sniff_imageonly_test)
 
 	/* svg header type, gif data and sniffing allowed images only */
 	err = mimesniff_compute_effective_type("image/jpeg",
-					       "GIF87a",
+					       (const uint8_t*)"GIF87a",
 					       6,
 					       true,
 					       true,
@@ -524,7 +565,7 @@ START_TEST(mimesniff_text_header_nodata_sniff_test)
 
 	/* svg header type, unsniffable data and sniffing allowed images only */
 	err = mimesniff_compute_effective_type("text/plain",
-					       "a\nb\tc \x01",
+					       (const uint8_t*)"a\nb\tc \x01",
 					       7,
 					       true,
 					       false,
@@ -556,8 +597,8 @@ START_TEST(mimesniff_text_header_sniff_test)
 	bool match;
 
 
-	err = mimesniff_compute_effective_type(tst->data,
-					       "text",
+	err = mimesniff_compute_effective_type((const char*)tst->data,
+					       (const uint8_t*)"text",
 					       4,
 					       true,
 					       false,
@@ -716,7 +757,6 @@ START_TEST(mimesniff_html_header_sniff_test)
 {
 	nserror err;
 	lwc_string *effective_type;
-	bool match;
 
 	err = mimesniff_compute_effective_type("text/html",
 					       NULL,
