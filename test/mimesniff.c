@@ -168,7 +168,7 @@ static struct test_mimetype match_unknown_bom_tests[] = {
 
 static struct test_mimetype match_unknown_ws_tests[] = {
 	SIG("<?xml", text_xml, false),
-	SIG("<!DOCTYPE HTML ", text_html, false),
+	SIG("<!DOCTYPE HTML>", text_html, false),
 	SIG("<HTML ", text_html, false),
 	SIG("<HEAD ", text_html, false),
 	SIG("<SCRIPT ", text_html, false),
@@ -725,21 +725,46 @@ START_TEST(mimesniff_html_header_sniff_test)
 					       false,
 					       &effective_type);
 	ck_assert_int_eq(err, NSERROR_NEED_DATA);
+}
+END_TEST
+
+
+#define SIG(s,m,a) { (const uint8_t *)s, SLEN(s), &corestring_lwc_##m, a }
+static struct test_mimetype text_html_header_tests[] = {
+	SIG("text", text_html, true),
+	SIG("\xef\xbb\xbf\t\n\r <!-- a comment><!DOCTYPE HTML><?pi?><head>", text_html, true),
+	SIG("\xef\xbb\xbf\t\n\r <!DOCTYPE HTML><?pi?><rss version=\"2.0\">", application_rss_xml, true),
+	SIG("\t\n\r <? pi ?><feed>", application_atom_xml, true),
+	SIG("<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns=\"http://purl.org/rss/1.0\">", application_rss_xml, true),
+	SIG("<rdf:RDF xmlns=\"http://purl.org/rss/1.0\">", text_html, true),
+	SIG("<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">", text_html, true),
+};
+#undef SIG
+
+
+START_TEST(mimesniff_text_html_header_sniff_test)
+{
+	nserror err;
+	const struct test_mimetype *tst = &text_html_header_tests[_i];
+	lwc_string *effective_type;
+	bool match;
 
 	err = mimesniff_compute_effective_type("text/html",
-					       "text",
-					       4,
+					       tst->data,
+					       tst->len,
 					       true,
 					       false,
 					       &effective_type);
 	ck_assert_int_eq(err, NSERROR_OK);
 
 	ck_assert(lwc_string_caseless_isequal(effective_type,
-					      corestring_lwc_text_html,
+					      *(tst->mime_type),
 					      &match) == lwc_error_ok && match);
 	lwc_string_unref(effective_type);
+
 }
 END_TEST
+
 
 START_TEST(mimesniff_text_fancy_header_sniff_test)
 {
@@ -790,7 +815,12 @@ static TCase *mimesniff_header_case_create(void)
 	tcase_add_test(tc, mimesniff_plusxml_header_sniff_test);
 	tcase_add_test(tc, mimesniff_xml_header_sniff_test);
 	tcase_add_test(tc, mimesniff_supported_image_header_sniff_test);
+
 	tcase_add_test(tc, mimesniff_html_header_sniff_test);
+	tcase_add_loop_test(tc,
+			    mimesniff_text_html_header_sniff_test,
+			    0, NELEMS(text_html_header_tests));
+
 	tcase_add_test(tc, mimesniff_text_fancy_header_sniff_test);
 
 	return tc;
