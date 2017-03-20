@@ -417,6 +417,249 @@ START_TEST(mimesniff_parsable_header_nosniff_test)
 }
 END_TEST
 
+START_TEST(mimesniff_svg_header_sniff_imageonly_test)
+{
+	nserror err;
+	lwc_string *effective_type;
+	bool match;
+
+	/* svg header type, no data and sniffing allowed images only*/
+	err = mimesniff_compute_effective_type("image/svg+xml",
+					       NULL,
+					       0,
+					       true,
+					       true,
+					       &effective_type);
+	ck_assert_int_eq(err, NSERROR_OK);
+
+	ck_assert(lwc_string_caseless_isequal(effective_type,
+					      corestring_lwc_image_svg,
+					      &match) == lwc_error_ok && match);
+	lwc_string_unref(effective_type);
+}
+END_TEST
+
+START_TEST(mimesniff_image_header_sniff_imageonly_test)
+{
+	nserror err;
+	lwc_string *effective_type;
+	bool match;
+
+	/* jpeg header type, no data and sniffing allowed images only */
+	err = mimesniff_compute_effective_type("image/jpeg",
+					       NULL,
+					       0,
+					       true,
+					       true,
+					       &effective_type);
+	ck_assert_int_eq(err, NSERROR_NEED_DATA);
+
+	/* svg header type, unsniffable data and sniffing allowed images only */
+	err = mimesniff_compute_effective_type("image/jpeg",
+					       "notsniffablejpeg",
+					       12,
+					       true,
+					       true,
+					       &effective_type);
+	ck_assert_int_eq(err, NSERROR_OK);
+
+	ck_assert(lwc_string_caseless_isequal(effective_type,
+					      corestring_lwc_image_jpeg,
+					      &match) == lwc_error_ok && match);
+	lwc_string_unref(effective_type);
+
+	/* svg header type, gif data and sniffing allowed images only */
+	err = mimesniff_compute_effective_type("image/jpeg",
+					       "GIF87a",
+					       6,
+					       true,
+					       true,
+					       &effective_type);
+	ck_assert_int_eq(err, NSERROR_OK);
+
+	ck_assert(lwc_string_caseless_isequal(effective_type,
+					      corestring_lwc_image_gif,
+					      &match) == lwc_error_ok && match);
+	lwc_string_unref(effective_type);
+
+
+}
+END_TEST
+
+START_TEST(mimesniff_text_header_nodata_sniff_test)
+{
+	nserror err;
+	lwc_string *effective_type;
+	bool match;
+
+	/* text header type, no data and sniffing allowed  */
+	err = mimesniff_compute_effective_type("text/plain",
+					       NULL,
+					       0,
+					       true,
+					       false,
+					       &effective_type);
+	ck_assert_int_eq(err, NSERROR_NEED_DATA);
+
+	/* svg header type, unsniffable data and sniffing allowed images only */
+	err = mimesniff_compute_effective_type("text/plain",
+					       "a\nb\tc \x01",
+					       7,
+					       true,
+					       false,
+					       &effective_type);
+	ck_assert_int_eq(err, NSERROR_OK);
+
+	ck_assert(lwc_string_caseless_isequal(effective_type,
+					      corestring_lwc_application_octet_stream,
+					      &match) == lwc_error_ok && match);
+	lwc_string_unref(effective_type);
+
+}
+END_TEST
+
+#define SIG(s,m,a) { (const uint8_t *)s, SLEN(s), &corestring_lwc_##m, a }
+static struct test_mimetype text_header_tests[] = {
+	SIG("text/plain", text_plain, true),
+	SIG("text/plain; charset=ISO-8859-1", text_plain, true),
+	SIG("text/plain; charset=iso-8859-1", text_plain, true),
+	SIG("text/plain; charset=UTF-8", text_plain, true),
+};
+#undef SIG
+
+START_TEST(mimesniff_text_header_sniff_test)
+{
+	nserror err;
+	const struct test_mimetype *tst = &text_header_tests[_i];
+	lwc_string *effective_type;
+	bool match;
+
+
+	err = mimesniff_compute_effective_type(tst->data,
+					       "text",
+					       4,
+					       true,
+					       false,
+					       &effective_type);
+	ck_assert_int_eq(err, NSERROR_OK);
+
+	ck_assert(lwc_string_caseless_isequal(effective_type,
+					      corestring_lwc_text_plain,
+					      &match) == lwc_error_ok && match);
+	lwc_string_unref(effective_type);
+}
+END_TEST
+
+
+START_TEST(mimesniff_unknown_header_sniff_test)
+{
+	nserror err;
+	lwc_string *effective_type;
+	bool match;
+
+	/* unknown header type, sniffable data and sniffing allowed */
+	err = mimesniff_compute_effective_type("unknown/unknown",
+					       match_unknown_riff_tests[0].data,
+					       match_unknown_riff_tests[0].len,
+					       true,
+					       false,
+					       &effective_type);
+	ck_assert_int_eq(err, NSERROR_OK);
+
+	ck_assert(lwc_string_caseless_isequal(effective_type,
+					      *match_unknown_riff_tests[0].mime_type,
+					      &match) == lwc_error_ok && match);
+	lwc_string_unref(effective_type);
+
+	/* unknown header type, sniffable data and sniffing allowed */
+	err = mimesniff_compute_effective_type("application/unknown",
+					       match_unknown_riff_tests[1].data,
+					       match_unknown_riff_tests[1].len,
+					       true,
+					       false,
+					       &effective_type);
+	ck_assert_int_eq(err, NSERROR_OK);
+
+	ck_assert(lwc_string_caseless_isequal(effective_type,
+					      *match_unknown_riff_tests[1].mime_type,
+					      &match) == lwc_error_ok && match);
+	lwc_string_unref(effective_type);
+
+	/* unknown header type, sniffable data and sniffing allowed */
+	err = mimesniff_compute_effective_type("*/*",
+					       match_unknown_riff_tests[0].data,
+					       match_unknown_riff_tests[0].len,
+					       true,
+					       false,
+					       &effective_type);
+	ck_assert_int_eq(err, NSERROR_OK);
+
+	ck_assert(lwc_string_caseless_isequal(effective_type,
+					      *match_unknown_riff_tests[0].mime_type,
+					      &match) == lwc_error_ok && match);
+	lwc_string_unref(effective_type);
+
+}
+END_TEST
+
+
+START_TEST(mimesniff_plusxml_header_sniff_test)
+{
+	nserror err;
+	lwc_string *effective_type;
+	bool match;
+
+	/* unknown header type, sniffable data and sniffing allowed */
+	err = mimesniff_compute_effective_type("image/svg+xml",
+					       NULL,
+					       0,
+					       true,
+					       false,
+					       &effective_type);
+	ck_assert_int_eq(err, NSERROR_OK);
+
+	ck_assert(lwc_string_caseless_isequal(effective_type,
+					      corestring_lwc_image_svg,
+					      &match) == lwc_error_ok && match);
+	lwc_string_unref(effective_type);
+}
+END_TEST
+
+START_TEST(mimesniff_xml_header_sniff_test)
+{
+	nserror err;
+	lwc_string *effective_type;
+	bool match;
+
+	err = mimesniff_compute_effective_type("text/xml",
+					       NULL,
+					       0,
+					       true,
+					       false,
+					       &effective_type);
+	ck_assert_int_eq(err, NSERROR_OK);
+
+	ck_assert(lwc_string_caseless_isequal(effective_type,
+					      corestring_lwc_text_xml,
+					      &match) == lwc_error_ok && match);
+	lwc_string_unref(effective_type);
+
+	err = mimesniff_compute_effective_type("application/xml",
+					       NULL,
+					       0,
+					       true,
+					       false,
+					       &effective_type);
+	ck_assert_int_eq(err, NSERROR_OK);
+
+	ck_assert(lwc_string_caseless_isequal(effective_type,
+					      corestring_lwc_application_xml,
+					      &match) == lwc_error_ok && match);
+	lwc_string_unref(effective_type);
+
+}
+END_TEST
+
 /* test cases with header mime type */
 static TCase *mimesniff_header_case_create(void)
 {
@@ -429,6 +672,15 @@ static TCase *mimesniff_header_case_create(void)
 
 	tcase_add_test(tc, mimesniff_unparsable_header_test);
 	tcase_add_test(tc, mimesniff_parsable_header_nosniff_test);
+	tcase_add_test(tc, mimesniff_svg_header_sniff_imageonly_test);
+	tcase_add_test(tc, mimesniff_image_header_sniff_imageonly_test);
+	tcase_add_test(tc, mimesniff_text_header_nodata_sniff_test);
+	tcase_add_loop_test(tc,
+			    mimesniff_text_header_sniff_test,
+			    0, NELEMS(text_header_tests));
+	tcase_add_test(tc, mimesniff_unknown_header_sniff_test);
+	tcase_add_test(tc, mimesniff_plusxml_header_sniff_test);
+	tcase_add_test(tc, mimesniff_xml_header_sniff_test);
 
 	return tc;
 }
