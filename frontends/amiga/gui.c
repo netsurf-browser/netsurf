@@ -2763,7 +2763,8 @@ static void ami_handle_applib(void)
 				struct ApplicationCustomMsg *applibcustmsg =
 					(struct ApplicationCustomMsg *)applibmsg;
 				LOG("Ringhio BackMsg received: %s", applibcustmsg->customMsg);
-				OpenWorkbenchObjectA(applibcustmsg->customMsg, NULL);
+
+				ami_download_parse_backmsg(applibcustmsg->customMsg);
 			}
 			break;
 		}

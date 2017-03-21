@@ -76,6 +76,10 @@
 #define APPNOTIFY_Percentage    ( TAG_USER + 14 )
 #endif
 
+#ifndef APPNOTIFY_StopBackMsg
+#define APPNOTIFY_StopBackMsg   ( TAG_USER + 17 )
+#endif
+
 struct gui_download_window {
 	struct ami_generic_window w;
 	struct Window *win;
@@ -93,7 +97,8 @@ struct gui_download_window {
 };
 
 enum {
-	AMINS_DLOAD_OK = 0,
+	AMINS_DLOAD_PROGRESS = 0,
+	AMINS_DLOAD_OK,
 	AMINS_DLOAD_ERROR,
 	AMINS_DLOAD_ABORT,
 };
@@ -167,11 +172,15 @@ static struct gui_download_window *gui_download_window_create(download_context *
 	}
 
 	if((nsoption_bool(download_notify_progress) == true)) {
+		char bkm[1030];
+		snprintf(bkm, 1030, "STOP %p", dw);
+
 		Notify(ami_gui_get_app_id(), APPNOTIFY_Title, messages_get("amiDownloading"),
 				APPNOTIFY_PubScreenName, "FRONT",
 				APPNOTIFY_Text, dw->fname,
 				APPNOTIFY_DisplayTime, TRUE,     
 				APPNOTIFY_Percentage, 0,
+				APPNOTIFY_StopBackMsg, bkm,
 				TAG_DONE);
 	} else {
 		dw->objects[OID_MAIN] = WindowObj,
@@ -216,6 +225,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 	}
 
 	dw->ctx = ctx;
+	dw->result = AMINS_DLOAD_PROGRESS;
 
 	ami_gui_win_list_add(dw, AMINS_DLWINDOW, &ami_download_table);
 
@@ -281,6 +291,9 @@ static void gui_download_window_done(struct gui_download_window *dw)
 	if(!dw) return;
 	bw = dw->bw;
 
+	if(dw->result == AMINS_DLOAD_PROGRESS)
+		dw->result = AMINS_DLOAD_OK;
+
 	if((nsoption_bool(download_notify_progress) == true)) {
 		Notify(ami_gui_get_app_id(),
 				APPNOTIFY_Update, TRUE,
@@ -289,9 +302,12 @@ static void gui_download_window_done(struct gui_download_window *dw)
 
 	if((nsoption_bool(download_notify)) && (dw->result == AMINS_DLOAD_OK))
 	{
+		char bkm[1030];
+		snprintf(bkm, 1030, "OPEN %s", dw->fname);
+
 		Notify(ami_gui_get_app_id(), APPNOTIFY_Title, messages_get("amiDownloadComplete"),
 				APPNOTIFY_PubScreenName, "FRONT",
-				APPNOTIFY_BackMsg, dw->fname,
+				APPNOTIFY_BackMsg, bkm,
 				APPNOTIFY_CloseOnDC, TRUE,
 				APPNOTIFY_Text, dw->fname,
 				TAG_DONE);
@@ -359,6 +375,8 @@ static BOOL ami_download_window_event(void *w)
 	struct gui_download_window *dw = (struct gui_download_window *)w;
 	ULONG result;
 	uint16 code;
+
+	if(dw == NULL) return FALSE; /* We may not have a real window */
 
 	while((result = RA_HandleInput(dw->objects[OID_MAIN], &code)) != WMHI_LASTMSG)
 	{
@@ -489,6 +507,13 @@ BOOL ami_download_check_overwrite(const char *file, struct Window *win, ULONG si
 
 	if(res == 1) return TRUE;
 		else return FALSE;
+}
+
+void ami_download_parse_backmsg(const char *backmsg)
+{
+	if((backmsg[0] == 'O') && (backmsg[1] == 'P') && (backmsg[2] == 'E') && (backmsg[3] == 'N')) {
+		OpenWorkbenchObjectA((backmsg + 5), NULL);
+	}
 }
 
 static struct gui_download_table download_table = {
