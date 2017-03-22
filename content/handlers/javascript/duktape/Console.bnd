@@ -110,7 +110,7 @@ method Console::time()
 		return 0;
 
 	if (!duk_is_string(ctx, 0)) {
-		duk_error(ctx, DUK_ERR_ERROR, "Console.time() takes a string");
+		return duk_error(ctx, DUK_ERR_ERROR, "Console.time() takes a string");
 	}
 
 	duk_set_top(ctx, 1);
@@ -136,7 +136,7 @@ method Console::timeEnd()
 		return 0;
 
 	if (!duk_is_string(ctx, 0)) {
-		duk_error(ctx, DUK_ERR_ERROR, "Console.time() takes a string");
+		return duk_error(ctx, DUK_ERR_ERROR, "Console.time() takes a string");
 	}
 
 	duk_set_top(ctx, 1);

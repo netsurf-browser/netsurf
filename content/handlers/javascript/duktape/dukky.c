@@ -474,8 +474,7 @@ dukky_push_node(duk_context *ctx, struct dom_node *node)
 static duk_ret_t
 dukky_bad_constructor(duk_context *ctx)
 {
-	duk_error(ctx, DUK_ERR_ERROR, "Bad constructor");
-	return 0;
+	return duk_error(ctx, DUK_ERR_ERROR, "Bad constructor");
 }
 
 void
