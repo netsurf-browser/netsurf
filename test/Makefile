@@ -11,33 +11,32 @@ TESTS := \
 	utils \
 	messages \
 	time \
-	mimesniff #llcache
+	mimesniff \
+	corestrings #llcache
+
+# sources necessary to use nsurl functionality
+NSURL_SOURCES := utils/nsurl/nsurl.c utils/nsurl/parse.c utils/idna.c \
+	utils/punycode.c
 
 # nsurl sources
-nsurl_SRCS := utils/corestrings.c utils/nsurl/nsurl.c \
-		utils/nsurl/parse.c \
-		utils/idna.c utils/punycode.c \
-		test/log.c test/nsurl.c
+nsurl_SRCS := $(NSURL_SOURCES) utils/corestrings.c test/log.c test/nsurl.c
 
 # url database test sources
-urldbtest_SRCS := content/urldb.c \
-		utils/idna.c utils/bloom.c utils/nsoption.c \
-		utils/nsurl/nsurl.c utils/nsurl/parse.c \
-		utils/corestrings.c utils/punycode.c \
-		utils/hashtable.c utils/messages.c utils/time.c utils/utils.c \
-		test/log.c test/urldbtest.c
+urldbtest_SRCS := $(NSURL_SOURCES) \
+	utils/bloom.c utils/nsoption.c utils/corestrings.c utils/time.c	\
+	utils/hashtable.c utils/messages.c utils/utils.c \
+	content/urldb.c \
+	test/log.c test/urldbtest.c
 
 # low level cache sources
 llcache_SRCS := content/fetch.c content/fetchers/curl.c \
-		content/fetchers/about.c content/fetchers/data.c \
-		content/fetchers/resource.c content/llcache.c \
-		content/urldb.c \
-		image/image_cache.c \
-		utils/base64.c utils/corestrings.c utils/hashtable.c \
-		utils/nsurl/nsurl.c utils/nsurl/parse.c \
-		utils/messages.c utils/url.c utils/useragent.c \
-		utils/utils.c \
-		test/log.c test/llcache.c
+	content/fetchers/about.c content/fetchers/data.c \
+	content/fetchers/resource.c content/llcache.c \
+	content/urldb.c \
+	image/image_cache.c \
+	$(NSURL_SOURCES) utils/base64.c utils/corestrings.c utils/hashtable.c \
+	utils/messages.c utils/url.c utils/useragent.c utils/utils.c \
+	test/log.c test/llcache.c
 
 # messages test sources
 messages_SRCS := utils/messages.c utils/hashtable.c test/log.c test/messages.c
@@ -55,21 +54,25 @@ hashtable_SRCS := utils/hashtable.c test/log.c test/hashtable.c
 urlescape_SRCS := utils/url.c test/log.c test/urlescape.c
 
 # utility test sources
-utils_SRCS := utils/utils.c utils/messages.c utils/hashtable.c \
-		utils/corestrings.c utils/nsurl/nsurl.c \
-		utils/nsurl/parse.c utils/idna.c utils/punycode.c \
-		test/log.c test/utils.c
+utils_SRCS := $(NSURL_SOURCES) utils/utils.c utils/messages.c \
+	utils/hashtable.c utils/corestrings.c  \
+	test/log.c test/utils.c
 
 # time test sources
 time_SRCS := utils/time.c test/log.c test/time.c
 
 # mimesniff test sources
-mimesniff_SRCS := utils/hashtable.c utils/nsurl/nsurl.c utils/hashtable.c \
-	utils/nsurl/parse.c utils/corestrings.c utils/idna.c utils/punycode.c \
+mimesniff_SRCS := $(NSURL_SOURCES) utils/hashtable.c utils/corestrings.c \
 	utils/http/generics.c utils/http/content-type.c \
 	utils/http/primitives.c utils/messages.c utils/http/parameter.c \
 	content/mimesniff.c \
 	test/log.c test/mimesniff.c
+
+# corestrings test sources
+corestrings_SRCS := $(NSURL_SOURCES) utils/corestrings.c \
+	test/log.c test/corestrings.c
+corestrings_LD := -lmalloc_fig
+
 
 # Coverage builds need additional flags
 COV_ROOT := build/$(HOST)-coverage
@@ -121,20 +124,24 @@ ifneq ($(CC_MAJOR),2)
 endif
 
 TESTCFLAGS := -std=c99 -g \
-		$(COMMON_WARNFLAGS) \
-		-D_BSD_SOURCE \
-		-D_POSIX_C_SOURCE=200809L \
-		-D_XOPEN_SOURCE=600 \
-		-Itest -Iinclude -Icontent/handlers -Ifrontends -I. -I.. \
-		-Dnsgtk \
-		$(shell pkg-config --cflags libcurl libparserutils libwapcaplet libdom libnsutils libutf8proc) \
-		$(LIB_CFLAGS) \
-		$(COV_CFLAGS)
+	$(COMMON_WARNFLAGS) \
+	-D_BSD_SOURCE \
+	-D_POSIX_C_SOURCE=200809L \
+	-D_XOPEN_SOURCE=600 \
+	-Itest -Iinclude -Icontent/handlers -Ifrontends -I. -I.. \
+	-Dnsgtk \
+	$(shell pkg-config --cflags libcurl libparserutils libwapcaplet libdom libnsutils libutf8proc) \
+	$(LIB_CFLAGS) \
+	$(COV_CFLAGS)
 
-TESTLDFLAGS := $(shell pkg-config --libs libcurl libparserutils libwapcaplet libdom libnsutils libutf8proc) -lz \
-		$(LIB_LDFLAGS)\
-		$(COV_LDFLAGS)
+TESTLDFLAGS := -L$(TESTROOT) \
+	$(shell pkg-config --libs libcurl libparserutils libwapcaplet libdom libnsutils libutf8proc) -lz \
+	$(LIB_LDFLAGS)\
+	$(COV_LDFLAGS)
 
+# malloc faliure injection generator
+$(TESTROOT)/libmalloc_fig.so:test/malloc_fig.c
+	$(CC) -shared -fPIC -I. -std=c99 $(COMMON_WARNFLAGS) $^ -o $@
 
 # Source files for all tests being compiled
 TESTSOURCES :=
@@ -144,13 +151,13 @@ GCOV ?= gcov
 define gen_test_target
 $$(TESTROOT)/$(1): $$(sort $$(addprefix $$(TESTROOT)/,$$(subst /,_,$$(patsubst %.c,%.o,$$(patsubst %.cpp,%.o,$$(patsubst %.m,%.o,$$(patsubst %.s,%.o,$$($(1)_SRCS))))))))
 	$$(VQ)echo "LINKTEST: $$@"
-	$$(Q)$$(CC) $$(TESTCFLAGS) $$^ -o $$@ $$(TESTLDFLAGS)
+	$$(Q)$$(CC) $$(TESTCFLAGS) $$^ -o $$@ $$($(1)_LD) $$(TESTLDFLAGS)
 
 .PHONY:$(1)_test
 
 $(1)_test:$$(TESTROOT)/$(1)
 	$$(VQ)echo "RUN TEST: $(1)"
-	$$(Q)$$(TESTROOT)/$(1)
+	$$(Q)LD_LIBRARY_PATH=$$(TESTROOT)/ $$(TESTROOT)/$(1)
 
 TESTSOURCES += $$($(1)_SRCS)
 
@@ -174,7 +181,7 @@ $(eval $(foreach SOURCE,$(sort $(filter %.c,$(TESTSOURCES))), \
 
 .PHONY:test coverage
 
-test: $(TESTROOT)/created $(addsuffix _test,$(TESTS))
+test: $(TESTROOT)/created $(TESTROOT)/libmalloc_fig.so $(addsuffix _test,$(TESTS))
 
 coverage: test
 
