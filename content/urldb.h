@@ -128,7 +128,7 @@ bool urldb_set_thumbnail(struct nsurl *url, struct bitmap *bitmap);
  * \param referrer Referring resource, or 0 for verifiable transaction
  * \return true on success, false otherwise
  */
-bool urldb_set_cookie(const char *header, struct nsurl *url, struct nsurl *referer);
+bool urldb_set_cookie(const char *header, struct nsurl *url, struct nsurl *referrer);
 
 
 /**
