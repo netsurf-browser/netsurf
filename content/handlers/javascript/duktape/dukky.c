@@ -48,7 +48,7 @@
 #define HANDLER_MAGIC MAGIC(HANDLER_MAP)
 #define EVENT_LISTENER_JS_MAGIC MAGIC(EVENT_LISTENER_JS_MAP)
 
-static duk_ret_t dukky_populate_object(duk_context *ctx)
+static duk_ret_t dukky_populate_object(duk_context *ctx, void *udata)
 {
 	/* ... obj args protoname nargs */
 	int nargs = duk_get_int(ctx, -1);
@@ -103,7 +103,7 @@ duk_ret_t dukky_create_object(duk_context *ctx, const char *name, int args)
 	/* ... obj args name */
 	duk_push_int(ctx, args);
 	/* ... obj args name nargs */
-	if ((ret = duk_safe_call(ctx, dukky_populate_object, args + 3, 1))
+	if ((ret = duk_safe_call(ctx, dukky_populate_object, NULL, args + 3, 1))
 	    != DUK_EXEC_SUCCESS)
 		return ret;
 	LOG("created");
@@ -143,7 +143,7 @@ dukky_push_node_stacked(duk_context *ctx)
 		/* ... nodeptr klass nodes obj nodeptr klass */
 		duk_push_int(ctx, 1);
 		/* ... nodeptr klass nodes obj nodeptr klass 1 */
-		if (duk_safe_call(ctx, dukky_populate_object, 4, 1)
+		if (duk_safe_call(ctx, dukky_populate_object, NULL, 4, 1)
 		    != DUK_EXEC_SUCCESS) {
 			duk_set_top(ctx, top_at_fail);
 			LOG("Boo and also hiss");
@@ -474,8 +474,7 @@ dukky_push_node(duk_context *ctx, struct dom_node *node)
 static duk_ret_t
 dukky_bad_constructor(duk_context *ctx)
 {
-	duk_error(ctx, DUK_ERR_ERROR, "Bad constructor");
-	return 0;
+	return duk_error(ctx, DUK_ERR_ERROR, "Bad constructor");
 }
 
 void
@@ -624,7 +623,7 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 	return (jsobject *)ctx;
 }
 
-static duk_ret_t eval_top_string(duk_context *ctx)
+static duk_ret_t eval_top_string(duk_context *ctx, void *udata)
 {
 	duk_eval(ctx);
 	return 0;
@@ -654,7 +653,7 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 	duk_push_lstring(CTX, txt, txtlen);
 
 	(void) nsu_getmonotonic_ms(&ctx->exec_start_time);
-	if (duk_safe_call(CTX, eval_top_string, 1, 1) == DUK_EXEC_ERROR) {
+	if (duk_safe_call(CTX, eval_top_string, NULL, 1, 1) == DUK_EXEC_ERROR) {
 		duk_get_prop_string(CTX, 0, "name");
 		duk_get_prop_string(CTX, 0, "message");
 		duk_get_prop_string(CTX, 0, "fileName");

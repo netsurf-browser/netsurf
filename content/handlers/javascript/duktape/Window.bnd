@@ -72,8 +72,7 @@ getter Window::console()
 	if (duk_is_undefined(ctx, -1)) {
 		duk_pop(ctx);
 		if (dukky_create_object(ctx, PROTO_NAME(CONSOLE), 0) != DUK_EXEC_SUCCESS) {
-			duk_error(ctx, DUK_ERR_ERROR, "Unable to create console object");
-			return 0;
+			return duk_error(ctx, DUK_ERR_ERROR, "Unable to create console object");
 		}
 		duk_dup(ctx, -1);
 		duk_put_prop_string(ctx, -3, MAGIC(Console));
@@ -91,8 +90,7 @@ getter Window::location()
 		duk_push_pointer(ctx, llcache_handle_get_url(priv->htmlc->base.llcache));
 
 		if (dukky_create_object(ctx, PROTO_NAME(LOCATION), 1) != DUK_EXEC_SUCCESS) {
-			duk_error(ctx, DUK_ERR_ERROR, "Unable to create location object");
-			return 0;
+			return duk_error(ctx, DUK_ERR_ERROR, "Unable to create location object");
 		}
 		duk_dup(ctx, -1);
 		duk_put_prop_string(ctx, -3, MAGIC(Location));
@@ -110,10 +108,9 @@ getter Window::navigator()
 		if (dukky_create_object(ctx,
 					PROTO_NAME(NAVIGATOR),
 					0) != DUK_EXEC_SUCCESS) {
-			duk_error(ctx,
+			return duk_error(ctx,
 				  DUK_ERR_ERROR,
 				  "Unable to create navigator object");
-			return 0;
 		}
 		duk_dup(ctx, -1);
 		duk_put_prop_string(ctx, -3, MAGIC(Navigator));
