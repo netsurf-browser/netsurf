@@ -1220,6 +1220,7 @@ html_begin_conversion(html_content *htmlc)
 	if (htmlc->aborted) {
 		LOG("Conversion aborted (%p) (active: %u)", htmlc,
 				htmlc->base.active);
+		content_set_error(&htmlc->base);
 		content_broadcast_errorcode(&htmlc->base, NSERROR_STOPPED);
 		return false;
 	}
