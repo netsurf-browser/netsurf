@@ -350,6 +350,11 @@
 #define DUK_F_VBCC
 #endif
 
+/* Atari Mint */
+#if defined(__MINT__)
+#define DUK_F_MINT
+#endif
+
 #if defined(ANDROID) || defined(__ANDROID__)
 #define DUK_F_ANDROID
 #endif
@@ -2271,8 +2276,9 @@ typedef struct duk_hthread duk_context;
  * for platforms that don't include them.  MSVC isn't detected as C99, but
  * these functions also exist in MSVC 2013 and later so include a clause for
  * that too.  Android doesn't have log2; disable all of these for Android.
+ * Atari MINT also lacks these.
  */
-#if (defined(DUK_F_C99) || defined(DUK_F_CPP11) || (defined(_MSC_VER) && (_MSC_VER >= 1800))) && !defined(DUK_F_ANDROID)
+#if (defined(DUK_F_C99) || defined(DUK_F_CPP11) || (defined(_MSC_VER) && (_MSC_VER >= 1800))) && !defined(DUK_F_ANDROID) && !defined(DUK_F_MINT)
 #if !defined(DUK_CBRT)
 #define DUK_CBRT             cbrt
 #endif
