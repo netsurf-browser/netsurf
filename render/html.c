@@ -686,8 +686,9 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 					content_broadcast(&htmlc->base,
 							CONTENT_MSG_GETCTX,
 							msg_data);
-					LOG("javascript context: %p",
-							htmlc->jscontext);
+					LOG("javascript context: %p (htmlc: %p)",
+							htmlc->jscontext,
+							htmlc);
 				}
 				if (htmlc->jscontext != NULL) {
 					js_handle_new_element(htmlc->jscontext,
@@ -1142,7 +1143,7 @@ static bool html_convert(struct content *c)
 	}
 
 	htmlc->base.active--; /* the html fetch is no longer active */
-	LOG("%d fetches active", htmlc->base.active);
+	LOG("%d fetches active (%p)", htmlc->base.active, c);
 
 	/* The parse cannot be completed here because it may be paused
 	 * untill all the resources being fetched have completed.
@@ -1195,7 +1196,7 @@ html_begin_conversion(html_content *htmlc)
 	 * complete to avoid repeating the completion pointlessly.
 	 */
 	if (htmlc->parse_completed == false) {
-		LOG("Completing parse");
+		LOG("Completing parse (%p)", htmlc);
 		/* complete parsing */
 		error = dom_hubbub_parser_completed(htmlc->parser);
 		if (error != DOM_HUBBUB_OK) {
@@ -1210,12 +1211,15 @@ html_begin_conversion(html_content *htmlc)
 	}
 
 	if (html_can_begin_conversion(htmlc) == false) {
+		LOG("Can't begin conversion (%p)", htmlc);
 		/* We can't proceed (see commentary above) */
 		return true;
 	}
 
 	/* Give up processing if we've been aborted */
 	if (htmlc->aborted) {
+		LOG("Conversion aborted (%p) (active: %u)", htmlc,
+				htmlc->base.active);
 		content_broadcast_errorcode(&htmlc->base, NSERROR_STOPPED);
 		return false;
 	}
@@ -1366,7 +1370,7 @@ static void html_stop(struct content *c)
 		break;
 
 	default:
-		LOG("Unexpected status %d", c->status);
+		LOG("Unexpected status %d (%p)", c->status, c);
 		assert(0);
 	}
 }
