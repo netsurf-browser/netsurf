@@ -188,6 +188,19 @@ static inline int ascii_hex_to_value(char c)
 }
 
 /**
+ * Converts two hexadecimal characters to a single number
+ *
+ * \param[in] c1  most significant hex digit.
+ * \param[in] c2  least significant hex digit.
+ * \return the total value of the two digit hex number (0-255),
+ *         or -ve if input not hex.
+ */
+static inline int ascii_hex_to_value_2_chars(char c1, char c2)
+{
+	return 16 * ascii_hex_to_value(c1) + ascii_hex_to_value(c2);
+}
+
+/**
  * Convert an upper case character to lower case.
  *
  * If the given character is not upper case alphabetical, it is returned
