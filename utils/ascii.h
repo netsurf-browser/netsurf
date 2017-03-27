@@ -168,6 +168,26 @@ static inline bool ascii_is_hex(char c)
 }
 
 /**
+ * Convert a hexadecimal character to its value.
+ *
+ * \param[in] c  Character to convert.
+ * \return value of character (0-15), or -256 if not a hexadecimal character.
+ */
+static inline int ascii_hex_to_value(char c)
+{
+	if (ascii_is_digit(c)) {
+		return c - '0';
+	} else if (ascii_is_af_lower(c)) {
+		return c - 'a' + 10;
+	} else if (ascii_is_af_upper(c)) {
+		return c - 'A' + 10;
+	}
+
+	/* Invalid hex */
+	return -256;
+}
+
+/**
  * Convert an upper case character to lower case.
  *
  * If the given character is not upper case alphabetical, it is returned
