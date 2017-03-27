@@ -123,6 +123,17 @@ static inline bool ascii_is_hex_lower(char c)
 }
 
 /**
+ * Test whether a character is 'A' to 'F' (uppercase).
+ *
+ * \param[in] c  Character to test.
+ * \return true iff `c` is 'A' to 'F' (uppercase), else false.
+ */
+static inline bool ascii_is_af_upper(char c)
+{
+	return (c >= 'A' && c <= 'F');
+}
+
+/**
  * Test whether a character is hexadecimal (upper case).
  *
  * \param[in] c  Character to test.
@@ -130,8 +141,7 @@ static inline bool ascii_is_hex_lower(char c)
  */
 static inline bool ascii_is_hex_upper(char c)
 {
-	return (ascii_is_digit(c) ||
-			(c >= 'A' && c <= 'F'));
+	return (ascii_is_digit(c) || ascii_is_af_upper(c));
 }
 
 /**
@@ -143,7 +153,7 @@ static inline bool ascii_is_hex_upper(char c)
 static inline bool ascii_is_hex(char c)
 {
 	return (ascii_is_digit(c) ||
-			(c >= 'A' && c <= 'F') ||
+			ascii_is_af_upper(c) ||
 			(c >= 'a' && c <= 'f'));
 }
 
