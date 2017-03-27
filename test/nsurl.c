@@ -153,6 +153,12 @@ static const struct test_pairs create_tests[] = {
 	/* punycode */
 	{ "http://a.कॉम/a", "http://a.xn--11b4c3d/a" },
 	{ "https://smog.大众汽车/test", "https://smog.xn--3oq18vl8pn36a/test"},
+
+	/* unnecessary escape */
+	{ "http://%7a%7A/", "http://zz/" },
+
+	/* bad escape */
+	{ "http://%1g%G0/", "http://%1g%g0/" },
 };
 
 /**
