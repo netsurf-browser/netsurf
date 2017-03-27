@@ -1430,14 +1430,15 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 		struct url_markers m_path;
 		size_t new_length;
 
-		if (base->components.host != NULL &&
-					base->components.path == NULL) {
-			/* Append relative path to "/". */
-			*(buff_pos++) = '/';
-			memcpy(buff_pos, rel + m.path, m.query - m.path);
-			buff_pos += m.query - m.path;
+		/* RFC3986 said to append relative path to "/" if the
+		 * base path had no path and an authority.
+		 *
+		 * However, that specification is redundant, and base paths
+		 * are normalised, so file, http, and https URLs will always
+		 * have a non-empty path.  (Empty paths become "/".)
+		 */
 
-		} else {
+		{
 			/* Append relative path to all but last segment of
 			 * base path. */
 			size_t path_end = lwc_string_length(
