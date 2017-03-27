@@ -111,6 +111,17 @@ static inline bool ascii_is_alphanumerical(char c)
 }
 
 /**
+ * Test whether a character is 'a' to 'f' (lowercase).
+ *
+ * \param[in] c  Character to test.
+ * \return true iff `c` is 'a' to 'f' (lowercase), else false.
+ */
+static inline bool ascii_is_af_lower(char c)
+{
+	return (c >= 'a' && c <= 'f');
+}
+
+/**
  * Test whether a character is hexadecimal (lower case).
  *
  * \param[in] c  Character to test.
@@ -118,8 +129,7 @@ static inline bool ascii_is_alphanumerical(char c)
  */
 static inline bool ascii_is_hex_lower(char c)
 {
-	return (ascii_is_digit(c) ||
-			(c >= 'a' && c <= 'f'));
+	return (ascii_is_digit(c) || ascii_is_af_lower(c));
 }
 
 /**
@@ -154,7 +164,7 @@ static inline bool ascii_is_hex(char c)
 {
 	return (ascii_is_digit(c) ||
 			ascii_is_af_upper(c) ||
-			(c >= 'a' && c <= 'f'));
+			ascii_is_af_lower(c));
 }
 
 /**
