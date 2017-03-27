@@ -594,45 +594,6 @@ static size_t nsurl__get_longest_section(struct url_markers *m)
 
 
 /**
- * Converts two hexadecimal digits to a single number
- *
- * \param c1	most significant hex digit
- * \param c2	least significant hex digit
- * \return the total value of the two digit hex number, or -ve if input not hex
- *
- * For unescaping url encoded characters.
- */
-static inline int nsurl__get_ascii_offset(char c1, char c2)
-{
-	int offset;
-
-	/* Use 1st char as most significant hex digit */
-	if (ascii_is_digit(c1))
-		offset = 16 * (c1 - '0');
-	else if (c1 >= 'a' && c1 <= 'f')
-		offset = 16 * (c1 - 'a' + 10);
-	else if (c1 >= 'A' && c1 <= 'F')
-		offset = 16 * (c1 - 'A' + 10);
-	else
-		/* Not valid hex */
-		return -1;
-
-	/* Use 2nd char as least significant hex digit and sum */
-	if (ascii_is_digit(c2))
-		offset += c2 - '0';
-	else if (c2 >= 'a' && c2 <= 'f')
-		offset += c2 - 'a' + 10;
-	else if (c2 >= 'A' && c2 <= 'F')
-		offset += c2 - 'A' + 10;
-	else
-		/* Not valid hex */
-		return -1;
-
-	return offset;
-}
-
-
-/**
  * Create the components of a NetSurf URL object for a section of a URL string
  *
  * \param url_s		URL string
@@ -716,7 +677,7 @@ static nserror nsurl__create_from_section(const char * const url_s,
 			/* Might be an escaped character needing unescaped */
 
 			/* Find which character which was escaped */
-			ascii_offset = nsurl__get_ascii_offset(*(pos + 1),
+			ascii_offset = ascii_hex_to_value_2_chars(*(pos + 1),
 					*(pos + 2));
 
 			if (ascii_offset < 0) {
