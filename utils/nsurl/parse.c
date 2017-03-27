@@ -270,6 +270,16 @@ static void nsurl__get_string_markers(const char * const url_s,
 					  (*(pos - off + 4) == 'S')))) {
 				marker.scheme_type = NSURL_SCHEME_HTTPS;
 				is_http = true;
+			} else if (off == SLEN("file") &&
+					(((*(pos - off + 0) == 'f') ||
+					  (*(pos - off + 0) == 'F')) &&
+					 ((*(pos - off + 1) == 'i') ||
+					  (*(pos - off + 1) == 'I')) &&
+					 ((*(pos - off + 2) == 'l') ||
+					  (*(pos - off + 2) == 'L')) &&
+					 ((*(pos - off + 3) == 'e') ||
+					  (*(pos - off + 3) == 'E')))) {
+				marker.scheme_type = NSURL_SCHEME_FILE;
 			} else if (off == SLEN("ftp") &&
 					(((*(pos - off + 0) == 'f') ||
 					  (*(pos - off + 0) == 'F')) &&
