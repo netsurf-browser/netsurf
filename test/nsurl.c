@@ -629,7 +629,7 @@ static const struct test_compare component_tests[] = {
 	{ "file:", NULL, NSURL_PASSWORD, false },
 	{ "file:", NULL, NSURL_HOST, false },
 	{ "file:", NULL, NSURL_PORT, false },
-	{ "file:", NULL, NSURL_PATH, false },
+	{ "file:", "/", NSURL_PATH, true },
 	{ "file:", NULL, NSURL_QUERY, false },
 	{ "file:", NULL, NSURL_FRAGMENT, false },
 
