@@ -146,6 +146,9 @@ static const struct test_pairs create_tests[] = {
 	{ "HTTP://a/b",		"http://a/b" },
 	{ "ftp://a/b",		"ftp://a/b" },
 	{ "FTP://a/b",		"ftp://a/b" },
+	{ "MAILTO:foo@bar",	"mailto:foo@bar" },
+	{ "FILE:///",		"file:///" },
+	{ "http://HOST/",	"http://host/" },
 
 	/* punycode */
 	{ "http://a.कॉम/a", "http://a.xn--11b4c3d/a" },
