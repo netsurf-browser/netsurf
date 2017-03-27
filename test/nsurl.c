@@ -129,6 +129,13 @@ static const struct test_pairs create_tests[] = {
 	{ "mailto:u@a",		"mailto:u@a" },
 	{ "mailto:@a",		"mailto:a" },
 
+	{ "file:///",		"file:///" },
+	{ "file://",		"file:///" },
+	{ "file:/",		"file:///" },
+	{ "file:",		"file:///" },
+	{ "file:////",		"file:////" },
+	{ "file://///",		"file://///" },
+
 	/* test case insensitivity */
 	{ "HTTP://a/b",		"http://a/b" },
 	{ "ftp://a/b",		"ftp://a/b" },
