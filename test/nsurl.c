@@ -144,6 +144,7 @@ static const struct test_pairs create_tests[] = {
 
 	/* test case insensitivity */
 	{ "HTTP://a/b",		"http://a/b" },
+	{ "HTTPS://a/b",	"https://a/b" },
 	{ "ftp://a/b",		"ftp://a/b" },
 	{ "FTP://a/b",		"ftp://a/b" },
 	{ "MAILTO:foo@bar",	"mailto:foo@bar" },
