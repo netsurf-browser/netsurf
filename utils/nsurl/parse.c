@@ -818,6 +818,11 @@ static nserror nsurl__create_from_section(const char * const url_s,
 		url->username = NULL;
 		url->password = NULL;
 
+		/* file: URLs don't have credentials */
+		if (url->scheme_type == NSURL_SCHEME_FILE) {
+			break;
+		}
+
 		if (length != 0 && *norm_start != ':') {
 			char *sec_start = norm_start;
 			if (pegs->colon_first != pegs->authority &&
@@ -853,6 +858,11 @@ static nserror nsurl__create_from_section(const char * const url_s,
 	case URL_HOST:
 		url->host = NULL;
 		url->port = NULL;
+
+		/* file: URLs don't have a host */
+		if (url->scheme_type == NSURL_SCHEME_FILE) {
+			break;
+		}
 
 		if (length != 0) {
 			size_t colon = 0;
