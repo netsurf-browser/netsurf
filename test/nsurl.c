@@ -136,6 +136,12 @@ static const struct test_pairs create_tests[] = {
 	{ "file:////",		"file:////" },
 	{ "file://///",		"file://///" },
 
+	{ "file://localhost/",	"file:///" },
+	{ "file://foobar/",	"file:///" },
+	{ "file://foobar",	"file:///" },
+	{ "file:///foobar",	"file:///foobar" },
+	{ "file://tlsa@foo/",	"file:///" },
+
 	/* test case insensitivity */
 	{ "HTTP://a/b",		"http://a/b" },
 	{ "ftp://a/b",		"ftp://a/b" },
