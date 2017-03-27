@@ -952,9 +952,13 @@ static nserror nsurl__create_from_section(const char * const url_s,
 					&url->path) != lwc_error_ok) {
 				return NSERROR_NOMEM;
 			}
-		} else if (url->host != NULL &&
-				url->scheme_type != NSURL_SCHEME_MAILTO) {
-			/* Set empty path to "/", if there's a host */
+		} else if ((url->host != NULL &&
+				url->scheme_type != NSURL_SCHEME_MAILTO) ||
+				url->scheme_type == NSURL_SCHEME_FILE) {
+			/* Set empty path to "/" if:
+			 *   - there's a host and its not a mailto: URL
+			 *   - its a file: URL
+			 */
 			if (lwc_intern_string("/", SLEN("/"),
 					&url->path) != lwc_error_ok) {
 				return NSERROR_NOMEM;
