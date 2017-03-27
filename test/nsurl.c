@@ -116,6 +116,8 @@ static const struct test_pairs create_tests[] = {
 
 	{ "http://www.ns-b.org:/",
 	  "http://www.ns-b.org/" },
+	{ "http://///////////www.ns-b.org:/",
+	  "http://www.ns-b.org/" },
 	{ "http://u@www.ns-b.org:/hello",
 	  "http://u@www.ns-b.org/hello" },
 	{ "http://u:p@www.ns-b.org:/hello",
@@ -160,6 +162,12 @@ static const struct test_pairs create_tests[] = {
 
 	/* bad escape */
 	{ "http://%1g%G0/", "http://%1g%g0/" },
+
+	{ "    http://www.ns-b.org/",		"http://www.ns-b.org/" },
+	{ "http://www.ns-b.org/    ",		"http://www.ns-b.org/" },
+	{ "http://www.ns-b.org    ",		"http://www.ns-b.org/" },
+	{ "http://www.ns-b.org/?q   ",		"http://www.ns-b.org/?q" },
+	{ "http://www.ns-b.org/#f    ",		"http://www.ns-b.org/#f" },
 };
 
 /**
@@ -422,6 +430,9 @@ static const struct test_pairs join_tests[] = {
 	{ "  /  ",		"http://a/" },
 	{ "  ?  ",		"http://a/b/c/d;p?" },
 	{ "  h  ",		"http://a/b/c/h" },
+	{ "//foo?",		"http://foo/?" },
+	{ "//foo#bar",		"http://foo/#bar" },
+	{ "//foo/",		"http://foo/" },
 	{ "http://<!--#echo var=", "http://<!--/#echo%20var="},
 	/* [1] Extra slash beyond rfc3986 5.4.1 example, since we're
 	 *     testing normalisation in addition to joining */
