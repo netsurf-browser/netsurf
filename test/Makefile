@@ -81,10 +81,19 @@ ifeq ($(MAKECMDGOALS),coverage)
   COV_CXXFLAGS ?= -fprofile-arcs -ftest-coverage -O0
   COV_LDFLAGS ?= -lgcov -fprofile-arcs
   TESTROOT := $(COV_ROOT)
+  ifeq ($(NOASSERTCOVERAGE),yes)
+    NOCOV_TESTSOURCES ?=
+    COV_CPPFLAGS ?=
+  else
+    NOCOV_TESTSOURCES ?= test/assert.c
+    COV_CPPFLAGS ?= -D__assert_fail=__ns_assert_fail
+  endif
 else
   COV_CFLAGS ?= -O0
   COV_CXXFLAGS ?= -O0
+  COV_CPPFLAGS ?=
   TESTROOT := build/$(HOST)-test
+  NOCOV_TESTSOURCES ?=
 endif
 
 
@@ -123,7 +132,7 @@ ifneq ($(CC_MAJOR),2)
   COMMON_WARNFLAGS += -Wno-unused-parameter
 endif
 
-TESTCFLAGS := -std=c99 -g \
+BASE_TESTCFLAGS := -std=c99 -g \
 	$(COMMON_WARNFLAGS) \
 	-D_BSD_SOURCE \
 	-D_POSIX_C_SOURCE=200809L \
@@ -131,8 +140,10 @@ TESTCFLAGS := -std=c99 -g \
 	-Itest -Iinclude -Icontent/handlers -Ifrontends -I. -I.. \
 	-Dnsgtk \
 	$(shell pkg-config --cflags libcurl libparserutils libwapcaplet libdom libnsutils libutf8proc) \
-	$(LIB_CFLAGS) \
-	$(COV_CFLAGS)
+	$(LIB_CFLAGS)
+TESTCFLAGS := $(BASE_TESTCFLAGS) \
+	$(COV_CFLAGS) \
+	$(COV_CPPFLAGS)
 
 TESTLDFLAGS := -L$(TESTROOT) \
 	$(shell pkg-config --libs libcurl libparserutils libwapcaplet libdom libnsutils libutf8proc) -lz \
@@ -149,7 +160,7 @@ TESTSOURCES :=
 GCOV ?= gcov
 
 define gen_test_target
-$$(TESTROOT)/$(1): $$(sort $$(addprefix $$(TESTROOT)/,$$(subst /,_,$$(patsubst %.c,%.o,$$(patsubst %.cpp,%.o,$$(patsubst %.m,%.o,$$(patsubst %.s,%.o,$$($(1)_SRCS))))))))
+$$(TESTROOT)/$(1): $$(sort $$(addprefix $$(TESTROOT)/,$$(subst /,_,$$(patsubst %.c,%.o,$$(patsubst %.cpp,%.o,$$(patsubst %.m,%.o,$$(patsubst %.s,%.o,$$($(1)_SRCS) $$(NOCOV_TESTSOURCES))))))))
 	$$(VQ)echo "LINKTEST: $$@"
 	$$(Q)$$(CC) $$(TESTCFLAGS) $$^ -o $$@ $$($(1)_LD) $$(TESTLDFLAGS)
 
@@ -171,12 +182,22 @@ $$(TESTROOT)/$(2): $(1) $$(TESTROOT)/created
 
 endef
 
+define compile_test_nocov_target_c
+$$(TESTROOT)/$(2): $(1) $$(TESTROOT)/created
+	$$(VQ)echo " COMPILE: $(1) (No coverage)"
+	$$(Q)$$(RM) $$(TESTROOT)/$(2)
+	$$(Q)$$(CC) $$(BASE_TESTCFLAGS) -o $$(TESTROOT)/$(2) -c $(1)
+
+endef
+
 # Generate target for each test program and the list of objects it needs
 $(eval $(foreach TST,$(TESTS), $(call gen_test_target,$(TST))))
 
 # generate target rules for test objects
 $(eval $(foreach SOURCE,$(sort $(filter %.c,$(TESTSOURCES))), \
 	$(call compile_test_target_c,$(SOURCE),$(subst /,_,$(SOURCE:.c=.o)),$(subst /,_,$(SOURCE:.c=.d)))))
+$(eval $(foreach SOURCE,$(sort $(filter %.c,$(NOCOV_TESTSOURCES))), \
+	$(call compile_test_nocov_target_c,$(SOURCE),$(subst /,_,$(SOURCE:.c=.o)),$(subst /,_,$(SOURCE:.c=.d)))))
 
 
 .PHONY:test coverage
