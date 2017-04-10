@@ -1586,6 +1586,7 @@ css_error node_presentational_hint(void *pw, void *node,
 		css_hint_width(pw, node);
 		break;
 	case DOM_HTML_ELEMENT_TYPE_HR:
+		css_hint_width(pw, node);
 		css_hint_margin_left_right_hr(pw, node);
 		break;
 	case DOM_HTML_ELEMENT_TYPE_TEXTAREA:
