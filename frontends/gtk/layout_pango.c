@@ -194,7 +194,7 @@ nsfont_split(const plot_font_style_t *fstyle,
 	pango_layout_set_single_paragraph_mode(layout, TRUE);
 
 	/* Obtain the second line of the layout (if there is one) */
-	line = pango_layout_get_line(layout, 1);
+	line = pango_layout_get_line_readonly(layout, 1);
 	if (line != NULL) {
 		/* Pango split the text. The line's start_index indicates the 
 		 * start of the character after the line break. */
