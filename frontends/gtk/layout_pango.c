@@ -226,26 +226,23 @@ nserror nsfont_paint(int x, int y, const char *string, size_t length,
 		const plot_font_style_t *fstyle)
 {
 	PangoFontDescription *desc;
-	PangoLayout *layout;
 	PangoLayoutLine *line;
 
 	if (length == 0)
 		return NSERROR_OK;
 
-	layout = pango_cairo_create_layout(current_cr);
+	nsfont_pango_check();
 
 	desc = nsfont_style_to_description(fstyle);
-	pango_layout_set_font_description(layout, desc);
+	pango_layout_set_font_description(nsfont_pango_layout, desc);
 	pango_font_description_free(desc);
 
-	pango_layout_set_text(layout, string, length);
+	pango_layout_set_text(nsfont_pango_layout, string, length);
 
-	line = pango_layout_get_line_readonly(layout, 0);
+	line = pango_layout_get_line_readonly(nsfont_pango_layout, 0);
 	cairo_move_to(current_cr, x, y);
 	nsgtk_set_colour(fstyle->foreground);
 	pango_cairo_show_layout_line(current_cr, line);
-
-	g_object_unref(layout);
 
 	return NSERROR_OK;
 }
