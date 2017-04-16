@@ -17,7 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "amiga/os3support.h"
+#ifndef AMIGA_STRINGVIEW_H
+#define AMIGA_STRINGVIEW_H 1
 
 #include <exec/semaphores.h>
 #include <intuition/classes.h>
@@ -58,3 +59,5 @@ void FreeStringClass(Class *);
 #ifdef __cplusplus
 }
 #endif
+#endif
+

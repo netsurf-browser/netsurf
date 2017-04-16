@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifdef __amigaos4__
 /// Include
 
 #include <proto/dos.h>
@@ -32,7 +33,6 @@
 #include <gadgets/layout.h>
 #include <gadgets/listbrowser.h>
 
-#include "amiga/os3support.h"
 #include "amiga/libs.h"
 
 #include "stringview.h"
@@ -867,4 +867,5 @@ void FreeStringClass(Class *cl)
 ///
 
 /* The End */
+#endif //__amigaos4__
 

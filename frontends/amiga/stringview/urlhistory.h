@@ -17,6 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef AMIGA_URLHISTORY_H
+#define AMIGA_URLHISTORY_H 1
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -31,3 +34,5 @@ void          URLHistory_AddPage( const char * urlString );
 #ifdef __cplusplus
 }
 #endif
+#endif
+

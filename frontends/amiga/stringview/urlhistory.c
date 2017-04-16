@@ -18,6 +18,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifdef __amigaos4__
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
@@ -123,3 +124,5 @@ void URLHistory_AddPage( const char * urlString )
 		urldb_iterate_partial(urlString, URLHistoryFound);
 	}
 }
+#endif //__amigaos4__
+

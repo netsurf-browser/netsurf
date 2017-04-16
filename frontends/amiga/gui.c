@@ -17,10 +17,11 @@
  */
 
 
-
+#ifdef __amigaos4__
 /* Custom StringView class */
 #include "amiga/stringview/stringview.h"
 #include "amiga/stringview/urlhistory.h"
+#endif
 
 /* AmigaOS libraries */
 #ifdef __amigaos4__
@@ -196,7 +197,9 @@ static bool ami_quit = false;
 
 static struct MsgPort *schedulermsgport = NULL;
 static struct MsgPort *appport;
+#ifdef __amigaos4__
 static Class *urlStringClass;
+#endif
 
 static BOOL locked_screen = FALSE;
 static int screen_signal = -1;
@@ -439,7 +442,9 @@ static void ami_gui_resources_free(void)
 
 static bool ami_gui_resources_open(void)
 {
+#ifdef __amigaos4__
 	urlStringClass = MakeStringClass();
+#endif
 
     if(!(appport = AllocSysObjectTags(ASOT_PORT,
 							ASO_NoTrack, FALSE,
@@ -3058,7 +3063,9 @@ static void gui_quit(void)
 
 	ami_file_req_free();
 	ami_openurl_close();
+#ifdef __amigaos4__
 	FreeStringClass(urlStringClass);
+#endif
 
 	FreeObjList(window_list);
 
