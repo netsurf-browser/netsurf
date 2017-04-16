@@ -5368,7 +5368,7 @@ struct duk_heaphdr_string {
 #if defined(DUK_USE_REFERENCE_COUNTING)
 #if defined(DUK_USE_FINALIZER_SUPPORT)
 DUK_INTERNAL_DECL void duk_refzero_check_slow(duk_hthread *thr);
-DUK_INTERNAL_DECL void duk_refzero_check_fast(duk_hthread *thr);
+DUK_INTERNAL_DECL DUK_INLINE void duk_refzero_check_fast(duk_hthread *thr);
 #endif
 DUK_INTERNAL_DECL void duk_heaphdr_refcount_finalize_norz(duk_heap *heap, duk_heaphdr *hdr);
 DUK_INTERNAL_DECL void duk_hobject_refcount_finalize_norz(duk_heap *heap, duk_hobject *h);
