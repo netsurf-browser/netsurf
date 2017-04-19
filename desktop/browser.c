@@ -2332,7 +2332,7 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 			}
 		}
 
-		guit->window->redraw(bw->window);
+		guit->window->invalidate(bw->window, NULL);
 
 		break;
 
@@ -2398,7 +2398,7 @@ void browser_window_update_box(struct browser_window *bw, struct rect *rect)
 
 	if (bw->window != NULL) {
 		/* Front end window */
-		guit->window->update(bw->window, rect);
+		guit->window->invalidate(bw->window, rect);
 	} else {
 		/* Core managed browser window */
 		browser_window_get_position(bw, true, &pos_x, &pos_y);
@@ -2410,7 +2410,7 @@ void browser_window_update_box(struct browser_window *bw, struct rect *rect)
 		rect->x1 += pos_x / bw->scale;
 		rect->y1 += pos_y / bw->scale;
 
-		guit->window->update(top->window, rect);
+		guit->window->invalidate(top->window, rect);
 	}
 }
 

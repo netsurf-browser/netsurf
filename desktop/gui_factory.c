@@ -161,10 +161,7 @@ static nserror verify_window_register(struct gui_window_table *gwt)
 	if (gwt->destroy == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
-	if (gwt->redraw == NULL) {
-		return NSERROR_BAD_PARAMETER;
-	}
-	if (gwt->update == NULL) {
+	if (gwt->invalidate == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
 	if (gwt->get_scroll == NULL) {

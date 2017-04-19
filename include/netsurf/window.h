@@ -98,21 +98,23 @@ struct gui_window_table {
 	void (*destroy)(struct gui_window *gw);
 
 	/**
-	 * Force a redraw of the entire contents of a window.
+	 * Invalidate an area of a window.
 	 *
-	 * @todo this API should be merged with update.
+	 * The specified area of the window should now be considered
+	 *  out of date. If the area is NULL the entire window must be
+	 *  invalidated. It is expected that the windowing system will
+	 *  then subsequently cause redraw/expose operations as
+	 *  necessary.
 	 *
-	 * \param g gui_window to redraw
-	 */
-	void (*redraw)(struct gui_window *g);
-
-	/**
-	 * Redraw an area of a window.
+	 * \note the frontend should not attempt to actually start the
+	 *  redraw operations as a result of this callback because the
+	 *  core redraw functions may already be threaded.
 	 *
 	 * \param g gui_window
-	 * \param rect area to redraw
+	 * \param rect area to redraw or NULL for the entire window area
+	 * \return NSERROR_OK on success or appropriate error code
 	 */
-	void (*update)(struct gui_window *g, const struct rect *rect);
+	nserror (*invalidate)(struct gui_window *g, const struct rect *rect);
 
 	/**
 	 * Get the scroll position of a browser window.
@@ -289,7 +291,7 @@ struct gui_window_table {
 	/**
 	 * Called when the gui_window has new content.
 	 *
-	 * \param  g  the gui_window that has new content
+	 * \param g the gui_window that has new content
 	 */
 	void (*new_content)(struct gui_window *g);
 
@@ -303,13 +305,19 @@ struct gui_window_table {
 	 */
 	void (*file_gadget_open)(struct gui_window *g, struct hlcache_handle *hl, struct form_control *gadget);
 
-	/** object dragged to window*/
+	/**
+	 * object dragged to window
+	 */
 	void (*drag_save_object)(struct gui_window *g, struct hlcache_handle *c, gui_save_type type);
 
-	/** drag selection save */
+	/**
+	 * drag selection save
+	 */
 	void (*drag_save_selection)(struct gui_window *g, const char *selection);
 
-	/** selection started */
+	/**
+	 * selection started
+	 */
 	void (*start_selection)(struct gui_window *g);
 };
 
