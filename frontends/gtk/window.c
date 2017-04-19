@@ -1014,27 +1014,38 @@ static void gui_window_remove_caret(struct gui_window *g)
 
 }
 
-static void gui_window_redraw_window(struct gui_window *g)
-{
-	gtk_widget_queue_draw(GTK_WIDGET(g->layout));
-}
-
-static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
+/**
+ * Invalidates an area of a GTK browser window
+ *
+ * \param g gui_window
+ * \param rect area to redraw or NULL for the entire window area
+ * \return NSERROR_OK on success or appropriate error code
+ */
+static nserror
+nsgtk_window_invalidate_area(struct gui_window *g, const struct rect *rect)
 {
 	int sx, sy;
 	float scale;
 
-	if (!browser_window_has_content(g->bw))
-		return;
+	if (rect == NULL) {
+		gtk_widget_queue_draw(GTK_WIDGET(g->layout));
+		return NSERROR_OK;
+	}
+
+	if (!browser_window_has_content(g->bw)) {
+		return NSERROR_OK;
+	}
 
 	gui_window_get_scroll(g, &sx, &sy);
 	scale = browser_window_get_scale(g->bw);
 
 	gtk_widget_queue_draw_area(GTK_WIDGET(g->layout),
-			rect->x0 * scale - sx,
-			rect->y0 * scale - sy,
-			(rect->x1 - rect->x0) * scale,
-			(rect->y1 - rect->y0) * scale);
+				   rect->x0 * scale - sx,
+				   rect->y0 * scale - sy,
+				   (rect->x1 - rect->x0) * scale,
+				   (rect->y1 - rect->y0) * scale);
+
+	return NSERROR_OK;
 }
 
 static void gui_window_set_status(struct gui_window *g, const char *text)
@@ -1295,7 +1306,7 @@ gui_window_file_gadget_open(struct gui_window *g,
 			GTK_FILE_CHOOSER(dialog));
 		
 		browser_window_set_gadget_filename(g->bw, gadget, filename);
-		
+
 		g_free(filename);
 	}
 
@@ -1305,8 +1316,7 @@ gui_window_file_gadget_open(struct gui_window *g,
 static struct gui_window_table window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
-	.redraw = gui_window_redraw_window,
-	.update = gui_window_update_box,
+	.invalidate = nsgtk_window_invalidate_area,
 	.get_scroll = gui_window_get_scroll,
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
