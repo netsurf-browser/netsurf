@@ -42,5 +42,19 @@ bool ro_gui_window_check_menu(wimp_menu *menu);
  */
 nserror ro_gui_window_set_url(struct gui_window *g, struct nsurl *url);
 
+/**
+ * Cause an area of a window to be invalidated
+ *
+ * The specified area of the window should now be considered out of
+ *  date. If the entire window is invalidated this simply calls
+ *  wimp_force_redraw() otherwise the area is added to a queue of
+ *  pending updates which will be processed from a wimp poll allowing
+ *  multiple invalidation requests to be agregated.
+ *
+ * \param g The window to update
+ * \param rect The area of the window to update or NULL to redraw entire contents.
+ */
+nserror ro_gui_window_invalidate_area(struct gui_window *g, const struct rect *rect);
+
 #endif
 
