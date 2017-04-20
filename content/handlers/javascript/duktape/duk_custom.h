@@ -28,6 +28,7 @@
 #undef DUK_USE_DATE_PARSE_STRING
 #endif
 
+#define DUK_USE_FASTINT
 #define DUK_USE_REGEXP_CANON_WORKAROUND
 
 /* Required for execution timeout checking */
