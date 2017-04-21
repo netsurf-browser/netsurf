@@ -1394,7 +1394,7 @@ typedef struct {
 #if 0
 DUK_INTERNAL_DECL duk_double_t duk_tval_get_number_unpacked(duk_tval *tv);
 #endif
-DUK_INTERNAL_DECL duk_double_t duk_tval_get_number_unpacked_fastint(duk_tval *tv);
+DUK_INTERNAL_DECL DUK_INLINE duk_double_t duk_tval_get_number_unpacked_fastint(duk_tval *tv);
 #endif
 
 #endif  /* DUK_USE_PACKED_TVAL */
@@ -1436,7 +1436,7 @@ DUK_INTERNAL_DECL duk_double_t duk_tval_get_number_unpacked_fastint(duk_tval *tv
 #define DUK_FASTINT_MAX           0x7fffffffffffLL
 #define DUK_FASTINT_BITS          48
 
-DUK_INTERNAL_DECL void duk_tval_set_number_chkfast_fast(duk_tval *tv, duk_double_t x);
+DUK_INTERNAL_DECL DUK_INLINE void duk_tval_set_number_chkfast_fast(duk_tval *tv, duk_double_t x);
 DUK_INTERNAL_DECL void duk_tval_set_number_chkfast_slow(duk_tval *tv, duk_double_t x);
 #endif
 
