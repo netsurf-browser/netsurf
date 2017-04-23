@@ -119,12 +119,6 @@ gui_window_set_title(struct gui_window *g, const char *title)
 }
 
 static void
-gui_window_redraw_window(struct gui_window *g)
-{
-  fprintf(stdout, "WINDOW REDRAW WIN %u\n", g->win_num);
-}
-
-static void
 gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
                           bool scaled)
 {
@@ -166,13 +160,28 @@ gui_window_set_scroll(struct gui_window *g, int sx, int sy)
   fprintf(stdout, "WINDOW SET_SCROLL WIN %u X %d Y %d\n", g->win_num, sx, sy);
 }
 
-static void
-gui_window_update_box(struct gui_window *g, const struct rect *rect)
+/**
+ * Invalidates an area of a monkey browser window
+ *
+ * \param gw gui_window
+ * \param rect area to redraw or NULL for the entire window area
+ * \return NSERROR_OK on success or appropriate error code
+ */
+static nserror
+monkey_window_invalidate_area(struct gui_window *gw, const struct rect *rect)
 {
-  fprintf(stdout, "WINDOW UPDATE_BOX WIN %u X %d Y %d WIDTH %d HEIGHT %d\n",
-          g->win_num, rect->x0, rect->y0,
-          (rect->x1 - rect->x0), (rect->y1 - rect->y0));
-  
+	fprintf(stdout, "WINDOW INVALIDATE_AREA WIN %u", gw->win_num);
+
+	if (rect != NULL) {
+		fprintf(stdout,
+			" X %d Y %d WIDTH %d HEIGHT %d\n",
+			rect->x0, rect->y0,
+			(rect->x1 - rect->x0), (rect->y1 - rect->y0));
+	} else {
+		fprintf(stdout," ALL\n");
+	}
+
+	return NSERROR_OK;
 }
 
 static void
@@ -501,8 +510,7 @@ monkey_window_handle_command(int argc, char **argv)
 static struct gui_window_table window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
-	.redraw = gui_window_redraw_window,
-	.update = gui_window_update_box,
+	.invalidate = monkey_window_invalidate_area,
 	.get_scroll = gui_window_get_scroll,
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
