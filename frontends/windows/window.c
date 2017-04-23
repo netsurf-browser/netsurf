@@ -883,17 +883,35 @@ static void nsws_window_update_forward_back(struct gui_window *w)
 
 
 /**
- * redraw the whole window
+ * Invalidate an area of a win32 browser window
  *
- * \param gw win32 frontends graphical window.
+ * \param gw The netsurf window being invalidated.
+ * \param rect area to redraw or NULL for entrire window area.
+ * \return NSERROR_OK or appropriate error code.
  */
-static void win32_window_redraw_window(struct gui_window *gw)
+static nserror
+win32_window_invalidate_area(struct gui_window *gw, const struct rect *rect)
 {
-	/* LOG("gw:%p", gw); */
-	if (gw != NULL) {
-		RedrawWindow(gw->drawingarea, NULL, NULL,
-			     RDW_INVALIDATE | RDW_NOERASE);
+	RECT *redrawrectp = NULL;
+	RECT redrawrect;
+
+	assert(gw != NULL);
+
+	if (rect != NULL) {
+		redrawrectp = &redrawrect;
+
+		redrawrect.left = (long)rect->x0 - (gw->scrollx / gw->scale);
+		redrawrect.top = (long)rect->y0 - (gw->scrolly / gw->scale);
+		redrawrect.right =(long)rect->x1;
+		redrawrect.bottom = (long)rect->y1;
+
 	}
+	RedrawWindow(gw->drawingarea,
+		     redrawrectp,
+		     NULL,
+		     RDW_INVALIDATE | RDW_NOERASE);
+
+	return NSERROR_OK;
 }
 
 
@@ -922,7 +940,7 @@ static void nsws_set_scale(struct gui_window *gw, float scale)
 		browser_window_set_scale(gw->bw, scale, true);
 	}
 
-	win32_window_redraw_window(gw);
+	win32_window_invalidate_area(gw, NULL);
 	win32_window_set_scroll(gw, x, y);
 }
 
@@ -1523,32 +1541,6 @@ static void win32_window_destroy(struct gui_window *w)
 
 
 /**
- * Cause redraw of part of a win32 window.
- *
- * \param gw win32 gui window
- * \param rect area to redraw
- */
-static void
-win32_window_update(struct gui_window *gw, const struct rect *rect)
-{
-	if (gw == NULL)
-		return;
-
-	RECT redrawrect;
-
-	redrawrect.left = (long)rect->x0 - (gw->scrollx / gw->scale);
-	redrawrect.top = (long)rect->y0 - (gw->scrolly / gw->scale);
-	redrawrect.right =(long)rect->x1;
-	redrawrect.bottom = (long)rect->y1;
-
-	RedrawWindow(gw->drawingarea,
-		     &redrawrect,
-		     NULL,
-		     RDW_INVALIDATE | RDW_NOERASE);
-}
-
-
-/**
  * Find the current dimensions of a win32 browser window's content area.
  *
  * \param gw gui_window to measure
@@ -1776,8 +1768,7 @@ static void win32_window_stop_throbber(struct gui_window *w)
 static struct gui_window_table window_table = {
 	.create = win32_window_create,
 	.destroy = win32_window_destroy,
-	.redraw = win32_window_redraw_window,
-	.update = win32_window_update,
+	.invalidate = win32_window_invalidate_area,
 	.get_scroll = win32_window_get_scroll,
 	.set_scroll = win32_window_set_scroll,
 	.get_dimensions = win32_window_get_dimensions,

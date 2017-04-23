@@ -41,6 +41,7 @@
 #include "content/content.h"
 
 #include "riscos/gui.h"
+#include "riscos/window.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
 #include "riscos/print.h"
@@ -95,7 +96,6 @@ static unsigned int print_fonts_count;
 /** Error in print_fonts_plot_text() or print_fonts_callback(). */
 static const char *print_fonts_error;
 
-void gui_window_redraw_window(struct gui_window *g);
 
 static bool ro_gui_print_click(wimp_pointer *pointer);
 static bool ro_gui_print_apply(wimp_w w);
@@ -729,7 +729,7 @@ bool print_document(struct gui_window *g, const char *filename)
 	if (content_get_type(h) == CONTENT_HTML)
 		content_reformat(h, false, saved_width, saved_height);
 
-	gui_window_redraw_window(g);
+	ro_gui_window_invalidate_area(g, NULL);
 
 	return true;
 

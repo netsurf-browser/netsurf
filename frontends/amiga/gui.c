@@ -245,7 +245,7 @@ static bool gui_window_get_scroll(struct gui_window *g, int *restrict sx, int *r
 static void gui_window_set_scroll(struct gui_window *g, int sx, int sy);
 static void gui_window_remove_caret(struct gui_window *g);
 static void gui_window_place_caret(struct gui_window *g, int x, int y, int height, const struct rect *clip);
-static void gui_window_update_box(struct gui_window *g, const struct rect *restrict rect);
+//static void amiga_window_invalidate_area(struct gui_window *g, const struct rect *restrict rect);
 
 
 /* accessors for default options - user option is updated if it is set as per default */
@@ -3667,6 +3667,44 @@ static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw
 	return;
 }
 
+
+/**
+ * Invalidates an area of an amiga browser window
+ *
+ * \param g gui_window
+ * \param rect area to redraw or NULL for the entire window area
+ * \return NSERROR_OK on success or appropriate error code
+ */
+static nserror amiga_window_invalidate_area(struct gui_window *g,
+					    const struct rect *restrict rect)
+{
+	struct nsObject *nsobj;
+	struct rect *restrict deferred_rect;
+
+	if(!g) return NSERROR_BAD_PARAMETER;
+
+	if (rect == NULL) {
+		if (g != g->shared->gw) {
+			return NSERROR_OK;
+		}
+	} else {
+		if (ami_gui_window_update_box_deferred_check(g->deferred_rects, rect,
+							    g->deferred_rects_pool)) {
+			deferred_rect = ami_memory_itempool_alloc(g->deferred_rects_pool,
+								  sizeof(struct rect));
+			CopyMem(rect, deferred_rect, sizeof(struct rect));
+			nsobj = AddObject(g->deferred_rects, AMINS_RECT);
+			nsobj->objstruct = deferred_rect;
+		} else {
+			LOG("Ignoring duplicate or subset of queued box redraw");
+		}
+	}
+	ami_schedule_redraw(g->shared, false);
+
+	return NSERROR_OK;
+}
+
+
 static void ami_refresh_window(struct gui_window_2 *gwin)
 {
 	/* simplerefresh only */
@@ -3699,7 +3737,7 @@ static void ami_refresh_window(struct gui_window_2 *gwin)
 
 	regrect = gwin->win->RPort->Layer->DamageList->RegionRectangle;
 
-	gui_window_update_box(gwin->gw, &r);
+	amiga_window_invalidate_area(gwin->gw, &r);
 
 	while(regrect)
 	{
@@ -3714,7 +3752,7 @@ static void ami_refresh_window(struct gui_window_2 *gwin)
 
 		regrect = regrect->Next;
 
-		gui_window_update_box(gwin->gw, &r);
+		amiga_window_invalidate_area(gwin->gw, &r);
 	}
 
 	EndRefresh(gwin->win, TRUE);
@@ -4706,7 +4744,7 @@ static void ami_redraw_callback(void *p)
  *
  * \param  gwin         a struct gui_window_2
  * \param  full_redraw  set to true to schedule a full redraw,
-                        should only be set to false when called from gui_window_update_box()
+                        should only be set to false when called from amiga_window_invalidate_area()
  */
 void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw)
 {
@@ -4719,14 +4757,6 @@ void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw)
 static void ami_schedule_redraw_remove(struct gui_window_2 *gwin)
 {
 	ami_schedule(-1, ami_redraw_callback, gwin);
-}
-
-static void gui_window_redraw_window(struct gui_window *g)
-{
-	if(!g) return;
-
-	if(g == g->shared->gw)
-		ami_schedule_redraw(g->shared, true);
 }
 
 static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw)
@@ -4796,23 +4826,6 @@ bool ami_gui_window_update_box_deferred_check(struct MinList *deferred_rects,
 	return true;
 }
 
-static void gui_window_update_box(struct gui_window *g, const struct rect *restrict rect)
-{
-	struct nsObject *nsobj;
-	struct rect *restrict deferred_rect;
-	if(!g) return;
-	
-	if(ami_gui_window_update_box_deferred_check(g->deferred_rects, rect,
-			g->deferred_rects_pool)) {
-		deferred_rect = ami_memory_itempool_alloc(g->deferred_rects_pool, sizeof(struct rect));
-		CopyMem(rect, deferred_rect, sizeof(struct rect));
-		nsobj = AddObject(g->deferred_rects, AMINS_RECT);
-		nsobj->objstruct = deferred_rect;
-	} else {
-		LOG("Ignoring duplicate or subset of queued box redraw");
-	}
-	ami_schedule_redraw(g->shared, false);
-}
 
 /**
  * callback from core to reformat a window.
@@ -4883,26 +4896,26 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 		{
 			ami_spacebox_to_ns_coords(gwin, &rect.x0, &rect.y0, 0, height - (vcurrent - oldv) - 1);
 			ami_spacebox_to_ns_coords(gwin, &rect.x1, &rect.y1, width + 1, height + 1);
-			gui_window_update_box(gwin->gw, &rect);
+			amiga_window_invalidate_area(gwin->gw, &rect);
 		}
 		else if(vcurrent<oldv) /* Going up */
 		{
 			ami_spacebox_to_ns_coords(gwin, &rect.x0, &rect.y0, 0, 0);
 			ami_spacebox_to_ns_coords(gwin, &rect.x1, &rect.y1, width + 1, oldv - vcurrent + 1);
-			gui_window_update_box(gwin->gw, &rect);
+			amiga_window_invalidate_area(gwin->gw, &rect);
 		}
 
 		if(hcurrent>oldh) /* Going right */
 		{
 			ami_spacebox_to_ns_coords(gwin, &rect.x0, &rect.y0, width - (hcurrent - oldh), 0);
 			ami_spacebox_to_ns_coords(gwin, &rect.x1, &rect.y1, width + 1, height + 1);
-			gui_window_update_box(gwin->gw, &rect);
+			amiga_window_invalidate_area(gwin->gw, &rect);
 		}
 		else if(hcurrent<oldh) /* Going left */
 		{
 			ami_spacebox_to_ns_coords(gwin, &rect.x0, &rect.y0, 0, 0);
 			ami_spacebox_to_ns_coords(gwin, &rect.x1, &rect.y1, oldh - hcurrent + 1, height + 1);
-			gui_window_update_box(gwin->gw, &rect);
+			amiga_window_invalidate_area(gwin->gw, &rect);
 		}
 	}
 	else
@@ -4931,6 +4944,7 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 
 	ami_gui_free_space_box(bbox);
 }
+
 
 void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs)
 {
@@ -5556,8 +5570,7 @@ static char *ami_gui_get_user_dir(STRPTR current_user)
 static struct gui_window_table amiga_window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
-	.redraw = gui_window_redraw_window,
-	.update = gui_window_update_box,
+	.invalidate = amiga_window_invalidate_area,
 	.get_scroll = gui_window_get_scroll,
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,

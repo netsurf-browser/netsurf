@@ -90,8 +90,6 @@
 #include "riscos/ucstables.h"
 #include "riscos/filetype.h"
 
-void gui_window_redraw_window(struct gui_window *g);
-
 static void gui_window_set_extent(struct gui_window *g, int width, int height);
 
 static void ro_gui_window_redraw(wimp_draw *redraw);
@@ -696,46 +694,39 @@ static void gui_window_set_title(struct gui_window *g, const char *title)
 	ro_gui_set_window_title(g->window, g->title);
 }
 
-
-/**
- * Force a redraw of the entire contents of a browser window.
- *
- * \param  g   gui_window to redraw
- */
-void gui_window_redraw_window(struct gui_window *g)
-{
-	wimp_window_info info;
-	os_error *error;
-
-	assert(g);
-	info.w = g->window;
-	error = xwimp_get_window_info_header_only(&info);
-	if (error) {
-		LOG("xwimp_get_window_info_header_only: 0x%x: %s", error->errnum, error->errmess);
-		ro_warn_user("WimpError", error->errmess);
-		return;
-	}
-	error = xwimp_force_redraw(g->window, info.extent.x0, info.extent.y0,
-			info.extent.x1, info.extent.y1);
-	if (error) {
-		LOG("xwimp_force_redraw: 0x%x: %s", error->errnum, error->errmess);
-		ro_warn_user("WimpError", error->errmess);
-	}
-}
-
-
-/**
- * Redraw an area of a window.
- *
- * \param  g The window to update
- * \param  rect  The area of the window to update.
- */
-
-static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
+/* exported interface documented in riscos/window.h */
+nserror ro_gui_window_invalidate_area(struct gui_window *g,
+				   const struct rect *rect)
 {
 	bool use_buffer;
 	int x0, y0, x1, y1;
 	struct update_box *cur;
+	wimp_window_info info;
+	os_error *error;
+
+	assert(g);
+
+	if (rect == NULL) {
+		info.w = g->window;
+		error = xwimp_get_window_info_header_only(&info);
+		if (error) {
+			LOG("xwimp_get_window_info_header_only: 0x%x: %s",
+			    error->errnum, error->errmess);
+			ro_warn_user("WimpError", error->errmess);
+			return NSERROR_INVALID;
+		}
+
+		error = xwimp_force_redraw(g->window,
+					   info.extent.x0, info.extent.y0,
+					   info.extent.x1, info.extent.y1);
+		if (error) {
+			LOG("xwimp_force_redraw: 0x%x: %s",
+			    error->errnum, error->errmess);
+			ro_warn_user("WimpError", error->errmess);
+			return NSERROR_INVALID;
+		}
+		return NSERROR_OK;
+	}
 
 	x0 = floorf(rect->x0 * 2 * g->scale);
 	y0 = -ceilf(rect->y1 * 2 * g->scale);
@@ -747,25 +738,27 @@ static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 	/* try to optimise buffered redraws */
 	if (use_buffer) {
 		for (cur = pending_updates; cur != NULL; cur = cur->next) {
-			if ((cur->g != g) || (!cur->use_buffer))
+			if ((cur->g != g) || (!cur->use_buffer)) {
 				continue;
-			if ((((cur->x0 - x1) < MARGIN) || ((cur->x1 - x0) < MARGIN)) &&
-					(((cur->y0 - y1) < MARGIN) || ((cur->y1 - y0) < MARGIN))) {
+			}
+			if ((((cur->x0 - x1) < MARGIN) ||
+			     ((cur->x1 - x0) < MARGIN)) &&
+			    (((cur->y0 - y1) < MARGIN) ||
+			     ((cur->y1 - y0) < MARGIN))) {
 				cur->x0 = min(cur->x0, x0);
 				cur->y0 = min(cur->y0, y0);
 				cur->x1 = max(cur->x1, x1);
 				cur->y1 = max(cur->y1, y1);
-				return;
+				return NSERROR_OK;
 			}
-
 		}
 	}
 	cur = malloc(sizeof(struct update_box));
 	if (!cur) {
 		LOG("No memory for malloc.");
-		ro_warn_user("NoMemory", 0);
-		return;
+		return NSERROR_NOMEM;
 	}
+
 	cur->x0 = x0;
 	cur->y0 = y0;
 	cur->x1 = x1;
@@ -774,6 +767,8 @@ static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 	pending_updates = cur;
 	cur->g = g;
 	cur->use_buffer = use_buffer;
+
+	return NSERROR_OK;
 }
 
 
@@ -1983,7 +1978,7 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 		/* Toggle display of box outlines. */
 		browser_window_debug(g->bw, CONTENT_DEBUG_REDRAW);
 
-		gui_window_redraw_window(g);
+		ro_gui_window_invalidate_area(g, NULL);
 		return true;
 
 	case wimp_KEY_RETURN:
@@ -4104,8 +4099,9 @@ void ro_gui_window_action_page_info(struct gui_window *g)
 void ro_gui_window_redraw_all(void)
 {
 	struct gui_window *g;
-	for (g = window_list; g; g = g->next)
-		gui_window_redraw_window(g);
+	for (g = window_list; g; g = g->next) {
+		ro_gui_window_invalidate_area(g, NULL);
+	}
 }
 
 
@@ -4985,8 +4981,7 @@ bool ro_gui_alt_pressed(void)
 static struct gui_window_table window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
-	.redraw = gui_window_redraw_window,
-	.update = gui_window_update_box,
+	.invalidate = ro_gui_window_invalidate_area,
 	.get_scroll = gui_window_get_scroll,
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,

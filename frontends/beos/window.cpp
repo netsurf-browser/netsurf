@@ -1000,39 +1000,42 @@ void nsbeos_redraw_caret(struct gui_window *g)
 	g->view->UnlockLooper();
 }
 
-static void gui_window_redraw_window(struct gui_window *g)
+/**
+ * Invalidate an area of a beos browser window
+ *
+ * \param gw The netsurf window being invalidated.
+ * \param rect area to redraw or NULL for entrire window area.
+ * \return NSERROR_OK or appropriate error code.
+ */
+static nserror
+beos_window_invalidate_area(struct gui_window *g, const struct rect *rect)
 {
-	if (g->view == NULL)
-		return;
-	if (!g->view->LockLooper())
-		return;
+	if (browser_window_has_content(g->bw) == false) {
+		return NSERROR_OK;
+	}
+
+	if (g->view == NULL) {
+		return NSERROR_OK;
+	}
+
+	if (!g->view->LockLooper()) {
+		return NSERROR_OK;
+	}
 
 	nsbeos_current_gc_set(g->view);
 
-	g->view->Invalidate();
+	if (rect != NULL) {
+		//XXX +1 ??
+		g->view->Invalidate(BRect(rect->x0, rect->y0,
+					  rect->x1 - 1, rect->y1 - 1));
+	} else {
+		g->view->Invalidate();
+	}
 
 	nsbeos_current_gc_set(NULL);
 	g->view->UnlockLooper();
-}
 
-static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
-{
-	if (browser_window_has_content(g->bw) == false)
-		return;
-
-	if (g->view == NULL)
-		return;
-	if (!g->view->LockLooper())
-		return;
-
-	nsbeos_current_gc_set(g->view);
-
-//XXX +1 ??
-	g->view->Invalidate(BRect(rect->x0, rect->y0,
-				   rect->x1 - 1, rect->y1 - 1));
-
-	nsbeos_current_gc_set(NULL);
-	g->view->UnlockLooper();
+	return NSERROR_OK;
 }
 
 static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
@@ -1349,8 +1352,7 @@ static void gui_window_get_dimensions(struct gui_window *g, int *width, int *hei
 static struct gui_window_table window_table = {
 	gui_window_create,
 	gui_window_destroy,
-	gui_window_redraw_window,
-	gui_window_update_box,
+	beos_window_invalidate_area,
 	gui_window_get_scroll,
 	gui_window_set_scroll,
 	gui_window_get_dimensions,

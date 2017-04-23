@@ -1803,21 +1803,33 @@ gui_window_destroy(struct gui_window *gw)
 	free(gw);
 }
 
-static void
-gui_window_redraw_window(struct gui_window *g)
-{
-	fb_queue_redraw(g->browser, 0, 0, fbtk_get_width(g->browser), fbtk_get_height(g->browser) );
-}
 
-static void
-gui_window_update_box(struct gui_window *g, const struct rect *rect)
+/**
+ * Invalidates an area of a framebuffer browser window
+ *
+ * \param gw The netsurf window being invalidated.
+ * \param rect area to redraw or NULL for the entire window area
+ * \return NSERROR_OK on success or appropriate error code
+ */
+static nserror
+fb_window_invalidate_area(struct gui_window *g, const struct rect *rect)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(g->browser);
-	fb_queue_redraw(g->browser,
-			rect->x0 - bwidget->scrollx,
-			rect->y0 - bwidget->scrolly,
-			rect->x1 - bwidget->scrollx,
-			rect->y1 - bwidget->scrolly);
+
+	if (rect != NULL) {
+		fb_queue_redraw(g->browser,
+				rect->x0 - bwidget->scrollx,
+				rect->y0 - bwidget->scrolly,
+				rect->x1 - bwidget->scrollx,
+				rect->y1 - bwidget->scrolly);
+	} else {
+		fb_queue_redraw(g->browser,
+				0,
+				0,
+				fbtk_get_width(g->browser),
+				fbtk_get_height(g->browser));
+	}
+	return NSERROR_OK;
 }
 
 static bool
@@ -2051,8 +2063,7 @@ static void framebuffer_window_reformat(struct gui_window *gw)
 static struct gui_window_table framebuffer_window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
-	.redraw = gui_window_redraw_window,
-	.update = gui_window_update_box,
+	.invalidate = fb_window_invalidate_area,
 	.get_scroll = gui_window_get_scroll,
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
