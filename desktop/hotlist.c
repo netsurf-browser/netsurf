@@ -63,6 +63,7 @@ struct hotlist_ctx {
 	bool built;
 	struct hotlist_folder *default_folder;
 	char *save_path;
+	bool save_scheduled;
 };
 struct hotlist_ctx hl_ctx;
 
@@ -72,6 +73,107 @@ struct hotlist_entry {
 
 	struct treeview_field_data data[HL_N_FIELDS - 1];
 };
+
+
+/*
+ * Get path for writing hotlist to
+ *
+ * \param path		The final path of the hotlist
+ * \param loaded	Updated to the path to write the holist to
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ */
+static nserror hotlist_get_temp_path(const char *path, char **temp_path)
+{
+	const char *extension = "-bk";
+	char *joined;
+	int len;
+
+	len = strlen(path) + strlen(extension);
+
+	joined = malloc(len + 1);
+	if (joined == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	if (snprintf(joined, len + 1, "%s%s", path, extension) != len) {
+		free(joined);
+		return NSERROR_UNKNOWN;
+	}
+
+	*temp_path = joined;
+	return NSERROR_OK;
+}
+
+
+/* Save the hotlist to to a file at the given path
+ *
+ * \param path  Path to save hostlist file to.
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ */
+static nserror hotlist_save(const char *path)
+{
+	nserror res = NSERROR_OK;
+	char *temp_path;
+
+	/* Get path to export to */
+	res = hotlist_get_temp_path(path, &temp_path);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	/* Export to temp path */
+	res = hotlist_export(temp_path, NULL);
+	if (res != NSERROR_OK) {
+		goto cleanup;
+	}
+
+	/* Remove old hotlist to handle non-POSIX rename() implementations. */
+	(void)remove(path);
+
+	/* Replace any old hotlist file with the one we just saved */
+	if (rename(temp_path, path) != 0) {
+		res = NSERROR_SAVE_FAILED;
+		LOG("Error renaming hotlist: %s.", strerror(errno));
+		goto cleanup;
+	}
+
+cleanup:
+	free(temp_path);
+
+	return res;
+}
+
+
+/**
+ * Scheduler callback for saving the hotlist.
+ *
+ * \param p  Unused user data.
+ */
+static void hotlist_schedule_save_cb(void *p)
+{
+	hl_ctx.save_scheduled = false;
+	hotlist_save(hl_ctx.save_path);
+}
+
+
+/**
+ * Schedule a hotlist save.
+ *
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ */
+static nserror hotlist_schedule_save(void)
+{
+	if (hl_ctx.save_scheduled == false) {
+		nserror err = guit->misc->schedule(10 * 1000,
+				hotlist_schedule_save_cb, NULL);
+		if (err != NSERROR_OK) {
+			return err;
+		}
+		hl_ctx.save_scheduled = true;
+	}
+
+	return NSERROR_OK;
+}
 
 
 /**
@@ -437,6 +539,8 @@ hotlist_tree_node_entry_cb(struct treeview_node_msg msg, void *data)
 	case TREE_MSG_NODE_DELETE:
 		e->entry = NULL;
 		hotlist_delete_entry_internal(e);
+
+		err = hotlist_schedule_save();
 		break;
 
 	case TREE_MSG_NODE_EDIT:
@@ -460,6 +564,8 @@ hotlist_tree_node_entry_cb(struct treeview_node_msg msg, void *data)
 				free((void *)old_text);
 			}
 
+			err = hotlist_schedule_save();
+
 		} else if (lwc_string_isequal(hl_ctx.fields[HL_URL].field,
 				msg.data.node_edit.field, &match) ==
 				lwc_error_ok && match == true &&
@@ -477,6 +583,8 @@ hotlist_tree_node_entry_cb(struct treeview_node_msg msg, void *data)
 				treeview_update_node_entry(hl_ctx.tree,
 						   e->entry, e->data, e);
 				nsurl_unref(old_url);
+
+				err = hotlist_schedule_save();
 			}
 		}
 		break;
@@ -597,7 +705,7 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 
 
 /*
- * Callback for libdom_iterate_child_elements, which dispite the namespace is
+ * Callback for libdom_iterate_child_elements, which despite the namespace is
  * a NetSurf function.
  *
  * \param node		Node that is a child of the directory UL node
@@ -725,36 +833,6 @@ nserror hotlist_load_directory_cb(dom_node *node, void *ctx)
 
 	dom_string_unref(name);
 
-	return NSERROR_OK;
-}
-
-
-/*
- * Get path for writing hotlist to
- *
- * \param path		The final path of the hotlist
- * \param loaded	Updated to the path to write the holist to
- * \return NSERROR_OK on success, or appropriate error otherwise
- */
-static nserror hotlist_get_temp_path(const char *path, char **temp_path)
-{
-	const char *extension = "-bk";
-	char *joined;
-	int len;
-
-	len = strlen(path) + strlen(extension);
-
-	joined = malloc(len + 1);
-	if (joined == NULL) {
-		return NSERROR_NOMEM;
-	}
-
-	if (snprintf(joined, len + 1, "%s%s", path, extension) != len) {
-		free(joined);
-		return NSERROR_UNKNOWN;
-	}
-
-	*temp_path = joined;
 	return NSERROR_OK;
 }
 
@@ -916,45 +994,6 @@ static nserror hotlist_generate(void)
 	}
 
 	return NSERROR_OK;
-}
-
-
-/* Save the hotlist to to a file at the given path
- *
- * \param path  Path to save hostlist file to.
- * \return NSERROR_OK on success, or appropriate error otherwise
- */
-static nserror hotlist_save(const char *path)
-{
-	nserror res = NSERROR_OK;
-	char *temp_path;
-
-	/* Get path to export to */
-	res = hotlist_get_temp_path(path, &temp_path);
-	if (res != NSERROR_OK) {
-		return res;
-	}
-
-	/* Export to temp path */
-	res = hotlist_export(temp_path, NULL);
-	if (res != NSERROR_OK) {
-		goto cleanup;
-	}
-
-	/* Remove old hotlist to handle non-POSIX rename() implementations. */
-	(void)remove(path);
-
-	/* Replace any old hotlist file with the one we just saved */
-	if (rename(temp_path, path) != 0) {
-		res = NSERROR_SAVE_FAILED;
-		LOG("Error renaming hotlist: %s.", strerror(errno));
-		goto cleanup;
-	}
-
-cleanup:
-	free(temp_path);
-
-	return res;
 }
 
 
@@ -1394,7 +1433,7 @@ nserror hotlist_add_url(nsurl *url)
 	if (err != NSERROR_OK)
 		return err;
 
-	return NSERROR_OK;
+	return hotlist_schedule_save();
 }
 
 
