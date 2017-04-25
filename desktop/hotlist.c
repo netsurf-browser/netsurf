@@ -1368,6 +1368,10 @@ nserror hotlist_fini(void)
 
 	LOG("Finalising hotlist");
 
+	/* Remove any existing scheduled save callback */
+	guit->misc->schedule(-1, hotlist_schedule_save_cb, NULL);
+	hl_ctx.save_scheduled = false;
+
 	/* Save the hotlist */
 	err = hotlist_save(hl_ctx.save_path);
 	if (err != NSERROR_OK) {
