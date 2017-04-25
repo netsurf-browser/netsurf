@@ -79,7 +79,7 @@ static nserror atari_hotlist_init_phase2(struct core_window *cw,
 static void atari_hotlist_finish(struct core_window *cw)
 {
 	LOG("cw:%p", cw);
-	hotlist_fini(hl.path);
+	hotlist_fini();
 }
 
 static void atari_hotlist_draw(struct core_window *cw, int x,
@@ -199,7 +199,7 @@ void atari_hotlist_init(void)
 		}
 
 		LOG("Hotlist: %s", (char *)&hl.path);
-		hotlist_init(hl.path);
+		hotlist_init(hl.path, hl.path);
 
 		if( hl.window == NULL ){
 			int flags = ATARI_TREEVIEW_WIDGETS;
