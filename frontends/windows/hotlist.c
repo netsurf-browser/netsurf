@@ -184,7 +184,7 @@ nserror nsw32_hotlist_finalise(void)
 		return NSERROR_OK;
 	}
 
-	res = hotlist_fini(nsoption_charp(hotlist_path));
+	res = hotlist_fini();
 	if (res == NSERROR_OK) {
 		res = nsw32_corewindow_fini(&hotlist_window->core);
 		DestroyWindow(hotlist_window->core.hWnd);
