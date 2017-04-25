@@ -292,7 +292,8 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 
 	urldb_load(nsoption_charp(url_file));
 	urldb_load_cookies(nsoption_charp(cookie_file));
-	hotlist_init(nsoption_charp(hotlist_path));
+	hotlist_init(nsoption_charp(hotlist_path),
+			nsoption_charp(hotlist_path));
 
 	/* The tree view system needs to know the screen's DPI, so we
 	 * find that out here, rather than when we create a first browser
@@ -456,7 +457,7 @@ static void gui_quit(void)
 		    messages_get_errorcode(res));
 	}
 
-	res = hotlist_fini(nsoption_charp(hotlist_path));
+	res = hotlist_fini();
 	if (res != NSERROR_OK) {
 		LOG("Error finalising hotlist: %s",
 		    messages_get_errorcode(res));
