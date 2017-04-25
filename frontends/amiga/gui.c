@@ -1019,7 +1019,8 @@ static void gui_init2(int argc, char** argv)
 	}
 	/**/
 
-	hotlist_init(nsoption_charp(hotlist_file));
+	hotlist_init(nsoption_charp(hotlist_file),
+			nsoption_charp(hotlist_file));
 	search_web_select_provider(nsoption_int(search_provider));
 
 	if (notalreadyrunning && 
@@ -3042,7 +3043,7 @@ static void gui_quit(void)
 
 	urldb_save(nsoption_charp(url_file));
 	urldb_save_cookies(nsoption_charp(cookie_file));
-	hotlist_fini(nsoption_charp(hotlist_file));
+	hotlist_fini();
 #ifdef __amigaos4__
 	if(IApplication && ami_appid)
 		UnregisterApplication(ami_appid, NULL);
