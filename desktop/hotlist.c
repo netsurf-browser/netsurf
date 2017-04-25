@@ -62,6 +62,7 @@ struct hotlist_ctx {
 	struct treeview_field_desc fields[HL_N_FIELDS];
 	bool built;
 	struct hotlist_folder *default_folder;
+	char *save_path;
 };
 struct hotlist_ctx hl_ctx;
 
@@ -1227,7 +1228,9 @@ static nserror hotlist_populate(const char *path)
 
 
 /* Exported interface, documented in hotlist.h */
-nserror hotlist_init(const char *path)
+nserror hotlist_init(
+		const char *load_path,
+		const char *save_path)
 {
 	nserror err;
 
@@ -1242,9 +1245,16 @@ nserror hotlist_init(const char *path)
 	hl_ctx.built = false;
 	hl_ctx.default_folder = NULL;
 
+	/* Store the save path */
+	hl_ctx.save_path = strdup(save_path);
+	if (hl_ctx.save_path == NULL) {
+		return NSERROR_NOMEM;
+	}
+
 	/* Init. hotlist treeview entry fields */
 	err = hotlist_initialise_entry_fields();
 	if (err != NSERROR_OK) {
+		free(hl_ctx.save_path);
 		hl_ctx.tree = NULL;
 		return err;
 	}
@@ -1254,13 +1264,15 @@ nserror hotlist_init(const char *path)
 			HL_N_FIELDS, hl_ctx.fields, NULL, NULL,
 			TREEVIEW_NO_FLAGS);
 	if (err != NSERROR_OK) {
+		free(hl_ctx.save_path);
 		hl_ctx.tree = NULL;
 		return err;
 	}
 
 	/* Populate the hotlist */
-	err = hotlist_populate(path);
+	err = hotlist_populate(load_path);
 	if (err != NSERROR_OK) {
+		free(hl_ctx.save_path);
 		return err;
 	}
 
@@ -1310,7 +1322,7 @@ nserror hotlist_manager_fini(void)
 
 
 /* Exported interface, documented in hotlist.h */
-nserror hotlist_fini(const char *path)
+nserror hotlist_fini(void)
 {
 	int i;
 	nserror err;
@@ -1318,10 +1330,12 @@ nserror hotlist_fini(const char *path)
 	LOG("Finalising hotlist");
 
 	/* Save the hotlist */
-	err = hotlist_save(path);
+	err = hotlist_save(hl_ctx.save_path);
 	if (err != NSERROR_OK) {
 		LOG("Problem saving the hotlist.");
 	}
+
+	free(hl_ctx.save_path);
 
 	/* Destroy the hotlist treeview */
 	err = treeview_destroy(hl_ctx.tree);

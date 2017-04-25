@@ -40,10 +40,13 @@ struct rect;
  * be called before URLs can be added to the hotlist, and before the
  * hotlist can be queried to ask if URLs are present in the hotlist.
  *
- * \param path The path to hotlist file to load
+ * \param load_path The path to load hotlist from.
+ * \param save_path The path to save hotlist to.
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror hotlist_init(const char *path);
+nserror hotlist_init(
+		const char *load_path,
+		const char *save_path);
 
 /**
  * Initialise the hotlist manager.
@@ -78,10 +81,9 @@ nserror hotlist_manager_fini(void);
  * internal data.  After calling this if hotlist is required again,
  * hotlist_init must be called.
  *
- * \param path		The path to save hotlist to
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror hotlist_fini(const char *path);
+nserror hotlist_fini(void);
 
 /**
  * Add an entry to the hotlist for given URL.
