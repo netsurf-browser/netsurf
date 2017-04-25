@@ -583,7 +583,7 @@ nserror ro_gui_hotlist_finalise(void)
 		return NSERROR_OK;
 	}
 
-	res = hotlist_fini(nsoption_charp(hotlist_save));
+	res = hotlist_fini();
 	if (res == NSERROR_OK) {
 		res = ro_corewindow_fini(&hotlist_window->core);
 

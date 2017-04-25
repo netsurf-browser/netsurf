@@ -1185,7 +1185,8 @@ static nserror gui_init(int argc, char** argv)
 	/* Load in visited URLs, Cookies, and hostlist */
 	urldb_load(nsoption_charp(url_path));
 	urldb_load_cookies(nsoption_charp(cookie_file));
-	hotlist_init(nsoption_charp(hotlist_path));
+	hotlist_init(nsoption_charp(hotlist_path),
+			nsoption_charp(hotlist_save));
 
 	/* Initialise with the wimp */
 	error = xwimp_initialise(wimp_VERSION_RO38, task_name,
