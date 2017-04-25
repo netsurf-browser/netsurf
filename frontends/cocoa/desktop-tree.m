@@ -139,7 +139,7 @@ static bool treeview_test_init(struct tree *tree)
 			guit->misc->warning("Couldn't init new global history.", 0);
 		break;
 	case TREE_HOTLIST:
-		err = hotlist_init(tree_hotlist_path);
+		err = hotlist_init(tree_hotlist_path, tree_hotlist_path);
 		if (err != NSERROR_OK)
 			guit->misc->warning("Couldn't init new hotlist.", 0);
 		err = hotlist_manager_init(&cw_t, (struct core_window *)tree);
@@ -177,7 +177,7 @@ static bool treeview_test_fini(struct tree *tree)
 			guit->misc->warning("Couldn't finalise cookie manager.", 0);
 		break;
 	case TREE_HOTLIST:
-		err = hotlist_fini(tree_hotlist_path);
+		err = hotlist_fini();
 		if (err != NSERROR_OK)
 			guit->misc->warning("Couldn't finalise hotlist.", 0);
 		break;
