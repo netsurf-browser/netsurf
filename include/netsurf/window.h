@@ -136,11 +136,20 @@ struct gui_window_table {
 	/**
 	 * Set the scroll position of a browser window.
 	 *
-	 * \param  g   gui_window to scroll
-	 * \param  sx  point to place at top-left of window
-	 * \param  sy  point to place at top-left of window
+	 * scrolls the viewport to ensure the specified rectangle of
+	 *   the content is shown.
+	 * If the rectangle is of zero size i.e. x0 == x1 and y0 == y1
+	 *   the contents will be scrolled so the specified point in the
+	 *   content is at the top of the viewport.
+	 * If the size of the rectangle is non zero the frontend may
+	 *   add padding or center the defined area or it may simply
+	 *   align as in the zero size rectangle
+	 *
+	 * \param gw gui_window to scroll
+	 * \param rect The rectangle to ensure is shown.
+	 * \return NSERROR_OK on success or apropriate error code.
 	 */
-	void (*set_scroll)(struct gui_window *g, int sx, int sy);
+	nserror (*set_scroll)(struct gui_window *gw, const struct rect *rect);
 
 
 	/**
@@ -267,20 +276,6 @@ struct gui_window_table {
 	 */
 	nserror (*save_link)(struct gui_window *g, struct nsurl *url, const char *title);
 
-	/**
-	 * Scrolls the specified area of a browser window into view.
-	 *
-	 * @todo investigate if this can be merged with set_scroll
-	 * which is what the default implementation used by most
-	 * toolkits uses.
-	 *
-	 * \param  g   gui_window to scroll
-	 * \param  x0  left point to ensure visible
-	 * \param  y0  bottom point to ensure visible
-	 * \param  x1  right point to ensure visible
-	 * \param  y1  top point to ensure visible
-	 */
-	void (*scroll_visible)(struct gui_window *g, int x0, int y0, int x1, int y1);
 
 	/**
 	 * Starts drag scrolling of a browser window
