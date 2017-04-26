@@ -82,12 +82,6 @@ static void gui_default_window_set_icon(struct gui_window *g,
 {
 }
 
-static void gui_default_window_scroll_visible(struct gui_window *g,
-				       int x0, int y0,
-				       int x1, int y1)
-{
-	guit->window->set_scroll(g, x0, y0);
-}
 
 static void gui_default_window_new_content(struct gui_window *g)
 {
@@ -211,9 +205,6 @@ static nserror verify_window_register(struct gui_window_table *gwt)
 	}
 	if (gwt->save_link == NULL) {
 		gwt->save_link = gui_default_window_save_link;
-	}
-	if (gwt->scroll_visible == NULL) {
-		gwt->scroll_visible = gui_default_window_scroll_visible;
 	}
 	if (gwt->new_content == NULL) {
 		gwt->new_content = gui_default_window_new_content;

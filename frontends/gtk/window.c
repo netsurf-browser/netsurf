@@ -1041,11 +1041,25 @@ static void gui_window_set_status(struct gui_window *g, const char *text)
 }
 
 
-static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
+/**
+ * Set the scroll position of a gtk browser window.
+ *
+ * Scrolls the viewport to ensure the specified rectangle of the
+ *   content is shown. The GTK implementation scrolls the contents so
+ *   the specified point in the content is at the top of the viewport.
+ *
+ * \param gw gui window to scroll
+ * \param rect The rectangle to ensure is shown.
+ * \return NSERROR_OK on success or apropriate error code.
+ */
+static nserror
+gui_window_set_scroll(struct gui_window *g, const struct rect *rect)
 {
 	GtkAdjustment *vadj = nsgtk_layout_get_vadjustment(g->layout);
 	GtkAdjustment *hadj = nsgtk_layout_get_hadjustment(g->layout);
-	gdouble vlower, vpage, vupper, hlower, hpage, hupper, x = (double)sx, y = (double)sy;
+	gdouble vlower, vpage, vupper, hlower, hpage, hupper;
+	gdouble x = (gdouble)rect->x0;
+	gdouble y = (gdouble)rect->y0;
 
 	assert(vadj);
 	assert(hadj);
@@ -1053,17 +1067,23 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	g_object_get(vadj, "page-size", &vpage, "lower", &vlower, "upper", &vupper, NULL);
 	g_object_get(hadj, "page-size", &hpage, "lower", &hlower, "upper", &hupper, NULL);
 
-	if (x < hlower)
+	if (x < hlower) {
 		x = hlower;
-	if (x > (hupper - hpage))
+	}
+	if (x > (hupper - hpage)) {
 		x = hupper - hpage;
-	if (y < vlower)
+	}
+	if (y < vlower) {
 		y = vlower;
-	if (y > (vupper - vpage))
+	}
+	if (y > (vupper - vpage)) {
 		y = vupper - vpage;
+	}
 
 	gtk_adjustment_set_value(vadj, y);
 	gtk_adjustment_set_value(hadj, x);
+
+	return NSERROR_OK;
 }
 
 static void gui_window_update_extent(struct gui_window *g)

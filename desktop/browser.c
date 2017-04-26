@@ -586,36 +586,33 @@ static void browser_window_set_selection(struct browser_window *bw,
 	top->selection.read_only = read_only;
 }
 
-/* exported interface, documented in browser.h */
-void browser_window_scroll_visible(struct browser_window *bw,
-		const struct rect *rect)
-{
-	assert(bw != NULL);
 
-	if (bw->window != NULL) {
-		/* Front end window */
-		guit->window->scroll_visible(bw->window,
-				rect->x0, rect->y0, rect->x1, rect->y1);
-	} else {
-		/* Core managed browser window */
-		if (bw->scroll_x != NULL)
-			scrollbar_set(bw->scroll_x, rect->x0, false);
-		if (bw->scroll_y != NULL)
-			scrollbar_set(bw->scroll_y, rect->y0, false);
-	}
-}
-
-/* exported interface, documented in browser.h */
-void browser_window_set_scroll(struct browser_window *bw, int x, int y)
+/**
+ * Set the scroll position of a browser window.
+ *
+ * scrolls the viewport to ensure the specified rectangle of the
+ *   content is shown.
+ *
+ * \param gw gui_window to scroll
+ * \param rect The rectangle to ensure is shown.
+ * \return NSERROR_OK on success or apropriate error code.
+ */
+static nserror
+browser_window_set_scroll(struct browser_window *bw,
+			  const struct rect *rect)
 {
 	if (bw->window != NULL) {
-		guit->window->set_scroll(bw->window, x, y);
-	} else {
-		if (bw->scroll_x != NULL)
-			scrollbar_set(bw->scroll_x, x, false);
-		if (bw->scroll_y != NULL)
-			scrollbar_set(bw->scroll_y, y, false);
+		return guit->window->set_scroll(bw->window, rect);
 	}
+
+	if (bw->scroll_x != NULL) {
+		scrollbar_set(bw->scroll_x, rect->x0, false);
+	}
+	if (bw->scroll_y != NULL) {
+		scrollbar_set(bw->scroll_y, rect->y0, false);
+	}
+
+	return NSERROR_OK;
 }
 
 /**
@@ -1610,25 +1607,28 @@ browser_window_callback(hlcache_handle *c,
 		break;
 
 	case CONTENT_MSG_SCROLL:
-		/* Content wants to be scrolled */
-		if (bw->current_content != c)
-			break;
+	{
+		struct rect rect = {
+			.x0 = event->data.scroll.x0,
+			.y0 = event->data.scroll.y0,
+		};
 
-		if (event->data.scroll.area) {
-			struct rect rect = {
-				.x0 = event->data.scroll.x0,
-				.y0 = event->data.scroll.y0,
-				.x1 = event->data.scroll.x1,
-				.y1 = event->data.scroll.y1
-			};
-			browser_window_scroll_visible(bw, &rect);
-		} else {
-			browser_window_set_scroll(bw,
-					event->data.scroll.x0,
-					event->data.scroll.y0);
+		/* Content wants to be scrolled */
+		if (bw->current_content != c) {
+			break;
 		}
 
+		if (event->data.scroll.area) {
+			rect.x1 = event->data.scroll.x1;
+			rect.y1 = event->data.scroll.y1;
+		} else {
+			rect.x1 = event->data.scroll.x0;
+			rect.y1 = event->data.scroll.y0;
+		}
+		browser_window_set_scroll(bw, &rect);
+
 		break;
+	}
 
 	case CONTENT_MSG_DRAGSAVE:
 	{
@@ -2324,13 +2324,48 @@ void browser_window_set_dimensions(struct browser_window *bw,
 }
 
 
+/**
+ * scroll to a fragment if present
+ *
+ * \param bw browser window
+ * \return true if the scroll was sucessful
+ */
+static bool frag_scroll(struct browser_window *bw)
+{
+	struct rect rect;
+
+	if (bw->frag_id == NULL) {
+		return false;
+	}
+
+	if (!html_get_id_offset(bw->current_content,
+				bw->frag_id,
+				&rect.x0,
+				&rect.y0)) {
+		return false;
+	}
+
+	rect.x1 = rect.x0;
+	rect.y1 = rect.y0;
+	if (browser_window_set_scroll(bw, &rect) == NSERROR_OK) {
+		return true;
+	}
+	return false;
+}
+
 /* Exported interface, documented in browser.h */
 void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 {
-	int x, y;
+	static const struct rect zrect = {
+		.x0 = 0,
+		.y0 = 0,
+		.x1 = 0,
+		.y1 = 0
+	};
 
-	if (bw->current_content == NULL)
+	if (bw->current_content == NULL) {
 		return;
+	}
 
 	switch (bw->browser_window_type) {
 
@@ -2343,13 +2378,9 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 
 		/* if frag_id exists, then try to scroll to it */
 		/** @todo don't do this if the user has scrolled */
-		if (bw->frag_id &&
-		    html_get_id_offset(bw->current_content,
-				       bw->frag_id, &x, &y)) {
-			browser_window_set_scroll(bw, x, y);
-		} else {
+		if (!frag_scroll(bw)) {
 			if (scroll_to_top) {
-				browser_window_set_scroll(bw, 0, 0);
+				browser_window_set_scroll(bw, &zrect);
 			}
 		}
 
@@ -2364,15 +2395,13 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 
 		browser_window_update_extent(bw);
 
-		if (scroll_to_top)
-			browser_window_set_scroll(bw, 0, 0);
+		if (scroll_to_top) {
+			browser_window_set_scroll(bw, &zrect);
+		}
 
 		/* if frag_id exists, then try to scroll to it */
 		/** @todo don't do this if the user has scrolled */
-		if (bw->frag_id && html_get_id_offset(bw->current_content,
-				bw->frag_id, &x, &y)) {
-			browser_window_set_scroll(bw, x, y);
-		}
+		frag_scroll(bw);
 
 		html_redraw_a_box(bw->parent->current_content, bw->box);
 		break;
@@ -2382,15 +2411,13 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 		struct rect rect;
 		browser_window_update_extent(bw);
 
-		if (scroll_to_top)
-			browser_window_set_scroll(bw, 0, 0);
+		if (scroll_to_top) {
+			browser_window_set_scroll(bw, &zrect);
+		}
 
 		/* if frag_id exists, then try to scroll to it */
 		/** @todo don't do this if the user has scrolled */
-		if (bw->frag_id && html_get_id_offset(bw->current_content,
-				bw->frag_id, &x, &y)) {
-			browser_window_set_scroll(bw, x, y);
-		}
+		frag_scroll(bw);
 
 		rect.x0 = scrollbar_get_offset(bw->scroll_x);
 		rect.y0 = scrollbar_get_offset(bw->scroll_y);
@@ -3078,17 +3105,19 @@ void browser_window_mouse_track(struct browser_window *bw,
 		browser_window_resize_frame(bw, bw->x + x, bw->y + y);
 	} else if (bw->drag.type == DRAGGING_PAGE_SCROLL) {
 		/* mouse movement since drag started */
-		int scrollx = bw->drag.start_x - x;
-		int scrolly = bw->drag.start_y - y;
+		struct rect rect;
+
+		rect.x0 = bw->drag.start_x - x;
+		rect.y0 = bw->drag.start_y - y;
 
 		/* new scroll offsets */
-		scrollx += bw->drag.start_scroll_x;
-		scrolly += bw->drag.start_scroll_y;
+		rect.x0 += bw->drag.start_scroll_x;
+		rect.y0 += bw->drag.start_scroll_y;
 
-		bw->drag.start_scroll_x = scrollx;
-		bw->drag.start_scroll_y = scrolly;
+		bw->drag.start_scroll_x = rect.x1 = rect.x0;
+		bw->drag.start_scroll_y = rect.y1 = rect.y0;
 
-		browser_window_set_scroll(bw, scrollx, scrolly);
+		browser_window_set_scroll(bw, &rect);
 	} else {
 		assert(c != NULL);
 		content_mouse_track(c, bw, mouse, x, y);

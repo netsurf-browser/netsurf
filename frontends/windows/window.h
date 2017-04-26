@@ -73,6 +73,7 @@ struct gui_window {
 	struct gui_window *next, *prev; /**< global linked list */
 };
 
+struct rect;
 
 /**
  * Obtain gui window structure from window handle.
@@ -91,13 +92,17 @@ struct gui_window *nsws_get_gui_window(HWND hwnd);
 bool nsws_window_go(HWND hwnd, const char *urltxt);
 
 /**
- * scroll the window
+ * Set the scroll position of a win32 browser window.
  *
- * \param w The win32 gui window to scroll.
- * \param sx the new 'absolute' horizontal scroll location
- * \param sy the new 'absolute' vertical scroll location
+ * Scrolls the viewport to ensure the specified rectangle of the
+ *   content is shown. The win32 implementation scrolls the contents so
+ *   the specified point in the content is at the top of the viewport.
+ *
+ * \param gw The win32 gui window to scroll.
+ * \param rect The rectangle to ensure is shown.
+ * \return NSERROR_OK on success or apropriate error code.
  */
-void win32_window_set_scroll(struct gui_window *w, int sx, int sy);
+nserror win32_window_set_scroll(struct gui_window *gw, const struct rect *rect);
 
 /**
  * Create the main browser window class.

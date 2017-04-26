@@ -1807,7 +1807,7 @@ gui_window_destroy(struct gui_window *gw)
 /**
  * Invalidates an area of a framebuffer browser window
  *
- * \param gw The netsurf window being invalidated.
+ * \param g The netsurf window being invalidated.
  * \param rect area to redraw or NULL for the entire window area
  * \return NSERROR_OK on success or appropriate error code
  */
@@ -1844,16 +1844,29 @@ gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 	return true;
 }
 
-static void
-gui_window_set_scroll(struct gui_window *gw, int sx, int sy)
+/**
+ * Set the scroll position of a framebuffer browser window.
+ *
+ * Scrolls the viewport to ensure the specified rectangle of the
+ *   content is shown. The framebuffer implementation scrolls the contents so
+ *   the specified point in the content is at the top of the viewport.
+ *
+ * \param gw gui_window to scroll
+ * \param rect The rectangle to ensure is shown.
+ * \return NSERROR_OK on success or apropriate error code.
+ */
+static nserror
+gui_window_set_scroll(struct gui_window *gw, const struct rect *rect)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(gw->browser);
 	float scale = browser_window_get_scale(gw->bw);
 
 	assert(bwidget);
 
-	widget_scroll_x(gw, sx * scale, true);
-	widget_scroll_y(gw, sy * scale, true);
+	widget_scroll_x(gw, rect->x0 * scale, true);
+	widget_scroll_y(gw, rect->y0 * scale, true);
+
+	return NSERROR_OK;
 }
 
 
@@ -1867,16 +1880,16 @@ gui_window_set_scroll(struct gui_window *gw, int sx, int sy)
  * \return NSERROR_OK on sucess and width and height updated.
  */
 static nserror
-gui_window_get_dimensions(struct gui_window *g,
+gui_window_get_dimensions(struct gui_window *gw,
 			  int *width,
 			  int *height,
 			  bool scaled)
 {
-	*width = fbtk_get_width(g->browser);
-	*height = fbtk_get_height(g->browser);
+	*width = fbtk_get_width(gw->browser);
+	*height = fbtk_get_height(gw->browser);
 
 	if (scaled) {
-		float scale = browser_window_get_scale(g->bw);
+		float scale = browser_window_get_scale(gw->bw);
 		*width /= scale;
 		*height /= scale;
 	}

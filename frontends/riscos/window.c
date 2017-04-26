@@ -806,124 +806,118 @@ static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 
 
 /**
- * Set the scroll position of a browser window.
+ * Set the scroll position of a riscos browser window.
  *
- * \param  g   gui_window to scroll
- * \param  sx  point to place at top-left of window
- * \param  sy  point to place at top-left of window
+ * Scrolls the viewport to ensure the specified rectangle of the
+ *   content is shown.
+ *
+ * \param g gui window to scroll
+ * \param rect The rectangle to ensure is shown.
+ * \return NSERROR_OK on success or apropriate error code.
  */
-
-static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
+static nserror
+gui_window_set_scroll(struct gui_window *g, const struct rect *rect)
 {
 	wimp_window_state state;
 	os_error *error;
-
-	assert(g);
-
-	state.w = g->window;
-	error = xwimp_get_window_state(&state);
-	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
-		ro_warn_user("WimpError", error->errmess);
-		return;
-	}
-
-	state.xscroll = sx * 2 * g->scale;
-	state.yscroll = -sy * 2 * g->scale;
-	if (g->toolbar)
-		state.yscroll += ro_toolbar_full_height(g->toolbar);
-	ro_gui_window_open(PTR_WIMP_OPEN(&state));
-}
-
-
-/**
- * Scrolls the specified area of a browser window into view.
- *
- * \param  g   gui_window to scroll
- * \param  x0  left point to ensure visible
- * \param  y0  bottom point to ensure visible
- * \param  x1  right point to ensure visible
- * \param  y1  top point to ensure visible
- */
-static void gui_window_scroll_visible(struct gui_window *g, int x0, int y0, int x1, int y1)
-{
-	wimp_window_state state;
-	os_error *error;
-	int cx0, cy0, width, height;
-	int padding_available;
 	int toolbar_height = 0;
-	int correction;
 
 	assert(g);
 
 	state.w = g->window;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		LOG("xwimp_get_window_state: 0x%x: %s",
+		    error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
-		return;
+		return NSERROR_BAD_PARAMETER;
 	}
 
-	if (g->toolbar)
+	if (g->toolbar) {
 		toolbar_height = ro_toolbar_full_height(g->toolbar);
-
-	x0 = x0 * 2 * g->scale;
-	y0 = y0 * 2 * g->scale;
-	x1 = x1 * 2 * g->scale;
-	y1 = y1 * 2 * g->scale;
-
-	cx0 = state.xscroll;
-	cy0 = -state.yscroll + toolbar_height;
-	width = state.visible.x1 - state.visible.x0;
-	height = state.visible.y1 - state.visible.y0 - toolbar_height;
-
-	/* make sure we're visible */
-	correction = (x1 - cx0 - width);
-	if (correction > 0)
-		cx0 += correction;
-	correction = (y1 - cy0 - height);
-	if (correction > 0)
-		cy0 += correction;
-	if (x0 < cx0)
-		cx0 = x0;
-	if (y0 < cy0)
-		cy0 = y0;
-
-	/* try to give a SCROLL_VISIBLE_PADDING border of space around us */
-	padding_available = (width - x1 + x0) / 2;
-	if (padding_available > 0) {
-		if (padding_available > SCROLL_VISIBLE_PADDING)
-			padding_available = SCROLL_VISIBLE_PADDING;
-		correction = (cx0 + width - x1);
-		if (correction < padding_available)
-			cx0 += padding_available;
-		correction = (x0 - cx0);
-		if (correction < padding_available)
-			cx0 -= padding_available;
-	}
-	padding_available = (height - y1 + y0) / 2;
-	if (padding_available > 0) {
-		if (padding_available > SCROLL_VISIBLE_PADDING)
-			padding_available = SCROLL_VISIBLE_PADDING;
-		correction = (cy0 + height - y1);
-		if (correction < padding_available)
-			cy0 += padding_available;
-		correction = (y0 - cy0);
-		if (correction < padding_available)
-			cy0 -= padding_available;
 	}
 
-	state.xscroll = cx0;
-	state.yscroll = -cy0 + toolbar_height;
+	if ((rect->x0 == rect->x1) && (rect->y0 == rect->y1)) {
+		/* scroll to top */
+		state.xscroll = rect->x0 * 2 * g->scale;
+		state.yscroll = (-rect->y0 * 2 * g->scale) + toolbar_height;
+	} else {
+		/* scroll area into view with padding */
+		int x0, y0, x1, y1;
+		int cx0, cy0, width, height;
+		int padding_available;
+		int correction;
+
+		x0 = rect->x0 * 2 * g->scale;
+		y0 = rect->y0 * 2 * g->scale;
+		x1 = rect->x1 * 2 * g->scale;
+		y1 = rect->y1 * 2 * g->scale;
+
+		cx0 = state.xscroll;
+		cy0 = -state.yscroll + toolbar_height;
+		width = state.visible.x1 - state.visible.x0;
+		height = state.visible.y1 - state.visible.y0 - toolbar_height;
+
+		/* make sure we're visible */
+		correction = (x1 - cx0 - width);
+		if (correction > 0) {
+			cx0 += correction;
+		}
+		correction = (y1 - cy0 - height);
+		if (correction > 0) {
+			cy0 += correction;
+		}
+		if (x0 < cx0) {
+			cx0 = x0;
+		}
+		if (y0 < cy0) {
+			cy0 = y0;
+		}
+
+		/* try to give a SCROLL_VISIBLE_PADDING border of space around us */
+		padding_available = (width - x1 + x0) / 2;
+		if (padding_available > 0) {
+			if (padding_available > SCROLL_VISIBLE_PADDING) {
+				padding_available = SCROLL_VISIBLE_PADDING;
+			}
+			correction = (cx0 + width - x1);
+			if (correction < padding_available) {
+				cx0 += padding_available;
+			}
+			correction = (x0 - cx0);
+			if (correction < padding_available) {
+				cx0 -= padding_available;
+			}
+		}
+		padding_available = (height - y1 + y0) / 2;
+		if (padding_available > 0) {
+			if (padding_available > SCROLL_VISIBLE_PADDING) {
+				padding_available = SCROLL_VISIBLE_PADDING;
+			}
+			correction = (cy0 + height - y1);
+			if (correction < padding_available) {
+				cy0 += padding_available;
+			}
+			correction = (y0 - cy0);
+			if (correction < padding_available) {
+				cy0 -= padding_available;
+			}
+		}
+
+		state.xscroll = cx0;
+		state.yscroll = -cy0 + toolbar_height;
+	}
 	ro_gui_window_open(PTR_WIMP_OPEN(&state));
+
+	return NSERROR_OK;
 }
 
 
 /**
  * Find the current dimensions of a browser window's content area.
  *
- * \param g	 gui_window to measure
- * \param width	 receives width of window
+ * \param gw gui window to measure
+ * \param width receives width of window
  * \param height receives height of window
  * \param scaled whether to return scaled values
  */
@@ -4988,7 +4982,6 @@ static struct gui_window_table window_table = {
 	.remove_caret = gui_window_remove_caret,
 	.save_link = gui_window_save_link,
 	.drag_start = gui_window_drag_start,
-	.scroll_visible = gui_window_scroll_visible,
 	.scroll_start = gui_window_scroll_start,
 	.new_content = gui_window_new_content,
 	.start_throbber = gui_window_start_throbber,

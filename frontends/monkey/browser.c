@@ -112,7 +112,7 @@ gui_window_set_title(struct gui_window *g, const char *title)
 /**
  * Find the current dimensions of a monkey browser window content area.
  *
- * \param gw The gui window to measure content area of.
+ * \param g The gui window to measure content area of.
  * \param width receives width of window
  * \param height receives height of window
  * \param scaled whether to return scaled values
@@ -154,13 +154,28 @@ gui_window_stop_throbber(struct gui_window *g)
   fprintf(stdout, "WINDOW STOP_THROBBER WIN %u\n", g->win_num);
 }
 
-static void
-gui_window_set_scroll(struct gui_window *g, int sx, int sy)
+
+/**
+ * Set the scroll position of a monkey browser window.
+ *
+ * Scrolls the viewport to ensure the specified rectangle of the
+ *   content is shown.
+ *
+ * \param gw gui window to scroll
+ * \param rect The rectangle to ensure is shown.
+ * \return NSERROR_OK on success or apropriate error code.
+ */
+static nserror
+gui_window_set_scroll(struct gui_window *gw, const struct rect *rect)
 {
-  g->scrollx = sx;
-  g->scrolly = sy;
-  fprintf(stdout, "WINDOW SET_SCROLL WIN %u X %d Y %d\n", g->win_num, sx, sy);
+  gw->scrollx = rect->x0;
+  gw->scrolly = rect->y0;
+
+  fprintf(stdout, "WINDOW SET_SCROLL WIN %u X0 %d Y0 %d X1 %d Y1 %d\n",
+	  gw->win_num, rect->x0, rect->y0, rect->x1, rect->y1);
+  return NSERROR_OK;
 }
+
 
 /**
  * Invalidates an area of a monkey browser window
@@ -298,13 +313,6 @@ gui_window_scroll_start(struct gui_window *g)
   return true;
 }
 
-static void
-gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
-                          int x1, int y1)
-{
-  fprintf(stdout, "WINDOW SCROLL_VISIBLE WIN %u X0 %d Y0 %d X1 %d Y1 %d\n",
-          g->win_num, x0, y0, x1, y1);
-}
 
 static void
 gui_window_place_caret(struct gui_window *g, int x, int y, int height,
@@ -527,7 +535,6 @@ static struct gui_window_table window_table = {
 	.remove_caret = gui_window_remove_caret,
 	.drag_start = gui_window_drag_start,
 	.save_link = gui_window_save_link,
-	.scroll_visible = gui_window_scroll_visible,
 	.scroll_start = gui_window_scroll_start,
 	.new_content = gui_window_new_content,
 	.start_throbber = gui_window_start_throbber,
