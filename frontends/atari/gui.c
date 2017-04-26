@@ -424,17 +424,30 @@ bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
     return( true );
 }
 
-static void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
+/**
+ * Set the scroll position of a atari browser window.
+ *
+ * Scrolls the viewport to ensure the specified rectangle of the
+ *   content is shown. The atari implementation scrolls the contents so
+ *   the specified point in the content is at the top of the viewport.
+ *
+ * \param gw gui window to scroll
+ * \param rect The rectangle to ensure is shown.
+ * \return NSERROR_OK on success or apropriate error code.
+ */
+static nserror
+gui_window_set_scroll(struct gui_window *gw, const struct rect *rect)
 {
-    if (   (w == NULL)
-	   || (w->browser->bw == NULL)
-	   || (!browser_window_has_content(w->browser->bw)))
-	return;
+    if ((gw == NULL) ||
+	(gw->browser->bw == NULL) ||
+	(!browser_window_has_content(gw->browser->bw))) {
+	return NSERROR_BAD_PARAMETER;
+    }
 
-    LOG("scroll (gui_window: %p) %d, %d\n", w, sx, sy);
-    window_scroll_by(w->root, sx, sy);
-    return;
+    LOG("scroll (gui_window: %p) %d, %d\n", gw, rect->x0, rect->y0);
+    window_scroll_by(gw->root, rect->x0, rect->y0);
 
+    return NSERROR_OK;
 }
 
 /**
