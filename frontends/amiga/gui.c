@@ -4970,13 +4970,28 @@ static bool gui_window_get_scroll(struct gui_window *g, int *restrict sx, int *r
 	return true;
 }
 
-static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
+/**
+ * Set the scroll position of a amiga browser window.
+ *
+ * Scrolls the viewport to ensure the specified rectangle of the
+ *   content is shown. The amiga implementation scrolls the contents so
+ *   the specified point in the content is at the top of the viewport.
+ *
+ * \param gw gui_window to scroll
+ * \param rect The rectangle to ensure is shown.
+ * \return NSERROR_OK on success or apropriate error code.
+ */
+static nserror gui_window_set_scroll(struct gui_window *g, const struct rect *rect)
 {
 	struct IBox *bbox;
 	int width, height;
+	nserror res;
 
-	if(!g) return;
-	if(!g->bw || browser_window_has_content(g->bw) == false) return;
+	if(!g) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if(!g->bw ||
+	   browser_window_has_content(g->bw) == false) return;
 
 	if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
 		amiga_warn_user("NoMemory", "");
