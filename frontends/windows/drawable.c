@@ -137,8 +137,10 @@ nsws_drawable_vscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 	SetScrollInfo(hwnd, SB_VERT, &si, TRUE);
 	GetScrollInfo(hwnd, SB_VERT, &si);
 	if (si.nPos != mem) {
-		win32_window_set_scroll(gw, gw->scrollx, gw->scrolly +
-					gw->requestscrolly + si.nPos - mem);
+		struct rect rect;
+		rect.x0 = rect.x1 = gw->scrollx;
+		rect.y0 = rect.y1 = gw->scrolly + gw->requestscrolly + si.nPos - mem;
+		win32_window_set_scroll(gw, &rect);
 	}
 
 	return 0;
@@ -201,9 +203,10 @@ nsws_drawable_hscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 	SetScrollInfo(hwnd, SB_HORZ, &si, TRUE);
 	GetScrollInfo(hwnd, SB_HORZ, &si);
 	if (si.nPos != mem) {
-		win32_window_set_scroll(gw,
-					gw->scrollx + gw->requestscrollx + si.nPos - mem,
-					gw->scrolly);
+		struct rect rect;
+		rect.x0 = rect.x1 = gw->scrollx + gw->requestscrollx + si.nPos - mem;
+		rect.y0 = rect.y1 = gw->scrolly;
+		win32_window_set_scroll(gw, &rect);
 	}
 
 	return 0;

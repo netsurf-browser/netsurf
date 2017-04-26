@@ -923,7 +923,7 @@ win32_window_invalidate_area(struct gui_window *gw, const struct rect *rect)
  */
 static void nsws_set_scale(struct gui_window *gw, float scale)
 {
-	int x, y;
+	struct rect rect;
 
 	assert(gw != NULL);
 
@@ -931,8 +931,8 @@ static void nsws_set_scale(struct gui_window *gw, float scale)
 		return;
 	}
 
-	x = gw->scrollx;
-	y = gw->scrolly;
+	rect.x0 = rect.x1 = gw->scrollx;
+	rect.y0 = rect.y1 = gw->scrolly;
 
 	gw->scale = scale;
 
@@ -941,7 +941,7 @@ static void nsws_set_scale(struct gui_window *gw, float scale)
 	}
 
 	win32_window_invalidate_area(gw, NULL);
-	win32_window_set_scroll(gw, x, y);
+	win32_window_set_scroll(gw, &rect);
 }
 
 
@@ -1338,7 +1338,7 @@ nsws_window_resize(struct gui_window *gw,
 		   WPARAM wparam,
 		   LPARAM lparam)
 {
-	int x, y;
+	struct rect rect;
 	RECT rstatus, rtool;
 
 	if ((gw->toolbar == NULL) ||
@@ -1351,7 +1351,7 @@ nsws_window_resize(struct gui_window *gw,
 
 	GetClientRect(gw->toolbar, &rtool);
 	GetWindowRect(gw->statusbar, &rstatus);
-	win32_window_get_scroll(gw, &x, &y);
+	win32_window_get_scroll(gw, &rect.x0, &rect.y0);
 	gw->width = LOWORD(lparam);
 	gw->height = HIWORD(lparam) - (rtool.bottom - rtool.top) - (rstatus.bottom - rstatus.top);
 
@@ -1365,7 +1365,7 @@ nsws_window_resize(struct gui_window *gw,
 	}
 	nsws_window_update_forward_back(gw);
 
-	win32_window_set_scroll(gw, x, y);
+	win32_window_set_scroll(gw, &rect);
 
 	if (gw->toolbar != NULL) {
 		SendMessage(gw->toolbar, TB_SETSTATE,
@@ -1830,40 +1830,39 @@ bool nsws_window_go(HWND hwnd, const char *urltxt)
 
 
 /* exported interface documented in windows/window.h */
-void win32_window_set_scroll(struct gui_window *w, int sx, int sy)
+nserror win32_window_set_scroll(struct gui_window *gw, const struct rect *rect)
 {
 	SCROLLINFO si;
-	nserror err;
+	nserror res;
 	int height;
 	int width;
 	POINT p;
 
-	if ((w == NULL) || (w->bw == NULL))
-		return;
-
-	err = browser_window_get_extents(w->bw, true, &width, &height);
-	if (err != NSERROR_OK) {
-		return;
+	if ((gw == NULL) || (gw->bw == NULL)) {
+		return NSERROR_BAD_PARAMETER;
 	}
 
-	/*LOG("scroll sx,sy:%d,%d x,y:%d,%d w.h:%d,%d",sx,sy,w->scrollx,w->scrolly, width,height);*/
+	res = browser_window_get_extents(gw->bw, true, &width, &height);
+	if (res != NSERROR_OK) {
+		return res;
+	}
 
 	/* The resulting gui window scroll must remain within the
 	 * windows bounding box.
 	 */
-	if (sx < 0) {
-		w->requestscrollx = -w->scrollx;
-	} else if (sx > (width - w->width)) {
-		w->requestscrollx = (width - w->width) - w->scrollx;
+	if (rect->x0 < 0) {
+		gw->requestscrollx = -gw->scrollx;
+	} else if (rect->x0 > (width - gw->width)) {
+		gw->requestscrollx = (width - gw->width) - gw->scrollx;
 	} else {
-		w->requestscrollx = sx - w->scrollx;
+		gw->requestscrollx = rect->x0 - gw->scrollx;
 	}
-	if (sy < 0) {
-		w->requestscrolly = -w->scrolly;
-	} else if (sy > (height - w->height)) {
-		w->requestscrolly = (height - w->height) - w->scrolly;
+	if (rect->y0 < 0) {
+		gw->requestscrolly = -gw->scrolly;
+	} else if (rect->y0 > (height - gw->height)) {
+		gw->requestscrolly = (height - gw->height) - gw->scrolly;
 	} else {
-		w->requestscrolly = sy - w->scrolly;
+		gw->requestscrolly = rect->y0 - gw->scrolly;
 	}
 
 	/*LOG("requestscroll x,y:%d,%d", w->requestscrollx, w->requestscrolly);*/
@@ -1873,10 +1872,10 @@ void win32_window_set_scroll(struct gui_window *w, int sx, int sy)
 	si.fMask = SIF_ALL;
 	si.nMin = 0;
 	si.nMax = height - 1;
-	si.nPage = w->height;
-	si.nPos = max(w->scrolly + w->requestscrolly, 0);
-	si.nPos = min(si.nPos, height - w->height);
-	SetScrollInfo(w->drawingarea, SB_VERT, &si, TRUE);
+	si.nPage = gw->height;
+	si.nPos = max(gw->scrolly + gw->requestscrolly, 0);
+	si.nPos = min(si.nPos, height - gw->height);
+	SetScrollInfo(gw->drawingarea, SB_VERT, &si, TRUE);
 	/*LOG("SetScrollInfo VERT min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos);*/
 
 	/* set the horizontal scroll offset */
@@ -1884,30 +1883,31 @@ void win32_window_set_scroll(struct gui_window *w, int sx, int sy)
 	si.fMask = SIF_ALL;
 	si.nMin = 0;
 	si.nMax = width -1;
-	si.nPage = w->width;
-	si.nPos = max(w->scrollx + w->requestscrollx, 0);
-	si.nPos = min(si.nPos, width - w->width);
-	SetScrollInfo(w->drawingarea, SB_HORZ, &si, TRUE);
+	si.nPage = gw->width;
+	si.nPos = max(gw->scrollx + gw->requestscrollx, 0);
+	si.nPos = min(si.nPos, width - gw->width);
+	SetScrollInfo(gw->drawingarea, SB_HORZ, &si, TRUE);
 	/*LOG("SetScrollInfo HORZ min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos);*/
 
 	/* Set caret position */
 	GetCaretPos(&p);
-	HideCaret(w->drawingarea);
-	SetCaretPos(p.x - w->requestscrollx, p.y - w->requestscrolly);
-	ShowCaret(w->drawingarea);
+	HideCaret(gw->drawingarea);
+	SetCaretPos(p.x - gw->requestscrollx, p.y - gw->requestscrolly);
+	ShowCaret(gw->drawingarea);
 
 	RECT r, redraw;
 	r.top = 0;
-	r.bottom = w->height + 1;
+	r.bottom = gw->height + 1;
 	r.left = 0;
-	r.right = w->width + 1;
-	ScrollWindowEx(w->drawingarea, - w->requestscrollx, - w->requestscrolly, &r, NULL, NULL, &redraw, SW_INVALIDATE);
+	r.right = gw->width + 1;
+	ScrollWindowEx(gw->drawingarea, - gw->requestscrollx, - gw->requestscrolly, &r, NULL, NULL, &redraw, SW_INVALIDATE);
 	/*LOG("ScrollWindowEx %d, %d", - w->requestscrollx, - w->requestscrolly);*/
-	w->scrolly += w->requestscrolly;
-	w->scrollx += w->requestscrollx;
-	w->requestscrollx = 0;
-	w->requestscrolly = 0;
+	gw->scrolly += gw->requestscrolly;
+	gw->scrollx += gw->requestscrollx;
+	gw->requestscrollx = 0;
+	gw->requestscrolly = 0;
 
+	return NSERROR_OK;
 }
 
 
