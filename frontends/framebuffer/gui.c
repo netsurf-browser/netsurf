@@ -1583,7 +1583,7 @@ resize_browser_widget(struct gui_window *gw, int x, int y,
 		int width, int height)
 {
 	fbtk_set_pos_and_size(gw->browser, x, y, width, height);
-	browser_window_reformat(gw->bw, false, width, height);
+	browser_window_schedule_reformat(gw->bw);
 }
 
 static void
@@ -1857,21 +1857,30 @@ gui_window_set_scroll(struct gui_window *gw, int sx, int sy)
 }
 
 
-static void
+/**
+ * Find the current dimensions of a framebuffer browser window content area.
+ *
+ * \param gw The gui window to measure content area of.
+ * \param width receives width of window
+ * \param height receives height of window
+ * \param scaled whether to return scaled values
+ * \return NSERROR_OK on sucess and width and height updated.
+ */
+static nserror
 gui_window_get_dimensions(struct gui_window *g,
 			  int *width,
 			  int *height,
 			  bool scaled)
 {
-	float scale = browser_window_get_scale(g->bw);
-
 	*width = fbtk_get_width(g->browser);
 	*height = fbtk_get_height(g->browser);
 
 	if (scaled) {
+		float scale = browser_window_get_scale(g->bw);
 		*width /= scale;
 		*height /= scale;
 	}
+	return NSERROR_OK;
 }
 
 static void
@@ -2050,15 +2059,6 @@ gui_window_remove_caret(struct gui_window *g)
 	}
 }
 
-static void framebuffer_window_reformat(struct gui_window *gw)
-{
-	/** @todo if we ever do zooming reformat should be implemented */
-	LOG("window:%p", gw);
-
-	/*
-	  browser_window_reformat(gw->bw, false, width, height);
-	*/
-}
 
 static struct gui_window_table framebuffer_window_table = {
 	.create = gui_window_create,
@@ -2068,7 +2068,6 @@ static struct gui_window_table framebuffer_window_table = {
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
 	.update_extent = gui_window_update_extent,
-	.reformat = framebuffer_window_reformat,
 
 	.set_url = gui_window_set_url,
 	.set_status = gui_window_set_status,
