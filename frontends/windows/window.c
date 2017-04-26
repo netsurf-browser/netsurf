@@ -1236,7 +1236,7 @@ nsws_window_command(HWND hwnd,
 			browser_window_debug(gw->bw, CONTENT_DEBUG_REDRAW);
 			/* TODO: This should only redraw, not reformat.
 			 * (Layout doesn't change, so reformat is a waste of time) */
-			browser_window_reformat(gw->bw, false, gw->width, gw->height);
+			browser_window_schedule_reformat(gw->bw);
 		}
 		break;
 
@@ -1548,18 +1548,17 @@ static void win32_window_destroy(struct gui_window *w)
  * \param height receives height of window
  * \param scaled whether to return scaled values
  */
-static void
+static nserror
 win32_window_get_dimensions(struct gui_window *gw,
 			    int *width, int *height,
 			    bool scaled)
 {
-	if (gw == NULL)
-		return;
-
-	LOG("get dimensions %p w=%d h=%d", gw, gw->width, gw->height);
-
 	*width = gw->width;
 	*height = gw->height;
+
+	LOG("gw:%p w=%d h=%d", gw, *width, *height);
+
+	return NSERROR_OK;
 }
 
 
@@ -1572,19 +1571,6 @@ win32_window_get_dimensions(struct gui_window *gw,
 static void win32_window_update_extent(struct gui_window *w)
 {
 
-}
-
-
-/**
- * callback from core to reformat a win32 window.
- *
- * \param gw The win32 gui window to reformat.
- */
-static void win32_window_reformat(struct gui_window *gw)
-{
-	if (gw != NULL) {
-		browser_window_reformat(gw->bw, false, gw->width, gw->height);
-	}
 }
 
 
@@ -1773,7 +1759,6 @@ static struct gui_window_table window_table = {
 	.set_scroll = win32_window_set_scroll,
 	.get_dimensions = win32_window_get_dimensions,
 	.update_extent = win32_window_update_extent,
-	.reformat = win32_window_reformat,
 
 	.set_title = win32_window_set_title,
 	.set_url = win32_window_set_url,
