@@ -927,16 +927,20 @@ static void gui_window_scroll_visible(struct gui_window *g, int x0, int y0, int 
  * \param height receives height of window
  * \param scaled whether to return scaled values
  */
-
-static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height, bool scaled)
+static nserror
+gui_window_get_dimensions(struct gui_window *gw,
+			  int *width, int *height,
+			  bool scaled)
 {
   	/* use the cached window sizes */
-	*width = g->old_width / 2;
-	*height = g->old_height / 2;
+	*width = gw->old_width / 2;
+	*height = gw->old_height / 2;
+
 	if (scaled) {
-		*width /= g->scale;
-		*height /= g->scale;
+		*width /= gw->scale;
+		*height /= gw->scale;
 	}
+	return NSERROR_OK;
 }
 
 
@@ -4207,18 +4211,6 @@ void ro_gui_window_update_boxes(void)
 
 
 /**
- * callback from core to reformat a window.
- */
-static void riscos_window_reformat(struct gui_window *gw)
-{
-	if (gw != NULL) {
-		browser_window_reformat(gw->bw, false,
-					gw->old_width / 2,
-					gw->old_height / 2);
-	}
-}
-
-/**
  * Destroy all browser windows.
  */
 
@@ -4986,7 +4978,6 @@ static struct gui_window_table window_table = {
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
 	.update_extent = gui_window_update_extent,
-	.reformat = riscos_window_reformat,
 
 	.set_title = gui_window_set_title,
 	.set_url = ro_gui_window_set_url,
