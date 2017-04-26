@@ -1643,15 +1643,26 @@ static void ami_gui_menu_update_all(void)
 	} while((node = nnode));
 }
 
-static void gui_window_get_dimensions(struct gui_window *g,
+/**
+ * Find the current dimensions of a amiga browser window content area.
+ *
+ * \param gw The gui window to measure content area of.
+ * \param width receives width of window
+ * \param height receives height of window
+ * \param scaled whether to return scaled values
+ * \return NSERROR_OK on sucess and width and height updated
+ *          else error code.
+ */
+static nserror gui_window_get_dimensions(struct gui_window *gw,
 		int *restrict width, int *restrict height, bool scaled)
 {
 	struct IBox *bbox;
-	if(!g) return;
+	nserror res;
 
-	if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+	res = ami_gui_get_space_box((Object *)gw->shared->objects[GID_BROWSER], &bbox);
+	if(res != NSERROR_OK) {
 		amiga_warn_user("NoMemory", "");
-		return;
+		return res;
 	}
 
 	*width = bbox->Width;
@@ -1659,11 +1670,12 @@ static void gui_window_get_dimensions(struct gui_window *g,
 
 	ami_gui_free_space_box(bbox);
 
-	if(scaled)
-	{
-		*width /= g->scale;
-		*height /= g->scale;
+	if(scaled) {
+		*width /= gw->scale;
+		*height /= gw->scale;
 	}
+
+	return NSERROR_OK;
 }
 
 /* Add a horizontal scroller, if not already present
@@ -4828,26 +4840,6 @@ bool ami_gui_window_update_box_deferred_check(struct MinList *deferred_rects,
 }
 
 
-/**
- * callback from core to reformat a window.
- */
-static void amiga_window_reformat(struct gui_window *gw)
-{
-	struct IBox *bbox;
-
-	LOG("reformat window %p", gw);
-
-	if (gw != NULL) {
-		if(ami_gui_get_space_box((Object *)gw->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-			amiga_warn_user("NoMemory", "");
-			return;
-		}
-		browser_window_reformat(gw->bw, false, bbox->Width, bbox->Height);
-		gw->shared->redraw_scroll = false;
-		ami_gui_free_space_box(bbox);
-	}
-}
-
 static void ami_do_redraw(struct gui_window_2 *gwin)
 {
 	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600;
@@ -5576,7 +5568,6 @@ static struct gui_window_table amiga_window_table = {
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
 	.update_extent = gui_window_update_extent,
-	.reformat = amiga_window_reformat,
 
 	.set_icon = gui_window_set_icon,
 	.set_title = gui_window_set_title,
