@@ -129,18 +129,19 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	[[(BrowserViewController *)g browserView] scrollPoint: cocoa_point( sx, sy )];
 }
 
+
+
 /**
- * callback from core to reformat a window.
+ * Find the current dimensions of a cocoa browser window content area.
+ *
+ * \param gw The gui window to measure content area of.
+ * \param width receives width of window
+ * \param height receives height of window
+ * \param scaled whether to return scaled values
+ * \return NSERROR_OK on sucess and width and height updated
+ *          else error code.
  */
-static void cocoa_window_reformat(struct gui_window *gw)
-{
-	if (gw != NULL) {
-                [[(BrowserViewController *)gw browserView] reformat ];
-	}
-}
-
-
-static void gui_window_get_dimensions(struct gui_window *g,
+static nserror gui_window_get_dimensions(struct gui_window *g,
                                       int *width, int *height,
                                       bool scaled)
 {
@@ -154,6 +155,8 @@ static void gui_window_get_dimensions(struct gui_window *g,
 	}
 	*width = cocoa_pt_to_px( NSWidth( frame ) );
 	*height = cocoa_pt_to_px( NSHeight( frame ) );
+
+        return NSERROR_OK;
 }
 
 static void gui_window_update_extent(struct gui_window *g)
@@ -304,7 +307,6 @@ static struct gui_window_table window_table = {
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
 	.update_extent = gui_window_update_extent,
-	.reformat = cocoa_window_reformat,
 
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,

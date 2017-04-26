@@ -43,8 +43,6 @@
 - (void) scrollVertical: (CGFloat) amount;
 - (CGFloat) pageScroll;
 
-- (void) reformat;
-
 - (void) popUpContextMenuForEvent: (NSEvent *) event;
 
 - (IBAction) cmOpenURLInTab: (id) sender;
@@ -505,14 +503,6 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
         return NSHeight( [[self superview] frame] ) - [[self enclosingScrollView] pageScroll];
 }
 
-- (void) reformat
-{
-        NSRect size = [[self superview] frame];
-        browser_window_reformat(browser,
-                                false,
-                                cocoa_pt_to_px( NSWidth( size ) ),
-                                cocoa_pt_to_px( NSHeight( size ) ) );
-}
 
 - (void) popUpContextMenuForEvent: (NSEvent *) event
 {
