@@ -485,132 +485,6 @@ nsgtk_plot_path(const struct redraw_context *ctx,
 
 
 /**
- * plot a pixbuf
- *
- * \param x x coordinate to put pixmap
- * \param y y coordinate to put pixmap
- * \param width width of pixmap
- * \param height height of pixmap
- * \param bitmap The bitmap to plot
- * \param bg the background colour
- */
-static nserror
-nsgtk_plot_pixbuf(int x, int y, int width, int height,
-		  struct bitmap *bitmap, colour bg)
-{
-	int x0, y0, x1, y1;
-	int dsrcx, dsrcy, dwidth, dheight;
-	int bmwidth, bmheight;
-
-	cairo_surface_t *bmsurface = bitmap->surface;
-
-	/* Bail early if we can */
-	if (width == 0 || height == 0)
-		/* Nothing to plot */
-		return NSERROR_OK;
-	if ((x > (cliprect.x + cliprect.width)) ||
-			((x + width) < cliprect.x) ||
-			(y > (cliprect.y + cliprect.height)) ||
-			((y + height) < cliprect.y)) {
-		/* Image completely outside clip region */
-		return NSERROR_OK;
-	}
-
-	/* Get clip rectangle / image rectangle edge differences */
-	x0 = cliprect.x - x;
-	y0 = cliprect.y - y;
-	x1 = (x + width)  - (cliprect.x + cliprect.width);
-	y1 = (y + height) - (cliprect.y + cliprect.height);
-
-	/* Set initial draw geometry */
-	dsrcx = x;
-	dsrcy = y;
-	dwidth = width;
-	dheight = height;
-
-	/* Manually clip draw coordinates to area of image to be rendered */
-	if (x0 > 0) {
-		/* Clip left */
-		dsrcx += x0;
-		dwidth -= x0;
-	}
-	if (y0 > 0) {
-		/* Clip top */
-		dsrcy += y0;
-		dheight -= y0;
-	}
-	if (x1 > 0) {
-		/* Clip right */
-		dwidth -= x1;
-	}
-	if (y1 > 0) {
-		/* Clip bottom */
-		dheight -= y1;
-	}
-
-	if (dwidth == 0 || dheight == 0)
-		/* Nothing to plot */
-		return NSERROR_OK;
-
-	bmwidth = cairo_image_surface_get_width(bmsurface);
-	bmheight = cairo_image_surface_get_height(bmsurface);
-
-	/* Render the bitmap */
-	if ((bmwidth == width) && (bmheight == height)) {
-		/* Bitmap is not scaled */
-		/* Plot the bitmap */
-		cairo_set_source_surface(current_cr, bmsurface, x, y);
-		cairo_rectangle(current_cr, dsrcx, dsrcy, dwidth, dheight);
-		cairo_fill(current_cr);
-
-	} else {
-		/* Bitmap is scaled */
-		if ((bitmap->scsurface != NULL) && 
-		    ((cairo_image_surface_get_width(bitmap->scsurface) != width) || 
-		     (cairo_image_surface_get_height(bitmap->scsurface) != height))){
-			cairo_surface_destroy(bitmap->scsurface);
-			bitmap->scsurface = NULL;
-		} 
-
-		if (bitmap->scsurface == NULL) {
-			bitmap->scsurface = cairo_surface_create_similar(bmsurface,CAIRO_CONTENT_COLOR_ALPHA, width, height);
-			cairo_t *cr = cairo_create(bitmap->scsurface);
-
-			/* Scale *before* setting the source surface (1) */
-			cairo_scale(cr, (double)width / bmwidth, (double)height / bmheight);
-			cairo_set_source_surface(cr, bmsurface, 0, 0);
-
-			/* To avoid getting the edge pixels blended with 0
-			 * alpha, which would occur with the default
-			 * EXTEND_NONE. Use EXTEND_PAD for 1.2 or newer (2)
-			 */
-			cairo_pattern_set_extend(cairo_get_source(cr), 
-						 CAIRO_EXTEND_REFLECT); 
-
-			/* Replace the destination with the source instead of
-			 * overlaying 
-			 */
-			cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
-
-			/* Do the actual drawing */
-			cairo_paint(cr);
-   
-			cairo_destroy(cr);
-
-		}
-		/* Plot the scaled bitmap */
-		cairo_set_source_surface(current_cr, bitmap->scsurface, x, y);
-		cairo_rectangle(current_cr, dsrcx, dsrcy, dwidth, dheight);
-		cairo_fill(current_cr);
-
-    
-	}
-
-	return NSERROR_OK;
-}
-
-
-/**
  * Plot a bitmap
  *
  * Tiled plot of a bitmap image. (x,y) gives the top left
@@ -643,44 +517,100 @@ nsgtk_plot_bitmap(const struct redraw_context *ctx,
 		  colour bg,
 		  bitmap_flags_t flags)
 {
-	int doneheight = 0, donewidth = 0;
 	bool repeat_x = (flags & BITMAPF_REPEAT_X);
 	bool repeat_y = (flags & BITMAPF_REPEAT_Y);
+	GdkRectangle cliprect_bitmap;
+	cairo_surface_t *img_surface;
+	int img_width, img_height;
 
 	/* Bail early if we can */
-	if (width == 0 || height == 0)
+	if (width <= 0 || height <= 0) {
 		/* Nothing to plot */
 		return NSERROR_OK;
-
-	if (!(repeat_x || repeat_y)) {
-		/* Not repeating at all, so just pass it on */
-		return nsgtk_plot_pixbuf(x, y, width, height, bitmap, bg);
 	}
 
-	if (y > cliprect.y) {
-		doneheight = (cliprect.y - height) + ((y - cliprect.y) % height);
+	/* Copy the clip rectangle into bitmap plot clip rectangle */
+	cliprect_bitmap = cliprect;
+
+	/* Constrain bitmap plot rectangle for any lack of tiling */
+	if (!repeat_x) {
+		if (cliprect_bitmap.width > width) {
+			cliprect_bitmap.width = width;
+		}
+		if (cliprect_bitmap.x < x) {
+			cliprect_bitmap.x = x;
+			cliprect_bitmap.width -= x - cliprect_bitmap.x;
+		}
+	}
+	if (!repeat_y) {
+		if (cliprect_bitmap.height > height) {
+			cliprect_bitmap.height = height;
+		}
+		if (cliprect_bitmap.y < y) {
+			cliprect_bitmap.y = y;
+			cliprect_bitmap.height -= y - cliprect_bitmap.y;
+		}
+	}
+
+	/* Bail early if we can */
+	if (cliprect_bitmap.width <= 0 || cliprect_bitmap.height <= 0) {
+		/* Nothing to plot */
+		return NSERROR_OK;
+	}
+
+	/* Get the image's surface and intrinsic dimensions */
+	img_surface = bitmap->surface;
+	img_width = cairo_image_surface_get_width(img_surface);
+	img_height = cairo_image_surface_get_height(img_surface);
+
+	/* Set the source surface */
+	if ((img_width == width) && (img_height == height)) {
+		/* Non-scaled rendering */
+		cairo_set_source_surface(current_cr, img_surface, x, y);
+
+		/* Enable tiling if we're repeating */
+		if (repeat_x || repeat_y) {
+			cairo_pattern_set_extend(
+					cairo_get_source(current_cr),
+					CAIRO_EXTEND_REPEAT);
+		}
+
+		/* Render the bitmap */
+		cairo_rectangle(current_cr,
+				cliprect_bitmap.x,
+				cliprect_bitmap.y,
+				cliprect_bitmap.width,
+				cliprect_bitmap.height);
+		cairo_fill(current_cr);
 	} else {
-		doneheight = y;
-	}
+		/* Scaled rendering */
+		double scale_x = (double)width / img_width;
+		double scale_y = (double)height / img_height;
 
-	while (doneheight < (cliprect.y + cliprect.height)) {
-		if (x > cliprect.x) {
-			donewidth = (cliprect.x - width) + ((x - cliprect.x) % width);
-		} else {
-			donewidth = x;
+		/* Save cairo rendering context state before scaling */
+		cairo_save(current_cr);
+		cairo_scale(current_cr, scale_x, scale_y);
+
+		cairo_set_source_surface(current_cr, img_surface,
+				x / scale_x, y / scale_y);
+
+		/* Enable tiling if we're repeating */
+		if (repeat_x || repeat_y) {
+			cairo_pattern_set_extend(
+					cairo_get_source(current_cr),
+					CAIRO_EXTEND_REPEAT);
 		}
 
-		while (donewidth < (cliprect.x + cliprect.width)) {
-			nsgtk_plot_pixbuf(donewidth, doneheight,
-					  width, height, bitmap, bg);
-			donewidth += width;
-			if (!repeat_x) 
-				break;
-		}
-		doneheight += height;
+		/* Render the bitmap */
+		cairo_rectangle(current_cr,
+				cliprect_bitmap.x / scale_x,
+				cliprect_bitmap.y / scale_y,
+				cliprect_bitmap.width / scale_x,
+				cliprect_bitmap.height / scale_y);
+		cairo_fill(current_cr);
 
-		if (!repeat_y) 
-			break;
+		/* Restore pre-scaling cairo rendering state */
+		cairo_restore(current_cr);
 	}
 
 	return NSERROR_OK;
