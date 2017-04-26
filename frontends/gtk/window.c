@@ -895,21 +895,6 @@ void nsgtk_reflow_all_windows(void)
 }
 
 
-/**
- * callback from core to reformat a window.
- */
-static void nsgtk_window_reformat(struct gui_window *gw)
-{
-	GtkAllocation alloc;
-
-	if (gw != NULL) {
-		/** @todo consider gtk_widget_get_allocated_width() */
-		nsgtk_widget_get_allocation(GTK_WIDGET(gw->layout), &alloc);
-
-		browser_window_reformat(gw->bw, false, alloc.width, alloc.height);
-	}
-}
-
 void nsgtk_window_destroy_browser(struct gui_window *gw)
 {
 	/* remove tab */
@@ -1203,24 +1188,37 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 }
 
 
-static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
-			       bool scaled)
+/**
+ * Find the current dimensions of a GTK browser window content area.
+ *
+ * \param gw The gui window to measure content area of.
+ * \param width receives width of window
+ * \param height receives height of window
+ * \param scaled whether to return scaled values
+ * \return NSERROR_OK on sucess and width and height updated
+ *          else error code.
+ */
+static nserror
+gui_window_get_dimensions(struct gui_window *gw,
+			  int *width, int *height,
+			  bool scaled)
 {
 	GtkAllocation alloc;
 
-	/* @todo consider gtk_widget_get_allocated_width() */
-	nsgtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
+	/** @todo consider gtk_widget_get_allocated_width() */
+	nsgtk_widget_get_allocation(GTK_WIDGET(gw->layout), &alloc);
 
 	*width = alloc.width;
 	*height = alloc.height;
 
 	if (scaled) {
-		float scale = browser_window_get_scale(g->bw);
+		float scale = browser_window_get_scale(gw->bw);
 		*width /= scale;
 		*height /= scale;
 	}
-	LOG("width: %i", *width);
-	LOG("height: %i", *height);
+	LOG("gw:%p width:%i height:%i", gw, *width, *height);
+
+	return NSERROR_OK;
 }
 
 static void gui_window_start_selection(struct gui_window *g)
@@ -1321,7 +1319,6 @@ static struct gui_window_table window_table = {
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
 	.update_extent = gui_window_update_extent,
-	.reformat = nsgtk_window_reformat,
 
 	.set_icon = gui_window_set_icon,
 	.set_status = gui_window_set_status,
