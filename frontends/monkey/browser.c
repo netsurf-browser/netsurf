@@ -61,15 +61,6 @@ monkey_find_window_by_num(uint32_t win_num)
   return ret;
 }
 
-
-/**
- * callback from core to reformat a window.
- */
-static void monkey_window_reformat(struct gui_window *gw)
-{
-	browser_window_reformat(gw->bw,	false, gw->width, gw->height);
-}
-
 void
 monkey_kill_browser_windows(void)
 {
@@ -118,7 +109,16 @@ gui_window_set_title(struct gui_window *g, const char *title)
   fprintf(stdout, "WINDOW TITLE WIN %u STR %s\n", g->win_num, title);
 }
 
-static void
+/**
+ * Find the current dimensions of a monkey browser window content area.
+ *
+ * \param gw The gui window to measure content area of.
+ * \param width receives width of window
+ * \param height receives height of window
+ * \param scaled whether to return scaled values
+ * \return NSERROR_OK on sucess and width and height updated.
+ */
+static nserror
 gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
                           bool scaled)
 {
@@ -126,6 +126,8 @@ gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
           g->win_num, g->width, g->height);
   *width = g->width;
   *height = g->height;
+
+  return NSERROR_OK;
 }
 
 static void
@@ -515,7 +517,6 @@ static struct gui_window_table window_table = {
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
 	.update_extent = gui_window_update_extent,
-	.reformat = monkey_window_reformat,
 
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,
