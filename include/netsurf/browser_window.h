@@ -296,16 +296,23 @@ void browser_window_reload(struct browser_window *bw, bool all);
  */
 void browser_window_destroy(struct browser_window *bw);
 
+
 /**
  * Reformat a browser window contents to a new width or height.
+ *
+ * This API is not safe to call from all contexts and care must be used.
+ *
+ * \warning This API is generally only useful within the browser core
+ * and is only exposed for historical reasons. A frontend almost
+ * certianly actually wants browser_window_schedule_reformat() and not
+ * this.
  *
  * \param bw         The browser window to reformat.
  * \param background Reformat in the background.
  * \param width      new width
  * \param height     new height
  */
-void browser_window_reformat(struct browser_window *bw, bool background,
-		int width, int height);
+void browser_window_reformat(struct browser_window *bw, bool background, int width, int height);
 
 
 /**
@@ -411,6 +418,7 @@ void browser_window_mouse_click(struct browser_window *bw,
 void browser_window_mouse_track(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
 
+
 /**
  * Locate a browser window in the specified stack according.
  *
@@ -423,21 +431,28 @@ struct browser_window *browser_window_find_target(
 		struct browser_window *bw, const char *target,
 		browser_mouse_state mouse);
 
+
 /**
- * Cause the frontends reformat entry to be called in safe context.
+ * Reformat the browser window contents in a safe context.
  *
- * The browser_window_reformat call cannot safely be called from some
- * contexts, this call allows for the reformat to happen from a safe
+ * The browser_window_reformat() call cannot safely be called from some
+ * contexts, This interface allows for the reformat to happen from a safe
  * top level context.
  *
- * The callback is frontend provided as the context information (size
- * etc.) about the windowing toolkit is only available to the
- * frontend.
+ * The reformat uses the window table get_dimensions() callback as the
+ * correct viewport dimensions are only available to the frontend.
+ *
+ * \param bw The browser window to reformat the content of.
+ * \return NSERROR_OK on success else appropriate error code.
  */
 nserror browser_window_schedule_reformat(struct browser_window *bw);
 
 
-
+/**
+ * callback for select menu widget
+ *
+ * \todo This API needs investigating
+ */
 void browser_select_menu_callback(void *client_data,
 		int x, int y, int width, int height);
 

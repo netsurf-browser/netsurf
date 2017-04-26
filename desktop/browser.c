@@ -1781,6 +1781,27 @@ static void browser_window_destroy_children(struct browser_window *bw)
 
 
 /**
+ * internal scheduled reformat callback.
+ *
+ * scheduled reformat callback to allow reformats from unthreaded context.
+ *
+ * \param vbw The browser window to be reformatted
+ */
+static void scheduled_reformat(void *vbw)
+{
+	struct browser_window *bw = vbw;
+	int width;
+	int height;
+	nserror res;
+
+	res = guit->window->get_dimensions(bw->window, &width, &height, false);
+	if (res == NSERROR_OK) {
+		browser_window_reformat(bw, false, width, height);
+	}
+}
+
+
+/**
  * Release all memory associated with a browser window.
  *
  * \param  bw  browser window
@@ -1809,8 +1830,8 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 	/* The ugly cast here is so the reformat function can be
 	 * passed a gui window pointer in its API rather than void*
 	 */
-	LOG("Clearing schedule %p(%p)", guit->window->reformat, bw->window);
-	guit->misc->schedule(-1, (void(*)(void*))guit->window->reformat, bw->window);
+	LOG("Clearing reformat schedule for browser window %p", bw);
+	guit->misc->schedule(-1, scheduled_reformat, bw);
 
 	/* If this brower window is not the root window, and has focus, unset
 	 * the root browser window's focus pointer. */
@@ -2574,13 +2595,16 @@ void browser_window_set_pointer(struct browser_window *bw,
 	guit->window->set_pointer(root->window, gui_shape);
 }
 
+
 /* exported function documented in netsurf/browser_window.h */
 nserror browser_window_schedule_reformat(struct browser_window *bw)
 {
-	/* The ugly cast here is so the reformat function can be
-	 * passed a gui window pointer in its API rather than void*
-	 */
-	guit->misc->schedule(0, (void(*)(void*))guit->window->reformat, bw->window);
+	if (bw->window == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	guit->misc->schedule(0, scheduled_reformat, bw);
+
 	return NSERROR_OK;
 }
 

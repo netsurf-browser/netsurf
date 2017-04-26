@@ -23,8 +23,8 @@
  * operations.
  */
 
-#ifndef _NETSURF_WINDOW_H_
-#define _NETSURF_WINDOW_H_
+#ifndef NETSURF_WINDOW_H
+#define NETSURF_WINDOW_H
 
 typedef enum gui_save_type {
 	GUI_SAVE_SOURCE,
@@ -50,10 +50,13 @@ typedef enum {
 	GDRAGGING_OTHER
 } gui_drag_type;
 
+/**
+ * Window creation control flags.
+ */
 typedef enum {
-	GW_CREATE_NONE		= 0,		/* New window */
-	GW_CREATE_CLONE		= (1 << 0),	/* Clone existing window */
-	GW_CREATE_TAB		= (1 << 1)	/* In same window as existing */
+	GW_CREATE_NONE = 0, /**< New window */
+	GW_CREATE_CLONE = (1 << 0), /**< Clone existing window */
+	GW_CREATE_TAB = (1 << 1) /**< In same window as existing */
 } gui_window_create_flags;
 
 struct browser_window;
@@ -90,12 +93,14 @@ struct gui_window_table {
 			struct gui_window *existing,
 			gui_window_create_flags flags);
 
+
 	/**
 	 * Destroy previously created gui window
 	 *
 	 * \param gw The gui window to destroy.
 	 */
 	void (*destroy)(struct gui_window *gw);
+
 
 	/**
 	 * Invalidate an area of a window.
@@ -116,6 +121,7 @@ struct gui_window_table {
 	 */
 	nserror (*invalidate)(struct gui_window *g, const struct rect *rect);
 
+
 	/**
 	 * Get the scroll position of a browser window.
 	 *
@@ -126,6 +132,7 @@ struct gui_window_table {
 	 */
 	bool (*get_scroll)(struct gui_window *g, int *sx, int *sy);
 
+
 	/**
 	 * Set the scroll position of a browser window.
 	 *
@@ -135,18 +142,24 @@ struct gui_window_table {
 	 */
 	void (*set_scroll)(struct gui_window *g, int sx, int sy);
 
+
 	/**
 	 * Find the current dimensions of a browser window's content area.
 	 *
-	 * @todo The implementations of this are buggy and its only
-	 * used from frames code.
+	 * This is used to determine the actual available drawing size
+	 * in pixels. This is used to allow contents that can be
+	 * dynamicaly reformatted, such as HTML, to better use the
+	 * available space.
 	 *
-	 * \param g	 gui_window to measure
-	 * \param width	 receives width of window
+	 * \param gw The gui window to measure content area of.
+	 * \param width receives width of window
 	 * \param height receives height of window
 	 * \param scaled whether to return scaled values
+	 * \return NSERROR_OK on sucess and width and height updated
+	 *          else error code.
 	 */
-	void (*get_dimensions)(struct gui_window *g, int *width, int *height, bool scaled);
+	nserror (*get_dimensions)(struct gui_window *gw, int *width, int *height, bool scaled);
+
 
 	/**
 	 * Update the extent of the inside of a browser window to that of the
@@ -158,18 +171,6 @@ struct gui_window_table {
 	 * \param  g gui_window to update the extent of
 	 */
 	void (*update_extent)(struct gui_window *g);
-
-	/**
-	 * Reformat a window.
-	 *
-	 * This is used to perform reformats when the page contents
-	 * require reformatting. The reformat is requested using
-	 * browser_window_schedule_reformat and occurs via a scheduled
-	 * callback hence from top level context.
-	 *
-	 * \param g gui_window to reformat.
-	 */
-	void (*reformat)(struct gui_window *g);
 
 
 	/* Optional entries */
