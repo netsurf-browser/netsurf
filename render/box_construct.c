@@ -594,6 +594,7 @@ static void box_construct_generate(dom_node *n, html_content *content,
 		struct box *box, const css_computed_style *style)
 {
 	struct box *gen = NULL;
+	enum css_display_e computed_display;
 	const css_computed_content_item *c_item;
 
 	/* Nothing to generate if the parent box is not a block */
@@ -611,8 +612,10 @@ static void box_construct_generate(dom_node *n, html_content *content,
 	}
 
 	/* create box for this element */
-	if (css_computed_display(style, box_is_root(n)) == CSS_DISPLAY_BLOCK) {
-		/* currently only support block level elements */
+	computed_display = css_computed_display(style, box_is_root(n));
+	if (computed_display == CSS_DISPLAY_BLOCK ||
+			computed_display == CSS_DISPLAY_TABLE) {
+		/* currently only support block level boxes */
 
 		/** \todo Not wise to drop const from the computed style */
 		gen = box_create(NULL, (css_computed_style *) style,
