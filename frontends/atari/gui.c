@@ -293,25 +293,27 @@ void gui_window_destroy(struct gui_window *gw)
 }
 
 /**
- * Find the current dimensions of a browser window's content area.
+ * Find the current dimensions of a atari browser window content area.
  *
- * \param w	 gui_window to measure
- * \param width	 receives width of window
+ * \param gw The gui window to measure content area of.
+ * \param width receives width of window
  * \param height receives height of window
  * \param scaled whether to return scaled values
+ * \return NSERROR_OK on sucess and width and height updated
+ *          else error code.
  */
-static void
-gui_window_get_dimensions(struct gui_window *w,
+static nserror
+gui_window_get_dimensions(struct gui_window *gw,
 			  int *width,
 			  int *height,
 			  bool scaled)
 {
-    if (w == NULL)
-	return;
     GRECT rect;
-    window_get_grect(w->root, BROWSER_AREA_CONTENT, &rect);
+    window_get_grect(gw->root, BROWSER_AREA_CONTENT, &rect);
     *width = rect.g_w;
     *height = rect.g_h;
+
+    return NSERROR_OK;
 }
 
 /**
@@ -373,16 +375,6 @@ void atari_window_set_status(struct gui_window *w, const char *text)
 
     if(input_window == w)
 	window_set_stauts(w->root, (char*)text);
-}
-
-static void atari_window_reformat(struct gui_window *gw)
-{
-    int width = 0, height = 0;
-
-    if (gw != NULL) {
-	gui_window_get_dimensions(gw, &width, &height, true);
-	browser_window_reformat(gw->browser->bw, false, width, height);
-    }
 }
 
 
@@ -1063,7 +1055,6 @@ static struct gui_window_table atari_window_table = {
     .set_scroll = gui_window_set_scroll,
     .get_dimensions = gui_window_get_dimensions,
     .update_extent = gui_window_update_extent,
-    .reformat = atari_window_reformat,
 
     .set_title = gui_window_set_title,
     .set_url = gui_window_set_url,
