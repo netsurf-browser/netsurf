@@ -242,7 +242,7 @@ static void ami_do_redraw(struct gui_window_2 *g);
 static void ami_schedule_redraw_remove(struct gui_window_2 *gwin);
 
 static bool gui_window_get_scroll(struct gui_window *g, int *restrict sx, int *restrict sy);
-static void gui_window_set_scroll(struct gui_window *g, int sx, int sy);
+static nserror gui_window_set_scroll(struct gui_window *g, const struct rect *rect);
 static void gui_window_remove_caret(struct gui_window *g);
 static void gui_window_place_caret(struct gui_window *g, int x, int y, int height, const struct rect *clip);
 //static void amiga_window_invalidate_area(struct gui_window *g, const struct rect *restrict rect);
@@ -1494,6 +1494,7 @@ static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 {
 	struct IBox *bbox;
 	int x, y;
+	struct rect rect;
 
 	if(ami_mouse_to_ns_coords(gwin, &x, &y, -1, -1) == true)
 	{
@@ -1560,8 +1561,9 @@ static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 			}
 
 			ami_gui_free_space_box(bbox);
-
-			gui_window_set_scroll(gwin->gw, xs, ys);
+			rect.x0 = rect.x1 = xs;
+			rect.y0 = rect.y1 = ys;
+			gui_window_set_scroll(gwin->gw, &rect);
 		}
 	}
 }
@@ -2561,12 +2563,15 @@ static BOOL ami_gui_event(void *w)
 
 		if(drag_x_move || drag_y_move)
 		{
+			struct rect rect;
+
 			gui_window_get_scroll(gwin->gw,
 				&gwin->gw->scrollx, &gwin->gw->scrolly);
 
-			gui_window_set_scroll(gwin->gw,
-				gwin->gw->scrollx + drag_x_move,
-				gwin->gw->scrolly + drag_y_move);
+			rect.x0 = rect.x1 = gwin->gw->scrollx + drag_x_move;
+			rect.y0 = rect.y1 = gwin->gw->scrolly + drag_y_move;
+
+			gui_window_set_scroll(gwin->gw, &rect);
 		}
 
 //	ReplyMsg((struct Message *)message);
@@ -2921,11 +2926,15 @@ void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 
 	if(redraw)
 	{
+		struct rect rect;
+
 		ami_plot_clear_bbox(gwin->win->RPort, bbox);
 		browser_window_update(gwin->gw->bw, false);
 
-		gui_window_set_scroll(gwin->gw,
-			gwin->gw->scrollx, gwin->gw->scrolly);
+		rect.x0 = rect.x1 = gwin->gw->scrollx;
+		rect.y0 = rect.y1 = gwin->gw->scrolly;
+
+		gui_window_set_scroll(gwin->gw, &rect);
 		gwin->redraw_scroll = false;
 
 		browser_window_refresh_url_bar(gwin->gw->bw);
@@ -4981,25 +4990,33 @@ static bool gui_window_get_scroll(struct gui_window *g, int *restrict sx, int *r
  * \param rect The rectangle to ensure is shown.
  * \return NSERROR_OK on success or apropriate error code.
  */
-static nserror gui_window_set_scroll(struct gui_window *g, const struct rect *rect)
+static nserror
+gui_window_set_scroll(struct gui_window *g, const struct rect *rect)
 {
 	struct IBox *bbox;
 	int width, height;
 	nserror res;
+	int sx = 0, sy = 0;
 
 	if(!g) {
 		return NSERROR_BAD_PARAMETER;
 	}
-	if(!g->bw ||
-	   browser_window_has_content(g->bw) == false) return;
-
-	if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		amiga_warn_user("NoMemory", "");
-		return;
+	if(!g->bw || browser_window_has_content(g->bw) == false) {
+		return NSERROR_BAD_PARAMETER;
 	}
 
-	if(sx < 0) sx=0;
-	if(sy < 0) sy=0;
+	res = ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox);
+	if(res != NSERROR_OK) {
+		amiga_warn_user("NoMemory", "");
+		return res;
+	}
+
+	if (rect->x0 > 0) {
+		sx = rect->x0;
+	}
+	if (rect->y0 > 0) {
+		sy = rect->y0;
+	}
 
 	browser_window_get_extents(g->bw, false, &width, &height);
 
@@ -5037,6 +5054,7 @@ static nserror gui_window_set_scroll(struct gui_window *g, const struct rect *re
 		g->scrollx = sx;
 		g->scrolly = sy;
 	}
+	return NSERROR_OK;
 }
 
 static void gui_window_update_extent(struct gui_window *g)

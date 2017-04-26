@@ -1049,16 +1049,20 @@ static nserror
 gui_window_set_scroll(struct gui_window *g, const struct rect *rect)
 {
 	//CALLED();
-	if (g->view == NULL)
-		return;
-	if (!g->view->LockLooper())
-		return;
+	if (g->view == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (!g->view->LockLooper()) {
+		return NSERROR_BAD_PARAMETER;
+        }
 
 #warning XXX: report to view frame ?
-	if (g->view->ScrollBar(B_HORIZONTAL))
+	if (g->view->ScrollBar(B_HORIZONTAL)) {
 		g->view->ScrollBar(B_HORIZONTAL)->SetValue(rect->x0);
-	if (g->view->ScrollBar(B_VERTICAL))
+        }
+	if (g->view->ScrollBar(B_VERTICAL)) {
 		g->view->ScrollBar(B_VERTICAL)->SetValue(rect->y0);
+        }
 		
 	g->view->UnlockLooper();
 
