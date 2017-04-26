@@ -911,28 +911,6 @@ void nsbeos_reflow_all_windows(void)
 }
 
 
-
-/**
- * callback from core to reformat a window.
- */
-static void beos_window_reformat(struct gui_window *g)
-{
-        if (g == NULL) {
-                return;
-        }
-
-        NSBrowserFrameView *view = g->view;
-        if (view && view->LockLooper()) {
-                BRect bounds = view->Bounds();
-                view->UnlockLooper();
-#warning XXX why - 1 & - 2 !???
-                browser_window_reformat(g->bw,
-                                        false,
-                                        bounds.Width() + 1 /* - 2*/,
-                                        bounds.Height() + 1);
-        }        
-}
-
 void nsbeos_window_destroy_browser(struct gui_window *g)
 {
 	browser_window_destroy(g->bw);
@@ -1334,19 +1312,32 @@ static struct gui_clipboard_table clipboard_table = {
 
 struct gui_clipboard_table *beos_clipboard_table = &clipboard_table;
 
-static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
-			       bool scaled)
+/**
+ * Find the current dimensions of a beos browser window content area.
+ *
+ * \param gw The gui window to measure content area of.
+ * \param width receives width of window
+ * \param height receives height of window
+ * \param scaled whether to return scaled values
+ * \return NSERROR_OK on sucess and width and height updated
+ *          else error code.
+ */
+static nserror
+gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
+                          bool scaled)
 {
-	if (g->view && g->view->LockLooper()) {
-		*width = g->view->Bounds().Width() + 1;
-		*height = g->view->Bounds().Height() + 1;
-		g->view->UnlockLooper();
-	}
+        if (g->view &&
+            g->view->LockLooper()) {
+                *width = g->view->Bounds().Width() + 1;
+                *height = g->view->Bounds().Height() + 1;
+                g->view->UnlockLooper();
 
-	if (scaled) {
-		*width /= g->scale;
-		*height /= g->scale;
-	}
+                if (scaled) {
+                        *width /= g->scale;
+                        *height /= g->scale;
+                }
+        }
+        return NSERROR_OK;
 }
 
 static struct gui_window_table window_table = {
@@ -1357,7 +1348,6 @@ static struct gui_window_table window_table = {
 	gui_window_set_scroll,
 	gui_window_get_dimensions,
 	gui_window_update_extent,
-        beos_window_reformat,
 
 	/* from scaffold */
 	gui_window_set_title,
