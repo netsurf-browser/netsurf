@@ -1048,7 +1048,7 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth, bool style)
 	if (box->title)
 		fprintf(stream, " [%s]", box->title);
 	if (box->id)
-		fprintf(stream, " <%s>", lwc_string_data(box->id));
+		fprintf(stream, " ID:%s", lwc_string_data(box->id));
 	if (box->type == BOX_INLINE || box->type == BOX_INLINE_END)
 		fprintf(stream, " inline_end %p", box->inline_end);
 	if (box->float_children)
@@ -1070,6 +1070,13 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth, bool style)
 					box->col[i].width,
 					box->col[i].min, box->col[i].max);
 		fprintf(stream, ")");
+	}
+	if (box->node != NULL) {
+		dom_string *name;
+		if (dom_node_get_node_name(box->node, &name) == DOM_NO_ERR) {
+			fprintf(stream, " <%s>", dom_string_data(name));
+			dom_string_unref(name);
+		}
 	}
 	fprintf(stream, "\n");
 
