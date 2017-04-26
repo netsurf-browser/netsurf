@@ -981,7 +981,7 @@ void nsbeos_redraw_caret(struct gui_window *g)
 /**
  * Invalidate an area of a beos browser window
  *
- * \param gw The netsurf window being invalidated.
+ * \param g The netsurf window being invalidated.
  * \param rect area to redraw or NULL for entrire window area.
  * \return NSERROR_OK or appropriate error code.
  */
@@ -1034,7 +1034,19 @@ static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 	return true;
 }
 
-static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
+/**
+ * Set the scroll position of a beos browser window.
+ *
+ * Scrolls the viewport to ensure the specified rectangle of the
+ *   content is shown. The beos implementation scrolls the contents so
+ *   the specified point in the content is at the top of the viewport.
+ *
+ * \param g gui window to scroll
+ * \param rect The rectangle to ensure is shown.
+ * \return NSERROR_OK on success or apropriate error code.
+ */
+static nserror
+gui_window_set_scroll(struct gui_window *g, const struct rect *rect)
 {
 	//CALLED();
 	if (g->view == NULL)
@@ -1044,11 +1056,13 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 
 #warning XXX: report to view frame ?
 	if (g->view->ScrollBar(B_HORIZONTAL))
-		g->view->ScrollBar(B_HORIZONTAL)->SetValue(sx);
+		g->view->ScrollBar(B_HORIZONTAL)->SetValue(rect->x0);
 	if (g->view->ScrollBar(B_VERTICAL))
-		g->view->ScrollBar(B_VERTICAL)->SetValue(sy);
+		g->view->ScrollBar(B_VERTICAL)->SetValue(rect->y0);
 		
 	g->view->UnlockLooper();
+
+        return NSERROR_OK;
 }
 
 
@@ -1315,7 +1329,7 @@ struct gui_clipboard_table *beos_clipboard_table = &clipboard_table;
 /**
  * Find the current dimensions of a beos browser window content area.
  *
- * \param gw The gui window to measure content area of.
+ * \param g The gui window to measure content area of.
  * \param width receives width of window
  * \param height receives height of window
  * \param scaled whether to return scaled values
@@ -1361,7 +1375,6 @@ static struct gui_window_table window_table = {
 	gui_window_stop_throbber,
 	NULL, //drag_start
 	NULL, //save_link
-	NULL, //scroll_visible
 	NULL, //scroll_start
 	gui_window_new_content,
 	NULL, //create_form_select_menu
