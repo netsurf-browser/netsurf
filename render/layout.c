@@ -332,6 +332,7 @@ layout_minmax_line(struct box *first,
 	for (b = first; b; b = b->next) {
 		enum css_width_e wtype;
 		enum css_height_e htype;
+		enum css_box_sizing_e bs;
 		css_fixed value = 0;
 		css_unit unit = CSS_UNIT_PX;
 
@@ -506,6 +507,7 @@ layout_minmax_line(struct box *first,
 
 		/* calculate box width */
 		wtype = css_computed_width(b->style, &value, &unit);
+		bs = css_computed_box_sizing(block->style);
 		if (wtype == CSS_WIDTH_SET) {
 			if (unit == CSS_UNIT_PCT) {
 				/*
@@ -516,6 +518,19 @@ layout_minmax_line(struct box *first,
 			} else {
 				width = FIXTOINT(nscss_len2px(value, unit,
 						b->style));
+
+				if (bs == CSS_BOX_SIZING_BORDER_BOX) {
+					fixed = frac = 0;
+					calculate_mbp_width(block->style, LEFT,
+							false, true, true,
+							&fixed, &frac);
+					calculate_mbp_width(block->style, RIGHT,
+							false, true, true,
+							&fixed, &frac);
+					if (width < fixed) {
+						width = fixed;
+					}
+				}
 				if (width < 0)
 					width = 0;
 			}
@@ -541,11 +556,21 @@ layout_minmax_line(struct box *first,
 			}
 
 			fixed = frac = 0;
-			calculate_mbp_width(b->style, LEFT, true, true, true,
-					&fixed, &frac);
-			calculate_mbp_width(b->style, RIGHT, true, true, true,
-					&fixed, &frac);
-
+			if (bs == CSS_BOX_SIZING_BORDER_BOX) {
+				calculate_mbp_width(b->style, LEFT,
+						true, false, false,
+						&fixed, &frac);
+				calculate_mbp_width(b->style, RIGHT,
+						true, false, false,
+						&fixed, &frac);
+			} else {
+				calculate_mbp_width(b->style, LEFT,
+						true, true, true,
+						&fixed, &frac);
+				calculate_mbp_width(b->style, RIGHT,
+						true, true, true,
+						&fixed, &frac);
+			}
 			if (0 < width + fixed)
 				width += fixed;
 		} else if (b->flags & IFRAME) {
@@ -554,13 +579,25 @@ layout_minmax_line(struct box *first,
 				width = 400;
 
 			fixed = frac = 0;
-			calculate_mbp_width(b->style, LEFT, true, true, true,
-					&fixed, &frac);
-			calculate_mbp_width(b->style, RIGHT, true, true, true,
-					&fixed, &frac);
+			if (bs == CSS_BOX_SIZING_BORDER_BOX) {
+				calculate_mbp_width(b->style, LEFT,
+						true, false, false,
+						&fixed, &frac);
+				calculate_mbp_width(b->style, RIGHT,
+						true, false, false,
+						&fixed, &frac);
+			} else {
+				calculate_mbp_width(b->style, LEFT,
+						true, true, true,
+						&fixed, &frac);
+				calculate_mbp_width(b->style, RIGHT,
+						true, true, true,
+						&fixed, &frac);
+			}
 
 			if (0 < width + fixed)
 				width += fixed;
+
 		} else {
 			/* form control with no object */
 			if (width == AUTO)
@@ -667,6 +704,7 @@ layout_minmax_block(struct box *block, const struct gui_layout_table *font_func)
 	enum css_height_e htype = CSS_HEIGHT_AUTO;
 	css_fixed height = 0;
 	css_unit hunit = CSS_UNIT_PX;
+	enum css_box_sizing_e bs = CSS_BOX_SIZING_CONTENT_BOX;
 	bool child_has_height = false;
 
 	assert(block->type == BOX_BLOCK ||
@@ -680,6 +718,7 @@ layout_minmax_block(struct box *block, const struct gui_layout_table *font_func)
 	if (block->style != NULL) {
 		wtype = css_computed_width(block->style, &width, &wunit);
 		htype = css_computed_height(block->style, &height, &hunit);
+		bs = css_computed_box_sizing(block->style);
 	}
 
 	/* set whether the minimum width is of any interest for this box */
@@ -800,6 +839,19 @@ layout_minmax_block(struct box *block, const struct gui_layout_table *font_func)
 	if (block->type != BOX_TABLE_CELL && wtype == CSS_WIDTH_SET &&
 			wunit != CSS_UNIT_PCT) {
 		min = max = FIXTOINT(nscss_len2px(width, wunit, block->style));
+		if (bs == CSS_BOX_SIZING_BORDER_BOX) {
+			int border_box_fixed = 0;
+			float border_box_frac = 0;
+			calculate_mbp_width(block->style, LEFT,
+					false, true, true,
+					&border_box_fixed, &border_box_frac);
+			calculate_mbp_width(block->style, RIGHT,
+					false, true, true,
+					&border_box_fixed, &border_box_frac);
+			if (min < border_box_fixed) {
+				min = max = border_box_fixed;
+			}
+		}
 	}
 
 	if (htype == CSS_HEIGHT_SET && hunit != CSS_UNIT_PCT &&
@@ -811,12 +863,8 @@ layout_minmax_block(struct box *block, const struct gui_layout_table *font_func)
 	/* add margins, border, padding to min, max widths */
 	/* Note: we don't know available width here so percentage margin
 	 * and paddings are wrong. */
-	if (block->gadget && wtype == CSS_WIDTH_SET &&
-			(block->gadget->type == GADGET_SUBMIT ||
-			block->gadget->type == GADGET_RESET ||
-			block->gadget->type == GADGET_BUTTON)) {
-		/* some gadgets with specified width already include border and
-		 * padding, so just get margin */
+	if (bs == CSS_BOX_SIZING_BORDER_BOX && wtype == CSS_WIDTH_SET) {
+		/* Border and padding included in width, so just get margin */
 		calculate_mbp_width(block->style, LEFT, true, false, false,
 				&extra_fixed, &extra_frac);
 		calculate_mbp_width(block->style, RIGHT, true, false, false,
@@ -850,12 +898,11 @@ layout_minmax_block(struct box *block, const struct gui_layout_table *font_func)
 
 
 /**
- * Under some circumstances, specified dimensions for form elements include
- * borders and padding.
+ * Adjust a specified width or height for the box-sizing property.
+ *
+ * This turns the specified dimension into a content-box dimension.
  *
  * \param  box		    gadget to adjust dimensions of
- * \param  percentage	    whether the gadget has its dimension specified as a
- *				percentage
  * \param  available_width  width of containing block
  * \param  setwidth	    set true if the dimension to be tweaked is a width,
  *				else set false for a height
@@ -863,25 +910,29 @@ layout_minmax_block(struct box *block, const struct gui_layout_table *font_func)
  *				updated to new value after consideration of
  *				gadget properties.
  */
-static void layout_tweak_form_dimensions(struct box *box, bool percentage,
-		int available_width, bool setwidth, int *dimension)
+static void layout_handle_box_sizing(
+		struct box *box,
+		int available_width,
+		bool setwidth,
+		int *dimension)
 {
-	int fixed = 0;
-	float frac = 0;
+	enum css_box_sizing_e bs;
 
-	assert(box && box->gadget);
+	assert(box && box->style);
 
-	/* specified gadget widths include borders and padding in some
-	 * cases */
-	if (percentage || box->gadget->type == GADGET_SUBMIT ||
-			box->gadget->type == GADGET_RESET ||
-			box->gadget->type == GADGET_BUTTON) {
+	bs = css_computed_box_sizing(box->style);
+
+	if (bs == CSS_BOX_SIZING_BORDER_BOX) {
+		int orig = *dimension;
+		int fixed = 0;
+		float frac = 0;
+
 		calculate_mbp_width(box->style, setwidth ? LEFT : TOP,
 				false, true, true, &fixed, &frac);
 		calculate_mbp_width(box->style, setwidth ? RIGHT : BOTTOM,
 				false, true, true, &fixed, &frac);
-		*dimension -= frac * available_width + fixed;
-		*dimension = *dimension > 0 ? *dimension : 0;
+		orig -= frac * available_width + fixed;
+		*dimension = orig > 0 ? orig : 0;
 	}
 }
 
@@ -921,7 +972,6 @@ layout_find_dimensions(int available_width,
 {
 	struct box *containing_block = NULL;
 	unsigned int i;
-	bool percentage;
 
 	if (width) {
 		enum css_width_e wtype;
@@ -942,13 +992,9 @@ layout_find_dimensions(int available_width,
 			*width = AUTO;
 		}
 
-		/* specified gadget widths include borders and padding in some
-		 * cases */
-		if (box->gadget && *width != AUTO) {
-			percentage = unit == CSS_UNIT_PCT;
-
-			layout_tweak_form_dimensions(box, percentage,
-					available_width, true, width);
+		if (*width != AUTO) {
+			layout_handle_box_sizing(box, available_width,
+					true, width);
 		}
 	}
 
@@ -1034,13 +1080,9 @@ layout_find_dimensions(int available_width,
 			*height = AUTO;
 		}
 
-		/* specified gadget heights include borders and padding in
-		 * some cases */
-		if (box->gadget && *height != AUTO) {
-			percentage = unit == CSS_UNIT_PCT;
-
-			layout_tweak_form_dimensions(box, percentage,
-					available_width, false, height);
+		if (*height != AUTO) {
+			layout_handle_box_sizing(box, available_width,
+					false, height);
 		}
 	}
 
@@ -1064,13 +1106,9 @@ layout_find_dimensions(int available_width,
 			*max_width = -1;
 		}
 
-		/* specified gadget widths include borders and padding in some
-		 * cases */
-		if (box->gadget && *max_width != -1) {
-			percentage = unit == CSS_UNIT_PCT;
-
-			layout_tweak_form_dimensions(box, percentage,
-					available_width, true, max_width);
+		if (*max_width != -1) {
+			layout_handle_box_sizing(box, available_width,
+					true, max_width);
 		}
 	}
 
@@ -1094,13 +1132,9 @@ layout_find_dimensions(int available_width,
 			*min_width = 0;
 		}
 
-		/* specified gadget widths include borders and padding in some
-		 * cases */
-		if (box->gadget && *min_width != 0) {
-			percentage = unit == CSS_UNIT_PCT;
-
-			layout_tweak_form_dimensions(box, percentage,
-					available_width, true, min_width);
+		if (*min_width != 0) {
+			layout_handle_box_sizing(box, available_width,
+					true, min_width);
 		}
 	}
 
