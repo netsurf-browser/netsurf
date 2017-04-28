@@ -40,8 +40,11 @@ struct rect;
  * be called before URLs can be added to the hotlist, and before the
  * hotlist can be queried to ask if URLs are present in the hotlist.
  *
+ * In read-only mode the hotlist can be modified, but changes will not
+ * persist over sessions.
+ *
  * \param load_path The path to load hotlist from.
- * \param save_path The path to save hotlist to, or NULL for read-only.
+ * \param save_path The path to save hotlist to, or NULL for read-only mode.
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror hotlist_init(
