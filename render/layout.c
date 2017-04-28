@@ -1545,16 +1545,20 @@ layout_solve_width(struct box *box,
 
 	/* Find width */
 	if (width == AUTO) {
-		/* any other 'auto' become 0 or the minimum required values */
-		if (box->margin[LEFT] == AUTO)
-			box->margin[LEFT] = lm;
-		if (box->margin[RIGHT] == AUTO)
-			box->margin[RIGHT] = rm;
+		int margin_left = box->margin[LEFT];
+		int margin_right = box->margin[RIGHT];
+
+		if (margin_left == AUTO) {
+			margin_left = lm;
+		}
+		if (margin_right == AUTO) {
+			margin_right = rm;
+		}
 
 		width = available_width -
-				(box->margin[LEFT] + box->border[LEFT].width +
+				(margin_left + box->border[LEFT].width +
 				box->padding[LEFT] + box->padding[RIGHT] +
-				box->border[RIGHT].width + box->margin[RIGHT]);
+				box->border[RIGHT].width + margin_right);
 		width = width < 0 ? 0 : width;
 		auto_width = true;
 	}
@@ -1572,8 +1576,16 @@ layout_solve_width(struct box *box,
 	}
 
 	/* Width was auto, and unconstrained by min/max width, so we're done */
-	if (auto_width)
+	if (auto_width) {
+		/* any other 'auto' become 0 or the minimum required values */
+		if (box->margin[LEFT] == AUTO) {
+			box->margin[LEFT] = lm;
+		}
+		if (box->margin[RIGHT] == AUTO) {
+			box->margin[RIGHT] = rm;
+		}
 		return width;
+	}
 
 	/* Width was not auto, or was constrained by min/max width
 	 * Need to compute left/right margins */
