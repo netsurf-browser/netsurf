@@ -107,13 +107,18 @@ static nserror hotlist_get_temp_path(const char *path, char **temp_path)
 
 /* Save the hotlist to to a file at the given path
  *
- * \param path  Path to save hostlist file to.
+ * \param path  Path to save hotlist file to.  NULL path is a no-op.
  * \return NSERROR_OK on success, or appropriate error otherwise
  */
 static nserror hotlist_save(const char *path)
 {
 	nserror res = NSERROR_OK;
 	char *temp_path;
+
+	/* NULL path is a no-op. */
+	if (path == NULL) {
+		return NSERROR_OK;
+	}
 
 	/* Get path to export to */
 	res = hotlist_get_temp_path(path, &temp_path);
@@ -163,7 +168,7 @@ static void hotlist_schedule_save_cb(void *p)
  */
 static nserror hotlist_schedule_save(void)
 {
-	if (hl_ctx.save_scheduled == false) {
+	if (hl_ctx.save_scheduled == false && hl_ctx.save_path != NULL) {
 		nserror err = guit->misc->schedule(10 * 1000,
 				hotlist_schedule_save_cb, NULL);
 		if (err != NSERROR_OK) {
@@ -1285,9 +1290,13 @@ nserror hotlist_init(
 	hl_ctx.default_folder = NULL;
 
 	/* Store the save path */
-	hl_ctx.save_path = strdup(save_path);
-	if (hl_ctx.save_path == NULL) {
-		return NSERROR_NOMEM;
+	if (save_path != NULL) {
+		hl_ctx.save_path = strdup(save_path);
+		if (hl_ctx.save_path == NULL) {
+			return NSERROR_NOMEM;
+		}
+	} else {
+		hl_ctx.save_path = NULL;
 	}
 
 	/* Init. hotlist treeview entry fields */

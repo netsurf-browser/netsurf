@@ -41,7 +41,7 @@ struct rect;
  * hotlist can be queried to ask if URLs are present in the hotlist.
  *
  * \param load_path The path to load hotlist from.
- * \param save_path The path to save hotlist to.
+ * \param save_path The path to save hotlist to, or NULL for read-only.
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror hotlist_init(
