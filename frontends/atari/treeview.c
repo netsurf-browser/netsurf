@@ -44,8 +44,7 @@
  * Declare Core Window Callbacks:
  */
 
-void atari_treeview_redraw_request(struct core_window *cw,
-								const struct rect *r);
+nserror atari_treeview_invalidate_area(struct core_window *cw, const struct rect *r);
 void atari_treeview_update_size(struct core_window *cw, int width, int height);
 void atari_treeview_scroll_visible(struct core_window *cw,
 								const struct rect *r);
@@ -56,7 +55,7 @@ void atari_treeview_drag_status(struct core_window *cw,
 		core_window_drag_status ds);
 
 static struct core_window_callback_table cw_t = {
-	.redraw_request = atari_treeview_redraw_request,
+	.invalidate = atari_treeview_invalidate_area,
 	.update_size = atari_treeview_update_size,
 	.scroll_visible = atari_treeview_scroll_visible,
 	.get_window_dimensions = atari_treeview_get_window_dimensions,
@@ -655,32 +654,43 @@ void atari_treeview_close(struct core_window *cw)
  */
 
 /**
- * Request a redraw of the window
+ * callback from core to request an invalidation of a window area.
  *
- * \param cw		the core window object
- * \param r		rectangle to redraw
+ * The specified area of the window should now be considered
+ *  out of date. If the area is NULL the entire window must be
+ *  invalidated.
+ *
+ * \param[in] cw The core window to invalidate.
+ * \param[in] r area to redraw or NULL for the entire window area.
+ * \return NSERROR_OK on success or appropriate error code.
  */
-void atari_treeview_redraw_request(struct core_window *cw, const struct rect *r)
+nserror atari_treeview_invalidate_area(struct core_window *cw, const struct rect *r)
 {
 	GRECT area;
 	struct gemtk_wm_scroll_info_s * slid;
 	struct atari_treeview_window * tv = (struct atari_treeview_window *)cw;
 
-	RECT_TO_GRECT(r, &area)
-
 	assert(tv);
 
-	slid = gemtk_wm_get_scroll_info(tv->window);
+	if (r != NULL) {
+		RECT_TO_GRECT(r, &area);
 
-	//dbg_rect("redraw rect request", r);
+		slid = gemtk_wm_get_scroll_info(tv->window);
 
-	// treeview redraw is always full window width:
-	area.g_x = 0;
-	area.g_w = 8000;
-	// but vertical redraw region is clipped:
-	area.g_y = r->y0 - (slid->y_pos*slid->y_unit_px);
-	area.g_h = r->y1 - r->y0;
+		//dbg_rect("redraw rect request", r);
+
+		// treeview redraw is always full window width:
+		area.g_x = 0;
+		area.g_w = 8000;
+		// but vertical redraw region is clipped:
+		area.g_y = r->y0 - (slid->y_pos*slid->y_unit_px);
+		area.g_h = r->y1 - r->y0;
+	} else {
+		atari_treeview_get_grect(cw, TREEVIEW_AREA_CONTENT, &area);
+	}
 	atari_treeview_redraw_grect_request(cw, &area);
+
+	return NSERROR_OK;
 }
 
 /**
