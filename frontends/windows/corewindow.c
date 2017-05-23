@@ -307,21 +307,42 @@ nsw32_window_corewindow_event_callback(HWND hwnd,
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
+
 /**
- * callback from core to request a redraw
+ * callback from core to request an invalidation of a window area.
+ *
+ * The specified area of the window should now be considered
+ *  out of date. If the area is NULL the entire window must be
+ *  invalidated.
+ *
+ * \param[in] cw The core window to invalidate.
+ * \param[in] rect area to redraw or NULL for the entire window area.
+ * \return NSERROR_OK on success or appropriate error code.
  */
-static void
-nsw32_cw_redraw_request(struct core_window *cw, const struct rect *r)
+static nserror
+nsw32_cw_invalidate_area(struct core_window *cw, const struct rect *rect)
 {
 	struct nsw32_corewindow *nsw32_cw = (struct nsw32_corewindow *)cw;
-	RECT wr;
+	RECT *redrawrectp = NULL;
+	RECT redrawrect;
 
-	wr.left = r->x0;
-	wr.top = r->y0;
-	wr.right = r->x1;
-	wr.bottom = r->y1;
+	assert(gw != NULL);
 
-	RedrawWindow(nsw32_cw->hWnd, &wr, NULL, RDW_INVALIDATE | RDW_NOERASE);
+	if (rect != NULL) {
+		redrawrectp = &redrawrect;
+
+		redrawrect.left = (long)rect->x0;
+		redrawrect.top = (long)rect->y0;
+		redrawrect.right =(long)rect->x1;
+		redrawrect.bottom = (long)rect->y1;
+
+	}
+	RedrawWindow(nsw32_cw->hWnd,
+		     redrawrectp,
+		     NULL,
+		     RDW_INVALIDATE | RDW_NOERASE);
+
+	return NSERROR_OK;
 }
 
 
@@ -376,7 +397,7 @@ nsw32_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
 
 
 struct core_window_callback_table nsw32_cw_cb_table = {
-	.redraw_request = nsw32_cw_redraw_request,
+	.invalidate = nsw32_cw_invalidate,
 	.update_size = nsw32_cw_update_size,
 	.scroll_visible = nsw32_cw_scroll_visible,
 	.get_window_dimensions = nsw32_cw_get_window_dimensions,
