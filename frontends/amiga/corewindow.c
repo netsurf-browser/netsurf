@@ -797,15 +797,26 @@ static const struct ami_win_event_table ami_cw_table = {
 	ami_cw_close,
 };
 
+
 /**
- * callback from core to request a redraw
+ * callback from core to request an invalidation of a amiga core window area.
+ *
+ * The specified area of the window should now be considered
+ *  out of date. If the area is NULL the entire window must be
+ *  invalidated.
+ *
+ * \param[in] cw The core window to invalidate.
+ * \param[in] rect area to redraw or NULL for the entire window area.
+ * \return NSERROR_OK on success or appropriate error code.
  */
-static void
-ami_cw_redraw_request(struct core_window *cw, const struct rect *r)
+static nserror
+ami_cw_invalidate_area(struct core_window *cw, const struct rect *r)
 {
 	struct ami_corewindow *ami_cw = (struct ami_corewindow *)cw;
 
 	ami_cw_redraw(ami_cw, r);
+
+	return NSERROR_OK;
 }
 
 
@@ -897,7 +908,7 @@ ami_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
 
 
 struct core_window_callback_table ami_cw_cb_table = {
-        .redraw_request = ami_cw_redraw_request,
+        .invalidate = ami_cw_invalidate_area,
         .update_size = ami_cw_update_size,
         .scroll_visible = ami_cw_scroll_visible,
         .get_window_dimensions = ami_cw_get_window_dimensions,
