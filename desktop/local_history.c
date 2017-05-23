@@ -23,6 +23,7 @@
 
 #include <stdlib.h>
 
+#include "utils/errors.h"
 #include "netsurf/types.h"
 #include "netsurf/core_window.h"
 

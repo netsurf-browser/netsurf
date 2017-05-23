@@ -34,8 +34,8 @@ The header that defines the callback interface is netsurf/core_window.h
 The callback table contains five function pointer interfaces which the
 frontend must implement for the core.
 
- - redraw_request
-      request a redraw an area of a window
+ - invalidate
+      invalidate an area of a window
 
  - update_size
       Update the limits of the window 
@@ -67,27 +67,29 @@ core to provide the necessary interactions with the frontend windowing
 system.
 
 These actions should ideally use the standard frontend window
-processing. So for the GTK frontend when the core calls the redraw
+processing. So for the GTK frontend when the core calls the invalidate
 operation it simply marks the area passed as damaged (using
 gtk_widget_queue_draw_area()) and lets the standard expose event cause
-the redraw to occour.
+the redraw to occur.
 
 If the frontend needs to redraw an area of a window (perhaps an expose
-event occoured) it must call the corewindoe API wrappers
-implementation e.g in the case of ssl certificate viewer
+event occurred or the window has had an area marked as invalid) it
+must call the core window API wrappers implementation which will
+perform the plot operations required to update an area of the window.
+
+e.g in the case of ssl certificate viewer
 
 void sslcert_viewer_redraw(struct sslcert_session_data *ssl_d,
                            int x, int y, struct rect *clip,
                            const struct redraw_context *ctx);
 
-which will perform the plot operations required to update an area of
-the window for that SSL data.
+would perform the plot operations for that SSL data window.
 
 Usage
 -----
 
 The usage pattern that is expected is for a frontend to create a core
-window impementation that implements the necessary five API in a
+window implementation that implements the necessary five API in a
 generic way and allows the frontend to provide the specific
 specialisation for each of the user interface elements it wishes to
 use (cookies, SSL viewer etc).
@@ -95,7 +97,7 @@ use (cookies, SSL viewer etc).
 The GTK frontend for example:
 
 has source corewindow.[ch] which implement the five core callbacks
-using generic GTK operations (redraw_request calls
+using generic GTK operations (invalidate calls
 gtk_widget_queue_draw_area() etc.) and then provides additional
 operations on a GTK drawing area object to attach expose event
 processing, keypress processing etc.
@@ -110,7 +112,7 @@ calls sslcert_viewer_init() directly.
 frontend skeleton
 -----------------
 
-An example core window implementation for a frontend ssl certficiate
+An example core window implementation for a frontend ssl certificate
 viewer is presented here. This implements the suggested usage above
 and provides generic corewindow helpers.
 
@@ -313,8 +315,8 @@ example_cw_draw_event(toolkit_widget *widget,
 /**
  * callback from core to request a redraw
  */
-static void
-example_cw_redraw_request(struct core_window *cw, const struct rect *r)
+static nserror
+example_cw_invalidate(struct core_window *cw, const struct rect *r)
 {
         struct example_corewindow *example_cw = (struct example_corewindow *)cw;
 
@@ -362,7 +364,7 @@ example_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
 
 
 struct core_window_callback_table example_cw_cb_table = {
-        .redraw_request = example_cw_redraw_request,
+        .invalidate = example_cw_invalidate,
         .update_size = example_cw_update_size,
         .scroll_visible = example_cw_scroll_visible,
         .get_window_dimensions = example_cw_get_window_dimensions,

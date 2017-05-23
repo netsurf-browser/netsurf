@@ -20,7 +20,7 @@
  * \file
  * Interface to core window handling.
  *
- * This provides a generallised API for frontends to implement which
+ * This provides a generalised API for frontends to implement which
  *  allows them to provide a single implementation for general window
  *  operations on their platform.
  *
@@ -35,6 +35,9 @@
 struct core_window;
 struct rect;
 
+/**
+ * drag status passed to drag_status callback
+ */
 typedef enum {
 	CORE_WINDOW_DRAG_NONE,
 	CORE_WINDOW_DRAG_SELECTION,
@@ -42,15 +45,28 @@ typedef enum {
 	CORE_WINDOW_DRAG_MOVE
 } core_window_drag_status;
 
-/** Callbacks to achieve various core window functionality. */
+/**
+ * Callbacks to achieve various core window functionality.
+ */
 struct core_window_callback_table {
 	/**
-	 * Request a redraw of the window
+	 * Invalidate an area of a window.
 	 *
-	 * \param[in] cw the core window object
-	 * \param[in] r rectangle to redraw
+	 * The specified area of the window should now be considered
+	 *  out of date. If the area is NULL the entire window must be
+	 *  invalidated. It is expected that the windowing system will
+	 *  then subsequently cause redraw/expose operations as
+	 *  necessary.
+	 *
+	 * \note the frontend should not attempt to actually start the
+	 *  redraw operations as a result of this callback because the
+	 *  core redraw functions may already be threaded.
+	 *
+	 * \param[in] cw The core window to invalidate.
+	 * \param[in] rect area to redraw or NULL for the entire window area
+	 * \return NSERROR_OK on success or appropriate error code
 	 */
-	void (*redraw_request)(struct core_window *cw, const struct rect *r);
+	nserror (*invalidate)(struct core_window *cw, const struct rect *rect);
 
 	/**
 	 * Update the limits of the window
