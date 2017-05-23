@@ -326,8 +326,6 @@ nsw32_cw_invalidate_area(struct core_window *cw, const struct rect *rect)
 	RECT *redrawrectp = NULL;
 	RECT redrawrect;
 
-	assert(gw != NULL);
-
 	if (rect != NULL) {
 		redrawrectp = &redrawrect;
 
@@ -397,7 +395,7 @@ nsw32_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
 
 
 struct core_window_callback_table nsw32_cw_cb_table = {
-	.invalidate = nsw32_cw_invalidate,
+	.invalidate = nsw32_cw_invalidate_area,
 	.update_size = nsw32_cw_update_size,
 	.scroll_visible = nsw32_cw_scroll_visible,
 	.get_window_dimensions = nsw32_cw_get_window_dimensions,
