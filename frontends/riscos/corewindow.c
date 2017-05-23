@@ -700,7 +700,9 @@ static void cw_tb_save(void *ctx, char *config)
 
 
 
-/** core window toolbar callbacks */
+/**
+ * riscos core window toolbar callbacks
+ */
 static const struct toolbar_callbacks corewindow_toolbar_callbacks = {
 	.theme_update = cw_tb_theme,
 	.change_size = cw_tb_size,
@@ -709,24 +711,50 @@ static const struct toolbar_callbacks corewindow_toolbar_callbacks = {
 	.save_buttons = cw_tb_save,
 };
 
+
 /**
- * callback from core to request a redraw.
+ * callback from core to request an invalidation of a window area.
+ *
+ * The specified area of the window should now be considered
+ *  out of date. If the area is NULL the entire window must be
+ *  invalidated.
+ *
+ * \param[in] cw The core window to invalidate.
+ * \param[in] r area to redraw or NULL for the entire window area.
+ * \return NSERROR_OK on success or appropriate error code.
  */
-static void
-ro_cw_redraw_request(struct core_window *cw, const struct rect *r)
+static nserror
+ro_cw_invalidate(struct core_window *cw, const struct rect *r)
 {
 	struct ro_corewindow *ro_cw = (struct ro_corewindow *)cw;
 	os_error *error;
+	wimp_window_info info;
+
+	if (r == NULL) {
+		info.w = ro_cw->wh;
+		error = xwimp_get_window_info_header_only(&info);
+		if (error) {
+			LOG("xwimp_get_window_info_header_only: 0x%x: %s",
+			    error->errnum, error->errmess);
+			return NSERROR_INVALID;
+		}
+	} else {
+		/* convert the passed rectangle into RO window dimensions */
+		info.extent.x0 = 2 * r->x0;
+		info.extent.y0 = (-2 * (r->y0 + (r->y1 - r->y0))) + ro_cw->origin_y;
+		info.extent.x1 = 2 * (r->x0 + (r->x1 - r->x0));
+		info.extent.y1 = (-2 * r->y0) + ro_cw->origin_y;
+	}
 
 	error = xwimp_force_redraw(ro_cw->wh,
-			   (2 * r->x0),
-			   (-2 * (r->y0 + (r->y1 - r->y0))) + ro_cw->origin_y,
-			   (2 * (r->x0 + (r->x1 - r->x0))),
-			   (-2 * r->y0) + ro_cw->origin_y);
+				   info.extent.x0, info.extent.y0,
+				   info.extent.x1, info.extent.y1);
 	if (error) {
 		LOG("xwimp_force_redraw: 0x%x: %s",
 		    error->errnum, error->errmess);
+		return NSERROR_INVALID;
 	}
+	return NSERROR_OK;
 }
 
 
@@ -817,7 +845,7 @@ ro_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
 
 
 struct core_window_callback_table ro_cw_cb_table = {
-	.redraw_request = ro_cw_redraw_request,
+	.invalidate = ro_cw_invalidate,
 	.update_size = ro_cw_update_size,
 	.scroll_visible = ro_cw_scroll_visible,
 	.get_window_dimensions = ro_cw_get_window_dimensions,
