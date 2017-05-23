@@ -84,13 +84,6 @@ ifeq ($(HOST),AmigaOS)
   endif
 endif
 
-ifeq ($(HOST),Darwin)
-  HOST := macosx
-  ifeq ($(TARGET),)
-    TARGET := cocoa
-  endif
-endif
-
 ifeq ($(HOST),FreeMiNT)
   HOST := mint
 endif
@@ -116,7 +109,7 @@ ifeq ($(TARGET),)
 endif
 
 # valid values for the TARGET
-VLDTARGET := riscos gtk gtk3 beos amiga amigaos3 framebuffer windows atari cocoa monkey
+VLDTARGET := riscos gtk gtk3 beos amiga amigaos3 framebuffer windows atari monkey
 
 # Check for valid TARGET
 ifeq ($(filter $(VLDTARGET),$(TARGET)),)
@@ -255,9 +248,6 @@ else
           PKG_CONFIG := PKG_CONFIG_LIBDIR="$(GCCSDK_INSTALL_ENV)/lib/pkgconfig" pkg-config
         endif
       else
-        ifeq ($(TARGET),cocoa)
-          PKG_CONFIG := PKG_CONFIG_PATH="$(PKG_CONFIG_PATH):/usr/local/lib/pkgconfig" pkg-config
-        else
           ifeq ($(TARGET),atari)
             ifeq ($(HOST),atari)
               PKG_CONFIG := pkg-config
@@ -323,7 +313,6 @@ else
               endif
             endif
           endif
-        endif
       endif
     endif
   endif

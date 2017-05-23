@@ -758,7 +758,6 @@ INPUT                  = frontends/amiga \
                          frontends/atari \
                          frontends/atari/plot \
                          frontends/beos \
-                         frontends/cocoa \
                          frontends/framebuffer \
                          frontends/framebuffer/fbtk \
                          frontends/gtk \
