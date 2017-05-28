@@ -74,6 +74,7 @@
 #include "riscos/window.h"
 #include "riscos/iconbar.h"
 #include "riscos/sslcert.h"
+#include "riscos/local_history.h"
 #include "riscos/global_history.h"
 #include "riscos/cookies.h"
 #include "riscos/wimp_event.h"
@@ -1252,9 +1253,6 @@ static nserror gui_init(int argc, char** argv)
 	/* Initialise query windows */
 	ro_gui_query_init();
 
-	/* Initialise the history subsystem */
-	ro_gui_history_init();
-
 	/* Initialise toolbars */
 	ro_toolbar_init();
 
@@ -1560,6 +1558,7 @@ static void gui_quit(void)
 	urldb_save_cookies(nsoption_charp(cookie_jar));
 	urldb_save(nsoption_charp(url_save));
 	ro_gui_window_quit();
+	ro_gui_local_history_finalise();
 	ro_gui_global_history_finalise();
 	ro_gui_hotlist_finalise();
 	ro_gui_cookies_finalise();

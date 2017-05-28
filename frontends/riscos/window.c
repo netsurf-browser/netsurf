@@ -69,6 +69,7 @@
 #include "riscos/buffer.h"
 #include "riscos/cookies.h"
 #include "riscos/dialog.h"
+#include "riscos/local_history.h"
 #include "riscos/global_history.h"
 #include "riscos/gui.h"
 #include "riscos/gui/status_bar.h"
@@ -3947,13 +3948,22 @@ void ro_gui_window_action_new_window(struct gui_window *g)
 /**
  * Open a local history pane for a browser window.
  *
- * \param *g			The browser window to act on.
+ * \param g The browser window to act on.
  */
 
-void ro_gui_window_action_local_history(struct gui_window *g)
+void ro_gui_window_action_local_history(struct gui_window *gw)
 {
-	if (g != NULL && g->bw != NULL)
-		ro_gui_history_open(g, true);
+	nserror res;
+
+	if ((gw == NULL) || (gw->bw == NULL)) {
+		return;
+	}
+
+	res = ro_gui_local_history_present(gw->window, gw->bw);
+
+	if (res != NSERROR_OK) {
+		ro_warn_user(messages_get_errorcode(res), 0);
+	}
 }
 
 

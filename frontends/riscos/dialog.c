@@ -44,6 +44,7 @@
 #include "riscos/configure.h"
 #include "riscos/cookies.h"
 #include "riscos/dialog.h"
+#include "riscos/local_history.h"
 #include "riscos/global_history.h"
 #include "riscos/gui.h"
 #include "riscos/hotlist.h"
@@ -176,7 +177,7 @@ void ro_gui_dialog_init(void)
 			ro_gui_dialog_zoom_apply);
 	ro_gui_wimp_event_set_help_prefix(dialog_zoom, "HelpScaleView");
 
-	/* Treeview initialisation has moved to the end, to allow any
+	/* core window based initialisation done last to allow any
 	 * associated dialogues to be set up first.
 	 */
 
@@ -185,6 +186,9 @@ void ro_gui_dialog_init(void)
 
 	/* hotlist window */
 	ro_gui_hotlist_initialise();
+
+	/* local history window */
+	ro_gui_local_history_initialise();
 
 	/* global history window */
 	ro_gui_global_history_initialise();

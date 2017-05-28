@@ -59,7 +59,6 @@ extern wimp_w dialog_info, dialog_saveas, dialog_zoom, dialog_pageinfo,
 extern wimp_w current_menu_window;
 extern bool current_menu_open;
 extern wimp_menu *recent_search_menu;	/* search.c */
-extern wimp_w history_window;
 extern bool gui_redraw_debug;
 extern osspriteop_area *gui_sprites;
 extern bool dialog_folder_add, dialog_entry_add, hotlist_insert;
@@ -168,10 +167,6 @@ bool ro_gui_shift_pressed(void);
 bool ro_gui_ctrl_pressed(void);
 bool ro_gui_alt_pressed(void);
 void gui_window_set_pointer(struct gui_window *g, enum gui_pointer_shape shape);
-
-/* in history.c */
-void ro_gui_history_init(void);
-void ro_gui_history_open(struct gui_window *g, bool pointer);
 
 /* in schedule.c */
 extern bool sched_active;

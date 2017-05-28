@@ -236,12 +236,7 @@ static void ro_cw_mouse_at(wimp_pointer *pointer, void *data)
 	}
 	LOG("RO corewindow context %p", ro_cw);
 
-	/* no futher processing required if no drag in progress */
-	if (ro_cw->drag_status == CORE_WINDOW_DRAG_NONE) {
-		return;
-	}
-
-	/* Not a Menu click and a drag is in progress. */
+	/* Not a Menu click. */
 	state.w = pointer->w;
 	error = xwimp_get_window_state(&state);
 	if (error) {
@@ -250,18 +245,23 @@ static void ro_cw_mouse_at(wimp_pointer *pointer, void *data)
 		return;
 	}
 
-	/* Convert the returned mouse coordinates into NetSurf's internal
-	 * units.
+	/* Convert the returned mouse coordinates into
+	 * NetSurf's internal units.
 	 */
 	xpos = ((pointer->pos.x - state.visible.x0) + state.xscroll) / 2;
 	ypos = ((state.visible.y1 - pointer->pos.y) -
 		state.yscroll + ro_cw->origin_y) / 2;
 
-	/* Start to process the mouse click. */
-	mouse = ro_gui_mouse_drag_state(pointer->buttons,
-					wimp_BUTTON_DOUBLE_CLICK_DRAG);
+	/* if no drag in progress report hover */
+	if (ro_cw->drag_status == CORE_WINDOW_DRAG_NONE) {
+		mouse = BROWSER_MOUSE_HOVER;
+	} else {
+		/* Start to process the mouse click. */
+		mouse = ro_gui_mouse_drag_state(pointer->buttons,
+						wimp_BUTTON_DOUBLE_CLICK_DRAG);
 
-	ro_cw->mouse(ro_cw, mouse, xpos, ypos);
+		ro_cw->mouse(ro_cw, mouse, xpos, ypos);
+	}
 
 	if (!(mouse & BROWSER_MOUSE_DRAG_ON)) {
 		ro_cw->mouse(ro_cw, BROWSER_MOUSE_HOVER, xpos, ypos);
@@ -373,6 +373,30 @@ ro_cw_drag_start(struct ro_corewindow *ro_cw,
 
 
 /**
+ * Handle Pointer Leaving Window events.
+ *
+ * These events are delivered as the termination callback handler from
+ * ro_mouse's mouse tracking.
+ *
+ * \param leaving The Wimp_PointerLeavingWindow block.
+ * \param data NULL data pointer.
+ */
+static void ro_cw_pointer_leaving(wimp_leaving *leaving, void *data)
+{
+	struct ro_corewindow *ro_cw;
+
+	ro_cw = (struct ro_corewindow *)ro_gui_wimp_event_get_user_data(leaving->w);
+	if (ro_cw == NULL) {
+		LOG("no corewindow conext for window: 0x%x",
+		    (unsigned int)leaving->w);
+		return;
+	}
+
+	ro_cw->mouse(ro_cw, BROWSER_MOUSE_LEAVE, 0, 0);
+}
+
+
+/**
  * Wimp callback on pointer entering window.
  *
  * The wimp has issued an event to the window because the pointer has
@@ -382,7 +406,7 @@ ro_cw_drag_start(struct ro_corewindow *ro_cw,
  */
 static void ro_cw_pointer_entering(wimp_entering *entering)
 {
-	ro_mouse_track_start(NULL, ro_cw_mouse_at, NULL);
+	ro_mouse_track_start(ro_cw_pointer_leaving, ro_cw_mouse_at, NULL);
 }
 
 

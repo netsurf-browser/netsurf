@@ -79,7 +79,10 @@ typedef enum browser_mouse_state {
 	/** 2nd modifier key pressed (eg. Ctrl) */
 	BROWSER_MOUSE_MOD_2 = (1 << 12),
 	/** 3rd modifier key pressed (eg. Alt) */
-	BROWSER_MOUSE_MOD_3 = (1 << 13)
+	BROWSER_MOUSE_MOD_3 = (1 << 13),
+
+	/** pointer leaving window */
+	BROWSER_MOUSE_LEAVE = (1 << 14),
 } browser_mouse_state;
 
 
