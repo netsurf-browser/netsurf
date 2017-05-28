@@ -33,7 +33,6 @@ bool ro_gui_dialog_open_top(wimp_w w, struct toolbar *toolbar,
 		int width, int height);
 void ro_gui_dialog_open_at_pointer(wimp_w w);
 void ro_gui_dialog_open_xy(wimp_w, int x, int y);
-void ro_gui_dialog_open_centre_parent(wimp_w parent, wimp_w w);
 
 void ro_gui_dialog_open_persistent(wimp_w parent, wimp_w w, bool pointer);
 void ro_gui_dialog_add_persistent(wimp_w parent, wimp_w w);

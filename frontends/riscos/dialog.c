@@ -510,7 +510,8 @@ void ro_gui_dialog_open_xy(wimp_w w, int x, int y)
  * /param parent the parent window (NULL for centre of screen)
  * /param child the child window
  */
-void ro_gui_dialog_open_centre_parent(wimp_w parent, wimp_w child) {
+static void ro_gui_dialog_open_centre_parent(wimp_w parent, wimp_w child)
+{
 	os_error *error;
 	wimp_window_state state;
 	int mid_x, mid_y;
@@ -545,7 +546,7 @@ void ro_gui_dialog_open_centre_parent(wimp_w parent, wimp_w child) {
 
 	/* move to the centre of the parent at the top of the stack */
 	dimension = state.visible.x1 - state.visible.x0;
-	scroll_width = ro_get_vscroll_width(history_window);
+	scroll_width = ro_get_vscroll_width(parent);
 	state.visible.x0 = mid_x - (dimension + scroll_width) / 2;
 	state.visible.x1 = state.visible.x0 + dimension;
 	dimension = state.visible.y1 - state.visible.y0;
@@ -567,10 +568,11 @@ void ro_gui_dialog_open_centre_parent(wimp_w parent, wimp_w child) {
 
 void ro_gui_dialog_open_persistent(wimp_w parent, wimp_w w, bool pointer) {
 
-	if (pointer)
+	if (pointer) {
 		ro_gui_dialog_open_at_pointer(w);
-	else
+	} else {
 		ro_gui_dialog_open_centre_parent(parent, w);
+	}
 
 	/* todo: use wimp_event definitions rather than special cases */
 	if ((w == dialog_pageinfo) || (w == dialog_objinfo))
