@@ -33,9 +33,9 @@ struct local_history_session;
 struct browser_window;
 
 /**
- * Initialise the global history.
+ * Initialise the local history.
  *
- * This iterates through the URL database, generating the global history data,
+ * This iterates through the URL database, generating the local history data,
  * and creates a treeview.
  *
  * This must be called before any other local_history_* function.
@@ -52,10 +52,10 @@ nserror local_history_init(struct core_window_callback_table *cw_t,
 			   struct local_history_session **session);
 
 /**
- * Finalise the global history.
+ * Finalise the local history.
  *
- * This destroys the global history treeview and the global history module's
- * internal data.  After calling this if global history is required again,
+ * This destroys the local history treeview and the local history module's
+ * internal data.  After calling this if ocall history is required again,
  * local_history_init must be called.
  *
  * \param session The local history session to finalise.
@@ -65,7 +65,7 @@ nserror local_history_fini(struct local_history_session *session);
 
 
 /**
- * Redraw the global history.
+ * Redraw the local history.
  *
  * \param session The local history session context.
  * \param x     X coordinate to render history at
@@ -104,13 +104,27 @@ bool local_history_keypress(struct local_history_session *session, uint32_t key)
 nserror local_history_set(struct local_history_session *session, struct browser_window *bw);
 
 /**
- * get size of local history content area
+ * get size of local history content area.
  *
- * \param session The local history session context.
+ * \param[in] session The local history session context.
  * \param[out] width on sucessful return the width of the localhistory content
  * \param[out] height on sucessful return the height of the localhistory content
  * \return NSERROR_OK or appropriate error code.
  */
 nserror local_history_get_size(struct local_history_session *session, int *width, int *height);
+
+/**
+ * get url of entry at position in local history content area.
+ *
+ * \todo the returned url should be a referenced nsurl.
+ *
+ * \param[in] session The local history session context.
+ * \param[in] x The x coordinate to get url of.
+ * \param[in] y The y coordinate to get url of.
+ * \param[out] url_out string representation of the url at the coordinates.
+ * \return NSERROR_OK and url_out updated or NSERROR_NOT_FOUND if no url at
+ *          location.
+ */
+nserror local_history_get_url(struct local_history_session *session, int x, int y, const char **url_out);
 
 #endif

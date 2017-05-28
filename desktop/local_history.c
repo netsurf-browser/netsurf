@@ -91,7 +91,10 @@ local_history_mouse_action(struct local_history_session *session,
 {
 	if (mouse & BROWSER_MOUSE_PRESS_1) {
 		browser_window_history_click(session->bw, x, y, false);
+	} else 	if (mouse & BROWSER_MOUSE_PRESS_2) {
+		browser_window_history_click(session->bw, x, y, true);
 	}
+
 }
 
 /* exported interface documented in desktop/local_history.h */
@@ -131,6 +134,24 @@ local_history_get_size(struct local_history_session *session,
 	browser_window_history_size(session->bw, width, height);
 	*width += 20;
 	*height += 20;
+
+	return NSERROR_OK;
+}
+
+
+/* exported interface documented in desktop/local_history.h */
+nserror
+local_history_get_url(struct local_history_session *session,
+		      int x, int y,
+		      const char **url_out)
+{
+	const char *url;
+	url = browser_window_history_position_url(session->bw, x, y);
+	if (url == NULL) {
+		return NSERROR_NOT_FOUND;
+	}
+
+	*url_out = url;
 
 	return NSERROR_OK;
 }
