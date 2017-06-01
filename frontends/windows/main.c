@@ -46,7 +46,7 @@
 #include "windows/corewindow.h"
 #include "windows/ssl_cert.h"
 #include "windows/download.h"
-#include "windows/localhistory.h"
+#include "windows/local_history.h"
 #include "windows/window.h"
 #include "windows/schedule.h"
 #include "windows/font.h"
@@ -376,7 +376,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 
 	ret = nsws_create_main_class(hInstance);
 	ret = nsws_create_drawable_class(hInstance);
-	ret = nsws_create_localhistory_class(hInstance);
 	ret = nsw32_create_corewindow_class(hInstance);
 	ret = nsws_create_cert_verify_class(hInstance);
 

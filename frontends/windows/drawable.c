@@ -38,7 +38,7 @@
 #include "windows/windbg.h"
 #include "windows/plot.h"
 #include "windows/window.h"
-#include "windows/localhistory.h"
+#include "windows/local_history.h"
 #include "windows/drawable.h"
 
 static const char windowclassname_drawable[] = "nswsdrawablewindow";
@@ -415,7 +415,7 @@ nsws_drawable_mousedown(struct gui_window *gw,
 	if ((gw == NULL) ||
 	    (gw->mouse == NULL) ||
 	    (gw->bw == NULL)) {
-		nsws_localhistory_close(gw);
+		nsw32_local_history_hide();
 		return 0;
 	}
 
@@ -532,9 +532,8 @@ nsws_window_drawable_event_callback(HWND hwnd,
 					GET_Y_LPARAM(lparam),
 					BROWSER_MOUSE_PRESS_1);
 		SetFocus(hwnd);
-		nsws_localhistory_close(gw);
+		nsw32_local_history_hide();
 		return 0;
-		break;
 
 	case WM_RBUTTONDOWN:
 		nsws_drawable_mousedown(gw,

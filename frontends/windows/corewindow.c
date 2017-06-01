@@ -211,7 +211,7 @@ nsw32_corewindow_vscroll(struct nsw32_corewindow *nsw32_cw,
 		       NULL,
 		       NULL,
 		       NULL,
-		       SW_INVALIDATE);
+		       SW_ERASE | SW_INVALIDATE);
 
 	/**
 	 * /todo win32 corewindow vertical scrolling needs us to
@@ -220,6 +220,69 @@ nsw32_corewindow_vscroll(struct nsw32_corewindow *nsw32_cw,
 
 	return 0;
 }
+
+
+static LRESULT
+nsw32_corewindow_hscroll(struct nsw32_corewindow *nsw32_cw,
+			 HWND hwnd,
+			 WPARAM wparam)
+{
+	SCROLLINFO si; /* current scroll information */
+	SCROLLINFO usi; /* updated scroll infomation for scrollwindowex */
+
+	LOG("VSCROLL");
+
+	si.cbSize = sizeof(si);
+	si.fMask = SIF_ALL;
+	GetScrollInfo(hwnd, SB_HORZ, &si);
+	usi = si;
+
+	switch (LOWORD(wparam))	{
+	case SB_LINELEFT:
+		usi.nPos -= 30;
+		break;
+
+	case SB_LINERIGHT:
+		usi.nPos += 30;
+		break;
+
+	case SB_PAGELEFT:
+		usi.nPos -= si.nPage;
+		break;
+
+	case SB_PAGERIGHT:
+		usi.nPos += si.nPage;
+		break;
+
+	case SB_THUMBTRACK:
+		usi.nPos = si.nTrackPos;
+		break;
+
+	default:
+		break;
+	}
+
+	if (usi.nPos < si.nMin) {
+		usi.nPos = si.nMin;
+	}
+	if (usi.nPos > si.nMax) {
+		usi.nPos = si.nMax;
+	}
+
+	SetScrollInfo(hwnd, SB_HORZ, &usi, TRUE);
+
+	ScrollWindowEx(hwnd,
+		       si.nPos - usi.nPos,
+		       0,
+		       NULL,
+		       NULL,
+		       NULL,
+		       NULL,
+		       SW_ERASE | SW_INVALIDATE);
+
+	return 0;
+}
+
 
 static LRESULT
 nsw32_corewindow_mousedown(struct nsw32_corewindow *nsw32_cw,
@@ -274,6 +337,9 @@ nsw32_window_corewindow_event_callback(HWND hwnd,
 
 		case WM_VSCROLL:
 			return nsw32_corewindow_vscroll(nsw32_cw, hwnd, wparam);
+
+		case WM_HSCROLL:
+			return nsw32_corewindow_hscroll(nsw32_cw, hwnd, wparam);
 
 		case WM_LBUTTONDOWN:
 			return nsw32_corewindow_mousedown(nsw32_cw,

@@ -49,7 +49,7 @@
 #include "windows/drawable.h"
 #include "windows/font.h"
 #include "windows/prefs.h"
-#include "windows/localhistory.h"
+#include "windows/local_history.h"
 #include "windows/hotlist.h"
 #include "windows/cookies.h"
 #include "windows/global_history.h"
@@ -879,6 +879,7 @@ static void nsws_window_update_forward_back(struct gui_window *w)
 			    MAKELONG((back ? TBSTATE_ENABLED :
 				      TBSTATE_INDETERMINATE), 0));
 	}
+	nsw32_local_history_hide();
 }
 
 
@@ -1148,7 +1149,7 @@ nsws_window_command(HWND hwnd,
 		break;
 
 	case IDM_NAV_LOCALHISTORY:
-		gw->localhistory = nsws_window_create_localhistory(gw);
+		nsw32_local_history_present(gw->main, gw->bw);
 		break;
 
 	case IDM_NAV_GLOBALHISTORY:
@@ -1436,6 +1437,7 @@ nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 	case WM_NCDESTROY:
 		RemoveProp(hwnd, TEXT("GuiWnd"));
+		nsw32_local_history_hide();
 		browser_window_destroy(gw->bw);
 		if (--open_windows <= 0) {
 			win32_set_quit(true);
@@ -1947,13 +1949,4 @@ HWND gui_window_main_window(struct gui_window *w)
 	if (w == NULL)
 		return NULL;
 	return w->main;
-}
-
-
-/* exported interface documented in windows/window.h */
-struct nsws_localhistory *gui_window_localhistory(struct gui_window *w)
-{
-	if (w == NULL)
-		return NULL;
-	return w->localhistory;
 }
