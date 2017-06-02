@@ -3206,7 +3206,7 @@ layout_absolute(struct box *box,
 
 		/* Adjust for {min|max}-width */
 		if (max_width >= 0 && width > max_width) width = max_width;
-		if (min_width >  0 && width < min_width) width = min_width;
+		if (width < min_width) width = min_width;
 
 		right = containing_block->width -
 			left -
@@ -3267,7 +3267,7 @@ layout_absolute(struct box *box,
 			/* Adjust for {min|max}-width */
 			if (max_width >= 0 && width > max_width)
 				width = max_width;
-			if (min_width >  0 && width < min_width)
+			if (width < min_width)
 				width = min_width;
 
 			left = containing_block->width -
@@ -3301,7 +3301,7 @@ layout_absolute(struct box *box,
 			/* Adjust for {min|max}-width */
 			if (max_width >= 0 && width > max_width)
 				width = max_width;
-			if (min_width >  0 && width < min_width)
+			if (width < min_width)
 				width = min_width;
 
 			right = containing_block->width -
@@ -3314,7 +3314,7 @@ layout_absolute(struct box *box,
 			/* Adjust for {min|max}-width */
 			if (max_width >= 0 && width > max_width)
 				width = max_width;
-			if (min_width >  0 && width < min_width)
+			if (width < min_width)
 				width = min_width;
 
 			left = containing_block->width -
@@ -3333,7 +3333,7 @@ layout_absolute(struct box *box,
 			/* Adjust for {min|max}-width */
 			if (max_width >= 0 && width > max_width)
 				width = max_width;
-			if (min_width >  0 && width < min_width)
+			if (width < min_width)
 				width = min_width;
 
 		} else if (left != AUTO && width != AUTO && right == AUTO) {
@@ -3341,7 +3341,7 @@ layout_absolute(struct box *box,
 			/* Adjust for {min|max}-width */
 			if (max_width >= 0 && width > max_width)
 				width = max_width;
-			if (min_width >  0 && width < min_width)
+			if (width < min_width)
 				width = min_width;
 
 			right = containing_block->width -
