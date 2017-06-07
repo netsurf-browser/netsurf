@@ -332,7 +332,7 @@ void CloseOutlineFont(struct OutlineFont *of, struct List *list)
 int64 GetFileSize(BPTR fh)
 {
 	int32 size = 0;
-	struct FileInfoBlock *fib = malloc(sizeof(struct FileInfoBlock));
+	struct FileInfoBlock *fib = AllocDosObject(DOS_FIB, NULL);
 	if(fib == NULL) return 0;
 
 	ExamineFH(fh, fib);
