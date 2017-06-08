@@ -338,7 +338,7 @@ int64 GetFileSize(BPTR fh)
 	ExamineFH(fh, fib);
 	size = fib->fib_Size;
 
-	free(fib);
+	FreeDosObject(DOS_FIB, fib);
 	return (int64)size;
 }
 
