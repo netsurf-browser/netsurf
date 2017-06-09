@@ -806,7 +806,7 @@ static const struct ami_win_event_table ami_cw_table = {
  *  invalidated.
  *
  * \param[in] cw The core window to invalidate.
- * \param[in] rect area to redraw or NULL for the entire window area.
+ * \param[in] r area to redraw or NULL for the entire window area.
  * \return NSERROR_OK on success or appropriate error code.
  */
 static nserror

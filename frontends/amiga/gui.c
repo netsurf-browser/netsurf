@@ -4986,7 +4986,7 @@ static bool gui_window_get_scroll(struct gui_window *g, int *restrict sx, int *r
  *   content is shown. The amiga implementation scrolls the contents so
  *   the specified point in the content is at the top of the viewport.
  *
- * \param gw gui_window to scroll
+ * \param g gui_window to scroll
  * \param rect The rectangle to ensure is shown.
  * \return NSERROR_OK on success or apropriate error code.
  */

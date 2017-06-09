@@ -272,8 +272,8 @@ ns-clone()
     done
 
     # put current env.sh in place in workspace
-    if [ ! -f "${TARGET_WORKSPACE}/env.sh" -a -f ${TARGET_WORKSPACE}/${NS_BROWSER}/Docs/env.sh ]; then
-	cp ${TARGET_WORKSPACE}/${NS_BROWSER}/Docs/env.sh ${TARGET_WORKSPACE}/env.sh
+    if [ ! -f "${TARGET_WORKSPACE}/env.sh" -a -f ${TARGET_WORKSPACE}/${NS_BROWSER}/docs/env.sh ]; then
+	cp ${TARGET_WORKSPACE}/${NS_BROWSER}/docs/env.sh ${TARGET_WORKSPACE}/env.sh
     fi
 }
 

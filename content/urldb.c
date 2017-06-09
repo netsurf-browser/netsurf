@@ -849,7 +849,7 @@ urldb_iterate_partial_host(struct search_node *root,
  *
  * Given: http://www.example.org/a/b/c/d//e
  * and assuming a path tree:
- *     .
+ *     ^
  *    /	\
  *   a1 b1
  *  / \

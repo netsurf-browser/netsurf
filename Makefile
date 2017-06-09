@@ -879,7 +879,7 @@ install: all-program install-$(TARGET)
 
 .PHONY: docs
 
-docs: Docs/Doxyfile
+docs: docs/Doxyfile
 	doxygen $<
 
 

@@ -593,7 +593,7 @@ static void browser_window_set_selection(struct browser_window *bw,
  * scrolls the viewport to ensure the specified rectangle of the
  *   content is shown.
  *
- * \param gw gui_window to scroll
+ * \param bw window to scroll
  * \param rect The rectangle to ensure is shown.
  * \return NSERROR_OK on success or apropriate error code.
  */

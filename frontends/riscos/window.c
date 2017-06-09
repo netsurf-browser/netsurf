@@ -3948,9 +3948,8 @@ void ro_gui_window_action_new_window(struct gui_window *g)
 /**
  * Open a local history pane for a browser window.
  *
- * \param g The browser window to act on.
+ * \param gw The browser window to act on.
  */
-
 void ro_gui_window_action_local_history(struct gui_window *gw)
 {
 	nserror res;

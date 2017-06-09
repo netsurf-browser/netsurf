@@ -1048,7 +1048,7 @@ static void gui_window_set_status(struct gui_window *g, const char *text)
  *   content is shown. The GTK implementation scrolls the contents so
  *   the specified point in the content is at the top of the viewport.
  *
- * \param gw gui window to scroll
+ * \param g gui window to scroll
  * \param rect The rectangle to ensure is shown.
  * \return NSERROR_OK on success or apropriate error code.
  */

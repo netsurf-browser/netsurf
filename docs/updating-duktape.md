@@ -13,11 +13,11 @@ Updating Duktape
 
     2.  Run the following command:
 
-           python2 tools/configure.py \
-               --output-directory /tmp/output \
-               --source-directory src-input \
-               --config-metadata config \
-               --fixup-line '#include "duk_custom.h"'
+            python2 tools/configure.py \
+              --output-directory /tmp/output \
+              --source-directory src-input \
+              --config-metadata config \
+              --fixup-line '#include "duk_custom.h"'
 
     3.  This generates a suitable set of duktape
         sources in `/tmp/output`
