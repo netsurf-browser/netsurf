@@ -336,7 +336,7 @@ main(int argc, char **argv)
 	setbuf(stderr, NULL);
 
 	/* Prep the search paths */
-	respaths = nsmonkey_init_resource("${HOME}/.netsurf/:${NETSURFRES}:"MONKEY_RESPATH":./monkey/res");
+	respaths = nsmonkey_init_resource("${HOME}/.netsurf/:${NETSURFRES}:"MONKEY_RESPATH":./frontends/monkey/res");
 
 	/* initialise logging. Not fatal if it fails but not much we can do
 	 * about it either.
