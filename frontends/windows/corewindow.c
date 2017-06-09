@@ -286,18 +286,40 @@ nsw32_corewindow_hscroll(struct nsw32_corewindow *nsw32_cw,
 
 static LRESULT
 nsw32_corewindow_mousedown(struct nsw32_corewindow *nsw32_cw,
+			 HWND hwnd,
 			   int x, int y,
 			   browser_mouse_state button)
 {
+	SCROLLINFO si; /* scroll information */
+
+	/* get scroll positions */
+	si.cbSize = sizeof(si);
+	si.fMask = SIF_POS;
+	GetScrollInfo(hwnd, SB_HORZ, &si);
+	x += si.nPos;
+	GetScrollInfo(hwnd, SB_VERT, &si);
+	y += si.nPos;
+
 	nsw32_cw->mouse(nsw32_cw, button, x, y);
 	return 0;
 }
 
 static LRESULT
 nsw32_corewindow_mouseup(struct nsw32_corewindow *nsw32_cw,
+			 HWND hwnd,
 			 int x, int y,
 			 browser_mouse_state button)
 {
+	SCROLLINFO si; /* scroll information */
+
+	/* get scroll positions */
+	si.cbSize = sizeof(si);
+	si.fMask = SIF_POS;
+	GetScrollInfo(hwnd, SB_HORZ, &si);
+	x += si.nPos;
+	GetScrollInfo(hwnd, SB_VERT, &si);
+	y += si.nPos;
+
 	nsw32_cw->mouse(nsw32_cw, button, x, y);
 	return 0;
 }
@@ -342,25 +364,25 @@ nsw32_window_corewindow_event_callback(HWND hwnd,
 			return nsw32_corewindow_hscroll(nsw32_cw, hwnd, wparam);
 
 		case WM_LBUTTONDOWN:
-			return nsw32_corewindow_mousedown(nsw32_cw,
+			return nsw32_corewindow_mousedown(nsw32_cw, hwnd,
 							  GET_X_LPARAM(lparam),
 							  GET_Y_LPARAM(lparam),
 							  BROWSER_MOUSE_PRESS_1);
 
 		case WM_RBUTTONDOWN:
-			return nsw32_corewindow_mousedown(nsw32_cw,
+			return nsw32_corewindow_mousedown(nsw32_cw, hwnd,
 							   GET_X_LPARAM(lparam),
 							   GET_Y_LPARAM(lparam),
 							   BROWSER_MOUSE_PRESS_2);
 
 		case WM_LBUTTONUP:
-			return nsw32_corewindow_mouseup(nsw32_cw,
+			return nsw32_corewindow_mouseup(nsw32_cw, hwnd,
 							GET_X_LPARAM(lparam),
 							GET_Y_LPARAM(lparam),
 							BROWSER_MOUSE_CLICK_1);
 
 		case WM_RBUTTONUP:
-			return nsw32_corewindow_mouseup(nsw32_cw,
+			return nsw32_corewindow_mouseup(nsw32_cw, hwnd,
 							GET_X_LPARAM(lparam),
 							GET_Y_LPARAM(lparam),
 							BROWSER_MOUSE_CLICK_2);
@@ -393,14 +415,22 @@ nsw32_cw_invalidate_area(struct core_window *cw, const struct rect *rect)
 	RECT redrawrect;
 
 	if (rect != NULL) {
+		SCROLLINFO si; /* scroll information */
+
+		/* get scroll positions */
+		si.cbSize = sizeof(si);
+		si.fMask = SIF_POS;
+		GetScrollInfo(nsw32_cw->hWnd, SB_HORZ, &si);
+		redrawrect.left = (long)rect->x0 - si.nPos;
+		redrawrect.right = (long)rect->x1 - si.nPos;
+
+		GetScrollInfo(nsw32_cw->hWnd, SB_VERT, &si);
+		redrawrect.top = (long)rect->y0 - si.nPos;
+		redrawrect.bottom = (long)rect->y1 - si.nPos;
+
 		redrawrectp = &redrawrect;
-
-		redrawrect.left = (long)rect->x0;
-		redrawrect.top = (long)rect->y0;
-		redrawrect.right =(long)rect->x1;
-		redrawrect.bottom = (long)rect->y1;
-
 	}
+
 	RedrawWindow(nsw32_cw->hWnd,
 		     redrawrectp,
 		     NULL,
