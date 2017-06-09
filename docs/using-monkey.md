@@ -143,9 +143,12 @@ Responses
     a window.
 
   GENERIC POLL BLOCKING
+  GENERIC POLL TIMED nnnn
     Monkey reached a point where it could sleep waiting for
     commands or scheduled timeouts.  No fetches nor redraws
-    were pending.
+    were pending.  If there are no timeouts or other pending
+    jobs then this will be a BLOCKING poll, otherwise the number
+    given is in milliseconds.
 
   Window messages
   ---------------

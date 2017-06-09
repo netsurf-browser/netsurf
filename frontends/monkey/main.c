@@ -287,7 +287,7 @@ static void monkey_run(void)
 
     default:
       LOG("Iterate non-blocking");
-      fprintf(stdout, "GENERIC POLL TIMED\n");
+      fprintf(stdout, "GENERIC POLL TIMED %d\n", schedtm);
       tv.tv_sec = schedtm / 1000; /* miliseconds to seconds */
       tv.tv_usec = (schedtm % 1000) * 1000; /* remainder to microseconds */
       timeout = &tv;
