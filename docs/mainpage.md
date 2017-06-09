@@ -1,7 +1,7 @@
 NetSurf web browser
 ===================
 
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/1037/badge)](https://bestpractices.coreinfrastructure.org/projects/1037)
+![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/1037/badge)[*](https://bestpractices.coreinfrastructure.org/projects/1037)
 
 The NetSurf code makes use of Doxygen for code documentation.
 
