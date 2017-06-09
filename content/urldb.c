@@ -696,8 +696,8 @@ static bool urldb__host_is_ip_address(const char *host)
 	}
 
 	ipv6_addr_len = host_len - 2;
-	if (ipv6_addr_len > sizeof(ipv6_addr)) {
-		ipv6_addr_len = sizeof(ipv6_addr);
+	if (ipv6_addr_len >= sizeof(ipv6_addr)) {
+		ipv6_addr_len = sizeof(ipv6_addr) - 1;
 	}
 	strncpy(ipv6_addr, sane_host + 1, ipv6_addr_len);
 	ipv6_addr[ipv6_addr_len] = '\0';
