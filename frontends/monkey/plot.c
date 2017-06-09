@@ -58,8 +58,8 @@ monkey_plot_clip(const struct redraw_context *ctx, const struct rect *clip)
  */
 static nserror
 monkey_plot_arc(const struct redraw_context *ctx,
-	       const plot_style_t *style,
-	       int x, int y, int radius, int angle1, int angle2)
+		const plot_style_t *style,
+		int x, int y, int radius, int angle1, int angle2)
 {
 	fprintf(stdout,
 		"PLOT ARC X %d Y %d RADIUS %d ANGLE1 %d ANGLE2 %d\n",
@@ -82,8 +82,8 @@ monkey_plot_arc(const struct redraw_context *ctx,
  */
 static nserror
 monkey_plot_disc(const struct redraw_context *ctx,
-		const plot_style_t *style,
-		int x, int y, int radius)
+		 const plot_style_t *style,
+		 int x, int y, int radius)
 {
 	fprintf(stdout,
 		"PLOT DISC X %d Y %d RADIUS %d\n",
@@ -105,8 +105,8 @@ monkey_plot_disc(const struct redraw_context *ctx,
  */
 static nserror
 monkey_plot_line(const struct redraw_context *ctx,
-		const plot_style_t *style,
-		const struct rect *line)
+		 const plot_style_t *style,
+		 const struct rect *line)
 {
 	fprintf(stdout,
 		"PLOT LINE X0 %d Y0 %d X1 %d Y1 %d\n",
@@ -130,8 +130,8 @@ monkey_plot_line(const struct redraw_context *ctx,
  */
 static nserror
 monkey_plot_rectangle(const struct redraw_context *ctx,
-		     const plot_style_t *style,
-		     const struct rect *rect)
+		      const plot_style_t *style,
+		      const struct rect *rect)
 {
 	fprintf(stdout,
 		"PLOT RECT X0 %d Y0 %d X1 %d Y1 %d\n",
@@ -156,9 +156,9 @@ monkey_plot_rectangle(const struct redraw_context *ctx,
  */
 static nserror
 monkey_plot_polygon(const struct redraw_context *ctx,
-		   const plot_style_t *style,
-		   const int *p,
-		   unsigned int n)
+		    const plot_style_t *style,
+		    const int *p,
+		    unsigned int n)
 {
 	fprintf(stdout,
 		"PLOT POLYGON VERTICIES %d\n",
@@ -183,11 +183,11 @@ monkey_plot_polygon(const struct redraw_context *ctx,
  */
 static nserror
 monkey_plot_path(const struct redraw_context *ctx,
-		const plot_style_t *pstyle,
-		const float *p,
-		unsigned int n,
-		float width,
-		const float transform[6])
+		 const plot_style_t *pstyle,
+		 const float *p,
+		 unsigned int n,
+		 float width,
+		 const float transform[6])
 {
 	fprintf(stdout,
 		"PLOT PATH VERTICIES %d WIDTH %f\n",
@@ -222,12 +222,12 @@ monkey_plot_path(const struct redraw_context *ctx,
  */
 static nserror
 monkey_plot_bitmap(const struct redraw_context *ctx,
-		  struct bitmap *bitmap,
-		  int x, int y,
-		  int width,
-		  int height,
-		  colour bg,
-		  bitmap_flags_t flags)
+		   struct bitmap *bitmap,
+		   int x, int y,
+		   int width,
+		   int height,
+		   colour bg,
+		   bitmap_flags_t flags)
 {
 	fprintf(stdout,
 		"PLOT BITMAP X %d Y %d WIDTH %d HEIGHT %d\n",
@@ -249,11 +249,11 @@ monkey_plot_bitmap(const struct redraw_context *ctx,
  */
 static nserror
 monkey_plot_text(const struct redraw_context *ctx,
-		const struct plot_font_style *fstyle,
-		int x,
-		int y,
-		const char *text,
-		size_t length)
+		 const struct plot_font_style *fstyle,
+		 int x,
+		 int y,
+		 const char *text,
+		 size_t length)
 {
 	fprintf(stdout,
 		"PLOT TEXT X %d Y %d STR %*s\n",

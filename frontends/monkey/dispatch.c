@@ -28,9 +28,9 @@
 #include "monkey/dispatch.h"
 
 typedef struct cmdhandler {
-  struct cmdhandler *r_next, *r_prev;
-  const char *cmd;
-  handle_command_fn fn;
+	struct cmdhandler *r_next, *r_prev;
+	const char *cmd;
+	handle_command_fn fn;
 } monkey_cmdhandler_t;
 
 static monkey_cmdhandler_t *handler_ring = NULL;
@@ -38,68 +38,68 @@ static monkey_cmdhandler_t *handler_ring = NULL;
 nserror
 monkey_register_handler(const char *cmd, handle_command_fn fn)
 {
-  monkey_cmdhandler_t *ret = calloc(sizeof(*ret), 1);
-  if (ret == NULL) {
-    LOG("Unable to allocate handler");
-    return NSERROR_NOMEM;
-  }
-  ret->cmd = strdup(cmd);
-  ret->fn = fn;
-  RING_INSERT(handler_ring, ret);
-  return NSERROR_OK;
+	monkey_cmdhandler_t *ret = calloc(sizeof(*ret), 1);
+	if (ret == NULL) {
+		LOG("Unable to allocate handler");
+		return NSERROR_NOMEM;
+	}
+	ret->cmd = strdup(cmd);
+	ret->fn = fn;
+	RING_INSERT(handler_ring, ret);
+	return NSERROR_OK;
 }
 
 void
 monkey_process_command(void)
 {
-  char buffer[PATH_MAX];
-  int argc = 0;
-  char **argv = NULL;
-  char *p, *r = NULL;
-  handle_command_fn fn = NULL;
-  char **nargv;
+	char buffer[PATH_MAX];
+	int argc = 0;
+	char **argv = NULL;
+	char *p, *r = NULL;
+	handle_command_fn fn = NULL;
+	char **nargv;
   
-  if (fgets(buffer, PATH_MAX, stdin) == NULL) {
-    /* end of input or read error so issue QUIT */
-    sprintf(buffer, "QUIT\n");
-  }
+	if (fgets(buffer, PATH_MAX, stdin) == NULL) {
+		/* end of input or read error so issue QUIT */
+		sprintf(buffer, "QUIT\n");
+	}
 
-  /* remove newline */
-  buffer[strlen(buffer) - 1] = '\0';
+	/* remove newline */
+	buffer[strlen(buffer) - 1] = '\0';
   
-  argv = malloc(sizeof *argv);
-  if (argv == NULL) {
-    return;
-  }
-  argc = 1;
-  *argv = buffer;
+	argv = malloc(sizeof *argv);
+	if (argv == NULL) {
+		return;
+	}
+	argc = 1;
+	*argv = buffer;
   
-  for (p = r = buffer; *p != '\0'; p++) {
-    if (*p == ' ') {
-      nargv = realloc(argv, sizeof(*argv) * (argc + 1));
-      if (nargv == NULL) {
-	/* reallocation of argument vector failed, try using what is
-	 * already processed.
-	 */
-	break;
-      } else {
-	argv = nargv;
-      }
-      argv[argc++] = r = p + 1;
-      *p = '\0';
-    }
-  }
+	for (p = r = buffer; *p != '\0'; p++) {
+		if (*p == ' ') {
+			nargv = realloc(argv, sizeof(*argv) * (argc + 1));
+			if (nargv == NULL) {
+				/* reallocation of argument vector failed, try using what is
+				 * already processed.
+				 */
+				break;
+			} else {
+				argv = nargv;
+			}
+			argv[argc++] = r = p + 1;
+			*p = '\0';
+		}
+	}
   
-  RING_ITERATE_START(monkey_cmdhandler_t, handler_ring, handler) {
-    if (strcmp(argv[0], handler->cmd) == 0) {
-      fn = handler->fn;
-      RING_ITERATE_STOP(handler_ring, handler);
-    }
-  } RING_ITERATE_END(handler_ring, handler);
+	RING_ITERATE_START(monkey_cmdhandler_t, handler_ring, handler) {
+		if (strcmp(argv[0], handler->cmd) == 0) {
+			fn = handler->fn;
+			RING_ITERATE_STOP(handler_ring, handler);
+		}
+	} RING_ITERATE_END(handler_ring, handler);
   
-  if (fn != NULL) {
-    fn(argc, argv);
-  }
+	if (fn != NULL) {
+		fn(argc, argv);
+	}
 
-  free(argv);
+	free(argv);
 }

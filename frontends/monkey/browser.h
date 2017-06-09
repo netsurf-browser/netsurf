@@ -25,16 +25,16 @@ extern struct gui_window_table *monkey_window_table;
 extern struct gui_download_table *monkey_download_table;
 
 struct gui_window {
-  struct gui_window *r_next;
-  struct gui_window *r_prev;
+	struct gui_window *r_next;
+	struct gui_window *r_prev;
   
-  uint32_t win_num;
-  struct browser_window *bw;
+	uint32_t win_num;
+	struct browser_window *bw;
   
-  int width, height;
-  int scrollx, scrolly;
+	int width, height;
+	int scrollx, scrolly;
   
-  char *host;  /* Ignore this, it's in case RING*() gets debugging for fetchers */
+	char *host;  /* Ignore this, it's in case RING*() gets debugging for fetchers */
   
 };
 

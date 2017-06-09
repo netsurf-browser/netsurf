@@ -25,11 +25,11 @@
 #include "monkey/cert.h"
 
 typedef struct monkey_cert {
-  struct monkey_cert *r_next, *r_prev;
-  uint32_t num;
-  char *host; /* Ignore */
-  nserror (*cb)(bool,void*);
-  void *pw;
+	struct monkey_cert *r_next, *r_prev;
+	uint32_t num;
+	char *host; /* Ignore */
+	nserror (*cb)(bool,void*);
+	void *pw;
 } monkey_cert_t;
 
 static monkey_cert_t *cert_ring = NULL;
@@ -40,20 +40,20 @@ gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
                 unsigned long num, nserror (*cb)(bool proceed, void *pw),
                 void *cbpw)
 {
-  monkey_cert_t *m4t = calloc(sizeof(*m4t), 1);
-  if (m4t == NULL) {
-    return NSERROR_NOMEM;
-  }
-  m4t->cb = cb;
-  m4t->pw = cbpw;
-  m4t->num = cert_ctr++;
+	monkey_cert_t *m4t = calloc(sizeof(*m4t), 1);
+	if (m4t == NULL) {
+		return NSERROR_NOMEM;
+	}
+	m4t->cb = cb;
+	m4t->pw = cbpw;
+	m4t->num = cert_ctr++;
   
-  RING_INSERT(cert_ring, m4t);
+	RING_INSERT(cert_ring, m4t);
   
-  fprintf(stdout, "SSLCERT VERIFY CERT %u URL %s\n",
-          m4t->num, nsurl_access(url));
+	fprintf(stdout, "SSLCERT VERIFY CERT %u URL %s\n",
+		m4t->num, nsurl_access(url));
 
-  return NSERROR_OK;
+	return NSERROR_OK;
 }
 
 

@@ -36,18 +36,18 @@ extern char **respaths;
 
 static nsurl *gui_get_resource_url(const char *path)
 {
-  char buf[PATH_MAX];
-  nsurl *url = NULL;
+	char buf[PATH_MAX];
+	nsurl *url = NULL;
 
-  netsurf_path_to_nsurl(filepath_sfind(respaths, buf, path), &url);
+	netsurf_path_to_nsurl(filepath_sfind(respaths, buf, path), &url);
 
-  return url;
+	return url;
 }
 
 static struct gui_fetch_table fetch_table = {
-  .filetype = monkey_fetch_filetype,
+	.filetype = monkey_fetch_filetype,
 
-  .get_resource_url = gui_get_resource_url,
+	.get_resource_url = gui_get_resource_url,
 };
 
 struct gui_fetch_table *monkey_fetch_table = &fetch_table;
