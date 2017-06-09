@@ -18,9 +18,9 @@
 
 /**
  * \file
- * Generic bitmap handling (GDK / GTK+ implementation).
+ * GTK bitmap handling.
  *
- * This implements the interface given by desktop/bitmap.h using GdkPixbufs.
+ * This implements the bitmap interface using cairo image surfaces
  */
 
 #include <assert.h>
