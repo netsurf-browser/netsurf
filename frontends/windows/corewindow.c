@@ -211,7 +211,7 @@ nsw32_corewindow_vscroll(struct nsw32_corewindow *nsw32_cw,
 		       NULL,
 		       NULL,
 		       NULL,
-		       SW_ERASE | SW_INVALIDATE);
+		       SW_INVALIDATE);
 
 	/**
 	 * /todo win32 corewindow vertical scrolling needs us to
@@ -278,7 +278,7 @@ nsw32_corewindow_hscroll(struct nsw32_corewindow *nsw32_cw,
 		       NULL,
 		       NULL,
 		       NULL,
-		       SW_ERASE | SW_INVALIDATE);
+		       SW_INVALIDATE);
 
 	return 0;
 }
