@@ -96,7 +96,7 @@ static nserror schedule_remove(void (*callback)(void *p), void *p)
 	return NSERROR_OK;
 }
 
-/* exported function documented in framebuffer/schedule.h */
+/* exported function documented in monkey/schedule.h */
 nserror monkey_schedule(int tival, void (*callback)(void *p), void *p)
 {
 	struct nscallback *nscb;
@@ -129,7 +129,7 @@ nserror monkey_schedule(int tival, void (*callback)(void *p), void *p)
 	return NSERROR_OK;
 }
 
-/* exported function documented in framebuffer/schedule.h */
+/* exported function documented in monkey/schedule.h */
 int monkey_schedule_run(void)
 {
 	struct timeval tv;
