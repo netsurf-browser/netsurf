@@ -785,9 +785,15 @@ bool browser_window_history_redraw(struct browser_window *bw,
 		const struct redraw_context *ctx)
 {
 	struct history *history;
+	struct rect rect = {
+		.x0 = 0,
+		.y0 = 0,
+	};
 
 	assert(bw != NULL);
 	history = bw->history;
+	rect.x1 = history->width;
+	rect.y1 = history->height;
 
 	if (history == NULL) {
 		LOG("Attempt to draw NULL history.");
@@ -796,6 +802,8 @@ bool browser_window_history_redraw(struct browser_window *bw,
 
 	if (!history->start)
 		return true;
+
+	ctx->plot->rectangle(ctx, &pstyle_bg, &rect);
 
 	return browser_window_history__redraw_entry(history, history->start,
 			0, 0, 0, 0, 0, 0, false, ctx);
@@ -808,12 +816,20 @@ bool browser_window_history_redraw_rectangle(struct browser_window *bw,
 	int x, int y, const struct redraw_context *ctx)
 {
 	struct history *history;
+	struct rect rect = {
+		.x0 = x0,
+		.y0 = y0,
+		.x1 = x1,
+		.y1 = y1,
+	};
 
 	assert(bw != NULL);
 	history = bw->history;
 
 	if (!history->start)
 		return true;
+
+	ctx->plot->rectangle(ctx, &pstyle_bg, &rect);
 
 	return browser_window_history__redraw_entry(history, history->start,
 		x0, y0, x1, y1, x, y, true, ctx);
