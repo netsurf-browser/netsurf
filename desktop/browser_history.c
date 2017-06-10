@@ -465,7 +465,6 @@ nserror browser_window_history_create(struct browser_window *bw)
 	if (res != NSERROR_OK) {
 		return res;
 	}
-	pstyle_bg.fill_colour = 0xf888ff;
 	pfstyle_node.background = pstyle_bg.fill_colour;
 	pfstyle_node_sel.background = pstyle_bg.fill_colour;
 
