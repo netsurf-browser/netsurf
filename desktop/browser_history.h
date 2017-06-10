@@ -127,15 +127,6 @@ void browser_window_history_size(struct browser_window *bw,
 		int *width, int *height);
 
 /**
- * Redraw all of a history area.
- *
- * \param bw browser window with history object.
- * \param ctx current redraw context
- */
-bool browser_window_history_redraw(struct browser_window *bw,
-		const struct redraw_context *ctx);
-
-/**
  * Redraw part of a history area.
  *
  * \param bw browser window with history object.

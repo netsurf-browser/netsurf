@@ -781,36 +781,6 @@ void browser_window_history_size(struct browser_window *bw,
 
 
 /* exported interface documented in desktop/browser_history.h */
-bool browser_window_history_redraw(struct browser_window *bw,
-		const struct redraw_context *ctx)
-{
-	struct history *history;
-	struct rect rect = {
-		.x0 = 0,
-		.y0 = 0,
-	};
-
-	assert(bw != NULL);
-	history = bw->history;
-	rect.x1 = history->width;
-	rect.y1 = history->height;
-
-	if (history == NULL) {
-		LOG("Attempt to draw NULL history.");
-		return false;
-	}
-
-	if (!history->start)
-		return true;
-
-	ctx->plot->rectangle(ctx, &pstyle_bg, &rect);
-
-	return browser_window_history__redraw_entry(history, history->start,
-			0, 0, 0, 0, 0, 0, false, ctx);
-}
-
-
-/* exported interface documented in desktop/browser_history.h */
 bool browser_window_history_redraw_rectangle(struct browser_window *bw,
 	int x0, int y0, int x1, int y1,
 	int x, int y, const struct redraw_context *ctx)
