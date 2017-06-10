@@ -486,7 +486,7 @@ static void
 nsw32_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
 {
 	struct nsw32_corewindow *nsw32_cw = (struct nsw32_corewindow *)cw;
-	nsw32_cw->drag_staus = ds;
+	nsw32_cw->drag_status = ds;
 }
 
 
@@ -508,6 +508,7 @@ nsw32_corewindow_init(HINSTANCE hInstance,
 
 	/* setup the core window callback table */
 	nsw32_cw->cb_table = &nsw32_cw_cb_table;
+	nsw32_cw->drag_status = CORE_WINDOW_DRAG_NONE;
 
 	/* start with the content area being as small as possible */
 	nsw32_cw->content_width = -1;

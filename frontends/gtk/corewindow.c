@@ -662,7 +662,7 @@ static void
 nsgtk_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
 {
 	struct nsgtk_corewindow *nsgtk_cw = (struct nsgtk_corewindow *)cw;
-	nsgtk_cw->drag_staus = ds;
+	nsgtk_cw->drag_status = ds;
 }
 
 
@@ -682,7 +682,7 @@ static struct core_window_callback_table nsgtk_cw_cb_table = {
 nserror nsgtk_corewindow_init(struct nsgtk_corewindow *nsgtk_cw)
 {
 	nsgtk_cw->cb_table = &nsgtk_cw_cb_table;
-	nsgtk_cw->drag_staus = CORE_WINDOW_DRAG_NONE;
+	nsgtk_cw->drag_status = CORE_WINDOW_DRAG_NONE;
 
 	/* input method setup */
 	nsgtk_cw->input_method = gtk_im_multicontext_new();

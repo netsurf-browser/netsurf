@@ -171,7 +171,7 @@ static void
 fb_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
 {
 	struct fb_corewindow *fb_cw = (struct fb_corewindow *)cw;
-	fb_cw->drag_staus = ds;
+	fb_cw->drag_status = ds;
 }
 
 
@@ -192,6 +192,7 @@ nserror fb_corewindow_init(fbtk_widget_t *parent, struct fb_corewindow *fb_cw)
 
 	/* setup the core window callback table */
 	fb_cw->cb_table = &fb_cw_cb_table;
+	fb_cw->drag_status = CORE_WINDOW_DRAG_NONE;
 
 	/* container window */
 	fb_cw->wnd = fbtk_create_window(parent, 0, 0, 0, 0, 0);

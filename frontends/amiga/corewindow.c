@@ -920,6 +920,7 @@ nserror ami_corewindow_init(struct ami_corewindow *ami_cw)
 {
 	/* setup the core window callback table */
 	ami_cw->cb_table = &ami_cw_cb_table;
+	ami_cw->drag_status = CORE_WINDOW_DRAG_NONE;
 
 	/* clear some vars */
 	ami_cw->mouse_state = BROWSER_MOUSE_HOVER;

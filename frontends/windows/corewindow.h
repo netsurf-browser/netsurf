@@ -38,7 +38,7 @@ struct nsw32_corewindow {
 	const char *title;
 	
         /** drag status set by core */
-        core_window_drag_status drag_staus;
+        core_window_drag_status drag_status;
 
         /** table of callbacks for core window operations */
         struct core_window_callback_table *cb_table;

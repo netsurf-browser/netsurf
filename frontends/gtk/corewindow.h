@@ -51,7 +51,7 @@ struct nsgtk_corewindow {
 	/** mouse state */
 	struct nsgtk_corewindow_mouse mouse_state;
 	/** drag status set by core */
-	core_window_drag_status drag_staus;
+	core_window_drag_status drag_status;
 
 	/**
 	 * callback to draw on drawable area of nsgtk core window

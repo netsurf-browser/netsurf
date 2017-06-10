@@ -156,7 +156,7 @@ frontends/example/corewindow.h
     
     
             /** drag status set by core */
-            core_window_drag_status drag_staus;
+            core_window_drag_status drag_status;
     
             /** table of callbacks for core window operations */
             struct core_window_callback_table *cb_table;
@@ -357,7 +357,7 @@ frontends/example/corewindow.c
     example_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
     {
             struct example_corewindow *example_cw = (struct example_corewindow *)cw;
-            example_cw->drag_staus = ds;
+            example_cw->drag_status = ds;
     }
     
     
