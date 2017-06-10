@@ -171,8 +171,8 @@ gui_window_set_scroll(struct gui_window *gw, const struct rect *rect)
 	gw->scrollx = rect->x0;
 	gw->scrolly = rect->y0;
 
-	fprintf(stdout, "WINDOW SET_SCROLL WIN %u X0 %d Y0 %d X1 %d Y1 %d\n",
-		gw->win_num, rect->x0, rect->y0, rect->x1, rect->y1);
+	fprintf(stdout, "WINDOW SET_SCROLL WIN %u X %d Y %d\n",
+		gw->win_num, rect->x0, rect->y0);
 	return NSERROR_OK;
 }
 
