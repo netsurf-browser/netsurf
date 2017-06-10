@@ -286,15 +286,13 @@ static plot_font_style_t pfstyle_node_sel = {
  * \param y1 area bottom right y coordinate
  * \param x window x offset
  * \param y window y offset
- * \param clip clip redraw
  * \param ctx current redraw context
  */
 static bool
 browser_window_history__redraw_entry(struct history *history,
 		struct history_entry *entry,
 		int x0, int y0, int x1, int y1,
-		int x, int y, bool clip,
-		const struct redraw_context *ctx)
+		int x, int y, const struct redraw_context *ctx)
 {
 	size_t char_offset;
 	int actual_x;
@@ -318,15 +316,13 @@ browser_window_history__redraw_entry(struct history *history,
 	}
 
 	/* setup clip area */
-	if (clip) {
-		rect.x0 = x0 + xoffset;
-		rect.y0 = y0 + yoffset;
-		rect.x1 = x1 + xoffset;
-		rect.y1 = y1 + yoffset;
-		res = ctx->plot->clip(ctx, &rect);
-		if (res != NSERROR_OK) {
-			return false;
-		}
+	rect.x0 = x0 + xoffset;
+	rect.y0 = y0 + yoffset;
+	rect.x1 = x1 + xoffset;
+	rect.y1 = y1 + yoffset;
+	res = ctx->plot->clip(ctx, &rect);
+	if (res != NSERROR_OK) {
+		return false;
 	}
 
 	/* Only attempt to plot bitmap if it is present */
@@ -399,7 +395,7 @@ browser_window_history__redraw_entry(struct history *history,
 		}
 
 		if (!browser_window_history__redraw_entry(history, child,
-			x0, y0, x1, y1, x, y, clip, ctx)) {
+			x0, y0, x1, y1, x, y, ctx)) {
 			return false;
 		}
 	}
@@ -802,7 +798,7 @@ bool browser_window_history_redraw_rectangle(struct browser_window *bw,
 	ctx->plot->rectangle(ctx, &pstyle_bg, &rect);
 
 	return browser_window_history__redraw_entry(history, history->start,
-		x0, y0, x1, y1, x, y, true, ctx);
+		x0, y0, x1, y1, x, y, ctx);
 }
 
 
