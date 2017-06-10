@@ -39,6 +39,8 @@ browser windows are prefixed by `WINDOW`.
 
 * `WINDOW`
 
+* `OPTIONS`
+
 ### Top level response tags for nsmonkey
 
 * `GENERIC`: Generic messages such as poll loops etc.
@@ -78,6 +80,12 @@ Commands
 
     Cause monkey to quit cleanly.
     This will cleanly destroy open windows etc.
+
+*   `OPTIONS` _%str_
+
+    Cause monkey to set options.  The passed options should be in the same
+    form as the command line, e.g. `OPTIONS --enable_javascript=1`
+    
 
 ### Window commands
 
