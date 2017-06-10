@@ -106,25 +106,27 @@ ami_history_local_mouse(struct ami_corewindow *ami_cw,
 	/* technically degenerate container of */
 	history_local_win = (struct ami_history_local_window *)ami_cw;
 
-	nsurl *url = browser_window_history_position_url(history_local_win->gw->bw, x, y);
+	nsurl *url;
 
-	if (url == NULL) {
-		SetGadgetAttrs(
-			(struct Gadget *)ami_cw->objects[GID_CW_DRAW],
-			ami_cw->win,
-			NULL,
-			GA_HintInfo,
-			NULL,
-			TAG_DONE);
-	} else {
-		SetGadgetAttrs(
-			(struct Gadget *)ami_cw->objects[GID_CW_DRAW],
-			ami_cw->win,
-			NULL,
-			GA_HintInfo,
-			nsurl_access(url),
-			TAG_DONE);
-		nsurl_unref(url);
+	if(local_history_get_url(history_local_win->session, x, y, &url) == NSERROR_OK) {
+		if (url == NULL) {
+			SetGadgetAttrs(
+				(struct Gadget *)ami_cw->objects[GID_CW_DRAW],
+				ami_cw->win,
+				NULL,
+				GA_HintInfo,
+				NULL,
+				TAG_DONE);
+		} else {
+			SetGadgetAttrs(
+				(struct Gadget *)ami_cw->objects[GID_CW_DRAW],
+				ami_cw->win,
+				NULL,
+				GA_HintInfo,
+				nsurl_access(url),
+				TAG_DONE);
+			nsurl_unref(url);
+		}
 	}
 
 	local_history_mouse_action(history_local_win->session, mouse_state, x, y);
