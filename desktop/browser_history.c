@@ -294,8 +294,6 @@ browser_window_history__redraw_entry(struct history *history,
 	int actual_x;
 	struct history_entry *child;
 	int tailsize = 5;
-	int xoffset = x - clip->x0;
-	int yoffset = y - clip->y0;
 
 	plot_style_t *pstyle;
 	plot_font_style_t *pfstyle;
@@ -311,22 +309,12 @@ browser_window_history__redraw_entry(struct history *history,
 		pfstyle = &pfstyle_node;
 	}
 
-	/* setup clip area */
-	rect.x0 = clip->x0 + xoffset;
-	rect.y0 = clip->y0 + yoffset;
-	rect.x1 = clip->x1 + xoffset;
-	rect.y1 = clip->y1 + yoffset;
-	res = ctx->plot->clip(ctx, &rect);
-	if (res != NSERROR_OK) {
-		return false;
-	}
-
 	/* Only attempt to plot bitmap if it is present */
 	if (entry->bitmap != NULL) {
 		res = ctx->plot->bitmap(ctx,
 					entry->bitmap,
-					entry->x + xoffset,
-					entry->y + yoffset,
+					entry->x + x,
+					entry->y + y,
 					WIDTH, HEIGHT,
 					0xffffff,
 					0);
@@ -335,10 +323,10 @@ browser_window_history__redraw_entry(struct history *history,
 		}
 	}
 
-	rect.x0 = entry->x - 1 + xoffset;
-	rect.y0 = entry->y - 1 + yoffset;
-	rect.x1 = entry->x + xoffset + WIDTH;
-	rect.y1 = entry->y + yoffset + HEIGHT;
+	rect.x0 = entry->x - 1 + x;
+	rect.y0 = entry->y - 1 + y;
+	rect.x1 = entry->x + x + WIDTH;
+	rect.y1 = entry->y + y + HEIGHT;
 	res = ctx->plot->rectangle(ctx, pstyle, &rect);
 	if (res != NSERROR_OK) {
 		return false;
@@ -353,8 +341,8 @@ browser_window_history__redraw_entry(struct history *history,
 
 	res = ctx->plot->text(ctx,
 			      pfstyle,
-			      entry->x + xoffset,
-			      entry->y + HEIGHT + 12 + yoffset,
+			      entry->x + x,
+			      entry->y + HEIGHT + 12 + y,
 			      entry->page.title,
 			      char_offset);
 	if (res != NSERROR_OK) {
@@ -363,28 +351,28 @@ browser_window_history__redraw_entry(struct history *history,
 
 	/* for each child node draw a line and recurse redraw into it */
 	for (child = entry->forward; child; child = child->next) {
-		rect.x0 = entry->x + WIDTH + xoffset;
-		rect.y0 = entry->y + HEIGHT / 2 + yoffset;
-		rect.x1 = entry->x + WIDTH + tailsize + xoffset;
-		rect.y1 = entry->y + HEIGHT / 2 + yoffset;
+		rect.x0 = entry->x + WIDTH + x;
+		rect.y0 = entry->y + HEIGHT / 2 + y;
+		rect.x1 = entry->x + WIDTH + tailsize + x;
+		rect.y1 = entry->y + HEIGHT / 2 + y;
 		res = ctx->plot->line(ctx, &pstyle_line, &rect);
 		if (res != NSERROR_OK) {
 			return false;
 		}
 
-		rect.x0 = entry->x + WIDTH + tailsize + xoffset;
-		rect.y0 = entry->y + HEIGHT / 2 + yoffset;
-		rect.x1 = child->x - tailsize + xoffset;
-		rect.y1 = child->y + HEIGHT / 2 + yoffset;
+		rect.x0 = entry->x + WIDTH + tailsize + x;
+		rect.y0 = entry->y + HEIGHT / 2 + y;
+		rect.x1 = child->x - tailsize + x;
+		rect.y1 = child->y + HEIGHT / 2 + y;
 		res = ctx->plot->line(ctx, &pstyle_line, &rect);
 		if (res != NSERROR_OK) {
 			return false;
 		}
 
-		rect.x0 = child->x - tailsize + xoffset;
-		rect.y0 = child->y + HEIGHT / 2 + yoffset;
-		rect.x1 = child->x + xoffset;
-		rect.y1 = child->y + HEIGHT / 2 + yoffset;
+		rect.x0 = child->x - tailsize + x;
+		rect.y0 = child->y + HEIGHT / 2 + y;
+		rect.x1 = child->x + x;
+		rect.y1 = child->y + HEIGHT / 2 + y;
 		res = ctx->plot->line(ctx, &pstyle_line, &rect);
 		if (res != NSERROR_OK) {
 			return false;
@@ -477,6 +465,7 @@ nserror browser_window_history_create(struct browser_window *bw)
 	if (res != NSERROR_OK) {
 		return res;
 	}
+	pstyle_bg.fill_colour = 0xf888ff;
 	pfstyle_node.background = pstyle_bg.fill_colour;
 	pfstyle_node_sel.background = pstyle_bg.fill_colour;
 
@@ -778,6 +767,12 @@ bool browser_window_history_redraw_rectangle(struct browser_window *bw,
 		const struct redraw_context *ctx)
 {
 	struct history *history;
+	struct rect r = {
+		.x0 = clip->x0 + x,
+		.y0 = clip->y0 + y,
+		.x1 = clip->x1 + x,
+		.y1 = clip->y1 + y,
+	};
 
 	assert(bw != NULL);
 	history = bw->history;
@@ -785,7 +780,8 @@ bool browser_window_history_redraw_rectangle(struct browser_window *bw,
 	if (!history->start)
 		return true;
 
-	ctx->plot->rectangle(ctx, &pstyle_bg, clip);
+	ctx->plot->clip(ctx, &r);
+	ctx->plot->rectangle(ctx, &pstyle_bg, &r);
 
 	return browser_window_history__redraw_entry(
 			history, history->start,
