@@ -28,6 +28,7 @@
 #include "utils/nsoption.h"
 #include "utils/messages.h"
 #include "utils/log.h"
+#include "utils/nsurl.h"
 #include "netsurf/window.h"
 #include "netsurf/plotters.h"
 #include "netsurf/keypress.h"
@@ -127,7 +128,7 @@ static nserror
 ro_local_history_tooltip(struct ro_local_history_window *lhw, int x, int y)
 {
 	int width;
-	const char *url;
+	nsurl *url;
 	wimp_window_state state;
 	wimp_icon_state ic;
 	os_box box = {0, 0, 0, 0};
@@ -162,17 +163,19 @@ ro_local_history_tooltip(struct ro_local_history_window *lhw, int x, int y)
 	}
 
 	/* get width of string */
-	error = xwimptextop_string_width(url,
-					 strlen(url) > 256 ? 256 : strlen(url),
+	error = xwimptextop_string_width(nsurl_access(url),
+					 nsurl_length(url) > 256 ? 256 : nsurl_length(url),
 					 &width);
 	if (error) {
 		LOG("xwimptextop_string_width: 0x%x: %s",
 		    error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
+		nsurl_unref(url);
 		return NSERROR_NOMEM;
 	}
 
-	ro_gui_set_icon_string(dialog_tooltip, 0, url, true);
+	ro_gui_set_icon_string(dialog_tooltip, 0, nsurl_access(url), true);
+	nsurl_unref(url);
 
 	/* resize icon appropriately */
 	ic.w = dialog_tooltip;

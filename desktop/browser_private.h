@@ -249,4 +249,55 @@ void browser_window_set_status(struct browser_window *bw, const char *text);
  */
 struct browser_window * browser_window_get_root(struct browser_window *bw);
 
+
+/**
+ * Create a new history tree for a browser window window.
+ *
+ * \param bw browser window to create history for.
+ *
+ * \return NSERROR_OK or appropriate error otherwise
+ */
+nserror browser_window_history_create(struct browser_window *bw);
+
+/**
+ * Clone a bw's history tree for new bw
+ *
+ * \param  existing	browser window with history to clone.
+ * \param  clone	browser window to make cloned history for.
+ *
+ * \return  NSERROR_OK or appropriate error otherwise
+ */
+nserror browser_window_history_clone(const struct browser_window *existing,
+		struct browser_window *clone);
+/**
+ * Insert a url into the history tree.
+ *
+ * \param  bw       browser window with history object
+ * \param  content  content to add to history
+ * \param  frag_id  fragment identifier, or NULL.
+ * \return NSERROR_OK or error code on faliure.
+ *
+ * The page is added after the current entry and becomes current.
+ */
+nserror browser_window_history_add(struct browser_window *bw,
+		struct hlcache_handle *content, lwc_string *frag_id);
+
+/**
+ * Update the thumbnail for the current entry.
+ *
+ * \param bw The browser window to update the history within.
+ * \param content content for current entry
+ * \return NSERROR_OK or error code on faliure.
+ */
+nserror browser_window_history_update(struct browser_window *bw,
+		struct hlcache_handle *content);
+
+/**
+ * Free a history structure.
+ *
+ * \param bw The browser window to destroy the history within.
+ */
+void browser_window_history_destroy(struct browser_window *bw);
+
+
 #endif

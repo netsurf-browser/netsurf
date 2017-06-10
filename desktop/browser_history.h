@@ -16,71 +16,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Browser history tree (interface).
+/**
+ * \file
+ * Interface to browser history operations
+ *
+ * The are operations on a browsing contexts history. These interfaces
+ * allow navigation forward and backwards in the history as well as
+ * enumerating the entries.
+ *
+ * The local history viewing is distinct via corewindow defined in
+ * desktop/local_history.h
  */
 
-#ifndef _NETSURF_DESKTOP_BROWSER_HISTORY_H_
-#define _NETSURF_DESKTOP_BROWSER_HISTORY_H_
+#ifndef NETSURF_DESKTOP_BROWSER_HISTORY_H
+#define NETSURF_DESKTOP_BROWSER_HISTORY_H
 
 #include <stdbool.h>
-#include <libwapcaplet/libwapcaplet.h>
 
 #include "utils/errors.h"
 
-struct hlcache_handle;
 struct browser_window;
 struct history_entry;
-struct redraw_context;
-
-/**
- * Create a new history tree for a browser window window.
- *
- * \param bw browser window to create history for.
- *
- * \return NSERROR_OK or appropriate error otherwise
- */
-nserror browser_window_history_create(struct browser_window *bw);
-
-/**
- * Clone a bw's history tree for new bw
- *
- * \param  existing	browser window with history to clone.
- * \param  clone	browser window to make cloned history for.
- *
- * \return  NSERROR_OK or appropriate error otherwise
- */
-nserror browser_window_history_clone(const struct browser_window *existing,
-		struct browser_window *clone);
-/**
- * Insert a url into the history tree.
- *
- * \param  bw       browser window with history object
- * \param  content  content to add to history
- * \param  frag_id  fragment identifier, or NULL.
- * \return NSERROR_OK or error code on faliure.
- *
- * The page is added after the current entry and becomes current.
- */
-nserror browser_window_history_add(struct browser_window *bw,
-		struct hlcache_handle *content, lwc_string *frag_id);
-
-/**
- * Update the thumbnail for the current entry.
- *
- * \param bw The browser window to update the history within.
- * \param content content for current entry
- * \return NSERROR_OK or error code on faliure.
- */
-nserror browser_window_history_update(struct browser_window *bw,
-		struct hlcache_handle *content);
-
-/**
- * Free a history structure.
- *
- * \param bw The browser window to destroy the history within.
- */
-void browser_window_history_destroy(struct browser_window *bw);
 
 /**
  * Go back in the history.
@@ -91,6 +47,7 @@ void browser_window_history_destroy(struct browser_window *bw);
  */
 nserror browser_window_history_back(struct browser_window *bw, bool new_window);
 
+
 /**
  * Go forward in the history.
  *
@@ -100,6 +57,7 @@ nserror browser_window_history_back(struct browser_window *bw, bool new_window);
  */
 nserror browser_window_history_forward(struct browser_window *bw, bool new_window);
 
+
 /**
  * Check whether it is pssible to go back in the history.
  *
@@ -107,6 +65,7 @@ nserror browser_window_history_forward(struct browser_window *bw, bool new_windo
  * \return true if the history can go back, false otherwise
  */
 bool browser_window_history_back_available(struct browser_window *bw);
+
 
 /**
  * Check whether it is pssible to go forwards in the history.
@@ -116,51 +75,6 @@ bool browser_window_history_back_available(struct browser_window *bw);
  */
 bool browser_window_history_forward_available(struct browser_window *bw);
 
-/**
- * Get the dimensions of a history.
- *
- * \param bw browser window with history object.
- * \param width updated to width
- * \param height updated to height
- */
-void browser_window_history_size(struct browser_window *bw,
-		int *width, int *height);
-
-/**
- * Redraw part of a history area.
- *
- * \param bw   browser window with history object.
- * \param clip redraw area
- * \param x    start X co-ordinate on plot canvas
- * \param y    start Y co-ordinate on plot canvas
- * \param ctx  current redraw context
- */
-bool browser_window_history_redraw_rectangle(struct browser_window *bw,
-		struct rect *clip, int x, int y,
-		const struct redraw_context *ctx);
-
-/**
- * Handle a mouse click in a history.
- *
- * \param bw browser window containing history
- * \param x click coordinate
- * \param y click coordinate
- * \param new_window  open a new window instead of using bw
- * \return true if action was taken, false if click was not on an entry
- */
-bool browser_window_history_click(struct browser_window *bw,
-		int x, int y, bool new_window);
-
-/**
- * Determine the URL of the entry at a position.
- *
- * \param bw browser window containing history
- * \param x x coordinate.
- * \param y y coordinate.
- * \return URL, or 0 if no entry at (x, y)
- */
-const char *browser_window_history_position_url(struct browser_window *bw,
-		int x, int y);
 
 /**
  * Callback function type for history enumeration
@@ -175,6 +89,7 @@ typedef bool (*browser_window_history_enumerate_cb)(
 		int x0, int y0, int x1, int y1, 
 		const struct history_entry *entry, void *user_data);
 
+
 /**
  * Enumerate all entries in the history.
  * Do not change the history while it is being enumerated.
@@ -186,6 +101,7 @@ typedef bool (*browser_window_history_enumerate_cb)(
 void browser_window_history_enumerate(const struct browser_window *bw,
 		browser_window_history_enumerate_cb cb, void *user_data);
 
+
 /**
  * Enumerate all entries that will be reached by the 'forward' button
  *
@@ -195,6 +111,7 @@ void browser_window_history_enumerate(const struct browser_window *bw,
  */
 void browser_window_history_enumerate_forward(const struct browser_window *bw, 
 		browser_window_history_enumerate_cb cb, void *user_data);
+
 
 /**
  * Enumerate all entries that will be reached by the 'back' button
@@ -206,14 +123,15 @@ void browser_window_history_enumerate_forward(const struct browser_window *bw,
 void browser_window_history_enumerate_back(const struct browser_window *bw, 
 		browser_window_history_enumerate_cb cb, void *user_data);
 
+
 /**
  * Returns the URL to a history entry
  *
- * \param	entry		the history entry to retrieve the URL from
- * \return	the URL
+ * \param entry the history entry to retrieve the URL from
+ * \return A referenced nsurl URL
  */
-const char *browser_window_history_entry_get_url(
-		const struct history_entry *entry);
+struct nsurl *browser_window_history_entry_get_url(const struct history_entry *entry);
+
 
 /**
  * Returns the URL to a history entry
@@ -224,6 +142,7 @@ const char *browser_window_history_entry_get_url(
 const char *browser_window_history_entry_get_fragment_id(
 		const struct history_entry *entry);
 
+
 /**
  * Returns the title of a history entry
  *
@@ -232,6 +151,7 @@ const char *browser_window_history_entry_get_fragment_id(
  */
 const char *browser_window_history_entry_get_title(
 		const struct history_entry *entry);
+
 
 /**
  * Navigate to specified history entry, optionally in new window

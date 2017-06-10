@@ -41,6 +41,7 @@
 #include "desktop/gui_internal.h"
 #include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
+#include "desktop/local_history.h"
 
 #define WIDTH 100
 #define HEIGHT 86
@@ -811,7 +812,7 @@ bool browser_window_history_click(struct browser_window *bw,
 
 
 /* exported interface documented in desktop/browser_history.h */
-const char *browser_window_history_position_url(struct browser_window *bw,
+nsurl *browser_window_history_position_url(struct browser_window *bw,
 		int x, int y)
 {
 	struct history_entry *entry;
@@ -821,10 +822,11 @@ const char *browser_window_history_position_url(struct browser_window *bw,
 	history = bw->history;
 
 	entry = browser_window_history__find_position(history->start, x, y);
-	if (!entry)
-		return 0;
+	if (!entry) {
+		return NULL;
+	}
 
-	return nsurl_access(entry->page.url);
+	return nsurl_ref(entry->page.url);
 }
 
 
@@ -875,10 +877,9 @@ void browser_window_history_enumerate(const struct browser_window *bw,
 
 
 /* exported interface documented in desktop/browser_history.h */
-const char *browser_window_history_entry_get_url(
-		const struct history_entry *entry)
+nsurl *browser_window_history_entry_get_url(const struct history_entry *entry)
 {
-	return nsurl_access(entry->page.url);
+	return nsurl_ref(entry->page.url);
 }
 
 

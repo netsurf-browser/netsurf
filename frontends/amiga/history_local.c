@@ -44,7 +44,8 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
-#include "desktop/browser_history.h"
+#include "utils/nsurl.h"
+#include "desktop/local_history.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/plotters.h"
 #include "netsurf/window.h"
@@ -252,7 +253,7 @@ static BOOL ami_history_event(void *w)
 	struct history_window *hw = (struct history_window *)w;
 	ULONG result = 0;
 	uint16 code;
-	const char *url;
+	nsurl *url = NULL;
 	struct IBox *bbox;
 	ULONG xs, ys;
 
@@ -287,10 +288,24 @@ static BOOL ami_history_event(void *w)
 
 				ami_gui_free_space_box(bbox);
 
-				RefreshSetGadgetAttrs((APTR)hw->objects[GID_BROWSER],
-					hw->win, NULL,
-					GA_HintInfo, url,
-					TAG_DONE);
+				if (url == NULL) {
+					RefreshSetGadgetAttrs(
+						(APTR)hw->objects[GID_BROWSER],
+						hw->win,
+						NULL,
+						GA_HintInfo,
+						NULL,
+						TAG_DONE);
+				} else {
+					RefreshSetGadgetAttrs(
+						(APTR)hw->objects[GID_BROWSER],
+						hw->win,
+						NULL,
+						GA_HintInfo,
+						nsurl_access(url),
+						TAG_DONE);
+					nsurl_unref(url);
+				}
 			break;
 
 			case WMHI_NEWSIZE:

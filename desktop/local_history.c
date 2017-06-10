@@ -24,6 +24,7 @@
 #include <stdlib.h>
 
 #include "utils/errors.h"
+#include "utils/nsurl.h"
 #include "netsurf/types.h"
 #include "netsurf/core_window.h"
 
@@ -143,9 +144,9 @@ local_history_get_size(struct local_history_session *session,
 nserror
 local_history_get_url(struct local_history_session *session,
 		      int x, int y,
-		      const char **url_out)
+		      nsurl **url_out)
 {
-	const char *url;
+	nsurl *url;
 	url = browser_window_history_position_url(session->bw, x, y);
 	if (url == NULL) {
 		return NSERROR_NOT_FOUND;
