@@ -336,6 +336,7 @@ framebuffer_plot_bitmap(const struct redraw_context *ctx,
 		if (!nsfb_plot_copy(bm, NULL, nsfb, &loc)) {
 			return NSERROR_INVALID;
 		}
+		return NSERROR_OK;
 	}
 
 	nsfb_plot_get_clip(nsfb, &clipbox);
