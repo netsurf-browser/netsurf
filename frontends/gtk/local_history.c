@@ -116,7 +116,7 @@ nsgtk_local_history_draw(struct nsgtk_corewindow *nsgtk_cw, struct rect *r)
 	lhw = (struct nsgtk_local_history_window *)nsgtk_cw;
 
 	ctx.plot->clip(&ctx, r);
-	local_history_redraw(lhw->session, r->x0, r->y0, r, &ctx);
+	local_history_redraw(lhw->session, 0, 0, r, &ctx);
 
 	return NSERROR_OK;
 }
