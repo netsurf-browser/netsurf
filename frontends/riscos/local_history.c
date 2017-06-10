@@ -90,7 +90,7 @@ ro_local_history_draw(struct ro_corewindow *ro_cw,
 	ro_plot_origin_x = originx;
 	ro_plot_origin_y = originy;
 	no_font_blending = true;
-	local_history_redraw(lhw->session, r->x0, r->y0, r, &ctx);
+	local_history_redraw(lhw->session, 0, 0, r, &ctx);
 	no_font_blending = false;
 
 	return NSERROR_OK;
