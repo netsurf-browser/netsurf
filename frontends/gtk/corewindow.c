@@ -682,6 +682,7 @@ static struct core_window_callback_table nsgtk_cw_cb_table = {
 nserror nsgtk_corewindow_init(struct nsgtk_corewindow *nsgtk_cw)
 {
 	nsgtk_cw->cb_table = &nsgtk_cw_cb_table;
+	nsgtk_cw->drag_staus = CORE_WINDOW_DRAG_NONE;
 
 	/* input method setup */
 	nsgtk_cw->input_method = gtk_im_multicontext_new();
