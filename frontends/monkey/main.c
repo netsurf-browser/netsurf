@@ -208,6 +208,11 @@ static void quit_handler(int argc, char **argv)
 	monkey_done = true;
 }
 
+static void monkey_options_handle_command(int argc, char **argv)
+{
+	nsoption_commandline(&argc, argv, nsoptions);
+}
+
 /**
  * Set option defaults for monkey frontend
  *
@@ -379,7 +384,12 @@ main(int argc, char **argv)
 
 	ret = monkey_register_handler("WINDOW", monkey_window_handle_command);
 	if (ret != NSERROR_OK) {
-		die("window handler fialed to register");
+		die("window handler failed to register");
+	}
+
+	ret = monkey_register_handler("OPTIONS", monkey_options_handle_command);
+	if (ret != NSERROR_OK) {
+		die("options handler failed to register");
 	}
 
 	fprintf(stdout, "GENERIC STARTED\n");
