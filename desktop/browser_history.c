@@ -279,27 +279,23 @@ static plot_font_style_t pfstyle_node_sel = {
  * Recursively redraw a history_entry.
  *
  * \param history history containing the entry
- * \param entry entry to render
- * \param x0 area top left x coordinate
- * \param y0 area top left y coordinate
- * \param x1 area bottom right x coordinate
- * \param y1 area bottom right y coordinate
- * \param x window x offset
- * \param y window y offset
- * \param ctx current redraw context
+ * \param entry   entry to render
+ * \param clip    redraw area
+ * \param x       window x offset
+ * \param y       window y offset
+ * \param ctx     current redraw context
  */
 static bool
 browser_window_history__redraw_entry(struct history *history,
-		struct history_entry *entry,
-		int x0, int y0, int x1, int y1,
+		struct history_entry *entry, struct rect *clip,
 		int x, int y, const struct redraw_context *ctx)
 {
 	size_t char_offset;
 	int actual_x;
 	struct history_entry *child;
 	int tailsize = 5;
-	int xoffset = x - x0;
-	int yoffset = y - y0;
+	int xoffset = x - clip->x0;
+	int yoffset = y - clip->y0;
 
 	plot_style_t *pstyle;
 	plot_font_style_t *pfstyle;
@@ -316,10 +312,10 @@ browser_window_history__redraw_entry(struct history *history,
 	}
 
 	/* setup clip area */
-	rect.x0 = x0 + xoffset;
-	rect.y0 = y0 + yoffset;
-	rect.x1 = x1 + xoffset;
-	rect.y1 = y1 + yoffset;
+	rect.x0 = clip->x0 + xoffset;
+	rect.y0 = clip->y0 + yoffset;
+	rect.x1 = clip->x1 + xoffset;
+	rect.y1 = clip->y1 + yoffset;
 	res = ctx->plot->clip(ctx, &rect);
 	if (res != NSERROR_OK) {
 		return false;
@@ -395,7 +391,7 @@ browser_window_history__redraw_entry(struct history *history,
 		}
 
 		if (!browser_window_history__redraw_entry(history, child,
-			x0, y0, x1, y1, x, y, ctx)) {
+			clip, x, y, ctx)) {
 			return false;
 		}
 	}
@@ -778,16 +774,10 @@ void browser_window_history_size(struct browser_window *bw,
 
 /* exported interface documented in desktop/browser_history.h */
 bool browser_window_history_redraw_rectangle(struct browser_window *bw,
-	int x0, int y0, int x1, int y1,
-	int x, int y, const struct redraw_context *ctx)
+		struct rect *clip, int x, int y,
+		const struct redraw_context *ctx)
 {
 	struct history *history;
-	struct rect rect = {
-		.x0 = x0,
-		.y0 = y0,
-		.x1 = x1,
-		.y1 = y1,
-	};
 
 	assert(bw != NULL);
 	history = bw->history;
@@ -795,10 +785,11 @@ bool browser_window_history_redraw_rectangle(struct browser_window *bw,
 	if (!history->start)
 		return true;
 
-	ctx->plot->rectangle(ctx, &pstyle_bg, &rect);
+	ctx->plot->rectangle(ctx, &pstyle_bg, clip);
 
-	return browser_window_history__redraw_entry(history, history->start,
-		x0, y0, x1, y1, x, y, ctx);
+	return browser_window_history__redraw_entry(
+			history, history->start,
+			clip, x, y, ctx);
 }
 
 

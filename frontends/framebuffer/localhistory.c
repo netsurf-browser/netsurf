@@ -36,6 +36,7 @@ localhistory_redraw(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
 	struct gui_localhistory *glh = cbi->context;
 	nsfb_bbox_t rbox;
+	struct rect clip;
 
 	struct redraw_context ctx = {
 		.interactive = true,
@@ -53,12 +54,13 @@ localhistory_redraw(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 
 	nsfb_plot_rectangle_fill(fbtk_get_nsfb(widget), &rbox, 0xffffffff);
 
+	clip.x0 = glh->scrollx;
+	clip.y0 = glh->scrolly;
+	clip.x1 = fbtk_get_width(widget) + glh->scrollx;
+	clip.y0 = fbtk_get_height(widget) + glh->scrolly;
+
 	browser_window_history_redraw_rectangle(glh->bw,
-				 glh->scrollx,
-				 glh->scrolly,
-				 fbtk_get_width(widget) + glh->scrollx,
-				 fbtk_get_height(widget) + glh->scrolly,
-				 0, 0, &ctx);
+			&clip, 0, 0, &ctx);
 
 	nsfb_update(fbtk_get_nsfb(widget), &rbox);
 

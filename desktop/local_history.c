@@ -77,7 +77,7 @@ local_history_redraw(struct local_history_session *session,
 {
 	if (session->bw != NULL) {
 		browser_window_history_redraw_rectangle(session->bw,
-			clip->x0, clip->y0, clip->x1, clip->y1, x, y, ctx);
+				clip, x, y, ctx);
 	}
 	return NSERROR_OK;
 }

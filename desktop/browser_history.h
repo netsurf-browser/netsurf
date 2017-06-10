@@ -129,17 +129,14 @@ void browser_window_history_size(struct browser_window *bw,
 /**
  * Redraw part of a history area.
  *
- * \param bw browser window with history object.
- * \param x0 left X co-ordinate of redraw area
- * \param y0 top Y co-ordinate of redraw area
- * \param x1 right X co-ordinate of redraw area
- * \param y1 lower Y co-ordinate of redraw area
- * \param x start X co-ordinate on plot canvas
- * \param y start Y co-ordinate on plot canvas
- * \param ctx current redraw context
+ * \param bw   browser window with history object.
+ * \param clip redraw area
+ * \param x    start X co-ordinate on plot canvas
+ * \param y    start Y co-ordinate on plot canvas
+ * \param ctx  current redraw context
  */
 bool browser_window_history_redraw_rectangle(struct browser_window *bw,
-		int x0, int y0, int x1, int y1, int x, int y,
+		struct rect *clip, int x, int y,
 		const struct redraw_context *ctx);
 
 /**

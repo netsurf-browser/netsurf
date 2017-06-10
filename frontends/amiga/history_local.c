@@ -84,6 +84,7 @@ static void ami_history_redraw(struct history_window *hw)
 {
 	struct IBox *bbox;
 	ULONG xs,ys;
+	struct rect clip;
 	struct redraw_context ctx = {
 		.interactive = true,
 		.background_images = true,
@@ -102,9 +103,11 @@ static void ami_history_redraw(struct history_window *hw)
 	SetRPAttrs(glob->rp, RPTAG_APenColor, 0xffffffff, TAG_DONE);
 	RectFill(glob->rp, 0, 0, bbox->Width - 1, bbox->Height - 1);
 */
-
-	browser_window_history_redraw_rectangle(hw->gw->bw, xs, ys,
-			bbox->Width + xs, bbox->Height + ys, 0, 0, &ctx);
+	clip.x0 = xs;
+	clip.y0 = ys;
+	clip.x1 = bbox->Width + xs;
+	clip.y1 = bbox->Height + ys;
+	browser_window_history_redraw_rectangle(hw->gw->bw, &clip, 0, 0, &ctx);
 
 	ami_clearclipreg(hw->gg);
 	ami_history_update_extent(hw);

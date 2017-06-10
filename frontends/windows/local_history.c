@@ -111,11 +111,7 @@ nsw32_local_history_draw(struct nsw32_corewindow *nsw32_cw,
 
 	lhw = (struct nsw32_local_history_window *)nsw32_cw;
 
-	local_history_redraw(lhw->session,
-			     r->x0 - scrollx,
-			     r->y0 - scrolly,
-			     r,
-			     &ctx);
+	local_history_redraw(lhw->session, -scrollx, -scrolly, r, &ctx);
 
 	return NSERROR_OK;
 }
