@@ -706,7 +706,6 @@ dom_default_action_DOMSubtreeModified_cb(struct dom_event *evt, void *pw)
 {
 	dom_event_target *node;
 	dom_node_type type;
-	dom_string *name;
 	dom_exception exc;
 	html_content *htmlc = pw;
 
@@ -722,16 +721,19 @@ dom_default_action_DOMSubtreeModified_cb(struct dom_event *evt, void *pw)
 		exc = dom_node_get_node_type(node, &type);
 		if ((exc == DOM_NO_ERR) && (type == DOM_ELEMENT_NODE)) {
 			/* an element node has been modified */
-			exc = dom_node_get_node_name(node, &name);
-			if ((exc == DOM_NO_ERR) && (name != NULL)) {
+			dom_html_element_type tag_type;
 
-				if (dom_string_caseless_isequal(name,
-						corestring_dom_style)) {
-					html_css_update_style(htmlc,
-							(dom_node *)node);
-				}
+			exc = dom_html_element_get_tag_type(node, &tag_type);
+			if (exc != DOM_NO_ERR) {
+				tag_type = DOM_HTML_ELEMENT_TYPE__UNKNOWN;
+			}
 
-				dom_string_unref(name);
+			switch (tag_type) {
+			case DOM_HTML_ELEMENT_TYPE_STYLE:
+				html_css_update_style(htmlc, (dom_node *)node);
+				break;
+			default:
+				break;
 			}
 		}
 		dom_node_unref(node);
