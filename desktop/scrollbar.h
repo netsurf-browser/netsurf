@@ -19,6 +19,8 @@
 /**
  * \file
  * Scrollbar widget interface.
+ *
+ * Scrollbar widgets used in frames code, not for frontend use
  */
 
 #ifndef NETSURF_DESKTOP_SCROLLBAR_H
@@ -30,10 +32,10 @@
 #define SCROLLBAR_WIDTH 16
 
 /* Region dependent values for scrollbar_scroll function */
-#define SCROLL_TOP		INT_MIN
-#define SCROLL_PAGE_UP		INT_MIN + 1
-#define SCROLL_PAGE_DOWN	INT_MAX - 1
-#define SCROLL_BOTTOM		INT_MAX
+#define SCROLL_TOP	 INT_MIN
+#define SCROLL_PAGE_UP	 (INT_MIN + 1)
+#define SCROLL_PAGE_DOWN (INT_MAX - 1)
+#define SCROLL_BOTTOM	 INT_MAX
 
 struct scrollbar;
 

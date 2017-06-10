@@ -90,6 +90,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
+#include <limits.h>
 
 /* NetSurf core includes */
 #include "utils/log.h"
@@ -115,7 +116,6 @@
 #include "desktop/hotlist.h"
 #include "desktop/version.h"
 #include "desktop/save_complete.h"
-#include "desktop/scrollbar.h"
 #include "desktop/searchweb.h"
 
 /* NetSurf Amiga platform includes */
@@ -157,6 +157,11 @@
 #define AMINS_SCROLLERPEN NUMDRIPENS
 #define NSA_KBD_SCROLL_PX 10
 #define NSA_MAX_HOTLIST_BUTTON_LEN 20
+
+#define SCROLL_TOP INT_MIN
+#define SCROLL_PAGE_UP (INT_MIN + 1)
+#define SCROLL_PAGE_DOWN (INT_MAX - 1)
+#define SCROLL_BOTTOM (INT_MAX)
 
 /* Extra mouse button defines to match those in intuition/intuition.h */
 #define SIDEDOWN  (IECODE_4TH_BUTTON)

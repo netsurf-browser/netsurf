@@ -35,6 +35,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <string.h>
+#include <limits.h>
 #include <oslib/colourtrans.h>
 #include <oslib/osbyte.h>
 #include <oslib/osfile.h>
@@ -63,7 +64,6 @@
 #include "netsurf/keypress.h"
 #include "desktop/browser_history.h"
 #include "desktop/cookie_manager.h"
-#include "desktop/scrollbar.h"
 
 #include "riscos/bitmap.h"
 #include "riscos/buffer.h"
@@ -166,6 +166,11 @@ static void ro_gui_window_process_form_select_menu(struct gui_window *g,
 #endif
 
 #define SCROLL_VISIBLE_PADDING 32
+
+#define SCROLL_TOP INT_MIN
+#define SCROLL_PAGE_UP (INT_MIN + 1)
+#define SCROLL_PAGE_DOWN (INT_MAX - 1)
+#define SCROLL_BOTTOM INT_MAX
 
 /** Remembers which iconised sprite numbers are in use */
 static bool iconise_used[64];
