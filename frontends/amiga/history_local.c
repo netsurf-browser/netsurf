@@ -1,5 +1,5 @@
 /*
- * Copyright 2009, 2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2017 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,359 +16,298 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Browser history window (AmigaOS implementation).
- *
- * There is only one history window, not one per browser window.
+/**
+ * \file
+ * Implementation of Amiga local history using core windows.
  */
 
-#include "amiga/os3support.h"
-
-#include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
+
 #include <proto/intuition.h>
-#include <proto/exec.h>
-#include <proto/graphics.h>
-#include <intuition/icclass.h>
-#include <proto/utility.h>
-#include <proto/window.h>
-#include <proto/space.h>
-#include <proto/layout.h>
+
 #include <classes/window.h>
-#include <gadgets/space.h>
+#include <gadgets/button.h>
+#include <gadgets/layout.h>
 #include <gadgets/scroller.h>
-#include <reaction/reaction.h>
+#include <gadgets/space.h>
+#include <images/label.h>
+
+#include <intuition/icclass.h>
 #include <reaction/reaction_macros.h>
 
 #include "utils/log.h"
-#include "utils/utils.h"
-#include "utils/messages.h"
-#include "utils/nsurl.h"
-#include "desktop/local_history.h"
-#include "netsurf/browser_window.h"
+#include "netsurf/keypress.h"
 #include "netsurf/plotters.h"
-#include "netsurf/window.h"
-#include "graphics/rpattr.h"
+#include "desktop/local_history.h"
+#include "utils/messages.h"
+#include "utils/nsoption.h"
+#include "utils/nsurl.h"
 
-#include "amiga/libs.h"
-#include "amiga/misc.h"
-#include "amiga/object.h"
-#include "amiga/plotters.h"
+#include "amiga/corewindow.h"
 #include "amiga/gui.h"
+#include "amiga/libs.h"
 #include "amiga/history_local.h"
+#include "amiga/utf8.h"
 
-struct history_window {
-	struct ami_generic_window w;
-	struct Window *win;
-	Object *objects[GID_LAST];
-	struct gui_window *gw;
-	struct Hook scrollerhook;
-	struct gui_globals *gg;
-};
-
-static void ami_history_update_extent(struct history_window *hw);
-HOOKF(void, ami_history_scroller_hook, Object *, object, struct IntuiMessage *);
-
-static BOOL ami_history_event(void *w);
-
-static const struct ami_win_event_table ami_localhistory_table = {
-	ami_history_event,
-	NULL, /* we don't explicitly close the local history window on quit */
-};
 
 /**
- * Redraw history window.
+ * Amiga local history viewing window context
  */
+struct ami_history_local_window {
+	/** Amiga core window context */
+	struct ami_corewindow core;
 
-static void ami_history_redraw(struct history_window *hw)
+	/** Amiga GUI stuff */
+	struct gui_window *gw;
+
+	/** local history viewer context data */
+	struct local_history_session *session;
+};
+
+static struct ami_history_local_window *history_local_window = NULL;
+
+/**
+ * destroy a previously created local history view
+ */
+nserror
+ami_history_local_destroy(struct ami_history_local_window *history_local_win)
 {
-	struct IBox *bbox;
-	ULONG xs,ys;
-	struct rect clip;
-	struct redraw_context ctx = {
-		.interactive = true,
-		.background_images = true,
-		.plot = &amiplot,
-		.priv = hw->gg
-	};
+	nserror res;
 
-	GetAttr(SCROLLER_Top,hw->objects[OID_HSCROLL],(ULONG *)&xs);
-	GetAttr(SCROLLER_Top,hw->objects[OID_VSCROLL],(ULONG *)&ys);
-	if(ami_gui_get_space_box(hw->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		amiga_warn_user("NoMemory", "");
-		return;
+	if (history_local_win == NULL) {
+		return NSERROR_OK;
 	}
 
-/*	core should clear this area for us
-	SetRPAttrs(glob->rp, RPTAG_APenColor, 0xffffffff, TAG_DONE);
-	RectFill(glob->rp, 0, 0, bbox->Width - 1, bbox->Height - 1);
-*/
-	clip.x0 = xs;
-	clip.y0 = ys;
-	clip.x1 = bbox->Width + xs;
-	clip.y1 = bbox->Height + ys;
-	browser_window_history_redraw_rectangle(hw->gw->bw, &clip, 0, 0, &ctx);
-
-	ami_clearclipreg(hw->gg);
-	ami_history_update_extent(hw);
-
-	BltBitMapRastPort(ami_plot_ra_get_bitmap(hw->gg), 0, 0, hw->win->RPort,
-				bbox->Left, bbox->Top, bbox->Width, bbox->Height, 0x0C0);
-
-	ami_gui_free_space_box(bbox);
+	res = local_history_fini(history_local_win->session);
+	if (res == NSERROR_OK) {
+		history_local_win->gw->hw = NULL;
+		res = ami_corewindow_fini(&history_local_win->core); /* closes the window for us */
+		history_local_window = NULL;
+	}
+	return res;
 }
 
+/**
+ * callback for mouse action for local history on core window
+ *
+ * \param ami_cw The Amiga core window structure.
+ * \param mouse_state netsurf mouse state on event
+ * \param x location of event
+ * \param y location of event
+ * \return NSERROR_OK on success otherwise apropriate error code
+ */
+static nserror
+ami_history_local_mouse(struct ami_corewindow *ami_cw,
+					browser_mouse_state mouse_state,
+					int x, int y)
+{
+	struct ami_history_local_window *history_local_win;
+	/* technically degenerate container of */
+	history_local_win = (struct ami_history_local_window *)ami_cw;
+
+	nsurl *url = browser_window_history_position_url(history_local_win->gw->bw, x, y);
+
+	if (url == NULL) {
+		SetGadgetAttrs(
+			(struct Gadget *)ami_cw->objects[GID_CW_DRAW],
+			ami_cw->win,
+			NULL,
+			GA_HintInfo,
+			NULL,
+			TAG_DONE);
+	} else {
+		SetGadgetAttrs(
+			(struct Gadget *)ami_cw->objects[GID_CW_DRAW],
+			ami_cw->win,
+			NULL,
+			GA_HintInfo,
+			nsurl_access(url),
+			TAG_DONE);
+		nsurl_unref(url);
+	}
+
+	local_history_mouse_action(history_local_win->session, mouse_state, x, y);
+
+	return NSERROR_OK;
+}
+
+/**
+ * callback for keypress for local history on core window
+ *
+ * \param ami_cw The Amiga core window structure.
+ * \param nskey The netsurf key code
+ * \return NSERROR_OK on success otherwise apropriate error code
+ */
+static nserror
+ami_history_local_key(struct ami_corewindow *ami_cw, uint32_t nskey)
+{
+	struct ami_history_local_window *history_local_win;
+
+	/* technically degenerate container of */
+	history_local_win = (struct ami_history_local_window *)ami_cw;
+
+	if (local_history_keypress(history_local_win->session, nskey)) {
+			return NSERROR_OK;
+	}
+	return NSERROR_NOT_IMPLEMENTED;
+}
+
+/**
+ * callback on draw event for certificate verify on core window
+ *
+ * \param ami_cw The Amiga core window structure.
+ * \param x the x coordinate to draw
+ * \param y the y coordinate to draw
+ * \param r The rectangle of the window that needs updating.
+ * \param ctx The drawing context
+ * \return NSERROR_OK on success otherwise apropriate error code
+ */
+static nserror
+ami_history_local_draw(struct ami_corewindow *ami_cw, int x, int y, struct rect *r, struct redraw_context *ctx)
+{
+	struct ami_history_local_window *history_local_win;
+
+	/* technically degenerate container of */
+	history_local_win = (struct ami_history_local_window *)ami_cw;
+
+	//ctx->plot->clip(ctx, r); //??
+	local_history_redraw(history_local_win->session, x, y, r, ctx);
+
+	return NSERROR_OK;
+}
+
+static nserror
+ami_history_local_create_window(struct ami_history_local_window *history_local_win)
+{
+	struct ami_corewindow *ami_cw = (struct ami_corewindow *)&history_local_win->core;
+	ULONG refresh_mode = WA_SmartRefresh;
+
+	if(nsoption_bool(window_simple_refresh) == true) {
+		refresh_mode = WA_SimpleRefresh;
+	}
+
+	ami_cw->objects[GID_CW_WIN] = WindowObj,
+  	    WA_ScreenTitle, ami_gui_get_screen_title(),
+       	WA_Title, ami_cw->wintitle,
+       	WA_Activate, TRUE,
+       	WA_DepthGadget, TRUE,
+       	WA_DragBar, TRUE,
+       	WA_CloseGadget, TRUE,
+       	WA_SizeGadget, TRUE,
+		WA_SizeBRight, TRUE,
+		WA_Width, 100,
+		WA_Height, 100,
+		WA_PubScreen, scrn,
+		WA_ReportMouse, TRUE,
+		refresh_mode, TRUE,
+		WA_IDCMP, IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
+				IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
+				IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY | IDCMP_REFRESHWINDOW,
+		WINDOW_IDCMPHook, &ami_cw->idcmp_hook,
+		WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE |
+				IDCMP_SIZEVERIFY | IDCMP_REFRESHWINDOW,
+		WINDOW_SharedPort, sport,
+		WINDOW_HorizProp, 1,
+		WINDOW_VertProp, 1,
+		WINDOW_UserData, history_local_win,
+//		WINDOW_MenuStrip, NULL,
+		WINDOW_MenuUserData, WGUD_HOOK,
+		WINDOW_IconifyGadget, FALSE,
+		WINDOW_Position, WPOS_CENTERSCREEN,
+		WINDOW_ParentGroup, ami_cw->objects[GID_CW_MAIN] = LayoutVObj,
+			LAYOUT_AddChild, ami_cw->objects[GID_CW_DRAW] = SpaceObj,
+				GA_ID, GID_CW_DRAW,
+				SPACE_Transparent, TRUE,
+				SPACE_BevelStyle, BVS_DISPLAY,
+				GA_RelVerify, TRUE,
+   			SpaceEnd,
+		EndGroup,
+	EndWindow;
+
+	if(ami_cw->objects[GID_CW_WIN] == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	return NSERROR_OK;
+}
 
 /* exported interface documented in amiga/history_local.h */
-void ami_history_open(struct gui_window *gw)
+nserror ami_history_local_present(struct gui_window *gw)
 {
-	struct history *history;
+	struct ami_history_local_window *ncwin;
+	nserror res;
 	int width, height;
 
-	if (gw->bw == NULL)
-		return;
+	if(history_local_window != NULL) {
+		//windowtofront()
 
-	history = browser_window_get_history(gw->bw);
-	if (history == NULL)
-		return;
-
-	if(!gw->hw)
-	{
-		gw->hw = calloc(1, sizeof(struct history_window));
-		gw->hw->gg = ami_plot_ra_alloc(scrn->Width, scrn->Height, false, true);
-
-		gw->hw->gw = gw;
-		browser_window_history_size(gw->bw, &width, &height);
-
-		gw->hw->scrollerhook.h_Entry = (void *)ami_history_scroller_hook;
-		gw->hw->scrollerhook.h_Data = gw->hw;
-
-		gw->hw->objects[OID_MAIN] = WindowObj,
-			WA_ScreenTitle, ami_gui_get_screen_title(),
-			WA_Title, messages_get("History"),
-			WA_Activate, TRUE,
-			WA_DepthGadget, TRUE,
-			WA_DragBar, TRUE,
-			WA_CloseGadget, TRUE,
-			WA_SizeGadget, TRUE,
-			WA_PubScreen,scrn,
-			WA_InnerWidth,width,
-			WA_InnerHeight,height + 10,
-			WINDOW_SharedPort,sport,
-			WINDOW_UserData,gw->hw,
-			WINDOW_IconifyGadget, FALSE,
-			WINDOW_GadgetHelp, TRUE,
-			WINDOW_Position, WPOS_CENTERSCREEN,
-			WINDOW_HorizProp,1,
-			WINDOW_VertProp,1,
-			WINDOW_IDCMPHook,&gw->hw->scrollerhook,
-			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE,
-//			WA_ReportMouse,TRUE,
-			WA_IDCMP,IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE, // | IDCMP_MOUSEMOVE,
-			WINDOW_ParentGroup, gw->hw->objects[GID_MAIN] = LayoutVObj,
-				LAYOUT_AddChild, gw->hw->objects[GID_BROWSER] = SpaceObj,
-					GA_ID,GID_BROWSER,
-//					SPACE_MinWidth,width,
-//					SPACE_MinHeight,height,
-				SpaceEnd,
-			EndGroup,
-		EndWindow;
-
-		gw->hw->win = (struct Window *)RA_OpenWindow(gw->hw->objects[OID_MAIN]);
-		ami_gui_win_list_add(gw->hw, AMINS_HISTORYWINDOW, &ami_localhistory_table);
-
-		GetAttr(WINDOW_HorizObject,gw->hw->objects[OID_MAIN],(ULONG *)&gw->hw->objects[OID_HSCROLL]);
-		GetAttr(WINDOW_VertObject,gw->hw->objects[OID_MAIN],(ULONG *)&gw->hw->objects[OID_VSCROLL]);
-
-		RefreshSetGadgetAttrs((APTR)gw->hw->objects[OID_VSCROLL],gw->hw->win,NULL,
-			GA_ID,OID_VSCROLL,
-			SCROLLER_Top,0,
-			ICA_TARGET,ICTARGET_IDCMP,
-			TAG_DONE);
-
-		RefreshSetGadgetAttrs((APTR)gw->hw->objects[OID_HSCROLL],gw->hw->win,NULL,
-			GA_ID,OID_HSCROLL,
-			SCROLLER_Top,0,
-			ICA_TARGET,ICTARGET_IDCMP,
-			TAG_DONE);
-	}
-
-	ami_history_redraw(gw->hw);
-}
-
-
-/**
- * Handle mouse clicks in the history window.
- *
- * \return true if the event was handled, false to pass it on
- */
-
-static bool ami_history_click(struct history_window *hw, uint16 code)
-{
-	int x, y;
-	struct IBox *bbox;
-	ULONG xs, ys;
-
-	if(ami_gui_get_space_box(hw->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		amiga_warn_user("NoMemory", "");
-		return false;
-	}
-
-	GetAttr(SCROLLER_Top,hw->objects[OID_HSCROLL],(ULONG *)&xs);
-	x = hw->win->MouseX - bbox->Left +xs;
-	GetAttr(SCROLLER_Top,hw->objects[OID_VSCROLL],(ULONG *)&ys);
-	y = hw->win->MouseY - bbox->Top + ys;
-
-	ami_gui_free_space_box(bbox);
-
-	switch(code)
-	{
-		case SELECTUP:
-			browser_window_history_click(hw->gw->bw, x, y, false);
-			ami_history_redraw(hw);
-			ami_schedule_redraw(hw->gw->shared, true);
-		break;
-
-		case MIDDLEUP:
-			browser_window_history_click(hw->gw->bw, x, y, true);
-			ami_history_redraw(hw);
-		break;
-	}
-
-	return true;
-}
-
-void ami_history_close(struct history_window *hw)
-{
-	ami_plot_ra_free(hw->gg);
-	hw->gw->hw = NULL;
-	DisposeObject(hw->objects[OID_MAIN]);
-	ami_gui_win_list_remove(hw);
-}
-
-static BOOL ami_history_event(void *w)
-{
-	/* return TRUE if window destroyed */
-	struct history_window *hw = (struct history_window *)w;
-	ULONG result = 0;
-	uint16 code;
-	nsurl *url = NULL;
-	struct IBox *bbox;
-	ULONG xs, ys;
-
-	while((result = RA_HandleInput(hw->objects[OID_MAIN],&code)) != WMHI_LASTMSG)
-	{
-       	switch(result & WMHI_CLASSMASK) // class
-   		{
-/* no menus yet, copied in as will probably need it later
-			case WMHI_MENUPICK:
-				item = ItemAddress(gwin->win->MenuStrip,code);
-				while (code != MENUNULL)
-				{
-					ami_menupick(code,gwin);
-					if(win_destroyed) break;
-					code = item->NextSelect;
-				}
-			break;
-*/
-
-			case WMHI_MOUSEMOVE:
-				GetAttr(SCROLLER_Top, hw->objects[OID_HSCROLL], (ULONG *)&xs);
-				GetAttr(SCROLLER_Top, hw->objects[OID_VSCROLL], (ULONG *)&ys);
-
-				if(ami_gui_get_space_box(hw->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-					amiga_warn_user("NoMemory", "");
-					break;
-				}
-
-				url = browser_window_history_position_url(hw->gw->bw,
-					hw->win->MouseX - bbox->Left + xs,
-					hw->win->MouseY - bbox->Top + ys);
-
-				ami_gui_free_space_box(bbox);
-
-				if (url == NULL) {
-					RefreshSetGadgetAttrs(
-						(APTR)hw->objects[GID_BROWSER],
-						hw->win,
-						NULL,
-						GA_HintInfo,
-						NULL,
-						TAG_DONE);
-				} else {
-					RefreshSetGadgetAttrs(
-						(APTR)hw->objects[GID_BROWSER],
-						hw->win,
-						NULL,
-						GA_HintInfo,
-						nsurl_access(url),
-						TAG_DONE);
-					nsurl_unref(url);
-				}
-			break;
-
-			case WMHI_NEWSIZE:
-				ami_history_redraw(hw);
-			break;
-
-			case WMHI_MOUSEBUTTONS:
-				ami_history_click(hw,code);
-			break;
-
-			case WMHI_CLOSEWINDOW:
-				ami_history_close(hw);
-				return TRUE;
-			break;
+		if (gw->hw != NULL) {
+			res = local_history_set(gw->hw->session, gw->bw);
+			return res;
 		}
-	}
-	return FALSE;
-}
 
-static void ami_history_update_extent(struct history_window *hw)
-{
-	struct IBox *bbox;
-	int width, height;
-
-	browser_window_history_size(hw->gw->bw, &width, &height);
-	if(ami_gui_get_space_box(hw->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		amiga_warn_user("NoMemory", "");
-		return;
+		return NSERROR_OK;
 	}
 
-	RefreshSetGadgetAttrs((APTR)hw->objects[OID_VSCROLL], hw->win, NULL,
-		GA_ID, OID_VSCROLL,
-		SCROLLER_Total, height,
-		SCROLLER_Visible, bbox->Height,
-		ICA_TARGET, ICTARGET_IDCMP,
+	ncwin = calloc(1, sizeof(struct ami_history_local_window));
+	if (ncwin == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	ncwin->core.wintitle = ami_utf8_easy((char *)messages_get("History"));
+
+	res = ami_history_local_create_window(ncwin);
+	if (res != NSERROR_OK) {
+		LOG("SSL UI builder init failed");
+		ami_utf8_free(ncwin->core.wintitle);
+		free(ncwin);
+		return res;
+	}
+
+	/* initialise Amiga core window */
+	ncwin->core.draw = ami_history_local_draw;
+	ncwin->core.key = ami_history_local_key;
+	ncwin->core.mouse = ami_history_local_mouse;
+	ncwin->core.close = ami_history_local_destroy;
+	ncwin->core.event = NULL;
+	ncwin->core.drag_end = NULL;
+	ncwin->core.icon_drop = NULL;
+
+	res = ami_corewindow_init(&ncwin->core);
+	if (res != NSERROR_OK) {
+		ami_utf8_free(ncwin->core.wintitle);
+		DisposeObject(ncwin->core.objects[GID_CW_WIN]);
+		free(ncwin);
+		return res;
+	}
+
+	res = local_history_init(ncwin->core.cb_table,
+				 (struct core_window *)ncwin,
+				 gw->bw,
+				 &ncwin->session);
+	if (res != NSERROR_OK) {
+		ami_utf8_free(ncwin->core.wintitle);
+		DisposeObject(ncwin->core.objects[GID_CW_WIN]);
+		free(ncwin);
+		return res;
+	}
+
+	res = local_history_get_size(ncwin->session,
+					     &width,
+					     &height);
+
+	/*TODO: Adjust these to account for window borders */
+
+	SetAttrs(ncwin->core.objects[GID_CW_WIN],
+		WA_Width, width,
+		WA_Height, height,
 		TAG_DONE);
 
-	RefreshSetGadgetAttrs((APTR)hw->objects[OID_HSCROLL], hw->win, NULL,
-		GA_ID, OID_HSCROLL,
-		SCROLLER_Total, width,
-		SCROLLER_Visible, bbox->Width,
-		ICA_TARGET, ICTARGET_IDCMP,
-		TAG_DONE);
+	ncwin->gw = gw;
+	history_local_window = ncwin;
+	gw->hw = ncwin;
 
-	ami_gui_free_space_box(bbox);
+	return NSERROR_OK;
 }
 
-HOOKF(void, ami_history_scroller_hook, Object *, object, struct IntuiMessage *)
-{
-	ULONG gid;
-	struct history_window *hw = hook->h_Data;
-
-	if (msg->Class == IDCMP_IDCMPUPDATE) 
-	{ 
-		gid = GetTagData( GA_ID, 0, msg->IAddress ); 
-
-		switch( gid ) 
-		{ 
- 			case OID_HSCROLL: 
- 			case OID_VSCROLL: 
-				ami_history_redraw(hw);
- 			break; 
-		} 
-	}
-//	ReplyMsg((struct Message *)msg);
-} 

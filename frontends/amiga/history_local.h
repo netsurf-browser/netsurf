@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2017 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,23 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef AMIGA_HISTORY_LOCAL_H
-#define AMIGA_HISTORY_LOCAL_H
-
-#include <exec/types.h>
-#include <intuition/classusr.h>
+#ifndef AMIGA_HISTORY_GLOBAL_H
+#define AMIGA_HISTORY_GLOBAL_H
 
 struct gui_window;
-struct gui_globals;
-struct history_window;
+struct ami_history_local_window;
 
-/**
- * Open history window.
- *
- * \param  gw          gui_window to open history for
- */
-void ami_history_open(struct gui_window *gw);
-
-void ami_history_close(struct history_window *hw);
+/** Open the global history viewer */
+nserror ami_history_local_present(struct gui_window *gw);
+nserror ami_history_local_destroy(struct ami_history_local_window *history_local_win);
 #endif
 

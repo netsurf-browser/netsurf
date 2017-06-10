@@ -4596,7 +4596,7 @@ static void gui_window_destroy(struct gui_window *g)
 
 	if(g->hw)
 	{
-		ami_history_close(g->hw);
+		ami_history_local_destroy(g->hw);
 		win_destroyed = true;
 	}
 

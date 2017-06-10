@@ -326,7 +326,7 @@ HOOKF(void, ami_menu_item_browser_localhistory, APTR, window, struct IntuiMessag
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	ami_history_open(gwin->gw);
+	ami_history_local_present(gwin->gw);
 }
 
 HOOKF(void, ami_menu_item_browser_globalhistory, APTR, window, struct IntuiMessage *)

@@ -87,7 +87,8 @@ enum
 };
 
 struct find_window;
-struct history_window;
+struct ami_history_local_window;
+struct ami_menu_data;
 
 #define AMI_GUI_TOOLBAR_MAX 20
 
@@ -109,8 +110,6 @@ struct ami_generic_window {
 	struct nsObject *node;
 	const struct ami_win_event_table *tbl;
 };
-
-struct ami_menu_data;
 
 struct gui_window_2 {
 	struct ami_generic_window w;
@@ -174,7 +173,7 @@ struct gui_window
 	int c_h_temp;
 	int scrollx;
 	int scrolly;
-	struct history_window *hw;
+	struct ami_history_local_window *hw;
 	struct List dllist;
 	struct hlcache_handle *favicon;
 	bool throbbing;
