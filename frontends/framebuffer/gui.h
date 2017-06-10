@@ -27,17 +27,6 @@ typedef struct fb_cursor_s fb_cursor_t;
 /* bounding box */
 typedef struct nsfb_bbox_s bbox_t;
 
-struct gui_localhistory {
-	struct browser_window *bw;
-
-	struct fbtk_widget_s *window;
-	struct fbtk_widget_s *hscroll;
-	struct fbtk_widget_s *vscroll;
-	struct fbtk_widget_s *history;
-
-	int scrollx, scrolly; /**< scroll offsets. */
-};
-
 struct gui_window {
 	struct browser_window *bw;
 
@@ -59,8 +48,6 @@ struct gui_window {
 
 	int throbber_index;
 
-	struct gui_localhistory *localhistory;
-
 	struct gui_window *next;
 	struct gui_window *prev;
 };
@@ -68,12 +55,7 @@ struct gui_window {
 
 extern struct gui_window *window_list;
 
-struct gui_localhistory *fb_create_localhistory(struct browser_window *bw,
-		struct fbtk_widget_s *parent, int furniture_width);
-void fb_localhistory_map(struct gui_localhistory * glh);
-
 void gui_resize(struct fbtk_widget_s *root, int width, int height);
-
 
 #endif /* NETSURF_FB_GUI_H */
 

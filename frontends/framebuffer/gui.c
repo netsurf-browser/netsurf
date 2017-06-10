@@ -54,6 +54,7 @@
 #include "framebuffer/clipboard.h"
 #include "framebuffer/fetch.h"
 #include "framebuffer/bitmap.h"
+#include "framebuffer/local_history.h"
 
 
 #define NSFB_TOOLBAR_DEFAULT_LAYOUT "blfsrutc"
@@ -1150,7 +1151,7 @@ fb_localhistory_btn_clik(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	if (cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
-	fb_localhistory_map(gw->localhistory);
+	fb_local_history_present(fbtk, gw->bw);
 
 	return 0;
 }
@@ -1782,7 +1783,6 @@ gui_window_create(struct browser_window *bw,
 	gw->bw = bw;
 
 	create_normal_browser_window(gw, nsoption_int(fb_furniture_size));
-	gw->localhistory = fb_create_localhistory(bw, fbtk, nsoption_int(fb_furniture_size));
 
 	/* map and request redraw of gui window */
 	fbtk_set_mapping(gw->window, true);
