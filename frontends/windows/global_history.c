@@ -126,7 +126,7 @@ static nserror nsw32_global_history_init(HINSTANCE hInstance)
 		return NSERROR_OK;
 	}
 
-	ncwin = malloc(sizeof(struct nsw32_global_history_window));
+	ncwin = calloc(1, sizeof(*ncwin));
 	if (ncwin == NULL) {
 		return NSERROR_NOMEM;
 	}

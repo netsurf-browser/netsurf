@@ -130,7 +130,7 @@ static nserror nsw32_hotlist_init(HINSTANCE hInstance)
 		return NSERROR_OK;
 	}
 
-	ncwin = malloc(sizeof(struct nsw32_hotlist_window));
+	ncwin = calloc(1, sizeof(*ncwin));
 	if (ncwin == NULL) {
 		return NSERROR_NOMEM;
 	}

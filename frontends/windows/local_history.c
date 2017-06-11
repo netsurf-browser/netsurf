@@ -143,7 +143,7 @@ nsw32_local_history_init(HINSTANCE hInstance,
 		return res;
 	}
 
-	ncwin = malloc(sizeof(struct nsw32_local_history_window));
+	ncwin = calloc(1, sizeof(*ncwin));
 	if (ncwin == NULL) {
 		return NSERROR_NOMEM;
 	}
