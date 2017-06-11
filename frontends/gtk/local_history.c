@@ -141,7 +141,7 @@ nsgtk_local_history_init(struct browser_window *bw,
 		return res;
 	}
 
-	ncwin = malloc(sizeof(struct nsgtk_local_history_window));
+	ncwin = calloc(1, sizeof(*ncwin));
 	if (ncwin == NULL) {
 		return NSERROR_NOMEM;
 	}
