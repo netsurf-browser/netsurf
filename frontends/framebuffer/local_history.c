@@ -145,7 +145,7 @@ fb_local_history_init(fbtk_widget_t *parent,
 		return res;
 	}
 
-	ncwin = malloc(sizeof(struct fb_local_history_window));
+	ncwin = calloc(1, sizeof(*ncwin));
 	if (ncwin == NULL) {
 		return NSERROR_NOMEM;
 	}
