@@ -466,7 +466,7 @@ static nserror ro_hotlist_init(void)
 		return NSERROR_OK;
 	}
 
-	ncwin = malloc(sizeof(struct ro_hotlist_window));
+	ncwin = calloc(1, sizeof(*ncwin));
 	if (ncwin == NULL) {
 		return NSERROR_NOMEM;
 	}

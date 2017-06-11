@@ -377,7 +377,7 @@ static nserror ro_cookie_init(void)
 		return NSERROR_OK;
 	}
 
-	ncwin = malloc(sizeof(struct ro_cookie_window));
+	ncwin = calloc(1, sizeof(*ncwin));
 	if (ncwin == NULL) {
 		return NSERROR_NOMEM;
 	}

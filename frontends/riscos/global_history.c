@@ -405,7 +405,7 @@ static nserror ro_global_history_init(void)
 		return NSERROR_OK;
 	}
 
-	ncwin = malloc(sizeof(struct ro_global_history_window));
+	ncwin = calloc(1, sizeof(*ncwin));
 	if (ncwin == NULL) {
 		return NSERROR_NOMEM;
 	}
