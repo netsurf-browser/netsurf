@@ -35,8 +35,48 @@
 struct box;
 struct hlcache_handle;
 struct gui_window;
-struct history;
 struct selection;
+struct nsurl;
+
+/**
+ * history entry page information
+ */
+struct history_page {
+	struct nsurl *url;    /**< Page URL, never NULL. */
+	lwc_string *frag_id; /** Fragment identifier, or NULL. */
+	char *title;  /**< Page title, never NULL. */
+};
+
+/**
+ * A node in the history tree.
+ */
+struct history_entry {
+	struct history_page page;
+	struct history_entry *back;  /**< Parent. */
+	struct history_entry *next;  /**< Next sibling. */
+	struct history_entry *forward;  /**< First child. */
+	struct history_entry *forward_pref;  /**< Child in direction of
+						  current entry. */
+	struct history_entry *forward_last;  /**< Last child. */
+	unsigned int children;  /**< Number of children. */
+	int x;  /**< Position of node. */
+	int y;  /**< Position of node. */
+	struct bitmap *bitmap;  /**< Thumbnail bitmap, or 0. */
+};
+
+/**
+ * History tree for a window.
+ */
+struct history {
+	/** First page in tree (page that window opened with). */
+	struct history_entry *start;
+	/** Current position in tree. */
+	struct history_entry *current;
+	/** Width of layout. */
+	int width;
+	/** Height of layout. */
+	int height;
+};
 
 /**
  * Browser window data.
@@ -269,6 +309,8 @@ nserror browser_window_history_create(struct browser_window *bw);
  */
 nserror browser_window_history_clone(const struct browser_window *existing,
 		struct browser_window *clone);
+
+
 /**
  * Insert a url into the history tree.
  *

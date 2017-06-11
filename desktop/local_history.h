@@ -87,8 +87,12 @@ nserror local_history_redraw(struct local_history_session *session, int x, int y
  * \param[in] mouse The current mouse state
  * \param[in] x The current mouse X coordinate
  * \param[in] y The current mouse Y coordinate
+ * \return NSERROR_OK if mouse action was processed.
+ *         NSERROR_NOT_FOUND if nothing under the pointer where it was clicked
+ *         NSERROR_NOT_IMPLEMENTED if the action was not processed.
+ *         NSERROR_PERMISSION if the clicked item was the current page
  */
-void local_history_mouse_action(struct local_history_session *session, enum browser_mouse_state mouse, int x, int y);
+nserror local_history_mouse_action(struct local_history_session *session, enum browser_mouse_state mouse, int x, int y);
 
 
 /**
@@ -135,50 +139,6 @@ nserror local_history_get_size(struct local_history_session *session, int *width
  *          location.
  */
 nserror local_history_get_url(struct local_history_session *session, int x, int y, struct nsurl **url_out);
-
-
-/* depricated local history viewing interfaces */
-
-/**
- * Get the dimensions of a history.
- *
- * \param bw browser window with history object.
- * \param width updated to width
- * \param height updated to height
- */
-void browser_window_history_size(struct browser_window *bw, int *width, int *height);
-
-/**
- * Redraw part of a history area.
- *
- * \param bw   browser window with history object.
- * \param clip redraw area
- * \param x    start X co-ordinate on plot canvas
- * \param y    start Y co-ordinate on plot canvas
- * \param ctx  current redraw context
- */
-bool browser_window_history_redraw_rectangle(struct browser_window *bw, struct rect *clip, int x, int y, const struct redraw_context *ctx);
-
-/**
- * Handle a mouse click in a history.
- *
- * \param bw browser window containing history
- * \param x click coordinate
- * \param y click coordinate
- * \param new_window  open a new window instead of using bw
- * \return true if action was taken, false if click was not on an entry
- */
-bool browser_window_history_click(struct browser_window *bw, int x, int y, bool new_window);
-
-/**
- * Determine the URL of the entry at a position.
- *
- * \param bw browser window containing history
- * \param x x coordinate.
- * \param y y coordinate.
- * \return nsurl at position or NULL if no entry.
- */
-struct nsurl *browser_window_history_position_url(struct browser_window *bw, int x, int y);
 
 
 #endif
