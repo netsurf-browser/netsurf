@@ -36,6 +36,7 @@
 
 #include "riscos/global_history.h"
 #include "riscos/gui.h"
+#include "riscos/window.h"
 #include "riscos/mouse.h"
 #include "riscos/toolbar.h"
 #include "riscos/url_complete.h"

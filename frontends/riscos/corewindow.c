@@ -42,6 +42,7 @@
 #include "riscos/wimp_event.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
+#include "riscos/window.h"
 #include "riscos/toolbar.h"
 #include "riscos/mouse.h"
 #include "riscos/corewindow.h"

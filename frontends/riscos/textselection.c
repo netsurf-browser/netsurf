@@ -36,6 +36,7 @@
 #include "netsurf/browser_window.h"
 
 #include "riscos/gui.h"
+#include "riscos/window.h"
 #include "riscos/menus.h"
 #include "riscos/message.h"
 #include "riscos/mouse.h"

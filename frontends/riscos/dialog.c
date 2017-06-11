@@ -47,6 +47,7 @@
 #include "riscos/local_history.h"
 #include "riscos/global_history.h"
 #include "riscos/gui.h"
+#include "riscos/window.h"
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
 #include "riscos/save.h"
