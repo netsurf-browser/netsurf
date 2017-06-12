@@ -259,23 +259,14 @@ find_entry_position(struct history_entry *entry, int x, int y)
 
 
 /* exported interface documented in desktop/local_history.h */
-nserror local_history_init(struct core_window_callback_table *cw_t,
-			   void *core_window_handle,
-			   struct browser_window *bw,
-			   struct local_history_session **session)
+nserror
+local_history_init(struct core_window_callback_table *cw_t,
+		   void *core_window_handle,
+		   struct browser_window *bw,
+		   struct local_history_session **session)
 {
 	nserror res;
 	struct local_history_session *nses;
-
-	nses = calloc(1, sizeof(struct local_history_session));
-	if (nses == NULL) {
-		return NSERROR_NOMEM;
-	}
-
-	nses->cw_t = cw_t;
-	nses->core_window_handle = core_window_handle;
-
-	local_history_set(nses, bw);
 
 	res = ns_system_colour_char("Window", &pstyle_bg.fill_colour);
 	if (res != NSERROR_OK) {
@@ -297,8 +288,18 @@ nserror local_history_init(struct core_window_callback_table *cw_t,
 	}
 	pfstyle_node_sel.foreground = pstyle_rect_sel.stroke_colour;
 
+	nses = calloc(1, sizeof(struct local_history_session));
+	if (nses == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	nses->cw_t = cw_t;
+	nses->core_window_handle = core_window_handle;
+
+	local_history_set(nses, bw);
 
 	*session = nses;
+
 	return NSERROR_OK;
 }
 
