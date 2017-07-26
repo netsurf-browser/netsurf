@@ -571,6 +571,9 @@ static TCase *urldb_add_get_case_create(void)
  * Session basic test case
  *
  * The databases are loaded and saved with no manipulation
+ *
+ * \warning This test will fail when 32bit time_t wraps in 2038 as the
+ *           cookie database expiry field is limited to that size.
  */
 START_TEST(urldb_session_test)
 {
@@ -591,7 +594,7 @@ START_TEST(urldb_session_test)
 	res = urldb_save(outnam);
 	ck_assert_int_eq(res, NSERROR_OK);
 
-	/* check for the correct answer */
+	/* check the url database file written and the test file match */
 	ck_assert_int_eq(cmp(outnam, test_urldb_out_path), 0);
 
 	/* remove test output */
@@ -601,7 +604,7 @@ START_TEST(urldb_session_test)
 	outnam = testnam(NULL);
 	urldb_save_cookies(outnam);
 
-	/* check for the correct answer */
+	/* check the cookies file written and the test file match */
 	ck_assert_int_eq(cmp(outnam, test_cookies_out_path), 0);
 
 	/* remove test output */
