@@ -35,6 +35,13 @@
 
 #include "test/malloc_fig.h"
 
+/**
+ * The number of corestrings.
+ *
+ * This is used to test all the out of memory paths in initialisation.
+ */
+#define CORESTRING_TEST_COUNT 435
+
 START_TEST(corestrings_test)
 {
 	nserror ires;
@@ -58,7 +65,7 @@ static TCase *corestrings_case_create(void)
 	TCase *tc;
 	tc = tcase_create("corestrings");
 
-	tcase_add_loop_test(tc, corestrings_test, 0, 437);
+	tcase_add_loop_test(tc, corestrings_test, 0, CORESTRING_TEST_COUNT);
 
 	return tc;
 }
