@@ -1339,7 +1339,6 @@ nsws_window_resize(struct gui_window *gw,
 		   WPARAM wparam,
 		   LPARAM lparam)
 {
-	struct rect rect;
 	RECT rstatus, rtool;
 
 	if ((gw->toolbar == NULL) ||
@@ -1352,7 +1351,6 @@ nsws_window_resize(struct gui_window *gw,
 
 	GetClientRect(gw->toolbar, &rtool);
 	GetWindowRect(gw->statusbar, &rstatus);
-	win32_window_get_scroll(gw, &rect.x0, &rect.y0);
 	gw->width = LOWORD(lparam);
 	gw->height = HIWORD(lparam) - (rtool.bottom - rtool.top) - (rstatus.bottom - rstatus.top);
 
@@ -1366,7 +1364,7 @@ nsws_window_resize(struct gui_window *gw,
 	}
 	nsws_window_update_forward_back(gw);
 
-	win32_window_set_scroll(gw, &rect);
+	browser_window_update(gw->bw, false);
 
 	if (gw->toolbar != NULL) {
 		SendMessage(gw->toolbar, TB_SETSTATE,
