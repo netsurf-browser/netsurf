@@ -280,7 +280,7 @@ win32_font_split(const plot_font_style_t *style,
 				length,
 				x,
 				char_offset,
-				actual_x)) {
+				actual_x) == NSERROR_OK) {
 		c_off = *char_offset;
 		if (*char_offset == length) {
 			ret = NSERROR_OK;
