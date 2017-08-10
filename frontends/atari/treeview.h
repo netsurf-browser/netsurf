@@ -68,7 +68,7 @@ struct atari_treeview_callbacks {
 /**
  * Initalize an window to be an treeview window.
  *
-*/
+ */
 struct core_window *atari_treeview_create(GUIWIN *win, struct atari_treeview_callbacks * callbacks, void * user_data, uint32_t flags);
 
 /**
