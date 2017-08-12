@@ -42,7 +42,6 @@
 #include "netsurf/plotters.h"
 #include "netsurf/form.h"
 #include "netsurf/keypress.h"
-#include "desktop/textarea.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 
@@ -355,6 +354,7 @@ static gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 		break;
 
 	case 3:	/* Right button, usually. Action button, context menu. */
+		/** \todo determine if hiding the caret here is necessary */
 		browser_window_remove_caret(g->bw, true);
 		nsgtk_scaffolding_context_menu(g->scaffold,
 					       g->mouse.pressed_x,
