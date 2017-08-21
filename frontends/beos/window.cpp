@@ -1000,8 +1000,6 @@ beos_window_invalidate_area(struct gui_window *g, const struct rect *rect)
 		return NSERROR_OK;
 	}
 
-	nsbeos_current_gc_set(g->view);
-
 	if (rect != NULL) {
 		//XXX +1 ??
 		g->view->Invalidate(BRect(rect->x0, rect->y0,
@@ -1010,7 +1008,6 @@ beos_window_invalidate_area(struct gui_window *g, const struct rect *rect)
 		g->view->Invalidate();
 	}
 
-	nsbeos_current_gc_set(NULL);
 	g->view->UnlockLooper();
 
 	return NSERROR_OK;
