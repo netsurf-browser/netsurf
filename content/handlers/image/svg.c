@@ -62,7 +62,7 @@ static nserror svg_create_svg_data(svg_content *c)
 
 no_memory:
 	msg_data.error = messages_get("NoMemory");
-	content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+	content_broadcast(&c->base, CONTENT_MSG_ERROR, &msg_data);
 	return NSERROR_NOMEM;
 }
 

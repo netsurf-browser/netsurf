@@ -538,7 +538,7 @@ static void search_text(const char *string, int string_len,
 	msg_data.scroll.y0 = bounds.y0;
 	msg_data.scroll.x1 = bounds.x1;
 	msg_data.scroll.y1 = bounds.y1;
-	content_broadcast(context->c, CONTENT_MSG_SCROLL, msg_data);
+	content_broadcast(context->c, CONTENT_MSG_SCROLL, &msg_data);
 }
 
 
@@ -571,7 +571,7 @@ void search_step(struct search_context *context, search_flags_t flags,
 		msg_data.scroll.area = false;
 		msg_data.scroll.x0 = 0;
 		msg_data.scroll.y0 = 0;
-		content_broadcast(context->c, CONTENT_MSG_SCROLL, msg_data);
+		content_broadcast(context->c, CONTENT_MSG_SCROLL, &msg_data);
 		return;
 	}
 	search_text(string, string_len, context, flags);

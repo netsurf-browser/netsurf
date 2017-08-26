@@ -80,7 +80,7 @@ static nserror nsbmp_create_bmp_data(nsbmp_content *bmp)
 	bmp->bmp = calloc(sizeof(struct bmp_image), 1);
 	if (bmp->bmp == NULL) {
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&bmp->base, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(&bmp->base, CONTENT_MSG_ERROR, &msg_data);
 		return NSERROR_NOMEM;
 	}
 
@@ -139,12 +139,12 @@ static bool nsbmp_convert(struct content *c)
 			break;
 		case BMP_INSUFFICIENT_MEMORY:
 			msg_data.error = messages_get("NoMemory");
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 			return false;
 		case BMP_INSUFFICIENT_DATA:
 		case BMP_DATA_ERROR:
 			msg_data.error = messages_get("BadBMP");
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 			return false;
 	}
 

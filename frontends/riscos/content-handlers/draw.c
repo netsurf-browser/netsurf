@@ -128,7 +128,7 @@ bool draw_convert(struct content *c)
 	if (error) {
 		LOG("xdrawfile_bbox: 0x%x: %s", error->errnum, error->errmess);
 		msg_data.error = error->errmess;
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}
 

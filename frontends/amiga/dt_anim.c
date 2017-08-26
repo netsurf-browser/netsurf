@@ -190,7 +190,7 @@ bool amiga_dt_anim_convert(struct content *c)
 			plugin->bitmap = amiga_bitmap_create(width, height, bm_flags);
 			if (!plugin->bitmap) {
 				msg_data.error = messages_get("NoMemory");
-				content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+				content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 				return false;
 			}
 

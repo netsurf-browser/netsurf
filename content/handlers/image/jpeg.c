@@ -301,7 +301,7 @@ static bool nsjpeg_convert(struct content *c)
 		jpeg_destroy_decompress(&cinfo);
 
 		msg_data.error = nsjpeg_error_buffer;
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}
 

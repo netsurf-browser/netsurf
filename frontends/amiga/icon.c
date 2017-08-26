@@ -155,7 +155,7 @@ bool amiga_icon_convert(struct content *c)
 	if(filename == NULL)
 	{
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}
 
@@ -167,7 +167,7 @@ bool amiga_icon_convert(struct content *c)
 	if(dobj == NULL)
 	{
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}
 
@@ -187,14 +187,14 @@ bool amiga_icon_convert(struct content *c)
 	icon_c->bitmap = amiga_bitmap_create(width, height, BITMAP_NEW);
 	if (!icon_c->bitmap) {
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		if(dobj) FreeDiskObject(dobj);
 		return false;
 	}
 	imagebuf = (ULONG *) amiga_bitmap_get_buffer(icon_c->bitmap);
 	if (!imagebuf) {
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		if(dobj) FreeDiskObject(dobj);
 		return false;
 	}

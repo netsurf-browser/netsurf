@@ -77,7 +77,7 @@ static nserror nsico_create_ico_data(nsico_content *c)
 	c->ico = calloc(sizeof(ico_collection), 1);
 	if (c->ico == NULL) {
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, &msg_data);
 		return NSERROR_NOMEM;
 	}
 	ico_collection_create(c->ico, &bmp_bitmap_callbacks);
@@ -138,12 +138,12 @@ static bool nsico_convert(struct content *c)
 		break;
 	case BMP_INSUFFICIENT_MEMORY:
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	case BMP_INSUFFICIENT_DATA:
 	case BMP_DATA_ERROR:
 		msg_data.error = messages_get("BadICO");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}
 

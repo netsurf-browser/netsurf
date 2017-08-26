@@ -355,7 +355,7 @@ exec_src_script(html_content *c,
 	ns_error = nsurl_join(c->base_url, dom_string_data(src), &joined);
 	if (ns_error != NSERROR_OK) {
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, &msg_data);
 		return DOM_HUBBUB_NOMEM;
 	}
 
@@ -411,7 +411,7 @@ exec_src_script(html_content *c,
 	if (nscript == NULL) {
 		nsurl_unref(joined);
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, &msg_data);
 		return DOM_HUBBUB_NOMEM;
 	}
 
@@ -483,7 +483,7 @@ exec_inline_script(html_content *c, dom_node *node, dom_string *mimetype)
 		dom_string_unref(script);
 
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, &msg_data);
 		return DOM_HUBBUB_NOMEM;
 
 	}
@@ -526,7 +526,7 @@ html_process_script(void *ctx, dom_node *node)
 		union content_msg_data msg_data;
 
 		msg_data.jscontext = &c->jscontext;
-		content_broadcast(&c->base, CONTENT_MSG_GETCTX, msg_data);
+		content_broadcast(&c->base, CONTENT_MSG_GETCTX, &msg_data);
 		LOG("javascript context %p ", c->jscontext);
 		if (c->jscontext == NULL) {
 			/* no context and it could not be created, abort */

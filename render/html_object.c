@@ -177,7 +177,7 @@ html_object_callback(hlcache_handle *object,
 			data.redraw.height = box->height;
 			data.redraw.full_redraw = true;
 
-			content_broadcast(&c->base, CONTENT_MSG_REDRAW, data);
+			content_broadcast(&c->base, CONTENT_MSG_REDRAW, &data);
 		}
 		break;
 
@@ -276,7 +276,7 @@ html_object_callback(hlcache_handle *object,
 				data.redraw.object_y += y;
 
 				content_broadcast(&c->base,
-						CONTENT_MSG_REDRAW, data);
+						CONTENT_MSG_REDRAW, &data);
 				break;
 
 			} else {
@@ -315,7 +315,7 @@ html_object_callback(hlcache_handle *object,
 				data.redraw.object_y += y + box->padding[TOP];
 			}
 
-			content_broadcast(&c->base, CONTENT_MSG_REDRAW, data);
+			content_broadcast(&c->base, CONTENT_MSG_REDRAW, &data);
 		}
 		break;
 
@@ -354,7 +354,7 @@ html_object_callback(hlcache_handle *object,
 			msg_data.dragsave.content =
 					event->data.dragsave.content;
 
-		content_broadcast(&c->base, CONTENT_MSG_DRAGSAVE, msg_data);
+		content_broadcast(&c->base, CONTENT_MSG_DRAGSAVE, &msg_data);
 	}
 		break;
 
@@ -364,7 +364,7 @@ html_object_callback(hlcache_handle *object,
 	case CONTENT_MSG_GADGETCLICK:
 		/* These messages are for browser window layer.
 		 * we're not interested, so pass them on. */
-		content_broadcast(&c->base, event->type, event->data);
+		content_broadcast(&c->base, event->type, &event->data);
 		break;
 
 	case CONTENT_MSG_CARET:

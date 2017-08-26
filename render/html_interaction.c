@@ -368,7 +368,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 				mouse, x - box_x, y - box_y);
 		if (status != NULL) {
 			msg_data.explicit_status_text = status;
-			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
+			content_broadcast(c, CONTENT_MSG_STATUS, &msg_data);
 		} else {
 			int width, height;
 			form_select_get_dimensions(html->visible_select_menu,
@@ -459,7 +459,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		}
 
 		msg_data.explicit_status_text = status;
-		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
+		content_broadcast(c, CONTENT_MSG_STATUS, &msg_data);
 		return;
 	}
 
@@ -678,7 +678,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			} else if (mouse & BROWSER_MOUSE_CLICK_1) {
 				msg_data.select_menu.gadget = gadget;
 				content_broadcast(c, CONTENT_MSG_SELECTMENU,
-						msg_data);
+						&msg_data);
 			}
 			break;
 		case GADGET_CHECKBOX:
@@ -768,7 +768,8 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			status = messages_get("FormFile");
 			if (mouse & BROWSER_MOUSE_CLICK_1) {
 				msg_data.gadget_click.gadget = gadget;
-				content_broadcast(c, CONTENT_MSG_GADGETCLICK, msg_data);
+				content_broadcast(c, CONTENT_MSG_GADGETCLICK,
+						&msg_data);
 			}
 			break;
 		case GADGET_BUTTON:
@@ -782,12 +783,12 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		if (mouse & BROWSER_MOUSE_DRAG_2) {
 			msg_data.dragsave.type = CONTENT_SAVE_NATIVE;
 			msg_data.dragsave.content = object;
-			content_broadcast(c, CONTENT_MSG_DRAGSAVE, msg_data);
+			content_broadcast(c, CONTENT_MSG_DRAGSAVE, &msg_data);
 
 		} else if (mouse & BROWSER_MOUSE_DRAG_1) {
 			msg_data.dragsave.type = CONTENT_SAVE_ORIG;
 			msg_data.dragsave.content = object;
-			content_broadcast(c, CONTENT_MSG_DRAGSAVE, msg_data);
+			content_broadcast(c, CONTENT_MSG_DRAGSAVE, &msg_data);
 		}
 
 		/* \todo should have a drag-saving object msg */
@@ -869,7 +870,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 				mouse & BROWSER_MOUSE_MOD_1) {
 			msg_data.savelink.url = url;
 			msg_data.savelink.title = title;
-			content_broadcast(c, CONTENT_MSG_SAVELINK, msg_data);
+			content_broadcast(c, CONTENT_MSG_SAVELINK, &msg_data);
 
 		} else if (mouse & (BROWSER_MOUSE_CLICK_1 |
 				BROWSER_MOUSE_CLICK_2))
@@ -968,7 +969,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 					msg_data.dragsave.content = NULL;
 					content_broadcast(c,
 							CONTENT_MSG_DRAGSAVE,
-							msg_data);
+							&msg_data);
 				} else {
 					if (drag_candidate == NULL) {
 						browser_window_page_drag_start(
@@ -988,7 +989,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 					msg_data.dragsave.content = NULL;
 					content_broadcast(c,
 							CONTENT_MSG_DRAGSAVE,
-							msg_data);
+							&msg_data);
 				} else {
 					if (drag_candidate == NULL) {
 						browser_window_page_drag_start(
@@ -1013,10 +1014,10 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 	if (!iframe && !html_object_box) {
 		msg_data.explicit_status_text = status;
-		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
+		content_broadcast(c, CONTENT_MSG_STATUS, &msg_data);
 
 		msg_data.pointer = pointer;
-		content_broadcast(c, CONTENT_MSG_POINTER, msg_data);
+		content_broadcast(c, CONTENT_MSG_POINTER, &msg_data);
 	}
 
 	/* fire dom click event */
@@ -1217,7 +1218,7 @@ void html_overflow_scroll_callback(void *client_data,
 		html_set_drag_type(html, drag_type, drag_owner, NULL);
 
 		msg_data.pointer = BROWSER_POINTER_AUTO;
-		content_broadcast(data->c, CONTENT_MSG_POINTER, msg_data);
+		content_broadcast(data->c, CONTENT_MSG_POINTER, &msg_data);
 		break;
 	}
 }
@@ -1292,7 +1293,7 @@ void html_set_drag_type(html_content *html, html_drag_type drag_type,
 	msg_data.drag.rect = rect;
 
 	/* Inform of the content's drag status change */
-	content_broadcast((struct content *)html, CONTENT_MSG_DRAG, msg_data);
+	content_broadcast((struct content *)html, CONTENT_MSG_DRAG, &msg_data);
 }
 
 /* Documented in html_internal.h */
@@ -1350,7 +1351,7 @@ void html_set_focus(html_content *html, html_focus_type focus_type,
 	}
 
 	/* Inform of the content's drag status change */
-	content_broadcast((struct content *)html, CONTENT_MSG_CARET, msg_data);
+	content_broadcast((struct content *)html, CONTENT_MSG_CARET, &msg_data);
 }
 
 /* Documented in html_internal.h */
@@ -1426,5 +1427,5 @@ void html_set_selection(html_content *html, html_selection_type selection_type,
 
 	/* Inform of the content's selection status change */
 	content_broadcast((struct content *)html, CONTENT_MSG_SELECTION,
-			msg_data);
+			&msg_data);
 }

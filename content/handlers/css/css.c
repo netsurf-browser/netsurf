@@ -172,7 +172,7 @@ nscss_create(const content_handler *handler,
 			nscss_content_done, result);
 	if (error != NSERROR_OK) {
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&result->base, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(&result->base, CONTENT_MSG_ERROR, &msg_data);
 		if (charset_value != NULL)
 			lwc_string_unref(charset_value);
 		free(result);
@@ -256,7 +256,7 @@ bool nscss_process_data(struct content *c, const char *data, unsigned int size)
 	error = nscss_process_css_data(&css->data, data, size);
 	if (error != CSS_OK && error != CSS_NEEDDATA) {
 		msg_data.error = "?";
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 	}
 
 	return (error == CSS_OK || error == CSS_NEEDDATA);
@@ -292,7 +292,7 @@ bool nscss_convert(struct content *c)
 	error = nscss_convert_css_data(&css->data);
 	if (error != CSS_OK) {
 		msg_data.error = "?";
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}
 
@@ -485,7 +485,7 @@ void nscss_content_done(struct content_css_data *css, void *pw)
 	error = css_stylesheet_size(css->sheet, &size);
 	if (error != CSS_OK) {
 		msg_data.error = "?";
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		content_set_error(c);
 		return;
 	}

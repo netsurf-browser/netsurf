@@ -86,7 +86,7 @@ static nserror nsgif_create_gif_data(nsgif_content *c)
 	c->gif = calloc(sizeof(gif_animation), 1);
 	if (c->gif == NULL) {
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, &msg_data);
 		return NSERROR_NOMEM;
 	}
 	gif_create(c->gif, &gif_bitmap_callbacks);
@@ -231,7 +231,7 @@ static void nsgif_animate(void *p)
 	data.redraw.object_width = gif->base.width;
 	data.redraw.object_height = gif->base.height;
 
-	content_broadcast(&gif->base, CONTENT_MSG_REDRAW, data);
+	content_broadcast(&gif->base, CONTENT_MSG_REDRAW, &data);
 }
 
 static bool nsgif_convert(struct content *c)
@@ -261,7 +261,7 @@ static bool nsgif_convert(struct content *c)
 				msg_data.error = messages_get("NoMemory");
 				break;
 			}
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 			return false;
 		}
 	} while (res != GIF_OK && res != GIF_INSUFFICIENT_FRAME_DATA);
@@ -270,7 +270,7 @@ static bool nsgif_convert(struct content *c)
 	if ((gif->gif->frame_count_partial == 0) || (gif->gif->width == 0) ||
 			(gif->gif->height == 0)) {
 		msg_data.error = messages_get("BadGIF");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}
 

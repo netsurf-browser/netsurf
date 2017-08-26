@@ -185,7 +185,7 @@ bool artworks_convert(struct content *c)
 	if (used >= 0) {
 		LOG("Alias$LoadArtWorksModules not defined");
 		msg_data.error = messages_get("AWNotSeen");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}
 
@@ -194,7 +194,7 @@ bool artworks_convert(struct content *c)
 	if (error) {
 		LOG("xos_cli: 0x%x: %s", error->errnum, error->errmess);
 		msg_data.error = error->errmess;
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}
 
@@ -204,7 +204,7 @@ bool artworks_convert(struct content *c)
 	if (error) {
 		LOG("AWRender_FileInitAddress: 0x%x: %s", error->errnum, error->errmess);
 		msg_data.error = error->errmess;
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}
 
@@ -214,7 +214,7 @@ bool artworks_convert(struct content *c)
 	if (error) {
 		LOG("AWRender_RenderAddress: 0x%x: %s", error->errnum, error->errmess);
 		msg_data.error = error->errmess;
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}
 
@@ -226,7 +226,7 @@ bool artworks_convert(struct content *c)
 	if (error) {
 		LOG("awrender_init: 0x%x : %s", error->errnum, error->errmess);
 		msg_data.error = error->errmess;
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}
 
@@ -241,7 +241,7 @@ bool artworks_convert(struct content *c)
 	if (error) {
 		LOG("AWRender_DocBounds: 0x%x: %s", error->errnum, error->errmess);
 		msg_data.error = error->errmess;
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}
 
@@ -255,7 +255,7 @@ bool artworks_convert(struct content *c)
 	if (!aw->block) {
 		LOG("failed to create block for ArtworksRenderer");
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}
 

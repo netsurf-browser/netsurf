@@ -186,7 +186,7 @@ textplain_create_internal(textplain_content *c, lwc_string *encoding)
 
 no_memory:
 	msg_data.error = messages_get("NoMemory");
-	content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+	content_broadcast(&c->base, CONTENT_MSG_ERROR, &msg_data);
 
 	return NSERROR_NOMEM;
 }
@@ -363,7 +363,7 @@ textplain_process_data(struct content *c, const char *data, unsigned int size)
 
 no_memory:
 	msg_data.error = messages_get("NoMemory");
-	content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+	content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 	return false;
 }
 
@@ -647,10 +647,10 @@ textplain_mouse_action(struct content *c,
 	}
 
 	msg_data.explicit_status_text = status;
-	content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
+	content_broadcast(c, CONTENT_MSG_STATUS, &msg_data);
 
 	msg_data.pointer = pointer;
-	content_broadcast(c, CONTENT_MSG_POINTER, msg_data);
+	content_broadcast(c, CONTENT_MSG_POINTER, &msg_data);
 }
 
 

@@ -163,7 +163,7 @@ nserror content_llcache_callback(llcache_handle *llcache,
 
 		content_set_status(c, messages_get("Processing"));
 		msg_data.explicit_status_text = NULL;
-		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
+		content_broadcast(c, CONTENT_MSG_STATUS, &msg_data);
 
 		content_convert(c);
 	}
@@ -172,17 +172,17 @@ nserror content_llcache_callback(llcache_handle *llcache,
 		/** \todo Error page? */
 		c->status = CONTENT_STATUS_ERROR;
 		msg_data.error = event->data.msg;
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		break;
 	case LLCACHE_EVENT_PROGRESS:
 		content_set_status(c, event->data.msg);
 		msg_data.explicit_status_text = NULL;
-		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
+		content_broadcast(c, CONTENT_MSG_STATUS, &msg_data);
 		break;
 	case LLCACHE_EVENT_REDIRECT:
 		msg_data.redirect.from = event->data.redirect.from;
 		msg_data.redirect.to = event->data.redirect.to;
-		content_broadcast(c, CONTENT_MSG_REDIRECT, msg_data);
+		content_broadcast(c, CONTENT_MSG_REDIRECT, &msg_data);
 		break;
 	}
 
@@ -292,8 +292,6 @@ void content_convert(struct content *c)
 
 void content_set_ready(struct content *c)
 {
-	union content_msg_data msg_data;
-
 	/* The content must be locked at this point, as it can only 
 	 * become READY after conversion. */
 	assert(c->locked);
@@ -301,7 +299,7 @@ void content_set_ready(struct content *c)
 
 	c->status = CONTENT_STATUS_READY;
 	content_update_status(c);
-	content_broadcast(c, CONTENT_MSG_READY, msg_data);
+	content_broadcast(c, CONTENT_MSG_READY, NULL);
 }
 
 /**
@@ -310,7 +308,6 @@ void content_set_ready(struct content *c)
 
 void content_set_done(struct content *c)
 {
-	union content_msg_data msg_data;
 	uint64_t now_ms;
 
 	nsu_getmonotonic_ms(&now_ms);
@@ -318,7 +315,7 @@ void content_set_done(struct content *c)
 	c->status = CONTENT_STATUS_DONE;
 	c->time = now_ms - c->time;
 	content_update_status(c);
-	content_broadcast(c, CONTENT_MSG_DONE, msg_data);
+	content_broadcast(c, CONTENT_MSG_DONE, NULL);
 }
 
 /**
@@ -363,7 +360,7 @@ void content__reformat(struct content *c, bool background,
 		c->locked = false;
 
 		data.background = background;
-		content_broadcast(c, CONTENT_MSG_REFORMAT, data);
+		content_broadcast(c, CONTENT_MSG_REFORMAT, &data);
 	}
 }
 
@@ -436,7 +433,7 @@ void content_mouse_track(hlcache_handle *h, struct browser_window *bw,
 	} else {
 		union content_msg_data msg_data;
 		msg_data.pointer = BROWSER_POINTER_AUTO;
-		content_broadcast(c, CONTENT_MSG_POINTER, msg_data);
+		content_broadcast(c, CONTENT_MSG_POINTER, &msg_data);
 	}
 
 
@@ -540,7 +537,7 @@ void content__request_redraw(struct content *c,
 	data.redraw.object_width = c->width;
 	data.redraw.object_height = c->height;
 
-	content_broadcast(c, CONTENT_MSG_REDRAW, data);
+	content_broadcast(c, CONTENT_MSG_REDRAW, &data);
 }
 
 
@@ -753,15 +750,20 @@ bool content_is_shareable(struct content *c)
  */
 
 void content_broadcast(struct content *c, content_msg msg,
-		union content_msg_data data)
+		const union content_msg_data *data)
 {
 	struct content_user *user, *next;
+	union content_msg_data d = { 0 };
 	assert(c);
+
+	if (data != NULL) {
+		d = *data;
+	}
 //	LOG("%p -> msg:%d", c, msg);
 	for (user = c->user_list->next; user != 0; user = next) {
 		next = user->next;  /* user may be destroyed during callback */
 		if (user->callback != 0)
-			user->callback(c, msg, data, user->pw);
+			user->callback(c, msg, d, user->pw);
 	}
 }
 
@@ -1040,7 +1042,7 @@ bool content__add_rfc5988_link(struct content *c,
 
 	/* broadcast the data */
 	msg_data.rfc5988_link = newlink;
-	content_broadcast(c, CONTENT_MSG_LINK, msg_data);
+	content_broadcast(c, CONTENT_MSG_LINK, &msg_data);
 
 	return true;
 }

@@ -166,7 +166,7 @@ void content_set_error(struct content *c);
 
 void content_set_status(struct content *c, const char *status_message);
 void content_broadcast(struct content *c, content_msg msg,
-		union content_msg_data data);
+		const union content_msg_data *data);
 /**
  * Send an errorcode message to all users.
  */

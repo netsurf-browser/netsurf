@@ -443,7 +443,7 @@ static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
 		c->base.refresh = nsurl_ref(
 				content_get_url(&c->base));
 
-		content_broadcast(&c->base, CONTENT_MSG_REFRESH, msg_data);
+		content_broadcast(&c->base, CONTENT_MSG_REFRESH, &msg_data);
 
 		return NSERROR_OK;
 	}
@@ -522,7 +522,8 @@ static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
 
 			c->base.refresh = nsurl;
 
-			content_broadcast(&c->base, CONTENT_MSG_REFRESH, msg_data);
+			content_broadcast(&c->base, CONTENT_MSG_REFRESH,
+					&msg_data);
 			c->refresh = true;
 		}
 
@@ -603,7 +604,7 @@ void html_finish_conversion(html_content *htmlc)
 	LOG("DOM to box (%p)", htmlc);
 	content_set_status(&htmlc->base, messages_get("Processing"));
 	msg_data.explicit_status_text = NULL;
-	content_broadcast(&htmlc->base, CONTENT_MSG_STATUS, msg_data);
+	content_broadcast(&htmlc->base, CONTENT_MSG_STATUS, &msg_data);
 
 	exc = dom_document_get_document_element(htmlc->document, (void *) &html);
 	if ((exc != DOM_NO_ERR) || (html == NULL)) {
@@ -685,7 +686,7 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 					msg_data.jscontext = &htmlc->jscontext;
 					content_broadcast(&htmlc->base,
 							CONTENT_MSG_GETCTX,
-							msg_data);
+							&msg_data);
 					LOG("javascript context: %p (htmlc: %p)",
 							htmlc->jscontext,
 							htmlc);

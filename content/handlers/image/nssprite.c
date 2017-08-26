@@ -119,13 +119,13 @@ static bool nssprite_convert(struct content *c)
 	nssprite->bitmap = guit->bitmap->create(sprite->width, sprite->height, BITMAP_NEW);
 	if (!nssprite->bitmap) {
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}
 	uint32_t* imagebuf = (uint32_t *)guit->bitmap->get_buffer(nssprite->bitmap);
 	if (!imagebuf) {
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}
 	unsigned char *spritebuf = (unsigned char *)sprite->image;
