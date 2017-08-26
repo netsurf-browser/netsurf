@@ -643,9 +643,13 @@ bool content_scaled_redraw(struct hlcache_handle *h,
  * called with the content.
  */
 
-bool content_add_user(struct content *c,
-		void (*callback)(struct content *c, content_msg msg,
-			union content_msg_data data, void *pw),
+bool content_add_user(
+		struct content *c,
+		void (*callback)(
+				struct content *c,
+				content_msg msg,
+				const union content_msg_data *data,
+				void *pw),
 		void *pw)
 {
 	struct content_user *user;
@@ -673,9 +677,13 @@ bool content_add_user(struct content *c,
  * content_add_user().
  */
 
-void content_remove_user(struct content *c,
-		void (*callback)(struct content *c, content_msg msg,
-			union content_msg_data data, void *pw),
+void content_remove_user(
+		struct content *c,
+		void (*callback)(
+				struct content *c,
+				content_msg msg,
+				const union content_msg_data *data,
+				void *pw),
 		void *pw)
 {
 	struct content_user *user, *next;
@@ -753,17 +761,13 @@ void content_broadcast(struct content *c, content_msg msg,
 		const union content_msg_data *data)
 {
 	struct content_user *user, *next;
-	union content_msg_data d = { 0 };
 	assert(c);
 
-	if (data != NULL) {
-		d = *data;
-	}
 //	LOG("%p -> msg:%d", c, msg);
 	for (user = c->user_list->next; user != 0; user = next) {
 		next = user->next;  /* user may be destroyed during callback */
 		if (user->callback != 0)
-			user->callback(c, msg, d, user->pw);
+			user->callback(c, msg, data, user->pw);
 	}
 }
 
@@ -779,8 +783,10 @@ void content_broadcast_errorcode(struct content *c, nserror errorcode)
 
 	for (user = c->user_list->next; user != 0; user = next) {
 		next = user->next;  /* user may be destroyed during callback */
-		if (user->callback != 0)
-			user->callback(c, CONTENT_MSG_ERRORCODE, data, user->pw);
+		if (user->callback != 0) {
+			user->callback(c, CONTENT_MSG_ERRORCODE,
+					&data, user->pw);
+		}
 	}
 }
 

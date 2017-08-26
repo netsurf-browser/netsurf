@@ -92,8 +92,11 @@ struct content_handler {
 /** Linked list of users of a content. */
 struct content_user
 {
-	void (*callback)(struct content *c, content_msg msg,
-			union content_msg_data data, void *pw);
+	void (*callback)(
+			struct content *c,
+			content_msg msg,
+			const union content_msg_data *data,
+			void *pw);
 	void *pw;
 
 	struct content_user *next;

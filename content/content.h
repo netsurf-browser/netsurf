@@ -200,10 +200,24 @@ union content_msg_data {
 void content_destroy(struct content *c);
 
 
-bool content_add_user(struct content *h, void (*callback)(struct content *c, content_msg msg, union content_msg_data data, void *pw), void *pw);
+bool content_add_user(
+		struct content *h,
+		void (*callback)(
+				struct content *c,
+				content_msg msg,
+				const union content_msg_data *data,
+				void *pw),
+		void *pw);
 
 
-void content_remove_user(struct content *c, void (*callback)(struct content *c, content_msg msg, union content_msg_data data, void *pw), void *pw);
+void content_remove_user(
+		struct content *c,
+		void (*callback)(
+				struct content *c,
+				content_msg msg,
+				const union content_msg_data *data,
+				void *pw),
+		void *pw);
 
 
 uint32_t content_count_users(struct content *c);

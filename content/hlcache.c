@@ -179,14 +179,16 @@ static bool hlcache_type_is_acceptable(lwc_string *mime_type,
  * \param pw	Pointer to private data (hlcache_handle)
  */
 static void hlcache_content_callback(struct content *c, content_msg msg,
-		union content_msg_data data, void *pw)
+		const union content_msg_data *data, void *pw)
 {
 	hlcache_handle *handle = pw;
-	hlcache_event event;
+	hlcache_event event = { 0 };
 	nserror error = NSERROR_OK;
 
 	event.type = msg;
-	event.data = data;
+	if (data != NULL) {
+		event.data = *data;
+	}
 
 	if (handle->cb != NULL)
 		error = handle->cb(handle, &event, handle->pw);
