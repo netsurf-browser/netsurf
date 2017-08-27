@@ -136,7 +136,6 @@ nscss_create(const content_handler *handler,
 	const char *charset = NULL;
 	const char *xnsbase = NULL;
 	lwc_string *charset_value = NULL;
-	union content_msg_data msg_data;
 	nserror error;
 
 	result = calloc(1, sizeof(nscss_content));
@@ -171,8 +170,7 @@ nscss_create(const content_handler *handler,
 			xnsbase, charset, result->base.quirks,
 			nscss_content_done, result);
 	if (error != NSERROR_OK) {
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&result->base, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(&result->base, NSERROR_NOMEM);
 		if (charset_value != NULL)
 			lwc_string_unref(charset_value);
 		free(result);
@@ -250,13 +248,11 @@ static nserror nscss_create_css_data(struct content_css_data *c,
 bool nscss_process_data(struct content *c, const char *data, unsigned int size)
 {
 	nscss_content *css = (nscss_content *) c;
-	union content_msg_data msg_data;
 	css_error error;
 
 	error = nscss_process_css_data(&css->data, data, size);
 	if (error != CSS_OK && error != CSS_NEEDDATA) {
-		msg_data.error = "?";
-		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(c, NSERROR_CSS);
 	}
 
 	return (error == CSS_OK || error == CSS_NEEDDATA);
@@ -286,13 +282,11 @@ static css_error nscss_process_css_data(struct content_css_data *c,
 bool nscss_convert(struct content *c)
 {
 	nscss_content *css = (nscss_content *) c;
-	union content_msg_data msg_data;
 	css_error error;
 
 	error = nscss_convert_css_data(&css->data);
 	if (error != CSS_OK) {
-		msg_data.error = "?";
-		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(c, NSERROR_CSS);
 		return false;
 	}
 
@@ -475,7 +469,6 @@ content_type nscss_content_type(void)
  */
 void nscss_content_done(struct content_css_data *css, void *pw)
 {
-	union content_msg_data msg_data;
 	struct content *c = pw;
 	uint32_t i;
 	size_t size;
@@ -484,8 +477,7 @@ void nscss_content_done(struct content_css_data *css, void *pw)
 	/* Retrieve the size of this sheet */
 	error = css_stylesheet_size(css->sheet, &size);
 	if (error != CSS_OK) {
-		msg_data.error = "?";
-		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(c, NSERROR_CSS);
 		content_set_error(c);
 		return;
 	}
@@ -639,6 +631,7 @@ nserror nscss_import(hlcache_handle *handle,
 		error = nscss_import_complete(ctx);
 		break;
 
+	case CONTENT_MSG_ERRORCODE:
 	case CONTENT_MSG_ERROR:
 		hlcache_handle_release(handle);
 		ctx->css->imports[ctx->index].c = NULL;
