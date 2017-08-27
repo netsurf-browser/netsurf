@@ -72,7 +72,6 @@ static void *nsgif_bitmap_create(int width, int height)
 
 static nserror nsgif_create_gif_data(nsgif_content *c)
 {
-	union content_msg_data msg_data;
 	gif_bitmap_callback_vt gif_bitmap_callbacks = {
 		.bitmap_create = nsgif_bitmap_create,
 		.bitmap_destroy = guit->bitmap->destroy,
@@ -85,8 +84,7 @@ static nserror nsgif_create_gif_data(nsgif_content *c)
 	/* Initialise our data structure */
 	c->gif = calloc(sizeof(gif_animation), 1);
 	if (c->gif == NULL) {
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
 		return NSERROR_NOMEM;
 	}
 	gif_create(c->gif, &gif_bitmap_callbacks);
@@ -238,7 +236,6 @@ static bool nsgif_convert(struct content *c)
 {
 	nsgif_content *gif = (nsgif_content *) c;
 	int res;
-	union content_msg_data msg_data;
 	const char *data;
 	unsigned long size;
 	char *title;
@@ -251,17 +248,18 @@ static bool nsgif_convert(struct content *c)
 		res = gif_initialise(gif->gif, size, (unsigned char *) data);
 		if (res != GIF_OK && res != GIF_WORKING && 
 				res != GIF_INSUFFICIENT_FRAME_DATA) {
+			nserror error = NSERROR_UNKNOWN;
 			switch (res) {
 			case GIF_FRAME_DATA_ERROR:
 			case GIF_INSUFFICIENT_DATA:
 			case GIF_DATA_ERROR:
-				msg_data.error = messages_get("BadGIF");
+				error = NSERROR_GIF_ERROR;
 				break;
 			case GIF_INSUFFICIENT_MEMORY:
-				msg_data.error = messages_get("NoMemory");
+				error = NSERROR_NOMEM;
 				break;
 			}
-			content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
+			content_broadcast_errorcode(c, error);
 			return false;
 		}
 	} while (res != GIF_OK && res != GIF_INSUFFICIENT_FRAME_DATA);
@@ -269,8 +267,7 @@ static bool nsgif_convert(struct content *c)
 	/* Abort on bad GIFs */
 	if ((gif->gif->frame_count_partial == 0) || (gif->gif->width == 0) ||
 			(gif->gif->height == 0)) {
-		msg_data.error = messages_get("BadGIF");
-		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(c, NSERROR_GIF_ERROR);
 		return false;
 	}
 

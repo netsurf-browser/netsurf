@@ -49,6 +49,8 @@ typedef enum {
 
 	NSERROR_BMP_ERROR,              /**< A BMP error occurred */
 
+	NSERROR_GIF_ERROR,              /**< A GIF error occurred */
+
 	NSERROR_BAD_ENCODING,		/**< The character set is unknown */
 
 	NSERROR_NEED_DATA,		/**< More data needed */
