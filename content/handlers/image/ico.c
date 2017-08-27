@@ -66,7 +66,6 @@ static void *nsico_bitmap_create(int width, int height, unsigned int bmp_state)
 
 static nserror nsico_create_ico_data(nsico_content *c)
 {
-	union content_msg_data msg_data;
 	bmp_bitmap_callback_vt bmp_bitmap_callbacks = {
 		.bitmap_create = nsico_bitmap_create,
 		.bitmap_destroy = guit->bitmap->destroy,
@@ -76,8 +75,7 @@ static nserror nsico_create_ico_data(nsico_content *c)
 
 	c->ico = calloc(sizeof(ico_collection), 1);
 	if (c->ico == NULL) {
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
 		return NSERROR_NOMEM;
 	}
 	ico_collection_create(c->ico, &bmp_bitmap_callbacks);
@@ -122,7 +120,6 @@ static bool nsico_convert(struct content *c)
 	nsico_content *ico = (nsico_content *) c;
 	struct bmp_image *bmp;
 	bmp_result res;
-	union content_msg_data msg_data;
 	const char *data;
 	unsigned long size;
 	char *title;
@@ -137,13 +134,11 @@ static bool nsico_convert(struct content *c)
 	case BMP_OK:
 		break;
 	case BMP_INSUFFICIENT_MEMORY:
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(c, NSERROR_NOMEM);
 		return false;
 	case BMP_INSUFFICIENT_DATA:
 	case BMP_DATA_ERROR:
-		msg_data.error = messages_get("BadICO");
-		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(c, NSERROR_ICO_ERROR);
 		return false;
 	}
 
