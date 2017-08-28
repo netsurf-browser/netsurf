@@ -181,6 +181,7 @@ html_object_callback(hlcache_handle *object,
 		}
 		break;
 
+	case CONTENT_MSG_ERRORCODE:
 	case CONTENT_MSG_ERROR:
 		hlcache_handle_release(object);
 
