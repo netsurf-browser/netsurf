@@ -1094,6 +1094,7 @@ browser_window_favicon_callback(hlcache_handle *c,
 		break;
 
 	case CONTENT_MSG_ERROR:
+	case CONTENT_MSG_ERRORCODE:
 
 		/* clean up after ourselves */
 		if (c == bw->favicon.loading) {
