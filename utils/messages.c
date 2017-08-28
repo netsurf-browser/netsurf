@@ -338,6 +338,10 @@ const char *messages_get_errorcode(nserror code)
 		/* Requested item not found */
 		return messages_get_ctx("NotFound", messages_hash);
 
+	case NSERROR_NOT_DIRECTORY:
+		/* Missing directory */
+		return messages_get_ctx("NotDirectory", messages_hash);
+
 	case NSERROR_SAVE_FAILED:
 		/* Failed to save data */
 		return messages_get_ctx("SaveFailed", messages_hash);
@@ -349,6 +353,26 @@ const char *messages_get_errorcode(nserror code)
 	case NSERROR_INIT_FAILED:
 		/* Initialisation failed */
 		return messages_get_ctx("InitFailed", messages_hash);
+
+	case NSERROR_BMP_ERROR:
+		/* A BMP error occurred */
+		return messages_get_ctx("BMPError", messages_hash);
+
+	case NSERROR_GIF_ERROR:
+		/* A GIF error occurred */
+		return messages_get_ctx("GIFError", messages_hash);
+
+	case NSERROR_ICO_ERROR:
+		/* A ICO error occurred */
+		return messages_get_ctx("ICOError", messages_hash);
+
+	case NSERROR_PNG_ERROR:
+		/* A PNG error occurred */
+		return messages_get_ctx("PNGError", messages_hash);
+
+	case NSERROR_SVG_ERROR:
+		/* A SVG error occurred */
+		return messages_get_ctx("SVGError", messages_hash);
 
 	case NSERROR_BAD_ENCODING:
 		/* The character set is unknown */
@@ -394,13 +418,40 @@ const char *messages_get_errorcode(nserror code)
 		/* Bad URL */
 		return messages_get_ctx("BadURL", messages_hash);
 
-	default:
+	case NSERROR_BAD_CONTENT:
+		/* Bad Content */
+		return messages_get_ctx("BadContent", messages_hash);
+
+	case NSERROR_FRAME_DEPTH:
+		/* Exceeded frame depth */
+		return messages_get_ctx("FrameDepth", messages_hash);
+
+	case NSERROR_PERMISSION:
+		/* Permission error */
+		return messages_get_ctx("PermissionError", messages_hash);
+
+	case NSERROR_BAD_SIZE:
+		/* Bad size */
+		return messages_get_ctx("BadSize", messages_hash);
+
+	case NSERROR_NOSPACE:
+		/* Insufficient space */
+		return messages_get_ctx("NoSpace", messages_hash);
+
+	case NSERROR_NOT_IMPLEMENTED:
+		/* Functionality is not implemented */
+		return messages_get_ctx("NotImplemented", messages_hash);
+
 	case NSERROR_UNKNOWN:
-		break;
+		/* Unknown error */
+		return messages_get_ctx("Unknown", messages_hash);
 	}
 
-	/* Unknown error */
-	return messages_get_ctx("Unknown", messages_hash);
+	/* The switch has no default, so the compiler should tell us when we
+	 * forget to add messages for new error codes.  As such, we should
+	 * never get here.
+	 */
+	assert(0);
 }
 
 
