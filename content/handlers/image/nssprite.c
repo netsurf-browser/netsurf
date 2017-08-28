@@ -95,7 +95,6 @@ static nserror nssprite_create(const content_handler *handler,
 static bool nssprite_convert(struct content *c)
 {
 	nssprite_content *nssprite = (nssprite_content *) c;
-	union content_msg_data msg_data;
 
 	struct rosprite_mem_context* ctx;
 
@@ -118,14 +117,12 @@ static bool nssprite_convert(struct content *c)
 
 	nssprite->bitmap = guit->bitmap->create(sprite->width, sprite->height, BITMAP_NEW);
 	if (!nssprite->bitmap) {
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(c, NSERROR_NOMEM);
 		return false;
 	}
 	uint32_t* imagebuf = (uint32_t *)guit->bitmap->get_buffer(nssprite->bitmap);
 	if (!imagebuf) {
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(c, NSERROR_NOMEM);
 		return false;
 	}
 	unsigned char *spritebuf = (unsigned char *)sprite->image;
