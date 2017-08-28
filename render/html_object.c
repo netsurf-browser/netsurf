@@ -125,7 +125,9 @@ html_object_callback(hlcache_handle *object,
 	struct box *box;
 
 	box = o->box;
-	if (box == NULL && event->type != CONTENT_MSG_ERROR) {
+	if (box == NULL &&
+			event->type != CONTENT_MSG_ERROR &&
+			event->type != CONTENT_MSG_ERRORCODE) {
 		return NSERROR_OK;
 	}
 
