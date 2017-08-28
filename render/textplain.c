@@ -150,7 +150,6 @@ textplain_create_internal(textplain_content *c, lwc_string *encoding)
 	char *utf8_data;
 	parserutils_inputstream *stream;
 	parserutils_error error;
-	union content_msg_data msg_data;
 
 	textplain_style.size = (nsoption_int(font_size) * FONT_SIZE_SCALE) / 10;
 
@@ -185,8 +184,7 @@ textplain_create_internal(textplain_content *c, lwc_string *encoding)
 	return NSERROR_OK;
 
 no_memory:
-	msg_data.error = messages_get("NoMemory");
-	content_broadcast(&c->base, CONTENT_MSG_ERROR, &msg_data);
+	content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
 
 	return NSERROR_NOMEM;
 }
@@ -347,7 +345,6 @@ textplain_process_data(struct content *c, const char *data, unsigned int size)
 {
 	textplain_content *text = (textplain_content *) c;
 	parserutils_inputstream *stream = text->inputstream;
-	union content_msg_data msg_data;
 	parserutils_error error;
 
 	error = parserutils_inputstream_append(stream,
@@ -362,8 +359,7 @@ textplain_process_data(struct content *c, const char *data, unsigned int size)
 	return true;
 
 no_memory:
-	msg_data.error = messages_get("NoMemory");
-	content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
+	content_broadcast_errorcode(c, NSERROR_NOMEM);
 	return false;
 }
 
