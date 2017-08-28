@@ -134,7 +134,7 @@ endif
 
 BASE_TESTCFLAGS := -std=c99 -g \
 	$(COMMON_WARNFLAGS) \
-	-D_BSD_SOURCE \
+	-D_DEFAULT_SOURCE \
 	-D_POSIX_C_SOURCE=200809L \
 	-D_XOPEN_SOURCE=600 \
 	-Itest -Iinclude -Icontent/handlers -Ifrontends -I. -I.. \
