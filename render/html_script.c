@@ -346,7 +346,6 @@ exec_src_script(html_content *c,
 	nsurl *joined;
 	hlcache_child_context child;
 	struct html_script *nscript;
-	union content_msg_data msg_data;
 	bool async;
 	bool defer;
 	enum html_script_type script_type;
@@ -357,8 +356,7 @@ exec_src_script(html_content *c,
 	/* src url */
 	ns_error = nsurl_join(c->base_url, dom_string_data(src), &joined);
 	if (ns_error != NSERROR_OK) {
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
 		return DOM_HUBBUB_NOMEM;
 	}
 
@@ -413,8 +411,7 @@ exec_src_script(html_content *c,
 	nscript = html_process_new_script(c, mimetype, script_type);
 	if (nscript == NULL) {
 		nsurl_unref(joined);
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
 		return DOM_HUBBUB_NOMEM;
 	}
 
@@ -468,7 +465,6 @@ exec_src_script(html_content *c,
 static dom_hubbub_error
 exec_inline_script(html_content *c, dom_node *node, dom_string *mimetype)
 {
-	union content_msg_data msg_data;
 	dom_string *script;
 	dom_exception exc; /* returned by libdom functions */
 	struct lwc_string_s *lwcmimetype;
@@ -485,8 +481,7 @@ exec_inline_script(html_content *c, dom_node *node, dom_string *mimetype)
 	if (nscript == NULL) {
 		dom_string_unref(script);
 
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
 		return DOM_HUBBUB_NOMEM;
 
 	}
