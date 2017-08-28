@@ -62,8 +62,6 @@ typedef struct rsvg_content {
 
 static nserror rsvg_create_svg_data(rsvg_content *c)
 {
-	union content_msg_data msg_data;
-
 	c->rsvgh = NULL;
 	c->cs = NULL;
 	c->ct = NULL;
@@ -71,8 +69,7 @@ static nserror rsvg_create_svg_data(rsvg_content *c)
 
 	if ((c->rsvgh = rsvg_handle_new()) == NULL) {
 		LOG("rsvg_handle_new() returned NULL.");
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
 		return NSERROR_NOMEM;
 	}
 
@@ -115,14 +112,12 @@ static bool rsvg_process_data(struct content *c, const char *data,
 			unsigned int size)
 {
 	rsvg_content *d = (rsvg_content *) c;
-	union content_msg_data msg_data;
 	GError *err = NULL;
 
 	if (rsvg_handle_write(d->rsvgh, (const guchar *)data, (gsize)size,
 				&err) == FALSE) {
 		LOG("rsvg_handle_write returned an error: %s", err->message);
-		msg_data.error = err->message;
-		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(c, NSERROR_SVG_ERROR);
 		return false;
 	}
 
@@ -161,14 +156,12 @@ static inline void rsvg_argb_to_abgr(uint8_t *pixels,
 static bool rsvg_convert(struct content *c)
 {
 	rsvg_content *d = (rsvg_content *) c;
-	union content_msg_data msg_data;
 	RsvgDimensionData rsvgsize;
 	GError *err = NULL;
 
 	if (rsvg_handle_close(d->rsvgh, &err) == FALSE) {
 		LOG("rsvg_handle_close returned an error: %s", err->message);
-		msg_data.error = err->message;
-		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(c, NSERROR_SVG_ERROR);
 		return false;
 	}
 
@@ -186,7 +179,7 @@ static bool rsvg_convert(struct content *c)
 			BITMAP_NEW)) == NULL) {
 		LOG("Failed to create bitmap for rsvg render.");
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(c, NSERROR_NOMEM);
 		return false;
 	}
 
@@ -196,15 +189,13 @@ static bool rsvg_convert(struct content *c)
 			c->width, c->height,
 			guit->bitmap->get_rowstride(d->bitmap))) == NULL) {
 		LOG("Failed to create Cairo image surface for rsvg render.");
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(c, NSERROR_NOMEM);
 		return false;
 	}
 
 	if ((d->ct = cairo_create(d->cs)) == NULL) {
 		LOG("Failed to create Cairo drawing context for rsvg render.");
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(c, NSERROR_NOMEM);
 		return false;
 	}
 

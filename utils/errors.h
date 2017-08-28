@@ -55,6 +55,8 @@ typedef enum {
 
 	NSERROR_PNG_ERROR,              /**< A PNG error occurred */
 
+	NSERROR_SVG_ERROR,              /**< A SVG error occurred */
+
 	NSERROR_BAD_ENCODING,		/**< The character set is unknown */
 
 	NSERROR_NEED_DATA,		/**< More data needed */
