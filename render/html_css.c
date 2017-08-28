@@ -109,8 +109,8 @@ html_convert_css_callback(hlcache_handle *css,
 		break;
 
 	case CONTENT_MSG_ERROR:
-	case CONTENT_MSG_ERRORCODE:
 		LOG("stylesheet %s failed: %s", nsurl_access(hlcache_handle_get_url(css)), event->data.error);
+	case CONTENT_MSG_ERRORCODE:
 		hlcache_handle_release(css);
 		s->sheet = NULL;
 		parent->base.active--;
