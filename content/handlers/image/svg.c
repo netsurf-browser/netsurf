@@ -49,8 +49,6 @@ typedef struct svg_content {
 
 static nserror svg_create_svg_data(svg_content *c)
 {
-	union content_msg_data msg_data;
-
 	c->diagram = svgtiny_create();
 	if (c->diagram == NULL)
 		goto no_memory;
@@ -61,8 +59,7 @@ static nserror svg_create_svg_data(svg_content *c)
 	return NSERROR_OK;
 
 no_memory:
-	msg_data.error = messages_get("NoMemory");
-	content_broadcast(&c->base, CONTENT_MSG_ERROR, &msg_data);
+	content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
 	return NSERROR_NOMEM;
 }
 
