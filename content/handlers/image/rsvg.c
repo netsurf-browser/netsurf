@@ -178,7 +178,6 @@ static bool rsvg_convert(struct content *c)
 	if ((d->bitmap = guit->bitmap->create(c->width, c->height,
 			BITMAP_NEW)) == NULL) {
 		LOG("Failed to create bitmap for rsvg render.");
-		msg_data.error = messages_get("NoMemory");
 		content_broadcast_errorcode(c, NSERROR_NOMEM);
 		return false;
 	}
