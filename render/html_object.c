@@ -440,7 +440,8 @@ html_object_callback(hlcache_handle *object,
             c->base.active == 0 &&
             (event->type == CONTENT_MSG_LOADING ||
              event->type == CONTENT_MSG_DONE ||
-             event->type == CONTENT_MSG_ERROR)) {
+             event->type == CONTENT_MSG_ERROR ||
+             event->type == CONTENT_MSG_ERRORCODE)) {
 		/* all objects have arrived */
 		content__reformat(&c->base, false, c->base.available_width,
 				c->base.height);
