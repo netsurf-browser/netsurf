@@ -350,10 +350,6 @@ const char *messages_get_errorcode(nserror code)
 		/* Initialisation failed */
 		return messages_get_ctx("InitFailed", messages_hash);
 
-	case NSERROR_MNG_ERROR:
-		/* An MNG error occurred */
-		return messages_get_ctx("MNGError", messages_hash);
-
 	case NSERROR_BAD_ENCODING:
 		/* The character set is unknown */
 		return messages_get_ctx("BadEncoding", messages_hash);

@@ -52,7 +52,6 @@ struct message_test_vec_s message_errorcode_test_vec[] = {
 	{ NSERROR_SAVE_FAILED, "SaveFailed" },
 	{ NSERROR_CLONE_FAILED, "CloneFailed" },
 	{ NSERROR_INIT_FAILED, "InitFailed" },
-	{ NSERROR_MNG_ERROR, "Error converting MNG/PNG/JNG: %i" },
 	{ NSERROR_BAD_ENCODING, "BadEncoding" },
 	{ NSERROR_NEED_DATA, "NeedData" },
 	{ NSERROR_ENCODING_CHANGE, "EncodingChanged" },

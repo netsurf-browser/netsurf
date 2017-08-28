@@ -36,7 +36,6 @@ typedef enum {
 	NSERROR_SAVE_FAILED,            /**< Failed to save data */
 	NSERROR_CLONE_FAILED,           /**< Failed to clone handle */
 	NSERROR_INIT_FAILED,            /**< Initialisation failed */
-	NSERROR_MNG_ERROR,              /**< An MNG error occurred */
 	NSERROR_BMP_ERROR,              /**< A BMP error occurred */
 	NSERROR_GIF_ERROR,              /**< A GIF error occurred */
 	NSERROR_ICO_ERROR,              /**< A ICO error occurred */
