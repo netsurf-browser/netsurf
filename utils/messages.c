@@ -452,6 +452,7 @@ const char *messages_get_errorcode(nserror code)
 	 * never get here.
 	 */
 	assert(0);
+	return messages_get_ctx("Unknown", messages_hash);
 }
 
 
