@@ -296,6 +296,7 @@ search_web_ico_callback(hlcache_handle *ico,
 
 	case CONTENT_MSG_ERROR:
 		LOG("icon %s error: %s", nsurl_access(hlcache_handle_get_url(ico)), event->data.error);
+	case CONTENT_MSG_ERRORCODE:
 		hlcache_handle_release(ico);
 		/* clear reference to released handle */
 		provider->ico_handle = NULL;
@@ -450,6 +451,7 @@ default_ico_callback(hlcache_handle *ico,
 
 	case CONTENT_MSG_ERROR:
 		LOG("icon %s error: %s", nsurl_access(hlcache_handle_get_url(ico)), event->data.error);
+	case CONTENT_MSG_ERRORCODE:
 		hlcache_handle_release(ico);
 		/* clear reference to released handle */
 		ctx->default_ico_handle = NULL;
