@@ -240,14 +240,11 @@ static void end_callback(png_structp png_s, png_infop info)
 
 static nserror nspng_create_png_data(nspng_content *png_c)
 {
-	union content_msg_data msg_data;
-
 	png_c->bitmap = NULL;
 
 	png_c->png = png_create_read_struct(PNG_LIBPNG_VER_STRING, 0, 0, 0);
 	if (png_c->png == NULL) {
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&png_c->base, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(&png_c->base, NSERROR_NOMEM);
 		return NSERROR_NOMEM;
 	}
 
@@ -257,8 +254,7 @@ static nserror nspng_create_png_data(nspng_content *png_c)
 	if (png_c->info == NULL) {
 		png_destroy_read_struct(&png_c->png, &png_c->info, 0);
 
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&png_c->base, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(&png_c->base, NSERROR_NOMEM);
 		return NSERROR_NOMEM;
 	}
 
@@ -268,8 +264,7 @@ static nserror nspng_create_png_data(nspng_content *png_c)
 		png_c->png = NULL;
 		png_c->info = NULL;
 
-		msg_data.error = messages_get("PNGError");
-		content_broadcast(&png_c->base, CONTENT_MSG_ERROR, &msg_data);
+		content_broadcast_errorcode(&png_c->base, NSERROR_PNG_ERROR);
 		return NSERROR_NOMEM;
 	}
 
@@ -323,7 +318,6 @@ static bool nspng_process_data(struct content *c, const char *data,
 			       unsigned int size)
 {
 	nspng_content *png_c = (nspng_content *)c;
-	union content_msg_data msg_data;
 	volatile bool ret = true;
 
 	if (png_c->no_process_data) {
@@ -362,8 +356,7 @@ static bool nspng_process_data(struct content *c, const char *data,
 			png_c->png = NULL;
 			png_c->info = NULL;
 
-			msg_data.error = messages_get("PNGError");
-			content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
+			content_broadcast_errorcode(c, NSERROR_PNG_ERROR);
 
 			ret = false;
 
