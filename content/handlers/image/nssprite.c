@@ -49,13 +49,13 @@ typedef struct nssprite_content {
 	rosprite_error err = x; \
 	if (err == ROSPRITE_EOF) { \
 		LOG("Got ROSPRITE_EOF when loading sprite file"); \
-		return false; \
+		goto ro_sprite_error; \
 	} else if (err == ROSPRITE_BADMODE) { \
 		LOG("Got ROSPRITE_BADMODE when loading sprite file"); \
-		return false; \
+		goto ro_sprite_error; \
 	} else if (err == ROSPRITE_OK) { \
 	} else { \
-		return false; \
+		goto ro_sprite_error; \
 	} \
 } while(0)
 
@@ -96,7 +96,7 @@ static bool nssprite_convert(struct content *c)
 {
 	nssprite_content *nssprite = (nssprite_content *) c;
 
-	struct rosprite_mem_context* ctx;
+	struct rosprite_mem_context* ctx = NULL;
 
 	const char *data;
 	unsigned long size;
@@ -160,6 +160,13 @@ static bool nssprite_convert(struct content *c)
 	content_set_status(c, ""); /* Done: update status bar */
 
 	return true;
+
+ro_sprite_error:
+	if (ctx != NULL) {
+		rosprite_destroy_mem_context(ctx);
+	}
+
+	return false;
 }
 
 
