@@ -370,6 +370,10 @@ const char *messages_get_errorcode(nserror code)
 		/* A PNG error occurred */
 		return messages_get_ctx("PNGError", messages_hash);
 
+	case NSERROR_SPRITE_ERROR:
+		/* A SVG error occurred */
+		return messages_get_ctx("SpriteError", messages_hash);
+
 	case NSERROR_SVG_ERROR:
 		/* A SVG error occurred */
 		return messages_get_ctx("SVGError", messages_hash);

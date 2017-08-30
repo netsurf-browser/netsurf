@@ -165,7 +165,7 @@ ro_sprite_error:
 	if (ctx != NULL) {
 		rosprite_destroy_mem_context(ctx);
 	}
-	content_broadcast_errorcode(c, NSERROR_UNKNOWN);
+	content_broadcast_errorcode(c, NSERROR_SPRITE_ERROR);
 
 	return false;
 }

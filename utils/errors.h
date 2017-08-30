@@ -40,6 +40,7 @@ typedef enum {
 	NSERROR_GIF_ERROR,              /**< A GIF error occurred */
 	NSERROR_ICO_ERROR,              /**< A ICO error occurred */
 	NSERROR_PNG_ERROR,              /**< A PNG error occurred */
+	NSERROR_SPRITE_ERROR,           /**< A RISC OS Sprite error occurred */
 	NSERROR_SVG_ERROR,              /**< A SVG error occurred */
 	NSERROR_BAD_ENCODING,           /**< The character set is unknown */
 	NSERROR_NEED_DATA,              /**< More data needed */
