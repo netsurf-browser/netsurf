@@ -184,6 +184,24 @@ ns-yum-install()
     sudo yum -y install $(echo ${NS_DEV_RPM} ${NS_TOOL_RPM} ${NS_GTK_RPM})
 }
 
+
+# DNF RPM packages for rpm based systems (tested on fedora 25)
+NS_DEV_DNF_RPM="java-1.8.0-openjdk-headless gcc clang pkgconfig libcurl-devel libjpeg-devel expat-devel libpng-devel openssl-devel gperf perl-HTML-Parser"
+NS_TOOL_DNF_RPM="git flex bison ccache screen"
+if [ "x${NETSURF_GTK_MAJOR}" = "x3" ]; then
+    NS_GTK_DNF_RPM="gtk3-devel"
+else
+    NS_GTK_DNF_RPM="gtk2-devel"
+fi
+
+# dnf commandline to install necessary dev packages
+ns-dnf-install()
+{
+    sudo dnf install $(echo ${NS_DEV_DNF_RPM} ${NS_TOOL_DNF_RPM} ${NS_GTK_DNF_RPM})
+}
+
+
+
 # Haiku secondary arch suffix:
 # empty for primary (gcc2 on x86),
 # "_x86" for gcc4 secondary.
@@ -227,19 +245,21 @@ fi
 ns-package-install()
 {
     if [ -x "/usr/bin/apt-get" ]; then
-	ns-apt-get-install
+        ns-apt-get-install
+    elif [ -x "/usr/bin/dnf" ]; then
+        ns-dnf-install
     elif [ -x "/usr/bin/yum" ]; then
-	ns-yum-install
+        ns-yum-install
     elif [ -x "/bin/pkgman" ]; then
-	ns-pkgman-install
+        ns-pkgman-install
     elif [ -x "/opt/local/bin/port" ]; then
-	ns-macport-install
+        ns-macport-install
     elif [ -x "/usr/sbin/pkg" ]; then
-	ns-freebsdpkg-install
+        ns-freebsdpkg-install
     else
         echo "Unable to determine OS packaging system in use."
-	echo "Please ensure development packages are installed for:"
-	echo ${NS_DEV_GEN}"," ${NS_TOOL_GEN}"," ${NS_GTK_GEN}
+        echo "Please ensure development packages are installed for:"
+        echo ${NS_DEV_GEN}"," ${NS_TOOL_GEN}"," ${NS_GTK_GEN}
     fi
 }
 
