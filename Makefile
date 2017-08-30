@@ -505,8 +505,11 @@ CXXWARNFLAGS :=
 # C default warning flags
 CWARNFLAGS := -Wstrict-prototypes -Wmissing-prototypes -Wnested-externs
 
-# Pull in the configuration
+# Pull in the default configuration
 include Makefile.defaults
+
+# Pull in the user configuration
+-include Makefile.config
 
 # libraries enabled by feature switch without pkgconfig file 
 $(eval $(call feature_switch,JPEG,JPEG (libjpeg),-DWITH_JPEG,-ljpeg,-UWITH_JPEG,))
