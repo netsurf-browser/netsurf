@@ -22,28 +22,28 @@ fi
 # Get the host build if unset
 if [ "x${HOST}" = "x" ]; then
     if [ "x${TARGET_ABI}" = "x" ]; then
-	HOST=${BUILD}
+        HOST=${BUILD}
     else
-	HOST=${TARGET_ABI}
+        HOST=${TARGET_ABI}
     fi
 else
     HOST_CC_LIST="${HOST}-cc ${HOST}-gcc /opt/netsurf/${HOST}/cross/bin/${HOST}-cc /opt/netsurf/${HOST}/cross/bin/${HOST}-gcc"
     for HOST_CC_V in $(echo ${HOST_CC_LIST});do
-	HOST_CC=$(/bin/which ${HOST_CC_V})
-	if [ "x${HOST_CC}" != "x" ];then
-	    break
-	fi
+        HOST_CC=$(/bin/which ${HOST_CC_V})
+        if [ "x${HOST_CC}" != "x" ];then
+            break
+        fi
     done
     if [ "x${HOST_CC}" = "x" ];then
-	echo "Unable to execute host compiler for HOST=${HOST}. is it set correctly?"
-	return 1
+        echo "Unable to execute host compiler for HOST=${HOST}. is it set correctly?"
+        return 1
     fi
 
     HOST_CC_MACHINE=$(${HOST_CC} -dumpmachine 2>/dev/null)
 
     if [ "${HOST_CC_MACHINE}" != "${HOST}" ];then
-	echo "Compiler dumpmachine differes from HOST setting"
-	return 2
+        echo "Compiler dumpmachine differes from HOST setting"
+        return 2
     fi
     unset HOST_CC_LIST HOST_CC_V HOST_CC HOST_CC_MACHINE
 fi
@@ -139,8 +139,8 @@ case "${HOST}" in
         NS_TOOLS=""
         # libraries required for the freebsd frontend
         NS_FRONTEND_LIBS=""
-	# select gnu make
-	MAKE=gmake
+        # select gnu make
+        MAKE=gmake
         ;;
     *)
         # default tools required to build the browser
@@ -268,13 +268,13 @@ ns-package-install()
 # git pull in all repos parameters are passed to git pull
 ns-pull()
 {
-    for REPO in $(echo ${NS_BUILDSYSTEM} ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_TOOLS} ${NS_BROWSER}) ; do 
-	echo -n "     GIT: Pulling ${REPO}: "
-	if [ -f "${TARGET_WORKSPACE}/${REPO}/.git/config" ]; then
-	    (cd ${TARGET_WORKSPACE}/${REPO} && git pull $*; )
-	else
-	    echo "Repository not present"	    
-	fi
+    for REPO in $(echo ${NS_BUILDSYSTEM} ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_TOOLS} ${NS_BROWSER}) ; do
+        echo -n "     GIT: Pulling ${REPO}: "
+        if [ -f "${TARGET_WORKSPACE}/${REPO}/.git/config" ]; then
+            (cd ${TARGET_WORKSPACE}/${REPO} && git pull $*; )
+        else
+            echo "Repository not present"
+        fi
     done
 }
 
@@ -282,18 +282,18 @@ ns-pull()
 ns-clone()
 {
     mkdir -p ${TARGET_WORKSPACE}
-    for REPO in $(echo ${NS_BUILDSYSTEM} ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_RISCOS_LIBS} ${NS_TOOLS} ${NS_BROWSER}) ; do 
-	echo -n "     GIT: Cloning ${REPO}: "
-	if [ -f ${TARGET_WORKSPACE}/${REPO}/.git/config ]; then
-	    echo "Repository already present"
-	else
-	    (cd ${TARGET_WORKSPACE} && git clone ${NS_GIT}/${REPO}.git; )
-	fi
+    for REPO in $(echo ${NS_BUILDSYSTEM} ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_RISCOS_LIBS} ${NS_TOOLS} ${NS_BROWSER}) ; do
+        echo -n "     GIT: Cloning ${REPO}: "
+        if [ -f ${TARGET_WORKSPACE}/${REPO}/.git/config ]; then
+            echo "Repository already present"
+        else
+            (cd ${TARGET_WORKSPACE} && git clone ${NS_GIT}/${REPO}.git; )
+        fi
     done
 
     # put current env.sh in place in workspace
     if [ ! -f "${TARGET_WORKSPACE}/env.sh" -a -f ${TARGET_WORKSPACE}/${NS_BROWSER}/docs/env.sh ]; then
-	cp ${TARGET_WORKSPACE}/${NS_BROWSER}/docs/env.sh ${TARGET_WORKSPACE}/env.sh
+        cp ${TARGET_WORKSPACE}/${NS_BROWSER}/docs/env.sh ${TARGET_WORKSPACE}/env.sh
     fi
 }
 
@@ -301,19 +301,19 @@ ns-clone()
 ns-make-libs()
 {
     for REPO in $(echo ${NS_BUILDSYSTEM} ${NS_TOOLS}); do
-	echo "    MAKE: make -C ${REPO} $USE_CPUS $*"
-	${MAKE} -C ${TARGET_WORKSPACE}/${REPO} $USE_CPUS $*
-	if [ $? -ne 0 ]; then
-	    return $?
-	fi
+        echo "    MAKE: make -C ${REPO} $USE_CPUS $*"
+        ${MAKE} -C ${TARGET_WORKSPACE}/${REPO} $USE_CPUS $*
+        if [ $? -ne 0 ]; then
+            return $?
+        fi
     done
 
-    for REPO in $(echo ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS}); do 
-	echo "    MAKE: make -C ${REPO} $USE_CPUS $*"
+    for REPO in $(echo ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS}); do
+        echo "    MAKE: make -C ${REPO} $USE_CPUS $*"
         ${MAKE} -C ${TARGET_WORKSPACE}/${REPO} HOST=${HOST} $USE_CPUS $*
-	if [ $? -ne 0 ]; then
-	    return $?
-	fi
+        if [ $? -ne 0 ]; then
+            return $?
+        fi
     done
 }
 
@@ -337,4 +337,3 @@ ns-make()
 {
     ${MAKE} $USE_CPUS "$@"
 }
-
