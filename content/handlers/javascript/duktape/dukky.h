@@ -26,10 +26,12 @@
 #define DUKKY_H
 
 #ifdef JS_DEBUG
-#  define JS_LOG(format, args...) LOG(format , ##args)
+#  define JS_LOG(format, args...) NSLOG(netsurf, INFO, format , ##args)
 #else
 #  define JS_LOG(format, ...) ((void) 0)
 #endif
+
+#define LOG(format, args...) NSLOG(netsurf, INFO, format , ##args)
 
 duk_ret_t dukky_create_object(duk_context *ctx, const char *name, int args);
 duk_bool_t dukky_push_node_stacked(duk_context *ctx);

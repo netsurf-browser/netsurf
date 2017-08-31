@@ -537,6 +537,7 @@ NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
 NETSURF_FEATURE_OPENSSL_CFLAGS := -DWITH_OPENSSL
 NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
 NETSURF_FEATURE_NSPSL_CFLAGS := -DWITH_NSPSL
+NETSURF_FEATURE_NSLOG_CFLAGS := -DWITH_NSLOG
 
 # libcurl and openssl ordering matters as if libcurl requires ssl it
 #  needs to come first in link order to ensure its symbols can be
@@ -557,6 +558,7 @@ $(eval $(call pkg_config_find_and_add_enabled,GIF,libnsgif,GIF))
 $(eval $(call pkg_config_find_and_add_enabled,NSSVG,libsvgtiny,SVG))
 $(eval $(call pkg_config_find_and_add_enabled,ROSPRITE,librosprite,Sprite))
 $(eval $(call pkg_config_find_and_add_enabled,NSPSL,libnspsl,PSL))
+$(eval $(call pkg_config_find_and_add_enabled,NSLOG,libnslog,LOG))
 
 # List of directories in which headers are searched for
 INCLUDE_DIRS :=. include $(OBJROOT)
@@ -568,6 +570,10 @@ CXXFLAGS += -DNETSURF_UA_FORMAT_STRING=\"$(NETSURF_UA_FORMAT_STRING)\"
 # set the default homepage to use
 CFLAGS += -DNETSURF_HOMEPAGE=\"$(NETSURF_HOMEPAGE)\"
 CXXFLAGS += -DNETSURF_HOMEPAGE=\"$(NETSURF_HOMEPAGE)\"
+
+# set the logging level
+CFLAGS += -DNETSURF_LOG_LEVEL=$(NETSURF_LOG_LEVEL)
+CXXFLAGS += -DNETSURF_LOG_LEVEL=$(NETSURF_LOG_LEVEL)
 
 # ----------------------------------------------------------------------------
 # General make rules

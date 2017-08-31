@@ -17,8 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NETSURF_LOG_H_
-#define _NETSURF_LOG_H_
+#ifndef NETSURF_LOG_H
+#define NETSURF_LOG_H
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -43,9 +43,31 @@ typedef bool(nslog_ensure_t)(FILE *fptr);
  */
 extern nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv);
 
-#ifdef NDEBUG
-#  define LOG(format, ...) ((void) 0)
-#else
+#ifndef NETSURF_LOG_LEVEL
+#define NETSURF_LOG_LEVEL INFO
+#endif
+
+#define NSLOG_LVL(level) NSLOG_LEVEL_ ## level
+#define NSLOG_EVL(level) NSLOG_LVL(level)
+#define NSLOG_COMPILED_MIN_LEVEL NSLOG_EVL(NETSURF_LOG_LEVEL)
+
+#ifdef WITH_NSLOG
+
+#include <nslog/nslog.h>
+
+NSLOG_DECLARE_CATEGORY(netsurf);
+
+#else /* WITH_NSLOG */
+
+enum nslog_level {
+	NSLOG_LEVEL_DEEPDEBUG = 0,
+	NSLOG_LEVEL_DEBUG = 1,
+	NSLOG_LEVEL_VERBOSE = 2,
+	NSLOG_LEVEL_INFO = 3,
+	NSLOG_LEVEL_WARNING = 4,
+	NSLOG_LEVEL_ERROR = 5,
+	NSLOG_LEVEL_CRITICAL = 6
+};
 
 extern void nslog_log(const char *file, const char *func, int ln, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
 
@@ -60,13 +82,15 @@ extern void nslog_log(const char *file, const char *func, int ln, const char *fo
 #    define LOG_LN __LINE__
 #  endif
 
-#define LOG(format, args...)						\
+#define NSLOG(catname, level, logmsg, args...)				\
 	do {								\
-		if (verbose_log) {					\
-			nslog_log(__FILE__, LOG_FN, LOG_LN, format , ##args); \
+		if (NSLOG_LEVEL_##level >= NSLOG_COMPILED_MIN_LEVEL) {	\
+			nslog_log(__FILE__, LOG_FN, LOG_LN, logmsg , ##args); \
 		}							\
 	} while(0)
 
-#endif
+#define NSLOG_DEFINE_CATEGORY(catname, description)
+
+#endif  /* WITH_NSLOG */
 
 #endif

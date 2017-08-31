@@ -70,7 +70,15 @@ NETSURF_USE_DUKTAPE := YES
 NETSURF_USE_HARU_PDF := NO
 
 # Enable the use of the Public suffix library to detect supercookies
+# Valid options: YES, NO, AUTO	                          (highly recommended)
 NETSURF_USE_NSPSL := AUTO
+
+# Enable use of filtered logging library
+# Valid options: YES, NO, AUTO	                          (highly recommended)
+NETSURF_USE_NSLOG := AUTO
+# The minimum logging level *compiled* into netsurf
+# Valid options are: DEEPDEBUG, DEBUG, VERBOSE, INFO, WARNING, ERROR, CRITICAL
+NETSURF_LOG_LEVEL := INFO
 
 # Enable stripping the NetSurf binary
 # Valid options: YES, NO
