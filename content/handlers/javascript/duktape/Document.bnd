@@ -41,11 +41,12 @@ method Document::write()
 				     corestring_dom___ns_key_html_content_data,
 				     &htmlc);
 	if ((err != DOM_NO_ERR) || (htmlc == NULL)) {
-		LOG("error getting htmlc. parent node:%p htmlc:%p",
-				priv->parent.node, htmlc);
+		NSLOG(netsurf, INFO,
+		      "error getting htmlc. parent node:%p htmlc:%p",
+		      priv->parent.node, htmlc);
 		return 0;
 	} else if (htmlc->parser == NULL) {
-		LOG("error; no parser for htmlc: %p", htmlc);
+		NSLOG(netsurf, INFO, "error; no parser for htmlc: %p", htmlc);
 		return 0;
 	}
 
@@ -74,11 +75,12 @@ method Document::writeln()
 				     corestring_dom___ns_key_html_content_data,
 				     &htmlc);
 	if ((err != DOM_NO_ERR) || (htmlc == NULL)) {
-		LOG("error getting htmlc. parent node:%p htmlc:%p",
-				priv->parent.node, htmlc);
+		NSLOG(netsurf, INFO,
+		      "error getting htmlc. parent node:%p htmlc:%p",
+		      priv->parent.node, htmlc);
 		return 0;
 	} else if (htmlc->parser == NULL) {
-		LOG("error; no parser for htmlc: %p", htmlc);
+		NSLOG(netsurf, INFO, "error; no parser for htmlc: %p", htmlc);
 		return 0;
 	}
 
@@ -311,8 +313,9 @@ getter Document::cookie()
 			return 1;
 		}
 	} else {
-		LOG("error getting htmlc. parent node:%p htmlc:%p",
-		    priv->parent.node, htmlc);
+		NSLOG(netsurf, INFO,
+		      "error getting htmlc. parent node:%p htmlc:%p",
+		      priv->parent.node, htmlc);
 	}
 	return 0;
 %}

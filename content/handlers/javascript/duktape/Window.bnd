@@ -25,9 +25,10 @@ init Window(struct browser_window *win, struct html_content *htmlc)
 	/* element window */
 	priv->win = win;
 	priv->htmlc = htmlc;
-	LOG("win=%p htmlc=%p", priv->win, priv->htmlc);
+	NSLOG(netsurf, INFO, "win=%p htmlc=%p", priv->win, priv->htmlc);
 
-	LOG("URL is %s", nsurl_access(browser_window_get_url(priv->win)));
+	NSLOG(netsurf, INFO,
+	      "URL is %s", nsurl_access(browser_window_get_url(priv->win)));
 %}
 
 prototype Window()
@@ -138,6 +139,6 @@ method Window::alert()
 %{
 	duk_size_t msg_len;
 	const char *msg = duk_safe_to_lstring(ctx, 0, &msg_len);
-	LOG("JS ALERT: %*s", (int)msg_len, msg);
+	NSLOG(netsurf, INFO, "JS ALERT: %*s", (int)msg_len, msg);
 	return 0;
 %}

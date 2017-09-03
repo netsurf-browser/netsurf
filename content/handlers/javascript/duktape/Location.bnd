@@ -40,7 +40,7 @@ method Location::reload()
 	if (priv_win->win != NULL) {
 		browser_window_reload(priv_win->win, false);
 	} else {
-		LOG("failed to get browser context");
+		NSLOG(netsurf, INFO, "failed to get browser context");
 	}
 	return 0;
 %}
@@ -54,7 +54,7 @@ method Location::assign()
 	duk_pop(ctx);
 
 	if (priv_win == NULL || priv_win->win == NULL) {
-		LOG("failed to get browser context");
+		NSLOG(netsurf, INFO, "failed to get browser context");
 		return 0;
 	}
 
@@ -83,7 +83,7 @@ method Location::replace()
 	duk_pop(ctx);
 
 	if (priv_win == NULL || priv_win->win == NULL) {
-		LOG("failed to get browser context");
+		NSLOG(netsurf, INFO, "failed to get browser context");
 		return 0;
 	}
 
@@ -131,7 +131,7 @@ setter Location::href()
 	duk_pop(ctx);
 
 	if (priv_win == NULL || priv_win->win == NULL) {
-		LOG("failed to get browser context");
+		NSLOG(netsurf, INFO, "failed to get browser context");
 		return 0;
 	}
 

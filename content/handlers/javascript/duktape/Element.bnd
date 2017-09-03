@@ -183,7 +183,7 @@ getter Element::childElementCount()
 			element = NULL;
 		}
 	}
-	LOG("I found %u of them", jsret);
+	NSLOG(netsurf, INFO, "I found %u of them", jsret);
 	duk_push_uint(ctx, jsret);
 	return 1;
 %}

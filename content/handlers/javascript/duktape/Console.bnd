@@ -34,7 +34,7 @@ write_log_entry(duk_context *ctx, unsigned int group, char logtype)
 	/* spcs... pfx strs... */
 	duk_concat(ctx, duk_get_top(ctx));
 	/* str */
-	LOG("%s", duk_safe_to_string(ctx, 0));
+	NSLOG(netsurf, INFO, "%s", duk_safe_to_string(ctx, 0));
 }
 
 %};

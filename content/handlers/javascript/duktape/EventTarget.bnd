@@ -173,7 +173,8 @@ method EventTarget::addEventListener()
 		exc = dom_string_create((const uint8_t*)ev_ty, ev_ty_l,
 					&ev_ty_s);
 		if (exc != DOM_NO_ERR) {
-			LOG("Oh dear, failed to create dom_string in addEventListener()");
+			NSLOG(netsurf, INFO,
+			      "Oh dear, failed to create dom_string in addEventListener()");
 			return 0;
 		}
 		dukky_register_event_listener_for(
