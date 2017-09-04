@@ -43,6 +43,7 @@ typedef bool(nslog_ensure_t)(FILE *fptr);
  */
 extern nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv);
 
+/* ensure a logging level is defined */
 #ifndef NETSURF_LOG_LEVEL
 #define NETSURF_LOG_LEVEL INFO
 #endif
@@ -56,6 +57,7 @@ extern nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv);
 #include <nslog/nslog.h>
 
 NSLOG_DECLARE_CATEGORY(netsurf);
+NSLOG_DECLARE_CATEGORY(llcache);
 
 #else /* WITH_NSLOG */
 
@@ -88,8 +90,6 @@ extern void nslog_log(const char *file, const char *func, int ln, const char *fo
 			nslog_log(__FILE__, LOG_FN, LOG_LN, logmsg , ##args); \
 		}							\
 	} while(0)
-
-#define NSLOG_DEFINE_CATEGORY(catname, description)
 
 #endif  /* WITH_NSLOG */
 

@@ -52,16 +52,6 @@
 #include "content/backing_store.h"
 #include "content/urldb.h"
 
-/** Define to enable tracing of llcache operations. */
-#undef LLCACHE_TRACE
-//#define LLCACHE_TRACE 1
-
-#ifdef LLCACHE_TRACE
-#define LLCACHE_LOG(x...) LOG(x)
-#else
-#define LLCACHE_LOG(x...) ((void) 0)
-#endif
-
 /**
  * State of a low-level cache object fetch.
  */
@@ -316,7 +306,8 @@ static nserror llcache_object_user_new(llcache_handle_callback cb, void *pw,
 
 	u->handle = h;
 
-	LLCACHE_LOG("Created user %p (%p, %p, %p)", u, h, (void *) cb, pw);
+	NSLOG(llcache, DEBUG,
+	      "Created user %p (%p, %p, %p)", u, h, (void *) cb, pw);
 
 	*user = u;
 
@@ -333,7 +324,7 @@ static nserror llcache_object_user_new(llcache_handle_callback cb, void *pw,
  */
 static nserror llcache_object_user_destroy(llcache_object_user *user)
 {
-	LLCACHE_LOG("Destroyed user %p", user);
+	NSLOG(llcache, DEBUG, "Destroyed user %p", user);
 
 	assert(user->next == NULL);
 	assert(user->prev == NULL);
@@ -377,7 +368,7 @@ static nserror llcache_object_remove_user(llcache_object *object,
 		object->last_used = time(NULL);
 	}
 
-	LLCACHE_LOG("Removing user %p from %p", user, object);
+	NSLOG(llcache, DEBUG, "Removing user %p from %p", user, object);
 
 	return NSERROR_OK;
 }
@@ -433,7 +424,7 @@ static nserror llcache_object_new(nsurl *url, llcache_object **result)
 	if (obj == NULL)
 		return NSERROR_NOMEM;
 
-	LLCACHE_LOG("Created object %p (%s)", obj, nsurl_access(url));
+	NSLOG(llcache, DEBUG, "Created object %p (%s)", obj, nsurl_access(url));
 
 	obj->url = nsurl_ref(url);
 
@@ -874,7 +865,7 @@ static nserror llcache_object_refetch(llcache_object *object)
 	/* Reset fetch state */
 	object->fetch.state = LLCACHE_FETCH_INIT;
 
-	LLCACHE_LOG("Re-fetching %p", object);
+	NSLOG(llcache, DEBUG, "Re-fetching %p", object);
 
 	/* Kick off fetch */
 	res = fetch_start(object->url,
@@ -921,7 +912,7 @@ static nserror llcache_object_fetch(llcache_object *object, uint32_t flags,
 	nsurl *referer_clone = NULL;
 	llcache_post_data *post_clone = NULL;
 
-	LLCACHE_LOG("Starting fetch for %p", object);
+	NSLOG(llcache, DEBUG, "Starting fetch for %p", object);
 
 	if (post != NULL) {
 		error = llcache_post_data_clone(post, &post_clone);
@@ -955,8 +946,8 @@ static nserror llcache_object_destroy(llcache_object *object)
 {
 	size_t i;
 
-	LLCACHE_LOG("Destroying object %p, %s", object,
-			nsurl_access(object->url));
+	NSLOG(llcache, DEBUG, "Destroying object %p, %s", object,
+	      nsurl_access(object->url));
 
 	if (object->source_data != NULL) {
 		if (object->store_state == LLCACHE_STATE_DISC) {
@@ -1038,16 +1029,17 @@ llcache_object_rfc2616_remaining_lifetime(const llcache_cache_control *cd)
 	current_age += cd->res_time - cd->req_time + now - cd->res_time;
 
 	/* Determine freshness lifetime of this object */
-	if (cd->max_age != INVALID_AGE)
+	if (cd->max_age != INVALID_AGE) {
 		freshness_lifetime = cd->max_age;
-	else if (cd->expires != 0)
+	} else if (cd->expires != 0) {
 		freshness_lifetime = cd->expires - cd->date;
-	else if (cd->last_modified != 0)
+	} else if (cd->last_modified != 0) {
 		freshness_lifetime = (now - cd->last_modified) / 10;
-	else
+	} else {
 		freshness_lifetime = 0;
+	}
 
-	/* LLCACHE_LOG("%d:%d", freshness_lifetime, current_age); */
+	NSLOG(llcache, DEBUG, "%d:%d", freshness_lifetime, current_age);
 
 	if ((cd->no_cache == LLCACHE_VALIDATE_FRESH) &&
 	    (freshness_lifetime > current_age)) {
@@ -1076,7 +1068,7 @@ static bool llcache_object_is_fresh(const llcache_object *object)
 
 	remaining_lifetime = llcache_object_rfc2616_remaining_lifetime(cd);
 
-	LLCACHE_LOG("%p: (%d > 0 || %d != %d)", object,
+	NSLOG(llcache, DEBUG, "%p: (%d > 0 || %d != %d)", object,
 	     remaining_lifetime,
 	     object->fetch.state, LLCACHE_FETCH_COMPLETE);
 
@@ -1322,7 +1314,7 @@ llcache_serialise_metadata(llcache_object *object,
 		datasize -= use;
 	}
 
-	LLCACHE_LOG("Filled buffer with %d spare", datasize);
+	NSLOG(llcache, DEBUG, "Filled buffer with %d spare", datasize);
 
 	*data_out = data;
 	*datasize_out = allocsize - datasize;
@@ -1331,13 +1323,13 @@ llcache_serialise_metadata(llcache_object *object,
 
 overflow:
 	/* somehow we overflowed the buffer - hth? */
-	NSLOG(netsurf, INFO, "Overflowed metadata buffer");
+	NSLOG(llcache, INFO, "Overflowed metadata buffer");
 	free(data);
 	return NSERROR_INVALID;
 
 operror:
 	/* output error */
-	NSLOG(netsurf, INFO, "Output error");
+	NSLOG(llcache, INFO, "Output error");
 	free(data);
 	return NSERROR_INVALID;
 }
@@ -1374,7 +1366,7 @@ llcache_process_metadata(llcache_object *object)
 	size_t num_headers;
 	size_t hloop;
 
-	NSLOG(netsurf, INFO, "Retrieving metadata");
+	NSLOG(llcache, INFO, "Retrieving metadata");
 
 	/* attempt to retrieve object metadata from the backing store */
 	res = guit->llcache->fetch(object->url,
@@ -1385,7 +1377,7 @@ llcache_process_metadata(llcache_object *object)
 		return res;
 	}
 
-	NSLOG(netsurf, INFO, "Processing retrieved data");
+	NSLOG(llcache, INFO, "Processing retrieved data");
 
 	/* metadata line 1 is the url the metadata referrs to */
 	line = 1;
@@ -1408,7 +1400,7 @@ llcache_process_metadata(llcache_object *object)
 		 * by simply skipping caching of this object.
 		 */
 
-		NSLOG(netsurf, INFO, "Got metadata for %s instead of %s",
+		NSLOG(llcache, INFO, "Got metadata for %s instead of %s",
 		      nsurl_access(metadataurl), nsurl_access(object->url));
 
 		nsurl_unref(metadataurl);
@@ -1502,7 +1494,8 @@ llcache_process_metadata(llcache_object *object)
 	return NSERROR_OK;
 
 format_error:
-	NSLOG(netsurf, INFO, "metadata error on line %d error code %d\n",
+	NSLOG(llcache, INFO,
+	      "metadata error on line %d error code %d\n",
 	      line, res);
 	guit->llcache->release(object->url, BACKING_STORE_META);
 
@@ -1585,7 +1578,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
 	nserror error;
 	llcache_object *obj, *newest = NULL;
 
-	LLCACHE_LOG("Searching cache for %s flags:%x referer:%s post:%p",
+	NSLOG(llcache, DEBUG, "Searching cache for %s flags:%x referer:%s post:%p",
 			nsurl_access(url), flags,
 			referer==NULL?"":nsurl_access(referer), post);
 
@@ -1604,7 +1597,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
 	 * pull from persistent store.
 	 */
 	if (newest == NULL) {
-		LLCACHE_LOG("No viable object found in llcache");
+		NSLOG(llcache, DEBUG, "No viable object found in llcache");
 
 		error = llcache_object_new(url, &obj);
 		if (error != NSERROR_OK)
@@ -1613,7 +1606,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
 		/* attempt to retrieve object from persistent store */
 		error = llcache_object_fetch_persistant(obj, flags, referer, post, redirect_count);
 		if (error == NSERROR_OK) {
-			LLCACHE_LOG("retrieved object from persistent store");
+			NSLOG(llcache, DEBUG, "retrieved object from persistent store");
 
 			/* set newest object from persistent store which
 			 * will cause the normal object handling to be used.
@@ -1631,7 +1624,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
 
 	if ((newest != NULL) && (llcache_object_is_fresh(newest))) {
 		/* Found a suitable object, and it's still fresh */
-		LLCACHE_LOG("Found fresh %p", newest);
+		NSLOG(llcache, DEBUG, "Found fresh %p", newest);
 
 		/* The client needs to catch up with the object's state.
 		 * This will occur the next time that llcache_poll is called.
@@ -1652,7 +1645,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
 		 * failed, destroy cache object and fall though to
 		 * cache miss to re-fetch
 		 */
-		LLCACHE_LOG("Persistent retrieval failed for %p", newest);
+		NSLOG(llcache, DEBUG, "Persistent retrieval failed for %p", newest);
 
 		llcache_object_remove_from_list(newest,	&llcache->cached_objects);
 		llcache_object_destroy(newest);
@@ -1673,7 +1666,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
 			if (error != NSERROR_OK)
 				return error;
 
-			LLCACHE_LOG("Found candidate %p (%p)", obj, newest);
+			NSLOG(llcache, DEBUG, "Found candidate %p (%p)", obj, newest);
 
 			/* Clone candidate's cache data */
 			error = llcache_object_clone_cache_data(newest, obj, true);
@@ -1703,7 +1696,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
 			return NSERROR_OK;
 		}
 
-		LLCACHE_LOG("Persistent retrieval failed for %p", newest);
+		NSLOG(llcache, DEBUG, "Persistent retrieval failed for %p", newest);
 
 		/* retrieval of source data from persistent store
 		 * failed, destroy cache object and fall though to
@@ -1758,7 +1751,7 @@ llcache_object_retrieve(nsurl *url,
 	nsurl *defragmented_url;
 	bool uncachable = false;
 
-	LLCACHE_LOG("Retrieve %s (%x, %s, %p)", nsurl_access(url), flags,
+	NSLOG(llcache, DEBUG, "Retrieve %s (%x, %s, %p)", nsurl_access(url), flags,
 		     referer==NULL?"":nsurl_access(referer), post);
 
 
@@ -1825,7 +1818,7 @@ llcache_object_retrieve(nsurl *url,
 		/* Returned object is already in the cached list */
 	}
 
-	LLCACHE_LOG("Retrieved %p", obj);
+	NSLOG(llcache, DEBUG, "Retrieved %p", obj);
 
 	*result = obj;
 
@@ -1858,7 +1851,7 @@ static nserror llcache_object_add_user(llcache_object *object,
 		object->users->prev = user;
 	object->users = user;
 
-	LLCACHE_LOG("Adding user %p to %p", user, object);
+	NSLOG(llcache, DEBUG, "Adding user %p to %p", user, object);
 
 	return NSERROR_OK;
 }
@@ -1899,7 +1892,7 @@ static nserror llcache_fetch_redirect(llcache_object *object,
 	/* Forcibly stop redirecting if we've followed too many redirects */
 #define REDIRECT_LIMIT 10
 	if (object->fetch.redirect_count > REDIRECT_LIMIT) {
-		NSLOG(netsurf, INFO, "Too many nested redirects");
+		NSLOG(llcache, INFO, "Too many nested redirects");
 
 		event.type = LLCACHE_EVENT_ERROR;
 		event.data.msg = messages_get("BadRedirect");
@@ -2494,7 +2487,7 @@ static void llcache_persist_slowcheck(void *p)
 		total_bandwidth = (llcache->total_written * 1000) / llcache->total_elapsed;
 
 		if (total_bandwidth < llcache->minimum_bandwidth) {
-			NSLOG(netsurf, INFO,
+			NSLOG(llcache, INFO,
 			      "Current bandwidth %"PRIu64" less than minimum %"PRIsizet,
 			      total_bandwidth,
 			      llcache->minimum_bandwidth);
@@ -2527,7 +2520,7 @@ static void llcache_persist(void *p)
 
 	ret = build_candidate_list(&lst, &lst_count);
 	if (ret != NSERROR_OK) {
-		LLCACHE_LOG("Unable to construct candidate list for persistent writeout");
+		NSLOG(llcache, DEBUG, "Unable to construct candidate list for persistent writeout");
 		return;
 	}
 
@@ -2545,7 +2538,7 @@ static void llcache_persist(void *p)
 		total_elapsed += elapsed;
 		total_bandwidth = (total_written * 1000) / total_elapsed;
 
-		LLCACHE_LOG("Wrote %zd bytes in %lums bw:%lu %s",
+		NSLOG(llcache, DEBUG, "Wrote %zd bytes in %lums bw:%lu %s",
 		     written, elapsed, (written * 1000) / elapsed,
 		     nsurl_access(lst[idx]->url) );
 
@@ -2553,7 +2546,7 @@ static void llcache_persist(void *p)
 		 * (bandwidth) for this run being exceeded.
 		 */
 		if (total_elapsed > llcache->time_quantum) {
-			NSLOG(netsurf, INFO, "Overran timeslot");
+			NSLOG(llcache, INFO, "Overran timeslot");
 			/* writeout has exhausted the available time.
 			 * Either the writeout is slow or the last
 			 * object was very large.
@@ -2612,10 +2605,10 @@ static void llcache_persist(void *p)
 	llcache->total_written += total_written;
 	llcache->total_elapsed += total_elapsed;
 
-	LLCACHE_LOG("writeout size:%zd time:%lu bandwidth:%lubytes/s",
+	NSLOG(llcache, DEBUG, "writeout size:%zd time:%lu bandwidth:%lubytes/s",
 	     total_written, total_elapsed, total_bandwidth);
 
-	LLCACHE_LOG("Rescheduling writeout in %dms", next);
+	NSLOG(llcache, DEBUG, "Rescheduling writeout in %dms", next);
 	guit->misc->schedule(next, llcache_persist, NULL);
 }
 
@@ -2632,7 +2625,7 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 	llcache_object *object = p;
 	llcache_event event;
 
-	LLCACHE_LOG("Fetch event %d for %p", msg->type, object);
+	NSLOG(llcache, DEBUG, "Fetch event %d for %p", msg->type, object);
 
 	switch (msg->type) {
 	case FETCH_HEADER:
@@ -2856,10 +2849,7 @@ static nserror llcache_object_notify_users(llcache_object *object)
 	nserror error;
 	llcache_object_user *user, *next_user;
 	llcache_event event;
-
-#ifdef LLCACHE_TRACE
 	bool emitted_notify = false;
-#endif
 
 	/**
 	 * State transitions and event emission for users.
@@ -2920,19 +2910,20 @@ static nserror llcache_object_notify_users(llcache_object *object)
 		 * continue is used)
 		 */
 
-#ifdef LLCACHE_TRACE
 		if (handle->state != objstate) {
 			if (emitted_notify == false) {
-				NSLOG(netsurf, INFO, "Notifying users of %p",
+				NSLOG(llcache, DEBUG,
+				      "Notifying users of %p",
 				      object);
 				emitted_notify = true;
 			}
 
-			NSLOG(netsurf, INFO,
-			      "User %p state: %d Object state: %d", user,
-			      handle->state, objstate);
+			NSLOG(llcache, DEBUG,
+			      "User %p state: %d Object state: %d",
+			      user,
+			      handle->state,
+			      objstate);
 		}
-#endif
 
 		/* User: INIT, Obj: HEADERS, DATA, COMPLETE => User->HEADERS */
 		if (handle->state == LLCACHE_FETCH_INIT &&
@@ -3189,7 +3180,7 @@ void llcache_clean(bool purge)
 	int remaining_lifetime;
 	uint32_t limit;
 
-	LLCACHE_LOG("Attempting cache clean");
+	NSLOG(llcache, DEBUG, "Attempting cache clean");
 
 	/* If the cache is being purged set the size limit to zero. */
 	if (purge) {
@@ -3209,7 +3200,7 @@ void llcache_clean(bool purge)
 		    (object->candidate_count == 0) &&
 		    (object->fetch.fetch == NULL) &&
 		    (object->fetch.outstanding_query == false)) {
-			LLCACHE_LOG("Discarding uncachable object with no users (%p) %s",
+			NSLOG(llcache, DEBUG, "Discarding uncachable object with no users (%p) %s",
 				    object, nsurl_access(object->url));
 
 			llcache_object_remove_from_list(object,
@@ -3236,7 +3227,7 @@ void llcache_clean(bool purge)
 		    (object->fetch.outstanding_query == false) &&
 		    (remaining_lifetime <= 0)) {
 			/* object is stale */
-			LLCACHE_LOG("discarding stale cacheable object with no "
+			NSLOG(llcache, DEBUG, "discarding stale cacheable object with no "
 					"users or pending fetches (%p) %s",
 					object, nsurl_access(object->url));
 
@@ -3282,7 +3273,7 @@ void llcache_clean(bool purge)
 
 			llcache_size -=	object->source_len;
 
-			LLCACHE_LOG("Freeing source data for %p len:%zd",
+			NSLOG(llcache, DEBUG, "Freeing source data for %p len:%zd",
 				     object,
 				     object->source_len);
 		}
@@ -3302,12 +3293,12 @@ void llcache_clean(bool purge)
 		    (object->fetch.outstanding_query == false) &&
 		    (object->store_state == LLCACHE_STATE_DISC) &&
 		    (object->source_data == NULL)) {
-			LLCACHE_LOG("discarding backed object len:%zd "
-				     "age:%d (%p) %s",
-				     object->source_len,
-				     time(NULL) - object->last_used,
-				     object,
-				     nsurl_access(object->url));
+			NSLOG(llcache, DEBUG,
+			     "discarding backed object len:%zd age:%ld (%p) %s",
+			      object->source_len,
+			      time(NULL) - object->last_used,
+			      object,
+			      nsurl_access(object->url));
 
 			llcache_size -=	total_object_size(object);
 
@@ -3333,11 +3324,12 @@ void llcache_clean(bool purge)
 		    (object->fetch.fetch == NULL) &&
 		    (object->fetch.outstanding_query == false) &&
 		    (object->store_state == LLCACHE_STATE_RAM)) {
-			LLCACHE_LOG("discarding fresh object len:%zd age:%d (%p) %s",
-				     object->source_len,
-				     time(NULL) - object->last_used,
-				     object,
-				     nsurl_access(object->url));
+			NSLOG(llcache, DEBUG,
+			      "discarding fresh object len:%zd age:%ld (%p) %s",
+			      object->source_len,
+			      time(NULL) - object->last_used,
+			      object,
+			      nsurl_access(object->url));
 
 			llcache_size -=	object->source_len + sizeof(*object);
 
@@ -3347,7 +3339,7 @@ void llcache_clean(bool purge)
 		}
 	}
 
-	LLCACHE_LOG("Size: %u (limit: %u)", llcache_size, limit);
+	NSLOG(llcache, DEBUG, "Size: %u (limit: %u)", llcache_size, limit);
 }
 
 /* Exported interface documented in content/llcache.h */
@@ -3369,7 +3361,8 @@ llcache_initialise(const struct llcache_parameters *prm)
 	llcache->fetch_attempts = prm->fetch_attempts;
 	llcache->all_caught_up = true;
 
-	NSLOG(netsurf, INFO, "llcache initialising with a limit of %d bytes",
+	NSLOG(llcache, INFO,
+	      "llcache initialising with a limit of %d bytes",
 	      llcache->limit);
 
 	/* backing store initialisation */
@@ -3433,7 +3426,7 @@ void llcache_finalise(void)
 			llcache->total_elapsed;
 	}
 
-	NSLOG(netsurf, INFO,
+	NSLOG(llcache, INFO,
 	      "Backing store wrote %"PRIu64" bytes in %"PRIu64" ms ""(average %"PRIu64" bytes/second)",
 	      llcache->total_written,
 	      llcache->total_elapsed,

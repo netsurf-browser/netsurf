@@ -1,9 +1,5 @@
 /*
- * Copyright 2007 Rob Kendrick <rjek@netsurf-browser.org>
- * Copyright 2004-2007 James Bursa <bursa@users.sourceforge.net>
- * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
- * Copyright 2004 John Tytgat <joty@netsurf-browser.org>
+ * Copyright 2017 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -35,8 +31,6 @@ bool verbose_log = false;
 
 /** The stream to which logging is sent */
 static FILE *logfile;
-
-NSLOG_DEFINE_CATEGORY(netsurf, "NetSurf default logging");
 
 /** Subtract the `struct timeval' values X and Y
  *
@@ -96,6 +90,9 @@ static const char *nslog_gettime(void)
 }
 
 #ifdef WITH_NSLOG
+
+NSLOG_DEFINE_CATEGORY(netsurf, "NetSurf default logging");
+NSLOG_DEFINE_CATEGORY(llcache, "Low level cache");
 
 static void
 netsurf_render_log(void *_ctx,
