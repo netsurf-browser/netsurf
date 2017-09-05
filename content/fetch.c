@@ -60,16 +60,6 @@
 #include "javascript/fetcher.h"
 #include "content/urldb.h"
 
-/* Define this to turn on verbose fetch logging */
-#undef DEBUG_FETCH_VERBOSE
-
-/** Verbose fetcher logging */
-#ifdef DEBUG_FETCH_VERBOSE
-#define FETCH_LOG(x...) LOG(x...)
-#else
-#define FETCH_LOG(x...)
-#endif
-
 /** The maximum number of fetchers that can be added */
 #define MAX_FETCHERS 10
 
@@ -158,8 +148,10 @@ static int get_fetcher_for_scheme(lwc_string *scheme)
 static bool fetch_dispatch_job(struct fetch *fetch)
 {
 	RING_REMOVE(queue_ring, fetch);
-	FETCH_LOG("Attempting to start fetch %p, fetcher %p, url %s", fetch,
-	     fetch->fetcher_handle, nsurl_access(fetch->url));
+	NSLOG(fetch, DEBUG,
+	      "Attempting to start fetch %p, fetcher %p, url %s", fetch,
+	      fetch->fetcher_handle,
+	      nsurl_access(fetch->url));
 
 	if (!fetchers[fetch->fetcherd].ops.start(fetch->fetcher_handle)) {
 		RING_INSERT(queue_ring, fetch); /* Put it back on the end of the queue */
@@ -210,14 +202,13 @@ static bool fetch_choose_and_dispatch(void)
 
 static void dump_rings(void)
 {
-#ifdef DEBUG_FETCH_VERBOSE
 	struct fetch *q;
 	struct fetch *f;
 
 	q = queue_ring;
 	if (q) {
 		do {
-			NSLOG(netsurf, INFO, "queue_ring: %s",
+			NSLOG(fetch, DEBUG, "queue_ring: %s",
 			      nsurl_access(q->url));
 			q = q->r_next;
 		} while (q != queue_ring);
@@ -225,12 +216,11 @@ static void dump_rings(void)
 	f = fetch_ring;
 	if (f) {
 		do {
-			NSLOG(netsurf, INFO, "fetch_ring: %s",
+			NSLOG(fetch, DEBUG, "fetch_ring: %s",
 			      nsurl_access(f->url));
 			f = f->r_next;
 		} while (f != fetch_ring);
 	}
-#endif
 }
 
 /**
@@ -246,7 +236,10 @@ static bool fetch_dispatch_jobs(void)
 	RING_GETSIZE(struct fetch, queue_ring, all_queued);
 	RING_GETSIZE(struct fetch, fetch_ring, all_active);
 
-	FETCH_LOG("queue_ring %i, fetch_ring %i", all_queued, all_active);
+	NSLOG(fetch, DEBUG,
+	      "queue_ring %i, fetch_ring %i",
+	      all_queued,
+	      all_active);
 	dump_rings();
 
 	while ((all_queued != 0) &&
@@ -254,12 +247,14 @@ static bool fetch_dispatch_jobs(void)
 	       fetch_choose_and_dispatch()) {
 			all_queued--;
 			all_active++;
-			FETCH_LOG("%d queued, %d fetching",
-				   all_queued, all_active);
+			NSLOG(fetch, DEBUG,
+			      "%d queued, %d fetching",
+			      all_queued,
+			      all_active);
 	}
 
-	FETCH_LOG("Fetch ring is now %d elements.", all_active);
-	FETCH_LOG("Queue ring is now %d elements.", all_queued);
+	NSLOG(fetch, DEBUG, "Fetch ring is now %d elements.", all_active);
+	NSLOG(fetch, DEBUG, "Queue ring is now %d elements.", all_queued);
 
 	return (all_active > 0);
 }
@@ -269,7 +264,7 @@ static void fetcher_poll(void *unused)
 	int fetcherd;
 
 	if (fetch_dispatch_jobs()) {
-		FETCH_LOG("Polling fetchers");
+		NSLOG(fetch, DEBUG, "Polling fetchers");
 		for (fetcherd = 0; fetcherd < MAX_FETCHERS; fetcherd++) {
 			if (fetchers[fetcherd].refcount > 0) {
 				/* fetcher present */
@@ -343,7 +338,7 @@ void fetcher_quit(void)
 			 * the reference count to allow the fetcher to
 			 * be stopped.
 			 */
-			NSLOG(netsurf, INFO,
+			NSLOG(fetch, INFO,
 			      "Fetcher for scheme %s still has %d active users at quit.",
 			      lwc_string_data(fetchers[fetcherd].scheme),
 			      fetchers[fetcherd].refcount);
@@ -396,12 +391,12 @@ fetch_fdset(fd_set *read_fd_set,
 	int fetcherd; /* fetcher index */
 
 	if (!fetch_dispatch_jobs()) {
-		FETCH_LOG("No jobs");
+		NSLOG(fetch, DEBUG, "No jobs");
 		*maxfd_out = -1;
 		return NSERROR_OK;
 	}
 
-	FETCH_LOG("Polling fetchers");
+	NSLOG(fetch, DEBUG, "Polling fetchers");
 
 	for (fetcherd = 0; fetcherd < MAX_FETCHERS; fetcherd++) {
 		if (fetchers[fetcherd].refcount > 0) {
@@ -484,7 +479,7 @@ fetch_start(nsurl *url,
 		return NSERROR_NO_FETCH_HANDLER;
 	}
 
-	FETCH_LOG("fetch %p, url '%s'", fetch, nsurl_access(url));
+	NSLOG(fetch, DEBUG, "fetch %p, url '%s'", fetch, nsurl_access(url));
 
 	/* construct a new fetch structure */
 	fetch->callback = callback;
@@ -576,7 +571,7 @@ fetch_start(nsurl *url,
 
 	/* Ask the queue to run. */
 	if (fetch_dispatch_jobs()) {
-		FETCH_LOG("scheduling poll");
+		NSLOG(fetch, DEBUG, "scheduling poll");
 		/* schedule active fetchers to run again in 10ms */
 		guit->misc->schedule(10, fetcher_poll, NULL);
 	}
@@ -589,7 +584,8 @@ fetch_start(nsurl *url,
 void fetch_abort(struct fetch *f)
 {
 	assert(f);
-	FETCH_LOG("fetch %p, fetcher %p, url '%s'", f, f->fetcher_handle,
+	NSLOG(fetch, DEBUG,
+	      "fetch %p, fetcher %p, url '%s'", f, f->fetcher_handle,
 	     nsurl_access(f->url));
 	fetchers[f->fetcherd].ops.abort(f->fetcher_handle);
 }
@@ -597,7 +593,10 @@ void fetch_abort(struct fetch *f)
 /* exported interface documented in content/fetch.h */
 void fetch_free(struct fetch *f)
 {
-	FETCH_LOG("Freeing fetch %p, fetcher %p", f, f->fetcher_handle);
+	NSLOG(fetch, DEBUG,
+	      "Freeing fetch %p, fetcher %p",
+	      f,
+	      f->fetcher_handle);
 
 	fetchers[f->fetcherd].ops.free(f->fetcher_handle);
 
@@ -723,7 +722,8 @@ void fetch_multipart_data_destroy(struct fetch_multipart_data *list)
 		free(list->name);
 		free(list->value);
 		if (list->file) {
-			FETCH_LOG("Freeing rawfile: %s", list->rawfile);
+			NSLOG(fetch, DEBUG,
+			      "Freeing rawfile: %s", list->rawfile);
 			free(list->rawfile);
 		}
 		free(list);
@@ -741,8 +741,13 @@ fetch_send_callback(const fetch_msg *msg, struct fetch *fetch)
 /* exported interface documented in content/fetch.h */
 void fetch_remove_from_queues(struct fetch *fetch)
 {
-	FETCH_LOG("Fetch %p, fetcher %p can be freed",
-		   fetch, fetch->fetcher_handle);
+	int all_active;
+	int all_queued;
+
+	NSLOG(fetch, DEBUG,
+	      "Fetch %p, fetcher %p can be freed",
+	      fetch,
+	      fetch->fetcher_handle);
 
 	/* Go ahead and free the fetch properly now */
 	if (fetch->fetch_is_active) {
@@ -751,24 +756,19 @@ void fetch_remove_from_queues(struct fetch *fetch)
 		RING_REMOVE(queue_ring, fetch);
 	}
 
-#ifdef DEBUG_FETCH_VERBOSE
-	int all_active;
-	int all_queued;
 
 	RING_GETSIZE(struct fetch, fetch_ring, all_active);
 	RING_GETSIZE(struct fetch, queue_ring, all_queued);
 
-	NSLOG(netsurf, INFO, "Fetch ring is now %d elements.", all_active);
-
-	NSLOG(netsurf, INFO, "Queue ring is now %d elements.", all_queued);
-#endif
+	NSLOG(fetch, DEBUG, "Fetch ring is now %d elements.", all_active);
+	NSLOG(fetch, DEBUG, "Queue ring is now %d elements.", all_queued);
 }
 
 
 /* exported interface documented in content/fetch.h */
 void fetch_set_http_code(struct fetch *fetch, long http_code)
 {
-	FETCH_LOG("Setting HTTP code to %ld", http_code);
+	NSLOG(fetch, DEBUG, "Setting HTTP code to %ld", http_code);
 
 	fetch->http_code = http_code;
 }
