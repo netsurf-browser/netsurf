@@ -343,7 +343,7 @@ layout_minmax_line(struct box *first,
 				b->type == BOX_INLINE_END);
 
 #ifdef LAYOUT_DEBUG
-		LOG("%p: min %i, max %i", b, min, max);
+		NSLOG(netsurf, INFO, "%p: min %i, max %i", b, min, max);
 #endif
 
 		if (b->type == BOX_BR) {
@@ -625,7 +625,7 @@ layout_minmax_line(struct box *first,
 	*line_max = max;
 
 #ifdef LAYOUT_DEBUG
-	LOG("line_min %i, line_max %i", min, max);
+	NSLOG(netsurf, INFO, "line_min %i, line_max %i", min, max);
 #endif
 
 	assert(b != first);
@@ -1470,7 +1470,7 @@ find_sides(struct box *fl,
 	int fy0, fy1, fx0, fx1;
 
 #ifdef LAYOUT_DEBUG
-	LOG("y0 %i, y1 %i, x0 %i, x1 %i", y0, y1, *x0, *x1);
+	NSLOG(netsurf, INFO, "y0 %i, y1 %i, x0 %i, x1 %i", y0, y1, *x0, *x1);
 #endif
 
 	*left = *right = 0;
@@ -1501,7 +1501,8 @@ find_sides(struct box *fl,
 	}
 
 #ifdef LAYOUT_DEBUG
-	LOG("x0 %i, x1 %i, left %p, right %p", *x0, *x1, *left, *right);
+	NSLOG(netsurf, INFO, "x0 %i, x1 %i, left %p, right %p", *x0, *x1,
+	      *left, *right);
 #endif
 }
 
@@ -1965,13 +1966,17 @@ static bool layout_table(struct box *table, int available_width,
 	/* calculate width required by cells */
 	for (i = 0; i != columns; i++) {
 #ifdef LAYOUT_DEBUG
-		LOG("table %p, column %u: type %s, width %i, min %i, max %i", table, i, ((const char *[]){
+		NSLOG(netsurf, INFO,
+		      "table %p, column %u: type %s, width %i, min %i, max %i",
+		      table,
+		      i, ((const char *[]){
 			"UNKNOWN",
 			"FIXED",
 			"AUTO",
 			"PERCENT",
-			"RELATIVE"
-		})[col[i].type], col[i].width, col[i].min, col[i].max);
+			"RELATIVE",
+				})[col[i].type], col[i].width, col[i].min,
+		      col[i].max);
 #endif
 
 		if (col[i].positioned) {
@@ -1991,14 +1996,16 @@ static bool layout_table(struct box *table, int available_width,
 			required_width += col[i].min;
 
 #ifdef LAYOUT_DEBUG
-		LOG("required_width %i", required_width);
+		NSLOG(netsurf, INFO, "required_width %i", required_width);
 #endif
 	}
 	required_width += (columns + 1 - positioned_columns) *
 			border_spacing_h;
 
 #ifdef LAYOUT_DEBUG
-	LOG("width %i, min %i, max %i, auto %i, required %i", table_width, table->min_width, table->max_width, auto_width, required_width);
+	NSLOG(netsurf, INFO,
+	      "width %i, min %i, max %i, auto %i, required %i", table_width,
+	      table->min_width, table->max_width, auto_width, required_width);
 #endif
 
 	if (auto_width < required_width) {
@@ -2449,7 +2456,8 @@ static bool layout_block_object(struct box *block)
 	assert(block->object);
 
 #ifdef LAYOUT_DEBUG
-	LOG("block %p, object %s, width %i", block, hlcache_handle_get_url(block->object), block->width);
+	NSLOG(netsurf, INFO, "block %p, object %s, width %i", block,
+	      hlcache_handle_get_url(block->object), block->width);
 #endif
 
 	if (content_get_type(block->object) == CONTENT_HTML) {
@@ -2747,7 +2755,7 @@ layout_block_context(struct box *block,
 		}
 
 #ifdef LAYOUT_DEBUG
-		LOG("box %p, cx %i, cy %i", box, cx, cy);
+		NSLOG(netsurf, INFO, "box %p, cx %i, cy %i", box, cx, cy);
 #endif
 
 		/* Layout (except tables). */
@@ -3625,7 +3633,8 @@ static void layout_compute_relative_offset(struct box *box, int *x, int *y)
 	}
 
 #ifdef LAYOUT_DEBUG
-	LOG("left %i, right %i, top %i, bottom %i", left, right, top, bottom);
+	NSLOG(netsurf, INFO, "left %i, right %i, top %i, bottom %i", left,
+	      right, top, bottom);
 #endif
 
 	*x = left;
@@ -3888,8 +3897,11 @@ layout_text_box_split(html_content *content,
 	else
 		c2->parent->last = c2;
 #ifdef LAYOUT_DEBUG
-		LOG("split_box %p len: %u \"%.*s\"", split_box, split_box->length, split_box->length, split_box->text);
-		LOG("  new_box %p len: %u \"%.*s\"", c2, c2->length, c2->length, c2->text);
+		NSLOG(netsurf, INFO, "split_box %p len: %u \"%.*s\"",
+		      split_box, split_box->length, split_box->length,
+		      split_box->text);
+		NSLOG(netsurf, INFO, "  new_box %p len: %u \"%.*s\"", c2,
+		      c2->length, c2->length, c2->text);
 #endif
 	return true;
 }
@@ -4080,7 +4092,8 @@ place_float_below(struct box *c, int width, int cx, int y, struct box *cont)
 			y : cont->cached_place_below_level;
 
 #ifdef LAYOUT_DEBUG
-	LOG("c %p, width %i, cx %i, y %i, cont %p", c, width, cx, y, cont);
+	NSLOG(netsurf, INFO, "c %p, width %i, cx %i, y %i, cont %p", c,
+	      width, cx, y, cont);
 #endif
 
 	do {
@@ -4159,7 +4172,15 @@ layout_line(struct box *first,
 	plot_font_style_t fstyle;
 
 #ifdef LAYOUT_DEBUG
-	LOG("first %p, first->text '%.*s', width %i, y %i, cx %i, cy %i", first, (int)first->length, first->text, *width, *y, cx, cy);
+	NSLOG(netsurf, INFO,
+	      "first %p, first->text '%.*s', width %i, y %i, cx %i, cy %i",
+	      first,
+	      (int)first->length,
+	      first->text,
+	      *width,
+	      *y,
+	      cx,
+	      cy);
 #endif
 
 	/* find sides at top of line */
@@ -4190,7 +4211,7 @@ layout_line(struct box *first,
 	 * body executed at least once
 	 * keep in sync with the loop in layout_minmax_line() */
 #ifdef LAYOUT_DEBUG
-	LOG("x0 %i, x1 %i, x1 - x0 %i", x0, x1, x1 - x0);
+	NSLOG(netsurf, INFO, "x0 %i, x1 %i, x1 - x0 %i", x0, x1, x1 - x0);
 #endif
 
 	for (x = 0, b = first; x <= x1 - x0 && b != 0; b = b->next) {
@@ -4203,7 +4224,7 @@ layout_line(struct box *first,
 				b->type == BOX_INLINE_END);
 
 #ifdef LAYOUT_DEBUG
-		LOG("pass 1: b %p, x %i", b, x);
+		NSLOG(netsurf, INFO, "pass 1: b %p, x %i", b, x);
 #endif
 
 		if (b->type == BOX_BR)
@@ -4414,12 +4435,12 @@ layout_line(struct box *first,
 
 	/* pass 2: place boxes in line: loop body executed at least once */
 #ifdef LAYOUT_DEBUG
-	LOG("x0 %i, x1 %i, x1 - x0 %i", x0, x1, x1 - x0);
+	NSLOG(netsurf, INFO, "x0 %i, x1 %i, x1 - x0 %i", x0, x1, x1 - x0);
 #endif
 
 	for (x = x_previous = 0, b = first; x <= x1 - x0 && b; b = b->next) {
 #ifdef LAYOUT_DEBUG
-		LOG("pass 2: b %p, x %i", b, x);
+		NSLOG(netsurf, INFO, "pass 2: b %p, x %i", b, x);
 #endif
 
 		if (b->type == BOX_INLINE_BLOCK &&
@@ -4489,7 +4510,7 @@ layout_line(struct box *first,
 		} else {
 			/* float */
 #ifdef LAYOUT_DEBUG
-			LOG("float %p", b);
+			NSLOG(netsurf, INFO, "float %p", b);
 #endif
 
 			d = b->children;
@@ -4501,7 +4522,8 @@ layout_line(struct box *first,
 				return false;
 
 #ifdef LAYOUT_DEBUG
-			LOG("%p : %d %d", d, d->margin[TOP], d->border[TOP].width);
+			NSLOG(netsurf, INFO, "%p : %d %d", d, d->margin[TOP],
+			      d->border[TOP].width);
 #endif
 
 			d->x = d->margin[LEFT] + d->border[LEFT].width;
@@ -4654,7 +4676,7 @@ layout_line(struct box *first,
 			}
 			x += space_before + w;
 #ifdef LAYOUT_DEBUG
-			LOG("forcing");
+			NSLOG(netsurf, INFO, "forcing");
 #endif
 		} else if ((split == 0 || x1 - x0 <= x + space_before + w) &&
 				inline_count == 1) {
@@ -4664,11 +4686,16 @@ layout_line(struct box *first,
 			used_height = 0;
 			if (left) {
 #ifdef LAYOUT_DEBUG
-				LOG("cy %i, left->y %i, left->height %i", cy, left->y, left->height);
+				NSLOG(netsurf, INFO,
+				      "cy %i, left->y %i, left->height %i",
+				      cy,
+				      left->y,
+				      left->height);
 #endif
 				used_height = left->y + left->height - cy + 1;
 #ifdef LAYOUT_DEBUG
-				LOG("used_height %i", used_height);
+				NSLOG(netsurf, INFO, "used_height %i",
+				      used_height);
 #endif
 			}
 			if (right && used_height <
@@ -4680,20 +4707,22 @@ layout_line(struct box *first,
 
 			b = split_box;
 #ifdef LAYOUT_DEBUG
-			LOG("moving below float");
+			NSLOG(netsurf, INFO, "moving below float");
 #endif
 		} else if (split == 0 || x1 - x0 <= x + space_before + w) {
 			/* first word of box doesn't fit so leave box for next
 			 * line */
 			b = split_box;
 #ifdef LAYOUT_DEBUG
-			LOG("leaving for next line");
+			NSLOG(netsurf, INFO, "leaving for next line");
 #endif
 		} else {
 			/* fit as many words as possible */
 			assert(split != 0);
 #ifdef LAYOUT_DEBUG
-			LOG("'%.*s' %i %zu %i", (int)split_box->length, split_box->text, x1 - x0, split, w);
+			NSLOG(netsurf, INFO, "'%.*s' %i %zu %i",
+			      (int)split_box->length, split_box->text,
+			      x1 - x0, split, w);
 #endif
 			if (split != split_box->length) {
 				if (!layout_text_box_split(content, &fstyle,
@@ -4703,7 +4732,7 @@ layout_line(struct box *first,
 			}
 			x += space_before + w;
 #ifdef LAYOUT_DEBUG
-			LOG("fitting words");
+			NSLOG(netsurf, INFO, "fitting words");
 #endif
 		}
 		move_y = true;
@@ -4843,7 +4872,13 @@ bool layout_inline_container(struct box *inline_container, int width,
 	assert(inline_container->type == BOX_INLINE_CONTAINER);
 
 #ifdef LAYOUT_DEBUG
-	LOG("inline_container %p, width %i, cont %p, cx %i, cy %i", inline_container, width, cont, cx, cy);
+	NSLOG(netsurf, INFO,
+	      "inline_container %p, width %i, cont %p, cx %i, cy %i",
+	      inline_container,
+	      width,
+	      cont,
+	      cx,
+	      cy);
 #endif
 
 	has_text_children = false;
@@ -4873,7 +4908,7 @@ bool layout_inline_container(struct box *inline_container, int width,
 	 */
 	for (c = inline_container->children; c; ) {
 #ifdef LAYOUT_DEBUG
-		LOG("c %p", c);
+		NSLOG(netsurf, INFO, "c %p", c);
 #endif
 		curwidth = inline_container->width;
 		if (!layout_line(c, &curwidth, &y, cx, cy + y, cont, first_line,

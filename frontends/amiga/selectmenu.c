@@ -58,7 +58,8 @@ BOOL ami_selectmenu_is_safe(void)
 	BOOL popupmenu_lib_ok = FALSE;
 
 	if((PopupMenuBase = OpenLibrary("popupmenu.library", 53))) {
-		LOG("popupmenu.library v%d.%d", PopupMenuBase->lib_Version, PopupMenuBase->lib_Revision);
+		NSLOG(netsurf, INFO, "popupmenu.library v%d.%d",
+		      PopupMenuBase->lib_Version, PopupMenuBase->lib_Revision);
 		if(LIB_IS_AT_LEAST((struct Library *)PopupMenuBase, 53, 11))
 			popupmenu_lib_ok = TRUE;
 		CloseLibrary(PopupMenuBase);

@@ -99,7 +99,7 @@ static nserror get_config_home(char **config_home_out)
 
 	*config_home_out = strdup(adPath);
 
-	LOG("using config path \"%s\"", *config_home_out);
+	NSLOG(netsurf, INFO, "using config path \"%s\"", *config_home_out);
 
 	return NSERROR_OK;
 }
@@ -343,15 +343,16 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	/* Locate the correct user configuration directory path */
 	ret = get_config_home(&nsw32_config_home);
 	if (ret != NSERROR_OK) {
-		LOG("Unable to locate a configuration directory.");
+		NSLOG(netsurf, INFO,
+		      "Unable to locate a configuration directory.");
 		nsw32_config_home = NULL;
 	}
 
 	/* Initialise user options */
 	ret = nsw32_option_init(&argc, argv);
 	if (ret != NSERROR_OK) {
-		LOG("Options failed to initialise (%s)\n",
-			messages_get_errorcode(ret));
+		NSLOG(netsurf, INFO, "Options failed to initialise (%s)\n",
+		      messages_get_errorcode(ret));
 		return 1;
 	}
 
@@ -365,7 +366,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	/* common initialisation */
 	ret = netsurf_init(NULL);
 	if (ret != NSERROR_OK) {
-		LOG("NetSurf failed to initialise");
+		NSLOG(netsurf, INFO, "NetSurf failed to initialise");
 		return 1;
 	}
 
@@ -392,7 +393,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 		addr = NETSURF_HOMEPAGE;
 	}
 
-	LOG("calling browser_window_create");
+	NSLOG(netsurf, INFO, "calling browser_window_create");
 
 	ret = nsurl_create(addr, &url);
 	if (ret == NSERROR_OK) {

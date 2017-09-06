@@ -475,7 +475,7 @@ nserror nsgtk_download_init(void)
 
 	res = nsgtk_builder_new_from_resname("downloads", &builder);
 	if (res != NSERROR_OK) {
-		LOG("Download UI builder init failed");
+		NSLOG(netsurf, INFO, "Download UI builder init failed");
 		return res;
 	}
 

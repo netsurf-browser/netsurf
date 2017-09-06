@@ -103,18 +103,21 @@ html_convert_css_callback(hlcache_handle *css,
 	switch (event->type) {
 
 	case CONTENT_MSG_DONE:
-		LOG("done stylesheet slot %d '%s'", i, nsurl_access(hlcache_handle_get_url(css)));
+		NSLOG(netsurf, INFO, "done stylesheet slot %d '%s'", i,
+		      nsurl_access(hlcache_handle_get_url(css)));
 		parent->base.active--;
-		LOG("%d fetches active", parent->base.active);
+		NSLOG(netsurf, INFO, "%d fetches active", parent->base.active);
 		break;
 
 	case CONTENT_MSG_ERROR:
-		LOG("stylesheet %s failed: %s", nsurl_access(hlcache_handle_get_url(css)), event->data.error);
+		NSLOG(netsurf, INFO, "stylesheet %s failed: %s",
+		      nsurl_access(hlcache_handle_get_url(css)),
+		      event->data.error);
 	case CONTENT_MSG_ERRORCODE:
 		hlcache_handle_release(css);
 		s->sheet = NULL;
 		parent->base.active--;
-		LOG("%d fetches active", parent->base.active);
+		NSLOG(netsurf, INFO, "%d fetches active", parent->base.active);
 		content_add_error(&parent->base, "?", 0);
 		break;
 
@@ -151,7 +154,7 @@ html_stylesheet_from_domnode(html_content *c,
 
 	exc = dom_node_get_text_content(node, &style);
 	if ((exc != DOM_NO_ERR) || (style == NULL)) {
-		LOG("No text content");
+		NSLOG(netsurf, INFO, "No text content");
 		return NSERROR_OK;
 	}
 
@@ -182,7 +185,7 @@ html_stylesheet_from_domnode(html_content *c,
 	nsurl_unref(url);
 
 	c->base.active++;
-	LOG("%d fetches active", c->base.active);
+	NSLOG(netsurf, INFO, "%d fetches active", c->base.active);
 
 	return NSERROR_OK;
 }
@@ -254,13 +257,14 @@ static bool html_css_process_modified_style(html_content *c,
 
 	error = html_stylesheet_from_domnode(c, s->node, &sheet);
 	if (error != NSERROR_OK) {
-		LOG("Failed to update sheet");
+		NSLOG(netsurf, INFO, "Failed to update sheet");
 		content_broadcast_errorcode(&c->base, error);
 		return false;
 	}
 
 	if (sheet != NULL) {
-		LOG("Updating sheet %p with %p", s->sheet, sheet);
+		NSLOG(netsurf, INFO, "Updating sheet %p with %p", s->sheet,
+		      sheet);
 
 		if (s->sheet != NULL) {
 			switch (content_get_status(s->sheet)) {
@@ -269,7 +273,8 @@ static bool html_css_process_modified_style(html_content *c,
 			default:
 				hlcache_handle_abort(s->sheet);
 				c->base.active--;
-				LOG("%d fetches active", c->base.active);
+				NSLOG(netsurf, INFO, "%d fetches active",
+				      c->base.active);
 			}
 			hlcache_handle_release(s->sheet);
 		}
@@ -314,7 +319,9 @@ bool html_css_update_style(html_content *c, dom_node *style)
 		s = html_create_style_element(c, style);
 	}
 	if (s == NULL) {
-		LOG("Could not find or create inline stylesheet for %p", style);
+		NSLOG(netsurf, INFO,
+		      "Could not find or create inline stylesheet for %p",
+		      style);
 		return false;
 	}
 
@@ -418,7 +425,8 @@ bool html_css_process_link(html_content *htmlc, dom_node *node)
 	}
 	dom_string_unref(href);
 
-	LOG("linked stylesheet %i '%s'", htmlc->stylesheet_count, nsurl_access(joined));
+	NSLOG(netsurf, INFO, "linked stylesheet %i '%s'",
+	      htmlc->stylesheet_count, nsurl_access(joined));
 
 	/* extend stylesheets array to allow for new sheet */
 	stylesheets = realloc(htmlc->stylesheets,
@@ -453,7 +461,7 @@ bool html_css_process_link(html_content *htmlc, dom_node *node)
 	htmlc->stylesheet_count++;
 
 	htmlc->base.active++;
-	LOG("%d fetches active", htmlc->base.active);
+	NSLOG(netsurf, INFO, "%d fetches active", htmlc->base.active);
 
 	return true;
 
@@ -518,7 +526,7 @@ nserror html_css_quirks_stylesheets(html_content *c)
 		}
 
 		c->base.active++;
-		LOG("%d fetches active", c->base.active);
+		NSLOG(netsurf, INFO, "%d fetches active", c->base.active);
 	}
 
 	return ns_error;
@@ -562,7 +570,7 @@ nserror html_css_new_stylesheets(html_content *c)
 	}
 
 	c->base.active++;
-	LOG("%d fetches active", c->base.active);
+	NSLOG(netsurf, INFO, "%d fetches active", c->base.active);
 
 
 	if (nsoption_bool(block_advertisements)) {
@@ -576,7 +584,7 @@ nserror html_css_new_stylesheets(html_content *c)
 		}
 
 		c->base.active++;
-		LOG("%d fetches active", c->base.active);
+		NSLOG(netsurf, INFO, "%d fetches active", c->base.active);
 
 	}
 
@@ -589,7 +597,7 @@ nserror html_css_new_stylesheets(html_content *c)
 	}
 
 	c->base.active++;
-	LOG("%d fetches active", c->base.active);
+	NSLOG(netsurf, INFO, "%d fetches active", c->base.active);
 
 	return ns_error;
 }

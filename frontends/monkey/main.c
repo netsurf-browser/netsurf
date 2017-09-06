@@ -278,20 +278,20 @@ static void monkey_run(void)
 		/* setup timeout */
 		switch (schedtm) {
 		case -1:
-			LOG("Iterate blocking");
+			NSLOG(netsurf, INFO, "Iterate blocking");
 			fprintf(stdout, "GENERIC POLL BLOCKING\n");
 			timeout = NULL;
 			break;
 
 		case 0:
-			LOG("Iterate immediate");
+			NSLOG(netsurf, INFO, "Iterate immediate");
 			tv.tv_sec = 0;
 			tv.tv_usec = 0;
 			timeout = &tv;
 			break;
 
 		default:
-			LOG("Iterate non-blocking");
+			NSLOG(netsurf, INFO, "Iterate non-blocking");
 			fprintf(stdout, "GENERIC POLL TIMED %d\n", schedtm);
 			tv.tv_sec = schedtm / 1000; /* miliseconds to seconds */
 			tv.tv_usec = (schedtm % 1000) * 1000; /* remainder to microseconds */
@@ -361,7 +361,7 @@ main(int argc, char **argv)
 	messages = filepath_find(respaths, "Messages");
 	ret = messages_add_from_file(messages);
 	if (ret != NSERROR_OK) {
-		LOG("Messages failed to load");
+		NSLOG(netsurf, INFO, "Messages failed to load");
 	}
 
 	/* common initialisation */

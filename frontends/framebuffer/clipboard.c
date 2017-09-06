@@ -53,8 +53,8 @@ static void gui_get_clipboard(char **buffer, size_t *length)
 
 	if (gui_clipboard.length > 0) {
 		assert(gui_clipboard.buffer != NULL);
-		LOG("Pasting %zd bytes: \"%s\"\n",
-		    gui_clipboard.length, gui_clipboard.buffer);
+		NSLOG(netsurf, INFO, "Pasting %zd bytes: \"%s\"\n",
+		      gui_clipboard.length, gui_clipboard.buffer);
 
 		*buffer = malloc(gui_clipboard.length);
 

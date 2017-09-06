@@ -171,7 +171,7 @@ browser_window_redraw(struct browser_window *bw,
 	nserror res;
 
 	if (bw == NULL) {
-		LOG("NULL browser window");
+		NSLOG(netsurf, INFO, "NULL browser window");
 		return false;
 	}
 
@@ -336,7 +336,7 @@ browser_window_redraw(struct browser_window *bw,
 bool browser_window_redraw_ready(struct browser_window *bw)
 {
 	if (bw == NULL) {
-		LOG("NULL browser window");
+		NSLOG(netsurf, INFO, "NULL browser window");
 		return false;
 	} else if (bw->current_content != NULL) {
 		/* Can't render locked contents */
@@ -415,7 +415,8 @@ void browser_window_set_position(struct browser_window *bw, int x, int y)
 		bw->x = x;
 		bw->y = y;
 	} else {
-		LOG("Asked to set position of front end window.");
+		NSLOG(netsurf, INFO,
+		      "Asked to set position of front end window.");
 		assert(0);
 	}
 }
@@ -811,7 +812,7 @@ nserror browser_window_debug(struct browser_window *bw, enum content_debug op)
 static bool slow_script(void *ctx)
 {
 	static int count = 0;
-	LOG("Continuing execution %d", count);
+	NSLOG(netsurf, INFO, "Continuing execution %d", count);
 	count++;
 	if (count > 1) {
 		count = 0;
@@ -982,11 +983,12 @@ browser_window_download(struct browser_window *bw,
 		/* no internal handler for this type, call out to frontend */
 		error = guit->misc->launch_url(url);
 	} else if (error != NSERROR_OK) {
-		LOG("Failed to fetch download: %d", error);
+		NSLOG(netsurf, INFO, "Failed to fetch download: %d", error);
 	} else {
 		error = download_context_create(l, root->window);
 		if (error != NSERROR_OK) {
-			LOG("Failed creating download context: %d", error);
+			NSLOG(netsurf, INFO,
+			      "Failed creating download context: %d", error);
 			llcache_handle_abort(l);
 			llcache_handle_release(l);
 		}
@@ -1114,7 +1116,8 @@ browser_window_favicon_callback(hlcache_handle *c,
 
 			error = nsurl_create("resource:favicon.ico", &nsurl);
 			if (error != NSERROR_OK) {
-				LOG("Unable to create default location url");
+				NSLOG(netsurf, INFO,
+				      "Unable to create default location url");
 			} else {
 				hlcache_handle_retrieve(nsurl,
 						HLCACHE_RETRIEVE_SNIFF_TYPE,
@@ -1204,7 +1207,8 @@ browser_window_update_favicon(hlcache_handle *c,
 			error = nsurl_create("resource:favicon.ico", &nsurl);
 		}
 		if (error != NSERROR_OK) {
-			LOG("Unable to create default location url");
+			NSLOG(netsurf, INFO,
+			      "Unable to create default location url");
 			return;
 		}
 	} else {
@@ -1212,9 +1216,11 @@ browser_window_update_favicon(hlcache_handle *c,
 	}
 
 	if (link == NULL) {
-		LOG("fetching general favicon from '%s'", nsurl_access(nsurl));
+		NSLOG(netsurf, INFO, "fetching general favicon from '%s'",
+		      nsurl_access(nsurl));
 	} else {
-		LOG("fetching favicon rel:%s '%s'", lwc_string_data(link->rel), nsurl_access(nsurl));
+		NSLOG(netsurf, INFO, "fetching favicon rel:%s '%s'",
+		      lwc_string_data(link->rel), nsurl_access(nsurl));
 	}
 
 	hlcache_handle_retrieve(nsurl, HLCACHE_RETRIEVE_SNIFF_TYPE,
@@ -1811,7 +1817,7 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 {
 	assert(bw);
 
-	LOG("Destroying window");
+	NSLOG(netsurf, INFO, "Destroying window");
 
 	if (bw->children != NULL || bw->iframes != NULL) {
 		browser_window_destroy_children(bw);
@@ -1831,7 +1837,8 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 	/* The ugly cast here is so the reformat function can be
 	 * passed a gui window pointer in its API rather than void*
 	 */
-	LOG("Clearing reformat schedule for browser window %p", bw);
+	NSLOG(netsurf, INFO,
+	      "Clearing reformat schedule for browser window %p", bw);
 	guit->misc->schedule(-1, scheduled_reformat, bw);
 
 	/* If this brower window is not the root window, and has focus, unset
@@ -1911,7 +1918,8 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 	free(bw->name);
 	free(bw->status.text);
 	bw->status.text = NULL;
-	LOG("Status text cache match:miss %d:%d", bw->status.match, bw->status.miss);
+	NSLOG(netsurf, INFO, "Status text cache match:miss %d:%d",
+	      bw->status.match, bw->status.miss);
 }
 
 /**
@@ -2004,14 +2012,14 @@ browser_window_navigate(struct browser_window *bw,
 	assert(bw);
 	assert(url);
 
-	LOG("bw %p, url %s", bw, nsurl_access(url));
+	NSLOG(netsurf, INFO, "bw %p, url %s", bw, nsurl_access(url));
 
 	/* don't allow massively nested framesets */
 	for (cur = bw; cur->parent; cur = cur->parent) {
 		depth++;
 	}
 	if (depth > FRAME_DEPTH) {
-		LOG("frame depth too high.");
+		NSLOG(netsurf, INFO, "frame depth too high.");
 		return NSERROR_FRAME_DEPTH;
 	}
 
@@ -2103,7 +2111,7 @@ browser_window_navigate(struct browser_window *bw,
 	browser_window_remove_caret(bw, false);
 	browser_window_destroy_children(bw);
 
-	LOG("Loading '%s'", nsurl_access(url));
+	NSLOG(netsurf, INFO, "Loading '%s'", nsurl_access(url));
 
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = (flags & BW_NAVIGATE_HISTORY);
@@ -2319,7 +2327,8 @@ void browser_window_set_dimensions(struct browser_window *bw,
 		bw->width = width;
 		bw->height = height;
 	} else {
-		LOG("Asked to set dimensions of front end window.");
+		NSLOG(netsurf, INFO,
+		      "Asked to set dimensions of front end window.");
 		assert(0);
 	}
 }

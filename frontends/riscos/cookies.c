@@ -445,12 +445,12 @@ nserror ro_gui_cookies_present(void)
 
 	res = ro_cookie_init();
 	if (res == NSERROR_OK) {
-		LOG("Presenting");
+		NSLOG(netsurf, INFO, "Presenting");
 		ro_gui_dialog_open_top(cookie_window->core.wh,
 				       cookie_window->core.toolbar,
 				       600, 800);
 	} else {
-		LOG("Failed presenting code %d", res);
+		NSLOG(netsurf, INFO, "Failed presenting code %d", res);
 	}
 
 	return res;

@@ -99,7 +99,7 @@ char *nsws_find_resource(char *buf, const char *filename, const char *def)
 	char t[PATH_MAX];
 
 	if (cdir != NULL) {
-		LOG("Found Home %s", cdir);
+		NSLOG(netsurf, INFO, "Found Home %s", cdir);
 		strcpy(t, cdir);
 		strcat(t, "/.netsurf/");
 		strcat(t, filename);
@@ -126,7 +126,7 @@ char *nsws_find_resource(char *buf, const char *filename, const char *def)
 	getcwd(t, PATH_MAX - SLEN("\\res\\") - strlen(filename));
 	strcat(t, "\\res\\");
 	strcat(t, filename);
-	LOG("looking in %s", t);
+	NSLOG(netsurf, INFO, "looking in %s", t);
 	if ((realpath(t, buf) != NULL) && (access(buf, R_OK) == 0))
 		return buf;
 

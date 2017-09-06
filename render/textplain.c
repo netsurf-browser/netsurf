@@ -423,7 +423,7 @@ static void textplain_reformat(struct content *c, int width, int height)
 	size_t line_start;
 	nserror res;
 
-	LOG("content %p w:%d h:%d", c, width, height);
+	NSLOG(netsurf, INFO, "content %p w:%d h:%d", c, width, height);
 
 	/* compute available columns (assuming monospaced font) - use 8
 	 * characters for better accuracy
@@ -522,7 +522,7 @@ static void textplain_reformat(struct content *c, int width, int height)
 	return;
 
 no_memory:
-	LOG("out of memory (line_count %lu)", line_count);
+	NSLOG(netsurf, INFO, "out of memory (line_count %lu)", line_count);
 	return;
 }
 

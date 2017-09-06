@@ -59,12 +59,14 @@ nserror nsgtk_throbber_init(void)
 		if (res != NSERROR_OK) {
 			break;
 		}
-		LOG("%s",resname);
+		NSLOG(netsurf, INFO, "%s", resname);
 	}
 
 	if (frame < 1) {
 		/* we need at least two frames - one for idle, one for active */
-		LOG("Insufficent number of frames (%d) in throbber animation.", frame);
+		NSLOG(netsurf, INFO,
+		      "Insufficent number of frames (%d) in throbber animation.",
+		      frame);
 		res = NSERROR_INIT_FAILED;
 	}
 

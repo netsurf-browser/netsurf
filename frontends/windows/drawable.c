@@ -83,7 +83,7 @@ nsws_drawable_vscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 	SCROLLINFO si;
 	int mem;
 
-	LOG("VSCROLL %d", gw->requestscrolly);
+	NSLOG(netsurf, INFO, "VSCROLL %d", gw->requestscrolly);
 
 	if (gw->requestscrolly != 0)
 		return 0;
@@ -157,7 +157,7 @@ nsws_drawable_hscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 	SCROLLINFO si;
 	int mem;
 
-	LOG("HSCROLL %d", gw->requestscrollx);
+	NSLOG(netsurf, INFO, "HSCROLL %d", gw->requestscrollx);
 
 	if (gw->requestscrollx != 0)
 		return 0;
@@ -369,7 +369,8 @@ nsws_drawable_mouseup(struct gui_window *gw,
 	    (gw->bw == NULL))
 		return 0;
 
-	LOG("state 0x%x, press 0x%x", gw->mouse->state, press);
+	NSLOG(netsurf, INFO, "state 0x%x, press 0x%x", gw->mouse->state,
+	      press);
 	if ((gw->mouse->state & press) != 0) {
 		gw->mouse->state &= ~press;
 		gw->mouse->state |= click;
@@ -383,10 +384,10 @@ nsws_drawable_mouseup(struct gui_window *gw,
 		gw->mouse->state &= ~BROWSER_MOUSE_MOD_3;
 
 	if ((gw->mouse->state & click) != 0) {
-		LOG("mouse click bw %p, state 0x%x, x %f, y %f",
-		    gw->bw, gw->mouse->state,
-		    (x + gw->scrollx) / gw->scale,
-		    (y + gw->scrolly) / gw->scale);
+		NSLOG(netsurf, INFO,
+		      "mouse click bw %p, state 0x%x, x %f, y %f", gw->bw,
+		      gw->mouse->state, (x + gw->scrollx) / gw->scale,
+		      (y + gw->scrolly) / gw->scale);
 
 		browser_window_mouse_click(gw->bw,
 					   gw->mouse->state,
@@ -430,10 +431,9 @@ nsws_drawable_mousedown(struct gui_window *gw,
 	gw->mouse->pressed_x = (x + gw->scrollx) / gw->scale;
 	gw->mouse->pressed_y = (y + gw->scrolly) / gw->scale;
 
-	LOG("mouse click bw %p, state %x, x %f, y %f",
-	    gw->bw, gw->mouse->state,
-	    (x + gw->scrollx) / gw->scale,
-	    (y + gw->scrolly) / gw->scale);
+	NSLOG(netsurf, INFO, "mouse click bw %p, state %x, x %f, y %f",
+	      gw->bw, gw->mouse->state, (x + gw->scrollx) / gw->scale,
+	      (y + gw->scrolly) / gw->scale);
 
 	browser_window_mouse_click(gw->bw, gw->mouse->state,
 				   (x + gw->scrollx) / gw->scale,
@@ -466,7 +466,8 @@ nsws_drawable_mousemove(struct gui_window *gw, int x, int y)
 	    (abs(x - gw->mouse->pressed_x) >= 5) &&
 	    (abs(y - gw->mouse->pressed_y) >= 5)) {
 
-		LOG("Drag start state 0x%x", gw->mouse->state);
+		NSLOG(netsurf, INFO, "Drag start state 0x%x",
+		      gw->mouse->state);
 
 		if ((gw->mouse->state & BROWSER_MOUSE_PRESS_1) != 0) {
 			browser_window_mouse_click(gw->bw, BROWSER_MOUSE_DRAG_1,
@@ -515,7 +516,8 @@ nsws_window_drawable_event_callback(HWND hwnd,
 
 	gw = nsws_get_gui_window(hwnd);
 	if (gw == NULL) {
-		LOG("Unable to find gui window structure for hwnd %p", hwnd);
+		NSLOG(netsurf, INFO,
+		      "Unable to find gui window structure for hwnd %p", hwnd);
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 	}
 
@@ -604,7 +606,7 @@ nsws_window_create_drawable(HINSTANCE hinstance,
 
 	if (hwnd == NULL) {
 		win_perror("WindowCreateDrawable");
-		LOG("Window creation failed");
+		NSLOG(netsurf, INFO, "Window creation failed");
 		return NULL;
 	}
 

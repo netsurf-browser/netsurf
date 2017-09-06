@@ -168,7 +168,7 @@ static bool save_complete_save_buffer(save_complete_ctx *ctx,
 	fp = fopen(fname, "wb");
 	if (fp == NULL) {
 		free(fname);
-		LOG("fopen(): errno = %i", errno);
+		NSLOG(netsurf, INFO, "fopen(): errno = %i", errno);
 		guit->misc->warning("SaveError", strerror(errno));
 		return false;
 	}
@@ -1044,7 +1044,7 @@ static bool save_complete_node_handler(dom_node *node,
 	} else if (type == DOM_DOCUMENT_NODE) {
 		/* Do nothing */
 	} else {
-		LOG("Unhandled node type: %d", type);
+		NSLOG(netsurf, INFO, "Unhandled node type: %d", type);
 	}
 
 	return true;
@@ -1075,7 +1075,7 @@ static bool save_complete_save_html_document(save_complete_ctx *ctx,
 	fp = fopen(fname, "wb");
 	if (fp == NULL) {
 		free(fname);
-		LOG("fopen(): errno = %i", errno);
+		NSLOG(netsurf, INFO, "fopen(): errno = %i", errno);
 		guit->misc->warning("SaveError", strerror(errno));
 		return false;
 	}
@@ -1154,7 +1154,7 @@ static bool save_complete_inventory(save_complete_ctx *ctx)
 	fp = fopen(fname, "w");
 	free(fname);
 	if (fp == NULL) {
-		LOG("fopen(): errno = %i", errno);
+		NSLOG(netsurf, INFO, "fopen(): errno = %i", errno);
 		guit->misc->warning("SaveError", strerror(errno));
 		return false;
 	}
@@ -1182,7 +1182,8 @@ static nserror regcomp_wrapper(regex_t *preg, const char *regex, int cflags)
 	if (r) {
 		char errbuf[200];
 		regerror(r, preg, errbuf, sizeof errbuf);
-		LOG("Failed to compile regexp '%s': %s\n", regex, errbuf);
+		NSLOG(netsurf, INFO, "Failed to compile regexp '%s': %s\n",
+		      regex, errbuf);
 		return NSERROR_INIT_FAILED;
 	}
 	return NSERROR_OK;

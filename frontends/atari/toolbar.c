@@ -269,7 +269,7 @@ struct s_toolbar *toolbar_create(struct s_gui_win_root *owner)
 	int i;
 	struct s_toolbar *t;
 
-	LOG("owner %p", owner);
+	NSLOG(netsurf, INFO, "owner %p", owner);
 
 	assert(init == true);
 
@@ -327,8 +327,9 @@ struct s_toolbar *toolbar_create(struct s_gui_win_root *owner)
 	t->throbber.max_index = THROBBER_MAX_INDEX;
 	t->throbber.running = false;
 
-	LOG("created toolbar: %p, root: %p, textarea: %p, throbber: %p",
-            t, owner, t->url.textarea, &t->throbber);
+	NSLOG(netsurf, INFO,
+	      "created toolbar: %p, root: %p, textarea: %p, throbber: %p", t,
+	      owner, t->url.textarea, &t->throbber);
 	return( t );
 }
 
@@ -458,7 +459,7 @@ toolbar_update_buttons(struct s_toolbar *tb,
                        struct browser_window *bw,
                        short button)
 {
-        LOG("tb %p", tb);
+        NSLOG(netsurf, INFO, "tb %p", tb);
 
 	struct s_tb_button * bt;
 	bool enable = false;
@@ -582,7 +583,7 @@ void toolbar_set_dimensions(struct s_toolbar *tb, GRECT *area)
 
 void toolbar_set_url(struct s_toolbar *tb, const char *text)
 {
-	LOG("tb %p", tb);
+	NSLOG(netsurf, INFO, "tb %p", tb);
 
 	textarea_set_text(tb->url.textarea, text);
 
@@ -668,7 +669,7 @@ bool toolbar_text_input(struct s_toolbar *tb, char *text)
 {
 	bool handled = true;
 
-	LOG("tb %p", tb);
+	NSLOG(netsurf, INFO, "tb %p", tb);
 
 	return(handled);
 }
@@ -757,7 +758,7 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
 	short mx, my, mb, kstat;
 	struct gui_window * gw;
 
-        LOG("tb %p", tb);
+        NSLOG(netsurf, INFO, "tb %p", tb);
 
 
 	if (obj==TOOLBAR_AREA_URL) {

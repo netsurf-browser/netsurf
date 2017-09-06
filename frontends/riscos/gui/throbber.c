@@ -81,7 +81,7 @@ struct throbber *ro_gui_throbber_create(struct theme_descriptor *theme)
 
 	throbber = malloc(sizeof(struct throbber));
 	if (throbber == NULL) {
-		LOG("No memory for malloc()");
+		NSLOG(netsurf, INFO, "No memory for malloc()");
 		return NULL;
 	}
 
@@ -248,7 +248,8 @@ bool ro_gui_throbber_icon_update(struct throbber *throbber)
 
 		error = xwimp_create_icon(&icon, &throbber->icon);
 		if (error != NULL) {
-			LOG("xwimp_create_icon: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_create_icon: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			throbber->icon = -1;
 			return false;
@@ -259,7 +260,8 @@ bool ro_gui_throbber_icon_update(struct throbber *throbber)
 	} else if (throbber->hidden && throbber->icon != -1) {
 		error = xwimp_delete_icon(throbber->window, throbber->icon);
 		if (error != NULL) {
-			LOG("xwimp_delete_icon: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_delete_icon: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			return false;
 		}
@@ -295,7 +297,8 @@ bool ro_gui_throbber_icon_resize(struct throbber *throbber)
 				throbber->extent.x0, throbber->extent.y0,
 				throbber->extent.x1, throbber->extent.y1);
 		if (error != NULL) {
-			LOG("xwimp_resize_icon: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_resize_icon: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			throbber->icon = -1;
 			return false;

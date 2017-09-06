@@ -73,7 +73,8 @@ nserror content__init(struct content *c, const content_handler *handler,
 	struct content_user *user_sentinel;
 	nserror error;
 	
-	LOG("url "URL_FMT_SPC" -> %p", nsurl_access(llcache_handle_get_url(llcache)), c);
+	NSLOG(netsurf, INFO, "url "URL_FMT_SPC" -> %p",
+	      nsurl_access(llcache_handle_get_url(llcache)), c);
 
 	user_sentinel = calloc(1, sizeof(struct content_user));
 	if (user_sentinel == NULL) {
@@ -272,7 +273,8 @@ void content_convert(struct content *c)
 	if (c->locked == true)
 		return;
 	
-	LOG("content "URL_FMT_SPC" (%p)", nsurl_access(llcache_handle_get_url(c->llcache)), c);
+	NSLOG(netsurf, INFO, "content "URL_FMT_SPC" (%p)",
+	      nsurl_access(llcache_handle_get_url(c->llcache)), c);
 
 	if (c->handler->data_complete != NULL) {
 		c->locked = true;
@@ -376,7 +378,8 @@ void content_destroy(struct content *c)
 	struct content_rfc5988_link *link;
 
 	assert(c);
-	LOG("content %p %s", c, nsurl_access(llcache_handle_get_url(c->llcache)));
+	NSLOG(netsurf, INFO, "content %p %s", c,
+	      nsurl_access(llcache_handle_get_url(c->llcache)));
 	assert(c->locked == false);
 
 	if (c->handler->destroy != NULL)
@@ -585,7 +588,7 @@ bool content_scaled_redraw(struct hlcache_handle *h,
 		return true;
 	}
 
-	LOG("Content %p %dx%d ctx:%p", c, width, height, ctx);
+	NSLOG(netsurf, INFO, "Content %p %dx%d ctx:%p", c, width, height, ctx);
 
 	if (ctx->plot->option_knockout) {
 		knockout_plot_start(ctx, &new_ctx);
@@ -654,7 +657,9 @@ bool content_add_user(
 {
 	struct content_user *user;
 
-	LOG("content "URL_FMT_SPC" (%p), user %p %p", nsurl_access(llcache_handle_get_url(c->llcache)), c, callback, pw);
+	NSLOG(netsurf, INFO, "content "URL_FMT_SPC" (%p), user %p %p",
+	      nsurl_access(llcache_handle_get_url(c->llcache)), c, callback,
+	      pw);
 	user = malloc(sizeof(struct content_user));
 	if (!user)
 		return false;
@@ -687,7 +692,9 @@ void content_remove_user(
 		void *pw)
 {
 	struct content_user *user, *next;
-	LOG("content "URL_FMT_SPC" (%p), user %p %p", nsurl_access(llcache_handle_get_url(c->llcache)), c, callback, pw);
+	NSLOG(netsurf, INFO, "content "URL_FMT_SPC" (%p), user %p %p",
+	      nsurl_access(llcache_handle_get_url(c->llcache)), c, callback,
+	      pw);
 
 	/* user_list starts with a sentinel */
 	for (user = c->user_list; user->next != 0 &&
@@ -695,7 +702,7 @@ void content_remove_user(
 				user->next->pw == pw); user = user->next)
 		;
 	if (user->next == 0) {
-		LOG("user not found in list");
+		NSLOG(netsurf, INFO, "user not found in list");
 		assert(0);
 		return;
 	}
@@ -808,7 +815,8 @@ void content_open(hlcache_handle *h, struct browser_window *bw,
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
-	LOG("content %p %s", c, nsurl_access(llcache_handle_get_url(c->llcache)));
+	NSLOG(netsurf, INFO, "content %p %s", c,
+              nsurl_access(llcache_handle_get_url(c->llcache)));
 	if (c->handler->open != NULL)
 		c->handler->open(c, bw, page, params);
 }
@@ -824,7 +832,8 @@ void content_close(hlcache_handle *h)
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
-	LOG("content %p %s", c, nsurl_access(llcache_handle_get_url(c->llcache)));
+	NSLOG(netsurf, INFO, "content %p %s", c,
+              nsurl_access(llcache_handle_get_url(c->llcache)));
 	if (c->handler->close != NULL)
 		c->handler->close(c);
 }
@@ -1472,7 +1481,7 @@ nserror content__clone(const struct content *c, struct content *nc)
  */
 nserror content_abort(struct content *c)
 {
-	LOG("Aborting %p", c);
+	NSLOG(netsurf, INFO, "Aborting %p", c);
 	
 	if (c->handler->stop != NULL)
 		c->handler->stop(c);

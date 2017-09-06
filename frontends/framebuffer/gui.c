@@ -120,7 +120,7 @@ static void die(const char *error)
  */
 static nserror fb_warn_user(const char *warning, const char *detail)
 {
-	LOG("%s %s", warning, detail);
+	NSLOG(netsurf, INFO, "%s %s", warning, detail);
 	return NSERROR_OK;
 }
 
@@ -153,7 +153,7 @@ widget_scroll_y(struct gui_window *gw, int y, bool abs)
 	int content_width, content_height;
 	int height;
 
-	LOG("window scroll");
+	NSLOG(netsurf, INFO, "window scroll");
 	if (abs) {
 		bwidget->pany = y - bwidget->scrolly;
 	} else {
@@ -237,7 +237,7 @@ fb_pan(fbtk_widget_t *widget,
 	height = fbtk_get_height(widget);
 	width = fbtk_get_width(widget);
 
-	LOG("panning %d, %d", bwidget->panx, bwidget->pany);
+	NSLOG(netsurf, INFO, "panning %d, %d", bwidget->panx, bwidget->pany);
 
 	x = fbtk_get_absx(widget);
 	y = fbtk_get_absy(widget);
@@ -413,7 +413,8 @@ fb_browser_window_redraw(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 
 	bwidget = fbtk_get_userpw(widget);
 	if (bwidget == NULL) {
-		LOG("browser widget from widget %p was null", widget);
+		NSLOG(netsurf, INFO,
+		      "browser widget from widget %p was null", widget);
 		return -1;
 	}
 
@@ -465,7 +466,7 @@ process_cmdline(int argc, char** argv)
 		{0, 0, 0,  0 }
 	}; /* no long options */
 
-	LOG("argc %d, argv %p", argc, argv);
+	NSLOG(netsurf, INFO, "argc %d, argv %p", argc, argv);
 
 	fename = "sdl";
 	febpp = 32;
@@ -534,7 +535,7 @@ static nserror set_defaults(struct nsoption_s *defaults)
 
 	if (nsoption_charp(cookie_file) == NULL ||
 	    nsoption_charp(cookie_jar) == NULL) {
-		LOG("Failed initialising cookie options");
+		NSLOG(netsurf, INFO, "Failed initialising cookie options");
 		return NSERROR_BAD_PARAMETER;
 	}
 
@@ -612,7 +613,7 @@ static void framebuffer_run(void)
 
 static void gui_quit(void)
 {
-	LOG("gui_quit");
+	NSLOG(netsurf, INFO, "gui_quit");
 
 	urldb_save_cookies(nsoption_charp(cookie_jar));
 
@@ -639,7 +640,8 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	    cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
-	LOG("browser window clicked at %d,%d", cbi->x, cbi->y);
+	NSLOG(netsurf, INFO, "browser window clicked at %d,%d", cbi->x,
+	      cbi->y);
 
 	switch (cbi->event->type) {
 	case NSFB_EVENT_KEY_DOWN:
@@ -824,7 +826,7 @@ fb_browser_window_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	static fbtk_modifier_type modifier = FBTK_MOD_CLEAR;
 	int ucs4 = -1;
 
-	LOG("got value %d", cbi->event->value.keycode);
+	NSLOG(netsurf, INFO, "got value %d", cbi->event->value.keycode);
 
 	switch (cbi->event->type) {
 	case NSFB_EVENT_KEY_DOWN:
@@ -1200,7 +1202,7 @@ create_toolbar(struct gui_window *gw,
 		toolbar_layout = NSFB_TOOLBAR_DEFAULT_LAYOUT;
 	}
 
-	LOG("Using toolbar layout %s", toolbar_layout);
+	NSLOG(netsurf, INFO, "Using toolbar layout %s", toolbar_layout);
 
 	itmtype = toolbar_layout;
 
@@ -1234,7 +1236,7 @@ create_toolbar(struct gui_window *gw,
 	       (*itmtype != 0) && 
 	       (xdir !=0)) {
 
-		LOG("toolbar adding %c", *itmtype);
+		NSLOG(netsurf, INFO, "toolbar adding %c", *itmtype);
 
 
 		switch (*itmtype) {
@@ -1376,7 +1378,9 @@ create_toolbar(struct gui_window *gw,
 		default:
 			widget = NULL;
 			xdir = 0;
-			LOG("Unknown element %c in toolbar layout", *itmtype);
+			NSLOG(netsurf, INFO,
+			      "Unknown element %c in toolbar layout",
+			      *itmtype);
 		        break;
 
 		}
@@ -1385,7 +1389,7 @@ create_toolbar(struct gui_window *gw,
 			xpos += (xdir * (fbtk_get_width(widget) + padding));
 		}
 
-		LOG("xpos is %d", xpos);
+		NSLOG(netsurf, INFO, "xpos is %d", xpos);
 
 		itmtype += xdir;
 	}
@@ -1595,7 +1599,7 @@ create_normal_browser_window(struct gui_window *gw, int furniture_width)
 	int statusbar_width = 0;
 	int toolbar_height = nsoption_int(fb_toolbar_size);
 
-	LOG("Normal window");
+	NSLOG(netsurf, INFO, "Normal window");
 
 	gw->window = fbtk_create_window(fbtk, 0, 0, 0, 0, 0);
 
@@ -1626,7 +1630,8 @@ create_normal_browser_window(struct gui_window *gw, int furniture_width)
 				      false);
 	fbtk_set_handler(gw->status, FBTK_CBT_POINTERENTER, set_ptr_default_move, NULL);
 
-	LOG("status bar %p at %d,%d", gw->status, fbtk_get_absx(gw->status), fbtk_get_absy(gw->status));
+	NSLOG(netsurf, INFO, "status bar %p at %d,%d", gw->status,
+	      fbtk_get_absx(gw->status), fbtk_get_absy(gw->status));
 
 	/* create horizontal scrollbar */
 	gw->hscroll = fbtk_create_hscroll(gw->window,
@@ -2183,7 +2188,7 @@ main(int argc, char** argv)
 
 	/* create an initial browser window */
 
-	LOG("calling browser_window_create");
+	NSLOG(netsurf, INFO, "calling browser_window_create");
 
 	ret = nsurl_create(feurl, &url);
 	if (ret == NSERROR_OK) {
@@ -2205,7 +2210,7 @@ main(int argc, char** argv)
 	netsurf_exit();
 
 	if (fb_font_finalise() == false)
-		LOG("Font finalisation failed.");
+		NSLOG(netsurf, INFO, "Font finalisation failed.");
 
 	/* finalise options */
 	nsoption_finalise(nsoptions, nsoptions_default);

@@ -203,12 +203,14 @@ void list_schedule(void)
 
 	gettimeofday(&tv, NULL);
 
-        LOG("schedule list at %ld:%ld", tv.tv_sec, tv.tv_usec);
+        NSLOG(netsurf, INFO, "schedule list at %ld:%ld", tv.tv_sec,
+              tv.tv_usec);
 
         cur_nscb = schedule_list;
 
         while (cur_nscb != NULL) {
-                LOG("Schedule %p at %ld:%ld", cur_nscb, cur_nscb->tv.tv_sec, cur_nscb->tv.tv_usec);
+                NSLOG(netsurf, INFO, "Schedule %p at %ld:%ld", cur_nscb,
+                      cur_nscb->tv.tv_sec, cur_nscb->tv.tv_usec);
                 cur_nscb = cur_nscb->next;
         }
 }

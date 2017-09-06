@@ -126,7 +126,8 @@ bool draw_convert(struct content *c)
 	error = xdrawfile_bbox(0, (drawfile_diagram *) data,
 			(int) source_size, 0, &bbox);
 	if (error) {
-		LOG("xdrawfile_bbox: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xdrawfile_bbox: 0x%x: %s",
+		      error->errnum, error->errmess);
 		msg_data.error = error->errmess;
 		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
@@ -208,7 +209,8 @@ bool draw_redraw(struct content *c, struct content_redraw_data *data,
 	error = xdrawfile_render(0, (drawfile_diagram *) src_data,
 			(int) source_size, &matrix, 0, 0);
 	if (error) {
-		LOG("xdrawfile_render: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xdrawfile_render: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return false;
 	}
 

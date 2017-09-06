@@ -175,7 +175,7 @@ query_id query_user_xy(const char *query, const char *detail,
 	err = utf8_to_local_encoding(yes, 0, &local_text);
 	if (err != NSERROR_OK) {
 		assert(err != NSERROR_BAD_ENCODING);
-		LOG("utf8_to_local_encoding_failed");
+		NSLOG(netsurf, INFO, "utf8_to_local_encoding_failed");
 		local_text = NULL;
 	}
 
@@ -191,7 +191,8 @@ query_id query_user_xy(const char *query, const char *detail,
 
 	error = xwimptextop_string_width(icn->data.indirected_text.text, len, &width);
 	if (error) {
-		LOG("xwimptextop_string_width: 0x%x:%s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimptextop_string_width: 0x%x:%s",
+		      error->errnum, error->errmess);
 		width = len * 16;
 	}
 	if (!query_yes_width) query_yes_width = icn->extent.x1 - icn->extent.x0;
@@ -204,7 +205,7 @@ query_id query_user_xy(const char *query, const char *detail,
 	err = utf8_to_local_encoding(no, 0, &local_text);
 	if (err != NSERROR_OK) {
 		assert(err != NSERROR_BAD_ENCODING);
-		LOG("utf8_to_local_encoding_failed");
+		NSLOG(netsurf, INFO, "utf8_to_local_encoding_failed");
 		local_text = NULL;
 	}
 
@@ -222,7 +223,8 @@ query_id query_user_xy(const char *query, const char *detail,
 	icn->extent.x1 = tx - 16;
 	error = xwimptextop_string_width(icn->data.indirected_text.text, len, &width);
 	if (error) {
-		LOG("xwimptextop_string_width: 0x%x:%s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimptextop_string_width: 0x%x:%s",
+		      error->errnum, error->errmess);
 		width = len * 16;
 	}
 	width += 28;
@@ -263,7 +265,8 @@ query_id query_user_xy(const char *query, const char *detail,
 
 	error = xwimp_set_caret_position(qw->window, (wimp_i)-1, 0, 0, 1 << 25, -1);
 	if (error) {
-		LOG("xwimp_get_caret_position: 0x%x : %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_caret_position: 0x%x : %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 
@@ -307,7 +310,10 @@ void ro_gui_query_window_bring_to_front(query_id id)
 
 		error = xwimp_set_caret_position(qw->window, (wimp_i)-1, 0, 0, 1 << 25, -1);
 		if (error) {
-			LOG("xwimp_get_caret_position: 0x%x : %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xwimp_get_caret_position: 0x%x : %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 		}
 	}
@@ -327,7 +333,8 @@ void ro_gui_query_close(wimp_w w)
 	ro_gui_dialog_close(w);
 	error = xwimp_delete_window(qw->window);
 	if (error) {
-		LOG("xwimp_delete_window: 0x%x:%s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_delete_window: 0x%x:%s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 	ro_gui_wimp_event_finalise(w);

@@ -51,7 +51,8 @@ static void *bitmap_create(int width, int height, unsigned int state)
 {
         nsfb_t *bm;
 
-        LOG("width %d, height %d, state %u", width, height, state);
+        NSLOG(netsurf, INFO, "width %d, height %d, state %u", width, height,
+              state);
 
 	bm = nsfb_new(NSFB_SURFACE_RAM);
 	if (bm == NULL) {
@@ -69,7 +70,7 @@ static void *bitmap_create(int width, int height, unsigned int state)
 		return NULL;
 	}
 
-        LOG("bitmap %p", bm);
+        NSLOG(netsurf, INFO, "bitmap %p", bm);
 
         return bm;
 }
@@ -197,11 +198,11 @@ static bool bitmap_test_opaque(void *bitmap)
 
         while (tst-- > 0) {
                 if (bmpptr[(tst << 2) + 3] != 0xff) {
-                        LOG("bitmap %p has transparency", bm);
+                        NSLOG(netsurf, INFO, "bitmap %p has transparency", bm);
                         return false;
                 }
         }
-        LOG("bitmap %p is opaque", bm);
+        NSLOG(netsurf, INFO, "bitmap %p is opaque", bm);
 	return true;
 }
 
@@ -282,7 +283,7 @@ bitmap_render(struct bitmap *bitmap,
 
 	nsfb_get_geometry(tbm, &width, &height, NULL);
 
-	LOG("width %d, height %d", width, height);
+	NSLOG(netsurf, INFO, "width %d, height %d", width, height);
 
 	/* Calculate size of buffer to render the content into */
 	/* We get the width from the content width, unless it exceeds 1024,

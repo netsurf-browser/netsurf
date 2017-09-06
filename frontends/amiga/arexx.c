@@ -173,7 +173,7 @@ void ami_arexx_execute(char *script)
 
 	if((lock = Lock(script, ACCESS_READ))) {
 		DevNameFromLock(lock, full_script_path, 1024, DN_FULLPATH);
-		LOG("Executing script: %s", full_script_path);
+		NSLOG(netsurf, INFO, "Executing script: %s", full_script_path);
 		ami_arexx_command(full_script_path, NULL);
 		UnLock(lock);
 	}

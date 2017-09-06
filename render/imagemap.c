@@ -241,21 +241,35 @@ void imagemap_dump(html_content *c)
 
 		map = c->imagemaps[i];
 		while (map != NULL) {
-			LOG("Imagemap: %s", map->key);
+			NSLOG(netsurf, INFO, "Imagemap: %s", map->key);
 
 			for (entry = map->list; entry; entry = entry->next) {
 				switch (entry->type) {
 				case IMAGEMAP_DEFAULT:
-					LOG("\tDefault: %s", nsurl_access(entry->url));
+					NSLOG(netsurf, INFO, "\tDefault: %s",
+					      nsurl_access(entry->url));
 					break;
 				case IMAGEMAP_RECT:
-					LOG("\tRectangle: %s: [(%d,%d),(%d,%d)]", nsurl_access(entry->url), entry->bounds.rect.x0, entry->bounds.rect.y0, entry->bounds.rect.x1, entry->bounds.rect.y1);
+					NSLOG(netsurf, INFO,
+					      "\tRectangle: %s: [(%d,%d),(%d,%d)]",
+					      nsurl_access(entry->url),
+					      entry->bounds.rect.x0,
+					      entry->bounds.rect.y0,
+					      entry->bounds.rect.x1,
+					      entry->bounds.rect.y1);
 					break;
 				case IMAGEMAP_CIRCLE:
-					LOG("\tCircle: %s: [(%d,%d),%d]", nsurl_access(entry->url), entry->bounds.circle.x, entry->bounds.circle.y, entry->bounds.circle.r);
+					NSLOG(netsurf, INFO,
+					      "\tCircle: %s: [(%d,%d),%d]",
+					      nsurl_access(entry->url),
+					      entry->bounds.circle.x,
+					      entry->bounds.circle.y,
+					      entry->bounds.circle.r);
 					break;
 				case IMAGEMAP_POLY:
-					LOG("\tPolygon: %s:", nsurl_access(entry->url));
+					NSLOG(netsurf, INFO,
+					      "\tPolygon: %s:",
+					      nsurl_access(entry->url));
 					for (j = 0; j != entry->bounds.poly.num;
 							j++) {
 						fprintf(stderr, "(%d,%d) ",

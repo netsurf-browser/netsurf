@@ -120,7 +120,8 @@ void ro_uri_bounce(wimp_message *msg)
 	/* Get required buffer size */
 	e = xuri_request_uri(0, NULL, 0, message->handle, &size);
 	if (e) {
-		LOG("xuri_request_uri: %d: %s", e->errnum, e->errmess);
+		NSLOG(netsurf, INFO, "xuri_request_uri: %d: %s", e->errnum,
+		      e->errmess);
 		return;
 	}
 
@@ -131,7 +132,8 @@ void ro_uri_bounce(wimp_message *msg)
 	/* Get URI */
 	e = xuri_request_uri(0, uri_buf, size, message->handle, 0);
 	if (e) {
-		LOG("xuri_request_uri: %d: %s", e->errnum, e->errmess);
+		NSLOG(netsurf, INFO, "xuri_request_uri: %d: %s", e->errnum,
+		      e->errmess);
 		free(uri_buf);
 		return;
 	}

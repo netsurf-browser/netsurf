@@ -138,7 +138,8 @@ static nserror hotlist_save(const char *path)
 	/* Replace any old hotlist file with the one we just saved */
 	if (rename(temp_path, path) != 0) {
 		res = NSERROR_SAVE_FAILED;
-		LOG("Error renaming hotlist: %s.", strerror(errno));
+		NSLOG(netsurf, INFO, "Error renaming hotlist: %s.",
+		      strerror(errno));
 		goto cleanup;
 	}
 
@@ -652,20 +653,20 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 	/* The li must contain an "a" element */
 	a = libdom_find_first_element(li, corestring_lwc_a);
 	if (a == NULL) {
-		LOG("Missing <a> in <li>");
+		NSLOG(netsurf, INFO, "Missing <a> in <li>");
 		return NSERROR_INVALID;
 	}
 
 	derror = dom_node_get_text_content(a, &title1);
 	if (derror != DOM_NO_ERR) {
-		LOG("No title");
+		NSLOG(netsurf, INFO, "No title");
 		dom_node_unref(a);
 		return NSERROR_INVALID;
 	}
 
 	derror = dom_element_get_attribute(a, corestring_dom_href, &url1);
 	if (derror != DOM_NO_ERR || url1 == NULL) {
-		LOG("No URL");
+		NSLOG(netsurf, INFO, "No URL");
 		dom_string_unref(title1);
 		dom_node_unref(a);
 		return NSERROR_INVALID;
@@ -683,7 +684,8 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 	dom_string_unref(url1);
 
 	if (err != NSERROR_OK) {
-		LOG("Failed normalising '%s'", dom_string_data(url1));
+		NSLOG(netsurf, INFO, "Failed normalising '%s'",
+		      dom_string_data(url1));
 
 		if (title1 != NULL) {
 			dom_string_unref(title1);
@@ -763,7 +765,8 @@ nserror hotlist_load_directory_cb(dom_node *node, void *ctx)
 
 		error = dom_node_get_text_content(node, &title);
 		if (error != DOM_NO_ERR || title == NULL) {
-			LOG("Empty <h4> or memory exhausted.");
+			NSLOG(netsurf, INFO,
+			      "Empty <h4> or memory exhausted.");
 			dom_string_unref(name);
 			return NSERROR_DOM;
 		}
@@ -861,7 +864,7 @@ static nserror hotlist_load(const char *path, bool *loaded)
 
 	/* Handle no path */
 	if (path == NULL) {
-		LOG("No hotlist file path provided.");
+		NSLOG(netsurf, INFO, "No hotlist file path provided.");
 		return NSERROR_OK;
 	}
 
@@ -1283,7 +1286,7 @@ nserror hotlist_init(
 		return err;
 	}
 
-	LOG("Loading hotlist");
+	NSLOG(netsurf, INFO, "Loading hotlist");
 
 	hl_ctx.tree = NULL;
 	hl_ctx.built = false;
@@ -1329,7 +1332,7 @@ nserror hotlist_init(
 	 * the treeview is built. */
 	hl_ctx.built = true;
 
-	LOG("Loaded hotlist");
+	NSLOG(netsurf, INFO, "Loaded hotlist");
 
 	return NSERROR_OK;
 }
@@ -1375,7 +1378,7 @@ nserror hotlist_fini(void)
 	int i;
 	nserror err;
 
-	LOG("Finalising hotlist");
+	NSLOG(netsurf, INFO, "Finalising hotlist");
 
 	/* Remove any existing scheduled save callback */
 	guit->misc->schedule(-1, hotlist_schedule_save_cb, NULL);
@@ -1384,7 +1387,7 @@ nserror hotlist_fini(void)
 	/* Save the hotlist */
 	err = hotlist_save(hl_ctx.save_path);
 	if (err != NSERROR_OK) {
-		LOG("Problem saving the hotlist.");
+		NSLOG(netsurf, INFO, "Problem saving the hotlist.");
 	}
 
 	free(hl_ctx.save_path);
@@ -1403,7 +1406,7 @@ nserror hotlist_fini(void)
 		return err;
 	}
 
-	LOG("Finalised hotlist");
+	NSLOG(netsurf, INFO, "Finalised hotlist");
 
 	return err;
 }

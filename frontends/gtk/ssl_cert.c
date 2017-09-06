@@ -183,7 +183,7 @@ nserror gtk_cert_verify(struct nsurl *url,
 
 	res = nsgtk_builder_new_from_resname("ssl", &ncwin->builder);
 	if (res != NSERROR_OK) {
-		LOG("SSL UI builder init failed");
+		NSLOG(netsurf, INFO, "SSL UI builder init failed");
 		free(ncwin);
 		return res;
 	}

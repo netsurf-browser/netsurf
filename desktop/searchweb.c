@@ -289,13 +289,16 @@ search_web_ico_callback(hlcache_handle *ico,
 	switch (event->type) {
 
 	case CONTENT_MSG_DONE:
-		LOG("icon '%s' retrieved", nsurl_access(hlcache_handle_get_url(ico)));
+		NSLOG(netsurf, INFO, "icon '%s' retrieved",
+		      nsurl_access(hlcache_handle_get_url(ico)));
 		guit->search_web->provider_update(provider->name,
 						  content_get_bitmap(ico));
 		break;
 
 	case CONTENT_MSG_ERROR:
-		LOG("icon %s error: %s", nsurl_access(hlcache_handle_get_url(ico)), event->data.error);
+		NSLOG(netsurf, INFO, "icon %s error: %s",
+		      nsurl_access(hlcache_handle_get_url(ico)),
+		      event->data.error);
 	case CONTENT_MSG_ERRORCODE:
 		hlcache_handle_release(ico);
 		/* clear reference to released handle */
@@ -439,7 +442,8 @@ default_ico_callback(hlcache_handle *ico,
 	switch (event->type) {
 
 	case CONTENT_MSG_DONE:
-		LOG("default icon '%s' retrieved", nsurl_access(hlcache_handle_get_url(ico)));
+		NSLOG(netsurf, INFO, "default icon '%s' retrieved",
+		      nsurl_access(hlcache_handle_get_url(ico)));
 
 		/* only set to default icon if providers icon has no handle */
 		if (ctx->providers[search_web_ctx.current].ico_handle == NULL) {
@@ -450,7 +454,9 @@ default_ico_callback(hlcache_handle *ico,
 		break;
 
 	case CONTENT_MSG_ERROR:
-		LOG("icon %s error: %s", nsurl_access(hlcache_handle_get_url(ico)), event->data.error);
+		NSLOG(netsurf, INFO, "icon %s error: %s",
+		      nsurl_access(hlcache_handle_get_url(ico)),
+		      event->data.error);
 	case CONTENT_MSG_ERRORCODE:
 		hlcache_handle_release(ico);
 		/* clear reference to released handle */

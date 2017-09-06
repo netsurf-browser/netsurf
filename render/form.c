@@ -218,7 +218,8 @@ void form_free_control(struct form_control *control)
 	struct form_control *c;
 	assert(control != NULL);
 
-	LOG("Control:%p name:%p value:%p initial:%p", control, control->name, control->value, control->initial_value);
+	NSLOG(netsurf, INFO, "Control:%p name:%p value:%p initial:%p",
+	      control, control->name, control->value, control->initial_value);
 	free(control->name);
 	free(control->value);
 	free(control->initial_value);
@@ -229,7 +230,9 @@ void form_free_control(struct form_control *control)
 		for (option = control->data.select.items; option;
 				option = next) {
 			next = option->next;
-			LOG("select option:%p text:%p value:%p", option, option->text, option->value);
+			NSLOG(netsurf, INFO,
+			      "select option:%p text:%p value:%p", option,
+			      option->text, option->value);
 			free(option->text);
 			free(option->value);
 			free(option);
@@ -348,7 +351,7 @@ bool form_successful_controls_dom(struct form *_form,
 	/** \todo Replace this call with something DOMish */
 	charset = form_acceptable_charset(_form);
 	if (charset == NULL) {
-		LOG("failed to find charset");
+		NSLOG(netsurf, INFO, "failed to find charset");
 		return false;
 	}
 
@@ -362,7 +365,7 @@ bool form_successful_controls_dom(struct form *_form,
 	err = dom_html_form_element_get_elements(form, &form_elements);
 	
 	if (err != DOM_NO_ERR) {
-		LOG("Could not get form elements");
+		NSLOG(netsurf, INFO, "Could not get form elements");
 		goto dom_no_memory;
 	}
 	
@@ -370,7 +373,7 @@ bool form_successful_controls_dom(struct form *_form,
 	err = dom_html_collection_get_length(form_elements, &element_count);
 	
 	if (err != DOM_NO_ERR) {
-		LOG("Could not get form element count");
+		NSLOG(netsurf, INFO, "Could not get form element count");
 		goto dom_no_memory;
 	}
 	
@@ -402,7 +405,8 @@ bool form_successful_controls_dom(struct form *_form,
 		err = dom_html_collection_item(form_elements,
 					       index, &form_element);
 		if (err != DOM_NO_ERR) {
-			LOG("Could not retrieve form element %d", index);
+			NSLOG(netsurf, INFO,
+			      "Could not retrieve form element %d", index);
 			goto dom_no_memory;
 		}
 
@@ -414,7 +418,7 @@ bool form_successful_controls_dom(struct form *_form,
 		 */
 		err = dom_node_get_node_name(form_element, &nodename);
 		if (err != DOM_NO_ERR) {
-			LOG("Could not get node name");
+			NSLOG(netsurf, INFO, "Could not get node name");
 			goto dom_no_memory;
 		}
 
@@ -423,14 +427,16 @@ bool form_successful_controls_dom(struct form *_form,
 				(dom_html_text_area_element *)form_element,
 				&element_disabled);
 			if (err != DOM_NO_ERR) {
-				LOG("Could not get text area disabled property");
+				NSLOG(netsurf, INFO,
+				      "Could not get text area disabled property");
 				goto dom_no_memory;
 			}
 			err = dom_html_text_area_element_get_name(
 				(dom_html_text_area_element *)form_element,
 				&inputname);
 			if (err != DOM_NO_ERR) {
-				LOG("Could not get text area name property");
+				NSLOG(netsurf, INFO,
+				      "Could not get text area name property");
 				goto dom_no_memory;
 			}
 		} else if (dom_string_isequal(nodename, corestring_dom_SELECT)) {
@@ -438,14 +444,16 @@ bool form_successful_controls_dom(struct form *_form,
 				(dom_html_select_element *)form_element,
 				&element_disabled);
 			if (err != DOM_NO_ERR) {
-				LOG("Could not get select disabled property");
+				NSLOG(netsurf, INFO,
+				      "Could not get select disabled property");
 				goto dom_no_memory;
 			}
 			err = dom_html_select_element_get_name(
 				(dom_html_select_element *)form_element,
 				&inputname);
 			if (err != DOM_NO_ERR) {
-				LOG("Could not get select name property");
+				NSLOG(netsurf, INFO,
+				      "Could not get select name property");
 				goto dom_no_memory;
 			}
 		} else if (dom_string_isequal(nodename, corestring_dom_INPUT)) {
@@ -453,14 +461,16 @@ bool form_successful_controls_dom(struct form *_form,
 				(dom_html_input_element *)form_element,
 				&element_disabled);
 			if (err != DOM_NO_ERR) {
-				LOG("Could not get input disabled property");
+				NSLOG(netsurf, INFO,
+				      "Could not get input disabled property");
 				goto dom_no_memory;
 			}
 			err = dom_html_input_element_get_name(
 				(dom_html_input_element *)form_element,
 				&inputname);
 			if (err != DOM_NO_ERR) {
-				LOG("Could not get input name property");
+				NSLOG(netsurf, INFO,
+				      "Could not get input name property");
 				goto dom_no_memory;
 			}
 		} else if (dom_string_isequal(nodename, corestring_dom_BUTTON)) {
@@ -468,21 +478,23 @@ bool form_successful_controls_dom(struct form *_form,
 				(dom_html_button_element *)form_element,
 				&element_disabled);
 			if (err != DOM_NO_ERR) {
-				LOG("Could not get button disabled property");
+				NSLOG(netsurf, INFO,
+				      "Could not get button disabled property");
 				goto dom_no_memory;
 			}
 			err = dom_html_button_element_get_name(
 				(dom_html_button_element *)form_element,
 				&inputname);
 			if (err != DOM_NO_ERR) {
-				LOG("Could not get button name property");
+				NSLOG(netsurf, INFO,
+				      "Could not get button name property");
 				goto dom_no_memory;
 			}
 		} else {
 			/* Unknown element type came through! */
-			LOG("Unknown element type: %*s",
-			    (int)dom_string_byte_length(nodename),
-			    dom_string_data(nodename));
+			NSLOG(netsurf, INFO, "Unknown element type: %*s",
+			      (int)dom_string_byte_length(nodename),
+			      dom_string_data(nodename));
 			goto dom_no_memory;
 		}
 		if (element_disabled)
@@ -495,7 +507,8 @@ bool form_successful_controls_dom(struct form *_form,
 				(dom_html_text_area_element *)form_element,
 				&inputvalue);
 			if (err != DOM_NO_ERR) {
-				LOG("Could not get text area content");
+				NSLOG(netsurf, INFO,
+				      "Could not get text area content");
 				goto dom_no_memory;
 			}
 		} else if (dom_string_isequal(nodename, corestring_dom_SELECT)) {
@@ -504,13 +517,15 @@ bool form_successful_controls_dom(struct form *_form,
 				(dom_html_select_element *)form_element,
 				&options);
 			if (err != DOM_NO_ERR) {
-				LOG("Could not get select options collection");
+				NSLOG(netsurf, INFO,
+				      "Could not get select options collection");
 				goto dom_no_memory;
 			}
 			err = dom_html_options_collection_get_length(
 				options, &options_count);
 			if (err != DOM_NO_ERR) {
-				LOG("Could not get select options collection length");
+				NSLOG(netsurf, INFO,
+				      "Could not get select options collection length");
 				goto dom_no_memory;
 			}
 			for(option_index = 0; option_index < options_count;
@@ -527,14 +542,17 @@ bool form_successful_controls_dom(struct form *_form,
 				err = dom_html_options_collection_item(
 					options, option_index, &option_element);
 				if (err != DOM_NO_ERR) {
-					LOG("Could not get options item %d", option_index);
+					NSLOG(netsurf, INFO,
+					      "Could not get options item %d",
+					      option_index);
 					goto dom_no_memory;
 				}
 				err = dom_html_option_element_get_selected(
 					(dom_html_option_element *)option_element,
 					&selected);
 				if (err != DOM_NO_ERR) {
-					LOG("Could not get option selected property");
+					NSLOG(netsurf, INFO,
+					      "Could not get option selected property");
 					goto dom_no_memory;
 				}
 				if (!selected)
@@ -543,13 +561,15 @@ bool form_successful_controls_dom(struct form *_form,
 					(dom_html_option_element *)option_element,
 					&inputvalue);
 				if (err != DOM_NO_ERR) {
-					LOG("Could not get option value");
+					NSLOG(netsurf, INFO,
+					      "Could not get option value");
 					goto dom_no_memory;
 				}
 				
 				success_new = calloc(1, sizeof(*success_new));
 				if (success_new == NULL) {
-					LOG("Could not allocate data for option");
+					NSLOG(netsurf, INFO,
+					      "Could not allocate data for option");
 					goto dom_no_memory;
 				}
 		
@@ -558,12 +578,14 @@ bool form_successful_controls_dom(struct form *_form,
 		
 				success_new->name = ENCODE_ITEM(inputname);
 				if (success_new->name == NULL) {
-					LOG("Could not encode name for option");
+					NSLOG(netsurf, INFO,
+					      "Could not encode name for option");
 					goto dom_no_memory;
 				}
 				success_new->value = ENCODE_ITEM(inputvalue);
 				if (success_new->value == NULL) {
-					LOG("Could not encode value for option");
+					NSLOG(netsurf, INFO,
+					      "Could not encode value for option");
 					goto dom_no_memory;
 				}
 			}
@@ -573,7 +595,8 @@ bool form_successful_controls_dom(struct form *_form,
 				(dom_html_button_element *) form_element,
 				&inputtype);
 			if (err != DOM_NO_ERR) {
-				LOG("Could not get button element type");
+				NSLOG(netsurf, INFO,
+				      "Could not get button element type");
 				goto dom_no_memory;
 			}
 			if (dom_string_caseless_isequal(
@@ -593,7 +616,8 @@ bool form_successful_controls_dom(struct form *_form,
 					(dom_html_button_element *)form_element,
 					&inputvalue);
 				if (err != DOM_NO_ERR) {
-					LOG("Could not get submit button value");
+					NSLOG(netsurf, INFO,
+					      "Could not get submit button value");
 					goto dom_no_memory;
 				}
 				/* Drop through to report successful button */
@@ -610,7 +634,8 @@ bool form_successful_controls_dom(struct form *_form,
 				(dom_html_input_element *) form_element,
 				&inputtype);
 			if (err != DOM_NO_ERR) {
-				LOG("Could not get input element type");
+				NSLOG(netsurf, INFO,
+				      "Could not get input element type");
 				goto dom_no_memory;
 			}
 			if (dom_string_caseless_isequal(
@@ -630,7 +655,8 @@ bool form_successful_controls_dom(struct form *_form,
 					(dom_html_input_element *)form_element,
 					&inputvalue);
 				if (err != DOM_NO_ERR) {
-					LOG("Could not get submit button value");
+					NSLOG(netsurf, INFO,
+					      "Could not get submit button value");
 					goto dom_no_memory;
 				}
 				/* Drop through to report the successful button */
@@ -648,11 +674,13 @@ bool form_successful_controls_dom(struct form *_form,
 					 corestring_dom___ns_key_image_coords_node_data,
 					 &coords);
 				 if (err != DOM_NO_ERR) {
-					 LOG("Could not get image XY data");
+					 NSLOG(netsurf, INFO,
+					       "Could not get image XY data");
 					 goto dom_no_memory;
 				 }
 				 if (coords == NULL) {
-					 LOG("No XY data on the image input");
+					 NSLOG(netsurf, INFO,
+					       "No XY data on the image input");
 					 goto dom_no_memory;
 				 }
 				 
@@ -661,7 +689,8 @@ bool form_successful_controls_dom(struct form *_form,
 				 success_new = calloc(1, sizeof(*success_new));
 				 if (success_new == NULL) {
 					 free(basename);
-					 LOG("Could not allocate data for image.x");
+					 NSLOG(netsurf, INFO,
+					       "Could not allocate data for image.x");
 					 goto dom_no_memory;
 				 }
 				 
@@ -671,13 +700,15 @@ bool form_successful_controls_dom(struct form *_form,
 				 success_new->name = malloc(strlen(basename) + 3);
 				 if (success_new->name == NULL) {
 					 free(basename);
-					 LOG("Could not allocate name for image.x");
+					 NSLOG(netsurf, INFO,
+					       "Could not allocate name for image.x");
 					 goto dom_no_memory;
 				 }
 				 success_new->value = malloc(20);
 				 if (success_new->value == NULL) {
 					 free(basename);
-					 LOG("Could not allocate value for image.x");
+					 NSLOG(netsurf, INFO,
+					       "Could not allocate value for image.x");
 					 goto dom_no_memory;
 				 }
 				 sprintf(success_new->name, "%s.x", basename);
@@ -686,7 +717,8 @@ bool form_successful_controls_dom(struct form *_form,
 				 success_new = calloc(1, sizeof(*success_new));
 				 if (success_new == NULL) {
 					 free(basename);
-					 LOG("Could not allocate data for image.y");
+					 NSLOG(netsurf, INFO,
+					       "Could not allocate data for image.y");
 					 goto dom_no_memory;
 				 }
 				 
@@ -696,13 +728,15 @@ bool form_successful_controls_dom(struct form *_form,
 				 success_new->name = malloc(strlen(basename) + 3);
 				 if (success_new->name == NULL) {
 					 free(basename);
-					 LOG("Could not allocate name for image.y");
+					 NSLOG(netsurf, INFO,
+					       "Could not allocate name for image.y");
 					 goto dom_no_memory;
 				 }
 				 success_new->value = malloc(20);
 				 if (success_new->value == NULL) {
 					 free(basename);
-					 LOG("Could not allocate value for image.y");
+					 NSLOG(netsurf, INFO,
+					       "Could not allocate value for image.y");
 					 goto dom_no_memory;
 				 }
 				 sprintf(success_new->name, "%s.y", basename);
@@ -717,7 +751,8 @@ bool form_successful_controls_dom(struct form *_form,
 					(dom_html_input_element *)form_element,
 					&checked);
 				if (err != DOM_NO_ERR) {
-					LOG("Could not get input element checked");
+					NSLOG(netsurf, INFO,
+					      "Could not get input element checked");
 					goto dom_no_memory;
 				}
 				if (!checked)
@@ -726,7 +761,8 @@ bool form_successful_controls_dom(struct form *_form,
 					(dom_html_input_element *)form_element,
 					&inputvalue);
 				if (err != DOM_NO_ERR) {
-					LOG("Could not get input element value");
+					NSLOG(netsurf, INFO,
+					      "Could not get input element value");
 					goto dom_no_memory;
 				}
 				if (inputvalue == NULL) {
@@ -741,7 +777,8 @@ bool form_successful_controls_dom(struct form *_form,
 					(dom_html_input_element *)form_element,
 					&inputvalue);
 				if (err != DOM_NO_ERR) {
-					LOG("Could not get file value");
+					NSLOG(netsurf, INFO,
+					      "Could not get file value");
 					goto dom_no_memory;
 				}
 				err = dom_node_get_user_data(
@@ -749,14 +786,16 @@ bool form_successful_controls_dom(struct form *_form,
 					corestring_dom___ns_key_file_name_node_data,
 					&rawfile_temp);
 				if (err != DOM_NO_ERR) {
-					LOG("Could not get file rawname");
+					NSLOG(netsurf, INFO,
+					      "Could not get file rawname");
 					goto dom_no_memory;
 				}
 				rawfile_temp = strdup(rawfile_temp != NULL ?
 						      rawfile_temp :
 						      "");
 				if (rawfile_temp == NULL) {
-					LOG("Could not copy file rawname");
+					NSLOG(netsurf, INFO,
+					      "Could not copy file rawname");
 					goto dom_no_memory;
 				}
 				/* Fall out to the allocation */
@@ -765,7 +804,8 @@ bool form_successful_controls_dom(struct form *_form,
 				   dom_string_caseless_isequal(
 					   inputtype, corestring_dom_button)) {
 				/* Skip these */
-				LOG("Skipping RESET and BUTTON");
+				NSLOG(netsurf, INFO,
+				      "Skipping RESET and BUTTON");
 				continue;
 			} else {
 				/* Everything else is treated as text values */
@@ -773,7 +813,8 @@ bool form_successful_controls_dom(struct form *_form,
 					(dom_html_input_element *)form_element,
 					&inputvalue);
 				if (err != DOM_NO_ERR) {
-					LOG("Could not get input value");
+					NSLOG(netsurf, INFO,
+					      "Could not get input value");
 					goto dom_no_memory;
 				}
 				/* Fall out to the allocation */
@@ -782,7 +823,8 @@ bool form_successful_controls_dom(struct form *_form,
 		
 		success_new = calloc(1, sizeof(*success_new));
 		if (success_new == NULL) {
-			LOG("Could not allocate data for generic");
+			NSLOG(netsurf, INFO,
+			      "Could not allocate data for generic");
 			goto dom_no_memory;
 		}
 		
@@ -791,12 +833,14 @@ bool form_successful_controls_dom(struct form *_form,
 		
 		success_new->name = ENCODE_ITEM(inputname);
 		if (success_new->name == NULL) {
-			LOG("Could not encode name for generic");
+			NSLOG(netsurf, INFO,
+			      "Could not encode name for generic");
 			goto dom_no_memory;
 		}
 		success_new->value = ENCODE_ITEM(inputvalue);
 		if (success_new->value == NULL) {
-			LOG("Could not encode value for generic");
+			NSLOG(netsurf, INFO,
+			      "Could not encode value for generic");
 			goto dom_no_memory;
 		}
 		if (rawfile_temp != NULL) {

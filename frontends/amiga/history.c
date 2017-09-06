@@ -438,7 +438,7 @@ nserror ami_history_global_present(void)
 
 	res = ami_history_global_create_window(ncwin);
 	if (res != NSERROR_OK) {
-		LOG("SSL UI builder init failed");
+		NSLOG(netsurf, INFO, "SSL UI builder init failed");
 		ami_utf8_free(ncwin->core.wintitle);
 		free(ncwin);
 		return res;

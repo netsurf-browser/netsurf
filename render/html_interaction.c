@@ -289,7 +289,7 @@ html__image_coords_dom_user_data_handler(dom_node_operation operation,
 		break;
 
 	default:
-		LOG("User data operation not handled.");
+		NSLOG(netsurf, INFO, "User data operation not handled.");
 		assert(0);
 	}
 }

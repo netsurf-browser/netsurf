@@ -105,7 +105,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
         switch (msg[0]) {
 
         case WM_REDRAW:
-			LOG("WM_REDRAW");
+			NSLOG(netsurf, INFO, "WM_REDRAW");
             on_redraw(data->rootwin, msg);
             break;
 
@@ -113,7 +113,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
         case WM_SIZED:
         case WM_MOVED:
         case WM_FULLED:
-			LOG("WM_SIZED");
+			NSLOG(netsurf, INFO, "WM_SIZED");
             on_resized(data->rootwin);
             break;
 
@@ -132,7 +132,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
         case WM_TOPPED:
         case WM_NEWTOP:
         case WM_UNICONIFY:
-			LOG("WM_TOPPED");
+			NSLOG(netsurf, INFO, "WM_TOPPED");
             gui_set_input_gui_window(data->rootwin->active_gui_window);
             //window_restore_active_gui_window(data->rootwin);
             // TODO: use something like "restore_active_gui_window_state()"
@@ -143,7 +143,8 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
             // TODO: this needs to iterate through all gui windows and
             // check if the rootwin is this window...
             if (data->rootwin->active_gui_window != NULL) {
-                LOG("WM_CLOSED initiated destroy for bw %p", data->rootwin->active_gui_window->browser->bw);
+                NSLOG(netsurf, INFO, "WM_CLOSED initiated destroy for bw %p",
+                      data->rootwin->active_gui_window->browser->bw);
                 browser_window_destroy(
                     data->rootwin->active_gui_window->browser->bw);
             }
@@ -166,13 +167,16 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
         // handle key
         uint16_t nkc = gem_to_norm( (short)ev_out->emo_kmeta,
                                     (short)ev_out->emo_kreturn);
-		LOG("rootwin MU_KEYBD input, nkc: %x\n", nkc);
+		NSLOG(netsurf, INFO, "rootwin MU_KEYBD input, nkc: %x\n", nkc);
         retval = on_window_key_input(data->rootwin, nkc);
         // printf("on_window_key_input: %d\n", retval);
 
     }
     if ((ev_out->emo_events & MU_BUTTON) != 0) {
-		LOG("rootwin MU_BUTTON input, x: %d, y: %d\n", ev_out->emo_mouse.p_x, ev_out->emo_mouse.p_x);
+		NSLOG(netsurf, INFO,
+                      "rootwin MU_BUTTON input, x: %d, y: %d\n",
+                      ev_out->emo_mouse.p_x,
+                      ev_out->emo_mouse.p_x);
         window_get_grect(data->rootwin, BROWSER_AREA_CONTENT,
                          &area);
         if (POINT_WITHIN(ev_out->emo_mouse.p_x, ev_out->emo_mouse.p_y,
@@ -312,13 +316,13 @@ void window_unref_gui_window(ROOTWIN *rootwin, struct gui_window *gw)
     struct gui_window *w;
     input_window = NULL;
 
-    LOG("window: %p, gui_window: %p", rootwin, gw);
+    NSLOG(netsurf, INFO, "window: %p, gui_window: %p", rootwin, gw);
 
     w = window_list;
     // find the next active tab:
     while( w != NULL ) {
         if(w->root == rootwin && w != gw) {
-        	LOG("activating next tab %p", w);
+        	NSLOG(netsurf, INFO, "activating next tab %p", w);
             gui_set_input_gui_window(w);
             break;
         }
@@ -338,7 +342,7 @@ int window_destroy(ROOTWIN *rootwin)
 
     assert(rootwin != NULL);
 
-    LOG("%p", rootwin);
+    NSLOG(netsurf, INFO, "%p", rootwin);
 
     if (gemtk_wm_get_user_data(rootwin->win) != NULL) {
         free(gemtk_wm_get_user_data(rootwin->win));
@@ -404,7 +408,7 @@ void window_restore_active_gui_window(ROOTWIN *rootwin)
 	GRECT tb_area;
 	struct gui_window *gw;
 
-	LOG("rootwin %p", rootwin);
+	NSLOG(netsurf, INFO, "rootwin %p", rootwin);
 
 	assert(rootwin->active_gui_window);
 
@@ -499,7 +503,7 @@ void window_set_focus(struct s_gui_win_root *rootwin,
     assert(rootwin != NULL);
 
     if (rootwin->focus.type != type || rootwin->focus.element != element) {
-        LOG("Set focus: %p (%d)\n", element, type);
+        NSLOG(netsurf, INFO, "Set focus: %p (%d)\n", element, type);
         rootwin->focus.type = type;
         rootwin->focus.element = element;
 		switch( type ) {
@@ -563,11 +567,11 @@ void window_set_active_gui_window(ROOTWIN *rootwin, struct gui_window *gw)
 {
 	struct gui_window *old_gw = rootwin->active_gui_window;
 
-	LOG("gw %p",gw);
+	NSLOG(netsurf, INFO, "gw %p", gw);
 
         if (rootwin->active_gui_window != NULL) {
                 if(rootwin->active_gui_window == gw) {
-                        LOG("nothing to do...");
+                        NSLOG(netsurf, INFO, "nothing to do...");
                         return;
                 }
         }
@@ -576,7 +580,7 @@ void window_set_active_gui_window(ROOTWIN *rootwin, struct gui_window *gw)
 
 	rootwin->active_gui_window = gw;
 	if (old_gw != NULL) {
-		LOG("restoring window...");
+		NSLOG(netsurf, INFO, "restoring window...");
 		window_restore_active_gui_window(rootwin);
 	}
 }
@@ -651,7 +655,7 @@ void window_open_search(ROOTWIN *rootwin, bool reformat)
 	GRECT area;
 	OBJECT *obj;
 
-	LOG("rootwin %p", rootwin);
+	NSLOG(netsurf, INFO, "rootwin %p", rootwin);
 
 	gw = rootwin->active_gui_window;
 	bw = gw->browser->bw;
@@ -1478,7 +1482,13 @@ static void on_file_dropped(ROOTWIN *rootwin, short msg[8])
 
                 buff[size] = 0;
 
-                LOG("file: %s, ext: %s, size: %ld dropped at: %d,%d\n", (char *)buff, (char *)&ext, size, mx, my);
+                NSLOG(netsurf, INFO,
+                      "file: %s, ext: %s, size: %ld dropped at: %d,%d\n",
+                      (char *)buff,
+                      (char *)&ext,
+                      size,
+                      mx,
+                      my);
 
                 gui_window_get_scroll(gw, &sx, &sy);
 
@@ -1500,7 +1510,8 @@ static void on_file_dropped(ROOTWIN *rootwin, short msg[8])
                     if (ret != NSERROR_OK) {
                         free(buff);
                         /* A bad encoding should never happen */
-                        LOG("utf8_from_local_encoding failed");
+                        NSLOG(netsurf, INFO,
+                              "utf8_from_local_encoding failed");
                         assert(ret != NSERROR_BAD_ENCODING);
                         /* no memory */
                         goto error;

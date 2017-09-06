@@ -160,7 +160,7 @@ html_object_callback(hlcache_handle *object,
 
 	case CONTENT_MSG_DONE:
 		c->base.active--;
-		LOG("%d fetches active", c->base.active);
+		NSLOG(netsurf, INFO, "%d fetches active", c->base.active);
 
 		html_object_done(box, object, o->background);
 
@@ -191,7 +191,8 @@ html_object_callback(hlcache_handle *object,
 
 		if (box != NULL) {
 			c->base.active--;
-			LOG("%d fetches active", c->base.active);
+			NSLOG(netsurf, INFO, "%d fetches active",
+			      c->base.active);
 
 			content_add_error(&c->base, "?", 0);
 			html_object_failed(box, c, o->background);
@@ -503,7 +504,8 @@ static bool html_replace_object(struct content_html_object *object, nsurl *url)
 		/* remove existing object */
 		if (content_get_status(object->content) != CONTENT_STATUS_DONE) {
 			c->base.active--;
-			LOG("%d fetches active", c->base.active);
+			NSLOG(netsurf, INFO, "%d fetches active",
+			      c->base.active);
 		}
 
 		hlcache_handle_release(object->content);
@@ -524,7 +526,7 @@ static bool html_replace_object(struct content_html_object *object, nsurl *url)
 
 	for (page = c; page != NULL; page = page->page) {
 		page->base.active++;
-		LOG("%d fetches active", c->base.active);
+		NSLOG(netsurf, INFO, "%d fetches active", c->base.active);
 
 		page->base.status = CONTENT_STATUS_READY;
 	}
@@ -607,7 +609,8 @@ nserror html_object_abort_objects(html_content *htmlc)
 			object->content = NULL;
 			if (object->box != NULL) {
 				htmlc->base.active--;
-				LOG("%d fetches active", htmlc->base.active);
+				NSLOG(netsurf, INFO, "%d fetches active",
+				      htmlc->base.active);
 			}
 			break;
 
@@ -645,7 +648,7 @@ nserror html_object_free_objects(html_content *html)
 		struct content_html_object *victim = html->object_list;
 
 		if (victim->content != NULL) {
-			LOG("object %p", victim->content);
+			NSLOG(netsurf, INFO, "object %p", victim->content);
 
 			if (content_get_type(victim->content) == CONTENT_HTML) {
 				guit->misc->schedule(-1, html_object_refresh, victim);
@@ -707,7 +710,7 @@ bool html_fetch_object(html_content *c, nsurl *url, struct box *box,
 	c->num_objects++;
 	if (box != NULL) {
 		c->base.active++;
-		LOG("%d fetches active", c->base.active);
+		NSLOG(netsurf, INFO, "%d fetches active", c->base.active);
 	}
 
 	return true;

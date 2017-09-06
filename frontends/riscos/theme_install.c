@@ -182,7 +182,7 @@ bool ro_gui_theme_install_apply(wimp_w w)
 	/* convert spaces to hard spaces */
 	theme_file = strdup(theme_install_descriptor.name);
 	if (!theme_file) {
-	  	LOG("malloc failed");
+	  	NSLOG(netsurf, INFO, "malloc failed");
 	  	ro_warn_user("NoMemory", 0);
 		return false;
 	}
@@ -203,7 +203,8 @@ bool ro_gui_theme_install_apply(wimp_w w)
 			(byte *) source_data,
 			(byte *) source_data + source_size);
 	if (error) {
-		LOG("xosfile_save_stamped: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xosfile_save_stamped: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("ThemeInstallErr", 0);
 		free(theme_file);
 		return false;

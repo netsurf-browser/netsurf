@@ -74,7 +74,7 @@ enum nspng_cberr {
  */
 static void nspng_warning(png_structp png_ptr, png_const_charp warning_message)
 {
-	LOG("%s", warning_message);
+	NSLOG(netsurf, INFO, "%s", warning_message);
 }
 
 /**
@@ -82,7 +82,7 @@ static void nspng_warning(png_structp png_ptr, png_const_charp warning_message)
  */
 static void nspng_error(png_structp png_ptr, png_const_charp error_message)
 {
-	LOG("%s", error_message);
+	NSLOG(netsurf, INFO, "%s", error_message);
 	longjmp(png_jmpbuf(png_ptr), CBERR_LIBPNG);
 }
 
@@ -175,10 +175,8 @@ static void info_callback(png_structp png_s, png_infop info)
 	png_c->rowbytes = png_get_rowbytes(png_s, info);
 	png_c->interlace = (interlace == PNG_INTERLACE_ADAM7);
 
-	LOG("size %li * %li, rowbytes %" PRIsizet, 
-	    (unsigned long)width,
-	    (unsigned long)height,
-	    png_c->rowbytes);
+	NSLOG(netsurf, INFO, "size %li * %li, rowbytes %"PRIsizet,
+	      (unsigned long)width, (unsigned long)height, png_c->rowbytes);
 }
 
 static void row_callback(png_structp png_s, png_bytep new_row,
@@ -260,7 +258,7 @@ static nserror nspng_create_png_data(nspng_content *png_c)
 
 	if (setjmp(png_jmpbuf(png_c->png))) {
 		png_destroy_read_struct(&png_c->png, &png_c->info, 0);
-		LOG("Failed to set callbacks");
+		NSLOG(netsurf, INFO, "Failed to set callbacks");
 		png_c->png = NULL;
 		png_c->info = NULL;
 
@@ -350,7 +348,8 @@ static bool nspng_process_data(struct content *c, const char *data,
 			 * up png conversion and signal the content
 			 * error 
 			 */
-			LOG("Fatal PNG error during header, error content");
+			NSLOG(netsurf, INFO,
+			      "Fatal PNG error during header, error content");
 
 			png_destroy_read_struct(&png_c->png, &png_c->info, 0);
 			png_c->png = NULL;

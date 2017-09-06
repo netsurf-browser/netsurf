@@ -204,13 +204,14 @@ void monkey_schedule_list(void)
 
 	gettimeofday(&tv, NULL);
 
-	LOG("schedule list at %lld:%ld", (long long)tv.tv_sec, tv.tv_usec);
+	NSLOG(netsurf, INFO, "schedule list at %lld:%ld",
+	      (long long)tv.tv_sec, tv.tv_usec);
 
 	cur_nscb = schedule_list;
 
 	while (cur_nscb != NULL) {
-		LOG("Schedule %p at %lld:%ld",
-		    cur_nscb, (long long)cur_nscb->tv.tv_sec, cur_nscb->tv.tv_usec);
+		NSLOG(netsurf, INFO, "Schedule %p at %lld:%ld", cur_nscb,
+		      (long long)cur_nscb->tv.tv_sec, cur_nscb->tv.tv_usec);
 		cur_nscb = cur_nscb->next;
 	}
 }

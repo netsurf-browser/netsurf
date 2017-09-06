@@ -288,7 +288,9 @@ void context_popup(struct gui_window * gw, short x, short y)
 				    /* the GEMDOS cmdline contains the length of the commandline
 				       in the first byte: */
 				    cmdline[0] = (unsigned char)strlen(tempfile);
-					LOG("Creating temporay source file: %s\n", tempfile);
+					NSLOG(netsurf, INFO,
+					      "Creating temporay source file: %s\n",
+					      tempfile);
 					fp_tmpfile = fopen(tempfile, "w");
 					if (fp_tmpfile != NULL){
 						fwrite(data, size, 1, fp_tmpfile);
@@ -306,7 +308,8 @@ void context_popup(struct gui_window * gw, short x, short y)
 					}
 
 				} else {
-					LOG("Invalid content!");
+					NSLOG(netsurf, INFO,
+					      "Invalid content!");
 				}
 			} else {
 				form_alert(0, "[1][Set option \"atari_editor\".][OK]");

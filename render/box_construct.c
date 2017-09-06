@@ -1900,7 +1900,7 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 	bool ok;
 
 	if (content->frameset) {
-		LOG("Error: multiple framesets in document.");
+		NSLOG(netsurf, INFO, "Error: multiple framesets in document.");
 		/* Don't convert children */
 		if (convert_children)
 			*convert_children = false;

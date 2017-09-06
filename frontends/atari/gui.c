@@ -139,11 +139,11 @@ static void atari_poll(void)
     evnt_multi_fast(&aes_event_in, aes_msg_out, &aes_event_out);
     if(gemtk_wm_dispatch_event(&aes_event_in, &aes_event_out, aes_msg_out) == 0) {
 	if( (aes_event_out.emo_events & MU_MESAG) != 0 ) {
-	    LOG("WM: %d\n", aes_msg_out[0]);
+	    NSLOG(netsurf, INFO, "WM: %d\n", aes_msg_out[0]);
 	    switch(aes_msg_out[0]) {
 
 	    case MN_SELECTED:
-		LOG("Menu Item: %d\n", aes_msg_out[4]);
+		NSLOG(netsurf, INFO, "Menu Item: %d\n", aes_msg_out[4]);
 		deskmenu_dispatch_item(aes_msg_out[3], aes_msg_out[4]);
 		break;
 
@@ -195,13 +195,14 @@ gui_window_create(struct browser_window *bw,
 		  gui_window_create_flags flags)
 {
     struct gui_window *gw=NULL;
-    LOG("gw: %p, BW: %p, existing %p, flags: %d\n", gw, bw, existing, (int)flags);
+    NSLOG(netsurf, INFO, "gw: %p, BW: %p, existing %p, flags: %d\n", gw, bw,
+          existing, (int)flags);
 
     gw = calloc(1, sizeof(struct gui_window));
     if (gw == NULL)
 	return NULL;
 
-    LOG("new window: %p, bw: %p\n", gw, bw);
+    NSLOG(netsurf, INFO, "new window: %p, bw: %p\n", gw, bw);
     window_create(gw, bw, existing, WIDGET_STATUSBAR|WIDGET_TOOLBAR|WIDGET_RESIZE\
 		  |WIDGET_SCROLL);
     if (gw->root->win) {
@@ -253,7 +254,7 @@ void gui_window_destroy(struct gui_window *gw)
     if (gw == NULL)
 	return;
 
-    LOG("%s\n", __FUNCTION__);
+    NSLOG(netsurf, INFO, "%s\n", __FUNCTION__);
 
     if (input_window == gw) {
 	gui_set_input_gui_window(NULL);
@@ -444,7 +445,8 @@ gui_window_set_scroll(struct gui_window *gw, const struct rect *rect)
 	return NSERROR_BAD_PARAMETER;
     }
 
-    LOG("scroll (gui_window: %p) %d, %d\n", gw, rect->x0, rect->y0);
+    NSLOG(netsurf, INFO, "scroll (gui_window: %p) %d, %d\n", gw, rect->x0,
+          rect->y0);
     window_scroll_by(gw->root, rect->x0, rect->y0);
 
     return NSERROR_OK;
@@ -771,7 +773,8 @@ static void gui_401login_open(nsurl *url, const char *realm,
         char * out = NULL;
         bres = login_form_do( url, (char*)realm, &out);
         if (bres) {
-                LOG("url: %s, realm: %s, auth: %s\n", nsurl_access(url), realm, out);
+                NSLOG(netsurf, INFO, "url: %s, realm: %s, auth: %s\n",
+                      nsurl_access(url), realm, out);
                 urldb_set_auth_details(url, realm, out);
         }
         if (out != NULL) {
@@ -789,7 +792,7 @@ gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 		void *cbpw)
 {
         struct sslcert_session_data *data;
-        LOG("url %s", nsurl_access(url));
+        NSLOG(netsurf, INFO, "url %s", nsurl_access(url));
 
         // TODO: localize string
         int b = form_alert(1, "[2][SSL Verify failed, continue?][Continue|Abort|Details...]");
@@ -812,7 +815,8 @@ gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 
 void gui_set_input_gui_window(struct gui_window *gw)
 {
-    LOG("Setting input window from: %p to %p\n", input_window, gw);
+    NSLOG(netsurf, INFO, "Setting input window from: %p to %p\n",
+          input_window, gw);
     input_window = gw;
 }
 
@@ -823,7 +827,7 @@ struct gui_window * gui_get_input_window(void)
 
 static void gui_quit(void)
 {
-    LOG("quitting");
+    NSLOG(netsurf, INFO, "quitting");
 
     struct gui_window *gw = window_list;
     struct gui_window *tmp = window_list;
@@ -852,9 +856,9 @@ static void gui_quit(void)
 
     rsrc_free();
 
-    LOG("Shutting down plotter");
+    NSLOG(netsurf, INFO, "Shutting down plotter");
     plot_finalise();
-    LOG("done");
+    NSLOG(netsurf, INFO, "done");
 }
 
 /**
@@ -866,7 +870,7 @@ process_cmdline(int argc, char** argv)
     int opt;
     bool set_default_dimensions = true;
 
-    LOG("argc %d, argv %p", argc, argv);
+    NSLOG(netsurf, INFO, "argc %d, argv %p", argc, argv);
 
     if ((nsoption_int(window_width) != 0) && (nsoption_int(window_height) != 0)) {
 
@@ -959,7 +963,7 @@ static nserror set_defaults(struct nsoption_s *defaults)
     /* Set defaults for absent option strings */
     nsoption_setnull_charp(cookie_file, strdup("cookies"));
     if (nsoption_charp(cookie_file) == NULL) {
-	LOG("Failed initialising string options");
+	NSLOG(netsurf, INFO, "Failed initialising string options");
 	return NSERROR_BAD_PARAMETER;
     }
     return NSERROR_OK;
@@ -976,7 +980,7 @@ static void gui_init(int argc, char** argv)
     OBJECT * cursors;
 
     atari_find_resource(buf, "netsurf.rsc", "./res/netsurf.rsc");
-    LOG("Using RSC file: %s ", (char *)&buf);
+    NSLOG(netsurf, INFO, "Using RSC file: %s ", (char *)&buf);
     if (rsrc_load(buf)==0) {
 
 	char msg[1024];
@@ -1012,15 +1016,16 @@ static void gui_init(int argc, char** argv)
     create_cursor(MFORM_EX_FLAG_USERFORM, CURSOR_HELP,
 		  cursors, &gem_cursors.help);
 
-    LOG("Enabling core select menu");
+    NSLOG(netsurf, INFO, "Enabling core select menu");
     nsoption_set_bool(core_select_menu, true);
 
-    LOG("Loading url.db from: %s", nsoption_charp(url_file));
+    NSLOG(netsurf, INFO, "Loading url.db from: %s", nsoption_charp(url_file));
     if( strlen(nsoption_charp(url_file)) ) {
 	urldb_load(nsoption_charp(url_file));
     }
 
-    LOG("Loading cookies from: %s", nsoption_charp(cookie_file));
+    NSLOG(netsurf, INFO, "Loading cookies from: %s",
+          nsoption_charp(cookie_file));
     if( strlen(nsoption_charp(cookie_file)) ) {
 	urldb_load_cookies(nsoption_charp(cookie_file));
     }
@@ -1028,10 +1033,10 @@ static void gui_init(int argc, char** argv)
     if (process_cmdline(argc,argv) != true)
 	die("unable to process command line.\n");
 
-    LOG("Initializing NKC...");
+    NSLOG(netsurf, INFO, "Initializing NKC...");
     nkc_init();
 
-    LOG("Initializing plotters...");
+    NSLOG(netsurf, INFO, "Initializing plotters...");
     struct redraw_context ctx = {
 	    .interactive = true,
 	    .background_images = true,
@@ -1172,18 +1177,18 @@ int main(int argc, char** argv)
     ret = messages_add_from_file(messages);
 
     /* common initialisation */
-    LOG("Initialising core...");
+    NSLOG(netsurf, INFO, "Initialising core...");
     ret = netsurf_init(store);
     if (ret != NSERROR_OK) {
 	die("NetSurf failed to initialise");
     }
 
-    LOG("Initializing GUI...");
+    NSLOG(netsurf, INFO, "Initializing GUI...");
     gui_init(argc, argv);
 
     graf_mouse( ARROW , NULL);
 
-    LOG("Creating initial browser window...");
+    NSLOG(netsurf, INFO, "Creating initial browser window...");
     addr = option_homepage_url;
     if (strncmp(addr, "file://", 7) && strncmp(addr, "http://", 7)) {
 	if (stat(addr, &stat_buf) == 0) {
@@ -1205,7 +1210,7 @@ int main(int argc, char** argv)
     if (ret != NSERROR_OK) {
 	atari_warn_user(messages_get_errorcode(ret), 0);
     } else {
-	LOG("Entering Atari event mainloop...");
+	NSLOG(netsurf, INFO, "Entering Atari event mainloop...");
 	while (!atari_quit) {
 	    atari_poll();
 	}
@@ -1219,7 +1224,7 @@ int main(int argc, char** argv)
     fclose(stdout);
     fclose(stderr);
 #endif
-    LOG("exit_gem");
+    NSLOG(netsurf, INFO, "exit_gem");
     exit_gem();
 
     return 0;

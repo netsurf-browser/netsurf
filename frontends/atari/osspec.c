@@ -119,14 +119,14 @@ char *gemdos_realpath(const char * path, char * rpath)
 		return(rpath);
 	}
 
-	LOG("realpath in: %s\n", path);
+	NSLOG(netsurf, INFO, "realpath in: %s\n", path);
 	r = realpath(path, work);
 	if (r != NULL) {
 		unx2dos((const char *)r, rpath);
-		LOG("realpath out: %s\n", rpath);
+		NSLOG(netsurf, INFO, "realpath out: %s\n", rpath);
 		return(rpath);
 	} else {
-		LOG("realpath out: NULL!\n");
+		NSLOG(netsurf, INFO, "realpath out: NULL!\n");
 	}
 	return (NULL);
 }

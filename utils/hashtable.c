@@ -81,7 +81,7 @@ struct hash_table *hash_create(unsigned int chains)
 	struct hash_table *r = malloc(sizeof(struct hash_table));
 
 	if (r == NULL) {
-		LOG("Not enough memory for hash table.");
+		NSLOG(netsurf, INFO, "Not enough memory for hash table.");
 		return NULL;
 	}
 
@@ -89,7 +89,8 @@ struct hash_table *hash_create(unsigned int chains)
 	r->chain = calloc(chains, sizeof(struct hash_entry *));
 
 	if (r->chain == NULL) {
-		LOG("Not enough memory for %d hash table chains.", chains);
+		NSLOG(netsurf, INFO,
+		      "Not enough memory for %d hash table chains.", chains);
 		free(r);
 		return NULL;
 	}
@@ -134,7 +135,7 @@ bool hash_add(struct hash_table *ht, const char *key, const char *value)
 
 	e = malloc(sizeof(struct hash_entry));
 	if (e == NULL) {
-		LOG("Not enough memory for hash entry.");
+		NSLOG(netsurf, INFO, "Not enough memory for hash entry.");
 		return false;
 	}
 
@@ -144,7 +145,8 @@ bool hash_add(struct hash_table *ht, const char *key, const char *value)
 	v = strlen(value) ;
 	e->pairing = malloc(v + e->key_length + 2);
 	if (e->pairing == NULL) {
-		LOG("Not enough memory for string duplication.");
+		NSLOG(netsurf, INFO,
+		      "Not enough memory for string duplication.");
 		free(e);
 		return false;
 	}

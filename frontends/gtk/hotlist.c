@@ -236,8 +236,9 @@ static void nsgtk_hotlist_init_menu(struct nsgtk_hotlist_window *hlwin)
 		w = GTK_WIDGET(gtk_builder_get_object(hlwin->builder,
 						      event->widget));
 		if (w == NULL) {
-			LOG("Unable to connect menu widget ""%s""",
-			    event->widget);
+			NSLOG(netsurf, INFO,
+			      "Unable to connect menu widget ""%s""",
+			      event->widget);
 		} else {
 			g_signal_connect(G_OBJECT(w),
 					 "activate",
@@ -326,7 +327,7 @@ static nserror nsgtk_hotlist_init(void)
 
 	res = nsgtk_builder_new_from_resname("hotlist", &ncwin->builder);
 	if (res != NSERROR_OK) {
-		LOG("Hotlist UI builder init failed");
+		NSLOG(netsurf, INFO, "Hotlist UI builder init failed");
 		free(ncwin);
 		return res;
 	}

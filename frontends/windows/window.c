@@ -88,7 +88,7 @@ static int get_window_dpi(HWND hwnd)
 
 	ReleaseDC(hwnd, hdc);
 
-	LOG("FIX DPI %d", dpi);
+	NSLOG(netsurf, INFO, "FIX DPI %d", dpi);
 
 	return dpi;
 }
@@ -163,7 +163,8 @@ static HWND nsws_window_create(HINSTANCE hInstance, struct gui_window *gw)
 	gw->mainmenu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MENU_MAIN));
 	gw->rclick = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MENU_CONTEXT));
 
-	LOG("creating hInstance %p GUI window %p", hInstance, gw);
+	NSLOG(netsurf, INFO, "creating hInstance %p GUI window %p",
+	      hInstance, gw);
 	hwnd = CreateWindowEx(0,
 			      windowclassname_main,
 			      "NetSurf Browser",
@@ -181,7 +182,7 @@ static HWND nsws_window_create(HINSTANCE hInstance, struct gui_window *gw)
 			      NULL);
 
 	if (hwnd == NULL) {
-		LOG("Window create failed");
+		NSLOG(netsurf, INFO, "Window create failed");
 		return NULL;
 	}
 
@@ -194,9 +195,9 @@ static HWND nsws_window_create(HINSTANCE hInstance, struct gui_window *gw)
 	    (nsoption_int(window_height) >= 100) &&
 	    (nsoption_int(window_x) >= 0) &&
 	    (nsoption_int(window_y) >= 0)) {
-		LOG("Setting Window position %d,%d %d,%d",
-		    nsoption_int(window_x), nsoption_int(window_y),
-		    nsoption_int(window_width), nsoption_int(window_height));
+		NSLOG(netsurf, INFO, "Setting Window position %d,%d %d,%d",
+		      nsoption_int(window_x), nsoption_int(window_y),
+		      nsoption_int(window_width), nsoption_int(window_height));
 		SetWindowPos(hwnd, HWND_TOP,
 			     nsoption_int(window_x),
 			     nsoption_int(window_y),
@@ -227,47 +228,50 @@ nsws_window_toolbar_command(struct gui_window *gw,
 			    int identifier,
 			    HWND ctrl_window)
 {
-	LOG("notification_code %d identifier %d ctrl_window %p",
-	    notification_code, identifier, ctrl_window);
+	NSLOG(netsurf, INFO,
+	      "notification_code %d identifier %d ctrl_window %p",
+	      notification_code,
+	      identifier,
+	      ctrl_window);
 
 	switch(identifier) {
 
 	case IDC_MAIN_URLBAR:
 		switch (notification_code) {
 		case EN_CHANGE:
-			LOG("EN_CHANGE");
+			NSLOG(netsurf, INFO, "EN_CHANGE");
 			break;
 
 		case EN_ERRSPACE:
-			LOG("EN_ERRSPACE");
+			NSLOG(netsurf, INFO, "EN_ERRSPACE");
 			break;
 
 		case EN_HSCROLL:
-			LOG("EN_HSCROLL");
+			NSLOG(netsurf, INFO, "EN_HSCROLL");
 			break;
 
 		case EN_KILLFOCUS:
-			LOG("EN_KILLFOCUS");
+			NSLOG(netsurf, INFO, "EN_KILLFOCUS");
 			break;
 
 		case EN_MAXTEXT:
-			LOG("EN_MAXTEXT");
+			NSLOG(netsurf, INFO, "EN_MAXTEXT");
 			break;
 
 		case EN_SETFOCUS:
-			LOG("EN_SETFOCUS");
+			NSLOG(netsurf, INFO, "EN_SETFOCUS");
 			break;
 
 		case EN_UPDATE:
-			LOG("EN_UPDATE");
+			NSLOG(netsurf, INFO, "EN_UPDATE");
 			break;
 
 		case EN_VSCROLL:
-			LOG("EN_VSCROLL");
+			NSLOG(netsurf, INFO, "EN_VSCROLL");
 			break;
 
 		default:
-			LOG("Unknown notification_code");
+			NSLOG(netsurf, INFO, "Unknown notification_code");
 			break;
 		}
 		break;
@@ -421,7 +425,7 @@ nsws_window_urlbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	case WM_DESTROY:
 		hFont = (HFONT)SendMessage(hwnd, WM_GETFONT, 0, 0);
 		if (hFont != NULL) {
-			LOG("Destroyed font object");
+			NSLOG(netsurf, INFO, "Destroyed font object");
 			DeleteObject(hFont);
 		}
 
@@ -502,12 +506,13 @@ nsws_window_urlbar_create(HINSTANCE hInstance,
 			   CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
 			   DEFAULT_PITCH | FF_SWISS, "Arial");
 	if (hFont != NULL) {
-		LOG("Setting font object");
+		NSLOG(netsurf, INFO, "Setting font object");
 		SendMessage(hwnd, WM_SETFONT, (WPARAM)hFont, 0);
 	}
 
-	LOG("Created url bar hwnd:%p, x:%d, y:%d, w:%d, h:%d",
-	    hwnd, urlx, urly, urlwidth, urlheight);
+	NSLOG(netsurf, INFO,
+	      "Created url bar hwnd:%p, x:%d, y:%d, w:%d, h:%d", hwnd, urlx,
+	      urly, urlwidth, urlheight);
 
 	return hwnd;
 }
@@ -548,7 +553,7 @@ nsws_window_throbber_create(HINSTANCE hInstance,
 			    NULL);
 
 	nsws_find_resource(avi, "throbber.avi", "windows/res/throbber.avi");
-	LOG("setting throbber avi as %s", avi);
+	NSLOG(netsurf, INFO, "setting throbber avi as %s", avi);
 	Animate_Open(hwnd, avi);
 	if (gw->throbbing) {
 		Animate_Play(hwnd, 0, -1, -1);
@@ -576,7 +581,8 @@ get_imagelist(HINSTANCE hInstance, int resid, int bsize, int bcnt)
 	HIMAGELIST hImageList;
 	HBITMAP hScrBM;
 
-	LOG("resource id %d, bzize %d, bcnt %d", resid, bsize, bcnt);
+	NSLOG(netsurf, INFO, "resource id %d, bzize %d, bcnt %d", resid,
+	      bsize, bcnt);
 
 	hImageList = ImageList_Create(bsize, bsize,
 				      ILC_COLOR24 | ILC_MASK, 0,
@@ -997,8 +1003,11 @@ nsws_window_command(HWND hwnd,
 {
 	nserror ret;
 
-	LOG("notification_code %x identifier %x ctrl_window %p",
-	    notification_code, identifier, ctrl_window);
+	NSLOG(netsurf, INFO,
+	      "notification_code %x identifier %x ctrl_window %p",
+	      notification_code,
+	      identifier,
+	      ctrl_window);
 
 	switch(identifier) {
 
@@ -1073,7 +1082,7 @@ nsws_window_command(HWND hwnd,
 		HANDLE h = GetClipboardData(CF_TEXT);
 		if (h != NULL) {
 			char *content = GlobalLock(h);
-			LOG("pasting %s\n", content);
+			NSLOG(netsurf, INFO, "pasting %s\n", content);
 			GlobalUnlock(h);
 		}
 		CloseClipboard();
@@ -1276,7 +1285,7 @@ nsws_window_command(HWND hwnd,
 		int len = SendMessage(gw->urlbar, WM_GETTEXTLENGTH, 0, 0);
 		char addr[len + 1];
 		SendMessage(gw->urlbar, WM_GETTEXT, (WPARAM)(len + 1), (LPARAM)addr);
-		LOG("launching %s\n", addr);
+		NSLOG(netsurf, INFO, "launching %s\n", addr);
 
 		if (nsurl_create(addr, &url) != NSERROR_OK) {
 			win32_warning("NoMemory", 0);
@@ -1313,7 +1322,7 @@ nsws_window_command(HWND hwnd,
  */
 static bool win32_window_get_scroll(struct gui_window *gw, int *sx, int *sy)
 {
-	LOG("get scroll");
+	NSLOG(netsurf, INFO, "get scroll");
 	if (gw == NULL)
 		return false;
 
@@ -1410,7 +1419,8 @@ nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 	gw = nsws_get_gui_window(hwnd);
 	if (gw == NULL) {
-		LOG("Unable to find gui window structure for hwnd %p", hwnd);
+		NSLOG(netsurf, INFO,
+		      "Unable to find gui window structure for hwnd %p", hwnd);
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 	}
 
@@ -1463,7 +1473,7 @@ win32_window_create(struct browser_window *bw,
 {
 	struct gui_window *gw;
 
-	LOG("Creating gui window for browser window %p", bw);
+	NSLOG(netsurf, INFO, "Creating gui window for browser window %p", bw);
 
 	gw = calloc(1, sizeof(struct gui_window));
 	if (gw == NULL) {
@@ -1484,7 +1494,7 @@ win32_window_create(struct browser_window *bw,
 	gw->mouse = malloc(sizeof(struct browser_mouse));
 	if (gw->mouse == NULL) {
 		free(gw);
-		LOG("Unable to allocate mouse state");
+		NSLOG(netsurf, INFO, "Unable to allocate mouse state");
 		return NULL;
 	}
 	gw->mouse->gui = gw;
@@ -1504,8 +1514,12 @@ win32_window_create(struct browser_window *bw,
 	gw->statusbar = nsws_window_create_statusbar(hinst, gw->main, gw);
 	gw->drawingarea = nsws_window_create_drawable(hinst, gw->main, gw);
 
-	LOG("new window: main:%p toolbar:%p statusbar %p drawingarea %p",
-	    gw->main, gw->toolbar, gw->statusbar, gw->drawingarea);
+	NSLOG(netsurf, INFO,
+	      "new window: main:%p toolbar:%p statusbar %p drawingarea %p",
+	      gw->main,
+	      gw->toolbar,
+	      gw->statusbar,
+	      gw->drawingarea);
 
 	font_hwnd = gw->drawingarea;
 	open_windows++;
@@ -1556,7 +1570,7 @@ win32_window_get_dimensions(struct gui_window *gw,
 	*width = gw->width;
 	*height = gw->height;
 
-	LOG("gw:%p w=%d h=%d", gw, *width, *height);
+	NSLOG(netsurf, INFO, "gw:%p w=%d h=%d", gw, *width, *height);
 
 	return NSERROR_OK;
 }
@@ -1588,7 +1602,7 @@ static void win32_window_set_title(struct gui_window *w, const char *title)
 		return;
 	}
 
-	LOG("%p, title %s", w, title);
+	NSLOG(netsurf, INFO, "%p, title %s", w, title);
 	fulltitle = malloc(strlen(title) + SLEN("  -  NetSurf") + 1);
 	if (fulltitle == NULL) {
 		win32_warning("NoMemory", 0);

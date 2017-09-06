@@ -166,7 +166,8 @@ wimp_w ro_gui_saveas_create(const char *template_name)
 
 	error = xosmodule_alloc(area_size, (void **) &area);
 	if (error) {
-		LOG("xosmodule_alloc: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xosmodule_alloc: 0x%x: %s",
+		      error->errnum, error->errmess);
 		xwimp_close_template();
 		die(error->errmess);
 	} else {
@@ -176,7 +177,10 @@ wimp_w ro_gui_saveas_create(const char *template_name)
 
 		error = xosspriteop_clear_sprites(osspriteop_USER_AREA, saveas_area);
 		if (error) {
-			LOG("xosspriteop_clear_sprites: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xosspriteop_clear_sprites: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("MiscError", error->errmess);
 
 			xosmodule_free(saveas_area);
@@ -192,7 +196,8 @@ wimp_w ro_gui_saveas_create(const char *template_name)
 	/* create window */
 	error = xwimp_create_window(window, &w);
 	if (error) {
-		LOG("xwimp_create_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_create_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		xwimp_close_template();
 		die(error->errmess);
 	}
@@ -212,7 +217,8 @@ void ro_gui_saveas_quit(void)
 	if (saveas_area) {
 		os_error *error = xosmodule_free(saveas_area);
 		if (error) {
-			LOG("xosmodule_free: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xosmodule_free: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("MiscError", error->errmess);
 		}
 		saveas_area = NULL;
@@ -239,14 +245,14 @@ ro_gui_save_create_thumbnail(struct hlcache_handle *h, const char *name)
 
 	bitmap = riscos_bitmap_create(34, 34, BITMAP_NEW | BITMAP_OPAQUE | BITMAP_CLEAR_MEMORY);
 	if (!bitmap) {
-		LOG("Thumbnail initialisation failed.");
+		NSLOG(netsurf, INFO, "Thumbnail initialisation failed.");
 		return false;
 	}
 	riscos_bitmap_render(bitmap, h);
 	area = riscos_bitmap_convert_8bpp(bitmap);
 	riscos_bitmap_destroy(bitmap);
 	if (!area) {
-		LOG("Thumbnail conversion failed.");
+		NSLOG(netsurf, INFO, "Thumbnail conversion failed.");
 		return false;
 	}
 
@@ -391,7 +397,10 @@ ro_gui_save_set_state(struct hlcache_handle *h, gui_save_type save_type,
 		}
 
 		if (error) {
-			LOG("ro_gui_wimp_get_sprite: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "ro_gui_wimp_get_sprite: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("MiscError", error->errmess);
 		} else {
 			/* the sprite area should always be large enough for
@@ -501,7 +510,8 @@ static void ro_gui_save_drag_end(wimp_dragged *drag, void *data)
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
-		LOG("xwimp_get_pointer_info: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_pointer_info: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -627,7 +637,8 @@ static void ro_gui_save_done(void)
 		error = xwimp_send_message(wimp_USER_MESSAGE, message,
 				message->sender);
 		if (error) {
-			LOG("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_send_message: 0x%x: %s",
+		              error->errnum, error->errmess);
 			ro_warn_user("SaveError", error->errmess);
 		}
 	}
@@ -667,7 +678,10 @@ static void ro_gui_save_done(void)
 			ro_gui_dialog_close(dialog_saveas);
 			error = xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
 			if (error) {
-				LOG("xwimp_create_menu: 0x%x: %s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xwimp_create_menu: 0x%x: %s",
+				      error->errnum,
+				      error->errmess);
 				ro_warn_user("MenuError", error->errmess);
 			}
 		}
@@ -770,8 +784,8 @@ static void ro_gui_save_set_file_type(const char *path, lwc_string *mime_type)
 
 	error = xosfile_set_type(path, rotype);
 	if (error != NULL) {
-		LOG("xosfile_set_type: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xosfile_set_type: 0x%x: %s",
+		      error->errnum, error->errmess);
 	}
 }
 
@@ -798,7 +812,8 @@ static bool ro_gui_save_complete(struct hlcache_handle *h, char *path)
 	/* Create dir */
 	error = xosfile_create_dir(path, 0);
 	if (error) {
-		LOG("xosfile_create_dir: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xosfile_create_dir: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("SaveError", error->errmess);
 		return false;
 	}
@@ -807,7 +822,7 @@ static bool ro_gui_save_complete(struct hlcache_handle *h, char *path)
 	snprintf(buf, sizeof buf, "%s.!Run", path);
 	fp = fopen(buf, "w");
 	if (!fp) {
-		LOG("fopen(): errno = %i", errno);
+		NSLOG(netsurf, INFO, "fopen(): errno = %i", errno);
 		ro_warn_user("SaveError", strerror(errno));
 		return false;
 	}
@@ -816,7 +831,8 @@ static bool ro_gui_save_complete(struct hlcache_handle *h, char *path)
 	fclose(fp);
 	error = xosfile_set_type(buf, 0xfeb);
 	if (error) {
-		LOG("xosfile_set_type: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xosfile_set_type: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("SaveError", error->errmess);
 		return false;
 	}
@@ -825,7 +841,8 @@ static bool ro_gui_save_complete(struct hlcache_handle *h, char *path)
 	snprintf(buf, sizeof buf, "%s.!RunImage", path);
 	fp = fopen(buf, "w");
 	if (!fp) {
-		LOG("Creating !RunImage failed: errno = %i", errno);
+		NSLOG(netsurf, INFO, "Creating !RunImage failed: errno = %i",
+		      errno);
 	} else {
 		fclose(fp);
 	}
@@ -851,7 +868,10 @@ static bool ro_gui_save_complete(struct hlcache_handle *h, char *path)
 
 	error = xosspriteop_save_sprite_file(osspriteop_NAME, saveas_area, buf);
 	if (error) {
-		LOG("xosspriteop_save_sprite_file: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO,
+		      "xosspriteop_save_sprite_file: 0x%x: %s",
+		      error->errnum,
+		      error->errmess);
 		ro_warn_user("SaveError", error->errmess);
 		return false;
 	}
@@ -897,7 +917,10 @@ static bool ro_gui_save_object_native(struct hlcache_handle *h, char *path)
 				(byte *) source_data,
 				(byte *) source_data + source_size);
 		if (error != NULL) {
-			LOG("xosfile_save_stamped: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xosfile_save_stamped: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("SaveError", error->errmess);
 			return false;
 		}
@@ -947,7 +970,8 @@ ro_gui_save_content(struct hlcache_handle *h, char *path, bool force_overwrite)
 		error = xosfile_read_stamped(path, &obj_type,
 				NULL, NULL, NULL, NULL, NULL);
 		if (error) {
-			LOG("xosfile_read_stamped: 0x%x:%s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xosfile_read_stamped: 0x%x:%s",
+			      error->errnum, error->errmess);
 			ro_warn_user("SaveError", error->errmess);
 			return false;
 		}
@@ -1003,7 +1027,10 @@ ro_gui_save_content(struct hlcache_handle *h, char *path, bool force_overwrite)
 					(byte *) source_data,
 					(byte *) source_data + source_size);
 			if (error) {
-				LOG("xosfile_save_stamped: 0x%x: %s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xosfile_save_stamped: 0x%x: %s",
+				      error->errnum,
+				      error->errmess);
 				ro_warn_user("SaveError", error->errmess);
 				return false;
 			}
@@ -1029,14 +1056,20 @@ ro_gui_save_content(struct hlcache_handle *h, char *path, bool force_overwrite)
 				return false;
 			error = xosfile_set_type(path, 0xfaf);
 			if (error)
-				LOG("xosfile_set_type: 0x%x: %s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xosfile_set_type: 0x%x: %s",
+				      error->errnum,
+				      error->errmess);
 			break;
 		case GUI_SAVE_HISTORY_EXPORT_HTML:
 			if (global_history_export(path, NULL) != NSERROR_OK)
 				return false;
 			error = xosfile_set_type(path, 0xfaf);
 			if (error)
-				LOG("xosfile_set_type: 0x%x: %s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xosfile_set_type: 0x%x: %s",
+				      error->errnum,
+				      error->errmess);
 			break;
 
 		case GUI_SAVE_TEXT_SELECTION:
@@ -1056,7 +1089,10 @@ ro_gui_save_content(struct hlcache_handle *h, char *path, bool force_overwrite)
 			return ro_gui_save_clipboard(path);
 
 		default:
-			LOG("Unexpected content type: %d, path %s", gui_save_current_type, path);
+			NSLOG(netsurf, INFO,
+			      "Unexpected content type: %d, path %s",
+			      gui_save_current_type,
+			      path);
 			return false;
 	}
 	return true;
@@ -1121,7 +1157,8 @@ void gui_drag_save_object(struct gui_window *g,
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
-		LOG("xwimp_get_pointer_info: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_pointer_info: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -1158,7 +1195,8 @@ void gui_drag_save_selection(struct gui_window *g, const char *selection)
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
-		LOG("xwimp_get_pointer_info: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_pointer_info: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -1210,8 +1248,8 @@ void ro_gui_drag_save_link(gui_save_type save_type, const nsurl *url,
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
-		LOG("xwimp_get_pointer_info: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_pointer_info: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -1252,7 +1290,10 @@ void ro_gui_drag_icon(int x, int y, const char *sprite)
 					saveas_area, (osspriteop_id)sprite, NULL);
 			if (error) {
 				if (error->errnum != error_SPRITE_OP_DOESNT_EXIST) {
-					LOG("xosspriteop_select_sprite: 0x%x: %s", error->errnum, error->errmess);
+					NSLOG(netsurf, INFO,
+					      "xosspriteop_select_sprite: 0x%x: %s",
+					      error->errnum,
+					      error->errmess);
 					ro_warn_user("MiscError", error->errmess);
 				}
 			}
@@ -1272,7 +1313,8 @@ void ro_gui_drag_icon(int x, int y, const char *sprite)
 			return;
 		}
 
-		LOG("xdragasprite_start: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xdragasprite_start: 0x%x: %s",
+		      error->errnum, error->errmess);
 	}
 
 	drag.type = wimp_DRAG_USER_FIXED;
@@ -1285,7 +1327,8 @@ void ro_gui_drag_icon(int x, int y, const char *sprite)
 	error = xwimp_drag_box(&drag);
 
 	if (error) {
-		LOG("xwimp_drag_box: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_drag_box: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("DragError", error->errmess);
 	} else {
 		dragbox_active = true;
@@ -1323,14 +1366,20 @@ void ro_gui_drag_box_cancel(void)
 		if (using_dragasprite) {
 			error = xdragasprite_stop();
 			if (error) {
-				LOG("xdragasprite_stop: 0x%x: %s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xdragasprite_stop: 0x%x: %s",
+				      error->errnum,
+				      error->errmess);
 				ro_warn_user("WimpError", error->errmess);
 			}
 		}
 		else {
 			error = xwimp_drag_box(NULL);
 			if (error) {
-				LOG("xwimp_drag_box: 0x%x: %s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xwimp_drag_box: 0x%x: %s",
+				      error->errnum,
+				      error->errmess);
 				ro_warn_user("WimpError", error->errmess);
 			}
 		}
@@ -1384,7 +1433,8 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 
 		default:
 			if (!gui_save_content) {
-				LOG("unexpected DataSaveAck: gui_save_content not set");
+				NSLOG(netsurf, INFO,
+				      "unexpected DataSaveAck: gui_save_content not set");
 				return;
 			}
 			break;

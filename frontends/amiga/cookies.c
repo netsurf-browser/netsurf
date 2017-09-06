@@ -364,7 +364,7 @@ nserror ami_cookies_present(void)
 
 	res = ami_cookies_create_window(ncwin);
 	if (res != NSERROR_OK) {
-		LOG("SSL UI builder init failed");
+		NSLOG(netsurf, INFO, "SSL UI builder init failed");
 		ami_utf8_free(ncwin->core.wintitle);
 		free(ncwin);
 		return res;

@@ -217,14 +217,16 @@ static void dump_rings(void)
 	q = queue_ring;
 	if (q) {
 		do {
-			LOG("queue_ring: %s", nsurl_access(q->url));
+			NSLOG(netsurf, INFO, "queue_ring: %s",
+			      nsurl_access(q->url));
 			q = q->r_next;
 		} while (q != queue_ring);
 	}
 	f = fetch_ring;
 	if (f) {
 		do {
-			LOG("fetch_ring: %s", nsurl_access(f->url));
+			NSLOG(netsurf, INFO, "fetch_ring: %s",
+			      nsurl_access(f->url));
 			f = f->r_next;
 		} while (f != fetch_ring);
 	}
@@ -341,7 +343,10 @@ void fetcher_quit(void)
 			 * the reference count to allow the fetcher to
 			 * be stopped.
 			 */
-			LOG("Fetcher for scheme %s still has %d active users at quit.", lwc_string_data(fetchers[fetcherd].scheme), fetchers[fetcherd].refcount);
+			NSLOG(netsurf, INFO,
+			      "Fetcher for scheme %s still has %d active users at quit.",
+			      lwc_string_data(fetchers[fetcherd].scheme),
+			      fetchers[fetcherd].refcount);
 
 			fetchers[fetcherd].refcount = 1;
 		}
@@ -753,9 +758,9 @@ void fetch_remove_from_queues(struct fetch *fetch)
 	RING_GETSIZE(struct fetch, fetch_ring, all_active);
 	RING_GETSIZE(struct fetch, queue_ring, all_queued);
 
-	LOG("Fetch ring is now %d elements.", all_active);
+	NSLOG(netsurf, INFO, "Fetch ring is now %d elements.", all_active);
 
-	LOG("Queue ring is now %d elements.", all_queued);
+	NSLOG(netsurf, INFO, "Queue ring is now %d elements.", all_queued);
 #endif
 }
 

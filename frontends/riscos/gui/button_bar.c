@@ -138,7 +138,7 @@ struct button_bar *ro_gui_button_bar_create(struct theme_descriptor *theme,
 
 	button_bar = malloc(sizeof(struct button_bar));
 	if (button_bar == NULL) {
-		LOG("No memory for malloc()");
+		NSLOG(netsurf, INFO, "No memory for malloc()");
 		return NULL;
 	}
 
@@ -538,7 +538,10 @@ bool ro_gui_button_bar_icon_update(struct button_bar *button_bar)
 
 			error = xwimp_create_icon(&icon, &button->icon);
 			if (error) {
-				LOG("xwimp_create_icon: 0x%x: %s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xwimp_create_icon: 0x%x: %s",
+				      error->errnum,
+				      error->errmess);
 				ro_warn_user("WimpError", error->errmess);
 				button->icon = -1;
 				return false;
@@ -548,7 +551,10 @@ bool ro_gui_button_bar_icon_update(struct button_bar *button_bar)
 			error = xwimp_delete_icon(button_bar->window,
 					button->icon);
 			if (error != NULL) {
-				LOG("xwimp_delete_icon: 0x%x: %s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xwimp_delete_icon: 0x%x: %s",
+				      error->errnum,
+				      error->errmess);
 				ro_warn_user("WimpError", error->errmess);
 				return false;
 			}
@@ -598,7 +604,10 @@ bool ro_gui_button_bar_icon_resize(struct button_bar *button_bar)
 						button->y_pos +
 						button->y_size);
 			if (error != NULL) {
-				LOG("xwimp_resize_icon: 0x%x: %s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xwimp_resize_icon: 0x%x: %s",
+				      error->errnum,
+				      error->errmess);
 				ro_warn_user("WimpError", error->errmess);
 				button->icon = -1;
 				return false;
@@ -769,7 +778,10 @@ bool ro_gui_button_bar_click(struct button_bar *button_bar,
 					button_bar->sprites,
 					sprite, &box, NULL);
 			if (error)
-				LOG("xdragasprite_start: 0x%x: %s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xdragasprite_start: 0x%x: %s",
+				      error->errnum,
+				      error->errmess);
 
 			ro_mouse_drag_start(ro_gui_button_bar_drag_end,
 					NULL, NULL, NULL);
@@ -870,7 +882,8 @@ void ro_gui_button_bar_drag_end(wimp_dragged *drag, void *data)
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
-		LOG("xwimp_get_pointer_info: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_pointer_info: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -880,7 +893,8 @@ void ro_gui_button_bar_drag_end(wimp_dragged *drag, void *data)
 	state.w = drag_start->window;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -1068,7 +1082,7 @@ char *ro_gui_button_bar_get_config(struct button_bar *button_bar)
 
 	config = malloc(size);
 	if (config == NULL) {
-		LOG("No memory for malloc()");
+		NSLOG(netsurf, INFO, "No memory for malloc()");
 		ro_warn_user("NoMemory", 0);
 		return NULL;
 	}

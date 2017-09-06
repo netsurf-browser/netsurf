@@ -68,7 +68,7 @@ static nserror rsvg_create_svg_data(rsvg_content *c)
 	c->bitmap = NULL;
 
 	if ((c->rsvgh = rsvg_handle_new()) == NULL) {
-		LOG("rsvg_handle_new() returned NULL.");
+		NSLOG(netsurf, INFO, "rsvg_handle_new() returned NULL.");
 		content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
 		return NSERROR_NOMEM;
 	}
@@ -116,7 +116,8 @@ static bool rsvg_process_data(struct content *c, const char *data,
 
 	if (rsvg_handle_write(d->rsvgh, (const guchar *)data, (gsize)size,
 				&err) == FALSE) {
-		LOG("rsvg_handle_write returned an error: %s", err->message);
+		NSLOG(netsurf, INFO,
+		      "rsvg_handle_write returned an error: %s", err->message);
 		content_broadcast_errorcode(c, NSERROR_SVG_ERROR);
 		return false;
 	}
@@ -160,7 +161,8 @@ static bool rsvg_convert(struct content *c)
 	GError *err = NULL;
 
 	if (rsvg_handle_close(d->rsvgh, &err) == FALSE) {
-		LOG("rsvg_handle_close returned an error: %s", err->message);
+		NSLOG(netsurf, INFO,
+		      "rsvg_handle_close returned an error: %s", err->message);
 		content_broadcast_errorcode(c, NSERROR_SVG_ERROR);
 		return false;
 	}
@@ -177,7 +179,8 @@ static bool rsvg_convert(struct content *c)
 
 	if ((d->bitmap = guit->bitmap->create(c->width, c->height,
 			BITMAP_NEW)) == NULL) {
-		LOG("Failed to create bitmap for rsvg render.");
+		NSLOG(netsurf, INFO,
+		      "Failed to create bitmap for rsvg render.");
 		content_broadcast_errorcode(c, NSERROR_NOMEM);
 		return false;
 	}
@@ -187,13 +190,15 @@ static bool rsvg_convert(struct content *c)
 			CAIRO_FORMAT_ARGB32,
 			c->width, c->height,
 			guit->bitmap->get_rowstride(d->bitmap))) == NULL) {
-		LOG("Failed to create Cairo image surface for rsvg render.");
+		NSLOG(netsurf, INFO,
+		      "Failed to create Cairo image surface for rsvg render.");
 		content_broadcast_errorcode(c, NSERROR_NOMEM);
 		return false;
 	}
 
 	if ((d->ct = cairo_create(d->cs)) == NULL) {
-		LOG("Failed to create Cairo drawing context for rsvg render.");
+		NSLOG(netsurf, INFO,
+		      "Failed to create Cairo drawing context for rsvg render.");
 		content_broadcast_errorcode(c, NSERROR_NOMEM);
 		return false;
 	}

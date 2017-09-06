@@ -51,7 +51,8 @@ void ami_font_setdevicedpi(int id)
 	struct DisplayInfo dinfo;
 
 	if(nsoption_bool(bitmap_fonts) == true) {
-		LOG("WARNING: Using diskfont.library for text. Forcing DPI to 72.");
+		NSLOG(netsurf, INFO,
+		      "WARNING: Using diskfont.library for text. Forcing DPI to 72.");
 		nsoption_set_int(screen_ydpi, 72);
 	}
 
@@ -79,7 +80,14 @@ void ami_font_setdevicedpi(int id)
 
 				xdpi = (yres * ydpi) / xres;
 
-				LOG("XDPI = %ld, YDPI = %ld (DisplayInfo resolution %d x %d, corrected %d x %d)", xdpi, ydpi, dinfo.Resolution.x, dinfo.Resolution.y, xres, yres);
+				NSLOG(netsurf, INFO,
+				      "XDPI = %ld, YDPI = %ld (DisplayInfo resolution %d x %d, corrected %d x %d)",
+				      xdpi,
+				      ydpi,
+				      dinfo.Resolution.x,
+				      dinfo.Resolution.y,
+				      xres,
+				      yres);
 			}
 		}
 	}

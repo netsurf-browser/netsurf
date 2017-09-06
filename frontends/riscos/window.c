@@ -206,7 +206,8 @@ gui_window_place_caret(struct gui_window *g,
 	error = xwimp_set_caret_position(g->window, -1,
 			x * 2, -(y + height) * 2, height * 2, -1);
 	if (error) {
-		LOG("xwimp_set_caret_position: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_set_caret_position: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 }
@@ -235,7 +236,10 @@ static void gui_window_set_extent(struct gui_window *g, int width, int height)
 		state.w = g->window;
 		error = xwimp_get_window_state(&state);
 		if (error) {
-			LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xwimp_get_window_state: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			return;
 		}
@@ -266,7 +270,8 @@ static void gui_window_set_extent(struct gui_window *g, int width, int height)
 	os_box extent = { 0, -height, width, toolbar_height };
 	error = xwimp_set_extent(g->window, &extent);
 	if (error) {
-		LOG("xwimp_set_extent: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_set_extent: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -309,7 +314,8 @@ static void ro_gui_window_open(wimp_open *open)
 	state.w = g->window;
 	error = xwimp_get_window_state_and_nesting(&state, &parent, &linkage);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -414,7 +420,8 @@ static void ro_gui_window_open(wimp_open *open)
 
 	error = xwimp_open_window_nested_with_flags(&state, parent, linkage);
 	if (error) {
-		LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_open_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -453,8 +460,10 @@ static void gui_window_update_extent(struct gui_window *g)
 	info.w = g->window;
 	error = xwimp_get_window_info_header_only(&info);
 	if (error) {
-		LOG("xwimp_get_window_info_header_only: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO,
+		      "xwimp_get_window_info_header_only: 0x%x: %s",
+		      error->errnum,
+		      error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -1046,7 +1055,8 @@ ro_gui_window_scroll_action(struct gui_window *g,
 	state.w = g->window;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return;
 	}
 
@@ -1060,7 +1070,8 @@ ro_gui_window_scroll_action(struct gui_window *g,
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
-		LOG("xwimp_get_pointer_info 0x%x : %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_pointer_info 0x%x : %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -1180,7 +1191,8 @@ ro_gui_window_scroll_action(struct gui_window *g,
 
 		error = xwimp_open_window((wimp_open *) &state);
 		if (error) {
-			LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_open_window: 0x%x: %s",
+			      error->errnum, error->errmess);
 		}
 	}
 }
@@ -1218,7 +1230,8 @@ ro_gui_window_handle_local_keypress(struct gui_window *g,
 
 	ro_error = xwimp_get_pointer_info(&pointer);
 	if (ro_error) {
-		LOG("xwimp_get_pointer_info: 0x%x: %s\n", ro_error->errnum, ro_error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_pointer_info: 0x%x: %s\n",
+		      ro_error->errnum, ro_error->errmess);
 		ro_warn_user("WimpError", ro_error->errmess);
 		return false;
 	}
@@ -1528,8 +1541,8 @@ static void ro_gui_window_close(wimp_w w)
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
-		LOG("xwimp_get_pointer_info: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_pointer_info: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -1559,7 +1572,10 @@ static void ro_gui_window_close(wimp_w w)
 				}
 				error = xos_cli(temp_name);
 				if (error) {
-					LOG("xos_cli: 0x%x: %s", error->errnum, error->errmess);
+					NSLOG(netsurf, INFO,
+					      "xos_cli: 0x%x: %s",
+					      error->errnum,
+					      error->errmess);
 					ro_warn_user("MiscError", error->errmess);
 					return;
 				}
@@ -1611,7 +1627,8 @@ static void ro_gui_window_redraw(wimp_draw *redraw)
 
 	error = xwimp_redraw_window(redraw, &more);
 	if (error) {
-		LOG("xwimp_redraw_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_redraw_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -1653,7 +1670,8 @@ static void ro_gui_window_redraw(wimp_draw *redraw)
 		if (error && !(ro_gui_current_redraw_gui->
 				option.buffer_everything &&
 				error->errnum == error_WIMP_GET_RECT)) {
-			LOG("xwimp_get_rectangle: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_get_rectangle: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			ro_gui_current_redraw_gui = NULL;
 			return;
@@ -1971,7 +1989,7 @@ ro_gui_window_prepare_form_select_menu(struct gui_window *g,
 		if (err != NSERROR_OK) {
 			/* badenc should never happen */
 			assert(err != NSERROR_BAD_ENCODING);
-			LOG("utf8_to_local_encoding failed");
+			NSLOG(netsurf, INFO, "utf8_to_local_encoding failed");
 			ro_warn_user("NoMemory", 0);
 			ro_gui_menu_destroy();
 			return false;
@@ -1997,7 +2015,7 @@ ro_gui_window_prepare_form_select_menu(struct gui_window *g,
 
 			temp = cnv_space2nbsp(option->text);
 			if (!temp) {
-				LOG("cnv_space2nbsp failed");
+				NSLOG(netsurf, INFO, "cnv_space2nbsp failed");
 				ro_warn_user("NoMemory", 0);
 				ro_gui_menu_destroy();
 				return false;
@@ -2009,7 +2027,7 @@ ro_gui_window_prepare_form_select_menu(struct gui_window *g,
 				/* A bad encoding should never happen,
 				 * so assert this */
 				assert(err != NSERROR_BAD_ENCODING);
-				LOG("utf8_to_enc failed");
+				NSLOG(netsurf, INFO, "utf8_to_enc failed");
 				ro_warn_user("NoMemory", 0);
 				ro_gui_menu_destroy();
 				return false;
@@ -2831,7 +2849,10 @@ ro_gui_window_menu_select(wimp_w w,
 			state.w = w;
 			oserror = xwimp_get_window_state(&state);
 			if (oserror) {
-				LOG("xwimp_get_window_state: 0x%x: %s", oserror->errnum, oserror->errmess);
+				NSLOG(netsurf, INFO,
+				      "xwimp_get_window_state: 0x%x: %s",
+				      oserror->errnum,
+				      oserror->errmess);
 				ro_warn_user("WimpError", oserror->errmess);
 			}
 			nsoption_set_int(window_x, state.visible.x0);
@@ -3209,7 +3230,10 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 		state.w = existing->window;
 		error = xwimp_get_window_state(&state);
 		if (error) {
-			LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xwimp_get_window_state: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 		}
 		window.visible.x0 = state.visible.x0;
@@ -3313,7 +3337,8 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 
 	error = xwimp_create_window(&window, &g->window);
 	if (error) {
-		LOG("xwimp_create_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_create_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		free(g);
 		return 0;
@@ -3382,8 +3407,8 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 	state.w = g->window;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return g;
 	}
@@ -3459,7 +3484,8 @@ static void gui_window_destroy(struct gui_window *g)
 	/* delete window */
 	error = xwimp_delete_window(w);
 	if (error) {
-		LOG("xwimp_delete_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_delete_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 	ro_gui_wimp_event_finalise(w);
@@ -3515,7 +3541,8 @@ static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 	state.w = g->window;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
@@ -3550,8 +3577,8 @@ gui_window_set_scroll(struct gui_window *g, const struct rect *rect)
 	state.w = g->window;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return NSERROR_BAD_PARAMETER;
 	}
@@ -3731,8 +3758,8 @@ static void gui_window_remove_caret(struct gui_window *g)
 
 	error = xwimp_get_caret_position(&caret);
 	if (error) {
-		LOG("xwimp_get_caret_position: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_caret_position: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -3776,20 +3803,25 @@ static void ro_gui_window_scroll_end(wimp_dragged *drag, void *data)
 
 	error = xwimp_drag_box((wimp_drag*)-1);
 	if (error) {
-		LOG("xwimp_drag_box: 0x%x : %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_drag_box: 0x%x : %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
-		LOG("xwimp_get_pointer_info 0x%x : %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_pointer_info 0x%x : %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
 	error = xwimpspriteop_set_pointer_shape("ptr_default", 0x31, 0, 0, 0, 0);
 	if (error) {
-		LOG("xwimpspriteop_set_pointer_shape: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO,
+		      "xwimpspriteop_set_pointer_shape: 0x%x: %s",
+		      error->errnum,
+		      error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 
@@ -3814,7 +3846,8 @@ static bool gui_window_scroll_start(struct gui_window *g)
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
-		LOG("xwimp_get_pointer_info 0x%x : %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_pointer_info 0x%x : %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
@@ -3822,7 +3855,8 @@ static bool gui_window_scroll_start(struct gui_window *g)
 	info.w = g->window;
 	error = xwimp_get_window_info_header_only((wimp_window_info*)&info);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x : %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x : %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
@@ -3844,7 +3878,8 @@ static bool gui_window_scroll_start(struct gui_window *g)
 
 	error = xwimp_drag_box(&drag);
 	if (error) {
-		LOG("xwimp_drag_box: 0x%x : %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_drag_box: 0x%x : %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
@@ -3876,7 +3911,10 @@ gui_window_drag_start(struct gui_window *g,
 		 * duration */
 		os_error *error = xwimp_get_pointer_info(&pointer);
 		if (error) {
-			LOG("xwimp_get_pointer_info 0x%x : %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xwimp_get_pointer_info 0x%x : %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			return false;
 		}
@@ -3893,7 +3931,8 @@ gui_window_drag_start(struct gui_window *g,
 
 		error = xwimp_drag_box(&drag);
 		if (error) {
-			LOG("xwimp_drag_box: 0x%x : %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_drag_box: 0x%x : %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			return false;
 		}
@@ -3955,7 +3994,8 @@ gui_window_create_form_select_menu(struct gui_window *g,
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
-		LOG("xwimp_get_pointer_info: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_pointer_info: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		ro_gui_menu_destroy();
 		return;
@@ -3988,7 +4028,8 @@ ro_gui_window_import_text(struct gui_window *g, const char *filename)
 	error = xosfile_read_stamped(filename, &obj_type, NULL, NULL,
 			&size, NULL, NULL);
 	if (error) {
-		LOG("xosfile_read_stamped: 0x%x:%s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xosfile_read_stamped: 0x%x:%s",
+		      error->errnum, error->errmess);
 		ro_warn_user("FileError", error->errmess);
 		return true;  /* was for us, but it didn't work! */
 	}
@@ -4007,7 +4048,8 @@ ro_gui_window_import_text(struct gui_window *g, const char *filename)
 			NULL, NULL, NULL, NULL, NULL);
 
 	if (error) {
-		LOG("xosfile_load_stamped: 0x%x:%s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xosfile_load_stamped: 0x%x:%s",
+		      error->errnum, error->errmess);
 		ro_warn_user("LoadError", error->errmess);
 		free(buf);
 		return true;
@@ -4017,7 +4059,7 @@ ro_gui_window_import_text(struct gui_window *g, const char *filename)
 	if (ret != NSERROR_OK) {
 		/* bad encoding shouldn't happen */
 		assert(ret != NSERROR_BAD_ENCODING);
-		LOG("utf8_from_local_encoding failed");
+		NSLOG(netsurf, INFO, "utf8_from_local_encoding failed");
 		free(buf);
 		ro_warn_user("NoMemory", NULL);
 		return true;
@@ -4206,8 +4248,10 @@ ro_gui_window_invalidate_area(struct gui_window *g, const struct rect *rect)
 		info.w = g->window;
 		error = xwimp_get_window_info_header_only(&info);
 		if (error) {
-			LOG("xwimp_get_window_info_header_only: 0x%x: %s",
-			    error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xwimp_get_window_info_header_only: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			return NSERROR_INVALID;
 		}
@@ -4216,8 +4260,8 @@ ro_gui_window_invalidate_area(struct gui_window *g, const struct rect *rect)
 					   info.extent.x0, info.extent.y0,
 					   info.extent.x1, info.extent.y1);
 		if (error) {
-			LOG("xwimp_force_redraw: 0x%x: %s",
-			    error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_force_redraw: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			return NSERROR_INVALID;
 		}
@@ -4251,7 +4295,7 @@ ro_gui_window_invalidate_area(struct gui_window *g, const struct rect *rect)
 	}
 	cur = malloc(sizeof(struct update_box));
 	if (!cur) {
-		LOG("No memory for malloc.");
+		NSLOG(netsurf, INFO, "No memory for malloc.");
 		return NSERROR_NOMEM;
 	}
 
@@ -4323,7 +4367,8 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 	message->your_ref = message->my_ref;
 	error = xwimp_send_message(wimp_USER_MESSAGE, message, message->sender);
 	if (error) {
-		LOG("xwimp_send_message: 0x%x: %s\n", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_send_message: 0x%x: %s\n",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 
@@ -4375,12 +4420,14 @@ ro_gui_window_iconise(struct gui_window *g, wimp_full_message_window_info *wi)
 				(osspriteop_id)overlay, &width, &height, NULL,
 				NULL);
 		if (error) {
-			LOG("xosspriteop_read_sprite_info: 0x%x: %s",
-			    error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xosspriteop_read_sprite_info: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("MiscError", error->errmess);
 			overlay = NULL;
 		} else if (sprite_bpp(overlay) != 8) {
-			LOG("overlay sprite is not 8bpp");
+			NSLOG(netsurf, INFO, "overlay sprite is not 8bpp");
 			overlay = NULL;
 		}
 	}
@@ -4389,7 +4436,7 @@ ro_gui_window_iconise(struct gui_window *g, wimp_full_message_window_info *wi)
 	bitmap = riscos_bitmap_create(width, height,
 			BITMAP_NEW | BITMAP_OPAQUE | BITMAP_CLEAR_MEMORY);
 	if (!bitmap) {
-		LOG("Thumbnail initialisation failed.");
+		NSLOG(netsurf, INFO, "Thumbnail initialisation failed.");
 		return;
 	}
 	riscos_bitmap_render(bitmap, h);
@@ -4399,7 +4446,7 @@ ro_gui_window_iconise(struct gui_window *g, wimp_full_message_window_info *wi)
 	area = riscos_bitmap_convert_8bpp(bitmap);
 	riscos_bitmap_destroy(bitmap);
 	if (!area) {
-		LOG("Thumbnail conversion failed.");
+		NSLOG(netsurf, INFO, "Thumbnail conversion failed.");
 		return;
 	}
 
@@ -4420,7 +4467,8 @@ ro_gui_window_iconise(struct gui_window *g, wimp_full_message_window_info *wi)
 	error = xosspriteop_save_sprite_file(osspriteop_USER_AREA,
 			area, temp_fname);
 	if (error) {
-		LOG("xosspriteop_save_sprite_file: 0x%x:%s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xosspriteop_save_sprite_file: 0x%x:%s",
+		      error->errnum, error->errmess);
 		ro_warn_user("MiscError", error->errmess);
 		free(area);
 		return;
@@ -4428,7 +4476,10 @@ ro_gui_window_iconise(struct gui_window *g, wimp_full_message_window_info *wi)
 
 	error = xwimpspriteop_merge_sprite_file(temp_fname);
 	if (error) {
-		LOG("xwimpspriteop_merge_sprite_file: 0x%x:%s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO,
+		      "xwimpspriteop_merge_sprite_file: 0x%x:%s",
+		      error->errnum,
+		      error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		remove(temp_fname);
 		free(area);
@@ -4453,7 +4504,8 @@ ro_gui_window_iconise(struct gui_window *g, wimp_full_message_window_info *wi)
 	error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message*)wi,
 			wi->sender);
 	if (error) {
-		LOG("xwimp_send_message: 0x%x:%s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_send_message: 0x%x:%s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 	else {
@@ -4479,7 +4531,10 @@ bool ro_gui_toolbar_dataload(struct gui_window *g, wimp_message *message)
 		error = xwimp_send_message(wimp_USER_MESSAGE, message,
 				message->sender);
 		if (error) {
-			LOG("xwimp_send_message: 0x%x: %s\n", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xwimp_send_message: 0x%x: %s\n",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 		}
 		return true;
@@ -4536,7 +4591,8 @@ void ro_gui_window_update_boxes(void)
 
 		error = xwimp_update_window(&update, &more);
 		if (error) {
-			LOG("xwimp_update_window: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_update_window: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			continue;
 		}
@@ -4569,7 +4625,10 @@ void ro_gui_window_update_boxes(void)
 			 * found. This appears to be a bug in RISC OS. */
 			if (error && !(use_buffer &&
 					error->errnum == error_WIMP_GET_RECT)) {
-				LOG("xwimp_get_rectangle: 0x%x: %s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xwimp_get_rectangle: 0x%x: %s",
+				      error->errnum,
+				      error->errmess);
 				ro_warn_user("WimpError", error->errmess);
 				ro_gui_current_redraw_gui = NULL;
 				continue;
@@ -4685,7 +4744,8 @@ ro_gui_window_to_window_pos(struct gui_window *g, int x, int y, os_coord *pos)
 	state.w = g->window;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x:%s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x:%s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
@@ -4709,7 +4769,8 @@ bool ro_gui_window_to_screen_pos(struct gui_window *g,
 	state.w = g->window;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x:%s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x:%s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
@@ -4913,7 +4974,10 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 		error = xwimpspriteop_set_pointer_shape(entry->sprite_name,
 				1, entry->xactive, entry->yactive, 0, 0);
 		if (error) {
-			LOG("xwimpspriteop_set_pointer_shape: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xwimpspriteop_set_pointer_shape: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 		}
 	} else {
@@ -4923,7 +4987,10 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 				(osspriteop_id) entry->sprite_name,
 				1, entry->xactive, entry->yactive, 0, 0);
 		if (error) {
-			LOG("xosspriteop_set_pointer_shape: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xosspriteop_set_pointer_shape: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 		}
 	}

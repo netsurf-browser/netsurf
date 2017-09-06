@@ -155,7 +155,7 @@ nsw32_corewindow_vscroll(struct nsw32_corewindow *nsw32_cw,
 	SCROLLINFO si; /* current scroll information */
 	SCROLLINFO usi; /* updated scroll infomation for scrollwindowex */
 
-	LOG("VSCROLL");
+	NSLOG(netsurf, INFO, "VSCROLL");
 
 	si.cbSize = sizeof(si);
 	si.fMask = SIF_ALL;
@@ -230,7 +230,7 @@ nsw32_corewindow_hscroll(struct nsw32_corewindow *nsw32_cw,
 	SCROLLINFO si; /* current scroll information */
 	SCROLLINFO usi; /* updated scroll infomation for scrollwindowex */
 
-	LOG("VSCROLL");
+	NSLOG(netsurf, INFO, "VSCROLL");
 
 	si.cbSize = sizeof(si);
 	si.fMask = SIF_ALL;
@@ -450,7 +450,7 @@ nsw32_cw_update_size(struct core_window *cw, int width, int height)
 
 	nsw32_cw->content_width = width;
 	nsw32_cw->content_height = height;
-	LOG("new content size w:%d h:%d", width, height);
+	NSLOG(netsurf, INFO, "new content size w:%d h:%d", width, height);
 
 	update_scrollbars(nsw32_cw);
 }
@@ -527,7 +527,7 @@ nsw32_corewindow_init(HINSTANCE hInstance,
 			CS_DBLCLKS;
 	}
 
-	LOG("creating hInstance %p core window", hInstance);
+	NSLOG(netsurf, INFO, "creating hInstance %p core window", hInstance);
 	nsw32_cw->hWnd = CreateWindowEx(0,
 					windowclassname_corewindow,
 					nsw32_cw->title,
@@ -541,7 +541,7 @@ nsw32_corewindow_init(HINSTANCE hInstance,
 					hInstance,
 					NULL);
 	if (nsw32_cw->hWnd == NULL) {
-		LOG("Window create failed");
+		NSLOG(netsurf, INFO, "Window create failed");
 		return NSERROR_NOMEM;
 	}
 

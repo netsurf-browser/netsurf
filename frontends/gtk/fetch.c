@@ -90,7 +90,8 @@ void gtk_fetch_filetype_init(const char *mimefile)
 
 	fh = fopen(mimefile, "r");
 	if (fh == NULL) {
-		LOG("Unable to open a mime.types file, so using a minimal one for you.");
+		NSLOG(netsurf, INFO,
+		      "Unable to open a mime.types file, so using a minimal one for you.");
 		return;
 	}
 

@@ -971,7 +971,8 @@ static nserror nsgtk_toolbar_customization_save(struct nsgtk_scaffolding *g)
 				nsgtk_scaffolding_button(g, tbidx)->location);
 		if (plen == order_len) {
 			/* ran out of space, bail early */
-			LOG("toolbar ordering exceeded available space");
+			NSLOG(netsurf, INFO,
+			      "toolbar ordering exceeded available space");
 			break;
 		}
 		cur += plen;
@@ -1110,7 +1111,7 @@ static void nsgtk_toolbar_window_open(struct nsgtk_scaffolding *g)
 
 	res = nsgtk_builder_new_from_resname("toolbar", &window->builder);
 	if (res != NSERROR_OK) {
-		LOG("Toolbar UI builder init failed");
+		NSLOG(netsurf, INFO, "Toolbar UI builder init failed");
 		nsgtk_warning(messages_get("NoMemory"), 0);
 		nsgtk_toolbar_cancel_clicked(NULL, g);
 		free(theme);

@@ -1601,7 +1601,7 @@ treeview_cw_attach(treeview *tree,
 	assert(cw != NULL);
 
 	if (tree->cw_t != NULL || tree->cw_h != NULL) {
-		LOG("Treeview already attached.");
+		NSLOG(netsurf, INFO, "Treeview already attached.");
 		return NSERROR_UNKNOWN;
 	}
 	tree->cw_t = cw_t;
@@ -1666,7 +1666,7 @@ treeview_node_expand_internal(treeview *tree, treeview_node *node)
 
 	if (node->flags & TV_NFLAGS_EXPANDED) {
 		/* What madness is this? */
-		LOG("Tried to expand an expanded node.");
+		NSLOG(netsurf, INFO, "Tried to expand an expanded node.");
 		return NSERROR_OK;
 	}
 
@@ -1824,7 +1824,7 @@ treeview_node_contract_internal(treeview *tree, treeview_node *node)
 
 	if ((node->flags & TV_NFLAGS_EXPANDED) == false) {
 		/* What madness is this? */
-		LOG("Tried to contract a contracted node.");
+		NSLOG(netsurf, INFO, "Tried to contract a contracted node.");
 		return NSERROR_OK;
 	}
 
@@ -2771,7 +2771,7 @@ static nserror treeview_move_selection(treeview *tree, struct rect *rect)
 		break;
 
 	default:
-		LOG("Bad drop target for move.");
+		NSLOG(netsurf, INFO, "Bad drop target for move.");
 		return NSERROR_BAD_PARAMETER;
 	}
 
@@ -4403,7 +4403,7 @@ nserror treeview_init(void)
 		return NSERROR_OK;
 	}
 
-	LOG("Initialising treeview module");
+	NSLOG(netsurf, INFO, "Initialising treeview module");
 
 	font_pt_size = nsoption_int(treeview_font_size);
 	if (font_pt_size <= 0) {
@@ -4434,7 +4434,7 @@ nserror treeview_init(void)
 
 	tree_g.initialised++;
 
-	LOG("Initialised treeview module");
+	NSLOG(netsurf, INFO, "Initialised treeview module");
 
 	return NSERROR_OK;
 }
@@ -4450,11 +4450,12 @@ nserror treeview_fini(void)
 		return NSERROR_OK;
 
 	} else if (tree_g.initialised == 0) {
-		LOG("Warning: tried to finalise uninitialised treeview module");
+		NSLOG(netsurf, INFO,
+		      "Warning: tried to finalise uninitialised treeview module");
 		return NSERROR_OK;
 	}
 
-	LOG("Finalising treeview module");
+	NSLOG(netsurf, INFO, "Finalising treeview module");
 
 	for (i = 0; i < TREE_RES_LAST; i++) {
 		hlcache_handle_release(treeview_res[i].c);
@@ -4471,7 +4472,7 @@ nserror treeview_fini(void)
 
 	tree_g.initialised--;
 
-	LOG("Finalised treeview module");
+	NSLOG(netsurf, INFO, "Finalised treeview module");
 
 	return NSERROR_OK;
 }

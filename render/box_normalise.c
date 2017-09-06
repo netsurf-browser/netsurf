@@ -111,7 +111,7 @@ bool box_normalise_block(struct box *block, html_content *c)
 	assert(block != NULL);
 
 #ifdef BOX_NORMALISE_DEBUG
-	LOG("block %p, block->type %u", block, block->type);
+	NSLOG(netsurf, INFO, "block %p, block->type %u", block, block->type);
 #endif
 
 	assert(block->type == BOX_BLOCK || block->type == BOX_INLINE_BLOCK ||
@@ -119,7 +119,8 @@ bool box_normalise_block(struct box *block, html_content *c)
 
 	for (child = block->children; child != NULL; child = next_child) {
 #ifdef BOX_NORMALISE_DEBUG
-		LOG("child %p, child->type = %d", child, child->type);
+		NSLOG(netsurf, INFO, "child %p, child->type = %d", child,
+		      child->type);
 #endif
 
 		next_child = child->next;	/* child may be destroyed */
@@ -223,7 +224,7 @@ bool box_normalise_table(struct box *table, html_content * c)
 	assert(table->type == BOX_TABLE);
 
 #ifdef BOX_NORMALISE_DEBUG
-	LOG("table %p", table);
+	NSLOG(netsurf, INFO, "table %p", table);
 #endif
 
 	col_info.num_columns = 1;
@@ -337,7 +338,8 @@ bool box_normalise_table(struct box *table, html_content * c)
 		struct box *row;
 
 #ifdef BOX_NORMALISE_DEBUG
-		LOG("table->children == 0, creating implied row");
+		NSLOG(netsurf, INFO,
+		      "table->children == 0, creating implied row");
 #endif
 
 		assert(table->style != NULL);
@@ -399,7 +401,7 @@ bool box_normalise_table(struct box *table, html_content * c)
 		return false;
 
 #ifdef BOX_NORMALISE_DEBUG
-	LOG("table %p done", table);
+	NSLOG(netsurf, INFO, "table %p done", table);
 #endif
 
 	return true;
@@ -585,7 +587,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 	assert(row_group->type == BOX_TABLE_ROW_GROUP);
 
 #ifdef BOX_NORMALISE_DEBUG
-	LOG("row_group %p", row_group);
+	NSLOG(netsurf, INFO, "row_group %p", row_group);
 #endif
 
 	for (child = row_group->children; child != NULL; child = next_child) {
@@ -677,7 +679,8 @@ bool box_normalise_table_row_group(struct box *row_group,
 
 	if (row_group->children == NULL) {
 #ifdef BOX_NORMALISE_DEBUG
-		LOG("row_group->children == 0, inserting implied row");
+		NSLOG(netsurf, INFO,
+		      "row_group->children == 0, inserting implied row");
 #endif
 
 		assert(row_group->style != NULL);
@@ -712,7 +715,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 	row_group->rows = group_row_count;
 
 #ifdef BOX_NORMALISE_DEBUG
-	LOG("row_group %p done", row_group);
+	NSLOG(netsurf, INFO, "row_group %p done", row_group);
 #endif
 
 	return true;
@@ -734,7 +737,7 @@ bool box_normalise_table_row(struct box *row,
 	assert(row->type == BOX_TABLE_ROW);
 
 #ifdef BOX_NORMALISE_DEBUG
-	LOG("row %p", row);
+	NSLOG(netsurf, INFO, "row %p", row);
 #endif
 
 	for (child = row->children; child != NULL; child = next_child) {
@@ -843,7 +846,7 @@ bool box_normalise_table_row(struct box *row,
 	col_info->num_rows++;
 
 #ifdef BOX_NORMALISE_DEBUG
-	LOG("row %p done", row);
+	NSLOG(netsurf, INFO, "row %p done", row);
 #endif
 
 	return true;
@@ -934,7 +937,7 @@ bool box_normalise_inline_container(struct box *cont, html_content * c)
 	assert(cont->type == BOX_INLINE_CONTAINER);
 
 #ifdef BOX_NORMALISE_DEBUG
-	LOG("cont %p", cont);
+	NSLOG(netsurf, INFO, "cont %p", cont);
 #endif
 
 	for (child = cont->children; child != NULL; child = next_child) {
@@ -997,7 +1000,7 @@ bool box_normalise_inline_container(struct box *cont, html_content * c)
 	}
 
 #ifdef BOX_NORMALISE_DEBUG
-	LOG("cont %p done", cont);
+	NSLOG(netsurf, INFO, "cont %p done", cont);
 #endif
 
 	return true;

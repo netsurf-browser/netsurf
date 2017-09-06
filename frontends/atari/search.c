@@ -67,7 +67,7 @@ struct gui_search_table *atari_search_table = &search_table;
  */
 void nsatari_search_set_status(bool found, void *p)
 {
-	LOG("%p set status: %d\n", p, found);
+	NSLOG(netsurf, INFO, "%p set status: %d\n", p, found);
 	// TODO: maybe update GUI
 }
 
@@ -80,7 +80,7 @@ void nsatari_search_set_status(bool found, void *p)
 void nsatari_search_set_hourglass(bool active, void *p)
 {
 	SEARCH_FORM_SESSION s = (SEARCH_FORM_SESSION)p;
-	LOG("active: %d, session: %p", active, p);
+	NSLOG(netsurf, INFO, "active: %d, session: %p", active, p);
 	if (active) {
 		gui_window_set_pointer(s->g, GUI_POINTER_PROGRESS);
 	} else {
@@ -99,7 +99,7 @@ void nsatari_search_set_hourglass(bool active, void *p)
  */
 void nsatari_search_add_recent(const char *string, void *p)
 {
-	LOG("%p add recent: %s\n", p, string);
+	NSLOG(netsurf, INFO, "%p add recent: %s\n", p, string);
 }
 
 
@@ -115,7 +115,7 @@ void nsatari_search_set_forward_state(bool active, void *p)
 	GRECT area;
 	SEARCH_FORM_SESSION s = (SEARCH_FORM_SESSION)p;
 	/* deactivate back cb */
-	LOG("%p: set forward state: %d\n", p, active);
+	NSLOG(netsurf, INFO, "%p: set forward state: %d\n", p, active);
 
 	gw = s->g;
 
@@ -142,7 +142,7 @@ void nsatari_search_set_back_state(bool active, void *p)
 	GRECT area;
 	SEARCH_FORM_SESSION s = (SEARCH_FORM_SESSION)p;
 	/* deactivate back cb */
-	LOG("%p: set back state: %d\n", p, active);
+	NSLOG(netsurf, INFO, "%p: set back state: %d\n", p, active);
 
 	s->state.back_avail = active;
 	gw = s->g;
@@ -224,7 +224,7 @@ void nsatari_search_restore_form( struct s_search_form_session *s, OBJECT *obj)
 void nsatari_search_session_destroy(struct s_search_form_session *s)
 {
 	if (s != NULL) {
-		LOG("session %p", s);
+		NSLOG(netsurf, INFO, "session %p", s);
 		browser_window_search_clear(s->g->browser->bw);
 		free(s);
 	}

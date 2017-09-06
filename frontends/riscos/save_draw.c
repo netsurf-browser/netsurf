@@ -54,7 +54,7 @@ static int ro_save_draw_height;
  */
 static nserror ro_save_draw_error(pencil_code code)
 {
-	LOG("code %i", code);
+	NSLOG(netsurf, INFO, "code %i", code);
 
 	switch (code) {
 	case pencil_OK:
@@ -333,13 +333,13 @@ ro_save_draw_path(const struct redraw_context *ctx,
 		return NSERROR_OK;
 
 	if (p[0] != PLOTTER_PATH_MOVE) {
-		LOG("path doesn't start with a move");
+		NSLOG(netsurf, INFO, "path doesn't start with a move");
 		return NSERROR_INVALID;
 	}
 
 	path = malloc(sizeof *path * (n + 10));
 	if (!path) {
-		LOG("out of memory");
+		NSLOG(netsurf, INFO, "out of memory");
 		return NSERROR_INVALID;
 	}
 
@@ -389,7 +389,7 @@ ro_save_draw_path(const struct redraw_context *ctx,
 			i += 7;
 			empty_path = false;
 		} else {
-			LOG("bad path command %f", p[i]);
+			NSLOG(netsurf, INFO, "bad path command %f", p[i]);
 			free(path);
 			return NSERROR_INVALID;
 		}
@@ -624,8 +624,8 @@ bool save_as_draw(struct hlcache_handle *h, const char *path)
 			(byte *) drawfile_buffer,
 			(byte *) drawfile_buffer + drawfile_size);
 	if (error) {
-		LOG("xosfile_save_stamped failed: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xosfile_save_stamped failed: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("SaveError", error->errmess);
 		pencil_free(ro_save_draw_diagram);
 		return false;

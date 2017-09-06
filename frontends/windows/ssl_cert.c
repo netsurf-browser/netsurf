@@ -191,7 +191,7 @@ nserror nsw32_cert_verify(struct nsurl *url,
 		return res;
 	}
 
-	LOG("creating hInstance %p SSL window", hinst);
+	NSLOG(netsurf, INFO, "creating hInstance %p SSL window", hinst);
 	ncwin->hWnd = CreateWindowEx(0,
 				     windowclassname_sslcert,
 				     "SSL Certificate viewer",
@@ -208,7 +208,7 @@ nserror nsw32_cert_verify(struct nsurl *url,
 				     hinst,
 				     NULL);
 	if (ncwin->hWnd == NULL) {
-		LOG("Window create failed");
+		NSLOG(netsurf, INFO, "Window create failed");
 		return NSERROR_NOMEM;
 	}
 
@@ -375,8 +375,11 @@ nsw32_window_ssl_cert_command(HWND hwnd,
 			      int identifier,
 			      HWND ctrl_window)
 {
-	LOG("notification_code %x identifier %x ctrl_window %p",
-	    notification_code, identifier, ctrl_window);
+	NSLOG(netsurf, INFO,
+	      "notification_code %x identifier %x ctrl_window %p",
+	      notification_code,
+	      identifier,
+	      ctrl_window);
 
 	switch(identifier) {
 	case IDC_SSLCERT_BTN_ACCEPT:

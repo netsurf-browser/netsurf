@@ -361,7 +361,7 @@ static struct ami_font_cache_node *ami_font_open(const char *font, bool critical
 	
 	if(!nodedata->font)
 	{
-		LOG("Requested font not found: %s", font);
+		NSLOG(netsurf, INFO, "Requested font not found: %s", font);
 		if(critical == true) amiga_warn_user("CompError", font);
 		free(nodedata);
 		return NULL;
@@ -369,21 +369,28 @@ static struct ami_font_cache_node *ami_font_open(const char *font, bool critical
 
 	nodedata->bold = (char *)GetTagData(OT_BName, 0, nodedata->font->olf_OTagList);
 	if(nodedata->bold)
-		LOG("Bold font defined for %s is %s", font, nodedata->bold);
+		NSLOG(netsurf, INFO, "Bold font defined for %s is %s", font,
+		      nodedata->bold);
 	else
-		LOG("Warning: No designed bold font defined for %s", font);
+		NSLOG(netsurf, INFO,
+		      "Warning: No designed bold font defined for %s", font);
 
 	nodedata->italic = (char *)GetTagData(OT_IName, 0, nodedata->font->olf_OTagList);
 	if(nodedata->italic)
-		LOG("Italic font defined for %s is %s", font, nodedata->italic);
+		NSLOG(netsurf, INFO, "Italic font defined for %s is %s",
+		      font, nodedata->italic);
 	else
-		LOG("Warning: No designed italic font defined for %s", font);
+		NSLOG(netsurf, INFO,
+		      "Warning: No designed italic font defined for %s", font);
 
 	nodedata->bolditalic = (char *)GetTagData(OT_BIName, 0, nodedata->font->olf_OTagList);
 	if(nodedata->bolditalic)
-		LOG("Bold-italic font defined for %s is %s", font, nodedata->bolditalic);
+		NSLOG(netsurf, INFO, "Bold-italic font defined for %s is %s",
+		      font, nodedata->bolditalic);
 	else
-		LOG("Warning: No designed bold-italic font defined for %s", font);
+		NSLOG(netsurf, INFO,
+		      "Warning: No designed bold-italic font defined for %s",
+		      font);
 
 	ami_font_cache_insert(nodedata, font);
 	return nodedata;

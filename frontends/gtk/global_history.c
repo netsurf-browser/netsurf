@@ -214,8 +214,9 @@ nsgtk_global_history_init_menu(struct nsgtk_global_history_window *ghwin)
 		w = GTK_WIDGET(gtk_builder_get_object(ghwin->builder,
 						      event->widget));
 		if (w == NULL) {
-			LOG("Unable to connect menu widget ""%s""",
-			    event->widget);
+			NSLOG(netsurf, INFO,
+			      "Unable to connect menu widget ""%s""",
+			      event->widget);
 		} else {
 			g_signal_connect(G_OBJECT(w),
 					 "activate",
@@ -306,7 +307,7 @@ static nserror nsgtk_global_history_init(void)
 
 	res = nsgtk_builder_new_from_resname("globalhistory", &ncwin->builder);
 	if (res != NSERROR_OK) {
-		LOG("History UI builder init failed");
+		NSLOG(netsurf, INFO, "History UI builder init failed");
 		free(ncwin);
 		return res;
 	}

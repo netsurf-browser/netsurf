@@ -334,7 +334,7 @@ hscroll_redraw(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 		hpos = 0;
 	}
 
-	LOG("hscroll %d", hscroll);
+	NSLOG(netsurf, INFO, "hscroll %d", hscroll);
 
 	rect.x0 = bbox.x0 + 3 + hpos;
 	rect.y0 = bbox.y0 + 5;
@@ -362,7 +362,7 @@ hscrolll_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 		newpos = scrollw->u.scroll.minimum;
 
 	if (newpos == scrollw->u.scroll.position) {
-		LOG("horiz scroll was the same %d", newpos);
+		NSLOG(netsurf, INFO, "horiz scroll was the same %d", newpos);
 		return 0;
 	}
 

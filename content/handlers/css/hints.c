@@ -1615,7 +1615,7 @@ css_error node_presentational_hint(void *pw, void *node,
 	}
 
 #ifdef LOG_STATS
-	LOG("Properties with hints: %i", hint_ctx.len);
+	NSLOG(netsurf, INFO, "Properties with hints: %i", hint_ctx.len);
 #endif
 
 	css_hint_get_hints(hints, nhints);

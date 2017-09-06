@@ -354,9 +354,11 @@ nserror browser_window_create_frameset(struct browser_window *bw,
 			window->parent = bw;
 
 			if (window->name)
-				LOG("Created frame '%s'", window->name);
+				NSLOG(netsurf, INFO, "Created frame '%s'",
+				      window->name);
 			else
-				LOG("Created frame (unnamed)");
+				NSLOG(netsurf, INFO,
+				      "Created frame (unnamed)");
 		}
 	}
 

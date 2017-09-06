@@ -80,7 +80,9 @@ static void __CDECL cert_info_draw( WINDOW * win, short buf[8], void * data)
 	if( line == NULL )
 		return;
 
-	LOG("Cert info draw, win: %p, data: %p, scrollx: %d", win, data, dp->scrollx );
+	NSLOG(netsurf, INFO,
+	      "Cert info draw, win: %p, data: %p, scrollx: %d", win, data,
+	      dp->scrollx);
 
 	WindGet( win, WF_WORKXYWH, &x, &y, &w, &h );
 	/*using static values here, as RsrcUserDraw has mem leaks & a very small stack */
@@ -158,7 +160,7 @@ static void do_popup( WINDOW *win, int index, int mode, void *data)
 	char * items[dp->num_certs];
 	short x, y;
 	unsigned int i;
-	LOG("do_popup: num certs: %d", dp->num_certs);
+	NSLOG(netsurf, INFO, "do_popup: num certs: %d", dp->num_certs);
 	for( i = 0; i<dp->num_certs; i++) {
 		items[i] = malloc( 48 );
 		strncpy(items[i], (char*)&dp->cert_infos_n[i].issuer, 46 );
@@ -246,7 +248,7 @@ verify_ssl_form_do(const char * url,
 				break;
 
 			case VERIFY_BT_SCROLL_R:
-					LOG("scroll r!");
+					NSLOG(netsurf, INFO, "scroll r!");
 					cont = true;
 					dp.scrollx += 1;
 					if( dp.scrollx > (dp.cols - (272 / 8 )) )

@@ -31,7 +31,7 @@ char * local_file_to_url( const char * filename )
 	#define BACKSLASH	0x5C
 	char * url;
 
-	LOG("in: %s", filename);
+	NSLOG(netsurf, INFO, "in: %s", filename);
 
 	if( strlen(filename) <= 2){
 		return( NULL );
@@ -55,7 +55,7 @@ char * local_file_to_url( const char * filename )
 
 	free(fname_local);
 
-	LOG("out: %s", url);
+	NSLOG(netsurf, INFO, "out: %s", url);
 
 	return( url );
 	#undef BACKSLASH
@@ -81,10 +81,10 @@ char * atari_find_resource(char *buf, const char *filename, const char *def)
 {
 	char *cdir = NULL;
 	char t[PATH_MAX];
-	LOG("%s (def: %s)", filename, def);
+	NSLOG(netsurf, INFO, "%s (def: %s)", filename, def);
 	strcpy(t, NETSURF_GEM_RESPATH);
 	strcat(t, filename);
-	LOG("checking %s", (char *)&t);
+	NSLOG(netsurf, INFO, "checking %s", (char *)&t);
 	if (gemdos_realpath(t, buf) != NULL) {
 		if (access(buf, R_OK) == 0) {
 			return buf;
@@ -92,7 +92,7 @@ char * atari_find_resource(char *buf, const char *filename, const char *def)
 	}
 	strcpy(t, "./");
 	strcat(t, filename);
-	LOG("checking %s", (char *)&t);
+	NSLOG(netsurf, INFO, "checking %s", (char *)&t);
 	if (gemdos_realpath(t, buf) != NULL) {
 		if (access(buf, R_OK) == 0) {
 			return buf;
@@ -104,7 +104,7 @@ char * atari_find_resource(char *buf, const char *filename, const char *def)
 		strcpy(t, cdir);
 		strcat(t, "/.netsurf/");
 		strcat(t, filename);
-		LOG("checking %s", (char *)&t);
+		NSLOG(netsurf, INFO, "checking %s", (char *)&t);
 		if (gemdos_realpath(t, buf) != NULL) {
 			if (access(buf, R_OK) == 0)
 				return buf;
@@ -116,19 +116,19 @@ char * atari_find_resource(char *buf, const char *filename, const char *def)
 		if (gemdos_realpath(cdir, buf) != NULL) {
 			strcat(buf, "/");
 			strcat(buf, filename);
-			LOG("checking %s", (char *)&t);
+			NSLOG(netsurf, INFO, "checking %s", (char *)&t);
 			if (access(buf, R_OK) == 0)
 				return buf;
 		}
 	}
 	if (def[0] == '~') {
 		snprintf(t, PATH_MAX, "%s%s", getenv("HOME"), def + 1);
-		LOG("checking %s", (char *)&t);
+		NSLOG(netsurf, INFO, "checking %s", (char *)&t);
 		if (gemdos_realpath(t, buf) == NULL) {
 			strcpy(buf, t);
 		}
 	} else {
-		LOG("checking %s", (char *)def);
+		NSLOG(netsurf, INFO, "checking %s", (char *)def);
 		if (gemdos_realpath(def, buf) == NULL) {
 			strcpy(buf, def);
 		}

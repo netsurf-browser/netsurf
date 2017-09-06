@@ -36,7 +36,7 @@ const char *fetch_filetype(const char *unix_path)
 	char * res = (char*)"text/html";
 	l = strlen(unix_path);
 
-	LOG("unix path: %s", unix_path);
+	NSLOG(netsurf, INFO, "unix path: %s", unix_path);
 
 	/* This line is added for devlopment versions running from the root dir: */
 	if( strchr( unix_path, (int)'.' ) ){
@@ -85,6 +85,6 @@ const char *fetch_filetype(const char *unix_path)
 		}
 	}
 
-	LOG("mime type: %s", res);
+	NSLOG(netsurf, INFO, "mime type: %s", res);
 	return( res );
 }

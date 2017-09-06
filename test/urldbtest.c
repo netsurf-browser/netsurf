@@ -143,7 +143,7 @@ static nsurl *make_url(const char *url)
 {
 	nsurl *nsurl;
 	if (nsurl_create(url, &nsurl) != NSERROR_OK) {
-		LOG("failed creating nsurl");
+		NSLOG(netsurf, INFO, "failed creating nsurl");
 		exit(1);
 	}
 	return nsurl;
@@ -229,9 +229,8 @@ static void urldb_lwc_iterator(lwc_string *str, void *pw)
 {
 	int *scount = pw;
 
-	LOG("[%3u] %.*s", str->refcnt,
-	    (int)lwc_string_length(str),
-	    lwc_string_data(str));
+	NSLOG(netsurf, INFO, "[%3u] %.*s", str->refcnt,
+	      (int)lwc_string_length(str), lwc_string_data(str));
 	(*scount)++;
 }
 
@@ -245,7 +244,7 @@ static void urldb_teardown(void)
 
 	corestrings_fini();
 
-	LOG("Remaining lwc strings:");
+	NSLOG(netsurf, INFO, "Remaining lwc strings:");
 	lwc_iterate_strings(urldb_lwc_iterator, &scount);
 	ck_assert_int_eq(scount, 0);
 }
@@ -712,7 +711,7 @@ static int cb_count;
 
 static bool urldb_iterate_entries_cb(nsurl *url, const struct url_data *data)
 {
-	LOG("url: %s", nsurl_access(url));
+	NSLOG(netsurf, INFO, "url: %s", nsurl_access(url));
 	/* fprintf(stderr, "url:%s\ntitle:%s\n\n",nsurl_access(url), data->title); */
 	cb_count++;
 	return true;
@@ -995,7 +994,7 @@ static TCase *urldb_case_create(void)
 
 static bool urldb_iterate_cookies_cb(const struct cookie_data *data)
 {
-	LOG("%p", data);
+	NSLOG(netsurf, INFO, "%p", data);
 	/* fprintf(stderr, "domain:%s\npath:%s\nname:%s\n\n",data->domain, data->path, data->name);*/
 	return true;
 }

@@ -74,7 +74,8 @@ message_process_line(struct hash_table *hash, uint8_t *ln, int lnlen)
 	value = colon + 1;
 
 	if (hash_add(hash, (char *)ln, (char *)value) == false) {
-		LOG("Unable to add %s:%s to hash table", ln, value);
+		NSLOG(netsurf, INFO, "Unable to add %s:%s to hash table", ln,
+		      value);
 		return NSERROR_INVALID;
 	}
 	return NSERROR_OK;
@@ -97,7 +98,9 @@ static nserror messages_load_ctx(const char *path, struct hash_table **ctx)
 
 	fp = gzopen(path, "r");
 	if (!fp) {
-		LOG("Unable to open messages file \"%.100s\": %s", path, strerror(errno));
+		NSLOG(netsurf, INFO,
+		      "Unable to open messages file \"%.100s\": %s", path,
+		      strerror(errno));
 
 		return NSERROR_NOT_FOUND;
 	}
@@ -112,7 +115,9 @@ static nserror messages_load_ctx(const char *path, struct hash_table **ctx)
 		nctx = *ctx;
 	}
 	if (nctx == NULL) {
-		LOG("Unable to create hash table for messages file %s", path);
+		NSLOG(netsurf, INFO,
+		      "Unable to create hash table for messages file %s",
+		      path);
 		gzclose(fp);
 		return NSERROR_NOMEM;
 	}
@@ -131,7 +136,9 @@ static nserror messages_load_ctx(const char *path, struct hash_table **ctx)
 		value = colon + 1;
 
 		if (hash_add(nctx, s, value) == false) {
-			LOG("Unable to add %s:%s to hash table of %s", s, value, path);
+			NSLOG(netsurf, INFO,
+			      "Unable to add %s:%s to hash table of %s", s,
+			      value, path);
 			gzclose(fp);
 			if (*ctx == NULL) {
 				hash_destroy(nctx);
@@ -202,7 +209,7 @@ nserror messages_add_from_file(const char *path)
 		return NSERROR_BAD_PARAMETER;
 	}
 
-	LOG("Loading Messages from '%s'", path);
+	NSLOG(netsurf, INFO, "Loading Messages from '%s'", path);
 
 	err = messages_load_ctx(path, &messages_hash);
 
@@ -225,7 +232,7 @@ nserror messages_add_from_inline(const uint8_t *data, size_t data_size)
 		messages_hash = hash_create(HASH_SIZE);
 	}
 	if (messages_hash == NULL) {
-		LOG("Unable to create hash table");
+		NSLOG(netsurf, INFO, "Unable to create hash table");
 		return NSERROR_NOMEM;
 	}
 
@@ -238,7 +245,7 @@ nserror messages_add_from_inline(const uint8_t *data, size_t data_size)
 
 	ret = inflateInit2(&strm, 32 + MAX_WBITS);
 	if (ret != Z_OK) {
-		LOG("inflateInit returned %d", ret);
+		NSLOG(netsurf, INFO, "inflateInit returned %d", ret);
 		return NSERROR_INVALID;
 	}
 
@@ -271,7 +278,7 @@ nserror messages_add_from_inline(const uint8_t *data, size_t data_size)
 		}
 		if (used == sizeof(s)) {
 			/* entire buffer used and no newline */
-			LOG("Overlength line");
+			NSLOG(netsurf, INFO, "Overlength line");
 			used = 0;
 		}
 	} while (ret != Z_STREAM_END);
@@ -279,7 +286,7 @@ nserror messages_add_from_inline(const uint8_t *data, size_t data_size)
 	inflateEnd(&strm);
 
 	if (ret != Z_STREAM_END) {
-		LOG("inflate returned %d", ret);
+		NSLOG(netsurf, INFO, "inflate returned %d", ret);
 		return NSERROR_INVALID;
 	}
 	return NSERROR_OK;

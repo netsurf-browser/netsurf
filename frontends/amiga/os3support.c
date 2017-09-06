@@ -216,13 +216,13 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	fh = Open(fontpath, MODE_OLDFILE);
 
 	if(fh == 0) {
-		LOG("Unable to open FONT %s", fontpath);
+		NSLOG(netsurf, INFO, "Unable to open FONT %s", fontpath);
 		FreeVec(fontpath);
 		return NULL;
 	}
 
 	if(Read(fh, &fch, sizeof(struct FontContentsHeader)) != sizeof(struct FontContentsHeader)) {
-		LOG("Unable to read FONT %s", fontpath);
+		NSLOG(netsurf, INFO, "Unable to read FONT %s", fontpath);
 		FreeVec(fontpath);
 		Close(fh);
 		return NULL;
@@ -231,7 +231,7 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	Close(fh);
 
 	if(fch.fch_FileID != OFCH_ID) {
-		LOG("%s is not an outline font!", fontpath);
+		NSLOG(netsurf, INFO, "%s is not an outline font!", fontpath);
 		FreeVec(fontpath);
 		return NULL;
 	}
@@ -242,7 +242,7 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	if(p) *p = '.';
 
 	if(fh == 0) {
-		LOG("Unable to open OTAG %s", otagpath);
+		NSLOG(netsurf, INFO, "Unable to open OTAG %s", otagpath);
 		FreeVec(otagpath);
 		return NULL;
 	}
@@ -250,7 +250,7 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	size = GetFileSize(fh);
 	buffer = (UBYTE *)malloc(size);
 	if(buffer == NULL) {
-		LOG("Unable to allocate memory");
+		NSLOG(netsurf, INFO, "Unable to allocate memory");
 		Close(fh);
 		FreeVec(otagpath);
 		return NULL;
@@ -262,7 +262,7 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	/* The first tag is supposed to be OT_FileIdent and should equal 'size' */
 	struct TagItem *tag = (struct TagItem *)buffer;
 	if((tag->ti_Tag != OT_FileIdent) || (tag->ti_Data != (ULONG)size)) {
-		LOG("Invalid OTAG file");
+		NSLOG(netsurf, INFO, "Invalid OTAG file");
 		free(buffer);
 		FreeVec(otagpath);
 		return NULL;
@@ -277,10 +277,10 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 
 	/* Find OT_Engine and open the font engine */
 	if(ti = FindTagItem(OT_Engine, buffer)) {
-		LOG("Using font engine %s", ti->ti_Data);
+		NSLOG(netsurf, INFO, "Using font engine %s", ti->ti_Data);
 		fname = ASPrintf("%s.library", ti->ti_Data);
 	} else {
-		LOG("Cannot find OT_Engine tag");
+		NSLOG(netsurf, INFO, "Cannot find OT_Engine tag");
 		free(buffer);
 		FreeVec(otagpath);
 		return NULL;
@@ -289,7 +289,7 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	BulletBase = (struct BulletBase *)OpenLibrary(fname, 0L);
 
 	if(BulletBase == NULL) {
-		LOG("Unable to open font engine %s", fname);
+		NSLOG(netsurf, INFO, "Unable to open font engine %s", fname);
 		free(buffer);
 		FreeVec(fname);
 		FreeVec(otagpath);

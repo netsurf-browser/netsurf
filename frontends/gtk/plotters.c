@@ -413,7 +413,7 @@ nsgtk_plot_path(const struct redraw_context *ctx,
 		return NSERROR_OK;
 
 	if (p[0] != PLOTTER_PATH_MOVE) {
-		LOG("Path does not start with move");
+		NSLOG(netsurf, INFO, "Path does not start with move");
 		return NSERROR_INVALID;
 	}
 
@@ -451,7 +451,7 @@ nsgtk_plot_path(const struct redraw_context *ctx,
 				       p[i+5], p[i+6]);
 			i += 7;
 		} else {
-			LOG("bad path command %f", p[i]);
+			NSLOG(netsurf, INFO, "bad path command %f", p[i]);
 			/* Reset matrix for safety */
 			cairo_set_matrix(current_cr, &old_ctm);
 			return NSERROR_INVALID;

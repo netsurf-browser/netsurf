@@ -63,22 +63,22 @@ static void update_scrollbars(struct ro_corewindow *ro_cw, wimp_open *open)
 	int extent_height;
 	os_box extent;
 
-	LOG("RO corewindow context %p", ro_cw);
+	NSLOG(netsurf, INFO, "RO corewindow context %p", ro_cw);
 
 	/* extent of content in not smaller than window so start there */
 	extent_width = open->visible.x1 - open->visible.x0;
 	extent_height = open->visible.y0 - open->visible.y1;
-	LOG("extent w:%d h:%d content w:%d h:%d origin h:%d",
-	    extent_width, extent_height,
-	    ro_cw->content_width, ro_cw->content_height, ro_cw->origin_y);
+	NSLOG(netsurf, INFO,
+	      "extent w:%d h:%d content w:%d h:%d origin h:%d", extent_width,
+	      extent_height, ro_cw->content_width, ro_cw->content_height,
+	      ro_cw->origin_y);
 	if (ro_cw->content_width > extent_width) {
 		extent_width = ro_cw->content_width;
 	}
 	if (extent_height > (ro_cw->origin_y + ro_cw->content_height)) {
 		extent_height = ro_cw->origin_y + ro_cw->content_height;
 	}
-	LOG("extent w:%d h:%d",
-	    extent_width, extent_height);
+	NSLOG(netsurf, INFO, "extent w:%d h:%d", extent_width, extent_height);
 	extent.x0 = 0;
 	extent.y0 = extent_height;
 	extent.x1 = extent_width;
@@ -86,15 +86,15 @@ static void update_scrollbars(struct ro_corewindow *ro_cw, wimp_open *open)
 
 	error = xwimp_set_extent(ro_cw->wh, &extent);
 	if (error) {
-		LOG("xwimp_set_extent: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_set_extent: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return;
 	}
 
 	error = xwimp_open_window(open);
 	if (error) {
-		LOG("xwimp_open_window: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_open_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 	}
 }
 
@@ -130,8 +130,8 @@ static void ro_cw_redraw(wimp_draw *redraw)
 		error = xwimp_get_rectangle(redraw, &more);
 	}
 	if (error != NULL) {
-		LOG("xwimp_redraw_window: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_redraw_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 	}
 
 }
@@ -145,7 +145,7 @@ static void ro_cw_scroll(wimp_scroll *scroll)
 	wimp_open open;
 
 	ro_cw = (struct ro_corewindow *)ro_gui_wimp_event_get_user_data(scroll->w);
-	LOG("RO corewindow context %p", ro_cw);
+	NSLOG(netsurf, INFO, "RO corewindow context %p", ro_cw);
 
 	page_x = scroll->visible.x1 - scroll->visible.x0 - 32;
 	page_y = scroll->visible.y1 - scroll->visible.y0 - 32;
@@ -202,8 +202,8 @@ static void ro_cw_scroll(wimp_scroll *scroll)
 
 	error = xwimp_open_window(&open);
 	if (error) {
-		LOG("xwimp_open_window: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_open_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 	}
 
 }
@@ -231,18 +231,18 @@ static void ro_cw_mouse_at(wimp_pointer *pointer, void *data)
 
 	ro_cw = (struct ro_corewindow *)ro_gui_wimp_event_get_user_data(pointer->w);
 	if (ro_cw == NULL) {
-		LOG("no corewindow conext for window: 0x%x",
-		    (unsigned int)pointer->w);
+		NSLOG(netsurf, INFO, "no corewindow conext for window: 0x%x",
+		      (unsigned int)pointer->w);
 		return;
 	}
-	LOG("RO corewindow context %p", ro_cw);
+	NSLOG(netsurf, INFO, "RO corewindow context %p", ro_cw);
 
 	/* Not a Menu click. */
 	state.w = pointer->w;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return;
 	}
 
@@ -285,14 +285,15 @@ static void ro_cw_drag_end(wimp_dragged *drag, void *data)
 
 	error = xwimp_drag_box((wimp_drag *) -1);
 	if (error) {
-		LOG("xwimp_drag_box: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_drag_box: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 
 	error = xwimp_auto_scroll(0, NULL, NULL);
 	if (error) {
-		LOG("xwimp_auto_scroll: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_auto_scroll: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 }
@@ -345,12 +346,13 @@ ro_cw_drag_start(struct ro_corewindow *ro_cw,
 		break;
 	}
 
-	LOG("Drag start...");
+	NSLOG(netsurf, INFO, "Drag start...");
 
 	error = xwimp_drag_box_with_flags(&drag,
 			wimp_DRAG_BOX_KEEP_IN_LINE | wimp_DRAG_BOX_CLIP);
 	if (error) {
-		LOG("xwimp_drag_box: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_drag_box: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	} else {
 		auto_scroll.w = ro_cw->wh;
@@ -364,7 +366,8 @@ ro_cw_drag_start(struct ro_corewindow *ro_cw,
 		error = xwimp_auto_scroll(wimp_AUTO_SCROLL_ENABLE_VERTICAL,
 				&auto_scroll, NULL);
 		if (error) {
-			LOG("xwimp_auto_scroll: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_auto_scroll: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 		}
 
@@ -388,8 +391,8 @@ static void ro_cw_pointer_leaving(wimp_leaving *leaving, void *data)
 
 	ro_cw = (struct ro_corewindow *)ro_gui_wimp_event_get_user_data(leaving->w);
 	if (ro_cw == NULL) {
-		LOG("no corewindow conext for window: 0x%x",
-		    (unsigned int)leaving->w);
+		NSLOG(netsurf, INFO, "no corewindow conext for window: 0x%x",
+		      (unsigned int)leaving->w);
 		return;
 	}
 
@@ -439,14 +442,14 @@ static bool ro_cw_mouse_click(wimp_pointer *pointer)
 	struct ro_corewindow *ro_cw;
 
 	ro_cw = (struct ro_corewindow *)ro_gui_wimp_event_get_user_data(pointer->w);
-	LOG("RO corewindow context %p", ro_cw);
+	NSLOG(netsurf, INFO, "RO corewindow context %p", ro_cw);
 
 
 	state.w = ro_cw->wh;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return false;
 	}
 
@@ -517,7 +520,7 @@ static bool ro_cw_keypress(wimp_key *key)
 	nserror res;
 
 	ro_cw = (struct ro_corewindow *)ro_gui_wimp_event_get_user_data(key->w);
-	LOG("RO corewindow context %p", ro_cw);
+	NSLOG(netsurf, INFO, "RO corewindow context %p", ro_cw);
 
 	c = (uint32_t) key->c;
 
@@ -640,8 +643,8 @@ static void cw_tb_size(void *ctx)
 	state.w = ro_cw->wh;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return;
 	}
 
@@ -649,8 +652,8 @@ static void cw_tb_size(void *ctx)
 				   0, state.visible.y0 - state.visible.y1,
 				   state.visible.x1 - state.visible.x0, 0);
 	if (error) {
-		LOG("xwimp_force_redraw: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_force_redraw: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return;
 	}
 }
@@ -759,8 +762,10 @@ ro_cw_invalidate(struct core_window *cw, const struct rect *r)
 		info.w = ro_cw->wh;
 		error = xwimp_get_window_info_header_only(&info);
 		if (error) {
-			LOG("xwimp_get_window_info_header_only: 0x%x: %s",
-			    error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xwimp_get_window_info_header_only: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			return NSERROR_INVALID;
 		}
 	} else {
@@ -775,8 +780,8 @@ ro_cw_invalidate(struct core_window *cw, const struct rect *r)
 				   info.extent.x0, info.extent.y0,
 				   info.extent.x1, info.extent.y1);
 	if (error) {
-		LOG("xwimp_force_redraw: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_force_redraw: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return NSERROR_INVALID;
 	}
 	return NSERROR_OK;
@@ -794,8 +799,8 @@ ro_cw_update_size(struct core_window *cw, int width, int height)
 	wimp_window_state state;
 	os_error *error;
 
-	LOG("content resize from w:%d h:%d to w:%d h:%d",
-	    ro_cw->content_width, ro_cw->content_height, width, height);
+	NSLOG(netsurf, INFO, "content resize from w:%d h:%d to w:%d h:%d",
+	      ro_cw->content_width, ro_cw->content_height, width, height);
 
 	ro_cw->content_width = width * 2;
 	ro_cw->content_height = -(2 * height);
@@ -803,8 +808,8 @@ ro_cw_update_size(struct core_window *cw, int width, int height)
 	state.w = ro_cw->wh;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return;
 	}
 
@@ -848,8 +853,8 @@ ro_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
 	state.w = ro_cw->wh;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return;
 	}
 

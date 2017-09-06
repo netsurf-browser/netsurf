@@ -65,7 +65,7 @@ static nsurl *get_resource_url(const char *path)
 static const char *fetch_filetype(const char *unix_path)
 {
 	int l;
-	LOG("unix path %s", unix_path);
+	NSLOG(netsurf, INFO, "unix path %s", unix_path);
 	l = strlen(unix_path);
 	if (2 < l && strcasecmp(unix_path + l - 3, "css") == 0)
 		return "text/css";

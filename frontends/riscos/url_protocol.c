@@ -75,17 +75,19 @@ void ro_url_message_received(wimp_message *message)
 
 	} else {
 		if (!url_message->indirect.url.offset) {
-			LOG("no URL in message");
+			NSLOG(netsurf, INFO, "no URL in message");
 			return;
 		}
 		if (28 < message->size &&
 				url_message->indirect.body_file.offset) {
-			LOG("POST for URL message not implemented");
+			NSLOG(netsurf, INFO,
+			      "POST for URL message not implemented");
 			return;
 		}
 		if (url_message->indirect.url.offset < 28 ||
 				236 <= url_message->indirect.url.offset) {
-			LOG("external pointers in URL message unimplemented");
+			NSLOG(netsurf, INFO,
+			      "external pointers in URL message unimplemented");
 			/* these messages have never been seen in the wild,
 			 * and there is the problem of invalid addresses which
 			 * would cause an abort */
@@ -122,7 +124,8 @@ void ro_url_message_received(wimp_message *message)
 	error = xwimp_send_message(wimp_USER_MESSAGE_ACKNOWLEDGE, message,
 			message->sender);
 	if (error) {
-		LOG("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_send_message: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 
@@ -165,7 +168,8 @@ void ro_url_broadcast(const char *url)
 	error = xwimp_send_message(wimp_USER_MESSAGE_RECORDED,
 			(wimp_message *) &message, 0);
 	if (error) {
-		LOG("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_send_message: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 }
@@ -184,7 +188,7 @@ void ro_url_load(const char *url)
 
 	colon = strchr(url, ':');
 	if (!colon) {
-		LOG("invalid url '%s'", url);
+		NSLOG(netsurf, INFO, "invalid url '%s'", url);
 		return;
 	}
 
@@ -204,7 +208,8 @@ void ro_url_load(const char *url)
 
 	error = xwimp_start_task(command, 0);
 	if (error) {
-		LOG("xwimp_start_task: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_start_task: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 

@@ -584,7 +584,8 @@ ULONG ami_gui_menu_number(int item)
 		break;
 
 		default:
-			LOG("WARNING: Unrecognised menu item %d", item);
+			NSLOG(netsurf, INFO,
+			      "WARNING: Unrecognised menu item %d", item);
 			menu_num = 0;
 		break;
 	}

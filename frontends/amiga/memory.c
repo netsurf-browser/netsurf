@@ -50,23 +50,38 @@ void *ami_memory_clear_alloc(size_t size, UBYTE value)
 static int ami_memory_slab_usage_cb(const struct __slab_usage_information * sui)
 {
 	if(sui->sui_slab_index <= 1) {
-		LOG("clib2 slab usage:");
-		LOG("  The size of all slabs, in bytes: %ld", sui->sui_slab_size);
-		LOG("  Number of allocations which are not managed by slabs: %ld",
-			sui->sui_num_single_allocations);
-		LOG("  Total number of bytes allocated for memory not managed by slabs: %ld",
-			sui->sui_total_single_allocation_size);
-		LOG("  Number of slabs currently in play: %ld", sui->sui_num_slabs);
-		LOG("  Number of currently unused slabs: %ld", sui->sui_num_empty_slabs);
-		LOG("  Number of slabs in use which are completely filled with data: %ld",
-			sui->sui_num_full_slabs);
-		LOG("  Total number of bytes allocated for all slabs: %ld",
-			sui->sui_total_slab_allocation_size);
+		NSLOG(netsurf, INFO, "clib2 slab usage:");
+		NSLOG(netsurf, INFO,
+		      "  The size of all slabs, in bytes: %ld",
+		      sui->sui_slab_size);
+		NSLOG(netsurf, INFO,
+		      "  Number of allocations which are not managed by slabs: %ld",
+		      sui->sui_num_single_allocations);
+		NSLOG(netsurf, INFO,
+		      "  Total number of bytes allocated for memory not managed by slabs: %ld",
+		      sui->sui_total_single_allocation_size);
+		NSLOG(netsurf, INFO,
+		      "  Number of slabs currently in play: %ld",
+		      sui->sui_num_slabs);
+		NSLOG(netsurf, INFO,
+		      "  Number of currently unused slabs: %ld",
+		      sui->sui_num_empty_slabs);
+		NSLOG(netsurf, INFO,
+		      "  Number of slabs in use which are completely filled with data: %ld",
+		      sui->sui_num_full_slabs);
+		NSLOG(netsurf, INFO,
+		      "  Total number of bytes allocated for all slabs: %ld",
+		      sui->sui_total_slab_allocation_size);
 	}
-	LOG("Slab %d", sui->sui_slab_index);
-	LOG("  Memory chunk size managed by this slab: %ld", sui->sui_chunk_size);
-	LOG("  Number of memory chunks that fit in this slab: %ld", sui->sui_num_chunks);
-	LOG("  Number of memory chunks used in this slab: %ld", sui->sui_num_chunks_used);
+	NSLOG(netsurf, INFO, "Slab %d", sui->sui_slab_index);
+	NSLOG(netsurf, INFO, "  Memory chunk size managed by this slab: %ld",
+	      sui->sui_chunk_size);
+	NSLOG(netsurf, INFO,
+	      "  Number of memory chunks that fit in this slab: %ld",
+	      sui->sui_num_chunks);
+	NSLOG(netsurf, INFO,
+	      "  Number of memory chunks used in this slab: %ld",
+	      sui->sui_num_chunks_used);
 
 	return 0;
 }
@@ -74,16 +89,20 @@ static int ami_memory_slab_usage_cb(const struct __slab_usage_information * sui)
 static int ami_memory_slab_alloc_cb(const struct __slab_allocation_information *sai)
 {
 	if(sai->sai_allocation_index <= 1) {
-		LOG("clib2 allocation usage:");
-		LOG("  Number of allocations which are not managed by slabs: %ld",
-			sai->sai_num_single_allocations);
-		LOG("  Total number of bytes allocated for memory not managed by slabs: %ld",
-			sai->sai_total_single_allocation_size);
+		NSLOG(netsurf, INFO, "clib2 allocation usage:");
+		NSLOG(netsurf, INFO,
+		      "  Number of allocations which are not managed by slabs: %ld",
+		      sai->sai_num_single_allocations);
+		NSLOG(netsurf, INFO,
+		      "  Total number of bytes allocated for memory not managed by slabs: %ld",
+		      sai->sai_total_single_allocation_size);
 	}
-	LOG("Alloc %d", sai->sai_allocation_index);
-	LOG("  Size of this allocation, as requested: %ld", sai->sai_allocation_size);
-	LOG("  Total size of this allocation, including management data: %ld",
-		sai->sai_total_allocation_size);
+	NSLOG(netsurf, INFO, "Alloc %d", sai->sai_allocation_index);
+	NSLOG(netsurf, INFO, "  Size of this allocation, as requested: %ld",
+	      sai->sai_allocation_size);
+	NSLOG(netsurf, INFO,
+	      "  Total size of this allocation, including management data: %ld",
+	      sai->sai_total_allocation_size);
 
 	return 0;
 }
@@ -111,13 +130,13 @@ void ami_memory_slab_dump(BPTR fh)
 static void ami_memory_low_mem_handler(void *p)
 {
 	if(low_mem_status == PURGE_STEP1) {
-		LOG("Purging llcache");
+		NSLOG(netsurf, INFO, "Purging llcache");
 		llcache_clean(true);
 		low_mem_status = PURGE_DONE_STEP1;
 	}
 
 	if(low_mem_status == PURGE_STEP2) {
-		LOG("Purging unused slabs");
+		NSLOG(netsurf, INFO, "Purging unused slabs");
 		__free_unused_slabs();
 		low_mem_status = PURGE_DONE_STEP2;
 	}

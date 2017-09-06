@@ -69,7 +69,10 @@ static void ami_font_cache_cleanup(struct SkipList *skiplist)
 		SubTime(&curtime, &node->lastused);
 		if(curtime.Seconds > 300)
 		{
-			LOG("Freeing font %p not used for %ld seconds", node->skip_node.sn_Key, curtime.Seconds);
+			NSLOG(netsurf, INFO,
+			      "Freeing font %p not used for %ld seconds",
+			      node->skip_node.sn_Key,
+			      curtime.Seconds);
 			ami_font_bullet_close(node);
 			RemoveSkipNode(skiplist, node->skip_node.sn_Key);
 		}
@@ -98,7 +101,10 @@ static void ami_font_cache_cleanup(struct MinList *ami_font_cache_list)
 		SubTime(&curtime, &fnode->lastused);
 		if(curtime.Seconds > 300)
 		{
-			LOG("Freeing %s not used for %ld seconds", node->dtz_Node.ln_Name, curtime.Seconds);
+			NSLOG(netsurf, INFO,
+			      "Freeing %s not used for %ld seconds",
+			      node->dtz_Node.ln_Name,
+			      curtime.Seconds);
 			DelObject(node);
 		}
 	} while((node=nnode));
@@ -146,7 +152,7 @@ struct ami_font_cache_node *ami_font_cache_locate(const char *font)
 		return nodedata;
 	}
 
-	LOG("Font cache miss: %s (%lx)", font, hash);
+	NSLOG(netsurf, INFO, "Font cache miss: %s (%lx)", font, hash);
 	return NULL;
 }
 
@@ -180,7 +186,7 @@ void ami_font_cache_insert(struct ami_font_cache_node *nodedata, const char *fon
 
 void ami_font_cache_fini(void)
 {
-	LOG("Cleaning up font cache");
+	NSLOG(netsurf, INFO, "Cleaning up font cache");
 	ami_schedule(-1, (void *)ami_font_cache_cleanup, ami_font_cache_list);
 #ifdef __amigaos4__
 	ami_font_cache_del_skiplist(ami_font_cache_list);

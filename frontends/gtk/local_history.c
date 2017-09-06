@@ -148,7 +148,7 @@ nsgtk_local_history_init(struct browser_window *bw,
 
 	res = nsgtk_builder_new_from_resname("localhistory", &ncwin->builder);
 	if (res != NSERROR_OK) {
-		LOG("Local history UI builder init failed");
+		NSLOG(netsurf, INFO, "Local history UI builder init failed");
 		free(ncwin);
 		return res;
 	}

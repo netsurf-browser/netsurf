@@ -222,7 +222,7 @@ void gui_401login_open(nsurl *url,
 
 	res = create_login_window(url, host, realm, cb, cbpw);
 	if (res != NSERROR_OK) {
-		LOG("Login init failed");
+		NSLOG(netsurf, INFO, "Login init failed");
 
 		/* creating login failed so cancel navigation */
 		cb(false, cbpw);

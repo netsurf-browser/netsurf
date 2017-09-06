@@ -40,7 +40,7 @@ monkey_register_handler(const char *cmd, handle_command_fn fn)
 {
 	monkey_cmdhandler_t *ret = calloc(sizeof(*ret), 1);
 	if (ret == NULL) {
-		LOG("Unable to allocate handler");
+		NSLOG(netsurf, INFO, "Unable to allocate handler");
 		return NSERROR_NOMEM;
 	}
 	ret->cmd = strdup(cmd);

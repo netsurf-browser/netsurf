@@ -126,8 +126,10 @@ print_apply_settings(hlcache_handle *content, struct print_settings *settings)
 
 	content_reformat(content, false, page_content_width, 0);
 
-	LOG("New layout applied.New height = %d ; New width = %d ",
-	    content_get_height(content), content_get_width(content));
+	NSLOG(netsurf, INFO,
+	      "New layout applied.New height = %d ; New width = %d ",
+	      content_get_height(content),
+	      content_get_width(content));
 
 	return true;
 }

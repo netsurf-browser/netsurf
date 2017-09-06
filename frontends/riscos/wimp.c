@@ -103,7 +103,10 @@ void ro_gui_wimp_cache_furniture_sizes(wimp_w w)
 	furniture_sizes.border_widths.x1 = 40;
 	error = xwimpextend_get_furniture_sizes(&furniture_sizes);
 	if (error) {
-		LOG("xwimpextend_get_furniture_sizes: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO,
+		      "xwimpextend_get_furniture_sizes: 0x%x: %s",
+		      error->errnum,
+		      error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 }
@@ -123,13 +126,15 @@ bool ro_gui_wimp_read_eig_factors(os_mode mode, int *xeig, int *yeig)
 
 	error = xos_read_mode_variable(mode, os_MODEVAR_XEIG_FACTOR, xeig, 0);
 	if (error) {
-		LOG("xos_read_mode_variable: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xos_read_mode_variable: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("MiscError", error->errmess);
 		return false;
 	}
 	error = xos_read_mode_variable(mode, os_MODEVAR_YEIG_FACTOR, yeig, 0);
 	if (error) {
-		LOG("xos_read_mode_variable: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xos_read_mode_variable: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("MiscError", error->errmess);
 		return false;
 	}
@@ -196,14 +201,16 @@ void ro_gui_force_redraw_icon(wimp_w w, wimp_i i)
 	ic.i = i;
 	error = xwimp_get_icon_state(&ic);
 	if (error) {
-		LOG("xwimp_get_icon_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_icon_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 	error = xwimp_force_redraw(w, ic.icon.extent.x0, ic.icon.extent.y0,
 			ic.icon.extent.x1, ic.icon.extent.y1);
 	if (error) {
-		LOG("xwimp_force_redraw: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_force_redraw: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 }
@@ -235,7 +242,8 @@ const char *ro_gui_get_icon_string(wimp_w w, wimp_i i)
 	ic.i = i;
 	error = xwimp_get_icon_state(&ic);
 	if (error) {
-		LOG("xwimp_get_icon_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_icon_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return NULL;
 	}
@@ -277,7 +285,7 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text, bool is_utf8)
 		if (err != NSERROR_OK) {
 			/* A bad encoding should never happen, so assert this */
 			assert(err != NSERROR_BAD_ENCODING);
-			LOG("utf8_to_enc failed");
+			NSLOG(netsurf, INFO, "utf8_to_enc failed");
 			/* Paranoia */
 			local_text = NULL;
 		}
@@ -292,7 +300,8 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text, bool is_utf8)
 	ic.i = i;
 	error = xwimp_get_icon_state(&ic);
 	if (error) {
-		LOG("xwimp_get_icon_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_icon_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		goto exit;
 	}
@@ -325,7 +334,10 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text, bool is_utf8)
 				(button_type == wimp_BUTTON_WRITE_CLICK_DRAG)) {
 			error = xwimp_get_caret_position(&caret);
 			if (error) {
-				LOG("xwimp_get_caret_position: 0x%x: %s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xwimp_get_caret_position: 0x%x: %s",
+				      error->errnum,
+				      error->errmess);
 				ro_warn_user("WimpError", error->errmess);
 				goto exit;
 			}
@@ -336,7 +348,10 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text, bool is_utf8)
 				error = xwimp_set_caret_position(w, i, caret.pos.x,
 						caret.pos.y, -1, caret.index);
 				if (error) {
-					LOG("xwimp_set_caret_position: 0x%x: %s", error->errnum, error->errmess);
+					NSLOG(netsurf, INFO,
+					      "xwimp_set_caret_position: 0x%x: %s",
+					      error->errnum,
+					      error->errmess);
 					ro_warn_user("WimpError", error->errmess);
 				}
 			}
@@ -433,7 +448,8 @@ void ro_gui_set_icon_selected_state(wimp_w w, wimp_i i, bool state)
 	error = xwimp_set_icon_state(w, i,
 			(state ? wimp_ICON_SELECTED : 0), wimp_ICON_SELECTED);
 	if (error) {
-		LOG("xwimp_set_icon_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_set_icon_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 }
@@ -452,7 +468,8 @@ bool ro_gui_get_icon_selected_state(wimp_w w, wimp_i i)
 	ic.i = i;
 	error = xwimp_get_icon_state(&ic);
 	if (error) {
-		LOG("xwimp_get_icon_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_icon_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
@@ -478,7 +495,8 @@ void ro_gui_set_icon_shaded_state(wimp_w w, wimp_i i, bool state)
 	error = xwimp_set_icon_state(w, i,
 			(state ? wimp_ICON_SHADED : 0), wimp_ICON_SHADED);
 	if (error) {
-		LOG("xwimp_get_icon_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_icon_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 	if (!state)
@@ -487,7 +505,8 @@ void ro_gui_set_icon_shaded_state(wimp_w w, wimp_i i, bool state)
 	/* ensure the caret is not in a shaded icon */
 	error = xwimp_get_caret_position(&caret);
 	if (error) {
-		LOG("xwimp_get_caret_position: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_caret_position: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -499,7 +518,8 @@ void ro_gui_set_icon_shaded_state(wimp_w w, wimp_i i, bool state)
 	/* lose the caret */
 	error = xwimp_set_caret_position((wimp_w)-1, (wimp_i)-1, -1, -1, -1, -1);
 	if (error) {
-		LOG("xwimp_set_caret_position: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_set_caret_position: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -540,7 +560,8 @@ void ro_gui_set_icon_deleted_state(wimp_w w, wimp_i i, bool state)
 	error = xwimp_set_icon_state(w, i,
 			(state ? wimp_ICON_DELETED : 0), wimp_ICON_DELETED);
 	if (error) {
-		LOG("xwimp_get_icon_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_icon_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 	if (!state)
@@ -549,7 +570,8 @@ void ro_gui_set_icon_deleted_state(wimp_w w, wimp_i i, bool state)
 	/* ensure the caret is not in a shaded icon */
 	error = xwimp_get_caret_position(&caret);
 	if (error) {
-		LOG("xwimp_get_caret_position: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_caret_position: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -561,7 +583,8 @@ void ro_gui_set_icon_deleted_state(wimp_w w, wimp_i i, bool state)
 	/* lose the caret */
 	error = xwimp_set_caret_position((wimp_w)-1, (wimp_i)-1, -1, -1, -1, -1);
 	if (error) {
-		LOG("xwimp_set_caret_position: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_set_caret_position: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -597,7 +620,8 @@ void ro_gui_set_icon_button_type(wimp_w w, wimp_i i, int type)
 	error = xwimp_set_icon_state(w, i, wimp_ICON_BUTTON_TYPE,
 			(type << wimp_ICON_BUTTON_TYPE_SHIFT));
 	if (error) {
-		LOG("xwimp_set_icon_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_set_icon_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 }
@@ -622,7 +646,8 @@ void ro_gui_set_icon_sprite(wimp_w w, wimp_i i, osspriteop_area *area,
 	ic.i = i;
 	error = xwimp_get_icon_state(&ic);
 	if (error) {
-		LOG("xwimp_get_icon_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_icon_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -659,7 +684,8 @@ void ro_gui_set_window_title(wimp_w w, const char *text)
 	window.w = w;
 	error = xwimp_get_window_info_header_only((wimp_window_info *)&window);
 	if (error) {
-		LOG("xwimp_get_window_info: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_info: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -670,7 +696,7 @@ void ro_gui_set_window_title(wimp_w w, const char *text)
 		/* A bad encoding should never happen,
 		 * so assert this */
 		assert(err != NSERROR_BAD_ENCODING);
-		LOG("utf8_to_enc failed");
+		NSLOG(netsurf, INFO, "utf8_to_enc failed");
 		return;
 	}
 
@@ -686,7 +712,8 @@ void ro_gui_set_window_title(wimp_w w, const char *text)
 	*/
 	error = xwimp_force_redraw_title(w);
 	if (error) {
-		LOG("xwimp_force_redraw_title: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_force_redraw_title: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -713,7 +740,8 @@ bool ro_gui_set_caret_first(wimp_w w)
 	win_state.w = w;
 	error = xwimp_get_window_state(&win_state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
@@ -724,7 +752,8 @@ bool ro_gui_set_caret_first(wimp_w w)
 	window.w = w;
 	error = xwimp_get_window_info_header_only((wimp_window_info *)&window);
 	if (error) {
-		LOG("xwimp_get_window_info: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_info: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
@@ -735,7 +764,10 @@ bool ro_gui_set_caret_first(wimp_w w)
 		state.i = icon;
 		error = xwimp_get_icon_state(&state);
 		if (error) {
-			LOG("xwimp_get_icon_state: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xwimp_get_icon_state: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			return false;
 		}
@@ -752,7 +784,10 @@ bool ro_gui_set_caret_first(wimp_w w)
 		error = xwimp_set_caret_position(w, icon, 0, 0, -1,
 				strlen(state.icon.data.indirected_text.text));
 		if (error) {
-			LOG("xwimp_set_caret_position: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xwimp_set_caret_position: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 		}
 		return true;
@@ -778,7 +813,10 @@ osspriteop_area *ro_gui_load_sprite_file(const char *pathname)
 	error = xosfile_read_stamped_no_path(pathname,
 			&obj_type, 0, 0, &len, 0, 0);
 	if (error) {
-		LOG("xosfile_read_stamped_no_path: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO,
+		      "xosfile_read_stamped_no_path: 0x%x: %s",
+		      error->errnum,
+		      error->errmess);
 		ro_warn_user("MiscError", error->errmess);
 		return 0;
 	}
@@ -801,7 +839,10 @@ osspriteop_area *ro_gui_load_sprite_file(const char *pathname)
 	error = xosspriteop_load_sprite_file(osspriteop_USER_AREA,
 			area, pathname);
 	if (error) {
-		LOG("xosspriteop_load_sprite_file: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO,
+		      "xosspriteop_load_sprite_file: 0x%x: %s",
+		      error->errnum,
+		      error->errmess);
 		ro_warn_user("MiscError", error->errmess);
 		free(area);
 		return 0;
@@ -831,7 +872,10 @@ bool ro_gui_wimp_sprite_exists(const char *sprite)
 	error = xwimpspriteop_select_sprite(sprite, 0);
 	if (error) {
 		if (error->errnum != error_SPRITE_OP_DOESNT_EXIST) {
-			LOG("xwimpspriteop_select_sprite: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xwimpspriteop_select_sprite: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("MiscError", error->errmess);
 		}
 		return false;
@@ -904,7 +948,10 @@ bool ro_gui_wimp_get_sprite_dimensions(osspriteop_area *area, char *sprite,
 		if (height != NULL)
 			*height = dimensions.y;
 	} else if (error->errnum != error_SPRITE_OP_DOESNT_EXIST) {
-		LOG("xosspriteop_read_sprite_info: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO,
+		      "xosspriteop_read_sprite_info: 0x%x: %s",
+		      error->errnum,
+		      error->errmess);
 		ro_warn_user("MiscError", error->errmess);
 		return false;
 	}
@@ -929,7 +976,8 @@ void ro_gui_user_redraw(wimp_draw *redraw, bool user_fill,
 
 	error = xwimp_redraw_window(redraw, &more);
 	if (error) {
-		LOG("xwimp_redraw_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_redraw_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -939,14 +987,18 @@ void ro_gui_user_redraw(wimp_draw *redraw, bool user_fill,
 					colourtrans_SET_BG_GCOL,
 					os_ACTION_OVERWRITE, 0, 0);
 			if (error) {
-				LOG("xcolourtrans_set_gcol: 0x%x: %s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xcolourtrans_set_gcol: 0x%x: %s",
+				      error->errnum,
+				      error->errmess);
 				ro_warn_user("MiscError", error->errmess);
 			}
 			os_clg();
 		}
 		error = xwimp_get_rectangle(redraw, &more);
 		if (error) {
-			LOG("xwimp_get_rectangle: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_get_rectangle: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			return;
 		}
@@ -973,7 +1025,8 @@ void ro_gui_wimp_update_window_furniture(wimp_w w, wimp_window_flags bic_mask,
 	state.w = w;
 	error = xwimp_get_window_state_and_nesting(&state, &parent, &linkage);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -986,7 +1039,8 @@ void ro_gui_wimp_update_window_furniture(wimp_w w, wimp_window_flags bic_mask,
 		state.next = wimp_HIDDEN;
 	error = xwimp_open_window_nested_with_flags(&state, parent, linkage);
 	if (error) {
-		LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_open_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -994,7 +1048,8 @@ void ro_gui_wimp_update_window_furniture(wimp_w w, wimp_window_flags bic_mask,
 	if (!open) {
 		error = xwimp_close_window(w);
 		if (error) {
-			LOG("xwimp_close_window: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_close_window: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			return;
 		}
@@ -1016,7 +1071,8 @@ bool ro_gui_wimp_check_window_furniture(wimp_w w, wimp_window_flags mask)
 	state.w = w;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
@@ -1116,7 +1172,8 @@ void ro_gui_scroll(wimp_scroll *scroll)
 
 	error = xwimp_open_window((wimp_open *) scroll);
 	if (error) {
-		LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_open_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 	}
 }
 

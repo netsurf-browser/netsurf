@@ -51,7 +51,7 @@ fbtk_input(fbtk_widget_t *root, nsfb_event_t *event)
 	/* obtain widget with input focus */
 	input = root->u.root.input;
 	if (input == NULL) {
-		LOG("No widget has input focus.");
+		NSLOG(netsurf, INFO, "No widget has input focus.");
 		return; /* no widget with input */
 	}
 
@@ -84,7 +84,7 @@ fbtk_click(fbtk_widget_t *widget, nsfb_event_t *event)
 	x = fbtk_get_absx(clicked);
 	y = fbtk_get_absy(clicked);
 
-	LOG("clicked %p at %d,%d", clicked, x, y);
+	NSLOG(netsurf, INFO, "clicked %p at %d,%d", clicked, x, y);
 
 	/* post the click */
 	fbtk_post_callback(clicked, FBTK_CBT_CLICK, event, cloc.x0 - x, cloc.y0 - y);

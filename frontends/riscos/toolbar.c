@@ -227,7 +227,7 @@ struct toolbar *ro_toolbar_create(struct theme_descriptor *descriptor,
 
 	toolbar = calloc(sizeof(struct toolbar), 1);
 	if (toolbar == NULL) {
-		LOG("No memory for malloc()");
+		NSLOG(netsurf, INFO, "No memory for malloc()");
 		ro_warn_user("NoMemory", 0);
 		return NULL;
 	}
@@ -366,7 +366,8 @@ bool ro_toolbar_rebuild(struct toolbar *toolbar)
 		old_window = toolbar->toolbar_handle;
 		error = xwimp_delete_window(toolbar->toolbar_handle);
 		if (error)
-			LOG("xwimp_delete_window: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_delete_window: 0x%x: %s",
+			      error->errnum, error->errmess);
 		toolbar->toolbar_handle = NULL;
 	}
 
@@ -375,7 +376,8 @@ bool ro_toolbar_rebuild(struct toolbar *toolbar)
 	error = xwimp_create_window(&ro_toolbar_window,
 			&toolbar->toolbar_handle);
 	if (error) {
-		LOG("xwimp_create_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_create_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
@@ -493,7 +495,8 @@ bool ro_toolbar_rebuild(struct toolbar *toolbar)
 		icon.icon.data.indirected_text.size = 1;
 		error = xwimp_create_icon(&icon, &toolbar->editor_div1);
 		if (error) {
-			LOG("xwimp_create_icon: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_create_icon: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			toolbar->editor_div1 = -1;
 		}
@@ -558,7 +561,10 @@ bool ro_toolbar_attach(struct toolbar *toolbar, wimp_w parent)
 				wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
 						<< wimp_CHILD_TS_EDGE_SHIFT);
 		if (error) {
-			LOG("xwimp_open_window_nested: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xwimp_open_window_nested: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			return false;
 		}
@@ -568,7 +574,8 @@ bool ro_toolbar_attach(struct toolbar *toolbar, wimp_w parent)
 
 	error = xwimp_close_window(toolbar->toolbar_handle);
 	if (error) {
-		LOG("xwimp_close_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_close_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
@@ -601,7 +608,10 @@ bool ro_toolbar_process(struct toolbar *toolbar, int width, bool reformat)
 		outline.w = toolbar->parent_handle;
 		error = xwimp_get_window_outline(&outline);
 		if (error) {
-			LOG("xwimp_get_window_outline: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xwimp_get_window_outline: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			return false;
 		}
@@ -621,7 +631,10 @@ bool ro_toolbar_process(struct toolbar *toolbar, int width, bool reformat)
 		state.w = toolbar->parent_handle;
 		error = xwimp_get_window_state(&state);
 		if (error) {
-			LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xwimp_get_window_state: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			return false;
 		}
@@ -647,7 +660,10 @@ bool ro_toolbar_process(struct toolbar *toolbar, int width, bool reformat)
 			error = xwimp_set_extent(toolbar->toolbar_handle,
 					&extent);
 			if (error) {
-				LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xwimp_get_window_state: 0x%x: %s",
+				      error->errnum,
+				      error->errmess);
 				ro_warn_user("WimpError", error->errmess);
 			}
 
@@ -935,7 +951,7 @@ void ro_toolbar_destroy(struct toolbar *toolbar)
 	if (toolbar == NULL)
 		return;
 
-	LOG("Destroying toolbar 0x%x", (unsigned int)toolbar);
+	NSLOG(netsurf, INFO, "Destroying toolbar 0x%x", (unsigned int)toolbar);
 
 	/* Destroy the widgets. */
 
@@ -994,7 +1010,8 @@ void ro_toolbar_redraw(wimp_draw *redraw)
 
 	error = xwimp_redraw_window(redraw, &more);
 	if (error) {
-		LOG("xwimp_redraw_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_redraw_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -1013,7 +1030,8 @@ void ro_toolbar_redraw(wimp_draw *redraw)
 
 		error = xwimp_get_rectangle(redraw, &more);
 		if (error) {
-			LOG("xwimp_get_rectangle: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_get_rectangle: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			return;
 		}
@@ -1046,7 +1064,8 @@ bool ro_toolbar_click(wimp_pointer *pointer)
 	state.w = toolbar->toolbar_handle;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
@@ -1325,7 +1344,8 @@ const char *ro_toolbar_get_help_suffix(wimp_w w, wimp_i i, os_coord *pos,
 	state.w = toolbar->toolbar_handle;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return NULL;
 	}

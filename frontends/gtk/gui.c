@@ -208,7 +208,8 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	    (nsoption_charp(hotlist_path) == NULL) ||
 	    (nsoption_charp(downloads_directory) == NULL) ||
 	    (nsoption_charp(ca_path) == NULL)) {
-		LOG("Failed initialising default resource paths");
+		NSLOG(netsurf, INFO,
+		      "Failed initialising default resource paths");
 		return NSERROR_BAD_PARAMETER;
 	}
 
@@ -238,7 +239,7 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 
 	error = nsgtk_builder_new_from_resname("warning", &warning_builder);
 	if (error != NSERROR_OK) {
-		LOG("Unable to initialise warning dialog");
+		NSLOG(netsurf, INFO, "Unable to initialise warning dialog");
 		return error;
 	}
 
@@ -248,7 +249,7 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	error = nsgdk_pixbuf_new_from_resname("netsurf.xpm",
 					      &win_default_icon_pixbuf);
 	if (error == NSERROR_OK) {
-		LOG("Seting default window icon");
+		NSLOG(netsurf, INFO, "Seting default window icon");
 		gtk_window_set_default_icon(win_default_icon_pixbuf);
 	}
 
@@ -256,7 +257,8 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	resource_filename = filepath_find(respath, "SearchEngines");
 	search_web_init(resource_filename);
 	if (resource_filename != NULL) {
-		LOG("Using '%s' as Search Engines file", resource_filename);
+		NSLOG(netsurf, INFO, "Using '%s' as Search Engines file",
+		      resource_filename);
 		free(resource_filename);
 	}
 
@@ -278,7 +280,7 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	/* initialise throbber */
 	error = nsgtk_throbber_init();
 	if (error != NSERROR_OK) {
-		LOG("Unable to initialise throbber.");
+		NSLOG(netsurf, INFO, "Unable to initialise throbber.");
 		return error;
 	}
 
@@ -300,12 +302,12 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	 * window.
 	 */
 	browser_set_dpi(gdk_screen_get_resolution(gdk_screen_get_default()));
-	LOG("Set CSS DPI to %d", browser_get_dpi());
+	NSLOG(netsurf, INFO, "Set CSS DPI to %d", browser_get_dpi());
 
 	/* Initialise top level UI elements */
 	error = nsgtk_download_init();
 	if (error != NSERROR_OK) {
-		LOG("Unable to initialise download window.");
+		NSLOG(netsurf, INFO, "Unable to initialise download window.");
 		return error;
 	}
 
@@ -426,7 +428,7 @@ static void gui_quit(void)
 {
 	nserror res;
 
-	LOG("Quitting GUI");
+	NSLOG(netsurf, INFO, "Quitting GUI");
 
 	/* Ensure all scaffoldings are destroyed before we go into exit */
 	nsgtk_download_destroy();
@@ -435,32 +437,34 @@ static void gui_quit(void)
 
 	res = nsgtk_cookies_destroy();
 	if (res != NSERROR_OK) {
-		LOG("Error finalising cookie viewer: %s",
-		    messages_get_errorcode(res));
+		NSLOG(netsurf, INFO, "Error finalising cookie viewer: %s",
+		      messages_get_errorcode(res));
 	}
 
 	res = nsgtk_local_history_destroy();
 	if (res != NSERROR_OK) {
-		LOG("Error finalising local history viewer: %s",
-		    messages_get_errorcode(res));
+		NSLOG(netsurf, INFO,
+		      "Error finalising local history viewer: %s",
+		      messages_get_errorcode(res));
 	}
 
 	res = nsgtk_global_history_destroy();
 	if (res != NSERROR_OK) {
-		LOG("Error finalising global history viewer: %s",
-		    messages_get_errorcode(res));
+		NSLOG(netsurf, INFO,
+		      "Error finalising global history viewer: %s",
+		      messages_get_errorcode(res));
 	}
 
 	res = nsgtk_hotlist_destroy();
 	if (res != NSERROR_OK) {
-		LOG("Error finalising hotlist viewer: %s",
-		    messages_get_errorcode(res));
+		NSLOG(netsurf, INFO, "Error finalising hotlist viewer: %s",
+		      messages_get_errorcode(res));
 	}
 
 	res = hotlist_fini();
 	if (res != NSERROR_OK) {
-		LOG("Error finalising hotlist: %s",
-		    messages_get_errorcode(res));
+		NSLOG(netsurf, INFO, "Error finalising hotlist: %s",
+		      messages_get_errorcode(res));
 	}
 
 	free(nsgtk_config_home);
@@ -492,7 +496,7 @@ nserror nsgtk_warning(const char *warning, const char *detail)
 	static GtkWindow *nsgtk_warning_window;
 	GtkLabel *WarningLabel;
 
-	LOG("%s %s", warning, detail ? detail : "");
+	NSLOG(netsurf, INFO, "%s %s", warning, detail ? detail : "");
 	fflush(stdout);
 
 	nsgtk_warning_window = GTK_WINDOW(gtk_builder_get_object(warning_builder, "wndWarning"));
@@ -600,7 +604,7 @@ static void nsgtk_pdf_password(char **owner_pass, char **user_pass, char *path)
 
 	res = nsgtk_builder_new_from_resname("password", &password_builder);
 	if (res != NSERROR_OK) {
-		LOG("Password UI builder init failed");
+		NSLOG(netsurf, INFO, "Password UI builder init failed");
 		return;
 	}
 
@@ -821,7 +825,7 @@ static nserror get_config_home(char **config_home_out)
 	if (home_dir != NULL) {
 		ret = check_dirname(home_dir, ".netsurf", &config_home);
 		if (ret == NSERROR_OK) {
-			LOG("\"%s\"", config_home);
+			NSLOG(netsurf, INFO, "\"%s\"", config_home);
 			*config_home_out = config_home;
 			return ret;
 		}
@@ -861,7 +865,7 @@ static nserror get_config_home(char **config_home_out)
 		}
 	}
 
-	LOG("\"%s\"", config_home);
+	NSLOG(netsurf, INFO, "\"%s\"", config_home);
 
 	*config_home_out = config_home;
 	return NSERROR_OK;
@@ -874,7 +878,7 @@ static nserror create_config_home(char **config_home_out)
 	char *xdg_config_dir;
 	nserror ret;
 
-	LOG("Attempting to create configuration directory");
+	NSLOG(netsurf, INFO, "Attempting to create configuration directory");
 
 	/* $XDG_CONFIG_HOME defines the base directory
 	 * relative to which user specific configuration files
@@ -910,7 +914,7 @@ static nserror create_config_home(char **config_home_out)
 	/* strip the trailing separator */
 	config_home[strlen(config_home) - 1] = 0;
 
-	LOG("\"%s\"", config_home);
+	NSLOG(netsurf, INFO, "\"%s\"", config_home);
 
 	*config_home_out = config_home;
 
@@ -959,7 +963,7 @@ static nserror get_cache_home(char **cache_home_out)
 		}
 	}
 
-	LOG("\"%s\"", cache_home);
+	NSLOG(netsurf, INFO, "\"%s\"", cache_home);
 
 	*cache_home_out = cache_home;
 	return NSERROR_OK;
@@ -972,7 +976,7 @@ static nserror create_cache_home(char **cache_home_out)
 	char *xdg_cache_dir;
 	nserror ret;
 
-	LOG("Attempting to create configuration directory");
+	NSLOG(netsurf, INFO, "Attempting to create configuration directory");
 
 	/* $XDG_CACHE_HOME defines the base directory
 	 * relative to which user specific cache files
@@ -1008,7 +1012,7 @@ static nserror create_cache_home(char **cache_home_out)
 	/* strip the trailing separator */
 	cache_home[strlen(cache_home) - 1] = 0;
 
-	LOG("\"%s\"", cache_home);
+	NSLOG(netsurf, INFO, "\"%s\"", cache_home);
 
 	*cache_home_out = cache_home;
 
@@ -1115,7 +1119,8 @@ int main(int argc, char** argv)
 		ret = create_config_home(&nsgtk_config_home);
 	}
 	if (ret != NSERROR_OK) {
-		LOG("Unable to locate a configuration directory.");
+		NSLOG(netsurf, INFO,
+		      "Unable to locate a configuration directory.");
 		nsgtk_config_home = NULL;
 	}
 
@@ -1155,7 +1160,7 @@ int main(int argc, char** argv)
 	if (ret != NSERROR_OK) {
 		fprintf(stderr, "Unable to load translated messages (%s)\n",
 			messages_get_errorcode(ret));
-		LOG("Unable to load translated messages");
+		NSLOG(netsurf, INFO, "Unable to load translated messages");
 		/** \todo decide if message load faliure should be fatal */
 	}
 
@@ -1166,7 +1171,7 @@ int main(int argc, char** argv)
 		ret = create_cache_home(&cache_home);
 	}
 	if (ret != NSERROR_OK) {
-		LOG("Unable to locate a cache directory.");
+		NSLOG(netsurf, INFO, "Unable to locate a cache directory.");
 	}
 
 	/* core initialisation */

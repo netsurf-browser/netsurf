@@ -131,7 +131,7 @@ struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit
 	struct gui_globals *gg = malloc(sizeof(struct gui_globals));
 
 	if(force32bit == false) depth = GetBitMapAttr(scrn->RastPort.BitMap, BMA_DEPTH);
-	LOG("Screen depth = %d", depth);
+	NSLOG(netsurf, INFO, "Screen depth = %d", depth);
 
 #ifdef __amigaos4__
 	if(depth < 16) {
@@ -241,7 +241,8 @@ struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit
 	gg->open_num = -1;
 
 	init_layers_count++;
-	LOG("Layer initialised (total: %d)", init_layers_count);
+	NSLOG(netsurf, INFO, "Layer initialised (total: %d)",
+	      init_layers_count);
 
 	return gg;
 }
@@ -328,7 +329,8 @@ static ULONG ami_plot_obtain_pen(struct MinList *shared_pens, ULONG colr)
 			(colr & 0x00ff0000) << 8,
 			NULL);
 	
-	if(pen == -1) LOG("WARNING: Cannot allocate pen for ABGR:%lx", colr);
+	if(pen == -1) NSLOG(netsurf, INFO,
+			    "WARNING: Cannot allocate pen for ABGR:%lx", colr);
 
 	if((shared_pens != NULL) && (pool_pens != NULL)) {
 		if((node = (struct ami_plot_pen *)ami_memory_itempool_alloc(pool_pens, sizeof(struct ami_plot_pen)))) {
@@ -849,17 +851,17 @@ ami_polygon(const struct redraw_context *ctx,
 	ami_plot_setapen(glob, glob->rp, style->fill_colour);
 
 	if (AreaMove(glob->rp,p[0],p[1]) == -1) {
-		LOG("AreaMove: vector list full");
+		NSLOG(netsurf, INFO, "AreaMove: vector list full");
 	}
 
 	for (uint32 k = 1; k < n; k++) {
 		if (AreaDraw(glob->rp,p[k*2],p[(k*2)+1]) == -1) {
-			LOG("AreaDraw: vector list full");
+			NSLOG(netsurf, INFO, "AreaDraw: vector list full");
 		}
 	}
 
 	if (AreaEnd(glob->rp) == -1) {
-		LOG("AreaEnd: error");
+		NSLOG(netsurf, INFO, "AreaEnd: error");
 	}
 
 	return NSERROR_OK;
@@ -900,7 +902,7 @@ ami_path(const struct redraw_context *ctx,
 	}
 
 	if (p[0] != PLOTTER_PATH_MOVE) {
-		LOG("Path does not start with move");
+		NSLOG(netsurf, INFO, "Path does not start with move");
 		return NSERROR_INVALID;
 	}
 
@@ -922,7 +924,8 @@ ami_path(const struct redraw_context *ctx,
 		if (p[i] == PLOTTER_PATH_MOVE) {
 			if (pstyle->fill_colour != NS_TRANSPARENT) {
 				if (AreaMove(glob->rp, p[i+1], p[i+2]) == -1) {
-					LOG("AreaMove: vector list full");
+					NSLOG(netsurf, INFO,
+					      "AreaMove: vector list full");
 				}
 			} else {
 				Move(glob->rp, p[i+1], p[i+2]);
@@ -936,7 +939,7 @@ ami_path(const struct redraw_context *ctx,
 		} else if (p[i] == PLOTTER_PATH_CLOSE) {
 			if (pstyle->fill_colour != NS_TRANSPARENT) {
 				if (AreaEnd(glob->rp) == -1) {
-					LOG("AreaEnd: error");
+					NSLOG(netsurf, INFO, "AreaEnd: error");
 				}
 			} else {
 				Draw(glob->rp, start_p.x, start_p.y);
@@ -945,7 +948,8 @@ ami_path(const struct redraw_context *ctx,
 		} else if (p[i] == PLOTTER_PATH_LINE) {
 			if (pstyle->fill_colour != NS_TRANSPARENT) {
 				if (AreaDraw(glob->rp, p[i+1], p[i+2]) == -1) {
-					LOG("AreaDraw: vector list full");
+					NSLOG(netsurf, INFO,
+					      "AreaDraw: vector list full");
 				}
 			} else {
 				Draw(glob->rp, p[i+1], p[i+2]);
@@ -965,7 +969,8 @@ ami_path(const struct redraw_context *ctx,
 				ami_bezier(&cur_p, &p_a, &p_b, &p_c, t, &p_r);
 				if (pstyle->fill_colour != NS_TRANSPARENT) {
 					if (AreaDraw(glob->rp, p_r.x, p_r.y) == -1) {
-						LOG("AreaDraw: vector list full");
+						NSLOG(netsurf, INFO,
+						      "AreaDraw: vector list full");
 					}
 				} else {
 					Draw(glob->rp, p_r.x, p_r.y);
@@ -975,7 +980,7 @@ ami_path(const struct redraw_context *ctx,
 			cur_p.y = p_c.y;
 			i += 7;
 		} else {
-			LOG("bad path command %f", p[i]);
+			NSLOG(netsurf, INFO, "bad path command %f", p[i]);
 			/* End path for safety if using Area commands */
 			if (pstyle->fill_colour != NS_TRANSPARENT) {
 				AreaEnd(glob->rp);

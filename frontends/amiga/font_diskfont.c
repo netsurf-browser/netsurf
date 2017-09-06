@@ -55,7 +55,7 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 		(fstyle->size == prev_fstyle->size) &&
 		(fstyle->flags == prev_fstyle->flags) &&
 		(fstyle->weight == prev_fstyle->weight)) {
-		LOG("(using current font)");
+		NSLOG(netsurf, INFO, "(using current font)");
 		return prev_font;
 	}
 
@@ -99,7 +99,7 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 	snprintf(font, MAX_FONT_NAME_SIZE, "%s.font", fontname);
 	tattr.ta_Name = font;
 	tattr.ta_YSize = fstyle->size / FONT_SIZE_SCALE;
-	LOG("font: %s/%d", tattr.ta_Name, tattr.ta_YSize);
+	NSLOG(netsurf, INFO, "font: %s/%d", tattr.ta_Name, tattr.ta_YSize);
 
 	if(prev_font != NULL) CloseFont(prev_font);
 

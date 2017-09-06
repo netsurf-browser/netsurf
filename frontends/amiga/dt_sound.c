@@ -76,7 +76,7 @@ static const content_handler amiga_dt_sound_content_handler = {
 
 static void amiga_dt_sound_play(Object *dto)
 {
-	LOG("Playing...");
+	NSLOG(netsurf, INFO, "Playing...");
 	IDoMethod(dto, DTM_TRIGGER, NULL, STM_PLAY, NULL);
 }
 
@@ -126,7 +126,7 @@ nserror amiga_dt_sound_create(const content_handler *handler,
 	amiga_dt_sound_content *plugin;
 	nserror error;
 
-	LOG("amiga_dt_sound_create");
+	NSLOG(netsurf, INFO, "amiga_dt_sound_create");
 
 	plugin = calloc(1, sizeof(amiga_dt_sound_content));
 	if (plugin == NULL)
@@ -146,7 +146,7 @@ nserror amiga_dt_sound_create(const content_handler *handler,
 
 bool amiga_dt_sound_convert(struct content *c)
 {
-	LOG("amiga_dt_sound_convert");
+	NSLOG(netsurf, INFO, "amiga_dt_sound_convert");
 
 	amiga_dt_sound_content *plugin = (amiga_dt_sound_content *) c;
 	int width = 50, height = 50;
@@ -180,7 +180,7 @@ void amiga_dt_sound_destroy(struct content *c)
 {
 	amiga_dt_sound_content *plugin = (amiga_dt_sound_content *) c;
 
-	LOG("amiga_dt_sound_destroy");
+	NSLOG(netsurf, INFO, "amiga_dt_sound_destroy");
 
 	DisposeDTObject(plugin->dto);
 
@@ -199,7 +199,7 @@ bool amiga_dt_sound_redraw(struct content *c,
 	};
 	struct rect rect;
 
-	LOG("amiga_dt_sound_redraw");
+	NSLOG(netsurf, INFO, "amiga_dt_sound_redraw");
 
 	rect.x0 = data->x;
 	rect.y0 = data->y;
@@ -226,7 +226,7 @@ void amiga_dt_sound_open(struct content *c, struct browser_window *bw,
 	amiga_dt_sound_content *plugin = (amiga_dt_sound_content *) c;
 	struct object_param *param;
 
-	LOG("amiga_dt_sound_open");
+	NSLOG(netsurf, INFO, "amiga_dt_sound_open");
 
 	plugin->immediate = false;
 
@@ -234,7 +234,8 @@ void amiga_dt_sound_open(struct content *c, struct browser_window *bw,
 	{
 		do
 		{
-			LOG("%s = %s", param->name, param->value);
+			NSLOG(netsurf, INFO, "%s = %s", param->name,
+			      param->value);
 			if((strcmp(param->name, "autoplay") == 0) &&
 				(strcmp(param->value, "true") == 0)) plugin->immediate = true;
 			if((strcmp(param->name, "autoStart") == 0) &&
@@ -255,7 +256,7 @@ nserror amiga_dt_sound_clone(const struct content *old, struct content **newc)
 	amiga_dt_sound_content *plugin;
 	nserror error;
 
-	LOG("amiga_dt_sound_clone");
+	NSLOG(netsurf, INFO, "amiga_dt_sound_clone");
 
 	plugin = calloc(1, sizeof(amiga_dt_sound_content));
 	if (plugin == NULL)

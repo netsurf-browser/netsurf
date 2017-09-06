@@ -188,7 +188,8 @@ void ami_drag_save(struct Window *win)
 		break;
 
 		default:
-			LOG("Unsupported drag save operation %d", drag_save);
+			NSLOG(netsurf, INFO,
+			      "Unsupported drag save operation %d", drag_save);
 		break;
 	}
 

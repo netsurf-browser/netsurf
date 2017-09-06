@@ -39,13 +39,13 @@ static nserror
 atari_global_history_init_phase2(struct core_window *cw,
 				 struct core_window_callback_table *cb_t)
 {
-	LOG("cw %p", cw);
+	NSLOG(netsurf, INFO, "cw %p", cw);
 	return(global_history_init(cb_t, cw));
 }
 
 static void atari_global_history_finish(struct core_window *cw)
 {
-	LOG("cw %p", cw);
+	NSLOG(netsurf, INFO, "cw %p", cw);
 	global_history_fini();
 }
 
@@ -58,7 +58,7 @@ static void atari_global_history_draw(struct core_window *cw, int x,
 
 static void atari_global_history_keypress(struct core_window *cw, uint32_t ucs4)
 {
-	LOG("ucs4: %"PRIu32, ucs4);
+	NSLOG(netsurf, INFO, "ucs4: %"PRIu32, ucs4);
 	global_history_keypress(ucs4);
 }
 
@@ -67,7 +67,7 @@ atari_global_history_mouse_action(struct core_window *cw,
 				  browser_mouse_state mouse,
 				  int x, int y)
 {
-	LOG("x:  %d, y: %d\n", x, y);
+	NSLOG(netsurf, INFO, "x:  %d, y: %d\n", x, y);
 
 	global_history_mouse_action(mouse, x, y);
 }
@@ -82,7 +82,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
 	short retval = 0;
 
-	LOG("win %p", win);
+	NSLOG(netsurf, INFO, "win %p", win);
 
 	if (ev_out->emo_events & MU_MESAG) {
 		switch (msg[0]) {
@@ -134,7 +134,8 @@ void atari_global_history_init(void)
 
 			if (atari_global_history.tv == NULL) {
 				/* handle it properly, clean up previous allocs */
-				LOG("Failed to allocate treeview");
+				NSLOG(netsurf, INFO,
+				      "Failed to allocate treeview");
 				return;
 			}
 		}
@@ -181,7 +182,7 @@ void atari_global_history_destroy(void)
 		atari_treeview_delete(atari_global_history.tv);
 		atari_global_history.init = false;
 	}
-	LOG("done");
+	NSLOG(netsurf, INFO, "done");
 }
 
 void atari_global_history_redraw(void)

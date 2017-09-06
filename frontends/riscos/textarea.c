@@ -138,7 +138,7 @@ uintptr_t ro_textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 
 	ret = malloc(sizeof(struct text_area));
 	if (!ret) {
-		LOG("malloc failed");
+		NSLOG(netsurf, INFO, "malloc failed");
 		return 0;
 	}
 
@@ -148,7 +148,7 @@ uintptr_t ro_textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 	ret->flags = flags;
 	ret->text = malloc(64);
 	if (!ret->text) {
-		LOG("malloc failed");
+		NSLOG(netsurf, INFO, "malloc failed");
 		free(ret);
 		return 0;
 	}
@@ -160,7 +160,7 @@ uintptr_t ro_textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 //	ret->selection_end = (unsigned int)-1;
 	ret->font_family = strdup(font_family ? font_family : "Corpus");
 	if (!ret->font_family) {
-		LOG("strdup failed");
+		NSLOG(netsurf, INFO, "strdup failed");
 		free(ret->text);
 		free(ret);
 		return 0;
@@ -181,7 +181,8 @@ uintptr_t ro_textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 		text_area_definition.title_fg = wimp_COLOUR_BLACK;
 	error = xwimp_create_window(&text_area_definition, &ret->window);
 	if (error) {
-		LOG("xwimp_create_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_create_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		free(ret->font_family);
 		free(ret->text);
 		free(ret);
@@ -228,7 +229,8 @@ bool ro_textarea_update(uintptr_t self)
 	state.w = ta->parent;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return false;
 	}
 
@@ -236,7 +238,8 @@ bool ro_textarea_update(uintptr_t self)
 	istate.i = ta->icon;
 	error = xwimp_get_icon_state(&istate);
 	if (error) {
-		LOG("xwimp_get_icon_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_icon_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return false;
 	}
 
@@ -267,7 +270,8 @@ bool ro_textarea_update(uintptr_t self)
 
 	error = xwimp_set_extent(ta->window, &extent);
 	if (error) {
-		LOG("xwimp_set_extent: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_set_extent: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return false;
 	}
 
@@ -282,7 +286,8 @@ bool ro_textarea_update(uintptr_t self)
 			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
 					<< wimp_CHILD_RS_EDGE_SHIFT);
 	if (error) {
-		LOG("xwimp_open_window_nested: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_open_window_nested: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return false;
 	}
 
@@ -307,7 +312,8 @@ void ro_textarea_destroy(uintptr_t self)
 
 	error = xwimp_delete_window(ta->window);
 	if (error) {
-		LOG("xwimp_delete_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_delete_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 	}
 
 	ro_gui_wimp_event_finalise(ta->window);
@@ -331,14 +337,14 @@ bool ro_textarea_set_text(uintptr_t self, const char *text)
 
 	ta = (struct text_area *)self;
 	if (!ta || ta->magic != MAGIC) {
-		LOG("magic doesn't match");
+		NSLOG(netsurf, INFO, "magic doesn't match");
 		return true;
 	}
 
 	if (len >= ta->text_alloc) {
 		char *temp = realloc(ta->text, len + 64);
 		if (!temp) {
-			LOG("realloc failed");
+			NSLOG(netsurf, INFO, "realloc failed");
 			return false;
 		}
 		ta->text = temp;
@@ -368,7 +374,7 @@ int ro_textarea_get_text(uintptr_t self, char *buf, unsigned int len)
 
 	ta = (struct text_area *)self;
 	if (!ta || ta->magic != MAGIC) {
-		LOG("magic doesn't match");
+		NSLOG(netsurf, INFO, "magic doesn't match");
 		return -1;
 	}
 
@@ -378,7 +384,7 @@ int ro_textarea_get_text(uintptr_t self, char *buf, unsigned int len)
 	}
 
 	if (len < ta->text_len) {
-		LOG("buffer too small");
+		NSLOG(netsurf, INFO, "buffer too small");
 		return -1;
 	}
 
@@ -403,7 +409,7 @@ void ro_textarea_insert_text(uintptr_t self, unsigned int index,
 
 	ta = (struct text_area *)self;
 	if (!ta || ta->magic != MAGIC) {
-		LOG("magic doesn't match");
+		NSLOG(netsurf, INFO, "magic doesn't match");
 		return;
 	}
 
@@ -420,7 +426,7 @@ void ro_textarea_insert_text(uintptr_t self, unsigned int index,
 	if (b_len + ta->text_len >= ta->text_alloc) {
 		char *temp = realloc(ta->text, b_len + ta->text_len + 64);
 		if (!temp) {
-			LOG("realloc failed");
+			NSLOG(netsurf, INFO, "realloc failed");
 			return;
 		}
 
@@ -457,7 +463,7 @@ void ro_textarea_replace_text(uintptr_t self, unsigned int start,
 
 	ta = (struct text_area *)self;
 	if (!ta || ta->magic != MAGIC) {
-		LOG("magic doesn't match");
+		NSLOG(netsurf, INFO, "magic doesn't match");
 		return;
 	}
 
@@ -491,7 +497,7 @@ void ro_textarea_replace_text(uintptr_t self, unsigned int start,
 		char *temp = realloc(ta->text,
 			b_len + ta->text_len - (b_end - b_start) + 64);
 		if (!temp) {
-			LOG("realloc failed");
+			NSLOG(netsurf, INFO, "realloc failed");
 			return;
 		}
 
@@ -532,7 +538,7 @@ void ro_textarea_set_caret(uintptr_t self, unsigned int caret)
 
 	ta = (struct text_area *)self;
 	if (!ta || ta->magic != MAGIC) {
-		LOG("magic doesn't match");
+		NSLOG(netsurf, INFO, "magic doesn't match");
 		return;
 	}
 
@@ -574,9 +580,10 @@ void ro_textarea_set_caret(uintptr_t self, unsigned int caret)
 			b_off - ta->lines[ta->caret_pos.line].b_start, &x);
 	if (code != rufl_OK) {
 		if (code == rufl_FONT_MANAGER_ERROR)
-			LOG("rufl_width: 0x%x: %s", rufl_fm_error->errnum, rufl_fm_error->errmess);
+			NSLOG(netsurf, INFO, "rufl_width: 0x%x: %s",
+			      rufl_fm_error->errnum, rufl_fm_error->errmess);
 		else
-			LOG("rufl_width: 0x%x", code);
+			NSLOG(netsurf, INFO, "rufl_width: 0x%x", code);
 		return;
 	}
 
@@ -585,7 +592,8 @@ void ro_textarea_set_caret(uintptr_t self, unsigned int caret)
 				ta->line_height / 4 + ta->line_spacing,
 			os_line_height.y, -1);
 	if (error) {
-		LOG("xwimp_set_caret_position: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_set_caret_position: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return;
 	}
 }
@@ -609,7 +617,7 @@ void ro_textarea_set_caret_xy(uintptr_t self, int x, int y)
 
 	ta = (struct text_area *)self;
 	if (!ta || ta->magic != MAGIC) {
-		LOG("magic doesn't match");
+		NSLOG(netsurf, INFO, "magic doesn't match");
 		return;
 	}
 
@@ -623,7 +631,8 @@ void ro_textarea_set_caret_xy(uintptr_t self, int x, int y)
 	state.w = ta->window;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return;
 	}
 
@@ -644,9 +653,10 @@ void ro_textarea_set_caret_xy(uintptr_t self, int x, int y)
 			x, &b_off, &x);
 	if (code != rufl_OK) {
 		if (code == rufl_FONT_MANAGER_ERROR)
-			LOG("rufl_x_to_offset: 0x%x: %s", rufl_fm_error->errnum, rufl_fm_error->errmess);
+			NSLOG(netsurf, INFO, "rufl_x_to_offset: 0x%x: %s",
+			      rufl_fm_error->errnum, rufl_fm_error->errmess);
 		else
-			LOG("rufl_x_to_offset: 0x%x", code);
+			NSLOG(netsurf, INFO, "rufl_x_to_offset: 0x%x", code);
 		return;
 	}
 
@@ -670,7 +680,7 @@ unsigned int ro_textarea_get_caret(uintptr_t self)
 
 	ta = (struct text_area *)self;
 	if (!ta || ta->magic != MAGIC) {
-		LOG("magic doesn't match");
+		NSLOG(netsurf, INFO, "magic doesn't match");
 		return -1;
 	}
 
@@ -711,7 +721,7 @@ void ro_textarea_reflow(struct text_area *ta, unsigned int line)
 		ta->lines =
 			malloc(LINE_CHUNK_SIZE * sizeof(struct line_info));
 		if (!ta->lines) {
-			LOG("malloc failed");
+			NSLOG(netsurf, INFO, "malloc failed");
 			return;
 		}
 	}
@@ -734,9 +744,13 @@ void ro_textarea_reflow(struct text_area *ta, unsigned int line)
 				&b_off, &x);
 		if (code != rufl_OK) {
 			if (code == rufl_FONT_MANAGER_ERROR)
-				LOG("rufl_x_to_offset: 0x%x: %s", rufl_fm_error->errnum, rufl_fm_error->errmess);
+				NSLOG(netsurf, INFO,
+				      "rufl_x_to_offset: 0x%x: %s",
+				      rufl_fm_error->errnum,
+				      rufl_fm_error->errmess);
 			else
-				LOG("rufl_x_to_offset: 0x%x", code);
+				NSLOG(netsurf, INFO,
+				      "rufl_x_to_offset: 0x%x", code);
 			return;
 		}
 
@@ -745,7 +759,7 @@ void ro_textarea_reflow(struct text_area *ta, unsigned int line)
 					(line_count + LINE_CHUNK_SIZE) *
 					sizeof(struct line_info));
 			if (!temp) {
-				LOG("realloc failed");
+				NSLOG(netsurf, INFO, "realloc failed");
 				return;
 			}
 
@@ -809,7 +823,8 @@ void ro_textarea_reflow(struct text_area *ta, unsigned int line)
 
 	error = xwimp_set_extent(ta->window, &extent);
 	if (error) {
-		LOG("xwimp_set_extent: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_set_extent: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return;
 	}
 
@@ -826,7 +841,10 @@ void ro_textarea_reflow(struct text_area *ta, unsigned int line)
 		error = xwimp_get_window_state_and_nesting(&state,
 				&parent, &linkage);
 		if (error) {
-			LOG("xwimp_get_window_state_and_nesting: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xwimp_get_window_state_and_nesting: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			return;
 		}
 
@@ -839,7 +857,10 @@ void ro_textarea_reflow(struct text_area *ta, unsigned int line)
 		state.w = ta->window;
 		error = xwimp_get_window_state(&state);
 		if (error) {
-			LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xwimp_get_window_state: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			return;
 		}
 
@@ -853,7 +874,10 @@ void ro_textarea_reflow(struct text_area *ta, unsigned int line)
 		error = xwimp_open_window_nested(PTR_WIMP_OPEN(&state),
 				parent, linkage);
 		if (error) {
-			LOG("xwimp_open_window_nested: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xwimp_open_window_nested: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			return;
 		}
 
@@ -1009,7 +1033,10 @@ bool ro_textarea_key_press(wimp_key *key)
 					(wimp_message*)&keypress, ta->parent,
 					ta->icon, 0);
 			if (error) {
-				LOG("xwimp_send_message: 0x%x:%s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xwimp_send_message: 0x%x:%s",
+				      error->errnum,
+				      error->errmess);
 			}
 			break;
 		}
@@ -1060,7 +1087,8 @@ void ro_textarea_redraw_internal(wimp_draw *redraw, bool update)
 	else
 		error = xwimp_redraw_window(redraw, &more);
 	if (error) {
-		LOG("xwimp_redraw_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_redraw_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return;
 	}
 
@@ -1076,13 +1104,17 @@ void ro_textarea_redraw_internal(wimp_draw *redraw, bool update)
 				colourtrans_SET_BG_GCOL | colourtrans_USE_ECFS_GCOL,
 				os_ACTION_OVERWRITE, 0, 0);
 		if (error) {
-			LOG("xcolourtrans_set_gcol: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xcolourtrans_set_gcol: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			return;
 		}
 
 		error = xos_clg();
 		if (error) {
-			LOG("xos_clg: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xos_clg: 0x%x: %s",
+			      error->errnum, error->errmess);
 			return;
 		}
 
@@ -1113,7 +1145,10 @@ void ro_textarea_redraw_internal(wimp_draw *redraw, bool update)
 						0xD9D9D900 : 0xFFFFFF00,
 					0x00000000, 14, 0, 0, 0);
 			if (error) {
-				LOG("xcolourtrans_set_font_colours: 0x%x: %s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xcolourtrans_set_font_colours: 0x%x: %s",
+				      error->errnum,
+				      error->errmess);
 				return;
 			}
 
@@ -1128,15 +1163,20 @@ void ro_textarea_redraw_internal(wimp_draw *redraw, bool update)
 					rufl_BLEND_FONT);
 			if (code != rufl_OK) {
 				if (code == rufl_FONT_MANAGER_ERROR)
-					LOG("rufl_paint: rufl_FONT_MANAGER_ERROR: 0x%x: %s", rufl_fm_error->errnum, rufl_fm_error->errmess);
+					NSLOG(netsurf, INFO,
+					      "rufl_paint: rufl_FONT_MANAGER_ERROR: 0x%x: %s",
+					      rufl_fm_error->errnum,
+					      rufl_fm_error->errmess);
 				else
-					LOG("rufl_paint: 0x%x", code);
+					NSLOG(netsurf, INFO,
+					      "rufl_paint: 0x%x", code);
 			}
 		}
 
 		error = xwimp_get_rectangle(redraw, &more);
 		if (error) {
-			LOG("xwimp_get_rectangle: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_get_rectangle: 0x%x: %s",
+			      error->errnum, error->errmess);
 			return;
 		}
 	}
@@ -1153,7 +1193,8 @@ void ro_textarea_open(wimp_open *open)
 
 	error = xwimp_open_window(open);
 	if (error) {
-		LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_open_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return;
 	}
 }

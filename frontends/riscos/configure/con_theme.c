@@ -104,20 +104,23 @@ bool ro_gui_options_theme_initialise(wimp_w w)
 		return false;
 	error = xwimp_create_window(&theme_pane_definition, &theme_pane);
 	if (error) {
-		LOG("xwimp_create_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_create_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return false;
 	}
 	state.w = w;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return false;
 	}
 	icon_state.w = w;
 	icon_state.i = THEME_PANE_AREA;
 	error = xwimp_get_icon_state(&icon_state);
 	if (error) {
-		LOG("xwimp_get_icon_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_icon_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return false;
 	}
 	state.w = theme_pane;
@@ -126,7 +129,8 @@ bool ro_gui_options_theme_initialise(wimp_w w)
 	state.visible.x0 += icon_state.icon.extent.x0 + 16;
 	state.visible.y0 = state.visible.y1 + icon_state.icon.extent.y0 + 16;
 	state.visible.y1 += icon_state.icon.extent.y1 - 28;
-	LOG("Y0 = %i, y1 = %i", icon_state.icon.extent.y0, icon_state.icon.extent.y1);
+	NSLOG(netsurf, INFO, "Y0 = %i, y1 = %i", icon_state.icon.extent.y0,
+	      icon_state.icon.extent.y1);
 	error = xwimp_open_window_nested(PTR_WIMP_OPEN(&state), w,
 			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
 					<< wimp_CHILD_XORIGIN_SHIFT |
@@ -141,7 +145,8 @@ bool ro_gui_options_theme_initialise(wimp_w w)
 			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
 					<< wimp_CHILD_TS_EDGE_SHIFT);
 	if (error) {
-		LOG("xwimp_open_window_nested: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_open_window_nested: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return false;
 	}
 
@@ -176,7 +181,8 @@ void ro_gui_options_theme_finalise(wimp_w w)
 		ro_gui_wimp_event_finalise(theme_pane);
 		error = xwimp_delete_window(theme_pane);
 		if (error) {
-			LOG("xwimp_delete_window: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_delete_window: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 		}
 		theme_pane = 0;
@@ -269,7 +275,7 @@ void ro_gui_options_theme_load(void)
 			ro_toolbar_rebuild(toolbar);
 			toolbar_display = calloc(sizeof(struct toolbar_display), 1);
 			if (!toolbar_display) {
-				LOG("No memory for calloc()");
+				NSLOG(netsurf, INFO, "No memory for calloc()");
 				ro_warn_user("NoMemory", 0);
 				return;
 			}
@@ -291,7 +297,8 @@ void ro_gui_options_theme_load(void)
 	state.w = theme_pane;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}

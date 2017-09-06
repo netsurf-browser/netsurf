@@ -164,8 +164,9 @@ static void nsgtk_cookies_init_menu(struct nsgtk_cookie_window *ncwin)
 		w = GTK_WIDGET(gtk_builder_get_object(ncwin->builder,
 						      event->widget));
 		if (w == NULL) {
-			LOG("Unable to connect menu widget ""%s""",
-			    event->widget);
+			NSLOG(netsurf, INFO,
+			      "Unable to connect menu widget ""%s""",
+			      event->widget);
 		} else {
 			g_signal_connect(G_OBJECT(w),
 					 "activate",
@@ -253,7 +254,7 @@ static nserror nsgtk_cookies_init(void)
 
 	res = nsgtk_builder_new_from_resname("cookies", &ncwin->builder);
 	if (res != NSERROR_OK) {
-		LOG("Cookie UI builder init failed");
+		NSLOG(netsurf, INFO, "Cookie UI builder init failed");
 		free(ncwin);
 		return res;
 	}

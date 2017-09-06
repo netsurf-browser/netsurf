@@ -191,7 +191,8 @@ void ro_gui_401login_close(wimp_w w)
 
 	error = xwimp_delete_window(w);
 	if (error) {
-		LOG("xwimp_delete_window: 0x%x:%s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_delete_window: 0x%x:%s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 	ro_gui_wimp_event_finalise(w);
@@ -212,7 +213,7 @@ bool ro_gui_401login_apply(wimp_w w)
 
 	auth = malloc(strlen(session->uname) + strlen(session->pwd) + 2);
 	if (!auth) {
-		LOG("calloc failed");
+		NSLOG(netsurf, INFO, "calloc failed");
 		ro_warn_user("NoMemory", 0);
 		return false;
 	}

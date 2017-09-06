@@ -474,12 +474,12 @@ nserror ro_gui_global_history_present(void)
 
 	res = ro_global_history_init();
 	if (res == NSERROR_OK) {
-		LOG("Presenting");
+		NSLOG(netsurf, INFO, "Presenting");
 		ro_gui_dialog_open_top(global_history_window->core.wh,
 				       global_history_window->core.toolbar,
 				       600, 800);
 	} else {
-		LOG("Failed presenting code %d", res);
+		NSLOG(netsurf, INFO, "Failed presenting code %d", res);
 	}
 
 	return res;

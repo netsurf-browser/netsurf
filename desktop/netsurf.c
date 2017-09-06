@@ -89,7 +89,8 @@
 
 static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 {
-	LOG("[%3u] %.*s", str->refcnt, (int)lwc_string_length(str), lwc_string_data(str));
+	NSLOG(netsurf, INFO, "[%3u] %.*s", str->refcnt,
+	      (int)lwc_string_length(str), lwc_string_data(str));
 }
 
 /**
@@ -165,8 +166,9 @@ nserror netsurf_init(const char *store_path)
 
 	if (hlcache_parameters.llcache.limit < MINIMUM_MEMORY_CACHE_SIZE) {
 		hlcache_parameters.llcache.limit = MINIMUM_MEMORY_CACHE_SIZE;
-		LOG("Setting minimum memory cache size %" PRIsizet,
-		    hlcache_parameters.llcache.limit);
+		NSLOG(netsurf, INFO,
+		      "Setting minimum memory cache size %"PRIsizet,
+		      hlcache_parameters.llcache.limit);
 	} 
 
 	/* Set up the max attempts made to fetch a timing out resource */
@@ -243,19 +245,19 @@ void netsurf_exit(void)
 {
 	hlcache_stop();
 	
-	LOG("Closing GUI");
+	NSLOG(netsurf, INFO, "Closing GUI");
 	guit->misc->quit();
 	
-	LOG("Finalising JavaScript");
+	NSLOG(netsurf, INFO, "Finalising JavaScript");
 	js_finalise();
 
-	LOG("Finalising Web Search");
+	NSLOG(netsurf, INFO, "Finalising Web Search");
 	search_web_finalise();
 
-	LOG("Finalising high-level cache");
+	NSLOG(netsurf, INFO, "Finalising high-level cache");
 	hlcache_finalise();
 
-	LOG("Closing fetches");
+	NSLOG(netsurf, INFO, "Closing fetches");
 	fetcher_quit();
 
 	/* dump any remaining cache entries */
@@ -264,21 +266,21 @@ void netsurf_exit(void)
 	/* Clean up after content handlers */
 	content_factory_fini();
 
-	LOG("Closing utf8");
+	NSLOG(netsurf, INFO, "Closing utf8");
 	utf8_finalise();
 
-	LOG("Destroying URLdb");
+	NSLOG(netsurf, INFO, "Destroying URLdb");
 	urldb_destroy();
 
-	LOG("Destroying System colours");
+	NSLOG(netsurf, INFO, "Destroying System colours");
 	ns_system_colour_finalize();
 
-	LOG("Destroying Messages");
+	NSLOG(netsurf, INFO, "Destroying Messages");
 	messages_destroy();
 
 	corestrings_fini();
-	LOG("Remaining lwc strings:");
+	NSLOG(netsurf, INFO, "Remaining lwc strings:");
 	lwc_iterate_strings(netsurf_lwc_iterator, NULL);
 
-	LOG("Exited successfully");
+	NSLOG(netsurf, INFO, "Exited successfully");
 }

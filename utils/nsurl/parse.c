@@ -451,19 +451,19 @@ static void nsurl__get_string_markers(const char * const url_s,
 	}
 
 #ifdef NSURL_DEBUG
-	LOG("marker.start: %i", marker.start);
-	LOG("marker.scheme_end: %i", marker.scheme_end);
-	LOG("marker.authority: %i", marker.authority);
+	NSLOG(netsurf, INFO, "marker.start: %i", marker.start);
+	NSLOG(netsurf, INFO, "marker.scheme_end: %i", marker.scheme_end);
+	NSLOG(netsurf, INFO, "marker.authority: %i", marker.authority);
 
-	LOG("marker.colon_first: %i", marker.colon_first);
-	LOG("marker.at: %i", marker.at);
-	LOG("marker.colon_last: %i", marker.colon_last);
+	NSLOG(netsurf, INFO, "marker.colon_first: %i", marker.colon_first);
+	NSLOG(netsurf, INFO, "marker.at: %i", marker.at);
+	NSLOG(netsurf, INFO, "marker.colon_last: %i", marker.colon_last);
 
-	LOG("marker.path: %i", marker.path);
-	LOG("marker.query: %i", marker.query);
-	LOG("marker.fragment: %i", marker.fragment);
+	NSLOG(netsurf, INFO, "marker.path: %i", marker.path);
+	NSLOG(netsurf, INFO, "marker.query: %i", marker.query);
+	NSLOG(netsurf, INFO, "marker.fragment: %i", marker.fragment);
 
-	LOG("marker.end: %i", marker.end);
+	NSLOG(netsurf, INFO, "marker.end: %i", marker.end);
 #endif
 
 	/* Got all the URL components pegged out now */
@@ -485,8 +485,8 @@ static size_t nsurl__remove_dot_segments(char *path, char *output)
 
 	while (*path_pos != '\0') {
 #ifdef NSURL_DEBUG
-		LOG(" in:%s", path_pos);
-		LOG("out:%.*s", output_pos - output, output);
+		NSLOG(netsurf, INFO, " in:%s", path_pos);
+		NSLOG(netsurf, INFO, "out:%.*s", output_pos - output, output);
 #endif
 		if (*path_pos == '.') {
 			if (*(path_pos + 1) == '.' &&
@@ -1324,7 +1324,8 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	assert(rel != NULL);
 
 #ifdef NSURL_DEBUG
-	LOG("base: \"%s\", rel: \"%s\"", nsurl_access(base), rel);
+	NSLOG(netsurf, INFO, "base: \"%s\", rel: \"%s\"", nsurl_access(base),
+	      rel);
 #endif
 
 	/* Peg out the URL sections */

@@ -269,7 +269,7 @@ static void scaffolding_window_destroy(GtkWidget *widget, gpointer data)
 {
 	struct nsgtk_scaffolding *gs = data;
 
-	LOG("scaffold:%p", gs);
+	NSLOG(netsurf, INFO, "scaffold:%p", gs);
 
 	nsgtk_local_history_hide();
 
@@ -282,7 +282,7 @@ static void scaffolding_window_destroy(GtkWidget *widget, gpointer data)
 		gs->next->prev = gs->prev;
 	}
 
-	LOG("scaffold list head: %p", scaf_list);
+	NSLOG(netsurf, INFO, "scaffold list head: %p", scaf_list);
 
 	if (scaf_list == NULL) {
 		/* no more open windows - stop the browser */
@@ -805,7 +805,10 @@ MULTIHANDLER(savepage)
 	path = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(fc));
 	d = opendir(path);
 	if (d == NULL) {
-		LOG("Unable to open directory %s for complete save: %s", path, strerror(errno));
+		NSLOG(netsurf, INFO,
+		      "Unable to open directory %s for complete save: %s",
+		      path,
+		      strerror(errno));
 		if (errno == ENOTDIR)
 			nsgtk_warning("NoDirError", path);
 		else
@@ -837,7 +840,7 @@ MULTIHANDLER(pdf)
 	char *url_name;
 	nserror res;
 
-	LOG("Print preview (generating PDF)  started.");
+	NSLOG(netsurf, INFO, "Print preview (generating PDF)  started.");
 
 	res = nsurl_nice(browser_window_get_url(bw), &url_name, true);
 	if (res != NSERROR_OK) {
@@ -1221,10 +1224,10 @@ MULTIHANDLER(selectall)
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 
 	if (nsgtk_widget_has_focus(GTK_WIDGET(g->url_bar))) {
-		LOG("Selecting all URL bar text");
+		NSLOG(netsurf, INFO, "Selecting all URL bar text");
 		gtk_editable_select_region(GTK_EDITABLE(g->url_bar), 0, -1);
 	} else {
-		LOG("Selecting all document text");
+		NSLOG(netsurf, INFO, "Selecting all document text");
 		browser_window_key_press(bw, NS_KEY_SELECT_ALL);
 	}
 
@@ -1590,7 +1593,8 @@ MULTIHANDLER(localhistory)
 
 	res = nsgtk_local_history_present(g->window, bw);
 	if (res != NSERROR_OK) {
-		LOG("Unable to initialise local history window.");
+		NSLOG(netsurf, INFO,
+		      "Unable to initialise local history window.");
 	}
 	return TRUE;
 }
@@ -1600,7 +1604,8 @@ MULTIHANDLER(globalhistory)
 	nserror res;
 	res = nsgtk_global_history_present();
 	if (res != NSERROR_OK) {
-		LOG("Unable to initialise global history window.");
+		NSLOG(netsurf, INFO,
+		      "Unable to initialise global history window.");
 	}
 	return TRUE;
 }
@@ -1620,7 +1625,7 @@ MULTIHANDLER(showbookmarks)
 	nserror res;
 	res = nsgtk_hotlist_present();
 	if (res != NSERROR_OK) {
-		LOG("Unable to initialise bookmark window.");
+		NSLOG(netsurf, INFO, "Unable to initialise bookmark window.");
 	}
 	return TRUE;
 }
@@ -1630,7 +1635,7 @@ MULTIHANDLER(showcookies)
 	nserror res;
 	res = nsgtk_cookies_present();
 	if (res != NSERROR_OK) {
-		LOG("Unable to initialise cookies window.");
+		NSLOG(netsurf, INFO, "Unable to initialise cookies window.");
 	}
 	return TRUE;
 }
@@ -2073,7 +2078,8 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 		return NULL;
 	}
 
-	LOG("Constructing a scaffold of %p for gui_window %p", gs, toplevel);
+	NSLOG(netsurf, INFO,
+	      "Constructing a scaffold of %p for gui_window %p", gs, toplevel);
 
 	gs->top_level = toplevel;
 
@@ -2278,7 +2284,7 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	/* finally, show the window. */
 	gtk_widget_show(GTK_WIDGET(gs->window));
 
-	LOG("creation complete");
+	NSLOG(netsurf, INFO, "creation complete");
 
 	return gs;
 }
@@ -2466,7 +2472,8 @@ gui_search_web_provider_update(const char *provider_name,
 	GdkPixbuf *srch_pixbuf = NULL;
 	char *searchcontent;
 
-	LOG("name:%s bitmap %p", provider_name, provider_bitmap);
+	NSLOG(netsurf, INFO, "name:%s bitmap %p", provider_name,
+	      provider_bitmap);
 
 	if (provider_bitmap != NULL) {
 		srch_pixbuf = nsgdk_pixbuf_get_from_surface(provider_bitmap->surface, 16, 16);

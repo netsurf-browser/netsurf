@@ -287,7 +287,10 @@ bool riscos_bitmap_save(void *vbitmap, const char *path, unsigned flags)
 		error = xosspriteop_save_sprite_file(osspriteop_USER_AREA,
 				(bitmap->sprite_area), path);
 		if (error) {
-			LOG("xosspriteop_save_sprite_file: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xosspriteop_save_sprite_file: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("SaveError", error->errmess);
 			return false;
 		}
@@ -347,7 +350,8 @@ bool riscos_bitmap_save(void *vbitmap, const char *path, unsigned flags)
 
 		error = xosfind_openoutw(0, path, NULL, &fw);
 		if (error) {
-			LOG("xosfind_openoutw: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xosfind_openoutw: 0x%x: %s",
+			      error->errnum, error->errmess);
 			free(chunk_buf);
 			ro_warn_user("SaveError", error->errmess);
 			return false;
@@ -361,7 +365,8 @@ bool riscos_bitmap_save(void *vbitmap, const char *path, unsigned flags)
 		if (!error)
 			error = xosgbpb_writew(fw, (byte*)p, image_size, NULL);
 		if (error) {
-			LOG("xosgbpb_writew: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xosgbpb_writew: 0x%x: %s",
+			      error->errnum, error->errmess);
 			free(chunk_buf);
 			xosfind_closew(fw);
 			ro_warn_user("SaveError", error->errmess);
@@ -406,7 +411,10 @@ bool riscos_bitmap_save(void *vbitmap, const char *path, unsigned flags)
 			}
 			error = xosgbpb_writew(fw, (byte*)chunk_buf, dp-chunk_buf, NULL);
 			if (error) {
-				LOG("xosgbpb_writew: 0x%x: %s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xosgbpb_writew: 0x%x: %s",
+				      error->errnum,
+				      error->errmess);
 				free(chunk_buf);
 				xosfind_closew(fw);
 				ro_warn_user("SaveError", error->errmess);
@@ -416,13 +424,15 @@ bool riscos_bitmap_save(void *vbitmap, const char *path, unsigned flags)
 
 		error = xosfind_closew(fw);
 		if (error) {
-			LOG("xosfind_closew: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xosfind_closew: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("SaveError", error->errmess);
 		}
 
 		error = xosfile_set_type(path, osfile_TYPE_SPRITE);
 		if (error) {
-			LOG("xosfile_set_type: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xosfile_set_type: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("SaveError", error->errmess);
 		}
 
@@ -509,7 +519,8 @@ void riscos_bitmap_overlay_sprite(struct bitmap *bitmap,
 			(osspriteop_id)s,
 			&w, &h, NULL, NULL);
 	if (error) {
-		LOG("xosspriteop_read_sprite_info: 0x%x:%s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xosspriteop_read_sprite_info: 0x%x:%s",
+		      error->errnum, error->errmess);
 		return;
 	}
 	sp_offset = ((s->width + 1) * 4) - w;
@@ -591,7 +602,7 @@ static osspriteop_area *thumbnail_create_8bpp(struct bitmap *bitmap)
 
 	sprite_area = (osspriteop_area *)malloc(area_size);
 	if (!sprite_area) {
-		LOG("no memory for malloc()");
+		NSLOG(netsurf, INFO, "no memory for malloc()");
 		return NULL;
 	}
 	sprite_area->size = area_size;
@@ -759,7 +770,8 @@ static void thumbnail_test(void)
 	area_size = sizeof(osspriteop_area) +
 			sizeof(osspriteop_header) + sizeof(int);
 	if ((sprite_area = (osspriteop_area *)malloc(area_size)) == NULL) {
-		LOG("Insufficient memory to perform sprite test.");
+		NSLOG(netsurf, INFO,
+		      "Insufficient memory to perform sprite test.");
 		return;
 	}
 	sprite_area->size = area_size + 1;
@@ -791,7 +803,7 @@ nserror riscos_bitmap_render(struct bitmap *bitmap,
 	assert(content);
 	assert(bitmap);
 
-	LOG("content %p in bitmap %p", content, bitmap);
+	NSLOG(netsurf, INFO, "content %p in bitmap %p", content, bitmap);
 
 	/* check if we have access to 32bpp sprites natively */
 	if (thumbnail_32bpp_available == -1) {

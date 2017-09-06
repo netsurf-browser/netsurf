@@ -53,7 +53,7 @@ dump_tk_tree(fbtk_widget_t *widget)
 	int indent = 0;
 
 	while (widget != NULL) {
-		LOG("%*s%p", indent, "", widget);
+		NSLOG(netsurf, INFO, "%*s%p", indent, "", widget);
 		if (widget->first_child != NULL) {
 			widget = widget->first_child;
 			indent += 6;
@@ -101,7 +101,9 @@ fbtk_request_redraw(fbtk_widget_t *widget)
 	widget->redraw.height = widget->height;
 
 #ifdef FBTK_LOGGING
-	LOG("redrawing %p %d,%d %d,%d", widget, widget->redraw.x, widget->redraw.y, widget->redraw.width, widget->redraw.height);
+	NSLOG(netsurf, INFO, "redrawing %p %d,%d %d,%d", widget,
+	      widget->redraw.x, widget->redraw.y, widget->redraw.width,
+	      widget->redraw.height);
 #endif
 
 	cwidget = widget->last_child;
@@ -122,7 +124,7 @@ fbtk_request_redraw(fbtk_widget_t *widget)
 int
 fbtk_set_mapping(fbtk_widget_t *widget, bool map)
 {
-	LOG("setting mapping on %p to %d", widget, map);
+	NSLOG(netsurf, INFO, "setting mapping on %p to %d", widget, map);
 	widget->mapped = map;
 	if (map) {
 		fbtk_request_redraw(widget);
@@ -145,7 +147,7 @@ swap_siblings(fbtk_widget_t *lw)
 
 	assert(rw != NULL);
 
-	LOG("Swapping %p with %p", lw, rw);
+	NSLOG(netsurf, INFO, "Swapping %p with %p", lw, rw);
 	before = lw->prev;
 	after = rw->next;
 
@@ -411,7 +413,8 @@ fbtk_get_root_widget(fbtk_widget_t *widget)
 
 	/* check root widget was found */
 	if (widget->type != FB_WIDGET_TYPE_ROOT) {
-		LOG("Widget with null parent that is not the root widget!");
+		NSLOG(netsurf, INFO,
+		      "Widget with null parent that is not the root widget!");
 		return NULL;
 	}
 
@@ -552,7 +555,8 @@ fbtk_widget_new(fbtk_widget_t *parent,
 		return NULL;
 
 #ifdef FBTK_LOGGING
-	LOG("creating %p %d,%d %d,%d", neww, x, y, width, height);
+	NSLOG(netsurf, INFO, "creating %p %d,%d %d,%d", neww, x, y, width,
+	      height);
 #endif
 
 	/* make new window fit inside parent */
@@ -575,7 +579,8 @@ fbtk_widget_new(fbtk_widget_t *parent,
 	}
 
 #ifdef FBTK_LOGGING
-	LOG("using %p %d,%d %d,%d", neww, x, y, width, height);
+	NSLOG(netsurf, INFO, "using %p %d,%d %d,%d", neww, x, y, width,
+	      height);
 #endif
 	/* set values */
 	neww->type = type;
@@ -635,7 +640,8 @@ do_redraw(nsfb_t *nsfb, fbtk_widget_t *widget)
 		plot_ctx.y1 = plot_ctx.y0 + widget->redraw.height;
 
 #ifdef FBTK_LOGGING
-		LOG("clipping %p %d,%d %d,%d", widget, plot_ctx.x0, plot_ctx.y0, plot_ctx.x1, plot_ctx.y1);
+		NSLOG(netsurf, INFO, "clipping %p %d,%d %d,%d", widget,
+		      plot_ctx.x0, plot_ctx.y0, plot_ctx.x1, plot_ctx.y1);
 #endif
 		if (nsfb_plot_set_clip(nsfb, &plot_ctx) == true) {
 			fbtk_post_callback(widget, FBTK_CBT_REDRAW);

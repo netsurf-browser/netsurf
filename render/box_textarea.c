@@ -149,7 +149,9 @@ static void box_textarea_callback(void *data, struct textarea_msg *msg)
 				break;
 
 			default:
-				LOG("Drag type %d not handled.", msg->data.drag);
+				NSLOG(netsurf, INFO,
+				      "Drag type %d not handled.",
+				      msg->data.drag);
 				/* This is a logic faliure in the
 				 * front end code so abort.
 				 */

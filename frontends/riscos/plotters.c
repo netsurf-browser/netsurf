@@ -79,15 +79,16 @@ ro_plot_draw_path(const draw_path * const path,
 
 	error = xcolourtrans_set_gcol(c << 8, 0, os_ACTION_OVERWRITE, 0, 0);
 	if (error) {
-		LOG("xcolourtrans_set_gcol: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xcolourtrans_set_gcol: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return NSERROR_INVALID;
 	}
 
 	error = xdraw_stroke(path, 0, 0, 0, width * 2 * 256,
 			&line_style, dash_pattern);
 	if (error) {
-		LOG("xdraw_stroke: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xdraw_stroke: 0x%x: %s", error->errnum,
+		      error->errmess);
 		return NSERROR_INVALID;
 	}
 
@@ -115,8 +116,8 @@ ro_plot_clip(const struct redraw_context *ctx, const struct rect *clip)
 	int clip_y1 = ro_plot_origin_y - clip->y1 * 2;
 
 	if (clip_x1 < clip_x0 || clip_y0 < clip_y1) {
-		LOG("bad clip rectangle %i %i %i %i",
-		    clip_x0, clip_y0, clip_x1, clip_y1);
+		NSLOG(netsurf, INFO, "bad clip rectangle %i %i %i %i",
+		      clip_x0, clip_y0, clip_x1, clip_y1);
 		return NSERROR_BAD_SIZE;
 	}
 
@@ -132,7 +133,8 @@ ro_plot_clip(const struct redraw_context *ctx, const struct rect *clip)
 
 	error = xos_writen(buf, 9);
 	if (error) {
-		LOG("xos_writen: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xos_writen: 0x%x: %s", error->errnum,
+		      error->errmess);
 		return NSERROR_INVALID;
 	}
 
@@ -173,8 +175,8 @@ ro_plot_arc(const struct redraw_context *ctx,
 			os_ACTION_OVERWRITE, 0, 0);
 
 	if (error) {
-		LOG("xcolourtrans_set_gcol: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xcolourtrans_set_gcol: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return NSERROR_INVALID;
 	}
 
@@ -188,19 +190,22 @@ ro_plot_arc(const struct redraw_context *ctx,
 
 	error = xos_plot(os_MOVE_TO, x, y);	/* move to centre */
 	if (error) {
-		LOG("xos_plot: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xos_plot: 0x%x: %s", error->errnum,
+		      error->errmess);
 		return NSERROR_INVALID;
 	}
 
 	error = xos_plot(os_MOVE_TO, sx, sy);	/* move to start */
 	if (error) {
-		LOG("xos_plot: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xos_plot: 0x%x: %s", error->errnum,
+		      error->errmess);
 		return NSERROR_INVALID;
 	}
 
 	error = xos_plot(os_PLOT_ARC | os_PLOT_TO, ex, ey);	/* arc to end */
 	if (error) {
-		LOG("xos_plot: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xos_plot: 0x%x: %s", error->errnum,
+		      error->errmess);
 		return NSERROR_INVALID;
 	}
 
@@ -230,20 +235,24 @@ ro_plot_disc(const struct redraw_context *ctx,
 		error = xcolourtrans_set_gcol(style->fill_colour << 8, 0,
 					      os_ACTION_OVERWRITE, 0, 0);
 		if (error) {
-			LOG("xcolourtrans_set_gcol: 0x%x: %s",
-			    error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xcolourtrans_set_gcol: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			return NSERROR_INVALID;
 		}
 		error = xos_plot(os_MOVE_TO,
 				 ro_plot_origin_x + x * 2,
 				 ro_plot_origin_y - y * 2);
 		if (error) {
-			LOG("xos_plot: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xos_plot: 0x%x: %s",
+			      error->errnum, error->errmess);
 			return NSERROR_INVALID;
 		}
 		error = xos_plot(os_PLOT_CIRCLE | os_PLOT_BY, radius * 2, 0);
 		if (error) {
-			LOG("xos_plot: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xos_plot: 0x%x: %s",
+			      error->errnum, error->errmess);
 			return NSERROR_INVALID;
 		}
 	}
@@ -253,22 +262,26 @@ ro_plot_disc(const struct redraw_context *ctx,
 		error = xcolourtrans_set_gcol(style->stroke_colour << 8, 0,
 					      os_ACTION_OVERWRITE, 0, 0);
 		if (error) {
-			LOG("xcolourtrans_set_gcol: 0x%x: %s",
-			    error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xcolourtrans_set_gcol: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			return NSERROR_INVALID;
 		}
 		error = xos_plot(os_MOVE_TO,
 				 ro_plot_origin_x + x * 2,
 				 ro_plot_origin_y - y * 2);
 		if (error) {
-			LOG("xos_plot: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xos_plot: 0x%x: %s",
+			      error->errnum, error->errmess);
 			return NSERROR_INVALID;
 		}
 		error = xos_plot(os_PLOT_CIRCLE_OUTLINE | os_PLOT_BY,
 				 radius * 2, 0);
 
 		if (error) {
-			LOG("xos_plot: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xos_plot: 0x%x: %s",
+			      error->errnum, error->errmess);
 			return NSERROR_INVALID;
 		}
 	}
@@ -343,8 +356,10 @@ ro_plot_rectangle(const struct redraw_context *ctx,
 						colourtrans_USE_ECFS_GCOL,
 						os_ACTION_OVERWRITE, 0, 0);
 		if (error) {
-			LOG("xcolourtrans_set_gcol: 0x%x: %s",
-			    error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xcolourtrans_set_gcol: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			return NSERROR_INVALID;
 		}
 
@@ -352,7 +367,8 @@ ro_plot_rectangle(const struct redraw_context *ctx,
 				 ro_plot_origin_x + rect->x0 * 2,
 				 ro_plot_origin_y - rect->y0 * 2 - 1);
 		if (error) {
-			LOG("xos_plot: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xos_plot: 0x%x: %s",
+			      error->errnum, error->errmess);
 			return NSERROR_INVALID;
 		}
 
@@ -360,7 +376,8 @@ ro_plot_rectangle(const struct redraw_context *ctx,
 				 ro_plot_origin_x + rect->x1 * 2 - 1,
 				 ro_plot_origin_y - rect->y1 * 2);
 		if (error) {
-			LOG("xos_plot: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xos_plot: 0x%x: %s",
+			      error->errnum, error->errmess);
 			return NSERROR_INVALID;
 		}
 	}
@@ -441,13 +458,14 @@ ro_plot_polygon(const struct redraw_context *ctx,
 	error = xcolourtrans_set_gcol(style->fill_colour << 8,
 				      0, os_ACTION_OVERWRITE, 0, 0);
 	if (error) {
-		LOG("xcolourtrans_set_gcol: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xcolourtrans_set_gcol: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return NSERROR_INVALID;
 	}
 	error = xdraw_fill((draw_path *) path, 0, 0, 0);
 	if (error) {
-		LOG("xdraw_fill: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xdraw_fill: 0x%x: %s", error->errnum,
+		      error->errmess);
 		return NSERROR_INVALID;
 	}
 
@@ -494,13 +512,13 @@ ro_plot_path(const struct redraw_context *ctx,
 	}
 
 	if (p[0] != PLOTTER_PATH_MOVE) {
-		LOG("path doesn't start with a move");
+		NSLOG(netsurf, INFO, "path doesn't start with a move");
 		goto error;
 	}
 
 	path = malloc(sizeof *path * (n + 10));
 	if (!path) {
-		LOG("out of memory");
+		NSLOG(netsurf, INFO, "out of memory");
 		goto error;
 	}
 
@@ -528,7 +546,7 @@ ro_plot_path(const struct redraw_context *ctx,
 			path[i + 6] = -p[i + 6] * 2 * 256;
 			i += 7;
 		} else {
-			LOG("bad path command %f", p[i]);
+			NSLOG(netsurf, INFO, "bad path command %f", p[i]);
 			goto error;
 		}
 	}
@@ -546,15 +564,17 @@ ro_plot_path(const struct redraw_context *ctx,
 		error = xcolourtrans_set_gcol(pstyle->fill_colour << 8, 0,
 				os_ACTION_OVERWRITE, 0, 0);
 		if (error) {
-			LOG("xcolourtrans_set_gcol: 0x%x: %s",
-			    error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xcolourtrans_set_gcol: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			goto error;
 		}
 
 		error = xdraw_fill((draw_path *) path, 0, &trfm, 0);
 		if (error) {
-			LOG("xdraw_stroke: 0x%x: %s",
-			    error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xdraw_stroke: 0x%x: %s",
+			      error->errnum, error->errmess);
 			goto error;
 		}
 	}
@@ -563,16 +583,18 @@ ro_plot_path(const struct redraw_context *ctx,
 		error = xcolourtrans_set_gcol(pstyle->stroke_colour << 8, 0,
 				os_ACTION_OVERWRITE, 0, 0);
 		if (error) {
-			LOG("xcolourtrans_set_gcol: 0x%x: %s",
-			    error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xcolourtrans_set_gcol: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			goto error;
 		}
 
 		error = xdraw_stroke((draw_path *) path, 0, &trfm, 0,
 				width * 2 * 256, &line_style, 0);
 		if (error) {
-			LOG("xdraw_stroke: 0x%x: %s",
-			    error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xdraw_stroke: 0x%x: %s",
+			      error->errnum, error->errmess);
 			goto error;
 		}
 	}
@@ -623,7 +645,7 @@ ro_plot_bitmap(const struct redraw_context *ctx,
 
 	buffer = riscos_bitmap_get_buffer(bitmap);
 	if (!buffer) {
-		LOG("bitmap_get_buffer failed");
+		NSLOG(netsurf, INFO, "bitmap_get_buffer failed");
 		return NSERROR_INVALID;
 	}
 
@@ -669,8 +691,10 @@ ro_plot_text(const struct redraw_context *ctx,
 			fstyle->background << 8, fstyle->foreground << 8,
 			14, 0, 0, 0);
 	if (error) {
-		LOG("xcolourtrans_set_font_colours: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO,
+		      "xcolourtrans_set_font_colours: 0x%x: %s",
+		      error->errnum,
+		      error->errmess);
 		return NSERROR_INVALID;
 	}
 

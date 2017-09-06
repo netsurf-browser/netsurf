@@ -142,7 +142,7 @@ static void nsjpeg_term_source(j_decompress_ptr cinfo)
 static void nsjpeg_error_log(j_common_ptr cinfo)
 {
 	cinfo->err->format_message(cinfo, nsjpeg_error_buffer);
-	LOG("%s", nsjpeg_error_buffer);
+	NSLOG(netsurf, INFO, "%s", nsjpeg_error_buffer);
 }
 
 
@@ -156,7 +156,7 @@ static void nsjpeg_error_exit(j_common_ptr cinfo)
 	jmp_buf *setjmp_buffer = (jmp_buf *) cinfo->client_data;
 
 	cinfo->err->format_message(cinfo, nsjpeg_error_buffer);
-	LOG("%s", nsjpeg_error_buffer);
+	NSLOG(netsurf, INFO, "%s", nsjpeg_error_buffer);
 
 	longjmp(*setjmp_buffer, 1);
 }

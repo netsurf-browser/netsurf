@@ -84,7 +84,7 @@ plot_block(COLORREF col, int x, int y, int width, int height)
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
-		LOG("HDC not set on call to plotters");
+		NSLOG(netsurf, INFO, "HDC not set on call to plotters");
 		return NSERROR_INVALID;
 	}
 
@@ -299,7 +299,7 @@ plot_bitmap(struct bitmap *bitmap, int x, int y, int width, int height)
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
-		LOG("HDC not set on call to plotters");
+		NSLOG(netsurf, INFO, "HDC not set on call to plotters");
 		return NSERROR_INVALID;
 	}
 
@@ -404,7 +404,7 @@ arc(const struct redraw_context *ctx,
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
-		LOG("HDC not set on call to plotters");
+		NSLOG(netsurf, INFO, "HDC not set on call to plotters");
 		return NSERROR_INVALID;
 	}
 
@@ -515,7 +515,7 @@ disc(const struct redraw_context *ctx,
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
-		LOG("HDC not set on call to plotters");
+		NSLOG(netsurf, INFO, "HDC not set on call to plotters");
 		return NSERROR_INVALID;
 	}
 
@@ -594,7 +594,7 @@ line(const struct redraw_context *ctx,
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
-		LOG("HDC not set on call to plotters");
+		NSLOG(netsurf, INFO, "HDC not set on call to plotters");
 		return NSERROR_INVALID;
 	}
 
@@ -661,7 +661,7 @@ rectangle(const struct redraw_context *ctx,
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
-		LOG("HDC not set on call to plotters");
+		NSLOG(netsurf, INFO, "HDC not set on call to plotters");
 		return NSERROR_INVALID;
 	}
 
@@ -744,7 +744,7 @@ polygon(const struct redraw_context *ctx,
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
-		LOG("HDC not set on call to plotters");
+		NSLOG(netsurf, INFO, "HDC not set on call to plotters");
 		return NSERROR_INVALID;
 	}
 
@@ -878,7 +878,7 @@ bitmap(const struct redraw_context *ctx,
 	PLOT_LOG("Plotting %p at %d,%d by %d,%d",bitmap, x,y,width,height);
 
 	if (bitmap == NULL) {
-		LOG("Passed null bitmap!");
+		NSLOG(netsurf, INFO, "Passed null bitmap!");
 		return NSERROR_OK;
 	}
 
@@ -993,7 +993,7 @@ text(const struct redraw_context *ctx,
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
-		LOG("HDC not set on call to plotters");
+		NSLOG(netsurf, INFO, "HDC not set on call to plotters");
 		return NSERROR_INVALID;
 	}
 

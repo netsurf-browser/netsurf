@@ -174,7 +174,7 @@ static char *amiga_dt_picture_datatype(struct content *c)
 
 static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
 {
-	LOG("amiga_dt_picture_cache_convert");
+	NSLOG(netsurf, INFO, "amiga_dt_picture_cache_convert");
 
 	union content_msg_data msg_data;
 	UBYTE *bm_buffer;
@@ -210,7 +210,7 @@ static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
 
 bool amiga_dt_picture_convert(struct content *c)
 {
-	LOG("amiga_dt_picture_convert");
+	NSLOG(netsurf, INFO, "amiga_dt_picture_convert");
 
 	int width, height;
 	char *title;
@@ -256,7 +256,7 @@ nserror amiga_dt_picture_clone(const struct content *old, struct content **newc)
 	struct content *adt;
 	nserror error;
 
-	LOG("amiga_dt_picture_clone");
+	NSLOG(netsurf, INFO, "amiga_dt_picture_clone");
 
 	adt = calloc(1, sizeof(struct content));
 	if (adt == NULL)

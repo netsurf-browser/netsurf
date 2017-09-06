@@ -458,7 +458,7 @@ nsgtk_window_scroll_event(GtkWidget *widget,
 		break;
 #endif
 	default:
-		LOG("Unhandled mouse scroll direction");
+		NSLOG(netsurf, INFO, "Unhandled mouse scroll direction");
 		return TRUE;
 	}
 
@@ -741,7 +741,7 @@ gui_window_create(struct browser_window *bw,
 
 	res = nsgtk_builder_new_from_resname("tabcontents", &tab_builder);
 	if (res != NSERROR_OK) {
-		LOG("Tab contents UI builder init failed");
+		NSLOG(netsurf, INFO, "Tab contents UI builder init failed");
 		return NULL;
 	}
 
@@ -754,7 +754,8 @@ gui_window_create(struct browser_window *bw,
 		return NULL;
 	}
 
-	LOG("Creating gui window %p for browser window %p", g, bw);
+	NSLOG(netsurf, INFO, "Creating gui window %p for browser window %p",
+	      g, bw);
 
 	g->bw = bw;
 	g->mouse.state = 0;
@@ -903,10 +904,10 @@ void nsgtk_window_destroy_browser(struct gui_window *gw)
 
 static void gui_window_destroy(struct gui_window *g)
 {
-	LOG("gui_window: %p", g);
+	NSLOG(netsurf, INFO, "gui_window: %p", g);
 	assert(g != NULL);
 	assert(g->bw != NULL);
-	LOG("scaffolding: %p", g->scaffold);
+	NSLOG(netsurf, INFO, "scaffolding: %p", g->scaffold);
 
 	if (g->prev) {
 		g->prev->next = g->next;
@@ -918,7 +919,7 @@ static void gui_window_destroy(struct gui_window *g)
 		g->next->prev = g->prev;
 	}
 
-	LOG("window list head: %p", window_list);
+	NSLOG(netsurf, INFO, "window list head: %p", window_list);
 }
 
 /**
@@ -940,13 +941,13 @@ static void gui_window_set_icon(struct gui_window *gw, struct hlcache_handle *ic
 	if (icon != NULL) {
 		icon_bitmap = content_get_bitmap(icon);
 		if (icon_bitmap != NULL) {
-			LOG("Using %p bitmap", icon_bitmap);
+			NSLOG(netsurf, INFO, "Using %p bitmap", icon_bitmap);
 			gw->icon = nsgdk_pixbuf_get_from_surface(icon_bitmap->surface, 16, 16);
 		}
 	}
 
 	if (gw->icon == NULL) {
-		LOG("Using default favicon");
+		NSLOG(netsurf, INFO, "Using default favicon");
 		g_object_ref(favicon_pixbuf);
 		gw->icon = favicon_pixbuf;
 	}
@@ -1236,7 +1237,7 @@ gui_window_get_dimensions(struct gui_window *gw,
 		*width /= scale;
 		*height /= scale;
 	}
-	LOG("gw:%p width:%i height:%i", gw, *width, *height);
+	NSLOG(netsurf, INFO, "gw:%p width:%i height:%i", gw, *width, *height);
 
 	return NSERROR_OK;
 }
@@ -1269,8 +1270,8 @@ static void gui_window_create_form_select_menu(struct gui_window *g,
 	item = 0;
 	option = form_select_get_option(control, item);
 	while (option != NULL) {
-		LOG("Item %"PRIdPTR" option %p text %s",
-		    item, option, option->text);
+		NSLOG(netsurf, INFO, "Item %"PRIdPTR" option %p text %s",
+		      item, option, option->text);
 		menu_item = gtk_check_menu_item_new_with_label(option->text);
 		if (option->selected) {
 			gtk_check_menu_item_set_active(
@@ -1313,10 +1314,10 @@ gui_window_file_gadget_open(struct gui_window *g,
 			NSGTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
 			NULL);
 
-	LOG("*** open dialog: %p", dialog);
+	NSLOG(netsurf, INFO, "*** open dialog: %p", dialog);
 			
 	int ret = gtk_dialog_run(GTK_DIALOG(dialog));
-	LOG("*** return value: %d", ret);
+	NSLOG(netsurf, INFO, "*** return value: %d", ret);
 	if (ret == GTK_RESPONSE_ACCEPT) {
 		char *filename;
 

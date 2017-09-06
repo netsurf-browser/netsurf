@@ -218,9 +218,10 @@ static void ami_schedule_dump(void)
 	GetSysTime(&tv);
 	Amiga2Date(tv.Seconds, &clockdata);
 	
-	LOG("Current time = %d-%d-%d %d:%d:%d.%d", clockdata.mday, clockdata.month, clockdata.year,
-		clockdata.hour, clockdata.min, clockdata.sec, tv.Microseconds);
-	LOG("Events remaining in queue:");
+	NSLOG(netsurf, INFO, "Current time = %d-%d-%d %d:%d:%d.%d",
+	      clockdata.mday, clockdata.month, clockdata.year,
+	      clockdata.hour, clockdata.min, clockdata.sec, tv.Microseconds);
+	NSLOG(netsurf, INFO, "Events remaining in queue:");
 
 	iterator = pblHeapIterator(schedule_list);
 
@@ -231,9 +232,9 @@ static void ami_schedule_dump(void)
 			nscb, clockdata.mday, clockdata.month, clockdata.year, clockdata.hour, clockdata.min, clockdata.sec, 
 			nscb->tv.Microseconds, nscb->callback, nscb->p);
 		if(CheckIO((struct IORequest *)nscb) == NULL) {
-			LOG("-> ACTIVE");
+			NSLOG(netsurf, INFO, "-> ACTIVE");
 		} else {
-			LOG("-> COMPLETE");
+			NSLOG(netsurf, INFO, "-> COMPLETE");
 		}
 	};
 

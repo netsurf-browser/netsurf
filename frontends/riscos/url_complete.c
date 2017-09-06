@@ -171,7 +171,8 @@ bool ro_gui_url_complete_keypress(struct toolbar *toolbar, uint32_t key)
 				-(url_complete_matches_selection + 1) * 44,
 				65536, -url_complete_matches_selection * 44);
 		if (error) {
-			LOG("xwimp_force_redraw: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_force_redraw: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 		}
 
@@ -210,7 +211,10 @@ bool ro_gui_url_complete_keypress(struct toolbar *toolbar, uint32_t key)
 		state.w = parent;
 		error = xwimp_get_window_state(&state);
 		if (error) {
-			LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xwimp_get_window_state: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			return false;
 		}
@@ -228,7 +232,10 @@ bool ro_gui_url_complete_keypress(struct toolbar *toolbar, uint32_t key)
 				error = xwimp_force_redraw(dialog_url_complete,
 					0, -(i + 1) * 44, 65536, -i * 44);
 				if (error) {
-					LOG("xwimp_force_redraw: 0x%x: %s", error->errnum, error->errmess);
+					NSLOG(netsurf, INFO,
+					      "xwimp_force_redraw: 0x%x: %s",
+					      error->errnum,
+					      error->errmess);
 					ro_warn_user("WimpError",
 							error->errmess);
 				}
@@ -281,7 +288,8 @@ bool ro_gui_url_complete_keypress(struct toolbar *toolbar, uint32_t key)
 			0, -(old_selection + 1) * 44,
 			65536, -old_selection * 44);
 	if (error) {
-		LOG("xwimp_force_redraw: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_force_redraw: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 
@@ -289,7 +297,8 @@ bool ro_gui_url_complete_keypress(struct toolbar *toolbar, uint32_t key)
 			0, -(url_complete_matches_selection + 1) * 44,
 			65536, -url_complete_matches_selection * 44);
 	if (error) {
-		LOG("xwimp_force_redraw: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_force_redraw: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 
@@ -320,7 +329,8 @@ bool ro_gui_url_complete_keypress(struct toolbar *toolbar, uint32_t key)
 	state.w = dialog_url_complete;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return true;
 	}
@@ -335,7 +345,8 @@ bool ro_gui_url_complete_keypress(struct toolbar *toolbar, uint32_t key)
 
 	error = xwimp_open_window(PTR_WIMP_OPEN(&state));
 	if (error) {
-		LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_open_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return true;
 	}
@@ -411,7 +422,8 @@ void ro_gui_url_complete_resize(struct toolbar *toolbar, wimp_open *open)
 	state.w = dialog_url_complete;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -423,13 +435,14 @@ void ro_gui_url_complete_resize(struct toolbar *toolbar, wimp_open *open)
 	toolbar_state.w = ro_toolbar_get_window(toolbar);
 	error = xwimp_get_window_state(&toolbar_state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
 
 	if (!ro_toolbar_get_url_field_extent(toolbar, &url_extent)) {
-		LOG("Failed to read URL field extent.");
+		NSLOG(netsurf, INFO, "Failed to read URL field extent.");
 		return;
 	}
 
@@ -438,7 +451,8 @@ void ro_gui_url_complete_resize(struct toolbar *toolbar, wimp_open *open)
 	extent.x1 = 65536;
 	error = xwimp_set_extent(dialog_url_complete, &extent);
 	if (error) {
-		LOG("xwimp_set_extent: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_set_extent: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -460,14 +474,16 @@ void ro_gui_url_complete_resize(struct toolbar *toolbar, wimp_open *open)
 	if (state.visible.x1 - state.visible.x0 < 0) {
 		error = xwimp_close_window(dialog_url_complete);
 		if (error) {
-			LOG("xwimp_close_window: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_close_window: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 		}
 	} else {
 		error = xwimp_open_window_nested_with_flags(&state,
 				(wimp_w)-1, 0);
 		if (error) {
-			LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_open_window: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 			return;
 		}
@@ -507,7 +523,8 @@ bool ro_gui_url_complete_close(void)
 
 	error = xwimp_close_window(dialog_url_complete);
 	if (error) {
-		LOG("xwimp_close_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_close_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 	}
 
@@ -547,7 +564,7 @@ void ro_gui_url_complete_redraw(wimp_draw *redraw)
 
 	/* no matches? no redraw */
 	if (!url_complete_matches) {
-		LOG("Attempt to redraw with no matches made");
+		NSLOG(netsurf, INFO, "Attempt to redraw with no matches made");
 		/* Fill is never used, so make it something obvious */
 		ro_gui_user_redraw(redraw, false, os_COLOUR_BLACK);
 		return;
@@ -582,7 +599,10 @@ void ro_gui_url_complete_redraw(wimp_draw *redraw)
 
 			error = xwimp_plot_icon(&url_complete_icon);
 			if (error) {
-				LOG("xwimp_plot_icon: 0x%x: %s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xwimp_plot_icon: 0x%x: %s",
+				      error->errnum,
+				      error->errmess);
 				ro_warn_user("WimpError", error->errmess);
 			}
 
@@ -604,7 +624,10 @@ void ro_gui_url_complete_redraw(wimp_draw *redraw)
 			url_complete_sprite.extent.y0 = -(line + 1) * 44;
 			error = xwimp_plot_icon(&url_complete_sprite);
 			if (error) {
-				LOG("xwimp_plot_icon: 0x%x: %s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xwimp_plot_icon: 0x%x: %s",
+				      error->errnum,
+				      error->errmess);
 				ro_warn_user("WimpError", error->errmess);
 			}
 		}
@@ -658,7 +681,8 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer)
 	state.w = dialog_url_complete;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
@@ -685,14 +709,16 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer)
 				0, -(old_selection + 1) * 44,
 				65536, -old_selection * 44);
 		if (error) {
-			LOG("xwimp_force_redraw: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_force_redraw: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 		}
 		error = xwimp_force_redraw(dialog_url_complete,
 				0, -(url_complete_matches_selection + 1) * 44,
 				65536, -url_complete_matches_selection * 44);
 		if (error) {
-			LOG("xwimp_force_redraw: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_force_redraw: 0x%x: %s",
+			      error->errnum, error->errmess);
 			ro_warn_user("WimpError", error->errmess);
 		}
 	}

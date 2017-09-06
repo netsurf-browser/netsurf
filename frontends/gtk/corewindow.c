@@ -413,14 +413,14 @@ nsgtk_cw_keypress_event(GtkWidget *widget, GdkEventKey *event, gpointer g)
 	if (res == NSERROR_OK) {
 		return TRUE;
 	} else if (res != NSERROR_NOT_IMPLEMENTED) {
-		LOG("%s", messages_get_errorcode(res));
+		NSLOG(netsurf, INFO, "%s", messages_get_errorcode(res));
 		return FALSE;
 	}
 
 	/* deal with unprocessed keypress */
 	res = nsgtk_cw_key(nsgtk_cw, nskey);
 	if (res != NSERROR_OK) {
-		LOG("%s", messages_get_errorcode(res));
+		NSLOG(netsurf, INFO, "%s", messages_get_errorcode(res));
 		return FALSE;
 	}
 	return TRUE;

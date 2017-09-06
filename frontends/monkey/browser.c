@@ -471,7 +471,7 @@ monkey_window_handle_redraw(int argc, char **argv)
 		clip.y1 = atoi(argv[6]);
 	}
   
-	LOG("Issue redraw");
+	NSLOG(netsurf, INFO, "Issue redraw");
 	fprintf(stdout, "WINDOW REDRAW WIN %d START\n", atoi(argv[2]));
 	browser_window_redraw(gw->bw, gw->scrollx, gw->scrolly, &clip, &ctx);  
 	fprintf(stdout, "WINDOW REDRAW WIN %d STOP\n", atoi(argv[2]));

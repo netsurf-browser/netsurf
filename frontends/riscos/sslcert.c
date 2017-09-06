@@ -82,14 +82,14 @@ static void ro_gui_cert_release_window(struct ro_cert_window *certw)
 
 	error = xwimp_delete_window(certw->wh);
 	if (error) {
-		LOG("xwimp_delete_window: 0x%x:%s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_delete_window: 0x%x:%s",
+		      error->errnum, error->errmess);
 	}
 
 	error = xwimp_delete_window(certw->core.wh);
 	if (error) {
-		LOG("xwimp_delete_window: 0x%x:%s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_delete_window: 0x%x:%s",
+		      error->errnum, error->errmess);
 	}
 
 	free(certw);
@@ -165,16 +165,16 @@ static nserror cert_attach_pane(wimp_w parent, wimp_w pane)
 	winfo.w = pane;
 	error = xwimp_get_window_info_header_only(&winfo);
 	if (error) {
-		LOG("xwimp_get_window_info: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_info: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return NSERROR_INIT_FAILED;
 	}
 
 	wstate.w = parent;
 	error = xwimp_get_window_state(&wstate);
 	if (error) {
-		LOG("xwimp_get_window_state: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return NSERROR_INIT_FAILED;
 	}
 
@@ -182,8 +182,8 @@ static nserror cert_attach_pane(wimp_w parent, wimp_w pane)
 	istate.i = ICON_SSL_PANE;
 	error = xwimp_get_icon_state(&istate);
 	if (error) {
-		LOG("xwimp_get_icon_state: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_icon_state: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return NSERROR_INIT_FAILED;
 	}
 
@@ -211,8 +211,8 @@ static nserror cert_attach_pane(wimp_w parent, wimp_w pane)
 	if (set_extent) {
 		error = xwimp_set_extent(pane, &(winfo.extent));
 		if (error) {
-			LOG("xwimp_set_extent: 0x%x: %s",
-			    error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_set_extent: 0x%x: %s",
+			      error->errnum, error->errmess);
 			return NSERROR_INIT_FAILED;
 		}
 	}
@@ -225,8 +225,8 @@ static nserror cert_attach_pane(wimp_w parent, wimp_w pane)
 		wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT << wimp_CHILD_LS_EDGE_SHIFT |
 		wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT << wimp_CHILD_RS_EDGE_SHIFT);
 	if (error) {
-		LOG("xwimp_open_window_nested: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_open_window_nested: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return NSERROR_INIT_FAILED;
 	}
 
@@ -336,8 +336,8 @@ gui_cert_verify(nsurl *url,
 	/* Create the SSL window */
 	error = xwimp_create_window(dialog_cert_template, &ncwin->wh);
 	if (error) {
-		LOG("xwimp_create_window: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_create_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		free(ncwin);
 		return NSERROR_INIT_FAILED;
 	}
@@ -345,8 +345,8 @@ gui_cert_verify(nsurl *url,
 	/* create ssl viewer pane window */
 	error = xwimp_create_window(cert_tree_template, &ncwin->core.wh);
 	if (error) {
-		LOG("xwimp_create_window: 0x%x: %s",
-		    error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_create_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		free(ncwin);
 		return NSERROR_INIT_FAILED;
 	}

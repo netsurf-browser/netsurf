@@ -137,7 +137,8 @@ struct progress_bar *ro_gui_progress_bar_create(void)
 	error = xwimp_create_window((wimp_window *)&progress_bar_definition,
 				&pb->w);
 	if (error) {
-		LOG("xwimp_create_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_create_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		free(pb);
 		return NULL;
 	}
@@ -165,7 +166,8 @@ void ro_gui_progress_bar_destroy(struct progress_bar *pb)
 	ro_gui_wimp_event_finalise(pb->w);
 	error = xwimp_delete_window(pb->w);
 	if (error) {
-		LOG("xwimp_delete_window: 0x%x:%s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_delete_window: 0x%x:%s",
+		      error->errnum, error->errmess);
 	}
 
 	free(pb);
@@ -327,7 +329,8 @@ void ro_gui_progress_bar_update(struct progress_bar *pb, int width, int height)
 	redraw.box.x0 = cur.x1;
 	error = xwimp_update_window(&redraw, &more);
 	if (error) {
-		LOG("Error getting update window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "Error getting update window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return;
 	}
 	if (more)
@@ -351,7 +354,8 @@ void ro_gui_progress_bar_redraw(wimp_draw *redraw)
 
 	error = xwimp_redraw_window(redraw, &more);
 	if (error) {
-		LOG("xwimp_redraw_window: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_redraw_window: 0x%x: %s",
+		      error->errnum, error->errmess);
 		return;
 	}
 	if (more)
@@ -385,7 +389,8 @@ void ro_gui_progress_bar_animate(void *p)
 	redraw.box = pb->visible;
 	error = xwimp_update_window(&redraw, &more);
 	if (error != NULL) {
-		LOG("Error getting update window: '%s'", error->errmess);
+		NSLOG(netsurf, INFO, "Error getting update window: '%s'",
+		      error->errmess);
 		return;
 	}
 	if (more)
@@ -533,7 +538,8 @@ void ro_gui_progress_bar_redraw_window(wimp_draw *redraw,
 		}
 		error = xwimp_get_rectangle(redraw, &more);
 		if (error) {
-			LOG("xwimp_get_rectangle: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xwimp_get_rectangle: 0x%x: %s",
+			      error->errnum, error->errmess);
 			return;
 		}
 	}

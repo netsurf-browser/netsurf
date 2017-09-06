@@ -166,7 +166,7 @@ CMP_STATUSBAR sb_create( struct gui_window * gw )
 
 void sb_destroy( CMP_STATUSBAR s )
 {
-	LOG("%s\n", __FUNCTION__);
+	NSLOG(netsurf, INFO, "%s\n", __FUNCTION__);
 	if( s ) {
 		if( s->comp ){
 			mt_CompDelete( &app, s->comp );
@@ -206,7 +206,7 @@ CMP_STATUSBAR sb_create( struct gui_window * gw )
 
 void sb_destroy( CMP_STATUSBAR s )
 {
-	LOG("%s\n", __FUNCTION__);
+	NSLOG(netsurf, INFO, "%s\n", __FUNCTION__);
 	if( s ) {
 		free( s );
 	}

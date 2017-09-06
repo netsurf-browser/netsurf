@@ -162,7 +162,7 @@ nserror amiga_dt_anim_create(const content_handler *handler,
 
 bool amiga_dt_anim_convert(struct content *c)
 {
-	LOG("amiga_dt_anim_convert");
+	NSLOG(netsurf, INFO, "amiga_dt_anim_convert");
 
 	amiga_dt_anim_content *plugin = (amiga_dt_anim_content *) c;
 	union content_msg_data msg_data;
@@ -246,7 +246,7 @@ void amiga_dt_anim_destroy(struct content *c)
 {
 	amiga_dt_anim_content *plugin = (amiga_dt_anim_content *) c;
 
-	LOG("amiga_dt_anim_destroy");
+	NSLOG(netsurf, INFO, "amiga_dt_anim_destroy");
 
 	if (plugin->bitmap != NULL)
 		amiga_bitmap_destroy(plugin->bitmap);
@@ -263,7 +263,7 @@ bool amiga_dt_anim_redraw(struct content *c,
 	amiga_dt_anim_content *plugin = (amiga_dt_anim_content *) c;
 	bitmap_flags_t flags = BITMAPF_NONE;
 
-	LOG("amiga_dt_anim_redraw");
+	NSLOG(netsurf, INFO, "amiga_dt_anim_redraw");
 
 	if (data->repeat_x)
 		flags |= BITMAPF_REPEAT_X;
@@ -290,20 +290,20 @@ bool amiga_dt_anim_redraw(struct content *c,
 void amiga_dt_anim_open(struct content *c, struct browser_window *bw,
 	struct content *page, struct object_params *params)
 {
-	LOG("amiga_dt_anim_open");
+	NSLOG(netsurf, INFO, "amiga_dt_anim_open");
 
 	return;
 }
 
 void amiga_dt_anim_close(struct content *c)
 {
-	LOG("amiga_dt_anim_close");
+	NSLOG(netsurf, INFO, "amiga_dt_anim_close");
 	return;
 }
 
 void amiga_dt_anim_reformat(struct content *c, int width, int height)
 {
-	LOG("amiga_dt_anim_reformat");
+	NSLOG(netsurf, INFO, "amiga_dt_anim_reformat");
 	return;
 }
 
@@ -312,7 +312,7 @@ nserror amiga_dt_anim_clone(const struct content *old, struct content **newc)
 	amiga_dt_anim_content *plugin;
 	nserror error;
 
-	LOG("amiga_dt_anim_clone");
+	NSLOG(netsurf, INFO, "amiga_dt_anim_clone");
 
 	plugin = calloc(1, sizeof(amiga_dt_anim_content));
 	if (plugin == NULL)

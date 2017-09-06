@@ -96,7 +96,7 @@ int ctor_font_plotter_internal( FONT_PLOTTER self )
 	self->str_split = str_split;
 	self->pixel_pos = pixel_pos;
 	self->text = text;
-	LOG("%s: %s\n", (char *)__FILE__, __FUNCTION__);
+	NSLOG(netsurf, INFO, "%s: %s\n", (char *)__FILE__, __FUNCTION__);
 	if( !init ) {
 		vdih = self->vdi_handle;
 		fontbmp = atari_bitmap_create(48, 48, 0);

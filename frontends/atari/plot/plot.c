@@ -1628,7 +1628,7 @@ int plot_init(const struct redraw_context *ctx, char *fdrvrname)
 	short work_out[57];
 	atari_plot_vdi_handle=graf_handle(&dummy, &dummy, &dummy, &dummy);
 	v_opnvwk(work_in, &atari_plot_vdi_handle, work_out);
-	LOG("Plot VDI handle: %d", atari_plot_vdi_handle);
+	NSLOG(netsurf, INFO, "Plot VDI handle: %d", atari_plot_vdi_handle);
     }
     read_vdi_sysinfo(atari_plot_vdi_handle, &vdi_sysinfo);
     if(verbose_log) {
@@ -1640,7 +1640,8 @@ int plot_init(const struct redraw_context *ctx, char *fdrvrname)
 				atari_font_flags, &err);
     if (err) {
 	const char * desc = plot_err_str(err);
-	LOG("Unable to load font plotter %s -> %s", fdrvrname, desc );
+	NSLOG(netsurf, INFO, "Unable to load font plotter %s -> %s",
+              fdrvrname, desc);
 	die("font plotter");
     }
 

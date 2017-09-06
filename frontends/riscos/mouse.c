@@ -81,7 +81,8 @@ void ro_mouse_poll(void)
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
-		LOG("xwimp_get_pointer_info: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_get_pointer_info: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -194,7 +195,7 @@ void ro_mouse_track_start(void (*poll_end)(wimp_leaving *leaving, void *data),
 				ro_mouse_ignore_leaving_event == false)
 			ro_mouse_poll_end_callback(NULL, ro_mouse_poll_data);
 
-		LOG("Unexpected mouse track termination.");
+		NSLOG(netsurf, INFO, "Unexpected mouse track termination.");
 
 		ro_mouse_ignore_leaving_event = false;
 		ro_mouse_poll_end_callback = NULL;

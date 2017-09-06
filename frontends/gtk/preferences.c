@@ -621,7 +621,7 @@ comboboxLanguage_add_from_file(GtkListStore *liststore,
 
 	gtk_list_store_clear(liststore);
 
-	LOG("Used %s for languages", file_location);
+	NSLOG(netsurf, INFO, "Used %s for languages", file_location);
 	while (fgets(buf, sizeof(buf), fp)) {
 		/* Ignore blank lines */
 		if (buf[0] == '\0')
@@ -668,7 +668,7 @@ nsgtk_preferences_comboboxLanguage_realize(GtkWidget *widget,
 	const char *accept_language;
 
 	if (priv->content_language == NULL) {
-		LOG("content language list store unavailable");
+		NSLOG(netsurf, INFO, "content language list store unavailable");
 		return;
 	}
 
@@ -697,7 +697,7 @@ nsgtk_preferences_comboboxLanguage_realize(GtkWidget *widget,
 		}
 	}
 	if (res != NSERROR_OK) {
-		LOG("error populatiung languages combo");
+		NSLOG(netsurf, INFO, "error populatiung languages combo");
 	}
 }
 
@@ -989,14 +989,15 @@ GtkWidget* nsgtk_preferences(struct browser_window *bw, GtkWindow *parent)
 
 	res = nsgtk_builder_new_from_resname("options", &preferences_builder);
 	if (res != NSERROR_OK) {
-		LOG("Preferences UI builder init failed");
+		NSLOG(netsurf, INFO, "Preferences UI builder init failed");
 		return NULL;
 	}
 
 	priv->dialog = gtk_builder_get_object(preferences_builder,
 					       "dialogPreferences");
 	if (priv->dialog == NULL) {
-		LOG("Unable to get object for preferences dialog");
+		NSLOG(netsurf, INFO,
+		      "Unable to get object for preferences dialog");
 		/* release builder as were done with it */
 		g_object_unref(G_OBJECT(preferences_builder));
 		return NULL;

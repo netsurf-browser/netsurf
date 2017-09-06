@@ -108,7 +108,7 @@ nserror riscos_schedule(int t, void (*callback)(void *p), void *p)
 
 	entry = malloc(sizeof *entry);
 	if (!entry) {
-		LOG("malloc failed");
+		NSLOG(netsurf, INFO, "malloc failed");
 		return NSERROR_NOMEM;
 	}
 

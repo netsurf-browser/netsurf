@@ -169,7 +169,8 @@ void ro_gui_print_prepare(struct gui_window *g)
 	/* Read Printer Driver name */
 	error = xpdriver_info(0, 0, 0, 0, &desc, 0, 0, 0);
 	if (error) {
-		LOG("xpdriver_info: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xpdriver_info: 0x%x: %s",
+		      error->errnum, error->errmess);
 		printers_exists = false;
 	}
 
@@ -306,7 +307,8 @@ void print_send_printsave(struct hlcache_handle *h)
 	e = xwimp_send_message(wimp_USER_MESSAGE_RECORDED,
 			(wimp_message *)&m, 0);
 	if (e) {
-		LOG("xwimp_send_message: 0x%x: %s", e->errnum, e->errmess);
+		NSLOG(netsurf, INFO, "xwimp_send_message: 0x%x: %s",
+		      e->errnum, e->errmess);
 		ro_warn_user("WimpError", e->errmess);
 		ro_print_cleanup();
 	}
@@ -330,7 +332,8 @@ bool print_send_printtypeknown(wimp_message *m)
 	m->action = message_PRINT_TYPE_KNOWN;
 	e = xwimp_send_message(wimp_USER_MESSAGE, m, m->sender);
 	if (e) {
-		LOG("xwimp_send_message: 0x%x: %s", e->errnum, e->errmess);
+		NSLOG(netsurf, INFO, "xwimp_send_message: 0x%x: %s",
+		      e->errnum, e->errmess);
 		ro_warn_user("WimpError", e->errmess);
 		return false;
 	}
@@ -436,7 +439,8 @@ bool ro_print_ack(wimp_message *m)
 	/* read printer driver type */
 	error = xpdriver_info(&info_type, 0, 0, 0, 0, 0, 0, 0);
 	if (error) {
-		LOG("xpdriver_info: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xpdriver_info: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("PrintError", error->errmess);
 		ro_print_cleanup();
 		return true;
@@ -461,7 +465,8 @@ bool ro_print_ack(wimp_message *m)
 
 	error = xwimp_send_message(wimp_USER_MESSAGE_RECORDED, m, m->sender);
 	if (error) {
-		LOG("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xwimp_send_message: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("WimpError", error->errmess);
 		/* and delete temporary file */
 		xosfile_delete(m->data.data_xfer.file_name,
@@ -533,7 +538,8 @@ bool print_document(struct gui_window *g, const char *filename)
 	/* read printer driver features */
 	error = xpdriver_info(0, 0, 0, &features, 0, 0, 0, 0);
 	if (error) {
-		LOG("xpdriver_info: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xpdriver_info: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("PrintError", error->errmess);
 		return false;
 	}
@@ -541,7 +547,8 @@ bool print_document(struct gui_window *g, const char *filename)
 	/* read page size */
 	error = xpdriver_page_size(0, 0, &left, &bottom, &right, &top);
 	if (error) {
-		LOG("xpdriver_page_size: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xpdriver_page_size: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("PrintError", error->errmess);
 		return false;
 	}
@@ -564,7 +571,8 @@ bool print_document(struct gui_window *g, const char *filename)
 	error = xosfind_openoutw(osfind_NO_PATH | osfind_ERROR_IF_DIR |
 			osfind_ERROR_IF_ABSENT, filename, 0, &fhandle);
 	if (error) {
-		LOG("xosfind_openoutw: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xosfind_openoutw: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("PrintError", error->errmess);
 		return false;
 	}
@@ -572,7 +580,8 @@ bool print_document(struct gui_window *g, const char *filename)
 	/* select print job */
 	error = xpdriver_select_jobw(fhandle, "NetSurf", &old_job);
 	if (error) {
-		LOG("xpdriver_select_jobw: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xpdriver_select_jobw: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("PrintError", error->errmess);
 		xosfind_closew(fhandle);
 		return false;
@@ -632,18 +641,23 @@ bool print_document(struct gui_window *g, const char *filename)
 		/* give page rectangle */
 		error = xpdriver_give_rectangle(0, &b, &t, &p, os_COLOUR_WHITE);
 		if (error) {
-			LOG("xpdriver_give_rectangle: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xpdriver_give_rectangle: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			error_message = error->errmess;
 			goto error;
 		}
 
-		LOG("given rectangle: [(%d, %d), (%d, %d)]", b.x0, b.y0, b.x1, b.y1);
+		NSLOG(netsurf, INFO, "given rectangle: [(%d, %d), (%d, %d)]",
+		      b.x0, b.y0, b.x1, b.y1);
 
 		/* and redraw the document */
 		error = xpdriver_draw_page(print_num_copies, &b, 0, 0,
 				&more, 0);
 		if (error) {
-			LOG("xpdriver_draw_page: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO, "xpdriver_draw_page: 0x%x: %s",
+			      error->errnum, error->errmess);
 			error_message = error->errmess;
 			goto error;
 		}
@@ -657,7 +671,9 @@ bool print_document(struct gui_window *g, const char *filename)
 				.plot = &ro_plotters
 			};
 
-			LOG("redrawing area: [(%d, %d), (%d, %d)]", b.x0, b.y0, b.x1, b.y1);
+			NSLOG(netsurf, INFO,
+			      "redrawing area: [(%d, %d), (%d, %d)]", b.x0,
+			      b.y0, b.x1, b.y1);
 			clip.x0 = (b.x0 - ro_plot_origin_x) / 2;
 			clip.y0 = (ro_plot_origin_y - b.y1) / 2;
 			clip.x1 = (b.x1 - ro_plot_origin_x) / 2;
@@ -679,7 +695,10 @@ bool print_document(struct gui_window *g, const char *filename)
 
 			error = xpdriver_get_rectangle(&b, &more, 0);
 			if (error) {
-				LOG("xpdriver_get_rectangle: 0x%x: %s", error->errnum, error->errmess);
+				NSLOG(netsurf, INFO,
+				      "xpdriver_get_rectangle: 0x%x: %s",
+				      error->errnum,
+				      error->errmess);
 				error_message = error->errmess;
 				goto error;
 			}
@@ -701,14 +720,16 @@ bool print_document(struct gui_window *g, const char *filename)
 
 	error = (os_error *) _swix(PDriver_EndJob, _IN(0), (int) fhandle);
 	if (error) {
-		LOG("xpdriver_end_jobw: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xpdriver_end_jobw: 0x%x: %s",
+		      error->errnum, error->errmess);
 		error_message = error->errmess;
 		goto error;
 	}
 
 	error = xosfind_closew(fhandle);
 	if (error) {
-		LOG("xosfind_closew: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xosfind_closew: 0x%x: %s",
+		      error->errnum, error->errmess);
 		ro_warn_user("PrintError", error->errmess);
 		return false;
 	}
@@ -716,7 +737,10 @@ bool print_document(struct gui_window *g, const char *filename)
 	if (old_job) {
 		error = xpdriver_select_jobw(old_job, 0, 0);
 		if (error) {
-			LOG("xpdriver_select_jobw: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xpdriver_select_jobw: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			ro_warn_user("PrintError", error->errmess);
 			/* the printing succeeded anyway */
 			return true;
@@ -855,11 +879,14 @@ print_fonts_plot_text(const struct redraw_context *ctx,
 			text, length, 0, 0, print_fonts_callback, 0);
 	if (code != rufl_OK) {
 		if (code == rufl_FONT_MANAGER_ERROR) {
-			LOG("rufl_paint_callback: rufl_FONT_MANAGER_ERROR: ""0x%x: %s",
-			    rufl_fm_error->errnum, rufl_fm_error->errmess);
+			NSLOG(netsurf, INFO,
+			      "rufl_paint_callback: rufl_FONT_MANAGER_ERROR: ""0x%x: %s",
+			      rufl_fm_error->errnum,
+			      rufl_fm_error->errmess);
 			print_fonts_error = rufl_fm_error->errmess;
 		} else {
-			LOG("rufl_paint_callback: 0x%x", code);
+			NSLOG(netsurf, INFO, "rufl_paint_callback: 0x%x",
+			      code);
 		}
 		return NSERROR_INVALID;
 	}
@@ -934,18 +961,22 @@ const char *print_declare_fonts(struct hlcache_handle *h)
 	}
 
 	for (i = 0; i != print_fonts_count; ++i) {
-		LOG("%u %s", i, print_fonts_list[i]);
+		NSLOG(netsurf, INFO, "%u %s", i, print_fonts_list[i]);
 		error = xpdriver_declare_font(0, print_fonts_list[i],
 				pdriver_KERNED);
 		if (error) {
-			LOG("xpdriver_declare_font: 0x%x: %s", error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xpdriver_declare_font: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			error_message = error->errmess;
 			goto end;
 		}
 	}
 	error = xpdriver_declare_font(0, 0, 0);
 	if (error) {
-		LOG("xpdriver_declare_font: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xpdriver_declare_font: 0x%x: %s",
+		      error->errnum, error->errmess);
 		error_message = error->errmess;
 		goto end;
 	}

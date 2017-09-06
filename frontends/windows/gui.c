@@ -66,7 +66,7 @@ void win32_run(void)
 	int timeout; /* timeout in miliseconds */
 	UINT timer_id = 0;
 
-	LOG("Starting messgae dispatcher");
+	NSLOG(netsurf, INFO, "Starting messgae dispatcher");
 
 	while (!win32_quit) {
 		/* run the scheduler and discover how long to wait for
@@ -128,7 +128,7 @@ static void gui_get_clipboard(char **buffer, size_t *length)
 	clipboard_handle = GetClipboardData(CF_TEXT);
 	if (clipboard_handle != NULL) {
 		content = GlobalLock(clipboard_handle);
-		LOG("pasting %s", content);
+		NSLOG(netsurf, INFO, "pasting %s", content);
 		GlobalUnlock(clipboard_handle);
 	}
 }

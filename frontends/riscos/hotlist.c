@@ -548,19 +548,20 @@ nserror ro_gui_hotlist_present(void)
 			return NSERROR_OK;
 		}
 
-		LOG("xos_cli: 0x%x: %s", error->errnum, error->errmess);
+		NSLOG(netsurf, INFO, "xos_cli: 0x%x: %s", error->errnum,
+		      error->errmess);
 		ro_warn_user("Failed to launch external hotlist: %s",
 			     error->errmess);
 	}
 
 	res = ro_hotlist_init();
 	if (res == NSERROR_OK) {
-		LOG("Presenting");
+		NSLOG(netsurf, INFO, "Presenting");
 		ro_gui_dialog_open_top(hotlist_window->core.wh,
 				       hotlist_window->core.toolbar,
 				       600, 800);
 	} else {
-		LOG("Failed presenting code %d", res);
+		NSLOG(netsurf, INFO, "Failed presenting code %d", res);
 	}
 
 	return res;
