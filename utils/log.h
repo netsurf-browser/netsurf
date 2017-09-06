@@ -59,6 +59,7 @@ extern nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv);
 NSLOG_DECLARE_CATEGORY(netsurf);
 NSLOG_DECLARE_CATEGORY(llcache);
 NSLOG_DECLARE_CATEGORY(fetch);
+NSLOG_DECLARE_CATEGORY(plot);
 
 #else /* WITH_NSLOG */
 

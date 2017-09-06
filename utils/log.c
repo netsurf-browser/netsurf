@@ -94,6 +94,7 @@ static const char *nslog_gettime(void)
 NSLOG_DEFINE_CATEGORY(netsurf, "NetSurf default logging");
 NSLOG_DEFINE_CATEGORY(llcache, "Low level cache");
 NSLOG_DEFINE_CATEGORY(fetch, "objet fetching");
+NSLOG_DEFINE_CATEGORY(plot, "rendering system");
 
 static void
 netsurf_render_log(void *_ctx,

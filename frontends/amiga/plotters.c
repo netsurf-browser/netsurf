@@ -53,15 +53,6 @@
 #include "amiga/rtg.h"
 #include "amiga/utf8.h"
 
-/* set AMI_PLOTTER_DEBUG to 0 for no debugging, 1 for debugging */
-//#define AMI_PLOTTER_DEBUG 1
-
-#ifdef AMI_PLOTTER_DEBUG
-#define PLOT_LOG(x...) LOG(x)
-#else
-#define PLOT_LOG(x...) ((void) 0)
-#endif
-
 HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage *);
 
 struct bfbitmap {
@@ -118,9 +109,6 @@ static bool palette_mapped = true; /* palette-mapped state for the screen */
    25000 = 5000 vectors
   */
 #define AREA_SIZE 25000
-
-/* Define the below to get additional debug */
-#undef AMI_PLOTTER_DEBUG
 
 struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit, bool alloc_pen_list)
 {
@@ -438,7 +426,7 @@ static void ami_arc_gfxlib(struct RastPort *rp, int x, int y, int radius, int an
 static nserror
 ami_bitmap(struct gui_globals *glob, int x, int y, int width, int height, struct bitmap *bitmap)
 {
-	PLOT_LOG("[ami_plotter] Entered ami_bitmap()");
+	NSLOG(plot, DEEPDEBUG, "[ami_plotter] Entered ami_bitmap()");
 
 	struct BitMap *tbm;
 
@@ -458,7 +446,7 @@ ami_bitmap(struct gui_globals *glob, int x, int y, int width, int height, struct
 		return NSERROR_OK;
 	}
 
-	PLOT_LOG("[ami_plotter] ami_bitmap() got native bitmap");
+	NSLOG(plot, DEEPDEBUG, "[ami_plotter] ami_bitmap() got native bitmap");
 
 #ifdef __amigaos4__
 	if (__builtin_expect((GfxBase->LibNode.lib_Version >= 53) &&
@@ -617,7 +605,7 @@ ami_clip(const struct redraw_context *ctx, const struct rect *clip)
 	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
 	struct Region *reg = NULL;
 
-	PLOT_LOG("[ami_plotter] Entered ami_clip()");
+	NSLOG(plot, DEEPDEBUG, "[ami_plotter] Entered ami_clip()");
 
 	if (glob->rp->Layer) {
 		reg = NewRegion();
@@ -661,7 +649,7 @@ ami_arc(const struct redraw_context *ctx,
 	const plot_style_t *style,
 	int x, int y, int radius, int angle1, int angle2)
 {
-	PLOT_LOG("[ami_plotter] Entered ami_arc()");
+	NSLOG(plot, DEEPDEBUG, "[ami_plotter] Entered ami_arc()");
 
 	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
 
@@ -693,7 +681,7 @@ ami_disc(const struct redraw_context *ctx,
 		const plot_style_t *style,
 		int x, int y, int radius)
 {
-	PLOT_LOG("[ami_plotter] Entered ami_disc()");
+	NSLOG(plot, DEEPDEBUG, "[ami_plotter] Entered ami_disc()");
 
 	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
 
@@ -728,7 +716,7 @@ ami_line(const struct redraw_context *ctx,
 		const plot_style_t *style,
 		const struct rect *line)
 {
-	PLOT_LOG("[ami_plotter] Entered ami_line()");
+	NSLOG(plot, DEEPDEBUG, "[ami_plotter] Entered ami_line()");
 
 	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
 
@@ -780,7 +768,7 @@ ami_rectangle(const struct redraw_context *ctx,
 		     const plot_style_t *style,
 		     const struct rect *rect)
 {
-	PLOT_LOG("[ami_plotter] Entered ami_rectangle()");
+	NSLOG(plot, DEEPDEBUG, "[ami_plotter] Entered ami_rectangle()");
 
 	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
 
@@ -844,7 +832,7 @@ ami_polygon(const struct redraw_context *ctx,
 		   const int *p,
 		   unsigned int n)
 {
-	PLOT_LOG("[ami_plotter] Entered ami_polygon()");
+	NSLOG(plot, DEEPDEBUG, "[ami_plotter] Entered ami_polygon()");
 
 	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
 
@@ -893,7 +881,7 @@ ami_path(const struct redraw_context *ctx,
 	unsigned int i;
 	struct bez_point start_p = {0, 0}, cur_p = {0, 0}, p_a, p_b, p_c, p_r;
 
-	PLOT_LOG("[ami_plotter] Entered ami_path()");
+	NSLOG(plot, DEEPDEBUG, "[ami_plotter] Entered ami_path()");
 
 	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
 
@@ -1037,7 +1025,7 @@ ami_bitmap_tile(const struct redraw_context *ctx,
 	bool repeat_x = (flags & BITMAPF_REPEAT_X);
 	bool repeat_y = (flags & BITMAPF_REPEAT_Y);
 
-	PLOT_LOG("[ami_plotter] Entered ami_bitmap_tile()");
+	NSLOG(plot, DEEPDEBUG, "[ami_plotter] Entered ami_bitmap_tile()");
 
 	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
 
@@ -1154,7 +1142,7 @@ ami_text(const struct redraw_context *ctx,
 		const char *text,
 		size_t length)
 {
-	PLOT_LOG("[ami_plotter] Entered ami_text()");
+	NSLOG(plot, DEEPDEBUG, "[ami_plotter] Entered ami_text()");
 
 	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
 
