@@ -538,7 +538,7 @@ nsbeos_plot_path(const struct redraw_context *ctx,
         }
 
         if (p[0] != PLOTTER_PATH_MOVE) {
-                LOG("path doesn't start with a move");
+                NSLOG(netsurf, INFO, "path doesn't start with a move");
                 return NSERROR_INVALID;
         }
 
@@ -563,7 +563,7 @@ nsbeos_plot_path(const struct redraw_context *ctx,
                         shape.BezierTo(pt);
                         i += 7;
                 } else {
-                        LOG("bad path command %f", p[i]);
+                        NSLOG(netsurf, INFO, "bad path command %f", p[i]);
                         return NSERROR_INVALID;
                 }
         }

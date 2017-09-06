@@ -50,14 +50,17 @@ bool nsbeos_throbber_initialise_from_png(const int frames, ...)
 	
 	if (frames < 2) {
 		/* we need at least two frames - one for idle, one for active */
-		LOG("Insufficent number of frames in throbber animation!");
-		LOG("(called with %d frames, where 2 is a minimum.)", frames);
+		NSLOG(netsurf, INFO,
+		      "Insufficent number of frames in throbber animation!");
+		NSLOG(netsurf, INFO,
+		      "(called with %d frames, where 2 is a minimum.)",
+		      frames);
 		return false;
 	}
 
 	BResources *res = get_app_resources();
 	if (res == NULL) {
-		LOG("Can't find resources for throbber!");
+		NSLOG(netsurf, INFO, "Can't find resources for throbber!");
 		return false;
 	}
 
@@ -74,14 +77,17 @@ bool nsbeos_throbber_initialise_from_png(const int frames, ...)
 		data = res->LoadResource('data', fn, &size);
 		throb->framedata[i] = NULL;
 		if (!data) {
-			LOG("Error when loading resource %s", fn);
+			NSLOG(netsurf, INFO, "Error when loading resource %s",
+			      fn);
 			errors_when_loading = true;
 			continue;
 		}
 		BMemoryIO mem(data, size);
 		throb->framedata[i] = BTranslationUtils::GetBitmap(&mem);
 		if (throb->framedata[i] == NULL) {
-			LOG("Error when loading %s: GetBitmap() returned NULL", fn);
+			NSLOG(netsurf, INFO,
+			      "Error when loading %s: GetBitmap() returned NULL",
+			      fn);
 			errors_when_loading = true;
 		}
 	}

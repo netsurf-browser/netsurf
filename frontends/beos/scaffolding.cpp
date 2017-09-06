@@ -796,7 +796,7 @@ int32 nsbeos_replicant_main_thread(void *_arg)
 
 static void nsbeos_window_destroy_event(NSBrowserWindow *window, nsbeos_scaffolding *g, BMessage *event)
 {
-	LOG("Being Destroyed = %d", g->being_destroyed);
+	NSLOG(netsurf, INFO, "Being Destroyed = %d", g->being_destroyed);
 
 	if (--open_windows == 0)
 		nsbeos_done = true;
@@ -854,7 +854,9 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 	bw = nsbeos_get_browser_for_gui(scaffold->top_level);
 	bool reloadAll = false;
 
-	LOG("nsbeos_scaffolding_dispatch_event() what = 0x%08lx", message->what);
+	NSLOG(netsurf, INFO,
+	      "nsbeos_scaffolding_dispatch_event() what = 0x%08lx",
+	      message->what);
 	switch (message->what) {
 		case B_QUIT_REQUESTED:
 			nsbeos_scaffolding_destroy(scaffold);
@@ -997,7 +999,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			browser_window_key_press(bw, NS_KEY_PASTE);
 			break;
 		case B_SELECT_ALL:
-			LOG("Selecting all text");
+			NSLOG(netsurf, INFO, "Selecting all text");
 			browser_window_key_press(bw, NS_KEY_SELECT_ALL);
 			break;
 		case B_NETPOSITIVE_BACK:
@@ -1359,7 +1361,8 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 
 void nsbeos_scaffolding_destroy(nsbeos_scaffolding *scaffold)
 {
-	LOG("Being Destroyed = %d", scaffold->being_destroyed);
+	NSLOG(netsurf, INFO, "Being Destroyed = %d",
+	      scaffold->being_destroyed);
 	if (scaffold->being_destroyed) return;
 	scaffold->being_destroyed = 1;
 	nsbeos_window_destroy_event(scaffold->window, scaffold, NULL);
@@ -1444,7 +1447,7 @@ static void recursively_set_menu_items_target(BMenu *menu, BHandler *handler)
 
 void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 {
-	LOG("Attaching view to scaffolding %p", g);
+	NSLOG(netsurf, INFO, "Attaching view to scaffolding %p", g);
 
 	// this is a replicant,... and it went bad
 	if (!g->window) {
@@ -1722,7 +1725,8 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 {
 	struct beos_scaffolding *g = (struct beos_scaffolding *)malloc(sizeof(*g));
 
-	LOG("Constructing a scaffold of %p for gui_window %p", g, toplevel);
+	NSLOG(netsurf, INFO,
+	      "Constructing a scaffold of %p for gui_window %p", g, toplevel);
 
 	g->top_level = toplevel;
 	g->being_destroyed = 0;

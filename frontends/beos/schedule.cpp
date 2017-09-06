@@ -58,7 +58,8 @@ nsbeos_schedule_kill_callback(void *_target, void *_match)
 	_nsbeos_callback_t *match = (_nsbeos_callback_t *)_match;
 	if ((target->callback == match->callback) &&
 	    (target->context == match->context)) {
-		LOG("Found match for %p(%p), killing.", target->callback, target->context);
+		NSLOG(netsurf, INFO, "Found match for %p(%p), killing.",
+		      target->callback, target->context);
 		target->callback = NULL;
 		target->context = NULL;
 		target->callback_killed = true;
@@ -69,7 +70,8 @@ nsbeos_schedule_kill_callback(void *_target, void *_match)
 static void
 schedule_remove(void (*callback)(void *p), void *p)
 {
-	LOG("schedule_remove() for %p(%p)", cb->callback, cb->context);
+	NSLOG(netsurf, INFO, "schedule_remove() for %p(%p)", cb->callback,
+	      cb->context);
 	if (callbacks == NULL)
 		return;
 	_nsbeos_callback_t cb_match;
@@ -81,7 +83,7 @@ schedule_remove(void (*callback)(void *p), void *p)
 
 nserror beos_schedule(int t, void (*callback)(void *p), void *p)
 {
-	LOG("t:%d cb:%p p:%p", t, cb->callback, cb->context);
+	NSLOG(netsurf, INFO, "t:%d cb:%p p:%p", t, cb->callback, cb->context);
 
 	if (callbacks == NULL) {
 		callbacks = new BList;
@@ -111,7 +113,7 @@ nserror beos_schedule(int t, void (*callback)(void *p), void *p)
 bool
 schedule_run(void)
 {
-	LOG("schedule_run()");
+	NSLOG(netsurf, INFO, "schedule_run()");
 
 	earliest_callback_timeout = B_INFINITE_TIMEOUT;
 	if (callbacks == NULL)
@@ -120,7 +122,8 @@ schedule_run(void)
 	bigtime_t now = system_time();
 	int32 i;
 
-	LOG("Checking %ld callbacks to for deadline.", this_run->CountItems());
+	NSLOG(netsurf, INFO, "Checking %ld callbacks to for deadline.",
+	      this_run->CountItems());
 
 	/* Run all the callbacks which made it this far. */
 	for (i = 0; i < callbacks->CountItems(); ) {
@@ -132,7 +135,8 @@ schedule_run(void)
 			i++;
 			continue;
 		}
-		LOG("Running callbacks %p(%p).", cb->callback, cb->context);
+		NSLOG(netsurf, INFO, "Running callbacks %p(%p).",
+		      cb->callback, cb->context);
 		if (!cb->callback_killed)
 			cb->callback(cb->context);
 		callbacks->RemoveItem(cb);

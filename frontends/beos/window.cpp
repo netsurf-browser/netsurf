@@ -354,7 +354,8 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 		return 0;
 	}
 
-	LOG("Creating gui window %p for browser window %p", g, bw);
+	NSLOG(netsurf, INFO, "Creating gui window %p for browser window %p",
+	      g, bw);
 
 	g->bw = bw;
 	g->mouse.state = 0;
@@ -436,19 +437,21 @@ void nsbeos_dispatch_event(BMessage *message)
 		continue;
 
 	if (gui && gui != z) {
-		LOG("discarding event for destroyed gui_window");
+		NSLOG(netsurf, INFO,
+		      "discarding event for destroyed gui_window");
 		delete message;
 		return;
 	}
 	if (scaffold && (!y || scaffold != y->scaffold)) {
-		LOG("discarding event for destroyed scaffolding");
+		NSLOG(netsurf, INFO,
+		      "discarding event for destroyed scaffolding");
 		delete message;
 		return;
 	}
 
 	// messages for top-level
 	if (scaffold) {
-		LOG("dispatching to top-level");
+		NSLOG(netsurf, INFO, "dispatching to top-level");
 		nsbeos_scaffolding_dispatch_event(scaffold, message);
 		delete message;
 		return;
@@ -763,7 +766,8 @@ void nsbeos_window_keypress_event(BView *view, gui_window *g, BMessage *event)
 	if (!numbytes)
 		numbytes = strlen(bytes);
 
-	LOG("mods 0x%08lx key %ld raw %ld byte[0] %d", mods, key, raw_char, buff[0]);
+	NSLOG(netsurf, INFO, "mods 0x%08lx key %ld raw %ld byte[0] %d", mods,
+	      key, raw_char, buff[0]);
 
 	char byte;
 	if (numbytes == 1) {
@@ -930,10 +934,10 @@ static void gui_window_destroy(struct gui_window *g)
 		g->next->prev = g->prev;
 
 
-	LOG("Destroying gui_window %p", g);
+	NSLOG(netsurf, INFO, "Destroying gui_window %p", g);
 	assert(g != NULL);
 	assert(g->bw != NULL);
-	LOG("     Scaffolding: %p", g->scaffold);
+	NSLOG(netsurf, INFO, "     Scaffolding: %p", g->scaffold);
 
 	if (g->view == NULL)
 		return;
@@ -1090,8 +1094,9 @@ static void gui_window_update_extent(struct gui_window *g)
 	x_max -= g->view->Bounds().Width() + 1;
 	y_max -= g->view->Bounds().Height() + 1;
 
-	LOG("x_max = %d y_max = %d x_prop = %f y_prop = %f\n",
-            x_max, y_max, x_prop, y_prop);
+	NSLOG(netsurf, INFO,
+	      "x_max = %d y_max = %d x_prop = %f y_prop = %f\n", x_max,
+	      y_max, x_prop, y_prop);
 
 	if (g->view->ScrollBar(B_HORIZONTAL)) {
 		g->view->ScrollBar(B_HORIZONTAL)->SetRange(0, x_max);
