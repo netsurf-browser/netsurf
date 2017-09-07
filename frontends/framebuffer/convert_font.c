@@ -278,8 +278,7 @@ bool generate_font_header(const char *path, struct font_data *data)
 
 	fp = fopen(path, "wb");
 	if (fp == NULL) {
-		NSLOG(netsurf, INFO, LOG_ERROR,
-		      "Couldn't open header file \"%s\"\n", path);
+		LOG(LOG_ERROR, "Couldn't open header file \"%s\"\n", path);
 		return false;
 	}
 
@@ -316,8 +315,7 @@ bool generate_font_source(const char *path, struct font_data *data)
 
 	fp = fopen(path, "wb");
 	if (fp == NULL) {
-		NSLOG(netsurf, INFO, LOG_ERROR,
-		      "Couldn't open output file \"%s\"\n", path);
+		LOG(LOG_ERROR, "Couldn't open output file \"%s\"\n", path);
 		return false;
 	}
 
@@ -415,14 +413,14 @@ static bool add_glyph_to_data(glyph_entry *add, int id, int style,
 		d->e[d->glyphs++] = e;
 		e->index = d->glyphs;
 		if (d->glyphs >= 0xfffd) {
-			NSLOG(netsurf, INFO, LOG_ERROR,
-			      "  Too many glyphs for internal data ""representation\n");
+			LOG(LOG_ERROR, "  Too many glyphs for internal data "
+					"representation\n");
 			return false;
 		}
 	} else {
 		/* Duplicate glyph */
-		NSLOG(netsurf, INFO, LOG_DEBUG,
-		      "  U+%.4X (%s) is duplicate\n", id, short_labels[style]);
+		LOG(LOG_DEBUG, "  U+%.4X (%s) is duplicate\n",
+				id, short_labels[style]);
 	}
 
 	/* Find glyph's section */
@@ -434,8 +432,8 @@ static bool add_glyph_to_data(glyph_entry *add, int id, int style,
 		size_t size = (d->sec_count[style] + 1) * SECTION_SIZE;
 		uint16_t *temp = realloc(d->sections[style], size);
 		if (temp == NULL) {
-			NSLOG(netsurf, INFO, LOG_ERROR,
-			      "  Couldn't increase sections ""allocation\n");
+			LOG(LOG_ERROR, "  Couldn't increase sections "
+					"allocation\n");
 			return false;
 		}
 		memset(temp + d->sec_count[style] * 256, 0,
@@ -458,50 +456,47 @@ static bool check_glyph_data_valid(int pos, char c)
 
 	if (pos == 44) {
 		if (c != '\n') {
-			NSLOG(netsurf, INFO, LOG_ERROR,
-			      "  Invalid glyph data: ""expecting '\\n', got '%c' (%i)\n",
-			      c,
-			      c);
+			LOG(LOG_ERROR, "  Invalid glyph data: "
+					"expecting '\\n', got '%c' (%i)\n",
+					c, c);
 			return false;
 		} else {
 			return true;
 		}
 	} else if (pos < 3) {
 		if (c != ' ') {
-			NSLOG(netsurf, INFO, LOG_ERROR,
-			      "  Invalid glyph data: ""expecting ' ', got '%c' (%i)\n",
-			      c,
-			      c);
+			LOG(LOG_ERROR, "  Invalid glyph data: "
+					"expecting ' ', got '%c' (%i)\n",
+					c, c);
 			return false;
 		} else {
 			return true;
 		}
 	} else if (offset == 0) {
 		if (c != '\n' && c != ' ') {
-			NSLOG(netsurf, INFO, LOG_ERROR,
-			      "  Invalid glyph data: ""expecting '\\n' or ' ', ""got '%c' (%i)\n",
-			      c,
-			      c);
+			LOG(LOG_ERROR, "  Invalid glyph data: "
+					"expecting '\\n' or ' ', "
+					"got '%c' (%i)\n",
+					c, c);
 			return false;
 		} else {
 			return true;
 		}
 	} else if (offset < 3) {
 		if (c != ' ') {
-			NSLOG(netsurf, INFO, LOG_ERROR,
-			      "  Invalid glyph data: ""expecting ' ', got '%c' (%i)\n",
-			      c,
-			      c);
+			LOG(LOG_ERROR, "  Invalid glyph data: "
+					"expecting ' ', got '%c' (%i)\n",
+					c, c);
 			return false;
 		} else {
 			return true;
 		}
 	} else if (offset >= 3 && pos < 11) {
 		if (c != '.' && c != '#') {
-			NSLOG(netsurf, INFO, LOG_ERROR,
-			      "  Invalid glyph data: ""expecting '.' or '#', ""got '%c' (%i)\n",
-			      c,
-			      c);
+			LOG(LOG_ERROR, "  Invalid glyph data: "
+					"expecting '.' or '#', "
+					"got '%c' (%i)\n",
+					c, c);
 			return false;
 		} else {
 			return true;
@@ -510,10 +505,10 @@ static bool check_glyph_data_valid(int pos, char c)
 
 	/* offset must be >=3 */
 	if (c != '.' && c != '#' && c != ' ') {
-		NSLOG(netsurf, INFO, LOG_ERROR,
-		      "  Invalid glyph data: ""expecting '.', '#', or ' ', ""got '%c' (%i)\n",
-		      c,
-		      c);
+		LOG(LOG_ERROR, "  Invalid glyph data: "
+		    "expecting '.', '#', or ' ', "
+		    "got '%c' (%i)\n",
+		    c, c);
 		return false;
 	}
 
@@ -702,11 +697,11 @@ static bool parse_glyph_data(struct parse_context *ctx, char c,
 
 	/* Check that character is valid */
 	if (check_glyph_data_valid(ctx->data.in_gd.pos, c) == false) {
-		NSLOG(netsurf, INFO, LOG_ERROR,
-		      "  Error in U+%.4X data: ""glyph line: %i, pos: %i\n",
-		      ctx->id,
-		      ctx->data.in_gd.line,
-		      ctx->data.in_gd.pos);
+		LOG(LOG_ERROR, "  Error in U+%.4X data: "
+				"glyph line: %i, pos: %i\n",
+				ctx->id,
+				ctx->data.in_gd.line,
+				ctx->data.in_gd.pos);
 		goto error;
 	}
 
@@ -717,8 +712,8 @@ static bool parse_glyph_data(struct parse_context *ctx, char c,
 			ctx->data.in_gd.e[glyph] =
 					calloc(sizeof(struct glyph_entry), 1);
 			if (ctx->data.in_gd.e[glyph] == NULL) {
-				NSLOG(netsurf, INFO, LOG_ERROR,
-				      "  Couldn't allocate memory for ""glyph entry\n");
+				LOG(LOG_ERROR, "  Couldn't allocate memory for "
+						"glyph entry\n");
 				goto error;
 			}
 
@@ -740,17 +735,18 @@ static bool parse_glyph_data(struct parse_context *ctx, char c,
 	if (c == '\n') {
 		if (ctx->data.in_gd.line == 0) {
 			if (ctx->data.in_gd.e[0] == NULL) {
-				NSLOG(netsurf, INFO, LOG_ERROR,
-				      "  Error in U+%.4X data: ""\"Regular\" glyph style must ""be present\n",
-				      ctx->id);
+				LOG(LOG_ERROR, "  Error in U+%.4X data: "
+						"\"Regular\" glyph style must "
+						"be present\n", ctx->id);
 				goto error;
 			}
 		} else if (ctx->data.in_gd.styles !=
 				ctx->data.in_gd.line_styles) {
-			NSLOG(netsurf, INFO, LOG_ERROR,
-			      "  Error in U+%.4X data: ""glyph line: %i ""styles don't match first line\n",
-			      ctx->id,
-			      ctx->data.in_gd.line);
+			LOG(LOG_ERROR, "  Error in U+%.4X data: "
+					"glyph line: %i "
+					"styles don't match first line\n",
+					ctx->id,
+					ctx->data.in_gd.line);
 			goto error;
 		}
 
@@ -768,10 +764,10 @@ static bool parse_glyph_data(struct parse_context *ctx, char c,
 				ctx->count[i] += 1;
 				if (glyph_is_codepoint(ctx->data.in_gd.e[i],
 						ctx->id, i)) {
-					NSLOG(netsurf, INFO, LOG_DEBUG,
-					      "  U+%.4X (%s) is ""codepoint\n",
-					      ctx->id,
-					      short_labels[i]);
+					LOG(LOG_DEBUG, "  U+%.4X (%s) is "
+							"codepoint\n",
+							ctx->id,
+							short_labels[i]);
 					ctx->codepoints += 1;
 					free(ctx->data.in_gd.e[i]);
 					ctx->data.in_gd.e[i] = NULL;
@@ -814,8 +810,7 @@ static bool get_hex_digit_value(char c, int *v)
 	else if (c >= 'A' && c <= 'F')
 		*v = (10 + c - 'A');
 	else {
-		NSLOG(netsurf, INFO, LOG_ERROR,
-		      "Invalid hex digit '%c' (%i)\n", c, c);
+		LOG(LOG_ERROR, "Invalid hex digit '%c' (%i)\n", c, c);
 		return false;
 	}
 
@@ -852,16 +847,14 @@ static bool parse_chunk(struct parse_context *ctx, const char *buf, size_t len,
 
 	while (pos < end) {
 		if (*pos == '\r') {
-			NSLOG(netsurf, INFO, LOG_ERROR,
-			      "Detected \'\\r\': Bad line ending\n");
+			LOG(LOG_ERROR, "Detected \'\\r\': Bad line ending\n");
 			return false;
 		}
 
 		switch (ctx->state) {
 		case START:
 			if (*pos != '*') {
-				NSLOG(netsurf, INFO, LOG_ERROR,
-				      "First character must be '*'\n");
+				LOG(LOG_ERROR, "First character must be '*'\n");
 				printf("Got: %c (%i)\n", *pos, *pos);
 				return false;
 			}
@@ -873,13 +866,12 @@ static bool parse_chunk(struct parse_context *ctx, const char *buf, size_t len,
 		case IN_HEADER:
 			if (ctx->data.in_header.new_line == true) {
 				if (*pos != '*') {
-					NSLOG(netsurf, INFO, LOG_INFO,
-					      "  Got header ""(%i bytes)\n",
-					      d->header_len);
-					NSLOG(netsurf, INFO, LOG_DEBUG,
-					      "  Header:\n\n%.*s\n",
-					      d->header_len,
-					      d->header);
+					LOG(LOG_INFO, "  Got header "
+							"(%i bytes)\n",
+							d->header_len);
+					LOG(LOG_DEBUG, "  Header:\n\n%.*s\n",
+							d->header_len,
+							d->header);
 					ctx->data.before_id.new_line = false;
 					ctx->data.before_id.u = false;
 					ctx->state = BEFORE_ID;
@@ -894,9 +886,9 @@ static bool parse_chunk(struct parse_context *ctx, const char *buf, size_t len,
 			}
 
 			if (d->header_len == HEADER_MAX) {
-				NSLOG(netsurf, INFO, LOG_ERROR,
-				      "  Header too long ""(>%i bytes)\n",
-				      d->header_len);
+				LOG(LOG_ERROR, "  Header too long "
+						"(>%i bytes)\n",
+						d->header_len);
 				return false;
 			}
 
@@ -930,8 +922,7 @@ static bool parse_chunk(struct parse_context *ctx, const char *buf, size_t len,
 			ok = assemble_codepoint(pos, ctx->data.g_id.c++,
 					&ctx->id);
 			if (!ok) {
-				NSLOG(netsurf, INFO, LOG_ERROR,
-				      "  Invalid glyph ID\n");
+				LOG(LOG_ERROR, "  Invalid glyph ID\n");
 				return false;
 			}
 
@@ -1003,8 +994,8 @@ static bool parse_chunk(struct parse_context *ctx, const char *buf, size_t len,
 	}
 
 	for (i = 0; i < 4; i++) {
-		NSLOG(netsurf, INFO, LOG_DEBUG, "  %s: %i gylphs\n",
-		      labels[i], ctx->count[i] - count[i]);
+		LOG(LOG_DEBUG, "  %s: %i gylphs\n", labels[i],
+				ctx->count[i] - count[i]);
 	}
 
 	return true;
@@ -1028,15 +1019,13 @@ bool load_font(const char *path, struct font_data **data)
 
 	fp = fopen(path, "rb");
 	if (fp == NULL) {
-		NSLOG(netsurf, INFO, LOG_ERROR,
-		      "Couldn't open font data file\n");
+		LOG(LOG_ERROR, "Couldn't open font data file\n");
 		return false;
 	}
 
 	d = calloc(sizeof(struct font_data), 1);
 	if (d == NULL) {
-		NSLOG(netsurf, INFO, LOG_ERROR,
-		      "Couldn't allocate memory for font data\n");
+		LOG(LOG_ERROR, "Couldn't allocate memory for font data\n");
 		fclose(fp);
 		return false;
 	}
@@ -1045,19 +1034,18 @@ bool load_font(const char *path, struct font_data **data)
 	fseek(fp, 0L, SEEK_END);
 	file_len = ftell(fp);
 	if (file_len == -1) {
-		NSLOG(netsurf, INFO, LOG_ERROR, "Could not size input file\n");
+		LOG(LOG_ERROR, "Could not size input file\n");
 		free(d);
 		fclose(fp);
 		return false;
 	}
 	fseek(fp, 0L, SEEK_SET);
-	NSLOG(netsurf, INFO, LOG_DEBUG, "Input size: %zu bytes\n", file_len);
+	LOG(LOG_DEBUG, "Input size: %zu bytes\n", file_len);
 
 	/* Allocate buffer for data chunks */
 	buf = malloc(CHUNK_SIZE);
 	if (buf == NULL) {
-		NSLOG(netsurf, INFO, LOG_ERROR,
-		      "Couldn't allocate memory for input buffer\n");
+		LOG(LOG_ERROR, "Couldn't allocate memory for input buffer\n");
 		free(d);
 		fclose(fp);
 		return false;
@@ -1066,24 +1054,20 @@ bool load_font(const char *path, struct font_data **data)
 	/* Initialise parser */
 	parse_init(&ctx);
 
-	NSLOG(netsurf, INFO, LOG_DEBUG, "Using chunk size of %i bytes\n",
-	      CHUNK_SIZE);
+	LOG(LOG_DEBUG, "Using chunk size of %i bytes\n", CHUNK_SIZE);
 
 	/* Parse the input file in chunks */
 	for (done = 0; done < file_len; done += CHUNK_SIZE) {
-		NSLOG(netsurf, INFO, LOG_INFO, "Parsing input chunk %zu\n",
-		      done / CHUNK_SIZE);
+		LOG(LOG_INFO, "Parsing input chunk %zu\n", done / CHUNK_SIZE);
 
 		/* Read chunk */
 		len = fread(buf, 1, CHUNK_SIZE, fp);
 		if (file_len - done < CHUNK_SIZE &&
 				len != file_len - done) {
-			NSLOG(netsurf, INFO, LOG_WARNING,
-			      "Last chunk has suspicious size\n");
+			LOG(LOG_WARNING, "Last chunk has suspicious size\n");
 		} else if (file_len - done >= CHUNK_SIZE &&
 				len != CHUNK_SIZE) {
-			NSLOG(netsurf, INFO, LOG_ERROR,
-			      "Problem reading file\n");
+			LOG(LOG_ERROR, "Problem reading file\n");
 			free(buf);
 			free(d);
 			fclose(fp);
@@ -1098,33 +1082,29 @@ bool load_font(const char *path, struct font_data **data)
 			fclose(fp);
 			return false;
 		}
-		NSLOG(netsurf, INFO, LOG_DEBUG, "Parsed %zu bytes\n",
-		      done + len);
+		LOG(LOG_DEBUG, "Parsed %zu bytes\n", done + len);
 	}
 
 	fclose(fp);
 
 	if (ctx.state != BEFORE_ID) {
-		NSLOG(netsurf, INFO, LOG_ERROR, "Unexpected end of file\n");
+		LOG(LOG_ERROR, "Unexpected end of file\n");
 		free(buf);
 		free(d);
 		return false;
 	}
 
-	NSLOG(netsurf, INFO, LOG_INFO, "Parsing complete:\n");
+	LOG(LOG_INFO, "Parsing complete:\n");
 	count = 0;
 	for (i = 0; i < 4; i++) {
-		NSLOG(netsurf, INFO, LOG_INFO, "  %s: %i gylphs\n",
-		      labels[i], ctx.count[i]);
+		LOG(LOG_INFO, "  %s: %i gylphs\n", labels[i], ctx.count[i]);
 		count += ctx.count[i];
 	}
 
-	NSLOG(netsurf, INFO, LOG_RESULT,
-	      "  Total %i gylphs ""(of which %i unique, %i codepoints, %i duplicates)\n",
-	      count,
-	      d->glyphs,
-	      ctx.codepoints,
-	      count - d->glyphs - ctx.codepoints);
+	LOG(LOG_RESULT, "  Total %i gylphs "
+			"(of which %i unique, %i codepoints, %i duplicates)\n",
+			count, d->glyphs, ctx.codepoints,
+			count - d->glyphs - ctx.codepoints);
 
 	free(buf);
 
@@ -1135,9 +1115,16 @@ bool load_font(const char *path, struct font_data **data)
 static void log_usage(const char *argv0)
 {
 	level = LOG_INFO;
-	NSLOG(netsurf, INFO, LOG_INFO,
-	      "Usage:\n""\t%s [options] <in_file> <out_file>\n""\n""Options:\n""\t--help    -h   Display this text\n""\t--quiet   -q   Don't show warnings\n""\t--verbose -v   Verbose output\n""\t--debug   -d   Full debug output\n",
-	      argv0);
+	LOG(LOG_INFO,
+	    "Usage:\n"
+	    "\t%s [options] <in_file> <out_file>\n"
+	    "\n"
+	    "Options:\n"
+	    "\t--help    -h   Display this text\n"
+	    "\t--quiet   -q   Don't show warnings\n"
+	    "\t--verbose -v   Verbose output\n"
+	    "\t--debug   -d   Full debug output\n",
+	    argv0);
 }
 
 int main(int argc, char** argv)
@@ -1200,9 +1187,8 @@ int main(int argc, char** argv)
 	in_path = argv[optind];
 	out_path = argv[optind + 1];
 
-	NSLOG(netsurf, INFO, LOG_DEBUG, "Using input path: \"%s\"\n", in_path);
-	NSLOG(netsurf, INFO, LOG_DEBUG, "Using output path: \"%s\"\n",
-	      out_path);
+	LOG(LOG_DEBUG, "Using input path: \"%s\"\n", in_path);
+	LOG(LOG_DEBUG, "Using output path: \"%s\"\n", out_path);
 
 	ok = load_font(in_path, &data);
 	if (!ok) {
