@@ -25,12 +25,6 @@
 
 #include "windows/schedule.h"
 
-#ifdef DEBUG_SCHEDULER
-#define SRLOG(x...) LOG(x)
-#else
-#define SRLOG(x...) ((void) 0)
-#endif
-
 /* linked list of scheduled callbacks */
 static struct nscallback *schedule_list = NULL;
 
@@ -66,7 +60,7 @@ static nserror schedule_remove(void (*callback)(void *p), void *p)
                 return NSERROR_OK;
 	}
 
-	SRLOG("removing %p, %p", callback, p);
+	NSLOG(schedule, DEBUG, "removing %p, %p", callback, p);
 
         cur_nscb = schedule_list;
         prev_nscb = NULL;
@@ -76,8 +70,11 @@ static nserror schedule_remove(void (*callback)(void *p), void *p)
                     (cur_nscb->p ==  p)) {
                         /* item to remove */
 
-                        SRLOG("callback entry %p removing  %p(%p)",
-                             cur_nscb, cur_nscb->callback, cur_nscb->p);
+                        NSLOG(schedule, DEBUG,
+			      "callback entry %p removing  %p(%p)",
+			      cur_nscb,
+			      cur_nscb->callback,
+			      cur_nscb->p);
 
                         /* remove callback */
                         unlnk_nscb = cur_nscb;
@@ -118,7 +115,8 @@ nserror win32_schedule(int ival, void (*callback)(void *p), void *p)
 		return NSERROR_NOMEM;
 	}
 
-	SRLOG("adding callback %p for %p(%p) at %d cs",
+	NSLOG(schedule, DEBUG,
+	      "adding callback %p for %p(%p) at %d cs",
 	       nscb, callback, p, ival);
 
 	gettimeofday(&nscb->tv, NULL);
@@ -168,8 +166,11 @@ schedule_run(void)
                                 prev_nscb->next = unlnk_nscb->next;
                         }
 
-                        SRLOG("callback entry %p running %p(%p)",
-                             unlnk_nscb, unlnk_nscb->callback, unlnk_nscb->p);
+                        NSLOG(schedule, DEBUG,
+			      "callback entry %p running %p(%p)",
+			      unlnk_nscb,
+			      unlnk_nscb->callback,
+			      unlnk_nscb->p);
                         /* call callback */
                         unlnk_nscb->callback(unlnk_nscb->p);
 
@@ -201,8 +202,9 @@ schedule_run(void)
 	/* make returned time relative to now */
 	timersub(&nexttime, &tv, &rettime);
 
-	SRLOG("returning time to next event as %ldms",
-	     (rettime.tv_sec * 1000) + (rettime.tv_usec / 1000));
+	NSLOG(schedule, DEBUG,
+	      "returning time to next event as %ldms",
+	      (rettime.tv_sec * 1000) + (rettime.tv_usec / 1000));
 
 	/* return next event time in milliseconds (24days max wait) */
         return (rettime.tv_sec * 1000) + (rettime.tv_usec / 1000);
@@ -216,14 +218,16 @@ void list_schedule(void)
 
 	gettimeofday(&tv, NULL);
 
-        NSLOG(netsurf, INFO, "schedule list at %ld:%ld", tv.tv_sec,
-              tv.tv_usec);
+        NSLOG(netsurf, INFO, "schedule list at %ld:%ld", tv.tv_sec, tv.tv_usec);
 
         cur_nscb = schedule_list;
 
         while (cur_nscb != NULL) {
-                NSLOG(netsurf, INFO, "Schedule %p at %ld:%ld", cur_nscb,
-                      cur_nscb->tv.tv_sec, cur_nscb->tv.tv_usec);
+                NSLOG(netsurf, INFO,
+		      "Schedule %p at %ld:%ld",
+		      cur_nscb,
+                      cur_nscb->tv.tv_sec,
+		      cur_nscb->tv.tv_usec);
                 cur_nscb = cur_nscb->next;
         }
 }

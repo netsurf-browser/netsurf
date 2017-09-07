@@ -228,9 +228,11 @@ static void ami_schedule_dump(void)
 	while ((nscb = pblIteratorNext(iterator)) != -1)
 	{
 		Amiga2Date(nscb->tv.Seconds, &clockdata);
-		LOG("nscb: %p, at %d-%d-%d %d:%d:%d.%d, callback: %p, %p",
-			nscb, clockdata.mday, clockdata.month, clockdata.year, clockdata.hour, clockdata.min, clockdata.sec, 
-			nscb->tv.Microseconds, nscb->callback, nscb->p);
+		NSLOG(netsurf, INFO,
+		      "nscb: %p, at %d-%d-%d %d:%d:%d.%d, callback: %p, %p",
+		      nscb, clockdata.mday, clockdata.month, clockdata.year,
+		      clockdata.hour, clockdata.min, clockdata.sec,
+		      nscb->tv.Microseconds, nscb->callback, nscb->p);
 		if(CheckIO((struct IORequest *)nscb) == NULL) {
 			NSLOG(netsurf, INFO, "-> ACTIVE");
 		} else {
