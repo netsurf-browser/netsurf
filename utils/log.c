@@ -105,20 +105,21 @@ netsurf_render_log(void *_ctx,
 		   const char *fmt,
 		   va_list args)
 {
+	if (verbose_log) {
+		fprintf(logfile,
+			"%s %.*s:%i %.*s: ",
+			nslog_gettime(),
+			ctx->filenamelen,
+			ctx->filename,
+			ctx->lineno,
+			ctx->funcnamelen,
+			ctx->funcname);
 
-	fprintf(logfile,
-		"%s %.*s:%i %.*s: ",
-		nslog_gettime(),
-		ctx->filenamelen,
-		ctx->filename,
-		ctx->lineno,
-		ctx->funcnamelen,
-		ctx->funcname);
+		vfprintf(logfile, fmt, args);
 
-	vfprintf(logfile, fmt, args);
-
-	/* Log entries aren't newline terminated add one for clarity */
-	fputc('\n', logfile);
+		/* Log entries aren't newline terminated add one for clarity */
+		fputc('\n', logfile);
+	}
 }
 
 #else
