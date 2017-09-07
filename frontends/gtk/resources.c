@@ -227,7 +227,7 @@ init_resource(char **respath, struct nsgtk_resource_s *resource)
 		      resource->path);
 		return NSERROR_OK;
 	}
-	NSLOG(netsurf, DEEPDEBUG, "gresource \"%s\" not found", resname);*/
+	NSLOG(netsurf, DEEPDEBUG, "gresource \"%s\" not found", resname);
 	free(resname);
 
 #endif
