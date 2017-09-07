@@ -21,12 +21,6 @@
 
 #include "netsurf/types.h"
 
-#ifdef FBTK_LOGGING
-#define FBTK_LOG(x) LOG(x)
-#else
-#define FBTK_LOG(x)
-#endif
-
 #define FB_SCROLL_COLOUR 0xFFAAAAAA
 #define FB_FRAME_COLOUR 0xFFDDDDDD
 #define FB_COLOUR_BLACK 0xFF000000
