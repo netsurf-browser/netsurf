@@ -24,11 +24,13 @@
 const char *msg_num_to_name(int msg);
 void win_perror(const char *lpszFunction);
 
-#define LOG_WIN_MSG(h, m, w, l)				\
-	if (((m) != WM_SETCURSOR) &&			\
-	    ((m) != WM_MOUSEMOVE) &&			\
-	    ((m) != WM_NCHITTEST) &&			\
-	    ((m) != WM_ENTERIDLE))			\
-		LOG("%s, hwnd %p, w 0x%x, l 0x%Ix", msg_num_to_name(m), h, w, l);
+#define LOG_WIN_MSG(h, m, w, l)						\
+	if (((m) != WM_SETCURSOR) &&					\
+	    ((m) != WM_MOUSEMOVE) &&					\
+	    ((m) != WM_NCHITTEST) &&					\
+	    ((m) != WM_ENTERIDLE))					\
+		NSLOG(netsurf, INFO,					\
+		      "%s, hwnd %p, w 0x%x, l 0x%Ix",			\
+		      msg_num_to_name(m), h, w, l)
 
 #endif

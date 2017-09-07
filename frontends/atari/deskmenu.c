@@ -181,7 +181,7 @@ static void __CDECL menu_about(short item, short title, void *data)
 	  nserror error;
 	  char buf[PATH_MAX];
 
-	  LOG("%s", __FUNCTION__);
+	  NSLOG(netsurf, INFO, "abort menu");
 	  strcpy((char*)&buf, "file://");
 	  strncat((char*)&buf, (char*)"./doc/README.TXT",
 	  PATH_MAX - (strlen("file://")+1) );

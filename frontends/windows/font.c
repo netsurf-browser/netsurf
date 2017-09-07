@@ -309,10 +309,11 @@ win32_font_split(const plot_font_style_t *style,
 		}
 	}
 
-/*
-  LOG("ret %d Split %u chars at %ipx: Split at char %i (%ipx) - %.*s",
-  ret, length, x, *char_offset, *actual_x, *char_offset, string);
-*/
+
+	NSLOG(netsurf, DEEPDEBUG,
+	      "ret %d Split %u chars at %ipx: Split at char %i (%ipx) - %.*s",
+	      ret, length, x, *char_offset, *actual_x, *char_offset, string);
+
 	return ret;
 }
 

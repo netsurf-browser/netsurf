@@ -163,7 +163,8 @@ static HWND nsws_window_create(HINSTANCE hInstance, struct gui_window *gw)
 	gw->mainmenu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MENU_MAIN));
 	gw->rclick = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MENU_CONTEXT));
 
-	NSLOG(netsurf, INFO, "creating hInstance %p GUI window %p",
+	NSLOG(netsurf, INFO,
+	      "creating hInstance %p GUI window %p",
 	      hInstance, gw);
 	hwnd = CreateWindowEx(0,
 			      windowclassname_main,
@@ -195,7 +196,8 @@ static HWND nsws_window_create(HINSTANCE hInstance, struct gui_window *gw)
 	    (nsoption_int(window_height) >= 100) &&
 	    (nsoption_int(window_x) >= 0) &&
 	    (nsoption_int(window_y) >= 0)) {
-		NSLOG(netsurf, INFO, "Setting Window position %d,%d %d,%d",
+		NSLOG(netsurf, INFO,
+		      "Setting Window position %d,%d %d,%d",
 		      nsoption_int(window_x), nsoption_int(window_y),
 		      nsoption_int(window_width), nsoption_int(window_height));
 		SetWindowPos(hwnd, HWND_TOP,
@@ -1879,7 +1881,9 @@ nserror win32_window_set_scroll(struct gui_window *gw, const struct rect *rect)
 		gw->requestscrolly = rect->y0 - gw->scrolly;
 	}
 
-	/*LOG("requestscroll x,y:%d,%d", w->requestscrollx, w->requestscrolly);*/
+	NSLOG(netsurf, DEEPDEBUG,
+	      "requestscroll x,y:%d,%d",
+	      w->requestscrollx, w->requestscrolly);
 
 	/* set the vertical scroll offset */
 	si.cbSize = sizeof(si);
@@ -1890,7 +1894,9 @@ nserror win32_window_set_scroll(struct gui_window *gw, const struct rect *rect)
 	si.nPos = max(gw->scrolly + gw->requestscrolly, 0);
 	si.nPos = min(si.nPos, height - gw->height);
 	SetScrollInfo(gw->drawingarea, SB_VERT, &si, TRUE);
-	/*LOG("SetScrollInfo VERT min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos);*/
+	NSLOG(netsurf, DEEPDEBUG,
+	      "SetScrollInfo VERT min:%d max:%d page:%d pos:%d",
+	      si.nMin, si.nMax, si.nPage, si.nPos);
 
 	/* set the horizontal scroll offset */
 	si.cbSize = sizeof(si);
@@ -1901,7 +1907,9 @@ nserror win32_window_set_scroll(struct gui_window *gw, const struct rect *rect)
 	si.nPos = max(gw->scrollx + gw->requestscrollx, 0);
 	si.nPos = min(si.nPos, width - gw->width);
 	SetScrollInfo(gw->drawingarea, SB_HORZ, &si, TRUE);
-	/*LOG("SetScrollInfo HORZ min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos);*/
+	NSLOG(netsurf, DEEPDEBUG,
+	      "SetScrollInfo HORZ min:%d max:%d page:%d pos:%d",
+	      si.nMin, si.nMax, si.nPage, si.nPos);
 
 	/* Set caret position */
 	GetCaretPos(&p);
@@ -1915,7 +1923,9 @@ nserror win32_window_set_scroll(struct gui_window *gw, const struct rect *rect)
 	r.left = 0;
 	r.right = gw->width + 1;
 	ScrollWindowEx(gw->drawingarea, - gw->requestscrollx, - gw->requestscrolly, &r, NULL, NULL, &redraw, SW_INVALIDATE);
-	/*LOG("ScrollWindowEx %d, %d", - w->requestscrollx, - w->requestscrolly);*/
+	NSLOG(netsurf, DEEPDEBUG,
+	      "ScrollWindowEx %d, %d",
+	      - w->requestscrollx, - w->requestscrolly);
 	gw->scrolly += gw->requestscrolly;
 	gw->scrollx += gw->requestscrollx;
 	gw->requestscrollx = 0;

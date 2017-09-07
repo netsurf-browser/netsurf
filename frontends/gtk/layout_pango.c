@@ -84,9 +84,10 @@ nsfont_width(const plot_font_style_t *fstyle,
 
 	pango_layout_get_pixel_size(nsfont_pango_layout, width, 0);
 
-	/* LOG("fstyle: %p string:\"%.*s\", length: %u, width: %dpx",
-			fstyle, length, string, length, *width);
-	 */
+	NSLOG(netsurf, DEEPDEBUG,
+	      "fstyle: %p string:\"%.*s\", length: %u, width: %dpx",
+	      fstyle, length, string, length, *width);
+	 
 
 	return NSERROR_OK;
 }

@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Window themes (implementation).
+/**
+ * \file
+ * Window themes implementation.
  */
 
 #include <alloca.h>
@@ -180,8 +181,10 @@ static void ro_gui_theme_get_available_in_dir(const char *directory)
 				(osgbpb_info_list *) &info, 1, context,
 				sizeof(info), 0, &read_count, &context);
 		if (error) {
-			LOG("xosgbpb_dir_entries_info: 0x%x: %s",
-				error->errnum, error->errmess);
+			NSLOG(netsurf, INFO,
+			      "xosgbpb_dir_entries_info: 0x%x: %s",
+			      error->errnum,
+			      error->errmess);
 			if (error->errnum == 0xd6)	/* no such dir */
 				return;
 			ro_warn_user("MiscError", error->errmess);

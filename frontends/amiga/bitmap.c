@@ -602,8 +602,12 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 						TAG_DONE);
 
 			if (err != COMPERR_Success) {
-				LOG("Composite error %ld - falling back", err);
-				/* If it failed, do it again the way which works in software */
+				NSLOG(netsurf, INFO,
+				      "Composite error %ld - falling back",
+				      err);
+				/* If it failed, do it again the way
+				 *  which works in software
+				 */
 #else
 			{
 #endif
@@ -617,7 +621,8 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 						COMPTAG_FriendBitMap, scrn->RastPort.BitMap,
 						TAG_DONE);
 				/* If it still fails... it's non-fatal */
-				LOG("Fallback returned error %ld", err);
+				NSLOG(netsurf, INFO,
+				      "Fallback returned error %ld", err);
 			}
 		} else /* Do it the old-fashioned way.  This is pretty slow, even on OS4.1 */
 #endif

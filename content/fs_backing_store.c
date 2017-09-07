@@ -1153,12 +1153,12 @@ build_entrymap(struct store_state *state)
 	state->total_alloc = 0;
 
 	for (eloop = 1; eloop < state->last_entry; eloop++) {
-		/*
-		LOG("entry:%d ident:0x%08x used:%d",
-		     eloop,
-		     BS_ADDRESS(state->entries[eloop].ident, state),
-		     state->entries[eloop].use_count);
-		*/
+
+		NSLOG(llcache, DEEPDEBUG,
+		      "entry:%d ident:0x%08x used:%d",
+		      eloop,
+		      BS_ADDRESS(state->entries[eloop].ident, state),
+		      state->entries[eloop].use_count);
 
 		/* update the address map to point at the entry */
 		BS_ENTRY_INDEX(state->entries[eloop].ident, state) = eloop;

@@ -274,8 +274,10 @@ set_colour_from_wimp(struct nsoption_s *opts,
 
 	error = xwimp_read_true_palette((os_palette *) &palette);
 	if (error != NULL) {
-		LOG("xwimp_read_palette: 0x%x: %s",
-		     error->errnum, error->errmess);
+		NSLOG(netsurf, INFO,
+		      "xwimp_read_palette: 0x%x: %s",
+		      error->errnum,
+		      error->errmess);
 	} else {
 		/* entries are in B0G0R0LL */
 		def_colour = palette.entries[wimp] >> 8;

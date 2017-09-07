@@ -770,7 +770,7 @@ void content_broadcast(struct content *c, content_msg msg,
 	struct content_user *user, *next;
 	assert(c);
 
-//	LOG("%p -> msg:%d", c, msg);
+	NSLOG(netsurf, DEEPDEBUG, "%p -> msg:%d", c, msg);
 	for (user = c->user_list->next; user != 0; user = next) {
 		next = user->next;  /* user may be destroyed during callback */
 		if (user->callback != 0)

@@ -457,7 +457,7 @@ void nsbeos_dispatch_event(BMessage *message)
 		return;
 	}
 
-	//LOG("processing message");
+	NSLOG(netsurf, DEEPDEBUG, "processing message");
 	switch (message->what) {
 		case B_QUIT_REQUESTED:
 			// from the BApplication

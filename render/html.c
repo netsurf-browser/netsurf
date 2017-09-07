@@ -769,7 +769,7 @@ dom_event_fetcher(dom_string *type,
 		  dom_default_action_phase phase,
 		  void **pw)
 {
-	//LOG("type:%s", dom_string_data(type));
+	NSLOG(netsurf, DEEPDEBUG, "type:%s", dom_string_data(type));
 
 	if (phase == DOM_DEFAULT_ACTION_END) {
 		if (dom_string_isequal(type, corestring_dom_DOMNodeInserted)) {

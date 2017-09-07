@@ -187,28 +187,44 @@ static inline void nsurl__components_destroy(struct nsurl_components *c)
 static inline void nsurl__dump(const nsurl *url)
 {
 	if (url->components.scheme)
-		LOG("  Scheme: %s", lwc_string_data(url->components.scheme));
+		NSLOG(netsurf, INFO,netsurf, INFO,
+			"  Scheme: %s",
+			lwc_string_data(url->components.scheme));
 
 	if (url->components.username)
-		LOG("Username: %s", lwc_string_data(url->components.username));
+		NSLOG(netsurf, INFO,
+		      "Username: %s",
+		      lwc_string_data(url->components.username));
 
 	if (url->components.password)
-		LOG("Password: %s", lwc_string_data(url->components.password));
+		NSLOG(netsurf, INFO,
+		      "Password: %s",
+		      lwc_string_data(url->components.password));
 
 	if (url->components.host)
-		LOG("    Host: %s", lwc_string_data(url->components.host));
+		NSLOG(netsurf, INFO,
+		      "    Host: %s",
+		      lwc_string_data(url->components.host));
 
 	if (url->components.port)
-		LOG("    Port: %s", lwc_string_data(url->components.port));
+		NSLOG(netsurf, INFO,
+		      "    Port: %s",
+		      lwc_string_data(url->components.port));
 
 	if (url->components.path)
-		LOG("    Path: %s", lwc_string_data(url->components.path));
+		NSLOG(netsurf, INFO,
+		      "    Path: %s",
+		      lwc_string_data(url->components.path));
 
 	if (url->components.query)
-		LOG("   Query: %s", lwc_string_data(url->components.query));
+		NSLOG(netsurf, INFO,
+		      "   Query: %s",
+		      lwc_string_data(url->components.query));
 
 	if (url->components.fragment)
-		LOG("Fragment: %s", lwc_string_data(url->components.fragment));
+		NSLOG(netsurf, INFO,
+		      "Fragment: %s",
+		      lwc_string_data(url->components.fragment));
 }
 #endif
 

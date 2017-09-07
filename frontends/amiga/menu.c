@@ -263,7 +263,9 @@ static int ami_menu_layout_mc_recursive(Object *menu_parent, struct ami_menu_dat
 					TAG_DONE);
 			}
 
-			//LOG("Adding item %p ID %d (%s) to parent %p", menu_item, j, md[j]->menulab, menu_parent);
+			NSLOG(netsurf, DEEPDEBUG,
+			      "Adding item %p ID %d (%s) to parent %p",
+			      menu_item, j, md[j]->menulab, menu_parent);
 			IDoMethod(menu_parent, OM_ADDMEMBER, menu_item);
 			continue;
 		} else if (md[j]->menutype > level) {

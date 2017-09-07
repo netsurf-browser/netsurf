@@ -764,17 +764,21 @@ void nsbeos_gui_poll(void)
 	timeout.tv_sec = (long)(next_schedule / 1000000LL);
 	timeout.tv_usec = (long)(next_schedule % 1000000LL);
 
-	//LOG("gui_poll: select(%d, ..., %Ldus", max_fd, next_schedule);
+	NSLOG(netsurf, DEEPDEBUG,
+	      "gui_poll: select(%d, ..., %Ldus",
+	      max_fd, next_schedule);
 	fd_count = select(max_fd, &read_fd_set, &write_fd_set, &exc_fd_set, 
 		&timeout);
-	//LOG("select: %d\n", fd_count);
+	NSLOG(netsurf, DEEPDEBUG, "select: %d\n", fd_count);
 
 	if (fd_count > 0 && FD_ISSET(sEventPipe[0], &read_fd_set)) {
 		BMessage *message;
 		int len = read(sEventPipe[0], &message, sizeof(void *));
-		//LOG("gui_poll: BMessage ? %d read", len);
+		NSLOG(netsurf, DEEPDEBUG, "gui_poll: BMessage ? %d read", len);
 		if (len == sizeof(void *)) {
-			//LOG("gui_poll: BMessage.what %-4.4s\n", &(message->what));
+			NSLOG(netsurf, DEEPDEBUG,
+			      "gui_poll: BMessage.what %-4.4s\n",
+			      &(message->what));
 			nsbeos_dispatch_event(message);
 		}
 	}

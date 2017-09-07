@@ -526,7 +526,8 @@ HOOKF(void, ami_cw_idcmp_hook, Object *, object, struct IntuiMessage *)
 		break;
 
 		default:
-			LOG("IDCMP hook unhandled event: %ld", msg->Class);
+			NSLOG(netsurf, INFO,
+			      "IDCMP hook unhandled event: %ld", msg->Class);
 		break;
 	}
 } 
