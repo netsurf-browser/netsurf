@@ -47,6 +47,7 @@
 #include "utils/talloc.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"
+#include "netsurf/inttypes.h"
 #include "netsurf/content.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/layout.h"
@@ -2442,7 +2443,7 @@ static bool layout_block_object(struct box *block)
 			block->type == BOX_TABLE_CELL);
 	assert(block->object);
 
-	NSLOG(layout, DEBUG,  "block %p, object %s, width %i", block,
+	NSLOG(layout, DEBUG,  "block %p, object %p, width %i", block,
 	      hlcache_handle_get_url(block->object), block->width);
 
 	if (content_get_type(block->object) == CONTENT_HTML) {
@@ -3888,12 +3889,17 @@ layout_text_box_split(html_content *content,
 		c2->parent->last = c2;
 
 	NSLOG(layout, DEBUG,
-	      "split_box %p len: %u \"%.*s\"",
-	      split_box, split_box->length, split_box->length,
+	      "split_box %p len: %" PRIsizet " \"%.*s\"",
+	      split_box,
+	      split_box->length,
+	      (int)split_box->length,
 	      split_box->text);
 	NSLOG(layout, DEBUG,
-	      "  new_box %p len: %u \"%.*s\"", c2,
-	      c2->length, c2->length, c2->text);
+	      "  new_box %p len: %" PRIsizet " \"%.*s\"",
+	      c2,
+	      c2->length,
+	      (int)c2->length,
+	      c2->text);
 
 	return true;
 }
