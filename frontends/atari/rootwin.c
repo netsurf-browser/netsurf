@@ -244,7 +244,7 @@ int window_create(struct gui_window * gw,
         flags |= ( SIZER );
     }
     if( inflags & WIDGET_STATUSBAR ) {
-        flags |= ( /* INFO */ 0x0010 );
+        flags |= ( INFO );
     }
 
     gw->root = malloc(sizeof(struct s_gui_win_root));
