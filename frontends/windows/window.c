@@ -1922,10 +1922,19 @@ nserror win32_window_set_scroll(struct gui_window *gw, const struct rect *rect)
 	r.bottom = gw->height + 1;
 	r.left = 0;
 	r.right = gw->width + 1;
-	ScrollWindowEx(gw->drawingarea, - gw->requestscrollx, - gw->requestscrolly, &r, NULL, NULL, &redraw, SW_INVALIDATE);
+	ScrollWindowEx(gw->drawingarea,
+		       - gw->requestscrollx,
+		       - gw->requestscrolly,
+		       &r,
+		       NULL,
+		       NULL,
+		       &redraw,
+		       SW_INVALIDATE);
 	NSLOG(netsurf, DEEPDEBUG,
 	      "ScrollWindowEx %d, %d",
-	      - w->requestscrollx, - w->requestscrolly);
+	      - gw->requestscrollx,
+	      - gw->requestscrolly);
+
 	gw->scrolly += gw->requestscrolly;
 	gw->scrollx += gw->requestscrollx;
 	gw->requestscrollx = 0;
