@@ -580,7 +580,8 @@ line(const struct redraw_context *ctx,
      const plot_style_t *style,
      const struct rect *line)
 {
-	NSLOG(plot, DEEPDEBUG, "from %d,%d to %d,%d", x0, y0, x1, y1);
+	NSLOG(plot, DEEPDEBUG, "from %d,%d to %d,%d",
+	      line->x0, line->y0, line->x1, line->y1);
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {

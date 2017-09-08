@@ -1883,7 +1883,7 @@ nserror win32_window_set_scroll(struct gui_window *gw, const struct rect *rect)
 
 	NSLOG(netsurf, DEEPDEBUG,
 	      "requestscroll x,y:%d,%d",
-	      w->requestscrollx, w->requestscrolly);
+	      gw->requestscrollx, gw->requestscrolly);
 
 	/* set the vertical scroll offset */
 	si.cbSize = sizeof(si);
