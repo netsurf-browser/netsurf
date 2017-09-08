@@ -25,6 +25,10 @@
 
 #include "utils/errors.h"
 
+#if defined(__MINT__)
+#undef INFO
+#endif
+
 extern bool verbose_log;
 
 /**
