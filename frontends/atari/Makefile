@@ -47,6 +47,7 @@ CFLAGS += -U__STRICT_ANSI__ -std=c99 -Dsmall -Dnsatari \
 		-D_BSD_SOURCE \
 		-D_XOPEN_SOURCE=600 \
 		-D_POSIX_C_SOURCE=200112L \
+		-DNSLOG_LEVEL_0x0010=NSLOG_LEVEL_INFO \
 		$(shell $(PKG_CONFIG) --cflags openssl ) \
 		$(shell $(PKG_CONFIG) --cflags libcurl )
 
