@@ -20,6 +20,7 @@
 #include <stdio.h>
 
 #include "utils/config.h"
+#include "utils/nsoption.h"
 #include "utils/sys_time.h"
 #include "utils/utsname.h"
 #include "desktop/version.h"
@@ -105,21 +106,43 @@ netsurf_render_log(void *_ctx,
 		   const char *fmt,
 		   va_list args)
 {
-	if (verbose_log) {
-		fprintf(logfile,
-			"%s %.*s:%i %.*s: ",
-			nslog_gettime(),
-			ctx->filenamelen,
-			ctx->filename,
-			ctx->lineno,
-			ctx->funcnamelen,
-			ctx->funcname);
+	fprintf(logfile,
+		"%s %.*s:%i %.*s: ",
+		nslog_gettime(),
+		ctx->filenamelen,
+		ctx->filename,
+		ctx->lineno,
+		ctx->funcnamelen,
+		ctx->funcname);
 
-		vfprintf(logfile, fmt, args);
+	vfprintf(logfile, fmt, args);
 
-		/* Log entries aren't newline terminated add one for clarity */
-		fputc('\n', logfile);
+	/* Log entries aren't newline terminated add one for clarity */
+	fputc('\n', logfile);
+}
+
+/* exported interface documented in utils/log.h */
+nserror
+nslog_set_filter(const char *filter)
+{
+	nslog_error err;
+	nslog_filter_t *filt = NULL;
+
+	err = nslog_filter_from_text(filter, &filt);
+	if (err != NSLOG_NO_ERROR) {
+		if (err == NSLOG_NO_MEMORY)
+			return NSERROR_NOMEM;
+		else
+			return NSERROR_INVALID;
 	}
+
+	err = nslog_filter_set_active(filt, NULL);
+	if (err != NSLOG_NO_ERROR) {
+		nslog_filter_unref(filt);
+		return NSERROR_NOSPACE;
+	}
+
+	return NSERROR_OK;
 }
 
 #else
@@ -146,6 +169,15 @@ nslog_log(const char *file, const char *func, int ln, const char *format, ...)
 		fputc('\n', logfile);
 	}
 }
+
+/* exported interface documented in utils/log.h */
+nserror
+nslog_set_filter(const char *filter)
+{
+	(void)(filter);
+	return NSERROR_OK;
+}
+
 
 #endif
 
@@ -195,7 +227,7 @@ nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 			/* ensure we actually show logging */
 			verbose_log = true;
 		}
-	} else if (verbose_log == true) {
+	} else {
 		/* default is logging to stderr */
 		logfile = stderr;
 	}
@@ -211,10 +243,14 @@ nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 
 #ifdef WITH_NSLOG
 
-	if (nslog_set_render_callback(netsurf_render_log, NULL) != NSLOG_NO_ERROR) {
+	if (nslog_set_filter(verbose_log ?
+			     NETSURF_BUILTIN_VERBOSE_FILTER :
+			     NETSURF_BUILTIN_LOG_FILTER) != NSERROR_OK) {
 		ret = NSERROR_INIT_FAILED;
 		verbose_log = false;
-
+	} else if (nslog_set_render_callback(netsurf_render_log, NULL) != NSLOG_NO_ERROR) {
+		ret = NSERROR_INIT_FAILED;
+		verbose_log = false;
 	} else if (nslog_uncork() != NSLOG_NO_ERROR) {
 		ret = NSERROR_INIT_FAILED;
 		verbose_log = false;
@@ -240,4 +276,14 @@ nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 	}
 
 	return ret;
+}
+
+/* exported interface documented in utils/log.h */
+nserror
+nslog_set_filter_by_options()
+{
+	if (verbose_log)
+		return nslog_set_filter(nsoption_charp(verbose_filter));
+	else
+		return nslog_set_filter(nsoption_charp(log_filter));
 }

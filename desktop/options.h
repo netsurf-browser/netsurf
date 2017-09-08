@@ -289,3 +289,8 @@ NSOPTION_COLOUR(sys_colour_ThreeDShadow, 0x00d5d5d5)
 NSOPTION_COLOUR(sys_colour_Window, 0x00f1f1f1)
 NSOPTION_COLOUR(sys_colour_WindowFrame, 0x004e4e4e)
 NSOPTION_COLOUR(sys_colour_WindowText, 0x00000000)
+
+/** Filter for non-verbose logging */
+NSOPTION_STRING(log_filter, "level:WARNING")
+/** Filter for verbose logging */
+NSOPTION_STRING(verbose_filter, "level:VERBOSE")

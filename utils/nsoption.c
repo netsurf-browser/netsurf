@@ -187,7 +187,7 @@ static void nsoption_validate(struct nsoption_s *opts, struct nsoption_s *defs)
 			break;
 		}
 	}
-	if (black == true) {
+	if (black == true && defs != NULL) {
 		for (cloop = NSOPTION_SYS_COLOUR_START;
 		     cloop <= NSOPTION_SYS_COLOUR_END;
 		     cloop++) {
@@ -209,6 +209,9 @@ static void nsoption_validate(struct nsoption_s *opts, struct nsoption_s *defs)
 		 opts[NSOPTION_max_retried_fetches].value.u) > 60) &&
 		(opts[NSOPTION_max_retried_fetches].value.u > 1))
 		opts[NSOPTION_max_retried_fetches].value.u--;
+
+	/* We ignore the result because we can't fail to validate. Yay */
+	(void)nslog_set_filter_by_options();
 }
 
 /**
@@ -819,6 +822,8 @@ nsoption_commandline(int *pargc, char **argv, struct nsoption_s *opts)
 		argv[mv_loop + 1] = argv[mv_loop + idx];
 	}
 	*pargc -= (idx - 1);
+
+	nsoption_validate(opts, nsoptions_default);
 
 	return NSERROR_OK;
 }

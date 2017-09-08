@@ -47,6 +47,18 @@ typedef bool(nslog_ensure_t)(FILE *fptr);
  */
 extern nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv);
 
+/**
+ * Set the logging filter.
+ *
+ * Compiles and enables the given logging filter.
+ */
+extern nserror nslog_set_filter(const char *filter);
+
+/**
+ * Set the logging filter according to the options.
+ */
+extern nserror nslog_set_filter_by_options(void);
+
 /* ensure a logging level is defined */
 #ifndef NETSURF_LOG_LEVEL
 #define NETSURF_LOG_LEVEL INFO
