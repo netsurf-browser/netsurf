@@ -70,8 +70,7 @@ schedule_remove(void (*callback)(void *p), void *p)
 {
 	NSLOG(schedule, DEBUG,
 	      "schedule_remove() for %p(%p)",
-	      cb->callback,
-	      cb->context);
+	      callback, p);
 	if (callbacks == NULL)
 		return;
 	_nsbeos_callback_t cb_match;
@@ -83,7 +82,7 @@ schedule_remove(void (*callback)(void *p), void *p)
 
 nserror beos_schedule(int t, void (*callback)(void *p), void *p)
 {
-	NSLOG(schedule, DEBUG, "t:%d cb:%p p:%p", t, cb->callback, cb->context);
+	NSLOG(schedule, DEBUG, "t:%d cb:%p p:%p", t, callback, p);
 
 	if (callbacks == NULL) {
 		callbacks = new BList;
@@ -124,7 +123,7 @@ schedule_run(void)
 
 	NSLOG(schedule, DEBUG,
 	      "Checking %ld callbacks to for deadline.",
-	      this_run->CountItems());
+	      callbacks->CountItems());
 
 	/* Run all the callbacks which made it this far. */
 	for (i = 0; i < callbacks->CountItems(); ) {
