@@ -185,7 +185,7 @@ int monkey_schedule_run(void)
 	timersub(&nexttime, &tv, &rettime);
 
 	NSLOG(schedule, DEBUG, "returning time to next event as %ldms",
-	      (rettime.tv_sec * 1000) + (rettime.tv_usec / 1000));
+	      (long)((rettime.tv_sec * 1000) + (rettime.tv_usec / 1000)));
 
 	/* return next event time in milliseconds (24days max wait) */
 	return (rettime.tv_sec * 1000) + (rettime.tv_usec / 1000);
