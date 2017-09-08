@@ -3296,7 +3296,7 @@ void llcache_clean(bool purge)
 			NSLOG(llcache, DEBUG,
 			     "discarding backed object len:%zd age:%ld (%p) %s",
 			      object->source_len,
-			      time(NULL) - object->last_used,
+			      (long)(time(NULL) - object->last_used),
 			      object,
 			      nsurl_access(object->url));
 
