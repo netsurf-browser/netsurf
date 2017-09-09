@@ -208,6 +208,15 @@ struct treeview_edit {
 
 
 /**
+ * Treeview search box details
+ */
+struct treeview_search {
+	struct textarea *textarea;	/**< Search box.  Never NULL. */
+	bool active;			/**< Whether the search box is active */
+};
+
+
+/**
  * The treeview context
  */
 struct treeview {
@@ -224,6 +233,8 @@ struct treeview {
 	struct treeview_drag drag; /**< Drag state */
 	struct treeview_move move; /**< Move drag details */
 	struct treeview_edit edit; /**< Edit details */
+
+	struct treeview_search search; /**< Treeview search box */
 
 	const struct treeview_callback_table *callbacks; /**< For node events */
 
@@ -1504,6 +1515,94 @@ treeview_delete_node(treeview *tree,
 }
 
 
+/**
+ * Helper to create a textarea.
+ *
+ * \param[in] tree         The treeview we're creating the textarea for.
+ * \param[in] width        The width of the textarea.
+ * \param[in] height       The height of the textarea.
+ * \param[in] border       The border colour to use.
+ * \param[in] background   The background colour to use.
+ * \param[in] foreground   The foreground colour to use.
+ * \param[in] text         The text style to use for the text area.
+ * \param[in] ta_callback  The textarea callback function to give the textarea.
+ * \return the textarea pointer on success, or NULL on failure.
+ */
+static struct textarea *treeview__create_textarea(
+		treeview *tree,
+		int width,
+		int height,
+		colour border,
+		colour background,
+		colour foreground,
+		plot_font_style_t text,
+		textarea_client_callback ta_callback)
+{
+	/* Configure the textarea */
+	textarea_flags ta_flags = TEXTAREA_INTERNAL_CARET;
+	textarea_setup ta_setup = {
+		.text = text,
+		.width = width,
+		.height = height,
+		.pad_top = 0,
+		.pad_left = 2,
+		.pad_right = 2,
+		.pad_bottom = 0,
+		.border_width = 1,
+		.border_col = border,
+		.selected_bg = foreground,
+		.selected_text = background,
+	};
+
+	ta_setup.text.foreground = foreground;
+	ta_setup.text.background = background;
+
+	/* Create text area */
+	return textarea_create(ta_flags, &ta_setup, ta_callback, tree);
+}
+
+
+/**
+ * Callback for textarea_create, in desktop/treeview.h
+ *
+ * \param data treeview context
+ * \param msg textarea message
+ */
+static void treeview_textarea_search_callback(void *data,
+		struct textarea_msg *msg)
+{
+	treeview *tree = data;
+	struct rect *r;
+
+	switch (msg->type) {
+	case TEXTAREA_MSG_DRAG_REPORT:
+		if (msg->data.drag == TEXTAREA_DRAG_NONE) {
+			/* Textarea drag finished */
+			tree->drag.type = TV_DRAG_NONE;
+		} else {
+			/* Textarea drag started */
+			tree->drag.type = TV_DRAG_SEARCH;
+		}
+		treeview__cw_drag_status(tree, tree->drag.type);
+		break;
+
+	case TEXTAREA_MSG_REDRAW_REQUEST:
+		r = &msg->data.redraw;
+		r->x0 += tree_g.window_padding + tree_g.icon_size;
+		r->y0 += 0;
+		r->x1 += 600;
+		r->y1 += tree_g.line_height;
+
+		/* Redraw the textarea */
+		cw_invalidate_area(tree, r);
+		break;
+
+	default:
+		break;
+	}
+}
+
+
 /* Exported interface, documented in treeview.h */
 nserror
 treeview_create(treeview **tree,
@@ -1583,6 +1682,23 @@ treeview_create(treeview **tree,
 	(*tree)->edit.textarea = NULL;
 	(*tree)->edit.node = NULL;
 
+	if (flags & TREEVIEW_SEARCHABLE) {
+		(*tree)->search.textarea = treeview__create_textarea(
+				*tree, 600, tree_g.line_height,
+				plot_style_even.text.background,
+				plot_style_even.text.background,
+				plot_style_even.text.foreground,
+				plot_style_odd.text,
+				treeview_textarea_search_callback);
+		if ((*tree)->search.textarea == NULL) {
+			treeview_destroy(*tree);
+			return NSERROR_NOMEM;
+		}
+	} else {
+		(*tree)->search.textarea = NULL;
+	}
+	(*tree)->search.active = false;
+
 	(*tree)->flags = flags;
 
 	(*tree)->cw_t = cw_t;
@@ -1639,6 +1755,10 @@ nserror treeview_destroy(treeview *tree)
 		lwc_string_unref(tree->fields[f].field);
 	}
 	free(tree->fields);
+
+	if (tree->search.textarea != NULL) {
+		textarea_destroy(tree->search.textarea);
+	}
 
 	/* Free treeview */
 	free(tree);
@@ -3369,47 +3489,6 @@ static void treeview_textarea_callback(void *data, struct textarea_msg *msg)
 
 
 /**
- * Helper to create a textarea.
- *
- * \param[in] tree         The treeview we're creating the textarea for.
- * \param[in] width        The width of the textarea.
- * \param[in] height       The height of the textarea.
- * \param[in] text         The text style to use for the text area.
- * \param[in] ta_callback  The textarea callback function to give the textarea.
- * \return the textarea pointer on success, or NULL on failure.
- */
-static struct textarea *treeview_create_textarea(
-		treeview *tree,
-		int width,
-		int height,
-		plot_font_style_t text,
-		textarea_client_callback ta_callback)
-{
-	/* Configure the textarea */
-	textarea_flags ta_flags = TEXTAREA_INTERNAL_CARET;
-	textarea_setup ta_setup = {
-		.text = text,
-		.width = width,
-		.height = height,
-		.pad_top = 0,
-		.pad_left = 2,
-		.pad_right = 2,
-		.pad_bottom = 0,
-		.border_width = 1,
-		.border_col = 0x000000,
-		.selected_bg = 0x000000,
-		.selected_text = 0xffffff,
-	};
-
-	ta_setup.text.foreground = 0x000000;
-	ta_setup.text.background = 0xffffff;
-
-	/* Create text area */
-	return textarea_create(ta_flags, &ta_setup, ta_callback, tree);
-}
-
-
-/**
  * Start edit of node field, at given y-coord, if editable
  *
  * \param tree Treeview object to consider editing in
@@ -3481,8 +3560,9 @@ treeview_edit_node_at_point(treeview *tree,
 	height = tree_g.line_height;
 
 	/* Create text area */
-	tree->edit.textarea = treeview_create_textarea(tree, width, height,
-			plot_style_odd.text, treeview_textarea_callback);
+	tree->edit.textarea = treeview__create_textarea(tree, width, height,
+			0x000000, 0xffffff, 0x000000, plot_style_odd.text,
+			treeview_textarea_callback);
 	if (tree->edit.textarea == NULL) {
 		return false;
 	}
