@@ -76,7 +76,8 @@ typedef enum {
 	TREEVIEW_NO_MOVES	= (1 << 0),	/**< No node drags */
 	TREEVIEW_NO_DELETES	= (1 << 1),	/**< No node deletes */
 	TREEVIEW_READ_ONLY	= TREEVIEW_NO_MOVES | TREEVIEW_NO_DELETES,
-	TREEVIEW_DEL_EMPTY_DIRS	= (1 << 2)	/**< Delete dirs on empty */
+	TREEVIEW_DEL_EMPTY_DIRS	= (1 << 2),	/**< Delete dirs on empty */
+	TREEVIEW_SEARCHABLE     = (1 << 3),	/**< Treeview has search bar */
 } treeview_flags;
 
 /**
