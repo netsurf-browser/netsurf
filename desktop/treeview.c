@@ -171,7 +171,8 @@ struct treeview_drag {
 		TV_DRAG_NONE,
 		TV_DRAG_SELECTION,
 		TV_DRAG_MOVE,
-		TV_DRAG_TEXTAREA
+		TV_DRAG_TEXTAREA,
+		TV_DRAG_SEARCH,
 	} type;	/**< Drag type */
 	treeview_node *start_node;	/**< Start node */
 	bool selected;			/**< Start node is selected */
