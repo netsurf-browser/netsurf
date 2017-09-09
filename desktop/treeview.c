@@ -2695,7 +2695,8 @@ static bool treeview_clear_selection(treeview *tree, struct rect *rect)
 	sw.purpose = TREEVIEW_WALK_CLEAR_SELECTION;
 	sw.data.redraw.required = false;
 	sw.data.redraw.rect = rect;
-	sw.current_y = 0;
+	sw.current_y = (tree->flags & TREEVIEW_SEARCHABLE) ?
+			tree_g.line_height : 0;
 
 	treeview_walk_internal(tree->root, false, NULL,
 			       treeview_node_selection_walk_cb, &sw);
@@ -2723,7 +2724,8 @@ static bool treeview_select_all(treeview *tree, struct rect *rect)
 	sw.purpose = TREEVIEW_WALK_SELECT_ALL;
 	sw.data.redraw.required = false;
 	sw.data.redraw.rect = rect;
-	sw.current_y = 0;
+	sw.current_y = (tree->flags & TREEVIEW_SEARCHABLE) ?
+			tree_g.line_height : 0;
 
 	treeview_walk_internal(tree->root, false, NULL,
 			       treeview_node_selection_walk_cb, &sw);
@@ -2742,7 +2744,8 @@ static void treeview_commit_selection_drag(treeview *tree)
 	struct treeview_selection_walk_data sw;
 
 	sw.purpose = TREEVIEW_WALK_COMMIT_SELECT_DRAG;
-	sw.current_y = 0;
+	sw.current_y = (tree->flags & TREEVIEW_SEARCHABLE) ?
+			tree_g.line_height : 0;
 
 	if (tree->drag.start.y > tree->drag.prev.y) {
 		sw.data.drag.sel_min = tree->drag.prev.y;
@@ -3967,6 +3970,8 @@ treeview_mouse_action(treeview *tree, browser_mouse_state mouse, int x, int y)
 {
 	struct rect r;
 	bool redraw = false;
+	int search_height = (tree->flags & TREEVIEW_SEARCHABLE) ?
+			tree_g.line_height : 0;
 
 	assert(tree != NULL);
 	assert(tree->root != NULL);
@@ -4023,7 +4028,7 @@ treeview_mouse_action(treeview *tree, browser_mouse_state mouse, int x, int y)
 		}
 	}
 
-	if (y > tree->root->height) {
+	if (y > tree->root->height + search_height) {
 		/* Below tree */
 
 		r.x0 = 0;
@@ -4101,7 +4106,7 @@ treeview_mouse_action(treeview *tree, browser_mouse_state mouse, int x, int y)
 		ma.mouse = mouse;
 		ma.x = x;
 		ma.y = y;
-		ma.current_y = 0;
+		ma.current_y = search_height;
 
 		treeview_walk_internal(tree->root, false, NULL,
 				       treeview_node_mouse_action_cb, &ma);
