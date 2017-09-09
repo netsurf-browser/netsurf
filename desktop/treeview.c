@@ -3981,6 +3981,23 @@ treeview_mouse_action(treeview *tree, browser_mouse_state mouse, int x, int y)
 		textarea_mouse_action(tree->edit.textarea, mouse,
 				      x - tree->edit.x, y - tree->edit.y);
 		return;
+	} else if (tree->drag.type == TV_DRAG_SEARCH || y < search_height) {
+		if (tree->search.active == false) {
+			tree->search.active = true;
+			if (treeview_clear_selection(tree, &r)) {
+				cw_invalidate_area(tree, &r);
+			}
+		}
+		textarea_mouse_action(tree->search.textarea, mouse,
+				x - tree_g.window_padding - tree_g.icon_size,
+				y);
+		return;
+	} else if (mouse & (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_PRESS_2) &&
+			tree->search.active == true) {
+
+		tree->search.active = false;
+		textarea_set_caret(tree->search.textarea, -1);
+		return;
 	}
 
 	/* Handle textarea related mouse action */
