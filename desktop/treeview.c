@@ -3368,6 +3368,47 @@ static void treeview_textarea_callback(void *data, struct textarea_msg *msg)
 
 
 /**
+ * Helper to create a textarea.
+ *
+ * \param[in] tree         The treeview we're creating the textarea for.
+ * \param[in] width        The width of the textarea.
+ * \param[in] height       The height of the textarea.
+ * \param[in] text         The text style to use for the text area.
+ * \param[in] ta_callback  The textarea callback function to give the textarea.
+ * \return the textarea pointer on success, or NULL on failure.
+ */
+static struct textarea *treeview_create_textarea(
+		treeview *tree,
+		int width,
+		int height,
+		plot_font_style_t text,
+		textarea_client_callback ta_callback)
+{
+	/* Configure the textarea */
+	textarea_flags ta_flags = TEXTAREA_INTERNAL_CARET;
+	textarea_setup ta_setup = {
+		.text = text,
+		.width = width,
+		.height = height,
+		.pad_top = 0,
+		.pad_left = 2,
+		.pad_right = 2,
+		.pad_bottom = 0,
+		.border_width = 1,
+		.border_col = 0x000000,
+		.selected_bg = 0x000000,
+		.selected_text = 0xffffff,
+	};
+
+	ta_setup.text.foreground = 0x000000;
+	ta_setup.text.background = 0xffffff;
+
+	/* Create text area */
+	return textarea_create(ta_flags, &ta_setup, ta_callback, tree);
+}
+
+
+/**
  * Start edit of node field, at given y-coord, if editable
  *
  * \param tree Treeview object to consider editing in
@@ -3392,8 +3433,6 @@ treeview_edit_node_at_point(treeview *tree,
 	int field_y = node_y;
 	int field_x;
 	int width, height;
-	textarea_setup ta_setup;
-	textarea_flags ta_flags;
 	bool success;
 
 	/* If the main field is editable, make field_data point to it */
@@ -3435,31 +3474,14 @@ treeview_edit_node_at_point(treeview *tree,
 	/* Get window width/height */
 	treeview__cw_get_window_dimensions(tree, &width, &height);
 
-	/* Anow textarea width/height */
+	/* Calculate textarea width/height */
 	field_x = n->inset + tree_g.step_width + tree_g.icon_step - 3;
 	width -= field_x;
 	height = tree_g.line_height;
 
-	/* Configure the textarea */
-	ta_flags = TEXTAREA_INTERNAL_CARET;
-
-	ta_setup.width = width;
-	ta_setup.height = height;
-	ta_setup.pad_top = 0;
-	ta_setup.pad_right = 2;
-	ta_setup.pad_bottom = 0;
-	ta_setup.pad_left = 2;
-	ta_setup.border_width = 1;
-	ta_setup.border_col = 0x000000;
-	ta_setup.selected_text = 0xffffff;
-	ta_setup.selected_bg = 0x000000;
-	ta_setup.text = plot_style_odd.text;
-	ta_setup.text.foreground = 0x000000;
-	ta_setup.text.background = 0xffffff;
-
 	/* Create text area */
-	tree->edit.textarea = textarea_create(ta_flags, &ta_setup,
-					      treeview_textarea_callback, tree);
+	tree->edit.textarea = treeview_create_textarea(tree, width, height,
+			plot_style_odd.text, treeview_textarea_callback);
 	if (tree->edit.textarea == NULL) {
 		return false;
 	}
