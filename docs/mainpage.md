@@ -15,6 +15,11 @@ There are some basic user guides for the
 The [core user options](docs/netsurf-options.md) of the browser are
 documented which are augmented by each frontend in a specific manner.
 
+### Logging
+
+The [logging](docs/logging.md) interface controls debug and error
+messages not output through the GUI.
+
 Documented API
 --------------
 
