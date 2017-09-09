@@ -3281,7 +3281,7 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 
 	assert(tree != NULL);
 
-	/* Pass to textarea, if editing in progress */
+	/* Pass to any textarea, if editing in progress */
 	if (tree->edit.textarea != NULL) {
 		switch (key) {
 		case NS_KEY_ESCAPE:
@@ -3293,6 +3293,23 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 			return true;
 		default:
 			return textarea_keypress(tree->edit.textarea, key);
+		}
+	} else if (tree->search.active == true) {
+		switch (key) {
+		case NS_KEY_ESCAPE:
+			textarea_set_text(tree->search.textarea, "");
+			textarea_set_caret(tree->search.textarea, 0);
+			r.x0 = tree_g.window_padding + tree_g.icon_size;
+			r.x1 = 600;
+			r.y0 = 0;
+			r.y1 = tree_g.line_height;
+			cw_invalidate_area(tree, &r);
+			return true;
+		case NS_KEY_NL:
+		case NS_KEY_CR:
+			return true;
+		default:
+			return textarea_keypress(tree->search.textarea, key);
 		}
 	}
 
