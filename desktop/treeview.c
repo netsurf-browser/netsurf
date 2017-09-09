@@ -2175,6 +2175,40 @@ treeview_redraw(treeview *tree,
 	data.repeat_x = false;
 	data.repeat_y = false;
 
+	if (tree->flags & TREEVIEW_SEARCHABLE) {
+		if (render_y < r.y1) {
+			enum treeview_resource_id icon = TREE_RES_SEARCH;
+
+			/* Fill the blank area at the bottom */
+			rect.x0 = r.x0;
+			rect.y0 = render_y;
+			rect.x1 = r.x1;
+			rect.y1 = render_y + tree_g.line_height;
+			new_ctx.plot->rectangle(&new_ctx, &plot_style_even.bg,
+					&rect);
+
+			if (treeview_res[icon].ready) {
+				/* Icon resource is available */
+				data.x = tree_g.window_padding;
+				data.y = render_y + ((tree_g.line_height -
+						treeview_res[icon].height + 1) /
+						2);
+				data.background_colour = plot_style_even.bg.
+						fill_colour;
+
+				content_redraw(treeview_res[icon].c,
+						&data, &r, &new_ctx);
+			}
+
+			textarea_redraw(tree->search.textarea,
+					x + tree_g.window_padding +
+							tree_g.icon_step, y,
+					plot_style_even.bg.fill_colour, 1.0,
+					&r, &new_ctx);
+		}
+		render_y += tree_g.line_height;
+	}
+
 	while (node != NULL) {
 		int i;
 		next = (node->flags & TV_NFLAGS_EXPANDED) ?
