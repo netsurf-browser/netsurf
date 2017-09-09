@@ -39,6 +39,9 @@ const char *test_choices_all_path = "test/data/Choices-all";
 const char *test_choices_full_path = "test/data/Choices-full";
 const char *test_choices_missing_path = "test/data/Choices-missing";
 
+/* Stubs */
+nserror nslog_set_filter_by_options() { return NSERROR_OK; }
+
 /**
  * generate test output filenames
  */

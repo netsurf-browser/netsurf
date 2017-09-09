@@ -77,6 +77,9 @@ struct test_urls {
 #define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
 
 
+/* Stubs */
+nserror nslog_set_filter_by_options() { return NSERROR_OK; }
+
 /**
  * generate test output filenames
  */

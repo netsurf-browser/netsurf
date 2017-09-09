@@ -95,6 +95,8 @@ sys_colour_ThreeDShadow:d5d5d5
 sys_colour_Window:f1f1f1
 sys_colour_WindowFrame:4e4e4e
 sys_colour_WindowText:000000
+log_filter:level:WARNING
+verbose_filter:level:VERBOSE
 render_resample:1
 downloads_clear:0
 request_overwrite:1
