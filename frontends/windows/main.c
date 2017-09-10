@@ -419,5 +419,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	/* finalise options */
 	nsoption_finalise(nsoptions, nsoptions_default);
 
+	/* finalise logging */
+	nslog_finalise();
+
 	return 0;
 }

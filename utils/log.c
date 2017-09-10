@@ -137,8 +137,8 @@ nslog_set_filter(const char *filter)
 	}
 
 	err = nslog_filter_set_active(filt, NULL);
+	filt = nslog_filter_unref(filt);
 	if (err != NSLOG_NO_ERROR) {
-		nslog_filter_unref(filt);
 		return NSERROR_NOSPACE;
 	}
 
@@ -286,4 +286,20 @@ nslog_set_filter_by_options()
 		return nslog_set_filter(nsoption_charp(verbose_filter));
 	else
 		return nslog_set_filter(nsoption_charp(log_filter));
+}
+
+/* exported interface documented in utils/log.h */
+void
+nslog_finalise()
+{
+	NSLOG(netsurf, INFO,
+	      "Finalising logging, please report any further messages");
+	verbose_log = true;
+	if (logfile != stderr) {
+		fclose(logfile);
+		logfile = stderr;
+	}
+#ifdef WITH_NSLOG
+	nslog_cleanup();
+#endif
 }

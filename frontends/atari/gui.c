@@ -1225,6 +1225,10 @@ int main(int argc, char** argv)
     fclose(stderr);
 #endif
     NSLOG(netsurf, INFO, "exit_gem");
+
+    /* finalise logging */
+    nslog_finalise();
+
     exit_gem();
 
     return 0;

@@ -2215,6 +2215,9 @@ main(int argc, char** argv)
 	/* finalise options */
 	nsoption_finalise(nsoptions, nsoptions_default);
 
+	/* finalise logging */
+	nslog_finalise();
+
 	return 0;
 }
 

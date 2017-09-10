@@ -5841,6 +5841,9 @@ int main(int argc, char** argv)
 	free(current_user_dir);
 	FreeVec(current_user_faviconcache);
 
+	/* finalise logging */
+	nslog_finalise();
+
 #ifndef __amigaos4__
 	/* OS3 low memory handler */
 	ami_memory_fini(memhandler);

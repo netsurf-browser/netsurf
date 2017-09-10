@@ -2557,5 +2557,8 @@ int main(int argc, char** argv)
 	netsurf_exit();
 	nsoption_finalise(nsoptions, nsoptions_default);
 
+	/* finalise logging */
+	nslog_finalise();
+
 	return 0;
 }

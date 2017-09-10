@@ -44,6 +44,15 @@ typedef bool(nslog_ensure_t)(FILE *fptr);
 extern nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv);
 
 /**
+ * Shut down the logging system.
+ *
+ * Shuts down the logging subsystem, resetting to verbose logging and output
+ * to stderr.  Note, if logging is done after calling this, it will be sent
+ * to stderr without filtering.
+ */
+extern void nslog_finalise(void);
+
+/**
  * Set the logging filter.
  *
  * Compiles and enables the given logging filter.
