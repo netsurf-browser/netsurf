@@ -962,7 +962,7 @@ treeview_create_node_entry(treeview *tree,
 	}
 
 	e = malloc(sizeof(struct treeview_node_entry) +
-		   (tree->n_fields - 1) * sizeof(struct treeview_field));
+			(tree->n_fields - 1) * sizeof(struct treeview_field));
 	if (e == NULL) {
 		return NSERROR_NOMEM;
 	}
@@ -978,8 +978,8 @@ treeview_create_node_entry(treeview *tree,
 	assert(fields != NULL);
 	assert(fields[0].field != NULL);
 	assert(lwc_string_isequal(tree->fields[0].field,
-				  fields[0].field, &match) == lwc_error_ok &&
-	       match == true);
+			fields[0].field, &match) == lwc_error_ok &&
+			match == true);
 	n->text.data = fields[0].value;
 	n->text.len = fields[0].value_len;
 	n->text.width = 0;
@@ -994,8 +994,8 @@ treeview_create_node_entry(treeview *tree,
 	for (i = 1; i < tree->n_fields; i++) {
 		assert(fields[i].field != NULL);
 		assert(lwc_string_isequal(tree->fields[i].field,
-					  fields[i].field, &match) == lwc_error_ok &&
-		       match == true);
+				fields[i].field, &match) == lwc_error_ok &&
+				match == true);
 
 		e->fields[i - 1].value.data = fields[i].value;
 		e->fields[i - 1].value.len = fields[i].value_len;
@@ -1103,11 +1103,10 @@ treeview_walk(treeview *tree,
 	if (root == NULL)
 		root = tree->root;
 
-	return treeview_walk_internal(root,
-				      true,
-				      (leave_cb != NULL) ? treeview_walk_bwd_cb : NULL,
-				      (enter_cb != NULL) ? treeview_walk_fwd_cb : NULL,
-				      &tw);
+	return treeview_walk_internal(root, true,
+			(leave_cb != NULL) ? treeview_walk_bwd_cb : NULL,
+			(enter_cb != NULL) ? treeview_walk_fwd_cb : NULL,
+			&tw);
 }
 
 
