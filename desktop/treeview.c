@@ -2243,6 +2243,225 @@ nserror treeview_expand(treeview *tree, bool only_folders)
 }
 
 
+/**
+ * Draw a treeview normally, in tree mode.
+ *
+ * \param[in]     tree      The treeview we're rendering.
+ * \param[in]     x         X coordinate we're rendering the treeview at.
+ * \param[in]     y         Y coordinate we're rendering the treeview at.
+ * \param[in,out] render_y  Current vertical position in tree, updated on exit.
+ * \param[in]     r         Clip rectangle.
+ * \param[in]     data      Redraw data for rendering contents.
+ * \param[in]     ctx       Current render context.
+ */
+static void treeview_redraw_tree(
+		treeview *tree,
+		const int x,
+		const int y,
+		int *render_y_in_out,
+		struct rect *r,
+		struct content_redraw_data *data,
+		const struct redraw_context *ctx)
+{
+	struct treeview_node_style *style = &plot_style_odd;
+	enum treeview_resource_id res = TREE_RES_CONTENT;
+	int baseline = (tree_g.line_height * 3 + 2) / 4;
+	plot_font_style_t *infotext_style;
+	treeview_node *root = tree->root;
+	treeview_node *node = tree->root;
+	int render_y = *render_y_in_out;
+	plot_font_style_t *text_style;
+	plot_style_t *bg_style;
+	int sel_min, sel_max;
+	uint32_t count = 0;
+	struct rect rect;
+	int inset;
+	int x0;
+
+	if (tree->drag.start.y > tree->drag.prev.y) {
+		sel_min = tree->drag.prev.y;
+		sel_max = tree->drag.start.y;
+	} else {
+		sel_min = tree->drag.start.y;
+		sel_max = tree->drag.prev.y;
+	}
+
+	while (node != NULL) {
+		struct treeview_node_entry *entry;
+		struct bitmap *furniture;
+		bool invert_selection;
+		treeview_node *next;
+		int height;
+		int i;
+
+		next = (node->flags & TV_NFLAGS_EXPANDED) ?
+			node->children : NULL;
+
+		if (next != NULL) {
+			/* down to children */
+			node = next;
+		} else {
+			/* No children.  As long as we're not at the root,
+			 * go to next sibling if present, or nearest ancestor
+			 * with a next sibling. */
+
+			while (node != root &&
+			       node->next_sib == NULL) {
+				node = node->parent;
+			}
+
+			if (node == root)
+				break;
+
+			node = node->next_sib;
+		}
+
+		assert(node != NULL);
+		assert(node != root);
+		assert(node->type == TREE_NODE_FOLDER ||
+		       node->type == TREE_NODE_ENTRY);
+
+		count++;
+		inset = x + node->inset;
+		height = (node->type == TREE_NODE_ENTRY) ? node->height :
+			tree_g.line_height;
+
+		if ((render_y + height) < r->y0) {
+			/* This node's line is above clip region */
+			render_y += height;
+			continue;
+		}
+
+		style = (count & 0x1) ? &plot_style_odd : &plot_style_even;
+		if (tree->drag.type == TV_DRAG_SELECTION &&
+		    (render_y + height >= sel_min &&
+		     render_y < sel_max)) {
+			invert_selection = true;
+		} else {
+			invert_selection = false;
+		}
+		if ((node->flags & TV_NFLAGS_SELECTED && !invert_selection) ||
+		    (!(node->flags & TV_NFLAGS_SELECTED) &&
+		     invert_selection)) {
+			bg_style = &style->sbg;
+			text_style = &style->stext;
+			infotext_style = &style->sitext;
+			furniture = (node->flags & TV_NFLAGS_EXPANDED) ?
+				style->furn[TREE_FURN_CONTRACT].sel :
+				style->furn[TREE_FURN_EXPAND].sel;
+		} else {
+			bg_style = &style->bg;
+			text_style = &style->text;
+			infotext_style = &style->itext;
+			furniture = (node->flags & TV_NFLAGS_EXPANDED) ?
+				style->furn[TREE_FURN_CONTRACT].bmp :
+				style->furn[TREE_FURN_EXPAND].bmp;
+		}
+
+		/* Render background */
+		rect.x0 = r->x0;
+		rect.y0 = render_y;
+		rect.x1 = r->x1;
+		rect.y1 = render_y + height;
+		ctx->plot->rectangle(ctx, bg_style, &rect);
+
+		/* Render toggle */
+		ctx->plot->bitmap(ctx,
+				furniture,
+				inset,
+				render_y + tree_g.line_height / 4,
+				style->furn[TREE_FURN_EXPAND].size,
+				style->furn[TREE_FURN_EXPAND].size,
+				bg_style->fill_colour,
+				BITMAPF_NONE);
+
+		/* Render icon */
+		if (node->type == TREE_NODE_ENTRY) {
+			res = TREE_RES_CONTENT;
+		} else if (node->flags & TV_NFLAGS_SPECIAL) {
+			res = TREE_RES_FOLDER_SPECIAL;
+		} else {
+			res = TREE_RES_FOLDER;
+		}
+
+		if (treeview_res[res].ready) {
+			/* Icon resource is available */
+			data->x = inset + tree_g.step_width;
+			data->y = render_y + ((tree_g.line_height -
+					      treeview_res[res].height + 1) / 2);
+			data->background_colour = bg_style->fill_colour;
+
+			content_redraw(treeview_res[res].c, data, r, ctx);
+		}
+
+		/* Render text */
+		x0 = inset + tree_g.step_width + tree_g.icon_step;
+		ctx->plot->text(ctx,
+				text_style,
+				x0, render_y + baseline,
+				node->text.data,
+				node->text.len);
+
+		/* Rendered the node */
+		render_y += tree_g.line_height;
+		if (render_y > r->y1) {
+			/* Passed the bottom of what's in the clip region.
+			 * Done. */
+			break;
+		}
+
+
+		if (node->type != TREE_NODE_ENTRY ||
+		    !(node->flags & TV_NFLAGS_EXPANDED))
+			/* Done everything for this node */
+			continue;
+
+		/* Render expanded entry fields */
+		entry = (struct treeview_node_entry *)node;
+		for (i = 0; i < tree->n_fields - 1; i++) {
+			struct treeview_field *ef = &(tree->fields[i + 1]);
+
+			if (ef->flags & TREE_FLAG_SHOW_NAME) {
+				int max_width = tree->field_width;
+
+				ctx->plot->text(ctx,
+						infotext_style,
+						x0 + max_width - ef->value.width - tree_g.step_width,
+						render_y + baseline,
+						ef->value.data,
+						ef->value.len);
+
+				ctx->plot->text(ctx,
+						infotext_style,
+						x0 + max_width,
+						render_y + baseline,
+						entry->fields[i].value.data,
+						entry->fields[i].value.len);
+			} else {
+				ctx->plot->text(ctx,
+						infotext_style,
+						x0, render_y + baseline,
+						entry->fields[i].value.data,
+						entry->fields[i].value.len);
+			}
+
+			/* Rendered the expanded entry field */
+			render_y += tree_g.line_height;
+		}
+
+		/* Finished rendering expanded entry */
+
+		if (render_y > r->y1) {
+			/* Passed the bottom of what's in the clip region.
+			 * Done. */
+			break;
+		}
+	}
+
+	*render_y_in_out = render_y;
+}
+
+
 /* Exported interface, documented in treeview.h */
 void
 treeview_redraw(treeview *tree,
@@ -2252,37 +2471,14 @@ treeview_redraw(treeview *tree,
 		const struct redraw_context *ctx)
 {
 	struct redraw_context new_ctx = *ctx;
-	treeview_node *node, *root, *next;
-	struct treeview_node_entry *entry;
-	struct treeview_node_style *style = &plot_style_odd;
 	struct content_redraw_data data;
 	struct rect r;
 	struct rect rect;
-	uint32_t count = 0;
 	int render_y = y;
-	int inset;
-	int x0;
-	int baseline = (tree_g.line_height * 3 + 2) / 4;
-	enum treeview_resource_id res = TREE_RES_CONTENT;
-	plot_style_t *bg_style;
-	plot_font_style_t *text_style;
-	plot_font_style_t *infotext_style;
-	struct bitmap *furniture;
-	int height;
-	int sel_min, sel_max;
-	bool invert_selection;
 
 	assert(tree != NULL);
 	assert(tree->root != NULL);
 	assert(tree->root->flags & TV_NFLAGS_EXPANDED);
-
-	if (tree->drag.start.y > tree->drag.prev.y) {
-		sel_min = tree->drag.prev.y;
-		sel_max = tree->drag.start.y;
-	} else {
-		sel_min = tree->drag.start.y;
-		sel_max = tree->drag.prev.y;
-	}
 
 	/* Start knockout rendering if it's available for this plotter */
 	if (ctx->plot->option_knockout) {
@@ -2295,9 +2491,6 @@ treeview_redraw(treeview *tree,
 	r.x1 = clip->x1 + x;
 	r.y1 = clip->y1 + y;
 	new_ctx.plot->clip(&new_ctx, &r);
-
-	/* Draw the tree */
-	node = root = tree->root;
 
 	/* Setup common content redraw data */
 	data.width = tree_g.icon_size;
@@ -2340,172 +2533,7 @@ treeview_redraw(treeview *tree,
 		render_y += tree_g.line_height;
 	}
 
-	while (node != NULL) {
-		int i;
-		next = (node->flags & TV_NFLAGS_EXPANDED) ?
-			node->children : NULL;
-
-		if (next != NULL) {
-			/* down to children */
-			node = next;
-		} else {
-			/* No children.  As long as we're not at the root,
-			 * go to next sibling if present, or nearest ancestor
-			 * with a next sibling. */
-
-			while (node != root &&
-			       node->next_sib == NULL) {
-				node = node->parent;
-			}
-
-			if (node == root)
-				break;
-
-			node = node->next_sib;
-		}
-
-		assert(node != NULL);
-		assert(node != root);
-		assert(node->type == TREE_NODE_FOLDER ||
-		       node->type == TREE_NODE_ENTRY);
-
-		count++;
-		inset = x + node->inset;
-		height = (node->type == TREE_NODE_ENTRY) ? node->height :
-			tree_g.line_height;
-
-		if ((render_y + height) < r.y0) {
-			/* This node's line is above clip region */
-			render_y += height;
-			continue;
-		}
-
-		style = (count & 0x1) ? &plot_style_odd : &plot_style_even;
-		if (tree->drag.type == TV_DRAG_SELECTION &&
-		    (render_y + height >= sel_min &&
-		     render_y < sel_max)) {
-			invert_selection = true;
-		} else {
-			invert_selection = false;
-		}
-		if ((node->flags & TV_NFLAGS_SELECTED && !invert_selection) ||
-		    (!(node->flags & TV_NFLAGS_SELECTED) &&
-		     invert_selection)) {
-			bg_style = &style->sbg;
-			text_style = &style->stext;
-			infotext_style = &style->sitext;
-			furniture = (node->flags & TV_NFLAGS_EXPANDED) ?
-				style->furn[TREE_FURN_CONTRACT].sel :
-				style->furn[TREE_FURN_EXPAND].sel;
-		} else {
-			bg_style = &style->bg;
-			text_style = &style->text;
-			infotext_style = &style->itext;
-			furniture = (node->flags & TV_NFLAGS_EXPANDED) ?
-				style->furn[TREE_FURN_CONTRACT].bmp :
-				style->furn[TREE_FURN_EXPAND].bmp;
-		}
-
-		/* Render background */
-		rect.x0 = r.x0;
-		rect.y0 = render_y;
-		rect.x1 = r.x1;
-		rect.y1 = render_y + height;
-		new_ctx.plot->rectangle(&new_ctx, bg_style, &rect);
-
-		/* Render toggle */
-		new_ctx.plot->bitmap(&new_ctx,
-				     furniture,
-				     inset,
-				     render_y + tree_g.line_height / 4,
-				     style->furn[TREE_FURN_EXPAND].size,
-				     style->furn[TREE_FURN_EXPAND].size,
-				     bg_style->fill_colour,
-				     BITMAPF_NONE);
-
-		/* Render icon */
-		if (node->type == TREE_NODE_ENTRY) {
-			res = TREE_RES_CONTENT;
-		} else if (node->flags & TV_NFLAGS_SPECIAL) {
-			res = TREE_RES_FOLDER_SPECIAL;
-		} else {
-			res = TREE_RES_FOLDER;
-		}
-
-		if (treeview_res[res].ready) {
-			/* Icon resource is available */
-			data.x = inset + tree_g.step_width;
-			data.y = render_y + ((tree_g.line_height -
-					      treeview_res[res].height + 1) / 2);
-			data.background_colour = bg_style->fill_colour;
-
-			content_redraw(treeview_res[res].c,
-				       &data, &r, &new_ctx);
-		}
-
-		/* Render text */
-		x0 = inset + tree_g.step_width + tree_g.icon_step;
-		new_ctx.plot->text(&new_ctx,
-				   text_style,
-				   x0, render_y + baseline,
-				   node->text.data,
-				   node->text.len);
-
-		/* Rendered the node */
-		render_y += tree_g.line_height;
-		if (render_y > r.y1) {
-			/* Passed the bottom of what's in the clip region.
-			 * Done. */
-			break;
-		}
-
-
-		if (node->type != TREE_NODE_ENTRY ||
-		    !(node->flags & TV_NFLAGS_EXPANDED))
-			/* Done everything for this node */
-			continue;
-
-		/* Render expanded entry fields */
-		entry = (struct treeview_node_entry *)node;
-		for (i = 0; i < tree->n_fields - 1; i++) {
-			struct treeview_field *ef = &(tree->fields[i + 1]);
-
-			if (ef->flags & TREE_FLAG_SHOW_NAME) {
-				int max_width = tree->field_width;
-
-				new_ctx.plot->text(&new_ctx,
-						   infotext_style,
-						   x0 + max_width - ef->value.width - tree_g.step_width,
-						   render_y + baseline,
-						   ef->value.data,
-						   ef->value.len);
-
-				new_ctx.plot->text(&new_ctx,
-						   infotext_style,
-						   x0 + max_width,
-						   render_y + baseline,
-						   entry->fields[i].value.data,
-						   entry->fields[i].value.len);
-			} else {
-				new_ctx.plot->text(&new_ctx,
-						   infotext_style,
-						   x0, render_y + baseline,
-						   entry->fields[i].value.data,
-						   entry->fields[i].value.len);
-			}
-
-			/* Rendered the expanded entry field */
-			render_y += tree_g.line_height;
-		}
-
-		/* Finished rendering expanded entry */
-
-		if (render_y > r.y1) {
-			/* Passed the bottom of what's in the clip region.
-			 * Done. */
-			break;
-		}
-	}
+	treeview_redraw_tree(tree, x, y, &render_y, &r, &data, &new_ctx);
 
 	if (render_y < r.y1) {
 		/* Fill the blank area at the bottom */
