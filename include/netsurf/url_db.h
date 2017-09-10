@@ -96,15 +96,6 @@ void urldb_iterate_entries(bool (*callback)(struct nsurl *url,	const struct url_
 
 
 /**
- * Retrieve thumbnail data for given URL
- *
- * \param url Absolute URL to search for
- * \return Pointer to thumbnail data, or NULL if not found.
- */
-struct bitmap *urldb_get_thumbnail(struct nsurl *url);
-
-
-/**
  * Find data for an URL.
  *
  * \param url Absolute URL to look for

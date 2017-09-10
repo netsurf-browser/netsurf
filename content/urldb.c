@@ -202,7 +202,6 @@ struct path_data {
 	char **fragment;	/**< Array of fragments */
 	bool persistent;	/**< This entry should persist */
 
-	struct bitmap *thumb;	/**< Thumbnail image of resource */
 	struct url_internal_data urld;	/**< URL data for resource */
 
 	/**
@@ -2702,10 +2701,6 @@ static void urldb_destroy_path_node_content(struct path_data *node)
 		free(node->fragment[i]);
 	free(node->fragment);
 
-	if (node->thumb) {
-		guit->bitmap->destroy(node->thumb);
-	}
-
 	free(node->urld.title);
 
 	for (a = node->cookies; a; a = b) {
@@ -3462,48 +3457,6 @@ bool urldb_get_cert_permissions(nsurl *url)
 	h = (const struct host_part *)p;
 
 	return h->permit_invalid_certs;
-}
-
-
-/* exported interface documented in content/urldb.h */
-bool urldb_set_thumbnail(nsurl *url, struct bitmap *bitmap)
-{
-	struct path_data *p;
-
-	assert(url);
-
-	/* add url, in case it's missing */
-	urldb_add_url(url);
-
-	p = urldb_find_url(url);
-	if (p == NULL) {
-		return false;
-	}
-
-	NSLOG(netsurf, INFO, "Setting bitmap on %s", nsurl_access(url));
-
-	if ((p->thumb) && (p->thumb != bitmap)) {
-		guit->bitmap->destroy(p->thumb);
-	}
-
-	p->thumb = bitmap;
-
-	return true;
-}
-
-
-/* exported interface documented in netsurf/url_db.h */
-struct bitmap *urldb_get_thumbnail(nsurl *url)
-{
-	struct path_data *p;
-
-	assert(url);
-
-	p = urldb_find_url(url);
-	if (!p)
-		return NULL;
-
-	return p->thumb;
 }
 
 

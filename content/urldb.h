@@ -111,16 +111,6 @@ bool urldb_get_cert_permissions(struct nsurl *url);
 
 
 /**
- * Set thumbnail for url, replacing any existing thumbnail
- *
- * \param url Absolute URL to consider
- * \param bitmap Opaque pointer to thumbnail data, or NULL to invalidate
- * \return true on successful setting else false
- */
-bool urldb_set_thumbnail(struct nsurl *url, struct bitmap *bitmap);
-
-
-/**
  * Parse Set-Cookie header and insert cookie(s) into database
  *
  * \param header Header to parse, with Set-Cookie: stripped

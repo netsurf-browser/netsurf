@@ -154,7 +154,7 @@ struct gui_bitmap_table {
 	 *
 	 * \param bitmap The bitmap to save
 	 * \param path The path to save the bitmap to.
-	 * \param flags Flags affectin the save.
+	 * \param flags Flags affecting the save.
 	 */
 	bool (*save)(void *bitmap, const char *path, unsigned flags);
 

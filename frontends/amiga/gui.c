@@ -2527,10 +2527,9 @@ static BOOL ami_gui_event(void *w)
 #ifdef __amigaos4__
 			case WMHI_ICONIFY:
 			{
-				struct bitmap *bm;
-
-				bm = urldb_get_thumbnail(browser_window_get_url(gwin->gw->bw));
-				if(!bm) bm = content_get_bitmap(browser_window_get_content(gwin->gw->bw));
+				struct bitmap *bm = NULL;
+				browser_window_history_get_thumbnail(gwin->gw->bw,
+								     &bm);
 				gwin->dobj = amiga_icon_from_bitmap(bm);
 				amiga_icon_superimpose_favicon_internal(gwin->gw->favicon,
 					gwin->dobj);

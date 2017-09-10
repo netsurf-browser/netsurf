@@ -50,7 +50,7 @@
  * Clone a history entry
  *
  * \param history opaque history structure, as returned by history_create()
- * \param entry   entry to clone
+ * \param entry entry to clone
  * \return A cloned history entry or NULL on error
  */
 static struct history_entry *
@@ -62,47 +62,85 @@ browser_window_history__clone_entry(struct history *history,
 	struct history_entry *prev = NULL;
 	struct history_entry *new_entry;
 
+	assert(entry);
 	assert(entry->page.url);
 	assert(entry->page.title);
 
 	/* clone the entry */
-	new_entry = malloc(sizeof *entry);
-	if (!new_entry)
+	new_entry = calloc(1, sizeof *entry);
+	if (!new_entry) {
 		return NULL;
+	}
 
-	memcpy(new_entry, entry, sizeof *entry);
-	new_entry->page.url = nsurl_ref(entry->page.url);
-	if (entry->page.frag_id)
-		new_entry->page.frag_id = lwc_string_ref(entry->page.frag_id);
-
+	/* copy page information */
 	new_entry->page.title = strdup(entry->page.title);
-	if (!new_entry->page.url || !new_entry->page.title ||
-			((entry->page.frag_id) && (!new_entry->page.frag_id))) {
-		nsurl_unref(new_entry->page.url);
-		if (new_entry->page.frag_id)
-			lwc_string_unref(new_entry->page.frag_id);
+	if (new_entry->page.title == NULL) {
+		free(new_entry);
+		return NULL;
+	}
+
+	new_entry->page.url = nsurl_ref(entry->page.url);
+	if (new_entry->page.url == NULL) {
 		free(new_entry->page.title);
 		free(new_entry);
 		return NULL;
 	}
 
-	/* update references */
-	if (history->current == entry)
-		history->current = new_entry;
-
-	/* recurse for all children */
-	for (child = new_entry->forward; child; child = child->next) {
-		new_child = browser_window_history__clone_entry(history, child);
-		if (new_child) {
-			new_child->back = new_entry;
-		} else {
+	if (entry->page.frag_id == NULL) {
+		new_entry->page.frag_id = NULL;
+	} else {
+		new_entry->page.frag_id = lwc_string_ref(entry->page.frag_id);
+		if (new_entry->page.frag_id == NULL) {
 			nsurl_unref(new_entry->page.url);
-			if (new_entry->page.frag_id)
-				lwc_string_unref(new_entry->page.frag_id);
-			free(new_entry->page.title);
 			free(new_entry);
 			return NULL;
 		}
+	}
+
+	if (entry->page.bitmap == NULL) {
+		new_entry->page.bitmap = NULL;
+	} else {
+		/* create a new bitmap and copy original into it */
+		unsigned char *bmsrc_data;
+		unsigned char *bmdst_data;
+		size_t bmsize;
+
+		new_entry->page.bitmap = guit->bitmap->create(WIDTH, HEIGHT,
+						BITMAP_NEW | BITMAP_OPAQUE);
+
+		if (new_entry->page.bitmap != NULL) {
+			bmsrc_data = guit->bitmap->get_buffer(entry->page.bitmap);
+			bmdst_data = guit->bitmap->get_buffer(new_entry->page.bitmap);
+			bmsize = guit->bitmap->get_rowstride(new_entry->page.bitmap) *
+				guit->bitmap->get_height(new_entry->page.bitmap);
+			memcpy(bmdst_data, bmsrc_data, bmsize);
+		}
+	}
+
+	/* copy tree values */
+	new_entry->back = entry->back;
+	new_entry->next = entry->next;
+	new_entry->forward = entry->forward;
+	new_entry->forward_pref = entry->forward_pref;
+	new_entry->forward_last = entry->forward_last;
+
+	/* recurse for all children */
+	for (child = new_entry->forward; child != NULL; child = child->next) {
+		new_child = browser_window_history__clone_entry(history, child);
+		if (new_child == NULL) {
+			nsurl_unref(new_entry->page.url);
+			if (new_entry->page.frag_id) {
+				lwc_string_unref(new_entry->page.frag_id);
+			}
+			free(new_entry->page.title);
+			if (entry->page.bitmap != NULL) {
+				guit->bitmap->destroy(entry->page.bitmap);
+			}
+			free(new_entry);
+			return NULL;
+		}
+
+		new_child->back = new_entry;
 		if (prev)
 			prev->next = new_child;
 		if (new_entry->forward == child)
@@ -113,6 +151,12 @@ browser_window_history__clone_entry(struct history *history,
 			new_entry->forward_last = new_child;
 		prev = new_child;
 	}
+
+	/* update references */
+	if (history->current == entry) {
+		history->current = new_entry;
+	}
+
 	return new_entry;
 }
 
@@ -123,15 +167,20 @@ browser_window_history__clone_entry(struct history *history,
 
 static void browser_window_history__free_entry(struct history_entry *entry)
 {
-	if (!entry)
-		return;
-	browser_window_history__free_entry(entry->forward);
-	browser_window_history__free_entry(entry->next);
-	nsurl_unref(entry->page.url);
-	if (entry->page.frag_id)
-		lwc_string_unref(entry->page.frag_id);
-	free(entry->page.title);
-	free(entry);
+	if (entry != NULL) {
+		browser_window_history__free_entry(entry->forward);
+		browser_window_history__free_entry(entry->next);
+
+		nsurl_unref(entry->page.url);
+		if (entry->page.frag_id) {
+			lwc_string_unref(entry->page.frag_id);
+		}
+		free(entry->page.title);
+		if (entry->page.bitmap != NULL) {
+			guit->bitmap->destroy(entry->page.bitmap);
+		}
+		free(entry);
+	}
 }
 
 
@@ -297,14 +346,14 @@ nserror browser_window_history_clone(const struct browser_window *existing,
 
 
 /* exported interface documented in desktop/browser_history.h */
-nserror browser_window_history_add(struct browser_window *bw,
-		struct hlcache_handle *content, lwc_string *frag_id)
+nserror
+browser_window_history_add(struct browser_window *bw,
+			   struct hlcache_handle *content,
+			   lwc_string *frag_id)
 {
 	struct history *history;
 	struct history_entry *entry;
-	nsurl *nsurl = hlcache_handle_get_url(content);
 	char *title;
-	struct bitmap *bitmap;
 	nserror ret;
 
 	assert(bw);
@@ -313,26 +362,40 @@ nserror browser_window_history_add(struct browser_window *bw,
 
 	history = bw->history;
 
-	/* allocate space */
 	entry = malloc(sizeof *entry);
 	if (entry == NULL) {
 		return NSERROR_NOMEM;
 	}
 
+	/* page information */
 	title = strdup(content_get_title(content));
 	if (title == NULL) {
 		free(entry);
 		return NSERROR_NOMEM;
 	}
 
-	entry->page.url = nsurl_ref(nsurl);
+	entry->page.url = nsurl_ref(hlcache_handle_get_url(content));
 	entry->page.frag_id = frag_id ? lwc_string_ref(frag_id) : NULL;
 	entry->page.title = title;
-	entry->page.bitmap = NULL;
 
+	/* create thumbnail for localhistory view */
+	NSLOG(netsurf, DEBUG,
+	      "Creating thumbnail for %s", nsurl_access(entry->page.url));
+
+	entry->page.bitmap = guit->bitmap->create(WIDTH, HEIGHT,
+			BITMAP_NEW | BITMAP_CLEAR_MEMORY | BITMAP_OPAQUE);
+	if (entry->page.bitmap != NULL) {
+		ret = guit->bitmap->render(entry->page.bitmap, content);
+		if (ret != NSERROR_OK) {
+			/* Thumbnail render failed */
+			NSLOG(netsurf, WARNING, "Thumbnail render failed");
+		}
+	}
+
+	/* insert into tree */
 	entry->back = history->current;
-	entry->next = 0;
-	entry->forward = entry->forward_pref = entry->forward_last = 0;
+	entry->next = NULL;
+	entry->forward = entry->forward_pref = entry->forward_last = NULL;
 	entry->children = 0;
 
 	if (history->current) {
@@ -348,34 +411,6 @@ nserror browser_window_history_add(struct browser_window *bw,
 		history->start = entry;
 	}
 	history->current = entry;
-
-	/* if we have a thumbnail, don't update until the page has finished
-	 * loading */
-	bitmap = urldb_get_thumbnail(nsurl);
-	if (bitmap == NULL) {
-		NSLOG(netsurf, INFO, "Creating thumbnail for %s",
-		      nsurl_access(nsurl));
-		bitmap = guit->bitmap->create(WIDTH, HEIGHT,
-					      BITMAP_NEW | BITMAP_CLEAR_MEMORY |
-					      BITMAP_OPAQUE);
-		if (bitmap != NULL) {
-			ret = guit->bitmap->render(bitmap, content);
-			if (ret == NSERROR_OK) {
-				/* Successful thumbnail so register it
-				 * with the url.
-				 */
-				urldb_set_thumbnail(nsurl, bitmap);
-			} else {
-				/* Thumbnailing failed. Ignore it
-				 * silently but clean up bitmap.
-				 */
-				NSLOG(netsurf, INFO, "Thumbnail renderfailed");
-				guit->bitmap->destroy(bitmap);
-				bitmap = NULL;
-			}
-		}
-	}
-	entry->page.bitmap = bitmap;
 
 	browser_window_history__layout(history);
 
@@ -411,7 +446,9 @@ nserror browser_window_history_update(struct browser_window *bw,
 	free(history->current->page.title);
 	history->current->page.title = title;
 
-	guit->bitmap->render(history->current->page.bitmap, content);
+	if (history->current->page.bitmap != NULL) {
+		guit->bitmap->render(history->current->page.bitmap, content);
+	}
 
 	return NSERROR_OK;
 }
@@ -475,6 +512,27 @@ bool browser_window_history_forward_available(struct browser_window *bw)
 			bw->history->current->forward_pref);
 }
 
+/* exported interface documented in desktop/browser_history.h */
+nserror
+browser_window_history_get_thumbnail(struct browser_window *bw,
+				 struct bitmap **bitmap_out)
+{
+	struct bitmap *bitmap;
+
+	if (!bw || !bw->history || !bw->history->current) {
+		return NSERROR_INVALID;
+	}
+
+	if (bw->history->current->page.bitmap == NULL) {
+		bitmap = content_get_bitmap(bw->current_content);
+	} else {
+		bitmap = bw->history->current->page.bitmap;
+	}
+
+	*bitmap_out = bitmap;
+
+	return NSERROR_OK;
+}
 
 /* exported interface documented in desktop/browser_history.h */
 nserror browser_window_history_go(struct browser_window *bw,
@@ -519,7 +577,7 @@ nserror browser_window_history_go(struct browser_window *bw,
 
 
 /* exported interface documented in desktop/browser_history.h */
-void browser_window_history_enumerate_forward(const struct browser_window *bw, 
+void browser_window_history_enumerate_forward(const struct browser_window *bw,
 		browser_window_history_enumerate_cb cb, void *user_data)
 {
 	struct history_entry *e;
@@ -537,7 +595,7 @@ void browser_window_history_enumerate_forward(const struct browser_window *bw,
 
 
 /* exported interface documented in desktop/browser_history.h */
-void browser_window_history_enumerate_back(const struct browser_window *bw, 
+void browser_window_history_enumerate_back(const struct browser_window *bw,
 		browser_window_history_enumerate_cb cb, void *user_data)
 {
 	struct history_entry *e;

@@ -75,6 +75,14 @@ bool browser_window_history_back_available(struct browser_window *bw);
  */
 bool browser_window_history_forward_available(struct browser_window *bw);
 
+/**
+ * Get the thumbnail bitmap for the current history entry
+ *
+ * \param bw The browser window
+ * \param bitmap The bitmat for the current history entry.
+ * \return NSERROR_OK or error code on faliure.
+ */
+nserror browser_window_history_get_thumbnail(struct browser_window *bw, struct bitmap **bitmap_out);
 
 /**
  * Callback function type for history enumeration
@@ -136,21 +144,19 @@ struct nsurl *browser_window_history_entry_get_url(const struct history_entry *e
 /**
  * Returns the URL to a history entry
  *
- * \param	entry		the history entry to retrieve the fragment id from
- * \return	the fragment id
+ * \param entry the history entry to retrieve the fragment id from
+ * \return the fragment id
  */
-const char *browser_window_history_entry_get_fragment_id(
-		const struct history_entry *entry);
+const char *browser_window_history_entry_get_fragment_id(const struct history_entry *entry);
 
 
 /**
  * Returns the title of a history entry
  *
- * \param	entry		the history entry to retrieve the title from
- * \return	the title
+ * \param entry The history entry to retrieve the title from
+ * \return the title
  */
-const char *browser_window_history_entry_get_title(
-		const struct history_entry *entry);
+const char *browser_window_history_entry_get_title(const struct history_entry *entry);
 
 
 /**
@@ -161,7 +167,6 @@ const char *browser_window_history_entry_get_title(
  * \param  new_window  open entry in new window
  * \return NSERROR_OK or error code on faliure.
  */
-nserror browser_window_history_go(struct browser_window *bw,
-		struct history_entry *entry, bool new_window);
+nserror browser_window_history_go(struct browser_window *bw, struct history_entry *entry, bool new_window);
 
 #endif
