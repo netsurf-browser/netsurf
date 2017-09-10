@@ -348,8 +348,12 @@ static inline void treeview__cw_update_size(
 	const struct treeview *tree,
 	int width, int height)
 {
+	int search_height = (tree->flags & TREEVIEW_SEARCHABLE) ?
+			tree_g.line_height : 0;
+
 	if (tree->cw_t != NULL) {
-		tree->cw_t->update_size(tree->cw_h, width, height);
+		tree->cw_t->update_size(tree->cw_h, width,
+				height + search_height);
 	}
 }
 
@@ -4151,12 +4155,15 @@ treeview_mouse_action(treeview *tree, browser_mouse_state mouse, int x, int y)
 /* Exported interface, documented in treeview.h */
 int treeview_get_height(treeview *tree)
 {
+	int search_height = (tree->flags & TREEVIEW_SEARCHABLE) ?
+			tree_g.line_height : 0;
+
 	assert(tree != NULL);
 	assert(tree->root != NULL);
 
 	treeview__cw_update_size(tree, -1, tree->root->height);
 
-	return tree->root->height;
+	return tree->root->height + search_height;
 }
 
 
