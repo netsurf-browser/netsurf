@@ -326,19 +326,21 @@ nserror browser_window_history_add(struct browser_window *bw,
 	}
 
 	entry->page.url = nsurl_ref(nsurl);
-	entry->page.frag_id = frag_id ? lwc_string_ref(frag_id) : 0;
-
+	entry->page.frag_id = frag_id ? lwc_string_ref(frag_id) : NULL;
 	entry->page.title = title;
+	entry->page.bitmap = NULL;
+
 	entry->back = history->current;
 	entry->next = 0;
 	entry->forward = entry->forward_pref = entry->forward_last = 0;
 	entry->children = 0;
-	entry->bitmap = 0;
+
 	if (history->current) {
-		if (history->current->forward_last)
+		if (history->current->forward_last) {
 			history->current->forward_last->next = entry;
-		else
+		} else {
 			history->current->forward = entry;
+		}
 		history->current->forward_pref = entry;
 		history->current->forward_last = entry;
 		history->current->children++;
@@ -373,7 +375,7 @@ nserror browser_window_history_add(struct browser_window *bw,
 			}
 		}
 	}
-	entry->bitmap = bitmap;
+	entry->page.bitmap = bitmap;
 
 	browser_window_history__layout(history);
 
@@ -392,7 +394,9 @@ nserror browser_window_history_update(struct browser_window *bw,
 
 	history = bw->history;
 
-	if (!history || !history->current || !history->current->bitmap) {
+	if (!history ||
+	    !history->current ||
+	    !history->current->page.bitmap) {
 		return NSERROR_INVALID;
 	}
 
@@ -407,7 +411,7 @@ nserror browser_window_history_update(struct browser_window *bw,
 	free(history->current->page.title);
 	history->current->page.title = title;
 
-	guit->bitmap->render(history->current->bitmap, content);
+	guit->bitmap->render(history->current->page.bitmap, content);
 
 	return NSERROR_OK;
 }

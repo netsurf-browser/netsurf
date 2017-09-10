@@ -195,10 +195,12 @@ static bool save_complete_save_buffer(save_complete_ctx *ctx,
  * \param osize updated with the size of the result.
  * \return converted source, or NULL on out of memory.
  */
-
-static char *save_complete_rewrite_stylesheet_urls(save_complete_ctx *ctx,
-		const char *source, unsigned long size, const nsurl *base,
-		unsigned long *osize)
+static char *
+save_complete_rewrite_stylesheet_urls(save_complete_ctx *ctx,
+				      const char *source,
+				      unsigned long size,
+				      const nsurl *base,
+				      unsigned long *osize)
 {
 	char *rewritten;
 	unsigned long offset = 0;
@@ -207,8 +209,9 @@ static char *save_complete_rewrite_stylesheet_urls(save_complete_ctx *ctx,
 
 	/* count number occurrences of @import to (over)estimate result size */
 	/* can't use strstr because source is not 0-terminated string */
-	for (offset = 0; SLEN("@import") < size &&
-			offset <= size - SLEN("@import"); offset++) {
+	for (offset = 0;
+	     (SLEN("@import") < size) && (offset <= (size - SLEN("@import")));
+	     offset++) {
 		if (source[offset] == '@' &&
 		    ascii_to_lower(source[offset + 1]) == 'i' &&
 		    ascii_to_lower(source[offset + 2]) == 'm' &&

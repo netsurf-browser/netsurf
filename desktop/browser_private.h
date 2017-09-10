@@ -45,6 +45,7 @@ struct history_page {
 	struct nsurl *url;    /**< Page URL, never NULL. */
 	lwc_string *frag_id; /** Fragment identifier, or NULL. */
 	char *title;  /**< Page title, never NULL. */
+	struct bitmap *bitmap;  /**< Thumbnail bitmap, or NULL. */
 };
 
 /**
@@ -61,7 +62,6 @@ struct history_entry {
 	unsigned int children;  /**< Number of children. */
 	int x;  /**< Position of node. */
 	int y;  /**< Position of node. */
-	struct bitmap *bitmap;  /**< Thumbnail bitmap, or 0. */
 };
 
 /**

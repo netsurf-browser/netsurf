@@ -144,9 +144,9 @@ redraw_entry(struct history *history,
 	}
 
 	/* Only attempt to plot bitmap if it is present */
-	if (entry->bitmap != NULL) {
+	if (entry->page.bitmap != NULL) {
 		res = ctx->plot->bitmap(ctx,
-					entry->bitmap,
+					entry->page.bitmap,
 					entry->x + x,
 					entry->y + y,
 					WIDTH, HEIGHT,
