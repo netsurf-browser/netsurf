@@ -566,13 +566,12 @@ treeview_walk_internal(treeview_node *root,
 	node = root;
 	parent = node->parent;
 	next_sibling = node->next_sib;
-	child = (!skip_children &&
-		 (full || (node->flags & TV_NFLAGS_EXPANDED))) ?
+	child = (full || (node->flags & TV_NFLAGS_EXPANDED)) ?
 		node->children : NULL;
 
 	while (node != NULL) {
 
-		if (child != NULL) {
+		if (child != NULL && !skip_children) {
 			/* Down to children */
 			node = child;
 		} else {
@@ -639,7 +638,6 @@ treeview_walk_internal(treeview_node *root,
 				return NSERROR_OK;
 			}
 		}
-		child = skip_children ? NULL : child;
 	}
 	return NSERROR_OK;
 }
