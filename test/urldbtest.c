@@ -869,27 +869,6 @@ START_TEST(urldb_auth_details_test)
 END_TEST
 
 
-START_TEST(urldb_thumbnail_test)
-{
-	nsurl *url;
-	struct bitmap *bmap;
-	struct bitmap *res;
-	bool set;
-
-	url = make_url(wikipedia_url);
-	bmap = (struct bitmap*)url;
-
-	set = urldb_set_thumbnail(url, bmap);
-	ck_assert(set == true);
-
-	res = urldb_get_thumbnail(url);
-	ck_assert(res != NULL);
-	ck_assert(res == bmap);
-
-	nsurl_unref(url);
-}
-END_TEST
-
 START_TEST(urldb_cert_permissions_test)
 {
 	nsurl *url;
@@ -985,7 +964,6 @@ static TCase *urldb_case_create(void)
 	tcase_add_test(tc, urldb_iterate_partial_numeric_v4_test);
 	tcase_add_test(tc, urldb_iterate_partial_numeric_v6_test);
 	tcase_add_test(tc, urldb_auth_details_test);
-	tcase_add_test(tc, urldb_thumbnail_test);
 	tcase_add_test(tc, urldb_cert_permissions_test);
 	tcase_add_test(tc, urldb_update_visit_test);
 	tcase_add_test(tc, urldb_reset_visit_test);
