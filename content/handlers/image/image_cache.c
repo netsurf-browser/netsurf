@@ -636,7 +636,7 @@ case chr :					\
 			FMTCHR('b', PRIssizet, params.hysteresis);
 			FMTCHR('c', PRIssizet, total_bitmap_size);
 			FMTCHR('d', "d", bitmap_count);
-			FMTCHR('e', "d", current_age / 1000);
+			FMTCHR('e', "u", current_age / 1000);
 			FMTCHR('f', PRIssizet, max_bitmap_size);
 			FMTCHR('g', "d", max_bitmap_size_count);
 			FMTCHR('h', "d", max_bitmap_count);
@@ -645,7 +645,7 @@ case chr :					\
 
 			case 'j':
 				slen += snprintf(string + slen, size - slen,
-						 "%d", pct?100:op_count);
+						 "%u", pct?100:op_count);
 				break;
 
 			FMTPCHR('k', "d", hit_count, op_count);
@@ -665,7 +665,7 @@ case chr :					\
 			FMTCHR('t', "d", specultive_miss_count);
 			FMTCHR('u', "d", total_extra_conversions);
 			FMTCHR('v', "d", total_extra_conversions_count);
-			FMTCHR('w', "d", peak_conversions_size);
+			FMTCHR('w', "u", peak_conversions_size);
 			FMTCHR('x', "d", peak_conversions);
 
 
@@ -688,8 +688,11 @@ case chr :					\
 }
 
 /* exported interface documented in image_cache.h */
-int image_cache_snentryf(char *string, size_t size, unsigned int entryn,
-		const char *fmt)
+int
+image_cache_snentryf(char *string,
+		     size_t size,
+		     unsigned int entryn,
+		     const char *fmt)
 {
 	struct image_cache_entry_s *centry;
 	size_t slen = 0; /* current output string length */
@@ -706,7 +709,7 @@ int image_cache_snentryf(char *string, size_t size, unsigned int entryn,
 			switch (fmt[fmtc]) {
 			case 'e':
 				slen += snprintf(string + slen, size - slen,
-						"%d", entryn);
+						"%u", entryn);
 				break;
 
 			case 'r':
