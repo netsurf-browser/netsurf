@@ -96,7 +96,7 @@ nserror html_script_exec(html_content *c)
 
 				s->already_started = true;
 
-			} 
+			}
 		}
 	}
 
@@ -105,8 +105,8 @@ nserror html_script_exec(html_content *c)
 
 /* create new html script entry */
 static struct html_script *
-html_process_new_script(html_content *c, 
-			dom_string *mimetype, 
+html_process_new_script(html_content *c,
+			dom_string *mimetype,
 			enum html_script_type type)
 {
 	struct html_script *nscript;
@@ -176,6 +176,8 @@ convert_script_async_cb(hlcache_handle *script,
 		NSLOG(netsurf, INFO, "script %s failed: %s",
 		      nsurl_access(hlcache_handle_get_url(script)),
 		      event->data.error);
+		/* fall through */
+
 	case CONTENT_MSG_ERRORCODE:
 		hlcache_handle_release(script);
 		s->data.handle = NULL;
@@ -233,6 +235,8 @@ convert_script_defer_cb(hlcache_handle *script,
 		NSLOG(netsurf, INFO, "script %s failed: %s",
 		      nsurl_access(hlcache_handle_get_url(script)),
 		      event->data.error);
+		/* fall through */
+
 	case CONTENT_MSG_ERRORCODE:
 		hlcache_handle_release(script);
 		s->data.handle = NULL;
@@ -301,7 +305,7 @@ convert_script_sync_cb(hlcache_handle *script,
 		err = dom_hubbub_parser_pause(parent->parser, false);
 		if (err != DOM_HUBBUB_OK) {
 			NSLOG(netsurf, INFO, "unpause returned 0x%x", err);
-		} 
+		}
 
 		break;
 
@@ -309,8 +313,9 @@ convert_script_sync_cb(hlcache_handle *script,
 		NSLOG(netsurf, INFO, "script %s failed: %s",
 		      nsurl_access(hlcache_handle_get_url(script)),
 		      event->data.error);
-	case CONTENT_MSG_ERRORCODE:
+		/* fall through */
 
+	case CONTENT_MSG_ERRORCODE:
 		hlcache_handle_release(script);
 		s->data.handle = NULL;
 		parent->base.active--;
@@ -324,7 +329,7 @@ convert_script_sync_cb(hlcache_handle *script,
 		err = dom_hubbub_parser_pause(parent->parser, false);
 		if (err != DOM_HUBBUB_OK) {
 			NSLOG(netsurf, INFO, "unpause returned 0x%x", err);
-		} 
+		}
 
 		break;
 
@@ -376,10 +381,10 @@ exec_src_script(html_content *c,
 	 *
 	 * Syncronously  pause the parent parse and continue after
 	 *                 the script has downloaded and executed. (default)
-	 * Async         Start the script downloading and execute it when it 
-	 *                 becomes available. 
-	 * Defered       Start the script downloading and execute it when 
-	 *                 the page has completed parsing, may be set along 
+	 * Async         Start the script downloading and execute it when it
+	 *                 becomes available.
+	 * Defered       Start the script downloading and execute it when
+	 *                 the page has completed parsing, may be set along
 	 *                 with async where it is ignored.
 	 */
 
@@ -388,7 +393,7 @@ exec_src_script(html_content *c,
 	 * value or the attribute name itself are valid. However
 	 * various browsers interpret this in various ways the most
 	 * compatible approach is to be liberal and accept any
-	 * value. Note setting the values to "false" still makes them true! 
+	 * value. Note setting the values to "false" still makes them true!
 	 */
 	exc = dom_element_has_attribute(node, corestring_dom_async, &async);
 	if (exc != DOM_NO_ERR) {
@@ -401,7 +406,7 @@ exec_src_script(html_content *c,
 		script_cb = convert_script_async_cb;
 
 	} else {
-		exc = dom_element_has_attribute(node, 
+		exc = dom_element_has_attribute(node,
 						corestring_dom_defer, &defer);
 		if (exc != DOM_NO_ERR) {
 			return DOM_HUBBUB_OK; /* dom error */
@@ -444,14 +449,14 @@ exec_src_script(html_content *c,
 
 	if (ns_error != NSERROR_OK) {
 		/* @todo Deal with fetch error better. currently assume
-		 * fetch never became active 
+		 * fetch never became active
 		 */
 		/* mark duff script fetch as already started */
-		nscript->already_started = true; 
+		nscript->already_started = true;
 		NSLOG(netsurf, INFO, "Fetch failed with error %d", ns_error);
 	} else {
 		/* update base content active fetch count */
-		c->base.active++; 
+		c->base.active++;
 		NSLOG(netsurf, INFO, "%d fetches active", c->base.active);
 
 		switch (script_type) {
