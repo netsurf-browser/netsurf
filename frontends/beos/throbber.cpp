@@ -64,7 +64,7 @@ bool nsbeos_throbber_initialise_from_png(const int frames, ...)
 		return false;
 	}
 
-	throb = (struct nsbeos_throbber *)malloc(sizeof(throb));
+	throb = (struct nsbeos_throbber *)malloc(sizeof(*throb));
 	throb->nframes = frames;
 	throb->framedata = (BBitmap **)malloc(sizeof(BBitmap *) * throb->nframes);
 	
