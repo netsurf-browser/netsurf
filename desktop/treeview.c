@@ -332,9 +332,9 @@ static struct treeview_resource treeview_res[TREE_RES_LAST] = {
  * \param[in] tree The treeview to request redraw on.
  * \param[in] r rectangle to redraw
  */
-static inline
-void cw_invalidate_area(const struct treeview *tree,
-			const struct rect *r)
+static inline void treeview__cw_invalidate_area(
+		const struct treeview *tree,
+		const struct rect *r)
 {
 	if (tree->cw_t != NULL) {
 		tree->cw_t->invalidate(tree->cw_h, r);
@@ -833,7 +833,7 @@ treeview_create_node_folder(treeview *tree,
 			r.y0 = treeview_node_y(tree, n);
 			r.x1 = REDRAW_MAX;
 			r.y1 = tree->root->height;
-			cw_invalidate_area(tree, &r);
+			treeview__cw_invalidate_area(tree, &r);
 		}
 	}
 
@@ -884,7 +884,7 @@ treeview_update_node_folder(treeview *tree,
 		r.y0 = treeview_node_y(tree, folder);
 		r.x1 = REDRAW_MAX;
 		r.y1 = r.y0 + tree_g.line_height;
-		cw_invalidate_area(tree, &r);
+		treeview__cw_invalidate_area(tree, &r);
 	}
 
 	return NSERROR_OK;
@@ -956,7 +956,7 @@ treeview_update_node_entry(treeview *tree,
 		r.y0 = treeview_node_y(tree, entry);
 		r.x1 = REDRAW_MAX;
 		r.y1 = r.y0 + entry->height;
-		cw_invalidate_area(tree, &r);
+		treeview__cw_invalidate_area(tree, &r);
 	}
 
 	return NSERROR_OK;
@@ -1043,7 +1043,7 @@ treeview_create_node_entry(treeview *tree,
 			r.y0 = treeview_node_y(tree, n);
 			r.x1 = REDRAW_MAX;
 			r.y1 = tree->root->height;
-			cw_invalidate_area(tree, &r);
+			treeview__cw_invalidate_area(tree, &r);
 		}
 	}
 
@@ -1195,7 +1195,7 @@ static void treeview_edit_cancel(treeview *tree, bool redraw)
 		r.y0 = tree->edit.y;
 		r.x1 = tree->edit.x + tree->edit.w;
 		r.y1 = tree->edit.y + tree->edit.h;
-		cw_invalidate_area(tree, &r);
+		treeview__cw_invalidate_area(tree, &r);
 	}
 }
 
@@ -1537,7 +1537,7 @@ treeview_delete_node(treeview *tree,
 	if (visible && !(flags & TREE_OPTION_SUPPRESS_REDRAW)) {
 		r.x0 = 0;
 		r.x1 = REDRAW_MAX;
-		cw_invalidate_area(tree, &r);
+		treeview__cw_invalidate_area(tree, &r);
 	}
 
 	return NSERROR_OK;
@@ -1738,7 +1738,7 @@ static void treeview_textarea_search_callback(void *data,
 		r->y1 += tree_g.line_height;
 
 		/* Redraw the textarea */
-		cw_invalidate_area(tree, r);
+		treeview__cw_invalidate_area(tree, r);
 		break;
 
 	case TEXTAREA_MSG_TEXT_MODIFIED:
@@ -2028,7 +2028,7 @@ nserror treeview_node_expand(treeview *tree, treeview_node *node)
 		r.x1 = REDRAW_MAX;
 		r.y1 = tree->root->height;
 
-		cw_invalidate_area(tree, &r);
+		treeview__cw_invalidate_area(tree, &r);
 	}
 
 	return res;
@@ -2137,7 +2137,7 @@ nserror treeview_node_contract(treeview *tree, treeview_node *node)
 		r.x1 = REDRAW_MAX;
 		r.y1 = tree->root->height;
 
-		cw_invalidate_area(tree, &r);
+		treeview__cw_invalidate_area(tree, &r);
 	}
 
 	return res;
@@ -2184,7 +2184,7 @@ nserror treeview_contract(treeview *tree, bool all)
 	treeview__cw_update_size(tree, -1, tree->root->height);
 
 	/* Redraw */
-	cw_invalidate_area(tree, &r);
+	treeview__cw_invalidate_area(tree, &r);
 
 	return NSERROR_OK;
 }
@@ -2258,7 +2258,7 @@ nserror treeview_expand(treeview *tree, bool only_folders)
 		r.x1 = REDRAW_MAX;
 		r.y1 = tree->root->height;
 
-		cw_invalidate_area(tree, &r);
+		treeview__cw_invalidate_area(tree, &r);
 	}
 	return res;
 }
@@ -3712,7 +3712,7 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 			r.x1 = 600;
 			r.y0 = 0;
 			r.y1 = tree_g.line_height;
-			cw_invalidate_area(tree, &r);
+			treeview__cw_invalidate_area(tree, &r);
 			return true;
 		case NS_KEY_NL:
 		case NS_KEY_CR:
@@ -3766,7 +3766,7 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 	}
 
 	if (redraw) {
-		cw_invalidate_area(tree, &r);
+		treeview__cw_invalidate_area(tree, &r);
 	}
 
 	return true;
@@ -3942,7 +3942,7 @@ static void treeview_textarea_callback(void *data, struct textarea_msg *msg)
 		r->y1 += tree->edit.y;
 
 		/* Redraw the textarea */
-		cw_invalidate_area(tree, r);
+		treeview__cw_invalidate_area(tree, r);
 		break;
 
 	default:
@@ -4102,7 +4102,7 @@ void treeview_edit_selection(treeview *tree)
 	rect.y0 = y;
 	rect.x1 = REDRAW_MAX;
 	rect.y1 = y + tree_g.line_height;
-	cw_invalidate_area(tree, &rect);
+	treeview__cw_invalidate_area(tree, &rect);
 }
 
 
@@ -4382,7 +4382,7 @@ treeview_node_mouse_action_cb(treeview_node *node,
 	}
 
 	if (redraw) {
-		cw_invalidate_area(ma->tree, &r);
+		treeview__cw_invalidate_area(ma->tree, &r);
 	}
 
 	*end = true; /* Reached line with click; stop walking tree */
@@ -4411,7 +4411,7 @@ treeview_mouse_action(treeview *tree, browser_mouse_state mouse, int x, int y)
 		if (tree->search.active == false) {
 			tree->search.active = true;
 			if (treeview_clear_selection(tree, &r)) {
-				cw_invalidate_area(tree, &r);
+				treeview__cw_invalidate_area(tree, &r);
 			}
 		}
 		textarea_mouse_action(tree->search.textarea, mouse,
@@ -4463,7 +4463,7 @@ treeview_mouse_action(treeview *tree, browser_mouse_state mouse, int x, int y)
 			tree->move.target_pos = TV_TARGET_NONE;
 
 			treeview__cw_drag_status(tree, CORE_WINDOW_DRAG_NONE);
-			cw_invalidate_area(tree, &r);
+			treeview__cw_invalidate_area(tree, &r);
 			return;
 		default:
 			/* No drag to end */
@@ -4538,7 +4538,7 @@ treeview_mouse_action(treeview *tree, browser_mouse_state mouse, int x, int y)
 		}
 
 		if (redraw) {
-			cw_invalidate_area(tree, &r);
+			treeview__cw_invalidate_area(tree, &r);
 		}
 
 	} else {
