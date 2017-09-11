@@ -37,6 +37,7 @@
 
 struct browser_window;
 struct history_entry;
+struct bitmap;
 
 /**
  * Go back in the history.
