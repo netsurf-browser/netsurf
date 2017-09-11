@@ -364,6 +364,27 @@ static inline void treeview__cw_update_size(
 
 
 /**
+ * Corewindow callback_wrapper: Scroll to top of window.
+ *
+ * \param[in] tree  The treeview to scroll.
+ */
+static inline void treeview__cw_scroll_top(
+		const struct treeview *tree)
+{
+	struct rect r = {
+		.x0 = 0,
+		.y0 = 0,
+		.x1 = tree_g.window_padding,
+		.y1 = tree_g.line_height,
+	};
+
+	if (tree->cw_t != NULL) {
+		tree->cw_t->scroll_visible(tree->cw_h, &r);
+	}
+}
+
+
+/**
  * Corewindow callback wrapper: Get window viewport dimensions
  *
  * \param[in] tree The treeview to get dimensions for.
@@ -1609,7 +1630,6 @@ static nserror treeview__search_walk_cb(
 				(struct treeview_node_entry *)n;
 		bool matched = false;
 
-
 		for (int i = 0; i < sw->tree->n_fields; i++) {
 			struct treeview_field *ef = &(sw->tree->fields[i + 1]);
 			if (ef->flags & TREE_FLAG_SEARCHABLE) {
@@ -1676,6 +1696,7 @@ static nserror treeview__search(
 	}
 
 	treeview__cw_update_size(tree, -1, height);
+	treeview__cw_scroll_top(tree);
 
 	return NSERROR_OK;
 }
