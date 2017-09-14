@@ -4509,7 +4509,9 @@ treeview_mouse_action(treeview *tree, browser_mouse_state mouse, int x, int y)
 		textarea_mouse_action(tree->edit.textarea, mouse,
 				      x - tree->edit.x, y - tree->edit.y);
 		return;
-	} else if (tree->drag.type == TV_DRAG_SEARCH || y < search_height) {
+	} else if (tree->drag.type == TV_DRAG_SEARCH ||
+			(y < search_height &&
+			 tree->drag.type == TV_DRAG_NONE)) {
 		if (tree->search.active == false) {
 			tree->search.active = true;
 			if (treeview_clear_selection(tree, &r)) {
