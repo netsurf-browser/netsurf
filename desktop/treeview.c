@@ -218,6 +218,7 @@ struct treeview_search {
 	struct textarea *textarea;  /**< Search box. */
 	bool active;                /**< Whether the search box has focus. */
 	bool search;                /**< Whether we have a search term. */
+	int height;                 /**< Current search display height. */
 };
 
 
@@ -324,6 +325,20 @@ static struct treeview_resource treeview_res[TREE_RES_LAST] = {
 	{ "resource:icons/directory2.png", NULL, 0, false },
 	{ "resource:icons/search.png", NULL, 0, false }
 };
+
+
+/**
+ * Get the display height of the treeview data component of the display.
+ *
+ * \param[in] tree  Treeview to get the height of.
+ * \return the display height in pixels.
+ */
+static inline int treeview__get_display_height(treeview *tree)
+{
+	return (tree->search.search == false) ?
+			tree->root->height :
+			tree->search.height;
+}
 
 
 /**
@@ -1645,7 +1660,7 @@ static nserror treeview__search_walk_cb(
 
 		if (matched) {
 			n->flags |= TV_NFLAGS_MATCHED;
-			sw->window_height += tree_g.line_height;
+			sw->window_height += n->height;
 		} else {
 			n->flags &= ~TV_NFLAGS_MATCHED;
 		}
@@ -1670,11 +1685,19 @@ static nserror treeview__search(
 {
 	nserror err;
 	uint32_t height;
+	uint32_t prev_height = treeview__get_display_height(tree);
+	int search_height = (tree->flags & TREEVIEW_SEARCHABLE) ?
+			tree_g.line_height : 0;
 	struct treeview_search_walk_data sw = {
 		.len = len,
 		.text = text,
 		.tree = tree,
 		.window_height = 0,
+	};
+	struct rect r = {
+		.x0 = 0,
+		.y0 = search_height,
+		.x1 = REDRAW_MAX,
 	};
 
 	assert(text[len] == '\0');
@@ -1686,6 +1709,7 @@ static nserror treeview__search(
 	}
 
 	if (len > 0) {
+		tree->search.height = sw.window_height;
 		tree->search.search = true;
 		height = sw.window_height;
 	} else {
@@ -1693,7 +1717,9 @@ static nserror treeview__search(
 		height = tree->root->height;
 	}
 
-	treeview__cw_update_size(tree, -1, height);
+	r.y1 = ((height > prev_height) ? height : prev_height) + search_height;
+	treeview__cw_invalidate_area(tree, &r);
+	treeview__cw_update_size(tree, -1, height + search_height);
 	treeview__cw_scroll_top(tree);
 
 	return NSERROR_OK;
@@ -2565,7 +2591,7 @@ static void treeview_redraw_search(
 
 		count++;
 		inset = x + tree_g.window_padding;
-		height = tree_g.line_height;
+		height = node->height;
 
 		if ((render_y + height) < r->y0) {
 			/* This node's line is above clip region */
@@ -4469,7 +4495,7 @@ treeview_mouse_action(treeview *tree, browser_mouse_state mouse, int x, int y)
 		}
 	}
 
-	if (y > tree->root->height + search_height) {
+	if (y > treeview__get_display_height(tree) + search_height) {
 		/* Below tree */
 
 		r.x0 = 0;
@@ -4560,13 +4586,14 @@ int treeview_get_height(treeview *tree)
 {
 	int search_height = (tree->flags & TREEVIEW_SEARCHABLE) ?
 			tree_g.line_height : 0;
+	int height = treeview__get_display_height(tree);
 
 	assert(tree != NULL);
 	assert(tree->root != NULL);
 
-	treeview__cw_update_size(tree, -1, tree->root->height);
+	treeview__cw_update_size(tree, -1, height);
 
-	return tree->root->height + search_height;
+	return height + search_height;
 }
 
 
