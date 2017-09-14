@@ -4527,7 +4527,11 @@ treeview_mouse_action(treeview *tree, browser_mouse_state mouse, int x, int y)
 
 		tree->search.active = false;
 		textarea_set_caret(tree->search.textarea, -1);
-		return;
+		r.x0 = 0;
+		r.y0 = 0;
+		r.x1 = REDRAW_MAX;
+		r.y1 = tree_g.line_height;
+		treeview__cw_invalidate_area(tree, &r);
 	}
 
 	/* Handle textarea related mouse action */
