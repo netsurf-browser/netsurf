@@ -4256,14 +4256,18 @@ treeview_node_mouse_action_cb(treeview_node *node,
 
 	/* Find where the mouse is */
 	if (ma->y <= ma->current_y + tree_g.line_height) {
-		if (ma->x >= node->inset - 1 &&
-		    ma->x < node->inset + tree_g.step_width) {
+		int inset = node->inset;
+		if (ma->tree->search.search == true) {
+			inset = tree_g.window_padding;
+		}
+		if (ma->x >= inset - 1 &&
+				ma->x < inset + tree_g.step_width) {
 			/* Over expansion toggle */
 			part = TV_NODE_PART_TOGGLE;
 
-		} else if (ma->x >= node->inset + tree_g.step_width &&
-			   ma->x < node->inset + tree_g.step_width +
-			   tree_g.icon_step + node->text.width) {
+		} else if (ma->x >= inset + tree_g.step_width &&
+				ma->x < inset + tree_g.step_width +
+				tree_g.icon_step + node->text.width) {
 			/* On node */
 			part = TV_NODE_PART_ON_NODE;
 		}
@@ -4337,7 +4341,8 @@ treeview_node_mouse_action_cb(treeview_node *node,
 			treeview__cw_drag_status(ma->tree,
 						 CORE_WINDOW_DRAG_SELECTION);
 
-		} else if (!(ma->tree->flags & TREEVIEW_NO_MOVES) &&
+		} else if (ma->tree->search.search == false &&
+			   !(ma->tree->flags & TREEVIEW_NO_MOVES) &&
 			   ma->mouse & BROWSER_MOUSE_DRAG_1 &&
 			   (ma->tree->drag.selected == true ||
 			    ma->tree->drag.part == TV_NODE_PART_ON_NODE)) {
@@ -4377,7 +4382,7 @@ treeview_node_mouse_action_cb(treeview_node *node,
 		ma->tree->drag.prev.node_y = ma->current_y;
 		ma->tree->drag.prev.node_h = height;
 	}
-	break;
+		break;
 
 	case TV_DRAG_MOVE:
 		redraw |= treeview_set_move_indicator(ma->tree, redraw,
