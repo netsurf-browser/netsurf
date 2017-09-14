@@ -553,10 +553,35 @@ static int treeview_node_y(treeview *tree, treeview_node *node)
 
 
 /**
+ * The treeview walk mode.  Controls which nodes are visited in a walk.
+ */
+enum treeview_walk_mode {
+	/**
+	 * Walk to all nodes in the (sub)tree.
+	 */
+	TREEVIEW_WALK_MODE_LOGICAL_COMPLETE,
+
+	/**
+	 * Walk to expanded nodes in the (sub)tree only.  Children of
+	 * collapsed nodes are not visited.
+	 */
+	TREEVIEW_WALK_MODE_LOGICAL_EXPANDED,
+
+	/**
+	 * Walk displayed nodes.  This differs from the
+	 * `TREEVIEW_WALK_MODE_LOGICAL_EXPANDED` mode when there is
+	 * an active search filter display.
+	 */
+	TREEVIEW_WALK_MODE_DISPLAY,
+};
+
+
+/**
  * Walk a treeview subtree, calling a callback at each node (depth first)
  *
+ * \param tree		Treeview being walked.
  * \param root		Root to walk tree from (doesn't get a callback call)
- * \param full		Iff true, visit children of collapsed nodes
+ * \param mode		The treeview walk mode to use.
  * \param callback_bwd	Function to call on each node in backwards order
  * \param callback_fwd	Function to call on each node in forwards order
  * \param ctx		Context to pass to callback
@@ -564,19 +589,36 @@ static int treeview_node_y(treeview *tree, treeview_node *node)
  *
  * \note Any node deletion must happen in callback_bwd.
  */
-static nserror
-treeview_walk_internal(treeview_node *root,
-		       bool full,
-		       nserror (*callback_bwd)(treeview_node *n, void *ctx, bool *end),
-		       nserror (*callback_fwd)(treeview_node *n, void *ctx, bool *skip_children, bool *end),
-		       void *ctx)
+static nserror treeview_walk_internal(
+		treeview *tree,
+		treeview_node *root,
+		enum treeview_walk_mode mode,
+		nserror (*callback_bwd)(
+				treeview_node *n,
+				void *ctx,
+				bool *end),
+		nserror (*callback_fwd)(
+				treeview_node *n,
+				void *ctx,
+				bool *skip_children,
+				bool *end),
+		void *ctx)
 {
 	treeview_node *node, *child, *parent, *next_sibling;
-	bool abort = false;
+	bool walking_search = (mode == TREEVIEW_WALK_MODE_DISPLAY &&
+			tree->search.search == true);
 	bool skip_children = false;
+	bool abort = false;
+	bool full = false;
 	nserror err;
+	bool entry;
 
 	assert(root != NULL);
+
+	if (mode == TREEVIEW_WALK_MODE_LOGICAL_COMPLETE || walking_search) {
+		/* We need to visit children of collapsed folders. */
+		full = true;
+	}
 
 	node = root;
 	parent = node->parent;
@@ -594,9 +636,10 @@ treeview_walk_internal(treeview_node *root,
 			 * go to next sibling if present, or nearest ancestor
 			 * with a next sibling. */
 
-			while (node != root &&
-			       next_sibling == NULL) {
-				if (callback_bwd != NULL) {
+			while (node != root && next_sibling == NULL) {
+				entry = (node->type == TREE_NODE_ENTRY);
+				if (callback_bwd != NULL &&
+						(entry || !walking_search)) {
 					/* Backwards callback */
 					err = callback_bwd(node, ctx, &abort);
 
@@ -636,10 +679,17 @@ treeview_walk_internal(treeview_node *root,
 		assert(node != NULL);
 		assert(node != root);
 
+		entry = (node->type == TREE_NODE_ENTRY);
+
 		parent = node->parent;
 		next_sibling = node->next_sib;
 		child = (full || (node->flags & TV_NFLAGS_EXPANDED)) ?
 			node->children : NULL;
+
+		if (walking_search && (!entry ||
+				!(node->flags & TV_NFLAGS_MATCHED))) {
+			continue;
+		}
 
 		if (callback_fwd != NULL) {
 			/* Forwards callback */
@@ -723,14 +773,17 @@ treeview_set_inset_from_parent(treeview_node *n,
 /**
  * Insert a treeview node into a treeview
  *
- * \param a parentless node to insert
- * \param b tree node to insert a as a relation of
+ * \param tree  the treeview to insert node into.
+ * \param a     parentless node to insert
+ * \param b     tree node to insert a as a relation of
  * \param rel The relationship between \a a and \a b
  */
 static inline void
-treeview_insert_node(treeview_node *a,
-		     treeview_node *b,
-		     enum treeview_relationship rel)
+treeview_insert_node(
+		treeview *tree,
+		treeview_node *a,
+		treeview_node *b,
+		enum treeview_relationship rel)
 {
 	assert(a != NULL);
 	assert(a->parent == NULL);
@@ -765,8 +818,9 @@ treeview_insert_node(treeview_node *a,
 
 	a->inset = a->parent->inset + tree_g.step_width;
 	if (a->children != NULL) {
-		treeview_walk_internal(a, true, NULL,
-				       treeview_set_inset_from_parent, NULL);
+		treeview_walk_internal(tree, a,
+				TREEVIEW_WALK_MODE_LOGICAL_COMPLETE, NULL,
+				treeview_set_inset_from_parent, NULL);
 	}
 
 	if (a->parent->flags & TV_NFLAGS_EXPANDED) {
@@ -831,7 +885,7 @@ treeview_create_node_folder(treeview *tree,
 
 	n->client_data = data;
 
-	treeview_insert_node(n, relation, rel);
+	treeview_insert_node(tree, n, relation, rel);
 
 	if (n->parent->flags & TV_NFLAGS_EXPANDED) {
 		/* Inform front end of change in dimensions */
@@ -1041,7 +1095,7 @@ treeview_create_node_entry(treeview *tree,
 		e->fields[i - 1].value.width = 0;
 	}
 
-	treeview_insert_node(n, relation, rel);
+	treeview_insert_node(tree, n, relation, rel);
 
 	if (n->parent->flags & TV_NFLAGS_EXPANDED) {
 		/* Inform front end of change in dimensions */
@@ -1142,7 +1196,8 @@ treeview_walk(treeview *tree,
 	if (root == NULL)
 		root = tree->root;
 
-	return treeview_walk_internal(root, true,
+	return treeview_walk_internal(tree, root,
+			TREEVIEW_WALK_MODE_LOGICAL_COMPLETE,
 			(leave_cb != NULL) ? treeview_walk_bwd_cb : NULL,
 			(enter_cb != NULL) ? treeview_walk_fwd_cb : NULL,
 			&tw);
@@ -1370,8 +1425,9 @@ treeview_delete_node_internal(treeview *tree,
 	}
 
 	/* Delete any children first */
-	err = treeview_walk_internal(n, true, treeview_delete_node_walk_cb,
-				     NULL, &nd);
+	err = treeview_walk_internal(tree, n,
+			TREEVIEW_WALK_MODE_LOGICAL_COMPLETE,
+			treeview_delete_node_walk_cb, NULL, &nd);
 	if (err != NSERROR_OK) {
 		return err;
 	}
@@ -1702,7 +1758,8 @@ static nserror treeview__search(
 
 	assert(text[len] == '\0');
 
-	err = treeview_walk_internal(tree->root, true, NULL,
+	err = treeview_walk_internal(tree, tree->root,
+			TREEVIEW_WALK_MODE_LOGICAL_COMPLETE, NULL,
 			treeview__search_walk_cb, &sw);
 	if (err != NSERROR_OK) {
 		return err;
@@ -2129,8 +2186,8 @@ treeview_node_contract_internal(treeview *tree, treeview_node *node)
 	selected = node->flags & TV_NFLAGS_SELECTED;
 
 	/* Contract children. */
-	treeview_walk_internal(node, false, treeview_node_contract_cb,
-			       NULL, &data);
+	treeview_walk_internal(tree, node, TREEVIEW_WALK_MODE_LOGICAL_EXPANDED,
+			treeview_node_contract_cb, NULL, &data);
 
 	/* Contract node */
 	treeview_node_contract_cb(node, &data, false);
@@ -2194,8 +2251,9 @@ nserror treeview_contract(treeview *tree, bool all)
 		selected = n->flags & TV_NFLAGS_SELECTED;
 
 		/* Contract children. */
-		treeview_walk_internal(n, false,
-				       treeview_node_contract_cb, NULL, &data);
+		treeview_walk_internal(tree, n,
+				TREEVIEW_WALK_MODE_LOGICAL_EXPANDED,
+				treeview_node_contract_cb, NULL, &data);
 
 		/* Contract node */
 		treeview_node_contract_cb(n, &data, false);
@@ -2269,11 +2327,9 @@ nserror treeview_expand(treeview *tree, bool only_folders)
 	data.tree = tree;
 	data.only_folders = only_folders;
 
-	res = treeview_walk_internal(tree->root,
-				     true,
-				     NULL,
-				     treeview_expand_cb,
-				     &data);
+	res = treeview_walk_internal(tree, tree->root,
+			TREEVIEW_WALK_MODE_LOGICAL_COMPLETE,
+			NULL, treeview_expand_cb, &data);
 	if (res == NSERROR_OK) {
 		/* expansion succeeded, schedule redraw */
 
@@ -3062,8 +3118,9 @@ bool treeview_has_selection(treeview *tree)
 	sw.purpose = TREEVIEW_WALK_HAS_SELECTION;
 	sw.data.has_selection = false;
 
-	treeview_walk_internal(tree->root, false, NULL,
-			       treeview_node_selection_walk_cb, &sw);
+	treeview_walk_internal(tree, tree->root,
+			TREEVIEW_WALK_MODE_DISPLAY, NULL,
+			treeview_node_selection_walk_cb, &sw);
 
 	return sw.data.has_selection;
 }
@@ -3082,8 +3139,9 @@ static treeview_node * treeview_get_first_selected(treeview *tree)
 	sw.purpose = TREEVIEW_WALK_GET_FIRST_SELECTED;
 	sw.data.first.n = NULL;
 
-	treeview_walk_internal(tree->root, false, NULL,
-			       treeview_node_selection_walk_cb, &sw);
+	treeview_walk_internal(tree, tree->root,
+			TREEVIEW_WALK_MODE_DISPLAY, NULL,
+			treeview_node_selection_walk_cb, &sw);
 
 	return sw.data.first.n;
 }
@@ -3131,8 +3189,9 @@ static bool treeview_clear_selection(treeview *tree, struct rect *rect)
 	sw.current_y = (tree->flags & TREEVIEW_SEARCHABLE) ?
 			tree_g.line_height : 0;
 
-	treeview_walk_internal(tree->root, false, NULL,
-			       treeview_node_selection_walk_cb, &sw);
+	treeview_walk_internal(tree, tree->root,
+			TREEVIEW_WALK_MODE_DISPLAY, NULL,
+			treeview_node_selection_walk_cb, &sw);
 
 	return sw.data.redraw.required;
 }
@@ -3160,8 +3219,9 @@ static bool treeview_select_all(treeview *tree, struct rect *rect)
 	sw.current_y = (tree->flags & TREEVIEW_SEARCHABLE) ?
 			tree_g.line_height : 0;
 
-	treeview_walk_internal(tree->root, false, NULL,
-			       treeview_node_selection_walk_cb, &sw);
+	treeview_walk_internal(tree, tree->root,
+			TREEVIEW_WALK_MODE_DISPLAY, NULL,
+			treeview_node_selection_walk_cb, &sw);
 
 	return sw.data.redraw.required;
 }
@@ -3188,8 +3248,9 @@ static void treeview_commit_selection_drag(treeview *tree)
 		sw.data.drag.sel_max = tree->drag.prev.y;
 	}
 
-	treeview_walk_internal(tree->root, false, NULL,
-			       treeview_node_selection_walk_cb, &sw);
+	treeview_walk_internal(tree, tree->root,
+			TREEVIEW_WALK_MODE_DISPLAY, NULL,
+			treeview_node_selection_walk_cb, &sw);
 }
 
 
@@ -3206,8 +3267,9 @@ static void treeview_move_yank_selection(treeview *tree)
 	sw.data.yank.prev = NULL;
 	sw.tree = tree;
 
-	treeview_walk_internal(tree->root, false, NULL,
-			       treeview_node_selection_walk_cb, &sw);
+	treeview_walk_internal(tree, tree->root,
+			TREEVIEW_WALK_MODE_DISPLAY, NULL,
+			treeview_node_selection_walk_cb, &sw);
 }
 
 
@@ -3226,8 +3288,9 @@ static void treeview_copy_selection(treeview *tree)
 	sw.data.copy.len = 0;
 	sw.tree = tree;
 
-	err = treeview_walk_internal(tree->root, false, NULL,
-				     treeview_node_selection_walk_cb, &sw);
+	err = treeview_walk_internal(tree, tree->root,
+			TREEVIEW_WALK_MODE_DISPLAY, NULL,
+			treeview_node_selection_walk_cb, &sw);
 	if (err != NSERROR_OK) {
 		return;
 	}
@@ -3265,8 +3328,9 @@ static bool treeview_delete_selection(treeview *tree, struct rect *rect)
 	sw.current_y = 0;
 	sw.tree = tree;
 
-	treeview_walk_internal(tree->root, false, NULL,
-			       treeview_node_selection_walk_cb, &sw);
+	treeview_walk_internal(tree, tree->root,
+			TREEVIEW_WALK_MODE_DISPLAY, NULL,
+			treeview_node_selection_walk_cb, &sw);
 
 	return sw.data.redraw.required;
 }
@@ -3297,8 +3361,9 @@ static bool treeview_propagate_selection(treeview *tree, struct rect *rect)
 	sw.current_y = 0;
 	sw.tree = tree;
 
-	treeview_walk_internal(tree->root, false, NULL,
-			       treeview_node_selection_walk_cb, &sw);
+	treeview_walk_internal(tree, tree->root,
+			TREEVIEW_WALK_MODE_DISPLAY, NULL,
+			treeview_node_selection_walk_cb, &sw);
 
 	return sw.data.redraw.required;
 }
@@ -3388,7 +3453,7 @@ static nserror treeview_move_selection(treeview *tree, struct rect *rect)
 			node->flags &= ~TV_NFLAGS_SELECTED;
 		}
 
-		treeview_insert_node(node, relation, relationship);
+		treeview_insert_node(tree, node, relation, relationship);
 
 		relation = node;
 		relationship = TREE_REL_NEXT_SIBLING;
@@ -3487,9 +3552,10 @@ static nserror treeview_launch_selection(treeview *tree)
 	lw.selected_depth = 0;
 	lw.tree = tree;
 
-	return treeview_walk_internal(tree->root, true,
-				      treeview_node_launch_walk_bwd_cb,
-				      treeview_node_launch_walk_fwd_cb, &lw);
+	return treeview_walk_internal(tree, tree->root,
+			TREEVIEW_WALK_MODE_LOGICAL_COMPLETE,
+			treeview_node_launch_walk_bwd_cb,
+			treeview_node_launch_walk_fwd_cb, &lw);
 }
 
 
@@ -3624,18 +3690,25 @@ treeview_keyboard_navigation(treeview *tree, uint32_t key, struct rect *rect)
 
 	/* Fill out the nav. state struct, by examining the current selection
 	 * state */
-	treeview_walk_internal(tree->root, false, NULL,
-			       treeview_node_nav_cb, &ns);
-	if (ns.next == NULL)
-		ns.next = tree->root->children;
-	if (ns.prev == NULL)
-		ns.prev = ns.last;
+	treeview_walk_internal(tree, tree->root,
+			TREEVIEW_WALK_MODE_DISPLAY, NULL,
+			treeview_node_nav_cb, &ns);
+
+	if (tree->search.search == false) {
+		if (ns.next == NULL)
+			ns.next = tree->root->children;
+		if (ns.prev == NULL)
+			ns.prev = ns.last;
+	}
 
 	/* Clear any existing selection */
 	redraw = treeview_clear_selection(tree, rect);
 
 	switch (key) {
 	case NS_KEY_LEFT:
+		if (tree->search.search == true) {
+			break;
+		}
 		if (ns.curr != NULL &&
 		    ns.curr->parent != NULL &&
 		    ns.curr->parent->type != TREE_NODE_ROOT) {
@@ -4575,8 +4648,9 @@ treeview_mouse_action(treeview *tree, browser_mouse_state mouse, int x, int y)
 		ma.y = y;
 		ma.current_y = search_height;
 
-		treeview_walk_internal(tree->root, false, NULL,
-				       treeview_node_mouse_action_cb, &ma);
+		treeview_walk_internal(tree, tree->root,
+				TREEVIEW_WALK_MODE_DISPLAY, NULL,
+				treeview_node_mouse_action_cb, &ma);
 	}
 }
 
