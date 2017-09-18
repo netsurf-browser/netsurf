@@ -809,7 +809,9 @@ nserror cookie_manager_init(struct core_window_callback_table *cw_t,
 	err = treeview_create(&cm_ctx.tree, &cm_tree_cb_t,
 			COOKIE_M_N_FIELDS, cm_ctx.fields,
 			cw_t, core_window_handle,
-			TREEVIEW_NO_MOVES | TREEVIEW_DEL_EMPTY_DIRS);
+			TREEVIEW_NO_MOVES |
+			TREEVIEW_DEL_EMPTY_DIRS |
+			TREEVIEW_SEARCHABLE);
 	if (err != NSERROR_OK) {
 		cm_ctx.tree = NULL;
 		return err;
