@@ -2013,6 +2013,12 @@ nserror treeview_destroy(treeview *tree)
 
 	assert(tree != NULL);
 
+	if (tree->search.textarea != NULL) {
+		tree->search.active = false;
+		tree->search.search = false;
+		textarea_destroy(tree->search.textarea);
+	}
+
 	/* Destroy nodes */
 	treeview_delete_node_internal(tree, tree->root, false,
 				      TREE_OPTION_SUPPRESS_RESIZE |
@@ -2023,10 +2029,6 @@ nserror treeview_destroy(treeview *tree)
 		lwc_string_unref(tree->fields[f].field);
 	}
 	free(tree->fields);
-
-	if (tree->search.textarea != NULL) {
-		textarea_destroy(tree->search.textarea);
-	}
 
 	/* Free treeview */
 	free(tree);
