@@ -806,6 +806,10 @@ static nserror treeview__search(
 
 	assert(text[len] == '\0');
 
+	if (tree->root == NULL) {
+		return NSERROR_OK;
+	}
+
 	err = treeview_walk_internal(tree, tree->root,
 			TREEVIEW_WALK_MODE_LOGICAL_COMPLETE, NULL,
 			treeview__search_walk_cb, &sw);
