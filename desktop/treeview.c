@@ -709,6 +709,206 @@ static nserror treeview_walk_internal(
 
 
 /**
+ * Data used when doing a treeview walk for search.
+ */
+struct treeview_search_walk_data {
+	treeview *tree;          /**< The treeview to search. */
+	const char *text;        /**< The string being searched for. */
+	const unsigned int len;  /**< Length of string being searched for. */
+	int window_height;       /**< Accumulate height for matching entries. */
+};
+
+
+/**
+ * Treewalk node callback for handling search.
+ *
+ * \param[in]     n              Current node.
+ * \param[in]     ctx            Treeview search context.
+ * \param[in,out] skip_children  Flag to allow children to be skipped.
+ * \param[in,out] end            Flag to allow iteration to be finished early.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror treeview__search_walk_cb(
+		treeview_node *n,
+		void *ctx,
+		bool *skip_children,
+		bool *end)
+{
+	struct treeview_search_walk_data *sw = ctx;
+
+	if (n->type != TREE_NODE_ENTRY) {
+		return NSERROR_OK;
+	}
+
+	if (sw->len == 0) {
+		n->flags &= ~TV_NFLAGS_MATCHED;
+	} else {
+		struct treeview_node_entry *entry =
+				(struct treeview_node_entry *)n;
+		bool matched = false;
+
+		for (int i = 0; i < sw->tree->n_fields; i++) {
+			struct treeview_field *ef = &(sw->tree->fields[i + 1]);
+			if (ef->flags & TREE_FLAG_SEARCHABLE) {
+				if (strcasestr(entry->fields[i].value.data,
+						sw->text) != NULL) {
+					matched = true;
+					break;
+				}
+			}
+		}
+
+		if (!matched && strcasestr(n->text.data, sw->text) != NULL) {
+			matched = true;
+		}
+
+		if (matched) {
+			n->flags |= TV_NFLAGS_MATCHED;
+			sw->window_height += n->height;
+		} else {
+			n->flags &= ~TV_NFLAGS_MATCHED;
+		}
+	}
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * Search treeview for text.
+ *
+ * \param[in] tree  Treeview to search.
+ * \param[in] text  UTF-8 string to search for.  (NULL-terminated.)
+ * \param[in] len   Byte length of UTF-8 string.
+ * \return NSERROR_OK on success, appropriate error otherwise.
+ */
+static nserror treeview__search(
+		treeview *tree,
+		const char *text,
+		unsigned int len)
+{
+	nserror err;
+	uint32_t height;
+	uint32_t prev_height = treeview__get_display_height(tree);
+	int search_height = (tree->flags & TREEVIEW_SEARCHABLE) ?
+			tree_g.line_height : 0;
+	struct treeview_search_walk_data sw = {
+		.len = len,
+		.text = text,
+		.tree = tree,
+		.window_height = 0,
+	};
+	struct rect r = {
+		.x0 = 0,
+		.y0 = search_height,
+		.x1 = REDRAW_MAX,
+	};
+
+	assert(text[len] == '\0');
+
+	err = treeview_walk_internal(tree, tree->root,
+			TREEVIEW_WALK_MODE_LOGICAL_COMPLETE, NULL,
+			treeview__search_walk_cb, &sw);
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
+	if (len > 0) {
+		tree->search.height = sw.window_height;
+		tree->search.search = true;
+		height = sw.window_height;
+	} else {
+		tree->search.search = false;
+		height = tree->root->height;
+	}
+
+	r.y1 = ((height > prev_height) ? height : prev_height) + search_height;
+	treeview__cw_invalidate_area(tree, &r);
+	treeview__cw_update_size(tree, -1, height + search_height);
+	treeview__cw_scroll_top(tree);
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * Callback for textarea_create, in desktop/treeview.h
+ *
+ * \param data treeview context
+ * \param msg textarea message
+ */
+static void treeview_textarea_search_callback(void *data,
+		struct textarea_msg *msg)
+{
+	treeview *tree = data;
+	struct rect *r;
+
+	if (tree->search.active == false) {
+		return;
+	}
+
+	switch (msg->type) {
+	case TEXTAREA_MSG_DRAG_REPORT:
+		if (msg->data.drag == TEXTAREA_DRAG_NONE) {
+			/* Textarea drag finished */
+			tree->drag.type = TV_DRAG_NONE;
+		} else {
+			/* Textarea drag started */
+			tree->drag.type = TV_DRAG_SEARCH;
+		}
+		treeview__cw_drag_status(tree, tree->drag.type);
+		break;
+
+	case TEXTAREA_MSG_REDRAW_REQUEST:
+		r = &msg->data.redraw;
+		r->x0 += tree_g.window_padding + tree_g.icon_size;
+		r->y0 += 0;
+		r->x1 += 600;
+		r->y1 += tree_g.line_height;
+
+		/* Redraw the textarea */
+		treeview__cw_invalidate_area(tree, r);
+		break;
+
+	case TEXTAREA_MSG_TEXT_MODIFIED:
+		/* Textarea length includes trailing NULL, so subtract it. */
+		treeview__search(tree,
+				msg->data.modified.text,
+				msg->data.modified.len - 1);
+		break;
+
+	default:
+		break;
+	}
+}
+
+
+/**
+ * Update the layout for any active search.
+ *
+ * \param[in] tree  The tree to update.
+ */
+static void treeview__search_update_display(
+		treeview *tree)
+{
+	const char *string;
+	unsigned int len;
+
+	if (tree->search.search == false) {
+		/* No active search to update view for. */
+		return;
+	}
+
+	string = textarea_data(tree->search.textarea, &len);
+	if (string == NULL || len == 0) {
+		return;
+	}
+
+	treeview__search(tree, string, len - 1);
+}
+
+
+/**
  * Create treeview's root node
  *
  * \param[out] root Returns root node
@@ -1016,6 +1216,8 @@ treeview_update_node_entry(treeview *tree,
 		}
 	}
 
+	treeview__search_update_display(tree);
+
 	/* Redraw */
 	if (entry->parent->flags & TV_NFLAGS_EXPANDED) {
 		struct rect r;
@@ -1113,6 +1315,8 @@ treeview_create_node_entry(treeview *tree,
 			treeview__cw_invalidate_area(tree, &r);
 		}
 	}
+
+	treeview__search_update_display(tree);
 
 	*entry = n;
 
@@ -1455,6 +1659,8 @@ treeview_delete_node_internal(treeview *tree,
 					 tree->root->height);
 	}
 
+	treeview__search_update_display(tree);
+
 	return NSERROR_OK;
 }
 
@@ -1657,181 +1863,6 @@ static struct textarea *treeview__create_textarea(
 
 	/* Create text area */
 	return textarea_create(ta_flags, &ta_setup, ta_callback, tree);
-}
-
-
-/**
- * Data used when doing a treeview walk for search.
- */
-struct treeview_search_walk_data {
-	treeview *tree;          /**< The treeview to search. */
-	const char *text;        /**< The string being searched for. */
-	const unsigned int len;  /**< Length of string being searched for. */
-	int window_height;       /**< Accumulate height for matching entries. */
-};
-
-
-/**
- * Treewalk node callback for handling search.
- *
- * \param[in]     n              Current node.
- * \param[in]     ctx            Treeview search context.
- * \param[in,out] skip_children  Flag to allow children to be skipped.
- * \param[in,out] end            Flag to allow iteration to be finished early.
- * \return NSERROR_OK on success else error code.
- */
-static nserror treeview__search_walk_cb(
-		treeview_node *n,
-		void *ctx,
-		bool *skip_children,
-		bool *end)
-{
-	struct treeview_search_walk_data *sw = ctx;
-
-	if (n->type != TREE_NODE_ENTRY) {
-		return NSERROR_OK;
-	}
-
-	if (sw->len == 0) {
-		n->flags &= ~TV_NFLAGS_MATCHED;
-	} else {
-		struct treeview_node_entry *entry =
-				(struct treeview_node_entry *)n;
-		bool matched = false;
-
-		for (int i = 0; i < sw->tree->n_fields; i++) {
-			struct treeview_field *ef = &(sw->tree->fields[i + 1]);
-			if (ef->flags & TREE_FLAG_SEARCHABLE) {
-				if (strcasestr(entry->fields[i].value.data,
-						sw->text) != NULL) {
-					matched = true;
-					break;
-				}
-			}
-		}
-
-		if (!matched && strcasestr(n->text.data, sw->text) != NULL) {
-			matched = true;
-		}
-
-		if (matched) {
-			n->flags |= TV_NFLAGS_MATCHED;
-			sw->window_height += n->height;
-		} else {
-			n->flags &= ~TV_NFLAGS_MATCHED;
-		}
-	}
-
-	return NSERROR_OK;
-}
-
-
-/**
- * Search treeview for text.
- *
- * \param[in] tree  Treeview to search.
- * \param[in] text  UTF-8 string to search for.  (NULL-terminated.)
- * \param[in] len   Byte length of UTF-8 string.
- * \return NSERROR_OK on success, appropriate error otherwise.
- */
-static nserror treeview__search(
-		treeview *tree,
-		const char *text,
-		unsigned int len)
-{
-	nserror err;
-	uint32_t height;
-	uint32_t prev_height = treeview__get_display_height(tree);
-	int search_height = (tree->flags & TREEVIEW_SEARCHABLE) ?
-			tree_g.line_height : 0;
-	struct treeview_search_walk_data sw = {
-		.len = len,
-		.text = text,
-		.tree = tree,
-		.window_height = 0,
-	};
-	struct rect r = {
-		.x0 = 0,
-		.y0 = search_height,
-		.x1 = REDRAW_MAX,
-	};
-
-	assert(text[len] == '\0');
-
-	err = treeview_walk_internal(tree, tree->root,
-			TREEVIEW_WALK_MODE_LOGICAL_COMPLETE, NULL,
-			treeview__search_walk_cb, &sw);
-	if (err != NSERROR_OK) {
-		return err;
-	}
-
-	if (len > 0) {
-		tree->search.height = sw.window_height;
-		tree->search.search = true;
-		height = sw.window_height;
-	} else {
-		tree->search.search = false;
-		height = tree->root->height;
-	}
-
-	r.y1 = ((height > prev_height) ? height : prev_height) + search_height;
-	treeview__cw_invalidate_area(tree, &r);
-	treeview__cw_update_size(tree, -1, height + search_height);
-	treeview__cw_scroll_top(tree);
-
-	return NSERROR_OK;
-}
-
-
-/**
- * Callback for textarea_create, in desktop/treeview.h
- *
- * \param data treeview context
- * \param msg textarea message
- */
-static void treeview_textarea_search_callback(void *data,
-		struct textarea_msg *msg)
-{
-	treeview *tree = data;
-	struct rect *r;
-
-	if (tree->search.active == false) {
-		return;
-	}
-
-	switch (msg->type) {
-	case TEXTAREA_MSG_DRAG_REPORT:
-		if (msg->data.drag == TEXTAREA_DRAG_NONE) {
-			/* Textarea drag finished */
-			tree->drag.type = TV_DRAG_NONE;
-		} else {
-			/* Textarea drag started */
-			tree->drag.type = TV_DRAG_SEARCH;
-		}
-		treeview__cw_drag_status(tree, tree->drag.type);
-		break;
-
-	case TEXTAREA_MSG_REDRAW_REQUEST:
-		r = &msg->data.redraw;
-		r->x0 += tree_g.window_padding + tree_g.icon_size;
-		r->y0 += 0;
-		r->x1 += 600;
-		r->y1 += tree_g.line_height;
-
-		/* Redraw the textarea */
-		treeview__cw_invalidate_area(tree, r);
-		break;
-
-	case TEXTAREA_MSG_TEXT_MODIFIED:
-		/* Textarea length includes trailing NULL, so subtract it. */
-		treeview__search(tree,
-				msg->data.modified.text,
-				msg->data.modified.len - 1);
-		break;
-
-	default:
-		break;
-	}
 }
 
 
