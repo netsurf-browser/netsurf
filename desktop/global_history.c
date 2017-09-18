@@ -752,7 +752,8 @@ nserror global_history_init(struct core_window_callback_table *cw_t,
 	err = treeview_create(&gh_ctx.tree, &gh_tree_cb_t,
 			N_FIELDS, gh_ctx.fields,
 			cw_t, core_window_handle,
-			TREEVIEW_NO_MOVES | TREEVIEW_DEL_EMPTY_DIRS);
+			TREEVIEW_NO_MOVES | TREEVIEW_DEL_EMPTY_DIRS |
+			TREEVIEW_SEARCHABLE);
 	if (err != NSERROR_OK) {
 		gh_ctx.tree = NULL;
 		return err;
