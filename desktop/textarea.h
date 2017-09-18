@@ -213,6 +213,16 @@ int textarea_get_text(struct textarea *ta, char *buf, unsigned int len);
 
 
 /**
+ * Access text data in a text area
+ *
+ * \param[in]  ta   Text area
+ * \param[out] len  Returns byte length of returned text, if passed non-NULL.
+ * \return textarea string data.
+ */
+const char * textarea_data(struct textarea *ta, unsigned int *len);
+
+
+/**
  * Set the caret's position
  *
  * \param ta	Text area

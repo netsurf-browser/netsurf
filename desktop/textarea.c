@@ -2074,6 +2074,17 @@ int textarea_get_text(struct textarea *ta, char *buf, unsigned int len)
 
 
 /* exported interface, documented in textarea.h */
+const char * textarea_data(struct textarea *ta, unsigned int *len)
+{
+	if (len != NULL) {
+		*len = ta->text.len;
+	}
+
+	return ta->text.data;
+}
+
+
+/* exported interface, documented in textarea.h */
 bool textarea_set_caret(struct textarea *ta, int caret)
 {
 	int b_off;
