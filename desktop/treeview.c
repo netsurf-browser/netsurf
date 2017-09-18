@@ -824,7 +824,7 @@ static nserror treeview__search(
 
 	r.y1 = ((height > prev_height) ? height : prev_height) + search_height;
 	treeview__cw_invalidate_area(tree, &r);
-	treeview__cw_update_size(tree, -1, height + search_height);
+	treeview__cw_update_size(tree, -1, height);
 	treeview__cw_scroll_top(tree);
 
 	return NSERROR_OK;
@@ -843,7 +843,7 @@ static void treeview_textarea_search_callback(void *data,
 	treeview *tree = data;
 	struct rect *r;
 
-	if (tree->search.active == false) {
+	if (tree->search.active == false || tree->root == NULL) {
 		return;
 	}
 
@@ -2064,7 +2064,6 @@ treeview_node_expand_internal(treeview *tree, treeview_node *node)
 		}
 
 		do {
-			assert((child->flags & TV_NFLAGS_EXPANDED) == false);
 			if (child->text.width == 0) {
 				guit->layout->width(&plot_style_odd.text,
 						    child->text.data,
@@ -2109,17 +2108,21 @@ treeview_node_expand_internal(treeview *tree, treeview_node *node)
 	/* Update the node */
 	node->flags |= TV_NFLAGS_EXPANDED;
 
-	/* And parent's heights */
-	do {
-		node->height += additional_height;
-		node = node->parent;
-	} while (node->parent != NULL);
+	/* And node heights */
+	for (struct treeview_node *n = node;
+			(n != NULL) && (n->flags & TV_NFLAGS_EXPANDED);
+			n = n->parent) {
+		n->height += additional_height;
+	}
 
-	node->height += additional_height;
+	if (tree->search.search) {
+		tree->search.height += additional_height;
+	}
 
 	/* Inform front end of change in dimensions */
 	if (additional_height != 0) {
-		treeview__cw_update_size(tree, -1, tree->root->height);
+		treeview__cw_update_size(tree, -1,
+				treeview__get_display_height(tree));
 	}
 
 	return NSERROR_OK;
@@ -2138,7 +2141,7 @@ nserror treeview_node_expand(treeview *tree, treeview_node *node)
 		r.x0 = 0;
 		r.y0 = treeview_node_y(tree, node);
 		r.x1 = REDRAW_MAX;
-		r.y1 = tree->root->height;
+		r.y1 = treeview__get_display_height(tree);
 
 		treeview__cw_invalidate_area(tree, &r);
 	}
@@ -2151,6 +2154,7 @@ nserror treeview_node_expand(treeview *tree, treeview_node *node)
  * context for treeview contraction callback
  */
 struct treeview_contract_data {
+	treeview *tree;
 	bool only_entries;
 };
 
@@ -2179,15 +2183,20 @@ static nserror treeview_node_contract_cb(treeview_node *n, void *ctx, bool *end)
 		return NSERROR_OK;
 	}
 
-	n->flags ^= TV_NFLAGS_EXPANDED;
 	h_reduction = n->height - tree_g.line_height;
 
 	assert(h_reduction >= 0);
+	for (struct treeview_node *node = n;
+			(node != NULL) && (node->flags & TV_NFLAGS_EXPANDED);
+			node = node->parent) {
+		node->height -= h_reduction;
+	}
 
-	do {
-		n->height -= h_reduction;
-		n = n->parent;
-	} while (n != NULL);
+	if (data->tree->search.search) {
+		data->tree->search.height -= h_reduction;
+	}
+
+	n->flags ^= TV_NFLAGS_EXPANDED;
 
 	return NSERROR_OK;
 }
@@ -2213,6 +2222,7 @@ treeview_node_contract_internal(treeview *tree, treeview_node *node)
 		return NSERROR_OK;
 	}
 
+	data.tree = tree;
 	data.only_entries = false;
 	selected = node->flags & TV_NFLAGS_SELECTED;
 
@@ -2227,7 +2237,7 @@ treeview_node_contract_internal(treeview *tree, treeview_node *node)
 		node->flags |= TV_NFLAGS_SELECTED;
 
 	/* Inform front end of change in dimensions */
-	treeview__cw_update_size(tree, -1, tree->root->height);
+	treeview__cw_update_size(tree, -1, treeview__get_display_height(tree));
 
 	return NSERROR_OK;
 }
