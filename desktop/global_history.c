@@ -536,7 +536,9 @@ static nserror global_history_initialise_entry_fields(void)
 		goto error;
 	}
 
-	gh_ctx.fields[GH_URL].flags = TREE_FLAG_COPY_TEXT;
+	gh_ctx.fields[GH_URL].flags =
+			TREE_FLAG_COPY_TEXT |
+			TREE_FLAG_SEARCHABLE;
 	label = "TreeviewLabelURL";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
