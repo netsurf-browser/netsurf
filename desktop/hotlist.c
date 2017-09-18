@@ -1198,8 +1198,10 @@ static nserror hotlist_initialise_entry_fields(void)
 		goto error;
 	}
 
-	hl_ctx.fields[HL_URL].flags = TREE_FLAG_ALLOW_EDIT |
-			TREE_FLAG_COPY_TEXT;
+	hl_ctx.fields[HL_URL].flags =
+			TREE_FLAG_ALLOW_EDIT |
+			TREE_FLAG_COPY_TEXT |
+			TREE_FLAG_SEARCHABLE;
 	label = "TreeviewLabelURL";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
