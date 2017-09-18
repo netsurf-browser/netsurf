@@ -576,7 +576,9 @@ static nserror cookie_manager_init_entry_fields(void)
 		goto error;
 	}
 
-	cm_ctx.fields[COOKIE_M_DOMAIN].flags = TREE_FLAG_SHOW_NAME;
+	cm_ctx.fields[COOKIE_M_DOMAIN].flags =
+			TREE_FLAG_SHOW_NAME |
+			TREE_FLAG_SEARCHABLE;
 	label = "TreeviewLabelDomain";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
