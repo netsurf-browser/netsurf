@@ -1313,7 +1313,7 @@ nserror hotlist_init(
 	/* Create the hotlist treeview */
 	err = treeview_create(&hl_ctx.tree, &hl_tree_cb_t,
 			HL_N_FIELDS, hl_ctx.fields, NULL, NULL,
-			TREEVIEW_NO_FLAGS);
+			TREEVIEW_SEARCHABLE);
 	if (err != NSERROR_OK) {
 		free(hl_ctx.save_path);
 		hl_ctx.tree = NULL;
