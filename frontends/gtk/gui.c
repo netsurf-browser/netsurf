@@ -287,6 +287,13 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	/* Initialise completions - cannot fail */
 	nsgtk_completion_init();
 
+	/* The tree view system needs to know the screen's DPI, so we
+	 * find that out here, rather than when we create a first browser
+	 * window.
+	 */
+	browser_set_dpi(gdk_screen_get_resolution(gdk_screen_get_default()));
+	NSLOG(netsurf, INFO, "Set CSS DPI to %d", browser_get_dpi());
+
 	filepath_sfinddef(respath, buf, "mime.types", "/etc/");
 	gtk_fetch_filetype_init(buf);
 
@@ -296,13 +303,6 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	urldb_load_cookies(nsoption_charp(cookie_file));
 	hotlist_init(nsoption_charp(hotlist_path),
 			nsoption_charp(hotlist_path));
-
-	/* The tree view system needs to know the screen's DPI, so we
-	 * find that out here, rather than when we create a first browser
-	 * window.
-	 */
-	browser_set_dpi(gdk_screen_get_resolution(gdk_screen_get_default()));
-	NSLOG(netsurf, INFO, "Set CSS DPI to %d", browser_get_dpi());
 
 	/* Initialise top level UI elements */
 	error = nsgtk_download_init();
