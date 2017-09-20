@@ -32,6 +32,7 @@
 #include "utils/utils.h"
 #include "netsurf/layout.h"
 #include "netsurf/content.h"
+#include "netsurf/window.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "netsurf/bitmap.h"
@@ -377,6 +378,8 @@ browser_window_history_add(struct browser_window *bw,
 	entry->page.url = nsurl_ref(hlcache_handle_get_url(content));
 	entry->page.frag_id = frag_id ? lwc_string_ref(frag_id) : NULL;
 	entry->page.title = title;
+	entry->page.scroll_x = 0.0f;
+	entry->page.scroll_y = 0.0f;
 
 	/* create thumbnail for localhistory view */
 	NSLOG(netsurf, DEBUG,
@@ -424,6 +427,7 @@ nserror browser_window_history_update(struct browser_window *bw,
 {
 	struct history *history;
 	char *title;
+	int sx, sy;
 
 	assert(bw != NULL);
 
@@ -442,7 +446,7 @@ nserror browser_window_history_update(struct browser_window *bw,
 	if (title == NULL) {
 		return NSERROR_NOMEM;
 	}
-
+	NSLOG(netsurf, INFO, "Updating history entry for %s", title);
 	free(history->current->page.title);
 	history->current->page.title = title;
 
@@ -450,10 +454,41 @@ nserror browser_window_history_update(struct browser_window *bw,
 		guit->bitmap->render(history->current->page.bitmap, content);
 	}
 
+	if (guit->window->get_scroll(bw->window, &sx, &sy)) {
+		/* Successfully got scroll offsets, update the entry */
+		history->current->page.scroll_x = \
+			(float)sx / (float)content_get_width(content);
+		history->current->page.scroll_y = \
+			(float)sy / (float)content_get_height(content);
+		NSLOG(netsurf, INFO, "Updated scroll offsets to %g by %g",
+		      history->current->page.scroll_x,
+		      history->current->page.scroll_y);
+	}
 	return NSERROR_OK;
 }
 
+/* exported interface documented in desktop/browser_private.h */
+nserror
+browser_window_history_get_scroll(struct browser_window *bw,
+				  float *sx, float *sy)
+{
+	struct history *history;
 
+	assert(bw != NULL);
+
+	history = bw->history;
+
+	if (!history ||
+	    !history->current ||
+	    !history->current->page.bitmap) {
+		return NSERROR_INVALID;
+	}
+
+	*sx = history->current->page.scroll_x;
+	*sy = history->current->page.scroll_y;
+
+	return NSERROR_OK;
+}
 
 /* exported interface documented in desktop/browser_history.h */
 void browser_window_history_destroy(struct browser_window *bw)
@@ -565,9 +600,11 @@ nserror browser_window_history_go(struct browser_window *bw,
 				url, NULL, bw, NULL);
 		history->current = current;
 	} else {
+		browser_window_history_update(bw, bw->current_content);
 		history->current = entry;
 		error = browser_window_navigate(bw, url, NULL,
-				BW_NAVIGATE_NONE, NULL, NULL, NULL);
+				BW_NAVIGATE_NO_TERMINAL_HISTORY_UPDATE,
+				NULL, NULL, NULL);
 	}
 
 	nsurl_unref(url);
