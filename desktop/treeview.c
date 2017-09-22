@@ -836,6 +836,37 @@ static nserror treeview__search(
 
 
 /**
+ * Cancel a treeview search, optionally droping focus from search widget.
+ *
+ * \param[in] tree        Treeview to cancel search in.
+ * \param[in] drop_focus  Iff true, drop input focus from search widget.
+ */
+static void treeview__search_cancel(treeview *tree, bool drop_focus)
+{
+	struct rect r = {
+		.x0 = tree_g.window_padding + tree_g.icon_size,
+		.x1 = 600,
+		.y0 = 0,
+		.y1 = tree_g.line_height,
+	};
+
+	if (tree->search.active == false) {
+		return;
+	}
+
+	if (drop_focus) {
+		tree->search.active = false;
+		textarea_set_caret(tree->search.textarea, -1);
+	} else {
+		textarea_set_caret(tree->search.textarea, 0);
+	}
+
+	textarea_set_text(tree->search.textarea, "");
+	treeview__cw_invalidate_area(tree, &r);
+}
+
+
+/**
  * Callback for textarea_create, in desktop/treeview.h
  *
  * \param data treeview context
@@ -3850,13 +3881,7 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 	} else if (tree->search.active == true) {
 		switch (key) {
 		case NS_KEY_ESCAPE:
-			textarea_set_text(tree->search.textarea, "");
-			textarea_set_caret(tree->search.textarea, 0);
-			r.x0 = tree_g.window_padding + tree_g.icon_size;
-			r.x1 = 600;
-			r.y0 = 0;
-			r.y1 = tree_g.line_height;
-			treeview__cw_invalidate_area(tree, &r);
+			treeview__search_cancel(tree, false);
 			return true;
 		case NS_KEY_NL:
 		case NS_KEY_CR:
