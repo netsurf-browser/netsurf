@@ -2321,6 +2321,7 @@ nserror treeview_contract(treeview *tree, bool all)
 	r.x1 = REDRAW_MAX;
 	r.y1 = tree->root->height;
 
+	data.tree = tree;
 	data.only_entries = !all;
 
 	for (n = tree->root->children; n != NULL; n = n->next_sib) {
