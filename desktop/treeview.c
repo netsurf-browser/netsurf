@@ -2033,6 +2033,8 @@ nserror treeview_cw_detach(treeview *tree)
 	tree->cw_t = NULL;
 	tree->cw_h = NULL;
 
+	treeview__search_cancel(tree, true);
+
 	return NSERROR_OK;
 }
 
