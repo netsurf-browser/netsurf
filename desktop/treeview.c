@@ -2154,7 +2154,9 @@ treeview_node_expand_internal(treeview *tree, treeview_node *node)
 		n->height += additional_height;
 	}
 
-	if (tree->search.search) {
+	if (tree->search.search &&
+			node->type == TREE_NODE_ENTRY &&
+			node->flags & TV_NFLAGS_MATCHED) {
 		tree->search.height += additional_height;
 	}
 
