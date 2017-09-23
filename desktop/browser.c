@@ -2386,6 +2386,11 @@ static bool frag_scroll(struct browser_window *bw)
 	rect.x1 = rect.x0;
 	rect.y1 = rect.y0;
 	if (browser_window_set_scroll(bw, &rect) == NSERROR_OK) {
+		if (bw->current_content != NULL &&
+		    bw->history != NULL &&
+		    bw->history->current != NULL) {
+			browser_window_history_update(bw, bw->current_content);
+		}
 		return true;
 	}
 	return false;
