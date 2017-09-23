@@ -454,7 +454,8 @@ nserror browser_window_history_update(struct browser_window *bw,
 		guit->bitmap->render(history->current->page.bitmap, content);
 	}
 
-	if (guit->window->get_scroll(bw->window, &sx, &sy)) {
+	if (bw->window != NULL &&
+	    guit->window->get_scroll(bw->window, &sx, &sy)) {
 		/* Successfully got scroll offsets, update the entry */
 		history->current->page.scroll_x = \
 			(float)sx / (float)content_get_width(content);
