@@ -1405,23 +1405,6 @@ browser_window_callback(hlcache_handle *c,
 		bw->current_content = c;
 		bw->loading_content = NULL;
 
-		/* Format the new content to the correct dimensions */
-		browser_window_get_dimensions(bw, &width, &height, true);
-		content_reformat(c, false, width, height);
-
-		browser_window_remove_caret(bw, false);
-
-		if (bw->window != NULL) {
-			guit->window->new_content(bw->window);
-
-			browser_window_refresh_url_bar(bw);
-		}
-
-		/* new content; set scroll_to_top */
-		browser_window_update(bw, true);
-		content_open(c, bw, 0, 0);
-		browser_window_set_status(bw, content_get_status_message(c));
-
 		/* history */
 		if (bw->history_add && bw->history) {
 			nsurl *url = hlcache_handle_get_url(c);
@@ -1457,6 +1440,23 @@ browser_window_callback(hlcache_handle *c,
 			 */
 			browser_window_history_add(bw, c, bw->frag_id);
 		}
+
+		/* Format the new content to the correct dimensions */
+		browser_window_get_dimensions(bw, &width, &height, true);
+		content_reformat(c, false, width, height);
+
+		browser_window_remove_caret(bw, false);
+
+		if (bw->window != NULL) {
+			guit->window->new_content(bw->window);
+
+			browser_window_refresh_url_bar(bw);
+		}
+
+		/* new content; set scroll_to_top */
+		browser_window_update(bw, true);
+		content_open(c, bw, 0, 0);
+		browser_window_set_status(bw, content_get_status_message(c));
 
 		/* frames */
 		if ((content_get_type(c) == CONTENT_HTML) &&
