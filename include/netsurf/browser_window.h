@@ -116,7 +116,10 @@ enum browser_window_nav_flags {
 	 *    A transaction is unverifiable if the user does not
 	 *    have that option.
 	 */
-	BW_NAVIGATE_UNVERIFIABLE	= (1 << 2)
+	BW_NAVIGATE_UNVERIFIABLE	= (1 << 2),
+
+	/** suppress initial history updates (used by back/fwd/etc) */
+	BW_NAVIGATE_NO_TERMINAL_HISTORY_UPDATE = (1 << 3)
 };
 
 /**

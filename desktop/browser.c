@@ -887,7 +887,7 @@ nserror browser_window_create(enum browser_window_create_flags flags,
 	}
 
 	if (url != NULL) {
-		enum browser_window_nav_flags nav_flags = BW_NAVIGATE_NONE;
+		enum browser_window_nav_flags nav_flags = BW_NAVIGATE_NO_TERMINAL_HISTORY_UPDATE;
 		if (flags & BW_CREATE_UNVERIFIABLE)
 			nav_flags |= BW_NAVIGATE_UNVERIFIABLE;
 		if (flags & BW_CREATE_HISTORY)
@@ -1355,6 +1355,7 @@ browser_window_callback(hlcache_handle *c,
 {
 	struct browser_window *bw = pw;
 	nserror res = NSERROR_OK;
+	float sx, sy;
 
 	switch (event->type) {
 	case CONTENT_MSG_DOWNLOAD:
@@ -1404,23 +1405,6 @@ browser_window_callback(hlcache_handle *c,
 		bw->current_content = c;
 		bw->loading_content = NULL;
 
-		/* Format the new content to the correct dimensions */
-		browser_window_get_dimensions(bw, &width, &height, true);
-		content_reformat(c, false, width, height);
-
-		browser_window_remove_caret(bw, false);
-
-		if (bw->window != NULL) {
-			guit->window->new_content(bw->window);
-
-			browser_window_refresh_url_bar(bw);
-		}
-
-		/* new content; set scroll_to_top */
-		browser_window_update(bw, true);
-		content_open(c, bw, 0, 0);
-		browser_window_set_status(bw, content_get_status_message(c));
-
 		/* history */
 		if (bw->history_add && bw->history) {
 			nsurl *url = hlcache_handle_get_url(c);
@@ -1457,6 +1441,23 @@ browser_window_callback(hlcache_handle *c,
 			browser_window_history_add(bw, c, bw->frag_id);
 		}
 
+		/* Format the new content to the correct dimensions */
+		browser_window_get_dimensions(bw, &width, &height, true);
+		content_reformat(c, false, width, height);
+
+		browser_window_remove_caret(bw, false);
+
+		if (bw->window != NULL) {
+			guit->window->new_content(bw->window);
+
+			browser_window_refresh_url_bar(bw);
+		}
+
+		/* new content; set scroll_to_top */
+		browser_window_update(bw, true);
+		content_open(c, bw, 0, 0);
+		browser_window_set_status(bw, content_get_status_message(c));
+
 		/* frames */
 		if ((content_get_type(c) == CONTENT_HTML) &&
 		    (html_get_frameset(c) != NULL)) {
@@ -1484,6 +1485,19 @@ browser_window_callback(hlcache_handle *c,
 		browser_window_set_status(bw, content_get_status_message(c));
 		browser_window_stop_throbber(bw);
 		browser_window_update_favicon(c, bw, NULL);
+
+		if (browser_window_history_get_scroll(bw, &sx, &sy) == NSERROR_OK) {
+			int scrollx = (int)((float)content_get_width(bw->current_content) * sx);
+			int scrolly = (int)((float)content_get_height(bw->current_content) * sy);
+			struct rect rect;
+			rect.x0 = rect.x1 = scrollx;
+			rect.y0 = rect.y1 = scrolly;
+			if (browser_window_set_scroll(bw, &rect) != NSERROR_OK) {
+				NSLOG(netsurf, WARNING,
+				      "Unable to set browser scroll offsets to %d by %d",
+				      scrollx, scrolly);
+			}
+		}
 
 		browser_window_history_update(bw, c);
 		hotlist_update_url(hlcache_handle_get_url(c));
@@ -2014,6 +2028,20 @@ browser_window_navigate(struct browser_window *bw,
 
 	NSLOG(netsurf, INFO, "bw %p, url %s", bw, nsurl_access(url));
 
+	/* If we're navigating and we have a history entry and a content
+	 * then update the history entry before we navigate to save our
+	 * current state.  However since history navigation pre-moves
+	 * the history state, we ensure that we only do this if we've not
+	 * been suppressed.  In the suppressed case, the history code
+	 * updates the history itself before navigating.
+	 */
+	if (bw->current_content != NULL &&
+	    bw->history != NULL &&
+	    bw->history->current != NULL &&
+	    !(flags & BW_NAVIGATE_NO_TERMINAL_HISTORY_UPDATE)) {
+		browser_window_history_update(bw, bw->current_content);
+	}
+
 	/* don't allow massively nested framesets */
 	for (cur = bw; cur->parent; cur = cur->parent) {
 		depth++;
@@ -2358,6 +2386,11 @@ static bool frag_scroll(struct browser_window *bw)
 	rect.x1 = rect.x0;
 	rect.y1 = rect.y0;
 	if (browser_window_set_scroll(bw, &rect) == NSERROR_OK) {
+		if (bw->current_content != NULL &&
+		    bw->history != NULL &&
+		    bw->history->current != NULL) {
+			browser_window_history_update(bw, bw->current_content);
+		}
 		return true;
 	}
 	return false;
