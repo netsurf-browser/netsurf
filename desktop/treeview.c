@@ -850,6 +850,7 @@ static void treeview__search_cancel(treeview *tree, bool drop_focus)
 		.y1 = tree_g.line_height,
 	};
 
+	tree->search.search = false;
 	if (tree->search.active == false) {
 		return;
 	}
