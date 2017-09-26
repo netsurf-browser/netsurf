@@ -1225,12 +1225,10 @@ static void ami_update_buttons(struct gui_window_2 *gwin)
 		}
 	}
 
-#ifdef __amigaos4__
 	GetAttr(GA_Disabled, gwin->objects[GID_BACK], (uint32 *)&s_back);
 	GetAttr(GA_Disabled, gwin->objects[GID_FORWARD], (uint32 *)&s_forward);
 	GetAttr(GA_Disabled, gwin->objects[GID_RELOAD], (uint32 *)&s_reload);
 	GetAttr(GA_Disabled, gwin->objects[GID_STOP], (uint32 *)&s_stop);
-#endif
 
 	if(BOOL_MISMATCH(s_back, back))
 		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_BACK],
@@ -1250,9 +1248,9 @@ static void ami_update_buttons(struct gui_window_2 *gwin)
 
 	if(ClickTabBase->lib_Version < 53) {
 		if(gwin->tabs <= 1) tabclose = TRUE;
-#ifdef __amigaos4__
+
 		GetAttr(GA_Disabled, gwin->objects[GID_CLOSETAB], (uint32 *)&s_tabclose);
-#endif
+
 		if(BOOL_MISMATCH(s_tabclose, tabclose))
 			SetGadgetAttrs((struct Gadget *)gwin->objects[GID_CLOSETAB],
 				gwin->win, NULL, GA_Disabled, tabclose, TAG_DONE);
