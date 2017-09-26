@@ -405,9 +405,10 @@ ULONG RefreshSetGadgetAttrsA(struct Gadget *g, struct Window *w, struct Requeste
 	ULONG retval;
 	BOOL changedisabled = FALSE;
 	BOOL disabled;
+	struct TagItem *ti;
 
 	if (w) {
-		if (FindTagItem(GA_Disabled,tags)) {
+		if ((ti = FindTagItem(GA_Disabled,tags)) && (ti->ti_Data != FALSE)) {
 			changedisabled = TRUE;
  			disabled = g->Flags & GFLG_DISABLED;
  		}
