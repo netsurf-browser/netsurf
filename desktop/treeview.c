@@ -4582,6 +4582,11 @@ treeview_mouse_action(treeview *tree, browser_mouse_state mouse, int x, int y)
 	assert(tree != NULL);
 	assert(tree->root != NULL);
 
+	/* Not interested in whether mouse leaves window. */
+	if (mouse == BROWSER_MOUSE_LEAVE) {
+		return;
+	}
+
 	/* Handle mouse drag captured by textarea */
 	if (tree->drag.type == TV_DRAG_TEXTAREA) {
 		textarea_mouse_action(tree->edit.textarea, mouse,
