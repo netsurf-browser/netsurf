@@ -286,11 +286,11 @@ bitmap_render(struct bitmap *bitmap,
 	NSLOG(netsurf, INFO, "width %d, height %d", width, height);
 
 	/* Calculate size of buffer to render the content into */
-	/* We get the width from the content width, unless it exceeds 1024,
-	 * in which case we use 1024. This means we never create excessively
-	 * large render buffers for huge contents, which would eat memory and
-	 * cripple performance. */
-	cwidth = min(content_get_width(content), 1024);
+	/* We get the width from the largest of the bitmap width and the content
+	 * width, unless it exceeds 1024, in which case we use 1024. This means
+	 * we never create excessively large render buffers for huge contents,
+	 * which would eat memory and cripple performance. */
+	cwidth = max(width, min(content_get_width(content), 1024));
 	/* The height is set in proportion with the width, according to the
 	 * aspect ratio of the required thumbnail. */
 	cheight = ((cwidth * height) + (width / 2)) / width;
