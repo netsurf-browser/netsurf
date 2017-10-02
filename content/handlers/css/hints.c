@@ -748,6 +748,8 @@ static void css_hint_vertical_align_table_cells(
 			corestring_dom_valign, &attr);
 
 	if (err == DOM_NO_ERR && attr != NULL) {
+		hint->data.length.value = 0;
+		hint->data.length.unit = CSS_UNIT_PX;
 		if (dom_string_caseless_lwc_isequal(attr,
 				corestring_lwc_top)) {
 			hint->prop = CSS_PROP_VERTICAL_ALIGN;
