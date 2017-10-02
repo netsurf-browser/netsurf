@@ -46,4 +46,73 @@ css_fixed nscss_len2pt(css_fixed length, css_unit unit);
  */
 css_fixed nscss_len2px(css_fixed length, css_unit unit, const css_computed_style *style);
 
+
+/**
+ * Temporary helper wrappers for for libcss computed style getter, while
+ * we don't support flexbox related property values.
+ */
+
+static inline uint8_t ns_computed_display(
+		const css_computed_style *style, bool root)
+{
+	uint8_t value = css_computed_display(style, root);
+
+	if (value == CSS_DISPLAY_FLEX) {
+		return CSS_DISPLAY_BLOCK;
+
+	} else if (value == CSS_DISPLAY_INLINE_FLEX) {
+		return CSS_DISPLAY_INLINE_BLOCK;
+	}
+
+	return value;
+}
+
+
+static inline uint8_t ns_computed_display_static(
+		const css_computed_style *style)
+{
+	uint8_t value = css_computed_display_static(style);
+
+	if (value == CSS_DISPLAY_FLEX) {
+		return CSS_DISPLAY_BLOCK;
+
+	} else if (value == CSS_DISPLAY_INLINE_FLEX) {
+		return CSS_DISPLAY_INLINE_BLOCK;
+	}
+
+	return value;
+}
+
+
+static inline uint8_t ns_computed_min_height(
+		const css_computed_style *style,
+		css_fixed *length, css_unit *unit)
+{
+	uint8_t value = css_computed_min_height(style, length, unit);
+
+	if (value == CSS_MIN_HEIGHT_AUTO) {
+		value = CSS_MIN_HEIGHT_SET;
+		*length = 0;
+		*unit = CSS_UNIT_PX;
+	}
+
+	return value;
+}
+
+
+static inline uint8_t ns_computed_min_width(
+		const css_computed_style *style,
+		css_fixed *length, css_unit *unit)
+{
+	uint8_t value = css_computed_min_width(style, length, unit);
+
+	if (value == CSS_MIN_WIDTH_AUTO) {
+		value = CSS_MIN_WIDTH_SET;
+		*length = 0;
+		*unit = CSS_UNIT_PX;
+	}
+
+	return value;
+}
+
 #endif

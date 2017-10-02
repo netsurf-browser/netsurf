@@ -20,6 +20,7 @@
 #include <libcss/libcss.h>
 
 #include "css/dump.h"
+#include "css/utils.h"
 
 /**
  * Dump a fixed point value to the stream in a textual form.
@@ -783,7 +784,7 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	}
 
 	/* display */
-	val = css_computed_display_static(style);
+	val = ns_computed_display_static(style);
 	switch (val) {
 	case CSS_DISPLAY_INLINE:
 		fprintf(stream, "display: inline ");
@@ -1268,7 +1269,7 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	}
 
 	/* min-height */
-	val = css_computed_min_height(style, &len1, &unit1);
+	val = ns_computed_min_height(style, &len1, &unit1);
 	switch (val) {
 	case CSS_MIN_HEIGHT_SET:
 		fprintf(stream, "min-height: ");
@@ -1282,7 +1283,7 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	}
 
 	/* min-width */
-	val = css_computed_min_width(style, &len1, &unit1);
+	val = ns_computed_min_width(style, &len1, &unit1);
 	switch (val) {
 	case CSS_MIN_WIDTH_SET:
 		fprintf(stream, "min-width: ");

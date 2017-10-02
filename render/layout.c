@@ -1110,7 +1110,7 @@ layout_find_dimensions(int available_width,
 		css_fixed value = 0;
 		css_unit unit = CSS_UNIT_PX;
 
-		type = css_computed_min_width(style, &value, &unit);
+		type = ns_computed_min_width(style, &value, &unit);
 
 		if (type == CSS_MIN_WIDTH_SET) {
 			if (unit == CSS_UNIT_PCT) {
@@ -1157,7 +1157,7 @@ layout_find_dimensions(int available_width,
 		css_fixed value = 0;
 		css_unit unit = CSS_UNIT_PX;
 
-		type = css_computed_min_height(style, &value, &unit);
+		type = ns_computed_min_height(style, &value, &unit);
 
 		if (type == CSS_MIN_HEIGHT_SET) {
 			if (unit == CSS_UNIT_PCT) {
@@ -2395,7 +2395,7 @@ static bool layout_apply_minmax_height(struct box *box, struct box *container)
 		}
 
 		/* min-height */
-		if (css_computed_min_height(box->style, &value, &unit) ==
+		if (ns_computed_min_height(box->style, &value, &unit) ==
 				CSS_MIN_HEIGHT_SET) {
 			if (unit == CSS_UNIT_PCT) {
 				if (containing_block &&

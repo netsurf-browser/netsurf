@@ -46,6 +46,7 @@
 #include "content/content_protected.h"
 #include "css/hints.h"
 #include "css/select.h"
+#include "css/utils.h"
 #include "desktop/gui_internal.h"
 
 #include "render/box.h"
@@ -612,7 +613,7 @@ static void box_construct_generate(dom_node *n, html_content *content,
 	}
 
 	/* create box for this element */
-	computed_display = css_computed_display(style, box_is_root(n));
+	computed_display = ns_computed_display(style, box_is_root(n));
 	if (computed_display == CSS_DISPLAY_BLOCK ||
 			computed_display == CSS_DISPLAY_TABLE) {
 		/* currently only support block level boxes */
@@ -625,7 +626,7 @@ static void box_construct_generate(dom_node *n, html_content *content,
 		}
 
 		/* set box type from computed display */
-		gen->type = box_map[css_computed_display(
+		gen->type = box_map[ns_computed_display(
 				style, box_is_root(n))];
 
 		box_add_child(box, gen);
@@ -831,11 +832,11 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 	if ((css_computed_position(box->style) == CSS_POSITION_ABSOLUTE ||
 			css_computed_position(box->style) ==
 					CSS_POSITION_FIXED) &&
-			(css_computed_display_static(box->style) ==
+			(ns_computed_display_static(box->style) ==
 					CSS_DISPLAY_INLINE ||
-			 css_computed_display_static(box->style) ==
+			 ns_computed_display_static(box->style) ==
 					CSS_DISPLAY_INLINE_BLOCK ||
-			 css_computed_display_static(box->style) ==
+			 ns_computed_display_static(box->style) ==
 					CSS_DISPLAY_INLINE_TABLE)) {
 		/* Special case for absolute positioning: make absolute inlines
 		 * into inline block so that the boxes are constructed in an
@@ -848,7 +849,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 		box->type = BOX_BLOCK;
 	} else {
 		/* Normal mapping */
-		box->type = box_map[css_computed_display(box->style,
+		box->type = box_map[ns_computed_display(box->style,
 				props.node_is_root)];
 	}
 
@@ -876,7 +877,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 				box->styles->styles[CSS_PSEUDO_ELEMENT_BEFORE]);
 	}
 
-	if (box->type == BOX_NONE || (css_computed_display(box->style,
+	if (box->type == BOX_NONE || (ns_computed_display(box->style,
 			props.node_is_root) == CSS_DISPLAY_NONE &&
 			props.node_is_root == false)) {
 		css_select_results_destroy(styles);
@@ -968,7 +969,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 
 		box_add_child(props.inline_container, box);
 	} else {
-		if (css_computed_display(box->style, props.node_is_root) ==
+		if (ns_computed_display(box->style, props.node_is_root) ==
 				CSS_DISPLAY_LIST_ITEM) {
 			/* List item: compute marker */
 			if (box_construct_marker(box, props.title, ctx,
@@ -1559,7 +1560,7 @@ bool box_image(BOX_SPECIAL_PARAMS)
 	css_unit wunit = CSS_UNIT_PX;
 	css_unit hunit = CSS_UNIT_PX;
 
-	if (box->style && css_computed_display(box->style,
+	if (box->style && ns_computed_display(box->style,
 			box_is_root(n)) == CSS_DISPLAY_NONE)
 		return true;
 
@@ -1666,7 +1667,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	dom_node *c;
 	dom_exception err;
 
-	if (box->style && css_computed_display(box->style,
+	if (box->style && ns_computed_display(box->style,
 			box_is_root(n)) == CSS_DISPLAY_NONE)
 		return true;
 
@@ -2316,7 +2317,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	struct content_html_iframe *iframe;
 	int i;
 
-	if (box->style && css_computed_display(box->style,
+	if (box->style && ns_computed_display(box->style,
 			box_is_root(n)) == CSS_DISPLAY_NONE)
 		return true;
 
@@ -2551,7 +2552,7 @@ bool box_input(BOX_SPECIAL_PARAMS)
 			corestring_lwc_image)) {
 		gadget->type = GADGET_IMAGE;
 
-		if (box->style && css_computed_display(box->style,
+		if (box->style && ns_computed_display(box->style,
 				box_is_root(n)) != CSS_DISPLAY_NONE &&
 		    nsoption_bool(foreground_images) == true) {
 			dom_string *s;
@@ -2887,7 +2888,7 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 	dom_string *src;
 	dom_exception err;
 
-	if (box->style && css_computed_display(box->style,
+	if (box->style && ns_computed_display(box->style,
 			box_is_root(n)) == CSS_DISPLAY_NONE)
 		return true;
 
