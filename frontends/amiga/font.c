@@ -37,7 +37,7 @@ static ULONG ami_xdpi = 72;
 
 ULONG ami_font_dpi_get_devicedpi(void)
 {
-	return ami_devicedpi;
+	return (ami_xdpi << 16) | ami_devicedpi;
 }
 
 ULONG ami_font_dpi_get_xdpi(void)
