@@ -388,6 +388,22 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 		}
 		break;
 
+	case NSFB_KEY_HOME:
+		if (widget->u.text.idx > 0) {
+			widget->u.text.idx = 0;
+
+			caret_moved = true;
+		}
+		break;
+
+	case NSFB_KEY_END:
+		if (widget->u.text.idx < widget->u.text.len) {
+			widget->u.text.idx = widget->u.text.len;
+
+			caret_moved = true;
+		}
+		break;
+
 	case NSFB_KEY_PAGEUP:
 	case NSFB_KEY_PAGEDOWN:
 	case NSFB_KEY_UP:
