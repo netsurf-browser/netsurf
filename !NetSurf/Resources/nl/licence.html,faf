@@ -63,25 +63,25 @@ dan verwijder deze uitzonderingverklaring uit uw eigen  versie.</p>
 <dl class="components">
 <dt><a href="http://www.netsurf-browser.org/">NetSurf</a></dt>
 <dd>
-<span>&copy; 2002&ndash;2016 De NetSurf-ontwikkerlaars</span>
+<span>&copy; 2002&ndash;2017 De NetSurf-ontwikkerlaars</span>
 <span><a href="#gplv2">GPLv2</a></span>
 </dd>
 
 <dt><a href="http://www.netsurf-browser.org/projects/libcss/">LibCSS</a></dt>
 <dd>
-<span>&copy; 2007&ndash;2016 John-Mark Bell</span>
+<span>&copy; 2007&ndash;2017 John-Mark Bell</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
 <dt><a href="http://www.netsurf-browser.org/projects/hubbub/">Hubbub</a></dt>
 <dd>
-<span>&copy; 2007&ndash;2016 John-Mark Bell<br>&copy; 2008&ndash;2009 Andrew Sidwell</span>
+<span>&copy; 2007&ndash;2017 John-Mark Bell<br>&copy; 2008&ndash;2009 Andrew Sidwell</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
 <dt><a href="http://www.netsurf-browser.org/projects/libparserutils/">LibParserUtils</a></dt>
 <dd>
-<span>&copy; 2007&ndash;2016 John-Mark Bell</span>
+<span>&copy; 2007&ndash;2017 John-Mark Bell</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
@@ -117,7 +117,7 @@ dan verwijder deze uitzonderingverklaring uit uw eigen  versie.</p>
 
 <dt><a href="http://www.netsurf-browser.org/projects/libnsfb/">Libnsfb</a></dt>
 <dd>
-<span>&copy; 2009&ndash;2016 Vincent Sanders<br>&copy; 2009&ndash;2016 Michael Drake</span>
+<span>&copy; 2009&ndash;2017 Vincent Sanders<br>&copy; 2009&ndash;2017 Michael Drake</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
@@ -129,7 +129,7 @@ dan verwijder deze uitzonderingverklaring uit uw eigen  versie.</p>
 
 <dt><a href="http://www.netsurf-browser.org/projects/libwapcaplet">LibWapcaplet</a></dt>
 <dd>
-<span>&copy; 2009&ndash;2016 NetSurf Browser Project, Daniel Silverstone</span>
+<span>&copy; 2009&ndash;2017 NetSurf Browser Project, Daniel Silverstone</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 </dl>
@@ -1872,7 +1872,7 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 </div>
 
 <div class="footer">
-<p>Auteursrecht 2003&ndash;2016 De NetSurf-ontwikkelaars</p>
+<p>Auteursrecht 2003&ndash;2017 De NetSurf-ontwikkelaars</p>
 </div>
 
 </body>
