@@ -20,11 +20,6 @@
 
 #include "desktop/version.h"
 
-const char * const netsurf_version = "3.7 (Dev"
-#if defined(CI_BUILD)
-	" CI #" CI_BUILD
-#endif
-	")"
-	;
+const char * const netsurf_version = "3.7 (15th October 2017)";
 const int netsurf_version_major = 3;
 const int netsurf_version_minor = 7;
