@@ -5423,8 +5423,8 @@ DUK_INTERNAL_DECL void duk_heaphdr_decref_norz(duk_hthread *thr, duk_heaphdr *h)
 /* Current convention is to use duk_size_t for value stack sizes and global indices,
  * and duk_idx_t for local frame indices.
  */
-DUK_INTERNAL_DECL void duk_valstack_grow_check_throw(duk_hthread *thr, duk_size_t min_bytes);
-DUK_INTERNAL_DECL duk_bool_t duk_valstack_grow_check_nothrow(duk_hthread *thr, duk_size_t min_bytes);
+DUK_INTERNAL_DECL DUK_INLINE void duk_valstack_grow_check_throw(duk_hthread *thr, duk_size_t min_bytes);
+DUK_INTERNAL_DECL DUK_INLINE duk_bool_t duk_valstack_grow_check_nothrow(duk_hthread *thr, duk_size_t min_bytes);
 DUK_INTERNAL_DECL void duk_valstack_shrink_check_nothrow(duk_hthread *thr, duk_bool_t snug);
 
 DUK_INTERNAL_DECL void duk_copy_tvals_incref(duk_hthread *thr, duk_tval *tv_dst, duk_tval *tv_src, duk_size_t count);
@@ -7888,13 +7888,13 @@ DUK_INTERNAL_DECL void duk_hthread_create_builtin_objects(duk_hthread *thr);
 DUK_INTERNAL_DECL duk_bool_t duk_hthread_init_stacks(duk_heap *heap, duk_hthread *thr);
 DUK_INTERNAL_DECL void duk_hthread_terminate(duk_hthread *thr);
 
-DUK_INTERNAL_DECL duk_activation *duk_hthread_activation_alloc(duk_hthread *thr);
+DUK_INTERNAL_DECL DUK_INLINE duk_activation *duk_hthread_activation_alloc(duk_hthread *thr);
 DUK_INTERNAL_DECL void duk_hthread_activation_free(duk_hthread *thr, duk_activation *act);
 DUK_INTERNAL_DECL void duk_hthread_activation_unwind_norz(duk_hthread *thr);
 DUK_INTERNAL_DECL void duk_hthread_activation_unwind_reuse_norz(duk_hthread *thr);
 DUK_INTERNAL_DECL duk_activation *duk_hthread_get_activation_for_level(duk_hthread *thr, duk_int_t level);
 
-DUK_INTERNAL_DECL duk_catcher *duk_hthread_catcher_alloc(duk_hthread *thr);
+DUK_INTERNAL_DECL DUK_INLINE duk_catcher *duk_hthread_catcher_alloc(duk_hthread *thr);
 DUK_INTERNAL_DECL void duk_hthread_catcher_free(duk_hthread *thr, duk_catcher *cat);
 DUK_INTERNAL_DECL void duk_hthread_catcher_unwind_norz(duk_hthread *thr, duk_activation *act);
 DUK_INTERNAL_DECL void duk_hthread_catcher_unwind_nolexenv_norz(duk_hthread *thr, duk_activation *act);
