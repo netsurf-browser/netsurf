@@ -714,7 +714,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 					return;
 				free(oldcoords);
 			}
-			/* drop through */
+			/* Fall through */
 		case GADGET_SUBMIT:
 			if (gadget->form) {
 				snprintf(status_buffer, sizeof status_buffer,

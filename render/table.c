@@ -741,27 +741,27 @@ bool table_border_is_more_eyecatching(const struct border *a,
 
 	/* 3b -- sort by style */
 	switch (a->style) {
-	case CSS_BORDER_STYLE_DOUBLE: impact++;
-	case CSS_BORDER_STYLE_SOLID:  impact++;
-	case CSS_BORDER_STYLE_DASHED: impact++;
-	case CSS_BORDER_STYLE_DOTTED: impact++;
-	case CSS_BORDER_STYLE_RIDGE:  impact++;
-	case CSS_BORDER_STYLE_OUTSET: impact++;
-	case CSS_BORDER_STYLE_GROOVE: impact++;
-	case CSS_BORDER_STYLE_INSET:  impact++;
+	case CSS_BORDER_STYLE_DOUBLE: impact++; /* Fall through */
+	case CSS_BORDER_STYLE_SOLID:  impact++; /* Fall through */
+	case CSS_BORDER_STYLE_DASHED: impact++; /* Fall through */
+	case CSS_BORDER_STYLE_DOTTED: impact++; /* Fall through */
+	case CSS_BORDER_STYLE_RIDGE:  impact++; /* Fall through */
+	case CSS_BORDER_STYLE_OUTSET: impact++; /* Fall through */
+	case CSS_BORDER_STYLE_GROOVE: impact++; /* Fall through */
+	case CSS_BORDER_STYLE_INSET:  impact++; /* Fall through */
 	default:
 		break;
 	}
 
 	switch (b->style) {
-	case CSS_BORDER_STYLE_DOUBLE: impact--;
-	case CSS_BORDER_STYLE_SOLID:  impact--;
-	case CSS_BORDER_STYLE_DASHED: impact--;
-	case CSS_BORDER_STYLE_DOTTED: impact--;
-	case CSS_BORDER_STYLE_RIDGE:  impact--;
-	case CSS_BORDER_STYLE_OUTSET: impact--;
-	case CSS_BORDER_STYLE_GROOVE: impact--;
-	case CSS_BORDER_STYLE_INSET:  impact--;
+	case CSS_BORDER_STYLE_DOUBLE: impact--; /* Fall through */
+	case CSS_BORDER_STYLE_SOLID:  impact--; /* Fall through */
+	case CSS_BORDER_STYLE_DASHED: impact--; /* Fall through */
+	case CSS_BORDER_STYLE_DOTTED: impact--; /* Fall through */
+	case CSS_BORDER_STYLE_RIDGE:  impact--; /* Fall through */
+	case CSS_BORDER_STYLE_OUTSET: impact--; /* Fall through */
+	case CSS_BORDER_STYLE_GROOVE: impact--; /* Fall through */
+	case CSS_BORDER_STYLE_INSET:  impact--; /* Fall through */
 	default:
 		break;
 	}
@@ -774,22 +774,22 @@ bool table_border_is_more_eyecatching(const struct border *a,
 	/* 4a -- sort by origin */
 	impact = 0;
 
-	switch (a_src) {
-	case BOX_TABLE_CELL:       impact++;
-	case BOX_TABLE_ROW:        impact++;
-	case BOX_TABLE_ROW_GROUP:  impact++;
 	/** \todo COL/COL_GROUP */
-	case BOX_TABLE:            impact++;
+	switch (a_src) {
+	case BOX_TABLE_CELL:       impact++; /* Fall through */
+	case BOX_TABLE_ROW:        impact++; /* Fall through */
+	case BOX_TABLE_ROW_GROUP:  impact++; /* Fall through */
+	case BOX_TABLE:            impact++; /* Fall through */
 	default:
 		break;
 	}
 
-	switch (b_src) {
-	case BOX_TABLE_CELL:       impact--;
-	case BOX_TABLE_ROW:        impact--;
-	case BOX_TABLE_ROW_GROUP:  impact--;
 	/** \todo COL/COL_GROUP */
-	case BOX_TABLE:            impact--;
+	switch (b_src) {
+	case BOX_TABLE_CELL:       impact--; /* Fall through */
+	case BOX_TABLE_ROW:        impact--; /* Fall through */
+	case BOX_TABLE_ROW_GROUP:  impact--; /* Fall through */
+	case BOX_TABLE:            impact--; /* Fall through */
 	default:
 		break;
 	}
