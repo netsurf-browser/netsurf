@@ -697,6 +697,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 				form_radio_set(gadget);
 			break;
 		case GADGET_IMAGE:
+			/* This falls through to SUBMIT */
 			if (mouse & BROWSER_MOUSE_CLICK_1) {
 				struct image_input_coords *coords, *oldcoords;
 				/** \todo Find a way to not ignore errors */

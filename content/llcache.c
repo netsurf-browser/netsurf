@@ -2698,9 +2698,7 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 			error = llcache_object_refetch(object);
 			break;
 		}
-		/* Otherwise fall through to error, setting the message to
-		 * a timeout
-		 */
+		/* Fall through */
 	case FETCH_ERROR:
 		/* An error occurred while fetching */
 		/* The fetch has has already been cleaned up by the fetcher */

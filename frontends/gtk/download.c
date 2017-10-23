@@ -331,6 +331,7 @@ static gboolean nsgtk_download_update(gboolean force_update)
 		switch (dl->status) {
 		case NSGTK_DOWNLOAD_WORKING:
 			pulse_mode = TRUE;
+			/* Fall through */
 
 		case NSGTK_DOWNLOAD_NONE:
 			dl->speed = dl->size_downloaded /
@@ -347,6 +348,7 @@ static gboolean nsgtk_download_update(gboolean force_update)
 
 			nsgtk_downloads_num_active++;
 			update = TRUE;
+			/* Fall through */
 
 		case NSGTK_DOWNLOAD_COMPLETE:
 			downloaded += dl->size_downloaded;
