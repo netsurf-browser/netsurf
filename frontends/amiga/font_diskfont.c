@@ -55,7 +55,6 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 		(fstyle->size == prev_fstyle->size) &&
 		(fstyle->flags == prev_fstyle->flags) &&
 		(fstyle->weight == prev_fstyle->weight)) {
-		NSLOG(netsurf, INFO, "(using current font)");
 		return prev_font;
 	}
 
