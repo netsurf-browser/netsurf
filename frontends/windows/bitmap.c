@@ -326,7 +326,7 @@ bitmap_render(struct bitmap *bitmap, struct hlcache_handle *content)
 		.plot = &win_plotters
 	};
 
-	width = min(content_get_width(content), 1024);
+	width = min(max(content_get_width(content), bitmap->width), 1024);
 	height = ((width * bitmap->height) + (bitmap->width / 2)) /
 		bitmap->width;
 
