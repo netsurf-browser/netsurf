@@ -6664,9 +6664,7 @@ struct duk_hobject {
 #endif
 #endif
 }
-#if (DUK_USE_ALIGN_BY == 8) && defined(DUK_USE_PACK_GCC_ATTR)
-__attribute__ ((aligned (8)))
-#elif (DUK_USE_ALIGN_BY == 8) && defined(DUK_USE_PACK_CLANG_ATTR)
+#if (DUK_USE_ALIGN_BY == 8)
 __attribute__ ((aligned (8)))
 #endif
 ;
