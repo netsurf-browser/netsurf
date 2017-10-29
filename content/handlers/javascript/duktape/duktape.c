@@ -6663,7 +6663,13 @@ struct duk_hobject {
 	duk_uint32_t h_size;  /* hash part size or 0 if unused */
 #endif
 #endif
-};
+}
+#if (DUK_USE_ALIGN_BY == 8) && defined(DUK_USE_PACK_GCC_ATTR)
+__attribute__ ((aligned (8)))
+#elif (DUK_USE_ALIGN_BY == 8) && defined(DUK_USE_PACK_CLANG_ATTR)
+__attribute__ ((aligned (8)))
+#endif
+;
 
 /*
  *  Exposed data
