@@ -850,12 +850,6 @@
 #if !defined(DUK_USE_BYTEORDER)
 #define DUK_USE_BYTEORDER 1
 #endif
-/* XXX: This is technically not guaranteed because it's possible to configure
- * an x86 to require aligned accesses with Alignment Check (AC) flag.
- */
-#if !defined(DUK_USE_ALIGN_BY)
-#define DUK_USE_ALIGN_BY 1
-#endif
 #define DUK_USE_PACKED_TVAL
 #define DUK_F_PACKED_TVAL_PROVIDED
 #elif defined(DUK_F_X64)
@@ -863,12 +857,6 @@
 #define DUK_USE_ARCH_STRING "x64"
 #if !defined(DUK_USE_BYTEORDER)
 #define DUK_USE_BYTEORDER 1
-#endif
-/* XXX: This is technically not guaranteed because it's possible to configure
- * an x86 to require aligned accesses with Alignment Check (AC) flag.
- */
-#if !defined(DUK_USE_ALIGN_BY)
-#define DUK_USE_ALIGN_BY 1
 #endif
 #undef DUK_USE_PACKED_TVAL
 #define DUK_F_PACKED_TVAL_PROVIDED
@@ -878,48 +866,30 @@
 #if !defined(DUK_USE_BYTEORDER)
 #define DUK_USE_BYTEORDER 1
 #endif
-/* XXX: This is technically not guaranteed because it's possible to configure
- * an x86 to require aligned accesses with Alignment Check (AC) flag.
- */
-#if !defined(DUK_USE_ALIGN_BY)
-#define DUK_USE_ALIGN_BY 1
-#endif
 #define DUK_USE_PACKED_TVAL
 #define DUK_F_PACKED_TVAL_PROVIDED
 #elif defined(DUK_F_ARM32)
 /* --- ARM 32-bit --- */
 #define DUK_USE_ARCH_STRING "arm32"
 /* Byte order varies, so rely on autodetect. */
-#if !defined(DUK_USE_ALIGN_BY)
-#define DUK_USE_ALIGN_BY 4
-#endif
 #define DUK_USE_PACKED_TVAL
 #define DUK_F_PACKED_TVAL_PROVIDED
 #elif defined(DUK_F_ARM64)
 /* --- ARM 64-bit --- */
 #define DUK_USE_ARCH_STRING "arm64"
 /* Byte order varies, so rely on autodetect. */
-#if !defined(DUK_USE_ALIGN_BY)
-#define DUK_USE_ALIGN_BY 8
-#endif
 #undef DUK_USE_PACKED_TVAL
 #define DUK_F_PACKED_TVAL_PROVIDED
 #elif defined(DUK_F_MIPS32)
 /* --- MIPS 32-bit --- */
 #define DUK_USE_ARCH_STRING "mips32"
 /* MIPS byte order varies so rely on autodetection. */
-#if !defined(DUK_USE_ALIGN_BY)
-#define DUK_USE_ALIGN_BY 8
-#endif
 #define DUK_USE_PACKED_TVAL
 #define DUK_F_PACKED_TVAL_PROVIDED
 #elif defined(DUK_F_MIPS64)
 /* --- MIPS 64-bit --- */
 #define DUK_USE_ARCH_STRING "mips64"
 /* MIPS byte order varies so rely on autodetection. */
-#if !defined(DUK_USE_ALIGN_BY)
-#define DUK_USE_ALIGN_BY 8
-#endif
 #undef DUK_USE_PACKED_TVAL
 #define DUK_F_PACKED_TVAL_PROVIDED
 #elif defined(DUK_F_PPC32)
@@ -927,9 +897,6 @@
 #define DUK_USE_ARCH_STRING "ppc32"
 #if !defined(DUK_USE_BYTEORDER)
 #define DUK_USE_BYTEORDER 3
-#endif
-#if !defined(DUK_USE_ALIGN_BY)
-#define DUK_USE_ALIGN_BY 8
 #endif
 #define DUK_USE_PACKED_TVAL
 #define DUK_F_PACKED_TVAL_PROVIDED
@@ -939,27 +906,18 @@
 #if !defined(DUK_USE_BYTEORDER)
 #define DUK_USE_BYTEORDER 3
 #endif
-#if !defined(DUK_USE_ALIGN_BY)
-#define DUK_USE_ALIGN_BY 8
-#endif
 #undef DUK_USE_PACKED_TVAL
 #define DUK_F_PACKED_TVAL_PROVIDED
 #elif defined(DUK_F_SPARC32)
 /* --- SPARC 32-bit --- */
 #define DUK_USE_ARCH_STRING "sparc32"
 /* SPARC byte order varies so rely on autodetection. */
-#if !defined(DUK_USE_ALIGN_BY)
-#define DUK_USE_ALIGN_BY 8
-#endif
 #define DUK_USE_PACKED_TVAL
 #define DUK_F_PACKED_TVAL_PROVIDED
 #elif defined(DUK_F_SPARC64)
 /* --- SPARC 64-bit --- */
 #define DUK_USE_ARCH_STRING "sparc64"
 /* SPARC byte order varies so rely on autodetection. */
-#if !defined(DUK_USE_ALIGN_BY)
-#define DUK_USE_ALIGN_BY 8
-#endif
 #undef DUK_USE_PACKED_TVAL
 #define DUK_F_PACKED_TVAL_PROVIDED
 #elif defined(DUK_F_SUPERH)
@@ -969,9 +927,6 @@
 /* Based on 'make checkalign' there are no alignment requirements on
  * Linux SH4, but align by 4 is probably a good basic default.
  */
-#if !defined(DUK_USE_ALIGN_BY)
-#define DUK_USE_ALIGN_BY 4
-#endif
 #define DUK_USE_PACKED_TVAL
 #define DUK_F_PACKED_TVAL_PROVIDED
 #elif defined(DUK_F_M68K)
@@ -980,9 +935,6 @@
 #if !defined(DUK_USE_BYTEORDER)
 #define DUK_USE_BYTEORDER 3
 #endif
-#if !defined(DUK_USE_ALIGN_BY)
-#define DUK_USE_ALIGN_BY 8
-#endif
 #define DUK_USE_PACKED_TVAL
 #define DUK_F_PACKED_TVAL_PROVIDED
 #elif defined(DUK_F_EMSCRIPTEN)
@@ -990,9 +942,6 @@
 #define DUK_USE_ARCH_STRING "emscripten"
 #if !defined(DUK_USE_BYTEORDER)
 #define DUK_USE_BYTEORDER 1
-#endif
-#if !defined(DUK_USE_ALIGN_BY)
-#define DUK_USE_ALIGN_BY 8
 #endif
 #undef DUK_USE_PACKED_TVAL
 #define DUK_F_PACKED_TVAL_PROVIDED
