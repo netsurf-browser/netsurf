@@ -4219,6 +4219,9 @@ DUK_INTERNAL_DECL void duk_regexp_match_force_global(duk_hthread *thr);  /* hack
 
 /* XXX: macro for shared header fields (avoids some padding issues) */
 
+#if (DUK_USE_ALIGN_BY == 8) && defined(DUK_USE_PACK_MSVC_PRAGMA)
+#pragma pack(push, 8)
+#endif
 struct duk_heaphdr {
 	duk_uint32_t h_flags;
 
@@ -4264,7 +4267,16 @@ struct duk_heaphdr {
 #if defined(DUK_USE_HEAPPTR16)
 	duk_uint16_t h_extra16;
 #endif
-};
+}
+#if (DUK_USE_ALIGN_BY == 8) && defined(DUK_USE_PACK_GCC_ATTR)
+__attribute__ ((aligned (8)))
+#elif (DUK_USE_ALIGN_BY == 8) && defined(DUK_USE_PACK_CLANG_ATTR)
+__attribute__ ((aligned (8)))
+#endif
+;
+#if (DUK_USE_ALIGN_BY == 8) && defined(DUK_USE_PACK_MSVC_PRAGMA)
+#pragma pack(pop)
+#endif
 
 struct duk_heaphdr_string {
 	/* 16 bits would be enough for shared heaphdr flags and duk_hstring
@@ -5733,6 +5745,9 @@ DUK_INTERNAL_DECL duk_double_t duk_time_get_monotonic_time(duk_hthread *thr);
  *  Misc
  */
 
+#if (DUK_USE_ALIGN_BY == 8) && defined(DUK_USE_PACK_MSVC_PRAGMA)
+#pragma pack(push, 8)
+#endif
 struct duk_hstring {
 	/* Smaller heaphdr than for other objects, because strings are held
 	 * in string intern table which requires no link pointers.  Much of
@@ -5777,7 +5792,16 @@ struct duk_hstring {
 	 *  for strings, but fields above should guarantee alignment-by-4
 	 *  (but not alignment-by-8).
 	 */
-};
+}
+#if (DUK_USE_ALIGN_BY == 8) && defined(DUK_USE_PACK_GCC_ATTR)
+__attribute__ ((aligned (8)))
+#elif (DUK_USE_ALIGN_BY == 8) && defined(DUK_USE_PACK_CLANG_ATTR)
+__attribute__ ((aligned (8)))
+#endif
+;
+#if (DUK_USE_ALIGN_BY == 8) && defined(DUK_USE_PACK_MSVC_PRAGMA)
+#pragma pack(pop)
+#endif
 
 /* The external string struct is defined even when the feature is inactive. */
 struct duk_hstring_external {
