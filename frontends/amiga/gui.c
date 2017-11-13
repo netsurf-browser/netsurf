@@ -4059,10 +4059,12 @@ gui_window_create(struct browser_window *bw,
 		ULONG addtabclosegadget = TAG_IGNORE;
 		ULONG iconifygadget = FALSE;
 
+#ifdef __amigaos4__
 		if (nsoption_charp(pubscreen_name) && 
 		    (locked_screen == TRUE) &&
 		    (strcmp(nsoption_charp(pubscreen_name), "Workbench") == 0))
 				iconifygadget = TRUE;
+#endif
 
 		NSLOG(netsurf, INFO, "Creating menu");
 		struct Menu *menu = ami_gui_menu_create(g->shared);
