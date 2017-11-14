@@ -270,9 +270,8 @@ static void ami_gui_opts_array_to_list(struct List *list, const char *array[], i
 				node = AllocChooserNode(CNA_Text, array[i], TAG_DONE);
 			break;
 			case NSA_LIST_RADIO:
-				/* Note: RBNA_Labels is RBNA_Label in OS4
-				 * Also note: These labels don't work (FIXME) */
-				node = AllocRadioButtonNode(RBNA_Labels, array[i], TAG_DONE);
+				/* Note: RBNA_Labels is RBNA_Label in OS4 */
+				node = AllocRadioButtonNode(0, RBNA_Labels, array[i], TAG_DONE);
 			break;
 			default:
 			break;
