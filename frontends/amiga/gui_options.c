@@ -1747,7 +1747,7 @@ static void ami_gui_opts_use(bool save)
 	switch(data)
 	{
 		case 0:
-			nsoption_set_charp(pubscreen_name, strdup("\0"));
+			nsoption_set_charp(pubscreen_name, NULL);
 			break;
 
 		case 1:
