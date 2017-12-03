@@ -210,7 +210,7 @@ ns-dnf-install()
 
 
 # packages for zypper installer RPM based systems (tested on openSUSE leap 42)
-NS_DEV_ZYP_RPM="java-1.8.0-openjdk-headless gcc clang pkgconfig libcurl-devel libjpeg-devel expat-devel libpng-devel openssl-devel gperf perl-HTML-Parser"
+NS_DEV_ZYP_RPM="java-1_8_0-openjdk-headless gcc clang pkgconfig libcurl-devel libjpeg-devel libexpat-devel libpng-devel openssl-devel gperf perl-HTML-Parser"
 NS_TOOL_ZYP_RPM="git flex bison gperf ccache screen"
 if [ "x${NETSURF_GTK_MAJOR}" = "x3" ]; then
     NS_GTK_ZYP_RPM="gtk3-devel"
