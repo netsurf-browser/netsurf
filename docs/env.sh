@@ -12,6 +12,13 @@
 # Copyright 2013 Vincent Sanders <vince@netsurf-browser.org>
 # Released under the MIT Licence
 
+# find which command used to find everything else on path
+if [ -x /usr/bin/which ]; then
+    WHICH_CMD=/usr/bin/which
+else
+    WHICH_CMD=/bin/which
+fi
+
 # parameters
 
 # The system doing the building
@@ -29,7 +36,7 @@ if [ "x${HOST}" = "x" ]; then
 else
     HOST_CC_LIST="${HOST}-cc ${HOST}-gcc /opt/netsurf/${HOST}/cross/bin/${HOST}-cc /opt/netsurf/${HOST}/cross/bin/${HOST}-gcc"
     for HOST_CC_V in $(echo ${HOST_CC_LIST});do
-        HOST_CC=$(/bin/which ${HOST_CC_V})
+        HOST_CC=$(${WHICH_CMD} ${HOST_CC_V})
         if [ "x${HOST_CC}" != "x" ];then
             break
         fi
@@ -169,23 +176,24 @@ ns-apt-get-install()
     sudo apt-get install $(echo ${NS_DEV_DEB} ${NS_TOOL_DEB} ${NS_GTK_DEB})
 }
 
-# RPM packages for rpm based systems (tested on fedora 20)
-NS_DEV_RPM="git gcc pkgconfig libexpat-devel openssl-devel libcurl-devel perl-Digest-MD5-File libjpeg-devel libpng-devel"
-NS_TOOL_RPM="flex bison"
+
+# packages for yum installer RPM based systems (tested on fedora 20)
+NS_DEV_YUM_RPM="git gcc pkgconfig libexpat-devel openssl-devel libcurl-devel perl-Digest-MD5-File libjpeg-devel libpng-devel"
+NS_TOOL_YUM_RPM="flex bison"
 if [ "x${NETSURF_GTK_MAJOR}" = "x3" ]; then
-    NS_GTK_RPM="gtk3-devel librsvg2-devel"
+    NS_GTK_YUM_RPM="gtk3-devel librsvg2-devel"
 else
-    NS_GTK_RPM="gtk2-devel librsvg2-devel"
+    NS_GTK_YUM_RPM="gtk2-devel librsvg2-devel"
 fi
 
 # yum commandline to install necessary dev packages
 ns-yum-install()
 {
-    sudo yum -y install $(echo ${NS_DEV_RPM} ${NS_TOOL_RPM} ${NS_GTK_RPM})
+    sudo yum -y install $(echo ${NS_DEV_YUM_RPM} ${NS_TOOL_YUM_RPM} ${NS_GTK_YUM_RPM})
 }
 
 
-# DNF RPM packages for rpm based systems (tested on fedora 25)
+# packages for dnf installer RPM based systems (tested on fedora 25)
 NS_DEV_DNF_RPM="java-1.8.0-openjdk-headless gcc clang pkgconfig libcurl-devel libjpeg-devel expat-devel libpng-devel openssl-devel gperf perl-HTML-Parser"
 NS_TOOL_DNF_RPM="git flex bison ccache screen"
 if [ "x${NETSURF_GTK_MAJOR}" = "x3" ]; then
@@ -201,12 +209,28 @@ ns-dnf-install()
 }
 
 
+# packages for zypper installer RPM based systems (tested on openSUSE leap 42)
+NS_DEV_ZYP_RPM="java-1.8.0-openjdk-headless gcc clang pkgconfig libcurl-devel libjpeg-devel expat-devel libpng-devel openssl-devel gperf perl-HTML-Parser"
+NS_TOOL_ZYP_RPM="git flex bison gperf ccache screen"
+if [ "x${NETSURF_GTK_MAJOR}" = "x3" ]; then
+    NS_GTK_ZYP_RPM="gtk3-devel"
+else
+    NS_GTK_ZYP_RPM="gtk2-devel"
+fi
+
+# zypper commandline to install necessary dev packages
+ns-zypper-install()
+{
+    sudo zypper install -y $(echo ${NS_DEV_ZYP_RPM} ${NS_TOOL_ZYP_RPM} ${NS_GTK_ZYP_RPM})
+}
+
+
+# Packages for Haiku install
 
 # Haiku secondary arch suffix:
-# empty for primary (gcc2 on x86),
-# "_x86" for gcc4 secondary.
+# empty for primary (gcc2 on x86) or "_x86" for gcc4 secondary.
 HA=_x86
-# Haiku packages
+
 NS_DEV_HPKG="devel:libcurl${HA} devel:libpng${HA} devel:libjpeg${HA} devel:libcrypto${HA} devel:libiconv${HA} devel:libexpat${HA} cmd:pkg_config${HA} cmd:gperf html_parser"
 
 # pkgman commandline to install necessary dev packages
@@ -214,6 +238,7 @@ ns-pkgman-install()
 {
     pkgman install $(echo ${NS_DEV_HPKG})
 }
+
 
 # MAC OS X
 NS_DEV_MACPORT="git expat openssl curl libjpeg-turbo libpng"
@@ -223,6 +248,8 @@ ns-macport-install()
     PATH=/opt/local/bin:/opt/local/sbin:$PATH sudo /opt/local/bin/port install $(echo ${NS_DEV_MACPORT})
 }
 
+
+# packages for FreeBSD install
 NS_DEV_FREEBSDPKG="gmake curl"
 
 # FreeBSD package install
@@ -230,6 +257,7 @@ ns-freebsdpkg-install()
 {
     pkg install $(echo ${NS_DEV_FREEBSDPKG})
 }
+
 
 # generic for help text
 NS_DEV_GEN="git, gcc, pkgconfig, expat library, openssl library, libcurl, perl, perl MD5 digest, libjpeg library, libpng library"
@@ -240,11 +268,13 @@ else
     NS_GTK_GEN="gtk+ 2 toolkit library, librsvg2 library"
 fi
 
-# Genertic OS package install
+# Generic OS package install
 #  looks for package managers and tries to use them if present
 ns-package-install()
 {
-    if [ -x "/usr/bin/apt-get" ]; then
+    if [ -x "/usr/bin/zypper" ]; then
+        ns-zypper-install
+    elif [ -x "/usr/bin/apt-get" ]; then
         ns-apt-get-install
     elif [ -x "/usr/bin/dnf" ]; then
         ns-dnf-install
