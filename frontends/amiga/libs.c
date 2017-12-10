@@ -23,6 +23,7 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 
+#include <proto/dos.h>
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
@@ -219,6 +220,7 @@ bool ami_libs_open(void)
 	AMINS_LIB_OPEN("asl.library",          37, Asl,         "main",        1, true)
 	AMINS_LIB_OPEN("datatypes.library",    39, DataTypes,   "main",        1, true)
 	AMINS_LIB_OPEN("diskfont.library",     40, Diskfont,    "main",        1, true)
+	AMINS_LIB_OPEN("dos.library",          37, DOS,         "main",        1, true)
 	AMINS_LIB_OPEN("gadtools.library",     37, GadTools,    "main",        1, true)
 	AMINS_LIB_OPEN("graphics.library",     40, Graphics,    "main",        1, true)
 	AMINS_LIB_OPEN("icon.library",         44, Icon,        "main",        1, true)
@@ -321,6 +323,7 @@ void ami_libs_close(void)
 	AMINS_LIB_CLOSE(Asl)
 	AMINS_LIB_CLOSE(DataTypes)
 	AMINS_LIB_CLOSE(Diskfont)
+	AMINS_LIB_CLOSE(DOS)
 	AMINS_LIB_CLOSE(GadTools)
 	AMINS_LIB_CLOSE(Graphics)
 	AMINS_LIB_CLOSE(Icon)
