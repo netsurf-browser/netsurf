@@ -2073,7 +2073,7 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	int i;
 	GtkAccelGroup *group;
 
-	gs = malloc(sizeof(*gs));
+	gs = calloc(1, sizeof(*gs));
 	if (gs == NULL) {
 		return NULL;
 	}
@@ -2491,7 +2491,11 @@ gui_search_web_provider_update(const char *provider_name,
 
 	/* set the search provider parameters up in each scaffold */
 	for (current = scaf_list; current != NULL; current = current->next) {
-	/* add ico to each window's toolbar */
+		if (current->webSearchEntry == NULL) {
+			continue;
+		}
+
+		/* add ico to each window's toolbar */
 		if (srch_pixbuf != NULL) {
 			nsgtk_entry_set_icon_from_pixbuf(current->webSearchEntry,
 							 GTK_ENTRY_ICON_PRIMARY,

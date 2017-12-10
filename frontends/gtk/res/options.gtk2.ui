@@ -2,6 +2,297 @@
 <interface>
   <requires lib="gtk+" version="2.16"/>
   <!-- interface-naming-policy project-wide -->
+  <object class="GtkAdjustment" id="adjustment_animation_time">
+    <property name="lower">0.10000000000000001</property>
+    <property name="upper">10</property>
+    <property name="value">0.10000000000000001</property>
+    <property name="step_increment">0.10000000000000001</property>
+    <property name="page_increment">1</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_cache_disc_size">
+    <property name="upper">4096</property>
+    <property name="value">1024</property>
+    <property name="step_increment">32</property>
+    <property name="page_increment">256</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_cache_memory_size">
+    <property name="upper">2048</property>
+    <property name="value">16</property>
+    <property name="step_increment">4</property>
+    <property name="page_increment">16</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_disc_cache_age">
+    <property name="upper">999</property>
+    <property name="value">28</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_fetching_cached">
+    <property name="upper">100</property>
+    <property name="value">1</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_fetching_max">
+    <property name="lower">1</property>
+    <property name="upper">100</property>
+    <property name="value">10</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_fetching_perhost">
+    <property name="lower">1</property>
+    <property name="upper">100</property>
+    <property name="value">1</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_font_default_size">
+    <property name="lower">1</property>
+    <property name="upper">99.900000000000006</property>
+    <property name="value">16</property>
+    <property name="step_increment">0.10000000000000001</property>
+    <property name="page_increment">2</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_history_age">
+    <property name="upper">999</property>
+    <property name="value">28</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">28</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_pdf_lmargin">
+    <property name="upper">999</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_pdf_scale">
+    <property name="lower">1</property>
+    <property name="upper">1000</property>
+    <property name="value">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_proxy_port">
+    <property name="lower">1</property>
+    <property name="upper">65535</property>
+    <property name="value">3128</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkImage" id="image1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="xpad">3</property>
+    <property name="stock">gtk-apply</property>
+  </object>
+  <object class="GtkListStore" id="liststore_content_language">
+    <columns>
+      <!-- column-name Code -->
+      <column type="gchararray"/>
+      <!-- column-name Description -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">en</col>
+        <col id="1" translatable="yes">English</col>
+      </row>
+    </data>
+  </object>
+  <object class="GtkListStore" id="liststore_defaultfont">
+    <columns>
+      <!-- column-name Type -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">preferencesFonttypeSans</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">preferencesFonttypeSerif</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">preferencesFonttypeMonospace</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">preferencesFonttypeCursive</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">preferencesFonttypeFantasy</col>
+      </row>
+    </data>
+  </object>
+  <object class="GtkListStore" id="liststore_developer_view">
+    <columns>
+      <!-- column-name Type -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">preferencesDeveloperViewWindow</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">preferencesDeveloperViewTab</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">preferencesDeveloperViewEditor</col>
+      </row>
+    </data>
+  </object>
+  <object class="GtkListStore" id="liststore_image_loading">
+    <columns>
+      <!-- column-name Type -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">preferencesImageLoadBoth</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">preferencesImageLoadFore</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">preferencesImageLoadBack</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">preferencesImageLoadNone</col>
+      </row>
+    </data>
+  </object>
+  <object class="GtkListStore" id="liststore_proxy_type">
+    <columns>
+      <!-- column-name Type -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">preferencesProxyTypeDirect</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">preferencesProxyTypeManual</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">preferencesProxyTypeBasic</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">preferencesProxyTypeNLTM</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">preferencesProxyTypeSystem</col>
+      </row>
+    </data>
+  </object>
+  <object class="GtkListStore" id="liststore_search_provider">
+    <columns>
+      <!-- column-name Provider -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0">Google</col>
+      </row>
+      <row>
+        <col id="0">Yahoo!</col>
+      </row>
+      <row>
+        <col id="0">Microsoft Live</col>
+      </row>
+      <row>
+        <col id="0">Buisiness.com</col>
+      </row>
+      <row>
+        <col id="0">Omgili</col>
+      </row>
+      <row>
+        <col id="0">BBC News</col>
+      </row>
+      <row>
+        <col id="0">Ubuntu Packages</col>
+      </row>
+      <row>
+        <col id="0">Creative Commons</col>
+      </row>
+      <row>
+        <col id="0">Ask</col>
+      </row>
+      <row>
+        <col id="0">Answers</col>
+      </row>
+      <row>
+        <col id="0">Dictionary.com</col>
+      </row>
+      <row>
+        <col id="0">YouTube</col>
+      </row>
+      <row>
+        <col id="0">AeroMP3</col>
+      </row>
+      <row>
+        <col id="0">AOL</col>
+      </row>
+      <row>
+        <col id="0">Baidu</col>
+      </row>
+      <row>
+        <col id="0">Amazon</col>
+      </row>
+      <row>
+        <col id="0">Ebay</col>
+      </row>
+      <row>
+        <col id="0">IMBD</col>
+      </row>
+      <row>
+        <col id="0">ESPN</col>
+      </row>
+      <row>
+        <col id="0">Wikipedia</col>
+      </row>
+      <row>
+        <col id="0">DuckDuckGo</col>
+      </row>
+    </data>
+  </object>
+  <object class="GtkListStore" id="liststore_tab_position">
+    <columns>
+      <!-- column-name Position -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">preferencesTabLocTop</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">preferencesTabLocLeft</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">preferencesTabLocRight</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">preferencesTabLocBottom</col>
+      </row>
+    </data>
+  </object>
+  <object class="GtkListStore" id="liststore_toolbar_buttontype">
+    <columns>
+      <!-- column-name Type -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">preferencesButtonTypeSmall</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">preferencesButtonTypeLarge</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">preferencesButtonTypeLargeText</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">preferencesButtonTypeText</col>
+      </row>
+    </data>
+  </object>
   <object class="GtkDialog" id="dialogPreferences">
     <property name="can_focus">False</property>
     <property name="border_width">5</property>
@@ -2178,7 +2469,6 @@
             </child>
             <child>
               <object class="GtkVBox" id="vbox_pdfexport">
-                <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="spacing">6</property>
                 <child>
@@ -2583,6 +2873,12 @@
                                     <property name="x_options">GTK_EXPAND</property>
                                   </packing>
                                 </child>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                                <child>
+                                  <placeholder/>
+                                </child>
                               </object>
                               <packing>
                                 <property name="expand">True</property>
@@ -2709,296 +3005,5 @@
       <action-widget response="0">help</action-widget>
       <action-widget response="-7">close</action-widget>
     </action-widgets>
-  </object>
-  <object class="GtkListStore" id="liststore_search_provider">
-    <columns>
-      <!-- column-name Provider -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0">Google</col>
-      </row>
-      <row>
-        <col id="0">Yahoo!</col>
-      </row>
-      <row>
-        <col id="0">Microsoft Live</col>
-      </row>
-      <row>
-        <col id="0">Buisiness.com</col>
-      </row>
-      <row>
-        <col id="0">Omgili</col>
-      </row>
-      <row>
-        <col id="0">BBC News</col>
-      </row>
-      <row>
-        <col id="0">Ubuntu Packages</col>
-      </row>
-      <row>
-        <col id="0">Creative Commons</col>
-      </row>
-      <row>
-        <col id="0">Ask</col>
-      </row>
-      <row>
-        <col id="0">Answers</col>
-      </row>
-      <row>
-        <col id="0">Dictionary.com</col>
-      </row>
-      <row>
-        <col id="0">YouTube</col>
-      </row>
-      <row>
-        <col id="0">AeroMP3</col>
-      </row>
-      <row>
-        <col id="0">AOL</col>
-      </row>
-      <row>
-        <col id="0">Baidu</col>
-      </row>
-      <row>
-        <col id="0">Amazon</col>
-      </row>
-      <row>
-        <col id="0">Ebay</col>
-      </row>
-      <row>
-        <col id="0">IMBD</col>
-      </row>
-      <row>
-        <col id="0">ESPN</col>
-      </row>
-      <row>
-        <col id="0">Wikipedia</col>
-      </row>
-      <row>
-        <col id="0">DuckDuckGo</col>
-      </row>
-    </data>
-  </object>
-  <object class="GtkListStore" id="liststore_tab_position">
-    <columns>
-      <!-- column-name Position -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">preferencesTabLocTop</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">preferencesTabLocLeft</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">preferencesTabLocRight</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">preferencesTabLocBottom</col>
-      </row>
-    </data>
-  </object>
-  <object class="GtkListStore" id="liststore_toolbar_buttontype">
-    <columns>
-      <!-- column-name Type -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">preferencesButtonTypeSmall</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">preferencesButtonTypeLarge</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">preferencesButtonTypeLargeText</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">preferencesButtonTypeText</col>
-      </row>
-    </data>
-  </object>
-  <object class="GtkListStore" id="liststore_image_loading">
-    <columns>
-      <!-- column-name Type -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">preferencesImageLoadBoth</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">preferencesImageLoadFore</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">preferencesImageLoadBack</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">preferencesImageLoadNone</col>
-      </row>
-    </data>
-  </object>
-  <object class="GtkListStore" id="liststore_defaultfont">
-    <columns>
-      <!-- column-name Type -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">preferencesFonttypeSans</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">preferencesFonttypeSerif</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">preferencesFonttypeMonospace</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">preferencesFonttypeCursive</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">preferencesFonttypeFantasy</col>
-      </row>
-    </data>
-  </object>
-  <object class="GtkImage" id="image1">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="xpad">3</property>
-    <property name="stock">gtk-apply</property>
-  </object>
-  <object class="GtkListStore" id="liststore_proxy_type">
-    <columns>
-      <!-- column-name Type -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">preferencesProxyTypeDirect</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">preferencesProxyTypeManual</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">preferencesProxyTypeBasic</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">preferencesProxyTypeNLTM</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">preferencesProxyTypeSystem</col>
-      </row>
-    </data>
-  </object>
-  <object class="GtkAdjustment" id="adjustment_animation_time">
-    <property name="value">0.10000000000000001</property>
-    <property name="lower">0.10000000000000001</property>
-    <property name="upper">10</property>
-    <property name="step_increment">0.10000000000000001</property>
-    <property name="page_increment">1</property>
-  </object>
-  <object class="GtkAdjustment" id="adjustment_font_default_size">
-    <property name="value">16</property>
-    <property name="lower">1</property>
-    <property name="upper">99.900000000000006</property>
-    <property name="step_increment">0.10000000000000001</property>
-    <property name="page_increment">2</property>
-  </object>
-  <object class="GtkAdjustment" id="adjustment_history_age">
-    <property name="value">28</property>
-    <property name="upper">999</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">28</property>
-  </object>
-  <object class="GtkAdjustment" id="adjustment_cache_memory_size">
-    <property name="value">16</property>
-    <property name="upper">2048</property>
-    <property name="step_increment">4</property>
-    <property name="page_increment">16</property>
-  </object>
-  <object class="GtkAdjustment" id="adjustment_cache_disc_size">
-    <property name="value">1024</property>
-    <property name="upper">4096</property>
-    <property name="step_increment">32</property>
-    <property name="page_increment">256</property>
-  </object>
-  <object class="GtkAdjustment" id="adjustment_disc_cache_age">
-    <property name="value">28</property>
-    <property name="upper">999</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjustment_proxy_port">
-    <property name="value">3128</property>
-    <property name="lower">1</property>
-    <property name="upper">65535</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjustment_fetching_max">
-    <property name="value">10</property>
-    <property name="lower">1</property>
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjustment_fetching_perhost">
-    <property name="value">1</property>
-    <property name="lower">1</property>
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjustment_fetching_cached">
-    <property name="value">1</property>
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjustment_pdf_scale">
-    <property name="value">100</property>
-    <property name="lower">1</property>
-    <property name="upper">1000</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjustment_pdf_lmargin">
-    <property name="upper">999</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
-  <object class="GtkListStore" id="liststore_content_language">
-    <columns>
-      <!-- column-name Code -->
-      <column type="gchararray"/>
-      <!-- column-name Description -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">en</col>
-        <col id="1" translatable="yes">English</col>
-      </row>
-    </data>
-  </object>
-  <object class="GtkListStore" id="liststore_developer_view">
-    <columns>
-      <!-- column-name Type -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">preferencesDeveloperViewWindow</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">preferencesDeveloperViewTab</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">preferencesDeveloperViewEditor</col>
-      </row>
-    </data>
   </object>
 </interface>
