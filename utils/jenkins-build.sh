@@ -135,6 +135,20 @@ case ${TARGET} in
 	    "ppc-amigaos")
 		;;
 
+	    *)
+		echo "Target \"${TARGET}\" cannot be built on \"${HOST})\""
+		exit 1
+		;;
+
+	esac
+
+	PKG_SRC=NetSurf_Amiga/netsurf
+	PKG_SFX=.lha
+	;;
+
+
+    "amigaos3")
+	case ${HOST} in
 	    "m68k-unknown-amigaos")
 		;;
 
