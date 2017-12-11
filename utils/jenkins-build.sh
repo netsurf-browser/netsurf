@@ -135,6 +135,9 @@ case ${TARGET} in
 	    "ppc-amigaos")
 		;;
 
+	    "m68k-unknown-amigaos")
+		;;
+
 	    *)
 		echo "Target \"${TARGET}\" cannot be built on \"${HOST})\""
 		exit 1
@@ -287,6 +290,11 @@ case ${TARGET} in
 		;;
 
 	    "ppc-amigaos")
+		export GCCSDK_INSTALL_ENV=/opt/netsurf/${HOST}/env
+		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${HOST}/cross/bin
+		;;
+
+	    "m68k-unknown-amigaos")
 		export GCCSDK_INSTALL_ENV=/opt/netsurf/${HOST}/env
 		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${HOST}/cross/bin
 		;;
