@@ -245,7 +245,7 @@ void ami_plot_ra_free(struct gui_globals *gg)
 	}
 
 	if(gg->rp) {
-		DeleteLayer(0,gg->rp->Layer);
+		if(gg->rp->Layer != NULL) DeleteLayer(0, gg->rp->Layer);
 		free(gg->rp->TmpRas);
 		free(gg->rp->AreaInfo);
 		free(gg->rp);
