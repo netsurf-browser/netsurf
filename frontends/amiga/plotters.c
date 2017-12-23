@@ -239,6 +239,8 @@ void ami_plot_ra_free(struct gui_globals *gg)
 {
 	init_layers_count--;
 
+	if(init_layers_count < 0) return;
+
 	if((init_layers_count == 0) && (pool_pens != NULL)) {
 		ami_memory_itempool_delete(pool_pens);
 		pool_pens = NULL;
