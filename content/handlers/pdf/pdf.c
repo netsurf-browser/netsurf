@@ -28,6 +28,7 @@
 #include <stdlib.h>
 
 #include <nspdf/document.h>
+#include <nspdf/meta.h>
 
 #include "utils/utils.h"
 #include "content/llcache.h"
@@ -117,6 +118,7 @@ static bool pdf_convert(struct content *c)
 	nspdferror pdfres;
 	const uint8_t *content_data;
 	unsigned long content_length;
+	struct lwc_string_s *title;
 
 	content_data = (const uint8_t *)content__get_source_data(c,
 						&content_length);
@@ -129,8 +131,14 @@ static bool pdf_convert(struct content *c)
 		return false;
 	}
 
+	pdfres = nspdf_get_title(pdfc->doc, &title);
+	if (pdfres == NSPDFERROR_OK) {
+		content__set_title(c, lwc_string_data(title));
+	}
+
 	content_set_ready(c);
 	content_set_done(c);
+
 	return true;
 }
 
