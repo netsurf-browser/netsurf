@@ -513,7 +513,6 @@ include Makefile.defaults
 
 # libraries enabled by feature switch without pkgconfig file 
 $(eval $(call feature_switch,JPEG,JPEG (libjpeg),-DWITH_JPEG,-ljpeg,-UWITH_JPEG,))
-$(eval $(call feature_switch,HARU_PDF,PDF export (haru),-DWITH_PDF_EXPORT,-lhpdf -lpng,-UWITH_PDF_EXPORT,))
 $(eval $(call feature_switch,LIBICONV_PLUG,glibc internal iconv,-DLIBICONV_PLUG,,-ULIBICONV_PLUG,-liconv))
 $(eval $(call feature_switch,DUKTAPE,Javascript (Duktape),,,,,))
 
@@ -538,6 +537,7 @@ NETSURF_FEATURE_OPENSSL_CFLAGS := -DWITH_OPENSSL
 NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
 NETSURF_FEATURE_NSPSL_CFLAGS := -DWITH_NSPSL
 NETSURF_FEATURE_NSLOG_CFLAGS := -DWITH_NSLOG
+NETSURF_FEATURE_NSPDF_CFLAGS := -DWITH_NSPDF
 
 # libcurl and openssl ordering matters as if libcurl requires ssl it
 #  needs to come first in link order to ensure its symbols can be
@@ -559,6 +559,7 @@ $(eval $(call pkg_config_find_and_add_enabled,NSSVG,libsvgtiny,SVG))
 $(eval $(call pkg_config_find_and_add_enabled,ROSPRITE,librosprite,Sprite))
 $(eval $(call pkg_config_find_and_add_enabled,NSPSL,libnspsl,PSL))
 $(eval $(call pkg_config_find_and_add_enabled,NSLOG,libnslog,LOG))
+$(eval $(call pkg_config_find_and_add_enabled,NSPDF,libnspdf,PDF))
 
 # List of directories in which headers are searched for
 INCLUDE_DIRS :=. include $(OBJROOT)

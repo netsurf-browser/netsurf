@@ -43,6 +43,7 @@
 #include "javascript/js.h"
 #include "render/html.h"
 #include "render/textplain.h"
+#include "pdf/pdf.h"
 
 #include "netsurf/browser_window.h"
 #include "desktop/system_colour.h"
@@ -213,6 +214,12 @@ nserror netsurf_init(const char *store_path)
 	ret = textplain_init();
 	if (ret != NSERROR_OK)
 		return ret;
+
+#ifdef WITH_NSPDF
+	ret = nspdf_init();
+	if (ret != NSERROR_OK)
+		return ret;
+#endif
 
 	setlocale(LC_ALL, "");
 

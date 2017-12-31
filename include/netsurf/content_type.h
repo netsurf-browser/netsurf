@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -68,8 +68,11 @@ typedef enum {
 	/** All script types. */
 	CONTENT_SCRIPT		= 0x40,
 
+	/** Portable Document Format. */
+	CONTENT_PDF		= 0x80,
+
 	/** Any content matches */
-	CONTENT_ANY		= 0x7f
+	CONTENT_ANY		= 0xff
 } content_type;
 
 

@@ -17,8 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Content handling (interface).
+/**
+ * \file
+ * Content handling interface.
  *
  * The content functions manipulate struct contents, which correspond to URLs.
  */
@@ -36,17 +37,34 @@ struct content_redraw_data;
 struct http_parameter;
 
 struct content_handler {
+	/**
+	 * content handler finalisation
+	 */
 	void (*fini)(void);
 
+	/**
+	 * create a content
+	 */
 	nserror (*create)(const struct content_handler *handler,
                           lwc_string *imime_type,
                           const struct http_parameter *params,
                           struct llcache_handle *llcache,
-                          const char *fallback_charset, bool quirks,
+                          const char *fallback_charset,
+			  bool quirks,
                           struct content **c);
 
+	/**
+	 * ongoing fetch has received data
+	 */
 	bool (*process_data)(struct content *c, 
-			const char *data, unsigned int size);
+			     const char *data,
+			     unsigned int size);
+
+	/**
+	 * fetcher has completed retrieving all the data
+	 *
+	 * \param c The completed content.
+	 */
 	bool (*data_complete)(struct content *c);
 	void (*reformat)(struct content *c, int width, int height);
 	void (*destroy)(struct content *c);
@@ -82,10 +100,14 @@ struct content_handler {
 	void (*add_user)(struct content *c);
 	void (*remove_user)(struct content *c);
 
-        /** handler dependant content sensitive internal data interface. */
+        /**
+	 * handler dependant content sensitive internal data interface.
+	 */
 	void * (*get_internal)(const struct content *c, void *context);
 
-	/** There must be one content per user for this type. */
+	/**
+	 * There must be one content per user for this type.
+	 */
 	bool no_share;
 };
 

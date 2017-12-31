@@ -63,11 +63,9 @@ NETSURF_USE_VIDEO := NO
 # Valid options: YES, NO
 NETSURF_USE_DUKTAPE := YES
 
-# Enable NetSurf's use of libharu for PDF export and GTK printing support.
-# There is no auto-detection available for this, as it does not have a
-# pkg-config file.
-# Valid options: YES, NO
-NETSURF_USE_HARU_PDF := NO
+# Enable the use of netsurf integrated pdf viewing
+# Valid options: YES, NO, AUTO
+NETSURF_USE_NSPDF := AUTO
 
 # Enable the use of the Public suffix library to detect supercookies
 # Valid options: YES, NO, AUTO	                          (highly recommended)

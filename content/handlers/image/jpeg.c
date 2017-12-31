@@ -17,8 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Content for image/jpeg (implementation).
+/**
+ * \file
+ * implementation of content handling for JPEG images.
  *
  * This implementation uses the IJG JPEG library.
  */

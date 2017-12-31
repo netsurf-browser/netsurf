@@ -13,4 +13,9 @@ include content/handlers/javascript/Makefile
 
 S_CONTENT += $(addprefix handlers/javascript/,$(S_JAVASCRIPT))
 
+# PDF source
+include content/handlers/pdf/Makefile
+
+S_CONTENT += $(addprefix handlers/pdf/,$(S_PDF))
+
 INCLUDE_DIRS += content/handlers
