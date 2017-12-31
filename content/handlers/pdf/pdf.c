@@ -27,11 +27,38 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include <nspdf/document.h>
+
 #include "utils/utils.h"
 #include "content/llcache.h"
 #include "content/content_protected.h"
 
 #include "pdf.h"
+
+typedef struct pdf_content {
+	struct content base;
+
+	struct nspdf_doc *doc;
+} pdf_content;
+
+static nserror nspdf2nserr(nspdferror nspdferr)
+{
+	nserror res;
+	switch (nspdferr) {
+	case NSPDFERROR_OK:
+		res = NSERROR_OK;
+		break;
+
+	case NSPDFERROR_NOMEM:
+		res = NSERROR_NOMEM;
+		break;
+
+	default:
+		res = NSERROR_UNKNOWN;
+		break;
+	}
+	return res;
+}
 
 /**
  * Content create entry point.
@@ -45,32 +72,63 @@ pdf_create(const content_handler *handler,
 	   bool quirks,
 	   struct content **c)
 {
-	struct content *jpeg;
-	nserror error;
+	struct pdf_content *pdfc;
+	nserror res;
+	nspdferror pdfres;
 
-	jpeg = calloc(1, sizeof(struct content));
-	if (jpeg == NULL)
+	pdfc = calloc(1, sizeof(struct pdf_content));
+	if (pdfc == NULL) {
 		return NSERROR_NOMEM;
-
-	error = content__init(jpeg, handler, imime_type, params,
-			      llcache, fallback_charset, quirks);
-	if (error != NSERROR_OK) {
-		free(jpeg);
-		return error;
 	}
 
-	*c = jpeg;
+	res = content__init(&pdfc->base,
+			    handler,
+			    imime_type,
+			    params,
+			    llcache,
+			    fallback_charset,
+			    quirks);
+	if (res != NSERROR_OK) {
+		free(pdfc);
+		return res;
+	}
+
+	pdfres = nspdf_document_create(&pdfc->doc);
+	if (pdfres != NSPDFERROR_OK) {
+		free(pdfc);
+		return nspdf2nserr(res);
+	}
+
+	*c = (struct content *)pdfc;
 
 	return NSERROR_OK;
 }
 
 /* exported interface documented in image_cache.h */
-static void pdf_destroy(struct content *content)
+static void pdf_destroy(struct content *c)
 {
+	struct pdf_content *pdfc = (struct pdf_content *)c;
+	nspdf_document_destroy(pdfc->doc);
 }
 
 static bool pdf_convert(struct content *c)
 {
+	struct pdf_content *pdfc = (struct pdf_content *)c;
+	nspdferror pdfres;
+	const uint8_t *content_data;
+	unsigned long content_length;
+
+	content_data = (const uint8_t *)content__get_source_data(c,
+						&content_length);
+
+	pdfres = nspdf_document_parse(pdfc->doc,
+				      content_data,
+				      content_length);
+	if (pdfres != NSPDFERROR_OK) {
+		content_broadcast_errorcode(c, NSERROR_INVALID);
+		return false;
+	}
+
 	content_set_ready(c);
 	content_set_done(c);
 	return true;
