@@ -272,15 +272,19 @@ bool filename_flush_directory(const char *folder, int depth)
 	parent = opendir(folder);
 
 	while ((entry = readdir(parent))) {
-	 	struct stat statbuf;
+		int written;
+		struct stat statbuf;
 
 		/* Ignore '.' and '..' */
 		if (strcmp(entry->d_name, ".") == 0 ||
 				strcmp(entry->d_name, "..") == 0)
 			continue;
 
-		snprintf(child, sizeof(child), "%s/%s", folder, entry->d_name);
-		child[sizeof(child) - 1] = '\0';
+		written = snprintf(child, sizeof(child), "%s/%s",
+				folder, entry->d_name);
+		if (written == sizeof(child)) {
+			child[sizeof(child) - 1] = '\0';
+		}
 
 		if (stat(child, &statbuf) == -1) {
 			NSLOG(netsurf, INFO, "Unable to stat %s: %s", child,
@@ -383,16 +387,21 @@ bool filename_delete_recursive(char *folder)
 	parent = opendir(folder);
 
 	while ((entry = readdir(parent))) {
+		int written;
+
 		/* Ignore '.' and '..' */
 		if (strcmp(entry->d_name, ".") == 0 ||
 				strcmp(entry->d_name, "..") == 0)
 			continue;
 
-		snprintf(child, sizeof(child), "%s/%s", folder, entry->d_name);
-		child[sizeof(child) - 1] = '\0';
+		written = snprintf(child, sizeof(child), "%s/%s",
+				folder, entry->d_name);
+		if (written == sizeof(child)) {
+			child[sizeof(child) - 1] = '\0';
+		}
 
 		if (stat(child, &statbuf) == -1) {
-                        NSLOG(netsurf, INFO, "Unable to stat %s: %s", child,
+			NSLOG(netsurf, INFO, "Unable to stat %s: %s", child,
 			      strerror(errno));
 			continue;
 		}
