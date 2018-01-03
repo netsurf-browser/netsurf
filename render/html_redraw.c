@@ -521,12 +521,14 @@ static bool html_redraw_radio(int x, int y, int width, int height,
  * \param  box	     box of input
  * \param  scale     scale for redraw
  * \param  background_colour  current background colour
+ * \param  len_ctx   Length conversion context
  * \param  ctx	     current redraw context
  * \return true if successful, false otherwise
  */
 
 static bool html_redraw_file(int x, int y, int width, int height,
 		struct box *box, float scale, colour background_colour,
+		const nscss_len_ctx *len_ctx,
 		const struct redraw_context *ctx)
 {
 	int text_width;
@@ -535,7 +537,7 @@ static bool html_redraw_file(int x, int y, int width, int height,
 	plot_font_style_t fstyle;
 	nserror res;
 
-	font_plot_style_from_css(box->style, &fstyle);
+	font_plot_style_from_css(len_ctx, box->style, &fstyle);
 	fstyle.background = background_colour;
 
 	if (box->gadget->value) {
@@ -578,13 +580,16 @@ static bool html_redraw_file(int x, int y, int width, int height,
  * \param  clip   current clip rectangle
  * \param  background_colour  current background colour
  * \param  background  box containing background details (usually \a box)
- * \param  ctx	  current redraw context
+ * \param  len_ctx  Length conversion context
+ * \param  ctx      current redraw context
  * \return true if successful, false otherwise
  */
 
 static bool html_redraw_background(int x, int y, struct box *box, float scale,
 		const struct rect *clip, colour *background_colour,
-		struct box *background, const struct redraw_context *ctx)
+		struct box *background,
+		const nscss_len_ctx *len_ctx,
+		const struct redraw_context *ctx)
 {
 	bool repeat_x = false;
 	bool repeat_y = false;
@@ -660,7 +665,7 @@ static bool html_redraw_background(int x, int y, struct box *box, float scale,
 				content_get_width(background->background)) *
 				scale * FIXTOFLT(hpos) / 100.;
 		} else {
-			x += (int) (FIXTOFLT(nscss_len2px(hpos, hunit, 
+			x += (int) (FIXTOFLT(nscss_len2px(len_ctx, hpos, hunit,
 					background->style)) * scale);
 		}
 
@@ -669,7 +674,7 @@ static bool html_redraw_background(int x, int y, struct box *box, float scale,
 				content_get_height(background->background)) *
 				scale * FIXTOFLT(vpos) / 100.;
 		} else {
-			y += (int) (FIXTOFLT(nscss_len2px(vpos, vunit,
+			y += (int) (FIXTOFLT(nscss_len2px(len_ctx, vpos, vunit,
 					background->style)) * scale);
 		}
 	}
@@ -802,13 +807,15 @@ static bool html_redraw_background(int x, int y, struct box *box, float scale,
  * \param  first  true if this is the first rectangle associated with the inline
  * \param  last   true if this is the last rectangle associated with the inline
  * \param  background_colour  updated to current background colour if plotted
- * \param  ctx	  current redraw context
+ * \param  len_ctx  Length conversion context
+ * \param  ctx      current redraw context
  * \return true if successful, false otherwise
  */
 
 static bool html_redraw_inline_background(int x, int y, struct box *box,
 		float scale, const struct rect *clip, struct rect b,
 		bool first, bool last, colour *background_colour,
+		const nscss_len_ctx *len_ctx,
 		const struct redraw_context *ctx)
 {
 	struct rect r = *clip;
@@ -869,7 +876,7 @@ static bool html_redraw_inline_background(int x, int y, struct box *box,
 				plot_content = false;
 			}
 		} else {
-			x += (int) (FIXTOFLT(nscss_len2px(hpos, hunit, 
+			x += (int) (FIXTOFLT(nscss_len2px(len_ctx, hpos, hunit,
 					box->style)) * scale);
 		}
 
@@ -878,7 +885,7 @@ static bool html_redraw_inline_background(int x, int y, struct box *box,
 					content_get_height(box->background) *
 					scale) * FIXTOFLT(vpos) / 100.;
 		} else {
-			y += (int) (FIXTOFLT(nscss_len2px(vpos, vunit, 
+			y += (int) (FIXTOFLT(nscss_len2px(len_ctx, vpos, vunit,
 					box->style)) * scale);
 		}
 	}
@@ -1120,7 +1127,7 @@ static bool html_redraw_text_box(const html_content *html, struct box *box,
 	bool excluded = (box->object != NULL);
 	plot_font_style_t fstyle;
 
-	font_plot_style_from_css(box->style, &fstyle);
+	font_plot_style_from_css(&html->len_ctx, box->style, &fstyle);
 	fstyle.background = current_background_color;
 
 	if (!text_redraw(box->text, box->length, box->byte_offset,
@@ -1382,21 +1389,25 @@ bool html_redraw_box(const html_content *html, struct box *box,
 		/* We have an absolutly positioned box with a clip rect */
 		if (css_rect.left_auto == false)
 			r.x0 = x - border_left + FIXTOINT(nscss_len2px(
+					&html->len_ctx,
 					css_rect.left, css_rect.lunit,
 					box->style));
 
 		if (css_rect.top_auto == false)
 			r.y0 = y - border_top + FIXTOINT(nscss_len2px(
+					&html->len_ctx,
 					css_rect.top, css_rect.tunit,
 					box->style));
 
 		if (css_rect.right_auto == false)
 			r.x1 = x - border_left + FIXTOINT(nscss_len2px(
+					&html->len_ctx,
 					css_rect.right, css_rect.runit,
 					box->style));
 
 		if (css_rect.bottom_auto == false)
 			r.y1 = y - border_top + FIXTOINT(nscss_len2px(
+					&html->len_ctx,
 					css_rect.bottom, css_rect.bunit,
 					box->style));
 
@@ -1486,7 +1497,8 @@ bool html_redraw_box(const html_content *html, struct box *box,
 		if ((p.x0 < p.x1) && (p.y0 < p.y1)) {
 			/* plot background */
 			if (!html_redraw_background(x, y, box, scale, &p,
-					&current_background_color, bg_box, ctx))
+					&current_background_color, bg_box,
+					&html->len_ctx, ctx))
 				return false;
 			/* restore previous graphics window */
 			if (ctx->plot->clip(ctx, &r) != NSERROR_OK)
@@ -1565,7 +1577,8 @@ bool html_redraw_box(const html_content *html, struct box *box,
 				if (!html_redraw_inline_background(
 						x, y, box, scale, &p, b,
 						first, false,
-						&current_background_color, ctx))
+						&current_background_color,
+						&html->len_ctx, ctx))
 					return false;
 				/* restore previous graphics window */
 				if (ctx->plot->clip(ctx, &r) != NSERROR_OK)
@@ -1597,7 +1610,8 @@ bool html_redraw_box(const html_content *html, struct box *box,
 		/* plot background and borders for last rectangle of
 		 * the inline */
 		if (!html_redraw_inline_background(x, ib_y, box, scale, &p, b,
-				first, true, &current_background_color, ctx))
+				first, true, &current_background_color,
+				&html->len_ctx, ctx))
 			return false;
 		/* restore previous graphics window */
 		if (ctx->plot->clip(ctx, &r) != NSERROR_OK)
@@ -1768,7 +1782,6 @@ bool html_redraw_box(const html_content *html, struct box *box,
 					    obj, sizeof(obj) - 1) != NSERROR_OK)
 				return false;
 		}
-			
 
 	} else if (box->iframe) {
 		/* Offset is passed to browser window redraw unscaled */
@@ -1789,7 +1802,7 @@ bool html_redraw_box(const html_content *html, struct box *box,
 	} else if (box->gadget && box->gadget->type == GADGET_FILE) {
 		if (!html_redraw_file(x + padding_left, y + padding_top,
 				width, height, box, scale,
-				current_background_color, ctx))
+				current_background_color, &html->len_ctx, ctx))
 			return false;
 
 	} else if (box->gadget &&

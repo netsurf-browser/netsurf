@@ -239,7 +239,14 @@ bool box_textarea_create_textarea(html_content *html,
 	dom_exception err;
 	textarea_setup ta_setup;
 	textarea_flags ta_flags;
-	plot_font_style_t fstyle;
+	plot_font_style_t fstyle = {
+		.family = PLOT_FONT_FAMILY_SANS_SERIF,
+		.size = 10 * FONT_SIZE_SCALE,
+		.weight = 400,
+		.flags = FONTF_NONE,
+		.background = 0,
+		.foreground = 0,
+	};
 	bool read_only = false;
 	bool disabled = false;
 	struct form_control *gadget = box->gadget;
@@ -306,8 +313,6 @@ bool box_textarea_create_textarea(html_content *html,
 		ta_flags |= TEXTAREA_READONLY;
 
 	gadget->data.text.data.gadget = gadget;
-
-	font_plot_style_from_css(gadget->box->style, &fstyle);
 
 	/* Reset to correct values by layout */
 	ta_setup.width = 200;

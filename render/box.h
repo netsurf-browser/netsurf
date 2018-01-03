@@ -91,6 +91,8 @@
 #include <stdio.h>
 #include <libcss/libcss.h>
 
+#include "content/handlers/css/utils.h"
+
 struct content;
 struct box;
 struct browser_window;
@@ -328,7 +330,9 @@ void box_free(struct box *box);
 void box_free_box(struct box *box);
 void box_bounds(struct box *box, struct rect *r);
 void box_coords(struct box *box, int *x, int *y);
-struct box *box_at_point(struct box *box, const int x, const int y,
+struct box *box_at_point(
+		const nscss_len_ctx *len_ctx,
+		struct box *box, const int x, const int y,
 		int *box_x, int *box_y);
 struct box *box_pick_text_box(struct html_content *html,
 		int x, int y, int dir, int *dx, int *dy);

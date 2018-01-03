@@ -25,6 +25,7 @@
 
 #include <stdbool.h>
 #include "netsurf/mouse.h"
+#include "content/handlers/css/utils.h"
 
 struct box;
 
@@ -43,6 +44,7 @@ struct selection
 {
 	struct content *c;
 	struct box *root;
+	nscss_len_ctx len_ctx;
 
 	unsigned max_idx;  /* total bytes in text representation */
 
@@ -60,7 +62,10 @@ struct selection *selection_create(struct content *c, bool is_html);
 void selection_prepare(struct selection *s, struct content *c, bool is_html);
 void selection_destroy(struct selection *s);
 
-void selection_init(struct selection *s, struct box *root);
+void selection_init(
+		struct selection *s,
+		struct box *root,
+		const nscss_len_ctx *len_ctx);
 void selection_reinit(struct selection *s, struct box *root);
 
 /* struct box *selection_root(struct selection *s); */

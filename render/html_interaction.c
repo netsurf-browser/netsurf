@@ -208,7 +208,7 @@ static size_t html_selection_drag_end(struct html_content *html,
 	if (box) {
 		plot_font_style_t fstyle;
 
-		font_plot_style_from_css(box->style, &fstyle);
+		font_plot_style_from_css(&html->len_ctx, box->style, &fstyle);
 
 		guit->layout->position(&fstyle, box->text, box->length,
 				       dx, &idx, &pixel_offset);
@@ -415,7 +415,8 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			size_t idx;
 			plot_font_style_t fstyle;
 
-			font_plot_style_from_css(box->style, &fstyle);
+			font_plot_style_from_css(&html->len_ctx,
+					box->style, &fstyle);
 
 			guit->layout->position(&fstyle,
 					       box->text, box->length,
@@ -649,7 +650,8 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			text_box = box;
 			text_box_x = box_x;
 		}
-	} while ((box = box_at_point(box, x, y, &box_x, &box_y)) != NULL);
+	} while ((box = box_at_point(&html->len_ctx, box, x, y,
+			&box_x, &box_y)) != NULL);
 
 	/* use of box_x, box_y, or content below this point is probably a
 	 * mistake; they will refer to the last box returned by box_at_point */
@@ -910,8 +912,8 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 				int pixel_offset;
 				size_t idx;
 
-				font_plot_style_from_css(text_box->style,
-						&fstyle);
+				font_plot_style_from_css(&html->len_ctx,
+						text_box->style, &fstyle);
 
 				guit->layout->position(&fstyle,
 						       text_box->text,

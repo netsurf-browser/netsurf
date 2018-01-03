@@ -227,7 +227,8 @@ html_object_callback(hlcache_handle *object,
 				if (hunit == CSS_UNIT_PCT) {
 					l = (width - w) * hpos / INTTOFIX(100);
 				} else {
-					l = FIXTOINT(nscss_len2px(hpos, hunit,
+					l = FIXTOINT(nscss_len2px(&c->len_ctx,
+							hpos, hunit,
 							box->style));
 				}
 
@@ -235,7 +236,8 @@ html_object_callback(hlcache_handle *object,
 				if (vunit == CSS_UNIT_PCT) {
 					t = (height - h) * vpos / INTTOFIX(100);
 				} else {
-					t = FIXTOINT(nscss_len2px(vpos, vunit,
+					t = FIXTOINT(nscss_len2px(&c->len_ctx,
+							vpos, vunit,
 							box->style));
 				}
 

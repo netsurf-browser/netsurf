@@ -621,13 +621,14 @@ void search_show_all(bool all, struct search_context *context)
 				if (!a->sel)
 					continue;
 
-				selection_init(a->sel, html->layout);
+				selection_init(a->sel, html->layout,
+						&html->len_ctx);
 			} else {
 				a->sel = selection_create(context->c, false);
 				if (!a->sel)
 					continue;
 
-				selection_init(a->sel, NULL);
+				selection_init(a->sel, NULL, NULL);
 			}
 
 			selection_set_start(a->sel, a->start_idx);

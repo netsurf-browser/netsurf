@@ -45,31 +45,57 @@ struct border {
 	css_unit unit;			/**< border-width units */
 };
 
-static void table_used_left_border_for_cell(struct box *cell);
-static void table_used_top_border_for_cell(struct box *cell);
-static void table_used_right_border_for_cell(struct box *cell);
-static void table_used_bottom_border_for_cell(struct box *cell);
-static bool table_border_is_more_eyecatching(const struct border *a,
-		box_type a_src, const struct border *b, box_type b_src);
-static void table_cell_top_process_table(struct box *table, struct border *a, 
+static void table_used_left_border_for_cell(
+		const nscss_len_ctx *len_ctx,
+		struct box *cell);
+static void table_used_top_border_for_cell(
+		const nscss_len_ctx *len_ctx,
+		struct box *cell);
+static void table_used_right_border_for_cell(
+		const nscss_len_ctx *len_ctx,
+		struct box *cell);
+static void table_used_bottom_border_for_cell(
+		const nscss_len_ctx *len_ctx,
+		struct box *cell);
+static bool table_border_is_more_eyecatching(
+		const nscss_len_ctx *len_ctx,
+		const struct border *a,
+		box_type a_src,
+		const struct border *b,
+		box_type b_src);
+static void table_cell_top_process_table(
+		const nscss_len_ctx *len_ctx,
+		struct box *table,
+		struct border *a,
 		box_type *a_src);
-static bool table_cell_top_process_group(struct box *cell, struct box *group, 
-		struct border *a, box_type *a_src);
-static bool table_cell_top_process_row(struct box *cell, struct box *row, 
-		struct border *a, box_type *a_src);
+static bool table_cell_top_process_group(
+		const nscss_len_ctx *len_ctx,
+		struct box *cell,
+		struct box *group,
+		struct border *a,
+		box_type *a_src);
+static bool table_cell_top_process_row(
+		const nscss_len_ctx *len_ctx,
+		struct box *cell,
+		struct box *row,
+		struct border *a,
+		box_type *a_src);
 
 
 /**
  * Determine the column width types for a table.
  *
- * \param  table  box of type BOX_TABLE
+ * \param  len_ctx  Length conversion context
+ * \param  table    box of type BOX_TABLE
  * \return  true on success, false on memory exhaustion
  *
  * The table->col array is allocated and type and width are filled in for each
  * column.
  */
 
-bool table_calculate_column_types(struct box *table)
+bool table_calculate_column_types(
+		const nscss_len_ctx *len_ctx,
+		struct box *table)
 {
 	unsigned int i, j;
 	struct column *col;
@@ -109,7 +135,7 @@ bool table_calculate_column_types(struct box *table)
 				css_computed_position(cell->style) != 
 				CSS_POSITION_FIXED) {
 			col[i].positioned = false;
-	        }
+		}
 
 		type = css_computed_width(cell->style, &value, &unit);
 
@@ -117,8 +143,8 @@ bool table_calculate_column_types(struct box *table)
 		if (col[i].type != COLUMN_WIDTH_FIXED &&
 				type == CSS_WIDTH_SET && unit != CSS_UNIT_PCT) {
 			col[i].type = COLUMN_WIDTH_FIXED;
-			col[i].width = FIXTOINT(nscss_len2px(value, unit, 
-					cell->style));
+			col[i].width = FIXTOINT(nscss_len2px(len_ctx,
+					value, unit, cell->style));
 			if (col[i].width < 0)
 				col[i].width = 0;
 			continue;
@@ -181,7 +207,7 @@ bool table_calculate_column_types(struct box *table)
 		if (type == CSS_WIDTH_SET && unit != CSS_UNIT_PCT &&
 				fixed_columns + unknown_columns ==
 				cell->columns) {
-			int width = (FIXTOFLT(nscss_len2px(value, unit, 
+			int width = (FIXTOFLT(nscss_len2px(len_ctx, value, unit,
 					cell->style)) -	fixed_width) / 
 					unknown_columns;
 			if (width < 0)
@@ -235,11 +261,14 @@ bool table_calculate_column_types(struct box *table)
 /**
  * Calculate used values of border-{trbl}-{style,color,width} for table cells.
  *
- * \param cell  Table cell to consider
+ * \param len_ctx  Length conversion context
+ * \param cell     Table cell to consider
  *
  * \post \a cell's border array is populated
  */
-void table_used_border_for_cell(struct box *cell)
+void table_used_border_for_cell(
+		const nscss_len_ctx *len_ctx,
+		struct box *cell)
 {
 	int side;
 
@@ -257,7 +286,8 @@ void table_used_border_for_cell(struct box *cell)
 				&cell->border[LEFT].c);
 		css_computed_border_left_width(cell->style, &width, &unit);
 		cell->border[LEFT].width = 
-			FIXTOINT(nscss_len2px(width, unit, cell->style));
+			FIXTOINT(nscss_len2px(len_ctx,
+					width, unit, cell->style));
 
 		/* Top border */
 		cell->border[TOP].style = 
@@ -266,7 +296,8 @@ void table_used_border_for_cell(struct box *cell)
 				&cell->border[TOP].c);
 		css_computed_border_top_width(cell->style, &width, &unit);
 		cell->border[TOP].width = 
-			FIXTOINT(nscss_len2px(width, unit, cell->style));
+			FIXTOINT(nscss_len2px(len_ctx,
+					width, unit, cell->style));
 
 		/* Right border */
 		cell->border[RIGHT].style = 
@@ -275,7 +306,8 @@ void table_used_border_for_cell(struct box *cell)
 				&cell->border[RIGHT].c);
 		css_computed_border_right_width(cell->style, &width, &unit);
 		cell->border[RIGHT].width = 
-			FIXTOINT(nscss_len2px(width, unit, cell->style));
+			FIXTOINT(nscss_len2px(len_ctx,
+					width, unit, cell->style));
 
 		/* Bottom border */
 		cell->border[BOTTOM].style = 
@@ -284,19 +316,20 @@ void table_used_border_for_cell(struct box *cell)
 				&cell->border[BOTTOM].c);
 		css_computed_border_bottom_width(cell->style, &width, &unit);
 		cell->border[BOTTOM].width = 
-			FIXTOINT(nscss_len2px(width, unit, cell->style));
+			FIXTOINT(nscss_len2px(len_ctx,
+					width, unit, cell->style));
 	} else {
 		/* Left border */
-		table_used_left_border_for_cell(cell);
+		table_used_left_border_for_cell(len_ctx, cell);
 
 		/* Top border */
-		table_used_top_border_for_cell(cell);
+		table_used_top_border_for_cell(len_ctx, cell);
 
 		/* Right border */
-		table_used_right_border_for_cell(cell);
+		table_used_right_border_for_cell(len_ctx, cell);
 
 		/* Bottom border */
-		table_used_bottom_border_for_cell(cell);
+		table_used_bottom_border_for_cell(len_ctx, cell);
 	}
 
 	/* Finally, ensure that any borders configured as 
@@ -316,9 +349,12 @@ void table_used_border_for_cell(struct box *cell)
 /**
  * Calculate used values of border-left-{style,color,width}
  *
- * \param cell Table cell to consider
+ * \param len_ctx  Length conversion context
+ * \param cell     Table cell to consider
  */
-void table_used_left_border_for_cell(struct box *cell)
+void table_used_left_border_for_cell(
+		const nscss_len_ctx *len_ctx,
+		struct box *cell)
 {
 	struct border a, b;
 	box_type a_src, b_src;
@@ -329,7 +365,7 @@ void table_used_left_border_for_cell(struct box *cell)
 	a.style = css_computed_border_left_style(cell->style);
 	a.color = css_computed_border_left_color(cell->style, &a.c);
 	css_computed_border_left_width(cell->style, &a.width, &a.unit);
-	a.width = nscss_len2px(a.width, a.unit, cell->style);
+	a.width = nscss_len2px(len_ctx, a.width, a.unit, cell->style);
 	a.unit = CSS_UNIT_PX;
 	a_src = BOX_TABLE_CELL;
 
@@ -362,11 +398,12 @@ void table_used_left_border_for_cell(struct box *cell)
 		b.style = css_computed_border_right_style(prev->style);
 		b.color = css_computed_border_right_color(prev->style, &b.c);
 		css_computed_border_right_width(prev->style, &b.width, &b.unit);
-		b.width = nscss_len2px(b.width, b.unit, prev->style);
+		b.width = nscss_len2px(len_ctx, b.width, b.unit, prev->style);
 		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE_CELL;
 
-		if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
+		if (table_border_is_more_eyecatching(len_ctx,
+				&a, a_src, &b, b_src)) {
 			a = b;
 			a_src = b_src;
 		}
@@ -384,12 +421,13 @@ void table_used_left_border_for_cell(struct box *cell)
 					row->style, &b.c);
 			css_computed_border_left_width(
 					row->style, &b.width, &b.unit);
-			b.width = nscss_len2px(b.width, b.unit, row->style);
+			b.width = nscss_len2px(len_ctx,
+					b.width, b.unit, row->style);
 			b.unit = CSS_UNIT_PX;
 			b_src = BOX_TABLE_ROW;
-		
-			if (table_border_is_more_eyecatching(&a, a_src, 
-					&b, b_src)) {
+
+			if (table_border_is_more_eyecatching(len_ctx,
+					&a, a_src, &b, b_src)) {
 				a = b;
 				a_src = b_src;
 			}
@@ -403,11 +441,12 @@ void table_used_left_border_for_cell(struct box *cell)
 		b.style = css_computed_border_left_style(group->style);
 		b.color = css_computed_border_left_color(group->style, &b.c);
 		css_computed_border_left_width(group->style, &b.width, &b.unit);
-		b.width = nscss_len2px(b.width, b.unit, group->style);
+		b.width = nscss_len2px(len_ctx, b.width, b.unit, group->style);
 		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE_ROW_GROUP;
 		
-		if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
+		if (table_border_is_more_eyecatching(len_ctx,
+				&a, a_src, &b, b_src)) {
 			a = b;
 			a_src = b_src;
 		}
@@ -416,11 +455,12 @@ void table_used_left_border_for_cell(struct box *cell)
 		b.style = css_computed_border_left_style(table->style);
 		b.color = css_computed_border_left_color(table->style, &b.c);
 		css_computed_border_left_width(table->style, &b.width, &b.unit);
-		b.width = nscss_len2px(b.width, b.unit, table->style);
+		b.width = nscss_len2px(len_ctx, b.width, b.unit, table->style);
 		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE;
 		
-		if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
+		if (table_border_is_more_eyecatching(len_ctx,
+				&a, a_src, &b, b_src)) {
 			a = b;
 			a_src = b_src;
 		}
@@ -429,16 +469,19 @@ void table_used_left_border_for_cell(struct box *cell)
 	/* a now contains the used left border for the cell */
 	cell->border[LEFT].style = a.style;
 	cell->border[LEFT].c = a.c;
-	cell->border[LEFT].width = 
-			FIXTOINT(nscss_len2px(a.width, a.unit, cell->style));
+	cell->border[LEFT].width = FIXTOINT(nscss_len2px(len_ctx,
+					a.width, a.unit, cell->style));
 }
 
 /**
  * Calculate used values of border-top-{style,color,width}
  *
- * \param cell Table cell to consider
+ * \param len_ctx  Length conversion context
+ * \param cell     Table cell to consider
  */
-void table_used_top_border_for_cell(struct box *cell)
+void table_used_top_border_for_cell(
+		const nscss_len_ctx *len_ctx,
+		struct box *cell)
 {
 	struct border a, b;
 	box_type a_src, b_src;
@@ -449,7 +492,7 @@ void table_used_top_border_for_cell(struct box *cell)
 	a.style = css_computed_border_top_style(cell->style);
 	css_computed_border_top_color(cell->style, &a.c);
 	css_computed_border_top_width(cell->style, &a.width, &a.unit);
-	a.width = nscss_len2px(a.width, a.unit, cell->style);
+	a.width = nscss_len2px(len_ctx, a.width, a.unit, cell->style);
 	a.unit = CSS_UNIT_PX;
 	a_src = BOX_TABLE_CELL;
 
@@ -457,18 +500,18 @@ void table_used_top_border_for_cell(struct box *cell)
 	b.style = css_computed_border_top_style(row->style);
 	css_computed_border_top_color(row->style, &b.c);
 	css_computed_border_top_width(row->style, &b.width, &b.unit);
-	b.width = nscss_len2px(b.width, b.unit, row->style);
+	b.width = nscss_len2px(len_ctx, b.width, b.unit, row->style);
 	b.unit = CSS_UNIT_PX;
 	b_src = BOX_TABLE_ROW;
 
-	if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
+	if (table_border_is_more_eyecatching(len_ctx, &a, a_src, &b, b_src)) {
 		a = b;
 		a_src = b_src;
 	}
 
 	if (row->prev != NULL) {
 		/* Consider row(s) above */
-		while (table_cell_top_process_row(cell, row->prev, 
+		while (table_cell_top_process_row(len_ctx, cell, row->prev,
 				&a, &a_src) == false) {
 			if (row->prev->prev == NULL) {
 				/* Consider row group */
@@ -489,26 +532,29 @@ void table_used_top_border_for_cell(struct box *cell)
 		b.style = css_computed_border_top_style(group->style);
 		b.color = css_computed_border_top_color(group->style, &b.c);
 		css_computed_border_top_width(group->style, &b.width, &b.unit);
-		b.width = nscss_len2px(b.width, b.unit, group->style);
+		b.width = nscss_len2px(len_ctx, b.width, b.unit, group->style);
 		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE_ROW_GROUP;
 
-		if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
+		if (table_border_is_more_eyecatching(len_ctx,
+				&a, a_src, &b, b_src)) {
 			a = b;
 			a_src = b_src;
 		}
 
 		if (group->prev == NULL) {
 			/* Top border of table */
-			table_cell_top_process_table(group->parent, &a, &a_src);
+			table_cell_top_process_table(len_ctx,
+					group->parent, &a, &a_src);
 		} else {
 			/* Process previous group(s) */
-			while (table_cell_top_process_group(cell, group->prev, 
+			while (table_cell_top_process_group(len_ctx,
+					cell, group->prev,
 					&a, &a_src) == false) {
 				if (group->prev->prev == NULL) {
 					/* Top border of table */
-					table_cell_top_process_table(
-							group->parent, 
+					table_cell_top_process_table(len_ctx,
+							group->parent,
 							&a, &a_src);
 					break;
 				} else {
@@ -521,16 +567,19 @@ void table_used_top_border_for_cell(struct box *cell)
 	/* a now contains the used top border for the cell */
 	cell->border[TOP].style = a.style;
 	cell->border[TOP].c = a.c;
-	cell->border[TOP].width = 
-			FIXTOINT(nscss_len2px(a.width, a.unit, cell->style));
+	cell->border[TOP].width = FIXTOINT(nscss_len2px(len_ctx,
+			a.width, a.unit, cell->style));
 }
 
 /**
  * Calculate used values of border-right-{style,color,width}
  *
- * \param cell Table cell to consider
+ * \param len_ctx  Length conversion context
+ * \param cell     Table cell to consider
  */
-void table_used_right_border_for_cell(struct box *cell)
+void table_used_right_border_for_cell(
+		const nscss_len_ctx *len_ctx,
+		struct box *cell)
 {
 	struct border a, b;
 	box_type a_src, b_src;
@@ -541,7 +590,7 @@ void table_used_right_border_for_cell(struct box *cell)
 	a.style = css_computed_border_right_style(cell->style);
 	css_computed_border_right_color(cell->style, &a.c);
 	css_computed_border_right_width(cell->style, &a.width, &a.unit);
-	a.width = nscss_len2px(a.width, a.unit, cell->style);
+	a.width = nscss_len2px(len_ctx, a.width, a.unit, cell->style);
 	a.unit = CSS_UNIT_PX;
 	a_src = BOX_TABLE_CELL;
 
@@ -565,12 +614,13 @@ void table_used_right_border_for_cell(struct box *cell)
 					row->style, &b.c);
 			css_computed_border_right_width(
 					row->style, &b.width, &b.unit);
-			b.width = nscss_len2px(b.width, b.unit, row->style);
+			b.width = nscss_len2px(len_ctx,
+					b.width, b.unit, row->style);
 			b.unit = CSS_UNIT_PX;
 			b_src = BOX_TABLE_ROW;
-		
-			if (table_border_is_more_eyecatching(&a, a_src, 
-					&b, b_src)) {
+
+			if (table_border_is_more_eyecatching(len_ctx,
+					&a, a_src, &b, b_src)) {
 				a = b;
 				a_src = b_src;
 			}
@@ -583,13 +633,14 @@ void table_used_right_border_for_cell(struct box *cell)
 		/* Row group -- consider its right border */
 		b.style = css_computed_border_right_style(group->style);
 		b.color = css_computed_border_right_color(group->style, &b.c);
-		css_computed_border_right_width(group->style, 
+		css_computed_border_right_width(group->style,
 				&b.width, &b.unit);
-		b.width = nscss_len2px(b.width, b.unit, group->style);
+		b.width = nscss_len2px(len_ctx, b.width, b.unit, group->style);
 		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE_ROW_GROUP;
 		
-		if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
+		if (table_border_is_more_eyecatching(len_ctx,
+				&a, a_src, &b, b_src)) {
 			a = b;
 			a_src = b_src;
 		}
@@ -599,11 +650,12 @@ void table_used_right_border_for_cell(struct box *cell)
 		b.color = css_computed_border_right_color(table->style, &b.c);
 		css_computed_border_right_width(table->style, 
 				&b.width, &b.unit);
-		b.width = nscss_len2px(b.width, b.unit, table->style);
+		b.width = nscss_len2px(len_ctx, b.width, b.unit, table->style);
 		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE;
 		
-		if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
+		if (table_border_is_more_eyecatching(len_ctx,
+				&a, a_src, &b, b_src)) {
 			a = b;
 			a_src = b_src;
 		}
@@ -612,16 +664,19 @@ void table_used_right_border_for_cell(struct box *cell)
 	/* a now contains the used right border for the cell */
 	cell->border[RIGHT].style = a.style;
 	cell->border[RIGHT].c = a.c;
-	cell->border[RIGHT].width = 
-			FIXTOINT(nscss_len2px(a.width, a.unit, cell->style));
+	cell->border[RIGHT].width = FIXTOINT(nscss_len2px(len_ctx,
+			a.width, a.unit, cell->style));
 }
 
 /**
  * Calculate used values of border-bottom-{style,color,width}
  *
- * \param cell Table cell to consider
+ * \param len_ctx  Length conversion context
+ * \param cell     Table cell to consider
  */
-void table_used_bottom_border_for_cell(struct box *cell)
+void table_used_bottom_border_for_cell(
+		const nscss_len_ctx *len_ctx,
+		struct box *cell)
 {
 	struct border a, b;
 	box_type a_src, b_src;
@@ -632,7 +687,7 @@ void table_used_bottom_border_for_cell(struct box *cell)
 	a.style = css_computed_border_bottom_style(cell->style);
 	css_computed_border_bottom_color(cell->style, &a.c);
 	css_computed_border_bottom_width(cell->style, &a.width, &a.unit);
-	a.width = nscss_len2px(a.width, a.unit, cell->style);
+	a.width = nscss_len2px(len_ctx, a.width, a.unit, cell->style);
 	a.unit = CSS_UNIT_PX;
 	a_src = BOX_TABLE_CELL;
 
@@ -656,11 +711,12 @@ void table_used_bottom_border_for_cell(struct box *cell)
 		b.style = css_computed_border_bottom_style(row->style);
 		b.color = css_computed_border_bottom_color(row->style, &b.c);
 		css_computed_border_bottom_width(row->style, &b.width, &b.unit);
-		b.width = nscss_len2px(b.width, b.unit, row->style);
+		b.width = nscss_len2px(len_ctx, b.width, b.unit, row->style);
 		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE_ROW;
 		
-		if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
+		if (table_border_is_more_eyecatching(len_ctx,
+				&a, a_src, &b, b_src)) {
 			a = b;
 			a_src = b_src;
 		}
@@ -670,11 +726,12 @@ void table_used_bottom_border_for_cell(struct box *cell)
 		b.color = css_computed_border_bottom_color(group->style, &b.c);
 		css_computed_border_bottom_width(group->style, 
 				&b.width, &b.unit);
-		b.width = nscss_len2px(b.width, b.unit, group->style);
+		b.width = nscss_len2px(len_ctx, b.width, b.unit, group->style);
 		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE_ROW_GROUP;
 		
-		if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
+		if (table_border_is_more_eyecatching(len_ctx,
+				&a, a_src, &b, b_src)) {
 			a = b;
 			a_src = b_src;
 		}
@@ -684,11 +741,12 @@ void table_used_bottom_border_for_cell(struct box *cell)
 		b.color = css_computed_border_bottom_color(table->style, &b.c);
 		css_computed_border_bottom_width(table->style, 
 				&b.width, &b.unit);
-		b.width = nscss_len2px(b.width, b.unit, table->style);
+		b.width = nscss_len2px(len_ctx, b.width, b.unit, table->style);
 		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE;
 		
-		if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
+		if (table_border_is_more_eyecatching(len_ctx,
+				&a, a_src, &b, b_src)) {
 			a = b;
 		}
 	}
@@ -696,21 +754,26 @@ void table_used_bottom_border_for_cell(struct box *cell)
 	/* a now contains the used bottom border for the cell */
 	cell->border[BOTTOM].style = a.style;
 	cell->border[BOTTOM].c = a.c;
-	cell->border[BOTTOM].width = 
-			FIXTOINT(nscss_len2px(a.width, a.unit, cell->style));
+	cell->border[BOTTOM].width = FIXTOINT(nscss_len2px(len_ctx,
+			a.width, a.unit, cell->style));
 }
 
 /**
  * Determine if a border style is more eyecatching than another
  *
- * \param a      Reference border style
- * \param a_src  Source of \a a
- * \param b      Candidate border style
- * \param b_src  Source of \a b
+ * \param len_ctx  Length conversion context
+ * \param a        Reference border style
+ * \param a_src    Source of \a a
+ * \param b        Candidate border style
+ * \param b_src    Source of \a b
  * \return True if \a b is more eyecatching than \a a
  */
-bool table_border_is_more_eyecatching(const struct border *a,
-		box_type a_src,	const struct border *b, box_type b_src)
+bool table_border_is_more_eyecatching(
+		const nscss_len_ctx *len_ctx,
+		const struct border *a,
+		box_type a_src,
+		const struct border *b,
+		box_type b_src)
 {
 	css_fixed awidth, bwidth;
 	int impact = 0;
@@ -731,8 +794,8 @@ bool table_border_is_more_eyecatching(const struct border *a,
 	 * if they've come from a computed style. */
 	assert(a->unit != CSS_UNIT_EM && a->unit != CSS_UNIT_EX);
 	assert(b->unit != CSS_UNIT_EM && b->unit != CSS_UNIT_EX);
-	awidth = nscss_len2px(a->width, a->unit, NULL);
-	bwidth = nscss_len2px(b->width, b->unit, NULL);
+	awidth = nscss_len2px(len_ctx, a->width, a->unit, NULL);
+	bwidth = nscss_len2px(len_ctx, b->width, b->unit, NULL);
 
 	if (awidth < bwidth)
 		return true;
@@ -811,14 +874,18 @@ bool table_border_is_more_eyecatching(const struct border *a,
 /**
  * Process a table
  *
- * \param table  Table to process
- * \param a      Current border style for cell
- * \param a_src  Source of \a a
+ * \param len_ctx  Length conversion context
+ * \param table    Table to process
+ * \param a        Current border style for cell
+ * \param a_src    Source of \a a
  *
  * \post \a a will be updated with most eyecatching style
  * \post \a a_src will be updated also
  */
-void table_cell_top_process_table(struct box *table, struct border *a, 
+void table_cell_top_process_table(
+		const nscss_len_ctx *len_ctx,
+		struct box *table,
+		struct border *a,
 		box_type *a_src)
 {
 	struct border b;
@@ -828,11 +895,11 @@ void table_cell_top_process_table(struct box *table, struct border *a,
 	b.style = css_computed_border_top_style(table->style);
 	b.color = css_computed_border_top_color(table->style, &b.c);
 	css_computed_border_top_width(table->style, &b.width, &b.unit);
-	b.width = nscss_len2px(b.width, b.unit, table->style);
+	b.width = nscss_len2px(len_ctx, b.width, b.unit, table->style);
 	b.unit = CSS_UNIT_PX;
 	b_src = BOX_TABLE;
 
-	if (table_border_is_more_eyecatching(a, *a_src, &b, b_src)) {
+	if (table_border_is_more_eyecatching(len_ctx, a, *a_src, &b, b_src)) {
 		*a = b;
 		*a_src = b_src;
 	}
@@ -841,17 +908,22 @@ void table_cell_top_process_table(struct box *table, struct border *a,
 /**
  * Process a group
  *
- * \param cell   Cell being considered
- * \param group  Group to process
- * \param a      Current border style for cell
- * \param a_src  Source of \a a
+ * \param len_ctx  Length conversion context
+ * \param cell     Cell being considered
+ * \param group    Group to process
+ * \param a        Current border style for cell
+ * \param a_src    Source of \a a
  * \return true if group has non-empty rows, false otherwise
  *
  * \post \a a will be updated with most eyecatching style
  * \post \a a_src will be updated also
  */
-bool table_cell_top_process_group(struct box *cell, struct box *group,
-		struct border *a, box_type *a_src)
+bool table_cell_top_process_group(
+		const nscss_len_ctx *len_ctx,
+		struct box *cell,
+		struct box *group,
+		struct border *a,
+		box_type *a_src)
 {
 	struct border b;
 	box_type b_src;
@@ -860,11 +932,11 @@ bool table_cell_top_process_group(struct box *cell, struct box *group,
 	b.style = css_computed_border_bottom_style(group->style);
 	b.color = css_computed_border_bottom_color(group->style, &b.c);
 	css_computed_border_bottom_width(group->style, &b.width, &b.unit);
-	b.width = nscss_len2px(b.width, b.unit, group->style);
+	b.width = nscss_len2px(len_ctx, b.width, b.unit, group->style);
 	b.unit = CSS_UNIT_PX;
 	b_src = BOX_TABLE_ROW_GROUP;
 
-	if (table_border_is_more_eyecatching(a, *a_src, &b, b_src)) {
+	if (table_border_is_more_eyecatching(len_ctx, a, *a_src, &b, b_src)) {
 		*a = b;
 		*a_src = b_src;
 	}
@@ -873,7 +945,7 @@ bool table_cell_top_process_group(struct box *cell, struct box *group,
 		/* Process rows in group, starting with last */
 		struct box *row = group->last;
 
-		while (table_cell_top_process_row(cell, row, 
+		while (table_cell_top_process_row(len_ctx, cell, row,
 				a, a_src) == false) {
 			if (row->prev == NULL) {
 				return false;
@@ -886,11 +958,12 @@ bool table_cell_top_process_group(struct box *cell, struct box *group,
 		b.style = css_computed_border_top_style(group->style);
 		b.color = css_computed_border_top_color(group->style, &b.c);
 		css_computed_border_top_width(group->style, &b.width, &b.unit);
-		b.width = nscss_len2px(b.width, b.unit, group->style);
+		b.width = nscss_len2px(len_ctx, b.width, b.unit, group->style);
 		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE_ROW_GROUP;
 
-		if (table_border_is_more_eyecatching(a, *a_src, &b, b_src)) {
+		if (table_border_is_more_eyecatching(len_ctx,
+				a, *a_src, &b, b_src)) {
 			*a = b;
 			*a_src = b_src;
 		}
@@ -904,17 +977,22 @@ bool table_cell_top_process_group(struct box *cell, struct box *group,
 /**
  * Process a row
  *
- * \param cell   Cell being considered
- * \param row    Row to process
- * \param a      Current border style for cell
- * \param a_src  Source of \a a
+ * \param len_ctx  Length conversion context
+ * \param cell     Cell being considered
+ * \param row      Row to process
+ * \param a        Current border style for cell
+ * \param a_src    Source of \a a
  * \return true if row has cells, false otherwise
  *
  * \post \a a will be updated with most eyecatching style
  * \post \a a_src will be updated also
  */
-bool table_cell_top_process_row(struct box *cell, struct box *row, 
-		struct border *a, box_type *a_src)
+bool table_cell_top_process_row(
+		const nscss_len_ctx *len_ctx,
+		struct box *cell,
+		struct box *row,
+		struct border *a,
+		box_type *a_src)
 {
 	struct border b;
 	box_type b_src;
@@ -923,11 +1001,11 @@ bool table_cell_top_process_row(struct box *cell, struct box *row,
 	b.style = css_computed_border_bottom_style(row->style);
 	b.color = css_computed_border_bottom_color(row->style, &b.c);
 	css_computed_border_bottom_width(row->style, &b.width, &b.unit);
-	b.width = nscss_len2px(b.width, b.unit, row->style);
+	b.width = nscss_len2px(len_ctx, b.width, b.unit, row->style);
 	b.unit = CSS_UNIT_PX;
 	b_src = BOX_TABLE_ROW;
 
-	if (table_border_is_more_eyecatching(a, *a_src, &b, b_src)) {
+	if (table_border_is_more_eyecatching(len_ctx, a, *a_src, &b, b_src)) {
 		*a = b;
 		*a_src = b_src;
 	}
@@ -937,11 +1015,12 @@ bool table_cell_top_process_row(struct box *cell, struct box *row,
 		b.style = css_computed_border_top_style(row->style);
 		b.color = css_computed_border_top_color(row->style, &b.c);
 		css_computed_border_top_width(row->style, &b.width, &b.unit);
-		b.width = nscss_len2px(b.width, b.unit, row->style);
+		b.width = nscss_len2px(len_ctx, b.width, b.unit, row->style);
 		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE_ROW;
 
-		if (table_border_is_more_eyecatching(a, *a_src, &b, b_src)) {
+		if (table_border_is_more_eyecatching(len_ctx,
+				a, *a_src, &b, b_src)) {
 			*a = b;
 			*a_src = b_src;
 		}
@@ -975,13 +1054,13 @@ bool table_cell_top_process_row(struct box *cell, struct box *row,
 						c->style, &b.c);
 				css_computed_border_bottom_width(c->style,
 						&b.width, &b.unit);
-				b.width = nscss_len2px(b.width, b.unit, 
-						c->style);
+				b.width = nscss_len2px(len_ctx,
+						b.width, b.unit, c->style);
 				b.unit = CSS_UNIT_PX;
 				b_src = BOX_TABLE_CELL;
 
-				if (table_border_is_more_eyecatching(a, *a_src,
-						&b, b_src)) {
+				if (table_border_is_more_eyecatching(len_ctx,
+						a, *a_src, &b, b_src)) {
 					*a = b;
 					*a_src = b_src;
 				}

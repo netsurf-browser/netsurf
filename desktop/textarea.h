@@ -329,8 +329,12 @@ void textarea_set_dimensions(struct textarea *ta, int width, int height);
  * \param bottom	the new bottom padding of the textarea
  * \param left		the new left padding of the textarea
  */
-void textarea_set_layout(struct textarea *ta, int width, int height,
-		int top, int right, int bottom, int left);
+void textarea_set_layout(
+		struct textarea *ta,
+		const plot_font_style_t *fstyle,
+		int width, int height,
+		int top, int right,
+		int bottom, int left);
 
 
 /**

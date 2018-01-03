@@ -131,8 +131,10 @@ static plot_font_flags_t plot_font_flags(enum css_font_style_e style,
 }
 
 
-/* exported function documented in render/font_internal.h */
-void font_plot_style_from_css(const css_computed_style *css,
+/* exported function documented in render/font.h */
+void font_plot_style_from_css(
+		const nscss_len_ctx *len_ctx,
+		const css_computed_style *css,
 		plot_font_style_t *fstyle)
 {
 	lwc_string **families;
@@ -144,7 +146,7 @@ void font_plot_style_from_css(const css_computed_style *css,
 			css_computed_font_family(css, &families));
 
 	css_computed_font_size(css, &length, &unit);
-	fstyle->size = FIXTOINT(FMUL(nscss_len2pt(length, unit),
+	fstyle->size = FIXTOINT(FMUL(nscss_len2pt(len_ctx, length, unit),
 				      INTTOFIX(FONT_SIZE_SCALE)));
 
 	/* Clamp font size to configured minimum */

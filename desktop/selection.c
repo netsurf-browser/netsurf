@@ -70,18 +70,20 @@ struct selection_string {
 
 
 typedef bool (*seln_traverse_handler)(const char *text, size_t length,
-		struct box *box, void *handle, const char *whitespace_text,
-		size_t whitespace_length);
+		struct box *box, const nscss_len_ctx *len_ctx, void *handle,
+		const char *whitespace_text, size_t whitespace_length);
 
 
-static bool redraw_handler(const char *text, size_t length, struct box *box,
+static bool redraw_handler(const char *text, size_t length,
+		struct box *box, const nscss_len_ctx *len_ctx,
 		void *handle, const char *whitespace_text,
 		size_t whitespace_length);
 static void selection_redraw(struct selection *s, unsigned start_idx,
 		unsigned end_idx);
 static bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
 		unsigned *start_offset, unsigned *end_offset);
-static bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
+static bool traverse_tree(struct box *box, const nscss_len_ctx *len_ctx,
+		unsigned start_idx, unsigned end_idx,
 		seln_traverse_handler handler,
 		void *handle, save_text_whitespace *before, bool *first,
 		bool do_marker);
@@ -198,7 +200,10 @@ void selection_reinit(struct selection *s, struct box *root)
  * \param  root  the root box for html document or NULL for text/plain
  */
 
-void selection_init(struct selection *s, struct box *root)
+void selection_init(
+		struct selection *s,
+		struct box *root,
+		const nscss_len_ctx *len_ctx)
 {
 	if (s->defined)
 		selection_clear(s, true);
@@ -207,6 +212,13 @@ void selection_init(struct selection *s, struct box *root)
 	s->start_idx = 0;
 	s->end_idx = 0;
 	s->drag_state = DRAG_NONE;
+	if (len_ctx != NULL) {
+		s->len_ctx = *len_ctx;
+	} else {
+		s->len_ctx.vw = 0;
+		s->len_ctx.vh = 0;
+		s->len_ctx.root_style = NULL;
+	}
 
 	selection_reinit(s, root);
 }
@@ -442,6 +454,7 @@ bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
  * for all boxes that lie (partially) within the given range
  *
  * \param  box        box subtree
+ * \param  len_ctx    Length conversion context.
  * \param  start_idx  start of range within textual representation (bytes)
  * \param  end_idx    end of range
  * \param  handler    handler function to call
@@ -452,7 +465,9 @@ bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
  * \return false iff traversal abandoned part-way through
  */
 
-bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
+bool traverse_tree(
+		struct box *box, const nscss_len_ctx *len_ctx,
+		unsigned start_idx, unsigned end_idx,
 		seln_traverse_handler handler,
 		void *handle, save_text_whitespace *before, bool *first,
 		bool do_marker)
@@ -473,9 +488,9 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 	if (box->list_marker) {
 		/* do the marker box before continuing with the rest of the
 		 * list element */
-		if (!traverse_tree(box->list_marker, start_idx, end_idx,
-				handler, handle, before, first,
-				true))
+		if (!traverse_tree(box->list_marker, len_ctx,
+				start_idx, end_idx, handler, handle,
+				before, first, true))
 			return false;
 	}
 
@@ -506,7 +521,7 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 				&end_offset)) {
 			if (!handler(box->text + start_offset, min(box->length,
 					end_offset) - start_offset,
-					box, handle, whitespace_text,
+					box, len_ctx, handle, whitespace_text,
 					whitespace_length))
 				return false;
 			if (before) {
@@ -533,7 +548,7 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 			 * the tree */
 			struct box *next = child->next;
 
-			if (!traverse_tree(child, start_idx, end_idx,
+			if (!traverse_tree(child, len_ctx, start_idx, end_idx,
 					handler, handle, before, first, false))
 				return false;
 
@@ -568,14 +583,16 @@ static bool selection_traverse(struct selection *s,
 
 	if (s->root) {
 		/* HTML */
-		return traverse_tree(s->root, s->start_idx, s->end_idx,
-				handler, handle, &before, &first, false);
+		return traverse_tree(s->root, &s->len_ctx,
+				s->start_idx, s->end_idx,
+				handler, handle,
+				&before, &first, false);
 	}
 
 	/* Text */
 	text = textplain_get_raw_data(s->c, s->start_idx, s->end_idx, &length);
 
-	if (text && !handler(text, length, NULL, handle, NULL, 0))
+	if (text && !handler(text, length, NULL, NULL, handle, NULL, 0))
 		return false;
 
 	return true;
@@ -597,8 +614,8 @@ static bool selection_traverse(struct selection *s,
  */
 
 bool redraw_handler(const char *text, size_t length, struct box *box,
-		void *handle, const char *whitespace_text,
-		size_t whitespace_length)
+		const nscss_len_ctx *len_ctx, void *handle,
+		const char *whitespace_text, size_t whitespace_length)
 {
 	if (box) {
 		struct rdw_info *r = (struct rdw_info*)handle;
@@ -606,7 +623,7 @@ bool redraw_handler(const char *text, size_t length, struct box *box,
 		int x, y;
 		plot_font_style_t fstyle;
 
-		font_plot_style_from_css(box->style, &fstyle);
+		font_plot_style_from_css(len_ctx, box->style, &fstyle);
 
 		/* \todo - it should be possible to reduce the redrawn area by
 		 * considering the 'text', 'length' and 'space' parameters */
@@ -652,7 +669,7 @@ void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
 	rdw.inited = false;
 
 	if (s->root) {
-		if (!traverse_tree(s->root, start_idx, end_idx,
+		if (!traverse_tree(s->root, &s->len_ctx, start_idx, end_idx,
 				redraw_handler, &rdw,
 				NULL, NULL, false))
 			return;
@@ -739,10 +756,11 @@ static bool selection_string_append(const char *text, size_t length, bool space,
 /**
  * Selection traversal routine for appending text to a string
  *
- * \param  text		pointer to text being added, or NULL for newline
- * \param  length	length of text to be appended (bytes)
- * \param  box		pointer to text box, or NULL if from textplain
- * \param  handle	selection string to append to
+ * \param  text         pointer to text being added, or NULL for newline
+ * \param  length       length of text to be appended (bytes)
+ * \param  box          pointer to text box, or NULL if from textplain
+ * \param  len_ctx      Length conversion context
+ * \param  handle       selection string to append to
  * \param  whitespace_text    whitespace to place before text for formatting
  *                            may be NULL
  * \param  whitespace_length  length of whitespace_text
@@ -750,7 +768,8 @@ static bool selection_string_append(const char *text, size_t length, bool space,
  */
 
 static bool selection_copy_handler(const char *text, size_t length,
-		struct box *box, void *handle, const char *whitespace_text,
+		struct box *box, const nscss_len_ctx *len_ctx,
+		void *handle, const char *whitespace_text,
 		size_t whitespace_length)
 {
 	bool add_space = false;
@@ -771,7 +790,7 @@ static bool selection_copy_handler(const char *text, size_t length,
 
 		if (box->style != NULL) {
 			/* Override default font style */
-			font_plot_style_from_css(box->style, &style);
+			font_plot_style_from_css(len_ctx, box->style, &style);
 			pstyle = &style;
 		} else {
 			/* If there's no style, there must be no text */

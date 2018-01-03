@@ -28,7 +28,11 @@
 
 struct box;
 
-bool table_calculate_column_types(struct box *table);
-void table_used_border_for_cell(struct box *cell);
+bool table_calculate_column_types(
+		const nscss_len_ctx *len_ctx,
+		struct box *table);
+void table_used_border_for_cell(
+		const nscss_len_ctx *len_ctx,
+		struct box *cell);
 
 #endif

@@ -69,8 +69,14 @@
 #define FPCT_OF_INT_TOINT(a, b) (FIXTOINT(FDIV((a * b), F_100)))
 
 /* forward declaration to break cycles */
-static bool layout_block_context(struct box *block, int viewport_height, html_content *content);
-static void layout_minmax_block(struct box *block, const struct gui_layout_table *font_func);
+static bool layout_block_context(
+		struct box *block,
+		int viewport_height,
+		html_content *content);
+static void layout_minmax_block(
+		struct box *block,
+		const struct gui_layout_table *font_func,
+		const html_content *content);
 
 
 /**
@@ -179,7 +185,9 @@ layout_get_object_dimensions(struct box *box,
  * \param  width  width of containing block
  * \return  length of indent
  */
-static int layout_text_indent(const css_computed_style *style, int width)
+static int layout_text_indent(
+		const nscss_len_ctx *len_ctx,
+		const css_computed_style *style, int width)
 {
 	css_fixed value = 0;
 	css_unit unit = CSS_UNIT_PX;
@@ -189,7 +197,7 @@ static int layout_text_indent(const css_computed_style *style, int width)
 	if (unit == CSS_UNIT_PCT) {
 		return FPCT_OF_INT_TOINT(value, width);
 	} else {
-		return FIXTOINT(nscss_len2px(value, unit, style));
+		return FIXTOINT(nscss_len2px(len_ctx, value, unit, style));
 	}
 }
 
@@ -197,6 +205,7 @@ static int layout_text_indent(const css_computed_style *style, int width)
 /**
  * Determine width of margin, borders, and padding on one side of a box.
  *
+ * \param len_ctx  CSS length conversion context for document
  * \param style    style to measure
  * \param side     side of box to measure
  * \param margin   whether margin width is required
@@ -206,7 +215,8 @@ static int layout_text_indent(const css_computed_style *style, int width)
  * \param frac     increased by sum of fractional margin and padding
  */
 static void
-calculate_mbp_width(const css_computed_style *style,
+calculate_mbp_width(const nscss_len_ctx *len_ctx,
+		    const css_computed_style *style,
 		    unsigned int side,
 		    bool margin,
 		    bool border,
@@ -217,19 +227,19 @@ calculate_mbp_width(const css_computed_style *style,
 	typedef uint8_t (*len_func)(const css_computed_style *style,
 			css_fixed *length, css_unit *unit);
 
-	static len_func margin_funcs[4] = {
+	static const len_func margin_funcs[4] = {
 		css_computed_margin_top,
 		css_computed_margin_right,
 		css_computed_margin_bottom,
 		css_computed_margin_left
 	};
-	static len_func padding_funcs[4] = {
+	static const len_func padding_funcs[4] = {
 		css_computed_padding_top,
 		css_computed_padding_right,
 		css_computed_padding_bottom,
 		css_computed_padding_left
 	};
-	static struct {
+	static const struct {
 		len_func width;
 		uint8_t (*style)(const css_computed_style *style);
 	} border_funcs[4] = {
@@ -257,8 +267,8 @@ calculate_mbp_width(const css_computed_style *style,
 			if (unit == CSS_UNIT_PCT) {
 				*frac += FIXTOINT(FDIV(value, F_100));
 			} else {
-				*fixed += FIXTOINT(nscss_len2px(value, unit,
-						style));
+				*fixed += FIXTOINT(nscss_len2px(len_ctx,
+						value, unit, style));
 			}
 		}
 	}
@@ -269,7 +279,8 @@ calculate_mbp_width(const css_computed_style *style,
 				CSS_BORDER_STYLE_NONE) {
 			border_funcs[side].width(style, &value, &unit);
 
-			*fixed += FIXTOINT(nscss_len2px(value, unit, style));
+			*fixed += FIXTOINT(nscss_len2px(len_ctx,
+					value, unit, style));
 		}
 	}
 
@@ -279,7 +290,8 @@ calculate_mbp_width(const css_computed_style *style,
 		if (unit == CSS_UNIT_PCT) {
 			*frac += FIXTOINT(FDIV(value, F_100));
 		} else {
-			*fixed += FIXTOINT(nscss_len2px(value, unit, style));
+			*fixed += FIXTOINT(nscss_len2px(len_ctx,
+					value, unit, style));
 		}
 	}
 }
@@ -290,19 +302,20 @@ calculate_mbp_width(const css_computed_style *style,
  *
  * \param table box of type TABLE
  * \param font_func Font functions
- * \param content  The HTML content being layed out.
+ * \param content  The HTML content we are laying out.
  * \post  table->min_width and table->max_width filled in,
  *        0 <= table->min_width <= table->max_width
  */
-static void
-layout_minmax_table(struct box *table, const struct gui_layout_table *font_func)
+static void layout_minmax_table(struct box *table,
+		const struct gui_layout_table *font_func,
+		const html_content *content)
 {
 	unsigned int i, j;
 	int border_spacing_h = 0;
 	int table_min = 0, table_max = 0;
 	int extra_fixed = 0;
 	float extra_frac = 0;
-	struct column *col = table->col;
+	struct column *col;
 	struct box *row_group, *row, *cell;
 	enum css_width_e wtype;
 	css_fixed value = 0;
@@ -311,6 +324,13 @@ layout_minmax_table(struct box *table, const struct gui_layout_table *font_func)
 	/* check if the widths have already been calculated */
 	if (table->max_width != UNKNOWN_MAX_WIDTH)
 		return;
+
+	if (table_calculate_column_types(&content->len_ctx, table) == false) {
+		NSLOG(netsurf, WARNING,
+				"Could not establish table column types.");
+		return;
+	}
+	col = table->col;
 
 	/* start with 0 except for fixed-width columns */
 	for (i = 0; i != table->columns; i++) {
@@ -328,7 +348,8 @@ layout_minmax_table(struct box *table, const struct gui_layout_table *font_func)
 
 		css_computed_border_spacing(table->style, &h, &hu, &v, &vu);
 
-		border_spacing_h = FIXTOINT(nscss_len2px(h, hu, table->style));
+		border_spacing_h = FIXTOINT(nscss_len2px(&content->len_ctx,
+				h, hu, table->style));
 	}
 
 	/* 1st pass: consider cells with colspan 1 only */
@@ -344,7 +365,7 @@ layout_minmax_table(struct box *table, const struct gui_layout_table *font_func)
 		if (cell->columns != 1)
 			continue;
 
-		layout_minmax_block(cell, font_func);
+		layout_minmax_block(cell, font_func, content);
 		i = cell->start_column;
 
 		if (col[i].positioned)
@@ -367,7 +388,7 @@ layout_minmax_table(struct box *table, const struct gui_layout_table *font_func)
 		if (cell->columns == 1)
 			continue;
 
-		layout_minmax_block(cell, font_func);
+		layout_minmax_block(cell, font_func, content);
 		i = cell->start_column;
 
 		/* find min width so far of spanned columns, and count
@@ -433,7 +454,8 @@ layout_minmax_table(struct box *table, const struct gui_layout_table *font_func)
 	/* fixed width takes priority, unless it is too narrow */
 	wtype = css_computed_width(table->style, &value, &unit);
 	if (wtype == CSS_WIDTH_SET && unit != CSS_UNIT_PCT) {
-		int width = FIXTOINT(nscss_len2px(value, unit, table->style));
+		int width = FIXTOINT(nscss_len2px(&content->len_ctx,
+				value, unit, table->style));
 		if (table_min < width)
 			table_min = width;
 		if (table_max < width)
@@ -441,9 +463,11 @@ layout_minmax_table(struct box *table, const struct gui_layout_table *font_func)
 	}
 
 	/* add margins, border, padding to min, max widths */
-	calculate_mbp_width(table->style, LEFT, true, true, true,
+	calculate_mbp_width(&content->len_ctx,
+			table->style, LEFT, true, true, true,
 			&extra_fixed, &extra_frac);
-	calculate_mbp_width(table->style, RIGHT, true, true, true,
+	calculate_mbp_width(&content->len_ctx,
+			table->style, RIGHT, true, true, true,
 			&extra_fixed, &extra_frac);
 	if (extra_fixed < 0)
 		extra_fixed = 0;
@@ -478,7 +502,8 @@ layout_minmax_line(struct box *first,
 		   int *line_max,
 		   bool first_line,
 		   bool *line_has_height,
-		   const struct gui_layout_table *font_func)
+		   const struct gui_layout_table *font_func,
+		   const html_content *content)
 {
 	int min = 0, max = 0, width, height, fixed;
 	float frac;
@@ -524,9 +549,11 @@ layout_minmax_line(struct box *first,
 		if (b->type == BOX_FLOAT_LEFT || b->type == BOX_FLOAT_RIGHT) {
 			assert(b->children);
 			if (b->children->type == BOX_BLOCK)
-				layout_minmax_block(b->children, font_func);
+				layout_minmax_block(b->children, font_func,
+						content);
 			else
-				layout_minmax_table(b->children, font_func);
+				layout_minmax_table(b->children, font_func,
+						content);
 			b->min_width = b->children->min_width;
 			b->max_width = b->children->max_width;
 			if (min < b->min_width)
@@ -536,7 +563,7 @@ layout_minmax_line(struct box *first,
 		}
 
 		if (b->type == BOX_INLINE_BLOCK) {
-			layout_minmax_block(b, font_func);
+			layout_minmax_block(b, font_func, content);
 			if (min < b->min_width)
 				min = b->min_width;
 			max += b->max_width;
@@ -547,16 +574,18 @@ layout_minmax_line(struct box *first,
 		}
 
 		assert(b->style);
-		font_plot_style_from_css(b->style, &fstyle);
+		font_plot_style_from_css(&content->len_ctx, b->style, &fstyle);
 
 		if (b->type == BOX_INLINE && !b->object &&
 				!(b->flags & REPLACE_DIM) &&
 				!(b->flags & IFRAME)) {
 			fixed = frac = 0;
-			calculate_mbp_width(b->style, LEFT, true, true, true,
+			calculate_mbp_width(&content->len_ctx,
+					b->style, LEFT, true, true, true,
 					&fixed, &frac);
 			if (!b->inline_end)
-				calculate_mbp_width(b->style, RIGHT,
+				calculate_mbp_width(&content->len_ctx,
+						b->style, RIGHT,
 						true, true, true,
 						&fixed, &frac);
 			if (0 < fixed)
@@ -565,7 +594,8 @@ layout_minmax_line(struct box *first,
 			/* \todo  update min width, consider fractional extra */
 		} else if (b->type == BOX_INLINE_END) {
 			fixed = frac = 0;
-			calculate_mbp_width(b->inline_end->style, RIGHT,
+			calculate_mbp_width(&content->len_ctx,
+					b->inline_end->style, RIGHT,
 					true, true, true,
 					&fixed, &frac);
 			if (0 < fixed)
@@ -686,15 +716,17 @@ layout_minmax_line(struct box *first,
 
 				width = AUTO;
 			} else {
-				width = FIXTOINT(nscss_len2px(value, unit,
-						b->style));
+				width = FIXTOINT(nscss_len2px(&content->len_ctx,
+						value, unit, b->style));
 
 				if (bs == CSS_BOX_SIZING_BORDER_BOX) {
 					fixed = frac = 0;
-					calculate_mbp_width(block->style, LEFT,
+					calculate_mbp_width(&content->len_ctx,
+							block->style, LEFT,
 							false, true, true,
 							&fixed, &frac);
-					calculate_mbp_width(block->style, RIGHT,
+					calculate_mbp_width(&content->len_ctx,
+							block->style, RIGHT,
 							false, true, true,
 							&fixed, &frac);
 					if (width < fixed) {
@@ -711,7 +743,8 @@ layout_minmax_line(struct box *first,
 		/* height */
 		htype = css_computed_height(b->style, &value, &unit);
 		if (htype == CSS_HEIGHT_SET) {
-			height = FIXTOINT(nscss_len2px(value, unit, b->style));
+			height = FIXTOINT(nscss_len2px(&content->len_ctx,
+					value, unit, b->style));
 		} else {
 			height = AUTO;
 		}
@@ -727,17 +760,21 @@ layout_minmax_line(struct box *first,
 
 			fixed = frac = 0;
 			if (bs == CSS_BOX_SIZING_BORDER_BOX) {
-				calculate_mbp_width(b->style, LEFT,
+				calculate_mbp_width(&content->len_ctx,
+						b->style, LEFT,
 						true, false, false,
 						&fixed, &frac);
-				calculate_mbp_width(b->style, RIGHT,
+				calculate_mbp_width(&content->len_ctx,
+						b->style, RIGHT,
 						true, false, false,
 						&fixed, &frac);
 			} else {
-				calculate_mbp_width(b->style, LEFT,
+				calculate_mbp_width(&content->len_ctx,
+						b->style, LEFT,
 						true, true, true,
 						&fixed, &frac);
-				calculate_mbp_width(b->style, RIGHT,
+				calculate_mbp_width(&content->len_ctx,
+						b->style, RIGHT,
 						true, true, true,
 						&fixed, &frac);
 			}
@@ -750,17 +787,21 @@ layout_minmax_line(struct box *first,
 
 			fixed = frac = 0;
 			if (bs == CSS_BOX_SIZING_BORDER_BOX) {
-				calculate_mbp_width(b->style, LEFT,
+				calculate_mbp_width(&content->len_ctx,
+						b->style, LEFT,
 						true, false, false,
 						&fixed, &frac);
-				calculate_mbp_width(b->style, RIGHT,
+				calculate_mbp_width(&content->len_ctx,
+						b->style, RIGHT,
 						true, false, false,
 						&fixed, &frac);
 			} else {
-				calculate_mbp_width(b->style, LEFT,
+				calculate_mbp_width(&content->len_ctx,
+						b->style, LEFT,
 						true, true, true,
 						&fixed, &frac);
-				calculate_mbp_width(b->style, RIGHT,
+				calculate_mbp_width(&content->len_ctx,
+						b->style, RIGHT,
 						true, true, true,
 						&fixed, &frac);
 			}
@@ -771,8 +812,10 @@ layout_minmax_line(struct box *first,
 		} else {
 			/* form control with no object */
 			if (width == AUTO)
-				width = FIXTOINT(nscss_len2px(INTTOFIX(1),
-						CSS_UNIT_EM, b->style));
+				width = FIXTOINT(nscss_len2px(
+						&content->len_ctx,
+						INTTOFIX(1), CSS_UNIT_EM,
+						b->style));
 		}
 
 		if (min < width)
@@ -785,7 +828,7 @@ layout_minmax_line(struct box *first,
 	if (first_line) {
 		/* todo: handle percentage values properly */
 		/* todo: handle text-indent interaction with floats */
-		int text_indent = layout_text_indent(
+		int text_indent = layout_text_indent(&content->len_ctx,
 				first->parent->parent->style, 100);
 		min = (min + text_indent < 0) ? 0 : min + text_indent;
 		max = (max + text_indent < 0) ? 0 : max + text_indent;
@@ -815,7 +858,8 @@ layout_minmax_line(struct box *first,
 static void
 layout_minmax_inline_container(struct box *inline_container,
 			       bool *has_height,
-			       const struct gui_layout_table *font_func)
+			       const struct gui_layout_table *font_func,
+			       const html_content *content)
 {
 	struct box *child;
 	int line_min = 0, line_max = 0;
@@ -833,7 +877,8 @@ layout_minmax_inline_container(struct box *inline_container,
 
 	for (child = inline_container->children; child; ) {
 		child = layout_minmax_line(child, &line_min, &line_max,
-				first_line, &line_has_height, font_func);
+				first_line, &line_has_height, font_func,
+				content);
 		if (min < line_min)
 			min = line_min;
 		if (max < line_max)
@@ -856,11 +901,14 @@ layout_minmax_inline_container(struct box *inline_container,
  *
  * \param block  box of type BLOCK, INLINE_BLOCK, or TABLE_CELL
  * \param font_func font functions
+ * \param content The HTML content being layed out.
  * \post  block->min_width and block->max_width filled in,
  *        0 <= block->min_width <= block->max_width
  */
-static void
-layout_minmax_block(struct box *block, const struct gui_layout_table *font_func)
+static void layout_minmax_block(
+		struct box *block,
+		const struct gui_layout_table *font_func,
+		const html_content *content)
 {
 	struct box *child;
 	int min = 0, max = 0;
@@ -913,7 +961,8 @@ layout_minmax_block(struct box *block, const struct gui_layout_table *font_func)
 		css_fixed size = INTTOFIX(10);
 		css_unit unit = CSS_UNIT_EM;
 
-		min = max = FIXTOINT(nscss_len2px(size, unit, block->style));
+		min = max = FIXTOINT(nscss_len2px(&content->len_ctx,
+				size, unit, block->style));
 
 		block->flags |= HAS_HEIGHT;
 	}
@@ -926,7 +975,8 @@ layout_minmax_block(struct box *block, const struct gui_layout_table *font_func)
 
 		/* form checkbox or radio button
 		 * if width is AUTO, set it to 1em */
-		min = max = FIXTOINT(nscss_len2px(size, unit, block->style));
+		min = max = FIXTOINT(nscss_len2px(&content->len_ctx,
+				size, unit, block->style));
 
 		block->flags |= HAS_HEIGHT;
 	}
@@ -934,7 +984,7 @@ layout_minmax_block(struct box *block, const struct gui_layout_table *font_func)
 	if (block->object) {
 		if (content_get_type(block->object) == CONTENT_HTML) {
 			layout_minmax_block(html_get_box_tree(block->object),
-					font_func);
+					font_func, content);
 			min = html_get_box_tree(block->object)->min_width;
 			max = html_get_box_tree(block->object)->max_width;
 		} else {
@@ -951,7 +1001,8 @@ layout_minmax_block(struct box *block, const struct gui_layout_table *font_func)
 		for (child = block->children; child; child = child->next) {
 			switch (child->type) {
 			case BOX_BLOCK:
-				layout_minmax_block(child, font_func);
+				layout_minmax_block(child, font_func,
+						content);
 				if (child->flags & HAS_HEIGHT)
 					child_has_height = true;
 				break;
@@ -960,7 +1011,8 @@ layout_minmax_block(struct box *block, const struct gui_layout_table *font_func)
 					child->flags |= NEED_MIN;
 
 				layout_minmax_inline_container(child,
-						&child_has_height, font_func);
+						&child_has_height, font_func,
+						content);
 				if (child_has_height &&
 						child ==
 						child->parent->children) {
@@ -968,7 +1020,8 @@ layout_minmax_block(struct box *block, const struct gui_layout_table *font_func)
 				}
 				break;
 			case BOX_TABLE:
-				layout_minmax_table(child, font_func);
+				layout_minmax_table(child, font_func,
+						content);
 				/* todo: fix for zero height tables */
 				child_has_height = true;
 				child->flags |= MAKE_HEIGHT;
@@ -1006,14 +1059,17 @@ layout_minmax_block(struct box *block, const struct gui_layout_table *font_func)
 	/* fixed width takes priority */
 	if (block->type != BOX_TABLE_CELL && wtype == CSS_WIDTH_SET &&
 			wunit != CSS_UNIT_PCT) {
-		min = max = FIXTOINT(nscss_len2px(width, wunit, block->style));
+		min = max = FIXTOINT(nscss_len2px(&content->len_ctx,
+				width, wunit, block->style));
 		if (bs == CSS_BOX_SIZING_BORDER_BOX) {
 			int border_box_fixed = 0;
 			float border_box_frac = 0;
-			calculate_mbp_width(block->style, LEFT,
+			calculate_mbp_width(&content->len_ctx,
+					block->style, LEFT,
 					false, true, true,
 					&border_box_fixed, &border_box_frac);
-			calculate_mbp_width(block->style, RIGHT,
+			calculate_mbp_width(&content->len_ctx,
+					block->style, RIGHT,
 					false, true, true,
 					&border_box_fixed, &border_box_frac);
 			if (min < border_box_fixed) {
@@ -1033,14 +1089,18 @@ layout_minmax_block(struct box *block, const struct gui_layout_table *font_func)
 	 * and paddings are wrong. */
 	if (bs == CSS_BOX_SIZING_BORDER_BOX && wtype == CSS_WIDTH_SET) {
 		/* Border and padding included in width, so just get margin */
-		calculate_mbp_width(block->style, LEFT, true, false, false,
+		calculate_mbp_width(&content->len_ctx,
+				block->style, LEFT, true, false, false,
 				&extra_fixed, &extra_frac);
-		calculate_mbp_width(block->style, RIGHT, true, false, false,
+		calculate_mbp_width(&content->len_ctx,
+				block->style, RIGHT, true, false, false,
 				&extra_fixed, &extra_frac);
 	} else {
-		calculate_mbp_width(block->style, LEFT, true, true, true,
+		calculate_mbp_width(&content->len_ctx,
+				block->style, LEFT, true, true, true,
 				&extra_fixed, &extra_frac);
-		calculate_mbp_width(block->style, RIGHT, true, true, true,
+		calculate_mbp_width(&content->len_ctx,
+				block->style, RIGHT, true, true, true,
 				&extra_fixed, &extra_frac);
 	}
 	if (extra_fixed < 0)
@@ -1070,6 +1130,7 @@ layout_minmax_block(struct box *block, const struct gui_layout_table *font_func)
  *
  * This turns the specified dimension into a content-box dimension.
  *
+ * \param  len_ctx          Length conversion context
  * \param  box		    gadget to adjust dimensions of
  * \param  available_width  width of containing block
  * \param  setwidth	    set true if the dimension to be tweaked is a width,
@@ -1079,6 +1140,7 @@ layout_minmax_block(struct box *block, const struct gui_layout_table *font_func)
  *				gadget properties.
  */
 static void layout_handle_box_sizing(
+		const nscss_len_ctx *len_ctx,
 		struct box *box,
 		int available_width,
 		bool setwidth,
@@ -1095,9 +1157,11 @@ static void layout_handle_box_sizing(
 		int fixed = 0;
 		float frac = 0;
 
-		calculate_mbp_width(box->style, setwidth ? LEFT : TOP,
+		calculate_mbp_width(len_ctx, box->style,
+				setwidth ? LEFT : TOP,
 				false, true, true, &fixed, &frac);
-		calculate_mbp_width(box->style, setwidth ? RIGHT : BOTTOM,
+		calculate_mbp_width(len_ctx, box->style,
+				setwidth ? RIGHT : BOTTOM,
 				false, true, true, &fixed, &frac);
 		orig -= frac * available_width + fixed;
 		*dimension = orig > 0 ? orig : 0;
@@ -1108,6 +1172,7 @@ static void layout_handle_box_sizing(
 /**
  * Calculate width, height, and thickness of margins, paddings, and borders.
  *
+ * \param  len_ctx          Length conversion context
  * \param  available_width  width of containing block
  * \param  viewport_height  height of viewport in pixels or -ve if unknown
  * \param  box		    current box
@@ -1124,7 +1189,8 @@ static void layout_handle_box_sizing(
  * \param  border	    filled with border widths, may be NULL
  */
 static void
-layout_find_dimensions(int available_width,
+layout_find_dimensions(const nscss_len_ctx *len_ctx,
+		       int available_width,
 		       int viewport_height,
 		       struct box *box,
 		       const css_computed_style *style,
@@ -1153,15 +1219,15 @@ layout_find_dimensions(int available_width,
 				*width = FPCT_OF_INT_TOINT(
 						value, available_width);
 			} else {
-				*width = FIXTOINT(nscss_len2px(value, unit,
-						style));
+				*width = FIXTOINT(nscss_len2px(len_ctx,
+						value, unit, style));
 			}
 		} else {
 			*width = AUTO;
 		}
 
 		if (*width != AUTO) {
-			layout_handle_box_sizing(box, available_width,
+			layout_handle_box_sizing(len_ctx, box, available_width,
 					true, width);
 		}
 	}
@@ -1241,15 +1307,15 @@ layout_find_dimensions(int available_width,
 					*height = AUTO;
 				}
 			} else {
-				*height = FIXTOINT(nscss_len2px(value, unit,
-						style));
+				*height = FIXTOINT(nscss_len2px(len_ctx,
+						value, unit, style));
 			}
 		} else {
 			*height = AUTO;
 		}
 
 		if (*height != AUTO) {
-			layout_handle_box_sizing(box, available_width,
+			layout_handle_box_sizing(len_ctx, box, available_width,
 					false, height);
 		}
 	}
@@ -1266,8 +1332,8 @@ layout_find_dimensions(int available_width,
 				*max_width = FPCT_OF_INT_TOINT(value,
 						available_width);
 			} else {
-				*max_width = FIXTOINT(nscss_len2px(value, unit,
-						style));
+				*max_width = FIXTOINT(nscss_len2px(len_ctx,
+						value, unit, style));
 			}
 		} else {
 			/* Inadmissible */
@@ -1275,7 +1341,7 @@ layout_find_dimensions(int available_width,
 		}
 
 		if (*max_width != -1) {
-			layout_handle_box_sizing(box, available_width,
+			layout_handle_box_sizing(len_ctx, box, available_width,
 					true, max_width);
 		}
 	}
@@ -1292,8 +1358,8 @@ layout_find_dimensions(int available_width,
 				*min_width = FPCT_OF_INT_TOINT(value,
 						available_width);
 			} else {
-				*min_width = FIXTOINT(nscss_len2px(value, unit,
-						style));
+				*min_width = FIXTOINT(nscss_len2px(len_ctx,
+						value, unit, style));
 			}
 		} else {
 			/* Inadmissible */
@@ -1301,7 +1367,7 @@ layout_find_dimensions(int available_width,
 		}
 
 		if (*min_width != 0) {
-			layout_handle_box_sizing(box, available_width,
+			layout_handle_box_sizing(len_ctx, box, available_width,
 					true, min_width);
 		}
 	}
@@ -1318,8 +1384,8 @@ layout_find_dimensions(int available_width,
 				/* TODO: handle percentage */
 				*max_height = -1;
 			} else {
-				*max_height = FIXTOINT(nscss_len2px(value, unit,
-						style));
+				*max_height = FIXTOINT(nscss_len2px(len_ctx,
+						value, unit, style));
 			}
 		} else {
 			/* Inadmissible */
@@ -1339,8 +1405,8 @@ layout_find_dimensions(int available_width,
 				/* TODO: handle percentage */
 				*min_height = 0;
 			} else {
-				*min_height = FIXTOINT(nscss_len2px(value, unit,
-						style));
+				*min_height = FIXTOINT(nscss_len2px(len_ctx,
+						value, unit, style));
 			}
 		} else {
 			/* Inadmissible */
@@ -1378,8 +1444,9 @@ layout_find_dimensions(int available_width,
 					margin[i] = FPCT_OF_INT_TOINT(value,
 							available_width);
 				} else {
-					margin[i] = FIXTOINT(nscss_len2px(value,
-							unit, style));
+					margin[i] = FIXTOINT(nscss_len2px(
+							len_ctx,
+							value, unit, style));
 				}
 			} else {
 				margin[i] = AUTO;
@@ -1411,8 +1478,8 @@ layout_find_dimensions(int available_width,
 				padding[i] = FPCT_OF_INT_TOINT(value,
 						available_width);
 			} else {
-				padding[i] = FIXTOINT(nscss_len2px(value, unit,
-						style));
+				padding[i] = FIXTOINT(nscss_len2px(len_ctx,
+						value, unit, style));
 			}
 		}
 
@@ -1459,8 +1526,8 @@ layout_find_dimensions(int available_width,
 				/* spec unclear: following Mozilla */
 				border[i].width = 0;
 			else
-				border[i].width = FIXTOINT(nscss_len2px(value,
-						unit, style));
+				border[i].width = FIXTOINT(nscss_len2px(len_ctx,
+						value, unit, style));
 
 			/* Special case for border-collapse: make all borders
 			 * on table/table-row-group/table-row zero width. */
@@ -1478,6 +1545,7 @@ layout_find_dimensions(int available_width,
 /**
  * Find next block that current margin collapses to.
  *
+ * \param  len_ctx  Length conversion context
  * \param  box    box to start tree-order search from (top margin is included)
  * \param  block  box responsible for current block fromatting context
  * \param  viewport_height  height of viewport in px
@@ -1486,7 +1554,8 @@ layout_find_dimensions(int available_width,
  * \return  next box that current margin collapses to, or NULL if none.
  */
 static struct box*
-layout_next_margin_block(struct box *box,
+layout_next_margin_block(const nscss_len_ctx *len_ctx,
+			 struct box *box,
 			 struct box *block,
 			 int viewport_height,
 			 int *max_pos_margin,
@@ -1505,7 +1574,8 @@ layout_next_margin_block(struct box *box,
 
 			/* Get margins */
 			if (box->style) {
-				layout_find_dimensions(box->parent->width,
+				layout_find_dimensions(len_ctx,
+						box->parent->width,
 						viewport_height, box,
 						box->style,
 						NULL, NULL, NULL, NULL,
@@ -1579,7 +1649,8 @@ layout_next_margin_block(struct box *box,
 
 			/* Get margins */
 			if (box->style) {
-				layout_find_dimensions(box->parent->width,
+				layout_find_dimensions(len_ctx,
+						box->parent->width,
 						viewport_height, box,
 						box->style,
 						NULL, NULL, NULL, NULL,
@@ -1815,6 +1886,7 @@ layout_solve_width(struct box *box,
  * Compute dimensions of box, margins, paddings, and borders for a block-level
  * element.
  *
+ * \param  len_ctx          Length conversion context
  * \param  available_width  Max width available in pixels
  * \param  viewport_height  Height of viewport in pixels or -ve if unknown
  * \param  lm		    min left margin required to avoid floats in px.
@@ -1827,7 +1899,8 @@ layout_solve_width(struct box *box,
  * See CSS 2.1 10.3.3, 10.3.4, 10.6.2, and 10.6.3.
  */
 static void
-layout_block_find_dimensions(int available_width,
+layout_block_find_dimensions(const nscss_len_ctx *len_ctx,
+			     int available_width,
 			     int viewport_height,
 			     int lm,
 			     int rm,
@@ -1840,8 +1913,8 @@ layout_block_find_dimensions(int available_width,
 	struct box_border *border = box->border;
 	const css_computed_style *style = box->style;
 
-	layout_find_dimensions(available_width, viewport_height, box, style,
-			&width, &height, &max_width, &min_width,
+	layout_find_dimensions(len_ctx, available_width, viewport_height, box,
+			style, &width, &height, &max_width, &min_width,
 			&max_height, &min_height, margin, padding, border);
 
 	if (box->object && !(box->flags & REPLACE_DIM) &&
@@ -1994,8 +2067,9 @@ static bool layout_table(struct box *table, int available_width,
 	memcpy(col, table->col, sizeof(col[0]) * columns);
 
 	/* find margins, paddings, and borders for table and cells */
-	layout_find_dimensions(available_width, -1, table, style, 0, 0, 0, 0,
-			0, 0, table->margin, table->padding, table->border);
+	layout_find_dimensions(&content->len_ctx, available_width, -1, table,
+			style, 0, 0, 0, 0, 0, 0, table->margin, table->padding,
+			table->border);
 	for (row_group = table->children; row_group;
 			row_group = row_group->next) {
 		for (row = row_group->children; row; row = row->next) {
@@ -2004,9 +2078,11 @@ static bool layout_table(struct box *table, int available_width,
 				enum css_overflow_e overflow_y;
 
 				assert(c->style);
-				table_used_border_for_cell(c);
-				layout_find_dimensions(available_width, -1,
-						c, c->style, 0, 0, 0, 0, 0, 0,
+				table_used_border_for_cell(
+						&content->len_ctx, c);
+				layout_find_dimensions(&content->len_ctx,
+						available_width, -1, c,
+						c->style, 0, 0, 0, 0, 0, 0,
 						0, c->padding, c->border);
 
 				overflow_x = css_computed_overflow_x(c->style);
@@ -2034,8 +2110,10 @@ static bool layout_table(struct box *table, int available_width,
 
 		css_computed_border_spacing(style, &h, &hu, &v, &vu);
 
-		border_spacing_h = FIXTOINT(nscss_len2px(h, hu, style));
-		border_spacing_v = FIXTOINT(nscss_len2px(v, vu, style));
+		border_spacing_h = FIXTOINT(nscss_len2px(&content->len_ctx,
+				h, hu, style));
+		border_spacing_v = FIXTOINT(nscss_len2px(&content->len_ctx,
+				v, vu, style));
 	}
 
 	/* find specified table width, or available width if auto-width */
@@ -2045,7 +2123,8 @@ static bool layout_table(struct box *table, int available_width,
 			table_width = FPCT_OF_INT_TOINT(value, available_width);
 		} else {
 			table_width =
-				FIXTOINT(nscss_len2px(value, unit, style));
+				FIXTOINT(nscss_len2px(&content->len_ctx,
+						value, unit, style));
 		}
 
 		/* specified width includes border */
@@ -2123,7 +2202,8 @@ static bool layout_table(struct box *table, int available_width,
 		} else {
 			/* This is the minimum height for the table
 			 * (see 17.5.3) */
-			min_height = FIXTOINT(nscss_len2px(value, unit, style));
+			min_height = FIXTOINT(nscss_len2px(&content->len_ctx,
+					value, unit, style));
 		}
 	}
 
@@ -2313,8 +2393,9 @@ static bool layout_table(struct box *table, int available_width,
 
 			htype = css_computed_height(row->style, &value, &unit);
 			if (htype == CSS_HEIGHT_SET && unit != CSS_UNIT_PCT) {
-				row_height = FIXTOINT(nscss_len2px(value, unit,
-						row->style));
+				row_height = FIXTOINT(nscss_len2px(
+						&content->len_ctx,
+						value, unit, row->style));
 			}
 			for (c = row->children; c; c = c->next) {
 				assert(c->style);
@@ -2351,8 +2432,9 @@ static bool layout_table(struct box *table, int available_width,
 					/* some sites use height="1" or similar
 					 * to attempt to make cells as small as
 					 * possible, so treat it as a minimum */
-					int h = FIXTOINT(nscss_len2px(value,
-							unit, c->style));
+					int h = FIXTOINT(nscss_len2px(
+							&content->len_ctx,
+							value, unit, c->style));
 					if (c->height < h)
 						c->height = h;
 				}
@@ -2496,12 +2578,16 @@ static bool layout_table(struct box *table, int available_width,
 /**
  * Manimpulate box height according to CSS min-height and max-height properties
  *
+ * \param  len_ctx      CSS length conversion context for document.
  * \param  box		block to modify with any min-height or max-height
  * \param  container	containing block for absolutely positioned elements, or
  *			NULL for non absolutely positioned elements.
  * \return		whether the height has been changed
  */
-static bool layout_apply_minmax_height(struct box *box, struct box *container)
+static bool layout_apply_minmax_height(
+		const nscss_len_ctx *len_ctx,
+		struct box *box,
+		struct box *container)
 {
 	int h;
 	struct box *containing_block = NULL;
@@ -2560,8 +2646,8 @@ static bool layout_apply_minmax_height(struct box *box, struct box *container)
 					}
 				}
 			} else {
-				h = FIXTOINT(nscss_len2px(value, unit,
-						box->style));
+				h = FIXTOINT(nscss_len2px(len_ctx,
+						value, unit, box->style));
 				if (h < box->height) {
 					box->height = h;
 					updated = true;
@@ -2590,8 +2676,8 @@ static bool layout_apply_minmax_height(struct box *box, struct box *container)
 					}
 				}
 			} else {
-				h = FIXTOINT(nscss_len2px(value, unit,
-						box->style));
+				h = FIXTOINT(nscss_len2px(len_ctx,
+						value, unit, box->style));
 				if (h > box->height) {
 					box->height = h;
 					updated = true;
@@ -2759,6 +2845,7 @@ layout_text_box_split(html_content *content,
  * Compute dimensions of box, margins, paddings, and borders for a floating
  * element using shrink-to-fit. Also used for inline-blocks.
  *
+ * \param  len_ctx          CSS length conversion context for document.
  * \param  available_width  Max width available in pixels
  * \param  style	    Box's style
  * \param  box		    Box for which to find dimensions
@@ -2766,9 +2853,11 @@ layout_text_box_split(html_content *content,
  *				height are updated.
  */
 static void
-layout_float_find_dimensions(int available_width,
-			     const css_computed_style *style,
-			     struct box *box)
+layout_float_find_dimensions(
+		const nscss_len_ctx *len_ctx,
+		int available_width,
+		const css_computed_style *style,
+		struct box *box)
 {
 	int width, height, max_width, min_width, max_height, min_height;
 	int *margin = box->margin;
@@ -2785,9 +2874,9 @@ layout_float_find_dimensions(int available_width,
 			 overflow_y == CSS_OVERFLOW_AUTO) ?
 			SCROLLBAR_WIDTH : 0;
 
-	layout_find_dimensions(available_width, -1, box, style, &width, &height,
-			&max_width, &min_width, &max_height, &min_height,
-			margin, padding, border);
+	layout_find_dimensions(len_ctx, available_width, -1, box, style,
+			&width, &height, &max_width, &min_width,
+			&max_height, &min_height, margin, padding, border);
 
 	if (margin[LEFT] == AUTO)
 		margin[LEFT] = 0;
@@ -2821,26 +2910,26 @@ layout_float_find_dimensions(int available_width,
 				box->gadget->type == GADGET_FILE) {
 			if (width == AUTO) {
 				size = INTTOFIX(10);
-				width = FIXTOINT(nscss_len2px(size, unit,
-						box->style));
+				width = FIXTOINT(nscss_len2px(len_ctx,
+						size, unit, box->style));
 			}
 			if (box->gadget->type == GADGET_FILE &&
 					height == AUTO) {
 				size = FLTTOFIX(1.5);
-				height = FIXTOINT(nscss_len2px(size, unit,
-						box->style));
+				height = FIXTOINT(nscss_len2px(len_ctx,
+						size, unit, box->style));
 			}
 		}
 		if (box->gadget->type == GADGET_TEXTAREA) {
 			if (width == AUTO) {
 				size = INTTOFIX(10);
-				width = FIXTOINT(nscss_len2px(size, unit,
-						box->style));
+				width = FIXTOINT(nscss_len2px(len_ctx,
+						size, unit, box->style));
 			}
 			if (height == AUTO) {
 				size = INTTOFIX(4);
-				height = FIXTOINT(nscss_len2px(size, unit,
-						box->style));
+				height = FIXTOINT(nscss_len2px(len_ctx,
+						size, unit, box->style));
 			}
 		}
 	} else if (width == AUTO) {
@@ -2861,10 +2950,10 @@ layout_float_find_dimensions(int available_width,
 			 * mbp as was used in layout_minmax_block() */
 			int fixed = 0;
 			float frac = 0;
-			calculate_mbp_width(box->style, LEFT, true, true, true,
-					&fixed, &frac);
-			calculate_mbp_width(box->style, RIGHT, true, true, true,
-					&fixed, &frac);
+			calculate_mbp_width(len_ctx, box->style, LEFT,
+					true, true, true, &fixed, &frac);
+			calculate_mbp_width(len_ctx, box->style, RIGHT,
+					true, true, true, &fixed, &frac);
 			if (fixed < 0)
 				fixed = 0;
 
@@ -2902,7 +2991,7 @@ static bool layout_float(struct box *b, int width, html_content *content)
 {
 	assert(b->type == BOX_TABLE || b->type == BOX_BLOCK ||
 			b->type == BOX_INLINE_BLOCK);
-	layout_float_find_dimensions(width, b->style, b);
+	layout_float_find_dimensions(&content->len_ctx, width, b->style, b);
 	if (b->type == BOX_TABLE) {
 		if (!layout_table(b, width, content))
 			return false;
@@ -2974,7 +3063,9 @@ place_float_below(struct box *c, int width, int cx, int y, struct box *cont)
 /**
  * Calculate line height from a style.
  */
-static int line_height(const css_computed_style *style)
+static int line_height(
+		const nscss_len_ctx *len_ctx,
+		const css_computed_style *style)
 {
 	enum css_line_height_e lhtype;
 	css_fixed lhvalue = 0;
@@ -2992,14 +3083,16 @@ static int line_height(const css_computed_style *style)
 
 	if (lhtype == CSS_LINE_HEIGHT_NUMBER ||
 			lhunit == CSS_UNIT_PCT) {
-		line_height = nscss_len2px(lhvalue, CSS_UNIT_EM, style);
+		line_height = nscss_len2px(len_ctx,
+				lhvalue, CSS_UNIT_EM, style);
 
 		if (lhtype != CSS_LINE_HEIGHT_NUMBER)
 			line_height = FDIV(line_height, F_100);
 	} else {
 		assert(lhunit != CSS_UNIT_PCT);
 
-		line_height = nscss_len2px(lhvalue, lhunit, style);
+		line_height = nscss_len2px(len_ctx,
+				lhvalue, lhunit, style);
 	}
 
 	return FIXTOINT(line_height);
@@ -3071,7 +3164,8 @@ layout_line(struct box *first,
 	x1 -= cx;
 
 	if (indent)
-		x0 += layout_text_indent(first->parent->parent->style, *width);
+		x0 += layout_text_indent(&content->len_ctx,
+				first->parent->parent->style, *width);
 
 	if (x1 < x0)
 		x1 = x0;
@@ -3080,8 +3174,8 @@ layout_line(struct box *first,
 	 * this is the line-height if there are text children and also in the
 	 * case of an initially empty text input */
 	if (has_text_children || first->parent->parent->gadget)
-		used_height = height =
-				line_height(first->parent->parent->style);
+		used_height = height = line_height(&content->len_ctx,
+				first->parent->parent->style);
 	else
 		/* inline containers with no text are usually for layout and
 		 * look better with no minimum line-height */
@@ -3120,7 +3214,7 @@ layout_line(struct box *first,
 			continue;
 
 		assert(b->style != NULL);
-		font_plot_style_from_css(b->style, &fstyle);
+		font_plot_style_from_css(&content->len_ctx, b->style, &fstyle);
 
 		x += space_after;
 
@@ -3144,9 +3238,9 @@ layout_line(struct box *first,
 
 		if (b->type == BOX_INLINE) {
 			/* calculate borders, margins, and padding */
-			layout_find_dimensions(*width, -1, b, b->style, 0, 0,
-					0, 0, 0, 0, b->margin, b->padding,
-					b->border);
+			layout_find_dimensions(&content->len_ctx,
+					*width, -1, b, b->style, 0, 0, 0, 0,
+					0, 0, b->margin, b->padding, b->border);
 			for (i = 0; i != 4; i++)
 				if (b->margin[i] == AUTO)
 					b->margin[i] = 0;
@@ -3179,7 +3273,8 @@ layout_line(struct box *first,
 		if (!b->object && !(b->flags & IFRAME) && !b->gadget &&
 				!(b->flags & REPLACE_DIM)) {
 			/* inline non-replaced, 10.3.1 and 10.6.1 */
-			b->height = line_height(b->style ? b->style :
+			b->height = line_height(&content->len_ctx,
+					b->style ? b->style :
 					b->parent->parent->style);
 			if (height < b->height)
 				height = b->height;
@@ -3249,9 +3344,12 @@ layout_line(struct box *first,
 		/* inline replaced, 10.3.2 and 10.6.2 */
 		assert(b->style);
 
-		layout_find_dimensions(*width, -1, b, b->style,
-				&b->width, &b->height, &max_width, &min_width,
-				&max_height, &min_height, NULL, NULL, NULL);
+		layout_find_dimensions(&content->len_ctx,
+				*width, -1, b, b->style,
+				&b->width, &b->height,
+				&max_width, &min_width,
+				&max_height, &min_height,
+				NULL, NULL, NULL);
 
 		if (b->object && !(b->flags & REPLACE_DIM)) {
 			layout_get_object_dimensions(b, &b->width, &b->height,
@@ -3269,10 +3367,12 @@ layout_line(struct box *first,
 		} else {
 			/* form control with no object */
 			if (b->width == AUTO)
-				b->width = FIXTOINT(nscss_len2px(INTTOFIX(1),
+				b->width = FIXTOINT(nscss_len2px(
+						&content->len_ctx, INTTOFIX(1),
 						CSS_UNIT_EM, b->style));
 			if (b->height == AUTO)
-				b->height = FIXTOINT(nscss_len2px(INTTOFIX(1),
+				b->height = FIXTOINT(nscss_len2px(
+						&content->len_ctx, INTTOFIX(1),
 						CSS_UNIT_EM, b->style));
 		}
 
@@ -3306,7 +3406,8 @@ layout_line(struct box *first,
 	x1 -= cx;
 
 	if (indent)
-		x0 += layout_text_indent(first->parent->parent->style, *width);
+		x0 += layout_text_indent(&content->len_ctx,
+				first->parent->parent->style, *width);
 
 	if (x1 < x0)
 		x1 = x0;
@@ -3363,8 +3464,9 @@ layout_line(struct box *first,
 				space_after = 0;
 			else if (b->text || b->type == BOX_INLINE_END) {
 				if (b->space == UNKNOWN_WIDTH) {
-					font_plot_style_from_css(b->style,
-							&fstyle);
+					font_plot_style_from_css(
+							&content->len_ctx,
+							b->style, &fstyle);
 					/** \todo handle errors */
 					font_func->width(&fstyle, " ", 1,
 							 &b->space);
@@ -3517,7 +3619,8 @@ layout_line(struct box *first,
 		    !(split_box->flags & IFRAME) &&
 		    !split_box->gadget && split_box->text) {
 
-			font_plot_style_from_css(split_box->style, &fstyle);
+			font_plot_style_from_css(&content->len_ctx,
+					split_box->style, &fstyle);
 			/** \todo handle errors */
 			font_func->split(&fstyle,
 					 split_box->text,
@@ -3879,7 +3982,8 @@ layout_block_context(struct box *block,
 		gadget_unit = CSS_UNIT_EM;
 		gadget_size = INTTOFIX(1);
 		if (block->height == AUTO)
-			block->height = FIXTOINT(nscss_len2px(gadget_size,
+			block->height = FIXTOINT(nscss_len2px(
+					&content->len_ctx, gadget_size,
 					gadget_unit, block->style));
 	}
 
@@ -3943,7 +4047,8 @@ layout_block_context(struct box *block,
 		/* If we don't know which box the current margin collapses
 		 * through to, find out.  Update the pos/neg margin values. */
 		if (margin_collapse == NULL) {
-			margin_collapse = layout_next_margin_block(box, block,
+			margin_collapse = layout_next_margin_block(
+					&content->len_ctx, box, block,
 					viewport_height,
 					&max_pos_margin, &max_neg_margin);
 			/* We have a margin that has not yet been applied. */
@@ -3994,7 +4099,8 @@ layout_block_context(struct box *block,
 						box->parent->padding[RIGHT] -
 						x1;
 			}
-			layout_block_find_dimensions(box->parent->width,
+			layout_block_find_dimensions(&content->len_ctx,
+					box->parent->width,
 					viewport_height, lm, rm, box);
 			if (box->type == BOX_BLOCK && !(box->flags & IFRAME)) {
 				layout_block_add_scrollbar(box, RIGHT);
@@ -4234,8 +4340,9 @@ layout_block_context(struct box *block,
 				if (box->style &&
 					css_computed_position(box->style) !=
 						CSS_POSITION_ABSOLUTE &&
-						layout_apply_minmax_height(box,
-								NULL)) {
+						layout_apply_minmax_height(
+							&content->len_ctx,
+							box, NULL)) {
 					/* Height altered */
 					/* Set current cy */
 					cy += box->height -
@@ -4291,19 +4398,23 @@ layout_block_context(struct box *block,
 	if (block->style && css_computed_position(block->style) !=
 			CSS_POSITION_ABSOLUTE) {
 		/* Block is in normal flow */
-		layout_apply_minmax_height(block, NULL);
+		layout_apply_minmax_height(&content->len_ctx, block, NULL);
 	}
 
 	if (block->gadget &&
 			(block->gadget->type == GADGET_TEXTAREA ||
 			block->gadget->type == GADGET_PASSWORD ||
 			block->gadget->type == GADGET_TEXTBOX)) {
+		plot_font_style_t fstyle;
 		int ta_width = block->padding[LEFT] + block->width +
 				block->padding[RIGHT];
 		int ta_height = block->padding[TOP] + block->height +
 				block->padding[BOTTOM];
+		font_plot_style_from_css(&content->len_ctx,
+				block->style, &fstyle);
+		fstyle.background = NS_TRANSPARENT;
 		textarea_set_layout(block->gadget->data.text.ta,
-				ta_width, ta_height,
+				&fstyle, ta_width, ta_height,
 				block->padding[TOP], block->padding[RIGHT],
 				block->padding[BOTTOM], block->padding[LEFT]);
 	}
@@ -4317,7 +4428,8 @@ layout_block_context(struct box *block,
  */
 static void
 layout_lists(struct box *box,
-	     const struct gui_layout_table *font_func)
+	     const struct gui_layout_table *font_func,
+	     const nscss_len_ctx *len_ctx)
 {
 	struct box *child;
 	struct box *marker;
@@ -4332,12 +4444,13 @@ layout_lists(struct box *box,
 				marker->x = -marker->width;
 				marker->height =
 					content_get_height(marker->object);
-				marker->y = (line_height(marker->style) -
+				marker->y = (line_height(len_ctx,
+						marker->style) -
 						marker->height) / 2;
 			} else if (marker->text) {
 				if (marker->width == UNKNOWN_WIDTH) {
-					font_plot_style_from_css(marker->style,
-							&fstyle);
+					font_plot_style_from_css(len_ctx,
+							marker->style, &fstyle);
 					font_func->width(&fstyle,
 							marker->text,
 							marker->length,
@@ -4346,7 +4459,8 @@ layout_lists(struct box *box,
 				}
 				marker->x = -marker->width;
 				marker->y = 0;
-				marker->height = line_height(marker->style);
+				marker->height = line_height(len_ctx,
+						marker->style);
 			} else {
 				marker->x = 0;
 				marker->y = 0;
@@ -4356,7 +4470,7 @@ layout_lists(struct box *box,
 			/* Gap between marker and content */
 			marker->x -= 4;
 		}
-		layout_lists(child, font_func);
+		layout_lists(child, font_func, len_ctx);
 	}
 }
 
@@ -4365,6 +4479,7 @@ layout_lists(struct box *box,
  * Compute box offsets for a relatively or absolutely positioned box with
  * respect to a box.
  *
+ * \param  len_ctx           Length conversion context
  * \param  box               box to compute offsets for
  * \param  containing_block  box to compute percentages with respect to
  * \param  top               updated to top offset, or AUTO
@@ -4375,7 +4490,8 @@ layout_lists(struct box *box,
  * See CSS 2.1 9.3.2. containing_block must have width and height.
  */
 static void
-layout_compute_offsets(struct box *box,
+layout_compute_offsets(const nscss_len_ctx *len_ctx,
+		       struct box *box,
 		       struct box *containing_block,
 		       int *top,
 		       int *right,
@@ -4397,7 +4513,8 @@ layout_compute_offsets(struct box *box,
 			*left = FPCT_OF_INT_TOINT(value,
 					containing_block->width);
 		} else {
-			*left = FIXTOINT(nscss_len2px(value, unit, box->style));
+			*left = FIXTOINT(nscss_len2px(len_ctx,
+					value, unit, box->style));
 		}
 	} else {
 		*left = AUTO;
@@ -4410,8 +4527,8 @@ layout_compute_offsets(struct box *box,
 			*right = FPCT_OF_INT_TOINT(value,
 					containing_block->width);
 		} else {
-			*right = FIXTOINT(nscss_len2px(value, unit,
-					box->style));
+			*right = FIXTOINT(nscss_len2px(len_ctx,
+					value, unit, box->style));
 		}
 	} else {
 		*right = AUTO;
@@ -4424,7 +4541,8 @@ layout_compute_offsets(struct box *box,
 			*top = FPCT_OF_INT_TOINT(value,
 					containing_block->height);
 		} else {
-			*top = FIXTOINT(nscss_len2px(value, unit, box->style));
+			*top = FIXTOINT(nscss_len2px(len_ctx,
+					value, unit, box->style));
 		}
 	} else {
 		*top = AUTO;
@@ -4437,8 +4555,8 @@ layout_compute_offsets(struct box *box,
 			*bottom = FPCT_OF_INT_TOINT(value,
 					containing_block->height);
 		} else {
-			*bottom = FIXTOINT(nscss_len2px(value, unit,
-					box->style));
+			*bottom = FIXTOINT(nscss_len2px(len_ctx,
+					value, unit, box->style));
 		}
 	} else {
 		*bottom = AUTO;
@@ -4494,16 +4612,17 @@ layout_absolute(struct box *box,
 		/** \todo inline containers */
 	}
 
-	layout_compute_offsets(box, containing_block,
+	layout_compute_offsets(&content->len_ctx, box, containing_block,
 			&top, &right, &bottom, &left);
 
 	/* Pass containing block into layout_find_dimensions via the float
 	 * containing block box member. This is unused for absolutely positioned
 	 * boxes because a box can't be floated and absolutely positioned. */
 	box->float_container = containing_block;
-	layout_find_dimensions(available_width, -1, box, box->style,
-			&width, &height, &max_width, &min_width,
-			0, 0, margin, padding, border);
+	layout_find_dimensions(&content->len_ctx, available_width, -1,
+			box, box->style, &width, &height,
+			&max_width, &min_width, 0, 0,
+			margin, padding, border);
 	box->float_container = NULL;
 
 	/* 10.3.7 */
@@ -4818,7 +4937,7 @@ layout_absolute(struct box *box,
 		/** \todo Inline ancestors */
 	}
 	box->height = height;
-	layout_apply_minmax_height(box, containing_block);
+	layout_apply_minmax_height(&content->len_ctx, box, containing_block);
 
 	return true;
 }
@@ -4895,11 +5014,16 @@ layout_position_absolute(struct box *box,
 /**
  * Compute a box's relative offset as per CSS 2.1 9.4.3
  *
+ * \param  len_ctx  Length conversion context
  * \param  box	Box to compute relative offsets for.
  * \param  x	Receives relative offset in x.
  * \param  y	Receives relative offset in y.
  */
-static void layout_compute_relative_offset(struct box *box, int *x, int *y)
+static void layout_compute_relative_offset(
+		const nscss_len_ctx *len_ctx,
+		struct box *box,
+		int *x,
+		int *y)
 {
 	int left, right, top, bottom;
 	struct box *containing_block;
@@ -4916,7 +5040,7 @@ static void layout_compute_relative_offset(struct box *box, int *x, int *y)
 		containing_block = box->parent;
 	}
 
-	layout_compute_offsets(box, containing_block,
+	layout_compute_offsets(len_ctx, box, containing_block,
 			&top, &right, &bottom, &left);
 
 	if (left == AUTO && right == AUTO)
@@ -4964,6 +5088,7 @@ static void layout_compute_relative_offset(struct box *box, int *x, int *y)
 /**
  * Adjust positions of relatively positioned boxes.
  *
+ * \param  len_ctx  Length conversion context
  * \param  root  box to adjust the position of
  * \param  fp    box which forms the block formatting context for children of
  *		 "root" which are floats
@@ -4975,7 +5100,12 @@ static void layout_compute_relative_offset(struct box *box, int *x, int *y)
  *               box, "fp", for float children of "root"
  */
 static void
-layout_position_relative(struct box *root, struct box *fp, int fx, int fy)
+layout_position_relative(
+		const nscss_len_ctx *len_ctx,
+		struct box *root,
+		struct box *fp,
+		int fx,
+		int fy)
 {
 	struct box *box; /* for children of "root" */
 	struct box *fn;  /* for block formatting context box for children of
@@ -4999,7 +5129,8 @@ layout_position_relative(struct box *root, struct box *fp, int fx, int fy)
 		/* If relatively positioned, get offsets */
 		if (box->style && css_computed_position(box->style) ==
 				CSS_POSITION_RELATIVE)
-			layout_compute_relative_offset(box, &x, &y);
+			layout_compute_relative_offset(
+					len_ctx, box, &x, &y);
 		else
 			x = y = 0;
 
@@ -5035,7 +5166,7 @@ layout_position_relative(struct box *root, struct box *fp, int fx, int fy)
 		}
 
 		/* recurse first */
-		layout_position_relative(box, fn, fnx, fny);
+		layout_position_relative(len_ctx, box, fn, fnx, fny);
 
 		/* Ignore things we're not interested in. */
 		if (!box->style || (box->style &&
@@ -5064,6 +5195,7 @@ layout_position_relative(struct box *root, struct box *fp, int fx, int fy)
 /**
  * Find a box's bounding box relative to itself, i.e. the box's border edge box
  *
+ * \param  len_ctx  Length conversion context
  * \param  box      box find bounding box of
  * \param  desc_x0  updated to left of box's bbox
  * \param  desc_y0  updated to top of box's bbox
@@ -5071,9 +5203,11 @@ layout_position_relative(struct box *root, struct box *fp, int fx, int fy)
  * \param  desc_y1  updated to bottom of box's bbox
  */
 static void
-layout_get_box_bbox(struct box *box,
-		    int *desc_x0, int *desc_y0,
-		    int *desc_x1, int *desc_y1)
+layout_get_box_bbox(
+		const nscss_len_ctx *len_ctx,
+		struct box *box,
+		int *desc_x0, int *desc_y0,
+		int *desc_x1, int *desc_y1)
 {
 	*desc_x0 = -box->border[LEFT].width;
 	*desc_y0 = -box->border[TOP].width;
@@ -5093,7 +5227,8 @@ layout_get_box_bbox(struct box *box,
 		int text_height;
 
 		css_computed_font_size(box->style, &font_size, &font_unit);
-		text_height = nscss_len2px(font_size, font_unit, box->style);
+		text_height = nscss_len2px(len_ctx, font_size, font_unit,
+				box->style);
 		text_height = FIXTOINT(text_height * 3 / 4);
 		*desc_y0 = (*desc_y0 < -text_height) ? *desc_y0 : -text_height;
 	}
@@ -5103,16 +5238,19 @@ layout_get_box_bbox(struct box *box,
 /**
  * Apply changes to box descendant_[xy][01] values due to given child.
  *
- * \param  box    box to update
- * \param  child  a box, which may affect box's descendant bbox
- * \param  off_x  offset to apply to child->x coord to treat as child of box
- * \param  off_y  offset to apply to child->y coord to treat as child of box
+ * \param  len_ctx  Length conversion context
+ * \param  box      box to update
+ * \param  child    a box, which may affect box's descendant bbox
+ * \param  off_x    offset to apply to child->x coord to treat as child of box
+ * \param  off_y    offset to apply to child->y coord to treat as child of box
  */
 static void
-layout_update_descendant_bbox(struct box *box,
-			      struct box *child,
-			      int off_x,
-			      int off_y)
+layout_update_descendant_bbox(
+		const nscss_len_ctx *len_ctx,
+		struct box *box,
+		struct box *child,
+		int off_x,
+		int off_y)
 {
 	int child_desc_x0, child_desc_y0, child_desc_x1, child_desc_y1;
 
@@ -5132,7 +5270,8 @@ layout_update_descendant_bbox(struct box *box,
 	}
 
 	/* Get child's border edge */
-	layout_get_box_bbox(child, &child_desc_x0, &child_desc_y0,
+	layout_get_box_bbox(len_ctx, child,
+			&child_desc_x0, &child_desc_y0,
 			&child_desc_x1, &child_desc_y1);
 
 	if (overflow_x == CSS_OVERFLOW_VISIBLE &&
@@ -5169,9 +5308,12 @@ layout_update_descendant_bbox(struct box *box,
  * Recursively calculate the descendant_[xy][01] values for a laid-out box tree
  * and inform iframe browser windows of their size and position.
  *
- * \param  box  tree of boxes to update
+ * \param  len_ctx  Length conversion context
+ * \param  box      tree of boxes to update
  */
-static void layout_calculate_descendant_bboxes(struct box *box)
+static void layout_calculate_descendant_bboxes(
+		const nscss_len_ctx *len_ctx,
+		struct box *box)
 {
 	struct box *child;
 
@@ -5180,7 +5322,8 @@ static void layout_calculate_descendant_bboxes(struct box *box)
 	/* assert((box->width >= 0) && (box->height >= 0)); */
 
 	/* Initialise box's descendant box to border edge box */
-	layout_get_box_bbox(box, &box->descendant_x0, &box->descendant_y0,
+	layout_get_box_bbox(len_ctx, box,
+			&box->descendant_x0, &box->descendant_y0,
 			&box->descendant_x1, &box->descendant_y1);
 
 	/* Extend it to contain HTML contents if box is replaced */
@@ -5213,7 +5356,7 @@ static void layout_calculate_descendant_bboxes(struct box *box)
 					child->type == BOX_FLOAT_RIGHT)
 				continue;
 
-			layout_update_descendant_bbox(box, child,
+			layout_update_descendant_bbox(len_ctx, box, child,
 					box->x, box->y);
 
 			if (child == box->inline_end)
@@ -5231,7 +5374,7 @@ static void layout_calculate_descendant_bboxes(struct box *box)
 				child->type == BOX_FLOAT_RIGHT)
 			continue;
 
-		layout_calculate_descendant_bboxes(child);
+		layout_calculate_descendant_bboxes(len_ctx, child);
 
 		if (box->style && css_computed_overflow_x(box->style) ==
 				CSS_OVERFLOW_HIDDEN &&
@@ -5239,23 +5382,23 @@ static void layout_calculate_descendant_bboxes(struct box *box)
 				CSS_OVERFLOW_HIDDEN)
 			continue;
 
-		layout_update_descendant_bbox(box, child, 0, 0);
+		layout_update_descendant_bbox(len_ctx, box, child, 0, 0);
 	}
 
 	for (child = box->float_children; child; child = child->next_float) {
 		assert(child->type == BOX_FLOAT_LEFT ||
 				child->type == BOX_FLOAT_RIGHT);
 
-		layout_calculate_descendant_bboxes(child);
+		layout_calculate_descendant_bboxes(len_ctx, child);
 
-		layout_update_descendant_bbox(box, child, 0, 0);
+		layout_update_descendant_bbox(len_ctx, box, child, 0, 0);
 	}
 
 	if (box->list_marker) {
 		child = box->list_marker;
-		layout_calculate_descendant_bboxes(child);
+		layout_calculate_descendant_bboxes(len_ctx, child);
 
-		layout_update_descendant_bbox(box, child, 0, 0);
+		layout_update_descendant_bbox(len_ctx, box, child, 0, 0);
 	}
 }
 
@@ -5267,9 +5410,10 @@ bool layout_document(html_content *content, int width, int height)
 	struct box *doc = content->layout;
 	const struct gui_layout_table *font_func = content->font_func;
 
-	layout_minmax_block(doc, font_func);
+	layout_minmax_block(doc, font_func, content);
 
-	layout_block_find_dimensions(width, height, 0, 0, doc);
+	layout_block_find_dimensions(&content->len_ctx,
+			width, height, 0, 0, doc);
 	doc->x = doc->margin[LEFT] + doc->border[LEFT].width;
 	doc->y = doc->margin[TOP] + doc->border[TOP].width;
 	width -= doc->margin[LEFT] + doc->border[LEFT].width +
@@ -5300,11 +5444,11 @@ bool layout_document(html_content *content, int width, int height)
 					 doc->children->margin[BOTTOM]);
 	}
 
-	layout_lists(doc, font_func);
+	layout_lists(doc, font_func, &content->len_ctx);
 	layout_position_absolute(doc, doc, 0, 0, content);
-	layout_position_relative(doc, doc, 0, 0);
+	layout_position_relative(&content->len_ctx, doc, doc, 0, 0);
 
-	layout_calculate_descendant_bboxes(doc);
+	layout_calculate_descendant_bboxes(&content->len_ctx, doc);
 
 	return ret;
 }

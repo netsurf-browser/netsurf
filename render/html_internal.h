@@ -26,6 +26,7 @@
 
 #include <libcss/libcss.h>
 
+#include "content/handlers/css/utils.h"
 #include "content/content_protected.h"
 #include "desktop/selection.h"
 #include "render/html.h"
@@ -93,6 +94,9 @@ typedef struct html_content {
 	nsurl *base_url;
 	/** Base target */
 	char *base_target;
+
+	/** CSS length conversion context for document. */
+	nscss_len_ctx len_ctx;
 
 	/** Content has been aborted in the LOADING state */
 	bool aborted;

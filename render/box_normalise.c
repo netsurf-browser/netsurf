@@ -422,9 +422,6 @@ bool box_normalise_table(
 
 	free(col_info.spans);
 
-	if (table_calculate_column_types(table) == false)
-		return false;
-
 #ifdef BOX_NORMALISE_DEBUG
 	NSLOG(netsurf, INFO, "table %p done", table);
 #endif
