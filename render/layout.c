@@ -286,6 +286,181 @@ calculate_mbp_width(const css_computed_style *style,
 
 
 /**
+ * Calculate minimum and maximum width of a table.
+ *
+ * \param table box of type TABLE
+ * \param font_func Font functions
+ * \param content  The HTML content being layed out.
+ * \post  table->min_width and table->max_width filled in,
+ *        0 <= table->min_width <= table->max_width
+ */
+static void
+layout_minmax_table(struct box *table, const struct gui_layout_table *font_func)
+{
+	unsigned int i, j;
+	int border_spacing_h = 0;
+	int table_min = 0, table_max = 0;
+	int extra_fixed = 0;
+	float extra_frac = 0;
+	struct column *col = table->col;
+	struct box *row_group, *row, *cell;
+	enum css_width_e wtype;
+	css_fixed value = 0;
+	css_unit unit = CSS_UNIT_PX;
+
+	/* check if the widths have already been calculated */
+	if (table->max_width != UNKNOWN_MAX_WIDTH)
+		return;
+
+	/* start with 0 except for fixed-width columns */
+	for (i = 0; i != table->columns; i++) {
+		if (col[i].type == COLUMN_WIDTH_FIXED)
+			col[i].min = col[i].max = col[i].width;
+		else
+			col[i].min = col[i].max = 0;
+	}
+
+	/* border-spacing is used in the separated borders model */
+	if (css_computed_border_collapse(table->style) ==
+			CSS_BORDER_COLLAPSE_SEPARATE) {
+		css_fixed h = 0, v = 0;
+		css_unit hu = CSS_UNIT_PX, vu = CSS_UNIT_PX;
+
+		css_computed_border_spacing(table->style, &h, &hu, &v, &vu);
+
+		border_spacing_h = FIXTOINT(nscss_len2px(h, hu, table->style));
+	}
+
+	/* 1st pass: consider cells with colspan 1 only */
+	for (row_group = table->children; row_group; row_group =row_group->next)
+	for (row = row_group->children; row; row = row->next)
+	for (cell = row->children; cell; cell = cell->next) {
+		assert(cell->type == BOX_TABLE_CELL);
+		assert(cell->style);
+		/** TODO: Handle colspan="0" correctly.
+		 *        It's currently converted to 1 in box normaisation */
+		assert(cell->columns != 0);
+
+		if (cell->columns != 1)
+			continue;
+
+		layout_minmax_block(cell, font_func);
+		i = cell->start_column;
+
+		if (col[i].positioned)
+			continue;
+
+		/* update column min, max widths using cell widths */
+		if (col[i].min < cell->min_width)
+			col[i].min = cell->min_width;
+		if (col[i].max < cell->max_width)
+			col[i].max = cell->max_width;
+	}
+
+	/* 2nd pass: cells which span multiple columns */
+	for (row_group = table->children; row_group; row_group =row_group->next)
+	for (row = row_group->children; row; row = row->next)
+	for (cell = row->children; cell; cell = cell->next) {
+		unsigned int flexible_columns = 0;
+		int min = 0, max = 0, fixed_width = 0, extra;
+
+		if (cell->columns == 1)
+			continue;
+
+		layout_minmax_block(cell, font_func);
+		i = cell->start_column;
+
+		/* find min width so far of spanned columns, and count
+		 * number of non-fixed spanned columns and total fixed width */
+		for (j = 0; j != cell->columns; j++) {
+			min += col[i + j].min;
+			if (col[i + j].type == COLUMN_WIDTH_FIXED)
+				fixed_width += col[i + j].width;
+			else
+				flexible_columns++;
+		}
+		min += (cell->columns - 1) * border_spacing_h;
+
+		/* distribute extra min to spanned columns */
+		if (min < cell->min_width) {
+			if (flexible_columns == 0) {
+				extra = 1 + (cell->min_width - min) /
+						cell->columns;
+				for (j = 0; j != cell->columns; j++) {
+					col[i + j].min += extra;
+					if (col[i + j].max < col[i + j].min)
+						col[i + j].max = col[i + j].min;
+				}
+			} else {
+				extra = 1 + (cell->min_width - min) /
+						flexible_columns;
+				for (j = 0; j != cell->columns; j++) {
+					if (col[i + j].type !=
+							COLUMN_WIDTH_FIXED) {
+						col[i + j].min += extra;
+						if (col[i + j].max <
+								col[i + j].min)
+							col[i + j].max =
+								col[i + j].min;
+					}
+				}
+			}
+		}
+
+		/* find max width so far of spanned columns */
+		for (j = 0; j != cell->columns; j++)
+			max += col[i + j].max;
+		max += (cell->columns - 1) * border_spacing_h;
+
+		/* distribute extra max to spanned columns */
+		if (max < cell->max_width && flexible_columns) {
+			extra = 1 + (cell->max_width - max) / flexible_columns;
+			for (j = 0; j != cell->columns; j++)
+				if (col[i + j].type != COLUMN_WIDTH_FIXED)
+					col[i + j].max += extra;
+		}
+	}
+
+	for (i = 0; i != table->columns; i++) {
+		if (col[i].max < col[i].min) {
+			box_dump(stderr, table, 0, true);
+			assert(0);
+		}
+		table_min += col[i].min;
+		table_max += col[i].max;
+	}
+
+	/* fixed width takes priority, unless it is too narrow */
+	wtype = css_computed_width(table->style, &value, &unit);
+	if (wtype == CSS_WIDTH_SET && unit != CSS_UNIT_PCT) {
+		int width = FIXTOINT(nscss_len2px(value, unit, table->style));
+		if (table_min < width)
+			table_min = width;
+		if (table_max < width)
+			table_max = width;
+	}
+
+	/* add margins, border, padding to min, max widths */
+	calculate_mbp_width(table->style, LEFT, true, true, true,
+			&extra_fixed, &extra_frac);
+	calculate_mbp_width(table->style, RIGHT, true, true, true,
+			&extra_fixed, &extra_frac);
+	if (extra_fixed < 0)
+		extra_fixed = 0;
+	if (extra_frac < 0)
+		extra_frac = 0;
+	if (1.0 <= extra_frac)
+		extra_frac = 0.9;
+	table->min_width = (table_min + extra_fixed) / (1.0 - extra_frac);
+	table->max_width = (table_max + extra_fixed) / (1.0 - extra_frac);
+	table->min_width += (table->columns + 1) * border_spacing_h;
+	table->max_width += (table->columns + 1) * border_spacing_h;
+
+	assert(0 <= table->min_width && table->min_width <= table->max_width);
+}
+
+
+/**
  * Calculate minimum and maximum width of a line.
  *
  * \param first       a box in an inline container
@@ -4923,173 +5098,6 @@ bool layout_inline_container(struct box *inline_container, int width,
 	inline_container->height = y;
 
 	return true;
-}
-
-
-/* exported function documented in render/layout.h */
-void
-layout_minmax_table(struct box *table, const struct gui_layout_table *font_func)
-{
-	unsigned int i, j;
-	int border_spacing_h = 0;
-	int table_min = 0, table_max = 0;
-	int extra_fixed = 0;
-	float extra_frac = 0;
-	struct column *col = table->col;
-	struct box *row_group, *row, *cell;
-	enum css_width_e wtype;
-	css_fixed value = 0;
-	css_unit unit = CSS_UNIT_PX;
-
-	/* check if the widths have already been calculated */
-	if (table->max_width != UNKNOWN_MAX_WIDTH)
-		return;
-
-	/* start with 0 except for fixed-width columns */
-	for (i = 0; i != table->columns; i++) {
-		if (col[i].type == COLUMN_WIDTH_FIXED)
-			col[i].min = col[i].max = col[i].width;
-		else
-			col[i].min = col[i].max = 0;
-	}
-
-	/* border-spacing is used in the separated borders model */
-	if (css_computed_border_collapse(table->style) ==
-			CSS_BORDER_COLLAPSE_SEPARATE) {
-		css_fixed h = 0, v = 0;
-		css_unit hu = CSS_UNIT_PX, vu = CSS_UNIT_PX;
-
-		css_computed_border_spacing(table->style, &h, &hu, &v, &vu);
-
-		border_spacing_h = FIXTOINT(nscss_len2px(h, hu, table->style));
-	}
-
-	/* 1st pass: consider cells with colspan 1 only */
-	for (row_group = table->children; row_group; row_group =row_group->next)
-	for (row = row_group->children; row; row = row->next)
-	for (cell = row->children; cell; cell = cell->next) {
-		assert(cell->type == BOX_TABLE_CELL);
-		assert(cell->style);
-		/** TODO: Handle colspan="0" correctly.
-		 *        It's currently converted to 1 in box normaisation */
-		assert(cell->columns != 0);
-
-		if (cell->columns != 1)
-			continue;
-
-		layout_minmax_block(cell, font_func);
-		i = cell->start_column;
-
-		if (col[i].positioned)
-			continue;
-
-		/* update column min, max widths using cell widths */
-		if (col[i].min < cell->min_width)
-			col[i].min = cell->min_width;
-		if (col[i].max < cell->max_width)
-			col[i].max = cell->max_width;
-	}
-
-	/* 2nd pass: cells which span multiple columns */
-	for (row_group = table->children; row_group; row_group =row_group->next)
-	for (row = row_group->children; row; row = row->next)
-	for (cell = row->children; cell; cell = cell->next) {
-		unsigned int flexible_columns = 0;
-		int min = 0, max = 0, fixed_width = 0, extra;
-
-		if (cell->columns == 1)
-			continue;
-
-		layout_minmax_block(cell, font_func);
-		i = cell->start_column;
-
-		/* find min width so far of spanned columns, and count
-		 * number of non-fixed spanned columns and total fixed width */
-		for (j = 0; j != cell->columns; j++) {
-			min += col[i + j].min;
-			if (col[i + j].type == COLUMN_WIDTH_FIXED)
-				fixed_width += col[i + j].width;
-			else
-				flexible_columns++;
-		}
-		min += (cell->columns - 1) * border_spacing_h;
-
-		/* distribute extra min to spanned columns */
-		if (min < cell->min_width) {
-			if (flexible_columns == 0) {
-				extra = 1 + (cell->min_width - min) /
-						cell->columns;
-				for (j = 0; j != cell->columns; j++) {
-					col[i + j].min += extra;
-					if (col[i + j].max < col[i + j].min)
-						col[i + j].max = col[i + j].min;
-				}
-			} else {
-				extra = 1 + (cell->min_width - min) /
-						flexible_columns;
-				for (j = 0; j != cell->columns; j++) {
-					if (col[i + j].type !=
-							COLUMN_WIDTH_FIXED) {
-						col[i + j].min += extra;
-						if (col[i + j].max <
-								col[i + j].min)
-							col[i + j].max =
-								col[i + j].min;
-					}
-				}
-			}
-		}
-
-		/* find max width so far of spanned columns */
-		for (j = 0; j != cell->columns; j++)
-			max += col[i + j].max;
-		max += (cell->columns - 1) * border_spacing_h;
-
-		/* distribute extra max to spanned columns */
-		if (max < cell->max_width && flexible_columns) {
-			extra = 1 + (cell->max_width - max) / flexible_columns;
-			for (j = 0; j != cell->columns; j++)
-				if (col[i + j].type != COLUMN_WIDTH_FIXED)
-					col[i + j].max += extra;
-		}
-	}
-
-	for (i = 0; i != table->columns; i++) {
-		if (col[i].max < col[i].min) {
-			box_dump(stderr, table, 0, true);
-			assert(0);
-		}
-		table_min += col[i].min;
-		table_max += col[i].max;
-	}
-
-	/* fixed width takes priority, unless it is too narrow */
-	wtype = css_computed_width(table->style, &value, &unit);
-	if (wtype == CSS_WIDTH_SET && unit != CSS_UNIT_PCT) {
-		int width = FIXTOINT(nscss_len2px(value, unit, table->style));
-		if (table_min < width)
-			table_min = width;
-		if (table_max < width)
-			table_max = width;
-	}
-
-	/* add margins, border, padding to min, max widths */
-	calculate_mbp_width(table->style, LEFT, true, true, true,
-			&extra_fixed, &extra_frac);
-	calculate_mbp_width(table->style, RIGHT, true, true, true,
-			&extra_fixed, &extra_frac);
-	if (extra_fixed < 0)
-		extra_fixed = 0;
-	if (extra_frac < 0)
-		extra_frac = 0;
-	if (1.0 <= extra_frac)
-		extra_frac = 0.9;
-	table->min_width = (table_min + extra_fixed) / (1.0 - extra_frac);
-	table->max_width = (table_max + extra_fixed) / (1.0 - extra_frac);
-	table->min_width += (table->columns + 1) * border_spacing_h;
-	table->max_width += (table->columns + 1) * border_spacing_h;
-
-	assert(0 <= table->min_width && table->min_width <= table->max_width);
 }
 
 

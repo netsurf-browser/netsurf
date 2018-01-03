@@ -63,14 +63,4 @@ bool layout_inline_container(struct box *box, int width, struct box *cont, int c
  */
 void layout_calculate_descendant_bboxes(struct box *box);
 
-/**
- * Calculate minimum and maximum width of a table.
- *
- * \param table box of type TABLE
- * \param font_func Font functions
- * \post  table->min_width and table->max_width filled in,
- *        0 <= table->min_width <= table->max_width
- */
-void layout_minmax_table(struct box *table, const struct gui_layout_table *font_func);
-
 #endif
