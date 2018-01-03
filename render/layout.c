@@ -5061,56 +5061,6 @@ layout_position_relative(struct box *root, struct box *fp, int fx, int fy)
 }
 
 
-/* exported function documented in render/layout.h */
-bool layout_document(html_content *content, int width, int height)
-{
-	bool ret;
-	struct box *doc = content->layout;
-	const struct gui_layout_table *font_func = content->font_func;
-
-	layout_minmax_block(doc, font_func);
-
-	layout_block_find_dimensions(width, height, 0, 0, doc);
-	doc->x = doc->margin[LEFT] + doc->border[LEFT].width;
-	doc->y = doc->margin[TOP] + doc->border[TOP].width;
-	width -= doc->margin[LEFT] + doc->border[LEFT].width +
-			doc->padding[LEFT] + doc->padding[RIGHT] +
-			doc->border[RIGHT].width + doc->margin[RIGHT];
-	if (width < 0) {
-		width = 0;
-	}
-	doc->width = width;
-
-	ret = layout_block_context(doc, height, content);
-
-	/* make <html> and <body> fill available height */
-	if (doc->y + doc->padding[TOP] + doc->height + doc->padding[BOTTOM] +
-			doc->border[BOTTOM].width + doc->margin[BOTTOM] <
-			height) {
-		doc->height = height - (doc->y + doc->padding[TOP] +
-				doc->padding[BOTTOM] +
-				doc->border[BOTTOM].width +
-				doc->margin[BOTTOM]);
-		if (doc->children)
-			doc->children->height = doc->height -
-					(doc->children->margin[TOP] +
-					 doc->children->border[TOP].width +
-					 doc->children->padding[TOP] +
-					 doc->children->padding[BOTTOM] +
-					 doc->children->border[BOTTOM].width +
-					 doc->children->margin[BOTTOM]);
-	}
-
-	layout_lists(doc, font_func);
-	layout_position_absolute(doc, doc, 0, 0, content);
-	layout_position_relative(doc, doc, 0, 0);
-
-	layout_calculate_descendant_bboxes(doc);
-
-	return ret;
-}
-
-
 /**
  * Find a box's bounding box relative to itself, i.e. the box's border edge box
  *
@@ -5215,8 +5165,13 @@ layout_update_descendant_bbox(struct box *box,
 }
 
 
-/* exported function documented in render/layout.h */
-void layout_calculate_descendant_bboxes(struct box *box)
+/**
+ * Recursively calculate the descendant_[xy][01] values for a laid-out box tree
+ * and inform iframe browser windows of their size and position.
+ *
+ * \param  box  tree of boxes to update
+ */
+static void layout_calculate_descendant_bboxes(struct box *box)
 {
 	struct box *child;
 
@@ -5302,4 +5257,54 @@ void layout_calculate_descendant_bboxes(struct box *box)
 
 		layout_update_descendant_bbox(box, child, 0, 0);
 	}
+}
+
+
+/* exported function documented in render/layout.h */
+bool layout_document(html_content *content, int width, int height)
+{
+	bool ret;
+	struct box *doc = content->layout;
+	const struct gui_layout_table *font_func = content->font_func;
+
+	layout_minmax_block(doc, font_func);
+
+	layout_block_find_dimensions(width, height, 0, 0, doc);
+	doc->x = doc->margin[LEFT] + doc->border[LEFT].width;
+	doc->y = doc->margin[TOP] + doc->border[TOP].width;
+	width -= doc->margin[LEFT] + doc->border[LEFT].width +
+			doc->padding[LEFT] + doc->padding[RIGHT] +
+			doc->border[RIGHT].width + doc->margin[RIGHT];
+	if (width < 0) {
+		width = 0;
+	}
+	doc->width = width;
+
+	ret = layout_block_context(doc, height, content);
+
+	/* make <html> and <body> fill available height */
+	if (doc->y + doc->padding[TOP] + doc->height + doc->padding[BOTTOM] +
+			doc->border[BOTTOM].width + doc->margin[BOTTOM] <
+			height) {
+		doc->height = height - (doc->y + doc->padding[TOP] +
+				doc->padding[BOTTOM] +
+				doc->border[BOTTOM].width +
+				doc->margin[BOTTOM]);
+		if (doc->children)
+			doc->children->height = doc->height -
+					(doc->children->margin[TOP] +
+					 doc->children->border[TOP].width +
+					 doc->children->padding[TOP] +
+					 doc->children->padding[BOTTOM] +
+					 doc->children->border[BOTTOM].width +
+					 doc->children->margin[BOTTOM]);
+	}
+
+	layout_lists(doc, font_func);
+	layout_position_absolute(doc, doc, 0, 0, content);
+	layout_position_relative(doc, doc, 0, 0);
+
+	layout_calculate_descendant_bboxes(doc);
+
+	return ret;
 }

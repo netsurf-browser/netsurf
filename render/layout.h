@@ -42,12 +42,4 @@ struct gui_layout_table;
  */
 bool layout_document(struct html_content *content, int width, int height);
 
-/**
- * Recursively calculate the descendant_[xy][01] values for a laid-out box tree
- * and inform iframe browser windows of their size and position.
- *
- * \param  box  tree of boxes to update
- */
-void layout_calculate_descendant_bboxes(struct box *box);
-
 #endif
