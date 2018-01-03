@@ -43,19 +43,6 @@ struct gui_layout_table;
 bool layout_document(struct html_content *content, int width, int height);
 
 /**
- * Layout lines of text or inline boxes with floats.
- *
- * \param box inline container box
- * \param width horizontal space available
- * \param cont ancestor box which defines horizontal space, for floats
- * \param cx box position relative to cont
- * \param cy box position relative to cont
- * \param content  memory pool for any new boxes
- * \return true on success, false on memory exhaustion
- */
-bool layout_inline_container(struct box *box, int width, struct box *cont, int cx, int cy, struct html_content *content);
-
-/**
  * Recursively calculate the descendant_[xy][01] values for a laid-out box tree
  * and inform iframe browser windows of their size and position.
  *
