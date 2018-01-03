@@ -278,7 +278,7 @@ css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
 		 * element's style */
 		error = css_computed_style_compose(ctx->parent_style,
 				styles->styles[CSS_PSEUDO_ELEMENT_NONE],
-				nscss_compute_font_size, NULL,
+				nscss_compute_font_size, ctx,
 				&composed);
 		if (error != CSS_OK) {
 			css_select_results_destroy(styles);
@@ -310,7 +310,7 @@ css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
 		error = css_computed_style_compose(
 				styles->styles[CSS_PSEUDO_ELEMENT_NONE],
 				styles->styles[pseudo_element],
-				nscss_compute_font_size, NULL,
+				nscss_compute_font_size, ctx,
 				&composed);
 		if (error != CSS_OK) {
 			/* TODO: perhaps this shouldn't be quite so
@@ -349,7 +349,7 @@ css_computed_style *nscss_get_blank_style(nscss_select_ctx *ctx,
 	/* TODO: Do we really need to compose?  Initial style shouldn't
 	 * have any inherited properties. */
 	error = css_computed_style_compose(parent, partial,
-			nscss_compute_font_size, NULL, &composed);
+			nscss_compute_font_size, ctx, &composed);
 	css_computed_style_destroy(partial);
 	if (error != CSS_OK) {
 		css_computed_style_destroy(composed);
@@ -422,14 +422,37 @@ css_error nscss_compute_font_size(void *pw, const css_hint *parent,
 				FDIV(parent_size.value, FLTTOFIX(1.2));
 		size->data.length.unit = parent_size.unit;
 	} else if (size->data.length.unit == CSS_UNIT_EM ||
-			size->data.length.unit == CSS_UNIT_EX) {
+			size->data.length.unit == CSS_UNIT_EX ||
+			size->data.length.unit == CSS_UNIT_CAP ||
+			size->data.length.unit == CSS_UNIT_CH ||
+			size->data.length.unit == CSS_UNIT_IC) {
 		size->data.length.value =
 			FMUL(size->data.length.value, parent_size.value);
 
-		if (size->data.length.unit == CSS_UNIT_EX) {
+		switch (size->data.length.unit) {
+		case CSS_UNIT_EX:
 			/* 1ex = 0.6em in NetSurf */
 			size->data.length.value = FMUL(size->data.length.value,
 					FLTTOFIX(0.6));
+			break;
+		case CSS_UNIT_CAP:
+			/* Height of captals.  1cap = 0.9em in NetSurf. */
+			size->data.length.value = FMUL(size->data.length.value,
+					FLTTOFIX(0.9));
+			break;
+		case CSS_UNIT_CH:
+			/* Width of '0'.  1ch = 0.4em in NetSurf. */
+			size->data.length.value = FMUL(size->data.length.value,
+					FLTTOFIX(0.4));
+			break;
+		case CSS_UNIT_IC:
+			/* Width of U+6C43.  1ic = 1.1em in NetSurf. */
+			size->data.length.value = FMUL(size->data.length.value,
+					FLTTOFIX(1.1));
+			break;
+		default:
+			/* No scaling required for EM. */
+			break;
 		}
 
 		size->data.length.unit = parent_size.unit;
@@ -437,6 +460,25 @@ css_error nscss_compute_font_size(void *pw, const css_hint *parent,
 		size->data.length.value = FDIV(FMUL(size->data.length.value,
 				parent_size.value), INTTOFIX(100));
 		size->data.length.unit = parent_size.unit;
+	} else if (size->data.length.unit == CSS_UNIT_REM) {
+		nscss_select_ctx *ctx = pw;
+		if (parent == NULL) {
+			size->data.length.value = parent_size.value;
+			size->data.length.unit = parent_size.unit;
+		} else {
+			css_computed_font_size(ctx->root_style,
+					&parent_size.value,
+					&size->data.length.unit);
+			size->data.length.value = FMUL(
+					size->data.length.value,
+					parent_size.value);
+		}
+	} else if (size->data.length.unit == CSS_UNIT_RLH) {
+		/** TODO: Convert root element line-height to absolute value. */
+		size->data.length.value = FMUL(size->data.length.value, FDIV(
+				INTTOFIX(nsoption_int(font_size)),
+				INTTOFIX(10)));
+		size->data.length.unit = CSS_UNIT_PT;
 	}
 
 	size->status = CSS_FONT_SIZE_DIMENSION;

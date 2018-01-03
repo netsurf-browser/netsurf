@@ -356,6 +356,9 @@ bool box_hscrollbar_present(const struct box *box);
 nserror dom_to_box(struct dom_node *n, struct html_content *c,
 		box_construct_complete_cb cb);
 
-bool box_normalise_block(struct box *block, struct html_content *c);
+bool box_normalise_block(
+		struct box *block,
+		const struct box *root,
+		struct html_content *c);
 
 #endif
