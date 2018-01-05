@@ -104,7 +104,8 @@ static bool box_construct_element(struct box_construct_ctx *ctx,
 static void box_construct_element_after(dom_node *n, html_content *content);
 static bool box_construct_text(struct box_construct_ctx *ctx);
 static css_select_results * box_get_style(html_content *c,
-		const css_computed_style *parent_style, dom_node *n);
+		const css_computed_style *parent_style,
+		const css_computed_style *root_style, dom_node *n);
 static void box_text_transform(char *s, unsigned int len,
 		enum css_text_transform_e tt);
 #define BOX_SPECIAL_PARAMS dom_node *n, html_content *content, \
@@ -429,7 +430,8 @@ void convert_xml_to_box(struct box_construct_ctx *ctx)
 			root.children->parent = &root;
 
 			/** \todo Remove box_normalise_block */
-			if (box_normalise_block(&root, ctx->content) == false) {
+			if (box_normalise_block(&root, ctx->root_box,
+					ctx->content) == false) {
 				ctx->cb(ctx->content, false);
 			} else {
 				ctx->content->layout = root.children;
@@ -741,6 +743,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 	lwc_string *bgimage_uri;
 	dom_exception err;
 	struct box_construct_props props;
+	const css_computed_style *root_style = NULL;
 
 	assert(ctx->n != NULL);
 
@@ -753,7 +756,12 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 		props.containing_block->flags &= ~PRE_STRIP;
 	}
 
-	styles = box_get_style(ctx->content, props.parent_style, ctx->n);
+	if (props.node_is_root == false) {
+		root_style = ctx->root_box->style;
+	}
+
+	styles = box_get_style(ctx->content, props.parent_style, root_style,
+			ctx->n);
 	if (styles == NULL)
 		return false;
 
@@ -1321,13 +1329,15 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 /**
  * Get the style for an element.
  *
- * \param  c		   content of type CONTENT_HTML that is being processed
+ * \param  c               content of type CONTENT_HTML that is being processed
  * \param  parent_style    style at this point in xml tree, or NULL for root
- * \param  n		   node in xml tree
+ * \param  root_style      root node's style, or NULL for root
+ * \param  n               node in xml tree
  * \return  the new style, or NULL on memory exhaustion
  */
 css_select_results *box_get_style(html_content *c,
-		const css_computed_style *parent_style, dom_node *n)
+		const css_computed_style *parent_style,
+		const css_computed_style *root_style, dom_node *n)
 {
 	dom_string *s;
 	dom_exception err;
@@ -1359,6 +1369,7 @@ css_select_results *box_get_style(html_content *c,
 	ctx.quirks = (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL);
 	ctx.base_url = c->base_url;
 	ctx.universal = c->universal;
+	ctx.root_style = root_style;
 	ctx.parent_style = parent_style;
 
 	/* Select style for element */

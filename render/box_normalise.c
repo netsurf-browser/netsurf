@@ -65,24 +65,38 @@ struct columns {
 };
 
 
-static bool box_normalise_table(struct box *table, html_content *c);
-static bool box_normalise_table_spans(struct box *table, 
-		struct span_info *spans, html_content *c);
-static bool box_normalise_table_row_group(struct box *row_group,
+static bool box_normalise_table(
+		struct box *table,
+		const struct box *root,
+		html_content *c);
+static bool box_normalise_table_spans(
+		struct box *table,
+		const struct box *root,
+		struct span_info *spans,
+		html_content *c);
+static bool box_normalise_table_row_group(
+		struct box *row_group,
+		const struct box *root, 
 		struct columns *col_info,
 		html_content *c);
-static bool box_normalise_table_row(struct box *row,
+static bool box_normalise_table_row(
+		struct box *row,
+		const struct box *root,
 		struct columns *col_info,
 		html_content *c);
 static bool calculate_table_row(struct columns *col_info,
 		unsigned int col_span, unsigned int row_span,
 		unsigned int *start_column, struct box *cell);
-static bool box_normalise_inline_container(struct box *cont, html_content *c);
+static bool box_normalise_inline_container(
+		struct box *cont,
+		const struct box *root,
+		html_content *c);
 
 /**
  * Ensure the box tree is correctly nested by adding and removing nodes.
  *
  * \param block  box of type BLOCK, INLINE_BLOCK, or TABLE_CELL
+ * \param root   root box of document
  * \param c      content of boxes
  * \return true on success, false on memory exhaustion
  *
@@ -100,7 +114,10 @@ static bool box_normalise_inline_container(struct box *cont, html_content *c);
  * \endcode
  */
 
-bool box_normalise_block(struct box *block, html_content *c)
+bool box_normalise_block(
+		struct box *block,
+		const struct box *root,
+		html_content *c)
 {
 	struct box *child;
 	struct box *next_child;
@@ -109,6 +126,9 @@ bool box_normalise_block(struct box *block, html_content *c)
 	nscss_select_ctx ctx;
 
 	assert(block != NULL);
+	assert(root != NULL);
+
+	ctx.root_style = root->style;
 
 #ifdef BOX_NORMALISE_DEBUG
 	NSLOG(netsurf, INFO, "block %p, block->type %u", block, block->type);
@@ -128,15 +148,15 @@ bool box_normalise_block(struct box *block, html_content *c)
 		switch (child->type) {
 		case BOX_BLOCK:
 			/* ok */
-			if (box_normalise_block(child, c) == false)
+			if (box_normalise_block(child, root, c) == false)
 				return false;
 			break;
 		case BOX_INLINE_CONTAINER:
-			if (box_normalise_inline_container(child, c) == false)
+			if (box_normalise_inline_container(child, root, c) == false)
 				return false;
 			break;
 		case BOX_TABLE:
-			if (box_normalise_table(child, c) == false)
+			if (box_normalise_table(child, root, c) == false)
 				return false;
 			break;
 		case BOX_INLINE:
@@ -199,7 +219,7 @@ bool box_normalise_block(struct box *block, html_content *c)
 				block->last = table;
 			table->parent = block;
 
-			if (box_normalise_table(table, c) == false)
+			if (box_normalise_table(table, root, c) == false)
 				return false;
 			break;
 		default:
@@ -211,7 +231,10 @@ bool box_normalise_block(struct box *block, html_content *c)
 }
 
 
-bool box_normalise_table(struct box *table, html_content * c)
+bool box_normalise_table(
+		struct box *table,
+		const struct box *root,
+		html_content * c)
 {
 	struct box *child;
 	struct box *next_child;
@@ -222,6 +245,8 @@ bool box_normalise_table(struct box *table, html_content * c)
 
 	assert(table != NULL);
 	assert(table->type == BOX_TABLE);
+
+	ctx.root_style = root->style;
 
 #ifdef BOX_NORMALISE_DEBUG
 	NSLOG(netsurf, INFO, "table %p", table);
@@ -243,7 +268,7 @@ bool box_normalise_table(struct box *table, html_content * c)
 		switch (child->type) {
 		case BOX_TABLE_ROW_GROUP:
 			/* ok */
-			if (box_normalise_table_row_group(child,
+			if (box_normalise_table_row_group(child, root,
 					&col_info, c) == false) {
 				free(col_info.spans);
 				return false;
@@ -308,7 +333,7 @@ bool box_normalise_table(struct box *table, html_content * c)
 				table->last = row_group;
 			row_group->parent = table;
 
-			if (box_normalise_table_row_group(row_group,
+			if (box_normalise_table_row_group(row_group, root,
 					&col_info, c) == false) {
 				free(col_info.spans);
 				return false;
@@ -390,15 +415,12 @@ bool box_normalise_table(struct box *table, html_content * c)
 		table->rows = 1;
 	}
 
-	if (box_normalise_table_spans(table, col_info.spans, c) == false) {
+	if (box_normalise_table_spans(table, root, col_info.spans, c) == false) {
 		free(col_info.spans);
 		return false;
 	}
 
 	free(col_info.spans);
-
-	if (table_calculate_column_types(table) == false)
-		return false;
 
 #ifdef BOX_NORMALISE_DEBUG
 	NSLOG(netsurf, INFO, "table %p done", table);
@@ -413,12 +435,16 @@ bool box_normalise_table(struct box *table, html_content * c)
  * Additionally, generate empty cells.
  *
  * \param table  Table to process
+ * \param root   root box of document
  * \param spans  Array of length table->columns for use in empty cell detection
  * \param c      Content containing table
  * \return True on success, false on memory exhaustion.
  */
 
-bool box_normalise_table_spans(struct box *table, struct span_info *spans,
+bool box_normalise_table_spans(
+		struct box *table,
+		const struct box *root,
+		struct span_info *spans,
 		html_content *c)
 {
 	struct box *table_row_group;
@@ -428,6 +454,8 @@ bool box_normalise_table_spans(struct box *table, struct span_info *spans,
 	unsigned int group_rows_left;
 	unsigned int col;
 	nscss_select_ctx ctx;
+
+	ctx.root_style = root->style;
 
 	/* Clear span data */
 	memset(spans, 0, table->columns * sizeof(struct span_info));
@@ -572,7 +600,9 @@ bool box_normalise_table_spans(struct box *table, struct span_info *spans,
 }
 
 
-bool box_normalise_table_row_group(struct box *row_group,
+bool box_normalise_table_row_group(
+		struct box *row_group,
+		const struct box *root,
 		struct columns *col_info,
 		html_content * c)
 {
@@ -586,6 +616,8 @@ bool box_normalise_table_row_group(struct box *row_group,
 	assert(row_group != 0);
 	assert(row_group->type == BOX_TABLE_ROW_GROUP);
 
+	ctx.root_style = root->style;
+
 #ifdef BOX_NORMALISE_DEBUG
 	NSLOG(netsurf, INFO, "row_group %p", row_group);
 #endif
@@ -597,7 +629,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 		case BOX_TABLE_ROW:
 			/* ok */
 			group_row_count++;
-			if (box_normalise_table_row(child, col_info,
+			if (box_normalise_table_row(child, root, col_info,
 					c) == false)
 				return false;
 			break;
@@ -657,7 +689,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 			row->parent = row_group;
 
 			group_row_count++;
-			if (box_normalise_table_row(row, col_info,
+			if (box_normalise_table_row(row, root, col_info,
 					c) == false)
 				return false;
 			break;
@@ -722,7 +754,9 @@ bool box_normalise_table_row_group(struct box *row_group,
 }
 
 
-bool box_normalise_table_row(struct box *row,
+bool box_normalise_table_row(
+		struct box *row,
+		const struct box *root,
 		struct columns *col_info,
 		html_content * c)
 {
@@ -736,6 +770,8 @@ bool box_normalise_table_row(struct box *row,
 	assert(row != NULL);
 	assert(row->type == BOX_TABLE_ROW);
 
+	ctx.root_style = root->style;
+
 #ifdef BOX_NORMALISE_DEBUG
 	NSLOG(netsurf, INFO, "row %p", row);
 #endif
@@ -746,7 +782,7 @@ bool box_normalise_table_row(struct box *row,
 		switch (child->type) {
 		case BOX_TABLE_CELL:
 			/* ok */
-			if (box_normalise_block(child, c) == false)
+			if (box_normalise_block(child, root, c) == false)
 				return false;
 			cell = child;
 			break;
@@ -805,7 +841,7 @@ bool box_normalise_table_row(struct box *row,
 				row->last = cell;
 			cell->parent = row;
 
-			if (box_normalise_block(cell, c) == false)
+			if (box_normalise_block(cell, root, c) == false)
 				return false;
 			break;
 		case BOX_INLINE:
@@ -928,7 +964,10 @@ bool calculate_table_row(struct columns *col_info,
 }
 
 
-bool box_normalise_inline_container(struct box *cont, html_content * c)
+bool box_normalise_inline_container(
+		struct box *cont,
+		const struct box *root,
+		html_content * c)
 {
 	struct box *child;
 	struct box *next_child;
@@ -951,7 +990,7 @@ bool box_normalise_inline_container(struct box *cont, html_content * c)
 			break;
 		case BOX_INLINE_BLOCK:
 			/* ok */
-			if (box_normalise_block(child, c) == false)
+			if (box_normalise_block(child, root, c) == false)
 				return false;
 			break;
 		case BOX_FLOAT_LEFT:
@@ -961,12 +1000,12 @@ bool box_normalise_inline_container(struct box *cont, html_content * c)
 
 			switch (child->children->type) {
 			case BOX_BLOCK:
-				if (box_normalise_block(child->children,
+				if (box_normalise_block(child->children, root,
 						c) == false)
 					return false;
 				break;
 			case BOX_TABLE:
-				if (box_normalise_table(child->children,
+				if (box_normalise_table(child->children, root,
 						c) == false)
 					return false;
 				break;

@@ -1398,6 +1398,10 @@ static void html_reformat(struct content *c, int width, int height)
 
 	htmlc->reflowing = true;
 
+	htmlc->len_ctx.vw = width;
+	htmlc->len_ctx.vh = height;
+	htmlc->len_ctx.root_style = htmlc->layout->style;
+
 	layout_document(htmlc, width, height);
 	layout = htmlc->layout;
 
@@ -1647,7 +1651,7 @@ html_open(struct content *c,
 	html->drag_owner.no_owner = true;
 
 	/* text selection */
-	selection_init(&html->sel, html->layout);
+	selection_init(&html->sel, html->layout, &html->len_ctx);
 	html->selection_type = HTML_SELECTION_NONE;
 	html->selection_owner.none = true;
 
@@ -1768,7 +1772,8 @@ html_get_contextual_content(struct content *c, int x, int y,
 	struct box *next;
 	int box_x = 0, box_y = 0;
 
-	while ((next = box_at_point(box, x, y, &box_x, &box_y)) != NULL) {
+	while ((next = box_at_point(&html->len_ctx, box, x, y,
+			&box_x, &box_y)) != NULL) {
 		box = next;
 
 		/* hidden boxes are ignored */
@@ -1845,7 +1850,8 @@ html_scroll_at_point(struct content *c, int x, int y, int scrx, int scry)
 
 	/* TODO: invert order; visit deepest box first */
 
-	while ((next = box_at_point(box, x, y, &box_x, &box_y)) != NULL) {
+	while ((next = box_at_point(&html->len_ctx, box, x, y,
+			&box_x, &box_y)) != NULL) {
 		box = next;
 
 		if (box->style && css_computed_visibility(box->style) ==
@@ -1987,7 +1993,8 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 	int box_x = 0, box_y = 0;
 
 	/* Scan box tree for boxes that can handle drop */
-	while ((next = box_at_point(box, x, y, &box_x, &box_y)) != NULL) {
+	while ((next = box_at_point(&html->len_ctx, box, x, y,
+			&box_x, &box_y)) != NULL) {
 		box = next;
 
 		if (box->style && css_computed_visibility(box->style) ==

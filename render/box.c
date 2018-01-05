@@ -342,20 +342,27 @@ void box_bounds(struct box *box, struct rect *r)
 /**
  * Determine if a point lies within a box.
  *
- * \param  box		box to consider
- * \param  x		coordinate relative to box
- * \param  y		coordinate relative to box
- * \param  physically	if function returning true, physically is set true if
- *			point is within the box's physical dimensions and false
- *			if the point is not within the box's physical dimensions
- *			but is in the area defined by the box's descendants.
- *			if function returning false, physically is undefined.
+ * \param[in]  len_ctx     CSS length conversion context to use.
+ * \param[in]  box         Box to consider
+ * \param[in]  x           Coordinate relative to box
+ * \param[in]  y           Coordinate relative to box
+ * \param[out] physically  If function returning true, physically is set true
+ *                         iff point is within the box's physical dimensions and
+ *                         false if the point is not within the box's physical
+ *                         dimensions but is in the area defined by the box's
+ *                         descendants.  If function returns false, physically
+ *                         is undefined.
  * \return  true if the point is within the box or a descendant box
  *
  * This is a helper function for box_at_point().
  */
 
-static bool box_contains_point(struct box *box, int x, int y, bool *physically)
+static bool box_contains_point(
+		const nscss_len_ctx *len_ctx,
+		const struct box *box,
+		int x,
+		int y,
+		bool *physically)
 {
 	css_computed_clip_rect css_rect;
 
@@ -382,25 +389,25 @@ static bool box_contains_point(struct box *box, int x, int y, bool *physically)
 
 		/* Adjust rect to css clip region */
 		if (css_rect.left_auto == false) {
-			r.x0 += FIXTOINT(nscss_len2px(
+			r.x0 += FIXTOINT(nscss_len2px(len_ctx,
 					css_rect.left, css_rect.lunit,
 					box->style));
 		}
 		if (css_rect.top_auto == false) {
-			r.y0 += FIXTOINT(nscss_len2px(
+			r.y0 += FIXTOINT(nscss_len2px(len_ctx,
 					css_rect.top, css_rect.tunit,
 					box->style));
 		}
 		if (css_rect.right_auto == false) {
 			r.x1 = box->border[LEFT].width +
-					FIXTOINT(nscss_len2px(
+					FIXTOINT(nscss_len2px(len_ctx,
 							css_rect.right,
 							css_rect.runit,
 							box->style));
 		}
 		if (css_rect.bottom_auto == false) {
 			r.y1 = box->border[TOP].width +
-					FIXTOINT(nscss_len2px(
+					FIXTOINT(nscss_len2px(len_ctx,
 							css_rect.bottom,
 							css_rect.bunit,
 							box->style));
@@ -659,6 +666,7 @@ skip_children:
 /**
  * Find the boxes at a point.
  *
+ * \param  len_ctx  CSS length conversion context for document.
  * \param  box      box to search children of
  * \param  x        point to find, in global document coordinates
  * \param  y        point to find, in global document coordinates
@@ -674,13 +682,14 @@ skip_children:
  *	struct box *box = top_of_document_to_search;
  *	int box_x = 0, box_y = 0;
  *
- *	while ((box = box_at_point(box, x, y, &box_x, &box_y))) {
+ *	while ((box = box_at_point(len_ctx, box, x, y, &box_x, &box_y))) {
  *		// process box
  *	}
  * \endcode
  */
 
-struct box *box_at_point(struct box *box, const int x, const int y,
+struct box *box_at_point(const nscss_len_ctx *len_ctx,
+		struct box *box, const int x, const int y,
 		int *box_x, int *box_y)
 {
 	bool skip_children;
@@ -690,7 +699,7 @@ struct box *box_at_point(struct box *box, const int x, const int y,
 
 	skip_children = false;
 	while ((box = box_next_xy(box, box_x, box_y, skip_children))) {
-		if (box_contains_point(box, x - *box_x, y - *box_y,
+		if (box_contains_point(len_ctx, box, x - *box_x, y - *box_y,
 				&physically)) {
 			*box_x -= scrollbar_get_offset(box->scroll_x);
 			*box_y -= scrollbar_get_offset(box->scroll_y);

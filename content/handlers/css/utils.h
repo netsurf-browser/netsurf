@@ -27,24 +27,54 @@
 extern css_fixed nscss_screen_dpi;
 
 /**
+ * Length conversion context data.
+ */
+typedef struct nscss_len_ctx {
+	/**
+	 * Viewport width in px.
+	 * Only used if unit is vh, vw, vi, vb, vmin, or vmax.
+	 */
+	int vw;
+	/**
+	 * Viewport height in px.
+	 * Only used if unit is vh, vw, vi, vb, vmin, or vmax.
+	 */
+	int vh;
+	/**
+	 * Computed style for the document root element.
+	 * May be NULL if unit is not rem, or rlh.
+	 */
+	const css_computed_style *root_style;
+} nscss_len_ctx;
+
+/**
  * Convert an absolute CSS length to points.
  *
- * \param[in] length Absolute CSS length.
- * \param[in] unit Unit of the length.
+ * \param[in] ctx     Length conversion context.
+ * \param[in] length  Absolute CSS length.
+ * \param[in] unit    Unit of the length.
  * \return length in points
  */
-css_fixed nscss_len2pt(css_fixed length, css_unit unit);
+css_fixed nscss_len2pt(
+		const nscss_len_ctx *ctx,
+		css_fixed length,
+		css_unit unit);
 
 /**
  * Convert a CSS length to pixels.
  *
- * \param length Length to convert
- * \param unit Corresponding unit
- * \param style Computed style applying to length. May be NULL if unit is
- *                 neither em nor ex
+ * \param[in] ctx     Length conversion context.
+ * \param[in] length  Length to convert.
+ * \param[in] unit    Corresponding unit.
+ * \param[in] style   Computed style applying to length.
+ *                    May be NULL if unit is not em, ex, cap, ch, or ic.
  * \return length in pixels
  */
-css_fixed nscss_len2px(css_fixed length, css_unit unit, const css_computed_style *style);
+css_fixed nscss_len2px(
+		const nscss_len_ctx *ctx,
+		css_fixed length,
+		css_unit unit,
+		const css_computed_style *style);
 
 
 /**

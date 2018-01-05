@@ -32,10 +32,13 @@ struct plot_font_style;
 /**
  * Populate a font style using data from a computed CSS style
  *
- * \param css     Computed style to consider
- * \param fstyle  Font style to populate
+ * \param len_ctx  Length conversion context
+ * \param css      Computed style to consider
+ * \param fstyle   Font style to populate
  */
-void font_plot_style_from_css(const css_computed_style *css,
-			      struct plot_font_style *fstyle);
+void font_plot_style_from_css(
+		const nscss_len_ctx *len_ctx,
+		const css_computed_style *css,
+		struct plot_font_style *fstyle);
 
 #endif

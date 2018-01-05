@@ -113,6 +113,45 @@ static void dump_css_unit(FILE *stream, css_fixed val, css_unit unit)
 	case CSS_UNIT_KHZ:
 		fprintf(stream, "kHz");
 		break;
+	case CSS_UNIT_CAP:
+		fprintf(stream, "cap");
+		break;
+	case CSS_UNIT_CH:
+		fprintf(stream, "ch");
+		break;
+	case CSS_UNIT_IC:
+		fprintf(stream, "ic");
+		break;
+	case CSS_UNIT_REM:
+		fprintf(stream, "rem");
+		break;
+	case CSS_UNIT_LH:
+		fprintf(stream, "lh");
+		break;
+	case CSS_UNIT_RLH:
+		fprintf(stream, "rlh");
+		break;
+	case CSS_UNIT_VH:
+		fprintf(stream, "vh");
+		break;
+	case CSS_UNIT_VW:
+		fprintf(stream, "vw");
+		break;
+	case CSS_UNIT_VI:
+		fprintf(stream, "vi");
+		break;
+	case CSS_UNIT_VB:
+		fprintf(stream, "vb");
+		break;
+	case CSS_UNIT_VMIN:
+		fprintf(stream, "vmin");
+		break;
+	case CSS_UNIT_VMAX:
+		fprintf(stream, "vmax");
+		break;
+	case CSS_UNIT_Q:
+		fprintf(stream, "q");
+		break;
 	}
 }
 

@@ -1133,6 +1133,7 @@ bool form_open_select_menu(void *client_data,
 	plot_font_style_t fstyle;
 	int total_height;
 	struct form_select_menu *menu;
+	html_content *html = (html_content *)c;
 
 
 	/* if the menu is opened for the first time */
@@ -1153,7 +1154,7 @@ bool form_open_select_menu(void *client_data,
 				box->border[LEFT].width +
 				box->padding[RIGHT] + box->padding[LEFT];
 
-		font_plot_style_from_css(control->box->style,
+		font_plot_style_from_css(&html->len_ctx, control->box->style,
 				&fstyle);
 		menu->f_size = fstyle.size;
 

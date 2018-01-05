@@ -37,6 +37,7 @@ typedef struct nscss_select_ctx
 	bool quirks;
 	struct nsurl *base_url;
 	lwc_string *universal;
+	const css_computed_style *root_style;
 	const css_computed_style *parent_style;
 } nscss_select_ctx;
 

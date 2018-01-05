@@ -988,7 +988,7 @@ textplain_open(struct content *c,
 	text->bw = bw;
 
 	/* text selection */
-	selection_init(&text->sel, NULL);
+	selection_init(&text->sel, NULL, NULL);
 }
 
 
