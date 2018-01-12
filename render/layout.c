@@ -68,6 +68,55 @@
 /* Fixed point percentage (a) of an integer (b), to an integer */
 #define FPCT_OF_INT_TOINT(a, b) (FIXTOINT(FDIV((a * b), F_100)))
 
+typedef uint8_t (*css_len_func)(
+		const css_computed_style *style,
+		css_fixed *length, css_unit *unit);
+typedef uint8_t (*css_border_style_func)(
+		const css_computed_style *style);
+typedef uint8_t (*css_border_color_func)(
+		const css_computed_style *style,
+		css_color *color);
+
+/** Array of per-side access functions for computed style margins. */
+static const css_len_func margin_funcs[4] = {
+	[TOP]    = css_computed_margin_top,
+	[RIGHT]  = css_computed_margin_right,
+	[BOTTOM] = css_computed_margin_bottom,
+	[LEFT]   = css_computed_margin_left,
+};
+
+/** Array of per-side access functions for computed style paddings. */
+static const css_len_func padding_funcs[4] = {
+	[TOP]    = css_computed_padding_top,
+	[RIGHT]  = css_computed_padding_right,
+	[BOTTOM] = css_computed_padding_bottom,
+	[LEFT]   = css_computed_padding_left,
+};
+
+/** Array of per-side access functions for computed style border_widths. */
+static const css_len_func border_width_funcs[4] = {
+	[TOP]    = css_computed_border_top_width,
+	[RIGHT]  = css_computed_border_right_width,
+	[BOTTOM] = css_computed_border_bottom_width,
+	[LEFT]   = css_computed_border_left_width,
+};
+
+/** Array of per-side access functions for computed style border styles. */
+static const css_border_style_func border_style_funcs[4] = {
+	[TOP]    = css_computed_border_top_style,
+	[RIGHT]  = css_computed_border_right_style,
+	[BOTTOM] = css_computed_border_bottom_style,
+	[LEFT]   = css_computed_border_left_style,
+};
+
+/** Array of per-side access functions for computed style border colors. */
+static const css_border_color_func border_color_funcs[4] = {
+	[TOP]    = css_computed_border_top_color,
+	[RIGHT]  = css_computed_border_right_color,
+	[BOTTOM] = css_computed_border_bottom_color,
+	[LEFT]   = css_computed_border_left_color,
+};
+
 /* forward declaration to break cycles */
 static bool layout_block_context(
 		struct box *block,
@@ -224,35 +273,6 @@ calculate_mbp_width(const nscss_len_ctx *len_ctx,
 		    int *fixed,
 		    float *frac)
 {
-	typedef uint8_t (*len_func)(const css_computed_style *style,
-			css_fixed *length, css_unit *unit);
-
-	static const len_func margin_funcs[4] = {
-		css_computed_margin_top,
-		css_computed_margin_right,
-		css_computed_margin_bottom,
-		css_computed_margin_left
-	};
-	static const len_func padding_funcs[4] = {
-		css_computed_padding_top,
-		css_computed_padding_right,
-		css_computed_padding_bottom,
-		css_computed_padding_left
-	};
-	static const struct {
-		len_func width;
-		uint8_t (*style)(const css_computed_style *style);
-	} border_funcs[4] = {
-		{ css_computed_border_top_width,
-				css_computed_border_top_style },
-		{ css_computed_border_right_width,
-				css_computed_border_right_style },
-		{ css_computed_border_bottom_width,
-				css_computed_border_bottom_style },
-		{ css_computed_border_left_width,
-				css_computed_border_left_style }
-	};
-
 	css_fixed value = 0;
 	css_unit unit = CSS_UNIT_PX;
 
@@ -275,9 +295,9 @@ calculate_mbp_width(const nscss_len_ctx *len_ctx,
 
 	/* border */
 	if (border) {
-		if (border_funcs[side].style(style) !=
+		if (border_style_funcs[side](style) !=
 				CSS_BORDER_STYLE_NONE) {
-			border_funcs[side].width(style, &value, &unit);
+			border_width_funcs[side](style, &value, &unit);
 
 			*fixed += FIXTOINT(nscss_len2px(len_ctx,
 					value, unit, style));
@@ -1420,24 +1440,7 @@ layout_find_dimensions(const nscss_len_ctx *len_ctx,
 			css_fixed value = 0;
 			css_unit unit = CSS_UNIT_PX;
 
-			switch (i) {
-			case TOP:
-				type = css_computed_margin_top(style,
-						&value, &unit);
-				break;
-			case RIGHT:
-				type = css_computed_margin_right(style,
-						&value, &unit);
-				break;
-			case BOTTOM:
-				type = css_computed_margin_bottom(style,
-						&value, &unit);
-				break;
-			case LEFT:
-				type = css_computed_margin_left(style,
-						&value, &unit);
-				break;
-			}
+			type = margin_funcs[i](style, &value, &unit);
 
 			if (type == CSS_MARGIN_SET) {
 				if (unit == CSS_UNIT_PCT) {
@@ -1457,22 +1460,7 @@ layout_find_dimensions(const nscss_len_ctx *len_ctx,
 			css_fixed value = 0;
 			css_unit unit = CSS_UNIT_PX;
 
-			switch (i) {
-			case TOP:
-				css_computed_padding_top(style, &value, &unit);
-				break;
-			case RIGHT:
-				css_computed_padding_right(style, &value,
-						&unit);
-				break;
-			case BOTTOM:
-				css_computed_padding_bottom(style, &value,
-						&unit);
-				break;
-			case LEFT:
-				css_computed_padding_left(style, &value, &unit);
-				break;
-			}
+			padding_funcs[i](style, &value, &unit);
 
 			if (unit == CSS_UNIT_PCT) {
 				padding[i] = FPCT_OF_INT_TOINT(value,
@@ -1490,33 +1478,9 @@ layout_find_dimensions(const nscss_len_ctx *len_ctx,
 			css_fixed value = 0;
 			css_unit unit = CSS_UNIT_PX;
 
-			switch (i) {
-			case TOP:
-				css_computed_border_top_width(style, &value,
-						&unit);
-				bstyle = css_computed_border_top_style(style);
-				css_computed_border_top_color(style, &color);
-				break;
-			case RIGHT:
-				css_computed_border_right_width(style, &value,
-						&unit);
-				bstyle = css_computed_border_right_style(style);
-				css_computed_border_right_color(style, &color);
-				break;
-			case BOTTOM:
-				css_computed_border_bottom_width(style, &value,
-						&unit);
-				bstyle = css_computed_border_bottom_style(
-						style);
-				css_computed_border_bottom_color(style, &color);
-				break;
-			case LEFT:
-				css_computed_border_left_width(style, &value,
-						&unit);
-				bstyle = css_computed_border_left_style(style);
-				css_computed_border_left_color(style, &color);
-				break;
-			}
+			border_width_funcs[i](style, &value, &unit);
+			bstyle = border_style_funcs[i](style);
+			border_color_funcs[i](style, &color);
 
 			border[i].style = bstyle;
 			border[i].c = color;
