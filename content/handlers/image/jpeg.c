@@ -214,7 +214,12 @@ jpeg_cache_convert(struct content *c)
 	jpeg_read_header(&cinfo, TRUE);
 
 	/* set output processing parameters */
-	cinfo.out_color_space = JCS_RGB;
+	if (cinfo.jpeg_color_space == JCS_CMYK ||
+			cinfo.jpeg_color_space == JCS_YCCK) {
+		cinfo.out_color_space = JCS_CMYK;
+	} else {
+		cinfo.out_color_space = JCS_RGB;
+	}
 	cinfo.dct_method = JDCT_ISLOW;
 
 	/* commence the decompression, output parameters now valid */
@@ -248,22 +253,42 @@ jpeg_cache_convert(struct content *c)
 					   rowstride * cinfo.output_scanline);
 		jpeg_read_scanlines(&cinfo, scanlines, 1);
 
+		if (cinfo.out_color_space == JCS_CMYK) {
+			int i;
+			for (i = width - 1; 0 <= i; i--) {
+				/* Trivial inverse CMYK -> RGBA */
+				const int c = scanlines[0][i * 4 + 0];
+				const int m = scanlines[0][i * 4 + 1];
+				const int y = scanlines[0][i * 4 + 2];
+				const int k = scanlines[0][i * 4 + 3];
+
+				const int ck = c * k;
+				const int mk = m * k;
+				const int yk = y * k;
+
+#define DIV255(x) ((x) + 1 + ((x) >> 8)) >> 8
+				scanlines[0][i * 4 + 0] = DIV255(ck);
+				scanlines[0][i * 4 + 1] = DIV255(mk);
+				scanlines[0][i * 4 + 2] = DIV255(yk);
+				scanlines[0][i * 4 + 3] = 0xff;
+#undef DIV255
+			}
+		} else {
 #if RGB_RED != 0 || RGB_GREEN != 1 || RGB_BLUE != 2 || RGB_PIXELSIZE != 4
-{
-		/* Missmatch between configured libjpeg pixel format and
-		 * NetSurf pixel format.  Convert to RGBA */
-		int i;
-		for (i = width - 1; 0 <= i; i--) {
-			int r = scanlines[0][i * RGB_PIXELSIZE + RGB_RED];
-			int g = scanlines[0][i * RGB_PIXELSIZE + RGB_GREEN];
-			int b = scanlines[0][i * RGB_PIXELSIZE + RGB_BLUE];
-			scanlines[0][i * 4 + 0] = r;
-			scanlines[0][i * 4 + 1] = g;
-			scanlines[0][i * 4 + 2] = b;
-			scanlines[0][i * 4 + 3] = 0xff;
-		}
-}
+			/* Missmatch between configured libjpeg pixel format and
+			 * NetSurf pixel format.  Convert to RGBA */
+			int i;
+			for (i = width - 1; 0 <= i; i--) {
+				int r = scanlines[0][i * RGB_PIXELSIZE + RGB_RED];
+				int g = scanlines[0][i * RGB_PIXELSIZE + RGB_GREEN];
+				int b = scanlines[0][i * RGB_PIXELSIZE + RGB_BLUE];
+				scanlines[0][i * 4 + 0] = r;
+				scanlines[0][i * 4 + 1] = g;
+				scanlines[0][i * 4 + 2] = b;
+				scanlines[0][i * 4 + 3] = 0xff;
+			}
 #endif
+		}
 	} while (cinfo.output_scanline != cinfo.output_height);
 	guit->bitmap->modified(bitmap);
 
