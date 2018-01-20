@@ -1565,6 +1565,7 @@ initialise(const struct llcache_store_parameters *parameters)
 	ret = build_entrymap(newstate);
 	if (ret != NSERROR_OK) {
 		/* that obviously went well */
+		free(newstate->entries);
 		free(newstate->path);
 		free(newstate);
 		return ret;
@@ -1573,6 +1574,8 @@ initialise(const struct llcache_store_parameters *parameters)
 	ret = read_blocks(newstate);
 	if (ret != NSERROR_OK) {
 		/* oh dear */
+		free(newstate->addrmap);
+		free(newstate->entries);
 		free(newstate->path);
 		free(newstate);
 		return ret;
@@ -1640,6 +1643,8 @@ finalise(void)
 			      0);
 		}
 
+		free(storestate->addrmap);
+		free(storestate->entries);
 		free(storestate->path);
 		free(storestate);
 		storestate = NULL;
