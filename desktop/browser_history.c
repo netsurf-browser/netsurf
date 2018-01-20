@@ -601,7 +601,9 @@ nserror browser_window_history_go(struct browser_window *bw,
 				url, NULL, bw, NULL);
 		history->current = current;
 	} else {
-		browser_window_history_update(bw, bw->current_content);
+		if (bw->current_content != NULL) {
+			browser_window_history_update(bw, bw->current_content);
+		}
 		history->current = entry;
 		error = browser_window_navigate(bw, url, NULL,
 				BW_NAVIGATE_NO_TERMINAL_HISTORY_UPDATE,
