@@ -39,6 +39,8 @@
 #include <librsvg/rsvg-cairo.h>
 #endif
 
+#include <nsutils/endian.h>
+
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
@@ -139,15 +141,21 @@ static inline void rsvg_argb_to_abgr(uint8_t *pixels,
 		int width, int height, size_t rowstride)
 {
 	uint8_t *p = pixels;
+	int boff = 0, roff = 2;
+
+	if (endian_host_is_le() == false) {
+		boff = 1;
+		roff = 3;
+	}
 
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
 			/* Swap R and B */
-			const uint8_t r = p[x+3];
+			const uint8_t r = p[4*x+roff];
 
-			p[x+3] = p[x];
+			p[4*x+roff] = p[4*x+boff];
 
-			p[x] = r;
+			p[4*x+boff] = r;
 		}
 
 		p += rowstride;
