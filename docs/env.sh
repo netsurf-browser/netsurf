@@ -25,7 +25,7 @@
 ###############################################################################
 
 # deb packages for dpkg based systems
-NS_DEV_DEB="build-essential pkg-config git gperf libcurl3-dev libssl-dev libpng-dev libjpeg-dev"
+NS_DEV_DEB="build-essential pkg-config git gperf libcurl3-dev libpng-dev libjpeg-dev"
 NS_TOOL_DEB="flex bison libhtml-parser-perl"
 if [ "x${NETSURF_GTK_MAJOR}" = "x3" ]; then
     NS_GTK_DEB="libgtk-3-dev librsvg2-dev"
@@ -36,6 +36,11 @@ fi
 # apt get commandline to install necessary dev packages
 ns-apt-get-install()
 {
+    if /usr/bin/apt-cache show libssl1.0-dev >/dev/null 2>&1; then
+        NS_DEV_DEB="${NS_DEV_DEB} libssl1.0-dev"
+    else
+        NS_DEV_DEB="${NS_DEV_DEB} libssl-dev"
+    fi
     sudo apt-get install $(echo ${NS_DEV_DEB} ${NS_TOOL_DEB} ${NS_GTK_DEB})
 }
 
