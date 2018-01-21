@@ -195,6 +195,7 @@ static struct
 static nsurl *gui_get_resource_url(const char *path)
 {
 	static const char base_url[] = "file:///NetSurf:/Resources/";
+	const char *lang;
 	size_t path_len, length;
 	char *raw;
 	nsurl *url = NULL;
@@ -220,8 +221,12 @@ static nsurl *gui_get_resource_url(const char *path)
 
 	path_len = strlen(path);
 
+	lang = ro_gui_default_language();
+
 	/* Find max URL length */
-	length = SLEN(base_url) + SLEN("xx/") + path_len + 1;
+	length = SLEN(base_url) +
+			strlen(lang) + 1 + /* <lang> + / */
+			path_len + 1; /* + NUL */
 
 	raw = malloc(length);
 	if (raw != NULL) {
@@ -230,13 +235,11 @@ static nsurl *gui_get_resource_url(const char *path)
 		ptr += SLEN(base_url);
 
 		/* Add language directory to URL, for translated files */
-		/* TODO: handle non-en langauages
-		 *       handle non-html translated files */
+		/* TODO: handle non-html translated files */
 		if (path_len > SLEN(".html") &&
 				strncmp(path + path_len - SLEN(".html"),
 					".html", SLEN(".html")) == 0) {
-			memcpy(ptr, "en/", SLEN("en/"));
-			ptr += SLEN("en/");
+			ptr += sprintf(ptr, "%s/", lang);
 		}
 
 		/* Add filename to URL */
