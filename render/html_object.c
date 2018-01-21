@@ -97,6 +97,16 @@ html_object_done(struct box *box,
 
 	box->object = object;
 
+	/* Normalise the box type, now it has been replaced. */
+	switch (box->type) {
+	case BOX_TABLE:
+		box->type = BOX_BLOCK;
+		break;
+	default:
+		/* TODO: Any other box types need mapping? */
+		break;
+	}
+
 	if (!(box->flags & REPLACE_DIM)) {
 		/* invalidate parent min, max widths */
 		for (b = box; b; b = b->parent)
