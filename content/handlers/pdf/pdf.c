@@ -29,6 +29,7 @@
 
 #include <nspdf/document.h>
 #include <nspdf/meta.h>
+#include <nspdf/page.h>
 
 #include "utils/utils.h"
 #include "content/llcache.h"
@@ -142,6 +143,16 @@ static bool pdf_convert(struct content *c)
 	return true;
 }
 
+static nspdferror
+pdf_path(const struct nspdf_style *style,
+	 const float *p,
+	 unsigned int n,
+	 const float transform[6],
+	 const void *ctx)
+{
+	return NSPDFERROR_OK;
+}
+
 /* exported interface documented in image_cache.h */
 static bool
 pdf_redraw(struct content *c,
@@ -149,6 +160,22 @@ pdf_redraw(struct content *c,
 	   const struct rect *clip,
 	   const struct redraw_context *ctx)
 {
+	struct pdf_content *pdfc = (struct pdf_content *)c;
+	nspdferror pdfres;
+	struct nspdf_render_ctx render_ctx;
+
+	render_ctx.ctx = ctx;
+	render_ctx.device_space[0] = 1;
+	render_ctx.device_space[1] = 0;
+	render_ctx.device_space[2] = 0;
+	render_ctx.device_space[3] = 1;
+	render_ctx.device_space[4] = 0; /* x offset */
+	render_ctx.device_space[5] = -200; /* y offset */
+	render_ctx.path = pdf_path;
+
+	pdfres = nspdf_page_render(pdfc->doc, 0, &render_ctx);
+
+
 	return true;
 }
 
