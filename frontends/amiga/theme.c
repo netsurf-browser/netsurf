@@ -54,7 +54,8 @@
 
 static struct BitMap *throbber = NULL;
 static struct bitmap *throbber_nsbm = NULL;
-static int throbber_frames, throbber_update_interval;
+static int throbber_frames = 1;
+static int throbber_update_interval;
 static Object *mouseptrobj[AMI_LASTPOINTER+1];
 static struct BitMap *mouseptrbm[AMI_LASTPOINTER+1];
 
@@ -176,6 +177,7 @@ void ami_theme_throbber_setup(void)
 
 	ami_get_theme_filename(throbberfile,"theme_throbber",false);
 	throbber_frames=atoi(messages_get("theme_throbber_frames"));
+	if(throbber_frames == 0) throbber_frames = 1;
 	throbber_update_interval = atoi(messages_get("theme_throbber_delay"));
 	if(throbber_update_interval == 0) throbber_update_interval = 250;
 
