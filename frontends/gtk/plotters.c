@@ -421,7 +421,7 @@ nsgtk_plot_path(const struct redraw_context *ctx,
 	cairo_get_matrix(current_cr, &old_ctm);
 
 	/* Set up line style and width */
-	cairo_set_line_width(current_cr, 1);
+	cairo_set_line_width(current_cr, width);
 	nsgtk_set_solid();
 
 	/* Load new CTM */

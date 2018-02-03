@@ -544,7 +544,7 @@ void content__request_redraw(struct content *c,
 }
 
 
-/* exported interface, documented in content/content.h */
+/* exported interface, documented in content/content_protected.h */
 bool content_redraw(hlcache_handle *h, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx)
 {

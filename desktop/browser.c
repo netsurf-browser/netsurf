@@ -3259,6 +3259,7 @@ void browser_window_mouse_click(struct browser_window *bw,
 
 	switch (content_get_type(c)) {
 	case CONTENT_HTML:
+	case CONTENT_PDF:
 	case CONTENT_TEXTPLAIN:
 	{
 		/* Give bw focus */

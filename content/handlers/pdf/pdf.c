@@ -31,7 +31,10 @@
 #include <nspdf/meta.h>
 #include <nspdf/page.h>
 
+#include "utils/messages.h"
 #include "utils/utils.h"
+#include "netsurf/plotters.h"
+#include "netsurf/content.h"
 #include "content/llcache.h"
 #include "content/content_protected.h"
 
@@ -41,6 +44,8 @@ typedef struct pdf_content {
 	struct content base;
 
 	struct nspdf_doc *doc;
+
+	unsigned int current_page;
 } pdf_content;
 
 static nserror nspdf2nserr(nspdferror nspdferr)
@@ -120,6 +125,8 @@ static bool pdf_convert(struct content *c)
 	const uint8_t *content_data;
 	unsigned long content_length;
 	struct lwc_string_s *title;
+	float page_width;
+	float page_height;
 
 	content_data = (const uint8_t *)content__get_source_data(c,
 						&content_length);
@@ -137,6 +144,18 @@ static bool pdf_convert(struct content *c)
 		content__set_title(c, lwc_string_data(title));
 	}
 
+	/** \todo extract documents starting page number */
+	pdfc->current_page = 0;
+
+	pdfres = nspdf_get_page_dimensions(pdfc->doc,
+					   pdfc->current_page,
+					   &page_width,
+					   &page_height);
+	if (pdfres == NSPDFERROR_OK) {
+		pdfc->base.width = page_width;
+		pdfc->base.height = page_height;
+	}
+
 	content_set_ready(c);
 	content_set_done(c);
 
@@ -145,11 +164,19 @@ static bool pdf_convert(struct content *c)
 
 static nspdferror
 pdf_path(const struct nspdf_style *style,
-	 const float *p,
-	 unsigned int n,
+	 const float *path,
+	 unsigned int path_length,
 	 const float transform[6],
-	 const void *ctx)
+	 const void *ctxin)
 {
+	const struct redraw_context *ctx = ctxin;
+
+	ctx->plot->path(ctx,
+			style,
+			path,
+			path_length,
+			style->stroke_width,
+			transform);
 	return NSPDFERROR_OK;
 }
 
@@ -164,16 +191,20 @@ pdf_redraw(struct content *c,
 	nspdferror pdfres;
 	struct nspdf_render_ctx render_ctx;
 
+	printf("data x:%d y:%d w:%d h:%d\nclip %d %d %d %d\n",
+	       data->x, data->y, data->width, data->height,
+	       clip->x0, clip->y0, clip->x1, clip->y1);
+
 	render_ctx.ctx = ctx;
-	render_ctx.device_space[0] = 1;
+	render_ctx.device_space[0] = 1; /* scale x */
 	render_ctx.device_space[1] = 0;
 	render_ctx.device_space[2] = 0;
-	render_ctx.device_space[3] = 1;
+	render_ctx.device_space[3] = -1; /* scale y */
 	render_ctx.device_space[4] = 0; /* x offset */
-	render_ctx.device_space[5] = -200; /* y offset */
+	render_ctx.device_space[5] = data->height; /* y offset */
 	render_ctx.path = pdf_path;
 
-	pdfres = nspdf_page_render(pdfc->doc, 0, &render_ctx);
+	pdfres = nspdf_page_render(pdfc->doc, pdfc->current_page, &render_ctx);
 
 
 	return true;
@@ -192,12 +223,42 @@ static content_type pdf_content_type(void)
 	return CONTENT_PDF;
 }
 
+static void
+pdf_mouse_action(struct content *c,
+		 struct browser_window *bw,
+		 browser_mouse_state mouse,
+		 int x, int y)
+{
+	struct pdf_content *pdfc = (struct pdf_content *)c;
+	nspdferror pdfres;
+	printf("ici\n");
+	if (mouse & BROWSER_MOUSE_CLICK_1) {
+		float page_width;
+		float page_height;
+
+		pdfc->current_page++;
+
+		pdfres = nspdf_get_page_dimensions(pdfc->doc,
+						   pdfc->current_page,
+						   &page_width,
+						   &page_height);
+		if (pdfres == NSPDFERROR_OK) {
+			pdfc->base.width = page_width;
+			pdfc->base.height = page_height;
+			printf("page $d w:%f h:%f\n",pdfc->current_page, page_width, page_height);
+		}
+
+		browser_window_update(bw, false);
+
+	}
+}
 
 static const content_handler nspdf_content_handler = {
 	.create = pdf_create,
 	.data_complete = pdf_convert,
 	.destroy = pdf_destroy,
 	.redraw = pdf_redraw,
+	.mouse_action = pdf_mouse_action,
 	.clone = pdf_clone,
 	.type = pdf_content_type,
 	.no_share = false,
