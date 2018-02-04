@@ -33,8 +33,10 @@
 
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "utils/log.h"
 #include "netsurf/plotters.h"
 #include "netsurf/content.h"
+#include "netsurf/browser_window.h"
 #include "content/llcache.h"
 #include "content/content_protected.h"
 
@@ -46,6 +48,7 @@ typedef struct pdf_content {
 	struct nspdf_doc *doc;
 
 	unsigned int current_page;
+	unsigned int page_count;
 } pdf_content;
 
 static nserror nspdf2nserr(nspdferror nspdferr)
@@ -139,13 +142,19 @@ static bool pdf_convert(struct content *c)
 		return false;
 	}
 
+	pdfres = nspdf_page_count(pdfc->doc, &pdfc->page_count);
+	if (pdfres != NSPDFERROR_OK) {
+		content_broadcast_errorcode(c, NSERROR_INVALID);
+		return false;
+	}
+
 	pdfres = nspdf_get_title(pdfc->doc, &title);
 	if (pdfres == NSPDFERROR_OK) {
 		content__set_title(c, lwc_string_data(title));
 	}
 
 	/** \todo extract documents starting page number */
-	pdfc->current_page = 0;
+	pdfc->current_page = 16;
 
 	pdfres = nspdf_get_page_dimensions(pdfc->doc,
 					   pdfc->current_page,
@@ -172,7 +181,7 @@ pdf_path(const struct nspdf_style *style,
 	const struct redraw_context *ctx = ctxin;
 
 	ctx->plot->path(ctx,
-			style,
+			(const struct plot_style_s *)style,
 			path,
 			path_length,
 			style->stroke_width,
@@ -191,7 +200,8 @@ pdf_redraw(struct content *c,
 	nspdferror pdfres;
 	struct nspdf_render_ctx render_ctx;
 
-	printf("data x:%d y:%d w:%d h:%d\nclip %d %d %d %d\n",
+	NSLOG(netsurf, DEBUG,
+	      "data x:%d y:%d w:%d h:%d\nclip %d %d %d %d\n",
 	       data->x, data->y, data->width, data->height,
 	       clip->x0, clip->y0, clip->x1, clip->y1);
 
@@ -205,7 +215,6 @@ pdf_redraw(struct content *c,
 	render_ctx.path = pdf_path;
 
 	pdfres = nspdf_page_render(pdfc->doc, pdfc->current_page, &render_ctx);
-
 
 	return true;
 }
@@ -224,32 +233,56 @@ static content_type pdf_content_type(void)
 }
 
 static void
+pdf_change_page(struct pdf_content *pdfc,
+		struct browser_window *bw,
+		unsigned int page_number)
+{
+	float page_width;
+	float page_height;
+	nspdferror pdfres;
+
+	/* ensure page stays in bounds */
+	if (page_number >= pdfc->page_count) {
+		return;
+	}
+
+	pdfc->current_page = page_number;
+
+	pdfres = nspdf_get_page_dimensions(pdfc->doc,
+					   pdfc->current_page,
+					   &page_width,
+					   &page_height);
+	if (pdfres == NSPDFERROR_OK) {
+		pdfc->base.width = page_width;
+		pdfc->base.height = page_height;
+		NSLOG(netsurf, DEBUG,
+		      "page %d w:%f h:%f\n",
+		       pdfc->current_page,
+		       page_width,
+		       page_height);
+	}
+
+	browser_window_update(bw, false);
+}
+
+static void
 pdf_mouse_action(struct content *c,
 		 struct browser_window *bw,
 		 browser_mouse_state mouse,
 		 int x, int y)
 {
 	struct pdf_content *pdfc = (struct pdf_content *)c;
-	nspdferror pdfres;
-	printf("ici\n");
+
 	if (mouse & BROWSER_MOUSE_CLICK_1) {
-		float page_width;
-		float page_height;
+		int bwwidth;
+		int bwheight;
+		browser_window_get_extents(bw, false, &bwwidth, &bwheight);
 
-		pdfc->current_page++;
-
-		pdfres = nspdf_get_page_dimensions(pdfc->doc,
-						   pdfc->current_page,
-						   &page_width,
-						   &page_height);
-		if (pdfres == NSPDFERROR_OK) {
-			pdfc->base.width = page_width;
-			pdfc->base.height = page_height;
-			printf("page $d w:%f h:%f\n",pdfc->current_page, page_width, page_height);
+		if (x < (bwwidth / 2)) {
+			pdf_change_page(pdfc, bw, pdfc->current_page - 1);
+		} else {
+			pdf_change_page(pdfc, bw, pdfc->current_page + 1);
 		}
-
-		browser_window_update(bw, false);
-
 	}
 }
 
