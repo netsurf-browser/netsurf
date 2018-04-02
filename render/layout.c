@@ -730,10 +730,6 @@ layout_minmax_line(struct box *first,
 		bs = css_computed_box_sizing(block->style);
 		if (wtype == CSS_WIDTH_SET) {
 			if (unit == CSS_UNIT_PCT) {
-				/*
-				b->width = FPCT_OF_INT_TOINT(value, width);
-				*/
-
 				width = AUTO;
 			} else {
 				width = FIXTOINT(nscss_len2px(&content->len_ctx,
