@@ -503,6 +503,23 @@ static void layout_minmax_table(struct box *table,
 	assert(0 <= table->min_width && table->min_width <= table->max_width);
 }
 
+/**
+ * Helper to check if a box has percentage max width.
+ *
+ * \param[in]  b  Box to check.
+ * \return true iff box has percnetage max width.
+ */
+static inline bool box_has_percentage_max_width(struct box *b)
+{
+	css_unit unit = CSS_UNIT_PX;
+	enum css_max_width_e type;
+	css_fixed value = 0;
+
+	assert(b != NULL);
+
+	type = css_computed_max_width(b->style, &value, &unit);
+	return ((type == CSS_MAX_WIDTH_SET) && (unit == CSS_UNIT_PCT));
+}
 
 /**
  * Calculate minimum and maximum width of a line.
@@ -834,7 +851,7 @@ layout_minmax_line(struct box *first,
 						b->style));
 		}
 
-		if (min < width)
+		if (min < width && !box_has_percentage_max_width(b))
 			min = width;
 		if (width > 0)
 			max += width;
