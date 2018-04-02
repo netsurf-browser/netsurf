@@ -836,7 +836,8 @@ layout_minmax_line(struct box *first,
 
 		if (min < width)
 			min = width;
-		max += width;
+		if (width > 0)
+			max += width;
 
 		*line_has_height = true;
 	}
