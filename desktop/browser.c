@@ -1405,6 +1405,10 @@ browser_window_callback(hlcache_handle *c,
 		bw->current_content = c;
 		bw->loading_content = NULL;
 
+		/* Format the new content to the correct dimensions */
+		browser_window_get_dimensions(bw, &width, &height, true);
+		content_reformat(c, false, width, height);
+
 		/* history */
 		if (bw->history_add && bw->history) {
 			nsurl *url = hlcache_handle_get_url(c);
@@ -1437,13 +1441,13 @@ browser_window_callback(hlcache_handle *c,
 			 * all newly visited URLs.  With the history_add call
 			 * after, we only leak the thumbnails when urldb does
 			 * not add the URL.
+			 *
+			 * Also, since browser_window_history_add can create
+			 * a thumbnail (content_redraw), we need to do it after
+			 * content_reformat.
 			 */
 			browser_window_history_add(bw, c, bw->frag_id);
 		}
-
-		/* Format the new content to the correct dimensions */
-		browser_window_get_dimensions(bw, &width, &height, true);
-		content_reformat(c, false, width, height);
 
 		browser_window_remove_caret(bw, false);
 
