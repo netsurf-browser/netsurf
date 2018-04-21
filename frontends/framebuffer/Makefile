@@ -130,9 +130,11 @@ define convert_font
 
 S_FONTS += $(2)
 
-$(2): $(1) $(TOOLROOT)/convert_font
+$(2) $(3): $(1) $(TOOLROOT)/convert_font
 	$(VQ)echo "    FONT: $(1) ($(4))"
 	$(Q)$(TOOLROOT)/convert_font -H $(3) $(1) $(2)
+
+frontends/framebuffer/font_internal.c: $(3)
 
 endef
 
