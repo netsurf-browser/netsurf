@@ -114,6 +114,8 @@ typedef struct {
 	bool tried_with_tls_downgrade;	/**< Whether we've tried TLS <= 1.0 */
 
 	bool outstanding_query;		/**< Waiting for a query response */
+
+	bool tainted_tls;		/**< Whether the TLS transport is tainted */
 } llcache_fetch_ctx;
 
 /**
@@ -1857,6 +1859,86 @@ static nserror llcache_object_add_user(llcache_object *object,
 }
 
 /**
+ * Transform a request-URI based on HSTS policy
+ *
+ * \param url URL to transform
+ * \param result Pointer to location to receive transformed URL
+ * \param hsts_in_use Pointer to location to receive HSTS in-use flag
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+static nserror llcache_hsts_transform_url(nsurl *url, nsurl **result,
+		bool *hsts_in_use)
+{
+	lwc_string *scheme = NULL;
+	bool match;
+	nserror error = NSERROR_OK;
+
+	scheme = nsurl_get_component(url, NSURL_SCHEME);
+	if (lwc_string_caseless_isequal(scheme, corestring_lwc_http,
+			&match) != lwc_error_ok || match == false) {
+		/* Non-HTTP fetch: ignore */
+		lwc_string_unref(scheme);
+		*result = nsurl_ref(url);
+		*hsts_in_use = false;
+		return error;
+	}
+	lwc_string_unref(scheme);
+
+	if (urldb_get_hsts_enabled(url)) {
+		/* Only need to force HTTPS. If original port was explicitly
+		 * specified as 80, nsurl_create/join will remove it (as
+		 * it's redundant) */
+		error = nsurl_replace_scheme(url, corestring_lwc_https,
+				result);
+		*hsts_in_use = (error == NSERROR_OK);
+	} else {
+		*result = nsurl_ref(url);
+		*hsts_in_use = false;
+	}
+
+	return error;
+}
+
+/**
+ * Update HSTS policy for target domain.
+ *
+ * \param object Newly-fetched cache object
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+static nserror llcache_hsts_update_policy(llcache_object *object)
+{
+	size_t i;
+	lwc_string *scheme = NULL;
+	bool match = false;
+
+	scheme = nsurl_get_component(object->url, NSURL_SCHEME);
+	if (lwc_string_caseless_isequal(scheme, corestring_lwc_https,
+			&match) != lwc_error_ok || match == false) {
+		/* Non-HTTPS fetch: ignore */
+		lwc_string_unref(scheme);
+		return NSERROR_OK;
+	}
+	lwc_string_unref(scheme);
+
+	if (object->fetch.tainted_tls) {
+		/* Transport is tainted: ignore */
+		return NSERROR_OK;
+	}
+
+	for (i = 0; i < object->num_headers; i++) {
+		if (strcasecmp("Strict-Transport-Security",
+				object->headers[i].name) == 0) {
+			urldb_set_hsts_policy(object->url,
+					object->headers[i].value);
+			/* Only process the first one we find */
+			break;
+		}
+	}
+
+	return NSERROR_OK;
+}
+
+/**
  * Handle FETCH_REDIRECT event
  *
  * \param object       Object being redirected
@@ -1871,10 +1953,10 @@ static nserror llcache_fetch_redirect(llcache_object *object,
 	llcache_object *dest;
 	llcache_object_user *user, *next;
 	const llcache_post_data *post = object->fetch.post;
-	nsurl *url;
+	nsurl *url, *hsts_url;
 	lwc_string *scheme;
 	lwc_string *object_scheme;
-	bool match;
+	bool match, hsts_in_use;
 	/* Extract HTTP response code from the fetch object */
 	long http_code = fetch_http_code(object->fetch.fetch);
 	llcache_event event;
@@ -1906,15 +1988,23 @@ static nserror llcache_fetch_redirect(llcache_object *object,
 	if (error != NSERROR_OK)
 		return error;
 
+	/* Perform HSTS transform */
+	error = llcache_hsts_transform_url(url, &hsts_url, &hsts_in_use);
+	if (error != NSERROR_OK) {
+		nsurl_unref(url);
+		return error;
+	}
+	nsurl_unref(url);
+
 	/* Inform users of redirect */
 	event.type = LLCACHE_EVENT_REDIRECT;
 	event.data.redirect.from = object->url;
-	event.data.redirect.to = url;
+	event.data.redirect.to = hsts_url;
 
 	error = llcache_send_event_to_users(object, &event);
 
 	if (error != NSERROR_OK) {
-		nsurl_unref(url);
+		nsurl_unref(hsts_url);
 		return error;
 	}
 
@@ -1922,7 +2012,7 @@ static nserror llcache_fetch_redirect(llcache_object *object,
 	 * A "validated" scheme is one over which we have some guarantee that
 	 * the source is trustworthy. */
 	object_scheme = nsurl_get_component(object->url, NSURL_SCHEME);
-	scheme = nsurl_get_component(url, NSURL_SCHEME);
+	scheme = nsurl_get_component(hsts_url, NSURL_SCHEME);
 
 	/* resource: and about: are allowed to redirect anywhere */
 	if ((lwc_string_isequal(object_scheme, corestring_lwc_resource,
@@ -1938,7 +2028,7 @@ static nserror llcache_fetch_redirect(llcache_object *object,
 				&match) == lwc_error_ok && match == true)) {
 			lwc_string_unref(object_scheme);
 			lwc_string_unref(scheme);
-			nsurl_unref(url);
+			nsurl_unref(hsts_url);
 			return NSERROR_OK;
 		}
 	}
@@ -1947,8 +2037,8 @@ static nserror llcache_fetch_redirect(llcache_object *object,
 	lwc_string_unref(object_scheme);
 
 	/* Bail out if we've no way of handling this URL */
-	if (fetch_can_fetch(url) == false) {
-		nsurl_unref(url);
+	if (fetch_can_fetch(hsts_url) == false) {
+		nsurl_unref(hsts_url);
 		return NSERROR_OK;
 	}
 
@@ -1957,17 +2047,17 @@ static nserror llcache_fetch_redirect(llcache_object *object,
 		post = NULL;
 	} else if (http_code != 307 || post != NULL) {
 		/** \todo 300, 305, 307 with POST */
-		nsurl_unref(url);
+		nsurl_unref(hsts_url);
 		return NSERROR_OK;
 	}
 
 	/* Attempt to fetch target URL */
-	error = llcache_object_retrieve(url, object->fetch.flags,
+	error = llcache_object_retrieve(hsts_url, object->fetch.flags,
 			object->fetch.referer, post,
 			object->fetch.redirect_count + 1, &dest);
 
 	/* No longer require url */
-	nsurl_unref(url);
+	nsurl_unref(hsts_url);
 
 	if (error != NSERROR_OK)
 		return error;
@@ -2058,6 +2148,8 @@ static nserror llcache_fetch_notmodified(llcache_object *object,
 
 	/* Mark it complete */
 	object->fetch.state = LLCACHE_FETCH_COMPLETE;
+
+	(void) llcache_hsts_update_policy(object);
 
 	/* Old object will be flushed from the cache on the next poll */
 
@@ -2253,6 +2345,9 @@ static nserror llcache_fetch_cert_error(llcache_object *object,
 	/* Invalidate cache-control data */
 	llcache_invalidate_cache_control_data(object);
 
+	/* Consider the TLS transport tainted */
+	object->fetch.tainted_tls = true;
+
 	if (llcache->query_cb != NULL) {
 		llcache_query query;
 
@@ -2302,6 +2397,9 @@ static nserror llcache_fetch_ssl_error(llcache_object *object)
 
 	/* Invalidate cache-control data */
 	llcache_invalidate_cache_control_data(object);
+
+	/* Consider the TLS transport tainted */
+	object->fetch.tainted_tls = true;
 
 	if (object->fetch.tried_with_tls_downgrade == true) {
 		/* Have already tried to downgrade, so give up */
@@ -2683,6 +2781,8 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 
 		/* record when the fetch finished */
 		object->cache.fin_time = time(NULL);
+
+		(void) llcache_hsts_update_policy(object);
 
 		guit->misc->schedule(5000, llcache_persist, NULL);
 	}
@@ -3483,23 +3583,34 @@ nserror llcache_handle_retrieve(nsurl *url, uint32_t flags,
 	nserror error;
 	llcache_object_user *user;
 	llcache_object *object;
+	nsurl *hsts_url;
+	bool hsts_in_use;
+
+	/* Perform HSTS transform */
+	error = llcache_hsts_transform_url(url, &hsts_url, &hsts_in_use);
+	if (error != NSERROR_OK) {
+		return error;
+	}
 
 	/* Can we fetch this URL at all? */
-	if (fetch_can_fetch(url) == false) {
+	if (fetch_can_fetch(hsts_url) == false) {
+		nsurl_unref(hsts_url);
 		return NSERROR_NO_FETCH_HANDLER;
 	}
 
 	/* Create a new object user */
 	error = llcache_object_user_new(cb, pw, &user);
 	if (error != NSERROR_OK) {
+		nsurl_unref(hsts_url);
 		return error;
 	}
 
 	/* Retrieve a suitable object from the cache,
 	 * creating a new one if needed. */
-	error = llcache_object_retrieve(url, flags, referer, post, 0, &object);
+	error = llcache_object_retrieve(hsts_url, flags, referer, post, 0, &object);
 	if (error != NSERROR_OK) {
 		llcache_object_user_destroy(user);
+		nsurl_unref(hsts_url);
 		return error;
 	}
 
@@ -3510,6 +3621,8 @@ nserror llcache_handle_retrieve(nsurl *url, uint32_t flags,
 
 	/* Users exist which are now not caught up! */
 	llcache_users_not_caught_up();
+
+	nsurl_unref(hsts_url);
 
 	return NSERROR_OK;
 }
