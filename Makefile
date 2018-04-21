@@ -752,7 +752,6 @@ DEPFILES :=
 # 3 = obj filename, no prefix
 define dependency_generate_c
 DEPFILES += $(2)
-$$(DEPROOT)/$(2): $$(DEPROOT)/created $(1) Makefile.config
 
 endef
 
@@ -761,7 +760,6 @@ endef
 # 3 = obj filename, no prefix
 define dependency_generate_s
 DEPFILES += $(2)
-$$(DEPROOT)/$(2): $$(DEPROOT)/created $(1)
 
 endef
 
@@ -771,7 +769,7 @@ endef
 ifeq ($(CC_MAJOR),2)
 # simpler deps tracking for gcc2...
 define compile_target_c
-$$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $(1) $$(OBJROOT)/created
+$$(OBJROOT)/$(2): $(1) $$(OBJROOT)/created $$(DEPROOT)/created
 	$$(VQ)echo "     DEP: $(1)"
 	$$(Q)$$(RM) $$(DEPROOT)/$(3)
 	$$(Q)$$(CC) $$(IFLAGS) $$(CFLAGS) -MM  \
@@ -784,7 +782,7 @@ $$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $(1) $$(OBJROOT)/created
 endef
 else
 define compile_target_c
-$$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $(1) $$(OBJROOT)/created
+$$(OBJROOT)/$(2): $(1) $$(OBJROOT)/created $$(DEPROOT)/created
 	$$(VQ)echo " COMPILE: $(1)"
 	$$(Q)$$(RM) $$(DEPROOT)/$(3)
 	$$(Q)$$(RM) $$(OBJROOT)/$(2)
@@ -796,7 +794,7 @@ endef
 endif
 
 define compile_target_cpp
-$$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $(1) $$(OBJROOT)/created
+$$(OBJROOT)/$(2): $(1) $$(OBJROOT)/created $$(DEPROOT)/created
 	$$(VQ)echo "     DEP: $(1)"
 	$$(Q)$$(RM) $$(DEPROOT)/$(3)
 	$$(Q)$$(CC) $$(IFLAGS) $$(CXXFLAGS) $$(COMMON_WARNFLAGS) $$(CXXWARNFLAGS) -MM  \
@@ -812,7 +810,7 @@ endef
 # 2 = obj filename, no prefix
 # 3 = dep filename, no prefix
 define compile_target_s
-$$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $(1) $$(OBJROOT)/created
+$$(OBJROOT)/$(2): $(1) $$(OBJROOT)/created $$(DEPROOT)/created
 	$$(VQ)echo "ASSEMBLE: $(1)"
 	$$(Q)$$(RM) $$(DEPROOT)/$(3)
 	$$(Q)$$(RM) $$(OBJROOT)/$(2)
