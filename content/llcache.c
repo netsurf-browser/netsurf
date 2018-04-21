@@ -86,7 +86,7 @@ struct llcache_handle {
 typedef struct llcache_object_user {
 	llcache_handle *handle;		/**< Handle data for client */
 
-	bool iterator_target;		/**< This is the an iterator target */
+	bool iterator_target;		/**< This is the iterator target */
 	bool queued_for_delete;		/**< This user is queued for deletion */
 
 	struct llcache_object_user *prev;	/**< Previous in list */
@@ -126,7 +126,7 @@ typedef enum {
 } llcache_validate;
 
 /**
- * cache control value for invalid age.
+ * Cache control value for invalid age.
  */
 #define INVALID_AGE -1
 
@@ -150,7 +150,7 @@ typedef struct {
 	char *value;		/**< Header value */
 } llcache_header;
 
-/** Current status of objects data */
+/** Current status of an object's data */
 typedef enum {
 	LLCACHE_STATE_RAM = 0, /**< source data is stored in RAM only */
 	LLCACHE_STATE_DISC, /**< source data is stored on disc */
@@ -191,7 +191,7 @@ struct llcache_object {
 
 	/* Instrumentation. These elements are strictly for information
 	 * to improve the cache performance and to provide performance
-	 * metrics. The values are non-authorative and must not be used to
+	 * metrics. The values are non-authoritative and must not be used to
 	 * determine object lifetime etc.
 	 */
 	time_t last_used; /**< time the last user was removed from the object */
@@ -791,7 +791,7 @@ static nserror llcache_fetch_process_header(llcache_object *object,
 /**
  * (Re)fetch an object
  *
- * sets up headers and attempts to start an actual fetch from the
+ * Sets up headers and attempts to start an actual fetch from the
  * fetchers system updating the llcache object with the new fetch on
  * successful start.
  *
@@ -1165,14 +1165,14 @@ llcache_object_remove_from_list(llcache_object *object, llcache_object **list)
 /**
  * Retrieve source data for an object from persistent store if necessary.
  *
- * If an objects source data has been placed in the persistent store
- * and the in memory copy released this will attempt to retrieve the
- * source data.
+ * If an object's source data has been placed in the persistent store
+ * and there is no in-memory copy, then attempt to retrieve the source
+ * data.
  *
  * \param object the object to operate on.
  * \return appropriate error code.
  */
-static nserror llcache_persist_retrieve(llcache_object *object)
+static nserror llcache_retrieve_persisted_data(llcache_object *object)
 {
 	/* ensure the source data is present if necessary */
 	if ((object->source_data != NULL) ||
@@ -1191,7 +1191,7 @@ static nserror llcache_persist_retrieve(llcache_object *object)
 }
 
 /**
- * Generate a serialised version of an objects metadata
+ * Generate a serialised version of an object's metadata
  *
  * The metadata includes object headers.
  *
@@ -1335,7 +1335,7 @@ operror:
 }
 
 /**
- * Deserialisation of an objects metadata.
+ * Deserialisation of an object's metadata.
  *
  * Attempt to retrieve and deserialise the metadata for an object from
  * the backing store.
@@ -1361,7 +1361,7 @@ llcache_process_metadata(llcache_object *object)
 
 	size_t source_length;
 	time_t request_time;
-	time_t reponse_time;
+	time_t response_time;
 	time_t completion_time;
 	size_t num_headers;
 	size_t hloop;
@@ -1412,7 +1412,7 @@ llcache_process_metadata(llcache_object *object)
 	nsurl_unref(metadataurl);
 
 
-	/* metadata line 2 is the objects length */
+	/* metadata line 2 is the object's length */
 	line = 2;
 	ln += lnsize + 1;
 	lnsize = strlen(ln);
@@ -1438,7 +1438,7 @@ llcache_process_metadata(llcache_object *object)
 	ln += lnsize + 1;
 	lnsize = strlen(ln);
 
-	res = nsc_snptimet(ln, lnsize, &reponse_time);
+	res = nsc_snptimet(ln, lnsize, &response_time);
 	if (res != NSERROR_OK)
 		goto format_error;
 
@@ -1485,7 +1485,7 @@ llcache_process_metadata(llcache_object *object)
 	object->source_alloc = metadatalen;
 
 	object->cache.req_time = request_time;
-	object->cache.res_time = reponse_time;
+	object->cache.res_time = response_time;
 	object->cache.fin_time = completion_time;
 
 	/* object stored in backing store */
@@ -1514,7 +1514,7 @@ format_error:
  *         cache else appropriate error code.
  */
 static nserror
-llcache_object_fetch_persistant(llcache_object *object,
+llcache_object_fetch_persistent(llcache_object *object,
 				uint32_t flags,
 				nsurl *referer,
 				const llcache_post_data *post,
@@ -1604,7 +1604,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
 			return error;
 
 		/* attempt to retrieve object from persistent store */
-		error = llcache_object_fetch_persistant(obj, flags, referer, post, redirect_count);
+		error = llcache_object_fetch_persistent(obj, flags, referer, post, redirect_count);
 		if (error == NSERROR_OK) {
 			NSLOG(llcache, DEBUG, "retrieved object from persistent store");
 
@@ -1631,7 +1631,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
 		 */
 
 		/* ensure the source data is present */
-		error = llcache_persist_retrieve(newest);
+		error = llcache_retrieve_persisted_data(newest);
 		if (error == NSERROR_OK) {
 			/* source data was successfully retrieved from
 			 * persistent store
@@ -1658,7 +1658,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
 		/* Found a candidate object but it needs freshness validation */
 
 		/* ensure the source data is present */
-		error = llcache_persist_retrieve(newest);
+		error = llcache_retrieve_persisted_data(newest);
 		if (error == NSERROR_OK) {
 
 			/* Create a new object */
@@ -3444,8 +3444,8 @@ static void llcache_catch_up_all_users(void *ignored)
 	llcache_object *object;
 
 	/* Assume after this we'll be all caught up.  If any user of a handle
-	 * defers then we'll end up set not caught up and we'll
-	 * reschedule at that point via llcache_users_not_caught_up()
+	 * defers then we'll invalidate all_caught_up and reschedule via
+	 * llcache_users_not_caught_up()
 	 */
 	llcache->all_caught_up = true;
 
