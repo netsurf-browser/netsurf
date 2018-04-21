@@ -46,7 +46,7 @@ ns-apt-get-install()
 
 
 # packages for yum installer RPM based systems (tested on fedora 20)
-NS_DEV_YUM_RPM="git gcc pkgconfig libexpat-devel openssl-devel gperf libcurl-devel perl-Digest-MD5-File libjpeg-devel libpng-devel"
+NS_DEV_YUM_RPM="git gcc pkgconfig expat-devel openssl-devel gperf libcurl-devel perl-Digest-MD5-File libjpeg-devel libpng-devel"
 NS_TOOL_YUM_RPM="flex bison"
 if [ "x${NETSURF_GTK_MAJOR}" = "x3" ]; then
     NS_GTK_YUM_RPM="gtk3-devel librsvg2-devel"
