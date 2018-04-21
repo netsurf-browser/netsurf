@@ -4,7 +4,7 @@
 # Included by javascript/Makefile
 #
 
-content/handlers/javascript/dukky.c: $(OBJROOT)/duktape/binding.h
+content/handlers/javascript/duktape/dukky.c: $(OBJROOT)/duktape/binding.h
 
 BINDINGS := $(wildcard content/handlers/javascript/duktape/*.bnd)
 
