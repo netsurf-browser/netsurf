@@ -1981,6 +1981,8 @@ static nserror llcache_fetch_redirect(llcache_object *object,
 	/* And mark it complete */
 	object->fetch.state = LLCACHE_FETCH_COMPLETE;
 
+	(void) llcache_hsts_update_policy(object);
+
 	/* Forcibly stop redirecting if we've followed too many redirects */
 #define REDIRECT_LIMIT 10
 	if (object->fetch.redirect_count > REDIRECT_LIMIT) {
