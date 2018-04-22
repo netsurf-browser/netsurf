@@ -559,6 +559,10 @@ fetch_curl_sslctxfun(CURL *curl_handle, void *_sslctx, void *parm)
 
 	SSL_CTX_set_options(sslctx, options);
 
+#ifdef SSL_OP_NO_TICKET
+	SSL_CTX_clear_options(sslctx, SSL_OP_NO_TICKET);
+#endif
+
 	return CURLE_OK;
 }
 
