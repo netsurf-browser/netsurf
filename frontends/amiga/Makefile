@@ -83,7 +83,7 @@ netsurf.lha: $(EXETARGET)
 	$(Q)mv $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/icons $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/Icons
 	$(Q)cp -rp $(AMIGA_DISTRIBUTION_FILES) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
 	$(Q)cat resources/SearchEngines $(AMIGA_PKG_DIR)/SearchEngines >$(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/SearchEngines
-	$(Q)cp -p resources/addblock.css $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/adblock.css
+	$(Q)cp -p resources/adblock.css $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/adblock.css
 	$(Q)cp -p resources/default.css $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/nsdefault.css
 	$(Q)cp -p resources/internal.css $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/internal.css
 	$(Q)cp -p resources/quirks.css $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/quirks.css
