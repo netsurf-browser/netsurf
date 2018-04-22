@@ -24,8 +24,7 @@
 
   The GTK port of NetSurf requires access to some resources at run time.
   These are stored in gtk/res/ in the source tree.  Some of these files are
-  symlinks into the !NetSurf directory, which is the application container
-  for the native RISC OS build.  None of the other files from the !NetSurf
+  symlinks into the top level resources directory.  Not all of the files in the
   directory are required - the symlinks are used only as a way of making
   checkouts smaller and making sure changes to one set of resources updates
   the other.

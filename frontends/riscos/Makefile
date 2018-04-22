@@ -16,7 +16,7 @@ $(eval $(call feature_enabled,DRAW_EXPORT,-DWITH_DRAW_EXPORT,-lpencil,Drawfile e
 
 
 TPD_RISCOS = $(foreach TPL,$(notdir $(TPL_RISCOS)), \
-		!NetSurf/Resources/$(TPL)/Templates$(TPLEXT))
+		$(FRONTEND_SOURCE_DIR)/appdir/Resources/$(TPL)/Templates$(TPLEXT))
 
 RESOURCES = $(TPD_RISCOS)
 
@@ -68,16 +68,16 @@ S_FRONTEND := 401login.c assert.c bitmap.c buffer.c configure.c gui.c	\
 #   are not yet available
 SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_FRONTEND)
 
-EXETARGET := !NetSurf/!RunImage$(EXEEXT)
+EXETARGET := $(FRONTEND_SOURCE_DIR)/appdir/!RunImage$(EXEEXT)
 
 # The filter and target for split messages
 MESSAGES_FILTER=ro
 
-!NetSurf/!Run$(RUNEXT): $(FRONTEND_SOURCE_DIR)/scripts/Run $(EXETARGET)
+$(FRONTEND_SOURCE_DIR)/appdir/!Run$(RUNEXT): $(FRONTEND_SOURCE_DIR)/scripts/Run $(EXETARGET)
 	$(VQ)echo " MAKERUN: $@"
 	$(Q)$(MAKERUN) $(EXETARGET) $< $@
 
-!NetSurf/!Help$(RUNEXT): $(FRONTEND_SOURCE_DIR)/scripts/Help
+$(FRONTEND_SOURCE_DIR)/appdir/!Help$(RUNEXT): $(FRONTEND_SOURCE_DIR)/scripts/Help
 	$(VQ)echo "      CP: $@"
 	$(Q)cp $< $@
 
@@ -86,16 +86,16 @@ $(DEPROOT)/squeeze.d: $(EXETARGET)
 	$(Q)$(SQUEEZE) -f -v $(EXETARGET)
 	$(Q)$(TOUCH) $@
 
-POSTEXES += !NetSurf/!Run$(RUNEXT) !NetSurf/!Help$(RUNEXT) $(DEPROOT)/squeeze.d
+POSTEXES += $(FRONTEND_SOURCE_DIR)/appdir/!Run$(RUNEXT) $(FRONTEND_SOURCE_DIR)/appdir/!Help$(RUNEXT) $(DEPROOT)/squeeze.d
 
 
 clean-run:
-	$(VQ)echo "   CLEAN: !NetSurf/!Run$(RUNEXT)"
-	$(Q) $(RM) !NetSurf/!Run$(RUNEXT)
+	$(VQ)echo "   CLEAN: !Run$(RUNEXT)"
+	$(Q) $(RM) $(FRONTEND_SOURCE_DIR)/appdir/!Run$(RUNEXT)
 
 clean-help:
-	$(VQ)echo "   CLEAN: !NetSurf/!Help$(RUNEXT)"
-	$(Q) $(RM) !NetSurf/!Help$(RUNEXT)
+	$(VQ)echo "   CLEAN: !Help$(RUNEXT)"
+	$(Q) $(RM) $(FRONTEND_SOURCE_DIR)/appdir/!Help$(RUNEXT)
 
 CLEANS += clean-run clean-help
 
@@ -109,12 +109,12 @@ TPL_RISCOS := $(addprefix $(FRONTEND_SOURCE_DIR)/templates/,$(TPL_RISCOS))
 
 # Template target creation macro
 define compile_template
-!NetSurf/Resources/$(1)/Templates$$(TPLEXT): $(2)
+$(FRONTEND_SOURCE_DIR)/appdir/Resources/$(1)/Templates$$(TPLEXT): $(2)
 	$$(VQ)echo "TEMPLATE: $(2)"
-	$$(Q)$$(MKDIR) -p !NetSurf/Resources/$(1)
+	$$(Q)$$(MKDIR) -p $(FRONTEND_SOURCE_DIR)/appdir/Resources/$(1)
 	$$(Q)$$(CC) -x c -E -P $$(CFLAGS) $(2) | $$(CCRES) - $$@
 
-CLEAN_TEMPLATES += !NetSurf/Resources/$(1)/Templates$$(TPLEXT)
+CLEAN_TEMPLATES += $(FRONTEND_SOURCE_DIR)/appdir/Resources/$(1)/Templates$$(TPLEXT)
 
 endef
 
@@ -142,7 +142,7 @@ package-riscos: netsurf.zip
 netsurf.zip: $(EXETARGET)
 	$(eval $@_TMPDIR := $(shell mktemp -d))
 	$(Q) $(RM) $@
-	$(Q) rsync --archive --verbose $(CURDIR)/!NetSurf $($@_TMPDIR)
+	$(Q) cp -rLvp $(FRONTEND_SOURCE_DIR)/appdir $($@_TMPDIR)/!NetSurf
 	$(Q) $(CURDIR)/utils/git-date.sh $(FRONTEND_SOURCE_DIR)/distribution
 	$(Q) rsync --archive --verbose $(FRONTEND_SOURCE_DIR)/distribution/!Boot $($@_TMPDIR)
 	$(Q) rsync --archive --verbose $(FRONTEND_SOURCE_DIR)/distribution/!System $($@_TMPDIR)
