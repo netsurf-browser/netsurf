@@ -3557,7 +3557,7 @@ bool urldb_set_hsts_policy(struct nsurl *url, const char *header)
 	if (max_age == 0) {
 		h->hsts.expires = 0;
 		h->hsts.include_sub_domains = false;
-	} else if (now + max_age > h->hsts.expires) {
+	} else if ((time_t) (now + max_age) > h->hsts.expires) {
 		h->hsts.expires = now + max_age;
 	}
 
