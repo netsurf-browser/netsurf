@@ -84,6 +84,7 @@ endif
 # installer messages generation
 $(OBJROOT)/messages-en: resources/FatMessages
 	$(VQ)echo "MSGSPLIT: Language: en Filter: win"
+	$(Q)$(RM) $@
 	$(Q)$(SPLIT_MESSAGES) -l en -p win -f messages -o $@ $<
 
 netsurf-installer.exe: $(EXETARGET) $(WIN_RES_INS_OBJ)

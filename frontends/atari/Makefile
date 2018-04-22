@@ -177,7 +177,8 @@ endif
 	$(Q)cp \!NetSurf/Resources/internal.css,f79 $(ATARI_TARGET_DIR)res/internal.css
 	$(Q)cp \!NetSurf/Resources/SearchEngines $(ATARI_TARGET_DIR)res/search
 	$(Q)cp \!NetSurf/Resources/ca-bundle $(ATARI_TARGET_DIR)res/cabundle
-	$(Q)$(SPLIT_MESSAGES) -l en -p atari -f messages resources/FatMessages > $(ATARI_TARGET_DIR)res/messages
+	$(Q)$(RM) $(ATARI_TARGET_DIR)res/messages
+	$(Q)$(SPLIT_MESSAGES) -l en -p atari -f messages -o $(ATARI_TARGET_DIR)res/messages resources/FatMessages
 	$(Q)cp \!NetSurf/Resources/en/welcome.html,faf $(ATARI_TARGET_DIR)res/welcome.html
 	$(Q)cp \!NetSurf/Resources/en/maps.html,faf $(ATARI_TARGET_DIR)res/maps.html
 	$(Q)cp \!NetSurf/Resources/en/licence.html,faf $(ATARI_TARGET_DIR)res/licence.html

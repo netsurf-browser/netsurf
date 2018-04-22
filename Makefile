@@ -651,16 +651,12 @@ S_COMMON := \
 # Message splitting rule generation macro
 # 1 = Language
 define split_messages
-.INTERMEDIATE:$$(MESSAGES_TARGET)/$(1)/Messages.tmp
 
-$$(MESSAGES_TARGET)/$(1)/Messages.tmp: resources/FatMessages
+$$(MESSAGES_TARGET)/$(1)/Messages: resources/FatMessages
 	$$(VQ)echo "MSGSPLIT: Language: $(1) Filter: $$(MESSAGES_FILTER)"
 	$$(Q)$$(MKDIR) -p $$(MESSAGES_TARGET)/$(1)
-	$$(Q)$$(SPLIT_MESSAGES) -l $(1) -p $$(MESSAGES_FILTER) -f messages -o $$@ $$<
-
-$$(MESSAGES_TARGET)/$(1)/Messages: $$(MESSAGES_TARGET)/$(1)/Messages.tmp
-	$$(VQ)echo "COMPRESS: $$@"
-	$$(Q)gzip -9n < $$< > $$@
+	$$(Q)$$(RM) $$@
+	$$(Q)$$(SPLIT_MESSAGES) -l $(1) -p $$(MESSAGES_FILTER) -f messages -o $$@ -z $$<
 
 CLEAN_MESSAGES += $$(MESSAGES_TARGET)/$(1)/Messages
 MESSAGES += $$(MESSAGES_TARGET)/$(1)/Messages
