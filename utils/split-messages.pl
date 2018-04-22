@@ -34,6 +34,8 @@ use strict;
 use Getopt::Long ();
 use Fcntl qw( O_CREAT O_EXCL O_WRONLY O_APPEND O_RDONLY O_WRONLY );
 
+use IO::Compress::Gzip;
+
 use constant GETOPT_OPTS => qw( auto_abbrev no_getopt_compat bundling );
 use constant GETOPT_SPEC =>
   qw( output|o=s
@@ -43,6 +45,7 @@ use constant GETOPT_SPEC =>
       plat|platform|p=s
       format|fmt|f=s
       warning|W=s
+      gzip|z
       help|h|? );
 
 # default option values:
@@ -214,7 +217,7 @@ sub input_stream ()
     return \*STDIN;
 }
 
-sub output_stream ()
+sub underlying_output_stream ()
 {
     if( $opt{output} )
     {
@@ -227,6 +230,18 @@ sub output_stream ()
     }
 
     return \*STDOUT;
+}
+
+sub output_stream ()
+{
+    my $ofh = underlying_output_stream();
+
+    if( $opt{gzip} )
+    {
+        $ofh = new IO::Compress::Gzip( $ofh, AutoClose => 1, -Level => 9 );
+    }
+
+    return $ofh;
 }
 
 sub formatter ()
