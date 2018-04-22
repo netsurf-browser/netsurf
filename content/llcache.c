@@ -109,6 +109,8 @@ typedef struct {
 
 	uint32_t retries_remaining;     /**< Number of times to retry on timeout */
 
+	bool hsts_in_use;		/**< Whether HSTS applies to this fetch */
+
 	bool tried_with_auth;		/**< Whether we've tried with auth */
 
 	bool tried_with_tls_downgrade;	/**< Whether we've tried TLS <= 1.0 */
@@ -904,11 +906,12 @@ static nserror llcache_object_refetch(llcache_object *object)
  * \param referer	  Referring URL, or NULL for none
  * \param post		  POST data, or NULL for GET
  * \param redirect_count  Number of redirects followed so far
+ * \param hsts_in_use     Whether HSTS applies to this fetch
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 static nserror llcache_object_fetch(llcache_object *object, uint32_t flags,
 		nsurl *referer, const llcache_post_data *post,
-		uint32_t redirect_count)
+		uint32_t redirect_count, bool hsts_in_use)
 {
 	nserror error;
 	nsurl *referer_clone = NULL;
@@ -930,6 +933,7 @@ static nserror llcache_object_fetch(llcache_object *object, uint32_t flags,
 	object->fetch.post = post_clone;
 	object->fetch.redirect_count = redirect_count;
 	object->fetch.retries_remaining = llcache->fetch_attempts;
+	object->fetch.hsts_in_use = hsts_in_use;
 
 	return llcache_object_refetch(object);
 }
@@ -1566,6 +1570,7 @@ llcache_object_fetch_persistent(llcache_object *object,
  * \param referer	  Referring URL, or NULL if none
  * \param post		  POST data, or NULL for a GET request
  * \param redirect_count  Number of redirects followed so far
+ * \param hsts_in_use     Whether HSTS applies to this fetch
  * \param result	  Pointer to location to receive retrieved object
  * \return NSERROR_OK on success, appropriate error otherwise
  */
@@ -1575,6 +1580,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
 				   nsurl *referer,
 				   const llcache_post_data *post,
 				   uint32_t redirect_count,
+				   bool hsts_in_use,
 				   llcache_object **result)
 {
 	nserror error;
@@ -1683,7 +1689,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
 
 			/* Attempt to kick-off fetch */
 			error = llcache_object_fetch(obj, flags, referer, post,
-						     redirect_count);
+						     redirect_count, hsts_in_use);
 			if (error != NSERROR_OK) {
 				newest->candidate_count--;
 				llcache_object_destroy(obj);
@@ -1715,7 +1721,8 @@ llcache_object_retrieve_from_cache(nsurl *url,
 	}
 
 	/* Attempt to kick-off fetch */
-	error = llcache_object_fetch(obj, flags, referer, post, redirect_count);
+	error = llcache_object_fetch(obj, flags, referer, post,
+			redirect_count, hsts_in_use);
 	if (error != NSERROR_OK) {
 		llcache_object_destroy(obj);
 		return error;
@@ -1737,6 +1744,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
  * \param referer	  Referring URL, or NULL if none
  * \param post		  POST data, or NULL for a GET request
  * \param redirect_count  Number of redirects followed so far
+ * \param hsts_in_use     Whether HSTS applies to this fetch
  * \param result	  Pointer to location to receive retrieved object
  * \return NSERROR_OK on success, appropriate error otherwise
  */
@@ -1746,6 +1754,7 @@ llcache_object_retrieve(nsurl *url,
 			nsurl *referer,
 			const llcache_post_data *post,
 			uint32_t redirect_count,
+			bool hsts_in_use,
 			llcache_object **result)
 {
 	nserror error;
@@ -1800,7 +1809,7 @@ llcache_object_retrieve(nsurl *url,
 
 		/* Attempt to kick-off fetch */
 		error = llcache_object_fetch(obj, flags, referer, post,
-				redirect_count);
+				redirect_count, hsts_in_use);
 		if (error != NSERROR_OK) {
 			llcache_object_destroy(obj);
 			nsurl_unref(defragmented_url);
@@ -1811,7 +1820,8 @@ llcache_object_retrieve(nsurl *url,
 		llcache_object_add_to_list(obj, &llcache->uncached_objects);
 	} else {
 		error = llcache_object_retrieve_from_cache(defragmented_url,
-				flags, referer, post, redirect_count, &obj);
+				flags, referer, post, redirect_count,
+				hsts_in_use, &obj);
 		if (error != NSERROR_OK) {
 			nsurl_unref(defragmented_url);
 			return error;
@@ -2054,7 +2064,8 @@ static nserror llcache_fetch_redirect(llcache_object *object,
 	/* Attempt to fetch target URL */
 	error = llcache_object_retrieve(hsts_url, object->fetch.flags,
 			object->fetch.referer, post,
-			object->fetch.redirect_count + 1, &dest);
+			object->fetch.redirect_count + 1,
+			hsts_in_use, &dest);
 
 	/* No longer require url */
 	nsurl_unref(hsts_url);
@@ -2348,7 +2359,8 @@ static nserror llcache_fetch_cert_error(llcache_object *object,
 	/* Consider the TLS transport tainted */
 	object->fetch.tainted_tls = true;
 
-	if (llcache->query_cb != NULL) {
+	/* Only give the user a chance if HSTS isn't in use for this fetch */
+	if (object->fetch.hsts_in_use == false && llcache->query_cb != NULL) {
 		llcache_query query;
 
 		/* Emit query for TLS */
@@ -2401,7 +2413,10 @@ static nserror llcache_fetch_ssl_error(llcache_object *object)
 	/* Consider the TLS transport tainted */
 	object->fetch.tainted_tls = true;
 
-	if (object->fetch.tried_with_tls_downgrade == true) {
+	/* Make no attempt to downgrade if HSTS is in use
+	 * (i.e. assume server does TLS properly) */
+	if (object->fetch.hsts_in_use ||
+			object->fetch.tried_with_tls_downgrade) {
 		/* Have already tried to downgrade, so give up */
 		llcache_event event;
 
@@ -3607,7 +3622,8 @@ nserror llcache_handle_retrieve(nsurl *url, uint32_t flags,
 
 	/* Retrieve a suitable object from the cache,
 	 * creating a new one if needed. */
-	error = llcache_object_retrieve(hsts_url, flags, referer, post, 0, &object);
+	error = llcache_object_retrieve(hsts_url, flags, referer, post, 0,
+			hsts_in_use, &object);
 	if (error != NSERROR_OK) {
 		llcache_object_user_destroy(user);
 		nsurl_unref(hsts_url);
