@@ -25,11 +25,13 @@
  */
 
 #include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <check.h>
 
+#include "utils/errors.h"
 #include "utils/hashtable.h"
 
 /* Limit for hash table tests which use /usr/share/dict/words */
