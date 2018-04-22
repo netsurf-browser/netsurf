@@ -129,6 +129,7 @@ static struct nsgtk_resource_s direct_resource[] = {
 	RES_ENTRY("icons/hotlist-rmv.png"),
 	RES_ENTRY("icons/search.png"),
 	RES_ENTRY("languages"),
+	RES_ENTRY("accelerators"),
 	RES_ENTRY("Messages"),
 	{ NULL, 0, NSGTK_RESOURCE_FILE, NULL },
 };
@@ -178,11 +179,12 @@ init_resource(char **respath, struct nsgtk_resource_s *resource)
 
 	langv = g_get_language_names();
 
+	/* look for resource under per language paths */
 	while (langv[langc] != NULL) {
+		/* allocate and fill a full resource name path buffer */
 		resnamelen = snprintf(NULL, 0,
 				      "/org/netsurf/%s/%s",
 				      langv[langc], resource->name);
-
 		resname = malloc(resnamelen + 1);
 		if (resname == NULL) {
 			return NSERROR_NOMEM;
@@ -191,6 +193,7 @@ init_resource(char **respath, struct nsgtk_resource_s *resource)
 			 "/org/netsurf/%s/%s",
 			 langv[langc], resource->name);
 
+		/* check if resource is present */
 		present = g_resources_get_info(resname,
 					       G_RESOURCE_LOOKUP_FLAGS_NONE,
 					       NULL, NULL, NULL);
@@ -208,8 +211,9 @@ init_resource(char **respath, struct nsgtk_resource_s *resource)
 
 		langc++;
 	}
-	resnamelen = snprintf(NULL, 0, "/org/netsurf/%s", resource->name);
 
+	/* allocate and fill a full resource name path buffer with no language*/
+	resnamelen = snprintf(NULL, 0, "/org/netsurf/%s", resource->name);
 	resname = malloc(resnamelen + 1);
 	if (resname == NULL) {
 		return NSERROR_NOMEM;
@@ -232,20 +236,22 @@ init_resource(char **respath, struct nsgtk_resource_s *resource)
 
 #endif
 
+	/* look for file on disc */
 	resname = filepath_find(respath, resource->name);
-	if (resname == NULL) {
+	if (resname != NULL) {
+		/* found an entry on the path */
+		resource->path = resname;
+		resource->type = NSGTK_RESOURCE_FILE;
+
 		NSLOG(netsurf, INFO,
-		      "Unable to find resource %s on resource path",
-		      resource->name);
-		return NSERROR_NOT_FOUND;
+		      "Found file resource path %s", resource->path);
+		return NSERROR_OK;
 	}
 
-	/* found an entry on the path */
-	resource->path = resname;
-	resource->type = NSGTK_RESOURCE_FILE;
+	NSLOG(netsurf, INFO, "Unable to find resource %s on resource path",
+	      resource->name);
 
-	NSLOG(netsurf, INFO, "Found file resource path %s", resource->path);
-	return NSERROR_OK;
+	return NSERROR_NOT_FOUND;
 }
 
 /**
@@ -381,7 +387,7 @@ find_resource_from_name(const char *resname, struct nsgtk_resource_s *resource)
 
 #ifdef SHOW_GRESOURCE
 /**
- * Debug dump of all resources compile din via GResource.
+ * Debug dump of all resources compiled in via GResource.
  */
 static void list_gresource(void)
 {

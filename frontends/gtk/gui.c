@@ -72,6 +72,7 @@
 #include "gtk/resources.h"
 #include "gtk/login.h"
 #include "gtk/layout_pango.h"
+#include "gtk/accelerator.h"
 
 bool nsgtk_complete = false;
 
@@ -227,7 +228,11 @@ static nserror set_defaults(struct nsoption_s *defaults)
 
 
 /**
- * Initialize GTK interface.
+ * Initialize GTK specific parts of the browser.
+ *
+ * \param argc The number of arguments on the command line
+ * \param argv A string vector of command line arguments.
+ * \respath A string vector of the path elements of resources 
  */
 static nserror nsgtk_init(int argc, char** argv, char **respath)
 {
@@ -235,20 +240,29 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	char *resource_filename;
 	char *addr = NULL;
 	nsurl *url;
-	nserror error;
+	nserror res;
 
-	error = nsgtk_builder_new_from_resname("warning", &warning_builder);
-	if (error != NSERROR_OK) {
+	/* Initialise gtk accelerator table */
+	res = nsgtk_accelerator_init(respaths);
+	if (res != NSERROR_OK) {
+		NSLOG(netsurf, INFO,
+		      "Unable to load gtk accelerator configuration");
+		/* not fatal if this does not load */
+	}
+
+	/* initialise warning dialog */
+	res = nsgtk_builder_new_from_resname("warning", &warning_builder);
+	if (res != NSERROR_OK) {
 		NSLOG(netsurf, INFO, "Unable to initialise warning dialog");
-		return error;
+		return res;
 	}
 
 	gtk_builder_connect_signals(warning_builder, NULL);
 
 	/* set default icon if its available */
-	error = nsgdk_pixbuf_new_from_resname("netsurf.xpm",
-					      &win_default_icon_pixbuf);
-	if (error == NSERROR_OK) {
+	res = nsgdk_pixbuf_new_from_resname("netsurf.xpm",
+					    &win_default_icon_pixbuf);
+	if (res == NSERROR_OK) {
 		NSLOG(netsurf, INFO, "Seting default window icon");
 		gtk_window_set_default_icon(win_default_icon_pixbuf);
 	}
@@ -263,25 +277,25 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	}
 
 	/* Default favicon */
-	error = nsgdk_pixbuf_new_from_resname("favicon.png", &favicon_pixbuf);
-	if (error != NSERROR_OK) {
+	res = nsgdk_pixbuf_new_from_resname("favicon.png", &favicon_pixbuf);
+	if (res != NSERROR_OK) {
 		favicon_pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB,
 						false, 8, 16, 16);
 	}
 
 	/* arrow down icon */
-	error = nsgdk_pixbuf_new_from_resname("arrow_down_8x32.png",
-					      &arrow_down_pixbuf);
-	if (error != NSERROR_OK) {
+	res = nsgdk_pixbuf_new_from_resname("arrow_down_8x32.png",
+					    &arrow_down_pixbuf);
+	if (res != NSERROR_OK) {
 		arrow_down_pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB,
 						   false, 8, 8, 32);
 	}
 
 	/* initialise throbber */
-	error = nsgtk_throbber_init();
-	if (error != NSERROR_OK) {
+	res = nsgtk_throbber_init();
+	if (res != NSERROR_OK) {
 		NSLOG(netsurf, INFO, "Unable to initialise throbber.");
-		return error;
+		return res;
 	}
 
 	/* Initialise completions - cannot fail */
@@ -302,13 +316,13 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	urldb_load(nsoption_charp(url_file));
 	urldb_load_cookies(nsoption_charp(cookie_file));
 	hotlist_init(nsoption_charp(hotlist_path),
-			nsoption_charp(hotlist_path));
+		     nsoption_charp(hotlist_path));
 
 	/* Initialise top level UI elements */
-	error = nsgtk_download_init();
-	if (error != NSERROR_OK) {
+	res = nsgtk_download_init();
+	if (res != NSERROR_OK) {
 		NSLOG(netsurf, INFO, "Unable to initialise download window.");
-		return error;
+		return res;
 	}
 
 	/* If there is a url specified on the command line use it */
@@ -338,19 +352,19 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	}
 
 	/* create an initial browser window */
-	error = nsurl_create(addr, &url);
-	if (error == NSERROR_OK) {
-		error = browser_window_create(BW_CREATE_HISTORY,
-					      url,
-					      NULL,
-					      NULL,
-					      NULL);
+	res = nsurl_create(addr, &url);
+	if (res == NSERROR_OK) {
+		res = browser_window_create(BW_CREATE_HISTORY,
+					    url,
+					    NULL,
+					    NULL,
+					    NULL);
 		nsurl_unref(url);
 	}
 
 	free(addr);
 
-	return error;
+	return res;
 }
 
 
@@ -1163,7 +1177,7 @@ int main(int argc, char** argv)
 		NSLOG(netsurf, INFO, "Unable to load translated messages");
 		/** \todo decide if message load faliure should be fatal */
 	}
-
+	
 	/* Locate the correct user cache directory path */
 	ret = get_cache_home(&cache_home);
 	if (ret == NSERROR_NOT_FOUND) {
@@ -1183,7 +1197,7 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	/* run the browser */
+	/* gtk specific initalisation and main run loop */
 	ret = nsgtk_init(argc, argv, respaths);
 	if (ret != NSERROR_OK) {
 		fprintf(stderr, "NetSurf gtk initialise failed (%s)\n",

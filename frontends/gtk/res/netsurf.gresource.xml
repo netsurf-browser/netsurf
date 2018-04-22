@@ -68,5 +68,6 @@
     <file>icons/hotlist-rmv.png</file>
     <file>icons/search.png</file>
     <file>languages</file>
+    <file>accelerators</file>
   </gresource>
 </gresources>

@@ -27,6 +27,7 @@
 #include "gtk/compat.h"
 #include "gtk/menu.h"
 #include "gtk/warn.h"
+#include "gtk/accelerator.h"
 
 /**
  * Adds image menu item to a menu.
@@ -34,28 +35,37 @@
  * \param menu the menu to add the item to
  * \param item_out a pointer to the item's location in the menu struct
  * \param message the menu item I18n lookup value
- * \param messageAccel the menu item accelerator I18n lookup value
  * \param group the 'global' in a gtk sense accelerator group
  * \return true if sucessful and \a item_out updated else false.
  */
 
-static bool nsgtk_menu_add_image_item(GtkMenu *menu,
-		GtkWidget **item_out, const char *message,
-		const char *messageAccel, GtkAccelGroup *group)
+static bool
+nsgtk_menu_add_image_item(GtkMenu *menu,
+			  GtkWidget **item_out,
+			  const char *message,
+			  GtkAccelGroup *group)
 {
 	unsigned int key;
 	GdkModifierType mod;
 	GtkWidget *item;
-
+	const char *accelerator_desc; /* accelerator key description */
+	
 	item = nsgtk_image_menu_item_new_with_mnemonic(messages_get(message));
 	if (item == NULL) {
 		return false;
 	}
-
-	gtk_accelerator_parse(messages_get(messageAccel), &key, &mod);
-	if (key > 0) {
-		gtk_widget_add_accelerator(item, "activate", group, key, mod,
-					   GTK_ACCEL_VISIBLE);
+	
+	accelerator_desc = nsgtk_accelerator_get_desc(message);
+	if (accelerator_desc != NULL) {
+		gtk_accelerator_parse(accelerator_desc, &key, &mod);
+		if (key > 0) {
+			gtk_widget_add_accelerator(item,
+						   "activate",
+						   group,
+						   key,
+						   mod,
+						   GTK_ACCEL_VISIBLE);
+		}
 	}
 	gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
 	gtk_widget_show(item);
@@ -73,8 +83,7 @@ static bool nsgtk_menu_add_image_item(GtkMenu *menu,
 	n->m##_menu = GTK_MENU(gtk_menu_new())
 
 #define IMAGE_ITEM(p, q, r, s, t)\
-	nsgtk_menu_add_image_item(s->p##_menu, &(s->q##_menuitem), #r,\
-			#r "Accel", t)
+	nsgtk_menu_add_image_item(s->p##_menu, &(s->q##_menuitem), #r, t)
 
 #define CHECK_ITEM(p, q, r, s)\
 	s->q##_menuitem = GTK_CHECK_MENU_ITEM(\
@@ -130,8 +139,8 @@ static bool nsgtk_menu_add_image_item(GtkMenu *menu,
 * creates an export submenu
 * \param group the 'global' in a gtk sense accelerator reference
 */
-
-static struct nsgtk_export_submenu *nsgtk_menu_export_submenu(GtkAccelGroup *group)
+static struct nsgtk_export_submenu *
+nsgtk_menu_export_submenu(GtkAccelGroup *group)
 {
 	struct nsgtk_export_submenu *ret = malloc(sizeof(struct
 			nsgtk_export_submenu));
@@ -157,8 +166,8 @@ static struct nsgtk_export_submenu *nsgtk_menu_export_submenu(GtkAccelGroup *gro
 * \param group the 'global' in a gtk sense accelerator reference
 */
 
-static struct nsgtk_scaleview_submenu *nsgtk_menu_scaleview_submenu(
-		GtkAccelGroup *group)
+static struct nsgtk_scaleview_submenu *
+nsgtk_menu_scaleview_submenu(GtkAccelGroup *group)
 {
 	struct nsgtk_scaleview_submenu *ret =
 			malloc(sizeof(struct nsgtk_scaleview_submenu));
@@ -185,7 +194,8 @@ static struct nsgtk_scaleview_submenu *nsgtk_menu_scaleview_submenu(
 
 static struct nsgtk_tabs_submenu *nsgtk_menu_tabs_submenu(GtkAccelGroup *group)
 {
-	struct nsgtk_tabs_submenu *ret = malloc(sizeof(struct nsgtk_tabs_submenu));
+	struct nsgtk_tabs_submenu *ret;
+	ret = malloc(sizeof(struct nsgtk_tabs_submenu));
 	if (ret == NULL) {
 		nsgtk_warning(messages_get("NoMemory"), 0);
 		return NULL;

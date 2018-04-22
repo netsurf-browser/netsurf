@@ -1814,51 +1814,26 @@ de.gtk.gtkNewTab:Neuer _Tab
 fr.gtk.gtkNewTab:Nouvel _Onglet
 it.gtk.gtkNewTab:Nuova _scheda
 nl.gtk.gtkNewTab:Nieuw _Tabblad
-en.gtk.gtkNewTabAccel:<ctrl>t
-de.gtk.gtkNewTabAccel:<ctrl>t
-fr.gtk.gtkNewTabAccel:<ctrl>t
-it.gtk.gtkNewTabAccel:<ctrl>t
-nl.gtk.gtkNewTabAccel:<ctrl>t
 en.gtk.gtkNewWindow:_New Window
 de.gtk.gtkNewWindow:_Neues Fenster
 fr.gtk.gtkNewWindow:_Nouvelle Fenêtre
 it.gtk.gtkNewWindow:_Nuova finestra
 nl.gtk.gtkNewWindow:_Nieuw venster
-en.gtk.gtkNewWindowAccel:<ctrl>n
-de.gtk.gtkNewWindowAccel:<ctrl>n
-fr.gtk.gtkNewWindowAccel:<ctrl>n
-it.gtk.gtkNewWindowAccel:<ctrl>n
-nl.gtk.gtkNewWindowAccel:<ctrl>n
 en.gtk.gtkOpenFile:_Open File
 de.gtk.gtkOpenFile:Datei öffnen
 fr.gtk.gtkOpenFile:_Ouvrir un fichier
 it.gtk.gtkOpenFile:_Apri file
 nl.gtk.gtkOpenFile:Bestand _openen
-en.gtk.gtkOpenFileAccel:<ctrl>o
-de.gtk.gtkOpenFileAccel:<ctrl>o
-fr.gtk.gtkOpenFileAccel:<ctrl>o
-it.gtk.gtkOpenFileAccel:<ctrl>o
-nl.gtk.gtkOpenFileAccel:<ctrl>o
 en.gtk.gtkCloseWindow:_Close Window
 de.gtk.gtkCloseWindow:Fenster schließen
 fr.gtk.gtkCloseWindow:_Fermer la fenêtre
 it.gtk.gtkCloseWindow:_Chiudi finestra
 nl.gtk.gtkCloseWindow:_Venster sluiten
-en.gtk.gtkCloseWindowAccel:<ctrl><shift>w
-de.gtk.gtkCloseWindowAccel:<ctrl><shift>w
-fr.gtk.gtkCloseWindowAccel:<ctrl><maj>w
-it.gtk.gtkCloseWindowAccel:<ctrl><shift>w
-nl.gtk.gtkCloseWindowAccel:<ctrl><shift>w
 en.gtk.gtkSavePage:Save Page…
 de.gtk.gtkSavePage:Seite speichern..
 fr.gtk.gtkSavePage:Enregistrer la Page...
 it.gtk.gtkSavePage:Salva pagina...
 nl.gtk.gtkSavePage:Pagina bewaren...
-en.gtk.gtkSavePageAccel:<ctrl>s
-de.gtk.gtkSavePageAccel:<ctrl>s
-fr.gtk.gtkSavePageAccel:<ctrl>s
-it.gtk.gtkSavePageAccel:<ctrl>s
-nl.gtk.gtkSavePageAccel:<ctrl>s
 en.gtk.gtkExport:Export
 de.gtk.gtkExport:Exportieren
 fr.gtk.gtkExport:Exporter
@@ -1889,62 +1864,32 @@ de.gtk.gtkPrintPreview:Druckvorschau...
 fr.gtk.gtkPrintPreview:Aperçu avant impression...
 it.gtk.gtkPrintPreview:Anteprima di stampa...
 nl.gtk.gtkPrintPreview:Afdruk_voorbeeld...
-en.gtk.gtkPrintPreviewAccel:<ctrl><shift>p
-de.gtk.gtkPrintPreviewAccel:<ctrl><shift>p
-fr.gtk.gtkPrintPreviewAccel:<ctrl><maj>p
-it.gtk.gtkPrintPreviewAccel:<ctrl><shift>p
-nl.gtk.gtkPrintPreviewAccel:<ctrl><shift>p
 en.gtk.gtkPrint:Print…
 de.gtk.gtkPrint:Drucken...
 fr.gtk.gtkPrint:Imprimer...
 it.gtk.gtkPrint:Stampa...
 nl.gtk.gtkPrint:Af_drukken...
-en.gtk.gtkPrintAccel:<ctrl>p
-de.gtk.gtkPrintAccel:<ctrl>p
-fr.gtk.gtkPrintAccel:<ctrl>p
-it.gtk.gtkPrintAccel:<ctrl>p
-nl.gtk.gtkPrintAccel:<ctrl>p
 en.gtk.gtkQuitMenu:_Quit
 de.gtk.gtkQuitMenu:Beenden
 fr.gtk.gtkQuitMenu:_Quitter
 it.gtk.gtkQuitMenu:_Esci
 nl.gtk.gtkQuitMenu:A_fsluiten
-en.gtk.gtkQuitMenuAccel:<ctrl>q
-de.gtk.gtkQuitMenuAccel:<ctrl>q
-fr.gtk.gtkQuitMenuAccel:<ctrl>q
-it.gtk.gtkQuitMenuAccel:<ctrl>q
-nl.gtk.gtkQuitMenuAccel:<ctrl>q
 
 en.gtk.gtkCut:Cu_t
 de.gtk.gtkCut:Ausschneiden
 fr.gtk.gtkCut:Cou_per
 it.gtk.gtkCut:Ta_glia
 nl.gtk.gtkCut:K_nippen
-en.gtk.gtkCutAccel:<ctrl>x
-de.gtk.gtkCutAccel:<ctrl>x
-fr.gtk.gtkCutAccel:<ctrl>x
-it.gtk.gtkCutAccel:<ctrl>x
-nl.gtk.gtkCutAccel:<ctrl>x
 en.gtk.gtkCopy:_Copy
 de.gtk.gtkCopy:Kopieren
 fr.gtk.gtkCopy:_Copier
 it.gtk.gtkCopy:_Copia
 nl.gtk.gtkCopy:_Kopiëren
-en.gtk.gtkCopyAccel:<ctrl>c
-de.gtk.gtkCopyAccel:<ctrl>c
-fr.gtk.gtkCopyAccel:<ctrl>c
-it.gtk.gtkCopyAccel:<ctrl>c
-nl.gtk.gtkCopyAccel:<ctrl>c
 en.gtk.gtkPaste:_Paste
 de.gtk.gtkPaste:Einfügen
 fr.gtk.gtkPaste:C_oller
 it.gtk.gtkPaste:_Incolla
 nl.gtk.gtkPaste:_Plakken
-en.gtk.gtkPasteAccel:<ctrl>v
-de.gtk.gtkPasteAccel:<ctrl>v
-fr.gtk.gtkPasteAccel:<ctrl>v
-it.gtk.gtkPasteAccel:<ctrl>v
-nl.gtk.gtkPasteAccel:<ctrl>v
 en.gtk.gtkDelete:_Delete
 de.gtk.gtkDelete:Löschen
 fr.gtk.gtkDelete:_Supprimer
@@ -1955,21 +1900,11 @@ de.gtk.gtkSelectAll:_Alles auswählen
 fr.gtk.gtkSelectAll:_Tout sélectionner
 it.gtk.gtkSelectAll:Seleziona _Tutto
 nl.gtk.gtkSelectAll:_Alles selecteren
-en.gtk.gtkSelectAllAccel:<ctrl>a
-de.gtk.gtkSelectAllAccel:<ctrl>a
-fr.gtk.gtkSelectAllAccel:<ctrl>a
-it.gtk.gtkSelectAllAccel:<ctrl>a
-nl.gtk.gtkSelectAllAccel:<ctrl>a
 en.gtk.gtkFind:_Find…
 de.gtk.gtkFind:_Finden..
 fr.gtk.gtkFind:_Rechercher...
 it.gtk.gtkFind:_Trova...
 nl.gtk.gtkFind:_Zoeken...
-en.gtk.gtkFindAccel:<ctrl>f
-de.gtk.gtkFindAccel:<ctrl>f
-fr.gtk.gtkFindAccel:<ctrl>f
-it.gtk.gtkFindAccel:<ctrl>f
-nl.gtk.gtkFindAccel:<ctrl>f
 en.gtk.gtkPreferences:P_references
 de.gtk.gtkPreferences:Einstellungen
 fr.gtk.gtkPreferences:P_références
@@ -1981,21 +1916,11 @@ de.gtk.gtkStop:_Stop
 fr.gtk.gtkStop:_Arrêter
 it.gtk.gtkStop:_Stoppa
 nl.gtk.gtkStop:_Stoppen
-en.gtk.gtkStopAccel:Escape
-de.gtk.gtkStopAccel:Escape
-fr.gtk.gtkStopAccel:Échap
-it.gtk.gtkStopAccel:Escape
-nl.gtk.gtkStopAccel:Escape
 en.gtk.gtkReload:_Reload
 de.gtk.gtkReload:Neu laden
 fr.gtk.gtkReload:_Actualiser
 it.gtk.gtkReload:_Ricarica
 nl.gtk.gtkReload:Ver_nieuwen
-en.gtk.gtkReloadAccel:F5
-de.gtk.gtkReloadAccel:F5
-fr.gtk.gtkReloadAccel:F5
-it.gtk.gtkReloadAccel:F5
-nl.gtk.gtkReloadAccel:F5
 en.gtk.gtkScaleView:_Scale View
 de.gtk.gtkScaleView:Ansicht skalieren
 fr.gtk.gtkScaleView:_Zoom
@@ -2006,51 +1931,26 @@ de.gtk.gtkZoomPlus:Here_inzoomen
 fr.gtk.gtkZoomPlus:Zoom _avant
 it.gtk.gtkZoomPlus:_Incrementa zoom
 nl.gtk.gtkZoomPlus:_Inzoomen
-en.gtk.gtkZoomPlusAccel:<ctrl>plus
-de.gtk.gtkZoomPlusAccel:<ctrl>plus
-fr.gtk.gtkZoomPlusAccel:<ctrl>+
-it.gtk.gtkZoomPlusAccel:<ctrl>più
-nl.gtk.gtkZoomPlusAccel:<ctrl>plus
 en.gtk.gtkZoomMinus:Zoom _out
 de.gtk.gtkZoomMinus:Herausz_oomen
 fr.gtk.gtkZoomMinus:Z_oom arrière
 it.gtk.gtkZoomMinus:_Diminuisci zoom
 nl.gtk.gtkZoomMinus:_Uitzoomen
-en.gtk.gtkZoomMinusAccel:<ctrl>minus
-de.gtk.gtkZoomMinusAccel:<ctrl>minus
-fr.gtk.gtkZoomMinusAccel:<ctrl>-
-it.gtk.gtkZoomMinusAccel:<ctrl>meno
-nl.gtk.gtkZoomMinusAccel:<ctrl>minus
 en.gtk.gtkZoomNormal:_Normal size
 de.gtk.gtkZoomNormal:_Normalgröße
 fr.gtk.gtkZoomNormal:_Taille Normale
 it.gtk.gtkZoomNormal:Dimensione _normale
 nl.gtk.gtkZoomNormal:_Originele grootte
-en.gtk.gtkZoomNormalAccel:<ctrl>0
-de.gtk.gtkZoomNormalAccel:<ctrl>0
-fr.gtk.gtkZoomNormalAccel:<ctrl>0
-it.gtk.gtkZoomNormalAccel:<ctrl>0
-nl.gtk.gtkZoomNormalAccel:<ctrl>0
 en.gtk.gtkFullScreen:_Fullscreen
 de.gtk.gtkFullScreen:_Vollbild
 fr.gtk.gtkFullScreen:_Plein écran
 it.gtk.gtkFullScreen:_Tutto schermo
 nl.gtk.gtkFullScreen:_Volledig scherm
-en.gtk.gtkFullScreenAccel:F11
-de.gtk.gtkFullScreenAccel:F11
-fr.gtk.gtkFullScreenAccel:F11
-it.gtk.gtkFullScreenAccel:F11
-nl.gtk.gtkFullScreenAccel:F11
 en.gtk.gtkPageSource:Page S_ource
 de.gtk.gtkPageSource: Q_uelltext anzeigen
 fr.gtk.gtkPageSource:Code s_ource de la page
 it.gtk.gtkPageSource:Mostra s_orgente
 nl.gtk.gtkPageSource:Pagina_bron
-en.gtk.gtkPageSourceAccel:<ctrl>U
-de.gtk.gtkPageSourceAccel:<ctrl>U
-fr.gtk.gtkPageSourceAccel:<ctrl>U
-it.gtk.gtkPageSourceAccel:<ctrl>U
-nl.gtk.gtkPageSourceAccel:<ctrl>U
 en.gtk.gtkImages:_Images
 de.gtk.gtkImages:B_ilder
 fr.gtk.gtkImages:_Images
@@ -2096,11 +1996,6 @@ de.gtk.gtkDownloads:_Downloads...
 fr.gtk.gtkDownloads:_Téléchargements...
 it.gtk.gtkDownloads:_Trasferimenti...
 nl.gtk.gtkDownloads:_Downloads...
-en.gtk.gtkDownloadsAccel:<ctrl>j
-de.gtk.gtkDownloadsAccel:<ctrl>j
-fr.gtk.gtkDownloadsAccel:<ctrl>j
-it.gtk.gtkDownloadsAccel:<ctrl>j
-nl.gtk.gtkDownloadsAccel:<ctrl>j
 en.gtk.gtkSaveWindowSize:S_ave Window Size
 de.gtk.gtkSaveWindowSize:Fenstergröße _speichern
 fr.gtk.gtkSaveWindowSize:E_nregistrer la taille de la fenêtre
@@ -2132,122 +2027,62 @@ de.gtk.gtkBack:_Zurück
 fr.gtk.gtkBack:_Précédent
 it.gtk.gtkBack:_Indietro
 nl.gtk.gtkBack:_Terug
-en.gtk.gtkBackAccel:<alt>Left
-de.gtk.gtkBackAccel:<alt>Left
-fr.gtk.gtkBackAccel:<alt>Gauche
-it.gtk.gtkBackAccel:<alt>Sinistra
-nl.gtk.gtkBackAccel:<alt>Linkerpijltoets
 en.gtk.gtkForward:_Forward
 de.gtk.gtkForward:_Vorwärts
 fr.gtk.gtkForward:_Suivant
 it.gtk.gtkForward:_Avanti
 nl.gtk.gtkForward:_Vooruit
-en.gtk.gtkForwardAccel:<alt>Right
-de.gtk.gtkForwardAccel:<alt>Right
-fr.gtk.gtkForwardAccel:<alt>Droit
-it.gtk.gtkForwardAccel:<alt>Destra
-nl.gtk.gtkForwardAccel:<alt>Rechterpijltoets
 en.gtk.gtkHome:_Home
 de.gtk.gtkHome:_Startseite
 fr.gtk.gtkHome:_Accueil
 it.gtk.gtkHome:_Home
 nl.gtk.gtkHome:_Beginpagina
-en.gtk.gtkHomeAccel:<alt>Down
-de.gtk.gtkHomeAccel:<alt>Down
-fr.gtk.gtkHomeAccel:<alt>Bas
-it.gtk.gtkHomeAccel:<alt>Giù
-nl.gtk.gtkHomeAccel:<alt>Pijl omlaag
 en.gtk.gtkLocalHistory:_Local History…
 de.gtk.gtkLocalHistory:_Lokaler Verlauf
 fr.gtk.gtkLocalHistory:Historique _local
 it.gtk.gtkLocalHistory:Cronologia _locale
 nl.gtk.gtkLocalHistory:Vensterge_schiedenis
-en.gtk.gtkLocalHistoryAccel:<ctrl>h
-de.gtk.gtkLocalHistoryAccel:<ctrl>h
-fr.gtk.gtkLocalHistoryAccel:<ctrl>h
-it.gtk.gtkLocalHistoryAccel:<ctrl>h
-nl.gtk.gtkLocalHistoryAccel:<ctrl>h
 en.gtk.gtkGlobalHistory:_Global History…
 de.gtk.gtkGlobalHistory:_Globaler Verlauf
 fr.gtk.gtkGlobalHistory:Historique _global
 it.gtk.gtkGlobalHistory:Cronologia _globale
 nl.gtk.gtkGlobalHistory:Browser_geschiedenis
-en.gtk.gtkGlobalHistoryAccel:<ctrl><shift>h
-de.gtk.gtkGlobalHistoryAccel:<ctrl><shift>h
-fr.gtk.gtkGlobalHistoryAccel:<ctrl><maj>h
-it.gtk.gtkGlobalHistoryAccel:<ctrl><shift>h
-nl.gtk.gtkGlobalHistoryAccel:<ctrl><shift>h
 en.gtk.gtkAddBookMarks:_Add to Bookmarks…
 de.gtk.gtkAddBookMarks:_Lesezeichen hinzufügen..
 fr.gtk.gtkAddBookMarks:_Ajouter un marque-page..
 it.gtk.gtkAddBookMarks:_Aggiungi ai segnalibri...
 nl.gtk.gtkAddBookMarks:_Aan bladwijzers toevoegen...
-en.gtk.gtkAddBookMarksAccel:<ctrl>d
-de.gtk.gtkAddBookMarksAccel:<ctrl>d
-fr.gtk.gtkAddBookMarksAccel:<ctrl>d
-it.gtk.gtkAddBookMarksAccel:<ctrl>d
-nl.gtk.gtkAddBookMarksAccel:<ctrl>d
 en.gtk.gtkShowBookMarks:_Show Bookmarks…
 de.gtk.gtkShowBookMarks:Le_sezeichen anzeigen..
 fr.gtk.gtkShowBookMarks:_Montrer les marques-pages...
 it.gtk.gtkShowBookMarks:_Mostra segnalibri...
 nl.gtk.gtkShowBookMarks:Bladwijzers _beheren...
-en.gtk.gtkShowBookMarksAccel:F6
-de.gtk.gtkShowBookMarksAccel:F6
-fr.gtk.gtkShowBookMarksAccel:F6
-it.gtk.gtkShowBookMarksAccel:F6
-nl.gtk.gtkShowBookMarksAccel:F6
 en.gtk.gtkShowCookies:Show _Cookies…
 de.gtk.gtkShowCookies:Zeige _Cookies…
 fr.gtk.gtkShowCookies:Afficher _cookies...
 it.gtk.gtkShowCookies:Mostra _cookie...
 nl.gtk.gtkShowCookies:_Cookies beheren...
-en.gtk.gtkShowCookiesAccel:F9
-de.gtk.gtkShowCookiesAccel:F9
-fr.gtk.gtkShowCookiesAccel:F9
-it.gtk.gtkShowCookiesAccel:F9
-nl.gtk.gtkShowCookiesAccel:F9
 en.gtk.gtkOpenLocation:_Open Location…
 de.gtk.gtkOpenLocation:_Ort öffnen..
 fr.gtk.gtkOpenLocation:_Ouvrir un site..
 it.gtk.gtkOpenLocation:_Apri indirizzo...
 nl.gtk.gtkOpenLocation:Locatie _openen..
-en.gtk.gtkOpenLocationAccel:<ctrl>l
-de.gtk.gtkOpenLocationAccel:<ctrl>l
-fr.gtk.gtkOpenLocationAccel:<ctrl>l
-it.gtk.gtkOpenLocationAccel:<ctrl>l
-nl.gtk.gtkOpenLocationAccel:<ctrl>l
 
 en.gtk.gtkNextTab:_Next tab
 de.gtk.gtkNextTab:_Nächster Tab
 fr.gtk.gtkNextTab:O_nglet suivant
 it.gtk.gtkNextTab:Scheda _successiva
 nl.gtk.gtkNextTab:Vol_gende tabblad
-en.gtk.gtkNextTabAccel:<ctrl>Right
-de.gtk.gtkNextTabAccel:<ctrl>Right
-fr.gtk.gtkNextTabAccel:<ctrl>Droit
-it.gtk.gtkNextTabAccel:<ctrl>Destra
-nl.gtk.gtkNextTabAccel:<ctrl>Rechterpijltoets
 en.gtk.gtkPrevTab:_Previous tab
 de.gtk.gtkPrevTab:_Vorheriger Tab
 fr.gtk.gtkPrevTab:Onglet _précédent
 it.gtk.gtkPrevTab:Scheda _precedente
 nl.gtk.gtkPrevTab:Vo_rige tabblad
-en.gtk.gtkPrevTabAccel:<ctrl>Left
-de.gtk.gtkPrevTabAccel:<ctrl>Left
-fr.gtk.gtkPrevTabAccel:<ctrl>Gauche
-it.gtk.gtkPrevTabAccel:<ctrl>Sinistra
-nl.gtk.gtkPrevTabAccel:<ctrl>Linkerpijltoets
 en.gtk.gtkCloseTab:_Close tab
 de.gtk.gtkCloseTab:Tab s_chliessen
 fr.gtk.gtkCloseTab:_Fermer l'onglet
 it.gtk.gtkCloseTab:_Chiudi scheda
 nl.gtk.gtkCloseTab:Tabblad _sluiten
-en.gtk.gtkCloseTabAccel:<ctrl>w
-de.gtk.gtkCloseTabAccel:<ctrl>w
-fr.gtk.gtkCloseTabAccel:<ctrl>w
-it.gtk.gtkCloseTabAccel:<ctrl>w
-nl.gtk.gtkCloseTabAccel:<ctrl>w
 
 en.gtk.gtkContents:_Contents…
 de.gtk.gtkContents:_Inhalt
