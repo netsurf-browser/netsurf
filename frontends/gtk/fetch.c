@@ -30,6 +30,7 @@
  * ASCII hence not using locale dependant ctype functions for parsing.
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -39,8 +40,8 @@
 #include <strings.h>
 #include <gtk/gtk.h>
 
-#include "utils/hashtable.h"
 #include "utils/log.h"
+#include "utils/hashtable.h"
 #include "utils/filepath.h"
 #include "utils/file.h"
 #include "utils/nsurl.h"

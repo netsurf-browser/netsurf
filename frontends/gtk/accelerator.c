@@ -25,36 +25,55 @@
 #include <stdint.h>
 #include <gtk/gtk.h>
 
+#include "utils/log.h"
 #include "utils/errors.h"
 #include "utils/hashtable.h"
 
 #include "gtk/resources.h"
 #include "gtk/accelerator.h"
 
+/** acclelerators are stored in a fixed-size hash table. */
+#define HASH_SIZE 53
+
 /** The hash table used to store the accelerators */
 static struct hash_table *accelerators_hash = NULL;
 
 nserror nsgtk_accelerator_init(char **respaths)
 {
-	nserror ret;
+	nserror res;
 	const uint8_t *data;
 	size_t data_size;
 
-	ret = nsgtk_data_from_resname("accelerators", &data, &data_size);
-	if (ret == NSERROR_OK) {
-		//ret = hashtable_add_from_inline(data, data_size);
+	if (accelerators_hash == NULL) {
+		accelerators_hash = hash_create(HASH_SIZE);
+	}
+	if (accelerators_hash == NULL) {
+		NSLOG(netsurf, INFO, "Unable to create hash table");
+		return NSERROR_NOMEM;
+	}
+
+	res = nsgtk_data_from_resname("accelerators", &data, &data_size);
+	if (res == NSERROR_OK) {
+		res = hash_add_inline(accelerators_hash, data, data_size);
 	} else {
-		const char *accelerators;
+		const char *accelerators_path;
 		/* Obtain path to accelerators */
-		ret = nsgtk_path_from_resname("accelerators", &accelerators);
-		if (ret == NSERROR_OK) {
-			//ret = hashtable_add_from_file(messages);
+		res = nsgtk_path_from_resname("accelerators",
+					      &accelerators_path);
+		if (res == NSERROR_OK) {
+			res = hash_add_file(accelerators_hash,
+					    accelerators_path);
 		}
 	}
-	return ret;
+
+	return res;
 }
 
 const char *nsgtk_accelerator_get_desc(const char *key)
 {
-	return NULL;
+	if ((key == NULL) ||
+	    (accelerators_hash == NULL)) {
+		return NULL;
+	}
+	return hash_get(accelerators_hash, key);
 }
