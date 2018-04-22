@@ -25,6 +25,8 @@ nsurl_SRCS := $(NSURL_SOURCES) utils/corestrings.c test/log.c test/nsurl.c
 urldbtest_SRCS := $(NSURL_SOURCES) \
 	utils/bloom.c utils/nsoption.c utils/corestrings.c utils/time.c	\
 	utils/hashtable.c utils/messages.c utils/utils.c \
+	utils/http/primitives.c utils/http/generics.c \
+	utils/http/strict-transport-security.c \
 	content/urldb.c \
 	test/log.c test/urldbtest.c
 
