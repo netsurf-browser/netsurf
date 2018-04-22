@@ -134,7 +134,7 @@ $(2) $(3): $(1) $(TOOLROOT)/convert_font
 	$(VQ)echo "    FONT: $(1) ($(4))"
 	$(Q)$(TOOLROOT)/convert_font -H $(3) $(1) $(2)
 
-frontends/framebuffer/font_internal.c: $(3)
+frontends/framebuffer/font_internal.c: $(2)
 
 endef
 
