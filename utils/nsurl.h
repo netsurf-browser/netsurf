@@ -301,6 +301,25 @@ nserror nsurl_replace_query(const nsurl *url, const char *query,
 
 
 /**
+ * Create a NetSurf URL object, with scheme replaced
+ *
+ * \param url	  NetSurf URL to create new NetSurf URL from
+ * \param scheme  Scheme to use
+ * \param new_url Returns new NetSurf URL with scheme provided
+ * \return NSERROR_OK on success, appropriate error otherwise
+ *
+ * If return value != NSERROR_OK, nothing will be returned in new_url.
+ *
+ * It is up to the client to call nsurl_unref when they are finished with
+ * the created object.
+ *
+ * Any scheme component in url is replaced with scheme in new_url.
+ */
+nserror nsurl_replace_scheme(const nsurl *url, lwc_string *scheme,
+		nsurl **new_url);
+
+
+/**
  * Attempt to find a nice filename for a URL.
  *
  * \param url		A NetSurf URL object to create a filename from

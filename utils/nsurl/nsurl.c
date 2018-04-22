@@ -648,6 +648,93 @@ nserror nsurl_replace_query(const nsurl *url, const char *query,
 }
 
 
+/* exported interface, documented in nsurl.h */
+nserror nsurl_replace_scheme(const nsurl *url, lwc_string *scheme,
+		nsurl **new_url)
+{
+	int scheme_len;
+	int base_len;
+	char *pos;
+	size_t len;
+	bool match;
+
+	assert(url != NULL);
+	assert(scheme != NULL);
+
+	/* Get the length of the new scheme */
+	scheme_len = lwc_string_length(scheme);
+
+	/* Find the change in length from url to new_url */
+	base_len = url->length;
+	if (url->components.scheme != NULL) {
+		base_len -= lwc_string_length(url->components.scheme);
+	}
+
+	/* Set new_url's length */
+	len = base_len + scheme_len;
+
+	/* Create NetSurf URL object */
+	*new_url = malloc(sizeof(nsurl) + len + 1); /* Add 1 for \0 */
+	if (*new_url == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	(*new_url)->length = len;
+
+	/* Set string */
+	pos = (*new_url)->string;
+	memcpy(pos, lwc_string_data(scheme), scheme_len);
+	memcpy(pos + scheme_len,
+			url->string + url->length - base_len, base_len);
+	pos[len] = '\0';
+
+	/* Copy components */
+	(*new_url)->components.scheme = lwc_string_ref(scheme);
+	(*new_url)->components.username =
+			nsurl__component_copy(url->components.username);
+	(*new_url)->components.password =
+			nsurl__component_copy(url->components.password);
+	(*new_url)->components.host =
+			nsurl__component_copy(url->components.host);
+	(*new_url)->components.port =
+			nsurl__component_copy(url->components.port);
+	(*new_url)->components.path =
+			nsurl__component_copy(url->components.path);
+	(*new_url)->components.query =
+			nsurl__component_copy(url->components.query);
+	(*new_url)->components.fragment =
+			nsurl__component_copy(url->components.fragment);
+
+	/* Compute new scheme type */
+	if (lwc_string_caseless_isequal(scheme, corestring_lwc_http,
+			&match) == lwc_error_ok && match == true) {
+		(*new_url)->components.scheme_type = NSURL_SCHEME_HTTP;
+	} else if (lwc_string_caseless_isequal(scheme, corestring_lwc_https,
+			&match) == lwc_error_ok && match == true) {
+		(*new_url)->components.scheme_type = NSURL_SCHEME_HTTPS;
+	} else if (lwc_string_caseless_isequal(scheme, corestring_lwc_file,
+			&match) == lwc_error_ok && match == true) {
+		(*new_url)->components.scheme_type = NSURL_SCHEME_FILE;
+	} else if (lwc_string_caseless_isequal(scheme, corestring_lwc_ftp,
+			&match) == lwc_error_ok && match == true) {
+		(*new_url)->components.scheme_type = NSURL_SCHEME_FTP;
+	} else if (lwc_string_caseless_isequal(scheme, corestring_lwc_mailto,
+			&match) == lwc_error_ok && match == true) {
+		(*new_url)->components.scheme_type = NSURL_SCHEME_MAILTO;
+	} else {
+		(*new_url)->components.scheme_type = NSURL_SCHEME_OTHER;
+	}
+
+	/* Get the nsurl's hash */
+	nsurl__calc_hash(*new_url);
+
+	/* Give the URL a reference */
+	(*new_url)->count = 1;
+
+	return NSERROR_OK;
+}
+
+
 /* exported interface documented in utils/nsurl.h */
 nserror nsurl_nice(const nsurl *url, char **result, bool remove_extensions)
 {
