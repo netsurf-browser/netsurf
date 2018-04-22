@@ -45,66 +45,19 @@
 /** The hash table used to store the standard Messages file for the old API */
 static struct hash_table *messages_hash = NULL;
 
-/**
- * process a line of input.
- */
-static nserror
-message_process_line(struct hash_table *hash, uint8_t *ln, int lnlen)
-{
-	uint8_t *value;
-	uint8_t *colon;
-
-	/* empty or comment lines */
-	if (ln[0] == 0 || ln[0] == '#') {
-		return NSERROR_OK;
-	}
-
-	/* find first colon as key/value separator */
-	for (colon = ln; colon < (ln + lnlen); colon++) {
-		if (*colon == ':') {
-			break;
-		}
-	}
-	if (colon == (ln + lnlen)) {
-		/* no colon found */
-		return NSERROR_INVALID;
-	}
-
-	*colon = 0;  /* terminate key */
-	value = colon + 1;
-
-	if (hash_add(hash, (char *)ln, (char *)value) == false) {
-		NSLOG(netsurf, INFO, "Unable to add %s:%s to hash table", ln,
-		      value);
-		return NSERROR_INVALID;
-	}
-	return NSERROR_OK;
-}
 
 /**
  * Read keys and values from messages file.
  *
  * \param  path  pathname of messages file
- * \param  ctx   reference of hash table to merge with.
+ * \param  ctx   reference of hash table to merge with or NULL to create one.
  * \return NSERROR_OK on sucess and ctx updated or error code on faliure.
  */
 static nserror messages_load_ctx(const char *path, struct hash_table **ctx)
 {
-	char s[400]; /* line buffer */
-	gzFile fp; /* compressed file handle */
 	struct hash_table *nctx; /* new context */
-
-	assert(path != NULL);
-
-	fp = gzopen(path, "r");
-	if (!fp) {
-		NSLOG(netsurf, INFO,
-		      "Unable to open messages file \"%.100s\": %s", path,
-		      strerror(errno));
-
-		return NSERROR_NOT_FOUND;
-	}
-
+	nserror res;
+	
 	if (*ctx == NULL) {
 		nctx = hash_create(HASH_SIZE);
 	} else {
@@ -118,40 +71,16 @@ static nserror messages_load_ctx(const char *path, struct hash_table **ctx)
 		NSLOG(netsurf, INFO,
 		      "Unable to create hash table for messages file %s",
 		      path);
-		gzclose(fp);
 		return NSERROR_NOMEM;
 	}
 
-	while (gzgets(fp, s, sizeof s)) {
-		char *colon, *value;
 
-		if (s[0] == 0 || s[0] == '#')
-			continue;
-
-		s[strlen(s) - 1] = 0;  /* remove \n at end */
-		colon = strchr(s, ':');
-		if (!colon)
-			continue;
-		*colon = 0;  /* terminate key */
-		value = colon + 1;
-
-		if (hash_add(nctx, s, value) == false) {
-			NSLOG(netsurf, INFO,
-			      "Unable to add %s:%s to hash table of %s", s,
-			      value, path);
-			gzclose(fp);
-			if (*ctx == NULL) {
-				hash_destroy(nctx);
-			}
-			return NSERROR_INVALID;
-		}
+	res = hash_add_file(nctx, path);
+	if (res == NSERROR_OK) {
+		*ctx = nctx;
 	}
 
-	gzclose(fp);
-
-	*ctx = nctx;
-
-	return NSERROR_OK;
+	return res;
 }
 
 
@@ -203,30 +132,19 @@ static void messages_destroy_ctx(struct hash_table *ctx)
 /* exported interface documented in messages.h */
 nserror messages_add_from_file(const char *path)
 {
-	nserror err;
-
 	if (path == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
 
 	NSLOG(netsurf, INFO, "Loading Messages from '%s'", path);
 
-	err = messages_load_ctx(path, &messages_hash);
-
-
-	return err;
+	return messages_load_ctx(path, &messages_hash);
 }
 
 
 /* exported interface documented in messages.h */
-nserror messages_add_from_inline(const uint8_t *data, size_t data_size)
+nserror messages_add_from_inline(const uint8_t *data, size_t size)
 {
-	z_stream strm;
-	int ret;
-	uint8_t s[512]; /* line buffer */
-	size_t used = 0; /* number of bytes in buffer in use */
-	uint8_t *nl;
-
 	/* ensure the hash table is initialised */
 	if (messages_hash == NULL) {
 		messages_hash = hash_create(HASH_SIZE);
@@ -235,61 +153,7 @@ nserror messages_add_from_inline(const uint8_t *data, size_t data_size)
 		NSLOG(netsurf, INFO, "Unable to create hash table");
 		return NSERROR_NOMEM;
 	}
-
-	strm.zalloc = Z_NULL;
-	strm.zfree = Z_NULL;
-	strm.opaque = Z_NULL;
-
-	strm.next_in = (uint8_t *)data;
-	strm.avail_in = data_size;
-
-	ret = inflateInit2(&strm, 32 + MAX_WBITS);
-	if (ret != Z_OK) {
-		NSLOG(netsurf, INFO, "inflateInit returned %d", ret);
-		return NSERROR_INVALID;
-	}
-
-	do {
-		strm.next_out = s + used;
-		strm.avail_out = sizeof(s) - used;
-
-		ret = inflate(&strm, Z_NO_FLUSH);
-		if ((ret != Z_OK) && (ret != Z_STREAM_END)) {
-			break;
-		}
-
-		used = sizeof(s) - strm.avail_out;
-		while (used > 0) {
-			/* find nl */
-			for (nl = &s[0]; nl < &s[used]; nl++) {
-				if (*nl == '\n') {
-					break;
-				}
-			}
-			if (nl == &s[used]) {
-				/* no nl found */
-				break;
-			}
-			/* found newline */
-			*nl = 0; /* null terminate line */
-			message_process_line(messages_hash, &s[0], nl - &s[0]);
-			memmove(&s[0], nl + 1, used - ((nl + 1) - &s[0]) );
-			used -= ((nl +1) - &s[0]);
-		}
-		if (used == sizeof(s)) {
-			/* entire buffer used and no newline */
-			NSLOG(netsurf, INFO, "Overlength line");
-			used = 0;
-		}
-	} while (ret != Z_STREAM_END);
-
-	inflateEnd(&strm);
-
-	if (ret != Z_STREAM_END) {
-		NSLOG(netsurf, INFO, "inflate returned %d", ret);
-		return NSERROR_INVALID;
-	}
-	return NSERROR_OK;
+	return hash_add_inline(messages_hash, data, size);
 }
 
 /* exported interface documented in messages.h */

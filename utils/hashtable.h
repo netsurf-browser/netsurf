@@ -29,8 +29,11 @@
 struct hash_table;
 
 /**
- * Create a new hash table, and return a context for it.  The memory consumption
- * of a hash table is approximately 8 + (nchains * 12) bytes if it is empty.
+ * Create a new hash table
+ *
+ * Allocate a new hash table and return a context for it.  The memory
+ * consumption of a hash table is approximately 8 + (nchains * 12)
+ * bytes if it is empty.
  *
  * \param chains Number of chains/buckets this hash table will have.  This
  *		  should be a prime number, and ideally a prime number just
@@ -41,18 +44,22 @@ struct hash_table;
 struct hash_table *hash_create(unsigned int chains);
 
 /**
- * Destroys a hash table, freeing all memory associated with it.
+ * Destroys a hash table
+ *
+ * Destroy a hash table freeing all memory associated with it.
  *
  * \param ht Hash table to destroy. After the function returns, this
- *            will nolonger be valid.
+ *             will no longer be valid.
  */
 void hash_destroy(struct hash_table *ht);
 
 /**
- * Adds a key/value pair to a hash table.  If the key you're adding is already
- * in the hash table, it does not replace it, but it does take precedent over
- * it.  The old key/value pair will be inaccessable but still in memory until
- * hash_destroy() is called on the hash table.
+ * Adds a key/value pair to a hash table.
+ *
+ * If the key you're adding is already in the hash table, it does not
+ * replace it, but it does take precedent over it.  The old key/value
+ * pair will be inaccessable but still in memory until hash_destroy()
+ * is called on the hash table.
  *
  * \param  ht	  The hash table context to add the key/value pair to.
  * \param  key	  The key to associate the value with.  A copy is made.
@@ -70,5 +77,35 @@ bool hash_add(struct hash_table *ht, const char *key, const char *value);
  * \return The value associated with the key, or NULL if it was not found.
  */
 const char *hash_get(struct hash_table *ht, const char *key);
+
+/**
+ * Add key/value pairs to a hash table with data from a file
+ *
+ * The file should be formatted as a series of lines terminated with
+ *  newline character. Each line should contain a key/value pair
+ *  separated by a colon. If a line is empty or starts with a #
+ *  character it will be ignored.
+ *
+ * The file may be optionally gzip compressed.
+ *
+ * \param ht The hash table context to add the key/value pairs to.
+ * \param path Path to file with key/value pairs in.
+ * \return NSERROR_OK on success else error code
+ */
+nserror hash_add_file(struct hash_table *ht, const char *path);
+
+/**
+ * Add key/value pairs to a hash table with data from a memory buffer
+ *
+ * The data format is the same as in hash_add_file() but held in memory
+ *
+ * The data may optionally be gzip compressed.
+ *
+ * \param ht The hash table context to add the key/value pairs to.
+ * \param data Source of key/value pairs
+ * \param size length of \a data
+ * \return NSERROR_OK on success else error code
+ */
+nserror hash_add_inline(struct hash_table *ht, const uint8_t *data, size_t size);
 
 #endif
