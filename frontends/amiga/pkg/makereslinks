@@ -3,26 +3,26 @@
 failat 50
 makedir Resources
 cd Resources
-makelink AdBlock.css /!NetSurf/Resources/AdBlock,f79 soft
+makelink AdBlock.css /resources/adblock.css soft
 makelink default.css /amiga/resources/default.css soft
-makelink ca-bundle /!NetSurf/Resources/ca-bundle soft
-makelink de /!NetSurf/Resources/de soft
-makelink nsdefault.css /!NetSurf/Resources/CSS,f79 soft
+makelink ca-bundle /resources/ca-bundle soft
+makelink de /resources/de soft
+makelink nsdefault.css /resources/default.css soft
 makelink favicon.png /amiga/resources/favicon.png soft
 makelink Resource.map /amiga/resources/Resource.map soft
-makelink en /!NetSurf/Resources/en soft
-makelink fr /!NetSurf/Resources/fr soft
-makelink internal.css /!NetSurf/Resources/internal.css,f79 soft
-makelink it /!NetSurf/Resources/it soft
+makelink en /resources/en soft
+makelink fr /resources/fr soft
+makelink internal.css /resources/internal.css soft
+makelink it /resources/it soft
 makelink LangNames /amiga/resources/LangNames soft
-makelink netsurf.png /!NetSurf/Resources/netsurf.png,b60 soft
-makelink nl /!NetSurf/Resources/nl soft
+makelink netsurf.png /resources/netsurf.png soft
+makelink nl /resources/nl soft
 makelink Pointers /amiga/resources/Pointers soft
-makelink quirks.css /!NetSurf/Resources/Quirks,f79 soft
+makelink quirks.css /resources/quirks.css soft
 makelink SearchEngines /amiga/resources/SearchEngines soft
 makelink splash.png /amiga/resources/splash.png soft
 makelink Themes /amiga/resources/Themes soft
 makelink mimetypes /amiga/resources/mimetypes soft
 
 /
-makelink amiga/resources/nsdefault.css //!NetSurf/Resources/CSS,f79 soft
+makelink amiga/resources/nsdefault.css //resources/default.css soft

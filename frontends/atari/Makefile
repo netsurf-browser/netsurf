@@ -118,8 +118,8 @@ ATARI_FONT_SOURCE_URL := http://ftp.gnome.org/pub/GNOME/sources/ttf-bitstream-ve
 #ATARI_FONT_SOURCE_URL := http://localhost/$(ATARI_FONT_NAME).tar.gz
 ATARI_FONT_TMP_DIR := $(DEPROOT)/../
 ATARI_FONT_SOURCE_DIR := $(ATARI_FONT_TMP_DIR)$(ATARI_FONT_NAME)/
-ATARI_GENERIC_RESOURCES := de en it ja
-ATARI_RESOURCES := $(addprefix \!NetSurf/Resources/,$(ATARI_GENERIC_RESOURCES))
+ATARI_GENERIC_RESOURCES := de en it ja nl
+ATARI_RESOURCES := $(addprefix resources/,$(ATARI_GENERIC_RESOURCES))
 
 # ----------------------------------------------------------------------------
 # Install target
@@ -168,21 +168,21 @@ endif
 	$(Q)cp $(ATARI_RES_DIR)/netsurf.rsc  $(ATARI_TARGET_DIR)res/netsurf.rsc
 	$(Q)cp $(ATARI_RES_DIR)/languages  $(ATARI_TARGET_DIR)res/languages
 	$(Q)cp $(ATARI_RES_DIR)/icons/toolbar -R $(ATARI_TARGET_DIR)res/icons
-	$(Q)cp \!NetSurf/Resources/Icons/* -R $(ATARI_TARGET_DIR)res/icons/
+	$(Q)cp resources/icons/* -R $(ATARI_TARGET_DIR)res/icons/
 
-	$(Q)cp \!NetSurf/Resources/netsurf.png,b60 $(ATARI_TARGET_DIR)res/netsurf.png
-	$(Q)cp \!NetSurf/Resources/AdBlock,f79 $(ATARI_TARGET_DIR)res/adblock.css
-	$(Q)cp \!NetSurf/Resources/CSS,f79 $(ATARI_TARGET_DIR)res/default.css
-	$(Q)cp \!NetSurf/Resources/Quirks,f79 $(ATARI_TARGET_DIR)res/quirks.css
-	$(Q)cp \!NetSurf/Resources/internal.css,f79 $(ATARI_TARGET_DIR)res/internal.css
-	$(Q)cp \!NetSurf/Resources/SearchEngines $(ATARI_TARGET_DIR)res/search
-	$(Q)cp \!NetSurf/Resources/ca-bundle $(ATARI_TARGET_DIR)res/cabundle
+	$(Q)cp resources/netsurf.png $(ATARI_TARGET_DIR)res/netsurf.png
+	$(Q)cp resources/adblock.css $(ATARI_TARGET_DIR)res/adblock.css
+	$(Q)cp resources/default.css $(ATARI_TARGET_DIR)res/default.css
+	$(Q)cp resources/quirks.css $(ATARI_TARGET_DIR)res/quirks.css
+	$(Q)cp resources/internal.css $(ATARI_TARGET_DIR)res/internal.css
+	$(Q)cp resources/SearchEngines $(ATARI_TARGET_DIR)res/search
+	$(Q)cp resources/ca-bundle $(ATARI_TARGET_DIR)res/cabundle
 	$(Q)$(RM) $(ATARI_TARGET_DIR)res/messages
 	$(Q)$(SPLIT_MESSAGES) -l en -p atari -f messages -o $(ATARI_TARGET_DIR)res/messages resources/FatMessages
-	$(Q)cp \!NetSurf/Resources/en/welcome.html,faf $(ATARI_TARGET_DIR)res/welcome.html
-	$(Q)cp \!NetSurf/Resources/en/maps.html,faf $(ATARI_TARGET_DIR)res/maps.html
-	$(Q)cp \!NetSurf/Resources/en/licence.html,faf $(ATARI_TARGET_DIR)res/licence.html
-	$(Q)cp \!NetSurf/Resources/en/credits.html,faf $(ATARI_TARGET_DIR)res/credits.html
+	$(Q)cp resources/en/welcome.html $(ATARI_TARGET_DIR)res/welcome.html
+	$(Q)cp resources/en/maps.html $(ATARI_TARGET_DIR)res/maps.html
+	$(Q)cp resources/en/licence.html $(ATARI_TARGET_DIR)res/licence.html
+	$(Q)cp resources/en/credits.html $(ATARI_TARGET_DIR)res/credits.html
 
 # copy "Bitstream Vera" font:
 	$(Q)cp $(ATARI_FONT_SOURCE_DIR)RELEASENOTES.TXT $(ATARI_TARGET_DIR)res/fonts/

@@ -130,7 +130,7 @@ MESSAGES_FILTER=any
 # The languages in the fat messages to convert
 MESSAGES_LANGUAGES=de en fr it nl
 # The target directory for the split messages
-MESSAGES_TARGET=!NetSurf/Resources
+MESSAGES_TARGET=resources
 
 # Defaults for tools
 PERL=perl
