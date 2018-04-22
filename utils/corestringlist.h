@@ -86,6 +86,7 @@ CORESTRING_LWC_STRING(icon);
 CORESTRING_LWC_STRING(iframe);
 CORESTRING_LWC_STRING(image);
 CORESTRING_LWC_STRING(img);
+CORESTRING_LWC_STRING(includesubdomains);
 CORESTRING_LWC_STRING(input);
 CORESTRING_LWC_STRING(javascript);
 CORESTRING_LWC_STRING(justify);
@@ -141,6 +142,7 @@ CORESTRING_LWC_STRING(_top);
 /* unusual lwc strings */
 CORESTRING_LWC_VALUE(shortcut_icon, "shortcut icon");
 CORESTRING_LWC_VALUE(slash_, "/");
+CORESTRING_LWC_VALUE(max_age, "max-age");
 
 /* mime types */
 CORESTRING_LWC_VALUE(multipart_form_data, "multipart/form-data");

@@ -45,7 +45,7 @@ nserror http_parse_content_disposition(const char *header_value,
 	http__skip_LWS(&pos);
 
 	if (*pos == ';') {
-		error = http__item_list_parse(&pos, 
+		error = http__item_list_parse(&pos,
 				http__parse_parameter, NULL, &params);
 		if (error != NSERROR_OK && error != NSERROR_NOT_FOUND) {
 			lwc_string_unref(mtype);

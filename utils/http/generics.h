@@ -19,6 +19,8 @@
 #ifndef NETSURF_UTILS_HTTP_GENERICS_H_
 #define NETSURF_UTILS_HTTP_GENERICS_H_
 
+#include <stdbool.h>
+
 #include "utils/errors.h"
 
 /**

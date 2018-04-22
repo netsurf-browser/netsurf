@@ -92,7 +92,7 @@ nserror http__parse_challenge(const char **input, http_challenge **challenge)
 	http__skip_LWS(&pos);
 
 	if (*pos == ',') {
-		error = http__item_list_parse(&pos, 
+		error = http__item_list_parse(&pos,
 				http__parse_parameter, first, &params);
 		if (error != NSERROR_OK && error != NSERROR_NOT_FOUND) {
 			lwc_string_unref(scheme);
