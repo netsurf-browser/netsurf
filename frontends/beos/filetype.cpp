@@ -18,6 +18,7 @@
 
 #define __STDBOOL_H__	1
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
