@@ -5,8 +5,8 @@
 # The key names are the same as those in the gdk/gdkkeysyms.h header file
 #   but without the leading “GDK_KEY_”.
 
-gtkNextTab:<Control>Right
-gtkPrevTab:<Control>Left
+gtkNextTab:<Control>Page_Down
+gtkPrevTab:<Control>Page_Up
 gtkCloseTab:<Control>w
 gtkNewTab:<Control>t
 gtkNewWindow:<Control>n
