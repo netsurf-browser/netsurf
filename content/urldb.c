@@ -108,6 +108,7 @@
 #include "utils/time.h"
 #include "utils/nsurl.h"
 #include "utils/ascii.h"
+#include "utils/http.h"
 #include "netsurf/bitmap.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/gui_internal.h"
@@ -222,6 +223,11 @@ struct path_data {
 	struct path_data *last; /**< Last child */
 };
 
+struct hsts_data {
+	time_t expires; /**< Expiry time */
+	bool include_sub_domains; /**< Whether to include subdomains */
+};
+
 struct host_part {
 	/**
 	 * Known paths on this host. This _must_ be first so that
@@ -233,6 +239,8 @@ struct host_part {
 	 * without verifying certificate authenticity
 	 */
 	bool permit_invalid_certs;
+	/* HSTS data */
+	struct hsts_data hsts;
 
 	/**
 	 * Part of host string
@@ -290,7 +298,7 @@ static int loaded_cookie_file_version;
 /** Minimum URL database file version */
 #define MIN_URL_FILE_VERSION 106
 /** Current URL database file version */
-#define URL_FILE_VERSION 106
+#define URL_FILE_VERSION 107
 
 /**
  * filter for url presence in database
@@ -511,7 +519,8 @@ static void urldb_save_search_tree(struct search_node *parent, FILE *fp)
 	unsigned int path_count = 0;
 	char *path, *p, *end;
 	int path_alloc = 64, path_used = 1;
-	time_t expiry;
+	time_t expiry, hsts_expiry = 0;
+	int hsts_include_subdomains = 0;
 
 	expiry = time(NULL) - ((60 * 60 * 24) * nsoption_int(expire_url));
 
@@ -537,13 +546,25 @@ static void urldb_save_search_tree(struct search_node *parent, FILE *fp)
 		p += written;
 	}
 
+	h = parent->data;
+	if (h && h->hsts.expires > expiry) {
+		hsts_expiry = h->hsts.expires;
+		hsts_include_subdomains = h->hsts.include_sub_domains;
+	}
+
 	urldb_count_urls(&parent->data->paths, expiry, &path_count);
 
 	if (path_count > 0) {
-		fprintf(fp, "%s\n%i\n", host, path_count);
+		fprintf(fp, "%s %i ", host, hsts_include_subdomains);
+		urldb_write_timet(fp, hsts_expiry);
+		fprintf(fp, "%i\n", path_count);
 
 		urldb_write_paths(&parent->data->paths, host, fp,
 				  &path, &path_alloc, &path_used, expiry);
+	} else if (hsts_expiry) {
+		fprintf(fp, "%s %i ", host, hsts_include_subdomains);
+		urldb_write_timet(fp, hsts_expiry);
+		fprintf(fp, "0\n");
 	}
 
 	free(path);
@@ -2894,6 +2915,9 @@ nserror urldb_load(const char *filename)
 	}
 
 	while (fgets(host, sizeof host, fp)) {
+		time_t hsts_expiry = 0;
+		int hsts_include_sub_domains = 0;
+
 		/* get the hostname */
 		length = strlen(host) - 1;
 		host[length] = '\0';
@@ -2911,6 +2935,25 @@ nserror urldb_load(const char *filename)
 			continue;
 		}
 
+		if (version >= 107) {
+			char *p = host;
+			while (*p && *p != ' ') p++;
+			while (*p && *p == ' ') { *p = '\0'; p++; }
+			hsts_include_sub_domains = (*p == '1');
+			while (*p && *p != ' ') p++;
+			while (*p && *p == ' ') p++;
+			nsc_snptimet(p, strlen(p), &hsts_expiry);
+		}
+
+		h = urldb_add_host(host);
+		if (!h) {
+			NSLOG(netsurf, INFO, "Failed adding host: '%s'", host);
+			fclose(fp);
+			return NSERROR_NOMEM;
+		}
+		h->hsts.expires = hsts_expiry;
+		h->hsts.include_sub_domains = hsts_include_sub_domains;
+
 		/* read number of URLs */
 		if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 			break;
@@ -2920,13 +2963,6 @@ nserror urldb_load(const char *filename)
 		if (urls == 0) {
 			NSLOG(netsurf, INFO, "No URLs for '%s'", host);
 			continue;
-		}
-
-		h = urldb_add_host(host);
-		if (!h) {
-			NSLOG(netsurf, INFO, "Failed adding host: '%s'", host);
-			fclose(fp);
-			return NSERROR_NOMEM;
 		}
 
 		/* load the non-corrupt data */
@@ -3457,6 +3493,138 @@ bool urldb_get_cert_permissions(nsurl *url)
 	h = (const struct host_part *)p;
 
 	return h->permit_invalid_certs;
+}
+
+
+/* exported interface documented in content/urldb.h */
+bool urldb_set_hsts_policy(struct nsurl *url, const char *header)
+{
+	struct path_data *p;
+	struct host_part *h;
+	lwc_string *host;
+	time_t now = time(NULL);
+	http_strict_transport_security *sts;
+	uint32_t max_age = 0;
+	nserror error;
+
+	assert(url);
+
+	host = nsurl_get_component(url, NSURL_HOST);
+	if (host != NULL) {
+		if (urldb__host_is_ip_address(lwc_string_data(host))) {
+			/* Host is IP: ignore */
+			lwc_string_unref(host);
+			return true;
+		} else if (lwc_string_length(host) == 0) {
+			/* Host is blank: ignore */
+			lwc_string_unref(host);
+			return true;
+		}
+
+		lwc_string_unref(host);
+	} else {
+		/* No host part: ignore */
+		return true;
+	}
+
+	/* add url, in case it's missing */
+	urldb_add_url(url);
+
+	p = urldb_find_url(url);
+	if (!p)
+		return false;
+
+	for (; p && p->parent; p = p->parent)
+		/* do nothing */;
+	assert(p);
+
+	h = (struct host_part *)p;
+	if (h->permit_invalid_certs) {
+		/* Transport is tainted: ignore */
+		return true;
+	}
+
+	error = http_parse_strict_transport_security(header, &sts);
+	if (error != NSERROR_OK) {
+		/* Parse failed: ignore */
+		return true;
+	}
+
+	h->hsts.include_sub_domains =
+		http_strict_transport_security_include_subdomains(sts);
+
+	max_age = http_strict_transport_security_max_age(sts);
+	if (max_age == 0) {
+		h->hsts.expires = 0;
+		h->hsts.include_sub_domains = false;
+	} else if (now + max_age > h->hsts.expires) {
+		h->hsts.expires = now + max_age;
+	}
+
+	http_strict_transport_security_destroy(sts);
+
+	return true;
+}
+
+
+/* exported interface documented in content/urldb.h */
+bool urldb_get_hsts_enabled(struct nsurl *url)
+{
+	struct path_data *p;
+	const struct host_part *h;
+	lwc_string *host;
+	time_t now = time(NULL);
+
+	assert(url);
+
+	host = nsurl_get_component(url, NSURL_HOST);
+	if (host != NULL) {
+		if (urldb__host_is_ip_address(lwc_string_data(host))) {
+			/* Host is IP: not enabled */
+			lwc_string_unref(host);
+			return false;
+		} else if (lwc_string_length(host) == 0) {
+			/* Host is blank: not enabled */
+			lwc_string_unref(host);
+			return false;
+		}
+
+		lwc_string_unref(host);
+	} else {
+		/* No host part: not enabled */
+		return false;
+	}
+
+	/* The URL must exist in the db in order to find HSTS policy, since
+	 * we search up the tree from the URL node, and policy from further
+	 * up may also apply. */
+	urldb_add_url(url);
+
+	p = urldb_find_url(url);
+	if (!p)
+		return false;
+
+	for (; p && p->parent; p = p->parent)
+		/* do nothing */;
+	assert(p);
+
+	h = (const struct host_part *)p;
+
+	/* Consult record for this host */
+	if (h->hsts.expires > now) {
+		/* Not expired */
+		return true;
+	}
+
+	/* Consult parent domains */
+	for (h = h->parent; h && h != &db_root; h = h->parent) {
+		if (h->hsts.expires > now && h->hsts.include_sub_domains) {
+			/* Not expired and subdomains included */
+			return true;
+		}
+	}
+
+	return false;
 }
 
 

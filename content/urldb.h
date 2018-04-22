@@ -131,4 +131,22 @@ bool urldb_set_cookie(const char *header, struct nsurl *url, struct nsurl *refer
 char *urldb_get_cookie(struct nsurl *url, bool include_http_only);
 
 
+/**
+ * Set HSTS policy for an URL
+ *
+ * \param url URL being fetched
+ * \param header Strict-Transport-Security header value
+ * \return true on success, false otherwise
+ */
+bool urldb_set_hsts_policy(struct nsurl *url, const char *header);
+
+
+/**
+ * Determine if HSTS policy is enabled for an URL
+ *
+ * \param url URL being fetched
+ * \return true if HSTS policy is enabled, false otherwise
+ */
+bool urldb_get_hsts_enabled(struct nsurl *url);
+
 #endif
