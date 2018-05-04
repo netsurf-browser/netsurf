@@ -1,5 +1,5 @@
 /*
- *  Duktape public API for Duktape 2.2.0.
+ *  Duktape public API for Duktape 2.2.1.
  *
  *  See the API reference for documentation on call semantics.  The exposed,
  *  supported API is between the "BEGIN PUBLIC API" and "END PUBLIC API"
@@ -154,7 +154,7 @@
  * development snapshots have 99 for patch level (e.g. 0.10.99 would be a
  * development version after 0.10.0 but before the next official release).
  */
-#define DUK_VERSION                       20200L
+#define DUK_VERSION                       20201L
 
 /* Git commit, describe, and branch for Duktape build.  Useful for
  * non-official snapshot builds so that application code can easily log
