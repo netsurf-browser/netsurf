@@ -891,7 +891,7 @@
 #define DUK_USE_ARCH_STRING "arm32"
 /* Byte order varies, so rely on autodetect. */
 #if !defined(DUK_USE_ALIGN_BY)
-#define DUK_USE_ALIGN_BY 4
+#define DUK_USE_ALIGN_BY 8
 #endif
 #define DUK_USE_PACKED_TVAL
 #define DUK_F_PACKED_TVAL_PROVIDED
