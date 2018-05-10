@@ -34,7 +34,7 @@
 #include "netsurf/plotters.h"
 #include "content/hlcache.h"
 #include "css/utils.h"
-#include "render/box.h"
+#include "html/box.h"
 
 #include "desktop/print.h"
 #include "desktop/printer.h"

@@ -33,7 +33,7 @@
 #include "utils/messages.h"
 #include "netsurf/plotters.h"
 #include "netsurf/content.h"
-#include "render/box.h"
+#include "html/box.h"
 #include "content/llcache.h"
 #include "content/content_protected.h"
 

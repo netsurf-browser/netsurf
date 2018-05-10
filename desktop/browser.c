@@ -56,9 +56,9 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "css/utils.h"
-#include "render/form_internal.h"
-#include "render/html.h"
-#include "render/box.h"
+#include "html/form_internal.h"
+#include "html/html.h"
+#include "html/box.h"
 #include "javascript/js.h"
 
 #include "desktop/browser_history.h"

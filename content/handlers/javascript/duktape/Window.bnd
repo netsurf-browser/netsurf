@@ -15,8 +15,8 @@ class Window {
 #include "utils/nsurl.h"
 #include "netsurf/browser_window.h"
 #include "content/hlcache.h"
-#include "render/html.h"
-#include "render/html_internal.h"
+#include "html/html.h"
+#include "html/html_internal.h"
 %};
 };
 

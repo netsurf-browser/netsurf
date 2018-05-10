@@ -43,8 +43,8 @@
 #include "netsurf/content.h"
 #include "content/hlcache.h"
 #include "css/css.h"
-#include "render/box.h"
-#include "render/html.h"
+#include "html/box.h"
+#include "html/html.h"
 
 #include "netsurf/misc.h"
 #include "desktop/gui_internal.h"

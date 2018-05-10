@@ -33,8 +33,8 @@
 #include "utils/utils.h"
 #include "netsurf/content.h"
 #include "content/hlcache.h"
-#include "render/html.h"
-#include "render/box.h"
+#include "html/html.h"
+#include "html/box.h"
 
 #include "desktop/browser_private.h"
 #include "desktop/frames.h"

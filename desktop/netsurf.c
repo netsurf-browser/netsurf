@@ -41,8 +41,8 @@
 #include "image/image.h"
 #include "image/image_cache.h"
 #include "javascript/js.h"
-#include "render/html.h"
-#include "render/textplain.h"
+#include "html/html.h"
+#include "text/textplain.h"
 
 #include "netsurf/browser_window.h"
 #include "desktop/system_colour.h"

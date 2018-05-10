@@ -37,9 +37,9 @@
 #include "netsurf/form.h"
 #include "netsurf/window.h"
 #include "netsurf/keypress.h"
-#include "render/box.h"
-#include "render/html_internal.h"
-#include "render/layout.h"
+#include "html/box.h"
+#include "html/html_internal.h"
+#include "html/layout.h"
 
 #include "desktop/browser_private.h"
 #include "desktop/textinput.h"

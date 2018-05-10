@@ -617,9 +617,6 @@ include frontends/Makefile
 # Content sources
 include content/Makefile
 
-# render sources
-include render/Makefile
-
 # utility sources
 include utils/Makefile
 
@@ -636,7 +633,6 @@ include desktop/Makefile
 S_COMMON := \
 	$(S_CONTENT) \
 	$(S_FETCHERS) \
-	$(S_RENDER) \
 	$(S_UTILS) \
 	$(S_HTTP) \
 	$(S_NSURL) \
