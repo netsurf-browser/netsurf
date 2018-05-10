@@ -773,7 +773,6 @@ INPUT                  = docs \
                          frontends/riscos/scripts \
                          frontends/windows \
                          include/netsurf \
-                         render \
                          desktop \
                          content \
                          content/fetchers \
@@ -781,6 +780,8 @@ INPUT                  = docs \
                          content/handlers/css \
                          content/handlers/javascript \
                          content/handlers/javascript/duktape \
+                         content/handlers/html \
+                         content/handlers/text \
                          utils \
                          utils/http
 
