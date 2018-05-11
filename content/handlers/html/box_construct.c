@@ -49,6 +49,7 @@
 #include "css/utils.h"
 #include "desktop/gui_internal.h"
 
+#include "html/html.h"
 #include "html/box.h"
 #include "html/box_textarea.h"
 #include "html/form_internal.h"

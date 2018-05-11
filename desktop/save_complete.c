@@ -44,6 +44,7 @@
 #include "content/hlcache.h"
 #include "css/css.h"
 #include "html/box.h"
+#include "html/html_save.h"
 #include "html/html.h"
 
 #include "netsurf/misc.h"

@@ -40,6 +40,7 @@
 #include "desktop/scrollbar.h"
 #include "desktop/gui_internal.h"
 
+#include "html/html.h"
 #include "html/box.h"
 #include "html/html_internal.h"
 

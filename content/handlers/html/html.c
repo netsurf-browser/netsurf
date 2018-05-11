@@ -54,9 +54,11 @@
 #include "javascript/js.h"
 #include "desktop/gui_internal.h"
 
+#include "html/html.h"
+#include "html/html_save.h"
+#include "html/html_internal.h"
 #include "html/box.h"
 #include "html/form_internal.h"
-#include "html/html_internal.h"
 #include "html/imagemap.h"
 #include "html/layout.h"
 #include "html/search.h"

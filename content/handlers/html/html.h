@@ -28,9 +28,6 @@
 
 #include <stdbool.h>
 
-#include <dom/dom.h>
-#include <dom/bindings/hubbub/parser.h>
-
 #include "netsurf/types.h"
 #include "netsurf/content_type.h"
 #include "netsurf/browser_window.h"
@@ -64,6 +61,7 @@ struct html_stylesheet {
 	bool modified;
 	bool unused;
 };
+
 
 /**
  * Container for scripts used by an HTML document
@@ -103,12 +101,10 @@ struct content_html_object {
 	bool background;  /**< This object is a background image. */
 };
 
-struct html_scrollbar_data {
-	struct content *c;
-	struct box *box;
-};
 
-/** Frame tree (frameset or frame tag) */
+/**
+ * Frame tree (frameset or frame tag)
+ */
 struct content_html_frames {
 	int cols;	/** number of columns in frameset */
 	int rows;	/** number of rows in frameset */
@@ -129,7 +125,9 @@ struct content_html_frames {
 	struct content_html_frames *children; /** [cols * rows] children */
 };
 
-/** Inline frame list (iframe tag) */
+/**
+ * Inline frame list (iframe tag)
+ */
 struct content_html_iframe {
 	struct box *box;
 
@@ -153,19 +151,46 @@ struct content_html_iframe {
 #define STYLESHEET_USER		3	/* user stylesheet */
 #define STYLESHEET_START	4	/* start of document stylesheets */
 
+/**
+ * initialise content handler
+ *
+ * \return NSERROR_OK on success otherwise appropriate error code
+ */
 nserror html_init(void);
 
+/**
+ * redraw a specific box
+ *
+ * used by core browser
+ */
 void html_redraw_a_box(struct hlcache_handle *h, struct box *box);
 
-void html_overflow_scroll_drag_end(struct scrollbar *scrollbar,
-		browser_mouse_state mouse, int x, int y);
-
-dom_document *html_get_document(struct hlcache_handle *h);
-struct box *html_get_box_tree(struct hlcache_handle *h);
+/**
+ * obtain html frame content from handle
+ *
+ * used by core browser
+ */
 struct content_html_frames *html_get_frameset(struct hlcache_handle *h);
+
+/**
+ * obtain html iframe content from handle
+ *
+ * used by core browser
+ */
 struct content_html_iframe *html_get_iframe(struct hlcache_handle *h);
-struct nsurl *html_get_base_url(struct hlcache_handle *h);
+
+/**
+ * obtain html base target from handle
+ *
+ * used by core browser
+ */
 const char *html_get_base_target(struct hlcache_handle *h);
+
+/**
+ * set filename on a file gadget
+ *
+ * used by core browser
+ */
 void html_set_file_gadget_filename(struct hlcache_handle *hl,
 	struct form_control *gadget, const char *fn);
 
@@ -179,8 +204,19 @@ void html_set_file_gadget_filename(struct hlcache_handle *hl,
 struct html_stylesheet *html_get_stylesheets(struct hlcache_handle *h,
 		unsigned int *n);
 
+/**
+ * Retrieve objects used by HTML document
+ *
+ * \param h Content to retrieve objects from
+ * \param n Pointer to location to receive number of objects
+ * \return Pointer to array of objects
+ */
 struct content_html_object *html_get_objects(struct hlcache_handle *h,
 		unsigned int *n);
+
+/**
+ * get the offset within the docuemnt of a fragment id
+ */
 bool html_get_id_offset(struct hlcache_handle *h, lwc_string *frag_id,
 		int *x, int *y);
 

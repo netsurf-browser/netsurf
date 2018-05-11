@@ -39,6 +39,7 @@
 #include "content/fetch.h"
 #include "content/hlcache.h"
 
+#include "html/html.h"
 #include "html/html_internal.h"
 
 typedef bool (script_handler_t)(struct jscontext *jscontext, const char *data, size_t size) ;

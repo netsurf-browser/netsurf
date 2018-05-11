@@ -33,7 +33,7 @@
 #include "utils/utils.h"
 #include "netsurf/content.h"
 #include "html/box.h"
-#include "html/html.h"
+#include "html/html_save.h"
 
 #include "netsurf/utf8.h"
 #include "desktop/gui_internal.h"

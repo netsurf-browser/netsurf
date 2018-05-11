@@ -38,6 +38,7 @@
 #include "css/css.h"
 #include "desktop/gui_internal.h"
 
+#include "html/html.h"
 #include "html/html_internal.h"
 
 static nsurl *html_default_stylesheet_url;

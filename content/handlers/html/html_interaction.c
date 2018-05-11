@@ -294,6 +294,45 @@ html__image_coords_dom_user_data_handler(dom_node_operation operation,
 	}
 }
 
+
+/**
+ * End overflow scroll scrollbar drags
+ *
+ * \param  scrollbar  scrollbar widget
+ * \param  mouse   state of mouse buttons and modifier keys
+ * \param  x	   coordinate of mouse
+ * \param  y	   coordinate of mouse
+ */
+static void
+html_overflow_scroll_drag_end(struct scrollbar *scrollbar,
+			      browser_mouse_state mouse,
+			      int x, int y)
+{
+	int scroll_mouse_x, scroll_mouse_y, box_x, box_y;
+	struct html_scrollbar_data *data = scrollbar_get_data(scrollbar);
+	struct box *box;
+
+	box = data->box;
+	box_coords(box, &box_x, &box_y);
+
+	if (scrollbar_is_horizontal(scrollbar)) {
+		scroll_mouse_x = x - box_x;
+		scroll_mouse_y = y - (box_y + box->padding[TOP] +
+				box->height + box->padding[BOTTOM] -
+				SCROLLBAR_WIDTH);
+		scrollbar_mouse_drag_end(scrollbar, mouse,
+				scroll_mouse_x, scroll_mouse_y);
+	} else {
+		scroll_mouse_x = x - (box_x + box->padding[LEFT] +
+				box->width + box->padding[RIGHT] -
+				SCROLLBAR_WIDTH);
+		scroll_mouse_y = y - box_y;
+		scrollbar_mouse_drag_end(scrollbar, mouse,
+				scroll_mouse_x, scroll_mouse_y);
+	}
+}
+
+
 /**
  * Handle mouse clicks and movements in an HTML content window.
  *
@@ -1226,41 +1265,6 @@ void html_overflow_scroll_callback(void *client_data,
 	}
 }
 
-
-/**
- * End overflow scroll scrollbar drags
- *
- * \param  scrollbar  scrollbar widget
- * \param  mouse   state of mouse buttons and modifier keys
- * \param  x	   coordinate of mouse
- * \param  y	   coordinate of mouse
- */
-void html_overflow_scroll_drag_end(struct scrollbar *scrollbar,
-		browser_mouse_state mouse, int x, int y)
-{
-	int scroll_mouse_x, scroll_mouse_y, box_x, box_y;
-	struct html_scrollbar_data *data = scrollbar_get_data(scrollbar);
-	struct box *box;
-
-	box = data->box;
-	box_coords(box, &box_x, &box_y);
-
-	if (scrollbar_is_horizontal(scrollbar)) {
-		scroll_mouse_x = x - box_x;
-		scroll_mouse_y = y - (box_y + box->padding[TOP] +
-				box->height + box->padding[BOTTOM] -
-				SCROLLBAR_WIDTH);
-		scrollbar_mouse_drag_end(scrollbar, mouse,
-				scroll_mouse_x, scroll_mouse_y);
-	} else {
-		scroll_mouse_x = x - (box_x + box->padding[LEFT] +
-				box->width + box->padding[RIGHT] -
-				SCROLLBAR_WIDTH);
-		scroll_mouse_y = y - box_y;
-		scrollbar_mouse_drag_end(scrollbar, mouse,
-				scroll_mouse_x, scroll_mouse_y);
-	}
-}
 
 /* Documented in html_internal.h */
 void html_set_drag_type(html_content *html, html_drag_type drag_type,

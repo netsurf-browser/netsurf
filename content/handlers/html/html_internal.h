@@ -25,14 +25,14 @@
 #define NETSURF_HTML_HTML_INTERNAL_H
 
 #include <libcss/libcss.h>
+#include <dom/bindings/hubbub/parser.h>
 
-#include "content/handlers/css/utils.h"
+#include "netsurf/types.h"
 #include "content/content_protected.h"
 #include "desktop/selection.h"
 
-#include "html/html.h"
-
 struct gui_layout_table;
+struct scrollbar_msg_data;
 
 typedef enum {
 	HTML_DRAG_NONE,			/** No drag */
@@ -44,12 +44,15 @@ typedef enum {
 	HTML_DRAG_CONTENT_SCROLL	/** Not own; drag in child content */
 } html_drag_type;
 
+/**
+ * For drags we don't own
+ */
 union html_drag_owner {
 	bool no_owner;
 	struct box *content;
 	struct scrollbar *scrollbar;
 	struct box *textarea;
-}; /**< For drags we don't own */
+};
 
 typedef enum {
 	HTML_SELECTION_NONE,		/** No selection */
@@ -57,24 +60,39 @@ typedef enum {
 	HTML_SELECTION_SELF,		/** Selection in this html content */
 	HTML_SELECTION_CONTENT		/** Selection in child content */
 } html_selection_type;
+
+/**
+ * For getting at selections in this content or things in this content
+ */
 union html_selection_owner {
 	bool none;
 	struct box *textarea;
 	struct box *content;
-}; /**< For getting at selections in this content or things in this content */
+};
 
 typedef enum {
-	HTML_FOCUS_SELF,		/** Focus is our own */
-	HTML_FOCUS_CONTENT,		/** Focus belongs to child content */
-	HTML_FOCUS_TEXTAREA		/** Focus belongs to textarea */
+	HTML_FOCUS_SELF,		/**< Focus is our own */
+	HTML_FOCUS_CONTENT,		/**< Focus belongs to child content */
+	HTML_FOCUS_TEXTAREA		/**< Focus belongs to textarea */
 } html_focus_type;
+
+/**
+ * For directing input
+ */
 union html_focus_owner {
 	bool self;
 	struct box *textarea;
 	struct box *content;
-}; /**< For directing input */
+};
 
-/** Data specific to CONTENT_HTML. */
+struct html_scrollbar_data {
+	struct content *c;
+	struct box *box;
+};
+
+/**
+ * Data specific to CONTENT_HTML.
+ */
 typedef struct html_content {
 	struct content base;
 
