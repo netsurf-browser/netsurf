@@ -57,16 +57,16 @@ static nserror messages_load_ctx(const char *path, struct hash_table **ctx)
 {
 	struct hash_table *nctx; /* new context */
 	nserror res;
-	
-	if (*ctx == NULL) {
-		nctx = hash_create(HASH_SIZE);
-	} else {
+
+	if (*ctx != NULL) {
 		/**
 		 * \note The passed hash is not copied here so this
 		 * updates in place.
 		 */
-		nctx = *ctx;
+		return hash_add_file(*ctx, path);
 	}
+
+	nctx = hash_create(HASH_SIZE);
 	if (nctx == NULL) {
 		NSLOG(netsurf, INFO,
 		      "Unable to create hash table for messages file %s",
@@ -74,10 +74,11 @@ static nserror messages_load_ctx(const char *path, struct hash_table **ctx)
 		return NSERROR_NOMEM;
 	}
 
-
 	res = hash_add_file(nctx, path);
 	if (res == NSERROR_OK) {
 		*ctx = nctx;
+	} else {
+		hash_destroy(nctx);
 	}
 
 	return res;
@@ -337,4 +338,3 @@ void messages_destroy(void)
 	messages_destroy_ctx(messages_hash);
 	messages_hash = NULL;
 }
-
