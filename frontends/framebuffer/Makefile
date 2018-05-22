@@ -170,7 +170,7 @@ EXETARGET := nsfb
 
 NETSURF_FRAMEBUFFER_RESOURCE_LIST := adblock.css credits.html	\
 	default.css internal.css licence.html			\
-	netsurf.png quirks.css welcome.html maps.html Messages
+	netsurf.png quirks.css welcome.html maps.html
 
 install-framebuffer:
 	$(Q)$(MKDIR) -p $(DESTDIR)$(NETSURF_FRAMEBUFFER_BIN)
