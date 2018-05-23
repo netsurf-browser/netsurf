@@ -407,7 +407,7 @@ ro_save_draw_path(const struct redraw_context *ctx,
 			   pstyle->stroke_colour == NS_TRANSPARENT ?
 			   pencil_TRANSPARENT :
 			   pstyle->stroke_colour << 8,
-			   plot_style_fixed_to_int(style->stroke_width),
+			   plot_style_fixed_to_int(pstyle->stroke_width),
 			   pencil_JOIN_MITRED,
 			   pencil_CAP_BUTT,
 			   pencil_CAP_BUTT,
