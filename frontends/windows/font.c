@@ -120,7 +120,7 @@ HFONT get_font(const plot_font_style_t *style)
 	int nHeight = -10;
 
 	HDC hdc = GetDC(font_hwnd);
-	nHeight = -MulDiv(style->size, GetDeviceCaps(hdc, LOGPIXELSY), 72 * FONT_SIZE_SCALE);
+	nHeight = -MulDiv(style->size, GetDeviceCaps(hdc, LOGPIXELSY), 72 * PLOT_STYLE_SCALE);
 	ReleaseDC(font_hwnd, hdc);
 
 	HFONT font = CreateFont(

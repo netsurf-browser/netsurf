@@ -210,7 +210,7 @@ svg_redraw_internal(struct content *c,
 
 			fstyle.background = 0xffffff;
 			fstyle.foreground = 0x000000;
-			fstyle.size = (8 * FONT_SIZE_SCALE) * scale;
+			fstyle.size = (8 * PLOT_STYLE_SCALE) * scale;
 
 			res = ctx->plot->text(ctx,
 					      &fstyle,

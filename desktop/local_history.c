@@ -90,7 +90,7 @@ static plot_style_t pstyle_rect_sel = {
  */
 static plot_font_style_t pfstyle_node = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
-	.size = 8 * FONT_SIZE_SCALE,
+	.size = 8 * PLOT_STYLE_SCALE,
 	.weight = 400,
 	.flags = FONTF_NONE,
 };
@@ -101,7 +101,7 @@ static plot_font_style_t pfstyle_node = {
  */
 static plot_font_style_t pfstyle_node_sel = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
-	.size = 8 * FONT_SIZE_SCALE,
+	.size = 8 * PLOT_STYLE_SCALE,
 	.weight = 900,
 	.flags = FONTF_NONE,
 };

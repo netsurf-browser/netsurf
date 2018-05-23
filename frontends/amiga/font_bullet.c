@@ -63,7 +63,7 @@
 #define NSA_VALUE_SHEARSIN (1 << 14)
 #define NSA_VALUE_SHEARCOS (1 << 16)
 
-#define NSA_FONT_EMWIDTH(s) (s / FONT_SIZE_SCALE) * (ami_font_dpi_get_xdpi() / 72.0)
+#define NSA_FONT_EMWIDTH(s) (s / PLOT_STYLE_SCALE) * (ami_font_dpi_get_xdpi() / 72.0)
 
 const uint16 sc_table[] = {
 		0x0061, 0x1D00, /* a */
@@ -512,7 +512,7 @@ static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle
 	}
 
 	/* Scale to 16.16 fixed point */
-	ysize = fstyle->size * ((1 << 16) / FONT_SIZE_SCALE);
+	ysize = fstyle->size * ((1 << 16) / PLOT_STYLE_SCALE);
 
 	if(designed_node == NULL) {
 		ofont = node->font;

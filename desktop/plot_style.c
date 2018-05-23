@@ -81,7 +81,7 @@ plot_style_t const * const plot_style_broken_object =
 
 static const plot_font_style_t plot_fstyle_broken_object_static = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
-	.size = 16 * FONT_SIZE_SCALE,
+	.size = 16 * PLOT_STYLE_SCALE,
 	.weight = 400,
 	.flags = FONTF_NONE,
 	.background = 0x8888ff,
@@ -156,7 +156,7 @@ plot_style_t *plot_style_stroke_lightwbasec = &plot_style_stroke_lightwbasec_sta
 /* Generic font style */
 static const plot_font_style_t plot_style_font_static = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
-	.size = 8 * FONT_SIZE_SCALE,
+	.size = 8 * PLOT_STYLE_SCALE,
 	.weight = 400,
 	.flags = FONTF_NONE,
 	.background = 0xffffff,

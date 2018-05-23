@@ -212,7 +212,7 @@ fb_get_font_size(const plot_font_style_t *fstyle)
 {
 	int size = fstyle->size * 10 /
 			(((nsoption_int(font_min_size) * 3 +
-			   nsoption_int(font_size)) / 4) * FONT_SIZE_SCALE);
+			   nsoption_int(font_size)) / 4) * PLOT_STYLE_SCALE);
 	if (size > 2)
 		size = 2;
 	else if (size <= 0)

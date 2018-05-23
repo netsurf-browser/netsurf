@@ -36,8 +36,14 @@
 /** Transparent colour value. */
 #define NS_TRANSPARENT 0x01000000
 
-/** Scaling factor for font sizes */
-#define FONT_SIZE_SCALE 1024
+/** 22:10 fixed point */
+#define PLOT_STYLE_RADIX (10)
+
+/** Scaling factor for plot styles */
+#define PLOT_STYLE_SCALE (1 << PLOT_STYLE_RADIX)
+
+/* type for fixed point numbers */
+typedef int32_t plot_style_fixed;
 
 /**
  * Type of plot operation
@@ -90,7 +96,7 @@ typedef enum {
  */
 typedef struct plot_font_style {
 	plot_font_generic_family_t family; /**< Generic family to plot with */
-	int size; /**< Font size, in points * FONT_SIZE_SCALE */
+	plot_style_fixed size; /**< Font size, in pt */
 	int weight; /**< Font weight: value in range [100,900] as per CSS */
 	plot_font_flags_t flags; /**< Font flags */
 	colour background; /**< Background colour to blend to, if appropriate */

@@ -1805,7 +1805,7 @@ static void textarea_setup_text_offsets(struct textarea *ta)
 
 	ta->line_height = FIXTOINT(FMUL(FLTTOFIX(1.3), FDIV(FMUL(
 			nscss_screen_dpi, FDIV(INTTOFIX(ta->fstyle.size),
-			INTTOFIX(FONT_SIZE_SCALE))), F_72)));
+			INTTOFIX(PLOT_STYLE_SCALE))), F_72)));
 
 	text_y_offset = text_y_offset_baseline = ta->border_width;
 	if (ta->flags & TEXTAREA_MULTILINE) {
@@ -1948,7 +1948,7 @@ struct textarea *textarea_create(const textarea_flags flags,
 
 	ret->line_height = FIXTOINT(FMUL(FLTTOFIX(1.3), FDIV(FMUL(
 			nscss_screen_dpi, FDIV(INTTOFIX(setup->text.size),
-			INTTOFIX(FONT_SIZE_SCALE))), F_72)));
+			INTTOFIX(PLOT_STYLE_SCALE))), F_72)));
 
 	ret->caret_pos.line = ret->caret_pos.byte_off = -1;
 	ret->caret_x = 0;

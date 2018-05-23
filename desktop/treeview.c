@@ -5195,7 +5195,7 @@ nserror treeview_init(void)
 			10 + 36) / 72;
 	tree_g.line_height = (font_px_size * 8 + 3) / 6;
 
-	res = treeview_init_plot_styles(font_pt_size * FONT_SIZE_SCALE / 10);
+	res = treeview_init_plot_styles(font_pt_size * PLOT_STYLE_SCALE / 10);
 	if (res != NSERROR_OK) {
 		return res;
 	}

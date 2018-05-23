@@ -469,7 +469,7 @@ void nsfont_read_style(const plot_font_style_t *fstyle,
 		rufl_WEIGHT_900
 	};
 
-	*font_size = (fstyle->size * 16) / FONT_SIZE_SCALE;
+	*font_size = (fstyle->size * 16) / PLOT_STYLE_SCALE;
 	if (1600 < *font_size)
 		*font_size = 1600;
 

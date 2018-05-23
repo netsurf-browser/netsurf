@@ -86,7 +86,7 @@ typedef struct textplain_content {
 #define MARGIN 4
 
 #define TAB_WIDTH 8  /* must be power of 2 currently */
-#define TEXT_SIZE 10 * FONT_SIZE_SCALE  /* Unscaled text size in pt */
+#define TEXT_SIZE 10 * PLOT_STYLE_SCALE  /* Unscaled text size in pt */
 
 static plot_font_style_t textplain_style = {
 	.family = PLOT_FONT_FAMILY_MONOSPACE,
@@ -149,7 +149,7 @@ textplain_create_internal(textplain_content *c, lwc_string *encoding)
 	parserutils_inputstream *stream;
 	parserutils_error error;
 
-	textplain_style.size = (nsoption_int(font_size) * FONT_SIZE_SCALE) / 10;
+	textplain_style.size = (nsoption_int(font_size) * PLOT_STYLE_SCALE) / 10;
 
 	utf8_data = malloc(CHUNK);
 	if (utf8_data == NULL)
@@ -400,7 +400,7 @@ static float textplain_line_height(void)
 	/* Size is in points, so convert to pixels.
 	 * Then use a constant line height of 1.2 x font size.
 	 */
-	return FIXTOFLT(FDIV((FMUL(FLTTOFIX(1.2), FMUL(nscss_screen_dpi, INTTOFIX((textplain_style.size / FONT_SIZE_SCALE))))), F_72));
+	return FIXTOFLT(FDIV((FMUL(FLTTOFIX(1.2), FMUL(nscss_screen_dpi, INTTOFIX((textplain_style.size / PLOT_STYLE_SCALE))))), F_72));
 }
 
 
