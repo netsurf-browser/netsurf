@@ -26,6 +26,7 @@
 
 #include <stdint.h>
 #include <stdint.h>
+#include <libwapcaplet/libwapcaplet.h>
 #include "netsurf/types.h"
 
 /** light grey widget base colour */
@@ -108,6 +109,12 @@ typedef enum {
  * Font style for plotting
  */
 typedef struct plot_font_style {
+	/**
+	 * Array of pointers to font families.
+	 *
+	 * May be NULL.  Array is NULL terminated.
+	 */
+	lwc_string * const * families;
 	plot_font_generic_family_t family; /**< Generic family to plot with */
 	plot_style_fixed size; /**< Font size, in pt */
 	int weight; /**< Font weight: value in range [100,900] as per CSS */
