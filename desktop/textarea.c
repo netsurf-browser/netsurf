@@ -45,9 +45,9 @@
 #define TA_ALLOC_STEP 512
 
 static plot_style_t pstyle_stroke_caret = {
-    .stroke_type = PLOT_OP_TYPE_SOLID,
-    .stroke_colour = CARET_COLOR,
-    .stroke_width = 1,
+	.stroke_type = PLOT_OP_TYPE_SOLID,
+	.stroke_colour = CARET_COLOR,
+	.stroke_width = plot_style_int_to_fixed(1),
 };
 
 struct line_info {

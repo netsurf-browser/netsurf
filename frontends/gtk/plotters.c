@@ -89,6 +89,20 @@ static inline void nsgtk_set_dashed(void)
 
 
 /**
+ * Set cairo context line width.
+ */
+static inline void nsgtk_set_line_width(plot_style_fixed width)
+{
+	if (width == 0) {
+		cairo_set_line_width(current_cr, 1);
+	} else {
+		cairo_set_line_width(current_cr,
+				plot_style_fixed_to_double(width));
+	}
+}
+
+
+/**
  * \brief Sets a clip rectangle for subsequent plot operations.
  *
  * \param ctx The current redraw context.
@@ -191,10 +205,7 @@ nsgtk_plot_disc(const struct redraw_context *ctx,
 			break;
 		}
 
-		if (style->stroke_width == 0)
-			cairo_set_line_width(current_cr, 1);
-		else
-			cairo_set_line_width(current_cr, style->stroke_width);
+		nsgtk_set_line_width(style->stroke_width);
 
 		cairo_arc(current_cr, x, y, radius, 0, M_PI * 2);
 
@@ -242,10 +253,7 @@ nsgtk_plot_line(const struct redraw_context *ctx,
 		nsgtk_set_colour(style->stroke_colour);
 	}
 
-	if (style->stroke_width == 0)
-		cairo_set_line_width(current_cr, 1);
-	else
-		cairo_set_line_width(current_cr, style->stroke_width);
+	nsgtk_set_line_width(style->stroke_width);
 
 	/* core expects horizontal and vertical lines to be on pixels, not
 	 * between pixels
@@ -331,10 +339,7 @@ nsgtk_plot_rectangle(const struct redraw_context *ctx,
 			break;
 		}
 
-		if (style->stroke_width == 0)
-			cairo_set_line_width(current_cr, 1);
-		else
-			cairo_set_line_width(current_cr, style->stroke_width);
+		nsgtk_set_line_width(style->stroke_width);
 
 		cairo_rectangle(current_cr,
 				rect->x0 + 0.5,

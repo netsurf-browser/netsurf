@@ -324,9 +324,9 @@ ro_plot_line(const struct redraw_context *ctx,
 			dashed = true;
 
 		return ro_plot_draw_path((const draw_path *)path,
-					 style->stroke_width,
-					 style->stroke_colour,
-					 dotted, dashed);
+				plot_style_fixed_to_int(style->stroke_width),
+				style->stroke_colour,
+				dotted, dashed);
 	}
 	return NSERROR_OK;
 }
@@ -412,10 +412,10 @@ ro_plot_rectangle(const struct redraw_context *ctx,
 			dashed = true;
 
 		ro_plot_draw_path((const draw_path *)path,
-				  style->stroke_width,
-				  style->stroke_colour,
-				  dotted,
-				  dashed);
+				plot_style_fixed_to_int(style->stroke_width),
+				style->stroke_colour,
+				dotted,
+				dashed);
 	}
 
 	return NSERROR_OK;

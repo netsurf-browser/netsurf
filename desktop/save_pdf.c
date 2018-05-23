@@ -213,10 +213,10 @@ bool pdf_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *psty
 		}
 
 		apply_clip_and_mode(false,
-				    NS_TRANSPARENT,
-				    pstyle->stroke_colour,
-				    pstyle->stroke_width,
-				    dash);
+				NS_TRANSPARENT,
+				pstyle->stroke_colour,
+				plot_style_int_to_fixed(pstyle->stroke_width),
+				dash);
 
 		HPDF_Page_Rectangle(pdf_page, x0, page_height - y0, x1 - x0, -(y1 - y0));
 		HPDF_Page_Stroke(pdf_page);
@@ -245,10 +245,10 @@ bool pdf_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle)
 	}
 
 	apply_clip_and_mode(false,
-			    NS_TRANSPARENT,
-			    pstyle->stroke_colour,
-			    pstyle->stroke_width,
-			    dash);
+			NS_TRANSPARENT,
+			pstyle->stroke_colour,
+			plot_style_int_to_fixed(pstyle->stroke_width),
+			dash);
 
 	HPDF_Page_MoveTo(pdf_page, x0, page_height - y0);
 	HPDF_Page_LineTo(pdf_page, x1, page_height - y1);

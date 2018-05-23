@@ -191,11 +191,12 @@ svg_redraw_internal(struct content *c,
 			pstyle.stroke_colour = BGR(diagram->shape[i].stroke);
 			pstyle.fill_colour = BGR(diagram->shape[i].fill);
 			res = ctx->plot->path(ctx,
-					     &pstyle,
-					     diagram->shape[i].path,
-					     diagram->shape[i].path_length,
-					     diagram->shape[i].stroke_width,
-					     transform);
+					&pstyle,
+					diagram->shape[i].path,
+					diagram->shape[i].path_length,
+					plot_style_int_to_fixed(
+						diagram->shape[i].stroke_width),
+					transform);
 			if (res != NSERROR_OK) {
 				return false;
 			}

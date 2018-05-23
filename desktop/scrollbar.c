@@ -164,17 +164,17 @@ scrollbar_rectangle(const struct redraw_context *ctx,
 
 	static plot_style_t c0 = {
 		.stroke_type = PLOT_OP_TYPE_SOLID,
-		.stroke_width = 1,
+		.stroke_width = plot_style_int_to_fixed(1),
 	};
 
 	static plot_style_t c1 = {
 		.stroke_type = PLOT_OP_TYPE_SOLID,
-		.stroke_width = 1,
+		.stroke_width = plot_style_int_to_fixed(1),
 	};
 
 	static plot_style_t c2 = {
 		.stroke_type = PLOT_OP_TYPE_SOLID,
-		.stroke_width = 1,
+		.stroke_width = plot_style_int_to_fixed(1),
 	};
 
 	if (inset) {

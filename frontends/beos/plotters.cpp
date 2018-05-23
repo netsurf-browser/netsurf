@@ -370,7 +370,7 @@ nsbeos_plot_line(const struct redraw_context *ctx,
         nsbeos_set_colour(style->stroke_colour);
 
         float pensize = view->PenSize();
-        view->SetPenSize(style->stroke_width);
+        view->SetPenSize(plot_style_fixed_to_float(style->stroke_width));
 
         BPoint start(line->x0, line->y0);
         BPoint end(line->x1, line->y1);
@@ -447,7 +447,7 @@ nsbeos_plot_rectangle(const struct redraw_context *ctx,
                 nsbeos_set_colour(style->stroke_colour);
 
                 float pensize = view->PenSize();
-                view->SetPenSize(style->stroke_width);
+                view->SetPenSize(plot_style_fixed_to_float(style->stroke_width));
 
                 BRect rect(nsrect->x0, nsrect->y0, nsrect->x1, nsrect->y1);
                 view->StrokeRect(rect, pat);

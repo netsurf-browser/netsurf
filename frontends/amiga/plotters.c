@@ -722,8 +722,8 @@ ami_line(const struct redraw_context *ctx,
 
 	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
 
-	glob->rp->PenWidth = style->stroke_width;
-	glob->rp->PenHeight = style->stroke_width;
+	glob->rp->PenWidth = plot_style_fixed_to_int(style->stroke_width);
+	glob->rp->PenHeight = plot_style_fixed_to_int(style->stroke_width);
 
 	switch (style->stroke_type) {
 		case PLOT_OP_TYPE_SOLID: /**< Solid colour */
@@ -780,8 +780,8 @@ ami_rectangle(const struct redraw_context *ctx,
 	}
 
 	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
-		glob->rp->PenWidth = style->stroke_width;
-		glob->rp->PenHeight = style->stroke_width;
+		glob->rp->PenWidth = plot_style_fixed_to_int(style->stroke_width);
+		glob->rp->PenHeight = plot_style_fixed_to_int(style->stroke_width);
 
 		switch (style->stroke_type) {
 			case PLOT_OP_TYPE_SOLID: /**< Solid colour */
