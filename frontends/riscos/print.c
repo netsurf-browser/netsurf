@@ -831,7 +831,6 @@ print_fonts_plot_path(const struct redraw_context *ctx,
 		const plot_style_t *pstyle,
 		const float *p,
 		unsigned int n,
-		float width,
 		const float transform[6])
 {
 	return NSERROR_OK;

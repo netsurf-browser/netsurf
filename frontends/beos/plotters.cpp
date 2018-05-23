@@ -518,7 +518,6 @@ nsbeos_plot_polygon(const struct redraw_context *ctx,
  * \param pstyle Style controlling the path plot.
  * \param p elements of path
  * \param n nunber of elements on path
- * \param width The width of the path
  * \param transform A transform to apply to the path.
  * \return NSERROR_OK on success else error code.
  */
@@ -527,7 +526,6 @@ nsbeos_plot_path(const struct redraw_context *ctx,
                  const plot_style_t *pstyle,
                  const float *p,
                  unsigned int n,
-                 float width,
                  const float transform[6])
 {
         unsigned int i;
@@ -578,7 +576,7 @@ nsbeos_plot_path(const struct redraw_context *ctx,
 
         rgb_color old_high = view->HighColor();
         float old_pen = view->PenSize();
-        view->SetPenSize(width);
+        view->SetPenSize(plot_style_fixed_to_float(pstyle->stroke_width));
         view->MovePenTo(0, 0);
         if (pstyle->fill_colour != NS_TRANSPARENT) {
                 view->SetHighColor(nsbeos_rgb_colour(pstyle->fill_colour));

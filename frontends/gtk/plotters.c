@@ -399,7 +399,6 @@ nsgtk_plot_polygon(const struct redraw_context *ctx,
  * \param pstyle Style controlling the path plot.
  * \param p elements of path
  * \param n nunber of elements on path
- * \param width The width of the path
  * \param transform A transform to apply to the path.
  * \return NSERROR_OK on success else error code.
  */
@@ -408,7 +407,6 @@ nsgtk_plot_path(const struct redraw_context *ctx,
 		const plot_style_t *pstyle,
 		const float *p,
 		unsigned int n,
-		float width,
 		const float transform[6])
 {
 	unsigned int i;
@@ -426,7 +424,7 @@ nsgtk_plot_path(const struct redraw_context *ctx,
 	cairo_get_matrix(current_cr, &old_ctm);
 
 	/* Set up line style and width */
-	cairo_set_line_width(current_cr, 1);
+	nsgtk_set_line_width(pstyle->stroke_width);
 	nsgtk_set_solid();
 
 	/* Load new CTM */

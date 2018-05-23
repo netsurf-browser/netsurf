@@ -312,7 +312,6 @@ ro_save_draw_polygon(const struct redraw_context *ctx,
  * \param pstyle Style controlling the path plot.
  * \param p elements of path
  * \param n nunber of elements on path
- * \param width The width of the path
  * \param transform A transform to apply to the path.
  * \return NSERROR_OK on success else error code.
  */
@@ -321,7 +320,6 @@ ro_save_draw_path(const struct redraw_context *ctx,
 		  const plot_style_t *pstyle,
 		  const float *p,
 		  unsigned int n,
-		  float width,
 		  const float transform[6])
 {
 	pencil_code code;
@@ -409,7 +407,8 @@ ro_save_draw_path(const struct redraw_context *ctx,
 			   pstyle->stroke_colour == NS_TRANSPARENT ?
 			   pencil_TRANSPARENT :
 			   pstyle->stroke_colour << 8,
-			   width, pencil_JOIN_MITRED,
+			   plot_style_fixed_to_int(style->stroke_width),
+			   pencil_JOIN_MITRED,
 			   pencil_CAP_BUTT,
 			   pencil_CAP_BUTT,
 			   0,

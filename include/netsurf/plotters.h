@@ -220,7 +220,6 @@ struct plotter_table {
 	 * \param pstyle Style controlling the path plot.
 	 * \param p elements of path
 	 * \param n nunber of elements on path
-	 * \param width The width of the path
 	 * \param transform A transform to apply to the path.
 	 * \return NSERROR_OK on success else error code.
 	 */
@@ -229,7 +228,6 @@ struct plotter_table {
 			const plot_style_t *pstyle,
 			const float *p,
 			unsigned int n,
-			float width,
 			const float transform[6]);
 
 	/**
