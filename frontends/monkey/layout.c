@@ -33,7 +33,7 @@ static nserror nsfont_width(const plot_font_style_t *fstyle,
 			    const char *string, size_t length,
 			    int *width)
 {
-	*width = (fstyle->size * utf8_bounded_length(string, length)) / FONT_SIZE_SCALE;
+	*width = (fstyle->size * utf8_bounded_length(string, length)) / PLOT_STYLE_SCALE;
 	return NSERROR_OK;
 }
 
@@ -53,10 +53,10 @@ static nserror nsfont_position_in_string(const plot_font_style_t *fstyle,
 					 const char *string, size_t length,
 					 int x, size_t *char_offset, int *actual_x)
 {
-	*char_offset = x / (fstyle->size / FONT_SIZE_SCALE);
+	*char_offset = x / (fstyle->size / PLOT_STYLE_SCALE);
 	if (*char_offset > length)
 		*char_offset = length;
-	*actual_x = *char_offset * (fstyle->size / FONT_SIZE_SCALE);
+	*actual_x = *char_offset * (fstyle->size / PLOT_STYLE_SCALE);
 	return NSERROR_OK;
 }
 
@@ -88,7 +88,7 @@ static nserror nsfont_split(const plot_font_style_t *fstyle,
 			    const char *string, size_t length,
 			    int x, size_t *char_offset, int *actual_x)
 {
-	int c_off = *char_offset = x / (fstyle->size / FONT_SIZE_SCALE);
+	int c_off = *char_offset = x / (fstyle->size / PLOT_STYLE_SCALE);
 	if (*char_offset > length) {
 		*char_offset = length;
 	} else {
@@ -104,7 +104,7 @@ static nserror nsfont_split(const plot_font_style_t *fstyle,
 			}
 		}
 	}
-	*actual_x = *char_offset * (fstyle->size / FONT_SIZE_SCALE);
+	*actual_x = *char_offset * (fstyle->size / PLOT_STYLE_SCALE);
 	return NSERROR_OK;
 }
 

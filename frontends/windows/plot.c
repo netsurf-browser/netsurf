@@ -601,7 +601,9 @@ line(const struct redraw_context *ctx,
 		 (style->stroke_type == PLOT_OP_TYPE_DASH) ? PS_DASH:
 		 0);
 	LOGBRUSH lb = {BS_SOLID, col, 0};
-	HPEN pen = ExtCreatePen(penstyle, style->stroke_width, &lb, 0, NULL);
+	HPEN pen = ExtCreatePen(penstyle,
+			plot_style_fixed_to_int(style->stroke_width),
+			&lb, 0, NULL);
 	if (pen == NULL) {
 		DeleteObject(clipregion);
 		return NSERROR_INVALID;
@@ -672,7 +674,9 @@ rectangle(const struct redraw_context *ctx,
 	if (style->fill_type == PLOT_OP_TYPE_NONE)
 		lb1.lbStyle = BS_HOLLOW;
 
-	HPEN pen = ExtCreatePen(penstyle, style->stroke_width, &lb, 0, NULL);
+	HPEN pen = ExtCreatePen(penstyle,
+			plot_style_fixed_to_int(style->stroke_width),
+			&lb, 0, NULL);
 	if (pen == NULL) {
 		return NSERROR_INVALID;
 	}
@@ -810,7 +814,6 @@ polygon(const struct redraw_context *ctx,
  * \param pstyle Style controlling the path plot.
  * \param p elements of path
  * \param n nunber of elements on path
- * \param width The width of the path
  * \param transform A transform to apply to the path.
  * \return NSERROR_OK on success else error code.
  */
@@ -819,7 +822,6 @@ path(const struct redraw_context *ctx,
      const plot_style_t *pstyle,
      const float *p,
      unsigned int n,
-     float width,
      const float transform[6])
 {
 	NSLOG(plot, DEEPDEBUG, "path unimplemented");

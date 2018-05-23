@@ -130,7 +130,7 @@ void nsbeos_style_to_font(BFont &font, const struct plot_font_style *fstyle)
 	}
 
 //fprintf(stderr, "nsbeos_style_to_font: value %f unit %d\n", style->font_size.value.length.value, style->font_size.value.length.unit);
-	size = fstyle->size / FONT_SIZE_SCALE;
+	size = fstyle->size / PLOT_STYLE_SCALE;
 
 //fprintf(stderr, "nsbeos_style_to_font: %f %d\n", size, style->font_size.value.length.unit);
 

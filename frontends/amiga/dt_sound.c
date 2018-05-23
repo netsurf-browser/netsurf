@@ -195,7 +195,7 @@ bool amiga_dt_sound_redraw(struct content *c,
 		.fill_type = PLOT_OP_TYPE_SOLID,
 		.fill_colour = 0xffffff,
 		.stroke_colour = 0x000000,
-		.stroke_width = 1,
+		.stroke_width = plot_style_int_to_fixed(1),
 	};
 	struct rect rect;
 

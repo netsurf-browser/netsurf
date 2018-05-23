@@ -168,7 +168,7 @@ framebuffer_plot_line(const struct redraw_context *ctx,
 		}
 
 		pen.stroke_colour = style->stroke_colour;
-		pen.stroke_width = style->stroke_width;
+		pen.stroke_width = plot_style_fixed_to_int(style->stroke_width);
 		nsfb_plot_line(nsfb, &rect, &pen);
 	}
 
@@ -216,7 +216,9 @@ framebuffer_plot_rectangle(const struct redraw_context *ctx,
 			dashed = true;
 		}
 
-		nsfb_plot_rectangle(nsfb, &rect, style->stroke_width, style->stroke_colour, dotted, dashed);
+		nsfb_plot_rectangle(nsfb, &rect,
+				plot_style_fixed_to_int(style->stroke_width),
+				style->stroke_colour, dotted, dashed);
 	}
 	return NSERROR_OK;
 }
@@ -259,7 +261,6 @@ framebuffer_plot_polygon(const struct redraw_context *ctx,
  * \param pstyle Style controlling the path plot.
  * \param p elements of path
  * \param n nunber of elements on path
- * \param width The width of the path
  * \param transform A transform to apply to the path.
  * \return NSERROR_OK on success else error code.
  */
@@ -268,7 +269,6 @@ framebuffer_plot_path(const struct redraw_context *ctx,
 		const plot_style_t *pstyle,
 		const float *p,
 		unsigned int n,
-		float width,
 		const float transform[6])
 {
 	NSLOG(netsurf, INFO, "path unimplemented");

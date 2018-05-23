@@ -144,14 +144,15 @@ void font_plot_style_from_css(
 
 	fstyle->family = plot_font_generic_family(
 			css_computed_font_family(css, &families));
+	fstyle->families = families;
 
 	css_computed_font_size(css, &length, &unit);
 	fstyle->size = FIXTOINT(FMUL(nscss_len2pt(len_ctx, length, unit),
-				      INTTOFIX(FONT_SIZE_SCALE)));
+				      INTTOFIX(PLOT_STYLE_SCALE)));
 
 	/* Clamp font size to configured minimum */
-	if (fstyle->size < (nsoption_int(font_min_size) * FONT_SIZE_SCALE) / 10)
-		fstyle->size = (nsoption_int(font_min_size) * FONT_SIZE_SCALE) / 10;
+	if (fstyle->size < (nsoption_int(font_min_size) * PLOT_STYLE_SCALE) / 10)
+		fstyle->size = (nsoption_int(font_min_size) * PLOT_STYLE_SCALE) / 10;
 
 	fstyle->weight = plot_font_weight(css_computed_font_weight(css));
 	fstyle->flags = plot_font_flags(css_computed_font_style(css),

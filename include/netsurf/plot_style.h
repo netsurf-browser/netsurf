@@ -25,6 +25,8 @@
 #define NETSURF_PLOT_STYLE_H
 
 #include <stdint.h>
+#include <stdint.h>
+#include <libwapcaplet/libwapcaplet.h>
 #include "netsurf/types.h"
 
 /** light grey widget base colour */
@@ -36,8 +38,26 @@
 /** Transparent colour value. */
 #define NS_TRANSPARENT 0x01000000
 
-/** Scaling factor for font sizes */
-#define FONT_SIZE_SCALE 1024
+/** 22:10 fixed point */
+#define PLOT_STYLE_RADIX (10)
+
+/** Scaling factor for plot styles */
+#define PLOT_STYLE_SCALE (1 << PLOT_STYLE_RADIX)
+
+/* type for fixed point numbers */
+typedef int32_t plot_style_fixed;
+
+/* Convert an int to fixed point */
+#define plot_style_int_to_fixed(v) ((v) << PLOT_STYLE_RADIX)
+
+/* Convert fixed point to int */
+#define plot_style_fixed_to_int(v) ((v) >> PLOT_STYLE_RADIX)
+
+/* Convert fixed point to float */
+#define plot_style_fixed_to_float(v) (((float)v) / PLOT_STYLE_SCALE)
+
+/* Convert fixed point to double */
+#define plot_style_fixed_to_double(v) (((double)v) / PLOT_STYLE_SCALE)
 
 /**
  * Type of plot operation
@@ -55,7 +75,7 @@ typedef enum {
  */
 typedef struct plot_style_s {
 	plot_operation_type_t stroke_type; /**< Stroke plot type */
-	int stroke_width; /**< Width of stroke, in pixels */
+	plot_style_fixed stroke_width; /**< Width of stroke, in pixels */
 	colour stroke_colour; /**< Colour of stroke */
 	plot_operation_type_t fill_type; /**< Fill plot type */
 	colour fill_colour; /**< Colour of fill */
@@ -89,8 +109,14 @@ typedef enum {
  * Font style for plotting
  */
 typedef struct plot_font_style {
+	/**
+	 * Array of pointers to font families.
+	 *
+	 * May be NULL.  Array is NULL terminated.
+	 */
+	lwc_string * const * families;
 	plot_font_generic_family_t family; /**< Generic family to plot with */
-	int size; /**< Font size, in points * FONT_SIZE_SCALE */
+	plot_style_fixed size; /**< Font size, in pt */
 	int weight; /**< Font weight: value in range [100,900] as per CSS */
 	plot_font_flags_t flags; /**< Font flags */
 	colour background; /**< Background colour to blend to, if appropriate */

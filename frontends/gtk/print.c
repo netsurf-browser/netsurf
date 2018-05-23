@@ -133,6 +133,17 @@ static inline void nsgtk_print_set_dashed(void)
 	cairo_set_dash(gtk_print_current_cr, cdashes, 1, 0);
 }
 
+/** Set cairo context line width. */
+static inline void nsgtk_set_line_width(plot_style_fixed width)
+{
+	if (width == 0) {
+		cairo_set_line_width(gtk_print_current_cr, 1);
+	} else {
+		cairo_set_line_width(gtk_print_current_cr,
+				plot_style_fixed_to_double(width));
+	}
+}
+
 
 /**
  * \brief Sets a clip rectangle for subsequent plot operations.
@@ -248,10 +259,7 @@ nsgtk_print_plot_disc(const struct redraw_context *ctx,
 			break;
 		}
 
-		if (style->stroke_width == 0)
-			cairo_set_line_width(gtk_print_current_cr, 1);
-		else
-			cairo_set_line_width(gtk_print_current_cr, style->stroke_width);
+		nsgtk_set_line_width(style->stroke_width);
 
 		cairo_arc(gtk_print_current_cr, x, y, radius, 0, M_PI * 2);
 
@@ -294,10 +302,7 @@ nsgtk_print_plot_line(const struct redraw_context *ctx,
 		break;
 	}
 
-	if (style->stroke_width == 0) 
-		cairo_set_line_width(gtk_print_current_cr, 1);
-	else
-		cairo_set_line_width(gtk_print_current_cr, style->stroke_width);
+	nsgtk_set_line_width(style->stroke_width);
 
 	cairo_move_to(gtk_print_current_cr, line->x0 + 0.5, line->y0 + 0.5);
 	cairo_line_to(gtk_print_current_cr, line->x1 + 0.5, line->y1 + 0.5);
@@ -350,13 +355,6 @@ nsgtk_print_plot_rectangle(const struct redraw_context *ctx,
 	}
 
         if (style->stroke_type != PLOT_OP_TYPE_NONE) { 
-		int stroke_width;
-
-		/* ensure minimum stroke width */
-		stroke_width = style->stroke_width;
-                if (stroke_width == 0) {
-			stroke_width = 1;
-                }
 
 		nsgtk_print_set_colour(style->stroke_colour);
 
@@ -375,7 +373,7 @@ nsgtk_print_plot_rectangle(const struct redraw_context *ctx,
                         break;
                 }
 
-		cairo_set_line_width(gtk_print_current_cr, stroke_width);
+		nsgtk_set_line_width(style->stroke_width);
 
 		cairo_rectangle(gtk_print_current_cr,
 				rect->x0, rect->y0,
@@ -429,7 +427,6 @@ nsgtk_print_plot_polygon(const struct redraw_context *ctx,
  * \param pstyle Style controlling the path plot.
  * \param p elements of path
  * \param n nunber of elements on path
- * \param width The width of the path
  * \param transform A transform to apply to the path.
  * \return NSERROR_OK on success else error code.
  */
@@ -438,7 +435,6 @@ nsgtk_print_plot_path(const struct redraw_context *ctx,
 		const plot_style_t *pstyle,
 		const float *p,
 		unsigned int n,
-		float width,
 		const float transform[6])
 {
 	/* Only the internal SVG renderer uses this plot call currently,

@@ -2124,7 +2124,7 @@ plot_line(const struct redraw_context *ctx,
 {
     short pxy[4];
     uint32_t lt;
-    int sw = pstyle->stroke_width;
+    int sw = plot_style_fixed_to_int(pstyle->stroke_width);
 
     if (((line->x0 < 0) && (line->x1 < 0)) ||
 	((line->y0 < 0) && (line->y1 < 0))) {
@@ -2183,7 +2183,7 @@ plot_rectangle(const struct redraw_context *ctx,
 {
     short pxy[4];
     GRECT r, rclip, sclip;
-    int sw = pstyle->stroke_width;
+    int sw = plot_style_fixed_to_int(pstyle->stroke_width);
     uint32_t lt;
 
     /* current canvas clip: */
@@ -2266,7 +2266,7 @@ plot_rectangle(const struct redraw_context *ctx,
 
     if (pstyle->fill_type != PLOT_OP_TYPE_NONE ) {
 	short stroke_width = (short)(pstyle->stroke_type != PLOT_OP_TYPE_NONE) ?
-	    pstyle->stroke_width : 0;
+	    plot_style_fixed_to_int(pstyle->stroke_width) : 0;
 
 	vsf_rgbcolor(atari_plot_vdi_handle, pstyle->fill_colour);
 	vsf_perimeter(atari_plot_vdi_handle, 0);
@@ -2343,7 +2343,6 @@ plot_polygon(const struct redraw_context *ctx,
  * \param pstyle Style controlling the path plot.
  * \param p elements of path
  * \param n nunber of elements on path
- * \param width The width of the path
  * \param transform A transform to apply to the path.
  * \return NSERROR_OK on success else error code.
  */
@@ -2352,7 +2351,6 @@ plot_path(const struct redraw_context *ctx,
 	  const plot_style_t *pstyle,
 	  const float *p,
 	  unsigned int n,
-	  float width,
 	  const float transform[6])
 {
     /** \todo Implement atari path plot */

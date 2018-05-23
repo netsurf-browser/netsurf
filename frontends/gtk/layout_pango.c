@@ -277,7 +277,7 @@ nsfont_style_to_description(const plot_font_style_t *fstyle)
 		break;
 	}
 
-	size = (fstyle->size * PANGO_SCALE) / FONT_SIZE_SCALE;
+	size = (fstyle->size * PANGO_SCALE) / PLOT_STYLE_SCALE;
 
 	if (fstyle->flags & FONTF_ITALIC)
 		style = PANGO_STYLE_ITALIC;

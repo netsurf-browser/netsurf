@@ -111,7 +111,7 @@ html_redraw_border_plot(const int side,
 
 	plot_style_bdr.stroke_type = PLOT_OP_TYPE_DASH;
 	plot_style_bdr.stroke_colour = c;
-	plot_style_bdr.stroke_width = thickness;
+	plot_style_bdr.stroke_width = (thickness << PLOT_STYLE_RADIX);
 	plot_style_fillbdr.fill_colour = c;
 	plot_style_fillbdr_dark.fill_colour = darken_colour(c);
 	plot_style_fillbdr_light.fill_colour = lighten_colour(c);

@@ -45,9 +45,9 @@
 #define TA_ALLOC_STEP 512
 
 static plot_style_t pstyle_stroke_caret = {
-    .stroke_type = PLOT_OP_TYPE_SOLID,
-    .stroke_colour = CARET_COLOR,
-    .stroke_width = 1,
+	.stroke_type = PLOT_OP_TYPE_SOLID,
+	.stroke_colour = CARET_COLOR,
+	.stroke_width = plot_style_int_to_fixed(1),
 };
 
 struct line_info {
@@ -1805,7 +1805,7 @@ static void textarea_setup_text_offsets(struct textarea *ta)
 
 	ta->line_height = FIXTOINT(FMUL(FLTTOFIX(1.3), FDIV(FMUL(
 			nscss_screen_dpi, FDIV(INTTOFIX(ta->fstyle.size),
-			INTTOFIX(FONT_SIZE_SCALE))), F_72)));
+			INTTOFIX(PLOT_STYLE_SCALE))), F_72)));
 
 	text_y_offset = text_y_offset_baseline = ta->border_width;
 	if (ta->flags & TEXTAREA_MULTILINE) {
@@ -1948,7 +1948,7 @@ struct textarea *textarea_create(const textarea_flags flags,
 
 	ret->line_height = FIXTOINT(FMUL(FLTTOFIX(1.3), FDIV(FMUL(
 			nscss_screen_dpi, FDIV(INTTOFIX(setup->text.size),
-			INTTOFIX(FONT_SIZE_SCALE))), F_72)));
+			INTTOFIX(PLOT_STYLE_SCALE))), F_72)));
 
 	ret->caret_pos.line = ret->caret_pos.byte_off = -1;
 	ret->caret_x = 0;

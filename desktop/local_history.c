@@ -55,7 +55,7 @@ struct local_history_session {
  */
 static plot_style_t pstyle_line = {
 	.stroke_type = PLOT_OP_TYPE_SOLID,
-	.stroke_width = 2,
+	.stroke_width = plot_style_int_to_fixed(2),
 };
 
 
@@ -72,7 +72,7 @@ static plot_style_t pstyle_bg = {
  */
 static plot_style_t pstyle_rect = {
 	.stroke_type = PLOT_OP_TYPE_SOLID,
-	.stroke_width = 1,
+	.stroke_width = plot_style_int_to_fixed(1),
 };
 
 
@@ -81,7 +81,7 @@ static plot_style_t pstyle_rect = {
  */
 static plot_style_t pstyle_rect_sel = {
 	.stroke_type = PLOT_OP_TYPE_SOLID,
-	.stroke_width = 3,
+	.stroke_width = plot_style_int_to_fixed(3),
 };
 
 
@@ -90,7 +90,7 @@ static plot_style_t pstyle_rect_sel = {
  */
 static plot_font_style_t pfstyle_node = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
-	.size = 8 * FONT_SIZE_SCALE,
+	.size = 8 * PLOT_STYLE_SCALE,
 	.weight = 400,
 	.flags = FONTF_NONE,
 };
@@ -101,7 +101,7 @@ static plot_font_style_t pfstyle_node = {
  */
 static plot_font_style_t pfstyle_node_sel = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
-	.size = 8 * FONT_SIZE_SCALE,
+	.size = 8 * PLOT_STYLE_SCALE,
 	.weight = 900,
 	.flags = FONTF_NONE,
 };

@@ -94,7 +94,7 @@ static float toolbar_url_scale = 1.0;
 
 static plot_font_style_t font_style_url = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
-	.size = 14*FONT_SIZE_SCALE,
+	.size = 14*PLOT_STYLE_SCALE,
 	.weight = 400,
 	.flags = FONTF_NONE,
 	.background = 0xffffff,
@@ -302,7 +302,7 @@ struct s_toolbar *toolbar_create(struct s_gui_win_root *owner)
 
 	/* create the url widget: */
 	font_style_url.size =
-		toolbar_styles[t->style].font_height_pt * FONT_SIZE_SCALE;
+		toolbar_styles[t->style].font_height_pt * PLOT_STYLE_SCALE;
 
 	textarea_flags ta_flags = TEXTAREA_INTERNAL_CARET;
 	textarea_setup ta_setup;

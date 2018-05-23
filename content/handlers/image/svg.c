@@ -188,14 +188,15 @@ svg_redraw_internal(struct content *c,
 
 	for (i = 0; i != diagram->shape_count; i++) {
 		if (diagram->shape[i].path) {
+			pstyle.stroke_width = plot_style_int_to_fixed(
+					diagram->shape[i].stroke);
 			pstyle.stroke_colour = BGR(diagram->shape[i].stroke);
 			pstyle.fill_colour = BGR(diagram->shape[i].fill);
 			res = ctx->plot->path(ctx,
-					     &pstyle,
-					     diagram->shape[i].path,
-					     diagram->shape[i].path_length,
-					     diagram->shape[i].stroke_width,
-					     transform);
+					&pstyle,
+					diagram->shape[i].path,
+					diagram->shape[i].path_length,
+					transform);
 			if (res != NSERROR_OK) {
 				return false;
 			}
@@ -210,7 +211,7 @@ svg_redraw_internal(struct content *c,
 
 			fstyle.background = 0xffffff;
 			fstyle.foreground = 0x000000;
-			fstyle.size = (8 * FONT_SIZE_SCALE) * scale;
+			fstyle.size = (8 * PLOT_STYLE_SCALE) * scale;
 
 			res = ctx->plot->text(ctx,
 					      &fstyle,

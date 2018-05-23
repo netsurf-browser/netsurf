@@ -1160,7 +1160,7 @@ bool form_open_select_menu(void *client_data,
 
 		menu->line_height = FIXTOINT(FDIV((FMUL(FLTTOFIX(1.2),
 				FMUL(nscss_screen_dpi,
-				INTTOFIX(fstyle.size / FONT_SIZE_SCALE)))),
+				INTTOFIX(fstyle.size / PLOT_STYLE_SCALE)))),
 				F_72));
 
 		line_height_with_spacing = menu->line_height +

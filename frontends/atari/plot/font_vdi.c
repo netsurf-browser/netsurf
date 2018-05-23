@@ -106,9 +106,9 @@ static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle, const c
 		fx |= 1;
 	vst_effects( self->vdi_handle, fx );
 	/* TODO: replace 90 with global dpi setting */
-	//pxsize = ceil( (fstyle->size/FONT_SIZE_SCALE) * 90 / 72 );
+	//pxsize = ceil( (fstyle->size/PLOT_STYLE_SCALE) * 90 / 72 );
 	//vst_height( self->vdi_handle, pxsize ,&cw, &ch, &cellw, &cellh);
-	pxsize = ceil( (fstyle->size/FONT_SIZE_SCALE) * 90  );
+	pxsize = ceil( (fstyle->size/PLOT_STYLE_SCALE) * 90  );
 	vst_point( self->vdi_handle, pxsize, &cw, &ch, &cellw, &cellh);
 /*
 	if(slen != utf8_bounded_length(str, length)){
@@ -148,10 +148,10 @@ static int str_split( FONT_PLOTTER self, const plot_font_style_t * fstyle, const
 	if( fstyle->weight > 450 )
 		fx |= 1;
 	vst_effects( self->vdi_handle, fx );
-	//pxsize = ceil( (fstyle->size/FONT_SIZE_SCALE) * 90 / 72 );
+	//pxsize = ceil( (fstyle->size/PLOT_STYLE_SCALE) * 90 / 72 );
 	//vst_height( self->vdi_handle, pxsize ,&cw, &ch, &cellw, &cellh);
 
-	pxsize = ceil( (fstyle->size/FONT_SIZE_SCALE) * 90  );
+	pxsize = ceil( (fstyle->size/PLOT_STYLE_SCALE) * 90  );
 	vst_point( self->vdi_handle, pxsize, &cw, &ch, &cellw, &cellh);
 	*actual_x = 0;
 	//*char_offset = 0;
@@ -216,7 +216,7 @@ static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t * fstyle,const 
 	if( fstyle->weight > 450 )
 		fx |= 1;
 	vst_effects(self->vdi_handle, fx);
-	pxsize = ceil( (fstyle->size/FONT_SIZE_SCALE) * 90 / 72 );
+	pxsize = ceil( (fstyle->size/PLOT_STYLE_SCALE) * 90 / 72 );
 	vst_height( self->vdi_handle, pxsize ,&cw, &ch, &cellw, &cellh);
 	*actual_x = 0;
 	*char_offset = 0;
@@ -283,8 +283,8 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 
 	/* TODO: netsurf uses 90 as default dpi ( somewhere defined in libcss),
 	   use that value or pass it as arg, to reduce netsurf dependency */
-	//pxsize = ceil( (fstyle->size/FONT_SIZE_SCALE) * 90 / 72 );
-	pxsize = ceil( (fstyle->size/FONT_SIZE_SCALE) * 90 / 72 );
+	//pxsize = ceil( (fstyle->size/PLOT_STYLE_SCALE) * 90 / 72 );
+	pxsize = ceil( (fstyle->size/PLOT_STYLE_SCALE) * 90 / 72 );
 
 	plot_get_dimensions(&canvas);
 	x += canvas.g_x;

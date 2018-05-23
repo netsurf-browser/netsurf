@@ -722,8 +722,8 @@ ami_line(const struct redraw_context *ctx,
 
 	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
 
-	glob->rp->PenWidth = style->stroke_width;
-	glob->rp->PenHeight = style->stroke_width;
+	glob->rp->PenWidth = plot_style_fixed_to_int(style->stroke_width);
+	glob->rp->PenHeight = plot_style_fixed_to_int(style->stroke_width);
 
 	switch (style->stroke_type) {
 		case PLOT_OP_TYPE_SOLID: /**< Solid colour */
@@ -780,8 +780,8 @@ ami_rectangle(const struct redraw_context *ctx,
 	}
 
 	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
-		glob->rp->PenWidth = style->stroke_width;
-		glob->rp->PenHeight = style->stroke_width;
+		glob->rp->PenWidth = plot_style_fixed_to_int(style->stroke_width);
+		glob->rp->PenHeight = plot_style_fixed_to_int(style->stroke_width);
 
 		switch (style->stroke_type) {
 			case PLOT_OP_TYPE_SOLID: /**< Solid colour */
@@ -868,7 +868,6 @@ ami_polygon(const struct redraw_context *ctx,
  * \param pstyle Style controlling the path plot.
  * \param p elements of path
  * \param n nunber of elements on path
- * \param width The width of the path
  * \param transform A transform to apply to the path.
  * \return NSERROR_OK on success else error code.
  */
@@ -877,7 +876,6 @@ ami_path(const struct redraw_context *ctx,
 		const plot_style_t *pstyle,
 		const float *p,
 		unsigned int n,
-		float width,
 		const float transform[6])
 {
 	unsigned int i;

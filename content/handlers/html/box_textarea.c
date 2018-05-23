@@ -244,7 +244,7 @@ bool box_textarea_create_textarea(html_content *html,
 	textarea_flags ta_flags;
 	plot_font_style_t fstyle = {
 		.family = PLOT_FONT_FAMILY_SANS_SERIF,
-		.size = 10 * FONT_SIZE_SCALE,
+		.size = 10 * PLOT_STYLE_SCALE,
 		.weight = 400,
 		.flags = FONTF_NONE,
 		.background = 0,

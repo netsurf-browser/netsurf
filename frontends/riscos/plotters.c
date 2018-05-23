@@ -324,9 +324,9 @@ ro_plot_line(const struct redraw_context *ctx,
 			dashed = true;
 
 		return ro_plot_draw_path((const draw_path *)path,
-					 style->stroke_width,
-					 style->stroke_colour,
-					 dotted, dashed);
+				plot_style_fixed_to_int(style->stroke_width),
+				style->stroke_colour,
+				dotted, dashed);
 	}
 	return NSERROR_OK;
 }
@@ -412,10 +412,10 @@ ro_plot_rectangle(const struct redraw_context *ctx,
 			dashed = true;
 
 		ro_plot_draw_path((const draw_path *)path,
-				  style->stroke_width,
-				  style->stroke_colour,
-				  dotted,
-				  dashed);
+				plot_style_fixed_to_int(style->stroke_width),
+				style->stroke_colour,
+				dotted,
+				dashed);
 	}
 
 	return NSERROR_OK;
@@ -483,7 +483,6 @@ ro_plot_polygon(const struct redraw_context *ctx,
  * \param pstyle Style controlling the path plot.
  * \param p elements of path
  * \param n nunber of elements on path
- * \param width The width of the path
  * \param transform A transform to apply to the path.
  * \return NSERROR_OK on success else error code.
  */
@@ -492,7 +491,6 @@ ro_plot_path(const struct redraw_context *ctx,
 		const plot_style_t *pstyle,
 		const float *p,
 		unsigned int n,
-		float width,
 		const float transform[6])
 {
 	static const draw_line_style line_style = {
@@ -591,7 +589,9 @@ ro_plot_path(const struct redraw_context *ctx,
 		}
 
 		error = xdraw_stroke((draw_path *) path, 0, &trfm, 0,
-				width * 2 * 256, &line_style, 0);
+				plot_style_fixed_to_int(
+						pstyle->stroke_width) * 2 * 256,
+				&line_style, 0);
 		if (error) {
 			NSLOG(netsurf, INFO, "xdraw_stroke: 0x%x: %s",
 			      error->errnum, error->errmess);

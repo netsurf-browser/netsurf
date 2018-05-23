@@ -47,7 +47,7 @@ plot_style_t *plot_style_fill_red = &plot_style_fill_red_static;
 static const plot_style_t plot_style_content_edge_static = {
 	.stroke_type = PLOT_OP_TYPE_SOLID,
 	.stroke_colour = 0x00ff0000,
-	.stroke_width = 1,
+	.stroke_width = plot_style_int_to_fixed(1),
 };
 plot_style_t const * const plot_style_content_edge =
 		&plot_style_content_edge_static;
@@ -55,7 +55,7 @@ plot_style_t const * const plot_style_content_edge =
 static const plot_style_t plot_style_padding_edge_static = {
 	.stroke_type = PLOT_OP_TYPE_SOLID,
 	.stroke_colour = 0x000000ff,
-	.stroke_width = 1,
+	.stroke_width = plot_style_int_to_fixed(1),
 };
 plot_style_t const * const plot_style_padding_edge =
 		&plot_style_padding_edge_static;
@@ -63,7 +63,7 @@ plot_style_t const * const plot_style_padding_edge =
 static const plot_style_t plot_style_margin_edge_static = {
 	.stroke_type = PLOT_OP_TYPE_SOLID,
 	.stroke_colour = 0x0000ffff,
-	.stroke_width = 1,
+	.stroke_width = plot_style_int_to_fixed(1),
 };
 plot_style_t const * const plot_style_margin_edge =
 		&plot_style_margin_edge_static;
@@ -74,14 +74,14 @@ static const plot_style_t plot_style_broken_object_static = {
 	.fill_colour = 0x008888ff,
 	.stroke_type = PLOT_OP_TYPE_SOLID,
 	.stroke_colour = 0x000000ff,
-	.stroke_width = 1,
+	.stroke_width = plot_style_int_to_fixed(1),
 };
 plot_style_t const * const plot_style_broken_object =
 		&plot_style_broken_object_static;
 
 static const plot_font_style_t plot_fstyle_broken_object_static = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
-	.size = 16 * FONT_SIZE_SCALE,
+	.size = 16 * PLOT_STYLE_SCALE,
 	.weight = 400,
 	.flags = FONTF_NONE,
 	.background = 0x8888ff,
@@ -134,7 +134,7 @@ plot_style_t *plot_style_fill_wblobc = &plot_style_fill_wblobc_static;
 static plot_style_t plot_style_stroke_wblobc_static = {
 	.stroke_type = PLOT_OP_TYPE_SOLID,
 	.stroke_colour = WIDGET_BLOBC,
-	.stroke_width = 2,
+	.stroke_width = plot_style_int_to_fixed(2),
 };
 plot_style_t *plot_style_stroke_wblobc = &plot_style_stroke_wblobc_static;
 
@@ -156,7 +156,7 @@ plot_style_t *plot_style_stroke_lightwbasec = &plot_style_stroke_lightwbasec_sta
 /* Generic font style */
 static const plot_font_style_t plot_style_font_static = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
-	.size = 8 * FONT_SIZE_SCALE,
+	.size = 8 * PLOT_STYLE_SCALE,
 	.weight = 400,
 	.flags = FONTF_NONE,
 	.background = 0xffffff,

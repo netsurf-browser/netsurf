@@ -250,7 +250,7 @@ static void ft_fill_scalar(const plot_font_style_t *fstyle, FTC_Scaler srec)
 
 	srec->face_id = (FTC_FaceID)font_faces[selected_face];
 
-	srec->width = srec->height = (fstyle->size * 64) / FONT_SIZE_SCALE;
+	srec->width = srec->height = (fstyle->size * 64) / PLOT_STYLE_SCALE;
 	srec->pixel = 0;
 
 	/* calculate x/y resolution, when browser_get_dpi() isn't available */
