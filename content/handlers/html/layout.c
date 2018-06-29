@@ -4138,13 +4138,12 @@ layout_block_context(struct box *block,
 		}
 
 		/* Vertical margin */
-		if (((box->type == BOX_BLOCK &&
-				(box->flags & HAS_HEIGHT)) ||
-				box->type == BOX_TABLE ||
-				(box->type == BOX_INLINE_CONTAINER &&
-				box != box->parent->children) ||
-				margin_collapse == box) &&
-				in_margin == true) {
+		if (((box->type == BOX_BLOCK && (box->flags & HAS_HEIGHT)) ||
+		     box->type == BOX_TABLE ||
+		     (box->type == BOX_INLINE_CONTAINER &&
+		      box != box->parent->children) ||
+		     margin_collapse == box) &&
+		    in_margin == true) {
 			/* Margin goes above this box. */
 			cy += max_pos_margin - max_neg_margin;
 			box->y += max_pos_margin - max_neg_margin;
