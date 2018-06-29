@@ -366,4 +366,15 @@ bool box_normalise_block(
 		const struct box *root,
 		struct html_content *c);
 
+/**
+ * Check if layout box is a first child.
+ *
+ * \param[in] b  Box to check.
+ * \return true iff box is first child.
+ */
+static inline bool box_is_first_child(struct box *b)
+{
+	return (b->parent == NULL || b == b->parent->children);
+}
+
 #endif
