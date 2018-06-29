@@ -1578,7 +1578,7 @@ layout_next_margin_block(const nscss_len_ctx *len_ctx,
 					css_computed_overflow_y(box->style) !=
 					CSS_OVERFLOW_VISIBLE) ||
 					(box->type == BOX_INLINE_CONTAINER &&
-					box != box->parent->children)) {
+					!box_is_first_child(box))) {
 				/* Collapse to this box; return it */
 				return box;
 			}
@@ -4141,7 +4141,7 @@ layout_block_context(struct box *block,
 		if (((box->type == BOX_BLOCK && (box->flags & HAS_HEIGHT)) ||
 		     box->type == BOX_TABLE ||
 		     (box->type == BOX_INLINE_CONTAINER &&
-		      box != box->parent->children) ||
+		      !box_is_first_child(box)) ||
 		     margin_collapse == box) &&
 		    in_margin == true) {
 			/* Margin goes above this box. */
