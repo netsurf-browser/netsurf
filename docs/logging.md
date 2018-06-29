@@ -62,11 +62,17 @@ The main command line switches that control logging are:
   - -V <file>
   Send the logging to a file instead of standard output 
   
-  - -log_filter=<filter>
+  - --log_filter=<filter>
   Set the non verbose filter
 
-  - -log_verbose_filter=<filter>
+  - --verbose_filter=<filter>
   Set the verbose filter
+
+Examples:
+
+    ./nsgtk --log_filter="level:INFO"
+    ./nsgtk -v --verbose_filter="(cat:layout && level:DEBUG)"
+    ./nsgtk -v --verbose_filter="((cat:layout && level:DEBUG) || level:INFO)"
 
 Options
 -------
