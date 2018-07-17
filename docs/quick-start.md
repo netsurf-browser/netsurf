@@ -11,7 +11,7 @@ Native build
 Grab a temporary env.sh
 -----------------------
 
-     $ wget http://git.netsurf-browser.org/netsurf.git/plain/docs/env.sh
+     $ wget https://git.netsurf-browser.org/netsurf.git/plain/docs/env.sh
      $ unset HOST
      $ source env.sh
 
@@ -108,7 +108,7 @@ We maintain cross compilation environments and an SDK for a number of
 
 Pre-built versions of the toolchains for 64bit x86 Debian systems are
   available via our [automated build and test
-  infrastructure](http://ci.netsurf-browser.org/builds/toolchains/)
+  infrastructure](https://ci.netsurf-browser.org/builds/toolchains/)
 
 
 Not working?
