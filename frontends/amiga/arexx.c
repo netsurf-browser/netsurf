@@ -366,7 +366,7 @@ RXHOOKF(rx_save)
 			FWrite(fh, source_data, 1, source_size);
 
 		FClose(fh);
-		SetComment((char *)cmd->ac_ArgList[0], nsurl_access(browser_window_get_url(gw->bw)));
+		SetComment((char *)cmd->ac_ArgList[0], nsurl_access(browser_window_access_url(gw->bw)));
 	}
 
 	ami_reset_pointer(gw->shared);
@@ -395,7 +395,7 @@ RXHOOKF(rx_geturl)
 
 	if(gw && gw->bw)
 	{
-		strcpy(result, nsurl_access(browser_window_get_url(gw->bw)));
+		strcpy(result, nsurl_access(browser_window_access_url(gw->bw)));
 	}
 	else
 	{

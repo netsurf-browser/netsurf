@@ -146,7 +146,7 @@ HOOKF(void, ami_ctxmenu_item_urlopentab, APTR, window, struct IntuiMessage *)
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 	nserror error = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY | BW_CREATE_TAB,
 								      url,
-								      browser_window_get_url(gwin->gw->bw),
+								      browser_window_access_url(gwin->gw->bw),
 								      gwin->gw->bw,
 								      &bw);
 
@@ -163,7 +163,7 @@ HOOKF(void, ami_ctxmenu_item_urlopenwin, APTR, window, struct IntuiMessage *)
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 	nserror error = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY,
 								      url,
-								      browser_window_get_url(gwin->gw->bw),
+								      browser_window_access_url(gwin->gw->bw),
 								      gwin->gw->bw,
 								      &bw);
 
@@ -180,7 +180,7 @@ HOOKF(void, ami_ctxmenu_item_urldownload, APTR, window, struct IntuiMessage *)
 
 	browser_window_navigate(gwin->gw->bw,
 		url,
-		browser_window_get_url(gwin->gw->bw),
+		browser_window_access_url(gwin->gw->bw),
 		BW_NAVIGATE_DOWNLOAD,
 		NULL,
 		NULL,
@@ -200,7 +200,7 @@ HOOKF(void, ami_ctxmenu_item_objshow, APTR, window, struct IntuiMessage *)
 
 	browser_window_navigate(gwin->gw->bw,
 							hlcache_handle_get_url(hook->h_Data),
-							browser_window_get_url(gwin->gw->bw),
+							browser_window_access_url(gwin->gw->bw),
 							BW_NAVIGATE_HISTORY,
 							NULL,
 							NULL,
@@ -240,7 +240,7 @@ HOOKF(void, ami_ctxmenu_item_frameshow, APTR, window, struct IntuiMessage *)
 
 	browser_window_navigate(gwin->gw->bw,
 							hlcache_handle_get_url(hook->h_Data),
-							browser_window_get_url(gwin->gw->bw),
+							browser_window_access_url(gwin->gw->bw),
 							BW_NAVIGATE_HISTORY,
 							NULL,
 							NULL,

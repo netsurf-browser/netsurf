@@ -261,7 +261,7 @@ HOOKF(void, ami_menu_item_edit_copy, APTR, window, struct IntuiMessage *)
 		 * the objects containing the values returned (and the
 		 * constness cast away) is safe.
 		 */
-		ami_bitmap_set_url(bm, browser_window_get_url(gwin->gw->bw));
+		ami_bitmap_set_url(bm, browser_window_access_url(gwin->gw->bw));
 		ami_bitmap_set_title(bm, browser_window_get_title(gwin->gw->bw));
 		ami_easy_clipboard_bitmap(bm);
 	}
@@ -419,7 +419,7 @@ HOOKF(void, ami_menu_item_hotlist_add, APTR, window, struct IntuiMessage *)
 	if (bw == NULL || browser_window_has_content(bw) == false)
 		return;
 
-	hotlist_add_url(browser_window_get_url(bw));
+	hotlist_add_url(browser_window_access_url(bw));
 	ami_gui_update_hotlist_button(gwin);
 }
 

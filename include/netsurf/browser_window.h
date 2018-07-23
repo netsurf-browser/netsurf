@@ -200,14 +200,14 @@ bool browser_window_up_available(struct browser_window *bw);
 nserror browser_window_navigate_up(struct browser_window *bw, bool new_window);
 
 /**
- * Get a browser window's URL.
+ * Access a browser window's URL.  This URL is always without any fragment.
  *
  * \param bw browser window
  * \return pointer to nsurl. Doesn't create a ref for caller.
  *
  * \note guaranteed to return a valid nsurl ptr, never returns NULL.
  */
-struct nsurl* browser_window_get_url(struct browser_window *bw);
+struct nsurl* browser_window_access_url(struct browser_window *bw);
 
 /**
  * Get the title of a browser_window.

@@ -216,7 +216,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 					browser_window_navigate(
 						gw->browser->bw,
 						hlcache_handle_get_url(ctx->ccdata.object),
-						browser_window_get_url(gw->browser->bw),
+						browser_window_access_url(gw->browser->bw),
 						BW_NAVIGATE_DOWNLOAD,
 						NULL,
 						NULL,
@@ -232,7 +232,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 				error = browser_window_navigate(
 					gw->browser->bw,
 					ctx->ccdata.link,
-					browser_window_get_url(gw->browser->bw),
+					browser_window_access_url(gw->browser->bw),
 					BW_NAVIGATE_DOWNLOAD,
 					NULL,
 					NULL,
@@ -269,7 +269,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 				error = browser_window_create(
 					BW_CREATE_HISTORY | BW_CREATE_CLONE,
 					ctx->ccdata.link,
-					browser_window_get_url(gw->browser->bw),
+					browser_window_access_url(gw->browser->bw),
 					gw->browser->bw,
 					NULL);
 				if (error != NSERROR_OK) {

@@ -52,7 +52,7 @@ nserror nsgtk_viewsource(GtkWindow *parent, struct browser_window *bw)
 
 	source_data = content_get_source_data(hlcontent, &source_size);
 
-	ret = nsurl_nice(browser_window_get_url(bw), &filename, false);
+	ret = nsurl_nice(browser_window_access_url(bw), &filename, false);
 	if (ret != NSERROR_OK) {
 		filename = strdup(messages_get("SaveSource"));
 		if (filename == NULL) {
@@ -60,12 +60,12 @@ nserror nsgtk_viewsource(GtkWindow *parent, struct browser_window *bw)
 		}
 	}
 
-	title = malloc(strlen(nsurl_access(browser_window_get_url(bw))) + SLEN("Source of  - NetSurf") + 1);
+	title = malloc(strlen(nsurl_access(browser_window_access_url(bw))) + SLEN("Source of  - NetSurf") + 1);
 	if (title == NULL) {
 		free(filename);
 		return NSERROR_NOMEM;
 	}
-	sprintf(title, "Source of %s - NetSurf", nsurl_access(browser_window_get_url(bw)));
+	sprintf(title, "Source of %s - NetSurf", nsurl_access(browser_window_access_url(bw)));
 
 	ret = utf8_from_enc(source_data,
 			    content_get_encoding(hlcontent, CONTENT_ENCODING_NORMAL),

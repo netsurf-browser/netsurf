@@ -826,7 +826,7 @@ ENTRY_SIGNALS(entryHomePageURL, homepage_url)
 G_MODULE_EXPORT void
 nsgtk_preferences_setCurrentPage_clicked(GtkButton *button, struct ppref *priv)
 {
-	const gchar *url = nsurl_access(browser_window_get_url(priv->bw));
+	const gchar *url = nsurl_access(browser_window_access_url(priv->bw));
 
 	if (priv->entryHomePageURL != NULL) {
 		gtk_entry_set_text(GTK_ENTRY(priv->entryHomePageURL), url);

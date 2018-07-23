@@ -28,7 +28,7 @@ init Window(struct browser_window *win, struct html_content *htmlc)
 	NSLOG(netsurf, INFO, "win=%p htmlc=%p", priv->win, priv->htmlc);
 
 	NSLOG(netsurf, INFO,
-	      "URL is %s", nsurl_access(browser_window_get_url(priv->win)));
+	      "URL is %s", nsurl_access(browser_window_access_url(priv->win)));
 %}
 
 prototype Window()

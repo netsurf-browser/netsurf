@@ -780,7 +780,7 @@ MULTIHANDLER(savepage)
 	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(fc), filter);
 	gtk_file_chooser_set_filter(GTK_FILE_CHOOSER(fc), filter);
 
-	res = nsurl_nice(browser_window_get_url(
+	res = nsurl_nice(browser_window_access_url(
 			nsgtk_get_browser_window(g->top_level)), &path, false);
 	if (res != NSERROR_OK) {
 		path = strdup(messages_get("SaveText"));
@@ -842,7 +842,7 @@ MULTIHANDLER(pdf)
 
 	NSLOG(netsurf, INFO, "Print preview (generating PDF)  started.");
 
-	res = nsurl_nice(browser_window_get_url(bw), &url_name, true);
+	res = nsurl_nice(browser_window_access_url(bw), &url_name, true);
 	if (res != NSERROR_OK) {
 		nsgtk_warning(messages_get_errorcode(res), 0);
 		return TRUE;
@@ -915,7 +915,7 @@ MULTIHANDLER(plaintext)
 	char *filename;
 	nserror res;
 
-	res = nsurl_nice(browser_window_get_url(
+	res = nsurl_nice(browser_window_access_url(
 			nsgtk_get_browser_window(g->top_level)),
 			&filename, false);
 	if (res != NSERROR_OK) {
@@ -1616,7 +1616,7 @@ MULTIHANDLER(addbookmarks)
 
 	if (bw == NULL || !browser_window_has_content(bw))
 		return TRUE;
-	hotlist_add_url(browser_window_get_url(bw));
+	hotlist_add_url(browser_window_access_url(bw));
 	return TRUE;
 }
 
