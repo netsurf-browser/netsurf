@@ -830,6 +830,8 @@ ro_gui_window_toolbar_click(void *data,
 		case TOOLBAR_URL_DRAG_URL:
 		{
 			gui_save_type save_type;
+			nserror err;
+			nsurl *url;
 
 			if (!browser_window_has_content(g->bw))
 				break;
@@ -839,9 +841,17 @@ ro_gui_window_toolbar_click(void *data,
 			else
 				save_type = GUI_SAVE_LINK_TEXT;
 
-			ro_gui_drag_save_link(save_type,
-					browser_window_access_url(g->bw),
+			err = browser_window_get_url(g->bw, true, &url);
+			if (err != NSERROR_OK) {
+				/* Fall back to access (won't get fragment). */
+				url = nsurl_ref(
+					browser_window_access_url(g->bw));
+			}
+
+			ro_gui_drag_save_link(save_type, url,
 					browser_window_get_title(g->bw), g);
+
+			nsurl_unref(url);
 		}
 			break;
 
