@@ -2267,6 +2267,36 @@ nsurl* browser_window_access_url(struct browser_window *bw)
 	return corestring_nsurl_about_blank;
 }
 
+/* Exported interface, documented in include/netsurf/browser_window.h */
+nserror browser_window_get_url(
+		struct browser_window *bw,
+		bool fragment,
+		nsurl** url_out)
+{
+	nserror err;
+	nsurl *url;
+
+	assert(bw != NULL);
+
+	if (!fragment || bw->frag_id == NULL || bw->loading_content != NULL) {
+		/* If there's a loading content, then the bw->frag_id will have
+		 * been trampled, possibly with a new frag_id, but we will
+		 * still be returning the current URL, so in this edge case
+		 * we just drop any fragment. */
+		url = nsurl_ref(browser_window_access_url(bw));
+
+	} else {
+		err = nsurl_refragment(browser_window_access_url(bw),
+				bw->frag_id, &url);
+		if (err != NSERROR_OK) {
+			return err;
+		}
+	}
+
+	*url_out = url;
+	return NSERROR_OK;
+}
+
 /* Exported interface, documented in browser.h */
 const char* browser_window_get_title(struct browser_window *bw)
 {

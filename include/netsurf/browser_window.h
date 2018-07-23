@@ -210,6 +210,19 @@ nserror browser_window_navigate_up(struct browser_window *bw, bool new_window);
 struct nsurl* browser_window_access_url(struct browser_window *bw);
 
 /**
+ * Access a browser window's URL.
+ *
+ * \param[in]  bw        browser window
+ * \param[in]  fragment  Whether to include any URL fragment.
+ * \param[out] url_out   Returns a ref to the URL on success.
+ * \return NSERROR_OK, or appropriate error otherwise.
+ */
+nserror browser_window_get_url(
+		struct browser_window *bw,
+		bool fragment,
+		struct nsurl** url_out);
+
+/**
  * Get the title of a browser_window.
  *
  * \param bw The browser window.
