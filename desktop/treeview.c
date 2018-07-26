@@ -333,7 +333,7 @@ static struct treeview_resource treeview_res[TREE_RES_LAST] = {
  * \param[in] tree  Treeview to get the height of.
  * \return the display height in pixels.
  */
-static inline int treeview__get_display_height(treeview *tree)
+static inline int treeview__get_display_height(const treeview *tree)
 {
 	return (tree->search.search == false) ?
 			tree->root->height :
@@ -501,9 +501,8 @@ static inline treeview_node * treeview_node_next(treeview_node *node, bool full)
  */
 static treeview_node * treeview_y_node(treeview *tree, int target_y)
 {
+	int y = (tree->flags & TREEVIEW_SEARCHABLE) ? tree_g.line_height : 0;
 	treeview_node *n;
-	int y = 0;
-	int h;
 
 	assert(tree != NULL);
 	assert(tree->root != NULL);
@@ -511,7 +510,7 @@ static treeview_node * treeview_y_node(treeview *tree, int target_y)
 	n = treeview_node_next(tree->root, false);
 
 	while (n != NULL) {
-		h = (n->type == TREE_NODE_ENTRY) ?
+		int h = (n->type == TREE_NODE_ENTRY) ?
 			n->height : tree_g.line_height;
 		if (target_y >= y && target_y < y + h)
 			return n;
@@ -531,10 +530,12 @@ static treeview_node * treeview_y_node(treeview *tree, int target_y)
  * \param node Node to get position of
  * \return node's y position
  */
-static int treeview_node_y(treeview *tree, treeview_node *node)
+static int treeview_node_y(
+		const treeview *tree,
+		const treeview_node *node)
 {
 	treeview_node *n;
-	int y = 0;
+	int y = (tree->flags & TREEVIEW_SEARCHABLE) ? tree_g.line_height : 0;
 
 	assert(tree != NULL);
 	assert(tree->root != NULL);
@@ -549,6 +550,31 @@ static int treeview_node_y(treeview *tree, treeview_node *node)
 	}
 
 	return y;
+}
+
+
+/**
+ * Redraw tree from given node to the bottom.
+ *
+ * \param[in] tree  Tree to redraw from node in.
+ * \param[in] node  Node to redraw from.
+ */
+static void treeview__redraw_from_node(
+		const treeview *tree,
+		const treeview_node *node)
+{
+	int search_height = (tree->flags & TREEVIEW_SEARCHABLE) ?
+			tree_g.line_height : 0;
+	struct rect r = {
+		.x0 = 0,
+		.y0 = treeview_node_y(tree, node),
+		.x1 = REDRAW_MAX,
+		.y1 = treeview__get_display_height(tree) + search_height,
+	};
+
+	assert(tree != NULL);
+
+	treeview__cw_invalidate_area(tree, &r);
 }
 
 
@@ -2175,17 +2201,13 @@ treeview_node_expand_internal(treeview *tree, treeview_node *node)
 nserror treeview_node_expand(treeview *tree, treeview_node *node)
 {
 	nserror res;
-	struct rect r;
 
 	res = treeview_node_expand_internal(tree, node);
+	NSLOG(netsurf, INFO, "Expanding!");
 	if (res == NSERROR_OK) {
 		/* expansion was successful, attempt redraw */
-		r.x0 = 0;
-		r.y0 = treeview_node_y(tree, node);
-		r.x1 = REDRAW_MAX;
-		r.y1 = treeview__get_display_height(tree);
-
-		treeview__cw_invalidate_area(tree, &r);
+		treeview__redraw_from_node(tree, node);
+		NSLOG(netsurf, INFO, "Expanded!");
 	}
 
 	return res;
@@ -2289,19 +2311,15 @@ treeview_node_contract_internal(treeview *tree, treeview_node *node)
 nserror treeview_node_contract(treeview *tree, treeview_node *node)
 {
 	nserror res;
-	struct rect r;
 
 	assert(tree != NULL);
 
 	res = treeview_node_contract_internal(tree, node);
+	NSLOG(netsurf, INFO, "Contracting!");
 	if (res == NSERROR_OK) {
 		/* successful contraction, request redraw */
-		r.x0 = 0;
-		r.y0 = treeview_node_y(tree, node);
-		r.x1 = REDRAW_MAX;
-		r.y1 = tree->root->height;
-
-		treeview__cw_invalidate_area(tree, &r);
+		treeview__redraw_from_node(tree, node);
+		NSLOG(netsurf, INFO, "Contracted!");
 	}
 
 	return res;
@@ -2311,6 +2329,8 @@ nserror treeview_node_contract(treeview *tree, treeview_node *node)
 /* Exported interface, documented in treeview.h */
 nserror treeview_contract(treeview *tree, bool all)
 {
+	int search_height = (tree->flags & TREEVIEW_SEARCHABLE) ?
+			tree_g.line_height : 0;
 	struct treeview_contract_data data;
 	bool selected;
 	treeview_node *n;
@@ -2322,7 +2342,7 @@ nserror treeview_contract(treeview *tree, bool all)
 	r.x0 = 0;
 	r.y0 = 0;
 	r.x1 = REDRAW_MAX;
-	r.y1 = tree->root->height;
+	r.y1 = tree->root->height + search_height;
 
 	data.tree = tree;
 	data.only_entries = !all;
@@ -3769,7 +3789,9 @@ treeview_keyboard_navigation(treeview *tree, uint32_t key, struct rect *rect)
 		.n_selected = 0,
 		.prev_n_selected = 0
 	};
-	int h = tree->root->height;
+	int search_height = (tree->flags & TREEVIEW_SEARCHABLE) ?
+			tree_g.line_height : 0;
+	int h = treeview__get_display_height(tree) + search_height;
 	bool redraw = false;
 
 	/* Fill out the nav. state struct, by examining the current selection
@@ -3853,8 +3875,8 @@ treeview_keyboard_navigation(treeview *tree, uint32_t key, struct rect *rect)
 	rect->x0 = 0;
 	rect->y0 = 0;
 	rect->x1 = REDRAW_MAX;
-	if (tree->root->height > h)
-		rect->y1 = tree->root->height;
+	if (treeview__get_display_height(tree) + search_height > h)
+		rect->y1 = treeview__get_display_height(tree) + search_height;
 	else
 		rect->y1 = h;
 	redraw = true;
@@ -4290,6 +4312,7 @@ struct treeview_mouse_action {
 	int x;
 	int y;
 	int current_y;	/* Y coordinate value of top of current node */
+	int search_height;
 };
 
 
@@ -4477,7 +4500,8 @@ treeview_node_mouse_action_cb(treeview_node *node,
 	if (((node->type == TREE_NODE_FOLDER) &&
 	     (ma->mouse & BROWSER_MOUSE_DOUBLE_CLICK) && click) ||
 	    (part == TV_NODE_PART_TOGGLE && click)) {
-		int h = ma->tree->root->height;
+		int h = treeview__get_display_height(ma->tree) +
+				ma->search_height;
 
 		/* Clear any existing selection */
 		redraw |= treeview_clear_selection(ma->tree, &r);
@@ -4495,7 +4519,13 @@ treeview_node_mouse_action_cb(treeview_node *node,
 		/* Set up redraw */
 		if (!redraw || r.y0 > ma->current_y)
 			r.y0 = ma->current_y;
-		r.y1 = h > ma->tree->root->height ? h : ma->tree->root->height;
+		if (h > treeview__get_display_height(ma->tree) +
+				ma->search_height) {
+			r.y1 = h;
+		} else {
+			r.y1 = treeview__get_display_height(ma->tree) +
+				ma->search_height;
+		}
 		redraw = true;
 
 	} else if ((node->type == TREE_NODE_ENTRY) &&
@@ -4734,13 +4764,14 @@ treeview_mouse_action(treeview *tree, browser_mouse_state mouse, int x, int y)
 
 	} else {
 		/* On tree */
-		struct treeview_mouse_action ma;
-
-		ma.tree = tree;
-		ma.mouse = mouse;
-		ma.x = x;
-		ma.y = y;
-		ma.current_y = search_height;
+		struct treeview_mouse_action ma = {
+			ma.tree = tree,
+			ma.mouse = mouse,
+			ma.x = x,
+			ma.y = y,
+			ma.current_y = search_height,
+			ma.search_height = search_height,
+		};
 
 		treeview_walk_internal(tree, tree->root,
 				TREEVIEW_WALK_MODE_DISPLAY, NULL,
