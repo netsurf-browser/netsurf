@@ -3030,6 +3030,7 @@ struct treeview_selection_walk_data {
 		} drag;
 		struct {
 			treeview_node *prev;
+			treeview_node *fixed;
 		} yank;
 		struct {
 			treeview_node *n;
@@ -3131,6 +3132,10 @@ treeview_node_selection_walk_cb(treeview_node *n,
 		if (n->flags & TV_NFLAGS_SELECTED) {
 			treeview_node *p = n->parent;
 			int h = 0;
+
+			if (n == sw->data.yank.fixed) {
+				break;
+			}
 
 			if (treeview_unlink_node(n))
 				h = n->height;
@@ -3361,13 +3366,15 @@ static void treeview_commit_selection_drag(treeview *tree)
 /**
  * Yank a selection to the node move list.
  *
- * \param tree Treeview object to yank selection from
+ * \param tree   Treeview object to yank selection from
+ * \param fixed  Treeview node that should not be yanked
  */
-static void treeview_move_yank_selection(treeview *tree)
+static void treeview_move_yank_selection(treeview *tree, treeview_node *fixed)
 {
 	struct treeview_selection_walk_data sw;
 
 	sw.purpose = TREEVIEW_WALK_YANK_SELECTION;
+	sw.data.yank.fixed = fixed;
 	sw.data.yank.prev = NULL;
 	sw.tree = tree;
 
@@ -3541,15 +3548,16 @@ static nserror treeview_move_selection(treeview *tree, struct rect *rect)
 		parent = relation->parent;
 	}
 
-	/* The node that we're moving selection to can't itself be selected */
-	assert(!(relation->flags & TV_NFLAGS_SELECTED));
-
 	/* Move all selected nodes from treeview to tree->move.root */
-	treeview_move_yank_selection(tree);
+	treeview_move_yank_selection(tree, relation);
 
 	/* Move all nodes on tree->move.root to target location */
 	for (node = tree->move.root; node != NULL; node = next) {
 		next = node->next_sib;
+
+		if (node == relation) {
+			continue;
+		}
 
 		if (!(parent->flags & TV_NFLAGS_EXPANDED)) {
 			if (node->flags & TV_NFLAGS_EXPANDED)
