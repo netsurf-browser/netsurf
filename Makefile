@@ -575,6 +575,25 @@ CXXFLAGS += -DNETSURF_HOMEPAGE=\"$(NETSURF_HOMEPAGE)\"
 CFLAGS += -DNETSURF_LOG_LEVEL=$(NETSURF_LOG_LEVEL)
 CXXFLAGS += -DNETSURF_LOG_LEVEL=$(NETSURF_LOG_LEVEL)
 
+# If we're building the sanitizer goal, override things
+ifneq ($(filter-out sanitize,$(MAKECMDGOALS)),$(MAKECMDGOALS))
+override NETSURF_USE_SANITIZER := YES
+override NETSURF_RECOVER_SANITIZERS := NO
+endif
+
+# If we're going to use the sanitizer set it up
+ifeq ($(NETSURF_USE_SANITIZER),YES)
+SAN_FLAGS := -fsanitize=address -fsanitize=undefined
+ifeq ($(NETSURF_RECOVER_SANITIZERS),NO)
+SAN_FLAGS += -fno-sanitize-recover
+endif
+else
+SAN_FLAGS :=
+endif
+CFLAGS += $(SAN_FLAGS)
+CXXFLAGS += $(SAN_FLAGS)
+LDFLAGS += $(SAN_FLAGS)
+
 # and the logging filter
 CFLAGS += -DNETSURF_BUILTIN_LOG_FILTER=\"$(NETSURF_BUILTIN_LOG_FILTER)\"
 CXXFLAGS += -DNETSURF_BUILTIN_LOG_FILTER=\"$(NETSURF_BUILTIN_LOG_FILTER)\"

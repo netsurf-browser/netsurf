@@ -109,6 +109,11 @@ NETSURF_USE_LIBICONV_PLUG := YES
 # Valid options: YES, NO
 NETSURF_FS_BACKING_STORE := NO
 
+# Enable the ASAN and UBSAN flags regardless of targets
+NETSURF_USE_SANITIZERS := NO
+# But recover after sanitizer failure
+NETSURF_RECOVER_SANITIZERS := YES
+
 # Initial CFLAGS. Optimisation level etc. tend to be target specific.
 CFLAGS :=
 

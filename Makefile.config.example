@@ -33,3 +33,9 @@
 
 ### To change flags to javascript binding generator
 # GBFLAGS:=-g
+
+### To enable ASAN and UBSAN support in builds regardless of target
+# override NETSURF_USE_SANITIZERS := YES
+
+### If you're using the sanitizers and you want it to stop on failure...
+# override NETSURF_RECOVER_SANITIZERS := NO
