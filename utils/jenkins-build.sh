@@ -411,6 +411,12 @@ if [ ${HAVE_DISTCC} = "true" ];then
 fi
 
 
+########### Prepare a Makefile.config ##################
+
+rm -f Makefile.config
+cat > Makefile.config <<EOF
+override NETSURF_LOG_LEVEL := DEBUG
+EOF
 
 ########### Build from source ##################
 
