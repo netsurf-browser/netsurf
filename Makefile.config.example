@@ -35,7 +35,7 @@
 # GBFLAGS:=-g
 
 ### To enable ASAN and UBSAN support in builds regardless of target
-# override NETSURF_USE_SANITIZERS := YES
+# override NETSURF_USE_SANITIZER := YES
 
 ### If you're using the sanitizers and you want it to stop on failure...
 # override NETSURF_RECOVER_SANITIZERS := NO
