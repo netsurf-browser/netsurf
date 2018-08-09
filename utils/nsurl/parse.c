@@ -302,6 +302,16 @@ static void nsurl__get_string_markers(const char * const url_s,
 					 ((*(pos - off + 5) == 'o') ||
 					  (*(pos - off + 5) == 'O')))) {
 				marker.scheme_type = NSURL_SCHEME_MAILTO;
+			} else if (off == SLEN("data") &&
+					(((*(pos - off + 0) == 'd') ||
+					  (*(pos - off + 0) == 'D')) &&
+					 ((*(pos - off + 1) == 'a') ||
+					  (*(pos - off + 1) == 'A')) &&
+					 ((*(pos - off + 2) == 't') ||
+					  (*(pos - off + 2) == 'T')) &&
+					 ((*(pos - off + 3) == 'a') ||
+					  (*(pos - off + 3) == 'A')))) {
+				marker.scheme_type = NSURL_SCHEME_DATA;
 			}
 
 			/* Skip over colon */
