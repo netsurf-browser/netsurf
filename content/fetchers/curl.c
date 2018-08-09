@@ -1179,7 +1179,7 @@ static void fetch_curl_poll(lwc_string *scheme_ignored)
 				&exc_fd_set, &max_fd);
 		assert(codem == CURLM_OK);
 
-		NSLOG(netsurf, INFO,
+		NSLOG(netsurf, DEEPDEBUG,
 		      "Curl file descriptor states (maxfd=%i):", max_fd);
 		for (i = 0; i <= max_fd; i++) {
 			bool read = false;
@@ -1208,7 +1208,7 @@ static void fetch_curl_poll(lwc_string *scheme_ignored)
 	do {
 		codem = curl_multi_perform(fetch_curl_multi, &running);
 		if (codem != CURLM_OK && codem != CURLM_CALL_MULTI_PERFORM) {
-			NSLOG(netsurf, DEEPDEBUG, "curl_multi_perform: %i %s",
+			NSLOG(netsurf, WARNING, "curl_multi_perform: %i %s",
 			      codem, curl_multi_strerror(codem));
 			guit->misc->warning("MiscError", curl_multi_strerror(codem));
 			return;
