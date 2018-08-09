@@ -1196,7 +1196,7 @@ static void fetch_curl_poll(lwc_string *scheme_ignored)
 				error = true;
 			}
 			if (read || write || error) {
-				NSLOG(netsurf, INFO, "  fd %i: %s %s %s", i,
+				NSLOG(netsurf, DEEPDEBUG, "  fd %i: %s %s %s", i,
 				      read ? "read" : "    ",
 				      write ? "write" : "     ",
 				      error ? "error" : "     ");
@@ -1208,7 +1208,7 @@ static void fetch_curl_poll(lwc_string *scheme_ignored)
 	do {
 		codem = curl_multi_perform(fetch_curl_multi, &running);
 		if (codem != CURLM_OK && codem != CURLM_CALL_MULTI_PERFORM) {
-			NSLOG(netsurf, INFO, "curl_multi_perform: %i %s",
+			NSLOG(netsurf, DEEPDEBUG, "curl_multi_perform: %i %s",
 			      codem, curl_multi_strerror(codem));
 			guit->misc->warning("MiscError", curl_multi_strerror(codem));
 			return;
