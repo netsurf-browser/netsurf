@@ -460,21 +460,19 @@ static void nsurl__get_string_markers(const char * const url_s,
 			marker.fragment = marker.end;
 	}
 
-#ifdef NSURL_DEBUG
-	NSLOG(netsurf, INFO, "marker.start: %i", marker.start);
-	NSLOG(netsurf, INFO, "marker.scheme_end: %i", marker.scheme_end);
-	NSLOG(netsurf, INFO, "marker.authority: %i", marker.authority);
+	NSLOG(netsurf, DEEPDEBUG, "marker.start: %zu", marker.start);
+	NSLOG(netsurf, DEEPDEBUG, "marker.scheme_end: %zu", marker.scheme_end);
+	NSLOG(netsurf, DEEPDEBUG, "marker.authority: %zu", marker.authority);
 
-	NSLOG(netsurf, INFO, "marker.colon_first: %i", marker.colon_first);
-	NSLOG(netsurf, INFO, "marker.at: %i", marker.at);
-	NSLOG(netsurf, INFO, "marker.colon_last: %i", marker.colon_last);
+	NSLOG(netsurf, DEEPDEBUG, "marker.colon_first: %zu", marker.colon_first);
+	NSLOG(netsurf, DEEPDEBUG, "marker.at: %zu", marker.at);
+	NSLOG(netsurf, DEEPDEBUG, "marker.colon_last: %zu", marker.colon_last);
 
-	NSLOG(netsurf, INFO, "marker.path: %i", marker.path);
-	NSLOG(netsurf, INFO, "marker.query: %i", marker.query);
-	NSLOG(netsurf, INFO, "marker.fragment: %i", marker.fragment);
+	NSLOG(netsurf, DEEPDEBUG, "marker.path: %zu", marker.path);
+	NSLOG(netsurf, DEEPDEBUG, "marker.query: %zu", marker.query);
+	NSLOG(netsurf, DEEPDEBUG, "marker.fragment: %zu", marker.fragment);
 
-	NSLOG(netsurf, INFO, "marker.end: %i", marker.end);
-#endif
+	NSLOG(netsurf, DEEPDEBUG, "marker.end: %zu", marker.end);
 
 	/* Got all the URL components pegged out now */
 	*markers = marker;
@@ -494,10 +492,10 @@ static size_t nsurl__remove_dot_segments(char *path, char *output)
 	char *output_pos = output;
 
 	while (*path_pos != '\0') {
-#ifdef NSURL_DEBUG
-		NSLOG(netsurf, INFO, " in:%s", path_pos);
-		NSLOG(netsurf, INFO, "out:%.*s", output_pos - output, output);
-#endif
+		NSLOG(netsurf, DEEPDEBUG, " in:%s", path_pos);
+		NSLOG(netsurf, DEEPDEBUG, "out:%.*s",
+				(int)(output_pos - output), output);
+
 		if (*path_pos == '.') {
 			if (*(path_pos + 1) == '.' &&
 					*(path_pos + 2) == '/') {
@@ -1333,10 +1331,8 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	assert(base != NULL);
 	assert(rel != NULL);
 
-#ifdef NSURL_DEBUG
-	NSLOG(netsurf, INFO, "base: \"%s\", rel: \"%s\"", nsurl_access(base),
-	      rel);
-#endif
+	NSLOG(netsurf, DEEPDEBUG, "base: \"%s\", rel: \"%s\"",
+			nsurl_access(base), rel);
 
 	/* Peg out the URL sections */
 	nsurl__get_string_markers(rel, &m, true);

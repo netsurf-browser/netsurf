@@ -25,10 +25,6 @@
 #include "utils/utils.h"
 
 
-/* Define to enable NSURL debugging */
-#undef NSURL_DEBUG
-
-
 /** A type for URL schemes */
 enum nsurl_scheme_type {
 	NSURL_SCHEME_OTHER,
@@ -188,44 +184,36 @@ static inline void nsurl__components_destroy(struct nsurl_components *c)
 static inline void nsurl__dump(const nsurl *url)
 {
 	if (url->components.scheme)
-		NSLOG(netsurf, INFO,netsurf, INFO,
-			"  Scheme: %s",
-			lwc_string_data(url->components.scheme));
+		NSLOG(netsurf, DEEPDEBUG, "  Scheme: %s",
+				lwc_string_data(url->components.scheme));
 
 	if (url->components.username)
-		NSLOG(netsurf, INFO,
-		      "Username: %s",
-		      lwc_string_data(url->components.username));
+		NSLOG(netsurf, DEEPDEBUG, "Username: %s",
+				lwc_string_data(url->components.username));
 
 	if (url->components.password)
-		NSLOG(netsurf, INFO,
-		      "Password: %s",
-		      lwc_string_data(url->components.password));
+		NSLOG(netsurf, DEEPDEBUG, "Password: %s",
+				lwc_string_data(url->components.password));
 
 	if (url->components.host)
-		NSLOG(netsurf, INFO,
-		      "    Host: %s",
-		      lwc_string_data(url->components.host));
+		NSLOG(netsurf, DEEPDEBUG, "    Host: %s",
+				lwc_string_data(url->components.host));
 
 	if (url->components.port)
-		NSLOG(netsurf, INFO,
-		      "    Port: %s",
-		      lwc_string_data(url->components.port));
+		NSLOG(netsurf, DEEPDEBUG, "    Port: %s",
+				lwc_string_data(url->components.port));
 
 	if (url->components.path)
-		NSLOG(netsurf, INFO,
-		      "    Path: %s",
-		      lwc_string_data(url->components.path));
+		NSLOG(netsurf, DEEPDEBUG, "    Path: %s",
+				lwc_string_data(url->components.path));
 
 	if (url->components.query)
-		NSLOG(netsurf, INFO,
-		      "   Query: %s",
-		      lwc_string_data(url->components.query));
+		NSLOG(netsurf, DEEPDEBUG, "   Query: %s",
+				lwc_string_data(url->components.query));
 
 	if (url->components.fragment)
-		NSLOG(netsurf, INFO,
-		      "Fragment: %s",
-		      lwc_string_data(url->components.fragment));
+		NSLOG(netsurf, DEEPDEBUG, "Fragment: %s",
+				lwc_string_data(url->components.fragment));
 }
 #endif
 

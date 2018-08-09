@@ -88,10 +88,6 @@ void nsurl_unref(nsurl *url)
 	if (--url->count > 0)
 		return;
 
-#ifdef NSURL_DEBUG
-	nsurl__dump(url);
-#endif
-
 	/* Release lwc strings */
 	nsurl__components_destroy(&url->components);
 
