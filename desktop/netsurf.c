@@ -109,6 +109,9 @@ static nserror netsurf_llcache_query_handler(const llcache_query *query,
 
 	switch (query->type) {
 	case LLCACHE_QUERY_AUTH:
+		NSLOG(llcache, INFO, "HTTP Auth for: %s: %s",
+				query->data.auth.realm,
+				nsurl_access(query->url));
 		guit->misc->login(query->url, query->data.auth.realm, cb, cbpw);
 		break;
 
