@@ -181,6 +181,24 @@ const char *nsurl_access(const nsurl *url);
 
 
 /**
+ * Variant of \ref nsurl_access for logging.
+ *
+ * \param url	  NetSurf URL to retrieve a string pointer for.
+ * \return the required string
+ *
+ * This will not necessarily return the actual nsurl's URL, but something
+ * that is suitable for recording to logs.  E.g. URLs with the `data` scheme
+ * will return a simple place holder, to avoid repeatedly dumping loads of data.
+ *
+ * The returned string is owned by the NetSurf URL object.  It will die
+ * with the NetSurf URL object.  Keep a reference to the URL if you need it.
+ *
+ * The returned string has a trailing '\0'.
+ */
+const char *nsurl_access_log(const nsurl *url);
+
+
+/**
  * Get a UTF-8 string (for human readable IDNs) from a NetSurf URL object
  *
  * \param url	  NetSurf URL object

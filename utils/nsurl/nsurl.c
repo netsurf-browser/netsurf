@@ -316,6 +316,19 @@ const char *nsurl_access(const nsurl *url)
 
 
 /* exported interface, documented in nsurl.h */
+const char *nsurl_access_log(const nsurl *url)
+{
+	assert(url != NULL);
+
+	if (url->components.scheme_type == NSURL_SCHEME_DATA) {
+		return "[data url]";
+	}
+
+	return url->string;
+}
+
+
+/* exported interface, documented in nsurl.h */
 nserror nsurl_get_utf8(const nsurl *url, char **url_s, size_t *url_l)
 {
 	nserror err;
