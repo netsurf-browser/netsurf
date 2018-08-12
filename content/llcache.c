@@ -481,6 +481,14 @@ static nserror llcache_post_data_clone(const llcache_post_data *orig,
 /**
  * Split a fetch header into name and value
  *
+ * HTTP header splitting according to grammar defined in RFC7230 section 3.2
+ *   https://tools.ietf.org/html/rfc7230#section-3.2
+ *
+ * This implementation is non conformant in that it:
+ *  - includes carrige return and newline in whitespace (3.2.3)
+ *  - allows whitespace before and after the field-name token (3.2.4)
+ *  - does not handle obsolete line folding (3.2.4)
+ *
  * \param data	 Header string
  * \param len	 Byte length of header
  * \param name	 Pointer to location to receive header name
@@ -566,127 +574,146 @@ static nserror llcache_fetch_split_header(const uint8_t *data, size_t len,
 }
 
 /**
- * Parse a fetch header
+ * parse cache control header value
  *
- * \param object  Object to parse header for
- * \param data	  Header string
- * \param len	  Byte length of header
- * \param name	  Pointer to location to receive header name
- * \param value	  Pointer to location to receive header value
+ * \param object Object to parse header for
+ * \param value header value
  * \return NSERROR_OK on success, appropriate error otherwise
- *
- * \note This function also has the side-effect of updating
- *	 the cache control data for the object if an interesting
- *	 header is encountered
  */
-static nserror llcache_fetch_parse_header(llcache_object *object,
-		const uint8_t *data, size_t len, char **name, char **value)
+static nserror
+llcache_fetch_parse_cache_control(llcache_object *object, char *value)
 {
-	nserror res;
+	const char *start = value;
+	const char *comma = value;
 
-	/* Set fetch response time if not already set */
-	if (object->cache.res_time == 0) {
-		object->cache.res_time = time(NULL);
-        }
+	while (*comma != '\0') {
+		while (*comma != '\0' && *comma != ',') {
+			comma++;
+		}
 
-	/* Decompose header into name-value pair */
-	res = llcache_fetch_split_header(data, len, name, value);
-	if (res != NSERROR_OK) {
-		return res;
-        }
-
-	/* Parse cache headers to populate cache control data */
-
-	if ((5 < len) &&
-            strcasecmp(*name, "Date") == 0) {
-		/* extract Date header */
-                nsc_strntimet(*value,
-                              strlen(*value),
-                              &object->cache.date);
-	} else if ((4 < len) &&
-                   strcasecmp(*name, "Age") == 0) {
-		/* extract Age header */
-		if ('0' <= **value && **value <= '9') {
-			object->cache.age = atoi(*value);
-                }
-	} else if ((8 < len) &&
-                   strcasecmp(*name, "Expires") == 0) {
-		/* extract Expires header */
-                res = nsc_strntimet(*value,
-                                    strlen(*value),
-                                    &object->cache.expires);
-                if (res != NSERROR_OK) {
-                        object->cache.expires = (time_t)0x7fffffff;
-                }
-	} else if ((14 < len) &&
-                   strcasecmp(*name, "Cache-Control") == 0) {
-		/* extract and parse Cache-Control header */
-		const char *start = *value;
-		const char *comma = *value;
-
-		while (*comma != '\0') {
-			while (*comma != '\0' && *comma != ',') {
-				comma++;
-                        }
-
-			if ((8 < comma - start) &&
-                            (strncasecmp(start,	"no-cache", 8) == 0 ||
-                             strncasecmp(start, "no-store", 8) == 0)) {
-				/**
-                                 * \todo When we get a disk cache we should
-                                 *  distinguish between these two.
-                                 */
-				object->cache.no_cache = LLCACHE_VALIDATE_ALWAYS;
-			} else if ((7 < comma - start) &&
-                                   strncasecmp(start, "max-age", 7) == 0) {
-				/* Find '=' */
-				while (start < comma && *start != '=') {
-					start++;
-                                }
-
-				/* Skip over it */
+		if ((8 < comma - start) &&
+		    (strncasecmp(start,	"no-cache", 8) == 0 ||
+		     strncasecmp(start, "no-store", 8) == 0)) {
+			/**
+			 * \todo When we get a disk cache we should
+			 *  distinguish between these two.
+			 */
+			object->cache.no_cache = LLCACHE_VALIDATE_ALWAYS;
+		} else if ((7 < comma - start) &&
+			   strncasecmp(start, "max-age", 7) == 0) {
+			/* Find '=' */
+			while (start < comma && *start != '=') {
 				start++;
+			}
+
+			/* Skip over it */
+			start++;
 
 #define SKIP_ST(p) while (*p != '\0' && (*p == ' ' || *p == '\t')) p++
 
-				/* Skip whitespace */
-				SKIP_ST(start);
+			/* Skip whitespace */
+			SKIP_ST(start);
 
-				if (start < comma) {
-					object->cache.max_age = atoi(start);
-                                }
+			if (start < comma) {
+				object->cache.max_age = atoi(start);
 			}
+		}
 
-			if (*comma != '\0') {
-				/* Skip past comma */
-				comma++;
-				/* Skip whitespace */
-				SKIP_ST(comma);
-			}
+		if (*comma != '\0') {
+			/* Skip past comma */
+			comma++;
+			/* Skip whitespace */
+			SKIP_ST(comma);
+		}
 
 #undef SKIP_ST
 
-			/* Set start for next token */
-			start = comma;
-		}
-	} else if ((5 < len) &&
-                   (strcasecmp(*name, "ETag") == 0)) {
-		/* extract ETag header */
-		free(object->cache.etag);
-		object->cache.etag = strdup(*value);
-		if (object->cache.etag == NULL) {
-			free(*name);
-			free(*value);
-			return NSERROR_NOMEM;
-		}
-	} else if ((14 < len) &&
-                   (strcasecmp(*name, "Last-Modified") == 0)) {
-		/* extract Last-Modified header */
-                nsc_strntimet(*value,
-                              strlen(*value),
-                              &object->cache.last_modified);
+		/* Set start for next token */
+		start = comma;
 	}
+	return NSERROR_OK;
+}
 
+/**
+ * Update cache control from appropriate header
+ *
+ * \param object Object to parse header for
+ * \param name header name
+ * \param value header value
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+static nserror
+llcache_fetch_header_cache_control(llcache_object *object,
+				   char *name,
+				   char *value)
+{
+	nserror res;
+	size_t name_len;
+
+	/* Parse cache headers to populate cache control data */
+	name_len = strlen(name);
+
+	switch (name_len) {
+	case 3:
+		if (strcasecmp(name, "Age") == 0) {
+			/* extract Age header */
+			if ('0' <= *value && *value <= '9') {
+				object->cache.age = atoi(value);
+			}
+
+		}
+		break;
+
+	case 4:
+		if (strcasecmp(name, "Date") == 0) {
+			/* extract Date header */
+			res = nsc_strntimet(value,
+					    strlen(value),
+					    &object->cache.date);
+			if (res != NSERROR_OK) {
+				NSLOG(llcache, INFO,
+				      "Processing Date header value \"%s\" returned %d",
+				      value, res);
+			}
+		} else if (strcasecmp(name, "ETag") == 0) {
+			/* extract ETag header */
+			free(object->cache.etag);
+			object->cache.etag = strdup(value);
+			if (object->cache.etag == NULL) {
+				NSLOG(llcache, INFO,
+				      "No memory to duplicate ETag");
+				return NSERROR_NOMEM;
+			}
+		}
+		break;
+
+	case 7:
+		if (strcasecmp(name, "Expires") == 0) {
+			/* process Expires header value */
+			res = nsc_strntimet(value,
+					    strlen(value),
+					    &object->cache.expires);
+			if (res != NSERROR_OK) {
+				NSLOG(llcache, INFO,
+				      "Processing Expires header value \"%s\" returned %d",
+				      value, res);
+				object->cache.expires = (time_t)0x7fffffff;
+			}
+		}
+		break;
+
+	case 13:
+		if (strcasecmp(name, "Cache-Control") == 0) {
+			/* parse Cache-Control header value */
+			llcache_fetch_parse_cache_control(object,value);
+		} else if (strcasecmp(name, "Last-Modified") == 0) {
+			/* parse Last-Modified header value */
+			nsc_strntimet(value,
+				      strlen(value),
+				      &object->cache.last_modified);
+		}
+		break;
+	}
 
 	return NSERROR_OK;
 }
@@ -733,7 +760,7 @@ static inline void llcache_invalidate_cache_control_data(llcache_object *object)
 static nserror llcache_fetch_process_header(llcache_object *object,
 		const uint8_t *data, size_t len)
 {
-	nserror error;
+	nserror res;
 	char *name, *value;
 	llcache_header *temp;
 
@@ -761,9 +788,15 @@ static nserror llcache_fetch_process_header(llcache_object *object,
 		llcache_destroy_headers(object);
 	}
 
-	error = llcache_fetch_parse_header(object, data, len, &name, &value);
-	if (error != NSERROR_OK) {
-		return error;
+	/* Set fetch response time if not already set */
+	if (object->cache.res_time == 0) {
+		object->cache.res_time = time(NULL);
+	}
+
+	/* Parse header into name-value pair */
+	res = llcache_fetch_split_header(data, len, &name, &value);
+	if (res != NSERROR_OK) {
+		return res;
 	}
 
 	/* deal with empty header */
@@ -773,9 +806,17 @@ static nserror llcache_fetch_process_header(llcache_object *object,
 		return NSERROR_OK;
 	}
 
+	/* update cache control data from header */
+	res = llcache_fetch_header_cache_control(object, name, value);
+	if (res != NSERROR_OK) {
+		free(name);
+		free(value);
+		return res;
+	}
+
 	/* Append header data to the object's headers array */
-	temp = realloc(object->headers, (object->num_headers + 1) *
-			sizeof(llcache_header));
+	temp = realloc(object->headers,
+		       (object->num_headers + 1) * sizeof(llcache_header));
 	if (temp == NULL) {
 		free(name);
 		free(value);
@@ -1586,9 +1627,11 @@ llcache_object_retrieve_from_cache(nsurl *url,
 	nserror error;
 	llcache_object *obj, *newest = NULL;
 
-	NSLOG(llcache, DEBUG, "Searching cache for %s flags:%x referer:%s post:%p",
-			nsurl_access(url), flags,
-			referer==NULL?"":nsurl_access(referer), post);
+	NSLOG(llcache, DEBUG,
+	      "Searching cache for %s flags:%x referer:%s post:%p",
+	      nsurl_access(url), flags,
+	      referer==NULL?"":nsurl_access(referer),
+	      post);
 
 	/* Search for the most recently fetched matching object */
 	for (obj = llcache->cached_objects; obj != NULL; obj = obj->next) {
@@ -3784,9 +3827,10 @@ nserror llcache_handle_force_stream(llcache_handle *handle)
 /* See llcache.h for documentation */
 nserror llcache_handle_invalidate_cache_data(llcache_handle *handle)
 {
-	if (handle->object != NULL && handle->object->fetch.fetch == NULL &&
-			handle->object->cache.no_cache ==
-				LLCACHE_VALIDATE_FRESH) {
+	if ((handle->object != NULL) &&
+	    (handle->object->fetch.fetch == NULL) &&
+	    (handle->object->cache.no_cache == LLCACHE_VALIDATE_FRESH)) {
+		/* mark the cached object as requiring validation */
 		handle->object->cache.no_cache = LLCACHE_VALIDATE_ONCE;
 	}
 
