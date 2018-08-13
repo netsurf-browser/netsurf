@@ -81,7 +81,7 @@ void gui_401login_open(nsurl *url, const char *realm,
 
 	lw->host = host;
 	lw->url = nsurl_ref(url);
-	lw->realm = strcpy(realm);
+	lw->realm = (realm != NULL) ? strdup(realm) : NULL;
 	lw->cb = cb;
 	lw->cbpw = cbpw;
 
