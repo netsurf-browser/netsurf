@@ -91,13 +91,40 @@ struct gui_misc_table {
 	 * \param cbpw Context pointer passed to cb
 	 * \return NSERROR_OK on sucess else error and cb never called
 	 */
-	nserror (*cert_verify)(struct nsurl *url, const struct ssl_cert_info *certs, unsigned long num, nserror (*cb)(bool proceed, void *pw), void *cbpw);
+	nserror (*cert_verify)(struct nsurl *url,
+			const struct ssl_cert_info *certs,
+			unsigned long num,
+			nserror (*cb)(bool proceed, void *pw),
+			void *cbpw);
 
 	/**
 	 * Prompt user for login
+	 *
+	 * To cancel a login, clients should call the `cb` callback passing
+	 * NULL for username, and password.  Otherwise, for logins, username
+	 * and password should both be non-NULL.  Pass "" if the empty string
+	 * is required.
+	 *
+	 * If the front end returns NSERROR_OK for this function, they must,
+	 * at some future time, call the `cb` with `cbpw` callback exactly once.
+	 *
+	 * If ther front end returns other than NSERROR_OK, they should not
+	 * call the `cb` callback.
+	 *
+	 * \param url       The URL being verified.
+	 * \param realm     The authorization realm.
+	 * \param username  Any current username (or empty string).
+	 * \param password  Any current password (or empty string).
+	 * \param cb        Callback upon user decision.
+	 * \param cbpw      Context pointer passed to cb
+	 * \return NSERROR_OK on sucess else error and cb never called
 	 */
-	void (*login)(struct nsurl *url, const char *realm,
-			nserror (*cb)(bool proceed, void *pw), void *cbpw);
+	nserror (*login)(struct nsurl *url, const char *realm,
+			const char *username, const char *password,
+			nserror (*cb)(const char *username,
+					const char *password,
+					void *pw),
+			void *cbpw);
 
 	/**
 	 * Prompt the user for a password for a PDF.

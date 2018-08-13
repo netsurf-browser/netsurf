@@ -679,10 +679,14 @@ static nserror gui_default_cert_verify(nsurl *url,
 	return NSERROR_NOT_IMPLEMENTED;
 }
 
-static void gui_default_401login_open(nsurl *url, const char *realm,
-		nserror (*cb)(bool proceed, void *pw), void *cbpw)
+static nserror gui_default_401login_open(nsurl *url, const char *realm,
+		const char *username, const char *password,
+		nserror (*cb)(const char *username,
+				const char *password,
+				void *pw),
+		void *cbpw)
 {
-	cb(false, cbpw);
+	return NSERROR_NOT_IMPLEMENTED;
 }
 
 static void
