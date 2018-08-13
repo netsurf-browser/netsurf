@@ -35,7 +35,12 @@ extern bool nsbeos_done;
 extern bool replicated;
 int gui_init_replicant(int argc, char** argv);
 
-extern "C" void gui_401login_open(struct nsurl *url, const char *realm, nserror (*cb)(bool proceed, void *pw), void *cbpw);
+extern "C" void nserror gui_401login_open(nsurl *url, const char *realm,
+		const char *username, const char *password,
+		nserror (*cb)(const char *username,
+				const char *password,
+				void *pw),
+		void *cbpw);
 
 extern "C" void nsbeos_gui_poll(void);
 
