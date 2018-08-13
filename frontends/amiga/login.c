@@ -81,7 +81,7 @@ void gui_401login_open(nsurl *url, const char *realm,
 
 	lw->host = host;
 	lw->url = nsurl_ref(url);
-	lw->realm = (char *)realm;
+	lw->realm = strcpy(realm);
 	lw->cb = cb;
 	lw->cbpw = cbpw;
 
@@ -188,6 +188,7 @@ static void ami_401login_close(struct gui_login_window *lw)
 	DisposeObject(lw->objects[OID_MAIN]);
 	lwc_string_unref(lw->host);
 	nsurl_unref(lw->url);
+	free(lw->realm);
 	ami_gui_win_list_remove(lw);
 }
 
