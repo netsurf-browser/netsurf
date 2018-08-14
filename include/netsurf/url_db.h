@@ -58,27 +58,6 @@ nserror urldb_save(const char *filename);
 
 
 /**
- * Set authentication data for an URL
- *
- * \param url The URL to consider
- * \param realm The authentication realm
- * \param auth The authentication details (in form username:password)
- */
-void urldb_set_auth_details(struct nsurl *url, const char *realm, const char *auth);
-
-
-/**
- * Look up authentication details in database
- *
- * \param url Absolute URL to search for
- * \param realm When non-NULL, it is realm which can be used to determine
- *        the protection space when that's not been done before for given URL.
- * \return Pointer to authentication details, or NULL if not found
- */
-const char *urldb_get_auth_details(struct nsurl *url, const char *realm);
-
-
-/**
  * Iterate over entries in the database which match the given prefix
  *
  * \param prefix Prefix to match
