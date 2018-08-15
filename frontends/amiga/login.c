@@ -46,8 +46,10 @@
 
 #include "amiga/gui.h"
 #include "amiga/libs.h"
-#include "amiga/object.h"
 #include "amiga/login.h"
+#include "amiga/misc.h"
+#include "amiga/object.h"
+#include "amiga/utf8.h"
 
 enum {
 	AMI_LOGIN_MSG_HOST,
@@ -78,7 +80,7 @@ static void ami_401login_close(void *w);
 
 static const struct ami_win_event_table ami_login_table = {
 	ami_401login_event,
-	ami_401login_close,
+	ami_401login_close, /* TODO: investigate why this doesn't get called on exit */
 };
 
 nserror gui_401login_open(nsurl *url, const char *realm,
@@ -215,13 +217,20 @@ static void ami_401login_close(void *w)
 
 static void ami_401login_login(struct gui_login_window *lw)
 {
-	ULONG *user,*pass;
+	char *user;
+	char *pass;
 
 	GetAttr(STRINGA_TextVal,lw->objects[GID_USER],(ULONG *)&user);
 	GetAttr(STRINGA_TextVal,lw->objects[GID_PASS],(ULONG *)&pass);
 
-	/* TODO: Encoding conversion to UTF8 for `user` and `pass`? */
-	lw->cb(user, pass, lw->cbpw);
+	char *user_utf8 = ami_to_utf8_easy(user);
+	char *pass_utf8 = ami_to_utf8_easy(pass);
+
+	if(user_utf8 && pass_utf8) {
+		lw->cb(user_utf8, pass_utf8, lw->cbpw);
+	} else {
+		amiga_warn_user("NoMemory", "");
+	}
 
 	/* Invalidate continuation */
 	lw->cb = NULL;
