@@ -418,6 +418,11 @@ cat > Makefile.config <<EOF
 override NETSURF_LOG_LEVEL := DEBUG
 EOF
 
+########### Additional environment info ########
+
+set
+uname -a
+
 ########### Build from source ##################
 
 # Clean first
