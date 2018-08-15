@@ -111,13 +111,22 @@ nserror gui_401login_open(nsurl *url, const char *realm,
 	lw->messages[AMI_LOGIN_MSG_LOGIN] = ami_utf8_easy(messages_get("Login"));
 	lw->messages[AMI_LOGIN_MSG_CANCEL] = ami_utf8_easy(messages_get("Cancel"));
 
-	len = strlen(username);
-	assert(len < sizeof(lw->uname));
-	memcpy(lw->uname, username, len + 1);
+	/* Convert existing username and password to local charset */
+	char *user_utf8 = ami_utf8_easy(username);
+	if(user_utf8 != NULL) {
+		len = strlen(user_utf8);
+		assert(len < sizeof(lw->uname));
+		memcpy(lw->uname, user_utf8, len + 1);
+		ami_utf8_free(user_utf8);
+	}
 
-	len = strlen(password);
-	assert(len < sizeof(lw->pwd));
-	memcpy(lw->pwd, password, len + 1);
+	char *pass_utf8 = ami_utf8_easy(password);
+	if(pass_utf8 != NULL) {
+		len = strlen(pass_utf8);
+		assert(len < sizeof(lw->pwd));
+		memcpy(lw->pwd, pass_utf8, len + 1);
+		ami_utf8_free(pass_utf8);
+	}
 
 	lw->objects[OID_MAIN] = WindowObj,
       	    WA_ScreenTitle, ami_gui_get_screen_title(),
@@ -220,14 +229,19 @@ static void ami_401login_login(struct gui_login_window *lw)
 	char *user;
 	char *pass;
 
+	/* Get username and password from string gadgets */
 	GetAttr(STRINGA_TextVal,lw->objects[GID_USER],(ULONG *)&user);
 	GetAttr(STRINGA_TextVal,lw->objects[GID_PASS],(ULONG *)&pass);
 
+	/* Convert from local charset to UTF-8 */
 	char *user_utf8 = ami_to_utf8_easy(user);
 	char *pass_utf8 = ami_to_utf8_easy(pass);
 
 	if(user_utf8 && pass_utf8) {
 		lw->cb(user_utf8, pass_utf8, lw->cbpw);
+
+		ami_utf8_free(user_utf8);
+		ami_utf8_free(pass_utf8);
 	} else {
 		amiga_warn_user("NoMemory", "");
 	}
