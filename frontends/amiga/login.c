@@ -63,11 +63,11 @@ struct gui_login_window {
 };
 
 static BOOL ami_401login_event(void *w);
+static void ami_401login_close(void *w)
 
 static const struct ami_win_event_table ami_login_table = {
 	ami_401login_event,
-	NULL, /* we don't explicitly close the login window at all.
-			@todo check if this prevents us from quitting NetSurf */
+	ami_401login_close,
 };
 
 nserror gui_401login_open(nsurl *url, const char *realm,
@@ -175,8 +175,10 @@ nserror gui_401login_open(nsurl *url, const char *realm,
 	return NSERROR_OK;
 }
 
-static void ami_401login_close(struct gui_login_window *lw)
+static void ami_401login_close(void *w)
 {
+	struct gui_login_window *lw = (struct gui_login_window *)w;
+
 	/* If continuation exists, then forbid refetch */
 	if (lw->cb != NULL)
 		lw->cb(NULL, NULL, lw->cbpw);
