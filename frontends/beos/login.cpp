@@ -44,7 +44,9 @@ extern "C" {
 
 class LoginAlert : public BAlert {
 public:
-        LoginAlert(nserror (*callback)(bool proceed, void *pw),
+        LoginAlert(nserror (*callback)(const char *username,
+				const char *password,
+				void *pw),
                    void *callbaclpw,
                    nsurl *url,
                    const char *host,
@@ -57,7 +59,9 @@ private:
         nsurl* fUrl;				/**< URL being fetched */
         BString fHost;				/**< Host for user display */
         BString fRealm;				/**< Authentication realm */
-        nserror (*fCallback)(bool proceed, void *pw);
+        nserror (*fCallback)(const char *username,
+			const char *password,
+			void *pw);
         void *fCallbackPw;
 
         BTextControl *fUserControl;
@@ -66,13 +70,17 @@ private:
 
 static void create_login_window(nsurl *host,
                 lwc_string *realm, const char *fetchurl,
-                nserror (*cb)(bool proceed, void *pw), void *cbpw);
+                nserror (*cb)(const char *username,
+				const char *password,
+				void *pw), void *cbpw);
 
 
 #define TC_H 25
 #define TC_MARGIN 10
 
-LoginAlert::LoginAlert(nserror (*callback)(bool proceed, void *pw),
+LoginAlert::LoginAlert(nserror (*callback)(const char *username,
+						const char *password,
+						void *pw),
 				void *callbackpw,
 				nsurl *url, 
 				const char *host, 
@@ -164,8 +172,12 @@ LoginAlert::MessageReceived(BMessage *message)
 }
 
 
-extern "C" void gui_401login_open(nsurl *url, const char *realm,
-		nserror (*cb)(bool proceed, void *pw), void *cbpw)
+extern "C" nserror gui_401login_open(nsurl *url, const char *realm,
+		const char *username, const char *password,
+		nserror (*cb)(const char *username,
+				const char *password,
+				void *pw),
+		void *cbpw)
 {
 	lwc_string *host;
 
@@ -174,12 +186,17 @@ extern "C" void gui_401login_open(nsurl *url, const char *realm,
 	create_login_window(url, host, realm, cb, cbpw);
 
 	free(host);
+
+	return NSERROR_OK;
 }
 
 //void create_login_window(struct browser_window *bw, const char *host,
 //		const char *realm, const char *fetchurl)
 static void create_login_window(nsurl *url, lwc_string *host,
-                const char *realm, nserror (*cb)(bool proceed, void *pw),
+                const char *realm, nserror (*cb)(
+                		const char *username,
+                		const char *password,
+                		void *pw),
                 void *cbpw)
 {
 	BString r("Secure Area");

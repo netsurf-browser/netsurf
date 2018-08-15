@@ -53,7 +53,7 @@ struct gui_login_window {
 	struct ami_generic_window w;
 	struct Window *win;
 	Object *objects[GID_LAST];
-	nserror (*cb)(bool proceed, void *pw);
+	nserror (*cb)(const char *username, const char *password, void *pw);
 	void *cbpw;
 	nsurl *url;
 	char *realm;
@@ -70,14 +70,20 @@ static const struct ami_win_event_table ami_login_table = {
 			@todo check if this prevents us from quitting NetSurf */
 };
 
-void gui_401login_open(nsurl *url, const char *realm,
-		nserror (*cb)(bool proceed, void *pw), void *cbpw)
+nserror gui_401login_open(nsurl *url, const char *realm,
+		const char *username, const char *password,
+		nserror (*cb)(const char *username,
+				const char *password,
+				void *pw),
+		void *cbpw)
 {
-	const char *auth;
 	struct gui_login_window *lw = calloc(1, sizeof(struct gui_login_window));
 	lwc_string *host = nsurl_get_component(url, NSURL_HOST);
+	size_t len;
 
 	assert(host != NULL);
+	assert(username != NULL);
+	assert(password != NULL);
 
 	lw->host = host;
 	lw->url = nsurl_ref(url);
@@ -85,25 +91,13 @@ void gui_401login_open(nsurl *url, const char *realm,
 	lw->cb = cb;
 	lw->cbpw = cbpw;
 
-	auth = urldb_get_auth_details(lw->url, realm);
+	len = strlen(username);
+	assert(len < sizeof(lw->uname));
+	memcpy(lw->uname, username, len + 1);
 
-	if (auth == NULL) {
-		lw->uname[0] = '\0';
-		lw->pwd[0] = '\0';
-	} else {
-		const char *pwd;
-		size_t pwd_len;
-
-		pwd = strchr(auth, ':');
-		assert(pwd && pwd < auth + sizeof(lw->uname));
-		memcpy(lw->uname, auth, pwd - auth);
-		lw->uname[pwd - auth] = '\0';
-		++pwd;
-		pwd_len = strlen(pwd);
-		assert(pwd_len < sizeof(lw->pwd));
-		memcpy(lw->pwd, pwd, pwd_len);
-		lw->pwd[pwd_len] = '\0';
-	}
+	len = strlen(password);
+	assert(len < sizeof(lw->pwd));
+	memcpy(lw->pwd, password, len + 1);
 
 	lw->objects[OID_MAIN] = WindowObj,
       	    WA_ScreenTitle, ami_gui_get_screen_title(),
@@ -177,13 +171,15 @@ void gui_401login_open(nsurl *url, const char *realm,
 
 	lw->win = (struct Window *)RA_OpenWindow(lw->objects[OID_MAIN]);
 	ami_gui_win_list_add(lw, AMINS_LOGINWINDOW, &ami_login_table);
+
+	return NSERROR_OK;
 }
 
 static void ami_401login_close(struct gui_login_window *lw)
 {
 	/* If continuation exists, then forbid refetch */
 	if (lw->cb != NULL)
-		lw->cb(false, lw->cbpw);
+		lw->cb(NULL, NULL, lw->cbpw);
 
 	DisposeObject(lw->objects[OID_MAIN]);
 	lwc_string_unref(lw->host);
@@ -195,16 +191,12 @@ static void ami_401login_close(struct gui_login_window *lw)
 static void ami_401login_login(struct gui_login_window *lw)
 {
 	ULONG *user,*pass;
-	STRPTR userpass;
 
 	GetAttr(STRINGA_TextVal,lw->objects[GID_USER],(ULONG *)&user);
 	GetAttr(STRINGA_TextVal,lw->objects[GID_PASS],(ULONG *)&pass);
 
-	userpass = ASPrintf("%s:%s",user,pass);
-	urldb_set_auth_details(lw->url,lw->realm,userpass);
-	FreeVec(userpass);
-
-	lw->cb(true, lw->cbpw);
+	/* TODO: Encoding conversion to UTF8 for `user` and `pass`? */
+	lw->cb(user, pass, lw->cbpw);
 
 	/* Invalidate continuation */
 	lw->cb = NULL;

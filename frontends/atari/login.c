@@ -34,7 +34,7 @@
 #include "atari/res/netsurf.rsh"
 
 
-bool login_form_do(nsurl * url, char * realm, char ** out)
+bool login_form_do(nsurl * url, char * realm, char ** u_out char ** p_out)
 {
 	char user[255];
 	char pass[255];
@@ -45,8 +45,6 @@ bool login_form_do(nsurl * url, char * realm, char ** out)
 	user[0] = 0;
 	pass[0] = 0;
 
-	// TODO: use auth details for predefined login data
-	// auth = urldb_get_auth_details(url, realm);
 	tree = gemtk_obj_get_tree(LOGIN);
 
 	assert(tree != NULL);
@@ -57,10 +55,18 @@ bool login_form_do(nsurl * url, char * realm, char ** out)
 		get_string(tree, LOGIN_TB_USER, user);
 		get_string(tree, LOGIN_TB_PASSWORD, pass);
 		int size = strlen((char*)&user) + strlen((char*)&pass) + 2 ;
-		*out = malloc(size);
-		snprintf(*out, size, "%s:%s", user, pass);
+		*u_out = malloc(strlen((char*)&user) + 1);
+		*p_out = malloc(strlen((char*)&pass) + 1);
+		if (u_out == NULL || p_out == NULL) {
+			free(*u_out);
+			free(*p_out);
+			return false;
+		}
+		memcpy(*u_out, (char*)&user, strlen((char*)&user) + 1);
+		memcpy(*p_out, (char*)&pass, strlen((char*)&pass) + 1);
 	} else {
-		*out = NULL;
+		*u_out = NULL;
+		*p_out = NULL;
 	}
 	return((exit_obj == LOGIN_BT_LOGIN));
 }

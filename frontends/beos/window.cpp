@@ -655,23 +655,26 @@ void nsbeos_dispatch_event(BMessage *message)
 		{
 			nsurl* url;
 			BString realm;
-			BString auth;
+			BString username;
+			BString password;
 			void* cbpw;
-			nserror (*cb)(bool proceed, void* pw);
+			nserror (*cb)(const char *username,
+					const char *password,
+					void *pw);
 
 			if (message->FindPointer("URL", (void**)&url) < B_OK)
 				break;
 			if (message->FindString("Realm", &realm) < B_OK)
 				break;
-			if (message->FindString("Auth", &auth) < B_OK)
+			if (message->FindString("User", &username) < B_OK)
+				break;
+			if (message->FindString("Pass", &password) < B_OK)
 				break;
 			if (message->FindPointer("callback", (void**)&cb) < B_OK)
 				break;
 			if (message->FindPointer("callback_pw", (void**)&cbpw) < B_OK)
 				break;
-			//printf("login to '%s' with '%s'\n", url.String(), auth.String());
-			urldb_set_auth_details(url, realm.String(), auth.String());
-			cb(true, cbpw);
+			cb(username.String(), password.String(), cbpw);
 			break;
 		}
 		default:

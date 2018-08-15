@@ -23,7 +23,11 @@
 
 struct gui_login_window;
 
-void gui_401login_open(nsurl *url, const char *realm,
-		       nserror (*cb)(bool proceed, void *pw), void *cbpw);
+nserror gui_401login_open(nsurl *url, const char *realm,
+		const char *username, const char *password,
+		nserror (*cb)(const char *username,
+				const char *password,
+				void *pw),
+		void *cbpw);
 #endif
 

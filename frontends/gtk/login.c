@@ -32,7 +32,9 @@ struct session_401 {
 	nsurl *url;				/**< URL being fetched */
 	lwc_string *host;			/**< Host for user display */
 	char *realm;				/**< Authentication realm */
-	nserror (*cb)(bool proceed, void *pw);	/**< Continuation callback */
+	nserror (*cb)(const char *username,
+			const char *password,
+			void *pw);		/**< Continuation callback */
 	void *cbpw;				/**< Continuation data */
 	GtkBuilder *x;				/**< Our builder windows */
 	GtkWindow *wnd;				/**< The login window itself */
@@ -83,14 +85,8 @@ static void nsgtk_login_ok_clicked(GtkButton *w, gpointer data)
 	struct session_401 *session = (struct session_401 *)data;
 	const gchar *user = gtk_entry_get_text(session->user);
 	const gchar *pass = gtk_entry_get_text(session->pass);
-	char *auth;
 
-	auth = malloc(strlen(user) + strlen(pass) + 2);
-	sprintf(auth, "%s:%s", user, pass);
-	urldb_set_auth_details(session->url, session->realm, auth);
-	free(auth);
-
-	session->cb(true, session->cbpw);
+	session->cb(user, pass, session->cbpw);
 
 	destroy_login_window(session);
 }
@@ -106,7 +102,7 @@ static void nsgtk_login_cancel_clicked(GtkButton *w, gpointer data)
 {
 	struct session_401 *session = (struct session_401 *) data;
 
-	session->cb(false, session->cbpw);
+	session->cb(NULL, NULL, session->cbpw);
 
 	/* close and destroy the window */
 	destroy_login_window(session);
@@ -128,10 +124,12 @@ static void nsgtk_login_cancel_clicked(GtkButton *w, gpointer data)
  */
 static nserror
 create_login_window(nsurl *url,
-		    lwc_string *host,
-		    const char *realm,
-		    nserror (*cb)(bool proceed, void *pw),
-		    void *cbpw)
+		lwc_string *host, const char *realm,
+		const char *username, const char *password,
+		nserror (*cb)(const char *username,
+				const char *password,
+				void *pw),
+		void *cbpw)
 {
 	struct session_401 *session;
 	GtkWindow *wnd;
@@ -177,8 +175,8 @@ create_login_window(nsurl *url,
 
 	gtk_label_set_text(GTK_LABEL(lhost), lwc_string_data(host));
 	gtk_label_set_text(lrealm, realm);
-	gtk_entry_set_text(euser, "");
-	gtk_entry_set_text(epass, "");
+	gtk_entry_set_text(euser, username);
+	gtk_entry_set_text(epass, password);
 
 	/* attach signal handlers to the Login and Cancel buttons in our new
 	 * window to call functions in this file to process the login
@@ -209,10 +207,12 @@ create_login_window(nsurl *url,
 
 
 /* exported function documented in gtk/login.h */
-void gui_401login_open(nsurl *url,
-		       const char *realm,
-		       nserror (*cb)(bool proceed, void *pw),
-		       void *cbpw)
+nserror gui_401login_open(nsurl *url, const char *realm,
+		const char *username, const char *password,
+		nserror (*cb)(const char *username,
+				const char *password,
+				void *pw),
+		void *cbpw)
 {
 	lwc_string *host;
 	nserror res;
@@ -220,13 +220,15 @@ void gui_401login_open(nsurl *url,
 	host = nsurl_get_component(url, NSURL_HOST);
 	assert(host != NULL);
 
-	res = create_login_window(url, host, realm, cb, cbpw);
+	res = create_login_window(url, host, realm, username, password,
+			cb, cbpw);
 	if (res != NSERROR_OK) {
 		NSLOG(netsurf, INFO, "Login init failed");
 
-		/* creating login failed so cancel navigation */
-		cb(false, cbpw);
+		return res;
 	}
 
 	lwc_string_unref(host);
+
+	return NSERROR_OK;
 }
