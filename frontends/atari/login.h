@@ -21,6 +21,6 @@
 
 #include "utils/nsurl.h"
 
-bool login_form_do(nsurl * url, char * realm, char ** u_out char ** p_out);
+bool login_form_do(nsurl * url, char * realm, char ** u_out, char ** p_out);
 
 #endif

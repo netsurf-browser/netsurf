@@ -34,7 +34,7 @@
 #include "atari/res/netsurf.rsh"
 
 
-bool login_form_do(nsurl * url, char * realm, char ** u_out char ** p_out)
+bool login_form_do(nsurl * url, char * realm, char ** u_out, char ** p_out)
 {
 	char user[255];
 	char pass[255];
