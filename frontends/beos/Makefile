@@ -33,6 +33,50 @@ VERSION_FULL := $(shell sed -n '/_version.*=.*"/{s/.*"\(.*\)".*/\1/;p;}' desktop
 VERSION_MAJ := $(shell sed -n '/_major/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
 VERSION_MIN := $(shell sed -n '/_minor/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
 
+
+HARCH := $(shell getarch)
+HPARCH := $(shell getarch -p)
+ifneq ($(HARCH),$(HPARCH))
+PKGSARCH := _$(HARCH)
+endif
+
+PKGNAME := netsurf$(PKGSARCH)-$(VERSION_MAJ).$(VERSION_MIN)-1-$(HPARCH).hpkg
+HAIKU_TARGET_DIR := netsurf_pkg
+
+# Identity of the packager
+PACKAGER := $(shell git config --get user.name) <$(shell git config --get user.email)>
+
+# package manifest file
+# TODO: remove requires hardcoding
+PKGINFO := \
+name	netsurf$(PKGSARCH)\n\
+version	$(VERSION_MAJ).$(VERSION_MIN)-1\n\
+architecture	$(HPARCH)\n\
+summary	"A multi-platform web browser"\n\
+description	"Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser for RISC OS, UNIX-like platforms (including Linux), Mac OS X, and more.Whether you want to check your webmail, read the news or post to discussion forums, NetSurf is your lightweight gateway to the world wide web. Actively developed, NetSurf is continually evolving and improving."\n\
+vendor	"NetSurf"\n\
+packager	"$(PACKAGER)"\n\
+copyrights	{\n\t"2003-2018 The NetSurf Browser project"\n}\n\
+licenses	{\n\t"GNU GPL v2"\n}\n\
+urls	{\n\t"http://www.netsurf-browser.org/"\n}\n\
+source-urls	{\n\t"http://download.netsurf-browser.org/netsurf/releases/source/netsurf-$(VERSION_MAJ).$(VERSION_MIN)-src.tar.gz"\n}\n\
+provides	{\n\
+\tnetsurf$(PKGSARCH) = $(VERSION_MAJ).$(VERSION_MIN)\n\
+\tapp:netsurf = $(VERSION_MAJ).$(VERSION_MIN)\n\
+}\n\
+requires	{\n\
+\thaiku_x86>=r1~alpha4_pm_hrev51655-1\n\
+\tlib:libcurl_x86>=4.4.0\n\
+\tlib:libexpat_x86>=1.6.7\n\
+\tlib:libiconv_x86>=2.5.0\n\
+\tlib:libpng16_x86>=16.34.0\n\
+\tlib:libjpeg_x86>=9.2.0\n\
+\tlib:libssl_x86>=1.0.0\n\
+\tlib:libutf8proc_x86>=1.3.1\n\
+\tlib:libz_x86>=1.2.11\n\
+}\n
+
+
 # ----------------------------------------------------------------------------
 # Source file setup
 # ----------------------------------------------------------------------------
@@ -104,4 +148,22 @@ install-beos:
 # Package target
 # ----------------------------------------------------------------------------
 
-package-beos:
+package-beos: $(PKGNAME)
+	$(VQ)echo Creating $(PKGNAME)
+
+$(PKGNAME): $(EXETARGET)
+	$(Q)rm -rf $(HAIKU_TARGET_DIR)
+	$(Q)rm -rf $(PKGNAME)
+	$(Q)$(MKDIR) $(HAIKU_TARGET_DIR)
+	$(Q)echo -e '$(PKGINFO)' > $(HAIKU_TARGET_DIR)/.PackageInfo
+	$(Q)$(MKDIR) -p $(HAIKU_TARGET_DIR)/apps/netsurf/res
+	$(Q)$(MKDIR) -p $(HAIKU_TARGET_DIR)/data/deskbar/menu/Applications
+	$(Q)copyattr -d $(EXETARGET) $(HAIKU_TARGET_DIR)/apps/NetSurf
+	$(Q)cp -vRL $(FRONTEND_RESOURCES_DIR)/adblock.css $(HAIKU_TARGET_DIR)/apps/netsurf/res
+	$(Q)cp -vRL $(FRONTEND_RESOURCES_DIR)/ca-bundle.txt $(HAIKU_TARGET_DIR)/apps/netsurf/res
+	$(Q)cp -vRL $(FRONTEND_RESOURCES_DIR)/default.css $(HAIKU_TARGET_DIR)/apps/netsurf/res
+	$(Q)cp -vRL $(FRONTEND_RESOURCES_DIR)/beosdefault.css $(HAIKU_TARGET_DIR)/apps/netsurf/res
+	$(Q)cp -vRL $(FRONTEND_RESOURCES_DIR)/license $(HAIKU_TARGET_DIR)/apps/netsurf/res
+	$(Q)cp -vRL $(FRONTEND_RESOURCES_DIR)/SearchEngines $(HAIKU_TARGET_DIR)/apps/netsurf/res
+	$(Q)ln -s ../../../../apps/NetSurf $(HAIKU_TARGET_DIR)/data/deskbar/menu/Applications/
+	package create -v -C $(HAIKU_TARGET_DIR) $(PKGNAME)
