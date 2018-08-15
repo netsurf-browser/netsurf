@@ -49,6 +49,16 @@
 #include "amiga/object.h"
 #include "amiga/login.h"
 
+enum {
+	AMI_LOGIN_MSG_HOST,
+	AMI_LOGIN_MSG_REALM,
+	AMI_LOGIN_MSG_USER,
+	AMI_LOGIN_MSG_PASS,
+	AMI_LOGIN_MSG_LOGIN,
+	AMI_LOGIN_MSG_CANCEL,
+	AMI_LOGIN_MSG_MAX
+};
+
 struct gui_login_window {
 	struct ami_generic_window w;
 	struct Window *win;
@@ -60,10 +70,11 @@ struct gui_login_window {
 	lwc_string *host;
 	char uname[256];
 	char pwd[256];
+	char *messages[AMI_LOGIN_MSG_MAX];
 };
 
 static BOOL ami_401login_event(void *w);
-static void ami_401login_close(void *w)
+static void ami_401login_close(void *w);
 
 static const struct ami_win_event_table ami_login_table = {
 	ami_401login_event,
@@ -91,6 +102,13 @@ nserror gui_401login_open(nsurl *url, const char *realm,
 	lw->cb = cb;
 	lw->cbpw = cbpw;
 
+	lw->messages[AMI_LOGIN_MSG_HOST] = ami_utf8_easy(messages_get("Host"));
+	lw->messages[AMI_LOGIN_MSG_REALM] = ami_utf8_easy(messages_get("Realm"));
+	lw->messages[AMI_LOGIN_MSG_USER] = ami_utf8_easy(messages_get("Username"));
+	lw->messages[AMI_LOGIN_MSG_PASS] = ami_utf8_easy(messages_get("Password"));
+	lw->messages[AMI_LOGIN_MSG_LOGIN] = ami_utf8_easy(messages_get("Login"));
+	lw->messages[AMI_LOGIN_MSG_CANCEL] = ami_utf8_easy(messages_get("Cancel"));
+
 	len = strlen(username);
 	assert(len < sizeof(lw->uname));
 	memcpy(lw->uname, username, len + 1);
@@ -115,12 +133,11 @@ nserror gui_401login_open(nsurl *url, const char *realm,
          	WINDOW_Position, WPOS_CENTERSCREEN,
            	WINDOW_ParentGroup, lw->objects[GID_MAIN] = LayoutVObj,
 				LAYOUT_AddChild, StringObj,
-					STRINGA_TextVal,
-					lwc_string_data(lw->host),
+					STRINGA_TextVal, lwc_string_data(lw->host),
 					GA_ReadOnly,TRUE,
 				StringEnd,
 				CHILD_Label, LabelObj,
-					LABEL_Text,messages_get("Host"),
+					LABEL_Text, lw->messages[AMI_LOGIN_MSG_HOST],
 				LabelEnd,
 				CHILD_WeightedHeight,0,
 				LAYOUT_AddChild, StringObj,
@@ -128,7 +145,7 @@ nserror gui_401login_open(nsurl *url, const char *realm,
 					GA_ReadOnly,TRUE,
 				StringEnd,
 				CHILD_Label, LabelObj,
-					LABEL_Text,messages_get("Realm"),
+					LABEL_Text, lw->messages[AMI_LOGIN_MSG_REALM],
 				LabelEnd,
 				CHILD_WeightedHeight,0,
 				LAYOUT_AddChild, lw->objects[GID_USER] = StringObj,
@@ -137,7 +154,7 @@ nserror gui_401login_open(nsurl *url, const char *realm,
 					STRINGA_TextVal, lw->uname,
 				StringEnd,
 				CHILD_Label, LabelObj,
-					LABEL_Text,messages_get("Username"),
+					LABEL_Text, lw->messages[AMI_LOGIN_MSG_USER],
 				LabelEnd,
 				CHILD_WeightedHeight,0,
 				LAYOUT_AddChild, lw->objects[GID_PASS] = StringObj,
@@ -147,21 +164,21 @@ nserror gui_401login_open(nsurl *url, const char *realm,
 					STRINGA_TextVal, lw->pwd,
 				StringEnd,
 				CHILD_Label, LabelObj,
-					LABEL_Text,messages_get("Password"),
+					LABEL_Text, lw->messages[AMI_LOGIN_MSG_PASS],
 				LabelEnd,
 				CHILD_WeightedHeight,0,
 				LAYOUT_AddChild, LayoutHObj,
 					LAYOUT_AddChild, lw->objects[GID_LOGIN] = ButtonObj,
 						GA_ID,GID_LOGIN,
 						GA_RelVerify,TRUE,
-						GA_Text,messages_get("Login"),
+						GA_Text, lw->messages[AMI_LOGIN_MSG_LOGIN],
 						GA_TabCycle,TRUE,
 					ButtonEnd,
 					CHILD_WeightedHeight,0,
 					LAYOUT_AddChild, lw->objects[GID_CANCEL] = ButtonObj,
 						GA_ID,GID_CANCEL,
 						GA_RelVerify,TRUE,
-						GA_Text,messages_get("Cancel"),
+						GA_Text, lw->messages[AMI_LOGIN_MSG_CANCEL],
 						GA_TabCycle,TRUE,
 					ButtonEnd,
 				LayoutEnd,
@@ -187,6 +204,12 @@ static void ami_401login_close(void *w)
 	lwc_string_unref(lw->host);
 	nsurl_unref(lw->url);
 	free(lw->realm);
+
+	/* Free local charset version of messages */
+	for(int i = 0; i < AMI_LOGIN_MSG_MAX; i++) {
+		ami_utf8_free(lw->messages[i]);
+	}
+
 	ami_gui_win_list_remove(lw);
 }
 
