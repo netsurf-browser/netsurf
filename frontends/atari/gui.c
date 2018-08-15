@@ -779,8 +779,8 @@ static void gui_401login_open(nsurl *url, const char *realm,
 
     bres = login_form_do(url, (char*)realm, &u_out, &p_out);
     if (bres) {
-        NSLOG(netsurf, INFO, "url: %s, realm: %s, auth: %s\n",
-                nsurl_access(url), realm, out);
+        NSLOG(netsurf, INFO, "url: %s, realm: %s, auth: %s:%s\n",
+                nsurl_access(url), realm, u_out, p_out);
     }
     if (cb != NULL) {
         cb(u_out, p_out, cbpw);
