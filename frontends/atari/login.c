@@ -38,7 +38,6 @@ bool login_form_do(nsurl * url, char * realm, char ** u_out, char ** p_out)
 {
 	char user[255];
 	char pass[255];
-	//const char * auth;
 	short exit_obj = 0;
 	OBJECT * tree;
 
