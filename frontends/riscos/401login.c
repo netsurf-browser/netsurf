@@ -41,7 +41,7 @@
 
 static void ro_gui_401login_close(wimp_w w);
 static bool ro_gui_401login_apply(wimp_w w);
-static void ro_gui_401login_open(nsurl *url, lwc_string *host,
+static nserror ro_gui_401login_open(nsurl *url, lwc_string *host,
 		const char *realm,
 		const char *username, const char *password,
 		nserror (*cb)(const char *username,
@@ -84,14 +84,15 @@ nserror gui_401login_open(nsurl *url, const char *realm,
 				void *pw),
 		void *cbpw)
 {
+	nserror err;
 	lwc_string *host = nsurl_get_component(url, NSURL_HOST);
 	assert(host != NULL);
 
-	ro_gui_401login_open(url, host, realm, username, password, cb, cbpw);
-
+	err = ro_gui_401login_open(url, host, realm, username, password,
+			cb, cbpw);
 	lwc_string_unref(host);
 
-	return NSERROR_OK;
+	return err;
 }
 
 
@@ -99,7 +100,7 @@ nserror gui_401login_open(nsurl *url, const char *realm,
  * Open a 401 login window.
  */
 
-void ro_gui_401login_open(nsurl *url, lwc_string *host, const char *realm,
+nserror ro_gui_401login_open(nsurl *url, lwc_string *host, const char *realm,
 		const char *username, const char *password,
 		nserror (*cb)(const char *username,
 				const char *password,
@@ -117,7 +118,7 @@ void ro_gui_401login_open(nsurl *url, lwc_string *host, const char *realm,
 	session = calloc(1, sizeof(struct session_401));
 	if (!session) {
 		ro_warn_user("NoMemory", 0);
-		return;
+		return NSERROR_NOMEM;
 	}
 
 	if (realm == NULL)
@@ -142,7 +143,7 @@ void ro_gui_401login_open(nsurl *url, lwc_string *host, const char *realm,
 		lwc_string_unref(session->host);
 		free(session);
 		ro_warn_user("NoMemory", 0);
-		return;
+		return NSERROR_NOMEM;
 	}
 
 	/* fill in download window icons */
@@ -177,6 +178,8 @@ void ro_gui_401login_open(nsurl *url, lwc_string *host, const char *realm,
 	ro_gui_wimp_event_set_user_data(w, session);
 
 	ro_gui_dialog_open_persistent(NULL, w, false);
+
+	return NSERROR_OK;
 }
 
 /**
