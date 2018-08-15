@@ -136,7 +136,7 @@ extern struct gui_download_table *riscos_download_table;
 
 /* in 401login.c */
 void ro_gui_401login_init(void);
-void gui_401login_open(nsurl *url, const char *realm,
+void gui_401login_open(struct nsurl *url, const char *realm,
 		const char *username, const char *password,
 		nserror (*cb)(const char *username,
 				const char *password,
