@@ -766,7 +766,7 @@ static void gui_set_clipboard(const char *buffer, size_t length,
     }
 }
 
-static void gui_401login_open(nsurl *url, const char *realm,
+static nserror gui_401login_open(nsurl *url, const char *realm,
         const char *username, const char *password,
         nserror (*cb)(const char *username,
                 const char *password,
@@ -791,6 +791,8 @@ static void gui_401login_open(nsurl *url, const char *realm,
     if (p_out != NULL) {
         free(p_out);
     }
+
+    return NSERROR_OK;
 }
 
 static nserror
