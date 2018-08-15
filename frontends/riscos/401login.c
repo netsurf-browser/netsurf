@@ -77,7 +77,7 @@ void ro_gui_401login_init(void)
 /**
  * Open the login dialog
  */
-void gui_401login_open(nsurl *url, const char *realm,
+nserror gui_401login_open(nsurl *url, const char *realm,
 		const char *username, const char *password,
 		nserror (*cb)(const char *username,
 				const char *password,
@@ -90,6 +90,8 @@ void gui_401login_open(nsurl *url, const char *realm,
 	ro_gui_401login_open(url, host, realm, username, password, cb, cbpw);
 
 	lwc_string_unref(host);
+
+	return NSERROR_OK;
 }
 
 
