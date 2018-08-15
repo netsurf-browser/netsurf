@@ -146,6 +146,8 @@ static nserror netsurf__unpack_userpass(
 		username = malloc(1);
 		password = malloc(1);
 		if (username == NULL || password == NULL) {
+			free(username);
+			free(password);
 			return NSERROR_NOMEM;
 		}
 		username[0] = '\0';
@@ -167,6 +169,8 @@ static nserror netsurf__unpack_userpass(
 		username = malloc(len + 1);
 		password = malloc(len2 + 1);
 		if (username == NULL || password == NULL) {
+			free(username);
+			free(password);
 			return NSERROR_NOMEM;
 		}
 		memcpy(username, userpass, len);
