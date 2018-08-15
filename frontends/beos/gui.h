@@ -35,7 +35,7 @@ extern bool nsbeos_done;
 extern bool replicated;
 int gui_init_replicant(int argc, char** argv);
 
-extern "C" void nserror gui_401login_open(nsurl *url, const char *realm,
+extern "C" nserror gui_401login_open(nsurl *url, const char *realm,
 		const char *username, const char *password,
 		nserror (*cb)(const char *username,
 				const char *password,
