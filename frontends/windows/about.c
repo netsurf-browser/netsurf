@@ -141,7 +141,7 @@ nsws_about_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 void nsws_about_dialog_init(HINSTANCE hinst, HWND parent)
 {
-	int ret = DialogBox(hinst, MAKEINTRESOURCE(IDD_DLG_ABOUT), parent,
+	int ret = DialogBox(hinst, MAKEINTRESOURCE(IDD_ABOUT), parent,
 			nsws_about_event_callback);
 	if (ret == -1) {
 		win32_warning(messages_get("NoMemory"), 0);

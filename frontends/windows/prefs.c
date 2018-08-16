@@ -718,7 +718,7 @@ void nsws_prefs_dialog_init(HINSTANCE hinst, HWND parent)
 	psp[0].dwSize = sizeof(PROPSHEETPAGE);
 	psp[0].dwFlags = 0;/*PSP_USEICONID*/
 	psp[0].hInstance = hinst;
-	psp[0].pszTemplate = MAKEINTRESOURCE(IDD_DLG_OPTIONS_GENERAL);
+	psp[0].pszTemplate = MAKEINTRESOURCE(IDD_OPTIONS_GENERAL);
 	psp[0].pfnDlgProc = options_general_dialog_handler;
 	psp[0].lParam = 0;
 	psp[0].pfnCallback = NULL;
@@ -726,7 +726,7 @@ void nsws_prefs_dialog_init(HINSTANCE hinst, HWND parent)
 	psp[1].dwSize = sizeof(PROPSHEETPAGE);
 	psp[1].dwFlags = 0;/*PSP_USEICONID*/
 	psp[1].hInstance = hinst;
-	psp[1].pszTemplate = MAKEINTRESOURCE(IDD_DLG_OPTIONS_CONNECTIONS);
+	psp[1].pszTemplate = MAKEINTRESOURCE(IDD_OPTIONS_CONNECTIONS);
 	psp[1].pfnDlgProc = options_connections_dialog_handler;
 	psp[1].lParam = 0;
 	psp[1].pfnCallback = NULL;
@@ -734,7 +734,7 @@ void nsws_prefs_dialog_init(HINSTANCE hinst, HWND parent)
 	psp[2].dwSize = sizeof(PROPSHEETPAGE);
 	psp[2].dwFlags = 0;/*PSP_USEICONID*/
 	psp[2].hInstance = hinst;
-	psp[2].pszTemplate = MAKEINTRESOURCE(IDD_DLG_OPTIONS_APPERANCE);
+	psp[2].pszTemplate = MAKEINTRESOURCE(IDD_OPTIONS_APPERANCE);
 	psp[2].pfnDlgProc = options_appearance_dialog_handler;
 	psp[2].lParam = 0;
 	psp[2].pfnCallback = NULL;

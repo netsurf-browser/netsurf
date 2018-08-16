@@ -185,7 +185,7 @@ nsws_download_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 static bool nsws_download_window_up(struct gui_download_window *w)
 {
 	w->hwnd = CreateDialog(hinst,
-			       MAKEINTRESOURCE(IDD_DLG_DOWNLOAD),
+			       MAKEINTRESOURCE(IDD_DOWNLOAD),
 			       gui_window_main_window(w->window),
 			       nsws_download_event_callback);
 	if (w->hwnd == NULL) {
