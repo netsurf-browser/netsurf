@@ -37,6 +37,8 @@
 #include <string.h>
 #include <strings.h>
 
+#include "netsurf/inttypes.h"
+
 #include "utils/ascii.h"
 #include "utils/corestrings.h"
 #include "utils/errors.h"
@@ -460,19 +462,29 @@ static void nsurl__get_string_markers(const char * const url_s,
 			marker.fragment = marker.end;
 	}
 
-	NSLOG(netsurf, DEEPDEBUG, "marker.start: %zu", marker.start);
-	NSLOG(netsurf, DEEPDEBUG, "marker.scheme_end: %zu", marker.scheme_end);
-	NSLOG(netsurf, DEEPDEBUG, "marker.authority: %zu", marker.authority);
+	NSLOG(netsurf, DEEPDEBUG,
+	      "marker.start: %"PRIsizet, marker.start);
+	NSLOG(netsurf, DEEPDEBUG,
+	      "marker.scheme_end: %"PRIsizet, marker.scheme_end);
+	NSLOG(netsurf, DEEPDEBUG,
+	      "marker.authority: %"PRIsizet, marker.authority);
 
-	NSLOG(netsurf, DEEPDEBUG, "marker.colon_first: %zu", marker.colon_first);
-	NSLOG(netsurf, DEEPDEBUG, "marker.at: %zu", marker.at);
-	NSLOG(netsurf, DEEPDEBUG, "marker.colon_last: %zu", marker.colon_last);
+	NSLOG(netsurf, DEEPDEBUG,
+	      "marker.colon_first: %"PRIsizet, marker.colon_first);
+	NSLOG(netsurf, DEEPDEBUG,
+	      "marker.at: %"PRIsizet, marker.at);
+	NSLOG(netsurf, DEEPDEBUG,
+	      "marker.colon_last: %"PRIsizet, marker.colon_last);
 
-	NSLOG(netsurf, DEEPDEBUG, "marker.path: %zu", marker.path);
-	NSLOG(netsurf, DEEPDEBUG, "marker.query: %zu", marker.query);
-	NSLOG(netsurf, DEEPDEBUG, "marker.fragment: %zu", marker.fragment);
+	NSLOG(netsurf, DEEPDEBUG,
+	      "marker.path: %"PRIsizet, marker.path);
+	NSLOG(netsurf, DEEPDEBUG,
+	      "marker.query: %"PRIsizet, marker.query);
+	NSLOG(netsurf, DEEPDEBUG,
+	      "marker.fragment: %"PRIsizet, marker.fragment);
 
-	NSLOG(netsurf, DEEPDEBUG, "marker.end: %zu", marker.end);
+	NSLOG(netsurf, DEEPDEBUG,
+	      "marker.end: %"PRIsizet, marker.end);
 
 	/* Got all the URL components pegged out now */
 	*markers = marker;

@@ -3617,8 +3617,8 @@ layout_line(struct box *first,
 
 
 		NSLOG(layout, DEBUG,
-		      "splitting: split_box %p \"%.*s\", spilt %zu, w %i, "
-		      "left %p, right %p, inline_count %u",
+		      "splitting: split_box %p \"%.*s\", spilt %"PRIsizet
+		      ", w %i, left %p, right %p, inline_count %u",
 		      split_box,
 		      (int)split_box->length,
 		      split_box->text,
@@ -3689,7 +3689,8 @@ layout_line(struct box *first,
 			/* fit as many words as possible */
 			assert(split != 0);
 
-			NSLOG(layout, DEBUG,  "'%.*s' %i %zu %i",
+			NSLOG(layout, DEBUG,
+			      "'%.*s' %i %"PRIsizet" %i",
 			      (int)split_box->length, split_box->text,
 			      x1 - x0, split, w);
 
