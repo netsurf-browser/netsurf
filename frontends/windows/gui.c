@@ -52,6 +52,74 @@ HINSTANCE hinst;
 
 static bool win32_quit = false;
 
+struct dialog_list_entry {
+	struct dialog_list_entry *next;
+	HWND hwnd;
+};
+
+static struct dialog_list_entry *dlglist = NULL;
+
+/* exported interface documented in gui.h */
+nserror nsw32_add_dialog(HWND hwndDlg)
+{
+	struct dialog_list_entry *nentry;
+	nentry = malloc(sizeof(struct dialog_list_entry));
+	if (nentry == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	nentry->hwnd = hwndDlg;
+	nentry->next = dlglist;
+	dlglist = nentry;
+
+	return NSERROR_OK;
+}
+
+/* exported interface documented in gui.h */
+nserror nsw32_del_dialog(HWND hwndDlg)
+{
+	struct dialog_list_entry **prev;
+	struct dialog_list_entry *cur;
+
+	prev = &dlglist;
+	cur = *prev;
+
+	while (cur != NULL) {
+		if (cur->hwnd == hwndDlg) {
+			/* found match */
+			*prev = cur->next;
+			NSLOG(netsurf, DEBUG,
+			      "removed hwnd %p entry %p", cur->hwnd, cur);
+			free(cur);
+			return NSERROR_OK;
+		}
+		prev = &cur->next;
+		cur = *prev;
+	}
+	NSLOG(netsurf, INFO, "did not find hwnd %p", hwndDlg);
+
+	return NSERROR_NOT_FOUND;
+}
+
+/**
+ * walks dialog list and attempts to process any messages for them
+ */
+static nserror handle_dialog_message(LPMSG lpMsg)
+{
+	struct dialog_list_entry *cur;
+	cur = dlglist;
+	while (cur != NULL) {
+		if (IsDialogMessage(cur->hwnd, lpMsg)) {
+			NSLOG(netsurf, DEBUG,
+			      "dispatched dialog hwnd %p", cur->hwnd);
+			return NSERROR_OK;
+		}
+		cur = cur->next;
+	}
+
+	return NSERROR_NOT_FOUND;
+}
+
 /* exported interface documented in gui.h */
 void win32_set_quit(bool q)
 {
@@ -92,7 +160,8 @@ void win32_run(void)
 			}
 		}
 
-		if (bRet > 0) {
+		if ((bRet > 0) &&
+		    (handle_dialog_message(&Msg) != NSERROR_OK)) {
 			TranslateMessage(&Msg);
 			DispatchMessage(&Msg);
 		}

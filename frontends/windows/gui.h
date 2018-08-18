@@ -56,4 +56,15 @@ void win32_set_quit(bool q);
  */
 nserror win32_warning(const char *warning, const char *detail);
 
+/**
+ * add a modeless dialog to the special handling list
+ */
+nserror nsw32_add_dialog(HWND hwndDlg);
+
+/**
+ * remove a modeless dialog from the special handling list
+ */
+nserror nsw32_del_dialog(HWND hwndDlg);
+
+
 #endif 

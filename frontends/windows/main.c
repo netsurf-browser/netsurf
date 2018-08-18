@@ -45,6 +45,7 @@
 #include "windows/drawable.h"
 #include "windows/corewindow.h"
 #include "windows/ssl_cert.h"
+#include "windows/login.h"
 #include "windows/download.h"
 #include "windows/local_history.h"
 #include "windows/window.h"
@@ -272,7 +273,9 @@ static nserror nsw32_option_init(int *pargc, char** argv)
 static struct gui_misc_table win32_misc_table = {
 	.schedule = win32_schedule,
 	.warning = win32_warning,
+
 	.cert_verify = nsw32_cert_verify,
+	.login = nsw32_401login,
 };
 
 /**

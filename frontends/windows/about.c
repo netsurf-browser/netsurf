@@ -139,7 +139,7 @@ nsws_about_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	return FALSE;
 }
 
-void nsws_about_dialog_init(HINSTANCE hinst, HWND parent)
+void nsw32_about_dialog_init(HINSTANCE hinst, HWND parent)
 {
 	int ret = DialogBox(hinst, MAKEINTRESOURCE(IDD_ABOUT), parent,
 			nsws_about_event_callback);

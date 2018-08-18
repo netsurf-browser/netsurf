@@ -1274,7 +1274,7 @@ nsws_window_command(HWND hwnd,
 		break;
 
 	case IDM_HELP_ABOUT:
-		nsws_about_dialog_init(hinst, gw->main);
+		nsw32_about_dialog_init(hinst, gw->main);
 		break;
 
 	case IDC_MAIN_LAUNCH_URL:

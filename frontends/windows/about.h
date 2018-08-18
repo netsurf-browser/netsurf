@@ -16,9 +16,9 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NETSURF_WINDOWS_ABOUT_H_
-#define _NETSURF_WINDOWS_ABOUT_H_
+#ifndef NETSURF_WINDOWS_ABOUT_H
+#define NETSURF_WINDOWS_ABOUT_H
 
-void nsws_about_dialog_init(HINSTANCE hinst, HWND parent);
+void nsw32_about_dialog_init(HINSTANCE hinst, HWND parent);
 
 #endif
