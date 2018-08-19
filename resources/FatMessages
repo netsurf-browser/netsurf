@@ -2740,6 +2740,9 @@ nl.all.CaseSens:Hoofdlettergevoelig
 # This section contains tokens which are used in the 401 login
 # (authentication) dialog box.
 #
+en.all.LoginDescription:The site %s with realm "%s" is requesting credentials for access.
+en.all.LoginAgain:The credentials for the site %s and realm "%s" were rejected.
+en.all.LoginLabel:A website is requesting credentials for access.
 en.all.Host:Host
 de.all.Host:Host
 fr.all.Host:Hôte

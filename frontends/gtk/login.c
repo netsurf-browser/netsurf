@@ -22,6 +22,7 @@
 
 #include "utils/log.h"
 #include "utils/nsurl.h"
+#include "utils/messages.h"
 #include "netsurf/url_db.h"
 
 #include "gtk/resources.h"
@@ -29,12 +30,9 @@
 
 /** login window session data */
 struct session_401 {
-	nsurl *url;				/**< URL being fetched */
-	lwc_string *host;			/**< Host for user display */
-	char *realm;				/**< Authentication realm */
 	nserror (*cb)(const char *username,
-			const char *password,
-			void *pw);		/**< Continuation callback */
+		      const char *password,
+		      void *pw);		/**< Continuation callback */
 	void *cbpw;				/**< Continuation data */
 	GtkBuilder *x;				/**< Our builder windows */
 	GtkWindow *wnd;				/**< The login window itself */
@@ -49,9 +47,6 @@ struct session_401 {
  */
 static void destroy_login_window(struct session_401 *session)
 {
-	nsurl_unref(session->url);
-	lwc_string_unref(session->host);
-	free(session->realm);
 	gtk_widget_destroy(GTK_WIDGET(session->wnd));
 	g_object_unref(G_OBJECT(session->x));
 	free(session);
@@ -62,7 +57,7 @@ static void destroy_login_window(struct session_401 *session)
  * process next signal in entry widgets.
  *
  * \param w current widget
- * \param data next widget 
+ * \param data next widget
  */
 static void nsgtk_login_next(GtkWidget *w, gpointer data)
 {
@@ -83,8 +78,11 @@ static void nsgtk_login_ok_clicked(GtkButton *w, gpointer data)
 	 */
 
 	struct session_401 *session = (struct session_401 *)data;
-	const gchar *user = gtk_entry_get_text(session->user);
-	const gchar *pass = gtk_entry_get_text(session->pass);
+	const gchar *user;
+	const gchar *pass;
+
+	user = gtk_entry_get_text(session->user);
+	pass = gtk_entry_get_text(session->pass);
 
 	session->cb(user, pass, session->cbpw);
 
@@ -110,6 +108,59 @@ static void nsgtk_login_cancel_clicked(GtkButton *w, gpointer data)
 
 
 /**
+ * generate the description of the login request
+ */
+static nserror
+get_login_description(struct nsurl *url,
+		      const char *realm,
+		      const char *username,
+		      const char *password,
+		      char **out_str)
+{
+	char *url_s;
+	size_t url_l;
+	nserror res;
+	char *str = NULL;
+	int strlen;
+	const char *key;
+
+	res = nsurl_get(url, NSURL_SCHEME | NSURL_HOST, &url_s, &url_l);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	if ((*username == 0) && (*password == 0)) {
+		key = "LoginDescription";
+	} else {
+		key = "LoginAgain";
+	}
+
+	str = messages_get_buff(key, url_s, realm);
+	NSLOG(netsurf, INFO,
+	      "key:%s url:%s realm:%s str:%s", key, url_s, realm, str);
+
+	if (strcmp(key, str) != 0) {
+		*out_str = str;
+	} else {
+		/* no message so fallback */
+		const char *fmt = "The site %s is requesting your username and password. The realm is \"%s\"";
+		strlen = snprintf(str, 0, fmt, url_s, realm) + 1;
+		str = malloc(strlen);
+		if (str == NULL) {
+			res = NSERROR_NOMEM;
+		} else {
+			snprintf(str, strlen, fmt, url_s, realm);
+			*out_str = str;
+		}
+	}
+
+	free(url_s);
+
+	return res;
+}
+
+
+/**
  * create a new instance of the login window
  *
  * creates login window and handles to all the widgets we're
@@ -124,20 +175,23 @@ static void nsgtk_login_cancel_clicked(GtkButton *w, gpointer data)
  */
 static nserror
 create_login_window(nsurl *url,
-		lwc_string *host, const char *realm,
-		const char *username, const char *password,
-		nserror (*cb)(const char *username,
-				const char *password,
-				void *pw),
-		void *cbpw)
+		    lwc_string *host,
+		    const char *realm,
+		    const char *username,
+		    const char *password,
+		    nserror (*cb)(const char *username,
+				  const char *password,
+				  void *pw),
+		    void *cbpw)
 {
+	nserror res;
 	struct session_401 *session;
 	GtkWindow *wnd;
-	GtkLabel *lhost, *lrealm;
+	GtkLabel *ldesc;
 	GtkEntry *euser, *epass;
 	GtkButton *bok, *bcan;
-	GtkBuilder* builder;
-	nserror res;
+	GtkBuilder *builder;
+	char *description = NULL;
 
 	session = calloc(1, sizeof(struct session_401));
 	if (session == NULL) {
@@ -152,18 +206,14 @@ create_login_window(nsurl *url,
 
 	gtk_builder_connect_signals(builder, NULL);
 
-	wnd = GTK_WINDOW(gtk_builder_get_object(builder, "wndLogin"));
-	lhost = GTK_LABEL(gtk_builder_get_object(builder, "labelLoginHost"));
-	lrealm = GTK_LABEL(gtk_builder_get_object(builder, "labelLoginRealm"));
-	euser = GTK_ENTRY(gtk_builder_get_object(builder, "entryLoginUser"));
-	epass = GTK_ENTRY(gtk_builder_get_object(builder, "entryLoginPass"));
-	bok = GTK_BUTTON(gtk_builder_get_object(builder, "buttonLoginOK"));
-	bcan = GTK_BUTTON(gtk_builder_get_object(builder, "buttonLoginCan"));
+	wnd = GTK_WINDOW(gtk_builder_get_object(builder, "LoginDialog"));
+	ldesc = GTK_LABEL(gtk_builder_get_object(builder, "LoginDescription"));
+	euser = GTK_ENTRY(gtk_builder_get_object(builder, "LoginUsername"));
+	epass = GTK_ENTRY(gtk_builder_get_object(builder, "LoginPassword"));
+	bok = GTK_BUTTON(gtk_builder_get_object(builder, "LoginOK"));
+	bcan = GTK_BUTTON(gtk_builder_get_object(builder, "LoginCancel"));
 
 	/* create and fill in our session structure */
-	session->url = nsurl_ref(url);
-	session->host = lwc_string_ref(host);
-	session->realm = strdup(realm ? realm : "Secure Area");
 	session->cb = cb;
 	session->cbpw = cbpw;
 	session->x = builder;
@@ -172,9 +222,11 @@ create_login_window(nsurl *url,
 	session->pass = epass;
 
 	/* fill in our new login window */
-
-	gtk_label_set_text(GTK_LABEL(lhost), lwc_string_data(host));
-	gtk_label_set_text(lrealm, realm);
+	res = get_login_description(url, realm, username, password, &description);
+	if (res == NSERROR_OK) {
+		gtk_label_set_text(GTK_LABEL(ldesc), description);
+		free(description);
+	}
 	gtk_entry_set_text(euser, username);
 	gtk_entry_set_text(epass, password);
 
@@ -190,7 +242,6 @@ create_login_window(nsurl *url,
 	/* attach signal handlers to the entry boxes such that pressing
 	 * enter in one progresses the focus onto the next widget.
 	 */
-
 	g_signal_connect(G_OBJECT(euser), "activate",
 			 G_CALLBACK(nsgtk_login_next), (gpointer)epass);
 	g_signal_connect(G_OBJECT(epass), "activate",
