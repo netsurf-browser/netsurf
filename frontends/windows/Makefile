@@ -33,11 +33,15 @@ WSCFLAGS := -std=c99 -Dnswin32 -DCURL_STATICLIB -DCARES_STATICLIB -g
 CFLAGS += $(WSCFLAGS)
 LDFLAGS += $(WSCFLAGS)
 
+# The filter and target for split messages
+MESSAGES_FILTER=win
+MESSAGES_TARGET=$(FRONTEND_RESOURCES_DIR)
+
 # ----------------------------------------------------------------------------
 # built-in resource setup
 # ----------------------------------------------------------------------------
 
-$(OBJROOT)/windows_resource.o: $(FRONTEND_RESOURCES_DIR)/resource.rc
+$(OBJROOT)/windows_resource.o: $(FRONTEND_RESOURCES_DIR)/resource.rc $(addsuffix /Messages,$(addprefix $(MESSAGES_TARGET)/,$(MESSAGES_LANGUAGES)))
 	$(VQ)echo " WINDRES: compiling windows resources"
 	${Q}$(WINDRES) $< -O coff -o $@
 
@@ -49,7 +53,7 @@ S_RESOURCES := windows_resource.o
 
 # sources purely for the windows build
 S_FRONTEND := main.c window.c gui.c drawable.c plot.c findfile.c	\
-	  font.c bitmap.c about.c prefs.c download.c filetype.c file.c	\
+	  font.c bitmap.c about.c prefs.c download.c fetch.c file.c	\
 	  local_history.c schedule.c windbg.c pointers.c login.c \
 	  corewindow.c hotlist.c cookies.c global_history.c ssl_cert.c
 

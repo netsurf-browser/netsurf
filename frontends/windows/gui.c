@@ -40,7 +40,6 @@
 
 #include "windows/schedule.h"
 #include "windows/window.h"
-#include "windows/filetype.h"
 #include "windows/gui.h"
 
 /**

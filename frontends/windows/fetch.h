@@ -19,6 +19,22 @@
 #ifndef _NETSURF_WINDOWS_FILETYPE_H_
 #define _NETSURF_WINDOWS_FILETYPE_H_
 
+/**
+ * win32 API fetch operation table
+ */
 struct gui_fetch_table *win32_fetch_table;
+
+/**
+ * Translate resource to win32 resource data.
+ *
+ * Obtains the data for a resource directly
+ *
+ * \param path The path of the resource to locate.
+ * \param data Pointer to recive data into
+ * \param data_len Pointer to length of returned data
+ * \return NSERROR_OK and the data and length values updated
+ *         else appropriate error code.
+ */
+nserror nsw32_get_resource_data(const char *path, const uint8_t **data_out, size_t *data_len_out);
 
 #endif

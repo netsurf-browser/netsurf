@@ -2866,6 +2866,7 @@ de.all.Form_Many:(Viele)
 fr.all.Form_Many:(Plusieurs)
 it.all.Form_Many:(Molti)
 nl.all.Form_Many:(Veel)
+en.all.Form_Drop:Drop file here
 en.gtk.Form_Drop:Click to select file
 fr.gtk.Form_Drop:Cliquer pour sélectionner fichier
 nl.gtk.Form_Drop:Klik om bestand te selecteren

@@ -18,38 +18,6 @@ IDR_NETSURF_BANNER BITMAP         "banner.bmp"
 
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDR_THROBBER_FRAME0_BITMAP BITMAP         "throbber/throbber0.bmp"
-
-
-LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDR_THROBBER_FRAME1_BITMAP BITMAP         "throbber/throbber1.bmp"
-
-
-LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDR_THROBBER_FRAME2_BITMAP BITMAP         "throbber/throbber2.bmp"
-
-
-LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDR_THROBBER_FRAME3_BITMAP BITMAP         "throbber/throbber3.bmp"
-
-
-LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDR_THROBBER_FRAME4_BITMAP BITMAP         "throbber/throbber4.bmp"
-
-
-LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDR_THROBBER_FRAME5_BITMAP BITMAP         "throbber/throbber5.bmp"
-
-
-LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDR_THROBBER_FRAME6_BITMAP BITMAP         "throbber/throbber6.bmp"
-
-
-LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDR_THROBBER_FRAME7_BITMAP BITMAP         "throbber/throbber7.bmp"
-
-
-LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 IDR_TOOLBAR_BITMAP BITMAP         "toolbar.bmp"
 
 
@@ -60,7 +28,8 @@ IDR_TOOLBAR_BITMAP_GREY BITMAP         "toolbarg.bmp"
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 IDR_TOOLBAR_BITMAP_HOT BITMAP         "toolbarh.bmp"
 
-
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+IDR_THROBBER_AVI AVI "throbber.avi"
 
 //
 // Menu resources
@@ -315,3 +284,43 @@ FONT 8, "MS Shell Dlg", 0, 0, 1
 //
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 IDR_NETSURF_ICON   ICON           "NetSurf.ico"
+
+
+//
+// User resources
+//
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+default.css USER "default.css"
+adblock.css USER "adblock.css"
+internal.css USER "internal.css"
+quirks.css USER "quirks.css"
+welcome.html USER "welcome.html"
+licence.html USER "licence.html"
+credits.html USER "credits.html"
+netsurf.png USER "netsurf.png"
+icons/arrow-l.png USER "icons/arrow-l.png"
+icons/content.png USER "icons/content.png"
+icons/directory.png USER "icons/directory.png"
+icons/directory2.png USER "icons/directory2.png"
+icons/hotlist-add.png USER "icons/hotlist-add.png"
+icons/hotlist-rmv.png USER "icons/hotlist-rmv.png"
+icons/search.png USER "icons/search.png"
+
+/* translated messages */
+
+/* english is the fallback */
+LANGUAGE LANG_ENGLISH, SUBLANG_DEFAULT
+messages USER "en/Messages"
+
+LANGUAGE LANG_FRENCH, SUBLANG_DEFAULT
+messages USER "fr/Messages"
+
+LANGUAGE LANG_GERMAN, SUBLANG_DEFAULT
+messages USER "de/Messages"
+
+LANGUAGE LANG_ITALIAN, SUBLANG_DEFAULT
+messages USER "it/Messages"
+
+LANGUAGE LANG_DUTCH, SUBLANG_DEFAULT
+messages USER "nl/Messages"

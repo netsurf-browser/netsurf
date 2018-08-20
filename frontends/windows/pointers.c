@@ -33,7 +33,6 @@
 
 #include "windows/schedule.h"
 #include "windows/window.h"
-#include "windows/filetype.h"
 #include "windows/pointers.h"
 
 struct nsws_pointers {

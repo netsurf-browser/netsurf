@@ -28,6 +28,9 @@ extern HINSTANCE hinst;
 /** Directory where all configuration files are held. */
 extern char *nsw32_config_home;
 
+/** resource search path vector. */
+extern char **respaths;
+
 /* bounding box */
 typedef struct bbox_s {
         int x0;
