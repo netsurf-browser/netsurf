@@ -121,7 +121,7 @@ get_login_description(struct nsurl *url,
 	size_t url_l;
 	nserror res;
 	char *str = NULL;
-	int strlen;
+	int slen;
 	const char *key;
 
 	res = nsurl_get(url, NSURL_SCHEME | NSURL_HOST, &url_s, &url_l);
@@ -144,12 +144,12 @@ get_login_description(struct nsurl *url,
 	} else {
 		/* no message so fallback */
 		const char *fmt = "The site %s is requesting your username and password. The realm is \"%s\"";
-		strlen = snprintf(str, 0, fmt, url_s, realm) + 1;
-		str = malloc(strlen);
+		slen = snprintf(str, 0, fmt, url_s, realm) + 1;
+		str = malloc(slen);
 		if (str == NULL) {
 			res = NSERROR_NOMEM;
 		} else {
-			snprintf(str, strlen, fmt, url_s, realm);
+			snprintf(str, slen, fmt, url_s, realm);
 			*out_str = str;
 		}
 	}
