@@ -125,11 +125,11 @@ de.all.Utilities:Werkzeuge
 fr.all.Utilities:Utilitaires
 it.all.Utilities:Utilità
 nl.all.Utilities:Diversen
-en.ro.Help:Help
-de.ro.Help:Hilfe
-fr.ro.Help:Aide
-it.ro.Help:Aiuto
-nl.ro.Help:Hulp
+en.all.Help:Help
+de.all.Help:Hilfe
+fr.all.Help:Aide
+it.all.Help:Aiuto
+nl.all.Help:Hulp
 
 # Main -> Page menu
 #
