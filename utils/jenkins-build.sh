@@ -420,8 +420,8 @@ EOF
 
 ########### Additional environment info ########
 
-set
 uname -a
+
 
 ########### Build from source ##################
 
@@ -432,17 +432,15 @@ ${MAKE} clean
 ${MAKE} -j ${PARALLEL} -k CI_BUILD=${BUILD_NUMBER} ATARIARCH=${ATARIARCH} Q=
 
 
-
 ############ Package artifact construction ################
 
 # build the package file
-${MAKE} -k CI_BUILD=${BUILD_NUMBER} ATARIARCH=${ATARIARCH} package Q=
+${MAKE} -k CI_BUILD=${BUILD_NUMBER} ATARIARCH=${ATARIARCH} PACKAGER="NetSurf Developers <support@netsurf-browser.org>" Q= package
 
 if [ ! -f "${PKG_SRC}${PKG_SFX}" ]; then
     # unable to find package file
     exit 1
 fi
-
 
 
 ############ Package artifact deployment ################
