@@ -42,6 +42,9 @@
 #include <Roster.h>
 #include <Screen.h>
 #include <String.h>
+#ifdef __HAIKU__
+#include <LocaleRoster.h>
+#endif
 
 extern "C" {
 
@@ -519,9 +522,18 @@ static BPath get_messages_path()
 
 	BPath p;
 	f.FindPath(B_FIND_PATH_APPS_DIRECTORY, "netsurf/res", p);
-	// TODO: use Haiku's BLocale stuff
-	BString lang(getenv("LC_MESSAGES"));
-	lang.Truncate(2);
+	BString lang;
+#ifdef __HAIKU__
+	BMessage preferredLangs;
+	if (BLocaleRoster::Default()->GetPreferredLanguages(&preferredLangs) == B_OK) {
+		preferredLangs.FindString("language", 0, &lang);
+		lang.Truncate(2);
+	}
+#endif
+	if (lang.Length() < 1) {
+		lang.SetTo(getenv("LC_MESSAGES"));
+		lang.Truncate(2);
+	}
 	BDirectory d(p.Path());
 	if (!d.Contains(lang.String(), B_DIRECTORY_NODE))
 		lang = "en";
@@ -1040,9 +1052,19 @@ int main(int argc, char** argv)
 	BResources resources;
 	resources.SetToImage((const void*)main);
 	size_t size = 0;
-	
+
+	BString lang;
+#ifdef __HAIKU__
+	BMessage preferredLangs;
+	if (BLocaleRoster::Default()->GetPreferredLanguages(&preferredLangs) == B_OK) {
+		preferredLangs.FindString("language", 0, &lang);
+	}
+#endif
+	if (lang.Length() < 1)
+		lang.SetTo(getenv("LC_MESSAGES"));
+
 	char path[12];
-	sprintf(path,"%.2s/Messages", getenv("LC_MESSAGES"));
+	sprintf(path,"%.2s/Messages", lang.String());
 	NSLOG(netsurf, INFO, "Loading messages from resource %s\n", path);
 
 	const uint8_t* res = (const uint8_t*)resources.LoadResource('data', path, &size);
