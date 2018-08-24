@@ -299,8 +299,11 @@ void imagemap_dump(html_content *c)
  * \return false on memory exhaustion, true otherwise
  */
 static bool
-imagemap_addtolist(const struct html_content *c, dom_node *n, nsurl *base_url,
-		   struct mapentry **entry, dom_string *tagtype)
+imagemap_addtolist(const struct html_content *c,
+		   dom_node *n,
+		   nsurl *base_url,
+		   struct mapentry **entry,
+		   dom_string *tagtype)
 {
 	dom_exception exc;
 	dom_string *href = NULL, *target = NULL, *shape = NULL;
@@ -377,9 +380,12 @@ imagemap_addtolist(const struct html_content *c, dom_node *n, nsurl *base_url,
 		new_map->target = malloc(dom_string_byte_length(target) + 1);
 		if (new_map->target == NULL)
 			goto bad_out;
-		/* Safe, but relies on dom_strings being NULL terminated */
-		/* \todo Do this better */
-		strcpy(new_map->target, dom_string_data(target));
+
+		strncpy(new_map->target,
+			dom_string_data(target),
+			dom_string_byte_length(target));
+
+		new_map->target[dom_string_byte_length(target)] = 0;
 	}
 
 	if (new_map->type != IMAGEMAP_DEFAULT) {
