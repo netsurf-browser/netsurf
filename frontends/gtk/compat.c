@@ -234,12 +234,17 @@ void nsgtk_widget_override_background_color(GtkWidget *widget,
 					    uint16_t b)
 {
 #if GTK_CHECK_VERSION(3,0,0)
+#if GTK_CHECK_VERSION(3,16,0)
+        /* do nothing - deprecated - must use css styling */
+	return;
+#else
 	GdkRGBA colour;
 	colour.alpha = (double)a / 0xffff;
 	colour.red = (double)r / 0xffff;
 	colour.green = (double)g / 0xffff;
 	colour.blue = (double)b / 0xffff;
 	gtk_widget_override_background_color(widget, state, &colour);
+#endif
 #else
 	GdkColor colour;
 	colour.pixel = a;
@@ -403,15 +408,25 @@ GtkWidget *nsgtk_dialog_get_content_area(GtkDialog *dialog)
 #endif
 }
 
+#if GTK_CHECK_VERSION(3,22,0)
+#include "gtk/scaffolding.h"
+#endif
+
 gboolean nsgtk_show_uri(GdkScreen *screen,
 			const gchar *uri,
 			guint32 timestamp,
 			GError **error)
 {
 #if GTK_CHECK_VERSION(2,14,0)
-	return gtk_show_uri(screen, uri, timestamp, error);
+#if GTK_CHECK_VERSION(3,22,0)
+	GtkWindow *parent;
+	parent = nsgtk_scaffolding_window(nsgtk_current_scaffolding());
+	return gtk_show_uri_on_window(parent, uri, timestamp,error);
 #else
-	return FALSE; /* FIXME */
+	return gtk_show_uri(screen, uri, timestamp, error);
+#endif
+#else
+	return FALSE; /** \todo add uri opening for before gtk 2.14 */
 #endif
 }
 
