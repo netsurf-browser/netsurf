@@ -972,6 +972,9 @@ static char *form_url_encode(struct form *form,
 
 		assert(url_err == NSERROR_OK);
 
+		/* resize string to allow for new key/value pair,
+		 *  equals, amphersand and terminator
+		 */
 		len1 = len + strlen(name) + strlen(value) + 2;
 		s2 = realloc(s, len1 + 1);
 		if (!s2) {
@@ -981,7 +984,8 @@ static char *form_url_encode(struct form *form,
 			return NULL;
 		}
 		s = s2;
-		sprintf(s + len, "%s=%s&", name, value);
+
+		snprintf(s + len, (len1 + 1) - len, "%s=%s&", name, value);
 		len = len1;
 		free(name);
 		free(value);
