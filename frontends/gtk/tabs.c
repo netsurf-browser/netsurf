@@ -82,7 +82,7 @@ static GtkWidget *nsgtk_tab_label_setup(struct gui_window *window)
 	close = nsgtk_image_new_from_stock(NSGTK_STOCK_CLOSE,
 					   GTK_ICON_SIZE_MENU);
 	gtk_container_add(GTK_CONTAINER(button), close);
-	gtk_button_set_focus_on_click(GTK_BUTTON(button), FALSE);
+	nsgtk_button_set_focus_on_click(GTK_BUTTON(button), FALSE);
 	gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE);
 	gtk_widget_set_tooltip_text(button, "Close this tab.");
 

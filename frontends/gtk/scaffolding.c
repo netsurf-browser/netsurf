@@ -534,8 +534,7 @@ nsgtk_window_tool_bar_clicked(GtkToolbar *toolbar,
 	popup_menu_hide(g->menu_popup, true, false, true, false);
 	popup_menu_show(g->menu_popup, false, false, false, true);
 
-	gtk_menu_popup(g->menu_popup->popup_menu, NULL, NULL, NULL, NULL, 0,
-		       gtk_get_current_event_time());
+	nsgtk_menu_popup_at_pointer(g->menu_popup->popup_menu, NULL);
 
 	return TRUE;
 }
@@ -2751,8 +2750,7 @@ void nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g,
 		popup_menu_hide(g->menu_popup, false, false, false, true);
 	}
 
-	gtk_menu_popup(gtkmenu, NULL, NULL, NULL, NULL, 0,
-		       gtk_get_current_event_time());
+	nsgtk_menu_popup_at_pointer(gtkmenu, NULL);
 }
 
 /**

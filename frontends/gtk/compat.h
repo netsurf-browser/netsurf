@@ -209,6 +209,16 @@ GtkWidget *nsgtk_button_new_from_stock(const gchar *stock_id);
  */
 gboolean nsgtk_stock_lookup(const gchar *stock_id, GtkStockItem *item);
 
+/**
+ * Sets whether the button will grab focus when it is clicked with the mouse.
+ *
+ * Compatability interface for original deprecated in GTK 3.20
+ *
+ * \param button The button alter
+ * \param focus_on_click whether the button grabs focus when clicked with the mouse
+ */
+void nsgtk_button_set_focus_on_click(GtkButton *button, gboolean focus_on_click);
+
 void nsgtk_window_set_opacity(GtkWindow *window, gdouble opacity);
 
 void nsgtk_scrolled_window_add_with_viewport(GtkScrolledWindow *window, GtkWidget *child);
@@ -268,6 +278,15 @@ GtkWidget *nsgtk_image_menu_item_new_with_mnemonic(const gchar *label);
  */
 void nsgtk_image_menu_item_set_image(GtkWidget *image_menu_item, GtkWidget *image);
 
+/**
+ * Displays menu and makes it available for selection
+ *
+ * Compatability interface for gtk_menu_popup deprecated in GTK 3.22.
+ *
+ * \param image_menu_item The image menu entry item.
+ * \param trigger_event the GdkEvent that initiated this request or NULL if it's the current event.
+ */
+void nsgtk_menu_popup_at_pointer(GtkMenu *menu, const GdkEvent *trigger_event);
 
 /**
  * Parses a resource file containing a GtkBuilder UI definition and
