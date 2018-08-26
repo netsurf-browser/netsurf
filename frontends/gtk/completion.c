@@ -21,8 +21,6 @@
  * Implementation of url entry completion.
  */
 
-#include <gtk/gtk.h>
-
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
@@ -31,6 +29,7 @@
 #include "netsurf/browser_window.h"
 #include "desktop/searchweb.h"
 
+#include "gtk/compat.h"
 #include "gtk/warn.h"
 #include "gtk/scaffolding.h"
 #include "gtk/window.h"
@@ -80,7 +79,7 @@ nsgtk_completion_match_select(GtkEntryCompletion *widget,
 			      GtkTreeIter *iter,
 			      gpointer user_data)
 {
-	GValue value = {0, };
+	GValue value = G_VALUE_INIT;
 	struct nsgtk_scaffolding *g = user_data;
 	struct browser_window *bw = nsgtk_get_browser_window(nsgtk_scaffolding_top_level(g));
 	nserror ret;

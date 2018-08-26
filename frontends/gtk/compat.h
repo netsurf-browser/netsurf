@@ -80,6 +80,12 @@ typedef enum  {
 } GtkAlign;
 #endif
 
+/* value init since gtk 2.30 */
+#ifndef G_VALUE_INIT
+#define G_VALUE_INIT  { 0, { { 0 } } }
+#endif
+
+
 /**
  * Set the alignment of a widget.
  *
