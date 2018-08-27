@@ -1237,7 +1237,6 @@ gui_window_get_dimensions(struct gui_window *gw,
 		*width /= scale;
 		*height /= scale;
 	}
-	NSLOG(netsurf, INFO, "gw:%p width:%i height:%i", gw, *width, *height);
 
 	return NSERROR_OK;
 }
