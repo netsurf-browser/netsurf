@@ -585,6 +585,22 @@ void html_finish_conversion(html_content *htmlc)
 		return;
 	}
 
+	/* If we already have a selection context, then we have already
+	 * "finished" conversion.  We can get here twice if e.g. some JS
+	 * adds a new stylesheet, and the stylesheet gets added after
+	 * the HTML content is initially finished.
+	 *
+	 * If we didn't do this, the HTML content would try to rebuild the
+	 * box tree for the html content when this new stylesheet is ready.
+	 * NetSurf has no concept of dynamically changing documents, so this
+	 * would break badly.
+	 */
+	if (htmlc->select_ctx != NULL) {
+		NSLOG(netsurf, INFO,
+				"Ignoring style change: NS layout is static.");
+		return;
+	}
+
 	/* create new css selection context */
 	error = html_css_new_selection_context(htmlc, &htmlc->select_ctx);
 	if (error != NSERROR_OK) {
