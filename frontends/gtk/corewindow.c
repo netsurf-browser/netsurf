@@ -304,7 +304,7 @@ nsgtk_cw_motion_notify_event(GtkWidget *widget,
  */
 static nserror nsgtk_cw_key(struct nsgtk_corewindow *nsgtk_cw, uint32_t nskey)
 {
-	double value;
+	double value = 0;
 	GtkAdjustment *vscroll;
 	GtkAdjustment *hscroll;
 	GtkAdjustment *scroll = NULL;
