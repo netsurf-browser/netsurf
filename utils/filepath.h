@@ -69,10 +69,10 @@ char *filepath_findfile(const char *format, ...);
  * normalised file name of the first acessible file or NULL if no file
  * can be found in any of the resource paths.
  *
- * @param respathv The resource path vector to iterate.
- * @param filepath The buffer to place the result in.
- * @param filename The filename of the resource to search for.
- * @return A pointer to filepath if a target is found or NULL if not.
+ * \param respathv The resource path vector to iterate.
+ * \param filepath The buffer to place the result in.
+ * \param filename The filename of the resource to search for.
+ * \return A pointer to filepath if a target is found or NULL if not.
  */
 char *filepath_sfind(char **respathv, char *filepath, const char *filename);
 
@@ -93,6 +93,12 @@ char *filepath_find(char **respathv, const char *filename);
  * is used as an additional path element to search, if that still
  * fails the returned path is set to the concatination of the default
  * path and the filename.
+ *
+ * \param respathv The resource path vector to iterate.
+ * \param filepath The buffer to place the result in. Must have space for PATH_MAX bytes.
+ * \param filename The filename of the resource to search for.
+ * \param def The default path to use
+ * \return A pointer to filepath if a target is found or the default if not
  */
 char *filepath_sfinddef(char **respathv, char *filepath, const char *filename,
 		const char *def);

@@ -165,7 +165,7 @@ filepath_sfinddef(char **respathv,
 			snprintf(t, PATH_MAX, "%s/%s", def, filename);
 		}		
 		if (realpath(t, ret) == NULL) {
-			strcpy(ret, t);
+			strncpy(ret, t, PATH_MAX);
 		}
 
 	}
