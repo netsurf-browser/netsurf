@@ -82,7 +82,7 @@ case ${TARGET} in
 
 	esac
 
-	PKG_SRC=netsurf_x86-3.8-1-x86_gcc2
+	PKG_SRC=netsurf_x86-3.9-1-x86_gcc2
 	PKG_SFX=.hpkg
 	;;
 
