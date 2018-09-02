@@ -59,9 +59,10 @@
 #define AMINS_LIB_OPEN(LIB, LIBVER, PREFIX, INTERFACE, INTVER, FAIL)	\
 	NSLOG(netsurf, INFO, "Opening %s v%d", LIB, LIBVER);		\
 	if((PREFIX##Base = (struct PREFIX##Base *)OpenLibrary(LIB, LIBVER))) {	\
+		NSLOG(netsurf, INFO, " -> opened v%d.%d", ((struct Library *)PREFIX##Base)->lib_Version, ((struct Library *)PREFIX##Base)->lib_Revision);	\
 		I##PREFIX = (struct PREFIX##IFace *)GetInterface((struct Library *)PREFIX##Base, INTERFACE, INTVER, NULL);	\
 		if(I##PREFIX == NULL) {	\
-			NSLOG(netsurf, INFO, "Failed to get %s interface v%d of %s", INTERFACE, INTVER, LIB); \
+			NSLOG(netsurf, ERROR, "Failed to get %s interface v%d of %s", INTERFACE, INTVER, LIB); \
 			AMINS_LIB_CLOSE(PREFIX)	\
 			if(FAIL == true) {	\
 				STRPTR error = ASPrintf("Unable to open interface %s v%d\nof %s v%ld (fatal error - not an OS4 lib?)", INTERFACE, INTVER, LIB, LIBVER);	\
@@ -71,7 +72,7 @@
 			}	\
 		}	\
 	} else {	\
-		NSLOG(netsurf, INFO, "Failed to open %s v%d", LIB, LIBVER); \
+		NSLOG(netsurf, ERROR, "Failed to open %s v%d", LIB, LIBVER); \
 		if(FAIL == true) {	\
 			STRPTR error = ASPrintf("Unable to open %s v%ld (fatal error)", LIB, LIBVER);	\
 			ami_misc_fatal_error(error);	\
@@ -93,15 +94,17 @@
 #define AMINS_CLASS_OPEN(CLASS, CLASSVER, PREFIX, CLASSGET, NEEDINTERFACE)	\
 	NSLOG(netsurf, INFO, "Opening %s v%d", CLASS, CLASSVER);		\
 	if((PREFIX##Base = OpenClass(CLASS, CLASSVER, &PREFIX##Class))) {	\
+		NSLOG(netsurf, INFO, " -> opened v%d.%d", ((struct Library *)PREFIX##Base)->lib_Version, ((struct Library *)PREFIX##Base)->lib_Revision);	\
 		if(NEEDINTERFACE == true) {	\
 			NSLOG(netsurf, INFO, "        + interface");	\
 			I##PREFIX = (struct PREFIX##IFace *)GetInterface((struct Library *)PREFIX##Base, "main", 1, NULL);	\
 			if(I##PREFIX == NULL) {	\
-				NSLOG(netsurf, INFO, "Failed to get main interface v1 of %s", CLASS); \
+				NSLOG(netsurf, ERROR, "Failed to get main interface v1 of %s", CLASS); \
 			}	\
 		}	\
 	}	\
 	if(PREFIX##Class == NULL) {	\
+		NSLOG(netsurf, ERROR, "Failed to open %s v%d", CLASS, CLASSVER); \
 		STRPTR error = ASPrintf("Unable to open %s v%d (fatal error)", CLASS, CLASSVER);	\
 		ami_misc_fatal_error(error);	\
 		FreeVec(error);	\
@@ -121,8 +124,9 @@
 #define AMINS_LIB_OPEN(LIB, LIBVER, PREFIX, INTERFACE, INTVER, FAIL)	\
 	NSLOG(netsurf, INFO, "Opening %s v%d", LIB, LIBVER);		\
 	if((PREFIX##Base = (struct PREFIX##Base *)OpenLibrary(LIB, LIBVER))) {	\
+		NSLOG(netsurf, INFO, " -> opened v%d.%d", ((struct Library *)PREFIX##Base)->lib_Version, ((struct Library *)PREFIX##Base)->lib_Revision);	\
 	} else {	\
-		NSLOG(netsurf, INFO, "Failed to open %s v%d", LIB, LIBVER); \
+		NSLOG(netsurf, ERROR, "Failed to open %s v%d", LIB, LIBVER); \
 		if(FAIL == true) {	\
 			STRPTR error = ASPrintf("Unable to open %s v%d (fatal error)", LIB, LIBVER);	\
 			ami_misc_fatal_error(error);	\
@@ -140,9 +144,11 @@
 #define AMINS_CLASS_OPEN(CLASS, CLASSVER, PREFIX, CLASSGET, NEEDINTERFACE)	\
 	NSLOG(netsurf, INFO, "Opening %s v%d", CLASS, CLASSVER);	\
 	if((PREFIX##Base = OpenLibrary(CLASS, CLASSVER))) {	\
+		NSLOG(netsurf, INFO, " -> opened v%d.%d", ((struct Library *)PREFIX##Base)->lib_Version, ((struct Library *)PREFIX##Base)->lib_Revision);	\
 		PREFIX##Class = CLASSGET##_GetClass();	\
 	}	\
 	if(PREFIX##Class == NULL) {	\
+		NSLOG(netsurf, ERROR, "Failed to open %s v%d", CLASS, CLASSVER); \
 		STRPTR error = ASPrintf("Unable to open %s v%d (fatal error)", CLASS, CLASSVER);	\
 		ami_misc_fatal_error(error);	\
 		FreeVec(error);	\
