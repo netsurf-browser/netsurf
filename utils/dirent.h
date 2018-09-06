@@ -28,8 +28,8 @@
  *  utils config header include.
  */
 
-#ifndef _NETSURF_UTILS_DIRENT_H_
-#define _NETSURF_UTILS_DIRENT_H_
+#ifndef NETSURF_UTILS_DIRENT_H
+#define NETSURF_UTILS_DIRENT_H
 
 #include "utils/config.h"
 
