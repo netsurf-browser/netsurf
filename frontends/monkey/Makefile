@@ -9,20 +9,27 @@
 
 CWARNFLAGS += -Werror
 
-CFLAGS += -std=c99 -Dmonkey -Dnsmonkey -g \
-	  -D_BSD_SOURCE \
-	  -D_DEFAULT_SOURCE \
-	  -D_XOPEN_SOURCE=700 \
-	  -D_POSIX_C_SOURCE=200809L \
-	  -D_NETBSD_SOURCE \
+CFLAGS += -std=c99 \
+	  -Dmonkey -Dnsmonkey -g \
 	  -DMONKEY_RESPATH=\"$(NETSURF_MONKEY_RESOURCES)\"
 
 LDFLAGS += -lm
 
 # ---------------------------------------------------------------------------
-# Windows flag setup
+# HOST specific feature flags
 # ---------------------------------------------------------------------------
 
+# enable POSIX and XSI features.
+# everywhere but freebsd where the default set already has them enabled
+ifneq ($(HOST),FreeBSD)
+  CFLAGS += -D_POSIX_C_SOURCE=200809L \
+	    -D_XOPEN_SOURCE=700 \
+	    -D_BSD_SOURCE \
+	    -D_DEFAULT_SOURCE \
+	    -D_NETBSD_SOURCE
+endif
+
+# Windows flag setup
 ifeq ($(HOST),Windows_NT)
   CFLAGS += -U__STRICT_ANSI__
 endif
