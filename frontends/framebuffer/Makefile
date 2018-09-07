@@ -2,7 +2,8 @@
 # Framebuffer target setup
 # ----------------------------------------------------------------------------
 
-CFLAGS += -Dnsframebuffer 
+CFLAGS += -std=c99 -g \
+	  -Dnsframebuffer -Dsmall
 
 #resource path
 CFLAGS += '-DNETSURF_FB_RESPATH="$(NETSURF_FB_RESPATH)"'
@@ -20,11 +21,6 @@ CFLAGS += '-DNETSURF_FB_FONT_MONOSPACE_BOLD="$(NETSURF_FB_FONT_MONOSPACE_BOLD)"'
 CFLAGS += '-DNETSURF_FB_FONT_CURSIVE="$(NETSURF_FB_FONT_CURSIVE)"'
 CFLAGS += '-DNETSURF_FB_FONT_FANTASY="$(NETSURF_FB_FONT_FANTASY)"'
 
-CFLAGS += -std=c99 -g -Dsmall \
-	  -D_BSD_SOURCE \
-	  -D_DEFAULT_SOURCE \
-	  -D_POSIX_C_SOURCE=200809L
-
 LDFLAGS += -lm
 
 # non optional pkg-configed libs
@@ -38,6 +34,19 @@ ifeq ($(NETSURF_FB_FONTLIB),freetype)
   LDFLAGS += $(shell freetype-config --libs)
 endif
 
+# ---------------------------------------------------------------------------
+# HOST specific feature flags
+# ---------------------------------------------------------------------------
+
+# enable POSIX and XSI features.
+# everywhere but freebsd where the default set already has them enabled
+ifneq ($(HOST),FreeBSD)
+  CFLAGS += -D_POSIX_C_SOURCE=200809L \
+	    -D_XOPEN_SOURCE=700 \
+	    -D_BSD_SOURCE \
+	    -D_DEFAULT_SOURCE \
+	    -D_NETBSD_SOURCE
+endif
 
 # ----------------------------------------------------------------------------
 # built-in resource setup
@@ -81,11 +90,11 @@ FB_IMAGE_throbber8 := throbber/throbber8.png
 
 # local compiler flags
 ifeq ($(HOST),OpenBSD)
-    HOST_CFLAGS += $(shell $(PKG_CONFIG) --cflags libpng)
-    HOST_LDFLAGS += $(shell $(PKG_CONFIG) --libs libpng)
+    BUILD_CFLAGS += $(shell $(PKG_CONFIG) --cflags libpng)
+    BUILD_LDFLAGS += $(shell $(PKG_CONFIG) --libs libpng)
 else
-    HOST_CFLAGS +=
-    HOST_LDFLAGS += -lpng
+    BUILD_CFLAGS +=
+    BUILD_LDFLAGS += -lpng
 endif
 
 # Host tool to convert image bitmaps to source code.
@@ -93,8 +102,8 @@ endif
 # convert_image dependd on fb_bitmap.h so that if we change that
 # header, we get new images built.
 $(TOOLROOT)/convert_image: $(TOOLROOT)/created $(FRONTEND_SOURCE_DIR)/convert_image.c $(FRONTEND_SOURCE_DIR)/fbtk.h
-	$(VQ)echo " HOST CC: $@"
-	$(Q)$(HOST_CC) $(HOST_CFLAGS) -o $@ $(FRONTEND_SOURCE_DIR)/convert_image.c $(HOST_LDFLAGS)
+	$(VQ)echo "BUILD CC: $@"
+	$(Q)$(BUILD_CC) $(BUILD_CFLAGS) -o $@ $(FRONTEND_SOURCE_DIR)/convert_image.c $(BUILD_LDFLAGS)
 
 # 1: input file
 # 2: output file
@@ -118,8 +127,8 @@ FB_FONT_internal_ns-sans := fonts/glyph_data
 
 # Internal font conversion
 $(TOOLROOT)/convert_font: $(TOOLROOT)/created $(FRONTEND_SOURCE_DIR)/convert_font.c
-	$(VQ)echo " HOST CC: $@"
-	$(Q)$(HOST_CC) -o $@ $(FRONTEND_SOURCE_DIR)/convert_font.c
+	$(VQ)echo "BUILD CC: $@"
+	$(Q)$(BUILD_CC) -o $@ $(FRONTEND_SOURCE_DIR)/convert_font.c
 
 # 1: input file
 # 2: output source code file

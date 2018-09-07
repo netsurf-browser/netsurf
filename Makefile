@@ -148,7 +148,7 @@ endif
 VQ=@
 
 # Override this only if the host compiler is called something different
-HOST_CC := gcc
+BUILD_CC := cc
 
 ifeq ($(TARGET),riscos)
   ifeq ($(HOST),riscos)
