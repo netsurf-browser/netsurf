@@ -323,7 +323,7 @@ CC_VERSION := $(shell $(CC) -dumpversion)
 CC_MAJOR := $(word 1,$(subst ., ,$(CC_VERSION)))
 CC_MINOR := $(word 2,$(subst ., ,$(CC_VERSION)))
 define cc_ver_ge
-$(shell expr $(CC_MAJOR) \>= $(1) \& $(CC_MINOR) \>= $(2))
+$(shell expr $(CC_MAJOR) \> $(1) \| \( $(CC_MAJOR) = $(1) \& $(CC_MINOR) \>= $(2) \) )
 endef
 
 # CCACHE
