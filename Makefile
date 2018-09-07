@@ -491,6 +491,11 @@ ifeq ($(call cc_ver_ge,4,6),1)
   COMMON_WARNFLAGS += -Wno-unused-but-set-variable
 endif
 
+# Implicit fallthrough warnings suppressed by comment
+ifeq ($(call cc_ver_ge,7,1),1)
+  COMMON_WARNFLAGS += -Wimplicit-fallthrough=3
+endif
+
 # deal with chaging warning flags for different platforms
 ifeq ($(HOST),OpenBSD)
   # OpenBSD headers are not compatible with redundant declaration warning

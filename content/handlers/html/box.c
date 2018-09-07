@@ -505,7 +505,7 @@ static inline struct box *box_move_xy(struct box *b, enum box_walk_dir dir,
 			rb = b;
 			break;
 		}
-		/* Fall through */
+		/* fall through */
 
 	case BOX_WALK_NEXT_SIBLING:
 		do {
