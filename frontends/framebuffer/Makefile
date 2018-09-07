@@ -93,8 +93,13 @@ ifeq ($(HOST),OpenBSD)
     BUILD_CFLAGS += $(shell $(PKG_CONFIG) --cflags libpng)
     BUILD_LDFLAGS += $(shell $(PKG_CONFIG) --libs libpng)
 else
-    BUILD_CFLAGS +=
-    BUILD_LDFLAGS += -lpng
+  ifeq ($(HOST),FreeBSD)
+      BUILD_CFLAGS += $(shell $(PKG_CONFIG) --cflags libpng)
+      BUILD_LDFLAGS += $(shell $(PKG_CONFIG) --libs libpng)
+  else
+      BUILD_CFLAGS +=
+      BUILD_LDFLAGS += -lpng
+  endif
 endif
 
 # Host tool to convert image bitmaps to source code.
