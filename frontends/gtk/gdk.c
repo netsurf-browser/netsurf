@@ -33,7 +33,8 @@ convert_alpha(guchar  *dest_data,
 	int x, y;
 
 	for (y = 0; y < height; y++) {
-		guint32 *src = (guint32 *) src_data;
+		/* this cast is safe, the buffer is appropriately aligned */
+		guint32 *src = (void *) src_data;
 
 		for (x = 0; x < width; x++) {
 			guint alpha = src[x] >> 24;
