@@ -81,11 +81,21 @@ enum
 	GID_S_LAST
 };
 
+enum {
+	SSTR_TITLE = 0,
+	SSTR_CASE,
+	SSTR_SHOWALL,
+	SSTR_PREV,
+	SSTR_NEXT,
+	SSTR_LAST
+};
+
 struct find_window {
 	struct ami_generic_window w;
 	struct Window *win;
 	Object *objects[GID_S_LAST];
 	struct gui_window *gwin;
+	char *message[SSTR_LAST];
 };
 
 static struct find_window *fwin = NULL;
@@ -144,57 +154,63 @@ void ami_search_open(struct gui_window *gwin)
 
 	fwin = calloc(1, sizeof(struct find_window));
 
+	/* Get local charset messages. If any of these are NULL it doesn't matter */
+	fwin->message[SSTR_TITLE] = ami_utf8_easy(messages_get("FindTextNS"));
+	fwin->message[SSTR_CASE] = ami_utf8_easy(messages_get("CaseSens"));
+	fwin->message[SSTR_SHOWALL] = ami_utf8_easy(messages_get("ShowAll"));
+	fwin->message[SSTR_PREV] = ami_utf8_easy(messages_get("Prev"));
+	fwin->message[SSTR_NEXT] = ami_utf8_easy(messages_get("Next"));
+
 	fwin->objects[OID_S_MAIN] = WindowObj,
       	WA_ScreenTitle, ami_gui_get_screen_title(),
-       	WA_Title,messages_get("FindTextNS"),
+       	WA_Title, fwin->message[SSTR_TITLE],
        	WA_Activate, TRUE,
        	WA_DepthGadget, TRUE,
        	WA_DragBar, TRUE,
        	WA_CloseGadget, TRUE,
        	WA_SizeGadget, TRUE,
-		WA_PubScreen,scrn,
-		WINDOW_SharedPort,sport,
-		WINDOW_UserData,fwin,
+		WA_PubScreen, scrn,
+		WINDOW_SharedPort, sport,
+		WINDOW_UserData, fwin,
 		WINDOW_IconifyGadget, FALSE,
-		WINDOW_LockHeight,TRUE,
+		WINDOW_LockHeight, TRUE,
          	WINDOW_Position, WPOS_CENTERSCREEN,
            	WINDOW_ParentGroup, fwin->objects[GID_S_MAIN] = LayoutVObj,
 				LAYOUT_AddChild, fwin->objects[GID_S_SEARCHSTRING] = StringObj,
-					GA_ID,GID_S_SEARCHSTRING,
-					GA_TabCycle,TRUE,
-					GA_RelVerify,TRUE,
+					GA_ID, GID_S_SEARCHSTRING,
+					GA_TabCycle, TRUE,
+					GA_RelVerify, TRUE,
 				StringEnd,
-				CHILD_WeightedHeight,0,
+				CHILD_WeightedHeight, 0,
 				LAYOUT_AddChild, fwin->objects[GID_S_CASE] = CheckBoxObj,
-					GA_ID,GID_S_CASE,
-					GA_Text,messages_get("CaseSens"),
-					GA_Selected,FALSE,
-					GA_TabCycle,TRUE,
-					GA_RelVerify,TRUE,
+					GA_ID, GID_S_CASE,
+					GA_Text, fwin->message[SSTR_CASE],
+					GA_Selected, FALSE,
+					GA_TabCycle, TRUE,
+					GA_RelVerify, TRUE,
 				CheckBoxEnd,
 				LAYOUT_AddChild, fwin->objects[GID_S_SHOWALL] = CheckBoxObj,
 					GA_ID,GID_S_SHOWALL,
-					GA_Text,messages_get("ShowAll"),
-					GA_Selected,FALSE,
-					GA_TabCycle,TRUE,
-					GA_RelVerify,TRUE,
+					GA_Text, fwin->message[SSTR_SHOWALL],
+					GA_Selected, FALSE,
+					GA_TabCycle, TRUE,
+					GA_RelVerify, TRUE,
 				CheckBoxEnd,
-
 				LAYOUT_AddChild, LayoutHObj,
 					LAYOUT_AddChild, fwin->objects[GID_S_PREV] = ButtonObj,
-						GA_ID,GID_S_PREV,
-						GA_RelVerify,TRUE,
-						GA_Text,messages_get("Prev"),
-						GA_TabCycle,TRUE,
-						GA_Disabled,TRUE,
+						GA_ID, GID_S_PREV,
+						GA_RelVerify, TRUE,
+						GA_Text, fwin->message[SSTR_PREV],
+						GA_TabCycle, TRUE,
+						GA_Disabled, TRUE,
 					ButtonEnd,
-					CHILD_WeightedHeight,0,
+					CHILD_WeightedHeight, 0,
 					LAYOUT_AddChild, fwin->objects[GID_S_NEXT] = ButtonObj,
-						GA_ID,GID_S_NEXT,
-						GA_RelVerify,TRUE,
-						GA_Text,messages_get("Next"),
-						GA_TabCycle,TRUE,
-						GA_Disabled,TRUE,
+						GA_ID, GID_S_NEXT,
+						GA_RelVerify, TRUE,
+						GA_Text, fwin->message[SSTR_NEXT],
+						GA_TabCycle, TRUE,
+						GA_Disabled, TRUE,
 					ButtonEnd,
 				LayoutEnd,
 				CHILD_WeightedHeight,0,
@@ -215,6 +231,12 @@ void ami_search_close(void)
 	browser_window_search_clear(fwin->gwin->bw);
 	fwin->gwin->shared->searchwin = NULL;
 	DisposeObject(fwin->objects[OID_S_MAIN]);
+
+	/* Free local charset version of messages */
+	for(int i = 0; i < SSTR_LAST; i++) {
+		ami_utf8_free(fwin->message[i]);
+	}
+
 	ami_gui_win_list_remove(fwin);
 	fwin = NULL;
 }
