@@ -389,7 +389,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2 |
 			BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2);
 
-	nserror res;
+	nserror res = NSERROR_OK;
 
 	if (drag_type != DRAGGING_NONE && !mouse &&
 			html->visible_select_menu != NULL) {
