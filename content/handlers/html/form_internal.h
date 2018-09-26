@@ -195,29 +195,6 @@ bool form_successful_controls(struct form *form,
 		struct fetch_multipart_data **successful_controls);
 
 /**
- * Identify 'successful' controls via the DOM.
- *
- * All text strings in the successful controls list will be in the charset most
- * appropriate for submission. Therefore, no utf8_to_* processing should be
- * performed upon them.
- *
- * \todo The chosen charset needs to be made available such that it can be
- * included in the submission request (e.g. in the fetch's Content-Type header)
- *
- * See HTML 4.01 section 17.13.2.
- *
- * \param[in] form  form to search for successful controls
- * \param[in] submit_button  control used to submit the form, if any
- * \param[out] successful_controls  updated to point to linked list of
- *                        fetch_multipart_data, 0 if no controls
- * \return  true on success, false on memory exhaustion
- */
-bool form_successful_controls_dom(struct form *form,
-		struct form_control *submit_button,
-		struct fetch_multipart_data **successful_controls);
-
-
-/**
  * Open a select menu for a select form control, creating it if necessary.
  *
  * \param client_data  data passed to the redraw callback
@@ -268,8 +245,18 @@ void form_select_mouse_drag_end(struct form_control *control,
 		enum browser_mouse_state mouse, int x, int y);
 void form_select_get_dimensions(struct form_control *control,
 		int *width, int *height);
-void form_submit(struct nsurl *page_url, struct browser_window *target,
+
+/**
+ * navigate browser window based on form submission.
+ *
+ * \param page_url content url
+ * \param target The browsing context in which the navigation will occour.
+ * \param form The form to submit.
+ * \param submit_button The control used to submit the form.
+ */
+nserror form_submit(struct nsurl *page_url, struct browser_window *target,
 		struct form *form, struct form_control *submit_button);
+
 void form_radio_set(struct form_control *radio);
 
 void form_gadget_update_value(struct form_control *control, char *value);

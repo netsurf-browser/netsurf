@@ -389,6 +389,8 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2 |
 			BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2);
 
+	nserror res;
+
 	if (drag_type != DRAGGING_NONE && !mouse &&
 			html->visible_select_menu != NULL) {
 		/* drag end: select menu */
@@ -875,9 +877,12 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		}
 	} else if (url) {
 		if (nsoption_bool(display_decoded_idn) == true) {
-			if (nsurl_get_utf8(url, &url_s, &url_l) != NSERROR_OK) {
-				/* Unable to obtain a decoded IDN.  This is not a fatal error.
-				 * Ensure the string pointer is NULL so we use the encoded version. */
+			res = nsurl_get_utf8(url, &url_s, &url_l);
+			if (res != NSERROR_OK) {
+				/* Unable to obtain a decoded IDN. This is not
+				 *  a fatal error.  Ensure the string pointer
+				 *  is NULL so we use the encoded version.
+				 */
 				url_s = NULL;
 			}
 		}
@@ -1072,22 +1077,32 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	 */
 	switch (action) {
 	case ACTION_SUBMIT:
-		form_submit(content_get_url(c),
-				browser_window_find_target(bw, target, mouse),
-				gadget->form, gadget);
+		res = form_submit(content_get_url(c),
+				  browser_window_find_target(bw, target, mouse),
+				  gadget->form,
+				  gadget);
 		break;
+
 	case ACTION_GO:
-		browser_window_navigate(browser_window_find_target(bw, target, mouse),
-					url,
-					content_get_url(c),
-					BW_NAVIGATE_HISTORY,
-					NULL,
-					NULL,
-					NULL);
+		res = browser_window_navigate(
+				browser_window_find_target(bw, target, mouse),
+				url,
+				content_get_url(c),
+				BW_NAVIGATE_HISTORY,
+				NULL,
+				NULL,
+				NULL);
 		break;
+
 	case ACTION_NONE:
+		res = NSERROR_OK;
 		break;
 	}
+
+	if (res != NSERROR_OK) {
+		guit->misc->warning(messages_get_errorcode(res), NULL);
+	}
+
 }
 
 

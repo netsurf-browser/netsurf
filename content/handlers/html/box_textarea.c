@@ -25,8 +25,11 @@
 
 #include "utils/config.h"
 #include "utils/log.h"
+#include "utils/messages.h"
 #include "netsurf/keypress.h"
+#include "netsurf/misc.h"
 #include "desktop/textarea.h"
+#include "desktop/gui_internal.h"
 
 #include "html/html_internal.h"
 #include "html/box.h"
@@ -41,6 +44,7 @@ bool box_textarea_keypress(html_content *html, struct box *box, uint32_t key)
 	struct textarea *ta = gadget->data.text.ta;
 	struct form* form = box->gadget->form;
 	struct content *c = (struct content *) html;
+	nserror res;
 
 	assert(ta != NULL);
 
@@ -48,9 +52,16 @@ bool box_textarea_keypress(html_content *html, struct box *box, uint32_t key)
 		switch (key) {
 		case NS_KEY_NL:
 		case NS_KEY_CR:
-			if (form)
-				form_submit(content_get_url(c), html->bw,
-						form, 0);
+			if (form) {
+				res = form_submit(content_get_url(c),
+						  html->bw,
+						  form,
+						  NULL);
+				if (res != NSERROR_OK) {
+					guit->misc->warning(messages_get_errorcode(res), NULL);
+				}
+
+			}
 			return true;
 
 		case NS_KEY_TAB:

@@ -327,10 +327,28 @@ bool form_add_option(struct form_control *control, char *value, char *text,
 }
 
 
-/* exported interface documented in html/form_internal.h */
-bool form_successful_controls_dom(struct form *_form,
-				  struct form_control *_submit_button,
-				  struct fetch_multipart_data **successful_controls)
+/**
+ * Identify 'successful' controls via the DOM.
+ *
+ * All text strings in the successful controls list will be in the charset most
+ * appropriate for submission. Therefore, no utf8_to_* processing should be
+ * performed upon them.
+ *
+ * \todo The chosen charset needs to be made available such that it can be
+ * included in the submission request (e.g. in the fetch's Content-Type header)
+ *
+ * See HTML 4.01 section 17.13.2.
+ *
+ * \param[in] form  form to search for successful controls
+ * \param[in] submit_button  control used to submit the form, if any
+ * \param[out] successful_controls  updated to point to linked list of
+ *                        fetch_multipart_data, NULL if no controls
+ * \return NSERROR_OK on success or appropriate error code
+ */
+static nserror
+form_successful_controls_dom(struct form *_form,
+			     struct form_control *_submit_button,
+			     struct fetch_multipart_data **successful_controls)
 {
 	dom_html_form_element *form = _form->node;
 	dom_html_element *submit_button = (_submit_button != NULL) ? _submit_button->node : NULL;
@@ -352,7 +370,7 @@ bool form_successful_controls_dom(struct form *_form,
 	charset = form_acceptable_charset(_form);
 	if (charset == NULL) {
 		NSLOG(netsurf, INFO, "failed to find charset");
-		return false;
+		return NSERROR_NOMEM;
 	}
 
 #define ENCODE_ITEM(i) (((i) == NULL) ? (				\
@@ -685,6 +703,11 @@ bool form_successful_controls_dom(struct form *_form,
 				 }
 
 				 basename = ENCODE_ITEM(inputname);
+				 if (basename == NULL) {
+					 NSLOG(netsurf, INFO,
+					       "Could not encode basename");
+					 goto dom_no_memory;
+				 }
 
 				 success_new = calloc(1, sizeof(*success_new));
 				 if (success_new == NULL) {
@@ -704,6 +727,8 @@ bool form_successful_controls_dom(struct form *_form,
 					       "Could not allocate name for image.x");
 					 goto dom_no_memory;
 				 }
+				 sprintf(success_new->name, "%s.x", basename);
+
 				 success_new->value = malloc(20);
 				 if (success_new->value == NULL) {
 					 free(basename);
@@ -711,7 +736,6 @@ bool form_successful_controls_dom(struct form *_form,
 					       "Could not allocate value for image.x");
 					 goto dom_no_memory;
 				 }
-				 sprintf(success_new->name, "%s.x", basename);
 				 sprintf(success_new->value, "%d", coords->x);
 
 				 success_new = calloc(1, sizeof(*success_new));
@@ -890,7 +914,7 @@ bool form_successful_controls_dom(struct form *_form,
 
 	*successful_controls = sentinel.next;
 
-	return true;
+	return NSERROR_OK;
 
 dom_no_memory:
 	free(charset);
@@ -915,73 +939,61 @@ dom_no_memory:
 	if (rawfile_temp != NULL)
 		free(rawfile_temp);
 
-	return false;
+	return NSERROR_NOMEM;
 }
 #undef ENCODE_ITEM
 
 /**
  * Encode controls using application/x-www-form-urlencoded.
  *
- * \param  form  form to which successful controls relate
- * \param  control  linked list of fetch_multipart_data
- * \param  query_string  iff true add '?' to the start of returned data
- * \return  URL-encoded form, or 0 on memory exhaustion
+ * \param[in] form form to which successful controls relate
+ * \param[in] control linked list of fetch_multipart_data
+ * \param[out] encoded_out URL-encoded form data
+ * \return NSERROR_OK on success and \a encoded_out updated else appropriate error code
  */
-
-static char *form_url_encode(struct form *form,
+static nserror
+form_url_encode(struct form *form,
 		struct fetch_multipart_data *control,
-		bool query_string)
+		char **encoded_out)
 {
 	char *name, *value;
 	char *s, *s2;
 	unsigned int len, len1, len_init;
-	nserror url_err;
+	nserror res;
 
-	if (query_string)
-		s = malloc(2);
-	else
-		s = malloc(1);
+	s = malloc(1);
 
-	if (s == NULL)
-		return NULL;
-
-	if (query_string) {
-		s[0] = '?';
-		s[1] = '\0';
-		len_init = len = 1;
-	} else {
-		s[0] = '\0';
-		len_init = len = 0;
+	if (s == NULL) {
+		return NSERROR_NOMEM;
 	}
 
+	s[0] = '\0';
+	len_init = len = 0;
+
 	for (; control; control = control->next) {
-		url_err = url_escape(control->name, true, NULL, &name);
-		if (url_err == NSERROR_NOMEM) {
+		res = url_escape(control->name, true, NULL, &name);
+		if (res != NSERROR_OK) {
 			free(s);
-			return NULL;
+			return res;
 		}
 
-		assert(url_err == NSERROR_OK);
-
-		url_err = url_escape(control->value, true, NULL, &value);
-		if (url_err == NSERROR_NOMEM) {
+		res = url_escape(control->value, true, NULL, &value);
+		if (res != NSERROR_OK) {
 			free(name);
 			free(s);
-			return NULL;
+			return res;
 		}
-
-		assert(url_err == NSERROR_OK);
 
 		/* resize string to allow for new key/value pair,
 		 *  equals, amphersand and terminator
 		 */
 		len1 = len + strlen(name) + strlen(value) + 2;
 		s2 = realloc(s, len1 + 1);
-		if (!s2) {
+		if (s2 == NULL) {
 			free(value);
 			free(name);
 			free(s);
-			return NULL;
+			return NSERROR_NOMEM;
 		}
 		s = s2;
 
@@ -995,7 +1007,10 @@ static char *form_url_encode(struct form *form,
 		/* Replace trailing '&' */
 		s[len - 1] = '\0';
 	}
-	return s;
+
+	*encoded_out = s;
+
+	return NSERROR_OK;
 }
 
 /**
@@ -1008,17 +1023,15 @@ char *form_acceptable_charset(struct form *form)
 {
 	char *temp, *c;
 
-	if (!form)
-		return NULL;
-
 	if (!form->accept_charsets) {
 		/* no accept-charsets attribute for this form */
-		if (form->document_charset)
+		if (form->document_charset) {
 			/* document charset present, so use it */
 			return strdup(form->document_charset);
-		else
+		} else {
 			/* no document charset, so default to 8859-1 */
 			return strdup("ISO-8859-1");
+		}
 	}
 
 	/* make temporary copy of accept-charsets attribute */
@@ -1768,98 +1781,85 @@ void form_radio_set(struct form_control *radio)
 }
 
 
-/**
- * Collect controls and submit a form.
- */
-
-void form_submit(nsurl *page_url, struct browser_window *target,
-		struct form *form, struct form_control *submit_button)
+/* private interface described in html/form_internal.h */
+nserror
+form_submit(nsurl *page_url,
+	    struct browser_window *target,
+	    struct form *form,
+	    struct form_control *submit_button)
 {
-	char *data = NULL;
-	struct fetch_multipart_data *success;
+	nserror res;
+	char *data = NULL; /* encoded form data */
+	struct fetch_multipart_data *success = NULL; /* gcc is incapable of correctly reasoning about use and generates "maybe used uninitialised" warnings */
 	nsurl *action_url;
-	nsurl *action_query;
-	nserror error;
+	nsurl *query_url;
 
 	assert(form != NULL);
 
-	if (form_successful_controls_dom(form, submit_button, &success) == false) {
-		guit->misc->warning("NoMemory", 0);
-		return;
+	/* obtain list of controls from DOM */
+	res = form_successful_controls_dom(form, submit_button, &success);
+	if (res != NSERROR_OK) {
+		return res;
 	}
 
 	/* Decompose action */
-	if (nsurl_create(form->action, &action_url) != NSERROR_OK) {
-		free(data);
+	res = nsurl_create(form->action, &action_url);
+	if (res != NSERROR_OK) {
 		fetch_multipart_data_destroy(success);
-		guit->misc->warning("NoMemory", 0);
-		return;
+		return res;
 	}
 
 	switch (form->method) {
 	case method_GET:
-		data = form_url_encode(form, success, true);
-		if (data == NULL) {
-			fetch_multipart_data_destroy(success);
-			guit->misc->warning("NoMemory", 0);
-			return;
-		}
+		res = form_url_encode(form, success, &data);
+		if (res == NSERROR_OK) {
+			/* Replace query segment */
+			res = nsurl_replace_query(action_url, data, &query_url);
+			if (res == NSERROR_OK) {
+				res = browser_window_navigate(target,
+							      query_url,
+							      page_url,
+							      BW_NAVIGATE_HISTORY,
+							      NULL,
+							      NULL,
+							      NULL);
 
-		/* Replace query segment */
-		error = nsurl_replace_query(action_url, data, &action_query);
-		if (error != NSERROR_OK) {
-			nsurl_unref(action_query);
+				nsurl_unref(query_url);
+			}
 			free(data);
-			fetch_multipart_data_destroy(success);
-			guit->misc->warning(messages_get_errorcode(error), 0);
-			return;
 		}
-
-		/* Construct submit url */
-		browser_window_navigate(target,
-					action_query,
-					page_url,
-					BW_NAVIGATE_HISTORY,
-					NULL,
-					NULL,
-					NULL);
-
-		nsurl_unref(action_query);
 		break;
 
 	case method_POST_URLENC:
-		data = form_url_encode(form, success, false);
-		if (data == NULL) {
-			fetch_multipart_data_destroy(success);
-			guit->misc->warning("NoMemory", 0);
-			nsurl_unref(action_url);
-			return;
+		res = form_url_encode(form, success, &data);
+		if (res == NSERROR_OK) {
+			res = browser_window_navigate(target,
+						      action_url,
+						      page_url,
+						      BW_NAVIGATE_HISTORY,
+						      data,
+						      NULL,
+						      NULL);
+			free(data);
 		}
-
-		browser_window_navigate(target,
-					action_url,
-					page_url,
-					BW_NAVIGATE_HISTORY,
-					data,
-					NULL,
-					NULL);
 		break;
 
 	case method_POST_MULTIPART:
-		browser_window_navigate(target,
-					action_url,
-					page_url,
-					BW_NAVIGATE_HISTORY,
-					NULL,
-					success,
-					NULL);
+		res = browser_window_navigate(target,
+					      action_url,
+					      page_url,
+					      BW_NAVIGATE_HISTORY,
+					      NULL,
+					      success,
+					      NULL);
 
 		break;
 	}
 
 	nsurl_unref(action_url);
 	fetch_multipart_data_destroy(success);
-	free(data);
+
+	return res;
 }
 
 void form_gadget_update_value(struct form_control *control, char *value)
