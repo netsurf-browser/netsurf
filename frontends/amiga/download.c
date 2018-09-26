@@ -80,10 +80,18 @@
 #define APPNOTIFY_StopBackMsg   ( TAG_USER + 17 )
 #endif
 
+enum {
+	OID_D_MAIN = 0,
+	GID_D_MAIN,
+	GID_D_STATUS,
+	GID_D_CANCEL,
+	GID_D_LAST
+};
+
 struct gui_download_window {
 	struct ami_generic_window w;
 	struct Window *win;
-	Object *objects[GID_LAST];
+	Object *objects[GID_D_LAST];
 	BPTR fh;
 	uint32 size;
 	uint32 downloaded;
@@ -183,7 +191,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 				APPNOTIFY_StopBackMsg, bkm,
 				TAG_DONE);
 	} else {
-		dw->objects[OID_MAIN] = WindowObj,
+		dw->objects[OID_D_MAIN] = WindowObj,
       	    WA_ScreenTitle, ami_gui_get_screen_title(),
            	WA_Title, dw->url,
            	WA_Activate, TRUE,
@@ -197,9 +205,9 @@ static struct gui_download_window *gui_download_window_create(download_context *
 			WINDOW_IconifyGadget, FALSE,
 			WINDOW_LockHeight,TRUE,
          	WINDOW_Position, WPOS_CENTERSCREEN,
-           	WINDOW_ParentGroup, dw->objects[GID_MAIN] = LayoutVObj,
-				LAYOUT_AddChild, dw->objects[GID_STATUS] = FuelGaugeObj,
-					GA_ID,GID_STATUS,
+           	WINDOW_ParentGroup, dw->objects[GID_D_MAIN] = LayoutVObj,
+				LAYOUT_AddChild, dw->objects[GID_D_STATUS] = FuelGaugeObj,
+					GA_ID,GID_D_STATUS,
 					GA_Text,messages_get("amiDownload"),
 					FUELGAUGE_Min,0,
 					FUELGAUGE_Max,total_size,
@@ -212,8 +220,8 @@ static struct gui_download_window *gui_download_window_create(download_context *
 				FuelGaugeEnd,
 				CHILD_NominalSize,TRUE,
 				CHILD_WeightedHeight,0,
-				LAYOUT_AddChild, dw->objects[GID_CANCEL] = ButtonObj,
-					GA_ID,GID_CANCEL,
+				LAYOUT_AddChild, dw->objects[GID_D_CANCEL] = ButtonObj,
+					GA_ID,GID_D_CANCEL,
 					GA_RelVerify,TRUE,
 					GA_Text,messages_get("Abort"),
 					GA_TabCycle,TRUE,
@@ -221,7 +229,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 			EndGroup,
 		EndWindow;
 
-		dw->win = (struct Window *)RA_OpenWindow(dw->objects[OID_MAIN]);
+		dw->win = (struct Window *)RA_OpenWindow(dw->objects[OID_D_MAIN]);
 	}
 
 	dw->ctx = ctx;
@@ -256,7 +264,7 @@ static nserror gui_download_window_data(struct gui_download_window *dw,
 					APPNOTIFY_Percentage, dw->progress,
 					TAG_DONE);
 		} else {
-			RefreshSetGadgetAttrs((struct Gadget *)dw->objects[GID_STATUS], dw->win, NULL,
+			RefreshSetGadgetAttrs((struct Gadget *)dw->objects[GID_D_STATUS], dw->win, NULL,
 						FUELGAUGE_Level,   dw->downloaded,
 						GA_Text,           messages_get("amiDownload"),
 						FUELGAUGE_VarArgs, va,
@@ -271,7 +279,7 @@ static nserror gui_download_window_data(struct gui_download_window *dw,
 					APPNOTIFY_Percentage, 100,
 					TAG_DONE);
 		} else {
-			RefreshSetGadgetAttrs((struct Gadget *)dw->objects[GID_STATUS], dw->win, NULL,
+			RefreshSetGadgetAttrs((struct Gadget *)dw->objects[GID_D_STATUS], dw->win, NULL,
 						FUELGAUGE_Level,   dw->downloaded,
 						GA_Text,           messages_get("amiDownloadU"),
 						FUELGAUGE_VarArgs, va,
@@ -330,8 +338,8 @@ static void gui_download_window_done(struct gui_download_window *dw)
 
 	downloads_in_progress--;
 
-	if(dw->objects[OID_MAIN] != NULL) {
-		DisposeObject(dw->objects[OID_MAIN]);
+	if(dw->objects[OID_D_MAIN] != NULL) {
+		DisposeObject(dw->objects[OID_D_MAIN]);
 	}
 
 	ami_gui_win_list_remove(dw);
@@ -378,14 +386,14 @@ static BOOL ami_download_window_event(void *w)
 
 	if(dw == NULL) return FALSE; /* We may not have a real window */
 
-	while((result = RA_HandleInput(dw->objects[OID_MAIN], &code)) != WMHI_LASTMSG)
+	while((result = RA_HandleInput(dw->objects[OID_D_MAIN], &code)) != WMHI_LASTMSG)
 	{
        	switch(result & WMHI_CLASSMASK) // class
 		{
 			case WMHI_GADGETUP:
 				switch(result & WMHI_GADGETMASK)
 				{
-					case GID_CANCEL:
+					case GID_D_CANCEL:
 						ami_download_window_abort(dw);
 						return TRUE;
 					break;

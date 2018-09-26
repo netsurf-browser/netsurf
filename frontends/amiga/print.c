@@ -73,6 +73,20 @@ bool ami_print_dump(void);
 void ami_print_progress(void);
 void ami_print_close_device(void);
 
+enum
+{
+	POID_MAIN = 0,
+	POID_LAST,
+	PGID_MAIN,
+	PGID_PRINTER,
+	PGID_SCALE,
+	PGID_COPIES,
+	PGID_PRINT,
+	PGID_CANCEL,
+	PGID_STATUS,
+	PGID_LAST
+};
+
 const struct printer amiprinter = {
 	&amiplot,
 	ami_print_begin,
@@ -91,28 +105,17 @@ struct ami_printer_info
 	struct print_settings *ps;
 	int page;
 	int pages;
-	Object *gadgets[GID_LAST];
-	Object *objects[OID_LAST];
+	Object *gadgets[PGID_LAST];
+	Object *objects[POID_LAST];
 	struct Window *win;
 };
 
 struct ami_print_window {
 	struct ami_generic_window w;
 	struct Window *win;
-	Object *objects[OID_LAST];
-	Object *gadgets[GID_LAST];
+	Object *objects[POID_LAST];
+	Object *gadgets[PGID_LAST];
 	struct hlcache_handle *c;
-};
-
-enum
-{
-	PGID_MAIN=0,
-	PGID_PRINTER,
-	PGID_SCALE,
-	PGID_COPIES,
-	PGID_PRINT,
-	PGID_CANCEL,
-	PGID_LAST
 };
 
 #define IFFPrefChunkCnt 2
@@ -265,7 +268,7 @@ void ami_print_ui(struct hlcache_handle *c)
 
 	ami_print_ui_setup();
 
-	pw->objects[OID_MAIN] = WindowObj,
+	pw->objects[POID_MAIN] = WindowObj,
       	    WA_ScreenTitle, ami_gui_get_screen_title(),
            	WA_Title, gadlab[PGID_PRINT],
            	WA_Activate, TRUE,
@@ -328,7 +331,7 @@ void ami_print_ui(struct hlcache_handle *c)
 						GA_TabCycle,TRUE,
 					ButtonEnd,
 					CHILD_WeightedHeight,0,
-					LAYOUT_AddChild, pw->gadgets[GID_CANCEL] = ButtonObj,
+					LAYOUT_AddChild, pw->gadgets[PGID_CANCEL] = ButtonObj,
 						GA_ID, PGID_CANCEL,
 						GA_RelVerify, TRUE,
 						GA_Text, gadlab[PGID_CANCEL],
@@ -339,13 +342,13 @@ void ami_print_ui(struct hlcache_handle *c)
 			EndGroup,
 		EndWindow;
 
-	pw->win = (struct Window *)RA_OpenWindow(pw->objects[OID_MAIN]);
+	pw->win = (struct Window *)RA_OpenWindow(pw->objects[POID_MAIN]);
 	ami_gui_win_list_add(pw, AMINS_PRINTWINDOW, &ami_print_table);
 }
 
 static void ami_print_close(struct ami_print_window *pw)
 {
-	DisposeObject(pw->objects[OID_MAIN]);
+	DisposeObject(pw->objects[POID_MAIN]);
 	ami_gui_win_list_remove(pw);
 
 	ami_print_ui_free();
@@ -362,7 +365,7 @@ static BOOL ami_print_event(void *w)
 	int print_scale;
 	int printer_unit;
 
-	while((result = RA_HandleInput(pw->objects[OID_MAIN],&code)) != WMHI_LASTMSG)
+	while((result = RA_HandleInput(pw->objects[POID_MAIN],&code)) != WMHI_LASTMSG)
 	{
        	switch(result & WMHI_CLASSMASK) // class
    		{
@@ -509,7 +512,7 @@ bool ami_print_next_page(void)
 {
 	ami_print_info.page++;
 
-	RefreshSetGadgetAttrs((struct Gadget *)ami_print_info.gadgets[GID_STATUS],
+	RefreshSetGadgetAttrs((struct Gadget *)ami_print_info.gadgets[PGID_STATUS],
 				ami_print_info.win, NULL,
 				FUELGAUGE_Level, ami_print_info.page,
 				TAG_DONE);
@@ -519,7 +522,7 @@ bool ami_print_next_page(void)
 void ami_print_end(void)
 {
 	ami_plot_ra_free(ami_print_info.gg);
-	DisposeObject(ami_print_info.objects[OID_MAIN]);
+	DisposeObject(ami_print_info.objects[POID_MAIN]);
 
 	ami_print_close_device();
 	ami_print_free();
@@ -554,7 +557,7 @@ bool ami_print_dump(void)
 
 void ami_print_progress(void)
 {
-	ami_print_info.objects[OID_MAIN] = WindowObj,
+	ami_print_info.objects[POID_MAIN] = WindowObj,
       	    WA_ScreenTitle, ami_gui_get_screen_title(),
            	WA_Title, messages_get("Printing"),
            	WA_Activate, TRUE,
@@ -568,9 +571,9 @@ void ami_print_progress(void)
 			WINDOW_IconifyGadget, FALSE,
 			WINDOW_LockHeight,TRUE,
          	WINDOW_Position, WPOS_CENTERSCREEN,
-           	WINDOW_ParentGroup, ami_print_info.gadgets[GID_MAIN] = LayoutVObj,
-				LAYOUT_AddChild, ami_print_info.gadgets[GID_STATUS] = FuelGaugeObj,
-					GA_ID,GID_STATUS,
+           	WINDOW_ParentGroup, ami_print_info.gadgets[PGID_MAIN] = LayoutVObj,
+				LAYOUT_AddChild, ami_print_info.gadgets[PGID_STATUS] = FuelGaugeObj,
+					GA_ID,PGID_STATUS,
 					FUELGAUGE_Min,0,
 					FUELGAUGE_Max,ami_print_info.pages,
 					FUELGAUGE_Level,0,
@@ -582,8 +585,8 @@ void ami_print_progress(void)
 				CHILD_NominalSize,TRUE,
 				CHILD_WeightedHeight,0,
 /*
-				LAYOUT_AddChild, ami_print_info.gadgets[GID_CANCEL] = ButtonObj,
-					GA_ID,GID_CANCEL,
+				LAYOUT_AddChild, ami_print_info.gadgets[PGID_CANCEL] = ButtonObj,
+					GA_ID,PGID_CANCEL,
 					GA_Disabled,TRUE,
 					GA_RelVerify,TRUE,
 					GA_Text,messages_get("Abort"),
@@ -593,6 +596,6 @@ void ami_print_progress(void)
 			EndGroup,
 		EndWindow;
 
-	ami_print_info.win = (struct Window *)RA_OpenWindow(ami_print_info.objects[OID_MAIN]);
+	ami_print_info.win = (struct Window *)RA_OpenWindow(ami_print_info.objects[POID_MAIN]);
 }
 

@@ -61,10 +61,20 @@ enum {
 	AMI_LOGIN_MSG_MAX
 };
 
+enum {
+	OID_L_MAIN = 0,
+	GID_L_MAIN,
+	GID_L_USER,
+	GID_L_PASS,
+	GID_L_LOGIN,
+	GID_L_CANCEL,
+	GID_L_LAST
+};
+
 struct gui_login_window {
 	struct ami_generic_window w;
 	struct Window *win;
-	Object *objects[GID_LAST];
+	Object *objects[GID_L_LAST];
 	nserror (*cb)(const char *username, const char *password, void *pw);
 	void *cbpw;
 	nsurl *url;
@@ -128,7 +138,7 @@ nserror gui_401login_open(nsurl *url, const char *realm,
 		ami_utf8_free(pass_utf8);
 	}
 
-	lw->objects[OID_MAIN] = WindowObj,
+	lw->objects[OID_L_MAIN] = WindowObj,
       	    WA_ScreenTitle, ami_gui_get_screen_title(),
            	WA_Title, nsurl_access(lw->url),
            	WA_Activate, TRUE,
@@ -142,7 +152,7 @@ nserror gui_401login_open(nsurl *url, const char *realm,
 			WINDOW_IconifyGadget, FALSE,
 			WINDOW_LockHeight,TRUE,
          	WINDOW_Position, WPOS_CENTERSCREEN,
-           	WINDOW_ParentGroup, lw->objects[GID_MAIN] = LayoutVObj,
+           	WINDOW_ParentGroup, lw->objects[GID_L_MAIN] = LayoutVObj,
 				LAYOUT_AddChild, StringObj,
 					STRINGA_TextVal, lwc_string_data(lw->host),
 					GA_ReadOnly,TRUE,
@@ -159,8 +169,8 @@ nserror gui_401login_open(nsurl *url, const char *realm,
 					LABEL_Text, lw->messages[AMI_LOGIN_MSG_REALM],
 				LabelEnd,
 				CHILD_WeightedHeight,0,
-				LAYOUT_AddChild, lw->objects[GID_USER] = StringObj,
-					GA_ID,GID_USER,
+				LAYOUT_AddChild, lw->objects[GID_L_USER] = StringObj,
+					GA_ID,GID_L_USER,
 					GA_TabCycle,TRUE,
 					STRINGA_TextVal, lw->uname,
 				StringEnd,
@@ -168,8 +178,8 @@ nserror gui_401login_open(nsurl *url, const char *realm,
 					LABEL_Text, lw->messages[AMI_LOGIN_MSG_USER],
 				LabelEnd,
 				CHILD_WeightedHeight,0,
-				LAYOUT_AddChild, lw->objects[GID_PASS] = StringObj,
-					GA_ID,GID_PASS,
+				LAYOUT_AddChild, lw->objects[GID_L_PASS] = StringObj,
+					GA_ID,GID_L_PASS,
 					STRINGA_HookType,SHK_PASSWORD,
 					GA_TabCycle,TRUE,
 					STRINGA_TextVal, lw->pwd,
@@ -179,15 +189,15 @@ nserror gui_401login_open(nsurl *url, const char *realm,
 				LabelEnd,
 				CHILD_WeightedHeight,0,
 				LAYOUT_AddChild, LayoutHObj,
-					LAYOUT_AddChild, lw->objects[GID_LOGIN] = ButtonObj,
-						GA_ID,GID_LOGIN,
+					LAYOUT_AddChild, lw->objects[GID_L_LOGIN] = ButtonObj,
+						GA_ID,GID_L_LOGIN,
 						GA_RelVerify,TRUE,
 						GA_Text, lw->messages[AMI_LOGIN_MSG_LOGIN],
 						GA_TabCycle,TRUE,
 					ButtonEnd,
 					CHILD_WeightedHeight,0,
-					LAYOUT_AddChild, lw->objects[GID_CANCEL] = ButtonObj,
-						GA_ID,GID_CANCEL,
+					LAYOUT_AddChild, lw->objects[GID_L_CANCEL] = ButtonObj,
+						GA_ID,GID_L_CANCEL,
 						GA_RelVerify,TRUE,
 						GA_Text, lw->messages[AMI_LOGIN_MSG_CANCEL],
 						GA_TabCycle,TRUE,
@@ -197,7 +207,7 @@ nserror gui_401login_open(nsurl *url, const char *realm,
 			EndGroup,
 		EndWindow;
 
-	lw->win = (struct Window *)RA_OpenWindow(lw->objects[OID_MAIN]);
+	lw->win = (struct Window *)RA_OpenWindow(lw->objects[OID_L_MAIN]);
 	ami_gui_win_list_add(lw, AMINS_LOGINWINDOW, &ami_login_table);
 
 	return NSERROR_OK;
@@ -211,7 +221,7 @@ static void ami_401login_close(void *w)
 	if (lw->cb != NULL)
 		lw->cb(NULL, NULL, lw->cbpw);
 
-	DisposeObject(lw->objects[OID_MAIN]);
+	DisposeObject(lw->objects[OID_L_MAIN]);
 	lwc_string_unref(lw->host);
 	nsurl_unref(lw->url);
 	free(lw->realm);
@@ -230,8 +240,8 @@ static void ami_401login_login(struct gui_login_window *lw)
 	char *pass;
 
 	/* Get username and password from string gadgets */
-	GetAttr(STRINGA_TextVal,lw->objects[GID_USER],(ULONG *)&user);
-	GetAttr(STRINGA_TextVal,lw->objects[GID_PASS],(ULONG *)&pass);
+	GetAttr(STRINGA_TextVal,lw->objects[GID_L_USER],(ULONG *)&user);
+	GetAttr(STRINGA_TextVal,lw->objects[GID_L_PASS],(ULONG *)&pass);
 
 	/* Convert from local charset to UTF-8 */
 	char *user_utf8 = ami_to_utf8_easy(user);
@@ -260,19 +270,19 @@ static BOOL ami_401login_event(void *w)
 	ULONG result;
 	uint16 code;
 
-	while((result = RA_HandleInput(lw->objects[OID_MAIN], &code)) != WMHI_LASTMSG)
+	while((result = RA_HandleInput(lw->objects[OID_L_MAIN], &code)) != WMHI_LASTMSG)
 	{
        	switch(result & WMHI_CLASSMASK) // class
 		{
 			case WMHI_GADGETUP:
 				switch(result & WMHI_GADGETMASK)
 				{
-					case GID_LOGIN:
+					case GID_L_LOGIN:
 						ami_401login_login(lw);
 						return TRUE;
 					break;
 
-					case GID_CANCEL:
+					case GID_L_CANCEL:
 						ami_401login_close(lw);
 						return TRUE;
 					break;
