@@ -237,7 +237,8 @@ static nserror amiga_path_to_nsurl(const char *path, struct nsurl **url_out)
 }
 
 /**
- * returns a string with escape chars translated.
+ * returns a string with escape chars translated
+ * and string converted to local charset
  * (based on remove_underscores from utils.c)
  */
 
@@ -259,7 +260,8 @@ char *translate_escape_chars(const char *s)
 		}
 	}
 	ret[ii] = '\0';
-	return ret;
+
+	return ami_utf8_easy(ret);
 }
 
 /**

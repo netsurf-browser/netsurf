@@ -4688,7 +4688,7 @@ static void gui_window_destroy(struct gui_window *g)
 	free(g->shared->svbuffer);
 
 	for(gid = 0; gid < GID_LAST; gid++)
-		free(g->shared->helphints[gid]);
+		ami_utf8_free(g->shared->helphints[gid]);
 
 	ami_gui_win_list_remove(g->shared);
 	if(g->tab_node) {
