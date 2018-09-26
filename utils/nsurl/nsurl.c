@@ -54,7 +54,7 @@
  * Does nothing if the components are the same, so ensure match is
  * preset to true.
  */
-#define nsurl__component_compare(c1, c2, match)	      		\
+#define nsurl__component_compare(c1, c2, match)			\
 	if (c1 && c2 && lwc_error_ok ==				\
 			lwc_string_isequal(c1, c2, match)) {	\
 		/* do nothing */                                \
@@ -364,7 +364,7 @@ nserror nsurl_get_utf8(const nsurl *url, char **url_s, size_t *url_l)
 	}
 
 	*url_l = scheme_len + idna_host_len + path_len + 1; /* +1 for \0 */
-	*url_s = malloc(*url_l); 
+	*url_s = malloc(*url_l);
 
 	if (*url_s == NULL) {
 		err = NSERROR_NOMEM;
@@ -574,57 +574,67 @@ nserror nsurl_refragment(const nsurl *url, lwc_string *frag, nsurl **new_url)
 nserror nsurl_replace_query(const nsurl *url, const char *query,
 		nsurl **new_url)
 {
-	int query_len;		/* Length of new query string, including '?' */
-	int frag_len = 0;	/* Length of fragment, including '#' */
-	int base_len;		/* Length of URL up to start of query */
-	char *pos;
-	size_t len;
-	lwc_string *lwc_query;
+	int query_len;    /* Length of new query string excluding '?' */
+	int frag_len = 0; /* Length of fragment, excluding '#' */
+	int base_len;     /* Length of URL up to start of query */
+	char *pos;        /* current position in output string */
+	size_t length;    /* new url string length */
+	lwc_string *lwc_query = NULL;
 
 	assert(url != NULL);
 	assert(query != NULL);
-	assert(query[0] == '?');
 
-	/* Get the length of the new query */
-	query_len = strlen(query);
+	length = query_len = strlen(query);
+	if (query_len > 0) {
+		length++; /* allow for '?' */
+
+		/* intern string */
+		if (lwc_intern_string(query,
+				      query_len,
+				      &lwc_query) != lwc_error_ok) {
+			return NSERROR_NOMEM;
+		}
+	}
 
 	/* Find the change in length from url to new_url */
 	base_len = url->length;
 	if (url->components.query != NULL) {
-		base_len -= lwc_string_length(url->components.query);
+		base_len -= (1 + lwc_string_length(url->components.query));
 	}
 	if (url->components.fragment != NULL) {
-		frag_len = 1 + lwc_string_length(url->components.fragment);
-		base_len -= frag_len;
+		frag_len = lwc_string_length(url->components.fragment);
+		base_len -= (1 + frag_len);
+		length += frag_len + 1; /* allow for '#' */
 	}
 
-	/* Set new_url's length */
-	len = base_len + query_len + frag_len;
+	/* compute new url string length */
+	length += base_len;
 
 	/* Create NetSurf URL object */
-	*new_url = malloc(sizeof(nsurl) + len + 1); /* Add 1 for \0 */
+	*new_url = malloc(sizeof(nsurl) + length + 1); /* Add 1 for \0 */
 	if (*new_url == NULL) {
+		if (query_len > 0) {
+			lwc_string_unref(lwc_query);
+		}
 		return NSERROR_NOMEM;
 	}
 
-	if (lwc_intern_string(query, query_len, &lwc_query) != lwc_error_ok) {
-		free(*new_url);
-		return NSERROR_NOMEM;
-	}
-
-	(*new_url)->length = len;
+	(*new_url)->length = length;
 
 	/* Set string */
 	pos = (*new_url)->string;
 	memcpy(pos, url->string, base_len);
 	pos += base_len;
-	memcpy(pos, query, query_len);
-	pos += query_len;
+	if (query_len > 0) {
+		*pos = '?';
+		memcpy(++pos, query, query_len);
+		pos += query_len;
+	}
 	if (url->components.fragment != NULL) {
 		const char *frag = lwc_string_data(url->components.fragment);
 		*pos = '#';
-		memcpy(++pos, frag, frag_len - 1);
-		pos += frag_len - 1;
+		memcpy(++pos, frag, frag_len);
+		pos += frag_len;
 	}
 	*pos = '\0';
 
@@ -945,4 +955,3 @@ nserror nsurl_parent(const nsurl *url, nsurl **new_url)
 
 	return NSERROR_OK;
 }
-

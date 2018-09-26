@@ -105,9 +105,10 @@ enum nsurl_string_flags {
 						NSURL_F_HOST |
 						NSURL_F_PORT),
 	NSURL_F_PATH			= (1 << 8),
-	NSURL_F_QUERY			= (1 << 9),
-	NSURL_F_FRAGMENT_PUNCTUATION	= (1 << 10),
-	NSURL_F_FRAGMENT		= (1 << 11)
+	NSURL_F_QUERY_PUNCTUATION	= (1 << 9),
+	NSURL_F_QUERY			= (1 << 10),
+	NSURL_F_FRAGMENT_PUNCTUATION	= (1 << 11),
+	NSURL_F_FRAGMENT		= (1 << 12)
 };
 
 /**

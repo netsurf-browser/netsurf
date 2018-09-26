@@ -428,9 +428,9 @@ static const struct test_pairs join_tests[] = {
 	{ "  ",			"http://a/b/c/d;p?q" },
 	{ "/",			"http://a/" },
 	{ "  /  ",		"http://a/" },
-	{ "  ?  ",		"http://a/b/c/d;p?" },
+	{ "  ?  ",		"http://a/b/c/d;p" },
 	{ "  h  ",		"http://a/b/c/h" },
-	{ "//foo?",		"http://foo/?" },
+	{ "//foo?",		"http://foo/" },
 	{ "//foo#bar",		"http://foo/#bar" },
 	{ "//foo/",		"http://foo/" },
 	{ "http://<!--#echo var=", "http://<!--/#echo%20var="},
@@ -531,20 +531,24 @@ END_TEST
  */
 static const struct test_triplets replace_query_tests[] = {
 	{ "http://netsurf-browser.org/?magical=true",
-	  "?magical=true&result=win",
+	  "magical=true&result=win",
 	  "http://netsurf-browser.org/?magical=true&result=win"},
 
 	{ "http://netsurf-browser.org/?magical=true#fragment",
-	  "?magical=true&result=win",
+	  "magical=true&result=win",
 	  "http://netsurf-browser.org/?magical=true&result=win#fragment"},
 
 	{ "http://netsurf-browser.org/#fragment",
-	  "?magical=true&result=win",
+	  "magical=true&result=win",
 	  "http://netsurf-browser.org/?magical=true&result=win#fragment"},
 
 	{ "http://netsurf-browser.org/path",
-	  "?magical=true",
+	  "magical=true",
 	  "http://netsurf-browser.org/path?magical=true"},
+
+	{ "http://netsurf-browser.org/path?magical=true",
+	  "",
+	  "http://netsurf-browser.org/path"},
 
 };
 
@@ -655,7 +659,7 @@ static const struct test_compare component_tests[] = {
 	{ "http://u:p@a:66/b/c/d;p?q#f", "a", NSURL_HOST, true },
 	{ "http://u:p@a:66/b/c/d;p?q#f", "66", NSURL_PORT, true },
 	{ "http://u:p@a:66/b/c/d;p?q#f", "/b/c/d;p", NSURL_PATH, true },
-	{ "http://u:p@a:66/b/c/d;p?q#f", "?q", NSURL_QUERY, true },
+	{ "http://u:p@a:66/b/c/d;p?q#f", "q", NSURL_QUERY, true },
 	{ "http://u:p@a:66/b/c/d;p?q#f", "f", NSURL_FRAGMENT, true },
 
 	{ "file:", "file", NSURL_SCHEME, true },
@@ -666,6 +670,11 @@ static const struct test_compare component_tests[] = {
 	{ "file:", "/", NSURL_PATH, true },
 	{ "file:", NULL, NSURL_QUERY, false },
 	{ "file:", NULL, NSURL_FRAGMENT, false },
+
+	{ "http://u:p@a:66/b/c/d;p?q=v#f", "q=v", NSURL_QUERY, true },
+	{ "http://u:p@a:66/b/c/d;p?q=v", "q=v", NSURL_QUERY, true },
+	{ "http://u:p@a:66/b/c/d;p?q=v&q1=v1#f", "q=v&q1=v1", NSURL_QUERY, true },
+	{ "http://u:p@a:66/b/c/d;p?q=v&q1=v1", "q=v&q1=v1", NSURL_QUERY, true },
 
 };
 
@@ -1167,12 +1176,11 @@ START_TEST(nsurl_api_assert_replace_query3_test)
 	nsurl *url;
 	nsurl *res;
 	nserror err;
-	const char *rel = "moo";
 
 	err = nsurl_create(base_str, &url);
 	ck_assert(err == NSERROR_OK);
 
-	err = nsurl_replace_query(url, rel, &res);
+	err = nsurl_replace_query(url, NULL, &res);
 	ck_assert(err != NSERROR_OK);
 
 	nsurl_unref(url);

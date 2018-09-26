@@ -344,7 +344,7 @@ static void nsurl__get_string_markers(const char * const url_s,
 	 * and in the case of mailto: when we assume there is an authority.
 	 */
 	if ((*pos == '/' && *(pos + 1) == '/') ||
-			(is_http && ((joining && *pos == '/') || 
+			(is_http && ((joining && *pos == '/') ||
 					(joining == false &&
 					marker.scheme_end != marker.start))) ||
 			marker.scheme_type == NSURL_SCHEME_MAILTO) {
@@ -577,7 +577,7 @@ static size_t nsurl__remove_dot_segments(char *path, char *output)
 
 		/* Copy up to but not including next '/' */
 		  while ((*path_pos != '/') && (*path_pos != '\0'))
-		  	*output_pos++ = *path_pos++;
+			*output_pos++ = *path_pos++;
 	}
 
 	return output_pos - output;
@@ -671,7 +671,9 @@ static nserror nsurl__create_from_section(const char * const url_s,
 		break;
 
 	case URL_QUERY:
-		start = pegs->query;
+		start = (*(url_s + pegs->query) != '?') ?
+				pegs->query :
+				pegs->query + 1;
 		end = pegs->fragment;
 		break;
 
@@ -1085,6 +1087,15 @@ static void nsurl__get_string_data(const struct nsurl_components *url,
 		*url_l += SLEN("@");
 	}
 
+	/* spanned query question mark */
+	if ((flags & ~(NSURL_F_QUERY | NSURL_F_FRAGMENT)) &&
+	    (flags & NSURL_F_QUERY)) {
+		flags |= NSURL_F_QUERY_PUNCTUATION;
+
+		*url_l += SLEN("?");
+	}
+
+	/* spanned fragment hash mark */
 	if ((flags & ~NSURL_F_FRAGMENT) && (flags & NSURL_F_FRAGMENT)) {
 		flags |= NSURL_F_FRAGMENT_PUNCTUATION;
 
@@ -1158,6 +1169,8 @@ static void nsurl__get_string(const struct nsurl_components *url, char *url_s,
 	}
 
 	if (flags & NSURL_F_QUERY) {
+		if (flags & NSURL_F_QUERY_PUNCTUATION)
+			*(pos++) = '?';
 		memcpy(pos, lwc_string_data(url->query), l->query);
 		pos += l->query;
 	}
@@ -1557,4 +1570,3 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 
 	return NSERROR_OK;
 }
-

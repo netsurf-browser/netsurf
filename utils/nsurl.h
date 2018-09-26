@@ -313,6 +313,9 @@ nserror nsurl_refragment(const nsurl *url, lwc_string *frag, nsurl **new_url);
  * the created object.
  *
  * Any query component in url is replaced with query in new_url.
+ *
+ * Passing the empty string as a replacement will result in the query
+ * component being removed.
  */
 nserror nsurl_replace_query(const nsurl *url, const char *query,
 		nsurl **new_url);
