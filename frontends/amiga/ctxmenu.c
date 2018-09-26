@@ -510,6 +510,7 @@ static bool ami_ctxmenu_history(int direction, struct gui_window_2 *gwin, const 
 
 	IDoMethod(history_root, OM_ADDMEMBER, MStrip,
 							MA_Type, T_ITEM,
+							/* TODO: MA_Label should be in local charset */
 							MA_Label, browser_window_history_entry_get_title(entry),
 							MA_ID, id,
 							MA_Image, NULL,
