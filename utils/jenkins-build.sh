@@ -451,6 +451,7 @@ command -v ${MD5SUM} >/dev/null 2>&1 || MD5SUM=echo
 
 # find sha256 binary name
 SHAR256SUM=sha256sum
+command -v ${SHAR256SUM} >/dev/null 2>&1 || SHAR256SUM=sha256
 command -v ${SHAR256SUM} >/dev/null 2>&1 || SHAR256SUM=echo
 
 ${MD5SUM} "${PKG_SRC}${PKG_SFX}" > ${PKG_SRC}.md5
