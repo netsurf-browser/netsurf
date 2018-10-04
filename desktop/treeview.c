@@ -4773,12 +4773,12 @@ treeview_mouse_action(treeview *tree, browser_mouse_state mouse, int x, int y)
 	} else {
 		/* On tree */
 		struct treeview_mouse_action ma = {
-			ma.tree = tree,
-			ma.mouse = mouse,
-			ma.x = x,
-			ma.y = y,
-			ma.current_y = search_height,
-			ma.search_height = search_height,
+			.tree = tree,
+			.mouse = mouse,
+			.x = x,
+			.y = y,
+			.current_y = search_height,
+			.search_height = search_height,
 		};
 
 		treeview_walk_internal(tree, tree->root,
