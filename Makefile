@@ -319,7 +319,7 @@ else
 endif
 
 # compiler versioning to adjust warning flags
-CC_VERSION := $(shell $(CC) -dumpversion)
+CC_VERSION := $(shell $(CC) -dumpversion -dumpfullversion)
 CC_MAJOR := $(word 1,$(subst ., ,$(CC_VERSION)))
 CC_MINOR := $(word 2,$(subst ., ,$(CC_VERSION)))
 define cc_ver_ge
