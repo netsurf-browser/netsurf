@@ -472,7 +472,7 @@ for SUFFIX in "${PKG_SFX}" .md5 .sha256;do
     # remove the local file artifact
     rm -f "${PKG_SRC}${SUFFIX}"
 
-    OLD_ARTIFACT_TARGETS=${OLD_ARTIFACT_TARGETS} "${DESTDIR}/NetSurf-${OLD_IDENTIFIER}${SUFFIX}"
+    OLD_ARTIFACT_TARGETS="${OLD_ARTIFACT_TARGETS} ${DESTDIR}/NetSurf-${OLD_IDENTIFIER}${SUFFIX}"
 done
 
 
