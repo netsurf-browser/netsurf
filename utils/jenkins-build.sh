@@ -443,8 +443,18 @@ if [ ! -f "${PKG_SRC}${PKG_SFX}" ]; then
 fi
 
 # create package checksum files
-md5sum "${PKG_SRC}${PKG_SFX}" > ${PKG_SRC}.md5
-sha256sum "${PKG_SRC}${PKG_SFX}" > ${PKG_SRC}.sha
+
+# find md5sum binary
+MD5SUM=md5sum;
+command -v ${MD5SUM} >/dev/null 2>&1 || MD5SUM=md5
+command -v ${MD5SUM} >/dev/null 2>&1 || MD5SUM=echo
+
+# find sha256 binary name
+SHAR256SUM=sha256sum
+command -v ${SHAR256SUM} >/dev/null 2>&1 || SHAR256SUM=echo
+
+${MD5SUM} "${PKG_SRC}${PKG_SFX}" > ${PKG_SRC}.md5
+${SHAR256SUM} "${PKG_SRC}${PKG_SFX}" > ${PKG_SRC}.sha
 
 
 ############ Package artifact deployment ################
@@ -453,18 +463,20 @@ sha256sum "${PKG_SRC}${PKG_SFX}" > ${PKG_SRC}.sha
 DESTDIR=/srv/ci.netsurf-browser.org/html/builds/${TARGET}/
 
 NEW_ARTIFACT_TARGET="NetSurf-${IDENTIFIER}"
+OLD_ARTIFACT_TARGETS=""
 
-for SUFFIX in "${PKG_SFX}" .md5 .sha;do
+for SUFFIX in "${PKG_SFX}" .md5 .sha256;do
     # copy the file to the output - always use scp as it works local or remote
     scp "${PKG_SRC}${SUFFIX}" netsurf@ci.netsurf-browser.org:${DESTDIR}/${NEW_ARTIFACT_TARGET}${SUFFIX}
 
     # remove the local file artifact
     rm -f "${PKG_SRC}${SUFFIX}"
+
+    OLD_ARTIFACT_TARGETS=${OLD_ARTIFACT_TARGETS} "${DESTDIR}/NetSurf-${OLD_IDENTIFIER}${SUFFIX}"
 done
 
 
 ############ Expired package artifact removal and latest linking ##############
 
-OLD_ARTIFACT_TARGET="NetSurf-${OLD_IDENTIFIER}${PKG_SFX}"
 
-ssh netsurf@ci.netsurf-browser.org "rm -f ${DESTDIR}/${OLD_ARTIFACT_TARGET} ${DESTDIR}/LATEST && echo "${NEW_ARTIFACT_TARGET}${PKG_SFX}" > ${DESTDIR}/LATEST"
+ssh netsurf@ci.netsurf-browser.org "rm -f ${OLD_ARTIFACT_TARGETS} ${DESTDIR}/LATEST && echo "${NEW_ARTIFACT_TARGET}${PKG_SFX}" > ${DESTDIR}/LATEST"
