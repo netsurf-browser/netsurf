@@ -442,27 +442,29 @@ if [ ! -f "${PKG_SRC}${PKG_SFX}" ]; then
     exit 1
 fi
 
+# create package checksum files
+md5sum "${PKG_SRC}${PKG_SFX}" > ${PKG_SRC}.md5
+sha256sum "${PKG_SRC}${PKG_SFX}" > ${PKG_SRC}.sha
+
 
 ############ Package artifact deployment ################
 
 #destination for package artifacts
 DESTDIR=/srv/ci.netsurf-browser.org/html/builds/${TARGET}/
 
-NEW_ARTIFACT_TARGET="NetSurf-${IDENTIFIER}${PKG_SFX}"
+NEW_ARTIFACT_TARGET="NetSurf-${IDENTIFIER}"
 
-# copy the file into the output - always use scp as it works local or remote
-scp "${PKG_SRC}${PKG_SFX}" netsurf@ci.netsurf-browser.org:${DESTDIR}/${NEW_ARTIFACT_TARGET}
+for SUFFIX in "${PKG_SFX}" .md5 .sha;do
+    # copy the file to the output - always use scp as it works local or remote
+    scp "${PKG_SRC}${SUFFIX}" netsurf@ci.netsurf-browser.org:${DESTDIR}/${NEW_ARTIFACT_TARGET}${SUFFIX}
 
-# remove the local package file artifact
-rm -f "${PKG_SRC}${PKG_SFX}"
-
-# setup latest link
-ssh netsurf@ci.netsurf-browser.org "rm -f ${DESTDIR}/LATEST && echo "${NEW_ARTIFACT_TARGET}" > ${DESTDIR}/LATEST"
-
+    # remove the local file artifact
+    rm -f "${PKG_SRC}${SUFFIX}"
+done
 
 
-############ Package artifact cleanup ################
+############ Expired package artifact removal and latest linking ##############
 
 OLD_ARTIFACT_TARGET="NetSurf-${OLD_IDENTIFIER}${PKG_SFX}"
 
-ssh netsurf@ci.netsurf-browser.org "rm -f ${DESTDIR}/${OLD_ARTIFACT_TARGET}"
+ssh netsurf@ci.netsurf-browser.org "rm -f ${DESTDIR}/${OLD_ARTIFACT_TARGET} ${DESTDIR}/LATEST && echo "${NEW_ARTIFACT_TARGET}${PKG_SFX}" > ${DESTDIR}/LATEST"
