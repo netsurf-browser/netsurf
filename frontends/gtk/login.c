@@ -139,7 +139,7 @@ get_login_description(struct nsurl *url,
 	NSLOG(netsurf, INFO,
 	      "key:%s url:%s realm:%s str:%s", key, url_s, realm, str);
 
-	if (strcmp(key, str) != 0) {
+	if ((str != NULL) && (strcmp(key, str) != 0) {
 		*out_str = str;
 	} else {
 		/* no message so fallback */
