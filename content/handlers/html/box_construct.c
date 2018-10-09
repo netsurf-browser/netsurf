@@ -2476,49 +2476,57 @@ static bool box_input_text(html_content *html, struct box *box,
 
 bool box_input(BOX_SPECIAL_PARAMS)
 {
-	struct form_control *gadget = NULL;
+	struct form_control *gadget;
 	dom_string *type = NULL;
 	dom_exception err;
 	nsurl *url;
 	nserror error;
 
-	dom_element_get_attribute(n, corestring_dom_type, &type);
-
 	gadget = html_forms_get_control_for_node(content->forms, n);
-	if (gadget == NULL)
-		goto no_memory;
+	if (gadget == NULL) {
+		return false;
+	}
+
 	box->gadget = gadget;
 	box->flags |= IS_REPLACED;
 	gadget->box = box;
 	gadget->html = content;
 
-	if (type && dom_string_caseless_lwc_isequal(type,
-			corestring_lwc_password)) {
+	/* get entry type */
+	err = dom_element_get_attribute(n, corestring_dom_type, &type);
+	if ((err != DOM_NO_ERR) || (type == NULL)) {
+		/* no type so "text" is assumed */
+		if (box_input_text(content, box, n) == false) {
+			return false;
+		}
+		*convert_children = false;
+		return true;
+	}
+
+
+	if (dom_string_caseless_lwc_isequal(type, corestring_lwc_password)) {
 		if (box_input_text(content, box, n) == false)
 			goto no_memory;
 
-	} else if (type && dom_string_caseless_lwc_isequal(type,
-			corestring_lwc_file)) {
+	} else if (dom_string_caseless_lwc_isequal(type, corestring_lwc_file)) {
 		box->type = BOX_INLINE_BLOCK;
 
-	} else if (type && dom_string_caseless_lwc_isequal(type,
+	} else if (dom_string_caseless_lwc_isequal(type,
 			corestring_lwc_hidden)) {
 		/* no box for hidden inputs */
 		box->type = BOX_NONE;
 
-	} else if (type &&
-			(dom_string_caseless_lwc_isequal(type,
+	} else if ((dom_string_caseless_lwc_isequal(type,
 				corestring_lwc_checkbox) ||
 			dom_string_caseless_lwc_isequal(type,
 				corestring_lwc_radio))) {
 
-	} else if (type &&
-			(dom_string_caseless_lwc_isequal(type,
+	} else if (dom_string_caseless_lwc_isequal(type,
 				corestring_lwc_submit) ||
 			dom_string_caseless_lwc_isequal(type,
 				corestring_lwc_reset) ||
 			dom_string_caseless_lwc_isequal(type,
-				corestring_lwc_button))) {
+				corestring_lwc_button)) {
 		struct box *inline_container, *inline_box;
 
 		if (box_button(n, content, box, 0) == false)
@@ -2560,11 +2568,12 @@ bool box_input(BOX_SPECIAL_PARAMS)
 
 		box_add_child(box, inline_container);
 
-	} else if (type && dom_string_caseless_lwc_isequal(type,
+	} else if (dom_string_caseless_lwc_isequal(type,
 			corestring_lwc_image)) {
 		gadget->type = GADGET_IMAGE;
 
-		if (box->style && ns_computed_display(box->style,
+		if (box->style &&
+		    ns_computed_display(box->style,
 				box_is_root(n)) != CSS_DISPLAY_NONE &&
 		    nsoption_bool(foreground_images) == true) {
 			dom_string *s;
@@ -2595,20 +2604,19 @@ bool box_input(BOX_SPECIAL_PARAMS)
 			}
 		}
 	} else {
-		/* the default type is "text" */
+		/* unhandled type the default is "text" */
 		if (box_input_text(content, box, n) == false)
 			goto no_memory;
 	}
 
-	if (type)
-		dom_string_unref(type);
+	dom_string_unref(type);
 
 	*convert_children = false;
+
 	return true;
 
 no_memory:
-	if (type)
-		dom_string_unref(type);
+	dom_string_unref(type);
 
 	return false;
 }
