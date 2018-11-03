@@ -13,6 +13,8 @@ steps:
   - window: win1
     status: complete
 - action: plot-check
+  window: win1
+  checks:
   - text-contains: Not found
   - text-contains: Error 404
 - action: navigate
@@ -23,8 +25,10 @@ steps:
   - window: win1
     status: complete
 - action: plot-check
+  window: win1
+  checks:
   - bitmap-count: 1
 - action: window-close
-  - window: win1
+  window: win1
 - action: quit
 

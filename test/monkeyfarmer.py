@@ -1,6 +1,4 @@
-#!/usr/bin/python3
-
-# Copyright 2017 Daniel Silverstone <dsilvers@digital-scurf.org>
+# Copyright 2017, 2018 Daniel Silverstone <dsilvers@digital-scurf.org>
 #
 # This file is part of NetSurf, http://www.netsurf-browser.org/
 #
@@ -32,11 +30,8 @@ import socket
 import subprocess
 import time
 
-#monkey_cmd = ['./nsmonkey', '--accept_language=fr']
-monkey_cmd = ['./nsmonkey']
-
 class MonkeyFarmer(asyncore.dispatcher):
-    def __init__(self, online, quiet=False):
+    def __init__(self, monkey_cmd, online, quiet=False):
         (mine, monkeys) = socket.socketpair()
         
         asyncore.dispatcher.__init__(self, sock=mine)
@@ -127,15 +122,18 @@ class MonkeyFarmer(asyncore.dispatcher):
                 break
 
 class Browser:
-    def __init__(self, quiet=False):
-        self.farmer = MonkeyFarmer(online=self.on_monkey_line, quiet=quiet)
+    def __init__(self, monkey_cmd=["./nsmonkey"], quiet=False):
+        self.farmer = MonkeyFarmer(monkey_cmd=monkey_cmd, online=self.on_monkey_line, quiet=quiet)
         self.windows = {}
         self.current_draw_target = None
         self.started = False
         self.stopped = False
         self.launchurl = None
+        now = time.time()
         while not self.started:
             self.farmer.loop(once=True)
+            if (time.time() - now) > 1:
+                break
 
     def pass_options(self, *opts):
         if len(opts) > 0:
@@ -219,6 +217,13 @@ class BrowserWindow:
 
     def kill(self):
         self.browser.farmer.tell_monkey("WINDOW DESTROY %s" % self.winid)
+
+    def wait_until_dead(self, timeout=1):
+        now = time.time()
+        while self.alive:
+            self.browser.farmer.loop(once=True)
+            if (time.time() - now) > timeout:
+                break
 
     def go(self, url, referer = None):
         if referer is None:
@@ -339,47 +344,47 @@ class BrowserWindow:
             self.browser.farmer.loop(once=True)
         return self.plotted
             
+
+if __name__ == '__main__':
+    # Simple test is as follows...
             
-# Simple test is as follows...
-            
-browser = Browser(quiet=True)
+    browser = Browser(quiet=True)
+    win = browser.new_window()
 
-win = browser.new_window()
+    fname = "test/js/inline-doc-write-simple.html"
+    full_fname = os.path.join(os.getcwd(), fname)
 
-fname = "test/js/inline-doc-write-simple.html"
-full_fname = os.path.join(os.getcwd(), fname)
+    browser.pass_options("--enable_javascript=0")
+    win.load_page("file://" + full_fname)
 
-browser.pass_options("--enable_javascript=0")
-win.load_page("file://" + full_fname)
+    print("Loaded, URL is {}".format(win.url))
 
-print("Loaded, URL is {}".format(win.url))
-
-cmds = win.redraw()
-print("Received {} plot commands".format(len(cmds)))
-for cmd in cmds:
-    if cmd[0] == "TEXT":
-        x = cmd[2]
-        y = cmd[4]
-        rest = " ".join(cmd[6:])
-        print("{} {} -> {}".format(x,y,rest))
+    cmds = win.redraw()
+    print("Received {} plot commands".format(len(cmds)))
+    for cmd in cmds:
+        if cmd[0] == "TEXT":
+            x = cmd[2]
+            y = cmd[4]
+            rest = " ".join(cmd[6:])
+            print("{} {} -> {}".format(x,y,rest))
 
 
-browser.pass_options("--enable_javascript=1")
-win.load_page("file://" + full_fname)
+    browser.pass_options("--enable_javascript=1")
+    win.load_page("file://" + full_fname)
 
-print("Loaded, URL is {}".format(win.url))
+    print("Loaded, URL is {}".format(win.url))
 
-cmds = win.redraw()
-print("Received {} plot commands".format(len(cmds)))
-for cmd in cmds:
-    if cmd[0] == "TEXT":
-        x = cmd[2]
-        y = cmd[4]
-        rest = " ".join(cmd[6:])
-        print("{} {} -> {}".format(x,y,rest))
+    cmds = win.redraw()
+    print("Received {} plot commands".format(len(cmds)))
+    for cmd in cmds:
+        if cmd[0] == "TEXT":
+            x = cmd[2]
+            y = cmd[4]
+            rest = " ".join(cmd[6:])
+            print("{} {} -> {}".format(x,y,rest))
 
-browser.quit_and_wait()
+    browser.quit_and_wait()
 
-#print("Discussion was:")
-#for line in browser.farmer.discussion:
-#    print("{} {}".format(line[0], line[1]))
+    #print("Discussion was:")
+    #for line in browser.farmer.discussion:
+    #    print("{} {}".format(line[0], line[1]))
