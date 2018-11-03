@@ -745,6 +745,16 @@ static void nsgtk_download_store_create_item (struct gui_download_window *dl)
 			   NSGTK_DOWNLOAD, dl, -1);
 }
 
+/**
+ * Wrapper to GSourceFunc-ify nsgtk_download_update.
+ */
+static gboolean nsgtk_download_gsourcefunc__nsgtk_download_update(
+		gpointer user_data)
+{
+	bool *force_update = user_data;
+	return nsgtk_download_update(*force_update);
+}
+
 static struct gui_download_window *
 gui_download_window_create(download_context *ctx, struct gui_window *gui)
 {
@@ -825,8 +835,10 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 		nsgtk_download_change_status(download, NSGTK_DOWNLOAD_WORKING);
 
 	if (nsgtk_downloads_num_active == 0) {
-		g_timeout_add(UPDATE_RATE,
-			      (GSourceFunc) nsgtk_download_update, FALSE);
+		g_timeout_add(
+			UPDATE_RATE,
+			nsgtk_download_gsourcefunc__nsgtk_download_update,
+			FALSE);
 	}
 
 	nsgtk_downloads_list = g_list_prepend(nsgtk_downloads_list, download);
