@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # Copyright 2017 Daniel Silverstone <dsilvers@digital-scurf.org>
 #
@@ -49,8 +49,8 @@ class MonkeyFarmer(asyncore.dispatcher):
 
         monkeys.close()
 
-        self.buffer = ""
-        self.incoming = ""
+        self.buffer = b""
+        self.incoming = b""
         self.lines = []
         self.scheduled = []
         self.deadmonkey = False
@@ -62,12 +62,12 @@ class MonkeyFarmer(asyncore.dispatcher):
         
     def handle_read(self):
         got = self.recv(8192)
-        if got == "" or got is None:
+        if not got:
             self.deadmonkey = True
             return
         self.incoming += got
-        if "\n" in self.incoming:
-            lines = self.incoming.split("\n")
+        if b"\n" in self.incoming:
+            lines = self.incoming.split(b"\n")
             self.incoming = lines.pop()
             self.lines = lines
 
@@ -81,12 +81,14 @@ class MonkeyFarmer(asyncore.dispatcher):
     def tell_monkey(self, *args):
         cmd = (" ".join(args))
         if not self.quiet:
-            print ">>> %s" % cmd
-        self.buffer += "%s\n" % cmd
+            print(">>> {}".format(cmd))
+        cmd = cmd + "\n"
+        self.buffer += cmd.encode('utf-8')
 
     def monkey_says(self, line):
+        line = line.decode('utf-8')
         if not self.quiet:
-            print "<<< %s" % line
+            print("<<< {}".format(line))
         self.online(line)
 
     def schedule_event(self, event, secs=None, when=None):
@@ -154,7 +156,7 @@ class Browser:
         else:
             win = self.windows.get(winid, None)
             if win is None:
-                print "    Unknown window id %s" % winid
+                print("    Unknown window id {}".format(winid))
             else:
                 win.handle(action, *args)
 
@@ -340,24 +342,30 @@ full_fname = os.path.join(os.getcwd(), fname)
 browser.pass_options("--enable_javascript=0")
 win.load_page("file://" + full_fname)
 
-print("Loaded, URL is %s" % win.url)
+print("Loaded, URL is {}".format(win.url))
 
 cmds = win.redraw()
-print("Received %d plot commands" % len(cmds))
+print("Received {} plot commands".format(len(cmds)))
 for cmd in cmds:
     if cmd[0] == "TEXT":
-        print "%s %s -> %s" % (cmd[2], cmd[4], (" ".join(cmd[6:])))
+        x = cmd[2]
+        y = cmd[4]
+        rest = " ".join(cmd[6:])
+        print("{} {} -> {}".format(x,y,rest))
 
 
 browser.pass_options("--enable_javascript=1")
 win.load_page("file://" + full_fname)
 
-print("Loaded, URL is %s" % win.url)
+print("Loaded, URL is {}".format(win.url))
 
 cmds = win.redraw()
-print("Received %d plot commands" % len(cmds))
+print("Received {} plot commands".format(len(cmds)))
 for cmd in cmds:
     if cmd[0] == "TEXT":
-        print "%s %s -> %s" % (cmd[2], cmd[4], (" ".join(cmd[6:])))
+        x = cmd[2]
+        y = cmd[4]
+        rest = " ".join(cmd[6:])
+        print("{} {} -> {}".format(x,y,rest))
 
 browser.quit_and_wait()
