@@ -56,6 +56,7 @@ class MonkeyFarmer(asyncore.dispatcher):
         self.deadmonkey = False
         self.online = online
         self.quiet = quiet
+        self.discussion = []
 
     def handle_connect(self):
         pass
@@ -82,6 +83,7 @@ class MonkeyFarmer(asyncore.dispatcher):
         cmd = (" ".join(args))
         if not self.quiet:
             print(">>> {}".format(cmd))
+        self.discussion.append((">",cmd))
         cmd = cmd + "\n"
         self.buffer += cmd.encode('utf-8')
 
@@ -89,6 +91,7 @@ class MonkeyFarmer(asyncore.dispatcher):
         line = line.decode('utf-8')
         if not self.quiet:
             print("<<< {}".format(line))
+        self.discussion.append(("<", line))
         self.online(line)
 
     def schedule_event(self, event, secs=None, when=None):
@@ -128,6 +131,11 @@ class Browser:
         self.farmer = MonkeyFarmer(online=self.on_monkey_line, quiet=quiet)
         self.windows = {}
         self.current_draw_target = None
+        self.started = False
+        self.stopped = False
+        self.launchurl = None
+        while not self.started:
+            self.farmer.loop(once=True)
 
     def pass_options(self, *opts):
         if len(opts) > 0:
@@ -145,9 +153,18 @@ class Browser:
     def quit_and_wait(self):
         self.quit()
         self.farmer.loop()
+        return self.stopped
         
     def handle_GENERIC(self, what, *args):
-        pass
+        if what == 'STARTED':
+            self.started = True
+        elif what == 'FINISHED':
+            self.stopped = True
+        elif what == 'LAUNCH':
+            self.launchurl = args[1]
+        else:
+            # TODO: Nothing for now?
+            pass
 
     def handle_WINDOW(self, action, _win, winid, *args):
         if action == "NEW":
@@ -210,6 +227,7 @@ class BrowserWindow:
         else:
             self.browser.farmer.tell_monkey("WINDOW GO %s %s %s" % (
                 self.winid, url, referer))
+        self.wait_start_loading()
 
     def reload(self):
         self.browser.farmer.tell_monkey("WINDOW RELOAD %s" % self.winid)
@@ -304,13 +322,12 @@ class BrowserWindow:
             self.go(url, referer)
         self.wait_loaded()
 
-    def reload(self):
-        self.browser.farmer.tell_monkey("WINDOW RELOAD %s" % self.winid)
-        self.wait_loaded()
-
-    def wait_loaded(self):
+    def wait_start_loading(self):
         while not self.throbbing:
             self.browser.farmer.loop(once=True)
+
+    def wait_loaded(self):
+        self.wait_start_loading()
         while self.throbbing:
             self.browser.farmer.loop(once=True)
 
@@ -369,3 +386,7 @@ for cmd in cmds:
         print("{} {} -> {}".format(x,y,rest))
 
 browser.quit_and_wait()
+
+#print("Discussion was:")
+#for line in browser.farmer.discussion:
+#    print("{} {}".format(line[0], line[1]))
