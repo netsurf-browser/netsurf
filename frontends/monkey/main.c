@@ -393,6 +393,11 @@ main(int argc, char **argv)
 		die("options handler failed to register");
 	}
 
+	ret = monkey_register_handler("LOGIN", monkey_login_handle_command);
+	if (ret != NSERROR_OK) {
+		die("login handler failed to register");
+	}
+
 	moutf(MOUT_GENERIC, "STARTED");
 	monkey_run();
 

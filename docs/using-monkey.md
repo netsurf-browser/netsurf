@@ -49,7 +49,7 @@ browser windows are prefixed by `WINDOW`.
 
 * `WINDOW`: Anything about browser windows in general
 
-* `DOWNLOAD_WINDOW`: Anything about the download window.
+* `DOWNLOAD`: Anything about the download window.
 
 * `SSLCERT`: Anything about SSL certificates
 
@@ -122,6 +122,25 @@ Commands
 
     Cause a browser window to reload its current content.
     Expect responses similar to a GO command.
+
+
+### Login commands
+
+*   `LOGIN USERNAME` _%id%_ _%str_
+
+    Set the username for the login
+
+*   `LOGIN PASSWORD` _%id%_ _%str_
+
+    Set the password for the login
+
+*   `LOGIN GO` _%id%_
+
+    Cause a login to proceed using the set credentials
+
+*   `LOGIN DESTROY` _%id%_
+
+    Cause a login to fail
 
 
 Responses
@@ -304,28 +323,28 @@ Responses
 
 ### Download window messages
 
-*   `DOWNLOAD_WINDOW CREATE DWIN` _%id%_ `WIN` _%id%_
+*   `DOWNLOAD CREATE DWIN` _%id%_ `WIN` _%id%_
 
     The core asked Monkey to create a download window owned by the
     given browser window.
 
-*   `DOWNLOAD_WINDOW DATA DWIN` _%id%_ `SIZE` _%n%_ `DATA` _%str%_
+*   `DOWNLOAD DATA DWIN` _%id%_ `SIZE` _%n%_ `DATA` _%str%_
 
     The core asked Monkey to update the named download window with
     the given byte size and data string.
 
-*   `DOWNLOAD_WINDOW ERROR DWIN` _%id%_ `ERROR` _%str%_
+*   `DOWNLOAD ERROR DWIN` _%id%_ `ERROR` _%str%_
 
     The core asked Monkey to update the named download window with
     the given error message.
 
-*   `DOWNLOAD_WINDOW DONE DWIN` _%id%_
+*   `DOWNLOAD DONE DWIN` _%id%_
 
     The core asked Monkey to destroy the named download window.
 
 ### SSL Certificate messages
 
-*   `SSLCERT VERIFY CERT` _%id%_ `URL` _%url%_
+*   `SSLCERT VERIFY CWIN` _%id%_ `URL` _%url%_
 
     The core asked Monkey to say whether or not a given SSL
     certificate is OK.
@@ -334,7 +353,7 @@ Responses
 
 ### 401 Login messages
 
-*   `401LOGIN OPEN M4` _%id%_ `URL` _%url%_ `REALM` _%str%_
+*   `LOGIN OPEN LWIN` _%id%_ `URL` _%url%_ USER _%str%_ PASSWD _%str%_ `REALM` _%str%_
 
     The core asked Monkey to ask for identification for the named
     realm at the given URL.
