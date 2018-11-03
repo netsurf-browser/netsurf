@@ -16,6 +16,17 @@ CFLAGS += -std=c99 \
 LDFLAGS += -lm
 
 # ---------------------------------------------------------------------------
+# Target setup
+# ---------------------------------------------------------------------------
+
+# Path to monkey resources
+MONKEY_RESOURCES_DIR := $(FRONTEND_RESOURCES_DIR)
+
+# The filter and target for split messages
+MESSAGES_FILTER=monkey
+MESSAGES_TARGET=$(MONKEY_RESOURCES_DIR)
+
+# ---------------------------------------------------------------------------
 # HOST specific feature flags
 # ---------------------------------------------------------------------------
 
