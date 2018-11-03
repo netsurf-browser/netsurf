@@ -232,13 +232,6 @@ class BrowserWindow:
     def reload(self):
         self.browser.farmer.tell_monkey("WINDOW RELOAD %s" % self.winid)
             
-    def redraw(self, coords=None):
-        if coords is None:
-            self.browser.farmer.tell_monkey("WINDOW REDRAW %s" % self.winid)
-        else:
-            self.browser.farmer.tell_monkey("WINDOW REDRAW %s %s" % (
-                self.winid, (" ".join(coords))))
-
     def handle(self, action, *args):
         handler = getattr(self, "handle_window_" + action, None)
         if handler is not None:
