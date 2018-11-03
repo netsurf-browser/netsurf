@@ -480,7 +480,7 @@ monkey_window_handle_redraw(int argc, char **argv)
 	NSLOG(netsurf, INFO, "Issue redraw");
 	moutf(MOUT_WINDOW, "REDRAW WIN %d START", atoi(argv[2]));
 	browser_window_redraw(gw->bw, gw->scrollx, gw->scrolly, &clip, &ctx);
-	moutf(MOUT_ERROR, "REDRAW WIN %d STOP", atoi(argv[2]));
+	moutf(MOUT_WINDOW, "REDRAW WIN %d STOP", atoi(argv[2]));
 }
 
 static void
