@@ -212,6 +212,26 @@ static void nsgtk_download_sensitivity_evaluate(GtkTreeSelection *selection)
 	nsgtk_download_sensitivity_update_buttons(sensitivity);
 }
 
+/**
+ * Wrapper to GFunc-ify gtk_tree_path_free for g_list_foreach.
+ */
+static void nsgtk_download_gfunc__gtk_tree_path_free(
+		gpointer data,
+		gpointer user_data)
+{
+	gtk_tree_path_free(data);
+}
+
+/**
+ * Wrapper to GFunc-ify g_free for g_list_foreach.
+ */
+static void nsgtk_download_gfunc__g_free(
+		gpointer data,
+		gpointer user_data)
+{
+	g_free(data);
+}
+
 static void nsgtk_download_do(nsgtk_download_selection_action action)
 {
 	GList *rows, *dls = NULL;
@@ -235,8 +255,8 @@ static void nsgtk_download_do(nsgtk_download_selection_action action)
 
 			rows = rows->next;
 		}
-		g_list_foreach(rows, (GFunc)gtk_tree_path_free, NULL);
-		g_list_foreach(rows, (GFunc)g_free, NULL);
+		g_list_foreach(rows, nsgtk_download_gfunc__gtk_tree_path_free, NULL);
+		g_list_foreach(rows, nsgtk_download_gfunc__g_free, NULL);
 		g_list_free(rows);
 	} else
 		dls = g_list_copy(nsgtk_downloads_list);
