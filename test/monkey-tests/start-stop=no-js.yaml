@@ -1,0 +1,8 @@
+title: start and stop browser without JS
+group: basic
+steps:
+- action: launch
+  args:
+  - enable_javascript=0
+- action: quit
+
