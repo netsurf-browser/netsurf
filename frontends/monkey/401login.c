@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "monkey/output.h"
 #include "monkey/401login.h"
 
 typedef struct monkey401 {
@@ -34,12 +35,16 @@ typedef struct monkey401 {
 static monkey401_t *m4_ring = NULL;
 static uint32_t m4_ctr = 0;
 
-nserror gui_401login_open(nsurl *url, const char *realm,
-		const char *username, const char *password,
-		nserror (*cb)(const char *username,
+
+nserror
+gui_401login_open(nsurl *url,
+		  const char *realm,
+		  const char *username,
+		  const char *password,
+		  nserror (*cb)(const char *username,
 				const char *password,
 				void *pw),
-		void *cbpw)
+		  void *cbpw)
 {
 	monkey401_t *m4t = calloc(sizeof(*m4t), 1);
 	if (m4t == NULL) {
@@ -51,7 +56,7 @@ nserror gui_401login_open(nsurl *url, const char *realm,
   
 	RING_INSERT(m4_ring, m4t);
   
-	fprintf(stdout, "401LOGIN OPEN M4 %u URL %s REALM %s\n",
+	moutf(MOUT_LOGIN, "OPEN LWIN %u URL %s REALM %s",
 		m4t->num, nsurl_access(url), realm);
 
 	return NSERROR_OK;

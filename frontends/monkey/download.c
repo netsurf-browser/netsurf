@@ -25,6 +25,7 @@
 #include "netsurf/download.h"
 #include "desktop/download.h"
 
+#include "monkey/output.h"
 #include "monkey/browser.h"
 
 static uint32_t dwin_ctr = 0;
@@ -51,8 +52,8 @@ gui_download_window_create(download_context *ctx,
   
 	RING_INSERT(dw_ring, ret);
   
-	fprintf(stdout, "DOWNLOAD_WINDOW CREATE DWIN %u WIN %u\n", 
-		ret->dwin_num, parent->win_num);
+	moutf(MOUT_DOWNLOAD, "CREATE DWIN %u WIN %u",
+	      ret->dwin_num, parent->win_num);
   
 	return ret;
 }
@@ -61,7 +62,7 @@ static nserror
 gui_download_window_data(struct gui_download_window *dw, 
                          const char *data, unsigned int size)
 {
-	fprintf(stdout, "DOWNLOAD_WINDOW DATA DWIN %u SIZE %u DATA %s\n",
+	moutf(MOUT_DOWNLOAD, "DATA DWIN %u SIZE %u DATA %s",
 		dw->dwin_num, size, data);
 	return NSERROR_OK;
 }
@@ -70,15 +71,13 @@ static void
 gui_download_window_error(struct gui_download_window *dw,
                           const char *error_msg)
 {
-	fprintf(stdout, "DOWNLOAD_WINDOW ERROR DWIN %u ERROR %s\n",
-		dw->dwin_num, error_msg);
+	moutf(MOUT_DOWNLOAD, "ERROR DWIN %u ERROR %s", dw->dwin_num, error_msg);
 }
 
 static void
 gui_download_window_done(struct gui_download_window *dw)
 {
-	fprintf(stdout, "DOWNLOAD_WINDOW DONE DWIN %u\n",
-		dw->dwin_num);
+	moutf(MOUT_DOWNLOAD, "DONE DWIN %u", dw->dwin_num);
 	RING_REMOVE(dw_ring, dw);
 	free(dw);
 }

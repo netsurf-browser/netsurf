@@ -37,6 +37,7 @@
 #include "netsurf/cookie_db.h"
 #include "content/fetch.h"
 
+#include "monkey/output.h"
 #include "monkey/dispatch.h"
 #include "monkey/browser.h"
 #include "monkey/cert.h"
@@ -66,7 +67,7 @@ static bool monkey_done = false;
  */
 static void die(const char * const error)
 {
-	fprintf(stderr, "DIE %s\n", error);
+	moutf(MOUT_DIE, "%s", error);
 	exit(EXIT_FAILURE);
 }
 
@@ -199,7 +200,7 @@ static void monkey_quit(void)
 
 static nserror gui_launch_url(struct nsurl *url)
 {
-	fprintf(stdout, "GENERIC LAUNCH URL %s\n", nsurl_access(url));
+	moutf(MOUT_GENERIC, "LAUNCH URL %s", nsurl_access(url));
 	return NSERROR_OK;
 }
 
@@ -279,7 +280,7 @@ static void monkey_run(void)
 		switch (schedtm) {
 		case -1:
 			NSLOG(netsurf, INFO, "Iterate blocking");
-			fprintf(stdout, "GENERIC POLL BLOCKING\n");
+			moutf(MOUT_GENERIC, "POLL BLOCKING");
 			timeout = NULL;
 			break;
 
@@ -292,7 +293,7 @@ static void monkey_run(void)
 
 		default:
 			NSLOG(netsurf, INFO, "Iterate non-blocking");
-			fprintf(stdout, "GENERIC POLL TIMED %d\n", schedtm);
+			moutf(MOUT_GENERIC, "POLL TIMED %d", schedtm);
 			tv.tv_sec = schedtm / 1000; /* miliseconds to seconds */
 			tv.tv_usec = (schedtm % 1000) * 1000; /* remainder to microseconds */
 			timeout = &tv;
@@ -392,14 +393,14 @@ main(int argc, char **argv)
 		die("options handler failed to register");
 	}
 
-	fprintf(stdout, "GENERIC STARTED\n");
+	moutf(MOUT_GENERIC, "STARTED");
 	monkey_run();
 
-	fprintf(stdout, "GENERIC CLOSING_DOWN\n");
+	moutf(MOUT_GENERIC, "CLOSING_DOWN");
 	monkey_kill_browser_windows();
 
 	netsurf_exit();
-	fprintf(stdout, "GENERIC FINISHED\n");
+	moutf(MOUT_GENERIC, "FINISHED");
 
 	/* finalise options */
 	nsoption_finalise(nsoptions, nsoptions_default);

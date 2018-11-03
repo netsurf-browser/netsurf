@@ -23,6 +23,7 @@
 #include "utils/errors.h"
 #include "netsurf/bitmap.h"
 
+#include "monkey/output.h"
 #include "monkey/bitmap.h"
 
 struct bitmap {
@@ -127,7 +128,7 @@ static int bitmap_get_height(void *bitmap)
 static nserror bitmap_render(struct bitmap *bitmap,
 			     struct hlcache_handle *content)
 {
-	fprintf(stdout, "GENERIC BITMAP RENDER\n");
+	moutf(MOUT_GENERIC, "BITMAP RENDER");
 	return NSERROR_OK;
 }
 

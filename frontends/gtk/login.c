@@ -258,12 +258,15 @@ create_login_window(nsurl *url,
 
 
 /* exported function documented in gtk/login.h */
-nserror gui_401login_open(nsurl *url, const char *realm,
-		const char *username, const char *password,
-		nserror (*cb)(const char *username,
+nserror
+gui_401login_open(nsurl *url,
+		  const char *realm,
+		  const char *username,
+		  const char *password,
+		  nserror (*cb)(const char *username,
 				const char *password,
 				void *pw),
-		void *cbpw)
+		  void *cbpw)
 {
 	lwc_string *host;
 	nserror res;

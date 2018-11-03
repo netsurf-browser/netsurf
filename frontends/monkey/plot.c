@@ -22,6 +22,8 @@
 #include "utils/errors.h"
 #include "netsurf/plotters.h"
 
+#include "monkey/output.h"
+
 /**
  * \brief Sets a clip rectangle for subsequent plot operations.
  *
@@ -33,8 +35,7 @@
 static nserror
 monkey_plot_clip(const struct redraw_context *ctx, const struct rect *clip)
 {
-	fprintf(stdout,
-		"PLOT CLIP X0 %d Y0 %d X1 %d Y1 %d\n",
+	moutf(MOUT_PLOT, "CLIP X0 %d Y0 %d X1 %d Y1 %d",
 		clip->x0, clip->y0, clip->x1, clip->y1);
 	return NSERROR_OK;
 }
@@ -61,9 +62,8 @@ monkey_plot_arc(const struct redraw_context *ctx,
 		const plot_style_t *style,
 		int x, int y, int radius, int angle1, int angle2)
 {
-	fprintf(stdout,
-		"PLOT ARC X %d Y %d RADIUS %d ANGLE1 %d ANGLE2 %d\n",
-		x, y, radius, angle1, angle2);
+	moutf(MOUT_PLOT, "ARC X %d Y %d RADIUS %d ANGLE1 %d ANGLE2 %d",
+	      x, y, radius, angle1, angle2);
 	return NSERROR_OK;
 }
 
@@ -85,9 +85,7 @@ monkey_plot_disc(const struct redraw_context *ctx,
 		 const plot_style_t *style,
 		 int x, int y, int radius)
 {
-	fprintf(stdout,
-		"PLOT DISC X %d Y %d RADIUS %d\n",
-		x, y, radius);
+	moutf(MOUT_PLOT, "DISC X %d Y %d RADIUS %d", x, y, radius);
 	return NSERROR_OK;
 }
 
@@ -108,8 +106,7 @@ monkey_plot_line(const struct redraw_context *ctx,
 		 const plot_style_t *style,
 		 const struct rect *line)
 {
-	fprintf(stdout,
-		"PLOT LINE X0 %d Y0 %d X1 %d Y1 %d\n",
+	moutf(MOUT_PLOT, "LINE X0 %d Y0 %d X1 %d Y1 %d",
 		line->x0, line->y0, line->x1, line->y1);
 	return NSERROR_OK;
 }
@@ -133,8 +130,7 @@ monkey_plot_rectangle(const struct redraw_context *ctx,
 		      const plot_style_t *style,
 		      const struct rect *rect)
 {
-	fprintf(stdout,
-		"PLOT RECT X0 %d Y0 %d X1 %d Y1 %d\n",
+	moutf(MOUT_PLOT, "RECT X0 %d Y0 %d X1 %d Y1 %d",
 		rect->x0, rect->y0, rect->x1, rect->y1);
 	return NSERROR_OK;
 }
@@ -160,9 +156,7 @@ monkey_plot_polygon(const struct redraw_context *ctx,
 		    const int *p,
 		    unsigned int n)
 {
-	fprintf(stdout,
-		"PLOT POLYGON VERTICIES %d\n",
-		n);
+	moutf(MOUT_PLOT, "POLYGON VERTICIES %d", n);
 	return NSERROR_OK;
 }
 
@@ -187,8 +181,7 @@ monkey_plot_path(const struct redraw_context *ctx,
 		 unsigned int n,
 		 const float transform[6])
 {
-	fprintf(stdout,
-		"PLOT PATH VERTICIES %d WIDTH %f\n",
+	moutf(MOUT_PLOT, "PATH VERTICIES %d WIDTH %f",
 		n, plot_style_fixed_to_float(pstyle->stroke_width));
 	return NSERROR_OK;
 }
@@ -227,9 +220,8 @@ monkey_plot_bitmap(const struct redraw_context *ctx,
 		   colour bg,
 		   bitmap_flags_t flags)
 {
-	fprintf(stdout,
-		"PLOT BITMAP X %d Y %d WIDTH %d HEIGHT %d\n",
-		x, y, width, height);
+	moutf(MOUT_PLOT, "BITMAP X %d Y %d WIDTH %d HEIGHT %d",
+	      x, y, width, height);
 	return NSERROR_OK;
 }
 
@@ -253,9 +245,7 @@ monkey_plot_text(const struct redraw_context *ctx,
 		 const char *text,
 		 size_t length)
 {
-	fprintf(stdout,
-		"PLOT TEXT X %d Y %d STR %*s\n",
-		x, y, (int)length, text);
+	moutf(MOUT_PLOT, "TEXT X %d Y %d STR %*s\n", x, y, (int)length, text);
 	return NSERROR_OK;
 }
 

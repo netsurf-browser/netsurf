@@ -22,6 +22,7 @@
 #include "utils/ring.h"
 #include "utils/nsurl.h"
 
+#include "monkey/output.h"
 #include "monkey/cert.h"
 
 typedef struct monkey_cert {
@@ -36,9 +37,10 @@ static monkey_cert_t *cert_ring = NULL;
 static uint32_t cert_ctr = 0;
 
 nserror
-gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs, 
-                unsigned long num, nserror (*cb)(bool proceed, void *pw),
-                void *cbpw)
+gui_cert_verify(nsurl *url,
+		const struct ssl_cert_info *certs,
+		unsigned long num, nserror (*cb)(bool proceed, void *pw),
+		void *cbpw)
 {
 	monkey_cert_t *m4t = calloc(sizeof(*m4t), 1);
 	if (m4t == NULL) {
@@ -47,13 +49,11 @@ gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 	m4t->cb = cb;
 	m4t->pw = cbpw;
 	m4t->num = cert_ctr++;
-  
+
 	RING_INSERT(cert_ring, m4t);
-  
-	fprintf(stdout, "SSLCERT VERIFY CERT %u URL %s\n",
-		m4t->num, nsurl_access(url));
+
+	moutf(MOUT_SSLCERT, "VERIFY CWIN %u URL %s",
+	      m4t->num, nsurl_access(url));
 
 	return NSERROR_OK;
 }
-
-
