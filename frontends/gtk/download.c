@@ -89,7 +89,9 @@ struct gui_download_window {
 	GError *error;
 };
 
-typedef	void (*nsgtk_download_selection_action)(struct gui_download_window *dl);
+typedef	void (*nsgtk_download_selection_action)(
+		struct gui_download_window *dl,
+		void *user_data);
 
 static GtkWindow *nsgtk_download_window, *nsgtk_download_parent;
 static GtkProgressBar *nsgtk_download_progress_bar;
@@ -408,7 +410,9 @@ static gboolean nsgtk_download_update(gboolean force_update)
 		return TRUE;
 }
 
-static void nsgtk_download_store_clear_item(struct gui_download_window *dl)
+static void nsgtk_download_store_clear_item(
+		struct gui_download_window *dl,
+		void *user_data)
 {
 	if (dl->sensitivity & NSGTK_DOWNLOAD_CLEAR) {
 		nsgtk_downloads_list = g_list_remove(nsgtk_downloads_list, dl);
@@ -465,7 +469,9 @@ static void nsgtk_download_change_status (
 	}
 }
 
-static void nsgtk_download_store_cancel_item (struct gui_download_window *dl)
+static void nsgtk_download_store_cancel_item (
+		struct gui_download_window *dl,
+		void *user_data)
 {
 	if (dl->sensitivity & NSGTK_DOWNLOAD_CANCEL) {
 		dl->speed = 0;
@@ -871,7 +877,7 @@ static void gui_download_window_done(struct gui_download_window *dw)
 	nsgtk_download_change_status(dw, NSGTK_DOWNLOAD_COMPLETE);
 
 	if (nsoption_bool(downloads_clear))
-		nsgtk_download_store_clear_item(dw);
+		nsgtk_download_store_clear_item(dw, NULL);
 	else
 		nsgtk_download_update(TRUE);
 }
