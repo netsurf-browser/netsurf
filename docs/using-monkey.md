@@ -147,6 +147,21 @@ Commands
     This will send a `DESTROY` message back.
 
 
+### SSL certificate commands
+
+*   `SSLCERT GO` _%id%_
+
+    Cause a ssl certificate to be accepted and fetch to proceed.
+
+    This will send a `DESTROY` message back.
+
+*   `SSLCERT DESTROY` _%id%_
+
+    Cause a ssl certificate to be rejected and fetch to fail
+
+    This will send a `DESTROY` message back.
+
+
 Responses
 ---------
 
@@ -353,11 +368,14 @@ Responses
     The core asked Monkey to say whether or not a given SSL
     certificate is OK.
 
-> TODO: Implement the rest of the SSL certificat verification behaviour
+*   `LOGIN DESTROY CWIN` _%id%_
+
+    The given certificate window has been destroyed and should no longer be sent
+    commands otherwise undefined behaviour may ensue.
 
 ### 401 Login messages
 
-*   `LOGIN OPEN LWIN` _%id%_ `URL` _%url%_ USER _%str%_ PASSWD _%str%_ `REALM` _%str%_
+*   `LOGIN OPEN LWIN` _%id%_ `URL` _%url%_
 
     The core asked Monkey to ask for identification for the given URL.
 

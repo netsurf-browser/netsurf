@@ -18,22 +18,24 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "utils/ring.h"
 #include "utils/nsurl.h"
+#include "content/urldb.h"
 
 #include "monkey/output.h"
 #include "monkey/cert.h"
 
-typedef struct monkey_cert {
+struct monkey_cert {
 	struct monkey_cert *r_next, *r_prev;
 	uint32_t num;
-	char *host; /* Ignore */
 	nserror (*cb)(bool,void*);
-	void *pw;
-} monkey_cert_t;
+	void *cbpw;
+	nsurl *url;
+};
 
-static monkey_cert_t *cert_ring = NULL;
+static struct monkey_cert *cert_ring = NULL;
 static uint32_t cert_ctr = 0;
 
 nserror
@@ -42,18 +44,106 @@ gui_cert_verify(nsurl *url,
 		unsigned long num, nserror (*cb)(bool proceed, void *pw),
 		void *cbpw)
 {
-	monkey_cert_t *m4t = calloc(sizeof(*m4t), 1);
-	if (m4t == NULL) {
+	struct monkey_cert *mcrt_ctx;
+	
+	mcrt_ctx = calloc(sizeof(*mcrt_ctx), 1);
+	if (mcrt_ctx == NULL) {
 		return NSERROR_NOMEM;
 	}
-	m4t->cb = cb;
-	m4t->pw = cbpw;
-	m4t->num = cert_ctr++;
 
-	RING_INSERT(cert_ring, m4t);
+	mcrt_ctx->cb = cb;
+	mcrt_ctx->cbpw = cbpw;
+	mcrt_ctx->num = cert_ctr++;
+	mcrt_ctx->url = nsurl_ref(url);
+	
+	RING_INSERT(cert_ring, mcrt_ctx);
 
 	moutf(MOUT_SSLCERT, "VERIFY CWIN %u URL %s",
-	      m4t->num, nsurl_access(url));
+	      mcrt_ctx->num, nsurl_access(url));
 
 	return NSERROR_OK;
+}
+
+
+static struct monkey_cert *
+monkey_find_sslcert_by_num(uint32_t sslcert_num)
+{
+	struct monkey_cert *ret = NULL;
+
+	RING_ITERATE_START(struct monkey_cert, cert_ring, c_ring) {
+		if (c_ring->num == sslcert_num) {
+			ret = c_ring;
+			RING_ITERATE_STOP(cert_ring, c_ring);
+		}
+	} RING_ITERATE_END(cert_ring, c_ring);
+
+	return ret;
+}
+
+static void free_sslcert_context(struct monkey_cert *mcrt_ctx) {
+	moutf(MOUT_SSLCERT, "DESTROY CWIN %u", mcrt_ctx->num);
+	RING_REMOVE(cert_ring, mcrt_ctx);
+	if (mcrt_ctx->url) {
+		nsurl_unref(mcrt_ctx->url);
+	}
+	free(mcrt_ctx);
+}
+
+static void
+monkey_sslcert_handle_go(int argc, char **argv)
+{
+	struct monkey_cert *mcrt_ctx;
+
+	if (argc != 3) {
+		moutf(MOUT_ERROR, "SSLCERT GO ARGS BAD");
+		return;
+	}
+
+	mcrt_ctx = monkey_find_sslcert_by_num(atoi(argv[2]));
+	if (mcrt_ctx == NULL) {
+		moutf(MOUT_ERROR, "SSLCERT NUM BAD");
+		return;
+	}
+
+	urldb_set_cert_permissions(mcrt_ctx->url, true);
+
+	mcrt_ctx->cb(true, mcrt_ctx->cbpw);
+
+	free_sslcert_context(mcrt_ctx);
+}
+
+static void
+monkey_sslcert_handle_destroy(int argc, char **argv)
+{
+	struct monkey_cert *mcrt_ctx;
+
+	if (argc != 3) {
+		moutf(MOUT_ERROR, "SSLCERT DESTROY ARGS BAD");
+		return;
+	}
+
+	mcrt_ctx = monkey_find_sslcert_by_num(atoi(argv[2]));
+	if (mcrt_ctx == NULL) {
+		moutf(MOUT_ERROR, "SSLCERT NUM BAD");
+		return;
+	}
+
+	mcrt_ctx->cb(false, mcrt_ctx->cbpw);
+
+	free_sslcert_context(mcrt_ctx);
+}
+
+void
+monkey_sslcert_handle_command(int argc, char **argv)
+{
+	if (argc == 1)
+		return;
+
+	if (strcmp(argv[1], "DESTROY") == 0) {
+		monkey_sslcert_handle_destroy(argc, argv);
+	} else if (strcmp(argv[1], "GO") == 0) {
+		monkey_sslcert_handle_go(argc, argv);
+	} else {
+		moutf(MOUT_ERROR, "SSLCERT COMMAND UNKNOWN %s", argv[1]);
+	}
 }

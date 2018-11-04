@@ -16,13 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NETSURF_MONKEY_CERT_H_
-#define _NETSURF_MONKEY_CERT_H_
+#ifndef NETSURF_MONKEY_CERT_H
+#define NETSURF_MONKEY_CERT_H
 
 struct ssl_cert_info;
 
 nserror gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
                 unsigned long num, nserror (*cb)(bool proceed, void *pw),
                 void *cbpw);
+
+
+void monkey_sslcert_handle_command(int argc, char **argv);
 
 #endif

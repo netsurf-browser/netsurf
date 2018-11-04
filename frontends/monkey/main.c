@@ -398,6 +398,12 @@ main(int argc, char **argv)
 		die("login handler failed to register");
 	}
 
+	ret = monkey_register_handler("SSLCERT", monkey_sslcert_handle_command);
+	if (ret != NSERROR_OK) {
+		die("sslcert handler failed to register");
+	}
+	
+
 	moutf(MOUT_GENERIC, "STARTED");
 	monkey_run();
 
