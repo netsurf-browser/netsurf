@@ -60,7 +60,6 @@ def run_test_step_action_launch(ctx, step):
     ctx['browser'] = Browser(monkey_cmd=[ctx["monkey"]], quiet=True)
     assert_browser(ctx)
     ctx['windows'] = dict()
-    ctx['timers'] = dict()
 
 def run_test_step_action_window_new(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
@@ -182,7 +181,6 @@ def run_test_step_action_quit(ctx, step):
     assert_browser(ctx)
     browser = ctx.pop('browser')
     windows = ctx.pop('windows')
-    timers = ctx.pop('timers')
     assert(browser.quit_and_wait())
 
 step_handlers = {
@@ -205,6 +203,7 @@ def run_test_step(ctx, step):
 
 def walk_test_plan(ctx, plan):
     ctx["depth"] = 0
+    ctx["timers"] = dict()
     for step in plan["steps"]:
         run_test_step(ctx, step)
 
