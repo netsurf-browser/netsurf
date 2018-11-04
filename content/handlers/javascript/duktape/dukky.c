@@ -627,12 +627,6 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 	return (jsobject *)ctx;
 }
 
-static duk_ret_t eval_top_string(duk_context *ctx, void *udata)
-{
-	duk_eval(ctx);
-	return 0;
-}
-
 duk_bool_t dukky_check_timeout(void *udata)
 {
 #define JS_EXEC_TIMEOUT_MS 10000 /* 10 seconds */
@@ -649,32 +643,66 @@ duk_bool_t dukky_check_timeout(void *udata)
 			now > (ctx->exec_start_time + JS_EXEC_TIMEOUT_MS);
 }
 
+static duk_ret_t dukky_safe_get(duk_context *ctx, void *udata)
+{
+	duk_get_prop_string(ctx, 0, udata);
+	return 1;
+}
+
 bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 {
 	assert(ctx);
 	if (txt == NULL || txtlen == 0) return false;
 	duk_set_top(CTX, 0);
-	duk_push_lstring(CTX, txt, txtlen);
 
 	(void) nsu_getmonotonic_ms(&ctx->exec_start_time);
-	if (duk_safe_call(CTX, eval_top_string, NULL, 1, 1) == DUK_EXEC_ERROR) {
-		duk_get_prop_string(CTX, 0, "name");
-		duk_get_prop_string(CTX, 0, "message");
-		duk_get_prop_string(CTX, 0, "fileName");
-		duk_get_prop_string(CTX, 0, "lineNumber");
-		duk_get_prop_string(CTX, 0, "stack");
-		NSLOG(netsurf, INFO, "Uncaught error in JS: %s: %s",
-		      duk_safe_to_string(CTX, 1), duk_safe_to_string(CTX, 2));
-		NSLOG(netsurf, INFO, "              was at: %s line %s",
-		      duk_safe_to_string(CTX, 3), duk_safe_to_string(CTX, 4));
-		NSLOG(netsurf, INFO, "         Stack trace: %s",
-		      duk_safe_to_string(CTX, 5));
-		return false;
+	duk_push_string(CTX, "?unknown source?");
+	if (duk_pcompile_lstring_filename(CTX, DUK_COMPILE_EVAL, txt, txtlen) != 0) {
+		NSLOG(netsurf, WARN, "Failed to compile JavaScript input");
+		goto handle_error;
 	}
+
+	if (duk_pcall(CTX, 0/*nargs*/) == DUK_EXEC_ERROR) {
+		NSLOG(netsurf, WARN, "Failed to execute JavaScript");
+		goto handle_error;
+	}
+
 	if (duk_get_top(CTX) == 0) duk_push_boolean(CTX, false);
 	NSLOG(netsurf, INFO, "Returning %s",
 	      duk_get_boolean(CTX, 0) ? "true" : "false");
 	return duk_get_boolean(CTX, 0);
+
+handle_error:
+	if (!duk_is_error(CTX, 0)) {
+		NSLOG(netsurf, INFO, "Uncaught non-Error derived error in JS: %s", duk_safe_to_string(CTX, 0));
+	} else {
+#define GETTER(what)						\
+		if (duk_has_prop_string(CTX, 0, what)) {	\
+			NSLOG(netsurf, WARN, "Fetching " what); \
+			duk_dup(CTX, 0);			\
+			if (duk_safe_call(CTX, dukky_safe_get, (void *)what, 1, 1) != DUK_EXEC_SUCCESS) { \
+				NSLOG(netsurf, WARN, "Error fetching " what ": %s", duk_safe_to_string(CTX, -1)); \
+			} else { \
+				NSLOG(netsurf, WARN, "Success fetching " what);	\
+			}						\
+		} else {						\
+			NSLOG(netsurf, WARN, "Faking " what);		\
+			duk_push_string(CTX, "?" what "?");		\
+		}
+		GETTER("name");
+		GETTER("message");
+		GETTER("fileName");
+		GETTER("lineNumber");
+		GETTER("stack");
+		NSLOG(netsurf, INFO, "Uncaught error in JS: %s: %s",
+		      duk_safe_to_string(CTX, 1), duk_safe_to_string(CTX, 2));
+		NSLOG(netsurf, INFO, "              was at: %s line %s",
+		duk_safe_to_string(CTX, 3), duk_safe_to_string(CTX, 4));
+		NSLOG(netsurf, INFO, "         Stack trace: %s",
+		      duk_safe_to_string(CTX, 5));
+#undef GETTER
+	}
+	return false;
 }
 
 /*** New style event handling ***/
