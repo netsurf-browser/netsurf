@@ -82,7 +82,9 @@ def run_test_step_action_window_close(ctx, step):
 def run_test_step_action_navigate(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     assert_browser(ctx)
+    assert(step.get('url') is not None)
     tag = step['window']
+    print(get_indent(ctx) + "        " + tag + " --> " + step['url'])
     win = ctx['windows'].get(tag)
     assert(win is not None)
     win.go(step['url'])
