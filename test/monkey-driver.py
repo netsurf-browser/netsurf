@@ -60,7 +60,7 @@ def conds_met(ctx, conds):
         assert(status == "complete") # TODO: Add more status support?
         if window == "*all*":
             for win in ctx['windows'].items():
-                if win.throbbing:
+                if win[1].throbbing:
                     return False
         else:
             win = ctx['windows'][window]
