@@ -355,10 +355,28 @@ Responses
 
 *   `LOGIN OPEN LWIN` _%id%_ `URL` _%url%_ USER _%str%_ PASSWD _%str%_ `REALM` _%str%_
 
-    The core asked Monkey to ask for identification for the named
-    realm at the given URL.
+    The core asked Monkey to ask for identification for the given URL.
 
-> TODO: Implement support to control the 401LOGIN process
+    This will be *immediately* followed by:
+
+*   `LOGIN USER LWIN` _%id%_ `STR` _%str%_
+
+    The given login window has a default username of the given string
+
+    This will be *immediately* followed by:
+
+*   `LOGIN PASS LWIN` _%id%_ `STR` _%str%_
+
+    The given login window has a default password of the given string
+
+    This will be *immediately* followed by:
+
+*   `LOGIN REALM LWIN` _%id%_ `STR` _%str%_
+
+    The given login window has a realm of the given string
+
+    Subsequent to this message, the user of monkey is at liberty to issue
+    `LOGIN` commands to control the response of the `401LOGIN` process.
 
 ### Plotter messages
 

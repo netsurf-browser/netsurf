@@ -70,8 +70,10 @@ gui_401login_open(struct nsurl *url,
 		password = "";
 	}
 
-	moutf(MOUT_LOGIN, "OPEN LWIN %u URL %s USER %s PASSWD %s REALM %s",
-	      m401_ctx->num, nsurl_access(url), username, password, realm);
+	moutf(MOUT_LOGIN, "OPEN LWIN %u URL %s", m401_ctx->num, nsurl_access(url));
+	moutf(MOUT_LOGIN, "USER LWIN %u STR %s", m401_ctx->num, username);
+	moutf(MOUT_LOGIN, "PASS LWIN %u STR %s", m401_ctx->num, password);
+	moutf(MOUT_LOGIN, "REALM LWIN %u STR %s", m401_ctx->num, realm);
 
 	return NSERROR_OK;
 }
