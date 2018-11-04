@@ -105,6 +105,32 @@ def run_test_step_action_navigate(ctx, step):
 
 def run_test_step_action_sleep_ms(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
+    conds = step['conditions']
+    sleep_time = step['time']
+    sleep = 0
+    have_repeat = False
+    if isinstance(sleep_time, str):
+        assert(ctx['repeats'].get(sleep_time) is not None)
+        repeat = ctx['repeats'].get(sleep_time)
+        sleep = repeat["i"] / 1000
+        start = repeat["start"]
+        have_repeat = True
+    else:
+        sleep = time / 1000
+        start = time.time()
+
+    while True:
+        slept = time.time() - start
+        if conds_met(ctx, conds):
+            if have_repeat:
+                ctx['repeats'][sleep_time]["loop"] = False
+            print(get_indent(ctx) + "        Condition met after {}s".format(slept))
+            break
+        elif slept > sleep:
+            print(get_indent(ctx) + "        Condition not met after {}s".format(sleep))
+            break
+        else:
+            ctx['browser'].farmer.loop(once=True)
 
 def run_test_step_action_block(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
@@ -116,10 +142,20 @@ def run_test_step_action_block(ctx, step):
 
 def run_test_step_action_repeat(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
-    ctx["depth"] += 1
-    for step in step["steps"]:
-        run_test_step(ctx, step)
-    ctx["depth"] -= 1
+    tag = step['tag']
+    assert(ctx['repeats'].get(tag) is None)
+    ctx['repeats'][tag] = {
+        "i": step["min"],
+        "step": step["step"],
+        "loop": True,
+    }
+    while ctx['repeats'][tag]["loop"]:
+        ctx['repeats'][tag]["start"] = time.time()
+        ctx["depth"] += 1
+        for s in step["steps"]:
+            run_test_step(ctx, s)
+        ctx['repeats'][tag]["i"] += ctx['repeats'][tag]["step"]
+        ctx["depth"] -= 1
 
 def run_test_step_action_plot_check(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
@@ -204,6 +240,7 @@ def run_test_step(ctx, step):
 def walk_test_plan(ctx, plan):
     ctx["depth"] = 0
     ctx["timers"] = dict()
+    ctx['repeats'] = dict()
     for step in plan["steps"]:
         run_test_step(ctx, step)
 

@@ -4,7 +4,7 @@ steps:
 - action: repeat
   min: 0
   step: 50
-  name: sleepytimer
+  tag: sleepytimer
   steps:
   - action: launch
   - action: window-new
