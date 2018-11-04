@@ -125,6 +125,7 @@ class Browser:
     def __init__(self, monkey_cmd=["./nsmonkey"], quiet=False):
         self.farmer = MonkeyFarmer(monkey_cmd=monkey_cmd, online=self.on_monkey_line, quiet=quiet)
         self.windows = {}
+        self.logins = {}
         self.current_draw_target = None
         self.started = False
         self.stopped = False
@@ -175,6 +176,19 @@ class Browser:
             else:
                 win.handle(action, *args)
 
+    def handle_LOGIN(self, action, _lwin, winid, *args):
+        if action == "OPEN":
+            new_win = LoginWindow(self, winid, *args)
+            self.logins[winid] = new_win
+        else:
+            win = self.logins.get(winid, None)
+            if win is None:
+                print("    Unknown login window id {}".format(winid))
+            else:
+                win.handle(action, *args)
+                if win.alive and win.ready:
+                    self.handle_ready_login(win)
+
     def handle_PLOT(self, *args):
         if self.current_draw_target is not None:
             self.current_draw_target.handle_plot(*args)
@@ -189,8 +203,63 @@ class Browser:
             self.farmer.loop(once=True)
         poss_wins = set(self.windows.keys()).difference(wins_known)
         return self.windows[poss_wins.pop()]
+
+    def handle_ready_login(self, lwin):
+        # Override this method to do useful stuff
+        lwin.destroy()
+
+class LoginWindow:
+    def __init__(self, browser, winid, _url, *url):
+        self.alive = True
+        self.ready = False
+        self.browser = browser
+        self.winid = winid
+        self.url = " ".join(url)
+        self.username = None
+        self.password = None
+        self.realm = None
+
+    def handle(self, action, _str="STR", *rest):
+        content = " ".join(rest)
+        if action == "USER":
+            self.username = content
+        elif action == "PASS":
+            self.password = content
+        elif action == "REALM":
+            self.realm = content
+        elif action == "DESTROY":
+            self.alive = False
+        else:
+            raise AssertionError("Unknown action {} for login window".format(action))
+        if not (self.username is None or self.password is None or self.realm is None):
+            self.ready = True
+
+    def send_username(self, username=None):
+        assert(self.alive)
+        if username is None:
+            username = self.username
+        self.browser.farmer.tell_monkey("LOGIN USERNAME {} {}".format(self.winid, username))
+
+    def send_password(self, password=None):
+        assert(self.alive)
+        if password is None:
+            password = self.password
+        self.browser.farmer.tell_monkey("LOGIN PASSWORD {} {}".format(self.winid, password))
+
+    def _wait_dead(self):
+        while self.alive:
+            self.browser.farmer.loop(once=True)
         
-                
+    def go(self):
+        assert(self.alive)
+        self.browser.farmer.tell_monkey("LOGIN GO {}".format(self.winid))
+        self._wait_dead()
+
+    def destroy(self):
+        assert(self.alive)
+        self.browser.farmer.tell_monkey("LOGIN DESTROY {}".format(self.winid))
+        self._wait_dead()
+        
 class BrowserWindow:
     def __init__(self, browser, winid, _for, coreid, _existing, otherid, _newtab, newtab, _clone, clone):
         self.alive = True
@@ -384,6 +453,24 @@ if __name__ == '__main__':
             print("{} {} -> {}".format(x,y,rest))
 
     browser.quit_and_wait()
+
+    class FooBarLogin(Browser):
+        def handle_ready_login(self, lwin):
+            lwin.send_username("foo")
+            lwin.send_password("bar")
+            lwin.go()
+
+    browser = FooBarLogin(quiet=True)
+    win = browser.new_window()
+    win.load_page("https://httpbin.org/basic-auth/foo/bar")
+    cmds = win.redraw()
+    
+    for cmd in cmds:
+        if cmd[0] == "TEXT":
+            x = cmd[2]
+            y = cmd[4]
+            rest = " ".join(cmd[6:])
+            print("{} {} -> {}".format(x,y,rest))
 
     #print("Discussion was:")
     #for line in browser.farmer.discussion:

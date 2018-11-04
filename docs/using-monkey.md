@@ -138,9 +138,13 @@ Commands
 
     Cause a login to proceed using the set credentials
 
+    This will send a `DESTROY` message back.
+
 *   `LOGIN DESTROY` _%id%_
 
     Cause a login to fail
+
+    This will send a `DESTROY` message back.
 
 
 Responses
@@ -377,6 +381,11 @@ Responses
 
     Subsequent to this message, the user of monkey is at liberty to issue
     `LOGIN` commands to control the response of the `401LOGIN` process.
+
+*   `LOGIN DESTROY LWIN` _%id%_
+
+    The given login window has been destroyed and should no longer be sent
+    commands otherwise undefined behaviour may ensue.
 
 ### Plotter messages
 

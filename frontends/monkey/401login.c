@@ -94,6 +94,7 @@ monkey_find_login_by_num(uint32_t login_num)
 }
 
 static void free_login_context(struct monkey401 *m401_ctx) {
+	moutf(MOUT_LOGIN, "DESTROY LWIN %u", m401_ctx->num);
 	RING_REMOVE(m401_ring, m401_ctx);
 	if (m401_ctx->username != NULL) {
 		free(m401_ctx->username);
@@ -121,7 +122,7 @@ monkey_login_handle_go(int argc, char **argv)
 	}
 
 	m401_ctx->cb(m401_ctx->username, m401_ctx->password, m401_ctx->cbpw);
-
+	
 	free_login_context(m401_ctx);
 }
 
