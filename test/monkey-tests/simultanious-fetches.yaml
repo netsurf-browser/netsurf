@@ -25,7 +25,7 @@ steps:
   url: http://www.arstechnica.co.uk/
 - action: block
   conditions:
-  - window: *all*
+  - window: "*all*"
     status: complete
 - action: window-close
   window: win1
