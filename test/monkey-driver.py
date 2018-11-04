@@ -52,7 +52,22 @@ def print_test_plan_info(ctx, plan):
 def assert_browser(ctx):
     assert(ctx['browser'].started)
     assert(not ctx['browser'].stopped)
-    
+
+def conds_met(ctx, conds):
+    for cond in conds:
+        status = cond['status']
+        window = cond['window']
+        assert(status == "complete") # TODO: Add more status support?
+        if window == "*all*":
+            for win in ctx['windows'].items():
+                if win.throbbing:
+                    return False
+        else:
+            win = ctx['windows'][window]
+            if win.throbbing:
+                return False
+    return True
+
 def run_test_step_action_launch(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     assert(ctx.get('browser') is None)
@@ -95,23 +110,8 @@ def run_test_step_action_block(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     conds = step['conditions']
     assert_browser(ctx)
-
-    def conds_met():
-        for cond in conds:
-            status = cond['status']
-            window = cond['window']
-            assert(status == "complete") # TODO: Add more status support?
-            if window == "*all*":
-                for win in ctx['windows'].items():
-                    if win.throbbing:
-                        return False
-            else:
-                win = ctx['windows'][window]
-                if win.throbbing:
-                    return False
-        return True
     
-    while not conds_met():
+    while not conds_met(ctx, conds):
         ctx['browser'].farmer.loop(once=True)
 
 def run_test_step_action_repeat(ctx, step):
