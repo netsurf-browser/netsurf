@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import sys, getopt, yaml
+import sys, getopt, yaml, time
 
 from monkeyfarmer import Browser
 
@@ -60,6 +60,7 @@ def run_test_step_action_launch(ctx, step):
     ctx['browser'] = Browser(monkey_cmd=[ctx["monkey"]], quiet=True)
     assert_browser(ctx)
     ctx['windows'] = dict()
+    ctx['timers'] = dict()
 
 def run_test_step_action_window_new(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
@@ -143,18 +144,43 @@ def run_test_step_action_plot_check(ctx, step):
 
 def run_test_step_action_timer_start(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
+    tag = step['tag']
+    assert_browser(ctx)
+    assert(ctx['timers'].get(tag) is None)
+    ctx['timers'][tag] = {}
+    ctx['timers'][tag]["start"] = time.time()
 
 def run_test_step_action_timer_stop(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
+    timer = step['timer']
+    assert_browser(ctx)
+    assert(ctx['timers'].get(timer) is not None)
+    taken = time.time() - ctx['timers'][timer]["start"]
+    print(get_indent(ctx) + "        " + timer + " took: " + str(taken) + "s")
+    ctx['timers'][timer]["taken"] = taken
 
 def run_test_step_action_timer_check(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
+    condition = step["condition"].split()
+    assert(len(condition) == 3)
+    timer1 = ctx['timers'].get(condition[0])
+    timer2 = ctx['timers'].get(condition[2])
+    assert(timer1 is not None)
+    assert(timer2 is not None)
+    assert(timer1["taken"] is not None)
+    assert(timer2["taken"] is not None)
+    assert(condition[1] in ('<', '>'))
+    if condition[1] == '<':
+        assert(timer1["taken"] < timer2["taken"])
+    elif condition[1] == '>':
+        assert(timer1["taken"] > timer2["taken"])
 
 def run_test_step_action_quit(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     assert_browser(ctx)
     browser = ctx.pop('browser')
     windows = ctx.pop('windows')
+    timers = ctx.pop('timers')
     assert(browser.quit_and_wait())
 
 step_handlers = {
