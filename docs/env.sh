@@ -36,7 +36,10 @@ fi
 # apt get commandline to install necessary dev packages
 ns-apt-get-install()
 {
-    if /usr/bin/apt-cache show libssl1.0-dev >/dev/null 2>&1; then
+    LIBCURL_OPENSSL_CONFLICTS="$(/usr/bin/apt-cache show libcurl4-openssl-dev | grep Conflicts | grep -o libssl1.0-dev)"
+    if [ "x${LIBCURL_OPENSSL_CONFLICTS}" != "x" ]; then
+        NS_DEV_DEB="${NS_DEV_DEB} libssl-dev"
+    elif /usr/bin/apt-cache show libssl1.0-dev >/dev/null 2>&1; then
         NS_DEV_DEB="${NS_DEV_DEB} libssl1.0-dev"
     else
         NS_DEV_DEB="${NS_DEV_DEB} libssl-dev"
