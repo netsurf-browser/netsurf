@@ -658,12 +658,12 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 	(void) nsu_getmonotonic_ms(&ctx->exec_start_time);
 	duk_push_string(CTX, "?unknown source?");
 	if (duk_pcompile_lstring_filename(CTX, DUK_COMPILE_EVAL, txt, txtlen) != 0) {
-		NSLOG(netsurf, WARN, "Failed to compile JavaScript input");
+		NSLOG(netsurf, WARNING, "Failed to compile JavaScript input");
 		goto handle_error;
 	}
 
 	if (duk_pcall(CTX, 0/*nargs*/) == DUK_EXEC_ERROR) {
-		NSLOG(netsurf, WARN, "Failed to execute JavaScript");
+		NSLOG(netsurf, WARNING, "Failed to execute JavaScript");
 		goto handle_error;
 	}
 
@@ -678,15 +678,15 @@ handle_error:
 	} else {
 #define GETTER(what)						\
 		if (duk_has_prop_string(CTX, 0, what)) {	\
-			NSLOG(netsurf, WARN, "Fetching " what); \
+			NSLOG(netsurf, WARNING, "Fetching " what); \
 			duk_dup(CTX, 0);			\
 			if (duk_safe_call(CTX, dukky_safe_get, (void *)what, 1, 1) != DUK_EXEC_SUCCESS) { \
-				NSLOG(netsurf, WARN, "Error fetching " what ": %s", duk_safe_to_string(CTX, -1)); \
+				NSLOG(netsurf, WARNING, "Error fetching " what ": %s", duk_safe_to_string(CTX, -1)); \
 			} else { \
-				NSLOG(netsurf, WARN, "Success fetching " what);	\
+				NSLOG(netsurf, WARNING, "Success fetching " what);	\
 			}						\
 		} else {						\
-			NSLOG(netsurf, WARN, "Faking " what);		\
+			NSLOG(netsurf, WARNING, "Faking " what);		\
 			duk_push_string(CTX, "?" what "?");		\
 		}
 		GETTER("name");
