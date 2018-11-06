@@ -96,7 +96,9 @@ const char *filename_request(void)
 	else
 		dir->high_used |= (1 << (i - 32));
 
-	sprintf(filename_buffer, "%s%.2i", dir->prefix, i);
+	i = i % 99;
+
+	snprintf(filename_buffer, sizeof(filename_buffer), "%s%.2i", dir->prefix, i);
 
 	return filename_buffer;
 }
