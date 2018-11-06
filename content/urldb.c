@@ -2969,7 +2969,7 @@ nserror urldb_load(const char *filename)
 		for (i = 0; i < urls; i++) {
 			struct path_data *p = NULL;
 			char scheme[64], ports[10];
-			char url[64 + 3 + 256 + 6 + 4096 + 1];
+			char url[64 + 3 + 256 + 6 + 4096 + 1 + 1];
 			unsigned int port;
 			bool is_file = false;
 			nsurl *nsurl;
