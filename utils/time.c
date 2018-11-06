@@ -109,7 +109,7 @@ static const char * const months[NSC_TIME_MONTH__COUNT] = {
 /* exported interface documented in utils/time.h */
 const char *rfc1123_date(time_t t)
 {
-	static char ret[30];
+	static char ret[31];
 
 	struct tm *tm = gmtime(&t);
 
