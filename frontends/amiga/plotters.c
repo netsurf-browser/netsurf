@@ -400,10 +400,10 @@ void ami_plot_clear_bbox(struct RastPort *rp, struct IBox *bbox)
 
 static void ami_arc_gfxlib(struct RastPort *rp, int x, int y, int radius, int angle1, int angle2)
 {
-	double angle1_r = (double)(angle1) * (M_PI / 180.0);
-	double angle2_r = (double)(angle2) * (M_PI / 180.0);
-	double angle, b, c;
-	double step = 0.1; //(angle2_r - angle1_r) / ((angle2_r - angle1_r) * (double)radius);
+	float angle1_r = (float)(angle1) * (M_PI / 180.0);
+	float angle2_r = (float)(angle2) * (M_PI / 180.0);
+	float angle, b, c;
+	float step = 0.1; //(angle2_r - angle1_r) / ((angle2_r - angle1_r) * (float)radius);
 	int x0, y0, x1, y1;
 
 	x0 = x;
@@ -412,13 +412,13 @@ static void ami_arc_gfxlib(struct RastPort *rp, int x, int y, int radius, int an
 	b = angle1_r;
 	c = angle2_r;
 	
-	x1 = (int)(cos(b) * (double)radius);
-	y1 = (int)(sin(b) * (double)radius);
+	x1 = (int)(cos(b) * (float)radius);
+	y1 = (int)(sin(b) * (float)radius);
 	Move(rp, x0 + x1, y0 - y1);
 		
 	for(angle = (b + step); angle <= c; angle += step) {
-		x1 = (int)(cos(angle) * (double)radius);
-		y1 = (int)(sin(angle) * (double)radius);
+		x1 = (int)(cos(angle) * (float)radius);
+		y1 = (int)(sin(angle) * (float)radius);
 		Draw(rp, x0 + x1, y0 - y1);
 	}
 }
@@ -580,7 +580,7 @@ HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage 
 
 static void ami_bezier(struct bez_point *restrict a, struct bez_point *restrict b,
 				struct bez_point *restrict c, struct bez_point *restrict d,
-				double t, struct bez_point *restrict p) {
+				float t, struct bez_point *restrict p) {
     p->x = pow((1 - t), 3) * a->x + 3 * t * pow((1 -t), 2) * b->x + 3 * (1-t) * pow(t, 2)* c->x + pow (t, 3)* d->x;
     p->y = pow((1 - t), 3) * a->y + 3 * t * pow((1 -t), 2) * b->y + 3 * (1-t) * pow(t, 2)* c->y + pow (t, 3)* d->y;
 }
@@ -953,7 +953,7 @@ ami_path(const struct redraw_context *ctx,
 			p_c.x = p[i+5];
 			p_c.y = p[i+6];
 
-			for (double t = 0.0; t <= 1.0; t += 0.1) {
+			for (float t = 0.0; t <= 1.0; t += 0.1) {
 				ami_bezier(&cur_p, &p_a, &p_b, &p_c, t, &p_r);
 				if (pstyle->fill_colour != NS_TRANSPARENT) {
 					if (AreaDraw(glob->rp, p_r.x, p_r.y) == -1) {
