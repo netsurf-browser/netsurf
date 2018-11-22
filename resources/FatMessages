@@ -1663,7 +1663,7 @@ it.gtk.gtkError: Errore
 nl.gtk.gtkError: Fout 
 en.gtk.gtkComplete: Complete 
 de.gtk.gtkComplete: Vollständig 
-fr.gtk.gtkComplete: Terniné 
+fr.gtk.gtkComplete: Terminé 
 it.gtk.gtkComplete: Completo 
 nl.gtk.gtkComplete: Voltooid 
 en.gtk.gtkCanceled: Canceled 
