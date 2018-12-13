@@ -144,7 +144,6 @@ static const struct element_entry element_table[] = {
 	{"embed", box_embed},
 	{"frameset", box_frameset},
 	{"iframe", box_iframe},
-	{"image", box_image},
 	{"img", box_image},
 	{"input", box_input},
 	{"noscript", box_noscript},
