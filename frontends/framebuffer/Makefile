@@ -23,16 +23,32 @@ CFLAGS += '-DNETSURF_FB_FONT_FANTASY="$(NETSURF_FB_FONT_FANTASY)"'
 
 LDFLAGS += -lm
 
+# freetype is optional but older versions do not use pkg-config
+ifeq ($(NETSURF_FB_FONTLIB),freetype)
+  NETSURF_USE_FREETYPE2 := AUTO
+  NETSURF_FEATURE_FREETYPE2_CFLAGS := -DFB_USE_FREETYPE
+
+  $(eval $(call pkg_config_find_and_add_enabled,FREETYPE2,freetype2,freetype2))
+
+  # try and use non pkg-config method
+  ifeq ($(NETSURF_USE_FREETYPE2),NO)
+    FREETYPE_CONFIG_EXISTS := $(shell freetype-config --cflags >/dev/null && echo yes)
+    ifeq ($(FREETYPE_CONFIG_EXISTS),yes)
+      NETSURF_USE_FREETYPE2 := YES
+      CFLAGS += $(shell freetype-config --cflags) $(NETSURF_FEATURE_FREETYPE2_CFLAGS)
+      LDFLAGS += $(shell freetype-config --libs)
+      $(info FT2.CNFG: freetype2 (freetype2)	enabled)
+    else
+      $(info FT2.CNFG: freetype2 (freetype2)	failed)
+      $(error Unable to find library for: freetype2)
+    endif
+  endif
+endif
+
 # non optional pkg-configed libs
 LDFLAGS += -Wl,--whole-archive
 $(eval $(call pkg_config_find_and_add,libnsfb,libnsfb))
 LDFLAGS += -Wl,--no-whole-archive
-
-# freetype is optional but does not use pkg-config
-ifeq ($(NETSURF_FB_FONTLIB),freetype)
-  CFLAGS += -DFB_USE_FREETYPE $(shell freetype-config --cflags)
-  LDFLAGS += $(shell freetype-config --libs)
-endif
 
 # ---------------------------------------------------------------------------
 # HOST specific feature flags
