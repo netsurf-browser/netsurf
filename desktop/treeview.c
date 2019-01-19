@@ -3441,7 +3441,7 @@ static bool treeview_delete_selection(treeview *tree, struct rect *rect)
 	sw.purpose = TREEVIEW_WALK_DELETE_SELECTION;
 	sw.data.redraw.required = false;
 	sw.data.redraw.rect = rect;
-	sw.current_y = 0;
+	sw.current_y = treeview__get_search_height(tree);
 	sw.tree = tree;
 
 	treeview_walk_internal(tree, tree->root,
@@ -3474,7 +3474,7 @@ static bool treeview_propagate_selection(treeview *tree, struct rect *rect)
 	sw.purpose = TREEVIEW_WALK_PROPAGATE_SELECTION;
 	sw.data.redraw.required = false;
 	sw.data.redraw.rect = rect;
-	sw.current_y = 0;
+	sw.current_y = treeview__get_search_height(tree);
 	sw.tree = tree;
 
 	treeview_walk_internal(tree, tree->root,
