@@ -3436,7 +3436,7 @@ static bool treeview_delete_selection(treeview *tree, struct rect *rect)
 	rect->x0 = 0;
 	rect->y0 = 0;
 	rect->x1 = REDRAW_MAX;
-	rect->y1 = tree->root->height;
+	rect->y1 = treeview__get_display_height(tree);
 
 	sw.purpose = TREEVIEW_WALK_DELETE_SELECTION;
 	sw.data.redraw.required = false;
