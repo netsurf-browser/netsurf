@@ -54,14 +54,19 @@ LDFLAGS += -Wl,--no-whole-archive
 # HOST specific feature flags
 # ---------------------------------------------------------------------------
 
-# enable POSIX and XSI features.
-# everywhere but freebsd where the default set already has them enabled
+# enable POSIX and XSI feature flasg except:
+#   - the default set on freebsd already has them enabled
+#   - openbsd does not require the default source flags
 ifneq ($(HOST),FreeBSD)
-  CFLAGS += -D_POSIX_C_SOURCE=200809L \
-	    -D_XOPEN_SOURCE=700 \
-	    -D_BSD_SOURCE \
-	    -D_DEFAULT_SOURCE \
-	    -D_NETBSD_SOURCE
+  ifneq ($(HOST),OpenBSD)
+    CFLAGS += -D_POSIX_C_SOURCE=200809L \
+	      -D_XOPEN_SOURCE=700 \
+	      -D_BSD_SOURCE \
+	      -D_DEFAULT_SOURCE \
+	      -D_NETBSD_SOURCE
+  else
+    CFLAGS += -D_POSIX_C_SOURCE=200809L
+  endif
 endif
 
 # ----------------------------------------------------------------------------
