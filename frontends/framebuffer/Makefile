@@ -212,8 +212,8 @@ install-framebuffer:
 	$(Q)$(INSTALL) -T $(EXETARGET) $(DESTDIR)/$(NETSURF_FRAMEBUFFER_BIN)/netsurf-fb
 	$(Q)$(INSTALL) -d $(DESTDIR)/$(NETSURF_FRAMEBUFFER_RESOURCES)
 	$(Q)for F in $(NETSURF_FRAMEBUFFER_RESOURCE_LIST); do $(INSTALL) -m 644 $(FRONTEND_RESOURCES_DIR)/$$F $(DESTDIR)/$(NETSURF_FRAMEBUFFER_RESOURCES); done
-	$(Q)$(RM) $(DESTDIR)/$(NETSURF_FRAMEBUFFER_RESOURCES)/messages
-	$(Q)$(SPLIT_MESSAGES) -l en -p fb -f messages -o $(DESTDIR)/$(NETSURF_FRAMEBUFFER_RESOURCES)/messages -z resources/FatMessages
+	$(Q)$(RM) $(DESTDIR)/$(NETSURF_FRAMEBUFFER_RESOURCES)/Messages
+	$(Q)$(SPLIT_MESSAGES) -l en -p fb -f messages -o $(DESTDIR)/$(NETSURF_FRAMEBUFFER_RESOURCES)/Messages -z resources/FatMessages
 
 # ----------------------------------------------------------------------------
 # Package target
