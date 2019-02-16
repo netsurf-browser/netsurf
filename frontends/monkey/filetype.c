@@ -69,8 +69,10 @@ void monkey_fetch_filetype_init(const char *mimefile)
 	hash_add(mime_hash, "html", "text/html");
 	hash_add(mime_hash, "jpg", "image/jpeg");
 	hash_add(mime_hash, "jpeg", "image/jpeg");
+	hash_add(mime_hash, "bmp", "image/bmp");
 	hash_add(mime_hash, "gif", "image/gif");
 	hash_add(mime_hash, "png", "image/png");
+	hash_add(mime_hash, "ico", "image/ico");
 	hash_add(mime_hash, "jng", "image/jng");
 	hash_add(mime_hash, "mng", "image/mng");
 	hash_add(mime_hash, "webp", "image/webp");
