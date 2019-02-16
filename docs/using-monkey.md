@@ -5,6 +5,13 @@ This document provides usage instructions for the Monkey version of NetSurf.
 
 Monkey NetSurf has been tested on Ubuntu and Debian.
 
+Automated testing
+-----------------
+
+If you want to run the monkey_driver.py or monkey-see-monkey-do tools then
+you will need python3 and pyyaml installed.  The latter also needs internet
+access to test.netsurf-browser.org to acquire test data.
+
 Overview
 --------
 
