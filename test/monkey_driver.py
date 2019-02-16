@@ -231,6 +231,7 @@ def run_test_step_action_plot_check(ctx, step):
             print("Check {} NOT in {}".format(repr(check['text-not-contains']),repr(all_text)))
             assert(check['text-not-contains'] not in all_text)
         elif 'bitmap-count' in check.keys():
+            print("Check bitmap count is {}".format(int(check['bitmap-count'])))
             assert(len(bitmaps) == int(check['bitmap-count']))
         else:
             raise AssertionError("Unknown check: {}".format(repr(check)))
