@@ -1,0 +1,71 @@
+#!/usr/bin/python3
+
+# If you have any poo, fling it now!
+
+BASE_PATH="https://test.netsurf-browser.org/cgi-bin/monkey-index.cgi"
+MONKEY_PATH="./nsmonkey"
+
+# Otherwise let's begin...
+
+import sys
+
+import yaml
+
+import multiprocessing as mp
+
+from urllib import request
+from io import StringIO
+
+import monkey_driver as driver
+
+mp.set_start_method('fork')
+
+def child_run_test(parts):
+    outcapture = StringIO()
+    errcapture = StringIO()
+    oldout = sys.stdout
+    olderr = sys.stderr
+    sys.stdout = outcapture
+    sys.stderr = errcapture
+    try:
+        driver.run_preloaded_test(MONKEY_PATH, parts)
+    except:
+        sys.stdout = oldout
+        sys.stderr = olderr
+        print("FAIL:")
+        print("STDOUT:\n{}\n", outcapture.getvalue())
+        print("STDERR:\n{}\n", errcapture.getvalue())
+        print("RERAISE:")
+        raise
+
+def run_test(parts):
+    p = mp.Process(target=child_run_test, args=(parts, ))
+    p.start()
+    p.join()
+    return p.exitcode
+
+
+print("Fetching tests...")
+index = request.urlopen(BASE_PATH)
+index = index.read()
+print("Parsing tests...")
+test_set = yaml.load_all(index)
+
+print("Running tests...")
+ret = 0
+for test in test_set:
+    if test["kind"] == 'group':
+        print("Start group: {}".format(test["group"]))
+        print("  => {}".format(test["description"]))
+    elif test["kind"] == 'test':
+        print("  => Run test: {}".format(test["filename"]))
+        ret = run_test(test["content"])
+        if ret != 0:
+            break
+        
+if ret != 0:
+    print("FAIL")
+    sys.exit(1)
+else:
+    print("PASS")
+    sys.exit(0)

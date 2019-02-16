@@ -317,14 +317,21 @@ def walk_test_plan(ctx, plan):
     for step in plan["steps"]:
         run_test_step(ctx, step)
 
+def run_test_plan(ctx, plan):
+    print_test_plan_info(ctx, plan)
+    walk_test_plan(ctx, plan)
+
+def run_preloaded_test(path_monkey, plan):
+    ctx = {
+        "monkey": path_monkey,
+    }
+    run_test_plan(ctx, plan)
 
 def main(argv):
     ctx = {}
     path_monkey, path_test = parse_argv(argv)
     plan = load_test_plan(path_test)
     ctx["monkey"] = path_monkey
-    print_test_plan_info(ctx, plan)
-    walk_test_plan(ctx, plan)
 
 # Some python weirdness to get to main().
 if __name__ == "__main__":
