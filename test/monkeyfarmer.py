@@ -464,7 +464,7 @@ if __name__ == '__main__':
     win = browser.new_window()
     win.load_page("https://httpbin.org/basic-auth/foo/bar")
     cmds = win.redraw()
-    
+    print("Received {} plot commands for auth test".format(len(cmds)))
     for cmd in cmds:
         if cmd[0] == "TEXT":
             x = cmd[2]
