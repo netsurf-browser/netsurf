@@ -332,6 +332,7 @@ def main(argv):
     path_monkey, path_test = parse_argv(argv)
     plan = load_test_plan(path_test)
     ctx["monkey"] = path_monkey
+    run_test_plan(ctx, plan)
 
 # Some python weirdness to get to main().
 if __name__ == "__main__":
