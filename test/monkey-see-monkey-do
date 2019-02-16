@@ -56,7 +56,7 @@ ret = 0
 for test in test_set:
     if test["kind"] == 'group':
         print("Start group: {}".format(test["group"]))
-        print("  => {}".format(test["description"]))
+        print("  [ {} ]".format(test["description"]))
     elif test["kind"] == 'test':
         print("  => Run test: {}".format(test["filename"]))
         ret = run_test(test["content"])
