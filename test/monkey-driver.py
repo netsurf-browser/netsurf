@@ -4,6 +4,59 @@ import sys, getopt, yaml, time
 
 from monkeyfarmer import Browser
 
+class DriverBrowser(Browser):
+    def __init__(self, *args, **kwargs):
+        super(DriverBrowser, self).__init__(*args, **kwargs)
+        self.auth = []
+
+    def add_auth(self, url, realm, username, password):
+        self.auth.append((url, realm, username, password))
+
+    def remove_auth(self, url, realm, username, password):
+        keep = []
+        def matches(a,b):
+            if a is None or b is None:
+                return True
+            return a == b
+        for (iurl, irealm, iusername, ipassword) in self.auth:
+            if not (matches(url, iurl) or
+                    matches(realm, irealm) or
+                    matches(username, iusername) or
+                    matches(password, ipassword)):
+                keep.append((iurl, irealm, iusername, ipassword))
+        self.auth = keep
+
+    def handle_ready_login(self, logwin):
+        # We have logwin.{url,username,password,realm}
+        # We must logwin.send_{username,password}(xxx)
+        # We may logwin.go()
+        # We may logwin.destroy()
+        def matches(a,b):
+            if a is None or b is None:
+                return True
+            return a == b
+        candidates = []
+        for (url, realm, username, password) in self.auth:
+            score = 0
+            if matches(url, logwin.url):
+                score += 1
+            if matches(realm, logwin.realm):
+                score += 1
+            if matches(username, logwin.username):
+                score += 1
+            if score > 0:
+                candidates.append((score, username, password))
+        if candidates:
+            candidates.sort()
+            (score, username, password) = candidates[-1]
+            print("401: Found candidate {}/{} with score {}".format(username, password, score))
+            logwin.send_username(username)
+            logwin.send_password(password)
+            logwin.go()
+        else:
+            print("401: No candidate found, cancelling login box")
+            logwin.destroy()
+
 def print_usage():
     print('Usage:')
     print('  ' + sys.argv[0] + ' -m <path to monkey> -t <path to test>')
@@ -72,7 +125,7 @@ def run_test_step_action_launch(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     assert(ctx.get('browser') is None)
     assert(ctx.get('windows') is None)
-    ctx['browser'] = Browser(monkey_cmd=[ctx["monkey"]], quiet=True)
+    ctx['browser'] = DriverBrowser(monkey_cmd=[ctx["monkey"]], quiet=True)
     assert_browser(ctx)
     ctx['windows'] = dict()
 
@@ -174,6 +227,9 @@ def run_test_step_action_plot_check(ctx, step):
         if 'text-contains' in check.keys():
             print("Check {} in {}".format(repr(check['text-contains']),repr(all_text)))
             assert(check['text-contains'] in all_text)
+        elif 'text-not-contains' in check.keys():
+            print("Check {} NOT in {}".format(repr(check['text-not-contains']),repr(all_text)))
+            assert(check['text-not-contains'] not in all_text)
         elif 'bitmap-count' in check.keys():
             assert(len(bitmaps) == int(check['bitmap-count']))
         else:
@@ -212,6 +268,21 @@ def run_test_step_action_timer_check(ctx, step):
     elif condition[1] == '>':
         assert(timer1["taken"] > timer2["taken"])
 
+def run_test_step_action_add_auth(ctx, step):
+    print(get_indent(ctx) + "Action:" + step["action"])
+    assert_browser(ctx)
+    browser = ctx['browser']
+    browser.add_auth(step.get("url"), step.get("realm"),
+                     step.get("username"), step.get("password"))
+
+
+def run_test_step_action_remove_auth(ctx, step):
+    print(get_indent(ctx) + "Action:" + step["action"])
+    assert_browser(ctx)
+    browser = ctx['browser']
+    browser.remove_auth(step.get("url"), step.get("realm"),
+                        step.get("username"), step.get("password"))
+
 def run_test_step_action_quit(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     assert_browser(ctx)
@@ -231,6 +302,8 @@ step_handlers = {
     "timer-stop":   run_test_step_action_timer_stop,
     "timer-check":  run_test_step_action_timer_check,
     "plot-check":   run_test_step_action_plot_check,
+    "add-auth":     run_test_step_action_add_auth,
+    "remove-auth":  run_test_step_action_remove_auth,
     "quit":         run_test_step_action_quit,
 }
 
