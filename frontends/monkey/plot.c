@@ -245,7 +245,7 @@ monkey_plot_text(const struct redraw_context *ctx,
 		 const char *text,
 		 size_t length)
 {
-	moutf(MOUT_PLOT, "TEXT X %d Y %d STR %*s\n", x, y, (int)length, text);
+	moutf(MOUT_PLOT, "TEXT X %d Y %d STR %.*s", x, y, (int)length, text);
 	return NSERROR_OK;
 }
 
