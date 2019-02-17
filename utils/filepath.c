@@ -16,10 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Provides utility functions for finding readable files.
  *
- * These functions are intended to make finding resource files more straightforward.
+ * These functions are intended to make finding resource files more
+ *  straightforward.
  */
 
 #include <sys/types.h>
@@ -37,7 +39,7 @@
 #include "utils/filepath.h"
 
 /** maximum number of elements in the resource vector */
-#define MAX_RESPATH 128 
+#define MAX_RESPATH 128
 
 /* exported interface documented in filepath.h */
 char *filepath_vsfindfile(char *str, const char *format, va_list ap)
@@ -61,19 +63,20 @@ char *filepath_vsfindfile(char *str, const char *format, va_list ap)
 	}
 
 	realpathname = realpath(pathname, str);
-	
+
 	free(pathname);
-	
+
 	if (realpathname != NULL) {
 		/* sucessfully expanded pathname */
 		if (access(realpathname, R_OK) != 0) {
 			/* unable to read the file */
 			return NULL;
-		}	
+		}
 	}
 
 	return realpathname;
 }
+
 
 /* exported interface documented in filepath.h */
 char *filepath_sfindfile(char *str, const char *format, ...)
@@ -87,6 +90,7 @@ char *filepath_sfindfile(char *str, const char *format, ...)
 
 	return ret;
 }
+
 
 /* exported interface documented in filepath.h */
 char *filepath_findfile(const char *format, ...)
@@ -120,6 +124,7 @@ char *filepath_sfind(char **respathv, char *filepath, const char *filename)
 	return NULL;
 }
 
+
 /* exported interface documented in filepath.h */
 char *filepath_find(char **respathv, const char *filename)
 {
@@ -140,6 +145,7 @@ char *filepath_find(char **respathv, const char *filename)
 
 	return ret;
 }
+
 
 /* exported interface documented in filepath.h */
 char *
@@ -163,7 +169,7 @@ filepath_sfinddef(char **respathv,
 			snprintf(t, PATH_MAX, "%s/%s/%s", getenv("HOME"), def + 1, filename);
 		} else {
 			snprintf(t, PATH_MAX, "%s/%s", def, filename);
-		}		
+		}
 		if (realpath(t, ret) == NULL) {
 			strncpy(ret, t, PATH_MAX);
 		}
@@ -182,23 +188,41 @@ filepath_generate(char * const *pathv, const char * const *langv)
 	int langc = 0;
 	int respathc = 0;
 	struct stat dstat;
-	char tmppath[PATH_MAX];
+	char *tmppath;
+	int tmppathlen;
 
 	respath = calloc(MAX_RESPATH, sizeof(char *));
 
 	while ((respath != NULL) &&
 	       (pathv[pathc] != NULL)) {
-		if ((stat(pathv[pathc], &dstat) == 0) && 
+		if ((stat(pathv[pathc], &dstat) == 0) &&
 		    S_ISDIR(dstat.st_mode)) {
 			/* path element exists and is a directory */
 			langc = 0;
 			while (langv[langc] != NULL) {
-				snprintf(tmppath, sizeof tmppath, "%s/%s", pathv[pathc],langv[langc]);
-				if ((stat(tmppath, &dstat) == 0) && 
+				tmppathlen = snprintf(NULL,
+						      0,
+						      "%s/%s",
+						      pathv[pathc],
+						      langv[langc]);
+				tmppath = malloc(tmppathlen + 1);
+				if (tmppath == NULL) {
+					break;
+				}
+				snprintf(tmppath,
+					 tmppathlen + 1,
+					 "%s/%s",
+					 pathv[pathc],
+					 langv[langc]);
+
+				if ((stat(tmppath, &dstat) == 0) &&
 				    S_ISDIR(dstat.st_mode)) {
 					/* path element exists and is a directory */
-					respath[respathc++] = strdup(tmppath);
+					respath[respathc++] = tmppath;
+				} else {
+					free(tmppath);
 				}
+
 				langc++;
 			}
 			respath[respathc++] = strdup(pathv[pathc]);
@@ -207,6 +231,7 @@ filepath_generate(char * const *pathv, const char * const *langv)
 	}
 	return respath;
 }
+
 
 /**
  * expand ${} in a string into environment variables.
@@ -236,20 +261,20 @@ expand_path(const char *path, int pathlen)
 	explen = pathlen;
 
 	while (exp[cloop] != 0) {
-		if ((exp[cloop] == '$') && 
+		if ((exp[cloop] == '$') &&
 		    (exp[cloop + 1] == '{')) {
 			cstart = cloop;
 			cloop++;
-		} 
-		
+		}
+
 		if ((cstart != -1) &&
 		    (exp[cloop] == '}')) {
 			replen = cloop - cstart;
 			exp[cloop] = 0;
 			envv = getenv(exp + cstart + 2);
 			if (envv == NULL) {
-				memmove(exp + cstart, 
-					exp + cloop + 1, 
+				memmove(exp + cstart,
+					exp + cloop + 1,
 					explen - cloop);
 				explen -= replen;
 			} else {
@@ -261,8 +286,8 @@ expand_path(const char *path, int pathlen)
 					return NULL;
 				}
 				exp = tmp;
-				memmove(exp + cstart + envlen, 
-					exp + cloop + 1, 
+				memmove(exp + cstart + envlen,
+					exp + cloop + 1,
 					explen - cloop );
 				memmove(exp + cstart, envv, envlen);
 				explen += envlen - replen;
@@ -281,6 +306,7 @@ expand_path(const char *path, int pathlen)
 
 	return exp;
 }
+
 
 /* exported interface documented in filepath.h */
 char **
@@ -319,11 +345,12 @@ filepath_path_to_strvec(const char *path)
 		/* check for termination */
 		if (*eend == 0)
 			break;
-		
+
 		estart = eend;
 	}
 	return strvec;
 }
+
 
 /* exported interface documented in filepath.h */
 void filepath_free_strvec(char **pathv)
@@ -335,4 +362,3 @@ void filepath_free_strvec(char **pathv)
 	}
 	free(pathv);
 }
-

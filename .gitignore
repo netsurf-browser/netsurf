@@ -7,8 +7,7 @@ frontends/riscos/appdir/Resources/fr/Templates,fec
 frontends/riscos/appdir/Resources/de/Templates,fec
 frontends/riscos/appdir/Resources/nl/Templates,fec
 resources/*/Messages
-frontends/gtk/res/*/Messages
-frontends/windows/res/*/Messages
+frontends/*/res/*/Messages
 codedocs
 nsgtk
 nsgtk3

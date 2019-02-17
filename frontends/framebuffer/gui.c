@@ -2104,7 +2104,8 @@ static struct gui_misc_table framebuffer_misc_table = {
 	.quit = gui_quit,
 };
 
-/** Entry point from OS.
+/**
+ * Entry point from OS.
  *
  * /param argc The number of arguments in the string vector.
  * /param argv The argument string vector.
@@ -2134,7 +2135,7 @@ main(int argc, char** argv)
 		die("NetSurf operation table failed registration");
         }
 
-	respaths = fb_init_resource(NETSURF_FB_RESPATH":"NETSURF_FB_FONTPATH);
+	respaths = fb_init_resource_path(NETSURF_FB_RESPATH":"NETSURF_FB_FONTPATH);
 
 	/* initialise logging. Not fatal if it fails but not much we
 	 * can do about it either.

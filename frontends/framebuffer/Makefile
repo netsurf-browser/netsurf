@@ -1,5 +1,10 @@
+#
+# Makefile for NetSurf Framebuffer frontend
+#
+# This file is part of NetSurf 
+#
 # ----------------------------------------------------------------------------
-# Framebuffer target setup
+# Framebuffer flag setup (using pkg-config)
 # ----------------------------------------------------------------------------
 
 CFLAGS += -std=c99 -g \
@@ -49,6 +54,14 @@ endif
 LDFLAGS += -Wl,--whole-archive
 $(eval $(call pkg_config_find_and_add,libnsfb,libnsfb))
 LDFLAGS += -Wl,--no-whole-archive
+
+# ---------------------------------------------------------------------------
+# Target setup
+# ---------------------------------------------------------------------------
+
+# The filter and target for split messages
+MESSAGES_FILTER=fb
+MESSAGES_TARGET=$(FRONTEND_RESOURCES_DIR)
 
 # ---------------------------------------------------------------------------
 # HOST specific feature flags

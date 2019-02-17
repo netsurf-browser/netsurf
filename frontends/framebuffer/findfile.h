@@ -27,6 +27,6 @@ extern char **respaths;
  * is performed here, once, rather than every time a resource is
  * searched for.
  */
-char **fb_init_resource(const char *resource_path);
+char **fb_init_resource_path(const char *resource_path);
 
 #endif /* NETSURF_FB_FINDFILE_H */
