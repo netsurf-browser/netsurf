@@ -54,7 +54,7 @@ prototype Window()
 
 getter Window::document()
 %{
-	JS_LOG("priv=%p", priv);
+	NSLOG(netsurf, DEBUG, "priv=%p", priv);
 	dom_document *doc = priv->htmlc->document;
 	dukky_push_node(ctx, (struct dom_node *)doc);
 	return 1;
