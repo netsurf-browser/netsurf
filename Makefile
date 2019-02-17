@@ -432,6 +432,7 @@ define pkg_config_find_and_add_enabled
   endif
 
   NETSURF_FEATURE_$(1)_AVAILABLE := $$(shell $$(PKG_CONFIG) --exists $(2) && echo yes)
+  NETSURF_FEATURE_$(1)_CFLAGS ?= -DWITH_$(1)
 
   ifeq ($$(NETSURF_USE_$(1)),YES)
     ifeq ($$(NETSURF_FEATURE_$(1)_AVAILABLE),yes)
@@ -535,15 +536,10 @@ LDFLAGS += -lz
 # Optional libraries with pkgconfig
 
 # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs
-NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
-NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
-NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
-NETSURF_FEATURE_CURL_CFLAGS := -DWITH_CURL
+# We only need to define the ones where the feature name doesn't exactly
+# match the WITH_FEATURE flag
 NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
-NETSURF_FEATURE_OPENSSL_CFLAGS := -DWITH_OPENSSL
 NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
-NETSURF_FEATURE_NSPSL_CFLAGS := -DWITH_NSPSL
-NETSURF_FEATURE_NSLOG_CFLAGS := -DWITH_NSLOG
 
 # libcurl and openssl ordering matters as if libcurl requires ssl it
 #  needs to come first in link order to ensure its symbols can be
