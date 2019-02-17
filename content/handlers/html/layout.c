@@ -5390,6 +5390,10 @@ bool layout_document(html_content *content, int width, int height)
 	struct box *doc = content->layout;
 	const struct gui_layout_table *font_func = content->font_func;
 
+	NSLOG(layout, DEBUG, "Doing layout to %ix%i of %s",
+			width, height, nsurl_access(content_get_url(
+					&content->base)));
+
 	layout_minmax_block(doc, font_func, content);
 
 	layout_block_find_dimensions(&content->len_ctx,
