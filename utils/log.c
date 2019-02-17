@@ -99,6 +99,7 @@ NSLOG_DEFINE_CATEGORY(plot, "rendering system");
 NSLOG_DEFINE_CATEGORY(schedule, "scheduler");
 NSLOG_DEFINE_CATEGORY(fbtk, "Framebuffer toolkit");
 NSLOG_DEFINE_CATEGORY(layout, "Layout");
+NSLOG_DEFINE_CATEGORY(dukky, "Duktape JavaScript Binding");
 
 static void
 netsurf_render_log(void *_ctx,
