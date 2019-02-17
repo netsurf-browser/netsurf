@@ -96,6 +96,7 @@ nserror content__init(struct content *c, const content_handler *handler,
 	c->width = 0;
 	c->height = 0;
 	c->available_width = 0;
+	c->available_height = 0;
 	c->quirks = quirks;
 	c->refresh = 0;
 	nsu_getmonotonic_ms(&c->time);
@@ -355,6 +356,7 @@ void content__reformat(struct content *c, bool background,
 	assert(c->locked == false);
 
 	c->available_width = width;
+	c->available_height = height;
 	if (c->handler->reformat != NULL) {
 
 		c->locked = true;

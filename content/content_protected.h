@@ -113,7 +113,8 @@ struct content {
 	content_status status;	/**< Current status. */
 
 	int width, height;	/**< Dimensions, if applicable. */
-	int available_width;	/**< Available width (eg window width). */
+	int available_width;	/**< Viewport width. */
+	int available_height;	/**< Viewport height. */
 
 	bool quirks;		/**< Content is in quirks mode */
 	char *fallback_charset;	/**< Fallback charset, or NULL */
