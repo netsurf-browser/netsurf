@@ -17,8 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Content for image/jpeg (implementation).
+/**
+ * \file
+ * implementation of content handling for image/jpeg
  *
  * This implementation uses the IJG JPEG library.
  */
@@ -161,6 +162,9 @@ static void nsjpeg_error_exit(j_common_ptr cinfo)
 	longjmp(*setjmp_buffer, 1);
 }
 
+/**
+ * create a bitmap from jpeg content.
+ */
 static struct bitmap *
 jpeg_cache_convert(struct content *c)
 {
