@@ -554,6 +554,7 @@ else
 endif
 $(eval $(call pkg_config_find_and_add_enabled,OPENSSL,openssl,OpenSSL))
 
+$(eval $(call pkg_config_find_and_add_enabled,WEBP,libwebp,WEBP))
 $(eval $(call pkg_config_find_and_add_enabled,PNG,libpng,PNG))
 $(eval $(call pkg_config_find_and_add_enabled,BMP,libnsbmp,BMP))
 $(eval $(call pkg_config_find_and_add_enabled,GIF,libnsgif,GIF))

@@ -35,6 +35,7 @@
 #include "image/png.h"
 #include "image/rsvg.h"
 #include "image/svg.h"
+#include "image/webp.h"
 #include "image/image.h"
 
 /**
@@ -90,6 +91,12 @@ nserror image_init(void)
 #endif
 #ifdef WITH_RSVG
 	error = nsrsvg_init();
+	if (error != NSERROR_OK)
+		return error;
+#endif
+
+#ifdef WITH_WEBP
+	error = nswebp_init();
 	if (error != NSERROR_OK)
 		return error;
 #endif

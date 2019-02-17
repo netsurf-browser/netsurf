@@ -59,6 +59,10 @@ NETSURF_USE_PNG := YES
 # Valid options: YES, NO
 NETSURF_USE_VIDEO := NO
 
+# Enable NetSurf's use of libwebp for displaying WEBPs.
+# Valid options: YES, NO, AUTO
+NETSURF_USE_WEBP := AUTO
+
 # Enable NetSurf's use of duktape for javascript
 # Valid options: YES, NO
 NETSURF_USE_DUKTAPE := YES
