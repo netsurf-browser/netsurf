@@ -140,6 +140,8 @@ fb_init_resource_path(const char *resource_path)
 
 	respath = filepath_generate(pathv, (const char * const *)langv);
 
+	filepath_free_strvec(langv);
+
 	filepath_free_strvec(pathv);
 
 	return respath;
