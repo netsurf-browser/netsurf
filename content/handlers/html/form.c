@@ -1018,6 +1018,8 @@ form_dom_to_data_input(dom_html_input_element *input_element,
 /**
  * process form HTMLButtonElement into multipart data.
  *
+ * https://html.spec.whatwg.org/multipage/form-elements.html#the-button-element
+ *
  * \param button_element The form button DOM element to convert.
  * \param form_charset The form character set
  * \param doc_charset The document character set for fallback
@@ -1044,7 +1046,7 @@ form_dom_to_data_button(dom_html_button_element *button_element,
 						   &element_disabled);
 	if (exp != DOM_NO_ERR) {
 		NSLOG(netsurf, INFO,
-		      "Unabe to get disabled property. exp %d", exp);
+		      "Unable to get disabled property. exp %d", exp);
 		return NSERROR_DOM;
 	}
 
@@ -1053,15 +1055,25 @@ form_dom_to_data_button(dom_html_button_element *button_element,
 		return NSERROR_OK;
 	}
 
-	/* only submit buttons can cause data elements */
+	/* get the type attribute */
 	exp = dom_html_button_element_get_type(button_element, &inputtype);
 	if (exp != DOM_NO_ERR) {
 		NSLOG(netsurf, INFO, "Could not get button element type");
 		return NSERROR_DOM;
 	}
 
-	if (!dom_string_caseless_isequal(inputtype, corestring_dom_submit)) {
-		/* multipart data entry not required for non submit buttons */
+	/* If the type attribute is "reset" or "button" the element is
+	 *  barred from constraint validation. Specification says
+	 *  default and invalid values result in submit which will
+	 *  be considered.
+	 */
+	if (dom_string_caseless_isequal(inputtype, corestring_dom_reset)) {
+		/* multipart data entry not required for reset type */
+		dom_string_unref(inputtype);
+		return NSERROR_OK;
+	}
+	if (dom_string_caseless_isequal(inputtype, corestring_dom_button)) {
+		/* multipart data entry not required for button type */
 		dom_string_unref(inputtype);
 		return NSERROR_OK;
 	}
