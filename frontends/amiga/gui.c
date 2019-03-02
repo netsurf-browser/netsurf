@@ -1037,6 +1037,10 @@ static void gui_init2(int argc, char** argv)
 	    (nsoption_bool(startup_no_window) == false))
 		ami_openscreenfirst();
 
+	if(cli_force == true) {
+		notalreadyrunning = TRUE;
+	}
+
 	if(temp_homepage_url && notalreadyrunning) {
 		error = nsurl_create(temp_homepage_url, &url);
 		if (error == NSERROR_OK) {
@@ -1052,10 +1056,6 @@ static void gui_init2(int argc, char** argv)
 		}
 		free(temp_homepage_url);
 		temp_homepage_url = NULL;
-	}
-
-	if(cli_force == true) {
-		notalreadyrunning = TRUE;
 	}
 
 	if(argc == 0) { // WB
