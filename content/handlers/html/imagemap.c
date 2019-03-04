@@ -376,14 +376,14 @@ imagemap_addtolist(const struct html_content *c,
 	}
 
 	if (target != NULL) {
-		/* Copy target into the map */
+		/* Copy target dom string into the map data */
 		new_map->target = malloc(dom_string_byte_length(target) + 1);
 		if (new_map->target == NULL)
 			goto bad_out;
 
-		strncpy(new_map->target,
-			dom_string_data(target),
-			dom_string_byte_length(target));
+		memcpy(new_map->target,
+		       dom_string_data(target),
+		       dom_string_byte_length(target));
 
 		new_map->target[dom_string_byte_length(target)] = 0;
 	}
