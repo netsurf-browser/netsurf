@@ -40,6 +40,12 @@
 #include <proto/utility.h>
 #include <proto/wb.h>
 
+#ifdef WITH_AMISSL
+/* AmiSSL needs everything to use bsdsocket.library directly to avoid problems */
+#include <proto/bsdsocket.h>
+#define waitselect WaitSelect
+#endif
+
 /* Other OS includes */
 #include <datatypes/textclass.h>
 #include <devices/inputevent.h>
