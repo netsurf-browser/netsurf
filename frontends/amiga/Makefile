@@ -98,5 +98,5 @@ netsurf.lha: $(EXETARGET)
 	$(Q)cp -p $(AMIGA_PKG_DIR)/netsurf.readme.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
   endif
 	$(Q)cd $(AMIGA_INSTALL_TARGET_DIR); \
-	  lha a netsurf.lha NetSurf NetSurf.info AutoInstall
+	  lha ao6 netsurf.lha NetSurf NetSurf.info AutoInstall
 
