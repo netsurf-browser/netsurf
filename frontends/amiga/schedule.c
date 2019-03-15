@@ -336,6 +336,7 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 							ASOIOR_Duplicate, tioreq,
 							TAG_DONE);
 #else
+	if(schedule_msgport == NULL) return NSERROR_NOMEM;
 	nscb = (struct nscallback *)CreateIORequest(schedule_msgport, sizeof(struct nscallback));
 	*nscb = *tioreq;
 #endif
