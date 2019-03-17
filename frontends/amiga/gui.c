@@ -781,21 +781,7 @@ static nsurl *gui_get_resource_url(const char *path)
 	nsurl *url = NULL;
 
 	if(ami_locate_resource(buf, path) == false)
-	{
-		if((strncmp(path + strlen(path) - SLEN(".htm"), ".htm", SLEN(".htm")) == 0) ||
-			(strncmp(path + strlen(path) - SLEN(".html"), ".html", SLEN(".html")) == 0))
-		{
-			/* Try with RISC OS HTML filetype, might work */
-			strcpy(path2, path);
-			strcat(path2, ",faf");
-
-			if(ami_locate_resource(buf, path2) == false)
-			{
-				return NULL;
-			}
-		}
-		else return NULL;
-	}
+		return NULL;
 
 	netsurf_path_to_nsurl(buf, &url);
 
