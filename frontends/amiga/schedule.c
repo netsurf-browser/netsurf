@@ -170,7 +170,11 @@ static nserror schedule_remove(void (*callback)(void *p), void *p, bool abort)
 
 	if(nscb != NULL) {
 		if(abort == true) ami_schedule_remove_timer_event(nscb);
+#ifdef __amigaos4__
 		FreeSysObject(ASOT_IOREQUEST, nscb);
+#else
+		FreeVec(nscb);
+#endif
 		pblHeapConstruct(schedule_list);
 	}
 
@@ -190,7 +194,11 @@ static void schedule_remove_all(void)
 	{
 		ami_schedule_remove_timer_event(nscb);
 		pblIteratorRemove(iterator);
+#ifdef __amigaos4__
 		FreeSysObject(ASOT_IOREQUEST, nscb);
+#else
+		FreeVec(nscb);
+#endif
 	};
 
 	pblIteratorFree(iterator);
@@ -337,7 +345,7 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 							TAG_DONE);
 #else
 	if(schedule_msgport == NULL) return NSERROR_NOMEM;
-	nscb = (struct nscallback *)CreateIORequest(schedule_msgport, sizeof(struct nscallback));
+	nscb = AllocVec(sizeof(struct nscallback), MEMF_PUBLIC | MEMF_CLEAR);
 	*nscb = *tioreq;
 #endif
 	if(!nscb) return NSERROR_NOMEM;

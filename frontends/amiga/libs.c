@@ -113,7 +113,9 @@
 
 #define AMINS_CLASS_CLOSE(PREFIX)	\
 	if(I##PREFIX) DropInterface((struct Interface *)I##PREFIX);	\
-	if(PREFIX##Base) CloseClass(PREFIX##Base);
+	if(PREFIX##Base) CloseClass(PREFIX##Base);	\
+	I##PREFIX = NULL;	\
+	PREFIX##Base = NULL;
 
 #define AMINS_CLASS_STRUCT(PREFIX)	\
 	struct ClassLibrary *PREFIX##Base = NULL;	\
@@ -136,7 +138,8 @@
 	}
 
 #define AMINS_LIB_CLOSE(PREFIX)	\
-	if(PREFIX##Base) CloseLibrary((struct Library *)PREFIX##Base);
+	if(PREFIX##Base) CloseLibrary((struct Library *)PREFIX##Base);	\
+	PREFIX##Base = NULL;
 
 #define AMINS_LIB_STRUCT(PREFIX)	\
 	struct PREFIX##Base *PREFIX##Base = NULL;
@@ -156,7 +159,8 @@
 	}
 
 #define AMINS_CLASS_CLOSE(PREFIX)	\
-	if(PREFIX##Base) CloseLibrary(PREFIX##Base);
+	if(PREFIX##Base) CloseLibrary(PREFIX##Base);	\
+	PREFIX##Base = NULL;
 
 #define AMINS_CLASS_STRUCT(PREFIX)	\
 	struct Library *PREFIX##Base = NULL;	\
