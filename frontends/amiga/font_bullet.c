@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 - 2016 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2019 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -82,7 +82,7 @@ const uint16 sc_table[] = {
 		0x006E, 0x0274, /* n */
 		0x006F, 0x1D0F, /* o */
 		0x0070, 0x1D18, /* p */
-		0x0071, 0xA7EE, /* q (proposed) (Adobe codepoint 0xF771) */
+		0x0071, 0xA7AF, /* q */
 		0x0072, 0x0280, /* r */
 		0x0073, 0xA731, /* s */
 		0x0074, 0x1D1B, /* t */
