@@ -17,16 +17,18 @@ $(eval $(call feature_enabled,AMISSL,-DWITH_AMISSL -D__NO_NET_API -D__NO_NETINCL
 CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include
 CFLAGS += $(shell $(PKG_CONFIG) --cflags tre)
 
-#LDFLAGS += $(shell $(PKG_CONFIG) --static --libs libcurl openssl)
+LDFLAGS += $(shell $(PKG_CONFIG) --static --libs libcurl)
 LDFLAGS += $(shell $(PKG_CONFIG) --libs tre)
 LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
 
 LDFLAGS += -lpbl -liconv
 
+ifeq ($(NETSURF_USE_OPENSSL),YES)
+  LDFLAGS += $(shell $(PKG_CONFIG) --static --libs openssl)
+endif
+
 ifeq ($(SUBTARGET),os3)
   LDFLAGS += -lamiga -lm
-else
-  LDFLAGS += -lpthread
 endif
 
 EXETARGET := NetSurf
