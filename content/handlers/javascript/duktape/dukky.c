@@ -654,6 +654,7 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 	assert(ctx);
 	if (txt == NULL || txtlen == 0) return false;
 	duk_set_top(CTX, 0);
+	NSLOG(dukky, DEEPDEBUG, "%zd bytes: %s", txtlen, txt);
 
 	(void) nsu_getmonotonic_ms(&ctx->exec_start_time);
 	duk_push_string(CTX, "?unknown source?");
@@ -678,12 +679,12 @@ handle_error:
 	} else {
 #define GETTER(what)						\
 		if (duk_has_prop_string(CTX, 0, what)) {	\
-			NSLOG(dukky, DEBUG, "Fetching " what); \
+			NSLOG(dukky, DEEPDEBUG, "Fetching " what); \
 			duk_dup(CTX, 0);			\
 			if (duk_safe_call(CTX, dukky_safe_get, (void *)what, 1, 1) != DUK_EXEC_SUCCESS) { \
 				NSLOG(dukky, DEBUG, "Error fetching " what ": %s", duk_safe_to_string(CTX, -1)); \
 			} else { \
-				NSLOG(dukky, DEBUG, "Success fetching " what);	\
+				NSLOG(dukky, DEEPDEBUG, "Success fetching " what);	\
 			}						\
 		} else {						\
 			NSLOG(dukky, DEBUG, "Faking " what);		\
