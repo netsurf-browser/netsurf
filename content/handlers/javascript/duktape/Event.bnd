@@ -148,3 +148,40 @@ getter Event::defaultPrevented ()
 	return 1;
 %}
 
+getter Event::isTrusted ()
+%{
+	dom_exception exc;
+	bool ret;
+
+	exc = dom_event_get_is_trusted(priv->evt, &ret);
+	if (exc != DOM_NO_ERR) return 0;
+
+	duk_push_boolean(ctx, ret);
+	return 1;
+%}
+
+
+method Event::initEvent ()
+%{
+	dom_exception exc;
+	bool bubbles;
+	bool cancellable;
+
+	duk_size_t text_len;
+	const char *text = duk_safe_to_lstring(ctx, 0, &text_len);
+	dom_string *text_str;
+
+	exc = dom_string_create((const uint8_t*)text, text_len, &text_str);
+	if (exc != DOM_NO_ERR) return 0; /* coerced to undefined */
+
+	bubbles = duk_get_boolean(ctx, 1);
+	cancellable = duk_get_boolean(ctx, 2);
+
+	exc = dom_event_init(priv->evt, text_str, bubbles, cancellable);
+	if (exc != DOM_NO_ERR) {
+		dom_string_unref(text_str);
+		return 0;
+	}
+
+	return 0;
+%}

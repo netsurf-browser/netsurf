@@ -426,8 +426,6 @@ getter ErrorEvent::error(any);\n
 getter ErrorEvent::filename(string);\n
 getter ErrorEvent::lineno(unsigned long);\n
 getter ErrorEvent::message(string);\n
-method Event::initEvent();\n
-getter Event::isTrusted(boolean);\n
 method EventListener::handleEvent();\n
 method EventSource::close();\n
 getter EventSource::onerror(user);\n
