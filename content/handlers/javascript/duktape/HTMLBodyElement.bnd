@@ -8,6 +8,13 @@
  *         http://www.opensource.org/licenses/mit-license
  */
 
+prologue HTMLBodyElement()
+%{
+#include "utils/corestrings.h"
+
+#define HANDLER_MAGIC MAGIC(HANDLER_MAP)
+%}
+
 init HTMLBodyElement(struct dom_html_element *html_body_element::html_element);
 
 getter HTMLBodyElement::aLink();
@@ -22,3 +29,29 @@ getter HTMLBodyElement::text();
 setter HTMLBodyElement::text();
 getter HTMLBodyElement::vLink();
 setter HTMLBodyElement::vLink();
+getter HTMLBodyElement::onafterprint();
+setter HTMLBodyElement::onafterprint();
+getter HTMLBodyElement::onbeforeprint();
+setter HTMLBodyElement::onbeforeprint();
+getter HTMLBodyElement::onbeforeunload();
+setter HTMLBodyElement::onbeforeunload();
+getter HTMLBodyElement::onhashchange();
+setter HTMLBodyElement::onhashchange();
+getter HTMLBodyElement::onlanguagechange();
+setter HTMLBodyElement::onlanguagechange();
+getter HTMLBodyElement::onmessage();
+setter HTMLBodyElement::onmessage();
+getter HTMLBodyElement::onoffline();
+setter HTMLBodyElement::onoffline();
+getter HTMLBodyElement::ononline();
+setter HTMLBodyElement::ononline();
+getter HTMLBodyElement::onpagehide();
+setter HTMLBodyElement::onpagehide();
+getter HTMLBodyElement::onpageshow();
+setter HTMLBodyElement::onpageshow();
+getter HTMLBodyElement::onpopstate();
+setter HTMLBodyElement::onpopstate();
+getter HTMLBodyElement::onstorage();
+setter HTMLBodyElement::onstorage();
+getter HTMLBodyElement::onunload();
+setter HTMLBodyElement::onunload();
