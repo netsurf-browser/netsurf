@@ -736,7 +736,7 @@ handle_error:
 
 /*** New style event handling ***/
 
-static void dukky_push_event(duk_context *ctx, dom_event *evt)
+void dukky_push_event(duk_context *ctx, dom_event *evt)
 {
 	/* ... */
 	duk_get_global_string(ctx, EVENT_MAGIC);

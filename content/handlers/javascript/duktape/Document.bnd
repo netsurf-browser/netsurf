@@ -320,6 +320,23 @@ getter Document::cookie()
 	return 0;
 %}
 
+method Document::createEvent ()
+%{
+	/* Create a new event, mark it untrusted since it's new from JS */
+	dom_event *evt = NULL;
+	dom_exception exc;
+
+	exc = dom_event_create(&evt);
+	if (exc != DOM_NO_ERR) return 0;
+	exc = dom_event_set_is_trusted(evt, false);
+	if (exc != DOM_NO_ERR) { dom_event_unref(evt); return 0; }
+
+	dukky_push_event(ctx, evt);
+
+	dom_event_unref(evt);
+	return 1;
+%}
+
 getter Document::onabort();
 setter Document::onabort();
 getter Document::onautocompleteerror();

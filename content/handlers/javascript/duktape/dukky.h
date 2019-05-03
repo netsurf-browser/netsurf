@@ -36,6 +36,7 @@ void dukky_register_event_listener_for(duk_context *ctx,
 bool dukky_get_current_value_of_event_handler(duk_context *ctx,
 					      dom_string *name,
 					      dom_event_target *et);
+void dukky_push_event(duk_context *ctx, dom_event *evt);
 bool dukky_event_target_push_listeners(duk_context *ctx, bool dont_create);
 
 typedef enum {
