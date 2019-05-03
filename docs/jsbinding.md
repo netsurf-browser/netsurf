@@ -57,3 +57,31 @@ binding definitions to implement the interfaces.
 
 The bindings are a Domain Specific Language (DSL) which allows
 implementations to be added to each WebIDL method.
+
+Javascript implementation
+-------------------------
+
+NetSurf consumes the Duktape JS engine in order to run the JS code which
+is used within the browser.  Duktape is exceedingly well documented and
+its API docs at https://duktape.org/api.html are incredibly useful.
+
+It'll be worthwhile learning about how duktape stacks work in order to
+work on bindings in NetSurf
+
+Dukky
+-----
+
+Wrappering around and layering between duktape and the browser is a set of
+functionality we call `dukky`.  This defines a variety of conventions and
+capabilities which are common to almost all bindings.  The header `dukky.h`
+provides the interface to these functions.  Normally these functions are
+subsequently used by automatically generated content, but if your bindings
+need to add DOM nodes back into the JavaScript environment (for example when
+returning them from a method implementation) you will want `dukky_push_node()`
+or when calling a function in a JS context you'll likely want `dukky_pcall()`
+
+Dukky automatically terminates any JS call which lasts for more than 10
+seconds.  If you are calling a JS function from outside any of the "normal"
+means by which dukky might call code on your behalf (`js_exec()`, events, etc)
+then you should be sure to use `dukky_pcall()` and pass in `true` in
+`reset_timeout` otherwise your code may unexpectedly terminate early.
