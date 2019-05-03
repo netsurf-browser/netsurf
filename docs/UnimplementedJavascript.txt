@@ -1555,8 +1555,6 @@ method Window::blur();\n
 method Window::btoa();\n
 method Window::cancelAnimationFrame();\n
 method Window::captureEvents();\n
-method Window::clearInterval();\n
-method Window::clearTimeout();\n
 method Window::close();\n
 getter Window::closed(boolean);\n
 method Window::confirm();\n
@@ -1736,8 +1734,6 @@ method Window::requestAnimationFrame();\n
 getter Window::scrollbars(user);\n
 getter Window::self(user);\n
 getter Window::sessionStorage(user);\n
-method Window::setInterval();\n
-method Window::setTimeout();\n
 method Window::showModalDialog();\n
 getter Window::statusbar(user);\n
 getter Window::status(string);\n

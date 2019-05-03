@@ -17,7 +17,7 @@ $(OBJROOT)/duktape/binding.h $(OBJROOT)/duktape/Makefile: content/handlers/javas
 	$(Q)nsgenbind $(GBFLAGS) -I content/handlers/javascript/WebIDL $< $(OBJROOT)/duktape
 
 # create unimplemented report for doxygen
-Docs/UnimplementedJavascript.txt: content/handlers/javascript/duktape/netsurf.bnd $(BINDINGS)
+docs/UnimplementedJavascript.txt: content/handlers/javascript/duktape/netsurf.bnd $(BINDINGS)
 	$(Q)$(MKDIR) -p $(OBJROOT)/duktape
 	$(VQ)echo "/** \page unimplemented Unimplemented javascript bindings" > $@
 	$(VQ)echo "This is a list of all the binding methods, getters and setters without an implementation in a binding." >> $@
