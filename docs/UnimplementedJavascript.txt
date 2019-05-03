@@ -262,7 +262,6 @@ method Document::createAttributeNS();\n
 method Document::createComment();\n
 method Document::createDocumentFragment();\n
 method Document::createElementNS();\n
-method Document::createEvent();\n
 method Document::createNodeIterator();\n
 method Document::createProcessingInstruction();\n
 method Document::createRange();\n
