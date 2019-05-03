@@ -47,4 +47,7 @@ typedef enum {
 
 void dukky_shuffle_array(duk_context *ctx, duk_uarridx_t idx);
 
+/* pcall something, and if it errored, also dump the error to the log */
+duk_int_t dukky_pcall(duk_context *ctx, duk_size_t argc, bool reset_timeout);
+
 #endif

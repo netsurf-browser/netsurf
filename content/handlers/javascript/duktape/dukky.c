@@ -649,6 +649,62 @@ static duk_ret_t dukky_safe_get(duk_context *ctx, void *udata)
 	return 1;
 }
 
+static void dukky_dump_error(duk_context *ctx)
+{
+	/* stack is ..., errobj */
+	duk_idx_t stacktop = duk_get_top(ctx);
+	if (!duk_is_error(ctx, stacktop - 1)) {
+		NSLOG(dukky, INFO, "Uncaught non-Error derived error in JS: %s", duk_safe_to_string(ctx, stacktop - 1));
+	} else {
+#define GETTER(what)						\
+		if (duk_has_prop_string(ctx, stacktop - 1, what)) {	\
+			NSLOG(dukky, DEEPDEBUG, "Fetching " what); \
+			duk_dup(ctx, stacktop - 1);			\
+			if (duk_safe_call(ctx, dukky_safe_get, (void *)what, 1, 1) != DUK_EXEC_SUCCESS) { \
+				NSLOG(dukky, DEBUG, "Error fetching " what ": %s", duk_safe_to_string(ctx, -1)); \
+			} else { \
+				NSLOG(dukky, DEEPDEBUG, "Success fetching " what);	\
+			}						\
+		} else {						\
+			NSLOG(dukky, DEBUG, "Faking " what);		\
+			duk_push_string(ctx, "?" what "?");		\
+		}
+		GETTER("name");
+		GETTER("message");
+		GETTER("fileName");
+		GETTER("lineNumber");
+		GETTER("stack");
+		NSLOG(dukky, DEBUG, "Uncaught error in JS: %s: %s",
+		      duk_safe_to_string(ctx, -5), duk_safe_to_string(ctx, -4));
+		NSLOG(dukky, DEBUG, "              was at: %s line %s",
+		duk_safe_to_string(ctx, -3), duk_safe_to_string(ctx, -2));
+		NSLOG(dukky, DEBUG, "         Stack trace: %s",
+		      duk_safe_to_string(ctx, -1));
+#undef GETTER
+	}
+	duk_set_top(ctx, stacktop);
+}
+
+duk_int_t dukky_pcall(duk_context *ctx, duk_size_t argc, bool reset_timeout)
+{
+	if (reset_timeout) {
+		duk_memory_functions funcs;
+		jscontext *jsctx;
+		duk_get_memory_functions(ctx, &funcs);
+		jsctx = funcs.udata;
+		(void) nsu_getmonotonic_ms(&jsctx->exec_start_time);
+	}
+
+	duk_int_t ret = duk_pcall(ctx, argc);
+	if (ret) {
+		/* Something went wrong calling this... */
+		dukky_dump_error(ctx);
+	}
+
+	return ret;
+}
+
+
 bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 {
 	assert(ctx);
@@ -674,35 +730,7 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 	return duk_get_boolean(CTX, 0);
 
 handle_error:
-	if (!duk_is_error(CTX, 0)) {
-		NSLOG(dukky, INFO, "Uncaught non-Error derived error in JS: %s", duk_safe_to_string(CTX, 0));
-	} else {
-#define GETTER(what)						\
-		if (duk_has_prop_string(CTX, 0, what)) {	\
-			NSLOG(dukky, DEEPDEBUG, "Fetching " what); \
-			duk_dup(CTX, 0);			\
-			if (duk_safe_call(CTX, dukky_safe_get, (void *)what, 1, 1) != DUK_EXEC_SUCCESS) { \
-				NSLOG(dukky, DEBUG, "Error fetching " what ": %s", duk_safe_to_string(CTX, -1)); \
-			} else { \
-				NSLOG(dukky, DEEPDEBUG, "Success fetching " what);	\
-			}						\
-		} else {						\
-			NSLOG(dukky, DEBUG, "Faking " what);		\
-			duk_push_string(CTX, "?" what "?");		\
-		}
-		GETTER("name");
-		GETTER("message");
-		GETTER("fileName");
-		GETTER("lineNumber");
-		GETTER("stack");
-		NSLOG(dukky, DEBUG, "Uncaught error in JS: %s: %s",
-		      duk_safe_to_string(CTX, 1), duk_safe_to_string(CTX, 2));
-		NSLOG(dukky, DEBUG, "              was at: %s line %s",
-		duk_safe_to_string(CTX, 3), duk_safe_to_string(CTX, 4));
-		NSLOG(dukky, DEBUG, "         Stack trace: %s",
-		      duk_safe_to_string(CTX, 5));
-#undef GETTER
-	}
+	dukky_dump_error(CTX);
 	return false;
 }
 

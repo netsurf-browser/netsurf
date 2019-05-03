@@ -11,12 +11,163 @@
 class Window {
 	private struct browser_window * win;
 	private struct html_content * htmlc;
+	private struct window_schedule_s * schedule_ring;
 	prologue %{
 #include "utils/nsurl.h"
 #include "netsurf/browser_window.h"
 #include "content/hlcache.h"
 #include "html/html.h"
 #include "html/html_internal.h"
+#include "desktop/gui_internal.h"
+#include "netsurf/misc.h"
+#include "utils/ring.h"
+
+#define WINDOW_CALLBACKS MAGIC(WindowCallbacks)
+
+static size_t next_handle = 0;
+
+typedef struct window_schedule_s {
+	window_private_t *owner;
+	duk_context *ctx;
+	struct window_schedule_s *r_next;
+	struct window_schedule_s *r_prev;
+	size_t handle;
+	int repeat_timeout;
+} window_schedule_t;
+
+static void window_remove_callback_bits(duk_context *ctx, size_t handle) {
+	/* stack is ... */
+	duk_push_global_object(ctx);
+	duk_get_prop_string(ctx, -1, WINDOW_CALLBACKS);
+	/* stack is ..., win, cbt */
+	duk_push_int(ctx, (duk_int_t)handle);
+	/* ..., win, cbt, handle */
+	duk_del_prop(ctx, -2);
+	/* ..., win, cbt */
+	duk_pop_2(ctx);
+	/* ... */
+}
+
+static void window_call_callback(duk_context *ctx, size_t handle) {
+	NSLOG(dukky, DEEPDEBUG, "ctx=%p, handle=%zd", ctx, handle);
+	/* Stack is ... */
+	duk_push_context_dump(ctx);
+	NSLOG(dukky, DEEPDEBUG, "On entry to callback, stack is: %s", duk_get_string(ctx, -1));
+	duk_pop(ctx);
+	duk_push_global_object(ctx);
+	duk_get_prop_string(ctx, -1, WINDOW_CALLBACKS);
+	duk_push_int(ctx, (duk_int_t)handle);
+	duk_get_prop(ctx, -2);
+	/* ..., win, cbt, cbo */
+	/* What we want to do is call cbo.func passing all of cbo.args */
+	duk_get_prop_string(ctx, -1, "func");
+	duk_get_prop_string(ctx, -2, "args");
+	/* ..., win, cbt, cbo, func, argarr */
+	duk_size_t arrlen = duk_get_length(ctx, -1);
+	for (duk_size_t i = 0; i < arrlen; ++i) {
+		duk_push_int(ctx, (duk_int_t)i);
+		duk_get_prop(ctx, -(2+i));
+	}
+	/* ..., win, cbt, cbo, func, argarr, args... */
+	duk_remove(ctx, -(arrlen+1));
+	/* ..., win, cbt, cbo, func, args... */
+	duk_push_context_dump(ctx);
+	NSLOG(dukky, DEEPDEBUG, "Just before call with %d args: %s", (int)arrlen, duk_get_string(ctx, -1));
+	duk_pop(ctx);
+	(void) dukky_pcall(ctx, arrlen, true);
+	/* ..., win, cbt, cbo, retval */
+	duk_pop_n(ctx, 4);
+	/* ... */
+	duk_push_context_dump(ctx);
+	NSLOG(dukky, DEEPDEBUG, "On leaving callback, stack is: %s", duk_get_string(ctx, -1));
+	duk_pop(ctx);
+}
+
+static void window_schedule_callback(void *p) {
+	window_schedule_t *priv = (window_schedule_t *)p;
+
+	NSLOG(dukky, DEEPDEBUG, "Entered window scheduler callback: %zd", priv->handle);
+
+	window_call_callback(priv->ctx, priv->handle);
+
+	if (priv->repeat_timeout > 0) {
+		/* Reschedule */
+		NSLOG(dukky, DEEPDEBUG, "Rescheduling repeating callback %zd", priv->handle);
+		guit->misc->schedule(priv->repeat_timeout, window_schedule_callback, priv);
+	} else {
+		NSLOG(dukky, DEEPDEBUG, "Removing completed callback %zd", priv->handle);
+		/* Remove this from the ring */
+		RING_REMOVE(priv->owner->schedule_ring, priv);
+		window_remove_callback_bits(priv->ctx, priv->handle);
+		/* TODO: Remove the entry from the JS part */
+		free(priv);
+	}
+}
+
+static size_t window_alloc_new_callback(duk_context *ctx, window_private_t *window,
+					bool repeating, int timeout) {
+	size_t new_handle = next_handle++;
+	window_schedule_t *sched = calloc(sizeof *sched, 1);
+	if (sched == NULL) {
+		return new_handle;
+	}
+	sched->owner = window;
+	sched->ctx = ctx;
+	sched->handle = new_handle;
+	sched->repeat_timeout = repeating ? timeout : 0;
+
+	RING_INSERT(window->schedule_ring, sched);
+
+	/* Next, the duktape stack looks like: func, timeout, ...
+	 * In order to proceed, we want to put into the WINDOW_CALLBACKS
+	 * keyed by the handle, an object containing the call to make and
+	 * the array of arguments to call the function with
+	 */
+	duk_idx_t nargs = duk_get_top(ctx) - 2;
+	duk_push_global_object(ctx);
+	duk_get_prop_string(ctx, -1, WINDOW_CALLBACKS);
+	duk_push_int(ctx, (duk_int_t)new_handle);
+	duk_push_object(ctx);
+	/* stack is: func, timeout, ..., win, cbt, handle, cbo */
+
+	/* put the function into the cbo */
+	duk_dup(ctx, 0);
+	duk_put_prop_string(ctx, -2, "func");
+
+	/* Now the arguments */
+	duk_push_array(ctx);
+	for (duk_idx_t i = 0; i < nargs; ++i) {
+		duk_dup(ctx, 2 + i); /* Dup the arg */
+		duk_put_prop_index(ctx, -2, i); /* arr[i] = arg[i] */
+	}
+	duk_put_prop_string(ctx, -2, "args");
+	/* stack is: func, timeout, ..., win, cbt, handle, cbo */
+	duk_put_prop(ctx, -3);
+	/* stack is: func, timeout, ..., win, cbt */
+	duk_pop_2(ctx);
+	/* And we're back to func, timeout, ... */
+
+	guit->misc->schedule(timeout, window_schedule_callback, sched);
+	NSLOG(dukky, DEEPDEBUG, "Scheduled callback %zd for %d ms from now", new_handle, timeout);
+
+	return new_handle;
+}
+
+static void window_remove_callback_by_handle(duk_context *ctx,
+					     window_private_t *window,
+					     size_t handle) {
+	RING_ITERATE_START(window_schedule_t, window->schedule_ring, sched) {
+		if (sched->handle == handle) {
+			NSLOG(dukky, DEEPDEBUG, "Cancelled callback %zd", sched->handle);
+			guit->misc->schedule(-1, window_schedule_callback, sched);
+			RING_REMOVE(window->schedule_ring, sched);
+			window_remove_callback_bits(ctx, sched->handle);
+			free(sched);
+			RING_ITERATE_STOP(window->schedule_ring, sched);
+		}
+	} RING_ITERATE_END(window->schedule_ring, sched);
+}
+
 %};
 };
 
@@ -25,10 +176,21 @@ init Window(struct browser_window *win, struct html_content *htmlc)
 	/* element window */
 	priv->win = win;
 	priv->htmlc = htmlc;
-	NSLOG(netsurf, INFO, "win=%p htmlc=%p", priv->win, priv->htmlc);
+	priv->schedule_ring = NULL;
+	NSLOG(netsurf, DEEPDEBUG, "win=%p htmlc=%p", priv->win, priv->htmlc);
 
-	NSLOG(netsurf, INFO,
+	NSLOG(netsurf, DEEPDEBUG,
 	      "URL is %s", nsurl_access(browser_window_access_url(priv->win)));
+	duk_push_object(ctx);
+	duk_put_prop_string(ctx, 0, WINDOW_CALLBACKS);
+%}
+
+fini Window()
+%{
+	/* Cheaply iterate the schedule ring, cancelling any pending callbacks */
+	while (priv->schedule_ring != NULL) {
+		window_remove_callback_by_handle(ctx, priv, priv->schedule_ring->handle);
+	}
 %}
 
 prototype Window()
@@ -140,5 +302,55 @@ method Window::alert()
 	duk_size_t msg_len;
 	const char *msg = duk_safe_to_lstring(ctx, 0, &msg_len);
 	NSLOG(netsurf, INFO, "JS ALERT: %*s", (int)msg_len, msg);
+	return 0;
+%}
+
+method Window::setTimeout()
+%{
+	duk_idx_t argc = duk_get_top(ctx);
+	if (argc < 2) {
+		/* not enough arguments */
+		return duk_error(ctx, DUK_RET_TYPE_ERROR, dukky_error_fmt_argument, 2, argc);
+	}
+
+	/* func, timeout, args... */
+	duk_int_t timeout = duk_get_int(ctx, 1);
+	if (timeout < 10) { timeout = 10; }
+	size_t handle = window_alloc_new_callback(ctx, priv, false, (int)timeout);
+
+	duk_push_int(ctx, (duk_int_t)handle);
+	return 1;
+%}
+
+method Window::setInterval()
+%{
+	duk_idx_t argc = duk_get_top(ctx);
+	if (argc < 2) {
+		/* not enough arguments */
+		return duk_error(ctx, DUK_RET_TYPE_ERROR, dukky_error_fmt_argument, 2, argc);
+	}
+
+	/* func, timeout, args... */
+	duk_int_t timeout = duk_get_int(ctx, 1);
+	if (timeout < 10) { timeout = 10; }
+	size_t handle = window_alloc_new_callback(ctx, priv, true, (int)timeout);
+
+	duk_push_int(ctx, (duk_int_t)handle);
+	return 1;
+%}
+
+method Window::clearTimeout()
+%{
+	duk_int_t handle = duk_get_int(ctx, 0);
+	window_remove_callback_by_handle(ctx, priv, (size_t) handle);
+
+	return 0;
+%}
+
+method Window::clearInterval()
+%{
+	duk_int_t handle = duk_get_int(ctx, 0);
+	window_remove_callback_by_handle(ctx, priv, (size_t) handle);
+
 	return 0;
 %}
