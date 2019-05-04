@@ -20,7 +20,10 @@ outlining the remaining unimplemented API bindings.
 WebIDL
 ------
 
-The WebIDL specification defines the interface description language used.
+The [WebIDL specification](http://www.w3.org/TR/WebIDL/) defines the
+interface description language used. The WebIDL is being updated and
+an [editors draft](https://heycam.github.io/webidl/) is available but
+use is inconsistant.
 
 These descriptions should be periodicaly updated to keep the browser
 interfaces current.
@@ -31,6 +34,18 @@ to automaticaly update the IDL files by scraping the web specs.
 This tool needs a great deal of hand holding, not least because many of the
 source documents list the IDL fragments multiple times, some even have
 appendicies with the entrire IDL repeated.
+
+The IDL uses some slightly different terms than other object orientated
+ systems.
+
+  WebIDL | JavaScript | Common OOP | Note
+ ------- | ---------- | ---------- | ----
+ interface | prototype | class     | The data definition of the object
+ constants | read-only value property on the prototype | class variable | Belong to class, one copy
+ operation | method    | method    | functions that can be called
+ attribute | property  | property  | Variables set per instance
+
+
 
 Interface binding introduction
 ------------------------------
