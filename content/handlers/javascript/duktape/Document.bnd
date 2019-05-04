@@ -187,6 +187,20 @@ method Document::createElementNS()
 	return 1;
 %}
 
+method Document::createDocumentFragment()
+%{
+	struct dom_document_fragment *frag = NULL;
+	dom_exception err;
+
+	err = dom_document_create_document_fragment(priv->parent.node, &frag);
+
+	if (err != DOM_NO_ERR) return 0; /* coerced to undefined */
+
+	dukky_push_node(ctx, (dom_node *)frag);
+
+	return 1;
+%}
+
 getter Document::head()
 %{
 	struct dom_nodelist *nodes;
