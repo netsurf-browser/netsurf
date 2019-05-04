@@ -32,7 +32,6 @@ struct hlcache_handle;
  */
 struct nscss_import {
 	struct hlcache_handle *c;	/**< Content containing sheet */
-	uint64_t media;		/**< Media types that sheet applies to */
 };
 
 /**
