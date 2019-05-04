@@ -1343,10 +1343,14 @@ bool js_fire_event(jscontext *ctx, const char *type, struct dom_document *doc, s
 		/* ... handlers bodynode */
 		if (dukky_get_current_value_of_event_handler(
 			    CTX, corestring_dom_load, body) == false) {
+			/* Unref the body, we don't need it any more */
+			dom_node_unref(body);
 			/* ... handlers */
 			duk_pop(CTX);
 			return true;
 		}
+		/* Unref the body, we don't need it any more */
+		dom_node_unref(body);
 		/* ... handlers handler bodynode */
 		duk_pop(CTX);
 	}
