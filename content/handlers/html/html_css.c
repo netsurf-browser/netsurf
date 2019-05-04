@@ -631,6 +631,9 @@ html_css_new_selection_context(html_content *c, css_select_ctx **ret_select_ctx)
 		css_origin origin = CSS_ORIGIN_AUTHOR;
 
 		/* Filter out stylesheets for non-screen media. */
+		/* TODO: We should probably pass the sheet in anyway, and let
+		 *       libcss handle the filtering.
+		 */
 		if (hsheet->unused) {
 			continue;
 		}
@@ -646,10 +649,13 @@ html_css_new_selection_context(html_content *c, css_select_ctx **ret_select_ctx)
 		}
 
 		if (sheet != NULL) {
+			/* TODO: Pass the sheet's full media query, instead of
+			 *       "screen".
+			 */
 			css_ret = css_select_ctx_append_sheet(select_ctx,
 							      sheet,
 							      origin,
-							      CSS_MEDIA_SCREEN);
+							      "screen");
 			if (css_ret != CSS_OK) {
 				css_select_ctx_destroy(select_ctx);
 				return css_error_to_nserror(css_ret);
