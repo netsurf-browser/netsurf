@@ -645,6 +645,56 @@ void html_finish_conversion(html_content *htmlc)
 	dom_node_unref(html);
 }
 
+/* handler for a SCRIPT which has been added to a tree */
+static void
+dom_SCRIPT_showed_up(html_content *htmlc, dom_html_script_element *script)
+{
+	dom_exception exc;
+	dom_html_script_element_flags flags;
+	dom_hubbub_error res;
+	bool within;
+
+	if (!htmlc->enable_scripting) {
+		NSLOG(netsurf, INFO, "Encountered a script, but scripting is off, ignoring");
+		return;
+	}
+
+	NSLOG(netsurf, DEEPDEBUG, "Encountered a script, node %p showed up", script);
+
+	exc = dom_html_script_element_get_flags(script, &flags);
+	if (exc != DOM_NO_ERR) {
+		NSLOG(netsurf, DEEPDEBUG, "Unable to retrieve flags, giving up");
+		return;
+	}
+
+	if (flags & DOM_HTML_SCRIPT_ELEMENT_FLAG_PARSER_INSERTED) {
+		NSLOG(netsurf, DEBUG, "Script was parser inserted, skipping");
+		return;
+	}
+
+	exc = dom_node_contains(htmlc->document, script, &within);
+	if (exc != DOM_NO_ERR) {
+		NSLOG(netsurf, DEBUG, "Unable to determine if script was within document, ignoring");
+		return;
+	}
+
+	if (!within) {
+		NSLOG(netsurf, DEBUG, "Script was not within the document, ignoring for now");
+		return;
+	}
+
+	res = html_process_script(htmlc, (dom_node *) script);
+	if (res == DOM_HUBBUB_OK) {
+		NSLOG(netsurf, DEEPDEBUG, "Inserted script has finished running");
+	} else {
+		if (res == (DOM_HUBBUB_HUBBUB_ERR | HUBBUB_PAUSED)) {
+			NSLOG(netsurf, DEEPDEBUG, "Inserted script has launced asynchronously");
+		} else {
+			NSLOG(netsurf, DEEPDEBUG, "Failure starting script");
+		}
+	}
+}
+
 /* callback for DOMNodeInserted end type */
 static void
 dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
@@ -693,6 +743,9 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 			case DOM_HTML_ELEMENT_TYPE_STYLE:
 				html_css_process_style(htmlc, (dom_node *) node);
 				break;
+			case DOM_HTML_ELEMENT_TYPE_SCRIPT:
+				dom_SCRIPT_showed_up(htmlc, (dom_html_script_element *) node);
+				break;
 			default:
 				break;
 			}
@@ -720,7 +773,39 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 	}
 }
 
-/* callback for DOMNodeInserted end type */
+/* callback for DOMNodeInsertedIntoDocument end type */
+static void
+dom_default_action_DOMNodeInsertedIntoDocument_cb(struct dom_event *evt, void *pw)
+{
+	html_content *htmlc = pw;
+	dom_event_target *node;
+	dom_node_type type;
+	dom_exception exc;
+
+	exc = dom_event_get_target(evt, &node);
+	if ((exc == DOM_NO_ERR) && (node != NULL)) {
+		exc = dom_node_get_node_type(node, &type);
+		if ((exc == DOM_NO_ERR) && (type == DOM_ELEMENT_NODE)) {
+			/* an element node has been modified */
+			dom_html_element_type tag_type;
+
+			exc = dom_html_element_get_tag_type(node, &tag_type);
+			if (exc != DOM_NO_ERR) {
+				tag_type = DOM_HTML_ELEMENT_TYPE__UNKNOWN;
+			}
+
+			switch (tag_type) {
+			case DOM_HTML_ELEMENT_TYPE_SCRIPT:
+				dom_SCRIPT_showed_up(htmlc, (dom_html_script_element *) node);
+			default:
+				break;
+			}
+		}
+		dom_node_unref(node);
+	}
+}
+
+/* callback for DOMSubtreeModified end type */
 static void
 dom_default_action_DOMSubtreeModified_cb(struct dom_event *evt, void *pw)
 {
@@ -787,11 +872,13 @@ dom_event_fetcher(dom_string *type,
 		  dom_default_action_phase phase,
 		  void **pw)
 {
-	NSLOG(netsurf, DEEPDEBUG, "type:%s", dom_string_data(type));
+	NSLOG(netsurf, DEEPDEBUG, "phase:%d type:%s", phase, dom_string_data(type));
 
 	if (phase == DOM_DEFAULT_ACTION_END) {
 		if (dom_string_isequal(type, corestring_dom_DOMNodeInserted)) {
 			return dom_default_action_DOMNodeInserted_cb;
+		} else if (dom_string_isequal(type, corestring_dom_DOMNodeInsertedIntoDocument)) {
+			return dom_default_action_DOMNodeInsertedIntoDocument_cb;
 		} else if (dom_string_isequal(type, corestring_dom_DOMSubtreeModified)) {
 			return dom_default_action_DOMSubtreeModified_cb;
 		}
@@ -847,6 +934,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 
 	c->parser = NULL;
 	c->parse_completed = false;
+	c->conversion_begun = false;
 	c->document = NULL;
 	c->quirks = DOM_DOCUMENT_QUIRKS_MODE_NONE;
 	c->encoding = NULL;
@@ -948,6 +1036,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 				     (void *) &old_node_data);
 	if (err != DOM_NO_ERR) {
 		dom_hubbub_parser_destroy(c->parser);
+		c->parser = NULL;
 		nsurl_unref(c->base_url);
 		c->base_url = NULL;
 
@@ -1185,14 +1274,21 @@ bool html_can_begin_conversion(html_content *htmlc)
 {
 	unsigned int i;
 
+	/* Cannot begin conversion if we already have */
+	if (htmlc->conversion_begun)
+		return false;
+
+	/* Cannot begin conversion if we're still fetching stuff */
 	if (htmlc->base.active != 0)
 		return false;
 
 	for (i = 0; i != htmlc->stylesheet_count; i++) {
+		/* Cannot begin conversion if the stylesheets are modified */
 		if (htmlc->stylesheets[i].modified)
 			return false;
 	}
 
+	/* All is good, begin */
 	return true;
 }
 
@@ -1205,6 +1301,10 @@ html_begin_conversion(html_content *htmlc)
 	dom_exception exc; /* returned by libdom functions */
 	dom_string *node_name = NULL;
 	dom_hubbub_error error;
+
+	if (htmlc->conversion_begun)
+		/* Conversion already began, so we are okay */
+		return true;
 
 	/* The act of completing the parse can result in additional data
 	 * being flushed through the parser. This may result in new style or
@@ -1247,8 +1347,11 @@ html_begin_conversion(html_content *htmlc)
 		return false;
 	}
 
-	/* complete script execution */
-	html_script_exec(htmlc);
+	/* Conversion begins proper at this point */
+	htmlc->conversion_begun = true;
+
+	/* complete script execution, including deferred scripts */
+	html_script_exec(htmlc, true);
 
 	/* fire a simple event that bubbles named DOMContentLoaded at
 	 * the Document.

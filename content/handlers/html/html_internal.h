@@ -98,6 +98,7 @@ typedef struct html_content {
 
 	dom_hubbub_parser *parser; /**< Parser object handle */
 	bool parse_completed; /**< Whether the parse has been completed */
+	bool conversion_begun; /**< Whether or not the conversion has begun */
 
 	/** Document tree */
 	dom_document *document;
@@ -313,9 +314,10 @@ dom_hubbub_error html_process_script(void *ctx, dom_node *node);
  * http://www.whatwg.org/specs/web-apps/current-work/multipage/scripting-1.html#the-script-element
  *
  * \param htmlc html content.
+ * \param allow_defer allow deferred execution, if not, only async scripts.
  * \return NSERROR_OK error code.
  */
-nserror html_script_exec(html_content *htmlc);
+nserror html_script_exec(html_content *htmlc, bool allow_defer);
 
 /**
  * Free all script resources and references for a html content.

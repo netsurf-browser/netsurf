@@ -55,7 +55,7 @@ static script_handler_t *select_script_handler(content_type ctype)
 
 
 /* exported internal interface documented in html/html_internal.h */
-nserror html_script_exec(html_content *c)
+nserror html_script_exec(html_content *c, bool allow_defer)
 {
 	unsigned int i;
 	struct html_script *s;
@@ -71,7 +71,7 @@ nserror html_script_exec(html_content *c)
 		}
 
 		if ((s->type == HTML_SCRIPT_ASYNC) ||
-		    (s->type == HTML_SCRIPT_DEFER)) {
+		    (allow_defer && (s->type == HTML_SCRIPT_DEFER))) {
 			/* ensure script content is present */
 			if (s->data.handle == NULL)
 				continue;
@@ -200,6 +200,13 @@ convert_script_async_cb(hlcache_handle *script,
 		html_begin_conversion(parent);
 	}
 
+	/* if we have already started converting though, then we can handle the
+	 * scripts as they come in.
+	 */
+	else if (parent->conversion_begun) {
+		html_script_exec(parent, false);
+	}
+
 	return NSERROR_OK;
 }
 
@@ -304,9 +311,11 @@ convert_script_sync_cb(hlcache_handle *script,
 		}
 
 		/* continue parse */
-		err = dom_hubbub_parser_pause(parent->parser, false);
-		if (err != DOM_HUBBUB_OK) {
-			NSLOG(netsurf, INFO, "unpause returned 0x%x", err);
+		if (parent->parser != NULL) {
+			err = dom_hubbub_parser_pause(parent->parser, false);
+			if (err != DOM_HUBBUB_OK) {
+				NSLOG(netsurf, INFO, "unpause returned 0x%x", err);
+			}
 		}
 
 		break;
@@ -328,9 +337,11 @@ convert_script_sync_cb(hlcache_handle *script,
 		s->already_started = true;
 
 		/* continue parse */
-		err = dom_hubbub_parser_pause(parent->parser, false);
-		if (err != DOM_HUBBUB_OK) {
-			NSLOG(netsurf, INFO, "unpause returned 0x%x", err);
+		if (parent->parser != NULL) {
+			err = dom_hubbub_parser_pause(parent->parser, false);
+			if (err != DOM_HUBBUB_OK) {
+				NSLOG(netsurf, INFO, "unpause returned 0x%x", err);
+			}
 		}
 
 		break;
@@ -400,6 +411,12 @@ exec_src_script(html_content *c,
 	exc = dom_element_has_attribute(node, corestring_dom_async, &async);
 	if (exc != DOM_NO_ERR) {
 		return DOM_HUBBUB_OK; /* dom error */
+	}
+
+	if (c->parse_completed) {
+		/* After parse completed, all scripts are essentially async */
+		async = true;
+		defer = false;
 	}
 
 	if (async) {

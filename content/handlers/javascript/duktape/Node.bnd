@@ -427,6 +427,7 @@ method Node::appendChild()
 	dom_exception err;
 	dom_node *spare;
 
+	NSLOG(dukky, DEEPDEBUG, "About to append %p to %p", other->node, priv->node);
 	err = dom_node_append_child(priv->node, other->node, &spare);
 	if (err != DOM_NO_ERR) return 0;
 	dukky_push_node(ctx, spare);
