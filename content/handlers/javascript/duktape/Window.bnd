@@ -251,9 +251,11 @@ getter Window::console()
 
 getter Window::location()
 %{
+	/* obtain location object for this window (if it exists) */
 	duk_push_this(ctx);
 	duk_get_prop_string(ctx, -1, MAGIC(Location));
 	if (duk_is_undefined(ctx, -1)) {
+		/* location object did not previously exist so create it */
 		duk_pop(ctx);
 
 		duk_push_pointer(ctx, llcache_handle_get_url(priv->htmlc->base.llcache));
