@@ -45,7 +45,7 @@ css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
 		const char *charset, const char *url, bool allow_quirks);
 
 css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
-		uint64_t media, const css_stylesheet *inline_style);
+		const css_media *media, const css_stylesheet *inline_style);
 
 css_computed_style *nscss_get_blank_style(nscss_select_ctx *ctx,
 		const css_computed_style *parent);

@@ -1373,7 +1373,7 @@ css_select_results *box_get_style(html_content *c,
 	ctx.parent_style = parent_style;
 
 	/* Select style for element */
-	styles = nscss_get_style(&ctx, n, CSS_MEDIA_SCREEN, inline_style);
+	styles = nscss_get_style(&ctx, n, &c->media, inline_style);
 
 	/* No longer need inline style */
 	if (inline_style != NULL)

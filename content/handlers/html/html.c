@@ -950,6 +950,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	c->stylesheet_count = 0;
 	c->stylesheets = NULL;
 	c->select_ctx = NULL;
+	c->media.type = CSS_MEDIA_SCREEN;
 	c->universal = NULL;
 	c->num_objects = 0;
 	c->object_list = NULL;

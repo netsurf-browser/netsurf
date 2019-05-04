@@ -255,7 +255,7 @@ static void nscss_dom_user_data_handler(dom_node_operation operation,
  *         or NULL on failure
  */
 css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
-		uint64_t media, const css_stylesheet *inline_style)
+		const css_media *media, const css_stylesheet *inline_style)
 {
 	css_computed_style *composed;
 	css_select_results *styles;

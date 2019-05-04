@@ -156,6 +156,8 @@ typedef struct html_content {
 	struct html_stylesheet *stylesheets;
 	/**< Style selection context */
 	css_select_ctx *select_ctx;
+	/**< Style selection media specification */
+	css_media media;
 	/**< Universal selector */
 	lwc_string *universal;
 
