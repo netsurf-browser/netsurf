@@ -789,9 +789,18 @@ static void dukky_push_handler_code_(duk_context *ctx, dom_string *name,
 	dom_exception exc;
 	dom_node_type ntype;
 
-	/* Currently safe since libdom has no event targets which are not
-	 * nodes.  Reconsider this as and when we work out how to have
-	 * window do stuff
+	/* If et is NULL, then we're actually dealing with the Window object
+	 * which has no default handlers and no way to assign handlers
+	 * which aren't directly stored in the HANDLER_MAGIC
+	 */
+	if (et == NULL) {
+		duk_push_lstring(ctx, "", 0);
+		return;
+	}
+
+	/* The rest of this assumes et is a proper event target and expands
+	 * out from there based on the assumption that all valid event targets
+	 * are nodes.
 	 */
 	exc = dom_node_get_node_type(et, &ntype);
 	if (exc != DOM_NO_ERR) {
@@ -1091,8 +1100,14 @@ void dukky_register_event_listener_for(duk_context *ctx,
 	dom_exception exc;
 
 	/* ... */
-	if (dukky_push_node(ctx, (struct dom_node *)ele) == false)
-		return;
+	if (ele == NULL) {
+		/* A null element is the Window object */
+		duk_push_global_object(ctx);
+	} else {
+		/* Non null elements must be pushed as a node object */
+		if (dukky_push_node(ctx, (struct dom_node *)ele) == false)
+			return;
+	}
 	/* ... node */
 	duk_get_prop_string(ctx, -1, HANDLER_LISTENER_MAGIC);
 	/* ... node handlers */
@@ -1113,6 +1128,14 @@ void dukky_register_event_listener_for(duk_context *ctx,
 	/* ... node handlers */
 	duk_pop_2(ctx);
 	/* ... */
+	if (ele == NULL) {
+		/* Nothing more to do, Window doesn't register in the
+		 * normal event listener flow
+		 */
+		return;
+	}
+
+	/* Otherwise add an event listener to the element */
 	exc = dom_event_listener_create(dukky_generic_event_handler, ctx,
 					&listen);
 	if (exc != DOM_NO_ERR) return;
