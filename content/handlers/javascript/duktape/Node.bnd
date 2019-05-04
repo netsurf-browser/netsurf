@@ -10,6 +10,9 @@
 
 class Node {
 	private dom_node *node;
+	prologue %{
+#define LIST_PROXY_MAGIC MAGIC(LIST_PROXY)
+%}
 };
 
 init Node(struct dom_node *node)
@@ -117,12 +120,17 @@ getter Node::childNodes()
 		duk_pop(ctx);
 		exc = dom_node_get_child_nodes(priv->node, &nlist);
 		if (exc != DOM_NO_ERR) return 0;
+		duk_get_global_string(ctx, LIST_PROXY_MAGIC);
 		duk_push_pointer(ctx, nlist);
 		if (dukky_create_object(ctx, PROTO_NAME(NODELIST), 1) != DUK_EXEC_SUCCESS) {
 			dom_nodelist_unref(nlist);
 			return 0;
 		}
 		dom_nodelist_unref(nlist);
+		if (dukky_pcall(ctx, 1, false) != 0) {
+			NSLOG(dukky, DEBUG, "Unable to construct nodelist?");
+			return 0; /* coerced to undefined */
+		}
 		duk_dup(ctx, -1);
 		duk_put_prop_string(ctx, 0, MAGIC(childNodes));
 	}

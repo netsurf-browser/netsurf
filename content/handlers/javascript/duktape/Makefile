@@ -4,9 +4,15 @@
 # Included by javascript/Makefile
 #
 
-content/handlers/javascript/duktape/dukky.c: $(OBJROOT)/duktape/binding.h
+content/handlers/javascript/duktape/dukky.c: $(OBJROOT)/duktape/binding.h $(OBJROOT)/duktape/generics.js.inc
 
 BINDINGS := $(wildcard content/handlers/javascript/duktape/*.bnd)
+
+# Generator for the C include representing the generics.js
+$(OBJROOT)/duktape/generics.js.inc: content/handlers/javascript/duktape/generics.js
+	$(Q)$(MKDIR) -p $(OBJROOT)/duktape
+	$(VQ)echo "     XXD: $<"
+	$(Q)xxd -i $< | sed -e 's/content_handlers_javascript_duktape_generics_js/generics_js/' > $@
 
 # ensure genbind generates debugging files
 GBFLAGS+=-D

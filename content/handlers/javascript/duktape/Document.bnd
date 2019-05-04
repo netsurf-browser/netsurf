@@ -18,6 +18,7 @@ prologue Document()
 #include "content/urldb.h"
 
 #define HANDLER_MAGIC MAGIC(HANDLER_MAP)
+#define LIST_PROXY_MAGIC MAGIC(LIST_PROXY)
 %}
 
 
@@ -344,10 +345,18 @@ method Document::getElementsByTagName()
 
 	if (nodes == NULL) return 0; /* coerced to undefined */
 
+	duk_get_global_string(ctx, LIST_PROXY_MAGIC);
+
 	duk_push_pointer(ctx, nodes);
 	dukky_create_object(ctx, PROTO_NAME(NODELIST), 1);
 	dom_nodelist_unref(nodes);
-	return 1;
+
+	if (dukky_pcall(ctx, 1, false) != 0) {
+		NSLOG(dukky, DEBUG, "Unable to construct nodelist?");
+		return 0; /* coerced to undefined */
+	}
+
+	return 1; /* The Proxy(NodeList) wrapper */
 %}
 
 getter Document::cookie()

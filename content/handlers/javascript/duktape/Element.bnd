@@ -11,6 +11,7 @@
 class Element {
 	prologue %{
 #include <utils/corestrings.h>
+#define LIST_PROXY_MAGIC MAGIC(LIST_PROXY)
 %};
 };
 
@@ -204,9 +205,17 @@ method Element::getElementsByTagName ()
 						   tagname, &nlist);
 	dom_string_unref(tagname);
 	if (exc != DOM_NO_ERR) return 0;
+
+	duk_get_global_string(ctx, LIST_PROXY_MAGIC);
+
 	duk_push_pointer(ctx, nlist);
 	dukky_create_object(ctx, PROTO_NAME(NODELIST), 1);
 	dom_nodelist_unref(nlist);
+
+	if (dukky_pcall(ctx, 1, false) != 0) {
+		NSLOG(dukky, DEBUG, "Unable to construct nodelist?");
+		return 0; /* coerced to undefined */
+	}
 
 	return 1;
 %}

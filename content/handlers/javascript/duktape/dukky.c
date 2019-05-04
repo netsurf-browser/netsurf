@@ -37,6 +37,7 @@
 #include "javascript/content.h"
 
 #include "duktape/binding.h"
+#include "duktape/generics.js.inc"
 
 #include "duktape.h"
 #include "dukky.h"
@@ -47,6 +48,7 @@
 #define HANDLER_LISTENER_MAGIC MAGIC(HANDLER_LISTENER_MAP)
 #define HANDLER_MAGIC MAGIC(HANDLER_MAP)
 #define EVENT_LISTENER_JS_MAGIC MAGIC(EVENT_LISTENER_JS_MAP)
+#define LIST_PROXY_MAGIC MAGIC(LIST_PROXY)
 
 static duk_ret_t dukky_populate_object(duk_context *ctx, void *udata)
 {
@@ -635,6 +637,38 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 	duk_push_object(CTX);
 	duk_put_global_string(CTX, EVENT_MAGIC);
 
+	/* Now load the NetSurf table in */
+	/* ... */
+	duk_push_string(CTX, "generics.js");
+	/* ..., generics.js */
+	if (duk_pcompile_lstring_filename(CTX, DUK_COMPILE_EVAL,
+					  (const char *)generics_js, generics_js_len) != 0) {
+		NSLOG(dukky, CRITICAL, "%s", duk_safe_to_string(CTX, -1));
+		NSLOG(dukky, CRITICAL, "Unable to compile generics.js, compartment aborted");
+		return NULL;
+	}
+	/* ..., (generics.js) */
+	if (dukky_pcall(CTX, 0, true) != 0) {
+		NSLOG(dukky, CRITICAL, "Unable to run generics.js, compartment aborted");
+		return NULL;
+	}
+	/* ..., result */
+	duk_pop(CTX);
+	/* ... */
+	duk_push_global_object(CTX);
+	/* ..., Win */
+	duk_get_prop_string(CTX, -1, "NetSurf");
+	/* ..., Win, NetSurf */
+	duk_get_prop_string(CTX, -1, "makeListProxy");
+	/* ..., Win, NetSurf, MLP */
+	duk_put_global_string(CTX, LIST_PROXY_MAGIC);
+	/* ..., Win, NetSurf */
+	duk_pop(CTX);
+	/* ..., Win */
+	duk_del_prop_string(CTX, -1, "NetSurf");
+	duk_pop(CTX);
+	/* ... */
+
 	return (jsobject *)ctx;
 }
 
@@ -722,7 +756,7 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen, const char *name)
 	if (txt == NULL || txtlen == 0) return false;
 	duk_set_top(CTX, 0);
 	NSLOG(dukky, DEEPDEBUG, "Running %zd bytes from %s", txtlen, name);
-	NSLOG(dukky, DEEPDEBUG, "\n%s\n", txt);
+	/* NSLOG(dukky, DEEPDEBUG, "\n%s\n", txt); */
 
 	(void) nsu_getmonotonic_ms(&ctx->exec_start_time);
 	if (name != NULL) {
