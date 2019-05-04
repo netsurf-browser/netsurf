@@ -23,7 +23,7 @@ docs/UnimplementedJavascript.txt: content/handlers/javascript/duktape/netsurf.bn
 	$(VQ)echo "This is a list of all the binding methods, getters and setters without an implementation in a binding." >> $@
 	$(VQ)echo "" >> $@
 	$(VQ)echo " GENBIND: $<"
-	$(Q)nsgenbind $(GBFLAGS) -Wunimplemented -I content/handlers/javascript/WebIDL $< $(OBJROOT)/duktape 2>&1 >/dev/null | grep "Unimplemented" | cut -d' ' -f4- | sort -k 2 | awk '{print $$0 }' >> $@
+	$(Q)nsgenbind $(GBFLAGS) -Wunimplemented -I content/handlers/javascript/WebIDL $< $(OBJROOT)/duktape 2>&1 >/dev/null | grep "Unimplemented" | cut -d' ' -f4- | sort -k 2 | awk '{print $$0"\\n" }' >> $@
 	$(VQ)echo "*/" >> $@
 
 ifeq ($(filter $(MAKECMDGOALS),clean test coverage),)
