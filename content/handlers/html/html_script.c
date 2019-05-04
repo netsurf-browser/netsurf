@@ -597,16 +597,21 @@ nserror html_script_free(html_content *html)
 			dom_string_unref(html->scripts[i].mimetype);
 		}
 
-		if ((html->scripts[i].type == HTML_SCRIPT_INLINE) &&
-		    (html->scripts[i].data.string != NULL)) {
-
-			dom_string_unref(html->scripts[i].data.string);
-
-		} else if ((html->scripts[i].type == HTML_SCRIPT_SYNC) &&
-			   (html->scripts[i].data.handle != NULL)) {
-
-			hlcache_handle_release(html->scripts[i].data.handle);
-
+		switch (html->scripts[i].type) {
+		case HTML_SCRIPT_INLINE:
+			if (html->scripts[i].data.string != NULL) {
+				dom_string_unref(html->scripts[i].data.string);
+			}
+			break;
+		case HTML_SCRIPT_SYNC:
+			/* fallthrough */
+		case HTML_SCRIPT_ASYNC:
+			/* fallthrough */
+		case HTML_SCRIPT_DEFER:
+			if (html->scripts[i].data.handle != NULL) {
+				hlcache_handle_release(html->scripts[i].data.handle);
+			}
+			break;
 		}
 	}
 	free(html->scripts);
