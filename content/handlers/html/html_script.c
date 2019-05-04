@@ -91,7 +91,7 @@ nserror html_script_exec(html_content *c, bool allow_defer)
 					CONTENT_STATUS_DONE) {
 				/* external script is now available */
 				const char *data;
-				size_t size;
+				unsigned long size;
 				data = content_get_source_data(
 						s->data.handle, &size );
 				script_handler(c->jscontext, data, size,
