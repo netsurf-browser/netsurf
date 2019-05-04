@@ -163,6 +163,12 @@ dukky_push_node_stacked(duk_context *ctx)
 	/* ... node nodeptr klass nodes */
 	duk_pop_3(ctx);
 	/* ... node */
+	{
+		duk_dup(ctx, -1);
+		const char * what = duk_safe_to_string(ctx, -1);
+		NSLOG(dukky, DEEPDEBUG, "Created: %s", what);
+		duk_pop(ctx);
+	}
 	return true;
 }
 
@@ -457,7 +463,12 @@ dukky_push_node(duk_context *ctx, struct dom_node *node)
 		/* ... node nodes */
 		duk_pop(ctx);
 		/* ... node */
-		NSLOG(dukky, DEEPDEBUG, "Found it memoised");
+		{
+			duk_dup(ctx, -1);
+			const char * what = duk_safe_to_string(ctx, -1);
+			NSLOG(dukky, DEEPDEBUG, "Found it memoised: %s", what);
+			duk_pop(ctx);
+		}
 		return true;
 	}
 	/* ... nodes undefined */
