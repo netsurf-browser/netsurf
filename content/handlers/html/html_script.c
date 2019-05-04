@@ -42,7 +42,7 @@
 #include "html/html.h"
 #include "html/html_internal.h"
 
-typedef bool (script_handler_t)(struct jscontext *jscontext, const char *data, size_t size) ;
+typedef bool (script_handler_t)(struct jscontext *jscontext, const char *data, size_t size, const char *name);
 
 
 static script_handler_t *select_script_handler(content_type ctype)
@@ -91,10 +91,11 @@ nserror html_script_exec(html_content *c, bool allow_defer)
 					CONTENT_STATUS_DONE) {
 				/* external script is now available */
 				const char *data;
-				unsigned long size;
+				size_t size;
 				data = content_get_source_data(
 						s->data.handle, &size );
-				script_handler(c->jscontext, data, size);
+				script_handler(c->jscontext, data, size,
+					       nsurl_access(hlcache_handle_get_url(s->data.handle)));
 
 				s->already_started = true;
 
@@ -307,7 +308,8 @@ convert_script_sync_cb(hlcache_handle *script,
 			const char *data;
 			unsigned long size;
 			data = content_get_source_data(s->data.handle, &size );
-			script_handler(parent->jscontext, data, size);
+			script_handler(parent->jscontext, data, size,
+				       nsurl_access(hlcache_handle_get_url(s->data.handle)));
 		}
 
 		/* continue parse */
@@ -531,7 +533,8 @@ exec_inline_script(html_content *c, dom_node *node, dom_string *mimetype)
 	if (script_handler != NULL) {
 		script_handler(c->jscontext,
 			       dom_string_data(script),
-			       dom_string_byte_length(script));
+			       dom_string_byte_length(script),
+			       "?inline script?");
 	}
 	return DOM_HUBBUB_OK;
 }

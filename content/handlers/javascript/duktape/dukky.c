@@ -716,7 +716,7 @@ duk_int_t dukky_pcall(duk_context *ctx, duk_size_t argc, bool reset_timeout)
 }
 
 
-bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
+bool js_exec(jscontext *ctx, const char *txt, size_t txtlen, const char *name)
 {
 	assert(ctx);
 	if (txt == NULL || txtlen == 0) return false;
@@ -724,7 +724,11 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 	NSLOG(dukky, DEEPDEBUG, "%zd bytes: %s", txtlen, txt);
 
 	(void) nsu_getmonotonic_ms(&ctx->exec_start_time);
-	duk_push_string(CTX, "?unknown source?");
+	if (name != NULL) {
+		duk_push_string(CTX, name);
+	} else {
+		duk_push_string(CTX, "?unknown source?");
+	}
 	if (duk_pcompile_lstring_filename(CTX, DUK_COMPILE_EVAL, txt, txtlen) != 0) {
 		NSLOG(dukky, INFO, "Failed to compile JavaScript input");
 		goto handle_error;
