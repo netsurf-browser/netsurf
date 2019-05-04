@@ -213,6 +213,8 @@ prototype Window()
 	EXPOSE(Function);
 	EXPOSE(Proxy);
 	EXPOSE(String);
+	EXPOSE(Number);
+	EXPOSE(Error);
 	EXPOSE(encodeURI);
 	EXPOSE(encodeURIComponent);
 #undef EXPOSE
