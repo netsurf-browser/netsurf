@@ -12,7 +12,7 @@ class Node {
 	private dom_node *node;
 	prologue %{
 #define LIST_PROXY_MAGIC MAGIC(LIST_PROXY)
-%}
+%};
 };
 
 init Node(struct dom_node *node)
