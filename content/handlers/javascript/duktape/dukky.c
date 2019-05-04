@@ -721,7 +721,8 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen, const char *name)
 	assert(ctx);
 	if (txt == NULL || txtlen == 0) return false;
 	duk_set_top(CTX, 0);
-	NSLOG(dukky, DEEPDEBUG, "%zd bytes: %s", txtlen, txt);
+	NSLOG(dukky, DEEPDEBUG, "Running %zd bytes from %s", txtlen, name);
+	NSLOG(dukky, DEEPDEBUG, "\n%s\n", txt);
 
 	(void) nsu_getmonotonic_ms(&ctx->exec_start_time);
 	if (name != NULL) {

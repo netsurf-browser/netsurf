@@ -147,6 +147,46 @@ method Document::createElement()
 	return 1;
 %}
 
+method Document::createElementNS()
+%{
+	dom_node *newnode;
+	dom_exception err;
+	duk_size_t text_len;
+	duk_size_t ns_len;
+	const char *ns = duk_safe_to_lstring(ctx, 0, &ns_len);
+	const char *text = duk_safe_to_lstring(ctx, 0, &text_len);
+	dom_string *text_str;
+	dom_string *ns_str;
+
+	err = dom_string_create((const uint8_t*)ns, ns_len, &ns_str);
+	if (err != DOM_NO_ERR) return 0; /* coerced to undefined */
+
+	err = dom_string_create((const uint8_t*)text, text_len, &text_str);
+	if (err != DOM_NO_ERR) {
+		dom_string_unref(ns_str);
+		return 0; /* coerced to undefined */
+	}
+
+	err = dom_document_create_element_ns(priv->parent.node,
+					     ns_str,
+					     text_str,
+					     &newnode);
+	if (err != DOM_NO_ERR) {
+		dom_string_unref(ns_str);
+		dom_string_unref(text_str);
+		return 0; /* coerced to undefined */
+	}
+
+	dom_string_unref(text_str);
+	dom_string_unref(ns_str);
+
+	dukky_push_node(ctx, newnode);
+
+	dom_node_unref(newnode);
+
+	return 1;
+%}
+
 getter Document::head()
 %{
 	struct dom_nodelist *nodes;
