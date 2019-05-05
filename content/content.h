@@ -33,6 +33,7 @@
 #include "content/content_factory.h"
 #include "desktop/search.h" /* search flags enum */
 #include "netsurf/mouse.h" /* mouse state enums */
+#include "netsurf/console.h" /* console state and flags enums */
 
 struct browser_window;
 struct browser_window_features;
@@ -56,6 +57,7 @@ typedef enum {
 
 /** Used in callbacks to indicate what has occurred. */
 typedef enum {
+	CONTENT_MSG_LOG,       /**< Content wishes to log something */
 	CONTENT_MSG_LOADING,   /**< fetching or converting */
 	CONTENT_MSG_READY,     /**< may be displayed */
 	CONTENT_MSG_DONE,      /**< finished */
@@ -95,6 +97,13 @@ struct content_rfc5988_link {
 
 /** Extra data for some content_msg messages. */
 union content_msg_data {
+	/** CONTENT_MSG_LOG - Information for logging */
+	struct {
+		browser_window_console_source src; /**< The source of the logging */
+		const char *msg; /**< The message to log */
+		size_t msglen; /**< The length of that message */
+		browser_window_console_flags flags; /**< The flags of the logging */
+	} log;
 	/** CONTENT_MSG_ERROR - Error message */
 	const char *error;
         /** CONTENT_MSG_ERRORCODE - Error code */

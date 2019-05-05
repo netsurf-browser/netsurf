@@ -2514,7 +2514,7 @@ static bool html_exec(struct content *c, const char *src, size_t srclen)
 	dom_text *text_node;
 	dom_node *spare_node;
 	dom_html_script_element *script_node;
-	
+
 	if (htmlc->document == NULL) {
 		NSLOG(netsurf, DEEPDEBUG, "Unable to exec, no document");
 		goto out_no_string;

@@ -1358,6 +1358,13 @@ browser_window_callback(hlcache_handle *c,
 	float sx, sy;
 
 	switch (event->type) {
+	case CONTENT_MSG_LOG:
+		browser_window_console_log(bw,
+					   event->data.log.src,
+					   event->data.log.msg,
+					   event->data.log.msglen,
+					   event->data.log.flags);
+		break;
 	case CONTENT_MSG_DOWNLOAD:
 		assert(bw->loading_content == c);
 
