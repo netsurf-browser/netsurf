@@ -142,7 +142,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	 * data must still be there.
 	 */
 	
-	NSLOG(netsurf, INFO, "url: %.140s", nsurl_access(c->url));
+	NSLOG(netsurf, DEEPDEBUG, "url: %.140s", nsurl_access(c->url));
 	
 	if (nsurl_length(c->url) < 6) {
 		/* 6 is the minimum possible length (data:,) */
