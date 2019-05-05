@@ -18,7 +18,7 @@ prologue Document()
 #include "content/urldb.h"
 
 #define HANDLER_MAGIC MAGIC(HANDLER_MAP)
-#define LIST_PROXY_MAGIC MAGIC(LIST_PROXY)
+#define GENERICS_MAGIC MAGIC(GENERICS_TABLE)
 %}
 
 
@@ -345,7 +345,7 @@ method Document::getElementsByTagName()
 
 	if (nodes == NULL) return 0; /* coerced to undefined */
 
-	duk_get_global_string(ctx, LIST_PROXY_MAGIC);
+	dukky_push_generics(ctx, "makeListProxy");
 
 	duk_push_pointer(ctx, nodes);
 	dukky_create_object(ctx, PROTO_NAME(NODELIST), 1);

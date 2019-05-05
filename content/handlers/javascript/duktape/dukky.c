@@ -48,7 +48,7 @@
 #define HANDLER_LISTENER_MAGIC MAGIC(HANDLER_LISTENER_MAP)
 #define HANDLER_MAGIC MAGIC(HANDLER_MAP)
 #define EVENT_LISTENER_JS_MAGIC MAGIC(EVENT_LISTENER_JS_MAP)
-#define LIST_PROXY_MAGIC MAGIC(LIST_PROXY)
+#define GENERICS_MAGIC MAGIC(GENERICS_TABLE)
 
 static duk_ret_t dukky_populate_object(duk_context *ctx, void *udata)
 {
@@ -663,11 +663,7 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 	/* ..., Win */
 	duk_get_prop_string(CTX, -1, "NetSurf");
 	/* ..., Win, NetSurf */
-	duk_get_prop_string(CTX, -1, "makeListProxy");
-	/* ..., Win, NetSurf, MLP */
-	duk_put_global_string(CTX, LIST_PROXY_MAGIC);
-	/* ..., Win, NetSurf */
-	duk_pop(CTX);
+	duk_put_global_string(CTX, GENERICS_MAGIC);
 	/* ..., Win */
 	duk_del_prop_string(CTX, -1, "NetSurf");
 	duk_pop(CTX);
@@ -753,6 +749,17 @@ duk_int_t dukky_pcall(duk_context *ctx, duk_size_t argc, bool reset_timeout)
 	return ret;
 }
 
+
+void dukky_push_generics(duk_context *ctx, const char *generic)
+{
+	/* ... */
+	duk_get_global_string(ctx, GENERICS_MAGIC);
+	/* ..., generics */
+	duk_get_prop_string(ctx, -1, generic);
+	/* ..., generics, generic */
+	duk_remove(ctx, -2);
+	/* ..., generic */
+}
 
 bool js_exec(jscontext *ctx, const char *txt, size_t txtlen, const char *name)
 {
