@@ -1,1 +1,1 @@
-console.log("External asynchronous dynamism!");
+console.log("External %s dynamism!", "asynchronous");
