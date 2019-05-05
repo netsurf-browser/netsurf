@@ -120,8 +120,8 @@ static bool nsico_convert(struct content *c)
 	nsico_content *ico = (nsico_content *) c;
 	struct bmp_image *bmp;
 	bmp_result res;
-	const char *data;
-	unsigned long size;
+	const uint8_t *data;
+	size_t size;
 	char *title;
 
 	/* set the ico data */

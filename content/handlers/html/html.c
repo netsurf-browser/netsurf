@@ -1114,8 +1114,8 @@ html_process_encoding_change(struct content *c,
 	dom_hubbub_parser_params parse_params;
 	dom_hubbub_error error;
 	const char *encoding;
-	const char *source_data;
-	unsigned long source_size;
+	const uint8_t *source_data;
+	size_t source_size;
 
 	/* Retrieve new encoding */
 	encoding = dom_hubbub_parser_get_encoding(html->parser,
@@ -1181,7 +1181,7 @@ html_process_encoding_change(struct content *c,
 	 * it cannot be changed again.
 	 */
 	error = dom_hubbub_parser_parse_chunk(html->parser,
-					      (const uint8_t *)source_data,
+					      source_data,
 					      source_size);
 
 	return libdom_hubbub_error_to_nserror(error);

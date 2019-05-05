@@ -126,8 +126,8 @@ static bool svg_convert(struct content *c)
 static void svg_reformat(struct content *c, int width, int height)
 {
 	svg_content *svg = (svg_content *) c;
-	const char *source_data;
-	unsigned long source_size;
+	const uint8_t *source_data;
+	size_t source_size;
 
 	assert(svg->diagram);
 
@@ -135,9 +135,12 @@ static void svg_reformat(struct content *c, int width, int height)
 	if (width != svg->current_width || height != svg->current_height) {
 		source_data = content__get_source_data(c, &source_size);
 
-		svgtiny_parse(svg->diagram, source_data, source_size,
-				nsurl_access(content_get_url(c)),
-				width, height);
+		svgtiny_parse(svg->diagram,
+			      (const char *)source_data,
+			      source_size,
+			      nsurl_access(content_get_url(c)),
+			      width,
+			      height);
 
 		svg->current_width = width;
 		svg->current_height = height;
@@ -222,7 +225,7 @@ svg_redraw_internal(struct content *c,
 				return false;
 			}
 		}
-        }
+	}
 
 #undef BGR
 
@@ -361,5 +364,3 @@ static const char *svg_types[] = {
 
 
 CONTENT_FACTORY_REGISTER_TYPES(svg, svg_types, svg_content_handler);
-
-

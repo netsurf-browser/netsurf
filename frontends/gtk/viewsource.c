@@ -34,8 +34,8 @@ nserror nsgtk_viewsource(GtkWindow *parent, struct browser_window *bw)
 {
 	nserror ret;
 	struct hlcache_handle *hlcontent;
-	const char *source_data;
-	unsigned long source_size;
+	const uint8_t *source_data;
+	size_t source_size;
 	char *ndata = NULL;
 	size_t ndata_len;
 	char *filename;
@@ -67,8 +67,9 @@ nserror nsgtk_viewsource(GtkWindow *parent, struct browser_window *bw)
 	}
 	sprintf(title, "Source of %s - NetSurf", nsurl_access(browser_window_access_url(bw)));
 
-	ret = utf8_from_enc(source_data,
-			    content_get_encoding(hlcontent, CONTENT_ENCODING_NORMAL),
+	ret = utf8_from_enc((const char *)source_data,
+			    content_get_encoding(hlcontent,
+						 CONTENT_ENCODING_NORMAL),
 			    source_size,
 			    &ndata,
 			    &ndata_len);

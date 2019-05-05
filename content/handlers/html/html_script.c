@@ -42,7 +42,7 @@
 #include "html/html.h"
 #include "html/html_internal.h"
 
-typedef bool (script_handler_t)(struct jscontext *jscontext, const char *data, size_t size, const char *name);
+typedef bool (script_handler_t)(struct jscontext *jscontext, const uint8_t *data, size_t size, const char *name);
 
 
 static script_handler_t *select_script_handler(content_type ctype)
@@ -90,8 +90,8 @@ nserror html_script_exec(html_content *c, bool allow_defer)
 			if (content_get_status(s->data.handle) ==
 					CONTENT_STATUS_DONE) {
 				/* external script is now available */
-				const char *data;
-				unsigned long size;
+				const uint8_t *data;
+				size_t size;
 				data = content_get_source_data(
 						s->data.handle, &size );
 				script_handler(c->jscontext, data, size,
@@ -305,8 +305,8 @@ convert_script_sync_cb(hlcache_handle *script,
 		script_handler = select_script_handler(content_get_type(s->data.handle));
 		if (script_handler != NULL && parent->jscontext != NULL) {
 			/* script has a handler */
-			const char *data;
-			unsigned long size;
+			const uint8_t *data;
+			size_t size;
 			data = content_get_source_data(s->data.handle, &size );
 			script_handler(parent->jscontext, data, size,
 				       nsurl_access(hlcache_handle_get_url(s->data.handle)));
@@ -532,7 +532,7 @@ exec_inline_script(html_content *c, dom_node *node, dom_string *mimetype)
 
 	if (script_handler != NULL) {
 		script_handler(c->jscontext,
-			       dom_string_data(script),
+			       (const uint8_t *)dom_string_data(script),
 			       dom_string_byte_length(script),
 			       "?inline script?");
 	}

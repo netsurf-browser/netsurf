@@ -47,8 +47,6 @@ wimp_w dialog_theme_install;
 static void theme_install_close(wimp_w w);
 static nserror theme_install_callback(struct hlcache_handle *handle,
 		const hlcache_event *event, void *pw);
-static bool theme_install_read(const char *source_data, 
-		unsigned long source_size);
 
 
 /**
@@ -80,6 +78,33 @@ void theme_install_start(struct hlcache_handle *c)
 
 
 /**
+ * Fill in theme_install_descriptor from received theme data.
+ *
+ * \param  source_data  received data
+ * \param  source_size  size of data
+ * \return  true if data is a correct theme, false on error
+ *
+ * If the data is a correct theme, theme_install_descriptor is filled in.
+ */
+
+static bool
+theme_install_read(const uint8_t *source_data, size_t source_size)
+{
+	const void *data = source_data;
+
+	if (source_size < sizeof(struct theme_file_header))
+		return false;
+	if (!ro_gui_theme_read_file_header(&theme_install_descriptor,
+			(struct theme_file_header *) data))
+		return false;
+	if (source_size - sizeof(struct theme_file_header) !=
+			theme_install_descriptor.compressed_size)
+		return false;
+	return true;
+}
+
+
+/**
  * Callback for fetchcache() for theme install fetches.
  */
 
@@ -90,8 +115,8 @@ nserror theme_install_callback(struct hlcache_handle *handle,
 
 	case CONTENT_MSG_DONE:
 	{
-		const char *source_data;
-		unsigned long source_size;
+		const uint8_t *source_data;
+		size_t source_size;
 		int author_indent = 0;
 		char buffer[256];
 
@@ -135,30 +160,6 @@ nserror theme_install_callback(struct hlcache_handle *handle,
 }
 
 
-/**
- * Fill in theme_install_descriptor from received theme data.
- *
- * \param  source_data  received data
- * \param  source_size  size of data
- * \return  true if data is a correct theme, false on error
- *
- * If the data is a correct theme, theme_install_descriptor is filled in.
- */
-
-bool theme_install_read(const char *source_data, unsigned long source_size)
-{
-	const void *data = source_data;
-
-	if (source_size < sizeof(struct theme_file_header))
-		return false;
-	if (!ro_gui_theme_read_file_header(&theme_install_descriptor,
-			(struct theme_file_header *) data))
-		return false;
-	if (source_size - sizeof(struct theme_file_header) !=
-			theme_install_descriptor.compressed_size)
-		return false;
-	return true;
-}
 
 
 /**
@@ -174,8 +175,8 @@ bool ro_gui_theme_install_apply(wimp_w w)
 	struct theme_descriptor *theme_install;
 	os_error *error;
 	char *fix;
-	const char *source_data;
-	unsigned long source_size;
+	const uint8_t *source_data;
+	size_t source_size;
 
 	assert(theme_install_content);
 

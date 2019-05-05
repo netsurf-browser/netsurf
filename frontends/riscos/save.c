@@ -908,8 +908,8 @@ static bool ro_gui_save_object_native(struct hlcache_handle *h, char *path)
 
 	if (file_type == osfile_TYPE_SPRITE || file_type == osfile_TYPE_DRAW) {
 		/* Native sprite or drawfile */
-		const char *source_data;
-		unsigned long source_size;
+		const uint8_t *source_data;
+		size_t source_size;
 		os_error *error;
 
 		source_data = content_get_source_data(h, &source_size);
@@ -960,8 +960,8 @@ static bool
 ro_gui_save_content(struct hlcache_handle *h, char *path, bool force_overwrite)
 {
 	os_error *error;
-	const char *source_data;
-	unsigned long source_size;
+	const uint8_t *source_data;
+	size_t source_size;
 
 	/* does the user want to check for collisions when saving? */
 	if (!force_overwrite) {

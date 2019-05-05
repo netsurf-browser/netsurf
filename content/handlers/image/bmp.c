@@ -122,8 +122,8 @@ static bool nsbmp_convert(struct content *c)
 	nsbmp_content *bmp = (nsbmp_content *) c;
 	bmp_result res;
 	uint32_t swidth;
-	const char *data;
-	unsigned long size;
+	const uint8_t *data;
+	size_t size;
 	char *title;
 
 	/* set the bmp data */

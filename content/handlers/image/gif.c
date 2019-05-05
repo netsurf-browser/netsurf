@@ -236,8 +236,8 @@ static bool nsgif_convert(struct content *c)
 {
 	nsgif_content *gif = (nsgif_content *) c;
 	int res;
-	const char *data;
-	unsigned long size;
+	const uint8_t *data;
+	size_t size;
 	char *title;
 
 	/* Get the animation */

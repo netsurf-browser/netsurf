@@ -94,7 +94,7 @@ lwc_string *content_get_mime_type(struct hlcache_handle *h);
  * \param size Pointer to location to receive byte size of source
  * \return Pointer to source data
  */
-const char *content_get_source_data(struct hlcache_handle *h, unsigned long *size);
+const uint8_t *content_get_source_data(struct hlcache_handle *h, size_t *size);
 
 
 /**

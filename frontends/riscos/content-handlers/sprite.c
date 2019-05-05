@@ -16,7 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Content for image/x-riscos-sprite (RISC OS implementation).
  *
  * No conversion is necessary: we can render RISC OS sprites directly under
@@ -112,8 +113,8 @@ bool sprite_convert(struct content *c)
 	os_error *error;
 	int w, h;
 	union content_msg_data msg_data;
-	const char *source_data;
-	unsigned long source_size;
+	const uint8_t *source_data;
+	size_t source_size;
 	const void *sprite_data;
 	char *title;
 

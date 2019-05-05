@@ -346,8 +346,6 @@ RXHOOKF(rx_open)
 RXHOOKF(rx_save)
 {
 	BPTR fh = 0;
-	ULONG source_size;
-	const char *source_data;
 	struct gui_window *gw = cur_gw;
 
 	cmd->ac_RC = 0;
@@ -361,9 +359,13 @@ RXHOOKF(rx_save)
 					
 	if((fh = FOpen((char *)cmd->ac_ArgList[0], MODE_NEWFILE, 0)))
 	{
+		const uint8_t *source_data;
+		size_t source_size;
 		struct hlcache_handle *h = browser_window_get_content(gw->bw);
-		if((source_data = content_get_source_data(h, &source_size)))
+		source_data = content_get_source_data(h, &source_size);
+		if (source_data != NULL) {
 			FWrite(fh, source_data, 1, source_size);
+		}
 
 		FClose(fh);
 		SetComment((char *)cmd->ac_ArgList[0], nsurl_access(browser_window_access_url(gw->bw)));

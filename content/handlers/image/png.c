@@ -367,8 +367,8 @@ static bool nspng_process_data(struct content *c, const char *data,
 }
 
 struct png_cache_read_data_s {
-	const char *data;
-	unsigned long size;
+	const uint8_t *data;
+	size_t size;
 };
 
 /** PNG library read fucntion to read data from a memory array 
@@ -551,8 +551,8 @@ static nserror nspng_clone(const struct content *old_c, struct content **new_c)
 {
 	nspng_content *clone_png_c;
 	nserror error;
-	const char *data;
-	unsigned long size;
+	const uint8_t *data;
+	size_t size;
 
 	clone_png_c = calloc(1, sizeof(nspng_content));
 	if (clone_png_c == NULL)
@@ -573,7 +573,7 @@ static nserror nspng_clone(const struct content *old_c, struct content **new_c)
 
 	data = content__get_source_data(&clone_png_c->base, &size);
 	if (size > 0) {
-		if (nspng_process_data(&clone_png_c->base, data, size) == false) {
+		if (nspng_process_data(&clone_png_c->base, (const char *)data, size) == false) {
 			content_destroy(&clone_png_c->base);
 			return NSERROR_NOMEM;
 		}

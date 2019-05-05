@@ -1239,27 +1239,21 @@ int content__get_available_width(struct content *c)
 
 
 /* exported interface documented in content/content.h */
-const char *content_get_source_data(hlcache_handle *h, unsigned long *size)
+const uint8_t *content_get_source_data(hlcache_handle *h, size_t *size)
 {
 	return content__get_source_data(hlcache_handle_get_content(h), size);
 }
 
 /* exported interface documented in content/content_protected.h */
-const char *content__get_source_data(struct content *c, unsigned long *size)
+const uint8_t *content__get_source_data(struct content *c, size_t *size)
 {
-	const uint8_t *data;
-	size_t len;
-
 	assert(size != NULL);
 
+	/** \todo check if the content check should be an assert */
 	if (c == NULL)
 		return NULL;
 
-	data = llcache_handle_get_source_data(c->llcache, &len);
-
-	*size = (unsigned long) len;
-
-	return (const char *) data;
+	return llcache_handle_get_source_data(c->llcache, size);
 }
 
 /* exported interface documented in content/content.h */

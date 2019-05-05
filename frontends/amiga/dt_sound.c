@@ -150,10 +150,10 @@ bool amiga_dt_sound_convert(struct content *c)
 
 	amiga_dt_sound_content *plugin = (amiga_dt_sound_content *) c;
 	int width = 50, height = 50;
-	const uint8 *data;
-	ULONG size;
+	const uint8_t *data;
+	size_t size;
 
-	data = (uint8 *)content__get_source_data(c, &size);
+	data = content__get_source_data(c, &size);
 
 	plugin->dto = NewDTObject(NULL,
 					DTA_SourceType, DTST_MEMORY,

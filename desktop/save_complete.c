@@ -152,9 +152,12 @@ static bool save_complete_ctx_has_content(save_complete_ctx *ctx,
 	return false;
 }
 
-static bool save_complete_save_buffer(save_complete_ctx *ctx,
-		const char *leafname, const char *data, size_t data_len,
-		lwc_string *mime_type)
+static bool
+save_complete_save_buffer(save_complete_ctx *ctx,
+			  const char *leafname,
+			  const uint8_t *data,
+			  size_t data_len,
+			  lwc_string *mime_type)
 {
 	nserror ret;
 	FILE *fp;
@@ -196,14 +199,14 @@ static bool save_complete_save_buffer(save_complete_ctx *ctx,
  * \param osize updated with the size of the result.
  * \return converted source, or NULL on out of memory.
  */
-static char *
+static uint8_t *
 save_complete_rewrite_stylesheet_urls(save_complete_ctx *ctx,
-				      const char *source,
-				      unsigned long size,
+				      const uint8_t *source,
+				      size_t size,
 				      const nsurl *base,
-				      unsigned long *osize)
+				      size_t *osize)
 {
-	char *rewritten;
+	uint8_t *rewritten;
 	unsigned long offset = 0;
 	unsigned int imports = 0;
 	nserror error;
@@ -231,13 +234,16 @@ save_complete_rewrite_stylesheet_urls(save_complete_ctx *ctx,
 
 	offset = 0;
 	while (offset < size) {
-		const char *import_url = NULL;
+		const uint8_t *import_url = NULL;
 		char *import_url_copy;
 		int import_url_len = 0;
 		nsurl *url = NULL;
 		regmatch_t match[11];
-		int m = regexec(&save_complete_import_re, source + offset,
-				11, match, 0);
+		int m = regexec(&save_complete_import_re,
+				(const char *)source + offset,
+				11,
+				match,
+				0);
 		if (m)
 			break;
 
@@ -259,7 +265,8 @@ save_complete_rewrite_stylesheet_urls(save_complete_ctx *ctx,
 		}
 		assert(import_url != NULL);
 
-		import_url_copy = strndup(import_url, import_url_len);
+		import_url_copy = strndup((const char *)import_url,
+					  import_url_len);
 		if (import_url_copy == NULL) {
 			free(rewritten);
 			return NULL;
@@ -315,13 +322,13 @@ save_complete_rewrite_stylesheet_urls(save_complete_ctx *ctx,
 	return rewritten;
 }
 
-static bool save_complete_save_stylesheet(save_complete_ctx *ctx,
-		hlcache_handle *css)
+static bool
+save_complete_save_stylesheet(save_complete_ctx *ctx, hlcache_handle *css)
 {
-	const char *css_data;
-	unsigned long css_size;
-	char *source;
-	unsigned long source_len;
+	const uint8_t *css_data;
+	size_t css_size;
+	uint8_t *source;
+	size_t source_len;
 	struct nscss_import *imports;
 	uint32_t import_count;
 	lwc_string *type;
@@ -342,8 +349,12 @@ static bool save_complete_save_stylesheet(save_complete_ctx *ctx,
 		return false;
 
 	css_data = content_get_source_data(css, &css_size);
-	source = save_complete_rewrite_stylesheet_urls(ctx, css_data, css_size,
-			hlcache_handle_get_url(css), &source_len);
+	source = save_complete_rewrite_stylesheet_urls(
+		ctx,
+		css_data,
+		css_size,
+		hlcache_handle_get_url(css),
+		&source_len);
 	if (source == NULL) {
 		guit->misc->warning("NoMemory", 0);
 		return false;
@@ -408,11 +419,11 @@ static bool save_complete_save_html_stylesheets(save_complete_ctx *ctx,
 	return true;
 }
 
-static bool save_complete_save_html_object(save_complete_ctx *ctx,
-		hlcache_handle *obj)
+static bool
+save_complete_save_html_object(save_complete_ctx *ctx, hlcache_handle *obj)
 {
-	const char *obj_data;
-	unsigned long obj_size;
+	const uint8_t *obj_data;
+	size_t obj_size;
 	lwc_string *type;
 	bool result;
 	char filename[32];
@@ -898,13 +909,13 @@ static bool save_complete_handle_element(save_complete_ctx *ctx,
 		}
 
 		if (content != NULL) {
-			char *rewritten;
-			unsigned long len;
+			uint8_t *rewritten;
+			size_t len;
 
 			/* Rewrite @import rules */
 			rewritten = save_complete_rewrite_stylesheet_urls(
 					ctx,
-					dom_string_data(content),
+					(const uint8_t *)dom_string_data(content),
 					dom_string_byte_length(content),
 					ctx->base,
 					&len);

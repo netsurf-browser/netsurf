@@ -1980,8 +1980,8 @@ void ro_gui_view_source(struct hlcache_handle *c)
 	int objtype;
 	bool done = false;
 
-	const char *source_data;
-	unsigned long source_size;
+	const uint8_t *source_data;
+	size_t source_size;
 
 	if (!c) {
 		ro_warn_user("MiscError", "No document source");

@@ -112,8 +112,8 @@ bool draw_convert(struct content *c)
 {
 	draw_content *draw = (draw_content *) c;
 	union content_msg_data msg_data;
-	const char *source_data;
-	unsigned long source_size;
+	const uint8_t *source_data;
+	size_t source_size;
 	const void *data;
 	os_box bbox;
 	os_error *error;
@@ -180,8 +180,8 @@ bool draw_redraw(struct content *c, struct content_redraw_data *data,
 {
 	draw_content *draw = (draw_content *) c;
 	os_trfm matrix;
-	const char *source_data;
-	unsigned long source_size;
+	const uint8_t *source_data;
+	size_t source_size;
 	const void *src_data;
 	os_error *error;
 

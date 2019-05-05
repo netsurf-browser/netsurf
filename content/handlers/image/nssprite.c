@@ -98,8 +98,8 @@ static bool nssprite_convert(struct content *c)
 
 	struct rosprite_mem_context* ctx = NULL;
 
-	const char *data;
-	unsigned long size;
+	const uint8_t *data;
+	size_t size;
 	char *title;
 
 	data = content__get_source_data(c, &size);

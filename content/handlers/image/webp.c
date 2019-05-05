@@ -88,7 +88,7 @@ static struct bitmap *
 webp_cache_convert(struct content *c)
 {
 	const uint8_t *source_data; /* webp source data */
-	unsigned long source_size; /* length of webp source data */
+	size_t source_size; /* length of webp source data */
 	VP8StatusCode webpres;
 	WebPBitstreamFeatures webpfeatures;
 	unsigned int bmap_flags;
@@ -97,7 +97,7 @@ webp_cache_convert(struct content *c)
 	size_t rowstride;
 	struct bitmap *bitmap = NULL;
 
-	source_data = (uint8_t *)content__get_source_data(c, &source_size);
+	source_data = content__get_source_data(c, &source_size);
 
 	webpres = WebPGetFeatures(source_data, source_size, &webpfeatures);
 
@@ -156,12 +156,12 @@ webp_cache_convert(struct content *c)
 static bool webp_convert(struct content *c)
 {
 	int res;
-	unsigned long data_size;
 	const uint8_t* data;
+	size_t data_size;
 	int width;
 	int height;
 
-	data = (uint8_t *)content__get_source_data(c, &data_size);
+	data = content__get_source_data(c, &data_size);
 
 	res = WebPGetInfo(data, data_size, &width, &height);
 	if (res == 0) {

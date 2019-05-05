@@ -146,8 +146,9 @@ void ami_file_save(int type, char *fname, struct Window *win,
 		struct browser_window *bw)
 {
 	BPTR lock, fh;
-	const char *source_data;
-	ULONG source_size;
+	const uint8_t *source_data;
+	char *selection;
+	size_t source_size;
 	struct bitmap *bm;
 
 	ami_update_pointer(win, GUI_POINTER_WAIT);
@@ -155,7 +156,8 @@ void ami_file_save(int type, char *fname, struct Window *win,
 	if(ami_download_check_overwrite(fname, win, 0)) {
 		switch(type) {
 			case AMINS_SAVE_SOURCE:
-				if((source_data = content_get_source_data(object, &source_size))) {
+				source_data = content_get_source_data(object, &source_size);
+				if(source_data) {
 					BPTR fh;
 					if((fh = FOpen(fname, MODE_NEWFILE,0))) {
 						FWrite(fh, source_data, 1, source_size);
@@ -197,12 +199,17 @@ void ami_file_save(int type, char *fname, struct Window *win,
 			break;
 
 			case AMINS_SAVE_SELECTION:
-				if((source_data = browser_window_get_selection(bw))) {
-					if((fh = FOpen(fname, MODE_NEWFILE,0))) {
-						FWrite(fh, source_data, 1, strlen(source_data));
+				selection = browser_window_get_selection(bw);
+				if(selection) {
+					fh = FOpen(fname, MODE_NEWFILE,0);
+					if (fh) {
+						FWrite(fh,
+						       selection,
+						       1,
+						       strlen(selection));
 						FClose(fh);
 					}
-					free((void *)source_data);
+					free(selection);
 				}
 			break;
 		}

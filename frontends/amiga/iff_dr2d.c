@@ -310,22 +310,27 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 bool ami_save_svg(struct hlcache_handle *c,char *filename)
 {
 	struct IFFHandle *iffh;
-	const char *source_data;
-	ULONG source_size;
+	const uint8_t *source_data;
+	size_t source_size;
 
-	if(!ami_download_check_overwrite(filename, NULL, 0)) return false;
+	if (!ami_download_check_overwrite(filename, NULL, 0)) return false;
 
-	if((iffh = AllocIFF())) {
-		if((iffh->iff_Stream = Open(filename,MODE_NEWFILE))) {
+	if ((iffh = AllocIFF())) {
+		if ((iffh->iff_Stream = Open(filename,MODE_NEWFILE))) {
 			InitIFFasDOS(iffh);
 		}
 		else return false;
 	}
 
-	if((OpenIFF(iffh,IFFF_WRITE))) return false;
+	if ((OpenIFF(iffh,IFFF_WRITE))) return false;
 
-	if((source_data = content_get_source_data(c, &source_size)))
-		ami_svg_to_dr2d(iffh, source_data, source_size, nsurl_access(hlcache_handle_get_url(c)));
+	source_data = content_get_source_data(c, &source_size);
+	if (source_data != NULL) {
+		ami_svg_to_dr2d(iffh,
+				(const char *)source_data,
+				source_size,
+				nsurl_access(hlcache_handle_get_url(c)));
+	}
 
 	if(iffh) CloseIFF(iffh);
 	if(iffh->iff_Stream) Close((BPTR)iffh->iff_Stream);

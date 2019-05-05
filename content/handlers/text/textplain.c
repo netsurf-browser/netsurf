@@ -554,8 +554,8 @@ static nserror textplain_clone(const struct content *old, struct content **newc)
 	const textplain_content *old_text = (textplain_content *) old;
 	textplain_content *text;
 	nserror error;
-	const char *data;
-	unsigned long size;
+	const uint8_t *data;
+	size_t size;
 
 	text = calloc(1, sizeof(textplain_content));
 	if (text == NULL)
@@ -576,7 +576,9 @@ static nserror textplain_clone(const struct content *old, struct content **newc)
 
 	data = content__get_source_data(&text->base, &size);
 	if (size > 0) {
-		if (textplain_process_data(&text->base, data, size) == false) {
+		if (textplain_process_data(&text->base,
+					   (const char *)data,
+					   size) == false) {
 			content_destroy(&text->base);
 			return NSERROR_NOMEM;
 		}

@@ -761,10 +761,16 @@ void dukky_push_generics(duk_context *ctx, const char *generic)
 	/* ..., generic */
 }
 
-bool js_exec(jscontext *ctx, const char *txt, size_t txtlen, const char *name)
+/* exported interface documented in js.h */
+bool
+js_exec(jscontext *ctx, const uint8_t *txt, size_t txtlen, const char *name)
 {
 	assert(ctx);
-	if (txt == NULL || txtlen == 0) return false;
+
+	if (txt == NULL || txtlen == 0) {
+		return false;
+	}
+
 	duk_set_top(CTX, 0);
 	NSLOG(dukky, DEEPDEBUG, "Running %"PRIsizet" bytes from %s", txtlen, name);
 	/* NSLOG(dukky, DEEPDEBUG, "\n%s\n", txt); */
@@ -775,7 +781,10 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen, const char *name)
 	} else {
 		duk_push_string(CTX, "?unknown source?");
 	}
-	if (duk_pcompile_lstring_filename(CTX, DUK_COMPILE_EVAL, txt, txtlen) != 0) {
+	if (duk_pcompile_lstring_filename(CTX,
+					  DUK_COMPILE_EVAL,
+					  (const char *)txt,
+					  txtlen) != 0) {
 		NSLOG(dukky, INFO, "Failed to compile JavaScript input");
 		goto handle_error;
 	}

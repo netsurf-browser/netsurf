@@ -167,15 +167,15 @@ bool amiga_dt_anim_convert(struct content *c)
 	amiga_dt_anim_content *plugin = (amiga_dt_anim_content *) c;
 	union content_msg_data msg_data;
 	int width, height;
-	const uint8 *data;
+	const uint8_t *data;
+	size_t size;
 	UBYTE *bm_buffer;
-	ULONG size;
 	struct BitMapHeader *bmh;
 	unsigned int bm_flags = BITMAP_NEW | BITMAP_OPAQUE;
 	struct adtFrame adt_frame;
 	APTR clut;
 
-	data = (uint8 *)content__get_source_data(c, &size);
+	data = content__get_source_data(c, &size);
 
 	if((plugin->dto = NewDTObject(NULL,
 					DTA_SourceType, DTST_MEMORY,

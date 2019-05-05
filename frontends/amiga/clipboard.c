@@ -349,15 +349,22 @@ bool ami_easy_clipboard_bitmap(struct bitmap *bitmap)
 #ifdef WITH_NS_SVG
 bool ami_easy_clipboard_svg(struct hlcache_handle *c)
 {
-	const char *source_data;
-	ULONG source_size;
+	const uint8_t *source_data;
+	size_t source_size;
 
-	if(ami_mime_compare(c, "svg") == false) return false;
-	if((source_data = content_get_source_data(c, &source_size)) == NULL) return false;
+	if (ami_mime_compare(c, "svg") == false) {
+		return false;
+	}
+	source_data = content_get_source_data(c, &source_size);
+	if (source_data == NULL) {
+		return false;
+	}
 
-	if(!(OpenIFF(iffh,IFFF_WRITE)))
-	{
-		ami_svg_to_dr2d(iffh, source_data, source_size, nsurl_access(hlcache_handle_get_url(c)));
+	if (!(OpenIFF(iffh,IFFF_WRITE))) {
+		ami_svg_to_dr2d(iffh,
+				(const char *)source_data,
+				source_size,
+				nsurl_access(hlcache_handle_get_url(c)));
 		CloseIFF(iffh);
 	}
 

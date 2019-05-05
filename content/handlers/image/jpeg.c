@@ -168,8 +168,8 @@ static void nsjpeg_error_exit(j_common_ptr cinfo)
 static struct bitmap *
 jpeg_cache_convert(struct content *c)
 {
-	uint8_t *source_data; /* Jpeg source data */
-	unsigned long source_size; /* length of Jpeg source data */
+	const uint8_t *source_data; /* Jpeg source data */
+	size_t source_size; /* length of Jpeg source data */
 	struct jpeg_decompress_struct cinfo;
 	struct jpeg_error_mgr jerr;
 	jmp_buf setjmp_buffer;
@@ -188,7 +188,7 @@ jpeg_cache_convert(struct content *c)
 		nsjpeg_term_source };
 
 	/* obtain jpeg source data and perfom minimal sanity checks */
-	source_data = (uint8_t *)content__get_source_data(c, &source_size);
+	source_data = content__get_source_data(c, &source_size);
 
 	if ((source_data == NULL) ||
 	    (source_size < MIN_JPEG_SIZE)) {
@@ -315,8 +315,8 @@ static bool nsjpeg_convert(struct content *c)
 		nsjpeg_skip_input_data, jpeg_resync_to_restart,
 		nsjpeg_term_source };
 	union content_msg_data msg_data;
-	const char *data;
-	unsigned long size;
+	const uint8_t *data;
+	size_t size;
 	char *title;
 
 	/* check image header is valid and get width/height */

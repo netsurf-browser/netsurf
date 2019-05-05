@@ -262,8 +262,8 @@ static nserror rsvg_clone(const struct content *old, struct content **newc)
 {
 	rsvg_content *svg;
 	nserror error;
-	const char *data;
-	unsigned long size;
+	const uint8_t *data;
+	size_t size;
 
 	svg = calloc(1, sizeof(rsvg_content));
 	if (svg == NULL)
@@ -284,7 +284,7 @@ static nserror rsvg_clone(const struct content *old, struct content **newc)
 
 	data = content__get_source_data(&svg->base, &size);
 	if (size > 0) {
-		if (rsvg_process_data(&svg->base, data, size) == false) {
+		if (rsvg_process_data(&svg->base, (const char *)data, size) == false) {
 			content_destroy(&svg->base);
 			return NSERROR_NOMEM;
 		}

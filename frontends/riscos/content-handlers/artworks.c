@@ -170,8 +170,8 @@ bool artworks_convert(struct content *c)
 {
 	artworks_content *aw = (artworks_content *) c;
 	union content_msg_data msg_data;
-	const char *source_data;
-	unsigned long source_size;
+	const uint8_t *source_data;
+	size_t source_size;
 	void *init_workspace;
 	void *init_routine;
 	os_error *error;
@@ -224,7 +224,7 @@ bool artworks_convert(struct content *c)
 	source_data = content__get_source_data(c, &source_size);
 
 	/* initialise (convert file to new format if required) */
-	error = awrender_init(&source_data, &source_size,
+	error = awrender_init((const char **)&source_data, &source_size,
 			init_routine, init_workspace);
 	if (error) {
 		NSLOG(netsurf, INFO, "awrender_init: 0x%x : %s",
@@ -313,8 +313,8 @@ bool artworks_redraw(struct content *c, struct content_redraw_data *data,
 	};
 	artworks_content *aw = (artworks_content *) c;
 	struct awinfo_block info;
-	const char *source_data;
-	unsigned long source_size;
+	const uint8_t *source_data;
+	size_t source_size;
 	os_error *error;
 	os_trfm matrix;
 	int vals[24];
@@ -389,17 +389,17 @@ bool artworks_redraw(struct content *c, struct content_redraw_data *data,
 
 	source_data = content__get_source_data(c, &source_size);
 
-	error = awrender_render(source_data,
-			&info,
-			&matrix,
-			vals,
-			&aw->block,
-			&aw->size,
-			110,	/* fully anti-aliased */
-			0,
-			source_size,
-			aw->render_routine,
-			aw->render_workspace);
+	error = awrender_render((const char *)source_data,
+				&info,
+				&matrix,
+				vals,
+				&aw->block,
+				&aw->size,
+				110,	/* fully anti-aliased */
+				0,
+				source_size,
+				aw->render_routine,
+				aw->render_workspace);
 
 	if (error) {
 		NSLOG(netsurf, INFO, "awrender_render: 0x%x: %s",

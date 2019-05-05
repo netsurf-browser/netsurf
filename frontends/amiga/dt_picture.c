@@ -131,11 +131,11 @@ nserror amiga_dt_picture_create(const content_handler *handler,
 
 static Object *amiga_dt_picture_newdtobject(struct amiga_dt_picture_content *adt)
 {
-	const uint8 *data;
-	ULONG size;
+	const uint8_t *data;
+	size_t size;
 
 	if(adt->dto == NULL) {
-		data = (uint8 *)content__get_source_data((struct content *)adt, &size);
+		data = content__get_source_data((struct content *)adt, &size);
 
 		adt->dto = NewDTObject(NULL,
 					DTA_SourceType, DTST_MEMORY,
@@ -152,12 +152,12 @@ static Object *amiga_dt_picture_newdtobject(struct amiga_dt_picture_content *adt
 
 static char *amiga_dt_picture_datatype(struct content *c)
 {
-	const uint8 *data;
-	ULONG size;
+	const uint8_t *data;
+	size_t size;
 	struct DataType *dt;
 	char *filetype = NULL;
 	
-	data = (uint8 *)content__get_source_data(c, &size);
+	data = content__get_source_data(c, &size);
 
 	if((dt = ObtainDataType(DTST_MEMORY, NULL,
 					DTA_SourceAddress, data,

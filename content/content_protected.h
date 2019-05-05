@@ -17,8 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Content handling (interface).
+/**
+ * \file
+ * Protected interface to Content handling.
  *
  * The content functions manipulate struct contents, which correspond to URLs.
  */
@@ -255,7 +256,7 @@ int content__get_available_width(struct content *c);
  * \param size Pointer to location to receive byte size of source.
  * \return Pointer to source data.
  */
-const char *content__get_source_data(struct content *c, unsigned long *size);
+const uint8_t *content__get_source_data(struct content *c, size_t *size);
 
 /**
  * Invalidate content reuse data.
