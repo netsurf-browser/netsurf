@@ -216,21 +216,12 @@ static bool fetch_data_process(struct fetch_data_context *c)
 			free(unescaped);
 			return false;
 		}
+		free(unescaped);
 	} else {
-		c->data = malloc(unescaped_len);
-		if (c->data == NULL) {
-			msg.type = FETCH_ERROR;
-			msg.data.error =
-				"Unable to allocate memory for data: URL";
-			fetch_data_send_callback(&msg, c);
-			free(unescaped);
-			return false;
-		}
 		c->datalen = unescaped_len;
-		memcpy(c->data, unescaped, unescaped_len);
+		c->data = unescaped;
 	}
 	
-	free(unescaped);
 	
 	return true;
 }
