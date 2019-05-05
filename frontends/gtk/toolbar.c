@@ -786,7 +786,10 @@ static void nsgtk_toolbar_close(struct nsgtk_scaffolding *g)
 		gtk_widget_show_all(GTK_WIDGET(nsgtk_scaffolding_toolbar(
 				list)));
 		nsgtk_scaffolding_set_sensitivity(list);
-		nsgtk_widget_override_background_color(GTK_WIDGET(nsgtk_window_get_layout(nsgtk_scaffolding_top_level(list))), GTK_STATE_NORMAL, 0, 0xFFFF, 0xFFFF, 0xFFFF);
+		nsgtk_widget_override_background_color(
+			GTK_WIDGET(nsgtk_window_get_layout(nsgtk_scaffolding_top_level(list))),
+			GTK_STATE_FLAG_NORMAL,
+			0, 0xFFFF, 0xFFFF, 0xFFFF);
 		g_signal_handler_unblock(GTK_WIDGET(
 				nsgtk_window_get_layout(
 				nsgtk_scaffolding_top_level(list))),

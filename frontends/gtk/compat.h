@@ -159,6 +159,9 @@ GtkStateType nsgtk_widget_get_state(GtkWidget *widget);
 typedef GtkStateType GtkStateFlags;
 typedef GtkStyle GtkStyleContext;
 
+/* gtk 3 changed the enum name for the state flags */
+#define GTK_STATE_FLAG_NORMAL GTK_STATE_NORMAL
+
 #if GTK_CHECK_VERSION(2,22,0)
 enum {
 	GTK_IN_DESTRUCTION = 1 << 0,
