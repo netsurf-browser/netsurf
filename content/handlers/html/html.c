@@ -2504,6 +2504,90 @@ bool html_get_id_offset(hlcache_handle *h, lwc_string *frag_id, int *x, int *y)
 	return false;
 }
 
+static bool html_exec(struct content *c, const char *src, size_t srclen)
+{
+	html_content *htmlc = (html_content *)c;
+	bool result = false;
+	dom_exception err;
+	dom_html_body_element *body_node;
+	dom_string *dom_src;
+	dom_text *text_node;
+	dom_node *spare_node;
+	dom_html_script_element *script_node;
+	
+	if (htmlc->document == NULL) {
+		NSLOG(netsurf, DEEPDEBUG, "Unable to exec, no document");
+		goto out_no_string;
+	}
+
+	err = dom_string_create((const uint8_t *)src, srclen, &dom_src);
+	if (err != DOM_NO_ERR) {
+		NSLOG(netsurf, DEEPDEBUG, "Unable to exec, could not create string");
+		goto out_no_string;
+	}
+
+	err = dom_html_document_get_body(htmlc->document, &body_node);
+	if (err != DOM_NO_ERR) {
+		NSLOG(netsurf, DEEPDEBUG, "Unable to retrieve body element");
+		goto out_no_body;
+	}
+	
+	err = dom_document_create_text_node(htmlc->document, dom_src, &text_node);
+	if (err != DOM_NO_ERR) {
+		NSLOG(netsurf, DEEPDEBUG, "Unable to exec, could not create text node");
+		goto out_no_text_node;
+	}
+	
+	err = dom_document_create_element(htmlc->document, corestring_dom_SCRIPT, &script_node);
+	if (err != DOM_NO_ERR) {
+		NSLOG(netsurf, DEEPDEBUG, "Unable to exec, could not create script node");
+		goto out_no_script_node;
+	}
+	
+	err = dom_node_append_child(script_node, text_node, &spare_node);
+	if (err != DOM_NO_ERR) {
+		NSLOG(netsurf, DEEPDEBUG, "Unable to exec, could not insert code node into script node");
+		goto out_unparented;
+	}
+	dom_node_unref(spare_node); /* We do not need the spare ref at all */
+	
+	err = dom_node_append_child(body_node, script_node, &spare_node);
+	if (err != DOM_NO_ERR) {
+		NSLOG(netsurf, DEEPDEBUG, "Unable to exec, could not insert script node into document body");
+		goto out_unparented;
+	}
+	dom_node_unref(spare_node); /* Again no need for the spare ref */
+	
+	/* We successfully inserted the node into the DOM */
+	
+	result = true;
+	
+	/* Now we unwind, starting by removing the script from wherever it
+	 * ended up parented
+	 */
+	
+	err = dom_node_get_parent_node(script_node, &spare_node);
+	if (err == DOM_NO_ERR && spare_node != NULL) {
+		dom_node *second_spare;
+		err = dom_node_remove_child(spare_node, script_node, &second_spare);
+		if (err == DOM_NO_ERR) {
+			dom_node_unref(second_spare);
+		}
+		dom_node_unref(spare_node);
+	}
+
+out_unparented:
+	dom_node_unref(script_node);
+out_no_script_node:
+	dom_node_unref(text_node);
+out_no_text_node:
+	dom_node_unref(body_node);
+out_no_body:
+	dom_string_unref(dom_src);
+out_no_string:
+	return result;
+}
+
 /**
  * Compute the type of a content
  *
@@ -2546,6 +2630,7 @@ static const content_handler html_content_handler = {
 	.clone = html_clone,
 	.get_encoding = html_encoding,
 	.type = html_content_type,
+	.exec = html_exec,
 	.no_share = true,
 };
 
