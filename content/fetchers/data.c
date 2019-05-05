@@ -41,7 +41,7 @@
 
 struct fetch_data_context {
 	struct fetch *parent_fetch;
-	char *url;
+	nsurl *url;
 	char *mimetype;
 	char *data;
 	size_t datalen;
@@ -85,14 +85,7 @@ static void *fetch_data_setup(struct fetch *parent_fetch, nsurl *url,
 		return NULL;
 		
 	ctx->parent_fetch = parent_fetch;
-
-	/* TODO: keep as nsurl to avoid copy */
-	ctx->url = malloc(nsurl_length(url) + 1);
-	if (ctx->url == NULL) {
-		free(ctx);
-		return NULL;
-	}
-	memcpy(ctx->url, nsurl_access(url), nsurl_length(url) + 1);
+	ctx->url = nsurl_ref(url);
 
 	RING_INSERT(ring, ctx);
 	
@@ -108,7 +101,7 @@ static void fetch_data_free(void *ctx)
 {
 	struct fetch_data_context *c = ctx;
 
-	free(c->url);
+	nsurl_unref(c->url);
 	free(c->data);
 	free(c->mimetype);
 	RING_REMOVE(ring, c);
@@ -149,9 +142,9 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	 * data must still be there.
 	 */
 	
-	NSLOG(netsurf, INFO, "url: %.140s", c->url);
+	NSLOG(netsurf, INFO, "url: %.140s", nsurl_access(c->url));
 	
-	if (strlen(c->url) < 6) {
+	if (nsurl_length(c->url) < 6) {
 		/* 6 is the minimum possible length (data:,) */
 		msg.type = FETCH_ERROR;
 		msg.data.error = "Malformed data: URL";
@@ -160,7 +153,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	}
 	
 	/* skip the data: part */
-	params = c->url + SLEN("data:");
+	params = nsurl_access(c->url) + SLEN("data:");
 	
 	/* find the comma */
 	if ( (comma = strchr(params, ',')) == NULL) {
@@ -291,8 +284,8 @@ static void fetch_data_poll(lwc_string *scheme)
 				fetch_data_send_callback(&msg, c);
 			}
 		} else {
-			NSLOG(netsurf, INFO, "Processing of %s failed!",
-			      c->url);
+			NSLOG(netsurf, INFO, "Processing of %.140s failed!",
+			      nsurl_access(c->url));
 
 			/* Ensure that we're unlocked here. If we aren't, 
 			 * then fetch_data_process() is broken.
