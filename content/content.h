@@ -387,6 +387,17 @@ bool content_get_quirks(struct hlcache_handle *h);
 bool content_is_locked(struct hlcache_handle *h);
 
 
+/**
+ * Execute some JavaScript code inside a content object.
+ *
+ * Runs the passed in JavaScript code in the content object's context.
+ *
+ * \param h The handle to the content
+ * \param src The JavaScript source code
+ * \param srclen The length of the source code
+ * \return Whether the JS function was successfully injected into the content
+ */
+bool content_exec(struct hlcache_handle *h, const char *src, size_t srclen);
 
 
 #endif

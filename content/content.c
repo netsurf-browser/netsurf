@@ -545,6 +545,27 @@ void content__request_redraw(struct content *c,
 	content_broadcast(c, CONTENT_MSG_REDRAW, &data);
 }
 
+/* exported interface, documented in content/content.h */
+bool content_exec(struct hlcache_handle *h, const char *src, size_t srclen)
+{
+	struct content *c = hlcache_handle_get_content(h);
+	
+	assert(c != NULL);
+	
+	if (c->locked) {
+		/* Not safe to do stuff */
+		NSLOG(netsurf, DEEPDEBUG, "Unable to exec, content locked");
+		return false;
+	}
+	
+	if (c->handler->exec == NULL) {
+		/* Can't exec something on this content */
+		NSLOG(netsurf, DEEPDEBUG, "Unable to exec, no exec function");
+		return false;
+	}
+	
+	return c->handler->exec(c, src, srclen);
+}
 
 /* exported interface, documented in content/content.h */
 bool content_redraw(hlcache_handle *h, struct content_redraw_data *data,
