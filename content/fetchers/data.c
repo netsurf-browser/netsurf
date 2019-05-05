@@ -138,8 +138,8 @@ static bool fetch_data_process(struct fetch_data_context *c)
 {
 	nserror res;
 	fetch_msg msg;
-	char *params;
-	char *comma;
+	const char *params;
+	const char *comma;
 	char *unescaped;
 	size_t unescaped_len;
 	
