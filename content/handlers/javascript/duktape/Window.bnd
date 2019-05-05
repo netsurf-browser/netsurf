@@ -22,6 +22,7 @@ class Window {
 #include "desktop/gui_internal.h"
 #include "netsurf/misc.h"
 #include "utils/ring.h"
+#include "netsurf/inttypes.h"
 
 #define WINDOW_CALLBACKS MAGIC(WindowCallbacks)
 #define HANDLER_MAGIC MAGIC(HANDLER_MAP)
@@ -51,7 +52,7 @@ static void window_remove_callback_bits(duk_context *ctx, size_t handle) {
 }
 
 static void window_call_callback(duk_context *ctx, size_t handle) {
-	NSLOG(dukky, DEEPDEBUG, "ctx=%p, handle=%zd", ctx, handle);
+	NSLOG(dukky, DEEPDEBUG, "ctx=%p, handle=%"PRIsizet, ctx, handle);
 	/* Stack is ... */
 	duk_push_context_dump(ctx);
 	NSLOG(dukky, DEEPDEBUG, "On entry to callback, stack is: %s", duk_get_string(ctx, -1));
@@ -88,16 +89,16 @@ static void window_call_callback(duk_context *ctx, size_t handle) {
 static void window_schedule_callback(void *p) {
 	window_schedule_t *priv = (window_schedule_t *)p;
 
-	NSLOG(dukky, DEEPDEBUG, "Entered window scheduler callback: %zd", priv->handle);
+	NSLOG(dukky, DEEPDEBUG, "Entered window scheduler callback: %"PRIsizet, priv->handle);
 
 	window_call_callback(priv->ctx, priv->handle);
 
 	if (priv->repeat_timeout > 0) {
 		/* Reschedule */
-		NSLOG(dukky, DEEPDEBUG, "Rescheduling repeating callback %zd", priv->handle);
+		NSLOG(dukky, DEEPDEBUG, "Rescheduling repeating callback %"PRIsizet, priv->handle);
 		guit->misc->schedule(priv->repeat_timeout, window_schedule_callback, priv);
 	} else {
-		NSLOG(dukky, DEEPDEBUG, "Removing completed callback %zd", priv->handle);
+		NSLOG(dukky, DEEPDEBUG, "Removing completed callback %"PRIsizet, priv->handle);
 		/* Remove this from the ring */
 		RING_REMOVE(priv->owner->schedule_ring, priv);
 		window_remove_callback_bits(priv->ctx, priv->handle);
@@ -150,7 +151,7 @@ static size_t window_alloc_new_callback(duk_context *ctx, window_private_t *wind
 	/* And we're back to func, timeout, ... */
 
 	guit->misc->schedule(timeout, window_schedule_callback, sched);
-	NSLOG(dukky, DEEPDEBUG, "Scheduled callback %zd for %d ms from now", new_handle, timeout);
+	NSLOG(dukky, DEEPDEBUG, "Scheduled callback %"PRIsizet" for %d ms from now", new_handle, timeout);
 
 	return new_handle;
 }
@@ -160,7 +161,7 @@ static void window_remove_callback_by_handle(duk_context *ctx,
 					     size_t handle) {
 	RING_ITERATE_START(window_schedule_t, window->schedule_ring, sched) {
 		if (sched->handle == handle) {
-			NSLOG(dukky, DEEPDEBUG, "Cancelled callback %zd", sched->handle);
+			NSLOG(dukky, DEEPDEBUG, "Cancelled callback %"PRIsizet, sched->handle);
 			guit->misc->schedule(-1, window_schedule_callback, sched);
 			RING_REMOVE(window->schedule_ring, sched);
 			window_remove_callback_bits(ctx, sched->handle);
