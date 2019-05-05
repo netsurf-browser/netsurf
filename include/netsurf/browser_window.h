@@ -725,4 +725,16 @@ nserror browser_window_get_name(struct browser_window *bw, const char **name);
  */
 nserror browser_window_set_name(struct browser_window *bw, const char *name);
 
+/**
+ * Execute some JavaScript code in a browsing context.
+ *
+ * Runs the passed in JavaScript code in the browsing context.
+ *
+ * \param bw The browser window
+ * \param src The JavaScript source code
+ * \param srclen The length of the source code
+ * \return Whether the JS function was successfully injected into the content
+ */
+bool browser_window_exec(struct browser_window *bw, const char *src, size_t srclen);
+
 #endif

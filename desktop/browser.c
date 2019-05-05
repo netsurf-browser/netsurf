@@ -3406,3 +3406,24 @@ int browser_get_dpi(void)
 {
 	return FIXTOINT(nscss_screen_dpi);
 }
+
+/* exported interface documented in browser.h */
+bool browser_window_exec(struct browser_window *bw, const char *src, size_t srclen)
+{
+	assert(bw != NULL);
+
+	if (!bw->current_content) {
+		NSLOG(netsurf, DEEPDEBUG, "Unable to exec, no content");
+		return false;
+	}
+
+	if (content_get_status(bw->current_content) != CONTENT_STATUS_DONE) {
+		NSLOG(netsurf, DEEPDEBUG, "Unable to exec, content not done");
+		return false;
+	}
+
+	/* Okay it should be safe, forward the request through to the content
+	 * itself.  Only HTML contents currently support executing code
+	 */
+	return content_exec(bw->current_content, src, srclen);
+}
