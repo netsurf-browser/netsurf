@@ -500,6 +500,39 @@ monkey_window_handle_reload(int argc, char **argv)
 	}
 }
 
+static void
+monkey_window_handle_exec(int argc, char **argv)
+{
+	struct gui_window *gw;
+	if (argc < 5) {
+		moutf(MOUT_ERROR, "WINDOW EXEC ARGS BAD\n");
+	}
+
+	gw = monkey_find_window_by_num(atoi(argv[2]));
+
+	if (gw == NULL) {
+		moutf(MOUT_ERROR, "WINDOW NUM BAD");
+	} else {
+		/* Gather argv[4] onward into a string to pass to js_exec */
+		int total = 0;
+		for (int i = 4; i < argc; ++i) {
+			total += strlen(argv[i]) + 1;
+		}
+		char *cmd = calloc(total, 1);
+		strcpy(cmd, argv[4]);
+		for (int i = 5; i < argc; ++i) {
+			strcat(cmd, " ");
+			strcat(cmd, argv[i]);
+		}
+		/* Now execute the JS */
+
+		moutf(MOUT_WINDOW, "JS WIN %d RET %s", atoi(argv[2]),
+		      browser_window_exec(gw->bw, cmd, total - 1) ? "TRUE" : "FALSE");
+
+		free(cmd);
+	}
+}
+
 
 void
 monkey_window_handle_command(int argc, char **argv)
@@ -517,6 +550,8 @@ monkey_window_handle_command(int argc, char **argv)
 		monkey_window_handle_redraw(argc, argv);
 	} else if (strcmp(argv[1], "RELOAD") == 0) {
 		monkey_window_handle_reload(argc, argv);
+	} else if (strcmp(argv[1], "EXEC") == 0) {
+		monkey_window_handle_exec(argc, argv);
 	} else {
 		moutf(MOUT_ERROR, "WINDOW COMMAND UNKNOWN %s\n", argv[1]);
 	}

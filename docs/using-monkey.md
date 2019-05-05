@@ -130,14 +130,22 @@ Commands
     Cause a browser window to reload its current content.
     Expect responses similar to a GO command.
 
+*   `WINDOW EXEC WIN` _%id%_ _%str%_
+
+    Cause a browser window to execute some javascript.  It won't
+    work if the window doesn't have a *finished* HTML content.
+
+    This will send a `WINDOW JS WIN` _%id%_ `RET` `TRUE`/`FALSE`
+    where `FALSE` indicates that some issue prevented the injection of
+    the script.
 
 ### Login commands
 
-*   `LOGIN USERNAME` _%id%_ _%str_
+*   `LOGIN USERNAME` _%id%_ _%str%_
 
     Set the username for the login
 
-*   `LOGIN PASSWORD` _%id%_ _%str_
+*   `LOGIN PASSWORD` _%id%_ _%str%_
 
     Set the password for the login
 
