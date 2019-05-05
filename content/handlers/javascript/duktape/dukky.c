@@ -611,7 +611,11 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 	NSLOG(dukky, DEBUG,
 	      "New javascript/duktape compartment, win_priv=%p, doc_priv=%p", win_priv,
 	      doc_priv);
-	duk_set_top(ctx->ctx, 0);
+	if (CTX != NULL) {
+		duk_set_top(ctx->ctx, 0);
+		duk_gc(ctx->ctx, 0);
+		duk_gc(ctx->ctx, DUK_GC_COMPACT);
+	}
 	duk_push_thread(ctx->ctx);
 	ctx->thread = duk_require_context(ctx->ctx, -1);
 	duk_push_int(CTX, 0);
