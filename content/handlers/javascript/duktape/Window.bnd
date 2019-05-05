@@ -51,16 +51,20 @@ static void window_remove_callback_bits(duk_context *ctx, size_t handle) {
 	/* ... */
 }
 
-static void window_call_callback(duk_context *ctx, size_t handle) {
+static void window_call_callback(duk_context *ctx, size_t handle, bool clear_entry) {
 	NSLOG(dukky, DEEPDEBUG, "ctx=%p, handle=%"PRIsizet, ctx, handle);
 	/* Stack is ... */
+	duk_push_global_object(ctx);
+	/* ..., win */
+	duk_get_prop_string(ctx, -1, WINDOW_CALLBACKS);
+	/* ..., win, cbt */
+	duk_push_int(ctx, (duk_int_t)handle);
+	/* ..., win, cbt, handle */
+	duk_get_prop(ctx, -2);
+	/* ..., win, cbt, cbo */
 	duk_push_context_dump(ctx);
 	NSLOG(dukky, DEEPDEBUG, "On entry to callback, stack is: %s", duk_get_string(ctx, -1));
 	duk_pop(ctx);
-	duk_push_global_object(ctx);
-	duk_get_prop_string(ctx, -1, WINDOW_CALLBACKS);
-	duk_push_int(ctx, (duk_int_t)handle);
-	duk_get_prop(ctx, -2);
 	/* ..., win, cbt, cbo */
 	/* What we want to do is call cbo.func passing all of cbo.args */
 	duk_get_prop_string(ctx, -1, "func");
@@ -79,7 +83,18 @@ static void window_call_callback(duk_context *ctx, size_t handle) {
 	duk_pop(ctx);
 	(void) dukky_pcall(ctx, arrlen, true);
 	/* ..., win, cbt, cbo, retval */
-	duk_pop_n(ctx, 4);
+	if (clear_entry) {
+		NSLOG(dukky, DEEPDEBUG, "Not recurring callback, removing from cbt");
+		duk_pop_n(ctx, 2);
+		/* ..., win, cbt */
+		duk_push_int(ctx, (duk_int_t)handle);
+		/* ..., win, cbt, handle */
+		duk_del_prop(ctx, -2);
+		/* ..., win, cbt */
+		duk_pop_n(ctx, 2);
+	} else {
+		duk_pop_n(ctx, 4);
+	}
 	/* ... */
 	duk_push_context_dump(ctx);
 	NSLOG(dukky, DEEPDEBUG, "On leaving callback, stack is: %s", duk_get_string(ctx, -1));
@@ -91,7 +106,7 @@ static void window_schedule_callback(void *p) {
 
 	NSLOG(dukky, DEEPDEBUG, "Entered window scheduler callback: %"PRIsizet, priv->handle);
 
-	window_call_callback(priv->ctx, priv->handle);
+	window_call_callback(priv->ctx, priv->handle, priv->repeat_timeout == 0);
 
 	if (priv->repeat_timeout > 0) {
 		/* Reschedule */
@@ -102,7 +117,6 @@ static void window_schedule_callback(void *p) {
 		/* Remove this from the ring */
 		RING_REMOVE(priv->owner->schedule_ring, priv);
 		window_remove_callback_bits(priv->ctx, priv->handle);
-		/* TODO: Remove the entry from the JS part */
 		free(priv);
 	}
 }
