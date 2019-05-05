@@ -13,28 +13,49 @@ class Console {
       private unsigned int group;
       prologue %{
 #include <nsutils/time.h>
+#include "netsurf/browser_window.h"
 
 #define CONSOLE_TIMERS MAGIC(ConsoleTimers)
 
 static void
-write_log_entry(duk_context *ctx, unsigned int group, char logtype)
+write_log_entry(duk_context *ctx, unsigned int group, browser_window_console_flags flags)
 {
 	/* objs... */
+	dukky_push_generics(ctx, "consoleFormatter");
+	duk_insert(ctx, 0);
+	if (dukky_pcall(ctx, duk_get_top(ctx) - 1, false)) {
+		/* Failed to convert somehow, oh dear, you get to keep
+		 * all the pieces.
+		 */
+		duk_pop(ctx);
+		duk_push_string(ctx, "Oh dear, formatter went banananas");
+	}
+	/* str?objs?... */
 	for (int i = 0; i < duk_get_top(ctx); ++i) {
 		(void)duk_safe_to_string(ctx, i);
 	}
 	/* strs... */
-	duk_push_sprintf(ctx, "%c: ", logtype);
-	duk_insert(ctx, 0);
-	/* pfx strs... */
 	for (unsigned int u = 0; u < group; ++u) {
 		duk_push_lstring(ctx, " ", 1);
 		duk_insert(ctx, 0);
 	}
-	/* spcs... pfx strs... */
+	/* spcs... strs... */
 	duk_concat(ctx, duk_get_top(ctx));
 	/* str */
-	NSLOG(netsurf, INFO, "%s", duk_safe_to_string(ctx, 0));
+
+	duk_push_global_object(ctx);
+	duk_get_prop_string(ctx, -1, PRIVATE_MAGIC);
+	window_private_t *priv_win = duk_get_pointer(ctx, -1);
+	duk_pop(ctx);
+
+	duk_size_t msglen;
+	const char *msg = duk_safe_to_lstring(ctx, 0, &msglen);
+
+	if (browser_window_console_log(priv_win->win, BW_CS_SCRIPT_CONSOLE,
+				       msg, msglen,
+				       flags) != NSERROR_OK) {
+		NSLOG(netsurf, DEBUG, "Unable to log: %s", duk_safe_to_string(ctx, 0));
+	}
 }
 
 %};
