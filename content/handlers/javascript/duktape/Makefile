@@ -12,7 +12,8 @@ BINDINGS := $(wildcard content/handlers/javascript/duktape/*.bnd)
 $(OBJROOT)/duktape/generics.js.inc: content/handlers/javascript/duktape/generics.js
 	$(Q)$(MKDIR) -p $(OBJROOT)/duktape
 	$(VQ)echo "     XXD: $<"
-	$(Q)xxd -i $< | sed -e 's/content_handlers_javascript_duktape_generics_js/generics_js/' > $@
+	$(Q)xxd -i $< $@.tmp
+	$(Q)sed -e 's/content_handlers_javascript_duktape_generics_js/generics_js/' $@.tmp > $@
 
 # ensure genbind generates debugging files
 GBFLAGS+=-D
