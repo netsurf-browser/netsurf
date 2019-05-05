@@ -144,6 +144,43 @@ struct browser_window_features {
 };
 
 /**
+ * Sources of messages which end up in the browser window console
+ */
+typedef enum {
+	BW_CS_INPUT, /**< Input from the client */
+	BW_CS_SCRIPT_ERROR, /**< Error from some running script */
+	BW_CS_SCRIPT_CONSOLE, /**< Logging from some running script */
+} browser_window_console_source;
+
+/**
+ * Flags for browser window console logging.
+ *
+ * It is valid to bitwise-or some of these flags together where indicated.
+ */
+typedef enum {
+	/**
+	 * The log entry is foldable.
+	 *
+	 * Set this to indicate that the text should be folded on the first
+	 * newline on display.  If this is set but there are no newlines in
+	 * the logged text, the core will unset it before passing on to
+	 * callbacks or storing the log entry.
+	 */
+	BW_CS_FLAG_FOLDABLE = 1 << 0,
+
+	/** Logged at the 'log' level, please only use one of the LEVEL flags */
+	BW_CS_FLAG_LEVEL_LOG = 0 << 1,
+	/** Logged at the 'info' level, please use only one of the LEVEL flags */
+	BW_CS_FLAG_LEVEL_INFO = 1 << 1,
+	/** Logged at the 'warn' level, please use only one of the LEVEL flags */
+	BW_CS_FLAG_LEVEL_WARN = 2 << 1,
+	/** Logged at the 'error' level, please use only one of the LEVEL flags */
+	BW_CS_FLAG_LEVEL_ERROR = 3 << 1,
+	/** Mask for the error level to allow easy comparison using the above */
+	BW_CS_FLAG_LEVEL_MASK = 3 << 1,
+} browser_window_console_flags;
+
+/**
  * Create and open a new root browser window with the given page.
  *
  * \param flags		Flags to control operation
@@ -736,5 +773,24 @@ nserror browser_window_set_name(struct browser_window *bw, const char *name);
  * \return Whether the JS function was successfully injected into the content
  */
 bool browser_window_exec(struct browser_window *bw, const char *src, size_t srclen);
+
+/**
+ * Log a console message into the browser window console.
+ *
+ * If the targetted browser window is a frame, the message will be bubbled
+ * to the outermost window to be logged.
+ *
+ * \param bw The browser window
+ * \param src The source of the message
+ * \param msg The text of the message
+ * \param msglen The length of the text of the message
+ * \param flags Flags for the message
+ * \return Whether or not the logged message succeeded in being stored
+ */
+nserror browser_window_console_log(struct browser_window *bw,
+				   browser_window_console_source src,
+				   const char *msg,
+				   size_t msglen,
+				   browser_window_console_flags flags);
 
 #endif

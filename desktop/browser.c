@@ -3427,3 +3427,46 @@ bool browser_window_exec(struct browser_window *bw, const char *src, size_t srcl
 	 */
 	return content_exec(bw->current_content, src, srclen);
 }
+
+/* exported interface documented in browser_window.h */
+nserror browser_window_console_log(struct browser_window *bw,
+				   browser_window_console_source src,
+				   const char *msg,
+				   size_t msglen,
+				   browser_window_console_flags flags)
+{
+	browser_window_console_flags log_level = flags & BW_CS_FLAG_LEVEL_MASK;
+	struct browser_window *root = browser_window_get_root(bw);
+
+	assert(msg != NULL);
+	assert(msglen > 0);
+
+	/* bw is the target of the log, but root is where we log it */
+
+	NSLOG(netsurf, DEEPDEBUG, "Logging message in %p targetted at %p", root, bw);
+	NSLOG(netsurf, DEEPDEBUG, "Log came from %s",
+	      ((src == BW_CS_INPUT) ? "user input" :
+	       (src == BW_CS_SCRIPT_ERROR) ? "script error" :
+	       (src == BW_CS_SCRIPT_CONSOLE) ? "script console" :
+	       "unknown input location"));
+
+	switch (log_level) {
+	case BW_CS_FLAG_LEVEL_LOG:
+		NSLOG(netsurf, VERBOSE, "%.*s", (int)msglen, msg);
+		break;
+	case BW_CS_FLAG_LEVEL_INFO:
+		NSLOG(netsurf, INFO, "%.*s", (int)msglen, msg);
+		break;
+	case BW_CS_FLAG_LEVEL_WARN:
+		NSLOG(netsurf, WARNING, "%.*s", (int)msglen, msg);
+		break;
+	case BW_CS_FLAG_LEVEL_ERROR:
+		NSLOG(netsurf, ERROR, "%.*s", (int)msglen, msg);
+		break;
+	default:
+		/* Unreachable */
+		break;
+	}
+	
+	return NSERROR_OK;
+}
