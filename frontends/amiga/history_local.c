@@ -88,6 +88,15 @@ ami_history_local_destroy(struct ami_history_local_window *history_local_win)
 	return res;
 }
 
+static void ami_history_local_destroy_cw(struct ami_corewindow *ami_cw)
+{
+	struct ami_history_local_window *history_local_win;
+	/* technically degenerate container of */
+	history_local_win = (struct ami_history_local_window *)ami_cw;
+
+	ami_history_local_destroy(history_local_win);
+}
+
 /**
  * callback for mouse action for local history on core window
  *
@@ -271,7 +280,7 @@ nserror ami_history_local_present(struct gui_window *gw)
 	ncwin->core.draw = ami_history_local_draw;
 	ncwin->core.key = ami_history_local_key;
 	ncwin->core.mouse = ami_history_local_mouse;
-	ncwin->core.close = ami_history_local_destroy;
+	ncwin->core.close = ami_history_local_destroy_cw;
 	ncwin->core.event = NULL;
 	ncwin->core.drag_end = NULL;
 	ncwin->core.icon_drop = NULL;

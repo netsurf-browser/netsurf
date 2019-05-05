@@ -41,8 +41,8 @@ struct myStringClassData
 	Object *				WindowObject;
 	Object *				ListviewObject;
 	struct List				ListviewHeader;
-	uint32					ListviewCount;
-	uint32					ListviewSelected;
+	int32					ListviewCount;
+	int32					ListviewSelected;
 	struct List *			SearchHeader;
 	STRPTR					SearchBuffer;
 };
