@@ -1275,10 +1275,6 @@ bool html_can_begin_conversion(html_content *htmlc)
 {
 	unsigned int i;
 
-	/* Cannot begin conversion if we already have */
-	if (htmlc->conversion_begun)
-		return false;
-
 	/* Cannot begin conversion if we're still fetching stuff */
 	if (htmlc->base.active != 0)
 		return false;
@@ -1302,10 +1298,6 @@ html_begin_conversion(html_content *htmlc)
 	dom_exception exc; /* returned by libdom functions */
 	dom_string *node_name = NULL;
 	dom_hubbub_error error;
-
-	if (htmlc->conversion_begun)
-		/* Conversion already began, so we are okay */
-		return true;
 
 	/* The act of completing the parse can result in additional data
 	 * being flushed through the parser. This may result in new style or
