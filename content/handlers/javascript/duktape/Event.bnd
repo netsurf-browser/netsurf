@@ -54,6 +54,8 @@ getter Event::target ()
 	if (exc != DOM_NO_ERR) return 0;
 
 	dukky_push_node(ctx, et);
+
+	dom_node_unref(et);
 	return 1;
 %}
 
@@ -67,6 +69,8 @@ getter Event::currentTarget ()
 	if (exc != DOM_NO_ERR) return 0;
 
 	dukky_push_node(ctx, et);
+
+	dom_node_unref(et);
 	return 1;
 %}
 
