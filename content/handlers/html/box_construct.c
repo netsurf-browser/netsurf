@@ -2719,6 +2719,7 @@ bool box_select(BOX_SPECIAL_PARAMS)
 							c2) == false) {
 						dom_node_unref(c2);
 						dom_node_unref(c);
+						form_free_control(gadget);
 						return false;
 					}
 				} else {
@@ -2729,6 +2730,7 @@ bool box_select(BOX_SPECIAL_PARAMS)
 				if (err != DOM_NO_ERR) {
 					dom_node_unref(c2);
 					dom_node_unref(c);
+					form_free_control(gadget);
 					return false;
 				}
 
