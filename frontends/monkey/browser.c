@@ -350,7 +350,56 @@ gui_window_save_link(struct gui_window *g, nsurl *url, const char *title)
 	return NSERROR_OK;
 }
 
+static void
+gui_window_console_log(struct gui_window *g,
+		       browser_window_console_source src,
+		       const char *msg,
+		       size_t msglen,
+		       browser_window_console_flags flags)
+{
+	bool foldable = !!(flags & BW_CS_FLAG_FOLDABLE);
+	const char *src_text;
+	const char *level_text;
 
+	switch (src) {
+	case BW_CS_INPUT:
+		src_text = "client-input";
+		break;
+	case BW_CS_SCRIPT_ERROR:
+		src_text = "scripting-error";
+		break;
+	case BW_CS_SCRIPT_CONSOLE:
+		src_text = "scripting-console";
+		break;
+	default:
+		assert(0 && "Unknown scripting source");
+		src_text = "unknown";
+		break;
+	}
+
+	switch (flags & BW_CS_FLAG_LEVEL_MASK) {
+	case BW_CS_FLAG_LEVEL_LOG:
+		level_text = "LOG";
+		break;
+	case BW_CS_FLAG_LEVEL_INFO:
+		level_text = "INFO";
+		break;
+	case BW_CS_FLAG_LEVEL_WARN:
+		level_text = "WARN";
+		break;
+	case BW_CS_FLAG_LEVEL_ERROR:
+		level_text = "ERROR";
+		break;
+	default:
+		assert(0 && "Unknown console logging level");
+		level_text = "unknown";
+		break;
+	}
+
+	moutf(MOUT_WINDOW, "CONSOLE_LOG WIN %u SOURCE %s %sFOLDABLE %s %.*s",
+	      g->win_num, src_text, foldable ? "" : "NOT-", level_text,
+	      (int)msglen, msg);
+}
 
 /**** Handlers ****/
 
@@ -580,6 +629,8 @@ static struct gui_window_table window_table = {
 	.new_content = gui_window_new_content,
 	.start_throbber = gui_window_start_throbber,
 	.stop_throbber = gui_window_stop_throbber,
+
+	.console_log = gui_window_console_log,
 };
 
 struct gui_window_table *monkey_window_table = &window_table;
