@@ -26,6 +26,9 @@
 /** DPI of the screen, in fixed point units */
 extern css_fixed nscss_screen_dpi;
 
+/** Medium screen density for device viewing distance. */
+extern css_fixed nscss_baseline_pixel_density;
+
 /**
  * Length conversion context data.
  */
