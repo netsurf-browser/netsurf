@@ -248,8 +248,7 @@ css_fixed nscss_len2px(
 		break;
 	}
 
-	px_per_unit = FDIV(FMUL(px_per_unit, nscss_screen_dpi),
-			nscss_baseline_pixel_density);
+	px_per_unit = nscss_pixels_css_to_physical(px_per_unit);
 
 	/* Ensure we round px_per_unit to the nearest whole number of pixels:
 	 * the use of FIXTOINT() below will truncate. */
