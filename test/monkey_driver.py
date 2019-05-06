@@ -315,6 +315,18 @@ def run_test_step_action_wait_log(ctx, step):
     win.wait_for_log(source=source, foldable=foldable, level=level, substr=substr)
 
 
+def run_test_step_action_js_exec(ctx, step):
+    print(get_indent(ctx) + "Action: " + step["action"])
+    assert_browser(ctx)
+    browser = ctx['browser']
+    tag = step['window']
+    cmd = step['cmd']
+    print(get_indent(ctx) + "        " + tag + " Run " + cmd)
+    win = ctx['windows'].get(tag)
+    assert(win is not None)
+    win.js_exec(cmd)
+
+
 def run_test_step_action_quit(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     assert_browser(ctx)
@@ -338,6 +350,7 @@ step_handlers = {
     "remove-auth":  run_test_step_action_remove_auth,
     "clear-log":    run_test_step_action_clear_log,
     "wait-log":     run_test_step_action_wait_log,
+    "js-exec":      run_test_step_action_js_exec,
     "quit":         run_test_step_action_quit,
 }
 

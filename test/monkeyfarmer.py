@@ -306,7 +306,10 @@ class BrowserWindow:
 
     def reload(self):
         self.browser.farmer.tell_monkey("WINDOW RELOAD %s" % self.winid)
-            
+
+    def js_exec(self, src):
+        self.browser.farmer.tell_monkey("WINDOW EXEC WIN %s %s" % (self.winid, src))
+
     def handle(self, action, *args):
         handler = getattr(self, "handle_window_" + action, None)
         if handler is not None:

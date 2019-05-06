@@ -10,7 +10,14 @@ steps:
   window: win1
 - action: navigate
   window: win1
-  url: file:///home/dsilvers/dev-netsurf/workspace/netsurf/test/js/inserted-script.html
+  url: about:blank
+- action: block
+  conditions:
+  - window: win1
+    status: complete
+- action: js-exec
+  window: win1
+  cmd: location.assign("file:///home/dsilvers/dev-netsurf/workspace/netsurf/test/js/inserted-script.html")
 - action: block
   conditions:
   - window: win1
