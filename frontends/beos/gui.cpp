@@ -790,7 +790,7 @@ void nsbeos_gui_poll(void)
 		if (len == sizeof(void *)) {
 			NSLOG(netsurf, DEEPDEBUG,
 			      "gui_poll: BMessage.what %-4.4s\n",
-			      &(message->what));
+			      (char *)&(message->what));
 			nsbeos_dispatch_event(message);
 		}
 	}
@@ -834,7 +834,9 @@ void nsbeos_gui_view_source(struct hlcache_handle *content)
 	BPath path;
 	status_t err;
 	size_t size;
-	const char *source = content_get_source_data(content, &size);
+	const uint8_t *source;
+
+        source = content_get_source_data(content, &size);
 
 	if (!content || !source) {
 		beos_warn_user("MiscError", "No document source");
