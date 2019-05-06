@@ -1638,6 +1638,18 @@ browser_window_callback(hlcache_handle *c,
 		}
 		break;
 
+	case CONTENT_MSG_GETDIMS:
+	{
+		int width;
+		int height;
+
+		browser_window_get_dimensions(bw, &width, &height, true);
+
+		*(event->data.getdims.viewport_width) = width;
+		*(event->data.getdims.viewport_height) = height;
+		break;
+	}
+
 	case CONTENT_MSG_SCROLL:
 	{
 		struct rect rect = {
