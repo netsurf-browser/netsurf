@@ -128,6 +128,10 @@ def run_test_step_action_launch(ctx, step):
     ctx['browser'] = DriverBrowser(monkey_cmd=[ctx["monkey"]], quiet=True)
     assert_browser(ctx)
     ctx['windows'] = dict()
+    for arg in step.get('args', []):
+        print(get_indent(ctx) + "        " + arg)
+        ctx['browser'].pass_options(arg)
+
 
 def run_test_step_action_window_new(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
@@ -284,6 +288,33 @@ def run_test_step_action_remove_auth(ctx, step):
     browser.remove_auth(step.get("url"), step.get("realm"),
                         step.get("username"), step.get("password"))
 
+
+def run_test_step_action_clear_log(ctx, step):
+    print(get_indent(ctx) + "Action: " + step["action"])
+    assert_browser(ctx)
+    browser = ctx['browser']
+    tag = step['window']
+    print(get_indent(ctx) + "        " + tag + " Log cleared")
+    win = ctx['windows'].get(tag)
+    assert(win is not None)
+    win.clear_log()
+
+
+def run_test_step_action_wait_log(ctx, step):
+    print(get_indent(ctx) + "Action: " + step["action"])
+    assert_browser(ctx)
+    browser = ctx['browser']
+    tag = step['window']
+    source = step.get('source')
+    foldable = step.get('foldable')
+    level = step.get('level')
+    substr = step.get('substring')
+    print(get_indent(ctx) + "        " + tag + " Wait for logging")
+    win = ctx['windows'].get(tag)
+    assert(win is not None)
+    win.wait_for_log(source=source, foldable=foldable, level=level, substr=substr)
+
+
 def run_test_step_action_quit(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     assert_browser(ctx)
@@ -305,6 +336,8 @@ step_handlers = {
     "plot-check":   run_test_step_action_plot_check,
     "add-auth":     run_test_step_action_add_auth,
     "remove-auth":  run_test_step_action_remove_auth,
+    "clear-log":    run_test_step_action_clear_log,
+    "wait-log":     run_test_step_action_wait_log,
     "quit":         run_test_step_action_quit,
 }
 
