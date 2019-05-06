@@ -1533,8 +1533,8 @@ static void html_reformat(struct content *c, int width, int height)
 
 	htmlc->reflowing = true;
 
-	htmlc->len_ctx.vw = width;
-	htmlc->len_ctx.vh = height;
+	htmlc->len_ctx.vw = nscss_pixels_physical_to_css(width);
+	htmlc->len_ctx.vh = nscss_pixels_physical_to_css(height);
 	htmlc->len_ctx.root_style = htmlc->layout->style;
 
 	layout_document(htmlc, width, height);
