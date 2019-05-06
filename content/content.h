@@ -71,6 +71,7 @@ typedef enum {
 	CONTENT_MSG_DOWNLOAD,  /**< download, not for display */
 	CONTENT_MSG_LINK,      /**< RFC5988 link */
 	CONTENT_MSG_GETCTX,    /**< Javascript context */
+	CONTENT_MSG_GETDIMS,   /**< Get viewport dimensions. */
 	CONTENT_MSG_SCROLL,    /**< Request to scroll content */
 	CONTENT_MSG_DRAGSAVE,  /**< Allow drag saving of content */
 	CONTENT_MSG_SAVELINK,  /**< Allow URL to be saved */
@@ -140,6 +141,12 @@ union content_msg_data {
 	struct content_rfc5988_link *rfc5988_link;
 	/** CONTENT_MSG_GETCTX - Javascript context */
 	struct jscontext **jscontext;
+	/** CONTENT_MSG_GETDIMS - Get the viewport dimensions */
+	struct {
+		/* TODO: Consider getting screen_width, screen_height too. */
+		unsigned *viewport_width;
+		unsigned *viewport_height;
+	} getdims;
 	/** CONTENT_MSG_SCROLL - Part of content to scroll to show */
 	struct {
 		/** if true, scroll to show area given by (x0, y0) and (x1,y1).
