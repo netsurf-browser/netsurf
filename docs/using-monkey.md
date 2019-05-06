@@ -135,9 +135,7 @@ Commands
     Cause a browser window to execute some javascript.  It won't
     work if the window doesn't have a *finished* HTML content.
 
-    This will send a `WINDOW JS WIN` _%id%_ `RET` `TRUE`/`FALSE`
-    where `FALSE` indicates that some issue prevented the injection of
-    the script.
+	This will send a `JS` message back.
 
 ### Login commands
 
@@ -354,6 +352,18 @@ Responses
 
     The core wraps redraws in these messages.  Thus `PLOT` responses can
     be allocated to the appropriate window.
+
+*   `WINDOW JS WIN` _%id%_ `RET` `TRUE`/`FALSE`
+
+    Here `FALSE` indicates that some issue prevented the injection of
+    the script.
+
+*   `WINDOW CONSOLE_LOG WIN` _%id%_ `SOURCE` _%source%_ _%foldable%_ _%level%_ _%str%_
+
+    Here, _%source%_ will be one of: `client-input`, `scripting-error`, or
+    `scripting-console`.  _%foldable%_ will be one of `FOLDABLE` or
+    `NOT-FOLDABLE`.  _%level%_ will be one of `LOG`, `INFO`, `WARN`, or
+    `ERROR`.  The terminal string will be the log message.
 
 ### Download window messages
 
