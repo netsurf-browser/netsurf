@@ -27,6 +27,8 @@
 /** Screen DPI in fixed point units: defaults to 90, which RISC OS uses */
 css_fixed nscss_screen_dpi = F_90;
 
+/** Medium screen density for device viewing distance. */
+css_fixed nscss_baseline_pixel_density = F_96;
 
 /**
  * Map viewport-relative length units to either vh or vw.
@@ -100,7 +102,7 @@ css_fixed nscss_len2pt(
 	switch (unit) {
 	/* We assume the screen and any other output has the same dpi */
 	/* 1in = DPIpx => 1px = (72/DPI)pt */
-	case CSS_UNIT_PX: return FDIV(FMUL(length, F_72), nscss_screen_dpi);
+	case CSS_UNIT_PX: return FDIV(FMUL(length, F_72), F_96);
 	/* 1in = 72pt */
 	case CSS_UNIT_IN: return FMUL(length, F_72);
 	/* 1in = 2.54cm => 1cm = (72/2.54)pt */
@@ -115,10 +117,8 @@ css_fixed nscss_len2pt(
 	case CSS_UNIT_PT: return length;
 	/* 1pc = 12pt */
 	case CSS_UNIT_PC: return FMUL(length, INTTOFIX(12));
-	case CSS_UNIT_VH: return FDIV(FMUL(FDIV((length * ctx->vh), F_100),
-				F_72), nscss_screen_dpi);
-	case CSS_UNIT_VW: return FDIV(FMUL(FDIV((length * ctx->vw), F_100),
-				F_72), nscss_screen_dpi);
+	case CSS_UNIT_VH: return FDIV(FMUL(FDIV((length * ctx->vh), F_100), F_72), F_96);
+	case CSS_UNIT_VW: return FDIV(FMUL(FDIV((length * ctx->vw), F_100), F_72), F_96);
 	default: break;
 	}
 
@@ -161,7 +161,7 @@ css_fixed nscss_len2px(
 
 		/* Convert to pixels (manually, to maximise precision)
 		 * 1in = 72pt => 1pt = (DPI/72)px */
-		px_per_unit = FDIV(FMUL(font_size, nscss_screen_dpi), F_72);
+		px_per_unit = FDIV(FMUL(font_size, F_96), F_72);
 
 		/* Scale non-em units to em.  We have fixed ratios. */
 		switch (unit) {
@@ -190,23 +190,23 @@ css_fixed nscss_len2px(
 		break;
 	/* 1in = 2.54cm => 1cm = (DPI/2.54)px */
 	case CSS_UNIT_CM:
-		px_per_unit = FDIV(nscss_screen_dpi, FLTTOFIX(2.54));
+		px_per_unit = FDIV(F_96, FLTTOFIX(2.54));
 		break;
 	/* 1in = 25.4mm => 1mm = (DPI/25.4)px */
 	case CSS_UNIT_MM:
-		px_per_unit = FDIV(nscss_screen_dpi, FLTTOFIX(25.4));
+		px_per_unit = FDIV(F_96, FLTTOFIX(25.4));
 		break;
 	/* 1in = 101.6q => 1q = (DPI/101.6)px */
 	case CSS_UNIT_Q:
-		px_per_unit = FDIV(nscss_screen_dpi, FLTTOFIX(101.6));
+		px_per_unit = FDIV(F_96, FLTTOFIX(101.6));
 		break;
 	/* 1in = 72pt => 1pt = (DPI/72)px */
 	case CSS_UNIT_PT:
-		px_per_unit = FDIV(nscss_screen_dpi, F_72);
+		px_per_unit = FDIV(F_96, F_72);
 		break;
 	/* 1pc = 12pt => 1in = 6pc => 1pc = (DPI/6)px */
 	case CSS_UNIT_PC:
-		px_per_unit = FDIV(nscss_screen_dpi, INTTOFIX(6));
+		px_per_unit = FDIV(F_96, INTTOFIX(6));
 		break;
 	case CSS_UNIT_REM:
 	{
@@ -228,23 +228,28 @@ css_fixed nscss_len2px(
 
 		/* Convert to pixels (manually, to maximise precision)
 		 * 1in = 72pt => 1pt = (DPI/72)px */
-		px_per_unit = FDIV(FMUL(font_size, nscss_screen_dpi), F_72);
+		px_per_unit = FDIV(FMUL(font_size, F_96), F_72);
 		break;
 	}
 	/* 1rlh = <user_font_size>pt => 1rlh = (DPI/user_font_size)px */
 	case CSS_UNIT_RLH:
-		px_per_unit = FDIV(nscss_screen_dpi, FDIV(
+		px_per_unit = FDIV(F_96, FDIV(
 				INTTOFIX(nsoption_int(font_size)),
 				INTTOFIX(10)));
 		break;
 	case CSS_UNIT_VH:
-		return TRUNCATEFIX((FDIV((length * ctx->vh), F_100) + F_0_5));
+		px_per_unit = FDIV(ctx->vh, F_100);
+		break;
 	case CSS_UNIT_VW:
-		return TRUNCATEFIX((FDIV((length * ctx->vw), F_100) + F_0_5));
+		px_per_unit = FDIV(ctx->vw, F_100);
+		break;
 	default:
 		px_per_unit = 0;
 		break;
 	}
+
+	px_per_unit = FDIV(FMUL(px_per_unit, nscss_screen_dpi),
+			nscss_baseline_pixel_density);
 
 	/* Ensure we round px_per_unit to the nearest whole number of pixels:
 	 * the use of FIXTOINT() below will truncate. */
