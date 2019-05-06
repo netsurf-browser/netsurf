@@ -139,6 +139,15 @@ static void gui_default_window_start_selection(struct gui_window *g)
 {
 }
 
+static void
+gui_default_console_log(struct gui_window *gw,
+			browser_window_console_source src,
+			const char *msg,
+			size_t msglen,
+			browser_window_console_flags flags)
+{
+}
+
 
 /** verify window table is valid */
 static nserror verify_window_register(struct gui_window_table *gwt)
@@ -227,6 +236,9 @@ static nserror verify_window_register(struct gui_window_table *gwt)
 	}
 	if (gwt->start_selection == NULL) {
 		gwt->start_selection = gui_default_window_start_selection;
+	}
+	if (gwt->console_log == NULL) {
+		gwt->console_log = gui_default_console_log;
 	}
 
 	return NSERROR_OK;

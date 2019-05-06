@@ -26,6 +26,8 @@
 #ifndef NETSURF_WINDOW_H
 #define NETSURF_WINDOW_H
 
+#include "netsurf/console.h"
+
 typedef enum gui_save_type {
 	GUI_SAVE_SOURCE,
 	GUI_SAVE_DRAW,
@@ -341,6 +343,23 @@ struct gui_window_table {
 	 * \param gw The gui window to start selection in.
 	 */
 	void (*start_selection)(struct gui_window *gw);
+
+	/**
+	 * console logging happening.
+	 *
+	 * See \ref browser_window_console_log
+	 *
+	 * \param gw The gui window receiving the logging.
+	 * \param src The source of the logging message
+	 * \param msg The text of the logging message
+	 * \param msglen The length of the text of the logging message
+	 * \param flags Flags associated with the logging.
+	 */
+	void (*console_log)(struct gui_window *gw,
+			    browser_window_console_source src,
+			    const char *msg,
+			    size_t msglen,
+			    browser_window_console_flags flags);
 };
 
 #endif
