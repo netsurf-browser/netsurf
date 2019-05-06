@@ -3474,6 +3474,8 @@ nserror browser_window_console_log(struct browser_window *bw,
 		/* Unreachable */
 		break;
 	}
-	
+
+	guit->window->console_log(root->window, src, msg, msglen, flags);
+
 	return NSERROR_OK;
 }
