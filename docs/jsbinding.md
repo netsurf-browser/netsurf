@@ -113,10 +113,10 @@ The binding implementations are in the form of C code fragments
 directly pasted into the generated code with generated setup code
 surrounding it.
 
-### Simple getter and setter example
+### Simple attribute example
 
 The Window interface (class) in the HTML specification has an
-attribute called `name`.
+attribute (property) called `name`.
 
 The full WebIDL for the Window interface is defined in the
 `content/handlers/javascript/WebIDL/html.idl` file but the
@@ -189,6 +189,125 @@ So for the name attribute case the complete setter binding is:
             return 0;
     %}
 
+This uses browser_window_set_name() interface to set the name of the
+window. The return indicates the success of the operation.
 
 ### Simple method example
 
+The Location interface (class) in the HTML specification has an
+operation (method) called `asign`. This method causes the browser to
+navigate to a new url.
+
+The full WebIDL for the Window interface is defined in the
+`content/handlers/javascript/WebIDL/html.idl` file but the
+fragment for our example is:
+
+    interface Location {
+            void assign(DOMString url);
+    }
+
+This shows there is an operation called assign in the Location
+interface which takes a single string parameter and returns nothing.
+
+The method binding will be added to `Location.bnd` similarly to how
+the attribute example used `Window.bnd`
+
+    method Location::assign()
+    %{
+            window_private_t *priv_win;
+            nsurl *joined;
+            duk_size_t slen;
+            const char *url;
+
+            /* retrieve the private data from the root object (window) */
+            duk_push_global_object(ctx);
+            duk_get_prop_string(ctx, -1, PRIVATE_MAGIC);
+            priv_win = duk_get_pointer(ctx, -1);
+            duk_pop(ctx);
+            
+            if (priv_win == NULL || priv_win->win == NULL) {
+                    NSLOG(netsurf, INFO, "failed to get browser context");
+                    return 0;
+            }
+            
+            url = duk_safe_to_lstring(ctx, 0, &slen);
+            
+            nsurl_join(priv->url, url, &joined);
+            browser_window_navigate(priv_win->win,
+                    joined,
+                    NULL,
+                    BW_NAVIGATE_HISTORY,
+                    NULL,
+                    NULL,
+                    NULL);
+            nsurl_unref(joined);
+            return 0;
+    %}
+
+The nsgenbind tool generates code that automatically allows acess to
+the classes private data structure elements through a variable called
+`priv` and the duktape stack in the variable `ctx`.
+
+In this case nsgenbind will generate code that will ensure there is at
+least one parameter and coerce it to a string on the duktape `ctx`
+stack returning a type error if it is unable to do so.
+
+The binding implementation shown here uses browser_window_navigate()
+to navigate to the new url. To do this it needs the browser window
+handle (pointer) which is obtained from the global object (the window)
+private structure.
+
+Note that the duk_safe_to_lstring() call used to obtain the url
+parameter needs no additional checking as nsgenbind emits this code
+automaticaly.
+
+### Overloaded method example
+
+The Window interface (class) in the HTML specification has an
+operation (method) called `alert`. This method is supposed to cause
+the user to be alerted about something on the page.
+
+The full WebIDL for the Window interface is defined in the
+`content/handlers/javascript/WebIDL/html.idl` file but the
+fragment for our example is:
+
+    interface Window : EventTarget {
+          void alert();
+          void alert(DOMString message);
+    };
+
+This indicates there is an operation called `alert`. It has two
+overloaded prototypes, one takes no parameters and one takes a string
+parameter (technicaly a DOMString but the implementation does not
+differentiate between string types)
+
+The method binding will be added to `Window.bnd` as the attribute example
+
+    method Window::alert()
+    %{
+            duk_idx_t dukky_argc = duk_get_top(ctx);
+            if (dukky_argc == 0) {
+                    NSLOG(netsurf, INFO, "JS ALERT");
+            } else {
+                    duk_size_t msg_len;
+                    const char *msg;
+                    
+                    if (!duk_is_string(ctx, 0)) {
+                            duk_to_string(ctx, 0);
+                    }
+                    msg = duk_safe_to_lstring(ctx, 0, &msg_len);
+                    NSLOG(netsurf, INFO, "JS ALERT: %*s", (int)msg_len, msg);
+	    }
+            return 0;
+    %}
+
+The nsgenbind tool generates code that automatically allows acess to
+the classes private data structure elements through a variable called
+`priv` and the duktape stack in the variable `ctx`.
+
+For overloaded method calls nsgenbind does not emit code to do
+parameter verification and the binding code has to deal with all
+possible parameters itself.
+
+This binding checks the number of parameters and if one is present it
+coerces it to be a string and logs the result.

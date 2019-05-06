@@ -322,9 +322,19 @@ setter Window::name()
 
 method Window::alert()
 %{
-	duk_size_t msg_len;
-	const char *msg = duk_safe_to_lstring(ctx, 0, &msg_len);
-	NSLOG(netsurf, INFO, "JS ALERT: %*s", (int)msg_len, msg);
+	duk_idx_t dukky_argc = duk_get_top(ctx);
+	if (dukky_argc == 0) {
+		NSLOG(netsurf, INFO, "JS ALERT");
+	} else {
+		duk_size_t msg_len;
+		const char *msg;
+
+		if (!duk_is_string(ctx, 0)) {
+			duk_to_string(ctx, 0);
+		}
+		msg = duk_safe_to_lstring(ctx, 0, &msg_len);
+		NSLOG(netsurf, INFO, "JS ALERT: %*s", (int)msg_len, msg);
+	}
 	return 0;
 %}
 
