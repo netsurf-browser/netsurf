@@ -669,6 +669,8 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 	duk_pop(CTX);
 	/* ... */
 
+	dukky_log_stack_frame(CTX, "New compartment created");
+
 	return (jsobject *)ctx;
 }
 
@@ -698,8 +700,8 @@ static void dukky_dump_error(duk_context *ctx)
 {
 	/* stack is ..., errobj */
 	duk_idx_t stacktop = duk_get_top(ctx);
-	if (!duk_is_error(ctx, stacktop - 1)) {
-		NSLOG(dukky, INFO, "Uncaught non-Error derived error in JS: %s", duk_safe_to_string(ctx, stacktop - 1));
+	if (!duk_is_error(ctx, -1)) {
+		NSLOG(dukky, INFO, "Uncaught non-Error derived error in JS: %s", duk_safe_to_string(ctx, -1));
 	} else {
 #define GETTER(what)						\
 		if (duk_has_prop_string(ctx, stacktop - 1, what)) {	\
@@ -760,6 +762,23 @@ void dukky_push_generics(duk_context *ctx, const char *generic)
 	duk_remove(ctx, -2);
 	/* ..., generic */
 }
+
+static duk_int_t dukky_push_context_dump(duk_context *ctx, void *udata)
+{
+	duk_push_context_dump(ctx);
+	return 1;
+}
+
+void dukky_log_stack_frame(duk_context *ctx, const char * reason)
+{
+	if (duk_safe_call(ctx, dukky_push_context_dump, NULL, 0, 1) != 0) {
+		duk_pop(ctx);
+		duk_push_string(ctx, "[???]");
+	}
+	NSLOG(dukky, DEEPDEBUG, "%s, stack is: %s", reason, duk_safe_to_string(ctx, -1));
+	duk_pop(ctx);
+}
+
 
 /* exported interface documented in js.h */
 bool

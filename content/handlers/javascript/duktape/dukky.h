@@ -54,4 +54,7 @@ duk_int_t dukky_pcall(duk_context *ctx, duk_size_t argc, bool reset_timeout);
 /* Push a generics function onto the stack */
 void dukky_push_generics(duk_context *ctx, const char *generic);
 
+/* Log the current stack frame if possible */
+void dukky_log_stack_frame(duk_context *ctx, const char * reason);
+
 #endif
