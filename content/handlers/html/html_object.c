@@ -354,6 +354,13 @@ html_object_callback(hlcache_handle *object,
 		*(event->data.jscontext) = NULL;
 		break;
 
+	case CONTENT_MSG_GETDIMS:
+		*(event->data.getdims.viewport_width) =
+				content__get_width(&c->base);
+		*(event->data.getdims.viewport_height) =
+				content__get_height(&c->base);
+		break;
+
 	case CONTENT_MSG_SCROLL:
 		if (box->scroll_x != NULL)
 			scrollbar_set(box->scroll_x, event->data.scroll.x0,
