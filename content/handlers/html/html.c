@@ -570,6 +570,25 @@ static bool html_process_img(html_content *c, dom_node *node)
 	return success;
 }
 
+static void html_get_dimensions(html_content *htmlc)
+{
+	unsigned w;
+	unsigned h;
+	union content_msg_data msg_data = {
+		.getdims = {
+			.viewport_width = &w,
+			.viewport_height = &h,
+		},
+	};
+
+	content_broadcast(&htmlc->base, CONTENT_MSG_GETDIMS, &msg_data);
+
+	htmlc->media.width.value = INTTOFIX(w);
+	htmlc->media.width.unit = CSS_UNIT_PX;
+	htmlc->media.height.value = INTTOFIX(h);
+	htmlc->media.height.unit = CSS_UNIT_PX;
+}
+
 /* exported function documented in html/html_internal.h */
 void html_finish_conversion(html_content *htmlc)
 {
@@ -631,6 +650,8 @@ void html_finish_conversion(html_content *htmlc)
 		content_set_error(&htmlc->base);
 		return;
 	}
+
+	html_get_dimensions(htmlc);
 
 	error = dom_to_box(html, htmlc, html_box_convert_done);
 	if (error != NSERROR_OK) {
