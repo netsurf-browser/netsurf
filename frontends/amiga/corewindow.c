@@ -68,17 +68,19 @@
 #include "amiga/utf8.h"
 
 static void
-ami_cw_scroller_top(struct ami_corewindow *ami_cw, ULONG *restrict x, ULONG *restrict y)
+ami_cw_scroller_top(struct ami_corewindow *ami_cw,
+		    ULONG *restrict x,
+		    ULONG *restrict y)
 {
 	ULONG xs = 0;
 	ULONG ys = 0;
 
 	if(ami_cw->scroll_x_visible == true) {
-		GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_HSCROLL], (ULONG *)&xs);
+		GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_HSCROLL], &xs);
 	}
 
 	if(ami_cw->scroll_y_visible == true) {
-		GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_VSCROLL], (ULONG *)&ys);
+		GetAttr(SCROLLER_Top, ami_cw->objects[GID_CW_VSCROLL], &ys);
 	}
 
 	*x = xs;
@@ -243,15 +245,15 @@ ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 
 	ami_cw_scroller_top(ami_cw, &pos_x, &pos_y);
 
-	if(x - pos_x + width > bbox->Width) width = bbox->Width - (x - pos_x);
-	if(y - pos_y + height > bbox->Height) height = bbox->Height - (y - pos_y);
+	if(x - (LONG)pos_x + width > bbox->Width) width = bbox->Width - (x - pos_x);
+	if(y - (LONG)pos_y + height > bbox->Height) height = bbox->Height - (y - pos_y);
 
-	if(x < pos_x) {
+	if(x < (LONG)pos_x) {
 		width -= pos_x - x;
 		x = pos_x;
 	}
 
-	if(y < pos_y) {
+	if(y < (LONG)pos_y) {
 		height -= pos_y - y;
 		y = pos_y;
 	}
@@ -880,9 +882,9 @@ ami_cw_scroll_visible(struct core_window *cw, const struct rect *r)
 	win_y1 = win_y0 + win_h;
 
 	if(r->y1 > win_y1) scrollsety = r->y1 - win_h;
-	if(r->y0 < win_y0) scrollsety = r->y0;
+	if(r->y0 < (LONG)win_y0) scrollsety = r->y0;
 	if(r->x1 > win_x1) scrollsetx = r->x1 - win_w;
-	if(r->x0 < win_x0) scrollsetx = r->x0;
+	if(r->x0 < (LONG)win_x0) scrollsetx = r->x0;
 
 	if(ami_cw->scroll_y_visible == true) {
 		RefreshSetGadgetAttrs((APTR)ami_cw->objects[GID_CW_VSCROLL], ami_cw->win, NULL,

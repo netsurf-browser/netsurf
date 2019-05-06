@@ -169,7 +169,9 @@ static nserror amiga_nsfont_width(const plot_font_style_t *fstyle,
 {
 	*width = ami_font_unicode_width(string, length, fstyle, 0, 0, false);
 
-	if(*width <= 0) *width == length; // fudge
+	if(*width <= 0) {
+		*width = length; /* fudge */
+	}
 
 	return NSERROR_OK;
 }

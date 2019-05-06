@@ -531,10 +531,13 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 				}
 
 				ami_bitmap_rgba_to_argb(bitmap);
-				if(bitmap->drawhandle = ObtainDrawHandle(NULL,
-										&rp, scrn->ViewPort.ColorMap,
-										GGFX_DitherMode, dithermode,
-										TAG_DONE)) {
+				bitmap->drawhandle = ObtainDrawHandle(
+					NULL,
+					&rp,
+					scrn->ViewPort.ColorMap,
+					GGFX_DitherMode, dithermode,
+					TAG_DONE);
+				if(bitmap->drawhandle) {
 					APTR ddh = CreateDirectDrawHandle(bitmap->drawhandle,
 											bitmap->width, bitmap->height,
 											width, height, NULL);

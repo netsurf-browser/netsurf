@@ -31,6 +31,8 @@ ifeq ($(SUBTARGET),os3)
   LDFLAGS += -lamiga -lm
 endif
 
+COMMON_WARNFLAGS += -Wno-cast-align
+
 EXETARGET := NetSurf
 
 # The filter and target for split messages

@@ -783,7 +783,6 @@ static void ami_amiupdate(void)
 static nsurl *gui_get_resource_url(const char *path)
 {
 	char buf[1024];
-	char path2[1024];
 	nsurl *url = NULL;
 
 	if(ami_locate_resource(buf, path) == false)

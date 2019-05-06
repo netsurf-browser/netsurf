@@ -16,8 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef AMIGA_HISTORY_GLOBAL_H
-#define AMIGA_HISTORY_GLOBAL_H
+#ifndef AMIGA_HISTORY_LOCAL_H
+#define AMIGA_HISTORY_LOCAL_H
 
 struct gui_window;
 struct ami_history_local_window;
