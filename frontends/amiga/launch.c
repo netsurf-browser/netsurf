@@ -74,7 +74,7 @@ static void ami_openurl_free_list(struct MinList *list)
 	struct ami_protocol *node;
 	struct ami_protocol *nnode;
 
-	if(IsMinListEmpty(list)) {
+	if(!IsMinListEmpty(list)) {
 		node = (struct ami_protocol *)GetHead((struct List *)list);
 
 		do
