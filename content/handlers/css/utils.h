@@ -79,6 +79,31 @@ css_fixed nscss_len2px(
 		css_unit unit,
 		const css_computed_style *style);
 
+/**
+ * Convert css pixels to physical pixels.
+ *
+ * \param[in] css_pixels  Length in css pixels.
+ * \return length in physical pixels
+ */
+static inline css_fixed nscss_pixels_css_to_physical(
+		css_fixed css_pixels)
+{
+	return FDIV(FMUL(css_pixels, nscss_screen_dpi),
+			nscss_baseline_pixel_density);
+}
+
+/**
+ * Convert physical pixels to css pixels.
+ *
+ * \param[in] physical_pixels  Length in physical pixels.
+ * \return length in css pixels
+ */
+static inline css_fixed nscss_pixels_physical_to_css(
+		css_fixed physical_pixels)
+{
+	return FDIV(FMUL(physical_pixels, nscss_baseline_pixel_density),
+			nscss_screen_dpi);
+}
 
 /**
  * Temporary helper wrappers for for libcss computed style getter, while
