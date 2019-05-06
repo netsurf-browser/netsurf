@@ -1519,6 +1519,10 @@ nserror fetch_curl_register(void)
 	if (nsoption_bool(suppress_curl_debug)) {
 		SETOPT(CURLOPT_DEBUGFUNCTION, fetch_curl_ignore_debug);
 	}
+
+	/* Currently we explode if curl uses HTTP2, so force 1.1. */
+	SETOPT(CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+
 	SETOPT(CURLOPT_WRITEFUNCTION, fetch_curl_data);
 	SETOPT(CURLOPT_HEADERFUNCTION, fetch_curl_header);
 	SETOPT(CURLOPT_PROGRESSFUNCTION, fetch_curl_progress);
