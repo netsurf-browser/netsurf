@@ -89,37 +89,37 @@ method Console::groupEnd ()
 
 method Console::info()
 %{
-	write_log_entry(ctx, priv->group, 'I');
+	write_log_entry(ctx, priv->group, BW_CS_FLAG_LEVEL_INFO);
 	return 0;
 %}
 
 method Console::debug()
 %{
-	write_log_entry(ctx, priv->group, 'D');
+	write_log_entry(ctx, priv->group, BW_CS_FLAG_LEVEL_DEBUG);
 	return 0;
 %}
 
 method Console::error()
 %{
-	write_log_entry(ctx, priv->group, 'E');
+	write_log_entry(ctx, priv->group, BW_CS_FLAG_LEVEL_ERROR);
 	return 0;
 %}
 
 method Console::log()
 %{
-	write_log_entry(ctx, priv->group, 'L');
+	write_log_entry(ctx, priv->group, BW_CS_FLAG_LEVEL_LOG);
 	return 0;
 %}
 
 method Console::warn()
 %{
-	write_log_entry(ctx, priv->group, 'W');
+	write_log_entry(ctx, priv->group, BW_CS_FLAG_LEVEL_WARN);
 	return 0;
 %}
 
 method Console::dir()
 %{
-	write_log_entry(ctx, priv->group, 'd');
+	write_log_entry(ctx, priv->group, BW_CS_FLAG_LEVEL_INFO);
 	return 0;
 %}
 
@@ -182,7 +182,7 @@ method Console::timeEnd()
 	duk_push_string(ctx, "Timer elapsed: ");
 	duk_insert(ctx, 0);
 	duk_push_sprintf(ctx, "%lu ms", (duk_uint_t)(time_ms - old_time_ms));
-	write_log_entry(ctx, priv->group, 'T');
+	write_log_entry(ctx, priv->group, BW_CS_FLAG_LEVEL_INFO);
 	return 0;
 %}
 
@@ -193,6 +193,6 @@ method Console::trace ()
 	duk_safe_to_string(ctx, -1);
 	duk_insert(ctx, 0);
 	duk_set_top(ctx, 1);
-	write_log_entry(ctx, priv->group, 'S');
+	write_log_entry(ctx, priv->group, BW_CS_FLAG_LEVEL_INFO);
 	return 0;
 %}
