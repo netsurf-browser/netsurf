@@ -283,6 +283,7 @@ class BrowserWindow:
         self.url = ""
         self.plotted = []
         self.plotting = False
+        self.log_entries = []
 
     def kill(self):
         self.browser.farmer.tell_monkey("WINDOW DESTROY %s" % self.winid)
@@ -384,6 +385,9 @@ class BrowserWindow:
             self.browser.current_draw_target = None
             self.plotting = False
 
+    def handle_window_CONSOLE_LOG(self, _src, src, folding, level, *msg):
+        self.log_entries.append((src, folding == "FOLDABLE", level, " ".join(msg)))
+
     def load_page(self, url=None, referer=None):
         if url is not None:
             self.go(url, referer)
@@ -412,7 +416,33 @@ class BrowserWindow:
         while self.plotting:
             self.browser.farmer.loop(once=True)
         return self.plotted
-            
+
+    def clear_log(self):
+        self.log_entries = []
+
+    def log_contains(self, source=None, foldable=None, level=None, substr=None):
+        if (source is None) and (foldable is None) and (level is None) and (substr is None):
+            assert False, "Unable to run log_contains, no predicate given"
+
+        for (source_, foldable_, level_, msg_) in self.log_entries:
+            ok = True
+            if (source is not None) and (source != source_):
+                ok = False
+            if (foldable is not None) and (foldable != foldable_):
+                ok = False
+            if (level is not None) and (level != level_):
+                ok = False
+            if (substr is not None) and (substr not in msg_):
+                ok = False
+            if ok:
+                return True
+
+        return False
+
+    def wait_for_log(self, source=None, foldable=None, level=None, substr=None):
+        while not self.log_contains(source=source, foldable=foldable, level=level, substr=substr):
+            self.browser.farmer.loop(once=True)
+
 
 if __name__ == '__main__':
     # Simple test is as follows...
@@ -471,6 +501,17 @@ if __name__ == '__main__':
             y = cmd[4]
             rest = " ".join(cmd[6:])
             print("{} {} -> {}".format(x,y,rest))
+
+    fname = "test/js/inserted-script.html"
+    full_fname = os.path.join(os.getcwd(), fname)
+
+    browser = Browser(quiet=True)
+    browser.pass_options("--enable_javascript=1")
+    win = browser.new_window()
+    win.load_page("file://" + full_fname)
+    print("Loaded, URL is {}".format(win.url))
+
+    win.wait_for_log(substr="deferred")
 
     #print("Discussion was:")
     #for line in browser.farmer.discussion:
