@@ -326,6 +326,8 @@ void *ami_window_at_pointer(int type)
 }
 
 #else
+#include <stddef.h>
+
 #include "utils/errors.h"
 #include "amiga/drag.h"
 
