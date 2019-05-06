@@ -378,6 +378,9 @@ gui_window_console_log(struct gui_window *g,
 	}
 
 	switch (flags & BW_CS_FLAG_LEVEL_MASK) {
+	case BW_CS_FLAG_LEVEL_DEBUG:
+		level_text = "DEBUG";
+		break;
 	case BW_CS_FLAG_LEVEL_LOG:
 		level_text = "LOG";
 		break;

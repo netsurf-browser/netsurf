@@ -3458,6 +3458,9 @@ nserror browser_window_console_log(struct browser_window *bw,
 	       "unknown input location"));
 
 	switch (log_level) {
+	case BW_CS_FLAG_LEVEL_DEBUG:
+		NSLOG(netsurf, DEBUG, "%.*s", (int)msglen, msg);
+		break;
 	case BW_CS_FLAG_LEVEL_LOG:
 		NSLOG(netsurf, VERBOSE, "%.*s", (int)msglen, msg);
 		break;

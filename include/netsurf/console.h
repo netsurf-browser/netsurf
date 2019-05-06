@@ -49,16 +49,19 @@ typedef enum {
 	 */
 	BW_CS_FLAG_FOLDABLE = 1 << 0,
 
+	/** Logged at the 'debug' level, please use only one of the LEVEL flags */
+	BW_CS_FLAG_LEVEL_DEBUG = 0 << 1,
 	/** Logged at the 'log' level, please only use one of the LEVEL flags */
-	BW_CS_FLAG_LEVEL_LOG = 0 << 1,
+	BW_CS_FLAG_LEVEL_LOG = 1 << 1,
 	/** Logged at the 'info' level, please use only one of the LEVEL flags */
-	BW_CS_FLAG_LEVEL_INFO = 1 << 1,
+	BW_CS_FLAG_LEVEL_INFO = 2 << 1,
 	/** Logged at the 'warn' level, please use only one of the LEVEL flags */
-	BW_CS_FLAG_LEVEL_WARN = 2 << 1,
+	BW_CS_FLAG_LEVEL_WARN = 3 << 1,
 	/** Logged at the 'error' level, please use only one of the LEVEL flags */
-	BW_CS_FLAG_LEVEL_ERROR = 3 << 1,
+	BW_CS_FLAG_LEVEL_ERROR = 4 << 1,
+	/* Levels 5, 6, 7 unused as yet */
 	/** Mask for the error level to allow easy comparison using the above */
-	BW_CS_FLAG_LEVEL_MASK = 3 << 1,
+	BW_CS_FLAG_LEVEL_MASK = 7 << 1,
 } browser_window_console_flags;
 
 #endif /* _NETSURF_CONSOLE_H_ */
