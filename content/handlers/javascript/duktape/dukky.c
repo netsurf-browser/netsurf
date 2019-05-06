@@ -804,17 +804,17 @@ js_exec(jscontext *ctx, const uint8_t *txt, size_t txtlen, const char *name)
 					  DUK_COMPILE_EVAL,
 					  (const char *)txt,
 					  txtlen) != 0) {
-		NSLOG(dukky, INFO, "Failed to compile JavaScript input");
+		NSLOG(dukky, DEBUG, "Failed to compile JavaScript input");
 		goto handle_error;
 	}
 
 	if (duk_pcall(CTX, 0/*nargs*/) == DUK_EXEC_ERROR) {
-		NSLOG(dukky, INFO, "Failed to execute JavaScript");
+		NSLOG(dukky, DEBUG, "Failed to execute JavaScript");
 		goto handle_error;
 	}
 
 	if (duk_get_top(CTX) == 0) duk_push_boolean(CTX, false);
-	NSLOG(dukky, INFO, "Returning %s",
+	NSLOG(dukky, DEEPDEBUG, "Returning %s",
 	      duk_get_boolean(CTX, 0) ? "true" : "false");
 	return duk_get_boolean(CTX, 0);
 
