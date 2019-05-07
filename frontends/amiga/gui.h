@@ -312,6 +312,11 @@ void ami_gui_set_throbbing(struct gui_window *gw, bool throbbing);
 struct Window *ami_gui_get_window(struct gui_window *gw);
 
 /**
+ * Get window from gui_window_2
+ */
+struct Window *ami_gui2_get_window(struct gui_window_2 *gwin);
+
+/**
  * Get imenu from gui_window
  */
 struct Menu *ami_gui_get_menu(struct gui_window *gw);

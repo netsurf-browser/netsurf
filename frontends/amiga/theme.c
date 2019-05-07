@@ -221,14 +221,14 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 void ami_set_pointer(struct gui_window_2 *gwin, gui_pointer_shape shape, bool update)
 {
 	if(gwin->mouse_pointer == shape) return;
-	ami_update_pointer(gwin->win, shape);
+	ami_update_pointer(ami_gui2_get_window(gwin), shape);
 	if(update == true) gwin->mouse_pointer = shape;
 }
 
 /* reset the mouse pointer back to what NetSurf last set it as */
 void ami_reset_pointer(struct gui_window_2 *gwin)
 {
-	ami_update_pointer(gwin->win, gwin->mouse_pointer);
+	ami_update_pointer(ami_gui2_get_window(gwin), gwin->mouse_pointer);
 }
 
 void ami_update_pointer(struct Window *win, gui_pointer_shape shape)

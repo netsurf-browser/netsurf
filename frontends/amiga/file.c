@@ -84,7 +84,7 @@ void ami_file_open(struct gui_window_2 *gwin)
 
 	if(AslRequestTags(filereq,
 			ASLFR_TitleText, messages_get("NetSurf"),
-			ASLFR_Window, gwin->win,
+			ASLFR_Window, ami_gui2_get_window(gwin),
 			ASLFR_SleepWindow, TRUE,
 			ASLFR_Screen, scrn,
 			ASLFR_DoSaveMode, FALSE,
@@ -257,7 +257,7 @@ void ami_file_save_req(int type, struct gui_window_2 *gwin,
 	}
 
 	if(AslRequestTags(savereq,
-			ASLFR_Window, gwin->win,
+			ASLFR_Window, ami_gui2_get_window(gwin),
 			ASLFR_SleepWindow, TRUE,
 			ASLFR_TitleText, messages_get("NetSurf"),
 			ASLFR_Screen, scrn,
@@ -267,7 +267,7 @@ void ami_file_save_req(int type, struct gui_window_2 *gwin,
 		strlcpy(fname, savereq->fr_Drawer, 1024);
 		AddPart(fname, savereq->fr_File, 1024);
 
-		ami_file_save(type, fname, gwin->win, object,
+		ami_file_save(type, fname, ami_gui2_get_window(gwin), object,
 			ami_gui_get_favicon(gwin->gw), ami_gui_get_browser_window(gwin->gw));
 	}
 

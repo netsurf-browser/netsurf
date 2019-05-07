@@ -280,8 +280,8 @@ void ami_drag_selection(struct gui_window *g)
 		return;
 	}
 
-	x = gwin->win->MouseX;
-	y = gwin->win->MouseY;
+	x = ami_gui2_get_window(gwin)->MouseX;
+	y = ami_gui2_get_window(gwin)->MouseY;
 
 	if(ami_text_box_at_point(gwin, (ULONG *)&x, (ULONG *)&y))
 	{
@@ -296,8 +296,8 @@ void ami_drag_selection(struct gui_window *g)
 	}
 	else
 	{
-		x = gwin->win->MouseX;
-		y = gwin->win->MouseY;
+		x = ami_gui2_get_window(gwin)->MouseX;
+		y = ami_gui2_get_window(gwin)->MouseY;
 
 		if(ami_gadget_hit(gwin->objects[GID_URL], x, y))
 		{
@@ -305,7 +305,7 @@ void ami_drag_selection(struct gui_window *g)
 			{
 				utf8text = ami_utf8_easy(sel);
 				RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_URL],
-					gwin->win, NULL, STRINGA_TextVal, utf8text, TAG_DONE);
+					ami_gui2_get_window(gwin), NULL, STRINGA_TextVal, utf8text, TAG_DONE);
 				free(sel);
 				ami_utf8_free(utf8text);
 			}
@@ -316,7 +316,7 @@ void ami_drag_selection(struct gui_window *g)
 			{
 				utf8text = ami_utf8_easy(sel);
 				RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_SEARCHSTRING],
-					gwin->win, NULL, STRINGA_TextVal, utf8text, TAG_DONE);
+					ami_gui2_get_window(gwin), NULL, STRINGA_TextVal, utf8text, TAG_DONE);
 				free(sel);
 				ami_utf8_free(utf8text);
 			}

@@ -349,11 +349,16 @@ void ami_gui_set_throbbing(struct gui_window *gw, bool throbbing)
 	gw->throbbing = throbbing;
 }
 
+struct Window *ami_gui2_get_window(struct gui_window_2 *gwin)
+{
+	assert(gwin != NULL);
+	return gwin->win;
+}
+
 struct Window *ami_gui_get_window(struct gui_window *gw)
 {
 	assert(gw != NULL);
-	assert(gw->shared != NULL);
-	return gw->shared->win;
+	return ami_gui2_get_window(gw->shared);
 }
 
 struct Menu *ami_gui_get_menu(struct gui_window *gw)

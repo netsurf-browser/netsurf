@@ -304,7 +304,7 @@ static void *ami_find_gwin_by_id(struct Window *win, uint32 type)
 			if(node->Type == type)
 			{
 				gwin = node->objstruct;
-				if(win == gwin->win) return gwin;
+				if(win == ami_gui2_get_window(gwin)) return gwin;
 			}
 		} while((node = nnode));
 	}

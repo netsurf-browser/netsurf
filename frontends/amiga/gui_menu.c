@@ -191,7 +191,7 @@ HOOKF(void, ami_menu_item_project_about, APTR, window, struct IntuiMessage *)
 #ifdef __amigaos4__
 	sel = TimedDosRequesterTags(TDR_ImageType,TDRIMAGE_INFO,
 				TDR_TitleString, messages_get("NetSurf"),
-				TDR_Window, gwin->win,
+				TDR_Window, ami_gui2_get_window(gwin),
 				TDR_GadgetString, temp2,
 				TDR_FormatString,"NetSurf %s\nBuild date %s\n\nhttp://www.netsurf-browser.org",
 				TDR_Arg1,netsurf_version,
@@ -206,7 +206,7 @@ HOOKF(void, ami_menu_item_project_about, APTR, window, struct IntuiMessage *)
 		temp2,
 	};
 
-	sel = EasyRequest(gwin->win, &about_req, NULL, netsurf_version, verdate);
+	sel = EasyRequest(ami_gui2_get_window(gwin), &about_req, NULL, netsurf_version, verdate);
 #endif
 	free(temp2);
 
@@ -455,10 +455,10 @@ HOOKF(void, ami_menu_item_settings_snapshot, APTR, window, struct IntuiMessage *
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	nsoption_set_int(window_x, gwin->win->LeftEdge);
-	nsoption_set_int(window_y, gwin->win->TopEdge);
-	nsoption_set_int(window_width, gwin->win->Width);
-	nsoption_set_int(window_height, gwin->win->Height);
+	nsoption_set_int(window_x, ami_gui2_get_window(gwin)->LeftEdge);
+	nsoption_set_int(window_y, ami_gui2_get_window(gwin)->TopEdge);
+	nsoption_set_int(window_width, ami_gui2_get_window(gwin)->Width);
+	nsoption_set_int(window_height, ami_gui2_get_window(gwin)->Height);
 }
 
 HOOKF(void, ami_menu_item_settings_save, APTR, window, struct IntuiMessage *)
@@ -473,7 +473,7 @@ HOOKF(void, ami_menu_item_arexx_execute, APTR, window, struct IntuiMessage *)
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
 	if(AslRequestTags(filereq,
-						ASLFR_Window, gwin->win,
+						ASLFR_Window, ami_gui2_get_window(gwin),
 						ASLFR_SleepWindow, TRUE,
 						ASLFR_TitleText, messages_get("NetSurf"),
 						ASLFR_Screen, scrn,
@@ -706,7 +706,7 @@ void ami_gui_menu_update_checked(struct gui_window_2 *gwin)
 			ItemAddress(menustrip, ami_gui_menu_number(M_IMGBACK))->Flags ^= CHECKED;
 	}
 
-	ResetMenuStrip(gwin->win, menustrip);
+	ResetMenuStrip(ami_gui2_get_window(gwin), menustrip);
 }
 
 void ami_gui_menu_update_disabled(struct gui_window *g, struct hlcache_handle *c)
