@@ -193,6 +193,29 @@
 
 extern struct gui_utf8_table *amiga_utf8_table;
 
+struct gui_window
+{
+	struct gui_window_2 *shared;
+	int tab;
+	struct Node *tab_node;
+	int c_x; /* Caret X posn */
+	int c_y; /* Caret Y posn */
+	int c_w; /* Caret width */
+	int c_h; /* Caret height */
+	int c_h_temp;
+	int scrollx;
+	int scrolly;
+	struct ami_history_local_window *hw;
+	struct List dllist;
+	struct hlcache_handle *favicon;
+	bool throbbing;
+	char *tabtitle;
+	APTR deferred_rects_pool;
+	struct MinList *deferred_rects;
+	struct browser_window *bw;
+	float scale;
+};
+
 struct ami_gui_tb_userdata {
 	struct List *sblist;
 	struct gui_window_2 *gw;
@@ -265,6 +288,66 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 		nsoptions[NSOPTION_##OPTION].value.i = VALUE;	\
 	nsoptions_default[NSOPTION_##OPTION].value.i = VALUE
 
+/* Function documented in gui.h */
+struct browser_window *ami_gui_get_browser_window(struct gui_window *gw)
+{
+	assert(gw != NULL);
+	return gw->bw;
+}
+
+struct List *ami_gui_get_download_list(struct gui_window *gw)
+{
+	assert(gw != NULL);
+	return &gw->dllist;
+}
+
+struct gui_window_2 *ami_gui_get_gui_window_2(struct gui_window *gw)
+{
+	assert(gw != NULL);
+	return gw->shared;
+}
+
+const char *ami_gui_get_tab_title(struct gui_window *gw)
+{
+	assert(gw != NULL);
+	return (const char *)gw->tabtitle;
+}
+
+struct Node *ami_gui_get_tab_node(struct gui_window *gw)
+{
+	assert(gw != NULL);
+	return gw->tab_node;
+}
+
+struct hlcache_handle *ami_gui_get_favicon(struct gui_window *gw)
+{
+	assert(gw != NULL);
+	return gw->favicon;
+}
+
+struct ami_history_local_window *ami_gui_get_history_window(struct gui_window *gw)
+{
+	assert(gw != NULL);
+	return gw->hw;
+}
+
+void ami_gui_set_history_window(struct gui_window *gw, struct ami_history_local_window *hw)
+{
+	assert(gw != NULL);
+	gw->hw = hw;
+}
+
+bool ami_gui_get_throbbing(struct gui_window *gw)
+{
+	assert(gw != NULL);
+	return gw->throbbing;
+}
+
+void ami_gui_set_throbbing(struct gui_window *gw, bool throbbing)
+{
+	assert(gw != NULL);
+	gw->throbbing = throbbing;
+}
 
 
 STRPTR ami_locale_langs(int *codeset)
@@ -2484,11 +2567,11 @@ static BOOL ami_gui_event(void *w)
 							break;
 
 							case RAWKEY_F9: // decrease scale
-								ami_gui_set_scale(gwin->gw, gwin->gw->scale - 0.1);
+								ami_gui_adjust_scale(gwin->gw, -0.1);
 							break;
 
 							case RAWKEY_F10: // increase scale
-								ami_gui_set_scale(gwin->gw, gwin->gw->scale + 0.1);
+								ami_gui_adjust_scale(gwin->gw, +0.1);
 							break;
 							
 							case RAWKEY_HELP: // help
@@ -3511,6 +3594,11 @@ void ami_gui_set_scale(struct gui_window *gw, float scale)
 	if(scale <= 0.0) return;
 	gw->scale = scale;
 	browser_window_set_scale(gw->bw, scale, true);
+}
+
+void ami_gui_adjust_scale(struct gui_window *gw, float adjustment)
+{
+	ami_gui_set_scale(gw, gw->scale + adjustment);
 }
 
 void ami_gui_switch_to_new_tab(struct gui_window_2 *gwin)

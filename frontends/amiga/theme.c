@@ -215,7 +215,7 @@ void ami_get_theme_filename(char *filename, const char *themestring, bool protoc
 
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
-	ami_set_pointer(g->shared, shape, true);
+	ami_set_pointer(ami_gui_get_gui_window_2(g), shape, true);
 }
 
 void ami_set_pointer(struct gui_window_2 *gwin, gui_pointer_shape shape, bool update)
@@ -429,16 +429,16 @@ void gui_window_start_throbber(struct gui_window *g)
 	if(nsoption_bool(kiosk_mode)) return;
 
 #ifdef __amigaos4__
-	if(g->tab_node && (g->shared->tabs > 1))
+	if(ami_gui_get_tab_node(g) && (ami_gui_get_gui_window_2(g)->tabs > 1))
 	{
-		SetClickTabNodeAttrs(g->tab_node, TNA_Flagged, TRUE, TAG_DONE);
-		RefreshGadgets((APTR)g->shared->objects[GID_TABS],
-			g->shared->win, NULL);
+		SetClickTabNodeAttrs(ami_gui_get_tab_node(g), TNA_Flagged, TRUE, TAG_DONE);
+		RefreshGadgets((APTR)ami_gui_get_gui_window_2(g)->objects[GID_TABS],
+			ami_gui_get_gui_window_2(g)->win, NULL);
 	}
 #endif
 
-	g->throbbing = true;
-	if(g->shared->throbber_frame == 0) g->shared->throbber_frame = 1;
+	ami_gui_set_throbbing(g, true);
+	if(ami_gui_get_gui_window_2(g)->throbber_frame == 0) ami_gui_get_gui_window_2(g)->throbber_frame = 1;
 	ami_throbber_redraw_schedule(throbber_update_interval, g);
 }
 
@@ -450,22 +450,22 @@ void gui_window_stop_throbber(struct gui_window *g)
 	if(nsoption_bool(kiosk_mode)) return;
 
 #ifdef __amigaos4__
-	if(g->tab_node && (g->shared->tabs > 1))
+	if(ami_gui_get_tab_node(g) && (ami_gui_get_gui_window_2(g)->tabs > 1))
 	{
-		SetClickTabNodeAttrs(g->tab_node, TNA_Flagged, FALSE, TAG_DONE);
-		RefreshGadgets((APTR)g->shared->objects[GID_TABS],
-			g->shared->win, NULL);
+		SetClickTabNodeAttrs(ami_gui_get_tab_node(g), TNA_Flagged, FALSE, TAG_DONE);
+		RefreshGadgets((APTR)ami_gui_get_gui_window_2(g)->objects[GID_TABS],
+			ami_gui_get_gui_window_2(g)->win, NULL);
 	}
 #endif
 
-	if(g == g->shared->gw) {
-		if(ami_gui_get_space_box(g->shared->objects[GID_THROBBER], &bbox) != NSERROR_OK) {
+	if(g == ami_gui_get_gui_window_2(g)->gw) {
+		if(ami_gui_get_space_box(ami_gui_get_gui_window_2(g)->objects[GID_THROBBER], &bbox) != NSERROR_OK) {
 			amiga_warn_user("NoMemory", "");
 			return;
 		}
 
 		if(throbber != NULL) {
-			BltBitMapRastPort(throbber, 0, 0, g->shared->win->RPort,
+			BltBitMapRastPort(throbber, 0, 0, ami_gui_get_gui_window_2(g)->win->RPort,
 				bbox->Left, bbox->Top, 
 				ami_theme_throbber_get_width(), ami_theme_throbber_get_height(),
 				0x0C0);
@@ -473,7 +473,7 @@ void gui_window_stop_throbber(struct gui_window *g)
 		ami_gui_free_space_box(bbox);
 	}
 
-	g->throbbing = false;
+	ami_gui_set_throbbing(g, false);
 	ami_throbber_redraw_schedule(-1, g);
 }
 
@@ -484,17 +484,17 @@ static void ami_throbber_update(void *p)
 	int frame = 0;
 
 	if(!g) return;
-	if(!g->shared->objects[GID_THROBBER]) return;
+	if(!ami_gui_get_gui_window_2(g)->objects[GID_THROBBER]) return;
 
-	if(g->throbbing == true) {
-		frame = g->shared->throbber_frame;
-		g->shared->throbber_frame++;
-		if(g->shared->throbber_frame > (throbber_frames-1))
-			g->shared->throbber_frame=1;
+	if(ami_gui_get_throbbing(g) == true) {
+		frame = ami_gui_get_gui_window_2(g)->throbber_frame;
+		ami_gui_get_gui_window_2(g)->throbber_frame++;
+		if(ami_gui_get_gui_window_2(g)->throbber_frame > (throbber_frames-1))
+			ami_gui_get_gui_window_2(g)->throbber_frame=1;
 	}
 
-	if(g->shared->gw == g) {
-		if(ami_gui_get_space_box(g->shared->objects[GID_THROBBER], &bbox) != NSERROR_OK) {
+	if(ami_gui_get_gui_window_2(g)->gw == g) {
+		if(ami_gui_get_space_box(ami_gui_get_gui_window_2(g)->objects[GID_THROBBER], &bbox) != NSERROR_OK) {
 			amiga_warn_user("NoMemory", "");
 			return;
 		}
@@ -508,14 +508,14 @@ static void ami_throbber_update(void *p)
 						BLITA_Width, ami_theme_throbber_get_width(),
 						BLITA_Height, ami_theme_throbber_get_height(),
 						BLITA_Source, throbber,
-						BLITA_Dest, g->shared->win->RPort,
+						BLITA_Dest, ami_gui_get_gui_window_2(g)->win->RPort,
 						BLITA_SrcType, BLITT_BITMAP,
 						BLITA_DestType, BLITT_RASTPORT,
 					//	BLITA_UseSrcAlpha, TRUE,
 					TAG_DONE);
 #else
 			BltBitMapRastPort(throbber, ami_theme_throbber_get_width() * frame,
-				0, g->shared->win->RPort,
+				0, ami_gui_get_gui_window_2(g)->win->RPort,
 				bbox->Left, bbox->Top,
 				ami_theme_throbber_get_width(), ami_theme_throbber_get_height(),
 				0xC0);

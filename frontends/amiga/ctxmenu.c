@@ -107,8 +107,8 @@ HOOKF(void, ami_ctxmenu_item_selcopy, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin = (struct gui_window_2 *)hook->h_Data;
 
-	browser_window_key_press(gwin->gw->bw, NS_KEY_COPY_SELECTION);
-	browser_window_key_press(gwin->gw->bw, NS_KEY_CLEAR_SELECTION);
+	browser_window_key_press(ami_gui_get_browser_window(gwin->gw), NS_KEY_COPY_SELECTION);
+	browser_window_key_press(ami_gui_get_browser_window(gwin->gw), NS_KEY_CLEAR_SELECTION);
 }
 
 HOOKF(void, ami_ctxmenu_item_websearch, APTR, window, struct IntuiMessage *)
@@ -117,11 +117,11 @@ HOOKF(void, ami_ctxmenu_item_websearch, APTR, window, struct IntuiMessage *)
 	nsurl *url;
 
 	struct gui_window_2 *gwin = (struct gui_window_2 *)hook->h_Data;
-	char *sel = browser_window_get_selection(gwin->gw->bw);
+	char *sel = browser_window_get_selection(ami_gui_get_browser_window(gwin->gw));
 
 	ret = search_web_omni(sel, SEARCH_WEB_OMNI_SEARCHONLY, &url);
 	if (ret == NSERROR_OK) {
-			browser_window_navigate(gwin->gw->bw,
+			browser_window_navigate(ami_gui_get_browser_window(gwin->gw),
 					url,
 					NULL,
 					BW_NAVIGATE_HISTORY,
@@ -146,8 +146,8 @@ HOOKF(void, ami_ctxmenu_item_urlopentab, APTR, window, struct IntuiMessage *)
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 	nserror error = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY | BW_CREATE_TAB,
 								      url,
-								      browser_window_access_url(gwin->gw->bw),
-								      gwin->gw->bw,
+								      browser_window_access_url(ami_gui_get_browser_window(gwin->gw)),
+								      ami_gui_get_browser_window(gwin->gw),
 								      &bw);
 
 	if (error != NSERROR_OK)
@@ -163,8 +163,8 @@ HOOKF(void, ami_ctxmenu_item_urlopenwin, APTR, window, struct IntuiMessage *)
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 	nserror error = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY,
 								      url,
-								      browser_window_access_url(gwin->gw->bw),
-								      gwin->gw->bw,
+								      browser_window_access_url(ami_gui_get_browser_window(gwin->gw)),
+								      ami_gui_get_browser_window(gwin->gw),
 								      &bw);
 
 	if (error != NSERROR_OK)
@@ -178,9 +178,9 @@ HOOKF(void, ami_ctxmenu_item_urldownload, APTR, window, struct IntuiMessage *)
 
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_navigate(gwin->gw->bw,
+	browser_window_navigate(ami_gui_get_browser_window(gwin->gw),
 		url,
-		browser_window_access_url(gwin->gw->bw),
+		browser_window_access_url(ami_gui_get_browser_window(gwin->gw)),
 		BW_NAVIGATE_DOWNLOAD,
 		NULL,
 		NULL,
@@ -198,9 +198,9 @@ HOOKF(void, ami_ctxmenu_item_objshow, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_navigate(gwin->gw->bw,
+	browser_window_navigate(ami_gui_get_browser_window(gwin->gw),
 							hlcache_handle_get_url(hook->h_Data),
-							browser_window_access_url(gwin->gw->bw),
+							browser_window_access_url(ami_gui_get_browser_window(gwin->gw)),
 							BW_NAVIGATE_HISTORY,
 							NULL,
 							NULL,
@@ -238,9 +238,9 @@ HOOKF(void, ami_ctxmenu_item_frameshow, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_navigate(gwin->gw->bw,
+	browser_window_navigate(ami_gui_get_browser_window(gwin->gw),
 							hlcache_handle_get_url(hook->h_Data),
-							browser_window_access_url(gwin->gw->bw),
+							browser_window_access_url(ami_gui_get_browser_window(gwin->gw)),
 							BW_NAVIGATE_HISTORY,
 							NULL,
 							NULL,
@@ -271,7 +271,8 @@ HOOKF(void, ami_ctxmenu_item_history, APTR, window, struct IntuiMessage *)
 
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_history_go(gwin->gw->bw, (struct history_entry *)hook->h_Data, false);		
+	browser_window_history_go(ami_gui_get_browser_window(gwin->gw),
+		(struct history_entry *)hook->h_Data, false);		
 }
 
 
@@ -300,7 +301,7 @@ static uint32 ami_ctxmenu_hook_func(struct Hook *hook, struct Window *window, st
 	Object *root_menu;
 	bool ctxmenu_has_content = false;
 	struct gui_window_2 *gwin = hook->h_Data;
-	struct hlcache_handle *cc = browser_window_get_content(gwin->gw->bw);
+	struct hlcache_handle *cc = browser_window_get_content(ami_gui_get_browser_window(gwin->gw));
 	struct browser_window_features ccdata;
 	int mx = window->MouseX;
 	int my = window->MouseY;
@@ -328,11 +329,11 @@ static uint32 ami_ctxmenu_hook_func(struct Hook *hook, struct Window *window, st
 		return 0;
 	}
 
-	browser_window_get_features(gwin->gw->bw, x, y, &ccdata);
+	browser_window_get_features(ami_gui_get_browser_window(gwin->gw), x, y, &ccdata);
 
-	if((browser_window_can_select(gwin->gw->bw)) &&
-		((browser_window_get_editor_flags(gwin->gw->bw) & BW_EDITOR_CAN_COPY)) &&
-		(sel = browser_window_get_selection(gwin->gw->bw))) {
+	if((browser_window_can_select(ami_gui_get_browser_window(gwin->gw))) &&
+		((browser_window_get_editor_flags(ami_gui_get_browser_window(gwin->gw)) & BW_EDITOR_CAN_COPY)) &&
+		(sel = browser_window_get_selection(ami_gui_get_browser_window(gwin->gw)))) {
 
 		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_SELCOPY, gwin);
 		ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_WEBSEARCH, gwin);
@@ -567,9 +568,9 @@ struct Menu *ami_ctxmenu_history_create(int direction, struct gui_window_2 *gwin
 		gwin->temp = 0;
 
 		if(direction == AMI_CTXMENU_HISTORY_BACK) {
-			browser_window_history_enumerate_back(gwin->gw->bw, ami_ctxmenu_history_back, gwin);
+			browser_window_history_enumerate_back(ami_gui_get_browser_window(gwin->gw), ami_ctxmenu_history_back, gwin);
 		} else {
-			browser_window_history_enumerate_forward(gwin->gw->bw, ami_ctxmenu_history_forward, gwin);
+			browser_window_history_enumerate_forward(ami_gui_get_browser_window(gwin->gw), ami_ctxmenu_history_forward, gwin);
 		}
 	}
 

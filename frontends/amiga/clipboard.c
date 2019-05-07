@@ -86,14 +86,14 @@ void ami_clipboard_free(void)
 void gui_start_selection(struct gui_window *g)
 {
 	if(!g) return;
-	if(!g->shared->win) return;
+	if(!ami_gui_get_gui_window_2(g)->win) return;
 	if(nsoption_bool(kiosk_mode) == true) return;
 
-	ami_gui_menu_set_disabled(g->shared->win, g->shared->imenu, M_COPY, false);
-	ami_gui_menu_set_disabled(g->shared->win, g->shared->imenu, M_CLEAR, false);
+	ami_gui_menu_set_disabled(ami_gui_get_gui_window_2(g)->win, ami_gui_get_gui_window_2(g)->imenu, M_COPY, false);
+	ami_gui_menu_set_disabled(ami_gui_get_gui_window_2(g)->win, ami_gui_get_gui_window_2(g)->imenu, M_CLEAR, false);
 
-	if (browser_window_get_editor_flags(g->bw) & BW_EDITOR_CAN_CUT)
-		ami_gui_menu_set_disabled(g->shared->win, g->shared->imenu, M_CUT, false);
+	if (browser_window_get_editor_flags(ami_gui_get_browser_window(g)) & BW_EDITOR_CAN_CUT)
+		ami_gui_menu_set_disabled(ami_gui_get_gui_window_2(g)->win, ami_gui_get_gui_window_2(g)->imenu, M_CUT, false);
 }
 
 static char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size_t *text_length)
@@ -287,9 +287,9 @@ void ami_drag_selection(struct gui_window *g)
 	{
 		iffh = ami_clipboard_init_internal(1);
 
-		browser_window_key_press(g->bw, NS_KEY_COPY_SELECTION);
-		browser_window_mouse_click(gwin->gw->bw, BROWSER_MOUSE_PRESS_1, x, y);
-		browser_window_key_press(gwin->gw->bw, NS_KEY_PASTE);
+		browser_window_key_press(ami_gui_get_browser_window(g), NS_KEY_COPY_SELECTION);
+		browser_window_mouse_click(ami_gui_get_browser_window(gwin->gw), BROWSER_MOUSE_PRESS_1, x, y);
+		browser_window_key_press(ami_gui_get_browser_window(gwin->gw), NS_KEY_PASTE);
 
 		ami_clipboard_free_internal(iffh);
 		iffh = old_iffh;
@@ -301,7 +301,7 @@ void ami_drag_selection(struct gui_window *g)
 
 		if(ami_gadget_hit(gwin->objects[GID_URL], x, y))
 		{
-			if((sel = browser_window_get_selection(g->bw)))
+			if((sel = browser_window_get_selection(ami_gui_get_browser_window(g))))
 			{
 				utf8text = ami_utf8_easy(sel);
 				RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_URL],
@@ -312,7 +312,7 @@ void ami_drag_selection(struct gui_window *g)
 		}
 		else if(ami_gadget_hit(gwin->objects[GID_SEARCHSTRING], x, y))
 		{
-			if((sel = browser_window_get_selection(g->bw)))
+			if((sel = browser_window_get_selection(ami_gui_get_browser_window(g))))
 			{
 				utf8text = ami_utf8_easy(sel);
 				RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_SEARCHSTRING],

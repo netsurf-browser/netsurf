@@ -100,7 +100,7 @@ void ami_file_open(struct gui_window_2 *gwin)
 			if (netsurf_path_to_nsurl(temp, &url) != NSERROR_OK) {
 				amiga_warn_user("NoMemory", 0);
 			} else {
-				browser_window_navigate(gwin->gw->bw,
+				browser_window_navigate(ami_gui_get_browser_window(gwin->gw),
 					url,
 					NULL,
 					BW_NAVIGATE_HISTORY,
@@ -267,7 +267,8 @@ void ami_file_save_req(int type, struct gui_window_2 *gwin,
 		strlcpy(fname, savereq->fr_Drawer, 1024);
 		AddPart(fname, savereq->fr_File, 1024);
 
-		ami_file_save(type, fname, gwin->win, object, gwin->gw->favicon, gwin->gw->bw);
+		ami_file_save(type, fname, gwin->win, object,
+			ami_gui_get_favicon(gwin->gw), ami_gui_get_browser_window(gwin->gw));
 	}
 
 	if(fname) free(fname);

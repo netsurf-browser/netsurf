@@ -89,7 +89,7 @@ void gui_drag_save_object(struct gui_window *g, struct hlcache_handle *c,
 		break;
 	}
 
-	ami_drag_icon_show(g->shared->win, filetype);
+	ami_drag_icon_show(ami_gui_get_gui_window_2(g)->win, filetype);
 
 	drag_save_data = c;
 	drag_save_gui = g;
@@ -98,7 +98,7 @@ void gui_drag_save_object(struct gui_window *g, struct hlcache_handle *c,
 
 void gui_drag_save_selection(struct gui_window *g, const char *selection)
 {
-	ami_drag_icon_show(g->shared->win, "ascii");
+	ami_drag_icon_show(ami_gui_get_gui_window_2(g)->win, "ascii");
 
 	ami_autoscroll = true;
 	drag_save_data = g;
@@ -166,7 +166,7 @@ void ami_drag_save(struct Window *win)
 		case GUI_SAVE_TEXT_SELECTION: // selection
 			AddPart(path,"netsurf_text_selection",1024);
 			struct gui_window *g = (struct gui_window *) drag_save_data;
-			ami_file_save(AMINS_SAVE_SELECTION, path, win, NULL, NULL, g->bw);
+			ami_file_save(AMINS_SAVE_SELECTION, path, win, NULL, NULL, ami_gui_get_browser_window(g));
 		break;
 
 		case GUI_SAVE_COMPLETE:
@@ -174,7 +174,7 @@ void ami_drag_save(struct Window *win)
 			struct hlcache_handle *c = drag_save_data;
 
 			AddPart(path, content_get_title(c), 1024);
-			ami_file_save(AMINS_SAVE_COMPLETE, path, win, c, drag_save_gui->favicon, NULL);
+			ami_file_save(AMINS_SAVE_COMPLETE, path, win, c, ami_gui_get_favicon(drag_save_gui), NULL);
 		}
 		break;
 

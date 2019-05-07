@@ -81,7 +81,7 @@ ami_history_local_destroy(struct ami_history_local_window *history_local_win)
 
 	res = local_history_fini(history_local_win->session);
 	if (res == NSERROR_OK) {
-		history_local_win->gw->hw = NULL;
+		ami_gui_set_history_window(history_local_win->gw, NULL);
 		res = ami_corewindow_fini(&history_local_win->core); /* closes the window for us */
 		history_local_window = NULL;
 	}
@@ -253,8 +253,8 @@ nserror ami_history_local_present(struct gui_window *gw)
 	if(history_local_window != NULL) {
 		//windowtofront()
 
-		if (gw->hw != NULL) {
-			res = local_history_set(gw->hw->session, gw->bw);
+		if (ami_gui_get_history_window(gw) != NULL) {
+			res = local_history_set(ami_gui_get_history_window(gw)->session, ami_gui_get_browser_window(gw));
 			return res;
 		}
 
@@ -295,7 +295,7 @@ nserror ami_history_local_present(struct gui_window *gw)
 
 	res = local_history_init(ncwin->core.cb_table,
 				 (struct core_window *)ncwin,
-				 gw->bw,
+				 ami_gui_get_browser_window(gw),
 				 &ncwin->session);
 	if (res != NSERROR_OK) {
 		ami_utf8_free(ncwin->core.wintitle);
@@ -317,7 +317,7 @@ nserror ami_history_local_present(struct gui_window *gw)
 
 	ncwin->gw = gw;
 	history_local_window = ncwin;
-	gw->hw = ncwin;
+	ami_gui_set_history_window(gw, ncwin);
 
 	return NSERROR_OK;
 }

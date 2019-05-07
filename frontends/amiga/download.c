@@ -132,8 +132,8 @@ static struct gui_download_window *gui_download_window_create(download_context *
 
 	dw = calloc(1, sizeof(struct gui_download_window));
 
-	if(gui && (!IsListEmpty(&gui->dllist)) && (dw->dln = (struct dlnode *)FindName(&gui->dllist,url)))
-	{
+	if(gui && (!IsListEmpty(ami_gui_get_download_list(gui)) &&
+		(dw->dln = (struct dlnode *)FindName(ami_gui_get_download_list(gui), url)))) {
 		strcpy(dw->fname, dw->dln->filename);
 		free(dw->dln->node.ln_Name);
 		dw->dln->node.ln_Name = NULL;
@@ -141,7 +141,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 	else
 	{
 		if(AslRequestTags(savereq,
-			ASLFR_Window, gui->shared->win,
+			ASLFR_Window, ami_gui_get_gui_window_2(gui)->win,
 			ASLFR_SleepWindow, TRUE,
 			ASLFR_TitleText, messages_get("NetSurf"),
 			ASLFR_Screen, scrn,
@@ -150,7 +150,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 		{
 			strlcpy(dw->fname, savereq->fr_Drawer, 1024);
 			AddPart((STRPTR)&dw->fname,savereq->fr_File,1024);
-			if(!ami_download_check_overwrite(dw->fname, gui->shared->win, total_size))
+			if(!ami_download_check_overwrite(dw->fname, ami_gui_get_gui_window_2(gui)->win, total_size))
 			{
 				free(dw);
 				return NULL;
@@ -166,7 +166,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 	if(dl_filename) ami_utf8_free(dl_filename);
 	dw->size = total_size;
 	dw->downloaded = 0;
-	if(gui) dw->bw = gui->bw;
+	if(gui) dw->bw = ami_gui_get_browser_window(gui);
 	dw->url = url;
 
 	va[0] = (APTR)dw->downloaded;
@@ -434,7 +434,7 @@ gui_window_save_link(struct gui_window *g, nsurl *url, const char *title)
 	linkname = ASPrintf("Link_to_%s",FilePart(nsurl_access(url)));
 
 	if(AslRequestTags(savereq,
-		ASLFR_Window, g->shared->win,
+		ASLFR_Window, ami_gui_get_gui_window_2(g)->win,
 		ASLFR_SleepWindow, TRUE,
 		ASLFR_TitleText,messages_get("NetSurf"),
 		ASLFR_Screen,scrn,
@@ -444,9 +444,9 @@ gui_window_save_link(struct gui_window *g, nsurl *url, const char *title)
 		strlcpy(fname, savereq->fr_Drawer, 1024);
 		AddPart(fname,savereq->fr_File,1024);
 
-		ami_set_pointer(g->shared, GUI_POINTER_WAIT, false);
+		ami_set_pointer(ami_gui_get_gui_window_2(g), GUI_POINTER_WAIT, false);
 
-		if(ami_download_check_overwrite(fname, g->shared->win, 0))
+		if(ami_download_check_overwrite(fname, ami_gui_get_gui_window_2(g)->win, 0))
 		{
 			BPTR fh;
 
@@ -473,7 +473,7 @@ gui_window_save_link(struct gui_window *g, nsurl *url, const char *title)
 			}
 			FreeVec(linkname);
 		}
-		ami_reset_pointer(g->shared);
+		ami_reset_pointer(ami_gui_get_gui_window_2(g));
 	}
 	return NSERROR_OK;
 }

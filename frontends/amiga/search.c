@@ -143,10 +143,10 @@ void ami_search_open(struct gui_window *gwin)
 
 	if(fwin)
 	{
-		browser_window_search_clear(fwin->gwin->bw);
-		fwin->gwin->shared->searchwin = NULL;
+		browser_window_search_clear(ami_gui_get_browser_window(fwin->gwin));
+		ami_gui_get_gui_window_2(fwin->gwin)->searchwin = NULL;
 		fwin->gwin = gwin;
-		gwin->shared->searchwin = fwin;
+		ami_gui_get_gui_window_2(fwin->gwin)->searchwin = fwin;
 		WindowToFront(fwin->win);
 		ActivateWindow(fwin->win);
 		return;
@@ -220,7 +220,7 @@ void ami_search_open(struct gui_window *gwin)
 	fwin->win = (struct Window *)RA_OpenWindow(fwin->objects[OID_S_MAIN]);
 	fwin->gwin = gwin;
 	ami_gui_win_list_add(fwin, AMINS_FINDWINDOW, &ami_search_table);
-	gwin->shared->searchwin = fwin;
+	ami_gui_get_gui_window_2(fwin->gwin)->searchwin = fwin;
 	
 	ActivateLayoutGadget((struct Gadget *)fwin->objects[GID_S_MAIN], fwin->win,
 			NULL, (ULONG)fwin->objects[GID_S_SEARCHSTRING]);
@@ -228,8 +228,8 @@ void ami_search_open(struct gui_window *gwin)
 
 void ami_search_close(void)
 {
-	browser_window_search_clear(fwin->gwin->bw);
-	fwin->gwin->shared->searchwin = NULL;
+	browser_window_search_clear(ami_gui_get_browser_window(fwin->gwin));
+	ami_gui_get_gui_window_2(fwin->gwin)->searchwin = NULL;
 	DisposeObject(fwin->objects[OID_S_MAIN]);
 
 	/* Free local charset version of messages */
@@ -256,7 +256,7 @@ static BOOL ami_search_event(void *w)
 		switch(result & WMHI_GADGETMASK)
 		{
 			case GID_S_SEARCHSTRING:
-				browser_window_search_clear(fwin->gwin->bw);
+				browser_window_search_clear(ami_gui_get_browser_window(fwin->gwin));
 						
 				RefreshSetGadgetAttrs((struct Gadget *)fwin->objects[GID_S_PREV],
 					fwin->win, NULL,
@@ -275,10 +275,10 @@ static BOOL ami_search_event(void *w)
 				flags = SEARCH_FLAG_FORWARDS |
 					ami_search_flags();
 				browser_window_search(
-						fwin->gwin->bw,
+						ami_gui_get_browser_window(fwin->gwin),
 						NULL,
 						flags, ami_search_string());
-				ActivateWindow(fwin->gwin->shared->win);
+				ActivateWindow(ami_gui_get_gui_window_2(fwin->gwin)->win);
 			break;
 
 			case GID_S_PREV:
@@ -286,10 +286,10 @@ static BOOL ami_search_event(void *w)
 				flags = ~SEARCH_FLAG_FORWARDS &
 					ami_search_flags();
 				browser_window_search(
-						fwin->gwin->bw,
+						ami_gui_get_browser_window(fwin->gwin),
 						NULL,
 						flags, ami_search_string());
-				ActivateWindow(fwin->gwin->shared->win);
+				ActivateWindow(ami_gui_get_gui_window_2(fwin->gwin)->win);
 			break;
 		}
 		break;

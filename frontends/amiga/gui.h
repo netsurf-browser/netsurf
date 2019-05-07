@@ -152,29 +152,6 @@ struct gui_window_2 {
 	bool closed; /* Window has been closed (via menu) */
 };
 
-struct gui_window
-{
-	struct gui_window_2 *shared;
-	int tab;
-	struct Node *tab_node;
-	int c_x; /* Caret X posn */
-	int c_y; /* Caret Y posn */
-	int c_w; /* Caret width */
-	int c_h; /* Caret height */
-	int c_h_temp;
-	int scrollx;
-	int scrolly;
-	struct ami_history_local_window *hw;
-	struct List dllist;
-	struct hlcache_handle *favicon;
-	bool throbbing;
-	char *tabtitle;
-	APTR deferred_rects_pool;
-	struct MinList *deferred_rects;
-	struct browser_window *bw;
-	float scale;
-};
-
 extern struct MinList *window_list; /**\todo stop arexx.c poking about in here */
 extern struct Screen *scrn;
 extern struct MsgPort *sport;
@@ -273,6 +250,61 @@ int ami_gui_get_quals(Object *win_obj);
  */
 bool ami_gui_window_update_box_deferred_check(struct MinList *deferred_rects,
 				const struct rect *restrict new_rect, APTR mempool);
+
+/**
+ * Adjust scale by specified amount
+ */
+void ami_gui_adjust_scale(struct gui_window *gw, float adjustment);
+
+/**
+ * Get browser window from gui_window
+ */
+struct browser_window *ami_gui_get_browser_window(struct gui_window *gw);
+
+/**
+ * Get gui_window_2 from gui_window
+ */
+struct gui_window_2 *ami_gui_get_gui_window_2(struct gui_window *gw);
+
+/**
+ * Get download list from gui_window
+ */
+struct List *ami_gui_get_download_list(struct gui_window *gw);
+
+/**
+ * Get tab title from gui_window
+ */
+const char *ami_gui_get_tab_title(struct gui_window *gw);
+
+/**
+ * Get tab node from gui_window
+ */
+struct Node *ami_gui_get_tab_node(struct gui_window *gw);
+
+/**
+ * Get favicon from gui_window
+ */
+struct hlcache_handle *ami_gui_get_favicon(struct gui_window *gw);
+
+/**
+ * Get local history window from gui_window
+ */
+struct ami_history_local_window *ami_gui_get_history_window(struct gui_window *gw);
+
+/**
+ * Set local history window in gui_window
+ */
+void ami_gui_set_history_window(struct gui_window *gw, struct ami_history_local_window *hw);
+
+/**
+ * Get throbbing status from gui_window
+ */
+bool ami_gui_get_throbbing(struct gui_window *gw);
+
+/**
+ * Set throbbing status in gui_window
+ */
+void ami_gui_set_throbbing(struct gui_window *gw, bool throbbing);
 
 #endif
 
