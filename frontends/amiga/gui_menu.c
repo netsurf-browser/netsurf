@@ -711,7 +711,7 @@ void ami_gui_menu_update_checked(struct gui_window_2 *gwin)
 
 void ami_gui_menu_update_disabled(struct gui_window *g, struct hlcache_handle *c)
 {
-	struct Window *win = ami_gui_get_gui_window_2(g)->win;
+	struct Window *win = ami_gui_get_window(g);
 
 	if(nsoption_bool(kiosk_mode) == true) return;
 

@@ -86,14 +86,14 @@ void ami_clipboard_free(void)
 void gui_start_selection(struct gui_window *g)
 {
 	if(!g) return;
-	if(!ami_gui_get_gui_window_2(g)->win) return;
+	if(!ami_gui_get_window(g)) return;
 	if(nsoption_bool(kiosk_mode) == true) return;
 
-	ami_gui_menu_set_disabled(ami_gui_get_gui_window_2(g)->win, ami_gui_get_gui_window_2(g)->imenu, M_COPY, false);
-	ami_gui_menu_set_disabled(ami_gui_get_gui_window_2(g)->win, ami_gui_get_gui_window_2(g)->imenu, M_CLEAR, false);
+	ami_gui_menu_set_disabled(ami_gui_get_window(g), ami_gui_get_gui_window_2(g)->imenu, M_COPY, false);
+	ami_gui_menu_set_disabled(ami_gui_get_window(g), ami_gui_get_gui_window_2(g)->imenu, M_CLEAR, false);
 
 	if (browser_window_get_editor_flags(ami_gui_get_browser_window(g)) & BW_EDITOR_CAN_CUT)
-		ami_gui_menu_set_disabled(ami_gui_get_gui_window_2(g)->win, ami_gui_get_gui_window_2(g)->imenu, M_CUT, false);
+		ami_gui_menu_set_disabled(ami_gui_get_window(g), ami_gui_get_gui_window_2(g)->imenu, M_CUT, false);
 }
 
 static char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size_t *text_length)

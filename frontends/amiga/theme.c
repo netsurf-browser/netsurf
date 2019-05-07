@@ -433,7 +433,7 @@ void gui_window_start_throbber(struct gui_window *g)
 	{
 		SetClickTabNodeAttrs(ami_gui_get_tab_node(g), TNA_Flagged, TRUE, TAG_DONE);
 		RefreshGadgets((APTR)ami_gui_get_gui_window_2(g)->objects[GID_TABS],
-			ami_gui_get_gui_window_2(g)->win, NULL);
+			ami_gui_get_window(g), NULL);
 	}
 #endif
 
@@ -454,7 +454,7 @@ void gui_window_stop_throbber(struct gui_window *g)
 	{
 		SetClickTabNodeAttrs(ami_gui_get_tab_node(g), TNA_Flagged, FALSE, TAG_DONE);
 		RefreshGadgets((APTR)ami_gui_get_gui_window_2(g)->objects[GID_TABS],
-			ami_gui_get_gui_window_2(g)->win, NULL);
+			ami_gui_get_window(g), NULL);
 	}
 #endif
 
@@ -465,7 +465,7 @@ void gui_window_stop_throbber(struct gui_window *g)
 		}
 
 		if(throbber != NULL) {
-			BltBitMapRastPort(throbber, 0, 0, ami_gui_get_gui_window_2(g)->win->RPort,
+			BltBitMapRastPort(throbber, 0, 0, ami_gui_get_window(g)->RPort,
 				bbox->Left, bbox->Top, 
 				ami_theme_throbber_get_width(), ami_theme_throbber_get_height(),
 				0x0C0);
@@ -508,14 +508,14 @@ static void ami_throbber_update(void *p)
 						BLITA_Width, ami_theme_throbber_get_width(),
 						BLITA_Height, ami_theme_throbber_get_height(),
 						BLITA_Source, throbber,
-						BLITA_Dest, ami_gui_get_gui_window_2(g)->win->RPort,
+						BLITA_Dest, ami_gui_get_window(g)->RPort,
 						BLITA_SrcType, BLITT_BITMAP,
 						BLITA_DestType, BLITT_RASTPORT,
 					//	BLITA_UseSrcAlpha, TRUE,
 					TAG_DONE);
 #else
 			BltBitMapRastPort(throbber, ami_theme_throbber_get_width() * frame,
-				0, ami_gui_get_gui_window_2(g)->win->RPort,
+				0, ami_gui_get_window(g)->RPort,
 				bbox->Left, bbox->Top,
 				ami_theme_throbber_get_width(), ami_theme_throbber_get_height(),
 				0xC0);

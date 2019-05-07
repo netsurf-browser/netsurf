@@ -53,7 +53,7 @@ static LONG ami_misc_req(const char *message, uint32 type)
 		TDR_FormatString, message,
 		TDR_GadgetString, messages_get("OK"),
 		TDR_ImageType, type,
-		TDR_Window, cur_gw ? ami_gui_get_gui_window_2(cur_gw)->win : NULL,
+		TDR_Window, cur_gw ? ami_gui_get_window(cur_gw) : NULL,
 		TAG_DONE);
 #else
 	struct EasyStruct easyreq = {
@@ -64,7 +64,7 @@ static LONG ami_misc_req(const char *message, uint32 type)
 		messages_get("OK"),
 	};
 
-	ret = EasyRequest(cur_gw ? ami_gui_get_gui_window_2(cur_gw)->win : NULL, &easyreq, NULL);
+	ret = EasyRequest(cur_gw ? ami_gui_get_window(cur_gw) : NULL, &easyreq, NULL);
 #endif
 	return ret;
 }

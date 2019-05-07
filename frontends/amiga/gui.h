@@ -306,5 +306,10 @@ bool ami_gui_get_throbbing(struct gui_window *gw);
  */
 void ami_gui_set_throbbing(struct gui_window *gw, bool throbbing);
 
+/**
+ * Get window from gui_window
+ */
+struct Window *ami_gui_get_window(struct gui_window *gw);
+
 #endif
 

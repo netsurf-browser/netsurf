@@ -89,7 +89,7 @@ void gui_drag_save_object(struct gui_window *g, struct hlcache_handle *c,
 		break;
 	}
 
-	ami_drag_icon_show(ami_gui_get_gui_window_2(g)->win, filetype);
+	ami_drag_icon_show(ami_gui_get_window(g), filetype);
 
 	drag_save_data = c;
 	drag_save_gui = g;
@@ -98,7 +98,7 @@ void gui_drag_save_object(struct gui_window *g, struct hlcache_handle *c,
 
 void gui_drag_save_selection(struct gui_window *g, const char *selection)
 {
-	ami_drag_icon_show(ami_gui_get_gui_window_2(g)->win, "ascii");
+	ami_drag_icon_show(ami_gui_get_window(g), "ascii");
 
 	ami_autoscroll = true;
 	drag_save_data = g;

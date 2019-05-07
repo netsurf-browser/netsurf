@@ -168,7 +168,7 @@ void gui_create_form_select_menu(struct gui_window *g,
 
 	ami_set_pointer(ami_gui_get_gui_window_2(g), GUI_POINTER_DEFAULT, false); // Clear the menu-style pointer
 
-	IDoMethod(selectmenuobj, PM_OPEN, ami_gui_get_gui_window_2(g)->win);
+	IDoMethod(selectmenuobj, PM_OPEN, ami_gui_get_window(g));
 
 	/* PM_OPEN is blocking, so dispose menu immediately... */
 	if(selectmenuobj) DisposeObject(selectmenuobj);

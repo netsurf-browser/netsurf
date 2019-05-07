@@ -141,7 +141,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 	else
 	{
 		if(AslRequestTags(savereq,
-			ASLFR_Window, ami_gui_get_gui_window_2(gui)->win,
+			ASLFR_Window, ami_gui_get_window(gui),
 			ASLFR_SleepWindow, TRUE,
 			ASLFR_TitleText, messages_get("NetSurf"),
 			ASLFR_Screen, scrn,
@@ -150,7 +150,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 		{
 			strlcpy(dw->fname, savereq->fr_Drawer, 1024);
 			AddPart((STRPTR)&dw->fname,savereq->fr_File,1024);
-			if(!ami_download_check_overwrite(dw->fname, ami_gui_get_gui_window_2(gui)->win, total_size))
+			if(!ami_download_check_overwrite(dw->fname, ami_gui_get_window(gui), total_size))
 			{
 				free(dw);
 				return NULL;
@@ -434,7 +434,7 @@ gui_window_save_link(struct gui_window *g, nsurl *url, const char *title)
 	linkname = ASPrintf("Link_to_%s",FilePart(nsurl_access(url)));
 
 	if(AslRequestTags(savereq,
-		ASLFR_Window, ami_gui_get_gui_window_2(g)->win,
+		ASLFR_Window, ami_gui_get_window(g),
 		ASLFR_SleepWindow, TRUE,
 		ASLFR_TitleText,messages_get("NetSurf"),
 		ASLFR_Screen,scrn,
@@ -446,7 +446,7 @@ gui_window_save_link(struct gui_window *g, nsurl *url, const char *title)
 
 		ami_set_pointer(ami_gui_get_gui_window_2(g), GUI_POINTER_WAIT, false);
 
-		if(ami_download_check_overwrite(fname, ami_gui_get_gui_window_2(g)->win, 0))
+		if(ami_download_check_overwrite(fname, ami_gui_get_window(g), 0))
 		{
 			BPTR fh;
 

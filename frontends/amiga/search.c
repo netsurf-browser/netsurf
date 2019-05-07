@@ -278,7 +278,7 @@ static BOOL ami_search_event(void *w)
 						ami_gui_get_browser_window(fwin->gwin),
 						NULL,
 						flags, ami_search_string());
-				ActivateWindow(ami_gui_get_gui_window_2(fwin->gwin)->win);
+				ActivateWindow(ami_gui_get_window(fwin->gwin));
 			break;
 
 			case GID_S_PREV:
@@ -289,7 +289,7 @@ static BOOL ami_search_event(void *w)
 						ami_gui_get_browser_window(fwin->gwin),
 						NULL,
 						flags, ami_search_string());
-				ActivateWindow(ami_gui_get_gui_window_2(fwin->gwin)->win);
+				ActivateWindow(ami_gui_get_window(fwin->gwin));
 			break;
 		}
 		break;
