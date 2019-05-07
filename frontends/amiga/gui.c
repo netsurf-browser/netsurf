@@ -288,11 +288,17 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 		nsoptions[NSOPTION_##OPTION].value.i = VALUE;	\
 	nsoptions_default[NSOPTION_##OPTION].value.i = VALUE
 
-/* Function documented in gui.h */
+/* Functions documented in gui.h */
 struct browser_window *ami_gui_get_browser_window(struct gui_window *gw)
 {
 	assert(gw != NULL);
 	return gw->bw;
+}
+
+struct browser_window *ami_gui2_get_browser_window(struct gui_window_2 *gwin)
+{
+	assert(gwin != NULL);
+	return ami_gui_get_browser_window(gwin->gw);
 }
 
 struct List *ami_gui_get_download_list(struct gui_window *gw)
@@ -305,6 +311,12 @@ struct gui_window_2 *ami_gui_get_gui_window_2(struct gui_window *gw)
 {
 	assert(gw != NULL);
 	return gw->shared;
+}
+
+struct gui_window *ami_gui2_get_gui_window(struct gui_window_2 *gwin)
+{
+	assert(gwin != NULL);
+	return gwin->gw;
 }
 
 const char *ami_gui_get_tab_title(struct gui_window *gw)

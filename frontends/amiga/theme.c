@@ -458,7 +458,7 @@ void gui_window_stop_throbber(struct gui_window *g)
 	}
 #endif
 
-	if(g == ami_gui_get_gui_window_2(g)->gw) {
+	if(IS_CURRENT_GW(ami_gui_get_gui_window_2(g), g)) {
 		if(ami_gui_get_space_box(ami_gui_get_gui_window_2(g)->objects[GID_THROBBER], &bbox) != NSERROR_OK) {
 			amiga_warn_user("NoMemory", "");
 			return;
@@ -493,7 +493,7 @@ static void ami_throbber_update(void *p)
 			ami_gui_get_gui_window_2(g)->throbber_frame=1;
 	}
 
-	if(ami_gui_get_gui_window_2(g)->gw == g) {
+	if(IS_CURRENT_GW(ami_gui_get_gui_window_2(g),g)) {
 		if(ami_gui_get_space_box(ami_gui_get_gui_window_2(g)->objects[GID_THROBBER], &bbox) != NSERROR_OK) {
 			amiga_warn_user("NoMemory", "");
 			return;

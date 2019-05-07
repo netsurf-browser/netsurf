@@ -288,8 +288,8 @@ void ami_drag_selection(struct gui_window *g)
 		iffh = ami_clipboard_init_internal(1);
 
 		browser_window_key_press(ami_gui_get_browser_window(g), NS_KEY_COPY_SELECTION);
-		browser_window_mouse_click(ami_gui_get_browser_window(gwin->gw), BROWSER_MOUSE_PRESS_1, x, y);
-		browser_window_key_press(ami_gui_get_browser_window(gwin->gw), NS_KEY_PASTE);
+		browser_window_mouse_click(ami_gui2_get_browser_window(gwin), BROWSER_MOUSE_PRESS_1, x, y);
+		browser_window_key_press(ami_gui2_get_browser_window(gwin), NS_KEY_PASTE);
 
 		ami_clipboard_free_internal(iffh);
 		iffh = old_iffh;

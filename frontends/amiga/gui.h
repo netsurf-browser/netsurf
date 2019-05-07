@@ -157,6 +157,8 @@ extern struct Screen *scrn;
 extern struct MsgPort *sport;
 extern struct gui_window *cur_gw;
 
+#define IS_CURRENT_GW(GWIN,GW) (ami_gui2_get_gui_window(GWIN) == GW)
+
 /* The return value for these functions must be deallocated using FreeVec() */
 STRPTR ami_locale_langs(int *codeset);
 char *ami_gui_get_cache_favicon_name(struct nsurl *url, bool only_if_avail);
@@ -262,9 +264,19 @@ void ami_gui_adjust_scale(struct gui_window *gw, float adjustment);
 struct browser_window *ami_gui_get_browser_window(struct gui_window *gw);
 
 /**
+ * Get browser window from gui_window_2
+ */
+struct browser_window *ami_gui2_get_browser_window(struct gui_window_2 *gwin);
+
+/**
  * Get gui_window_2 from gui_window
  */
 struct gui_window_2 *ami_gui_get_gui_window_2(struct gui_window *gw);
+
+/**
+ * Get gui_window from gui_window_2
+ */
+struct gui_window *ami_gui2_get_gui_window(struct gui_window_2 *gwin);
 
 /**
  * Get download list from gui_window

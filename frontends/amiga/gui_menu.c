@@ -141,7 +141,7 @@ HOOKF(void, ami_menu_item_project_save, APTR, window, struct IntuiMessage *)
 
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	ami_file_save_req(type, gwin, browser_window_get_content(ami_gui_get_browser_window(gwin->gw)));
+	ami_file_save_req(type, gwin, browser_window_get_content(ami_gui2_get_browser_window(gwin)));
 }
 
 HOOKF(void, ami_menu_item_project_closetab, APTR, window, struct IntuiMessage *)
@@ -149,7 +149,7 @@ HOOKF(void, ami_menu_item_project_closetab, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_destroy(ami_gui_get_browser_window(gwin->gw));
+	browser_window_destroy(ami_gui2_get_browser_window(gwin));
 }
 
 HOOKF(void, ami_menu_item_project_closewin, APTR, window, struct IntuiMessage *)
@@ -166,7 +166,7 @@ HOOKF(void, ami_menu_item_project_print, APTR, window, struct IntuiMessage *)
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
 	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
-	ami_print_ui(browser_window_get_content(ami_gui_get_browser_window(gwin->gw)));
+	ami_print_ui(browser_window_get_content(ami_gui2_get_browser_window(gwin)));
 	ami_reset_pointer(gwin);
 }
 
@@ -243,7 +243,7 @@ HOOKF(void, ami_menu_item_edit_cut, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_key_press(ami_gui_get_browser_window(gwin->gw), NS_KEY_CUT_SELECTION);
+	browser_window_key_press(ami_gui2_get_browser_window(gwin), NS_KEY_CUT_SELECTION);
 }
 
 HOOKF(void, ami_menu_item_edit_copy, APTR, window, struct IntuiMessage *)
@@ -252,22 +252,22 @@ HOOKF(void, ami_menu_item_edit_copy, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	if(browser_window_can_select(ami_gui_get_browser_window(gwin->gw))) {
-		browser_window_key_press(ami_gui_get_browser_window(gwin->gw), NS_KEY_COPY_SELECTION);
-		browser_window_key_press(ami_gui_get_browser_window(gwin->gw), NS_KEY_CLEAR_SELECTION);
+	if(browser_window_can_select(ami_gui2_get_browser_window(gwin))) {
+		browser_window_key_press(ami_gui2_get_browser_window(gwin), NS_KEY_COPY_SELECTION);
+		browser_window_key_press(ami_gui2_get_browser_window(gwin), NS_KEY_CLEAR_SELECTION);
 	}
-	else if((bm = content_get_bitmap(browser_window_get_content(ami_gui_get_browser_window(gwin->gw))))) {
+	else if((bm = content_get_bitmap(browser_window_get_content(ami_gui2_get_browser_window(gwin))))) {
 		/** @todo It should be checked that the lifetime of
 		 * the objects containing the values returned (and the
 		 * constness cast away) is safe.
 		 */
-		ami_bitmap_set_url(bm, browser_window_access_url(ami_gui_get_browser_window(gwin->gw)));
-		ami_bitmap_set_title(bm, browser_window_get_title(ami_gui_get_browser_window(gwin->gw)));
+		ami_bitmap_set_url(bm, browser_window_access_url(ami_gui2_get_browser_window(gwin)));
+		ami_bitmap_set_title(bm, browser_window_get_title(ami_gui2_get_browser_window(gwin)));
 		ami_easy_clipboard_bitmap(bm);
 	}
 #ifdef WITH_NS_SVG
-	else if(ami_mime_compare(browser_window_get_content(ami_gui_get_browser_window(gwin->gw)), "svg") == true) {
-		ami_easy_clipboard_svg(browser_window_get_content(ami_gui_get_browser_window(gwin->gw)));
+	else if(ami_mime_compare(browser_window_get_content(ami_gui2_get_browser_window(gwin)), "svg") == true) {
+		ami_easy_clipboard_svg(browser_window_get_content(ami_gui2_get_browser_window(gwin)));
 	}
 #endif
 }
@@ -277,7 +277,7 @@ HOOKF(void, ami_menu_item_edit_paste, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_key_press(ami_gui_get_browser_window(gwin->gw), NS_KEY_PASTE);
+	browser_window_key_press(ami_gui2_get_browser_window(gwin), NS_KEY_PASTE);
 }
 
 HOOKF(void, ami_menu_item_edit_selectall, APTR, window, struct IntuiMessage *)
@@ -285,8 +285,8 @@ HOOKF(void, ami_menu_item_edit_selectall, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_key_press(ami_gui_get_browser_window(gwin->gw), NS_KEY_SELECT_ALL);
-	gui_start_selection(gwin->gw);
+	browser_window_key_press(ami_gui2_get_browser_window(gwin), NS_KEY_SELECT_ALL);
+	gui_start_selection(ami_gui2_get_gui_window(gwin));
 }
 
 HOOKF(void, ami_menu_item_edit_clearsel, APTR, window, struct IntuiMessage *)
@@ -294,7 +294,7 @@ HOOKF(void, ami_menu_item_edit_clearsel, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_key_press(ami_gui_get_browser_window(gwin->gw), NS_KEY_CLEAR_SELECTION);
+	browser_window_key_press(ami_gui2_get_browser_window(gwin), NS_KEY_CLEAR_SELECTION);
 }
 
 HOOKF(void, ami_menu_item_edit_undo, APTR, window, struct IntuiMessage *)
@@ -302,7 +302,7 @@ HOOKF(void, ami_menu_item_edit_undo, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_key_press(ami_gui_get_browser_window(gwin->gw), NS_KEY_UNDO);
+	browser_window_key_press(ami_gui2_get_browser_window(gwin), NS_KEY_UNDO);
 }
 
 HOOKF(void, ami_menu_item_edit_redo, APTR, window, struct IntuiMessage *)
@@ -310,7 +310,7 @@ HOOKF(void, ami_menu_item_edit_redo, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_key_press(ami_gui_get_browser_window(gwin->gw), NS_KEY_REDO);
+	browser_window_key_press(ami_gui2_get_browser_window(gwin), NS_KEY_REDO);
 }
 
 HOOKF(void, ami_menu_item_browser_find, APTR, window, struct IntuiMessage *)
@@ -318,7 +318,7 @@ HOOKF(void, ami_menu_item_browser_find, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	ami_search_open(gwin->gw);
+	ami_search_open(ami_gui2_get_gui_window(gwin));
 }
 
 HOOKF(void, ami_menu_item_browser_localhistory, APTR, window, struct IntuiMessage *)
@@ -326,7 +326,7 @@ HOOKF(void, ami_menu_item_browser_localhistory, APTR, window, struct IntuiMessag
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	ami_history_local_present(gwin->gw);
+	ami_history_local_present(ami_gui2_get_gui_window(gwin));
 }
 
 HOOKF(void, ami_menu_item_browser_globalhistory, APTR, window, struct IntuiMessage *)
@@ -380,7 +380,7 @@ HOOKF(void, ami_menu_item_browser_scale_decrease, APTR, window, struct IntuiMess
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	ami_gui_adjust_scale(gwin->gw, -0.1);
+	ami_gui_adjust_scale(ami_gui2_get_gui_window(gwin), -0.1);
 }
 
 HOOKF(void, ami_menu_item_browser_scale_normal, APTR, window, struct IntuiMessage *)
@@ -388,7 +388,7 @@ HOOKF(void, ami_menu_item_browser_scale_normal, APTR, window, struct IntuiMessag
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	ami_gui_set_scale(gwin->gw, 1.0);
+	ami_gui_set_scale(ami_gui2_get_gui_window(gwin), 1.0);
 }
 
 HOOKF(void, ami_menu_item_browser_scale_increase, APTR, window, struct IntuiMessage *)
@@ -396,7 +396,7 @@ HOOKF(void, ami_menu_item_browser_scale_increase, APTR, window, struct IntuiMess
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	ami_gui_adjust_scale(gwin->gw, +0.1);
+	ami_gui_adjust_scale(ami_gui2_get_gui_window(gwin), +0.1);
 }
 
 HOOKF(void, ami_menu_item_browser_redraw, APTR, window, struct IntuiMessage *)
@@ -414,7 +414,7 @@ HOOKF(void, ami_menu_item_hotlist_add, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	bw = ami_gui_get_browser_window(gwin->gw);
+	bw = ami_gui2_get_browser_window(gwin);
 
 	if (bw == NULL || browser_window_has_content(bw) == false)
 		return;
@@ -436,7 +436,7 @@ HOOKF(void, ami_menu_item_hotlist_entries, APTR, window, struct IntuiMessage *)
 
 	if(url == NULL) return;
 
-	browser_window_navigate(ami_gui_get_browser_window(gwin->gw),
+	browser_window_navigate(ami_gui2_get_browser_window(gwin),
 					url,
 					NULL,
 					BW_NAVIGATE_HISTORY,

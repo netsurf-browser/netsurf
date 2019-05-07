@@ -254,7 +254,7 @@ ami_hotlist_drag_end(struct ami_corewindow *ami_cw, int x, int y)
 		DisplayBeep(scrn);
 	} else if(url) {
 		if((gwin = ami_window_at_pointer(AMINS_WINDOW))) {
-			browser_window_navigate(ami_gui_get_browser_window(gwin->gw),
+			browser_window_navigate(ami_gui2_get_browser_window(gwin),
 					url,
 					NULL,
 					BW_NAVIGATE_HISTORY,

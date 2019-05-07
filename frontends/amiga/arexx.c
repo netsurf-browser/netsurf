@@ -191,7 +191,7 @@ static struct gui_window *ami_find_tab_gwin(struct gui_window_2 *gwin, int tab)
 	struct Node *ntab;
 	struct gui_window *gw;
 
-	if((tab == 0) || (gwin->tabs == 0)) return gwin->gw;
+	if((tab == 0) || (gwin->tabs == 0)) return ami_gui2_get_gui_window(gwin);
 
 	ctab = GetHead(&gwin->tab_list);
 
@@ -625,7 +625,7 @@ RXHOOKF(rx_active)
 			if(node->Type == AMINS_WINDOW)
 			{
 				windows++;
-				if(gwin->gw == gw)
+				if(IS_CURRENT_GW(gwin,gw))
 				{
 					window = windows;
 					break;
