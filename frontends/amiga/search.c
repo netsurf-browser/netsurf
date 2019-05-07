@@ -144,9 +144,9 @@ void ami_search_open(struct gui_window *gwin)
 	if(fwin)
 	{
 		browser_window_search_clear(ami_gui_get_browser_window(fwin->gwin));
-		ami_gui_get_gui_window_2(fwin->gwin)->searchwin = NULL;
+		ami_gui_set_find_window(fwin->gwin, NULL);
 		fwin->gwin = gwin;
-		ami_gui_get_gui_window_2(fwin->gwin)->searchwin = fwin;
+		ami_gui_set_find_window(fwin->gwin, fwin);
 		WindowToFront(fwin->win);
 		ActivateWindow(fwin->win);
 		return;
@@ -220,7 +220,7 @@ void ami_search_open(struct gui_window *gwin)
 	fwin->win = (struct Window *)RA_OpenWindow(fwin->objects[OID_S_MAIN]);
 	fwin->gwin = gwin;
 	ami_gui_win_list_add(fwin, AMINS_FINDWINDOW, &ami_search_table);
-	ami_gui_get_gui_window_2(fwin->gwin)->searchwin = fwin;
+	ami_gui_set_find_window(fwin->gwin, fwin);
 	
 	ActivateLayoutGadget((struct Gadget *)fwin->objects[GID_S_MAIN], fwin->win,
 			NULL, (ULONG)fwin->objects[GID_S_SEARCHSTRING]);
@@ -229,7 +229,7 @@ void ami_search_open(struct gui_window *gwin)
 void ami_search_close(void)
 {
 	browser_window_search_clear(ami_gui_get_browser_window(fwin->gwin));
-	ami_gui_get_gui_window_2(fwin->gwin)->searchwin = NULL;
+	ami_gui_set_find_window(fwin->gwin, NULL);
 	DisposeObject(fwin->objects[OID_S_MAIN]);
 
 	/* Free local charset version of messages */

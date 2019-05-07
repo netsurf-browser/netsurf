@@ -308,6 +308,11 @@ struct ami_history_local_window *ami_gui_get_history_window(struct gui_window *g
 void ami_gui_set_history_window(struct gui_window *gw, struct ami_history_local_window *hw);
 
 /**
+ * Set search window in gui_window
+ */
+void ami_gui_set_find_window(struct gui_window *gw, struct find_window *fw);
+
+/**
  * Get throbbing status from gui_window
  */
 bool ami_gui_get_throbbing(struct gui_window *gw);

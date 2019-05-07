@@ -350,6 +350,16 @@ void ami_gui_set_history_window(struct gui_window *gw, struct ami_history_local_
 	gw->hw = hw;
 }
 
+void ami_gui_set_find_window(struct gui_window *gw, struct find_window *fw)
+{
+	/* This needs to be in gui_window_2 as it is shared amongst tabs (I think),
+	 * it just happens that the find code only knows of the gui_window
+	 */
+	assert(gw != NULL);
+	assert(gw->shared != NULL);
+	gw->shared->searchwin = fw;
+}
+
 bool ami_gui_get_throbbing(struct gui_window *gw)
 {
 	assert(gw != NULL);
