@@ -389,6 +389,24 @@ void ami_gui2_set_menu(struct gui_window_2 *gwin, struct Menu *menu)
 	}
 }
 
+struct form_control *ami_gui_get_control(struct gui_window *gw)
+{
+	/* TODO: does this need to be in the shared window? */
+	assert(gw != NULL);
+	return gw->shared->control;
+}
+
+/**
+ * Set control (for select menu) to gui_window
+ */
+void ami_gui_set_control(struct gui_window *gw, struct form_control *control)
+{
+	/* TODO: does this need to be in the shared window? */
+	assert(gw != NULL);
+	gw->shared->control = control;
+}
+
+
 STRPTR ami_locale_langs(int *codeset)
 {
 	struct Locale *locale;

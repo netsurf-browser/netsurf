@@ -74,7 +74,7 @@ HOOKF(uint32, ami_popup_hook, Object *, item, APTR)
 	struct gui_window *gwin = hook->h_Data;
 
 	if(GetAttr(PMIA_ID, item, &itemid)) {
-		form_select_process_selection(ami_gui_get_gui_window_2(gwin)->control, itemid);
+		form_select_process_selection(ami_gui_get_control(gwin), itemid);
 	}
 
 	return itemid;
@@ -111,7 +111,7 @@ void gui_create_form_select_menu(struct gui_window *g,
 	selectmenuhook.h_SubEntry = NULL;
 	selectmenuhook.h_Data = g;
 
-	ami_gui_get_gui_window_2(g)->control = control;
+	ami_gui_set_control(g, control);
 
 	selectmenuobj = PMMENU(form_control_get_name(control)),
                         PMA_MenuHandler, &selectmenuhook, End;
