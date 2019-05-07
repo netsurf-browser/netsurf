@@ -114,7 +114,6 @@ struct gui_window_2 {
 	ULONG next_tab;
 	struct Node *last_new_tab;
 	struct Hook scrollerhook;
-	struct form_control *control;
 	browser_mouse_state mouse_state;
 	browser_mouse_state key_state;
 	ULONG throbber_update_count;

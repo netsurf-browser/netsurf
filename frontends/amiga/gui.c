@@ -214,6 +214,7 @@ struct gui_window
 	struct MinList *deferred_rects;
 	struct browser_window *bw;
 	float scale;
+	struct form_control *control;
 };
 
 struct ami_gui_tb_userdata {
@@ -391,9 +392,8 @@ void ami_gui2_set_menu(struct gui_window_2 *gwin, struct Menu *menu)
 
 struct form_control *ami_gui_get_control(struct gui_window *gw)
 {
-	/* TODO: does this need to be in the shared window? */
 	assert(gw != NULL);
-	return gw->shared->control;
+	return gw->control;
 }
 
 /**
@@ -401,9 +401,8 @@ struct form_control *ami_gui_get_control(struct gui_window *gw)
  */
 void ami_gui_set_control(struct gui_window *gw, struct form_control *control)
 {
-	/* TODO: does this need to be in the shared window? */
 	assert(gw != NULL);
-	gw->shared->control = control;
+	gw->control = control;
 }
 
 
