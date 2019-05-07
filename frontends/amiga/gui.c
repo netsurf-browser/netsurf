@@ -356,6 +356,13 @@ struct Window *ami_gui_get_window(struct gui_window *gw)
 	return gw->shared->win;
 }
 
+struct Menu *ami_gui_get_menu(struct gui_window *gw)
+{
+	assert(gw != NULL);
+	assert(gw->shared != NULL);
+	return gw->shared->imenu;
+}
+
 STRPTR ami_locale_langs(int *codeset)
 {
 	struct Locale *locale;

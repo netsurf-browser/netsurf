@@ -717,10 +717,10 @@ void ami_gui_menu_update_disabled(struct gui_window *g, struct hlcache_handle *c
 
 	if(content_get_type(c) <= CONTENT_CSS)
 	{
-		ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_SAVETXT, false);
-		ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_SAVECOMP, false);
+		ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_SAVETXT, false);
+		ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_SAVECOMP, false);
 #ifdef WITH_PDF_EXPORT
-		ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_SAVEPDF, false);
+		ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_SAVEPDF, false);
 #endif
 #if 0
 		if(browser_window_get_editor_flags(ami_gui_get_browser_window(g)) & BW_EDITOR_CAN_COPY) {
@@ -741,29 +741,29 @@ void ami_gui_menu_update_disabled(struct gui_window *g, struct hlcache_handle *c
 		else
 			OffMenu(win,AMI_MENU_PASTE);
 #else
-		ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_CUT, false);
-		ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_COPY, false);
-		ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_PASTE, false);
-		ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_CLEAR, false);
+		ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_CUT, false);
+		ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_COPY, false);
+		ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_PASTE, false);
+		ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_CLEAR, false);
 #endif
-		ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_SELALL, false);
-		ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_FIND, false);
-		ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_SAVEIFF, true);
+		ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_SELALL, false);
+		ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_FIND, false);
+		ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_SAVEIFF, true);
 	}
 	else
 	{
-		ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_CUT, true);
-		ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_PASTE, true);
-		ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_CLEAR, true);
+		ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_CUT, true);
+		ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_PASTE, true);
+		ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_CLEAR, true);
 
-		ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_SAVETXT, true);
-		ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_SAVECOMP, true);
+		ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_SAVETXT, true);
+		ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_SAVECOMP, true);
 #ifdef WITH_PDF_EXPORT
-		ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_SAVEPDF, true);
+		ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_SAVEPDF, true);
 #endif
 
-		ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_SELALL, true);
-		ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_FIND, true);
+		ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_SELALL, true);
+		ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_FIND, true);
 
 #ifdef WITH_NS_SVG
 		if(content_get_bitmap(c) || (ami_mime_compare(c, "svg") == true))
@@ -771,13 +771,13 @@ void ami_gui_menu_update_disabled(struct gui_window *g, struct hlcache_handle *c
 		if(content_get_bitmap(c))
 #endif
 		{
-			ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_COPY, false);
-			ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_SAVEIFF, false);
+			ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_COPY, false);
+			ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_SAVEIFF, false);
 		}
 		else
 		{
-			ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_COPY, true);
-			ami_gui_menu_set_disabled(win, ami_gui_get_gui_window_2(g)->imenu, M_SAVEIFF, true);
+			ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_COPY, true);
+			ami_gui_menu_set_disabled(win, ami_gui_get_menu(g), M_SAVEIFF, true);
 		}
 	}
 }
