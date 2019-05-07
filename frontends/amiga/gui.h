@@ -186,7 +186,8 @@ void ami_gui_update_hotlist_button(struct gui_window_2 *gwin);
 nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin);
 int ami_gui_count_windows(int window, int *tabs);
 void ami_gui_set_scale(struct gui_window *gw, float scale);
-
+void ami_set_pointer(struct gui_window_2 *gwin, gui_pointer_shape shape, bool update);
+void ami_reset_pointer(struct gui_window_2 *gwin);
 
 /**
  * Close a window and all tabs attached to it.

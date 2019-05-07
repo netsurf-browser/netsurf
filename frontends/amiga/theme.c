@@ -218,19 +218,6 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 	ami_set_pointer(ami_gui_get_gui_window_2(g), shape, true);
 }
 
-void ami_set_pointer(struct gui_window_2 *gwin, gui_pointer_shape shape, bool update)
-{
-	if(gwin->mouse_pointer == shape) return;
-	ami_update_pointer(ami_gui2_get_window(gwin), shape);
-	if(update == true) gwin->mouse_pointer = shape;
-}
-
-/* reset the mouse pointer back to what NetSurf last set it as */
-void ami_reset_pointer(struct gui_window_2 *gwin)
-{
-	ami_update_pointer(ami_gui2_get_window(gwin), gwin->mouse_pointer);
-}
-
 void ami_update_pointer(struct Window *win, gui_pointer_shape shape)
 {
 	if(ami_drag_has_data()) return; /**\todo check this shouldn't be drag_in_progress */

@@ -452,13 +452,26 @@ struct form_control *ami_gui_get_control(struct gui_window *gw)
 	return gw->control;
 }
 
-/**
- * Set control (for select menu) to gui_window
- */
 void ami_gui_set_control(struct gui_window *gw, struct form_control *control)
 {
 	assert(gw != NULL);
 	gw->control = control;
+}
+
+
+/** undocumented, or internal, or documented elsewhere **/
+
+void ami_set_pointer(struct gui_window_2 *gwin, gui_pointer_shape shape, bool update)
+{
+	if(gwin->mouse_pointer == shape) return;
+	ami_update_pointer(ami_gui2_get_window(gwin), shape);
+	if(update == true) gwin->mouse_pointer = shape;
+}
+
+/* reset the mouse pointer back to what NetSurf last set it as */
+void ami_reset_pointer(struct gui_window_2 *gwin)
+{
+	ami_update_pointer(ami_gui2_get_window(gwin), gwin->mouse_pointer);
 }
 
 
