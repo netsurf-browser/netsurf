@@ -432,13 +432,13 @@ void gui_window_start_throbber(struct gui_window *g)
 	if(ami_gui_get_tab_node(g) && (ami_gui_get_gui_window_2(g)->tabs > 1))
 	{
 		SetClickTabNodeAttrs(ami_gui_get_tab_node(g), TNA_Flagged, TRUE, TAG_DONE);
-		RefreshGadgets((APTR)ami_gui_get_gui_window_2(g)->objects[GID_TABS],
+		RefreshGadgets((APTR)ami_gui_get_object(g, AMI_GAD_TABS),
 			ami_gui_get_window(g), NULL);
 	}
 #endif
 
 	ami_gui_set_throbbing(g, true);
-	if(ami_gui_get_gui_window_2(g)->throbber_frame == 0) ami_gui_get_gui_window_2(g)->throbber_frame = 1;
+	if(ami_gui_get_throbber_frame(g) == 0) ami_gui_set_throbber_frame(g, 1);
 	ami_throbber_redraw_schedule(throbber_update_interval, g);
 }
 
@@ -453,13 +453,13 @@ void gui_window_stop_throbber(struct gui_window *g)
 	if(ami_gui_get_tab_node(g) && (ami_gui_get_gui_window_2(g)->tabs > 1))
 	{
 		SetClickTabNodeAttrs(ami_gui_get_tab_node(g), TNA_Flagged, FALSE, TAG_DONE);
-		RefreshGadgets((APTR)ami_gui_get_gui_window_2(g)->objects[GID_TABS],
+		RefreshGadgets((APTR)ami_gui_get_object(g, AMI_GAD_TABS),
 			ami_gui_get_window(g), NULL);
 	}
 #endif
 
 	if(IS_CURRENT_GW(ami_gui_get_gui_window_2(g), g)) {
-		if(ami_gui_get_space_box(ami_gui_get_gui_window_2(g)->objects[GID_THROBBER], &bbox) != NSERROR_OK) {
+		if(ami_gui_get_space_box(ami_gui_get_object(g, AMI_GAD_THROBBER), &bbox) != NSERROR_OK) {
 			amiga_warn_user("NoMemory", "");
 			return;
 		}
@@ -484,17 +484,17 @@ static void ami_throbber_update(void *p)
 	int frame = 0;
 
 	if(!g) return;
-	if(!ami_gui_get_gui_window_2(g)->objects[GID_THROBBER]) return;
+	if(!ami_gui_get_object(g, AMI_GAD_THROBBER)) return;
 
 	if(ami_gui_get_throbbing(g) == true) {
-		frame = ami_gui_get_gui_window_2(g)->throbber_frame;
-		ami_gui_get_gui_window_2(g)->throbber_frame++;
-		if(ami_gui_get_gui_window_2(g)->throbber_frame > (throbber_frames-1))
-			ami_gui_get_gui_window_2(g)->throbber_frame=1;
+		frame = ami_gui_get_throbber_frame(g);
+		ami_gui_set_throbber_frame(g, frame + 1);
+		if(ami_gui_get_throbber_frame(g) > (throbber_frames-1))
+			ami_gui_set_throbber_frame(g, 1);
 	}
 
 	if(IS_CURRENT_GW(ami_gui_get_gui_window_2(g),g)) {
-		if(ami_gui_get_space_box(ami_gui_get_gui_window_2(g)->objects[GID_THROBBER], &bbox) != NSERROR_OK) {
+		if(ami_gui_get_space_box(ami_gui_get_object(g, AMI_GAD_THROBBER), &bbox) != NSERROR_OK) {
 			amiga_warn_user("NoMemory", "");
 			return;
 		}

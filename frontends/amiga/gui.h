@@ -38,6 +38,12 @@
 #define HOOKF(ret,func,type,ptr,msgtype) static ASM ret func(REG(a0, struct Hook *hook),REG(a2, type ptr), REG(a1, msgtype msg))
 #endif
 
+/* valid options for ami_gui_get_object */
+enum {
+	AMI_GAD_THROBBER = 0,
+	AMI_GAD_TABS
+};
+
 enum
 {
     OID_MAIN = 0,
@@ -323,9 +329,24 @@ void ami_gui_set_find_window(struct gui_window *gw, struct find_window *fw);
 bool ami_gui_get_throbbing(struct gui_window *gw);
 
 /**
+ * Get throbbing frame from gui_window
+ */
+int ami_gui_get_throbber_frame(struct gui_window *gw);
+
+/**
+ * Set throbbing frame in gui_window
+ */
+void ami_gui_set_throbber_frame(struct gui_window *gw, int frame);
+
+/**
  * Set throbbing status in gui_window
  */
 void ami_gui_set_throbbing(struct gui_window *gw, bool throbbing);
+
+/**
+ * Get object from gui_window
+ */
+Object *ami_gui_get_object(struct gui_window *gw, int object_type);
 
 /**
  * Get window from gui_window

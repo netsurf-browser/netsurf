@@ -379,6 +379,45 @@ void ami_gui_set_throbbing(struct gui_window *gw, bool throbbing)
 	gw->throbbing = throbbing;
 }
 
+int ami_gui_get_throbber_frame(struct gui_window *gw)
+{
+	assert(gw != NULL);
+	assert(gw->shared != NULL);
+	return gw->shared->throbber_frame;
+}
+
+void ami_gui_set_throbber_frame(struct gui_window *gw, int frame)
+{
+	assert(gw != NULL);
+	assert(gw->shared != NULL);
+	gw->shared->throbber_frame = frame;
+}
+
+Object *ami_gui_get_object(struct gui_window *gw, int object_type)
+{
+	ULONG obj = 0;
+
+	assert(gw != NULL);
+	assert(gw->shared != NULL);
+
+	switch(object_type) {
+		case AMI_GAD_THROBBER:
+			obj = GID_THROBBER;
+		break;
+
+		case AMI_GAD_TABS:
+			obj = GID_TABS;
+		break;
+
+		default:
+			return NULL;
+		break;
+	}
+
+	return gw->shared->objects[obj];
+}
+
+
 struct Window *ami_gui2_get_window(struct gui_window_2 *gwin)
 {
 	assert(gwin != NULL);
