@@ -320,6 +320,13 @@ struct gui_window *ami_gui2_get_gui_window(struct gui_window_2 *gwin)
 	return gwin->gw;
 }
 
+const char *ami_gui_get_win_title(struct gui_window *gw)
+{
+	assert(gw != NULL);
+	assert(gw->shared != NULL);
+	return (const char *)gw->shared->wintitle;
+}
+
 const char *ami_gui_get_tab_title(struct gui_window *gw)
 {
 	assert(gw != NULL);

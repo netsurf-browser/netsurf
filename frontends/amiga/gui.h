@@ -288,6 +288,11 @@ struct List *ami_gui_get_download_list(struct gui_window *gw);
 const char *ami_gui_get_tab_title(struct gui_window *gw);
 
 /**
+ * Get window title from gui_window
+ */
+const char *ami_gui_get_win_title(struct gui_window *gw);
+
+/**
  * Get tab node from gui_window
  */
 struct Node *ami_gui_get_tab_node(struct gui_window *gw);

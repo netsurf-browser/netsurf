@@ -421,7 +421,7 @@ RXHOOKF(rx_gettitle)
 		if(ami_gui_get_gui_window_2(gw)->tabs > 1)
 			strcpy(result, ami_gui_get_tab_title(gw));
 		else
-			strcpy(result, ami_gui_get_gui_window_2(gw)->wintitle);
+			strcpy(result, ami_gui_get_win_title(gw));
 	}
 	else
 	{
