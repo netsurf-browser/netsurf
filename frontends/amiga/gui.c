@@ -363,6 +363,15 @@ struct Menu *ami_gui_get_menu(struct gui_window *gw)
 	return gw->shared->imenu;
 }
 
+void ami_gui2_set_menu(struct gui_window_2 *gwin, struct Menu *menu)
+{
+	if(menu != NULL) {
+		gwin->imenu = menu;
+	} else {
+		ami_gui_menu_freemenus(gwin->imenu);
+	}
+}
+
 STRPTR ami_locale_langs(int *codeset)
 {
 	struct Locale *locale;

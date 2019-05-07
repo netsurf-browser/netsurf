@@ -1035,26 +1035,31 @@ struct Menu *ami_gui_menu_create(struct gui_window_2 *gwin)
 	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
 #ifdef __amigaos4__
 		if(gui_menu != NULL) {
-			gwin->imenu = gui_menu;
+			ami_gui2_set_menu(gwin, gui_menu);
 			gui_menu_count++;
-			return gwin->imenu;
+			return gui_menu;
 		}
 		ami_init_menulabs(gui_menu_data);
 		ami_menu_scan(gui_menu_data);
 		ami_menu_arexx_scan(gui_menu_data);
-		gwin->imenu = ami_menu_layout(gui_menu_data, AMI_MENU_AREXX_MAX);
+		gui_menu = ami_menu_layout(gui_menu_data, AMI_MENU_AREXX_MAX);
 
-		gui_menu = gwin->imenu;
+		ami_gui2_set_menu(gwin, gui_menu);
 		gui_menu_count++;
+		return gui_menu;
 #endif
 	} else {
+		struct Menu *temp_menu;
+
 		ami_init_menulabs(gwin->menu_data);
 		ami_menu_scan(gwin->menu_data);
 		ami_menu_arexx_scan(gwin->menu_data);
-		gwin->imenu = ami_menu_layout(gwin->menu_data, AMI_MENU_AREXX_MAX);
+		temp_menu = ami_menu_layout(gwin->menu_data, AMI_MENU_AREXX_MAX);
+		ami_gui2_set_menu(gwin, temp_menu);
+		return temp_menu;
 	}
 
-	return gwin->imenu;
+	return NULL; // shouldn't get this far
 }
 
 static void ami_free_menulabs(struct ami_menu_data **md)
@@ -1089,6 +1094,13 @@ static void ami_free_menulabs(struct ami_menu_data **md)
 	}
 }
 
+void ami_gui_menu_freemenus(struct Menu *menu)
+{
+	if(menu != NULL) {
+		FreeMenus(menu);
+	}
+}
+
 void ami_gui_menu_free(struct gui_window_2 *gwin)
 {
 	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 54, 6)) {
@@ -1106,7 +1118,7 @@ void ami_gui_menu_free(struct gui_window_2 *gwin)
 #endif
 	} else {
 		ami_free_menulabs(gwin->menu_data);
-		FreeMenus(gwin->imenu);
+		ami_gui2_set_menu(gwin, NULL);
 	}
 }
 

@@ -154,5 +154,10 @@ void ami_gui_menu_refresh_hotlist(void);
  * \return true if NetSurf has been quit
  */
 bool ami_gui_menu_quit_selected(void);
+
+/**
+ * Frees a menu.  Only used on OS3 and old OS4.
+ */
+void ami_gui_menu_freemenus(struct Menu *menu);
 #endif
 

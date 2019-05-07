@@ -316,5 +316,10 @@ struct Window *ami_gui_get_window(struct gui_window *gw);
  */
 struct Menu *ami_gui_get_menu(struct gui_window *gw);
 
+/**
+ * Set imenu to gui_window_2. A value of NULL will free the menu.
+ */
+void ami_gui2_set_menu(struct gui_window_2 *gwin, struct Menu *menu);
+
 #endif
 
