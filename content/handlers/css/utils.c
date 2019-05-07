@@ -184,9 +184,9 @@ css_fixed nscss_len2px(
 	case CSS_UNIT_PX:
 		px_per_unit = F_1;
 		break;
-	/* 1in = DPIpx */
+	/* 1in = 96 CSS pixels */
 	case CSS_UNIT_IN:
-		px_per_unit = nscss_screen_dpi;
+		px_per_unit = F_96;
 		break;
 	/* 1in = 2.54cm => 1cm = (DPI/2.54)px */
 	case CSS_UNIT_CM:
