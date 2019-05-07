@@ -583,10 +583,13 @@ static void html_get_dimensions(html_content *htmlc)
 
 	content_broadcast(&htmlc->base, CONTENT_MSG_GETDIMS, &msg_data);
 
-	htmlc->media.width.value = INTTOFIX(w);
-	htmlc->media.width.unit = CSS_UNIT_PX;
-	htmlc->media.height.value = INTTOFIX(h);
-	htmlc->media.height.unit = CSS_UNIT_PX;
+	htmlc->media.width  = nscss_pixels_physical_to_css(INTTOFIX(w));
+	htmlc->media.height = nscss_pixels_physical_to_css(INTTOFIX(h));
+	htmlc->media.client_font_size =
+			FDIV(INTTOFIX(nsoption_int(font_size)), F_10);
+	htmlc->media.client_line_height =
+			FMUL(nscss_len2px(NULL, htmlc->media.client_font_size,
+					CSS_UNIT_PT, NULL), FLTTOFIX(1.33));
 }
 
 /* exported function documented in html/html_internal.h */
