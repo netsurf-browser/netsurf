@@ -339,6 +339,18 @@ struct Node *ami_gui_get_tab_node(struct gui_window *gw)
 	return gw->tab_node;
 }
 
+ULONG ami_gui2_get_tabs(struct gui_window_2 *gwin)
+{
+	assert(gwin != NULL);
+	return gwin->tabs;
+}
+
+struct List *ami_gui2_get_tab_list(struct gui_window_2 *gwin)
+{
+	assert(gwin != NULL);
+	return &gwin->tab_list;
+}
+
 struct hlcache_handle *ami_gui_get_favicon(struct gui_window *gw)
 {
 	assert(gw != NULL);
@@ -393,12 +405,11 @@ void ami_gui_set_throbber_frame(struct gui_window *gw, int frame)
 	gw->shared->throbber_frame = frame;
 }
 
-Object *ami_gui_get_object(struct gui_window *gw, int object_type)
+Object *ami_gui2_get_object(struct gui_window_2 *gwin, int object_type)
 {
 	ULONG obj = 0;
 
-	assert(gw != NULL);
-	assert(gw->shared != NULL);
+	assert(gwin != NULL);
 
 	switch(object_type) {
 		case AMI_GAD_THROBBER:
@@ -409,12 +420,20 @@ Object *ami_gui_get_object(struct gui_window *gw, int object_type)
 			obj = GID_TABS;
 		break;
 
+		case AMI_GAD_URL:
+			obj = GID_URL;
+		break;
+
+		case AMI_GAD_SEARCH:
+			obj = GID_SEARCHSTRING;
+		break;
+
 		default:
 			return NULL;
 		break;
 	}
 
-	return gw->shared->objects[obj];
+	return gwin->objects[obj];
 }
 
 
@@ -458,6 +477,53 @@ void ami_gui_set_control(struct gui_window *gw, struct form_control *control)
 	gw->control = control;
 }
 
+void ami_gui2_set_ctxmenu_history_tmp(struct gui_window_2 *gwin, int temp)
+{
+	assert(gwin != NULL);
+	gwin->temp = temp;
+}
+
+int ami_gui2_get_ctxmenu_history_tmp(struct gui_window_2 *gwin)
+{
+	assert(gwin != NULL);
+	return gwin->temp;
+}
+
+Object *ami_gui2_get_ctxmenu_history(struct gui_window_2 *gwin, ULONG direction)
+{
+	assert(gwin != NULL);
+	return gwin->history_ctxmenu[direction];
+}
+
+void ami_gui2_set_ctxmenu_history(struct gui_window_2 *gwin, ULONG direction, Object *ctx_hist)
+{
+	assert(gwin != NULL);
+	gwin->history_ctxmenu[direction] = ctx_hist;
+}
+
+Object *ami_gui2_get_ctxmenu_clicktab(struct gui_window_2 *gwin)
+{
+	assert(gwin != NULL);
+	return gwin->clicktab_ctxmenu;
+}
+
+void ami_gui2_set_ctxmenu_clicktab(struct gui_window_2 *gwin, Object *ctx_tab)
+{
+	assert(gwin != NULL);
+	gwin->clicktab_ctxmenu = ctx_tab;
+}
+
+void ami_gui2_set_closed(struct gui_window_2 *gwin, bool closed)
+{
+	assert(gwin != NULL);
+	gwin->closed = closed;
+}
+
+void ami_gui2_set_new_content(struct gui_window_2 *gwin, bool new_content)
+{
+	assert(gwin != NULL);
+	gwin->new_content = new_content;
+}
 
 /** undocumented, or internal, or documented elsewhere **/
 

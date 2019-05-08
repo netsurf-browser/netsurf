@@ -157,7 +157,7 @@ HOOKF(void, ami_menu_item_project_closewin, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	gwin->closed = true;
+	ami_gui2_set_closed(gwin, true);
 }
 
 HOOKF(void, ami_menu_item_project_print, APTR, window, struct IntuiMessage *)
@@ -405,7 +405,7 @@ HOOKF(void, ami_menu_item_browser_redraw, APTR, window, struct IntuiMessage *)
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
 	ami_schedule_redraw(gwin, true);
-	gwin->new_content = true;
+	ami_gui2_set_new_content(gwin, true);
 }
 
 HOOKF(void, ami_menu_item_hotlist_add, APTR, window, struct IntuiMessage *)

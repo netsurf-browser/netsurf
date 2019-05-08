@@ -191,9 +191,9 @@ static struct gui_window *ami_find_tab_gwin(struct gui_window_2 *gwin, int tab)
 	struct Node *ntab;
 	struct gui_window *gw;
 
-	if((tab == 0) || (gwin->tabs == 0)) return ami_gui2_get_gui_window(gwin);
+	if((tab == 0) || (ami_gui2_get_tabs(gwin) == 0)) return ami_gui2_get_gui_window(gwin);
 
-	ctab = GetHead(&gwin->tab_list);
+	ctab = GetHead(ami_gui2_get_tab_list(gwin));
 
 	do
 	{
@@ -215,9 +215,9 @@ static int ami_find_tab_bw(struct gui_window_2 *gwin, struct browser_window *bw)
 	struct Node *ntab;
 	struct gui_window *tgw = NULL;
 
-	if((bw == NULL) || (gwin->tabs == 0)) return 1;
+	if((bw == NULL) || (ami_gui2_get_tabs(gwin) == 0)) return 1;
 
-	ctab = GetHead(&gwin->tab_list);
+	ctab = GetHead(ami_gui2_get_tab_list(gwin));
 
 	do
 	{
@@ -418,7 +418,7 @@ RXHOOKF(rx_gettitle)
 
 	if(gw)
 	{
-		if(ami_gui_get_gui_window_2(gw)->tabs > 1)
+		if(ami_gui2_get_tabs(ami_gui_get_gui_window_2(gw)) > 1)
 			strcpy(result, ami_gui_get_tab_title(gw));
 		else
 			strcpy(result, ami_gui_get_win_title(gw));

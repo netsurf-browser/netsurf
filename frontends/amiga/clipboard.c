@@ -299,23 +299,23 @@ void ami_drag_selection(struct gui_window *g)
 		x = ami_gui2_get_window(gwin)->MouseX;
 		y = ami_gui2_get_window(gwin)->MouseY;
 
-		if(ami_gadget_hit(gwin->objects[GID_URL], x, y))
+		if(ami_gadget_hit(ami_gui2_get_object(gwin, AMI_GAD_URL), x, y))
 		{
 			if((sel = browser_window_get_selection(ami_gui_get_browser_window(g))))
 			{
 				utf8text = ami_utf8_easy(sel);
-				RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_URL],
+				RefreshSetGadgetAttrs((struct Gadget *)ami_gui2_get_object(gwin, AMI_GAD_URL),
 					ami_gui2_get_window(gwin), NULL, STRINGA_TextVal, utf8text, TAG_DONE);
 				free(sel);
 				ami_utf8_free(utf8text);
 			}
 		}
-		else if(ami_gadget_hit(gwin->objects[GID_SEARCHSTRING], x, y))
+		else if(ami_gadget_hit(ami_gui2_get_object(gwin, AMI_GAD_SEARCH), x, y))
 		{
 			if((sel = browser_window_get_selection(ami_gui_get_browser_window(g))))
 			{
 				utf8text = ami_utf8_easy(sel);
-				RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_SEARCHSTRING],
+				RefreshSetGadgetAttrs((struct Gadget *)ami_gui2_get_object(gwin, AMI_GAD_SEARCH),
 					ami_gui2_get_window(gwin), NULL, STRINGA_TextVal, utf8text, TAG_DONE);
 				free(sel);
 				ami_utf8_free(utf8text);

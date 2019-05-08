@@ -41,7 +41,9 @@
 /* valid options for ami_gui_get_object */
 enum {
 	AMI_GAD_THROBBER = 0,
-	AMI_GAD_TABS
+	AMI_GAD_TABS,
+	AMI_GAD_URL,
+	AMI_GAD_SEARCH
 };
 
 enum
@@ -86,6 +88,9 @@ enum
 struct find_window;
 struct ami_history_local_window;
 struct ami_menu_data;
+struct gui_window;
+struct gui_window_2;
+struct IBox;
 
 #define AMI_GUI_TOOLBAR_MAX 20
 
@@ -305,6 +310,16 @@ const char *ami_gui_get_win_title(struct gui_window *gw);
 struct Node *ami_gui_get_tab_node(struct gui_window *gw);
 
 /**
+ * Get tabs from gui_window_2
+ */
+ULONG ami_gui2_get_tabs(struct gui_window_2 *gwin);
+
+/**
+ * Get tab list from gui_window_2
+ */
+struct List *ami_gui2_get_tab_list(struct gui_window_2 *gwin);
+
+/**
  * Get favicon from gui_window
  */
 struct hlcache_handle *ami_gui_get_favicon(struct gui_window *gw);
@@ -347,7 +362,7 @@ void ami_gui_set_throbbing(struct gui_window *gw, bool throbbing);
 /**
  * Get object from gui_window
  */
-Object *ami_gui_get_object(struct gui_window *gw, int object_type);
+Object *ami_gui2_get_object(struct gui_window_2 *gwin, int object_type);
 
 /**
  * Get window from gui_window
@@ -378,6 +393,46 @@ struct form_control *ami_gui_get_control(struct gui_window *gw);
  * Set control (for select menu) to gui_window
  */
 void ami_gui_set_control(struct gui_window *gw, struct form_control *control);
+
+/**
+ * Set ctxmenu history tmp in gui_window_2
+ */
+void ami_gui2_set_ctxmenu_history_tmp(struct gui_window_2 *gwin, int temp);
+
+/**
+ * Get ctxmenu history tmp from gui_window_2
+ */
+int ami_gui2_get_ctxmenu_history_tmp(struct gui_window_2 *gwin);
+
+/**
+ * Get ctxmenu history from gui_window_2
+ */
+Object *ami_gui2_get_ctxmenu_history(struct gui_window_2 *gwin, ULONG direction);
+
+/**
+ * Set ctxmenu history in gui_window_2
+ */
+void ami_gui2_set_ctxmenu_history(struct gui_window_2 *gwin, ULONG direction, Object *ctx_hist);
+
+/**
+ * Get ctxmenu clicktab from gui_window_2
+ */
+Object *ami_gui2_get_ctxmenu_clicktab(struct gui_window_2 *gwin);
+
+/**
+ * Set ctxmenu clicktab in gui_window_2
+ */
+void ami_gui2_set_ctxmenu_clicktab(struct gui_window_2 *gwin, Object *ctx_tab);
+
+/**
+ * Set closed in gui_window_2
+ */
+void ami_gui2_set_closed(struct gui_window_2 *gwin, bool closed);
+
+/**
+ * Set new_content in gui_window_2
+ */
+void ami_gui2_set_new_content(struct gui_window_2 *gwin, bool new_content);
 
 #endif
 

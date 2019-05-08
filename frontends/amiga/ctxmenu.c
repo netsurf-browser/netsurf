@@ -499,15 +499,15 @@ void ami_ctxmenu_init(void)
 static bool ami_ctxmenu_history(int direction, struct gui_window_2 *gwin, const struct history_entry *entry)
 {
 	Object *history_root;
-	int id = AMI_CTX_ID_HISTORY0 + gwin->temp;
+	int id = AMI_CTX_ID_HISTORY0 + ami_gui2_get_ctxmenu_history_tmp(gwin);
 	if(direction == AMI_CTXMENU_HISTORY_FORWARD) id += 10;
 
-	if(gwin->temp >= 10) return false;
+	if(ami_gui2_get_ctxmenu_history_tmp(gwin) >= 10) return false;
 
 	ctxmenu_item_hook[id].h_Entry = (HOOKFUNC)ami_ctxmenu_item_history;
 	ctxmenu_item_hook[id].h_Data = (APTR)entry;
 
-	history_root = (Object *)IDoMethod(gwin->history_ctxmenu[direction], MM_FINDID, 0, AMI_CTX_ID_HISTORY);
+	history_root = (Object *)IDoMethod(ami_gui2_get_ctxmenu_history(gwin, direction), MM_FINDID, 0, AMI_CTX_ID_HISTORY);
 
 	IDoMethod(history_root, OM_ADDMEMBER, MStrip,
 							MA_Type, T_ITEM,
@@ -518,7 +518,7 @@ static bool ami_ctxmenu_history(int direction, struct gui_window_2 *gwin, const 
 							MA_UserData, &ctxmenu_item_hook[id],
 						MEnd);
 
-	gwin->temp++;
+	ami_gui2_set_ctxmenu_history_tmp(gwin, ami_gui2_get_ctxmenu_history_tmp(gwin) + 1);
 
 	return true;
 }
@@ -544,11 +544,11 @@ struct Menu *ami_ctxmenu_history_create(int direction, struct gui_window_2 *gwin
 {
 	Object *obj;
 
-	if(gwin->history_ctxmenu[direction] == NULL) {
+	if(ami_gui2_get_ctxmenu_history(gwin, direction) == NULL) {
 		if(ctxmenu_item_label[AMI_CTX_ID_HISTORY] == NULL)
 			ctxmenu_item_label[AMI_CTX_ID_HISTORY] = ami_utf8_easy(messages_get("History"));
 
-		gwin->history_ctxmenu[direction] = MStrip,
+		obj = MStrip,
 						MA_Type, T_ROOT,
 						MA_AddChild, MStrip,
 							MA_Type, T_MENU,
@@ -558,14 +558,17 @@ struct Menu *ami_ctxmenu_history_create(int direction, struct gui_window_2 *gwin
 							//MA_FreeImage, FALSE,
 						MEnd,
 					MEnd;
+
+		ami_gui2_set_ctxmenu_history(gwin, direction, obj);
+
 	} else {
 		for (int i = 0; i < 20; i++) {
-			obj = (Object *)IDoMethod(gwin->history_ctxmenu[direction],
+			obj = (Object *)IDoMethod(ami_gui2_get_ctxmenu_history(gwin, direction),
 					MM_FINDID, 0, AMI_CTX_ID_HISTORY0 + i);
-			if(obj != NULL) IDoMethod(gwin->history_ctxmenu[direction], OM_REMMEMBER, obj);
+			if(obj != NULL) IDoMethod(ami_gui2_get_ctxmenu_history(gwin, direction), OM_REMMEMBER, obj);
 		}
 
-		gwin->temp = 0;
+		ami_gui2_set_ctxmenu_history_tmp(gwin, 0);
 
 		if(direction == AMI_CTXMENU_HISTORY_BACK) {
 			browser_window_history_enumerate_back(ami_gui2_get_browser_window(gwin), ami_ctxmenu_history_back, gwin);
@@ -574,7 +577,7 @@ struct Menu *ami_ctxmenu_history_create(int direction, struct gui_window_2 *gwin
 		}
 	}
 
-	return (struct Menu *)gwin->history_ctxmenu[direction];
+	return (struct Menu *)ami_gui2_get_ctxmenu_history(gwin, direction);
 }
 
 
@@ -586,10 +589,13 @@ struct Menu *ami_ctxmenu_history_create(int direction, struct gui_window_2 *gwin
 struct Menu *ami_ctxmenu_clicktab_create(struct gui_window_2 *gwin)
 {
 	Object *root_menu;
+	Object *clicktab;
 
-	if(gwin->clicktab_ctxmenu != NULL) return (struct Menu *)gwin->clicktab_ctxmenu;
+	if(ami_gui2_get_ctxmenu_clicktab(gwin) != NULL) {
+		return (struct Menu *)ami_gui2_get_ctxmenu_clicktab(gwin);
+	}
 
-	gwin->clicktab_ctxmenu = MStrip,
+	clicktab = MStrip,
 					MA_Type, T_ROOT,
 					MA_AddChild, root_menu = MStrip,
 						MA_Type, T_MENU,
@@ -598,10 +604,12 @@ struct Menu *ami_ctxmenu_clicktab_create(struct gui_window_2 *gwin)
 					MEnd,
 				MEnd;
 
+	ami_gui2_set_ctxmenu_clicktab(gwin, clicktab);
+
 	ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_TABNEW, gwin);
 	ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_TABCLOSE_OTHER, gwin);
 
-	return (struct Menu *)gwin->clicktab_ctxmenu;
+	return (struct Menu *)clicktab;
 }
 
 
