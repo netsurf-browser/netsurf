@@ -87,7 +87,7 @@ inline void ami_ctxmenu_free(void) {}
 inline struct Hook *ami_ctxmenu_get_hook(APTR data) {return NULL;}
 inline void ami_ctxmenu_release_hook(struct Hook *hook) {}
 inline struct Menu *ami_ctxmenu_history_create(int direction, struct gui_window_2 *gwin) {return NULL;}
-inline struct Menu *ami_ctxmenu_clicktab_create(struct gui_window_2 *gwin) {return NULL;}
+inline struct Menu *ami_ctxmenu_clicktab_create(struct gui_window_2 *gwin, Object **clicktab_obj) {return NULL;}
 #endif //__amigaos4__
 #endif //AMIGA_CTXMENU_H
 
