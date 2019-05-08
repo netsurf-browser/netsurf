@@ -193,6 +193,55 @@
 
 extern struct gui_utf8_table *amiga_utf8_table;
 
+struct gui_window_2 {
+	struct ami_generic_window w;
+	struct Window *win;
+	Object *restrict objects[GID_LAST];
+	struct gui_window *gw; /* currently-displayed gui_window */
+	bool redraw_required;
+	int throbber_frame;
+	struct List tab_list;
+	ULONG tabs;
+	ULONG next_tab;
+	struct Node *last_new_tab;
+	struct Hook scrollerhook;
+	browser_mouse_state mouse_state;
+	browser_mouse_state key_state;
+	ULONG throbber_update_count;
+	struct find_window *searchwin;
+	ULONG oldh;
+	ULONG oldv;
+	int temp;
+	bool redraw_scroll;
+	bool new_content;
+	struct ami_menu_data *menu_data[AMI_MENU_AREXX_MAX + 1]; /* only for GadTools menus */
+	ULONG hotlist_items;
+	Object *restrict hotlist_toolbar_lab[AMI_GUI_TOOLBAR_MAX];
+	struct List hotlist_toolbar_list;
+	struct List *web_search_list;
+	Object *search_bm;
+	char *restrict svbuffer;
+	char *restrict status;
+	char *restrict wintitle;
+	char *restrict helphints[GID_LAST];
+	browser_mouse_state prev_mouse_state;
+	struct timeval lastclick;
+	struct AppIcon *appicon; /* iconify appicon */
+	struct DiskObject *dobj; /* iconify appicon */
+	struct Hook favicon_hook;
+	struct Hook throbber_hook;
+	struct Hook *ctxmenu_hook;
+	Object *restrict history_ctxmenu[2];
+	Object *clicktab_ctxmenu;
+	gui_drag_type drag_op;
+	struct IBox *ptr_lock;
+	struct AppWindow *appwin;
+	struct MinList *shared_pens;
+	gui_pointer_shape mouse_pointer;
+	struct Menu *imenu; /* Intuition menu */
+	bool closed; /* Window has been closed (via menu) */
+};
+
 struct gui_window
 {
 	struct gui_window_2 *shared;
@@ -412,6 +461,10 @@ Object *ami_gui2_get_object(struct gui_window_2 *gwin, int object_type)
 	assert(gwin != NULL);
 
 	switch(object_type) {
+		case AMI_WIN_MAIN:
+			obj = OID_MAIN;
+		break;
+
 		case AMI_GAD_THROBBER:
 			obj = GID_THROBBER;
 		break;
@@ -461,8 +514,14 @@ void ami_gui2_set_menu(struct gui_window_2 *gwin, struct Menu *menu)
 	if(menu != NULL) {
 		gwin->imenu = menu;
 	} else {
-		ami_gui_menu_freemenus(gwin->imenu);
+		ami_gui_menu_freemenus(gwin->imenu, gwin->menu_data);
 	}
+}
+
+struct ami_menu_data **ami_gui2_get_menu_data(struct gui_window_2 *gwin)
+{
+	assert(gwin != NULL);
+	return gwin->menu_data;
 }
 
 struct form_control *ami_gui_get_control(struct gui_window *gw)
@@ -499,18 +558,6 @@ void ami_gui2_set_ctxmenu_history(struct gui_window_2 *gwin, ULONG direction, Ob
 {
 	assert(gwin != NULL);
 	gwin->history_ctxmenu[direction] = ctx_hist;
-}
-
-Object *ami_gui2_get_ctxmenu_clicktab(struct gui_window_2 *gwin)
-{
-	assert(gwin != NULL);
-	return gwin->clicktab_ctxmenu;
-}
-
-void ami_gui2_set_ctxmenu_clicktab(struct gui_window_2 *gwin, Object *ctx_tab)
-{
-	assert(gwin != NULL);
-	gwin->clicktab_ctxmenu = ctx_tab;
 }
 
 void ami_gui2_set_closed(struct gui_window_2 *gwin, bool closed)

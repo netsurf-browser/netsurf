@@ -681,7 +681,7 @@ void ami_gui_menu_update_checked(struct gui_window_2 *gwin)
 
 	struct Menu *menustrip;
 
-	GetAttr(WINDOW_MenuStrip, gwin->objects[OID_MAIN], (ULONG *)&menustrip);
+	GetAttr(WINDOW_MenuStrip, ami_gui2_get_object(gwin, AMI_WIN_MAIN), (ULONG *)&menustrip);
 	if(!menustrip) return;
 	if(nsoption_bool(enable_javascript) == true) {
 		if((ItemAddress(menustrip, ami_gui_menu_number(M_JS))->Flags & CHECKED) == 0)
@@ -1050,11 +1050,12 @@ struct Menu *ami_gui_menu_create(struct gui_window_2 *gwin)
 #endif
 	} else {
 		struct Menu *temp_menu;
+		struct ami_menu_data **md = ami_gui2_get_menu_data(gwin);
 
-		ami_init_menulabs(gwin->menu_data);
-		ami_menu_scan(gwin->menu_data);
-		ami_menu_arexx_scan(gwin->menu_data);
-		temp_menu = ami_menu_layout(gwin->menu_data, AMI_MENU_AREXX_MAX);
+		ami_init_menulabs(md);
+		ami_menu_scan(md);
+		ami_menu_arexx_scan(md);
+		temp_menu = ami_menu_layout(md, AMI_MENU_AREXX_MAX);
 		ami_gui2_set_menu(gwin, temp_menu);
 		return temp_menu;
 	}
@@ -1094,10 +1095,14 @@ static void ami_free_menulabs(struct ami_menu_data **md)
 	}
 }
 
-void ami_gui_menu_freemenus(struct Menu *menu)
+void ami_gui_menu_freemenus(struct Menu *menu, struct ami_menu_data **md)
 {
 	if(menu != NULL) {
 		FreeMenus(menu);
+	}
+
+	if(md != NULL) {
+		ami_free_menulabs(md);
 	}
 }
 
@@ -1107,7 +1112,7 @@ void ami_gui_menu_free(struct gui_window_2 *gwin)
 #ifdef __amigaos4__
 		gui_menu_count--;
 
-		SetAttrs(gwin->objects[OID_MAIN], WINDOW_MenuStrip, NULL, TAG_DONE);
+		SetAttrs(ami_gui2_get_object(gwin, AMI_WIN_MAIN), WINDOW_MenuStrip, NULL, TAG_DONE);
 
 		if(gui_menu_count == 0) {
 			ami_free_menulabs(gui_menu_data);
@@ -1117,7 +1122,6 @@ void ami_gui_menu_free(struct gui_window_2 *gwin)
 		}
 #endif
 	} else {
-		ami_free_menulabs(gwin->menu_data);
 		ami_gui2_set_menu(gwin, NULL);
 	}
 }
