@@ -71,10 +71,10 @@ BOOL ami_selectmenu_is_safe(void)
 HOOKF(uint32, ami_popup_hook, Object *, item, APTR)
 {
 	uint32 itemid = 0;
-	struct gui_window *gwin = hook->h_Data;
+	struct form_control *control = hook->h_Data;
 
 	if(GetAttr(PMIA_ID, item, &itemid)) {
-		form_select_process_selection(ami_gui_get_control(gwin), itemid);
+		form_select_process_selection(control, itemid);
 	}
 
 	return itemid;
@@ -109,9 +109,7 @@ void gui_create_form_select_menu(struct gui_window *g,
 
 	selectmenuhook.h_Entry = ami_popup_hook;
 	selectmenuhook.h_SubEntry = NULL;
-	selectmenuhook.h_Data = g;
-
-	ami_gui_set_control(g, control);
+	selectmenuhook.h_Data = control;
 
 	selectmenuobj = PMMENU(form_control_get_name(control)),
                         PMA_MenuHandler, &selectmenuhook, End;

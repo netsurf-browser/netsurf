@@ -304,16 +304,6 @@ void ami_gui2_set_menu(struct gui_window_2 *gwin, struct Menu *menu);
 struct ami_menu_data **ami_gui2_get_menu_data(struct gui_window_2 *gwin);
 
 /**
- * Get control (for select menu) from gui_window
- */
-struct form_control *ami_gui_get_control(struct gui_window *gw);
-
-/**
- * Set control (for select menu) to gui_window
- */
-void ami_gui_set_control(struct gui_window *gw, struct form_control *control);
-
-/**
  * Set ctxmenu history tmp in gui_window_2
  */
 void ami_gui2_set_ctxmenu_history_tmp(struct gui_window_2 *gwin, int temp);

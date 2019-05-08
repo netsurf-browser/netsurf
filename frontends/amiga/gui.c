@@ -302,7 +302,6 @@ struct gui_window
 	struct MinList *deferred_rects;
 	struct browser_window *bw;
 	float scale;
-	struct form_control *control;
 };
 
 struct ami_gui_tb_userdata {
@@ -561,18 +560,6 @@ struct ami_menu_data **ami_gui2_get_menu_data(struct gui_window_2 *gwin)
 {
 	assert(gwin != NULL);
 	return gwin->menu_data;
-}
-
-struct form_control *ami_gui_get_control(struct gui_window *gw)
-{
-	assert(gw != NULL);
-	return gw->control;
-}
-
-void ami_gui_set_control(struct gui_window *gw, struct form_control *control)
-{
-	assert(gw != NULL);
-	gw->control = control;
 }
 
 void ami_gui2_set_ctxmenu_history_tmp(struct gui_window_2 *gwin, int temp)
