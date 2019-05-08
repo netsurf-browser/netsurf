@@ -586,13 +586,13 @@ struct Menu *ami_ctxmenu_history_create(int direction, struct gui_window_2 *gwin
  **************************/
 
 /** Exported interface documented in ctxmenu.h **/
-struct Menu *ami_ctxmenu_clicktab_create(struct gui_window_2 *gwin)
+struct Menu *ami_ctxmenu_clicktab_create(struct gui_window_2 *gwin, Object **clicktab_obj)
 {
 	Object *root_menu;
 	Object *clicktab;
 
-	if(ami_gui2_get_ctxmenu_clicktab(gwin) != NULL) {
-		return (struct Menu *)ami_gui2_get_ctxmenu_clicktab(gwin);
+	if(*clicktab_obj != NULL) {
+		return (struct Menu *)*clicktab_obj;
 	}
 
 	clicktab = MStrip,
@@ -604,7 +604,7 @@ struct Menu *ami_ctxmenu_clicktab_create(struct gui_window_2 *gwin)
 					MEnd,
 				MEnd;
 
-	ami_gui2_set_ctxmenu_clicktab(gwin, clicktab);
+	*clicktab_obj = clicktab;
 
 	ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_TABNEW, gwin);
 	ami_ctxmenu_add_item(root_menu, AMI_CTX_ID_TABCLOSE_OTHER, gwin);

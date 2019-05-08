@@ -75,10 +75,11 @@ struct Menu *ami_ctxmenu_history_create(int direction, struct gui_window_2 *gwin
  * Create ClickTab context menu
  *
  * \param gwin struct gui_window_2 *
- * \returns pointer to menu (for convenience, is also stored in gwin structure)
+ * \param clicktab_obj ptr to memory to hold clicktab menu object
+ * \returns pointer to menu (for convenience)
  * The returned pointer MUST be disposed of with DisposeObject before program exit.
  */
-struct Menu *ami_ctxmenu_clicktab_create(struct gui_window_2 *gwin);
+struct Menu *ami_ctxmenu_clicktab_create(struct gui_window_2 *gwin, Object **clicktab_obj);
 
 #else //__amigaos4__
 inline void ami_ctxmenu_init(void) {}

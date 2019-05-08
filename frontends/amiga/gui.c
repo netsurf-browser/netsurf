@@ -3660,7 +3660,7 @@ static void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 					GA_ID, GID_TABS,
 					GA_RelVerify, TRUE,
 					GA_Underscore, 13, // disable kb shortcuts
-					GA_ContextMenu, ami_ctxmenu_clicktab_create(gwin),
+					GA_ContextMenu, ami_ctxmenu_clicktab_create(gwin, &gwin->clicktab_ctxmenu),
 					CLICKTAB_Labels, &gwin->tab_list,
 					CLICKTAB_LabelTruncate, TRUE,
 					CLICKTAB_CloseImage, gwin->objects[GID_CLOSETAB_BM],
