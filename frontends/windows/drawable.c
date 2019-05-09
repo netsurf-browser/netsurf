@@ -41,7 +41,7 @@
 #include "windows/local_history.h"
 #include "windows/drawable.h"
 
-static const char windowclassname_drawable[] = "nswsdrawablewindow";
+static const wchar_t *windowclassname_drawable = L"nswsdrawablewindow";
 
 
 /**
@@ -223,19 +223,71 @@ nsws_drawable_resize(struct gui_window *gw)
 	return 0;
 }
 
-
 /**
- * Handle key press messages.
+ * Handle unicode character messages.
  */
 static LRESULT
-nsws_drawable_key(struct gui_window *gw, HWND hwnd, WPARAM wparam)
+nsws_drawable_unichar(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 {
-	if (GetFocus() != hwnd)
-		return 0 ;
+	uint32_t nskey;
 
+	if (wparam == UNICODE_NOCHAR) {
+		return 1;
+	}
+
+	nskey = wparam;
+	browser_window_key_press(gw->bw, nskey);
+	return 0;
+}
+
+/**
+ * Handle character messages.
+ *
+ * WM_CHAR is generated when WM_KEYDOWN message are passed to
+ * TranslateMessage; wParam is UTF-16.  If the codepoint is 4
+ * bytes, there are 2 WM_CHAR message, one with the high
+ * surrogate and one with the low surrogate.
+ */
+static LRESULT
+nsws_drawable_char(struct gui_window *gw, HWND hwnd, WPARAM wparam)
+{
+	uint32_t nskey;
+
+	nskey = wparam;
+
+	const uint32_t utf16_hi_surrogate_start = 0xD800;
+	const uint32_t utf16_lo_surrogate_start = 0xDC00;
+	const uint32_t utf16_surrogate_end = 0xDFFF;
+
+	static uint32_t highSurrogate = 0;
+
+	if ((nskey >= utf16_hi_surrogate_start) &&
+	    (nskey < utf16_lo_surrogate_start) ) {
+		highSurrogate = nskey;
+	} else {
+		if ((nskey >= utf16_lo_surrogate_start) &&
+		    (nskey <= utf16_surrogate_end)) {
+			uint32_t lowSurrogate = nskey;
+			nskey = (highSurrogate - utf16_hi_surrogate_start) << 10;
+			nskey |= ( lowSurrogate - utf16_lo_surrogate_start );
+			nskey += 0x10000;
+		}
+		highSurrogate = 0;
+
+		browser_window_key_press(gw->bw, nskey);
+	}
+
+	return 0;
+}
+
+/**
+ * Handle keydown messages.
+ */
+static LRESULT
+nsws_drawable_keydown(struct gui_window *gw, HWND hwnd, WPARAM wparam)
+{
 	uint32_t i;
 	bool shift = ((GetKeyState(VK_SHIFT) & 0x8000) == 0x8000);
-	bool capslock = ((GetKeyState(VK_CAPITAL) & 1) == 1);
 
 	switch(wparam) {
 	case VK_LEFT:
@@ -285,30 +337,18 @@ nsws_drawable_key(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 		break;
 
 	case VK_NEXT:
-		i = wparam;
-		SendMessage(hwnd, WM_VSCROLL, MAKELONG(SB_PAGEDOWN, 0),
-			    0);
-		break;
+		SendMessage(hwnd, WM_VSCROLL, MAKELONG(SB_PAGEDOWN, 0), 0);
+		return 1;
 
 	case VK_PRIOR:
-		i = wparam;
-		SendMessage(hwnd, WM_VSCROLL, MAKELONG(SB_PAGEUP, 0),
-			    0);
-		break;
+		SendMessage(hwnd, WM_VSCROLL, MAKELONG(SB_PAGEUP, 0), 0);
+		return 1;
 
 	default:
-		i = wparam;
-		break;
+		return 1;
 	}
 
-	if ((i >= 'A') &&
-	    (i <= 'Z') &&
-	    (((!capslock) && (!shift)) || ((capslock) && (shift)))) {
-		i += 'a' - 'A';
-	}
-
-	if (gw != NULL)
-		browser_window_key_press(gw->bw, i);
+	browser_window_key_press(gw->bw, i);
 
 	return 0;
 }
@@ -544,7 +584,6 @@ nsws_window_drawable_event_callback(HWND hwnd,
 					BROWSER_MOUSE_PRESS_2);
 		SetFocus(hwnd);
 		return 0;
-		break;
 
 	case WM_LBUTTONUP:
 		return nsws_drawable_mouseup(gw,
@@ -567,7 +606,16 @@ nsws_window_drawable_event_callback(HWND hwnd,
 		return nsws_drawable_paint(gw, hwnd);
 
 	case WM_KEYDOWN:
-		return nsws_drawable_key(gw, hwnd, wparam);
+		if (nsws_drawable_keydown(gw, hwnd, wparam) == 0) {
+			return 0;
+		}
+		break;
+
+	case WM_CHAR:
+		return nsws_drawable_char(gw, hwnd, wparam);
+
+	case WM_UNICHAR:
+		return nsws_drawable_unichar(gw, hwnd, wparam);
 
 	case WM_SIZE:
 		return nsws_drawable_resize(gw);
@@ -618,14 +666,16 @@ nsws_window_create_drawable(HINSTANCE hinstance,
 			    struct gui_window *gw)
 {
 	HWND hwnd;
-	hwnd = CreateWindow(windowclassname_drawable,
-			    NULL,
-			    WS_VISIBLE | WS_CHILD,
-			    0, 0, 0, 0,
-			    hparent,
-			    NULL,
-			    hinstance,
-			    NULL);
+	hwnd = CreateWindowExW(0,
+			       windowclassname_drawable,
+			       NULL,
+			       WS_VISIBLE | WS_CHILD,
+			       0, 0,
+			       0, 0,
+			       hparent,
+			       NULL,
+			       hinstance,
+			       NULL);
 
 	if (hwnd == NULL) {
 		win_perror("WindowCreateDrawable");
@@ -646,7 +696,7 @@ nsws_window_create_drawable(HINSTANCE hinstance,
 nserror
 nsws_create_drawable_class(HINSTANCE hinstance) {
 	nserror ret = NSERROR_OK;
-	WNDCLASSEX w;
+	WNDCLASSEXW w;
 
 	/* drawable area */
 	w.cbSize = sizeof(WNDCLASSEX);
@@ -662,7 +712,7 @@ nsws_create_drawable_class(HINSTANCE hinstance) {
 	w.lpszClassName = windowclassname_drawable;
 	w.hIconSm = NULL;
 
-	if (RegisterClassEx(&w) == 0) {
+	if (RegisterClassExW(&w) == 0) {
 		win_perror("DrawableClass");
 		ret = NSERROR_INIT_FAILED;
 	}
