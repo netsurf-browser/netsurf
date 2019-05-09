@@ -17,11 +17,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NETSURF_WINDOWS_GUI_H_
-#define _NETSURF_WINDOWS_GUI_H_
+#ifndef NETSURF_WINDOWS_GUI_H
+#define NETSURF_WINDOWS_GUI_H
 
 struct gui_window;
-struct gui_clipboard_table *win32_clipboard_table;
 
 extern HINSTANCE hinst;
 

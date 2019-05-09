@@ -36,7 +36,6 @@
 #include "utils/file.h"
 #include "utils/messages.h"
 #include "netsurf/browser_window.h"
-#include "netsurf/clipboard.h"
 
 #include "windows/schedule.h"
 #include "windows/window.h"
@@ -181,65 +180,3 @@ nserror win32_warning(const char *warning, const char *detail)
 }
 
 
-/**
- * Core asks front end for clipboard contents.
- *
- * \param buffer UTF-8 text, allocated by front end, ownership yeilded to core
- * \param length Byte length of UTF-8 text in buffer
- */
-static void gui_get_clipboard(char **buffer, size_t *length)
-{
-	/* TODO: Implement this */
-	HANDLE clipboard_handle;
-	char *content;
-
-	clipboard_handle = GetClipboardData(CF_TEXT);
-	if (clipboard_handle != NULL) {
-		content = GlobalLock(clipboard_handle);
-		NSLOG(netsurf, INFO, "pasting %s", content);
-		GlobalUnlock(clipboard_handle);
-	}
-}
-
-
-/**
- * Core tells front end to put given text in clipboard
- *
- * \param  buffer    UTF-8 text, owned by core
- * \param  length    Byte length of UTF-8 text in buffer
- * \param  styles    Array of styles given to text runs, owned by core, or NULL
- * \param  n_styles  Number of text run styles in array
- */
-static void gui_set_clipboard(const char *buffer, size_t length,
-			      nsclipboard_styles styles[], int n_styles)
-{
-	/* TODO: Implement this */
-	HANDLE hnew;
-	char *new, *original;
-	HANDLE h = GetClipboardData(CF_TEXT);
-	if (h == NULL)
-		original = (char *)"";
-	else
-		original = GlobalLock(h);
-
-	size_t len = strlen(original) + 1;
-	hnew = GlobalAlloc(GHND, length + len);
-	new = (char *)GlobalLock(hnew);
-	snprintf(new, length + len, "%s%s", original, buffer);
-
-	if (h != NULL) {
-		GlobalUnlock(h);
-		EmptyClipboard();
-	}
-	GlobalUnlock(hnew);
-	SetClipboardData(CF_TEXT, hnew);
-}
-
-
-
-static struct gui_clipboard_table clipboard_table = {
-	.get = gui_get_clipboard,
-	.set = gui_set_clipboard,
-};
-
-struct gui_clipboard_table *win32_clipboard_table = &clipboard_table;

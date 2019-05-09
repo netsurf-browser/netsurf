@@ -1056,48 +1056,35 @@ nsws_window_command(HWND hwnd,
 		break;
 
 	case IDM_EDIT_CUT:
-		OpenClipboard(gw->main);
-		EmptyClipboard();
-		CloseClipboard();
 		if (GetFocus() == gw->urlbar) {
 			SendMessage(gw->urlbar, WM_CUT, 0, 0);
-		} else if (gw->bw != NULL) {
-			browser_window_key_press(gw->bw, NS_KEY_CUT_SELECTION);
+		} else {
+			SendMessage(gw->drawingarea, WM_CUT, 0, 0);
 		}
 		break;
 
 	case IDM_EDIT_COPY:
-		OpenClipboard(gw->main);
-		EmptyClipboard();
-		CloseClipboard();
 		if (GetFocus() == gw->urlbar) {
 			SendMessage(gw->urlbar, WM_COPY, 0, 0);
-		} else if (gw->bw != NULL) {
-			browser_window_key_press(gw->bw, NS_KEY_COPY_SELECTION);
+		} else {
+			SendMessage(gw->drawingarea, WM_COPY, 0, 0);
 		}
 		break;
 
 	case IDM_EDIT_PASTE: {
-		OpenClipboard(gw->main);
-		HANDLE h = GetClipboardData(CF_TEXT);
-		if (h != NULL) {
-			char *content = GlobalLock(h);
-			NSLOG(netsurf, INFO, "pasting %s\n", content);
-			GlobalUnlock(h);
-		}
-		CloseClipboard();
-		if (GetFocus() == gw->urlbar)
+		if (GetFocus() == gw->urlbar) {
 			SendMessage(gw->urlbar, WM_PASTE, 0, 0);
-		else
-			browser_window_key_press(gw->bw, NS_KEY_PASTE);
+		} else {
+			SendMessage(gw->drawingarea, WM_PASTE, 0, 0);
+		}
 		break;
 	}
 
 	case IDM_EDIT_DELETE:
 		if (GetFocus() == gw->urlbar)
-			SendMessage(gw->urlbar, WM_CUT, 0, 0);
+			SendMessage(gw->urlbar, WM_CLEAR, 0, 0);
 		else
-			browser_window_key_press(gw->bw, NS_KEY_DELETE_RIGHT);
+			SendMessage(gw->drawingarea, WM_CLEAR, 0, 0);
 		break;
 
 	case IDM_EDIT_SELECT_ALL:

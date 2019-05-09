@@ -54,6 +54,7 @@
 #include "windows/fetch.h"
 #include "windows/pointers.h"
 #include "windows/bitmap.h"
+#include "windows/clipboard.h"
 #include "windows/gui.h"
 
 char **respaths; /** exported global defined in windows/gui.h */

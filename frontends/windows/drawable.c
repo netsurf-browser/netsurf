@@ -581,6 +581,29 @@ nsws_window_drawable_event_callback(HWND hwnd,
 	case WM_MOUSEWHEEL:
 		return nsws_drawable_wheel(gw, hwnd, wparam);
 
+	case WM_PASTE:
+		browser_window_key_press(gw->bw, NS_KEY_PASTE);
+		return 0;
+
+	case WM_COPY:
+		browser_window_key_press(gw->bw, NS_KEY_COPY_SELECTION);
+		return 0;
+
+	case WM_CUT:
+		browser_window_key_press(gw->bw, NS_KEY_CUT_SELECTION);
+		return 0;
+
+	case WM_CLEAR:
+		/**
+		 * \todo win32 clear operation deletes the contents of
+		 *       the selection but ns clear selection only
+		 *       removes the highlight.
+		 */
+		browser_window_key_press(gw->bw, NS_KEY_CLEAR_SELECTION);
+		return 0;
+
+
+
 	}
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 }

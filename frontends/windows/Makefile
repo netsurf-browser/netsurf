@@ -52,7 +52,7 @@ S_RESOURCES := windows_resource.o
 # ----------------------------------------------------------------------------
 
 # sources purely for the windows build
-S_FRONTEND := main.c window.c gui.c drawable.c plot.c findfile.c	\
+S_FRONTEND := main.c window.c gui.c clipboard.c drawable.c plot.c findfile.c \
 	  font.c bitmap.c about.c prefs.c download.c fetch.c file.c	\
 	  local_history.c schedule.c windbg.c pointers.c login.c \
 	  corewindow.c hotlist.c cookies.c global_history.c ssl_cert.c
