@@ -496,7 +496,7 @@ ami_hotlist_create_window(struct ami_hotlist_window *hotlist_win)
 		WINDOW_IDCMPHook, &ami_cw->idcmp_hook,
 		WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE |
 				IDCMP_SIZEVERIFY | IDCMP_REFRESHWINDOW,
-		WINDOW_SharedPort, sport,
+		WINDOW_SharedPort, ami_gui_get_shared_msgport(),
 		WINDOW_HorizProp, 1,
 		WINDOW_VertProp, 1,
 		WINDOW_UserData, hotlist_win,

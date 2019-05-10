@@ -200,7 +200,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
            	WA_CloseGadget, FALSE,
            	WA_SizeGadget, TRUE,
 			WA_PubScreen, ami_gui_get_screen(),
-			WINDOW_SharedPort,sport,
+			WINDOW_SharedPort, ami_gui_get_shared_msgport(),
 			WINDOW_UserData,dw,
 			WINDOW_IconifyGadget, FALSE,
 			WINDOW_LockHeight,TRUE,

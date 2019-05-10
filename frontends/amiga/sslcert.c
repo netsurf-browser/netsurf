@@ -243,7 +243,7 @@ ami_crtvrfy_create_window(struct ami_crtvrfy_window *crtvrfy_win)
 		WINDOW_IDCMPHook, &ami_cw->idcmp_hook,
 		WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE |
 				IDCMP_SIZEVERIFY | IDCMP_REFRESHWINDOW,
-		WINDOW_SharedPort, sport,
+		WINDOW_SharedPort, ami_gui_get_shared_msgport(),
 		WINDOW_UserData, crtvrfy_win,
 		/* WINDOW_NewMenu, twin->menu,   -> No menu for SSL Cert */
 		WINDOW_IconifyGadget, FALSE,

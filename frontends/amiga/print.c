@@ -277,7 +277,7 @@ void ami_print_ui(struct hlcache_handle *c)
            	WA_CloseGadget, TRUE,
            	WA_SizeGadget, FALSE,
 			WA_PubScreen, ami_gui_get_screen(),
-			WINDOW_SharedPort, sport,
+			WINDOW_SharedPort, ami_gui_get_shared_msgport(),
 			WINDOW_UserData, pw,
 			WINDOW_IconifyGadget, FALSE,
          	WINDOW_Position, WPOS_CENTERSCREEN,

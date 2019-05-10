@@ -75,8 +75,6 @@ struct ami_generic_window {
 	const struct ami_win_event_table *tbl;
 };
 
-extern struct MsgPort *sport;
-
 #define IS_CURRENT_GW(GWIN,GW) (ami_gui2_get_gui_window(GWIN) == GW)
 
 /* The return value for these functions must be deallocated using FreeVec() */
@@ -139,6 +137,13 @@ nserror ami_gui_get_space_box(Object *obj, struct IBox **bbox);
  * @param bbox A pointer to a struct IBox.
  */
 void ami_gui_free_space_box(struct IBox *bbox);
+
+/**
+ * Get shared message port
+ *
+ * @return Pointer to an initialised MsgPort
+ */
+struct MsgPort *ami_gui_get_shared_msgport(void);
 
 /**
  * Get the application.library ID NetSurf is registered as.
@@ -354,6 +359,7 @@ void ami_gui2_set_closed(struct gui_window_2 *gwin, bool closed);
 
 /**
  * Set new_content in gui_window_2
+ * Indicates the window needs redrawing
  */
 void ami_gui2_set_new_content(struct gui_window_2 *gwin, bool new_content);
 
