@@ -209,7 +209,7 @@ ami_history_local_create_window(struct ami_history_local_window *history_local_w
 		WA_SizeBRight, TRUE,
 		WA_Width, 100,
 		WA_Height, 100,
-		WA_PubScreen, scrn,
+		WA_PubScreen, ami_gui_get_screen(),
 		WA_ReportMouse, TRUE,
 		refresh_mode, TRUE,
 		WA_IDCMP, IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |

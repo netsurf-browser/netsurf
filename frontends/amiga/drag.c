@@ -109,6 +109,7 @@ void ami_drag_save(struct Window *win)
 {
 	ULONG which = WBO_NONE, type;
 	char path[1025], dpath[1025];
+	struct Screen *scrn = ami_gui_get_screen();
 
 	path[0] = 0; /* ensure path is terminated */
 
@@ -204,7 +205,7 @@ void ami_drag_icon_show(struct Window *win, const char *type)
 	struct DiskObject *dobj = NULL;
 	ULONG width, height;
 	int deftype = WBPROJECT;
-
+	struct Screen *scrn = ami_gui_get_screen();
 	drag_in_progress = TRUE;
 
 	if(nsoption_bool(drag_save_icons) == false)
@@ -255,6 +256,7 @@ void ami_drag_icon_show(struct Window *win, const char *type)
 bool ami_drag_icon_move(void)
 {
 	if(drag_icon == NULL) return FALSE;
+	struct Screen *scrn = ami_gui_get_screen();
 
 	ChangeWindowBox(drag_icon, scrn->MouseX - (drag_icon_width / 2),
 		scrn->MouseY - (drag_icon_height / 2),
@@ -314,6 +316,7 @@ static void *ami_find_gwin_by_id(struct Window *win, uint32 type)
 void *ami_window_at_pointer(int type)
 {
 	struct Layer *layer;
+	struct Screen *scrn = ami_gui_get_screen();
 
 	LockLayerInfo(&scrn->LayerInfo);
 

@@ -587,6 +587,7 @@ static void
 ami_cw_drag_end(struct ami_corewindow *ami_cw, int x, int y)
 {
 	if(ami_cw->dragging == false) return;
+	struct Screen *scrn = ami_gui_get_screen();
 
 	switch(ami_cw->drag_status) {
 		case CORE_WINDOW_DRAG_SELECTION:

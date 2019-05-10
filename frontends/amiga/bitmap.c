@@ -490,6 +490,7 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 			int width, int height, struct BitMap *restrict friendbm, int type)
 {
 	struct BitMap *restrict tbm = NULL;
+	struct Screen *scrn = ami_gui_get_screen();
 
 	if(bitmap->nativebm)
 	{

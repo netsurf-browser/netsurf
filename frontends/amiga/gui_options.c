@@ -657,7 +657,7 @@ void ami_gui_opts_open(void)
 			WA_DragBar, TRUE,
 			WA_CloseGadget, TRUE,
 			WA_SizeGadget, FALSE,
-			WA_PubScreen,scrn,
+			WA_PubScreen, ami_gui_get_screen(),
 			WINDOW_SharedPort,sport,
 			WINDOW_UserData,gow,
 			WINDOW_IconifyGadget, FALSE,
@@ -2109,10 +2109,10 @@ static BOOL ami_gui_opts_event(void *w)
 			case WMHI_GADGETHELP:
 				if((result & WMHI_GADGETMASK) == 0) {
 					/* Pointer not over our window */
-					ami_help_open(AMI_HELP_MAIN, scrn);
+					ami_help_open(AMI_HELP_MAIN, ami_gui_get_screen());
 				} else {
 					/* TODO: Make this sensitive to the tab the user is currently on */
-					ami_help_open(AMI_HELP_PREFS, scrn);
+					ami_help_open(AMI_HELP_PREFS, ami_gui_get_screen());
 				}
 			break;
 			

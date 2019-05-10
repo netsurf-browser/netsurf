@@ -310,7 +310,7 @@ ami_cookies_create_window(struct ami_cookie_window *cookie_win)
 		WA_Left, nsoption_int(cookies_window_xpos),
 		WA_Width, nsoption_int(cookies_window_xsize),
 		WA_Height, nsoption_int(cookies_window_ysize),
-		WA_PubScreen, scrn,
+		WA_PubScreen, ami_gui_get_screen(),
 		WA_ReportMouse, TRUE,
 		refresh_mode, TRUE,
 		WA_IDCMP, IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |

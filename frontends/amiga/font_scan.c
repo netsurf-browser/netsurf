@@ -114,7 +114,7 @@ static struct ami_font_scan_window *ami_font_scan_gui_open(int32 fonts)
            	WA_DragBar, TRUE,
            	WA_CloseGadget, FALSE,
            	WA_SizeGadget, TRUE,
-			WA_PubScreen, scrn,
+			WA_PubScreen, ami_gui_get_screen(),
 			WA_BusyPointer, TRUE,
 			WA_Width, 400,
 			WINDOW_UserData, fsw,

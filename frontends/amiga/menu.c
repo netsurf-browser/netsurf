@@ -251,7 +251,7 @@ static int ami_menu_layout_mc_recursive(Object *menu_parent, struct ami_menu_dat
 					MA_Image,
 						BitMapObj,
 							IA_Scalable, TRUE,
-							BITMAP_Screen, scrn,
+							BITMAP_Screen, ami_gui_get_screen(),
 							BITMAP_SourceFile, md[j]->menuicon,
 							BITMAP_Masking, TRUE,
 						BitMapEnd,
@@ -298,6 +298,7 @@ static struct Menu *ami_menu_layout_gt(struct ami_menu_data **md, int max)
 	struct NewMenu *nm;
 	struct Menu *imenu = NULL;
 	struct VisualInfo *vi;
+	struct Screen *scrn = ami_gui_get_screen();
 	struct RastPort *rp = &scrn->RastPort;
 	struct DrawInfo *dri = GetScreenDrawInfo(scrn);
 	int space_width = TextLength(rp, " ", 1);

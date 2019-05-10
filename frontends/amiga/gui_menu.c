@@ -476,7 +476,7 @@ HOOKF(void, ami_menu_item_arexx_execute, APTR, window, struct IntuiMessage *)
 						ASLFR_Window, ami_gui2_get_window(gwin),
 						ASLFR_SleepWindow, TRUE,
 						ASLFR_TitleText, messages_get("NetSurf"),
-						ASLFR_Screen, scrn,
+						ASLFR_Screen, ami_gui_get_screen(),
 						ASLFR_DoSaveMode, FALSE,
 						ASLFR_InitialDrawer, nsoption_charp(arexx_dir),
 						ASLFR_InitialPattern, "#?.nsrx",

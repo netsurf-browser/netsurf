@@ -144,7 +144,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 			ASLFR_Window, ami_gui_get_window(gui),
 			ASLFR_SleepWindow, TRUE,
 			ASLFR_TitleText, messages_get("NetSurf"),
-			ASLFR_Screen, scrn,
+			ASLFR_Screen, ami_gui_get_screen(),
 			ASLFR_InitialFile, dl_filename,
 			TAG_DONE))
 		{
@@ -199,7 +199,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
            	WA_DragBar, TRUE,
            	WA_CloseGadget, FALSE,
            	WA_SizeGadget, TRUE,
-			WA_PubScreen,scrn,
+			WA_PubScreen, ami_gui_get_screen(),
 			WINDOW_SharedPort,sport,
 			WINDOW_UserData,dw,
 			WINDOW_IconifyGadget, FALSE,
@@ -437,8 +437,8 @@ gui_window_save_link(struct gui_window *g, nsurl *url, const char *title)
 		ASLFR_Window, ami_gui_get_window(g),
 		ASLFR_SleepWindow, TRUE,
 		ASLFR_TitleText,messages_get("NetSurf"),
-		ASLFR_Screen,scrn,
-		ASLFR_InitialFile,linkname,
+		ASLFR_Screen, ami_gui_get_screen(),
+		ASLFR_InitialFile, linkname,
 		TAG_DONE))
 	{
 		strlcpy(fname, savereq->fr_Drawer, 1024);

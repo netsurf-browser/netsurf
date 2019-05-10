@@ -218,6 +218,7 @@ ami_crtvrfy_create_window(struct ami_crtvrfy_window *crtvrfy_win)
 {
 	struct ami_corewindow *ami_cw = (struct ami_corewindow *)&crtvrfy_win->core;
 	ULONG refresh_mode = WA_SmartRefresh;
+	struct Screen *scrn = ami_gui_get_screen();
 
 	if(nsoption_bool(window_simple_refresh) == true) {
 		refresh_mode = WA_SimpleRefresh;

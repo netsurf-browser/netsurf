@@ -402,7 +402,7 @@ static void ami_ctxmenu_alloc_item(int id, const char *label, const char *key, c
 
 	if(image != NULL) {
 		ctxmenu_item_image[id] = BitMapObj,
-									BITMAP_Screen, scrn,
+									BITMAP_Screen, ami_gui_get_screen(),
 									BITMAP_SourceFile, image,
 									BITMAP_Masking, TRUE,
 									BitMapEnd;

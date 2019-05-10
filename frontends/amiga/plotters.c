@@ -115,6 +115,7 @@ struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit
 	/* init shared bitmaps */
  	int depth = 32;
 	struct BitMap *friend = NULL;
+	struct Screen *scrn = ami_gui_get_screen();
 
 	struct gui_globals *gg = malloc(sizeof(struct gui_globals));
 
@@ -295,6 +296,7 @@ void ami_plot_ra_set_pen_list(struct gui_globals *gg, struct MinList *pen_list)
 void ami_clearclipreg(struct gui_globals *gg)
 {
 	struct Region *reg = NULL;
+	struct Screen *scrn = ami_gui_get_screen();
 
 	reg = InstallClipRegion(gg->rp->Layer,NULL);
 	if(reg) DisposeRegion(reg);
@@ -313,6 +315,8 @@ void ami_clearclipreg(struct gui_globals *gg)
 static ULONG ami_plot_obtain_pen(struct MinList *shared_pens, ULONG colr)
 {
 	struct ami_plot_pen *node;
+	struct Screen *scrn = ami_gui_get_screen();
+
 	LONG pen = ObtainBestPenA(scrn->ViewPort.ColorMap,
 			(colr & 0x000000ff) << 24,
 			(colr & 0x0000ff00) << 16,
@@ -336,6 +340,7 @@ static ULONG ami_plot_obtain_pen(struct MinList *shared_pens, ULONG colr)
 
 void ami_plot_release_pens(struct MinList *shared_pens)
 {
+	struct Screen *scrn = ami_gui_get_screen();
 	struct ami_plot_pen *node;
 	struct ami_plot_pen *nnode;
 
@@ -429,7 +434,7 @@ static nserror
 ami_bitmap(struct gui_globals *glob, int x, int y, int width, int height, struct bitmap *bitmap)
 {
 	NSLOG(plot, DEEPDEBUG, "[ami_plotter] Entered ami_bitmap()");
-
+	struct Screen *scrn = ami_gui_get_screen();
 	struct BitMap *tbm;
 
 	if (!width || !height) {
@@ -519,6 +524,7 @@ HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage 
 {
 	int xf,yf;
 	struct bfbitmap *bfbm = (struct bfbitmap *)hook->h_Data;
+	struct Screen *scrn = ami_gui_get_screen();
 
 	/* tile down and across to extents  (msg->Bounds.MinX)*/
 	for (xf = -bfbm->offsetx; xf < msg->Bounds.MaxX; xf += bfbm->width) {

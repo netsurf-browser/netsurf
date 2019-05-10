@@ -86,7 +86,7 @@ void ami_file_open(struct gui_window_2 *gwin)
 			ASLFR_TitleText, messages_get("NetSurf"),
 			ASLFR_Window, ami_gui2_get_window(gwin),
 			ASLFR_SleepWindow, TRUE,
-			ASLFR_Screen, scrn,
+			ASLFR_Screen, ami_gui_get_screen(),
 			ASLFR_DoSaveMode, FALSE,
 			ASLFR_RejectIcons, TRUE,
 			ASLFR_FilterFunc, &aslhookfunc,
@@ -260,7 +260,7 @@ void ami_file_save_req(int type, struct gui_window_2 *gwin,
 			ASLFR_Window, ami_gui2_get_window(gwin),
 			ASLFR_SleepWindow, TRUE,
 			ASLFR_TitleText, messages_get("NetSurf"),
-			ASLFR_Screen, scrn,
+			ASLFR_Screen, ami_gui_get_screen(),
 			ASLFR_InitialFile, fname_with_ext ? fname_with_ext : "",
 			TAG_DONE))
 	{

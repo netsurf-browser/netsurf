@@ -276,7 +276,7 @@ void ami_drag_selection(struct gui_window *g)
 	
 	if(!gwin)
 	{
-		DisplayBeep(scrn);
+		ami_gui_beep();
 		return;
 	}
 
@@ -323,7 +323,7 @@ void ami_drag_selection(struct gui_window *g)
 		}
 		else
 		{
-			DisplayBeep(scrn);
+			ami_gui_beep();
 		}
 	}
 }

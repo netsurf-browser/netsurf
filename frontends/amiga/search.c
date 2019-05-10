@@ -169,7 +169,7 @@ void ami_search_open(struct gui_window *gwin)
        	WA_DragBar, TRUE,
        	WA_CloseGadget, TRUE,
        	WA_SizeGadget, TRUE,
-		WA_PubScreen, scrn,
+		WA_PubScreen, ami_gui_get_screen(),
 		WINDOW_SharedPort, sport,
 		WINDOW_UserData, fwin,
 		WINDOW_IconifyGadget, FALSE,

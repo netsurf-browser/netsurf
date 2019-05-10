@@ -77,7 +77,6 @@ struct ami_generic_window {
 
 
 extern struct MinList *window_list; /**\todo stop arexx.c poking about in here */
-extern struct Screen *scrn;
 extern struct MsgPort *sport;
 
 #define IS_CURRENT_GW(GWIN,GW) (ami_gui2_get_gui_window(GWIN) == GW)
@@ -106,6 +105,11 @@ int ami_gui_count_windows(int window, int *tabs);
 void ami_gui_set_scale(struct gui_window *gw, float scale);
 void ami_set_pointer(struct gui_window_2 *gwin, gui_pointer_shape shape, bool update);
 void ami_reset_pointer(struct gui_window_2 *gwin);
+
+/**
+ * Beep
+ */
+void ami_gui_beep(void);
 
 /**
  * Close a window and all tabs attached to it.
@@ -143,6 +147,13 @@ void ami_gui_free_space_box(struct IBox *bbox);
  * @return App ID.
  */
 uint32 ami_gui_get_app_id(void);
+
+/**
+ * Get a pointer to the screen NetSurf is running on.
+ *
+ * @return Pointer to struct Screen.
+ */
+struct Screen *ami_gui_get_screen(void);
 
 /**
  * Get the string for NetSurf's screen titlebar.

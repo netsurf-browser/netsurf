@@ -251,7 +251,7 @@ ami_hotlist_drag_end(struct ami_corewindow *ami_cw, int x, int y)
 	}
 	
 	if((ok == false) || (url == NULL)) {
-		DisplayBeep(scrn);
+		ami_gui_beep();
 	} else if(url) {
 		if((gwin = ami_window_at_pointer(AMINS_WINDOW))) {
 			browser_window_navigate(ami_gui2_get_browser_window(gwin),
@@ -313,7 +313,7 @@ HOOKF(void, ami_hotlist_menu_item_project_export, APTR, window, struct IntuiMess
 		ASLFR_Window, ami_cw->win,
 		ASLFR_SleepWindow, TRUE,
 		ASLFR_TitleText, messages_get("NetSurf"),
-		ASLFR_Screen, scrn,
+		ASLFR_Screen, ami_gui_get_screen(),
 		ASLFR_InitialFile, "hotlist.html",
 		TAG_DONE)) {
 			strlcpy(fname, savereq->fr_Drawer, 1024);
@@ -487,7 +487,7 @@ ami_hotlist_create_window(struct ami_hotlist_window *hotlist_win)
 		WA_Left, nsoption_int(hotlist_window_xpos),
 		WA_Width, nsoption_int(hotlist_window_xsize),
 		WA_Height, nsoption_int(hotlist_window_ysize),
-		WA_PubScreen, scrn,
+		WA_PubScreen, ami_gui_get_screen(),
 		WA_ReportMouse, TRUE,
 		refresh_mode, TRUE,
 		WA_IDCMP, IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |

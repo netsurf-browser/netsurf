@@ -311,7 +311,7 @@ struct ami_gui_tb_userdata {
 };
 
 struct MinList *window_list = NULL;
-struct Screen *scrn = NULL;
+static struct Screen *scrn = NULL;
 struct MsgPort *sport = NULL;
 static struct gui_window *cur_gw = NULL;
 
@@ -380,6 +380,16 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 struct gui_window *ami_gui_get_active_gw(void)
 {
 	return cur_gw;
+}
+
+struct Screen *ami_gui_get_screen(void)
+{
+	return scrn;
+}
+
+void ami_gui_beep(void)
+{
+	DisplayBeep(scrn);
 }
 
 struct browser_window *ami_gui_get_browser_window(struct gui_window *gw)

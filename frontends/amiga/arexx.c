@@ -383,7 +383,7 @@ RXHOOKF(rx_quit)
 RXHOOKF(rx_tofront)
 {
 	cmd->ac_RC = 0;
-	ScreenToFront(scrn);
+	ScreenToFront(ami_gui_get_screen());
 }
 
 RXHOOKF(rx_geturl)
