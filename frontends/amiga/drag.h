@@ -35,8 +35,5 @@ void ami_drag_icon_close(struct Window *win);
 bool ami_drag_icon_move(void);
 BOOL ami_drag_in_progress(void);
 bool ami_drag_has_data(void);
-
-void *ami_window_at_pointer(int type);
-
 #endif
 

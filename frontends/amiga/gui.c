@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2016 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2019 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -36,6 +36,7 @@
 #include <proto/icon.h>
 #include <proto/intuition.h>
 #include <proto/keymap.h>
+#include <proto/layers.h>
 #include <proto/locale.h>
 #include <proto/utility.h>
 #include <proto/wb.h>
@@ -310,7 +311,7 @@ struct ami_gui_tb_userdata {
 	int items;
 };
 
-struct MinList *window_list = NULL;
+static struct MinList *window_list = NULL;
 static struct Screen *scrn = NULL;
 struct MsgPort *sport = NULL;
 static struct gui_window *cur_gw = NULL;
@@ -385,6 +386,12 @@ struct gui_window *ami_gui_get_active_gw(void)
 struct Screen *ami_gui_get_screen(void)
 {
 	return scrn;
+}
+
+struct MinList *ami_gui_get_window_list(void)
+{
+	assert(window_list != NULL);
+	return window_list;
 }
 
 void ami_gui_beep(void)
@@ -614,6 +621,52 @@ void ami_gui2_set_new_content(struct gui_window_2 *gwin, bool new_content)
 }
 
 /** undocumented, or internal, or documented elsewhere **/
+
+#ifdef __amigaos4__
+static void *ami_find_gwin_by_id(struct Window *win, uint32 type)
+{
+	struct nsObject *node, *nnode;
+	struct gui_window_2 *gwin;
+
+	if(!IsMinListEmpty(window_list))
+	{
+		node = (struct nsObject *)GetHead((struct List *)window_list);
+
+		do
+		{
+			nnode=(struct nsObject *)GetSucc((struct Node *)node);
+
+			if(node->Type == type)
+			{
+				gwin = node->objstruct;
+				if(win == ami_gui2_get_window(gwin)) return gwin;
+			}
+		} while((node = nnode));
+	}
+	return NULL;
+}
+
+void *ami_window_at_pointer(int type)
+{
+	struct Layer *layer;
+	struct Screen *scrn = ami_gui_get_screen();
+
+	LockLayerInfo(&scrn->LayerInfo);
+
+	layer = WhichLayer(&scrn->LayerInfo, scrn->MouseX, scrn->MouseY);
+
+	UnlockLayerInfo(&scrn->LayerInfo);
+
+	if(layer) return ami_find_gwin_by_id(layer->Window, type);
+		else return NULL;
+}
+#else
+/**\todo check if OS4 version of this function will build on OS3, even if it isn't called */
+void *ami_window_at_pointer(int type)
+{
+	return NULL;
+}
+#endif
 
 void ami_set_pointer(struct gui_window_2 *gwin, gui_pointer_shape shape, bool update)
 {

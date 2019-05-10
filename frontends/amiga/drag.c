@@ -24,7 +24,6 @@
 #include <proto/intuition.h>
 #include <proto/utility.h>
 #include <proto/icon.h>
-#include <proto/layers.h>
 
 #include <graphics/blitattr.h>
 #include <workbench/icon.h>
@@ -109,6 +108,7 @@ void ami_drag_save(struct Window *win)
 {
 	ULONG which = WBO_NONE, type;
 	char path[1025], dpath[1025];
+	struct Screen *scrn = ami_gui_get_screen();
 
 	path[0] = 0; /* ensure path is terminated */
 
@@ -289,44 +289,6 @@ bool ami_drag_has_data(void)
 		else return false;
 }
 
-static void *ami_find_gwin_by_id(struct Window *win, uint32 type)
-{
-	struct nsObject *node, *nnode;
-	struct gui_window_2 *gwin;
-
-	if(!IsMinListEmpty(window_list))
-	{
-		node = (struct nsObject *)GetHead((struct List *)window_list);
-
-		do
-		{
-			nnode=(struct nsObject *)GetSucc((struct Node *)node);
-
-			if(node->Type == type)
-			{
-				gwin = node->objstruct;
-				if(win == ami_gui2_get_window(gwin)) return gwin;
-			}
-		} while((node = nnode));
-	}
-	return NULL;
-}
-
-void *ami_window_at_pointer(int type)
-{
-	struct Layer *layer;
-	struct Screen *scrn = ami_gui_get_screen();
-
-	LockLayerInfo(&scrn->LayerInfo);
-
-	layer = WhichLayer(&scrn->LayerInfo, scrn->MouseX, scrn->MouseY);
-
-	UnlockLayerInfo(&scrn->LayerInfo);
-
-	if(layer) return ami_find_gwin_by_id(layer->Window, type);
-		else return NULL;
-}
-
 #else
 #include <stddef.h>
 
@@ -367,11 +329,6 @@ BOOL ami_drag_in_progress(void)
 bool ami_drag_has_data(void)
 {
 	return false;
-}
-
-void *ami_window_at_pointer(int type)
-{
-	return NULL;
 }
 #endif
 

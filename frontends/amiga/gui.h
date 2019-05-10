@@ -75,8 +75,6 @@ struct ami_generic_window {
 	const struct ami_win_event_table *tbl;
 };
 
-
-extern struct MinList *window_list; /**\todo stop arexx.c poking about in here */
 extern struct MsgPort *sport;
 
 #define IS_CURRENT_GW(GWIN,GW) (ami_gui2_get_gui_window(GWIN) == GW)
@@ -105,6 +103,7 @@ int ami_gui_count_windows(int window, int *tabs);
 void ami_gui_set_scale(struct gui_window *gw, float scale);
 void ami_set_pointer(struct gui_window_2 *gwin, gui_pointer_shape shape, bool update);
 void ami_reset_pointer(struct gui_window_2 *gwin);
+void *ami_window_at_pointer(int type);
 
 /**
  * Beep
@@ -176,6 +175,15 @@ nserror ami_gui_win_list_add(void *win, int type, const struct ami_win_event_tab
  * Remove a window from the NetSurf window list
  */
 void ami_gui_win_list_remove(void *win);
+
+/**
+ * Get the window list.
+ *
+ *\TODO: Nothing should be poking around in this list, but we aren't
+ *       assigning unique IDs to windows (ARexx interface needs this)
+ *       ami_find_gwin_by_id() is close but not ARexx-friendly
+ */
+struct MinList *ami_gui_get_window_list(void);
 
 /**
  * Get which qualifier keys are being pressed

@@ -235,6 +235,7 @@ static int ami_find_tab_bw(struct gui_window_2 *gwin, struct browser_window *bw)
 static struct gui_window *ami_find_tab(int window, int tab)
 {
 	struct nsObject *node, *nnode;
+	struct MinList *window_list = ami_gui_get_window_list();
 
 	if(!IsMinListEmpty(window_list))
 	{
@@ -607,6 +608,7 @@ RXHOOKF(rx_active)
 	struct gui_window *gw = ami_gui_get_active_gw();
 	struct nsObject *node, *nnode;
 	struct gui_window_2 *gwin = NULL;
+	struct MinList *window_list = ami_gui_get_window_list();
 
 	cmd->ac_RC = 0;
 
