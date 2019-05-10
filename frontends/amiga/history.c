@@ -200,7 +200,7 @@ ami_history_global_drag_end(struct ami_corewindow *ami_cw, int x, int y)
 	}
 	
 	if((ok == false) || (url == NULL)) {
-		DisplayBeep(ami_gui_get_screen());
+		ami_gui_beep();
 	} else if(url) {
 		if((gwin = ami_window_at_pointer(AMINS_WINDOW))) {
 			browser_window_navigate(ami_gui2_get_browser_window(gwin),

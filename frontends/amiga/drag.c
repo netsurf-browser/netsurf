@@ -109,7 +109,6 @@ void ami_drag_save(struct Window *win)
 {
 	ULONG which = WBO_NONE, type;
 	char path[1025], dpath[1025];
-	struct Screen *scrn = ami_gui_get_screen();
 
 	path[0] = 0; /* ensure path is terminated */
 
@@ -135,7 +134,7 @@ void ami_drag_save(struct Window *win)
 	{
 		if(drag_save == GUI_SAVE_TEXT_SELECTION)
 			ami_drag_selection((struct gui_window *)drag_save_data);
-		else DisplayBeep(scrn);
+		else ami_gui_beep();
 
 		drag_save = 0;
 		drag_save_data = NULL;
@@ -144,7 +143,7 @@ void ami_drag_save(struct Window *win)
 
 	if(path[0] == '\0')
 	{
-		DisplayBeep(scrn);
+		ami_gui_beep();
 		drag_save = 0;
 		drag_save_data = NULL;
 		return;
