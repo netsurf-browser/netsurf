@@ -349,17 +349,15 @@ static const __attribute__((used)) char *stack_cookie = "\0$STACK:196608\0";
 const char * const versvn;
 const char * const verdate;
 
-void ami_switch_tab(struct gui_window_2 *gwin, bool redraw);
-void ami_change_tab(struct gui_window_2 *gwin, int direction);
-void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs);
-void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys);
-void ami_quit_netsurf_delayed(void);
-Object *ami_gui_splash_open(void);
-void ami_gui_splash_close(Object *win_obj);
-HOOKF(uint32, ami_set_favicon_render_hook, APTR, space, struct gpRender *);
-HOOKF(uint32, ami_set_throbber_render_hook, APTR, space, struct gpRender *);
-bool ami_gui_map_filename(char **remapped, const char *restrict path, const char *restrict file,
-	const char *restrict map);
+static void ami_switch_tab(struct gui_window_2 *gwin, bool redraw);
+static void ami_change_tab(struct gui_window_2 *gwin, int direction);
+static void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs);
+static void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys);
+static void ami_quit_netsurf_delayed(void);
+static Object *ami_gui_splash_open(void);
+static void ami_gui_splash_close(Object *win_obj);
+static bool ami_gui_map_filename(char **remapped, const char *restrict path,
+	const char *restrict file, const char *restrict map);
 static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw);
 static void ami_do_redraw(struct gui_window_2 *g);
 static void ami_schedule_redraw_remove(struct gui_window_2 *gwin);
@@ -368,8 +366,9 @@ static bool gui_window_get_scroll(struct gui_window *g, int *restrict sx, int *r
 static nserror gui_window_set_scroll(struct gui_window *g, const struct rect *rect);
 static void gui_window_remove_caret(struct gui_window *g);
 static void gui_window_place_caret(struct gui_window *g, int x, int y, int height, const struct rect *clip);
-//static void amiga_window_invalidate_area(struct gui_window *g, const struct rect *restrict rect);
 
+HOOKF(uint32, ami_set_favicon_render_hook, APTR, space, struct gpRender *);
+HOOKF(uint32, ami_set_throbber_render_hook, APTR, space, struct gpRender *);
 
 /* accessors for default options - user option is updated if it is set as per default */
 #define nsoption_default_set_int(OPTION, VALUE)				\
@@ -729,7 +728,7 @@ STRPTR ami_locale_langs(int *codeset)
 	return acceptlangs;
 }
 
-bool ami_gui_map_filename(char **remapped, const char *restrict path,
+static bool ami_gui_map_filename(char **remapped, const char *restrict path,
 		const char *restrict file, const char *restrict map)
 {
 	BPTR fh = 0;
@@ -3285,7 +3284,7 @@ void ami_get_msg(void)
 		ami_quit_netsurf_delayed();
 }
 
-void ami_change_tab(struct gui_window_2 *gwin, int direction)
+static void ami_change_tab(struct gui_window_2 *gwin, int direction)
 {
 	struct Node *tab_node = gwin->gw->tab_node;
 	struct Node *ptab = NULL;
@@ -3307,7 +3306,7 @@ void ami_change_tab(struct gui_window_2 *gwin, int direction)
 	ami_switch_tab(gwin, true);
 }
 
-void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
+static void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 {
 	struct Node *tabnode;
 	struct IBox *bbox;
@@ -3403,7 +3402,7 @@ void ami_quit_netsurf(void)
 	}
 }
 
-void ami_quit_netsurf_delayed(void)
+static void ami_quit_netsurf_delayed(void)
 {
 	int res = -1;
 #ifdef __amigaos4__
@@ -5379,7 +5378,7 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 }
 
 
-void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs)
+static void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs)
 {
 	if(gwin->objects[GID_HSCROLL])
 	{
@@ -5390,7 +5389,7 @@ void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs)
 	}
 }
 
-void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys)
+static void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys)
 {
 	if(gwin->objects[GID_VSCROLL]) {
 		GetAttr(SCROLLER_Top, gwin->objects[GID_VSCROLL], ys);
@@ -5812,7 +5811,7 @@ BOOL ami_gadget_hit(Object *obj, int x, int y)
 	else return FALSE;
 }
 
-Object *ami_gui_splash_open(void)
+static Object *ami_gui_splash_open(void)
 {
 	Object *restrict win_obj, *restrict bm_obj;
 	struct Window *win;
@@ -5911,7 +5910,7 @@ Object *ami_gui_splash_open(void)
 	return win_obj;
 }
 
-void ami_gui_splash_close(Object *win_obj)
+static void ami_gui_splash_close(Object *win_obj)
 {
 	if(win_obj == NULL) return;
 
