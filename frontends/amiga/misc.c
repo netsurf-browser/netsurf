@@ -45,6 +45,7 @@
 static LONG ami_misc_req(const char *message, uint32 type)
 {
 	LONG ret = 0;
+	struct gui_window *cur_gw = ami_gui_get_active_gw();
 
 	NSLOG(netsurf, INFO, "%s", message);
 #ifdef __amigaos4__

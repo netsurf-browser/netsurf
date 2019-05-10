@@ -2141,9 +2141,9 @@ static BOOL ami_gui_opts_event(void *w)
 					break;
 
 					case GID_OPTS_HOMEPAGE_CURRENT:
-						if(cur_gw) RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_HOMEPAGE],
+						if(ami_gui_get_active_gw()) RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_HOMEPAGE],
 							gow->win, NULL, STRINGA_TextVal,
-							nsurl_access(browser_window_access_url(ami_gui_get_browser_window(cur_gw))), TAG_DONE);
+							nsurl_access(browser_window_access_url(ami_gui_get_browser_window(ami_gui_get_active_gw()))), TAG_DONE);
 					break;
 
 					case GID_OPTS_HOMEPAGE_BLANK:

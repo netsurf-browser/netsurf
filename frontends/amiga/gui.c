@@ -313,7 +313,7 @@ struct ami_gui_tb_userdata {
 struct MinList *window_list = NULL;
 struct Screen *scrn = NULL;
 struct MsgPort *sport = NULL;
-struct gui_window *cur_gw = NULL;
+static struct gui_window *cur_gw = NULL;
 
 static bool ami_quit = false;
 
@@ -377,6 +377,11 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 	nsoptions_default[NSOPTION_##OPTION].value.i = VALUE
 
 /* Functions documented in gui.h */
+struct gui_window *ami_gui_get_active_gw(void)
+{
+	return cur_gw;
+}
+
 struct browser_window *ami_gui_get_browser_window(struct gui_window *gw)
 {
 	assert(gw != NULL);

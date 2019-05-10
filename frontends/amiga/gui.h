@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2017 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2019 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -79,7 +79,6 @@ struct ami_generic_window {
 extern struct MinList *window_list; /**\todo stop arexx.c poking about in here */
 extern struct Screen *scrn;
 extern struct MsgPort *sport;
-extern struct gui_window *cur_gw;
 
 #define IS_CURRENT_GW(GWIN,GW) (ami_gui2_get_gui_window(GWIN) == GW)
 
@@ -182,6 +181,12 @@ bool ami_gui_window_update_box_deferred_check(struct MinList *deferred_rects,
  * Adjust scale by specified amount
  */
 void ami_gui_adjust_scale(struct gui_window *gw, float adjustment);
+
+/**
+ * Get a pointer to the gui_window which NetSurf considers
+ * to be the current/active one
+ */
+struct gui_window *ami_gui_get_active_gw(void);
 
 /**
  * Get browser window from gui_window

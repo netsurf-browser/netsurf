@@ -260,7 +260,7 @@ static struct gui_window *ami_find_tab(int window, int tab)
 RXHOOKF(rx_open)
 {
 	struct dlnode *dln;
-	struct gui_window *gw = cur_gw;
+	struct gui_window *gw = ami_gui_get_active_gw();
 	nsurl *url;
 
 	cmd->ac_RC = 0;
@@ -346,7 +346,7 @@ RXHOOKF(rx_open)
 RXHOOKF(rx_save)
 {
 	BPTR fh = 0;
-	struct gui_window *gw = cur_gw;
+	struct gui_window *gw = ami_gui_get_active_gw();
 
 	cmd->ac_RC = 0;
 
@@ -388,7 +388,7 @@ RXHOOKF(rx_tofront)
 
 RXHOOKF(rx_geturl)
 {
-	struct gui_window *gw = cur_gw;
+	struct gui_window *gw = ami_gui_get_active_gw();
 
 	cmd->ac_RC = 0;
 
@@ -409,7 +409,7 @@ RXHOOKF(rx_geturl)
 
 RXHOOKF(rx_gettitle)
 {
-	struct gui_window *gw = cur_gw;
+	struct gui_window *gw = ami_gui_get_active_gw();
 
 	cmd->ac_RC = 0;
 
@@ -515,7 +515,7 @@ RXHOOKF(rx_pubscreen)
 
 RXHOOKF(rx_back)
 {
-	struct gui_window *gw = cur_gw;
+	struct gui_window *gw = ami_gui_get_active_gw();
 
 	cmd->ac_RC = 0;
 
@@ -527,7 +527,7 @@ RXHOOKF(rx_back)
 
 RXHOOKF(rx_forward)
 {
-	struct gui_window *gw = cur_gw;
+	struct gui_window *gw = ami_gui_get_active_gw();
 
 	cmd->ac_RC = 0;
 
@@ -540,7 +540,7 @@ RXHOOKF(rx_forward)
 
 RXHOOKF(rx_home)
 {
-	struct gui_window *gw = cur_gw;
+	struct gui_window *gw = ami_gui_get_active_gw();
 	nsurl *url;
 
 	cmd->ac_RC = 0;
@@ -566,7 +566,7 @@ RXHOOKF(rx_home)
 
 RXHOOKF(rx_reload)
 {
-	struct gui_window *gw = cur_gw;
+	struct gui_window *gw = ami_gui_get_active_gw();
 
 	cmd->ac_RC = 0;
 
@@ -604,7 +604,7 @@ RXHOOKF(rx_windows)
 RXHOOKF(rx_active)
 {
 	int window = 0, tab = 0;
-	struct gui_window *gw = cur_gw;
+	struct gui_window *gw = ami_gui_get_active_gw();
 	struct nsObject *node, *nnode;
 	struct gui_window_2 *gwin = NULL;
 
@@ -646,7 +646,7 @@ RXHOOKF(rx_active)
 
 RXHOOKF(rx_close)
 {
-	struct gui_window *gw = cur_gw;
+	struct gui_window *gw = ami_gui_get_active_gw();
 
 	cmd->ac_RC = 0;
 
