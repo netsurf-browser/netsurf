@@ -230,7 +230,7 @@ nsws_window_toolbar_command(struct gui_window *gw,
 			    int identifier,
 			    HWND ctrl_window)
 {
-	NSLOG(netsurf, INFO,
+	NSLOG(netsurf, DEBUG,
 	      "notification_code %d identifier %d ctrl_window %p",
 	      notification_code,
 	      identifier,
@@ -241,39 +241,39 @@ nsws_window_toolbar_command(struct gui_window *gw,
 	case IDC_MAIN_URLBAR:
 		switch (notification_code) {
 		case EN_CHANGE:
-			NSLOG(netsurf, INFO, "EN_CHANGE");
+			NSLOG(netsurf, DEBUG, "EN_CHANGE");
 			break;
 
 		case EN_ERRSPACE:
-			NSLOG(netsurf, INFO, "EN_ERRSPACE");
+			NSLOG(netsurf, DEBUG, "EN_ERRSPACE");
 			break;
 
 		case EN_HSCROLL:
-			NSLOG(netsurf, INFO, "EN_HSCROLL");
+			NSLOG(netsurf, DEBUG, "EN_HSCROLL");
 			break;
 
 		case EN_KILLFOCUS:
-			NSLOG(netsurf, INFO, "EN_KILLFOCUS");
+			NSLOG(netsurf, DEBUG, "EN_KILLFOCUS");
 			break;
 
 		case EN_MAXTEXT:
-			NSLOG(netsurf, INFO, "EN_MAXTEXT");
+			NSLOG(netsurf, DEBUG, "EN_MAXTEXT");
 			break;
 
 		case EN_SETFOCUS:
-			NSLOG(netsurf, INFO, "EN_SETFOCUS");
+			NSLOG(netsurf, DEBUG, "EN_SETFOCUS");
 			break;
 
 		case EN_UPDATE:
-			NSLOG(netsurf, INFO, "EN_UPDATE");
+			NSLOG(netsurf, DEBUG, "EN_UPDATE");
 			break;
 
 		case EN_VSCROLL:
-			NSLOG(netsurf, INFO, "EN_VSCROLL");
+			NSLOG(netsurf, DEBUG, "EN_VSCROLL");
 			break;
 
 		default:
-			NSLOG(netsurf, INFO, "Unknown notification_code");
+			NSLOG(netsurf, DEBUG, "Unknown notification_code");
 			break;
 		}
 		break;
