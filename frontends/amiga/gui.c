@@ -270,6 +270,7 @@ struct gui_window_2 {
 	struct DiskObject *dobj; /* iconify appicon */
 	struct Hook favicon_hook;
 	struct Hook throbber_hook;
+	struct Hook browser_hook;
 	struct Hook *ctxmenu_hook;
 	Object *restrict history_ctxmenu[2];
 	Object *clicktab_ctxmenu;
@@ -369,6 +370,7 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 
 HOOKF(uint32, ami_set_favicon_render_hook, APTR, space, struct gpRender *);
 HOOKF(uint32, ami_set_throbber_render_hook, APTR, space, struct gpRender *);
+HOOKF(uint32, ami_gui_browser_render_hook, APTR, space, struct gpRender *);
 
 /* accessors for default options - user option is updated if it is set as per default */
 #define nsoption_default_set_int(OPTION, VALUE)				\
@@ -4453,6 +4455,9 @@ gui_window_create(struct browser_window *bw,
 	g->shared->throbber_hook.h_Entry = (void *)ami_set_throbber_render_hook;
 	g->shared->throbber_hook.h_Data = g->shared;
 
+	g->shared->browser_hook.h_Entry = (void *)ami_gui_browser_render_hook;
+	g->shared->browser_hook.h_Data = g->shared;
+
 	newprefs_hook.h_Entry = (void *)ami_gui_newprefs_hook;
 	newprefs_hook.h_Data = 0;
 	
@@ -4817,6 +4822,7 @@ gui_window_create(struct browser_window *bw,
 								LAYOUT_AddChild, g->shared->objects[GID_BROWSER] = SpaceObj,
 									GA_ID,GID_BROWSER,
 									SPACE_Transparent,TRUE,
+									SPACE_RenderHook, &g->shared->browser_hook,
 								SpaceEnd,
 							EndGroup,
 						EndGroup,
@@ -5661,6 +5667,19 @@ HOOKF(uint32, ami_set_throbber_render_hook, APTR, space, struct gpRender *)
 {
 	struct gui_window_2 *gwin = hook->h_Data;
 	ami_throbber_redraw_schedule(0, gwin->gw);
+	return 0;
+}
+
+HOOKF(uint32, ami_gui_browser_render_hook, APTR, space, struct gpRender *)
+{
+	struct gui_window_2 *gwin = hook->h_Data;
+
+	NSLOG(netsurf, DEBUG, "Render hook called with %d (REDRAW=1)", msg->gpr_Redraw);
+
+	if(msg->gpr_Redraw != GREDRAW_REDRAW) return 0;
+
+	ami_schedule_redraw(gwin, true);
+
 	return 0;
 }
 
