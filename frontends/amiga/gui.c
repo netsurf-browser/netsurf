@@ -5674,7 +5674,7 @@ HOOKF(uint32, ami_gui_browser_render_hook, APTR, space, struct gpRender *)
 {
 	struct gui_window_2 *gwin = hook->h_Data;
 
-	NSLOG(netsurf, DEBUG, "Render hook called with %d (REDRAW=1)", msg->gpr_Redraw);
+	NSLOG(netsurf, DEBUG, "Render hook called with %ld (REDRAW=1)", msg->gpr_Redraw);
 
 	if(msg->gpr_Redraw != GREDRAW_REDRAW) return 0;
 
