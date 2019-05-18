@@ -108,17 +108,28 @@ def assert_browser(ctx):
 
 def conds_met(ctx, conds):
     for cond in conds:
-        status = cond['status']
-        window = cond['window']
-        assert(status == "complete") # TODO: Add more status support?
-        if window == "*all*":
-            for win in ctx['windows'].items():
-                if win[1].throbbing:
+        if 'window' in cond.keys():
+            status = cond['status']
+            window = cond['window']
+            assert(status == "complete") # TODO: Add more status support?
+            if window == "*all*":
+                for win in ctx['windows'].items():
+                    if win[1].throbbing:
+                        return False
+            else:
+                win = ctx['windows'][window]
+                if win.throbbing:
                     return False
+        elif 'timer' in cond.keys():
+            timer = cond['timer']
+            elapsed = cond['elapsed']
+            assert_browser(ctx)
+            assert(ctx['timers'].get(timer) is not None)
+            taken = time.time() - ctx['timers'][timer]["start"]
+            assert(taken < elapsed)
         else:
-            win = ctx['windows'][window]
-            if win.throbbing:
-                return False
+            raise AssertionError("Unknown condition: {}".format(repr(cond)))
+
     return True
 
 def run_test_step_action_launch(ctx, step):
@@ -249,6 +260,13 @@ def run_test_step_action_timer_start(ctx, step):
     ctx['timers'][tag] = {}
     ctx['timers'][tag]["start"] = time.time()
 
+def run_test_step_action_timer_restart(ctx, step):
+    print(get_indent(ctx) + "Action: " + step["action"])
+    timer = step['timer']
+    assert_browser(ctx)
+    assert(ctx['timers'].get(timer) is not None)
+    ctx['timers'][timer]["start"] = time.time()
+
 def run_test_step_action_timer_stop(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     timer = step['timer']
@@ -344,6 +362,7 @@ step_handlers = {
     "block":        run_test_step_action_block,
     "repeat":       run_test_step_action_repeat,
     "timer-start":  run_test_step_action_timer_start,
+    "timer-restart":run_test_step_action_timer_restart,
     "timer-stop":   run_test_step_action_timer_stop,
     "timer-check":  run_test_step_action_timer_check,
     "plot-check":   run_test_step_action_plot_check,
