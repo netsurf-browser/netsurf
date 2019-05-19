@@ -11,7 +11,6 @@
 class Element {
 	prologue %{
 #include <utils/corestrings.h>
-#define LIST_PROXY_MAGIC MAGIC(LIST_PROXY)
 %};
 };
 
@@ -206,7 +205,7 @@ method Element::getElementsByTagName ()
 	dom_string_unref(tagname);
 	if (exc != DOM_NO_ERR) return 0;
 
-	duk_get_global_string(ctx, LIST_PROXY_MAGIC);
+	dukky_push_generics(ctx, "makeListProxy");
 
 	duk_push_pointer(ctx, nlist);
 	dukky_create_object(ctx, PROTO_NAME(NODELIST), 1);
