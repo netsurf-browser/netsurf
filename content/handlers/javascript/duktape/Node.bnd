@@ -11,7 +11,7 @@
 class Node {
 	private dom_node *node;
 	prologue %{
-#define LIST_PROXY_MAGIC MAGIC(LIST_PROXY)
+
 %};
 };
 
@@ -120,7 +120,7 @@ getter Node::childNodes()
 		duk_pop(ctx);
 		exc = dom_node_get_child_nodes(priv->node, &nlist);
 		if (exc != DOM_NO_ERR) return 0;
-		duk_get_global_string(ctx, LIST_PROXY_MAGIC);
+		dukky_push_generics(ctx, "makeListProxy");
 		duk_push_pointer(ctx, nlist);
 		if (dukky_create_object(ctx, PROTO_NAME(NODELIST), 1) != DUK_EXEC_SUCCESS) {
 			dom_nodelist_unref(nlist);
