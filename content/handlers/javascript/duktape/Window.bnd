@@ -198,6 +198,7 @@ init Window(struct browser_window *win, struct html_content *htmlc)
 
 fini Window()
 %{
+	NSLOG(dukky, DEEPDEBUG, "Shutting down Window %p", priv->win);
 	/* Cheaply iterate the schedule ring, cancelling any pending callbacks */
 	while (priv->schedule_ring != NULL) {
 		window_remove_callback_by_handle(ctx, priv, priv->schedule_ring->handle);
