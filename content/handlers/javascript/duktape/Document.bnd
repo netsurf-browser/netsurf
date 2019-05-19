@@ -18,7 +18,6 @@ prologue Document()
 #include "content/urldb.h"
 
 #define HANDLER_MAGIC MAGIC(HANDLER_MAP)
-#define GENERICS_MAGIC MAGIC(GENERICS_TABLE)
 %}
 
 
