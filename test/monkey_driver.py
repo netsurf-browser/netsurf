@@ -107,30 +107,37 @@ def assert_browser(ctx):
     assert(not ctx['browser'].stopped)
 
 def conds_met(ctx, conds):
+    # for each condition listed determine if they have been met
+    #  efectively this is condition1 | condition2
     for cond in conds:
-        if 'window' in cond.keys():
-            status = cond['status']
-            window = cond['window']
-            assert(status == "complete") # TODO: Add more status support?
-            if window == "*all*":
-                for win in ctx['windows'].items():
-                    if win[1].throbbing:
-                        return False
-            else:
-                win = ctx['windows'][window]
-                if win.throbbing:
-                    return False
-        elif 'timer' in cond.keys():
+        if 'timer' in cond.keys():
             timer = cond['timer']
             elapsed = cond['elapsed']
             assert_browser(ctx)
             assert(ctx['timers'].get(timer) is not None)
             taken = time.time() - ctx['timers'][timer]["start"]
-            assert(taken < elapsed)
+            if (taken >= elapsed):
+                return True
+        elif 'window' in cond.keys():
+            status = cond['status']
+            window = cond['window']
+            assert(status == "complete") # TODO: Add more status support?
+            if window == "*all*":
+                # all windows must be not throbbing
+                throbbing = False
+                for win in ctx['windows'].items():
+                    if win[1].throbbing:
+                        throbbing = True
+                if not throbbing:
+                    return True
+            else:
+                win = ctx['windows'][window]
+                if win.throbbing is False:
+                    return True
         else:
             raise AssertionError("Unknown condition: {}".format(repr(cond)))
 
-    return True
+    return False
 
 def run_test_step_action_launch(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
@@ -265,6 +272,9 @@ def run_test_step_action_timer_restart(ctx, step):
     timer = step['timer']
     assert_browser(ctx)
     assert(ctx['timers'].get(timer) is not None)
+    taken = time.time() - ctx['timers'][timer]["start"]
+    print(get_indent(ctx) + "        {} restarted at: {:.2f}s".format(timer, taken))
+    ctx['timers'][timer]["taken"] = taken
     ctx['timers'][timer]["start"] = time.time()
 
 def run_test_step_action_timer_stop(ctx, step):
