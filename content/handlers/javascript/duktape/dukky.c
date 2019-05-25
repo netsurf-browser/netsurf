@@ -607,11 +607,16 @@ void js_destroycontext(jscontext *ctx)
 jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 {
 	assert(ctx != NULL);
-	/* Pop any active thread off */
 	NSLOG(dukky, DEBUG,
 	      "New javascript/duktape compartment, win_priv=%p, doc_priv=%p", win_priv,
 	      doc_priv);
+	/* Pop any active thread off */
 	if (CTX != NULL) {
+		/* Closing down the extant compartment */
+		NSLOG(dukky, DEEPDEBUG, "Closing down extant compartment...");
+		duk_get_global_string(CTX, MAGIC(closedownCompartment));
+		dukky_pcall(CTX, 0, true);
+		NSLOG(dukky, DEEPDEBUG, "Popping the thread off the stack");
 		duk_set_top(ctx->ctx, 0);
 		duk_gc(ctx->ctx, 0);
 		duk_gc(ctx->ctx, DUK_GC_COMPACT);

@@ -179,6 +179,28 @@ static void window_remove_callback_by_handle(duk_context *ctx,
 	} RING_ITERATE_END(window->schedule_ring, sched);
 }
 
+/* This is the dodgy compartment closedown method */
+static duk_ret_t dukky_window_closedown_compartment(duk_context *ctx)
+{
+	window_private_t *priv = NULL;
+
+	duk_push_global_object(ctx);
+	duk_get_prop_string(ctx, -1, dukky_magic_string_private);
+	priv = duk_get_pointer(ctx, -1);
+	duk_pop_2(ctx);
+
+	if (priv == NULL) {
+		return 0;
+	}
+
+	NSLOG(dukky, DEEPDEBUG, "Closing down compartment");
+	while (priv->schedule_ring != NULL) {
+		window_remove_callback_by_handle(ctx, priv, priv->schedule_ring->handle);
+	}
+
+	return 0;
+}
+
 %};
 };
 
@@ -228,6 +250,17 @@ prototype Window()
 	EXPOSE(encodeURI);
 	EXPOSE(encodeURIComponent);
 #undef EXPOSE
+	/* Add s3kr1t method to close the compartment */
+	duk_dup(ctx, 0);
+	duk_push_string(ctx, MAGIC(closedownCompartment));
+	duk_push_c_function(ctx, dukky_window_closedown_compartment, DUK_VARARGS);
+	duk_def_prop(ctx, -3,
+		     DUK_DEFPROP_HAVE_VALUE |
+		     DUK_DEFPROP_HAVE_WRITABLE |
+		     DUK_DEFPROP_HAVE_ENUMERABLE |
+		     DUK_DEFPROP_ENUMERABLE |
+		     DUK_DEFPROP_HAVE_CONFIGURABLE);
+	duk_pop(ctx);
 %}
 
 getter Window::document()
