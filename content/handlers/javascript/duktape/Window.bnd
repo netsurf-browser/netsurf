@@ -249,6 +249,7 @@ prototype Window()
 	EXPOSE(Error);
 	EXPOSE(encodeURI);
 	EXPOSE(encodeURIComponent);
+	EXPOSE(NaN);
 #undef EXPOSE
 	/* Add s3kr1t method to close the compartment */
 	duk_dup(ctx, 0);
