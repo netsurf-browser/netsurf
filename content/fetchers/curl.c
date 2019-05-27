@@ -1,7 +1,7 @@
 /*
- * Copyright 2006 Daniel Silverstone <dsilvers@digital-scurf.org>
+ * Copyright 2006-2019 Daniel Silverstone <dsilvers@digital-scurf.org>
+ * Copyright 2010-2018 Vincent Sanders <vince@netsurf-browser.org>
  * Copyright 2007 James Bursa <bursa@users.sourceforge.net>
- * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  *
  * This file is part of NetSurf.
  *
@@ -1282,16 +1282,28 @@ fetch_curl_progress(void *clientp,
 
 
 /**
- * Ignore everything given to it.
- *
- * Used to ignore cURL debug.
+ * Format curl debug for nslog
  */
-static int fetch_curl_ignore_debug(CURL *handle,
-			    curl_infotype type,
-			    char *data,
-			    size_t size,
-			    void *userptr)
+static int
+fetch_curl_debug(CURL *handle,
+		 curl_infotype type,
+		 char *data,
+		 size_t size,
+		 void *userptr)
 {
+	static const char s_infotype[CURLINFO_END][3] = {
+		"* ", "< ", "> ", "{ ", "} ", "{ ", "} "
+	};
+	switch(type) {
+	case CURLINFO_TEXT:
+	case CURLINFO_HEADER_OUT:
+	case CURLINFO_HEADER_IN:
+		NSLOG(fetch, DEBUG, "%s%.*s", s_infotype[type], (int)size - 1, data);
+		break;
+
+	default:
+		break;
+	}
 	return 0;
 }
 
@@ -1510,14 +1522,12 @@ nserror fetch_curl_register(void)
 	if (code != CURLE_OK)						\
 		goto curl_easy_setopt_failed;
 
-	if (verbose_log) {
-	    SETOPT(CURLOPT_VERBOSE, 1);
-	} else {
-	    SETOPT(CURLOPT_VERBOSE, 0);
-	}
 	SETOPT(CURLOPT_ERRORBUFFER, fetch_error_buffer);
+	SETOPT(CURLOPT_DEBUGFUNCTION, fetch_curl_debug);
 	if (nsoption_bool(suppress_curl_debug)) {
-		SETOPT(CURLOPT_DEBUGFUNCTION, fetch_curl_ignore_debug);
+		SETOPT(CURLOPT_VERBOSE, 0);
+	} else {
+		SETOPT(CURLOPT_VERBOSE, 1);
 	}
 
 	/* Currently we explode if curl uses HTTP2, so force 1.1. */
