@@ -291,6 +291,6 @@ NSOPTION_COLOUR(sys_colour_WindowFrame, 0x004e4e4e)
 NSOPTION_COLOUR(sys_colour_WindowText, 0x00000000)
 
 /** Filter for non-verbose logging */
-NSOPTION_STRING(log_filter, "level:WARNING")
+NSOPTION_STRING(log_filter, NETSURF_BUILTIN_LOG_FILTER)
 /** Filter for verbose logging */
-NSOPTION_STRING(verbose_filter, "level:VERBOSE")
+NSOPTION_STRING(verbose_filter, NETSURF_BUILTIN_VERBOSE_FILTER)
