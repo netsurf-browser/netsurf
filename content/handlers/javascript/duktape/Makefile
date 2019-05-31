@@ -24,14 +24,18 @@ $(OBJROOT)/duktape/binding.h $(OBJROOT)/duktape/Makefile: content/handlers/javas
 	$(Q)nsgenbind $(GBFLAGS) -I content/handlers/javascript/WebIDL $< $(OBJROOT)/duktape
 
 # create unimplemented report for doxygen
-docs/UnimplementedJavascript.txt: content/handlers/javascript/duktape/netsurf.bnd $(BINDINGS)
+docs/UnimplementedJavascript.md: content/handlers/javascript/duktape/netsurf.bnd $(BINDINGS)
 	$(Q)$(MKDIR) -p $(OBJROOT)/duktape
-	$(VQ)echo "/** \page unimplemented Unimplemented javascript bindings" > $@
+	$(VQ)echo "Unimplemented javascript bindings {#unimplemented}" > $@
+	$(VQ)echo "=================================" >> $@
+	$(VQ)echo "" >> $@
 	$(VQ)echo "This is a list of all the binding methods, getters and setters without an implementation in a binding." >> $@
 	$(VQ)echo "" >> $@
+	$(VQ)echo "Type | Unimplemented binding" >> $@
+	$(VQ)echo "---- | ---------------------" >> $@
 	$(VQ)echo " GENBIND: $<"
-	$(Q)nsgenbind $(GBFLAGS) -Wunimplemented -I content/handlers/javascript/WebIDL $< $(OBJROOT)/duktape 2>&1 >/dev/null | grep "Unimplemented" | cut -d' ' -f4- | sort -k 2 | awk '{print $$0"\\n" }' >> $@
-	$(VQ)echo "*/" >> $@
+	$(Q)nsgenbind $(GBFLAGS) -Wunimplemented -I content/handlers/javascript/WebIDL $< $(OBJROOT)/duktape 2>&1 >/dev/null | awk 'BEGIN{count=0} /.*Unimplemented.*/{count++; out=$$4" |"; for(i=5;i<=NF;i++){out=out" "$$i}; print out} END{print "\n",count,"unimplemented bindings"}' >> $@
+	$(VQ)echo "" >> $@
 
 ifeq ($(filter $(MAKECMDGOALS),clean test coverage),)
 -include $(OBJROOT)/duktape/Makefile

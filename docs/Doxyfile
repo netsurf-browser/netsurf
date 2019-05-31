@@ -755,7 +755,7 @@ WARN_LOGFILE           =
 
 INPUT                  = docs \
                          docs/env.sh \
-                         docs/UnimplementedJavascript.txt \
+                         docs/UnimplementedJavascript.md \
                          frontends/amiga \
                          frontends/amiga/stringview \
                          frontends/atari \
