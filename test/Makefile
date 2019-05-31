@@ -18,7 +18,7 @@ TESTS := \
 NSURL_SOURCES := utils/nsurl/nsurl.c utils/nsurl/parse.c utils/idna.c \
 	utils/punycode.c
 
-# nsurl sources
+# nsurl test sources
 nsurl_SRCS := $(NSURL_SOURCES) utils/corestrings.c test/log.c test/nsurl.c
 
 # url database test sources
@@ -30,7 +30,7 @@ urldbtest_SRCS := $(NSURL_SOURCES) \
 	content/urldb.c \
 	test/log.c test/urldbtest.c
 
-# low level cache sources
+# low level cache test sources
 llcache_SRCS := content/fetch.c content/fetchers/curl.c \
 	content/fetchers/about.c content/fetchers/data.c \
 	content/fetchers/resource.c content/llcache.c \
@@ -141,6 +141,8 @@ BASE_TESTCFLAGS := -std=c99 -g \
 	-D_XOPEN_SOURCE=600 \
 	-Itest -Iinclude -Icontent/handlers -Ifrontends -I. -I.. \
 	-Dnsgtk \
+	-DNETSURF_BUILTIN_LOG_FILTER=\"level:WARNING\" \
+	-DNETSURF_BUILTIN_VERBOSE_FILTER=\"level:DEBUG\" \
 	$(SAN_FLAGS) \
 	$(shell pkg-config --cflags libcurl libparserutils libwapcaplet libdom libnsutils libutf8proc) \
 	$(LIB_CFLAGS)
