@@ -198,6 +198,8 @@ method Document::createDocumentFragment()
 
 	dukky_push_node(ctx, (dom_node *)frag);
 
+	dom_node_unref(frag); /* The pushed node holds the reference now */
+
 	return 1;
 %}
 
