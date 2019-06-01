@@ -96,6 +96,11 @@ nserror html_script_exec(html_content *c, bool allow_defer)
 						s->data.handle, &size );
 				script_handler(c->jscontext, data, size,
 					       nsurl_access(hlcache_handle_get_url(s->data.handle)));
+				/* We have to re-acquire this here since the
+				 * c->scripts array may have been reallocated
+				 * as a result of executing this script.
+				 */
+				s = &(c->scripts[i]);
 
 				s->already_started = true;
 
