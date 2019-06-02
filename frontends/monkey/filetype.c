@@ -112,7 +112,7 @@ void monkey_fetch_filetype_init(const char *mimefile)
 
 			/* search for the first whitespace char or NUL or
 			 * NL */
-			while (*ptr && (!ascii_is_space(*ptr)) && *ptr != '\n')
+			while (*ptr && (!ascii_is_space(*ptr)))
 				ptr++;
 
 			if (*ptr == '\0' || *ptr == '\n') {
@@ -135,8 +135,7 @@ void monkey_fetch_filetype_init(const char *mimefile)
 				/* search for the first whitespace char or
 				 * NUL or NL which is the end of the ext.
 				 */
-				while (*ptr && (!ascii_is_space(*ptr)) &&
-					*ptr != '\n')
+				while (*ptr && (!ascii_is_space(*ptr)))
 					ptr++;
 
 				if (*ptr == '\0' || *ptr == '\n') {
