@@ -110,7 +110,7 @@ void monkey_fetch_filetype_init(const char *mimefile)
 
 			type = ptr;
 
-			/* search for the first non-whitespace char or NUL or
+			/* search for the first whitespace char or NUL or
 			 * NL */
 			while (*ptr && (!ascii_is_space(*ptr)) && *ptr != '\n')
 				ptr++;
