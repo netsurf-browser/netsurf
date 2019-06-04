@@ -37,6 +37,9 @@ def child_run_test(parts):
         print("STDERR:\n{}\n", errcapture.getvalue())
         print("RERAISE:")
         raise
+    else:
+        sys.stdout = oldout
+        sys.stderr = olderr
 
 def run_test(parts):
     p = mp.Process(target=child_run_test, args=(parts, ))
