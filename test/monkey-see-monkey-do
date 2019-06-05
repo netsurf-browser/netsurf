@@ -8,7 +8,7 @@ MONKEY_PATH="./nsmonkey"
 # Otherwise let's begin...
 
 import sys
-
+import getopt
 import yaml
 
 import multiprocessing as mp
@@ -40,6 +40,8 @@ def child_run_test(parts):
     else:
         sys.stdout = oldout
         sys.stderr = olderr
+        if verbose == True:
+            print("STDOUT:\n{}\n", outcapture.getvalue())
 
 def run_test(parts):
     p = mp.Process(target=child_run_test, args=(parts, ))
@@ -47,6 +49,26 @@ def run_test(parts):
     p.join()
     return p.exitcode
 
+def print_usage():
+    print('Usage:')
+    print('  ' + sys.argv[0] + ' [-v] [-h]')
+
+def parse_argv(argv):
+    verbose=False
+    try:
+        opts, args = getopt.getopt(argv,"hv",[])
+    except getopt.GetoptError:
+        print_usage()
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print_usage()
+            sys.exit()
+        elif opt in ("-v", "--verbose"):
+            verbose=True
+    return verbose
+
+verbose = parse_argv(sys.argv[1:])
 
 print("Fetching tests...")
 index = request.urlopen(BASE_PATH)

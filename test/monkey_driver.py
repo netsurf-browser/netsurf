@@ -1,4 +1,24 @@
 #!/usr/bin/python3
+#
+# Copyright 2019 Daniel Silverstone <dsilvers@digital-scurf.org>
+#
+# This file is part of NetSurf, http://www.netsurf-browser.org/
+#
+# NetSurf is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# NetSurf is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+"""
+runs tests in monkey as defined in a yaml file
+"""
 
 import sys, getopt, yaml, time
 
@@ -8,6 +28,7 @@ class DriverBrowser(Browser):
     def __init__(self, *args, **kwargs):
         super(DriverBrowser, self).__init__(*args, **kwargs)
         self.auth = []
+        self.cert = []
 
     def add_auth(self, url, realm, username, password):
         self.auth.append((url, realm, username, password))
@@ -56,6 +77,42 @@ class DriverBrowser(Browser):
         else:
             print("401: No candidate found, cancelling login box")
             logwin.destroy()
+
+    def add_cert(self, url):
+        # add sll certificate error exception
+        self.cert.append(url)
+
+    def remove_cert(self, url):
+        keep = []
+        def matches(a,b):
+            if a is None or b is None:
+                return True
+            return a == b
+        for iurl in self.cert:
+            if not (matches(url, iurl)):
+                keep.append(iurl)
+        self.cert = keep
+
+    def handle_ready_sslcert(self, cwin):
+        def matches(a,b):
+            if a is None or b is None:
+                return True
+            return a == b
+        candidates = []
+        for url in self.cert:
+            score = 0
+            if matches(url, cwin.url):
+                score += 1
+            if score > 0:
+                candidates.append((score, url))
+        if candidates:
+            candidates.sort()
+            (score, url) = candidates[-1]
+            print("SSLCert: Found candidate {} with score {}".format(url, score))
+            cwin.go()
+        else:
+            print("SSLCert: No candidate found, cancelling sslcert box")
+            cwin.destroy()
 
 def print_usage():
     print('Usage:')
@@ -317,6 +374,19 @@ def run_test_step_action_remove_auth(ctx, step):
     browser.remove_auth(step.get("url"), step.get("realm"),
                         step.get("username"), step.get("password"))
 
+def run_test_step_action_add_cert(ctx, step):
+    print(get_indent(ctx) + "Action:" + step["action"])
+    assert_browser(ctx)
+    browser = ctx['browser']
+    browser.add_cert(step.get("url"))
+
+
+def run_test_step_action_remove_cert(ctx, step):
+    print(get_indent(ctx) + "Action:" + step["action"])
+    assert_browser(ctx)
+    browser = ctx['browser']
+    browser.remove_cert(step.get("url"))
+
 
 def run_test_step_action_clear_log(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
@@ -378,6 +448,8 @@ step_handlers = {
     "plot-check":   run_test_step_action_plot_check,
     "add-auth":     run_test_step_action_add_auth,
     "remove-auth":  run_test_step_action_remove_auth,
+    "add-cert":     run_test_step_action_add_cert,
+    "remove-cert":  run_test_step_action_remove_cert,
     "clear-log":    run_test_step_action_clear_log,
     "wait-log":     run_test_step_action_wait_log,
     "js-exec":      run_test_step_action_js_exec,
