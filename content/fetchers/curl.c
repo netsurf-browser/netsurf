@@ -142,6 +142,9 @@ static char fetch_error_buffer[CURL_ERROR_SIZE];
 /** Proxy authentication details. */
 static char fetch_proxy_userpwd[100];
 
+/** Interlock to prevent initiation during callbacks */
+static bool inside_curl = false;
+
 
 /* OpenSSL 1.0.x to 1.1.0 certificate reference counting changed
  * LibreSSL declares its OpenSSL version as 2.1 but only supports the old way
@@ -710,6 +713,9 @@ fetch_curl_initiate_fetch(struct curl_fetch_info *fetch, CURL *handle)
 	code = fetch_curl_set_options(fetch);
 	if (code != CURLE_OK) {
 		fetch->curl_handle = 0;
+		/* The handle maybe went bad, eat it */
+		NSLOG(netsurf, WARNING, "cURL handle maybe went bad, retry later");
+		curl_easy_cleanup(handle);
 		return false;
 	}
 
@@ -747,6 +753,10 @@ static CURL *fetch_curl_get_handle(lwc_string *host)
 static bool fetch_curl_start(void *vfetch)
 {
 	struct curl_fetch_info *fetch = (struct curl_fetch_info*)vfetch;
+	if (inside_curl) {
+		NSLOG(netsurf, DEBUG, "Deferring fetch because we're inside cURL");
+		return false;
+	}
 	return fetch_curl_initiate_fetch(fetch,
 			fetch_curl_get_handle(fetch->host));
 }
@@ -1317,6 +1327,9 @@ static size_t fetch_curl_data(char *data, size_t size, size_t nmemb, void *_f)
 	CURLcode code;
 	fetch_msg msg;
 
+	assert(inside_curl == false);
+	inside_curl = true;
+
 	/* ensure we only have to get this information once */
 	if (!f->http_code) {
 		code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE,
@@ -1330,11 +1343,13 @@ static size_t fetch_curl_data(char *data, size_t size, size_t nmemb, void *_f)
 	 */
 	if (f->http_code == 401) {
 		f->http_code = 0;
+		inside_curl = false;
 		return size * nmemb;
 	}
 
 	if (f->abort || (!f->had_headers && fetch_curl_process_headers(f))) {
 		f->stopped = true;
+		inside_curl = false;
 		return 0;
 	}
 
@@ -1344,6 +1359,7 @@ static size_t fetch_curl_data(char *data, size_t size, size_t nmemb, void *_f)
 	msg.data.header_or_data.len = size * nmemb;
 	fetch_send_callback(&msg, f->fetch_handle);
 
+	inside_curl = false;
 	if (f->abort) {
 		f->stopped = true;
 		return 0;
