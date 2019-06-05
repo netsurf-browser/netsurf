@@ -33,15 +33,15 @@ def child_run_test(parts):
         sys.stdout = oldout
         sys.stderr = olderr
         print("FAIL:")
-        print("STDOUT:\n{}\n", outcapture.getvalue())
-        print("STDERR:\n{}\n", errcapture.getvalue())
+        print("STDOUT:\n{}\n".format(outcapture.getvalue()))
+        print("STDERR:\n{}\n".format(errcapture.getvalue()))
         print("RERAISE:")
         raise
     else:
         sys.stdout = oldout
         sys.stderr = olderr
         if verbose == True:
-            print("STDOUT:\n{}\n", outcapture.getvalue())
+            print("STDOUT:\n{}\n".format(outcapture.getvalue()))
 
 def run_test(parts):
     p = mp.Process(target=child_run_test, args=(parts, ))
