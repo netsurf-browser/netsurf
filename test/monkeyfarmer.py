@@ -55,7 +55,17 @@ class MonkeyFarmer(asyncore.dispatcher):
 
     def handle_connect(self):
         pass
+
+    def handle_close(self):
+        # the pipe to the monkey process has closed
+        #  ensure the child process is finished and report the exit
+        self.close()
+        if self.monkey.poll() is None:
+            self.monkey.terminate()
+            self.monkey.wait()
+        self.lines.insert(0, "GENERIC EXIT {}".format(self.monkey.returncode).encode('utf-8'))
         
+
     def handle_read(self):
         got = self.recv(8192)
         if not got:
@@ -162,6 +172,10 @@ class Browser:
             self.stopped = True
         elif what == 'LAUNCH':
             self.launchurl = args[1]
+        elif what == 'EXIT':
+            if not self.stopped:
+                print("Unexpected exit of monkey process with code {}".format(args[0]))
+            assert(self.stopped)
         else:
             # TODO: Nothing for now?
             pass
