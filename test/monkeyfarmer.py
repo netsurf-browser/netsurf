@@ -359,6 +359,9 @@ class BrowserWindow:
                 self.winid, url, referer))
         self.wait_start_loading()
 
+    def stop(self):
+        self.browser.farmer.tell_monkey("WINDOW STOP %s" % (self.winid))
+
     def reload(self):
         self.browser.farmer.tell_monkey("WINDOW RELOAD %s" % self.winid)
 

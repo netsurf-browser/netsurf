@@ -235,6 +235,14 @@ def run_test_step_action_navigate(ctx, step):
     assert(win is not None)
     win.go(step['url'])
 
+def run_test_step_action_stop(ctx, step):
+    print(get_indent(ctx) + "Action: " + step["action"])
+    assert_browser(ctx)
+    tag = step['window']
+    win = ctx['windows'].get(tag)
+    assert(win is not None)
+    win.stop()
+
 def run_test_step_action_sleep_ms(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     conds = step['conditions']
@@ -438,6 +446,7 @@ step_handlers = {
     "window-new":   run_test_step_action_window_new,
     "window-close": run_test_step_action_window_close,
     "navigate":     run_test_step_action_navigate,
+    "stop":         run_test_step_action_stop,
     "sleep-ms":     run_test_step_action_sleep_ms,
     "block":        run_test_step_action_block,
     "repeat":       run_test_step_action_repeat,
