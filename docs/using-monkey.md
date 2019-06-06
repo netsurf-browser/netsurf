@@ -112,6 +112,11 @@ Commands
     Cause the given browser window to visit the given URL.
     Optionally you can give a referrer URL to also use (simulating
     a click in the browser on a link).
+    Minimally you can expect throbber stop response.
+
+*   `WINDOW STOP` _%id%_
+
+    Cause a browser window to stop any in progress navigatoipn.
     Minimally you can expect throbber, url etc responses.
 
 *   `WINDOW REDRAW` _%id%_ [_%num% %num% %num% %num%_]
@@ -125,7 +130,7 @@ Commands
     Minimally you can expect redraw start/stop messages and you
     can likely expect some number of `PLOT` results.
 
-*   `WINDOW RELOAD` _%id%_
+*   `WINDOW RELOAD` _%id%_ [all]
 
     Cause a browser window to reload its current content.
     Expect responses similar to a GO command.

@@ -494,6 +494,28 @@ monkey_window_handle_go(int argc, char **argv)
 	}
 }
 
+/**
+ * handle WINDOW STOP command
+ */
+static void
+monkey_window_handle_stop(int argc, char **argv)
+{
+	struct gui_window *gw;
+	if (argc != 3) {
+		moutf(MOUT_ERROR, "WINDOW STOP ARGS BAD\n");
+		return;
+	}
+
+	gw = monkey_find_window_by_num(atoi(argv[2]));
+
+	if (gw == NULL) {
+		moutf(MOUT_ERROR, "WINDOW NUM BAD");
+	} else {
+		browser_window_stop(gw->bw);
+	}
+}
+
+
 static void
 monkey_window_handle_redraw(int argc, char **argv)
 {
@@ -541,6 +563,7 @@ monkey_window_handle_reload(int argc, char **argv)
 	struct gui_window *gw;
 	if (argc != 3 && argc != 4) {
 		moutf(MOUT_ERROR, "WINDOW RELOAD ARGS BAD\n");
+		return;
 	}
 
 	gw = monkey_find_window_by_num(atoi(argv[2]));
@@ -598,6 +621,8 @@ monkey_window_handle_command(int argc, char **argv)
 		monkey_window_handle_destroy(argc, argv);
 	} else if (strcmp(argv[1], "GO") == 0) {
 		monkey_window_handle_go(argc, argv);
+	} else if (strcmp(argv[1], "STOP") == 0) {
+		monkey_window_handle_stop(argc, argv);
 	} else if (strcmp(argv[1], "REDRAW") == 0) {
 		monkey_window_handle_redraw(argc, argv);
 	} else if (strcmp(argv[1], "RELOAD") == 0) {
