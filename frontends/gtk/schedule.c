@@ -28,9 +28,9 @@
 
 /** Killable callback closure embodiment. */
 typedef struct {
-        void (*callback)(void *);	/**< The callback function. */
-        void *context;			/**< The context for the callback. */
-        bool callback_killed;		/**< Whether or not this was killed. */
+        void (*callback)(void *);       /**< The callback function. */
+        void *context;                  /**< The context for the callback. */
+        bool callback_killed;           /**< Whether or not this was killed. */
 } _nsgtk_callback_t;
 
 /** List of callbacks which have occurred and are pending running. */
@@ -61,20 +61,29 @@ nsgtk_schedule_kill_callback(void *_target, void *_match)
         if ((target->callback == match->callback) &&
             (target->context == match->context)) {
                 NSLOG(schedule, DEBUG,
-		      "Found match for %p(%p), killing.",
+                      "Found match for %p(%p), killing.",
                       target->callback, target->context);
                 target->callback = NULL;
                 target->context = NULL;
                 target->callback_killed = true;
+                match->callback_killed = true;
         }
 }
 
-static void
-schedule_remove(void (*callback)(void *p), void *p)
+/**
+ * remove a matching callback and context tuple from all lists
+ *
+ * \param callback The callback to match
+ * \param cbctx The callback context to match
+ * \return NSERROR_OK if the tuple was removed from at least one list else NSERROR_NOT_FOUND
+ */
+static nserror
+schedule_remove(void (*callback)(void *p), void *cbctx)
 {
         _nsgtk_callback_t cb_match = {
                 .callback = callback,
-                .context = p,
+                .context = cbctx,
+                .callback_killed = false,
         };
 
         g_list_foreach(queued_callbacks,
@@ -83,29 +92,36 @@ schedule_remove(void (*callback)(void *p), void *p)
                        nsgtk_schedule_kill_callback, &cb_match);
         g_list_foreach(this_run,
                        nsgtk_schedule_kill_callback, &cb_match);
+
+        if (cb_match.callback_killed == false) {
+                return NSERROR_NOT_FOUND;
+        }
+        return NSERROR_OK;
 }
 
 /* exported interface documented in gtk/schedule.h */
-nserror nsgtk_schedule(int t, void (*callback)(void *p), void *p)
+nserror nsgtk_schedule(int t, void (*callback)(void *p), void *cbctx)
 {
-        _nsgtk_callback_t *cb; 
+        _nsgtk_callback_t *cb;
+        nserror res;
 
         /* Kill any pending schedule of this kind. */
-        schedule_remove(callback, p);
+        res = schedule_remove(callback, cbctx);
 
-	if (t < 0) {
-		return NSERROR_OK;
-	}
+        /* only removal */
+        if (t < 0) {
+                return res;
+        }
 
-	cb = malloc(sizeof(_nsgtk_callback_t));
+        cb = malloc(sizeof(_nsgtk_callback_t));
         cb->callback = callback;
-        cb->context = p;
+        cb->context = cbctx;
         cb->callback_killed = false;
         /* Prepend is faster right now. */
         queued_callbacks = g_list_prepend(queued_callbacks, cb);
         g_timeout_add(t, nsgtk_schedule_generic_callback, cb);
 
-	return NSERROR_OK;
+        return NSERROR_OK;
 }
 
 bool
@@ -121,7 +137,7 @@ schedule_run(void)
         pending_callbacks = NULL;
 
         NSLOG(schedule, DEBUG,
-	      "Captured a run of %d callbacks to fire.",
+              "Captured a run of %d callbacks to fire.",
               g_list_length(this_run));
 
         /* Run all the callbacks which made it this far. */
@@ -132,5 +148,5 @@ schedule_run(void)
                         cb->callback(cb->context);
                 free(cb);
         }
-        return true;
+	return true;
 }

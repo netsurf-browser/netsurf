@@ -43,6 +43,7 @@ struct nscallback
  *
  * \param  callback  callback function
  * \param  p         user parameter, passed to callback function
+ * \return NSERROR_OK if callback found and removed else NSERROR_NOT_FOUND
  *
  * All scheduled callbacks matching both callback and p are removed.
  */
@@ -51,10 +52,11 @@ static nserror schedule_remove(void (*callback)(void *p), void *p)
 	struct nscallback *cur_nscb;
 	struct nscallback *prev_nscb;
 	struct nscallback *unlnk_nscb;
+	bool removed = false;
 
 	/* check there is something on the list to remove */
 	if (schedule_list == NULL) {
-		return NSERROR_OK;
+		return NSERROR_NOT_FOUND;
 	}
 
 	NSLOG(schedule, DEBUG, "removing %p, %p", callback, p);
@@ -80,6 +82,7 @@ static nserror schedule_remove(void (*callback)(void *p), void *p)
 				prev_nscb->next = cur_nscb;
 			}
 			free (unlnk_nscb);
+			removed = true;
 		} else {
 			/* move to next element */
 			prev_nscb = cur_nscb;
@@ -87,6 +90,9 @@ static nserror schedule_remove(void (*callback)(void *p), void *p)
 		}
 	}
 
+	if (removed == false) {
+		return NSERROR_NOT_FOUND;
+	}
 	return NSERROR_OK;
 }
 
@@ -99,7 +105,7 @@ nserror monkey_schedule(int tival, void (*callback)(void *p), void *p)
 
 	/* ensure uniqueness of the callback and context */
 	ret = schedule_remove(callback, p);
-	if ((tival < 0) || (ret != NSERROR_OK)) {
+	if (tival < 0) {
 		return ret;
 	}
 
