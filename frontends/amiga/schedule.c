@@ -345,12 +345,13 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 	nscb = AllocSysObjectTags(ASOT_IOREQUEST,
 							ASOIOR_Duplicate, tioreq,
 							TAG_DONE);
+	if(nscb == NULL) return NSERROR_NOMEM;
 #else
 	if(schedule_msgport == NULL) return NSERROR_NOMEM;
 	nscb = AllocVec(sizeof(struct nscallback), MEMF_PUBLIC | MEMF_CLEAR);
+	if(nscb == NULL) return NSERROR_NOMEM;
 	*nscb = *tioreq;
 #endif
-	if(!nscb) return NSERROR_NOMEM;
 
 	if (ami_schedule_add_timer_event(nscb, t) != NSERROR_OK)
 		return NSERROR_NOMEM;
