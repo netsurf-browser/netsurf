@@ -36,6 +36,7 @@ typedef struct window_schedule_s {
 	struct window_schedule_s *r_prev;
 	size_t handle;
 	int repeat_timeout;
+	bool running;
 } window_schedule_t;
 
 static void window_remove_callback_bits(duk_context *ctx, size_t handle) {
@@ -100,7 +101,9 @@ static void window_schedule_callback(void *p) {
 
 	NSLOG(dukky, DEEPDEBUG, "Entered window scheduler callback: %"PRIsizet, priv->handle);
 
+	priv->running = true;
 	window_call_callback(priv->ctx, priv->handle, priv->repeat_timeout == 0);
+	priv->running = false;
 
 	if (priv->repeat_timeout > 0) {
 		/* Reschedule */
@@ -126,6 +129,7 @@ static size_t window_alloc_new_callback(duk_context *ctx, window_private_t *wind
 	sched->ctx = ctx;
 	sched->handle = new_handle;
 	sched->repeat_timeout = repeating ? timeout : 0;
+	sched->running = false;
 
 	RING_INSERT(window->schedule_ring, sched);
 
@@ -171,14 +175,19 @@ static void window_remove_callback_by_handle(duk_context *ctx,
 
 	RING_ITERATE_START(window_schedule_t, window->schedule_ring, sched) {
 		if (sched->handle == handle) {
-			NSLOG(dukky, DEEPDEBUG, "Cancelled callback %"PRIsizet, sched->handle);
-			res = guit->misc->schedule(-1,
-						   window_schedule_callback,
-						   sched);
-			assert(res == NSERROR_OK);
-			RING_REMOVE(window->schedule_ring, sched);
-			window_remove_callback_bits(ctx, sched->handle);
-			free(sched);
+			if (sched->running) {
+				NSLOG(dukky, DEEPDEBUG, "Cancelling in-train callback %"PRIsizet, sched->handle);
+				sched->repeat_timeout = 0;
+			} else {
+				NSLOG(dukky, DEEPDEBUG, "Cancelled callback %"PRIsizet, sched->handle);
+				res = guit->misc->schedule(-1,
+							   window_schedule_callback,
+							   sched);
+				assert(res == NSERROR_OK);
+				RING_REMOVE(window->schedule_ring, sched);
+				window_remove_callback_bits(ctx, sched->handle);
+				free(sched);
+			}
 			RING_ITERATE_STOP(window->schedule_ring, sched);
 		}
 	} RING_ITERATE_END(window->schedule_ring, sched);
