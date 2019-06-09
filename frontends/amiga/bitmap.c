@@ -546,6 +546,7 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 					DirectDrawTrueColor(ddh, (ULONG *)amiga_bitmap_get_buffer(bitmap), 0, 0, TAG_DONE);
 					DeleteDirectDrawHandle(ddh);
 					ReleaseDrawHandle(bitmap->drawhandle);
+					bitmap->drawhandle = NULL;
 				}
 				ami_bitmap_argb_to_rgba(bitmap);
 			} else {
