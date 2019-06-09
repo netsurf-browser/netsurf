@@ -3458,7 +3458,10 @@ nserror browser_window_console_log(struct browser_window *bw,
 	struct browser_window *root = browser_window_get_root(bw);
 
 	assert(msg != NULL);
-	assert(msglen > 0);
+	/* We don't assert msglen > 0, if someone wants to log a real empty
+	 * string then we won't stop them.  It does sometimes happen from
+	 * JavaScript for example.
+	 */
 
 	/* bw is the target of the log, but root is where we log it */
 
