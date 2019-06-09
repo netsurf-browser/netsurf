@@ -63,7 +63,7 @@ static void window_call_callback(duk_context *ctx, size_t handle, bool clear_ent
 	/* ..., win, cbt, handle */
 	duk_get_prop(ctx, -2);
 	/* ..., win, cbt, cbo */
-	dukky_log_stack_frame(ctx, "On entry to callback");
+	//dukky_log_stack_frame(ctx, "On entry to callback");
 	/* ..., win, cbt, cbo */
 	/* What we want to do is call cbo.func passing all of cbo.args */
 	duk_get_prop_string(ctx, -1, "func");
@@ -77,7 +77,7 @@ static void window_call_callback(duk_context *ctx, size_t handle, bool clear_ent
 	/* ..., win, cbt, cbo, func, argarr, args... */
 	duk_remove(ctx, -(arrlen+1));
 	/* ..., win, cbt, cbo, func, args... */
-	dukky_log_stack_frame(ctx, "Just before call");
+	//dukky_log_stack_frame(ctx, "Just before call");
 	(void) dukky_pcall(ctx, arrlen, true);
 	/* ..., win, cbt, cbo, retval */
 	if (clear_entry) {
@@ -93,7 +93,7 @@ static void window_call_callback(duk_context *ctx, size_t handle, bool clear_ent
 		duk_pop_n(ctx, 4);
 	}
 	/* ... */
-	dukky_log_stack_frame(ctx, "On leaving callback");
+	//dukky_log_stack_frame(ctx, "On leaving callback");
 }
 
 static void window_schedule_callback(void *p) {
