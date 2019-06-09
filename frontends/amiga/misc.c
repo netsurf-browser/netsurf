@@ -247,6 +247,7 @@ char *translate_escape_chars(const char *s)
 {
 	size_t i, ii, len;
 	char *ret;
+	char *outs;
 	len = strlen(s);
 	ret = malloc(len + 1);
 	if (ret == NULL)
@@ -262,7 +263,9 @@ char *translate_escape_chars(const char *s)
 	}
 	ret[ii] = '\0';
 
-	return ami_utf8_easy(ret);
+	outs = ami_utf8_easy(ret);
+	free(ret);
+	return outs;
 }
 
 /**
