@@ -602,7 +602,9 @@ llcache_fetch_parse_cache_control(llcache_object *object, char *value)
 		object->cache.no_cache = LLCACHE_VALIDATE_ALWAYS;
 	}
 
-	object->cache.max_age = http_cache_control_max_age(cc);
+	if (http_cache_control_has_max_age(cc)) {
+		object->cache.max_age = http_cache_control_max_age(cc);
+	}
 
 	http_cache_control_destroy(cc);
 
