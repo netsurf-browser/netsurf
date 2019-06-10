@@ -608,16 +608,15 @@ llcache_fetch_parse_cache_control(llcache_object *object, char *value)
 				start++;
 			}
 
-			if (start < comma) {
-				/* Skip over '=' */
-				start++;
-			}
-
+			/* Skip over '=' */
+			start++;
 
 #define SKIP_ST(p) while (*p != '\0' && (*p == ' ' || *p == '\t')) p++
 
-			/* Skip whitespace */
-			SKIP_ST(start);
+			if (start < comma) {
+				  /* Skip whitespace */
+				  SKIP_ST(start);
+			}
 
 			if (start < comma) {
 				object->cache.max_age = atoi(start);
