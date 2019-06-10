@@ -30,6 +30,7 @@
  */
 struct http_cache_control {
 	uint32_t max_age;		/**< Max age (delta seconds) */
+	bool max_age_valid;		/**< Whether max-age is valid */
 	bool no_cache;			/**< Whether caching is forbidden */
 	bool no_store;			/**< Whether persistent caching is forbidden */
 };
@@ -240,6 +241,7 @@ nserror http_parse_cache_control(const char *header_value,
 	http_directive *directives = NULL;
 	lwc_string *value_str = NULL;
 	uint32_t max_age = 0;
+	bool max_age_valid = false;
 	bool no_cache = false;
 	bool no_store = false;
 	nserror error;
@@ -279,6 +281,7 @@ nserror http_parse_cache_control(const char *header_value,
 			corestring_lwc_max_age, &value_str);
 	if (error == NSERROR_OK && value_str != NULL) {
 		error = parse_max_age(value_str, &max_age);
+		max_age_valid = (error == NSERROR_OK);
 		lwc_string_unref(value_str);
 	}
 
@@ -310,6 +313,7 @@ nserror http_parse_cache_control(const char *header_value,
 	}
 
 	cc->max_age = max_age;
+	cc->max_age_valid = max_age_valid;
 	cc->no_cache = no_cache;
 	cc->no_store = no_store;
 
@@ -322,6 +326,12 @@ nserror http_parse_cache_control(const char *header_value,
 void http_cache_control_destroy(http_cache_control *victim)
 {
 	free(victim);
+}
+
+/* See cache-control.h for documentation */
+bool http_cache_control_has_max_age(http_cache_control *cc)
+{
+	return cc->max_age_valid;
 }
 
 /* See cache-control.h for documentation */

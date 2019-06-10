@@ -43,6 +43,14 @@ nserror http_parse_cache_control(const char *header_value,
 void http_cache_control_destroy(http_cache_control *victim);
 
 /**
+ * Determine if a valid max-age directive is present
+ *
+ * \param cc Object to inspect
+ * \return Whether max-age is valid
+ */
+bool http_cache_control_has_max_age(http_cache_control *cc);
+
+/**
  * Get the value of a cache control's max-age
  *
  * \param cc Object to inspect
