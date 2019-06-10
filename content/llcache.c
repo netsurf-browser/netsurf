@@ -45,6 +45,7 @@
 #include "utils/nsurl.h"
 #include "utils/utils.h"
 #include "utils/time.h"
+#include "utils/http.h"
 #include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
 
@@ -583,59 +584,28 @@ static nserror llcache_fetch_split_header(const uint8_t *data, size_t len,
 static nserror
 llcache_fetch_parse_cache_control(llcache_object *object, char *value)
 {
-	const char *start = value;
-	const char *comma = value;
+	http_cache_control *cc;
+	nserror error;
 
-	while (*comma != '\0') {
-		while (*comma != '\0' && *comma != ',') {
-			comma++;
-		}
-
-		if ((8 < comma - start) &&
-		    (strncasecmp(start,	"no-cache", 8) == 0 ||
-		     strncasecmp(start, "no-store", 8) == 0)) {
-			/**
-			 * \todo When we get a disk cache we should
-			 *  distinguish between these two.
-			 */
-			object->cache.no_cache = LLCACHE_VALIDATE_ALWAYS;
-		} else if ((7 < comma - start) &&
-			   strncasecmp(start, "max-age", 7) == 0) {
-			start += 7; /* skip max-age */
-
-			/* Find '=' */
-			while (start < comma && *start != '=') {
-				start++;
-			}
-
-			/* Skip over '=' */
-			start++;
-
-#define SKIP_ST(p) while (*p != '\0' && (*p == ' ' || *p == '\t')) p++
-
-			if (start < comma) {
-				  /* Skip whitespace */
-				  SKIP_ST(start);
-			}
-
-			if (start < comma) {
-				object->cache.max_age = atoi(start);
-
-			}
-		}
-
-		if (*comma != '\0') {
-			/* Skip past comma */
-			comma++;
-			/* Skip whitespace */
-			SKIP_ST(comma);
-		}
-
-#undef SKIP_ST
-
-		/* Set start for next token */
-		start = comma;
+	error = http_parse_cache_control(value, &cc);
+	if (error != NSERROR_OK) {
+		/* Ignore parse errors */
+		return NSERROR_OK;
 	}
+
+	if (http_cache_control_no_cache(cc) ||
+			http_cache_control_no_store(cc)) {
+		/**
+		 * \todo When we get a disk cache we should
+		 *  distinguish between these two.
+		 */
+		object->cache.no_cache = LLCACHE_VALIDATE_ALWAYS;
+	}
+
+	object->cache.max_age = http_cache_control_max_age(cc);
+
+	http_cache_control_destroy(cc);
+
 	return NSERROR_OK;
 }
 
