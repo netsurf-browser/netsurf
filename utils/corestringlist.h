@@ -144,6 +144,8 @@ CORESTRING_LWC_STRING(_top);
 CORESTRING_LWC_VALUE(shortcut_icon, "shortcut icon");
 CORESTRING_LWC_VALUE(slash_, "/");
 CORESTRING_LWC_VALUE(max_age, "max-age");
+CORESTRING_LWC_VALUE(no_cache, "no-cache");
+CORESTRING_LWC_VALUE(no_store, "no-store");
 
 /* mime types */
 CORESTRING_LWC_VALUE(multipart_form_data, "multipart/form-data");

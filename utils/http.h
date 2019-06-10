@@ -27,6 +27,7 @@
 
 #include "utils/errors.h"
 
+#include "utils/http/cache-control.h"
 #include "utils/http/content-disposition.h"
 #include "utils/http/content-type.h"
 #include "utils/http/strict-transport-security.h"
