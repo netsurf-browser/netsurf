@@ -228,12 +228,21 @@ def run_test_step_action_window_close(ctx, step):
 def run_test_step_action_navigate(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     assert_browser(ctx)
-    assert(step.get('url') is not None)
+    if 'url' in step.keys():
+        url = step['url']
+    elif 'repeaturl' in step.keys():
+        repeat = ctx['repeats'].get(step['repeaturl'])
+        assert(repeat is not None)
+        assert(repeat.get('values') is not None)
+        url = repeat['values'][repeat['i']]
+    else:
+        url = None
+    assert(url is not None)
     tag = step['window']
-    print(get_indent(ctx) + "        " + tag + " --> " + step['url'])
+    print(get_indent(ctx) + "        " + tag + " --> " + url)
     win = ctx['windows'].get(tag)
     assert(win is not None)
-    win.go(step['url'])
+    win.go(url)
 
 def run_test_step_action_stop(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
@@ -284,17 +293,32 @@ def run_test_step_action_repeat(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     tag = step['tag']
     assert(ctx['repeats'].get(tag) is None)
-    ctx['repeats'][tag] = {
-        "i": step["min"],
-        "step": step["step"],
-        "loop": True,
-    }
+    ctx['repeats'][tag] = { "loop": True, }
+
+    if 'min' in step.keys():
+        ctx['repeats'][tag]["i"] = step["min"]
+    else:
+        ctx['repeats'][tag]["i"] = 0
+
+    if 'step' in step.keys():
+        ctx['repeats'][tag]["step"] = step["step"]
+    else:
+        ctx['repeats'][tag]["step"] = 1
+
+    if 'values' in step.keys():
+        ctx['repeats'][tag]['values'] = step["values"]
+    else:
+        ctx['repeats'][tag]['values'] = None
+
     while ctx['repeats'][tag]["loop"]:
         ctx['repeats'][tag]["start"] = time.time()
         ctx["depth"] += 1
         for s in step["steps"]:
             run_test_step(ctx, s)
         ctx['repeats'][tag]["i"] += ctx['repeats'][tag]["step"]
+        if ctx['repeats'][tag]['values'] is not None:
+            if ctx['repeats'][tag]["i"] >= len(ctx['repeats'][tag]['values']):
+                ctx['repeats'][tag]["loop"] = False
         ctx["depth"] -= 1
 
 def run_test_step_action_plot_check(ctx, step):
@@ -340,7 +364,7 @@ def run_test_step_action_timer_restart(ctx, step):
     assert_browser(ctx)
     assert(ctx['timers'].get(timer) is not None)
     taken = time.time() - ctx['timers'][timer]["start"]
-    print(get_indent(ctx) + "        {} restarted at: {:.2f}s".format(timer, taken))
+    print("{}        {} restarted at: {:.2f}s".format(get_indent(ctx), timer, taken))
     ctx['timers'][timer]["taken"] = taken
     ctx['timers'][timer]["start"] = time.time()
 
@@ -350,7 +374,7 @@ def run_test_step_action_timer_stop(ctx, step):
     assert_browser(ctx)
     assert(ctx['timers'].get(timer) is not None)
     taken = time.time() - ctx['timers'][timer]["start"]
-    print(get_indent(ctx) + "        " + timer + " took: " + str(taken) + "s")
+    print("{}        {} took: {:.2f}s".format(get_indent(ctx), timer, taken))
     ctx['timers'][timer]["taken"] = taken
 
 def run_test_step_action_timer_check(ctx, step):
