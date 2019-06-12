@@ -301,7 +301,10 @@ def run_test_step_action_plot_check(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     assert_browser(ctx)
     win = ctx['windows'][step['window']]
-    checks = step['checks']
+    if 'checks' in step.keys():
+        checks = step['checks']
+    else:
+        checks = {}
     all_text = []
     bitmaps = []
     for plot in win.redraw():
@@ -310,23 +313,22 @@ def run_test_step_action_plot_check(ctx, step):
         if plot[0] == 'BITMAP':
             bitmaps.append(plot[1:])
     all_text = " ".join(all_text)
-    if checks is not None:
-        for check in checks:
-            if 'text-contains' in check.keys():
-                print("Check {} in {}".format(repr(check['text-contains']),repr(all_text)))
-                assert(check['text-contains'] in all_text)
-            elif 'text-not-contains' in check.keys():
-                print("Check {} NOT in {}".format(repr(check['text-not-contains']),repr(all_text)))
-                assert(check['text-not-contains'] not in all_text)
-            elif 'bitmap-count' in check.keys():
-                print("Check bitmap count is {}".format(int(check['bitmap-count'])))
-                assert(len(bitmaps) == int(check['bitmap-count']))
-            else:
-                raise AssertionError("Unknown check: {}".format(repr(check)))
+    for check in checks:
+        if 'text-contains' in check.keys():
+            print("Check {} in {}".format(repr(check['text-contains']),repr(all_text)))
+            assert(check['text-contains'] in all_text)
+        elif 'text-not-contains' in check.keys():
+            print("Check {} NOT in {}".format(repr(check['text-not-contains']),repr(all_text)))
+            assert(check['text-not-contains'] not in all_text)
+        elif 'bitmap-count' in check.keys():
+            print("Check bitmap count is {}".format(int(check['bitmap-count'])))
+            assert(len(bitmaps) == int(check['bitmap-count']))
+        else:
+            raise AssertionError("Unknown check: {}".format(repr(check)))
 
 def run_test_step_action_timer_start(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
-    tag = step['tag']
+    tag = step['timer']
     assert_browser(ctx)
     assert(ctx['timers'].get(tag) is None)
     ctx['timers'][tag] = {}

@@ -4,7 +4,7 @@ steps:
 - action: launch
   language: en
 - action: timer-start
-  tag: timer1
+  timer: timer1
 - action: window-new
   tag: win1
 - action: navigate
@@ -17,7 +17,7 @@ steps:
 - action: timer-stop
   timer: timer1
 - action: timer-start
-  tag: timer2
+  timer: timer2
 - action: window-new
   tag: win2
 - action: navigate
