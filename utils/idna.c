@@ -437,7 +437,7 @@ static bool idna__is_valid(int32_t *label, size_t len)
 	 */
 
 	/* 2. Check characters 3 and 4 are not '--'. */
-	if ((label[2] == 0x002d) && (label[3] == 0x002d)) {
+	if ((len >= 4) && (label[2] == 0x002d) && (label[3] == 0x002d)) {
 		NSLOG(netsurf, INFO,
 		      "Check failed: characters 2 and 3 are '--'");
 		return false;
