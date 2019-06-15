@@ -36,6 +36,8 @@
 
 #include "content/mimesniff.h"
 #include "content/hlcache.h"
+// Note, this is *ONLY* so that we can abort cleanly during shutdown of the cache
+#include "content/content_protected.h"
 
 typedef struct hlcache_entry hlcache_entry;
 typedef struct hlcache_retrieval_ctx hlcache_retrieval_ctx;
@@ -104,9 +106,10 @@ static struct hlcache_s *hlcache = NULL;
 /**
  * Attempt to clean the cache
  */
-static void hlcache_clean(void *ignored)
+static void hlcache_clean(void *force_clean_flag)
 {
 	hlcache_entry *entry, *next;
+	bool force_clean = (force_clean_flag != NULL);
 
 	for (entry = hlcache->content_list; entry != NULL; entry = next) {
 		next = entry->next;
@@ -114,11 +117,16 @@ static void hlcache_clean(void *ignored)
 		if (entry->content == NULL)
 			continue;
 
-		if (content__get_status(entry->content) == CONTENT_STATUS_LOADING)
-			continue;
-
 		if (content_count_users(entry->content) != 0)
 			continue;
+
+		if (content__get_status(entry->content) == CONTENT_STATUS_LOADING) {
+			if (force_clean == false)
+				continue;
+			NSLOG(netsurf, DEBUG, "Forcing content cleanup during shutdown");
+			content_abort(entry->content);
+			content_set_error(entry->content);
+		}
 
 		/** \todo This is over-zealous: all unused contents
 		 * will be immediately destroyed. Ideally, we want to
@@ -574,6 +582,20 @@ void hlcache_finalise(void)
 		prev_contents = num_contents;
 
 		hlcache_clean(NULL);
+
+		for (num_contents = 0, entry = hlcache->content_list;
+				entry != NULL; entry = entry->next) {
+			num_contents++;
+		}
+	} while (num_contents > 0 && num_contents != prev_contents);
+
+	NSLOG(netsurf, INFO, "%d contents remaining after being polite", num_contents);
+
+	/* Drain cache again, forcing the matter */
+	do {
+		prev_contents = num_contents;
+
+		hlcache_clean(&entry); // Any non-NULL pointer will do
 
 		for (num_contents = 0, entry = hlcache->content_list;
 				entry != NULL; entry = entry->next) {
