@@ -2762,6 +2762,13 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 	llcache_object *object = p;
 	llcache_event event;
 
+	if (llcache == NULL) {
+		NSLOG(llcache, CRITICAL, "Callback happened after llcache finalisation");
+		assert(false);
+		/* In case assertions are off, return here */
+		return;
+	}
+
 	NSLOG(llcache, DEBUG, "Fetch event %d for %p", msg->type, object);
 
 	switch (msg->type) {
