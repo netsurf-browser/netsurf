@@ -31,10 +31,15 @@ import subprocess
 import time
 
 class MonkeyFarmer(asyncore.dispatcher):
-    def __init__(self, monkey_cmd, online, quiet=False):
+    def __init__(self, monkey_cmd, online, quiet=False, *, wrapper=None):
         (mine, monkeys) = socket.socketpair()
         
         asyncore.dispatcher.__init__(self, sock=mine)
+
+        if wrapper is not None:
+            new_cmd = list(wrapper)
+            new_cmd.extend(monkey_cmd)
+            monkey_cmd = new_cmd
 
         self.monkey = subprocess.Popen(
             monkey_cmd,
@@ -52,6 +57,7 @@ class MonkeyFarmer(asyncore.dispatcher):
         self.online = online
         self.quiet = quiet
         self.discussion = []
+        self.maybe_slower = wrapper is not None
 
     def handle_connect(self):
         pass
@@ -132,8 +138,8 @@ class MonkeyFarmer(asyncore.dispatcher):
                 break
 
 class Browser:
-    def __init__(self, monkey_cmd=["./nsmonkey"], quiet=False):
-        self.farmer = MonkeyFarmer(monkey_cmd=monkey_cmd, online=self.on_monkey_line, quiet=quiet)
+    def __init__(self, monkey_cmd=["./nsmonkey"], quiet=False, *, wrapper=None):
+        self.farmer = MonkeyFarmer(monkey_cmd=monkey_cmd, online=self.on_monkey_line, quiet=quiet, wrapper=wrapper)
         self.windows = {}
         self.logins = {}
         self.sslcerts = {}
@@ -142,9 +148,14 @@ class Browser:
         self.stopped = False
         self.launchurl = None
         now = time.time()
+        timeout = now + 1
+
+        if wrapper is not None:
+            timeout = now + 10
+
         while not self.started:
             self.farmer.loop(once=True)
-            if (time.time() - now) > 1:
+            if time.time() > timeout:
                 break
 
     def pass_options(self, *opts):

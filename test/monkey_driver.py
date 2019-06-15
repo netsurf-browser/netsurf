@@ -121,8 +121,9 @@ def print_usage():
 def parse_argv(argv):
     path_monkey = ''
     path_test = ''
+    wrapper = None
     try:
-        opts, args = getopt.getopt(argv,"hm:t:",["monkey=","test="])
+        opts, args = getopt.getopt(argv,"hm:t:w:",["monkey=","test=","wrapper="])
     except getopt.GetoptError:
         print_usage()
         sys.exit(2)
@@ -134,6 +135,10 @@ def parse_argv(argv):
             path_monkey = arg
         elif opt in ("-t", "--test"):
             path_test = arg
+        elif opt in ("-w", "--wrapper"):
+            if wrapper is None:
+                wrapper = []
+            wrapper.extend(arg.split())
 
     if path_monkey == '':
         print_usage()
@@ -142,7 +147,7 @@ def parse_argv(argv):
         print_usage()
         sys.exit()
 
-    return path_monkey, path_test
+    return path_monkey, path_test, wrapper
 
 def load_test_plan(path):
     plan = []
@@ -200,7 +205,7 @@ def run_test_step_action_launch(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     assert(ctx.get('browser') is None)
     assert(ctx.get('windows') is None)
-    ctx['browser'] = DriverBrowser(monkey_cmd=[ctx["monkey"]], quiet=True)
+    ctx['browser'] = DriverBrowser(monkey_cmd=[ctx["monkey"]], quiet=True, wrapper=ctx["wrapper"])
     assert_browser(ctx)
     ctx['windows'] = dict()
     for arg in step.get('args', []):
@@ -513,9 +518,10 @@ def run_preloaded_test(path_monkey, plan):
 
 def main(argv):
     ctx = {}
-    path_monkey, path_test = parse_argv(argv)
+    path_monkey, path_test, wrapper = parse_argv(argv)
     plan = load_test_plan(path_test)
     ctx["monkey"] = path_monkey
+    ctx["wrapper"] = wrapper
     run_test_plan(ctx, plan)
 
 # Some python weirdness to get to main().
