@@ -205,7 +205,7 @@ def run_test_step_action_launch(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     assert(ctx.get('browser') is None)
     assert(ctx.get('windows') is None)
-    ctx['browser'] = DriverBrowser(monkey_cmd=[ctx["monkey"]], quiet=True, wrapper=ctx["wrapper"])
+    ctx['browser'] = DriverBrowser(monkey_cmd=[ctx["monkey"]], quiet=True, wrapper=ctx.get("wrapper"))
     assert_browser(ctx)
     ctx['windows'] = dict()
     for arg in step.get('args', []):
