@@ -8,7 +8,7 @@
 # toolchain is located in /usr/bin and the wildcard matching
 # fails then. So this wildcard matches only works for
 # the netsurf environment!
-STRIP := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*-strip))
+STRIP := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*-strip)
 STACK := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*stack)
 FT2CF := $(GCCSDK_INSTALL_ENV)/bin/freetype-config
 
