@@ -35548,7 +35548,7 @@ DUK_LOCAL void duk__enc_fastint_tval(duk_json_enc_ctx *js_ctx, duk_tval *tv) {
 	 * won't work for older MSVC.
 	 */
 	/*DUK_SPRINTF((char *) buf, "%lld", (long long) v);*/
-	DUK_SPRINTF((char *) buf, "%"PRIsizet, (ssize_t) v);
+	DUK_SPRINTF((char *) buf, "%"PRIsizet, (size_t) v);
 	DUK__EMIT_CSTR(js_ctx, (const char *) buf);
 }
 #endif
