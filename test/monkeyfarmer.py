@@ -64,18 +64,18 @@ class MonkeyFarmer(asyncore.dispatcher):
 
     def handle_close(self):
         # the pipe to the monkey process has closed
-        #  ensure the child process is finished and report the exit
         self.close()
-        if self.monkey.poll() is None:
-            self.monkey.terminate()
-            self.monkey.wait()
-        self.lines.insert(0, "GENERIC EXIT {}".format(self.monkey.returncode).encode('utf-8'))
         
 
     def handle_read(self):
         got = self.recv(8192)
         if not got:
             self.deadmonkey = True
+            #  ensure the child process is finished and report the exit
+            if self.monkey.poll() is None:
+                self.monkey.terminate()
+                self.monkey.wait()
+            self.lines.insert(0, "GENERIC EXIT {}".format(self.monkey.returncode).encode('utf-8'))
             return
         self.incoming += got
         if b"\n" in self.incoming:
