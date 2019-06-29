@@ -33,10 +33,31 @@ endif
 
 # non-pkgconfig components
 
-FREETYPE_FONT_CFLAGS := $(shell $(FT2CF) --cflags) -DWITH_FREETYPE_FONT_DRIVER
 SPIDERMONKEY_CFLAGS := -DXP_UNIX -DJS_HAS_FILE_OBJECT=0 -DJSOPTION_JIT=0 -DPOSIX_SOURCE -D_BSD_SOURCE
 
-$(eval $(call feature_enabled,ATARI_FREETYPE_FONT,$(FREETYPE_FONT_CFLAGS),-lfreetype,(Freetype)))
+# freetype is optional but older versions do not use pkg-config
+ifeq ($(NETSURF_USE_ATARI_FREETYPE_FONT),YES)
+  NETSURF_USE_FREETYPE2 := AUTO
+  NETSURF_FEATURE_FREETYPE2_CFLAGS := -DWITH_FREETYPE_FONT_DRIVER
+
+  $(eval $(call pkg_config_find_and_add_enabled,FREETYPE2,freetype2,freetype2))
+
+  # try and use non pkg-config method
+  ifeq ($(NETSURF_USE_FREETYPE2),NO)
+    FREETYPE_CONFIG_EXISTS := $(shell $(FT2CF) --cflags >/dev/null && echo yes)
+    ifeq ($(FREETYPE_CONFIG_EXISTS),yes)
+      NETSURF_USE_FREETYPE2 := YES
+      CFLAGS += $(shell $(FT2CF) --cflags) $(NETSURF_FEATURE_FREETYPE2_CFLAGS)
+      LDFLAGS += $(shell $(FT2CF) --libs)
+      $(info FT2.CNFG: freetype2 (freetype2)	enabled)
+    else
+      $(info FT2.CNFG: freetype2 (freetype2)	failed)
+      $(error Unable to find library for: freetype2)
+    endif
+  endif
+endif
+
+
 $(eval $(call feature_enabled,ATARI_NETSURF_FONT,-DWITH_INTERNAL_FONT_DRIVER,,(Internal Font)))
 $(eval $(call feature_enabled,ATARI_VDI_FONT,-DWITH_VDI_FONT_DRIVER,,(VDI Font)))
 $(eval $(call feature_enabled,ATARI_8BPP_SUPPORT,-DWITH_8BPP_SUPPORT,,(Indexed screen format support)))
