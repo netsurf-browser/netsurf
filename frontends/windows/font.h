@@ -35,8 +35,8 @@ struct font_desc {
     const char *encoding;
 };
 
-struct gui_layout_table *win32_layout_table;
-struct gui_utf8_table *win32_utf8_table;
+extern struct gui_layout_table *win32_layout_table;
+extern struct gui_utf8_table *win32_utf8_table;
 
 /**
  * convert from utf-8 to win32 font encoding.

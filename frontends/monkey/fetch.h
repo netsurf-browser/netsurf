@@ -19,6 +19,6 @@
 #ifndef NS_MONKEY_FETCH_H
 #define NS_MONKEY_FETCH_H
 
-struct gui_fetch_table *monkey_fetch_table;
+extern struct gui_fetch_table *monkey_fetch_table;
 
 #endif /* NS_MONKEY_FETCH_H */

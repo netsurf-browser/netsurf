@@ -20,6 +20,6 @@
 #ifndef NETSURF_FB_FETCH_H
 #define NETSURF_FB_FETCH_H
 
-struct gui_fetch_table *framebuffer_fetch_table;
+extern struct gui_fetch_table *framebuffer_fetch_table;
 
 #endif

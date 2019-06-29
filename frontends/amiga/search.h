@@ -22,7 +22,7 @@
 struct gui_search_table;
 struct gui_window;
 
-struct gui_search_table *amiga_search_table;
+extern struct gui_search_table *amiga_search_table;
 
 /**
  * Change the displayed search status.

@@ -25,7 +25,7 @@
 
 #include "oslib/wimp.h"
 
-struct gui_clipboard_table *riscos_clipboard_table;
+extern struct gui_clipboard_table *riscos_clipboard_table;
 
 void gui_start_selection(struct gui_window *g);
 

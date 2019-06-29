@@ -25,7 +25,7 @@ struct hlcache_handle;
 struct bitmap;
 
 /** bitmap operations table */
-struct gui_bitmap_table *riscos_bitmap_table;
+extern struct gui_bitmap_table *riscos_bitmap_table;
 
 /** save with full alpha channel (if not opaque) */
 #define BITMAP_SAVE_FULL_ALPHA	(1 << 0)

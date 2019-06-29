@@ -22,6 +22,6 @@
 /**
  * The clipboard operation function table for win32
  */
-struct gui_clipboard_table *win32_clipboard_table;
+extern struct gui_clipboard_table *win32_clipboard_table;
 
 #endif

@@ -22,7 +22,7 @@
 /**
  * win32 API fetch operation table
  */
-struct gui_fetch_table *win32_fetch_table;
+extern struct gui_fetch_table *win32_fetch_table;
 
 /**
  * Translate resource to win32 resource data.

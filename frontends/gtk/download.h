@@ -24,7 +24,7 @@
 /**
  * download operation table for gtk
  */
-struct gui_download_table *nsgtk_download_table;
+extern struct gui_download_table *nsgtk_download_table;
 
 /**
  * Initialise download window ready for use.

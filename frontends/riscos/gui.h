@@ -167,7 +167,7 @@ nserror riscos_schedule(int t, void (*callback)(void *p), void *p);
 /* in search.c */
 void ro_gui_search_init(void);
 void ro_gui_search_prepare(struct browser_window *g);
-struct gui_search_table *riscos_search_table;
+extern struct gui_search_table *riscos_search_table;
 
 /* in print.c */
 void ro_gui_print_init(void);

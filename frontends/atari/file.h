@@ -21,7 +21,7 @@
 
 #include "utils/file.h"
 
-struct gui_file_table *atari_file_table;
+extern struct gui_file_table *atari_file_table;
 
 
 #endif /* FILE_C_INCLUDED */

@@ -19,6 +19,6 @@
 #ifndef GTK_SELECTION_H
 #define GTK_SELECTION_H
 
-struct gui_clipboard_table *nsgtk_clipboard_table;
+extern struct gui_clipboard_table *nsgtk_clipboard_table;
 
 #endif

@@ -20,7 +20,7 @@
 #ifndef _NETSURF_WINDOWS_BITMAP_H_
 #define _NETSURF_WINDOWS_BITMAP_H_
 
-struct gui_bitmap_table *win32_bitmap_table;
+extern struct gui_bitmap_table *win32_bitmap_table;
 
 struct bitmap {
 	HBITMAP windib;

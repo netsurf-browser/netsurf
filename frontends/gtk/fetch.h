@@ -19,7 +19,7 @@
 #ifndef NETSURF_GTK_FETCH_H
 #define NETSURF_GTK_FETCH_H
 
-struct gui_fetch_table *nsgtk_fetch_table;
+extern struct gui_fetch_table *nsgtk_fetch_table;
 
 void gtk_fetch_filetype_init(const char *mimefile);
 void gtk_fetch_filetype_fin(void);

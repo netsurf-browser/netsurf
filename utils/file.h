@@ -117,7 +117,7 @@ struct gui_file_table {
 };
 
 /** Default (posix) file operation table. */
-struct gui_file_table *default_file_table;
+extern struct gui_file_table *default_file_table;
 
 /**
  * Generate a path from one or more component elemnts.

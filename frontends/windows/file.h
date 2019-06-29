@@ -24,6 +24,6 @@
 #ifndef _NETSURF_WINDOWS_FILE_H_
 #define _NETSURF_WINDOWS_FILE_H_
 
-struct gui_file_table *win32_file_table;
+extern struct gui_file_table *win32_file_table;
 
 #endif 

@@ -54,7 +54,7 @@
 */
 #define MFDB_SIZE( bpp, stride, h ) ( ((stride >> 3) * h) * bpp )
 
-struct gui_bitmap_table *atari_bitmap_table;
+extern struct gui_bitmap_table *atari_bitmap_table;
 
 struct bitmap {
 	int width;
