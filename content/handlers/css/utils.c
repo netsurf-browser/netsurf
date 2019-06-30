@@ -117,8 +117,8 @@ css_fixed nscss_len2pt(
 	case CSS_UNIT_PT: return length;
 	/* 1pc = 12pt */
 	case CSS_UNIT_PC: return FMUL(length, INTTOFIX(12));
-	case CSS_UNIT_VH: return FDIV(FMUL(FDIV((length * ctx->vh), F_100), F_72), F_96);
-	case CSS_UNIT_VW: return FDIV(FMUL(FDIV((length * ctx->vw), F_100), F_72), F_96);
+	case CSS_UNIT_VH: return FDIV(FMUL(FDIV(FMUL(length, ctx->vh), F_100), F_72), F_96);
+	case CSS_UNIT_VW: return FDIV(FMUL(FDIV(FMUL(length,ctx->vw), F_100), F_72), F_96);
 	default: break;
 	}
 
