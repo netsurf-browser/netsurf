@@ -208,9 +208,9 @@ def run_test_step_action_launch(ctx, step):
     ctx['browser'] = DriverBrowser(monkey_cmd=[ctx["monkey"]], quiet=True, wrapper=ctx.get("wrapper"))
     assert_browser(ctx)
     ctx['windows'] = dict()
-    for arg in step.get('args', []):
-        print(get_indent(ctx) + "        " + arg)
-        ctx['browser'].pass_options(arg)
+    for option in step.get('options', []):
+        print(get_indent(ctx) + "        " + option)
+        ctx['browser'].pass_options(option)
 
 
 def run_test_step_action_window_new(ctx, step):

@@ -160,7 +160,7 @@ class Browser:
 
     def pass_options(self, *opts):
         if len(opts) > 0:
-            self.farmer.tell_monkey("OPTIONS " + (" ".join(opts)))
+            self.farmer.tell_monkey("OPTIONS " + (" ".join(['--' + opt for opt in opts])))
         
     def on_monkey_line(self, line):
         parts = line.split(" ")
