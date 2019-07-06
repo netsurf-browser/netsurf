@@ -31,7 +31,7 @@ import os
 import socket
 import subprocess
 import time
-
+import errno
 
 class MonkeyFarmer(asyncore.dispatcher):
 
@@ -73,16 +73,23 @@ class MonkeyFarmer(asyncore.dispatcher):
         self.close()
 
     def handle_read(self):
-        got = self.recv(8192)
-        if not got:
-            self.deadmonkey = True
-            #  ensure the child process is finished and report the exit
-            if self.monkey.poll() is None:
-                self.monkey.terminate()
-                self.monkey.wait()
-            self.lines.insert(0, "GENERIC EXIT {}".format(
-                self.monkey.returncode).encode('utf-8'))
-            return
+        try:
+            got = self.recv(8192)
+            if not got:
+                self.deadmonkey = True
+                #  ensure the child process is finished and report the exit
+                if self.monkey.poll() is None:
+                    self.monkey.terminate()
+                    self.monkey.wait()
+                self.lines.insert(0, "GENERIC EXIT {}".format(
+                    self.monkey.returncode).encode('utf-8'))
+                return
+        except socket.error as error:
+            if error.errno == errno.EAGAIN or error.errno == errno.EWOULDBLOCK:
+                return
+            else:
+                raise
+
         self.incoming += got
         if b"\n" in self.incoming:
             lines = self.incoming.split(b"\n")
