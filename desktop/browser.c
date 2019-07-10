@@ -130,7 +130,7 @@ browser_window_get_name(struct browser_window *bw, const char **out_name)
 
 
 /* exported interface, documented in browser.h */
-nserror 
+nserror
 browser_window_set_name(struct browser_window *bw, const char *name)
 {
 	char *nname = NULL;
@@ -143,7 +143,7 @@ browser_window_set_name(struct browser_window *bw, const char *name)
 			return NSERROR_NOMEM;
 		}
 	}
-	
+
 	if (bw->name != NULL) {
 		free(bw->name);
 	}
@@ -1076,13 +1076,7 @@ browser_window_favicon_callback(hlcache_handle *c,
 	switch (event->type) {
 	case CONTENT_MSG_DONE:
 		if (bw->favicon.current != NULL) {
-			content_status status =
-					content_get_status(bw->favicon.current);
-
-			if ((status == CONTENT_STATUS_READY) ||
-					(status == CONTENT_STATUS_DONE))
-				content_close(bw->favicon.current);
-
+			content_close(bw->favicon.current);
 			hlcache_handle_release(bw->favicon.current);
 		}
 
@@ -1344,6 +1338,143 @@ static void browser_window_convert_to_download(struct browser_window *bw,
 	browser_window_stop_throbber(bw);
 }
 
+/**
+ * handle message for content ready on browser window
+ */
+static nserror
+browser_window_content_ready(struct browser_window *bw)
+{
+	int width, height;
+	nserror res = NSERROR_OK;
+
+	/* close and release the current window content */
+	if (bw->current_content != NULL) {
+		content_close(bw->current_content);
+		hlcache_handle_release(bw->current_content);
+	}
+
+	bw->current_content = bw->loading_content;
+	bw->loading_content = NULL;
+
+	/* Format the new content to the correct dimensions */
+	browser_window_get_dimensions(bw, &width, &height, true);
+	content_reformat(bw->current_content, false, width, height);
+
+	/* history */
+	if (bw->history_add && bw->history) {
+		nsurl *url = hlcache_handle_get_url(bw->current_content);
+
+		if (urldb_add_url(url)) {
+			urldb_set_url_title(url, content_get_title(bw->current_content));
+			urldb_update_url_visit_data(url);
+			urldb_set_url_content_type(url,
+						   content_get_type(bw->current_content));
+
+			/* This is safe as we've just added the URL */
+			global_history_add(urldb_get_url(url));
+		}
+		/**
+		 * \todo Urldb / Thumbnails / Local history brokenness
+		 *
+		 * We add to local history after calling urldb_add_url rather
+		 *  than in the block above.  If urldb_add_url fails (as it
+		 *  will for urls like "about:about", "about:config" etc),
+		 *  there would be no local history node, and later calls to
+		 *  history_update will either explode or overwrite the node
+		 *  for the previous URL.
+		 *
+		 * We call it after, rather than before urldb_add_url because
+		 *  history_add calls bitmap render, which tries to register
+		 *  the thumbnail with urldb.  That thumbnail registration
+		 *  fails if the url doesn't exist in urldb already, and only
+		 *  urldb-registered thumbnails get freed.  So if we called
+		 *  history_add before urldb_add_url we would leak thumbnails
+		 *  for all newly visited URLs.  With the history_add call
+		 *  after, we only leak the thumbnails when urldb does not add
+		 *  the URL.
+		 *
+		 * Also, since browser_window_history_add can create a
+		 *  thumbnail (content_redraw), we need to do it after
+		 *  content_reformat.
+		 */
+		browser_window_history_add(bw, bw->current_content, bw->frag_id);
+	}
+
+	browser_window_remove_caret(bw, false);
+
+	if (bw->window != NULL) {
+		guit->window->new_content(bw->window);
+
+		browser_window_refresh_url_bar(bw);
+	}
+
+	/* new content; set scroll_to_top */
+	browser_window_update(bw, true);
+	content_open(bw->current_content, bw, 0, 0);
+	browser_window_set_status(bw, content_get_status_message(bw->current_content));
+
+	/* frames */
+	if ((content_get_type(bw->current_content) == CONTENT_HTML) &&
+	    (html_get_frameset(bw->current_content) != NULL)) {
+		res = browser_window_create_frameset(bw, html_get_frameset(bw->current_content));
+	}
+
+	if (content_get_type(bw->current_content) == CONTENT_HTML &&
+	    html_get_iframe(bw->current_content) != NULL) {
+		browser_window_create_iframes(bw, html_get_iframe(bw->current_content));
+	}
+
+	return res;
+}
+
+
+/**
+ * handle message for content done on browser window
+ */
+static nserror
+browser_window_content_done(struct browser_window *bw)
+{
+	float sx, sy;
+	struct rect rect;
+	int scrollx;
+	int scrolly;
+
+	if (bw->window == NULL) {
+		/* Updated browser window's scrollbars. */
+		/**
+		 * \todo update browser window scrollbars before CONTENT_MSG_DONE
+		 */
+		browser_window_reformat(bw, true, bw->width, bw->height);
+		browser_window_handle_scrollbars(bw);
+	}
+
+	browser_window_update(bw, false);
+	browser_window_set_status(bw, content_get_status_message(bw->current_content));
+	browser_window_stop_throbber(bw);
+	browser_window_update_favicon(bw->current_content, bw, NULL);
+
+	if (browser_window_history_get_scroll(bw, &sx, &sy) == NSERROR_OK) {
+		scrollx = (int)((float)content_get_width(bw->current_content) * sx);
+		scrolly = (int)((float)content_get_height(bw->current_content) * sy);
+		rect.x0 = rect.x1 = scrollx;
+		rect.y0 = rect.y1 = scrolly;
+		if (browser_window_set_scroll(bw, &rect) != NSERROR_OK) {
+			NSLOG(netsurf, WARNING,
+			      "Unable to set browser scroll offsets to %d by %d",
+			      scrollx, scrolly);
+		}
+	}
+
+	browser_window_history_update(bw, bw->current_content);
+	hotlist_update_url(hlcache_handle_get_url(bw->current_content));
+
+	if (bw->refresh_interval != -1) {
+		guit->misc->schedule(bw->refresh_interval * 10,
+				     browser_window_refresh, bw);
+	}
+
+	return NSERROR_OK;
+}
 
 /**
  * Browser window content event callback handler.
@@ -1355,7 +1486,6 @@ browser_window_callback(hlcache_handle *c,
 {
 	struct browser_window *bw = pw;
 	nserror res = NSERROR_OK;
-	float sx, sy;
 
 	switch (event->type) {
 	case CONTENT_MSG_LOG:
@@ -1393,130 +1523,15 @@ browser_window_callback(hlcache_handle *c,
 		break;
 
 	case CONTENT_MSG_READY:
-	{
-		int width, height;
-
 		assert(bw->loading_content == c);
 
-		if (bw->current_content != NULL) {
-			content_status status =
-					content_get_status(bw->current_content);
-
-			if (status == CONTENT_STATUS_READY ||
-					status == CONTENT_STATUS_DONE)
-				content_close(bw->current_content);
-
-			hlcache_handle_release(bw->current_content);
-		}
-
-		bw->current_content = c;
-		bw->loading_content = NULL;
-
-		/* Format the new content to the correct dimensions */
-		browser_window_get_dimensions(bw, &width, &height, true);
-		content_reformat(c, false, width, height);
-
-		/* history */
-		if (bw->history_add && bw->history) {
-			nsurl *url = hlcache_handle_get_url(c);
-
-			if (urldb_add_url(url)) {
-				urldb_set_url_title(url, content_get_title(c));
-				urldb_update_url_visit_data(url);
-				urldb_set_url_content_type(url,
-						content_get_type(c));
-
-				/* This is safe as we've just added the URL */
-				global_history_add(urldb_get_url(url));
-			}
-			/** \todo Urldb / Thumbnails / Local history brokenness
-			 *
-			 * We add to local history after calling urldb_add_url
-			 * rather than in the block above.  If urldb_add_url
-			 * fails (as it will for urls like "about:about",
-			 * "about:config" etc), there would be no local history
-			 * node, and later calls to history_update will either
-			 * explode or overwrite the node for the previous URL.
-			 *
-			 * We call it after, rather than before urldb_add_url
-			 * because history_add calls bitmap render, which
-			 * tries to register the thumbnail with urldb.  That
-			 * thumbnail registration fails if the url doesn't
-			 * exist in urldb already, and only urldb-registered
-			 * thumbnails get freed.  So if we called history_add
-			 * before urldb_add_url we would leak thumbnails for
-			 * all newly visited URLs.  With the history_add call
-			 * after, we only leak the thumbnails when urldb does
-			 * not add the URL.
-			 *
-			 * Also, since browser_window_history_add can create
-			 * a thumbnail (content_redraw), we need to do it after
-			 * content_reformat.
-			 */
-			browser_window_history_add(bw, c, bw->frag_id);
-		}
-
-		browser_window_remove_caret(bw, false);
-
-		if (bw->window != NULL) {
-			guit->window->new_content(bw->window);
-
-			browser_window_refresh_url_bar(bw);
-		}
-
-		/* new content; set scroll_to_top */
-		browser_window_update(bw, true);
-		content_open(c, bw, 0, 0);
-		browser_window_set_status(bw, content_get_status_message(c));
-
-		/* frames */
-		if ((content_get_type(c) == CONTENT_HTML) &&
-		    (html_get_frameset(c) != NULL)) {
-			res = browser_window_create_frameset(bw,
-					html_get_frameset(c));
-		}
-		if (content_get_type(c) == CONTENT_HTML &&
-				html_get_iframe(c) != NULL)
-			browser_window_create_iframes(bw, html_get_iframe(c));
-	}
+		res = browser_window_content_ready(bw);
 		break;
 
 	case CONTENT_MSG_DONE:
 		assert(bw->current_content == c);
 
-		if (bw->window == NULL) {
-			/* Updated browser window's scrollbars.
-			 * TODO: do this before CONTENT_MSG_DONE */
-			browser_window_reformat(bw, true,
-					bw->width, bw->height);
-			browser_window_handle_scrollbars(bw);
-		}
-
-		browser_window_update(bw, false);
-		browser_window_set_status(bw, content_get_status_message(c));
-		browser_window_stop_throbber(bw);
-		browser_window_update_favicon(c, bw, NULL);
-
-		if (browser_window_history_get_scroll(bw, &sx, &sy) == NSERROR_OK) {
-			int scrollx = (int)((float)content_get_width(bw->current_content) * sx);
-			int scrolly = (int)((float)content_get_height(bw->current_content) * sy);
-			struct rect rect;
-			rect.x0 = rect.x1 = scrollx;
-			rect.y0 = rect.y1 = scrolly;
-			if (browser_window_set_scroll(bw, &rect) != NSERROR_OK) {
-				NSLOG(netsurf, WARNING,
-				      "Unable to set browser scroll offsets to %d by %d",
-				      scrollx, scrolly);
-			}
-		}
-
-		browser_window_history_update(bw, c);
-		hotlist_update_url(hlcache_handle_get_url(c));
-
-		if (bw->refresh_interval != -1) {
-			guit->misc->schedule(bw->refresh_interval * 10,
-					browser_window_refresh, bw);
-		}
+		res = browser_window_content_done(bw);
 		break;
 
 	case CONTENT_MSG_ERRORCODE:
@@ -1531,9 +1546,9 @@ browser_window_callback(hlcache_handle *c,
 			guit->misc->warning(event->data.error, NULL);
 		}
 
-		if (c == bw->loading_content)
+		if (c == bw->loading_content) {
 			bw->loading_content = NULL;
-		else if (c == bw->current_content) {
+		} else if (c == bw->current_content) {
 			bw->current_content = NULL;
 			browser_window_remove_caret(bw, false);
 		}
@@ -1908,11 +1923,7 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 	}
 
 	if (bw->current_content != NULL) {
-		content_status status = content_get_status(bw->current_content);
-		if (status == CONTENT_STATUS_READY ||
-				status == CONTENT_STATUS_DONE)
-			content_close(bw->current_content);
-
+		content_close(bw->current_content);
 		hlcache_handle_release(bw->current_content);
 		bw->current_content = NULL;
 	}
@@ -1924,13 +1935,7 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 	}
 
 	if (bw->favicon.current != NULL) {
-		content_status status = content_get_status(bw->favicon.current);
-
-		if (status == CONTENT_STATUS_READY ||
-		    status == CONTENT_STATUS_DONE) {
-			content_close(bw->favicon.current);
-		}
-
+		content_close(bw->favicon.current);
 		hlcache_handle_release(bw->favicon.current);
 		bw->favicon.current = NULL;
 	}
@@ -1965,7 +1970,7 @@ static void browser_window_destroy_internal(struct browser_window *bw)
  * \param bw	Browser window to update URL bar for.
  * \param url	URL for content displayed by bw including any fragment.
  */
-static inline nserror 
+static inline nserror
 browser_window_refresh_url_bar_internal(struct browser_window *bw, nsurl *url)
 {
 	assert(bw);
@@ -2326,7 +2331,7 @@ const char* browser_window_get_title(struct browser_window *bw)
 	}
 
 	/* no content so return about:blank */
-	return nsurl_access(corestring_nsurl_about_blank);	
+	return nsurl_access(corestring_nsurl_about_blank);
 }
 
 /* Exported interface, documented in browser.h */
