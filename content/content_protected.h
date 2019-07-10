@@ -60,9 +60,9 @@ struct content_handler {
 	bool (*redraw)(struct content *c, struct content_redraw_data *data,
 			const struct rect *clip,
 			const struct redraw_context *ctx);
-	void (*open)(struct content *c, struct browser_window *bw,
+	nserror (*open)(struct content *c, struct browser_window *bw,
 			struct content *page, struct object_params *params);
-	void (*close)(struct content *c);
+	nserror (*close)(struct content *c);
 	void (*clear_selection)(struct content *c);
 	char * (*get_selection)(struct content *c);
 	nserror (*get_contextual_content)(struct content *c, int x, int y,

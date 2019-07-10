@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * High-level resource cache (interface)
+/**
+ * \file
+ * High-level resource cache interface
  */
 
 #ifndef NETSURF_CONTENT_HLCACHE_H_

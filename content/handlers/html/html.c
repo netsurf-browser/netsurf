@@ -1774,7 +1774,7 @@ static nserror html_clone(const struct content *old, struct content **newc)
  * Handle a window containing a CONTENT_HTML being opened.
  */
 
-static void
+static nserror
 html_open(struct content *c,
 	  struct browser_window *bw,
 	  struct content *page,
@@ -1794,6 +1794,8 @@ html_open(struct content *c,
 	html->selection_owner.none = true;
 
 	html_object_open_objects(html, bw);
+
+	return NSERROR_OK;
 }
 
 
@@ -1801,7 +1803,7 @@ html_open(struct content *c,
  * Handle a window containing a CONTENT_HTML being closed.
  */
 
-static void html_close(struct content *c)
+static nserror html_close(struct content *c)
 {
 	html_content *htmlc = (html_content *) c;
 
@@ -1822,6 +1824,8 @@ static void html_close(struct content *c)
 
 	/* remove all object references from the html content */
 	html_object_close_objects(htmlc);
+
+	return NSERROR_OK;
 }
 
 

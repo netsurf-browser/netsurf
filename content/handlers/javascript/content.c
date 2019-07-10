@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Content for javascript (implementation)
+/**
+ * \file
+ * javascript content implementation
  */
 
 #include <assert.h>

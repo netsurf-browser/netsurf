@@ -1204,7 +1204,7 @@ textplain_redraw(struct content *c,
 /**
  * Handle a window containing a CONTENT_TEXTPLAIN being opened.
  */
-static void
+static nserror
 textplain_open(struct content *c,
 	       struct browser_window *bw,
 	       struct content *page,
@@ -1216,13 +1216,15 @@ textplain_open(struct content *c,
 
 	/* text selection */
 	selection_init(&text->sel, NULL, NULL);
+
+	return NSERROR_OK;
 }
 
 
 /**
  * Handle a window containing a CONTENT_TEXTPLAIN being closed.
  */
-static void textplain_close(struct content *c)
+static nserror textplain_close(struct content *c)
 {
 	textplain_content *text = (textplain_content *) c;
 
@@ -1231,6 +1233,8 @@ static void textplain_close(struct content *c)
 	}
 
 	text->bw = NULL;
+
+	return NSERROR_OK;
 }
 
 

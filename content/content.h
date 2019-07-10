@@ -278,10 +278,10 @@ void content_mouse_action(struct hlcache_handle *h, struct browser_window *bw,
 bool content_keypress(struct hlcache_handle *h, uint32_t key);
 
 
-void content_open(struct hlcache_handle *h, struct browser_window *bw,
+nserror content_open(struct hlcache_handle *h, struct browser_window *bw,
 		struct content *page, struct object_params *params);
 
-void content_close(struct hlcache_handle *h);
+nserror content_close(struct hlcache_handle *h);
 
 void content_clear_selection(struct hlcache_handle *h);
 
