@@ -19,7 +19,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Duktapeish implementation of javascript engine functions.
  */
 
@@ -49,6 +50,15 @@
 #define HANDLER_MAGIC MAGIC(HANDLER_MAP)
 #define EVENT_LISTENER_JS_MAGIC MAGIC(EVENT_LISTENER_JS_MAP)
 #define GENERICS_MAGIC MAGIC(GENERICS_TABLE)
+
+/**
+ * dukky javascript context
+ */
+struct jscontext {
+	duk_context *ctx; /**< duktape base context */
+	duk_context *thread; /**< duktape compartment */
+	uint64_t exec_start_time;
+};
 
 static duk_ret_t dukky_populate_object(duk_context *ctx, void *udata)
 {
@@ -535,6 +545,7 @@ static void *dukky_realloc_function(void *udata, void *ptr, duk_size_t size)
 	return realloc(ptr, size);
 }
 
+
 static void dukky_free_function(void *udata, void *ptr)
 {
 	if (ptr != NULL)
@@ -542,15 +553,36 @@ static void dukky_free_function(void *udata, void *ptr)
 }
 
 
-/**************************************** js.h ******************************/
-struct jscontext {
-	duk_context *ctx;
-	duk_context *thread;
-	uint64_t exec_start_time;
-};
-
 #define CTX (ctx->thread)
 
+/**
+ * close current compartment
+ *
+ * \param ctx javascript context
+ * \return NSERROR_OK on sucess.
+ */
+static nserror dukky_closecompartment(jscontext *ctx)
+{
+	/* ensure there is an active compartment */
+	if (ctx->thread == NULL) {
+		return NSERROR_OK;
+	}
+
+	/* Closing down the extant compartment */
+	NSLOG(dukky, DEEPDEBUG, "Closing down extant compartment...");
+	duk_get_global_string(ctx->thread, MAGIC(closedownCompartment));
+	dukky_pcall(CTX, 0, true);
+	NSLOG(dukky, DEEPDEBUG, "Popping the thread off the stack");
+	duk_set_top(ctx->ctx, 0);
+	duk_gc(ctx->ctx, 0);
+	duk_gc(ctx->ctx, DUK_GC_COMPACT);
+
+	ctx->thread = NULL;
+
+	return NSERROR_OK;
+}
+
+/* exported interface documented in js.h */
 void js_initialise(void)
 {
 	/** TODO: Forces JS on for our testing, needs changing before a release
@@ -562,16 +594,17 @@ void js_initialise(void)
 	javascript_init();
 }
 
+
+/* exported interface documented in js.h */
 void js_finalise(void)
 {
 	/* NADA for now */
 }
 
-#define DUKKY_NEW_PROTOTYPE(klass, uklass, klass_name)			\
-	dukky_create_prototype(ctx, dukky_##klass##___proto, PROTO_NAME(uklass), klass_name)
 
-nserror js_newcontext(int timeout, jscallback *cb, void *cbctx,
-		jscontext **jsctx)
+/* exported interface documented in js.h */
+nserror
+js_newcontext(int timeout, jscallback *cb, void *cbctx, jscontext **jsctx)
 {
 	duk_context *ctx;
 	jscontext *ret = calloc(1, sizeof(*ret));
@@ -597,30 +630,29 @@ nserror js_newcontext(int timeout, jscallback *cb, void *cbctx,
 	return NSERROR_OK;
 }
 
+
+/* exported interface documented in js.h */
 void js_destroycontext(jscontext *ctx)
 {
 	NSLOG(dukky, DEBUG, "Destroying duktape javascript context");
+	dukky_closecompartment(ctx);
 	duk_destroy_heap(ctx->ctx);
 	free(ctx);
 }
 
+
+/* exported interface documented in js.h */
 jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 {
 	assert(ctx != NULL);
 	NSLOG(dukky, DEBUG,
-	      "New javascript/duktape compartment, win_priv=%p, doc_priv=%p", win_priv,
-	      doc_priv);
+	      "New javascript/duktape compartment, win_priv=%p, doc_priv=%p",
+	      win_priv, doc_priv);
+
 	/* Pop any active thread off */
-	if (CTX != NULL) {
-		/* Closing down the extant compartment */
-		NSLOG(dukky, DEEPDEBUG, "Closing down extant compartment...");
-		duk_get_global_string(CTX, MAGIC(closedownCompartment));
-		dukky_pcall(CTX, 0, true);
-		NSLOG(dukky, DEEPDEBUG, "Popping the thread off the stack");
-		duk_set_top(ctx->ctx, 0);
-		duk_gc(ctx->ctx, 0);
-		duk_gc(ctx->ctx, DUK_GC_COMPACT);
-	}
+	dukky_closecompartment(ctx);
+
+	/* create new compartment thread */
 	duk_push_thread(ctx->ctx);
 	ctx->thread = duk_require_context(ctx->ctx, -1);
 	duk_push_int(CTX, 0);
