@@ -20,11 +20,10 @@
  * Interface to javascript engine functions.
  */
 
-#ifndef _NETSURF_JAVASCRIPT_JS_H_
-#define _NETSURF_JAVASCRIPT_JS_H_
+#ifndef NETSURF_JAVASCRIPT_JS_H_
+#define NETSURF_JAVASCRIPT_JS_H_
 
 #include "utils/errors.h"
-
 
 typedef struct jscontext jscontext;
 typedef struct jsobject jsobject;
@@ -37,40 +36,50 @@ struct dom_node;
 struct dom_element;
 struct dom_string;
 
-/** Initialise javascript interpreter */
+/**
+ * Initialise javascript interpreter
+ */
 void js_initialise(void);
 
-/** finalise javascript interpreter */
+/**
+ * finalise javascript interpreter
+ */
 void js_finalise(void);
 
-/** Create a new javascript context.
+/**
+ * Create a new javascript context.
  *
- * There is usually one context per browser context
+ * There is usually one context per browsing context (browser window)
  *
- * \param timeout elapsed wallclock time (in seconds)  before \a callback is called
+ * \param timeout elapsed wallclock time (in seconds) before \a callback is called
  * \param cb the callback when the runtime exceeds the timeout
  * \param cbctx The context to pass to the callback
  * \param jsctx Updated to the created JS context
  * \return NSERROR_OK on success, appropriate error otherwise.
  */
-nserror js_newcontext(int timeout, jscallback *cb, void *cbctx,
-		jscontext **jsctx);
+nserror js_newcontext(int timeout, jscallback *cb, void *cbctx, jscontext **jsctx);
 
-/** Destroy a previously created context */
+/**
+ * Destroy a previously created context
+ */
 void js_destroycontext(jscontext *ctx);
 
-/** Create a new javascript compartment
+/**
+ * Create a new javascript compartment
  *
  * This is called once for a page with javascript script tags on
  * it. It constructs a fresh global window object.
  */
 jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv);
 
-/* execute some javascript in a context */
+/**
+ * execute some javascript in a context
+ */
 bool js_exec(jscontext *ctx, const uint8_t *txt, size_t txtlen, const char *name);
 
-
-/* fire an event at a dom node */
+/**
+ * fire an event at a dom node
+ */
 bool js_fire_event(jscontext *ctx, const char *type, struct dom_document *doc, struct dom_node *target);
 
 bool
@@ -82,7 +91,8 @@ js_dom_event_add_listener(jscontext *ctx,
 
 /*** New Events ***/
 
-/** Handle a new element being created.
+/**
+ * Handle a new element being created.
  *
  * This is called once an element is inserted into the DOM document handled
  * by the context provided.  The JS implementation must then scan the element
@@ -90,7 +100,8 @@ js_dom_event_add_listener(jscontext *ctx,
  */
 void js_handle_new_element(jscontext *ctx, struct dom_element *node);
 
-/** Handle an event propagation finished callback.
+/**
+ * Handle an event propagation finished callback.
  *
  * This is called once an event finishes propagating, no matter how it
  * finishes.  The intent here is that the JS context can perform any cleanups
@@ -99,4 +110,4 @@ void js_handle_new_element(jscontext *ctx, struct dom_element *node);
  */
 void js_event_cleanup(jscontext *ctx, struct dom_event *evt);
 
-#endif /* _NETSURF_JAVASCRIPT_JS_H_ */
+#endif /* NETSURF_JAVASCRIPT_JS_H_ */
