@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Vincent Sanders <vince@netsurf-browser.org>
+ * Copyright 2019 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -20,11 +20,11 @@
 
 #include "desktop/version.h"
 
-const char * const netsurf_version = "3.9 (Dev"
+const char * const netsurf_version = "3.10 (Dev"
 #if defined(CI_BUILD)
 	" CI #" CI_BUILD
 #endif
 	")"
 	;
 const int netsurf_version_major = 3;
-const int netsurf_version_minor = 9;
+const int netsurf_version_minor = 10;
