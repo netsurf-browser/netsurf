@@ -200,15 +200,11 @@ static nserror set_defaults(struct nsoption_s *defaults)
 		nsoption_setnull_charp(downloads_directory, strdup(fname));
 	}
 
-	/* default path to certificates */
-	nsoption_setnull_charp(ca_path, strdup("/etc/ssl/certs"));
-
 	if ((nsoption_charp(cookie_file) == NULL) ||
 	    (nsoption_charp(cookie_jar) == NULL) ||
 	    (nsoption_charp(url_file) == NULL) ||
 	    (nsoption_charp(hotlist_path) == NULL) ||
-	    (nsoption_charp(downloads_directory) == NULL) ||
-	    (nsoption_charp(ca_path) == NULL)) {
+	    (nsoption_charp(downloads_directory) == NULL)) {
 		NSLOG(netsurf, INFO,
 		      "Failed initialising default resource paths");
 		return NSERROR_BAD_PARAMETER;
