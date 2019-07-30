@@ -220,6 +220,11 @@ layout_get_object_dimensions(struct box *box,
 		int intrinsic_width = content_get_width(box->object);
 		int intrinsic_height = content_get_height(box->object);
 
+		if (min_width >  0 && min_width > *width)
+			*width = min_width;
+		if (max_width >= 0 && max_width < *width)
+			*width = max_width;
+
 		if (intrinsic_width != 0)
 			*height = (*width * intrinsic_height) /
 					intrinsic_width;
