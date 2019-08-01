@@ -1,4 +1,6 @@
-#!/bin/sh
+# This shell fragment is intended for use in `bash` or `zsh`.  While it
+# may work in other shells it is not meant to, and any misbehaviour is not
+# considered a bug in that case.
 #
 # NetSurf Library, tool and browser development support script
 #
