@@ -2760,14 +2760,11 @@ void browser_window_update_box(struct browser_window *bw, struct rect *rect)
 {
 	int pos_x;
 	int pos_y;
-	struct browser_window *top;
+	struct browser_window *top = bw;
 
 	assert(bw);
 
-	if (bw->window != NULL) {
-		/* Front end window */
-		guit->window->invalidate(bw->window, rect);
-	} else {
+	if (bw->window == NULL) {
 		/* Core managed browser window */
 		browser_window_get_position(bw, true, &pos_x, &pos_y);
 
@@ -2777,9 +2774,14 @@ void browser_window_update_box(struct browser_window *bw, struct rect *rect)
 		rect->y0 += pos_y / bw->scale;
 		rect->x1 += pos_x / bw->scale;
 		rect->y1 += pos_y / bw->scale;
-
-		guit->window->invalidate(top->window, rect);
 	}
+
+	rect->x0 *= top->scale;
+	rect->y0 *= top->scale;
+	rect->x1 *= top->scale;
+	rect->y1 *= top->scale;
+
+	guit->window->invalidate(top->window, rect);
 }
 
 
