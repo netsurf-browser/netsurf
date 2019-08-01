@@ -1011,7 +1011,6 @@ static nserror
 nsgtk_window_invalidate_area(struct gui_window *g, const struct rect *rect)
 {
 	int sx, sy;
-	float scale;
 
 	if (rect == NULL) {
 		gtk_widget_queue_draw(GTK_WIDGET(g->layout));
@@ -1023,13 +1022,12 @@ nsgtk_window_invalidate_area(struct gui_window *g, const struct rect *rect)
 	}
 
 	gui_window_get_scroll(g, &sx, &sy);
-	scale = browser_window_get_scale(g->bw);
 
 	gtk_widget_queue_draw_area(GTK_WIDGET(g->layout),
-				   rect->x0 * scale - sx,
-				   rect->y0 * scale - sy,
-				   (rect->x1 - rect->x0) * scale,
-				   (rect->y1 - rect->y0) * scale);
+				   rect->x0 - sx,
+				   rect->y0 - sy,
+				   rect->x1 - rect->x0,
+				   rect->y1 - rect->y0);
 
 	return NSERROR_OK;
 }
