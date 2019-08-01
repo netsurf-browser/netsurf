@@ -382,7 +382,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	int padding_left, padding_right, padding_top, padding_bottom;
 	browser_drag_type drag_type = browser_window_get_drag_type(bw);
 	union content_msg_data msg_data;
-	struct dom_node *node = NULL;
+	struct dom_node *node = html->layout->node; /* Default to the <HTML> */
 	union html_drag_owner drag_owner;
 	union html_selection_owner sel_owner;
 	bool click = mouse & (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_PRESS_2 |
