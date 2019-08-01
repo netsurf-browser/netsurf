@@ -50,11 +50,6 @@
   they are invalid.  But as this is currently unimplemented in the GTK
   flavour of NetSurf, this won't make a difference at all.
 
-  For experimental javascript support the mozilla spiermonkey library
-  is required:
-
-      $ apt-get install libmozjs-dev
-
   Fedora:
 
       $ yum install curl-devel libpng-devel
