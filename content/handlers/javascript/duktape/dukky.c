@@ -39,6 +39,7 @@
 
 #include "duktape/binding.h"
 #include "duktape/generics.js.inc"
+#include "duktape/polyfill.js.inc"
 
 #include "duktape.h"
 #include "dukky.h"
@@ -680,6 +681,25 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 	/* And now the event mapping table */
 	duk_push_object(CTX);
 	duk_put_global_string(CTX, EVENT_MAGIC);
+
+	/* Now load the polyfills */
+	/* ... */
+	duk_push_string(CTX, "polyfill.js");
+	/* ..., polyfill.js */
+	if (duk_pcompile_lstring_filename(CTX, DUK_COMPILE_EVAL,
+					  (const char *)polyfill_js, polyfill_js_len) != 0) {
+		NSLOG(dukky, CRITICAL, "%s", duk_safe_to_string(CTX, -1));
+		NSLOG(dukky, CRITICAL, "Unable to compile polyfill.js, compartment aborted");
+		return NULL;
+	}
+	/* ..., (generics.js) */
+	if (dukky_pcall(CTX, 0, true) != 0) {
+		NSLOG(dukky, CRITICAL, "Unable to run polyfill.js, compartment aborted");
+		return NULL;
+	}
+	/* ..., result */
+	duk_pop(CTX);
+	/* ... */
 
 	/* Now load the NetSurf table in */
 	/* ... */

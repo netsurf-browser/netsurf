@@ -44,7 +44,7 @@ var NetSurf = {
 
 	const offset = target.search("%");
 
-	if (offset == -1 || offset >= target.length) {
+	if (offset == -1 || offset >= (target.length - 1)) {
 	    // We've a string, but the % either doesn't exist or is
 	    // at the end of it, so give up
 	    return Array.from(arguments);

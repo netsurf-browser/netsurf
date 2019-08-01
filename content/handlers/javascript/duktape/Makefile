@@ -4,7 +4,10 @@
 # Included by javascript/Makefile
 #
 
-content/handlers/javascript/duktape/dukky.c: $(OBJROOT)/duktape/binding.h $(OBJROOT)/duktape/generics.js.inc
+content/handlers/javascript/duktape/dukky.c: \
+	$(OBJROOT)/duktape/binding.h \
+	$(OBJROOT)/duktape/generics.js.inc \
+	$(OBJROOT)/duktape/polyfill.js.inc
 
 BINDINGS := $(wildcard content/handlers/javascript/duktape/*.bnd)
 
@@ -14,6 +17,13 @@ $(OBJROOT)/duktape/generics.js.inc: content/handlers/javascript/duktape/generics
 	$(VQ)echo "     XXD: $<"
 	$(Q)xxd -i $< $@.tmp
 	$(Q)sed -e 's/content_handlers_javascript_duktape_generics_js/generics_js/' $@.tmp > $@
+
+# Generator for the C include representing the polyfill.js
+$(OBJROOT)/duktape/polyfill.js.inc: content/handlers/javascript/duktape/polyfill.js
+	$(Q)$(MKDIR) -p $(OBJROOT)/duktape
+	$(VQ)echo "     XXD: $<"
+	$(Q)xxd -i $< $@.tmp
+	$(Q)sed -e 's/content_handlers_javascript_duktape_polyfill_js/polyfill_js/' $@.tmp > $@
 
 # ensure genbind generates debugging files
 GBFLAGS+=-D
