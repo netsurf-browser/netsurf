@@ -594,6 +594,10 @@ monkey_window_handle_exec(int argc, char **argv)
 			total += strlen(argv[i]) + 1;
 		}
 		char *cmd = calloc(total, 1);
+		if (cmd == NULL) {
+			moutf(MOUT_ERROR, "JS WIN %d RET ENOMEM", atoi(argv[2]));
+			return;
+		}
 		strcpy(cmd, argv[4]);
 		for (int i = 5; i < argc; ++i) {
 			strcat(cmd, " ");
