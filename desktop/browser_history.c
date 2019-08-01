@@ -458,11 +458,12 @@ nserror browser_window_history_update(struct browser_window *bw,
 	    guit->window->get_scroll(bw->window, &sx, &sy)) {
 		int content_height = content_get_height(content);
 		int content_width = content_get_width(content);
+		/* clamp width and height values */
 		if (content_height < 1) {
 			content_height = 1;
 		}
 		if (content_width < 1) {
-			content_height = 1;
+			content_width = 1;
 		}
 		/* Successfully got scroll offsets, update the entry */
 		history->current->page.scroll_x = \
