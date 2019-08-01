@@ -4278,10 +4278,10 @@ ro_gui_window_invalidate_area(struct gui_window *g, const struct rect *rect)
 		return NSERROR_OK;
 	}
 
-	x0 = floorf(rect->x0 * 2 * g->scale);
-	y0 = -ceilf(rect->y1 * 2 * g->scale);
-	x1 = ceilf(rect->x1 * 2 * g->scale) + 1;
-	y1 = -floorf(rect->y0 * 2 * g->scale) + 1;
+	x0 = floorf(rect->x0 * 2 );
+	y0 = -ceilf(rect->y1 * 2 );
+	x1 = ceilf(rect->x1 * 2 ) + 1;
+	y1 = -floorf(rect->y0 * 2 ) + 1;
 	use_buffer =
 		(g->option.buffer_everything || g->option.buffer_animations);
 
