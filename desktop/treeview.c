@@ -1965,7 +1965,7 @@ treeview_create(treeview **tree,
 
 	(*tree)->fields = malloc(sizeof(struct treeview_field) * n_fields);
 	if ((*tree)->fields == NULL) {
-		free(tree);
+		free(*tree);
 		return NSERROR_NOMEM;
 	}
 
