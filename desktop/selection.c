@@ -36,6 +36,7 @@
 #include "html/html_internal.h"
 #include "html/font.h"
 #include "text/textplain.h"
+#include "netsurf/browser_window.h"
 
 #include "netsurf/mouse.h"
 #include "desktop/browser_private.h"

@@ -28,6 +28,7 @@
 #include "utils/nsurl.h"
 #include "netsurf/types.h"
 #include "netsurf/layout.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/core_window.h"
 #include "netsurf/plotters.h"
 

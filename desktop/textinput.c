@@ -36,6 +36,7 @@
 #include "netsurf/mouse.h"
 #include "netsurf/form.h"
 #include "netsurf/window.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/keypress.h"
 #include "html/box.h"
 #include "html/html_internal.h"

@@ -72,29 +72,6 @@ static int open_windows = 0;
 
 
 /**
- * Obtain the DPI of the display.
- *
- * \param hwnd A win32 window handle to get the DPI for
- * \return The DPI of the device the window is displayed on.
- */
-static int get_window_dpi(HWND hwnd)
-{
-	HDC hdc = GetDC(hwnd);
-	int dpi = GetDeviceCaps(hdc, LOGPIXELSY);
-
-	if (dpi <= 10) {
-		dpi = 96; /* 96DPI is the default */
-	}
-
-	ReleaseDC(hwnd, hdc);
-
-	NSLOG(netsurf, INFO, "FIX DPI %d", dpi);
-
-	return dpi;
-}
-
-
-/**
  * create and attach accelerator table to main window
  *
  * \param gw gui window context.
@@ -189,8 +166,6 @@ static HWND nsws_window_create(HINSTANCE hInstance, struct gui_window *gw)
 
 	/* set the gui window associated with this browser */
 	SetProp(hwnd, TEXT("GuiWnd"), (HANDLE)gw);
-
-	browser_set_dpi(get_window_dpi(hwnd));
 
 	if ((nsoption_int(window_width) >= 100) &&
 	    (nsoption_int(window_height) >= 100) &&

@@ -12,7 +12,8 @@ desktop/version.c: testament $(OBJROOT)/testament.h
 
 # S_BROWSER are sources related to full browsers but are common
 # between RISC OS, GTK, BeOS and AmigaOS builds
-S_BROWSER := browser.c browser_history.c download.c frames.c netsurf.c \
+S_BROWSER := browser.c browser_window.c browser_history.c \
+        download.c frames.c netsurf.c \
 	save_complete.c save_text.c selection.c textinput.c gui_factory.c \
 	save_pdf.c font_haru.c
 

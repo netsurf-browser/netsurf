@@ -1,5 +1,6 @@
 /*
- * Copyright 2019 Vincent Sanders <vince@netsurf-browser.org>
+ * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
+ * Copyright 2006 James Bursa <bursa@users.sourceforge.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -18,24 +19,24 @@
 
 /**
  * \file
- *
- * Browser core functionality
+ * Browser interfaces.
  */
 
-#include "utils/errors.h"
-#include "netsurf/browser.h"
-#include "css/utils.h"
+#ifndef NETSURF_BROWSER_H_
+#define NETSURF_BROWSER_H_
 
-/* exported interface documented in netsurf/browser.h */
-nserror browser_set_dpi(int dpi)
-{
-	nscss_screen_dpi = INTTOFIX(dpi);
+/**
+ * Set the DPI of the browser.
+ *
+ * \param dpi The DPI to set.
+ */
+nserror browser_set_dpi(int dpi);
 
-	return NSERROR_OK;
-}
+/**
+ * Get the browser DPI.
+ *
+ * \return The DPI in use.
+ */
+int browser_get_dpi(void);
 
-/* exported interface documented in netsurf/browser.h */
-int browser_get_dpi(void)
-{
-	return FIXTOINT(nscss_screen_dpi);
-}
+#endif

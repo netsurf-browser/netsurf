@@ -22,8 +22,8 @@
  * Browser window creation and manipulation interface.
  */
 
-#ifndef _NETSURF_BROWSER_WINDOW_H_
-#define _NETSURF_BROWSER_WINDOW_H_
+#ifndef NETSURF_BROWSER_WINDOW_H_
+#define NETSURF_BROWSER_WINDOW_H_
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -666,19 +666,6 @@ bool browser_window_is_frameset(struct browser_window *bw);
 nserror browser_window_get_scrollbar_type(struct browser_window *bw,
 		browser_scrolling *h, browser_scrolling *v);
 
-/**
- * Set the DPI of the browser.
- *
- * \param dpi The DPI to set.
- */
-nserror browser_set_dpi(int dpi);
-
-/**
- * Get the browser DPI.
- *
- * \return The DPI in use.
- */
-int browser_get_dpi(void);
 
 /**
  * Dump debug info concerning the browser window's contents to file

@@ -34,6 +34,7 @@
 #include "utils/nsoption.h"
 #include "netsurf/url_db.h"
 #include "netsurf/cookie_db.h"
+#include "netsurf/browser.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/fetch.h"
 #include "netsurf/misc.h"
@@ -60,6 +61,26 @@
 char **respaths; /** exported global defined in windows/gui.h */
 
 char *nsw32_config_home; /* exported global defined in windows/gui.h */
+
+/**
+ * Obtain the DPI of the display.
+ *
+ * \return The DPI of the device the window is displayed on.
+ */
+static int get_screen_dpi(void)
+{
+	HDC screendc = GetDC(0);
+	int dpi = GetDeviceCaps(screendc, LOGPIXELSY);
+	ReleaseDC(0, screendc);
+
+	if (dpi <= 10) {
+		dpi = 96; /* 96DPI is the default */
+	}
+
+	NSLOG(netsurf, INFO, "FIX DPI %d", dpi);
+
+	return dpi;
+}
 
 /**
  * Get the path to the config directory.
@@ -392,6 +413,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 		NSLOG(netsurf, INFO, "NetSurf failed to initialise");
 		return 1;
 	}
+
+	browser_set_dpi(get_screen_dpi());
 
 	urldb_load(nsoption_charp(url_file));
 	urldb_load_cookies(nsoption_charp(cookie_file));

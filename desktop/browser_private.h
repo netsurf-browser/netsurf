@@ -22,13 +22,8 @@
  * Browser window private structure.
  */
 
-#ifndef _NETSURF_DESKTOP_BROWSER_PRIVATE_H_
-#define _NETSURF_DESKTOP_BROWSER_PRIVATE_H_
-
-#include <libwapcaplet/libwapcaplet.h>
-
-#include "netsurf/types.h"
-#include "netsurf/browser_window.h"
+#ifndef NETSURF_DESKTOP_BROWSER_PRIVATE_H_
+#define NETSURF_DESKTOP_BROWSER_PRIVATE_H_
 
 #include "desktop/frame_types.h"
 

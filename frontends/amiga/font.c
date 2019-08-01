@@ -24,7 +24,7 @@
 
 #include "utils/log.h"
 #include "utils/nsoption.h"
-#include "netsurf/browser_window.h"
+#include "netsurf/browser.h"
 #include "netsurf/layout.h"
 
 #include "amiga/font.h"

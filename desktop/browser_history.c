@@ -33,13 +33,14 @@
 #include "netsurf/layout.h"
 #include "netsurf/content.h"
 #include "netsurf/window.h"
+#include "netsurf/browser_window.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "netsurf/bitmap.h"
 
 #include "desktop/gui_internal.h"
-#include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
+#include "desktop/browser_history.h"
 
 #define WIDTH 100
 #define HEIGHT 86

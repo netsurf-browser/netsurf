@@ -18,11 +18,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
  
- /** \file
+/**
+ * \file
  * Free text search (core)
  */
 
 #include "content/content.h"
+#include "netsurf/types.h"
+#include "netsurf/browser_window.h"
 
 #include "desktop/browser_private.h"
 #include "desktop/search.h"

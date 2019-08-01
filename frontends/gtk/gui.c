@@ -41,6 +41,7 @@
 #include "netsurf/keypress.h"
 #include "netsurf/url_db.h"
 #include "netsurf/cookie_db.h"
+#include "netsurf/browser.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/misc.h"
 #include "netsurf/netsurf.h"
