@@ -68,17 +68,20 @@ static duk_ret_t dukky_populate_object(duk_context *ctx, void *udata)
 	/* ... obj args protoname */
 	duk_get_global_string(ctx, PROTO_MAGIC);
 	/* .. obj args protoname prototab */
-	duk_insert(ctx, -2);
-	/* ... obj args prototab protoname */
+	duk_dup(ctx, -2);
+	/* ... obj args protoname prototab protoname */
 	duk_get_prop(ctx, -2);
-	/* ... obj args prototab {proto/undefined} */
+	/* ... obj args protoname prototab {proto/undefined} */
 	if (duk_is_undefined(ctx, -1)) {
 		NSLOG(dukky, WARNING,
-		      "RuhRoh, couldn't find a prototype, HTMLUnknownElement it is");
+		      "Unable to find dukky prototype for `%s` - falling back to HTMLUnknownElement",
+		      duk_get_string(ctx, -3) + 2 /* Skip the two unprintables */);
 		duk_pop(ctx);
 		duk_push_string(ctx, PROTO_NAME(HTMLUNKNOWNELEMENT));
 		duk_get_prop(ctx, -2);
 	}
+	/* ... obj args protoname prototab proto */
+	duk_remove(ctx, -3);
 	/* ... obj args prototab proto */
 	duk_dup(ctx, -1);
 	/* ... obj args prototab proto proto */
