@@ -456,11 +456,19 @@ nserror browser_window_history_update(struct browser_window *bw,
 
 	if (bw->window != NULL &&
 	    guit->window->get_scroll(bw->window, &sx, &sy)) {
+		int content_height = content_get_height(content);
+		int content_width = content_get_width(content);
+		if (content_height < 1) {
+			content_height = 1;
+		}
+		if (content_width < 1) {
+			content_height = 1;
+		}
 		/* Successfully got scroll offsets, update the entry */
 		history->current->page.scroll_x = \
-			(float)sx / (float)content_get_width(content);
+			(float)sx / (float)content_width;
 		history->current->page.scroll_y = \
-			(float)sy / (float)content_get_height(content);
+			(float)sy / (float)content_height;
 		NSLOG(netsurf, INFO, "Updated scroll offsets to %g by %g",
 		      history->current->page.scroll_x,
 		      history->current->page.scroll_y);
