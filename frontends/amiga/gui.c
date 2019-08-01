@@ -4111,7 +4111,7 @@ static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw
 	}
 
 	ami_do_redraw_tiled(g->shared, busy, x0, y0,
-		(x1 - x0) * g->scale, (y1 - y0) * g->scale, sx, sy, bbox, &ctx);
+		x1 - x0, y1 - y0, sx, sy, bbox, &ctx);
 
 	ami_gui_free_space_box(bbox);
 
