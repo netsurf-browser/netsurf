@@ -227,7 +227,7 @@ static void dukky_html_element_class_from_tag_type(dom_html_element_type type,
 		SET_HTML_CLASS(LINK)
 		break;
 	case DOM_HTML_ELEMENT_TYPE_BUTTON:
-		SET_HTML_CLASS(BUTTOM)
+		SET_HTML_CLASS(BUTTON)
 		break;
 	case DOM_HTML_ELEMENT_TYPE_INPUT:
 		SET_HTML_CLASS(INPUT)
