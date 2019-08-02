@@ -1341,24 +1341,17 @@ struct gui_clipboard_table *beos_clipboard_table = &clipboard_table;
  * \param g The gui window to measure content area of.
  * \param width receives width of window
  * \param height receives height of window
- * \param scaled whether to return scaled values
  * \return NSERROR_OK on sucess and width and height updated
  *          else error code.
  */
 static nserror
-gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
-                          bool scaled)
+gui_window_get_dimensions(struct gui_window *g, int *width, int *height)
 {
         if (g->view &&
             g->view->LockLooper()) {
                 *width = g->view->Bounds().Width() + 1;
                 *height = g->view->Bounds().Height() + 1;
                 g->view->UnlockLooper();
-
-                if (scaled) {
-                        *width /= g->scale;
-                        *height /= g->scale;
-                }
         }
         return NSERROR_OK;
 }

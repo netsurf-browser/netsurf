@@ -1522,12 +1522,10 @@ static void win32_window_destroy(struct gui_window *w)
  * \param gw gui_window to measure
  * \param width	 receives width of window
  * \param height receives height of window
- * \param scaled whether to return scaled values
+ * \return NSERROR_OK and width and height updated
  */
 static nserror
-win32_window_get_dimensions(struct gui_window *gw,
-			    int *width, int *height,
-			    bool scaled)
+win32_window_get_dimensions(struct gui_window *gw, int *width, int *height)
 {
 	*width = gw->width;
 	*height = gw->height;

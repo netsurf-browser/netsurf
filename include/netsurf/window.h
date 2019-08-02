@@ -175,11 +175,10 @@ struct gui_window_table {
 	 * \param gw The gui window to measure content area of.
 	 * \param width receives width of window
 	 * \param height receives height of window
-	 * \param scaled whether to return scaled values
 	 * \return NSERROR_OK on success and width and height updated
 	 *          else error code.
 	 */
-	nserror (*get_dimensions)(struct gui_window *gw, int *width, int *height, bool scaled);
+	nserror (*get_dimensions)(struct gui_window *gw, int *width, int *height);
 
 
 	/**

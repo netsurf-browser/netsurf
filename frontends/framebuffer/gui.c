@@ -1881,23 +1881,14 @@ gui_window_set_scroll(struct gui_window *gw, const struct rect *rect)
  * \param gw The gui window to measure content area of.
  * \param width receives width of window
  * \param height receives height of window
- * \param scaled whether to return scaled values
  * \return NSERROR_OK on sucess and width and height updated.
  */
 static nserror
-gui_window_get_dimensions(struct gui_window *gw,
-			  int *width,
-			  int *height,
-			  bool scaled)
+gui_window_get_dimensions(struct gui_window *gw, int *width, int *height)
 {
 	*width = fbtk_get_width(gw->browser);
 	*height = fbtk_get_height(gw->browser);
 
-	if (scaled) {
-		float scale = browser_window_get_scale(gw->bw);
-		*width /= scale;
-		*height /= scale;
-	}
 	return NSERROR_OK;
 }
 

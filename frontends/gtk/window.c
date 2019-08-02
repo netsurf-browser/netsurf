@@ -1213,14 +1213,11 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
  * \param gw The gui window to measure content area of.
  * \param width receives width of window
  * \param height receives height of window
- * \param scaled whether to return scaled values
  * \return NSERROR_OK on sucess and width and height updated
  *          else error code.
  */
 static nserror
-gui_window_get_dimensions(struct gui_window *gw,
-			  int *width, int *height,
-			  bool scaled)
+gui_window_get_dimensions(struct gui_window *gw, int *width, int *height)
 {
 	GtkAllocation alloc;
 
@@ -1229,12 +1226,6 @@ gui_window_get_dimensions(struct gui_window *gw,
 
 	*width = alloc.width;
 	*height = alloc.height;
-
-	if (scaled) {
-		float scale = browser_window_get_scale(gw->bw);
-		*width /= scale;
-		*height /= scale;
-	}
 
 	return NSERROR_OK;
 }

@@ -119,17 +119,17 @@ gui_window_set_title(struct gui_window *g, const char *title)
  * \param g The gui window to measure content area of.
  * \param width receives width of window
  * \param height receives height of window
- * \param scaled whether to return scaled values
  * \return NSERROR_OK on sucess and width and height updated.
  */
 static nserror
-gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
-			  bool scaled)
+gui_window_get_dimensions(struct gui_window *g, int *width, int *height)
 {
-	moutf(MOUT_WINDOW, "GET_DIMENSIONS WIN %u WIDTH %d HEIGHT %d",
-		g->win_num, g->width, g->height);
 	*width = g->width;
 	*height = g->height;
+
+	moutf(MOUT_WINDOW,
+	      "GET_DIMENSIONS WIN %u WIDTH %d HEIGHT %d",
+	      g->win_num, *width, *height);
 
 	return NSERROR_OK;
 }

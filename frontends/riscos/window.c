@@ -3679,21 +3679,15 @@ gui_window_set_scroll(struct gui_window *g, const struct rect *rect)
  * \param gw gui window to measure
  * \param width receives width of window
  * \param height receives height of window
- * \param scaled whether to return scaled values
+ * \return NSERROR_OK and width and height updated
  */
 static nserror
-gui_window_get_dimensions(struct gui_window *gw,
-			  int *width, int *height,
-			  bool scaled)
+gui_window_get_dimensions(struct gui_window *gw, int *width, int *height)
 {
 	/* use the cached window sizes */
 	*width = gw->old_width / 2;
 	*height = gw->old_height / 2;
 
-	if (scaled) {
-		*width /= gw->scale;
-		*height /= gw->scale;
-	}
 	return NSERROR_OK;
 }
 

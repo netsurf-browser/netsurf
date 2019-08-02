@@ -1168,7 +1168,7 @@ static void scheduled_reformat(void *vbw)
 	int height;
 	nserror res;
 
-	res = guit->window->get_dimensions(bw->window, &width, &height, false);
+	res = guit->window->get_dimensions(bw->window, &width, &height);
 	if (res == NSERROR_OK) {
 		browser_window_reformat(bw, false, width, height);
 	}
@@ -2652,7 +2652,7 @@ browser_window_get_dimensions(struct browser_window *bw,
 		res = NSERROR_OK;
 	} else {
 		/* Front end window */
-		res = guit->window->get_dimensions(bw->window, width, height, false);
+		res = guit->window->get_dimensions(bw->window, width, height);
 	}
 	return res;
 }

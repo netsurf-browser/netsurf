@@ -2076,14 +2076,17 @@ static void ami_gui_menu_update_all(void)
  * \return NSERROR_OK on sucess and width and height updated
  *          else error code.
  */
-static nserror gui_window_get_dimensions(struct gui_window *gw,
-		int *restrict width, int *restrict height, bool scaled)
+static nserror
+gui_window_get_dimensions(struct gui_window *gw,
+			  int *restrict width,
+			  int *restrict height)
 {
 	struct IBox *bbox;
 	nserror res;
 
-	res = ami_gui_get_space_box((Object *)gw->shared->objects[GID_BROWSER], &bbox);
-	if(res != NSERROR_OK) {
+	res = ami_gui_get_space_box((Object *)gw->shared->objects[GID_BROWSER],
+				    &bbox);
+	if (res != NSERROR_OK) {
 		amiga_warn_user("NoMemory", "");
 		return res;
 	}
@@ -2092,11 +2095,6 @@ static nserror gui_window_get_dimensions(struct gui_window *gw,
 	*height = bbox->Height;
 
 	ami_gui_free_space_box(bbox);
-
-	if(scaled) {
-		*width /= gw->scale;
-		*height /= gw->scale;
-	}
 
 	return NSERROR_OK;
 }

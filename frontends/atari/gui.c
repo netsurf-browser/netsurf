@@ -299,15 +299,11 @@ void gui_window_destroy(struct gui_window *gw)
  * \param gw The gui window to measure content area of.
  * \param width receives width of window
  * \param height receives height of window
- * \param scaled whether to return scaled values
  * \return NSERROR_OK on sucess and width and height updated
  *          else error code.
  */
 static nserror
-gui_window_get_dimensions(struct gui_window *gw,
-			  int *width,
-			  int *height,
-			  bool scaled)
+gui_window_get_dimensions(struct gui_window *gw, int *width, int *height)
 {
     GRECT rect;
     window_get_grect(gw->root, BROWSER_AREA_CONTENT, &rect);
