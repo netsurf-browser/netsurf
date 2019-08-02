@@ -39,10 +39,12 @@
 #include "desktop/browser_history.h"
 #include "desktop/local_history.h"
 
-#define WIDTH 100
-#define HEIGHT 86
-#define RIGHT_MARGIN 50
-#define BOTTOM_MARGIN 30
+#include "content/handlers/css/utils.h"
+
+#define WIDTH (FIXTOINT(nscss_pixels_css_to_physical(INTTOFIX(116))))
+#define HEIGHT (FIXTOINT(nscss_pixels_css_to_physical(INTTOFIX(100))))
+#define RIGHT_MARGIN (FIXTOINT(nscss_pixels_css_to_physical(INTTOFIX(50))))
+#define BOTTOM_MARGIN (FIXTOINT(nscss_pixels_css_to_physical(INTTOFIX(30))))
 
 /**
  * local history viewer context
