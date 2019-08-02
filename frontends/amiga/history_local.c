@@ -319,6 +319,8 @@ nserror ami_history_local_present(struct gui_window *gw)
 	history_local_window = ncwin;
 	ami_gui_set_history_window(gw, ncwin);
 
+	local_history_scroll_to_cursor(ncwin->session);
+
 	return NSERROR_OK;
 }
 
