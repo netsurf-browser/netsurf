@@ -45,7 +45,7 @@
 # override NETSURF_LOG_LEVEL := DEBUG
 
 ### To change the compiled in default log, change this
-# override NETSURF_DEFAULT_LOG_FILTER := level:WARNING
+# override NETSURF_BUILTIN_LOG_FILTER := "(level:WARNING || cat:jserrors)"
 
 ### To change the compiled in *verbose* log, change this
-# override NETSURF_DEFAULT_VERBOSE_FILTER := level:VERBOSE
+# override NETSURF_BUILTIN_VERBOSE_FILTER := "(level:VERBOSE || cat:jserrors)"

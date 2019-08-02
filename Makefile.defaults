@@ -84,10 +84,10 @@ NETSURF_USE_NSLOG := AUTO
 # Valid options are: DEEPDEBUG, DEBUG, VERBOSE, INFO, WARNING, ERROR, CRITICAL
 NETSURF_LOG_LEVEL := INFO
 # The log filter set during log initialisation before options are available
-NETSURF_BUILTIN_LOG_FILTER := level:WARNING
+NETSURF_BUILTIN_LOG_FILTER := "(level:WARNING || cat:jserrors)"
 # The log filter set during log initialisation before options are available
 # if the logging level is set to verbose
-NETSURF_BUILTIN_VERBOSE_FILTER := level:VERBOSE
+NETSURF_BUILTIN_VERBOSE_FILTER := "(level:VERBOSE || cat:jserrors)"
 
 # Enable stripping the NetSurf binary
 # Valid options: YES, NO

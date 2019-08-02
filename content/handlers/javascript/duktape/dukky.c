@@ -761,7 +761,7 @@ static void dukky_dump_error(duk_context *ctx)
 	/* stack is ..., errobj */
 	duk_idx_t stacktop = duk_get_top(ctx);
 	if (!duk_is_error(ctx, -1)) {
-		NSLOG(dukky, INFO, "Uncaught non-Error derived error in JS: %s", duk_safe_to_string(ctx, -1));
+		NSLOG(jserrors, WARNING, "Uncaught non-Error derived error in JS: %s", duk_safe_to_string(ctx, -1));
 	} else {
 #define GETTER(what)						\
 		if (duk_has_prop_string(ctx, stacktop - 1, what)) {	\
@@ -781,11 +781,11 @@ static void dukky_dump_error(duk_context *ctx)
 		GETTER("fileName");
 		GETTER("lineNumber");
 		GETTER("stack");
-		NSLOG(dukky, DEBUG, "Uncaught error in JS: %s: %s",
+		NSLOG(jserrors, DEBUG, "Uncaught error in JS: %s: %s",
 		      duk_safe_to_string(ctx, -5), duk_safe_to_string(ctx, -4));
-		NSLOG(dukky, DEBUG, "              was at: %s line %s",
+		NSLOG(jserrors, DEBUG, "              was at: %s line %s",
 		duk_safe_to_string(ctx, -3), duk_safe_to_string(ctx, -2));
-		NSLOG(dukky, DEBUG, "         Stack trace: %s",
+		NSLOG(jserrors, DEBUG, "         Stack trace: %s",
 		      duk_safe_to_string(ctx, -1));
 #undef GETTER
 	}
