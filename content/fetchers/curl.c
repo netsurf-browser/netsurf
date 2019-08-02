@@ -1222,6 +1222,7 @@ static void fetch_curl_poll(lwc_string *scheme_ignored)
 	}
 
 	/* do any possible work on the current fetches */
+	inside_curl = true;
 	do {
 		codem = curl_multi_perform(fetch_curl_multi, &running);
 		if (codem != CURLM_OK && codem != CURLM_CALL_MULTI_PERFORM) {
@@ -1245,6 +1246,7 @@ static void fetch_curl_poll(lwc_string *scheme_ignored)
 		}
 		curl_msg = curl_multi_info_read(fetch_curl_multi, &queue);
 	}
+	inside_curl = false;
 }
 
 
@@ -1334,9 +1336,6 @@ static size_t fetch_curl_data(char *data, size_t size, size_t nmemb, void *_f)
 	CURLcode code;
 	fetch_msg msg;
 
-	assert(inside_curl == false);
-	inside_curl = true;
-
 	/* ensure we only have to get this information once */
 	if (!f->http_code) {
 		code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE,
@@ -1350,13 +1349,11 @@ static size_t fetch_curl_data(char *data, size_t size, size_t nmemb, void *_f)
 	 */
 	if (f->http_code == 401) {
 		f->http_code = 0;
-		inside_curl = false;
 		return size * nmemb;
 	}
 
 	if (f->abort || (!f->had_headers && fetch_curl_process_headers(f))) {
 		f->stopped = true;
-		inside_curl = false;
 		return 0;
 	}
 
@@ -1366,7 +1363,6 @@ static size_t fetch_curl_data(char *data, size_t size, size_t nmemb, void *_f)
 	msg.data.header_or_data.len = size * nmemb;
 	fetch_send_callback(&msg, f->fetch_handle);
 
-	inside_curl = false;
 	if (f->abort) {
 		f->stopped = true;
 		return 0;
