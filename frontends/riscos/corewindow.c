@@ -45,6 +45,7 @@
 #include "riscos/window.h"
 #include "riscos/toolbar.h"
 #include "riscos/mouse.h"
+#include "riscos/wimputils.h"
 #include "riscos/corewindow.h"
 
 #ifndef wimp_KEY_END
@@ -832,7 +833,23 @@ ro_cw_update_size(struct core_window *cw, int width, int height)
 static void
 ro_cw_scroll_visible(struct core_window *cw, const struct rect *r)
 {
-	//struct ro_corewindow *ro_cw = (struct ro_corewindow *)cw;
+	struct ro_corewindow *ro_cw = (struct ro_corewindow *)cw;
+	wimp_window_state state = {
+		.w = ro_cw->wh,
+	};
+	os_error *error;
+
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		NSLOG(netsurf, ERROR, "xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess);
+		return;
+	}
+
+	state.xscroll = r->x0 * 2;
+	state.yscroll = r->y0 * 2;
+
+	ro_cw_open(PTR_WIMP_OPEN(&state));
 }
 
 
