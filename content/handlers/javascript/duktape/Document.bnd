@@ -374,7 +374,39 @@ getter Document::cookie()
 		if (cookie_str != NULL) {
 			duk_push_string(ctx, cookie_str);
 			free(cookie_str);
-			return 1;
+		} else {
+			duk_push_string(ctx, "");
+		}
+		return 1;
+	} else {
+		NSLOG(netsurf, INFO,
+		      "error getting htmlc. parent node:%p htmlc:%p",
+		      priv->parent.node, htmlc);
+	}
+	return 0;
+%}
+
+setter Document::cookie()
+%{
+	struct html_content *htmlc;
+	dom_exception err;
+
+	const char * cookie_str = duk_safe_to_string(ctx, 0);
+
+	err = dom_node_get_user_data(priv->parent.node,
+				     corestring_dom___ns_key_html_content_data,
+				     &htmlc);
+	if ((err == DOM_NO_ERR) && (htmlc != NULL)) {
+		/* At this point we need to get the given cookie string parsed
+		 * and inserted into the urldb
+		 */
+		bool ok = urldb_set_cookie(cookie_str, /* The cookie string to set */
+					   /* The location to set the cookie for */
+					   llcache_handle_get_url(htmlc->base.llcache),
+					   NULL); /* The referer, which we trust */
+		if (!ok) {
+			NSLOG(netsurf, DEEPDEBUG, "unable to set cookie: %s", cookie_str);
+			/* However there's no useful way to signal that to JS */
 		}
 	} else {
 		NSLOG(netsurf, INFO,
