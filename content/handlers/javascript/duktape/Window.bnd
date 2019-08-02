@@ -328,14 +328,14 @@ prototype Window()
 	EXPOSE(Uint32Array);
 	EXPOSE(Float32Array);
 	EXPOSE(Float64Array);
-	/* EXPOSE(BigInt64Array); */ /* Duktape seems to lack this */
-	/* EXPOSE(BigUint64Array); */ /* Duktape seems to lack this */
+	/* EXPOSE(BigInt64Array); */ /* Duktape lacks this - nonstandard API */
+	/* EXPOSE(BigUint64Array); */ /* Duktape lacks this - nonstandard API */
 
 	/* ** Keyed Collections */
-	/* EXPOSE(Map); */
-	/* EXPOSE(Set); */
-	/* EXPOSE(WeakMap); */
-	/* EXPOSE(WeakSet); */
+	/* EXPOSE(Map); */ /* Duktape lacks this - ES6 */
+	/* EXPOSE(Set); */ /* Duktape lacks this - ES6 */
+	/* EXPOSE(WeakMap); */ /* Duktape lacks this - ES6 */
+	/* EXPOSE(WeakSet); */ /* Duktape lacks this - ES6 */
 
 	/* Structured Data */
 	EXPOSE(ArrayBuffer);
@@ -345,9 +345,9 @@ prototype Window()
 	EXPOSE(JSON);
 
 	/* ** Control abstraction properties */
-	/* EXPOSE(Promise); */ /* Probably ought to be one of ours? */
-	/* EXPOSE(Generator); */ /* Duktape and async? */
-	/* EXPOSE(GeneratorFunction); */ /* Duktape and async? */
+	/* EXPOSE(Promise); */ /* Probably ought to be one of ours? Also ES6 */
+	/* EXPOSE(Generator); */ /* Duktape and async? ES6 */
+	/* EXPOSE(GeneratorFunction); */ /* Duktape and async? ES6 */
 	/* EXPOSE(AsyncFunction); */ /* Duktape lacks this - experimental API */
 
 	/* Reflection */
@@ -356,6 +356,7 @@ prototype Window()
 
 	/* ** Internationalisation */
 	/* Duktape lacks Intl - Maybe polyfill it? */
+	/* There is suggestion that cdn.polyfill.io exists for it */
 
 	/* ** WebAssembly */
 	/* As yet, Duktape lacks WA */
