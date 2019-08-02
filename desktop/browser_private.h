@@ -254,10 +254,10 @@ nserror browser_window_initialise_common(enum browser_window_create_flags flags,
  * \param  bw      The browser window to get dimensions of
  * \param  width   Updated to the browser window viewport width
  * \param  height  Updated to the browser window viewport height
- * \param  scaled  Whether we want the height with scale applied
+ * \return NSERROR_OK and width and height updated otherwise error code
  */
-void browser_window_get_dimensions(struct browser_window *bw,
-		int *width, int *height, bool scaled);
+nserror browser_window_get_dimensions(struct browser_window *bw,
+		int *width, int *height);
 
 
 /**

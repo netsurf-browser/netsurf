@@ -674,7 +674,9 @@ static nserror browser_window_content_ready(struct browser_window *bw)
 	bw->loading_content = NULL;
 
 	/* Format the new content to the correct dimensions */
-	browser_window_get_dimensions(bw, &width, &height, true);
+	browser_window_get_dimensions(bw, &width, &height);
+	width /= bw->scale;
+	height /= bw->scale;
 	content_reformat(bw->current_content, false, width, height);
 
 	/* history */
@@ -974,10 +976,10 @@ browser_window_callback(hlcache_handle *c, const hlcache_event *event, void *pw)
 		int width;
 		int height;
 
-		browser_window_get_dimensions(bw, &width, &height, true);
+		browser_window_get_dimensions(bw, &width, &height);
 
-		*(event->data.getdims.viewport_width) = width;
-		*(event->data.getdims.viewport_height) = height;
+		*(event->data.getdims.viewport_width) = width / bw->scale;
+		*(event->data.getdims.viewport_height) = height / bw->scale;
 		break;
 	}
 
@@ -2635,22 +2637,24 @@ nserror browser_window_get_extents(struct browser_window *bw, bool scaled,
 
 
 /* exported internal interface, documented in desktop/browser_private.h */
-void
+nserror
 browser_window_get_dimensions(struct browser_window *bw,
 			      int *width,
-			      int *height,
-			      bool scaled)
+			      int *height)
 {
+	nserror res;
 	assert(bw);
 
 	if (bw->window == NULL) {
 		/* Core managed browser window */
 		*width = bw->width;
 		*height = bw->height;
+		res = NSERROR_OK;
 	} else {
 		/* Front end window */
-		guit->window->get_dimensions(bw->window, width, height, scaled);
+		res = guit->window->get_dimensions(bw->window, width, height, false);
 	}
+	return res;
 }
 
 
