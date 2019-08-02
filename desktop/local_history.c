@@ -31,6 +31,7 @@
 #include "netsurf/browser_window.h"
 #include "netsurf/core_window.h"
 #include "netsurf/plotters.h"
+#include "netsurf/keypress.h"
 
 #include "desktop/gui_internal.h"
 #include "desktop/system_colour.h"
@@ -438,6 +439,59 @@ local_history_mouse_action(struct local_history_session *session,
 bool
 local_history_keypress(struct local_history_session *session, uint32_t key)
 {
+	switch (key) {
+	case NS_KEY_NL:
+	case NS_KEY_CR:
+		/* pressed enter */
+		if (session->cursor != session->bw->history->current) {
+			browser_window_history_go(session->bw, session->cursor,
+						  false);
+			local_history_scroll_to_cursor(session);
+			session->cw_t->invalidate(session->core_window_handle, NULL);
+		}
+		/* We have handled this keypress */
+		return true;
+	case NS_KEY_LEFT:
+		/* Go to parent */
+		if (session->cursor->back) {
+			session->cursor = session->cursor->back;
+			local_history_scroll_to_cursor(session);
+			session->cw_t->invalidate(session->core_window_handle, NULL);
+		}
+		/* We have handled this keypress */
+		return true;
+	case NS_KEY_RIGHT:
+		/* Go to preferred child if there is one */
+		if (session->cursor->forward_pref) {
+			session->cursor = session->cursor->forward_pref;
+			local_history_scroll_to_cursor(session);
+			session->cw_t->invalidate(session->core_window_handle, NULL);
+		}
+		/* We have handled this keypress */
+		return true;
+	case NS_KEY_DOWN:
+		/* Go to next sibling down, if there is one */
+		if (session->cursor->next) {
+			session->cursor = session->cursor->next;
+			local_history_scroll_to_cursor(session);
+			session->cw_t->invalidate(session->core_window_handle, NULL);
+		}
+		/* We have handled this keypress */
+		return true;
+	case NS_KEY_UP:
+		/* Go to next sibling up, if there is one */
+		if (session->cursor->back) {
+			struct history_entry *ent = session->cursor->back->forward;
+			while (ent->next != NULL && ent->next != session->cursor) {
+				ent = ent->next;
+			}
+			session->cursor = ent;
+			local_history_scroll_to_cursor(session);
+			session->cw_t->invalidate(session->core_window_handle, NULL);
+		}
+		/* We have handled this keypress */
+		return true;
+	}
 	return false;
 }
 
