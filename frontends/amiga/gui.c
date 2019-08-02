@@ -2212,7 +2212,7 @@ static void ami_gui_scroller_update(struct gui_window_2 *gwin)
 		rethinkh = ami_gui_hscroll_remove(gwin);
 	} else {
 		if((browser_window_get_extents(gwin->gw->bw, false, &w, &h) == NSERROR_OK)) {
-			gui_window_get_dimensions(gwin->gw, &ww, &wh, false);
+			gui_window_get_dimensions(gwin->gw, &ww, &wh);
 		}
 
 		if(vscroll == BW_SCROLLING_NO) {
