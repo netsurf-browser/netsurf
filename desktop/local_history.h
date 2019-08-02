@@ -140,5 +140,12 @@ nserror local_history_get_size(struct local_history_session *session, int *width
  */
 nserror local_history_get_url(struct local_history_session *session, int x, int y, struct nsurl **url_out);
 
+/**
+ * Scroll the local history window to ensure the current cursor is shown.
+ *
+ * \param session The local history session
+ */
+nserror local_history_scroll_to_cursor(struct local_history_session *session);
+
 
 #endif

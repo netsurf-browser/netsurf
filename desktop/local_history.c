@@ -40,6 +40,8 @@
 
 #define WIDTH 100
 #define HEIGHT 86
+#define RIGHT_MARGIN 50
+#define BOTTOM_MARGIN 30
 
 /**
  * local history viewer context
@@ -48,6 +50,7 @@ struct local_history_session {
 	struct browser_window *bw;
 	struct core_window_callback_table *cw_t;
 	void *core_window_handle;
+	struct history_entry *cursor;
 };
 
 
@@ -87,6 +90,15 @@ static plot_style_t pstyle_rect_sel = {
 
 
 /**
+ * plot style for drawing rectangle round the cursor node
+ */
+static plot_style_t pstyle_rect_cursor = {
+	.stroke_type = PLOT_OP_TYPE_DASH,
+	.stroke_width = plot_style_int_to_fixed(3),
+};
+
+
+/**
  * plot style for font on unselected nodes
  */
 static plot_font_style_t pfstyle_node = {
@@ -121,6 +133,7 @@ static plot_font_style_t pfstyle_node_sel = {
 static nserror
 redraw_entry(struct history *history,
 	     struct history_entry *entry,
+	     struct history_entry *cursor,
 	     struct rect *clip,
 	     int x, int y,
 	     const struct redraw_context *ctx)
@@ -165,6 +178,15 @@ redraw_entry(struct history *history,
 	res = ctx->plot->rectangle(ctx, pstyle, &rect);
 	if (res != NSERROR_OK) {
 		return res;
+	}
+
+	/* If this is the cursor, show that */
+	if (entry == cursor) {
+		rect.x0 -= 1;
+		rect.y0 -= 1;
+		rect.x1 += 2;
+		rect.y1 += 2;
+		ctx->plot->rectangle(ctx, &pstyle_rect_cursor, &rect);
 	}
 
 	res = guit->layout->position(plot_style_font, entry->page.title,
@@ -213,7 +235,7 @@ redraw_entry(struct history *history,
 			return res;
 		}
 
-		res = redraw_entry(history, child, clip, x, y, ctx);
+		res = redraw_entry(history, child, cursor, clip, x, y, ctx);
 		if (res != NSERROR_OK) {
 			return res;
 		}
@@ -258,6 +280,25 @@ find_entry_position(struct history_entry *entry, int x, int y)
 	return NULL;
 }
 
+/* exported interface documented in desktop/local_history.h */
+nserror
+local_history_scroll_to_cursor(struct local_history_session *session)
+{
+	rect cursor;
+
+	if (session->cursor == NULL) {
+		return NSERROR_OK;
+	}
+
+	cursor.x0 = session->cursor->x - RIGHT_MARGIN / 2;
+	cursor.y0 = session->cursor->y - BOTTOM_MARGIN / 2;
+	cursor.x1 = cursor.x0 + WIDTH + RIGHT_MARGIN / 2;
+	cursor.y1 = cursor.y0 + HEIGHT + BOTTOM_MARGIN / 2;
+
+	session->cw_t->scroll_visible(session->core_window_handle, &cursor);
+
+	return NSERROR_OK;
+}
 
 /* exported interface documented in desktop/local_history.h */
 nserror
@@ -283,11 +324,16 @@ local_history_init(struct core_window_callback_table *cw_t,
 	pstyle_rect.stroke_colour = pstyle_line.stroke_colour;
 	pfstyle_node.foreground = pstyle_line.stroke_colour;
 
-	res = ns_system_colour_char("Highlight", &pstyle_rect_sel.stroke_colour);
+	res = ns_system_colour_char("ButtonText", &pstyle_rect_sel.stroke_colour);
 	if (res != NSERROR_OK) {
 		return res;
 	}
 	pfstyle_node_sel.foreground = pstyle_rect_sel.stroke_colour;
+
+	res = ns_system_colour_char("Highlight", &pstyle_rect_cursor.stroke_colour);
+	if (res != NSERROR_OK) {
+		return res;
+	}
 
 	nses = calloc(1, sizeof(struct local_history_session));
 	if (nses == NULL) {
@@ -339,11 +385,13 @@ local_history_redraw(struct local_history_session *session,
 	ctx->plot->clip(ctx, &r);
 	ctx->plot->rectangle(ctx, &pstyle_bg, &r);
 
-	return redraw_entry(session->bw->history,
-		     session->bw->history->start,
-		     clip,
-		     x, y,
-		     ctx);
+	return redraw_entry(
+		session->bw->history,
+		session->bw->history->start,
+		session->cursor,
+		clip,
+		x, y,
+		ctx);
 }
 
 /* exported interface documented in desktop/local_history.h */
@@ -399,12 +447,16 @@ local_history_set(struct local_history_session *session,
 		  struct browser_window *bw)
 {
 	session->bw = bw;
+	session->cursor = NULL;
+
 	if (bw != NULL) {
 		assert(session->bw->history != NULL);
+		session->cursor = bw->history->current;
 
 		session->cw_t->update_size(session->core_window_handle,
 					   session->bw->history->width,
 					   session->bw->history->height);
+		local_history_scroll_to_cursor(session);
 	}
 
 	return NSERROR_OK;
