@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 
 #include "utils/config.h"
 #include "utils/sys_time.h"
@@ -306,6 +307,7 @@ static void monkey_run(void)
 				&exc_fd_set,
 				timeout);
 		if (rdy_fd < 0) {
+			NSLOG(netsurf, CRITICAL, "Unable to select: %s", strerror(errno));
 			monkey_done = true;
 		} else if (rdy_fd > 0) {
 			if (FD_ISSET(0, &read_fd_set)) {
