@@ -263,6 +263,9 @@ static void monkey_run(void)
 
 	while (!monkey_done) {
 
+		/* discover the next scheduled event time */
+		schedtm = monkey_schedule_run();
+
 		/* clears fdset */
 		fetch_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
 
@@ -272,9 +275,6 @@ static void monkey_run(void)
 		}
 		FD_SET(0, &read_fd_set);
 		FD_SET(0, &exc_fd_set);
-
-		/* discover the next scheduled event time */
-		schedtm = monkey_schedule_run();
 
 		/* setup timeout */
 		switch (schedtm) {
