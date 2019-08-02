@@ -205,6 +205,7 @@ nserror fb_local_history_present(fbtk_widget_t *parent,
 
 		fbtk_set_zorder(local_history_window->core.wnd, INT_MIN);
 		fbtk_set_mapping(local_history_window->core.wnd, true);
+		local_history_scroll_to_cursor(local_history_window->session);
 	}
 
 	return res;
