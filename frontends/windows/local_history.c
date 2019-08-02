@@ -215,6 +215,7 @@ nsw32_local_history_present(HWND hWndParent, struct browser_window *bw)
 			     width,
 			     height,
 			     SWP_SHOWWINDOW);
+		local_history_scroll_to_cursor(local_history_window->session);
 	}
 	return res;
 }
