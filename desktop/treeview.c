@@ -565,6 +565,32 @@ static int treeview_node_y(
 
 
 /**
+ * Corewindow callback_wrapper: Scroll to make node visible
+ *
+ * \param[in] tree  The treeview to scroll.
+ * \param[in] node  The treeview node to scroll to visibility.
+ */
+static inline void treeview__cw_scroll_to_node(
+		const struct treeview *tree,
+		const struct treeview_node *node)
+{
+	struct rect r = {
+		.x0 = 0,
+		.y0 = treeview_node_y(tree, node),
+		.x1 = 1,
+		.y1 = ((node->type == TREE_NODE_ENTRY) ?
+		       node->height : tree_g.line_height),
+	};
+
+	r.y1 += r.y0; /* Apply the Y offset to the second Y coordinate */
+
+	if (tree->cw_t != NULL) {
+		tree->cw_t->scroll_visible(tree->cw_h, &r);
+	}
+}
+
+
+/**
  * Redraw tree from given node to the bottom.
  *
  * \param[in] tree  Tree to redraw from node in.
@@ -3805,12 +3831,15 @@ treeview_keyboard_navigation(treeview *tree, uint32_t key, struct rect *rect)
 	int search_height = treeview__get_search_height(tree);
 	int h = treeview__get_display_height(tree) + search_height;
 	bool redraw = false;
+	struct treeview_node *scroll_to_node = NULL;
 
 	/* Fill out the nav. state struct, by examining the current selection
 	 * state */
 	treeview_walk_internal(tree, tree->root,
 			TREEVIEW_WALK_MODE_DISPLAY, NULL,
 			treeview_node_nav_cb, &ns);
+
+	scroll_to_node = ns.curr;
 
 	if (tree->search.search == false) {
 		if (ns.next == NULL)
@@ -3832,10 +3861,12 @@ treeview_keyboard_navigation(treeview *tree, uint32_t key, struct rect *rect)
 		    ns.curr->parent->type != TREE_NODE_ROOT) {
 			/* Step to parent */
 			ns.curr->parent->flags |= TV_NFLAGS_SELECTED;
+			scroll_to_node = ns.curr->parent;
 
 		} else if (ns.curr != NULL && tree->root->children != NULL) {
 			/* Select first node in tree */
 			tree->root->children->flags |= TV_NFLAGS_SELECTED;
+			scroll_to_node = tree->root->children;
 		}
 		break;
 
@@ -3848,6 +3879,7 @@ treeview_keyboard_navigation(treeview *tree, uint32_t key, struct rect *rect)
 					/* Step to first child */
 					ns.curr->children->flags |=
 						TV_NFLAGS_SELECTED;
+					scroll_to_node = ns.curr->children;
 				} else {
 					/* Retain current node selection */
 					ns.curr->flags |= TV_NFLAGS_SELECTED;
@@ -3869,6 +3901,7 @@ treeview_keyboard_navigation(treeview *tree, uint32_t key, struct rect *rect)
 		if (ns.prev != NULL) {
 			/* Step to previous node */
 			ns.prev->flags |= TV_NFLAGS_SELECTED;
+			scroll_to_node = ns.prev;
 		}
 		break;
 
@@ -3876,12 +3909,15 @@ treeview_keyboard_navigation(treeview *tree, uint32_t key, struct rect *rect)
 		if (ns.next != NULL) {
 			/* Step to next node */
 			ns.next->flags |= TV_NFLAGS_SELECTED;
+			scroll_to_node = ns.next;
 		}
 		break;
 
 	default:
 		break;
 	}
+
+	treeview__cw_scroll_to_node(tree, scroll_to_node);
 
 	/* TODO: Deal with redraw area properly */
 	rect->x0 = 0;
