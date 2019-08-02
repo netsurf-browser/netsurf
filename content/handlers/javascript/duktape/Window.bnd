@@ -271,26 +271,94 @@ prototype Window()
 #define EXPOSE(v) \
 	duk_get_global_string(ctx, #v); \
 	duk_put_prop_string(ctx, 0, #v)
-	/* steal undefined */
+	/* https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects */
+	/* ** Value properties */
+	EXPOSE(infinity);
+	EXPOSE(NaN);
 	EXPOSE(undefined);
+	EXPOSE(null);
+	EXPOSE(globalThis);
+
+	/* ** Function properties */
 	EXPOSE(eval);
-	EXPOSE(Object);
-	EXPOSE(parseInt);
+	/* EXPOSE(uneval); */ /* Not standard, maybe not available */
+	EXPOSE(isFinite);
+	EXPOSE(isNaN);
 	EXPOSE(parseFloat);
-	EXPOSE(Array);
-	EXPOSE(Date);
-	EXPOSE(RegExp);
-	EXPOSE(Math);
-	EXPOSE(Function);
-	EXPOSE(Proxy);
-	EXPOSE(String);
-	EXPOSE(Number);
-	EXPOSE(Error);
+	EXPOSE(parseInt);
+	EXPOSE(decodeURI);
+	EXPOSE(decodeURIComponent);
 	EXPOSE(encodeURI);
 	EXPOSE(encodeURIComponent);
-	EXPOSE(NaN);
-	EXPOSE(isNaN);
-	EXPOSE(isFinite);
+	EXPOSE(escape);
+	EXPOSE(unescape);
+
+	/* ** Fundamental Objects */
+	EXPOSE(Object);
+	EXPOSE(Function);
+	EXPOSE(Boolean);
+	EXPOSE(Symbol);
+	EXPOSE(Error);
+	EXPOSE(EvalError);
+	EXPOSE(InternalError);
+	EXPOSE(RangeError);
+	EXPOSE(ReferenceError);
+	EXPOSE(SyntaxError);
+	EXPOSE(TypeError);
+	EXPOSE(URIError);
+
+	/* ** Numbers and Dates */
+	EXPOSE(Number);
+	EXPOSE(BigInt);
+	EXPOSE(Math);
+	EXPOSE(Date);
+
+	/* ** Text Processing */
+	EXPOSE(String);
+	EXPOSE(RegExp);
+
+	/* ** Indexed Collections */
+	EXPOSE(Array);
+	EXPOSE(Int8Array);
+	EXPOSE(Uint8Array);
+	EXPOSE(Uint8ClampedArray);
+	EXPOSE(Int16Array);
+	EXPOSE(Uint16Array);
+	EXPOSE(Int32Array);
+	EXPOSE(Uint32Array);
+	EXPOSE(Float32Array);
+	EXPOSE(Float64Array);
+	/* EXPOSE(BigInt64Array); */ /* Duktape seems to lack this */
+	/* EXPOSE(BigUint64Array); */ /* Duktape seems to lack this */
+
+	/* ** Keyed Collections */
+	/* EXPOSE(Map); */
+	/* EXPOSE(Set); */
+	/* EXPOSE(WeakMap); */
+	/* EXPOSE(WeakSet); */
+
+	/* Structured Data */
+	EXPOSE(ArrayBuffer);
+	/* EXPOSE(SharedArrayBuffer); */ /* Duktape lacks this - experimental API */
+	/* EXPOSE(Atomics); */ /* Duktape lacks this - experimental API */
+	EXPOSE(DataView);
+	EXPOSE(JSON);
+
+	/* ** Control abstraction properties */
+	/* EXPOSE(Promise); */ /* Probably ought to be one of ours? */
+	/* EXPOSE(Generator); */ /* Duktape and async? */
+	/* EXPOSE(GeneratorFunction); */ /* Duktape and async? */
+	/* EXPOSE(AsyncFunction); */ /* Duktape lacks this - experimental API */
+
+	/* Reflection */
+	EXPOSE(Reflect);
+	EXPOSE(Proxy);
+
+	/* ** Internationalisation */
+	/* Duktape lacks Intl - Maybe polyfill it? */
+
+	/* ** WebAssembly */
+	/* As yet, Duktape lacks WA */
 #undef EXPOSE
 	/* Add s3kr1t method to close the compartment */
 	duk_dup(ctx, 0);
