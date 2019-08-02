@@ -225,6 +225,8 @@ nserror nsgtk_local_history_present(GtkWindow *parent,
 		gtk_window_resize(local_history_window->wnd, width, height);
 
 		gtk_window_present(local_history_window->wnd);
+
+		local_history_scroll_to_cursor(local_history_window->session);
 	}
 
 	return res;
