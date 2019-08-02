@@ -750,11 +750,11 @@ void nsbeos_gui_poll(void)
 	unsigned int fd_count = 0;
 	bigtime_t next_schedule = 0;
 
-        /* get any active fetcher fd */
-	fetch_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
-
         /* run the scheduler */
 	schedule_run();
+
+        /* get any active fetcher fd */
+	fetch_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
 
 	// our own event pipe
 	FD_SET(sEventPipe[0], &read_fd_set);

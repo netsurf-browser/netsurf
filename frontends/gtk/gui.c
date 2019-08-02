@@ -398,6 +398,8 @@ static void nsgtk_main(void)
 		FD_ZERO(&write_fd_set);
 		FD_ZERO(&exc_fd_set);
 
+		schedule_run();
+
 		fetch_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
 		for (int i = 0; i <= max_fd; i++) {
 			if (FD_ISSET(i, &read_fd_set)) {
@@ -422,8 +424,6 @@ static void nsgtk_main(void)
 				fd_list[fd_count++] = fd;
 			}
 		}
-
-		schedule_run();
 
 		gtk_main_iteration();
 
