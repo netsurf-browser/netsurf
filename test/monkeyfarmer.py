@@ -81,8 +81,11 @@ class MonkeyFarmer(asyncore.dispatcher):
                 if self.monkey.poll() is None:
                     self.monkey.terminate()
                     self.monkey.wait()
+                print("Handling an exit {}".format(self.monkey.returncode))
+                print("The following are present in the queue: {}".format(self.lines))
                 self.lines.insert(0, "GENERIC EXIT {}".format(
                     self.monkey.returncode).encode('utf-8'))
+                print("The queue is now: {}".format(self.lines))
                 return
         except socket.error as error:
             if error.errno == errno.EAGAIN or error.errno == errno.EWOULDBLOCK:
