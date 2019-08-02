@@ -608,26 +608,52 @@ static void
 nsgtk_cw_scroll_visible(struct core_window *cw, const struct rect *r)
 {
 	struct nsgtk_corewindow *nsgtk_cw = (struct nsgtk_corewindow *)cw;
-	int y = 0, height = 0, y0, y1;
-	gdouble page;
+	int x0, y0, x1, y1;
+	gdouble vpage, hpage;
 	GtkAdjustment *vadj;
+	GtkAdjustment *hadj;
 
 	vadj = gtk_scrolled_window_get_vadjustment(nsgtk_cw->scrolled);
+	hadj = gtk_scrolled_window_get_hadjustment(nsgtk_cw->scrolled);
 
-	assert(vadj);
+	assert(vadj != NULL);
+	assert(hadj != NULL);
 
-	g_object_get(vadj, "page-size", &page, NULL);
+	g_object_get(vadj, "page-size", &vpage, NULL);
+	g_object_get(hadj, "page-size", &hpage, NULL);
 
 	y0 = (int)(gtk_adjustment_get_value(vadj));
-	y1 = y0 + page;
+	y1 = y0 + vpage;
+	x0 = (int)(gtk_adjustment_get_value(hadj));
+	x1 = x0 + hpage;
 
-	if ((y >= y0) && (y + height <= y1))
-		return;
-	if (y + height > y1)
-		y0 = y0 + (y + height - y1);
-	if (y < y0)
-		y0 = y;
+	if (r->y1 > y1) {
+		/* The bottom of the rectangle is off the bottom of the
+		 * window, so scroll down to fit it
+		 */
+		y0 = r->y1 - vpage;
+	}
+	if (r->y0 < y0) {
+		/* The top of the rectangle is off the top of the window,
+		 * so scroll up to fit it
+		 */
+		y0 = r->y0;
+	}
+	if (r->x1 > x1) {
+		/* The right of the rectangle is off the right of the window
+		 * so scroll right to fit it
+		 */
+		x0 = r->x1 - hpage;
+	}
+	if (r->x0 < x0) {
+		/* The left of the rectangle is off the left of the window
+		 * so scroll left to fit it
+		 */
+		x0 = r->x0;
+	}
+
 	gtk_adjustment_set_value(vadj, y0);
+	gtk_adjustment_set_value(hadj, x0);
 }
 
 
