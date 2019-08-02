@@ -860,7 +860,7 @@ static nserror llcache_object_refetch(llcache_object *object)
 		header_idx++;
 	}
 
-	if (object->cache.date != 0) {
+	if (object->cache.last_modified != 0) {
 		/* Maximum length of an RFC 1123 date is 29 bytes */
 		const size_t len = SLEN("If-Modified-Since: ") + 29 + 1;
 
@@ -873,7 +873,7 @@ static nserror llcache_object_refetch(llcache_object *object)
 		}
 
 		snprintf(headers[header_idx], len, "If-Modified-Since: %s",
-				rfc1123_date(object->cache.date));
+				rfc1123_date(object->cache.last_modified));
 
 		header_idx++;
 	}
