@@ -299,6 +299,15 @@ def run_test_step_action_stop(ctx, step):
     win.stop()
 
 
+def run_test_step_action_reload(ctx, step):
+    print(get_indent(ctx) + "Action: " + step["action"])
+    assert_browser(ctx)
+    tag = step['window']
+    win = ctx['windows'].get(tag)
+    assert win is not None
+    win.reload()
+
+
 def run_test_step_action_sleep_ms(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     conds = step['conditions']
@@ -540,6 +549,7 @@ STEP_HANDLERS = {
     "window-new":    run_test_step_action_window_new,
     "window-close":  run_test_step_action_window_close,
     "navigate":      run_test_step_action_navigate,
+    "reload":        run_test_step_action_reload,
     "stop":          run_test_step_action_stop,
     "sleep-ms":      run_test_step_action_sleep_ms,
     "block":         run_test_step_action_block,

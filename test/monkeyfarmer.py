@@ -426,8 +426,10 @@ class BrowserWindow:
     def stop(self):
         self.browser.farmer.tell_monkey("WINDOW STOP %s" % (self.winid))
 
-    def reload(self):
-        self.browser.farmer.tell_monkey("WINDOW RELOAD %s" % self.winid)
+    def reload(self, all=False):
+        all = " ALL" if all else ""
+        self.browser.farmer.tell_monkey("WINDOW RELOAD %s%s" % (self.winid, all))
+        self.wait_start_loading()
 
     def js_exec(self, src):
         self.browser.farmer.tell_monkey("WINDOW EXEC WIN %s %s" % (self.winid, src))
