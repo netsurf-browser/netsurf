@@ -750,12 +750,6 @@ duk_bool_t dukky_check_timeout(void *udata)
 			now > (ctx->exec_start_time + JS_EXEC_TIMEOUT_MS);
 }
 
-static duk_ret_t dukky_safe_get(duk_context *ctx, void *udata)
-{
-	duk_get_prop_string(ctx, 0, udata);
-	return 1;
-}
-
 static void dukky_dump_error(duk_context *ctx)
 {
 	/* stack is ..., errobj */
