@@ -394,6 +394,8 @@ ro_local_history_open(struct ro_local_history_window *lhw, wimp_w parent)
 
 	ro_gui_dialog_open_persistent(parent, lhw->core.wh, true);
 
+	local_history_scroll_to_cursor(lhw->session);
+
 	return NSERROR_OK;
 }
 
