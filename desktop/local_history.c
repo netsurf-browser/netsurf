@@ -39,13 +39,6 @@
 #include "desktop/browser_history.h"
 #include "desktop/local_history.h"
 
-#include "content/handlers/css/utils.h"
-
-#define WIDTH (FIXTOINT(nscss_pixels_css_to_physical(INTTOFIX(116))))
-#define HEIGHT (FIXTOINT(nscss_pixels_css_to_physical(INTTOFIX(100))))
-#define RIGHT_MARGIN (FIXTOINT(nscss_pixels_css_to_physical(INTTOFIX(50))))
-#define BOTTOM_MARGIN (FIXTOINT(nscss_pixels_css_to_physical(INTTOFIX(30))))
-
 /**
  * local history viewer context
  */
@@ -166,7 +159,8 @@ redraw_entry(struct history *history,
 					entry->page.bitmap,
 					entry->x + x,
 					entry->y + y,
-					WIDTH, HEIGHT,
+					LOCAL_HISTORY_WIDTH,
+					LOCAL_HISTORY_HEIGHT,
 					0xffffff,
 					0);
 		if (res != NSERROR_OK) {
@@ -176,8 +170,8 @@ redraw_entry(struct history *history,
 
 	rect.x0 = entry->x - 1 + x;
 	rect.y0 = entry->y - 1 + y;
-	rect.x1 = entry->x + x + WIDTH;
-	rect.y1 = entry->y + y + HEIGHT;
+	rect.x1 = entry->x + x + LOCAL_HISTORY_WIDTH;
+	rect.y1 = entry->y + y + LOCAL_HISTORY_HEIGHT;
 	res = ctx->plot->rectangle(ctx, pstyle, &rect);
 	if (res != NSERROR_OK) {
 		return res;
@@ -193,7 +187,7 @@ redraw_entry(struct history *history,
 	}
 
 	res = guit->layout->position(plot_style_font, entry->page.title,
-				     strlen(entry->page.title), WIDTH,
+				     strlen(entry->page.title), LOCAL_HISTORY_WIDTH,
 				     &char_offset, &actual_x);
 	if (res != NSERROR_OK) {
 		return res;
@@ -202,7 +196,7 @@ redraw_entry(struct history *history,
 	res = ctx->plot->text(ctx,
 			      pfstyle,
 			      entry->x + x,
-			      entry->y + HEIGHT + 12 + y,
+			      entry->y + LOCAL_HISTORY_HEIGHT + 12 + y,
 			      entry->page.title,
 			      char_offset);
 	if (res != NSERROR_OK) {
@@ -211,28 +205,28 @@ redraw_entry(struct history *history,
 
 	/* for each child node draw a line and recurse redraw into it */
 	for (child = entry->forward; child; child = child->next) {
-		rect.x0 = entry->x + WIDTH + x;
-		rect.y0 = entry->y + HEIGHT / 2 + y;
-		rect.x1 = entry->x + WIDTH + tailsize + x;
-		rect.y1 = entry->y + HEIGHT / 2 + y;
+		rect.x0 = entry->x + LOCAL_HISTORY_WIDTH + x;
+		rect.y0 = entry->y + LOCAL_HISTORY_HEIGHT / 2 + y;
+		rect.x1 = entry->x + LOCAL_HISTORY_WIDTH + tailsize + x;
+		rect.y1 = entry->y + LOCAL_HISTORY_HEIGHT / 2 + y;
 		res = ctx->plot->line(ctx, &pstyle_line, &rect);
 		if (res != NSERROR_OK) {
 			return res;
 		}
 
-		rect.x0 = entry->x + WIDTH + tailsize + x;
-		rect.y0 = entry->y + HEIGHT / 2 + y;
+		rect.x0 = entry->x + LOCAL_HISTORY_WIDTH + tailsize + x;
+		rect.y0 = entry->y + LOCAL_HISTORY_HEIGHT / 2 + y;
 		rect.x1 = child->x - tailsize + x;
-		rect.y1 = child->y + HEIGHT / 2 + y;
+		rect.y1 = child->y + LOCAL_HISTORY_HEIGHT / 2 + y;
 		res = ctx->plot->line(ctx, &pstyle_line, &rect);
 		if (res != NSERROR_OK) {
 			return res;
 		}
 
 		rect.x0 = child->x - tailsize + x;
-		rect.y0 = child->y + HEIGHT / 2 + y;
+		rect.y0 = child->y + LOCAL_HISTORY_HEIGHT / 2 + y;
 		rect.x1 = child->x + x;
-		rect.y1 = child->y + HEIGHT / 2 + y;
+		rect.y1 = child->y + LOCAL_HISTORY_HEIGHT / 2 + y;
 		res = ctx->plot->line(ctx, &pstyle_line, &rect);
 		if (res != NSERROR_OK) {
 			return res;
@@ -267,9 +261,9 @@ find_entry_position(struct history_entry *entry, int x, int y)
 	}
 
 	if ((entry->x <= x) &&
-	    (x <= entry->x + WIDTH) &&
+	    (x <= entry->x + LOCAL_HISTORY_WIDTH) &&
 	    (entry->y <= y) &&
-	    (y <= entry->y + HEIGHT)) {
+	    (y <= entry->y + LOCAL_HISTORY_HEIGHT)) {
 		return entry;
 	}
 
@@ -293,10 +287,12 @@ local_history_scroll_to_cursor(struct local_history_session *session)
 		return NSERROR_OK;
 	}
 
-	cursor.x0 = session->cursor->x - RIGHT_MARGIN / 2;
-	cursor.y0 = session->cursor->y - BOTTOM_MARGIN / 2;
-	cursor.x1 = cursor.x0 + WIDTH + RIGHT_MARGIN / 2;
-	cursor.y1 = cursor.y0 + HEIGHT + BOTTOM_MARGIN / 2;
+	cursor.x0 = session->cursor->x - LOCAL_HISTORY_RIGHT_MARGIN / 2;
+	cursor.y0 = session->cursor->y - LOCAL_HISTORY_BOTTOM_MARGIN / 2;
+	cursor.x1 = cursor.x0 + LOCAL_HISTORY_WIDTH +
+			LOCAL_HISTORY_RIGHT_MARGIN / 2;
+	cursor.y1 = cursor.y0 + LOCAL_HISTORY_HEIGHT +
+			LOCAL_HISTORY_BOTTOM_MARGIN / 2;
 
 	session->cw_t->scroll_visible(session->core_window_handle, &cursor);
 

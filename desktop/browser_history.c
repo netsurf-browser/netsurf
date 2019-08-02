@@ -42,12 +42,6 @@
 #include "desktop/browser_private.h"
 #include "desktop/browser_history.h"
 
-#define WIDTH 100
-#define HEIGHT 86
-#define RIGHT_MARGIN 50
-#define BOTTOM_MARGIN 30
-
-
 /**
  * Clone a history entry
  *
@@ -107,8 +101,10 @@ browser_window_history__clone_entry(struct history *history,
 		unsigned char *bmdst_data;
 		size_t bmsize;
 
-		new_entry->page.bitmap = guit->bitmap->create(WIDTH, HEIGHT,
-						BITMAP_NEW | BITMAP_OPAQUE);
+		new_entry->page.bitmap = guit->bitmap->create(
+				LOCAL_HISTORY_WIDTH,
+				LOCAL_HISTORY_HEIGHT,
+				BITMAP_NEW | BITMAP_OPAQUE);
 
 		if (new_entry->page.bitmap != NULL) {
 			bmsrc_data = guit->bitmap->get_buffer(entry->page.bitmap);
@@ -202,26 +198,26 @@ static int browser_window_history__layout_subtree(struct history *history,
 	struct history_entry *child;
 	int y1 = y;
 
-	if (history->width < x + WIDTH)
-		history->width = x + WIDTH;
+	if (history->width < x + LOCAL_HISTORY_WIDTH)
+		history->width = x + LOCAL_HISTORY_WIDTH;
 
 	if (!entry->forward) {
 		entry->x = x;
 		entry->y = y;
-		return y + HEIGHT;
+		return y + LOCAL_HISTORY_HEIGHT;
 	}
 
 	/* layout child subtrees below each other */
 	for (child = entry->forward; child; child = child->next) {
 		y1 = browser_window_history__layout_subtree(history, child,
-				x + WIDTH + RIGHT_MARGIN, y1);
+				x + LOCAL_HISTORY_WIDTH + LOCAL_HISTORY_RIGHT_MARGIN, y1);
 		if (child->next)
-			y1 += BOTTOM_MARGIN;
+			y1 += LOCAL_HISTORY_BOTTOM_MARGIN;
 	}
 
 	/* place ourselves in the middle */
 	entry->x = x;
-	entry->y = (y + y1) / 2 - HEIGHT / 2;
+	entry->y = (y + y1) / 2 - LOCAL_HISTORY_HEIGHT / 2;
 
 	return y1;
 }
@@ -244,12 +240,13 @@ static void browser_window_history__layout(struct history *history)
 	if (history->start)
 		history->height = browser_window_history__layout_subtree(
 				history, history->start,
-				RIGHT_MARGIN / 2, BOTTOM_MARGIN / 2);
+				LOCAL_HISTORY_RIGHT_MARGIN / 2,
+				LOCAL_HISTORY_BOTTOM_MARGIN / 2);
 	else
 		history->height = 0;
 
-	history->width += RIGHT_MARGIN / 2;
-	history->height += BOTTOM_MARGIN / 2;
+	history->width += LOCAL_HISTORY_RIGHT_MARGIN / 2;
+	history->height += LOCAL_HISTORY_BOTTOM_MARGIN / 2;
 }
 
 
@@ -275,7 +272,8 @@ static bool browser_window_history__enumerate_entry(
 	const struct history_entry *child;
 
 	if (!cb(bw, entry->x, entry->y,
-			entry->x + WIDTH, entry->y + HEIGHT,
+			entry->x + LOCAL_HISTORY_WIDTH,
+			entry->y + LOCAL_HISTORY_HEIGHT,
 			entry, ud))
 		return false;
 
@@ -304,8 +302,8 @@ nserror browser_window_history_create(struct browser_window *bw)
 		return NSERROR_NOMEM;
 	}
 
-	history->width = RIGHT_MARGIN / 2;
-	history->height = BOTTOM_MARGIN / 2;
+	history->width = LOCAL_HISTORY_RIGHT_MARGIN / 2;
+	history->height = LOCAL_HISTORY_BOTTOM_MARGIN / 2;
 
 	bw->history = history;
 
@@ -386,7 +384,8 @@ browser_window_history_add(struct browser_window *bw,
 	NSLOG(netsurf, DEBUG,
 	      "Creating thumbnail for %s", nsurl_access(entry->page.url));
 
-	entry->page.bitmap = guit->bitmap->create(WIDTH, HEIGHT,
+	entry->page.bitmap = guit->bitmap->create(
+			LOCAL_HISTORY_WIDTH, LOCAL_HISTORY_HEIGHT,
 			BITMAP_NEW | BITMAP_CLEAR_MEMORY | BITMAP_OPAQUE);
 	if (entry->page.bitmap != NULL) {
 		ret = guit->bitmap->render(entry->page.bitmap, content);
@@ -637,7 +636,8 @@ void browser_window_history_enumerate_forward(const struct browser_window *bw,
 
 	e = bw->history->current->forward_pref;
 	for (; e != NULL; e = e->forward_pref) {
-		if (!cb(bw, e->x, e->y, e->x + WIDTH, e->y + HEIGHT,
+		if (!cb(bw, e->x, e->y, e->x + LOCAL_HISTORY_WIDTH,
+				e->y + LOCAL_HISTORY_HEIGHT,
 				e, user_data))
 			break;
 	}
@@ -654,7 +654,8 @@ void browser_window_history_enumerate_back(const struct browser_window *bw,
 		return;
 
 	for (e = bw->history->current->back; e != NULL; e = e->back) {
-		if (!cb(bw, e->x, e->y, e->x + WIDTH, e->y + HEIGHT,
+		if (!cb(bw, e->x, e->y, e->x + LOCAL_HISTORY_WIDTH,
+				e->y + LOCAL_HISTORY_HEIGHT,
 				e, user_data))
 			break;
 	}

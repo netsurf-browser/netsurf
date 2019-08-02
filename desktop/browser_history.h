@@ -35,6 +35,17 @@
 
 #include "utils/errors.h"
 
+#include "content/handlers/css/utils.h"
+
+#define LOCAL_HISTORY_WIDTH \
+		(FIXTOINT(nscss_pixels_css_to_physical(INTTOFIX(116))))
+#define LOCAL_HISTORY_HEIGHT \
+		(FIXTOINT(nscss_pixels_css_to_physical(INTTOFIX(100))))
+#define LOCAL_HISTORY_RIGHT_MARGIN \
+		(FIXTOINT(nscss_pixels_css_to_physical(INTTOFIX(50))))
+#define LOCAL_HISTORY_BOTTOM_MARGIN \
+		(FIXTOINT(nscss_pixels_css_to_physical(INTTOFIX(30))))
+
 struct browser_window;
 struct history_entry;
 struct bitmap;
