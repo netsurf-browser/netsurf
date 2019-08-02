@@ -393,6 +393,7 @@ static nserror llcache_send_event_to_users(llcache_object *object,
 
 	user = object->users;
 	while (user != NULL) {
+		bool was_target = user->iterator_target;
 		user->iterator_target = true;
 
 		error = user->handle->cb(user->handle, event,
@@ -400,7 +401,7 @@ static nserror llcache_send_event_to_users(llcache_object *object,
 
 		next_user = user->next;
 
-		user->iterator_target = false;
+		user->iterator_target = was_target;
 
 		if (user->queued_for_delete) {
 			llcache_object_remove_user(object, user);
