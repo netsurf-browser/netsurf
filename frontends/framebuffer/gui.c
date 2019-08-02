@@ -628,8 +628,8 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	struct browser_widget_s *bwidget = fbtk_get_userpw(widget);
 	browser_mouse_state mouse;
 	float scale = browser_window_get_scale(gw->bw);
-	int x = (cbi->x + bwidget->scrollx) / scale;
-	int y = (cbi->y + bwidget->scrolly) / scale;
+	int x = cbi->x + bwidget->scrollx;
+	int y = cbi->y + bwidget->scrolly;
 	uint64_t time_now;
 	static struct {
 		enum { CLICK_SINGLE, CLICK_DOUBLE, CLICK_TRIPLE } type;
@@ -640,8 +640,7 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	    cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
-	NSLOG(netsurf, INFO, "browser window clicked at %d,%d", cbi->x,
-	      cbi->y);
+	NSLOG(netsurf, INFO, "browser window clicked at %d,%d", cbi->x, cbi->y);
 
 	switch (cbi->event->type) {
 	case NSFB_EVENT_KEY_DOWN:
@@ -666,14 +665,14 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 
 		case NSFB_KEY_MOUSE_4:
 			/* scroll up */
-			if (browser_window_scroll_at_point(gw->bw, x, y,
+			if (browser_window_scroll_at_point(gw->bw, x/scale, y/scale,
 					0, -100) == false)
 				widget_scroll_y(gw, -100, false);
 			break;
 
 		case NSFB_KEY_MOUSE_5:
 			/* scroll down */
-			if (browser_window_scroll_at_point(gw->bw, x, y,
+			if (browser_window_scroll_at_point(gw->bw, x/scale, y/scale,
 					0, 100) == false)
 				widget_scroll_y(gw, 100, false);
 			break;
@@ -703,7 +702,7 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 				gui_drag.state = GUI_DRAG_NONE;
 
 				/* Tell core */
-				browser_window_mouse_track(gw->bw, 0, x, y);
+				browser_window_mouse_track(gw->bw, 0, x/scale, y/scale);
 				break;
 			}
 			/* This is a click;
@@ -724,7 +723,7 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 				}
 
 				/* Tell core */
-				browser_window_mouse_track(gw->bw, 0, x, y);
+				browser_window_mouse_track(gw->bw, 0, x/scale, y/scale);
 				break;
 			}
 			/* This is a click;
@@ -783,8 +782,8 @@ fb_browser_window_move(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	struct gui_window *gw = cbi->context;
 	struct browser_widget_s *bwidget = fbtk_get_userpw(widget);
 	float scale = browser_window_get_scale(gw->bw);
-	int x = (cbi->x + bwidget->scrollx) / scale;
-	int y = (cbi->y + bwidget->scrolly) / scale;
+	int x = cbi->x + bwidget->scrollx;
+	int y = cbi->y + bwidget->scrolly;
 
 	if (gui_drag.state == GUI_DRAG_PRESSED &&
 			(abs(x - gui_drag.x) > 5 ||
@@ -813,7 +812,7 @@ fb_browser_window_move(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 			mouse |= BROWSER_MOUSE_HOLDING_2;
 	}
 
-	browser_window_mouse_track(gw->bw, mouse, x, y);
+	browser_window_mouse_track(gw->bw, mouse, x/scale, y/scale);
 
 	return 0;
 }

@@ -843,14 +843,14 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 		browser_window_get_position(iframe, false, &pos_x, &pos_y);
 
-		pos_x /= scale;
-		pos_y /= scale;
-
 		if (mouse & BROWSER_MOUSE_CLICK_1 ||
-				mouse & BROWSER_MOUSE_CLICK_2) {
+		    mouse & BROWSER_MOUSE_CLICK_2) {
 			browser_window_mouse_click(iframe, mouse,
-					x - pos_x, y - pos_y);
+						   (x * scale) - pos_x,
+						   (y * scale) - pos_y);
 		} else {
+			pos_x /= scale;
+			pos_y /= scale;
 			browser_window_mouse_track(iframe, mouse,
 					x - pos_x, y - pos_y);
 		}

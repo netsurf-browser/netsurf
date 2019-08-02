@@ -1485,6 +1485,137 @@ browser_window_mouse_drag_end(struct browser_window *bw,
 	}
 }
 
+/**
+ * Process mouse click event
+ *
+ * \param bw The browsing context receiving the event
+ * \param mouse The mouse event state
+ * \param x The scaled x co-ordinate of the event
+ * \param y The scaled y co-ordinate of the event
+ */
+static void
+browser_window_mouse_click_internal(struct browser_window *bw,
+			   browser_mouse_state mouse,
+			   int x, int y)
+{
+	hlcache_handle *c = bw->current_content;
+	const char *status = NULL;
+	browser_pointer_shape pointer = BROWSER_POINTER_DEFAULT;
+
+	if (bw->children) {
+		/* Browser window has children (frames) */
+		struct browser_window *child;
+		int cur_child;
+		int children = bw->rows * bw->cols;
+
+		for (cur_child = 0; cur_child < children; cur_child++) {
+
+			child = &bw->children[cur_child];
+
+			if ((x < child->x) ||
+			    (y < child->y) ||
+			    (child->x + child->width < x) ||
+			    (child->y + child->height < y)) {
+				/* Click not in this child */
+				continue;
+			}
+
+			/* It's this child that contains the click; pass it
+			 * on to child. */
+			browser_window_mouse_click_internal(child, mouse,
+				x - child->x + scrollbar_get_offset(
+							   child->scroll_x),
+				y - child->y + scrollbar_get_offset(
+							   child->scroll_y));
+
+			/* Mouse action was for this child, we're done */
+			return;
+		}
+
+		return;
+	}
+
+	if (!c)
+		return;
+
+	if (bw->scroll_x != NULL) {
+		int scr_x, scr_y;
+		browser_window_get_scrollbar_pos(bw, true, &scr_x, &scr_y);
+		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
+		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
+
+		if (scr_x > 0 && scr_x < get_horz_scrollbar_len(bw) &&
+		    scr_y > 0 && scr_y < SCROLLBAR_WIDTH) {
+			status = scrollbar_mouse_status_to_message(
+				scrollbar_mouse_action(
+					bw->scroll_x, mouse,
+					scr_x, scr_y));
+			pointer = BROWSER_POINTER_DEFAULT;
+
+			if (status != NULL)
+				browser_window_set_status(bw, status);
+
+			browser_window_set_pointer(bw, pointer);
+			return;
+		}
+	}
+
+	if (bw->scroll_y != NULL) {
+		int scr_x, scr_y;
+		browser_window_get_scrollbar_pos(bw, false, &scr_x, &scr_y);
+		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
+		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
+
+		if (scr_y > 0 && scr_y < get_vert_scrollbar_len(bw) &&
+		    scr_x > 0 && scr_x < SCROLLBAR_WIDTH) {
+			status = scrollbar_mouse_status_to_message(
+				scrollbar_mouse_action(
+					bw->scroll_y, mouse,
+					scr_x, scr_y));
+			pointer = BROWSER_POINTER_DEFAULT;
+
+			if (status != NULL)
+				browser_window_set_status(bw, status);
+
+			browser_window_set_pointer(bw, pointer);
+			return;
+		}
+	}
+
+	switch (content_get_type(c)) {
+	case CONTENT_HTML:
+	case CONTENT_TEXTPLAIN:
+	{
+		/* Give bw focus */
+		struct browser_window *root_bw = browser_window_get_root(bw);
+		if (bw != root_bw->focus) {
+			browser_window_remove_caret(bw, false);
+			browser_window_set_selection(bw, false, true);
+			root_bw->focus = bw;
+		}
+
+		/* Pass mouse action to content */
+		content_mouse_action(c, bw, mouse, x, y);
+	}
+	break;
+	default:
+		if (mouse & BROWSER_MOUSE_MOD_2) {
+			if (mouse & BROWSER_MOUSE_DRAG_2) {
+				guit->window->drag_save_object(bw->window, c,
+							       GUI_SAVE_OBJECT_NATIVE);
+			} else if (mouse & BROWSER_MOUSE_DRAG_1) {
+				guit->window->drag_save_object(bw->window, c,
+							       GUI_SAVE_OBJECT_ORIG);
+			}
+		} else if (mouse & (BROWSER_MOUSE_DRAG_1 |
+				    BROWSER_MOUSE_DRAG_2)) {
+			browser_window_page_drag_start(bw, x, y);
+			browser_window_set_pointer(bw, BROWSER_POINTER_MOVE);
+		}
+		break;
+	}
+}
+
 
 /* exported interface, documented in netsurf/browser_window.h */
 nserror
@@ -3316,124 +3447,15 @@ void browser_window_mouse_track(struct browser_window *bw,
 
 
 /* exported interface documented in netsurf/browser_window.h */
-void browser_window_mouse_click(struct browser_window *bw,
-				browser_mouse_state mouse, int x, int y)
+void
+browser_window_mouse_click(struct browser_window *bw,
+			   browser_mouse_state mouse,
+			   int x, int y)
 {
-	hlcache_handle *c = bw->current_content;
-	const char *status = NULL;
-	browser_pointer_shape pointer = BROWSER_POINTER_DEFAULT;
-
-	if (bw->children) {
-		/* Browser window has children (frames) */
-		struct browser_window *child;
-		int cur_child;
-		int children = bw->rows * bw->cols;
-
-		for (cur_child = 0; cur_child < children; cur_child++) {
-
-			child = &bw->children[cur_child];
-
-			if (x < child->x || y < child->y ||
-			    child->x + child->width < x ||
-			    child->y + child->height < y) {
-				/* Click not in this child */
-				continue;
-			}
-
-			/* It's this child that contains the click; pass it
-			 * on to child. */
-			browser_window_mouse_click(child, mouse,
-						   x - child->x + scrollbar_get_offset(
-							   child->scroll_x),
-						   y - child->y + scrollbar_get_offset(
-							   child->scroll_y));
-
-			/* Mouse action was for this child, we're done */
-			return;
-		}
-
-		return;
-	}
-
-	if (!c)
-		return;
-
-	if (bw->scroll_x != NULL) {
-		int scr_x, scr_y;
-		browser_window_get_scrollbar_pos(bw, true, &scr_x, &scr_y);
-		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
-		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
-
-		if (scr_x > 0 && scr_x < get_horz_scrollbar_len(bw) &&
-		    scr_y > 0 && scr_y < SCROLLBAR_WIDTH) {
-			status = scrollbar_mouse_status_to_message(
-				scrollbar_mouse_action(
-					bw->scroll_x, mouse,
-					scr_x, scr_y));
-			pointer = BROWSER_POINTER_DEFAULT;
-
-			if (status != NULL)
-				browser_window_set_status(bw, status);
-
-			browser_window_set_pointer(bw, pointer);
-			return;
-		}
-	}
-
-	if (bw->scroll_y != NULL) {
-		int scr_x, scr_y;
-		browser_window_get_scrollbar_pos(bw, false, &scr_x, &scr_y);
-		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
-		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
-
-		if (scr_y > 0 && scr_y < get_vert_scrollbar_len(bw) &&
-		    scr_x > 0 && scr_x < SCROLLBAR_WIDTH) {
-			status = scrollbar_mouse_status_to_message(
-				scrollbar_mouse_action(
-					bw->scroll_y, mouse,
-					scr_x, scr_y));
-			pointer = BROWSER_POINTER_DEFAULT;
-
-			if (status != NULL)
-				browser_window_set_status(bw, status);
-
-			browser_window_set_pointer(bw, pointer);
-			return;
-		}
-	}
-
-	switch (content_get_type(c)) {
-	case CONTENT_HTML:
-	case CONTENT_TEXTPLAIN:
-	{
-		/* Give bw focus */
-		struct browser_window *root_bw = browser_window_get_root(bw);
-		if (bw != root_bw->focus) {
-			browser_window_remove_caret(bw, false);
-			browser_window_set_selection(bw, false, true);
-			root_bw->focus = bw;
-		}
-
-		/* Pass mouse action to content */
-		content_mouse_action(c, bw, mouse, x, y);
-	}
-	break;
-	default:
-		if (mouse & BROWSER_MOUSE_MOD_2) {
-			if (mouse & BROWSER_MOUSE_DRAG_2) {
-				guit->window->drag_save_object(bw->window, c,
-							       GUI_SAVE_OBJECT_NATIVE);
-			} else if (mouse & BROWSER_MOUSE_DRAG_1) {
-				guit->window->drag_save_object(bw->window, c,
-							       GUI_SAVE_OBJECT_ORIG);
-			}
-		} else if (mouse & (BROWSER_MOUSE_DRAG_1 |
-				    BROWSER_MOUSE_DRAG_2)) {
-			browser_window_page_drag_start(bw, x, y);
-			browser_window_set_pointer(bw, BROWSER_POINTER_MOVE);
-		}
-		break;
-	}
+	browser_window_mouse_click_internal(bw,
+					    mouse,
+					    (x / bw->scale),
+					    (y / bw->scale));
 }
 
 

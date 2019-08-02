@@ -562,8 +562,8 @@ void nsbeos_dispatch_event(BMessage *message)
 			if (mods & B_CONTROL_KEY)
 				gui->mouse.state |= BROWSER_MOUSE_MOD_2;
 
-			gui->mouse.pressed_x = where.x / gui->scale;
-			gui->mouse.pressed_y = where.y / gui->scale;
+			gui->mouse.pressed_x = where.x;
+			gui->mouse.pressed_y = where.y;
 
 			// make sure the view is in focus
 			if (view && view->LockLooper()) {
@@ -624,8 +624,8 @@ void nsbeos_dispatch_event(BMessage *message)
 			if (gui->mouse.state & (BROWSER_MOUSE_CLICK_1|BROWSER_MOUSE_CLICK_2))
 				browser_window_mouse_click(gui->bw, 
 					(browser_mouse_state)gui->mouse.state, 
-					where.x / gui->scale,
-					where.y / gui->scale);
+					where.x,
+					where.y);
 			else 
 				browser_window_mouse_track(gui->bw, (browser_mouse_state)0, 
 					where.x, where.y);

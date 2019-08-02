@@ -332,8 +332,13 @@ static gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
 	return TRUE;
 }
 
-static gboolean nsgtk_window_button_press_event(GtkWidget *widget,
-					 GdkEventButton *event, gpointer data)
+/**
+ * GTK signal handler for button-press-event on layout
+ */
+static gboolean
+nsgtk_window_button_press_event(GtkWidget *widget,
+				GdkEventButton *event,
+				gpointer data)
 {
 	struct gui_window *g = data;
 
@@ -341,8 +346,8 @@ static gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 	gtk_widget_grab_focus(GTK_WIDGET(g->layout));
 	nsgtk_local_history_hide();
 
-	g->mouse.pressed_x = event->x / browser_window_get_scale(g->bw);
-	g->mouse.pressed_y = event->y / browser_window_get_scale(g->bw);
+	g->mouse.pressed_x = event->x;
+	g->mouse.pressed_y = event->y;
 
 	switch (event->button) {
 	case 1:	/* Left button, usually. Pass to core as BUTTON 1. */
@@ -382,8 +387,10 @@ static gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 	g->last_x = event->x;
 	g->last_y = event->y;
 
-	browser_window_mouse_click(g->bw, g->mouse.state, g->mouse.pressed_x,
-			g->mouse.pressed_y);
+	browser_window_mouse_click(g->bw,
+				   g->mouse.state,
+				   g->mouse.pressed_x,
+				   g->mouse.pressed_y);
 
 	return TRUE;
 }
@@ -410,8 +417,8 @@ static gboolean nsgtk_window_button_release_event(GtkWidget *widget,
 
 	if (g->mouse.state & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) {
 		browser_window_mouse_click(g->bw, g->mouse.state,
-				event->x / browser_window_get_scale(g->bw),
-				event->y / browser_window_get_scale(g->bw));
+				event->x,
+				event->y);
 	} else {
 		browser_window_mouse_track(g->bw, 0,
 				event->x / browser_window_get_scale(g->bw),

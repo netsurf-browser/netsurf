@@ -1152,10 +1152,12 @@ ro_gui_window_scroll_action(struct gui_window *g,
 	 */
 
 	if (pointer.w == g->window &&
-			ro_gui_window_to_window_pos(g,
-			pointer.pos.x, pointer.pos.y, &pos))
-		handled = browser_window_scroll_at_point(g->bw, pos.x, pos.y,
-				step_x, step_y);
+	    ro_gui_window_to_window_pos(g, pointer.pos.x, pointer.pos.y, &pos))
+		handled = browser_window_scroll_at_point(g->bw,
+							 pos.x/g->scale,
+							 pos.y/g->scale,
+							 step_x,
+							 step_y);
 
 	/* If the core didn't do the scrolling, handle it via the Wimp.
 	 * Windows which contain frames can only be scrolled by the core,
@@ -1249,7 +1251,7 @@ ro_gui_window_handle_local_keypress(struct gui_window *g,
 	if (!ro_gui_window_to_window_pos(g, pointer.pos.x, pointer.pos.y, &pos))
 		return false;
 
-	browser_window_get_features(g->bw, pos.x, pos.y, &cont);
+	browser_window_get_features(g->bw, pos.x/g->scale, pos.y/g->scale, &cont);
 
 	switch (c) {
 	case IS_WIMP_KEY + wimp_KEY_F1:	/* Help. */
@@ -2169,7 +2171,7 @@ ro_gui_window_menu_prepare(wimp_w w,
 
 		if (ro_gui_window_to_window_pos(g, pointer->pos.x,
 				pointer->pos.y, &pos)) {
-			browser_window_get_features(bw,	pos.x, pos.y, &cont);
+			browser_window_get_features(bw,	pos.x/g->scale, pos.y/g->scale, &cont);
 
 			current_menu_main = cont.main;
 			current_menu_object = cont.object;
@@ -3830,7 +3832,7 @@ static void ro_gui_window_scroll_end(wimp_dragged *drag, void *data)
 	}
 
 	if (ro_gui_window_to_window_pos(g, drag->final.x0, drag->final.y0, &pos))
-		browser_window_mouse_track(g->bw, 0, pos.x, pos.y);
+		browser_window_mouse_track(g->bw, 0, pos.x/g->scale, pos.y/g->scale);
 }
 
 
@@ -4362,7 +4364,7 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 			message->data.data_xfer.pos.y, &pos))
 		return false;
 
-	if (browser_window_drop_file_at_point(g->bw, pos.x, pos.y,
+	if (browser_window_drop_file_at_point(g->bw, pos.x/g->scale, pos.y/g->scale,
 			message->data.data_xfer.file_name) == false)
 		return false;
 
@@ -4390,7 +4392,7 @@ void ro_gui_window_mouse_at(wimp_pointer *pointer, void *data)
 		browser_window_mouse_track(g->bw,
 				ro_gui_mouse_drag_state(pointer->buttons,
 						wimp_BUTTON_DOUBLE_CLICK_DRAG),
-				pos.x, pos.y);
+				pos.x/g->scale, pos.y/g->scale);
 }
 
 
@@ -4753,8 +4755,8 @@ ro_gui_window_to_window_pos(struct gui_window *g, int x, int y, os_coord *pos)
 		ro_warn_user("WimpError", error->errmess);
 		return false;
 	}
-	pos->x = (x - (state.visible.x0 - state.xscroll)) / 2 / g->scale;
-	pos->y = ((state.visible.y1 - state.yscroll) - y) / 2 / g->scale;
+	pos->x = (x - (state.visible.x0 - state.xscroll)) / 2 ;
+	pos->y = ((state.visible.y1 - state.yscroll) - y) / 2 ;
 	return true;
 }
 

@@ -431,8 +431,8 @@ nsws_drawable_mouseup(struct gui_window *gw,
 
 		browser_window_mouse_click(gw->bw,
 					   gw->mouse->state,
-					   (x + gw->scrollx) / gw->scale,
-					   (y + gw->scrolly) / gw->scale);
+					   (x + gw->scrollx),
+					   (y + gw->scrolly));
 	} else {
 		browser_window_mouse_track(gw->bw,
 					   0,
@@ -476,8 +476,8 @@ nsws_drawable_mousedown(struct gui_window *gw,
 	      (y + gw->scrolly) / gw->scale);
 
 	browser_window_mouse_click(gw->bw, gw->mouse->state,
-				   (x + gw->scrollx) / gw->scale,
-				   (y + gw->scrolly) / gw->scale);
+				   (x + gw->scrollx),
+				   (y + gw->scrolly));
 
 	return 0;
 }
@@ -497,8 +497,8 @@ nsws_drawable_mousemove(struct gui_window *gw, int x, int y)
 		return 0;
 
 	/* scale co-ordinates */
-	x = (x + gw->scrollx) / gw->scale;
-	y = (y + gw->scrolly) / gw->scale;
+	x = (x + gw->scrollx) ;
+	y = (y + gw->scrolly);
 
 	/* if mouse button held down and pointer moved more than
 	 * minimum distance drag is happening */
@@ -535,7 +535,7 @@ nsws_drawable_mousemove(struct gui_window *gw, int x, int y)
 		gw->mouse->state &= ~BROWSER_MOUSE_MOD_3;
 
 
-	browser_window_mouse_track(gw->bw, gw->mouse->state, x, y);
+	browser_window_mouse_track(gw->bw, gw->mouse->state, x/ gw->scale, y/ gw->scale);
 
 	return 0;
 }
