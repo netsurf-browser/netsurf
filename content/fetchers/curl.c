@@ -813,23 +813,6 @@ static void fetch_curl_cache_handle(CURL *handle, lwc_string *host)
 
 
 /**
- * Abort a fetch.
- */
-static void fetch_curl_abort(void *vf)
-{
-	struct curl_fetch_info *f = (struct curl_fetch_info *)vf;
-	assert(f);
-	NSLOG(netsurf, INFO, "fetch %p, url '%s'", f, nsurl_access(f->url));
-	if (f->curl_handle) {
-		f->abort = true;
-	} else {
-		fetch_remove_from_queues(f->fetch_handle);
-		fetch_free(f->fetch_handle);
-	}
-}
-
-
-/**
  * Clean up the provided fetch object and free it.
  *
  * Will prod the queue afterwards to allow pending requests to be initiated.
@@ -852,6 +835,30 @@ static void fetch_curl_stop(struct curl_fetch_info *f)
 	}
 
 	fetch_remove_from_queues(f->fetch_handle);
+}
+
+
+/**
+ * Abort a fetch.
+ */
+static void fetch_curl_abort(void *vf)
+{
+	struct curl_fetch_info *f = (struct curl_fetch_info *)vf;
+	assert(f);
+	NSLOG(netsurf, INFO, "fetch %p, url '%s'", f, nsurl_access(f->url));
+	if (f->curl_handle) {
+		if (inside_curl) {
+			NSLOG(netsurf, DEBUG, "Deferring cleanup");
+			f->abort = true;
+		} else {
+			NSLOG(netsurf, DEBUG, "Immediate abort");
+			fetch_curl_stop(f);
+			fetch_free(f->fetch_handle);
+		}
+	} else {
+		fetch_remove_from_queues(f->fetch_handle);
+		fetch_free(f->fetch_handle);
+	}
 }
 
 
