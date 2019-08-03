@@ -3535,14 +3535,6 @@ browser_window_mouse_click(struct browser_window *bw,
 
 
 /* exported interface documented in netsurf/browser_window.h */
-void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
-				int width, int height)
-{
-	content_request_redraw(bw->current_content, x, y, width, height);
-}
-
-
-/* exported interface documented in netsurf/browser_window.h */
 void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 {
 	assert(bw != NULL);

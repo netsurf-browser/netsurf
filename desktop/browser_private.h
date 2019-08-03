@@ -270,6 +270,15 @@ void browser_window_update_extent(struct browser_window *bw);
 
 
 /**
+ * update an area of a browser window.
+ *
+ * \param bw The browser window to update.
+ * \param rect The area to redraw
+ */
+void browser_window_update_box(struct browser_window *bw, struct rect *rect);
+
+
+/**
  * Change the status bar of a browser window.
  *
  * \param  bw	 browser window

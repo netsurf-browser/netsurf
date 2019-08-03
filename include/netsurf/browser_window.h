@@ -265,6 +265,7 @@ bool browser_window_has_content(struct browser_window *bw);
  */
 struct hlcache_handle *browser_window_get_content(struct browser_window *bw);
 
+
 /**
  * Set the dimensions of the area a browser window occupies
  *
@@ -275,6 +276,7 @@ struct hlcache_handle *browser_window_get_content(struct browser_window *bw);
 void browser_window_set_dimensions(struct browser_window *bw,
 		int width, int height);
 
+
 /**
  * Redraw browser window, set extent to content, and update title.
  *
@@ -283,13 +285,6 @@ void browser_window_set_dimensions(struct browser_window *bw,
  */
 void browser_window_update(struct browser_window *bw, bool scroll_to_top);
 
-/**
- * update an area of a browser window.
- *
- * \param bw The browser window to update.
- * \param rect The area to redraw
- */
-void browser_window_update_box(struct browser_window *bw, struct rect *rect);
 
 /**
  * Stop all fetching activity in a browser window.
@@ -298,6 +293,7 @@ void browser_window_update_box(struct browser_window *bw, struct rect *rect);
  */
 void browser_window_stop(struct browser_window *bw);
 
+
 /**
  * Reload the page in a browser window.
  *
@@ -305,6 +301,7 @@ void browser_window_stop(struct browser_window *bw);
  * \param  all whether to reload all objects associated with the page
  */
 void browser_window_reload(struct browser_window *bw, bool all);
+
 
 /**
  * Close and destroy a browser window.
@@ -351,6 +348,7 @@ nserror browser_window_set_scale(struct browser_window *bw, float scale, bool ab
  */
 float browser_window_get_scale(struct browser_window *bw);
 
+
 /**
  * Get access to any page features at the given coordinates.
  *
@@ -369,6 +367,7 @@ float browser_window_get_scale(struct browser_window *bw);
 nserror browser_window_get_features(struct browser_window *bw,
 		int x, int y, struct browser_window_features *data);
 
+
 /**
  * Send a scroll request to a browser window at a particular point.  The
  * 'deepest' scrollable object which can be scrolled in the requested
@@ -384,6 +383,7 @@ nserror browser_window_get_features(struct browser_window *bw,
 bool browser_window_scroll_at_point(struct browser_window *bw,
 		int x, int y, int scrx, int scry);
 
+
 /**
  * Drop a file onto a browser window at a particular point, or determine if a
  * file may be dropped onto the content at given point.
@@ -397,6 +397,7 @@ bool browser_window_scroll_at_point(struct browser_window *bw,
 bool browser_window_drop_file_at_point(struct browser_window *bw,
 		int x, int y, char *file);
 
+
 /**
  * set filename on form control.
  *
@@ -407,12 +408,14 @@ bool browser_window_drop_file_at_point(struct browser_window *bw,
 void browser_window_set_gadget_filename(struct browser_window *bw,
 		struct form_control *gadget, const char *fn);
 
+
 /**
  * Update URL bar for a given browser window to bw's content's URL
  *
  * \param bw Browser window to update URL bar for.
  */
 nserror browser_window_refresh_url_bar(struct browser_window *bw);
+
 
 /**
  * Handle mouse clicks in a browser window.
@@ -424,6 +427,7 @@ nserror browser_window_refresh_url_bar(struct browser_window *bw);
  */
 void browser_window_mouse_click(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
+
 
 /**
  * Handle non-click mouse action in a browser window. (drag ends, movements)
@@ -474,17 +478,6 @@ nserror browser_window_schedule_reformat(struct browser_window *bw);
 void browser_select_menu_callback(void *client_data,
 		int x, int y, int width, int height);
 
-/**
- * Redraw a rectangular region of a browser window.
- *
- * \param  bw	  browser window to be redrawn
- * \param  x	  x co-ord of top-left
- * \param  y	  y co-ord of top-left
- * \param  width  width of rectangle
- * \param  height height of rectangle
- */
-void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
-		int width, int height);
 
 /**
  * Change the shape of the mouse pointer
@@ -495,6 +488,7 @@ void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 void browser_window_set_pointer(struct browser_window *bw,
 		browser_pointer_shape shape);
 
+
 /**
  * Start drag scrolling the contents of the browser window
  *
@@ -504,6 +498,7 @@ void browser_window_set_pointer(struct browser_window *bw,
  */
 void browser_window_page_drag_start(struct browser_window *bw, int x, int y);
 
+
 /**
  * Check availability of Back action for a given browser window
  *
@@ -511,6 +506,7 @@ void browser_window_page_drag_start(struct browser_window *bw, int x, int y);
  * \return true if Back action is available
  */
 bool browser_window_back_available(struct browser_window *bw);
+
 
 /**
  * Check availability of Forward action for a given browser window
@@ -520,6 +516,7 @@ bool browser_window_back_available(struct browser_window *bw);
  */
 bool browser_window_forward_available(struct browser_window *bw);
 
+
 /**
  * Check availability of Reload action for a given browser window
  *
@@ -528,6 +525,7 @@ bool browser_window_forward_available(struct browser_window *bw);
  */
 bool browser_window_reload_available(struct browser_window *bw);
 
+
 /**
  * Check availability of Stop action for a given browser window
  *
@@ -535,6 +533,7 @@ bool browser_window_reload_available(struct browser_window *bw);
  * \return true if Stop action is available
  */
 bool browser_window_stop_available(struct browser_window *bw);
+
 
 /**
  * Redraw an area of a window.
@@ -559,6 +558,7 @@ bool browser_window_stop_available(struct browser_window *bw);
  */
 bool browser_window_redraw(struct browser_window *bw, int x, int y,
 		const struct rect *clip, const struct redraw_context *ctx);
+
 
 /**
  * Check whether browser window is ready for redraw

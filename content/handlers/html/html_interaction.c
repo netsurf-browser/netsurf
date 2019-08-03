@@ -412,11 +412,13 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			content_broadcast(c, CONTENT_MSG_STATUS, &msg_data);
 		} else {
 			int width, height;
+			struct hlcache_handle *bw_content;
 			form_select_get_dimensions(html->visible_select_menu,
 					&width, &height);
 			html->visible_select_menu = NULL;
-			browser_window_redraw_rect(bw, box_x, box_y,
-					width, height);
+			bw_content = browser_window_get_content(bw);
+			content_request_redraw(bw_content,box_x, box_y,
+					       width, height);
 		}
 		return;
 	}
