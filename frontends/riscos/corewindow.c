@@ -847,8 +847,8 @@ ro_cw_get_scroll(struct core_window *cw, int *x, int *y)
 		return NSERROR_INVALID;
 	}
 
-	*x = state.xscroll / 2;
-	*y = state.yscroll / 2;
+	*x =  state.xscroll / 2;
+	*y = -state.yscroll / 2;
 	return NSERROR_OK;
 }
 
@@ -872,7 +872,7 @@ ro_cw_set_scroll(struct core_window *cw, int x, int y)
 		return NSERROR_INVALID;
 	}
 
-	state.xscroll = -x * 2;
+	state.xscroll =  x * 2;
 	state.yscroll = -y * 2;
 
 	ro_cw_open(PTR_WIMP_OPEN(&state));
