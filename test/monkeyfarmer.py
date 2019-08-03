@@ -148,10 +148,10 @@ class MonkeyFarmer(asyncore.dispatcher):
                 asyncore.loop(timeout=next_event - now, count=1)
             else:
                 asyncore.loop(count=1)
-            if len(self.lines) > 0:
+            while len(self.lines) > 0:
                 self.monkey_says(self.lines.pop(0))
-            if once:
-                break
+                if once or self.deadmonkey:
+                    return
 
 
 class Browser:
