@@ -471,15 +471,6 @@ nserror browser_window_schedule_reformat(struct browser_window *bw);
 
 
 /**
- * callback for select menu widget
- *
- * \todo This API needs investigating
- */
-void browser_select_menu_callback(void *client_data,
-		int x, int y, int width, int height);
-
-
-/**
  * Change the shape of the mouse pointer
  *
  * \param bw Browser window to set shape in
