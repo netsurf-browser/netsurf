@@ -29,7 +29,14 @@ struct rect;
 struct core_window;
 struct core_window_callback_table;
 
-/* exported interface documented in cw_helper.h */
+/**
+ * Scroll a core window to make the given rectangle visible.
+ *
+ * \param[in] cw_t  The core window callback table to use.
+ * \param[in] cw_h  The core window's handle.
+ * \param[in] r     The rectangle to make visisble by scrolling.
+ * \return NSERROR_OK on success or appropriate error code
+ */
 nserror cw_helper_scroll_visible(
 		const struct core_window_callback_table *cw_t,
 		struct core_window *cw_h,
