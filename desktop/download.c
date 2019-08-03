@@ -29,6 +29,7 @@
 #include "utils/corestrings.h"
 #include "utils/http.h"
 #include "utils/utils.h"
+#include "utils/log.h"
 #include "desktop/download.h"
 #include "netsurf/download.h"
 #include "desktop/gui_internal.h"
