@@ -28,6 +28,11 @@
  * Browser window creation and manipulation implementation.
  */
 
+/** smallest scale that can be applied to a browser window*/
+#define SCALE_MINIMUM 0.2
+/** largests scale that can be applied to a browser window*/
+#define SCALE_MAXIMUM 10.0
+
 #include "utils/config.h"
 
 #include <assert.h>
@@ -1337,32 +1342,40 @@ static bool frag_scroll(struct browser_window *bw)
  * Set browser window scale.
  *
  * \param bw Browser window.
- * \param scale value.
+ * \param absolute scale value.
+ * \return NSERROR_OK on success else error code
  */
-static void
+static nserror
 browser_window_set_scale_internal(struct browser_window *bw, float scale)
 {
 	int i;
-	hlcache_handle *c;
+	nserror res = NSERROR_OK;
 
-	if (fabs(bw->scale-scale) < 0.0001)
-		return;
+	/* do not apply tiny changes in scale */
+	if (fabs(bw->scale - scale) < 0.0001)
+		return res;
 
 	bw->scale = scale;
-	c = bw->current_content;
 
-	if (c != NULL) {
-		if (content_can_reformat(c) == false) {
+	if (bw->current_content != NULL) {
+		if (content_can_reformat(bw->current_content) == false) {
 			browser_window_update(bw, false);
 		} else {
-			browser_window_schedule_reformat(bw);
+			res = browser_window_schedule_reformat(bw);
 		}
 	}
 
-	for (i = 0; i < (bw->cols * bw->rows); i++)
-		browser_window_set_scale_internal(&bw->children[i], scale);
-	for (i = 0; i < bw->iframe_count; i++)
-		browser_window_set_scale_internal(&bw->iframes[i], scale);
+	/* scale frames */
+	for (i = 0; i < (bw->cols * bw->rows); i++) {
+		res = browser_window_set_scale_internal(&bw->children[i], scale);
+	}
+
+	/* sale iframes */
+	for (i = 0; i < bw->iframe_count; i++) {
+		res = browser_window_set_scale_internal(&bw->iframes[i], scale);
+	}
+
+	return res;
 }
 
 
@@ -3269,9 +3282,7 @@ nserror browser_window_schedule_reformat(struct browser_window *bw)
 		return NSERROR_BAD_PARAMETER;
 	}
 
-	guit->misc->schedule(0, scheduled_reformat, bw);
-
-	return NSERROR_OK;
+	return guit->misc->schedule(0, scheduled_reformat, bw);
 }
 
 
@@ -3304,18 +3315,44 @@ void browser_window_reformat(struct browser_window *bw, bool background,
 
 
 /* exported interface documented in netsurf/browser_window.h */
-void browser_window_set_scale(struct browser_window *bw, float scale, bool all)
+nserror
+browser_window_set_scale(struct browser_window *bw, float scale, bool absolute)
 {
-	while (bw->parent && all) {
+	nserror res;
+
+	/* get top browser window */
+	while (bw->parent) {
 		bw = bw->parent;
 	}
 
-	browser_window_set_scale_internal(bw, scale);
+	if (absolute) {
+		/* ensure "close" to 1 is treated as 1 */
+		if (scale > 0.95 && scale < 1.05) {
+			scale = 1.0;
+		}
+	} else {
+		/* ensure "close" to 1 is treated as 1 */
+		if ((scale + bw->scale) > (1.01 - scale) &&
+		    (scale + bw->scale) < (0.99 + scale)) {
+			scale = 1.0;
+		} else {
+			scale += bw->scale;
+		}
+	}
 
-	if (bw->parent)
-		bw = bw->parent;
+	/* clamp range between 0.1 and 10 (10% and 1000%) */
+	if (scale < SCALE_MINIMUM) {
+		scale = SCALE_MINIMUM;
+	} else if (scale > SCALE_MAXIMUM) {
+		scale = SCALE_MAXIMUM;
+	}
 
-	browser_window_recalculate_frameset(bw);
+	res = browser_window_set_scale_internal(bw, scale);
+	if (res == NSERROR_OK) {
+		browser_window_recalculate_frameset(bw);
+	}
+
+	return res;
 }
 
 

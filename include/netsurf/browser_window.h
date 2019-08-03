@@ -337,9 +337,10 @@ void browser_window_reformat(struct browser_window *bw, bool background, int wid
  *
  * \param bw The browser window to scale.
  * \param scale The new scale.
- * \param all Scale all windows in the tree (ie work up as well as down)
+ * \param absolute If the scale value is absolute or relative to current value
+ * \return NSERROR_OK and scale applied else other error code caused by reflow etc.
  */
-void browser_window_set_scale(struct browser_window *bw, float scale, bool all);
+nserror browser_window_set_scale(struct browser_window *bw, float scale, bool absolute);
 
 
 /**
