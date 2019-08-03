@@ -792,7 +792,7 @@ ro_cw_invalidate(struct core_window *cw, const struct rect *r)
 /**
  * Callback from the core to update the content area size.
  */
-static void
+static nserror
 ro_cw_update_size(struct core_window *cw, int width, int height)
 {
 	struct ro_corewindow *ro_cw = (struct ro_corewindow *)cw;
@@ -811,7 +811,7 @@ ro_cw_update_size(struct core_window *cw, int width, int height)
 	if (error) {
 		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
 		      error->errnum, error->errmess);
-		return;
+		return NSERROR_INVALID;
 	}
 
 	/* only update the window if it is open */
@@ -824,14 +824,15 @@ ro_cw_update_size(struct core_window *cw, int width, int height)
 
 		update_scrollbars(ro_cw, &open);
 	}
+	return NSERROR_OK;
 }
 
 
 /**
  * Callback from the core to scroll the visible content.
  */
-static void
-ro_cw_scroll_visible(struct core_window *cw, const struct rect *r)
+static nserror
+ro_cw_get_scroll(struct core_window *cw, int *x, int *y)
 {
 	struct ro_corewindow *ro_cw = (struct ro_corewindow *)cw;
 	wimp_window_state state = {
@@ -843,17 +844,39 @@ ro_cw_scroll_visible(struct core_window *cw, const struct rect *r)
 	if (error) {
 		NSLOG(netsurf, ERROR, "xwimp_get_window_state: 0x%x: %s",
 				error->errnum, error->errmess);
-		return;
+		return NSERROR_INVALID;
 	}
 
-	/* TODO:
-	 * Scroll so the area is brought into view, not just the top left of
-	 * the rectangle.  See `nsgtk_cw_scroll_visible`.
-	 */
-	state.xscroll = -r->x0 * 2;
-	state.yscroll = -r->y0 * 2;
+	*x = state.xscroll / 2;
+	*y = state.yscroll / 2;
+	return NSERROR_OK;
+}
+
+
+/**
+ * Callback from the core to scroll the visible content.
+ */
+static nserror
+ro_cw_set_scroll(struct core_window *cw, int x, int y)
+{
+	struct ro_corewindow *ro_cw = (struct ro_corewindow *)cw;
+	wimp_window_state state = {
+		.w = ro_cw->wh,
+	};
+	os_error *error;
+
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		NSLOG(netsurf, ERROR, "xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess);
+		return NSERROR_INVALID;
+	}
+
+	state.xscroll = -x * 2;
+	state.yscroll = -y * 2;
 
 	ro_cw_open(PTR_WIMP_OPEN(&state));
+	return NSERROR_OK;
 }
 
 
@@ -864,7 +887,7 @@ ro_cw_scroll_visible(struct core_window *cw, const struct rect *r)
  * \param[out] width to be set to viewport width in px
  * \param[out] height to be set to viewport height in px
  */
-static void
+static nserror
 ro_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
 {
 	struct ro_corewindow *ro_cw = (struct ro_corewindow *)cw;
@@ -876,29 +899,33 @@ ro_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
 	if (error) {
 		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
 		      error->errnum, error->errmess);
-		return;
+		return NSERROR_INVALID;
 	}
 
 	*width = (state.visible.x1 - state.visible.x0) / 2;
 	*height = (state.visible.y1 - state.visible.y0) / 2;
+	return NSERROR_OK;
 }
 
 
 /**
  * Callback from the core to update the drag status.
  */
-static void
+static nserror
 ro_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
 {
 	struct ro_corewindow *ro_cw = (struct ro_corewindow *)cw;
 	ro_cw->drag_status = ds;
+
+	return NSERROR_OK;
 }
 
 
 struct core_window_callback_table ro_cw_cb_table = {
 	.invalidate = ro_cw_invalidate,
 	.update_size = ro_cw_update_size,
-	.scroll_visible = ro_cw_scroll_visible,
+	.set_scroll = ro_cw_set_scroll,
+	.get_scroll = ro_cw_get_scroll,
 	.get_window_dimensions = ro_cw_get_window_dimensions,
 	.drag_status = ro_cw_drag_status
 };

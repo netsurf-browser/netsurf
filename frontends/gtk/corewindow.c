@@ -588,13 +588,15 @@ nsgtk_cw_invalidate_area(struct core_window *cw, const struct rect *rect)
  * \param width New widget width.
  * \param height New widget height.
  */
-static void
+static nserror
 nsgtk_cw_update_size(struct core_window *cw, int width, int height)
 {
 	struct nsgtk_corewindow *nsgtk_cw = (struct nsgtk_corewindow *)cw;
 
 	gtk_widget_set_size_request(GTK_WIDGET(nsgtk_cw->drawing_area),
 				    width, height);
+
+	return NSERROR_OK;
 }
 
 
@@ -604,12 +606,10 @@ nsgtk_cw_update_size(struct core_window *cw, int width, int height)
  * \param cw core window handle.
  * \param r rectangle that needs scrolling.
  */
-static void
-nsgtk_cw_scroll_visible(struct core_window *cw, const struct rect *r)
+static nserror
+nsgtk_cw_set_scroll(struct core_window *cw, int x, int y)
 {
 	struct nsgtk_corewindow *nsgtk_cw = (struct nsgtk_corewindow *)cw;
-	int x0, y0, x1, y1;
-	gdouble vpage, hpage;
 	GtkAdjustment *vadj;
 	GtkAdjustment *hadj;
 
@@ -619,41 +619,36 @@ nsgtk_cw_scroll_visible(struct core_window *cw, const struct rect *r)
 	assert(vadj != NULL);
 	assert(hadj != NULL);
 
-	g_object_get(vadj, "page-size", &vpage, NULL);
-	g_object_get(hadj, "page-size", &hpage, NULL);
+	gtk_adjustment_set_value(vadj, y);
+	gtk_adjustment_set_value(hadj, x);
 
-	y0 = (int)(gtk_adjustment_get_value(vadj));
-	y1 = y0 + vpage;
-	x0 = (int)(gtk_adjustment_get_value(hadj));
-	x1 = x0 + hpage;
+	return NSERROR_OK;
+}
 
-	if (r->y1 > y1) {
-		/* The bottom of the rectangle is off the bottom of the
-		 * window, so scroll down to fit it
-		 */
-		y0 = r->y1 - vpage;
-	}
-	if (r->y0 < y0) {
-		/* The top of the rectangle is off the top of the window,
-		 * so scroll up to fit it
-		 */
-		y0 = r->y0;
-	}
-	if (r->x1 > x1) {
-		/* The right of the rectangle is off the right of the window
-		 * so scroll right to fit it
-		 */
-		x0 = r->x1 - hpage;
-	}
-	if (r->x0 < x0) {
-		/* The left of the rectangle is off the left of the window
-		 * so scroll left to fit it
-		 */
-		x0 = r->x0;
-	}
 
-	gtk_adjustment_set_value(vadj, y0);
-	gtk_adjustment_set_value(hadj, x0);
+/**
+ * scroll window core window callback
+ *
+ * \param cw core window handle.
+ * \param r rectangle that needs scrolling.
+ */
+static nserror
+nsgtk_cw_get_scroll(struct core_window *cw, int *x, int *y)
+{
+	struct nsgtk_corewindow *nsgtk_cw = (struct nsgtk_corewindow *)cw;
+	GtkAdjustment *vadj;
+	GtkAdjustment *hadj;
+
+	vadj = gtk_scrolled_window_get_vadjustment(nsgtk_cw->scrolled);
+	hadj = gtk_scrolled_window_get_hadjustment(nsgtk_cw->scrolled);
+
+	assert(vadj != NULL);
+	assert(hadj != NULL);
+
+	*y = (int)(gtk_adjustment_get_value(vadj));
+	*x = (int)(gtk_adjustment_get_value(hadj));
+
+	return NSERROR_OK;
 }
 
 
@@ -664,7 +659,7 @@ nsgtk_cw_scroll_visible(struct core_window *cw, const struct rect *r)
  * \param[out] width to be set to viewport width in px
  * \param[out] height to be set to viewport height in px
  */
-static void
+static nserror
 nsgtk_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
 {
 	struct nsgtk_corewindow *nsgtk_cw = (struct nsgtk_corewindow *)cw;
@@ -679,6 +674,8 @@ nsgtk_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
 	vadj = gtk_scrolled_window_get_vadjustment(nsgtk_cw->scrolled);
 	g_object_get(vadj, "page-size", &page, NULL);
 	*height = page;
+
+	return NSERROR_OK;
 }
 
 
@@ -688,11 +685,13 @@ nsgtk_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
  * \param cw core window handle.
  * \param ds The new drag status.
  */
-static void
+static nserror
 nsgtk_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
 {
 	struct nsgtk_corewindow *nsgtk_cw = (struct nsgtk_corewindow *)cw;
 	nsgtk_cw->drag_status = ds;
+
+	return NSERROR_OK;
 }
 
 
@@ -702,7 +701,8 @@ nsgtk_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
 static struct core_window_callback_table nsgtk_cw_cb_table = {
 	.invalidate = nsgtk_cw_invalidate_area,
 	.update_size = nsgtk_cw_update_size,
-	.scroll_visible = nsgtk_cw_scroll_visible,
+	.set_scroll = nsgtk_cw_set_scroll,
+	.get_scroll = nsgtk_cw_get_scroll,
 	.get_window_dimensions = nsgtk_cw_get_window_dimensions,
 	.drag_status = nsgtk_cw_drag_status
 };

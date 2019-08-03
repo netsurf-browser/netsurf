@@ -136,7 +136,7 @@ fb_cw_invalidate(struct core_window *cw, const struct rect *r)
 }
 
 
-static void
+static nserror
 fb_cw_update_size(struct core_window *cw, int width, int height)
 {
 /*	struct fb_corewindow *fb_cw = (struct fb_corewindow *)cw;
@@ -144,41 +144,58 @@ fb_cw_update_size(struct core_window *cw, int width, int height)
 	toolkit_widget_set_size_request(FB_WIDGET(fb_cw->drawing_area),
 				    width, height);
 */
+	return NSERROR_OK;
 }
 
 
-static void
-fb_cw_scroll_visible(struct core_window *cw, const struct rect *r)
+static nserror
+fb_cw_set_scroll(struct core_window *cw, int x, int y)
 {
 /*	struct fb_corewindow *fb_cw = (struct fb_corewindow *)cw;
 
 	toolkit_scroll_widget(fb_cw->widget, r);
 */
+	return NSERROR_OK;
 }
 
 
-static void
+static nserror
+fb_cw_get_scroll(struct core_window *cw, int *x, int *y)
+{
+/*	struct fb_corewindow *fb_cw = (struct fb_corewindow *)cw;
+
+	toolkit_scroll_widget(fb_cw->widget, r);
+*/
+	return NSERROR_NOT_IMPLEMENTED;
+}
+
+
+static nserror
 fb_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
 {
 	struct fb_corewindow *fb_cw = (struct fb_corewindow *)cw;
 
 	*width = fbtk_get_width(fb_cw->drawable);
 	*height = fbtk_get_height(fb_cw->drawable);
+	return NSERROR_OK;
 }
 
 
-static void
+static nserror
 fb_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
 {
 	struct fb_corewindow *fb_cw = (struct fb_corewindow *)cw;
 	fb_cw->drag_status = ds;
+
+	return NSERROR_OK;
 }
 
 
 struct core_window_callback_table fb_cw_cb_table = {
 	.invalidate = fb_cw_invalidate,
 	.update_size = fb_cw_update_size,
-	.scroll_visible = fb_cw_scroll_visible,
+	.set_scroll = fb_cw_set_scroll,
+	.get_scroll = fb_cw_get_scroll,
 	.get_window_dimensions = fb_cw_get_window_dimensions,
 	.drag_status = fb_cw_drag_status
 };

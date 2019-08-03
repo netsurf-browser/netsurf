@@ -39,11 +39,12 @@
 #include "content/hlcache.h"
 #include "css/utils.h"
 
-#include "desktop/system_colour.h"
 #include "desktop/knockout.h"
 #include "desktop/textarea.h"
 #include "desktop/treeview.h"
+#include "desktop/cw_helper.h"
 #include "desktop/gui_internal.h"
+#include "desktop/system_colour.h"
 
 /**
  * The maximum horizontal size a treeview can possibly be.
@@ -404,9 +405,7 @@ static inline void treeview__cw_scroll_top(
 		.y1 = tree_g.line_height,
 	};
 
-	if (tree->cw_t != NULL) {
-		tree->cw_t->scroll_visible(tree->cw_h, &r);
-	}
+	cw_helper_scroll_visible(tree->cw_t, tree->cw_h, &r);
 }
 
 
@@ -584,9 +583,7 @@ static inline void treeview__cw_scroll_to_node(
 
 	r.y1 += r.y0; /* Apply the Y offset to the second Y coordinate */
 
-	if (tree->cw_t != NULL) {
-		tree->cw_t->scroll_visible(tree->cw_h, &r);
-	}
+	cw_helper_scroll_visible(tree->cw_t, tree->cw_h, &r);
 }
 
 

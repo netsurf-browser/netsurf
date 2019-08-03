@@ -74,16 +74,33 @@ struct core_window_callback_table {
 	 * \param[in] cw the core window object
 	 * \param[in] width the width in px, or negative if don't care
 	 * \param[in] height the height in px, or negative if don't care
+	 * \return NSERROR_OK on success or appropriate error code
 	 */
-	void (*update_size)(struct core_window *cw, int width, int height);
+	nserror (*update_size)(struct core_window *cw, int width, int height);
 
 	/**
-	 * Scroll the window to make area visible
+	 * Scroll the window to given scroll offsets
+	 *
+	 * Note: Core callers of this may want to look at calling
+	 * the `cw_helper_scroll_visible()`, rather than calling
+	 * this directly.
 	 *
 	 * \param[in] cw the core window object
-	 * \param[in] r rectangle to make visible
+	 * \param[in] x x-scroll value to set
+	 * \param[in] y y-scroll value to set
+	 * \return NSERROR_OK on success or appropriate error code
 	 */
-	void (*scroll_visible)(struct core_window *cw, const struct rect *r);
+	nserror (*set_scroll)(struct core_window *cw, int x, int y);
+
+	/**
+	 * Get the current scroll offsets
+	 *
+	 * \param[in] cw the core window object
+	 * \param[out] returns horizontal scroll in px
+	 * \param[out] returns vertical scroll in px
+	 * \return NSERROR_OK on success or appropriate error code
+	 */
+	nserror (*get_scroll)(struct core_window *cw, int *x, int *y);
 
 	/**
 	 * Get window viewport dimensions
@@ -91,8 +108,9 @@ struct core_window_callback_table {
 	 * \param[in] cw the core window object
 	 * \param[out] width to be set to viewport width in px
 	 * \param[out] height to be set to viewport height in px
+	 * \return NSERROR_OK on success or appropriate error code
 	 */
-	void (*get_window_dimensions)(struct core_window *cw,
+	nserror (*get_window_dimensions)(struct core_window *cw,
 			int *width, int *height);
 
 	/**
@@ -100,8 +118,9 @@ struct core_window_callback_table {
 	 *
 	 * \param[in] cw the core window object
 	 * \param[in] ds the current drag status
+	 * \return NSERROR_OK on success or appropriate error code
 	 */
-	void (*drag_status)(struct core_window *cw,
+	nserror (*drag_status)(struct core_window *cw,
 			core_window_drag_status ds);
 };
 

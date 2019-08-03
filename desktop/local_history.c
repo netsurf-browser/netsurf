@@ -33,6 +33,7 @@
 #include "netsurf/plotters.h"
 #include "netsurf/keypress.h"
 
+#include "desktop/cw_helper.h"
 #include "desktop/gui_internal.h"
 #include "desktop/system_colour.h"
 #include "desktop/browser_private.h"
@@ -294,9 +295,9 @@ local_history_scroll_to_cursor(struct local_history_session *session)
 	cursor.y1 = cursor.y0 + LOCAL_HISTORY_HEIGHT +
 			LOCAL_HISTORY_BOTTOM_MARGIN / 2;
 
-	session->cw_t->scroll_visible(session->core_window_handle, &cursor);
-
-	return NSERROR_OK;
+	return cw_helper_scroll_visible(session->cw_t,
+			session->core_window_handle,
+			&cursor);
 }
 
 /* exported interface documented in desktop/local_history.h */

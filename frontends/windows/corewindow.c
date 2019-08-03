@@ -443,7 +443,7 @@ nsw32_cw_invalidate_area(struct core_window *cw, const struct rect *rect)
 /**
  * Callback from the core to update the content area size
  */
-static void
+static nserror
 nsw32_cw_update_size(struct core_window *cw, int width, int height)
 {
 	struct nsw32_corewindow *nsw32_cw = (struct nsw32_corewindow *)cw;
@@ -453,13 +453,23 @@ nsw32_cw_update_size(struct core_window *cw, int width, int height)
 	NSLOG(netsurf, INFO, "new content size w:%d h:%d", width, height);
 
 	update_scrollbars(nsw32_cw);
+	return NSERROR_OK;
 }
 
 
-static void
-nsw32_cw_scroll_visible(struct core_window *cw, const struct rect *r)
+static nserror
+nsw32_cw_set_scroll(struct core_window *cw, int x, int y)
 {
 	/** /todo call setscroll apropriately */
+	return NSERROR_OK;
+}
+
+
+static nserror
+nsw32_cw_get_scroll(struct core_window *cw, int *x, int *y)
+{
+	/** /todo call getscroll apropriately */
+	return NSERROR_NOT_IMPLEMENTED;
 }
 
 
@@ -470,7 +480,7 @@ nsw32_cw_scroll_visible(struct core_window *cw, const struct rect *r)
  * \param[out] width to be set to viewport width in px
  * \param[out] height to be set to viewport height in px
  */
-static void
+static nserror
 nsw32_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
 {
 	struct nsw32_corewindow *nsw32_cw = (struct nsw32_corewindow *)cw;
@@ -479,21 +489,24 @@ nsw32_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
 	GetClientRect(nsw32_cw->hWnd, &rc);
 	*width = rc.right;
 	*height = rc.bottom;
+	return NSERROR_OK;
 }
 
 
-static void
+static nserror
 nsw32_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
 {
 	struct nsw32_corewindow *nsw32_cw = (struct nsw32_corewindow *)cw;
 	nsw32_cw->drag_status = ds;
+	return NSERROR_OK;
 }
 
 
 struct core_window_callback_table nsw32_cw_cb_table = {
 	.invalidate = nsw32_cw_invalidate_area,
 	.update_size = nsw32_cw_update_size,
-	.scroll_visible = nsw32_cw_scroll_visible,
+	.set_scroll = nsw32_cw_set_scroll,
+	.get_scroll = nsw32_cw_get_scroll,
 	.get_window_dimensions = nsw32_cw_get_window_dimensions,
 	.drag_status = nsw32_cw_drag_status
 };

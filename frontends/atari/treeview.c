@@ -426,7 +426,7 @@ atari_treeview_invalidate_area(struct core_window *cw,
  * \param width		the width in px, or negative if don't care
  * \param height	the height in px, or negative if don't care
  */
-static void
+static nserror
 atari_treeview_update_size(struct core_window *cw, int width, int height)
 {
 	GRECT area;
@@ -436,7 +436,7 @@ atari_treeview_update_size(struct core_window *cw, int width, int height)
 	if (tv != NULL) {
 
 		if (tv->disposing)
-			return;
+			return NSERROR_INVALID;
 
 		/* Get acces to the gemtk window slider settings: */
 		slid = gemtk_wm_get_scroll_info(tv->window);
@@ -465,6 +465,8 @@ atari_treeview_update_size(struct core_window *cw, int width, int height)
 		 */
 		gemtk_wm_update_slider(tv->window, GEMTK_WM_VH_SLIDER);
 	}
+
+	return NSERROR_OK;
 }
 
 
@@ -474,11 +476,18 @@ atari_treeview_update_size(struct core_window *cw, int width, int height)
  * \param cw		the core window object
  * \param r		rectangle to make visible
  */
-static void
-atari_treeview_scroll_visible(struct core_window *cw, const struct rect *r)
+static nserror
+atari_treeview_set_scroll(struct core_window *cw, int x, int y)
 {
-	/* atari frontend doesn't support dragging outside the treeview */
-	/* so there is no need to implement this? */
+	/* TODO */
+	return NSERROR_OK;
+}
+
+static nserror
+atari_treeview_get_scroll(struct core_window *cw, int *x, int *y)
+{
+	/* TODO */
+	return NSERROR_NOT_IMPLEMENTED;
 }
 
 
@@ -489,7 +498,7 @@ atari_treeview_scroll_visible(struct core_window *cw, const struct rect *r)
  * \param width		to be set to viewport width in px, if non NULL
  * \param height	to be set to viewport height in px, if non NULL
  */
-static void
+static nserror
 atari_treeview_get_window_dimensions(struct core_window *cw,
 				     int *width,
 				     int *height)
@@ -501,6 +510,8 @@ atari_treeview_get_window_dimensions(struct core_window *cw,
 		*width = work.g_w;
 		*height = work.g_h;
 	}
+
+	return NSERROR_OK;
 }
 
 
@@ -510,10 +521,10 @@ atari_treeview_get_window_dimensions(struct core_window *cw,
  * \param cw		the core window object
  * \param ds		the current drag status
  */
-static void
+static nserror
 atari_treeview_drag_status(struct core_window *cw, core_window_drag_status ds)
 {
-
+	return NSERROR_NOT_IMPLEMENTED;
 }
 
 
@@ -523,7 +534,8 @@ atari_treeview_drag_status(struct core_window *cw, core_window_drag_status ds)
 static struct core_window_callback_table cw_t = {
 	.invalidate = atari_treeview_invalidate_area,
 	.update_size = atari_treeview_update_size,
-	.scroll_visible = atari_treeview_scroll_visible,
+	.set_scroll = atari_treeview_set_scroll,
+	.get_scroll = atari_treeview_get_scroll,
 	.get_window_dimensions = atari_treeview_get_window_dimensions,
 	.drag_status = atari_treeview_drag_status
 };
