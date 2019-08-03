@@ -321,7 +321,7 @@ def run_test_step_action_sleep_ms(ctx, step):
         start = repeat["start"]
         have_repeat = True
     else:
-        sleep = time / 1000
+        sleep = sleep_time / 1000
         start = time.time()
 
     while True:
