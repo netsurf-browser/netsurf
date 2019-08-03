@@ -870,20 +870,13 @@ static nserror
 ami_cw_get_scroll(struct core_window *cw, int *x, int *y)
 {
 	struct ami_corewindow *ami_cw = (struct ami_corewindow *)cw;
-
-	int scrollsetx;
-	int scrollsety;
-	int win_w = 0, win_h = 0;
 	ULONG win_x0, win_y0;
-	int win_x1, win_y1;
-
-	ami_cw_window_size(ami_cw, &win_w, &win_h);
 
 	ami_cw_scroller_top(ami_cw, &win_x0, &win_y0);
 
 	*x = win_x0;
 	*y = win_y0;
-	return NSERROR_OK
+	return NSERROR_OK;
 }
 
 
