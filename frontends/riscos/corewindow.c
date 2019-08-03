@@ -846,8 +846,12 @@ ro_cw_scroll_visible(struct core_window *cw, const struct rect *r)
 		return;
 	}
 
-	state.xscroll = r->x0 * 2;
-	state.yscroll = r->y0 * 2;
+	/* TODO:
+	 * Scroll so the area is brought into view, not just the top left of
+	 * the rectangle.  See `nsgtk_cw_scroll_visible`.
+	 */
+	state.xscroll = -r->x0 * 2;
+	state.yscroll = -r->y0 * 2;
 
 	ro_cw_open(PTR_WIMP_OPEN(&state));
 }
