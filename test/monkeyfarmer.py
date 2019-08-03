@@ -83,7 +83,7 @@ class MonkeyFarmer(asyncore.dispatcher):
                     self.monkey.wait()
                 print("Handling an exit {}".format(self.monkey.returncode))
                 print("The following are present in the queue: {}".format(self.lines))
-                self.lines.insert(0, "GENERIC EXIT {}".format(
+                self.lines.append("GENERIC EXIT {}".format(
                     self.monkey.returncode).encode('utf-8'))
                 print("The queue is now: {}".format(self.lines))
                 return
@@ -97,7 +97,7 @@ class MonkeyFarmer(asyncore.dispatcher):
         if b"\n" in self.incoming:
             lines = self.incoming.split(b"\n")
             self.incoming = lines.pop()
-            self.lines = lines
+            self.lines.extend(lines)
 
     def writable(self):
         return len(self.buffer) > 0
