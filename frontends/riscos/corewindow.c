@@ -904,6 +904,15 @@ ro_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
 
 	*width = (state.visible.x1 - state.visible.x0) / 2;
 	*height = (state.visible.y1 - state.visible.y0) / 2;
+
+	/* Account for toolbar height, if present */
+	if (ro_cw->toolbar != NULL) {
+		*height -= ro_toolbar_full_height(ro_cw->toolbar) / 2;
+	}
+	if (*height < 0) {
+		*height = 0;
+	}
+
 	return NSERROR_OK;
 }
 
