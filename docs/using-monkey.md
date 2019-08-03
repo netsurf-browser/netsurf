@@ -142,6 +142,16 @@ Commands
 
 	This will send a `JS` message back.
 
+*   `WINDOW CLICK WIN` _%id%_ `X` _%num%_ `Y` _%num%_ `BUTTON` _%str%_ `KIND` _%str%_
+
+    Cause a browser window to experience a mouse click.  The coordinates should
+    be in plot coordinates, so you can use redraw plot commands to find things
+    and then click on them.  The `BUTTON` value should be one of `LEFT`
+    or `RIGHT`, and the `KIND` is `SINGLE`, `DOUBLE`, or `TRIPLE`.
+
+    This command will not output anything itself, it's expected only to do things
+    as a result of the click (e.g. navigating when clicking a link).
+
 ### Login commands
 
 *   `LOGIN USERNAME` _%id%_ _%str%_

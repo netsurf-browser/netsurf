@@ -613,6 +613,48 @@ monkey_window_handle_exec(int argc, char **argv)
 }
 
 
+static void
+monkey_window_handle_click(int argc, char **argv)
+{
+	/* `WINDOW CLICK WIN` _%id%_ `X` _%num%_ `Y` _%num%_ `BUTTON` _%str%_ `KIND` _%str%_ */
+	/*  0      1     2    3       4  5        6  7        8       9        10    11      */
+	struct gui_window *gw;
+	if (argc != 12) {
+		moutf(MOUT_ERROR, "WINDOW CLICK ARGS BAD\n");
+	}
+
+	gw = monkey_find_window_by_num(atoi(argv[2]));
+
+	if (gw == NULL) {
+		moutf(MOUT_ERROR, "WINDOW NUM BAD");
+	} else {
+		int x = atoi(argv[5]);
+		int y = atoi(argv[7]);
+		browser_mouse_state mouse;
+		const char *button = argv[9];
+		const char *kind = argv[11];
+		if (strcmp(button, "LEFT") == 0) {
+			mouse = BROWSER_MOUSE_CLICK_1;
+		} else if (strcmp(button, "RIGHT") == 0) {
+			mouse = BROWSER_MOUSE_CLICK_2;
+		} else {
+			moutf(MOUT_ERROR, "WINDOW BUTTON BAD");
+			return;
+		}
+		if (strcmp(kind, "SINGLE") == 0) {
+			/* Nothing */
+		} else if (strcmp(kind, "DOUBLE") == 0) {
+			mouse |= BROWSER_MOUSE_DOUBLE_CLICK;
+		} else if (strcmp(kind, "TRIPLE") == 0) {
+			mouse |= BROWSER_MOUSE_TRIPLE_CLICK;
+		} else {
+			moutf(MOUT_ERROR, "WINDOW KIND BAD");
+			return;
+		}
+		browser_window_mouse_click(gw->bw, mouse, x, y);
+	}
+}
+
 void
 monkey_window_handle_command(int argc, char **argv)
 {
@@ -633,6 +675,8 @@ monkey_window_handle_command(int argc, char **argv)
 		monkey_window_handle_reload(argc, argv);
 	} else if (strcmp(argv[1], "EXEC") == 0) {
 		monkey_window_handle_exec(argc, argv);
+	} else if (strcmp(argv[1], "CLICK") == 0) {
+		monkey_window_handle_click(argc, argv);
 	} else {
 		moutf(MOUT_ERROR, "WINDOW COMMAND UNKNOWN %s\n", argv[1]);
 	}
