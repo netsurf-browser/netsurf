@@ -2716,13 +2716,11 @@ void nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g,
 {
 	GtkMenu	*gtkmenu;
 	struct browser_window *bw;
-	float scale;
 
 	bw = nsgtk_get_browser_window(g->top_level);
-	scale =  browser_window_get_scale(bw);
 
 	/* update the global context menu features */
-	browser_window_get_features(bw,	x/scale, y/scale, &current_menu_features);
+	browser_window_get_features(bw,	x, y, &current_menu_features);
 
 	if (current_menu_features.link != NULL) {
 		/* menu is opening over a link */

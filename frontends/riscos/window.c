@@ -1154,8 +1154,8 @@ ro_gui_window_scroll_action(struct gui_window *g,
 	if (pointer.w == g->window &&
 	    ro_gui_window_to_window_pos(g, pointer.pos.x, pointer.pos.y, &pos))
 		handled = browser_window_scroll_at_point(g->bw,
-							 pos.x/g->scale,
-							 pos.y/g->scale,
+							 pos.x,
+							 pos.y,
 							 step_x,
 							 step_y);
 
@@ -1251,7 +1251,7 @@ ro_gui_window_handle_local_keypress(struct gui_window *g,
 	if (!ro_gui_window_to_window_pos(g, pointer.pos.x, pointer.pos.y, &pos))
 		return false;
 
-	browser_window_get_features(g->bw, pos.x/g->scale, pos.y/g->scale, &cont);
+	browser_window_get_features(g->bw, pos.x, pos.y, &cont);
 
 	switch (c) {
 	case IS_WIMP_KEY + wimp_KEY_F1:	/* Help. */
@@ -2171,7 +2171,7 @@ ro_gui_window_menu_prepare(wimp_w w,
 
 		if (ro_gui_window_to_window_pos(g, pointer->pos.x,
 				pointer->pos.y, &pos)) {
-			browser_window_get_features(bw,	pos.x/g->scale, pos.y/g->scale, &cont);
+			browser_window_get_features(bw,	pos.x, pos.y, &cont);
 
 			current_menu_main = cont.main;
 			current_menu_object = cont.object;

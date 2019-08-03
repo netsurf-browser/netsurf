@@ -1925,8 +1925,11 @@ html_get_contextual_content(struct content *c, int x, int y,
 		}
 
 		if (box->iframe) {
-			browser_window_get_features(box->iframe,
-					x - box_x, y - box_y, data);
+			browser_window_get_features(
+				box->iframe,
+				(x - box_x) * browser_window_get_scale(box->iframe),
+				(y - box_y) * browser_window_get_scale(box->iframe),
+				data);
 		}
 
 		if (box->object)
@@ -2001,8 +2004,12 @@ html_scroll_at_point(struct content *c, int x, int y, int scrx, int scry)
 			continue;
 
 		/* Pass into iframe */
-		if (box->iframe && browser_window_scroll_at_point(box->iframe,
-				x - box_x, y - box_y, scrx, scry) == true)
+		if (box->iframe &&
+		    browser_window_scroll_at_point(
+			    box->iframe,
+			    (x - box_x) * browser_window_get_scale(box->iframe),
+			    (y - box_y) * browser_window_get_scale(box->iframe),
+			    scrx, scry) == true)
 			return true;
 
 		/* Pass into textarea widget */

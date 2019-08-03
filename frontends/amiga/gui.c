@@ -1919,8 +1919,7 @@ static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 
 	if(ami_mouse_to_ns_coords(gwin, &x, &y, -1, -1) == true)
 	{
-		if(browser_window_scroll_at_point(gwin->gw->bw, x, y,
-			xs, ys) == false)
+		if(browser_window_scroll_at_point(gwin->gw->bw, x, y, xs, ys) == false)
 		{
 			int width, height;
 

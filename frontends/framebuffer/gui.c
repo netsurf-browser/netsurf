@@ -627,7 +627,6 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	struct gui_window *gw = cbi->context;
 	struct browser_widget_s *bwidget = fbtk_get_userpw(widget);
 	browser_mouse_state mouse;
-	float scale = browser_window_get_scale(gw->bw);
 	int x = cbi->x + bwidget->scrollx;
 	int y = cbi->y + bwidget->scrolly;
 	uint64_t time_now;
@@ -665,15 +664,17 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 
 		case NSFB_KEY_MOUSE_4:
 			/* scroll up */
-			if (browser_window_scroll_at_point(gw->bw, x/scale, y/scale,
-					0, -100) == false)
+			if (browser_window_scroll_at_point(gw->bw,
+							   x, y,
+							   0, -100) == false)
 				widget_scroll_y(gw, -100, false);
 			break;
 
 		case NSFB_KEY_MOUSE_5:
 			/* scroll down */
-			if (browser_window_scroll_at_point(gw->bw, x/scale, y/scale,
-					0, 100) == false)
+			if (browser_window_scroll_at_point(gw->bw,
+							   x, y,
+							   0, 100) == false)
 				widget_scroll_y(gw, 100, false);
 			break;
 

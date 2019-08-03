@@ -467,9 +467,8 @@ nsgtk_window_scroll_event(GtkWidget *widget,
 	deltay *= nsgtk_adjustment_get_step_increment(vscroll);
 
 	if (browser_window_scroll_at_point(g->bw,
-			event->x / browser_window_get_scale(g->bw),
-			event->y / browser_window_get_scale(g->bw),
-			deltax, deltay) != true) {
+					   event->x, event->y,
+					   deltax, deltay) != true) {
 
 		/* core did not handle event so change adjustments */
 

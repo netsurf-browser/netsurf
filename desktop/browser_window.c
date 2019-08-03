@@ -1782,6 +1782,63 @@ browser_window_mouse_track_internal(struct browser_window *bw,
 }
 
 
+static bool
+browser_window_scroll_at_point_internal(struct browser_window *bw,
+			       int x, int y,
+			       int scrx, int scry)
+{
+	bool handled_scroll = false;
+	assert(bw != NULL);
+
+	/* Handle (i)frame scroll offset (core-managed browser windows only) */
+	x += scrollbar_get_offset(bw->scroll_x);
+	y += scrollbar_get_offset(bw->scroll_y);
+
+	if (bw->children) {
+		/* Browser window has children, so pass request on to
+		 * appropriate child */
+		struct browser_window *bwc;
+		int cur_child;
+		int children = bw->rows * bw->cols;
+
+		/* Loop through all children of bw */
+		for (cur_child = 0; cur_child < children; cur_child++) {
+			/* Set current child */
+			bwc = &bw->children[cur_child];
+
+			/* Skip this frame if (x, y) coord lies outside */
+			if (x < bwc->x || bwc->x + bwc->width < x ||
+			    y < bwc->y || bwc->y + bwc->height < y)
+				continue;
+
+			/* Pass request into this child */
+			return browser_window_scroll_at_point_internal(
+				bwc,
+				(x - bwc->x),
+				(y - bwc->y),
+				scrx, scry);
+		}
+	}
+
+	/* Try to scroll any current content */
+	if (bw->current_content != NULL && content_scroll_at_point(
+		    bw->current_content, x, y, scrx, scry) == true)
+		/* Scroll handled by current content */
+		return true;
+
+	/* Try to scroll this window, if scroll not already handled */
+	if (handled_scroll == false) {
+		if (bw->scroll_y && scrollbar_scroll(bw->scroll_y, scry))
+			handled_scroll = true;
+
+		if (bw->scroll_x && scrollbar_scroll(bw->scroll_x, scrx))
+			handled_scroll = true;
+	}
+
+	return handled_scroll;
+}
+
+
 /* exported interface, documented in netsurf/browser_window.h */
 nserror
 browser_window_get_name(struct browser_window *bw, const char **out_name)
@@ -2244,7 +2301,8 @@ browser_window_get_features(struct browser_window *bw,
 	data->main = NULL;
 	data->form_features = CTX_FORM_NONE;
 
-	return browser_window__get_contextual_content(bw, x, y, data);
+	return browser_window__get_contextual_content(
+		bw, x / bw->scale, y / bw->scale, data);
 }
 
 
@@ -2254,53 +2312,11 @@ browser_window_scroll_at_point(struct browser_window *bw,
 			       int x, int y,
 			       int scrx, int scry)
 {
-	bool handled_scroll = false;
-	assert(bw != NULL);
-
-	/* Handle (i)frame scroll offset (core-managed browser windows only) */
-	x += scrollbar_get_offset(bw->scroll_x);
-	y += scrollbar_get_offset(bw->scroll_y);
-
-	if (bw->children) {
-		/* Browser window has children, so pass request on to
-		 * appropriate child */
-		struct browser_window *bwc;
-		int cur_child;
-		int children = bw->rows * bw->cols;
-
-		/* Loop through all children of bw */
-		for (cur_child = 0; cur_child < children; cur_child++) {
-			/* Set current child */
-			bwc = &bw->children[cur_child];
-
-			/* Skip this frame if (x, y) coord lies outside */
-			if (x < bwc->x || bwc->x + bwc->width < x ||
-			    y < bwc->y || bwc->y + bwc->height < y)
-				continue;
-
-			/* Pass request into this child */
-			return browser_window_scroll_at_point(bwc,
-							      (x - bwc->x), (y - bwc->y),
-							      scrx, scry);
-		}
-	}
-
-	/* Try to scroll any current content */
-	if (bw->current_content != NULL && content_scroll_at_point(
-		    bw->current_content, x, y, scrx, scry) == true)
-		/* Scroll handled by current content */
-		return true;
-
-	/* Try to scroll this window, if scroll not already handled */
-	if (handled_scroll == false) {
-		if (bw->scroll_y && scrollbar_scroll(bw->scroll_y, scry))
-			handled_scroll = true;
-
-		if (bw->scroll_x && scrollbar_scroll(bw->scroll_x, scrx))
-			handled_scroll = true;
-	}
-
-	return handled_scroll;
+	return browser_window_scroll_at_point_internal(bw,
+						       x / bw->scale,
+						       y / bw->scale,
+						       scrx,
+						       scry);
 }
 
 
