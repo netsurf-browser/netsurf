@@ -2229,8 +2229,13 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 				dom_string_unref(s);
 			}
 
-			dom_element_has_attribute(c, corestring_dom_noresize,
-					&frame->no_resize);
+			if (dom_element_has_attribute(c, corestring_dom_noresize,
+						      &frame->no_resize) != DOM_NO_ERR) {
+				/* If we can't read the attribute for some reason,
+				 * assume we didn't have it.
+				 */
+				frame->no_resize = false;
+			}
 
 			err = dom_element_get_attribute(c, corestring_dom_frameborder,
 					&s);
@@ -2849,7 +2854,10 @@ bool box_select_add_option(struct form_control *control, dom_node *n)
 	if (value == NULL)
 		goto no_memory;
 
-	dom_element_has_attribute(n, corestring_dom_selected, &selected);
+	if (dom_element_has_attribute(n, corestring_dom_selected, &selected) != DOM_NO_ERR) {
+		/* Assume not selected if we can't read the attribute presence */
+		selected = false;
+	}
 
 	/* replace spaces/TABs with hard spaces to prevent line wrapping */
 	text_nowrap = cnv_space2nbsp(text);
