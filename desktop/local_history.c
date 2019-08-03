@@ -434,6 +434,36 @@ local_history_mouse_action(struct local_history_session *session,
 	return NSERROR_OK;
 }
 
+/**
+ * Determine the point on the parent line where this history line branches.
+ *
+ * If `branch_point` gets set then there is a guarantee that (a) `ent` is
+ * a transitive child (forward) of that point. and (b) `branch_point` has a
+ * parent.
+ *
+ * \param[in] ent The entry to work backward from
+ * \param[out] branch_point The entry to set to the branch point if one is found
+ */
+static void
+_local_history_find_branch_point(struct history_entry *ent,
+				 struct history_entry **branch_point)
+{
+	if (ent->back == NULL) {
+		/* We're at the root, nothing to do */
+		return;
+	}
+	/* Start from our immediate parent */
+	ent = ent->back;
+	while (ent->back != NULL) {
+		if (ent->back->forward != ent->back->forward_last) {
+			/* This point is a branch */
+			*branch_point = ent;
+			break;
+		}
+		ent = ent->back;
+	}
+}
+
 /* exported interface documented in desktop/local_history.h */
 bool
 local_history_keypress(struct local_history_session *session, uint32_t key)
@@ -452,7 +482,7 @@ local_history_keypress(struct local_history_session *session, uint32_t key)
 		return true;
 	case NS_KEY_LEFT:
 		/* Go to parent */
-		if (session->cursor->back) {
+		if (session->cursor->back != NULL) {
 			session->cursor = session->cursor->back;
 			local_history_scroll_to_cursor(session);
 			session->cw_t->invalidate(session->core_window_handle, NULL);
@@ -461,7 +491,7 @@ local_history_keypress(struct local_history_session *session, uint32_t key)
 		return true;
 	case NS_KEY_RIGHT:
 		/* Go to preferred child if there is one */
-		if (session->cursor->forward_pref) {
+		if (session->cursor->forward_pref != NULL) {
 			session->cursor = session->cursor->forward_pref;
 			local_history_scroll_to_cursor(session);
 			session->cw_t->invalidate(session->core_window_handle, NULL);
@@ -470,25 +500,52 @@ local_history_keypress(struct local_history_session *session, uint32_t key)
 		return true;
 	case NS_KEY_DOWN:
 		/* Go to next sibling down, if there is one */
-		if (session->cursor->next) {
+		if (session->cursor->next != NULL) {
 			session->cursor = session->cursor->next;
-			local_history_scroll_to_cursor(session);
-			session->cw_t->invalidate(session->core_window_handle, NULL);
+		} else {
+			struct history_entry *branch_point = NULL;
+			_local_history_find_branch_point(
+				session->cursor,
+				&branch_point);
+			if (branch_point != NULL) {
+				if (branch_point->next != NULL) {
+					branch_point = branch_point->next;
+				}
+				session->cursor = branch_point;
+			}
 		}
 		/* We have handled this keypress */
+		local_history_scroll_to_cursor(session);
+		session->cw_t->invalidate(session->core_window_handle, NULL);
 		return true;
 	case NS_KEY_UP:
 		/* Go to next sibling up, if there is one */
-		if (session->cursor->back) {
+		if (session->cursor->back != NULL) {
 			struct history_entry *ent = session->cursor->back->forward;
-			while (ent->next != NULL && ent->next != session->cursor) {
+			while (ent != session->cursor &&
+			       ent->next != NULL &&
+			       ent->next != session->cursor) {
 				ent = ent->next;
 			}
-			session->cursor = ent;
-			local_history_scroll_to_cursor(session);
-			session->cw_t->invalidate(session->core_window_handle, NULL);
+			if (session->cursor != ent) {
+				session->cursor = ent;
+			} else {
+				struct history_entry *branch_point = NULL;
+				_local_history_find_branch_point(
+					session->cursor,
+					&branch_point);
+				if (branch_point != NULL) {
+					struct history_entry *ent = branch_point->back->forward;
+					while (ent->next != NULL && ent->next != branch_point) {
+						ent = ent->next;
+					}
+					session->cursor = ent;
+				}
+			}
 		}
 		/* We have handled this keypress */
+		local_history_scroll_to_cursor(session);
+		session->cw_t->invalidate(session->core_window_handle, NULL);
 		return true;
 	}
 	return false;
