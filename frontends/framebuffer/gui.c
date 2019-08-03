@@ -937,7 +937,7 @@ fb_browser_window_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 			}
 			break;
 
-		case NSFB_KEY_0: /* PLUS */
+		case NSFB_KEY_0:
 			if (modifier & FBTK_MOD_RCTRL ||
 					modifier & FBTK_MOD_LCTRL) {
 				browser_window_set_scale(gw->bw, 1, true);
