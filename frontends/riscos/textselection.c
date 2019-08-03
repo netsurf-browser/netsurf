@@ -188,8 +188,9 @@ static void ro_gui_selection_drag_end(wimp_dragged *drag, void *data)
 		return;
 	}
 
-	if (ro_gui_window_to_window_pos(g, drag->final.x0, drag->final.y0, &pos))
+	if (ro_gui_window_to_window_pos(g, drag->final.x0, drag->final.y0, &pos)) {
 		browser_window_mouse_track(g->bw, 0, pos.x, pos.y);
+	}
 }
 
 /**

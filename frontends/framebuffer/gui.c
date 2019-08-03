@@ -702,7 +702,7 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 				gui_drag.state = GUI_DRAG_NONE;
 
 				/* Tell core */
-				browser_window_mouse_track(gw->bw, 0, x/scale, y/scale);
+				browser_window_mouse_track(gw->bw, 0, x, y);
 				break;
 			}
 			/* This is a click;
@@ -723,7 +723,7 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 				}
 
 				/* Tell core */
-				browser_window_mouse_track(gw->bw, 0, x/scale, y/scale);
+				browser_window_mouse_track(gw->bw, 0, x, y);
 				break;
 			}
 			/* This is a click;
@@ -781,7 +781,6 @@ fb_browser_window_move(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	browser_mouse_state mouse = 0;
 	struct gui_window *gw = cbi->context;
 	struct browser_widget_s *bwidget = fbtk_get_userpw(widget);
-	float scale = browser_window_get_scale(gw->bw);
 	int x = cbi->x + bwidget->scrollx;
 	int y = cbi->y + bwidget->scrolly;
 
@@ -812,7 +811,7 @@ fb_browser_window_move(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 			mouse |= BROWSER_MOUSE_HOLDING_2;
 	}
 
-	browser_window_mouse_track(gw->bw, mouse, x/scale, y/scale);
+	browser_window_mouse_track(gw->bw, mouse, x, y);
 
 	return 0;
 }

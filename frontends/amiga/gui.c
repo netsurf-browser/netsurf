@@ -2438,8 +2438,8 @@ static BOOL ami_gui_event(void *w)
 					break;
 				}
 
-				x = (ULONG)((gwin->win->MouseX - bbox->Left) / gwin->gw->scale);
-				y = (ULONG)((gwin->win->MouseY - bbox->Top) / gwin->gw->scale);
+				x = (ULONG)((gwin->win->MouseX - bbox->Left));
+				y = (ULONG)((gwin->win->MouseY - bbox->Top));
 
 				ami_get_hscroll_pos(gwin, (ULONG *)&xs);
 				ami_get_vscroll_pos(gwin, (ULONG *)&ys);

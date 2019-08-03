@@ -378,10 +378,15 @@ nsws_drawable_paint(struct gui_window *gw, HWND hwnd)
 		clip.x1 = ps.rcPaint.right;
 		clip.y1 = ps.rcPaint.bottom;
 
+                /**
+		 * \todo work out why the heck scroll needs scaling
+		 */
+		
 		browser_window_redraw(gw->bw,
 				      -gw->scrollx / gw->scale,
 				      -gw->scrolly / gw->scale,
-				      &clip, &ctx);
+				      &clip,
+				      &ctx);
 	}
 
 	EndPaint(hwnd, &ps);
@@ -425,19 +430,21 @@ nsws_drawable_mouseup(struct gui_window *gw,
 
 	if ((gw->mouse->state & click) != 0) {
 		NSLOG(netsurf, INFO,
-		      "mouse click bw %p, state 0x%x, x %f, y %f", gw->bw,
-		      gw->mouse->state, (x + gw->scrollx) / gw->scale,
-		      (y + gw->scrolly) / gw->scale);
+		      "mouse click bw %p, state 0x%x, x %d, y %d",
+		      gw->bw,
+		      gw->mouse->state,
+		      x + gw->scrollx,
+		      y + gw->scrolly);
 
 		browser_window_mouse_click(gw->bw,
 					   gw->mouse->state,
-					   (x + gw->scrollx),
-					   (y + gw->scrolly));
+					   x + gw->scrollx,
+					   y + gw->scrolly);
 	} else {
 		browser_window_mouse_track(gw->bw,
 					   0,
-					   (x + gw->scrollx) / gw->scale,
-					   (y + gw->scrolly) / gw->scale);
+					   x + gw->scrollx,
+					   y + gw->scrolly);
 	}
 
 	gw->mouse->state = 0;
@@ -468,16 +475,19 @@ nsws_drawable_mousedown(struct gui_window *gw,
 	if ((GetKeyState(VK_MENU) & 0x8000) == 0x8000)
 		gw->mouse->state |= BROWSER_MOUSE_MOD_3;
 
-	gw->mouse->pressed_x = (x + gw->scrollx) / gw->scale;
-	gw->mouse->pressed_y = (y + gw->scrolly) / gw->scale;
+	gw->mouse->pressed_x = x + gw->scrollx;
+	gw->mouse->pressed_y = y + gw->scrolly;
 
-	NSLOG(netsurf, INFO, "mouse click bw %p, state %x, x %f, y %f",
-	      gw->bw, gw->mouse->state, (x + gw->scrollx) / gw->scale,
-	      (y + gw->scrolly) / gw->scale);
+	NSLOG(netsurf, INFO, "mouse click bw %p, state %x, x %d, y %d",
+	      gw->bw,
+	      gw->mouse->state,
+	      x + gw->scrollx,
+	      y + gw->scrolly);
 
-	browser_window_mouse_click(gw->bw, gw->mouse->state,
-				   (x + gw->scrollx),
-				   (y + gw->scrolly));
+	browser_window_mouse_click(gw->bw,
+				   gw->mouse->state,
+				   x + gw->scrollx,
+				   y + gw->scrolly);
 
 	return 0;
 }
@@ -496,9 +506,9 @@ nsws_drawable_mousemove(struct gui_window *gw, int x, int y)
 	if ((gw == NULL) || (gw->mouse == NULL) || (gw->bw == NULL))
 		return 0;
 
-	/* scale co-ordinates */
-	x = (x + gw->scrollx) ;
-	y = (y + gw->scrolly);
+	/* add scroll offsets */
+	x = x + gw->scrollx;
+	y = y + gw->scrolly;
 
 	/* if mouse button held down and pointer moved more than
 	 * minimum distance drag is happening */
@@ -535,7 +545,7 @@ nsws_drawable_mousemove(struct gui_window *gw, int x, int y)
 		gw->mouse->state &= ~BROWSER_MOUSE_MOD_3;
 
 
-	browser_window_mouse_track(gw->bw, gw->mouse->state, x/ gw->scale, y/ gw->scale);
+	browser_window_mouse_track(gw->bw, gw->mouse->state, x, y);
 
 	return 0;
 }

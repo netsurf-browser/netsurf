@@ -518,9 +518,10 @@ void nsbeos_dispatch_event(BMessage *message)
 			if (gui->mouse.state & BROWSER_MOUSE_MOD_2 && !ctrl)
 				gui->mouse.state ^= BROWSER_MOUSE_MOD_2;
 
-			browser_window_mouse_track(gui->bw, (browser_mouse_state)gui->mouse.state, 
-					(int)(where.x / gui->scale),
-					(int)(where.y / gui->scale));
+			browser_window_mouse_track(gui->bw,
+                                                   (browser_mouse_state)gui->mouse.state, 
+                                                   (int)(where.x),
+                                                   (int)(where.y));
 
 			gui->last_x = (int)where.x;
 			gui->last_y = (int)where.y;

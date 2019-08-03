@@ -849,10 +849,9 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 						   (x * scale) - pos_x,
 						   (y * scale) - pos_y);
 		} else {
-			pos_x /= scale;
-			pos_y /= scale;
 			browser_window_mouse_track(iframe, mouse,
-					x - pos_x, y - pos_y);
+						   (x * scale) - pos_x,
+						   (y * scale) - pos_y);
 		}
 	} else if (html_object_box) {
 

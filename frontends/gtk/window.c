@@ -325,9 +325,7 @@ static gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
 	if (g->mouse.state & BROWSER_MOUSE_MOD_2 && !ctrl)
 		g->mouse.state ^= BROWSER_MOUSE_MOD_2;
 
-	browser_window_mouse_track(g->bw, g->mouse.state,
-			event->x / browser_window_get_scale(g->bw),
-			event->y / browser_window_get_scale(g->bw));
+	browser_window_mouse_track(g->bw, g->mouse.state, event->x, event->y);
 
 	return TRUE;
 }
@@ -416,13 +414,9 @@ static gboolean nsgtk_window_button_release_event(GtkWidget *widget,
 		g->mouse.state ^= BROWSER_MOUSE_MOD_2;
 
 	if (g->mouse.state & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) {
-		browser_window_mouse_click(g->bw, g->mouse.state,
-				event->x,
-				event->y);
+		browser_window_mouse_click(g->bw, g->mouse.state, event->x, event->y);
 	} else {
-		browser_window_mouse_track(g->bw, 0,
-				event->x / browser_window_get_scale(g->bw),
-				event->y / browser_window_get_scale(g->bw));
+		browser_window_mouse_track(g->bw, 0, event->x, event->y);
 	}
 
 	g->mouse.state = 0;

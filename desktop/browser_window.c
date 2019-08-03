@@ -1617,6 +1617,171 @@ browser_window_mouse_click_internal(struct browser_window *bw,
 }
 
 
+/**
+ * Process mouse movement event
+ *
+ * \param bw The browsing context receiving the event
+ * \param mouse The mouse event state
+ * \param x The scaled x co-ordinate of the event
+ * \param y The scaled y co-ordinate of the event
+ */
+static void
+browser_window_mouse_track_internal(struct browser_window *bw,
+				    browser_mouse_state mouse,
+				    int x, int y)
+{
+	hlcache_handle *c = bw->current_content;
+	const char *status = NULL;
+	browser_pointer_shape pointer = BROWSER_POINTER_DEFAULT;
+
+	if (bw->window != NULL && bw->drag.window && bw != bw->drag.window) {
+		/* This is the root browser window and there's an active drag
+		 * in a sub window.
+		 * Pass the mouse action straight on to that bw. */
+		struct browser_window *drag_bw = bw->drag.window;
+		int off_x = 0;
+		int off_y = 0;
+
+		browser_window_get_position(drag_bw, true, &off_x, &off_y);
+
+		if (drag_bw->browser_window_type == BROWSER_WINDOW_FRAME) {
+			browser_window_mouse_track_internal(drag_bw, mouse,
+						   x - off_x, y - off_y);
+
+		} else if (drag_bw->browser_window_type ==
+			   BROWSER_WINDOW_IFRAME) {
+			browser_window_mouse_track_internal(drag_bw, mouse,
+						   x - off_x / bw->scale,
+						   y - off_y / bw->scale);
+		}
+		return;
+	}
+
+	if (bw->children) {
+		/* Browser window has children (frames) */
+		struct browser_window *child;
+		int cur_child;
+		int children = bw->rows * bw->cols;
+
+		for (cur_child = 0; cur_child < children; cur_child++) {
+
+			child = &bw->children[cur_child];
+
+			if ((x < child->x) ||
+			    (y < child->y) ||
+			    (child->x + child->width < x) ||
+			    (child->y + child->height < y)) {
+				/* Click not in this child */
+				continue;
+			}
+
+			/* It's this child that contains the mouse; pass
+			 * mouse action on to child */
+			browser_window_mouse_track_internal(
+				child,
+				mouse,
+				x - child->x + scrollbar_get_offset(child->scroll_x),
+				y - child->y + scrollbar_get_offset(child->scroll_y));
+
+			/* Mouse action was for this child, we're done */
+			return;
+		}
+
+		/* Odd if we reached here, but nothing else can use the click
+		 * when there are children. */
+		return;
+	}
+
+	if (c == NULL && bw->drag.type != DRAGGING_FRAME) {
+		return;
+	}
+
+	if (bw->drag.type != DRAGGING_NONE && !mouse) {
+		browser_window_mouse_drag_end(bw, mouse, x, y);
+	}
+
+	/* Browser window's horizontal scrollbar */
+	if (bw->scroll_x != NULL && bw->drag.type != DRAGGING_SCR_Y) {
+		int scr_x, scr_y;
+		browser_window_get_scrollbar_pos(bw, true, &scr_x, &scr_y);
+		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
+		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
+
+		if ((bw->drag.type == DRAGGING_SCR_X) ||
+		    (scr_x > 0 &&
+		     scr_x < get_horz_scrollbar_len(bw) &&
+		     scr_y > 0 &&
+		     scr_y < SCROLLBAR_WIDTH &&
+		     bw->drag.type == DRAGGING_NONE)) {
+			/* Start a scrollbar drag, or continue existing drag */
+			status = scrollbar_mouse_status_to_message(
+				scrollbar_mouse_action(
+					bw->scroll_x, mouse,
+					scr_x, scr_y));
+			pointer = BROWSER_POINTER_DEFAULT;
+
+			if (status != NULL) {
+				browser_window_set_status(bw, status);
+			}
+
+			browser_window_set_pointer(bw, pointer);
+			return;
+		}
+	}
+
+	/* Browser window's vertical scrollbar */
+	if (bw->scroll_y != NULL) {
+		int scr_x, scr_y;
+		browser_window_get_scrollbar_pos(bw, false, &scr_x, &scr_y);
+		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
+		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
+
+		if ((bw->drag.type == DRAGGING_SCR_Y) ||
+		    (scr_y > 0 &&
+		     scr_y < get_vert_scrollbar_len(bw) &&
+		     scr_x > 0 &&
+		     scr_x < SCROLLBAR_WIDTH &&
+		     bw->drag.type == DRAGGING_NONE)) {
+			/* Start a scrollbar drag, or continue existing drag */
+			status = scrollbar_mouse_status_to_message(
+				scrollbar_mouse_action(
+					bw->scroll_y, mouse,
+					scr_x, scr_y));
+			pointer = BROWSER_POINTER_DEFAULT;
+
+			if (status != NULL) {
+				browser_window_set_status(bw, status);
+			}
+
+			browser_window_set_pointer(bw, pointer);
+			return;
+		}
+	}
+
+	if (bw->drag.type == DRAGGING_FRAME) {
+		browser_window_resize_frame(bw, bw->x + x, bw->y + y);
+	} else if (bw->drag.type == DRAGGING_PAGE_SCROLL) {
+		/* mouse movement since drag started */
+		struct rect rect;
+
+		rect.x0 = bw->drag.start_x - x;
+		rect.y0 = bw->drag.start_y - y;
+
+		/* new scroll offsets */
+		rect.x0 += bw->drag.start_scroll_x;
+		rect.y0 += bw->drag.start_scroll_y;
+
+		bw->drag.start_scroll_x = rect.x1 = rect.x0;
+		bw->drag.start_scroll_y = rect.y1 = rect.y0;
+
+		browser_window_set_scroll(bw, &rect);
+	} else {
+		assert(c != NULL);
+		content_mouse_track(c, bw, mouse, x, y);
+	}
+}
+
+
 /* exported interface, documented in netsurf/browser_window.h */
 nserror
 browser_window_get_name(struct browser_window *bw, const char **out_name)
@@ -3292,159 +3457,16 @@ browser_window_find_target(struct browser_window *bw,
 
 
 /* exported interface documented in netsurf/browser_window.h */
-void browser_window_mouse_track(struct browser_window *bw,
-				browser_mouse_state mouse, int x, int y)
+void
+browser_window_mouse_track(struct browser_window *bw,
+			   browser_mouse_state mouse,
+			   int x, int y)
 {
-	hlcache_handle *c = bw->current_content;
-	const char *status = NULL;
-	browser_pointer_shape pointer = BROWSER_POINTER_DEFAULT;
-
-	if (bw->window != NULL && bw->drag.window && bw != bw->drag.window) {
-		/* This is the root browser window and there's an active drag
-		 * in a sub window.
-		 * Pass the mouse action straight on to that bw. */
-		struct browser_window *drag_bw = bw->drag.window;
-		int off_x = 0;
-		int off_y = 0;
-
-		browser_window_get_position(drag_bw, true, &off_x, &off_y);
-
-		if (drag_bw->browser_window_type == BROWSER_WINDOW_FRAME) {
-			browser_window_mouse_track(drag_bw, mouse,
-						   x - off_x, y - off_y);
-
-		} else if (drag_bw->browser_window_type ==
-			   BROWSER_WINDOW_IFRAME) {
-			browser_window_mouse_track(drag_bw, mouse,
-						   x - off_x / bw->scale,
-						   y - off_y / bw->scale);
-		}
-		return;
-	}
-
-	if (bw->children) {
-		/* Browser window has children (frames) */
-		struct browser_window *child;
-		int cur_child;
-		int children = bw->rows * bw->cols;
-
-		for (cur_child = 0; cur_child < children; cur_child++) {
-
-			child = &bw->children[cur_child];
-
-			if (x < child->x || y < child->y ||
-			    child->x + child->width < x ||
-			    child->y + child->height < y) {
-				/* Click not in this child */
-				continue;
-			}
-
-			/* It's this child that contains the mouse; pass
-			 * mouse action on to child */
-			browser_window_mouse_track(child, mouse,
-						   x - child->x + scrollbar_get_offset(
-							   child->scroll_x),
-						   y - child->y + scrollbar_get_offset(
-							   child->scroll_y));
-
-			/* Mouse action was for this child, we're done */
-			return;
-		}
-
-		/* Odd if we reached here, but nothing else can use the click
-		 * when there are children. */
-		return;
-	}
-
-	if (c == NULL && bw->drag.type != DRAGGING_FRAME) {
-		return;
-	}
-
-	if (bw->drag.type != DRAGGING_NONE && !mouse) {
-		browser_window_mouse_drag_end(bw, mouse, x, y);
-	}
-
-	/* Browser window's horizontal scrollbar */
-	if (bw->scroll_x != NULL && bw->drag.type != DRAGGING_SCR_Y) {
-		int scr_x, scr_y;
-		browser_window_get_scrollbar_pos(bw, true, &scr_x, &scr_y);
-		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
-		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
-
-		if ((bw->drag.type == DRAGGING_SCR_X) ||
-		    (scr_x > 0 &&
-		     scr_x < get_horz_scrollbar_len(bw) &&
-		     scr_y > 0 &&
-		     scr_y < SCROLLBAR_WIDTH &&
-		     bw->drag.type == DRAGGING_NONE)) {
-			/* Start a scrollbar drag, or continue existing drag */
-			status = scrollbar_mouse_status_to_message(
-				scrollbar_mouse_action(
-					bw->scroll_x, mouse,
-					scr_x, scr_y));
-			pointer = BROWSER_POINTER_DEFAULT;
-
-			if (status != NULL) {
-				browser_window_set_status(bw, status);
-			}
-
-			browser_window_set_pointer(bw, pointer);
-			return;
-		}
-	}
-
-	/* Browser window's vertical scrollbar */
-	if (bw->scroll_y != NULL) {
-		int scr_x, scr_y;
-		browser_window_get_scrollbar_pos(bw, false, &scr_x, &scr_y);
-		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
-		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
-
-		if ((bw->drag.type == DRAGGING_SCR_Y) ||
-		    (scr_y > 0 &&
-		     scr_y < get_vert_scrollbar_len(bw) &&
-		     scr_x > 0 &&
-		     scr_x < SCROLLBAR_WIDTH &&
-		     bw->drag.type == DRAGGING_NONE)) {
-			/* Start a scrollbar drag, or continue existing drag */
-			status = scrollbar_mouse_status_to_message(
-				scrollbar_mouse_action(
-					bw->scroll_y, mouse,
-					scr_x, scr_y));
-			pointer = BROWSER_POINTER_DEFAULT;
-
-			if (status != NULL) {
-				browser_window_set_status(bw, status);
-			}
-
-			browser_window_set_pointer(bw, pointer);
-			return;
-		}
-	}
-
-	if (bw->drag.type == DRAGGING_FRAME) {
-		browser_window_resize_frame(bw, bw->x + x, bw->y + y);
-	} else if (bw->drag.type == DRAGGING_PAGE_SCROLL) {
-		/* mouse movement since drag started */
-		struct rect rect;
-
-		rect.x0 = bw->drag.start_x - x;
-		rect.y0 = bw->drag.start_y - y;
-
-		/* new scroll offsets */
-		rect.x0 += bw->drag.start_scroll_x;
-		rect.y0 += bw->drag.start_scroll_y;
-
-		bw->drag.start_scroll_x = rect.x1 = rect.x0;
-		bw->drag.start_scroll_y = rect.y1 = rect.y0;
-
-		browser_window_set_scroll(bw, &rect);
-	} else {
-		assert(c != NULL);
-		content_mouse_track(c, bw, mouse, x, y);
-	}
+	browser_window_mouse_track_internal(bw,
+					    mouse,
+					    x / bw->scale,
+					    y / bw->scale);
 }
-
 
 /* exported interface documented in netsurf/browser_window.h */
 void
@@ -3454,8 +3476,8 @@ browser_window_mouse_click(struct browser_window *bw,
 {
 	browser_window_mouse_click_internal(bw,
 					    mouse,
-					    (x / bw->scale),
-					    (y / bw->scale));
+					    x / bw->scale,
+					    y / bw->scale);
 }
 
 

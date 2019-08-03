@@ -3831,8 +3831,9 @@ static void ro_gui_window_scroll_end(wimp_dragged *drag, void *data)
 		ro_warn_user("WimpError", error->errmess);
 	}
 
-	if (ro_gui_window_to_window_pos(g, drag->final.x0, drag->final.y0, &pos))
-		browser_window_mouse_track(g->bw, 0, pos.x/g->scale, pos.y/g->scale);
+	if (ro_gui_window_to_window_pos(g, drag->final.x0, drag->final.y0, &pos)) {
+		browser_window_mouse_track(g->bw, 0, pos.x, pos.y);
+	}
 }
 
 
@@ -4388,11 +4389,14 @@ void ro_gui_window_mouse_at(wimp_pointer *pointer, void *data)
 	os_coord pos;
 	struct gui_window *g = (struct gui_window *) data;
 
-	if (ro_gui_window_to_window_pos(g, pointer->pos.x, pointer->pos.y, &pos))
-		browser_window_mouse_track(g->bw,
-				ro_gui_mouse_drag_state(pointer->buttons,
+	if (ro_gui_window_to_window_pos(g, pointer->pos.x, pointer->pos.y, &pos)) {
+		browser_window_mouse_track(
+			g->bw,
+			ro_gui_mouse_drag_state(pointer->buttons,
 						wimp_BUTTON_DOUBLE_CLICK_DRAG),
-				pos.x/g->scale, pos.y/g->scale);
+			pos.x,
+			pos.y);
+	}
 }
 
 
