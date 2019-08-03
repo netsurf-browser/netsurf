@@ -380,6 +380,56 @@ def run_test_step_action_repeat(ctx, step):
         ctx["depth"] -= 1
 
 
+def run_test_step_action_click(ctx, step):
+    print(get_indent(ctx) + "Action: " + step["action"])
+    assert_browser(ctx)
+    win = ctx['windows'][step['window']]
+    targets = step['target']
+    if type(targets) == dict:
+        targets = [targets]
+    button = step.get('button', 'left').upper()
+    kind = step.get('kind', 'single').upper()
+    all_text_list = []
+    bitmaps = []
+    for plot in win.redraw():
+        if plot[0] == 'TEXT':
+            all_text_list.append((int(plot[2]), int(plot[4]), " ".join(plot[6:])))
+        if plot[0] == 'BITMAP':
+            bitmaps.append((int(plot[2]), int(plot[4]), int(plot[6]), int(plot[8])))
+
+    x = None
+    y = None
+
+    for target in targets:
+        if 'bitmap' in target:
+            if x is not None:
+                assert False, "Found more than one thing to click on, oh well"
+            bmap = int(target['bitmap'])
+            assert bmap < 0 or bmap >= len(bitmaps)
+            x = bitmaps[bmap][0] + bitmaps[bmap][2] / 2
+            y = bitmaps[bmap][1] + bitmaps[bmap][3] / 2
+        elif 'text' in target:
+            if x is not None:
+                assert False, "Found more than one thing to click on, oh well"
+            text = target['text']
+            for textentry in all_text_list:
+                if text in textentry[2]:
+                    if x is not None:
+                        assert False, "Text {} found more than once".format(text)
+                    x = textentry[0] + 2
+                    y = textentry[1] + 2
+
+    # Now we want to click on the x/y coordinate given
+    print(get_indent(ctx) + "        Clicking at {}, {} (button={} kind={})".format(x, y, button, kind))
+    win.click(x, y, button, kind)
+
+
+def run_test_step_action_wait_loading(ctx, step):
+    print(get_indent(ctx) + "Action: " + step["action"])
+    assert_browser(ctx)
+    win = ctx['windows'][step['window']]
+    win.wait_start_loading()
+
 def run_test_step_action_plot_check(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     assert_browser(ctx)
@@ -398,13 +448,13 @@ def run_test_step_action_plot_check(ctx, step):
     all_text = " ".join(all_text_list)
     for check in checks:
         if 'text-contains' in check.keys():
-            print("Check {} in {}".format(repr(check['text-contains']), repr(all_text)))
+            print("        Check {} in {}".format(repr(check['text-contains']), repr(all_text)))
             assert check['text-contains'] in all_text
         elif 'text-not-contains' in check.keys():
-            print("Check {} NOT in {}".format(repr(check['text-not-contains']), repr(all_text)))
+            print("        Check {} NOT in {}".format(repr(check['text-not-contains']), repr(all_text)))
             assert check['text-not-contains'] not in all_text
         elif 'bitmap-count' in check.keys():
-            print("Check bitmap count is {}".format(int(check['bitmap-count'])))
+            print("        Check bitmap count is {}".format(int(check['bitmap-count'])))
             assert len(bitmaps) == int(check['bitmap-count'])
         else:
             raise AssertionError("Unknown check: {}".format(repr(check)))
@@ -559,6 +609,8 @@ STEP_HANDLERS = {
     "timer-stop":    run_test_step_action_timer_stop,
     "timer-check":   run_test_step_action_timer_check,
     "plot-check":    run_test_step_action_plot_check,
+    "click":         run_test_step_action_click,
+    "wait-loading":  run_test_step_action_wait_loading,
     "add-auth":      run_test_step_action_add_auth,
     "remove-auth":   run_test_step_action_remove_auth,
     "add-cert":      run_test_step_action_add_cert,

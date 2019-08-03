@@ -434,6 +434,9 @@ class BrowserWindow:
         self.browser.farmer.tell_monkey("WINDOW RELOAD %s%s" % (self.winid, all))
         self.wait_start_loading()
 
+    def click(self, x, y, button="LEFT", kind="SINGLE"):
+        self.browser.farmer.tell_monkey("WINDOW CLICK WIN %s X %s Y %s BUTTON %s KIND %s" % (self.winid, x, y, button, kind))
+
     def js_exec(self, src):
         self.browser.farmer.tell_monkey("WINDOW EXEC WIN %s %s" % (self.winid, src))
 
