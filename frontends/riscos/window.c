@@ -4346,8 +4346,8 @@ nserror ro_gui_window_set_url(struct gui_window *g, nsurl *url)
 /* exported interface documented in riscos/window.h */
 void ro_gui_window_set_scale(struct gui_window *g, float scale)
 {
-	g->scale = scale;
 	browser_window_set_scale(g->bw, scale, true);
+	g->scale = browser_window_get_scale(g->bw);
 }
 
 

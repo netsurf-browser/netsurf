@@ -1255,9 +1255,8 @@ MULTIHANDLER(preferences)
 MULTIHANDLER(zoomplus)
 {
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-	float old_scale = nsgtk_get_scale_for_gui(g->top_level);
 
-	browser_window_set_scale(bw, old_scale + 0.05, true);
+	browser_window_set_scale(bw, 0.05, false);
 
 	return TRUE;
 }
@@ -1274,9 +1273,8 @@ MULTIHANDLER(zoomnormal)
 MULTIHANDLER(zoomminus)
 {
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-	float old_scale = nsgtk_get_scale_for_gui(g->top_level);
 
-	browser_window_set_scale(bw, old_scale - 0.05, true);
+	browser_window_set_scale(bw, -0.05, false);
 
 	return TRUE;
 }

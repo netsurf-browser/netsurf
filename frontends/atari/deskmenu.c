@@ -387,9 +387,7 @@ static void __CDECL menu_inc_scale(short item, short title, void *data)
 	if(input_window == NULL)
 		return;
 
-	browser_window_set_scale(input_window->browser->bw,
-				 browser_window_get_scale(input_window->browser->bw) + 0.25,
-				 true);
+	browser_window_set_scale(input_window->browser->bw, +0.25, false);
 }
 
 
@@ -398,9 +396,7 @@ static void __CDECL menu_dec_scale(short item, short title, void *data)
 	if(input_window == NULL)
 		return;
 
-	browser_window_set_scale(input_window->browser->bw,
-				 browser_window_get_scale(input_window->browser->bw) - 0.25,
-				 true);
+	browser_window_set_scale(input_window->browser->bw, -0.25, false);
 }
 
 

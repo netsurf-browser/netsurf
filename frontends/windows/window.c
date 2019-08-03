@@ -898,36 +898,6 @@ win32_window_invalidate_area(struct gui_window *gw, const struct rect *rect)
 
 
 /**
- * Set scale of a win32 browser window
- *
- * \param gw win32 frontend window context
- * \param scale The new scale
- */
-static void nsws_set_scale(struct gui_window *gw, float scale)
-{
-	struct rect rect;
-
-	assert(gw != NULL);
-
-	if (gw->scale == scale) {
-		return;
-	}
-
-	rect.x0 = rect.x1 = gw->scrollx;
-	rect.y0 = rect.y1 = gw->scrolly;
-
-	gw->scale = scale;
-
-	if (gw->bw != NULL) {
-		browser_window_set_scale(gw->bw, scale, true);
-	}
-
-	win32_window_invalidate_area(gw, NULL);
-	win32_window_set_scroll(gw, &rect);
-}
-
-
-/**
  * Create a new window due to menu selection
  *
  * \param gw frontends graphical window.
@@ -1136,15 +1106,15 @@ nsws_window_command(HWND hwnd,
 		break;
 
 	case IDM_VIEW_ZOOMPLUS:
-		nsws_set_scale(gw, gw->scale * 1.1);
+		browser_window_set_scale(gw->bw, 0.1, false);
 		break;
 
 	case IDM_VIEW_ZOOMMINUS:
-		nsws_set_scale(gw, gw->scale * 0.9);
+		browser_window_set_scale(gw->bw, -0.1, false);
 		break;
 
 	case IDM_VIEW_ZOOMNORMAL:
-		nsws_set_scale(gw, 1.0);
+		browser_window_set_scale(gw->bw, 1.0, true);
 		break;
 
 	case IDM_VIEW_SOURCE:
@@ -1542,9 +1512,12 @@ win32_window_get_dimensions(struct gui_window *gw, int *width, int *height)
  *
  * \param w gui_window to update the extent of
  */
-static void win32_window_update_extent(struct gui_window *w)
+static void win32_window_update_extent(struct gui_window *gw)
 {
-
+	struct rect rect;
+	rect.x0 = rect.x1 = gw->scrollx;
+	rect.y0 = rect.y1 = gw->scrolly;
+	win32_window_set_scroll(gw, &rect);
 }
 
 

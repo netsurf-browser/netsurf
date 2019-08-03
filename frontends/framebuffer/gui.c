@@ -912,34 +912,21 @@ fb_browser_window_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 		case NSFB_KEY_MINUS:
 			if (modifier & FBTK_MOD_RCTRL ||
 					modifier & FBTK_MOD_LCTRL) {
-				float scale = browser_window_get_scale(gw->bw);
-				scale -= 0.1;
-				if (scale < 0.1) {
-					scale = 0.1;
-				}
-				if (scale > 0.95 && scale < 1.05) {
-					scale = 1;
-				}
-				browser_window_set_scale(gw->bw, scale, true);
+				browser_window_set_scale(gw->bw, -0.1, false);
 			}
 			break;
 
 		case NSFB_KEY_EQUALS: /* PLUS */
 			if (modifier & FBTK_MOD_RCTRL ||
 					modifier & FBTK_MOD_LCTRL) {
-				float scale = browser_window_get_scale(gw->bw);
-				scale += 0.1;
-				if (scale > 0.95 && scale < 1.05) {
-					scale = 1;
-				}
-				browser_window_set_scale(gw->bw, scale, true);
+				browser_window_set_scale(gw->bw, 0.1, false);
 			}
 			break;
 
 		case NSFB_KEY_0:
 			if (modifier & FBTK_MOD_RCTRL ||
 					modifier & FBTK_MOD_LCTRL) {
-				browser_window_set_scale(gw->bw, 1, true);
+				browser_window_set_scale(gw->bw, 1.0, true);
 			}
 			break;
 
