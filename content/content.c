@@ -186,6 +186,13 @@ nserror content_llcache_callback(llcache_handle *llcache,
 		msg_data.redirect.to = event->data.redirect.to;
 		content_broadcast(c, CONTENT_MSG_REDIRECT, &msg_data);
 		break;
+	case LLCACHE_EVENT_QUERY:
+	case LLCACHE_EVENT_QUERY_FINISHED:
+		/* Should never happen, because the object can't query once
+		 * it has fetched enough that a migration to content happened.
+		 */
+		NSLOG(netsurf, DEBUG, "Encountered query related events during content handling");
+		break;
 	}
 
 	return error;

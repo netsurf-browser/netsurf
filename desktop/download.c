@@ -234,6 +234,13 @@ static nserror download_callback(llcache_handle *handle,
 
 	case LLCACHE_EVENT_REDIRECT:
 		break;
+	case LLCACHE_EVENT_QUERY:
+	case LLCACHE_EVENT_QUERY_FINISHED:
+		/* It's *POSSIBLE* we might have to handle these here
+		 * but how?
+		 */
+		NSLOG(netsurf, DEBUG, "Encountered query related events during download handling");
+		return NSERROR_NOT_IMPLEMENTED;
 	}
 
 	return error;

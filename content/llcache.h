@@ -48,45 +48,6 @@ typedef struct llcache_post_data {
 	} data;				/**< POST data content */
 } llcache_post_data;
 
-/** Low-level cache event types */
-typedef enum {
-	LLCACHE_EVENT_HAD_HEADERS,	/**< Received all headers */
-	LLCACHE_EVENT_HAD_DATA,		/**< Received some data */
-	LLCACHE_EVENT_DONE,		/**< Finished fetching data */
-
-	LLCACHE_EVENT_ERROR,		/**< An error occurred during fetch */
-	LLCACHE_EVENT_PROGRESS,		/**< Fetch progress update */
-
-	LLCACHE_EVENT_REDIRECT		/**< Fetch URL redirect occured */
-} llcache_event_type;
-
-/** Low-level cache events */
-typedef struct {
-	llcache_event_type type;	/**< Type of event */
-	union {
-		struct {
-			const uint8_t *buf;	/**< Buffer of data */
-			size_t len;	/**< Length of buffer, in bytes */
-		} data;			/**< Received data */
-		const char *msg;	/**< Error or progress message */
-		struct {
-			nsurl *from;	/**< Redirect origin */
-			nsurl *to;	/**< Redirect target */
-		} redirect;		/**< Fetch URL redirect occured */
-	} data;				/**< Event data */
-} llcache_event;
-
-/**
- * Client callback for low-level cache events
- *
- * \param handle  Handle for which event is issued
- * \param event   Event data
- * \param pw      Pointer to client-specific data
- * \return NSERROR_OK on success, appropriate error otherwise.
- */
-typedef nserror (*llcache_handle_callback)(llcache_handle *handle,
-		const llcache_event *event, void *pw);
-
 /** Flags for low-level cache object retrieval */
 enum llcache_retrieve_flag {
 	/* Note: We're permitted a maximum of 16 flags which must reside in the
@@ -139,6 +100,58 @@ typedef struct {
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 typedef nserror (*llcache_query_response)(bool proceed, void *cbpw);
+
+/** Low-level cache event types */
+typedef enum {
+	LLCACHE_EVENT_HAD_HEADERS,	/**< Received all headers */
+	LLCACHE_EVENT_HAD_DATA,		/**< Received some data */
+	LLCACHE_EVENT_DONE,		/**< Finished fetching data */
+
+	LLCACHE_EVENT_ERROR,		/**< An error occurred during fetch */
+	LLCACHE_EVENT_PROGRESS,		/**< Fetch progress update */
+
+	LLCACHE_EVENT_QUERY,            /**< Fetch has a query and is paused */
+	LLCACHE_EVENT_QUERY_FINISHED,   /**< Fetch had a query, but it is now finished */
+
+	LLCACHE_EVENT_REDIRECT		/**< Fetch URL redirect occured */
+} llcache_event_type;
+
+/**
+ * Low-level cache events.
+ *
+ * Lifetime of contained information is only for the duration of the event
+ * and must be copied if it is desirable to retain.
+ */
+typedef struct {
+	llcache_event_type type;	/**< Type of event */
+	union {
+		struct {
+			const uint8_t *buf;	/**< Buffer of data */
+			size_t len;	/**< Length of buffer, in bytes */
+		} data;			/**< Received data */
+		const char *msg;	/**< Error or progress message */
+		struct {
+			nsurl *from;	/**< Redirect origin */
+			nsurl *to;	/**< Redirect target */
+		} redirect;		/**< Fetch URL redirect occured */
+		struct {
+			llcache_query *query;    /**< Query information */
+			llcache_query_response cb; /**< Response callback */
+			void *cb_pw; /**< Response callback private word */
+		} query;                /**< Query event */
+	} data;				/**< Event data */
+} llcache_event;
+
+/**
+ * Client callback for low-level cache events
+ *
+ * \param handle  Handle for which event is issued
+ * \param event   Event data
+ * \param pw      Pointer to client-specific data
+ * \return NSERROR_OK on success, appropriate error otherwise.
+ */
+typedef nserror (*llcache_handle_callback)(llcache_handle *handle,
+		const llcache_event *event, void *pw);
 
 /**
  * Callback to handle fetch-related queries

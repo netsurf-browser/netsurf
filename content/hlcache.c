@@ -518,6 +518,20 @@ static nserror hlcache_llcache_callback(llcache_handle *handle,
 			ctx->handle->cb(ctx->handle, &hlevent, ctx->handle->pw);
 		}
 		break;
+	case LLCACHE_EVENT_QUERY:
+		if (hlcache->params.llcache.cb != NULL) {
+			return hlcache->params.llcache.cb(
+				event->data.query.query,
+				hlcache->params.llcache.cb_ctx,
+				event->data.query.cb,
+				event->data.query.cb_pw);
+		} else {
+			return NSERROR_NOT_IMPLEMENTED;
+		}
+		break;
+	case LLCACHE_EVENT_QUERY_FINISHED:
+		/* Currently nothing to do */
+		break;
 	}
 
 	return NSERROR_OK;

@@ -206,12 +206,6 @@ struct llcache_object {
  * Core llcache control context.
  */
 struct llcache_s {
-	/** Handler for fetch-related queries */
-	llcache_query_callback query_cb;
-
-	/** Data for fetch-related query handler */
-	void *query_cb_pw;
-
 	/** Head of the low-level cached object list */
 	llcache_object *cached_objects;
 
@@ -2267,10 +2261,18 @@ static nserror llcache_query_handle_response(bool proceed, void *cbpw)
 	llcache_event event;
 	llcache_object *object = cbpw;
 
+	if (object->fetch.outstanding_query == false) {
+		/* This object has already had its query answered */
+		return NSERROR_OK;
+	}
+
 	object->fetch.outstanding_query = false;
 
+	/* Tell all the users that we're leaving query state */
+	event.type = LLCACHE_EVENT_QUERY_FINISHED;
+
 	/* Refetch, using existing fetch parameters, if client allows us to */
-	if (proceed)
+	if (llcache_send_event_to_users(object, &event) == NSERROR_OK && proceed)
 		return llcache_object_refetch(object);
 
 	/* Invalidate cache-control data */
@@ -2317,38 +2319,31 @@ static nserror llcache_fetch_auth(llcache_object *object, const char *realm)
 	auth = urldb_get_auth_details(object->url, realm);
 
 	if (auth == NULL || object->fetch.tried_with_auth == true) {
+		llcache_query query;
+		llcache_event event;
+
 		/* No authentication details, or tried what we had, so ask */
 		object->fetch.tried_with_auth = false;
 
-		if (llcache->query_cb != NULL) {
-			llcache_query query;
+		/* Emit query for authentication details */
+		query.type = LLCACHE_QUERY_AUTH;
+		query.url = object->url;
+		query.data.auth.realm = realm;
 
-			/* Emit query for authentication details */
-			query.type = LLCACHE_QUERY_AUTH;
-			query.url = object->url;
-			query.data.auth.realm = realm;
+		/* Construct the query event */
+		event.type = LLCACHE_EVENT_QUERY;
+		event.data.query.query = &query;
+		event.data.query.cb = llcache_query_handle_response;
+		event.data.query.cb_pw = object;
 
-			object->fetch.outstanding_query = true;
+		object->fetch.outstanding_query = true;
 
-			error = llcache->query_cb(&query, llcache->query_cb_pw,
-					llcache_query_handle_response, object);
-			if (error != NSERROR_OK) {
-				/* do not continue if error querying user */
-				error = llcache_query_handle_response(false,
-								      object);
-			}
-		} else {
-			llcache_event event;
+		error = llcache_send_event_to_users(object, &event);
 
-			/* Mark object complete */
-			object->fetch.state = LLCACHE_FETCH_COMPLETE;
-
-			/* Inform client(s) that object fetch failed */
-			event.type = LLCACHE_EVENT_ERROR;
-			/** \todo More appropriate error message */
-			event.data.msg = messages_get("FetchFailed");
-
-			error = llcache_send_event_to_users(object, &event);
+		if (error != NSERROR_OK) {
+			/* do not continue if error querying user */
+			error = llcache_query_handle_response(false,
+							      object);
 		}
 	} else {
 		/* Flag that we've tried to refetch with credentials, so
@@ -2383,8 +2378,9 @@ static nserror llcache_fetch_cert_error(llcache_object *object,
 	object->fetch.tainted_tls = true;
 
 	/* Only give the user a chance if HSTS isn't in use for this fetch */
-	if (object->fetch.hsts_in_use == false && llcache->query_cb != NULL) {
+	if (object->fetch.hsts_in_use == false) {
 		llcache_query query;
+		llcache_event event;
 
 		/* Emit query for TLS */
 		query.type = LLCACHE_QUERY_SSL;
@@ -2392,10 +2388,16 @@ static nserror llcache_fetch_cert_error(llcache_object *object,
 		query.data.ssl.certs = certs;
 		query.data.ssl.num = num;
 
+		/* Construct the query event */
+		event.type = LLCACHE_EVENT_QUERY;
+		event.data.query.query = &query;
+		event.data.query.cb = llcache_query_handle_response;
+		event.data.query.cb_pw = object;
+
 		object->fetch.outstanding_query = true;
 
-		error = llcache->query_cb(&query, llcache->query_cb_pw,
-				llcache_query_handle_response, object);
+		error = llcache_send_event_to_users(object, &event);
+
 		if (error != NSERROR_OK) {
 			/* do not continue if error querying user */
 			error = llcache_query_handle_response(false, object);
@@ -3496,8 +3498,6 @@ llcache_initialise(const struct llcache_parameters *prm)
 		return NSERROR_NOMEM;
 	}
 
-	llcache->query_cb = prm->cb;
-	llcache->query_cb_pw = prm->cb_ctx;
 	llcache->limit = prm->limit;
 	llcache->minimum_lifetime = prm->minimum_lifetime;
 	llcache->minimum_bandwidth = prm->minimum_bandwidth;
