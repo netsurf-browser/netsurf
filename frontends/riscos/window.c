@@ -390,15 +390,18 @@ static void ro_gui_window_open(wimp_open *open)
 
 	/* reformat or change extent if necessary */
 	if (have_content &&
-			(g->old_width != width || g->old_height != height)) {
+	    (g->old_width != width || g->old_height != height)) {
 		/* Ctrl-resize of a top-level window scales the content size */
-		if ((g->old_width > 0) && (g->old_width != width) &&
-				(ro_gui_ctrl_pressed()))
-			new_scale = (g->scale * width) / g->old_width;
+		if ((g->old_width > 0) &&
+		    (g->old_width != width) &&
+		    (ro_gui_ctrl_pressed())) {
+			new_scale = (browser_window_get_scale(g->bw) * width) / g->old_width;
+		}
 		browser_window_schedule_reformat(g->bw);
 	}
-	if (g->update_extent || g->old_width != width ||
-			g->old_height != height) {
+	if (g->update_extent ||
+	    g->old_width != width ||
+	    g->old_height != height) {
 		g->old_width = width;
 		g->old_height = height;
 		g->update_extent = false;
@@ -1209,6 +1212,52 @@ ro_gui_window_scroll_action(struct gui_window *g,
 	}
 }
 
+/**
+ * handle scale kepresses within RISC OS
+ */
+static bool handle_local_keypress_scale(struct gui_window *gw, uint32_t c)
+{
+	float cscale; /* current scale */
+	float scale; /* new scale */
+
+	cscale = browser_window_get_scale(gw->bw);
+
+	scale = cscale;
+
+	if (ro_gui_shift_pressed() && c == 17) {
+		scale = cscale - 0.1;
+	} else if (ro_gui_shift_pressed() && c == 23) {
+		scale = cscale + 0.1;
+	} else if (c == 17) {
+		for (int i = SCALE_SNAP_TO_SIZE - 1; i >= 0; i--) {
+			if (scale_snap_to[i] < cscale) {
+				scale = scale_snap_to[i];
+				break;
+			}
+		}
+	} else {
+		for (unsigned int i = 0; i < SCALE_SNAP_TO_SIZE; i++) {
+			if (scale_snap_to[i] > cscale) {
+				scale = scale_snap_to[i];
+				break;
+			}
+		}
+	}
+
+	if (scale < scale_snap_to[0]) {
+		scale = scale_snap_to[0];
+	}
+
+	if (scale > scale_snap_to[SCALE_SNAP_TO_SIZE - 1]) {
+		scale = scale_snap_to[SCALE_SNAP_TO_SIZE - 1];
+	}
+
+	if (cscale != scale) {
+		ro_gui_window_set_scale(gw, scale);
+	}
+
+	return true;
+}
 
 /**
  * Handle keypresses within the RISC OS GUI
@@ -1231,7 +1280,6 @@ ro_gui_window_handle_local_keypress(struct gui_window *g,
 	os_error			*ro_error;
 	wimp_pointer			pointer;
 	os_coord			pos;
-	float				scale;
 	uint32_t			c = (uint32_t) key->c;
 	wimp_scroll_direction		xscroll = wimp_SCROLL_NONE;
 	wimp_scroll_direction		yscroll = wimp_SCROLL_NONE;
@@ -1392,34 +1440,10 @@ ro_gui_window_handle_local_keypress(struct gui_window *g,
 
 	case 17:       /* CTRL+Q (Zoom out) */
 	case 23:       /* CTRL+W (Zoom in) */
-		if (browser_window_has_content(g->bw) == false)
-			break;
-		scale = g->scale;
-		if (ro_gui_shift_pressed() && c == 17)
-			scale = g->scale - 0.1;
-		else if (ro_gui_shift_pressed() && c == 23)
-			scale = g->scale + 0.1;
-		else if (c == 17) {
-			for (int i = SCALE_SNAP_TO_SIZE - 1; i >= 0; i--)
-				if (scale_snap_to[i] < g->scale) {
-					scale = scale_snap_to[i];
-					break;
-				}
-		} else {
-			for (unsigned int i = 0; i < SCALE_SNAP_TO_SIZE; i++)
-				if (scale_snap_to[i] > g->scale) {
-					scale = scale_snap_to[i];
-					break;
-				}
+		if (browser_window_has_content(g->bw) == true) {
+			return handle_local_keypress_scale(g, c);
 		}
-		if (scale < scale_snap_to[0])
-			scale = scale_snap_to[0];
-		if (scale > scale_snap_to[SCALE_SNAP_TO_SIZE - 1])
-			scale = scale_snap_to[SCALE_SNAP_TO_SIZE - 1];
-		if (g->scale != scale) {
-			ro_gui_window_set_scale(g, scale);
-		}
-		return true;
+		break;
 
 	case IS_WIMP_KEY + wimp_KEY_PRINT:
 		ro_gui_window_action_print(g);
@@ -1700,37 +1724,48 @@ static void ro_gui_window_redraw(wimp_draw *redraw)
  */
 static void ro_gui_window_scroll(wimp_scroll *scroll)
 {
-	struct gui_window	*g = ro_gui_window_lookup(scroll->w);
+	float cscale, scale, inc;
+	struct gui_window *g = ro_gui_window_lookup(scroll->w);
 
-	if (g && browser_window_has_content(g->bw) && ro_gui_shift_pressed()) {
-		/* extended scroll request with shift held down; change zoom */
-		float scale, inc;
+	if (g == NULL) {
+		return;
+	}
 
-		if (scroll->ymin & 3)
-			inc = 0.02;  /* RO5 sends the msg 5 times;
-				      * don't ask me why
-				      *
-				      * @todo this is liable to break if
-				      * HID is configured optimally for
-				      * frame scrolling. *5 appears to be
-				      * an artifact of non-HID mode scrolling.
-				      */
-		else
-			inc = (1 << (ABS(scroll->ymin)>>2)) / 20.0F;
-
-		if (scroll->ymin > 0) {
-			scale = g->scale + inc;
-			if (scale > scale_snap_to[SCALE_SNAP_TO_SIZE - 1])
-				scale = scale_snap_to[SCALE_SNAP_TO_SIZE - 1];
-		} else {
-			scale = g->scale - inc;
-			if (scale < scale_snap_to[0])
-				scale = scale_snap_to[0];
-		}
-		if (g->scale != scale)
-			ro_gui_window_set_scale(g, scale);
-	} else if (g != NULL) {
+	if ((browser_window_has_content(g->bw) == false) ||
+	    (ro_gui_shift_pressed() == false)) {
 		ro_gui_window_scroll_action(g, scroll->xmin, scroll->ymin);
+		return;
+	}
+
+	/* extended scroll request with shift held down; change zoom */
+	cscale = browser_window_get_scale(g->bw);
+
+	if (scroll->ymin & 3) {
+		inc = 0.02;  /* RO5 sends the msg 5 times;
+			      * don't ask me why
+			      *
+			      * @todo this is liable to break if
+			      * HID is configured optimally for
+			      * frame scrolling. *5 appears to be
+			      * an artifact of non-HID mode scrolling.
+			      */
+	} else {
+		inc = (1 << (ABS(scroll->ymin)>>2)) / 20.0F;
+	}
+
+	if (scroll->ymin > 0) {
+		scale = cscale + inc;
+		if (scale > scale_snap_to[SCALE_SNAP_TO_SIZE - 1]) {
+			scale = scale_snap_to[SCALE_SNAP_TO_SIZE - 1];
+		}
+	} else {
+		scale = cscale - inc;
+		if (scale < scale_snap_to[0]) {
+			scale = scale_snap_to[0];
+		}
+	}
+	if (scale != cscale) {
+		ro_gui_window_set_scale(g, scale);
 	}
 }
 
