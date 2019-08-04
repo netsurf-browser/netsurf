@@ -1925,11 +1925,11 @@ html_get_contextual_content(struct content *c, int x, int y,
 		}
 
 		if (box->iframe) {
-			browser_window_get_features(
-				box->iframe,
-				(x - box_x) * browser_window_get_scale(box->iframe),
-				(y - box_y) * browser_window_get_scale(box->iframe),
-				data);
+			float scale = browser_window_get_scale(box->iframe);
+			browser_window_get_features(box->iframe,
+						    (x - box_x) * scale,
+						    (y - box_y) * scale,
+						    data);
 		}
 
 		if (box->object)
@@ -2004,13 +2004,15 @@ html_scroll_at_point(struct content *c, int x, int y, int scrx, int scry)
 			continue;
 
 		/* Pass into iframe */
-		if (box->iframe &&
-		    browser_window_scroll_at_point(
-			    box->iframe,
-			    (x - box_x) * browser_window_get_scale(box->iframe),
-			    (y - box_y) * browser_window_get_scale(box->iframe),
-			    scrx, scry) == true)
-			return true;
+		if (box->iframe) {
+			float scale = browser_window_get_scale(box->iframe);
+
+			if (browser_window_scroll_at_point(box->iframe,
+							   (x - box_x) * scale,
+							   (y - box_y) * scale,
+							   scrx, scry) == true)
+				return true;
+		}
 
 		/* Pass into textarea widget */
 		if (box->gadget && (box->gadget->type == GADGET_TEXTAREA ||
@@ -2146,15 +2148,21 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 			&box_x, &box_y)) != NULL) {
 		box = next;
 
-		if (box->style && css_computed_visibility(box->style) ==
-				CSS_VISIBILITY_HIDDEN)
+		if (box->style &&
+		    css_computed_visibility(box->style) == CSS_VISIBILITY_HIDDEN)
 			continue;
 
-		if (box->iframe)
-			return browser_window_drop_file_at_point(box->iframe,
-					x - box_x, y - box_y, file);
+		if (box->iframe) {
+			float scale = browser_window_get_scale(box->iframe);
+			return browser_window_drop_file_at_point(
+				box->iframe,
+				(x - box_x) * scale,
+				(y - box_y) * scale,
+				file);
+		}
 
-		if (box->object && content_drop_file_at_point(box->object,
+		if (box->object &&
+		    content_drop_file_at_point(box->object,
 					x - box_x, y - box_y, file) == true)
 			return true;
 

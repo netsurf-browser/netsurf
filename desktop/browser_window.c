@@ -1819,6 +1819,13 @@ browser_window_mouse_track_internal(struct browser_window *bw,
 }
 
 
+/**
+ * perform a scroll operation at a given coordinate
+ *
+ * \param bw The browsing context receiving the event
+ * \param x The scaled x co-ordinate of the event
+ * \param y The scaled y co-ordinate of the event
+ */
 static bool
 browser_window_scroll_at_point_internal(struct browser_window *bw,
 			       int x, int y,
@@ -1873,6 +1880,60 @@ browser_window_scroll_at_point_internal(struct browser_window *bw,
 	}
 
 	return handled_scroll;
+}
+
+
+/**
+ * allows a dragged file to be dropped into a browser window at a position
+ *
+ * \param bw The browsing context receiving the event
+ * \param x The scaled x co-ordinate of the event
+ * \param y The scaled y co-ordinate of the event
+ * \param file filename to be put in the widget
+ */
+static bool
+browser_window_drop_file_at_point_internal(struct browser_window *bw,
+					   int x, int y,
+					   char *file)
+{
+	assert(bw != NULL);
+
+	/* Handle (i)frame scroll offset (core-managed browser windows only) */
+	x += scrollbar_get_offset(bw->scroll_x);
+	y += scrollbar_get_offset(bw->scroll_y);
+
+	if (bw->children) {
+		/* Browser window has children, so pass request on to
+		 * appropriate child */
+		struct browser_window *bwc;
+		int cur_child;
+		int children = bw->rows * bw->cols;
+
+		/* Loop through all children of bw */
+		for (cur_child = 0; cur_child < children; cur_child++) {
+			/* Set current child */
+			bwc = &bw->children[cur_child];
+
+			/* Skip this frame if (x, y) coord lies outside */
+			if (x < bwc->x || bwc->x + bwc->width < x ||
+			    y < bwc->y || bwc->y + bwc->height < y)
+				continue;
+
+			/* Pass request into this child */
+			return browser_window_drop_file_at_point_internal(bwc,
+								 (x - bwc->x),
+								 (y - bwc->y),
+								 file);
+		}
+	}
+
+	/* Pass file drop on to any content */
+	if (bw->current_content != NULL) {
+		return content_drop_file_at_point(bw->current_content,
+						  x, y, file);
+	}
+
+	return false;
 }
 
 
@@ -2366,44 +2427,10 @@ browser_window_drop_file_at_point(struct browser_window *bw,
 				  int x, int y,
 				  char *file)
 {
-	assert(bw != NULL);
-
-	/* Handle (i)frame scroll offset (core-managed browser windows only) */
-	x += scrollbar_get_offset(bw->scroll_x);
-	y += scrollbar_get_offset(bw->scroll_y);
-
-	if (bw->children) {
-		/* Browser window has children, so pass request on to
-		 * appropriate child */
-		struct browser_window *bwc;
-		int cur_child;
-		int children = bw->rows * bw->cols;
-
-		/* Loop through all children of bw */
-		for (cur_child = 0; cur_child < children; cur_child++) {
-			/* Set current child */
-			bwc = &bw->children[cur_child];
-
-			/* Skip this frame if (x, y) coord lies outside */
-			if (x < bwc->x || bwc->x + bwc->width < x ||
-			    y < bwc->y || bwc->y + bwc->height < y)
-				continue;
-
-			/* Pass request into this child */
-			return browser_window_drop_file_at_point(bwc,
-								 (x - bwc->x),
-								 (y - bwc->y),
-								 file);
-		}
-	}
-
-	/* Pass file drop on to any content */
-	if (bw->current_content != NULL) {
-		return content_drop_file_at_point(bw->current_content,
-						  x, y, file);
-	}
-
-	return false;
+	return browser_window_drop_file_at_point_internal(bw,
+							  x / bw->scale,
+							  y / bw->scale,
+							  file);
 }
 
 

@@ -4365,7 +4365,7 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 			message->data.data_xfer.pos.y, &pos))
 		return false;
 
-	if (browser_window_drop_file_at_point(g->bw, pos.x/g->scale, pos.y/g->scale,
+	if (browser_window_drop_file_at_point(g->bw, pos.x, pos.y,
 			message->data.data_xfer.file_name) == false)
 		return false;
 
