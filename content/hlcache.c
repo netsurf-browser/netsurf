@@ -519,18 +519,26 @@ static nserror hlcache_llcache_callback(llcache_handle *handle,
 		}
 		break;
 	case LLCACHE_EVENT_QUERY:
-		if (hlcache->params.llcache.cb != NULL) {
-			return hlcache->params.llcache.cb(
-				event->data.query.query,
-				hlcache->params.llcache.cb_ctx,
-				event->data.query.cb,
-				event->data.query.cb_pw);
+		if (ctx->handle->cb != NULL) {
+			hlcache_event hlevent;
+
+			hlevent.type = CONTENT_MSG_QUERY;
+			hlevent.data.query_msg = &event->data.query;
+
+			ctx->handle->cb(ctx->handle, &hlevent, ctx->handle->pw);
 		} else {
 			return NSERROR_NOT_IMPLEMENTED;
 		}
 		break;
 	case LLCACHE_EVENT_QUERY_FINISHED:
-		/* Currently nothing to do */
+		if (ctx->handle->cb != NULL) {
+			hlcache_event hlevent;
+
+			hlevent.type = CONTENT_MSG_QUERY_FINISHED;
+			hlevent.data.query_finished_pw = event->data.query.cb_pw;
+
+			ctx->handle->cb(ctx->handle, &hlevent, ctx->handle->pw);
+		}
 		break;
 	}
 

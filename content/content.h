@@ -43,6 +43,7 @@ struct hlcache_handle;
 struct object_params;
 struct rect;
 struct redraw_context;
+struct llcache_query_msg;
 
 /** Status of a content */
 typedef enum {
@@ -58,6 +59,8 @@ typedef enum {
 /** Used in callbacks to indicate what has occurred. */
 typedef enum {
 	CONTENT_MSG_LOG,       /**< Content wishes to log something */
+	CONTENT_MSG_QUERY,     /**< Something under the content has a query */
+	CONTENT_MSG_QUERY_FINISHED, /**< Something under the content finished its query */
 	CONTENT_MSG_LOADING,   /**< fetching or converting */
 	CONTENT_MSG_READY,     /**< may be displayed */
 	CONTENT_MSG_DONE,      /**< finished */
@@ -105,6 +108,10 @@ union content_msg_data {
 		size_t msglen; /**< The length of that message */
 		browser_window_console_flags flags; /**< The flags of the logging */
 	} log;
+	/** CONTENT_MSG_QUERY - Query from underlying object somewhere */
+	const struct llcache_query_msg *query_msg;
+	/** CONTENT_MSG_QUERY_FINISHED - Query from underlying object finished */
+	void *query_finished_pw;
 	/** CONTENT_MSG_ERROR - Error message */
 	const char *error;
         /** CONTENT_MSG_ERRORCODE - Error code */
