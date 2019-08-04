@@ -2269,8 +2269,12 @@ form_gadget_sync_with_dom(struct form_control *control)
 	control->syncing = true;
 
 	/* If we've changed value, sync that toward the DOM */
-	if ((control->last_synced_value == NULL && control->value[0] != '\0') ||
-	    (control->last_synced_value != NULL && strcmp(control->value, control->last_synced_value) != 0)) {
+	if ((control->last_synced_value == NULL &&
+	     control->value != NULL &&
+	     control->value[0] != '\0') ||
+	    (control->last_synced_value != NULL &&
+	     control->value != NULL &&
+	     strcmp(control->value, control->last_synced_value) != 0)) {
 		char *dup = strdup(control->value);
 		if (dup == NULL) {
 			goto out;
