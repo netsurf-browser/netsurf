@@ -167,16 +167,6 @@ void nsgtk_window_set_tab(struct gui_window *g, GtkWidget *w)
 }
 
 
-struct gui_window *nsgtk_window_iterate(struct gui_window *g)
-{
-	return g->next;
-}
-
-float nsgtk_get_scale_for_gui(struct gui_window *g)
-{
-	return browser_window_get_scale(g->bw);
-}
-
 static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
 					gpointer user_data)
 {

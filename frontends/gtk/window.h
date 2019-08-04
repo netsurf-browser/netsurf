@@ -30,17 +30,73 @@ typedef enum nsgtk_window_signals {
 extern struct gui_window *window_list;
 extern int temp_open_background;
 
-struct browser_window *nsgtk_get_browser_window(struct gui_window *g);
-struct nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g);
+/**
+ * get core browsing context from gui window handle
+ *
+ * \param gw gui window handle
+ */
+struct browser_window *nsgtk_get_browser_window(struct gui_window *gw);
+
+/**
+ * get containing nsgtk scaffolding handle from gui window handle
+ *
+ * \param gw gui window handle
+ */
+struct nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *gw);
+
+/**
+ * get gdk pixbuf of favicon from gui window handle
+ *
+ * \param gw gui window handle
+ */
 GdkPixbuf *nsgtk_get_icon(struct gui_window *gw);
+
+/**
+ * cause all windows be be reflowed
+ */
 void nsgtk_reflow_all_windows(void);
-float nsgtk_get_scale_for_gui(struct gui_window *g);
-int nsgtk_gui_window_update_targets(struct gui_window *g);
-void nsgtk_window_destroy_browser(struct gui_window *g);
-unsigned long nsgtk_window_get_signalhandler(struct gui_window *g, int i);
-GtkLayout *nsgtk_window_get_layout(struct gui_window *g);
-struct gui_window *nsgtk_window_iterate(struct gui_window *g);
-GtkWidget *nsgtk_window_get_tab(struct gui_window *g);
-void nsgtk_window_set_tab(struct gui_window *g, GtkWidget *w);
+
+/**
+ * update targets
+ *
+ * \param gw gui window handle
+ */
+int nsgtk_gui_window_update_targets(struct gui_window *gw);
+
+/**
+ * destroy browsing context
+ *
+ * \param gw gui window handle
+ */
+void nsgtk_window_destroy_browser(struct gui_window *gw);
+
+/**
+ * set signal handler
+ *
+ * \param gw gui window handle
+ */
+unsigned long nsgtk_window_get_signalhandler(struct gui_window *gw, int i);
+
+/**
+ * get gtk layout from gui handle
+ *
+ * \param gw gui window handle
+ */
+GtkLayout *nsgtk_window_get_layout(struct gui_window *gw);
+
+/**
+ * get tab widget from gui window handle
+ *
+ * \param gw gui window handle
+ */
+GtkWidget *nsgtk_window_get_tab(struct gui_window *gw);
+
+/**
+ * set tab widget associated with gui window handle
+ *
+ * \param gw gui window handle
+ * \param w gtk widget to associate
+ */
+void nsgtk_window_set_tab(struct gui_window *gw, GtkWidget *w);
 
 #endif /* NETSURF_GTK_WINDOW_H */
