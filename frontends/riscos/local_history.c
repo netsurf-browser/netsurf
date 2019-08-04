@@ -384,6 +384,7 @@ ro_local_history_open(struct ro_local_history_window *lhw, wimp_w parent)
 	state.visible.x1 = width;
 	state.visible.y1 = height;
 	state.next = wimp_HIDDEN;
+	state.flags |= wimp_WINDOW_HAS_FOCUS;
 	error = xwimp_open_window(PTR_WIMP_OPEN(&state));
 	if (error) {
 		NSLOG(netsurf, INFO, "xwimp_open_window: 0x%x: %s",
