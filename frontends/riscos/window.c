@@ -3598,10 +3598,11 @@ static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 		return false;
 	}
 
-	if (g->toolbar)
+	if (g->toolbar) {
 		toolbar_height = ro_toolbar_full_height(g->toolbar);
-	*sx = state.xscroll / (2 * g->scale);
-	*sy = -(state.yscroll - toolbar_height) / (2 * g->scale);
+	}
+	*sx = state.xscroll / 2;
+	*sy = -(state.yscroll - toolbar_height) / 2;
 	return true;
 }
 
@@ -3640,8 +3641,8 @@ gui_window_set_scroll(struct gui_window *g, const struct rect *rect)
 
 	if ((rect->x0 == rect->x1) && (rect->y0 == rect->y1)) {
 		/* scroll to top */
-		state.xscroll = rect->x0 * 2 * g->scale;
-		state.yscroll = (-rect->y0 * 2 * g->scale) + toolbar_height;
+		state.xscroll = rect->x0 * 2;
+		state.yscroll = (-rect->y0 * 2) + toolbar_height;
 	} else {
 		/* scroll area into view with padding */
 		int x0, y0, x1, y1;
@@ -3649,10 +3650,10 @@ gui_window_set_scroll(struct gui_window *g, const struct rect *rect)
 		int padding_available;
 		int correction;
 
-		x0 = rect->x0 * 2 * g->scale;
-		y0 = rect->y0 * 2 * g->scale;
-		x1 = rect->x1 * 2 * g->scale;
-		y1 = rect->y1 * 2 * g->scale;
+		x0 = rect->x0 * 2 ;
+		y0 = rect->y0 * 2 ;
+		x1 = rect->x1 * 2 ;
+		y1 = rect->y1 * 2 ;
 
 		cx0 = state.xscroll;
 		cy0 = -state.yscroll + toolbar_height;
@@ -3987,8 +3988,9 @@ gui_window_drag_start(struct gui_window *g,
 	switch (type) {
 	case GDRAGGING_SCROLLBAR:
 		/* Dragging a core scrollbar */
-		ro_mouse_drag_start(ro_gui_window_scroll_end, ro_gui_window_mouse_at,
-				NULL, g);
+		ro_mouse_drag_start(ro_gui_window_scroll_end,
+				    ro_gui_window_mouse_at,
+				    NULL, g);
 		break;
 
 	default:
