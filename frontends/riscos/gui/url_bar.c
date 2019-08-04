@@ -1327,6 +1327,16 @@ static nserror ro_gui_url_bar_res_cb(hlcache_handle *handle,
 		r->height = content_get_height(handle);
 		break;
 
+	case CONTENT_MSG_QUERY:
+		/** \todo QUERY - Decide what is right here */
+		/* For now, the only safe decision is to cancel the fetch */
+		event->data.query_msg->cb(false, event->data.query_msg->cb_pw);
+		return NSERROR_OK;
+
+	case CONTENT_MSG_QUERY_FINISHED:
+		/** \todo QUERY - Decide what is right here */
+		return NSERROR_OK;
+
 	default:
 		break;
 	}

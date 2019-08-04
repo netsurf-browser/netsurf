@@ -446,6 +446,16 @@ browser_window_favicon_callback(hlcache_handle *c,
 		}
 		break;
 
+	case CONTENT_MSG_QUERY:
+		/** \todo QUERY - Decide what is right here */
+		/* For now, the only safe decision is to cancel the fetch */
+		event->data.query_msg->cb(false, event->data.query_msg->cb_pw);
+		break;
+
+	case CONTENT_MSG_QUERY_FINISHED:
+		/** \todo QUERY - Decide what is right here */
+		break;
+
 	default:
 		break;
 	}
@@ -1122,6 +1132,20 @@ browser_window_callback(hlcache_handle *c, const hlcache_event *event, void *pw)
 						       event->data.gadget_click.gadget);
 		}
 
+		break;
+
+	case CONTENT_MSG_QUERY:
+		/** \todo QUERY - Decide what is right here */
+		/* For now, we directly invoke the known global handler for queries */
+		return netsurf_llcache_query_handler(
+			event->data.query_msg->query,
+			NULL,
+			event->data.query_msg->cb,
+			event->data.query_msg->cb_pw);
+		break;
+
+	case CONTENT_MSG_QUERY_FINISHED:
+		/** \todo QUERY - Decide what is right here */
 		break;
 
 	default:
