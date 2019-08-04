@@ -397,7 +397,7 @@ static nserror llcache_send_event_to_users(llcache_object *object,
 
 		user->iterator_target = was_target;
 
-		if (user->queued_for_delete) {
+		if (user->queued_for_delete && !was_target) {
 			llcache_object_remove_user(object, user);
 			llcache_object_user_destroy(user);
 		}
