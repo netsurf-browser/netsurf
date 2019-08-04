@@ -16,8 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NETSURF_WINDOWS_WINDOW_H_
-#define _NETSURF_WINDOWS_WINDOW_H_
+#ifndef NETSURF_WINDOWS_WINDOW_H_
+#define NETSURF_WINDOWS_WINDOW_H_
 
 /** The window operation function table for win32 */
 extern struct gui_window_table *win32_window_table;

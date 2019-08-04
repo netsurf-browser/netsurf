@@ -17,7 +17,7 @@
  */
 
 /**
- * \file desktop/searchweb.c
+ * \file
  * \brief core web search facilities implementation.
  */
 
