@@ -3514,20 +3514,24 @@ static void gui_window_destroy(struct gui_window *g)
  */
 static void gui_window_set_title(struct gui_window *g, const char *title)
 {
+	float scale;
 	assert(g);
 	assert(title);
 
-	if (g->scale != 1.0) {
-		int scale_disp = g->scale * 100;
+	scale = browser_window_get_scale(g->bw);
 
-		if (ABS((float)scale_disp - g->scale * 100) >= 0.05)
+	if (scale != 1.0) {
+		int scale_disp = scale * 100;
+
+		if (ABS((float)scale_disp - scale * 100) >= 0.05) {
 			snprintf(g->title, sizeof g->title, "%s (%.1f%%)",
-					title, g->scale * 100);
-		else
+					title, scale * 100);
+		} else {
 			snprintf(g->title, sizeof g->title, "%s (%i%%)",
 					title, scale_disp);
+		}
 	} else {
-		strncpy(g->title, title, sizeof g->title);
+		strncpy(g->title, title, sizeof(g->title));
 	}
 
 	ro_gui_set_window_title(g->window, g->title);
