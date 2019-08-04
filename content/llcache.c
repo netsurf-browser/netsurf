@@ -2270,6 +2270,7 @@ static nserror llcache_query_handle_response(bool proceed, void *cbpw)
 
 	/* Tell all the users that we're leaving query state */
 	event.type = LLCACHE_EVENT_QUERY_FINISHED;
+	event.data.query.cb_pw = object;
 
 	/* Refetch, using existing fetch parameters, if client allows us to */
 	if (llcache_send_event_to_users(object, &event) == NSERROR_OK && proceed)
