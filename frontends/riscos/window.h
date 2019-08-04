@@ -192,17 +192,6 @@ bool ro_gui_window_to_window_pos(struct gui_window *g, int x, int y, os_coord *p
 
 
 /**
- * Convert x,y window co-ordinates into screen co-ordinates.
- *
- * \param g gui window
- * \param x x ordinate
- * \param y y ordinate
- * \param pos receives position in screen co-ordinatates
- * \return true iff conversion successful
- */
-bool ro_gui_window_to_screen_pos(struct gui_window *g, int x, int y, os_coord *pos);
-
-/**
  * Returns the state of the mouse buttons and modifiers keys for a
  * mouse action, suitable for passing to the OS-independent
  * browser window/ treeview/ etc code.

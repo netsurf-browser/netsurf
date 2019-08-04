@@ -4766,31 +4766,6 @@ ro_gui_window_to_window_pos(struct gui_window *g, int x, int y, os_coord *pos)
 
 
 /* exported interface documented in riscos/window.h */
-bool ro_gui_window_to_screen_pos(struct gui_window *g,
-				 int x,
-				 int y,
-				 os_coord *pos)
-{
-	wimp_window_state state;
-	os_error *error;
-
-	assert(g);
-
-	state.w = g->window;
-	error = xwimp_get_window_state(&state);
-	if (error) {
-		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x:%s",
-		      error->errnum, error->errmess);
-		ro_warn_user("WimpError", error->errmess);
-		return false;
-	}
-	pos->x = (x * 2 * g->scale) + (state.visible.x0 - state.xscroll);
-	pos->y = (state.visible.y1 - state.yscroll) - (y * 2 * g->scale);
-	return true;
-}
-
-
-/* exported interface documented in riscos/window.h */
 enum browser_mouse_state
 ro_gui_mouse_click_state(wimp_mouse_state buttons, wimp_icon_flags type)
 {
