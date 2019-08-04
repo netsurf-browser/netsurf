@@ -3379,13 +3379,8 @@ browser_window_set_scale(struct browser_window *bw, float scale, bool absolute)
 		bw = bw->parent;
 	}
 
-	if (absolute) {
-		/* ensure "close" to 1 is treated as 1 */
-		if (scale > 0.95 && scale < 1.05) {
-			scale = 1.0;
-		}
-	} else {
-		/* ensure "close" to 1 is treated as 1 */
+	if (!absolute) {
+		/* snap small values around 1.0 */
 		if ((scale + bw->scale) > (1.01 - scale) &&
 		    (scale + bw->scale) < (0.99 + scale)) {
 			scale = 1.0;
