@@ -398,7 +398,7 @@ ro_local_history_open(struct ro_local_history_window *lhw, wimp_w parent)
 	error = xwimp_set_caret_position(lhw->core.wh, -1, 0, 0, -1, 0);
 	if (error) {
 		NSLOG(netsurf, INFO,
-		      "xwimp_get_caret_position: 0x%x : %s",
+		      "xwimp_set_caret_position: 0x%x : %s",
 		      error->errnum,
 		      error->errmess);
 	}
