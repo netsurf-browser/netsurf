@@ -283,6 +283,9 @@ method Element::getAttribute()
 	const char *s = duk_safe_to_lstring(ctx, 0, &slen);
 	exc = dom_string_create((const uint8_t *)s, slen, &attr_name);
 	duk_pop(ctx);
+	if (exc != DOM_NO_ERR) {
+		return 0;
+	}
 
 	exc = dom_element_get_attribute(priv->parent.node,
 			attr_name, &attr_value);
@@ -336,6 +339,9 @@ method Element::hasAttribute()
 	const char *s = duk_safe_to_lstring(ctx, 0, &slen);
 	exc = dom_string_create((const uint8_t *)s, slen, &attr_name);
 	duk_pop(ctx);
+	if (exc != DOM_NO_ERR) {
+		return 0;
+	}
 
 	exc = dom_element_has_attribute(priv->parent.node,
 			attr_name, &res);
