@@ -72,6 +72,8 @@ struct image_input_coords {
 /** Form control. */
 struct form_control {
 	void *node;			/**< Corresponding DOM node */
+	struct dom_string *node_value;  /**< The last value sync'd with the DOM */
+	bool syncing;                   /**< Set if a DOM sync is in-progress */
 	struct html_content *html;	/**< HTML content containing control */
 
 	form_control_type type;		/**< Type of control */
@@ -81,6 +83,7 @@ struct form_control {
 	char *name;			/**< Control name */
 	char *value;			/**< Current value of control */
 	char *initial_value;		/**< Initial value of control */
+	char *last_synced_value;        /**< The last value sync'd to the DOM */
 	bool disabled;			/**< Whether control is disabled */
 
 	struct box *box;		/**< Box for control */
@@ -260,5 +263,19 @@ nserror form_submit(struct nsurl *page_url, struct browser_window *target,
 void form_radio_set(struct form_control *radio);
 
 void form_gadget_update_value(struct form_control *control, char *value);
+
+/**
+ * Synchronise this gadget with its associated DOM node.
+ *
+ * If the DOM has changed and the gadget has not, the DOM's new value is
+ * imported into the gadget.  If the gadget's value has changed and the DOM's
+ * has not, the gadget's value is pushed into the DOM.
+ * If both have changed, the gadget's value wins.
+ *
+ * \param control The form gadget to synchronise
+ *
+ * \note Currently this will only synchronise input gadgets (text/password)
+ */
+void form_gadget_sync_with_dom(struct form_control *control);
 
 #endif

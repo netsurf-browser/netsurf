@@ -211,7 +211,8 @@ static const box_type box_map[] = {
 	BOX_NONE /*CSS_DISPLAY_NONE*/
 };
 
-static inline struct box *box_for_node(dom_node *n)
+/* Exported function, see box.h */
+struct box *box_for_node(dom_node *n)
 {
 	struct box *box = NULL;
 	dom_exception err;

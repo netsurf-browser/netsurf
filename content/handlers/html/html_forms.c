@@ -391,7 +391,18 @@ parse_input_element(struct form *forms, dom_html_input_element *input)
 				control = NULL;
 				goto out;
 			}
+
+			control->last_synced_value = strdup(control->value);
+			if (control->last_synced_value == NULL) {
+				form_free_control(control);
+				control = NULL;
+				goto out;
+			}
+
+			control->node_value = dom_string_ref(ds_value);
 		}
+		/* Force the gadget and DOM to be in sync */
+		form_gadget_sync_with_dom(control);
 	}
 
 	if (form != NULL && control != NULL)

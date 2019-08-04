@@ -377,4 +377,12 @@ static inline bool box_is_first_child(struct box *b)
 	return (b->parent == NULL || b == b->parent->children);
 }
 
+/**
+ * Retrieve the box for a dom node, if there is one
+ *
+ * \param node The DOM node
+ * \return The box if there is one
+ */
+struct box *box_for_node(struct dom_node *node);
+
 #endif

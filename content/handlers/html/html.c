@@ -829,6 +829,23 @@ dom_default_action_DOMNodeInsertedIntoDocument_cb(struct dom_event *evt, void *p
 	}
 }
 
+/* Deal with input elements being modified by resyncing their gadget
+ * if they have one.
+ */
+static void html_texty_element_update(html_content *htmlc, dom_node *node)
+{
+	struct box *box = box_for_node(node);
+	if (box == NULL) {
+		return; /* No Box (yet?) so no gadget to update */
+	}
+	if (box->gadget == NULL) {
+		return; /* No gadget yet (under construction perhaps?) */
+	}
+	form_gadget_sync_with_dom(box->gadget);
+	/* And schedule a redraw for the box */
+	html__redraw_a_box(htmlc, box);
+}
+
 /* callback for DOMSubtreeModified end type */
 static void
 dom_default_action_DOMSubtreeModified_cb(struct dom_event *evt, void *pw)
@@ -861,6 +878,9 @@ dom_default_action_DOMSubtreeModified_cb(struct dom_event *evt, void *pw)
 			case DOM_HTML_ELEMENT_TYPE_STYLE:
 				html_css_update_style(htmlc, (dom_node *)node);
 				break;
+			case DOM_HTML_ELEMENT_TYPE_TEXTAREA:
+			case DOM_HTML_ELEMENT_TYPE_INPUT:
+				html_texty_element_update(htmlc, (dom_node *)node);
 			default:
 				break;
 			}

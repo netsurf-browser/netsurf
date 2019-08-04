@@ -223,6 +223,9 @@ void form_free_control(struct form_control *control)
 	free(control->name);
 	free(control->value);
 	free(control->initial_value);
+	if (control->last_synced_value != NULL) {
+		free(control->last_synced_value);
+	}
 
 	if (control->type == GADGET_SELECT) {
 		struct form_option *option, *next;
@@ -273,6 +276,10 @@ void form_free_control(struct form_control *control)
 				break;
 			}
 		}
+	}
+
+	if (control->node_value != NULL) {
+		dom_string_unref(control->node_value);
 	}
 
 	free(control);
@@ -2235,4 +2242,108 @@ void form_gadget_update_value(struct form_control *control, char *value)
 		/* Do nothing */
 		break;
 	}
+
+	/* Finally, sync this with the DOM */
+	form_gadget_sync_with_dom(control);
+}
+
+/* Exported API, see form_internal.h */
+void
+form_gadget_sync_with_dom(struct form_control *control)
+{
+	dom_exception exc;
+	dom_string *value = NULL;
+	bool changed_dom = false;
+
+	if (control->syncing ||
+	    (control->type != GADGET_TEXTBOX &&
+	     control->type != GADGET_PASSWORD &&
+	     control->type != GADGET_HIDDEN &&
+	     control->type != GADGET_TEXTAREA)) {
+		/* Not a control we support, or the control is already
+		 * mid-sync so we don't want to disrupt that
+		 */
+		return;
+	}
+
+	control->syncing = true;
+
+	/* If we've changed value, sync that toward the DOM */
+	if ((control->last_synced_value == NULL && control->value[0] != '\0') ||
+	    (control->last_synced_value != NULL && strcmp(control->value, control->last_synced_value) != 0)) {
+		char *dup = strdup(control->value);
+		if (dup == NULL) {
+			goto out;
+		}
+		if (control->last_synced_value != NULL) {
+			free(control->last_synced_value);
+		}
+		control->last_synced_value = dup;
+		exc = dom_string_create((uint8_t *)(control->value),
+					strlen(control->value), &value);
+		if (exc != DOM_NO_ERR) {
+			goto out;
+		}
+		if (control->node_value != NULL) {
+			dom_string_unref(control->node_value);
+		}
+		control->node_value = value;
+		value = NULL;
+		if (control->type == GADGET_TEXTAREA) {
+			exc = dom_html_text_area_element_set_value(control->node, control->node_value);
+		} else {
+			exc = dom_html_input_element_set_value(control->node, control->node_value);
+		}
+		if (exc != DOM_NO_ERR) {
+			goto out;
+		}
+		changed_dom = true;
+	}
+
+	/* Now check if the DOM has changed since our last go */
+	if (control->type == GADGET_TEXTAREA) {
+		exc = dom_html_text_area_element_get_value(control->node, &value);
+	} else {
+		exc = dom_html_input_element_get_value(control->node, &value);
+	}
+
+	if (exc != DOM_NO_ERR) {
+		/* Nothing much we can do here */
+		goto out;
+	}
+
+	if (!dom_string_isequal(control->node_value, value)) {
+		/* The DOM has changed */
+		if (!changed_dom) {
+			/* And it wasn't us */
+			char *value_s = strndup(
+				dom_string_data(value),
+				dom_string_byte_length(value));
+			char *dup = NULL;
+			if (value_s == NULL) {
+				goto out;
+			}
+			dup = strdup(value_s);
+			if (dup == NULL) {
+				free(value_s);
+				goto out;
+			}
+			free(control->value);
+			control->value = value_s;
+			free(control->last_synced_value);
+			control->last_synced_value = dup;
+			if (control->type != GADGET_HIDDEN &&
+			    control->data.text.ta != NULL) {
+				textarea_set_text(control->data.text.ta,
+						  value_s);
+			}
+		}
+		control->node_value = value;
+		value = NULL;
+	}
+
+out:
+	if (value != NULL)
+		dom_string_unref(value);
+	control->syncing = false;
 }
