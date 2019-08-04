@@ -607,12 +607,12 @@ static void css_hint_clean(void)
 	hint_ctx.len = 0;
 }
 
-static inline struct css_hint * css_hint_advance(struct css_hint *hint)
+static inline void css_hint_advance(struct css_hint **hint)
 {
 	hint_ctx.len++;
 	assert(hint_ctx.len < MAX_HINTS_PER_ELEMENT);
 
-	return ++hint;
+	(*hint)++;
 }
 
 static void css_hint_get_hints(struct css_hint **hints, uint32_t *nhints)
@@ -671,7 +671,7 @@ static void css_hint_table_cell_border_padding(
 			     hint_prop++) {
 				hint->prop = hint_prop;
 				hint->status = CSS_BORDER_STYLE_INSET;
-				hint = css_hint_advance(hint);
+				css_hint_advance(&hint);
 			}
 
 			for (hint_prop = CSS_PROP_BORDER_TOP_WIDTH;
@@ -681,7 +681,7 @@ static void css_hint_table_cell_border_padding(
 				hint->data.length.value = INTTOFIX(1);
 				hint->data.length.unit = CSS_UNIT_PX;
 				hint->status = CSS_BORDER_WIDTH_WIDTH;
-				hint = css_hint_advance(hint);
+				css_hint_advance(&hint);
 			}
 		}
 		dom_string_unref(attr);
@@ -704,7 +704,7 @@ static void css_hint_table_cell_border_padding(
 				hint->prop = hint_prop;
 				hint->data.color = hint_color;
 				hint->status = CSS_BORDER_COLOR_COLOR;
-				hint = css_hint_advance(hint);
+				css_hint_advance(&hint);
 			}
 		}
 		dom_string_unref(attr);
@@ -729,7 +729,7 @@ static void css_hint_table_cell_border_padding(
 				hint->data.length.value = hint_length.value;
 				hint->data.length.unit = hint_length.unit;
 				hint->status = CSS_PADDING_SET;
-				hint = css_hint_advance(hint);
+				css_hint_advance(&hint);
 			}
 		}
 		dom_string_unref(attr);
@@ -754,25 +754,25 @@ static void css_hint_vertical_align_table_cells(
 				corestring_lwc_top)) {
 			hint->prop = CSS_PROP_VERTICAL_ALIGN;
 			hint->status = CSS_VERTICAL_ALIGN_TOP;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 		} else if (dom_string_caseless_lwc_isequal(attr,
 					corestring_lwc_middle)) {
 			hint->prop = CSS_PROP_VERTICAL_ALIGN;
 			hint->status = CSS_VERTICAL_ALIGN_MIDDLE;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 		} else if (dom_string_caseless_lwc_isequal(attr,
 					corestring_lwc_bottom)) {
 			hint->prop = CSS_PROP_VERTICAL_ALIGN;
 			hint->status = CSS_VERTICAL_ALIGN_BOTTOM;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 		} else if (dom_string_caseless_lwc_isequal(attr,
 					corestring_lwc_baseline)) {
 			hint->prop = CSS_PROP_VERTICAL_ALIGN;
 			hint->status = CSS_VERTICAL_ALIGN_BASELINE;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(attr);
 	}
@@ -794,7 +794,7 @@ static void css_hint_vertical_align_replaced(
 				corestring_lwc_top)) {
 			hint->prop = CSS_PROP_VERTICAL_ALIGN;
 			hint->status = CSS_VERTICAL_ALIGN_TOP;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 		} else if (dom_string_caseless_lwc_isequal(attr,
 					corestring_lwc_bottom) ||
@@ -802,13 +802,13 @@ static void css_hint_vertical_align_replaced(
 					corestring_lwc_baseline)) {
 			hint->prop = CSS_PROP_VERTICAL_ALIGN;
 			hint->status = CSS_VERTICAL_ALIGN_BASELINE;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 		} else if (dom_string_caseless_lwc_isequal(attr,
 					corestring_lwc_texttop)) {
 			hint->prop = CSS_PROP_VERTICAL_ALIGN;
 			hint->status = CSS_VERTICAL_ALIGN_TEXT_TOP;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 		} else if (dom_string_caseless_lwc_isequal(attr,
 					corestring_lwc_absmiddle) ||
@@ -816,7 +816,7 @@ static void css_hint_vertical_align_replaced(
 					corestring_lwc_abscenter)) {
 			hint->prop = CSS_PROP_VERTICAL_ALIGN;
 			hint->status = CSS_VERTICAL_ALIGN_MIDDLE;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(attr);
 	}
@@ -837,25 +837,25 @@ static void css_hint_text_align_normal(
 				corestring_lwc_left)) {
 			hint->prop = CSS_PROP_TEXT_ALIGN;
 			hint->status = CSS_TEXT_ALIGN_LEFT;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 		} else if (dom_string_caseless_lwc_isequal(align,
 					corestring_lwc_center)) {
 			hint->prop = CSS_PROP_TEXT_ALIGN;
 			hint->status = CSS_TEXT_ALIGN_CENTER;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 		} else if (dom_string_caseless_lwc_isequal(align,
 					corestring_lwc_right)) {
 			hint->prop = CSS_PROP_TEXT_ALIGN;
 			hint->status = CSS_TEXT_ALIGN_RIGHT;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 		} else if (dom_string_caseless_lwc_isequal(align,
 					corestring_lwc_justify)) {
 			hint->prop = CSS_PROP_TEXT_ALIGN;
 			hint->status = CSS_TEXT_ALIGN_JUSTIFY;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(align);
 	}
@@ -869,7 +869,7 @@ static void css_hint_text_align_center(
 
 	hint->prop = CSS_PROP_TEXT_ALIGN;
 	hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
-	hint = css_hint_advance(hint);
+	css_hint_advance(&hint);
 }
 
 static void css_hint_margin_left_right_align_center(
@@ -895,11 +895,11 @@ static void css_hint_margin_left_right_align_center(
 						corestring_lwc_absmiddle)) {
 			hint->prop = CSS_PROP_MARGIN_LEFT;
 			hint->status = CSS_MARGIN_AUTO;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 			hint->prop = CSS_PROP_MARGIN_RIGHT;
 			hint->status = CSS_MARGIN_AUTO;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(attr);
 	}
@@ -921,25 +921,25 @@ static void css_hint_text_align_special(
 				corestring_lwc_center)) {
 			hint->prop = CSS_PROP_TEXT_ALIGN;
 			hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 		} else if (dom_string_caseless_lwc_isequal(align,
 					corestring_lwc_left)) {
 			hint->prop = CSS_PROP_TEXT_ALIGN;
 			hint->status = CSS_TEXT_ALIGN_LIBCSS_LEFT;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 		} else if (dom_string_caseless_lwc_isequal(align,
 					corestring_lwc_right)) {
 			hint->prop = CSS_PROP_TEXT_ALIGN;
 			hint->status = CSS_TEXT_ALIGN_LIBCSS_RIGHT;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 		} else if (dom_string_caseless_lwc_isequal(align,
 					corestring_lwc_justify)) {
 			hint->prop = CSS_PROP_TEXT_ALIGN;
 			hint->status = CSS_TEXT_ALIGN_JUSTIFY;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(align);
 	}
@@ -953,7 +953,7 @@ static void css_hint_text_align_table_special(
 
 	hint->prop = CSS_PROP_TEXT_ALIGN;
 	hint->status = CSS_TEXT_ALIGN_INHERIT_IF_NON_MAGIC;
-	hint = css_hint_advance(hint);
+	css_hint_advance(&hint);
 }
 
 static void css_hint_margin_hspace_vspace(
@@ -977,13 +977,13 @@ static void css_hint_margin_hspace_vspace(
 			hint->data.length.value = hint_length.value;
 			hint->data.length.unit = hint_length.unit;
 			hint->status = CSS_MARGIN_SET;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 			hint->prop = CSS_PROP_MARGIN_BOTTOM;
 			hint->data.length.value = hint_length.value;
 			hint->data.length.unit = hint_length.unit;
 			hint->status = CSS_MARGIN_SET;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(attr);
 	}
@@ -1001,13 +1001,13 @@ static void css_hint_margin_hspace_vspace(
 			hint->data.length.value = hint_length.value;
 			hint->data.length.unit = hint_length.unit;
 			hint->status = CSS_MARGIN_SET;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 			hint->prop = CSS_PROP_MARGIN_RIGHT;
 			hint->data.length.value = hint_length.value;
 			hint->data.length.unit = hint_length.unit;
 			hint->status = CSS_MARGIN_SET;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(attr);
 	}
@@ -1032,33 +1032,33 @@ static void css_hint_margin_left_right_hr(
 			hint->data.length.value = 0;
 			hint->data.length.unit = CSS_UNIT_PX;
 			hint->status = CSS_MARGIN_SET;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 			hint->prop = CSS_PROP_MARGIN_RIGHT;
 			hint->status = CSS_MARGIN_AUTO;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 		} else if (dom_string_caseless_lwc_isequal(attr,
 				corestring_lwc_center)) {
 			hint->prop = CSS_PROP_MARGIN_LEFT;
 			hint->status = CSS_MARGIN_AUTO;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 			hint->prop = CSS_PROP_MARGIN_RIGHT;
 			hint->status = CSS_MARGIN_AUTO;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 		} else if (dom_string_caseless_lwc_isequal(attr,
 				corestring_lwc_right)) {
 			hint->prop = CSS_PROP_MARGIN_LEFT;
 			hint->status = CSS_MARGIN_AUTO;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 			hint->prop = CSS_PROP_MARGIN_RIGHT;
 			hint->data.length.value = 0;
 			hint->data.length.unit = CSS_UNIT_PX;
 			hint->status = CSS_MARGIN_SET;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(attr);
 	}
@@ -1083,7 +1083,7 @@ static void css_hint_table_spacing_border(
 			     hint_prop++) {
 				hint->prop = hint_prop;
 				hint->status = CSS_BORDER_STYLE_OUTSET;
-				hint = css_hint_advance(hint);
+				css_hint_advance(&hint);
 		}
 
 		if (parse_dimension(
@@ -1098,7 +1098,7 @@ static void css_hint_table_spacing_border(
 				hint->data.length.value = hint_length.value;
 				hint->data.length.unit = hint_length.unit;
 				hint->status = CSS_BORDER_WIDTH_WIDTH;
-				hint = css_hint_advance(hint);
+				css_hint_advance(&hint);
 			}
 		}
 		dom_string_unref(attr);
@@ -1121,7 +1121,7 @@ static void css_hint_table_spacing_border(
 				hint->prop = hint_prop;
 				hint->data.color = hint_color;
 				hint->status = CSS_BORDER_COLOR_COLOR;
-				hint = css_hint_advance(hint);
+				css_hint_advance(&hint);
 			}
 		}
 		dom_string_unref(attr);
@@ -1138,7 +1138,7 @@ static void css_hint_table_spacing_border(
 			hint->prop = CSS_PROP_BORDER_SPACING;
 			hint->data.position.v = hint->data.position.h;
 			hint->status = CSS_BORDER_SPACING_SET;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(attr);
 	}
@@ -1162,7 +1162,7 @@ static void css_hint_height(
 				&hint->data.length.unit)) {
 			hint->prop = CSS_PROP_HEIGHT;
 			hint->status = CSS_HEIGHT_SET;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(attr);
 	}
@@ -1186,7 +1186,7 @@ static void css_hint_width(
 				&hint->data.length.unit)) {
 			hint->prop = CSS_PROP_WIDTH;
 			hint->status = CSS_WIDTH_SET;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(attr);
 	}
@@ -1211,7 +1211,7 @@ static void css_hint_height_width_textarea(
 			hint->prop = CSS_PROP_HEIGHT;
 			hint->data.length.unit = CSS_UNIT_EM;
 			hint->status = CSS_HEIGHT_SET;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(attr);
 	}
@@ -1227,7 +1227,7 @@ static void css_hint_height_width_textarea(
 			hint->prop = CSS_PROP_WIDTH;
 			hint->data.length.unit = CSS_UNIT_EX;
 			hint->status = CSS_WIDTH_SET;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(attr);
 	}
@@ -1276,7 +1276,7 @@ static void css_hint_width_input(
 				if (attr2 != NULL) {
 					dom_string_unref(attr2);
 				}
-				hint = css_hint_advance(hint);
+				css_hint_advance(&hint);
 			}
 		}
 		dom_string_unref(attr);
@@ -1329,7 +1329,7 @@ static void css_hint_anchor_color(
 						&hint->data.color)) {
 			hint->prop = CSS_PROP_COLOR;
 			hint->status = CSS_COLOR_COLOR;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(color);
 	}
@@ -1351,7 +1351,7 @@ static void css_hint_body_color(
 						&hint->data.color)) {
 			hint->prop = CSS_PROP_COLOR;
 			hint->status = CSS_COLOR_COLOR;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(color);
 	}
@@ -1373,7 +1373,7 @@ static void css_hint_color(
 						&hint->data.color)) {
 			hint->prop = CSS_PROP_COLOR;
 			hint->status = CSS_COLOR_COLOR;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(color);
 	}
@@ -1395,7 +1395,7 @@ static void css_hint_font_size(
 						&hint->data.length.value,
 						&hint->data.length.unit)) {
 			hint->prop = CSS_PROP_FONT_SIZE;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(size);
 	}
@@ -1415,13 +1415,13 @@ static void css_hint_float(
 				corestring_lwc_left)) {
 			hint->prop = CSS_PROP_FLOAT;
 			hint->status = CSS_FLOAT_LEFT;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 
 		} else if (dom_string_caseless_lwc_isequal(align,
 				corestring_lwc_right)) {
 			hint->prop = CSS_PROP_FLOAT;
 			hint->status = CSS_FLOAT_RIGHT;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(align);
 	}
@@ -1441,7 +1441,7 @@ static void css_hint_caption_side(
 				corestring_lwc_bottom)) {
 			hint->prop = CSS_PROP_CAPTION_SIDE;
 			hint->status = CSS_CAPTION_SIDE_BOTTOM;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(align);
 	}
@@ -1463,7 +1463,7 @@ static void css_hint_bg_color(
 				&hint->data.color)) {
 			hint->prop = CSS_PROP_BACKGROUND_COLOR;
 			hint->status = CSS_BACKGROUND_COLOR_COLOR;
-			hint = css_hint_advance(hint);
+			css_hint_advance(&hint);
 		}
 		dom_string_unref(bgcolor);
 	}
@@ -1495,7 +1495,7 @@ static void css_hint_bg_image(
 				hint->prop = CSS_PROP_BACKGROUND_IMAGE;
 				hint->data.string = iurl;
 				hint->status = CSS_BACKGROUND_IMAGE_IMAGE;
-				hint = css_hint_advance(hint);
+				css_hint_advance(&hint);
 			}
 		}
 	}
@@ -1513,7 +1513,7 @@ static void css_hint_white_space_nowrap(
 	if (err == DOM_NO_ERR && nowrap == true) {
 		hint->prop = CSS_PROP_WHITE_SPACE;
 		hint->status = CSS_WHITE_SPACE_NOWRAP;
-		hint = css_hint_advance(hint);
+		css_hint_advance(&hint);
 	}
 }
 
