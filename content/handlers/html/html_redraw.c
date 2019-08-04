@@ -1786,8 +1786,8 @@ bool html_redraw_box(const html_content *html, struct box *box,
 	} else if (box->iframe) {
 		/* Offset is passed to browser window redraw unscaled */
 		browser_window_redraw(box->iframe,
-				(x + padding_left) / scale,
-				(y + padding_top) / scale, &r, ctx);
+				x + padding_left,
+				y + padding_top, &r, ctx);
 
 	} else if (box->gadget && box->gadget->type == GADGET_CHECKBOX) {
 		if (!html_redraw_checkbox(x + padding_left, y + padding_top,

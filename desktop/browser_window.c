@@ -1929,6 +1929,9 @@ browser_window_redraw(struct browser_window *bw,
 	struct rect content_clip;
 	nserror res;
 
+	x /= bw->scale;
+	y /= bw->scale;
+
 	if (bw == NULL) {
 		NSLOG(netsurf, INFO, "NULL browser window");
 		return false;

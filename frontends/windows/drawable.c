@@ -383,8 +383,8 @@ nsws_drawable_paint(struct gui_window *gw, HWND hwnd)
 		 */
 		
 		browser_window_redraw(gw->bw,
-				      -gw->scrollx / gw->scale,
-				      -gw->scrolly / gw->scale,
+				      -gw->scrollx,
+				      -gw->scrolly,
 				      &clip,
 				      &ctx);
 	}

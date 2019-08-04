@@ -62,8 +62,6 @@ struct gui_window {
 
 	HACCEL acceltable; /**< accelerators */
 
-	float scale; /**< scale of content */
-
 	int scrollx; /**< current scroll location */
 	int scrolly; /**< current scroll location */
 

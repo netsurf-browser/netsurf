@@ -882,8 +882,8 @@ win32_window_invalidate_area(struct gui_window *gw, const struct rect *rect)
 	if (rect != NULL) {
 		redrawrectp = &redrawrect;
 
-		redrawrect.left = (long)rect->x0 - (gw->scrollx / gw->scale);
-		redrawrect.top = (long)rect->y0 - (gw->scrolly / gw->scale);
+		redrawrect.left = (long)rect->x0 - gw->scrollx;
+		redrawrect.top = (long)rect->y0 - gw->scrolly;
 		redrawrect.right =(long)rect->x1;
 		redrawrect.bottom = (long)rect->y1;
 
@@ -1417,7 +1417,6 @@ win32_window_create(struct browser_window *bw,
 
 	gw->width = 800;
 	gw->height = 600;
-	gw->scale = 1.0;
 	gw->toolbuttonsize = 24;
 	gw->requestscrollx = 0;
 	gw->requestscrolly = 0;
@@ -1609,9 +1608,8 @@ win32_window_place_caret(struct gui_window *w, int x, int y,
 		return;
 	}
 
-	CreateCaret(w->drawingarea, (HBITMAP)NULL, 1, height * w->scale);
-	SetCaretPos(x * w->scale - w->scrollx,
-		    y * w->scale - w->scrolly);
+	CreateCaret(w->drawingarea, (HBITMAP)NULL, 1, height );
+	SetCaretPos(x - w->scrollx, y  - w->scrolly);
 	ShowCaret(w->drawingarea);
 }
 

@@ -357,7 +357,6 @@ fb_redraw(fbtk_widget_t *widget,
 		.plot = &fb_plotters
 	};
 	nsfb_t *nsfb = fbtk_get_nsfb(widget);
-	float scale = browser_window_get_scale(bw);
 
 	x = fbtk_get_absx(widget);
 	y = fbtk_get_absy(widget);
@@ -377,8 +376,8 @@ fb_redraw(fbtk_widget_t *widget,
 	clip.y1 = bwidget->redraw_box.y1;
 
 	browser_window_redraw(bw,
-			(x - bwidget->scrollx) / scale,
-			(y - bwidget->scrolly) / scale,
+			x - bwidget->scrollx,
+			y - bwidget->scrolly,
 			&clip, &ctx);
 
 	if (fbtk_get_caret(widget, &caret_x, &caret_y, &caret_h)) {
@@ -1861,10 +1860,9 @@ static bool
 gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(g->browser);
-	float scale = browser_window_get_scale(g->bw);
 
-	*sx = bwidget->scrollx / scale;
-	*sy = bwidget->scrolly / scale;
+	*sx = bwidget->scrollx;
+	*sy = bwidget->scrolly;
 
 	return true;
 }
@@ -1884,12 +1882,11 @@ static nserror
 gui_window_set_scroll(struct gui_window *gw, const struct rect *rect)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(gw->browser);
-	float scale = browser_window_get_scale(gw->bw);
 
 	assert(bwidget);
 
-	widget_scroll_x(gw, rect->x0 * scale, true);
-	widget_scroll_y(gw, rect->y0 * scale, true);
+	widget_scroll_x(gw, rect->x0, true);
+	widget_scroll_y(gw, rect->y0, true);
 
 	return NSERROR_OK;
 }
