@@ -117,6 +117,15 @@ typedef enum {
 } llcache_event_type;
 
 /**
+ * Low-level cache query message
+ */
+typedef struct llcache_query_msg {
+	llcache_query *query;    /**< Query information */
+	llcache_query_response cb; /**< Response callback */
+	void *cb_pw; /**< Response callback private word */
+} llcache_query_msg;
+
+/**
  * Low-level cache events.
  *
  * Lifetime of contained information is only for the duration of the event
@@ -134,11 +143,7 @@ typedef struct {
 			nsurl *from;	/**< Redirect origin */
 			nsurl *to;	/**< Redirect target */
 		} redirect;		/**< Fetch URL redirect occured */
-		struct {
-			llcache_query *query;    /**< Query information */
-			llcache_query_response cb; /**< Response callback */
-			void *cb_pw; /**< Response callback private word */
-		} query;                /**< Query event */
+		llcache_query_msg query;/**< Query event */
 	} data;				/**< Event data */
 } llcache_event;
 
