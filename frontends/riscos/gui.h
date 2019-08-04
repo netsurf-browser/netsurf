@@ -93,8 +93,6 @@ struct gui_window {
 
 	char validation[12];	/**< Validation string for colours */
 
-	float scale;		/**< Browser window scale */
-
 	/** Options. */
 	struct {
 		bool buffer_animations;	/**< Use screen buffering for animations. */

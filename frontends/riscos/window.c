@@ -3268,7 +3268,6 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 	g->active = false;
 	strcpy(g->title, "NetSurf");
 	g->iconise_icon = -1;
-	g->scale = browser_window_get_scale(bw);
 
 	/* Set the window position */
 	if (existing != NULL &&
@@ -3952,6 +3951,7 @@ gui_window_drag_start(struct gui_window *g,
 {
 	wimp_pointer pointer;
 	wimp_drag drag;
+	float scale = browser_window_get_scale(g->bw);
 
 	if (rect != NULL) {
 		/* We have a box to constrain the pointer to, for the drag
@@ -3968,13 +3968,13 @@ gui_window_drag_start(struct gui_window *g,
 
 		drag.type = wimp_DRAG_USER_POINT;
 		drag.bbox.x0 = pointer.pos.x +
-				(int)(rect->x0 * 2 * g->scale);
+				(int)(rect->x0 * 2 * scale);
 		drag.bbox.y0 = pointer.pos.y +
-				(int)(rect->y0 * 2 * g->scale);
+				(int)(rect->y0 * 2 * scale);
 		drag.bbox.x1 = pointer.pos.x +
-				(int)(rect->x1 * 2 * g->scale);
+				(int)(rect->x1 * 2 * scale);
 		drag.bbox.y1 = pointer.pos.y +
-				(int)(rect->y1 * 2 * g->scale);
+				(int)(rect->y1 * 2 * scale);
 
 		error = xwimp_drag_box(&drag);
 		if (error) {
@@ -4388,7 +4388,6 @@ nserror ro_gui_window_set_url(struct gui_window *g, nsurl *url)
 void ro_gui_window_set_scale(struct gui_window *g, float scale)
 {
 	browser_window_set_scale(g->bw, scale, true);
-	g->scale = browser_window_get_scale(g->bw);
 }
 
 
@@ -4727,17 +4726,19 @@ void ro_gui_throb(void)
 /* exported interface documented in riscos/window.h */
 void ro_gui_window_default_options(struct gui_window *gui)
 {
+	float cscale;
+
 	if (gui == NULL)
 		return;
 
-	/*	Save the basic options
-	*/
-	nsoption_set_int(scale, gui->scale * 100);
+	cscale = browser_window_get_scale(gui->bw);
+
+	/*	Save the basic options	*/
+	nsoption_set_int(scale, cscale * 100);
 	nsoption_set_bool(buffer_animations, gui->option.buffer_animations);
 	nsoption_set_bool(buffer_everything, gui->option.buffer_everything);
 
-	/*	Set up the toolbar
-	*/
+	/*	Set up the toolbar	*/
 	if (gui->toolbar != NULL) {
 		nsoption_set_bool(toolbar_show_buttons,
 				  ro_toolbar_get_display_buttons(gui->toolbar));
@@ -4746,9 +4747,10 @@ void ro_gui_window_default_options(struct gui_window *gui)
 		nsoption_set_bool(toolbar_show_throbber,
 				  ro_toolbar_get_display_throbber(gui->toolbar));
 	}
-	if (gui->status_bar != NULL)
+	if (gui->status_bar != NULL) {
 		nsoption_set_int(toolbar_status_size,
 				 ro_gui_status_bar_get_width(gui->status_bar));
+	}
 }
 
 
