@@ -52,6 +52,10 @@
 #include "desktop/gui_internal.h"
 #include "netsurf/netsurf.h"
 
+
+/** \todo QUERY - Remove this import later */
+#include "desktop/browser_private.h"
+
 /** speculative pre-conversion small image size
  *
  * Experimenting by visiting every page from default page in order and
@@ -293,13 +297,18 @@ static nserror netsurf__handle_login(const llcache_query *query,
 /**
  * Dispatch a low-level cache query to the frontend
  *
+ * \todo QUERY - This should end up as part of browser_window_callback
+ *
+ * NOTE: Right now this is exported so that it can be invoked from the
+ * browser window callback
+ *
  * \param query  Query descriptor
  * \param pw     Private data
  * \param cb     Continuation callback
  * \param cbpw   Private data for continuation
  * \return NSERROR_OK
  */
-static nserror netsurf_llcache_query_handler(const llcache_query *query,
+nserror netsurf_llcache_query_handler(const llcache_query *query,
 		void *pw, llcache_query_response cb, void *cbpw)
 {
 	nserror res = NSERROR_OK;
