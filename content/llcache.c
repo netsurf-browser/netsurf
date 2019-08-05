@@ -2360,12 +2360,9 @@ static nserror llcache_fetch_auth(llcache_object *object, const char *realm)
  * Handle a TLS certificate verification failure
  *
  * \param object  Object being fetched
- * \param certs	  Certificate chain
- * \param num	  Number of certificates in chain
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-static nserror llcache_fetch_cert_error(llcache_object *object,
-		const struct ssl_cert_info *certs, size_t num)
+static nserror llcache_fetch_cert_error(llcache_object *object)
 {
 	nserror error = NSERROR_OK;
 
@@ -2386,8 +2383,6 @@ static nserror llcache_fetch_cert_error(llcache_object *object,
 		/* Emit query for TLS */
 		query.type = LLCACHE_QUERY_SSL;
 		query.url = object->url;
-		query.data.ssl.certs = certs;
-		query.data.ssl.num = num;
 
 		/* Construct the query event */
 		event.type = LLCACHE_EVENT_QUERY;
@@ -2880,7 +2875,17 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 		error = llcache_send_event_to_users(object, &event);
 
 		break;
+	case FETCH_CERTS:
+		/* Certificate information from the fetch */
+		/** \todo CERTS - Should we persist this on the object and
+		 * then catch up new users etc?
+		 */
+		event.type = LLCACHE_EVENT_GOT_CERTS;
+		event.data.certs.certs = msg->data.certs.certs;
+		event.data.certs.num = msg->data.certs.num_certs;
 
+		error = llcache_send_event_to_users(object, &event);
+		break;
 	/* Events requiring action */
 	case FETCH_AUTH:
 		/* Need Authentication */
@@ -2902,9 +2907,7 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 			object->candidate = NULL;
 		}
 
-		error = llcache_fetch_cert_error(object,
-				msg->data.cert_err.certs,
-				msg->data.cert_err.num_certs);
+		error = llcache_fetch_cert_error(object);
 		break;
 	case FETCH_SSL_ERR:
 		/* TLS connection setup failed */

@@ -142,6 +142,9 @@ nserror content_llcache_callback(llcache_handle *llcache,
 	nserror error = NSERROR_OK;
 
 	switch (event->type) {
+	case LLCACHE_EVENT_GOT_CERTS:
+		/* Will never happen: handled in hlcache */
+		break;
 	case LLCACHE_EVENT_HAD_HEADERS:
 		/* Will never happen: handled in hlcache */
 		break;

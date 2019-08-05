@@ -433,6 +433,18 @@ static nserror hlcache_llcache_callback(llcache_handle *handle,
 	assert(ctx->llcache == handle);
 
 	switch (event->type) {
+	case LLCACHE_EVENT_GOT_CERTS:
+		/* Pass them on upward */
+		if (ctx->handle->cb != NULL) {
+			hlcache_event hlevent;
+
+			hlevent.type = CONTENT_MSG_SSL_CERTS;
+			hlevent.data.certs.certs = event->data.certs.certs;
+			hlevent.data.certs.num = event->data.certs.num;
+
+			ctx->handle->cb(ctx->handle, &hlevent, ctx->handle->pw);
+		}
+		break;
 	case LLCACHE_EVENT_HAD_HEADERS:
 		error = mimesniff_compute_effective_type(llcache_handle_get_header(handle, "Content-Type"), NULL, 0,
 				ctx->flags & HLCACHE_RETRIEVE_SNIFF_TYPE,

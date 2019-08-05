@@ -42,6 +42,7 @@ typedef enum {
 	FETCH_ERROR,
 	FETCH_REDIRECT,
 	FETCH_NOTMODIFIED,
+	FETCH_CERTS,
 	FETCH_AUTH,
 	FETCH_CERT_ERR,
 	FETCH_SSL_ERR
@@ -70,7 +71,7 @@ typedef struct fetch_msg {
 		struct {
 			const struct ssl_cert_info *certs;
 			size_t num_certs;
-		} cert_err;
+		} certs;
 	} data;
 } fetch_msg;
 
@@ -95,11 +96,14 @@ struct ssl_cert_info {
 	char not_before[32];	/**< Valid from date */
 	char not_after[32];	/**< Valid to date */
 	int sig_type;		/**< Signature type */
-	long serial;		/**< Serial number */
+	char serialnum[64];	/**< Serial number */
 	char issuer[256];	/**< Issuer details */
 	char subject[256];	/**< Subject details */
 	int cert_type;		/**< Certificate type */
 };
+
+/** maximum number of X509 certificates in chain for TLS connection */
+#define MAX_SSL_CERTS 10
 
 typedef void (*fetch_callback)(const fetch_msg *msg, void *p);
 

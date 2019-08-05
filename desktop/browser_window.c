@@ -688,9 +688,15 @@ static nserror browser_window_content_ready(struct browser_window *bw)
 
 	bw->current_content = bw->loading_content;
 	bw->loading_content = NULL;
+
+	/* Transfer the fetch parameters */
 	browser_window__free_fetch_parameters(&bw->current_parameters);
 	bw->current_parameters = bw->loading_parameters;
 	memset(&bw->loading_parameters, 0, sizeof(bw->loading_parameters));
+
+	/* Transfer the SSL info */
+	bw->current_ssl_info = bw->loading_ssl_info;
+	bw->loading_ssl_info.num = 0;
 
 	/* Format the new content to the correct dimensions */
 	browser_window_get_dimensions(bw, &width, &height);
@@ -825,6 +831,14 @@ browser_window_callback(hlcache_handle *c, const hlcache_event *event, void *pw)
 	nserror res = NSERROR_OK;
 
 	switch (event->type) {
+	case CONTENT_MSG_SSL_CERTS:
+		/* SSL certificate information has arrived, store it */
+		assert(event->data.certs.num < MAX_SSL_CERTS);
+		memcpy(&bw->loading_ssl_info.certs[0],
+		       event->data.certs.certs,
+		       sizeof(struct ssl_cert_info) * event->data.certs.num);
+		bw->loading_ssl_info.num = event->data.certs.num;
+		break;
 	case CONTENT_MSG_LOG:
 		browser_window_console_log(bw,
 					   event->data.log.src,
@@ -1138,16 +1152,22 @@ browser_window_callback(hlcache_handle *c, const hlcache_event *event, void *pw)
 
 		break;
 
-	case CONTENT_MSG_QUERY:
+	case CONTENT_MSG_QUERY: {
 		/** \todo QUERY - Decide what is right here */
 		/* For now, we directly invoke the known global handler for queries */
+		llcache_query query = *(event->data.query_msg->query);
+		if (query.type == LLCACHE_QUERY_SSL) {
+			query.data.ssl.certs = &bw->loading_ssl_info.certs[0];
+			query.data.ssl.num = bw->loading_ssl_info.num;
+		}
+
 		return netsurf_llcache_query_handler(
-			event->data.query_msg->query,
+			&query,
 			NULL,
 			event->data.query_msg->cb,
 			event->data.query_msg->cb_pw);
 		break;
-
+	}
 	case CONTENT_MSG_QUERY_FINISHED:
 		/** \todo QUERY - Decide what is right here */
 		break;
@@ -2843,6 +2863,9 @@ browser_window__navigate_internal(struct browser_window *bw,
 	hlcache_handle *c;
 
 	NSLOG(netsurf, INFO, "Loading '%s'", nsurl_access(params->url));
+
+	/* Clear SSL info for load */
+	bw->loading_ssl_info.num = 0;
 
 	/* Set up retrieval parameters */
 	if (!(params->flags & BW_NAVIGATE_UNVERIFIABLE)) {

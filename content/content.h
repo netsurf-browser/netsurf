@@ -44,6 +44,7 @@ struct object_params;
 struct rect;
 struct redraw_context;
 struct llcache_query_msg;
+struct ssl_cert_info;
 
 /** Status of a content */
 typedef enum {
@@ -59,6 +60,7 @@ typedef enum {
 /** Used in callbacks to indicate what has occurred. */
 typedef enum {
 	CONTENT_MSG_LOG,       /**< Content wishes to log something */
+	CONTENT_MSG_SSL_CERTS, /**< Content is from SSL and this is its chain */
 	CONTENT_MSG_QUERY,     /**< Something under the content has a query */
 	CONTENT_MSG_QUERY_FINISHED, /**< Something under the content finished its query */
 	CONTENT_MSG_LOADING,   /**< fetching or converting */
@@ -107,6 +109,11 @@ union content_msg_data {
 		size_t msglen; /**< The length of that message */
 		browser_window_console_flags flags; /**< The flags of the logging */
 	} log;
+	/** CONTENT_MSG_SSL_CERTS - The certificate chain from the underlying fetch */
+	struct {
+		const struct ssl_cert_info *certs; /**< The chain */
+		size_t num; /**< The number of certs in the chain */
+	} certs;
 	/** CONTENT_MSG_QUERY - Query from underlying object somewhere */
 	const struct llcache_query_msg *query_msg;
 	/** CONTENT_MSG_QUERY_FINISHED - Query from underlying object finished */

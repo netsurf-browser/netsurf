@@ -181,6 +181,9 @@ static nserror download_callback(llcache_handle *handle,
 	nserror error = NSERROR_OK;
 
 	switch (event->type) {
+	case LLCACHE_EVENT_GOT_CERTS:
+		/* Nominally not interested in these */
+		break;
 	case LLCACHE_EVENT_HAD_HEADERS:
 		error = download_context_process_headers(ctx);
 		if (error != NSERROR_OK) {

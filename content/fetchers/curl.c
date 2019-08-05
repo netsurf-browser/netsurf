@@ -64,9 +64,6 @@
 /** maximum number of progress notifications per second */
 #define UPDATES_PER_SECOND 2
 
-/** maximum number of X509 certificates in chain for TLS connection */
-#define MAX_CERTS 10
-
 /* the ciphersuites we are willing to use */
 #define CIPHER_LIST						\
 	/* disable everything */				\
@@ -109,7 +106,7 @@ struct curl_fetch_info {
 	struct curl_httppost *post_multipart;	/**< Multipart post data, or 0. */
 	uint64_t last_progress_update;	/**< Time of last progress update */
 	int cert_depth; /**< deepest certificate in use */
-	struct cert_info cert_data[MAX_CERTS];	/**< HTTPS certificate data */
+	struct cert_info cert_data[MAX_SSL_CERTS];	/**< HTTPS certificate data */
 };
 
 /** curl handle cache entry */
@@ -446,6 +443,129 @@ failed:
 
 
 /**
+ * Report the certificate information in the fetch to the users
+ */
+static void
+fetch_curl_report_certs_upstream(struct curl_fetch_info *f)
+{
+	int depth;
+	BIO *mem;
+	BUF_MEM *buf;
+	const ASN1_INTEGER *asn1_num;
+	BIGNUM *bignum;
+	struct ssl_cert_info ssl_certs[MAX_SSL_CERTS];
+	fetch_msg msg;
+	struct cert_info *certs = f->cert_data;
+	memset(ssl_certs, 0, sizeof(ssl_certs));
+
+	for (depth = 0; depth <= f->cert_depth; depth++) {
+		assert(certs[depth].cert != NULL);
+
+		/* get certificate version */
+		ssl_certs[depth].version = X509_get_version(certs[depth].cert);
+
+		/* not before date */
+		mem = BIO_new(BIO_s_mem());
+		ASN1_TIME_print(mem, X509_get_notBefore(certs[depth].cert));
+		BIO_get_mem_ptr(mem, &buf);
+		(void) BIO_set_close(mem, BIO_NOCLOSE);
+		BIO_free(mem);
+		memcpy(ssl_certs[depth].not_before,
+		       buf->data,
+		       min(sizeof(ssl_certs[depth].not_before) - 1,
+			   (unsigned)buf->length));
+		ssl_certs[depth].not_before[min(sizeof(ssl_certs[depth].not_before) - 1,
+					    (unsigned)buf->length)] = 0;
+		BUF_MEM_free(buf);
+
+		/* not after date */
+		mem = BIO_new(BIO_s_mem());
+		ASN1_TIME_print(mem,
+				X509_get_notAfter(certs[depth].cert));
+		BIO_get_mem_ptr(mem, &buf);
+		(void) BIO_set_close(mem, BIO_NOCLOSE);
+		BIO_free(mem);
+		memcpy(ssl_certs[depth].not_after,
+		       buf->data,
+		       min(sizeof(ssl_certs[depth].not_after) - 1,
+			   (unsigned)buf->length));
+		ssl_certs[depth].not_after[min(sizeof(ssl_certs[depth].not_after) - 1,
+					   (unsigned)buf->length)] = 0;
+		BUF_MEM_free(buf);
+
+		/* signature type */
+		ssl_certs[depth].sig_type =
+			X509_get_signature_type(certs[depth].cert);
+
+		/* serial number */
+		asn1_num = X509_get0_serialNumber(certs[depth].cert);
+		if (asn1_num != NULL) {
+			bignum = ASN1_INTEGER_to_BN(asn1_num, NULL);
+			if (bignum != NULL) {
+				char *tmp = BN_bn2hex(bignum);
+				if (tmp != NULL) {
+					strncpy(ssl_certs[depth].serialnum,
+						tmp,
+						sizeof(ssl_certs[depth].serialnum));
+					ssl_certs[depth].serialnum[sizeof(ssl_certs[depth].serialnum)-1] = '\0';
+					OPENSSL_free(tmp);
+				}
+				BN_free(bignum);
+				bignum = NULL;
+			}
+		}
+
+		/* issuer name */
+		mem = BIO_new(BIO_s_mem());
+		X509_NAME_print_ex(mem,
+				   X509_get_issuer_name(certs[depth].cert),
+				   0, XN_FLAG_SEP_CPLUS_SPC |
+				   XN_FLAG_DN_REV | XN_FLAG_FN_NONE);
+		BIO_get_mem_ptr(mem, &buf);
+		(void) BIO_set_close(mem, BIO_NOCLOSE);
+		BIO_free(mem);
+		memcpy(ssl_certs[depth].issuer,
+		       buf->data,
+		       min(sizeof(ssl_certs[depth].issuer) - 1,
+			   (unsigned) buf->length));
+		ssl_certs[depth].issuer[min(sizeof(ssl_certs[depth].issuer) - 1,
+					(unsigned) buf->length)] = 0;
+		BUF_MEM_free(buf);
+
+		/* subject */
+		mem = BIO_new(BIO_s_mem());
+		X509_NAME_print_ex(mem,
+				   X509_get_subject_name(certs[depth].cert),
+				   0,
+				   XN_FLAG_SEP_CPLUS_SPC |
+				   XN_FLAG_DN_REV |
+				   XN_FLAG_FN_NONE);
+		BIO_get_mem_ptr(mem, &buf);
+		(void) BIO_set_close(mem, BIO_NOCLOSE);
+		BIO_free(mem);
+		memcpy(ssl_certs[depth].subject,
+		       buf->data,
+		       min(sizeof(ssl_certs[depth].subject) - 1,
+			   (unsigned)buf->length));
+		ssl_certs[depth].subject[min(sizeof(ssl_certs[depth].subject) - 1,
+					 (unsigned) buf->length)] = 0;
+		BUF_MEM_free(buf);
+
+		/* type of certificate */
+		ssl_certs[depth].cert_type =
+			X509_certificate_type(certs[depth].cert,
+					      X509_get_pubkey(certs[depth].cert));
+	}
+
+	msg.type = FETCH_CERTS;
+	msg.data.certs.certs = ssl_certs;
+	msg.data.certs.num_certs = depth;
+
+	fetch_send_callback(&msg, f->fetch_handle);
+}
+
+
+/**
  * OpenSSL Certificate verification callback
  *
  * Called for each certificate in a chain being verified. OpenSSL
@@ -479,7 +599,7 @@ fetch_curl_verify_callback(int verify_ok, X509_STORE_CTX *x509_ctx)
 	}
 
 	/* certificate chain is excessively deep so fail verification */
-	if (depth >= MAX_CERTS) {
+	if (depth >= MAX_SSL_CERTS) {
 		X509_STORE_CTX_set_error(x509_ctx,
 					 X509_V_ERR_CERT_CHAIN_TOO_LONG);
 		return 0;
@@ -524,6 +644,7 @@ fetch_curl_verify_callback(int verify_ok, X509_STORE_CTX *x509_ctx)
  */
 static int fetch_curl_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm)
 {
+	struct curl_fetch_info *f = (struct curl_fetch_info *) parm;
 	int ok;
 
 	/* Store fetch struct in context for verify callback */
@@ -533,6 +654,8 @@ static int fetch_curl_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm)
 	if (ok) {
 		ok = X509_verify_cert(x509_ctx);
 	}
+
+	fetch_curl_report_certs_upstream(f);
 
 	return ok;
 }
@@ -886,7 +1009,7 @@ static void fetch_curl_free(void *vf)
 		curl_formfree(f->post_multipart);
 	}
 
-	for (i = 0; i < MAX_CERTS && f->cert_data[i].cert; i++) {
+	for (i = 0; i < MAX_SSL_CERTS && f->cert_data[i].cert; i++) {
 		ns_X509_free(f->cert_data[i].cert);
 	}
 
@@ -955,114 +1078,6 @@ static bool fetch_curl_process_headers(struct curl_fetch_info *f)
 	return false;
 }
 
-/**
- * setup callback to allow the user to examine certificates which have
- * failed to validate during fetch.
- */
-static void
-curl_start_cert_validate(struct curl_fetch_info *f,
-			 struct cert_info *certs)
-{
-	int depth;
-	BIO *mem;
-	BUF_MEM *buf;
-	struct ssl_cert_info ssl_certs[MAX_CERTS];
-	fetch_msg msg;
-
-	for (depth = 0; depth <= f->cert_depth; depth++) {
-		assert(certs[depth].cert != NULL);
-
-		/* get certificate version */
-		ssl_certs[depth].version = X509_get_version(certs[depth].cert);
-
-		/* not before date */
-		mem = BIO_new(BIO_s_mem());
-		ASN1_TIME_print(mem, X509_get_notBefore(certs[depth].cert));
-		BIO_get_mem_ptr(mem, &buf);
-		(void) BIO_set_close(mem, BIO_NOCLOSE);
-		BIO_free(mem);
-		memcpy(ssl_certs[depth].not_before,
-		       buf->data,
-		       min(sizeof(ssl_certs[depth].not_before) - 1,
-			   (unsigned)buf->length));
-		ssl_certs[depth].not_before[min(sizeof(ssl_certs[depth].not_before) - 1,
-					    (unsigned)buf->length)] = 0;
-		BUF_MEM_free(buf);
-
-		/* not after date */
-		mem = BIO_new(BIO_s_mem());
-		ASN1_TIME_print(mem,
-				X509_get_notAfter(certs[depth].cert));
-		BIO_get_mem_ptr(mem, &buf);
-		(void) BIO_set_close(mem, BIO_NOCLOSE);
-		BIO_free(mem);
-		memcpy(ssl_certs[depth].not_after,
-		       buf->data,
-		       min(sizeof(ssl_certs[depth].not_after) - 1,
-			   (unsigned)buf->length));
-		ssl_certs[depth].not_after[min(sizeof(ssl_certs[depth].not_after) - 1,
-					   (unsigned)buf->length)] = 0;
-		BUF_MEM_free(buf);
-
-		/* signature type */
-		ssl_certs[depth].sig_type =
-			X509_get_signature_type(certs[depth].cert);
-
-		/* serial number */
-		ssl_certs[depth].serial =
-			ASN1_INTEGER_get(
-				X509_get_serialNumber(certs[depth].cert));
-
-		/* issuer name */
-		mem = BIO_new(BIO_s_mem());
-		X509_NAME_print_ex(mem,
-				   X509_get_issuer_name(certs[depth].cert),
-				   0, XN_FLAG_SEP_CPLUS_SPC |
-				   XN_FLAG_DN_REV | XN_FLAG_FN_NONE);
-		BIO_get_mem_ptr(mem, &buf);
-		(void) BIO_set_close(mem, BIO_NOCLOSE);
-		BIO_free(mem);
-		memcpy(ssl_certs[depth].issuer,
-		       buf->data,
-		       min(sizeof(ssl_certs[depth].issuer) - 1,
-			   (unsigned) buf->length));
-		ssl_certs[depth].issuer[min(sizeof(ssl_certs[depth].issuer) - 1,
-					(unsigned) buf->length)] = 0;
-		BUF_MEM_free(buf);
-
-		/* subject */
-		mem = BIO_new(BIO_s_mem());
-		X509_NAME_print_ex(mem,
-				   X509_get_subject_name(certs[depth].cert),
-				   0,
-				   XN_FLAG_SEP_CPLUS_SPC |
-				   XN_FLAG_DN_REV |
-				   XN_FLAG_FN_NONE);
-		BIO_get_mem_ptr(mem, &buf);
-		(void) BIO_set_close(mem, BIO_NOCLOSE);
-		BIO_free(mem);
-		memcpy(ssl_certs[depth].subject,
-		       buf->data,
-		       min(sizeof(ssl_certs[depth].subject) - 1,
-			   (unsigned)buf->length));
-		ssl_certs[depth].subject[min(sizeof(ssl_certs[depth].subject) - 1,
-					 (unsigned) buf->length)] = 0;
-		BUF_MEM_free(buf);
-
-		/* type of certificate */
-		ssl_certs[depth].cert_type =
-			X509_certificate_type(certs[depth].cert,
-					      X509_get_pubkey(certs[depth].cert));
-
-		/* and clean up */
-		ns_X509_free(certs[depth].cert);
-	}
-
-	msg.type = FETCH_CERT_ERR;
-	msg.data.cert_err.certs = ssl_certs;
-	msg.data.cert_err.num_certs = depth;
-	fetch_send_callback(&msg, f->fetch_handle);
-}
 
 /**
  * Handle a completed fetch (CURLMSG_DONE from curl_multi_info_read()).
@@ -1079,7 +1094,6 @@ static void fetch_curl_done(CURL *curl_handle, CURLcode result)
 	struct curl_fetch_info *f;
 	char **_hideous_hack = (char **) (void *) &f;
 	CURLcode code;
-	struct cert_info certs[MAX_CERTS];
 
 	/* find the structure associated with this fetch */
 	/* For some reason, cURL thinks CURLINFO_PRIVATE should be a string?! */
@@ -1127,9 +1141,6 @@ static void fetch_curl_done(CURL *curl_handle, CURLcode result)
 		/* CURLE_SSL_PEER_CERTIFICATE renamed to
 		 * CURLE_PEER_FAILED_VERIFICATION
 		 */
-		memset(certs, 0, sizeof(certs));
-		memcpy(certs, f->cert_data, sizeof(certs));
-		memset(f->cert_data, 0, sizeof(f->cert_data));
 		cert = true;
 	} else {
 		NSLOG(netsurf, INFO, "Unknown cURL response code %d", result);
@@ -1146,7 +1157,9 @@ static void fetch_curl_done(CURL *curl_handle, CURLcode result)
 		fetch_send_callback(&msg, f->fetch_handle);
 	} else if (cert) {
 		/* user needs to validate certificate with issue */
-		curl_start_cert_validate(f, certs);
+		fetch_msg msg;
+		msg.type = FETCH_CERT_ERR;
+		fetch_send_callback(&msg, f->fetch_handle);
 	} else if (error) {
 		fetch_msg msg;
 		switch (result) {

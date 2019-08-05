@@ -71,7 +71,6 @@ struct sslcert_session_data {
 struct sslcert_entry {
 	treeview_node *entry;
 	char version[24];
-	char serial[24];
 	char type[24];
 	struct treeview_field_data data[SSLCERT_V_N_FIELDS - 1];
 };
@@ -134,11 +133,9 @@ sslcert_viewer_set_treeview_field_data(struct sslcert_entry *e,
 				     &e->data[SSLCERT_V_SUBJECT],
 				     cert->subject, ssl_d);
 
-	written = snprintf(e->serial, sizeof(e->serial), "%li", cert->serial);
-	assert(written < sizeof(e->serial));
 	sslcert_viewer_field_builder(SSLCERT_V_SERIAL,
 				     &e->data[SSLCERT_V_SERIAL],
-				     e->serial, ssl_d);
+				     cert->serialnum, ssl_d);
 
 	written = snprintf(e->type, sizeof(e->type), "%i", cert->cert_type);
 	assert(written < sizeof(e->type));

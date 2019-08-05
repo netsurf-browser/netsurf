@@ -103,6 +103,7 @@ typedef nserror (*llcache_query_response)(bool proceed, void *cbpw);
 
 /** Low-level cache event types */
 typedef enum {
+	LLCACHE_EVENT_GOT_CERTS,        /**< SSL certificates arrived */
 	LLCACHE_EVENT_HAD_HEADERS,	/**< Received all headers */
 	LLCACHE_EVENT_HAD_DATA,		/**< Received some data */
 	LLCACHE_EVENT_DONE,		/**< Finished fetching data */
@@ -143,6 +144,10 @@ typedef struct {
 			nsurl *from;	/**< Redirect origin */
 			nsurl *to;	/**< Redirect target */
 		} redirect;		/**< Fetch URL redirect occured */
+		struct {
+			const struct ssl_cert_info *certs; /**< The chain */
+			size_t num;		/**< Number of certs in chain */
+		} certs;
 		llcache_query_msg query;/**< Query event */
 	} data;				/**< Event data */
 } llcache_event;
