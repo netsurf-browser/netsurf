@@ -186,7 +186,8 @@ static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
 	{
 		bitmap = amiga_bitmap_create(c->width, c->height, BITMAP_NEW);
 		if (!bitmap) {
-			msg_data.error = messages_get("NoMemory");
+			msg_data.errordata.errorcode = NSERROR_NOMEM;
+			msg_data.errordata.errorcode = messages_get("NoMemory");
 			content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 			return NULL;
 		}
