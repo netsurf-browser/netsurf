@@ -25,6 +25,7 @@
 #include <oslib/wimp.h>
 
 #include "utils/log.h"
+#include "utils/nsurl.h"
 #include "netsurf/plotters.h"
 #include "desktop/sslcert_viewer.h"
 

@@ -149,7 +149,7 @@ nserror theme_install_callback(struct hlcache_handle *handle,
 
 	case CONTENT_MSG_ERROR:
 		theme_install_close(dialog_theme_install);
-		ro_warn_user(event->data.error, 0);
+		ro_warn_user(event->data.errordata.errormsg, 0);
 		break;
 
 	default:

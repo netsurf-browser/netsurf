@@ -128,7 +128,8 @@ bool draw_convert(struct content *c)
 	if (error) {
 		NSLOG(netsurf, INFO, "xdrawfile_bbox: 0x%x: %s",
 		      error->errnum, error->errmess);
-		msg_data.error = error->errmess;
+		msg_data.errordata.errorcode = NSERROR_UNKNOWN;
+		msg_data.errordata.errorcode = error->errmess;
 		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}
