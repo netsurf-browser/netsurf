@@ -47,7 +47,9 @@ struct fetch_about_context;
 
 typedef bool (*fetch_about_handler)(struct fetch_about_context *);
 
-/** Context for an about fetch */
+/**
+ * Context for an about fetch
+ */
 struct fetch_about_context {
 	struct fetch_about_context *r_next, *r_prev;
 
@@ -58,10 +60,23 @@ struct fetch_about_context {
 
 	nsurl *url; /**< The full url the fetch refers to */
 
+	const struct fetch_multipart_data *multipart; /**< post data */
+
 	fetch_about_handler handler;
 };
 
 static struct fetch_about_context *ring = NULL;
+
+/**
+ * handler info for about scheme
+ */
+struct about_handlers {
+	const char *name; /**< name to match in url */
+	int name_len;
+	lwc_string *lname; /**< Interned name */
+	fetch_about_handler handler; /**< handler for the url */
+	bool hidden; /**< If entry should be hidden in listing */
+};
 
 /** issue fetch callbacks with locking */
 static inline bool fetch_about_send_callback(const fetch_msg *msg,
@@ -74,8 +89,8 @@ static inline bool fetch_about_send_callback(const fetch_msg *msg,
 	return ctx->aborted;
 }
 
-static bool fetch_about_send_header(struct fetch_about_context *ctx,
-		const char *fmt, ...)
+static bool
+fetch_about_send_header(struct fetch_about_context *ctx, const char *fmt, ...)
 {
 	char header[64];
 	fetch_msg msg;
@@ -575,42 +590,96 @@ static bool fetch_about_maps_handler(struct fetch_about_context *ctx)
 /* Forward declaration because this handler requires the handler table. */
 static bool fetch_about_about_handler(struct fetch_about_context *ctx);
 
-struct about_handlers {
-	const char *name; /**< name to match in url */
-	int name_len;
-	lwc_string *lname; /**< Interned name */
-	fetch_about_handler handler; /* handler for the url */
-	bool hidden; /* Flag indicating if entry should show in listing */
-};
-
-/** List of about paths and their handlers */
+/**
+ * List of about paths and their handlers
+ */
 struct about_handlers about_handler_list[] = {
-	{ "credits", SLEN("credits"), NULL,
-			fetch_about_credits_handler, false },
-	{ "licence", SLEN("licence"), NULL,
-			fetch_about_licence_handler, false },
-	{ "license", SLEN("license"), NULL,
-			fetch_about_licence_handler, true },
-	{ "welcome", SLEN("welcome"), NULL,
-			fetch_about_welcome_handler, false },
-	{ "maps", SLEN("maps"), NULL,
-			fetch_about_maps_handler, false },
-	{ "config", SLEN("config"), NULL,
-			fetch_about_config_handler, false },
-	{ "Choices", SLEN("Choices"), NULL,
-			fetch_about_choices_handler, false },
-	{ "testament", SLEN("testament"), NULL,
-			fetch_about_testament_handler, false },
-	{ "about", SLEN("about"), NULL,
-			fetch_about_about_handler, true },
-	{ "logo", SLEN("logo"), NULL,
-			fetch_about_logo_handler, true },
-	/* details about the image cache */
-	{ "imagecache", SLEN("imagecache"), NULL,
-			fetch_about_imagecache_handler, true },
-	/* The default blank page */
-	{ "blank", SLEN("blank"), NULL,
-			fetch_about_blank_handler, true }
+	{
+		"credits",
+		SLEN("credits"),
+		NULL,
+		fetch_about_credits_handler,
+		false
+	},
+	{
+		"licence",
+		SLEN("licence"),
+		NULL,
+		fetch_about_licence_handler,
+		false
+	},
+	{
+		"license",
+		SLEN("license"),
+		NULL,
+		fetch_about_licence_handler,
+		true
+	},
+	{
+		"welcome",
+		SLEN("welcome"),
+		NULL,
+		fetch_about_welcome_handler,
+		false
+	},
+	{
+		"maps",
+		SLEN("maps"),
+		NULL,
+		fetch_about_maps_handler,
+		false
+	},
+	{
+		"config",
+		SLEN("config"),
+		NULL,
+		fetch_about_config_handler,
+		false
+	},
+	{
+		"Choices",
+		SLEN("Choices"),
+		NULL,
+		fetch_about_choices_handler,
+		false
+	},
+	{
+		"testament",
+		SLEN("testament"),
+		NULL,
+		fetch_about_testament_handler,
+		false
+	},
+	{
+		"about",
+		SLEN("about"),
+		NULL,
+		fetch_about_about_handler,
+		true
+	},
+	{
+		"logo",
+		SLEN("logo"),
+		NULL,
+		fetch_about_logo_handler,
+		true
+	},
+	{
+		/* details about the image cache */
+		"imagecache",
+		SLEN("imagecache"),
+		NULL,
+		fetch_about_imagecache_handler,
+		true
+	},
+	{
+		/* The default blank page */
+		"blank",
+		SLEN("blank"),
+		NULL,
+		fetch_about_blank_handler,
+		true
+	}
 };
 
 #define about_handler_list_len (sizeof(about_handler_list) /		\
@@ -732,15 +801,22 @@ static bool fetch_about_can_fetch(const nsurl *url)
 	return true;
 }
 
-/** callback to set up a about fetch context. */
+/**
+ * callback to set up a about scheme fetch.
+ *
+ * \param post_urlenc post data in urlenc format, owned by the llcache object
+ *                        hence valid the entire lifetime of the fetch.
+ * \param post_multipart post data in multipart format, owned by the llcache
+ *                        object hence valid the entire lifetime of the fetch.
+ */
 static void *
 fetch_about_setup(struct fetch *fetchh,
-		 nsurl *url,
-		 bool only_2xx,
-		 bool downgrade_tls,
-		 const char *post_urlenc,
-		 const struct fetch_multipart_data *post_multipart,
-		 const char **headers)
+		  nsurl *url,
+		  bool only_2xx,
+		  bool downgrade_tls,
+		  const char *post_urlenc,
+		  const struct fetch_multipart_data *post_multipart,
+		  const char **headers)
 {
 	struct fetch_about_context *ctx;
 	unsigned int handler_loop;
@@ -769,6 +845,7 @@ fetch_about_setup(struct fetch *fetchh,
 
 	ctx->fetchh = fetchh;
 	ctx->url = nsurl_ref(url);
+	ctx->multipart = post_multipart;
 
 	RING_INSERT(ring, ctx);
 
