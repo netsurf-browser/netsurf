@@ -1358,6 +1358,13 @@ html_begin_conversion(html_content *htmlc)
 		NSLOG(netsurf, INFO, "Completing parse (%p)", htmlc);
 		/* complete parsing */
 		error = dom_hubbub_parser_completed(htmlc->parser);
+		if (error == DOM_HUBBUB_HUBBUB_ERR_PAUSED && htmlc->base.active > 0) {
+			/* The act of completing the parse failed because we've
+			 * encountered a sync script which needs to run
+			 */
+			NSLOG(netsurf, INFO, "Completing parse brought synchronous JS to light, cannot complete yet");
+			return true;
+		}
 		if (error != DOM_HUBBUB_OK) {
 			NSLOG(netsurf, INFO, "Parsing failed");
 
