@@ -2797,6 +2797,8 @@ browser_window_navigate(struct browser_window *bw,
 	child.charset = content_get_encoding(parent, CONTENT_ENCODING_NORMAL);
 	if ((parent != NULL) && (content_get_type(parent) == CONTENT_HTML)) {
 		child.quirks = content_get_quirks(parent);
+	} else {
+		child.quirks = false;
 	}
 
 	url = nsurl_ref(url);
