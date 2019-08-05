@@ -22,6 +22,8 @@
  * Treeview handling implementation.
  */
 
+#define _GNU_SOURCE /* strcasestr needs this for string.h */
+
 #include <string.h>
 
 #include "utils/utils.h"
