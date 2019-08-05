@@ -307,11 +307,11 @@ void box_coords(struct box *box, int *x, int *y)
 	*y = box->y;
 	while (box->parent) {
 		if (box_is_float(box)) {
-			do {
-				box = box->parent;
-			} while (!box->float_children);
-		} else
+			assert(box->float_container);
+			box = box->float_container;
+		} else {
 			box = box->parent;
+		}
 		*x += box->x - scrollbar_get_offset(box->scroll_x);
 		*y += box->y - scrollbar_get_offset(box->scroll_y);
 	}
