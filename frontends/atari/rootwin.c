@@ -288,8 +288,6 @@ int window_create(struct gui_window * gw,
     assert(gw->browser);
 
     gw->browser->bw = bw;
-    gw->scale = browser_window_get_scale(bw);
-
 
     /* create statusbar component: */
     if(sb) {

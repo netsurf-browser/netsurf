@@ -122,7 +122,6 @@ struct s_gui_win_root
 	CMP_TOOLBAR toolbar;
 	CMP_STATUSBAR statusbar;
 	struct s_focus_info focus;
-	float scale;
 	char * title;
 	struct bitmap * icon;
 	struct gui_window *active_gui_window;
