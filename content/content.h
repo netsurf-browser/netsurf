@@ -65,7 +65,6 @@ typedef enum {
 	CONTENT_MSG_READY,     /**< may be displayed */
 	CONTENT_MSG_DONE,      /**< finished */
 	CONTENT_MSG_ERROR,     /**< error occurred */
-	CONTENT_MSG_ERRORCODE, /**< error occurred return nserror */
 	CONTENT_MSG_REDIRECT,  /**< fetch url redirect occured */
 	CONTENT_MSG_STATUS,    /**< new status string */
 	CONTENT_MSG_REFORMAT,  /**< content_reformat done */
@@ -112,10 +111,17 @@ union content_msg_data {
 	const struct llcache_query_msg *query_msg;
 	/** CONTENT_MSG_QUERY_FINISHED - Query from underlying object finished */
 	void *query_finished_pw;
-	/** CONTENT_MSG_ERROR - Error message */
-	const char *error;
-        /** CONTENT_MSG_ERRORCODE - Error code */
-	nserror errorcode;
+	/** CONTENT_MSG_ERROR - Error from content or underlying fetch */
+	struct {
+		nserror errorcode; /**< The error code to convey meaning */
+		const char *errormsg; /**< The message.
+				       * if NSERROR_UNKNOWN then this is the
+				       * direct message, otherwise is some
+				       * kind of metadata (e.g. a message name
+				       * or somesuch) but always a nul
+				       * terminated string.
+				       */
+	} errordata;
         /** CONTENT_MSG_REDIRECT - Redirect info */
 	struct {
 		struct nsurl *from;	/**< Redirect origin */

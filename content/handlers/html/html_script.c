@@ -183,10 +183,8 @@ convert_script_async_cb(hlcache_handle *script,
 	case CONTENT_MSG_ERROR:
 		NSLOG(netsurf, INFO, "script %s failed: %s",
 		      nsurl_access(hlcache_handle_get_url(script)),
-		      event->data.error);
-		/* fall through */
+		      event->data.errordata.errormsg);
 
-	case CONTENT_MSG_ERRORCODE:
 		hlcache_handle_release(script);
 		s->data.handle = NULL;
 		parent->base.active--;
@@ -259,10 +257,8 @@ convert_script_defer_cb(hlcache_handle *script,
 	case CONTENT_MSG_ERROR:
 		NSLOG(netsurf, INFO, "script %s failed: %s",
 		      nsurl_access(hlcache_handle_get_url(script)),
-		      event->data.error);
-		/* fall through */
+		      event->data.errordata.errormsg);
 
-	case CONTENT_MSG_ERRORCODE:
 		hlcache_handle_release(script);
 		s->data.handle = NULL;
 		parent->base.active--;
@@ -350,10 +346,8 @@ convert_script_sync_cb(hlcache_handle *script,
 	case CONTENT_MSG_ERROR:
 		NSLOG(netsurf, INFO, "script %s failed: %s",
 		      nsurl_access(hlcache_handle_get_url(script)),
-		      event->data.error);
-		/* fall through */
+		      event->data.errordata.errormsg);
 
-	case CONTENT_MSG_ERRORCODE:
 		hlcache_handle_release(script);
 		s->data.handle = NULL;
 		parent->base.active--;

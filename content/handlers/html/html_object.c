@@ -137,9 +137,7 @@ html_object_callback(hlcache_handle *object,
 	struct box *box;
 
 	box = o->box;
-	if (box == NULL &&
-			event->type != CONTENT_MSG_ERROR &&
-			event->type != CONTENT_MSG_ERRORCODE) {
+	if (box == NULL && event->type != CONTENT_MSG_ERROR) {
 		return NSERROR_OK;
 	}
 
@@ -195,7 +193,6 @@ html_object_callback(hlcache_handle *object,
 		}
 		break;
 
-	case CONTENT_MSG_ERRORCODE:
 	case CONTENT_MSG_ERROR:
 		hlcache_handle_release(object);
 
@@ -472,8 +469,7 @@ html_object_callback(hlcache_handle *object,
 	    c->base.active == 0 &&
 	    (event->type == CONTENT_MSG_LOADING ||
 	     event->type == CONTENT_MSG_DONE ||
-	     event->type == CONTENT_MSG_ERROR ||
-	     event->type == CONTENT_MSG_ERRORCODE)) {
+	     event->type == CONTENT_MSG_ERROR)) {
 		/* all objects have arrived */
 		content__reformat(&c->base, false, c->base.available_width,
 				c->base.available_height);

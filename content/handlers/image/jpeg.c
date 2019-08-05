@@ -329,7 +329,8 @@ static bool nsjpeg_convert(struct content *c)
 	if (setjmp(setjmp_buffer)) {
 		jpeg_destroy_decompress(&cinfo);
 
-		msg_data.error = nsjpeg_error_buffer;
+		msg_data.errordata.errorcode = NSERROR_UNKNOWN;
+		msg_data.errordata.errormsg = nsjpeg_error_buffer;
 		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}

@@ -361,7 +361,8 @@ static nserror hlcache_migrate_ctx(hlcache_retrieval_ctx *ctx,
 				hlcache_event hlevent;
 
 				hlevent.type = CONTENT_MSG_ERROR;
-				hlevent.data.error = messages_get("MiscError");
+				hlevent.data.errordata.errorcode = NSERROR_UNKNOWN;
+				hlevent.data.errordata.errormsg = messages_get("MiscError");
 
 				ctx->handle->cb(ctx->handle, &hlevent,
 						ctx->handle->pw);
@@ -393,7 +394,8 @@ static nserror hlcache_migrate_ctx(hlcache_retrieval_ctx *ctx,
 			hlcache_event hlevent;
 
 			hlevent.type = CONTENT_MSG_ERROR;
-			hlevent.data.error = messages_get("UnacceptableType");
+			hlevent.data.errordata.errorcode = NSERROR_UNKNOWN;
+			hlevent.data.errordata.errormsg = messages_get("UnacceptableType");
 
 			ctx->handle->cb(ctx->handle, &hlevent,
 					ctx->handle->pw);
@@ -489,8 +491,9 @@ static nserror hlcache_llcache_callback(llcache_handle *handle,
 		if (ctx->handle->cb != NULL) {
 			hlcache_event hlevent;
 
-			hlevent.type = CONTENT_MSG_ERRORCODE;
-			hlevent.data.errorcode = error;
+			hlevent.type = CONTENT_MSG_ERROR;
+			hlevent.data.errordata.errorcode = error;
+			hlevent.data.errordata.errormsg = NULL;
 
 			ctx->handle->cb(ctx->handle, &hlevent, ctx->handle->pw);
 		}
@@ -500,7 +503,8 @@ static nserror hlcache_llcache_callback(llcache_handle *handle,
 			hlcache_event hlevent;
 
 			hlevent.type = CONTENT_MSG_ERROR;
-			hlevent.data.error = event->data.msg;
+			hlevent.data.errordata.errorcode = NSERROR_UNKNOWN;
+			hlevent.data.errordata.errormsg = event->data.msg;
 
 			ctx->handle->cb(ctx->handle, &hlevent, ctx->handle->pw);
 		}

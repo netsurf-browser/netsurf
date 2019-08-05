@@ -634,7 +634,6 @@ nserror nscss_import(hlcache_handle *handle,
 		error = nscss_import_complete(ctx);
 		break;
 
-	case CONTENT_MSG_ERRORCODE:
 	case CONTENT_MSG_ERROR:
 		hlcache_handle_release(handle);
 		ctx->css->imports[ctx->index].c = NULL;

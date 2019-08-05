@@ -298,10 +298,8 @@ search_web_ico_callback(hlcache_handle *ico,
 	case CONTENT_MSG_ERROR:
 		NSLOG(netsurf, INFO, "icon %s error: %s",
 		      nsurl_access(hlcache_handle_get_url(ico)),
-		      event->data.error);
-		/* fall through */
+		      event->data.errordata.errormsg);
 
-	case CONTENT_MSG_ERRORCODE:
 		hlcache_handle_release(ico);
 		/* clear reference to released handle */
 		provider->ico_handle = NULL;
@@ -468,10 +466,8 @@ default_ico_callback(hlcache_handle *ico,
 	case CONTENT_MSG_ERROR:
 		NSLOG(netsurf, INFO, "icon %s error: %s",
 		      nsurl_access(hlcache_handle_get_url(ico)),
-		      event->data.error);
-		/* fall through */
+		      event->data.errordata.errormsg);
 
-	case CONTENT_MSG_ERRORCODE:
 		hlcache_handle_release(ico);
 		/* clear reference to released handle */
 		ctx->default_ico_handle = NULL;

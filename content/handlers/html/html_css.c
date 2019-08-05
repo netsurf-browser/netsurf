@@ -116,10 +116,8 @@ html_convert_css_callback(hlcache_handle *css,
 	case CONTENT_MSG_ERROR:
 		NSLOG(netsurf, INFO, "stylesheet %s failed: %s",
 		      nsurl_access(hlcache_handle_get_url(css)),
-		      event->data.error);
-		/* fall through */
+		      event->data.errordata.errormsg);
 
-	case CONTENT_MSG_ERRORCODE:
 		hlcache_handle_release(css);
 		s->sheet = NULL;
 		parent->base.active--;

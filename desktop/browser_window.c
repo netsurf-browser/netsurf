@@ -410,7 +410,6 @@ browser_window_favicon_callback(hlcache_handle *c,
 		break;
 
 	case CONTENT_MSG_ERROR:
-	case CONTENT_MSG_ERRORCODE:
 
 		/* clean up after ourselves */
 		if (c == bw->favicon.loading) {
@@ -553,38 +552,6 @@ browser_window_update_favicon(hlcache_handle *c,
 				bw, NULL, CONTENT_IMAGE, &bw->favicon.loading);
 
 	nsurl_unref(nsurl);
-}
-
-
-/**
- * window callback errorcode handling.
- */
-static void
-browser_window_callback_errorcode(hlcache_handle *c,
-				  struct browser_window *bw,
-				  nserror code)
-{
-	const char* message;
-
-	message = messages_get_errorcode(code);
-
-	browser_window_set_status(bw, message);
-
-	/* Only warn the user about errors in top-level windows */
-	if (bw->browser_window_type == BROWSER_WINDOW_NORMAL) {
-		guit->misc->warning(message, NULL);
-	}
-
-	if (c == bw->loading_content) {
-		bw->loading_content = NULL;
-	} else if (c == bw->current_content) {
-		bw->current_content = NULL;
-		browser_window_remove_caret(bw, false);
-	}
-
-	hlcache_handle_release(c);
-
-	browser_window_stop_throbber(bw);
 }
 
 
@@ -867,16 +834,16 @@ browser_window_callback(hlcache_handle *c, const hlcache_event *event, void *pw)
 		res = browser_window_content_done(bw);
 		break;
 
-	case CONTENT_MSG_ERRORCODE:
-		browser_window_callback_errorcode(c, bw, event->data.errorcode);
-		break;
+	case CONTENT_MSG_ERROR: {
+		const char *message = event->data.errordata.errormsg;
+		if (event->data.errordata.errorcode != NSERROR_UNKNOWN) {
+			message = messages_get_errorcode(event->data.errordata.errorcode);
+		}
 
-	case CONTENT_MSG_ERROR:
-		browser_window_set_status(bw, event->data.error);
-
+		browser_window_set_status(bw, message);
 		/* Only warn the user about errors in top-level windows */
 		if (bw->browser_window_type == BROWSER_WINDOW_NORMAL) {
-			guit->misc->warning(event->data.error, NULL);
+			guit->misc->warning(message, NULL);
 		}
 
 		if (c == bw->loading_content) {
@@ -890,7 +857,7 @@ browser_window_callback(hlcache_handle *c, const hlcache_event *event, void *pw)
 
 		browser_window_stop_throbber(bw);
 		break;
-
+	}
 	case CONTENT_MSG_REDIRECT:
 		if (urldb_add_url(event->data.redirect.from))
 			urldb_update_url_visit_data(event->data.redirect.from);

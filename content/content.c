@@ -173,7 +173,8 @@ nserror content_llcache_callback(llcache_handle *llcache,
 	case LLCACHE_EVENT_ERROR:
 		/** \todo Error page? */
 		c->status = CONTENT_STATUS_ERROR;
-		msg_data.error = event->data.msg;
+		msg_data.errordata.errorcode = NSERROR_UNKNOWN;
+		msg_data.errordata.errormsg = event->data.msg;
 		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		break;
 	case LLCACHE_EVENT_PROGRESS:
@@ -816,12 +817,13 @@ void content_broadcast_errorcode(struct content *c, nserror errorcode)
 
 	assert(c);
 
-	data.errorcode = errorcode;
+	data.errordata.errorcode = errorcode;
+	data.errordata.errormsg = NULL;
 
 	for (user = c->user_list->next; user != 0; user = next) {
 		next = user->next;  /* user may be destroyed during callback */
 		if (user->callback != 0) {
-			user->callback(c, CONTENT_MSG_ERRORCODE,
+			user->callback(c, CONTENT_MSG_ERROR,
 					&data, user->pw);
 		}
 	}
