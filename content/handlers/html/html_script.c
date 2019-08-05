@@ -414,7 +414,7 @@ exec_src_script(html_content *c,
 	/* src url */
 	ns_error = nsurl_join(c->base_url, dom_string_data(src), &joined);
 	if (ns_error != NSERROR_OK) {
-		content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
+		content_broadcast_error(&c->base, NSERROR_NOMEM, NULL);
 		return DOM_HUBBUB_NOMEM;
 	}
 
@@ -476,7 +476,7 @@ exec_src_script(html_content *c,
 	nscript = html_process_new_script(c, mimetype, script_type);
 	if (nscript == NULL) {
 		nsurl_unref(joined);
-		content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
+		content_broadcast_error(&c->base, NSERROR_NOMEM, NULL);
 		return DOM_HUBBUB_NOMEM;
 	}
 
@@ -546,7 +546,7 @@ exec_inline_script(html_content *c, dom_node *node, dom_string *mimetype)
 	if (nscript == NULL) {
 		dom_string_unref(script);
 
-		content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
+		content_broadcast_error(&c->base, NSERROR_NOMEM, NULL);
 		return DOM_HUBBUB_NOMEM;
 
 	}

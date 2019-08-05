@@ -174,9 +174,13 @@ void content_set_status(struct content *c, const char *status_message);
 void content_broadcast(struct content *c, content_msg msg,
 		const union content_msg_data *data);
 /**
- * Send an errorcode message to all users.
+ * Send an error message to all users.
+ *
+ * \param c The content whose users should be informed of an error
+ * \param errorcode The nserror code to send
+ * \param msg The error message to send alongside
  */
-void content_broadcast_errorcode(struct content *c, nserror errorcode);
+void content_broadcast_error(struct content *c, nserror errorcode, const char *msg);
 
 void content_add_error(struct content *c, const char *token,
 		unsigned int line);

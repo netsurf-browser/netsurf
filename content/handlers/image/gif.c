@@ -84,7 +84,7 @@ static nserror nsgif_create_gif_data(nsgif_content *c)
 	/* Initialise our data structure */
 	c->gif = calloc(sizeof(gif_animation), 1);
 	if (c->gif == NULL) {
-		content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
+		content_broadcast_error(&c->base, NSERROR_NOMEM, NULL);
 		return NSERROR_NOMEM;
 	}
 	gif_create(c->gif, &gif_bitmap_callbacks);
@@ -259,7 +259,7 @@ static bool nsgif_convert(struct content *c)
 				error = NSERROR_NOMEM;
 				break;
 			}
-			content_broadcast_errorcode(c, error);
+			content_broadcast_error(c, error, NULL);
 			return false;
 		}
 	} while (res != GIF_OK && res != GIF_INSUFFICIENT_FRAME_DATA);
@@ -267,7 +267,7 @@ static bool nsgif_convert(struct content *c)
 	/* Abort on bad GIFs */
 	if ((gif->gif->frame_count_partial == 0) || (gif->gif->width == 0) ||
 			(gif->gif->height == 0)) {
-		content_broadcast_errorcode(c, NSERROR_GIF_ERROR);
+		content_broadcast_error(c, NSERROR_GIF_ERROR, NULL);
 		return false;
 	}
 

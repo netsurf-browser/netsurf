@@ -242,7 +242,7 @@ static nserror nspng_create_png_data(nspng_content *png_c)
 
 	png_c->png = png_create_read_struct(PNG_LIBPNG_VER_STRING, 0, 0, 0);
 	if (png_c->png == NULL) {
-		content_broadcast_errorcode(&png_c->base, NSERROR_NOMEM);
+		content_broadcast_error(&png_c->base, NSERROR_NOMEM, NULL);
 		return NSERROR_NOMEM;
 	}
 
@@ -252,7 +252,7 @@ static nserror nspng_create_png_data(nspng_content *png_c)
 	if (png_c->info == NULL) {
 		png_destroy_read_struct(&png_c->png, &png_c->info, 0);
 
-		content_broadcast_errorcode(&png_c->base, NSERROR_NOMEM);
+		content_broadcast_error(&png_c->base, NSERROR_NOMEM, NULL);
 		return NSERROR_NOMEM;
 	}
 
@@ -262,7 +262,7 @@ static nserror nspng_create_png_data(nspng_content *png_c)
 		png_c->png = NULL;
 		png_c->info = NULL;
 
-		content_broadcast_errorcode(&png_c->base, NSERROR_PNG_ERROR);
+		content_broadcast_error(&png_c->base, NSERROR_PNG_ERROR, NULL);
 		return NSERROR_NOMEM;
 	}
 
@@ -355,7 +355,7 @@ static bool nspng_process_data(struct content *c, const char *data,
 			png_c->png = NULL;
 			png_c->info = NULL;
 
-			content_broadcast_errorcode(c, NSERROR_PNG_ERROR);
+			content_broadcast_error(c, NSERROR_PNG_ERROR, NULL);
 
 			ret = false;
 

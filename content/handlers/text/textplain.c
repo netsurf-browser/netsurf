@@ -182,7 +182,7 @@ textplain_create_internal(textplain_content *c, lwc_string *encoding)
 	return NSERROR_OK;
 
 no_memory:
-	content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
+	content_broadcast_error(&c->base, NSERROR_NOMEM, NULL);
 
 	return NSERROR_NOMEM;
 }
@@ -357,7 +357,7 @@ textplain_process_data(struct content *c, const char *data, unsigned int size)
 	return true;
 
 no_memory:
-	content_broadcast_errorcode(c, NSERROR_NOMEM);
+	content_broadcast_error(c, NSERROR_NOMEM, NULL);
 	return false;
 }
 

@@ -120,9 +120,9 @@ static void html_box_convert_done(html_content *c, bool success)
 		html_object_free_objects(c);
 
 		if (success == false) {
-			content_broadcast_errorcode(&c->base, NSERROR_BOX_CONVERT);
+			content_broadcast_error(&c->base, NSERROR_BOX_CONVERT, NULL);
 		} else {
-			content_broadcast_errorcode(&c->base, NSERROR_STOPPED);
+			content_broadcast_error(&c->base, NSERROR_STOPPED, NULL);
 		}
 
 		content_set_error(&c->base);
@@ -144,7 +144,7 @@ static void html_box_convert_done(html_content *c, bool success)
 		 * like the other error paths
 		 */
 		NSLOG(netsurf, INFO, "error retrieving html element from dom");
-		content_broadcast_errorcode(&c->base, NSERROR_DOM);
+		content_broadcast_error(&c->base, NSERROR_DOM, NULL);
 		content_set_error(&c->base);
 		return;
 	}
@@ -154,7 +154,7 @@ static void html_box_convert_done(html_content *c, bool success)
 	if (err != NSERROR_OK) {
 		NSLOG(netsurf, INFO, "imagemap extraction failed");
 		html_object_free_objects(c);
-		content_broadcast_errorcode(&c->base, err);
+		content_broadcast_error(&c->base, err, NULL);
 		content_set_error(&c->base);
 		dom_node_unref(html);
 		return;
@@ -602,7 +602,7 @@ void html_finish_conversion(html_content *htmlc)
 
 	/* Bail out if we've been aborted */
 	if (htmlc->aborted) {
-		content_broadcast_errorcode(&htmlc->base, NSERROR_STOPPED);
+		content_broadcast_error(&htmlc->base, NSERROR_STOPPED, NULL);
 		content_set_error(&htmlc->base);
 		return;
 	}
@@ -626,7 +626,7 @@ void html_finish_conversion(html_content *htmlc)
 	/* create new css selection context */
 	error = html_css_new_selection_context(htmlc, &htmlc->select_ctx);
 	if (error != NSERROR_OK) {
-		content_broadcast_errorcode(&htmlc->base, error);
+		content_broadcast_error(&htmlc->base, error, NULL);
 		content_set_error(&htmlc->base);
 		return;
 	}
@@ -649,7 +649,7 @@ void html_finish_conversion(html_content *htmlc)
 	exc = dom_document_get_document_element(htmlc->document, (void *) &html);
 	if ((exc != DOM_NO_ERR) || (html == NULL)) {
 		NSLOG(netsurf, INFO, "error retrieving html element from dom");
-		content_broadcast_errorcode(&htmlc->base, NSERROR_DOM);
+		content_broadcast_error(&htmlc->base, NSERROR_DOM, NULL);
 		content_set_error(&htmlc->base);
 		return;
 	}
@@ -661,7 +661,7 @@ void html_finish_conversion(html_content *htmlc)
 		NSLOG(netsurf, INFO, "box conversion failed");
 		dom_node_unref(html);
 		html_object_free_objects(htmlc);
-		content_broadcast_errorcode(&htmlc->base, error);
+		content_broadcast_error(&htmlc->base, error, NULL);
 		content_set_error(&htmlc->base);
 		return;
 	}
@@ -1130,14 +1130,14 @@ html_create(const content_handler *handler,
 
 	error = html_create_html_data(html, params);
 	if (error != NSERROR_OK) {
-		content_broadcast_errorcode(&html->base, error);
+		content_broadcast_error(&html->base, error, NULL);
 		free(html);
 		return error;
 	}
 
 	error = html_css_new_stylesheets(html);
 	if (error != NSERROR_OK) {
-		content_broadcast_errorcode(&html->base, error);
+		content_broadcast_error(&html->base, error, NULL);
 		free(html);
 		return error;
 	}
@@ -1256,7 +1256,7 @@ html_process_data(struct content *c, const char *data, unsigned int size)
 
 	/* broadcast the error if necessary */
 	if (err != NSERROR_OK) {
-		content_broadcast_errorcode(c, err);
+		content_broadcast_error(c, err, NULL);
 		return false;
 	}
 
@@ -1361,8 +1361,9 @@ html_begin_conversion(html_content *htmlc)
 		if (error != DOM_HUBBUB_OK) {
 			NSLOG(netsurf, INFO, "Parsing failed");
 
-			content_broadcast_errorcode(&htmlc->base,
-						    libdom_hubbub_error_to_nserror(error));
+			content_broadcast_error(&htmlc->base,
+						libdom_hubbub_error_to_nserror(error),
+						NULL);
 
 			return false;
 		}
@@ -1380,7 +1381,7 @@ html_begin_conversion(html_content *htmlc)
 		NSLOG(netsurf, INFO, "Conversion aborted (%p) (active: %u)",
 		      htmlc, htmlc->base.active);
 		content_set_error(&htmlc->base);
-		content_broadcast_errorcode(&htmlc->base, NSERROR_STOPPED);
+		content_broadcast_error(&htmlc->base, NSERROR_STOPPED, NULL);
 		return false;
 	}
 
@@ -1401,15 +1402,17 @@ html_begin_conversion(html_content *htmlc)
 		encoding = dom_hubbub_parser_get_encoding(htmlc->parser,
 					&htmlc->encoding_source);
 		if (encoding == NULL) {
-			content_broadcast_errorcode(&htmlc->base,
-						    NSERROR_NOMEM);
+			content_broadcast_error(&htmlc->base,
+						NSERROR_NOMEM,
+						NULL);
 			return false;
 		}
 
 		htmlc->encoding = strdup(encoding);
 		if (htmlc->encoding == NULL) {
-			content_broadcast_errorcode(&htmlc->base,
-						    NSERROR_NOMEM);
+			content_broadcast_error(&htmlc->base,
+						NSERROR_NOMEM,
+						NULL);
 			return false;
 		}
 	}
@@ -1418,7 +1421,7 @@ html_begin_conversion(html_content *htmlc)
 	exc = dom_document_get_document_element(htmlc->document, (void *) &html);
 	if ((exc != DOM_NO_ERR) || (html == NULL)) {
 		NSLOG(netsurf, INFO, "error retrieving html element from dom");
-		content_broadcast_errorcode(&htmlc->base, NSERROR_DOM);
+		content_broadcast_error(&htmlc->base, NSERROR_DOM, NULL);
 		return false;
 	}
 
@@ -1428,7 +1431,7 @@ html_begin_conversion(html_content *htmlc)
 	    (!dom_string_caseless_lwc_isequal(node_name,
 			corestring_lwc_html))) {
 		NSLOG(netsurf, INFO, "root element not html");
-		content_broadcast_errorcode(&htmlc->base, NSERROR_DOM);
+		content_broadcast_error(&htmlc->base, NSERROR_DOM, NULL);
 		dom_node_unref(html);
 		return false;
 	}
@@ -1454,7 +1457,7 @@ html_begin_conversion(html_content *htmlc)
 		}
 
 		if (ns_error != NSERROR_OK) {
-			content_broadcast_errorcode(&htmlc->base, ns_error);
+			content_broadcast_error(&htmlc->base, ns_error, NULL);
 
 			dom_node_unref(html);
 			return false;
@@ -1464,8 +1467,9 @@ html_begin_conversion(html_content *htmlc)
 		f->action = strdup(nsurl_access(action));
 		nsurl_unref(action);
 		if (f->action == NULL) {
-			content_broadcast_errorcode(&htmlc->base,
-						    NSERROR_NOMEM);
+			content_broadcast_error(&htmlc->base,
+						NSERROR_NOMEM,
+						NULL);
 
 			dom_node_unref(html);
 			return false;
@@ -1475,8 +1479,9 @@ html_begin_conversion(html_content *htmlc)
 		if (f->document_charset == NULL) {
 			f->document_charset = strdup(htmlc->encoding);
 			if (f->document_charset == NULL) {
-				content_broadcast_errorcode(&htmlc->base,
-							    NSERROR_NOMEM);
+				content_broadcast_error(&htmlc->base,
+							NSERROR_NOMEM,
+							NULL);
 				dom_node_unref(html);
 				return false;
 			}

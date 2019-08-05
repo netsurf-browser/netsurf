@@ -168,7 +168,7 @@ nscss_create(const content_handler *handler,
 			xnsbase, charset, result->base.quirks,
 			nscss_content_done, result);
 	if (error != NSERROR_OK) {
-		content_broadcast_errorcode(&result->base, NSERROR_NOMEM);
+		content_broadcast_error(&result->base, NSERROR_NOMEM, NULL);
 		if (charset_value != NULL)
 			lwc_string_unref(charset_value);
 		free(result);
@@ -251,7 +251,7 @@ nscss_process_data(struct content *c, const char *data, unsigned int size)
 
 	error = nscss_process_css_data(&css->data, data, size);
 	if (error != CSS_OK && error != CSS_NEEDDATA) {
-		content_broadcast_errorcode(c, NSERROR_CSS);
+		content_broadcast_error(c, NSERROR_CSS, NULL);
 	}
 
 	return (error == CSS_OK || error == CSS_NEEDDATA);
@@ -285,7 +285,7 @@ bool nscss_convert(struct content *c)
 
 	error = nscss_convert_css_data(&css->data);
 	if (error != CSS_OK) {
-		content_broadcast_errorcode(c, NSERROR_CSS);
+		content_broadcast_error(c, NSERROR_CSS, NULL);
 		return false;
 	}
 
@@ -480,7 +480,7 @@ void nscss_content_done(struct content_css_data *css, void *pw)
 	/* Retrieve the size of this sheet */
 	error = css_stylesheet_size(css->sheet, &size);
 	if (error != CSS_OK) {
-		content_broadcast_errorcode(c, NSERROR_CSS);
+		content_broadcast_error(c, NSERROR_CSS, NULL);
 		content_set_error(c);
 		return;
 	}

@@ -810,7 +810,7 @@ void content_broadcast(struct content *c, content_msg msg,
 }
 
 /* exported interface documented in content_protected.h */
-void content_broadcast_errorcode(struct content *c, nserror errorcode)
+void content_broadcast_error(struct content *c, nserror errorcode, const char *msg)
 {
 	struct content_user *user, *next;
 	union content_msg_data data;
@@ -818,7 +818,7 @@ void content_broadcast_errorcode(struct content *c, nserror errorcode)
 	assert(c);
 
 	data.errordata.errorcode = errorcode;
-	data.errordata.errormsg = NULL;
+	data.errordata.errormsg = msg;
 
 	for (user = c->user_list->next; user != 0; user = next) {
 		next = user->next;  /* user may be destroyed during callback */

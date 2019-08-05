@@ -78,7 +78,7 @@ static nserror nsbmp_create_bmp_data(nsbmp_content *bmp)
 
 	bmp->bmp = calloc(sizeof(struct bmp_image), 1);
 	if (bmp->bmp == NULL) {
-		content_broadcast_errorcode(&bmp->base, NSERROR_NOMEM);
+		content_broadcast_error(&bmp->base, NSERROR_NOMEM, NULL);
 		return NSERROR_NOMEM;
 	}
 
@@ -135,11 +135,11 @@ static bool nsbmp_convert(struct content *c)
 		case BMP_OK:
 			break;
 		case BMP_INSUFFICIENT_MEMORY:
-			content_broadcast_errorcode(c, NSERROR_NOMEM);
+			content_broadcast_error(c, NSERROR_NOMEM, NULL);
 			return false;
 		case BMP_INSUFFICIENT_DATA:
 		case BMP_DATA_ERROR:
-			content_broadcast_errorcode(c, NSERROR_BMP_ERROR);
+			content_broadcast_error(c, NSERROR_BMP_ERROR, NULL);
 			return false;
 	}
 
