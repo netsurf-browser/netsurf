@@ -72,8 +72,6 @@ struct beos_scaffolding *nsbeos_get_scaffold(struct gui_window *g);
 
 struct browser_window *nsbeos_get_browser_for_gui(struct gui_window *g);
 
-float nsbeos_get_scale_for_gui(struct gui_window *g);
-
 int nsbeos_gui_window_update_targets(struct gui_window *g);
 
 void nsbeos_window_destroy_browser(struct gui_window *g);

@@ -92,8 +92,6 @@ struct gui_window {
 
 	/* Keep gui_windows in a list for cleanup later */
 	struct gui_window	*next, *prev;
-
-	float scale;
 };
 
 
@@ -336,11 +334,6 @@ struct browser_window *nsbeos_get_browser_for_gui(struct gui_window *g)
 	return g->bw;
 }
 
-float nsbeos_get_scale_for_gui(struct gui_window *g)
-{
-	return g->scale;
-}
-
 /* Create a gui_window */
 static struct gui_window *gui_window_create(struct browser_window *bw,
 		struct gui_window *existing,
@@ -360,7 +353,6 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 	g->bw = bw;
 	g->mouse.state = 0;
 	g->current_pointer = GUI_POINTER_DEFAULT;
-	g->scale = browser_window_get_scale(bw);
 
 	g->careth = 0;
 	g->pending_resizes = 0;
@@ -687,7 +679,6 @@ void nsbeos_dispatch_event(BMessage *message)
 void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 {
 	BRect updateRect;
-	//float scale = g->scale;
 	struct rect clip;
 
 	struct redraw_context ctx = { true, true, &nsbeos_plotters };
