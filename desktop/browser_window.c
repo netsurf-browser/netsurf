@@ -889,8 +889,6 @@ browser_window__handle_error(struct browser_window *bw,
 
 	hlcache_handle_release(c);
 
-	browser_window_stop_throbber(bw);
-
 	switch (code) {
 	case NSERROR_BAD_AUTH:
 		res = netsurf__handle_login(message, url,
@@ -910,6 +908,8 @@ browser_window__handle_error(struct browser_window *bw,
 	default:
 		break;
 	}
+
+	browser_window_stop_throbber(bw);
 
 	return NSERROR_OK;
 }
