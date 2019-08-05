@@ -31,10 +31,12 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#include "utils/log.h"
 #include "testament.h"
 #include "utils/corestrings.h"
 #include "utils/nsoption.h"
 #include "utils/utils.h"
+#include "utils/messages.h"
 #include "utils/ring.h"
 
 #include "content/fetch.h"
@@ -303,7 +305,9 @@ fetch_about_imagecache_handler_aborted:
 	return false;
 }
 
-/** Handler to generate about:config page */
+/**
+ * Handler to generate about scheme config page
+ */
 static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 {
 	fetch_msg msg;
@@ -587,6 +591,321 @@ static bool fetch_about_maps_handler(struct fetch_about_context *ctx)
 	return true;
 }
 
+
+/**
+ * generate a 500 server error respnse
+ */
+static bool fetch_about_srverror(struct fetch_about_context *ctx)
+{
+	char buffer[256];
+	int slen;
+	fetch_msg msg;
+
+	fetch_set_http_code(ctx->fetchh, 500);
+
+	/* content type */
+	if (fetch_about_send_header(ctx, "Content-Type: text/plain"))
+		return false;
+
+	msg.type = FETCH_DATA;
+	msg.data.header_or_data.buf = (const uint8_t *) buffer;
+	slen = snprintf(buffer, sizeof buffer, "Server error 500");
+
+	msg.data.header_or_data.len = slen;
+	if (fetch_about_send_callback(&msg, ctx))
+		return false;
+
+	msg.type = FETCH_FINISHED;
+	fetch_about_send_callback(&msg, ctx);
+
+	return true;
+}
+
+
+/**
+ * generate the description of the login request
+ */
+static nserror
+get_login_description(struct nsurl *url,
+		      const char *realm,
+		      const char *username,
+		      const char *password,
+		      char **out_str)
+{
+	char *url_s;
+	size_t url_l;
+	nserror res;
+	char *str = NULL;
+	int slen;
+	const char *key;
+
+	res = nsurl_get(url, NSURL_SCHEME | NSURL_HOST, &url_s, &url_l);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	if ((*username == 0) && (*password == 0)) {
+		key = "LoginDescription";
+	} else {
+		key = "LoginAgain";
+	}
+
+	str = messages_get_buff(key, url_s, realm);
+	NSLOG(netsurf, INFO,
+	      "key:%s url:%s realm:%s str:%s", key, url_s, realm, str);
+
+	if ((str != NULL) && (strcmp(key, str) != 0)) {
+		*out_str = str;
+	} else {
+		/* no message so fallback */
+		const char *fmt = "The site %s is requesting your username and password. The realm is \"%s\"";
+		slen = snprintf(str, 0, fmt, url_s, realm) + 1;
+		str = malloc(slen);
+		if (str == NULL) {
+			res = NSERROR_NOMEM;
+		} else {
+			snprintf(str, slen, fmt, url_s, realm);
+			*out_str = str;
+		}
+	}
+
+	free(url_s);
+
+	return res;
+}
+
+
+/**
+ * Handler to generate about scheme authorisation query page
+ */
+static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
+{
+	nserror res;
+	fetch_msg msg;
+	char buffer[1024];
+	int slen;
+	char *url_s;
+	size_t url_l;
+	const char *realm = "";
+	const char *username = "";
+	const char *password = "";
+	const char *title;
+	char *description = NULL;
+	struct nsurl *siteurl = NULL;
+	const struct fetch_multipart_data *curmd; /* mutipart data iterator */
+
+	/* extract parameters from multipart post data */
+	curmd = ctx->multipart;
+	while (curmd != NULL) {
+		if (strcmp(curmd->name, "siteurl") == 0) {
+			res = nsurl_create(curmd->value, &siteurl);
+			if (res != NSERROR_OK) {
+				return fetch_about_srverror(ctx);
+			}
+		} else if (strcmp(curmd->name, "realm") == 0) {
+			realm = curmd->value;
+		} else if (strcmp(curmd->name, "username") == 0) {
+			username = curmd->value;
+		} else if (strcmp(curmd->name, "password") == 0) {
+			password = curmd->value;
+		}
+		curmd = curmd->next;
+	}
+
+	if (siteurl == NULL) {
+		return fetch_about_srverror(ctx);
+	}
+
+	/* content is going to return ok */
+	fetch_set_http_code(ctx->fetchh, 200);
+
+	/* content type */
+	if (fetch_about_send_header(ctx, "Content-Type: text/html; charset=utf-8"))
+		goto fetch_about_query_auth_handler_aborted;
+
+	msg.type = FETCH_DATA;
+	msg.data.header_or_data.buf = (const uint8_t *) buffer;
+
+	title = messages_get("LoginTitle");
+	slen = snprintf(buffer, sizeof buffer,
+			"<html>\n<head>\n"
+			"<title>%s</title>\n"
+			"<link rel=\"stylesheet\" type=\"text/css\" "
+			"href=\"resource:internal.css\">\n"
+			"</head>\n"
+			"<body id =\"authentication\">\n"
+			"<h1>%s</h1>\n",
+			title, title);
+
+	res = get_login_description(siteurl,
+				    realm,
+				    username,
+				    password,
+				    &description);
+	if (res == NSERROR_OK) {
+		slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+				 "<p>%s</p>",
+				 description);
+		free(description);
+	}
+
+	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+			 "<form method=\"post\" enctype=\"multipart/form-data\">");
+
+	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+			 "<div>"
+			 "<label for=\"name\">%s:</label>"
+			 "<input type=\"text\" id=\"username\" "
+			 "name=\"username\" value=\"%s\">"
+			 "</div>",
+			 messages_get("Username"), username);
+
+	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+			 "<div>"
+			 "<label for=\"password\">%s:</label>"
+			 "<input type=\"password\" id=\"password\" "
+			 "name=\"password\" value=\"%s\">"
+			 "</div>",
+			 messages_get("Password"), password);
+
+	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+			 "<div>"
+			 "<input type=\"submit\" id=\"cancel\" name=\"cancel\" "
+			 "value=\"%s\">"
+			 "<input type=\"submit\" id=\"login\" name=\"login\" "
+			 "value=\"%s\">"
+			 "</div>",
+			 messages_get("Cancel"),
+			 messages_get("Login"));
+
+	res = nsurl_get(siteurl, NSURL_COMPLETE, &url_s, &url_l);
+	if (res != NSERROR_OK) {
+		url_s = strdup("");
+	}
+	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+			 "<input type=\"hidden\" name=\"siteurl\" value=\"%s\">",
+			 url_s);
+	free(url_s);
+
+	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+			 "<input type=\"hidden\" name=\"realm\" value=\"%s\">",
+			 realm);
+
+	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+			"</form></body>\n</html>\n");
+
+	msg.data.header_or_data.len = slen;
+	if (fetch_about_send_callback(&msg, ctx))
+		goto fetch_about_query_auth_handler_aborted;
+
+	msg.type = FETCH_FINISHED;
+	fetch_about_send_callback(&msg, ctx);
+
+	return true;
+
+fetch_about_query_auth_handler_aborted:
+	return false;
+}
+
+/**
+ * Handler to generate about scheme ssl query page
+ */
+static bool fetch_about_query_ssl_handler(struct fetch_about_context *ctx)
+{
+	nserror res;
+	fetch_msg msg;
+	char buffer[1024];
+	int slen;
+	char *url_s;
+	size_t url_l;
+	const char *reason = "";
+	const char *title;
+	struct nsurl *siteurl = NULL;
+	const struct fetch_multipart_data *curmd; /* mutipart data iterator */
+
+	/* extract parameters from multipart post data */
+	curmd = ctx->multipart;
+	while (curmd != NULL) {
+		if (strcmp(curmd->name, "siteurl") == 0) {
+			res = nsurl_create(curmd->value, &siteurl);
+			if (res != NSERROR_OK) {
+				return fetch_about_srverror(ctx);
+			}
+		} else if (strcmp(curmd->name, "reason") == 0) {
+			reason = curmd->value;
+		}
+		curmd = curmd->next;
+	}
+
+	if (siteurl == NULL) {
+		return fetch_about_srverror(ctx);
+	}
+
+	/* content is going to return ok */
+	fetch_set_http_code(ctx->fetchh, 200);
+
+	/* content type */
+	if (fetch_about_send_header(ctx, "Content-Type: text/html; charset=utf-8"))
+		goto fetch_about_query_ssl_handler_aborted;
+
+	msg.type = FETCH_DATA;
+	msg.data.header_or_data.buf = (const uint8_t *) buffer;
+
+	title = messages_get("PrivacyTitle");
+	slen = snprintf(buffer, sizeof buffer,
+			"<html>\n<head>\n"
+			"<title>%s</title>\n"
+			"<link rel=\"stylesheet\" type=\"text/css\" "
+			"href=\"resource:internal.css\">\n"
+			"</head>\n"
+			"<body id =\"privacy\">\n"
+			"<h1>%s</h1>\n",
+			title, title);
+
+	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+			 "<p>%s</p>",
+			 reason);
+
+	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+			 "<form method=\"post\" enctype=\"multipart/form-data\">");
+
+
+	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+			 "<div>"
+			 "<input type=\"submit\" id=\"back\" name=\"back\" "
+			 "value=\"%s\">"
+			 "<input type=\"submit\" id=\"proceed\" name=\"proceed\" "
+			 "value=\"%s\">"
+			 "</div>",
+			 messages_get("Backtosafety"),
+			 messages_get("Proceed"));
+
+	res = nsurl_get(siteurl, NSURL_COMPLETE, &url_s, &url_l);
+	if (res != NSERROR_OK) {
+		url_s = strdup("");
+	}
+	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+			 "<input type=\"hidden\" name=\"siteurl\" value=\"%s\">",
+			 url_s);
+	free(url_s);
+
+	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+			"</form></body>\n</html>\n");
+
+	msg.data.header_or_data.len = slen;
+	if (fetch_about_send_callback(&msg, ctx))
+		goto fetch_about_query_ssl_handler_aborted;
+
+	msg.type = FETCH_FINISHED;
+	fetch_about_send_callback(&msg, ctx);
+
+	return true;
+
+fetch_about_query_ssl_handler_aborted:
+	return false;
+}
+
+
 /* Forward declaration because this handler requires the handler table. */
 static bool fetch_about_about_handler(struct fetch_about_context *ctx);
 
@@ -678,6 +997,20 @@ struct about_handlers about_handler_list[] = {
 		SLEN("blank"),
 		NULL,
 		fetch_about_blank_handler,
+		true
+	},
+	{
+		"query/auth",
+		SLEN("query/auth"),
+		NULL,
+		fetch_about_query_auth_handler,
+		true
+	},
+	{
+		"query/ssl",
+		SLEN("query/ssl"),
+		NULL,
+		fetch_about_query_ssl_handler,
 		true
 	}
 };

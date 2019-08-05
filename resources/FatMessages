@@ -2740,8 +2740,12 @@ nl.all.CaseSens:Hoofdlettergevoelig
 # This section contains tokens which are used in the 401 login
 # (authentication) dialog box.
 #
+en.all.LoginTitle:Authentication Requested
+fr.all.LoginTitle:Authentification demandée
 en.all.LoginDescription:The site %s with realm "%s" is requesting credentials for access.
+fr.all.LoginDescription:Le site %s avec le royaume "%s" demande des informations d'identification pour l'accès.
 en.all.LoginAgain:The credentials for the site %s and realm "%s" were rejected.
+fr.all.LoginAgain:Les identifiants pour le site %s et le royaume "%s" ont été rejetés.
 en.all.LoginLabel:A website is requesting credentials for access.
 en.all.Host:Host
 de.all.Host:Host
@@ -2775,8 +2779,16 @@ it.all.Cancel:Annulla
 nl.all.Cancel:Annuleer
 
 
-# SSL certificate verification
-# ============================
+# Privacy error interface
+# =======================
+#
+
+en.all.PrivacyTitle:Privacy error
+en.all.Proceed:Proceed
+en.all.Backtosafety:Back to safety
+
+# SSL certificate viewer
+# ======================
 #
 # This section contains tokens which are used in the
 # SSL certificate verification dialog box.
