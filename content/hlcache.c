@@ -515,8 +515,8 @@ static nserror hlcache_llcache_callback(llcache_handle *handle,
 			hlcache_event hlevent;
 
 			hlevent.type = CONTENT_MSG_ERROR;
-			hlevent.data.errordata.errorcode = NSERROR_UNKNOWN;
-			hlevent.data.errordata.errormsg = event->data.msg;
+			hlevent.data.errordata.errorcode = event->data.error.code;
+			hlevent.data.errordata.errormsg = event->data.error.msg;
 
 			ctx->handle->cb(ctx->handle, &hlevent, ctx->handle->pw);
 		}
@@ -530,28 +530,6 @@ static nserror hlcache_llcache_callback(llcache_handle *handle,
 			hlevent.type = CONTENT_MSG_REDIRECT;
 			hlevent.data.redirect.from = event->data.redirect.from;
 			hlevent.data.redirect.to = event->data.redirect.to;
-
-			ctx->handle->cb(ctx->handle, &hlevent, ctx->handle->pw);
-		}
-		break;
-	case LLCACHE_EVENT_QUERY:
-		if (ctx->handle->cb != NULL) {
-			hlcache_event hlevent;
-
-			hlevent.type = CONTENT_MSG_QUERY;
-			hlevent.data.query_msg = &event->data.query;
-
-			ctx->handle->cb(ctx->handle, &hlevent, ctx->handle->pw);
-		} else {
-			return NSERROR_NOT_IMPLEMENTED;
-		}
-		break;
-	case LLCACHE_EVENT_QUERY_FINISHED:
-		if (ctx->handle->cb != NULL) {
-			hlcache_event hlevent;
-
-			hlevent.type = CONTENT_MSG_QUERY_FINISHED;
-			hlevent.data.query_finished_pw = event->data.query.cb_pw;
 
 			ctx->handle->cb(ctx->handle, &hlevent, ctx->handle->pw);
 		}

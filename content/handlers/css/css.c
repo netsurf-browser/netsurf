@@ -641,14 +641,6 @@ nserror nscss_import(hlcache_handle *handle,
 		error = nscss_import_complete(ctx);
 		/* Already released handle */
 		break;
-	case CONTENT_MSG_QUERY:
-		/** \todo QUERY - Decide what is right here */
-		/* For now, the only safe decision is to cancel the fetch */
-		event->data.query_msg->cb(false, event->data.query_msg->cb_pw);
-		break;
-	case CONTENT_MSG_QUERY_FINISHED:
-		/** \todo QUERY - Decide what is right here */
-		break;
 	default:
 		break;
 	}

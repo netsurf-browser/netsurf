@@ -401,12 +401,9 @@ nserror browser_window_history_get_scroll(struct browser_window *bw,
  */
 void browser_window_history_destroy(struct browser_window *bw);
 
-
-/** \todo QUERY - Remove this include */
-#include "content/llcache.h"
-/** \todo QUERY - Remove this import */
-nserror netsurf_llcache_query_handler(
-	const llcache_query *query,
-	void *pw, llcache_query_response cb, void *cbpw);
+/**
+ * Type for handling query responses short-term
+ */
+typedef nserror (*browser_window_query_callback)(bool proceed, void *pw);
 
 #endif

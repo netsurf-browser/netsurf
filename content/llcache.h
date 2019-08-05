@@ -63,44 +63,6 @@ enum llcache_retrieve_flag {
 	LLCACHE_RETRIEVE_STREAM_DATA    = (1 << 3)
 };
 
-/** Low-level cache query types */
-typedef enum {
-	LLCACHE_QUERY_AUTH,		/**< Need authentication details */
-	LLCACHE_QUERY_REDIRECT,		/**< Need permission to redirect */
-	LLCACHE_QUERY_SSL		/**< SSL chain needs inspection */
-} llcache_query_type;
-
-/** Low-level cache query */
-typedef struct {
-	llcache_query_type type;	/**< Type of query */
-
-	nsurl *url;			/**< URL being fetched */
-
-	union {
-		struct {
-			const char *realm;	/**< Authentication realm */
-		} auth;
-
-		struct {
-			const char *target;	/**< Redirect target */
-		} redirect;
-
-		struct {
-			const struct ssl_cert_info *certs;
-			size_t num;		/**< Number of certs in chain */
-		} ssl;
-	} data;
-} llcache_query;
-
-/**
- * Response handler for fetch-related queries
- *
- * \param proceed  Whether to proceed with the fetch or not
- * \param cbpw     Opaque value provided to llcache_query_callback
- * \return NSERROR_OK on success, appropriate error otherwise
- */
-typedef nserror (*llcache_query_response)(bool proceed, void *cbpw);
-
 /** Low-level cache event types */
 typedef enum {
 	LLCACHE_EVENT_GOT_CERTS,        /**< SSL certificates arrived */
@@ -111,20 +73,8 @@ typedef enum {
 	LLCACHE_EVENT_ERROR,		/**< An error occurred during fetch */
 	LLCACHE_EVENT_PROGRESS,		/**< Fetch progress update */
 
-	LLCACHE_EVENT_QUERY,            /**< Fetch has a query and is paused */
-	LLCACHE_EVENT_QUERY_FINISHED,   /**< Fetch had a query, but it is now finished */
-
 	LLCACHE_EVENT_REDIRECT		/**< Fetch URL redirect occured */
 } llcache_event_type;
-
-/**
- * Low-level cache query message
- */
-typedef struct llcache_query_msg {
-	llcache_query *query;    /**< Query information */
-	llcache_query_response cb; /**< Response callback */
-	void *cb_pw; /**< Response callback private word */
-} llcache_query_msg;
 
 /**
  * Low-level cache events.
@@ -139,7 +89,11 @@ typedef struct {
 			const uint8_t *buf;	/**< Buffer of data */
 			size_t len;	/**< Length of buffer, in bytes */
 		} data;			/**< Received data */
-		const char *msg;	/**< Error or progress message */
+		struct {
+			nserror code;		/**< The error code */
+			const char *msg;	/**< Error message */
+		} error;
+		const char *progress_msg;	/**< Progress message */
 		struct {
 			nsurl *from;	/**< Redirect origin */
 			nsurl *to;	/**< Redirect target */
@@ -148,7 +102,6 @@ typedef struct {
 			const struct ssl_cert_info *certs; /**< The chain */
 			size_t num;		/**< Number of certs in chain */
 		} certs;
-		llcache_query_msg query;/**< Query event */
 	} data;				/**< Event data */
 } llcache_event;
 
@@ -162,22 +115,6 @@ typedef struct {
  */
 typedef nserror (*llcache_handle_callback)(llcache_handle *handle,
 		const llcache_event *event, void *pw);
-
-/**
- * Callback to handle fetch-related queries
- *
- * \param query  Object containing details of query
- * \param pw     Pointer to callback-specific data
- * \param cb     Callback that client should call once query is satisfied
- * \param cbpw   Opaque value to pass into \a cb
- * \return NSERROR_OK on success, appropriate error otherwise
- *
- * \note This callback should return immediately. Once a suitable answer to
- *       the query has been obtained, the provided response callback should be
- *       called. This is intended to be an entirely asynchronous process.
- */
-typedef nserror (*llcache_query_callback)(const llcache_query *query, void *pw,
-		llcache_query_response cb, void *cbpw);
 
 /**
  * Parameters to configure the low level cache backing store.
@@ -230,9 +167,6 @@ struct llcache_store_parameters {
  * Parameters to configure the low level cache.
  */
 struct llcache_parameters {
-	llcache_query_callback cb; /**< Query handler for llcache */
-	void *cb_ctx; /**< Pointer to llcache query handler data */
-
 	size_t limit; /**< The target upper bound for the RAM cache size */
 	size_t hysteresis; /**< The hysteresis around the target size */
 

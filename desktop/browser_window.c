@@ -479,16 +479,6 @@ browser_window_favicon_callback(hlcache_handle *c,
 		}
 		break;
 
-	case CONTENT_MSG_QUERY:
-		/** \todo QUERY - Decide what is right here */
-		/* For now, the only safe decision is to cancel the fetch */
-		event->data.query_msg->cb(false, event->data.query_msg->cb_pw);
-		break;
-
-	case CONTENT_MSG_QUERY_FINISHED:
-		/** \todo QUERY - Decide what is right here */
-		break;
-
 	default:
 		break;
 	}
@@ -820,6 +810,110 @@ browser_window_content_done(struct browser_window *bw)
 	return NSERROR_OK;
 }
 
+/* Cheeky import for now */
+nserror netsurf__handle_login(const char * realm, nsurl *url,
+			      browser_window_query_callback cb, void *cbpw);
+
+/**
+ * Handle query responses from authentication or SSL requests
+ */
+static nserror
+browser_window__handle_query_response(bool proceed, void *pw)
+{
+	struct browser_window *bw = (struct browser_window *)pw;
+	nserror res = NSERROR_OK;
+
+	if (proceed) {
+		/* We want to restart the request, with the loading
+		 * context
+		 */
+		res = browser_window__navigate_internal(bw, &bw->loading_parameters);
+
+		if (res != NSERROR_OK) {
+			NSLOG(netsurf, WARNING, "Unable to navigate after query proceeds");
+		}
+	}
+
+	return res;
+}
+
+
+/**
+ * Handle errors during content fetch
+ */
+static nserror
+browser_window__handle_error(struct browser_window *bw,
+			     hlcache_handle *c,
+			     const hlcache_event *event)
+{
+	const char *message = event->data.errordata.errormsg;
+	nserror code = event->data.errordata.errorcode;
+	bool do_warning = true;
+	nserror res;
+	nsurl *url = hlcache_handle_get_url(c);
+
+	/* Unexpected OK? */
+	assert(code != NSERROR_OK);
+
+	switch (code) {
+	case NSERROR_BAD_AUTH:
+		do_warning = false;
+		break;
+	case NSERROR_BAD_CERTS:
+		do_warning = false;
+		break;
+	case NSERROR_BAD_REDIRECT:
+		/* The message is already filled out */
+		break;
+	case NSERROR_UNKNOWN:
+		message = messages_get_errorcode(code);
+		break;
+	default:
+		break;
+	}
+
+	if (do_warning) {
+		browser_window_set_status(bw, message);
+		/* Only warn the user about errors in top-level windows */
+		if (bw->browser_window_type == BROWSER_WINDOW_NORMAL) {
+			guit->misc->warning(message, NULL);
+		}
+	}
+
+	if (c == bw->loading_content) {
+		bw->loading_content = NULL;
+	} else if (c == bw->current_content) {
+		bw->current_content = NULL;
+		browser_window_remove_caret(bw, false);
+	}
+
+	hlcache_handle_release(c);
+
+	browser_window_stop_throbber(bw);
+
+	switch (code) {
+	case NSERROR_BAD_AUTH:
+		res = netsurf__handle_login(message, url,
+					    browser_window__handle_query_response,
+					    bw);
+		break;
+	case NSERROR_BAD_CERTS:
+		res = guit->misc->cert_verify(url,
+					      bw->loading_ssl_info.certs,
+					      bw->loading_ssl_info.num,
+					      browser_window__handle_query_response,
+					      bw);
+		if (res != NSERROR_OK) {
+			NSLOG(netsurf, DEBUG, "Unable to start GUI callback for SSL certs");
+		}
+		break;
+	default:
+		break;
+	}
+
+	return NSERROR_OK;
+}
+
 
 /**
  * Browser window content event callback handler.
@@ -885,30 +979,10 @@ browser_window_callback(hlcache_handle *c, const hlcache_event *event, void *pw)
 		res = browser_window_content_done(bw);
 		break;
 
-	case CONTENT_MSG_ERROR: {
-		const char *message = event->data.errordata.errormsg;
-		if (event->data.errordata.errorcode != NSERROR_UNKNOWN) {
-			message = messages_get_errorcode(event->data.errordata.errorcode);
-		}
-
-		browser_window_set_status(bw, message);
-		/* Only warn the user about errors in top-level windows */
-		if (bw->browser_window_type == BROWSER_WINDOW_NORMAL) {
-			guit->misc->warning(message, NULL);
-		}
-
-		if (c == bw->loading_content) {
-			bw->loading_content = NULL;
-		} else if (c == bw->current_content) {
-			bw->current_content = NULL;
-			browser_window_remove_caret(bw, false);
-		}
-
-		hlcache_handle_release(c);
-
-		browser_window_stop_throbber(bw);
+	case CONTENT_MSG_ERROR:
+		res = browser_window__handle_error(bw, c, event);
 		break;
-	}
+
 	case CONTENT_MSG_REDIRECT:
 		if (urldb_add_url(event->data.redirect.from))
 			urldb_update_url_visit_data(event->data.redirect.from);
@@ -1150,26 +1224,6 @@ browser_window_callback(hlcache_handle *c, const hlcache_event *event, void *pw)
 						       event->data.gadget_click.gadget);
 		}
 
-		break;
-
-	case CONTENT_MSG_QUERY: {
-		/** \todo QUERY - Decide what is right here */
-		/* For now, we directly invoke the known global handler for queries */
-		llcache_query query = *(event->data.query_msg->query);
-		if (query.type == LLCACHE_QUERY_SSL) {
-			query.data.ssl.certs = &bw->loading_ssl_info.certs[0];
-			query.data.ssl.num = bw->loading_ssl_info.num;
-		}
-
-		return netsurf_llcache_query_handler(
-			&query,
-			NULL,
-			event->data.query_msg->cb,
-			event->data.query_msg->cb_pw);
-		break;
-	}
-	case CONTENT_MSG_QUERY_FINISHED:
-		/** \todo QUERY - Decide what is right here */
 		break;
 
 	default:

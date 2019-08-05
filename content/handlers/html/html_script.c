@@ -193,16 +193,6 @@ convert_script_async_cb(hlcache_handle *script,
 
 		break;
 
-	case CONTENT_MSG_QUERY:
-		/** \todo QUERY - Decide what is right here */
-		/* For now, the only safe decision is to cancel the fetch */
-		event->data.query_msg->cb(false, event->data.query_msg->cb_pw);
-		return NSERROR_OK;
-
-	case CONTENT_MSG_QUERY_FINISHED:
-		/** \todo QUERY - Decide what is right here */
-		return NSERROR_OK;
-
 	default:
 		break;
 	}
@@ -266,16 +256,6 @@ convert_script_defer_cb(hlcache_handle *script,
 		content_add_error(&parent->base, "?", 0);
 
 		break;
-
-	case CONTENT_MSG_QUERY:
-		/** \todo QUERY - Decide what is right here */
-		/* For now, the only safe decision is to cancel the fetch */
-		event->data.query_msg->cb(false, event->data.query_msg->cb_pw);
-		return NSERROR_OK;
-
-	case CONTENT_MSG_QUERY_FINISHED:
-		/** \todo QUERY - Decide what is right here */
-		return NSERROR_OK;
 
 	default:
 		break;
@@ -366,16 +346,6 @@ convert_script_sync_cb(hlcache_handle *script,
 		}
 
 		break;
-
-	case CONTENT_MSG_QUERY:
-		/** \todo QUERY - Decide what is right here */
-		/* For now, the only safe decision is to cancel the fetch */
-		event->data.query_msg->cb(false, event->data.query_msg->cb_pw);
-		return NSERROR_OK;
-
-	case CONTENT_MSG_QUERY_FINISHED:
-		/** \todo QUERY - Decide what is right here */
-		return NSERROR_OK;
 
 	default:
 		break;

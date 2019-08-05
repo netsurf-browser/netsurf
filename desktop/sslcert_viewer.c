@@ -49,6 +49,7 @@ enum sslcert_viewer_field {
 	SSLCERT_V_N_FIELDS
 };
 
+typedef nserror (*response_cb)(bool proceed, void *pw);
 
 /**
  * ssl certificate verification context.
@@ -57,7 +58,7 @@ struct sslcert_session_data {
 	struct ssl_cert_info *certs; /**< Certificates */
 	unsigned long num;		/**< Number of certificates in chain */
 	nsurl *url;			/**< The url of the certificate */
-	llcache_query_response cb;	/**< Cert accept/reject callback */
+	response_cb cb;			/**< Cert accept/reject callback */
 	void *cbpw;			/**< Context passed to callback */
 
 	treeview *tree;			/**< The treeview object */
@@ -476,8 +477,8 @@ nserror sslcert_viewer_fini(struct sslcert_session_data *ssl_d)
 /* Exported interface, documented in sslcert_viewer.h */
 nserror
 sslcert_viewer_create_session_data(unsigned long num,
-				   nsurl *url,
-				   llcache_query_response cb,
+				   struct nsurl *url,
+				   nserror (*cb)(bool proceed, void *pw),
 				   void *cbpw,
 				   const struct ssl_cert_info *certs,
 				   struct sslcert_session_data **ssl_d)

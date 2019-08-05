@@ -194,7 +194,7 @@ struct auth_data {
 	char *realm;
 	nsurl *url;
 
-	llcache_query_response cb;
+	browser_window_query_callback cb;
 	void *pw;
 };
 
@@ -235,6 +235,9 @@ static nserror netsurf__handle_login_response(
 	return err;
 }
 
+/* Cheeky */
+nserror netsurf__handle_login(const char * realm, nsurl *url,
+			      browser_window_query_callback cb, void *cbpw);
 /**
  * Helper for getting front end to handle logins.
  *
@@ -244,8 +247,8 @@ static nserror netsurf__handle_login_response(
  * \param[in] cbpw   Private data for continuation
  * \return NSERROR_OK, or appropriate error code.
  */
-static nserror netsurf__handle_login(const llcache_query *query,
-		void *pw, llcache_query_response cb, void *cbpw)
+nserror netsurf__handle_login(const char * realm, nsurl *url,
+			      browser_window_query_callback cb, void *cbpw)
 {
 	struct auth_data *ctx;
 	char *username;
@@ -253,19 +256,19 @@ static nserror netsurf__handle_login(const llcache_query *query,
 	nserror err;
 
 	NSLOG(llcache, INFO, "HTTP Auth for: %s: %s",
-			query->data.auth.realm, nsurl_access(query->url));
+			realm, nsurl_access(url));
 
 	ctx = malloc(sizeof(*ctx));
 	if (ctx == NULL) {
 		return NSERROR_NOMEM;
 	}
 
-	ctx->realm = strdup(query->data.auth.realm);
+	ctx->realm = strdup(realm);
 	if (ctx->realm == NULL) {
 		free(ctx);
 		return NSERROR_NOMEM;
 	}
-	ctx->url = nsurl_ref(query->url);
+	ctx->url = nsurl_ref(url);
 	ctx->cb = cb;
 	ctx->pw = cbpw;
 
@@ -294,43 +297,6 @@ static nserror netsurf__handle_login(const llcache_query *query,
 	return NSERROR_OK;
 }
 
-/**
- * Dispatch a low-level cache query to the frontend
- *
- * \todo QUERY - This should end up as part of browser_window_callback
- *
- * NOTE: Right now this is exported so that it can be invoked from the
- * browser window callback
- *
- * \param query  Query descriptor
- * \param pw     Private data
- * \param cb     Continuation callback
- * \param cbpw   Private data for continuation
- * \return NSERROR_OK
- */
-nserror netsurf_llcache_query_handler(const llcache_query *query,
-		void *pw, llcache_query_response cb, void *cbpw)
-{
-	nserror res = NSERROR_OK;
-
-	switch (query->type) {
-	case LLCACHE_QUERY_AUTH:
-		res = netsurf__handle_login(query, pw, cb, cbpw);
-		break;
-
-	case LLCACHE_QUERY_REDIRECT:
-		/** \todo Need redirect query dialog */
-		/* For now, do nothing, as this query type isn't emitted yet */
-		break;
-
-	case LLCACHE_QUERY_SSL:
-		res = guit->misc->cert_verify(query->url, query->data.ssl.certs,
-				query->data.ssl.num, cb, cbpw);
-		break;
-	}
-
-	return res;
-}
 
 /* exported interface documented in netsurf/netsurf.h */
 nserror netsurf_init(const char *store_path)
@@ -339,7 +305,6 @@ nserror netsurf_init(const char *store_path)
 	struct hlcache_parameters hlcache_parameters = {
 		.bg_clean_time = HL_CACHE_CLEAN_TIME,
 		.llcache = {
-			.cb = netsurf_llcache_query_handler,
 			.minimum_lifetime = LLCACHE_STORE_MIN_LIFETIME,
 			.minimum_bandwidth = LLCACHE_STORE_MIN_BANDWIDTH,
 			.maximum_bandwidth = LLCACHE_STORE_MAX_BANDWIDTH,

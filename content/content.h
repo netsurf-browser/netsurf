@@ -61,8 +61,6 @@ typedef enum {
 typedef enum {
 	CONTENT_MSG_LOG,       /**< Content wishes to log something */
 	CONTENT_MSG_SSL_CERTS, /**< Content is from SSL and this is its chain */
-	CONTENT_MSG_QUERY,     /**< Something under the content has a query */
-	CONTENT_MSG_QUERY_FINISHED, /**< Something under the content finished its query */
 	CONTENT_MSG_LOADING,   /**< fetching or converting */
 	CONTENT_MSG_READY,     /**< may be displayed */
 	CONTENT_MSG_DONE,      /**< finished */
@@ -114,10 +112,6 @@ union content_msg_data {
 		const struct ssl_cert_info *certs; /**< The chain */
 		size_t num; /**< The number of certs in the chain */
 	} certs;
-	/** CONTENT_MSG_QUERY - Query from underlying object somewhere */
-	const struct llcache_query_msg *query_msg;
-	/** CONTENT_MSG_QUERY_FINISHED - Query from underlying object finished */
-	void *query_finished_pw;
 	/** CONTENT_MSG_ERROR - Error from content or underlying fetch */
 	struct {
 		nserror errorcode; /**< The error code to convey meaning */

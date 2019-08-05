@@ -59,6 +59,9 @@ typedef enum {
 	NSERROR_NOSPACE,                /**< Insufficient space */
 	NSERROR_BAD_SIZE,               /**< Bad size */
 	NSERROR_NOT_IMPLEMENTED,        /**< Functionality is not implemented */
+	NSERROR_BAD_REDIRECT,           /**< Fetch encountered a bad redirect */
+	NSERROR_BAD_AUTH,               /**< Fetch needs authentication data */
+	NSERROR_BAD_CERTS,              /**< Fetch needs certificate chain check */
 } nserror;
 
 #endif

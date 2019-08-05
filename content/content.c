@@ -176,12 +176,12 @@ nserror content_llcache_callback(llcache_handle *llcache,
 	case LLCACHE_EVENT_ERROR:
 		/** \todo Error page? */
 		c->status = CONTENT_STATUS_ERROR;
-		msg_data.errordata.errorcode = NSERROR_UNKNOWN;
-		msg_data.errordata.errormsg = event->data.msg;
+		msg_data.errordata.errorcode = event->data.error.code;
+		msg_data.errordata.errormsg = event->data.error.msg;
 		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		break;
 	case LLCACHE_EVENT_PROGRESS:
-		content_set_status(c, event->data.msg);
+		content_set_status(c, event->data.progress_msg);
 		msg_data.explicit_status_text = NULL;
 		content_broadcast(c, CONTENT_MSG_STATUS, &msg_data);
 		break;
@@ -189,13 +189,6 @@ nserror content_llcache_callback(llcache_handle *llcache,
 		msg_data.redirect.from = event->data.redirect.from;
 		msg_data.redirect.to = event->data.redirect.to;
 		content_broadcast(c, CONTENT_MSG_REDIRECT, &msg_data);
-		break;
-	case LLCACHE_EVENT_QUERY:
-	case LLCACHE_EVENT_QUERY_FINISHED:
-		/* Should never happen, because the object can't query once
-		 * it has fetched enough that a migration to content happened.
-		 */
-		NSLOG(netsurf, DEBUG, "Encountered query related events during content handling");
 		break;
 	}
 

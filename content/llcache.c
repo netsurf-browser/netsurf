@@ -116,8 +116,6 @@ typedef struct {
 
 	bool tried_with_tls_downgrade;	/**< Whether we've tried TLS <= 1.0 */
 
-	bool outstanding_query;		/**< Waiting for a query response */
-
 	bool tainted_tls;		/**< Whether the TLS transport is tainted */
 } llcache_fetch_ctx;
 
@@ -2004,7 +2002,8 @@ static nserror llcache_fetch_redirect(llcache_object *object,
 		NSLOG(llcache, INFO, "Too many nested redirects");
 
 		event.type = LLCACHE_EVENT_ERROR;
-		event.data.msg = messages_get("BadRedirect");
+		event.data.error.code = NSERROR_BAD_REDIRECT;
+		event.data.error.msg = messages_get("BadRedirect");
 
 		return llcache_send_event_to_users(object, &event);
 	}
@@ -2249,46 +2248,6 @@ llcache_fetch_process_data(llcache_object *object,
 	return NSERROR_OK;
 }
 
-/**
- * Handle a query response
- *
- * \param proceed  Whether to proceed with fetch
- * \param cbpw	   Our context for query
- * \return NSERROR_OK on success, appropriate error otherwise
- */
-static nserror llcache_query_handle_response(bool proceed, void *cbpw)
-{
-	llcache_event event;
-	llcache_object *object = cbpw;
-
-	if (object->fetch.outstanding_query == false) {
-		/* This object has already had its query answered */
-		return NSERROR_OK;
-	}
-
-	object->fetch.outstanding_query = false;
-
-	/* Tell all the users that we're leaving query state */
-	event.type = LLCACHE_EVENT_QUERY_FINISHED;
-	event.data.query.cb_pw = object;
-
-	/* Refetch, using existing fetch parameters, if client allows us to */
-	if (llcache_send_event_to_users(object, &event) == NSERROR_OK && proceed)
-		return llcache_object_refetch(object);
-
-	/* Invalidate cache-control data */
-	llcache_invalidate_cache_control_data(object);
-
-	/* Mark it complete */
-	object->fetch.state = LLCACHE_FETCH_COMPLETE;
-
-	/* Inform client(s) that object fetch failed */
-	event.type = LLCACHE_EVENT_ERROR;
-	/** \todo More appropriate error message */
-	event.data.msg = messages_get("FetchFailed");
-
-	return llcache_send_event_to_users(object, &event);
-}
 
 /**
  * Handle an authentication request
@@ -2320,32 +2279,20 @@ static nserror llcache_fetch_auth(llcache_object *object, const char *realm)
 	auth = urldb_get_auth_details(object->url, realm);
 
 	if (auth == NULL || object->fetch.tried_with_auth == true) {
-		llcache_query query;
 		llcache_event event;
-
 		/* No authentication details, or tried what we had, so ask */
 		object->fetch.tried_with_auth = false;
 
-		/* Emit query for authentication details */
-		query.type = LLCACHE_QUERY_AUTH;
-		query.url = object->url;
-		query.data.auth.realm = realm;
+		/* Mark object complete */
+		object->fetch.state = LLCACHE_FETCH_COMPLETE;
 
-		/* Construct the query event */
-		event.type = LLCACHE_EVENT_QUERY;
-		event.data.query.query = &query;
-		event.data.query.cb = llcache_query_handle_response;
-		event.data.query.cb_pw = object;
-
-		object->fetch.outstanding_query = true;
+		/* Inform client(s) that object fetch failed */
+		event.type = LLCACHE_EVENT_ERROR;
+		/** \todo More appropriate error message */
+		event.data.error.code = NSERROR_BAD_AUTH;
+		event.data.error.msg = messages_get("FetchFailed");
 
 		error = llcache_send_event_to_users(object, &event);
-
-		if (error != NSERROR_OK) {
-			/* do not continue if error querying user */
-			error = llcache_query_handle_response(false,
-							      object);
-		}
 	} else {
 		/* Flag that we've tried to refetch with credentials, so
 		 * that if the fetch fails again, we ask the user again */
@@ -2377,27 +2324,18 @@ static nserror llcache_fetch_cert_error(llcache_object *object)
 
 	/* Only give the user a chance if HSTS isn't in use for this fetch */
 	if (object->fetch.hsts_in_use == false) {
-		llcache_query query;
 		llcache_event event;
 
-		/* Emit query for TLS */
-		query.type = LLCACHE_QUERY_SSL;
-		query.url = object->url;
+		/* Mark object complete */
+		object->fetch.state = LLCACHE_FETCH_COMPLETE;
 
-		/* Construct the query event */
-		event.type = LLCACHE_EVENT_QUERY;
-		event.data.query.query = &query;
-		event.data.query.cb = llcache_query_handle_response;
-		event.data.query.cb_pw = object;
-
-		object->fetch.outstanding_query = true;
+		/* Inform client(s) that object fetch failed */
+		event.type = LLCACHE_EVENT_ERROR;
+		/** \todo More appropriate error message */
+		event.data.error.code = NSERROR_BAD_CERTS;
+		event.data.error.msg = messages_get("FetchFailed");
 
 		error = llcache_send_event_to_users(object, &event);
-
-		if (error != NSERROR_OK) {
-			/* do not continue if error querying user */
-			error = llcache_query_handle_response(false, object);
-		}
 	} else {
 		llcache_event event;
 
@@ -2407,7 +2345,8 @@ static nserror llcache_fetch_cert_error(llcache_object *object)
 		/* Inform client(s) that object fetch failed */
 		event.type = LLCACHE_EVENT_ERROR;
 		/** \todo More appropriate error message */
-		event.data.msg = messages_get("FetchFailed");
+		event.data.error.code = NSERROR_UNKNOWN;
+		event.data.error.msg = messages_get("FetchFailed");
 
 		error = llcache_send_event_to_users(object, &event);
 	}
@@ -2447,7 +2386,8 @@ static nserror llcache_fetch_ssl_error(llcache_object *object)
 		/* Inform client(s) that object fetch failed */
 		event.type = LLCACHE_EVENT_ERROR;
 		/** \todo More appropriate error message */
-		event.data.msg = messages_get("FetchFailed");
+		event.data.error.code = NSERROR_UNKNOWN;
+		event.data.error.msg = messages_get("FetchFailed");
 
 		error = llcache_send_event_to_users(object, &event);
 	} else {
@@ -2502,7 +2442,6 @@ build_candidate_list(struct llcache_object ***lst_out, int *lst_len_out)
 		 */
 		if ((object->candidate_count == 0) &&
 		    (object->fetch.fetch == NULL) &&
-		    (object->fetch.outstanding_query == false) &&
 		    (object->store_state == LLCACHE_STATE_RAM) &&
 		    (remaining_lifetime > llcache->minimum_lifetime)) {
 			lst[lst_len] = object;
@@ -2862,7 +2801,8 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 		/** \todo Consider using errorcode for something */
 
 		event.type = LLCACHE_EVENT_ERROR;
-		event.data.msg = msg->data.error;
+		event.data.error.code = NSERROR_UNKNOWN;
+		event.data.error.msg = msg->data.error;
 
 		error = llcache_send_event_to_users(object, &event);
 
@@ -2870,7 +2810,7 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 	case FETCH_PROGRESS:
 		/* Progress update */
 		event.type = LLCACHE_EVENT_PROGRESS;
-		event.data.msg = msg->data.progress;
+		event.data.progress_msg = msg->data.progress;
 
 		error = llcache_send_event_to_users(object, &event);
 
@@ -3349,8 +3289,7 @@ void llcache_clean(bool purge)
 		/* The candidate count of uncacheable objects is always 0 */
 		if ((object->users == NULL) &&
 		    (object->candidate_count == 0) &&
-		    (object->fetch.fetch == NULL) &&
-		    (object->fetch.outstanding_query == false)) {
+		    (object->fetch.fetch == NULL)) {
 			NSLOG(llcache, DEBUG, "Discarding uncachable object with no users (%p) %s",
 				    object, nsurl_access(object->url));
 
@@ -3375,7 +3314,6 @@ void llcache_clean(bool purge)
 		if ((object->users == NULL) &&
 		    (object->candidate_count == 0) &&
 		    (object->fetch.fetch == NULL) &&
-		    (object->fetch.outstanding_query == false) &&
 		    (remaining_lifetime <= 0)) {
 			/* object is stale */
 			NSLOG(llcache, DEBUG, "discarding stale cacheable object with no "
@@ -3416,7 +3354,6 @@ void llcache_clean(bool purge)
 		if ((object->users == NULL) &&
 		    (object->candidate_count == 0) &&
 		    (object->fetch.fetch == NULL) &&
-		    (object->fetch.outstanding_query == false) &&
 		    (object->store_state == LLCACHE_STATE_DISC)) {
 			guit->llcache->release(object->url, BACKING_STORE_NONE);
 
@@ -3441,7 +3378,6 @@ void llcache_clean(bool purge)
 		if ((object->users == NULL) &&
 		    (object->candidate_count == 0) &&
 		    (object->fetch.fetch == NULL) &&
-		    (object->fetch.outstanding_query == false) &&
 		    (object->store_state == LLCACHE_STATE_DISC) &&
 		    (object->source_data == NULL)) {
 			NSLOG(llcache, DEBUG,
@@ -3473,7 +3409,6 @@ void llcache_clean(bool purge)
 		if ((object->users == NULL) &&
 		    (object->candidate_count == 0) &&
 		    (object->fetch.fetch == NULL) &&
-		    (object->fetch.outstanding_query == false) &&
 		    (object->store_state == LLCACHE_STATE_RAM)) {
 			NSLOG(llcache, DEBUG,
 			      "discarding fresh object len:%"PRIssizet" age:%ld (%p) %s",

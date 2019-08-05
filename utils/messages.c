@@ -321,6 +321,18 @@ const char *messages_get_errorcode(nserror code)
 	case NSERROR_UNKNOWN:
 		/* Unknown error */
 		return messages_get_ctx("Unknown", messages_hash);
+
+	case NSERROR_BAD_AUTH:
+		/* Authentication required */
+		return messages_get_ctx("BadAuth", messages_hash);
+
+	case NSERROR_BAD_REDIRECT:
+		/* To many redirects */
+		return messages_get_ctx("TooManyRedirects", messages_hash);
+
+	case NSERROR_BAD_CERTS:
+		/* Certificate chain verification failure */
+		return messages_get_ctx("CertificateVerificationNeeded", messages_hash);
 	}
 
 	/* The switch has no default, so the compiler should tell us when we

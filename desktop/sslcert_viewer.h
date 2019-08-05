@@ -25,13 +25,14 @@
 #ifndef NETSURF_DESKTOP_SSLCERT_VIEWER_H
 #define NETSURF_DESKTOP_SSLCERT_VIEWER_H
 
-#include "content/llcache.h"
 #include "netsurf/mouse.h"
 
 struct sslcert_session_data;
 struct redraw_context;
 struct core_window_callback_table;
 struct rect;
+struct nsurl;
+struct ssl_cert_info;
 
 /**
  * Create ssl certificate viewer session data.
@@ -48,7 +49,7 @@ struct rect;
  * sslcert_viewer_fini destroys the session data.
  */
 nserror sslcert_viewer_create_session_data(
-		unsigned long num, nsurl *url, llcache_query_response cb,
+		unsigned long num, struct nsurl *url, nserror (*cb)(bool proceed, void *pw),
 		void *cbpw, const struct ssl_cert_info *certs,
 		struct sslcert_session_data **ssl_d);
 
