@@ -208,7 +208,7 @@ bool artworks_convert(struct content *c)
 		NSLOG(netsurf, INFO, "AWRender_FileInitAddress: 0x%x: %s",
 		      error->errnum, error->errmess);
 		msg_data.errordata.errorcode = NSERROR_UNKNOWN;
-		msg_data.errordata.errorcode = error->errmess;
+		msg_data.errordata.errormsg = error->errmess;
 		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}
