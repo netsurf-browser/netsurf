@@ -154,7 +154,8 @@ bool amiga_icon_convert(struct content *c)
 	/* This loader will only work on local files, so fail if not a local path */
 	if(filename == NULL)
 	{
-		msg_data.error = messages_get("NoMemory");
+		msg_data.errordata.errorcode = NSERROR_NOMEM;
+		msg_data.errordata.errormsg = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
 		return false;
 	}
