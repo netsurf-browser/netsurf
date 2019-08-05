@@ -76,6 +76,19 @@ struct history {
 };
 
 /**
+ * The parameters for a fetch.
+ */
+struct browser_fetch_parameters {
+	struct nsurl *url;                           /**< The URL to fetch */
+	struct nsurl *referrer;			     /**< Optional refererer */
+	enum browser_window_nav_flags flags;	     /**< Navigation flags */
+	char *post_urlenc;			     /**< URL encoded post data */
+	struct fetch_multipart_data *post_multipart; /**< Multipart post data */
+	char *parent_charset;			     /**< Optional parent character set */
+	bool parent_quirks;			     /**< Optional parent quirks */
+};
+
+/**
  * Browser window data.
  */
 struct browser_window {
@@ -84,11 +97,22 @@ struct browser_window {
 	 *  READY or DONE status or NULL for no content.
 	 */
 	struct hlcache_handle *current_content;
+
+	/**
+	 * The fetch parameters for the current content
+	 */
+	struct browser_fetch_parameters current_parameters;
+
 	/**
 	 * Content handle of page in process of being loaded or NULL
 	 * if no page is being loaded.
 	 */
 	struct hlcache_handle *loading_content;
+
+	/**
+	 * The fetch parameters for the loading content
+	 */
+	struct browser_fetch_parameters loading_parameters;
 
 	/**
 	 * Favicon

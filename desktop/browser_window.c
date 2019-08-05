@@ -86,6 +86,40 @@
 /* Have to forward declare browser_window_destroy_internal */
 static void browser_window_destroy_internal(struct browser_window *bw);
 
+/* Forward declare internal navigation function */
+static nserror browser_window__navigate_internal(
+	struct browser_window *bw, struct browser_fetch_parameters *params);
+
+
+/**
+ * Free the stored fetch parameters
+ *
+ * \param bw The browser window
+ */
+static void
+browser_window__free_fetch_parameters(struct browser_fetch_parameters *params) {
+	if (params->url != NULL) {
+		nsurl_unref(params->url);
+		params->url = NULL;
+	}
+	if (params->referrer != NULL) {
+		nsurl_unref(params->referrer);
+		params->referrer = NULL;
+	}
+	if (params->post_urlenc != NULL) {
+		free(params->post_urlenc);
+		params->post_urlenc = NULL;
+	}
+	if (params->post_multipart != NULL) {
+		fetch_multipart_data_destroy(params->post_multipart);
+		params->post_multipart = NULL;
+	}
+	if (params->parent_charset != NULL) {
+		free(params->parent_charset);
+		params->parent_charset = NULL;
+	}
+}
+
 
 /**
  * Get position of scrollbar widget within browser window.
@@ -654,6 +688,9 @@ static nserror browser_window_content_ready(struct browser_window *bw)
 
 	bw->current_content = bw->loading_content;
 	bw->loading_content = NULL;
+	browser_window__free_fetch_parameters(&bw->current_parameters);
+	bw->current_parameters = bw->loading_parameters;
+	memset(&bw->loading_parameters, 0, sizeof(bw->loading_parameters));
 
 	/* Format the new content to the correct dimensions */
 	browser_window_get_dimensions(bw, &width, &height);
@@ -1268,6 +1305,8 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 	free(bw->name);
 	free(bw->status.text);
 	bw->status.text = NULL;
+	browser_window__free_fetch_parameters(&bw->current_parameters);
+	browser_window__free_fetch_parameters(&bw->loading_parameters);
 	NSLOG(netsurf, INFO, "Status text cache match:miss %d:%d",
 	      bw->status.match, bw->status.miss);
 }
@@ -2632,7 +2671,6 @@ browser_window_navigate(struct browser_window *bw,
 			struct fetch_multipart_data *post_multipart,
 			hlcache_handle *parent)
 {
-	hlcache_handle *c;
 	int depth = 0;
 	struct browser_window *cur;
 	uint32_t fetch_flags = 0;
@@ -2758,36 +2796,100 @@ browser_window_navigate(struct browser_window *bw,
 	browser_window_remove_caret(bw, false);
 	browser_window_destroy_children(bw);
 
-	NSLOG(netsurf, INFO, "Loading '%s'", nsurl_access(url));
+	/* At this point, we're navigating, so store the fetch parameters */
+	browser_window__free_fetch_parameters(&bw->loading_parameters);
+
+	bw->loading_parameters.url = nsurl_ref(url);
+
+	if (referrer != NULL) {
+		bw->loading_parameters.referrer = nsurl_ref(referrer);
+	}
+
+	bw->loading_parameters.flags = flags;
+
+	if (post_urlenc != NULL) {
+		bw->loading_parameters.post_urlenc = strdup(post_urlenc);
+	}
+
+	if (post_multipart != NULL) {
+		bw->loading_parameters.post_multipart = fetch_multipart_data_clone(post_multipart);
+	}
+
+	if (parent != NULL) {
+		bw->loading_parameters.parent_charset = strdup(child.charset);
+		bw->loading_parameters.parent_quirks = child.quirks;
+	}
+
+	error = browser_window__navigate_internal(bw, &bw->loading_parameters);
+
+	nsurl_unref(url);
+
+	if (referrer != NULL) {
+		nsurl_unref(referrer);
+	}
+
+	return error;
+}
+
+nserror
+browser_window__navigate_internal(struct browser_window *bw,
+				  struct browser_fetch_parameters *params)
+{
+	uint32_t fetch_flags = 0;
+	bool fetch_is_post = (params->post_urlenc != NULL || params->post_multipart != NULL);
+	llcache_post_data post;
+	hlcache_child_context child;
+	nserror error;
+	hlcache_handle *c;
+
+	NSLOG(netsurf, INFO, "Loading '%s'", nsurl_access(params->url));
+
+	/* Set up retrieval parameters */
+	if (!(params->flags & BW_NAVIGATE_UNVERIFIABLE)) {
+		fetch_flags |= LLCACHE_RETRIEVE_VERIFIABLE;
+	}
+
+	if (params->post_multipart != NULL) {
+		post.type = LLCACHE_POST_MULTIPART;
+		post.data.multipart = params->post_multipart;
+	} else if (params->post_urlenc != NULL) {
+		post.type = LLCACHE_POST_URL_ENCODED;
+		post.data.urlenc = params->post_urlenc;
+	}
+
+	if (params->parent_charset != NULL) {
+		child.charset = params->parent_charset;
+		child.quirks = params->parent_quirks;
+	}
 
 	browser_window_set_status(bw, messages_get("Loading"));
-	bw->history_add = (flags & BW_NAVIGATE_HISTORY);
+	bw->history_add = (params->flags & BW_NAVIGATE_HISTORY);
 
 	/* Verifiable fetches may trigger a download */
-	if (!(flags & BW_NAVIGATE_UNVERIFIABLE)) {
+	if (!(params->flags & BW_NAVIGATE_UNVERIFIABLE)) {
 		fetch_flags |= HLCACHE_RETRIEVE_MAY_DOWNLOAD;
 	}
 
-	error = hlcache_handle_retrieve(url,
+	error = hlcache_handle_retrieve(params->url,
 					fetch_flags | HLCACHE_RETRIEVE_SNIFF_TYPE,
-					referrer,
+					params->referrer,
 					fetch_is_post ? &post : NULL,
 					browser_window_callback, bw,
-					parent != NULL ? &child : NULL,
+					params->parent_charset != NULL ? &child : NULL,
 					CONTENT_ANY, &c);
 
 	switch (error) {
 	case NSERROR_OK:
 		bw->loading_content = c;
 		browser_window_start_throbber(bw);
-		error = browser_window_refresh_url_bar_internal(bw, url);
+		error = browser_window_refresh_url_bar_internal(bw, params->url);
 		break;
 
 	case NSERROR_NO_FETCH_HANDLER: /* no handler for this type */
 		/** \todo does this always try and download even
 		 * unverifiable content?
 		 */
-		error = guit->misc->launch_url(url);
+		error = guit->misc->launch_url(params->url);
 		break;
 
 	default: /* report error to user */
@@ -2796,11 +2898,6 @@ browser_window_navigate(struct browser_window *bw,
 		guit->misc->warning(messages_get_errorcode(error), NULL);
 		break;
 
-	}
-
-	nsurl_unref(url);
-	if (referrer != NULL) {
-		nsurl_unref(referrer);
 	}
 
 	/* Record time */
