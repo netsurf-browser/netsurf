@@ -498,7 +498,7 @@ fetch_curl_report_certs_upstream(struct curl_fetch_info *f)
 			X509_get_signature_type(certs[depth].cert);
 
 		/* serial number */
-		asn1_num = X509_get0_serialNumber(certs[depth].cert);
+		asn1_num = X509_get_serialNumber(certs[depth].cert);
 		if (asn1_num != NULL) {
 			bignum = ASN1_INTEGER_to_BN(asn1_num, NULL);
 			if (bignum != NULL) {
