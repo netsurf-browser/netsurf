@@ -117,12 +117,12 @@ static bool nssprite_convert(struct content *c)
 
 	nssprite->bitmap = guit->bitmap->create(sprite->width, sprite->height, BITMAP_NEW);
 	if (!nssprite->bitmap) {
-		content_broadcast_errorcode(c, NSERROR_NOMEM);
+		content_broadcast_error(c, NSERROR_NOMEM, NULL);
 		return false;
 	}
 	uint32_t* imagebuf = (uint32_t *)guit->bitmap->get_buffer(nssprite->bitmap);
 	if (!imagebuf) {
-		content_broadcast_errorcode(c, NSERROR_NOMEM);
+		content_broadcast_error(c, NSERROR_NOMEM, NULL);
 		return false;
 	}
 	unsigned char *spritebuf = (unsigned char *)sprite->image;
@@ -165,7 +165,7 @@ ro_sprite_error:
 	if (ctx != NULL) {
 		rosprite_destroy_mem_context(ctx);
 	}
-	content_broadcast_errorcode(c, NSERROR_SPRITE_ERROR);
+	content_broadcast_error(c, NSERROR_SPRITE_ERROR, NULL);
 
 	return false;
 }
