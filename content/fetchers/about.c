@@ -737,6 +737,9 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 			"<h1>%s</h1>\n",
 			title, title);
 
+	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+			 "<form method=\"post\" enctype=\"multipart/form-data\">");
+
 	res = get_login_description(siteurl,
 				    realm,
 				    username,
@@ -749,8 +752,6 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 		free(description);
 	}
 
-	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
-			 "<form method=\"post\" enctype=\"multipart/form-data\">");
 
 	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
 			 "<div>"
@@ -769,7 +770,7 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 			 messages_get("Password"), password);
 
 	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
-			 "<div>"
+			 "<div align=\"right\">"
 			 "<input type=\"submit\" id=\"cancel\" name=\"cancel\" "
 			 "value=\"%s\">"
 			 "<input type=\"submit\" id=\"login\" name=\"login\" "
