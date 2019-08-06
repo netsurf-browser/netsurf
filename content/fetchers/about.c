@@ -770,7 +770,7 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 			 messages_get("Password"), password);
 
 	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
-			 "<div align=\"right\">"
+			 "<div id=\"buttons\">"
 			 "<input type=\"submit\" id=\"cancel\" name=\"cancel\" "
 			 "value=\"%s\">"
 			 "<input type=\"submit\" id=\"login\" name=\"login\" "

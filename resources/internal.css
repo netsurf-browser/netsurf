@@ -241,28 +241,40 @@ p.imagecachelist span {
  * authentication styling
  */
 
+body#authentication {
+    max-width: 34em;
+}
+
 body#authentication form {
   /* Just to center the form on the page */
   margin: 0 auto;
-  width: 400px;
   /* To see the outline of the form */
   padding: 1em;
   border: 1px solid #CCC;
   border-radius: 1em;
 }
 
+body#authentication form div + div {
+  margin-top: 1em;
+}
+
 body#authentication label {
   /* To make sure that all labels have the same size and are properly aligned */
   display: inline-block;
-  width: 90px;
+  width: 7em;
   text-align: right;
 }
 
 body#authentication input#username, body#authentication input#password {
 /* To give the same size to all text fields */
-  width: 300px;
+  width: 24em;
   box-sizing: border-box;
 
   /* To harmonize the look & feel of text field border */
   border: 1px solid #999;
+}
+
+body#authentication div#buttons {
+    text-align: right;
+    margin-right: 1em;
 }
