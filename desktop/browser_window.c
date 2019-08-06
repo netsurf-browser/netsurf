@@ -716,7 +716,6 @@ static nserror browser_window_content_ready(struct browser_window *bw)
 		bw->loading_ssl_info.num = 0;
 	}
 
-
 	/* Format the new content to the correct dimensions */
 	browser_window_get_dimensions(bw, &width, &height);
 	width /= bw->scale;
@@ -724,7 +723,7 @@ static nserror browser_window_content_ready(struct browser_window *bw)
 	content_reformat(bw->current_content, false, width, height);
 
 	/* history */
-	if (bw->history_add && bw->history) {
+	if (bw->history_add && bw->history && !bw->internal_nav) {
 		nsurl *url = hlcache_handle_get_url(bw->current_content);
 
 		if (urldb_add_url(url)) {
@@ -828,8 +827,8 @@ browser_window_content_done(struct browser_window *bw)
 		}
 	}
 
-	browser_window_history_update(bw, bw->current_content);
 	if (!bw->internal_nav) {
+		browser_window_history_update(bw, bw->current_content);
 		hotlist_update_url(hlcache_handle_get_url(bw->current_content));
 	}
 
@@ -3000,6 +2999,12 @@ browser_window_navigate(struct browser_window *bw,
 		if (post_multipart == NULL) {
 			return NSERROR_NEED_DATA;
 		}
+		/* It *is* internal, set it as such */
+		flags |= BW_NAVIGATE_INTERNAL | BW_NAVIGATE_HISTORY;
+		/* If we were previously internal, don't update again */
+		if (bw->internal_nav) {
+			flags |= BW_NAVIGATE_NO_TERMINAL_HISTORY_UPDATE;
+		}
 	}
 
 	/* If we're navigating and we have a history entry and a content
@@ -3321,6 +3326,7 @@ browser_window__navigate_internal_query_auth(struct browser_window *bw,
 	nsurl_unref(sitensurl);
 
 	/* Finally navigate to the original loading parameters */
+	bw->internal_nav = false;
 	return browser_window__navigate_internal_real(bw, &bw->loading_parameters);
 }
 
