@@ -1107,7 +1107,6 @@ static struct gui_misc_table atari_misc_table = {
     .warning = atari_warn_user,
 
     .quit = gui_quit,
-    .cert_verify = gui_cert_verify,
 };
 
 /* #define WITH_DBG_LOGFILE 1 */

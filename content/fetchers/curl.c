@@ -555,6 +555,49 @@ fetch_curl_report_certs_upstream(struct curl_fetch_info *f)
 		ssl_certs[depth].cert_type =
 			X509_certificate_type(certs[depth].cert,
 					      X509_get_pubkey(certs[depth].cert));
+
+		/* error code (if any) */
+		switch (certs[depth].err) {
+		case X509_V_OK:
+			ssl_certs[depth].err = SSL_CERT_ERR_OK;
+			break;
+		case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
+			/* fallthrough */
+		case X509_V_ERR_UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY:
+			ssl_certs[depth].err = SSL_CERT_ERR_BAD_ISSUER;
+			break;
+		case X509_V_ERR_UNABLE_TO_DECRYPT_CERT_SIGNATURE:
+			/* fallthrough */
+		case X509_V_ERR_UNABLE_TO_DECRYPT_CRL_SIGNATURE:
+			/* fallthrough */
+		case X509_V_ERR_CERT_SIGNATURE_FAILURE:
+			/* fallthrough */
+		case X509_V_ERR_CRL_SIGNATURE_FAILURE:
+			ssl_certs[depth].err = SSL_CERT_ERR_BAD_SIG;
+			break;
+		case X509_V_ERR_CERT_NOT_YET_VALID:
+			/* fallthrough */
+		case X509_V_ERR_CRL_NOT_YET_VALID:
+			ssl_certs[depth].err = SSL_CERT_ERR_TOO_YOUNG;
+			break;
+		case X509_V_ERR_CERT_HAS_EXPIRED:
+			/* fallthrough */
+		case X509_V_ERR_CRL_HAS_EXPIRED:
+			ssl_certs[depth].err = SSL_CERT_ERR_TOO_OLD;
+			break;
+		case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
+			ssl_certs[depth].err = SSL_CERT_ERR_SELF_SIGNED;
+			break;
+		case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
+			ssl_certs[depth].err = SSL_CERT_ERR_CHAIN_SELF_SIGNED;
+			break;
+		case X509_V_ERR_CERT_REVOKED:
+			ssl_certs[depth].err = SSL_CERT_ERR_REVOKED;
+			break;
+		default:
+			ssl_certs[depth].err = SSL_CERT_ERR_UNKNOWN;
+			break;
+		}
 	}
 
 	msg.type = FETCH_CERTS;

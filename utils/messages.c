@@ -343,6 +343,54 @@ const char *messages_get_errorcode(nserror code)
 	return messages_get_ctx("Unknown", messages_hash);
 }
 
+/* exported function documented in utils/messages.h */
+const char *messages_get_sslcode(ssl_cert_err code)
+{
+	switch (code) {
+	case SSL_CERT_ERR_OK:
+		/* Nothing wrong with this certificate */
+		return messages_get_ctx("SSLCertErrOk", messages_hash);
+
+	case SSL_CERT_ERR_UNKNOWN:
+		/* Unknown error */
+		return messages_get_ctx("SSLCertErrUnknown", messages_hash);
+
+	case SSL_CERT_ERR_BAD_ISSUER:
+		/* Bad issuer */
+		return messages_get_ctx("SSLCertErrBadIssuer", messages_hash);
+
+	case SSL_CERT_ERR_BAD_SIG:
+		/* Bad signature on this certificate */
+		return messages_get_ctx("SSLCertErrBadSig", messages_hash);
+
+	case SSL_CERT_ERR_TOO_YOUNG:
+		/* This certificate is not yet valid */
+		return messages_get_ctx("SSLCertErrTooYoung", messages_hash);
+
+	case SSL_CERT_ERR_TOO_OLD:
+		/* This certificate is no longer valid */
+		return messages_get_ctx("SSLCertErrTooOld", messages_hash);
+
+	case SSL_CERT_ERR_SELF_SIGNED:
+		/* This certificate is self signed */
+		return messages_get_ctx("SSLCertErrSelfSigned", messages_hash);
+
+	case SSL_CERT_ERR_CHAIN_SELF_SIGNED:
+		/* This certificate chain is self signed */
+		return messages_get_ctx("SSLCertErrChainSelfSigned", messages_hash);
+
+	case SSL_CERT_ERR_REVOKED:
+		/* This certificate has been revoked */
+		return messages_get_ctx("SSLCertErrRevoked", messages_hash);
+	}
+
+	/* The switch has no default, so the compiler should tell us when we
+	 * forget to add messages for new error codes.  As such, we should
+	 * never get here.
+	 */
+	assert(0);
+	return messages_get_ctx("Unknown", messages_hash);
+}
 
 /* exported function documented in utils/messages.h */
 void messages_destroy(void)

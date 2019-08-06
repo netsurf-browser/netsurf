@@ -36,6 +36,7 @@
 #include <stdint.h>
 
 #include "utils/errors.h"
+#include "netsurf/ssl_certs.h"
 
 /**
  * Read keys and values from messages file into the standard Messages hash.
@@ -77,6 +78,14 @@ const char *messages_get(const char *key);
  * \return message text
  */
 const char *messages_get_errorcode(nserror code);
+
+/**
+ * lookup of a message by SSL error code from the standard Messages hash.
+ *
+ * \param code ssl error code
+ * \return message text
+ */
+const char *messages_get_sslcode(ssl_cert_err code);
 
 /**
  * Formatted message from a key in the global message hash.

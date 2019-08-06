@@ -28,6 +28,7 @@
 #include "utils/config.h"
 #include "utils/nsurl.h"
 #include "utils/inet.h"
+#include "netsurf/ssl_certs.h"
 
 struct content;
 struct fetch;
@@ -87,23 +88,6 @@ struct fetch_multipart_data {
 	char *rawfile; /**< Raw filename if file is true */
 	bool file; /**< Item is a file */
 };
-
-/**
- * ssl certificate information for certificate error message
- */
-struct ssl_cert_info {
-	long version;		/**< Certificate version */
-	char not_before[32];	/**< Valid from date */
-	char not_after[32];	/**< Valid to date */
-	int sig_type;		/**< Signature type */
-	char serialnum[64];	/**< Serial number */
-	char issuer[256];	/**< Issuer details */
-	char subject[256];	/**< Subject details */
-	int cert_type;		/**< Certificate type */
-};
-
-/** maximum number of X509 certificates in chain for TLS connection */
-#define MAX_SSL_CERTS 10
 
 typedef void (*fetch_callback)(const fetch_msg *msg, void *p);
 

@@ -844,23 +844,45 @@ browser_window_content_done(struct browser_window *bw)
  * Handle query responses from SSL requests
  */
 static nserror
-browser_window__handle_query_response(bool proceed, void *pw)
+browser_window__handle_ssl_query_response(bool proceed, void *pw)
 {
 	struct browser_window *bw = (struct browser_window *)pw;
-	nserror res = NSERROR_OK;
 
-	if (proceed) {
-		/* We want to restart the request, with the loading
-		 * context
-		 */
-		res = browser_window__navigate_internal(bw, &bw->loading_parameters);
-
-		if (res != NSERROR_OK) {
-			NSLOG(netsurf, WARNING, "Unable to navigate after query proceeds");
-		}
+	/* If we're in the process of loading, stop the load */
+	if (bw->loading_content != NULL) {
+		/* We had a loading content (maybe auth page?) */
+		browser_window_stop(bw);
+		browser_window_remove_caret(bw, false);
+		browser_window_destroy_children(bw);
 	}
 
-	return res;
+	if (!proceed) {
+		/* We're processing a "back to safety", do a rough-and-ready
+		 * nav to the old 'current' parameters, with any post data
+		 * stripped away
+		 */
+		if (bw->current_parameters.post_urlenc != NULL) {
+			free(bw->current_parameters.post_urlenc);
+			bw->current_parameters.post_urlenc = NULL;
+		}
+
+		if (bw->current_parameters.post_multipart != NULL) {
+			fetch_multipart_data_destroy(bw->current_parameters.post_multipart);
+			bw->current_parameters.post_multipart = NULL;
+		}
+
+		bw->current_parameters.flags &= ~BW_NAVIGATE_HISTORY;
+		bw->internal_nav = false;
+		return browser_window__navigate_internal(bw, &bw->current_parameters);
+	}
+
+	/* We're processing a "proceed" attempt from the form */
+	/* First, we permit the SSL */
+	urldb_set_cert_permissions(bw->loading_parameters.url, true);
+
+	/* And then we navigate to the original loading parameters */
+	bw->internal_nav = false;
+	return browser_window__navigate_internal(bw, &bw->loading_parameters);
 }
 
 /**
@@ -1074,6 +1096,70 @@ out:
 }
 
 /**
+ * Handle a certificate verification request (BAD_CERTS) during a fetch
+ */
+static nserror
+browser_window__handle_bad_certs(struct browser_window *bw,
+				 nsurl *url)
+{
+	struct browser_fetch_parameters params;
+	nserror err;
+	/* Initially we don't know WHY the SSL cert was bad */
+	const char *reason = messages_get_sslcode(SSL_CERT_ERR_UNKNOWN);
+	size_t n;
+
+	memset(&params, 0, sizeof(params));
+
+	err = nsurl_create("about:query/ssl", &params.url);
+	if (err != NSERROR_OK) {
+		goto out;
+	}
+
+	err = fetch_multipart_data_new_kv(&params.post_multipart,
+					  "siteurl",
+					  nsurl_access(url));
+	if (err != NSERROR_OK) {
+		goto out;
+	}
+
+	for (n = 0; n < bw->loading_ssl_info.num; ++n) {
+		size_t idx = bw->loading_ssl_info.num - (n + 1);
+		ssl_cert_err err = bw->loading_ssl_info.certs[idx].err;
+		if (err != SSL_CERT_ERR_OK) {
+			reason = messages_get_sslcode(err);
+			break;
+		}
+	}
+
+	err = fetch_multipart_data_new_kv(&params.post_multipart,
+					  "reason",
+					  reason);
+	if (err != NSERROR_OK) {
+		goto out;
+	}
+
+	/* Now we issue the fetch */
+	bw->internal_nav = true;
+	err = browser_window__navigate_internal(bw, &params);
+	if (err != NSERROR_OK) {
+		goto out;
+	}
+
+	err = guit->misc->cert_verify(url,
+				      bw->loading_ssl_info.certs,
+				      bw->loading_ssl_info.num,
+				      browser_window__handle_ssl_query_response,
+				      bw);
+
+	if (err == NSERROR_NOT_IMPLEMENTED) {
+		err = NSERROR_OK;
+	}
+out:
+	browser_window__free_fetch_parameters(&params);
+	return err;
+}
+
+/**
  * Handle errors during content fetch
  */
 static nserror
@@ -1129,14 +1215,7 @@ browser_window__handle_error(struct browser_window *bw,
 		res = browser_window__handle_login(bw, message, url);
 		break;
 	case NSERROR_BAD_CERTS:
-		res = guit->misc->cert_verify(url,
-					      bw->loading_ssl_info.certs,
-					      bw->loading_ssl_info.num,
-					      browser_window__handle_query_response,
-					      bw);
-		if (res != NSERROR_OK) {
-			NSLOG(netsurf, DEBUG, "Unable to start GUI callback for SSL certs");
-		}
+		res = browser_window__handle_bad_certs(bw, url);
 		break;
 	default:
 		break;
@@ -2986,6 +3065,8 @@ browser_window_navigate(struct browser_window *bw,
 	if (scheme == corestring_lwc_about) {
 		if (path == corestring_lwc_query_auth) {
 			is_internal = true;
+		} else if (path == corestring_lwc_query_ssl) {
+			is_internal = true;
 		}
 	}
 	lwc_string_unref(scheme);
@@ -3331,6 +3412,32 @@ browser_window__navigate_internal_query_auth(struct browser_window *bw,
 }
 
 
+/**
+ * Internal navigation handler for the SSL/privacy query page.
+ *
+ * If the parameters indicate we're processing a *response* from the handler
+ * then we deal with that, otherwise we pass it on to the about: handler
+ */
+static nserror
+browser_window__navigate_internal_query_ssl(struct browser_window *bw,
+					    struct browser_fetch_parameters *params)
+{
+	bool is_proceed = false, is_back = false;
+
+	assert(params->post_multipart != NULL);
+
+	is_proceed = fetch_multipart_data_find(params->post_multipart, "proceed") != NULL;
+	is_back = fetch_multipart_data_find(params->post_multipart, "back") != NULL;
+
+	if (!(is_proceed || is_back)) {
+		/* This is a request, so pass it on */
+		return browser_window__navigate_internal_real(bw, params);
+	}
+
+	return browser_window__handle_ssl_query_response(is_proceed, bw);
+}
+
+
 nserror
 browser_window__navigate_internal(struct browser_window *bw,
 				  struct browser_fetch_parameters *params)
@@ -3355,6 +3462,10 @@ browser_window__navigate_internal(struct browser_window *bw,
 	if (path == corestring_lwc_query_auth) {
 		lwc_string_unref(path);
 		return browser_window__navigate_internal_query_auth(bw, params);
+	}
+	if (path == corestring_lwc_query_ssl) {
+		lwc_string_unref(path);
+		return browser_window__navigate_internal_query_ssl(bw, params);
 	}
 	lwc_string_unref(path);
 
