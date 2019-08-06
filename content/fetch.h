@@ -185,6 +185,30 @@ void fetch_multipart_data_destroy(struct fetch_multipart_data *list);
 struct fetch_multipart_data *fetch_multipart_data_clone(const struct fetch_multipart_data *list);
 
 /**
+ * Find an entry in a fetch_multipart_data
+ *
+ * \param list Pointer to the multipart list
+ * \param name The name to look for in the list
+ * \return The value found, or NULL if not present
+ */
+const char *fetch_multipart_data_find(const struct fetch_multipart_data *list,
+				      const char *name);
+
+/**
+ * Create an entry for a fetch_multipart_data
+ *
+ * If an entry exists of the same name, it will *NOT* be overwritten
+ *
+ * \param list Pointer to the pointer to the current multipart list
+ * \param name The name of the entry to create
+ * \param value The value of the entry to create
+ * \return The result of the attempt
+ */
+nserror fetch_multipart_data_new_kv(struct fetch_multipart_data **list,
+				    const char *name,
+				    const char *value);
+
+/**
  * send message to fetch
  */
 void fetch_send_callback(const fetch_msg *msg, struct fetch *fetch);

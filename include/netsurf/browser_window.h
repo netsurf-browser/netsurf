@@ -120,7 +120,10 @@ enum browser_window_nav_flags {
 	BW_NAVIGATE_UNVERIFIABLE	= (1 << 2),
 
 	/** suppress initial history updates (used by back/fwd/etc) */
-	BW_NAVIGATE_NO_TERMINAL_HISTORY_UPDATE = (1 << 3)
+	BW_NAVIGATE_NO_TERMINAL_HISTORY_UPDATE = (1 << 3),
+
+	/** Internal navigation (set only by core features using such) */
+	BW_NAVIGATE_INTERNAL            = (1 << 4)
 };
 
 /**

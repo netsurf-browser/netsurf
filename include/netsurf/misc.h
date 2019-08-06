@@ -98,18 +98,28 @@ struct gui_misc_table {
 			void *cbpw);
 
 	/**
-	 * Prompt user for login
+	 * Retrieve username/password for a given url+realm if there is one
+	 * stored in a frontend-specific way (e.g. gnome-keyring)
 	 *
-	 * To cancel a login, clients should call the `cb` callback passing
-	 * NULL for username, and password.  Otherwise, for logins, username
-	 * and password should both be non-NULL.  Pass "" if the empty string
+	 * To respond, call the callback with the url, realm, username,
+	 * and password.  Pass "" if the empty string
 	 * is required.
 	 *
-	 * If the front end returns NSERROR_OK for this function, they must,
+	 * To keep hold of the url, remember to nsurl_ref() it, and to keep
+	 * the realm, you will need to strdup() it.
+	 *
+	 * If the front end returns NSERROR_OK for this function, they may,
 	 * at some future time, call the `cb` with `cbpw` callback exactly once.
 	 *
-	 * If ther front end returns other than NSERROR_OK, they should not
+	 * If the front end returns other than NSERROR_OK, they should not
 	 * call the `cb` callback.
+	 *
+	 * The callback should not be called immediately upon receipt of this
+	 * call as the browser window may not be reentered.
+	 *
+	 * **NOTE** The lifetime of the cbpw is not well defined.  In general
+	 * do not use the cb if *any* browser window has navigated or been
+	 * destroyed.
 	 *
 	 * \param url       The URL being verified.
 	 * \param realm     The authorization realm.
@@ -120,11 +130,13 @@ struct gui_misc_table {
 	 * \return NSERROR_OK on sucess else error and cb never called
 	 */
 	nserror (*login)(struct nsurl *url, const char *realm,
-			const char *username, const char *password,
-			nserror (*cb)(const char *username,
-					const char *password,
-					void *pw),
-			void *cbpw);
+			 const char *username, const char *password,
+			 nserror (*cb)(struct nsurl *url,
+				       const char *realm,
+				       const char *username,
+				       const char *password,
+				       void *pw),
+			 void *cbpw);
 
 	/**
 	 * Prompt the user for a password for a PDF.

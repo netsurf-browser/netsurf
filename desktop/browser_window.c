@@ -92,6 +92,33 @@ static nserror browser_window__navigate_internal(
 
 
 /**
+ * Close and destroy all child browser window.
+ *
+ * \param  bw  browser window
+ */
+static void browser_window_destroy_children(struct browser_window *bw)
+{
+	int i;
+
+	if (bw->children) {
+		for (i = 0; i < (bw->rows * bw->cols); i++)
+			browser_window_destroy_internal(&bw->children[i]);
+		free(bw->children);
+		bw->children = NULL;
+		bw->rows = 0;
+		bw->cols = 0;
+	}
+	if (bw->iframes) {
+		for (i = 0; i < bw->iframe_count; i++)
+			browser_window_destroy_internal(&bw->iframes[i]);
+		free(bw->iframes);
+		bw->iframes = NULL;
+		bw->iframe_count = 0;
+	}
+}
+
+
+/**
  * Free the stored fetch parameters
  *
  * \param bw The browser window
@@ -679,14 +706,16 @@ static nserror browser_window_content_ready(struct browser_window *bw)
 	bw->current_content = bw->loading_content;
 	bw->loading_content = NULL;
 
-	/* Transfer the fetch parameters */
-	browser_window__free_fetch_parameters(&bw->current_parameters);
-	bw->current_parameters = bw->loading_parameters;
-	memset(&bw->loading_parameters, 0, sizeof(bw->loading_parameters));
+	if (!bw->internal_nav) {
+		/* Transfer the fetch parameters */
+		browser_window__free_fetch_parameters(&bw->current_parameters);
+		bw->current_parameters = bw->loading_parameters;
+		memset(&bw->loading_parameters, 0, sizeof(bw->loading_parameters));
+		/* Transfer the SSL info */
+		bw->current_ssl_info = bw->loading_ssl_info;
+		bw->loading_ssl_info.num = 0;
+	}
 
-	/* Transfer the SSL info */
-	bw->current_ssl_info = bw->loading_ssl_info;
-	bw->loading_ssl_info.num = 0;
 
 	/* Format the new content to the correct dimensions */
 	browser_window_get_dimensions(bw, &width, &height);
@@ -800,7 +829,9 @@ browser_window_content_done(struct browser_window *bw)
 	}
 
 	browser_window_history_update(bw, bw->current_content);
-	hotlist_update_url(hlcache_handle_get_url(bw->current_content));
+	if (!bw->internal_nav) {
+		hotlist_update_url(hlcache_handle_get_url(bw->current_content));
+	}
 
 	if (bw->refresh_interval != -1) {
 		guit->misc->schedule(bw->refresh_interval * 10,
@@ -810,12 +841,8 @@ browser_window_content_done(struct browser_window *bw)
 	return NSERROR_OK;
 }
 
-/* Cheeky import for now */
-nserror netsurf__handle_login(const char * realm, nsurl *url,
-			      browser_window_query_callback cb, void *cbpw);
-
 /**
- * Handle query responses from authentication or SSL requests
+ * Handle query responses from SSL requests
  */
 static nserror
 browser_window__handle_query_response(bool proceed, void *pw)
@@ -837,6 +864,215 @@ browser_window__handle_query_response(bool proceed, void *pw)
 	return res;
 }
 
+/**
+ * Unpack a "username:password" to components.
+ *
+ * \param[in]  userpass      The input string to split.
+ * \param[in]  username_out  Returns username on success.  Owned by caller.
+ * \param[out] password_out  Returns password on success.  Owned by caller.
+ * \return NSERROR_OK, or appropriate error code.
+ */
+static nserror
+browser_window__unpack_userpass(const char *userpass,
+				char **username_out,
+				char **password_out)
+{
+	const char *tmp;
+	char *username;
+	char *password;
+	size_t len;
+
+	if (userpass == NULL) {
+		username = malloc(1);
+		password = malloc(1);
+		if (username == NULL || password == NULL) {
+			free(username);
+			free(password);
+			return NSERROR_NOMEM;
+		}
+		username[0] = '\0';
+		password[0] = '\0';
+
+		*username_out = username;
+		*password_out = password;
+		return NSERROR_OK;
+	}
+
+	tmp = strchr(userpass, ':');
+	if (tmp == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	} else {
+		size_t len2;
+		len = tmp - userpass;
+		len2 = strlen(++tmp);
+
+		username = malloc(len + 1);
+		password = malloc(len2 + 1);
+		if (username == NULL || password == NULL) {
+			free(username);
+			free(password);
+			return NSERROR_NOMEM;
+		}
+		memcpy(username, userpass, len);
+		username[len] = '\0';
+		memcpy(password, tmp, len2 + 1);
+	}
+
+	*username_out = username;
+	*password_out = password;
+	return NSERROR_OK;
+}
+
+/**
+ * Build a "username:password" from components.
+ *
+ * \param[in]  username      The username component.
+ * \param[in]  password      The password component.
+ * \param[out] userpass_out  Returns combined string on success.
+ *                           Owned by caller.
+ * \return NSERROR_OK, or appropriate error code.
+ */
+static nserror
+browser_window__build_userpass(const char *username,
+			       const char *password,
+			       char **userpass_out)
+{
+	char *userpass;
+	size_t len;
+
+	len = strlen(username) + 1 + strlen(password) + 1;
+
+	userpass = malloc(len);
+	if (userpass == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	snprintf(userpass, len, "%s:%s", username, password);
+
+	*userpass_out = userpass;
+	return NSERROR_OK;
+}
+
+/**
+ * Handle a response from the UI when prompted for credentials
+ */
+static nserror
+browser_window__handle_userpass_response(nsurl *url,
+					 const char *realm,
+					 const char *username,
+					 const char *password,
+					 void *pw)
+{
+	struct browser_window *bw = (struct browser_window *)pw;
+	char *userpass;
+	nserror err;
+
+	err = browser_window__build_userpass(username, password, &userpass);
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
+	urldb_set_auth_details(url, realm, userpass);
+
+	free(userpass);
+
+	/**
+	 * \todo QUERY - Eventually this should fill out the form *NOT* nav
+	 *               to the original location
+	 */
+	/* Finally navigate to the original loading parameters */
+	if (bw->loading_content != NULL) {
+		/* We had a loading content (maybe auth page?) */
+		browser_window_stop(bw);
+		browser_window_remove_caret(bw, false);
+		browser_window_destroy_children(bw);
+	}
+	bw->internal_nav = false;
+	return browser_window__navigate_internal(bw, &bw->loading_parameters);
+}
+
+/**
+ * Handle login request (BAD_AUTH) during fetch
+ *
+ */
+static nserror
+browser_window__handle_login(struct browser_window *bw,
+			     const char *realm,
+			     nsurl *url) {
+	char *username = NULL, *password = NULL;
+	nserror err = NSERROR_OK;
+	struct browser_fetch_parameters params;
+
+	memset(&params, 0, sizeof(params));
+
+	/* Step one, retrieve what we have */
+	err = browser_window__unpack_userpass(
+		urldb_get_auth_details(url, realm),
+		&username, &password);
+	if (err != NSERROR_OK) {
+		goto out;
+	}
+
+	/* Step two, construct our fetch parameters */
+	err = nsurl_create("about:query/auth", &params.url);
+	if (err != NSERROR_OK) {
+		goto out;
+	}
+	params.referrer = nsurl_ref(url);
+	params.flags = BW_NAVIGATE_HISTORY | BW_NAVIGATE_NO_TERMINAL_HISTORY_UPDATE | BW_NAVIGATE_INTERNAL;
+
+	err = fetch_multipart_data_new_kv(&params.post_multipart,
+					  "siteurl",
+					  nsurl_access(url));
+	if (err != NSERROR_OK) {
+		goto out;
+	}
+
+	err = fetch_multipart_data_new_kv(&params.post_multipart,
+					  "realm",
+					  realm);
+	if (err != NSERROR_OK) {
+		goto out;
+	}
+
+	err = fetch_multipart_data_new_kv(&params.post_multipart,
+					  "username",
+					  username);
+	if (err != NSERROR_OK) {
+		goto out;
+	}
+
+	err = fetch_multipart_data_new_kv(&params.post_multipart,
+					  "password",
+					  password);
+	if (err != NSERROR_OK) {
+		goto out;
+	}
+
+	/* Now we issue the fetch */
+	bw->internal_nav = true;
+	err = browser_window__navigate_internal(bw, &params);
+
+	if (err != NSERROR_OK) {
+		goto out;
+	}
+
+	err = guit->misc->login(url, realm, username, password,
+				browser_window__handle_userpass_response, bw);
+
+	if (err == NSERROR_NOT_IMPLEMENTED) {
+		err = NSERROR_OK;
+	}
+out:
+	if (username != NULL) {
+		free(username);
+	}
+	if (password != NULL) {
+		free(password);
+	}
+	browser_window__free_fetch_parameters(&params);
+	return err;
+}
 
 /**
  * Handle errors during content fetch
@@ -891,9 +1127,7 @@ browser_window__handle_error(struct browser_window *bw,
 
 	switch (code) {
 	case NSERROR_BAD_AUTH:
-		res = netsurf__handle_login(message, url,
-					    browser_window__handle_query_response,
-					    bw);
+		res = browser_window__handle_login(bw, message, url);
 		break;
 	case NSERROR_BAD_CERTS:
 		res = guit->misc->cert_verify(url,
@@ -1231,33 +1465,6 @@ browser_window_callback(hlcache_handle *c, const hlcache_event *event, void *pw)
 	}
 
 	return res;
-}
-
-
-/**
- * Close and destroy all child browser window.
- *
- * \param  bw  browser window
- */
-static void browser_window_destroy_children(struct browser_window *bw)
-{
-	int i;
-
-	if (bw->children) {
-		for (i = 0; i < (bw->rows * bw->cols); i++)
-			browser_window_destroy_internal(&bw->children[i]);
-		free(bw->children);
-		bw->children = NULL;
-		bw->rows = 0;
-		bw->cols = 0;
-	}
-	if (bw->iframes) {
-		for (i = 0; i < bw->iframe_count; i++)
-			browser_window_destroy_internal(&bw->iframes[i]);
-		free(bw->iframes);
-		bw->iframes = NULL;
-		bw->iframe_count = 0;
-	}
 }
 
 
@@ -2717,12 +2924,23 @@ nserror browser_window_refresh_url_bar(struct browser_window *bw)
 		ret = browser_window_refresh_url_bar_internal(bw,
 				corestring_nsurl_about_blank);
 	} else if (bw->frag_id == NULL) {
-		ret = browser_window_refresh_url_bar_internal(bw,
-				hlcache_handle_get_url(bw->current_content));
+		nsurl *url;
+		if (bw->internal_nav) {
+			url = bw->loading_parameters.url;
+		} else {
+			url = hlcache_handle_get_url(bw->current_content);
+		}
+		ret = browser_window_refresh_url_bar_internal(bw, url);
 	} else {
 		/* Combine URL and Fragment */
+		nsurl *url;
+		if (bw->internal_nav) {
+			url = bw->loading_parameters.url;
+		} else {
+			url = hlcache_handle_get_url(bw->current_content);
+		}
 		ret = nsurl_refragment(
-			hlcache_handle_get_url(bw->current_content),
+			url,
 			bw->frag_id, &display_url);
 		if (ret == NSERROR_OK) {
 			ret = browser_window_refresh_url_bar_internal(bw,
@@ -2752,11 +2970,37 @@ browser_window_navigate(struct browser_window *bw,
 	llcache_post_data post;
 	hlcache_child_context child;
 	nserror error;
+	bool is_internal = false;
+	struct browser_fetch_parameters params, *pass_params = NULL;
+	lwc_string *scheme, *path;
 
 	assert(bw);
 	assert(url);
 
 	NSLOG(netsurf, INFO, "bw %p, url %s", bw, nsurl_access(url));
+
+	/* Check if this is an internal navigation URL, if so, we do not
+	 * do certain things during the load
+	 */
+	scheme = nsurl_get_component(url, NSURL_SCHEME);
+	path = nsurl_get_component(url, NSURL_PATH);
+	if (scheme == corestring_lwc_about) {
+		if (path == corestring_lwc_query_auth) {
+			is_internal = true;
+		}
+	}
+	lwc_string_unref(scheme);
+	lwc_string_unref(path);
+
+	if (is_internal &&
+	    !(flags & BW_NAVIGATE_INTERNAL)) {
+		/* Internal navigation detected, but flag not set, only allow
+		 * this is there's a fetch multipart
+		 */
+		if (post_multipart == NULL) {
+			return NSERROR_NEED_DATA;
+		}
+	}
 
 	/* If we're navigating and we have a history entry and a content
 	 * then update the history entry before we navigate to save our
@@ -2768,6 +3012,7 @@ browser_window_navigate(struct browser_window *bw,
 	if (bw->current_content != NULL &&
 	    bw->history != NULL &&
 	    bw->history->current != NULL &&
+	    !is_internal &&
 	    !(flags & BW_NAVIGATE_NO_TERMINAL_HISTORY_UPDATE)) {
 		browser_window_history_update(bw, bw->current_content);
 	}
@@ -2872,31 +3117,43 @@ browser_window_navigate(struct browser_window *bw,
 	browser_window_remove_caret(bw, false);
 	browser_window_destroy_children(bw);
 
-	/* At this point, we're navigating, so store the fetch parameters */
-	browser_window__free_fetch_parameters(&bw->loading_parameters);
+	/* Set up the fetch parameters */
+	memset(&params, 0, sizeof(params));
 
-	bw->loading_parameters.url = nsurl_ref(url);
+	params.url = nsurl_ref(url);
 
 	if (referrer != NULL) {
-		bw->loading_parameters.referrer = nsurl_ref(referrer);
+		params.referrer = nsurl_ref(referrer);
 	}
 
-	bw->loading_parameters.flags = flags;
+	params.flags = flags;
 
 	if (post_urlenc != NULL) {
-		bw->loading_parameters.post_urlenc = strdup(post_urlenc);
+		params.post_urlenc = strdup(post_urlenc);
 	}
 
 	if (post_multipart != NULL) {
-		bw->loading_parameters.post_multipart = fetch_multipart_data_clone(post_multipart);
+		params.post_multipart = fetch_multipart_data_clone(post_multipart);
 	}
 
 	if (parent != NULL) {
-		bw->loading_parameters.parent_charset = strdup(child.charset);
-		bw->loading_parameters.parent_quirks = child.quirks;
+		params.parent_charset = strdup(child.charset);
+		params.parent_quirks = child.quirks;
 	}
 
-	error = browser_window__navigate_internal(bw, &bw->loading_parameters);
+	bw->internal_nav = is_internal;
+
+	if (is_internal) {
+		pass_params = &params;
+	} else {
+		/* At this point, we're navigating, so store the fetch parameters */
+		browser_window__free_fetch_parameters(&bw->loading_parameters);
+		memcpy(&bw->loading_parameters, &params, sizeof(params));
+		memset(&params, 0, sizeof(params));
+		pass_params = &bw->loading_parameters;
+	}
+
+	error = browser_window__navigate_internal(bw, pass_params);
 
 	nsurl_unref(url);
 
@@ -2904,12 +3161,16 @@ browser_window_navigate(struct browser_window *bw,
 		nsurl_unref(referrer);
 	}
 
+	if (is_internal) {
+		browser_window__free_fetch_parameters(&params);
+	}
+
 	return error;
 }
 
-nserror
-browser_window__navigate_internal(struct browser_window *bw,
-				  struct browser_fetch_parameters *params)
+static nserror
+browser_window__navigate_internal_real(struct browser_window *bw,
+				       struct browser_fetch_parameters *params)
 {
 	uint32_t fetch_flags = 0;
 	bool fetch_is_post = (params->post_urlenc != NULL || params->post_multipart != NULL);
@@ -2983,6 +3244,118 @@ browser_window__navigate_internal(struct browser_window *bw,
 	nsu_getmonotonic_ms(&bw->last_action);
 
 	return error;
+}
+
+/**
+ * Internal navigation handler for the authentication query handler
+ *
+ * If the parameters indicate we're processing a *response* from the handler
+ * then we deal with that, otherwise we pass it on to the about: handler
+ */
+static nserror
+browser_window__navigate_internal_query_auth(struct browser_window *bw,
+					     struct browser_fetch_parameters *params)
+{
+	char *userpass = NULL;
+	const char *username, *password, *realm, *siteurl;
+	nsurl *sitensurl;
+	nserror res;
+	bool is_login = false, is_cancel = false;
+
+	assert(params->post_multipart != NULL);
+
+	is_login = fetch_multipart_data_find(params->post_multipart, "login") != NULL;
+	is_cancel = fetch_multipart_data_find(params->post_multipart, "cancel") != NULL;
+
+	if (!(is_login || is_cancel)) {
+		/* This is a request, so pass it on */
+		return browser_window__navigate_internal_real(bw, params);
+	}
+
+	if (is_cancel) {
+		/* We're processing a cancel, do a rough-and-ready nav to
+		 * about:blank
+		 */
+		browser_window__free_fetch_parameters(&bw->loading_parameters);
+		res = nsurl_create("about:blank", &bw->loading_parameters.url);
+		if (res != NSERROR_OK) {
+			return res;
+		}
+		bw->loading_parameters.flags = BW_NAVIGATE_NO_TERMINAL_HISTORY_UPDATE | BW_NAVIGATE_INTERNAL;
+		bw->internal_nav = true;
+		return browser_window__navigate_internal(bw, &bw->loading_parameters);
+	}
+
+	/* We're processing a "login" attempt from the form */
+
+	/* Retrieve the data */
+	username = fetch_multipart_data_find(params->post_multipart, "username");
+	password = fetch_multipart_data_find(params->post_multipart, "password");
+	realm = fetch_multipart_data_find(params->post_multipart, "realm");
+	siteurl = fetch_multipart_data_find(params->post_multipart, "siteurl");
+
+	if (username == NULL || password == NULL ||
+	    realm == NULL || siteurl == NULL) {
+		/* Bad inputs, simply fail */
+		return NSERROR_INVALID;
+	}
+
+	/* Parse the URL */
+	res = nsurl_create(siteurl, &sitensurl);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	/* Construct the username/password */
+	res = browser_window__build_userpass(username, password, &userpass);
+	if (res != NSERROR_OK) {
+		nsurl_unref(sitensurl);
+		return res;
+	}
+
+	/* And let urldb know */
+	urldb_set_auth_details(sitensurl, realm, userpass);
+
+	/* Clean up */
+	free(userpass);
+	nsurl_unref(sitensurl);
+
+	/* Finally navigate to the original loading parameters */
+	return browser_window__navigate_internal_real(bw, &bw->loading_parameters);
+}
+
+
+nserror
+browser_window__navigate_internal(struct browser_window *bw,
+				  struct browser_fetch_parameters *params)
+{
+	lwc_string *scheme, *path;
+	/* Here we determine if we're navigating to an internal query URI
+	 * and if so, what we need to do about it.
+	 *
+	 * If we're not, then we just move on to the real navigate.
+	 */
+
+	/* All our special URIs are in the about: scheme */
+	scheme = nsurl_get_component(params->url, NSURL_SCHEME);
+	if (scheme != corestring_lwc_about) {
+		lwc_string_unref(scheme);
+		goto normal_fetch;
+	}
+	lwc_string_unref(scheme);
+
+	/* Is it the auth query handler? */
+	path = nsurl_get_component(params->url, NSURL_PATH);
+	if (path == corestring_lwc_query_auth) {
+		lwc_string_unref(path);
+		return browser_window__navigate_internal_query_auth(bw, params);
+	}
+	lwc_string_unref(path);
+
+	/* Fall through to a normal about: fetch */
+
+normal_fetch:
+	return browser_window__navigate_internal_real(bw, params);
 }
 
 

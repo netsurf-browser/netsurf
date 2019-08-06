@@ -712,6 +712,23 @@ fetch_multipart_data_clone(const struct fetch_multipart_data *list)
 	return result;
 }
 
+
+/* exported interface documented in content/fetch.h */
+const char *
+fetch_multipart_data_find(const struct fetch_multipart_data *list,
+			  const char *name)
+{
+	while (list != NULL) {
+		if (strcmp(list->name, name) == 0) {
+			return list->value;
+		}
+		list = list->next;
+	}
+
+	return NULL;
+}
+
+
 /* exported interface documented in content/fetch.h */
 void fetch_multipart_data_destroy(struct fetch_multipart_data *list)
 {
@@ -729,6 +746,43 @@ void fetch_multipart_data_destroy(struct fetch_multipart_data *list)
 		free(list);
 	}
 }
+
+
+/* exported interface documented in content/fetch.h */
+nserror
+fetch_multipart_data_new_kv(struct fetch_multipart_data **list,
+			    const char *name,
+			    const char *value)
+{
+	struct fetch_multipart_data *newdata;
+
+	assert(list);
+
+	newdata = calloc(sizeof(*newdata), 1);
+
+	if (newdata == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	newdata->name = strdup(name);
+	if (newdata->name == NULL) {
+		free(newdata);
+		return NSERROR_NOMEM;
+	}
+
+	newdata->value = strdup(value);
+	if (newdata->value == NULL) {
+		free(newdata->name);
+		free(newdata);
+		return NSERROR_NOMEM;
+	}
+
+	newdata->next = *list;
+	*list = newdata;
+
+	return NSERROR_OK;
+}
+
 
 /* exported interface documented in content/fetch.h */
 void

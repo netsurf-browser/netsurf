@@ -314,7 +314,6 @@ static struct gui_misc_table win32_misc_table = {
 	.warning = win32_warning,
 
 	.cert_verify = nsw32_cert_verify,
-	.login = nsw32_401login,
 };
 
 /**

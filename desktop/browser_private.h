@@ -167,6 +167,8 @@ struct browser_window {
 	bool throbbing;
 	/** Add loading_content to the window history when it loads. */
 	bool history_add;
+	/** Internal navigation, do not update URL etc */
+	bool internal_nav;
 
 	/** Fragment identifier for current_content. */
 	lwc_string *frag_id;

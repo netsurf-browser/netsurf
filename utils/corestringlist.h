@@ -146,6 +146,7 @@ CORESTRING_LWC_VALUE(slash_, "/");
 CORESTRING_LWC_VALUE(max_age, "max-age");
 CORESTRING_LWC_VALUE(no_cache, "no-cache");
 CORESTRING_LWC_VALUE(no_store, "no-store");
+CORESTRING_LWC_VALUE(query_auth, "query/auth");
 
 /* mime types */
 CORESTRING_LWC_VALUE(multipart_form_data, "multipart/form-data");

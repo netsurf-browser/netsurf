@@ -30,10 +30,12 @@
 struct monkey401 {
 	struct monkey401 *r_next, *r_prev;
 	uint32_t num;
-	nserror (*cb)(const char *, const char *, void *);
+	nserror (*cb)(struct nsurl*, const char *, const char *, const char *, void *);
 	void *cbpw;
 	char *username;
 	char *password;
+	char *realm;
+	struct nsurl *url;
 };
 
 static struct monkey401 *m401_ring = NULL;
@@ -45,7 +47,9 @@ gui_401login_open(struct nsurl *url,
 		  const char *realm,
 		  const char *username,
 		  const char *password,
-		  nserror (*cb)(const char *username,
+		  nserror (*cb)(struct nsurl *url,
+				const char *realm,
+				const char *username,
 				const char *password,
 				void *pw),
 		  void *cbpw)
@@ -56,6 +60,12 @@ gui_401login_open(struct nsurl *url,
 	if (m401_ctx == NULL) {
 		return NSERROR_NOMEM;
 	}
+	m401_ctx->realm = strdup(realm);
+	if (m401_ctx->realm == NULL) {
+		free(m401_ctx);
+		return NSERROR_NOMEM;
+	}
+	m401_ctx->url = nsurl_ref(url);
 	m401_ctx->cb = cb;
 	m401_ctx->cbpw = cbpw;
 	m401_ctx->num = m401_ctr++;
@@ -102,6 +112,8 @@ static void free_login_context(struct monkey401 *m401_ctx) {
 	if (m401_ctx->password != NULL) {
 		free(m401_ctx->password);
 	}
+	free(m401_ctx->realm);
+	nsurl_unref(m401_ctx->url);
 	free(m401_ctx);
 }
 
@@ -121,7 +133,7 @@ monkey_login_handle_go(int argc, char **argv)
 		return;
 	}
 
-	m401_ctx->cb(m401_ctx->username, m401_ctx->password, m401_ctx->cbpw);
+	m401_ctx->cb(m401_ctx->url, m401_ctx->realm, m401_ctx->username, m401_ctx->password, m401_ctx->cbpw);
 	
 	free_login_context(m401_ctx);
 }
@@ -141,8 +153,6 @@ monkey_login_handle_destroy(int argc, char **argv)
 		moutf(MOUT_ERROR, "LOGIN NUM BAD");
 		return;
 	}
-
-	m401_ctx->cb(NULL, NULL, m401_ctx->cbpw);
 
 	free_login_context(m401_ctx);
 }

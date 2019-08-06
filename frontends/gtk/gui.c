@@ -1073,7 +1073,6 @@ static struct gui_misc_table nsgtk_misc_table = {
 	.quit = gui_quit,
 	.launch_url = gui_launch_url,
 	.cert_verify = gtk_cert_verify,
-	.login = gui_401login_open,
 	.pdf_password = nsgtk_pdf_password,
 };
 

@@ -2290,7 +2290,7 @@ static nserror llcache_fetch_auth(llcache_object *object, const char *realm)
 		event.type = LLCACHE_EVENT_ERROR;
 		/** \todo More appropriate error message */
 		event.data.error.code = NSERROR_BAD_AUTH;
-		event.data.error.msg = messages_get("FetchFailed");
+		event.data.error.msg = realm;
 
 		error = llcache_send_event_to_users(object, &event);
 	} else {

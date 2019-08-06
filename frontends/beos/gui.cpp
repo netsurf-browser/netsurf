@@ -997,7 +997,7 @@ static struct gui_misc_table beos_misc_table = {
 	gui_quit,
 	gui_launch_url,
 	NULL, //cert_verify
-	gui_401login_open,
+	NULL, //401login
 	NULL, // pdf_password (if we have Haru support)
 };
 
