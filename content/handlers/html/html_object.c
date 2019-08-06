@@ -178,6 +178,10 @@ html_object_callback(hlcache_handle *object,
 				box->flags & REPLACE_DIM) {
 			union content_msg_data data;
 
+			if (c->had_initial_layout == false) {
+				break;
+			}
+
 			if (!box_visible(box))
 				break;
 
@@ -211,6 +215,10 @@ html_object_callback(hlcache_handle *object,
 	case CONTENT_MSG_REDRAW:
 		if (c->base.status != CONTENT_STATUS_LOADING) {
 			union content_msg_data data = event->data;
+
+			if (c->had_initial_layout == false) {
+				break;
+			}
 
 			if (!box_visible(box))
 				break;

@@ -1592,6 +1592,7 @@ static void html_reformat(struct content *c, int width, int height)
 	selection_reinit(&htmlc->sel, htmlc->layout);
 
 	htmlc->reflowing = false;
+	htmlc->had_initial_layout = true;
 
 	/* calculate next reflow time at three times what it took to reflow */
 	nsu_getmonotonic_ms(&ms_after);

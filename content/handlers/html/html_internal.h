@@ -127,6 +127,9 @@ typedef struct html_content {
 	/** Whether a layout (reflow) is in progress */
 	bool reflowing;
 
+	/** Whether an initial layout has been done */
+	bool had_initial_layout;
+
 	/** Whether scripts are enabled for this content */
 	bool enable_scripting;
 
