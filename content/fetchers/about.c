@@ -801,9 +801,14 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 	msg.type = FETCH_FINISHED;
 	fetch_about_send_callback(&msg, ctx);
 
+	nsurl_unref(siteurl);
+
 	return true;
 
 fetch_about_query_auth_handler_aborted:
+
+	nsurl_unref(siteurl);
+
 	return false;
 }
 
@@ -899,9 +904,13 @@ static bool fetch_about_query_ssl_handler(struct fetch_about_context *ctx)
 	msg.type = FETCH_FINISHED;
 	fetch_about_send_callback(&msg, ctx);
 
+	nsurl_unref(siteurl);
+
 	return true;
 
 fetch_about_query_ssl_handler_aborted:
+	nsurl_unref(siteurl);
+
 	return false;
 }
 
