@@ -2784,6 +2784,7 @@ nl.all.Cancel:Annuleer
 #
 
 en.all.PrivacyTitle:Privacy error
+en.all.PrivacyDescription:Attackers might be trying to steal your information from %s (for example, passwords, messages or credit cards) %s
 en.all.Proceed:Proceed
 en.all.Backtosafety:Back to safety
 

@@ -80,9 +80,11 @@ struct about_handlers {
 	bool hidden; /**< If entry should be hidden in listing */
 };
 
-/** issue fetch callbacks with locking */
-static inline bool fetch_about_send_callback(const fetch_msg *msg,
-		struct fetch_about_context *ctx)
+/**
+ * issue fetch callbacks with locking
+ */
+static inline bool
+fetch_about_send_callback(const fetch_msg *msg, struct fetch_about_context *ctx)
 {
 	ctx->locked = true;
 	fetch_send_callback(msg, ctx->fetchh);
@@ -108,11 +110,39 @@ fetch_about_send_header(struct fetch_about_context *ctx, const char *fmt, ...)
 	msg.data.header_or_data.buf = (const uint8_t *) header;
 	msg.data.header_or_data.len = strlen(header);
 
-	fetch_about_send_callback(&msg, ctx);
-
-	return ctx->aborted;
+	return fetch_about_send_callback(&msg, ctx);
 }
 
+/**
+ * send formatted data on a fetch
+ */
+static nserror ssenddataf(struct fetch_about_context *ctx, const char *fmt, ...)
+{
+	char buffer[1024];
+	fetch_msg msg;
+	va_list ap;
+	int slen;
+
+	va_start(ap, fmt);
+
+	slen = vsnprintf(buffer, sizeof(buffer), fmt, ap);
+
+	va_end(ap);
+
+	if (slen >= (int)sizeof(buffer)) {
+		return NSERROR_NOSPACE;
+	}
+
+	msg.type = FETCH_DATA;
+	msg.data.header_or_data.buf = (const uint8_t *) buffer;
+	msg.data.header_or_data.len = slen;
+
+	if (fetch_about_send_callback(&msg, ctx)) {
+		return NSERROR_INVALID;
+	}
+
+	return NSERROR_OK;
+}
 
 
 
@@ -623,7 +653,37 @@ static bool fetch_about_srverror(struct fetch_about_context *ctx)
 
 
 /**
- * generate the description of the login request
+ * generate the description of the privacy query
+ */
+static nserror
+get_privacy_description(struct nsurl *url,
+		      const char *reason,
+		      char **out_str)
+{
+	nserror res;
+	char *url_s;
+	size_t url_l;
+	char *str = NULL;
+	const char *key = "PrivacyDescription";
+	res = nsurl_get(url, NSURL_SCHEME | NSURL_HOST, &url_s, &url_l);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	str = messages_get_buff(key, url_s, reason);
+
+	if ((str != NULL) && (strcmp(key, str) != 0)) {
+		*out_str = str;
+	} else {
+		*out_str = strdup(reason);
+	}
+	free(url_s);
+
+	return res;
+}
+
+/**
+ * generate the description of the login query
  */
 static nserror
 get_login_description(struct nsurl *url,
@@ -632,14 +692,14 @@ get_login_description(struct nsurl *url,
 		      const char *password,
 		      char **out_str)
 {
+	nserror res;
 	char *url_s;
 	size_t url_l;
-	nserror res;
 	char *str = NULL;
 	int slen;
 	const char *key;
 
-	res = nsurl_get(url, NSURL_SCHEME | NSURL_HOST, &url_s, &url_l);
+	res = nsurl_get(url, NSURL_HOST, &url_s, &url_l);
 	if (res != NSERROR_OK) {
 		return res;
 	}
@@ -682,8 +742,6 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 {
 	nserror res;
 	fetch_msg msg;
-	char buffer[1024];
-	int slen;
 	char *url_s;
 	size_t url_l;
 	const char *realm = "";
@@ -723,11 +781,10 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 	if (fetch_about_send_header(ctx, "Content-Type: text/html; charset=utf-8"))
 		goto fetch_about_query_auth_handler_aborted;
 
-	msg.type = FETCH_DATA;
-	msg.data.header_or_data.buf = (const uint8_t *) buffer;
 
 	title = messages_get("LoginTitle");
-	slen = snprintf(buffer, sizeof buffer,
+
+	res = ssenddataf(ctx,
 			"<html>\n<head>\n"
 			"<title>%s</title>\n"
 			"<link rel=\"stylesheet\" type=\"text/css\" "
@@ -736,9 +793,17 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 			"<body id =\"authentication\">\n"
 			"<h1>%s</h1>\n",
 			title, title);
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_auth_handler_aborted;
+	}
 
-	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
-			 "<form method=\"post\" enctype=\"multipart/form-data\">");
+
+	res = ssenddataf(ctx,
+			 "<form method=\"post\""
+			 " enctype=\"multipart/form-data\">");
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_auth_handler_aborted;
+	}
 
 	res = get_login_description(siteurl,
 				    realm,
@@ -746,30 +811,36 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 				    password,
 				    &description);
 	if (res == NSERROR_OK) {
-		slen += snprintf(buffer + slen, sizeof(buffer) - slen,
-				 "<p>%s</p>",
-				 description);
+		res = ssenddataf(ctx, "<p>%s</p>", description);
 		free(description);
+		if (res != NSERROR_OK) {
+			goto fetch_about_query_auth_handler_aborted;
+		}
 	}
 
-
-	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+	res = ssenddataf(ctx,
 			 "<div>"
 			 "<label for=\"name\">%s:</label>"
 			 "<input type=\"text\" id=\"username\" "
 			 "name=\"username\" value=\"%s\">"
 			 "</div>",
 			 messages_get("Username"), username);
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_auth_handler_aborted;
+	}
 
-	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+	res = ssenddataf(ctx,
 			 "<div>"
 			 "<label for=\"password\">%s:</label>"
 			 "<input type=\"password\" id=\"password\" "
 			 "name=\"password\" value=\"%s\">"
 			 "</div>",
 			 messages_get("Password"), password);
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_auth_handler_aborted;
+	}
 
-	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+	res = ssenddataf(ctx,
 			 "<div id=\"buttons\">"
 			 "<input type=\"submit\" id=\"cancel\" name=\"cancel\" "
 			 "value=\"%s\">"
@@ -778,26 +849,33 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 			 "</div>",
 			 messages_get("Cancel"),
 			 messages_get("Login"));
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_auth_handler_aborted;
+	}
 
 	res = nsurl_get(siteurl, NSURL_COMPLETE, &url_s, &url_l);
 	if (res != NSERROR_OK) {
 		url_s = strdup("");
 	}
-	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+	res = ssenddataf(ctx,
 			 "<input type=\"hidden\" name=\"siteurl\" value=\"%s\">",
 			 url_s);
 	free(url_s);
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_auth_handler_aborted;
+	}
 
-	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+	res = ssenddataf(ctx,
 			 "<input type=\"hidden\" name=\"realm\" value=\"%s\">",
 			 realm);
-
-	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
-			"</form></body>\n</html>\n");
-
-	msg.data.header_or_data.len = slen;
-	if (fetch_about_send_callback(&msg, ctx))
+	if (res != NSERROR_OK) {
 		goto fetch_about_query_auth_handler_aborted;
+	}
+
+	res = ssenddataf(ctx, "</form></body>\n</html>\n");
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_auth_handler_aborted;
+	}
 
 	msg.type = FETCH_FINISHED;
 	fetch_about_send_callback(&msg, ctx);
@@ -814,19 +892,18 @@ fetch_about_query_auth_handler_aborted:
 }
 
 /**
- * Handler to generate about scheme ssl query page
+ * Handler to generate about scheme privacy query page
  */
-static bool fetch_about_query_ssl_handler(struct fetch_about_context *ctx)
+static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 {
 	nserror res;
 	fetch_msg msg;
-	char buffer[1024];
-	int slen;
 	char *url_s;
 	size_t url_l;
 	const char *reason = "";
 	const char *title;
 	struct nsurl *siteurl = NULL;
+	char *description = NULL;
 	const struct fetch_multipart_data *curmd; /* mutipart data iterator */
 
 	/* extract parameters from multipart post data */
@@ -851,14 +928,12 @@ static bool fetch_about_query_ssl_handler(struct fetch_about_context *ctx)
 	fetch_set_http_code(ctx->fetchh, 200);
 
 	/* content type */
-	if (fetch_about_send_header(ctx, "Content-Type: text/html; charset=utf-8"))
+	if (fetch_about_send_header(ctx, "Content-Type: text/html; charset=utf-8")) {
 		goto fetch_about_query_ssl_handler_aborted;
-
-	msg.type = FETCH_DATA;
-	msg.data.header_or_data.buf = (const uint8_t *) buffer;
+	}
 
 	title = messages_get("PrivacyTitle");
-	slen = snprintf(buffer, sizeof buffer,
+	res = ssenddataf(ctx,
 			"<html>\n<head>\n"
 			"<title>%s</title>\n"
 			"<link rel=\"stylesheet\" type=\"text/css\" "
@@ -867,16 +942,27 @@ static bool fetch_about_query_ssl_handler(struct fetch_about_context *ctx)
 			"<body id =\"privacy\">\n"
 			"<h1>%s</h1>\n",
 			title, title);
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_ssl_handler_aborted;
+	}
 
-	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
-			 "<p>%s</p>",
-			 reason);
+	res = get_privacy_description(siteurl, reason, &description);
+	if (res == NSERROR_OK) {
+		res = ssenddataf(ctx, "<p>%s</p>", description);
+		free(description);
+		if (res != NSERROR_OK) {
+			goto fetch_about_query_ssl_handler_aborted;
+		}
+	}
 
-	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
-			 "<form method=\"post\" enctype=\"multipart/form-data\">");
+	res = ssenddataf(ctx,
+			 "<form method=\"post\""
+			 " enctype=\"multipart/form-data\">");
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_ssl_handler_aborted;
+	}
 
-
-	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+	res = ssenddataf(ctx,
 			 "<div>"
 			 "<input type=\"submit\" id=\"back\" name=\"back\" "
 			 "value=\"%s\">"
@@ -885,22 +971,26 @@ static bool fetch_about_query_ssl_handler(struct fetch_about_context *ctx)
 			 "</div>",
 			 messages_get("Backtosafety"),
 			 messages_get("Proceed"));
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_ssl_handler_aborted;
+	}
 
 	res = nsurl_get(siteurl, NSURL_COMPLETE, &url_s, &url_l);
 	if (res != NSERROR_OK) {
 		url_s = strdup("");
 	}
-	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
+	res = ssenddataf(ctx,
 			 "<input type=\"hidden\" name=\"siteurl\" value=\"%s\">",
 			 url_s);
 	free(url_s);
-
-	slen += snprintf(buffer + slen, sizeof(buffer) - slen,
-			"</form></body>\n</html>\n");
-
-	msg.data.header_or_data.len = slen;
-	if (fetch_about_send_callback(&msg, ctx))
+	if (res != NSERROR_OK) {
 		goto fetch_about_query_ssl_handler_aborted;
+	}
+
+	res = ssenddataf(ctx, "</form></body>\n</html>\n");
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_ssl_handler_aborted;
+	}
 
 	msg.type = FETCH_FINISHED;
 	fetch_about_send_callback(&msg, ctx);
@@ -1020,7 +1110,7 @@ struct about_handlers about_handler_list[] = {
 		"query/ssl",
 		SLEN("query/ssl"),
 		NULL,
-		fetch_about_query_ssl_handler,
+		fetch_about_query_privacy_handler,
 		true
 	}
 };
