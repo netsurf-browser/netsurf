@@ -97,6 +97,11 @@ dd > ul {
 	padding-top: 0.4em;
 	border-top: 2px solid #94adff; }
 
+input.default-action {
+    color: white;
+    background: rgb(0, 96, 223);
+    border-color: rgb(0, 96, 223);
+}
 
 /*
  * Directory Listing Style
@@ -242,7 +247,15 @@ p.imagecachelist span {
  */
 
 body#authentication {
-    max-width: 34em;
+    max-width: 45em;
+}
+
+body#authentication h1 {
+  padding: 0.8em 0.4em 0.5em 0.4em;
+  border-bottom: 0.1em solid #444;
+  margin: 0 0 1.3em 0;
+  background: #777;
+  color: white;
 }
 
 body#authentication form {
@@ -254,29 +267,43 @@ body#authentication form {
   border-radius: 1em;
 }
 
-body#authentication form div + div {
-  margin-top: 1em;
+body#authentication table {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 1.5em auto;
 }
 
 body#authentication label {
   /* To make sure that all labels have the same size and are properly aligned */
   display: inline-block;
-  width: 7em;
   text-align: right;
 }
 
-body#authentication input#username, body#authentication input#password {
-/* To give the same size to all text fields */
-  width: 24em;
+body#authentication table th {
+  text-align: right;
+}
+
+body#authentication table td {
+  text-align: left;
+}
+
+body#authentication table input {
+  /* To give the same size to all text fields */
+  width: 20em;
   box-sizing: border-box;
+  margin-right: 10%;
 
   /* To harmonize the look & feel of text field border */
   border: 1px solid #999;
 }
 
 body#authentication div#buttons {
-    text-align: right;
-    margin-right: 1em;
+  text-align: right;
+  margin-right: 1em;
+}
+
+body#authentication div#buttons input#login {
+  margin-left: 1em;
 }
 
 /*
@@ -284,7 +311,15 @@ body#authentication div#buttons {
  */
 
 body#privacy {
-    max-width: 34em;
+  max-width: 45em;
+}
+
+body#privacy h1 {
+  padding: 0.8em 0.4em 0.5em 0.4em;
+  border-bottom: 0.1em solid #444;
+  margin: 0 0 1.3em 0;
+  background: #c55;
+  color: white;
 }
 
 body#privacy form {
@@ -303,4 +338,8 @@ body#privacy form div + div {
 body#privacy div#buttons {
     text-align: right;
     margin-right: 1em;
+}
+
+body#authentication div#buttons input#proceed {
+  margin-left: 1em;
 }

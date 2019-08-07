@@ -799,24 +799,34 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 		}
 	}
 
+	res = ssenddataf(ctx, "<table>");
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_auth_handler_aborted;
+	}
+
 	res = ssenddataf(ctx,
-			 "<div>"
-			 "<label for=\"name\">%s:</label>"
-			 "<input type=\"text\" id=\"username\" "
-			 "name=\"username\" value=\"%s\">"
-			 "</div>",
+			 "<tr>"
+			 "<th><label for=\"name\">%s:</label></th>"
+			 "<td><input type=\"text\" id=\"username\" "
+			 "name=\"username\" value=\"%s\"></td>"
+			 "</tr>",
 			 messages_get("Username"), username);
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_auth_handler_aborted;
 	}
 
 	res = ssenddataf(ctx,
-			 "<div>"
-			 "<label for=\"password\">%s:</label>"
-			 "<input type=\"password\" id=\"password\" "
-			 "name=\"password\" value=\"%s\">"
-			 "</div>",
+			 "<tr>"
+			 "<th><label for=\"password\">%s:</label></th>"
+			 "<td><input type=\"password\" id=\"password\" "
+			 "name=\"password\" value=\"%s\"></td>"
+			 "</tr>",
 			 messages_get("Password"), password);
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_auth_handler_aborted;
+	}
+
+	res = ssenddataf(ctx, "</table>");
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_auth_handler_aborted;
 	}
