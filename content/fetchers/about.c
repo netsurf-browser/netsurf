@@ -81,6 +81,16 @@ struct about_handlers {
 };
 
 /**
+ * authentication query description if messages fails to retrieve usable text
+ */
+static const char *authentication_description_fallback = "The site %s is requesting your username and password. The realm is \"%s\"";
+
+/**
+ * privacy query description if messages fails to retrieve usable text
+ */
+static const char *privacy_description_fallback = "A privacy error occurred while communicating with %s this may be a site configuration error or an attempt to steal private information (passwords, messages or credit cards)";
+
+/**
  * issue fetch callbacks with locking
  */
 static inline bool
@@ -653,44 +663,14 @@ static bool fetch_about_srverror(struct fetch_about_context *ctx)
 
 
 /**
- * generate the description of the privacy query
- */
-static nserror
-get_privacy_description(struct nsurl *url,
-		      const char *reason,
-		      char **out_str)
-{
-	nserror res;
-	char *url_s;
-	size_t url_l;
-	char *str = NULL;
-	const char *key = "PrivacyDescription";
-	res = nsurl_get(url, NSURL_SCHEME | NSURL_HOST, &url_s, &url_l);
-	if (res != NSERROR_OK) {
-		return res;
-	}
-
-	str = messages_get_buff(key, url_s, reason);
-
-	if ((str != NULL) && (strcmp(key, str) != 0)) {
-		*out_str = str;
-	} else {
-		*out_str = strdup(reason);
-	}
-	free(url_s);
-
-	return res;
-}
-
-/**
  * generate the description of the login query
  */
 static nserror
-get_login_description(struct nsurl *url,
-		      const char *realm,
-		      const char *username,
-		      const char *password,
-		      char **out_str)
+get_authentication_description(struct nsurl *url,
+			       const char *realm,
+			       const char *username,
+			       const char *password,
+			       char **out_str)
 {
 	nserror res;
 	char *url_s;
@@ -718,13 +698,14 @@ get_login_description(struct nsurl *url,
 		*out_str = str;
 	} else {
 		/* no message so fallback */
-		const char *fmt = "The site %s is requesting your username and password. The realm is \"%s\"";
-		slen = snprintf(str, 0, fmt, url_s, realm) + 1;
+		slen = snprintf(str, 0, authentication_description_fallback,
+				url_s, realm) + 1;
 		str = malloc(slen);
 		if (str == NULL) {
 			res = NSERROR_NOMEM;
 		} else {
-			snprintf(str, slen, fmt, url_s, realm);
+			snprintf(str, slen, authentication_description_fallback,
+				 url_s, realm);
 			*out_str = str;
 		}
 	}
@@ -736,7 +717,7 @@ get_login_description(struct nsurl *url,
 
 
 /**
- * Handler to generate about scheme authorisation query page
+ * Handler to generate about scheme authentication query page
  */
 static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 {
@@ -778,8 +759,9 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 	fetch_set_http_code(ctx->fetchh, 200);
 
 	/* content type */
-	if (fetch_about_send_header(ctx, "Content-Type: text/html; charset=utf-8"))
+	if (fetch_about_send_header(ctx, "Content-Type: text/html; charset=utf-8")) {
 		goto fetch_about_query_auth_handler_aborted;
+	}
 
 
 	title = messages_get("LoginTitle");
@@ -797,7 +779,6 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 		goto fetch_about_query_auth_handler_aborted;
 	}
 
-
 	res = ssenddataf(ctx,
 			 "<form method=\"post\""
 			 " enctype=\"multipart/form-data\">");
@@ -805,11 +786,11 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 		goto fetch_about_query_auth_handler_aborted;
 	}
 
-	res = get_login_description(siteurl,
-				    realm,
-				    username,
-				    password,
-				    &description);
+	res = get_authentication_description(siteurl,
+					     realm,
+					     username,
+					     password,
+					     &description);
 	if (res == NSERROR_OK) {
 		res = ssenddataf(ctx, "<p>%s</p>", description);
 		free(description);
@@ -891,6 +872,54 @@ fetch_about_query_auth_handler_aborted:
 	return false;
 }
 
+
+/**
+ * generate the description of the privacy query
+ */
+static nserror get_privacy_description(struct nsurl *url, char **out_str)
+{
+	nserror res;
+	char *url_s;
+	size_t url_l;
+	char *str = NULL;
+	const char *key = "PrivacyDescription";
+
+	/* get the host in question */
+	res = nsurl_get(url, NSURL_HOST, &url_s, &url_l);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	/* obtain the description with the url substituted */
+	str = messages_get_buff(key, url_s);
+	if ((str != NULL) && (strcmp(key, str) == 0)) {
+		/* the returned string was simply the key */
+		free(str);
+		str = NULL;
+	}
+	if (str == NULL) {
+		/* failed to get suitable translated message text so
+		 *  fall back to basic english.
+		 */
+		int slen;
+		slen = snprintf(str, 0, privacy_description_fallback, url_s) + 1;
+		str = malloc(slen);
+		if (str != NULL) {
+			snprintf(str, slen, privacy_description_fallback, url_s);
+		}
+	}
+
+	if (str == NULL) {
+		res = NSERROR_NOMEM;
+	} else {
+		*out_str = str;
+	}
+	free(url_s);
+
+	return res;
+}
+
+
 /**
  * Handler to generate about scheme privacy query page
  */
@@ -946,15 +975,6 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 		goto fetch_about_query_ssl_handler_aborted;
 	}
 
-	res = get_privacy_description(siteurl, reason, &description);
-	if (res == NSERROR_OK) {
-		res = ssenddataf(ctx, "<p>%s</p>", description);
-		free(description);
-		if (res != NSERROR_OK) {
-			goto fetch_about_query_ssl_handler_aborted;
-		}
-	}
-
 	res = ssenddataf(ctx,
 			 "<form method=\"post\""
 			 " enctype=\"multipart/form-data\">");
@@ -962,8 +982,21 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 		goto fetch_about_query_ssl_handler_aborted;
 	}
 
+	res = get_privacy_description(siteurl, &description);
+	if (res == NSERROR_OK) {
+		res = ssenddataf(ctx, "<div><p>%s</p></div>", description);
+		free(description);
+		if (res != NSERROR_OK) {
+			goto fetch_about_query_ssl_handler_aborted;
+		}
+	}
+	res = ssenddataf(ctx, "<div><p>%s</p></div>", messages_get(reason));
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_ssl_handler_aborted;
+	}
+
 	res = ssenddataf(ctx,
-			 "<div>"
+			 "<div id=\"buttons\">"
 			 "<input type=\"submit\" id=\"back\" name=\"back\" "
 			 "value=\"%s\">"
 			 "<input type=\"submit\" id=\"proceed\" name=\"proceed\" "

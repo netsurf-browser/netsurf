@@ -238,7 +238,7 @@ p.imagecachelist span {
 }
 
 /*
- * authentication styling
+ * authentication query styling
  */
 
 body#authentication {
@@ -275,6 +275,32 @@ body#authentication input#username, body#authentication input#password {
 }
 
 body#authentication div#buttons {
+    text-align: right;
+    margin-right: 1em;
+}
+
+/*
+ * privacy query styling
+ */
+
+body#privacy {
+    max-width: 34em;
+}
+
+body#privacy form {
+  /* Just to center the form on the page */
+  margin: 0 auto;
+  /* To see the outline of the form */
+  padding: 1em;
+  border: 1px solid #CCC;
+  border-radius: 1em;
+}
+
+body#privacy form div + div {
+  margin-top: 1em;
+}
+
+body#privacy div#buttons {
     text-align: right;
     margin-right: 1em;
 }

@@ -2784,9 +2784,21 @@ nl.all.Cancel:Annuleer
 #
 
 en.all.PrivacyTitle:Privacy error
-en.all.PrivacyDescription:Attackers might be trying to steal your information from %s (for example, passwords, messages or credit cards) %s
+de.all.PrivacyTitle:Datenschutzfehler
+fr.all.PrivacyTitle:Erreur de confidentialité
+it.all.PrivacyTitle:Errore di privacy
+nl.all.PrivacyTitle:Privacyfout
+en.all.PrivacyDescription:A privacy error occurred while communicating with %s this may be a site configuration error or an attempt to steal private information (passwords, messages or credit cards)
 en.all.Proceed:Proceed
+de.all.Proceed:Vorgehen
+fr.all.Proceed:Procéder
+it.all.Proceed:Procedere
+nl.all.Proceed:Doorgaan
 en.all.Backtosafety:Back to safety
+de.all.Backtosafety:Zurück zur Sicherheit
+fr.all.Backtosafety:Retour a la sécurité
+it.all.Backtosafety:Ritorno alla sicurezza
+nl.all.Backtosafety:Terug naar veiligheid
 
 # SSL certificate viewer
 # ======================
