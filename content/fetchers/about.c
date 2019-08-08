@@ -44,7 +44,6 @@
 #include "content/fetchers/about.h"
 #include "image/image_cache.h"
 
-
 struct fetch_about_context;
 
 typedef bool (*fetch_about_handler)(struct fetch_about_context *);
@@ -103,6 +102,14 @@ fetch_about_send_callback(const fetch_msg *msg, struct fetch_about_context *ctx)
 	return ctx->aborted;
 }
 
+static inline bool
+fetch_about_send_finished(struct fetch_about_context *ctx)
+{
+	fetch_msg msg;
+	msg.type = FETCH_FINISHED;
+	return fetch_about_send_callback(&msg, ctx);
+}
+
 static bool
 fetch_about_send_header(struct fetch_about_context *ctx, const char *fmt, ...)
 {
@@ -155,7 +162,39 @@ static nserror ssenddataf(struct fetch_about_context *ctx, const char *fmt, ...)
 }
 
 
+/**
+ * Generate a 500 server error respnse
+ *
+ * \param ctx The fetcher context.
+ * \return true if handled false if aborted.
+ */
+static bool fetch_about_srverror(struct fetch_about_context *ctx)
+{
+	nserror res;
 
+	fetch_set_http_code(ctx->fetchh, 500);
+
+	/* content type */
+	if (fetch_about_send_header(ctx, "Content-Type: text/plain"))
+		return false;
+
+	res = ssenddataf(ctx, "Server error 500");
+	if (res != NSERROR_OK) {
+		return false;
+	}
+
+	fetch_about_send_finished(ctx);
+
+	return true;
+}
+
+
+/**
+ * Handler to generate about scheme cache page.
+ *
+ * \param ctx The fetcher context.
+ * \return true if handled false if aborted.
+ */
 static bool fetch_about_blank_handler(struct fetch_about_context *ctx)
 {
 	fetch_msg msg;
@@ -186,6 +225,12 @@ fetch_about_blank_handler_aborted:
 }
 
 
+/**
+ * Handler to generate about scheme credits page.
+ *
+ * \param ctx The fetcher context.
+ * \return true if handled false if aborted.
+ */
 static bool fetch_about_credits_handler(struct fetch_about_context *ctx)
 {
 	fetch_msg msg;
@@ -202,6 +247,12 @@ static bool fetch_about_credits_handler(struct fetch_about_context *ctx)
 }
 
 
+/**
+ * Handler to generate about scheme licence page.
+ *
+ * \param ctx The fetcher context.
+ * \return true if handled false if aborted.
+ */
 static bool fetch_about_licence_handler(struct fetch_about_context *ctx)
 {
 	fetch_msg msg;
@@ -216,6 +267,7 @@ static bool fetch_about_licence_handler(struct fetch_about_context *ctx)
 
 	return true;
 }
+
 
 /**
  * Handler to generate about:cache page.
@@ -232,7 +284,8 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 	int code = 200;
 	int slen;
 	unsigned int cent_loop = 0;
-	int res = 0;
+	int elen = 0; /* entry length */
+	nserror res;
 
 	/* content is going to return ok */
 	fetch_set_http_code(ctx->fetchh, code);
@@ -241,12 +294,9 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 	if (fetch_about_send_header(ctx, "Content-Type: text/html"))
 		goto fetch_about_imagecache_handler_aborted;
 
-	msg.type = FETCH_DATA;
-	msg.data.header_or_data.buf = (const uint8_t *) buffer;
-
 	/* page head */
-	slen = snprintf(buffer, sizeof buffer,
-			"<html>\n<head>\n"
+	res = ssenddataf(ctx,
+			 "<html>\n<head>\n"
 			"<title>NetSurf Browser Image Cache Status</title>\n"
 			"<link rel=\"stylesheet\" type=\"text/css\" "
 			"href=\"resource:internal.css\">\n"
@@ -256,10 +306,10 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 			"<a href=\"http://www.netsurf-browser.org/\">"
 			"<img src=\"resource:netsurf.png\" alt=\"NetSurf\"></a>"
 			"</p>\n"
-			"<h1>NetSurf Browser Image Cache Status</h1>\n"	);
-	msg.data.header_or_data.len = slen;
-	if (fetch_about_send_callback(&msg, ctx))
+			"<h1>NetSurf Browser Image Cache Status</h1>\n");
+	if (res != NSERROR_OK) {
 		goto fetch_about_imagecache_handler_aborted;
+	}
 
 	/* image cache summary */
 	slen = image_cache_snsummaryf(buffer, sizeof(buffer),
@@ -279,17 +329,20 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 				"</p>\n"
 		"<p>Bitmap of size %w had most (%x) conversions</p>\n"
 		"<h2>Current image cache contents</h2>\n");
-	if (slen >= (int) (sizeof(buffer)))
+	if (slen >= (int) (sizeof(buffer))) {
 		goto fetch_about_imagecache_handler_aborted; /* overflow */
+	}
 
+	/* send image cache summary */
+	msg.type = FETCH_DATA;
+	msg.data.header_or_data.buf = (const uint8_t *) buffer;
 	msg.data.header_or_data.len = slen;
-	if (fetch_about_send_callback(&msg, ctx))
+	if (fetch_about_send_callback(&msg, ctx)) {
 		goto fetch_about_imagecache_handler_aborted;
-
+	}
 
 	/* image cache entry table */
-	slen = snprintf(buffer, sizeof buffer,
-			"<p class=\"imagecachelist\">\n"
+	res = ssenddataf(ctx, "<p class=\"imagecachelist\">\n"
 			"<strong>"
 			"<span>Entry</span>"
 			"<span>Content Key</span>"
@@ -300,8 +353,14 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 			"<span>Bitmap Size</span>"
 			"<span>Source</span>"
 			"</strong>\n");
+	if (res != NSERROR_OK) {
+		goto fetch_about_imagecache_handler_aborted;
+	}
+
+	slen = 0;
 	do {
-		res = image_cache_snentryf(buffer + slen, sizeof buffer - slen,
+		elen = image_cache_snentryf(buffer + slen,
+					   sizeof buffer - slen,
 				cent_loop,
 				"<a href=\"%U\">"
 				"<span>%e</span>"
@@ -313,10 +372,10 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 				"<span>%s</span>"
 				"<span>%o</span>"
 				"</a>\n");
-		if (res <= 0)
+		if (elen <= 0)
 			break; /* last option */
 
-		if (res >= (int) (sizeof buffer - slen)) {
+		if (elen >= (int) (sizeof buffer - slen)) {
 			/* last entry would not fit in buffer, submit buffer */
 			msg.data.header_or_data.len = slen;
 			if (fetch_about_send_callback(&msg, ctx))
@@ -324,10 +383,10 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 			slen = 0;
 		} else {
 			/* normal addition */
-			slen += res;
+			slen += elen;
 			cent_loop++;
 		}
-	} while (res > 0);
+	} while (elen > 0);
 
 	slen += snprintf(buffer + slen, sizeof buffer - slen,
 			 "</p>\n</body>\n</html>\n");
@@ -336,8 +395,7 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 	if (fetch_about_send_callback(&msg, ctx))
 		goto fetch_about_imagecache_handler_aborted;
 
-	msg.type = FETCH_FINISHED;
-	fetch_about_send_callback(&msg, ctx);
+	fetch_about_send_finished(ctx);
 
 	return true;
 
@@ -345,52 +403,64 @@ fetch_about_imagecache_handler_aborted:
 	return false;
 }
 
+
 /**
  * Handler to generate about scheme config page
+ *
+ * \param ctx The fetcher context.
+ * \return true if handled false if aborted.
  */
 static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 {
 	fetch_msg msg;
 	char buffer[1024];
-	int code = 200;
-	int slen;
+	int slen = 0;
 	unsigned int opt_loop = 0;
-	int res = 0;
+	int elen = 0; /* entry length */
+	nserror res;
 
 	/* content is going to return ok */
-	fetch_set_http_code(ctx->fetchh, code);
+	fetch_set_http_code(ctx->fetchh, 200);
 
 	/* content type */
-	if (fetch_about_send_header(ctx, "Content-Type: text/html"))
+	if (fetch_about_send_header(ctx, "Content-Type: text/html")) {
 		goto fetch_about_config_handler_aborted;
+	}
+
+	res = ssenddataf(ctx,
+			 "<html>\n<head>\n"
+			 "<title>NetSurf Browser Config</title>\n"
+			 "<link rel=\"stylesheet\" type=\"text/css\" "
+			 "href=\"resource:internal.css\">\n"
+			 "</head>\n"
+			 "<body id =\"configlist\">\n"
+			 "<p class=\"banner\">"
+			 "<a href=\"http://www.netsurf-browser.org/\">"
+			 "<img src=\"resource:netsurf.png\""
+			 " alt=\"NetSurf\"></a>"
+			 "</p>\n"
+			 "<h1>NetSurf Browser Config</h1>\n"
+			 "<table class=\"config\">\n"
+			 "<tr><th>Option</th>"
+			 "<th>Type</th>"
+			 "<th>Provenance</th>"
+			 "<th>Setting</th></tr>\n");
+	if (res != NSERROR_OK) {
+		goto fetch_about_config_handler_aborted;
+	}
 
 	msg.type = FETCH_DATA;
 	msg.data.header_or_data.buf = (const uint8_t *) buffer;
 
-	slen = snprintf(buffer, sizeof buffer,
-			"<html>\n<head>\n"
-			"<title>NetSurf Browser Config</title>\n"
-			"<link rel=\"stylesheet\" type=\"text/css\" "
-			"href=\"resource:internal.css\">\n"
-			"</head>\n"
-			"<body id =\"configlist\">\n"
-			"<p class=\"banner\">"
-			"<a href=\"http://www.netsurf-browser.org/\">"
-			"<img src=\"resource:netsurf.png\" alt=\"NetSurf\"></a>"
-			"</p>\n"
-			"<h1>NetSurf Browser Config</h1>\n"
-			"<table class=\"config\">\n"
-			"<tr><th>Option</th><th>Type</th><th>Provenance</th><th>Setting</th></tr>\n");
-
 	do {
-		res = nsoption_snoptionf(buffer + slen,
+		elen = nsoption_snoptionf(buffer + slen,
 					 sizeof buffer - slen,
 					 opt_loop,
 					 "<tr><th>%k</th><td>%t</td><td>%p</td><td>%V</td></tr>\n");
-		if (res <= 0)
+		if (elen <= 0)
 			break; /* last option */
 
-		if (res >= (int) (sizeof buffer - slen)) {
+		if (elen >= (int) (sizeof buffer - slen)) {
 			/* last entry would not fit in buffer, submit buffer */
 			msg.data.header_or_data.len = slen;
 			if (fetch_about_send_callback(&msg, ctx))
@@ -398,10 +468,10 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 			slen = 0;
 		} else {
 			/* normal addition */
-			slen += res;
+			slen += elen;
 			opt_loop++;
 		}
-	} while (res > 0);
+	} while (elen > 0);
 
 	slen += snprintf(buffer + slen, sizeof buffer - slen,
 			 "</table>\n</body>\n</html>\n");
@@ -410,8 +480,7 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 	if (fetch_about_send_callback(&msg, ctx))
 		goto fetch_about_config_handler_aborted;
 
-	msg.type = FETCH_FINISHED;
-	fetch_about_send_callback(&msg, ctx);
+	fetch_about_send_finished(ctx);
 
 	return true;
 
@@ -420,8 +489,12 @@ fetch_about_config_handler_aborted:
 }
 
 
-/** Generate the text of a Choices file which represents the current
+/**
+ * Generate the text of a Choices file which represents the current
  * in use options.
+ *
+ * \param ctx The fetcher context.
+ * \return true if handled false if aborted.
  */
 static bool fetch_about_choices_handler(struct fetch_about_context *ctx)
 {
@@ -470,8 +543,7 @@ static bool fetch_about_choices_handler(struct fetch_about_context *ctx)
 	if (fetch_about_send_callback(&msg, ctx))
 		goto fetch_about_choices_handler_aborted;
 
-	msg.type = FETCH_FINISHED;
-	fetch_about_send_callback(&msg, ctx);
+	fetch_about_send_finished(ctx);
 
 	return true;
 
@@ -479,38 +551,39 @@ fetch_about_choices_handler_aborted:
 	return false;
 }
 
-/** Generate the text of an svn testament which represents the current
+
+typedef struct {
+	const char *leaf;
+	const char *modtype;
+} modification_t;
+
+/**
+ * Generate the text of an svn testament which represents the current
  * build-tree status
+ *
+ * \param ctx The fetcher context.
+ * \return true if handled false if aborted.
  */
-typedef struct { const char *leaf; const char *modtype; } modification_t;
 static bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 {
+	nserror res;
 	static modification_t modifications[] = WT_MODIFICATIONS;
-	fetch_msg msg;
-	char buffer[1024];
-	int code = 200;
-	int slen;
-	int i;
-
+	int modidx; /* midification index */
 
 	/* content is going to return ok */
-	fetch_set_http_code(ctx->fetchh, code);
+	fetch_set_http_code(ctx->fetchh, 200);
 
 	/* content type */
 	if (fetch_about_send_header(ctx, "Content-Type: text/plain"))
 		goto fetch_about_testament_handler_aborted;
 
-	msg.type = FETCH_DATA;
-	msg.data.header_or_data.buf = (const uint8_t *) buffer;
-
-	slen = snprintf(buffer, sizeof buffer,
-		 "# Automatically generated by NetSurf build system\n\n");
-
-	msg.data.header_or_data.len = slen;
-	if (fetch_about_send_callback(&msg, ctx))
+	res = ssenddataf(ctx,
+		"# Automatically generated by NetSurf build system\n\n");
+	if (res != NSERROR_OK) {
 		goto fetch_about_testament_handler_aborted;
+	}
 
-	slen = snprintf(buffer, sizeof buffer,
+	res = ssenddataf(ctx,
 #if defined(WT_BRANCHISTRUNK) || defined(WT_BRANCHISMASTER)
 			"# This is a *DEVELOPMENT* build from the main line.\n\n"
 #elif defined(WT_BRANCHISTAG) && (WT_MODIFIED == 0)
@@ -531,54 +604,44 @@ static bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 			"# This build carries the CI build number '" CI_BUILD "'\n\n"
 #endif
 			);
-
-	msg.data.header_or_data.len = slen;
-	if (fetch_about_send_callback(&msg, ctx))
+	if (res != NSERROR_OK) {
 		goto fetch_about_testament_handler_aborted;
+	}
 
-
-	slen = snprintf(buffer, sizeof buffer,
-			"Built by %s (%s) from %s at revision %s on %s\n\n",
-			GECOS, USERNAME, WT_BRANCHPATH, WT_REVID, WT_COMPILEDATE);
-
-	msg.data.header_or_data.len = slen;
-	if (fetch_about_send_callback(&msg, ctx))
+	res = ssenddataf(ctx,
+		"Built by %s (%s) from %s at revision %s on %s\n\n",
+		GECOS, USERNAME, WT_BRANCHPATH, WT_REVID, WT_COMPILEDATE);
+	if (res != NSERROR_OK) {
 		goto fetch_about_testament_handler_aborted;
+	}
 
-	slen = snprintf(buffer, sizeof buffer,
-			"Built on %s in %s\n\n",
-			WT_HOSTNAME, WT_ROOT);
-
-	msg.data.header_or_data.len = slen;
-	if (fetch_about_send_callback(&msg, ctx))
+	res = ssenddataf(ctx, "Built on %s in %s\n\n", WT_HOSTNAME, WT_ROOT);
+	if (res != NSERROR_OK) {
 		goto fetch_about_testament_handler_aborted;
+	}
 
 	if (WT_MODIFIED > 0) {
-		slen = snprintf(buffer, sizeof buffer,
+		res = ssenddataf(ctx,
 				"Working tree has %d modification%s\n\n",
 				WT_MODIFIED, WT_MODIFIED == 1 ? "" : "s");
 	} else {
-		slen = snprintf(buffer, sizeof buffer,
-				"Working tree is not modified.\n");
+		res = ssenddataf(ctx, "Working tree is not modified.\n");
 	}
-
-	msg.data.header_or_data.len = slen;
-	if (fetch_about_send_callback(&msg, ctx))
+	if (res != NSERROR_OK) {
 		goto fetch_about_testament_handler_aborted;
-
-	for (i = 0; i < WT_MODIFIED; ++i) {
-		slen = snprintf(buffer, sizeof buffer,
-				"  %s  %s\n",
-				modifications[i].modtype,
-				modifications[i].leaf);
-		msg.data.header_or_data.len = slen;
-		if (fetch_about_send_callback(&msg, ctx))
-			goto fetch_about_testament_handler_aborted;
-
 	}
 
-	msg.type = FETCH_FINISHED;
-	fetch_about_send_callback(&msg, ctx);
+	for (modidx = 0; modidx < WT_MODIFIED; ++modidx) {
+		res = ssenddataf(ctx,
+				 "  %s  %s\n",
+				 modifications[modidx].modtype,
+				 modifications[modidx].leaf);
+		if (res != NSERROR_OK) {
+			goto fetch_about_testament_handler_aborted;
+		}
+	}
+
+	fetch_about_send_finished(ctx);
 
 	return true;
 
@@ -586,6 +649,13 @@ fetch_about_testament_handler_aborted:
 	return false;
 }
 
+
+/**
+ * Handler to generate about scheme logo page
+ *
+ * \param ctx The fetcher context.
+ * \return true if handled false if aborted.
+ */
 static bool fetch_about_logo_handler(struct fetch_about_context *ctx)
 {
 	fetch_msg msg;
@@ -601,6 +671,13 @@ static bool fetch_about_logo_handler(struct fetch_about_context *ctx)
 	return true;
 }
 
+
+/**
+ * Handler to generate about scheme welcome page
+ *
+ * \param ctx The fetcher context.
+ * \return true if handled false if aborted.
+ */
 static bool fetch_about_welcome_handler(struct fetch_about_context *ctx)
 {
 	fetch_msg msg;
@@ -616,6 +693,13 @@ static bool fetch_about_welcome_handler(struct fetch_about_context *ctx)
 	return true;
 }
 
+
+/**
+ * Handler to generate about scheme maps page
+ *
+ * \param ctx The fetcher context.
+ * \return true if handled false if aborted.
+ */
 static bool fetch_about_maps_handler(struct fetch_about_context *ctx)
 {
 	fetch_msg msg;
@@ -626,36 +710,6 @@ static bool fetch_about_maps_handler(struct fetch_about_context *ctx)
 	msg.type = FETCH_REDIRECT;
 	msg.data.redirect = "resource:maps.html";
 
-	fetch_about_send_callback(&msg, ctx);
-
-	return true;
-}
-
-
-/**
- * generate a 500 server error respnse
- */
-static bool fetch_about_srverror(struct fetch_about_context *ctx)
-{
-	char buffer[256];
-	int slen;
-	fetch_msg msg;
-
-	fetch_set_http_code(ctx->fetchh, 500);
-
-	/* content type */
-	if (fetch_about_send_header(ctx, "Content-Type: text/plain"))
-		return false;
-
-	msg.type = FETCH_DATA;
-	msg.data.header_or_data.buf = (const uint8_t *) buffer;
-	slen = snprintf(buffer, sizeof buffer, "Server error 500");
-
-	msg.data.header_or_data.len = slen;
-	if (fetch_about_send_callback(&msg, ctx))
-		return false;
-
-	msg.type = FETCH_FINISHED;
 	fetch_about_send_callback(&msg, ctx);
 
 	return true;
@@ -718,11 +772,13 @@ get_authentication_description(struct nsurl *url,
 
 /**
  * Handler to generate about scheme authentication query page
+ *
+ * \param ctx The fetcher context.
+ * \return true if handled false if aborted.
  */
 static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 {
 	nserror res;
-	fetch_msg msg;
 	char *url_s;
 	size_t url_l;
 	const char *realm = "";
@@ -868,8 +924,7 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 		goto fetch_about_query_auth_handler_aborted;
 	}
 
-	msg.type = FETCH_FINISHED;
-	fetch_about_send_callback(&msg, ctx);
+	fetch_about_send_finished(ctx);
 
 	nsurl_unref(siteurl);
 
@@ -932,11 +987,13 @@ static nserror get_privacy_description(struct nsurl *url, char **out_str)
 
 /**
  * Handler to generate about scheme privacy query page
+ *
+ * \param ctx The fetcher context.
+ * \return true if handled false if aborted.
  */
 static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 {
 	nserror res;
-	fetch_msg msg;
 	char *url_s;
 	size_t url_l;
 	const char *reason = "";
@@ -1035,8 +1092,7 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 		goto fetch_about_query_ssl_handler_aborted;
 	}
 
-	msg.type = FETCH_FINISHED;
-	fetch_about_send_callback(&msg, ctx);
+	fetch_about_send_finished(ctx);
 
 	nsurl_unref(siteurl);
 
@@ -1158,8 +1214,8 @@ struct about_handlers about_handler_list[] = {
 	}
 };
 
-#define about_handler_list_len (sizeof(about_handler_list) /		\
-		sizeof(struct about_handlers))
+#define about_handler_list_len \
+	(sizeof(about_handler_list) / sizeof(struct about_handlers))
 
 /**
  * List all the valid about: paths available
@@ -1169,24 +1225,17 @@ struct about_handlers about_handler_list[] = {
  */
 static bool fetch_about_about_handler(struct fetch_about_context *ctx)
 {
-	fetch_msg msg;
-	char buffer[1024];
-	int code = 200;
-	int slen;
+	nserror res;
 	unsigned int abt_loop = 0;
-	int res = 0;
 
 	/* content is going to return ok */
-	fetch_set_http_code(ctx->fetchh, code);
+	fetch_set_http_code(ctx->fetchh, 200);
 
 	/* content type */
 	if (fetch_about_send_header(ctx, "Content-Type: text/html"))
 		goto fetch_about_config_handler_aborted;
 
-	msg.type = FETCH_DATA;
-	msg.data.header_or_data.buf = (const uint8_t *) buffer;
-
-	slen = snprintf(buffer, sizeof buffer,
+	res = ssenddataf(ctx,
 			"<html>\n<head>\n"
 			"<title>NetSurf List of About pages</title>\n"
 			"<link rel=\"stylesheet\" type=\"text/css\" "
@@ -1199,6 +1248,9 @@ static bool fetch_about_about_handler(struct fetch_about_context *ctx)
 			"</p>\n"
 			"<h1>NetSurf List of About pages</h1>\n"
 			"<ul>\n");
+	if (res != NSERROR_OK) {
+		goto fetch_about_config_handler_aborted;
+	}
 
 	for (abt_loop = 0; abt_loop < about_handler_list_len; abt_loop++) {
 
@@ -1206,34 +1258,21 @@ static bool fetch_about_about_handler(struct fetch_about_context *ctx)
 		if (about_handler_list[abt_loop].hidden)
 			continue;
 
-		res = snprintf(buffer + slen, sizeof buffer - slen,
+		res = ssenddataf(ctx,
 			       "<li><a href=\"about:%s\">about:%s</a></li>\n",
 			       about_handler_list[abt_loop].name,
 			       about_handler_list[abt_loop].name);
-		if (res <= 0)
-			break; /* last option */
-
-		if (res >= (int)(sizeof buffer - slen)) {
-			/* last entry would not fit in buffer, submit buffer */
-			msg.data.header_or_data.len = slen;
-			if (fetch_about_send_callback(&msg, ctx))
-				goto fetch_about_config_handler_aborted;
-			slen = 0;
-		} else {
-			/* normal addition */
-			slen += res;
+		if (res != NSERROR_OK) {
+			goto fetch_about_config_handler_aborted;
 		}
 	}
 
-	slen += snprintf(buffer + slen, sizeof buffer - slen,
-			 "</ul>\n</body>\n</html>\n");
-
-	msg.data.header_or_data.len = slen;
-	if (fetch_about_send_callback(&msg, ctx))
+	res = ssenddataf(ctx, "</ul>\n</body>\n</html>\n");
+	if (res != NSERROR_OK) {
 		goto fetch_about_config_handler_aborted;
+	}
 
-	msg.type = FETCH_FINISHED;
-	fetch_about_send_callback(&msg, ctx);
+	fetch_about_send_finished(ctx);
 
 	return true;
 
@@ -1242,7 +1281,9 @@ fetch_about_config_handler_aborted:
 }
 
 
-/** callback to initialise the about fetcher. */
+/**
+ * callback to initialise the about scheme fetcher.
+ */
 static bool fetch_about_initialise(lwc_string *scheme)
 {
 	unsigned int abt_loop = 0;
@@ -1263,7 +1304,10 @@ static bool fetch_about_initialise(lwc_string *scheme)
 	return true;
 }
 
-/** callback to finalise the about fetcher. */
+
+/**
+ * callback to finalise the about scheme fetcher.
+ */
 static void fetch_about_finalise(lwc_string *scheme)
 {
 	unsigned int abt_loop = 0;
@@ -1272,10 +1316,12 @@ static void fetch_about_finalise(lwc_string *scheme)
 	}
 }
 
+
 static bool fetch_about_can_fetch(const nsurl *url)
 {
 	return true;
 }
+
 
 /**
  * callback to set up a about scheme fetch.
@@ -1328,7 +1374,10 @@ fetch_about_setup(struct fetch *fetchh,
 	return ctx;
 }
 
-/** callback to free a about fetch */
+
+/**
+ * callback to free a about scheme fetch
+ */
 static void fetch_about_free(void *ctx)
 {
 	struct fetch_about_context *c = ctx;
@@ -1337,13 +1386,19 @@ static void fetch_about_free(void *ctx)
 	free(ctx);
 }
 
-/** callback to start a about fetch */
+
+/**
+ * callback to start an about scheme fetch
+ */
 static bool fetch_about_start(void *ctx)
 {
 	return true;
 }
 
-/** callback to abort a about fetch */
+
+/**
+ * callback to abort a about fetch
+ */
 static void fetch_about_abort(void *ctx)
 {
 	struct fetch_about_context *c = ctx;
@@ -1356,7 +1411,9 @@ static void fetch_about_abort(void *ctx)
 }
 
 
-/** callback to poll for additional about fetch contents */
+/**
+ * callback to poll for additional about fetch contents
+ */
 static void fetch_about_poll(lwc_string *scheme)
 {
 	struct fetch_about_context *c, *next;
@@ -1396,6 +1453,7 @@ static void fetch_about_poll(lwc_string *scheme)
 		 */
 	} while ( (c = next) != ring && ring != NULL);
 }
+
 
 nserror fetch_about_register(void)
 {
