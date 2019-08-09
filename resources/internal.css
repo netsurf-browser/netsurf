@@ -98,9 +98,9 @@ dd > ul {
 	border-top: 2px solid #94adff; }
 
 input.default-action {
-    color: white;
-    background: rgb(0, 96, 223);
-    border-color: rgb(0, 96, 223);
+	color: white;
+	background: rgb(0, 96, 223);
+	border-color: rgb(0, 96, 223);
 }
 
 /*
@@ -303,7 +303,7 @@ body#authentication div#buttons {
 }
 
 body#authentication div#buttons input#login {
-  margin-left: 1em;
+  margin-right: 1em;
 }
 
 /*
@@ -340,6 +340,6 @@ body#privacy div#buttons {
     margin-right: 1em;
 }
 
-body#authentication div#buttons input#proceed {
-  margin-left: 1em;
+body#privacy div#buttons input#back {
+  margin-right: 1em;
 }

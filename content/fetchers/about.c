@@ -889,13 +889,13 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 
 	res = ssenddataf(ctx,
 			 "<div id=\"buttons\">"
+			 "<input type=\"submit\" id=\"login\" name=\"login\" "
+			 "value=\"%s\" class=\"default-action\">"
 			 "<input type=\"submit\" id=\"cancel\" name=\"cancel\" "
 			 "value=\"%s\">"
-			 "<input type=\"submit\" id=\"login\" name=\"login\" "
-			 "value=\"%s\">"
 			 "</div>",
-			 messages_get("Cancel"),
-			 messages_get("Login"));
+			 messages_get("Login"),
+			 messages_get("Cancel"));
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_auth_handler_aborted;
 	}
@@ -1065,7 +1065,7 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 	res = ssenddataf(ctx,
 			 "<div id=\"buttons\">"
 			 "<input type=\"submit\" id=\"back\" name=\"back\" "
-			 "value=\"%s\">"
+			 "value=\"%s\" class=\"default-action\">"
 			 "<input type=\"submit\" id=\"proceed\" name=\"proceed\" "
 			 "value=\"%s\">"
 			 "</div>",
