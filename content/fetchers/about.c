@@ -1057,7 +1057,7 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 			goto fetch_about_query_ssl_handler_aborted;
 		}
 	}
-	res = ssenddataf(ctx, "<div><p>%s</p></div>", messages_get(reason));
+	res = ssenddataf(ctx, "<div><p>%s</p></div>", reason);
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_ssl_handler_aborted;
 	}

@@ -2800,6 +2800,17 @@ fr.all.Backtosafety:Retour a la sécurité
 it.all.Backtosafety:Ritorno alla sicurezza
 nl.all.Backtosafety:Terug naar veiligheid
 
+en.all.SSLCertErrOk:The certificate has no errors.
+en.all.SSLCertErrUnknown:An unknown error occoured while processing the certificate.
+en.all.SSLCertErrBadIssuer:The issuer of this certificate is not known. This may occour if the browser cannot access the certificate authority (CA) bundle.
+en.all.SSLCertErrBadSig:The certificate is improperly signed.
+en.all.SSLCertErrTooYoung:The certificate is not yet valid.
+en.all.SSLCertErrTooOld:The certificate has expired.
+en.all.SSLCertErrSelfSigned:The certificate is self signed.
+en.all.SSLCertErrChainSelfSigned:The certificate chain is self signed.
+en.all.SSLCertErrRevoked:The certificate has been revoked by the issuer.
+en.all.SSLCertErrCommonName:The certificate is for a different host than the server
+
 # SSL certificate viewer
 # ======================
 #
