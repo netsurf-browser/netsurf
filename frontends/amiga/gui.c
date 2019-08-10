@@ -2440,9 +2440,11 @@ gui_window_console_log(struct gui_window *g,
 						TAG_DONE);
 	}
 
+#ifdef __amigaos4__
 	DebugPrintF("NETSURF: CONSOLE_LOG SOURCE %s %sFOLDABLE %s %.*s\n",
 	      src_text, foldable ? "" : "NOT-", level_text,
 	      (int)msglen, msg);
+#endif
 }
 
 
