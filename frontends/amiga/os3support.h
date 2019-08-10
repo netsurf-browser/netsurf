@@ -78,6 +78,8 @@
 #define GAUGEIA_Level		TAG_IGNORE
 #define IA_InBorder			TAG_IGNORE
 #define IA_Label			TAG_IGNORE
+#define LBNCA_SoftStyle		TAG_IGNORE
+#define LISTBROWSER_Striping	TAG_IGNORE
 #define SA_Compositing		TAG_IGNORE
 #define SBNA_Text			TAG_IGNORE
 #define SBNA_HintInfo		TAG_IGNORE
@@ -104,9 +106,14 @@
 #define RAWKEY_F8	0x57
 #define RAWKEY_F9	0x58
 #define RAWKEY_F10	0x59
+#define RAWKEY_F12  0x6F
 #define RAWKEY_HELP	0x5F
 #define RAWKEY_HOME	0x70
 #define RAWKEY_END	0x71
+
+/* New pens - these may not be equivalent */
+#define DISABLEDTEXTPEN HIGHLIGHTTEXTPEN
+#define TITLEPEN FILLPEN
 
 /* Other constants */
 #define BVS_DISPLAY BVS_NONE
@@ -117,6 +124,7 @@
 #define OFF_OPEN 0
 #define AFF_OTAG 0
 #define ML_SEPARATOR NM_BARLABEL
+#define LBS_ROWS 0
 
 /* Renamed structures */
 #define AnchorPathOld AnchorPath

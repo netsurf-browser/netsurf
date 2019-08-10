@@ -72,6 +72,7 @@
 #include <proto/clicktab.h>
 #include <proto/label.h>
 #include <proto/layout.h>
+#include <proto/listbrowser.h>
 #include <proto/scroller.h>
 #include <proto/space.h>
 #include <proto/speedbar.h>
@@ -83,6 +84,7 @@
 #include <gadgets/chooser.h>
 #include <gadgets/clicktab.h>
 #include <gadgets/layout.h>
+#include <gadgets/listbrowser.h>
 #include <gadgets/scroller.h>
 #include <gadgets/space.h>
 #include <gadgets/speedbar.h>
@@ -230,6 +232,8 @@ enum
 	GID_HSCROLLLAYOUT,
 	GID_VSCROLL,
 	GID_VSCROLLLAYOUT,
+	GID_LOGLAYOUT,
+	GID_LOG,
 	GID_LAST
 };
 
@@ -303,6 +307,8 @@ struct gui_window
 	APTR deferred_rects_pool;
 	struct MinList *deferred_rects;
 	struct browser_window *bw;
+	struct ColumnInfo *logcolumns;
+	struct List loglist;
 };
 
 struct ami_gui_tb_userdata {
@@ -1771,6 +1777,7 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
 		case RAWKEY_F8:
 		case RAWKEY_F9:
 		case RAWKEY_F10:
+		case RAWKEY_F12:
 		case RAWKEY_HELP:
 			// don't translate
 			nskey = keycode;
@@ -2231,6 +2238,213 @@ static void ami_gui_scroller_update(struct gui_window_2 *gwin)
 		browser_window_schedule_reformat(gwin->gw->bw);
 	}
 }
+
+static void ami_gui_console_log_clear(struct gui_window *g)
+{
+	if(g->shared->objects[GID_LOG] != NULL) {
+		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_LOG], g->shared->win, NULL,
+						LISTBROWSER_Labels, NULL,
+						TAG_DONE);
+	}
+	
+	FreeListBrowserList(&g->loglist);
+
+	NewList(&g->loglist);
+
+	if(g->shared->objects[GID_LOG] != NULL) {
+		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_LOG], g->shared->win, NULL,
+						LISTBROWSER_Labels, &g->loglist,
+						TAG_DONE);
+	}
+}
+
+static void ami_gui_console_log_add(struct gui_window *g)
+{
+	struct TagItem attrs[2];
+
+	if(g->shared->objects[GID_LOG] != NULL) return;
+
+	attrs[0].ti_Tag = CHILD_MinHeight;
+	attrs[0].ti_Data = 50;
+	attrs[1].ti_Tag = TAG_DONE;
+	attrs[1].ti_Data = 0;
+
+	g->shared->objects[GID_LOG] = ListBrowserObj,
+					GA_ID, GID_LOG,
+					LISTBROWSER_ColumnInfo, g->logcolumns,
+					LISTBROWSER_ColumnTitles, TRUE,
+					LISTBROWSER_Labels, &g->loglist,
+					LISTBROWSER_Striping, LBS_ROWS,
+				ListBrowserEnd;
+
+#ifdef __amigaos4__
+	IDoMethod(g->shared->objects[GID_LOGLAYOUT], LM_ADDCHILD,
+			g->shared->win, g->shared->objects[GID_LOG], NULL);
+#else
+	SetAttrs(g->shared->objects[GID_LOGLAYOUT],
+		LAYOUT_AddChild, g->shared->objects[GID_LOG], TAG_MORE, &attrs);
+#endif
+
+	FlushLayoutDomainCache((struct Gadget *)g->shared->objects[GID_MAIN]);
+
+	RethinkLayout((struct Gadget *)g->shared->objects[GID_MAIN],
+			g->shared->win, NULL, TRUE);
+		
+	ami_schedule_redraw(g->shared, true);
+}
+
+static void ami_gui_console_log_remove(struct gui_window *g)
+{
+	if(g->shared->objects[GID_LOG] == NULL) return;
+
+#ifdef __amigaos4__
+	IDoMethod(g->shared->objects[GID_LOGLAYOUT], LM_REMOVECHILD,
+			g->shared->win, g->shared->objects[GID_LOG]);
+#else
+	SetAttrs(g->shared->objects[GID_LOGLAYOUT],
+		LAYOUT_RemoveChild, g->shared->objects[GID_LOG], TAG_DONE);
+#endif
+
+	g->shared->objects[GID_LOG] = NULL;
+
+	FlushLayoutDomainCache((struct Gadget *)g->shared->objects[GID_MAIN]);
+
+	RethinkLayout((struct Gadget *)g->shared->objects[GID_MAIN],
+			g->shared->win, NULL, TRUE);
+
+	ami_schedule_redraw(g->shared, true);
+}
+
+static bool ami_gui_console_log_toggle(struct gui_window *g)
+{
+	if(g->shared->objects[GID_LOG] == NULL) {
+		ami_gui_console_log_add(g);
+		return true;
+	} else {
+		ami_gui_console_log_remove(g);
+		return false;
+	}
+}
+
+static void ami_gui_console_log_switch(struct gui_window *g)
+{
+	if(g->shared->objects[GID_LOG] == NULL) return;
+
+	RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_LOG], g->shared->win, NULL,
+					LISTBROWSER_ColumnInfo, g->logcolumns,
+					LISTBROWSER_Labels, &g->loglist,
+					TAG_DONE);
+}
+
+static void
+gui_window_console_log(struct gui_window *g,
+		       browser_window_console_source src,
+		       const char *msg,
+		       size_t msglen,
+		       browser_window_console_flags flags)
+{
+	bool foldable = !!(flags & BW_CS_FLAG_FOLDABLE);
+	const char *src_text;
+	const char *level_text;
+	struct Node *node;
+	ULONG style = 0;
+	ULONG fgpen = FOREGROUNDPEN;
+	ULONG lbflags = LBFLG_READONLY;
+	char timestamp[256];
+	time_t now = time(NULL);
+	struct tm *timedata = localtime(&now);
+
+	strftime(timestamp, 256, "%c", timedata);
+
+	if(foldable) lbflags |= LBFLG_HASCHILDREN;
+
+	switch (src) {
+	case BW_CS_INPUT:
+		src_text = "client-input";
+		break;
+	case BW_CS_SCRIPT_ERROR:
+		src_text = "scripting-error";
+		break;
+	case BW_CS_SCRIPT_CONSOLE:
+		src_text = "scripting-console";
+		break;
+	default:
+		assert(0 && "Unknown scripting source");
+		src_text = "unknown";
+		break;
+	}
+
+	switch (flags & BW_CS_FLAG_LEVEL_MASK) {
+	case BW_CS_FLAG_LEVEL_DEBUG:
+		level_text = "DEBUG";
+		fgpen = DISABLEDTEXTPEN;
+		lbflags |= LBFLG_CUSTOMPENS;
+		break;
+	case BW_CS_FLAG_LEVEL_LOG:
+		level_text = "LOG";
+		fgpen = DISABLEDTEXTPEN;
+		lbflags |= LBFLG_CUSTOMPENS;
+		break;
+	case BW_CS_FLAG_LEVEL_INFO:
+		level_text = "INFO";
+		break;
+	case BW_CS_FLAG_LEVEL_WARN:
+		level_text = "WARN";
+		break;
+	case BW_CS_FLAG_LEVEL_ERROR:
+		level_text = "ERROR";
+		style = FSF_BOLD;
+		break;
+	default:
+		assert(0 && "Unknown console logging level");
+		level_text = "unknown";
+		break;
+	}
+
+	if(g->shared->objects[GID_LOG] != NULL) {
+		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_LOG], g->shared->win, NULL,
+						LISTBROWSER_Labels, NULL,
+						TAG_DONE);
+	}
+
+	/* Add log entry to list irrespective of whether the log is open. */
+	if((node = AllocListBrowserNode(4,
+				LBNA_Flags, lbflags,
+				LBNA_Column, 0,
+					LBNCA_SoftStyle, style,
+					LBNCA_FGPen, fgpen,
+					LBNCA_CopyText, TRUE,
+					LBNCA_Text, timestamp,
+				LBNA_Column, 1,
+					LBNCA_SoftStyle, style,
+					LBNCA_FGPen, fgpen,
+					LBNCA_CopyText, TRUE,
+					LBNCA_Text, src_text,
+				LBNA_Column, 2,
+					LBNCA_SoftStyle, style,
+					LBNCA_FGPen, fgpen,
+					LBNCA_CopyText, TRUE,
+					LBNCA_Text, level_text,
+				LBNA_Column, 3,
+					LBNCA_SoftStyle, style,
+					LBNCA_FGPen, fgpen,
+					LBNCA_CopyText, TRUE,
+					LBNCA_Text, msg,
+				TAG_DONE))) {
+		AddTail(&g->loglist, node);
+	}
+
+	if(g->shared->objects[GID_LOG] != NULL) {
+		RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_LOG], g->shared->win, NULL,
+						LISTBROWSER_Labels, &g->loglist,
+						TAG_DONE);
+	}
+
+	DebugPrintF("NETSURF: CONSOLE_LOG SOURCE %s %sFOLDABLE %s %.*s\n",
+	      src_text, foldable ? "" : "NOT-", level_text,
+	      (int)msglen, msg);
+}
+
 
 /**
  * function to add retrieved favicon to gui
@@ -2905,6 +3119,10 @@ static BOOL ami_gui_event(void *w)
 								ami_gui_adjust_scale(gwin->gw, +0.1);
 							break;
 							
+							case RAWKEY_F12: // console log
+								ami_gui_console_log_toggle(gwin->gw);
+							break;
+
 							case RAWKEY_HELP: // help
 								ami_help_open(AMI_HELP_GUI, scrn);
 							break;
@@ -3319,6 +3537,8 @@ static void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 				TNA_UserData, &gwin->gw,
 				TAG_DONE);
 	cur_gw = gwin->gw;
+
+	ami_gui_console_log_switch(gwin->gw);
 
 	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
 		amiga_warn_user("NoMemory", "");
@@ -4355,6 +4575,38 @@ gui_window_create(struct browser_window *bw,
 	g->deferred_rects_pool = ami_memory_itempool_create(sizeof(struct rect));
 	g->bw = bw;
 
+	NewList(&g->loglist);
+#ifdef __amigaos4__
+	g->logcolumns = AllocLBColumnInfo(4,
+			LBCIA_Column, 0,
+			//	LBCIA_CopyTitle, TRUE,
+				LBCIA_Title, "time", /**\TODO: add these to Messages */
+				LBCIA_Weight, 10,
+				LBCIA_DraggableSeparator, TRUE,
+				LBCIA_Separator, TRUE,
+			LBCIA_Column, 1,
+			//	LBCIA_CopyTitle, TRUE,
+				LBCIA_Title, "source", /**\TODO: add these to Messages */
+				LBCIA_Weight, 10,
+				LBCIA_DraggableSeparator, TRUE,
+				LBCIA_Separator, TRUE,
+			LBCIA_Column, 2,
+			//	LBCIA_CopyTitle, TRUE,
+				LBCIA_Title, "level", /**\TODO: add these to Messages */
+				LBCIA_Weight, 5,
+				LBCIA_DraggableSeparator, TRUE,
+				LBCIA_Separator, TRUE,
+			LBCIA_Column, 3,
+			//	LBCIA_CopyTitle, TRUE,
+				LBCIA_Title, "message", /**\TODO: add these to Messages */
+				LBCIA_Weight, 75,
+				LBCIA_DraggableSeparator, TRUE,
+				LBCIA_Separator, TRUE,
+		TAG_DONE);
+#else
+	/**\TODO write OS3-compatible version */
+#endif
+
 	if((flags & GW_CREATE_TAB) && existing)
 	{
 		g->shared = existing->shared;
@@ -4806,6 +5058,10 @@ gui_window_create(struct browser_window *bw,
 							EndGroup,
 						EndGroup,
 					EndGroup,
+//					LAYOUT_WeightBar, TRUE,
+					LAYOUT_AddChild, g->shared->objects[GID_LOGLAYOUT] = LayoutVObj,
+					EndGroup,
+					CHILD_WeightedHeight, 0,
 #ifndef __amigaos4__
 					LAYOUT_AddChild, g->shared->objects[GID_STATUS] = StringObj,
 						GA_ID, GID_STATUS,
@@ -5051,6 +5307,11 @@ static void gui_window_destroy(struct gui_window *g)
 		if((g->shared->tabs == 1) && (nsoption_bool(tab_always_show) == false))
 			ami_toggletabbar(g->shared, false);
 
+		FreeListBrowserList(&g->loglist);
+#ifdef __amigaos4__
+		FreeLBColumnInfo(g->logcolumns);
+#endif
+
 		if(g->tabtitle) free(g->tabtitle);
 		free(g);
 		return;
@@ -5083,6 +5344,11 @@ static void gui_window_destroy(struct gui_window *g)
 	DisposeObject((Object *)g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_FORWARD]);
 	ami_ctxmenu_release_hook(g->shared->ctxmenu_hook);
 	ami_gui_menu_free(g->shared);
+
+	FreeListBrowserList(&g->loglist);
+#ifdef __amigaos4__
+	FreeLBColumnInfo(g->logcolumns);
+#endif
 
 	free(g->shared->wintitle);
 	ami_utf8_free(g->shared->status);
@@ -6016,6 +6282,7 @@ static char *ami_gui_get_user_dir(STRPTR current_user)
 	return current_user_dir;
 }
 
+
 static struct gui_window_table amiga_window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
@@ -6036,8 +6303,10 @@ static struct gui_window_table amiga_window_table = {
 	.create_form_select_menu = gui_create_form_select_menu,
 	.file_gadget_open = gui_file_gadget_open,
 	.drag_save_object = gui_drag_save_object,
-	.drag_save_selection =gui_drag_save_selection,
+	.drag_save_selection = gui_drag_save_selection,
 	.start_selection = gui_start_selection,
+
+	.console_log = gui_window_console_log,
 
 	/* from theme */
 	.set_pointer = gui_window_set_pointer,

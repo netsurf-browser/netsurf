@@ -280,6 +280,7 @@ bool ami_libs_open(void)
 	AMINS_CLASS_OPEN("gadgets/integer.gadget",       41, Integer,       INTEGER,       false)
 	AMINS_CLASS_OPEN("images/label.image",           41, Label,         LABEL,         false)
 	AMINS_CLASS_OPEN("gadgets/layout.gadget",        43, Layout,        LAYOUT,        true)
+	AMINS_CLASS_OPEN("gadgets/listbrowser.gadget",   41, ListBrowser,   LISTBROWSER,   true)
 	AMINS_CLASS_OPEN("gadgets/radiobutton.gadget",   41, RadioButton,   RADIOBUTTON,   false)
 	AMINS_CLASS_OPEN("gadgets/scroller.gadget",      42, Scroller,      SCROLLER,      false)
 	AMINS_CLASS_OPEN("gadgets/space.gadget",         41, Space,         SPACE,         false)
@@ -287,10 +288,7 @@ bool ami_libs_open(void)
 	AMINS_CLASS_OPEN("gadgets/string.gadget",        41, String,        STRING,        false)
 	AMINS_CLASS_OPEN("window.class",                 42, Window,        WINDOW,        false)
 
-#ifdef __amigaos4__
-	/* BOOPSI classes only required on OS4 */
-	AMINS_CLASS_OPEN("gadgets/listbrowser.gadget",   45, ListBrowser,   LISTBROWSER,   true)
-#else
+#ifndef __amigaos4__
 	/* BOOPSI classes only required prior to OS4 */
 	PageClass = PAGE_GetClass();
 #endif
@@ -317,15 +315,13 @@ void ami_libs_close(void)
 	AMINS_CLASS_CLOSE(Integer)
 	AMINS_CLASS_CLOSE(Label)
 	AMINS_CLASS_CLOSE(Layout)
+	AMINS_CLASS_CLOSE(ListBrowser)
 	AMINS_CLASS_CLOSE(RadioButton)
 	AMINS_CLASS_CLOSE(Scroller)
 	AMINS_CLASS_CLOSE(Space)
 	AMINS_CLASS_CLOSE(SpeedBar)
 	AMINS_CLASS_CLOSE(String)
 	AMINS_CLASS_CLOSE(Window)
-#ifdef __amigaos4__
-	AMINS_CLASS_CLOSE(ListBrowser)
-#endif
 
 	/* Libraries */
 	AMINS_LIB_CLOSE(GuiGFX)

@@ -63,6 +63,7 @@ extern Class *WindowClass;
 #define LabelObj			NewObject(LabelClass, NULL
 #define LayoutHObj			NewObject(LayoutClass, NULL, LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ
 #define LayoutVObj			NewObject(LayoutClass, NULL, LAYOUT_Orientation, LAYOUT_ORIENT_VERT
+#define ListBrowserObj			NewObject(ListBrowserClass, NULL
 #ifdef __amigaos4__
 #define PageObj				NewObject(NULL, "page.gadget"
 #else
