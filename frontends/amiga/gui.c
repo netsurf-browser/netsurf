@@ -2348,7 +2348,7 @@ gui_window_console_log(struct gui_window *g,
 	const char *level_text;
 	struct Node *node;
 	ULONG style = 0;
-	ULONG fgpen = FOREGROUNDPEN;
+	ULONG fgpen = TEXTPEN;
 	ULONG lbflags = LBFLG_READONLY;
 	char timestamp[256];
 	time_t now = time(NULL);
