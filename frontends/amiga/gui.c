@@ -303,7 +303,6 @@ struct gui_window
 	APTR deferred_rects_pool;
 	struct MinList *deferred_rects;
 	struct browser_window *bw;
-	float scale;
 };
 
 struct ami_gui_tb_userdata {
@@ -1874,9 +1873,6 @@ static bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin,
 	int ns_x = space_x;
 	int ns_y = space_y;
 
-	ns_x /= gwin->gw->scale;
-	ns_y /= gwin->gw->scale;
-
 	ns_x += gwin->gw->scrollx;
 	ns_y += gwin->gw->scrolly;
 
@@ -2001,11 +1997,11 @@ static struct IBox *ami_ns_rect_to_ibox(struct gui_window_2 *gwin, const struct 
 		return NULL;
 	}
 
-	ibox->Left = gwin->win->MouseX + (rect->x0 * gwin->gw->scale);
-	ibox->Top = gwin->win->MouseY + (rect->y0 * gwin->gw->scale);
+	ibox->Left = gwin->win->MouseX + (rect->x0);
+	ibox->Top = gwin->win->MouseY + (rect->y0);
 
-	ibox->Width = (rect->x1 - rect->x0) * gwin->gw->scale;
-	ibox->Height = (rect->y1 - rect->y0) * gwin->gw->scale;
+	ibox->Width = (rect->x1 - rect->x0);
+	ibox->Height = (rect->y1 - rect->y0);
 
 	if(ibox->Left < bbox->Left) ibox->Left = bbox->Left;
 	if(ibox->Top < bbox->Top) ibox->Top = bbox->Top;
@@ -2071,7 +2067,6 @@ static void ami_gui_menu_update_all(void)
  * \param gw The gui window to measure content area of.
  * \param width receives width of window
  * \param height receives height of window
- * \param scaled whether to return scaled values
  * \return NSERROR_OK on sucess and width and height updated
  *          else error code.
  */
@@ -3928,13 +3923,13 @@ int ami_gui_count_windows(int window, int *tabs)
 void ami_gui_set_scale(struct gui_window *gw, float scale)
 {
 	browser_window_set_scale(gw->bw, scale, true);
-	gw->scale = browser_window_get_scale(gw->bw);
+	ami_schedule_redraw(gw->shared, true);
 }
 
 void ami_gui_adjust_scale(struct gui_window *gw, float adjustment)
 {
 	browser_window_set_scale(gw->bw, adjustment, false);
-	gw->scale = browser_window_get_scale(gw->bw);
+	ami_schedule_redraw(gw->shared, true);
 }
 
 void ami_gui_switch_to_new_tab(struct gui_window_2 *gwin)
@@ -3987,10 +3982,6 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 	int tile_size_y;
 
 	ami_plot_ra_get_size(glob, &tile_size_x, &tile_size_y);
-
-	int tile_x_scale = (int)(tile_size_x / gwin->gw->scale);
-	int tile_y_scale = (int)(tile_size_y / gwin->gw->scale);
-
 	ami_plot_ra_set_pen_list(glob, gwin->shared_pens);
 	
 	if(top < 0) {
@@ -4023,19 +4014,19 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 
 	if(busy) ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
 
-	for(y = top; y < (top + height); y += tile_y_scale) {
+	for(y = top; y < (top + height); y += tile_size_y) {
 		clip.y0 = 0;
 		clip.y1 = tile_size_y;
 		if(clip.y1 > height) clip.y1 = height;
-		if((((y - sy) * gwin->gw->scale) + clip.y1) > bbox->Height)
-			clip.y1 = bbox->Height - ((y - sy) * gwin->gw->scale);
+		if(((y - sy) + clip.y1) > bbox->Height)
+			clip.y1 = bbox->Height - (y - sy);
 
-		for(x = left; x < (left + width); x += tile_x_scale) {
+		for(x = left; x < (left + width); x += tile_size_x) {
 			clip.x0 = 0;
 			clip.x1 = tile_size_x;
 			if(clip.x1 > width) clip.x1 = width;
-			if((((x - sx) * gwin->gw->scale) + clip.x1) > bbox->Width)
-				clip.x1 = bbox->Width - ((x - sx) * gwin->gw->scale);
+			if(((x - sx) + clip.x1) > bbox->Width)
+				clip.x1 = bbox->Width - (x - sx);
 
 			if(browser_window_redraw(gwin->gw->bw,
 				clip.x0 - (int)x,
@@ -4050,15 +4041,15 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 					BLITA_SrcY, 0,
 					BLITA_DestType, BLITT_RASTPORT, 
 					BLITA_Dest, gwin->win->RPort,
-					BLITA_DestX, bbox->Left + (int)((x - sx) * gwin->gw->scale),
-					BLITA_DestY, bbox->Top + (int)((y - sy) * gwin->gw->scale),
+					BLITA_DestX, bbox->Left + (int)(x - sx),
+					BLITA_DestY, bbox->Top + (int)(y - sy),
 					BLITA_Width, (int)(clip.x1),
 					BLITA_Height, (int)(clip.y1),
 					TAG_DONE);
 #else
 				BltBitMapRastPort(ami_plot_ra_get_bitmap(glob), 0, 0, gwin->win->RPort,
-					bbox->Left + (int)((x - sx) * gwin->gw->scale),
-					bbox->Top + (int)((y - sy) * gwin->gw->scale),
+					bbox->Left + (int)(x - sx),
+					bbox->Top + (int)(y - sy),
 					(int)(clip.x1), (int)(clip.y1), 0xC0);
 #endif
 			}
@@ -4175,14 +4166,10 @@ static void ami_refresh_window(struct gui_window_2 *gwin)
 	
 	BeginRefresh(gwin->win);
 
-	r.x0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinX - bbox->Left) /
-			browser_window_get_scale(gwin->gw->bw)) + sx - 1;
-	r.x1 = ((gwin->win->RPort->Layer->DamageList->bounds.MaxX - bbox->Left) /
-			browser_window_get_scale(gwin->gw->bw)) + sx + 2;
-	r.y0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinY - bbox->Top) /
-			browser_window_get_scale(gwin->gw->bw)) + sy - 1;
-	r.y1 = ((gwin->win->RPort->Layer->DamageList->bounds.MaxY - bbox->Top) /
-			browser_window_get_scale(gwin->gw->bw)) + sy + 2;
+	r.x0 = (gwin->win->RPort->Layer->DamageList->bounds.MinX - bbox->Left) + sx - 1;
+	r.x1 = (gwin->win->RPort->Layer->DamageList->bounds.MaxX - bbox->Left) + sx + 2;
+	r.y0 = (gwin->win->RPort->Layer->DamageList->bounds.MinY - bbox->Top) + sy - 1;
+	r.y1 = (gwin->win->RPort->Layer->DamageList->bounds.MaxY - bbox->Top) + sy + 2;
 
 	regrect = gwin->win->RPort->Layer->DamageList->RegionRectangle;
 
@@ -4190,14 +4177,10 @@ static void ami_refresh_window(struct gui_window_2 *gwin)
 
 	while(regrect)
 	{
-		r.x0 = ((regrect->bounds.MinX - bbox->Left) /
-			browser_window_get_scale(gwin->gw->bw)) + sx - 1;
-		r.x1 = ((regrect->bounds.MaxX - bbox->Left) /
-			browser_window_get_scale(gwin->gw->bw)) + sx + 2;
-		r.y0 = ((regrect->bounds.MinY - bbox->Top) /
-			browser_window_get_scale(gwin->gw->bw)) + sy - 1;
-		r.y1 = ((regrect->bounds.MaxY - bbox->Top) /
-			browser_window_get_scale(gwin->gw->bw)) + sy + 2;
+		r.x0 = (regrect->bounds.MinX - bbox->Left) + sx - 1;
+		r.x1 = (regrect->bounds.MaxX - bbox->Left) + sx + 2;
+		r.y0 = (regrect->bounds.MinY - bbox->Top) + sy - 1;
+		r.y1 = (regrect->bounds.MaxY - bbox->Top) + sy + 2;
 
 		regrect = regrect->Next;
 
@@ -4371,7 +4354,6 @@ gui_window_create(struct browser_window *bw,
 	g->deferred_rects = NewObjList();
 	g->deferred_rects_pool = ami_memory_itempool_create(sizeof(struct rect));
 	g->bw = bw;
-	g->scale = browser_window_get_scale(bw);
 
 	if((flags & GW_CREATE_TAB) && existing)
 	{
@@ -5312,7 +5294,6 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 			gwin->redraw_scroll = false;
 
  		if(gwin->new_content) gwin->redraw_scroll = false;
-//		if(gwin->gw->scale != 1.0) gwin->redraw_scroll = false;
 	}
 
 	if(gwin->redraw_scroll)
@@ -5386,7 +5367,6 @@ static void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs)
 	if(gwin->objects[GID_HSCROLL])
 	{
 		GetAttr(SCROLLER_Top, (Object *)gwin->objects[GID_HSCROLL], xs);
-		*xs /= gwin->gw->scale;
 	} else {
 		*xs = 0;
 	}
@@ -5396,7 +5376,6 @@ static void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys)
 {
 	if(gwin->objects[GID_VSCROLL]) {
 		GetAttr(SCROLLER_Top, gwin->objects[GID_VSCROLL], ys);
-		*ys /= gwin->gw->scale;
 	} else {
 		*ys = 0;
 	}
@@ -5465,7 +5444,7 @@ gui_window_set_scroll(struct gui_window *g, const struct rect *rect)
 		if(g->shared->objects[GID_VSCROLL]) {
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_VSCROLL],
 				g->shared->win, NULL,
-				SCROLLER_Top, (ULONG)(sy * g->scale),
+				SCROLLER_Top, (ULONG)(sy),
 			TAG_DONE);
 		}
 
@@ -5473,7 +5452,7 @@ gui_window_set_scroll(struct gui_window *g, const struct rect *rect)
 		{
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_HSCROLL],
 				g->shared->win, NULL,
-				SCROLLER_Top, (ULONG)(sx * g->scale),
+				SCROLLER_Top, (ULONG)(sx),
 				TAG_DONE);
 		}
 
