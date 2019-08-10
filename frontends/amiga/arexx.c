@@ -69,7 +69,8 @@ enum
 	RX_ACTIVE,
 	RX_CLOSE,
 	RX_HOTLIST,
-	RX_SLABSTATS
+	RX_SLABSTATS,
+	RX_EXEC
 };
 
 static Object *arexx_obj = NULL;
@@ -98,6 +99,7 @@ RXHOOKF(rx_active);
 RXHOOKF(rx_close);
 RXHOOKF(rx_hotlist);
 RXHOOKF(rx_slabstats);
+RXHOOKF(rx_exec);
 
 STATIC struct ARexxCmd Commands[] =
 {
@@ -118,6 +120,7 @@ STATIC struct ARexxCmd Commands[] =
 	{"CLOSE",	RX_CLOSE,	rx_close,	"W=WINDOW/K/N,T=TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
 	{"HOTLIST",	RX_HOTLIST,	rx_hotlist,	"A=ACTION/A", 		0, 	NULL, 	0, 	0, 	NULL },
 	{"SLABSTATS",	RX_SLABSTATS,	rx_slabstats,	"FILE", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"EXEC",	RX_EXEC,	rx_exec,	"W=WINDOW/K/N,T=TAB/K/N,COMMAND/A/F", 		0, 	NULL, 	0, 	0, 	NULL },
 	{ NULL, 		0, 				NULL, 		NULL, 		0, 	NULL, 	0, 	0, 	NULL }
 };
 
@@ -672,6 +675,33 @@ RXHOOKF(rx_hotlist)
 	} else if(strcasecmp((char *)cmd->ac_ArgList[0], "CLOSE") == 0) {
 		ami_hotlist_close();
 	}
+}
+
+RXHOOKF(rx_exec)
+{
+	struct gui_window *gw = ami_gui_get_active_gw();
+	bool res = false;
+
+	if(nsoption_bool(arexx_allow_exec) == false) {
+		cmd->ac_RC = RETURN_FAIL;
+		return;
+	}
+
+	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
+		gw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
+
+	if(gw) {
+		NSLOG(netsurf, WARNING, "Executing js: %s", (char *)cmd->ac_ArgList[2]);
+		res = browser_window_exec(ami_gui_get_browser_window(gw),
+			(char *)cmd->ac_ArgList[2], strlen((char *)cmd->ac_ArgList[2]));
+	}
+
+	if(res == false) {
+		cmd->ac_RC = RETURN_ERROR;
+	} else {
+		cmd->ac_RC = RETURN_OK;
+	}
+
 }
 
 RXHOOKF(rx_slabstats)
