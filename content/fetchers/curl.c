@@ -1180,9 +1180,22 @@ static void fetch_curl_done(CURL *curl_handle, CURLcode result)
 		 */
 		;
 	} else if (result == CURLE_SSL_PEER_CERTIFICATE ||
-			result == CURLE_SSL_CACERT) {
-		/* CURLE_SSL_PEER_CERTIFICATE renamed to
-		 * CURLE_PEER_FAILED_VERIFICATION
+		   result == CURLE_SSL_CACERT) {
+		/*
+		 * curl in 7.63.0 (https://github.com/curl/curl/pull/3291)
+		 *   unified *all* SSL errors into the single
+		 *   CURLE_PEER_FAILED_VERIFICATION depricating
+		 *   CURLE_SSL_PEER_CERTIFICATE and CURLE_SSL_CACERT
+		 *
+		 * This change complete removed the ability to
+		 *   distinguish between certificate errors, host
+		 *   verification errors or any other failure reason
+		 *   using the curl result code.
+		 *
+		 * The result is when certificate error message is
+		 *   sent there is currently no way of informing the
+		 *   llcache about host verification faliures as the
+		 *   certificate chain has no error codes set.
 		 */
 		cert = true;
 	} else {

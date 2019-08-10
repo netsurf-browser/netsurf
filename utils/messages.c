@@ -382,6 +382,11 @@ const char *messages_get_sslcode(ssl_cert_err code)
 	case SSL_CERT_ERR_REVOKED:
 		/* This certificate has been revoked */
 		return messages_get_ctx("SSLCertErrRevoked", messages_hash);
+
+	case SSL_CERT_ERR_COMMON_NAME:
+		/* Common name is invalid */
+		return messages_get_ctx("SSLCertErrCommonName", messages_hash);
+
 	}
 
 	/* The switch has no default, so the compiler should tell us when we

@@ -38,6 +38,7 @@ typedef enum {
 	SSL_CERT_ERR_SELF_SIGNED, /**< This certificate (or the chain) is self signed */
 	SSL_CERT_ERR_CHAIN_SELF_SIGNED, /**< This certificate chain is self signed */
 	SSL_CERT_ERR_REVOKED,	/**< This certificate has been revoked */
+	SSL_CERT_ERR_COMMON_NAME, /**< This certificate host did not match teh server */
 } ssl_cert_err;
 
 /**
