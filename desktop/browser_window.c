@@ -2302,6 +2302,40 @@ browser_window_drop_file_at_point_internal(struct browser_window *bw,
 }
 
 
+/**
+ * Check if this is an internal navigation URL.
+ *
+ * This safely checks if the given url is an internal navigation even
+ *  for urls with no scheme or path.
+ *
+ * \param url The URL to check
+ * \return true if an internal navigation url else false
+ */
+static bool
+is_internal_navigate_url(nsurl *url)
+{
+	bool is_internal = false;
+	lwc_string *scheme, *path;
+
+	scheme = nsurl_get_component(url, NSURL_SCHEME);
+	if (scheme != NULL) {
+		path = nsurl_get_component(url, NSURL_PATH);
+		if (path != NULL) {
+			if (scheme == corestring_lwc_about) {
+				if (path == corestring_lwc_query_auth) {
+					is_internal = true;
+				} else if (path == corestring_lwc_query_ssl) {
+					is_internal = true;
+				}
+			}
+			lwc_string_unref(path);
+		}
+		lwc_string_unref(scheme);
+	}
+	return is_internal;
+}
+
+
 /* exported interface, documented in netsurf/browser_window.h */
 nserror
 browser_window_get_name(struct browser_window *bw, const char **out_name)
@@ -3050,27 +3084,17 @@ browser_window_navigate(struct browser_window *bw,
 	nserror error;
 	bool is_internal = false;
 	struct browser_fetch_parameters params, *pass_params = NULL;
-	lwc_string *scheme, *path;
 
 	assert(bw);
 	assert(url);
 
 	NSLOG(netsurf, INFO, "bw %p, url %s", bw, nsurl_access(url));
 
-	/* Check if this is an internal navigation URL, if so, we do not
-	 * do certain things during the load
+	/*
+	 * determine if navigation is internal url, if so, we do not
+	 * do certain things during the load.
 	 */
-	scheme = nsurl_get_component(url, NSURL_SCHEME);
-	path = nsurl_get_component(url, NSURL_PATH);
-	if (scheme == corestring_lwc_about) {
-		if (path == corestring_lwc_query_auth) {
-			is_internal = true;
-		} else if (path == corestring_lwc_query_ssl) {
-			is_internal = true;
-		}
-	}
-	lwc_string_unref(scheme);
-	lwc_string_unref(path);
+	is_internal = is_internal_navigate_url(url);
 
 	if (is_internal &&
 	    !(flags & BW_NAVIGATE_INTERNAL)) {
