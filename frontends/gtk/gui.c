@@ -71,7 +71,6 @@
 #include "gtk/ssl_cert.h"
 #include "gtk/bitmap.h"
 #include "gtk/resources.h"
-#include "gtk/login.h"
 #include "gtk/layout_pango.h"
 #include "gtk/accelerator.h"
 

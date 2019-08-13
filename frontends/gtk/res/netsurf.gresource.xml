@@ -19,13 +19,11 @@
     <file>ssl.gtk3.ui</file>
     <file>viewdata.gtk2.ui</file>
     <file>downloads.gtk3.ui</file>
-    <file>login.gtk2.ui</file>
     <file>options.gtk3.ui</file>
     <file>tabcontents.gtk2.ui</file>
     <file>viewdata.gtk3.ui</file>
     <file>localhistory.gtk2.ui</file>
     <file>globalhistory.gtk2.ui</file>
-    <file>login.gtk3.ui</file>
     <file>password.gtk2.ui</file>
     <file>tabcontents.gtk3.ui</file>
     <file>warning.gtk2.ui</file>
