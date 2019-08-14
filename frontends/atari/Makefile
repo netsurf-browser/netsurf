@@ -96,7 +96,6 @@ S_FRONTEND := \
 	gui.c \
 	hotlist.c \
 	history.c \
-	login.c \
 	misc.c \
 	osspec.c \
 	redrawslots.c \

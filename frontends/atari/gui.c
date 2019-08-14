@@ -761,35 +761,6 @@ static void gui_set_clipboard(const char *buffer, size_t length,
     }
 }
 
-static nserror gui_401login_open(nsurl *url, const char *realm,
-        const char *username, const char *password,
-        nserror (*cb)(const char *username,
-                const char *password,
-                void *pw),
-        void *cbpw)
-{
-    bool bres;
-    char * u_out = NULL;
-    char * p_out = NULL;
-
-    bres = login_form_do(url, (char*)realm, &u_out, &p_out);
-    if (bres) {
-        NSLOG(netsurf, INFO, "url: %s, realm: %s, auth: %s:%s\n",
-                nsurl_access(url), realm, u_out, p_out);
-    }
-    if (cb != NULL) {
-        cb(u_out, p_out, cbpw);
-    }
-    if (u_out != NULL) {
-        free(u_out);
-    }
-    if (p_out != NULL) {
-        free(p_out);
-    }
-
-    return NSERROR_OK;
-}
-
 static nserror
 gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 		unsigned long num, nserror (*cb)(bool proceed, void *pw),
