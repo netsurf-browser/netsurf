@@ -72,7 +72,6 @@
 
 
 wimp_w dialog_info, dialog_saveas,
-	dialog_401li,
 	dialog_zoom, dialog_pageinfo, dialog_objinfo, dialog_tooltip,
 	dialog_warning,
 	dialog_folder, dialog_entry, dialog_search, dialog_print,
@@ -113,9 +112,6 @@ void ro_gui_dialog_init(void)
 
 	/* configure window */
 	ro_gui_configure_initialise();
-
-	/* 401 login window */
-	ro_gui_401login_init();
 
 	/* theme installation */
 	dialog_theme_install = ro_gui_dialog_create("theme_inst");

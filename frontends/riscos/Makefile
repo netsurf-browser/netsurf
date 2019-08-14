@@ -46,7 +46,7 @@ endif
 # ----------------------------------------------------------------------------
 
 # S_RISCOS are sources purely for the RISC OS build
-S_FRONTEND := 401login.c assert.c bitmap.c buffer.c configure.c gui.c	\
+S_FRONTEND := assert.c bitmap.c buffer.c configure.c gui.c	\
 	dialog.c download.c filetype.c font.c help.c image.c	\
 	iconbar.c menus.c message.c mouse.c palettes.c plotters.c	\
 	print.c query.c save.c save_draw.c save_pdf.c schedule.c	\
