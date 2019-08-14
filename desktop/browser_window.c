@@ -873,7 +873,11 @@ browser_window__handle_ssl_query_response(bool proceed, void *pw)
 
 		bw->current_parameters.flags &= ~BW_NAVIGATE_HISTORY;
 		bw->internal_nav = false;
-		return browser_window__navigate_internal(bw, &bw->current_parameters);
+
+		browser_window__free_fetch_parameters(&bw->loading_parameters);
+		memcpy(&bw->loading_parameters, &bw->current_parameters, sizeof(bw->loading_parameters));
+		memset(&bw->current_parameters, 0, sizeof(bw->current_parameters));
+		return browser_window__navigate_internal(bw, &bw->loading_parameters);
 	}
 
 	/* We're processing a "proceed" attempt from the form */
