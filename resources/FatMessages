@@ -34,12 +34,1649 @@
 #
 
 # Globals
+# =======
+#
 en.all.NetSurf:NetSurf
 
 en.all.NetSurfCopyright:© 2003-2019 The NetSurf Developers
 de.all.NetSurfCopyright:© 2003-2019 die NetSurf Entwickler
 nl.all.NetSurfCopyright:© 2003-2019 De NetSurf-ontwikkelaars
 it.all.NetSurfCopyright:© 2003-2019 A cura degli sviluppatori di NetSurf
+
+
+# General
+# =======
+#
+# Some general purpose words and phrases
+#
+en.all.Yes:Yes
+de.all.Yes:Ja
+fr.all.Yes:Oui
+it.all.Yes:Si
+nl.all.Yes:Ja
+en.all.No:No
+de.all.No:Nein
+fr.all.No:Non
+it.all.No:No
+nl.all.No:Nee
+en.all.Replace:Replace file
+de.all.Replace:Überschreiben
+fr.all.Replace:Remplacer le fichier
+it.all.Replace:Sostituire il file
+nl.all.Replace:Vervang bestand
+en.all.DontReplace:Don't replace
+de.all.DontReplace:Abbrechen
+fr.all.DontReplace:Ne pas remplacer le fichier
+it.all.DontReplace:Non sostituire
+nl.all.DontReplace:Annuleer bewaaractie
+en.all.Remove:Remove address
+de.all.Remove:Adresse entfernen
+fr.all.Remove:Enlever/retirer une adresse
+it.all.Remove:Rimuovi indirizzo
+nl.all.Remove:Verwijder adres
+en.all.DontRemove:Don't remove
+de.all.DontRemove:Behalten
+fr.all.DontRemove:Ne pas enlever/retirer
+it.all.DontRemove:Non rimuovere
+nl.all.DontRemove:Niet verwijderen
+en.all.obj:object
+de.all.obj:Objekt
+fr.all.obj:objet
+it.all.obj:oggetto
+nl.all.obj:object
+en.all.objs:objects
+de.all.objs:Objekte
+fr.all.objs:objets
+it.all.objs:oggetti
+nl.all.objs:objecten
+en.all.styl:stylesheet
+de.all.styl:Formatvorlage
+fr.all.styl:feuille de styles
+it.all.styl:foglio di stile
+nl.all.styl:stijlblad
+en.all.styls:stylesheets
+de.all.styls:Formatvorlagen
+fr.all.styls:feuilles de styles
+it.all.styls:fogli di stile
+nl.all.styls:stijlbladen
+en.all.OK:OK
+de.all.OK:OK
+fr.all.OK:OK
+it.all.OK:OK
+nl.all.OK:OK
+en.all.Selecting:Selecting
+de.all.Selecting:Auswählen
+fr.all.Selecting:Sélection en cours
+it.all.Selecting:Selezione
+nl.all.Selecting:selecteren
+en.all.FrameDrag:Resizing frames
+de.all.FrameDrag:Frames ändern
+fr.all.FrameDrag:Redimensionnement des cadres en cours
+it.all.FrameDrag:Ridimensione dei frame
+nl.all.FrameDrag:frames aan het aanpassen
+
+
+# Units
+# =====
+#
+en.all.Bytes: B
+de.all.Bytes: B
+fr.all.Bytes: octets
+it.all.Bytes: Byte
+nl.all.Bytes: B
+en.all.kBytes: kB
+de.all.kBytes: kB
+fr.all.kBytes: Ko
+it.all.kBytes: KB
+nl.all.kBytes: KB
+en.all.MBytes: MB
+de.all.MBytes: MB
+fr.all.MBytes: Mo
+it.all.MBytes: MB
+nl.all.MBytes: MB
+en.all.GBytes: GB
+de.all.GBytes: GB
+fr.all.GBytes: Go
+it.all.GBytes: GB
+nl.all.GBytes: GB
+
+
+# Content Forms
+# =============
+#
+# This section contains tokens used by forms
+#
+en.all.Form_Submit:Submit
+de.all.Form_Submit:Übertragen
+fr.all.Form_Submit:Soumettre
+it.all.Form_Submit:Invia
+nl.all.Form_Submit:Versturen
+en.all.Form_Reset:Reset
+de.all.Form_Reset:Zurücksetzen
+fr.all.Form_Reset:Effacer
+it.all.Form_Reset:Resetta
+nl.all.Form_Reset:Opnieuw
+en.all.Form_None:
+de.all.Form_None:
+fr.all.Form_None:
+it.all.Form_None:
+nl.all.Form_None:
+en.all.Form_Many:(Many)
+de.all.Form_Many:(Viele)
+fr.all.Form_Many:(Plusieurs)
+it.all.Form_Many:(Molti)
+nl.all.Form_Many:(Veel)
+en.all.Form_Drop:Drop file here
+en.gtk.Form_Drop:Click to select file
+fr.gtk.Form_Drop:Cliquer pour sélectionner fichier
+nl.gtk.Form_Drop:Klik om bestand te selecteren
+en.ro.Form_Drop:Drop file here
+fr.ro.Form_Drop:Déposer fichier ici
+en.ami.Form_Drop:Click or drop file here
+fr.ami.Form_Drop:Cliquer ou déposer fichier ici]
+nl.ami.Form_Drop:Sleep bestand hierheen
+en.beos.Form_Drop:Drop file here
+fr.beos.Form_Drop:Drop file here
+nl.beos.Form_Drop:Sleep bestand hierheen
+en.fb.Form_Drop:Click to select file
+fr.fb.Form_Drop:Cliquer pour sélectionner fichier
+nl.fb.Form_Drop:Klik om bestand te selecteren
+en.osx.Form_Drop:Click to select file
+fr.osx.Form_Drop:Cliquer pour sélectionner fichier
+de.all.Form_Drop:Datei hier hinziehen
+fr.all.Form_Drop:Déposer les fichiers ici
+it.all.Form_Drop:Inserisci un file qui
+nl.all.Form_Drop:Bestand hier plaatsen
+en.all.FormSelect:Click to choose a form item
+de.all.FormSelect:Anklicken öffnet Auswahlmenü
+fr.all.FormSelect:Cliquer pour choisir un item de formulaire
+it.all.FormSelect:Clicca per scegliere un oggetto del modulo
+nl.all.FormSelect:Klikken selecteert een formulieritem
+en.all.FormCheckbox:Click to check this option
+de.all.FormCheckbox:Anklicken um die Option an/abzuschalten
+fr.all.FormCheckbox:Cliquer pour cocher cette option
+it.all.FormCheckbox:Clicca per scegliere questa opzione
+nl.all.FormCheckbox:Klikken selecteert deze optie
+en.all.FormRadio:Click to choose this option
+de.all.FormRadio:Anklicken wählt diese Option
+fr.all.FormRadio:Cliquer pour choisir cette option
+it.all.FormRadio:Clicca per selezionare questa opzione
+nl.all.FormRadio:Klikken kiest deze optie
+en.all.FormSubmit:Send form to %s
+de.all.FormSubmit:Daten übertragen an %s
+fr.all.FormSubmit:Envoyer le formulaire à %s
+it.all.FormSubmit:Invia il risultato del modulo a: %s
+nl.all.FormSubmit:Informatie versturen naar %s
+en.all.FormBadSubmit:Warning: form can not be submitted
+de.all.FormBadSubmit:Achtung: Daten können nicht gesendet werden
+fr.all.FormBadSubmit:Alerte : le formulaire n'a pas pu être envoyé
+it.all.FormBadSubmit:Attenzione: Il modulo non può essere inviato
+nl.all.FormBadSubmit:Waarschuwing: informatie kan niet verzonden worden
+en.all.FormButton:Warning: button can not be activated
+de.all.FormButton:Achtung: Schaltknopf kann nicht aktiviert werden
+fr.all.FormButton:Warning: Bouton ne peut être activé
+it.all.FormButton:Attenzione: il pulsante non può essere attivato
+nl.all.FormButton:Waarschuwing: knop kan niet geactiveerd worden
+en.all.FormTextarea:Click to edit the text
+de.all.FormTextarea:Anklicken zum Editieren
+fr.all.FormTextarea:Cliquer pour éditer ce texte
+it.all.FormTextarea:Clicca per editare il testo
+nl.all.FormTextarea:Klikken om tekst te bewerken
+en.all.FormTextbox:Click to edit this field
+de.all.FormTextbox:Anklicken zum Bearbeiten des Feldes
+fr.all.FormTextbox:Cliquer pour éditer ce champ
+it.all.FormTextbox:Clicca per editare il campo di testo
+nl.all.FormTextbox:Klikken om dit veld te bewerken
+en.all.FormReset:Reset form (not implemented)
+de.all.FormReset:Zurücksetzen (nicht implementiert)
+fr.all.FormReset:Effacer le formulaire (non implémenté)
+it.all.FormReset:Resetta il modulo
+nl.all.FormReset:Formulier opnieuw instellen (niet geïmplemented)
+en.all.FormFile:Drop a file here to upload it
+de.all.FormFile:Zum Upload Datei hierhin ziehen und fallenlassen
+fr.all.FormFile:Déposer un fichier ici pour le téléverser #Need review
+it.all.FormFile:Inserisci un file da inviare qui
+nl.all.FormFile:Het bestand hier plaatsen voor verzenden
+en.all.SelectMenu:Select
+de.all.SelectMenu:Auswahl
+fr.all.SelectMenu:Sélectionner
+it.all.SelectMenu:Seleziona
+nl.all.SelectMenu:Selecteer
+
+
+# Content titles
+# ==============
+#
+en.all.BMPTitle:%s (BMP image %lux%lu pixels)
+de.all.BMPTitle:%s (BMP Bild %lux%lu pixels)
+fr.all.BMPTitle:%s (Image BMP %lux%lu pixels)
+it.all.BMPTitle:%s (Immagine BMP %lux%lu pixel)
+nl.all.BMPTitle:%s (BMP-afbeelding %lux%lu punten)
+en.all.GIFTitle:%s (GIF image %lux%lu pixels)
+de.all.GIFTitle:%s (GIF Bild %lux%lu pixels)
+fr.all.GIFTitle:%s (Image GIF %lux%lu pixels)
+it.all.GIFTitle:%s (Immagine GIF %lux%lu pixel)
+nl.all.GIFTitle:%s (GIF-afbeelding %lux%lu punten)
+en.all.ICOTitle:%s (ICO image %lux%lu pixels)
+de.all.ICOTitle:%s (ICO Bild %lux%lu pixels)
+fr.all.ICOTitle:%s (Image BMP %lux%lu pixels)
+it.all.ICOTitle:%s (Immagine ICO %lux%lu pixel)
+nl.all.ICOTitle:%s (ICO-afbeelding %lux%lu punten)
+en.all.JPEGTitle:%s (JPEG image %lux%lu pixels)
+de.all.JPEGTitle:%s (JPEG Bild %lux%lu pixels)
+fr.all.JPEGTitle:%s (Image JPEG %lux%lu pixels)
+it.all.JPEGTitle:%s (Immagine JPEG %lux%lu pixel)
+nl.all.JPEGTitle:%s (JPEG-afbeelding %lux%lu punten)
+en.all.PNGTitle:%s (PNG image %lux%lu pixels)
+de.all.PNGTitle:%s (PNG Bild %lux%lu pixels)
+fr.all.PNGTitle:%s (Image PNG %lux%lu pixels)
+it.all.PNGTitle:%s (Immagine PNG %lux%lu pixel)
+nl.all.PNGTitle:%s (PNG-afbeelding %lux%lu punten)
+en.all.SpriteTitle:%s (Sprite image %lux%lu pixels)
+de.all.SpriteTitle:%s (Sprite Bild %lux%lu pixels)
+fr.all.SpriteTitle:%s (Image Sprite %lux%lu pixels)
+it.all.SpriteTitle:%s (Immagine Sprite %lux%lu pixel)
+nl.all.SpriteTitle:%s (Sprite-afbeelding %lux%lu punten)
+en.all.WebPTitle:%s (WebP image %lux%lu pixels)
+de.all.WebPTitle:%s (WebP Bild %lux%lu pixels)
+fr.all.WebPTitle:%s (Image WebP %lux%lu pixels)
+it.all.WebPTitle:%s (Immagine WebP %lux%lu pixel)
+nl.all.WebPTitle:%s (WebP-afbeelding %lux%lu punten)
+en.ro.ArtWorksTitle:%s (ArtWorks image %lux%lu pixels)
+de.ro.ArtWorksTitle:%s (ArtWorks Bild %lux%lu pixels)
+fr.ro.ArtWorksTitle:%s (Image ArtWorks %lux%lu pixels)
+it.ro.ArtWorksTitle:%s (Immagine ArtWorks %lux%lu pixel)
+nl.ro.ArtWorksTitle:%s (ArtWorks-afbeelding %lux%lu punten)
+en.ro.DrawTitle:%s (Draw image %lux%lu pixels)
+de.ro.DrawTitle:%s (Draw Bild %lux%lu pixels)
+fr.ro.DrawTitle:%s (Image Draw %lux%lu pixels)
+it.ro.DrawTitle:%s (Immagine Draw %lux%lu pixel)
+nl.ro.DrawTitle:%s (Draw-afbeelding %lux%lu punten)
+en.ami.DataTypesTitle:%s (%s image %lux%lu pixels)
+de.ami.DataTypesTitle:%s (%s Bild %lux%lu pixels)
+fr.ami.DataTypesTitle:%s (Image %s %lux%lu pixels)
+it.ami.DataTypesTitle:%s (Immagine %s %lux%lu pixel)
+nl.ami.DataTypesTitle:%s (%s afbeelding %lux%lu punten)
+
+
+# HTML page character encoding source
+# ===================================
+#
+en.all.Encoding0:from HTTP headers
+de.all.Encoding0:aus HTTP Kopfzeilen
+fr.all.Encoding0:dans les en-têtes HTTP
+it.all.Encoding0:da intestazioni HTTP
+nl.all.Encoding0:van HTTP-koppen
+en.all.Encoding1:detected
+de.all.Encoding1:ermittelt
+fr.all.Encoding1:détecté
+it.all.Encoding1:rilevato
+nl.all.Encoding1:gedetecteerd
+en.all.Encoding2:from <meta>
+de.all.Encoding2:aus <meta>
+fr.all.Encoding2:de <meta>
+it.all.Encoding2:da <meta>
+nl.all.Encoding2:van <meta>
+en.all.EncodingUnk:Unknown
+de.all.EncodingUnk:Unbekannt
+fr.all.EncodingUnk:Inconnu
+it.all.EncodingUnk:Sconosciuto
+nl.all.EncodingUnk:Onbekend
+
+
+# Fetching errors
+# ===============
+#
+# Error displayed as an HTML page
+#
+# This section contains error and warning messages which
+# are displayed to the user.
+#
+en.all.Not2xx:Server returned an error
+de.all.Not2xx:Server meldet Fehler zurück
+fr.all.Not2xx:Le serveur a renvoyé une erreur
+it.all.Not2xx:Il server ha riportato un errore
+nl.all.Not2xx:Server meldt een fout
+en.all.InvalidURL:The address <em>%s</em> could not be understood.
+de.all.InvalidURL:Die Adresse <em>%s</em> konnte nicht ausgewertet werden.
+fr.all.InvalidURL:L'adresse <em>%s</em> est incomprise.
+it.all.InvalidURL:L'indirizzo <em>%s</em> non è stato riconosciuto.
+nl.all.InvalidURL:Het adres <em>%s</em> klopt niet.
+
+
+# HTML error page
+# ===============
+#
+en.all.ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Page error</title></head><body><h1>Sorry, NetSurf was unable to display this page</h1><p><strong>%s</strong></p></body></html>
+de.all.ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Seitenfehler</title></head><body><h1>NetSurf konnte diese Seite leider nicht darstellen.</h1><p><strong>%s</strong></p></body></html>
+fr.all.ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Erreur</title></head><body><h1>Désolé, NetSurf n'a pas pu afficher cette page</h1><p><strong>%s</strong></p></body></html>
+it.all.ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Errore nella pagina</title></head><body><h1>Spiacente, NetSurf non è in grado di visualizzare questa pagina.</h1><p><strong>%s</strong></p></body></html>
+nl.all.ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Pagina fout</title></head><body><h1>Sorry, NetSurf kan deze pagina</h1><p><strong>%s</strong></p>niet tonen.</body></html>
+
+
+# General errors
+# ==============
+#
+# Messages shown in dialog box
+#
+# These may be augmented with further relevant information, which
+# is displayed after the contents of the relevant token.
+#
+en.all.NoMemory:NetSurf is running out of memory. Please free some memory and try again.
+de.all.NoMemory:Zu wenig Speicher. Bitte mehr Speicher zur Verfügung stellen und erneut versuchen.
+fr.all.NoMemory:NetSurf a besoin de plus de mémoire. Veuillez libérer de la mémoire et réessayer.
+it.all.NoMemory:Memoria insufficiente per l'esecuzione di NetSurf. Per favore liberane un pò e riprova nuovamente.
+nl.all.NoMemory:NetSurf heeft gebrek aan voldoende geheugen. Maak wat geheugen vrij en probeer het dan nog eens.
+en.all.SaveError:The file could not be saved due to an error:
+de.all.SaveError:Die Datei konnte wegen eines Fehlers nicht gespeichert werden:
+fr.all.SaveError:Le fichier n'a pas pu être sauvé suite à une erreur:
+it.all.SaveError:Il file non può essere salvato a causa di un errore:
+nl.all.SaveError:Wegens een fout kan dit bestand niet opgeslagen worden:
+en.all.LoadError:The file could not be loaded due to an error:
+de.all.LoadError:Die Datei konnte wegen eines Fehlers nicht geladen werden:
+fr.all.LoadError:Le fichier n'a pas pu être chargé à cause d'une erreur:
+it.all.LoadError:Il file non può essere caricato a causa di un errore:
+nl.all.LoadError:Wegens een fout kan dit bestand niet geladen worden:
+en.all.MiscError:An unexpected error occurred:
+de.all.MiscError:Unerwarteter Fehler:
+fr.all.MiscError:Une erreur inattendue s'est produite:
+it.all.MiscError:Si è verificato un errore inatteso:
+nl.all.MiscError:Er trad een onverwachte fout op:
+en.all.FileError:File does not exist:
+de.all.FileError:Datei existiert nicht:
+fr.all.FileError:Le fichier n'existe pas:
+it.all.FileError:Il file è inesistente:
+nl.all.FileError:Bestand lijkt niet te bestaan:
+en.all.PrintError:An error occurred when printing:
+de.all.PrintError:Ein Fehler trat während des Druckens auf:
+fr.all.PrintError:Une erreur s'est produite lors de l'impression:
+it.all.PrintError:Si è verificato un errore durante la stampa:
+nl.all.PrintError:Fout tijdens afdrukken:
+en.all.NoDiscSpace:Not enough space available on disc.
+de.all.NoDiscSpace:Nicht genug Speicherplatz auf dem Medium vorhanden.
+fr.all.NoDiscSpace:Pas assez d'espace disque disponible.
+it.all.NoDiscSpace:Spazio insufficiente nel disco.
+nl.all.NoDiscSpace:Onvoldoende ruimte beschikbaar op schijf.
+en.all.HotlistSaveError:The hotlist was unable to be correctly saved.
+de.all.HotlistSaveError:Hotlist konnte nicht korrekt gespeichert werden.
+fr.all.HotlistSaveError:Les favoris n'ont pas pu être sauvés correctement.
+it.all.HotlistSaveError:Non è stato possibile salvare correttamente i segnalibri.
+nl.all.HotlistSaveError:De favorietenlijst kon niet correct worden bewaard.
+en.all.TreeLoadError:The tree was unable to be correctly loaded.
+de.all.TreeLoadError:The tree was unable to be correctly loaded.
+fr.all.TreeLoadError:The tree was unable to be correctly loaded.
+it.all.TreeLoadError:L'albero della directory non è stato caricato correttamente.
+nl.all.TreeLoadError:De gegevensstructuur kon niet correct worden geladen.
+en.all.NoDirError:%s is not a directory
+de.all.NoDirError:%s ist kein Verzeichnis.
+fr.all.NoDirError:%s n'est pas un répertoire
+it.all.NoDirError:%s non è una directory
+nl.all.NoDirError:%s is geen map
+en.all.NoNameError:Please enter a name
+de.all.NoNameError:Bitte einen Namen eingeben.
+fr.all.NoNameError:Entrez un nom SVP
+it.all.NoNameError:Inserisci un nome
+nl.all.NoNameError:Geef een naam op
+en.all.NoURLError:Please enter a URL
+de.all.NoURLError:Bitte eine URL Adresse eingeben.
+fr.all.NoURLError:Entrez une URL SVP
+it.all.NoURLError:Inserisci un URL
+nl.all.NoURLError:Geef een adres op
+en.all.URIError:NetSurf was unable to parse this URI file due to a syntax error.
+de.all.URIError:NetSurf konnte die URI Datei nicht lesen. Syntax Fehler.
+fr.all.URIError:NetSurf est incapable de traiter ce fichier URI à cause d'une erreur de syntaxe.
+it.all.URIError:NetSurf non è stato in grado di processare questo file URI a causa di un errore di sintassi.
+nl.all.URIError:NetSurf kon dit URI-bestand niet verwerken vanwege een syntaxisfout.
+en.all.EmptyError:file is empty.
+de.all.EmptyError:Die Datei ist leer.
+fr.all.EmptyError:Le fichier est vide.
+it.all.EmptyError:Il file è vuoto.
+nl.all.EmptyError:bestand is leeg.
+en.all.SearchError:Invalid Search.
+de.all.SearchError:Suche fehlerhaft.
+fr.all.SearchError:Recherche Non-Valide.
+it.all.SearchError:Ricerca non valida.
+nl.all.SearchError:Ongeldige zoekopdracht.
+en.all.EncNotRec:Encoding type not recognised.
+de.all.EncNotRec:Encodierung nicht erkannt.
+fr.all.EncNotRec:Type de codage non reconnu.
+it.all.EncNotRec:Tipo di codifica sconosciuta.
+nl.all.EncNotRec:Codeertype is niet herkend.
+en.all.FileOpenError:could not open file '%s'
+de.all.FileOpenError:Datei ist nicht zu öffnen: '%s'
+fr.all.FileOpenError:ne parvient pas à ouvrir le fichier '%s'
+it.all.FileOpenError:Impossibile aprire il file '%s'
+nl.all.FileOpenError:kan bestand '%s' niet openen
+en.all.DirectoryError:directory '%s' already exists
+de.all.DirectoryError:Verzeichnis '%s' existiert bereits.
+fr.all.DirectoryError:répertoire '%s' existe déjà
+it.all.DirectoryError:La directory '%s' è già esistente
+nl.all.DirectoryError:map '%s' bestaat reeds
+
+# error messages for RISC OS
+#
+en.ro.PathToURL:An error occurred converting the file path to an URL:
+de.ro.PathToURL:Fehler beim Konvertieren des Dateipfades in eine URL Adresse:
+fr.ro.PathToURL:Une erreur s'est produite en convertissant le chemin du fichier en une URL:
+it.ro.PathToURL:Si è verificato un errore durante la conversione del percorso file nell'URL:
+nl.ro.PathToURL:Fout tijdens het omzetten van het bestandspad naar een adres:
+en.ro.WimpError:An unexpected Window Manager error occurred:
+de.ro.WimpError:Unerwarteter Fehler im Window Manager:
+fr.ro.WimpError:Une erreur inattendue du Gestionnaire de Fenêtres s'est produite:
+it.ro.WimpError:Si è verificato un errore inatteso nella finestra principale:
+nl.ro.WimpError:Er trad een onverwachte fout op in de Vensterbeheerder:
+en.ro.DragError:An error occurred when dragging the icon:
+de.ro.DragError:Fehler beim Ziehen des Symboles:
+fr.ro.DragError:Une erreur s'est produite lors du déplacement d'icône:
+it.ro.DragError:Si è verificato un errore durante il trascinamento dell'icona:
+nl.ro.DragError:Fout bij het slepen van het symbool:
+en.ro.MenuError:An error occurred when opening the menu:
+de.ro.MenuError:Fehler beim Öffnen des Menüs:
+fr.ro.MenuError:Une erreur s'est produite lors de l'ouverture du menu:
+it.ro.MenuError:Si è verificato un errore durante l'apertura del menu:
+nl.ro.MenuError:Fout bij het openen van het menu:
+en.ro.DownloadWarn:This download may not complete:
+de.ro.DownloadWarn:Der Download ist wahrscheinlich unvollständig:
+fr.ro.DownloadWarn:Ce téléchargement ne peut pas se terminer:
+it.ro.DownloadWarn:Questo trasferimento potrebbe essere incompleto:
+nl.ro.DownloadWarn:Dit bestand is misschien niet compleet opgehaald:
+en.ro.LongURL:The URL for this page is too long for NetSurf to display.
+de.ro.LongURL:The URL for this page is too long for NetSurf to display.
+fr.ro.LongURL:The URL for this page is too long for NetSurf to display.
+it.ro.LongURL:L'URL di questa pagina è troppo lungo per essere visualizzato su NetSurf.
+nl.ro.LongURL:Het adres van deze pagina is te lang voor NetSurf om te kunnen tonen.
+en.ro.FontBadInst:An error occurred when initialising fonts due to the presence of obsolete copies of the ROM fonts on disc. NetSurf will exit and launch a program which will attempt to fix this.
+de.ro.FontBadInst:Font-Initialisierung fehlerhaft. Obsolete Kopien von ROM Fonts auf dem lokalem Speichermedium. Fehlerbehebung startet.
+fr.ro.FontBadInst:Une erreur s'est produite lors de l'initialisation des fontes à cause de la présence de copies obsolètes de fontes ROM sur disque. NetSurf va sortir et lancer un programme qui va tenter de réparer cela.
+it.ro.FontBadInst:Si è verificato un errore durante l'inizializzazione dei font a causa della presenza di una copia obsoleta dei font "ROM" nel disco. NetSurf verrà chiuso e si cercherà di lanciare un programma in grado di risolvere questo problema.
+nl.ro.FontBadInst:Probleem ontstaan bij het initialiseren van de lettertypen. Een schijf bevat een map met geactiveerde ROM-lettertypes die overbodig zijn. NetSurf wordt gestopt en activeert een programma die dit probleem probeert te verhelpen.
+en.ro.FontError:Failed to open font "Homerton.Medium" (%s).
+de.ro.FontError:Fehler beim öffnen des Fonts "Homerton.Medium" (%s).
+fr.ro.FontError:Échec d'ouverture de la fonte "Homerton.Medium" (%s).
+it.ro.FontError:Impossibile aprire il font "Homerton.Medium" (%s).
+nl.ro.FontError:Het lettertypebestand "Homerton.Medium" kan niet worden geopend (%s).
+en.ro.Resolvers:No domain name servers are configured, so only browsing local files will be possible. Use Configure to set your name server(s).
+de.ro.Resolvers:Keine Domain Name Servers (DNS) konfiguriert. Nur lokale Dateien sind ladbar. Bitte DNS unter !Boot eintragen.
+fr.ro.Resolvers:Aucun nom de domaine n'étant configuré, seul la consultation de fichiers locaux est possible. Utilisez Configure pour définir les serveurs de noms.
+it.ro.Resolvers:Non è stato configurato nessun nome per i domini dei server, perciò sarà possibile effettuare la navigazione dei file solo in modalità locale. Usa "Configura" per impostare il nome (o i nomi) del/dei server.
+nl.ro.Resolvers:Er zijn geen DNS-servers ingesteld, dus kunnen alleen lokale bestanden worden bekeken. Ga naar de netwerkinstellingen via !Boot om de DNS-server(s) in te stellen.
+en.ro.Template:A window template is missing from the Templates file. Please reinstall NetSurf.
+de.ro.Template:Ein Template für ein Fenster fehlt in der Datei Templates. Bitte NetSurf neu installieren.
+fr.ro.Template:Un modèle de fenêtre est absent du fichier Templates. Réinstallez NetSurf SVP.
+it.ro.Template:Una finestra di template risulta mancante. Per favore reinstalla NetSurf.
+nl.ro.Template:Er ontbreekt een vensterdefinitie in het Templates-bestand. Installeer NetSurf opnieuw.
+en.ro.NoPathError:To save, drag the icon to a directory display
+de.ro.NoPathError:Symbol in ein Verzeichnisfenster ziehen um zu Speichern.
+fr.ro.NoPathError:Pour sauver, lâcher cette icône dans une fenêtre de Filer
+it.ro.NoPathError:Per salvare, trascina l'icona in una directory di visualizzazione.
+nl.ro.NoPathError:Het symbool naar een geopende mapvenster slepen om te bewaren.
+en.ro.AWNotSeen:Please locate the AWViewer application and try again.
+de.ro.AWNotSeen:Das Programm AWViewer wurde nicht gefunden.
+fr.ro.AWNotSeen:Localisez l'application AMViewer SVP puis réessayez.
+it.ro.AWNotSeen:Per favore fornisci l'applicativo AWViewer e riprova nuovamente.
+nl.ro.AWNotSeen:Initialiseer het AWViewer-programma door het op te zoeken en probeer het dan nog eens.
+en.ro.PrintErrorRO2:It appears that the printer is busy.
+de.ro.PrintErrorRO2:Der Drucker scheint beschäftigt zu sein.
+fr.ro.PrintErrorRO2:Il semble que l'imprimante soit occupée.
+it.ro.PrintErrorRO2:La stampante sembra essere occupata.
+nl.ro.PrintErrorRO2:De printer lijkt al bezig te zijn.
+en.ro.SprIsNull:Unable to convert image to sprite
+de.ro.SprIsNull:Bild nicht in Sprite konvertierbar
+nl.ro.SprIsNull:Afbeelding kan niet worden omgezet in een sprite.
+
+# Error messages for Amiga
+#
+en.ami.CompError:Unable to open
+de.ami.CompError:Nicht zu öffnen
+fr.ami.CompError:Unable to open
+it.ami.CompError:Impossibile aprire
+nl.ami.CompError:Niet te openen
+en.ami.BMConvErr:NetSurf requires guigfx.library to display images in this mode
+de.ami.BMConvErr:NetSurf benötigt die guigfx.library für Bilder in diesem Mode
+fr.ami.BMConvErr:NetSurf requires guigfx.library to display images in this mode
+it.ami.BMConvErr:NetSurf richiede guigfx.library per la visualizzazione delle immagini in questa modalità
+nl.ami.BMConvErr:NetSurf requires guigfx.library to display images in this mode
+en.ami.MultiTabClose:Are you sure you want to close multiple tabs?
+de.ami.MultiTabClose:Wirklich mehrere Tabs schließen?
+fr.ami.MultiTabClose:Are you sure you want to close multiple tabs?
+it.ami.MultiTabClose:Sono rimaste aperte più schede, sei sicuro di voler uscire da NetSurf?
+nl.ami.MultiTabClose:Er zijn meerdere tabbladen geopend. Tabbladen allemaal sluiten?
+en.ami.TCPIPShutdown:The TCP/IP stack has signalled that it is about to shutdown and NetSurf must exit.  NetSurf will quit in 5 seconds unless this shutdown is aborted.
+de.ami.TCPIPShutdown:Der TCP/IP Stack geht grad' zur Hölle und reißt Netsurf mit sich. In genau 5 Sekunden - es sei denn, der Shutdown wird abgebrochen.
+fr.ami.TCPIPShutdown:The TCP/IP stack has signalled that it is about to shutdown and NetSurf must exit.  NetSurf will quit in 5 seconds unless this shutdown is aborted.
+it.ami.TCPIPShutdown:Lo stack TCP/IP ha dato segnale di essere in procinto di arresto,  NetSurf verrà chiuso.  NetSurf si chiuderà entro 5 secondi a meno che lo shutdown non venga interrotto.
+nl.ami.TCPIPShutdown:De TCP/IP-stack meldt dat deze wordt afgesloten waardoor NetSurf gestopt moet worden. NetSurf zal stoppen in 5 seconden, tenzij het afsluiten wordt afgebroken.
+en.ami.AbortShutdown:Abort shutdown
+de.ami.AbortShutdown:Shutdown abbrechen
+fr.ami.AbortShutdown:Abort shutdown
+it.ami.AbortShutdown:Interrompi lo shutdown
+nl.ami.AbortShutdown:Afsluiten afbreken
+
+
+# Queries
+# =======
+#
+# This section contains queries which are displayed to the user
+#
+en.all.AbortDownload:Are you sure you wish to abort this download?
+de.all.AbortDownload:Soll das Herunterladen der Datei wirklich abgebrochen werden ?
+fr.all.AbortDownload:Étes-vous sûr de vouloir interrompre ce téléchargement ?
+it.all.AbortDownload:Sei sicuro di voler annullare questo trasferimento?
+nl.all.AbortDownload:Zeker weten dat deze ophaalopdracht afgebroken moet worden?
+en.all.QuitDownload:One or more downloads are still in progress. Are you sure you wish to quit?
+de.all.QuitDownload:Das Herunterladen ein oder mehrerer Dateien wurde noch nicht abgeschlossen. Soll NetSurf trotzdem beendet werden ?
+fr.all.QuitDownload:Un ou plusieurs téléchargements sont en cours. Êtes-vous sûr de vouloir quitter ?
+it.all.QuitDownload:Uno o più file si trovano in fase di scaricamento, sei sicuro di voler chiudere NetSurf?
+nl.all.QuitDownload:Eén of meer ophaalopdrachten zijn nog in uitvoering. Toch afbreken?
+en.all.OverwriteFile:A file with that name already exists and would be lost.
+de.all.OverwriteFile:Eine Datei mit diesem Namen existiert bereits und würde überschrieben werden.
+fr.all.OverwriteFile:Un fichier portant ce nom existe déjà et serait perdu.
+it.all.OverwriteFile:Un file con questo nome è già esistente, continuare comporterà la sovrascrittura del file originale.
+nl.all.OverwriteFile:Een bestand met deze naam bestaat al en zal door deze actie overschreven worden.
+en.all.RemoveHotlist:Are you sure you wish to remove this address from the hotlist?
+de.all.RemoveHotlist:Adresse wirklich aus der Hotlist entfernen?
+fr.all.RemoveHotlist:Êtes-vous sûr de vouloir supprimer l'adresse de la liste critique?
+it.all.RemoveHotlist:Sei sicuro di voler rimuovere questo indirizzo dai segnalibri?
+nl.all.RemoveHotlist:Zeker weten dat dit adres uit de favorietenlijst verwijderd moet worden?
+
+
+# Page fetching
+# =============
+#
+# This section contains messages which may be displayed whilst
+# fetching a page or other content
+#
+
+# Fetch status messages - displayed in status bar
+#
+en.all.Progress:%s of %s
+de.all.Progress:%s von %s
+fr.all.Progress:%s reçus de %s
+it.all.Progress:%s di %s
+nl.all.Progress:%s van %s
+en.all.ProgressU:%s
+de.all.ProgressU:%s
+fr.all.ProgressU:%s
+it.all.ProgressU:%s
+nl.all.ProgressU:%s
+en.all.RecPercent:Received %s (%u%%)
+de.all.RecPercent:Empfangen %s (%u%%)
+fr.all.RecPercent:%s (%u%%)
+it.all.RecPercent:ricevuti %s (%u%%)
+nl.all.RecPercent:ontvangen %s (%u%%)
+en.all.Received:Received %s
+de.all.Received:Empfangen %s
+fr.all.Received:%s reçus
+it.all.Received:ricevuti %s
+nl.all.Received:ontvangen %s
+en.all.Redirecting:Redirecting...
+de.all.Redirecting:Umleiten...
+fr.all.Redirecting:Redirection en cours...
+it.all.Redirecting:redirezione in corso...
+nl.all.Redirecting:doorverwijzen...
+en.all.Loading:Loading
+de.all.Loading:Laden
+fr.all.Loading:Chargement
+it.all.Loading:Caricamento della pagina...
+nl.all.Loading:laden
+en.all.Fetching:Fetching data
+de.all.Fetching:Daten holen
+fr.all.Fetching:Récupération des données
+it.all.Fetching:Ricezione
+nl.all.Fetching:ophalen
+en.all.Processing:Processing
+de.all.Processing:Auswerten
+fr.all.Processing:Traitement
+it.all.Processing:elaborazione del documento in corso...
+nl.all.Processing:verwerking
+en.all.Formatting:Formatting
+de.all.Formatting:Formatieren
+fr.all.Formatting:Formatage
+it.all.Formatting:formattazione del documento in corso...
+nl.all.Formatting:opmaken
+en.all.Done:Done
+de.all.Done:Fertiggestellt
+fr.all.Done:Terminé
+it.all.Done:Completato
+nl.all.Done:klaar
+en.all.Stopped:Stopped
+de.all.Stopped:Angehalten
+fr.all.Stopped:Arrêté
+it.all.Stopped:Interrotto
+nl.all.Stopped:gestopt
+
+# Fetch warning/error messages - displayed in status bar
+#
+en.all.BadRedirect:Bad redirect URL
+de.all.BadRedirect:Falsche URL für Redirect
+fr.all.BadRedirect:Mauvais URL de redirection
+it.all.BadRedirect:Errata redirezione dell'URL
+nl.all.BadRedirect:foutief doorverwijzen naar adres
+en.all.FetchFailed:Unable to fetch document
+de.all.FetchFailed:Kann Dokument nicht fetchen
+fr.all.FetchFailed:Récupération du fichier impossible
+it.all.FetchFailed:Impossibile ottenere il documento
+nl.all.FetchFailed:Dit document kan niet worden opgehaald.
+en.all.NotCSS:Warning: stylesheet is not CSS
+de.all.NotCSS:Warnung:Stylesheet ist kein CSS
+fr.all.NotCSS:Attention: feuille de style non CSS
+it.all.NotCSS:Attenzione: La dicitura "Foglio di stile" non ha nulla a che vedere con i CSS
+nl.all.NotCSS:melding: stijlblad is geen CSS
+en.all.NotFavIco:Favicon not supported
+de.all.NotFavIco:Favicon wird nicht unterstützt
+fr.all.NotFavIco:Favicon non-soutenu
+it.all.NotFavIco:Favicon non supportata
+nl.all.NotFavIco:websitesymbool wordt niet ondersteund
+en.all.BadObject:Warning: bad object type
+de.all.BadObject:Warnung: falscher Objekttyp
+fr.all.BadObject:Attention: mauvais type d'objet
+it.all.BadObject:Errore nell'analisi del tipo di oggetto
+nl.all.BadObject:melding: fout objecttype
+en.all.ObjError:Error loading object: %s
+de.all.ObjError:Fehler beim Laden des Objektes: %s
+fr.all.ObjError:Erreur lors du chargement de: %s
+it.all.ObjError:Errore nel caricamento dell'oggetto: %s
+nl.all.ObjError:fout bij het laden object: %s
+en.all.ParsingFail:Parsing the document failed.
+de.all.ParsingFail:Dokumentparsing ist fehlgeschlagen.
+fr.all.ParsingFail:L'analyse syntaxique du document a échoué.
+it.all.ParsingFail:Analisi del documento fallita.
+nl.all.ParsingFail:fout bij ontleden van dit document.
+en.all.CSSGeneric:Error processing CSS
+de.all.CSSGeneric:CSS Auswertung klappt nicht
+fr.all.CSSGeneric:Erreur lors du traitement CSS
+nl.all.CSSGeneric:fout bij het verwerken van de CSS
+it.all.CSSGeneric:Errore nell'elaborazione del CSS
+
+en.all.CSSBase:Base stylesheet failed to load
+fr.all.CSSBase:Échec de chargement de la feuille de style de base
+nl.all.CSSBase:basisstijlblad kan niet worden geladen
+it.all.CSSBase:Impossibile caricare il foglio di stile base
+
+en.all.BadGIF:Reading GIF failed.
+de.all.BadGIF:Lesen einer GIF Datei fehlgeschlagen.
+fr.all.BadGIF:Erreur de lecture de GIF.
+it.all.BadGIF:Lettura del file GIF fallita.
+nl.all.BadGIF:fout bij lezen GIF.
+en.all.BadBMP:Reading BMP failed.
+de.all.BadBMP:Lesen einer BMP Datei fehlgeschlagen.
+fr.all.BadBMP:Erreur de lecture de BMP.
+it.all.BadBMP:Lettura del file BMP fallita.
+nl.all.BadBMP:fout bij lezen BMP.
+en.all.BadICO:Reading ICO failed.
+de.all.BadICO:Lesen einer ICO Datei fehlgeschlagen.
+fr.all.BadICO:Erreur de lecture de ICO.
+it.all.BadICO:Lettura del file ICO fallita.
+nl.all.BadICO:fout bij lezen ICO.
+en.all.PNGError:Error converting PNG.
+de.all.PNGError:Fehler beim PNG konvertieren.
+fr.all.PNGError:Error converting PNG.
+it.all.PNGError:Errore durante la conversione PNG.
+nl.all.PNGError:fout bij omzetting PNG.
+en.all.MNGError:Error converting MNG/PNG/JNG: %i
+de.all.MNGError:MNG Library Fehler: %i
+fr.all.MNGError:Erreur dans la bibliothèque MNG: %i
+it.all.MNGError:Errore durante la conversione MNG/PNG/JNG: %i
+nl.all.MNGError:MNG-bibliotheekfout: %i
+en.all.BadSprite:Invalid or corrupt Sprite data.
+de.all.BadSprite:Ungültiges oder beschädigtes Sprite.
+fr.all.BadSprite:Les données du sprite sont invalides ou corrompues.
+it.all.BadSprite:Dati del file Sprite invalidi o corrotti.
+nl.all.BadSprite:foutief sprite-bestand.
+
+
+# HTTP status codes
+# =================
+#
+en.all.HTTP0:OK
+de.all.HTTP0:OK
+fr.all.HTTP0:OK
+it.all.HTTP0:OK
+nl.all.HTTP0:OK
+en.all.HTTP200:OK
+de.all.HTTP200:OK
+fr.all.HTTP200:OK
+it.all.HTTP200:OK
+nl.all.HTTP200:OK
+en.all.HTTP201:Created
+de.all.HTTP201:Created
+fr.all.HTTP201:Créé
+it.all.HTTP201:Creato
+nl.all.HTTP201:Aangemaakt
+en.all.HTTP202:Accepted
+de.all.HTTP202:Accepted
+fr.all.HTTP202:Accepté
+it.all.HTTP202:Accettato
+nl.all.HTTP202:Aanvaard
+en.all.HTTP203:Non-authoritative information
+de.all.HTTP203:Non-authoritative information
+fr.all.HTTP203:Information ne faisant pas autorité
+it.all.HTTP203:Informazione non autorevole
+nl.all.HTTP203:Niet-gemachtigde informatie
+en.all.HTTP204:No content
+de.all.HTTP204:No content
+fr.all.HTTP204:Pas de contenu
+it.all.HTTP204:Nessun contenuto
+nl.all.HTTP204:Geen inhoud
+en.all.HTTP205:Reset content
+de.all.HTTP205:Reset content
+fr.all.HTTP205:Remise-à-Zéro du contenu
+it.all.HTTP205:Resetta contenuto
+nl.all.HTTP205:Inhoud opnieuw instellen
+en.all.HTTP206:Partial content
+de.all.HTTP206:Partial content
+fr.all.HTTP206:Contenu partiel
+it.all.HTTP206:Contenuto parziale
+nl.all.HTTP206:Gedeeltelijke inhoud
+en.all.HTTP300:Multiple choices
+de.all.HTTP300:Multiple choices
+fr.all.HTTP300:Choix multiples
+it.all.HTTP300:Scelte multiple
+nl.all.HTTP300:Meerkeuze
+en.all.HTTP301:Moved permanently
+de.all.HTTP301:Moved permanently
+fr.all.HTTP301:A déménagé définitivement
+it.all.HTTP301:Rimosso permanentemente
+nl.all.HTTP301:Definitief verplaatst
+en.all.HTTP302:Found
+de.all.HTTP302:Found
+fr.all.HTTP302:Trouvé
+it.all.HTTP302:Trovato
+nl.all.HTTP302:Gevonden
+en.all.HTTP303:See other
+de.all.HTTP303:See other
+fr.all.HTTP303:Voir autre
+it.all.HTTP303:Mostra altro
+nl.all.HTTP303:Zie andere
+en.all.HTTP304:Not modified
+de.all.HTTP304:Not modified
+fr.all.HTTP304:Pas modifié
+it.all.HTTP304:Non modificato
+nl.all.HTTP304:Niet gewijzigd
+en.all.HTTP305:Use proxy
+de.all.HTTP305:Use proxy
+fr.all.HTTP305:Utilisez un proxy
+it.all.HTTP305:Usa Proxy
+nl.all.HTTP305:Gebruik Proxy
+en.all.HTTP307:Temporary redirect
+de.all.HTTP307:Temporary redirect
+fr.all.HTTP307:Redirection temporaire
+it.all.HTTP307:Redirezione temporanea
+nl.all.HTTP307:Tijdelijke omleiding
+en.all.HTTP400:Bad request
+de.all.HTTP400:Bad request
+fr.all.HTTP400:Mauvaise requête
+it.all.HTTP400:Richiesta errata
+nl.all.HTTP400:Foute aanvraag
+en.all.HTTP401:Unauthorized
+de.all.HTTP401:Unauthorized
+fr.all.HTTP401:Sans autorisation
+it.all.HTTP401:Autorizzazione negata
+nl.all.HTTP401:Niet geautoriseerd
+en.all.HTTP402:Payment required
+de.all.HTTP402:Payment required
+fr.all.HTTP402:Paiment nécessaire
+it.all.HTTP402:Richiesto di pagamento
+nl.all.HTTP402:Betalende toegang
+en.all.HTTP403:Forbidden
+de.all.HTTP403:Forbidden
+fr.all.HTTP403:Interdit
+it.all.HTTP403:Vietato
+nl.all.HTTP403:Verboden toegang
+en.all.HTTP404:Not found
+de.all.HTTP404:Not found
+fr.all.HTTP404:Pas trouvé
+it.all.HTTP404:Non trovato
+nl.all.HTTP404:Niet gevonden
+en.all.HTTP405:Method not allowed
+de.all.HTTP405:Method not allowed
+fr.all.HTTP405:Méthode non autorisée
+it.all.HTTP405:Metodo non permesso
+nl.all.HTTP405:Methode niet toegestaan
+en.all.HTTP406:Not acceptable
+de.all.HTTP406:Not acceptable
+fr.all.HTTP406:Pas acceptable
+it.all.HTTP406:Non accettabile
+nl.all.HTTP406:Niet aanvaardbaar
+en.all.HTTP407:Proxy authentication required
+de.all.HTTP407:Proxy authentication required
+fr.all.HTTP407:Authentification du proxy nécessaire
+it.all.HTTP407:Autentificazione Proxy necessaria
+nl.all.HTTP407:Authenticatie op de proxy-server verplicht
+en.all.HTTP408:Request timeout
+de.all.HTTP408:Request timeout
+fr.all.HTTP408:Délai de requête trop long
+it.all.HTTP408:Timeout della richiesta
+nl.all.HTTP408:Aanvraagtijd verstreken
+en.all.HTTP409:Conflict
+de.all.HTTP409:Conflict
+fr.all.HTTP409:Conflit
+it.all.HTTP409:Conflitto
+nl.all.HTTP409:Conflict
+en.all.HTTP410:Gone
+de.all.HTTP410:Gone
+fr.all.HTTP410:Parti
+it.all.HTTP410:Irraggiungibile
+nl.all.HTTP410:Verdwenen
+en.all.HTTP411:Length required
+de.all.HTTP411:Length required
+fr.all.HTTP411:Longueur nécessaire
+it.all.HTTP411:Lunghezza richiesta
+nl.all.HTTP411:Lengte benodigd
+en.all.HTTP412:Precondition failed
+de.all.HTTP412:Precondition failed
+fr.all.HTTP412:Échec de précondition
+it.all.HTTP412:Precondizione fallita
+nl.all.HTTP412:Niet voldaan aan vooraf gestelde voorwaarde
+en.all.HTTP413:Request entity too large
+de.all.HTTP413:Request entity too large
+fr.all.HTTP413:Demande d'entité trop grande
+it.all.HTTP413:Entità richiesta troppo larga
+nl.all.HTTP413:Aanvraag te groot
+en.all.HTTP414:Request-URI too long
+de.all.HTTP414:Request-URI too long
+fr.all.HTTP414:Request-URI trop long
+it.all.HTTP414:Richiesta URI troppo lunga
+nl.all.HTTP414:Aanvraagadres te lang
+en.all.HTTP415:Unsupported media type
+de.all.HTTP415:Unsupported media type
+fr.all.HTTP415:Type de média non supporté
+it.all.HTTP415:Tipo di media non supportato
+nl.all.HTTP415:Media-type niet ondersteund
+en.all.HTTP416:Requested range not satisfiable
+de.all.HTTP416:Requested range not satisfiable
+fr.all.HTTP416:Étendue demandée non satisfaisable
+it.all.HTTP416:Estensione richiesta non soddisfabile
+nl.all.HTTP416:Aangevraagd gedeelte niet opvraagbaar
+en.all.HTTP417:Expectation failed
+de.all.HTTP417:Expectation failed
+fr.all.HTTP417:Attente non satisfaite
+it.all.HTTP417:Previsione fallita
+nl.all.HTTP417:Niet voldaan aan verwachting
+en.all.HTTP500:Internal server error
+de.all.HTTP500:Internal server error
+fr.all.HTTP500:Erreur interne du serveur
+it.all.HTTP500:Errore interno del server
+nl.all.HTTP500:Interne serverfout
+en.all.HTTP501:Not implemented
+de.all.HTTP501:Not implemented
+fr.all.HTTP501:Non implémenté
+it.all.HTTP501:Non implementata
+nl.all.HTTP501:Niet geïmplementeerd
+en.all.HTTP502:Bad gateway
+de.all.HTTP502:Bad gateway
+fr.all.HTTP502:Mauvaise passerelle
+it.all.HTTP502:Gateway errato
+nl.all.HTTP502:Ongeldige Gateway
+en.all.HTTP503:Service unavailable
+de.all.HTTP503:Service unavailable
+fr.all.HTTP503:Service non disponible
+it.all.HTTP503:Servizio non disponibile
+nl.all.HTTP503:Dienst niet beschikbaar
+en.all.HTTP504:Gateway timeout
+de.all.HTTP504:Gateway timeout
+fr.all.HTTP504:Délai passerelle expiré
+it.all.HTTP504:Timeout Gateway
+nl.all.HTTP504:Aanvraagtijd bij Gateway verstreken
+en.all.HTTP505:HTTP version not supported
+de.all.HTTP505:HTTP version not supported
+fr.all.HTTP505:version HTTP non supportée
+it.all.HTTP505:Versione HTTP non supportata
+nl.all.HTTP505:HTTP-versie wordt niet ondersteund
+
+
+# Directory browser interface
+# ===========================
+#
+en.all.FileIndex:Index of %s
+de.all.FileIndex:Inhalt von %s
+fr.all.FileIndex:Index de %s
+it.all.FileIndex:Indice di %s
+nl.all.FileIndex:Index van %s
+en.all.FileParent:^ Up to parent directory
+de.all.FileParent:^ Eine Ebene höher
+fr.all.FileParent:^ Répertoire parent
+it.all.FileParent:^ Livello superiore
+nl.all.FileParent:^ Een mapniveau hoger
+en.all.FileDirectory:Directory
+de.all.FileDirectory:Verzeichnis
+fr.all.FileDirectory:Répertoire
+it.all.FileDirectory:Directory
+nl.all.FileDirectory:Map
+en.all.FileName:Name
+de.all.FileName:Name
+fr.all.FileName:Nom
+it.all.FileName:Nome
+nl.all.FileName:Naam
+en.all.FileSize:Size
+de.all.FileSize:Größe
+fr.all.FileSize:Taille
+it.all.FileSize:Dimensione
+nl.all.FileSize:Grootte
+en.all.FileDate:Date
+de.all.FileDate:Datum
+fr.all.FileDate:Date
+it.all.FileDate:Data
+nl.all.FileDate:Datum
+en.all.FileTime:Time
+de.all.FileTime:Zeit
+fr.all.FileTime:Time
+it.all.FileTime:Ora
+nl.all.FileTime:Tijd
+en.all.FileType:Type
+de.all.FileType:Typ
+fr.all.FileType:Type
+it.all.FileType:Tipo
+nl.all.FileType:Type
+
+
+# Find text user interface
+# ========================
+#
+# This section contains tokens which are used in the find text
+# dialog box.
+#
+en.all.NotFound:Not found
+de.all.NotFound:nichts
+fr.all.NotFound:Non trouvé
+it.all.NotFound:Non trovato
+nl.all.NotFound:Niet gevonden
+en.all.Next:Next
+de.all.Next:Nächster
+fr.all.Next:Suivant
+it.all.Next:Successivo
+nl.all.Next:Volgende
+en.all.Prev:Previous
+de.all.Prev:Vorheriger
+fr.all.Prev:Précédent
+it.all.Prev:Precedente
+nl.all.Prev:Vorige
+en.all.ShowAll:Show All
+de.all.ShowAll:Alle zeigen
+fr.all.ShowAll:Tout afficher
+it.all.ShowAll:Mostra Tutto
+nl.all.ShowAll:Toon alles
+en.all.CaseSens:Case Sensitive
+de.all.CaseSens:Groß-/Kleinschreibung
+fr.all.CaseSens:Sensible à la casse
+it.all.CaseSens:Maiuscole/Minuscole
+nl.all.CaseSens:Hoofdlettergevoelig
+
+
+# 401 login user interface
+# ========================
+#
+# This section contains tokens which are used in the 401 login
+# (authentication) dialog box.
+#
+en.all.LoginTitle:Authentication Requested
+fr.all.LoginTitle:Authentification demandée
+en.all.LoginDescription:The site %s with realm "%s" is requesting credentials for access.
+fr.all.LoginDescription:Le site %s avec le royaume "%s" demande des informations d'identification pour l'accès.
+en.all.LoginAgain:The credentials for the site %s and realm "%s" were rejected.
+fr.all.LoginAgain:Les identifiants pour le site %s et le royaume "%s" ont été rejetés.
+en.all.Host:Host
+de.all.Host:Host
+fr.all.Host:Hôte
+it.all.Host:Host
+nl.all.Host:Server
+en.all.Realm:Realm
+de.all.Realm:Realm
+fr.all.Realm:Domaine
+it.all.Realm:Tipo
+nl.all.Realm:Gebied
+en.all.Username:Username
+de.all.Username:Benutzername
+fr.all.Username:Nom d'utilisateur
+it.all.Username:Nome Utente
+nl.all.Username:Gebruikersnaam
+en.all.Password:Password
+de.all.Password:Passwort
+fr.all.Password:Mot de passe
+it.all.Password:Password
+nl.all.Password:Wachtwoord
+en.all.Login:Login
+de.all.Login:Login
+fr.all.Login:Connexion
+it.all.Login:Login
+nl.all.Login:Login
+en.all.Cancel:Cancel
+de.all.Cancel:Abbruch
+fr.all.Cancel:Annuler
+it.all.Cancel:Annulla
+nl.all.Cancel:Annuleer
+
+
+# Privacy error interface
+# =======================
+#
+en.all.PrivacyTitle:Privacy error
+de.all.PrivacyTitle:Datenschutzfehler
+fr.all.PrivacyTitle:Erreur de confidentialité
+it.all.PrivacyTitle:Errore di privacy
+nl.all.PrivacyTitle:Privacyfout
+en.all.PrivacyDescription:A privacy error occurred while communicating with %s this may be a site configuration error or an attempt to steal private information (passwords, messages or credit cards)
+en.all.Proceed:Proceed
+de.all.Proceed:Vorgehen
+fr.all.Proceed:Procéder
+it.all.Proceed:Procedere
+nl.all.Proceed:Doorgaan
+en.all.Backtosafety:Back to safety
+de.all.Backtosafety:Zurück zur Sicherheit
+fr.all.Backtosafety:Retour a la sécurité
+it.all.Backtosafety:Ritorno alla sicurezza
+nl.all.Backtosafety:Terug naar veiligheid
+
+en.all.SSLCertErrOk:The certificate has no errors.
+en.all.SSLCertErrUnknown:An unknown error occoured while processing the certificate.
+en.all.SSLCertErrBadIssuer:The issuer of this certificate is not known. This may occour if the browser cannot access the certificate authority (CA) bundle.
+en.all.SSLCertErrBadSig:The certificate is improperly signed.
+en.all.SSLCertErrTooYoung:The certificate is not yet valid.
+en.all.SSLCertErrTooOld:The certificate has expired.
+en.all.SSLCertErrSelfSigned:The certificate is self signed.
+en.all.SSLCertErrChainSelfSigned:The certificate chain is self signed.
+en.all.SSLCertErrRevoked:The certificate has been revoked by the issuer.
+en.all.SSLCertErrCommonName:The certificate is for a different host than the server
+
+
+# SSL certificate viewer
+# ======================
+#
+# This section contains tokens which are used in the
+# SSL certificate viewing dialog box.
+#
+en.all.SSLCerts:SSL certificates
+de.all.SSLCerts:SSL Zertifikat
+fr.all.SSLCerts:Certificats SSL
+it.all.SSLCerts:Certificati SSL
+nl.all.SSLCerts:SSL-certificaten
+en.all.SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
+de.all.SSLError:NetSurf konnte ein SSL Zertifikat nicht prüfen. Bitte die Details unten beachten.
+fr.all.SSLError:NetSurf a échoué dans la vérification de l'authenticité d'un certificat SSL. Vérifier les détails présentés ci-dessous.
+it.all.SSLError:NetSurf non è stato in grado di verificare l'autenticità di questo certificato SSL, per favore verifica i dettagli presenti di seguito
+nl.all.SSLError:NetSurf kan de authenticiteit van een SSL-certificaat niet controleren. Controleer onderstaande details.
+en.all.SSL_Certificate_Subject:Subject: %s
+de.all.SSL_Certificate_Subject:Subject: %s
+fr.all.SSL_Certificate_Subject:Objet : %s
+it.all.SSL_Certificate_Subject:Soggetto: %s
+nl.all.SSL_Certificate_Subject:Subjekt: %s
+en.all.SSL_Certificate_Issuer:Issuer: %s
+de.all.SSL_Certificate_Issuer:Issuer: %s
+fr.all.SSL_Certificate_Issuer:Émetteur : %s
+it.all.SSL_Certificate_Issuer:Emittente: %s
+nl.all.SSL_Certificate_Issuer:Uitgever: %s
+en.all.SSL_Certificate_Version:Version: %ld
+de.all.SSL_Certificate_Version:Version: %ld
+fr.all.SSL_Certificate_Version:Version : %ld
+it.all.SSL_Certificate_Version:Versione: %ld
+nl.all.SSL_Certificate_Version:Versie: %ld
+en.all.SSL_Certificate_ValidFrom:Valid from: %s
+de.all.SSL_Certificate_ValidFrom:Valid from: %s
+fr.all.SSL_Certificate_ValidFrom:Valide à compter du : %s
+it.all.SSL_Certificate_ValidFrom:Valido da: %s
+nl.all.SSL_Certificate_ValidFrom:Geldig vanaf: %s
+en.all.SSL_Certificate_ValidTo:Valid until: %s
+de.all.SSL_Certificate_ValidTo:Valid until: %s
+fr.all.SSL_Certificate_ValidTo:Valable jusqu'au : %s
+it.all.SSL_Certificate_ValidTo:Valido fino a: %s
+nl.all.SSL_Certificate_ValidTo:Geldig tot: %s
+en.all.SSL_Certificate_Type:Type: %i
+de.all.SSL_Certificate_Type:Type: %i
+fr.all.SSL_Certificate_Type:Type : %i
+it.all.SSL_Certificate_Type:Tipo: %i
+nl.all.SSL_Certificate_Type:Type: %i
+en.all.SSL_Certificate_Serial:Serial: %ld
+de.all.SSL_Certificate_Serial:Serial: %ld
+fr.all.SSL_Certificate_Serial:Série : %ld
+it.all.SSL_Certificate_Serial:Seriale: %ld
+nl.all.SSL_Certificate_Serial:Serienr.: %ld
+en.all.SSL_Certificate_Accept:Accept
+de.all.SSL_Certificate_Accept:Accept
+fr.all.SSL_Certificate_Accept:Accepter
+it.all.SSL_Certificate_Accept:Accetta
+nl.all.SSL_Certificate_Accept:Accepteer
+en.all.SSL_Certificate_Reject:Reject
+de.all.SSL_Certificate_Reject:Reject
+fr.all.SSL_Certificate_Reject:Rejeter
+it.all.SSL_Certificate_Reject:Rifiuta
+nl.all.SSL_Certificate_Reject:Weiger
+
+
+# Printing user interface
+# =======================
+#
+# This section contains tokens which are used in the printing
+# dialog box.
+#
+en.all.PrintSheetFilled:sheet is filled
+de.all.PrintSheetFilled:Druckseite
+fr.all.PrintSheetFilled:feuille remplie
+it.all.PrintSheetFilled:Il foglio stampato è pieno
+nl.all.PrintSheetFilled:pagina
+en.all.PrintSheetsFilled:sheets are filled
+de.all.PrintSheetsFilled:Druckseiten
+fr.all.PrintSheetsFilled:feuilles remplies
+it.all.PrintSheetsFilled:I fogli stampati sono pieni
+nl.all.PrintSheetsFilled:pagina's
+en.all.Printer:Printer
+de.all.Printer:Drucker
+fr.all.Printer:Imprimante
+it.all.Printer:Stampante
+nl.all.Printer:Printer
+en.all.Copies:Copies
+de.all.Copies:Kopien
+fr.all.Copies:Copies
+it.all.Copies:Copie
+nl.all.Copies:Kopieën
+en.all.Printing:Printing page
+de.all.Printing:Drucke Seite
+fr.all.Printing:Page impression
+it.all.Printing:Stampa della pagina
+nl.all.Printing:Pagina aan het afdrukken
+
+
+# Treeview interface
+# ==================
+#
+# This section contains tokens which are used in the treeview
+# component. (For example, in the main hotlist/global history windows)
+#
+
+# Tree URL text
+#
+en.all.TreeAdded:Added: %s
+de.all.TreeAdded:eingetragen am: %s
+fr.all.TreeAdded:Ajoutée : %s
+it.all.TreeAdded:Aggiunto: %s
+nl.all.TreeAdded:Toegevoegd: %s
+en.all.TreeLast:Last visited: %s
+de.all.TreeLast:letzter Besuch: %s
+fr.all.TreeLast:Dernière visitée : %s
+it.all.TreeLast:Ultima visita: %s
+nl.all.TreeLast:Laatst bezocht: %s
+en.all.TreeVisited:Visited: %s
+de.all.TreeVisited:gesehen am: %s
+fr.all.TreeVisited:Visitées : %s
+it.all.TreeVisited:Visitato: %s
+nl.all.TreeVisited:Bezocht: %s keer
+en.all.TreeVisits:Visits: %i
+de.all.TreeVisits:Besuche gesamt: %i
+fr.all.TreeVisits:Visites : %i
+it.all.TreeVisits:Visite totali: %i
+nl.all.TreeVisits:Bezocht: %i keer
+en.all.TreeUnknown:Unknown
+de.all.TreeUnknown:Unbekannt
+fr.all.TreeUnknown:Inconnue
+it.all.TreeUnknown:Sconosciuta/o
+nl.all.TreeUnknown:Onbekend
+en.all.TreeValue:Value: %s
+de.all.TreeValue:Eintrag: %s
+fr.all.TreeValue:Valeur : %s
+it.all.TreeValue:Valore: %s
+nl.all.TreeValue:Waarde: %s
+en.all.TreeComment:Comment: %s
+de.all.TreeComment:Kommentar: %s
+fr.all.TreeComment:Commentaire : %s
+it.all.TreeComment:Commento: %s
+nl.all.TreeComment:Commentaar: %s
+en.all.TreeDomain:Domain: %s%s
+de.all.TreeDomain:Domain: %s%s
+fr.all.TreeDomain:Domaine : %s%s
+it.all.TreeDomain:Dominio: %s%s
+nl.all.TreeDomain:Domein: %s%s
+en.all.TreePath:Path: %s%s
+de.all.TreePath:Pfad: %s%s
+fr.all.TreePath:Chemin : %s%s
+it.all.TreePath:Percorso: %s%s
+nl.all.TreePath:Pad: %s%s
+en.all.TreeExpires:Expires: %s
+de.all.TreeExpires:Verfällt: %s
+fr.all.TreeExpires:Expire : %s
+it.all.TreeExpires:Scadenza: %s
+nl.all.TreeExpires:Verloopt op: %s
+en.all.TreeLastUsed:Last used: %s
+de.all.TreeLastUsed:Zuletzt genutzt: %s
+fr.all.TreeLastUsed:Dernière utilisation : %s
+it.all.TreeLastUsed:Ultimo utilizzo: %s
+nl.all.TreeLastUsed:Laatst gebruikt: %s
+en.all.TreeSecure:Secure hosts only: %s
+de.all.TreeSecure:Nur sichere Hosts: %s
+fr.all.TreeSecure:Uniquement des sites sécurisés : %s
+it.all.TreeSecure:Solo host sicuri: %s
+nl.all.TreeSecure:Alleen veilige sites: %s
+en.all.TreeVersion:Version: %s
+de.all.TreeVersion:Version: %s
+fr.all.TreeVersion:Version : %s
+it.all.TreeVersion:Versione: %s
+nl.all.TreeVersion:Versie: %s
+en.all.TreePersistent:Persistent: %s
+de.all.TreePersistent:Persistent: %s
+fr.all.TreePersistent:Persistant : %s
+it.all.TreePersistent:Persistenza: %s
+nl.all.TreePersistent:Permanent: %s
+en.all.TreeHeaders: (from headers)
+de.all.TreeHeaders: (aus Header)
+fr.all.TreeHeaders: (à partir des entêtes)
+it.all.TreeHeaders: (da intestazioni)
+nl.all.TreeHeaders: (van koppen)
+en.all.TreeVersion0:Netscape
+de.all.TreeVersion0:Netscape
+fr.all.TreeVersion0:Netscape
+it.all.TreeVersion0:Netscape
+nl.all.TreeVersion0:Netscape
+en.all.TreeVersion1:RFC 2109
+de.all.TreeVersion1:RFC 2109
+fr.all.TreeVersion1:RFC 2109
+it.all.TreeVersion1:RFC 2109
+nl.all.TreeVersion1:RFC 2109
+en.all.TreeVersion2:RFC 2965
+de.all.TreeVersion2:RFC 2965
+fr.all.TreeVersion2:RFC 2965
+it.all.TreeVersion2:RFC 2965
+nl.all.TreeVersion2:RFC 2965
+en.all.TreeSession:Session end
+de.all.TreeSession:Sitzungsende
+fr.all.TreeSession:Fin de session
+it.all.TreeSession:Fine sessione
+nl.all.TreeSession:Sessie-einde
+en.all.TreeUnused:Unused
+de.all.TreeUnused:Nicht benutzt
+fr.all.TreeUnused:Inutilisé
+it.all.TreeUnused:Inutilizzato
+nl.all.TreeUnused:Ongebruikt
+en.all.TreeImport:Imported URL
+de.all.TreeImport:Importierte URL
+fr.all.TreeImport:URL importée
+it.all.TreeImport:URL importati
+nl.all.TreeImport:Geïmporteerd adres
+en.all.TreeNewLink:New address
+de.all.TreeNewLink:New address
+fr.all.TreeNewLink:Nouvelle adresse
+it.all.TreeNewLink:Nuovo indirizzo
+nl.all.TreeNewLink:Nieuw webadres
+en.all.TreeNewFolder:New directory
+de.all.TreeNewFolder:Neues Verzeichnis
+fr.all.TreeNewFolder:Nouv. répertoire
+it.all.TreeNewFolder:Nuova cartella
+nl.all.TreeNewFolder:Nieuwe map
+en.all.TreeLaunch:Visit URL
+de.all.TreeLaunch:URL ansehen
+fr.all.TreeLaunch:Visiter l'URL
+it.all.TreeLaunch:Visita URL
+nl.all.TreeLaunch:Bezoek webadres
+en.all.TreeDelete:Delete
+de.all.TreeDelete:Löschen
+fr.all.TreeDelete:Effacer
+it.all.TreeDelete:Elimina
+nl.all.TreeDelete:Verwijder
+en.all.TreeDefault:Set as default
+de.all.TreeDefault:Set as default
+fr.all.TreeDefault:Définir par défaut
+it.all.TreeDefault:Imposta come predefinito
+nl.all.TreeDefault:Stel in als standaard
+en.all.TreeClear:Clear default
+de.all.TreeClear:Clear default
+fr.all.TreeClear:Effacer défaut
+it.all.TreeClear:Annulla predefinito
+nl.all.TreeClear:Annuleer standaard
+en.ami.TreeEdit:Edit title
+de.ami.TreeEdit:Edit title
+fr.ami.TreeEdit:Modifier le titre
+it.ami.TreeEdit:Modifica titolo
+nl.ami.TreeEdit:Wijzig titel
+
+# Treeview field labels
+#
+en.all.TreeviewLabelTitle:Title
+de.all.TreeviewLabelTitle:Title
+fr.all.TreeviewLabelTitle:Titre
+it.all.TreeviewLabelTitle:Titolo
+nl.all.TreeviewLabelTitle:Titel:
+en.all.TreeviewLabelURL:URL
+de.all.TreeviewLabelURL:URL
+fr.all.TreeviewLabelURL:URL
+it.all.TreeviewLabelURL:URL
+nl.all.TreeviewLabelURL:Adres:
+en.all.TreeviewLabelLastVisit:Last visit
+de.all.TreeviewLabelLastVisit:Last visit
+fr.all.TreeviewLabelLastVisit:Dernière visite
+it.all.TreeviewLabelLastVisit:Ultima visita
+nl.all.TreeviewLabelLastVisit:Laatste bezoek:
+en.all.TreeviewLabelVisits:Visits
+de.all.TreeviewLabelVisits:Visits
+fr.all.TreeviewLabelVisits:Visites
+it.all.TreeviewLabelVisits:Visite
+nl.all.TreeviewLabelVisits:Bezocht:
+en.all.TreeviewLabelPeriod:Period
+de.all.TreeviewLabelPeriod:Period
+fr.all.TreeviewLabelPeriod:Période
+it.all.TreeviewLabelPeriod:Periodo
+nl.all.TreeviewLabelPeriod:Periode:
+
+en.all.TreeviewLabelName:Name
+de.all.TreeviewLabelName:Name
+fr.all.TreeviewLabelName:Nom
+it.all.TreeviewLabelName:Nome
+nl.all.TreeviewLabelName:Naam:
+en.all.TreeviewLabelContent:Content
+de.all.TreeviewLabelContent:Content
+fr.all.TreeviewLabelContent:Contenu
+it.all.TreeviewLabelContent:Contenuto
+nl.all.TreeviewLabelContent:Inhoud:
+en.all.TreeviewLabelDomain:Domain
+de.all.TreeviewLabelDomain:Domain
+fr.all.TreeviewLabelDomain:Domaine
+it.all.TreeviewLabelDomain:Dominio
+nl.all.TreeviewLabelDomain:Domein:
+en.all.TreeviewLabelPath:Path
+de.all.TreeviewLabelPath:Path
+fr.all.TreeviewLabelPath:Chemin
+it.all.TreeviewLabelPath:Percorso
+nl.all.TreeviewLabelPath:Pad:
+en.all.TreeviewLabelExpires:Expires
+de.all.TreeviewLabelExpires:Expires
+fr.all.TreeviewLabelExpires:Expire
+it.all.TreeviewLabelExpires:Scadenza
+nl.all.TreeviewLabelExpires:Verloopt:
+en.all.TreeviewLabelLastUsed:Last used
+de.all.TreeviewLabelLastUsed:Last used
+fr.all.TreeviewLabelLastUsed:Les dernières utilisées
+it.all.TreeviewLabelLastUsed:Ultimo utilizzo
+nl.all.TreeviewLabelLastUsed:Laatst gebruikt:
+en.all.TreeviewLabelRestrictions:Restrictions
+de.all.TreeviewLabelRestrictions:Restrictions
+fr.all.TreeviewLabelRestrictions:Restrictions
+it.all.TreeviewLabelRestrictions:Restrizioni
+nl.all.TreeviewLabelRestrictions:Beperkingen:
+en.all.TreeviewLabelVersion:Version
+de.all.TreeviewLabelVersion:Version
+fr.all.TreeviewLabelVersion:Version
+it.all.TreeviewLabelVersion:Versione
+nl.all.TreeviewLabelVersion:Versie:
+en.all.TreeviewLabelPersistent:Persistent
+de.all.TreeviewLabelPersistent:Persistent
+fr.all.TreeviewLabelPersistent:Persistant
+it.all.TreeviewLabelPersistent:Persistenza
+nl.all.TreeviewLabelPersistent:Permanent:
+en.all.TreeviewLabelDomainFolder:Domain folder
+de.all.TreeviewLabelDomainFolder:Domain folder
+fr.all.TreeviewLabelDomainFolder:Dossier de domaine
+it.all.TreeviewLabelDomainFolder:Cartella dominio
+nl.all.TreeviewLabelDomainFolder:Domeinmap:
+
+en.all.TreeviewLabelSerial:Serial
+de.all.TreeviewLabelSerial:Serial
+fr.all.TreeviewLabelSerial:Série
+it.all.TreeviewLabelSerial:Seriale
+nl.all.TreeviewLabelSerial:Serienr:
+en.all.TreeviewLabelType:Type
+de.all.TreeviewLabelType:Type
+fr.all.TreeviewLabelType:Type
+it.all.TreeviewLabelType:Tipo
+nl.all.TreeviewLabelType:Type:
+en.all.TreeviewLabelValidUntil:Valid until
+de.all.TreeviewLabelValidUntil:Valid until
+fr.all.TreeviewLabelValidUntil:Valable jusqu'au
+it.all.TreeviewLabelValidUntil:Valido fino a
+nl.all.TreeviewLabelValidUntil:Geldig tot:
+en.all.TreeviewLabelValidFrom:Valid from
+de.all.TreeviewLabelValidFrom:Valid from
+fr.all.TreeviewLabelValidFrom:Valable à partir du
+it.all.TreeviewLabelValidFrom:Valido da
+nl.all.TreeviewLabelValidFrom:Geldig vanaf:
+en.all.TreeviewLabelIssuer:Issuer
+de.all.TreeviewLabelIssuer:Issuer
+fr.all.TreeviewLabelIssuer:Émetteur
+it.all.TreeviewLabelIssuer:Emittente
+nl.all.TreeviewLabelIssuer:Uitgever:
+
+en.all.TreeviewLabelFolder:Folder
+de.all.TreeviewLabelFolder:Folder
+fr.all.TreeviewLabelFolder:Dossier
+it.all.TreeviewLabelFolder:Cartella
+nl.all.TreeviewLabelFolder:Map:
+
+# Cookie Manager field values
+#
+en.all.CookieManagerSession:Session
+it.all.CookieManagerSession:Sessione
+en.all.CookieManagerHTTPS:Secure hosts via https only
+de.all.CookieManagerHTTPS:Secure hosts via https only
+fr.all.CookieManagerHTTPS:Hôtes sécurisés via https uniquement
+it.all.CookieManagerHTTPS:Solo host sicuri via https
+nl.all.CookieManagerHTTPS:Veilige websites alleen via https
+en.all.CookieManagerSecure:Secure hosts only
+de.all.CookieManagerSecure:Secure hosts only
+fr.all.CookieManagerSecure:Hôtes sécurisés uniquement
+it.all.CookieManagerSecure:Solo host sicuri
+nl.all.CookieManagerSecure:Alleen veilige verbindingen
+en.all.CookieManagerHTTP:HTTP connections only
+de.all.CookieManagerHTTP:HTTP connections only
+fr.all.CookieManagerHTTP:Connexions HTTP uniquement
+it.all.CookieManagerHTTP:Solo connessioni HTTP
+nl.all.CookieManagerHTTP:Alleen HTTP-verbindingen
+
+# Hotlist default folder's default name
+#
+en.all.HotlistDefaultFolderName:Unsorted entries
+fr.all.HotlistDefaultFolderName:Entrées non triées
+it.all.HotlistDefaultFolderName:Voci non ordinate
+nl.all.HotlistDefaultFolderName:Ongesorteerde items
+
+# Default name for new folders
+#
+en.all.NewFolderName:New folder
+de.all.NewFolderName:New folder
+fr.all.NewFolderName:Nouveau dossier
+it.all.NewFolderName:Nuova cartella
+nl.all.NewFolderName:Nieuwe map
+
+# Default title
+#
+en.all.NoTitle:<No title>
+de.all.NoTitle:<No title>
+fr.all.NoTitle:<Sans titre>
+it.all.NoTitle:<Senza titolo>
+nl.all.NoTitle:<Naamloos>
+
+# Tree export
+#
+en.all.TreeHotlist:NetSurf hotlist
+de.all.TreeHotlist:NetSurf Hotlist
+fr.all.TreeHotlist:Favoris de NetSurf
+it.all.TreeHotlist:Segnalibri di NetSurf
+nl.all.TreeHotlist:NetSurf-favorieten
+
+
+# About user interface tokens
+# ===========================
+#
+# This secion is for tokens that have user information about the browser
+
+en.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
+fr.ami.NetSurfDesc:Petit comme une souris, rapide comme un guépard. NetSurf est un navigateur Web multi-plate-forme libre.
+it.ami.NetSurfDesc:Piccolo come un mouse e veloce come un ghepardo! NetSurf, il browser web opensource e multi-piattaforma
+nl.ami.NetSurfDesc:Klein als een muis, snel als een cheetah en gratis beschikbaar. NetSurf is een multi-platform webbrowser.
+
+en.gtk.AboutDesc:NetSurf is a small and fast web browser.
+fr.gtk.AboutDesc:NetSurf est un navigateur Web multi-plate-forme libre.
+it.gtk.AboutDesc:NetSurf, il browser web opensource e multi-piattaforma
+nl.gtk.AboutDesc:NetSurf is een kleine, snelle webbrowser met open broncode.
+
+
+# Hotlist user interface tokens
+# =============================
+#
+# This section contains tokens which are used in various parts of
+# the hotlist user interface.
+#
+
+# Hotlist sub-window titles
+#
+en.all.NewLink:Create new address
+de.all.NewLink:Neuen Eintrag erstellen
+fr.all.NewLink:Créer une nouvelle adresse
+it.all.NewLink:Crea nuovo indirizzo
+nl.all.NewLink:Nieuw adres aanmaken
+en.all.NewFolder:Create new directory
+de.all.NewFolder:Verzeichnis anlegen
+fr.all.NewFolder:Créer un nouveau dossier
+it.all.NewFolder:Crea nuova cartella
+nl.all.NewFolder:Nieuwe map aanmaken
+en.all.EditTitle:Edit title
+de.all.EditTitle:Edit title
+fr.all.EditTitle:Éditer le titre
+it.all.EditTitle:Modifica titolo
+nl.all.EditTitle:Wijzig titel
+en.all.EditLink:Edit address
+de.all.EditLink:Eintrag bearbeiten
+fr.all.EditLink:Éditer l'adresse
+it.all.EditLink:Modifica indirizzo
+nl.all.EditLink:Bewerk adres
+en.all.EditFolder:Rename directory
+de.all.EditFolder:Verzeichnis umbenennen
+fr.all.EditFolder:Renommer le dossier
+it.all.EditFolder:Rinomina cartella
+nl.all.EditFolder:Hernoem map
+
+# Default hotlist page names
+#
+en.all.HotlistHomepage:NetSurf homepage
+de.all.HotlistHomepage:NetSurf Homepage
+fr.all.HotlistHomepage:Page d'accueil de NetSurf
+it.all.HotlistHomepage:Pagina iniziale di NetSurf
+nl.all.HotlistHomepage:NetSurf-startpagina
+en.all.HotlistDocumentation:Documentation
+de.all.HotlistDocumentation:Dokumentation
+fr.all.HotlistDocumentation:Documentation
+it.all.HotlistDocumentation:Documentazione
+nl.all.HotlistDocumentation:Documentatie
+en.all.HotlistContact:Contact the NetSurf developers
+de.all.HotlistContact:Contact the NetSurf developers
+fr.all.HotlistContact:Contacter les développeurs de NetSurf
+it.all.HotlistContact:Contatta gli sviluppatori di NetSurf
+nl.all.HotlistContact:Contacteer (Eng.) de NetSurf-ontwikkelaars
+en.all.HotlistDownloads:Download the latest version
+de.all.HotlistDownloads:Download the latest version
+fr.all.HotlistDownloads:Télécharger la dernière version
+it.all.HotlistDownloads:Scarica l'ultima versione
+nl.all.HotlistDownloads:Haal de laatste versie op
+
+# Default (Amiga) hotlist folder names
+#
+en.ami.HotlistMenu:Hotlist menu
+de.ami.HotlistMenu:Hotlist menu
+fr.ami.HotlistMenu:Hotlist menu
+it.ami.HotlistMenu:Menu segnalibri
+nl.ami.HotlistMenu:Favorietenmenu
+en.ami.HotlistToolbar:Hotlist toolbar
+de.ami.HotlistToolbar:Hotlist toolbar
+fr.ami.HotlistToolbar:Hotlist toolbar
+it.ami.HotlistToolbar:Barra segnalibri
+nl.ami.HotlistToolbar:Favorietenwerkbalk
+
+
+# Global history user interface tokens
+# ====================================
+#
+# This section contains tokens which are used in various parts of
+# the global history user interface.
+#
+en.all.GlobalHistory:Global history
+de.all.GlobalHistory:History (global)
+fr.all.GlobalHistory:Historique global
+it.all.GlobalHistory:Cronologia globale
+nl.all.GlobalHistory:Browsergeschiedenis
+en.all.DomainAll:(All domains)
+de.all.DomainAll:(All domains)
+fr.all.DomainAll:(Tous les domaines)
+it.all.DomainAll:(Tutti i domini)
+nl.all.DomainAll:(Alle domeinen)
+en.all.DateToday:Today
+de.all.DateToday:Heute
+fr.all.DateToday:Aujourd'hui
+it.all.DateToday:Oggi
+nl.all.DateToday:Vandaag
+en.all.DateYesterday:Yesterday
+de.all.DateYesterday:Gestern
+fr.all.DateYesterday:Hier
+it.all.DateYesterday:Ieri
+nl.all.DateYesterday:Gisteren
+en.all.Date2Days:Two days ago
+de.all.Date2Days:vor 2 Tagen
+fr.all.Date2Days:Il y a deux jours
+it.all.Date2Days:2 giorni fa
+nl.all.Date2Days:2 dagen geleden
+en.all.Date3Days:Three days ago
+de.all.Date3Days:vor 3 Tagen
+fr.all.Date3Days:Il y a trois jours
+it.all.Date3Days:3 giorni fa
+nl.all.Date3Days:3 dagen geleden
+en.all.Date4Days:Four days ago
+de.all.Date4Days:vor 4 Tagen
+fr.all.Date4Days:Il y a quatre jours
+it.all.Date4Days:4 giorni fa
+nl.all.Date4Days:4 dagen geleden
+en.all.Date5Days:Five days ago
+de.all.Date5Days:vor 5 Tagen
+fr.all.Date5Days:Il y a cinq jours
+it.all.Date5Days:5 giorni fa
+nl.all.Date5Days:5 dagen geleden
+en.all.Date6Days:Six days ago
+de.all.Date6Days:vor 6 Tagen
+fr.all.Date6Days:Il y a six jours
+it.all.Date6Days:6 giorni fa
+nl.all.Date6Days:6 dagen geleden
+en.all.Date1Week:A week ago
+de.all.Date1Week:vor einer Woche
+fr.all.Date1Week:Il y a une semaine
+it.all.Date1Week:1 settimana fa
+nl.all.Date1Week:Een week geleden
+en.all.Date2Week:Two weeks ago
+de.all.Date2Week:vor 2 Wochen
+fr.all.Date2Week:Il y a 2 semaines
+it.all.Date2Week:2 settimane fa
+nl.all.Date2Week:2 weken geleden
+en.all.Date3Week:Three weeks ago
+de.all.Date3Week:vor 3 Wochen
+fr.all.Date3Week:Il y a 3 semaines
+it.all.Date3Week:3 settimane fa
+nl.all.Date3Week:3 weken geleden
+en.all.Sunday:Sunday
+de.all.Sunday:Sonntag
+fr.all.Sunday:Dimanche
+it.all.Sunday:Domenica
+nl.all.Sunday:Zondag
+en.all.Monday:Monday
+de.all.Monday:Montag
+fr.all.Monday:Lundi
+it.all.Monday:Lunedi
+nl.all.Monday:Maandag
+en.all.Tuesday:Tuesday
+de.all.Tuesday:Dienstag
+fr.all.Tuesday:Mardi
+it.all.Tuesday:Martedi
+nl.all.Tuesday:Dinsdag
+en.all.Wednesday:Wednesday
+de.all.Wednesday:Mittwoch
+fr.all.Wednesday:Mercredi
+it.all.Wednesday:Mercoledi
+nl.all.Wednesday:Woensdag
+en.all.Thursday:Thursday
+de.all.Thursday:Donnerstag
+fr.all.Thursday:Jeudi
+it.all.Thursday:Giovedi
+nl.all.Thursday:Donderdag
+en.all.Friday:Friday
+de.all.Friday:Freitag
+fr.all.Friday:Vendredi
+it.all.Friday:Venerdi
+nl.all.Friday:Vrijdag
+en.all.Saturday:Saturday
+de.all.Saturday:Samstag
+fr.all.Saturday:Samedi
+it.all.Saturday:Sabato
+nl.all.Saturday:Zaterdag
 
 
 # Menus
@@ -1021,515 +2658,6 @@ fr.all.ExternalApp:Ouvrir dans une application externe
 it.all.ExternalApp:Apri con applicazione esterna
 nl.all.ExternalApp:Open in ander programma
 
-# Treeview interface tokens
-# =========================
-#
-# This section contains tokens which are used in the treeview
-# component. (For example, in the main hotlist/global history windows)
-#
-
-# Tree URL text
-#
-en.all.TreeAdded:Added: %s
-de.all.TreeAdded:eingetragen am: %s
-fr.all.TreeAdded:Ajoutée : %s
-it.all.TreeAdded:Aggiunto: %s
-nl.all.TreeAdded:Toegevoegd: %s
-en.all.TreeLast:Last visited: %s
-de.all.TreeLast:letzter Besuch: %s
-fr.all.TreeLast:Dernière visitée : %s
-it.all.TreeLast:Ultima visita: %s
-nl.all.TreeLast:Laatst bezocht: %s
-en.all.TreeVisited:Visited: %s
-de.all.TreeVisited:gesehen am: %s
-fr.all.TreeVisited:Visitées : %s
-it.all.TreeVisited:Visitato: %s
-nl.all.TreeVisited:Bezocht: %s keer
-en.all.TreeVisits:Visits: %i
-de.all.TreeVisits:Besuche gesamt: %i
-fr.all.TreeVisits:Visites : %i
-it.all.TreeVisits:Visite totali: %i
-nl.all.TreeVisits:Bezocht: %i keer
-en.all.TreeUnknown:Unknown
-de.all.TreeUnknown:Unbekannt
-fr.all.TreeUnknown:Inconnue
-it.all.TreeUnknown:Sconosciuta/o
-nl.all.TreeUnknown:Onbekend
-en.all.TreeValue:Value: %s
-de.all.TreeValue:Eintrag: %s
-fr.all.TreeValue:Valeur : %s
-it.all.TreeValue:Valore: %s
-nl.all.TreeValue:Waarde: %s
-en.all.TreeComment:Comment: %s
-de.all.TreeComment:Kommentar: %s
-fr.all.TreeComment:Commentaire : %s
-it.all.TreeComment:Commento: %s
-nl.all.TreeComment:Commentaar: %s
-en.all.TreeDomain:Domain: %s%s
-de.all.TreeDomain:Domain: %s%s
-fr.all.TreeDomain:Domaine : %s%s
-it.all.TreeDomain:Dominio: %s%s
-nl.all.TreeDomain:Domein: %s%s
-en.all.TreePath:Path: %s%s
-de.all.TreePath:Pfad: %s%s
-fr.all.TreePath:Chemin : %s%s
-it.all.TreePath:Percorso: %s%s
-nl.all.TreePath:Pad: %s%s
-en.all.TreeExpires:Expires: %s
-de.all.TreeExpires:Verfällt: %s
-fr.all.TreeExpires:Expire : %s
-it.all.TreeExpires:Scadenza: %s
-nl.all.TreeExpires:Verloopt op: %s
-en.all.TreeLastUsed:Last used: %s
-de.all.TreeLastUsed:Zuletzt genutzt: %s
-fr.all.TreeLastUsed:Dernière utilisation : %s
-it.all.TreeLastUsed:Ultimo utilizzo: %s
-nl.all.TreeLastUsed:Laatst gebruikt: %s
-en.all.TreeSecure:Secure hosts only: %s
-de.all.TreeSecure:Nur sichere Hosts: %s
-fr.all.TreeSecure:Uniquement des sites sécurisés : %s
-it.all.TreeSecure:Solo host sicuri: %s
-nl.all.TreeSecure:Alleen veilige sites: %s
-en.all.TreeVersion:Version: %s
-de.all.TreeVersion:Version: %s
-fr.all.TreeVersion:Version : %s
-it.all.TreeVersion:Versione: %s
-nl.all.TreeVersion:Versie: %s
-en.all.TreePersistent:Persistent: %s
-de.all.TreePersistent:Persistent: %s
-fr.all.TreePersistent:Persistant : %s
-it.all.TreePersistent:Persistenza: %s
-nl.all.TreePersistent:Permanent: %s
-en.all.TreeHeaders: (from headers)
-de.all.TreeHeaders: (aus Header)
-fr.all.TreeHeaders: (à partir des entêtes)
-it.all.TreeHeaders: (da intestazioni)
-nl.all.TreeHeaders: (van koppen)
-en.all.TreeVersion0:Netscape
-de.all.TreeVersion0:Netscape
-fr.all.TreeVersion0:Netscape
-it.all.TreeVersion0:Netscape
-nl.all.TreeVersion0:Netscape
-en.all.TreeVersion1:RFC 2109
-de.all.TreeVersion1:RFC 2109
-fr.all.TreeVersion1:RFC 2109
-it.all.TreeVersion1:RFC 2109
-nl.all.TreeVersion1:RFC 2109
-en.all.TreeVersion2:RFC 2965
-de.all.TreeVersion2:RFC 2965
-fr.all.TreeVersion2:RFC 2965
-it.all.TreeVersion2:RFC 2965
-nl.all.TreeVersion2:RFC 2965
-en.all.TreeSession:Session end
-de.all.TreeSession:Sitzungsende
-fr.all.TreeSession:Fin de session
-it.all.TreeSession:Fine sessione
-nl.all.TreeSession:Sessie-einde
-en.all.TreeUnused:Unused
-de.all.TreeUnused:Nicht benutzt
-fr.all.TreeUnused:Inutilisé
-it.all.TreeUnused:Inutilizzato
-nl.all.TreeUnused:Ongebruikt
-en.all.TreeImport:Imported URL
-de.all.TreeImport:Importierte URL
-fr.all.TreeImport:URL importée
-it.all.TreeImport:URL importati
-nl.all.TreeImport:Geïmporteerd adres
-en.all.TreeNewLink:New address
-de.all.TreeNewLink:New address
-fr.all.TreeNewLink:Nouvelle adresse
-it.all.TreeNewLink:Nuovo indirizzo
-nl.all.TreeNewLink:Nieuw webadres
-en.all.TreeNewFolder:New directory
-de.all.TreeNewFolder:Neues Verzeichnis
-fr.all.TreeNewFolder:Nouv. répertoire
-it.all.TreeNewFolder:Nuova cartella
-nl.all.TreeNewFolder:Nieuwe map
-en.all.TreeLaunch:Visit URL
-de.all.TreeLaunch:URL ansehen
-fr.all.TreeLaunch:Visiter l'URL
-it.all.TreeLaunch:Visita URL
-nl.all.TreeLaunch:Bezoek webadres
-en.all.TreeDelete:Delete
-de.all.TreeDelete:Löschen
-fr.all.TreeDelete:Effacer
-it.all.TreeDelete:Elimina
-nl.all.TreeDelete:Verwijder
-en.all.TreeDefault:Set as default
-de.all.TreeDefault:Set as default
-fr.all.TreeDefault:Définir par défaut
-it.all.TreeDefault:Imposta come predefinito
-nl.all.TreeDefault:Stel in als standaard
-en.all.TreeClear:Clear default
-de.all.TreeClear:Clear default
-fr.all.TreeClear:Effacer défaut
-it.all.TreeClear:Annulla predefinito
-nl.all.TreeClear:Annuleer standaard
-en.ami.TreeEdit:Edit title
-de.ami.TreeEdit:Edit title
-fr.ami.TreeEdit:Modifier le titre
-it.ami.TreeEdit:Modifica titolo
-nl.ami.TreeEdit:Wijzig titel
-
-# Treeview field labels
-#
-en.all.TreeviewLabelTitle:Title
-de.all.TreeviewLabelTitle:Title
-fr.all.TreeviewLabelTitle:Titre
-it.all.TreeviewLabelTitle:Titolo
-nl.all.TreeviewLabelTitle:Titel:
-en.all.TreeviewLabelURL:URL
-de.all.TreeviewLabelURL:URL
-fr.all.TreeviewLabelURL:URL
-it.all.TreeviewLabelURL:URL
-nl.all.TreeviewLabelURL:Adres:
-en.all.TreeviewLabelLastVisit:Last visit
-de.all.TreeviewLabelLastVisit:Last visit
-fr.all.TreeviewLabelLastVisit:Dernière visite
-it.all.TreeviewLabelLastVisit:Ultima visita
-nl.all.TreeviewLabelLastVisit:Laatste bezoek:
-en.all.TreeviewLabelVisits:Visits
-de.all.TreeviewLabelVisits:Visits
-fr.all.TreeviewLabelVisits:Visites
-it.all.TreeviewLabelVisits:Visite
-nl.all.TreeviewLabelVisits:Bezocht:
-en.all.TreeviewLabelPeriod:Period
-de.all.TreeviewLabelPeriod:Period
-fr.all.TreeviewLabelPeriod:Période
-it.all.TreeviewLabelPeriod:Periodo
-nl.all.TreeviewLabelPeriod:Periode:
-
-en.all.TreeviewLabelName:Name
-de.all.TreeviewLabelName:Name
-fr.all.TreeviewLabelName:Nom
-it.all.TreeviewLabelName:Nome
-nl.all.TreeviewLabelName:Naam:
-en.all.TreeviewLabelContent:Content
-de.all.TreeviewLabelContent:Content
-fr.all.TreeviewLabelContent:Contenu
-it.all.TreeviewLabelContent:Contenuto
-nl.all.TreeviewLabelContent:Inhoud:
-en.all.TreeviewLabelDomain:Domain
-de.all.TreeviewLabelDomain:Domain
-fr.all.TreeviewLabelDomain:Domaine
-it.all.TreeviewLabelDomain:Dominio
-nl.all.TreeviewLabelDomain:Domein:
-en.all.TreeviewLabelPath:Path
-de.all.TreeviewLabelPath:Path
-fr.all.TreeviewLabelPath:Chemin
-it.all.TreeviewLabelPath:Percorso
-nl.all.TreeviewLabelPath:Pad:
-en.all.TreeviewLabelExpires:Expires
-de.all.TreeviewLabelExpires:Expires
-fr.all.TreeviewLabelExpires:Expire
-it.all.TreeviewLabelExpires:Scadenza
-nl.all.TreeviewLabelExpires:Verloopt:
-en.all.TreeviewLabelLastUsed:Last used
-de.all.TreeviewLabelLastUsed:Last used
-fr.all.TreeviewLabelLastUsed:Les dernières utilisées
-it.all.TreeviewLabelLastUsed:Ultimo utilizzo
-nl.all.TreeviewLabelLastUsed:Laatst gebruikt:
-en.all.TreeviewLabelRestrictions:Restrictions
-de.all.TreeviewLabelRestrictions:Restrictions
-fr.all.TreeviewLabelRestrictions:Restrictions
-it.all.TreeviewLabelRestrictions:Restrizioni
-nl.all.TreeviewLabelRestrictions:Beperkingen:
-en.all.TreeviewLabelVersion:Version
-de.all.TreeviewLabelVersion:Version
-fr.all.TreeviewLabelVersion:Version
-it.all.TreeviewLabelVersion:Versione
-nl.all.TreeviewLabelVersion:Versie:
-en.all.TreeviewLabelPersistent:Persistent
-de.all.TreeviewLabelPersistent:Persistent
-fr.all.TreeviewLabelPersistent:Persistant
-it.all.TreeviewLabelPersistent:Persistenza
-nl.all.TreeviewLabelPersistent:Permanent:
-en.all.TreeviewLabelDomainFolder:Domain folder
-de.all.TreeviewLabelDomainFolder:Domain folder
-fr.all.TreeviewLabelDomainFolder:Dossier de domaine
-it.all.TreeviewLabelDomainFolder:Cartella dominio
-nl.all.TreeviewLabelDomainFolder:Domeinmap:
-
-en.all.TreeviewLabelSerial:Serial
-de.all.TreeviewLabelSerial:Serial
-fr.all.TreeviewLabelSerial:Série
-it.all.TreeviewLabelSerial:Seriale
-nl.all.TreeviewLabelSerial:Serienr:
-en.all.TreeviewLabelType:Type
-de.all.TreeviewLabelType:Type
-fr.all.TreeviewLabelType:Type
-it.all.TreeviewLabelType:Tipo
-nl.all.TreeviewLabelType:Type:
-en.all.TreeviewLabelValidUntil:Valid until
-de.all.TreeviewLabelValidUntil:Valid until
-fr.all.TreeviewLabelValidUntil:Valable jusqu'au
-it.all.TreeviewLabelValidUntil:Valido fino a
-nl.all.TreeviewLabelValidUntil:Geldig tot:
-en.all.TreeviewLabelValidFrom:Valid from
-de.all.TreeviewLabelValidFrom:Valid from
-fr.all.TreeviewLabelValidFrom:Valable à partir du
-it.all.TreeviewLabelValidFrom:Valido da
-nl.all.TreeviewLabelValidFrom:Geldig vanaf:
-en.all.TreeviewLabelIssuer:Issuer
-de.all.TreeviewLabelIssuer:Issuer
-fr.all.TreeviewLabelIssuer:Émetteur
-it.all.TreeviewLabelIssuer:Emittente
-nl.all.TreeviewLabelIssuer:Uitgever:
-
-en.all.TreeviewLabelFolder:Folder
-de.all.TreeviewLabelFolder:Folder
-fr.all.TreeviewLabelFolder:Dossier
-it.all.TreeviewLabelFolder:Cartella
-nl.all.TreeviewLabelFolder:Map:
-
-
-# Cookie Manager field values
-#
-en.all.CookieManagerSession:Session
-it.all.CookieManagerSession:Sessione
-en.all.CookieManagerHTTPS:Secure hosts via https only
-de.all.CookieManagerHTTPS:Secure hosts via https only
-fr.all.CookieManagerHTTPS:Hôtes sécurisés via https uniquement
-it.all.CookieManagerHTTPS:Solo host sicuri via https
-nl.all.CookieManagerHTTPS:Veilige websites alleen via https
-en.all.CookieManagerSecure:Secure hosts only
-de.all.CookieManagerSecure:Secure hosts only
-fr.all.CookieManagerSecure:Hôtes sécurisés uniquement
-it.all.CookieManagerSecure:Solo host sicuri
-nl.all.CookieManagerSecure:Alleen veilige verbindingen
-en.all.CookieManagerHTTP:HTTP connections only
-de.all.CookieManagerHTTP:HTTP connections only
-fr.all.CookieManagerHTTP:Connexions HTTP uniquement
-it.all.CookieManagerHTTP:Solo connessioni HTTP
-nl.all.CookieManagerHTTP:Alleen HTTP-verbindingen
-
-
-# Hotlist default folder's default name
-#
-en.all.HotlistDefaultFolderName:Unsorted entries
-fr.all.HotlistDefaultFolderName:Entrées non triées
-it.all.HotlistDefaultFolderName:Voci non ordinate
-nl.all.HotlistDefaultFolderName:Ongesorteerde items
-
-
-# Default name for new folders
-#
-en.all.NewFolderName:New folder
-de.all.NewFolderName:New folder
-fr.all.NewFolderName:Nouveau dossier
-it.all.NewFolderName:Nuova cartella
-nl.all.NewFolderName:Nieuwe map
-
-
-# Default title
-#
-en.all.NoTitle:<No title>
-de.all.NoTitle:<No title>
-fr.all.NoTitle:<Sans titre>
-it.all.NoTitle:<Senza titolo>
-nl.all.NoTitle:<Naamloos>
-
-
-
-# Tree export
-#
-en.all.TreeHotlist:NetSurf hotlist
-de.all.TreeHotlist:NetSurf Hotlist
-fr.all.TreeHotlist:Favoris de NetSurf
-it.all.TreeHotlist:Segnalibri di NetSurf
-nl.all.TreeHotlist:NetSurf-favorieten
-
-
-# About user interface tokens
-# ===========================
-#
-# This secion is for tokens that have user information about the browser
-
-en.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
-fr.ami.NetSurfDesc:Petit comme une souris, rapide comme un guépard. NetSurf est un navigateur Web multi-plate-forme libre.
-it.ami.NetSurfDesc:Piccolo come un mouse e veloce come un ghepardo! NetSurf, il browser web opensource e multi-piattaforma
-nl.ami.NetSurfDesc:Klein als een muis, snel als een cheetah en gratis beschikbaar. NetSurf is een multi-platform webbrowser.
-
-en.gtk.AboutDesc:NetSurf is a small and fast web browser.
-fr.gtk.AboutDesc:NetSurf est un navigateur Web multi-plate-forme libre.
-it.gtk.AboutDesc:NetSurf, il browser web opensource e multi-piattaforma
-nl.gtk.AboutDesc:NetSurf is een kleine, snelle webbrowser met open broncode.
-
-# Hotlist user interface tokens
-# =============================
-#
-# This section contains tokens which are used in various parts of
-# the hotlist user interface.
-#
-
-# Hotlist sub-window titles
-#
-en.all.NewLink:Create new address
-de.all.NewLink:Neuen Eintrag erstellen
-fr.all.NewLink:Créer une nouvelle adresse
-it.all.NewLink:Crea nuovo indirizzo
-nl.all.NewLink:Nieuw adres aanmaken
-en.all.NewFolder:Create new directory
-de.all.NewFolder:Verzeichnis anlegen
-fr.all.NewFolder:Créer un nouveau dossier
-it.all.NewFolder:Crea nuova cartella
-nl.all.NewFolder:Nieuwe map aanmaken
-en.all.EditTitle:Edit title
-de.all.EditTitle:Edit title
-fr.all.EditTitle:Éditer le titre
-it.all.EditTitle:Modifica titolo
-nl.all.EditTitle:Wijzig titel
-en.all.EditLink:Edit address
-de.all.EditLink:Eintrag bearbeiten
-fr.all.EditLink:Éditer l'adresse
-it.all.EditLink:Modifica indirizzo
-nl.all.EditLink:Bewerk adres
-en.all.EditFolder:Rename directory
-de.all.EditFolder:Verzeichnis umbenennen
-fr.all.EditFolder:Renommer le dossier
-it.all.EditFolder:Rinomina cartella
-nl.all.EditFolder:Hernoem map
-
-# Default hotlist page names
-#
-en.all.HotlistHomepage:NetSurf homepage
-de.all.HotlistHomepage:NetSurf Homepage
-fr.all.HotlistHomepage:Page d'accueil de NetSurf
-it.all.HotlistHomepage:Pagina iniziale di NetSurf
-nl.all.HotlistHomepage:NetSurf-startpagina
-en.all.HotlistDocumentation:Documentation
-de.all.HotlistDocumentation:Dokumentation
-fr.all.HotlistDocumentation:Documentation
-it.all.HotlistDocumentation:Documentazione
-nl.all.HotlistDocumentation:Documentatie
-en.all.HotlistContact:Contact the NetSurf developers
-de.all.HotlistContact:Contact the NetSurf developers
-fr.all.HotlistContact:Contacter les développeurs de NetSurf
-it.all.HotlistContact:Contatta gli sviluppatori di NetSurf
-nl.all.HotlistContact:Contacteer (Eng.) de NetSurf-ontwikkelaars
-en.all.HotlistDownloads:Download the latest version
-de.all.HotlistDownloads:Download the latest version
-fr.all.HotlistDownloads:Télécharger la dernière version
-it.all.HotlistDownloads:Scarica l'ultima versione
-nl.all.HotlistDownloads:Haal de laatste versie op
-
-# Default (Amiga) hotlist folder names
-#
-en.ami.HotlistMenu:Hotlist menu
-de.ami.HotlistMenu:Hotlist menu
-fr.ami.HotlistMenu:Hotlist menu
-it.ami.HotlistMenu:Menu segnalibri
-nl.ami.HotlistMenu:Favorietenmenu
-en.ami.HotlistToolbar:Hotlist toolbar
-de.ami.HotlistToolbar:Hotlist toolbar
-fr.ami.HotlistToolbar:Hotlist toolbar
-it.ami.HotlistToolbar:Barra segnalibri
-nl.ami.HotlistToolbar:Favorietenwerkbalk
-
-
-# Global history user interface tokens
-# ====================================
-#
-# This section contains tokens which are used in various parts of
-# the global history user interface.
-#
-
-en.all.GlobalHistory:Global history
-de.all.GlobalHistory:History (global)
-fr.all.GlobalHistory:Historique global
-it.all.GlobalHistory:Cronologia globale
-nl.all.GlobalHistory:Browsergeschiedenis
-en.all.DomainAll:(All domains)
-de.all.DomainAll:(All domains)
-fr.all.DomainAll:(Tous les domaines)
-it.all.DomainAll:(Tutti i domini)
-nl.all.DomainAll:(Alle domeinen)
-en.all.DateToday:Today
-de.all.DateToday:Heute
-fr.all.DateToday:Aujourd'hui
-it.all.DateToday:Oggi
-nl.all.DateToday:Vandaag
-en.all.DateYesterday:Yesterday
-de.all.DateYesterday:Gestern
-fr.all.DateYesterday:Hier
-it.all.DateYesterday:Ieri
-nl.all.DateYesterday:Gisteren
-en.all.Date2Days:Two days ago
-de.all.Date2Days:vor 2 Tagen
-fr.all.Date2Days:Il y a deux jours
-it.all.Date2Days:2 giorni fa
-nl.all.Date2Days:2 dagen geleden
-en.all.Date3Days:Three days ago
-de.all.Date3Days:vor 3 Tagen
-fr.all.Date3Days:Il y a trois jours
-it.all.Date3Days:3 giorni fa
-nl.all.Date3Days:3 dagen geleden
-en.all.Date4Days:Four days ago
-de.all.Date4Days:vor 4 Tagen
-fr.all.Date4Days:Il y a quatre jours
-it.all.Date4Days:4 giorni fa
-nl.all.Date4Days:4 dagen geleden
-en.all.Date5Days:Five days ago
-de.all.Date5Days:vor 5 Tagen
-fr.all.Date5Days:Il y a cinq jours
-it.all.Date5Days:5 giorni fa
-nl.all.Date5Days:5 dagen geleden
-en.all.Date6Days:Six days ago
-de.all.Date6Days:vor 6 Tagen
-fr.all.Date6Days:Il y a six jours
-it.all.Date6Days:6 giorni fa
-nl.all.Date6Days:6 dagen geleden
-en.all.Date1Week:A week ago
-de.all.Date1Week:vor einer Woche
-fr.all.Date1Week:Il y a une semaine
-it.all.Date1Week:1 settimana fa
-nl.all.Date1Week:Een week geleden
-en.all.Date2Week:Two weeks ago
-de.all.Date2Week:vor 2 Wochen
-fr.all.Date2Week:Il y a 2 semaines
-it.all.Date2Week:2 settimane fa
-nl.all.Date2Week:2 weken geleden
-en.all.Date3Week:Three weeks ago
-de.all.Date3Week:vor 3 Wochen
-fr.all.Date3Week:Il y a 3 semaines
-it.all.Date3Week:3 settimane fa
-nl.all.Date3Week:3 weken geleden
-en.all.Sunday:Sunday
-de.all.Sunday:Sonntag
-fr.all.Sunday:Dimanche
-it.all.Sunday:Domenica
-nl.all.Sunday:Zondag
-en.all.Monday:Monday
-de.all.Monday:Montag
-fr.all.Monday:Lundi
-it.all.Monday:Lunedi
-nl.all.Monday:Maandag
-en.all.Tuesday:Tuesday
-de.all.Tuesday:Dienstag
-fr.all.Tuesday:Mardi
-it.all.Tuesday:Martedi
-nl.all.Tuesday:Dinsdag
-en.all.Wednesday:Wednesday
-de.all.Wednesday:Mittwoch
-fr.all.Wednesday:Mercredi
-it.all.Wednesday:Mercoledi
-nl.all.Wednesday:Woensdag
-en.all.Thursday:Thursday
-de.all.Thursday:Donnerstag
-fr.all.Thursday:Jeudi
-it.all.Thursday:Giovedi
-nl.all.Thursday:Donderdag
-en.all.Friday:Friday
-de.all.Friday:Freitag
-fr.all.Friday:Vendredi
-it.all.Friday:Venerdi
-nl.all.Friday:Vrijdag
-en.all.Saturday:Saturday
-de.all.Saturday:Samstag
-fr.all.Saturday:Samedi
-it.all.Saturday:Sabato
-nl.all.Saturday:Zaterdag
-
 
 # Download user interface tokens
 # ==============================
@@ -2105,7 +3233,6 @@ fr.gtk.gtkAbout:_A propos...
 it.gtk.gtkAbout:_Informazioni...
 nl.gtk.gtkAbout:_Programma-informatie...
 
-
 en.gtk.gtkCustomize:Customise…
 de.gtk.gtkCustomize:Anpassen…
 fr.gtk.gtkCustomize:Personnaliser...
@@ -2136,7 +3263,6 @@ de.gtk.gtkCopylink:Link_adresse kopieren
 fr.gtk.gtkCopylink:_Copier le lien
 it.gtk.gtkCopylink:Copia in_dirizzo link
 nl.gtk.gtkCopylink:Koppelingsloc_atie kopiëren
-
 
 en.gtk.gtkToolBarTitle:Toolbar custom button store
 de.gtk.gtkToolBarTitle:Benutzerdefinierter Ort für Toolbar-Icons
@@ -2667,1059 +3793,6 @@ fr.gtk.preferencesGenerationPassword:La restitution possède un mot de passe
 nl.gtk.preferencesGenerationPassword:Uitvoer wordt met wachtwoord beveiligd
 
 
-# Printing user interface tokens
-# ==============================
-#
-# This section contains tokens which are used in the printing
-# dialog box.
-#
-
-en.all.PrintSheetFilled:sheet is filled
-de.all.PrintSheetFilled:Druckseite
-fr.all.PrintSheetFilled:feuille remplie
-it.all.PrintSheetFilled:Il foglio stampato è pieno
-nl.all.PrintSheetFilled:pagina
-en.all.PrintSheetsFilled:sheets are filled
-de.all.PrintSheetsFilled:Druckseiten
-fr.all.PrintSheetsFilled:feuilles remplies
-it.all.PrintSheetsFilled:I fogli stampati sono pieni
-nl.all.PrintSheetsFilled:pagina's
-en.all.Printer:Printer
-de.all.Printer:Drucker
-fr.all.Printer:Imprimante
-it.all.Printer:Stampante
-nl.all.Printer:Printer
-en.all.Copies:Copies
-de.all.Copies:Kopien
-fr.all.Copies:Copies
-it.all.Copies:Copie
-nl.all.Copies:Kopieën
-en.all.Printing:Printing page
-de.all.Printing:Drucke Seite
-fr.all.Printing:Page impression
-it.all.Printing:Stampa della pagina
-nl.all.Printing:Pagina aan het afdrukken
-
-
-# Find text user interface tokens
-# ===============================
-#
-# This section contains tokens which are used in the find text
-# dialog box.
-#
-en.all.NotFound:Not found
-de.all.NotFound:nichts
-fr.all.NotFound:Non trouvé
-it.all.NotFound:Non trovato
-nl.all.NotFound:Niet gevonden
-en.all.Next:Next
-de.all.Next:Nächster
-fr.all.Next:Suivant
-it.all.Next:Successivo
-nl.all.Next:Volgende
-en.all.Prev:Previous
-de.all.Prev:Vorheriger
-fr.all.Prev:Précédent
-it.all.Prev:Precedente
-nl.all.Prev:Vorige
-en.all.ShowAll:Show All
-de.all.ShowAll:Alle zeigen
-fr.all.ShowAll:Tout afficher
-it.all.ShowAll:Mostra Tutto
-nl.all.ShowAll:Toon alles
-en.all.CaseSens:Case Sensitive
-de.all.CaseSens:Groß-/Kleinschreibung
-fr.all.CaseSens:Sensible à la casse
-it.all.CaseSens:Maiuscole/Minuscole
-nl.all.CaseSens:Hoofdlettergevoelig
-
-
-# 401 login user interface tokens
-# ===============================
-#
-# This section contains tokens which are used in the 401 login
-# (authentication) dialog box.
-#
-en.all.LoginTitle:Authentication Requested
-fr.all.LoginTitle:Authentification demandée
-en.all.LoginDescription:The site %s with realm "%s" is requesting credentials for access.
-fr.all.LoginDescription:Le site %s avec le royaume "%s" demande des informations d'identification pour l'accès.
-en.all.LoginAgain:The credentials for the site %s and realm "%s" were rejected.
-fr.all.LoginAgain:Les identifiants pour le site %s et le royaume "%s" ont été rejetés.
-en.all.LoginLabel:A website is requesting credentials for access.
-en.all.Host:Host
-de.all.Host:Host
-fr.all.Host:Hôte
-it.all.Host:Host
-nl.all.Host:Server
-en.all.Realm:Realm
-de.all.Realm:Realm
-fr.all.Realm:Domaine
-it.all.Realm:Tipo
-nl.all.Realm:Gebied
-en.all.Username:Username
-de.all.Username:Benutzername
-fr.all.Username:Nom d'utilisateur
-it.all.Username:Nome Utente
-nl.all.Username:Gebruikersnaam
-en.all.Password:Password
-de.all.Password:Passwort
-fr.all.Password:Mot de passe
-it.all.Password:Password
-nl.all.Password:Wachtwoord
-en.all.Login:Login
-de.all.Login:Login
-fr.all.Login:Connexion
-it.all.Login:Login
-nl.all.Login:Login
-en.all.Cancel:Cancel
-de.all.Cancel:Abbruch
-fr.all.Cancel:Annuler
-it.all.Cancel:Annulla
-nl.all.Cancel:Annuleer
-
-
-# Privacy error interface
-# =======================
-#
-
-en.all.PrivacyTitle:Privacy error
-de.all.PrivacyTitle:Datenschutzfehler
-fr.all.PrivacyTitle:Erreur de confidentialité
-it.all.PrivacyTitle:Errore di privacy
-nl.all.PrivacyTitle:Privacyfout
-en.all.PrivacyDescription:A privacy error occurred while communicating with %s this may be a site configuration error or an attempt to steal private information (passwords, messages or credit cards)
-en.all.Proceed:Proceed
-de.all.Proceed:Vorgehen
-fr.all.Proceed:Procéder
-it.all.Proceed:Procedere
-nl.all.Proceed:Doorgaan
-en.all.Backtosafety:Back to safety
-de.all.Backtosafety:Zurück zur Sicherheit
-fr.all.Backtosafety:Retour a la sécurité
-it.all.Backtosafety:Ritorno alla sicurezza
-nl.all.Backtosafety:Terug naar veiligheid
-
-en.all.SSLCertErrOk:The certificate has no errors.
-en.all.SSLCertErrUnknown:An unknown error occoured while processing the certificate.
-en.all.SSLCertErrBadIssuer:The issuer of this certificate is not known. This may occour if the browser cannot access the certificate authority (CA) bundle.
-en.all.SSLCertErrBadSig:The certificate is improperly signed.
-en.all.SSLCertErrTooYoung:The certificate is not yet valid.
-en.all.SSLCertErrTooOld:The certificate has expired.
-en.all.SSLCertErrSelfSigned:The certificate is self signed.
-en.all.SSLCertErrChainSelfSigned:The certificate chain is self signed.
-en.all.SSLCertErrRevoked:The certificate has been revoked by the issuer.
-en.all.SSLCertErrCommonName:The certificate is for a different host than the server
-
-# SSL certificate viewer
-# ======================
-#
-# This section contains tokens which are used in the
-# SSL certificate verification dialog box.
-#
-en.all.SSLCerts:SSL certificates
-de.all.SSLCerts:SSL Zertifikat
-fr.all.SSLCerts:Certificats SSL
-it.all.SSLCerts:Certificati SSL
-nl.all.SSLCerts:SSL-certificaten
-en.all.SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
-de.all.SSLError:NetSurf konnte ein SSL Zertifikat nicht prüfen. Bitte die Details unten beachten.
-fr.all.SSLError:NetSurf a échoué dans la vérification de l'authenticité d'un certificat SSL. Vérifier les détails présentés ci-dessous.
-it.all.SSLError:NetSurf non è stato in grado di verificare l'autenticità di questo certificato SSL, per favore verifica i dettagli presenti di seguito
-nl.all.SSLError:NetSurf kan de authenticiteit van een SSL-certificaat niet controleren. Controleer onderstaande details.
-en.all.SSL_Certificate_Subject:Subject: %s
-de.all.SSL_Certificate_Subject:Subject: %s
-fr.all.SSL_Certificate_Subject:Objet : %s
-it.all.SSL_Certificate_Subject:Soggetto: %s
-nl.all.SSL_Certificate_Subject:Subjekt: %s
-en.all.SSL_Certificate_Issuer:Issuer: %s
-de.all.SSL_Certificate_Issuer:Issuer: %s
-fr.all.SSL_Certificate_Issuer:Émetteur : %s
-it.all.SSL_Certificate_Issuer:Emittente: %s
-nl.all.SSL_Certificate_Issuer:Uitgever: %s
-en.all.SSL_Certificate_Version:Version: %ld
-de.all.SSL_Certificate_Version:Version: %ld
-fr.all.SSL_Certificate_Version:Version : %ld
-it.all.SSL_Certificate_Version:Versione: %ld
-nl.all.SSL_Certificate_Version:Versie: %ld
-en.all.SSL_Certificate_ValidFrom:Valid from: %s
-de.all.SSL_Certificate_ValidFrom:Valid from: %s
-fr.all.SSL_Certificate_ValidFrom:Valide à compter du : %s
-it.all.SSL_Certificate_ValidFrom:Valido da: %s
-nl.all.SSL_Certificate_ValidFrom:Geldig vanaf: %s
-en.all.SSL_Certificate_ValidTo:Valid until: %s
-de.all.SSL_Certificate_ValidTo:Valid until: %s
-fr.all.SSL_Certificate_ValidTo:Valable jusqu'au : %s
-it.all.SSL_Certificate_ValidTo:Valido fino a: %s
-nl.all.SSL_Certificate_ValidTo:Geldig tot: %s
-en.all.SSL_Certificate_Type:Type: %i
-de.all.SSL_Certificate_Type:Type: %i
-fr.all.SSL_Certificate_Type:Type : %i
-it.all.SSL_Certificate_Type:Tipo: %i
-nl.all.SSL_Certificate_Type:Type: %i
-en.all.SSL_Certificate_Serial:Serial: %ld
-de.all.SSL_Certificate_Serial:Serial: %ld
-fr.all.SSL_Certificate_Serial:Série : %ld
-it.all.SSL_Certificate_Serial:Seriale: %ld
-nl.all.SSL_Certificate_Serial:Serienr.: %ld
-en.all.SSL_Certificate_Accept:Accept
-de.all.SSL_Certificate_Accept:Accept
-fr.all.SSL_Certificate_Accept:Accepter
-it.all.SSL_Certificate_Accept:Accetta
-nl.all.SSL_Certificate_Accept:Accepteer
-en.all.SSL_Certificate_Reject:Reject
-de.all.SSL_Certificate_Reject:Reject
-fr.all.SSL_Certificate_Reject:Rejeter
-it.all.SSL_Certificate_Reject:Rifiuta
-nl.all.SSL_Certificate_Reject:Weiger
-
-
-# Content
-# =======
-#
-# This section contains tokens used by contents
-#
-
-# Forms
-#
-en.all.Form_Submit:Submit
-de.all.Form_Submit:Übertragen
-fr.all.Form_Submit:Soumettre
-it.all.Form_Submit:Invia
-nl.all.Form_Submit:Versturen
-en.all.Form_Reset:Reset
-de.all.Form_Reset:Zurücksetzen
-fr.all.Form_Reset:Effacer
-it.all.Form_Reset:Resetta
-nl.all.Form_Reset:Opnieuw
-en.all.Form_None:
-de.all.Form_None:
-fr.all.Form_None:
-it.all.Form_None:
-nl.all.Form_None:
-en.all.Form_Many:(Many)
-de.all.Form_Many:(Viele)
-fr.all.Form_Many:(Plusieurs)
-it.all.Form_Many:(Molti)
-nl.all.Form_Many:(Veel)
-en.all.Form_Drop:Drop file here
-en.gtk.Form_Drop:Click to select file
-fr.gtk.Form_Drop:Cliquer pour sélectionner fichier
-nl.gtk.Form_Drop:Klik om bestand te selecteren
-en.ro.Form_Drop:Drop file here
-fr.ro.Form_Drop:Déposer fichier ici
-en.ami.Form_Drop:Click or drop file here
-fr.ami.Form_Drop:Cliquer ou déposer fichier ici]
-nl.ami.Form_Drop:Sleep bestand hierheen
-en.beos.Form_Drop:Drop file here
-fr.beos.Form_Drop:Drop file here
-nl.beos.Form_Drop:Sleep bestand hierheen
-en.fb.Form_Drop:Click to select file
-fr.fb.Form_Drop:Cliquer pour sélectionner fichier
-nl.fb.Form_Drop:Klik om bestand te selecteren
-en.osx.Form_Drop:Click to select file
-fr.osx.Form_Drop:Cliquer pour sélectionner fichier
-de.all.Form_Drop:Datei hier hinziehen
-fr.all.Form_Drop:Déposer les fichiers ici
-it.all.Form_Drop:Inserisci un file qui
-nl.all.Form_Drop:Bestand hier plaatsen
-en.all.FormSelect:Click to choose a form item
-de.all.FormSelect:Anklicken öffnet Auswahlmenü
-fr.all.FormSelect:Cliquer pour choisir un item de formulaire
-it.all.FormSelect:Clicca per scegliere un oggetto del modulo
-nl.all.FormSelect:Klikken selecteert een formulieritem
-en.all.FormCheckbox:Click to check this option
-de.all.FormCheckbox:Anklicken um die Option an/abzuschalten
-fr.all.FormCheckbox:Cliquer pour cocher cette option
-it.all.FormCheckbox:Clicca per scegliere questa opzione
-nl.all.FormCheckbox:Klikken selecteert deze optie
-en.all.FormRadio:Click to choose this option
-de.all.FormRadio:Anklicken wählt diese Option
-fr.all.FormRadio:Cliquer pour choisir cette option
-it.all.FormRadio:Clicca per selezionare questa opzione
-nl.all.FormRadio:Klikken kiest deze optie
-en.all.FormSubmit:Send form to %s
-de.all.FormSubmit:Daten übertragen an %s
-fr.all.FormSubmit:Envoyer le formulaire à %s
-it.all.FormSubmit:Invia il risultato del modulo a: %s
-nl.all.FormSubmit:Informatie versturen naar %s
-en.all.FormBadSubmit:Warning: form can not be submitted
-de.all.FormBadSubmit:Achtung: Daten können nicht gesendet werden
-fr.all.FormBadSubmit:Alerte : le formulaire n'a pas pu être envoyé
-it.all.FormBadSubmit:Attenzione: Il modulo non può essere inviato
-nl.all.FormBadSubmit:Waarschuwing: informatie kan niet verzonden worden
-en.all.FormButton:Warning: button can not be activated
-de.all.FormButton:Achtung: Schaltknopf kann nicht aktiviert werden
-fr.all.FormButton:Warning: Bouton ne peut être activé
-it.all.FormButton:Attenzione: il pulsante non può essere attivato
-nl.all.FormButton:Waarschuwing: knop kan niet geactiveerd worden
-en.all.FormTextarea:Click to edit the text
-de.all.FormTextarea:Anklicken zum Editieren
-fr.all.FormTextarea:Cliquer pour éditer ce texte
-it.all.FormTextarea:Clicca per editare il testo
-nl.all.FormTextarea:Klikken om tekst te bewerken
-en.all.FormTextbox:Click to edit this field
-de.all.FormTextbox:Anklicken zum Bearbeiten des Feldes
-fr.all.FormTextbox:Cliquer pour éditer ce champ
-it.all.FormTextbox:Clicca per editare il campo di testo
-nl.all.FormTextbox:Klikken om dit veld te bewerken
-en.all.FormReset:Reset form (not implemented)
-de.all.FormReset:Zurücksetzen (nicht implementiert)
-fr.all.FormReset:Effacer le formulaire (non implémenté)
-it.all.FormReset:Resetta il modulo
-nl.all.FormReset:Formulier opnieuw instellen (niet geïmplemented)
-en.all.FormFile:Drop a file here to upload it
-de.all.FormFile:Zum Upload Datei hierhin ziehen und fallenlassen
-fr.all.FormFile:Déposer un fichier ici pour le téléverser #Need review
-it.all.FormFile:Inserisci un file da inviare qui
-nl.all.FormFile:Het bestand hier plaatsen voor verzenden
-en.all.SelectMenu:Select
-de.all.SelectMenu:Auswahl
-fr.all.SelectMenu:Sélectionner
-it.all.SelectMenu:Seleziona
-nl.all.SelectMenu:Selecteer
-
-# Content titles
-#
-en.all.DrawTitle:%s (Draw image %lux%lu pixels)
-de.all.DrawTitle:%s (Draw Bild %lux%lu pixels)
-fr.all.DrawTitle:%s (Image Draw %lux%lu pixels)
-it.all.DrawTitle:%s (Immagine Draw %lux%lu pixel)
-nl.all.DrawTitle:%s (Draw-afbeelding %lux%lu punten)
-en.all.GIFTitle:%s (GIF image %lux%lu pixels)
-de.all.GIFTitle:%s (GIF Bild %lux%lu pixels)
-fr.all.GIFTitle:%s (Image GIF %lux%lu pixels)
-it.all.GIFTitle:%s (Immagine GIF %lux%lu pixel)
-nl.all.GIFTitle:%s (GIF-afbeelding %lux%lu punten)
-en.all.BMPTitle:%s (BMP image %lux%lu pixels)
-de.all.BMPTitle:%s (BMP Bild %lux%lu pixels)
-fr.all.BMPTitle:%s (Image BMP %lux%lu pixels)
-it.all.BMPTitle:%s (Immagine BMP %lux%lu pixel)
-nl.all.BMPTitle:%s (BMP-afbeelding %lux%lu punten)
-en.all.ICOTitle:%s (ICO image %lux%lu pixels)
-de.all.ICOTitle:%s (ICO Bild %lux%lu pixels)
-fr.all.ICOTitle:%s (Image BMP %lux%lu pixels)
-it.all.ICOTitle:%s (Immagine ICO %lux%lu pixel)
-nl.all.ICOTitle:%s (ICO-afbeelding %lux%lu punten)
-en.all.JPEGTitle:%s (JPEG image %lux%lu pixels)
-de.all.JPEGTitle:%s (JPEG Bild %lux%lu pixels)
-fr.all.JPEGTitle:%s (Image JPEG %lux%lu pixels)
-it.all.JPEGTitle:%s (Immagine JPEG %lux%lu pixel)
-nl.all.JPEGTitle:%s (JPEG-afbeelding %lux%lu punten)
-en.all.PNGTitle:%s (PNG image %lux%lu pixels)
-de.all.PNGTitle:%s (PNG Bild %lux%lu pixels)
-fr.all.PNGTitle:%s (Image PNG %lux%lu pixels)
-it.all.PNGTitle:%s (Immagine PNG %lux%lu pixel)
-nl.all.PNGTitle:%s (PNG-afbeelding %lux%lu punten)
-en.all.JNGTitle:%s (JNG image %lux%lu pixels)
-de.all.JNGTitle:%s (JNG Bild %lux%lu pixels)
-fr.all.JNGTitle:%s (Image JNG %lux%lu pixels)
-it.all.JNGTitle:%s (Immagine JNG %lux%lu pixel)
-nl.all.JNGTitle:%s (JNG-afbeelding %lux%lu punten)
-en.all.MNGTitle:%s (MNG image %lux%lu pixels)
-de.all.MNGTitle:%s (MNG Bild %lux%lu pixels)
-fr.all.MNGTitle:%s (Image MNG %lux%lu pixels)
-it.all.MNGTitle:%s (Immagine MNG %lux%lu pixel)
-nl.all.MNGTitle:%s (MNG-afbeelding %lux%lu punten)
-en.all.WebPTitle:%s (WebP image %lux%lu pixels)
-de.all.WebPTitle:%s (WebP Bild %lux%lu pixels)
-fr.all.WebPTitle:%s (Image WebP %lux%lu pixels)
-it.all.WebPTitle:%s (Immagine WebP %lux%lu pixel)
-nl.all.WebPTitle:%s (WebP-afbeelding %lux%lu punten)
-en.all.SpriteTitle:%s (Sprite image %lux%lu pixels)
-de.all.SpriteTitle:%s (Sprite Bild %lux%lu pixels)
-fr.all.SpriteTitle:%s (Image Sprite %lux%lu pixels)
-it.all.SpriteTitle:%s (Immagine Sprite %lux%lu pixel)
-nl.all.SpriteTitle:%s (Sprite-afbeelding %lux%lu punten)
-en.all.ArtWorksTitle:%s (ArtWorks image %lux%lu pixels)
-de.all.ArtWorksTitle:%s (ArtWorks Bild %lux%lu pixels)
-fr.all.ArtWorksTitle:%s (Image ArtWorks %lux%lu pixels)
-it.all.ArtWorksTitle:%s (Immagine ArtWorks %lux%lu pixel)
-nl.all.ArtWorksTitle:%s (ArtWorks-afbeelding %lux%lu punten)
-en.ami.DataTypesTitle:%s (%s image %lux%lu pixels)
-de.ami.DataTypesTitle:%s (%s Bild %lux%lu pixels)
-fr.ami.DataTypesTitle:%s (Image %s %lux%lu pixels)
-it.ami.DataTypesTitle:%s (Immagine %s %lux%lu pixel)
-nl.ami.DataTypesTitle:%s (%s afbeelding %lux%lu punten)
-
-# HTML page character set
-#
-en.all.Encoding0:from HTTP headers
-de.all.Encoding0:aus HTTP Kopfzeilen
-fr.all.Encoding0:dans les en-têtes HTTP
-it.all.Encoding0:da intestazioni HTTP
-nl.all.Encoding0:van HTTP-koppen
-en.all.Encoding1:detected
-de.all.Encoding1:ermittelt
-fr.all.Encoding1:détecté
-it.all.Encoding1:rilevato
-nl.all.Encoding1:gedetecteerd
-en.all.Encoding2:from <meta>
-de.all.Encoding2:aus <meta>
-fr.all.Encoding2:de <meta>
-it.all.Encoding2:da <meta>
-nl.all.Encoding2:van <meta>
-en.all.EncodingUnk:Unknown
-de.all.EncodingUnk:Unbekannt
-fr.all.EncodingUnk:Inconnu
-it.all.EncodingUnk:Sconosciuto
-nl.all.EncodingUnk:Onbekend
-
-# Directory browser
-#
-en.all.FileIndex:Index of %s
-de.all.FileIndex:Inhalt von %s
-fr.all.FileIndex:Index de %s
-it.all.FileIndex:Indice di %s
-nl.all.FileIndex:Index van %s
-en.all.FileParent:^ Up to parent directory
-de.all.FileParent:^ Eine Ebene höher
-fr.all.FileParent:^ Répertoire parent
-it.all.FileParent:^ Livello superiore
-nl.all.FileParent:^ Een mapniveau hoger
-en.all.FileDirectory:Directory
-de.all.FileDirectory:Verzeichnis
-fr.all.FileDirectory:Répertoire
-it.all.FileDirectory:Directory
-nl.all.FileDirectory:Map
-en.all.FileName:Name
-de.all.FileName:Name
-fr.all.FileName:Nom
-it.all.FileName:Nome
-nl.all.FileName:Naam
-en.all.FileSize:Size
-de.all.FileSize:Größe
-fr.all.FileSize:Taille
-it.all.FileSize:Dimensione
-nl.all.FileSize:Grootte
-en.all.FileDate:Date
-de.all.FileDate:Datum
-fr.all.FileDate:Date
-it.all.FileDate:Data
-nl.all.FileDate:Datum
-en.all.FileTime:Time
-de.all.FileTime:Zeit
-fr.all.FileTime:Time
-it.all.FileTime:Ora
-nl.all.FileTime:Tijd
-en.all.FileType:Type
-de.all.FileType:Typ
-fr.all.FileType:Type
-it.all.FileType:Tipo
-nl.all.FileType:Type
-
-# Misc
-#
-en.all.Selecting:Selecting
-de.all.Selecting:Auswählen
-fr.all.Selecting:Sélection en cours
-it.all.Selecting:Selezione
-nl.all.Selecting:selecteren
-en.all.FrameDrag:Resizing frames
-de.all.FrameDrag:Frames ändern
-fr.all.FrameDrag:Redimensionnement des cadres en cours
-it.all.FrameDrag:Ridimensione dei frame
-nl.all.FrameDrag:frames aan het aanpassen
-
-
-# Errors
-# ======
-#
-# This section contains error and warning messages which
-# are displayed to the user.
-#
-
-# Fetching errors - displayed as an HTML page
-#
-en.all.Not2xx:Server returned an error
-de.all.Not2xx:Server meldet Fehler zurück
-fr.all.Not2xx:Le serveur a renvoyé une erreur
-it.all.Not2xx:Il server ha riportato un errore
-nl.all.Not2xx:Server meldt een fout
-en.all.InvalidURL:The address <em>%s</em> could not be understood.
-de.all.InvalidURL:Die Adresse <em>%s</em> konnte nicht ausgewertet werden.
-fr.all.InvalidURL:L'adresse <em>%s</em> est incomprise.
-it.all.InvalidURL:L'indirizzo <em>%s</em> non è stato riconosciuto.
-nl.all.InvalidURL:Het adres <em>%s</em> klopt niet.
-
-# HTML error page
-#
-en.all.ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Page error</title></head><body><h1>Sorry, NetSurf was unable to display this page</h1><p><strong>%s</strong></p></body></html>
-de.all.ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Seitenfehler</title></head><body><h1>NetSurf konnte diese Seite leider nicht darstellen.</h1><p><strong>%s</strong></p></body></html>
-fr.all.ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Erreur</title></head><body><h1>Désolé, NetSurf n'a pas pu afficher cette page</h1><p><strong>%s</strong></p></body></html>
-it.all.ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Errore nella pagina</title></head><body><h1>Spiacente, NetSurf non è in grado di visualizzare questa pagina.</h1><p><strong>%s</strong></p></body></html>
-nl.all.ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Pagina fout</title></head><body><h1>Sorry, NetSurf kan deze pagina</h1><p><strong>%s</strong></p>niet tonen.</body></html>
-
-# General errors - displayed in a dialog box
-#
-# These may be augmented with further relevant information, which
-# is displayed after the contents of the relevant token.
-#
-en.all.PathToURL:An error occurred converting the file path to an URL:
-de.all.PathToURL:Fehler beim Konvertieren des Dateipfades in eine URL Adresse:
-fr.all.PathToURL:Une erreur s'est produite en convertissant le chemin du fichier en une URL:
-it.all.PathToURL:Si è verificato un errore durante la conversione del percorso file nell'URL:
-nl.all.PathToURL:Fout tijdens het omzetten van het bestandspad naar een adres:
-en.all.SaveError:The file could not be saved due to an error:
-de.all.SaveError:Die Datei konnte wegen eines Fehlers nicht gespeichert werden:
-fr.all.SaveError:Le fichier n'a pas pu être sauvé suite à une erreur:
-it.all.SaveError:Il file non può essere salvato a causa di un errore:
-nl.all.SaveError:Wegens een fout kan dit bestand niet opgeslagen worden:
-en.all.LoadError:The file could not be loaded due to an error:
-de.all.LoadError:Die Datei konnte wegen eines Fehlers nicht geladen werden:
-fr.all.LoadError:Le fichier n'a pas pu être chargé à cause d'une erreur:
-it.all.LoadError:Il file non può essere caricato a causa di un errore:
-nl.all.LoadError:Wegens een fout kan dit bestand niet geladen worden:
-en.all.MenuError:An error occurred when opening the menu:
-de.all.MenuError:Fehler beim Öffnen des Menüs:
-fr.all.MenuError:Une erreur s'est produite lors de l'ouverture du menu:
-it.all.MenuError:Si è verificato un errore durante l'apertura del menu:
-nl.all.MenuError:Fout bij het openen van het menu:
-en.all.DragError:An error occurred when dragging the icon:
-de.all.DragError:Fehler beim Ziehen des Symboles:
-fr.all.DragError:Une erreur s'est produite lors du déplacement d'icône:
-it.all.DragError:Si è verificato un errore durante il trascinamento dell'icona:
-nl.all.DragError:Fout bij het slepen van het symbool:
-en.all.TbarError:An error occurred when constructing the toolbar:
-de.all.TbarError:Fehler beim Aufbau der Toolbar:
-fr.all.TbarError:Une erreur s'est produite lors de la construction de la barre d'outils:
-it.all.TbarError:Si è verificato un errore durante la costruzione della barra strumenti:
-nl.all.TbarError:Fout bij het maken van de gereedschapbalk:
-en.all.WimpError:An unexpected Window Manager error occurred:
-de.all.WimpError:Unerwarteter Fehler im Window Manager:
-fr.all.WimpError:Une erreur inattendue du Gestionnaire de Fenêtres s'est produite:
-it.all.WimpError:Si è verificato un errore inatteso nella finestra principale:
-nl.all.WimpError:Er trad een onverwachte fout op in de Vensterbeheerder:
-en.all.DownloadWarn:This download may not complete:
-de.all.DownloadWarn:Der Download ist wahrscheinlich unvollständig:
-fr.all.DownloadWarn:Ce téléchargement ne peut pas se terminer:
-it.all.DownloadWarn:Questo trasferimento potrebbe essere incompleto:
-nl.all.DownloadWarn:Dit bestand is misschien niet compleet opgehaald:
-en.all.MiscError:An unexpected error occurred:
-de.all.MiscError:Unerwarteter Fehler:
-fr.all.MiscError:Une erreur inattendue s'est produite:
-it.all.MiscError:Si è verificato un errore inatteso:
-nl.all.MiscError:Er trad een onverwachte fout op:
-en.all.FileError:File does not exist:
-de.all.FileError:Datei existiert nicht:
-fr.all.FileError:Le fichier n'existe pas:
-it.all.FileError:Il file è inesistente:
-nl.all.FileError:Bestand lijkt niet te bestaan:
-en.all.PrintError:An error occurred when printing:
-de.all.PrintError:Ein Fehler trat während des Druckens auf:
-fr.all.PrintError:Une erreur s'est produite lors de l'impression:
-it.all.PrintError:Si è verificato un errore durante la stampa:
-nl.all.PrintError:Fout tijdens afdrukken:
-
-# Specific errors - displayed in a dialog box
-#
-en.all.NoMemory:NetSurf is running out of memory. Please free some memory and try again.
-de.all.NoMemory:Zu wenig Speicher. Bitte mehr Speicher zur Verfügung stellen und erneut versuchen.
-fr.all.NoMemory:NetSurf a besoin de plus de mémoire. Veuillez libérer de la mémoire et réessayer.
-it.all.NoMemory:Memoria insufficiente per l'esecuzione di NetSurf. Per favore liberane un pò e riprova nuovamente.
-nl.all.NoMemory:NetSurf heeft gebrek aan voldoende geheugen. Maak wat geheugen vrij en probeer het dan nog eens.
-en.ro.LongURL:The URL for this page is too long for NetSurf to display.
-de.ro.LongURL:The URL for this page is too long for NetSurf to display.
-fr.ro.LongURL:The URL for this page is too long for NetSurf to display.
-it.ro.LongURL:L'URL di questa pagina è troppo lungo per essere visualizzato su NetSurf.
-nl.ro.LongURL:Het adres van deze pagina is te lang voor NetSurf om te kunnen tonen.
-en.ro.FontBadInst:An error occurred when initialising fonts due to the presence of obsolete copies of the ROM fonts on disc. NetSurf will exit and launch a program which will attempt to fix this.
-de.ro.FontBadInst:Font-Initialisierung fehlerhaft. Obsolete Kopien von ROM Fonts auf dem lokalem Speichermedium. Fehlerbehebung startet.
-fr.ro.FontBadInst:Une erreur s'est produite lors de l'initialisation des fontes à cause de la présence de copies obsolètes de fontes ROM sur disque. NetSurf va sortir et lancer un programme qui va tenter de réparer cela.
-it.ro.FontBadInst:Si è verificato un errore durante l'inizializzazione dei font a causa della presenza di una copia obsoleta dei font "ROM" nel disco. NetSurf verrà chiuso e si cercherà di lanciare un programma in grado di risolvere questo problema.
-nl.ro.FontBadInst:Probleem ontstaan bij het initialiseren van de lettertypen. Een schijf bevat een map met geactiveerde ROM-lettertypes die overbodig zijn. NetSurf wordt gestopt en activeert een programma die dit probleem probeert te verhelpen.
-en.ro.FontError:Failed to open font "Homerton.Medium" (%s).
-de.ro.FontError:Fehler beim öffnen des Fonts "Homerton.Medium" (%s).
-fr.ro.FontError:Échec d'ouverture de la fonte "Homerton.Medium" (%s).
-it.ro.FontError:Impossibile aprire il font "Homerton.Medium" (%s).
-nl.ro.FontError:Het lettertypebestand "Homerton.Medium" kan niet worden geopend (%s).
-en.ro.Resolvers:No domain name servers are configured, so only browsing local files will be possible. Use Configure to set your name server(s).
-de.ro.Resolvers:Keine Domain Name Servers (DNS) konfiguriert. Nur lokale Dateien sind ladbar. Bitte DNS unter !Boot eintragen.
-fr.ro.Resolvers:Aucun nom de domaine n'étant configuré, seul la consultation de fichiers locaux est possible. Utilisez Configure pour définir les serveurs de noms.
-it.ro.Resolvers:Non è stato configurato nessun nome per i domini dei server, perciò sarà possibile effettuare la navigazione dei file solo in modalità locale. Usa "Configura" per impostare il nome (o i nomi) del/dei server.
-nl.ro.Resolvers:Er zijn geen DNS-servers ingesteld, dus kunnen alleen lokale bestanden worden bekeken. Ga naar de netwerkinstellingen via !Boot om de DNS-server(s) in te stellen.
-en.all.NoDiscSpace:Not enough space available on disc.
-de.all.NoDiscSpace:Nicht genug Speicherplatz auf dem Medium vorhanden.
-fr.all.NoDiscSpace:Pas assez d'espace disque disponible.
-it.all.NoDiscSpace:Spazio insufficiente nel disco.
-nl.all.NoDiscSpace:Onvoldoende ruimte beschikbaar op schijf.
-en.ro.Template:A window template is missing from the Templates file. Please reinstall NetSurf.
-de.ro.Template:Ein Template für ein Fenster fehlt in der Datei Templates. Bitte NetSurf neu installieren.
-fr.ro.Template:Un modèle de fenêtre est absent du fichier Templates. Réinstallez NetSurf SVP.
-it.ro.Template:Una finestra di template risulta mancante. Per favore reinstalla NetSurf.
-nl.ro.Template:Er ontbreekt een vensterdefinitie in het Templates-bestand. Installeer NetSurf opnieuw.
-en.all.HotlistSaveError:The hotlist was unable to be correctly saved.
-de.all.HotlistSaveError:Hotlist konnte nicht korrekt gespeichert werden.
-fr.all.HotlistSaveError:Les favoris n'ont pas pu être sauvés correctement.
-it.all.HotlistSaveError:Non è stato possibile salvare correttamente i segnalibri.
-nl.all.HotlistSaveError:De favorietenlijst kon niet correct worden bewaard.
-en.all.TreeLoadError:The tree was unable to be correctly loaded.
-de.all.TreeLoadError:The tree was unable to be correctly loaded.
-fr.all.TreeLoadError:The tree was unable to be correctly loaded.
-it.all.TreeLoadError:L'albero della directory non è stato caricato correttamente.
-nl.all.TreeLoadError:De gegevensstructuur kon niet correct worden geladen.
-en.all.NoDirError:%s is not a directory
-de.all.NoDirError:%s ist kein Verzeichnis.
-fr.all.NoDirError:%s n'est pas un répertoire
-it.all.NoDirError:%s non è una directory
-nl.all.NoDirError:%s is geen map
-en.ro.NoPathError:To save, drag the icon to a directory display
-de.ro.NoPathError:Symbol in ein Verzeichnisfenster ziehen um zu Speichern.
-fr.ro.NoPathError:Pour sauver, lâcher cette icône dans une fenêtre de Filer
-it.ro.NoPathError:Per salvare, trascina l'icona in una directory di visualizzazione.
-nl.ro.NoPathError:Het symbool naar een geopende mapvenster slepen om te bewaren.
-en.all.NoNameError:Please enter a name
-de.all.NoNameError:Bitte einen Namen eingeben.
-fr.all.NoNameError:Entrez un nom SVP
-it.all.NoNameError:Inserisci un nome
-nl.all.NoNameError:Geef een naam op
-en.all.NoURLError:Please enter a URL
-de.all.NoURLError:Bitte eine URL Adresse eingeben.
-fr.all.NoURLError:Entrez une URL SVP
-it.all.NoURLError:Inserisci un URL
-nl.all.NoURLError:Geef een adres op
-en.all.URIError:NetSurf was unable to parse this URI file due to a syntax error.
-de.all.URIError:NetSurf konnte die URI Datei nicht lesen. Syntax Fehler.
-fr.all.URIError:NetSurf est incapable de traiter ce fichier URI à cause d'une erreur de syntaxe.
-it.all.URIError:NetSurf non è stato in grado di processare questo file URI a causa di un errore di sintassi.
-nl.all.URIError:NetSurf kon dit URI-bestand niet verwerken vanwege een syntaxisfout.
-en.all.EmptyError:file is empty.
-de.all.EmptyError:Die Datei ist leer.
-fr.all.EmptyError:Le fichier est vide.
-it.all.EmptyError:Il file è vuoto.
-nl.all.EmptyError:bestand is leeg.
-en.all.SearchError:Invalid Search.
-de.all.SearchError:Suche fehlerhaft.
-fr.all.SearchError:Recherche Non-Valide.
-it.all.SearchError:Ricerca non valida.
-nl.all.SearchError:Ongeldige zoekopdracht.
-en.all.PrintErrorRO2:It appears that the printer is busy.
-de.all.PrintErrorRO2:Der Drucker scheint beschäftigt zu sein.
-fr.all.PrintErrorRO2:Il semble que l'imprimante soit occupée.
-it.all.PrintErrorRO2:La stampante sembra essere occupata.
-nl.all.PrintErrorRO2:De printer lijkt al bezig te zijn.
-en.ro.AWNotSeen:Please locate the AWViewer application and try again.
-de.ro.AWNotSeen:Das Programm AWViewer wurde nicht gefunden.
-fr.ro.AWNotSeen:Localisez l'application AMViewer SVP puis réessayez.
-it.ro.AWNotSeen:Per favore fornisci l'applicativo AWViewer e riprova nuovamente.
-nl.ro.AWNotSeen:Initialiseer het AWViewer-programma door het op te zoeken en probeer het dan nog eens.
-en.all.EncNotRec:Encoding type not recognised.
-de.all.EncNotRec:Encodierung nicht erkannt.
-fr.all.EncNotRec:Type de codage non reconnu.
-it.all.EncNotRec:Tipo di codifica sconosciuta.
-nl.all.EncNotRec:Codeertype is niet herkend.
-en.all.FileOpenError:could not open file '%s'
-de.all.FileOpenError:Datei ist nicht zu öffnen: '%s'
-fr.all.FileOpenError:ne parvient pas à ouvrir le fichier '%s'
-it.all.FileOpenError:Impossibile aprire il file '%s'
-nl.all.FileOpenError:kan bestand '%s' niet openen
-en.all.DirectoryError:directory '%s' already exists
-de.all.DirectoryError:Verzeichnis '%s' existiert bereits.
-fr.all.DirectoryError:répertoire '%s' existe déjà
-it.all.DirectoryError:La directory '%s' è già esistente
-nl.all.DirectoryError:map '%s' bestaat reeds
-
-en.ro.SprIsNull:Unable to convert image to sprite
-de.ro.SprIsNull:Bild nicht in Sprite konvertierbar
-nl.ro.SprIsNull:Afbeelding kan niet worden omgezet in een sprite.
-
-# Error messages for Amiga version only
-en.ami.CompError:Unable to open
-de.ami.CompError:Nicht zu öffnen
-fr.ami.CompError:Unable to open
-it.ami.CompError:Impossibile aprire
-nl.ami.CompError:Niet te openen
-en.ami.BMConvErr:NetSurf requires guigfx.library to display images in this mode
-de.ami.BMConvErr:NetSurf benötigt die guigfx.library für Bilder in diesem Mode
-fr.ami.BMConvErr:NetSurf requires guigfx.library to display images in this mode
-it.ami.BMConvErr:NetSurf richiede guigfx.library per la visualizzazione delle immagini in questa modalità
-nl.ami.BMConvErr:NetSurf requires guigfx.library to display images in this mode
-en.ami.MultiTabClose:Are you sure you want to close multiple tabs?
-de.ami.MultiTabClose:Wirklich mehrere Tabs schließen?
-fr.ami.MultiTabClose:Are you sure you want to close multiple tabs?
-it.ami.MultiTabClose:Sono rimaste aperte più schede, sei sicuro di voler uscire da NetSurf?
-nl.ami.MultiTabClose:Er zijn meerdere tabbladen geopend. Tabbladen allemaal sluiten?
-en.ami.TCPIPShutdown:The TCP/IP stack has signalled that it is about to shutdown and NetSurf must exit.  NetSurf will quit in 5 seconds unless this shutdown is aborted.
-de.ami.TCPIPShutdown:Der TCP/IP Stack geht grad' zur Hölle und reißt Netsurf mit sich. In genau 5 Sekunden - es sei denn, der Shutdown wird abgebrochen.
-fr.ami.TCPIPShutdown:The TCP/IP stack has signalled that it is about to shutdown and NetSurf must exit.  NetSurf will quit in 5 seconds unless this shutdown is aborted.
-it.ami.TCPIPShutdown:Lo stack TCP/IP ha dato segnale di essere in procinto di arresto,  NetSurf verrà chiuso.  NetSurf si chiuderà entro 5 secondi a meno che lo shutdown non venga interrotto.
-nl.ami.TCPIPShutdown:De TCP/IP-stack meldt dat deze wordt afgesloten waardoor NetSurf gestopt moet worden. NetSurf zal stoppen in 5 seconden, tenzij het afsluiten wordt afgebroken.
-en.ami.AbortShutdown:Abort shutdown
-de.ami.AbortShutdown:Shutdown abbrechen
-fr.ami.AbortShutdown:Abort shutdown
-it.ami.AbortShutdown:Interrompi lo shutdown
-nl.ami.AbortShutdown:Afsluiten afbreken
-
-
-# Queries
-# =======
-#
-# This section contains queries which are displayed to the user
-#
-
-en.all.AbortDownload:Are you sure you wish to abort this download?
-de.all.AbortDownload:Soll das Herunterladen der Datei wirklich abgebrochen werden ?
-fr.all.AbortDownload:Étes-vous sûr de vouloir interrompre ce téléchargement ?
-it.all.AbortDownload:Sei sicuro di voler annullare questo trasferimento?
-nl.all.AbortDownload:Zeker weten dat deze ophaalopdracht afgebroken moet worden?
-en.all.QuitDownload:One or more downloads are still in progress. Are you sure you wish to quit?
-de.all.QuitDownload:Das Herunterladen ein oder mehrerer Dateien wurde noch nicht abgeschlossen. Soll NetSurf trotzdem beendet werden ?
-fr.all.QuitDownload:Un ou plusieurs téléchargements sont en cours. Êtes-vous sûr de vouloir quitter ?
-it.all.QuitDownload:Uno o più file si trovano in fase di scaricamento, sei sicuro di voler chiudere NetSurf?
-nl.all.QuitDownload:Eén of meer ophaalopdrachten zijn nog in uitvoering. Toch afbreken?
-en.all.OverwriteFile:A file with that name already exists and would be lost.
-de.all.OverwriteFile:Eine Datei mit diesem Namen existiert bereits und würde überschrieben werden.
-fr.all.OverwriteFile:Un fichier portant ce nom existe déjà et serait perdu.
-it.all.OverwriteFile:Un file con questo nome è già esistente, continuare comporterà la sovrascrittura del file originale.
-nl.all.OverwriteFile:Een bestand met deze naam bestaat al en zal door deze actie overschreven worden.
-en.all.RemoveHotlist:Are you sure you wish to remove this address from the hotlist?
-de.all.RemoveHotlist:Adresse wirklich aus der Hotlist entfernen?
-fr.all.RemoveHotlist:Êtes-vous sûr de vouloir supprimer l'adresse de la liste critique?
-it.all.RemoveHotlist:Sei sicuro di voler rimuovere questo indirizzo dai segnalibri?
-nl.all.RemoveHotlist:Zeker weten dat dit adres uit de favorietenlijst verwijderd moet worden?
-
-# Page fetching
-# =============
-#
-# This section contains messages which may be displayed whilst
-# fetching a page or other content
-#
-
-# Fetch status messages - displayed in status bar
-#
-en.all.Progress:%s of %s
-de.all.Progress:%s von %s
-fr.all.Progress:%s reçus de %s
-it.all.Progress:%s di %s
-nl.all.Progress:%s van %s
-en.all.ProgressU:%s
-de.all.ProgressU:%s
-fr.all.ProgressU:%s
-it.all.ProgressU:%s
-nl.all.ProgressU:%s
-en.all.RecPercent:Received %s (%u%%)
-de.all.RecPercent:Empfangen %s (%u%%)
-fr.all.RecPercent:%s (%u%%)
-it.all.RecPercent:ricevuti %s (%u%%)
-nl.all.RecPercent:ontvangen %s (%u%%)
-en.all.Received:Received %s
-de.all.Received:Empfangen %s
-fr.all.Received:%s reçus
-it.all.Received:ricevuti %s
-nl.all.Received:ontvangen %s
-en.all.Redirecting:Redirecting...
-de.all.Redirecting:Umleiten...
-fr.all.Redirecting:Redirection en cours...
-it.all.Redirecting:redirezione in corso...
-nl.all.Redirecting:doorverwijzen...
-en.all.Loading:Loading
-de.all.Loading:Laden
-fr.all.Loading:Chargement
-it.all.Loading:Caricamento della pagina...
-nl.all.Loading:laden
-en.all.Fetching:Fetching data
-de.all.Fetching:Daten holen
-fr.all.Fetching:Récupération des données
-it.all.Fetching:Ricezione
-nl.all.Fetching:ophalen
-en.all.Processing:Processing
-de.all.Processing:Auswerten
-fr.all.Processing:Traitement
-it.all.Processing:elaborazione del documento in corso...
-nl.all.Processing:verwerking
-en.all.Formatting:Formatting
-de.all.Formatting:Formatieren
-fr.all.Formatting:Formatage
-it.all.Formatting:formattazione del documento in corso...
-nl.all.Formatting:opmaken
-en.all.Done:Done
-de.all.Done:Fertiggestellt
-fr.all.Done:Terminé
-it.all.Done:Completato
-nl.all.Done:klaar
-en.all.Stopped:Stopped
-de.all.Stopped:Angehalten
-fr.all.Stopped:Arrêté
-it.all.Stopped:Interrotto
-nl.all.Stopped:gestopt
-
-# Fetch warning/error messages - displayed in status bar
-#
-en.all.BadRedirect:Bad redirect URL
-de.all.BadRedirect:Falsche URL für Redirect
-fr.all.BadRedirect:Mauvais URL de redirection
-it.all.BadRedirect:Errata redirezione dell'URL
-nl.all.BadRedirect:foutief doorverwijzen naar adres
-en.all.FetchFailed:Unable to fetch document
-de.all.FetchFailed:Kann Dokument nicht fetchen
-fr.all.FetchFailed:Récupération du fichier impossible
-it.all.FetchFailed:Impossibile ottenere il documento
-nl.all.FetchFailed:Dit document kan niet worden opgehaald.
-en.all.NotCSS:Warning: stylesheet is not CSS
-de.all.NotCSS:Warnung:Stylesheet ist kein CSS
-fr.all.NotCSS:Attention: feuille de style non CSS
-it.all.NotCSS:Attenzione: La dicitura "Foglio di stile" non ha nulla a che vedere con i CSS
-nl.all.NotCSS:melding: stijlblad is geen CSS
-en.all.NotFavIco:Favicon not supported
-de.all.NotFavIco:Favicon wird nicht unterstützt
-fr.all.NotFavIco:Favicon non-soutenu
-it.all.NotFavIco:Favicon non supportata
-nl.all.NotFavIco:websitesymbool wordt niet ondersteund
-en.all.BadObject:Warning: bad object type
-de.all.BadObject:Warnung: falscher Objekttyp
-fr.all.BadObject:Attention: mauvais type d'objet
-it.all.BadObject:Errore nell'analisi del tipo di oggetto
-nl.all.BadObject:melding: fout objecttype
-en.all.ObjError:Error loading object: %s
-de.all.ObjError:Fehler beim Laden des Objektes: %s
-fr.all.ObjError:Erreur lors du chargement de: %s
-it.all.ObjError:Errore nel caricamento dell'oggetto: %s
-nl.all.ObjError:fout bij het laden object: %s
-en.all.ParsingFail:Parsing the document failed.
-de.all.ParsingFail:Dokumentparsing ist fehlgeschlagen.
-fr.all.ParsingFail:L'analyse syntaxique du document a échoué.
-it.all.ParsingFail:Analisi del documento fallita.
-nl.all.ParsingFail:fout bij ontleden van dit document.
-en.all.CSSGeneric:Error processing CSS
-de.all.CSSGeneric:CSS Auswertung klappt nicht
-fr.all.CSSGeneric:Erreur lors du traitement CSS
-nl.all.CSSGeneric:fout bij het verwerken van de CSS
-it.all.CSSGeneric:Errore nell'elaborazione del CSS
-
-en.all.CSSBase:Base stylesheet failed to load
-fr.all.CSSBase:Échec de chargement de la feuille de style de base
-nl.all.CSSBase:basisstijlblad kan niet worden geladen
-it.all.CSSBase:Impossibile caricare il foglio di stile base
-
-en.all.BadGIF:Reading GIF failed.
-de.all.BadGIF:Lesen einer GIF Datei fehlgeschlagen.
-fr.all.BadGIF:Erreur de lecture de GIF.
-it.all.BadGIF:Lettura del file GIF fallita.
-nl.all.BadGIF:fout bij lezen GIF.
-en.all.BadBMP:Reading BMP failed.
-de.all.BadBMP:Lesen einer BMP Datei fehlgeschlagen.
-fr.all.BadBMP:Erreur de lecture de BMP.
-it.all.BadBMP:Lettura del file BMP fallita.
-nl.all.BadBMP:fout bij lezen BMP.
-en.all.BadICO:Reading ICO failed.
-de.all.BadICO:Lesen einer ICO Datei fehlgeschlagen.
-fr.all.BadICO:Erreur de lecture de ICO.
-it.all.BadICO:Lettura del file ICO fallita.
-nl.all.BadICO:fout bij lezen ICO.
-en.all.PNGError:Error converting PNG.
-de.all.PNGError:Fehler beim PNG konvertieren.
-fr.all.PNGError:Error converting PNG.
-it.all.PNGError:Errore durante la conversione PNG.
-nl.all.PNGError:fout bij omzetting PNG.
-en.all.MNGError:Error converting MNG/PNG/JNG: %i
-de.all.MNGError:MNG Library Fehler: %i
-fr.all.MNGError:Erreur dans la bibliothèque MNG: %i
-it.all.MNGError:Errore durante la conversione MNG/PNG/JNG: %i
-nl.all.MNGError:MNG-bibliotheekfout: %i
-en.all.BadSprite:Invalid or corrupt Sprite data.
-de.all.BadSprite:Ungültiges oder beschädigtes Sprite.
-fr.all.BadSprite:Les données du sprite sont invalides ou corrompues.
-it.all.BadSprite:Dati del file Sprite invalidi o corrotti.
-nl.all.BadSprite:foutief sprite-bestand.
-
-# HTTP status codes
-#
-en.all.HTTP0:OK
-de.all.HTTP0:OK
-fr.all.HTTP0:OK
-it.all.HTTP0:OK
-nl.all.HTTP0:OK
-en.all.HTTP200:OK
-de.all.HTTP200:OK
-fr.all.HTTP200:OK
-it.all.HTTP200:OK
-nl.all.HTTP200:OK
-en.all.HTTP201:Created
-de.all.HTTP201:Created
-fr.all.HTTP201:Créé
-it.all.HTTP201:Creato
-nl.all.HTTP201:Aangemaakt
-en.all.HTTP202:Accepted
-de.all.HTTP202:Accepted
-fr.all.HTTP202:Accepté
-it.all.HTTP202:Accettato
-nl.all.HTTP202:Aanvaard
-en.all.HTTP203:Non-authoritative information
-de.all.HTTP203:Non-authoritative information
-fr.all.HTTP203:Information ne faisant pas autorité
-it.all.HTTP203:Informazione non autorevole
-nl.all.HTTP203:Niet-gemachtigde informatie
-en.all.HTTP204:No content
-de.all.HTTP204:No content
-fr.all.HTTP204:Pas de contenu
-it.all.HTTP204:Nessun contenuto
-nl.all.HTTP204:Geen inhoud
-en.all.HTTP205:Reset content
-de.all.HTTP205:Reset content
-fr.all.HTTP205:Remise-à-Zéro du contenu
-it.all.HTTP205:Resetta contenuto
-nl.all.HTTP205:Inhoud opnieuw instellen
-en.all.HTTP206:Partial content
-de.all.HTTP206:Partial content
-fr.all.HTTP206:Contenu partiel
-it.all.HTTP206:Contenuto parziale
-nl.all.HTTP206:Gedeeltelijke inhoud
-en.all.HTTP300:Multiple choices
-de.all.HTTP300:Multiple choices
-fr.all.HTTP300:Choix multiples
-it.all.HTTP300:Scelte multiple
-nl.all.HTTP300:Meerkeuze
-en.all.HTTP301:Moved permanently
-de.all.HTTP301:Moved permanently
-fr.all.HTTP301:A déménagé définitivement
-it.all.HTTP301:Rimosso permanentemente
-nl.all.HTTP301:Definitief verplaatst
-en.all.HTTP302:Found
-de.all.HTTP302:Found
-fr.all.HTTP302:Trouvé
-it.all.HTTP302:Trovato
-nl.all.HTTP302:Gevonden
-en.all.HTTP303:See other
-de.all.HTTP303:See other
-fr.all.HTTP303:Voir autre
-it.all.HTTP303:Mostra altro
-nl.all.HTTP303:Zie andere
-en.all.HTTP304:Not modified
-de.all.HTTP304:Not modified
-fr.all.HTTP304:Pas modifié
-it.all.HTTP304:Non modificato
-nl.all.HTTP304:Niet gewijzigd
-en.all.HTTP305:Use proxy
-de.all.HTTP305:Use proxy
-fr.all.HTTP305:Utilisez un proxy
-it.all.HTTP305:Usa Proxy
-nl.all.HTTP305:Gebruik Proxy
-en.all.HTTP307:Temporary redirect
-de.all.HTTP307:Temporary redirect
-fr.all.HTTP307:Redirection temporaire
-it.all.HTTP307:Redirezione temporanea
-nl.all.HTTP307:Tijdelijke omleiding
-en.all.HTTP400:Bad request
-de.all.HTTP400:Bad request
-fr.all.HTTP400:Mauvaise requête
-it.all.HTTP400:Richiesta errata
-nl.all.HTTP400:Foute aanvraag
-en.all.HTTP401:Unauthorized
-de.all.HTTP401:Unauthorized
-fr.all.HTTP401:Sans autorisation
-it.all.HTTP401:Autorizzazione negata
-nl.all.HTTP401:Niet geautoriseerd
-en.all.HTTP402:Payment required
-de.all.HTTP402:Payment required
-fr.all.HTTP402:Paiment nécessaire
-it.all.HTTP402:Richiesto di pagamento
-nl.all.HTTP402:Betalende toegang
-en.all.HTTP403:Forbidden
-de.all.HTTP403:Forbidden
-fr.all.HTTP403:Interdit
-it.all.HTTP403:Vietato
-nl.all.HTTP403:Verboden toegang
-en.all.HTTP404:Not found
-de.all.HTTP404:Not found
-fr.all.HTTP404:Pas trouvé
-it.all.HTTP404:Non trovato
-nl.all.HTTP404:Niet gevonden
-en.all.HTTP405:Method not allowed
-de.all.HTTP405:Method not allowed
-fr.all.HTTP405:Méthode non autorisée
-it.all.HTTP405:Metodo non permesso
-nl.all.HTTP405:Methode niet toegestaan
-en.all.HTTP406:Not acceptable
-de.all.HTTP406:Not acceptable
-fr.all.HTTP406:Pas acceptable
-it.all.HTTP406:Non accettabile
-nl.all.HTTP406:Niet aanvaardbaar
-en.all.HTTP407:Proxy authentication required
-de.all.HTTP407:Proxy authentication required
-fr.all.HTTP407:Authentification du proxy nécessaire
-it.all.HTTP407:Autentificazione Proxy necessaria
-nl.all.HTTP407:Authenticatie op de proxy-server verplicht
-en.all.HTTP408:Request timeout
-de.all.HTTP408:Request timeout
-fr.all.HTTP408:Délai de requête trop long
-it.all.HTTP408:Timeout della richiesta
-nl.all.HTTP408:Aanvraagtijd verstreken
-en.all.HTTP409:Conflict
-de.all.HTTP409:Conflict
-fr.all.HTTP409:Conflit
-it.all.HTTP409:Conflitto
-nl.all.HTTP409:Conflict
-en.all.HTTP410:Gone
-de.all.HTTP410:Gone
-fr.all.HTTP410:Parti
-it.all.HTTP410:Irraggiungibile
-nl.all.HTTP410:Verdwenen
-en.all.HTTP411:Length required
-de.all.HTTP411:Length required
-fr.all.HTTP411:Longueur nécessaire
-it.all.HTTP411:Lunghezza richiesta
-nl.all.HTTP411:Lengte benodigd
-en.all.HTTP412:Precondition failed
-de.all.HTTP412:Precondition failed
-fr.all.HTTP412:Échec de précondition
-it.all.HTTP412:Precondizione fallita
-nl.all.HTTP412:Niet voldaan aan vooraf gestelde voorwaarde
-en.all.HTTP413:Request entity too large
-de.all.HTTP413:Request entity too large
-fr.all.HTTP413:Demande d'entité trop grande
-it.all.HTTP413:Entità richiesta troppo larga
-nl.all.HTTP413:Aanvraag te groot
-en.all.HTTP414:Request-URI too long
-de.all.HTTP414:Request-URI too long
-fr.all.HTTP414:Request-URI trop long
-it.all.HTTP414:Richiesta URI troppo lunga
-nl.all.HTTP414:Aanvraagadres te lang
-en.all.HTTP415:Unsupported media type
-de.all.HTTP415:Unsupported media type
-fr.all.HTTP415:Type de média non supporté
-it.all.HTTP415:Tipo di media non supportato
-nl.all.HTTP415:Media-type niet ondersteund
-en.all.HTTP416:Requested range not satisfiable
-de.all.HTTP416:Requested range not satisfiable
-fr.all.HTTP416:Étendue demandée non satisfaisable
-it.all.HTTP416:Estensione richiesta non soddisfabile
-nl.all.HTTP416:Aangevraagd gedeelte niet opvraagbaar
-en.all.HTTP417:Expectation failed
-de.all.HTTP417:Expectation failed
-fr.all.HTTP417:Attente non satisfaite
-it.all.HTTP417:Previsione fallita
-nl.all.HTTP417:Niet voldaan aan verwachting
-en.all.HTTP500:Internal server error
-de.all.HTTP500:Internal server error
-fr.all.HTTP500:Erreur interne du serveur
-it.all.HTTP500:Errore interno del server
-nl.all.HTTP500:Interne serverfout
-en.all.HTTP501:Not implemented
-de.all.HTTP501:Not implemented
-fr.all.HTTP501:Non implémenté
-it.all.HTTP501:Non implementata
-nl.all.HTTP501:Niet geïmplementeerd
-en.all.HTTP502:Bad gateway
-de.all.HTTP502:Bad gateway
-fr.all.HTTP502:Mauvaise passerelle
-it.all.HTTP502:Gateway errato
-nl.all.HTTP502:Ongeldige Gateway
-en.all.HTTP503:Service unavailable
-de.all.HTTP503:Service unavailable
-fr.all.HTTP503:Service non disponible
-it.all.HTTP503:Servizio non disponibile
-nl.all.HTTP503:Dienst niet beschikbaar
-en.all.HTTP504:Gateway timeout
-de.all.HTTP504:Gateway timeout
-fr.all.HTTP504:Délai passerelle expiré
-it.all.HTTP504:Timeout Gateway
-nl.all.HTTP504:Aanvraagtijd bij Gateway verstreken
-en.all.HTTP505:HTTP version not supported
-de.all.HTTP505:HTTP version not supported
-fr.all.HTTP505:version HTTP non supportée
-it.all.HTTP505:Versione HTTP non supportata
-nl.all.HTTP505:HTTP-versie wordt niet ondersteund
-
 # User interface
 # ==============
 #
@@ -3877,89 +3950,6 @@ fr.all.ThemeApplyErr:Une erreur s'est produite en essayant d'appliquer le thème
 it.all.ThemeApplyErr:Si è verificato un errore durante il tentativo di applicazione del tema
 nl.all.ThemeApplyErr:Een fout ontstond tijdens het toevoegen van het opgehaalde thema.
 
-
-# General
-# =======
-#
-# Some general purpose words and phrases
-#
-
-en.all.Bytes: B
-de.all.Bytes: B
-fr.all.Bytes: octets
-it.all.Bytes: Byte
-nl.all.Bytes: B
-en.all.kBytes: kB
-de.all.kBytes: kB
-fr.all.kBytes: Ko
-it.all.kBytes: KB
-nl.all.kBytes: KB
-en.all.MBytes: MB
-de.all.MBytes: MB
-fr.all.MBytes: Mo
-it.all.MBytes: MB
-nl.all.MBytes: MB
-en.all.GBytes: GB
-de.all.GBytes: GB
-fr.all.GBytes: Go
-it.all.GBytes: GB
-nl.all.GBytes: GB
-
-en.all.Yes:Yes
-de.all.Yes:Ja
-fr.all.Yes:Oui
-it.all.Yes:Si
-nl.all.Yes:Ja
-en.all.No:No
-de.all.No:Nein
-fr.all.No:Non
-it.all.No:No
-nl.all.No:Nee
-en.all.Replace:Replace file
-de.all.Replace:Überschreiben
-fr.all.Replace:Remplacer le fichier
-it.all.Replace:Sostituire il file
-nl.all.Replace:Vervang bestand
-en.all.DontReplace:Don't replace
-de.all.DontReplace:Abbrechen
-fr.all.DontReplace:Ne pas remplacer le fichier
-it.all.DontReplace:Non sostituire
-nl.all.DontReplace:Annuleer bewaaractie
-en.all.Remove:Remove address
-de.all.Remove:Adresse entfernen
-fr.all.Remove:Enlever/retirer une adresse
-it.all.Remove:Rimuovi indirizzo
-nl.all.Remove:Verwijder adres
-en.all.DontRemove:Don't remove
-de.all.DontRemove:Behalten
-fr.all.DontRemove:Ne pas enlever/retirer
-it.all.DontRemove:Non rimuovere
-nl.all.DontRemove:Niet verwijderen
-en.all.obj:object
-de.all.obj:Objekt
-fr.all.obj:objet
-it.all.obj:oggetto
-nl.all.obj:object
-en.all.objs:objects
-de.all.objs:Objekte
-fr.all.objs:objets
-it.all.objs:oggetti
-nl.all.objs:objecten
-en.all.styl:stylesheet
-de.all.styl:Formatvorlage
-fr.all.styl:feuille de styles
-it.all.styl:foglio di stile
-nl.all.styl:stijlblad
-en.all.styls:stylesheets
-de.all.styls:Formatvorlagen
-fr.all.styls:feuilles de styles
-it.all.styls:fogli di stile
-nl.all.styls:stijlbladen
-en.all.OK:OK
-de.all.OK:OK
-fr.all.OK:OK
-it.all.OK:OK
-nl.all.OK:OK
 en.ami.More:More
 de.ami.More:Mehr
 fr.ami.More:More
@@ -6440,38 +6430,54 @@ nl.all.SetPassword:Stel wachtwoord in
 # These tokens appear to be unused at the current time.
 #
 
-en.all.TreeHistory:NetSurf history
-de.all.TreeHistory:NetSurf Verlauf
-fr.all.TreeHistory:Historique de NetSurf
-it.all.TreeHistory:Cronologia NetSurf
-nl.all.TreeHistory:NetSurf-geschiedenis
-en.all.SaveSelect:Save
-de.all.SaveSelect:Sichern
-fr.all.SaveSelect:Sauver
-it.all.SaveSelect:Salva
-nl.all.SaveSelect:Bewaar
-en.all.ExportAs:Export as
-de.all.ExportAs:Exportieren als
-fr.all.ExportAs:Exporter sous
-it.all.ExportAs:Esporta come...
-nl.all.ExportAs:Exporteer als
-en.all.AnimImg:Animations
-de.all.AnimImg:Animationen
-fr.all.AnimImg:Animations et effets
-it.all.AnimImg:Animazioni
-nl.all.AnimImg:Animatie
-en.all.DitherImg:Dither images
-de.all.DitherImg:Bilder dithern
-fr.all.DitherImg:Tramage
-it.all.DitherImg:Immagini Dither
-nl.all.DitherImg:Benader kleur op afbeelding
-en.all.FilterImg:Smooth images
-de.all.FilterImg:Bilder weichzeichnen
-fr.all.FilterImg:Adoucir les images
-it.all.FilterImg:Immagini Smooth
-nl.all.FilterImg:Maak afbeelding vloeiend
-en.all.RenderText:Blend text to background
-de.all.RenderText:Text/Hintergrund Übergang weich
-fr.all.RenderText:Fondre le texte sur l'arrière-plan
-it.all.RenderText:Sfuma testo di sfondo
-nl.all.RenderText:Harmoniseer tekst met achtergrond
+#en.all.TreeHistory:NetSurf history
+#de.all.TreeHistory:NetSurf Verlauf
+#fr.all.TreeHistory:Historique de NetSurf
+#it.all.TreeHistory:Cronologia NetSurf
+#nl.all.TreeHistory:NetSurf-geschiedenis
+#en.all.SaveSelect:Save
+#de.all.SaveSelect:Sichern
+#fr.all.SaveSelect:Sauver
+#it.all.SaveSelect:Salva
+#nl.all.SaveSelect:Bewaar
+#en.all.ExportAs:Export as
+#de.all.ExportAs:Exportieren als
+#fr.all.ExportAs:Exporter sous
+#it.all.ExportAs:Esporta come...
+#nl.all.ExportAs:Exporteer als
+#en.all.AnimImg:Animations
+#de.all.AnimImg:Animationen
+#fr.all.AnimImg:Animations et effets
+#it.all.AnimImg:Animazioni
+#nl.all.AnimImg:Animatie
+#en.all.DitherImg:Dither images
+#de.all.DitherImg:Bilder dithern
+#fr.all.DitherImg:Tramage
+#it.all.DitherImg:Immagini Dither
+#nl.all.DitherImg:Benader kleur op afbeelding
+#en.all.FilterImg:Smooth images
+#de.all.FilterImg:Bilder weichzeichnen
+#fr.all.FilterImg:Adoucir les images
+#it.all.FilterImg:Immagini Smooth
+#nl.all.FilterImg:Maak afbeelding vloeiend
+#en.all.RenderText:Blend text to background
+#de.all.RenderText:Text/Hintergrund Übergang weich
+#fr.all.RenderText:Fondre le texte sur l'arrière-plan
+#it.all.RenderText:Sfuma testo di sfondo
+#nl.all.RenderText:Harmoniseer tekst met achtergrond
+#en.all.TbarError:An error occurred when constructing the toolbar:
+#de.all.TbarError:Fehler beim Aufbau der Toolbar:
+#fr.all.TbarError:Une erreur s'est produite lors de la construction de la barre d'outils:
+#it.all.TbarError:Si è verificato un errore durante la costruzione della barra strumenti:
+#nl.all.TbarError:Fout bij het maken van de gereedschapbalk:
+#en.all.JNGTitle:%s (JNG image %lux%lu pixels)
+#de.all.JNGTitle:%s (JNG Bild %lux%lu pixels)
+#fr.all.JNGTitle:%s (Image JNG %lux%lu pixels)
+#it.all.JNGTitle:%s (Immagine JNG %lux%lu pixel)
+#nl.all.JNGTitle:%s (JNG-afbeelding %lux%lu punten)
+#en.all.MNGTitle:%s (MNG image %lux%lu pixels)
+#de.all.MNGTitle:%s (MNG Bild %lux%lu pixels)
+#fr.all.MNGTitle:%s (Image MNG %lux%lu pixels)
+#it.all.MNGTitle:%s (Immagine MNG %lux%lu pixel)
+#nl.all.MNGTitle:%s (MNG-afbeelding %lux%lu punten)
+#en.all.LoginLabel:A website is requesting credentials for access.
