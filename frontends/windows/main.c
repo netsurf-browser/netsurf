@@ -46,7 +46,6 @@
 #include "windows/drawable.h"
 #include "windows/corewindow.h"
 #include "windows/ssl_cert.h"
-#include "windows/login.h"
 #include "windows/download.h"
 #include "windows/local_history.h"
 #include "windows/window.h"
