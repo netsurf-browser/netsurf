@@ -44,7 +44,7 @@ MESSAGES_FILTER=ami
 
 # sources purely for the Amiga build
 S_FRONTEND := gui.c history.c hotlist.c schedule.c file.c	\
-	misc.c bitmap.c font.c filetype.c utf8.c login.c memory.c	\
+	misc.c bitmap.c font.c filetype.c utf8.c memory.c	\
 	plotters.c object.c menu.c save_pdf.c arexx.c version.c		\
 	cookies.c ctxmenu.c clipboard.c help.c font_scan.c		\
 	launch.c search.c history_local.c download.c iff_dr2d.c		\

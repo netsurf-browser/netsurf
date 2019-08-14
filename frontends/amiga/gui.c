@@ -148,7 +148,6 @@
 #include "amiga/icon.h"
 #include "amiga/launch.h"
 #include "amiga/libs.h"
-#include "amiga/login.h"
 #include "amiga/memory.h"
 #include "amiga/menu.h"
 #include "amiga/misc.h"
