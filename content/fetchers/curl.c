@@ -39,6 +39,7 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <openssl/ssl.h>
+#include <openssl/x509v3.h>
 
 #include <libwapcaplet/libwapcaplet.h>
 #include <nsutils/time.h>
@@ -594,6 +595,9 @@ fetch_curl_report_certs_upstream(struct curl_fetch_info *f)
 		case X509_V_ERR_CERT_REVOKED:
 			ssl_certs[depth].err = SSL_CERT_ERR_REVOKED;
 			break;
+		case X509_V_ERR_HOSTNAME_MISMATCH:
+			ssl_certs[depth].err = SSL_CERT_ERR_HOSTNAME_MISMATCH;
+			break;
 		default:
 			ssl_certs[depth].err = SSL_CERT_ERR_UNKNOWN;
 			break;
@@ -689,9 +693,20 @@ static int fetch_curl_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm)
 {
 	struct curl_fetch_info *f = (struct curl_fetch_info *) parm;
 	int ok;
+	X509_VERIFY_PARAM *vparam;
+
+	/* Configure the verification parameters to include hostname */
+	vparam = X509_STORE_CTX_get0_param(x509_ctx);
+	X509_VERIFY_PARAM_set_hostflags(vparam, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
+
+	ok = X509_VERIFY_PARAM_set1_host(vparam,
+					 lwc_string_data(f->host),
+					 lwc_string_length(f->host));
 
 	/* Store fetch struct in context for verify callback */
-	ok = X509_STORE_CTX_set_app_data(x509_ctx, parm);
+	if (ok) {
+		ok = X509_STORE_CTX_set_app_data(x509_ctx, parm);
+	}
 
 	/* verify the certificate chain using standard call */
 	if (ok) {
@@ -1181,21 +1196,9 @@ static void fetch_curl_done(CURL *curl_handle, CURLcode result)
 		;
 	} else if (result == CURLE_SSL_PEER_CERTIFICATE ||
 		   result == CURLE_SSL_CACERT) {
-		/*
-		 * curl in 7.63.0 (https://github.com/curl/curl/pull/3291)
-		 *   unified *all* SSL errors into the single
-		 *   CURLE_PEER_FAILED_VERIFICATION depricating
-		 *   CURLE_SSL_PEER_CERTIFICATE and CURLE_SSL_CACERT
-		 *
-		 * This change complete removed the ability to
-		 *   distinguish between certificate errors, host
-		 *   verification errors or any other failure reason
-		 *   using the curl result code.
-		 *
-		 * The result is when certificate error message is
-		 *   sent there is currently no way of informing the
-		 *   llcache about host verification faliures as the
-		 *   certificate chain has no error codes set.
+		/* Some kind of failure has occurred.  If we don't know
+		 * what happened, we'll have reported unknown errors up
+		 * to the user already via the certificate chain error fields.
 		 */
 		cert = true;
 	} else {

@@ -383,9 +383,9 @@ const char *messages_get_sslcode(ssl_cert_err code)
 		/* This certificate has been revoked */
 		return messages_get_ctx("SSLCertErrRevoked", messages_hash);
 
-	case SSL_CERT_ERR_COMMON_NAME:
+	case SSL_CERT_ERR_HOSTNAME_MISMATCH:
 		/* Common name is invalid */
-		return messages_get_ctx("SSLCertErrCommonName", messages_hash);
+		return messages_get_ctx("SSLCertErrHostnameMismatch", messages_hash);
 
 	}
 

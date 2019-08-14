@@ -1076,7 +1076,7 @@ en.all.SSLCertErrTooOld:The certificate has expired.
 en.all.SSLCertErrSelfSigned:The certificate is self signed.
 en.all.SSLCertErrChainSelfSigned:The certificate chain is self signed.
 en.all.SSLCertErrRevoked:The certificate has been revoked by the issuer.
-en.all.SSLCertErrCommonName:The certificate is for a different host than the server
+en.all.SSLCertErrHostnameMismatch:The certificate is for a different host than the server
 
 
 # SSL certificate viewer
