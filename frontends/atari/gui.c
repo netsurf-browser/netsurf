@@ -54,7 +54,6 @@
 #include "atari/cookies.h"
 #include "atari/certview.h"
 #include "atari/history.h"
-#include "atari/login.h"
 #include "atari/encoding.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/plot/plot.h"
