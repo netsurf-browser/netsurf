@@ -45,13 +45,6 @@ struct browser_window *nsgtk_get_browser_window(struct gui_window *gw);
 struct nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *gw);
 
 /**
- * get gdk pixbuf of favicon from gui window handle
- *
- * \param gw gui window handle
- */
-GdkPixbuf *nsgtk_get_icon(struct gui_window *gw);
-
-/**
  * cause all windows be be reflowed
  */
 void nsgtk_reflow_all_windows(void);

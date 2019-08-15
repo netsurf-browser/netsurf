@@ -472,10 +472,6 @@ nsgtk_toolbar_make_widget(struct nsgtk_scaffolding *g,
 			return NULL;
 		}
 
-		nsgtk_entry_set_icon_from_pixbuf(entry,
-						 GTK_ENTRY_ICON_PRIMARY,
-						 favicon_pixbuf);
-
 		gtk_container_add(GTK_CONTAINER(w), entry);
 		gtk_tool_item_set_expand(GTK_TOOL_ITEM(w), TRUE);
 		break;

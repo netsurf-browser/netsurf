@@ -35,6 +35,7 @@
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/nsoption.h"
+#include "utils/messages.h"
 #include "netsurf/content.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
@@ -134,11 +135,6 @@ int temp_open_background = -1;
 struct nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g)
 {
 	return g->scaffold;
-}
-
-GdkPixbuf *nsgtk_get_icon(struct gui_window *gw)
-{
-	return gw->icon;
 }
 
 struct browser_window *nsgtk_get_browser_window(struct gui_window *g)
@@ -720,8 +716,8 @@ static void window_destroy(GtkWidget *widget, gpointer data)
  */
 static struct gui_window *
 gui_window_create(struct browser_window *bw,
-		struct gui_window *existing,
-		gui_window_create_flags flags)
+		  struct gui_window *existing,
+		  gui_window_create_flags flags)
 {
 	struct gui_window *g; /* what is being created to return */
 	bool tempback;
@@ -865,7 +861,7 @@ gui_window_create(struct browser_window *bw,
 		tempback = true;
 		break;
 	}
-	nsgtk_tab_add(g, g->container, tempback);
+	nsgtk_tab_add(g, g->container, tempback, messages_get("NewTab"), g->icon);
 
 	/* safe to drop the reference to the tab_builder as the container is
 	 * referenced by the notebook now.
@@ -918,7 +914,8 @@ static void gui_window_destroy(struct gui_window *g)
  * \param gw gtk gui window to set favicon on.
  * \param icon A handle to the new favicon content.
  */
-static void gui_window_set_icon(struct gui_window *gw, struct hlcache_handle *icon)
+static void
+gui_window_set_icon(struct gui_window *gw, struct hlcache_handle *icon)
 {
 	struct bitmap *icon_bitmap = NULL;
 
@@ -942,7 +939,7 @@ static void gui_window_set_icon(struct gui_window *gw, struct hlcache_handle *ic
 		gw->icon = favicon_pixbuf;
 	}
 
-	nsgtk_scaffolding_set_icon(gw);
+	nsgtk_tab_set_icon(gw, gw->icon);
 }
 
 static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)

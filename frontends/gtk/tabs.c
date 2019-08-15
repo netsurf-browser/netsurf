@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include "utils/nsoption.h"
-#include "utils/messages.h"
+#include "utils/log.h"
 #include "netsurf/browser_window.h"
 #include "desktop/search.h"
 
@@ -32,9 +32,15 @@
 
 #define TAB_WIDTH_N_CHARS 15
 
-/** callback to update sizes when style-set gtk signal */
-static void nsgtk_tab_update_size(GtkWidget *hbox, GtkStyle *previous_style,
-		GtkWidget *close_button)
+static gint srcpagenum;
+
+/**
+ * callback to update sizes when style-set gtk signal
+ */
+static void
+nsgtk_tab_update_size(GtkWidget *hbox,
+		      GtkStyle *previous_style,
+		      GtkWidget *close_button)
 {
 	PangoFontMetrics *metrics;
 	PangoContext *context;
@@ -63,20 +69,35 @@ static void nsgtk_tab_update_size(GtkWidget *hbox, GtkStyle *previous_style,
 	gtk_widget_set_size_request(close_button, w + 4, h + 4);
 }
 
-/** Create a notebook tab label */
-static GtkWidget *nsgtk_tab_label_setup(struct gui_window *window)
+
+/**
+ * Create a notebook tab label
+ */
+static GtkWidget *
+nsgtk_tab_label_setup(struct gui_window *window,
+		      const char *title,
+		      GdkPixbuf *icon_pixbuf)
 {
-	GtkWidget *hbox, *label, *button, *close;
+	GtkWidget *hbox, *favicon, *label, *button, *close;
 
-	hbox = nsgtk_hbox_new(FALSE, 2);
+	/* horizontal box */
+	hbox = nsgtk_hbox_new(FALSE, 3);
 
-	label = gtk_label_new(messages_get("NewTab"));
+	/* construct a favicon */
+	favicon = gtk_image_new();
+	if (icon_pixbuf != NULL) {
+		gtk_image_set_from_pixbuf(GTK_IMAGE(favicon), icon_pixbuf);
+	}
+
+	/* construct a label */
+	label = gtk_label_new(title);
 	gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_END);
 	gtk_label_set_single_line_mode(GTK_LABEL(label), TRUE);
 	nsgtk_widget_set_alignment(label, GTK_ALIGN_START, GTK_ALIGN_CENTER);
 	nsgtk_widget_set_margins(label, 0, 0);
 	gtk_widget_show(label);
 
+	/* construct a close button and attach signals */
 	button = gtk_button_new();
 
 	close = nsgtk_image_new_from_stock(NSGTK_STOCK_CLOSE,
@@ -86,40 +107,37 @@ static GtkWidget *nsgtk_tab_label_setup(struct gui_window *window)
 	gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE);
 	gtk_widget_set_tooltip_text(button, "Close this tab.");
 
-#ifdef FIXME
-	GtkRcStyle *rcstyle;
-	rcstyle = gtk_rc_style_new();
-	rcstyle->xthickness = rcstyle->ythickness = 0;
-	gtk_widget_modify_style(button, rcstyle);
-	g_object_unref(rcstyle);
-#endif
-
 	g_signal_connect_swapped(button, "clicked",
 			G_CALLBACK(nsgtk_window_destroy_browser), window);
 	g_signal_connect(hbox, "style-set",
 			G_CALLBACK(nsgtk_tab_update_size), button);
 
+	/* pack the widgets into the label box */
+	gtk_box_pack_start(GTK_BOX(hbox), favicon, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(hbox), label, TRUE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
 
+	g_object_set_data(G_OBJECT(hbox), "favicon", favicon);
 	g_object_set_data(G_OBJECT(hbox), "label", label);
 	g_object_set_data(G_OBJECT(hbox), "close-button", button);
 
-
 	gtk_widget_show_all(hbox);
+
 	return hbox;
 }
-#include "utils/log.h"
 
-/** callback when page is switched */
 
-static gint srcpagenum;
-
-/** The switch-page signal handler
+/**
+ * The before switch-page gtk signal handler
  *
  * This signal is handled both before and after delivery to work round
  * issue that setting the selected tab during the switch-page signal
  * fails
+ *
+ * \param notebook The notebook being changed
+ * \param page The notebook page being switched to
+ * \param selpagenum The currently selected page number
+ * \param user_data Unused
  */
 static void
 nsgtk_tab_switch_page(GtkNotebook *notebook,
@@ -130,6 +148,15 @@ nsgtk_tab_switch_page(GtkNotebook *notebook,
 	srcpagenum = gtk_notebook_get_current_page(notebook);
 }
 
+
+/**
+ * The after switch-page gtk signal handler
+ *
+ * \param notebook The notebook being changed
+ * \param selpage The notebook page selected
+ * \param selpagenum The currently selected page number
+ * \param user_data Unused
+ */
 static void
 nsgtk_tab_switch_page_after(GtkNotebook *notebook,
 			    GtkWidget *selpage,
@@ -169,10 +196,18 @@ nsgtk_tab_switch_page_after(GtkNotebook *notebook,
 	}
 }
 
-static void nsgtk_tab_page_reordered(GtkNotebook *notebook,
-				     GtkWidget *child,
-				     guint page_num,
-				     gpointer user_data)
+/**
+ * The tab reordered gtk signal handler
+ *
+ * \param notebook The notebook being changed
+ * \param page_num The currently selected page number
+ * \param user_data Unused
+ */
+static void
+nsgtk_tab_page_reordered(GtkNotebook *notebook,
+			 GtkWidget *child,
+			 guint page_num,
+			 gpointer user_data)
 {
 	gint pages;
 	GtkWidget *addpage;
@@ -187,6 +222,13 @@ static void nsgtk_tab_page_reordered(GtkNotebook *notebook,
 	}
 }
 
+/**
+ * The tab orientation signal handler
+ *
+ * \param notebook The notebook being changed
+ * \param page_num The currently selected page number
+ * \param user_data Unused
+ */
 static void
 nsgtk_tab_orientation(GtkNotebook *notebook)
 {
@@ -210,7 +252,9 @@ nsgtk_tab_orientation(GtkNotebook *notebook)
 	}
 }
 
-/** adds a "new tab" tab */
+/**
+ * adds a "new tab" tab
+ */
 static GtkWidget *
 nsgtk_tab_add_newtab(GtkNotebook *notebook)
 {
@@ -238,7 +282,10 @@ nsgtk_tab_add_newtab(GtkNotebook *notebook)
 	return tablabel;
 }
 
-/** callback to alter tab visibility when pages are added or removed */
+
+/**
+ * callback to alter tab visibility when pages are added or removed
+ */
 static void
 nsgtk_tab_visibility_update(GtkNotebook *notebook, GtkWidget *child, guint page)
 {
@@ -259,6 +306,7 @@ nsgtk_tab_visibility_update(GtkNotebook *notebook, GtkWidget *child, guint page)
 		gtk_notebook_set_show_tabs(notebook, FALSE);
 	}
 }
+
 
 /* exported interface documented in gtk/tabs.h */
 void nsgtk_tab_options_changed(GtkNotebook *notebook)
@@ -296,7 +344,9 @@ void nsgtk_tab_init(struct nsgtk_scaffolding *gs)
 /* exported interface documented in gtk/tabs.h */
 void nsgtk_tab_add(struct gui_window *gw,
 		   GtkWidget *tab_contents,
-		   bool background)
+		   bool background,
+		   const char *title,
+		   GdkPixbuf *icon_pixbuf)
 {
 	GtkNotebook *notebook;
 	GtkWidget *tabBox;
@@ -308,7 +358,7 @@ void nsgtk_tab_add(struct gui_window *gw,
 
 	notebook = nsgtk_scaffolding_notebook(nsgtk_get_scaffold(gw));
 
-	tabBox = nsgtk_tab_label_setup(gw);
+	tabBox = nsgtk_tab_label_setup(gw, title, icon_pixbuf);
 
 	nsgtk_window_set_tab(gw, tabBox);
 
@@ -331,6 +381,30 @@ void nsgtk_tab_add(struct gui_window *gw,
 	gtk_widget_grab_focus(GTK_WIDGET(nsgtk_scaffolding_urlbar(
 			nsgtk_get_scaffold(gw))));
 }
+
+
+/* exported interface documented in gtk/tabs.h */
+nserror nsgtk_tab_set_icon(struct gui_window *gw, GdkPixbuf *pixbuf)
+{
+	GtkWidget *favicon;
+	GtkWidget *tab;
+
+	if (pixbuf == NULL) {
+		return NSERROR_INVALID;
+	}
+
+	tab = nsgtk_window_get_tab(gw);
+	if (tab == NULL) {
+		return NSERROR_INVALID;
+	}
+
+	favicon = g_object_get_data(G_OBJECT(tab), "favicon");
+
+	gtk_image_set_from_pixbuf(GTK_IMAGE(favicon), pixbuf);
+
+	return NSERROR_OK;
+}
+
 
 /* exported interface documented in gtk/tabs.h */
 void nsgtk_tab_set_title(struct gui_window *g, const char *title)

@@ -2378,28 +2378,6 @@ void gui_window_stop_throbber(struct gui_window* _g)
 }
 
 
-/**
- * set favicon
- */
-void
-nsgtk_scaffolding_set_icon(struct gui_window *gw)
-{
-	struct nsgtk_scaffolding *sc = nsgtk_get_scaffold(gw);
-	GdkPixbuf *icon_pixbuf = nsgtk_get_icon(gw);
-
-	/* check icon needs to be shown */
-	if ((icon_pixbuf == NULL) ||
-	    (sc->top_level != gw)) {
-		return;
-	}
-
-	nsgtk_entry_set_icon_from_pixbuf(sc->url_bar,
-					 GTK_ENTRY_ICON_PRIMARY,
-					 icon_pixbuf);
-
-	gtk_widget_show_all(GTK_WIDGET(sc->buttons[URL_BAR_ITEM]->button));
-}
-
 static void
 nsgtk_scaffolding_set_websearch(struct nsgtk_scaffolding *g, const char *content)
 {
@@ -2661,8 +2639,6 @@ void nsgtk_scaffolding_set_top_level(struct gui_window *gw)
 
 	/* clear effects of potential searches */
 	browser_window_search_clear(bw);
-
-	nsgtk_scaffolding_set_icon(gw);
 
 	/* Ensure the window's title bar is updated */
 	nsgtk_window_set_title(gw, browser_window_get_title(bw));

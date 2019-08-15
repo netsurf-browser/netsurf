@@ -16,15 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NETSURF_GTK_TABS_H_
-#define _NETSURF_GTK_TABS_H_
+#ifndef NETSURF_GTK_TABS_H_
+#define NETSURF_GTK_TABS_H_
 
 struct gui_window;
 
 void nsgtk_tab_init(struct nsgtk_scaffolding *gs);
-void nsgtk_tab_add(struct gui_window *window, GtkWidget *tab_contents, bool background);
 
-/** set the tab title
+/**
+ * Add new tab to notebook.
+ */
+void nsgtk_tab_add(struct gui_window *window, GtkWidget *tab_contents, bool background, const char *title, GdkPixbuf *icon_pixbuf);
+
+/**
+ * set the tab title
  *
  * The tab title will be set to the parameter
  *
@@ -34,6 +39,18 @@ void nsgtk_tab_add(struct gui_window *window, GtkWidget *tab_contents, bool back
  * \param title The title text which may not be NULL.
  */
 void nsgtk_tab_set_title(struct gui_window *g, const char *title);
+
+/**
+ * set the tab icon
+ *
+ * The tab icon will be set to the \a pixbuf parameter
+ *
+ * \param gw The gui window to set teh tab icon for.
+ * \param pixbuf The pixbuf to set the icon to.
+ * \return NSERROR_OK on sucess else appropriate code.
+ */
+nserror nsgtk_tab_set_icon(struct gui_window *gw, GdkPixbuf *pixbuf);
+
 void nsgtk_tab_options_changed(GtkNotebook *notebook);
 nserror nsgtk_tab_close_current(GtkNotebook *notebook);
 nserror nsgtk_tab_prev(GtkNotebook *notebook);
