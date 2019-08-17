@@ -115,30 +115,17 @@ struct nsgtk_scaffolding {
 
 	/** scaffold container window */
 	GtkWindow *window;
-	bool fullscreen; /**< flag for the scaffold window fullscreen status */
+	/** flag for the scaffold window fullscreen status */
+	bool fullscreen;
 
 	/** tab widget holding displayed pages */
 	GtkNotebook *notebook;
 
-	/** entry widget holding the url of the current displayed page */
-	GtkWidget *url_bar;
-	GtkEntryCompletion *url_bar_completion; /**< Completions for url_bar */
-
-	/** Activity throbber */
-	GtkImage *throbber;
-	int throb_frame; /**< Current frame of throbber animation */
-
+	/** In page text search context */
 	struct gtk_search *search;
-	/** Web search widget */
-	GtkWidget *webSearchEntry;
 
-	/** controls toolbar */
-	GtkToolbar *tool_bar;
-	struct nsgtk_button_connect *buttons[PLACEHOLDER_BUTTON];
-	int offset;
-	int toolbarmem;
-	int toolbarbase;
-	int historybase;
+	/** controls toolbar context */
+	struct nsgtk_toolbar *toolbar;
 
 	/** menu bar hierarchy */
 	struct nsgtk_bar_submenu *menu_bar;
@@ -1868,9 +1855,7 @@ static void nsgtk_scaffolding_toolbar_init(struct nsgtk_scaffolding *g)
 	g->buttons[p##_BUTTON]->main = g->menu_bar->q->r##_menuitem;\
 	g->buttons[p##_BUTTON]->rclick = g->menu_popup->q->r##_menuitem;\
 	g->buttons[p##_BUTTON]->mhandler = nsgtk_on_##r##_activate_menu;\
-	g->buttons[p##_BUTTON]->bhandler = nsgtk_on_##r##_activate_button;\
-	g->buttons[p##_BUTTON]->dataplus = nsgtk_toolbar_##r##_button_data;\
-	g->buttons[p##_BUTTON]->dataminus = nsgtk_toolbar_##r##_toolbar_button_data
+	g->buttons[p##_BUTTON]->bhandler = nsgtk_on_##r##_activate_button;
 
 #define ITEM_SUB(p, q, r, s)\
 	g->buttons[p##_BUTTON]->main =\
@@ -1880,34 +1865,14 @@ static void nsgtk_scaffolding_toolbar_init(struct nsgtk_scaffolding *g)
 	g->buttons[p##_BUTTON]->mhandler =\
 			nsgtk_on_##s##_activate_menu;\
 	g->buttons[p##_BUTTON]->bhandler =\
-			nsgtk_on_##s##_activate_button;\
-	g->buttons[p##_BUTTON]->dataplus =\
-			nsgtk_toolbar_##s##_button_data;\
-	g->buttons[p##_BUTTON]->dataminus =\
-			nsgtk_toolbar_##s##_toolbar_button_data
+			nsgtk_on_##s##_activate_button;
 
 #define ITEM_BUTTON(p, q)\
 	g->buttons[p##_BUTTON]->bhandler =\
-			nsgtk_on_##q##_activate;\
-	g->buttons[p##_BUTTON]->dataplus =\
-			nsgtk_toolbar_##q##_button_data;\
-	g->buttons[p##_BUTTON]->dataminus =\
-			nsgtk_toolbar_##q##_toolbar_button_data
-
+			nsgtk_on_##q##_activate;
 #define ITEM_POP(p, q)					\
 	g->buttons[p##_BUTTON]->popup = g->menu_popup->q##_menuitem
 
-#define SENSITIVITY(q)				\
-	g->buttons[q##_BUTTON]->sensitivity = false
-
-#define ITEM_ITEM(p, q)\
-	g->buttons[p##_ITEM]->dataplus =\
-			nsgtk_toolbar_##q##_button_data;\
-	g->buttons[p##_ITEM]->dataminus =\
-			nsgtk_toolbar_##q##_toolbar_button_data
-
-	ITEM_ITEM(WEBSEARCH, websearch);
-	ITEM_ITEM(THROBBER, throbber);
 	ITEM_MAIN(NEWWINDOW, file_submenu, newwindow);
 	ITEM_MAIN(NEWTAB, file_submenu, newtab);
 	ITEM_MAIN(OPENFILE, file_submenu, openfile);
@@ -1964,27 +1929,11 @@ static void nsgtk_scaffolding_toolbar_init(struct nsgtk_scaffolding *g)
 	ITEM_SUB(SAVEDOMTREE, tools_submenu, developer, debugdomtree);
 	ITEM_BUTTON(HISTORY, history);
 
-	/* disable items that make no sense initially, as well as
-	 * as-yet-unimplemented items */
-	SENSITIVITY(BACK);
-	SENSITIVITY(FORWARD);
-	SENSITIVITY(STOP);
-	SENSITIVITY(PRINTPREVIEW);
-	SENSITIVITY(DELETE);
-	SENSITIVITY(DRAWFILE);
-	SENSITIVITY(POSTSCRIPT);
-	SENSITIVITY(NEXTTAB);
-	SENSITIVITY(PREVTAB);
-	SENSITIVITY(CLOSETAB);
-#ifndef WITH_PDF_EXPORT
-	SENSITIVITY(PDF);
-#endif
 
 #undef ITEM_MAIN
 #undef ITEM_SUB
 #undef ITEM_BUTTON
 #undef ITEM_POP
-#undef SENSITIVITY
 
 }
 
@@ -2012,64 +1961,87 @@ static void nsgtk_scaffolding_initial_sensitivity(struct nsgtk_scaffolding *g)
 	gtk_widget_set_sensitive(GTK_WIDGET(g->menu_bar->view_submenu->images_menuitem), FALSE);
 }
 
-
-void nsgtk_scaffolding_toolbars(struct nsgtk_scaffolding *g, int tbi)
+/**
+ * update search toolbar size and style
+ */
+static nserror nsgtk_search_update(struct gtk_search *search)
 {
-	switch (tbi) {
-		/* case 0 is 'unset' [from fresh install / clearing options]
-		 * see above */
+	switch (nsoption_int(button_type)) {
 
 	case 1: /* Small icons */
-		/* main toolbar */
-		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
+		gtk_toolbar_set_style(GTK_TOOLBAR(search->bar),
 				      GTK_TOOLBAR_ICONS);
-		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->tool_bar),
-					  GTK_ICON_SIZE_SMALL_TOOLBAR);
-		/* search toolbar */
-		gtk_toolbar_set_style(GTK_TOOLBAR(g->search->bar),
-				      GTK_TOOLBAR_ICONS);
-		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->search->bar),
+		gtk_toolbar_set_icon_size(GTK_TOOLBAR(search->bar),
 					  GTK_ICON_SIZE_SMALL_TOOLBAR);
 		break;
 
 	case 2: /* Large icons */
-		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
+		gtk_toolbar_set_style(GTK_TOOLBAR(search->bar),
 				      GTK_TOOLBAR_ICONS);
-		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->tool_bar),
-					  GTK_ICON_SIZE_LARGE_TOOLBAR);
-		/* search toolbar */
-		gtk_toolbar_set_style(GTK_TOOLBAR(g->search->bar),
-				      GTK_TOOLBAR_ICONS);
-		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->search->bar),
+		gtk_toolbar_set_icon_size(GTK_TOOLBAR(search->bar),
 					  GTK_ICON_SIZE_LARGE_TOOLBAR);
 		break;
 
 	case 3: /* Large icons with text */
-		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
+		gtk_toolbar_set_style(GTK_TOOLBAR(search->bar),
 				      GTK_TOOLBAR_BOTH);
-		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->tool_bar),
-					  GTK_ICON_SIZE_LARGE_TOOLBAR);
-		/* search toolbar */
-		gtk_toolbar_set_style(GTK_TOOLBAR(g->search->bar),
-				      GTK_TOOLBAR_BOTH);
-		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->search->bar),
+		gtk_toolbar_set_icon_size(GTK_TOOLBAR(search->bar),
 					  GTK_ICON_SIZE_LARGE_TOOLBAR);
 		break;
 
 	case 4: /* Text icons only */
-		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
-				      GTK_TOOLBAR_TEXT);
-		/* search toolbar */
-		gtk_toolbar_set_style(GTK_TOOLBAR(g->search->bar),
+		gtk_toolbar_set_style(GTK_TOOLBAR(search->bar),
 				      GTK_TOOLBAR_TEXT);
 	default:
 		break;
 	}
+	return NSERROR_OK;
 }
+
+
+static nserror
+nsgtk_search_create(GtkBuilder *builder, struct gtk_search **search_out)
+{
+	struct gtk_search *search;
+
+	search = malloc(sizeof(struct gtk_search));
+	if (search == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	search->bar = GTK_TOOLBAR(gtk_builder_get_object(builder, "searchbar"));
+	search->entry = GTK_ENTRY(gtk_builder_get_object(builder,"searchEntry"));
+
+	search->buttons[0] = GTK_TOOL_BUTTON(gtk_builder_get_object(
+						builder,"searchBackButton"));
+	search->buttons[1] = GTK_TOOL_BUTTON(gtk_builder_get_object(
+						builder,"searchForwardButton"));
+	search->buttons[2] = GTK_TOOL_BUTTON(gtk_builder_get_object(
+						builder,"closeSearchButton"));
+	search->checkAll = GTK_CHECK_BUTTON(gtk_builder_get_object(
+						builder,"checkAllSearch"));
+	search->caseSens = GTK_CHECK_BUTTON(gtk_builder_get_object(
+						builder,"caseSensButton"));
+
+	nsgtk_search_update(search);	
+
+	*search_out = search;
+	return NSERROR_OK;
+}
+
+
+/* exported interface documented in gtk/scaffolding.h */
+void nsgtk_scaffolding_toolbars(struct nsgtk_scaffolding *g)
+{
+	nsgtk_toolbar_update(g->toolbar);
+	nsgtk_search_update(g->search);
+}
+
 
 /* exported interface documented in gtk/scaffolding.h */
 struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 {
+	nserror res;
 	struct nsgtk_scaffolding *gs;
 	int i;
 	GtkAccelGroup *group;
@@ -2092,57 +2064,25 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 	gtk_builder_connect_signals(gs->builder, NULL);
 
-/** Obtain a GTK widget handle from UI builder object */
-#define GET_WIDGET(x) GTK_WIDGET (gtk_builder_get_object(gs->builder, (x)))
+	gs->window = GTK_WINDOW(gtk_builder_get_object(builder, "wndBrowser"));
+	gs->notebook = GTK_NOTEBOOK(gtk_builder_get_object(builder, "notebook"));
 
-	gs->window = GTK_WINDOW(GET_WIDGET("wndBrowser"));
-	gs->notebook = GTK_NOTEBOOK(GET_WIDGET("notebook"));
-	gs->tool_bar = GTK_TOOLBAR(GET_WIDGET("toolbar"));
-
-	gs->search = malloc(sizeof(struct gtk_search));
-	if (gs->search == NULL) {
+	res = nsgtk_toolbar_create(&gs->toolbar);
+	if (res != NSERROR_OK) {
 		free(gs);
 		return NULL;
 	}
 
-	gs->search->bar = GTK_TOOLBAR(GET_WIDGET("searchbar"));
-	gs->search->entry = GTK_ENTRY(GET_WIDGET("searchEntry"));
-
-	gs->search->buttons[0] = GTK_TOOL_BUTTON(GET_WIDGET("searchBackButton"));
-	gs->search->buttons[1] = GTK_TOOL_BUTTON(GET_WIDGET("searchForwardButton"));
-	gs->search->buttons[2] = GTK_TOOL_BUTTON(GET_WIDGET("closeSearchButton"));
-	gs->search->checkAll = GTK_CHECK_BUTTON(GET_WIDGET("checkAllSearch"));
-	gs->search->caseSens = GTK_CHECK_BUTTON(GET_WIDGET("caseSensButton"));
-
-#undef GET_WIDGET
-
-	/* allocate buttons */
-	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
-		gs->buttons[i] = calloc(1, sizeof(struct nsgtk_button_connect));
-		if (gs->buttons[i] == NULL) {
-			for (i-- ; i >= BACK_BUTTON; i--) {
-				free(gs->buttons[i]);
-			}
-			free(gs);
-			return NULL;
-		}
-		gs->buttons[i]->location = -1;
-		gs->buttons[i]->sensitivity = true;
+	res = nsgtk_search_create(&gs->search);
+	if (res != NSERROR_OK) {
+		free(gs);
+		return NULL;
 	}
-
-	/* here custom toolbutton adding code */
-	gs->offset = 0;
-	gs->toolbarmem = 0;
-	gs->toolbarbase = 0;
-	gs->historybase = 0;
-	nsgtk_toolbar_customization_load(gs);
-	nsgtk_toolbar_set_physical(gs);
-
+	
 	group = gtk_accel_group_new();
 	gtk_window_add_accel_group(gs->window, group);
 
 	gs->menu_bar = nsgtk_menu_bar_create(GTK_MENU_SHELL(gtk_builder_get_object(gs->builder, "menubar")), group);
-
 
 	/* set this window's size and position to what's in the options, or
 	 * or some sensible default if they're not set yet.
@@ -2162,63 +2102,19 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 		gtk_window_set_default_size(gs->window, 1000, 700);
 	}
 
-	/* Default toolbar button type uses system defaults */
-	if (nsoption_int(button_type) == 0) {
-		GtkSettings *settings = gtk_settings_get_default();
-		GtkIconSize tooliconsize;
-		GtkToolbarStyle toolbarstyle;
 
-		g_object_get(settings,
-			     "gtk-toolbar-icon-size", &tooliconsize,
-			     "gtk-toolbar-style", &toolbarstyle, NULL);
-
-		switch (toolbarstyle) {
-		case GTK_TOOLBAR_ICONS:
-			if (tooliconsize == GTK_ICON_SIZE_SMALL_TOOLBAR) {
-				nsoption_set_int(button_type, 1);
-			} else {
-				nsoption_set_int(button_type, 2);
-			}
-			break;
-
-		case GTK_TOOLBAR_TEXT:
-			nsoption_set_int(button_type, 4);
-			break;
-
-		case GTK_TOOLBAR_BOTH:
-		case GTK_TOOLBAR_BOTH_HORIZ:
-			/* no labels in default configuration */
-		default:
-			/* No system default, so use large icons */
-			nsoption_set_int(button_type, 2);
-			break;
-		}
-	}
-
-	nsgtk_scaffolding_toolbars(gs, nsoption_int(button_type));
-
-	gtk_toolbar_set_show_arrow(gs->tool_bar, TRUE);
-	gtk_widget_show_all(GTK_WIDGET(gs->tool_bar));
 	nsgtk_tab_init(gs);
 
-	gtk_widget_set_size_request(GTK_WIDGET(
-			gs->buttons[HISTORY_BUTTON]->button), 20, -1);
 
 
-	/* set up URL bar completion */
-	gs->url_bar_completion = nsgtk_url_entry_completion_new(gs);
-
-	/* set up the throbber. */
-	gs->throb_frame = 0;
-
-
-#define CONNECT(obj, sig, callback, ptr) \
-	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
 
 	g_signal_connect_after(gs->notebook, "page-added",
 			G_CALLBACK(nsgtk_window_tabs_add), gs);
 	g_signal_connect_after(gs->notebook, "page-removed",
 			G_CALLBACK(nsgtk_window_tabs_remove), gs);
+
+#define CONNECT(obj, sig, callback, ptr) \
+	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
 
 	/* connect main window signals to their handlers. */
 	CONNECT(gs->window, "delete-event",
@@ -2251,8 +2147,9 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	CONNECT(gs->search->caseSens, "toggled",
 		nsgtk_search_entry_changed, gs);
 
-	CONNECT(gs->tool_bar, "popup-context-menu",
-		nsgtk_window_tool_bar_clicked, gs);
+	/** \todo fix popup menu */
+	//CONNECT(gs->tool_bar, "popup-context-menu",
+	//	nsgtk_window_tool_bar_clicked, gs);
 
 	/* create popup menu */
 	gs->menu_popup = nsgtk_new_scaffolding_popup(gs, group);
@@ -2547,13 +2444,6 @@ GtkToolbar *nsgtk_scaffolding_toolbar(struct nsgtk_scaffolding *g)
 }
 
 /* exported interface documented in gtk/scaffolding.h */
-struct nsgtk_button_connect *
-nsgtk_scaffolding_button(struct nsgtk_scaffolding *g, int i)
-{
-	return g->buttons[i];
-}
-
-/* exported interface documented in gtk/scaffolding.h */
 struct gtk_search *nsgtk_scaffolding_search(struct nsgtk_scaffolding *g)
 {
 	return g->search;
@@ -2580,15 +2470,6 @@ void nsgtk_scaffolding_reset_offset(struct nsgtk_scaffolding *g)
 	g->offset = 0;
 }
 
-/* exported interface documented in gtk/scaffolding.h */
-void nsgtk_scaffolding_update_url_bar_ref(struct nsgtk_scaffolding *g)
-{
-	g->url_bar = GTK_WIDGET(gtk_bin_get_child(GTK_BIN(
-			nsgtk_scaffolding_button(g, URL_BAR_ITEM)->button)));
-
-	gtk_entry_set_completion(GTK_ENTRY(g->url_bar),
-			g->url_bar_completion);
-}
 
 /* exported interface documented in gtk/scaffolding.h */
 void nsgtk_scaffolding_update_throbber_ref(struct nsgtk_scaffolding *g)
@@ -2753,8 +2634,7 @@ void nsgtk_scaffolding_toolbar_size_allocate(GtkWidget *widget,
 	if (i == -1)
 		return;
 	if ((g->toolbarmem == alloc->x) ||
-			(g->buttons[i]->location <
-			g->buttons[HISTORY_BUTTON]->location))
+	    (g->buttons[i]->location < g->buttons[HISTORY_BUTTON]->location))
 	/* no reallocation after first adjustment, no reallocation for buttons
 	 * left of history button */
 		return;
@@ -2767,8 +2647,7 @@ void nsgtk_scaffolding_toolbar_size_allocate(GtkWidget *widget,
 		if (g->offset == 0)
 			g->offset = alloc->width - 20;
 		alloc->width = 20;
-	} else if (g->buttons[i]->location <=
-			g->buttons[URL_BAR_ITEM]->location) {
+	} else if (g->buttons[i]->location <= g->buttons[URL_BAR_ITEM]->location) {
 		alloc->x -= g->offset;
 		if (i == URL_BAR_ITEM)
 			alloc->width += g->offset;

@@ -30,60 +30,6 @@ struct nsurl;
 
 extern struct gui_search_web_table *nsgtk_search_web_table;
 
-typedef enum {
-	BACK_BUTTON = 0,
-	HISTORY_BUTTON,
-	FORWARD_BUTTON,
-	STOP_BUTTON,
-	RELOAD_BUTTON,
-	HOME_BUTTON,
-	URL_BAR_ITEM,
-	WEBSEARCH_ITEM,
-	THROBBER_ITEM,
-	NEWWINDOW_BUTTON,
-	NEWTAB_BUTTON,
-	OPENFILE_BUTTON,
-	CLOSETAB_BUTTON,
-	CLOSEWINDOW_BUTTON,
-	SAVEPAGE_BUTTON,
-	PDF_BUTTON,
-	PLAINTEXT_BUTTON,
-	DRAWFILE_BUTTON,
-	POSTSCRIPT_BUTTON,
-	PRINTPREVIEW_BUTTON,
-	PRINT_BUTTON,
-	QUIT_BUTTON,
-	CUT_BUTTON,
-	COPY_BUTTON,
-	PASTE_BUTTON,
-	DELETE_BUTTON,
-	SELECTALL_BUTTON,
-	FIND_BUTTON,
-	PREFERENCES_BUTTON,
-	ZOOMPLUS_BUTTON,
-	ZOOMMINUS_BUTTON,
-	ZOOMNORMAL_BUTTON,
-	FULLSCREEN_BUTTON,
-	VIEWSOURCE_BUTTON,
-	DOWNLOADS_BUTTON,
-	SAVEWINDOWSIZE_BUTTON,
-	TOGGLEDEBUGGING_BUTTON,
-	SAVEBOXTREE_BUTTON,
-	SAVEDOMTREE_BUTTON,
-	LOCALHISTORY_BUTTON,
-	GLOBALHISTORY_BUTTON,
-	ADDBOOKMARKS_BUTTON,
-	SHOWBOOKMARKS_BUTTON,
- 	SHOWCOOKIES_BUTTON,
-	OPENLOCATION_BUTTON,
-	NEXTTAB_BUTTON,
-	PREVTAB_BUTTON,
-	CONTENTS_BUTTON,
-	GUIDE_BUTTON,
-	INFO_BUTTON,
-	ABOUT_BUTTON,
-	PLACEHOLDER_BUTTON /* size indicator; array maximum indices */
-} nsgtk_toolbar_button;    /* PLACEHOLDER_BUTTON - 1 */
 
 struct gtk_history_window {
 	struct nsgtk_scaffolding 	*g;
@@ -100,18 +46,6 @@ struct gtk_search {
 	GtkCheckButton			*caseSens;
 };
 
-struct nsgtk_button_connect {
-	GtkToolItem *button;
-	int         location; /* in toolbar */
-	bool        sensitivity;
-	GtkWidget   *main; /* left click menu entry */
-	GtkWidget   *rclick; /* right click menu */
-	GtkWidget   *popup; /* popup menu entry */
-	void        *mhandler; /* menu item clicked */
-	void        *bhandler; /* button clicked */
-	void        *dataplus; /* customization -> toolbar */
-	void        *dataminus; /* customization -> store */
-};
 
 /**
  * create a new scaffolding for a window.
@@ -156,8 +90,6 @@ GtkWidget *nsgtk_scaffolding_websearch(struct nsgtk_scaffolding *g);
 GtkToolbar *nsgtk_scaffolding_toolbar(struct nsgtk_scaffolding *g);
 
 
-struct nsgtk_button_connect *nsgtk_scaffolding_button(struct nsgtk_scaffolding *g, int i);
-
 struct gtk_search *nsgtk_scaffolding_search(struct nsgtk_scaffolding *g);
 
 GtkMenuBar *nsgtk_scaffolding_menu_bar(struct nsgtk_scaffolding *g);
@@ -179,8 +111,6 @@ void nsgtk_scaffolding_reset_offset(struct nsgtk_scaffolding *g);
  * Iterate through available scaffolding.
  */
 struct nsgtk_scaffolding *nsgtk_scaffolding_iterate(struct nsgtk_scaffolding *g);
-
-void nsgtk_scaffolding_update_url_bar_ref(struct nsgtk_scaffolding *g);
 
 void nsgtk_scaffolding_update_throbber_ref(struct nsgtk_scaffolding *g);
 
@@ -245,6 +175,9 @@ nserror gui_window_set_url(struct gui_window *g, struct nsurl *url);
 void gui_window_start_throbber(struct gui_window *g);
 void gui_window_stop_throbber(struct gui_window *g);
 
-void nsgtk_scaffolding_toolbars(struct nsgtk_scaffolding *g, int tbi);
+/**
+ * toolbar style changed
+ */
+void nsgtk_scaffolding_toolbars(struct nsgtk_scaffolding *g);
 
 #endif /* NETSURF_GTK_SCAFFOLDING_H */

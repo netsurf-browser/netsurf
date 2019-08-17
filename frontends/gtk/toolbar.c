@@ -16,6 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * implementatio of toolbar to control browsing context
+ */
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -36,13 +41,68 @@
 #include "gtk/window.h"
 #include "gtk/compat.h"
 #include "gtk/resources.h"
+#include "gtk/toolbar_items.h"
 #include "gtk/toolbar.h"
+
+/** button location indicating button is not to be shown */
+#define INACTIVE_LOCATION (-1)
+
+/**
+ * toolbar item context
+ */
+struct nsgtk_toolbar_item {
+	GtkToolItem *button;
+	int         location; /* in toolbar */
+	bool        sensitivity;
+	GtkWidget   *main; /* left click menu entry */
+	GtkWidget   *rclick; /* right click menu */
+	GtkWidget   *popup; /* popup menu entry */
+	void        *mhandler; /* menu item clicked */
+	void        *bhandler; /* button clicked */
+	void        *dataplus; /* customization -> toolbar */
+	void        *dataminus; /* customization -> store */
+};
+
+
+/**
+ * control toolbar context
+ */
+struct nsgtk_toolbar {
+	/** gtk toolbar widget */
+	GtkToolbar *widget;
+
+	struct nsgtk_toolbar_item *buttons[PLACEHOLDER_BUTTON];
+	int offset;
+	int toolbarmem;
+	int toolbarbase;
+	int historybase;
+
+	/** entry widget holding the url of the current displayed page */
+	GtkWidget *url_bar;
+
+	/** Completions for url_bar */
+	GtkEntryCompletion *url_bar_completion;
+
+	/** Activity throbber */
+	GtkImage *throbber;
+
+	/** Current frame of throbber animation */
+	int throb_frame;
+
+	/** Web search widget */
+	GtkWidget *webSearchEntry;
+
+};
+
 
 static GtkTargetEntry entry = {(char *)"nsgtk_button_data",
 		GTK_TARGET_SAME_APP, 0};
 
 static bool edit_mode = false;
 
+/**
+ * toolbar customization window context
+ */
 struct nsgtk_toolbar_custom_store {
 	GtkWidget *window;
 	GtkWidget *store_buttons[PLACEHOLDER_BUTTON];
@@ -54,6 +114,7 @@ struct nsgtk_toolbar_custom_store {
 	int currentbutton;
 	bool fromstore;
 };
+
 /* the number of buttons that fit in the width of the store window */
 #define NSGTK_STORE_WIDTH 6
 
@@ -92,6 +153,495 @@ struct nsgtk_theme {
 	GtkImage *searchimage[SEARCH_BUTTONS_COUNT];
 	/* apng throbber element */
 };
+
+
+/* define data plus and data minus handlers */
+#define TOOLBAR_ITEM(identifier, name, sensitivity)			\
+static gboolean								\
+nsgtk_toolbar_##name##_data_plus(GtkWidget *widget,			\
+				 GdkDragContext *cont,			\
+				 GtkSelectionData *selection,		\
+				 guint info,				\
+				 guint time,				\
+				 gpointer data)				\
+{									\
+	window->currentbutton = identifier;				\
+	window->fromstore = true;					\
+	return TRUE;							\
+}									\
+static gboolean								\
+nsgtk_toolbar_##name##_data_minus(GtkWidget *widget,			\
+				  GdkDragContext *cont,			\
+				  GtkSelectionData *selection,		\
+				  guint info,				\
+				  guint time,				\
+				  gpointer data)			\
+{									\
+	window->currentbutton = identifier;				\
+	window->fromstore = false;					\
+	return TRUE;							\
+}
+
+#include "gtk/toolbar_items.h"
+
+#undef TOOLBAR_ITEM
+
+
+/**
+ * Apply the user toolbar button settings from configuration
+ *
+ * GTK specific user option string is a set of fields arranged as
+ * [itemreference];[itemlocation]|[itemreference];[itemlocation]| etc
+ *
+ * \param tb The toolbar to apply customization to
+ * \param NSERROR_OK on success else error code.
+ */
+static nserror
+apply_user_button_customization(struct nsgtk_toolbar *tb)
+{
+	int i, ii;
+	char *buffer;
+	char *buffer1, *subbuffer, *ptr = NULL, *pter = NULL;
+
+	/* set all button locations to inactive */
+	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
+		tb->buttons[i]->location = INACTIVE_LOCATION;
+	}
+
+	/* if no user config is present apply the defaults */
+	if (nsoption_charp(toolbar_order) == NULL) {
+		tb->buttons[BACK_BUTTON]->location = 0;
+		tb->buttons[HISTORY_BUTTON]->location = 1;
+		tb->buttons[FORWARD_BUTTON]->location = 2;
+		tb->buttons[STOP_BUTTON]->location = 3;
+		tb->buttons[RELOAD_BUTTON]->location = 4;
+		tb->buttons[URL_BAR_ITEM]->location = 5;
+		tb->buttons[WEBSEARCH_ITEM]->location = 6;
+		tb->buttons[THROBBER_ITEM]->location = 7;
+
+		return NSERROR_OK;
+	}
+
+	buffer = strdup(nsoption_charp(toolbar_order));
+	if (buffer == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	i = BACK_BUTTON;
+	ii = BACK_BUTTON;
+	buffer1 = strtok_r(buffer, "|", &ptr);
+	while (buffer1 != NULL) {
+		subbuffer = strtok_r(buffer1, ";", &pter);
+		if (subbuffer != NULL) {
+			i = atoi(subbuffer);
+			subbuffer = strtok_r(NULL, ";", &pter);
+			if (subbuffer != NULL) {
+				ii = atoi(subbuffer);
+				if ((i >= BACK_BUTTON) &&
+				    (i < PLACEHOLDER_BUTTON) &&
+				    (ii >= -1) &&
+				    (ii < PLACEHOLDER_BUTTON)) {
+					tb->buttons[i]->location = ii;
+				}
+			}
+		}
+		buffer1 = strtok_r(NULL, "|", &ptr);
+	}
+
+	free(buffer);
+	return NSERROR_OK;
+}
+
+
+/**
+ * widget factory for creation of toolbar item widgets
+ *
+ * \param i the id of the widget
+ * \param theme the theme to make the widgets from
+ * \return gtk widget
+ */
+static GtkWidget *
+make_toolbar_item(nsgtk_toolbar_button i, struct nsgtk_theme *theme)
+{
+	GtkWidget *w = NULL;
+
+	switch(i) {
+
+/* gtk_tool_button_new() accepts NULL args */
+#define MAKE_STOCKBUTTON(p, q)					\
+	case p##_BUTTON: {					\
+		GtkStockItem item;					\
+		char *label = NULL;					\
+		if (nsgtk_stock_lookup(q, &item) &&			\
+		    (item.label != NULL) &&				\
+		    ((label = remove_underscores(item.label, false)) != NULL)) { \
+			w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(	\
+					   theme->image[p##_BUTTON]), label)); \
+			free(label);					\
+		} else {						\
+			w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(	\
+					   theme->image[p##_BUTTON]), q)); \
+		}							\
+		break;							\
+	}
+
+	MAKE_STOCKBUTTON(HOME, NSGTK_STOCK_HOME)
+	MAKE_STOCKBUTTON(BACK, NSGTK_STOCK_GO_BACK)
+	MAKE_STOCKBUTTON(FORWARD, NSGTK_STOCK_GO_FORWARD)
+	MAKE_STOCKBUTTON(STOP, NSGTK_STOCK_STOP)
+	MAKE_STOCKBUTTON(RELOAD, NSGTK_STOCK_REFRESH)
+#undef MAKE_STOCKBUTTON
+
+	case HISTORY_BUTTON:
+		w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(
+				theme->image[HISTORY_BUTTON]), "H"));
+		break;
+
+	case URL_BAR_ITEM: {
+		GtkWidget *entry = nsgtk_entry_new();
+		w = GTK_WIDGET(gtk_tool_item_new());
+
+		if ((entry == NULL) || (w == NULL)) {
+			nsgtk_warning(messages_get("NoMemory"), 0);
+			return NULL;
+		}
+
+		gtk_container_add(GTK_CONTAINER(w), entry);
+		gtk_tool_item_set_expand(GTK_TOOL_ITEM(w), TRUE);
+		break;
+	}
+
+	case THROBBER_ITEM: {
+		nserror res;
+		GdkPixbuf *pixbuf;
+		res = nsgtk_throbber_get_frame(0, &pixbuf);
+		if (res != NSERROR_OK) {
+			return NULL;
+		}
+
+		if (edit_mode) {
+			w = GTK_WIDGET(gtk_tool_button_new(
+				GTK_WIDGET(gtk_image_new_from_pixbuf(pixbuf)),
+				"[throbber]"));
+		} else {
+			GtkWidget *image;
+
+			w = GTK_WIDGET(gtk_tool_item_new());
+
+			image = gtk_image_new_from_pixbuf(pixbuf);
+			if (image != NULL) {
+				nsgtk_widget_set_alignment(image,
+							   GTK_ALIGN_CENTER,
+							   GTK_ALIGN_CENTER);
+				nsgtk_widget_set_margins(image, 3, 0);
+
+				gtk_container_add(GTK_CONTAINER(w), image);
+			}
+		}
+		break;
+	}
+
+	case WEBSEARCH_ITEM: {
+		if (edit_mode)
+			return GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(
+					nsgtk_image_new_from_stock(NSGTK_STOCK_FIND,
+					GTK_ICON_SIZE_LARGE_TOOLBAR)),
+					"[websearch]"));
+
+		GtkWidget *entry = nsgtk_entry_new();
+
+		w = GTK_WIDGET(gtk_tool_item_new());
+
+		if ((entry == NULL) || (w == NULL)) {
+			nsgtk_warning(messages_get("NoMemory"), 0);
+			return NULL;
+		}
+
+		gtk_widget_set_size_request(entry, NSGTK_WEBSEARCH_WIDTH, -1);
+
+		nsgtk_entry_set_icon_from_stock(entry, GTK_ENTRY_ICON_PRIMARY,
+						NSGTK_STOCK_INFO);
+
+		gtk_container_add(GTK_CONTAINER(w), entry);
+		break;
+	}
+
+/* gtk_tool_button_new accepts NULL args */
+#define MAKE_MENUBUTTON(p, q)						\
+		case p##_BUTTON: {					\
+			char *label = NULL;				\
+			label = remove_underscores(messages_get(#q), false); \
+			w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(	\
+					   theme->image[p##_BUTTON]), label)); \
+			if (label != NULL)				\
+				free(label);				\
+			break;						\
+	}
+
+	MAKE_MENUBUTTON(NEWWINDOW, gtkNewWindow)
+	MAKE_MENUBUTTON(NEWTAB, gtkNewTab)
+	MAKE_MENUBUTTON(OPENFILE, gtkOpenFile)
+	MAKE_MENUBUTTON(CLOSETAB, gtkCloseTab)
+	MAKE_MENUBUTTON(CLOSEWINDOW, gtkCloseWindow)
+	MAKE_MENUBUTTON(SAVEPAGE, gtkSavePage)
+	MAKE_MENUBUTTON(PRINTPREVIEW, gtkPrintPreview)
+	MAKE_MENUBUTTON(PRINT, gtkPrint)
+	MAKE_MENUBUTTON(QUIT, gtkQuitMenu)
+	MAKE_MENUBUTTON(CUT, gtkCut)
+	MAKE_MENUBUTTON(COPY, gtkCopy)
+	MAKE_MENUBUTTON(PASTE, gtkPaste)
+	MAKE_MENUBUTTON(DELETE, gtkDelete)
+	MAKE_MENUBUTTON(SELECTALL, gtkSelectAll)
+	MAKE_MENUBUTTON(PREFERENCES, gtkPreferences)
+	MAKE_MENUBUTTON(ZOOMPLUS, gtkZoomPlus)
+	MAKE_MENUBUTTON(ZOOMMINUS, gtkZoomMinus)
+	MAKE_MENUBUTTON(ZOOMNORMAL, gtkZoomNormal)
+	MAKE_MENUBUTTON(FULLSCREEN, gtkFullScreen)
+	MAKE_MENUBUTTON(VIEWSOURCE, gtkViewSource)
+	MAKE_MENUBUTTON(CONTENTS, gtkContents)
+	MAKE_MENUBUTTON(ABOUT, gtkAbout)
+	MAKE_MENUBUTTON(PDF, gtkPDF)
+	MAKE_MENUBUTTON(PLAINTEXT, gtkPlainText)
+	MAKE_MENUBUTTON(DRAWFILE, gtkDrawFile)
+	MAKE_MENUBUTTON(POSTSCRIPT, gtkPostScript)
+	MAKE_MENUBUTTON(FIND, gtkFind)
+	MAKE_MENUBUTTON(DOWNLOADS, gtkDownloads)
+	MAKE_MENUBUTTON(SAVEWINDOWSIZE, gtkSaveWindowSize)
+	MAKE_MENUBUTTON(TOGGLEDEBUGGING, gtkToggleDebugging)
+	MAKE_MENUBUTTON(SAVEBOXTREE, gtkDebugBoxTree)
+	MAKE_MENUBUTTON(SAVEDOMTREE, gtkDebugDomTree)
+	MAKE_MENUBUTTON(LOCALHISTORY, gtkLocalHistory)
+	MAKE_MENUBUTTON(GLOBALHISTORY, gtkGlobalHistory)
+	MAKE_MENUBUTTON(ADDBOOKMARKS, gtkAddBookMarks)
+	MAKE_MENUBUTTON(SHOWBOOKMARKS, gtkShowBookMarks)
+	MAKE_MENUBUTTON(SHOWCOOKIES, gtkShowCookies)
+	MAKE_MENUBUTTON(OPENLOCATION, gtkOpenLocation)
+	MAKE_MENUBUTTON(NEXTTAB, gtkNextTab)
+	MAKE_MENUBUTTON(PREVTAB, gtkPrevTab)
+	MAKE_MENUBUTTON(GUIDE, gtkGuide)
+	MAKE_MENUBUTTON(INFO, gtkUserInformation)
+#undef MAKE_MENUBUTTON
+
+	default:
+		break;
+
+	}
+	return w;
+}
+
+
+/**
+ * append item to gtk toolbar container
+ *
+ * \param tb toolbar
+ * \param theme in use
+ * \param location item location being appended
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+append_item_to_toolbar(struct nsgtk_toolbar *tb,
+		       struct nsgtk_theme *theme,
+		       int location)
+{
+	int bidx; /* button index */
+
+	for (bidx = BACK_BUTTON; bidx < PLACEHOLDER_BUTTON; bidx++) {
+
+		if (tb->buttons[bidx]->location == location) {
+
+			tb->buttons[bidx]->button = GTK_TOOL_ITEM(
+					make_toolbar_item(bidx, theme));
+
+			gtk_toolbar_insert(tb->widget,
+					   tb->buttons[bidx]->button,
+					   location);
+			break;
+		}
+	}
+	return NSERROR_OK;
+}
+
+
+/**
+ * callback function to remove a widget from a container
+ */
+static void container_remove_widget(GtkWidget *widget, gpointer data)
+{
+	GtkContainer *container = GTK_CONTAINER(data);
+	gtk_container_remove(container, widget);
+}
+
+
+/**
+ * populates the gtk toolbar container with widgets in correct order
+ */
+static nserror populate_gtk_toolbar_widget(struct nsgtk_toolbar *tb)
+{
+	struct nsgtk_theme *theme; /* internal theme context */
+	int lidx; /* location index */
+
+	theme =	nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR, false);
+	if (theme == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	/* clear the toolbar container of all widgets */
+	gtk_container_foreach(GTK_CONTAINER(tb->widget),
+			      container_remove_widget,
+			      tb->widget);
+
+	/* add widgets to toolbar */
+	for (lidx = 0; lidx < PLACEHOLDER_BUTTON; lidx++) {
+		add_item_to_toolbar(tb, theme, lidx);
+	}
+
+	gtk_widget_show_all(GTK_WIDGET(tb->widget));
+	free(theme);
+
+	return NSERROR_OK;
+}
+
+/**
+ * create a toolbar item
+ *
+ * create a toolbar item and set up its default handlers
+ */
+static nserror
+toolbar_item_create(nsgtk_toolbar_button id,
+		    struct nsgtk_toolbar_item **item_out)
+{
+	struct nsgtk_toolbar_item *item;
+	item = calloc(1, sizeof(struct nsgtk_toolbar_item));
+	if (item == NULL) {
+		return NSERROR_NOMEM;
+	}
+	item->location = INACTIVE_LOCATION;
+			
+	switch (id) {
+#define TOOLBAR_ITEM(identifier, name, snstvty)				\
+	case identifier:						\
+		item->sensitivity = snstvty;				\
+		item->dataplus = nsgtk_toolbar_##name##_data_plus;	\
+		item->dataminus = nsgtk_toolbar_##name##_data_minus;	\
+		break;
+#include "gtk/toolbar_items.h"
+#undef TOOLBAR_ITEM
+	}
+
+        *item_out = item;
+        return NSERROR_OK;
+}
+
+/* exported interface documented in toolbar.h */
+nserror nsgtk_toolbar_create(GtkBuilder *builder, struct nsgtk_toolbar **tb_out)
+{
+	nserror res;
+	struct nsgtk_toolbar *tb;
+	int bidx; /* button index */
+
+	tb = calloc(1, sizeof(struct nsgtk_toolbar));
+	if (tb == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	tb->widget = GTK_TOOLBAR(gtk_builder_get_object(builder, "toolbar"));
+
+	/* allocate button contexts */
+	for (bidx = BACK_BUTTON; bidx < PLACEHOLDER_BUTTON; bidx++) {
+		res = toolbar_item_create(bidx, &tb->buttons[bidx]);
+		if (res != NSERROR_OK) {
+			for (bidx-- ; bidx >= BACK_BUTTON; bidx--) {
+				free(tb->buttons[bidx]);
+			}
+			free(tb);
+			return res;
+		}
+	}
+
+	res = apply_user_button_customization(tb);
+	if (res != NSERROR_OK) {
+		free(tb);
+		return res;
+	}
+
+	res = populate_gtk_toolbar_widget(tb);
+	if (res != NSERROR_OK) {
+		free(tb);
+		return res;
+	}
+
+	res = nsgtk_toolbar_update(tb);
+	if (res != NSERROR_OK) {
+		free(tb);
+		return res;
+	}
+
+	gtk_toolbar_set_show_arrow(tb->widget, TRUE);
+	gtk_widget_show_all(GTK_WIDGET(tb->widget));
+
+	/* if there is a history widget set its size */
+	if (tb->buttons[HISTORY_BUTTON]->button != NULL) {
+		gtk_widget_set_size_request(GTK_WIDGET(
+			tb->buttons[HISTORY_BUTTON]->button), 20, -1);
+	}
+
+	/* set up the throbber. */
+	tb->throb_frame = 0;
+
+	/* set up URL bar completion */
+	tb->url_bar_completion = nsgtk_url_entry_completion_new(gs);
+	
+	*tb_out = tb;
+	return NSERROR_OK;
+}
+
+
+/* exported interface documented in toolbar.h */
+nserror nsgtk_toolbar_destroy(struct nsgtk_toolbar *tb)
+{
+	/** \todo free buttons and destroy toolbar container (and widgets) */
+	free(tb);
+	return NSERROR_OK;
+}
+
+/* exported interface documented in toolbar.h */
+nserror nsgtk_toolbar_update(struct nsgtk_toolbar *tb)
+{
+	switch (nsoption_int(button_type)) {
+
+	case 1: /* Small icons */
+		gtk_toolbar_set_style(GTK_TOOLBAR(tb->widget),
+				      GTK_TOOLBAR_ICONS);
+		gtk_toolbar_set_icon_size(GTK_TOOLBAR(tb->widget),
+					  GTK_ICON_SIZE_SMALL_TOOLBAR);
+		break;
+
+	case 2: /* Large icons */
+		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
+				      GTK_TOOLBAR_ICONS);
+		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->tool_bar),
+					  GTK_ICON_SIZE_LARGE_TOOLBAR);
+		break;
+
+	case 3: /* Large icons with text */
+		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
+				      GTK_TOOLBAR_BOTH);
+		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->tool_bar),
+					  GTK_ICON_SIZE_LARGE_TOOLBAR);
+		break;
+
+	case 4: /* Text icons only */
+		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
+				      GTK_TOOLBAR_TEXT);
+		break;
+
+	default:
+		break;
+	}
+
+	return NSERROR_OK;
+}
+
 
 /**
  * returns a string without its underscores
@@ -277,7 +827,7 @@ void nsgtk_theme_implement(struct nsgtk_scaffolding *g)
 {
 	struct nsgtk_theme *theme[IMAGE_SET_COUNT];
 	int i;
-	struct nsgtk_button_connect *button;
+	struct nsgtk_toolbar_item *button;
 	struct gtk_search *search;
 
 	theme[IMAGE_SET_MAIN_MENU] = nsgtk_theme_load(GTK_ICON_SIZE_MENU, false);
@@ -387,7 +937,7 @@ static void nsgtk_toolbar_clear_toolbar(GtkWidget *widget, gpointer data)
 static void nsgtk_toolbar_temp_connect(struct nsgtk_scaffolding *g,
 				       nsgtk_toolbar_button bi)
 {
-	struct nsgtk_button_connect *bc;
+	struct nsgtk_toolbar_item *bc;
 
 	if (bi != URL_BAR_ITEM) {
 		bc = nsgtk_scaffolding_button(g, bi);
@@ -418,182 +968,6 @@ nsgtk_toolbar_get_id_at_location(struct nsgtk_scaffolding *g, int i)
 	return -1;
 }
 
-/**
- * widget factory for creation of toolbar item widgets
- * \param g the reference scaffolding
- * \param i the id of the widget
- * \param theme the theme to make the widgets from
- */
-static GtkWidget *
-nsgtk_toolbar_make_widget(struct nsgtk_scaffolding *g,
-			  nsgtk_toolbar_button i,
-			  struct nsgtk_theme *theme)
-{
-	GtkWidget *w = NULL;
-
-	switch(i) {
-
-/* gtk_tool_button_new() accepts NULL args */
-#define MAKE_STOCKBUTTON(p, q)					\
-	case p##_BUTTON: {					\
-		GtkStockItem item;					\
-		char *label = NULL;					\
-		if (nsgtk_stock_lookup(q, &item) &&			\
-		    (item.label != NULL) &&				\
-		    ((label = remove_underscores(item.label, false)) != NULL)) { \
-			w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(	\
-					   theme->image[p##_BUTTON]), label)); \
-			free(label);					\
-		} else {						\
-			w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(	\
-					   theme->image[p##_BUTTON]), q)); \
-		}							\
-		break;							\
-	}
-
-	MAKE_STOCKBUTTON(HOME, NSGTK_STOCK_HOME)
-	MAKE_STOCKBUTTON(BACK, NSGTK_STOCK_GO_BACK)
-	MAKE_STOCKBUTTON(FORWARD, NSGTK_STOCK_GO_FORWARD)
-	MAKE_STOCKBUTTON(STOP, NSGTK_STOCK_STOP)
-	MAKE_STOCKBUTTON(RELOAD, NSGTK_STOCK_REFRESH)
-#undef MAKE_STOCKBUTTON
-
-	case HISTORY_BUTTON:
-		w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(
-				theme->image[HISTORY_BUTTON]), "H"));
-		break;
-
-	case URL_BAR_ITEM: {
-		GtkWidget *entry = nsgtk_entry_new();
-		w = GTK_WIDGET(gtk_tool_item_new());
-
-		if ((entry == NULL) || (w == NULL)) {
-			nsgtk_warning(messages_get("NoMemory"), 0);
-			return NULL;
-		}
-
-		gtk_container_add(GTK_CONTAINER(w), entry);
-		gtk_tool_item_set_expand(GTK_TOOL_ITEM(w), TRUE);
-		break;
-	}
-
-	case THROBBER_ITEM: {
-		nserror res;
-		GdkPixbuf *pixbuf;
-		res = nsgtk_throbber_get_frame(0, &pixbuf);
-		if (res != NSERROR_OK) {
-			return NULL;
-		}
-
-		if (edit_mode) {
-			w = GTK_WIDGET(gtk_tool_button_new(
-				GTK_WIDGET(gtk_image_new_from_pixbuf(pixbuf)),
-				"[throbber]"));
-		} else {
-			GtkWidget *image;
-
-			w = GTK_WIDGET(gtk_tool_item_new());
-
-			image = gtk_image_new_from_pixbuf(pixbuf);
-			if (image != NULL) {
-				nsgtk_widget_set_alignment(image,
-							   GTK_ALIGN_CENTER,
-							   GTK_ALIGN_CENTER);
-				nsgtk_widget_set_margins(image, 3, 0);
-
-				gtk_container_add(GTK_CONTAINER(w), image);
-			}
-		}
-		break;
-	}
-
-	case WEBSEARCH_ITEM: {
-		if (edit_mode)
-			return GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(
-					nsgtk_image_new_from_stock(NSGTK_STOCK_FIND,
-					GTK_ICON_SIZE_LARGE_TOOLBAR)),
-					"[websearch]"));
-
-		GtkWidget *entry = nsgtk_entry_new();
-
-		w = GTK_WIDGET(gtk_tool_item_new());
-
-		if ((entry == NULL) || (w == NULL)) {
-			nsgtk_warning(messages_get("NoMemory"), 0);
-			return NULL;
-		}
-
-		gtk_widget_set_size_request(entry, NSGTK_WEBSEARCH_WIDTH, -1);
-
-		nsgtk_entry_set_icon_from_stock(entry, GTK_ENTRY_ICON_PRIMARY,
-						NSGTK_STOCK_INFO);
-
-		gtk_container_add(GTK_CONTAINER(w), entry);
-		break;
-	}
-
-/* gtk_tool_button_new accepts NULL args */
-#define MAKE_MENUBUTTON(p, q)						\
-		case p##_BUTTON: {					\
-			char *label = NULL;				\
-			label = remove_underscores(messages_get(#q), false); \
-			w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(	\
-					   theme->image[p##_BUTTON]), label)); \
-			if (label != NULL)				\
-				free(label);				\
-			break;						\
-	}
-
-	MAKE_MENUBUTTON(NEWWINDOW, gtkNewWindow)
-	MAKE_MENUBUTTON(NEWTAB, gtkNewTab)
-	MAKE_MENUBUTTON(OPENFILE, gtkOpenFile)
-	MAKE_MENUBUTTON(CLOSETAB, gtkCloseTab)
-	MAKE_MENUBUTTON(CLOSEWINDOW, gtkCloseWindow)
-	MAKE_MENUBUTTON(SAVEPAGE, gtkSavePage)
-	MAKE_MENUBUTTON(PRINTPREVIEW, gtkPrintPreview)
-	MAKE_MENUBUTTON(PRINT, gtkPrint)
-	MAKE_MENUBUTTON(QUIT, gtkQuitMenu)
-	MAKE_MENUBUTTON(CUT, gtkCut)
-	MAKE_MENUBUTTON(COPY, gtkCopy)
-	MAKE_MENUBUTTON(PASTE, gtkPaste)
-	MAKE_MENUBUTTON(DELETE, gtkDelete)
-	MAKE_MENUBUTTON(SELECTALL, gtkSelectAll)
-	MAKE_MENUBUTTON(PREFERENCES, gtkPreferences)
-	MAKE_MENUBUTTON(ZOOMPLUS, gtkZoomPlus)
-	MAKE_MENUBUTTON(ZOOMMINUS, gtkZoomMinus)
-	MAKE_MENUBUTTON(ZOOMNORMAL, gtkZoomNormal)
-	MAKE_MENUBUTTON(FULLSCREEN, gtkFullScreen)
-	MAKE_MENUBUTTON(VIEWSOURCE, gtkViewSource)
-	MAKE_MENUBUTTON(CONTENTS, gtkContents)
-	MAKE_MENUBUTTON(ABOUT, gtkAbout)
-	MAKE_MENUBUTTON(PDF, gtkPDF)
-	MAKE_MENUBUTTON(PLAINTEXT, gtkPlainText)
-	MAKE_MENUBUTTON(DRAWFILE, gtkDrawFile)
-	MAKE_MENUBUTTON(POSTSCRIPT, gtkPostScript)
-	MAKE_MENUBUTTON(FIND, gtkFind)
-	MAKE_MENUBUTTON(DOWNLOADS, gtkDownloads)
-	MAKE_MENUBUTTON(SAVEWINDOWSIZE, gtkSaveWindowSize)
-	MAKE_MENUBUTTON(TOGGLEDEBUGGING, gtkToggleDebugging)
-	MAKE_MENUBUTTON(SAVEBOXTREE, gtkDebugBoxTree)
-	MAKE_MENUBUTTON(SAVEDOMTREE, gtkDebugDomTree)
-	MAKE_MENUBUTTON(LOCALHISTORY, gtkLocalHistory)
-	MAKE_MENUBUTTON(GLOBALHISTORY, gtkGlobalHistory)
-	MAKE_MENUBUTTON(ADDBOOKMARKS, gtkAddBookMarks)
-	MAKE_MENUBUTTON(SHOWBOOKMARKS, gtkShowBookMarks)
-	MAKE_MENUBUTTON(SHOWCOOKIES, gtkShowCookies)
-	MAKE_MENUBUTTON(OPENLOCATION, gtkOpenLocation)
-	MAKE_MENUBUTTON(NEXTTAB, gtkNextTab)
-	MAKE_MENUBUTTON(PREVTAB, gtkPrevTab)
-	MAKE_MENUBUTTON(GUIDE, gtkGuide)
-	MAKE_MENUBUTTON(INFO, gtkUserInformation)
-#undef MAKE_MENUBUTTON
-
-	default:
-		break;
-
-	}
-	return w;
-}
 
 /**
  * called when a widget is dropped onto the toolbar
@@ -641,8 +1015,7 @@ nsgtk_toolbar_data(GtkWidget *widget,
 				location = -1;
 	}
 	nsgtk_scaffolding_button(g, window->currentbutton)->button =
-			GTK_TOOL_ITEM(nsgtk_toolbar_make_widget(g,
-			window->currentbutton, theme));
+			GTK_TOOL_ITEM(make_toolbar_item(window->currentbutton, theme));
 	free(theme);
 	if (nsgtk_scaffolding_button(g, window->currentbutton)->button
 			== NULL) {
@@ -744,8 +1117,7 @@ nsgtk_toolbar_add_item_to_toolbar(struct nsgtk_scaffolding *g, int i,
 	for (q = BACK_BUTTON; q < PLACEHOLDER_BUTTON; q++)
 		if (nsgtk_scaffolding_button(g, q)->location == i) {
 			nsgtk_scaffolding_button(g, q)->button = GTK_TOOL_ITEM(
-					nsgtk_toolbar_make_widget(g, q,
-					theme));
+					make_toolbar_item(q, theme));
 			gtk_toolbar_insert(nsgtk_scaffolding_toolbar(g),
 					nsgtk_scaffolding_button(g, q)->button,
 					i);
@@ -899,51 +1271,6 @@ static void nsgtk_toolbar_cast(struct nsgtk_scaffolding *g)
 }
 
 
-/**
- * load toolbar settings from file; file is a set of fields arranged as
- * [itemreference];[itemlocation]|[itemreference];[itemlocation]| etc
- */
-void nsgtk_toolbar_customization_load(struct nsgtk_scaffolding *g)
-{
-	int i, ii;
-	char *buffer;
-	char *buffer1, *subbuffer, *ptr = NULL, *pter = NULL;
-
-	/* default toolbar button order */
-	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
-		nsgtk_scaffolding_button(g, i)->location =
-		(i <= THROBBER_ITEM) ? i : -1;
-	}
-
-	/* ensure the option is actually set */
-	if (nsoption_charp(toolbar_order) == NULL) {
-		return;
-	}
-	buffer = strdup(nsoption_charp(toolbar_order));
-
-	i = BACK_BUTTON;
-	ii = BACK_BUTTON;
-	buffer1 = strtok_r(buffer, "|", &ptr);
-	while (buffer1 != NULL) {
-		subbuffer = strtok_r(buffer1, ";", &pter);
-		if (subbuffer != NULL) {
-			i = atoi(subbuffer);
-			subbuffer = strtok_r(NULL, ";", &pter);
-			if (subbuffer != NULL) {
-				ii = atoi(subbuffer);
-				if ((i >= BACK_BUTTON) &&
-				    (i < PLACEHOLDER_BUTTON) &&
-				    (ii >= -1) &&
-				    (ii < PLACEHOLDER_BUTTON)) {
-					nsgtk_scaffolding_button(g, i)->location = ii;
-				}
-			}
-		}
-		buffer1 = strtok_r(NULL, "|", &ptr);
-	}
-
-	free(buffer);
-}
 
 
 /**
@@ -1163,7 +1490,7 @@ static void nsgtk_toolbar_window_open(struct nsgtk_scaffolding *g)
 		if (i == URL_BAR_ITEM)
 			continue;
 		window->store_buttons[i] =
-			nsgtk_toolbar_make_widget(g, i, theme);
+			make_toolbar_item(i, theme);
 		if (window->store_buttons[i] == NULL) {
 			nsgtk_warning(messages_get("NoMemory"), 0);
 			continue;
@@ -1333,6 +1660,15 @@ int nsgtk_toolbar_get_id_from_widget(GtkWidget *widget,
 	return -1;
 }
 
+/* exported interface documented in gtk/scaffolding.h */
+void nsgtk_scaffolding_update_url_bar_ref(struct nsgtk_scaffolding *g)
+{
+	g->url_bar = GTK_WIDGET(gtk_bin_get_child(GTK_BIN(
+			g->buttons[URL_BAR_ITEM]->button)));
+
+	gtk_entry_set_completion(GTK_ENTRY(g->url_bar),
+			g->url_bar_completion);
+}
 
 /**
  * add handlers to factory widgets
@@ -1401,92 +1737,3 @@ void nsgtk_toolbar_connect_all(struct nsgtk_scaffolding *g)
 }
 
 
-#define DATAHANDLER(p, q, r)\
-gboolean nsgtk_toolbar_##p##_button_data(GtkWidget *widget, GdkDragContext\
-		*cont, GtkSelectionData	*selection, guint info, guint time,\
-		gpointer data)\
-{\
-	r->currentbutton = q##_BUTTON;\
-	r->fromstore = true;\
-	return TRUE;\
-}\
-gboolean nsgtk_toolbar_##p##_toolbar_button_data(GtkWidget *widget,\
-		GdkDragContext *cont, GtkSelectionData *selection, guint info,\
-		guint time, gpointer data)\
-{\
-	r->currentbutton = q##_BUTTON;\
-	r->fromstore = false;\
-	return TRUE;\
-}
-
-DATAHANDLER(home, HOME, window)
-DATAHANDLER(forward, FORWARD, window)
-DATAHANDLER(back, BACK, window)
-DATAHANDLER(stop, STOP, window)
-DATAHANDLER(reload, RELOAD, window)
-DATAHANDLER(history, HISTORY, window)
-DATAHANDLER(newwindow, NEWWINDOW, window)
-DATAHANDLER(newtab, NEWTAB, window)
-DATAHANDLER(openfile, OPENFILE, window)
-DATAHANDLER(closetab, CLOSETAB, window)
-DATAHANDLER(closewindow, CLOSEWINDOW, window)
-DATAHANDLER(savepage, SAVEPAGE, window)
-DATAHANDLER(printpreview, PRINTPREVIEW, window)
-DATAHANDLER(print, PRINT, window)
-DATAHANDLER(quit, QUIT, window)
-DATAHANDLER(cut, CUT, window)
-DATAHANDLER(copy, COPY, window)
-DATAHANDLER(paste, PASTE, window)
-DATAHANDLER(delete, DELETE, window)
-DATAHANDLER(selectall, SELECTALL, window)
-DATAHANDLER(preferences, PREFERENCES, window)
-DATAHANDLER(zoomplus, ZOOMPLUS, window)
-DATAHANDLER(zoomminus, ZOOMMINUS, window)
-DATAHANDLER(zoomnormal, ZOOMNORMAL, window)
-DATAHANDLER(fullscreen, FULLSCREEN, window)
-DATAHANDLER(viewsource, VIEWSOURCE, window)
-DATAHANDLER(contents, CONTENTS, window)
-DATAHANDLER(about, ABOUT, window)
-DATAHANDLER(pdf, PDF, window)
-DATAHANDLER(plaintext, PLAINTEXT, window)
-DATAHANDLER(drawfile, DRAWFILE, window)
-DATAHANDLER(postscript, POSTSCRIPT, window)
-DATAHANDLER(find, FIND, window)
-DATAHANDLER(downloads, DOWNLOADS, window)
-DATAHANDLER(savewindowsize, SAVEWINDOWSIZE, window)
-DATAHANDLER(toggledebugging, TOGGLEDEBUGGING, window)
-DATAHANDLER(debugboxtree, SAVEBOXTREE, window)
-DATAHANDLER(debugdomtree, SAVEDOMTREE, window)
-DATAHANDLER(localhistory, LOCALHISTORY, window)
-DATAHANDLER(globalhistory, GLOBALHISTORY, window)
-DATAHANDLER(addbookmarks, ADDBOOKMARKS, window)
-DATAHANDLER(showbookmarks, SHOWBOOKMARKS, window)
-DATAHANDLER(showcookies, SHOWCOOKIES, window)
-DATAHANDLER(openlocation, OPENLOCATION, window)
-DATAHANDLER(nexttab, NEXTTAB, window)
-DATAHANDLER(prevtab, PREVTAB, window)
-DATAHANDLER(guide, GUIDE, window)
-DATAHANDLER(info, INFO, window)
-#undef DATAHANDLER
-
-#define DATAHANDLER(p, q, r)						\
-gboolean nsgtk_toolbar_##p##_button_data(GtkWidget *widget, GdkDragContext\
-		*cont, GtkSelectionData	*selection, guint info, guint time,\
-		gpointer data)\
-{\
-	r->currentbutton = q##_ITEM;\
-	r->fromstore = true;\
-	return TRUE;\
-}\
-gboolean nsgtk_toolbar_##p##_toolbar_button_data(GtkWidget *widget,\
-		GdkDragContext *cont, GtkSelectionData *selection, guint info,\
-		guint time, gpointer data)\
-{\
-	r->currentbutton = q##_ITEM;\
-	r->fromstore = false;\
-	return TRUE;\
-}
-
-DATAHANDLER(throbber, THROBBER, window)
-DATAHANDLER(websearch, WEBSEARCH, window)
-#undef DATAHANDLER
