@@ -799,7 +799,7 @@ nsgtk_preferences_comboButtonType_changed(GtkComboBox *widget,
 	while (current != NULL)	{
 		nsgtk_scaffolding_reset_offset(current);
 
-		nsgtk_scaffolding_toolbars(current, nsoption_int(button_type));
+		nsgtk_scaffolding_toolbars(current);
 
 		current = nsgtk_scaffolding_iterate(current);
 	}

@@ -159,12 +159,15 @@ nsgtk_init_resource_path(const char *config_home)
 /**
  * Set option defaults for gtk frontend.
  *
- * @param defaults The option table to update.
- * @return error status.
+ * \param defaults The option table to update.
+ * \return error status.
  */
 static nserror set_defaults(struct nsoption_s *defaults)
 {
 	char *fname;
+	GtkSettings *settings;
+	GtkIconSize tooliconsize;
+	GtkToolbarStyle toolbarstyle;
 
 	/* cookie file default */
 	fname = NULL;
@@ -217,6 +220,35 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	nsoption_set_charp(font_cursive, strdup("Serif"));
 	nsoption_set_charp(font_fantasy, strdup("Serif"));
 
+	/* Default toolbar button type to system defaults */
+
+	settings = gtk_settings_get_default();
+	g_object_get(settings,
+		     "gtk-toolbar-icon-size", &tooliconsize,
+		     "gtk-toolbar-style", &toolbarstyle, NULL);
+
+	switch (toolbarstyle) {
+	case GTK_TOOLBAR_ICONS:
+		if (tooliconsize == GTK_ICON_SIZE_SMALL_TOOLBAR) {
+			nsoption_set_int(button_type, 1);
+		} else {
+			nsoption_set_int(button_type, 2);
+		}
+		break;
+
+	case GTK_TOOLBAR_TEXT:
+		nsoption_set_int(button_type, 4);
+		break;
+
+	case GTK_TOOLBAR_BOTH:
+	case GTK_TOOLBAR_BOTH_HORIZ:
+		/* no labels in default configuration */
+	default:
+		/* No system default, so use large icons */
+		nsoption_set_int(button_type, 2);
+		break;
+	}
+	
 	return NSERROR_OK;
 }
 

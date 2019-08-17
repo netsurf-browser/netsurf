@@ -16,8 +16,42 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NETSURF_GTK_TOOLBAR_H_
-#define _NETSURF_GTK_TOOLBAR_H_
+#ifndef NETSURF_GTK_TOOLBAR_H_
+#define NETSURF_GTK_TOOLBAR_H_
+
+/**
+ * control toolbar context
+ */
+struct nsgtk_toolbar;
+
+
+/**
+ * create a control toolbar
+ *
+ * \param[in] builder The gtk builder object the toolbar is being created from
+ * \param[out] toolbar a pointer to receive the result.
+ * \return NSERROR_OK and toolbar updated on success else error code
+ */
+nserror nsgtk_toolbar_create(GtkBuilder *builder, struct nsgtk_toolbar **toolbar);
+
+
+/**
+ * Destroy toolbar previously created
+ *
+ * \param toolbar A toolbar returned from a creation
+ * \return NSERROR_OK on success
+ */
+nserror nsgtk_toolbar_destroy(struct nsgtk_toolbar *toolbar);
+
+
+/**
+ * Update toolbar style and size based on current settings
+ *
+ * \param toolbar A toolbar returned from a creation
+ * \return NSERROR_OK on success
+ */
+nserror nsgtk_toolbar_update(struct nsgtk_toolbar *tb);
+
 
 /**
  * sets up the images for scaffolding.
@@ -25,68 +59,8 @@
 void nsgtk_theme_implement(struct nsgtk_scaffolding *g);
 
 void nsgtk_toolbar_customization_init(struct nsgtk_scaffolding *g);
-void nsgtk_toolbar_init(struct nsgtk_scaffolding *g);
-void nsgtk_toolbar_customization_load(struct nsgtk_scaffolding *g);
-void nsgtk_toolbar_set_physical(struct nsgtk_scaffolding *g);
 void nsgtk_toolbar_connect_all(struct nsgtk_scaffolding *g);
 int nsgtk_toolbar_get_id_from_widget(GtkWidget *widget, struct nsgtk_scaffolding *g);
 
-#define TOOLPROTO(q) gboolean nsgtk_toolbar_##q##_button_data(\
-		GtkWidget *widget, GdkDragContext *cont, GtkSelectionData\
-		*selection, guint info, guint time, gpointer data);\
-gboolean nsgtk_toolbar_##q##_toolbar_button_data(GtkWidget *widget,\
-		GdkDragContext *cont, GtkSelectionData *selection, guint info,\
-		guint time, gpointer data)
-TOOLPROTO(home);
-TOOLPROTO(back);
-TOOLPROTO(forward);
-TOOLPROTO(reload);
-TOOLPROTO(stop);
-TOOLPROTO(throbber);
-TOOLPROTO(websearch);
-TOOLPROTO(history);
-TOOLPROTO(newwindow);
-TOOLPROTO(newtab);
-TOOLPROTO(openfile);
-TOOLPROTO(closetab);
-TOOLPROTO(closewindow);
-TOOLPROTO(savepage);
-TOOLPROTO(pdf);
-TOOLPROTO(plaintext);
-TOOLPROTO(drawfile);
-TOOLPROTO(postscript);
-TOOLPROTO(printpreview);
-TOOLPROTO(print);
-TOOLPROTO(quit);
-TOOLPROTO(cut);
-TOOLPROTO(copy);
-TOOLPROTO(paste);
-TOOLPROTO(delete);
-TOOLPROTO(selectall);
-TOOLPROTO(find);
-TOOLPROTO(preferences);
-TOOLPROTO(zoomplus);
-TOOLPROTO(zoomminus);
-TOOLPROTO(zoomnormal);
-TOOLPROTO(fullscreen);
-TOOLPROTO(viewsource);
-TOOLPROTO(downloads);
-TOOLPROTO(localhistory);
-TOOLPROTO(globalhistory);
-TOOLPROTO(addbookmarks);
-TOOLPROTO(showbookmarks);
-TOOLPROTO(showcookies);
-TOOLPROTO(openlocation);
-TOOLPROTO(nexttab);
-TOOLPROTO(prevtab);
-TOOLPROTO(savewindowsize);
-TOOLPROTO(toggledebugging);
-TOOLPROTO(debugboxtree);
-TOOLPROTO(debugdomtree);
-TOOLPROTO(contents);
-TOOLPROTO(guide);
-TOOLPROTO(info);
-TOOLPROTO(about);
-#undef TOOLPROTO
 
 #endif
