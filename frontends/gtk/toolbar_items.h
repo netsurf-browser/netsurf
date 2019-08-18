@@ -83,6 +83,11 @@ typedef enum {
  *   item initial visibility
  */
 
+#ifndef TOOLBAR_ITEM
+#define TOOLBAR_ITEM(a, b, c)
+#define TOOLBAR_ITEM_SET
+#endif
+
 TOOLBAR_ITEM(BACK_BUTTON, back, false)
 TOOLBAR_ITEM(HISTORY_BUTTON, history, true)
 TOOLBAR_ITEM(FORWARD_BUTTON, forward, false)
@@ -134,3 +139,8 @@ TOOLBAR_ITEM(CONTENTS_BUTTON, contents, true)
 TOOLBAR_ITEM(GUIDE_BUTTON, guide, true)
 TOOLBAR_ITEM(INFO_BUTTON, info, true)
 TOOLBAR_ITEM(ABOUT_BUTTON, about, true)
+
+#ifdef TOOLBAR_ITEM_SET
+#undef TOOLBAR_ITEM
+#undef TOOLBAR_ITEM_SET
+#endif
