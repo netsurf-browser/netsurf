@@ -478,23 +478,23 @@ nsgtk_toolbar_make_widget(struct nsgtk_scaffolding *g,
 	}
 
 	case THROBBER_ITEM: {
-		if ((nsgtk_throbber == NULL) ||
-		    (nsgtk_throbber->framedata == NULL) ||
-		    (nsgtk_throbber->framedata[0] == NULL)) {
+		nserror res;
+		GdkPixbuf *pixbuf;
+		res = nsgtk_throbber_get_frame(0, &pixbuf);
+		if (res != NSERROR_OK) {
 			return NULL;
 		}
 
 		if (edit_mode) {
-			w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(
-					gtk_image_new_from_pixbuf(
-					nsgtk_throbber->framedata[0])),
-							   "[throbber]"));
+			w = GTK_WIDGET(gtk_tool_button_new(
+				GTK_WIDGET(gtk_image_new_from_pixbuf(pixbuf)),
+				"[throbber]"));
 		} else {
 			GtkWidget *image;
 
 			w = GTK_WIDGET(gtk_tool_item_new());
 
-			image = gtk_image_new_from_pixbuf(nsgtk_throbber->framedata[0]);
+			image = gtk_image_new_from_pixbuf(pixbuf);
 			if (image != NULL) {
 				nsgtk_widget_set_alignment(image,
 							   GTK_ALIGN_CENTER,

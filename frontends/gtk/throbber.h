@@ -16,20 +16,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __GTK_THROBBER_H__
-#define __GTK_THROBBER_H__
+#ifndef NETSURF_GTK_THROBBER_H
+#define NETSURF_GTK_THROBBER_H
 
-#include <gtk/gtk.h>
-
-struct nsgtk_throbber
-{
-	int		nframes;	/**< Number of frames in the throbber */
-	GdkPixbuf	**framedata;
-};
-
-extern struct nsgtk_throbber *nsgtk_throbber;
-
+/**
+ * Initialise global throbber context
+ */
 nserror nsgtk_throbber_init(void);
+
+/**
+ * release global throbber context
+ */
 void nsgtk_throbber_finalise(void);
 
-#endif /* __GTK_THROBBER_H__ */
+/**
+ * get the pixbuf of a given frame of the throbber
+ *
+ * \param frame The frame number starting at 0 for stopped frame
+ * \param pixbuf updated on success
+ * \return NSERROR_OK and pixbuf updated on success, NSERROR_BAD_SIZE if frame
+ *          is out of range else error code.
+ */
+nserror nsgtk_throbber_get_frame(int frame, GdkPixbuf **pixbuf);
+
+#endif /* NETSURF_GTK_THROBBER_H */

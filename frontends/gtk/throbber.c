@@ -28,7 +28,16 @@
 #include "gtk/resources.h"
 #include "gtk/throbber.h"
 
-struct nsgtk_throbber *nsgtk_throbber = NULL;
+/**
+ * Throbber images context
+ */
+struct nsgtk_throbber
+{
+	int nframes; /**< Number of frames in the throbber */
+	GdkPixbuf **framedata; /* pixbuf data for the frames */
+};
+
+static struct nsgtk_throbber *nsgtk_throbber = NULL;
 
 #define THROBBER_FRAMES 9
 #define THROBBER_FMT "throbber/throbber%d.png"
@@ -36,10 +45,10 @@ struct nsgtk_throbber *nsgtk_throbber = NULL;
 /* exported interface documented in gtk/throbber.h */
 nserror nsgtk_throbber_init(void)
 {
-	struct nsgtk_throbber *throb;		/**< structure we generate */
+	nserror res = NSERROR_OK;
+	struct nsgtk_throbber *throb;
 	int frame;
 	char resname[] = THROBBER_FMT;
-	nserror res = NSERROR_OK;
 
 	throb = malloc(sizeof(*throb));
 	if (throb == NULL) {
@@ -49,7 +58,7 @@ nserror nsgtk_throbber_init(void)
 	throb->framedata = malloc(sizeof(GdkPixbuf *) * THROBBER_FRAMES);
 	if (throb->framedata == NULL) {
 		free(throb);
-		return false;
+		return NSERROR_NOMEM;
 	}
 
 	for (frame = 0; frame < THROBBER_FRAMES; frame++) {
@@ -73,11 +82,9 @@ nserror nsgtk_throbber_init(void)
 	throb->nframes = frame;
 	nsgtk_throbber = throb;
 	return res;
-
-
 }
 
-
+/* exported interface documented in gtk/throbber.h */
 void nsgtk_throbber_finalise(void)
 {
 	int i;
@@ -91,3 +98,30 @@ void nsgtk_throbber_finalise(void)
 	nsgtk_throbber = NULL;
 }
 
+
+/* exported interface documented in gtk/throbber.h */
+nserror nsgtk_throbber_get_frame(int frame, GdkPixbuf **pixbuf)
+{
+	nserror res = NSERROR_OK;
+
+	/* ensure initialisation */
+	if (nsgtk_throbber == NULL) {
+		res = nsgtk_throbber_init();
+	}
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	/* ensure frame in range */
+	if ((frame < 0) || (frame >= nsgtk_throbber->nframes)) {
+		return NSERROR_BAD_SIZE;
+	}
+
+	/* ensure there is frame data */
+	if (nsgtk_throbber->framedata[frame] == NULL) {
+		return NSERROR_INVALID;
+	}
+
+	*pixbuf = nsgtk_throbber->framedata[frame];
+	return NSERROR_OK;
+}

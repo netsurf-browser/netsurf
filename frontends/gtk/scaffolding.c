@@ -349,16 +349,20 @@ static void scaffolding_update_context(struct nsgtk_scaffolding *g)
  */
 static void nsgtk_throb(void *p)
 {
+	nserror res;
+	GdkPixbuf *pixbuf;
 	struct nsgtk_scaffolding *g = p;
 
-	if (g->throb_frame >= (nsgtk_throbber->nframes - 1)) {
+	g->throb_frame++; /* advance to next frame */
+	res = nsgtk_throbber_get_frame(g->throb_frame, &pixbuf);
+	if (res == NSERROR_BAD_SIZE) {
 		g->throb_frame = 1;
-	} else {
-		g->throb_frame++;
+		res = nsgtk_throbber_get_frame(g->throb_frame, &pixbuf);
 	}
 
-	gtk_image_set_from_pixbuf(g->throbber,
-			nsgtk_throbber->framedata[g->throb_frame]);
+	if (res == NSERROR_OK) {
+		gtk_image_set_from_pixbuf(g->throbber, pixbuf);
+	}
 
 	nsgtk_schedule(100, nsgtk_throb, p);
 }
@@ -2358,11 +2362,19 @@ void gui_window_start_throbber(struct gui_window* _g)
 
 void gui_window_stop_throbber(struct gui_window* _g)
 {
+	nserror res;
+	GdkPixbuf *pixbuf;
 	struct nsgtk_scaffolding *g = nsgtk_get_scaffold(_g);
-	if (g == NULL)
+
+	if (g == NULL) {
 		return;
+	}
+
 	scaffolding_update_context(g);
 	nsgtk_schedule(-1, nsgtk_throb, g);
+
+	g->throb_frame = 0;
+
 	if (g->buttons[STOP_BUTTON] != NULL)
 		g->buttons[STOP_BUTTON]->sensitivity = false;
 	if (g->buttons[RELOAD_BUTTON] != NULL)
@@ -2370,11 +2382,11 @@ void gui_window_stop_throbber(struct gui_window* _g)
 
 	nsgtk_scaffolding_set_sensitivity(g);
 
-	if ((g->throbber == NULL) || (nsgtk_throbber == NULL) ||
-			(nsgtk_throbber->framedata == NULL) ||
-			(nsgtk_throbber->framedata[0] == NULL))
-		return;
-	gtk_image_set_from_pixbuf(g->throbber, nsgtk_throbber->framedata[0]);
+	res = nsgtk_throbber_get_frame(g->throb_frame, &pixbuf);
+	if ((res == NSERROR_OK) &&
+	    (g->throbber != NULL)) {
+		gtk_image_set_from_pixbuf(g->throbber, pixbuf);
+	}
 }
 
 
