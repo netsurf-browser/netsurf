@@ -124,9 +124,6 @@ struct nsgtk_scaffolding {
 	/** In page text search context */
 	struct gtk_search *search;
 
-	/** controls toolbar context */
-	struct nsgtk_toolbar *toolbar;
-
 	/** menu bar hierarchy */
 	struct nsgtk_bar_submenu *menu_bar;
 
@@ -2053,7 +2050,7 @@ nsgtk_search_create(GtkBuilder *builder, struct gtk_search **search_out)
 /* exported interface documented in gtk/scaffolding.h */
 void nsgtk_scaffolding_toolbars(struct nsgtk_scaffolding *g)
 {
-	nsgtk_toolbar_update(g->toolbar);
+  //	nsgtk_toolbar_update(g->toolbar);
 	nsgtk_search_update(g->search);
 }
 
@@ -2573,11 +2570,6 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	gs->window = GTK_WINDOW(gtk_builder_get_object(gs->builder, "wndBrowser"));
 	gs->notebook = GTK_NOTEBOOK(gtk_builder_get_object(gs->builder, "notebook"));
 
-	res = nsgtk_toolbar_create(gs->builder, &gs->toolbar);
-	if (res != NSERROR_OK) {
-		free(gs);
-		return NULL;
-	}
 
 	res = nsgtk_search_create(gs->builder, &gs->search);
 	if (res != NSERROR_OK) {
