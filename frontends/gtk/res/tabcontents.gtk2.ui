@@ -2,6 +2,131 @@
 <interface>
   <!-- interface-requires gtk+ 2.12 -->
   <!-- interface-naming-policy toplevel-contextual -->
+  <object class="GtkVBox" id="tabBox">
+    <property name="visible">True</property>
+    <child>
+      <object class="GtkToolbar" id="toolbar">
+        <property name="visible">True</property>
+        <property name="toolbar_style">GTK_TOOLBAR_BOTH_HORIZ</property>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">False</property>
+        <property name="position">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkToolbar" id="searchbar">
+        <property name="toolbar_style">GTK_TOOLBAR_BOTH</property>
+        <child>
+          <object class="GtkToolButton" id="closeSearchButton">
+            <property name="visible">True</property>
+            <property name="stock_id">gtk-close</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkToolItem" id="searchLabelItem">
+            <property name="visible">True</property>
+            <child>
+              <object class="GtkLabel" id="searchlabel">
+                <property name="visible">True</property>
+                <property name="xpad">4</property>
+                <property name="label" translatable="yes">Match</property>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="homogeneous">False</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkToolItem" id="toolSearch">
+            <property name="visible">True</property>
+            <child>
+              <object class="GtkEntry" id="searchEntry">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="homogeneous">False</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkToolButton" id="searchBackButton">
+            <property name="visible">True</property>
+            <property name="label" translatable="yes">Search _Back</property>
+            <property name="use_underline">True</property>
+            <property name="stock_id">gtk-go-back</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkToolButton" id="searchForwardButton">
+            <property name="visible">True</property>
+            <property name="label" translatable="yes">Search _Forward</property>
+            <property name="use_underline">True</property>
+            <property name="stock_id">gtk-go-forward</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkToolItem" id="checkAllSearchItem">
+            <property name="visible">True</property>
+            <child>
+              <object class="GtkCheckButton" id="checkAllSearch">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="tooltip-text" translatable="yes">show all matches</property>
+                <property name="label" translatable="yes">All      </property>
+                <property name="use_underline">True</property>
+                <property name="draw_indicator">True</property>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="homogeneous">False</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkToolItem" id="caseSensItem">
+            <property name="visible">True</property>
+            <child>
+              <object class="GtkCheckButton" id="caseSensButton">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="tooltip-text" translatable="yes">Match case when searching</property>
+                <property name="label" translatable="yes">Case</property>
+                <property name="relief">GTK_RELIEF_NONE</property>
+                <property name="use_underline">True</property>
+                <property name="draw_indicator">True</property>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="homogeneous">False</property>
+          </packing>
+        </child>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">False</property>
+        <property name="position">2</property>
+      </packing>
+    </child>
+    <child>
       <object class="GtkTable" id="tabContents">
         <property name="visible">True</property>
         <property name="n_rows">2</property>
@@ -77,6 +202,11 @@
           </packing>
         </child>
       </object>
+      <packing>
+        <property name="position">3</property>
+      </packing>
+    </child>
+  </object>
   <object class="GtkAdjustment" id="layouthadjustment">
     <property name="upper">100</property>
     <property name="step_increment">30</property>

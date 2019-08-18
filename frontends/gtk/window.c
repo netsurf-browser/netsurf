@@ -95,7 +95,10 @@ struct gui_window {
 	/** previous event location */
 	int last_x, last_y;
 
-	/** The top level container (tabContents) */
+	/** controls toolbar context */
+	struct nsgtk_toolbar *toolbar;
+
+	/** The top level container (tabBox) */
 	GtkWidget *container;
 
 	/** display widget for this page or frame */
@@ -767,11 +770,19 @@ gui_window_create(struct browser_window *bw,
 	}
 
 	/* Construct our primary elements */
-	g->container = GTK_WIDGET(gtk_builder_get_object(tab_builder, "tabContents"));
+	g->container = GTK_WIDGET(gtk_builder_get_object(tab_builder, "tabBox"));
 	g->layout = GTK_LAYOUT(gtk_builder_get_object(tab_builder, "layout"));
 	g->status_bar = GTK_LABEL(gtk_builder_get_object(tab_builder, "status_bar"));
 	g->paned = GTK_PANED(gtk_builder_get_object(tab_builder, "hpaned1"));
 	g->input_method = gtk_im_multicontext_new();
+
+
+	res = nsgtk_toolbar_create(tab_builder, &g->toolbar);
+	if (res != NSERROR_OK) {
+		free(g);
+		g_object_unref(tab_builder);
+		return NULL;
+	}
 
 	/* set a default favicon */
 	g_object_ref(favicon_pixbuf);
@@ -862,6 +873,9 @@ gui_window_create(struct browser_window *bw,
 		break;
 	}
 	nsgtk_tab_add(g, g->container, tempback, messages_get("NewTab"), g->icon);
+
+	/* \todo move search bar properly */
+	gtk_widget_hide(GTK_WIDGET(gtk_builder_get_object(tab_builder, "searchbar")));
 
 	/* safe to drop the reference to the tab_builder as the container is
 	 * referenced by the notebook now.
