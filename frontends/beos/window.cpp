@@ -1348,6 +1348,49 @@ gui_window_get_dimensions(struct gui_window *g, int *width, int *height)
         return NSERROR_OK;
 }
 
+
+/**
+ * process miscellaneous window events
+ *
+ * \param gw The window receiving the event.
+ * \param event The event code.
+ * \return NSERROR_OK when processed ok
+ */
+static nserror
+gui_window_event(struct gui_window *gw, enum gui_window_event event)
+{
+	switch (event) {
+	case GW_EVENT_UPDATE_EXTENT:
+		gui_window_update_extent(gw);
+		break;
+
+	case GW_EVENT_REMOVE_CARET:
+		gui_window_remove_caret(gw);
+		break;
+
+	case GW_EVENT_NEW_CONTENT:
+		gui_window_new_content(gw);
+		break;
+
+	case GW_EVENT_START_SELECTION:
+		gui_start_selection(gw);
+		break;
+
+	case GW_EVENT_START_THROBBER:
+		gui_window_start_throbber(gw);
+		break;
+
+	case GW_EVENT_STOP_THROBBER:
+		gui_window_stop_throbber(gw);
+		break;
+
+	default:
+		break;
+	}
+	return NSERROR_OK;
+}
+
+
 static struct gui_window_table window_table = {
 	gui_window_create,
 	gui_window_destroy,
@@ -1355,7 +1398,7 @@ static struct gui_window_table window_table = {
 	gui_window_get_scroll,
 	gui_window_set_scroll,
 	gui_window_get_dimensions,
-	gui_window_update_extent,
+	gui_window_event,
 
 	/* from scaffold */
 	gui_window_set_title,
@@ -1364,18 +1407,13 @@ static struct gui_window_table window_table = {
 	gui_window_set_status,
 	gui_window_set_pointer,
 	gui_window_place_caret,
-	gui_window_remove_caret,
-	gui_window_start_throbber,
-	gui_window_stop_throbber,
 	NULL, //drag_start
 	NULL, //save_link
-	NULL, //scroll_start
-	gui_window_new_content,
 	NULL, //create_form_select_menu
 	NULL, //file_gadget_open
 	NULL, //drag_save_object
 	NULL, //drag_save_selection
-	gui_start_selection
+	NULL  //console_log
 };
 
 struct gui_window_table *beos_window_table = &window_table;

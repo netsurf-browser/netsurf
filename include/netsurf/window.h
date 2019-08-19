@@ -28,6 +28,14 @@
 
 #include "netsurf/console.h"
 
+struct browser_window;
+struct form_control;
+struct rect;
+struct hlcache_handle;
+struct nsurl;
+
+enum gui_pointer_shape;
+
 typedef enum gui_save_type {
 	GUI_SAVE_SOURCE,
 	GUI_SAVE_DRAW,
@@ -61,13 +69,57 @@ typedef enum {
 	GW_CREATE_TAB = (1 << 1) /**< Create tab in same window as existing */
 } gui_window_create_flags;
 
-struct browser_window;
-struct form_control;
-struct rect;
-struct hlcache_handle;
-struct nsurl;
+/**
+ * Window events
+ *
+ * these are events delivered to a gui window which have no additional
+ * parameters and hence do not require separate callbacks.
+ */
+enum gui_window_event {
+	/**
+	 * An empty event should never occour
+	 */
+	GW_EVENT_NONE = 0,
 
-enum gui_pointer_shape;
+	/**
+	 * Update the extent of the inside of a browser window to that of the
+	 * current content.
+	 *
+	 * @todo this is used to update scroll bars does it need
+	 * renaming? some frontends (windows) do not even implement it.
+	 */
+	GW_EVENT_UPDATE_EXTENT,
+
+	/**
+	 * Remove the caret, if present.
+	 */
+	GW_EVENT_REMOVE_CARET,
+
+	/**
+	 * start the navigation throbber.
+	 */
+	GW_EVENT_START_THROBBER,
+
+	/**
+	 * stop the navigation throbber.
+	 */
+	GW_EVENT_STOP_THROBBER,
+
+	/**
+	 * Starts drag scrolling of a browser window
+	 */
+	GW_EVENT_SCROLL_START,
+
+	/**
+	 * Called when the gui_window has new content.
+	 */
+	GW_EVENT_NEW_CONTENT,
+
+	/**
+	 * selection started
+	 */
+	GW_EVENT_START_SELECTION,
+};
 
 /**
  * Graphical user interface window function table.
@@ -182,16 +234,16 @@ struct gui_window_table {
 
 
 	/**
-	 * Update the extent of the inside of a browser window to that of the
-	 * current content.
+	 * Miscelaneous event occoured for a window
 	 *
-	 * @todo this is used to update scroll bars does it need
-	 * renaming? some frontends (windows) do not even implement it.
+	 * This is used to inform the frontend of window events which
+	 *   require no additional parameters.
 	 *
-	 * \param gw The gui window to update the extent of.
+	 * \param gw The gui window the event occoured for
+	 * \param event Which event has occoured.
+	 * \return NSERROR_OK if teh event was processed else error code.
 	 */
-	void (*update_extent)(struct gui_window *gw);
-
+	nserror (*event)(struct gui_window *gw, enum gui_window_event event);
 
 	/* Optional entries */
 
@@ -247,27 +299,6 @@ struct gui_window_table {
 	void (*place_caret)(struct gui_window *g, int x, int y, int height, const struct rect *clip);
 
 	/**
-	 * Remove the caret, if present.
-	 *
-	 * \param g window with caret
-	 */
-	void (*remove_caret)(struct gui_window *g);
-
-	/**
-	 * start the navigation throbber.
-	 *
-	 * \param g window in which to start throbber.
-	 */
-	void (*start_throbber)(struct gui_window *g);
-
-	/**
-	 * stop the navigation throbber.
-	 *
-	 * \param g window with throbber to stop
-	 */
-	void (*stop_throbber)(struct gui_window *g);
-
-	/**
 	 * start a drag operation within a window
 	 *
 	 * \param g window to start drag from.
@@ -286,21 +317,6 @@ struct gui_window_table {
 	 * \return NSERROR_OK on success else appropriate error code.
 	 */
 	nserror (*save_link)(struct gui_window *g, struct nsurl *url, const char *title);
-
-
-	/**
-	 * Starts drag scrolling of a browser window
-	 *
-	 * \param g the window to scroll
-	 */
-	bool (*scroll_start)(struct gui_window *g);
-
-	/**
-	 * Called when the gui_window has new content.
-	 *
-	 * \param gw The gui window that has new content
-	 */
-	void (*new_content)(struct gui_window *gw);
 
 	/**
 	 * create a form select menu
@@ -335,13 +351,6 @@ struct gui_window_table {
 	 * \param selection The selection to save.
 	 */
 	void (*drag_save_selection)(struct gui_window *gw, const char *selection);
-
-	/**
-	 * selection started
-	 *
-	 * \param gw The gui window to start selection in.
-	 */
-	void (*start_selection)(struct gui_window *gw);
 
 	/**
 	 * console logging happening.

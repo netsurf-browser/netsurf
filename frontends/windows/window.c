@@ -1694,6 +1694,39 @@ static void win32_window_stop_throbber(struct gui_window *w)
 
 
 /**
+ * process miscellaneous window events
+ *
+ * \param gw The window receiving the event.
+ * \param event The event code.
+ * \return NSERROR_OK when processed ok
+ */
+static nserror
+win32_window_event(struct gui_window *gw, enum gui_window_event event)
+{
+	switch (event) {
+	case GW_EVENT_UPDATE_EXTENT:
+		win32_window_update_extent(gw);
+		break;
+
+	case GW_EVENT_REMOVE_CARET:
+		win32_window_remove_caret(gw);
+		break;
+
+	case GW_EVENT_START_THROBBER:
+		win32_window_start_throbber(gw);
+		break;
+
+	case GW_EVENT_STOP_THROBBER:
+		win32_window_stop_throbber(gw);
+		break;
+
+	default:
+		break;
+	}
+	return NSERROR_OK;
+}
+
+/**
  * win32 frontend browser window handling operation table
  */
 static struct gui_window_table window_table = {
@@ -1703,16 +1736,13 @@ static struct gui_window_table window_table = {
 	.get_scroll = win32_window_get_scroll,
 	.set_scroll = win32_window_set_scroll,
 	.get_dimensions = win32_window_get_dimensions,
-	.update_extent = win32_window_update_extent,
+	.event = win32_window_event,
 
 	.set_title = win32_window_set_title,
 	.set_url = win32_window_set_url,
 	.set_status = win32_window_set_status,
 	.set_pointer = win32_window_set_pointer,
 	.place_caret = win32_window_place_caret,
-	.remove_caret = win32_window_remove_caret,
-	.start_throbber = win32_window_start_throbber,
-	.stop_throbber = win32_window_stop_throbber,
 };
 
 struct gui_window_table *win32_window_table = &window_table;

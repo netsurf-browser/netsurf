@@ -307,7 +307,7 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 
 			s->drag_state = DRAG_END;
 
-			guit->window->start_selection(top->window);
+			guit->window->event(top->window, GW_EVENT_START_SELECTION);
 		}
 		else if (mouse & BROWSER_MOUSE_DRAG_2) {
 
@@ -326,7 +326,7 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 				s->drag_state = DRAG_START;
 			}
 
-			guit->window->start_selection(top->window);
+			guit->window->event(top->window, GW_EVENT_START_SELECTION);
 		}
 		else if (mouse & BROWSER_MOUSE_CLICK_2) {
 

@@ -410,14 +410,14 @@ static bool browser_window_check_throbber(struct browser_window *bw)
  *
  * \param bw browser window
  */
-static void browser_window_start_throbber(struct browser_window *bw)
+static nserror browser_window_start_throbber(struct browser_window *bw)
 {
 	bw->throbbing = true;
 
 	while (bw->parent)
 		bw = bw->parent;
 
-	guit->window->start_throbber(bw->window);
+	return guit->window->event(bw->window, GW_EVENT_START_THROBBER);
 }
 
 
@@ -426,16 +426,19 @@ static void browser_window_start_throbber(struct browser_window *bw)
  *
  * \param bw browser window
  */
-static void browser_window_stop_throbber(struct browser_window *bw)
+static nserror browser_window_stop_throbber(struct browser_window *bw)
 {
+	nserror res = NSERROR_OK;
+
 	bw->throbbing = false;
 
 	while (bw->parent)
 		bw = bw->parent;
 
 	if (!browser_window_check_throbber(bw)) {
-		guit->window->stop_throbber(bw->window);
+		res = guit->window->event(bw->window, GW_EVENT_STOP_THROBBER);
 	}
+	return res;
 }
 
 
@@ -765,7 +768,7 @@ static nserror browser_window_content_ready(struct browser_window *bw)
 	browser_window_remove_caret(bw, false);
 
 	if (bw->window != NULL) {
-		guit->window->new_content(bw->window);
+		guit->window->event(bw->window, GW_EVENT_NEW_CONTENT);
 
 		browser_window_refresh_url_bar(bw);
 	}
@@ -2580,7 +2583,7 @@ void browser_window_update_extent(struct browser_window *bw)
 {
 	if (bw->window != NULL) {
 		/* Front end window */
-		guit->window->update_extent(bw->window);
+		guit->window->event(bw->window, GW_EVENT_UPDATE_EXTENT);
 	} else {
 		/* Core-managed browser window */
 		browser_window_handle_scrollbars(bw);
@@ -4260,7 +4263,7 @@ void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 					 &bw->drag.start_scroll_x,
 					 &bw->drag.start_scroll_y);
 
-		guit->window->scroll_start(bw->window);
+		guit->window->event(bw->window, GW_EVENT_SCROLL_START);
 	} else {
 		/* Core managed browser window */
 		bw->drag.start_scroll_x = scrollbar_get_offset(bw->scroll_x);

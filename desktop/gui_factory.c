@@ -55,14 +55,6 @@ static nserror gui_default_window_set_url(struct gui_window *g, struct nsurl *ur
 	return NSERROR_OK;
 }
 
-static void gui_default_window_start_throbber(struct gui_window *g)
-{
-}
-
-static void gui_default_window_stop_throbber(struct gui_window *g)
-{
-}
-
 static bool gui_default_window_drag_start(struct gui_window *g,
 					  gui_drag_type type,
 					  const struct rect *rect)
@@ -82,17 +74,6 @@ static void gui_default_window_set_icon(struct gui_window *g,
 {
 }
 
-
-static void gui_default_window_new_content(struct gui_window *g)
-{
-}
-
-
-static bool gui_default_window_scroll_start(struct gui_window *g)
-{
-	return true;
-}
-
 static void gui_default_window_set_pointer(struct gui_window *g,
 					   gui_pointer_shape shape)
 {
@@ -106,10 +87,6 @@ static void gui_default_window_set_status(struct gui_window *g,
 static void gui_default_window_place_caret(struct gui_window *g,
 					   int x, int y, int height,
 					   const struct rect *clip)
-{
-}
-
-static void gui_default_window_remove_caret(struct gui_window *g)
 {
 }
 
@@ -135,9 +112,6 @@ static void gui_default_window_drag_save_selection(struct gui_window *g,
 {
 }
 
-static void gui_default_window_start_selection(struct gui_window *g)
-{
-}
 
 static void
 gui_default_console_log(struct gui_window *gw,
@@ -176,7 +150,7 @@ static nserror verify_window_register(struct gui_window_table *gwt)
 	if (gwt->get_dimensions == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
-	if (gwt->update_extent == NULL) {
+	if (gwt->event == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
 
@@ -200,26 +174,11 @@ static nserror verify_window_register(struct gui_window_table *gwt)
 	if (gwt->place_caret == NULL) {
 		gwt->place_caret = gui_default_window_place_caret;
 	}
-	if (gwt->remove_caret == NULL) {
-		gwt->remove_caret = gui_default_window_remove_caret;
-	}
-	if (gwt->start_throbber == NULL) {
-		gwt->start_throbber = gui_default_window_start_throbber;
-	}
-	if (gwt->stop_throbber == NULL) {
-		gwt->stop_throbber = gui_default_window_stop_throbber;
-	}
 	if (gwt->drag_start == NULL) {
 		gwt->drag_start = gui_default_window_drag_start;
 	}
 	if (gwt->save_link == NULL) {
 		gwt->save_link = gui_default_window_save_link;
-	}
-	if (gwt->new_content == NULL) {
-		gwt->new_content = gui_default_window_new_content;
-	}
-	if (gwt->scroll_start == NULL) {
-		gwt->scroll_start = gui_default_window_scroll_start;
 	}
 	if (gwt->create_form_select_menu == NULL) {
 		gwt->create_form_select_menu =
@@ -233,9 +192,6 @@ static nserror verify_window_register(struct gui_window_table *gwt)
 	}
 	if (gwt->drag_save_selection == NULL) {
 		gwt->drag_save_selection = gui_default_window_drag_save_selection;
-	}
-	if (gwt->start_selection == NULL) {
-		gwt->start_selection = gui_default_window_start_selection;
 	}
 	if (gwt->console_log == NULL) {
 		gwt->console_log = gui_default_console_log;
