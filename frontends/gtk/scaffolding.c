@@ -70,6 +70,7 @@
 #include "gtk/search.h"
 #include "gtk/throbber.h"
 #include "gtk/toolbar.h"
+#include "gtk/toolbar_items.h"
 #include "gtk/window.h"
 #include "gtk/gdk.h"
 #include "gtk/scaffolding.h"
@@ -102,6 +103,13 @@ static gboolean nsgtk_on_##q##_activate_menu(GtkMenuItem *widget, gpointer data)
 #define BUTTONHANDLER(q)\
 static gboolean nsgtk_on_##q##_activate(GtkButton *widget, gpointer data)
 
+
+struct nsgtk_menu {
+	GtkWidget   *main; /* left click menu entry */
+	GtkWidget   *rclick; /* right click menu */
+	GtkWidget   *popup; /* popup menu entry */
+};
+
 /** Core scaffolding structure. */
 struct nsgtk_scaffolding {
 	/** global linked list of scaffolding for gui interface adjustments */
@@ -132,6 +140,9 @@ struct nsgtk_scaffolding {
 
 	/** link popup menu */
 	struct nsgtk_link_menu *link_menu;
+
+	/** menu entries widgets for sensativity adjustment */
+	struct nsgtk_menu menus[PLACEHOLDER_BUTTON];
 };
 
 /** current scaffold for model dialogue use */
@@ -324,34 +335,6 @@ static void scaffolding_update_context(struct nsgtk_scaffolding *g)
 }
 
 
-/**
- * Make the throbber run.
- *
- * scheduled callback to update the throbber
- *
- * \param p The context passed when scheduled.
- */
-static void nsgtk_throb(void *p)
-{
-#if 0
-	nserror res;
-	GdkPixbuf *pixbuf;
-	struct nsgtk_scaffolding *g = p;
-
-	g->throb_frame++; /* advance to next frame */
-	res = nsgtk_throbber_get_frame(g->throb_frame, &pixbuf);
-	if (res == NSERROR_BAD_SIZE) {
-		g->throb_frame = 1;
-		res = nsgtk_throbber_get_frame(g->throb_frame, &pixbuf);
-	}
-
-	if (res == NSERROR_OK) {
-		gtk_image_set_from_pixbuf(g->throbber, pixbuf);
-	}
-
-	nsgtk_schedule(100, nsgtk_throb, p);
-#endif
-}
 
 
 /**
@@ -2115,23 +2098,20 @@ nserror gui_window_set_url(struct gui_window *gw, nsurl *url)
 	return NSERROR_OK;
 }
 
-void gui_window_start_throbber(struct gui_window* _g)
-{
+
 #if 0
+static nserror gui_window_start_throbber(struct gui_window* gw)
+{
 	struct nsgtk_scaffolding *g = nsgtk_get_scaffold(_g);
 	g->buttons[STOP_BUTTON]->sensitivity = true;
 	g->buttons[RELOAD_BUTTON]->sensitivity = false;
 	nsgtk_scaffolding_set_sensitivity(g);
 
 	scaffolding_update_context(g);
-
-	nsgtk_schedule(100, nsgtk_throb, g);
-#endif
 }
 
-void gui_window_stop_throbber(struct gui_window* _g)
+static nserror gui_window_stop_throbber(struct gui_window* gw)
 {
-#if 0
 	nserror res;
 	GdkPixbuf *pixbuf;
 	struct nsgtk_scaffolding *g = nsgtk_get_scaffold(_g);
@@ -2140,10 +2120,6 @@ void gui_window_stop_throbber(struct gui_window* _g)
 		return;
 	}
 
-	scaffolding_update_context(g);
-	nsgtk_schedule(-1, nsgtk_throb, g);
-
-	g->throb_frame = 0;
 
 	if (g->buttons[STOP_BUTTON] != NULL)
 		g->buttons[STOP_BUTTON]->sensitivity = false;
@@ -2152,13 +2128,8 @@ void gui_window_stop_throbber(struct gui_window* _g)
 
 	nsgtk_scaffolding_set_sensitivity(g);
 
-	res = nsgtk_throbber_get_frame(g->throb_frame, &pixbuf);
-	if ((res == NSERROR_OK) &&
-	    (g->throbber != NULL)) {
-		gtk_image_set_from_pixbuf(g->throbber, pixbuf);
-	}
-#endif
 }
+#endif
 
 
 static void
@@ -2348,15 +2319,6 @@ void nsgtk_scaffolding_reset_offset(struct nsgtk_scaffolding *g)
 
 
 /* exported interface documented in gtk/scaffolding.h */
-void nsgtk_scaffolding_update_throbber_ref(struct nsgtk_scaffolding *g)
-{
-#if 0
-	g->throbber = GTK_IMAGE(gtk_bin_get_child(
-			GTK_BIN(g->buttons[THROBBER_ITEM]->button)));
-#endif
-}
-
-/* exported interface documented in gtk/scaffolding.h */
 void nsgtk_scaffolding_update_websearch_ref(struct nsgtk_scaffolding *g)
 {
 #if 0
@@ -2432,11 +2394,6 @@ void nsgtk_scaffolding_set_sensitivity(struct nsgtk_scaffolding *g)
 		if (g->buttons[i]->rclick != NULL)\
 			gtk_widget_set_sensitive(GTK_WIDGET(\
 					g->buttons[i]->rclick),\
-					g->buttons[i]->sensitivity);\
-		if ((g->buttons[i]->location != -1) && \
-				(g->buttons[i]->button != NULL))\
-			gtk_widget_set_sensitive(GTK_WIDGET(\
-					g->buttons[i]->button),\
 					g->buttons[i]->sensitivity);\
 		if (g->buttons[i]->popup != NULL)\
 			gtk_widget_set_sensitive(GTK_WIDGET(\

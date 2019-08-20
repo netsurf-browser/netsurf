@@ -52,6 +52,7 @@
 #include "gtk/compat.h"
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
+#include "gtk/toolbar.h"
 #include "gtk/local_history.h"
 #include "gtk/plotters.h"
 #include "gtk/schedule.h"
@@ -1344,11 +1345,13 @@ gui_window_event(struct gui_window *gw, enum gui_window_event event)
 		break;
 
 	case GW_EVENT_START_THROBBER:
-		gui_window_start_throbber(gw);
+		nsgtk_toolbar_throbber(gw->toolbar, true);
+		/** \todo menu sensitivity for back/reload */
 		break;
 
 	case GW_EVENT_STOP_THROBBER:
-		gui_window_stop_throbber(gw);
+		nsgtk_toolbar_throbber(gw->toolbar, false);
+		/** \todo menu sensitivity for back/reload */
 		break;
 
 	default:

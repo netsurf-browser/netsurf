@@ -112,7 +112,6 @@ void nsgtk_scaffolding_reset_offset(struct nsgtk_scaffolding *g);
  */
 struct nsgtk_scaffolding *nsgtk_scaffolding_iterate(struct nsgtk_scaffolding *g);
 
-void nsgtk_scaffolding_update_throbber_ref(struct nsgtk_scaffolding *g);
 
 void nsgtk_scaffolding_update_websearch_ref(struct nsgtk_scaffolding *g);
 
@@ -172,8 +171,6 @@ nserror nsgtk_scaffolding_new_tab(struct gui_window *gw);
 void nsgtk_window_set_title(struct gui_window *gw, const char *title);
 
 nserror gui_window_set_url(struct gui_window *g, struct nsurl *url);
-void gui_window_start_throbber(struct gui_window *g);
-void gui_window_stop_throbber(struct gui_window *g);
 
 /**
  * toolbar style changed

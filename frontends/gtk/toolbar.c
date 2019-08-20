@@ -44,8 +44,15 @@
 #include "gtk/toolbar_items.h"
 #include "gtk/toolbar.h"
 
-/** button location indicating button is not to be shown */
+/**
+ * button location indicating button is not to be shown
+ */
 #define INACTIVE_LOCATION (-1)
+
+/**
+ * time (in ms) between throbber animation frame updates
+ */
+#define THROBBER_FRAME_TIME (100)
 
 /**
  * toolbar item context
@@ -54,9 +61,6 @@ struct nsgtk_toolbar_item {
 	GtkToolItem *button;
 	int         location; /* in toolbar */
 	bool        sensitivity;
-	GtkWidget   *main; /* left click menu entry */
-	GtkWidget   *rclick; /* right click menu */
-	GtkWidget   *popup; /* popup menu entry */
 	void        *mhandler; /* menu item clicked */
 	void        *bhandler; /* button clicked */
 	void        *dataplus; /* customization -> toolbar */
@@ -82,9 +86,6 @@ struct nsgtk_toolbar {
 
 	/** Completions for url_bar */
 	GtkEntryCompletion *url_bar_completion;
-
-	/** Activity throbber */
-	GtkImage *throbber;
 
 	/** Current frame of throbber animation */
 	int throb_frame;
@@ -151,7 +152,6 @@ typedef enum search_buttons {
 struct nsgtk_theme {
 	GtkImage *image[PLACEHOLDER_BUTTON];
 	GtkImage *searchimage[SEARCH_BUTTONS_COUNT];
-	/* apng throbber element */
 };
 
 
@@ -364,6 +364,7 @@ void nsgtk_theme_implement(struct nsgtk_scaffolding *g)
 		if (button == NULL)
 			continue;
 
+		#if 0
 		/* gtk_image_menu_item_set_image accepts NULL image */
 		if ((button->main != NULL) &&
 		    (theme[IMAGE_SET_MAIN_MENU] != NULL)) {
@@ -371,7 +372,7 @@ void nsgtk_theme_implement(struct nsgtk_scaffolding *g)
 				GTK_WIDGET(button->main),
 				GTK_WIDGET(theme[IMAGE_SET_MAIN_MENU]->image[i]));
 			gtk_widget_show_all(GTK_WIDGET(button->main));
-		}
+		}		
 		if ((button->rclick != NULL) &&
 		    (theme[IMAGE_SET_RCLICK_MENU] != NULL)) {
 			nsgtk_image_menu_item_set_image(GTK_WIDGET(button->rclick),
@@ -388,6 +389,7 @@ void nsgtk_theme_implement(struct nsgtk_scaffolding *g)
 							      image[i]));
 			gtk_widget_show_all(GTK_WIDGET(button->popup));
 		}
+		#endif
 		if ((button->location != -1) && (button->button	!= NULL) &&
 		    (theme[IMAGE_SET_BUTTONS] != NULL)) {
 			gtk_tool_button_set_icon_widget(
@@ -546,7 +548,7 @@ make_toolbar_item(nsgtk_toolbar_button i, struct nsgtk_theme *theme)
 			w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(	\
 					   theme->image[p##_BUTTON]), q)); \
 		}							\
-		break;							\
+	        break;							\
 	}
 
 	MAKE_STOCKBUTTON(HOME, NSGTK_STOCK_HOME)
@@ -1409,7 +1411,7 @@ static void nsgtk_scaffolding_update_url_bar_ref(struct nsgtk_scaffolding *g)
 static void
 nsgtk_toolbar_set_handler(struct nsgtk_scaffolding *g, nsgtk_toolbar_button i)
 {
-	switch(i){
+	switch(i) {
 	case URL_BAR_ITEM:
 		nsgtk_scaffolding_update_url_bar_ref(g);
 		g_signal_connect(GTK_WIDGET(nsgtk_scaffolding_urlbar(g)),
@@ -1421,7 +1423,6 @@ nsgtk_toolbar_set_handler(struct nsgtk_scaffolding *g, nsgtk_toolbar_button i)
 		break;
 
 	case THROBBER_ITEM:
-		nsgtk_scaffolding_update_throbber_ref(g);
 		break;
 
 	case WEBSEARCH_ITEM:
@@ -1556,6 +1557,9 @@ add_item_to_toolbar(struct nsgtk_toolbar *tb,
 			tb->buttons[bidx]->button = GTK_TOOL_ITEM(
 					make_toolbar_item(bidx, theme));
 
+			gtk_widget_set_sensitive(tb->buttons[bidx]->button,
+						 tb->buttons[bidx]->sensitivity);				
+
 			gtk_toolbar_insert(tb->widget,
 					   tb->buttons[bidx]->button,
 					   location);
@@ -1639,6 +1643,91 @@ toolbar_item_create(nsgtk_toolbar_button id,
 	*item_out = item;
 	return NSERROR_OK;
 }
+
+/**
+ * set a toolbar items sensitivity
+ *
+ * note this does not set menu items sensitivity
+ */
+static nserror
+set_item_sensitivity(struct nsgtk_toolbar_item *item, bool sensitivity)
+{
+	if (item->sensitivity == sensitivity) {
+		/* item does not require sensitivity changing */
+		return NSERROR_OK;
+	}
+	item->sensitivity = sensitivity;
+
+	if ((item->location != -1) && (item->button != NULL)) {
+		gtk_widget_set_sensitive(GTK_WIDGET(item->button),
+					 item->sensitivity);
+	}
+
+	return NSERROR_OK;
+	
+}
+
+/**
+ * set a toolbar item to a throbber frame number
+ *
+ * \param toolbar_item The toolbar item to update
+ * \param frame The animation frame number to update to
+ * \return NSERROR_OK on success,
+ *         NSERROR_INVALID if the toolbar item does not contain an image,
+ *         NSERROR_BAD_SIZE if the frame is out of range.
+ */
+static nserror set_throbber_frame(GtkToolItem *toolbar_item, int frame)
+{
+	nserror res;
+	GdkPixbuf *pixbuf;
+	GtkImage *throbber;
+
+	if (toolbar_item == NULL) {
+		/* no toolbar item */
+		return NSERROR_INVALID;
+	}
+
+	res = nsgtk_throbber_get_frame(frame, &pixbuf);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	throbber = GTK_IMAGE(gtk_bin_get_child(GTK_BIN(toolbar_item)));
+
+	gtk_image_set_from_pixbuf(throbber, pixbuf);
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * Make the throbber run.
+ *
+ * scheduled callback to update the throbber
+ *
+ * \param p The context passed when scheduled.
+ */
+static void next_throbber_frame(void *p)
+{
+	struct nsgtk_toolbar *tb = p;
+	nserror res;
+
+	tb->throb_frame++; /* advance to next frame */
+
+	res = set_throbber_frame(tb->buttons[THROBBER_ITEM]->button,
+				 tb->throb_frame);
+	if (res == NSERROR_BAD_SIZE) {
+		tb->throb_frame = 1;
+		res = set_throbber_frame(tb->buttons[THROBBER_ITEM]->button,
+					 tb->throb_frame);
+	}
+
+	/* only schedule next frame if there are no errors */
+	if (res == NSERROR_OK) {
+		nsgtk_schedule(THROBBER_FRAME_TIME, next_throbber_frame, p);
+	}
+}
+
 
 /* exported interface documented in toolbar.h */
 nserror nsgtk_toolbar_create(GtkBuilder *builder, struct nsgtk_toolbar **tb_out)
@@ -1750,3 +1839,34 @@ nserror nsgtk_toolbar_update(struct nsgtk_toolbar *tb)
 
 	return NSERROR_OK;
 }
+
+
+/* exported interface documented in toolbar.h */
+nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active)
+{
+	nserror res;
+	GdkPixbuf *pixbuf;
+
+	/* when activating the throbber simply schedule the next frame update */
+	if (active) {
+		nsgtk_schedule(THROBBER_FRAME_TIME, next_throbber_frame, tb);
+
+		set_item_sensitivity(tb->buttons[STOP_BUTTON], true);
+		set_item_sensitivity(tb->buttons[RELOAD_BUTTON], false);
+
+		return NSERROR_OK;
+	}
+	
+	/* stopping the throbber */
+	nsgtk_schedule(-1, next_throbber_frame, tb);
+	tb->throb_frame = 0;
+	res =  set_throbber_frame(tb->buttons[THROBBER_ITEM]->button,
+				  tb->throb_frame);
+
+	/* adjust sensitivity of other items */
+	set_item_sensitivity(tb->buttons[STOP_BUTTON], false);
+	set_item_sensitivity(tb->buttons[RELOAD_BUTTON], true);
+
+	return res;
+}
+
