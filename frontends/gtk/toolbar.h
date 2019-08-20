@@ -56,10 +56,19 @@ nserror nsgtk_toolbar_update(struct nsgtk_toolbar *tb);
  * Start or stop a throbber in a toolbar
  *
  * \param toolbar A toolbar returned from a creation
- * \param active Trie if the throbber animation should play.
+ * \param active True if the throbber animation should play.
  * \return NSERROR_OK on success
  */
 nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active);
+
+/**
+ * Update the toolbar url entry
+ *
+ * \param toolbar A toolbar returned from a creation
+ * \param url The URL to set
+ * \return NSERROR_OK on success
+ */
+nserror nsgtk_toolbar_set_url(struct nsgtk_toolbar *tb, nsurl *url);
 
 /**
  * sets up the images for scaffolding.

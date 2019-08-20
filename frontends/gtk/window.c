@@ -45,6 +45,7 @@
 #include "netsurf/keypress.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
+#include "utils/nsurl.h"
 
 #include "gtk/window.h"
 #include "gtk/selection.h"
@@ -1358,6 +1359,11 @@ gui_window_event(struct gui_window *gw, enum gui_window_event event)
 		break;
 	}
 	return NSERROR_OK;
+}
+
+static nserror gui_window_set_url(struct gui_window *gw, nsurl *url)
+{
+	return nsgtk_toolbar_set_url(gw->toolbar, url);
 }
 
 static struct gui_window_table window_table = {
