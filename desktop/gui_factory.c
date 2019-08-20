@@ -533,7 +533,7 @@ static nserror verify_file_register(struct gui_file_table *gft)
  * verify bitmap table is valid
  *
  * \param gbt The bitmap table to verify.
- * \return NSERROR_OK if teh table is valid else NSERROR_BAD_PARAMETER.
+ * \return NSERROR_OK if the table is valid else NSERROR_BAD_PARAMETER.
  */
 static nserror verify_bitmap_register(struct gui_bitmap_table *gbt)
 {

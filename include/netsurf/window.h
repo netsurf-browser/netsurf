@@ -77,7 +77,7 @@ typedef enum {
  */
 enum gui_window_event {
 	/**
-	 * An empty event should never occour
+	 * An empty event should never occur
 	 */
 	GW_EVENT_NONE = 0,
 
@@ -234,14 +234,14 @@ struct gui_window_table {
 
 
 	/**
-	 * Miscelaneous event occoured for a window
+	 * Miscellaneous event occurred for a window
 	 *
 	 * This is used to inform the frontend of window events which
 	 *   require no additional parameters.
 	 *
-	 * \param gw The gui window the event occoured for
-	 * \param event Which event has occoured.
-	 * \return NSERROR_OK if teh event was processed else error code.
+	 * \param gw The gui window the event occurred for
+	 * \param event Which event has occurred.
+	 * \return NSERROR_OK if the event was processed else error code.
 	 */
 	nserror (*event)(struct gui_window *gw, enum gui_window_event event);
 

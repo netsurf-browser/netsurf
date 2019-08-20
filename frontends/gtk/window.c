@@ -129,7 +129,7 @@ struct gui_window {
 /**< first entry in window list */
 struct gui_window *window_list = NULL;
 
-/** flag controlling opening of tabs in teh background */
+/** flag controlling opening of tabs in the background */
 int temp_open_background = -1;
 
 struct nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g)
