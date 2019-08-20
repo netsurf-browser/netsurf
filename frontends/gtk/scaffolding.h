@@ -170,8 +170,6 @@ nserror nsgtk_scaffolding_new_tab(struct gui_window *gw);
  */
 void nsgtk_window_set_title(struct gui_window *gw, const char *title);
 
-nserror gui_window_set_url(struct gui_window *g, struct nsurl *url);
-
 /**
  * toolbar style changed
  */
