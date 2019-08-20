@@ -52,6 +52,14 @@ nserror nsgtk_toolbar_destroy(struct nsgtk_toolbar *toolbar);
  */
 nserror nsgtk_toolbar_update(struct nsgtk_toolbar *tb);
 
+/**
+ * Start or stop a throbber in a toolbar
+ *
+ * \param toolbar A toolbar returned from a creation
+ * \param active Trie if the throbber animation should play.
+ * \return NSERROR_OK on success
+ */
+nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active);
 
 /**
  * sets up the images for scaffolding.
