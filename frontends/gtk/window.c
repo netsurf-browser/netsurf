@@ -706,6 +706,13 @@ static void window_destroy(GtkWidget *widget, gpointer data)
 }
 
 
+
+static struct browser_window *bw_from_gw(void *data)
+{
+	struct gui_window *gw = data;
+	return gw->bw;
+}
+
 /**
  * Create and open a gtk container (window or tab) for a browsing context.
  *
@@ -779,7 +786,7 @@ gui_window_create(struct browser_window *bw,
 	g->input_method = gtk_im_multicontext_new();
 
 
-	res = nsgtk_toolbar_create(tab_builder, &g->toolbar);
+	res = nsgtk_toolbar_create(tab_builder, bw_from_gw, g, &g->toolbar);
 	if (res != NSERROR_OK) {
 		free(g);
 		g_object_unref(tab_builder);
