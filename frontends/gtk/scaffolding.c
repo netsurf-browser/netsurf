@@ -75,7 +75,6 @@
 #include "gtk/gdk.h"
 #include "gtk/scaffolding.h"
 #include "gtk/tabs.h"
-#include "gtk/schedule.h"
 #include "gtk/viewdata.h"
 #include "gtk/resources.h"
 #include "gtk/layout_pango.h"

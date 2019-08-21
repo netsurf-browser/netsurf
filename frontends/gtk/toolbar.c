@@ -44,6 +44,7 @@
 #include "gtk/resources.h"
 #include "gtk/toolbar_items.h"
 #include "gtk/toolbar.h"
+#include "gtk/schedule.h"
 
 /**
  * button location indicating button is not to be shown
@@ -76,11 +77,16 @@ struct nsgtk_toolbar {
 	/** gtk toolbar widget */
 	GtkToolbar *widget;
 
-	struct nsgtk_toolbar_item *buttons[PLACEHOLDER_BUTTON];
+	/* toolbar size allocation context */
 	int offset;
 	int toolbarmem;
 	int toolbarbase;
 	int historybase;
+
+	/**
+	 * Toolbar item contexts
+	 */
+	struct nsgtk_toolbar_item *buttons[PLACEHOLDER_BUTTON];
 
 	/** entry widget holding the url of the current displayed page */
 	GtkWidget *url_bar;
@@ -94,6 +100,11 @@ struct nsgtk_toolbar {
 	/** Web search widget */
 	GtkWidget *webSearchEntry;
 
+	/**
+	 * callback to obtain a browser window for navigation
+	 */
+	struct browser_window *(*get_bw)(void *ctx);
+	void *get_bw_ctx;
 };
 
 
@@ -1559,7 +1570,7 @@ add_item_to_toolbar(struct nsgtk_toolbar *tb,
 					make_toolbar_item(bidx, theme));
 
 			/* set widgets initial sensitivity */
-			gtk_widget_set_sensitive(tb->buttons[bidx]->button,
+			gtk_widget_set_sensitive(GTK_WIDGET(tb->buttons[bidx]->button),
 						 tb->buttons[bidx]->sensitivity);
 
 			gtk_toolbar_insert(tb->widget,
@@ -1754,16 +1765,16 @@ itemid_from_location(struct nsgtk_toolbar *tb, int location)
  * find the toolbar item with a given gtk widget.
  *
  * \param tb the toolbar instance
- * \param widget the widget to search for
+ * \param toolitem the tool item widget to search for
  * \return the item id matching the widget
  */
 static nsgtk_toolbar_button
-itemid_from_gtkwidget(struct nsgtk_toolbar *tb, GtkWidget *widget)
+itemid_from_gtktoolitem(struct nsgtk_toolbar *tb, GtkToolItem *toolitem)
 {
 	int iidx;
 	for (iidx = BACK_BUTTON; iidx < PLACEHOLDER_BUTTON; iidx++) {
 		if ((tb->buttons[iidx]->location != INACTIVE_LOCATION) &&
-		    (tb->buttons[iidx]->button == widget)) {
+		    (tb->buttons[iidx]->button == toolitem)) {
 			break;
 		}
 	}
@@ -1772,15 +1783,23 @@ itemid_from_gtkwidget(struct nsgtk_toolbar *tb, GtkWidget *widget)
 
 
 /**
- * callback for toolbar widgets size allocation
+ * callback for all toolbar items widget size allocation
+ *
+ * handler connected to all toolbar items for the size-allocate signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param alloc The size allocation being set.
+ * \param data The toolbar context passed when the signal was connected
  */
 static void
-toolbar_size_allocate_cb(GtkWidget *widget, GtkAllocation *alloc, gpointer data)
+toolbar_item_size_allocate_cb(GtkWidget *widget,
+			      GtkAllocation *alloc,
+			      gpointer data)
 {
 	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
 	nsgtk_toolbar_button itemid;
 
-	itemid = itemid_from_gtkwidget(tb, widget);
+	itemid = itemid_from_gtktoolitem(tb, GTK_TOOL_ITEM(widget));
 
 	if ((tb->toolbarmem == alloc->x) ||
 	    (tb->buttons[itemid]->location < tb->buttons[HISTORY_BUTTON]->location)) {
@@ -1814,16 +1833,83 @@ toolbar_size_allocate_cb(GtkWidget *widget, GtkAllocation *alloc, gpointer data)
 }
 
 
+/**
+ * callback for url entry widget activation
+ *
+ * handler connected to url entry widget for the activate signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE to allow activation.
+ */
+static gboolean url_entry_activate_cb(GtkWidget *widget, gpointer data)
+{
+	nserror res;
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+	nsurl *url;
+
+	res = search_web_omni(gtk_entry_get_text(GTK_ENTRY(widget)),
+			      SEARCH_WEB_OMNI_NONE,
+			      &url);
+	if (res == NSERROR_OK) {
+		bw = tb->get_bw(tb->get_bw_ctx);
+		res = browser_window_navigate(
+			bw, url, NULL, BW_NAVIGATE_HISTORY, NULL, NULL, NULL);
+		nsurl_unref(url);
+	}
+	if (res != NSERROR_OK) {
+		nsgtk_warning(messages_get_errorcode(res), 0);
+	}
+
+	return TRUE;
+}
+
+/**
+ * callback for url entry widget changing
+ *
+ * handler connected to url entry widget for the change signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param event The key change event that changed the entry.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE to allow activation.
+ */
+static gboolean
+url_entry_changed_cb(GtkWidget *widget, GdkEventKey *event, gpointer data)
+{
+	return nsgtk_completion_update(GTK_ENTRY(widget));
+}
+
+
 static nserror
 toolbar_connect_signal(struct nsgtk_toolbar *tb, nsgtk_toolbar_button itemid)
 {
 	if (tb->buttons[itemid]->button != NULL) {
 		g_signal_connect(tb->buttons[itemid]->button,
 				 "size-allocate",
-				 G_CALLBACK(toolbar_size_allocate_cb),
+				 G_CALLBACK(toolbar_item_size_allocate_cb),
 				 tb);
 	}
 
+	switch (itemid) {
+	case URL_BAR_ITEM: {
+		GtkEntry *url_entry;
+		url_entry = GTK_ENTRY(gtk_bin_get_child(
+					GTK_BIN(tb->buttons[itemid]->button)));
+		g_signal_connect(GTK_WIDGET(url_entry),
+				 "activate",
+				 G_CALLBACK(url_entry_activate_cb),
+				 tb);
+		g_signal_connect(GTK_WIDGET(url_entry),
+				 "changed",
+				 G_CALLBACK(url_entry_changed_cb),
+				 tb);
+	}
+
+	}
+
+	return NSERROR_OK;
 }
 
 /**
@@ -1847,7 +1933,11 @@ nserror toolbar_connect_signals(struct nsgtk_toolbar *tb)
 }
 
 /* exported interface documented in toolbar.h */
-nserror nsgtk_toolbar_create(GtkBuilder *builder, struct nsgtk_toolbar **tb_out)
+nserror
+nsgtk_toolbar_create(GtkBuilder *builder,
+		     struct browser_window *(*get_bw)(void *ctx),
+		     void *get_bw_ctx,
+		     struct nsgtk_toolbar **tb_out)
 {
 	nserror res;
 	struct nsgtk_toolbar *tb;
@@ -1857,6 +1947,9 @@ nserror nsgtk_toolbar_create(GtkBuilder *builder, struct nsgtk_toolbar **tb_out)
 	if (tb == NULL) {
 		return NSERROR_NOMEM;
 	}
+
+	tb->get_bw = get_bw;
+	tb->get_bw_ctx = get_bw_ctx;
 
 	tb->widget = GTK_TOOLBAR(gtk_builder_get_object(builder, "toolbar"));
 

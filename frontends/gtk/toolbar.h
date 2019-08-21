@@ -32,7 +32,8 @@ struct nsgtk_toolbar;
  * \param[out] toolbar a pointer to receive the result.
  * \return NSERROR_OK and toolbar updated on success else error code
  */
-nserror nsgtk_toolbar_create(GtkBuilder *builder, struct nsgtk_toolbar **toolbar);
+nserror nsgtk_toolbar_create(GtkBuilder *builder, struct browser_window *(*get_bw)(void *ctx),
+		     void *get_bw_ctx,struct nsgtk_toolbar **toolbar);
 
 
 /**
