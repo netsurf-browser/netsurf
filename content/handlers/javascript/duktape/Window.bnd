@@ -480,13 +480,11 @@ method Window::alert()
 method Window::setTimeout()
 %{
 	duk_idx_t argc = duk_get_top(ctx);
-	if (argc < 2) {
-		/* not enough arguments */
-		return duk_error(ctx, DUK_RET_TYPE_ERROR, dukky_error_fmt_argument, 2, argc);
+	duk_int_t timeout = 10;
+	if (argc >= 2) {
+		timeout = duk_get_int(ctx, 1);
 	}
-
-	/* func, timeout, args... */
-	duk_int_t timeout = duk_get_int(ctx, 1);
+	/* func, [timeout, args...] */
 	if (timeout < 10) { timeout = 10; }
 	size_t handle = window_alloc_new_callback(ctx, priv, false, (int)timeout);
 
@@ -497,13 +495,11 @@ method Window::setTimeout()
 method Window::setInterval()
 %{
 	duk_idx_t argc = duk_get_top(ctx);
-	if (argc < 2) {
-		/* not enough arguments */
-		return duk_error(ctx, DUK_RET_TYPE_ERROR, dukky_error_fmt_argument, 2, argc);
+	duk_int_t timeout = 10;
+	if (argc >= 2) {
+		timeout = duk_get_int(ctx, 1);
 	}
-
-	/* func, timeout, args... */
-	duk_int_t timeout = duk_get_int(ctx, 1);
+	/* func, [timeout, args...] */
 	if (timeout < 10) { timeout = 10; }
 	size_t handle = window_alloc_new_callback(ctx, priv, true, (int)timeout);
 
