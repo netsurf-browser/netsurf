@@ -1026,10 +1026,7 @@ browser_window__handle_login(struct browser_window *bw,
 	}
 
 	/* Step two, construct our fetch parameters */
-	err = nsurl_create("about:query/auth", &params.url);
-	if (err != NSERROR_OK) {
-		goto out;
-	}
+	params.url = nsurl_ref(corestring_nsurl_about_query_auth);
 	params.referrer = nsurl_ref(url);
 	params.flags = BW_NAVIGATE_HISTORY | BW_NAVIGATE_NO_TERMINAL_HISTORY_UPDATE | BW_NAVIGATE_INTERNAL;
 
@@ -1101,10 +1098,7 @@ browser_window__handle_bad_certs(struct browser_window *bw,
 
 	memset(&params, 0, sizeof(params));
 
-	err = nsurl_create("about:query/ssl", &params.url);
-	if (err != NSERROR_OK) {
-		goto out;
-	}
+	params.url = nsurl_ref(corestring_nsurl_about_query_ssl);
 
 	err = fetch_multipart_data_new_kv(&params.post_multipart,
 					  "siteurl",
@@ -1678,8 +1672,6 @@ browser_window_refresh_url_bar_internal(struct browser_window *bw, nsurl *url)
 		/* Not root window or no gui window so do not set a URL */
 		return NSERROR_OK;
 	}
-	
-	NSLOG(netsurf, CRITICAL, "Updating the URL to %s", nsurl_access(url));
 	
 	return guit->window->set_url(bw->window, url);
 }
@@ -3380,10 +3372,7 @@ browser_window__navigate_internal_query_auth(struct browser_window *bw,
 		 * about:blank
 		 */
 		browser_window__free_fetch_parameters(&bw->loading_parameters);
-		res = nsurl_create("about:blank", &bw->loading_parameters.url);
-		if (res != NSERROR_OK) {
-			return res;
-		}
+		bw->loading_parameters.url = nsurl_ref(corestring_nsurl_about_blank);
 		bw->loading_parameters.flags = BW_NAVIGATE_NO_TERMINAL_HISTORY_UPDATE | BW_NAVIGATE_INTERNAL;
 		bw->internal_nav = true;
 		return browser_window__navigate_internal(bw, &bw->loading_parameters);

@@ -358,6 +358,8 @@ CORESTRING_DOM_VALUE(http_equiv, "http-equiv");
 CORESTRING_DOM_VALUE(html_namespace, "http://www.w3.org/1999/xhtml");
 
 CORESTRING_NSURL(about_blank, "about:blank");
+CORESTRING_NSURL(about_query_ssl, "about:query/ssl");
+CORESTRING_NSURL(about_query_auth, "about:query/auth");
 
 #undef CORESTRING_LWC_STRING
 #undef CORESTRING_DOM_STRING
