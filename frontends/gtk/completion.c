@@ -37,6 +37,18 @@
 
 GtkListStore *nsgtk_completion_list;
 
+struct nsgtk_completion_ctx {
+	/**
+	 * callback to obtain a browser window for navigation
+	 */
+	struct browser_window *(*get_bw)(void *ctx);
+
+	/**
+	 * context passed to get_bw function
+	 */
+	void *get_bw_ctx;
+};
+
 /**
  * completion row matcher
  */
@@ -50,7 +62,6 @@ static gboolean nsgtk_completion_match(GtkEntryCompletion *completion,
 	 * are in the list should be shown.
 	 */
 	return TRUE;
-
 }
 
 
@@ -77,13 +88,16 @@ static gboolean
 nsgtk_completion_match_select(GtkEntryCompletion *widget,
 			      GtkTreeModel *model,
 			      GtkTreeIter *iter,
-			      gpointer user_data)
+			      gpointer data)
 {
+	struct nsgtk_completion_ctx *cb_ctx;
 	GValue value = G_VALUE_INIT;
-	struct nsgtk_scaffolding *g = user_data;
-	struct browser_window *bw = nsgtk_get_browser_window(nsgtk_scaffolding_top_level(g));
+	struct browser_window *bw;
 	nserror ret;
 	nsurl *url;
+
+	cb_ctx = data;
+	bw = cb_ctx->get_bw(cb_ctx->get_bw_ctx);
 
 	gtk_tree_model_get_value(model, iter, 0, &value);
 
@@ -127,11 +141,20 @@ gboolean nsgtk_completion_update(GtkEntry *entry)
 }
 
 /* exported interface documented in completion.h */
-GtkEntryCompletion *nsgtk_url_entry_completion_new(struct nsgtk_scaffolding *gs)
+nserror
+nsgtk_completion_connect_signals(GtkEntry *entry,
+				 struct browser_window *(*get_bw)(void *ctx),
+				 void *get_bw_ctx)
 {
 	GtkEntryCompletion *completion;
+	struct nsgtk_completion_ctx *cb_ctx;
 
-	completion = gtk_entry_completion_new();
+	cb_ctx = calloc(1, sizeof(struct nsgtk_completion_ctx));
+	cb_ctx->get_bw = get_bw;
+	cb_ctx->get_bw_ctx = get_bw_ctx;
+
+	completion = gtk_entry_get_completion(entry);
+
 	gtk_entry_completion_set_match_func(completion,
 			nsgtk_completion_match, NULL, NULL);
 
@@ -146,13 +169,15 @@ GtkEntryCompletion *nsgtk_url_entry_completion_new(struct nsgtk_scaffolding *gs)
 	gtk_entry_completion_set_popup_completion(completion, TRUE);
 
 	/* when selected callback */
-	g_signal_connect(G_OBJECT(completion), "match-selected",
-			 G_CALLBACK(nsgtk_completion_match_select), gs);
+	g_signal_connect(G_OBJECT(completion),
+			 "match-selected",
+			 G_CALLBACK(nsgtk_completion_match_select),
+			 cb_ctx);
 
 	g_object_set(G_OBJECT(completion),
-			"popup-set-width", TRUE,
-			"popup-single-match", TRUE,
-			NULL);
+		     "popup-set-width", TRUE,
+		     "popup-single-match", TRUE,
+		     NULL);
 
-	return completion;
+	return NSERROR_OK;
 }

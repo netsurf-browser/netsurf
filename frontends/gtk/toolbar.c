@@ -105,6 +105,10 @@ struct nsgtk_toolbar {
 	 * callback to obtain a browser window for navigation
 	 */
 	struct browser_window *(*get_bw)(void *ctx);
+
+	/**
+	 * context passed to get_bw function
+	 */
 	void *get_bw_ctx;
 };
 
@@ -577,14 +581,20 @@ make_toolbar_item(nsgtk_toolbar_button i, struct nsgtk_theme *theme)
 		break;
 
 	case URL_BAR_ITEM: {
-		GtkWidget *entry = nsgtk_entry_new();
-		w = GTK_WIDGET(gtk_tool_item_new());
+		/* create a gtk entry widget with a completion attached */
+		GtkWidget *entry;
+		GtkEntryCompletion *completion;
 
-		if ((entry == NULL) || (w == NULL)) {
+		w = GTK_WIDGET(gtk_tool_item_new());
+		entry = nsgtk_entry_new();
+		completion = gtk_entry_completion_new();
+
+		if ((entry == NULL) || (completion == NULL) || (w == NULL)) {
 			nsgtk_warning(messages_get("NoMemory"), 0);
 			return NULL;
 		}
 
+		gtk_entry_set_completion(entry, completion);
 		gtk_container_add(GTK_CONTAINER(w), entry);
 		gtk_tool_item_set_expand(GTK_TOOL_ITEM(w), TRUE);
 		break;
@@ -1906,8 +1916,12 @@ toolbar_connect_signal(struct nsgtk_toolbar *tb, nsgtk_toolbar_button itemid)
 				 "changed",
 				 G_CALLBACK(url_entry_changed_cb),
 				 tb);
-		}
+
+		nsgtk_completion_connect_signals(url_entry,
+						tb->get_bw,
+						tb->get_bw_ctx);
 		break;
+	}
 	}
 
 	return NSERROR_OK;
@@ -1995,10 +2009,6 @@ nsgtk_toolbar_create(GtkBuilder *builder,
 
 	/* set the throbber start frame. */
 	tb->throb_frame = 0;
-
-	/* set up URL bar completion */
-	/** \todo sort out completion */
-	//tb->url_bar_completion = nsgtk_url_entry_completion_new(gs);
 
 	res = toolbar_connect_signals(tb);
 	if (res != NSERROR_OK) {

@@ -37,10 +37,11 @@ void nsgtk_completion_init(void);
 gboolean nsgtk_completion_update(GtkEntry *entry);
 
 /**
- * create a new entry completion on a scaffold.
- *
- * \param gs The scaffoliding which the url entry is in.
+ * connect signals on entry completion
  */
-GtkEntryCompletion *nsgtk_url_entry_completion_new(struct nsgtk_scaffolding *gs);
+nserror
+nsgtk_completion_connect_signals(GtkEntry *entry,
+				 struct browser_window *(*get_bw)(void *ctx),
+				 void *get_bw_ctx);
 
 #endif
