@@ -408,4 +408,11 @@ void browser_window_history_destroy(struct browser_window *bw);
  */
 typedef nserror (*browser_window_query_callback)(bool proceed, void *pw);
 
+/**
+ * Navigate a browser window to the current parameters
+ *
+ * \param bw The browser window to cause to navigate
+ */
+nserror browser_window__reload_current_parameters(struct browser_window *bw);
+
 #endif

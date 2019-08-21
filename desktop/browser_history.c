@@ -37,6 +37,7 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "netsurf/bitmap.h"
+#include "utils/corestrings.h"
 
 #include "desktop/gui_internal.h"
 #include "desktop/browser_private.h"
@@ -519,6 +520,24 @@ void browser_window_history_destroy(struct browser_window *bw)
 /* exported interface documented in desktop/browser_history.h */
 nserror browser_window_history_back(struct browser_window *bw, bool new_window)
 {
+	if (bw != NULL && bw->internal_nav) {
+		/* All internal nav back operations ignore new_window */
+		if (bw->current_parameters.url != NULL) {
+			/* There are some internal parameters, restart from there */
+			return browser_window__reload_current_parameters(bw);
+		} else {
+			/* No internal parameters, just navigate to about:blank */
+			return browser_window_navigate(
+				bw,
+				corestring_nsurl_about_blank,
+				NULL, /* Referer */
+				BW_NAVIGATE_HISTORY,
+				NULL, /* Post */
+				NULL, /* Post */
+				NULL  /* parent fetch */);
+		}
+	}
+
 	if (!bw || !bw->history || !bw->history->current ||
 	    !bw->history->current->back) {
 		return NSERROR_BAD_PARAMETER;

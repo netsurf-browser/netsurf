@@ -864,23 +864,7 @@ browser_window__handle_ssl_query_response(bool proceed, void *pw)
 		 * nav to the old 'current' parameters, with any post data
 		 * stripped away
 		 */
-		if (bw->current_parameters.post_urlenc != NULL) {
-			free(bw->current_parameters.post_urlenc);
-			bw->current_parameters.post_urlenc = NULL;
-		}
-
-		if (bw->current_parameters.post_multipart != NULL) {
-			fetch_multipart_data_destroy(bw->current_parameters.post_multipart);
-			bw->current_parameters.post_multipart = NULL;
-		}
-
-		bw->current_parameters.flags &= ~BW_NAVIGATE_HISTORY;
-		bw->internal_nav = false;
-
-		browser_window__free_fetch_parameters(&bw->loading_parameters);
-		memcpy(&bw->loading_parameters, &bw->current_parameters, sizeof(bw->loading_parameters));
-		memset(&bw->current_parameters, 0, sizeof(bw->current_parameters));
-		return browser_window__navigate_internal(bw, &bw->loading_parameters);
+		return browser_window__reload_current_parameters(bw);
 	}
 
 	/* We're processing a "proceed" attempt from the form */
@@ -1694,7 +1678,9 @@ browser_window_refresh_url_bar_internal(struct browser_window *bw, nsurl *url)
 		/* Not root window or no gui window so do not set a URL */
 		return NSERROR_OK;
 	}
-
+	
+	NSLOG(netsurf, CRITICAL, "Updating the URL to %s", nsurl_access(url));
+	
 	return guit->window->set_url(bw->window, url);
 }
 
@@ -4275,6 +4261,10 @@ void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 /* exported interface documented in netsurf/browser_window.h */
 bool browser_window_back_available(struct browser_window *bw)
 {
+	if (bw != NULL && bw->internal_nav) {
+		/* Internal nav, back is possible */
+		return true;
+	}
 	return (bw && bw->history && browser_window_history_back_available(bw));
 }
 
@@ -4374,4 +4364,29 @@ browser_window_console_log(struct browser_window *bw,
 	guit->window->console_log(root->window, src, msg, msglen, flags);
 
 	return NSERROR_OK;
+}
+
+/* Exported interface, documented in browser_private.h */
+nserror
+browser_window__reload_current_parameters(struct browser_window *bw)
+{
+	assert(bw != NULL);
+
+	if (bw->current_parameters.post_urlenc != NULL) {
+		free(bw->current_parameters.post_urlenc);
+		bw->current_parameters.post_urlenc = NULL;
+	}
+
+	if (bw->current_parameters.post_multipart != NULL) {
+		fetch_multipart_data_destroy(bw->current_parameters.post_multipart);
+		bw->current_parameters.post_multipart = NULL;
+	}
+
+	bw->current_parameters.flags &= ~BW_NAVIGATE_HISTORY;
+	bw->internal_nav = false;
+	
+	browser_window__free_fetch_parameters(&bw->loading_parameters);
+	memcpy(&bw->loading_parameters, &bw->current_parameters, sizeof(bw->loading_parameters));
+	memset(&bw->current_parameters, 0, sizeof(bw->current_parameters));
+	return browser_window__navigate_internal(bw, &bw->loading_parameters);
 }
