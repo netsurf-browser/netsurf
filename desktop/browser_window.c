@@ -3007,7 +3007,7 @@ void browser_window_destroy(struct browser_window *bw)
 nserror browser_window_refresh_url_bar(struct browser_window *bw)
 {
 	nserror ret;
-	nsurl *display_url;
+	nsurl *display_url, *url;
 
 	assert(bw);
 
@@ -3020,8 +3020,17 @@ nserror browser_window_refresh_url_bar(struct browser_window *bw)
 		/* no content so return about:blank */
 		ret = browser_window_refresh_url_bar_internal(bw,
 				corestring_nsurl_about_blank);
+	} else if (bw->throbbing) {
+		/* We're throbbing, so show the loading parameters url,
+		 * or if there isn't one, the current parameters url
+		 */
+		if (bw->loading_parameters.url != NULL) {
+			url = bw->loading_parameters.url;
+		} else {
+			url = bw->current_parameters.url;
+		}
+		ret = browser_window_refresh_url_bar_internal(bw, url);
 	} else if (bw->frag_id == NULL) {
-		nsurl *url;
 		if (bw->internal_nav) {
 			url = bw->loading_parameters.url;
 		} else {
@@ -3030,7 +3039,6 @@ nserror browser_window_refresh_url_bar(struct browser_window *bw)
 		ret = browser_window_refresh_url_bar_internal(bw, url);
 	} else {
 		/* Combine URL and Fragment */
-		nsurl *url;
 		if (bw->internal_nav) {
 			url = bw->loading_parameters.url;
 		} else {
@@ -3317,7 +3325,9 @@ browser_window__navigate_internal_real(struct browser_window *bw,
 	case NSERROR_OK:
 		bw->loading_content = c;
 		browser_window_start_throbber(bw);
-		error = browser_window_refresh_url_bar_internal(bw, params->url);
+		if (bw->internal_nav == false) {
+			error = browser_window_refresh_url_bar_internal(bw, params->url);
+		}
 		break;
 
 	case NSERROR_NO_FETCH_HANDLER: /* no handler for this type */
