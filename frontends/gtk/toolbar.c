@@ -92,9 +92,6 @@ struct nsgtk_toolbar {
 	/** entry widget holding the url of the current displayed page */
 	GtkWidget *url_bar;
 
-	/** Completions for url_bar */
-	GtkEntryCompletion *url_bar_completion;
-
 	/** Current frame of throbber animation */
 	int throb_frame;
 
@@ -173,7 +170,7 @@ struct nsgtk_theme {
 
 
 /* define data plus and data minus handlers */
-#define TOOLBAR_ITEM(identifier, name, sensitivity)			\
+#define TOOLBAR_ITEM(identifier, name, sensitivity, clicked)		\
 static gboolean								\
 nsgtk_toolbar_##name##_data_plus(GtkWidget *widget,			\
 				 GdkDragContext *cont,			\
@@ -594,7 +591,7 @@ make_toolbar_item(nsgtk_toolbar_button i, struct nsgtk_theme *theme)
 			return NULL;
 		}
 
-		gtk_entry_set_completion(entry, completion);
+		gtk_entry_set_completion(GTK_ENTRY(entry), completion);
 		gtk_container_add(GTK_CONTAINER(w), entry);
 		gtk_tool_item_set_expand(GTK_TOOL_ITEM(w), TRUE);
 		break;
@@ -658,14 +655,16 @@ make_toolbar_item(nsgtk_toolbar_button i, struct nsgtk_theme *theme)
 
 /* gtk_tool_button_new accepts NULL args */
 #define MAKE_MENUBUTTON(p, q)						\
-		case p##_BUTTON: {					\
-			char *label = NULL;				\
-			label = remove_underscores(messages_get(#q), false); \
-			w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(	\
-					   theme->image[p##_BUTTON]), label)); \
-			if (label != NULL)				\
-				free(label);				\
-			break;						\
+	case p##_BUTTON: {						\
+		char *label = NULL;					\
+		label = remove_underscores(messages_get(#q), false);	\
+		w = GTK_WIDGET(gtk_tool_button_new(			\
+					GTK_WIDGET(theme->image[p##_BUTTON]), \
+					label));			\
+		if (label != NULL) {					\
+			free(label);					\
+		}							\
+		break;							\
 	}
 
 	MAKE_MENUBUTTON(NEWWINDOW, gtkNewWindow)
@@ -1414,17 +1413,6 @@ int nsgtk_toolbar_get_id_from_widget(GtkWidget *widget,
 	return -1;
 }
 
-/* exported interface documented in gtk/scaffolding.h */
-static void nsgtk_scaffolding_update_url_bar_ref(struct nsgtk_scaffolding *g)
-{
-	#if 0
-	g->url_bar = GTK_WIDGET(gtk_bin_get_child(GTK_BIN(
-			g->buttons[URL_BAR_ITEM]->button)));
-
-	gtk_entry_set_completion(GTK_ENTRY(g->url_bar),
-			g->url_bar_completion);
-	#endif
-}
 
 /**
  * add handlers to factory widgets
@@ -1436,7 +1424,6 @@ nsgtk_toolbar_set_handler(struct nsgtk_scaffolding *g, nsgtk_toolbar_button i)
 {
 	switch(i) {
 	case URL_BAR_ITEM:
-		nsgtk_scaffolding_update_url_bar_ref(g);
 		g_signal_connect(GTK_WIDGET(nsgtk_scaffolding_urlbar(g)),
 				 "activate", G_CALLBACK(
 					 nsgtk_window_url_activate_event), g);
@@ -1633,125 +1620,6 @@ static nserror populate_gtk_toolbar_widget(struct nsgtk_toolbar *tb)
 	return NSERROR_OK;
 }
 
-/**
- * create a toolbar item
- *
- * create a toolbar item and set up its default handlers
- */
-static nserror
-toolbar_item_create(nsgtk_toolbar_button id,
-		    struct nsgtk_toolbar_item **item_out)
-{
-	struct nsgtk_toolbar_item *item;
-	item = calloc(1, sizeof(struct nsgtk_toolbar_item));
-	if (item == NULL) {
-		return NSERROR_NOMEM;
-	}
-	item->location = INACTIVE_LOCATION;
-
-	switch (id) {
-#define TOOLBAR_ITEM(identifier, name, snstvty)				\
-	case identifier:						\
-		item->sensitivity = snstvty;				\
-		item->dataplus = nsgtk_toolbar_##name##_data_plus;	\
-		item->dataminus = nsgtk_toolbar_##name##_data_minus;	\
-		break;
-#include "gtk/toolbar_items.h"
-#undef TOOLBAR_ITEM
-
-	case PLACEHOLDER_BUTTON:
-		free(item);
-		return NSERROR_INVALID;
-	}
-
-	*item_out = item;
-	return NSERROR_OK;
-}
-
-/**
- * set a toolbar items sensitivity
- *
- * note this does not set menu items sensitivity
- */
-static nserror
-set_item_sensitivity(struct nsgtk_toolbar_item *item, bool sensitivity)
-{
-	if (item->sensitivity == sensitivity) {
-		/* item does not require sensitivity changing */
-		return NSERROR_OK;
-	}
-	item->sensitivity = sensitivity;
-
-	if ((item->location != -1) && (item->button != NULL)) {
-		gtk_widget_set_sensitive(GTK_WIDGET(item->button),
-					 item->sensitivity);
-	}
-
-	return NSERROR_OK;
-
-}
-
-/**
- * set a toolbar item to a throbber frame number
- *
- * \param toolbar_item The toolbar item to update
- * \param frame The animation frame number to update to
- * \return NSERROR_OK on success,
- *         NSERROR_INVALID if the toolbar item does not contain an image,
- *         NSERROR_BAD_SIZE if the frame is out of range.
- */
-static nserror set_throbber_frame(GtkToolItem *toolbar_item, int frame)
-{
-	nserror res;
-	GdkPixbuf *pixbuf;
-	GtkImage *throbber;
-
-	if (toolbar_item == NULL) {
-		/* no toolbar item */
-		return NSERROR_INVALID;
-	}
-
-	res = nsgtk_throbber_get_frame(frame, &pixbuf);
-	if (res != NSERROR_OK) {
-		return res;
-	}
-
-	throbber = GTK_IMAGE(gtk_bin_get_child(GTK_BIN(toolbar_item)));
-
-	gtk_image_set_from_pixbuf(throbber, pixbuf);
-
-	return NSERROR_OK;
-}
-
-
-/**
- * Make the throbber run.
- *
- * scheduled callback to update the throbber
- *
- * \param p The context passed when scheduled.
- */
-static void next_throbber_frame(void *p)
-{
-	struct nsgtk_toolbar *tb = p;
-	nserror res;
-
-	tb->throb_frame++; /* advance to next frame */
-
-	res = set_throbber_frame(tb->buttons[THROBBER_ITEM]->button,
-				 tb->throb_frame);
-	if (res == NSERROR_BAD_SIZE) {
-		tb->throb_frame = 1;
-		res = set_throbber_frame(tb->buttons[THROBBER_ITEM]->button,
-					 tb->throb_frame);
-	}
-
-	/* only schedule next frame if there are no errors */
-	if (res == NSERROR_OK) {
-		nsgtk_schedule(THROBBER_FRAME_TIME, next_throbber_frame, p);
-	}
-}
-
 
 /**
  * find the toolbar item with a given location.
@@ -1876,6 +1744,7 @@ static gboolean url_entry_activate_cb(GtkWidget *widget, gpointer data)
 	return TRUE;
 }
 
+
 /**
  * callback for url entry widget changing
  *
@@ -1893,11 +1762,183 @@ url_entry_changed_cb(GtkWidget *widget, GdkEventKey *event, gpointer data)
 }
 
 
+/**
+ * handler for local history tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+localhistory_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	nserror res;
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+	GtkWidget *toplevel;
+
+	toplevel = gtk_widget_get_toplevel(widget);
+	bw = tb->get_bw(tb->get_bw_ctx);
+
+	res = nsgtk_local_history_present(toplevel, bw);
+	if (res != NSERROR_OK) {
+		NSLOG(netsurf, INFO, "Unable to present local history window.");
+	}
+	return TRUE;
+}
+
+
+/**
+ * handler for stop tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+stop_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+
+	browser_window_stop(tb->get_bw(tb->get_bw_ctx));
+
+	return TRUE;
+}
+
+/**
+ * create a toolbar item
+ *
+ * create a toolbar item and set up its default handlers
+ */
+static nserror
+toolbar_item_create(nsgtk_toolbar_button id,
+		    struct nsgtk_toolbar_item **item_out)
+{
+	struct nsgtk_toolbar_item *item;
+	item = calloc(1, sizeof(struct nsgtk_toolbar_item));
+	if (item == NULL) {
+		return NSERROR_NOMEM;
+	}
+	item->location = INACTIVE_LOCATION;
+
+	/* set item defaults from macro */
+	switch (id) {
+#define TOOLBAR_ITEM(identifier, name, snstvty, clicked)		\
+	case identifier:						\
+		item->sensitivity = snstvty;				\
+		item->dataplus = nsgtk_toolbar_##name##_data_plus;	\
+		item->dataminus = nsgtk_toolbar_##name##_data_minus;	\
+		item->bhandler = clicked;				\
+		break;
+#include "gtk/toolbar_items.h"
+#undef TOOLBAR_ITEM
+
+	case PLACEHOLDER_BUTTON:
+		free(item);
+		return NSERROR_INVALID;
+	}
+
+	*item_out = item;
+	return NSERROR_OK;
+}
+
+/**
+ * set a toolbar items sensitivity
+ *
+ * note this does not set menu items sensitivity
+ */
+static nserror
+set_item_sensitivity(struct nsgtk_toolbar_item *item, bool sensitivity)
+{
+	if (item->sensitivity == sensitivity) {
+		/* item does not require sensitivity changing */
+		return NSERROR_OK;
+	}
+	item->sensitivity = sensitivity;
+
+	if ((item->location != -1) && (item->button != NULL)) {
+		gtk_widget_set_sensitive(GTK_WIDGET(item->button),
+					 item->sensitivity);
+	}
+
+	return NSERROR_OK;
+
+}
+
+/**
+ * set a toolbar item to a throbber frame number
+ *
+ * \param toolbar_item The toolbar item to update
+ * \param frame The animation frame number to update to
+ * \return NSERROR_OK on success,
+ *         NSERROR_INVALID if the toolbar item does not contain an image,
+ *         NSERROR_BAD_SIZE if the frame is out of range.
+ */
+static nserror set_throbber_frame(GtkToolItem *toolbar_item, int frame)
+{
+	nserror res;
+	GdkPixbuf *pixbuf;
+	GtkImage *throbber;
+
+	if (toolbar_item == NULL) {
+		/* no toolbar item */
+		return NSERROR_INVALID;
+	}
+
+	res = nsgtk_throbber_get_frame(frame, &pixbuf);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	throbber = GTK_IMAGE(gtk_bin_get_child(GTK_BIN(toolbar_item)));
+
+	gtk_image_set_from_pixbuf(throbber, pixbuf);
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * Make the throbber run.
+ *
+ * scheduled callback to update the throbber
+ *
+ * \param p The context passed when scheduled.
+ */
+static void next_throbber_frame(void *p)
+{
+	struct nsgtk_toolbar *tb = p;
+	nserror res;
+
+	tb->throb_frame++; /* advance to next frame */
+
+	res = set_throbber_frame(tb->buttons[THROBBER_ITEM]->button,
+				 tb->throb_frame);
+	if (res == NSERROR_BAD_SIZE) {
+		tb->throb_frame = 1;
+		res = set_throbber_frame(tb->buttons[THROBBER_ITEM]->button,
+					 tb->throb_frame);
+	}
+
+	/* only schedule next frame if there are no errors */
+	if (res == NSERROR_OK) {
+		nsgtk_schedule(THROBBER_FRAME_TIME, next_throbber_frame, p);
+	}
+}
+
+
+/**
+ * connect signal handlers to a gtk toolbar item
+ */
 static nserror
 toolbar_connect_signal(struct nsgtk_toolbar *tb, nsgtk_toolbar_button itemid)
 {
-	if (tb->buttons[itemid]->button != NULL) {
-		g_signal_connect(tb->buttons[itemid]->button,
+	struct nsgtk_toolbar_item *item;
+
+	item = tb->buttons[itemid];
+
+	if (item->button != NULL) {
+		g_signal_connect(item->button,
 				 "size-allocate",
 				 G_CALLBACK(toolbar_item_size_allocate_cb),
 				 tb);
@@ -1906,8 +1947,7 @@ toolbar_connect_signal(struct nsgtk_toolbar *tb, nsgtk_toolbar_button itemid)
 	switch (itemid) {
 	case URL_BAR_ITEM: {
 		GtkEntry *url_entry;
-		url_entry = GTK_ENTRY(gtk_bin_get_child(
-					GTK_BIN(tb->buttons[itemid]->button)));
+		url_entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(item->button)));
 		g_signal_connect(GTK_WIDGET(url_entry),
 				 "activate",
 				 G_CALLBACK(url_entry_activate_cb),
@@ -1922,6 +1962,16 @@ toolbar_connect_signal(struct nsgtk_toolbar *tb, nsgtk_toolbar_button itemid)
 						tb->get_bw_ctx);
 		break;
 	}
+
+	default:
+		if ((item->bhandler != NULL) && (item->button != NULL)) {
+			g_signal_connect(item->button,
+					 "clicked",
+					 G_CALLBACK(item->bhandler),
+					 tb);
+		}
+		break;
+
 	}
 
 	return NSERROR_OK;
@@ -1965,8 +2015,11 @@ nsgtk_toolbar_create(GtkBuilder *builder,
 
 	tb->get_bw = get_bw;
 	tb->get_bw_ctx = get_bw_ctx;
+	/* set the throbber start frame. */
+	tb->throb_frame = 0;
 
 	tb->widget = GTK_TOOLBAR(gtk_builder_get_object(builder, "toolbar"));
+	gtk_toolbar_set_show_arrow(tb->widget, TRUE);
 
 	/* allocate button contexts */
 	for (bidx = BACK_BUTTON; bidx < PLACEHOLDER_BUTTON; bidx++) {
@@ -1998,7 +2051,6 @@ nsgtk_toolbar_create(GtkBuilder *builder,
 		return res;
 	}
 
-	gtk_toolbar_set_show_arrow(tb->widget, TRUE);
 	gtk_widget_show_all(GTK_WIDGET(tb->widget));
 
 	/* if there is a history widget set its size */
@@ -2006,9 +2058,6 @@ nsgtk_toolbar_create(GtkBuilder *builder,
 		gtk_widget_set_size_request(GTK_WIDGET(
 			tb->buttons[HISTORY_BUTTON]->button), 20, -1);
 	}
-
-	/* set the throbber start frame. */
-	tb->throb_frame = 0;
 
 	res = toolbar_connect_signals(tb);
 	if (res != NSERROR_OK) {
