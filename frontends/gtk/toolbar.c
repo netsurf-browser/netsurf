@@ -34,6 +34,7 @@
 #include "utils/file.h"
 #include "utils/nsurl.h"
 
+#include "gtk/completion.h"
 #include "gtk/gui.h"
 #include "gtk/warn.h"
 #include "gtk/search.h"
@@ -1905,8 +1906,8 @@ toolbar_connect_signal(struct nsgtk_toolbar *tb, nsgtk_toolbar_button itemid)
 				 "changed",
 				 G_CALLBACK(url_entry_changed_cb),
 				 tb);
-	}
-
+		}
+		break;
 	}
 
 	return NSERROR_OK;
@@ -1915,7 +1916,7 @@ toolbar_connect_signal(struct nsgtk_toolbar *tb, nsgtk_toolbar_button itemid)
 /**
  * connect all signals to widgets in a toolbar
  */
-nserror toolbar_connect_signals(struct nsgtk_toolbar *tb)
+static nserror toolbar_connect_signals(struct nsgtk_toolbar *tb)
 {
 	int location; /* location index */
 	nsgtk_toolbar_button itemid; /* item id */
@@ -2061,7 +2062,6 @@ nserror nsgtk_toolbar_update(struct nsgtk_toolbar *tb)
 nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active)
 {
 	nserror res;
-	GdkPixbuf *pixbuf;
 
 	/* when activating the throbber simply schedule the next frame update */
 	if (active) {

@@ -54,7 +54,6 @@
 #include "gtk/compat.h"
 #include "gtk/warn.h"
 #include "gtk/cookies.h"
-#include "gtk/completion.h"
 #include "gtk/preferences.h"
 #include "gtk/about.h"
 #include "gtk/viewsource.h"
