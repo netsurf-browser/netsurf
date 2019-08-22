@@ -88,11 +88,11 @@ typedef enum {
 #define TOOLBAR_ITEM_SET
 #endif
 
-TOOLBAR_ITEM(BACK_BUTTON, back, false, NULL)
+TOOLBAR_ITEM(BACK_BUTTON, back, false, back_button_clicked_cb)
 TOOLBAR_ITEM(HISTORY_BUTTON, history, true, localhistory_button_clicked_cb)
-TOOLBAR_ITEM(FORWARD_BUTTON, forward, false, NULL)
+TOOLBAR_ITEM(FORWARD_BUTTON, forward, false, forward_button_clicked_cb)
 TOOLBAR_ITEM(STOP_BUTTON, stop, false, stop_button_clicked_cb)
-TOOLBAR_ITEM(RELOAD_BUTTON, reload, true, NULL)
+TOOLBAR_ITEM(RELOAD_BUTTON, reload, true, reload_button_clicked_cb)
 TOOLBAR_ITEM(HOME_BUTTON, home, true, NULL)
 TOOLBAR_ITEM(URL_BAR_ITEM, url_bar, true, NULL)
 TOOLBAR_ITEM(WEBSEARCH_ITEM, websearch, true, NULL)
