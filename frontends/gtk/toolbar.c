@@ -27,7 +27,9 @@
 #include <gtk/gtk.h>
 
 #include "netsurf/browser_window.h"
+#include "desktop/browser_history.h"
 #include "desktop/searchweb.h"
+#include "desktop/search.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
@@ -46,6 +48,7 @@
 #include "gtk/toolbar_items.h"
 #include "gtk/toolbar.h"
 #include "gtk/schedule.h"
+#include "gtk/local_history.h"
 
 /**
  * button location indicating button is not to be shown
@@ -64,8 +67,13 @@ struct nsgtk_toolbar_item {
 	GtkToolItem *button;
 	int         location; /* in toolbar */
 	bool        sensitivity;
+
+	/**
+	 * button clicked handler
+	 */
+	gboolean (*bhandler)(GtkWidget *widget, gpointer data);
+
 	void        *mhandler; /* menu item clicked */
-	void        *bhandler; /* button clicked */
 	void        *dataplus; /* customization -> toolbar */
 	void        *dataminus; /* customization -> store */
 };
@@ -1662,6 +1670,28 @@ itemid_from_gtktoolitem(struct nsgtk_toolbar *tb, GtkToolItem *toolitem)
 
 
 /**
+ * set a toolbar items sensitivity
+ *
+ * note this does not set menu items sensitivity
+ */
+static nserror
+set_item_sensitivity(struct nsgtk_toolbar_item *item, bool sensitivity)
+{
+	if (item->sensitivity != sensitivity) {
+		/* item requires sensitivity changing */
+		item->sensitivity = sensitivity;
+
+		if ((item->location != -1) && (item->button != NULL)) {
+			gtk_widget_set_sensitive(GTK_WIDGET(item->button),
+						 item->sensitivity);
+		}
+	}
+
+	return NSERROR_OK;
+}
+
+
+/**
  * callback for all toolbar items widget size allocation
  *
  * handler connected to all toolbar items for the size-allocate signal
@@ -1763,6 +1793,38 @@ url_entry_changed_cb(GtkWidget *widget, GdkEventKey *event, gpointer data)
 
 
 /**
+ * handler for back tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+back_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+
+	bw = tb->get_bw(tb->get_bw_ctx);
+
+	if ((bw != NULL) && browser_window_history_back_available(bw)) {
+		/* clear potential search effects */
+		browser_window_search_clear(bw);
+
+		browser_window_history_back(bw, false);
+
+		set_item_sensitivity(tb->buttons[BACK_BUTTON],
+				browser_window_history_back_available(bw));
+		set_item_sensitivity(tb->buttons[FORWARD_BUTTON],
+				browser_window_history_forward_available(bw));
+
+		nsgtk_local_history_hide();
+	}
+	return TRUE;
+}
+
+
+/**
  * handler for local history tool bar item clicked signal
  *
  * \param widget The widget the signal is being delivered to.
@@ -1777,12 +1839,46 @@ localhistory_button_clicked_cb(GtkWidget *widget, gpointer data)
 	struct browser_window *bw;
 	GtkWidget *toplevel;
 
-	toplevel = gtk_widget_get_toplevel(widget);
+	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
+	if (toplevel != NULL) {
+		bw = tb->get_bw(tb->get_bw_ctx);
+
+		res = nsgtk_local_history_present(GTK_WINDOW(toplevel), bw);
+		if (res != NSERROR_OK) {
+			NSLOG(netsurf, INFO,
+			      "Unable to present local history window.");
+		}
+	}
+	return TRUE;
+}
+
+
+/**
+ * handler for forward tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+forward_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+
 	bw = tb->get_bw(tb->get_bw_ctx);
 
-	res = nsgtk_local_history_present(toplevel, bw);
-	if (res != NSERROR_OK) {
-		NSLOG(netsurf, INFO, "Unable to present local history window.");
+	if ((bw != NULL) && browser_window_history_forward_available(bw)) {
+		/* clear potential search effects */
+		browser_window_search_clear(bw);
+
+		browser_window_history_forward(bw, false);
+
+		set_item_sensitivity(tb->buttons[BACK_BUTTON],
+				browser_window_history_back_available(bw));
+		set_item_sensitivity(tb->buttons[FORWARD_BUTTON],
+				browser_window_history_forward_available(bw));
+		nsgtk_local_history_hide();
 	}
 	return TRUE;
 }
@@ -1804,6 +1900,33 @@ stop_button_clicked_cb(GtkWidget *widget, gpointer data)
 
 	return TRUE;
 }
+
+
+/**
+ * handler for reload tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+reload_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+
+	bw = tb->get_bw(tb->get_bw_ctx);
+
+	/* clear potential search effects */
+	browser_window_search_clear(bw);
+
+	browser_window_reload(bw, true);
+
+	return TRUE;
+}
+
+
+
 
 /**
  * create a toolbar item
@@ -1842,28 +1965,6 @@ toolbar_item_create(nsgtk_toolbar_button id,
 	return NSERROR_OK;
 }
 
-/**
- * set a toolbar items sensitivity
- *
- * note this does not set menu items sensitivity
- */
-static nserror
-set_item_sensitivity(struct nsgtk_toolbar_item *item, bool sensitivity)
-{
-	if (item->sensitivity == sensitivity) {
-		/* item does not require sensitivity changing */
-		return NSERROR_OK;
-	}
-	item->sensitivity = sensitivity;
-
-	if ((item->location != -1) && (item->button != NULL)) {
-		gtk_widget_set_sensitive(GTK_WIDGET(item->button),
-					 item->sensitivity);
-	}
-
-	return NSERROR_OK;
-
-}
 
 /**
  * set a toolbar item to a throbber frame number
@@ -2121,6 +2222,9 @@ nserror nsgtk_toolbar_update(struct nsgtk_toolbar *tb)
 nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active)
 {
 	nserror res;
+	struct browser_window *bw;
+
+	bw = tb->get_bw(tb->get_bw_ctx);
 
 	/* when activating the throbber simply schedule the next frame update */
 	if (active) {
@@ -2141,6 +2245,11 @@ nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active)
 	/* adjust sensitivity of other items */
 	set_item_sensitivity(tb->buttons[STOP_BUTTON], false);
 	set_item_sensitivity(tb->buttons[RELOAD_BUTTON], true);
+	set_item_sensitivity(tb->buttons[BACK_BUTTON],
+			     browser_window_history_back_available(bw));
+	set_item_sensitivity(tb->buttons[FORWARD_BUTTON],
+			     browser_window_history_forward_available(bw));
+	nsgtk_local_history_hide();
 
 	return res;
 }
