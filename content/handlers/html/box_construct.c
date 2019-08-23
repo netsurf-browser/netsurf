@@ -163,9 +163,11 @@ static const struct element_entry element_table[] = {
  * \return    netsurf error code indicating status of call
  */
 
-nserror dom_to_box(dom_node *n, html_content *c, box_construct_complete_cb cb)
+nserror dom_to_box(dom_node *n, html_content *c, box_construct_complete_cb cb, void **box_conversion_context)
 {
 	struct box_construct_ctx *ctx;
+
+	assert(box_conversion_context != NULL);
 
 	if (c->bctx == NULL) {
 		/* create a context allocation for this box tree */
@@ -186,8 +188,27 @@ nserror dom_to_box(dom_node *n, html_content *c, box_construct_complete_cb cb)
 	ctx->cb = cb;
 	ctx->bctx = c->bctx;
 
+	*box_conversion_context = ctx;
+
 	return guit->misc->schedule(0, (void *)convert_xml_to_box, ctx);
 }
+
+nserror cancel_dom_to_box(void *box_conversion_context)
+{
+	struct box_construct_ctx *ctx = box_conversion_context;
+	nserror err;
+
+	err = guit->misc->schedule(-1, (void *)convert_xml_to_box, ctx);
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
+	dom_node_unref(ctx->n);
+	free(ctx);
+
+	return NSERROR_OK;
+}
+
 
 /* mapping from CSS display to box type
  * this table must be in sync with libcss' css_display enum */

@@ -359,7 +359,8 @@ bool box_vscrollbar_present(const struct box *box);
 bool box_hscrollbar_present(const struct box *box);
 
 nserror dom_to_box(struct dom_node *n, struct html_content *c,
-		box_construct_complete_cb cb);
+		   box_construct_complete_cb cb, void **box_conversion_context);
+nserror cancel_dom_to_box(void *box_conversion_context);
 
 bool box_normalise_block(
 		struct box *block,

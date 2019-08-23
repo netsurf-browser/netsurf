@@ -138,6 +138,10 @@ typedef struct html_content {
 
 	/** A talloc context purely for the render box tree */
 	int *bctx;
+	/** A context pointer for the box conversion, NULL if no conversion
+	 * is in progress.
+	 */
+	void *box_conversion_context;
 	/** Box tree, or NULL. */
 	struct box *layout;
 	/** Document background colour. */

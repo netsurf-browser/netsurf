@@ -115,6 +115,8 @@ static void html_box_convert_done(html_content *c, bool success)
 
 	NSLOG(netsurf, INFO, "Done XML to box (%p)", c);
 
+	c->box_conversion_context = NULL;
+
 	/* Clean up and report error if unsuccessful or aborted */
 	if ((success == false) || (c->aborted)) {
 		html_object_free_objects(c);
@@ -656,7 +658,7 @@ void html_finish_conversion(html_content *htmlc)
 
 	html_get_dimensions(htmlc);
 
-	error = dom_to_box(html, htmlc, html_box_convert_done);
+	error = dom_to_box(html, htmlc, html_box_convert_done, &htmlc->box_conversion_context);
 	if (error != NSERROR_OK) {
 		NSLOG(netsurf, INFO, "box conversion failed");
 		dom_node_unref(html);
@@ -1709,6 +1711,13 @@ static void html_destroy(struct content *c)
 	struct form *f, *g;
 
 	NSLOG(netsurf, INFO, "content %p", c);
+
+	/* If we're still converting a layout, cancel it */
+	if (html->box_conversion_context != NULL) {
+		if (cancel_dom_to_box(html->box_conversion_context) != NSERROR_OK) {
+			NSLOG(netsurf, CRITICAL, "WARNING, Unable to cancel conversion context, browser may crash");
+		}
+	}
 
 	/* Destroy forms */
 	for (f = html->forms; f != NULL; f = g) {
