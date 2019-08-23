@@ -542,6 +542,108 @@ static char *remove_underscores(const char *s, bool replacespace)
 
 
 /**
+ * create throbber toolbar item widget
+ *
+ * create a gtk entry widget with a completion attached
+ */
+static GtkToolItem *
+make_toolbar_item_throbber(void)
+{
+	nserror res;
+	GtkToolItem *item;
+	GdkPixbuf *pixbuf;
+	GtkWidget *image;
+
+	res = nsgtk_throbber_get_frame(0, &pixbuf);
+	if (res != NSERROR_OK) {
+		return NULL;
+	}
+
+	if (edit_mode) {
+		item = gtk_tool_button_new(
+				GTK_WIDGET(gtk_image_new_from_pixbuf(pixbuf)),
+				"[throbber]");
+	} else {
+		item = gtk_tool_item_new();
+
+		image = gtk_image_new_from_pixbuf(pixbuf);
+		if (image != NULL) {
+			nsgtk_widget_set_alignment(image,
+						   GTK_ALIGN_CENTER,
+						   GTK_ALIGN_CENTER);
+			nsgtk_widget_set_margins(image, 3, 0);
+
+			gtk_container_add(GTK_CONTAINER(item), image);
+		}
+	}
+	return item;
+}
+
+/**
+ * create url bar toolbar item widget
+ *
+ * create a gtk entry widget with a completion attached
+ */
+static GtkToolItem *
+make_toolbar_item_url_bar(void)
+{
+	GtkToolItem *item;
+	GtkWidget *entry;
+	GtkEntryCompletion *completion;
+
+	item = gtk_tool_item_new();
+	entry = nsgtk_entry_new();
+	completion = gtk_entry_completion_new();
+
+	if ((entry == NULL) || (completion == NULL) || (item == NULL)) {
+		return NULL;
+	}
+
+	gtk_entry_set_completion(GTK_ENTRY(entry), completion);
+	gtk_container_add(GTK_CONTAINER(item), entry);
+	gtk_tool_item_set_expand(item, TRUE);
+
+	return item;
+}
+
+
+/**
+ * create web search toolbar item widget
+ */
+static GtkToolItem *
+make_toolbar_item_websearch(void)
+{
+	GtkToolItem *item;
+
+	if (edit_mode) {
+		item = gtk_tool_button_new(
+				GTK_WIDGET(nsgtk_image_new_from_stock(
+						NSGTK_STOCK_FIND,
+						GTK_ICON_SIZE_LARGE_TOOLBAR)),
+				"[websearch]");
+	} else {
+		GtkWidget *entry = nsgtk_entry_new();
+
+		item = gtk_tool_item_new();
+
+		if ((entry == NULL) || (item == NULL)) {
+			return NULL;
+		}
+
+		gtk_widget_set_size_request(entry, NSGTK_WEBSEARCH_WIDTH, -1);
+
+		nsgtk_entry_set_icon_from_stock(entry,
+						GTK_ENTRY_ICON_PRIMARY,
+						NSGTK_STOCK_INFO);
+
+		gtk_container_add(GTK_CONTAINER(item), entry);
+	}
+
+	return item;
+}
+
+
+/**
  * widget factory for creation of toolbar item widgets
  *
  * \param i the id of the widget
@@ -585,81 +687,17 @@ make_toolbar_item(nsgtk_toolbar_button i, struct nsgtk_theme *theme)
 				theme->image[HISTORY_BUTTON]), "H"));
 		break;
 
-	case URL_BAR_ITEM: {
-		/* create a gtk entry widget with a completion attached */
-		GtkWidget *entry;
-		GtkEntryCompletion *completion;
-
-		w = GTK_WIDGET(gtk_tool_item_new());
-		entry = nsgtk_entry_new();
-		completion = gtk_entry_completion_new();
-
-		if ((entry == NULL) || (completion == NULL) || (w == NULL)) {
-			nsgtk_warning(messages_get("NoMemory"), 0);
-			return NULL;
-		}
-
-		gtk_entry_set_completion(GTK_ENTRY(entry), completion);
-		gtk_container_add(GTK_CONTAINER(w), entry);
-		gtk_tool_item_set_expand(GTK_TOOL_ITEM(w), TRUE);
+	case URL_BAR_ITEM:
+		w = GTK_WIDGET(make_toolbar_item_url_bar());
 		break;
-	}
 
-	case THROBBER_ITEM: {
-		nserror res;
-		GdkPixbuf *pixbuf;
-
-		res = nsgtk_throbber_get_frame(0, &pixbuf);
-		if (res != NSERROR_OK) {
-			return NULL;
-		}
-
-		if (edit_mode) {
-			w = GTK_WIDGET(gtk_tool_button_new(
-				GTK_WIDGET(gtk_image_new_from_pixbuf(pixbuf)),
-				"[throbber]"));
-		} else {
-			GtkWidget *image;
-
-			w = GTK_WIDGET(gtk_tool_item_new());
-
-			image = gtk_image_new_from_pixbuf(pixbuf);
-			if (image != NULL) {
-				nsgtk_widget_set_alignment(image,
-							   GTK_ALIGN_CENTER,
-							   GTK_ALIGN_CENTER);
-				nsgtk_widget_set_margins(image, 3, 0);
-
-				gtk_container_add(GTK_CONTAINER(w), image);
-			}
-		}
+	case THROBBER_ITEM:
+		w = GTK_WIDGET(make_toolbar_item_throbber());
 		break;
-	}
 
-	case WEBSEARCH_ITEM: {
-		if (edit_mode)
-			return GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(
-					nsgtk_image_new_from_stock(NSGTK_STOCK_FIND,
-					GTK_ICON_SIZE_LARGE_TOOLBAR)),
-					"[websearch]"));
-
-		GtkWidget *entry = nsgtk_entry_new();
-
-		w = GTK_WIDGET(gtk_tool_item_new());
-
-		if ((entry == NULL) || (w == NULL)) {
-			nsgtk_warning(messages_get("NoMemory"), 0);
-			return NULL;
-		}
-
-		gtk_widget_set_size_request(entry, NSGTK_WEBSEARCH_WIDTH, -1);
-
-		nsgtk_entry_set_icon_from_stock(entry, GTK_ENTRY_ICON_PRIMARY,
-						NSGTK_STOCK_INFO);
-
-		gtk_container_add(GTK_CONTAINER(w), entry);
+	case WEBSEARCH_ITEM:
+		w = GTK_WIDGET(make_toolbar_item_websearch());
 		break;
-	}
 
 /* gtk_tool_button_new accepts NULL args */
 #define MAKE_MENUBUTTON(p, q)						\
@@ -723,6 +761,11 @@ make_toolbar_item(nsgtk_toolbar_button i, struct nsgtk_theme *theme)
 		break;
 
 	}
+
+	if (w == NULL) {
+		nsgtk_warning(messages_get("NoMemory"), 0);
+	}
+
 	return w;
 }
 
@@ -1926,6 +1969,47 @@ reload_button_clicked_cb(GtkWidget *widget, gpointer data)
 }
 
 
+/**
+ * handler for home tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+home_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	nserror res;
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	const char *addr;
+	struct browser_window *bw;
+	nsurl *url;
+
+	if (nsoption_charp(homepage_url) != NULL) {
+		addr = nsoption_charp(homepage_url);
+	} else {
+		addr = NETSURF_HOMEPAGE;
+	}
+
+	res = nsurl_create(addr, &url);
+	if (res == NSERROR_OK) {
+		bw = tb->get_bw(tb->get_bw_ctx);
+
+		res = browser_window_navigate(bw,
+					      url,
+					      NULL,
+					      BW_NAVIGATE_HISTORY,
+					      NULL,
+					      NULL,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (res != NSERROR_OK) {
+		nsgtk_warning(messages_get_errorcode(res), 0);
+	}
+
+	return TRUE;
+}
 
 
 /**
