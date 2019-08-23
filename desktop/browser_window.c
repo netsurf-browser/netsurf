@@ -4381,6 +4381,11 @@ browser_window__reload_current_parameters(struct browser_window *bw)
 		bw->current_parameters.post_multipart = NULL;
 	}
 
+	if (bw->current_parameters.url == NULL) {
+		/* We have never navigated so go to about:blank */
+		bw->current_parameters.url = nsurl_ref(corestring_nsurl_about_blank);
+	}
+
 	bw->current_parameters.flags &= ~BW_NAVIGATE_HISTORY;
 	bw->internal_nav = false;
 	
