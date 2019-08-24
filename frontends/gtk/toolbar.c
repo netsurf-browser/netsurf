@@ -1465,49 +1465,6 @@ int nsgtk_toolbar_get_id_from_widget(GtkWidget *widget,
 }
 
 
-/**
- * add handlers to factory widgets
- * \param g the scaffolding to attach handlers to
- * \param i the toolbar item id
- */
-static void
-nsgtk_toolbar_set_handler(struct nsgtk_scaffolding *g, nsgtk_toolbar_button i)
-{
-	switch(i) {
-	case URL_BAR_ITEM:
-		g_signal_connect(GTK_WIDGET(nsgtk_scaffolding_urlbar(g)),
-				 "activate", G_CALLBACK(
-					 nsgtk_window_url_activate_event), g);
-		g_signal_connect(GTK_WIDGET(nsgtk_scaffolding_urlbar(g)),
-				 "changed", G_CALLBACK(
-					 nsgtk_window_url_changed), g);
-		break;
-
-	case THROBBER_ITEM:
-		break;
-
-	case WEBSEARCH_ITEM:
-		nsgtk_scaffolding_update_websearch_ref(g);
-		g_signal_connect(GTK_WIDGET(nsgtk_scaffolding_websearch(g)),
-				 "activate", G_CALLBACK(
-					 nsgtk_websearch_activate), g);
-		g_signal_connect(GTK_WIDGET(nsgtk_scaffolding_websearch(g)),
-				 "button-press-event", G_CALLBACK(
-					 nsgtk_websearch_clear), g);
-		break;
-
-	default:
-		if ((nsgtk_scaffolding_button(g, i)->bhandler != NULL) &&
-		    (nsgtk_scaffolding_button(g, i)->button != NULL)) {
-			g_signal_connect(
-				nsgtk_scaffolding_button(g, i)->button,
-				"clicked",
-				G_CALLBACK(nsgtk_scaffolding_button(
-						   g, i)->bhandler), g);
-		}
-		break;
-	}
-}
 
 /**
  * connect 'normal' handlers to toolbar buttons
@@ -1525,7 +1482,7 @@ void nsgtk_toolbar_connect_all(struct nsgtk_scaffolding *g)
 					"size-allocate", G_CALLBACK(
 					nsgtk_scaffolding_toolbar_size_allocate
 					), g);
-		nsgtk_toolbar_set_handler(g, q);
+
 	}
 }
 
@@ -1786,56 +1743,6 @@ toolbar_item_size_allocate_cb(GtkWidget *widget,
 
 
 /**
- * callback for url entry widget activation
- *
- * handler connected to url entry widget for the activate signal
- *
- * \param widget The widget the signal is being delivered to.
- * \param data The toolbar context passed when the signal was connected
- * \return TRUE to allow activation.
- */
-static gboolean url_entry_activate_cb(GtkWidget *widget, gpointer data)
-{
-	nserror res;
-	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
-	struct browser_window *bw;
-	nsurl *url;
-
-	res = search_web_omni(gtk_entry_get_text(GTK_ENTRY(widget)),
-			      SEARCH_WEB_OMNI_NONE,
-			      &url);
-	if (res == NSERROR_OK) {
-		bw = tb->get_bw(tb->get_bw_ctx);
-		res = browser_window_navigate(
-			bw, url, NULL, BW_NAVIGATE_HISTORY, NULL, NULL, NULL);
-		nsurl_unref(url);
-	}
-	if (res != NSERROR_OK) {
-		nsgtk_warning(messages_get_errorcode(res), 0);
-	}
-
-	return TRUE;
-}
-
-
-/**
- * callback for url entry widget changing
- *
- * handler connected to url entry widget for the change signal
- *
- * \param widget The widget the signal is being delivered to.
- * \param event The key change event that changed the entry.
- * \param data The toolbar context passed when the signal was connected
- * \return TRUE to allow activation.
- */
-static gboolean
-url_entry_changed_cb(GtkWidget *widget, GdkEventKey *event, gpointer data)
-{
-	return nsgtk_completion_update(GTK_ENTRY(widget));
-}
-
-
-/**
  * handler for back tool bar item clicked signal
  *
  * \param widget The widget the signal is being delivered to.
@@ -2013,6 +1920,122 @@ home_button_clicked_cb(GtkWidget *widget, gpointer data)
 
 
 /**
+ * callback for url entry widget activation
+ *
+ * handler connected to url entry widget for the activate signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE to allow activation.
+ */
+static gboolean url_entry_activate_cb(GtkWidget *widget, gpointer data)
+{
+	nserror res;
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+	nsurl *url;
+
+	res = search_web_omni(gtk_entry_get_text(GTK_ENTRY(widget)),
+			      SEARCH_WEB_OMNI_NONE,
+			      &url);
+	if (res == NSERROR_OK) {
+		bw = tb->get_bw(tb->get_bw_ctx);
+		res = browser_window_navigate(
+			bw, url, NULL, BW_NAVIGATE_HISTORY, NULL, NULL, NULL);
+		nsurl_unref(url);
+	}
+	if (res != NSERROR_OK) {
+		nsgtk_warning(messages_get_errorcode(res), 0);
+	}
+
+	return TRUE;
+}
+
+
+/**
+ * callback for url entry widget changing
+ *
+ * handler connected to url entry widget for the change signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param event The key change event that changed the entry.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE to allow activation.
+ */
+static gboolean
+url_entry_changed_cb(GtkWidget *widget, GdkEventKey *event, gpointer data)
+{
+	return nsgtk_completion_update(GTK_ENTRY(widget));
+}
+
+
+/**
+ * handler for web search tool bar entry item activate signal
+ *
+ * handler connected to web search entry widget for the activate signal
+ *
+ * \todo make this user selectable to switch between opening in new
+ *   and navigating current window. Possibly improve core search_web interfaces
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean websearch_entry_activate_cb(GtkWidget *widget, gpointer data)
+{
+	nserror res;
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+	nsurl *url;
+
+	res = search_web_omni(gtk_entry_get_text(GTK_ENTRY(widget)),
+			      SEARCH_WEB_OMNI_SEARCHONLY,
+			      &url);
+	if (res == NSERROR_OK) {
+		temp_open_background = 0;
+		bw = tb->get_bw(tb->get_bw_ctx);
+
+		res = browser_window_create(
+			BW_CREATE_HISTORY | BW_CREATE_TAB,
+			url,
+			NULL,
+			bw,
+			NULL);
+		temp_open_background = -1;
+		nsurl_unref(url);
+	}
+	if (res != NSERROR_OK) {
+		nsgtk_warning(messages_get_errorcode(res), 0);
+	}
+
+	return TRUE;
+}
+
+/**
+ * handler for web search tool bar item button press signal
+ *
+ * allows a click in the websearch entry field to clear the name of the
+ * provider.
+ *
+ * \todo this does not work well, different behaviour wanted perhaps?
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+websearch_entry_button_press(GtkWidget *widget,
+			     GdkEventFocus *f,
+			     gpointer data)
+{
+	gtk_editable_select_region(GTK_EDITABLE(widget), 0, -1);
+	gtk_widget_grab_focus(GTK_WIDGET(widget));
+
+	return TRUE;
+}
+
+
+/**
  * create a toolbar item
  *
  * create a toolbar item and set up its default handlers
@@ -2119,6 +2142,7 @@ static nserror
 toolbar_connect_signal(struct nsgtk_toolbar *tb, nsgtk_toolbar_button itemid)
 {
 	struct nsgtk_toolbar_item *item;
+	GtkEntry *entry;
 
 	item = tb->buttons[itemid];
 
@@ -2130,23 +2154,36 @@ toolbar_connect_signal(struct nsgtk_toolbar *tb, nsgtk_toolbar_button itemid)
 	}
 
 	switch (itemid) {
-	case URL_BAR_ITEM: {
-		GtkEntry *url_entry;
-		url_entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(item->button)));
-		g_signal_connect(GTK_WIDGET(url_entry),
+	case URL_BAR_ITEM:
+		entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(item->button)));
+
+		g_signal_connect(GTK_WIDGET(entry),
 				 "activate",
 				 G_CALLBACK(url_entry_activate_cb),
 				 tb);
-		g_signal_connect(GTK_WIDGET(url_entry),
+		g_signal_connect(GTK_WIDGET(entry),
 				 "changed",
 				 G_CALLBACK(url_entry_changed_cb),
 				 tb);
 
-		nsgtk_completion_connect_signals(url_entry,
-						tb->get_bw,
-						tb->get_bw_ctx);
+		nsgtk_completion_connect_signals(entry,
+						 tb->get_bw,
+						 tb->get_bw_ctx);
 		break;
-	}
+
+
+	case WEBSEARCH_ITEM:
+		entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(item->button)));
+
+		g_signal_connect(GTK_WIDGET(entry),
+				 "activate",
+				 G_CALLBACK(websearch_entry_activate_cb),
+				 tb);
+		g_signal_connect(GTK_WIDGET(entry),
+				 "button-press-event",
+				 G_CALLBACK(websearch_entry_button_press),
+				 tb);
+		break;
 
 	default:
 		if ((item->bhandler != NULL) && (item->button != NULL)) {

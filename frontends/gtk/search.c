@@ -17,7 +17,8 @@
  */
 
 
- /** \file
+/**
+ * \file
  * Free text search (front component)
  */
 #include <stdint.h>
@@ -189,50 +190,6 @@ nsgtk_search_entry_key(GtkWidget *widget, GdkEventKey *event, gpointer data)
 	return FALSE;
 }
 
-/** connected to the websearch entry [return key] */
-
-gboolean nsgtk_websearch_activate(GtkWidget *widget, gpointer data)
-{
-	struct nsgtk_scaffolding *g = data;
-	nserror ret;
-	nsurl *url;
-
-	ret = search_web_omni(
-		gtk_entry_get_text(GTK_ENTRY(nsgtk_scaffolding_websearch(g))),
-		SEARCH_WEB_OMNI_SEARCHONLY,
-		&url);
-	if (ret == NSERROR_OK) {
-		temp_open_background = 0;
-		ret = browser_window_create(
-			BW_CREATE_HISTORY | BW_CREATE_TAB,
-			url,
-			NULL,
-			nsgtk_get_browser_window(nsgtk_scaffolding_top_level(g)),
-			NULL);
-		temp_open_background = -1;
-		nsurl_unref(url);
-	}
-	if (ret != NSERROR_OK) {
-		nsgtk_warning(messages_get_errorcode(ret), 0);
-	}
-
-	return TRUE;
-}
-
-/**
- * allows a click in the websearch entry field to clear the name of the
- * provider
- */
-
-gboolean nsgtk_websearch_clear(GtkWidget *widget, GdkEventFocus *f, 
-		gpointer data)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-	gtk_editable_select_region(GTK_EDITABLE(
-			nsgtk_scaffolding_websearch(g)), 0, -1);
-	gtk_widget_grab_focus(GTK_WIDGET(nsgtk_scaffolding_websearch(g)));
-	return TRUE;
-}
 
 
 

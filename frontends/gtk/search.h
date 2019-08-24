@@ -19,6 +19,11 @@
 #ifndef _NETSURF_GTK_SEARCH_H_
 #define _NETSURF_GTK_SEARCH_H_
 
+/**
+ * \file
+ * free text page search for gtk interfaces
+ */
+
 extern struct gui_search_table *nsgtk_search_table;
 
 struct nsgtk_scaffolding;
@@ -30,7 +35,6 @@ gboolean nsgtk_search_entry_key(GtkWidget *widget, GdkEventKey *event, gpointer 
 gboolean nsgtk_search_forward_button_clicked(GtkWidget *widget, gpointer data);
 gboolean nsgtk_search_back_button_clicked(GtkWidget *widget, gpointer data);
 gboolean nsgtk_search_close_button_clicked(GtkWidget *widget, gpointer data);
-gboolean nsgtk_websearch_activate(GtkWidget *widget, gpointer data);
-gboolean nsgtk_websearch_clear(GtkWidget *widget, GdkEventFocus *f, gpointer data);
+
 		
 #endif
