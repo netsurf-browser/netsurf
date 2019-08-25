@@ -73,7 +73,6 @@ struct nsgtk_toolbar_item {
 	 */
 	gboolean (*bhandler)(GtkWidget *widget, gpointer data);
 
-	void        *mhandler; /* menu item clicked */
 	void        *dataplus; /* customization -> toolbar */
 	void        *dataminus; /* customization -> store */
 };
