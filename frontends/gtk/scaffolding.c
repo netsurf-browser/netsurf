@@ -104,10 +104,11 @@ static gboolean nsgtk_on_##q##_activate(GtkButton *widget, gpointer data)
 
 
 struct nsgtk_menu {
-	GtkWidget   *main; /* main menu entry */
-	GtkWidget   *rclick; /* right click menu */
-	GtkWidget   *popup; /* popup menu entry */
-	void        *mhandler; /* menu item handler */
+	GtkWidget *main; /* main menu entry */
+	GtkWidget *rclick; /* right click menu */
+	GtkWidget *popup; /* popup menu entry */
+	void *mhandler; /* menu item handler */
+	bool sensitivity; /* menu item is sensitive */
 };
 
 /** Core scaffolding structure. */
@@ -320,12 +321,12 @@ scaffolding_window_delete_event(GtkWidget *widget,
 static void scaffolding_update_context(struct nsgtk_scaffolding *g)
 {
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-#if 0
-	g->buttons[BACK_BUTTON]->sensitivity =
-				browser_window_history_back_available(bw);
-		g->buttons[FORWARD_BUTTON]->sensitivity =
-				browser_window_history_forward_available(bw);
-#endif
+
+	g->menus[BACK_BUTTON].sensitivity =
+		browser_window_history_back_available(bw);
+	g->menus[FORWARD_BUTTON].sensitivity =
+		browser_window_history_forward_available(bw);
+
 	nsgtk_scaffolding_set_sensitivity(g);
 
 	/* update the url bar, particularly necessary when tabbing */
@@ -340,61 +341,56 @@ static void scaffolding_update_context(struct nsgtk_scaffolding *g)
 /**
  * edit the sensitivity of focused widget
  *
+ * \todo this needs to update toolbar sensitivity
+ *
  * \param g The scaffolding context.
  */
 static guint
-nsgtk_scaffolding_update_edit_actions_sensitivity(
-		struct nsgtk_scaffolding *g)
+nsgtk_scaffolding_update_edit_actions_sensitivity(struct nsgtk_scaffolding *g)
 {
-#if 0
 	GtkWidget *widget = gtk_window_get_focus(g->window);
-	gboolean has_selection;
 
 	if (GTK_IS_EDITABLE(widget)) {
+		gboolean has_selection;
 		has_selection = gtk_editable_get_selection_bounds(
-				GTK_EDITABLE (widget), NULL, NULL);
-
-		g->buttons[COPY_BUTTON]->sensitivity = has_selection;
-		g->buttons[CUT_BUTTON]->sensitivity = has_selection;
-		g->buttons[PASTE_BUTTON]->sensitivity = true;
+					GTK_EDITABLE(widget), NULL, NULL);
+		g->menus[COPY_BUTTON].sensitivity = has_selection;
+		g->menus[CUT_BUTTON].sensitivity = has_selection;
+		g->menus[PASTE_BUTTON].sensitivity = true;
 	} else {
 		struct browser_window *bw =
-				nsgtk_get_browser_window(g->top_level);
+			nsgtk_get_browser_window(g->top_level);
 		browser_editor_flags edit_f =
-				browser_window_get_editor_flags(bw);
+			browser_window_get_editor_flags(bw);
 
-		g->buttons[COPY_BUTTON]->sensitivity =
-				edit_f & BW_EDITOR_CAN_COPY;
-		g->buttons[CUT_BUTTON]->sensitivity =
-				edit_f & BW_EDITOR_CAN_CUT;
-		g->buttons[PASTE_BUTTON]->sensitivity =
-				edit_f & BW_EDITOR_CAN_PASTE;
+		g->menus[COPY_BUTTON].sensitivity =
+			edit_f & BW_EDITOR_CAN_COPY;
+		g->menus[CUT_BUTTON].sensitivity =
+			edit_f & BW_EDITOR_CAN_CUT;
+		g->menus[PASTE_BUTTON].sensitivity =
+			edit_f & BW_EDITOR_CAN_PASTE;
 	}
 
 	nsgtk_scaffolding_set_sensitivity(g);
-	return ((g->buttons[COPY_BUTTON]->sensitivity) |
-			(g->buttons[CUT_BUTTON]->sensitivity) |
-			(g->buttons[PASTE_BUTTON]->sensitivity));
-#else
-	return 0;
-#endif
+	return ((g->menus[COPY_BUTTON].sensitivity) |
+		(g->menus[CUT_BUTTON].sensitivity) |
+		(g->menus[PASTE_BUTTON].sensitivity));
 }
 
 
 /**
  * make edit actions sensitive
  *
+ * \todo toolbar sensitivity
+ *
  * \param g The scaffolding context.
  */
 static void
-nsgtk_scaffolding_enable_edit_actions_sensitivity(
-		struct nsgtk_scaffolding *g)
+nsgtk_scaffolding_enable_edit_actions_sensitivity(struct nsgtk_scaffolding *g)
 {
-#if 0
-	g->buttons[PASTE_BUTTON]->sensitivity = true;
-	g->buttons[COPY_BUTTON]->sensitivity = true;
-	g->buttons[CUT_BUTTON]->sensitivity = true;
-#endif
+	g->menus[PASTE_BUTTON].sensitivity = true;
+	g->menus[COPY_BUTTON].sensitivity = true;
+	g->menus[CUT_BUTTON].sensitivity = true;
 	nsgtk_scaffolding_set_sensitivity(g);
 
 	popup_menu_show(g->menu_popup, false, false, true, false);
@@ -448,30 +444,6 @@ static gboolean nsgtk_window_popup_menu_hidden(GtkWidget *widget,
 	return TRUE;
 }
 
-/* exported interface documented in gtk/scaffolding.h */
-gboolean nsgtk_window_url_activate_event(GtkWidget *widget, gpointer data)
-{
-#if 0
-	struct nsgtk_scaffolding *g = data;
-	nserror ret;
-	nsurl *url;
-
-	ret = search_web_omni(gtk_entry_get_text(GTK_ENTRY(g->url_bar)),
-			      SEARCH_WEB_OMNI_NONE,
-			      &url);
-	if (ret == NSERROR_OK) {
-		ret = browser_window_navigate(nsgtk_get_browser_window(g->top_level),
-					      url, NULL, BW_NAVIGATE_HISTORY,
-					      NULL, NULL, NULL);
-		nsurl_unref(url);
-	}
-	if (ret != NSERROR_OK) {
-		nsgtk_warning(messages_get_errorcode(ret), 0);
-	}
-#endif
-	return TRUE;
-}
-
 
 /**
  * update handler for URL entry widget
@@ -522,6 +494,9 @@ nsgtk_window_tool_bar_clicked(GtkToolbar *toolbar,
 /**
  * Update the menus when the number of tabs changes.
  *
+ * \todo toolbar sensitivity
+ * \todo next/previous tab ought to only be visible if there is such a tab
+ *
  * \param notebook The notebook all the tabs are in
  * \param page The newly added page container widget
  * \param page_num The index of the newly added page
@@ -535,20 +510,26 @@ nsgtk_window_tabs_add(GtkNotebook *notebook,
 {
 	gboolean visible = gtk_notebook_get_show_tabs(g->notebook);
 	g_object_set(g->menu_bar->view_submenu->tabs_menuitem,
-		     "visible", visible, NULL);
+		     "visible",
+		     visible,
+		     NULL);
 	g_object_set(g->menu_popup->view_submenu->tabs_menuitem,
-		     "visible", visible, NULL);
-#if 0
-	g->buttons[NEXTTAB_BUTTON]->sensitivity = visible;
-	g->buttons[PREVTAB_BUTTON]->sensitivity = visible;
-	g->buttons[CLOSETAB_BUTTON]->sensitivity = visible;
-#endif
+		     "visible",
+		     visible,
+		     NULL);
+
+	g->menus[NEXTTAB_BUTTON].sensitivity = visible;
+	g->menus[PREVTAB_BUTTON].sensitivity = visible;
+	g->menus[CLOSETAB_BUTTON].sensitivity = visible;
+
 	nsgtk_scaffolding_set_sensitivity(g);
 }
 
 
 /**
  * Update the menus when the number of tabs changes.
+ *
+ * \todo toolbar sensitivity
  *
  * \param notebook The notebook all the tabs are in
  * \param page The page container widget being removed
@@ -578,11 +559,11 @@ nsgtk_window_tabs_remove(GtkNotebook *notebook,
 	gboolean visible = gtk_notebook_get_show_tabs(gs->notebook);
 	g_object_set(gs->menu_bar->view_submenu->tabs_menuitem, "visible", visible, NULL);
 	g_object_set(gs->menu_popup->view_submenu->tabs_menuitem, "visible", visible, NULL);
-#if 0
-	gs->buttons[NEXTTAB_BUTTON]->sensitivity = visible;
-	gs->buttons[PREVTAB_BUTTON]->sensitivity = visible;
-	gs->buttons[CLOSETAB_BUTTON]->sensitivity = visible;
-#endif
+
+	gs->menus[NEXTTAB_BUTTON].sensitivity = visible;
+	gs->menus[PREVTAB_BUTTON].sensitivity = visible;
+	gs->menus[CLOSETAB_BUTTON].sensitivity = visible;
+
 	nsgtk_scaffolding_set_sensitivity(gs);
 }
 
@@ -1738,7 +1719,7 @@ BUTTONHANDLER(history)
 /**
  * attach gtk signal handlers for menus
  */
-static void nsgtk_attach_menu_handlers(struct nsgtk_scaffolding *g)
+static void nsgtk_menu_connect_signals(struct nsgtk_scaffolding *g)
 {
 	int idx; /* item index */
 	for (idx = BACK_BUTTON; idx < PLACEHOLDER_BUTTON; idx++) {
@@ -1859,7 +1840,12 @@ struct nsgtk_scaffolding *nsgtk_current_scaffolding(void)
  */
 static nserror nsgtk_menu_initialise(struct nsgtk_scaffolding *g)
 {
-#define ITEM_MAIN(p, q, r)\
+#define TOOLBAR_ITEM(identifier, name, snstvty, clicked) \
+	g->menus[identifier].sensitivity = snstvty;
+#include "gtk/toolbar_items.h"
+#undef TOOLBAR_ITEM
+
+#define ITEM_MAIN(p, q, r)						\
 	g->menus[p##_BUTTON].main = g->menu_bar->q->r##_menuitem;\
 	g->menus[p##_BUTTON].rclick = g->menu_popup->q->r##_menuitem;\
 	g->menus[p##_BUTTON].mhandler = nsgtk_on_##r##_activate_menu;
@@ -1869,11 +1855,11 @@ static nserror nsgtk_menu_initialise(struct nsgtk_scaffolding *g)
 			g->menu_bar->q->r##_submenu->s##_menuitem;\
 	g->menus[p##_BUTTON].rclick =\
 			g->menu_popup->q->r##_submenu->s##_menuitem;\
-	g->menus[p##_BUTTON].mhandler =\
-			nsgtk_on_##s##_activate_menu;
+	g->menus[p##_BUTTON].mhandler =	nsgtk_on_##s##_activate_menu;
 
-#define ITEM_POP(p, q)					\
+#define ITEM_POP(p, q) \
 	g->menus[p##_BUTTON].popup = g->menu_popup->q##_menuitem
+
 
 	ITEM_MAIN(NEWWINDOW, file_submenu, newwindow);
 	ITEM_MAIN(NEWTAB, file_submenu, newtab);
@@ -1939,31 +1925,30 @@ static nserror nsgtk_menu_initialise(struct nsgtk_scaffolding *g)
 	return NSERROR_OK;
 }
 
-#if 0
-static void nsgtk_scaffolding_initial_sensitivity(struct nsgtk_scaffolding *g)
+
+static void nsgtk_menu_set_sensitivity(struct nsgtk_scaffolding *g)
 {
+
 	for (int i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
-		if (g->buttons[i]->main != NULL)
+		if (g->menus[i].main != NULL) {
 			gtk_widget_set_sensitive(GTK_WIDGET(
-					g->buttons[i]->main),
-					g->buttons[i]->sensitivity);
-		if (g->buttons[i]->rclick != NULL)
+					g->menus[i].main),
+					g->menus[i].sensitivity);
+		}
+		if (g->menus[i].rclick != NULL) {
 			gtk_widget_set_sensitive(GTK_WIDGET(
-					g->buttons[i]->rclick),
-					g->buttons[i]->sensitivity);
-		if ((g->buttons[i]->location != -1) &&
-				(g->buttons[i]->button != NULL))
+					g->menus[i].rclick),
+					g->menus[i].sensitivity);
+		}
+		if (g->menus[i].popup != NULL) {
 			gtk_widget_set_sensitive(GTK_WIDGET(
-					g->buttons[i]->button),
-					g->buttons[i]->sensitivity);
-		if (g->buttons[i]->popup != NULL)
-			gtk_widget_set_sensitive(GTK_WIDGET(
-					g->buttons[i]->popup),
-					g->buttons[i]->sensitivity);
+					g->menus[i].popup),
+					g->menus[i].sensitivity);
+		}
 	}
 	gtk_widget_set_sensitive(GTK_WIDGET(g->menu_bar->view_submenu->images_menuitem), FALSE);
 }
-#endif
+
 /**
  * update search toolbar size and style
  */
@@ -2363,22 +2348,18 @@ void nsgtk_scaffolding_set_top_level(struct gui_window *gw)
 /* exported interface documented in scaffolding.h */
 void nsgtk_scaffolding_set_sensitivity(struct nsgtk_scaffolding *g)
 {
-#if 0
 	int i;
-#define SENSITIVITY(q)\
-		i = q##_BUTTON;\
-		if (g->buttons[i]->main != NULL)\
-			gtk_widget_set_sensitive(GTK_WIDGET(\
-					g->buttons[i]->main),\
-					g->buttons[i]->sensitivity);\
-		if (g->buttons[i]->rclick != NULL)\
-			gtk_widget_set_sensitive(GTK_WIDGET(\
-					g->buttons[i]->rclick),\
-					g->buttons[i]->sensitivity);\
-		if (g->buttons[i]->popup != NULL)\
-			gtk_widget_set_sensitive(GTK_WIDGET(\
-					g->buttons[i]->popup),\
-					g->buttons[i]->sensitivity);
+#define SENSITIVITY(q)							\
+	i = q##_BUTTON;							\
+	if (g->menus[i].main != NULL)					\
+		gtk_widget_set_sensitive(GTK_WIDGET(g->menus[i].main),	\
+					 g->menus[i].sensitivity);	\
+	if (g->menus[i].rclick != NULL)					\
+		gtk_widget_set_sensitive(GTK_WIDGET(g->menus[i].rclick), \
+					 g->menus[i].sensitivity);	\
+	if (g->menus[i].popup != NULL)					\
+		gtk_widget_set_sensitive(GTK_WIDGET(g->menus[i].popup), \
+					 g->menus[i].sensitivity);
 
 	SENSITIVITY(STOP)
 	SENSITIVITY(RELOAD)
@@ -2391,7 +2372,7 @@ void nsgtk_scaffolding_set_sensitivity(struct nsgtk_scaffolding *g)
 	SENSITIVITY(PREVTAB)
 	SENSITIVITY(CLOSETAB)
 #undef SENSITIVITY
-#endif
+
 }
 
 
@@ -2415,25 +2396,25 @@ void nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g,
 		gtkmenu = g->menu_popup->popup_menu;
 
 		nsgtk_scaffolding_update_edit_actions_sensitivity(g);
-#if 0
-		if (!(g->buttons[COPY_BUTTON]->sensitivity)) {
+
+		if (!(g->menus[COPY_BUTTON].sensitivity)) {
 			gtk_widget_hide(GTK_WIDGET(g->menu_popup->copy_menuitem));
 		} else {
 			gtk_widget_show(GTK_WIDGET(g->menu_popup->copy_menuitem));
 		}
 
-		if (!(g->buttons[CUT_BUTTON]->sensitivity)) {
+		if (!(g->menus[CUT_BUTTON].sensitivity)) {
 			gtk_widget_hide(GTK_WIDGET(g->menu_popup->cut_menuitem));
 		} else {
 			gtk_widget_show(GTK_WIDGET(g->menu_popup->cut_menuitem));
 		}
 
-		if (!(g->buttons[PASTE_BUTTON]->sensitivity)) {
+		if (!(g->menus[PASTE_BUTTON].sensitivity)) {
 			gtk_widget_hide(GTK_WIDGET(g->menu_popup->paste_menuitem));
 		} else {
 			gtk_widget_show(GTK_WIDGET(g->menu_popup->paste_menuitem));
 		}
-#endif
+
 		/* hide customise */
 		popup_menu_hide(g->menu_popup, false, false, false, true);
 	}
@@ -2441,41 +2422,6 @@ void nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g,
 	nsgtk_menu_popup_at_pointer(gtkmenu, NULL);
 }
 
-/**
- * reallocate width for history button, reallocate buttons right of history;
- * memorise base of history button / toolbar
- */
-void nsgtk_scaffolding_toolbar_size_allocate(GtkWidget *widget,
-		GtkAllocation *alloc, gpointer data)
-{
-	#if 0
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-	int i = nsgtk_toolbar_get_id_from_widget(widget, g);
-	if (i == -1)
-		return;
-	if ((g->toolbarmem == alloc->x) ||
-	    (g->buttons[i]->location < g->buttons[HISTORY_BUTTON]->location))
-	/* no reallocation after first adjustment, no reallocation for buttons
-	 * left of history button */
-		return;
-	if (widget == GTK_WIDGET(g->buttons[HISTORY_BUTTON]->button)) {
-		if (alloc->width == 20)
-			return;
-
-		g->toolbarbase = alloc->y + alloc->height;
-		g->historybase = alloc->x + 20;
-		if (g->offset == 0)
-			g->offset = alloc->width - 20;
-		alloc->width = 20;
-	} else if (g->buttons[i]->location <= g->buttons[URL_BAR_ITEM]->location) {
-		alloc->x -= g->offset;
-		if (i == URL_BAR_ITEM)
-			alloc->width += g->offset;
-	}
-	g->toolbarmem = alloc->x;
-	gtk_widget_size_allocate(widget, alloc);
-	#endif
-}
 
 
 /* exported interface documented in gtk/scaffolding.h */
@@ -2590,10 +2536,8 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 	/* set up the menu signal handlers */
 	nsgtk_menu_initialise(gs);
-	//nsgtk_toolbar_connect_all(gs);
-	nsgtk_attach_menu_handlers(gs);
-
-	//nsgtk_scaffolding_initial_sensitivity(gs);
+	nsgtk_menu_connect_signals(gs);
+	nsgtk_menu_set_sensitivity(gs);
 
 	gs->fullscreen = false;
 
