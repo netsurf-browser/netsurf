@@ -1475,12 +1475,6 @@ void nsgtk_toolbar_connect_all(struct nsgtk_scaffolding *g)
 		q = nsgtk_toolbar_get_id_at_location(g, i);
 		if (q == -1)
 			continue;
-		if (nsgtk_scaffolding_button(g, q)->button != NULL)
-			g_signal_connect(
-					nsgtk_scaffolding_button(g, q)->button,
-					"size-allocate", G_CALLBACK(
-					nsgtk_scaffolding_toolbar_size_allocate
-					), g);
 
 	}
 }
