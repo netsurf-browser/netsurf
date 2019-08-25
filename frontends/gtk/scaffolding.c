@@ -104,9 +104,10 @@ static gboolean nsgtk_on_##q##_activate(GtkButton *widget, gpointer data)
 
 
 struct nsgtk_menu {
-	GtkWidget   *main; /* left click menu entry */
+	GtkWidget   *main; /* main menu entry */
 	GtkWidget   *rclick; /* right click menu */
 	GtkWidget   *popup; /* popup menu entry */
+	void        *mhandler; /* menu item handler */
 };
 
 /** Core scaffolding structure. */
@@ -1734,21 +1735,30 @@ BUTTONHANDLER(history)
 #undef CHECKHANDLER
 #undef BUTTONHANDLER
 
+/**
+ * attach gtk signal handlers for menus
+ */
 static void nsgtk_attach_menu_handlers(struct nsgtk_scaffolding *g)
 {
-	#if 0
-	for (int i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
-		if (g->buttons[i]->main != NULL) {
-			g_signal_connect(g->buttons[i]->main, "activate",
-					G_CALLBACK(g->buttons[i]->mhandler), g);
+	int idx; /* item index */
+	for (idx = BACK_BUTTON; idx < PLACEHOLDER_BUTTON; idx++) {
+		if (g->menus[idx].main != NULL) {
+			g_signal_connect(g->menus[idx].main,
+					 "activate",
+					 G_CALLBACK(g->menus[idx].mhandler),
+					 g);
 		}
-		if (g->buttons[i]->rclick != NULL) {
-			g_signal_connect(g->buttons[i]->rclick, "activate",
-					G_CALLBACK(g->buttons[i]->mhandler), g);
+		if (g->menus[idx].rclick != NULL) {
+			g_signal_connect(g->menus[idx].rclick,
+					 "activate",
+					 G_CALLBACK(g->menus[idx].mhandler),
+					 g);
 		}
-		if (g->buttons[i]->popup != NULL) {
-			g_signal_connect(g->buttons[i]->popup, "activate",
-					G_CALLBACK(g->buttons[i]->mhandler), g);
+		if (g->menus[idx].popup != NULL) {
+			g_signal_connect(g->menus[idx].popup,
+					 "activate",
+					G_CALLBACK(g->menus[idx].mhandler),
+					 g);
 		}
 	}
 #define CONNECT_CHECK(q)\
@@ -1757,7 +1767,7 @@ static void nsgtk_attach_menu_handlers(struct nsgtk_scaffolding *g)
 	CONNECT_CHECK(menubar);
 	CONNECT_CHECK(toolbar);
 #undef CONNECT_CHECK
-#endif
+
 }
 
 /**
@@ -1843,33 +1853,27 @@ struct nsgtk_scaffolding *nsgtk_current_scaffolding(void)
 	}
 	return scaf_current;
 }
-#if 0
+
 /**
- * init the array g->buttons[]
+ * initialiase the menu signal handlers ready for connection
  */
-static void nsgtk_scaffolding_toolbar_init(struct nsgtk_scaffolding *g)
+static nserror nsgtk_menu_initialise(struct nsgtk_scaffolding *g)
 {
 #define ITEM_MAIN(p, q, r)\
-	g->buttons[p##_BUTTON]->main = g->menu_bar->q->r##_menuitem;\
-	g->buttons[p##_BUTTON]->rclick = g->menu_popup->q->r##_menuitem;\
-	g->buttons[p##_BUTTON]->mhandler = nsgtk_on_##r##_activate_menu;\
-	g->buttons[p##_BUTTON]->bhandler = nsgtk_on_##r##_activate_button;
+	g->menus[p##_BUTTON].main = g->menu_bar->q->r##_menuitem;\
+	g->menus[p##_BUTTON].rclick = g->menu_popup->q->r##_menuitem;\
+	g->menus[p##_BUTTON].mhandler = nsgtk_on_##r##_activate_menu;
 
 #define ITEM_SUB(p, q, r, s)\
-	g->buttons[p##_BUTTON]->main =\
+	g->menus[p##_BUTTON].main =\
 			g->menu_bar->q->r##_submenu->s##_menuitem;\
-	g->buttons[p##_BUTTON]->rclick =\
+	g->menus[p##_BUTTON].rclick =\
 			g->menu_popup->q->r##_submenu->s##_menuitem;\
-	g->buttons[p##_BUTTON]->mhandler =\
-			nsgtk_on_##s##_activate_menu;\
-	g->buttons[p##_BUTTON]->bhandler =\
-			nsgtk_on_##s##_activate_button;
+	g->menus[p##_BUTTON].mhandler =\
+			nsgtk_on_##s##_activate_menu;
 
-#define ITEM_BUTTON(p, q)\
-	g->buttons[p##_BUTTON]->bhandler =\
-			nsgtk_on_##q##_activate;
 #define ITEM_POP(p, q)					\
-	g->buttons[p##_BUTTON]->popup = g->menu_popup->q##_menuitem
+	g->menus[p##_BUTTON].popup = g->menu_popup->q##_menuitem
 
 	ITEM_MAIN(NEWWINDOW, file_submenu, newwindow);
 	ITEM_MAIN(NEWTAB, file_submenu, newtab);
@@ -1925,7 +1929,6 @@ static void nsgtk_scaffolding_toolbar_init(struct nsgtk_scaffolding *g)
 	ITEM_SUB(TOGGLEDEBUGGING, tools_submenu, developer, toggledebugging);
 	ITEM_SUB(SAVEBOXTREE, tools_submenu, developer, debugboxtree);
 	ITEM_SUB(SAVEDOMTREE, tools_submenu, developer, debugdomtree);
-	ITEM_BUTTON(HISTORY, history);
 
 
 #undef ITEM_MAIN
@@ -1933,9 +1936,10 @@ static void nsgtk_scaffolding_toolbar_init(struct nsgtk_scaffolding *g)
 #undef ITEM_BUTTON
 #undef ITEM_POP
 
+	return NSERROR_OK;
 }
 
-
+#if 0
 static void nsgtk_scaffolding_initial_sensitivity(struct nsgtk_scaffolding *g)
 {
 	for (int i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
@@ -2585,7 +2589,7 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	gs->link_menu = nsgtk_new_scaffolding_link_popup(gs, group);
 
 	/* set up the menu signal handlers */
-	//nsgtk_scaffolding_toolbar_init(gs);
+	nsgtk_menu_initialise(gs);
 	//nsgtk_toolbar_connect_all(gs);
 	nsgtk_attach_menu_handlers(gs);
 
