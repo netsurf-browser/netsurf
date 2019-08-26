@@ -87,22 +87,16 @@ static gboolean nsgtk_on_##q##_activate_menu(GtkMenuItem *widget, gpointer data)
 	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;\
 	return nsgtk_on_##q##_activate(g);\
 }\
-static gboolean nsgtk_on_##q##_activate_button(GtkButton *widget, gpointer data)\
-{\
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;\
-	return nsgtk_on_##q##_activate(g);\
-}\
 static gboolean nsgtk_on_##q##_activate(struct nsgtk_scaffolding *g)
 
-/** Macro to define a handler for menu events. */
-#define MENUHANDLER(q)\
-static gboolean nsgtk_on_##q##_activate_menu(GtkMenuItem *widget, gpointer data)
 
 /** Macro to define a handler for button events. */
 #define BUTTONHANDLER(q)\
 static gboolean nsgtk_on_##q##_activate(GtkButton *widget, gpointer data)
 
-
+/**
+ * menu entry context
+ */
 struct nsgtk_menu {
 	GtkWidget *main; /* main menu entry */
 	GtkWidget *rclick; /* right click menu */
@@ -111,7 +105,9 @@ struct nsgtk_menu {
 	bool sensitivity; /* menu item is sensitive */
 };
 
-/** Core scaffolding structure. */
+/**
+ * Core scaffolding structure.
+ */
 struct nsgtk_scaffolding {
 	/** global linked list of scaffolding for gui interface adjustments */
 	struct nsgtk_scaffolding *next, *prev;
@@ -146,7 +142,9 @@ struct nsgtk_scaffolding {
 	struct nsgtk_menu menus[PLACEHOLDER_BUTTON];
 };
 
-/** current scaffold for model dialogue use */
+/**
+ * current scaffold for model dialogue use
+ */
 static struct nsgtk_scaffolding *scaf_current;
 
 /** global list for interface changes */
@@ -334,8 +332,6 @@ static void scaffolding_update_context(struct nsgtk_scaffolding *g)
 
 	nsgtk_local_history_hide();
 }
-
-
 
 
 /**
@@ -727,16 +723,19 @@ MULTIHANDLER(savepage)
 	if (!browser_window_has_content(nsgtk_get_browser_window(g->top_level)))
 		return FALSE;
 
-	GtkWidget *fc = gtk_file_chooser_dialog_new(
+	GtkWidget *fc;
+	DIR *d;
+	char *path;
+	nserror res;
+	GtkFileFilter *filter;
+
+	fc = gtk_file_chooser_dialog_new(
 			messages_get("gtkcompleteSave"), g->window,
 			GTK_FILE_CHOOSER_ACTION_CREATE_FOLDER,
 			NSGTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 			NSGTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 			NULL);
-	DIR *d;
-	char *path;
-	nserror res;
-	GtkFileFilter *filter = gtk_file_filter_new();
+	filter = gtk_file_filter_new();
 	gtk_file_filter_set_name(filter, "Directories");
 	gtk_file_filter_add_custom(filter, GTK_FILE_FILTER_FILENAME,
 			nsgtk_filter_directory, NULL, NULL);
@@ -1023,7 +1022,9 @@ MULTIHANDLER(quit)
 	return TRUE;
 }
 
-MENUHANDLER(savelink)
+
+static gboolean
+nsgtk_on_savelink_activate_menu(GtkMenuItem *widget, gpointer data)
 {
 	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *) data;
 	struct gui_window *gui = g->top_level;
@@ -1050,7 +1051,8 @@ MENUHANDLER(savelink)
 /**
  * Handler for opening new window from a link. attached to the popup menu.
  */
-MENUHANDLER(link_openwin)
+static gboolean
+nsgtk_on_link_openwin_activate_menu(GtkMenuItem *widget, gpointer data)
 {
 	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *) data;
 	struct gui_window *gui = g->top_level;
@@ -1072,7 +1074,8 @@ MENUHANDLER(link_openwin)
 /**
  * Handler for opening new tab from a link. attached to the popup menu.
  */
-MENUHANDLER(link_opentab)
+static gboolean
+nsgtk_on_link_opentab_activate_menu(GtkMenuItem *widget, gpointer data)
 {
 	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *) data;
 	struct gui_window *gui = g->top_level;
@@ -1100,7 +1103,8 @@ MENUHANDLER(link_opentab)
 /**
  * Handler for bookmarking a link. attached to the popup menu.
  */
-MENUHANDLER(link_bookmark)
+static gboolean
+nsgtk_on_link_bookmark_activate_menu(GtkMenuItem *widget, gpointer data)
 {
 	if (current_menu_features.link == NULL)
 		return FALSE;
@@ -1113,7 +1117,8 @@ MENUHANDLER(link_bookmark)
 /**
  * Handler for copying a link. attached to the popup menu.
  */
-MENUHANDLER(link_copy)
+static gboolean
+nsgtk_on_link_copy_activate_menu(GtkMenuItem *widget, gpointer data)
 {
 	GtkClipboard *clipboard;
 
@@ -1177,7 +1182,9 @@ MULTIHANDLER(delete)
 	return TRUE;
 }
 
-MENUHANDLER(customize)
+
+static gboolean
+nsgtk_on_customize_activate_menu(GtkMenuItem *widget, gpointer data)
 {
 	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 	nsgtk_toolbar_customization_init(g);
@@ -1272,7 +1279,9 @@ MULTIHANDLER(viewsource)
 	return TRUE;
 }
 
-MENUHANDLER(menubar)
+
+static gboolean
+nsgtk_on_menubar_activate_menu(GtkMenuItem *widget, gpointer data)
 {
 	GtkWidget *w;
 	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
@@ -1318,7 +1327,9 @@ MENUHANDLER(menubar)
 	return TRUE;
 }
 
-MENUHANDLER(toolbar)
+
+static gboolean
+nsgtk_on_toolbar_activate_menu(GtkMenuItem *widget, gpointer data)
 {
 	GtkWidget *w;
 	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
@@ -1751,6 +1762,7 @@ static void nsgtk_menu_connect_signals(struct nsgtk_scaffolding *g)
 
 }
 
+
 /**
  * Create and connect handlers to popup menu.
  *
@@ -1769,20 +1781,30 @@ nsgtk_new_scaffolding_popup(struct nsgtk_scaffolding *g, GtkAccelGroup *group)
 		return NULL;
 	}
 
-	g_signal_connect(nmenu->popup_menu, "hide",
-			 G_CALLBACK(nsgtk_window_popup_menu_hidden), g);
+	g_signal_connect(nmenu->popup_menu,
+			 "hide",
+			 G_CALLBACK(nsgtk_window_popup_menu_hidden),
+			 g);
 
-	g_signal_connect(nmenu->cut_menuitem, "activate",
-			 G_CALLBACK(nsgtk_on_cut_activate_menu), g);
+	g_signal_connect(nmenu->cut_menuitem,
+			 "activate",
+			 G_CALLBACK(nsgtk_on_cut_activate_menu),
+			 g);
 
-	g_signal_connect(nmenu->copy_menuitem, "activate",
-			 G_CALLBACK(nsgtk_on_copy_activate_menu), g);
+	g_signal_connect(nmenu->copy_menuitem,
+			 "activate",
+			 G_CALLBACK(nsgtk_on_copy_activate_menu),
+			 g);
 
-	g_signal_connect(nmenu->paste_menuitem, "activate",
-			 G_CALLBACK(nsgtk_on_paste_activate_menu), g);
+	g_signal_connect(nmenu->paste_menuitem,
+			 "activate",
+			 G_CALLBACK(nsgtk_on_paste_activate_menu),
+			 g);
 
-	g_signal_connect(nmenu->customize_menuitem, "activate",
-			 G_CALLBACK(nsgtk_on_customize_activate_menu), g);
+	g_signal_connect(nmenu->customize_menuitem,
+			 "activate",
+			 G_CALLBACK(nsgtk_on_customize_activate_menu),
+			 g);
 
 	/* set initial popup menu visibility */
 	popup_menu_hide(nmenu, true, false, false, true);
@@ -1798,7 +1820,8 @@ nsgtk_new_scaffolding_popup(struct nsgtk_scaffolding *g, GtkAccelGroup *group)
  * \return true on success or false on error.
  */
 static struct nsgtk_link_menu *
-nsgtk_new_scaffolding_link_popup(struct nsgtk_scaffolding *g, GtkAccelGroup *group)
+nsgtk_new_scaffolding_link_popup(struct nsgtk_scaffolding *g,
+				 GtkAccelGroup *group)
 {
 	struct nsgtk_link_menu *nmenu;
 
@@ -1808,20 +1831,30 @@ nsgtk_new_scaffolding_link_popup(struct nsgtk_scaffolding *g, GtkAccelGroup *gro
 		return NULL;
 	}
 
-	g_signal_connect(nmenu->save_menuitem, "activate",
-			 G_CALLBACK(nsgtk_on_savelink_activate_menu), g);
+	g_signal_connect(nmenu->save_menuitem,
+			 "activate",
+			 G_CALLBACK(nsgtk_on_savelink_activate_menu),
+			 g);
 
-	g_signal_connect(nmenu->opentab_menuitem, "activate",
-			 G_CALLBACK(nsgtk_on_link_opentab_activate_menu), g);
+	g_signal_connect(nmenu->opentab_menuitem,
+			 "activate",
+			 G_CALLBACK(nsgtk_on_link_opentab_activate_menu),
+			 g);
 
-	g_signal_connect(nmenu->openwin_menuitem, "activate",
-			 G_CALLBACK(nsgtk_on_link_openwin_activate_menu), g);
+	g_signal_connect(nmenu->openwin_menuitem,
+			 "activate",
+			 G_CALLBACK(nsgtk_on_link_openwin_activate_menu),
+			 g);
 
-	g_signal_connect(nmenu->bookmark_menuitem, "activate",
-			 G_CALLBACK(nsgtk_on_link_bookmark_activate_menu), g);
+	g_signal_connect(nmenu->bookmark_menuitem,
+			 "activate",
+			 G_CALLBACK(nsgtk_on_link_bookmark_activate_menu),
+			 g);
 
-	g_signal_connect(nmenu->copy_menuitem, "activate",
-			 G_CALLBACK(nsgtk_on_link_copy_activate_menu), g);
+	g_signal_connect(nmenu->copy_menuitem,
+			 "activate",
+			 G_CALLBACK(nsgtk_on_link_copy_activate_menu),
+			 g);
 
 	return nmenu;
 }
