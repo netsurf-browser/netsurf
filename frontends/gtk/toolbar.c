@@ -65,16 +65,16 @@
  */
 struct nsgtk_toolbar_item {
 	GtkToolItem *button;
-	int         location; /* in toolbar */
-	bool        sensitivity;
+	int location; /* in toolbar */
+	bool sensitivity;
 
 	/**
 	 * button clicked handler
 	 */
 	gboolean (*bhandler)(GtkWidget *widget, gpointer data);
 
-	void        *dataplus; /* customization -> toolbar */
-	void        *dataminus; /* customization -> store */
+	void *dataplus; /* customization -> toolbar */
+	void *dataminus; /* customization -> store */
 };
 
 
@@ -225,39 +225,39 @@ nsgtk_theme_image_default(nsgtk_toolbar_button tbbutton,
 
 	switch(tbbutton) {
 
-#define BUTTON_IMAGE(p, q)					\
+#define BUTTON_IMAGE(p, q)						\
 	case p##_BUTTON:					\
 		image = GTK_IMAGE(nsgtk_image_new_from_stock(q, iconsize)); \
 		break
 
-		BUTTON_IMAGE(BACK, NSGTK_STOCK_GO_BACK);
-		BUTTON_IMAGE(FORWARD, NSGTK_STOCK_GO_FORWARD);
-		BUTTON_IMAGE(STOP, NSGTK_STOCK_STOP);
-		BUTTON_IMAGE(RELOAD, NSGTK_STOCK_REFRESH);
-		BUTTON_IMAGE(HOME, NSGTK_STOCK_HOME);
-		BUTTON_IMAGE(NEWWINDOW, "gtk-new");
-		BUTTON_IMAGE(NEWTAB, "gtk-new");
-		BUTTON_IMAGE(OPENFILE, NSGTK_STOCK_OPEN);
-		BUTTON_IMAGE(CLOSETAB, NSGTK_STOCK_CLOSE);
-		BUTTON_IMAGE(CLOSEWINDOW, NSGTK_STOCK_CLOSE);
-		BUTTON_IMAGE(SAVEPAGE, NSGTK_STOCK_SAVE_AS);
-		BUTTON_IMAGE(PRINTPREVIEW, "gtk-print-preview");
-		BUTTON_IMAGE(PRINT, "gtk-print");
-		BUTTON_IMAGE(QUIT, "gtk-quit");
-		BUTTON_IMAGE(CUT, "gtk-cut");
-		BUTTON_IMAGE(COPY, "gtk-copy");
-		BUTTON_IMAGE(PASTE, "gtk-paste");
-		BUTTON_IMAGE(DELETE, "gtk-delete");
-		BUTTON_IMAGE(SELECTALL, "gtk-select-all");
-		BUTTON_IMAGE(FIND, NSGTK_STOCK_FIND);
-		BUTTON_IMAGE(PREFERENCES, "gtk-preferences");
-		BUTTON_IMAGE(ZOOMPLUS, "gtk-zoom-in");
-		BUTTON_IMAGE(ZOOMMINUS, "gtk-zoom-out");
-		BUTTON_IMAGE(ZOOMNORMAL, "gtk-zoom-100");
-		BUTTON_IMAGE(FULLSCREEN, "gtk-fullscreen");
-		BUTTON_IMAGE(VIEWSOURCE, "gtk-index");
-		BUTTON_IMAGE(CONTENTS, "gtk-help");
-		BUTTON_IMAGE(ABOUT, "gtk-about");
+	BUTTON_IMAGE(BACK, NSGTK_STOCK_GO_BACK);
+	BUTTON_IMAGE(FORWARD, NSGTK_STOCK_GO_FORWARD);
+	BUTTON_IMAGE(STOP, NSGTK_STOCK_STOP);
+	BUTTON_IMAGE(RELOAD, NSGTK_STOCK_REFRESH);
+	BUTTON_IMAGE(HOME, NSGTK_STOCK_HOME);
+	BUTTON_IMAGE(NEWWINDOW, "gtk-new");
+	BUTTON_IMAGE(NEWTAB, "gtk-new");
+	BUTTON_IMAGE(OPENFILE, NSGTK_STOCK_OPEN);
+	BUTTON_IMAGE(CLOSETAB, NSGTK_STOCK_CLOSE);
+	BUTTON_IMAGE(CLOSEWINDOW, NSGTK_STOCK_CLOSE);
+	BUTTON_IMAGE(SAVEPAGE, NSGTK_STOCK_SAVE_AS);
+	BUTTON_IMAGE(PRINTPREVIEW, "gtk-print-preview");
+	BUTTON_IMAGE(PRINT, "gtk-print");
+	BUTTON_IMAGE(QUIT, "gtk-quit");
+	BUTTON_IMAGE(CUT, "gtk-cut");
+	BUTTON_IMAGE(COPY, "gtk-copy");
+	BUTTON_IMAGE(PASTE, "gtk-paste");
+	BUTTON_IMAGE(DELETE, "gtk-delete");
+	BUTTON_IMAGE(SELECTALL, "gtk-select-all");
+	BUTTON_IMAGE(FIND, NSGTK_STOCK_FIND);
+	BUTTON_IMAGE(PREFERENCES, "gtk-preferences");
+	BUTTON_IMAGE(ZOOMPLUS, "gtk-zoom-in");
+	BUTTON_IMAGE(ZOOMMINUS, "gtk-zoom-out");
+	BUTTON_IMAGE(ZOOMNORMAL, "gtk-zoom-100");
+	BUTTON_IMAGE(FULLSCREEN, "gtk-fullscreen");
+	BUTTON_IMAGE(VIEWSOURCE, "gtk-index");
+	BUTTON_IMAGE(CONTENTS, "gtk-help");
+	BUTTON_IMAGE(ABOUT, "gtk-about");
 #undef BUTTON_IMAGE
 
 	case HISTORY_BUTTON:
@@ -411,7 +411,8 @@ void nsgtk_theme_implement(struct nsgtk_scaffolding *g)
 			gtk_widget_show_all(GTK_WIDGET(button->popup));
 		}
 		#endif
-		if ((button->location != -1) && (button->button	!= NULL) &&
+		if ((button->location != -1) &&
+		    (button->button != NULL) &&
 		    (theme[IMAGE_SET_BUTTONS] != NULL)) {
 			gtk_tool_button_set_icon_widget(
 				GTK_TOOL_BUTTON(button->button),
@@ -2017,7 +2018,7 @@ static gboolean websearch_entry_activate_cb(GtkWidget *widget, gpointer data)
  * \return TRUE
  */
 static gboolean
-websearch_entry_button_press(GtkWidget *widget,
+websearch_entry_button_press_cb(GtkWidget *widget,
 			     GdkEventFocus *f,
 			     gpointer data)
 {
@@ -2174,7 +2175,7 @@ toolbar_connect_signal(struct nsgtk_toolbar *tb, nsgtk_toolbar_button itemid)
 				 tb);
 		g_signal_connect(GTK_WIDGET(entry),
 				 "button-press-event",
-				 G_CALLBACK(websearch_entry_button_press),
+				 G_CALLBACK(websearch_entry_button_press_cb),
 				 tb);
 		break;
 
