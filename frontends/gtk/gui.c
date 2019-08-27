@@ -63,6 +63,7 @@
 #include "gtk/global_history.h"
 #include "gtk/hotlist.h"
 #include "gtk/throbber.h"
+#include "gtk/toolbar_items.h"
 #include "gtk/scaffolding.h"
 #include "gtk/window.h"
 #include "gtk/schedule.h"

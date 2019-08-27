@@ -70,6 +70,19 @@ nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active);
  */
 nserror nsgtk_toolbar_set_url(struct nsgtk_toolbar *tb, nsurl *url);
 
+
+/**
+ * activate the handler for a toolbar item
+ *
+ * This allows the same action to be performed for menu enties as if
+ * the user had clicked the toolbar widget.
+ *
+ * \param toolbar A toolbar returned from a creation
+ * \param itemid the id of the item to activate
+ * \return NSERROR_OK on success
+ */
+nserror nsgtk_toolbar_item_activate(struct nsgtk_toolbar *tb, nsgtk_toolbar_button itemid);
+
 /**
  * sets up the images for scaffolding.
  */

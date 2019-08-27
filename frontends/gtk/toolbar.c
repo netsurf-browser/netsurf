@@ -35,7 +35,9 @@
 #include "utils/nsoption.h"
 #include "utils/file.h"
 #include "utils/nsurl.h"
+#include "utils/corestrings.h"
 
+#include "gtk/toolbar_items.h"
 #include "gtk/completion.h"
 #include "gtk/gui.h"
 #include "gtk/warn.h"
@@ -45,10 +47,9 @@
 #include "gtk/window.h"
 #include "gtk/compat.h"
 #include "gtk/resources.h"
-#include "gtk/toolbar_items.h"
-#include "gtk/toolbar.h"
 #include "gtk/schedule.h"
 #include "gtk/local_history.h"
+#include "gtk/toolbar.h"
 
 /**
  * button location indicating button is not to be shown
@@ -2030,6 +2031,205 @@ websearch_entry_button_press_cb(GtkWidget *widget,
 
 
 /**
+ * handler for new window tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+newwindow_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	nserror res;
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+	const char *addr;
+	nsurl *url;
+
+	if (nsoption_charp(homepage_url) != NULL) {
+		addr = nsoption_charp(homepage_url);
+	} else {
+		addr = NETSURF_HOMEPAGE;
+	}
+
+	res = nsurl_create(addr, &url);
+	if (res == NSERROR_OK) {
+		bw = tb->get_bw(tb->get_bw_ctx);
+		res = browser_window_create(BW_CREATE_HISTORY,
+					      url,
+					      NULL,
+					      bw,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (res != NSERROR_OK) {
+		nsgtk_warning(messages_get_errorcode(res), 0);
+	}
+
+	return TRUE;
+}
+
+
+/**
+ * handler for new tab tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+newtab_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	nserror res = NSERROR_OK;
+	nsurl *url = NULL;
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+
+	if (!nsoption_bool(new_blank)) {
+		const char *addr;
+		if (nsoption_charp(homepage_url) != NULL) {
+			addr = nsoption_charp(homepage_url);
+		} else {
+			addr = NETSURF_HOMEPAGE;
+		}
+		res = nsurl_create(addr, &url);
+	}
+
+	if (res == NSERROR_OK) {
+		bw = tb->get_bw(tb->get_bw_ctx);
+
+		res = browser_window_create(BW_CREATE_HISTORY |
+					    BW_CREATE_TAB,
+					    url,
+					    NULL,
+					    bw,
+					    NULL);
+	}
+	if (url != NULL) {
+		nsurl_unref(url);
+	}
+	if (res != NSERROR_OK) {
+		nsgtk_warning(messages_get_errorcode(res), 0);
+	}
+	return TRUE;
+}
+
+
+/**
+ * handler for open file tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+openfile_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	GtkWidget *dlgOpen;
+	gint response;
+	GtkWidget *toplevel;
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+
+	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
+
+	dlgOpen = gtk_file_chooser_dialog_new("Open File",
+					      GTK_WINDOW(toplevel),
+			GTK_FILE_CHOOSER_ACTION_OPEN,
+			NSGTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+			NSGTK_STOCK_OPEN, GTK_RESPONSE_OK,
+			NULL, NULL);
+
+	response = gtk_dialog_run(GTK_DIALOG(dlgOpen));
+	if (response == GTK_RESPONSE_OK) {
+		char *urltxt;
+		gchar *filename;
+		nserror res;
+		nsurl *url;
+
+		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dlgOpen));
+
+		urltxt = malloc(strlen(filename) + FILE_SCHEME_PREFIX_LEN + 1);
+		if (urltxt != NULL) {
+			sprintf(urltxt, FILE_SCHEME_PREFIX"%s", filename);
+
+			res = nsurl_create(urltxt, &url);
+			if (res == NSERROR_OK) {
+				bw = tb->get_bw(tb->get_bw_ctx);
+				res = browser_window_navigate(bw,
+							url,
+							NULL,
+							BW_NAVIGATE_HISTORY,
+							NULL,
+							NULL,
+							NULL);
+				nsurl_unref(url);
+			}
+			if (res != NSERROR_OK) {
+				nsgtk_warning(messages_get_errorcode(res), 0);
+			}
+			free(urltxt);
+		}
+
+
+		g_free(filename);
+	}
+
+	gtk_widget_destroy(dlgOpen);
+
+	return TRUE;
+}
+
+
+/**
+ * handler for close tab tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+closetab_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+
+	nsgtk_tab_close_current(tb->widget);
+
+	return TRUE;
+}
+
+
+/**
+ * handler for close window tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+closewindow_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	GtkWidget *toplevel;
+	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
+	gtk_widget_destroy(toplevel);
+	return TRUE;
+}
+
+
+/**
+ * handler for new window tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+savepage_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+}
+
+
+/**
  * create a toolbar item
  *
  * create a toolbar item and set up its default handlers
@@ -2400,6 +2600,38 @@ nserror nsgtk_toolbar_set_url(struct nsgtk_toolbar *tb, nsurl *url)
 	if (idn_url_s != NULL) {
 		free(idn_url_s);
 	}
+
+	return NSERROR_OK;
+}
+
+
+/* exported interface documented in toolbar.h */
+nserror
+nsgtk_toolbar_item_activate(struct nsgtk_toolbar *tb,
+			    nsgtk_toolbar_button itemid)
+{
+	GtkWidget *widget;
+
+	/* ensure item id in range */
+	if ((itemid < BACK_BUTTON) || (itemid >= PLACEHOLDER_BUTTON)) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (tb->buttons[itemid]->bhandler == NULL) {
+		return NSERROR_INVALID;
+	}
+
+	/*
+	 * if item has a widget in the current toolbar use that as the
+	 *   signal source otherwise use the toolbar widget itself.
+	 */
+	if (tb->buttons[itemid]->button != NULL) {
+		widget = GTK_WIDGET(tb->buttons[itemid]->button);
+	} else {
+		widget = tb->widget;
+	}
+
+	tb->buttons[itemid]->bhandler(widget, tb);
 
 	return NSERROR_OK;
 }

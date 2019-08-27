@@ -47,12 +47,12 @@
 #include "desktop/textinput.h"
 #include "utils/nsurl.h"
 
-#include "gtk/window.h"
 #include "gtk/selection.h"
 #include "gtk/warn.h"
 #include "gtk/compat.h"
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
+#include "gtk/toolbar_items.h"
 #include "gtk/toolbar.h"
 #include "gtk/local_history.h"
 #include "gtk/plotters.h"
@@ -61,6 +61,7 @@
 #include "gtk/bitmap.h"
 #include "gtk/gdk.h"
 #include "gtk/resources.h"
+#include "gtk/window.h"
 
 static GtkWidget *select_menu;
 static struct form_control *select_menu_control;
@@ -894,7 +895,12 @@ gui_window_create(struct browser_window *bw,
 	return g;
 }
 
-
+/* exported interface documented in window.h */
+nserror
+nsgtk_window_item_activate(struct gui_window *gw, nsgtk_toolbar_button itemid)
+{
+	return nsgtk_toolbar_item_activate(gw->toolbar, itemid);
+}
 
 void nsgtk_reflow_all_windows(void)
 {
