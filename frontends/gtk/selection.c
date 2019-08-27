@@ -24,6 +24,7 @@
 #include "netsurf/browser_window.h"
 #include "netsurf/clipboard.h"
 
+#include "gtk/toolbar_items.h"
 #include "gtk/window.h"
  
 static GString *current_selection = NULL;

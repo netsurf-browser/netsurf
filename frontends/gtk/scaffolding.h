@@ -155,8 +155,6 @@ void nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g, gdouble x, gdou
 
 gboolean nsgtk_window_url_changed(GtkWidget *, GdkEventKey *, gpointer);
 
-nserror nsgtk_scaffolding_new_tab(struct gui_window *gw);
-
 /* core acessors */
 /**
  * set the title in the window

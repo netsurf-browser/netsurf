@@ -69,8 +69,8 @@
 #include "gtk/print.h"
 #include "gtk/search.h"
 #include "gtk/throbber.h"
-#include "gtk/toolbar.h"
 #include "gtk/toolbar_items.h"
+#include "gtk/toolbar.h"
 #include "gtk/window.h"
 #include "gtk/gdk.h"
 #include "gtk/scaffolding.h"
@@ -601,104 +601,39 @@ static void nsgtk_openfile_open(const char *filename)
 
 /* signal handlers for menu entries */
 
-MULTIHANDLER(newwindow)
+/**
+ * menu signal handler for activation on new window item
+ */
+static gboolean
+nsgtk_on_newwindow_activate_menu(GtkMenuItem *widget, gpointer data)
 {
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-	const char *addr;
-	nsurl *url;
-	nserror error;
-
-	if (nsoption_charp(homepage_url) != NULL) {
-		addr = nsoption_charp(homepage_url);
-	} else {
-		addr = NETSURF_HOMEPAGE;
-	}
-
-	error = nsurl_create(addr, &url);
-	if (error == NSERROR_OK) {
-		error = browser_window_create(BW_CREATE_HISTORY,
-					      url,
-					      NULL,
-					      bw,
-					      NULL);
-		nsurl_unref(url);
-	}
-	if (error != NSERROR_OK) {
-		nsgtk_warning(messages_get_errorcode(error), 0);
-	}
-
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
+	nsgtk_window_item_activate(g->top_level, NEWWINDOW_BUTTON);
 	return TRUE;
 }
 
-/* exported interface documented in gtk/scaffolding.h */
-nserror nsgtk_scaffolding_new_tab(struct gui_window *gw)
+/**
+ * menu signal handler for activation on new tab item
+ */
+static gboolean
+nsgtk_on_newtab_activate_menu(GtkMenuItem *widget, gpointer data)
 {
-	struct browser_window *bw = nsgtk_get_browser_window(gw);
-	nsurl *url = NULL;
-	nserror error;
-
-	if (!nsoption_bool(new_blank)) {
-		const char *addr;
-		if (nsoption_charp(homepage_url) != NULL) {
-			addr = nsoption_charp(homepage_url);
-		} else {
-			addr = NETSURF_HOMEPAGE;
-		}
-		error = nsurl_create(addr, &url);
-		if (error != NSERROR_OK) {
-			nsgtk_warning(messages_get_errorcode(error), 0);
-		}
-	}
-
-	error = browser_window_create(BW_CREATE_HISTORY |
-				      BW_CREATE_TAB,
-				      url,
-				      NULL,
-				      bw,
-				      NULL);
-	if (url != NULL) {
-		nsurl_unref(url);
-	}
-	return error;
-}
-
-MULTIHANDLER(newtab)
-{
-	nserror error;
-
-	error = nsgtk_scaffolding_new_tab(g->top_level);
-	if (error != NSERROR_OK) {
-		nsgtk_warning(messages_get_errorcode(error), 0);
-	}
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
+	nsgtk_window_item_activate(g->top_level, NEWTAB_BUTTON);
 	return TRUE;
 }
 
-MULTIHANDLER(openfile)
+/**
+ * menu signal handler for activation on openfile item
+ */
+static gboolean
+nsgtk_on_openfile_activate_menu(GtkMenuItem *widget, gpointer data)
 {
-	GtkWidget *dlgOpen;
-	gint response;
-
-	scaf_current = g;
-	dlgOpen = gtk_file_chooser_dialog_new("Open File",
-			scaf_current->window,
-			GTK_FILE_CHOOSER_ACTION_OPEN,
-			NSGTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-			NSGTK_STOCK_OPEN, GTK_RESPONSE_OK,
-			NULL, NULL);
-
-	response = gtk_dialog_run(GTK_DIALOG(dlgOpen));
-	if (response == GTK_RESPONSE_OK) {
-		gchar *filename;
-		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dlgOpen));
-
-		nsgtk_openfile_open((const char *)filename);
-
-		g_free(filename);
-	}
-
-	gtk_widget_destroy(dlgOpen);
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
+	nsgtk_window_item_activate(g->top_level, OPENFILE_BUTTON);
 	return TRUE;
 }
+
 
 /**
  * callback to determine if a path is a directory.
@@ -1001,11 +936,18 @@ MULTIHANDLER(print)
 	return TRUE;
 }
 
-MULTIHANDLER(closewindow)
+
+/**
+ * menu signal handler for activation on close window item
+ */
+static gboolean
+nsgtk_on_closewindow_activate_menu(GtkMenuItem *widget, gpointer data)
 {
-	gtk_widget_destroy(GTK_WIDGET(g->window));
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
+	nsgtk_window_item_activate(g->top_level, CLOSEWINDOW_BUTTON);
 	return TRUE;
 }
+
 
 MULTIHANDLER(quit)
 {
@@ -1639,10 +1581,14 @@ MULTIHANDLER(prevtab)
 	return TRUE;
 }
 
-MULTIHANDLER(closetab)
+/**
+ * menu signal handler for activation on close tab item
+ */
+static gboolean
+nsgtk_on_closetab_activate_menu(GtkMenuItem *widget, gpointer data)
 {
-	nsgtk_tab_close_current(g->notebook);
-
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
+	nsgtk_window_item_activate(g->top_level, CLOSETAB_BUTTON);
 	return TRUE;
 }
 

@@ -34,6 +34,7 @@
 
 #include "gtk/warn.h"
 #include "gtk/scaffolding.h"
+#include "gtk/toolbar_items.h"
 #include "gtk/window.h"
 #include "gtk/compat.h"
 #include "gtk/resources.h"

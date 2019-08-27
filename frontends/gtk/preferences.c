@@ -30,6 +30,7 @@
 #include "desktop/searchweb.h"
 
 #include "gtk/compat.h"
+#include "gtk/toolbar_items.h"
 #include "gtk/window.h"
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"

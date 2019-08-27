@@ -92,4 +92,13 @@ GtkWidget *nsgtk_window_get_tab(struct gui_window *gw);
  */
 void nsgtk_window_set_tab(struct gui_window *gw, GtkWidget *w);
 
+/**
+ * activate the handler for a item in a toolbar of a gui window
+ *
+ * \param gw The gui window handle
+ * \param itemid The id of the item to activate
+ */
+nserror nsgtk_window_item_activate(struct gui_window *gw, nsgtk_toolbar_button itemid);
+
+
 #endif /* NETSURF_GTK_WINDOW_H */
