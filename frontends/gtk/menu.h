@@ -15,24 +15,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _NETSURF_GTK_MENU_H_
-#define _NETSURF_GTK_MENU_H_
+#ifndef NETSURF_GTK_MENU_H_
+#define NETSURF_GTK_MENU_H_
 
 #include <gtk/gtk.h>
 
+/**
+ * File menu item on menubar
+ */
 struct nsgtk_file_menu {
-	GtkMenuItem                     *file; /* File menu item on menubar */
-	GtkMenu				*file_menu;
-	GtkWidget		*newwindow_menuitem;
-	GtkWidget		*newtab_menuitem;
-	GtkWidget		*openfile_menuitem;
-	GtkWidget		*closewindow_menuitem;
-	GtkWidget		*savepage_menuitem;
-	GtkWidget		*export_menuitem;
-	struct nsgtk_export_submenu	*export_submenu;
-	GtkWidget		*printpreview_menuitem;
-	GtkWidget		*print_menuitem;
-	GtkWidget		*quit_menuitem;
+	GtkMenuItem *file;
+	GtkMenu *file_menu;
+	GtkWidget *newwindow_menuitem;
+	GtkWidget *newtab_menuitem;
+	GtkWidget *openfile_menuitem;
+	GtkWidget *closewindow_menuitem;
+	GtkWidget *export_menuitem;
+	struct nsgtk_export_submenu *export_submenu;
+	GtkWidget *printpreview_menuitem;
+	GtkWidget *print_menuitem;
+	GtkWidget *quit_menuitem;
 };
 
 struct nsgtk_edit_menu {
@@ -88,35 +90,34 @@ struct nsgtk_tools_menu {
 };
 
 struct nsgtk_help_menu {
-	GtkMenuItem             *help; /* Help menu item on menubar */
-	GtkMenu			*help_menu;
-	GtkWidget	*contents_menuitem;
-	GtkWidget	*guide_menuitem;
-	GtkWidget	*info_menuitem;
-	GtkWidget	*about_menuitem;
+	GtkMenuItem *help; /* Help menu item on menubar */
+	GtkMenu *help_menu;
+	GtkWidget *contents_menuitem;
+	GtkWidget *guide_menuitem;
+	GtkWidget *info_menuitem;
+	GtkWidget *about_menuitem;
 };
 
 
 struct nsgtk_export_submenu {
-	GtkMenu			*export_menu;
-	GtkWidget	*plaintext_menuitem;
-	GtkWidget	*drawfile_menuitem;
-	GtkWidget	*postscript_menuitem;
-	GtkWidget	*pdf_menuitem;
+	GtkMenu *export_menu;
+	GtkWidget *savepage_menuitem;
+	GtkWidget *plaintext_menuitem;
+	GtkWidget *pdf_menuitem;
 };
 
 struct nsgtk_scaleview_submenu {
-	GtkMenu			*scaleview_menu;
-	GtkWidget	*zoomplus_menuitem;
-	GtkWidget	*zoomminus_menuitem;
-	GtkWidget	*zoomnormal_menuitem;
+	GtkMenu *scaleview_menu;
+	GtkWidget *zoomplus_menuitem;
+	GtkWidget *zoomminus_menuitem;
+	GtkWidget *zoomnormal_menuitem;
 };
 
 struct nsgtk_tabs_submenu {
-	GtkMenu			*tabs_menu;
-	GtkWidget	*nexttab_menuitem;
-	GtkWidget	*prevtab_menuitem;
-	GtkWidget	*closetab_menuitem;
+	GtkMenu *tabs_menu;
+	GtkWidget *nexttab_menuitem;
+	GtkWidget *prevtab_menuitem;
+	GtkWidget *closetab_menuitem;
 };
 
 struct nsgtk_images_submenu {

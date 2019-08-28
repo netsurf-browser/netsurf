@@ -142,21 +142,23 @@ nsgtk_menu_add_image_item(GtkMenu *menu,
 static struct nsgtk_export_submenu *
 nsgtk_menu_export_submenu(GtkAccelGroup *group)
 {
-	struct nsgtk_export_submenu *ret = malloc(sizeof(struct
-			nsgtk_export_submenu));
+	struct nsgtk_export_submenu *ret;
+	ret = malloc(sizeof(struct nsgtk_export_submenu));
+
 	if (ret == NULL) {
 		nsgtk_warning(messages_get("NoMemory"), 0);
 		return NULL;
 	}
+
 	ret->export_menu = GTK_MENU(gtk_menu_new());
 	if (ret->export_menu == NULL) {
 		nsgtk_warning(messages_get("NoMemory"), 0);
 		free(ret);
 		return NULL;
 	}
+
+	IMAGE_ITEM(export, savepage, gtkSavePage, ret, group);
 	IMAGE_ITEM(export, plaintext, gtkPlainText, ret, group);
-	IMAGE_ITEM(export, drawfile, gtkDrawFile, ret, group);
-	IMAGE_ITEM(export, postscript, gtkPostScript, ret, group);
 	IMAGE_ITEM(export, pdf, gtkPDF, ret, group);
 	return ret;
 }
@@ -323,7 +325,6 @@ static struct nsgtk_file_menu *nsgtk_menu_file_submenu(GtkAccelGroup *group)
 	IMAGE_ITEM(file, openfile, gtkOpenFile, fmenu, group);
 	IMAGE_ITEM(file, closewindow, gtkCloseWindow, fmenu, group);
 	ADD_SEP(file, fmenu);
-	IMAGE_ITEM(file, savepage, gtkSavePage, fmenu, group);
 	IMAGE_ITEM(file, export, gtkExport, fmenu, group);
 	ADD_SEP(file, fmenu);
 	IMAGE_ITEM(file, printpreview, gtkPrintPreview, fmenu, group);
