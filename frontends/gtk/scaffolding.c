@@ -95,6 +95,19 @@ static gboolean nsgtk_on_##q##_activate(struct nsgtk_scaffolding *g)
 static gboolean nsgtk_on_##q##_activate(GtkButton *widget, gpointer data)
 
 /**
+ * handle menu activate signals by calling toolbar item activation
+ */
+#define MENUHANDLER(name, itemid)					\
+static gboolean								\
+nsgtk_on_##name##_activate_menu(GtkMenuItem *widget, gpointer data)	\
+{									\
+	struct nsgtk_scaffolding *gs = (struct nsgtk_scaffolding *)data;\
+	nsgtk_window_item_activate(gs->top_level, itemid);		\
+	return TRUE;							\
+}
+
+
+/**
  * menu entry context
  */
 struct nsgtk_menu {
@@ -604,122 +617,52 @@ static void nsgtk_openfile_open(const char *filename)
 /**
  * menu signal handler for activation on new window item
  */
-static gboolean
-nsgtk_on_newwindow_activate_menu(GtkMenuItem *widget, gpointer data)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-	nsgtk_window_item_activate(g->top_level, NEWWINDOW_BUTTON);
-	return TRUE;
-}
+MENUHANDLER(newwindow, NEWWINDOW_BUTTON);
 
 /**
  * menu signal handler for activation on new tab item
  */
-static gboolean
-nsgtk_on_newtab_activate_menu(GtkMenuItem *widget, gpointer data)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-	nsgtk_window_item_activate(g->top_level, NEWTAB_BUTTON);
-	return TRUE;
-}
+MENUHANDLER(newtab, NEWTAB_BUTTON);
 
 /**
  * menu signal handler for activation on open file item
  */
-static gboolean
-nsgtk_on_openfile_activate_menu(GtkMenuItem *widget, gpointer data)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-	nsgtk_window_item_activate(g->top_level, OPENFILE_BUTTON);
-	return TRUE;
-}
-
+MENUHANDLER(openfile, OPENFILE_BUTTON);
 
 /**
  * menu signal handler for activation on export complete page item
  */
-static gboolean
-nsgtk_on_savepage_activate_menu(GtkMenuItem *widget, gpointer data)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-	nsgtk_window_item_activate(g->top_level, SAVEPAGE_BUTTON);
-	return TRUE;
-}
-
+MENUHANDLER(savepage, SAVEPAGE_BUTTON);
 
 /**
  * menu signal handler for activation on export pdf item
  */
-static gboolean
-nsgtk_on_pdf_activate_menu(GtkMenuItem *widget, gpointer data)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-	nsgtk_window_item_activate(g->top_level, PDF_BUTTON);
-	return TRUE;
-}
+MENUHANDLER(pdf, PDF_BUTTON);
 
 /**
  * menu signal handler for activation on export plain text item
  */
-static gboolean
-nsgtk_on_plaintext_activate_menu(GtkMenuItem *widget, gpointer data)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-	nsgtk_window_item_activate(g->top_level, PLAINTEXT_BUTTON);
-	return TRUE;
-}
-
+MENUHANDLER(plaintext, PLAINTEXT_BUTTON);
 
 /**
  * menu signal handler for activation on print preview item
  */
-static gboolean
-nsgtk_on_printpreview_activate_menu(GtkMenuItem *widget, gpointer data)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-	nsgtk_window_item_activate(g->top_level, PRINTPREVIEW_BUTTON);
-	return TRUE;
-}
-
+MENUHANDLER(printpreview, PRINTPREVIEW_BUTTON);
 
 /**
  * menu signal handler for activation on print item
  */
-static gboolean
-nsgtk_on_print_activate_menu(GtkMenuItem *widget, gpointer data)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-	nsgtk_window_item_activate(g->top_level, PRINT_BUTTON);
-	return TRUE;
-}
-
+MENUHANDLER(print, PRINT_BUTTON);
 
 /**
  * menu signal handler for activation on close window item
  */
-static gboolean
-nsgtk_on_closewindow_activate_menu(GtkMenuItem *widget, gpointer data)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-	nsgtk_window_item_activate(g->top_level, CLOSEWINDOW_BUTTON);
-	return TRUE;
-}
+MENUHANDLER(closewindow, CLOSEWINDOW_BUTTON);
 
-
-MULTIHANDLER(quit)
-{
-	struct nsgtk_scaffolding *gs;
-
-	if (nsgtk_check_for_downloads(g->window) == false) {
-		gs = scaf_list;
-		while (gs != NULL) {
-			gtk_widget_destroy(GTK_WIDGET(gs->window));
-			gs = gs->next;
-		}
-	}
-
-	return TRUE;
-}
+/**
+ * menu signal handler for activation on close window item
+ */
+MENUHANDLER(quit, QUIT_BUTTON);
 
 
 static gboolean
@@ -832,54 +775,25 @@ nsgtk_on_link_copy_activate_menu(GtkMenuItem *widget, gpointer data)
 }
 
 
-MULTIHANDLER(cut)
-{
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-	GtkWidget *focused = gtk_window_get_focus(g->window);
+/**
+ * menu signal handler for activation on cut item
+ */
+MENUHANDLER(cut, CUT_BUTTON);
 
-	/* If the url bar has focus, let gtk handle it */
-	if (GTK_IS_EDITABLE (focused))
-		//gtk_editable_cut_clipboard (GTK_EDITABLE(g->url_bar));
-		;
-	else
-		browser_window_key_press(bw, NS_KEY_CUT_SELECTION);
+/**
+ * menu signal handler for activation on copy item
+ */
+MENUHANDLER(copy, COPY_BUTTON);
 
-	return TRUE;
-}
+/**
+ * menu signal handler for activation on paste item
+ */
+MENUHANDLER(paste, PASTE_BUTTON);
 
-MULTIHANDLER(copy)
-{
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-	GtkWidget *focused = gtk_window_get_focus(g->window);
-
-	/* If the url bar has focus, let gtk handle it */
-	if (GTK_IS_EDITABLE (focused))
-		//gtk_editable_copy_clipboard(GTK_EDITABLE(g->url_bar));
-		;
-	else
-		browser_window_key_press(bw, NS_KEY_COPY_SELECTION);
-
-	return TRUE;
-}
-
-MULTIHANDLER(paste)
-{
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-	GtkWidget *focused = gtk_window_get_focus(g->window);
-
-	/* If the url bar has focus, let gtk handle it */
-	if (GTK_IS_EDITABLE (focused))
-		gtk_editable_paste_clipboard (GTK_EDITABLE (focused));
-	else
-		browser_window_key_press(bw, NS_KEY_PASTE);
-
-	return TRUE;
-}
-
-MULTIHANDLER(delete)
-{
-	return TRUE;
-}
+/**
+ * menu signal handler for activation on delete item
+ */
+MENUHANDLER(delete, DELETE_BUTTON);
 
 
 static gboolean
@@ -890,22 +804,11 @@ nsgtk_on_customize_activate_menu(GtkMenuItem *widget, gpointer data)
 	return TRUE;
 }
 
-MULTIHANDLER(selectall)
-{
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-#if 0
-	if (nsgtk_widget_has_focus(GTK_WIDGET(g->url_bar))) {
-		NSLOG(netsurf, INFO, "Selecting all URL bar text");
-		gtk_editable_select_region(GTK_EDITABLE(g->url_bar), 0, -1);
-	} else {
-#endif
-		NSLOG(netsurf, INFO, "Selecting all document text");
-		browser_window_key_press(bw, NS_KEY_SELECT_ALL);
-#if 0
-	}
-#endif
-	return TRUE;
-}
+/**
+ * menu signal handler for activation on selectall item
+ */
+MENUHANDLER(selectall, SELECTALL_BUTTON);
+
 
 MULTIHANDLER(find)
 {
@@ -913,18 +816,11 @@ MULTIHANDLER(find)
 	return TRUE;
 }
 
-MULTIHANDLER(preferences)
-{
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-	GtkWidget* wndpreferences;
+/**
+ * menu signal handler for activation on preferences item
+ */
+MENUHANDLER(preferences,PREFERENCES_BUTTON);
 
-	wndpreferences = nsgtk_preferences(bw, g->window);
-	if (wndpreferences != NULL) {
-		gtk_widget_show(GTK_WIDGET(wndpreferences));
-	}
-
-	return TRUE;
-}
 
 MULTIHANDLER(zoomplus)
 {
@@ -1973,6 +1869,27 @@ static struct gui_search_web_table search_web_table = {
 struct gui_search_web_table *nsgtk_search_web_table = &search_web_table;
 
 /* exported interface documented in gtk/scaffolding.h */
+nserror nsgtk_scaffolding_destroy_all(void)
+{
+	struct nsgtk_scaffolding *gs;
+
+	gs = scaf_list;
+	assert(gs != NULL);
+
+	if (nsgtk_check_for_downloads(gs->window) == true) {
+		return NSERROR_INVALID;
+	}
+
+	/* iterate all scaffolding windows and destroy them */
+	while (gs != NULL) {
+		gtk_widget_destroy(GTK_WIDGET(gs->window));
+		gs = gs->next;
+	}
+	return NSERROR_OK;
+}
+
+
+/* exported interface documented in gtk/scaffolding.h */
 GtkWindow* nsgtk_scaffolding_window(struct nsgtk_scaffolding *g)
 {
 	return g->window;
@@ -2242,8 +2159,10 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
 
 	/* connect main window signals to their handlers. */
-	CONNECT(gs->window, "delete-event",
-		scaffolding_window_delete_event, gs);
+	CONNECT(gs->window,
+		"delete-event",
+		scaffolding_window_delete_event,
+		gs);
 
 	CONNECT(gs->window, "destroy", scaffolding_window_destroy, gs);
 

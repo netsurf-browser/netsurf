@@ -41,6 +41,7 @@
 #include "desktop/print.h"
 #include "netsurf/content.h"
 #include "netsurf/browser_window.h"
+#include "netsurf/keypress.h"
 
 #include "gtk/toolbar_items.h"
 #include "gtk/completion.h"
@@ -57,6 +58,7 @@
 #include "gtk/tabs.h"
 #include "gtk/print.h"
 #include "gtk/layout_pango.h"
+#include "gtk/preferences.h"
 #include "gtk/toolbar.h"
 
 /**
@@ -2526,6 +2528,204 @@ print_button_clicked_cb(GtkWidget *widget, gpointer data)
 	g_object_unref(print_op);
 
 	return TRUE;
+}
+
+/**
+ * handler for quit tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+quit_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	nsgtk_scaffolding_destroy_all();
+	return TRUE;
+}
+
+
+/**
+ * handler for cut tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+cut_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+	GtkWidget *focused;
+	GtkWidget *toplevel;
+
+	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
+
+	focused = gtk_window_get_focus(GTK_WINDOW(toplevel));
+
+	/* let gtk handle it if focused widget is an editable */
+	if (GTK_IS_EDITABLE(focused)) {
+		gtk_editable_cut_clipboard(GTK_EDITABLE(focused));
+	} else {
+		bw = tb->get_bw(tb->get_bw_ctx);
+		browser_window_key_press(bw, NS_KEY_CUT_SELECTION);
+	}
+
+	return TRUE;
+}
+
+
+/**
+ * handler for copy tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+copy_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+	GtkWidget *focused;
+	GtkWidget *toplevel;
+
+	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
+
+	focused = gtk_window_get_focus(GTK_WINDOW(toplevel));
+
+	/* let gtk handle it if focused widget is an editable */
+	if (GTK_IS_EDITABLE(focused)) {
+		gtk_editable_copy_clipboard(GTK_EDITABLE(focused));
+	} else {
+		bw = tb->get_bw(tb->get_bw_ctx);
+		browser_window_key_press(bw, NS_KEY_COPY_SELECTION);
+	}
+
+	return TRUE;
+}
+
+
+/**
+ * handler for paste tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+paste_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+	GtkWidget *focused;
+	GtkWidget *toplevel;
+
+	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
+
+	focused = gtk_window_get_focus(GTK_WINDOW(toplevel));
+
+	/* let gtk handle it if focused widget is an editable */
+	if (GTK_IS_EDITABLE(focused)) {
+		gtk_editable_paste_clipboard(GTK_EDITABLE(focused));
+	} else {
+		bw = tb->get_bw(tb->get_bw_ctx);
+		browser_window_key_press(bw, NS_KEY_PASTE);
+	}
+
+	return TRUE;
+}
+
+
+/**
+ * handler for delete tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+delete_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+	GtkWidget *focused;
+	GtkWidget *toplevel;
+
+	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
+
+	focused = gtk_window_get_focus(GTK_WINDOW(toplevel));
+
+	/* let gtk handle it if focused widget is an editable */
+	if (GTK_IS_EDITABLE(focused)) {
+		gtk_editable_delete_selection(GTK_EDITABLE(focused));
+	} else {
+		bw = tb->get_bw(tb->get_bw_ctx);
+		browser_window_key_press(bw, NS_KEY_CLEAR_SELECTION);
+	}
+
+	return TRUE;
+}
+
+
+/**
+ * handler for select all tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+selectall_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+	GtkWidget *focused;
+	GtkWidget *toplevel;
+
+	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
+
+	focused = gtk_window_get_focus(GTK_WINDOW(toplevel));
+
+	/* let gtk handle it if focused widget is an editable */
+	if (GTK_IS_EDITABLE(focused)) {
+		gtk_editable_select_region(GTK_EDITABLE(focused), 0, -1);
+	} else {
+		bw = tb->get_bw(tb->get_bw_ctx);
+		browser_window_key_press(bw, NS_KEY_SELECT_ALL);
+	}
+
+	return TRUE;
+}
+
+
+/**
+ * handler for preferences tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+preferences_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+	GtkWidget *toplevel;
+	GtkWidget *wndpreferences;
+
+	bw = tb->get_bw(tb->get_bw_ctx);
+
+	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
+
+	wndpreferences = nsgtk_preferences(bw, GTK_WINDOW(toplevel));
+	if (wndpreferences != NULL) {
+		gtk_widget_show(wndpreferences);
+	}
+
+	return TRUE;
+
 }
 
 
