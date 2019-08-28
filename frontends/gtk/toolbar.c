@@ -24,18 +24,23 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 #include <gtk/gtk.h>
 
-#include "netsurf/browser_window.h"
-#include "desktop/browser_history.h"
-#include "desktop/searchweb.h"
-#include "desktop/search.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
 #include "utils/file.h"
 #include "utils/nsurl.h"
 #include "utils/corestrings.h"
+#include "desktop/browser_history.h"
+#include "desktop/searchweb.h"
+#include "desktop/search.h"
+#include "desktop/save_complete.h"
+#include "desktop/save_text.h"
+#include "desktop/print.h"
+#include "netsurf/content.h"
+#include "netsurf/browser_window.h"
 
 #include "gtk/toolbar_items.h"
 #include "gtk/completion.h"
@@ -49,6 +54,9 @@
 #include "gtk/resources.h"
 #include "gtk/schedule.h"
 #include "gtk/local_history.h"
+#include "gtk/tabs.h"
+#include "gtk/print.h"
+#include "gtk/layout_pango.h"
 #include "gtk/toolbar.h"
 
 /**
@@ -2193,7 +2201,7 @@ closetab_button_clicked_cb(GtkWidget *widget, gpointer data)
 {
 	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
 
-	nsgtk_tab_close_current(tb->widget);
+	nsgtk_tab_close_current(GTK_NOTEBOOK(tb->widget));
 
 	return TRUE;
 }
@@ -2216,8 +2224,71 @@ closewindow_button_clicked_cb(GtkWidget *widget, gpointer data)
 }
 
 
+static nserror
+nsgtk_saveas_dialog(struct browser_window *bw,
+		    const char *title,
+		    GtkWindow *parent,
+		    bool folder,
+		    gchar **path_out)
+{
+	nserror res;
+	GtkWidget *fc; /* file chooser widget */
+	GtkFileChooserAction action;
+	char *path; /* proposed path */
+
+	if (!browser_window_has_content(bw)) {
+		/* cannot save a page with no content */
+		return NSERROR_INVALID;
+	}
+
+	if (folder) {
+		action = GTK_FILE_CHOOSER_ACTION_CREATE_FOLDER;
+	} else {
+		action = GTK_FILE_CHOOSER_ACTION_SAVE;
+	}
+
+	fc = gtk_file_chooser_dialog_new(title,
+					 parent,
+					 action,
+					 NSGTK_STOCK_CANCEL,
+					 GTK_RESPONSE_CANCEL,
+					 NSGTK_STOCK_SAVE,
+					 GTK_RESPONSE_ACCEPT,
+					 NULL);
+
+	/* set a default file name */
+	res = nsurl_nice(browser_window_access_url(bw), &path, false);
+	if (res != NSERROR_OK) {
+		path = strdup(messages_get("SaveText"));
+		if (path == NULL) {
+			gtk_widget_destroy(fc);
+			return NSERROR_NOMEM;
+		}
+	}
+
+	if ((!folder) || (access(path, F_OK) != 0)) {
+		gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(fc), path);
+	}
+	free(path);
+
+	/* confirm overwriting */
+	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(fc), TRUE);
+
+	/* run the dialog to let user select path */
+	if (gtk_dialog_run(GTK_DIALOG(fc)) != GTK_RESPONSE_ACCEPT) {
+		gtk_widget_destroy(fc);
+		return NSERROR_NOT_FOUND;
+	}
+
+	*path_out = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(fc));
+
+	gtk_widget_destroy(fc);
+
+	return NSERROR_OK;
+}
+
 /**
- * handler for new window tool bar item clicked signal
+ * handler for full save export tool bar item clicked signal
  *
  * \param widget The widget the signal is being delivered to.
  * \param data The toolbar context passed when the signal was connected
@@ -2226,6 +2297,235 @@ closewindow_button_clicked_cb(GtkWidget *widget, gpointer data)
 static gboolean
 savepage_button_clicked_cb(GtkWidget *widget, gpointer data)
 {
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+	DIR *d;
+	gchar *path;
+	nserror res;
+	GtkWidget *toplevel;
+
+	bw = tb->get_bw(tb->get_bw_ctx);
+	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
+
+	res = nsgtk_saveas_dialog(bw,
+				  messages_get("gtkcompleteSave"),
+				  GTK_WINDOW(toplevel),
+				  true,
+				  &path);
+	if (res != NSERROR_OK) {
+		return FALSE;
+	}
+
+	d = opendir(path);
+	if (d == NULL) {
+		NSLOG(netsurf, INFO,
+		      "Unable to open directory %s for complete save: %s",
+		      path,
+		      strerror(errno));
+		if (errno == ENOTDIR) {
+			nsgtk_warning("NoDirError", path);
+		} else {
+			nsgtk_warning("gtkFileError", path);
+		}
+		g_free(path);
+		return TRUE;
+	}
+	closedir(d);
+
+	save_complete(browser_window_get_content(bw), path, NULL);
+	g_free(path);
+
+	return TRUE;
+}
+
+
+/**
+ * handler for pdf export tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+pdf_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+	GtkWidget *toplevel;
+	gchar *filename;
+	nserror res;
+
+	bw = tb->get_bw(tb->get_bw_ctx);
+
+	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
+
+	res = nsgtk_saveas_dialog(bw,
+				  "Export to PDF",
+				  GTK_WINDOW(toplevel),
+				  false,
+				  &filename);
+	if (res != NSERROR_OK) {
+		return FALSE;
+	}
+
+#ifdef WITH_PDF_EXPORT
+	struct print_settings *settings;
+
+	/* this way the scale used by PDF functions is synchronised with that
+	 * used by the all-purpose print interface
+	 */
+	haru_nsfont_set_scale((float)option_export_scale / 100);
+
+	settings = print_make_settings(PRINT_OPTIONS,
+				       (const char *) filename,
+				       &haru_nsfont);
+	g_free(filename);
+	if (settings == NULL) {
+		return TRUE;
+	}
+	/* This will clean up the print_settings object for us */
+	print_basic_run(browser_window_get_content(bw),	&pdf_printer, settings);
+#endif
+	return TRUE;
+
+}
+
+
+/**
+ * handler for plain text export tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+plaintext_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+	GtkWidget *toplevel;
+	gchar *filename;
+	nserror res;
+
+	bw = tb->get_bw(tb->get_bw_ctx);
+
+	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
+
+	res = nsgtk_saveas_dialog(bw,
+				  messages_get("gtkplainSave"),
+				  GTK_WINDOW(toplevel),
+				  false,
+				  &filename);
+	if (res != NSERROR_OK) {
+		return FALSE;
+	}
+
+
+	save_as_text(browser_window_get_content(bw), filename);
+	g_free(filename);
+
+	return TRUE;
+}
+
+
+/**
+ * handler for print tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+print_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+	GtkPrintOperation *print_op;
+	GtkPageSetup *page_setup;
+	GtkPrintSettings *print_settings;
+	GtkPrintOperationResult res = GTK_PRINT_OPERATION_RESULT_ERROR;
+	struct print_settings *nssettings;
+	char *settings_fname = NULL;
+	GtkWidget *toplevel;
+
+	bw = tb->get_bw(tb->get_bw_ctx);
+
+	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
+
+	print_op = gtk_print_operation_new();
+	if (print_op == NULL) {
+		nsgtk_warning(messages_get("NoMemory"), 0);
+		return TRUE;
+	}
+
+	/* use previously saved settings if any */
+	netsurf_mkpath(&settings_fname, NULL, 2, nsgtk_config_home, "Print");
+	if (settings_fname != NULL) {
+		print_settings = gtk_print_settings_new_from_file(settings_fname, NULL);
+		if (print_settings != NULL) {
+			gtk_print_operation_set_print_settings(print_op,
+							       print_settings);
+
+			/* We're not interested in the settings any more */
+			g_object_unref(print_settings);
+		}
+	}
+
+	content_to_print = browser_window_get_content(bw);
+
+	page_setup = gtk_print_run_page_setup_dialog(GTK_WINDOW(toplevel),
+						     NULL,
+						     NULL);
+	if (page_setup == NULL) {
+		nsgtk_warning(messages_get("NoMemory"), 0);
+		free(settings_fname);
+		g_object_unref(print_op);
+		return TRUE;
+	}
+	gtk_print_operation_set_default_page_setup(print_op, page_setup);
+
+	nssettings = print_make_settings(PRINT_DEFAULT,
+					 NULL,
+					 nsgtk_layout_table);
+
+	g_signal_connect(print_op,
+			 "begin_print",
+			 G_CALLBACK(gtk_print_signal_begin_print),
+			 nssettings);
+	g_signal_connect(print_op,
+			 "draw_page",
+			 G_CALLBACK(gtk_print_signal_draw_page),
+			 NULL);
+	g_signal_connect(print_op,
+			 "end_print",
+			 G_CALLBACK(gtk_print_signal_end_print),
+			 nssettings);
+
+	if (content_get_type(browser_window_get_content(bw)) != CONTENT_TEXTPLAIN) {
+		res = gtk_print_operation_run(print_op,
+					      GTK_PRINT_OPERATION_ACTION_PRINT_DIALOG,
+					      GTK_WINDOW(toplevel),
+					      NULL);
+	}
+
+	/* if the settings were used save them for future use */
+	if (settings_fname != NULL) {
+		if (res == GTK_PRINT_OPERATION_RESULT_APPLY) {
+			/* Do not increment the settings reference */
+			print_settings = gtk_print_operation_get_print_settings(print_op);
+
+			gtk_print_settings_to_file(print_settings,
+						   settings_fname,
+						   NULL);
+		}
+		free(settings_fname);
+	}
+
+	/* Our print_settings object is destroyed by the end print handler */
+	g_object_unref(page_setup);
+	g_object_unref(print_op);
+
+	return TRUE;
 }
 
 
@@ -2628,7 +2928,7 @@ nsgtk_toolbar_item_activate(struct nsgtk_toolbar *tb,
 	if (tb->buttons[itemid]->button != NULL) {
 		widget = GTK_WIDGET(tb->buttons[itemid]->button);
 	} else {
-		widget = tb->widget;
+		widget = GTK_WIDGET(tb->widget);
 	}
 
 	tb->buttons[itemid]->bhandler(widget, tb);

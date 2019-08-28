@@ -2872,11 +2872,11 @@ de.gtk.gtkplainSave:Als Text speichern
 fr.gtk.gtkplainSave:Enregistrer sans mise en forme
 it.gtk.gtkplainSave:Salva come testo
 nl.gtk.gtkplainSave:Als tekst bewaren
-en.gtk.gtkcompleteSave:Save webpage complete - select an empty directory
-de.gtk.gtkcompleteSave:Seite komplett speichern - ein leeres Verzeichnis wählen
-fr.gtk.gtkcompleteSave:Enregistrer page web complète - sélectioner un dossier vide
-it.gtk.gtkcompleteSave:Salva l'intera pagina web - seleziona una directory vuota
-nl.gtk.gtkcompleteSave:Complete webpagina bewaren - selecteer een lege map
+en.gtk.gtkcompleteSave:Export complete page as a folder
+de.gtk.gtkcompleteSave:Seite komplett speichern
+fr.gtk.gtkcompleteSave:Enregistrer page web complète
+it.gtk.gtkcompleteSave:Salva l'intera pagina web
+nl.gtk.gtkcompleteSave:Complete webpagina bewaren
 en.gtk.gtkSaveConfirm:File saved
 de.gtk.gtkSaveConfirm:Datei gespeichert
 fr.gtk.gtkSaveConfirm:Fichier enregistré
@@ -2957,16 +2957,16 @@ de.gtk.gtkCloseWindow:Fenster schließen
 fr.gtk.gtkCloseWindow:_Fermer la fenêtre
 it.gtk.gtkCloseWindow:_Chiudi finestra
 nl.gtk.gtkCloseWindow:_Venster sluiten
-en.gtk.gtkSavePage:Save Page…
-de.gtk.gtkSavePage:Seite speichern..
-fr.gtk.gtkSavePage:Enregistrer la Page...
-it.gtk.gtkSavePage:Salva pagina...
-nl.gtk.gtkSavePage:Pagina bewaren...
 en.gtk.gtkExport:Export
 de.gtk.gtkExport:Exportieren
 fr.gtk.gtkExport:Exporter
 it.gtk.gtkExport:Esporta
 nl.gtk.gtkExport:Exporteren
+en.gtk.gtkSavePage:Complete Page…
+de.gtk.gtkSavePage:Seite speichern..
+fr.gtk.gtkSavePage:Enregistrer la Page...
+it.gtk.gtkSavePage:Salva pagina...
+nl.gtk.gtkSavePage:Pagina bewaren...
 en.gtk.gtkPlainText:Plain Text…
 de.gtk.gtkPlainText:Reiner Text..
 fr.gtk.gtkPlainText:Texte...

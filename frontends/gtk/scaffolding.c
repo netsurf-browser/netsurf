@@ -624,7 +624,7 @@ nsgtk_on_newtab_activate_menu(GtkMenuItem *widget, gpointer data)
 }
 
 /**
- * menu signal handler for activation on openfile item
+ * menu signal handler for activation on open file item
  */
 static gboolean
 nsgtk_on_openfile_activate_menu(GtkMenuItem *widget, gpointer data)
@@ -636,303 +636,60 @@ nsgtk_on_openfile_activate_menu(GtkMenuItem *widget, gpointer data)
 
 
 /**
- * callback to determine if a path is a directory.
- *
- * \param info The path information
- * \param data context pointer set to NULL
- * \return TRUE if path is a directory else false
+ * menu signal handler for activation on export complete page item
  */
 static gboolean
-nsgtk_filter_directory(const GtkFileFilterInfo *info,
-		       gpointer data)
+nsgtk_on_savepage_activate_menu(GtkMenuItem *widget, gpointer data)
 {
-	DIR *d = opendir(info->filename);
-	if (d == NULL)
-		return FALSE;
-	closedir(d);
-	return TRUE;
-}
-
-MULTIHANDLER(savepage)
-{
-	if (!browser_window_has_content(nsgtk_get_browser_window(g->top_level)))
-		return FALSE;
-
-	GtkWidget *fc;
-	DIR *d;
-	char *path;
-	nserror res;
-	GtkFileFilter *filter;
-
-	fc = gtk_file_chooser_dialog_new(
-			messages_get("gtkcompleteSave"), g->window,
-			GTK_FILE_CHOOSER_ACTION_CREATE_FOLDER,
-			NSGTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-			NSGTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
-			NULL);
-	filter = gtk_file_filter_new();
-	gtk_file_filter_set_name(filter, "Directories");
-	gtk_file_filter_add_custom(filter, GTK_FILE_FILTER_FILENAME,
-			nsgtk_filter_directory, NULL, NULL);
-	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(fc), filter);
-	gtk_file_chooser_set_filter(GTK_FILE_CHOOSER(fc), filter);
-
-	res = nsurl_nice(browser_window_access_url(
-			nsgtk_get_browser_window(g->top_level)), &path, false);
-	if (res != NSERROR_OK) {
-		path = strdup(messages_get("SaveText"));
-		if (path == NULL) {
-			nsgtk_warning("NoMemory", 0);
-			return FALSE;
-		}
-	}
-
-	if (access(path, F_OK) != 0)
-		gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(fc), path);
-	free(path);
-
-	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(fc),
-			TRUE);
-
-	if (gtk_dialog_run(GTK_DIALOG(fc)) != GTK_RESPONSE_ACCEPT) {
-		gtk_widget_destroy(fc);
-		return TRUE;
-	}
-
-	path = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(fc));
-	d = opendir(path);
-	if (d == NULL) {
-		NSLOG(netsurf, INFO,
-		      "Unable to open directory %s for complete save: %s",
-		      path,
-		      strerror(errno));
-		if (errno == ENOTDIR)
-			nsgtk_warning("NoDirError", path);
-		else
-			nsgtk_warning("gtkFileError", path);
-		gtk_widget_destroy(fc);
-		g_free(path);
-		return TRUE;
-	}
-	closedir(d);
-	save_complete(browser_window_get_content(nsgtk_get_browser_window(
-			g->top_level)), path, NULL);
-	g_free(path);
-
-	gtk_widget_destroy(fc);
-
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
+	nsgtk_window_item_activate(g->top_level, SAVEPAGE_BUTTON);
 	return TRUE;
 }
 
 
-MULTIHANDLER(pdf)
+/**
+ * menu signal handler for activation on export pdf item
+ */
+static gboolean
+nsgtk_on_pdf_activate_menu(GtkMenuItem *widget, gpointer data)
 {
-#ifdef WITH_PDF_EXPORT
-
-	GtkWidget *save_dialog;
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-	struct print_settings *settings;
-	char filename[PATH_MAX];
-	char dirname[PATH_MAX];
-	char *url_name;
-	nserror res;
-
-	NSLOG(netsurf, INFO, "Print preview (generating PDF)  started.");
-
-	res = nsurl_nice(browser_window_access_url(bw), &url_name, true);
-	if (res != NSERROR_OK) {
-		nsgtk_warning(messages_get_errorcode(res), 0);
-		return TRUE;
-	}
-
-	strncpy(filename, url_name, PATH_MAX);
-	strncat(filename, ".pdf", PATH_MAX - strlen(filename));
-	filename[PATH_MAX - 1] = '\0';
-
-	free(url_name);
-
-	strncpy(dirname, option_downloads_directory, PATH_MAX);
-	strncat(dirname, "/", PATH_MAX - strlen(dirname));
-	dirname[PATH_MAX - 1] = '\0';
-
-	/* this way the scale used by PDF functions is synchronised with that
-	 * used by the all-purpose print interface
-	 */
-	haru_nsfont_set_scale((float)option_export_scale / 100);
-
-	save_dialog = gtk_file_chooser_dialog_new("Export to PDF", g->window,
-		GTK_FILE_CHOOSER_ACTION_SAVE,
-		NSGTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-		NSGTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
-		NULL);
-
-	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(save_dialog),
-			dirname);
-
-	gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(save_dialog),
-			filename);
-
-	if (gtk_dialog_run(GTK_DIALOG(save_dialog)) == GTK_RESPONSE_ACCEPT) {
-		gchar *filename = gtk_file_chooser_get_filename(
-				GTK_FILE_CHOOSER(save_dialog));
-
-		settings = print_make_settings(PRINT_OPTIONS,
-				(const char *) filename, &haru_nsfont);
-		g_free(filename);
-
-		if (settings == NULL) {
-			nsgtk_warning(messages_get("NoMemory"), 0);
-			gtk_widget_destroy(save_dialog);
-			return TRUE;
-		}
-
-		/* This will clean up the print_settings object for us */
-		print_basic_run(browser_window_get_content(bw),
-				&pdf_printer, settings);
-	}
-
-	gtk_widget_destroy(save_dialog);
-
-#endif /* WITH_PDF_EXPORT */
-
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
+	nsgtk_window_item_activate(g->top_level, PDF_BUTTON);
 	return TRUE;
 }
 
-MULTIHANDLER(plaintext)
+/**
+ * menu signal handler for activation on export plain text item
+ */
+static gboolean
+nsgtk_on_plaintext_activate_menu(GtkMenuItem *widget, gpointer data)
 {
-	if (!browser_window_has_content(nsgtk_get_browser_window(g->top_level)))
-		return FALSE;
-
-	GtkWidget *fc = gtk_file_chooser_dialog_new(
-			messages_get("gtkplainSave"), g->window,
-			GTK_FILE_CHOOSER_ACTION_SAVE,
-			NSGTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-			NSGTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
-			NULL);
-	char *filename;
-	nserror res;
-
-	res = nsurl_nice(browser_window_access_url(
-			nsgtk_get_browser_window(g->top_level)),
-			&filename, false);
-	if (res != NSERROR_OK) {
-		filename = strdup(messages_get("SaveText"));
-		if (filename == NULL) {
-			nsgtk_warning("NoMemory", 0);
-			return FALSE;
-		}
-	}
-
-	gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(fc), filename);
-	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(fc),
-			TRUE);
-
-	free(filename);
-
-	if (gtk_dialog_run(GTK_DIALOG(fc)) == GTK_RESPONSE_ACCEPT) {
-		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(fc));
-		save_as_text(browser_window_get_content(
-				nsgtk_get_browser_window(
-				g->top_level)), filename);
-		g_free(filename);
-	}
-
-	gtk_widget_destroy(fc);
-	return TRUE;
-}
-
-MULTIHANDLER(drawfile)
-{
-	return TRUE;
-}
-
-MULTIHANDLER(postscript)
-{
-	return TRUE;
-}
-
-MULTIHANDLER(printpreview)
-{
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
+	nsgtk_window_item_activate(g->top_level, PLAINTEXT_BUTTON);
 	return TRUE;
 }
 
 
-MULTIHANDLER(print)
+/**
+ * menu signal handler for activation on print preview item
+ */
+static gboolean
+nsgtk_on_printpreview_activate_menu(GtkMenuItem *widget, gpointer data)
 {
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
+	nsgtk_window_item_activate(g->top_level, PRINTPREVIEW_BUTTON);
+	return TRUE;
+}
 
-	GtkPrintOperation *print_op;
-	GtkPageSetup *page_setup;
-	GtkPrintSettings *print_settings;
-	GtkPrintOperationResult res = GTK_PRINT_OPERATION_RESULT_ERROR;
-	struct print_settings *nssettings;
-	char *settings_fname = NULL;
 
-	print_op = gtk_print_operation_new();
-	if (print_op == NULL) {
-		nsgtk_warning(messages_get("NoMemory"), 0);
-		return TRUE;
-	}
-
-	/* use previously saved settings if any */
-	netsurf_mkpath(&settings_fname, NULL, 2, nsgtk_config_home, "Print");
-	if (settings_fname != NULL) {
-		print_settings = gtk_print_settings_new_from_file(settings_fname, NULL);
-		if (print_settings != NULL) {
-			gtk_print_operation_set_print_settings(print_op,
-						print_settings);
-
-			/* We're not interested in the settings any more */
-			g_object_unref(print_settings);
-		}
-	}
-
-	content_to_print = browser_window_get_content(bw);
-
-	page_setup = gtk_print_run_page_setup_dialog(g->window, NULL, NULL);
-	if (page_setup == NULL) {
-		nsgtk_warning(messages_get("NoMemory"), 0);
-		free(settings_fname);
-		g_object_unref(print_op);
-		return TRUE;
-	}
-	gtk_print_operation_set_default_page_setup(print_op, page_setup);
-
-	nssettings = print_make_settings(PRINT_DEFAULT, NULL, nsgtk_layout_table);
-
-	g_signal_connect(print_op, "begin_print",
-			G_CALLBACK(gtk_print_signal_begin_print), nssettings);
-	g_signal_connect(print_op, "draw_page",
-			G_CALLBACK(gtk_print_signal_draw_page), NULL);
-	g_signal_connect(print_op, "end_print",
-			G_CALLBACK(gtk_print_signal_end_print), nssettings);
-
-	if (content_get_type(browser_window_get_content(bw)) !=
-			CONTENT_TEXTPLAIN) {
-		res = gtk_print_operation_run(print_op,
-				GTK_PRINT_OPERATION_ACTION_PRINT_DIALOG,
-				g->window,
-				NULL);
-	}
-
-	/* if the settings were used save them for future use */
-	if (settings_fname != NULL) {
-		if (res == GTK_PRINT_OPERATION_RESULT_APPLY) {
-			/* Do not increment the settings reference */
-			print_settings =
-				gtk_print_operation_get_print_settings(print_op);
-
-			gtk_print_settings_to_file(print_settings,
-						   settings_fname,
-						   NULL);
-		}
-		free(settings_fname);
-	}
-
-	/* Our print_settings object is destroyed by the end print handler */
-	g_object_unref(page_setup);
-	g_object_unref(print_op);
-
+/**
+ * menu signal handler for activation on print item
+ */
+static gboolean
+nsgtk_on_print_activate_menu(GtkMenuItem *widget, gpointer data)
+{
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
+	nsgtk_window_item_activate(g->top_level, PRINT_BUTTON);
 	return TRUE;
 }
 
@@ -1839,16 +1596,20 @@ static nserror nsgtk_menu_initialise(struct nsgtk_scaffolding *g)
 #define ITEM_POP(p, q) \
 	g->menus[p##_BUTTON].popup = g->menu_popup->q##_menuitem
 
-
+	/* file menu */
 	ITEM_MAIN(NEWWINDOW, file_submenu, newwindow);
 	ITEM_MAIN(NEWTAB, file_submenu, newtab);
 	ITEM_MAIN(OPENFILE, file_submenu, openfile);
-	ITEM_MAIN(PRINT, file_submenu, print);
 	ITEM_MAIN(CLOSEWINDOW, file_submenu, closewindow);
-	ITEM_MAIN(SAVEPAGE, file_submenu, savepage);
 	ITEM_MAIN(PRINTPREVIEW, file_submenu, printpreview);
 	ITEM_MAIN(PRINT, file_submenu, print);
 	ITEM_MAIN(QUIT, file_submenu, quit);
+	/* file - export submenu */
+	ITEM_SUB(SAVEPAGE, file_submenu, export, savepage);
+	ITEM_SUB(PLAINTEXT, file_submenu, export, plaintext);
+	ITEM_SUB(PDF, file_submenu, export, pdf);
+
+	/* edit menu */
 	ITEM_MAIN(CUT, edit_submenu, cut);
 	ITEM_MAIN(COPY, edit_submenu, copy);
 	ITEM_MAIN(PASTE, edit_submenu, paste);
@@ -1856,44 +1617,51 @@ static nserror nsgtk_menu_initialise(struct nsgtk_scaffolding *g)
 	ITEM_MAIN(SELECTALL, edit_submenu, selectall);
 	ITEM_MAIN(FIND, edit_submenu, find);
 	ITEM_MAIN(PREFERENCES, edit_submenu, preferences);
+
+	/* view menu */
 	ITEM_MAIN(STOP, view_submenu, stop);
-	ITEM_POP(STOP, stop);
 	ITEM_MAIN(RELOAD, view_submenu, reload);
-	ITEM_POP(RELOAD, reload);
 	ITEM_MAIN(FULLSCREEN, view_submenu, fullscreen);
-	ITEM_MAIN(DOWNLOADS, tools_submenu, downloads);
 	ITEM_MAIN(SAVEWINDOWSIZE, view_submenu, savewindowsize);
+	/* view - scale submenu */
+	ITEM_SUB(ZOOMPLUS, view_submenu, scaleview, zoomplus);
+	ITEM_SUB(ZOOMMINUS, view_submenu, scaleview, zoomminus);
+	ITEM_SUB(ZOOMNORMAL, view_submenu, scaleview, zoomnormal);
+	/* view - tabs submenu */
+	ITEM_SUB(NEXTTAB, view_submenu, tabs, nexttab);
+	ITEM_SUB(PREVTAB, view_submenu, tabs, prevtab);
+	ITEM_SUB(CLOSETAB, view_submenu, tabs, closetab);
+
+	/* navigation menu */
 	ITEM_MAIN(BACK, nav_submenu, back);
-	ITEM_POP(BACK, back);
 	ITEM_MAIN(FORWARD, nav_submenu, forward);
-	ITEM_POP(FORWARD, forward);
 	ITEM_MAIN(HOME, nav_submenu, home);
 	ITEM_MAIN(LOCALHISTORY, nav_submenu, localhistory);
 	ITEM_MAIN(GLOBALHISTORY, nav_submenu, globalhistory);
 	ITEM_MAIN(ADDBOOKMARKS, nav_submenu, addbookmarks);
 	ITEM_MAIN(SHOWBOOKMARKS, nav_submenu, showbookmarks);
-	ITEM_MAIN(SHOWCOOKIES, tools_submenu, showcookies);
 	ITEM_MAIN(OPENLOCATION, nav_submenu, openlocation);
-	ITEM_MAIN(CONTENTS, help_submenu, contents);
-	ITEM_MAIN(INFO, help_submenu, info);
-	ITEM_MAIN(GUIDE, help_submenu, guide);
-	ITEM_MAIN(ABOUT, help_submenu, about);
-	ITEM_SUB(PLAINTEXT, file_submenu, export, plaintext);
-	ITEM_SUB(PDF, file_submenu, export, pdf);
-	ITEM_SUB(DRAWFILE, file_submenu, export, drawfile);
-	ITEM_SUB(POSTSCRIPT, file_submenu, export, postscript);
-	ITEM_SUB(ZOOMPLUS, view_submenu, scaleview, zoomplus);
-	ITEM_SUB(ZOOMMINUS, view_submenu, scaleview, zoomminus);
-	ITEM_SUB(ZOOMNORMAL, view_submenu, scaleview, zoomnormal);
-	ITEM_SUB(NEXTTAB, view_submenu, tabs, nexttab);
-	ITEM_SUB(PREVTAB, view_submenu, tabs, prevtab);
-	ITEM_SUB(CLOSETAB, view_submenu, tabs, closetab);
 
-	/* development submenu */
+	/* tools menu */
+	ITEM_MAIN(DOWNLOADS, tools_submenu, downloads);
+	ITEM_MAIN(SHOWCOOKIES, tools_submenu, showcookies);
+	/* tools > developer submenu */
 	ITEM_SUB(VIEWSOURCE, tools_submenu, developer, viewsource);
 	ITEM_SUB(TOGGLEDEBUGGING, tools_submenu, developer, toggledebugging);
 	ITEM_SUB(SAVEBOXTREE, tools_submenu, developer, debugboxtree);
 	ITEM_SUB(SAVEDOMTREE, tools_submenu, developer, debugdomtree);
+
+	/* help menu */
+	ITEM_MAIN(CONTENTS, help_submenu, contents);
+	ITEM_MAIN(GUIDE, help_submenu, guide);
+	ITEM_MAIN(INFO, help_submenu, info);
+	ITEM_MAIN(ABOUT, help_submenu, about);
+
+	/* popup menu */
+	ITEM_POP(STOP, stop);
+	ITEM_POP(RELOAD, reload);
+	ITEM_POP(BACK, back);
+	ITEM_POP(FORWARD, forward);
 
 
 #undef ITEM_MAIN
