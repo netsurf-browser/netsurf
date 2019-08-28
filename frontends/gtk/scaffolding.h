@@ -56,6 +56,14 @@ struct gtk_search {
 struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *gw);
 
 /**
+ * causes all scaffolding windows to be destroyed.
+ *
+ * \return NSERROR_OK and all scaffolding windows destroyed else
+ *         NSERROR_INVALID if download in progress and user continued.
+ */
+nserror nsgtk_scaffolding_destroy_all(void);
+
+/**
  * Obtain the most recently used scaffolding element.
  *
  * This allows tabs to be opened in the most recently used window
