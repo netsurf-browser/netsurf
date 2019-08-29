@@ -133,8 +133,6 @@ struct nsgtk_scaffolding {
 
 	/** scaffold container window */
 	GtkWindow *window;
-	/** flag for the scaffold window fullscreen status */
-	bool fullscreen;
 
 	/** tab widget holding displayed pages */
 	GtkNotebook *notebook;
@@ -819,60 +817,32 @@ MULTIHANDLER(find)
 /**
  * menu signal handler for activation on preferences item
  */
-MENUHANDLER(preferences,PREFERENCES_BUTTON);
+MENUHANDLER(preferences, PREFERENCES_BUTTON);
 
+/**
+ * menu signal handler for activation on zoom plus item
+ */
+MENUHANDLER(zoomplus, ZOOMPLUS_BUTTON);
 
-MULTIHANDLER(zoomplus)
-{
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
+/**
+ * menu signal handler for activation on zoom minus item
+ */
+MENUHANDLER(zoomminus, ZOOMMINUS_BUTTON);
 
-	browser_window_set_scale(bw, 0.05, false);
+/**
+ * menu signal handler for activation on zoom normal item
+ */
+MENUHANDLER(zoomnormal, ZOOMNORMAL_BUTTON);
 
-	return TRUE;
-}
+/**
+ * menu signal handler for activation on full screen item
+ */
+MENUHANDLER(fullscreen, FULLSCREEN_BUTTON);
 
-MULTIHANDLER(zoomnormal)
-{
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-
-	browser_window_set_scale(bw, 1.0, true);
-
-	return TRUE;
-}
-
-MULTIHANDLER(zoomminus)
-{
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-
-	browser_window_set_scale(bw, -0.05, false);
-
-	return TRUE;
-}
-
-MULTIHANDLER(fullscreen)
-{
-	if (g->fullscreen) {
-		gtk_window_unfullscreen(g->window);
-	} else {
-		gtk_window_fullscreen(g->window);
-	}
-
-	g->fullscreen = !g->fullscreen;
-
-	return TRUE;
-}
-
-MULTIHANDLER(viewsource)
-{
-	nserror ret;
-
-	ret = nsgtk_viewsource(g->window, nsgtk_get_browser_window(g->top_level));
-	if (ret != NSERROR_OK) {
-		nsgtk_warning(messages_get_errorcode(ret), 0);
-	}
-
-	return TRUE;
-}
+/**
+ * menu signal handler for activation on view source item
+ */
+MENUHANDLER(viewsource, VIEWSOURCE_BUTTON);
 
 
 static gboolean
@@ -2204,8 +2174,6 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	nsgtk_menu_initialise(gs);
 	nsgtk_menu_connect_signals(gs);
 	nsgtk_menu_set_sensitivity(gs);
-
-	gs->fullscreen = false;
 
 	/* attach to the list */
 	if (scaf_list) {
