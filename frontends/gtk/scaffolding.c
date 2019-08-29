@@ -927,160 +927,46 @@ nsgtk_on_toolbar_activate_menu(GtkMenuItem *widget, gpointer data)
 	return TRUE;
 }
 
-MULTIHANDLER(downloads)
-{
-	nsgtk_download_show(g->window);
+/**
+ * menu signal handler for activation on downloads item
+ */
+MENUHANDLER(downloads, DOWNLOADS_BUTTON);
 
-	return TRUE;
-}
+/**
+ * menu signal handler for activation on save window size item
+ */
+MENUHANDLER(savewindowsize, SAVEWINDOWSIZE_BUTTON);
 
-MULTIHANDLER(savewindowsize)
-{
-	int x,y,w,h;
-	char *choices = NULL;
+/**
+ * menu signal handler for activation on toggle debug render item
+ */
+MENUHANDLER(toggledebugging, TOGGLEDEBUGGING_BUTTON);
 
-	gtk_window_get_position(g->window, &x, &y);
-	gtk_window_get_size(g->window, &w, &h);
+/**
+ * menu signal handler for activation on debug box tree item
+ */
+MENUHANDLER(debugboxtree, SAVEBOXTREE_BUTTON);
 
-	nsoption_set_int(window_width, w);
-	nsoption_set_int(window_height, h);
-	nsoption_set_int(window_x, x);
-	nsoption_set_int(window_y, y);
+/**
+ * menu signal handler for activation on debug dom tree item
+ */
+MENUHANDLER(debugdomtree, SAVEDOMTREE_BUTTON);
 
-	netsurf_mkpath(&choices, NULL, 2, nsgtk_config_home, "Choices");
-	if (choices != NULL) {
-		nsoption_write(choices, NULL, NULL);
-		free(choices);
-	}
+/**
+ * menu signal handler for activation on stop item
+ */
+MENUHANDLER(stop, STOP_BUTTON);
 
-	return TRUE;
-}
+/**
+ * menu signal handler for activation on reload item
+ */
+MENUHANDLER(reload, RELOAD_BUTTON);
 
-MULTIHANDLER(toggledebugging)
-{
-	struct browser_window *bw;
+/**
+ * menu signal handler for activation on back item
+ */
+MENUHANDLER(back, BACK_BUTTON);
 
-	bw = nsgtk_get_browser_window(g->top_level);
-
-	browser_window_debug(bw, CONTENT_DEBUG_REDRAW);
-
-	nsgtk_reflow_all_windows();
-
-	return TRUE;
-}
-
-MULTIHANDLER(debugboxtree)
-{
-	gchar *fname;
-	gint handle;
-	FILE *f;
-	struct browser_window *bw;
-
-	handle = g_file_open_tmp("nsgtkboxtreeXXXXXX", &fname, NULL);
-	if ((handle == -1) || (fname == NULL)) {
-		return TRUE;
-	}
-	close(handle); /* in case it was binary mode */
-
-	/* save data to temporary file */
-	f = fopen(fname, "w");
-	if (f == NULL) {
-		nsgtk_warning("Error saving box tree dump.",
-			  "Unable to open file for writing.");
-		unlink(fname);
-		return TRUE;
-	}
-
-	bw = nsgtk_get_browser_window(g->top_level);
-
-	browser_window_debug_dump(bw, f, CONTENT_DEBUG_RENDER);
-
-	fclose(f);
-
-	nsgtk_viewfile("Box Tree Debug", "boxtree", fname);
-
-	g_free(fname);
-
-	return TRUE;
-}
-
-MULTIHANDLER(debugdomtree)
-{
-	gchar *fname;
-	gint handle;
-	FILE *f;
-	struct browser_window *bw;
-
-	handle = g_file_open_tmp("nsgtkdomtreeXXXXXX", &fname, NULL);
-	if ((handle == -1) || (fname == NULL)) {
-		return TRUE;
-	}
-	close(handle); /* in case it was binary mode */
-
-	/* save data to temporary file */
-	f = fopen(fname, "w");
-	if (f == NULL) {
-		nsgtk_warning("Error saving box tree dump.",
-			  "Unable to open file for writing.");
-		unlink(fname);
-		return TRUE;
-	}
-
-	bw = nsgtk_get_browser_window(g->top_level);
-
-	browser_window_debug_dump(bw, f, CONTENT_DEBUG_DOM);
-
-	fclose(f);
-
-	nsgtk_viewfile("DOM Tree Debug", "domtree", fname);
-
-	g_free(fname);
-
-	return TRUE;
-}
-
-
-MULTIHANDLER(stop)
-{
-	struct browser_window *bw =
-			nsgtk_get_browser_window(g->top_level);
-
-	browser_window_stop(bw);
-
-	return TRUE;
-}
-
-MULTIHANDLER(reload)
-{
-	struct browser_window *bw =
-			nsgtk_get_browser_window(g->top_level);
-	if (bw == NULL)
-		return TRUE;
-
-	/* clear potential search effects */
-	browser_window_search_clear(bw);
-
-	browser_window_reload(bw, true);
-
-	return TRUE;
-}
-
-MULTIHANDLER(back)
-{
-	struct browser_window *bw =
-			nsgtk_get_browser_window(g->top_level);
-
-	if ((bw == NULL) || (!browser_window_history_back_available(bw)))
-		return TRUE;
-
-	/* clear potential search effects */
-	browser_window_search_clear(bw);
-
-	browser_window_history_back(bw, false);
-	scaffolding_update_context(g);
-
-	return TRUE;
-}
 
 MULTIHANDLER(forward)
 {
@@ -1675,39 +1561,21 @@ void nsgtk_window_set_title(struct gui_window *gw, const char *title)
 }
 
 
-
-
-#if 0
-static nserror gui_window_start_throbber(struct gui_window* gw)
+/* exported interface documented in scaffolding.h */
+nserror nsgtk_scaffolding_throbber(struct gui_window* gw, bool active)
 {
-	struct nsgtk_scaffolding *g = nsgtk_get_scaffold(_g);
-	g->buttons[STOP_BUTTON]->sensitivity = true;
-	g->buttons[RELOAD_BUTTON]->sensitivity = false;
-	nsgtk_scaffolding_set_sensitivity(g);
-
-	scaffolding_update_context(g);
-}
-
-static nserror gui_window_stop_throbber(struct gui_window* gw)
-{
-	nserror res;
-	GdkPixbuf *pixbuf;
-	struct nsgtk_scaffolding *g = nsgtk_get_scaffold(_g);
-
-	if (g == NULL) {
-		return;
+	struct nsgtk_scaffolding *gs = nsgtk_get_scaffold(gw);
+	if (active) {
+		gs->menus[STOP_BUTTON].sensitivity = true;
+		gs->menus[RELOAD_BUTTON].sensitivity = false;
+	} else {
+		gs->menus[STOP_BUTTON].sensitivity = false;
+		gs->menus[RELOAD_BUTTON].sensitivity = true;
 	}
+	scaffolding_update_context(gs);
 
-
-	if (g->buttons[STOP_BUTTON] != NULL)
-		g->buttons[STOP_BUTTON]->sensitivity = false;
-	if (g->buttons[RELOAD_BUTTON] != NULL)
-		g->buttons[RELOAD_BUTTON]->sensitivity = true;
-
-	nsgtk_scaffolding_set_sensitivity(g);
-
+	return NSERROR_OK;
 }
-#endif
 
 
 static void

@@ -63,7 +63,7 @@ typedef enum {
 	GLOBALHISTORY_BUTTON,
 	ADDBOOKMARKS_BUTTON,
 	SHOWBOOKMARKS_BUTTON,
- 	SHOWCOOKIES_BUTTON,
+	SHOWCOOKIES_BUTTON,
 	OPENLOCATION_BUTTON,
 	NEXTTAB_BUTTON,
 	PREVTAB_BUTTON,
@@ -122,11 +122,11 @@ TOOLBAR_ITEM(ZOOMMINUS_BUTTON, zoomminus, true, zoomminus_button_clicked_cb)
 TOOLBAR_ITEM(ZOOMNORMAL_BUTTON, zoomnormal, true, zoomnormal_button_clicked_cb)
 TOOLBAR_ITEM(FULLSCREEN_BUTTON, fullscreen, true, fullscreen_button_clicked_cb)
 TOOLBAR_ITEM(VIEWSOURCE_BUTTON, viewsource, true, viewsource_button_clicked_cb)
-TOOLBAR_ITEM(DOWNLOADS_BUTTON, downloads, true, NULL)
-TOOLBAR_ITEM(SAVEWINDOWSIZE_BUTTON, savewindowsize, true, NULL)
-TOOLBAR_ITEM(TOGGLEDEBUGGING_BUTTON, toggledebugging, true, NULL)
-TOOLBAR_ITEM(SAVEBOXTREE_BUTTON, debugboxtree, true, NULL)
-TOOLBAR_ITEM(SAVEDOMTREE_BUTTON, debugdomtree, true, NULL)
+TOOLBAR_ITEM(DOWNLOADS_BUTTON, downloads, true, downloads_button_clicked_cb)
+TOOLBAR_ITEM(SAVEWINDOWSIZE_BUTTON, savewindowsize, true, savewindowsize_button_clicked_cb)
+TOOLBAR_ITEM(TOGGLEDEBUGGING_BUTTON, toggledebugging, true, toggledebugging_button_clicked_cb)
+TOOLBAR_ITEM(SAVEBOXTREE_BUTTON, debugboxtree, true, debugboxtree_button_clicked_cb)
+TOOLBAR_ITEM(SAVEDOMTREE_BUTTON, debugdomtree, true, debugdomtree_button_clicked_cb)
 TOOLBAR_ITEM(LOCALHISTORY_BUTTON, localhistory, true, localhistory_button_clicked_cb)
 TOOLBAR_ITEM(GLOBALHISTORY_BUTTON, globalhistory, true, NULL)
 TOOLBAR_ITEM(ADDBOOKMARKS_BUTTON, addbookmarks, true, NULL)

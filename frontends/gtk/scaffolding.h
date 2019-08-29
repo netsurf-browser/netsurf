@@ -64,6 +64,11 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *gw);
 nserror nsgtk_scaffolding_destroy_all(void);
 
 /**
+ * Update scaffolding window when throbber state changes
+ */
+nserror nsgtk_scaffolding_throbber(struct gui_window* gw, bool active);
+
+/**
  * Obtain the most recently used scaffolding element.
  *
  * This allows tabs to be opened in the most recently used window

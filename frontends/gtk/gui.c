@@ -249,7 +249,7 @@ static nserror set_defaults(struct nsoption_s *defaults)
 		nsoption_set_int(button_type, 2);
 		break;
 	}
-	
+
 	return NSERROR_OK;
 }
 
@@ -261,7 +261,7 @@ static nserror set_defaults(struct nsoption_s *defaults)
  *
  * \param argc The number of arguments on the command line
  * \param argv A string vector of command line arguments.
- * \respath A string vector of the path elements of resources 
+ * \respath A string vector of the path elements of resources
  */
 static nserror nsgtk_init(int argc, char** argv, char **respath)
 {
@@ -1204,7 +1204,7 @@ int main(int argc, char** argv)
 		NSLOG(netsurf, INFO, "Unable to load translated messages");
 		/** \todo decide if message load faliure should be fatal */
 	}
-	
+
 	/* Locate the correct user cache directory path */
 	ret = get_cache_home(&cache_home);
 	if (ret == NSERROR_NOT_FOUND) {

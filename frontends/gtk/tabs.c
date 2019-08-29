@@ -180,7 +180,7 @@ nsgtk_tab_switch_page_after(GtkNotebook *notebook,
 			srcpage = gtk_notebook_get_nth_page(notebook, srcpagenum);
 			gw = g_object_get_data(G_OBJECT(srcpage), "gui_window");
 			if ((gw != NULL) && (nsgtk_get_scaffold(gw) != NULL)) {
-			  	error = nsgtk_window_item_activate(gw, NEWTAB_BUTTON);
+				error = nsgtk_window_item_activate(gw, NEWTAB_BUTTON);
 				if (error != NSERROR_OK) {
 					NSLOG(netsurf, INFO,
 					      "Failed to open new tab.");
