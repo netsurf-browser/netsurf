@@ -2725,7 +2725,125 @@ preferences_button_clicked_cb(GtkWidget *widget, gpointer data)
 	}
 
 	return TRUE;
+}
 
+
+/**
+ * handler for zoom plus tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+zoomplus_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+
+	bw = tb->get_bw(tb->get_bw_ctx);
+
+	browser_window_set_scale(bw, 0.05, false);
+
+	return TRUE;
+}
+
+
+/**
+ * handler for zoom minus tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+zoomminus_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+
+	bw = tb->get_bw(tb->get_bw_ctx);
+
+	browser_window_set_scale(bw, -0.05, false);
+
+	return TRUE;
+
+}
+
+
+/**
+ * handler for zoom normal tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+zoomnormal_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+
+	bw = tb->get_bw(tb->get_bw_ctx);
+
+	browser_window_set_scale(bw, 1.0, true);
+
+	return TRUE;
+}
+
+
+/**
+ * handler for full screen tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+fullscreen_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	GtkWindow *gtkwindow; /* gtk window widget is in */
+	GdkWindow *gdkwindow;
+	GdkWindowState state;
+
+	gtkwindow = GTK_WINDOW(gtk_widget_get_ancestor(widget,GTK_TYPE_WINDOW));
+	gdkwindow = gtk_widget_get_window(GTK_WIDGET(gtkwindow));
+	state = gdk_window_get_state(gdkwindow);
+
+	if (state & GDK_WINDOW_STATE_FULLSCREEN) {
+		gtk_window_unfullscreen(gtkwindow);
+	} else {
+		gtk_window_fullscreen(gtkwindow);
+	}
+	return TRUE;
+}
+
+
+/**
+ * handler for full screen tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+viewsource_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	nserror res;
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+	GtkWindow *gtkwindow; /* gtk window widget is in */
+
+	bw = tb->get_bw(tb->get_bw_ctx);
+
+	gtkwindow = GTK_WINDOW(gtk_widget_get_ancestor(widget,GTK_TYPE_WINDOW));
+
+	res = nsgtk_viewsource(gtkwindow, bw);
+	if (res != NSERROR_OK) {
+		nsgtk_warning(messages_get_errorcode(res), 0);
+	}
+
+	return TRUE;
 }
 
 
