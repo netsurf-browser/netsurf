@@ -2820,7 +2820,7 @@ fullscreen_button_clicked_cb(GtkWidget *widget, gpointer data)
 
 
 /**
- * handler for full screen tool bar item clicked signal
+ * handler for view source tool bar item clicked signal
  *
  * \param widget The widget the signal is being delivered to.
  * \param data The toolbar context passed when the signal was connected
@@ -2844,6 +2844,172 @@ viewsource_button_clicked_cb(GtkWidget *widget, gpointer data)
 	}
 
 	return TRUE;
+}
+
+
+/**
+ * handler for show downloads tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+downloads_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	GtkWindow *gtkwindow; /* gtk window widget is in */
+	gtkwindow = GTK_WINDOW(gtk_widget_get_ancestor(widget,GTK_TYPE_WINDOW));
+	nsgtk_download_show(gtkwindow);
+	return TRUE;
+}
+
+
+/**
+ * handler for show downloads tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+savewindowsize_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	GtkWindow *gtkwindow; /* gtk window widget is in */
+	int x,y,w,h;
+	char *choices = NULL;
+
+	gtkwindow = GTK_WINDOW(gtk_widget_get_ancestor(widget,GTK_TYPE_WINDOW));
+
+	gtk_window_get_position(gtkwindow, &x, &y);
+	gtk_window_get_size(gtkwindow, &w, &h);
+
+	nsoption_set_int(window_width, w);
+	nsoption_set_int(window_height, h);
+	nsoption_set_int(window_x, x);
+	nsoption_set_int(window_y, y);
+
+	netsurf_mkpath(&choices, NULL, 2, nsgtk_config_home, "Choices");
+	if (choices != NULL) {
+		nsoption_write(choices, NULL, NULL);
+		free(choices);
+	}
+
+	return TRUE;
+}
+
+
+/**
+ * handler for show downloads tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+toggledebugging_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+
+	bw = tb->get_bw(tb->get_bw_ctx);
+
+	browser_window_debug(bw, CONTENT_DEBUG_REDRAW);
+
+	nsgtk_reflow_all_windows();
+
+	return TRUE;
+
+}
+
+
+/**
+ * handler for debug box tree tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+debugboxtree_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+	gchar *fname;
+	gint handle;
+	FILE *f;
+
+	handle = g_file_open_tmp("nsgtkboxtreeXXXXXX", &fname, NULL);
+	if ((handle == -1) || (fname == NULL)) {
+		return TRUE;
+	}
+	close(handle); /* in case it was binary mode */
+
+	/* save data to temporary file */
+	f = fopen(fname, "w");
+	if (f == NULL) {
+		nsgtk_warning("Error saving box tree dump.",
+			      "Unable to open file for writing.");
+		unlink(fname);
+		return TRUE;
+	}
+
+	bw = tb->get_bw(tb->get_bw_ctx);
+
+	browser_window_debug_dump(bw, f, CONTENT_DEBUG_RENDER);
+
+	fclose(f);
+
+	nsgtk_viewfile("Box Tree Debug", "boxtree", fname);
+
+	g_free(fname);
+
+	return TRUE;
+}
+
+
+/**
+ * handler for debug dom tree tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+debugdomtree_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+	gchar *fname;
+	gint handle;
+	FILE *f;
+
+	handle = g_file_open_tmp("nsgtkdomtreeXXXXXX", &fname, NULL);
+	if ((handle == -1) || (fname == NULL)) {
+		return TRUE;
+	}
+	close(handle); /* in case it was binary mode */
+
+	/* save data to temporary file */
+	f = fopen(fname, "w");
+	if (f == NULL) {
+		nsgtk_warning("Error saving box tree dump.",
+			      "Unable to open file for writing.");
+		unlink(fname);
+		return TRUE;
+	}
+
+	bw = tb->get_bw(tb->get_bw_ctx);
+
+	browser_window_debug_dump(bw, f, CONTENT_DEBUG_DOM);
+
+	fclose(f);
+
+	nsgtk_viewfile("DOM Tree Debug", "domtree", fname);
+
+	g_free(fname);
+
+	return TRUE;
+
 }
 
 

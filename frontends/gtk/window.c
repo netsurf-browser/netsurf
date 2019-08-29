@@ -1360,12 +1360,12 @@ gui_window_event(struct gui_window *gw, enum gui_window_event event)
 
 	case GW_EVENT_START_THROBBER:
 		nsgtk_toolbar_throbber(gw->toolbar, true);
-		/** \todo menu sensitivity for back/reload */
+		nsgtk_scaffolding_throbber(gw, true);
 		break;
 
 	case GW_EVENT_STOP_THROBBER:
 		nsgtk_toolbar_throbber(gw->toolbar, false);
-		/** \todo menu sensitivity for back/reload */
+		nsgtk_scaffolding_throbber(gw, false);
 		break;
 
 	default:
