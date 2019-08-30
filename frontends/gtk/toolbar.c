@@ -66,6 +66,7 @@
 #include "gtk/preferences.h"
 #include "gtk/hotlist.h"
 #include "gtk/cookies.h"
+#include "gtk/about.h"
 #include "gtk/toolbar.h"
 
 /**
@@ -131,7 +132,7 @@ struct nsgtk_toolbar {
 	/**
 	 * context passed to get_bw function
 	 */
-	void *get_bw_ctx;
+	void *get_ctx;
 };
 
 
@@ -1722,7 +1723,7 @@ toolbar_navigate_to_url(struct nsgtk_toolbar *tb, const char *urltxt)
 		return res;
 	}
 
-	bw = tb->get_bw(tb->get_bw_ctx);
+	bw = tb->get_bw(tb->get_ctx);
 
 	res = browser_window_navigate(bw,
 				      url,
@@ -1872,7 +1873,7 @@ back_button_clicked_cb(GtkWidget *widget, gpointer data)
 	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
 	struct browser_window *bw;
 
-	bw = tb->get_bw(tb->get_bw_ctx);
+	bw = tb->get_bw(tb->get_ctx);
 
 	if ((bw != NULL) && browser_window_history_back_available(bw)) {
 		/* clear potential search effects */
@@ -1904,7 +1905,7 @@ forward_button_clicked_cb(GtkWidget *widget, gpointer data)
 	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
 	struct browser_window *bw;
 
-	bw = tb->get_bw(tb->get_bw_ctx);
+	bw = tb->get_bw(tb->get_ctx);
 
 	if ((bw != NULL) && browser_window_history_forward_available(bw)) {
 		/* clear potential search effects */
@@ -1934,7 +1935,7 @@ stop_button_clicked_cb(GtkWidget *widget, gpointer data)
 {
 	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
 
-	browser_window_stop(tb->get_bw(tb->get_bw_ctx));
+	browser_window_stop(tb->get_bw(tb->get_ctx));
 
 	return TRUE;
 }
@@ -1953,7 +1954,7 @@ reload_button_clicked_cb(GtkWidget *widget, gpointer data)
 	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
 	struct browser_window *bw;
 
-	bw = tb->get_bw(tb->get_bw_ctx);
+	bw = tb->get_bw(tb->get_ctx);
 
 	/* clear potential search effects */
 	browser_window_search_clear(bw);
@@ -2013,7 +2014,7 @@ static gboolean url_entry_activate_cb(GtkWidget *widget, gpointer data)
 			      SEARCH_WEB_OMNI_NONE,
 			      &url);
 	if (res == NSERROR_OK) {
-		bw = tb->get_bw(tb->get_bw_ctx);
+		bw = tb->get_bw(tb->get_ctx);
 		res = browser_window_navigate(
 			bw, url, NULL, BW_NAVIGATE_HISTORY, NULL, NULL, NULL);
 		nsurl_unref(url);
@@ -2067,7 +2068,7 @@ static gboolean websearch_entry_activate_cb(GtkWidget *widget, gpointer data)
 			      &url);
 	if (res == NSERROR_OK) {
 		temp_open_background = 0;
-		bw = tb->get_bw(tb->get_bw_ctx);
+		bw = tb->get_bw(tb->get_ctx);
 
 		res = browser_window_create(
 			BW_CREATE_HISTORY | BW_CREATE_TAB,
@@ -2133,7 +2134,7 @@ newwindow_button_clicked_cb(GtkWidget *widget, gpointer data)
 
 	res = nsurl_create(addr, &url);
 	if (res == NSERROR_OK) {
-		bw = tb->get_bw(tb->get_bw_ctx);
+		bw = tb->get_bw(tb->get_ctx);
 		res = browser_window_create(BW_CREATE_HISTORY,
 					      url,
 					      NULL,
@@ -2175,7 +2176,7 @@ newtab_button_clicked_cb(GtkWidget *widget, gpointer data)
 	}
 
 	if (res == NSERROR_OK) {
-		bw = tb->get_bw(tb->get_bw_ctx);
+		bw = tb->get_bw(tb->get_ctx);
 
 		res = browser_window_create(BW_CREATE_HISTORY |
 					    BW_CREATE_TAB,
@@ -2234,7 +2235,7 @@ openfile_button_clicked_cb(GtkWidget *widget, gpointer data)
 
 			res = nsurl_create(urltxt, &url);
 			if (res == NSERROR_OK) {
-				bw = tb->get_bw(tb->get_bw_ctx);
+				bw = tb->get_bw(tb->get_ctx);
 				res = browser_window_navigate(bw,
 							url,
 							NULL,
@@ -2255,24 +2256,6 @@ openfile_button_clicked_cb(GtkWidget *widget, gpointer data)
 	}
 
 	gtk_widget_destroy(dlgOpen);
-
-	return TRUE;
-}
-
-
-/**
- * handler for close tab tool bar item clicked signal
- *
- * \param widget The widget the signal is being delivered to.
- * \param data The toolbar context passed when the signal was connected
- * \return TRUE
- */
-static gboolean
-closetab_button_clicked_cb(GtkWidget *widget, gpointer data)
-{
-	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
-
-	nsgtk_tab_close_current(GTK_NOTEBOOK(tb->widget));
 
 	return TRUE;
 }
@@ -2312,7 +2295,7 @@ savepage_button_clicked_cb(GtkWidget *widget, gpointer data)
 	nserror res;
 	GtkWidget *toplevel;
 
-	bw = tb->get_bw(tb->get_bw_ctx);
+	bw = tb->get_bw(tb->get_ctx);
 	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
 
 	res = nsgtk_saveas_dialog(bw,
@@ -2363,7 +2346,7 @@ pdf_button_clicked_cb(GtkWidget *widget, gpointer data)
 	gchar *filename;
 	nserror res;
 
-	bw = tb->get_bw(tb->get_bw_ctx);
+	bw = tb->get_bw(tb->get_ctx);
 
 	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
 
@@ -2415,7 +2398,7 @@ plaintext_button_clicked_cb(GtkWidget *widget, gpointer data)
 	gchar *filename;
 	nserror res;
 
-	bw = tb->get_bw(tb->get_bw_ctx);
+	bw = tb->get_bw(tb->get_ctx);
 
 	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
 
@@ -2456,7 +2439,7 @@ print_button_clicked_cb(GtkWidget *widget, gpointer data)
 	char *settings_fname = NULL;
 	GtkWidget *toplevel;
 
-	bw = tb->get_bw(tb->get_bw_ctx);
+	bw = tb->get_bw(tb->get_ctx);
 
 	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
 
@@ -2574,7 +2557,7 @@ cut_button_clicked_cb(GtkWidget *widget, gpointer data)
 	if (GTK_IS_EDITABLE(focused)) {
 		gtk_editable_cut_clipboard(GTK_EDITABLE(focused));
 	} else {
-		bw = tb->get_bw(tb->get_bw_ctx);
+		bw = tb->get_bw(tb->get_ctx);
 		browser_window_key_press(bw, NS_KEY_CUT_SELECTION);
 	}
 
@@ -2605,7 +2588,7 @@ copy_button_clicked_cb(GtkWidget *widget, gpointer data)
 	if (GTK_IS_EDITABLE(focused)) {
 		gtk_editable_copy_clipboard(GTK_EDITABLE(focused));
 	} else {
-		bw = tb->get_bw(tb->get_bw_ctx);
+		bw = tb->get_bw(tb->get_ctx);
 		browser_window_key_press(bw, NS_KEY_COPY_SELECTION);
 	}
 
@@ -2636,7 +2619,7 @@ paste_button_clicked_cb(GtkWidget *widget, gpointer data)
 	if (GTK_IS_EDITABLE(focused)) {
 		gtk_editable_paste_clipboard(GTK_EDITABLE(focused));
 	} else {
-		bw = tb->get_bw(tb->get_bw_ctx);
+		bw = tb->get_bw(tb->get_ctx);
 		browser_window_key_press(bw, NS_KEY_PASTE);
 	}
 
@@ -2667,7 +2650,7 @@ delete_button_clicked_cb(GtkWidget *widget, gpointer data)
 	if (GTK_IS_EDITABLE(focused)) {
 		gtk_editable_delete_selection(GTK_EDITABLE(focused));
 	} else {
-		bw = tb->get_bw(tb->get_bw_ctx);
+		bw = tb->get_bw(tb->get_ctx);
 		browser_window_key_press(bw, NS_KEY_CLEAR_SELECTION);
 	}
 
@@ -2698,7 +2681,7 @@ selectall_button_clicked_cb(GtkWidget *widget, gpointer data)
 	if (GTK_IS_EDITABLE(focused)) {
 		gtk_editable_select_region(GTK_EDITABLE(focused), 0, -1);
 	} else {
-		bw = tb->get_bw(tb->get_bw_ctx);
+		bw = tb->get_bw(tb->get_ctx);
 		browser_window_key_press(bw, NS_KEY_SELECT_ALL);
 	}
 
@@ -2721,7 +2704,7 @@ preferences_button_clicked_cb(GtkWidget *widget, gpointer data)
 	GtkWidget *toplevel;
 	GtkWidget *wndpreferences;
 
-	bw = tb->get_bw(tb->get_bw_ctx);
+	bw = tb->get_bw(tb->get_ctx);
 
 	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
 
@@ -2747,7 +2730,7 @@ zoomplus_button_clicked_cb(GtkWidget *widget, gpointer data)
 	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
 	struct browser_window *bw;
 
-	bw = tb->get_bw(tb->get_bw_ctx);
+	bw = tb->get_bw(tb->get_ctx);
 
 	browser_window_set_scale(bw, 0.05, false);
 
@@ -2768,7 +2751,7 @@ zoomminus_button_clicked_cb(GtkWidget *widget, gpointer data)
 	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
 	struct browser_window *bw;
 
-	bw = tb->get_bw(tb->get_bw_ctx);
+	bw = tb->get_bw(tb->get_ctx);
 
 	browser_window_set_scale(bw, -0.05, false);
 
@@ -2790,7 +2773,7 @@ zoomnormal_button_clicked_cb(GtkWidget *widget, gpointer data)
 	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
 	struct browser_window *bw;
 
-	bw = tb->get_bw(tb->get_bw_ctx);
+	bw = tb->get_bw(tb->get_ctx);
 
 	browser_window_set_scale(bw, 1.0, true);
 
@@ -2840,7 +2823,7 @@ viewsource_button_clicked_cb(GtkWidget *widget, gpointer data)
 	struct browser_window *bw;
 	GtkWindow *gtkwindow; /* gtk window widget is in */
 
-	bw = tb->get_bw(tb->get_bw_ctx);
+	bw = tb->get_bw(tb->get_ctx);
 
 	gtkwindow = GTK_WINDOW(gtk_widget_get_ancestor(widget,GTK_TYPE_WINDOW));
 
@@ -2917,7 +2900,7 @@ toggledebugging_button_clicked_cb(GtkWidget *widget, gpointer data)
 	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
 	struct browser_window *bw;
 
-	bw = tb->get_bw(tb->get_bw_ctx);
+	bw = tb->get_bw(tb->get_ctx);
 
 	browser_window_debug(bw, CONTENT_DEBUG_REDRAW);
 
@@ -2959,7 +2942,7 @@ debugboxtree_button_clicked_cb(GtkWidget *widget, gpointer data)
 		return TRUE;
 	}
 
-	bw = tb->get_bw(tb->get_bw_ctx);
+	bw = tb->get_bw(tb->get_ctx);
 
 	browser_window_debug_dump(bw, f, CONTENT_DEBUG_RENDER);
 
@@ -3004,7 +2987,7 @@ debugdomtree_button_clicked_cb(GtkWidget *widget, gpointer data)
 		return TRUE;
 	}
 
-	bw = tb->get_bw(tb->get_bw_ctx);
+	bw = tb->get_bw(tb->get_ctx);
 
 	browser_window_debug_dump(bw, f, CONTENT_DEBUG_DOM);
 
@@ -3036,7 +3019,7 @@ localhistory_button_clicked_cb(GtkWidget *widget, gpointer data)
 
 	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
 	if (toplevel != NULL) {
-		bw = tb->get_bw(tb->get_bw_ctx);
+		bw = tb->get_bw(tb->get_ctx);
 
 		res = nsgtk_local_history_present(GTK_WINDOW(toplevel), bw);
 		if (res != NSERROR_OK) {
@@ -3081,7 +3064,7 @@ addbookmarks_button_clicked_cb(GtkWidget *widget, gpointer data)
 	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
 	struct browser_window *bw;
 
-	bw = tb->get_bw(tb->get_bw_ctx);
+	bw = tb->get_bw(tb->get_ctx);
 	if (browser_window_has_content(bw)) {
 		hotlist_add_url(browser_window_access_url(bw));
 	}
@@ -3366,7 +3349,7 @@ toolbar_connect_signal(struct nsgtk_toolbar *tb, nsgtk_toolbar_button itemid)
 
 		nsgtk_completion_connect_signals(entry,
 						 tb->get_bw,
-						 tb->get_bw_ctx);
+						 tb->get_ctx);
 		break;
 
 
@@ -3417,11 +3400,41 @@ static nserror toolbar_connect_signals(struct nsgtk_toolbar *tb)
 	return NSERROR_OK;
 }
 
+/**
+ * signal handler for toolbar context menu
+ *
+ * \param toolbar The toolbar event is being delivered to
+ * \param x The x coordinate where the click happened
+ * \param y The x coordinate where the click happened
+ * \param button the buttons being pressed
+ * \param data The context pointer passed when the connection was made.
+ * \return TRUE to indicate signal handled.
+ */
+static gboolean
+toolbar_popup_context_menu_cb(GtkToolbar *toolbar,
+			      gint x,
+			      gint y,
+			      gint button,
+			      gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct gui_window *gw;
+	struct nsgtk_scaffolding *gs;
+
+	gw = tb->get_ctx; /** \todo stop assuming the context is a gui window */
+
+	gs = nsgtk_get_scaffold(gw);
+
+	nsgtk_scaffolding_toolbar_context_menu(gs);
+
+	return TRUE;
+}
+
 /* exported interface documented in toolbar.h */
 nserror
 nsgtk_toolbar_create(GtkBuilder *builder,
 		     struct browser_window *(*get_bw)(void *ctx),
-		     void *get_bw_ctx,
+		     void *get_ctx,
 		     struct nsgtk_toolbar **tb_out)
 {
 	nserror res;
@@ -3434,12 +3447,17 @@ nsgtk_toolbar_create(GtkBuilder *builder,
 	}
 
 	tb->get_bw = get_bw;
-	tb->get_bw_ctx = get_bw_ctx;
+	tb->get_ctx = get_ctx;
 	/* set the throbber start frame. */
 	tb->throb_frame = 0;
 
 	tb->widget = GTK_TOOLBAR(gtk_builder_get_object(builder, "toolbar"));
 	gtk_toolbar_set_show_arrow(tb->widget, TRUE);
+
+	g_signal_connect(tb->widget,
+			 "popup-context-menu",
+			 G_CALLBACK(toolbar_popup_context_menu_cb),
+			 tb);
 
 	/* allocate button contexts */
 	for (bidx = BACK_BUTTON; bidx < PLACEHOLDER_BUTTON; bidx++) {
@@ -3543,7 +3561,7 @@ nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active)
 	nserror res;
 	struct browser_window *bw;
 
-	bw = tb->get_bw(tb->get_bw_ctx);
+	bw = tb->get_bw(tb->get_ctx);
 
 	/* when activating the throbber simply schedule the next frame update */
 	if (active) {
