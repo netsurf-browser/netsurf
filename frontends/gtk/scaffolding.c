@@ -90,10 +90,6 @@ static gboolean nsgtk_on_##q##_activate_menu(GtkMenuItem *widget, gpointer data)
 static gboolean nsgtk_on_##q##_activate(struct nsgtk_scaffolding *g)
 
 
-/** Macro to define a handler for button events. */
-#define BUTTONHANDLER(q)\
-static gboolean nsgtk_on_##q##_activate(GtkButton *widget, gpointer data)
-
 /**
  * handle menu activate signals by calling toolbar item activation
  */
@@ -574,41 +570,6 @@ nsgtk_window_tabs_remove(GtkNotebook *notebook,
 	nsgtk_scaffolding_set_sensitivity(gs);
 }
 
-/**
- * Handle opening a file path.
- *
- * \param filename The filename to open.
- */
-static void nsgtk_openfile_open(const char *filename)
-{
-	struct browser_window *bw;
-	char *urltxt;
-	nsurl *url;
-	nserror error;
-
-	bw = nsgtk_get_browser_window(scaf_current->top_level);
-
-	urltxt = malloc(strlen(filename) + FILE_SCHEME_PREFIX_LEN + 1);
-
-	if (urltxt != NULL) {
-		sprintf(urltxt, FILE_SCHEME_PREFIX"%s", filename);
-
-		error = nsurl_create(urltxt, &url);
-		if (error != NSERROR_OK) {
-			nsgtk_warning(messages_get_errorcode(error), 0);
-		} else {
-			browser_window_navigate(bw,
-						url,
-						NULL,
-						BW_NAVIGATE_HISTORY,
-						NULL,
-						NULL,
-						NULL);
-			nsurl_unref(url);
-		}
-		free(urltxt);
-	}
-}
 
 /* signal handlers for menu entries */
 
@@ -967,113 +928,46 @@ MENUHANDLER(reload, RELOAD_BUTTON);
  */
 MENUHANDLER(back, BACK_BUTTON);
 
+/**
+ * menu signal handler for activation on forward item
+ */
+MENUHANDLER(forward, FORWARD_BUTTON);
 
-MULTIHANDLER(forward)
-{
-	struct browser_window *bw =
-			nsgtk_get_browser_window(g->top_level);
+/**
+ * menu signal handler for activation on home item
+ */
+MENUHANDLER(home, HOME_BUTTON);
 
-	if ((bw == NULL) || (!browser_window_history_forward_available(bw)))
-		return TRUE;
+/**
+ * menu signal handler for activation on localhistory item
+ */
+MENUHANDLER(localhistory, LOCALHISTORY_BUTTON);
 
-	/* clear potential search effects */
-	browser_window_search_clear(bw);
+/**
+ * menu signal handler for activation on globalhistory item
+ */
+MENUHANDLER(globalhistory, GLOBALHISTORY_BUTTON);
 
-	browser_window_history_forward(bw, false);
-	scaffolding_update_context(g);
+/**
+ * menu signal handler for activation on addbookmarks item
+ */
+MENUHANDLER(addbookmarks, ADDBOOKMARKS_BUTTON);
 
-	return TRUE;
-}
+/**
+ * menu signal handler for activation on showbookmarks item
+ */
+MENUHANDLER(showbookmarks, SHOWBOOKMARKS_BUTTON);
 
-MULTIHANDLER(home)
-{
-	static const char *addr = NETSURF_HOMEPAGE;
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-	nsurl *url;
-	nserror error;
+/**
+ * menu signal handler for activation on showcookies item
+ */
+MENUHANDLER(showcookies, SHOWCOOKIES_BUTTON);
 
-	if (nsoption_charp(homepage_url) != NULL) {
-		addr = nsoption_charp(homepage_url);
-	}
+/**
+ * menu signal handler for activation on showcookies item
+ */
+MENUHANDLER(openlocation, OPENLOCATION_BUTTON);
 
-	error = nsurl_create(addr, &url);
-	if (error != NSERROR_OK) {
-		nsgtk_warning(messages_get_errorcode(error), 0);
-	} else {
-		browser_window_navigate(bw,
-					url,
-					NULL,
-					BW_NAVIGATE_HISTORY,
-					NULL,
-					NULL,
-					NULL);
-		nsurl_unref(url);
-	}
-
-	return TRUE;
-}
-
-MULTIHANDLER(localhistory)
-{
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-	nserror res;
-
-	res = nsgtk_local_history_present(g->window, bw);
-	if (res != NSERROR_OK) {
-		NSLOG(netsurf, INFO,
-		      "Unable to initialise local history window.");
-	}
-	return TRUE;
-}
-
-MULTIHANDLER(globalhistory)
-{
-	nserror res;
-	res = nsgtk_global_history_present();
-	if (res != NSERROR_OK) {
-		NSLOG(netsurf, INFO,
-		      "Unable to initialise global history window.");
-	}
-	return TRUE;
-}
-
-MULTIHANDLER(addbookmarks)
-{
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-
-	if (bw == NULL || !browser_window_has_content(bw))
-		return TRUE;
-	hotlist_add_url(browser_window_access_url(bw));
-	return TRUE;
-}
-
-MULTIHANDLER(showbookmarks)
-{
-	nserror res;
-	res = nsgtk_hotlist_present();
-	if (res != NSERROR_OK) {
-		NSLOG(netsurf, INFO, "Unable to initialise bookmark window.");
-	}
-	return TRUE;
-}
-
-MULTIHANDLER(showcookies)
-{
-	nserror res;
-	res = nsgtk_cookies_present();
-	if (res != NSERROR_OK) {
-		NSLOG(netsurf, INFO, "Unable to initialise cookies window.");
-	}
-	return TRUE;
-}
-
-MULTIHANDLER(openlocation)
-{
-	#if 0
-	gtk_widget_grab_focus(GTK_WIDGET(g->url_bar));
-	#endif
-	return TRUE;
-}
 
 MULTIHANDLER(nexttab)
 {
@@ -1101,86 +995,29 @@ nsgtk_on_closetab_activate_menu(GtkMenuItem *widget, gpointer data)
 	return TRUE;
 }
 
-MULTIHANDLER(contents)
-{
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-	nsurl *url;
-	nserror error;
+/**
+ * menu signal handler for activation on showcookies item
+ */
+MENUHANDLER(contents, CONTENTS_BUTTON);
 
-	error = nsurl_create("http://www.netsurf-browser.org/documentation/", &url);
-	if (error != NSERROR_OK) {
-		nsgtk_warning(messages_get_errorcode(error), 0);
-	} else {
-		browser_window_navigate(bw,
-					url,
-					NULL,
-					BW_NAVIGATE_HISTORY,
-					NULL,
-					NULL,
-					NULL);
-		nsurl_unref(url);
-	}
+/**
+ * menu signal handler for activation on showcookies item
+ */
+MENUHANDLER(guide, GUIDE_BUTTON);
 
-	return TRUE;
-}
+/**
+ * menu signal handler for activation on showcookies item
+ */
+MENUHANDLER(info, INFO_BUTTON);
 
-MULTIHANDLER(guide)
-{
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-	nsurl *url;
+/**
+ * menu signal handler for activation on showcookies item
+ */
+MENUHANDLER(about, ABOUT_BUTTON);
 
-	if (nsurl_create("http://www.netsurf-browser.org/documentation/guide", &url) != NSERROR_OK) {
-		nsgtk_warning("NoMemory", 0);
-	} else {
-		browser_window_navigate(bw,
-					url,
-					NULL,
-					BW_NAVIGATE_HISTORY,
-					NULL,
-					NULL,
-					NULL);
-		nsurl_unref(url);
-	}
-
-	return TRUE;
-}
-
-MULTIHANDLER(info)
-{
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-	nsurl *url;
-
-	if (nsurl_create("http://www.netsurf-browser.org/documentation/info", &url) != NSERROR_OK) {
-		nsgtk_warning("NoMemory", 0);
-	} else {
-		browser_window_navigate(bw,
-					url,
-					NULL,
-					BW_NAVIGATE_HISTORY,
-					NULL,
-					NULL,
-					NULL);
-		nsurl_unref(url);
-	}
-
-	return TRUE;
-}
-
-MULTIHANDLER(about)
-{
-	nsgtk_about_dialog_init(g->window);
-	return TRUE;
-}
-
-BUTTONHANDLER(history)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-	return nsgtk_on_localhistory_activate(g);
-}
 
 #undef MULTIHANDLER
-#undef CHECKHANDLER
-#undef BUTTONHANDLER
+#undef MENUHANDLER
 
 /**
  * attach gtk signal handlers for menus
