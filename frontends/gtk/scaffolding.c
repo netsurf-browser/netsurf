@@ -79,29 +79,6 @@
 #include "gtk/resources.h"
 #include "gtk/layout_pango.h"
 
-/** Macro to define a handler for menu, button and activate events. */
-#define MULTIHANDLER(q)\
-static gboolean nsgtk_on_##q##_activate(struct nsgtk_scaffolding *g);\
-static gboolean nsgtk_on_##q##_activate_menu(GtkMenuItem *widget, gpointer data)\
-{\
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;\
-	return nsgtk_on_##q##_activate(g);\
-}\
-static gboolean nsgtk_on_##q##_activate(struct nsgtk_scaffolding *g)
-
-
-/**
- * handle menu activate signals by calling toolbar item activation
- */
-#define MENUHANDLER(name, itemid)					\
-static gboolean								\
-nsgtk_on_##name##_activate_menu(GtkMenuItem *widget, gpointer data)	\
-{									\
-	struct nsgtk_scaffolding *gs = (struct nsgtk_scaffolding *)data;\
-	nsgtk_window_item_activate(gs->top_level, itemid);		\
-	return TRUE;							\
-}
-
 
 /**
  * menu entry context
@@ -464,33 +441,16 @@ nsgtk_window_url_changed(GtkWidget *widget,
 	return nsgtk_completion_update(GTK_ENTRY(widget));
 }
 
-
-/**
- * Event handler for popup menu on toolbar.
- *
- * \param toolbar The toolbar being clicked
- * \param x The x coordinate where the click happened
- * \param y The x coordinate where the click happened
- * \param button the buttons being pressed
- * \param data The context pointer passed when the connection was made.
- * \return TRUE to indicate event handled.
- */
-static gboolean
-nsgtk_window_tool_bar_clicked(GtkToolbar *toolbar,
-			      gint x,
-			      gint y,
-			      gint button,
-			      gpointer data)
+/* exported interface documented in gtk/scaffolding.h */
+nserror nsgtk_scaffolding_toolbar_context_menu(struct nsgtk_scaffolding *gs)
 {
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-
 	/* set visibility for right-click popup menu */
-	popup_menu_hide(g->menu_popup, true, false, true, false);
-	popup_menu_show(g->menu_popup, false, false, false, true);
+	popup_menu_hide(gs->menu_popup, true, false, true, false);
+	popup_menu_show(gs->menu_popup, false, false, false, true);
 
-	nsgtk_menu_popup_at_pointer(g->menu_popup->popup_menu, NULL);
+	nsgtk_menu_popup_at_pointer(gs->menu_popup->popup_menu, NULL);
 
-	return TRUE;
+	return NSERROR_OK;
 }
 
 
@@ -574,6 +534,18 @@ nsgtk_window_tabs_remove(GtkNotebook *notebook,
 /* signal handlers for menu entries */
 
 /**
+ * handle menu activate signals by calling toolbar item activation
+ */
+#define MENUHANDLER(name, itemid)					\
+static gboolean								\
+nsgtk_on_##name##_activate_menu(GtkMenuItem *widget, gpointer data)	\
+{									\
+	struct nsgtk_scaffolding *gs = (struct nsgtk_scaffolding *)data;\
+	nsgtk_window_item_activate(gs->top_level, itemid);		\
+	return TRUE;							\
+}
+
+/**
  * menu signal handler for activation on new window item
  */
 MENUHANDLER(newwindow, NEWWINDOW_BUTTON);
@@ -623,117 +595,6 @@ MENUHANDLER(closewindow, CLOSEWINDOW_BUTTON);
  */
 MENUHANDLER(quit, QUIT_BUTTON);
 
-
-static gboolean
-nsgtk_on_savelink_activate_menu(GtkMenuItem *widget, gpointer data)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *) data;
-	struct gui_window *gui = g->top_level;
-	struct browser_window *bw = nsgtk_get_browser_window(gui);
-	nserror err;
-
-	if (current_menu_features.link == NULL)
-		return FALSE;
-
-	err = browser_window_navigate(bw,
-				current_menu_features.link,
-				NULL,
-				BW_NAVIGATE_DOWNLOAD,
-				NULL,
-				NULL,
-				NULL);
-	if (err != NSERROR_OK) {
-		nsgtk_warning(messages_get_errorcode(err), 0);
-	}
-
-	return TRUE;
-}
-
-/**
- * Handler for opening new window from a link. attached to the popup menu.
- */
-static gboolean
-nsgtk_on_link_openwin_activate_menu(GtkMenuItem *widget, gpointer data)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *) data;
-	struct gui_window *gui = g->top_level;
-	struct browser_window *bw = nsgtk_get_browser_window(gui);
-	nserror err;
-
-	if (current_menu_features.link == NULL)
-		return FALSE;
-
-	err = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY,
-				current_menu_features.link, NULL, bw, NULL);
-	if (err != NSERROR_OK) {
-		nsgtk_warning(messages_get_errorcode(err), 0);
-	}
-
-	return TRUE;
-}
-
-/**
- * Handler for opening new tab from a link. attached to the popup menu.
- */
-static gboolean
-nsgtk_on_link_opentab_activate_menu(GtkMenuItem *widget, gpointer data)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *) data;
-	struct gui_window *gui = g->top_level;
-	struct browser_window *bw = nsgtk_get_browser_window(gui);
-	nserror err;
-
-	if (current_menu_features.link == NULL)
-		return FALSE;
-
-	temp_open_background = 1;
-
-	err = browser_window_create(BW_CREATE_CLONE |
-				    BW_CREATE_HISTORY |
-				    BW_CREATE_TAB,
-				    current_menu_features.link, NULL, bw, NULL);
-	if (err != NSERROR_OK) {
-		nsgtk_warning(messages_get_errorcode(err), 0);
-	}
-
-	temp_open_background = -1;
-
-	return TRUE;
-}
-
-/**
- * Handler for bookmarking a link. attached to the popup menu.
- */
-static gboolean
-nsgtk_on_link_bookmark_activate_menu(GtkMenuItem *widget, gpointer data)
-{
-	if (current_menu_features.link == NULL)
-		return FALSE;
-
-	hotlist_add_url(current_menu_features.link);
-
-	return TRUE;
-}
-
-/**
- * Handler for copying a link. attached to the popup menu.
- */
-static gboolean
-nsgtk_on_link_copy_activate_menu(GtkMenuItem *widget, gpointer data)
-{
-	GtkClipboard *clipboard;
-
-	if (current_menu_features.link == NULL)
-		return FALSE;
-
-	clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
-	gtk_clipboard_set_text(clipboard,
-			       nsurl_access(current_menu_features.link), -1);
-
-	return TRUE;
-}
-
-
 /**
  * menu signal handler for activation on cut item
  */
@@ -755,25 +616,11 @@ MENUHANDLER(paste, PASTE_BUTTON);
 MENUHANDLER(delete, DELETE_BUTTON);
 
 
-static gboolean
-nsgtk_on_customize_activate_menu(GtkMenuItem *widget, gpointer data)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-	nsgtk_toolbar_customization_init(g);
-	return TRUE;
-}
 
 /**
  * menu signal handler for activation on selectall item
  */
 MENUHANDLER(selectall, SELECTALL_BUTTON);
-
-
-MULTIHANDLER(find)
-{
-	nsgtk_scaffolding_toggle_search_bar_visibility(g);
-	return TRUE;
-}
 
 /**
  * menu signal handler for activation on preferences item
@@ -804,6 +651,240 @@ MENUHANDLER(fullscreen, FULLSCREEN_BUTTON);
  * menu signal handler for activation on view source item
  */
 MENUHANDLER(viewsource, VIEWSOURCE_BUTTON);
+
+/**
+ * menu signal handler for activation on downloads item
+ */
+MENUHANDLER(downloads, DOWNLOADS_BUTTON);
+
+/**
+ * menu signal handler for activation on save window size item
+ */
+MENUHANDLER(savewindowsize, SAVEWINDOWSIZE_BUTTON);
+
+/**
+ * menu signal handler for activation on toggle debug render item
+ */
+MENUHANDLER(toggledebugging, TOGGLEDEBUGGING_BUTTON);
+
+/**
+ * menu signal handler for activation on debug box tree item
+ */
+MENUHANDLER(debugboxtree, SAVEBOXTREE_BUTTON);
+
+/**
+ * menu signal handler for activation on debug dom tree item
+ */
+MENUHANDLER(debugdomtree, SAVEDOMTREE_BUTTON);
+
+/**
+ * menu signal handler for activation on stop item
+ */
+MENUHANDLER(stop, STOP_BUTTON);
+
+/**
+ * menu signal handler for activation on reload item
+ */
+MENUHANDLER(reload, RELOAD_BUTTON);
+
+/**
+ * menu signal handler for activation on back item
+ */
+MENUHANDLER(back, BACK_BUTTON);
+
+/**
+ * menu signal handler for activation on forward item
+ */
+MENUHANDLER(forward, FORWARD_BUTTON);
+
+/**
+ * menu signal handler for activation on home item
+ */
+MENUHANDLER(home, HOME_BUTTON);
+
+/**
+ * menu signal handler for activation on localhistory item
+ */
+MENUHANDLER(localhistory, LOCALHISTORY_BUTTON);
+
+/**
+ * menu signal handler for activation on globalhistory item
+ */
+MENUHANDLER(globalhistory, GLOBALHISTORY_BUTTON);
+
+/**
+ * menu signal handler for activation on addbookmarks item
+ */
+MENUHANDLER(addbookmarks, ADDBOOKMARKS_BUTTON);
+
+/**
+ * menu signal handler for activation on showbookmarks item
+ */
+MENUHANDLER(showbookmarks, SHOWBOOKMARKS_BUTTON);
+
+/**
+ * menu signal handler for activation on showcookies item
+ */
+MENUHANDLER(showcookies, SHOWCOOKIES_BUTTON);
+
+/**
+ * menu signal handler for activation on showcookies item
+ */
+MENUHANDLER(openlocation, OPENLOCATION_BUTTON);
+
+/**
+ * menu signal handler for activation on showcookies item
+ */
+MENUHANDLER(contents, CONTENTS_BUTTON);
+
+/**
+ * menu signal handler for activation on showcookies item
+ */
+MENUHANDLER(guide, GUIDE_BUTTON);
+
+/**
+ * menu signal handler for activation on showcookies item
+ */
+MENUHANDLER(info, INFO_BUTTON);
+
+/**
+ * menu signal handler for activation on showcookies item
+ */
+MENUHANDLER(about, ABOUT_BUTTON);
+
+#undef MENUHANDLER
+
+
+static gboolean
+nsgtk_on_savelink_activate_menu(GtkMenuItem *widget, gpointer data)
+{
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *) data;
+	struct gui_window *gui = g->top_level;
+	struct browser_window *bw = nsgtk_get_browser_window(gui);
+	nserror err;
+
+	if (current_menu_features.link == NULL)
+		return FALSE;
+
+	err = browser_window_navigate(bw,
+				current_menu_features.link,
+				NULL,
+				BW_NAVIGATE_DOWNLOAD,
+				NULL,
+				NULL,
+				NULL);
+	if (err != NSERROR_OK) {
+		nsgtk_warning(messages_get_errorcode(err), 0);
+	}
+
+	return TRUE;
+}
+
+
+/**
+ * Handler for opening new window from a link. attached to the popup menu.
+ */
+static gboolean
+nsgtk_on_link_openwin_activate_menu(GtkMenuItem *widget, gpointer data)
+{
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *) data;
+	struct gui_window *gui = g->top_level;
+	struct browser_window *bw = nsgtk_get_browser_window(gui);
+	nserror err;
+
+	if (current_menu_features.link == NULL)
+		return FALSE;
+
+	err = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY,
+				current_menu_features.link, NULL, bw, NULL);
+	if (err != NSERROR_OK) {
+		nsgtk_warning(messages_get_errorcode(err), 0);
+	}
+
+	return TRUE;
+}
+
+
+/**
+ * Handler for opening new tab from a link. attached to the popup menu.
+ */
+static gboolean
+nsgtk_on_link_opentab_activate_menu(GtkMenuItem *widget, gpointer data)
+{
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *) data;
+	struct gui_window *gui = g->top_level;
+	struct browser_window *bw = nsgtk_get_browser_window(gui);
+	nserror err;
+
+	if (current_menu_features.link == NULL)
+		return FALSE;
+
+	temp_open_background = 1;
+
+	err = browser_window_create(BW_CREATE_CLONE |
+				    BW_CREATE_HISTORY |
+				    BW_CREATE_TAB,
+				    current_menu_features.link, NULL, bw, NULL);
+	if (err != NSERROR_OK) {
+		nsgtk_warning(messages_get_errorcode(err), 0);
+	}
+
+	temp_open_background = -1;
+
+	return TRUE;
+}
+
+
+/**
+ * Handler for bookmarking a link. attached to the popup menu.
+ */
+static gboolean
+nsgtk_on_link_bookmark_activate_menu(GtkMenuItem *widget, gpointer data)
+{
+	if (current_menu_features.link == NULL)
+		return FALSE;
+
+	hotlist_add_url(current_menu_features.link);
+
+	return TRUE;
+}
+
+
+/**
+ * Handler for copying a link. attached to the popup menu.
+ */
+static gboolean
+nsgtk_on_link_copy_activate_menu(GtkMenuItem *widget, gpointer data)
+{
+	GtkClipboard *clipboard;
+
+	if (current_menu_features.link == NULL)
+		return FALSE;
+
+	clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+	gtk_clipboard_set_text(clipboard,
+			       nsurl_access(current_menu_features.link), -1);
+
+	return TRUE;
+}
+
+
+static gboolean
+nsgtk_on_customize_activate_menu(GtkMenuItem *widget, gpointer data)
+{
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
+	nsgtk_toolbar_customization_init(g);
+	return TRUE;
+}
+
+
+static gboolean nsgtk_on_find_activate_menu(GtkMenuItem *widget, gpointer data)
+{
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
+
+	nsgtk_scaffolding_toggle_search_bar_visibility(g);
+	return TRUE;
+}
 
 
 static gboolean
@@ -888,101 +969,28 @@ nsgtk_on_toolbar_activate_menu(GtkMenuItem *widget, gpointer data)
 	return TRUE;
 }
 
-/**
- * menu signal handler for activation on downloads item
- */
-MENUHANDLER(downloads, DOWNLOADS_BUTTON);
 
-/**
- * menu signal handler for activation on save window size item
- */
-MENUHANDLER(savewindowsize, SAVEWINDOWSIZE_BUTTON);
-
-/**
- * menu signal handler for activation on toggle debug render item
- */
-MENUHANDLER(toggledebugging, TOGGLEDEBUGGING_BUTTON);
-
-/**
- * menu signal handler for activation on debug box tree item
- */
-MENUHANDLER(debugboxtree, SAVEBOXTREE_BUTTON);
-
-/**
- * menu signal handler for activation on debug dom tree item
- */
-MENUHANDLER(debugdomtree, SAVEDOMTREE_BUTTON);
-
-/**
- * menu signal handler for activation on stop item
- */
-MENUHANDLER(stop, STOP_BUTTON);
-
-/**
- * menu signal handler for activation on reload item
- */
-MENUHANDLER(reload, RELOAD_BUTTON);
-
-/**
- * menu signal handler for activation on back item
- */
-MENUHANDLER(back, BACK_BUTTON);
-
-/**
- * menu signal handler for activation on forward item
- */
-MENUHANDLER(forward, FORWARD_BUTTON);
-
-/**
- * menu signal handler for activation on home item
- */
-MENUHANDLER(home, HOME_BUTTON);
-
-/**
- * menu signal handler for activation on localhistory item
- */
-MENUHANDLER(localhistory, LOCALHISTORY_BUTTON);
-
-/**
- * menu signal handler for activation on globalhistory item
- */
-MENUHANDLER(globalhistory, GLOBALHISTORY_BUTTON);
-
-/**
- * menu signal handler for activation on addbookmarks item
- */
-MENUHANDLER(addbookmarks, ADDBOOKMARKS_BUTTON);
-
-/**
- * menu signal handler for activation on showbookmarks item
- */
-MENUHANDLER(showbookmarks, SHOWBOOKMARKS_BUTTON);
-
-/**
- * menu signal handler for activation on showcookies item
- */
-MENUHANDLER(showcookies, SHOWCOOKIES_BUTTON);
-
-/**
- * menu signal handler for activation on showcookies item
- */
-MENUHANDLER(openlocation, OPENLOCATION_BUTTON);
-
-
-MULTIHANDLER(nexttab)
+static gboolean
+nsgtk_on_nexttab_activate_menu(GtkMenuItem *widget, gpointer data)
 {
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
+
 	nsgtk_tab_next(g->notebook);
 
 	return TRUE;
 }
 
-MULTIHANDLER(prevtab)
+
+static gboolean
+nsgtk_on_prevtab_activate_menu(GtkMenuItem *widget, gpointer data)
 {
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 
 	nsgtk_tab_prev(g->notebook);
 
 	return TRUE;
 }
+
 
 /**
  * menu signal handler for activation on close tab item
@@ -991,33 +999,13 @@ static gboolean
 nsgtk_on_closetab_activate_menu(GtkMenuItem *widget, gpointer data)
 {
 	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-	nsgtk_window_item_activate(g->top_level, CLOSETAB_BUTTON);
+
+	nsgtk_tab_close_current(g->notebook);
+
 	return TRUE;
 }
 
-/**
- * menu signal handler for activation on showcookies item
- */
-MENUHANDLER(contents, CONTENTS_BUTTON);
-
-/**
- * menu signal handler for activation on showcookies item
- */
-MENUHANDLER(guide, GUIDE_BUTTON);
-
-/**
- * menu signal handler for activation on showcookies item
- */
-MENUHANDLER(info, INFO_BUTTON);
-
-/**
- * menu signal handler for activation on showcookies item
- */
-MENUHANDLER(about, ABOUT_BUTTON);
-
-
-#undef MULTIHANDLER
-#undef MENUHANDLER
+/* end of menu callback handlers */
 
 /**
  * attach gtk signal handlers for menus
@@ -1322,7 +1310,9 @@ static nserror nsgtk_search_update(struct gtk_search *search)
 	return NSERROR_OK;
 }
 
-
+/**
+ * create text search context
+ */
 static nserror
 nsgtk_search_create(GtkBuilder *builder, struct gtk_search **search_out)
 {
@@ -1350,6 +1340,50 @@ nsgtk_search_create(GtkBuilder *builder, struct gtk_search **search_out)
 	nsgtk_search_update(search);
 
 	*search_out = search;
+
+	return NSERROR_OK;
+}
+
+/**
+ * connect signals to search bar
+ */
+static nserror nsgtk_search_connect_signals(struct nsgtk_scaffolding *gs)
+{
+	g_signal_connect(gs->search->buttons[1],
+			 "clicked",
+			 G_CALLBACK(nsgtk_search_forward_button_clicked),
+			 gs);
+
+	g_signal_connect(gs->search->buttons[0],
+			 "clicked",
+			 G_CALLBACK(nsgtk_search_back_button_clicked),
+			 gs);
+
+	g_signal_connect(gs->search->entry,
+			 "changed",
+			 G_CALLBACK(nsgtk_search_entry_changed),
+			 gs);
+
+	g_signal_connect(gs->search->entry,
+			 "activate",
+			 G_CALLBACK(nsgtk_search_entry_activate),
+			 gs);
+
+	g_signal_connect(gs->search->entry,
+			 "key-press-event",
+			 G_CALLBACK(nsgtk_search_entry_key),
+			 gs);
+
+	g_signal_connect(gs->search->buttons[2],
+			 "clicked",
+			 G_CALLBACK(nsgtk_search_close_button_clicked),
+			 gs);
+
+	g_signal_connect(gs->search->caseSens,
+			 "toggled",
+			 G_CALLBACK(nsgtk_search_entry_changed),
+			 gs);
+
 	return NSERROR_OK;
 }
 
@@ -1470,6 +1504,7 @@ nsgtk_scaffolding_set_websearch(struct nsgtk_scaffolding *g, const char *content
 	gtk_entry_set_text(GTK_ENTRY(g->webSearchEntry), content);
 #endif
 }
+
 
 /**
  * GTK UI callback when search provider details are updated.
@@ -1789,8 +1824,10 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 	gtk_builder_connect_signals(gs->builder, NULL);
 
-	gs->window = GTK_WINDOW(gtk_builder_get_object(gs->builder, "wndBrowser"));
-	gs->notebook = GTK_NOTEBOOK(gtk_builder_get_object(gs->builder, "notebook"));
+	gs->window = GTK_WINDOW(gtk_builder_get_object(gs->builder,
+						       "wndBrowser"));
+	gs->notebook = GTK_NOTEBOOK(gtk_builder_get_object(gs->builder,
+							   "notebook"));
 
 
 	res = nsgtk_search_create(gs->builder, &gs->search);
@@ -1825,50 +1862,38 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 	nsgtk_tab_init(gs);
 
-	g_signal_connect_after(gs->notebook, "page-added",
-			G_CALLBACK(nsgtk_window_tabs_add), gs);
-	g_signal_connect_after(gs->notebook, "page-removed",
-			G_CALLBACK(nsgtk_window_tabs_remove), gs);
-
-#define CONNECT(obj, sig, callback, ptr) \
-	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
+	g_signal_connect_after(gs->notebook,
+			       "page-added",
+			       G_CALLBACK(nsgtk_window_tabs_add),
+			       gs);
+	g_signal_connect_after(gs->notebook,
+			       "page-removed",
+			       G_CALLBACK(nsgtk_window_tabs_remove),
+			       gs);
 
 	/* connect main window signals to their handlers. */
-	CONNECT(gs->window,
-		"delete-event",
-		scaffolding_window_delete_event,
-		gs);
+	g_signal_connect(gs->window,
+			 "delete-event",
+			 G_CALLBACK(scaffolding_window_delete_event),
+			 gs);
 
-	CONNECT(gs->window, "destroy", scaffolding_window_destroy, gs);
+	g_signal_connect(gs->window,
+			 "destroy",
+			 G_CALLBACK(scaffolding_window_destroy),
+			 gs);
 
 	/* toolbar URL bar menu bar search bar signal handlers */
-	CONNECT(gs->menu_bar->edit_submenu->edit, "show",
-		nsgtk_window_edit_menu_shown, gs);
-	CONNECT(gs->menu_bar->edit_submenu->edit, "hide",
-		nsgtk_window_edit_menu_hidden, gs);
+	g_signal_connect(gs->menu_bar->edit_submenu->edit,
+			 "show",
+			 G_CALLBACK(nsgtk_window_edit_menu_shown),
+			 gs);
 
-	CONNECT(gs->search->buttons[1], "clicked",
-			nsgtk_search_forward_button_clicked, gs);
+	g_signal_connect(gs->menu_bar->edit_submenu->edit,
+			 "hide",
+			 G_CALLBACK(nsgtk_window_edit_menu_hidden),
+			 gs);
 
-	CONNECT(gs->search->buttons[0], "clicked",
-			nsgtk_search_back_button_clicked, gs);
-
-	CONNECT(gs->search->entry, "changed", nsgtk_search_entry_changed, gs);
-
-	CONNECT(gs->search->entry, "activate", nsgtk_search_entry_activate, gs);
-
-	CONNECT(gs->search->entry, "key-press-event",
-		nsgtk_search_entry_key, gs);
-
-	CONNECT(gs->search->buttons[2], "clicked",
-		nsgtk_search_close_button_clicked, gs);
-
-	CONNECT(gs->search->caseSens, "toggled",
-		nsgtk_search_entry_changed, gs);
-
-	/** \todo fix popup menu */
-	//CONNECT(gs->tool_bar, "popup-context-menu",
-	//	nsgtk_window_tool_bar_clicked, gs);
+	nsgtk_search_connect_signals(gs);
 
 	/* create popup menu */
 	gs->menu_popup = nsgtk_new_scaffolding_popup(gs, group);

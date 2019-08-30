@@ -69,6 +69,11 @@ nserror nsgtk_scaffolding_destroy_all(void);
 nserror nsgtk_scaffolding_throbber(struct gui_window* gw, bool active);
 
 /**
+ * open a toolbar context menu
+ */
+nserror nsgtk_scaffolding_toolbar_context_menu(struct nsgtk_scaffolding *gs);
+
+/**
  * Obtain the most recently used scaffolding element.
  *
  * This allows tabs to be opened in the most recently used window
