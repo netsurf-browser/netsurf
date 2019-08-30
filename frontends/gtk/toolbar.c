@@ -39,6 +39,7 @@
 #include "desktop/save_complete.h"
 #include "desktop/save_text.h"
 #include "desktop/print.h"
+#include "desktop/hotlist.h"
 #include "netsurf/content.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/keypress.h"
@@ -55,10 +56,16 @@
 #include "gtk/resources.h"
 #include "gtk/schedule.h"
 #include "gtk/local_history.h"
+#include "gtk/global_history.h"
+#include "gtk/viewsource.h"
+#include "gtk/download.h"
+#include "gtk/viewdata.h"
 #include "gtk/tabs.h"
 #include "gtk/print.h"
 #include "gtk/layout_pango.h"
 #include "gtk/preferences.h"
+#include "gtk/hotlist.h"
+#include "gtk/cookies.h"
 #include "gtk/toolbar.h"
 
 /**
@@ -1697,6 +1704,111 @@ set_item_sensitivity(struct nsgtk_toolbar_item *item, bool sensitivity)
 
 
 /**
+ * cause the toolbar browsing context to navigate to a new url.
+ *
+ * \param tb the toolbar context.
+ * \param urltxt The url string.
+ * \return NSERROR_OK on success else appropriate error code.
+ */
+static nserror
+toolbar_navigate_to_url(struct nsgtk_toolbar *tb, const char *urltxt)
+{
+	struct browser_window *bw;
+	nsurl *url;
+	nserror res;
+
+	res = nsurl_create(urltxt, &url);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	bw = tb->get_bw(tb->get_bw_ctx);
+
+	res = browser_window_navigate(bw,
+				      url,
+				      NULL,
+				      BW_NAVIGATE_HISTORY,
+				      NULL,
+				      NULL,
+				      NULL);
+	nsurl_unref(url);
+
+	return res;
+}
+
+
+/**
+ * run a gtk file chooser as a save dialog to obtain a path
+ */
+static nserror
+nsgtk_saveas_dialog(struct browser_window *bw,
+		    const char *title,
+		    GtkWindow *parent,
+		    bool folder,
+		    gchar **path_out)
+{
+	nserror res;
+	GtkWidget *fc; /* file chooser widget */
+	GtkFileChooserAction action;
+	char *path; /* proposed path */
+
+	if (!browser_window_has_content(bw)) {
+		/* cannot save a page with no content */
+		return NSERROR_INVALID;
+	}
+
+	if (folder) {
+		action = GTK_FILE_CHOOSER_ACTION_CREATE_FOLDER;
+	} else {
+		action = GTK_FILE_CHOOSER_ACTION_SAVE;
+	}
+
+	fc = gtk_file_chooser_dialog_new(title,
+					 parent,
+					 action,
+					 NSGTK_STOCK_CANCEL,
+					 GTK_RESPONSE_CANCEL,
+					 NSGTK_STOCK_SAVE,
+					 GTK_RESPONSE_ACCEPT,
+					 NULL);
+
+	/* set a default file name */
+	res = nsurl_nice(browser_window_access_url(bw), &path, false);
+	if (res != NSERROR_OK) {
+		path = strdup(messages_get("SaveText"));
+		if (path == NULL) {
+			gtk_widget_destroy(fc);
+			return NSERROR_NOMEM;
+		}
+	}
+
+	if ((!folder) || (access(path, F_OK) != 0)) {
+		gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(fc), path);
+	}
+	free(path);
+
+	/* confirm overwriting */
+	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(fc), TRUE);
+
+	/* run the dialog to let user select path */
+	if (gtk_dialog_run(GTK_DIALOG(fc)) != GTK_RESPONSE_ACCEPT) {
+		gtk_widget_destroy(fc);
+		return NSERROR_NOT_FOUND;
+	}
+
+	*path_out = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(fc));
+
+	gtk_widget_destroy(fc);
+
+	return NSERROR_OK;
+}
+
+
+/*
+ * Toolbar button clicked handlers
+ */
+
+/**
  * callback for all toolbar items widget size allocation
  *
  * handler connected to all toolbar items for the size-allocate signal
@@ -1774,35 +1886,6 @@ back_button_clicked_cb(GtkWidget *widget, gpointer data)
 				browser_window_history_forward_available(bw));
 
 		nsgtk_local_history_hide();
-	}
-	return TRUE;
-}
-
-
-/**
- * handler for local history tool bar item clicked signal
- *
- * \param widget The widget the signal is being delivered to.
- * \param data The toolbar context passed when the signal was connected
- * \return TRUE
- */
-static gboolean
-localhistory_button_clicked_cb(GtkWidget *widget, gpointer data)
-{
-	nserror res;
-	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
-	struct browser_window *bw;
-	GtkWidget *toplevel;
-
-	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
-	if (toplevel != NULL) {
-		bw = tb->get_bw(tb->get_bw_ctx);
-
-		res = nsgtk_local_history_present(GTK_WINDOW(toplevel), bw);
-		if (res != NSERROR_OK) {
-			NSLOG(netsurf, INFO,
-			      "Unable to present local history window.");
-		}
 	}
 	return TRUE;
 }
@@ -1891,11 +1974,9 @@ reload_button_clicked_cb(GtkWidget *widget, gpointer data)
 static gboolean
 home_button_clicked_cb(GtkWidget *widget, gpointer data)
 {
-	nserror res;
 	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	nserror res;
 	const char *addr;
-	struct browser_window *bw;
-	nsurl *url;
 
 	if (nsoption_charp(homepage_url) != NULL) {
 		addr = nsoption_charp(homepage_url);
@@ -1903,19 +1984,7 @@ home_button_clicked_cb(GtkWidget *widget, gpointer data)
 		addr = NETSURF_HOMEPAGE;
 	}
 
-	res = nsurl_create(addr, &url);
-	if (res == NSERROR_OK) {
-		bw = tb->get_bw(tb->get_bw_ctx);
-
-		res = browser_window_navigate(bw,
-					      url,
-					      NULL,
-					      BW_NAVIGATE_HISTORY,
-					      NULL,
-					      NULL,
-					      NULL);
-		nsurl_unref(url);
-	}
+	res = toolbar_navigate_to_url(tb, addr);
 	if (res != NSERROR_OK) {
 		nsgtk_warning(messages_get_errorcode(res), 0);
 	}
@@ -2225,69 +2294,6 @@ closewindow_button_clicked_cb(GtkWidget *widget, gpointer data)
 	return TRUE;
 }
 
-
-static nserror
-nsgtk_saveas_dialog(struct browser_window *bw,
-		    const char *title,
-		    GtkWindow *parent,
-		    bool folder,
-		    gchar **path_out)
-{
-	nserror res;
-	GtkWidget *fc; /* file chooser widget */
-	GtkFileChooserAction action;
-	char *path; /* proposed path */
-
-	if (!browser_window_has_content(bw)) {
-		/* cannot save a page with no content */
-		return NSERROR_INVALID;
-	}
-
-	if (folder) {
-		action = GTK_FILE_CHOOSER_ACTION_CREATE_FOLDER;
-	} else {
-		action = GTK_FILE_CHOOSER_ACTION_SAVE;
-	}
-
-	fc = gtk_file_chooser_dialog_new(title,
-					 parent,
-					 action,
-					 NSGTK_STOCK_CANCEL,
-					 GTK_RESPONSE_CANCEL,
-					 NSGTK_STOCK_SAVE,
-					 GTK_RESPONSE_ACCEPT,
-					 NULL);
-
-	/* set a default file name */
-	res = nsurl_nice(browser_window_access_url(bw), &path, false);
-	if (res != NSERROR_OK) {
-		path = strdup(messages_get("SaveText"));
-		if (path == NULL) {
-			gtk_widget_destroy(fc);
-			return NSERROR_NOMEM;
-		}
-	}
-
-	if ((!folder) || (access(path, F_OK) != 0)) {
-		gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(fc), path);
-	}
-	free(path);
-
-	/* confirm overwriting */
-	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(fc), TRUE);
-
-	/* run the dialog to let user select path */
-	if (gtk_dialog_run(GTK_DIALOG(fc)) != GTK_RESPONSE_ACCEPT) {
-		gtk_widget_destroy(fc);
-		return NSERROR_NOT_FOUND;
-	}
-
-	*path_out = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(fc));
-
-	gtk_widget_destroy(fc);
-
-	return NSERROR_OK;
-}
 
 /**
  * handler for full save export tool bar item clicked signal
@@ -3012,6 +3018,220 @@ debugdomtree_button_clicked_cb(GtkWidget *widget, gpointer data)
 
 }
 
+
+/**
+ * handler for local history tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+localhistory_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	nserror res;
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+	GtkWidget *toplevel;
+
+	toplevel = gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW);
+	if (toplevel != NULL) {
+		bw = tb->get_bw(tb->get_bw_ctx);
+
+		res = nsgtk_local_history_present(GTK_WINDOW(toplevel), bw);
+		if (res != NSERROR_OK) {
+			NSLOG(netsurf, INFO,
+			      "Unable to present local history window.");
+		}
+	}
+	return TRUE;
+}
+
+
+/**
+ * handler for global history tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+globalhistory_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	nserror res;
+	res = nsgtk_global_history_present();
+	if (res != NSERROR_OK) {
+		NSLOG(netsurf, INFO,
+		      "Unable to initialise global history window.");
+	}
+	return TRUE;
+}
+
+
+/**
+ * handler for add bookmark tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+addbookmarks_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+
+	bw = tb->get_bw(tb->get_bw_ctx);
+	if (browser_window_has_content(bw)) {
+		hotlist_add_url(browser_window_access_url(bw));
+	}
+	return TRUE;
+}
+
+
+/**
+ * handler for show bookmark tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+showbookmarks_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	nserror res;
+	res = nsgtk_hotlist_present();
+	if (res != NSERROR_OK) {
+		NSLOG(netsurf, INFO, "Unable to initialise bookmark window.");
+	}
+	return TRUE;
+}
+
+
+/**
+ * handler for show cookies tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+showcookies_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	nserror res;
+	res = nsgtk_cookies_present();
+	if (res != NSERROR_OK) {
+		NSLOG(netsurf, INFO, "Unable to initialise cookies window.");
+	}
+	return TRUE;
+}
+
+
+/**
+ * handler for open location tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+openlocation_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	GtkToolItem *urltitem;
+
+	urltitem = tb->buttons[URL_BAR_ITEM]->button;
+	if (urltitem != NULL) {
+		GtkEntry *entry;
+		entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(urltitem)));
+		gtk_widget_grab_focus(GTK_WIDGET(entry));
+	}
+	return TRUE;
+}
+
+
+/**
+ * handler for contents tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+contents_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	nserror res;
+
+	res = toolbar_navigate_to_url(tb, "http://www.netsurf-browser.org/documentation/");
+	if (res != NSERROR_OK) {
+		nsgtk_warning(messages_get_errorcode(res), 0);
+	}
+
+	return TRUE;
+}
+
+/**
+ * handler for contents tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+guide_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	nserror res;
+
+	res = toolbar_navigate_to_url(tb, "http://www.netsurf-browser.org/documentation/guide");
+	if (res != NSERROR_OK) {
+		nsgtk_warning(messages_get_errorcode(res), 0);
+	}
+
+	return TRUE;
+}
+
+
+/**
+ * handler for contents tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+info_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	nserror res;
+
+	res = toolbar_navigate_to_url(tb, "http://www.netsurf-browser.org/documentation/info");
+	if (res != NSERROR_OK) {
+		nsgtk_warning(messages_get_errorcode(res), 0);
+	}
+
+	return TRUE;
+}
+
+
+/**
+ * handler for contents tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+about_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	GtkWindow *parent; /* gtk window widget is in */
+
+	parent = GTK_WINDOW(gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW));
+
+	nsgtk_about_dialog_init(parent);
+	return TRUE;
+}
 
 /**
  * create a toolbar item
