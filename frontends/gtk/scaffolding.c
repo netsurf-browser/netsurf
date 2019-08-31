@@ -1449,135 +1449,6 @@ nserror nsgtk_scaffolding_throbber(struct gui_window* gw, bool active)
 }
 
 
-static void
-nsgtk_scaffolding_set_websearch(struct nsgtk_scaffolding *g, const char *content)
-{
-#if 0
-	/** \todo this code appears technically correct, though
-	 * currently has no effect at all.
-	 */
-	PangoLayout *lo = gtk_entry_get_layout(GTK_ENTRY(g->webSearchEntry));
-	if (lo != NULL) {
-		pango_layout_set_font_description(lo, NULL);
-		PangoFontDescription *desc = pango_font_description_new();
-		if (desc != NULL) {
-			pango_font_description_set_style(desc,
-					PANGO_STYLE_ITALIC);
-			pango_font_description_set_family(desc, "Arial");
-			pango_font_description_set_weight(desc,
-					PANGO_WEIGHT_ULTRALIGHT);
-			pango_font_description_set_size(desc,
-					10 * PANGO_SCALE);
-			pango_layout_set_font_description(lo, desc);
-		}
-
-		PangoAttrList *list = pango_attr_list_new();
-		if (list != NULL) {
-			PangoAttribute *italic = pango_attr_style_new(
-					PANGO_STYLE_ITALIC);
-			if (italic != NULL) {
-				italic->start_index = 0;
-				italic->end_index = strlen(content);
-			}
-			PangoAttribute *grey = pango_attr_foreground_new(
-					0x7777, 0x7777, 0x7777);
-			if (grey != NULL) {
-				grey->start_index = 0;
-				grey->end_index = strlen(content);
-			}
-			pango_attr_list_insert(list, italic);
-			pango_attr_list_insert(list, grey);
-			pango_layout_set_attributes(lo, list);
-			pango_attr_list_unref(list);
-		}
-		pango_layout_set_text(lo, content, -1);
-	}
-/*	an alternative method */
-/*	char *parse = malloc(strlen(content) + 1);
-	PangoAttrList *list = pango_layout_get_attributes(lo);
-	char *markup = g_strconcat("<span foreground='#777777'><i>", content,
-			"</i></span>", NULL);
-	pango_parse_markup(markup, -1, 0, &list, &parse, NULL, NULL);
-	gtk_widget_show_all(g->webSearchEntry);
-*/
-	gtk_entry_set_visibility(GTK_ENTRY(g->webSearchEntry), TRUE);
-	gtk_entry_set_text(GTK_ENTRY(g->webSearchEntry), content);
-#endif
-}
-
-
-/**
- * GTK UI callback when search provider details are updated.
- *
- * \param provider_name The providers name.
- * \param provider_bitmap The bitmap representing the provider.
- * \return NSERROR_OK on success else error code.
- */
-static nserror
-gui_search_web_provider_update(const char *provider_name,
-			       struct bitmap *provider_bitmap)
-{
-	struct nsgtk_scaffolding *current;
-	GdkPixbuf *srch_pixbuf = NULL;
-	char *searchcontent;
-
-	NSLOG(netsurf, INFO, "name:%s bitmap %p", provider_name,
-	      provider_bitmap);
-
-	if (provider_bitmap != NULL) {
-		srch_pixbuf = nsgdk_pixbuf_get_from_surface(provider_bitmap->surface, 16, 16);
-
-		if (srch_pixbuf == NULL) {
-			return NSERROR_NOMEM;
-		}
-	}
-
-	/* setup the search content name */
-	searchcontent = malloc(strlen(provider_name) + SLEN("Search ") + 1);
-	if (searchcontent != NULL) {
-		sprintf(searchcontent, "Search %s", provider_name);
-	}
-#if 0
-	/* set the search provider parameters up in each scaffold */
-	for (current = scaf_list; current != NULL; current = current->next) {
-		if (current->webSearchEntry == NULL) {
-			continue;
-		}
-
-		/* add ico to each window's toolbar */
-		if (srch_pixbuf != NULL) {
-			nsgtk_entry_set_icon_from_pixbuf(current->webSearchEntry,
-							 GTK_ENTRY_ICON_PRIMARY,
-							 srch_pixbuf);
-		} else {
-			nsgtk_entry_set_icon_from_stock(current->webSearchEntry,
-							 GTK_ENTRY_ICON_PRIMARY,
-							 NSGTK_STOCK_FIND);
-		}
-
-		/* set search entry text */
-		if (searchcontent != NULL) {
-			nsgtk_scaffolding_set_websearch(current, searchcontent);
-		} else {
-			nsgtk_scaffolding_set_websearch(current, provider_name);
-		}
-	}
-#endif
-	free(searchcontent);
-
-	if (srch_pixbuf != NULL) {
-		g_object_unref(srch_pixbuf);
-	}
-
-	return NSERROR_OK;
-}
-
-static struct gui_search_web_table search_web_table = {
-	.provider_update = gui_search_web_provider_update,
-};
-
-struct gui_search_web_table *nsgtk_search_web_table = &search_web_table;
-
 /* exported interface documented in gtk/scaffolding.h */
 nserror nsgtk_scaffolding_destroy_all(void)
 {
@@ -1618,12 +1489,6 @@ GtkWidget *nsgtk_scaffolding_urlbar(struct nsgtk_scaffolding *g)
 }
 
 /* exported interface documented in gtk/scaffolding.h */
-GtkWidget *nsgtk_scaffolding_websearch(struct nsgtk_scaffolding *g)
-{
-	return NULL;//g->webSearchEntry;
-}
-
-/* exported interface documented in gtk/scaffolding.h */
 GtkToolbar *nsgtk_scaffolding_toolbar(struct nsgtk_scaffolding *g)
 {
 	return NULL;//g->tool_bar;
@@ -1656,15 +1521,6 @@ void nsgtk_scaffolding_reset_offset(struct nsgtk_scaffolding *g)
 	//g->offset = 0;
 }
 
-
-/* exported interface documented in gtk/scaffolding.h */
-void nsgtk_scaffolding_update_websearch_ref(struct nsgtk_scaffolding *g)
-{
-#if 0
-	g->webSearchEntry = gtk_bin_get_child(GTK_BIN(
-			g->buttons[WEBSEARCH_ITEM]->button));
-#endif
-}
 
 /* exported interface documented in gtk/scaffolding.h */
 void nsgtk_scaffolding_toggle_search_bar_visibility(struct nsgtk_scaffolding *g)
@@ -1803,7 +1659,6 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 {
 	nserror res;
 	struct nsgtk_scaffolding *gs;
-	int i;
 	GtkAccelGroup *group;
 
 	gs = calloc(1, sizeof(*gs));
@@ -1915,9 +1770,6 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 	/* set icon images */
 	nsgtk_theme_implement(gs);
-
-	/* set web search provider */
-	search_web_select_provider(nsoption_int(search_provider));
 
 	/* finally, show the window. */
 	gtk_widget_show(GTK_WIDGET(gs->window));

@@ -72,6 +72,17 @@ enum search_web_omni_flags {
  */
 nserror search_web_omni(const char *term, enum search_web_omni_flags flags, struct nsurl **url_out);
 
+
+/**
+ * obtain the current providers bitmap
+ *
+ * obtain the icon representing the current web search provider
+ *
+ * \param bitmap_out recives the resulting bitmap which may be NULL
+ * \return NSERROR_OK on success or NSERROR_INIT_FAILED if not initialised
+ */
+nserror search_web_get_provider_bitmap(struct bitmap **bitmap_out);
+
 /**
  * Change the currently selected web search provider.
  *

@@ -366,6 +366,33 @@ search_web_omni(const char *term,
 }
 
 /* exported interface documented in desktop/searchweb.h */
+nserror search_web_get_provider_bitmap(struct bitmap **bitmap_out)
+{
+	struct search_provider *provider;
+	struct bitmap *ico_bitmap = NULL;
+
+	/* must be initialised */
+	if (search_web_ctx.providers == NULL) {
+		return NSERROR_INIT_FAILED;
+	}
+
+	provider = &search_web_ctx.providers[search_web_ctx.current];
+
+	/* set the icon now (if we can) at least to the default */
+	if (provider->ico_handle != NULL) {
+		ico_bitmap = content_get_bitmap(provider->ico_handle);
+	}
+	if ((ico_bitmap == NULL) &&
+	    (search_web_ctx.default_ico_handle != NULL)) {
+		ico_bitmap = content_get_bitmap(search_web_ctx.default_ico_handle);
+	}
+
+	*bitmap_out = ico_bitmap;
+	return NSERROR_OK;
+}
+
+
+/* exported interface documented in desktop/searchweb.h */
 nserror search_web_select_provider(int selection)
 {
 	struct search_provider *provider;
@@ -520,10 +547,14 @@ nserror search_web_init(const char *provider_fname)
 	}
 
 	/* get default search icon */
-	ret = hlcache_handle_retrieve(icon_nsurl, 0, NULL, NULL,
+	ret = hlcache_handle_retrieve(icon_nsurl,
+				      0,
+				      NULL,
+				      NULL,
 				      default_ico_callback,
 				      &search_web_ctx,
-				      NULL, CONTENT_IMAGE,
+				      NULL,
+				      CONTENT_IMAGE,
 				      &search_web_ctx.default_ico_handle);
 	nsurl_unref(icon_nsurl);
 	if (ret != NSERROR_OK) {

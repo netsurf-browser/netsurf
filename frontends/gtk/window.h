@@ -20,6 +20,7 @@
 #define NETSURF_GTK_WINDOW_H 1
 
 extern struct gui_window_table *nsgtk_window_table;
+extern struct gui_search_web_table *nsgtk_search_web_table;
 
 typedef enum nsgtk_window_signals {
 	NSGTK_WINDOW_SIGNAL_CLICK,

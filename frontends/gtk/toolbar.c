@@ -67,6 +67,8 @@
 #include "gtk/hotlist.h"
 #include "gtk/cookies.h"
 #include "gtk/about.h"
+#include "gtk/gdk.h"
+#include "gtk/bitmap.h"
 #include "gtk/toolbar.h"
 
 /**
@@ -641,8 +643,12 @@ make_toolbar_item_websearch(void)
 						GTK_ICON_SIZE_LARGE_TOOLBAR)),
 				"[websearch]");
 	} else {
-		GtkWidget *entry = nsgtk_entry_new();
+		nserror res;
+		GtkWidget *entry;
+		struct bitmap *bitmap;
+		GdkPixbuf *pixbuf = NULL;
 
+		entry = nsgtk_entry_new();
 		item = gtk_tool_item_new();
 
 		if ((entry == NULL) || (item == NULL)) {
@@ -651,9 +657,21 @@ make_toolbar_item_websearch(void)
 
 		gtk_widget_set_size_request(entry, NSGTK_WEBSEARCH_WIDTH, -1);
 
-		nsgtk_entry_set_icon_from_stock(entry,
-						GTK_ENTRY_ICON_PRIMARY,
-						NSGTK_STOCK_INFO);
+		res = search_web_get_provider_bitmap(&bitmap);
+		if ((res == NSERROR_OK) && (bitmap != NULL)) {
+			pixbuf = nsgdk_pixbuf_get_from_surface(bitmap->surface,
+							       16, 16);
+		}
+
+		if (pixbuf != NULL) {
+			nsgtk_entry_set_icon_from_pixbuf(entry,
+							 GTK_ENTRY_ICON_PRIMARY,
+							 pixbuf);
+		} else {
+			nsgtk_entry_set_icon_from_stock(entry,
+							GTK_ENTRY_ICON_PRIMARY,
+							NSGTK_STOCK_INFO);
+		}
 
 		gtk_container_add(GTK_CONTAINER(item), entry);
 	}
@@ -3621,6 +3639,33 @@ nserror nsgtk_toolbar_set_url(struct nsgtk_toolbar *tb, nsurl *url)
 
 	if (idn_url_s != NULL) {
 		free(idn_url_s);
+	}
+
+	return NSERROR_OK;
+}
+
+
+/* exported interface documented in toolbar.h */
+nserror
+nsgtk_toolbar_set_websearch_image(struct nsgtk_toolbar *tb, GdkPixbuf *pixbuf)
+{
+	GtkWidget *entry;
+
+	if (tb->buttons[WEBSEARCH_ITEM]->button == NULL) {
+		/* no toolbar item */
+		return NSERROR_INVALID;
+	}
+
+	entry = gtk_bin_get_child(GTK_BIN(tb->buttons[WEBSEARCH_ITEM]->button));
+
+	if (pixbuf != NULL) {
+		nsgtk_entry_set_icon_from_pixbuf(entry,
+						 GTK_ENTRY_ICON_PRIMARY,
+						 pixbuf);
+	} else {
+		nsgtk_entry_set_icon_from_stock(entry,
+						GTK_ENTRY_ICON_PRIMARY,
+						NSGTK_STOCK_INFO);
 	}
 
 	return NSERROR_OK;
