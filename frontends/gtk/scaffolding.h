@@ -28,7 +28,6 @@ struct gui_window;
 struct gui_search_web_table;
 struct nsurl;
 
-extern struct gui_search_web_table *nsgtk_search_web_table;
 
 
 struct gtk_history_window {
@@ -98,11 +97,6 @@ GtkNotebook *nsgtk_scaffolding_notebook(struct nsgtk_scaffolding *g);
 GtkWidget *nsgtk_scaffolding_urlbar(struct nsgtk_scaffolding *g);
 
 /**
- * Get the gtk web search entry from a scaffold.
- */
-GtkWidget *nsgtk_scaffolding_websearch(struct nsgtk_scaffolding *g);
-
-/**
  * Get the gtk toolbar from a scaffold.
  */
 GtkToolbar *nsgtk_scaffolding_toolbar(struct nsgtk_scaffolding *g);
@@ -130,8 +124,6 @@ void nsgtk_scaffolding_reset_offset(struct nsgtk_scaffolding *g);
  */
 struct nsgtk_scaffolding *nsgtk_scaffolding_iterate(struct nsgtk_scaffolding *g);
 
-
-void nsgtk_scaffolding_update_websearch_ref(struct nsgtk_scaffolding *g);
 
 void nsgtk_scaffolding_toggle_search_bar_visibility(struct nsgtk_scaffolding *g);
 

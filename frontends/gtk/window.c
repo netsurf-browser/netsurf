@@ -655,7 +655,8 @@ static gboolean nsgtk_window_size_allocate_event(GtkWidget *widget,
 }
 
 
-/**  when the pane position is changed update the user option
+/**
+ * when the pane position is changed update the user option
  *
  * The slightly awkward implementation with the first allocation flag
  * is necessary because the initial window creation does not cause an
@@ -793,6 +794,7 @@ gui_window_create(struct browser_window *bw,
 		g_object_unref(tab_builder);
 		return NULL;
 	}
+
 
 	/* set a default favicon */
 	g_object_ref(favicon_pixbuf);
@@ -1196,8 +1198,10 @@ static void gui_window_set_pointer(struct gui_window *g,
 }
 
 
-static void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
-		const struct rect *clip)
+static void
+gui_window_place_caret(struct gui_window *g,
+		       int x, int y, int height,
+		       const struct rect *clip)
 {
 	nsgtk_redraw_caret(g);
 
@@ -1302,6 +1306,12 @@ static void gui_window_create_form_select_menu(struct gui_window *g,
 	nsgtk_menu_popup_at_pointer(GTK_MENU(select_menu), NULL);
 }
 
+
+/**
+ * GTK window UI callback when core needs a file selection gadget
+ *
+ * \param g The gui window on which the gadget has been requested
+ */
 static void
 gui_window_file_gadget_open(struct gui_window *g,
 			    struct hlcache_handle *hl,
@@ -1336,7 +1346,7 @@ gui_window_file_gadget_open(struct gui_window *g,
 
 
 /**
- * process miscellaneous window events
+ * GTK window UI callback to process miscellaneous events
  *
  * \param gw The window receiving the event.
  * \param event The event code.
@@ -1374,11 +1384,56 @@ gui_window_event(struct gui_window *gw, enum gui_window_event event)
 	return NSERROR_OK;
 }
 
+
+/**
+ * GTK window UI callback when core changes the current url
+ *
+ * \param gw The gui window on which the url has been set.
+ * \param url The new url.
+ */
 static nserror gui_window_set_url(struct gui_window *gw, nsurl *url)
 {
 	return nsgtk_toolbar_set_url(gw->toolbar, url);
 }
 
+
+/**
+ * GTK UI callback when search provider details are updated.
+ *
+ * \param name The providers name.
+ * \param bitmap The bitmap representing the provider.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+gui_search_web_provider_update(const char *name, struct bitmap *bitmap)
+{
+	struct gui_window *gw;
+	GdkPixbuf *pixbuf = NULL;
+
+	if (bitmap != NULL) {
+		pixbuf = nsgdk_pixbuf_get_from_surface(bitmap->surface, 16, 16);
+	}
+
+	for (gw = window_list; gw != NULL; gw = gw->next) {
+		nsgtk_toolbar_set_websearch_image(gw->toolbar, pixbuf);
+	}
+
+	return NSERROR_OK;
+}
+
+/**
+ * GTK frontend web search operation table
+ */
+static struct gui_search_web_table search_web_table = {
+	.provider_update = gui_search_web_provider_update,
+};
+
+struct gui_search_web_table *nsgtk_search_web_table = &search_web_table;
+
+
+/**
+ * GTK frontend browser window operation table
+ */
 static struct gui_window_table window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
@@ -1394,10 +1449,10 @@ static struct gui_window_table window_table = {
 	.place_caret = gui_window_place_caret,
 	.create_form_select_menu = gui_window_create_form_select_menu,
 	.file_gadget_open = gui_window_file_gadget_open,
+	.set_url = gui_window_set_url,
 
 	/* from scaffold */
 	.set_title = nsgtk_window_set_title,
-	.set_url = gui_window_set_url,
 };
 
 struct gui_window_table *nsgtk_window_table = &window_table;

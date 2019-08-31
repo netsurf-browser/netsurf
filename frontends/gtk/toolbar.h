@@ -70,6 +70,10 @@ nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active);
  */
 nserror nsgtk_toolbar_set_url(struct nsgtk_toolbar *tb, nsurl *url);
 
+/**
+ * set the websearch image
+ */
+nserror nsgtk_toolbar_set_websearch_image(struct nsgtk_toolbar *tb, GdkPixbuf *pixbuf);
 
 /**
  * activate the handler for a toolbar item
