@@ -196,6 +196,10 @@ struct nsgtk_theme {
 	GtkImage *searchimage[SEARCH_BUTTONS_COUNT];
 };
 
+/* forward declaration */
+void nsgtk_toolbar_connect_all(struct nsgtk_scaffolding *g);
+int nsgtk_toolbar_get_id_from_widget(GtkWidget *widget, struct nsgtk_scaffolding *g);
+
 
 /* define data plus and data minus handlers */
 #define TOOLBAR_ITEM(identifier, name, sensitivity, clicked)		\

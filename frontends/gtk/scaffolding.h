@@ -163,8 +163,6 @@ void nsgtk_scaffolding_set_sensitivity(struct nsgtk_scaffolding *g);
  */
 void nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g, gdouble x, gdouble y);
 
-gboolean nsgtk_window_url_changed(GtkWidget *, GdkEventKey *, gpointer);
-
 /* core acessors */
 /**
  * set the title in the window

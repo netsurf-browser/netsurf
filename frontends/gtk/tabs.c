@@ -318,28 +318,40 @@ void nsgtk_tab_options_changed(GtkNotebook *notebook)
 
 
 /* exported interface documented in gtk/tabs.h */
-void nsgtk_tab_init(struct nsgtk_scaffolding *gs)
+nserror nsgtk_notebook_create(GtkBuilder *builder, GtkNotebook **notebook_out)
 {
 	GtkNotebook *notebook;
 
-	notebook = nsgtk_scaffolding_notebook(gs);
+	notebook = GTK_NOTEBOOK(gtk_builder_get_object(builder, "notebook"));
 
 	nsgtk_tab_add_newtab(notebook);
 
-	g_signal_connect(notebook, "switch-page",
-			 G_CALLBACK(nsgtk_tab_switch_page), NULL);
-	g_signal_connect_after(notebook, "switch-page",
-			 G_CALLBACK(nsgtk_tab_switch_page_after), NULL);
-
-	g_signal_connect(notebook, "page-removed",
-			 G_CALLBACK(nsgtk_tab_visibility_update), NULL);
-	g_signal_connect(notebook, "page-added",
-			 G_CALLBACK(nsgtk_tab_visibility_update), NULL);
-	g_signal_connect(notebook, "page-reordered",
-			 G_CALLBACK(nsgtk_tab_page_reordered), NULL);
-
+	g_signal_connect(notebook,
+			 "switch-page",
+			 G_CALLBACK(nsgtk_tab_switch_page),
+			 NULL);
+	g_signal_connect_after(notebook,
+			       "switch-page",
+			       G_CALLBACK(nsgtk_tab_switch_page_after),
+			       NULL);
+	g_signal_connect(notebook,
+			 "page-removed",
+			 G_CALLBACK(nsgtk_tab_visibility_update),
+			 NULL);
+	g_signal_connect(notebook,
+			 "page-added",
+			 G_CALLBACK(nsgtk_tab_visibility_update),
+			 NULL);
+	g_signal_connect(notebook,
+			 "page-reordered",
+			 G_CALLBACK(nsgtk_tab_page_reordered),
+			 NULL);
 
 	nsgtk_tab_options_changed(notebook);
+
+	*notebook_out = notebook;
+
+	return NSERROR_OK;
 }
 
 /* exported interface documented in gtk/tabs.h */

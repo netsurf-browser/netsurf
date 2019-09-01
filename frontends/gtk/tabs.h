@@ -21,7 +21,17 @@
 
 struct gui_window;
 
-void nsgtk_tab_init(struct nsgtk_scaffolding *gs);
+/**
+ * create notebook
+ *
+ * creates a notebook for use inside a window, creates the special add
+ *   page(tab) and attaches all signals.
+ *
+ * \param builder the gtk builder object to create notbook from
+ * \param notebook_out reciveds the created notebook
+ * \return NSERROR_OK and notebook_out updated else error code
+ */
+nserror nsgtk_notebook_create(GtkBuilder *builder, GtkNotebook **notebook_out);
 
 /**
  * Add new tab to notebook.

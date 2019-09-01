@@ -17,67 +17,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <assert.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
 #include <gtk/gtk.h>
-#include <gdk-pixbuf/gdk-pixbuf.h>
 
 #include "utils/utils.h"
-#include "utils/dirent.h"
-#include "utils/messages.h"
-#include "utils/corestrings.h"
 #include "utils/log.h"
-#include "utils/nsoption.h"
-#include "utils/file.h"
 #include "utils/nsurl.h"
-#include "netsurf/content.h"
-#include "netsurf/keypress.h"
+#include "utils/messages.h"
+#include "utils/nsoption.h"
 #include "netsurf/browser_window.h"
-#include "netsurf/plotters.h"
 #include "desktop/browser_history.h"
 #include "desktop/hotlist.h"
-#include "desktop/print.h"
-#include "desktop/save_complete.h"
-#ifdef WITH_PDF_EXPORT
-#include "desktop/font_haru.h"
-#include "desktop/save_pdf.h"
-#endif
-#include "desktop/save_text.h"
-#include "desktop/searchweb.h"
 #include "desktop/search.h"
 
 #include "gtk/compat.h"
 #include "gtk/warn.h"
-#include "gtk/cookies.h"
-#include "gtk/completion.h"
-#include "gtk/preferences.h"
-#include "gtk/about.h"
-#include "gtk/viewsource.h"
-#include "gtk/bitmap.h"
-#include "gtk/gui.h"
-#include "gtk/global_history.h"
-#include "gtk/local_history.h"
-#include "gtk/hotlist.h"
-#include "gtk/download.h"
-#include "gtk/menu.h"
-#include "gtk/plotters.h"
-#include "gtk/print.h"
-#include "gtk/search.h"
-#include "gtk/throbber.h"
 #include "gtk/toolbar_items.h"
 #include "gtk/toolbar.h"
+#include "gtk/menu.h"
+#include "gtk/local_history.h"
+#include "gtk/download.h"
+#include "gtk/gui.h"
 #include "gtk/window.h"
-#include "gtk/gdk.h"
-#include "gtk/scaffolding.h"
+#include "gtk/completion.h"
 #include "gtk/tabs.h"
-#include "gtk/viewdata.h"
+#include "gtk/search.h"
 #include "gtk/resources.h"
-#include "gtk/layout_pango.h"
+#include "gtk/scaffolding.h"
 
 
 /**
@@ -131,7 +96,9 @@ struct nsgtk_scaffolding {
  */
 static struct nsgtk_scaffolding *scaf_current;
 
-/** global list for interface changes */
+/**
+ * global list for interface changes
+ */
 static struct nsgtk_scaffolding *scaf_list = NULL;
 
 /**
@@ -410,6 +377,7 @@ nsgtk_window_edit_menu_hidden(GtkWidget *widget,
 	return TRUE;
 }
 
+
 /**
  * gtk event handler for popup menu being hidden.
  *
@@ -417,40 +385,11 @@ nsgtk_window_edit_menu_hidden(GtkWidget *widget,
  * \param g scaffolding handle
  * \return TRUE to indicate event handled
  */
-static gboolean nsgtk_window_popup_menu_hidden(GtkWidget *widget,
-		struct nsgtk_scaffolding *g)
+static gboolean
+nsgtk_window_popup_menu_hidden(GtkWidget *widget, struct nsgtk_scaffolding *g)
 {
 	nsgtk_scaffolding_enable_edit_actions_sensitivity(g);
 	return TRUE;
-}
-
-
-/**
- * update handler for URL entry widget
- *
- * \param widget The widget receiving the delete event
- * \param event The event
- * \param data The context pointer passed when the connection was made.
- * \return TRUE to indicate signal handled.
- */
-gboolean
-nsgtk_window_url_changed(GtkWidget *widget,
-			 GdkEventKey *event,
-			 gpointer data)
-{
-	return nsgtk_completion_update(GTK_ENTRY(widget));
-}
-
-/* exported interface documented in gtk/scaffolding.h */
-nserror nsgtk_scaffolding_toolbar_context_menu(struct nsgtk_scaffolding *gs)
-{
-	/* set visibility for right-click popup menu */
-	popup_menu_hide(gs->menu_popup, true, false, true, false);
-	popup_menu_show(gs->menu_popup, false, false, false, true);
-
-	nsgtk_menu_popup_at_pointer(gs->menu_popup->popup_menu, NULL);
-
-	return NSERROR_OK;
 }
 
 
@@ -614,8 +553,6 @@ MENUHANDLER(paste, PASTE_BUTTON);
  * menu signal handler for activation on delete item
  */
 MENUHANDLER(delete, DELETE_BUTTON);
-
-
 
 /**
  * menu signal handler for activation on selectall item
@@ -1092,6 +1029,7 @@ nsgtk_new_scaffolding_popup(struct nsgtk_scaffolding *g, GtkAccelGroup *group)
 	return nmenu;
 }
 
+
 /**
  * Create and connect handlers to link popup menu.
  *
@@ -1139,14 +1077,6 @@ nsgtk_new_scaffolding_link_popup(struct nsgtk_scaffolding *g,
 	return nmenu;
 }
 
-/* exported interface documented in gtk/scaffolding.h */
-struct nsgtk_scaffolding *nsgtk_current_scaffolding(void)
-{
-	if (scaf_current == NULL) {
-		scaf_current = scaf_list;
-	}
-	return scaf_current;
-}
 
 /**
  * initialiase the menu signal handlers ready for connection
@@ -1274,6 +1204,49 @@ static void nsgtk_menu_set_sensitivity(struct nsgtk_scaffolding *g)
 }
 
 /**
+ * create and initialise menus
+ */
+nserror nsgtk_menus_create(struct nsgtk_scaffolding *gs)
+{
+	GtkMenuShell *menushell;
+	GtkAccelGroup *group;
+
+	menushell = GTK_MENU_SHELL(gtk_builder_get_object(gs->builder,
+							  "menubar"));
+
+	group = gtk_accel_group_new();
+
+	gtk_window_add_accel_group(gs->window, group);
+
+	gs->menu_bar = nsgtk_menu_bar_create(menushell, group);
+
+	/* toolbar URL bar menu bar search bar signal handlers */
+	g_signal_connect(gs->menu_bar->edit_submenu->edit,
+			 "show",
+			 G_CALLBACK(nsgtk_window_edit_menu_shown),
+			 gs);
+
+	g_signal_connect(gs->menu_bar->edit_submenu->edit,
+			 "hide",
+			 G_CALLBACK(nsgtk_window_edit_menu_hidden),
+			 gs);
+
+
+	/* create popup menu */
+	gs->menu_popup = nsgtk_new_scaffolding_popup(gs, group);
+
+	gs->link_menu = nsgtk_new_scaffolding_link_popup(gs, group);
+
+	/* set up the menu signal handlers */
+	nsgtk_menu_initialise(gs);
+	nsgtk_menu_connect_signals(gs);
+	nsgtk_menu_set_sensitivity(gs);
+
+	return NSERROR_OK;
+}
+
+
+/**
  * update search toolbar size and style
  */
 static nserror nsgtk_search_update(struct gtk_search *search)
@@ -1389,12 +1362,21 @@ static nserror nsgtk_search_connect_signals(struct nsgtk_scaffolding *gs)
 
 
 /* exported interface documented in gtk/scaffolding.h */
+struct nsgtk_scaffolding *nsgtk_current_scaffolding(void)
+{
+	if (scaf_current == NULL) {
+		scaf_current = scaf_list;
+	}
+	return scaf_current;
+}
+
+
+/* exported interface documented in gtk/scaffolding.h */
 void nsgtk_scaffolding_toolbars(struct nsgtk_scaffolding *g)
 {
   //	nsgtk_toolbar_update(g->toolbar);
 	nsgtk_search_update(g->search);
 }
-
 
 
 /* exported function documented in gtk/scaffolding.h */
@@ -1515,10 +1497,18 @@ struct nsgtk_scaffolding *nsgtk_scaffolding_iterate(struct nsgtk_scaffolding *g)
 	return g->next;
 }
 
+
 /* exported interface documented in gtk/scaffolding.h */
 void nsgtk_scaffolding_reset_offset(struct nsgtk_scaffolding *g)
 {
 	//g->offset = 0;
+}
+
+
+/* exported interface documented in gtk/scaffolding.h */
+struct gui_window *nsgtk_scaffolding_top_level(struct nsgtk_scaffolding *g)
+{
+	return g->top_level;
 }
 
 
@@ -1541,11 +1531,6 @@ void nsgtk_scaffolding_toggle_search_bar_visibility(struct nsgtk_scaffolding *g)
 	}
 }
 
-/* exported interface documented in gtk/scaffolding.h */
-struct gui_window *nsgtk_scaffolding_top_level(struct nsgtk_scaffolding *g)
-{
-	return g->top_level;
-}
 
 /* exported interface documented in gtk/scaffolding.h */
 void nsgtk_scaffolding_set_top_level(struct gui_window *gw)
@@ -1572,8 +1557,8 @@ void nsgtk_scaffolding_set_top_level(struct gui_window *gw)
 
 	/* Ensure the window's title bar is updated */
 	nsgtk_window_set_title(gw, browser_window_get_title(bw));
-
 }
+
 
 /* exported interface documented in scaffolding.h */
 void nsgtk_scaffolding_set_sensitivity(struct nsgtk_scaffolding *g)
@@ -1607,9 +1592,23 @@ void nsgtk_scaffolding_set_sensitivity(struct nsgtk_scaffolding *g)
 
 
 /* exported interface documented in gtk/scaffolding.h */
-void nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g,
-				    gdouble x,
-				    gdouble y)
+nserror nsgtk_scaffolding_toolbar_context_menu(struct nsgtk_scaffolding *gs)
+{
+	/* set visibility for right-click popup menu */
+	popup_menu_hide(gs->menu_popup, true, false, true, false);
+	popup_menu_show(gs->menu_popup, false, false, false, true);
+
+	nsgtk_menu_popup_at_pointer(gs->menu_popup->popup_menu, NULL);
+
+	return NSERROR_OK;
+}
+
+
+/* exported interface documented in gtk/scaffolding.h */
+void
+nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g,
+			       gdouble x,
+			       gdouble y)
 {
 	GtkMenu	*gtkmenu;
 	struct browser_window *bw;
@@ -1653,13 +1652,11 @@ void nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g,
 }
 
 
-
 /* exported interface documented in gtk/scaffolding.h */
 struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 {
 	nserror res;
 	struct nsgtk_scaffolding *gs;
-	GtkAccelGroup *group;
 
 	gs = calloc(1, sizeof(*gs));
 	if (gs == NULL) {
@@ -1679,25 +1676,13 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 	gtk_builder_connect_signals(gs->builder, NULL);
 
+	/* containing window setup */
 	gs->window = GTK_WINDOW(gtk_builder_get_object(gs->builder,
 						       "wndBrowser"));
-	gs->notebook = GTK_NOTEBOOK(gtk_builder_get_object(gs->builder,
-							   "notebook"));
 
-
-	res = nsgtk_search_create(gs->builder, &gs->search);
-	if (res != NSERROR_OK) {
-		free(gs);
-		return NULL;
-	}
-
-	group = gtk_accel_group_new();
-	gtk_window_add_accel_group(gs->window, group);
-
-	gs->menu_bar = nsgtk_menu_bar_create(GTK_MENU_SHELL(gtk_builder_get_object(gs->builder, "menubar")), group);
-
-	/* set this window's size and position to what's in the options, or
-	 * or some sensible default if they're not set yet.
+	/**
+	 * set this window's size and position to what's in the options, or
+	 *   some sensible default if they are not set yet.
 	 */
 	if (nsoption_int(window_width) > 0) {
 		gtk_window_move(gs->window,
@@ -1714,19 +1699,6 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 		gtk_window_set_default_size(gs->window, 1000, 700);
 	}
 
-
-	nsgtk_tab_init(gs);
-
-	g_signal_connect_after(gs->notebook,
-			       "page-added",
-			       G_CALLBACK(nsgtk_window_tabs_add),
-			       gs);
-	g_signal_connect_after(gs->notebook,
-			       "page-removed",
-			       G_CALLBACK(nsgtk_window_tabs_remove),
-			       gs);
-
-	/* connect main window signals to their handlers. */
 	g_signal_connect(gs->window,
 			 "delete-event",
 			 G_CALLBACK(scaffolding_window_delete_event),
@@ -1737,28 +1709,38 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 			 G_CALLBACK(scaffolding_window_destroy),
 			 gs);
 
-	/* toolbar URL bar menu bar search bar signal handlers */
-	g_signal_connect(gs->menu_bar->edit_submenu->edit,
-			 "show",
-			 G_CALLBACK(nsgtk_window_edit_menu_shown),
-			 gs);
 
-	g_signal_connect(gs->menu_bar->edit_submenu->edit,
-			 "hide",
-			 G_CALLBACK(nsgtk_window_edit_menu_hidden),
-			 gs);
+	/* notebook */
+	res = nsgtk_notebook_create(gs->builder, &gs->notebook);
+	if (res != NSERROR_OK) {
+		free(gs);
+		return NULL;
+	}
+
+	g_signal_connect_after(gs->notebook,
+			       "page-added",
+			       G_CALLBACK(nsgtk_window_tabs_add),
+			       gs);
+	g_signal_connect_after(gs->notebook,
+			       "page-removed",
+			       G_CALLBACK(nsgtk_window_tabs_remove),
+			       gs);
+
+
+	/* local page text search */
+	res = nsgtk_search_create(gs->builder, &gs->search);
+	if (res != NSERROR_OK) {
+		free(gs);
+		return NULL;
+	}
 
 	nsgtk_search_connect_signals(gs);
 
-	/* create popup menu */
-	gs->menu_popup = nsgtk_new_scaffolding_popup(gs, group);
-
-	gs->link_menu = nsgtk_new_scaffolding_link_popup(gs, group);
-
-	/* set up the menu signal handlers */
-	nsgtk_menu_initialise(gs);
-	nsgtk_menu_connect_signals(gs);
-	nsgtk_menu_set_sensitivity(gs);
+	res = nsgtk_menus_create(gs);
+	if (res != NSERROR_OK) {
+		free(gs);
+		return NULL;
+	}
 
 	/* attach to the list */
 	if (scaf_list) {
