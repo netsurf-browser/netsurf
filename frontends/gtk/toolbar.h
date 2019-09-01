@@ -23,7 +23,7 @@
  * control toolbar context
  */
 struct nsgtk_toolbar;
-
+struct nsgtk_scaffolding;
 
 /**
  * create a control toolbar
@@ -52,6 +52,7 @@ nserror nsgtk_toolbar_destroy(struct nsgtk_toolbar *toolbar);
  */
 nserror nsgtk_toolbar_update(struct nsgtk_toolbar *tb);
 
+
 /**
  * Start or stop a throbber in a toolbar
  *
@@ -60,6 +61,7 @@ nserror nsgtk_toolbar_update(struct nsgtk_toolbar *tb);
  * \return NSERROR_OK on success
  */
 nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active);
+
 
 /**
  * Update the toolbar url entry
@@ -70,16 +72,22 @@ nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active);
  */
 nserror nsgtk_toolbar_set_url(struct nsgtk_toolbar *tb, nsurl *url);
 
+
 /**
  * set the websearch image
+ *
+ * \param toolbar A toolbar returned from a creation
+ * \param pixbuf The pixel buffer data to use to set the web search icon
+ * \return NSERROR_OK on success
  */
 nserror nsgtk_toolbar_set_websearch_image(struct nsgtk_toolbar *tb, GdkPixbuf *pixbuf);
+
 
 /**
  * activate the handler for a toolbar item
  *
  * This allows the same action to be performed for menu enties as if
- * the user had clicked the toolbar widget.
+ *  the user had clicked the toolbar widget.
  *
  * \param toolbar A toolbar returned from a creation
  * \param itemid the id of the item to activate
@@ -87,14 +95,16 @@ nserror nsgtk_toolbar_set_websearch_image(struct nsgtk_toolbar *tb, GdkPixbuf *p
  */
 nserror nsgtk_toolbar_item_activate(struct nsgtk_toolbar *tb, nsgtk_toolbar_button itemid);
 
+
 /**
  * sets up the images for scaffolding.
  */
 void nsgtk_theme_implement(struct nsgtk_scaffolding *g);
 
+/**
+ * Initialise customization of toolbar entries
+ */
 void nsgtk_toolbar_customization_init(struct nsgtk_scaffolding *g);
-void nsgtk_toolbar_connect_all(struct nsgtk_scaffolding *g);
-int nsgtk_toolbar_get_id_from_widget(GtkWidget *widget, struct nsgtk_scaffolding *g);
 
 
 #endif
