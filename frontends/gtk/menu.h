@@ -38,45 +38,45 @@ struct nsgtk_file_menu {
 };
 
 struct nsgtk_edit_menu {
-	GtkMenuItem             *edit; /* Edit menu item on menubar */
-	GtkMenu			*edit_menu;
-	GtkWidget	*cut_menuitem;
-	GtkWidget	*copy_menuitem;
-	GtkWidget	*paste_menuitem;
-	GtkWidget	*delete_menuitem;
-	GtkWidget	*selectall_menuitem;
-	GtkWidget	*find_menuitem;
-	GtkWidget	*preferences_menuitem;
+	GtkMenuItem *edit; /* Edit menu item on menubar */
+	GtkMenu *edit_menu;
+	GtkWidget *cut_menuitem;
+	GtkWidget *copy_menuitem;
+	GtkWidget *paste_menuitem;
+	GtkWidget *delete_menuitem;
+	GtkWidget *selectall_menuitem;
+	GtkWidget *find_menuitem;
+	GtkWidget *preferences_menuitem;
 };
 
 struct nsgtk_view_menu {
-	GtkMenuItem             *view; /* View menu item on menubar */
-	GtkMenu			*view_menu; /* gtk menu attached to menu item */
-	GtkWidget		*stop_menuitem;
-	GtkWidget		*reload_menuitem;
-	GtkWidget		*scaleview_menuitem;
+	GtkMenuItem *view; /* View menu item on menubar */
+	GtkMenu *view_menu; /* gtk menu attached to menu item */
+
+	GtkWidget *scaleview_menuitem;
 	struct nsgtk_scaleview_submenu	*scaleview_submenu;
-	GtkWidget		*fullscreen_menuitem;
-	GtkWidget		*images_menuitem;
-	struct nsgtk_images_submenu	*images_submenu;
-	GtkWidget		*toolbars_menuitem;
-	struct nsgtk_toolbars_submenu	*toolbars_submenu;
-	GtkWidget		*tabs_menuitem;
-	struct nsgtk_tabs_submenu	*tabs_submenu;
-	GtkWidget		*savewindowsize_menuitem;
+	GtkWidget *fullscreen_menuitem;
+	GtkWidget *toolbars_menuitem;
+	struct nsgtk_toolbars_submenu *toolbars_submenu;
+	GtkWidget *tabs_menuitem;
+	struct nsgtk_tabs_submenu *tabs_submenu;
+	GtkWidget *savewindowsize_menuitem;
 };
 
 struct nsgtk_nav_menu {
-	GtkMenuItem             *nav; /* Nav menu item on menubar */
-	GtkMenu			*nav_menu;
-	GtkWidget	*back_menuitem;
-	GtkWidget	*forward_menuitem;
-	GtkWidget	*home_menuitem;
-	GtkWidget	*localhistory_menuitem;
-	GtkWidget	*globalhistory_menuitem;
-	GtkWidget	*addbookmarks_menuitem;
-	GtkWidget	*showbookmarks_menuitem;
-	GtkWidget	*openlocation_menuitem;
+	GtkMenuItem *nav; /* Nav menu item on menubar */
+	GtkMenu *nav_menu;
+
+	GtkWidget *back_menuitem;
+	GtkWidget *forward_menuitem;
+	GtkWidget *stop_menuitem;
+	GtkWidget *reload_menuitem;
+	GtkWidget *home_menuitem;
+	GtkWidget *localhistory_menuitem;
+	GtkWidget *globalhistory_menuitem;
+	GtkWidget *addbookmarks_menuitem;
+	GtkWidget *showbookmarks_menuitem;
+	GtkWidget *openlocation_menuitem;
 };
 
 struct nsgtk_tools_menu {
@@ -120,16 +120,10 @@ struct nsgtk_tabs_submenu {
 	GtkWidget *closetab_menuitem;
 };
 
-struct nsgtk_images_submenu {
-	GtkMenu			*images_menu;
-	GtkCheckMenuItem	*foregroundimages_menuitem;
-	GtkCheckMenuItem	*backgroundimages_menuitem;
-};
-
 struct nsgtk_toolbars_submenu {
-	GtkMenu			*toolbars_menu;
-	GtkCheckMenuItem	*menubar_menuitem;
-	GtkCheckMenuItem	*toolbar_menuitem;
+	GtkMenu *toolbars_menu;
+	GtkCheckMenuItem *menubar_menuitem;
+	GtkCheckMenuItem *toolbar_menuitem;
 };
 
 struct nsgtk_developer_submenu {
@@ -141,7 +135,9 @@ struct nsgtk_developer_submenu {
 	GtkWidget *debugdomtree_menuitem;
 };
 
-
+/**
+ * main menubar
+ */
 struct nsgtk_bar_submenu {
 	GtkMenuBar		*bar_menu;
 	struct nsgtk_file_menu	*file_submenu;
@@ -153,8 +149,8 @@ struct nsgtk_bar_submenu {
 	struct nsgtk_help_menu	*help_submenu;
 };
 
-struct nsgtk_popup_menu {
-	GtkMenu	*popup_menu;
+struct nsgtk_burger_menu {
+	GtkMenu	*burger_menu;
 
 	GtkWidget *file_menuitem;
 	struct nsgtk_file_menu *file_submenu;
@@ -176,22 +172,29 @@ struct nsgtk_popup_menu {
 
 	GtkWidget *help_menuitem;
 	struct nsgtk_help_menu *help_submenu;
+};
 
-	GtkWidget *first_separator;
+struct nsgtk_popup_menu {
+	GtkMenu	*popup_menu;
 
 	/* navigation entries */
 	GtkWidget *back_menuitem;
 	GtkWidget *forward_menuitem;
-
-	GtkWidget *third_separator;
-
-	/* view entries */
 	GtkWidget *stop_menuitem;
 	GtkWidget *reload_menuitem;
 
+	GtkWidget *first_separator;
+
+	/* edit entries */
 	GtkWidget *cut_menuitem;
 	GtkWidget *copy_menuitem;
 	GtkWidget *paste_menuitem;
+
+	GtkWidget *second_separator;
+
+	GtkWidget *tools_menuitem;
+	struct nsgtk_tools_menu *tools_submenu;
+
 	GtkWidget *customize_menuitem;
 
 };
@@ -208,18 +211,23 @@ struct nsgtk_link_menu {
 };
 
 /**
- * Create main menu bar.
+ * Create main menubar menu.
  */
 struct nsgtk_bar_submenu *nsgtk_menu_bar_create(GtkMenuShell *menubar, GtkAccelGroup *group);
 
 /**
- * Generate right click menu menu.
+ * Generate burger menu.
+ */
+struct nsgtk_burger_menu *nsgtk_burger_menu_create(GtkAccelGroup *group);
+
+/**
+ * Generate right click popup menu.
  *
  */
 struct nsgtk_popup_menu *nsgtk_popup_menu_create(GtkAccelGroup *group);
 
 /**
- * Generate context sensitive popup menu for link.
+ * Generate context sensitive link popup menu.
  *
  */
 struct nsgtk_link_menu *nsgtk_link_menu_create(GtkAccelGroup *group);

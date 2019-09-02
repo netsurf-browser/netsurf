@@ -51,6 +51,7 @@
 #define NSGTK_STOCK_STOP "process-stop"
 #define NSGTK_STOCK_OK "_OK"
 #define NSGTK_STOCK_OPEN "_Open"
+#define NSGTK_STOCK_OPEN_MENU "open-menu"
 #else
 #define NSGTK_STOCK_ADD GTK_STOCK_ADD
 #define NSGTK_STOCK_CANCEL GTK_STOCK_CANCEL
@@ -67,6 +68,7 @@
 #define NSGTK_STOCK_STOP GTK_STOCK_STOP
 #define NSGTK_STOCK_OK GTK_STOCK_OK
 #define NSGTK_STOCK_OPEN GTK_STOCK_OPEN
+#define NSGTK_STOCK_OPEN_MENU GTK_STOCK_JUSTIFY_FILL
 #endif
 
 /* widget alignment only available since 3.0 */

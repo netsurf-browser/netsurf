@@ -283,6 +283,7 @@ nsgtk_theme_image_default(nsgtk_toolbar_button tbbutton,
 	BUTTON_IMAGE(VIEWSOURCE, "gtk-index");
 	BUTTON_IMAGE(CONTENTS, "gtk-help");
 	BUTTON_IMAGE(ABOUT, "gtk-about");
+	BUTTON_IMAGE(OPENMENU, NSGTK_STOCK_OPEN_MENU);
 #undef BUTTON_IMAGE
 
 	case HISTORY_BUTTON:
@@ -796,6 +797,7 @@ make_toolbar_item(nsgtk_toolbar_button i, struct nsgtk_theme *theme)
 	MAKE_MENUBUTTON(PREVTAB, gtkPrevTab)
 	MAKE_MENUBUTTON(GUIDE, gtkGuide)
 	MAKE_MENUBUTTON(INFO, gtkUserInformation)
+	MAKE_MENUBUTTON(OPENMENU, gtkOpenMenu)
 #undef MAKE_MENUBUTTON
 
 	default:
@@ -3227,14 +3229,35 @@ info_button_clicked_cb(GtkWidget *widget, gpointer data)
  * \param data The toolbar context passed when the signal was connected
  * \return TRUE
  */
-static gboolean
-about_button_clicked_cb(GtkWidget *widget, gpointer data)
+static gboolean about_button_clicked_cb(GtkWidget *widget, gpointer data)
 {
 	GtkWindow *parent; /* gtk window widget is in */
 
 	parent = GTK_WINDOW(gtk_widget_get_ancestor(widget, GTK_TYPE_WINDOW));
 
 	nsgtk_about_dialog_init(parent);
+	return TRUE;
+}
+
+/**
+ * handler for openmenu tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE to indicate signal handled.
+ */
+static gboolean openmenu_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct gui_window *gw;
+	struct nsgtk_scaffolding *gs;
+
+	gw = tb->get_ctx; /** \todo stop assuming the context is a gui window */
+
+	gs = nsgtk_get_scaffold(gw);
+
+	nsgtk_scaffolding_burger_menu(gs);
+
 	return TRUE;
 }
 

@@ -50,7 +50,7 @@
  */
 struct nsgtk_menu {
 	GtkWidget *main; /* main menu entry */
-	GtkWidget *rclick; /* right click menu */
+	GtkWidget *burger; /* right click menu */
 	GtkWidget *popup; /* popup menu entry */
 	void *mhandler; /* menu item handler */
 	bool sensitivity; /* menu item is sensitive */
@@ -81,8 +81,11 @@ struct nsgtk_scaffolding {
 	/** menu bar hierarchy */
 	struct nsgtk_bar_submenu *menu_bar;
 
+	/** burger menu hierarchy */
+	struct nsgtk_burger_menu *burger_menu;
+
 	/** right click popup menu hierarchy */
-	struct nsgtk_popup_menu *menu_popup;
+	struct nsgtk_popup_menu *popup_menu;
 
 	/** link popup menu */
 	struct nsgtk_link_menu *link_menu;
@@ -112,39 +115,28 @@ static struct browser_window_features current_menu_features;
  * Helper to hide popup menu entries by grouping.
  *
  * \param menu The popup menu to modify.
- * \param submenu flag to indicate if submenus should be hidden.
  * \param nav flag to indicate if navigation entries should be hidden.
  * \param cnp flag to indicate if cut and paste entries should be hidden.
  * \param custom flag to indicate if menu customisation is hidden.
  */
 static void
-popup_menu_hide(struct nsgtk_popup_menu *menu,
-		bool submenu,
-		bool nav,
-		bool cnp,
-		bool custom)
+popup_menu_hide(struct nsgtk_popup_menu *menu, bool nav, bool cnp, bool custom)
 {
-	if (submenu) {
-		gtk_widget_hide(GTK_WIDGET(menu->file_menuitem));
-		gtk_widget_hide(GTK_WIDGET(menu->edit_menuitem));
-		gtk_widget_hide(GTK_WIDGET(menu->view_menuitem));
-		gtk_widget_hide(GTK_WIDGET(menu->nav_menuitem));
-		gtk_widget_hide(GTK_WIDGET(menu->help_menuitem));
-
-		gtk_widget_hide(menu->first_separator);
-	}
-
 	if (nav) {
 		gtk_widget_hide(GTK_WIDGET(menu->back_menuitem));
 		gtk_widget_hide(GTK_WIDGET(menu->forward_menuitem));
 		gtk_widget_hide(GTK_WIDGET(menu->stop_menuitem));
 		gtk_widget_hide(GTK_WIDGET(menu->reload_menuitem));
+
+		gtk_widget_hide(menu->first_separator);
 	}
 
 	if (cnp) {
 		gtk_widget_hide(GTK_WIDGET(menu->cut_menuitem));
 		gtk_widget_hide(GTK_WIDGET(menu->copy_menuitem));
 		gtk_widget_hide(GTK_WIDGET(menu->paste_menuitem));
+
+		gtk_widget_hide(menu->second_separator);
 	}
 
 	if (custom) {
@@ -158,39 +150,28 @@ popup_menu_hide(struct nsgtk_popup_menu *menu,
  * Helper to show popup menu entries by grouping.
  *
  * \param menu The popup menu to modify.
- * \param submenu flag to indicate if submenus should be visible.
  * \param nav flag to indicate if navigation entries should be visible.
  * \param cnp flag to indicate if cut and paste entries should be visible.
  * \param custom flag to indicate if menu customisation is visible.
  */
 static void
-popup_menu_show(struct nsgtk_popup_menu *menu,
-		bool submenu,
-		bool nav,
-		bool cnp,
-		bool custom)
+popup_menu_show(struct nsgtk_popup_menu *menu, bool nav, bool cnp, bool custom)
 {
-	if (submenu) {
-		gtk_widget_show(GTK_WIDGET(menu->file_menuitem));
-		gtk_widget_show(GTK_WIDGET(menu->edit_menuitem));
-		gtk_widget_show(GTK_WIDGET(menu->view_menuitem));
-		gtk_widget_show(GTK_WIDGET(menu->nav_menuitem));
-		gtk_widget_show(GTK_WIDGET(menu->help_menuitem));
-
-		gtk_widget_show(menu->first_separator);
-	}
-
 	if (nav) {
 		gtk_widget_show(GTK_WIDGET(menu->back_menuitem));
 		gtk_widget_show(GTK_WIDGET(menu->forward_menuitem));
 		gtk_widget_show(GTK_WIDGET(menu->stop_menuitem));
 		gtk_widget_show(GTK_WIDGET(menu->reload_menuitem));
+
+		gtk_widget_show(menu->first_separator);
 	}
 
 	if (cnp) {
 		gtk_widget_show(GTK_WIDGET(menu->cut_menuitem));
 		gtk_widget_show(GTK_WIDGET(menu->copy_menuitem));
 		gtk_widget_show(GTK_WIDGET(menu->paste_menuitem));
+
+		gtk_widget_show(menu->second_separator);
 	}
 
 	if (custom) {
@@ -319,6 +300,7 @@ nsgtk_scaffolding_update_edit_actions_sensitivity(struct nsgtk_scaffolding *g)
 	}
 
 	nsgtk_scaffolding_set_sensitivity(g);
+
 	return ((g->menus[COPY_BUTTON].sensitivity) |
 		(g->menus[CUT_BUTTON].sensitivity) |
 		(g->menus[PASTE_BUTTON].sensitivity));
@@ -340,7 +322,7 @@ nsgtk_scaffolding_enable_edit_actions_sensitivity(struct nsgtk_scaffolding *g)
 	g->menus[CUT_BUTTON].sensitivity = true;
 	nsgtk_scaffolding_set_sensitivity(g);
 
-	popup_menu_show(g->menu_popup, false, false, true, false);
+	popup_menu_show(g->popup_menu, false, true, false);
 }
 
 /* signal handling functions for the toolbar, URL bar, and menu bar */
@@ -415,7 +397,7 @@ nsgtk_window_tabs_add(GtkNotebook *notebook,
 		     "visible",
 		     visible,
 		     NULL);
-	g_object_set(g->menu_popup->view_submenu->tabs_menuitem,
+	g_object_set(g->burger_menu->view_submenu->tabs_menuitem,
 		     "visible",
 		     visible,
 		     NULL);
@@ -459,8 +441,10 @@ nsgtk_window_tabs_remove(GtkNotebook *notebook,
 	}
 
 	gboolean visible = gtk_notebook_get_show_tabs(gs->notebook);
-	g_object_set(gs->menu_bar->view_submenu->tabs_menuitem, "visible", visible, NULL);
-	g_object_set(gs->menu_popup->view_submenu->tabs_menuitem, "visible", visible, NULL);
+	g_object_set(gs->menu_bar->view_submenu->tabs_menuitem,
+		     "visible", visible, NULL);
+	g_object_set(gs->burger_menu->view_submenu->tabs_menuitem,
+		     "visible", visible, NULL);
 
 	gs->menus[NEXTTAB_BUTTON].sensitivity = visible;
 	gs->menus[PREVTAB_BUTTON].sensitivity = visible;
@@ -827,45 +811,39 @@ static gboolean nsgtk_on_find_activate_menu(GtkMenuItem *widget, gpointer data)
 static gboolean
 nsgtk_on_menubar_activate_menu(GtkMenuItem *widget, gpointer data)
 {
-	GtkWidget *w;
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
+	struct nsgtk_scaffolding *gs = (struct nsgtk_scaffolding *)data;
+	GtkCheckMenuItem *bmcmi; /* burger menu check */
+	GtkCheckMenuItem *mbcmi; /* menu bar check*/
 
-	/* if the menubar is not being shown the popup menu shows the
-	 * menubar entries instead.
-	 */
+	bmcmi = GTK_CHECK_MENU_ITEM(gs->burger_menu->view_submenu->toolbars_submenu->menubar_menuitem);
+	mbcmi = GTK_CHECK_MENU_ITEM(gs->menu_bar->view_submenu->toolbars_submenu->menubar_menuitem);
+
+	/* ensure menubar and burger menu checkboxes are both updated */
 	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(widget))) {
-		/* need to synchronise menus as gtk grumbles when one menu
-		 * is attached to both headers */
-		w = GTK_WIDGET(g->menu_popup->view_submenu->toolbars_submenu->menubar_menuitem);
-		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w))
-				== FALSE)
-			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
-					TRUE);
+		if (gtk_check_menu_item_get_active(bmcmi) == FALSE) {
+			gtk_check_menu_item_set_active(bmcmi, TRUE);
+		}
 
-		w = GTK_WIDGET(g->menu_bar->view_submenu->toolbars_submenu->menubar_menuitem);
-		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w))
-				== FALSE)
-			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
-					TRUE);
+		if (gtk_check_menu_item_get_active(mbcmi) == FALSE) {
+			gtk_check_menu_item_set_active(mbcmi, TRUE);
+		}
 
-		gtk_widget_show(GTK_WIDGET(g->menu_bar->bar_menu));
+		gtk_widget_show(GTK_WIDGET(gs->menu_bar->bar_menu));
 
-		popup_menu_show(g->menu_popup, false, true, true, true);
-		popup_menu_hide(g->menu_popup, true, false, false, false);
+		popup_menu_show(gs->popup_menu, true, true, true);
+		popup_menu_hide(gs->popup_menu, false, false, false);
 	} else {
-		w = GTK_WIDGET(g->menu_popup->view_submenu->toolbars_submenu->menubar_menuitem);
-		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)))
-			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
-					FALSE);
+		if (gtk_check_menu_item_get_active(bmcmi) == TRUE) {
+			gtk_check_menu_item_set_active(bmcmi, FALSE);
+		}
 
-		w = GTK_WIDGET(g->menu_bar->view_submenu->toolbars_submenu->menubar_menuitem);
-		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)))
-			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
-					FALSE);
+		if (gtk_check_menu_item_get_active(mbcmi) == TRUE) {
+			gtk_check_menu_item_set_active(mbcmi, FALSE);
+		}
 
-		gtk_widget_hide(GTK_WIDGET(g->menu_bar->bar_menu));
+		gtk_widget_hide(GTK_WIDGET(gs->menu_bar->bar_menu));
 
-		popup_menu_show(g->menu_popup, true, true, true, true);
+		popup_menu_show(gs->popup_menu, true, true, true);
 
 	}
 	return TRUE;
@@ -875,34 +853,35 @@ nsgtk_on_menubar_activate_menu(GtkMenuItem *widget, gpointer data)
 static gboolean
 nsgtk_on_toolbar_activate_menu(GtkMenuItem *widget, gpointer data)
 {
-	GtkWidget *w;
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
+	struct nsgtk_scaffolding *gs = (struct nsgtk_scaffolding *)data;
+	GtkCheckMenuItem *bmcmi; /* burger menu check */
+	GtkCheckMenuItem *mbcmi; /* menu bar check */
 
+	bmcmi = GTK_CHECK_MENU_ITEM(gs->burger_menu->view_submenu->toolbars_submenu->toolbar_menuitem);
+	mbcmi = GTK_CHECK_MENU_ITEM(gs->menu_bar->view_submenu->toolbars_submenu->toolbar_menuitem);
+
+	/* ensure menubar and burger menu checkboxes are both updated */
 	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(widget))) {
-		w = GTK_WIDGET(g->menu_popup->view_submenu->toolbars_submenu->toolbar_menuitem);
-		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w))
-				== FALSE)
-			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
-					TRUE);
+		if (gtk_check_menu_item_get_active(bmcmi) == FALSE) {
+			gtk_check_menu_item_set_active(bmcmi, TRUE);
+		}
 
-		w = GTK_WIDGET(g->menu_bar->view_submenu->toolbars_submenu->toolbar_menuitem);
-		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w))
-				== FALSE)
-			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
-					TRUE);
+		if (gtk_check_menu_item_get_active(mbcmi) == FALSE) {
+			gtk_check_menu_item_set_active(mbcmi, TRUE);
+		}
+
 		//gtk_widget_show(GTK_WIDGET(g->tool_bar));
 	} else {
-		w = GTK_WIDGET(g->menu_popup->view_submenu->toolbars_submenu->toolbar_menuitem);
-		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)))
-			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
-					FALSE);
-		w = GTK_WIDGET(g->menu_bar->view_submenu->toolbars_submenu->toolbar_menuitem);
-		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)))
-			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
-					FALSE);
+		if (gtk_check_menu_item_get_active(bmcmi) == TRUE) {
+			gtk_check_menu_item_set_active(bmcmi, FALSE);
+		}
+
+		if (gtk_check_menu_item_get_active(mbcmi) == TRUE) {
+			gtk_check_menu_item_set_active(mbcmi, FALSE);
+		}
+
 		//gtk_widget_hide(GTK_WIDGET(g->tool_bar));
 	}
-
 	return TRUE;
 }
 
@@ -957,8 +936,8 @@ static void nsgtk_menu_connect_signals(struct nsgtk_scaffolding *g)
 					 G_CALLBACK(g->menus[idx].mhandler),
 					 g);
 		}
-		if (g->menus[idx].rclick != NULL) {
-			g_signal_connect(g->menus[idx].rclick,
+		if (g->menus[idx].burger != NULL) {
+			g_signal_connect(g->menus[idx].burger,
 					 "activate",
 					 G_CALLBACK(g->menus[idx].mhandler),
 					 g);
@@ -970,15 +949,50 @@ static void nsgtk_menu_connect_signals(struct nsgtk_scaffolding *g)
 					 g);
 		}
 	}
-#define CONNECT_CHECK(q)\
-	g_signal_connect(g->menu_bar->view_submenu->toolbars_submenu->q##_menuitem, "toggled", G_CALLBACK(nsgtk_on_##q##_activate_menu), g);\
-	g_signal_connect(g->menu_popup->view_submenu->toolbars_submenu->q##_menuitem, "toggled", G_CALLBACK(nsgtk_on_##q##_activate_menu), g)
-	CONNECT_CHECK(menubar);
-	CONNECT_CHECK(toolbar);
-#undef CONNECT_CHECK
 
+	/*
+	 * attach signal handlers for menubar and toolbar visibility toggling
+	 */
+	g_signal_connect(g->menu_bar->view_submenu->toolbars_submenu->menubar_menuitem,
+			 "toggled",
+			 G_CALLBACK(nsgtk_on_menubar_activate_menu),
+			 g);
+	g_signal_connect(g->burger_menu->view_submenu->toolbars_submenu->menubar_menuitem,
+			 "toggled",
+			 G_CALLBACK(nsgtk_on_menubar_activate_menu),
+			 g);
+
+	g_signal_connect(g->menu_bar->view_submenu->toolbars_submenu->toolbar_menuitem,
+			 "toggled",
+			 G_CALLBACK(nsgtk_on_toolbar_activate_menu),
+			 g);
+	g_signal_connect(g->burger_menu->view_submenu->toolbars_submenu->toolbar_menuitem,
+			 "toggled",
+			 G_CALLBACK(nsgtk_on_toolbar_activate_menu),
+			 g);
 }
 
+
+/**
+ * Create and connect handlers to burger menu.
+ *
+ * \param g scaffolding to attach popup menu to.
+ * \param group The accelerator group to use for the popup.
+ * \return menu structure on success or NULL on error.
+ */
+static struct nsgtk_burger_menu *
+create_scaffolding_burger_menu(struct nsgtk_scaffolding *gs,
+			       GtkAccelGroup *group)
+{
+	struct nsgtk_burger_menu *nmenu;
+
+	nmenu = nsgtk_burger_menu_create(group);
+
+	if (nmenu == NULL) {
+		return NULL;
+	}
+	return nmenu;
+}
 
 /**
  * Create and connect handlers to popup menu.
@@ -988,7 +1002,7 @@ static void nsgtk_menu_connect_signals(struct nsgtk_scaffolding *g)
  * \return menu structure on success or NULL on error.
  */
 static struct nsgtk_popup_menu *
-nsgtk_new_scaffolding_popup(struct nsgtk_scaffolding *g, GtkAccelGroup *group)
+create_scaffolding_popup_menu(struct nsgtk_scaffolding *gs, GtkAccelGroup *group)
 {
 	struct nsgtk_popup_menu *nmenu;
 
@@ -1001,30 +1015,15 @@ nsgtk_new_scaffolding_popup(struct nsgtk_scaffolding *g, GtkAccelGroup *group)
 	g_signal_connect(nmenu->popup_menu,
 			 "hide",
 			 G_CALLBACK(nsgtk_window_popup_menu_hidden),
-			 g);
-
-	g_signal_connect(nmenu->cut_menuitem,
-			 "activate",
-			 G_CALLBACK(nsgtk_on_cut_activate_menu),
-			 g);
-
-	g_signal_connect(nmenu->copy_menuitem,
-			 "activate",
-			 G_CALLBACK(nsgtk_on_copy_activate_menu),
-			 g);
-
-	g_signal_connect(nmenu->paste_menuitem,
-			 "activate",
-			 G_CALLBACK(nsgtk_on_paste_activate_menu),
-			 g);
+			 gs);
 
 	g_signal_connect(nmenu->customize_menuitem,
 			 "activate",
 			 G_CALLBACK(nsgtk_on_customize_activate_menu),
-			 g);
+			 gs);
 
 	/* set initial popup menu visibility */
-	popup_menu_hide(nmenu, true, false, false, true);
+	popup_menu_hide(nmenu, false, false, true);
 
 	return nmenu;
 }
@@ -1038,8 +1037,7 @@ nsgtk_new_scaffolding_popup(struct nsgtk_scaffolding *g, GtkAccelGroup *group)
  * \return true on success or false on error.
  */
 static struct nsgtk_link_menu *
-nsgtk_new_scaffolding_link_popup(struct nsgtk_scaffolding *g,
-				 GtkAccelGroup *group)
+create_scaffolding_link_menu(struct nsgtk_scaffolding *g, GtkAccelGroup *group)
 {
 	struct nsgtk_link_menu *nmenu;
 
@@ -1088,20 +1086,39 @@ static nserror nsgtk_menu_initialise(struct nsgtk_scaffolding *g)
 #include "gtk/toolbar_items.h"
 #undef TOOLBAR_ITEM
 
+	/* items on menubar, burger */
 #define ITEM_MAIN(p, q, r)						\
-	g->menus[p##_BUTTON].main = g->menu_bar->q->r##_menuitem;\
-	g->menus[p##_BUTTON].rclick = g->menu_popup->q->r##_menuitem;\
-	g->menus[p##_BUTTON].mhandler = nsgtk_on_##r##_activate_menu;
+	g->menus[p##_BUTTON].mhandler = nsgtk_on_##r##_activate_menu;	\
+	g->menus[p##_BUTTON].main = g->menu_bar->q->r##_menuitem;	\
+	g->menus[p##_BUTTON].burger = g->burger_menu->q->r##_menuitem
 
-#define ITEM_SUB(p, q, r, s)\
-	g->menus[p##_BUTTON].main =\
-			g->menu_bar->q->r##_submenu->s##_menuitem;\
-	g->menus[p##_BUTTON].rclick =\
-			g->menu_popup->q->r##_submenu->s##_menuitem;\
-	g->menus[p##_BUTTON].mhandler =	nsgtk_on_##s##_activate_menu;
+	/* submenu items on menubar, burger */
+#define ITEM_SUB(p, q, r, s)					      \
+	g->menus[p##_BUTTON].mhandler =	nsgtk_on_##s##_activate_menu; \
+	g->menus[p##_BUTTON].main = g->menu_bar->q->r##_submenu->s##_menuitem;\
+	g->menus[p##_BUTTON].burger = g->burger_menu->q->r##_submenu->s##_menuitem
 
-#define ITEM_POP(p, q) \
-	g->menus[p##_BUTTON].popup = g->menu_popup->q##_menuitem
+	/* items on menubar, burger and context popup */
+#define ITEM_POP(p, q, r)						\
+	g->menus[p##_BUTTON].mhandler = nsgtk_on_##r##_activate_menu;	\
+	g->menus[p##_BUTTON].main = g->menu_bar->q->r##_menuitem;	\
+	g->menus[p##_BUTTON].burger = g->burger_menu->q->r##_menuitem;	\
+	g->menus[p##_BUTTON].popup = g->popup_menu->r##_menuitem
+
+	/* items on menubar, burger and context popup */
+#define ITEM_MAINPOP(p, q, r)						\
+	g->menus[p##_BUTTON].mhandler = nsgtk_on_##r##_activate_menu;	\
+	g->menus[p##_BUTTON].main = g->menu_bar->q->r##_menuitem;	\
+	g->menus[p##_BUTTON].burger = g->burger_menu->q->r##_menuitem;	\
+	g->menus[p##_BUTTON].popup = g->popup_menu->q->r##_menuitem
+
+	/* sub submenu items on menubar, burger and context popup */
+#define ITEM_SUBPOP(p, q, r, s)						\
+	g->menus[p##_BUTTON].mhandler =	nsgtk_on_##s##_activate_menu;	\
+	g->menus[p##_BUTTON].main = g->menu_bar->q->r##_submenu->s##_menuitem;\
+	g->menus[p##_BUTTON].burger = g->burger_menu->q->r##_submenu->s##_menuitem; \
+	g->menus[p##_BUTTON].popup = g->popup_menu->q->r##_submenu->s##_menuitem
+
 
 	/* file menu */
 	ITEM_MAIN(NEWWINDOW, file_submenu, newwindow);
@@ -1117,17 +1134,15 @@ static nserror nsgtk_menu_initialise(struct nsgtk_scaffolding *g)
 	ITEM_SUB(PDF, file_submenu, export, pdf);
 
 	/* edit menu */
-	ITEM_MAIN(CUT, edit_submenu, cut);
-	ITEM_MAIN(COPY, edit_submenu, copy);
-	ITEM_MAIN(PASTE, edit_submenu, paste);
+	ITEM_POP(CUT, edit_submenu, cut);
+	ITEM_POP(COPY, edit_submenu, copy);
+	ITEM_POP(PASTE, edit_submenu, paste);
 	ITEM_MAIN(DELETE, edit_submenu, delete);
 	ITEM_MAIN(SELECTALL, edit_submenu, selectall);
 	ITEM_MAIN(FIND, edit_submenu, find);
 	ITEM_MAIN(PREFERENCES, edit_submenu, preferences);
 
 	/* view menu */
-	ITEM_MAIN(STOP, view_submenu, stop);
-	ITEM_MAIN(RELOAD, view_submenu, reload);
 	ITEM_MAIN(FULLSCREEN, view_submenu, fullscreen);
 	ITEM_MAIN(SAVEWINDOWSIZE, view_submenu, savewindowsize);
 	/* view - scale submenu */
@@ -1140,8 +1155,10 @@ static nserror nsgtk_menu_initialise(struct nsgtk_scaffolding *g)
 	ITEM_SUB(CLOSETAB, view_submenu, tabs, closetab);
 
 	/* navigation menu */
-	ITEM_MAIN(BACK, nav_submenu, back);
-	ITEM_MAIN(FORWARD, nav_submenu, forward);
+	ITEM_POP(BACK, nav_submenu, back);
+	ITEM_POP(FORWARD, nav_submenu, forward);
+	ITEM_POP(STOP, nav_submenu, stop);
+	ITEM_POP(RELOAD, nav_submenu, reload);
 	ITEM_MAIN(HOME, nav_submenu, home);
 	ITEM_MAIN(LOCALHISTORY, nav_submenu, localhistory);
 	ITEM_MAIN(GLOBALHISTORY, nav_submenu, globalhistory);
@@ -1150,13 +1167,13 @@ static nserror nsgtk_menu_initialise(struct nsgtk_scaffolding *g)
 	ITEM_MAIN(OPENLOCATION, nav_submenu, openlocation);
 
 	/* tools menu */
-	ITEM_MAIN(DOWNLOADS, tools_submenu, downloads);
-	ITEM_MAIN(SHOWCOOKIES, tools_submenu, showcookies);
+	ITEM_MAINPOP(DOWNLOADS, tools_submenu, downloads);
+	ITEM_MAINPOP(SHOWCOOKIES, tools_submenu, showcookies);
 	/* tools > developer submenu */
-	ITEM_SUB(VIEWSOURCE, tools_submenu, developer, viewsource);
-	ITEM_SUB(TOGGLEDEBUGGING, tools_submenu, developer, toggledebugging);
-	ITEM_SUB(SAVEBOXTREE, tools_submenu, developer, debugboxtree);
-	ITEM_SUB(SAVEDOMTREE, tools_submenu, developer, debugdomtree);
+	ITEM_SUBPOP(VIEWSOURCE, tools_submenu, developer, viewsource);
+	ITEM_SUBPOP(TOGGLEDEBUGGING, tools_submenu, developer, toggledebugging);
+	ITEM_SUBPOP(SAVEBOXTREE, tools_submenu, developer, debugboxtree);
+	ITEM_SUBPOP(SAVEDOMTREE, tools_submenu, developer, debugdomtree);
 
 	/* help menu */
 	ITEM_MAIN(CONTENTS, help_submenu, contents);
@@ -1164,17 +1181,12 @@ static nserror nsgtk_menu_initialise(struct nsgtk_scaffolding *g)
 	ITEM_MAIN(INFO, help_submenu, info);
 	ITEM_MAIN(ABOUT, help_submenu, about);
 
-	/* popup menu */
-	ITEM_POP(STOP, stop);
-	ITEM_POP(RELOAD, reload);
-	ITEM_POP(BACK, back);
-	ITEM_POP(FORWARD, forward);
-
 
 #undef ITEM_MAIN
 #undef ITEM_SUB
-#undef ITEM_BUTTON
 #undef ITEM_POP
+#undef ITEM_MAINPOP
+#undef ITEM_SUBPOP
 
 	return NSERROR_OK;
 }
@@ -1189,9 +1201,9 @@ static void nsgtk_menu_set_sensitivity(struct nsgtk_scaffolding *g)
 					g->menus[i].main),
 					g->menus[i].sensitivity);
 		}
-		if (g->menus[i].rclick != NULL) {
+		if (g->menus[i].burger != NULL) {
 			gtk_widget_set_sensitive(GTK_WIDGET(
-					g->menus[i].rclick),
+					g->menus[i].burger),
 					g->menus[i].sensitivity);
 		}
 		if (g->menus[i].popup != NULL) {
@@ -1200,13 +1212,29 @@ static void nsgtk_menu_set_sensitivity(struct nsgtk_scaffolding *g)
 					g->menus[i].sensitivity);
 		}
 	}
-	gtk_widget_set_sensitive(GTK_WIDGET(g->menu_bar->view_submenu->images_menuitem), FALSE);
 }
 
 /**
  * create and initialise menus
+ *
+ * There are four menus held by the scaffolding:
+ *
+ *  1. Main menubar menu.
+ *     This can be hidden which causes the right click popup context menu
+ *       to use the burger menu.
+ *  2. Burger menu.
+ *     This can be opened from a burger icon on the toolbar.
+ *  3. popup context menu.
+ *     This is opened by right mouse clicking on the toolbar or browser area
+ *  4. link context menu
+ *     Opened like the other popup menu when the mouse is over a link in the
+ *        browser area
+ *
+ * The cut, copy, paste, delete and back, forwards, stop, reload groups of
+ *   menu entries are context sensitive and must be updated as appropriate
+ *   when a menu is opened which contains those groups.
  */
-nserror nsgtk_menus_create(struct nsgtk_scaffolding *gs)
+static nserror nsgtk_menus_create(struct nsgtk_scaffolding *gs)
 {
 	GtkMenuShell *menushell;
 	GtkAccelGroup *group;
@@ -1232,10 +1260,11 @@ nserror nsgtk_menus_create(struct nsgtk_scaffolding *gs)
 			 gs);
 
 
-	/* create popup menu */
-	gs->menu_popup = nsgtk_new_scaffolding_popup(gs, group);
+	gs->burger_menu = create_scaffolding_burger_menu(gs, group);
 
-	gs->link_menu = nsgtk_new_scaffolding_link_popup(gs, group);
+	gs->popup_menu = create_scaffolding_popup_menu(gs, group);
+
+	gs->link_menu = create_scaffolding_link_menu(gs, group);
 
 	/* set up the menu signal handlers */
 	nsgtk_menu_initialise(gs);
@@ -1569,8 +1598,8 @@ void nsgtk_scaffolding_set_sensitivity(struct nsgtk_scaffolding *g)
 	if (g->menus[i].main != NULL)					\
 		gtk_widget_set_sensitive(GTK_WIDGET(g->menus[i].main),	\
 					 g->menus[i].sensitivity);	\
-	if (g->menus[i].rclick != NULL)					\
-		gtk_widget_set_sensitive(GTK_WIDGET(g->menus[i].rclick), \
+	if (g->menus[i].burger != NULL)					\
+		gtk_widget_set_sensitive(GTK_WIDGET(g->menus[i].burger), \
 					 g->menus[i].sensitivity);	\
 	if (g->menus[i].popup != NULL)					\
 		gtk_widget_set_sensitive(GTK_WIDGET(g->menus[i].popup), \
@@ -1595,10 +1624,18 @@ void nsgtk_scaffolding_set_sensitivity(struct nsgtk_scaffolding *g)
 nserror nsgtk_scaffolding_toolbar_context_menu(struct nsgtk_scaffolding *gs)
 {
 	/* set visibility for right-click popup menu */
-	popup_menu_hide(gs->menu_popup, true, false, true, false);
-	popup_menu_show(gs->menu_popup, false, false, false, true);
+	popup_menu_hide(gs->popup_menu, false, true, false);
+	popup_menu_show(gs->popup_menu, false, false, true);
 
-	nsgtk_menu_popup_at_pointer(gs->menu_popup->popup_menu, NULL);
+	nsgtk_menu_popup_at_pointer(gs->popup_menu->popup_menu, NULL);
+
+	return NSERROR_OK;
+}
+
+/* exported interface documented in gtk/scaffolding.h */
+nserror nsgtk_scaffolding_burger_menu(struct nsgtk_scaffolding *gs)
+{
+	nsgtk_menu_popup_at_pointer(gs->burger_menu->burger_menu, NULL);
 
 	return NSERROR_OK;
 }
@@ -1621,31 +1658,36 @@ nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g,
 	if (current_menu_features.link != NULL) {
 		/* menu is opening over a link */
 		gtkmenu = g->link_menu->link_menu;
+	} else if (gtk_widget_get_visible(GTK_WIDGET(g->menu_bar->bar_menu)) == FALSE) {
+		gtkmenu = g->burger_menu->burger_menu;
+
+		nsgtk_scaffolding_update_edit_actions_sensitivity(g);
+
 	} else {
-		gtkmenu = g->menu_popup->popup_menu;
+		gtkmenu = g->popup_menu->popup_menu;
 
 		nsgtk_scaffolding_update_edit_actions_sensitivity(g);
 
 		if (!(g->menus[COPY_BUTTON].sensitivity)) {
-			gtk_widget_hide(GTK_WIDGET(g->menu_popup->copy_menuitem));
+			gtk_widget_hide(GTK_WIDGET(g->popup_menu->copy_menuitem));
 		} else {
-			gtk_widget_show(GTK_WIDGET(g->menu_popup->copy_menuitem));
+			gtk_widget_show(GTK_WIDGET(g->popup_menu->copy_menuitem));
 		}
 
 		if (!(g->menus[CUT_BUTTON].sensitivity)) {
-			gtk_widget_hide(GTK_WIDGET(g->menu_popup->cut_menuitem));
+			gtk_widget_hide(GTK_WIDGET(g->popup_menu->cut_menuitem));
 		} else {
-			gtk_widget_show(GTK_WIDGET(g->menu_popup->cut_menuitem));
+			gtk_widget_show(GTK_WIDGET(g->popup_menu->cut_menuitem));
 		}
 
 		if (!(g->menus[PASTE_BUTTON].sensitivity)) {
-			gtk_widget_hide(GTK_WIDGET(g->menu_popup->paste_menuitem));
+			gtk_widget_hide(GTK_WIDGET(g->popup_menu->paste_menuitem));
 		} else {
-			gtk_widget_show(GTK_WIDGET(g->menu_popup->paste_menuitem));
+			gtk_widget_show(GTK_WIDGET(g->popup_menu->paste_menuitem));
 		}
 
 		/* hide customise */
-		popup_menu_hide(g->menu_popup, false, false, false, true);
+		popup_menu_hide(g->popup_menu, false, false, true);
 	}
 
 	nsgtk_menu_popup_at_pointer(gtkmenu, NULL);
