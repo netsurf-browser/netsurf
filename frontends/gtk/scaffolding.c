@@ -894,101 +894,88 @@ static nserror nsgtk_menu_initialise(struct nsgtk_scaffolding *g)
 #undef TOOLBAR_ITEM
 
 	/* items on menubar, burger */
-#define ITEM_MAIN(p, q, r)						\
-	g->menus[p##_BUTTON].main = g->menu_bar->q->r##_menuitem;	\
-	g->menus[p##_BUTTON].burger = g->burger_menu->q->r##_menuitem
+#define ITEM_MB(p, q, r)						\
+	g->menus[p##_BUTTON].main = g->menu_bar->r##_submenu->q##_menuitem; \
+	g->menus[p##_BUTTON].burger = g->burger_menu->r##_submenu->q##_menuitem
 
-	/* submenu items on menubar, burger */
-#define ITEM_SUB(p, q, r, s)					      \
-	g->menus[p##_BUTTON].main = g->menu_bar->q->r##_submenu->s##_menuitem;\
-	g->menus[p##_BUTTON].burger = g->burger_menu->q->r##_submenu->s##_menuitem
-
-	/* items on menubar, burger and context popup */
-#define ITEM_POP(p, q, r)						\
-	g->menus[p##_BUTTON].main = g->menu_bar->q->r##_menuitem;	\
-	g->menus[p##_BUTTON].burger = g->burger_menu->q->r##_menuitem;	\
-	g->menus[p##_BUTTON].popup = g->popup_menu->r##_menuitem
+	/* items on menubar, burger and context popup submenu */
+#define ITEM_MBP(p, q, r)						\
+	g->menus[p##_BUTTON].main = g->menu_bar->r##_submenu->q##_menuitem; \
+	g->menus[p##_BUTTON].burger = g->burger_menu->r##_submenu->q##_menuitem; \
+	g->menus[p##_BUTTON].popup = g->popup_menu->r##_submenu->q##_menuitem
 
 	/* items on menubar, burger and context popup */
-#define ITEM_MAINPOP(p, q, r)						\
-	g->menus[p##_BUTTON].main = g->menu_bar->q->r##_menuitem;	\
-	g->menus[p##_BUTTON].burger = g->burger_menu->q->r##_menuitem;	\
-	g->menus[p##_BUTTON].popup = g->popup_menu->q->r##_menuitem
-
-	/* sub submenu items on menubar, burger and context popup */
-#define ITEM_SUBPOP(p, q, r, s)						\
-	g->menus[p##_BUTTON].main = g->menu_bar->q->r##_submenu->s##_menuitem;\
-	g->menus[p##_BUTTON].burger = g->burger_menu->q->r##_submenu->s##_menuitem; \
-	g->menus[p##_BUTTON].popup = g->popup_menu->q->r##_submenu->s##_menuitem
+#define ITEM_MBp(p, q, r)						\
+	g->menus[p##_BUTTON].main = g->menu_bar->r##_submenu->q##_menuitem; \
+	g->menus[p##_BUTTON].burger = g->burger_menu->r##_submenu->q##_menuitem; \
+	g->menus[p##_BUTTON].popup = g->popup_menu->q##_menuitem
 
 
 	/* file menu */
-	ITEM_MAIN(NEWWINDOW, file_submenu, newwindow);
-	ITEM_MAIN(NEWTAB, file_submenu, newtab);
-	ITEM_MAIN(OPENFILE, file_submenu, openfile);
-	ITEM_MAIN(CLOSEWINDOW, file_submenu, closewindow);
-	ITEM_MAIN(PRINTPREVIEW, file_submenu, printpreview);
-	ITEM_MAIN(PRINT, file_submenu, print);
-	ITEM_MAIN(QUIT, file_submenu, quit);
+	ITEM_MB(NEWWINDOW, newwindow, file);
+	ITEM_MB(NEWTAB, newtab, file);
+	ITEM_MB(OPENFILE, openfile, file);
+	ITEM_MB(CLOSEWINDOW, closewindow, file);
+	ITEM_MB(PRINTPREVIEW, printpreview, file);
+	ITEM_MB(PRINT, print, file);
+	ITEM_MB(QUIT, quit, file);
 	/* file - export submenu */
-	ITEM_SUB(SAVEPAGE, file_submenu, export, savepage);
-	ITEM_SUB(PLAINTEXT, file_submenu, export, plaintext);
-	ITEM_SUB(PDF, file_submenu, export, pdf);
+	ITEM_MB(SAVEPAGE, savepage, file_submenu->export);
+	ITEM_MB(PLAINTEXT, plaintext, file_submenu->export);
+	ITEM_MB(PDF, pdf, file_submenu->export);
 
 	/* edit menu */
-	ITEM_POP(CUT, edit_submenu, cut);
-	ITEM_POP(COPY, edit_submenu, copy);
-	ITEM_POP(PASTE, edit_submenu, paste);
-	ITEM_MAIN(DELETE, edit_submenu, delete);
-	ITEM_MAIN(SELECTALL, edit_submenu, selectall);
-	ITEM_MAIN(FIND, edit_submenu, find);
-	ITEM_MAIN(PREFERENCES, edit_submenu, preferences);
+	ITEM_MBp(CUT, cut, edit);
+	ITEM_MBp(COPY, copy, edit);
+	ITEM_MBp(PASTE, paste, edit);
+	ITEM_MB(DELETE, delete, edit);
+	ITEM_MB(SELECTALL, selectall, edit);
+	ITEM_MB(FIND, find, edit);
+	ITEM_MB(PREFERENCES, preferences, edit);
 
 	/* view menu */
-	ITEM_MAIN(FULLSCREEN, view_submenu, fullscreen);
-	ITEM_MAIN(SAVEWINDOWSIZE, view_submenu, savewindowsize);
+	ITEM_MB(FULLSCREEN, fullscreen, view);
+	ITEM_MB(SAVEWINDOWSIZE, savewindowsize, view);
 	/* view - scale submenu */
-	ITEM_SUB(ZOOMPLUS, view_submenu, scaleview, zoomplus);
-	ITEM_SUB(ZOOMMINUS, view_submenu, scaleview, zoomminus);
-	ITEM_SUB(ZOOMNORMAL, view_submenu, scaleview, zoomnormal);
+	ITEM_MB(ZOOMPLUS, zoomplus, view_submenu->scaleview);
+	ITEM_MB(ZOOMMINUS, zoomminus, view_submenu->scaleview);
+	ITEM_MB(ZOOMNORMAL, zoomnormal, view_submenu->scaleview);
 	/* view - tabs submenu */
-	ITEM_SUB(NEXTTAB, view_submenu, tabs, nexttab);
-	ITEM_SUB(PREVTAB, view_submenu, tabs, prevtab);
-	ITEM_SUB(CLOSETAB, view_submenu, tabs, closetab);
+	ITEM_MB(NEXTTAB, nexttab, view_submenu->tabs);
+	ITEM_MB(PREVTAB, prevtab, view_submenu->tabs);
+	ITEM_MB(CLOSETAB, closetab, view_submenu->tabs);
 
 	/* navigation menu */
-	ITEM_POP(BACK, nav_submenu, back);
-	ITEM_POP(FORWARD, nav_submenu, forward);
-	ITEM_POP(STOP, nav_submenu, stop);
-	ITEM_POP(RELOAD, nav_submenu, reload);
-	ITEM_MAIN(HOME, nav_submenu, home);
-	ITEM_MAIN(LOCALHISTORY, nav_submenu, localhistory);
-	ITEM_MAIN(GLOBALHISTORY, nav_submenu, globalhistory);
-	ITEM_MAIN(ADDBOOKMARKS, nav_submenu, addbookmarks);
-	ITEM_MAIN(SHOWBOOKMARKS, nav_submenu, showbookmarks);
-	ITEM_MAIN(OPENLOCATION, nav_submenu, openlocation);
+	ITEM_MBp(BACK, back, nav);
+	ITEM_MBp(FORWARD, forward, nav);
+	ITEM_MBp(STOP, stop, nav);
+	ITEM_MBp(RELOAD, reload, nav);
+	ITEM_MB(HOME, home, nav);
+	ITEM_MB(LOCALHISTORY, localhistory, nav);
+	ITEM_MB(GLOBALHISTORY, globalhistory, nav);
+	ITEM_MB(ADDBOOKMARKS, addbookmarks, nav);
+	ITEM_MB(SHOWBOOKMARKS, showbookmarks, nav);
+	ITEM_MB(OPENLOCATION, openlocation, nav);
 
 	/* tools menu */
-	ITEM_MAINPOP(DOWNLOADS, tools_submenu, downloads);
-	ITEM_MAINPOP(SHOWCOOKIES, tools_submenu, showcookies);
+	ITEM_MBP(DOWNLOADS, downloads, tools);
+	ITEM_MBP(SHOWCOOKIES, showcookies, tools);
 	/* tools > developer submenu */
-	ITEM_SUBPOP(VIEWSOURCE, tools_submenu, developer, viewsource);
-	ITEM_SUBPOP(TOGGLEDEBUGGING, tools_submenu, developer, toggledebugging);
-	ITEM_SUBPOP(SAVEBOXTREE, tools_submenu, developer, debugboxtree);
-	ITEM_SUBPOP(SAVEDOMTREE, tools_submenu, developer, debugdomtree);
+	ITEM_MBP(VIEWSOURCE, viewsource, tools_submenu->developer);
+	ITEM_MBP(TOGGLEDEBUGGING, toggledebugging, tools_submenu->developer);
+	ITEM_MBP(SAVEBOXTREE, debugboxtree, tools_submenu->developer);
+	ITEM_MBP(SAVEDOMTREE, debugdomtree, tools_submenu->developer);
 
 	/* help menu */
-	ITEM_MAIN(CONTENTS, help_submenu, contents);
-	ITEM_MAIN(GUIDE, help_submenu, guide);
-	ITEM_MAIN(INFO, help_submenu, info);
-	ITEM_MAIN(ABOUT, help_submenu, about);
+	ITEM_MB(CONTENTS, contents, help);
+	ITEM_MB(GUIDE, guide, help);
+	ITEM_MB(INFO, info, help);
+	ITEM_MB(ABOUT, about, help);
 
 
-#undef ITEM_MAIN
-#undef ITEM_SUB
-#undef ITEM_POP
-#undef ITEM_MAINPOP
-#undef ITEM_SUBPOP
+#undef ITEM_MB
+#undef ITEM_MBp
+#undef ITEM_MBP
 
 	return NSERROR_OK;
 }
