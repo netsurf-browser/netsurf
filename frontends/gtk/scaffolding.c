@@ -459,221 +459,21 @@ nsgtk_window_tabs_remove(GtkNotebook *notebook,
 /**
  * handle menu activate signals by calling toolbar item activation
  */
-#define MENUHANDLER(name, itemid)					\
+#define TOOLBAR_ITEM_y(identifier, name)			\
 static gboolean								\
 nsgtk_on_##name##_activate_menu(GtkMenuItem *widget, gpointer data)	\
 {									\
 	struct nsgtk_scaffolding *gs = (struct nsgtk_scaffolding *)data;\
-	nsgtk_window_item_activate(gs->top_level, itemid);		\
+	nsgtk_window_item_activate(gs->top_level, identifier);		\
 	return TRUE;							\
 }
-
-/**
- * menu signal handler for activation on new window item
- */
-MENUHANDLER(newwindow, NEWWINDOW_BUTTON);
-
-/**
- * menu signal handler for activation on new tab item
- */
-MENUHANDLER(newtab, NEWTAB_BUTTON);
-
-/**
- * menu signal handler for activation on open file item
- */
-MENUHANDLER(openfile, OPENFILE_BUTTON);
-
-/**
- * menu signal handler for activation on export complete page item
- */
-MENUHANDLER(savepage, SAVEPAGE_BUTTON);
-
-/**
- * menu signal handler for activation on export pdf item
- */
-MENUHANDLER(pdf, PDF_BUTTON);
-
-/**
- * menu signal handler for activation on export plain text item
- */
-MENUHANDLER(plaintext, PLAINTEXT_BUTTON);
-
-/**
- * menu signal handler for activation on print preview item
- */
-MENUHANDLER(printpreview, PRINTPREVIEW_BUTTON);
-
-/**
- * menu signal handler for activation on print item
- */
-MENUHANDLER(print, PRINT_BUTTON);
-
-/**
- * menu signal handler for activation on close window item
- */
-MENUHANDLER(closewindow, CLOSEWINDOW_BUTTON);
-
-/**
- * menu signal handler for activation on close window item
- */
-MENUHANDLER(quit, QUIT_BUTTON);
-
-/**
- * menu signal handler for activation on cut item
- */
-MENUHANDLER(cut, CUT_BUTTON);
-
-/**
- * menu signal handler for activation on copy item
- */
-MENUHANDLER(copy, COPY_BUTTON);
-
-/**
- * menu signal handler for activation on paste item
- */
-MENUHANDLER(paste, PASTE_BUTTON);
-
-/**
- * menu signal handler for activation on delete item
- */
-MENUHANDLER(delete, DELETE_BUTTON);
-
-/**
- * menu signal handler for activation on selectall item
- */
-MENUHANDLER(selectall, SELECTALL_BUTTON);
-
-/**
- * menu signal handler for activation on preferences item
- */
-MENUHANDLER(preferences, PREFERENCES_BUTTON);
-
-/**
- * menu signal handler for activation on zoom plus item
- */
-MENUHANDLER(zoomplus, ZOOMPLUS_BUTTON);
-
-/**
- * menu signal handler for activation on zoom minus item
- */
-MENUHANDLER(zoomminus, ZOOMMINUS_BUTTON);
-
-/**
- * menu signal handler for activation on zoom normal item
- */
-MENUHANDLER(zoomnormal, ZOOMNORMAL_BUTTON);
-
-/**
- * menu signal handler for activation on full screen item
- */
-MENUHANDLER(fullscreen, FULLSCREEN_BUTTON);
-
-/**
- * menu signal handler for activation on view source item
- */
-MENUHANDLER(viewsource, VIEWSOURCE_BUTTON);
-
-/**
- * menu signal handler for activation on downloads item
- */
-MENUHANDLER(downloads, DOWNLOADS_BUTTON);
-
-/**
- * menu signal handler for activation on save window size item
- */
-MENUHANDLER(savewindowsize, SAVEWINDOWSIZE_BUTTON);
-
-/**
- * menu signal handler for activation on toggle debug render item
- */
-MENUHANDLER(toggledebugging, TOGGLEDEBUGGING_BUTTON);
-
-/**
- * menu signal handler for activation on debug box tree item
- */
-MENUHANDLER(debugboxtree, SAVEBOXTREE_BUTTON);
-
-/**
- * menu signal handler for activation on debug dom tree item
- */
-MENUHANDLER(debugdomtree, SAVEDOMTREE_BUTTON);
-
-/**
- * menu signal handler for activation on stop item
- */
-MENUHANDLER(stop, STOP_BUTTON);
-
-/**
- * menu signal handler for activation on reload item
- */
-MENUHANDLER(reload, RELOAD_BUTTON);
-
-/**
- * menu signal handler for activation on back item
- */
-MENUHANDLER(back, BACK_BUTTON);
-
-/**
- * menu signal handler for activation on forward item
- */
-MENUHANDLER(forward, FORWARD_BUTTON);
-
-/**
- * menu signal handler for activation on home item
- */
-MENUHANDLER(home, HOME_BUTTON);
-
-/**
- * menu signal handler for activation on localhistory item
- */
-MENUHANDLER(localhistory, LOCALHISTORY_BUTTON);
-
-/**
- * menu signal handler for activation on globalhistory item
- */
-MENUHANDLER(globalhistory, GLOBALHISTORY_BUTTON);
-
-/**
- * menu signal handler for activation on addbookmarks item
- */
-MENUHANDLER(addbookmarks, ADDBOOKMARKS_BUTTON);
-
-/**
- * menu signal handler for activation on showbookmarks item
- */
-MENUHANDLER(showbookmarks, SHOWBOOKMARKS_BUTTON);
-
-/**
- * menu signal handler for activation on showcookies item
- */
-MENUHANDLER(showcookies, SHOWCOOKIES_BUTTON);
-
-/**
- * menu signal handler for activation on showcookies item
- */
-MENUHANDLER(openlocation, OPENLOCATION_BUTTON);
-
-/**
- * menu signal handler for activation on showcookies item
- */
-MENUHANDLER(contents, CONTENTS_BUTTON);
-
-/**
- * menu signal handler for activation on showcookies item
- */
-MENUHANDLER(guide, GUIDE_BUTTON);
-
-/**
- * menu signal handler for activation on showcookies item
- */
-MENUHANDLER(info, INFO_BUTTON);
-
-/**
- * menu signal handler for activation on showcookies item
- */
-MENUHANDLER(about, ABOUT_BUTTON);
-
-#undef MENUHANDLER
+#define TOOLBAR_ITEM_n(identifier, name)
+#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate) \
+	TOOLBAR_ITEM_ ## activate(identifier, name)
+#include "gtk/toolbar_items.h"
+#undef TOOLBAR_ITEM_y
+#undef TOOLBAR_ITEM_n
+#undef TOOLBAR_ITEM
 
 
 static gboolean
@@ -1081,7 +881,7 @@ create_scaffolding_link_menu(struct nsgtk_scaffolding *g, GtkAccelGroup *group)
  */
 static nserror nsgtk_menu_initialise(struct nsgtk_scaffolding *g)
 {
-#define TOOLBAR_ITEM(identifier, name, snstvty, clicked) \
+#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate) \
 	g->menus[identifier].sensitivity = snstvty;
 #include "gtk/toolbar_items.h"
 #undef TOOLBAR_ITEM

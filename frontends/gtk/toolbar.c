@@ -202,7 +202,7 @@ int nsgtk_toolbar_get_id_from_widget(GtkWidget *widget, struct nsgtk_scaffolding
 
 
 /* define data plus and data minus handlers */
-#define TOOLBAR_ITEM(identifier, name, sensitivity, clicked)		\
+#define TOOLBAR_ITEM(identifier, name, sensitivity, clicked, activate)	\
 static gboolean								\
 nsgtk_toolbar_##name##_data_plus(GtkWidget *widget,			\
 				 GdkDragContext *cont,			\
@@ -3058,6 +3058,19 @@ localhistory_button_clicked_cb(GtkWidget *widget, gpointer data)
 	return TRUE;
 }
 
+/**
+ * handler for history tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+history_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	return localhistory_button_clicked_cb(widget, data);
+}
+
 
 /**
  * handler for global history tool bar item clicked signal
@@ -3283,14 +3296,20 @@ toolbar_item_create(nsgtk_toolbar_button id,
 
 	/* set item defaults from macro */
 	switch (id) {
-#define TOOLBAR_ITEM(identifier, name, snstvty, clicked)		\
+#define TOOLBAR_ITEM_y(name)					\
+		item->bhandler = name##_button_clicked_cb;
+#define TOOLBAR_ITEM_n(name)			\
+		item->bhandler = NULL;
+#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate)	\
 	case identifier:						\
 		item->sensitivity = snstvty;				\
 		item->dataplus = nsgtk_toolbar_##name##_data_plus;	\
 		item->dataminus = nsgtk_toolbar_##name##_data_minus;	\
-		item->bhandler = clicked;				\
+		TOOLBAR_ITEM_ ## clicked(name)				\
 		break;
 #include "gtk/toolbar_items.h"
+#undef TOOLBAR_ITEM_y
+#undef TOOLBAR_ITEM_n
 #undef TOOLBAR_ITEM
 
 	case PLACEHOLDER_BUTTON:
