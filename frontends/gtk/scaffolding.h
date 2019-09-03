@@ -115,14 +115,6 @@ struct gtk_history_window *nsgtk_scaffolding_history_window(struct nsgtk_scaffol
 
 struct gui_window *nsgtk_scaffolding_top_level(struct nsgtk_scaffolding *g);
 
-/**
- * reset the scaffold offset value to 0.
- *
- * \todo The value is only ever altered in
- * nsgtk_scaffolding_toolbar_size_allocate and is something to do with
- * the history button either clarify or remove!
- */
-void nsgtk_scaffolding_reset_offset(struct nsgtk_scaffolding *g);
 
 /**
  * Iterate through available scaffolding.
@@ -177,9 +169,5 @@ void nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g, gdouble x, gdou
  */
 void nsgtk_window_set_title(struct gui_window *gw, const char *title);
 
-/**
- * toolbar style changed
- */
-void nsgtk_scaffolding_toolbars(struct nsgtk_scaffolding *g);
 
 #endif /* NETSURF_GTK_SCAFFOLDING_H */

@@ -46,9 +46,13 @@ struct browser_window *nsgtk_get_browser_window(struct gui_window *gw);
 struct nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *gw);
 
 /**
- * cause all windows be be reflowed
+ * Every window will have its tab, toolbar and drawing area updated
+ *
+ * The update will ensure the correct tab options are used, the
+ * toolbar size and style is changed and the browser window contents
+ * redrawn.
  */
-void nsgtk_reflow_all_windows(void);
+void nsgtk_window_update_all(void);
 
 /**
  * update targets

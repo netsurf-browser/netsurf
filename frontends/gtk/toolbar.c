@@ -812,6 +812,11 @@ make_toolbar_item(nsgtk_toolbar_button i, struct nsgtk_theme *theme)
 	return w;
 }
 
+/* exported interface documented in gtk/scaffolding.h */
+static void nsgtk_scaffolding_reset_offset(struct nsgtk_scaffolding *g)
+{
+	//g->offset = 0;
+}
 
 /**
  * called when a widget is dropped onto the toolbar
@@ -2928,10 +2933,9 @@ toggledebugging_button_clicked_cb(GtkWidget *widget, gpointer data)
 
 	browser_window_debug(bw, CONTENT_DEBUG_REDRAW);
 
-	nsgtk_reflow_all_windows();
+	nsgtk_window_update_all();
 
 	return TRUE;
-
 }
 
 
@@ -3564,6 +3568,12 @@ nserror nsgtk_toolbar_destroy(struct nsgtk_toolbar *tb)
 /* exported interface documented in toolbar.h */
 nserror nsgtk_toolbar_update(struct nsgtk_toolbar *tb)
 {
+	/*
+	 * reset toolbar size allocation so icon size change affects
+	 *  allocated widths.
+	 */
+	tb->offset = 0;
+
 	switch (nsoption_int(button_type)) {
 
 	case 1: /* Small icons */

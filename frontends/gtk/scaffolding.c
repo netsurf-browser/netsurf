@@ -1400,14 +1400,6 @@ struct nsgtk_scaffolding *nsgtk_current_scaffolding(void)
 }
 
 
-/* exported interface documented in gtk/scaffolding.h */
-void nsgtk_scaffolding_toolbars(struct nsgtk_scaffolding *g)
-{
-  //	nsgtk_toolbar_update(g->toolbar);
-	nsgtk_search_update(g->search);
-}
-
-
 /* exported function documented in gtk/scaffolding.h */
 void nsgtk_window_set_title(struct gui_window *gw, const char *title)
 {
@@ -1524,13 +1516,6 @@ struct nsgtk_scaffolding *nsgtk_scaffolding_iterate(struct nsgtk_scaffolding *g)
 		return scaf_list;
 	}
 	return g->next;
-}
-
-
-/* exported interface documented in gtk/scaffolding.h */
-void nsgtk_scaffolding_reset_offset(struct nsgtk_scaffolding *g)
-{
-	//g->offset = 0;
 }
 
 

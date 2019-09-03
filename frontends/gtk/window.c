@@ -904,11 +904,15 @@ nsgtk_window_item_activate(struct gui_window *gw, nsgtk_toolbar_button itemid)
 	return nsgtk_toolbar_item_activate(gw->toolbar, itemid);
 }
 
-void nsgtk_reflow_all_windows(void)
+/* exported interface documented in window.h */
+void nsgtk_window_update_all(void)
 {
-	for (struct gui_window *g = window_list; g; g = g->next) {
-		nsgtk_tab_options_changed(nsgtk_scaffolding_notebook(g->scaffold));
-		browser_window_schedule_reformat(g->bw);
+	struct gui_window *gw;
+	for (gw = window_list; gw != NULL; gw = gw->next) {
+		nsgtk_tab_options_changed(nsgtk_scaffolding_notebook(gw->scaffold));
+		nsgtk_toolbar_update(gw->toolbar);
+		/** \todo update search bar */
+		browser_window_schedule_reformat(gw->bw);
 	}
 }
 

@@ -512,7 +512,7 @@ SPINBUTTON_SIGNALS(spinDefaultSize, font_size, 10.0)
 G_MODULE_EXPORT void
 nsgtk_preferences_fontPreview_clicked(GtkButton *button, struct ppref *priv)
 {
-	nsgtk_reflow_all_windows();
+	nsgtk_window_update_all();
 }
 
 
@@ -714,7 +714,7 @@ nsgtk_preferences_checkShowSingleTab_toggled(GtkToggleButton *togglebutton,
 {
 	nsoption_set_bool(show_single_tab,
 			  gtk_toggle_button_get_active(togglebutton));
-	nsgtk_reflow_all_windows();
+	nsgtk_window_update_all();
 }
 
 G_MODULE_EXPORT void
@@ -736,20 +736,11 @@ G_MODULE_EXPORT void
 nsgtk_preferences_comboTabPosition_changed(GtkComboBox *widget,
 					   struct ppref *priv)
 {
-	struct nsgtk_scaffolding *current;
-
 	/* set the option */
 	nsoption_set_int(position_tab, gtk_combo_box_get_active(widget));
 
-	/* update all notebooks in all scaffolds */
-	current = nsgtk_scaffolding_iterate(NULL);
-	while (current)	{
-		nsgtk_scaffolding_reset_offset(current);
-
-		nsgtk_reflow_all_windows();
-
-		current = nsgtk_scaffolding_iterate(current);
-	}
+	/* update all windows */
+	nsgtk_window_update_all();
 }
 
 G_MODULE_EXPORT void
@@ -792,18 +783,10 @@ G_MODULE_EXPORT void
 nsgtk_preferences_comboButtonType_changed(GtkComboBox *widget,
 					   struct ppref *priv)
 {
-	struct nsgtk_scaffolding *current;
-
 	nsoption_set_int(button_type, gtk_combo_box_get_active(widget) + 1);
 
-	current = nsgtk_scaffolding_iterate(NULL);
-	while (current != NULL)	{
-		nsgtk_scaffolding_reset_offset(current);
-
-		nsgtk_scaffolding_toolbars(current);
-
-		current = nsgtk_scaffolding_iterate(current);
-	}
+	/* update all windows to adopt change */
+	nsgtk_window_update_all();
 }
 
 G_MODULE_EXPORT void
