@@ -217,12 +217,12 @@ static struct nsgtk_tabs_submenu *nsgtk_menu_tabs_submenu(GtkAccelGroup *group)
 
 
 /**
-* creates a toolbars submenu
-* \param group the 'global' in a gtk sense accelerator reference
-*/
-
-static struct nsgtk_toolbars_submenu *nsgtk_menu_toolbars_submenu(
-		GtkAccelGroup *group)
+ * creates a toolbars submenu
+ *
+ * \param group the 'global' in a gtk sense accelerator reference
+ */
+static struct nsgtk_toolbars_submenu *
+nsgtk_menu_toolbars_submenu(GtkAccelGroup *group)
 {
 	struct nsgtk_toolbars_submenu *ret =
 			malloc(sizeof(struct nsgtk_toolbars_submenu));
@@ -242,6 +242,9 @@ static struct nsgtk_toolbars_submenu *nsgtk_menu_toolbars_submenu(
 	CHECK_ITEM(toolbars, toolbar, gtkToolBar, ret)
 	if (ret->toolbar_menuitem != NULL)
 		gtk_check_menu_item_set_active(ret->toolbar_menuitem, TRUE);
+	ADD_SEP(toolbars, ret);
+	IMAGE_ITEM(toolbars, customize, gtkCustomize, ret, group);
+
 	return ret;
 }
 

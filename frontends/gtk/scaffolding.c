@@ -757,19 +757,16 @@ static void nsgtk_menu_connect_signals(struct nsgtk_scaffolding *g)
 			 "toggled",
 			 G_CALLBACK(nsgtk_on_menubar_activate_menu),
 			 g);
-	g_signal_connect(g->burger_menu->view_submenu->toolbars_submenu->menubar_menuitem,
-			 "toggled",
-			 G_CALLBACK(nsgtk_on_menubar_activate_menu),
-			 g);
 
 	g_signal_connect(g->menu_bar->view_submenu->toolbars_submenu->toolbar_menuitem,
 			 "toggled",
 			 G_CALLBACK(nsgtk_on_toolbar_activate_menu),
 			 g);
-	g_signal_connect(g->burger_menu->view_submenu->toolbars_submenu->toolbar_menuitem,
-			 "toggled",
-			 G_CALLBACK(nsgtk_on_toolbar_activate_menu),
+	g_signal_connect(g->menu_bar->view_submenu->toolbars_submenu->customize_menuitem,
+			 "activate",
+			 G_CALLBACK(nsgtk_on_customize_activate_menu),
 			 g);
+
 }
 
 
@@ -791,6 +788,18 @@ create_scaffolding_burger_menu(struct nsgtk_scaffolding *gs,
 	if (nmenu == NULL) {
 		return NULL;
 	}
+	g_signal_connect(nmenu->view_submenu->toolbars_submenu->menubar_menuitem,
+			 "toggled",
+			 G_CALLBACK(nsgtk_on_menubar_activate_menu),
+			 gs);
+	g_signal_connect(nmenu->view_submenu->toolbars_submenu->toolbar_menuitem,
+			 "toggled",
+			 G_CALLBACK(nsgtk_on_toolbar_activate_menu),
+			 gs);
+	g_signal_connect(nmenu->view_submenu->toolbars_submenu->customize_menuitem,
+			 "activate",
+			 G_CALLBACK(nsgtk_on_customize_activate_menu),
+			 gs);
 	return nmenu;
 }
 
