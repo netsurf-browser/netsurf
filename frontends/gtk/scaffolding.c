@@ -459,8 +459,8 @@ nsgtk_window_tabs_remove(GtkNotebook *notebook,
 /**
  * handle menu activate signals by calling toolbar item activation
  */
-#define TOOLBAR_ITEM_y(identifier, name)			\
-static gboolean								\
+#define TOOLBAR_ITEM_y(identifier, name)				\
+	static gboolean							\
 nsgtk_on_##name##_activate_menu(GtkMenuItem *widget, gpointer data)	\
 {									\
 	struct nsgtk_scaffolding *gs = (struct nsgtk_scaffolding *)data;\
@@ -468,8 +468,8 @@ nsgtk_on_##name##_activate_menu(GtkMenuItem *widget, gpointer data)	\
 	return TRUE;							\
 }
 #define TOOLBAR_ITEM_n(identifier, name)
-#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate) \
-	TOOLBAR_ITEM_ ## activate(identifier, name)
+#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate, pass) \
+	TOOLBAR_ITEM_ ## pass(identifier, name)
 #include "gtk/toolbar_items.h"
 #undef TOOLBAR_ITEM_y
 #undef TOOLBAR_ITEM_n
@@ -881,40 +881,42 @@ create_scaffolding_link_menu(struct nsgtk_scaffolding *g, GtkAccelGroup *group)
  */
 static nserror nsgtk_menu_initialise(struct nsgtk_scaffolding *g)
 {
-#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate) \
-	g->menus[identifier].sensitivity = snstvty;
+#define TOOLBAR_ITEM_y(identifier, name)				\
+	g->menus[identifier].mhandler = nsgtk_on_##name##_activate_menu;
+#define TOOLBAR_ITEM_n(identifier, name)		\
+	g->menus[identifier].mhandler = NULL;
+#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate, pass) \
+	g->menus[identifier].sensitivity = snstvty;			\
+	TOOLBAR_ITEM_ ## activate(identifier, name)
 #include "gtk/toolbar_items.h"
+#undef TOOLBAR_ITEM_y
+#undef TOOLBAR_ITEM_n
 #undef TOOLBAR_ITEM
 
 	/* items on menubar, burger */
 #define ITEM_MAIN(p, q, r)						\
-	g->menus[p##_BUTTON].mhandler = nsgtk_on_##r##_activate_menu;	\
 	g->menus[p##_BUTTON].main = g->menu_bar->q->r##_menuitem;	\
 	g->menus[p##_BUTTON].burger = g->burger_menu->q->r##_menuitem
 
 	/* submenu items on menubar, burger */
 #define ITEM_SUB(p, q, r, s)					      \
-	g->menus[p##_BUTTON].mhandler =	nsgtk_on_##s##_activate_menu; \
 	g->menus[p##_BUTTON].main = g->menu_bar->q->r##_submenu->s##_menuitem;\
 	g->menus[p##_BUTTON].burger = g->burger_menu->q->r##_submenu->s##_menuitem
 
 	/* items on menubar, burger and context popup */
 #define ITEM_POP(p, q, r)						\
-	g->menus[p##_BUTTON].mhandler = nsgtk_on_##r##_activate_menu;	\
 	g->menus[p##_BUTTON].main = g->menu_bar->q->r##_menuitem;	\
 	g->menus[p##_BUTTON].burger = g->burger_menu->q->r##_menuitem;	\
 	g->menus[p##_BUTTON].popup = g->popup_menu->r##_menuitem
 
 	/* items on menubar, burger and context popup */
 #define ITEM_MAINPOP(p, q, r)						\
-	g->menus[p##_BUTTON].mhandler = nsgtk_on_##r##_activate_menu;	\
 	g->menus[p##_BUTTON].main = g->menu_bar->q->r##_menuitem;	\
 	g->menus[p##_BUTTON].burger = g->burger_menu->q->r##_menuitem;	\
 	g->menus[p##_BUTTON].popup = g->popup_menu->q->r##_menuitem
 
 	/* sub submenu items on menubar, burger and context popup */
 #define ITEM_SUBPOP(p, q, r, s)						\
-	g->menus[p##_BUTTON].mhandler =	nsgtk_on_##s##_activate_menu;	\
 	g->menus[p##_BUTTON].main = g->menu_bar->q->r##_submenu->s##_menuitem;\
 	g->menus[p##_BUTTON].burger = g->burger_menu->q->r##_submenu->s##_menuitem; \
 	g->menus[p##_BUTTON].popup = g->popup_menu->q->r##_submenu->s##_menuitem
