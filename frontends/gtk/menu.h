@@ -193,11 +193,10 @@ struct nsgtk_popup_menu {
 
 	GtkWidget *second_separator;
 
+	GtkWidget *toolbars_menuitem;
+	struct nsgtk_toolbars_submenu *toolbars_submenu;
 	GtkWidget *tools_menuitem;
 	struct nsgtk_tools_menu *tools_submenu;
-
-	GtkWidget *customize_menuitem;
-
 };
 
 struct nsgtk_link_menu {

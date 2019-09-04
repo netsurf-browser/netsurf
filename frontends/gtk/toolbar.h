@@ -95,6 +95,14 @@ nserror nsgtk_toolbar_set_websearch_image(struct nsgtk_toolbar *tb, GdkPixbuf *p
  */
 nserror nsgtk_toolbar_item_activate(struct nsgtk_toolbar *tb, nsgtk_toolbar_button itemid);
 
+/**
+ * set the toolbar to be shown or hidden
+ *
+ * \param toolbar A toolbar returned from a creation
+ * \param show true to show the toolbar and false to hide it.
+ * \return NSERROR_OK on success
+ */
+nserror nsgtk_toolbar_show(struct nsgtk_toolbar *tb, bool show);
 
 /**
  * sets up the images for scaffolding.

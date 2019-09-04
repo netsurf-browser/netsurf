@@ -85,15 +85,17 @@ nsgtk_menu_add_image_item(GtkMenu *menu,
 #define IMAGE_ITEM(p, q, r, s, t)\
 	nsgtk_menu_add_image_item(s->p##_menu, &(s->q##_menuitem), #r, t)
 
-#define CHECK_ITEM(p, q, r, s)\
-	s->q##_menuitem = GTK_CHECK_MENU_ITEM(\
+#define CHECK_ITEM(p, q, r, s)					\
+	do {							\
+		s->q##_menuitem = GTK_CHECK_MENU_ITEM(		\
 			gtk_check_menu_item_new_with_mnemonic(\
 			messages_get(#r)));\
-	if ((s->q##_menuitem != NULL) && (s->p##_menu != NULL)) {\
-		gtk_menu_shell_append(GTK_MENU_SHELL(s->p##_menu),\
-				GTK_WIDGET(s->q##_menuitem));\
-		gtk_widget_show(GTK_WIDGET(s->q##_menuitem));\
-	}
+		if ((s->q##_menuitem != NULL) && (s->p##_menu != NULL)) { \
+			gtk_menu_shell_append(GTK_MENU_SHELL(s->p##_menu), \
+					      GTK_WIDGET(s->q##_menuitem)); \
+			gtk_widget_show(GTK_WIDGET(s->q##_menuitem));	\
+		}							\
+	} while(0)
 
 #define SET_SUBMENU(q, r)					\
 	do {							\
@@ -224,28 +226,36 @@ static struct nsgtk_tabs_submenu *nsgtk_menu_tabs_submenu(GtkAccelGroup *group)
 static struct nsgtk_toolbars_submenu *
 nsgtk_menu_toolbars_submenu(GtkAccelGroup *group)
 {
-	struct nsgtk_toolbars_submenu *ret =
-			malloc(sizeof(struct nsgtk_toolbars_submenu));
-	if (ret == NULL) {
-		nsgtk_warning(messages_get("NoMemory"), 0);
-		return NULL;
-	}
-	ret->toolbars_menu = GTK_MENU(gtk_menu_new());
-	if (ret->toolbars_menu == NULL) {
-		nsgtk_warning(messages_get("NoMemory"), 0);
-		free(ret);
-		return NULL;
-	}
-	CHECK_ITEM(toolbars, menubar, gtkMenuBar, ret)
-	if (ret->menubar_menuitem != NULL)
-		gtk_check_menu_item_set_active(ret->menubar_menuitem, TRUE);
-	CHECK_ITEM(toolbars, toolbar, gtkToolBar, ret)
-	if (ret->toolbar_menuitem != NULL)
-		gtk_check_menu_item_set_active(ret->toolbar_menuitem, TRUE);
-	ADD_SEP(toolbars, ret);
-	IMAGE_ITEM(toolbars, customize, gtkCustomize, ret, group);
+	struct nsgtk_toolbars_submenu *tmenu;
 
-	return ret;
+	tmenu = malloc(sizeof(struct nsgtk_toolbars_submenu));
+	if (tmenu == NULL) {
+		nsgtk_warning(messages_get("NoMemory"), 0);
+		return NULL;
+	}
+
+	tmenu->toolbars_menu = GTK_MENU(gtk_menu_new());
+	if (tmenu->toolbars_menu == NULL) {
+		nsgtk_warning(messages_get("NoMemory"), 0);
+		free(tmenu);
+		return NULL;
+	}
+
+	CHECK_ITEM(toolbars, menubar, gtkMenuBar, tmenu);
+	if (tmenu->menubar_menuitem != NULL) {
+		gtk_check_menu_item_set_active(tmenu->menubar_menuitem, TRUE);
+	}
+
+	CHECK_ITEM(toolbars, toolbar, gtkToolBar, tmenu);
+	if (tmenu->toolbar_menuitem != NULL) {
+		gtk_check_menu_item_set_active(tmenu->toolbar_menuitem, TRUE);
+	}
+
+	ADD_SEP(toolbars, tmenu);
+
+	IMAGE_ITEM(toolbars, customize, gtkCustomize, tmenu, group);
+
+	return tmenu;
 }
 
 /**
@@ -558,9 +568,11 @@ struct nsgtk_popup_menu *nsgtk_popup_menu_create(GtkAccelGroup *group)
 
 	ADD_NAMED_SEP(popup, second, nmenu);
 
+	IMAGE_ITEM(popup, toolbars, gtkToolbars, nmenu, group);
+	SET_SUBMENU(toolbars, nmenu);
+
 	IMAGE_ITEM(popup, tools, gtkTools, nmenu, group);
 	SET_SUBMENU(tools, nmenu);
-	IMAGE_ITEM(popup, customize, gtkCustomize, nmenu, group);
 
 	return nmenu;
 }

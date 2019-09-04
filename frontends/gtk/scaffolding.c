@@ -120,7 +120,7 @@ static struct browser_window_features current_menu_features;
  * \param custom flag to indicate if menu customisation is hidden.
  */
 static void
-popup_menu_hide(struct nsgtk_popup_menu *menu, bool nav, bool cnp, bool custom)
+popup_menu_hide(struct nsgtk_popup_menu *menu, bool nav, bool cnp)
 {
 	if (nav) {
 		gtk_widget_hide(GTK_WIDGET(menu->back_menuitem));
@@ -139,9 +139,6 @@ popup_menu_hide(struct nsgtk_popup_menu *menu, bool nav, bool cnp, bool custom)
 		gtk_widget_hide(menu->second_separator);
 	}
 
-	if (custom) {
-		gtk_widget_hide(GTK_WIDGET(menu->customize_menuitem));
-	}
 
 }
 
@@ -155,7 +152,7 @@ popup_menu_hide(struct nsgtk_popup_menu *menu, bool nav, bool cnp, bool custom)
  * \param custom flag to indicate if menu customisation is visible.
  */
 static void
-popup_menu_show(struct nsgtk_popup_menu *menu, bool nav, bool cnp, bool custom)
+popup_menu_show(struct nsgtk_popup_menu *menu, bool nav, bool cnp)
 {
 	if (nav) {
 		gtk_widget_show(GTK_WIDGET(menu->back_menuitem));
@@ -174,9 +171,6 @@ popup_menu_show(struct nsgtk_popup_menu *menu, bool nav, bool cnp, bool custom)
 		gtk_widget_show(menu->second_separator);
 	}
 
-	if (custom) {
-		gtk_widget_show(GTK_WIDGET(menu->customize_menuitem));
-	}
 }
 
 
@@ -322,7 +316,7 @@ nsgtk_scaffolding_enable_edit_actions_sensitivity(struct nsgtk_scaffolding *g)
 	g->menus[CUT_BUTTON].sensitivity = true;
 	nsgtk_scaffolding_set_sensitivity(g);
 
-	popup_menu_show(g->popup_menu, false, true, false);
+	popup_menu_show(g->popup_menu, false, true);
 }
 
 /* signal handling functions for the toolbar, URL bar, and menu bar */
@@ -615,10 +609,12 @@ nsgtk_on_menubar_activate_menu(GtkMenuItem *widget, gpointer data)
 {
 	struct nsgtk_scaffolding *gs = (struct nsgtk_scaffolding *)data;
 	GtkCheckMenuItem *bmcmi; /* burger menu check */
-	GtkCheckMenuItem *mbcmi; /* menu bar check*/
+	GtkCheckMenuItem *mbcmi; /* menu bar check */
+	GtkCheckMenuItem *tbcmi; /* popup menu check */
 
 	bmcmi = GTK_CHECK_MENU_ITEM(gs->burger_menu->view_submenu->toolbars_submenu->menubar_menuitem);
 	mbcmi = GTK_CHECK_MENU_ITEM(gs->menu_bar->view_submenu->toolbars_submenu->menubar_menuitem);
+	tbcmi = GTK_CHECK_MENU_ITEM(gs->popup_menu->toolbars_submenu->menubar_menuitem);
 
 	/* ensure menubar and burger menu checkboxes are both updated */
 	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(widget))) {
@@ -630,10 +626,12 @@ nsgtk_on_menubar_activate_menu(GtkMenuItem *widget, gpointer data)
 			gtk_check_menu_item_set_active(mbcmi, TRUE);
 		}
 
+		if (gtk_check_menu_item_get_active(tbcmi) == FALSE) {
+			gtk_check_menu_item_set_active(tbcmi, TRUE);
+		}
+
 		gtk_widget_show(GTK_WIDGET(gs->menu_bar->bar_menu));
 
-		popup_menu_show(gs->popup_menu, true, true, true);
-		popup_menu_hide(gs->popup_menu, false, false, false);
 	} else {
 		if (gtk_check_menu_item_get_active(bmcmi) == TRUE) {
 			gtk_check_menu_item_set_active(bmcmi, FALSE);
@@ -643,10 +641,11 @@ nsgtk_on_menubar_activate_menu(GtkMenuItem *widget, gpointer data)
 			gtk_check_menu_item_set_active(mbcmi, FALSE);
 		}
 
+		if (gtk_check_menu_item_get_active(tbcmi) == TRUE) {
+			gtk_check_menu_item_set_active(tbcmi, FALSE);
+		}
+
 		gtk_widget_hide(GTK_WIDGET(gs->menu_bar->bar_menu));
-
-		popup_menu_show(gs->popup_menu, true, true, true);
-
 	}
 	return TRUE;
 }
@@ -658,9 +657,11 @@ nsgtk_on_toolbar_activate_menu(GtkMenuItem *widget, gpointer data)
 	struct nsgtk_scaffolding *gs = (struct nsgtk_scaffolding *)data;
 	GtkCheckMenuItem *bmcmi; /* burger menu check */
 	GtkCheckMenuItem *mbcmi; /* menu bar check */
+	GtkCheckMenuItem *tbcmi; /* popup menu check */
 
 	bmcmi = GTK_CHECK_MENU_ITEM(gs->burger_menu->view_submenu->toolbars_submenu->toolbar_menuitem);
 	mbcmi = GTK_CHECK_MENU_ITEM(gs->menu_bar->view_submenu->toolbars_submenu->toolbar_menuitem);
+	tbcmi = GTK_CHECK_MENU_ITEM(gs->popup_menu->toolbars_submenu->toolbar_menuitem);
 
 	/* ensure menubar and burger menu checkboxes are both updated */
 	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(widget))) {
@@ -672,7 +673,11 @@ nsgtk_on_toolbar_activate_menu(GtkMenuItem *widget, gpointer data)
 			gtk_check_menu_item_set_active(mbcmi, TRUE);
 		}
 
-		//gtk_widget_show(GTK_WIDGET(g->tool_bar));
+		if (gtk_check_menu_item_get_active(tbcmi) == FALSE) {
+			gtk_check_menu_item_set_active(tbcmi, TRUE);
+		}
+
+		nsgtk_window_toolbar_show(gs, true);
 	} else {
 		if (gtk_check_menu_item_get_active(bmcmi) == TRUE) {
 			gtk_check_menu_item_set_active(bmcmi, FALSE);
@@ -682,7 +687,11 @@ nsgtk_on_toolbar_activate_menu(GtkMenuItem *widget, gpointer data)
 			gtk_check_menu_item_set_active(mbcmi, FALSE);
 		}
 
-		//gtk_widget_hide(GTK_WIDGET(g->tool_bar));
+		if (gtk_check_menu_item_get_active(tbcmi) == TRUE) {
+			gtk_check_menu_item_set_active(tbcmi, FALSE);
+		}
+
+		nsgtk_window_toolbar_show(gs, false);
 	}
 	return TRUE;
 }
@@ -828,13 +837,21 @@ create_scaffolding_popup_menu(struct nsgtk_scaffolding *gs, GtkAccelGroup *group
 			 G_CALLBACK(nsgtk_window_popup_menu_hidden),
 			 gs);
 
-	g_signal_connect(nmenu->customize_menuitem,
+	g_signal_connect(nmenu->toolbars_submenu->menubar_menuitem,
+			 "toggled",
+			 G_CALLBACK(nsgtk_on_menubar_activate_menu),
+			 gs);
+	g_signal_connect(nmenu->toolbars_submenu->toolbar_menuitem,
+			 "toggled",
+			 G_CALLBACK(nsgtk_on_toolbar_activate_menu),
+			 gs);
+	g_signal_connect(nmenu->toolbars_submenu->customize_menuitem,
 			 "activate",
 			 G_CALLBACK(nsgtk_on_customize_activate_menu),
 			 gs);
 
 	/* set initial popup menu visibility */
-	popup_menu_hide(nmenu, false, false, true);
+	popup_menu_hide(nmenu, false, false);
 
 	return nmenu;
 }
@@ -1411,8 +1428,7 @@ void nsgtk_scaffolding_set_sensitivity(struct nsgtk_scaffolding *g)
 nserror nsgtk_scaffolding_toolbar_context_menu(struct nsgtk_scaffolding *gs)
 {
 	/* set visibility for right-click popup menu */
-	popup_menu_hide(gs->popup_menu, false, true, false);
-	popup_menu_show(gs->popup_menu, false, false, true);
+	popup_menu_hide(gs->popup_menu, false, true);
 
 	nsgtk_menu_popup_at_pointer(gs->popup_menu->popup_menu, NULL);
 
@@ -1445,11 +1461,6 @@ nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g,
 	if (current_menu_features.link != NULL) {
 		/* menu is opening over a link */
 		gtkmenu = g->link_menu->link_menu;
-	} else if (gtk_widget_get_visible(GTK_WIDGET(g->menu_bar->bar_menu)) == FALSE) {
-		gtkmenu = g->burger_menu->burger_menu;
-
-		nsgtk_scaffolding_update_edit_actions_sensitivity(g);
-
 	} else {
 		gtkmenu = g->popup_menu->popup_menu;
 
@@ -1473,8 +1484,6 @@ nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g,
 			gtk_widget_show(GTK_WIDGET(g->popup_menu->paste_menuitem));
 		}
 
-		/* hide customise */
-		popup_menu_hide(g->popup_menu, false, false, true);
 	}
 
 	nsgtk_menu_popup_at_pointer(gtkmenu, NULL);

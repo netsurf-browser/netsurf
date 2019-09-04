@@ -52,7 +52,12 @@ struct nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *gw);
  * toolbar size and style is changed and the browser window contents
  * redrawn.
  */
-void nsgtk_window_update_all(void);
+nserror nsgtk_window_update_all(void);
+
+/**
+ * Windows associated with a scaffold will have their toolbar show state set
+ */
+nserror nsgtk_window_toolbar_show(struct nsgtk_scaffolding *gs, bool show);
 
 /**
  * update targets

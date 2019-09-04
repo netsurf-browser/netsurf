@@ -66,9 +66,6 @@
 static GtkWidget *select_menu;
 static struct form_control *select_menu_control;
 
-static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
-					gpointer user_data);
-
 struct gui_window {
 	/**
 	 * The gtk scaffold object containing menu, buttons, url bar, [tabs],
@@ -138,42 +135,12 @@ struct gui_window *window_list = NULL;
 /** flag controlling opening of tabs in the background */
 int temp_open_background = -1;
 
-struct nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g)
-{
-	return g->scaffold;
-}
-
-struct browser_window *nsgtk_get_browser_window(struct gui_window *g)
-{
-	return g->bw;
-}
-
-unsigned long nsgtk_window_get_signalhandler(struct gui_window *g, int i)
-{
-	return g->signalhandler[i];
-}
-
-GtkLayout *nsgtk_window_get_layout(struct gui_window *g)
-{
-	return g->layout;
-}
-
-GtkWidget *nsgtk_window_get_tab(struct gui_window *g)
-{
-	return g->tab;
-}
-
-void nsgtk_window_set_tab(struct gui_window *g, GtkWidget *w)
-{
-	g->tab = w;
-}
-
-
-static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
-					gpointer user_data)
+static void
+nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
+			  gpointer user_data)
 {
 	form_select_process_selection(select_menu_control,
-			(intptr_t)user_data);
+				      (intptr_t)user_data);
 }
 
 #if GTK_CHECK_VERSION(3,0,0)
@@ -270,8 +237,10 @@ nsgtk_window_draw_event(GtkWidget *widget, GdkEventExpose *event, gpointer data)
 
 #endif
 
-static gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
-					  GdkEventMotion *event, gpointer data)
+static gboolean
+nsgtk_window_motion_notify_event(GtkWidget *widget,
+				 GdkEventMotion *event,
+				 gpointer data)
 {
 	struct gui_window *g = data;
 	bool shift = event->state & GDK_SHIFT_MASK;
@@ -385,8 +354,11 @@ nsgtk_window_button_press_event(GtkWidget *widget,
 	return TRUE;
 }
 
-static gboolean nsgtk_window_button_release_event(GtkWidget *widget,
-					 GdkEventButton *event, gpointer data)
+
+static gboolean
+nsgtk_window_button_release_event(GtkWidget *widget,
+				  GdkEventButton *event,
+				  gpointer data)
 {
 	struct gui_window *g = data;
 	bool shift = event->state & GDK_SHIFT_MASK;
@@ -414,6 +386,7 @@ static gboolean nsgtk_window_button_release_event(GtkWidget *widget,
 	g->mouse.state = 0;
 	return TRUE;
 }
+
 
 static gboolean
 nsgtk_window_scroll_event(GtkWidget *widget,
@@ -502,8 +475,11 @@ nsgtk_window_scroll_event(GtkWidget *widget,
 	return TRUE;
 }
 
-static gboolean nsgtk_window_keypress_event(GtkWidget *widget,
-				GdkEventKey *event, gpointer data)
+
+static gboolean
+nsgtk_window_keypress_event(GtkWidget *widget,
+			    GdkEventKey *event,
+			    gpointer data)
 {
 	struct gui_window *g = data;
 	uint32_t nskey;
@@ -619,8 +595,11 @@ static gboolean nsgtk_window_keypress_event(GtkWidget *widget,
 	return TRUE;
 }
 
-static gboolean nsgtk_window_keyrelease_event(GtkWidget *widget,
-				GdkEventKey *event, gpointer data)
+
+static gboolean
+nsgtk_window_keyrelease_event(GtkWidget *widget,
+			      GdkEventKey *event,
+			      gpointer data)
 {
 	struct gui_window *g = data;
 
@@ -628,8 +607,10 @@ static gboolean nsgtk_window_keyrelease_event(GtkWidget *widget,
 }
 
 
-static void nsgtk_window_input_method_commit(GtkIMContext *ctx,
-				const gchar *str, gpointer data)
+static void
+nsgtk_window_input_method_commit(GtkIMContext *ctx,
+				 const gchar *str,
+				 gpointer data)
 {
 	struct gui_window *g = data;
 	size_t len = strlen(str), offset = 0;
@@ -644,8 +625,10 @@ static void nsgtk_window_input_method_commit(GtkIMContext *ctx,
 }
 
 
-static gboolean nsgtk_window_size_allocate_event(GtkWidget *widget,
-		GtkAllocation *allocation, gpointer data)
+static gboolean
+nsgtk_window_size_allocate_event(GtkWidget *widget,
+				 GtkAllocation *allocation,
+				 gpointer data)
 {
 	struct gui_window *g = data;
 
@@ -685,11 +668,15 @@ nsgtk_paned_notify__position(GObject *gobject, GParamSpec *pspec, gpointer data)
 	 ((gtk_paned_get_position(g->paned) * 10000) / (pane_alloc.width - 1)));
 }
 
-/** Set status bar / scroll bar proportion according to user option
- * when pane is resized.
+
+/**
+ * Set status bar / scroll bar proportion according to user option
+ *   when pane is resized.
  */
-static gboolean nsgtk_paned_size_allocate_event(GtkWidget *widget,
-		GtkAllocation *allocation, gpointer data)
+static gboolean
+nsgtk_paned_size_allocate_event(GtkWidget *widget,
+				GtkAllocation *allocation,
+				gpointer data)
 {
 	gtk_paned_set_position(GTK_PANED(widget),
 	       (nsoption_int(toolbar_status_size) * allocation->width) / 10000);
@@ -697,7 +684,10 @@ static gboolean nsgtk_paned_size_allocate_event(GtkWidget *widget,
 	return TRUE;
 }
 
-/* destroy the browsing context as there is nothing to display it now */
+
+/**
+ * destroy the browsing context as there is nothing to display it now
+ */
 static void window_destroy(GtkWidget *widget, gpointer data)
 {
 	struct gui_window *gw = data;
@@ -708,12 +698,12 @@ static void window_destroy(GtkWidget *widget, gpointer data)
 }
 
 
-
 static struct browser_window *bw_from_gw(void *data)
 {
 	struct gui_window *gw = data;
 	return gw->bw;
 }
+
 
 /**
  * Create and open a gtk container (window or tab) for a browsing context.
@@ -897,31 +887,6 @@ gui_window_create(struct browser_window *bw,
 	return g;
 }
 
-/* exported interface documented in window.h */
-nserror
-nsgtk_window_item_activate(struct gui_window *gw, nsgtk_toolbar_button itemid)
-{
-	return nsgtk_toolbar_item_activate(gw->toolbar, itemid);
-}
-
-/* exported interface documented in window.h */
-void nsgtk_window_update_all(void)
-{
-	struct gui_window *gw;
-	for (gw = window_list; gw != NULL; gw = gw->next) {
-		nsgtk_tab_options_changed(nsgtk_scaffolding_notebook(gw->scaffold));
-		nsgtk_toolbar_update(gw->toolbar);
-		/** \todo update search bar */
-		browser_window_schedule_reformat(gw->bw);
-	}
-}
-
-
-void nsgtk_window_destroy_browser(struct gui_window *gw)
-{
-	/* remove tab */
-	gtk_widget_destroy(gw->container);
-}
 
 static void gui_window_destroy(struct gui_window *g)
 {
@@ -942,6 +907,7 @@ static void gui_window_destroy(struct gui_window *g)
 
 	NSLOG(netsurf, INFO, "window list head: %p", window_list);
 }
+
 
 /**
  * favicon setting for gtk gui window.
@@ -977,6 +943,7 @@ gui_window_set_icon(struct gui_window *gw, struct hlcache_handle *icon)
 	nsgtk_tab_set_icon(gw, gw->icon);
 }
 
+
 static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
 	GtkAdjustment *vadj = nsgtk_layout_get_vadjustment(g->layout);
@@ -991,6 +958,7 @@ static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 	return true;
 }
 
+
 static void nsgtk_redraw_caret(struct gui_window *g)
 {
 	int sx, sy;
@@ -1004,6 +972,7 @@ static void nsgtk_redraw_caret(struct gui_window *g)
 			g->caretx - sx, g->carety - sy, 1, g->careth + 1);
 
 }
+
 
 static void gui_window_remove_caret(struct gui_window *g)
 {
@@ -1021,6 +990,7 @@ static void gui_window_remove_caret(struct gui_window *g)
 			g->caretx - sx, g->carety - sy, 1, oh + 1);
 
 }
+
 
 /**
  * Invalidates an area of a GTK browser window
@@ -1053,6 +1023,7 @@ nsgtk_window_invalidate_area(struct gui_window *g, const struct rect *rect)
 
 	return NSERROR_OK;
 }
+
 
 static void gui_window_set_status(struct gui_window *g, const char *text)
 {
@@ -1107,6 +1078,7 @@ gui_window_set_scroll(struct gui_window *g, const struct rect *rect)
 	return NSERROR_OK;
 }
 
+
 static void gui_window_update_extent(struct gui_window *g)
 {
 	int w, h;
@@ -1116,8 +1088,9 @@ static void gui_window_update_extent(struct gui_window *g)
 	}
 }
 
-static void gui_window_set_pointer(struct gui_window *g,
-				   gui_pointer_shape shape)
+
+static void
+gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
 	GdkCursor *cursor = NULL;
 	GdkCursorType cursortype;
@@ -1254,13 +1227,16 @@ gui_window_get_dimensions(struct gui_window *gw, int *width, int *height)
 	return NSERROR_OK;
 }
 
+
 static void gui_window_start_selection(struct gui_window *g)
 {
 	gtk_widget_grab_focus(GTK_WIDGET(g->layout));
 }
 
-static void gui_window_create_form_select_menu(struct gui_window *g,
-		struct form_control *control)
+
+static void
+gui_window_create_form_select_menu(struct gui_window *g,
+				   struct form_control *control)
 {
 	intptr_t item;
 	struct form_option *option;
@@ -1425,6 +1401,7 @@ gui_search_web_provider_update(const char *name, struct bitmap *bitmap)
 	return NSERROR_OK;
 }
 
+
 /**
  * GTK frontend web search operation table
  */
@@ -1460,3 +1437,88 @@ static struct gui_window_table window_table = {
 };
 
 struct gui_window_table *nsgtk_window_table = &window_table;
+
+
+/* exported interface documented in window.h */
+struct nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g)
+{
+	return g->scaffold;
+}
+
+
+/* exported interface documented in window.h */
+struct browser_window *nsgtk_get_browser_window(struct gui_window *g)
+{
+	return g->bw;
+}
+
+
+/* exported interface documented in window.h */
+unsigned long nsgtk_window_get_signalhandler(struct gui_window *g, int i)
+{
+	return g->signalhandler[i];
+}
+
+
+/* exported interface documented in window.h */
+GtkLayout *nsgtk_window_get_layout(struct gui_window *g)
+{
+	return g->layout;
+}
+
+
+/* exported interface documented in window.h */
+GtkWidget *nsgtk_window_get_tab(struct gui_window *g)
+{
+	return g->tab;
+}
+
+
+/* exported interface documented in window.h */
+void nsgtk_window_set_tab(struct gui_window *g, GtkWidget *w)
+{
+	g->tab = w;
+}
+
+
+/* exported interface documented in window.h */
+nserror
+nsgtk_window_item_activate(struct gui_window *gw, nsgtk_toolbar_button itemid)
+{
+	return nsgtk_toolbar_item_activate(gw->toolbar, itemid);
+}
+
+
+/* exported interface documented in window.h */
+void nsgtk_window_destroy_browser(struct gui_window *gw)
+{
+	/* remove tab */
+	gtk_widget_destroy(gw->container);
+}
+
+
+/* exported interface documented in window.h */
+nserror nsgtk_window_update_all(void)
+{
+	struct gui_window *gw;
+	for (gw = window_list; gw != NULL; gw = gw->next) {
+		nsgtk_tab_options_changed(nsgtk_scaffolding_notebook(gw->scaffold));
+		nsgtk_toolbar_update(gw->toolbar);
+		/** \todo update search bar */
+		browser_window_schedule_reformat(gw->bw);
+	}
+	return NSERROR_OK;
+}
+
+
+/* exported interface documented in window.h */
+nserror nsgtk_window_toolbar_show(struct nsgtk_scaffolding *gs, bool show)
+{
+	struct gui_window *gw;
+	for (gw = window_list; gw != NULL; gw = gw->next) {
+		if (gw->scaffold == gs) {
+			nsgtk_toolbar_show(gw->toolbar, show);
+		}
+	}
+	return NSERROR_OK;
+}

@@ -3758,3 +3758,16 @@ nsgtk_toolbar_item_activate(struct nsgtk_toolbar *tb,
 
 	return NSERROR_OK;
 }
+
+
+/* exported interface documented in toolbar.h */
+nserror nsgtk_toolbar_show(struct nsgtk_toolbar *tb, bool show)
+{
+	if (show) {
+		gtk_widget_show(GTK_WIDGET(tb->widget));
+	} else {
+		gtk_widget_hide(GTK_WIDGET(tb->widget));
+
+	}
+	return NSERROR_OK;
+}
