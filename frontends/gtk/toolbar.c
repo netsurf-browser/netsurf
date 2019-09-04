@@ -202,7 +202,7 @@ int nsgtk_toolbar_get_id_from_widget(GtkWidget *widget, struct nsgtk_scaffolding
 
 
 /* define data plus and data minus handlers */
-#define TOOLBAR_ITEM(identifier, name, sensitivity, clicked, activate, pass)\
+#define TOOLBAR_ITEM(identifier, name, sensitivity, clicked, activate)	\
 static gboolean								\
 nsgtk_toolbar_##name##_data_plus(GtkWidget *widget,			\
 				 GdkDragContext *cont,			\
@@ -3300,7 +3300,7 @@ toolbar_item_create(nsgtk_toolbar_button id,
 		item->bhandler = name##_button_clicked_cb;
 #define TOOLBAR_ITEM_n(name)			\
 		item->bhandler = NULL;
-#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate, pass)\
+#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate)	\
 	case identifier:						\
 		item->sensitivity = snstvty;				\
 		item->dataplus = nsgtk_toolbar_##name##_data_plus;	\

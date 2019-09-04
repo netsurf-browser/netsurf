@@ -459,7 +459,7 @@ nsgtk_window_tabs_remove(GtkNotebook *notebook,
 /**
  * handle menu activate signals by calling toolbar item activation
  */
-#define TOOLBAR_ITEM_y(identifier, name)				\
+#define TOOLBAR_ITEM_p(identifier, name)				\
 	static gboolean							\
 nsgtk_on_##name##_activate_menu(GtkMenuItem *widget, gpointer data)	\
 {									\
@@ -467,12 +467,14 @@ nsgtk_on_##name##_activate_menu(GtkMenuItem *widget, gpointer data)	\
 	nsgtk_window_item_activate(gs->top_level, identifier);		\
 	return TRUE;							\
 }
+#define TOOLBAR_ITEM_y(identifier, name)
 #define TOOLBAR_ITEM_n(identifier, name)
-#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate, pass) \
-	TOOLBAR_ITEM_ ## pass(identifier, name)
+#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate)	\
+	TOOLBAR_ITEM_ ## activate(identifier, name)
 #include "gtk/toolbar_items.h"
 #undef TOOLBAR_ITEM_y
 #undef TOOLBAR_ITEM_n
+#undef TOOLBAR_ITEM_p
 #undef TOOLBAR_ITEM
 
 
@@ -890,11 +892,13 @@ create_scaffolding_link_menu(struct nsgtk_scaffolding *g, GtkAccelGroup *group)
  */
 static nserror nsgtk_menu_initialise(struct nsgtk_scaffolding *g)
 {
+#define TOOLBAR_ITEM_p(identifier, name)				\
+	g->menus[identifier].mhandler = nsgtk_on_##name##_activate_menu;
 #define TOOLBAR_ITEM_y(identifier, name)				\
 	g->menus[identifier].mhandler = nsgtk_on_##name##_activate_menu;
-#define TOOLBAR_ITEM_n(identifier, name)		\
+#define TOOLBAR_ITEM_n(identifier, name)				\
 	g->menus[identifier].mhandler = NULL;
-#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate, pass) \
+#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate)	\
 	g->menus[identifier].sensitivity = snstvty;			\
 	TOOLBAR_ITEM_ ## activate(identifier, name)
 #include "gtk/toolbar_items.h"
