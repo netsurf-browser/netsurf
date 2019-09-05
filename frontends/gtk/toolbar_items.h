@@ -72,6 +72,7 @@ typedef enum {
 	INFO_BUTTON,
 	ABOUT_BUTTON,
 	OPENMENU_BUTTON,
+	CUSTOMIZE_BUTTON,
 	PLACEHOLDER_BUTTON /* size indicator; array maximum indices */
 } nsgtk_toolbar_button;    /* PLACEHOLDER_BUTTON - 1 */
 
@@ -144,6 +145,7 @@ TOOLBAR_ITEM(GUIDE_BUTTON, guide, true, y, p)
 TOOLBAR_ITEM(INFO_BUTTON, info, true, y, p)
 TOOLBAR_ITEM(ABOUT_BUTTON, about, true, y, p)
 TOOLBAR_ITEM(OPENMENU_BUTTON, openmenu, true, y, n)
+TOOLBAR_ITEM(CUSTOMIZE_BUTTON, cutomize, true, y, p)
 
 #ifdef TOOLBAR_ITEM_SET
 #undef TOOLBAR_ITEM

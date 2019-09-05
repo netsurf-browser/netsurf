@@ -137,11 +137,21 @@ struct nsgtk_toolbar {
 	void *get_ctx;
 };
 
+/**
+ * toolbar cusomisation context
+ */
+struct nsgtk_toolbar_customization {
+	/**
+	 * first entry is a toolbar widget so a customisation widget
+	 *   can be cast to toolbar and back.
+	 */
+	struct nsgtk_toolbar toolbar;
 
-static GtkTargetEntry entry = {(char *)"nsgtk_button_data",
-		GTK_TARGET_SAME_APP, 0};
-
-static bool edit_mode = false;
+	/**
+	 * toolbar gtk builder
+	 */
+	GtkBuilder *builder;
+};
 
 /**
  * toolbar customization window context
@@ -157,6 +167,8 @@ struct nsgtk_toolbar_custom_store {
 	int currentbutton;
 	bool fromstore;
 };
+
+static bool edit_mode = false;
 
 /* the number of buttons that fit in the width of the store window */
 #define NSGTK_STORE_WIDTH 6
@@ -233,11 +245,6 @@ nsgtk_toolbar_##name##_data_minus(GtkWidget *widget,			\
 #undef TOOLBAR_ITEM
 
 
-/* exported interface documented in gtk/scaffolding.h */
-static GtkToolbar *nsgtk_scaffolding_toolbar(struct nsgtk_scaffolding *g)
-{
-	return NULL;//g->tool_bar;
-}
 
 /**
  * get default image for buttons / menu items from gtk stock items.
@@ -494,37 +501,6 @@ void nsgtk_theme_implement(struct nsgtk_scaffolding *g)
 }
 
 
-/**
- * callback function to iterate toolbar's widgets
- */
-static void nsgtk_toolbar_clear_toolbar(GtkWidget *widget, gpointer data)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-	gtk_container_remove(GTK_CONTAINER(nsgtk_scaffolding_toolbar(g)),
-			     widget);
-}
-
-/**
- * connect temporary handler for toolbar edit events
- *
- * \param g The scaffolding
- * \param bi The button index
- */
-static void nsgtk_toolbar_temp_connect(struct nsgtk_scaffolding *g,
-				       nsgtk_toolbar_button bi)
-{
-	struct nsgtk_toolbar_item *bc;
-
-	if (bi != URL_BAR_ITEM) {
-		bc = nsgtk_scaffolding_button(g, bi);
-		if ((bc->button != NULL) && (bc->dataminus != NULL)) {
-			g_signal_connect(bc->button,
-					 "drag-data-get",
-					 G_CALLBACK(bc->dataminus),
-					 g);
-		}
-	}
-}
 
 /**
  * get scaffolding button index of button at location
@@ -816,6 +792,48 @@ make_toolbar_item(nsgtk_toolbar_button i, struct nsgtk_theme *theme)
 	}
 
 	return w;
+}
+#if 0
+
+static GtkTargetEntry entry = {(char *)"nsgtk_button_data",
+		GTK_TARGET_SAME_APP, 0};
+
+/* exported interface documented in gtk/scaffolding.h */
+static GtkToolbar *nsgtk_scaffolding_toolbar(struct nsgtk_scaffolding *g)
+{
+	return NULL;//g->tool_bar;
+}
+
+/**
+ * callback function to iterate toolbar's widgets
+ */
+static void nsgtk_toolbar_clear_toolbar(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
+	gtk_container_remove(GTK_CONTAINER(nsgtk_scaffolding_toolbar(g)),
+			     widget);
+}
+
+/**
+ * connect temporary handler for toolbar edit events
+ *
+ * \param g The scaffolding
+ * \param bi The button index
+ */
+static void nsgtk_toolbar_temp_connect(struct nsgtk_scaffolding *g,
+				       nsgtk_toolbar_button bi)
+{
+	struct nsgtk_toolbar_item *bc;
+
+	if (bi != URL_BAR_ITEM) {
+		bc = nsgtk_scaffolding_button(g, bi);
+		if ((bc->button != NULL) && (bc->dataminus != NULL)) {
+			g_signal_connect(bc->button,
+					 "drag-data-get",
+					 G_CALLBACK(bc->dataminus),
+					 g);
+		}
+	}
 }
 
 /* exported interface documented in gtk/scaffolding.h */
@@ -1498,7 +1516,42 @@ void nsgtk_toolbar_customization_init(struct nsgtk_scaffolding *g)
 	/* open toolbar window */
 	nsgtk_toolbar_window_open(g);
 }
+#endif
+/**
+ * create a toolbar customization tab
+ *
+ * this is completely different approach to previous implementation. it
+ *  is not modal and the toolbar configuration is performed completely
+ *  within the tab. once the user is happy they can apply the change or
+ *  cancel as they see fit while continuing to use the browser as usual.
+ */
+static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct nsgtk_toolbar_customization *tbc;
+	nserror res;
+	/* create nsgtk_toolbar_customization which has nsgtk_toolbar
+	 * at the front so we can reuse functions that take
+	 * nsgtk_toolbar
+	 */
+	tbc = calloc(1, sizeof(struct nsgtk_toolbar_customization));
 
+	/* create builder*/
+	res = nsgtk_builder_new_from_resname("toolbar", &tbc->builder);
+	if (res != NSERROR_OK) {
+		NSLOG(netsurf, INFO, "Toolbar UI builder init failed");
+		return TRUE;
+	}
+
+	/* get toolbar widget from builder */
+	/* populate toolbar widget in edit mode */
+	/* attach handlers to widgets */
+	/* use layout box for widgets to drag to/from */
+	/* save and update on apply button then discard */
+	/* discard button causes destruction */
+	/* close and cleanup on destroy signal */
+	return TRUE;
+}
 
 /**
  * \return toolbar item id when a widget is an element of the scaffolding

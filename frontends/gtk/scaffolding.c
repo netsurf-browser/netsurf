@@ -586,15 +586,6 @@ nsgtk_on_link_copy_activate_menu(GtkMenuItem *widget, gpointer data)
 }
 
 
-static gboolean
-nsgtk_on_customize_activate_menu(GtkMenuItem *widget, gpointer data)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-	nsgtk_toolbar_customization_init(g);
-	return TRUE;
-}
-
-
 static gboolean nsgtk_on_find_activate_menu(GtkMenuItem *widget, gpointer data)
 {
 	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
@@ -773,10 +764,6 @@ static void nsgtk_menu_connect_signals(struct nsgtk_scaffolding *g)
 			 "toggled",
 			 G_CALLBACK(nsgtk_on_toolbar_activate_menu),
 			 g);
-	g_signal_connect(g->menu_bar->view_submenu->toolbars_submenu->customize_menuitem,
-			 "activate",
-			 G_CALLBACK(nsgtk_on_customize_activate_menu),
-			 g);
 
 }
 
@@ -806,10 +793,6 @@ create_scaffolding_burger_menu(struct nsgtk_scaffolding *gs,
 	g_signal_connect(nmenu->view_submenu->toolbars_submenu->toolbar_menuitem,
 			 "toggled",
 			 G_CALLBACK(nsgtk_on_toolbar_activate_menu),
-			 gs);
-	g_signal_connect(nmenu->view_submenu->toolbars_submenu->customize_menuitem,
-			 "activate",
-			 G_CALLBACK(nsgtk_on_customize_activate_menu),
 			 gs);
 	return nmenu;
 }
@@ -844,10 +827,6 @@ create_scaffolding_popup_menu(struct nsgtk_scaffolding *gs, GtkAccelGroup *group
 	g_signal_connect(nmenu->toolbars_submenu->toolbar_menuitem,
 			 "toggled",
 			 G_CALLBACK(nsgtk_on_toolbar_activate_menu),
-			 gs);
-	g_signal_connect(nmenu->toolbars_submenu->customize_menuitem,
-			 "activate",
-			 G_CALLBACK(nsgtk_on_customize_activate_menu),
 			 gs);
 
 	/* set initial popup menu visibility */
@@ -974,6 +953,9 @@ static nserror nsgtk_menu_initialise(struct nsgtk_scaffolding *g)
 	ITEM_MB(NEXTTAB, nexttab, view_submenu->tabs);
 	ITEM_MB(PREVTAB, prevtab, view_submenu->tabs);
 	ITEM_MB(CLOSETAB, closetab, view_submenu->tabs);
+	/* view - toolbars submenu */
+	ITEM_MB(CUSTOMIZE, customize, view_submenu->toolbars);
+	g->menus[CUSTOMIZE_BUTTON].popup = g->popup_menu->toolbars_submenu->customize_menuitem;
 
 	/* navigation menu */
 	ITEM_MBp(BACK, back, nav);
