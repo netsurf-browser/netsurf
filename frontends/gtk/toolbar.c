@@ -233,6 +233,12 @@ nsgtk_toolbar_##name##_data_minus(GtkWidget *widget,			\
 #undef TOOLBAR_ITEM
 
 
+/* exported interface documented in gtk/scaffolding.h */
+static GtkToolbar *nsgtk_scaffolding_toolbar(struct nsgtk_scaffolding *g)
+{
+	return NULL;//g->tool_bar;
+}
+
 /**
  * get default image for buttons / menu items from gtk stock items.
  *

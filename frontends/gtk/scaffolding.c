@@ -1310,11 +1310,6 @@ GtkWidget *nsgtk_scaffolding_urlbar(struct nsgtk_scaffolding *g)
 	return NULL;//g->url_bar;
 }
 
-/* exported interface documented in gtk/scaffolding.h */
-GtkToolbar *nsgtk_scaffolding_toolbar(struct nsgtk_scaffolding *g)
-{
-	return NULL;//g->tool_bar;
-}
 
 /* exported interface documented in gtk/scaffolding.h */
 struct gtk_search *nsgtk_scaffolding_search(struct nsgtk_scaffolding *g)

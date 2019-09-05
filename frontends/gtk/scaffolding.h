@@ -29,20 +29,12 @@ struct gui_search_web_table;
 struct nsurl;
 
 
-
-struct gtk_history_window {
-	struct nsgtk_scaffolding 	*g;
-	GtkWindow		*window;
-	GtkScrolledWindow	*scrolled;
-	GtkDrawingArea		*drawing_area;
-};
-
 struct gtk_search {
-	GtkToolbar			*bar;
-	GtkEntry			*entry;
-	GtkToolButton			*buttons[3]; /* back, forward, */
-	GtkCheckButton			*checkAll;	/* close */
-	GtkCheckButton			*caseSens;
+	GtkToolbar *bar;
+	GtkEntry *entry;
+	GtkToolButton *buttons[3]; /* back, forward, */
+	GtkCheckButton *checkAll;
+	GtkCheckButton *caseSens;
 };
 
 
@@ -101,17 +93,10 @@ GtkNotebook *nsgtk_scaffolding_notebook(struct nsgtk_scaffolding *g);
  */
 GtkWidget *nsgtk_scaffolding_urlbar(struct nsgtk_scaffolding *g);
 
-/**
- * Get the gtk toolbar from a scaffold.
- */
-GtkToolbar *nsgtk_scaffolding_toolbar(struct nsgtk_scaffolding *g);
-
 
 struct gtk_search *nsgtk_scaffolding_search(struct nsgtk_scaffolding *g);
 
 GtkMenuBar *nsgtk_scaffolding_menu_bar(struct nsgtk_scaffolding *g);
-
-struct gtk_history_window *nsgtk_scaffolding_history_window(struct nsgtk_scaffolding *g);
 
 struct gui_window *nsgtk_scaffolding_top_level(struct nsgtk_scaffolding *g);
 
