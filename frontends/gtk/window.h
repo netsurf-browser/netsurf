@@ -87,20 +87,6 @@ unsigned long nsgtk_window_get_signalhandler(struct gui_window *gw, int i);
  */
 GtkLayout *nsgtk_window_get_layout(struct gui_window *gw);
 
-/**
- * get tab widget from gui window handle
- *
- * \param gw gui window handle
- */
-GtkWidget *nsgtk_window_get_tab(struct gui_window *gw);
-
-/**
- * set tab widget associated with gui window handle
- *
- * \param gw gui window handle
- * \param w gtk widget to associate
- */
-void nsgtk_window_set_tab(struct gui_window *gw, GtkWidget *w);
 
 /**
  * activate the handler for a item in a toolbar of a gui window

@@ -1202,23 +1202,19 @@ struct nsgtk_scaffolding *nsgtk_current_scaffolding(void)
 
 
 /* exported function documented in gtk/scaffolding.h */
-void nsgtk_window_set_title(struct gui_window *gw, const char *title)
+void nsgtk_scaffolding_set_title(struct gui_window *gw, const char *title)
 {
 	struct nsgtk_scaffolding *gs = nsgtk_get_scaffold(gw);
 	int title_len;
 	char *newtitle;
 
-	if ((title == NULL) || (title[0] == '\0')) {
-		if (gs->top_level != gw) {
-			gtk_window_set_title(gs->window, "NetSurf");
-		}
+	/* only set window title if top level window */
+	if (gs->top_level != gw) {
 		return;
 	}
 
-	nsgtk_tab_set_title(gw, title);
-
-	if (gs->top_level != gw) {
-		/* not top level window so do not set window title */
+	if (title == NULL || title[0] == '\0') {
+		gtk_window_set_title(gs->window, "NetSurf");
 		return;
 	}
 
@@ -1233,6 +1229,7 @@ void nsgtk_window_set_title(struct gui_window *gw, const char *title)
 	gtk_window_set_title(gs->window, newtitle);
 
 	free(newtitle);
+
 }
 
 
@@ -1366,7 +1363,7 @@ void nsgtk_scaffolding_set_top_level(struct gui_window *gw)
 	browser_window_search_clear(bw);
 
 	/* Ensure the window's title bar is updated */
-	nsgtk_window_set_title(gw, browser_window_get_title(bw));
+	nsgtk_scaffolding_set_title(gw, browser_window_get_title(bw));
 }
 
 

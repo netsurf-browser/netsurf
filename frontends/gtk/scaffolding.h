@@ -145,14 +145,13 @@ void nsgtk_scaffolding_set_sensitivity(struct nsgtk_scaffolding *g);
  */
 void nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g, gdouble x, gdouble y);
 
-/* core acessors */
 /**
  * set the title in the window
  *
  * \param gw The gui window to set title on
  * \param title The title to set which may be NULL
  */
-void nsgtk_window_set_title(struct gui_window *gw, const char *title);
+void nsgtk_scaffolding_set_title(struct gui_window *gw, const char *title);
 
 
 #endif /* NETSURF_GTK_SCAFFOLDING_H */

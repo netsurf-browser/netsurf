@@ -73,9 +73,13 @@ nsgtk_tab_update_size(GtkWidget *hbox,
 
 /**
  * Create a notebook tab label
+ *
+ * \param page The page content widget
+ * \param title The title of the page
+ * \param icon_pixbuf The icon of the page
  */
 static GtkWidget *
-nsgtk_tab_label_setup(struct gui_window *window,
+nsgtk_tab_label_setup(GtkWidget *page,
 		      const char *title,
 		      GdkPixbuf *icon_pixbuf)
 {
@@ -108,10 +112,13 @@ nsgtk_tab_label_setup(struct gui_window *window,
 	gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE);
 	gtk_widget_set_tooltip_text(button, "Close this tab.");
 
-	g_signal_connect_swapped(button, "clicked",
-			G_CALLBACK(nsgtk_window_destroy_browser), window);
-	g_signal_connect(hbox, "style-set",
-			G_CALLBACK(nsgtk_tab_update_size), button);
+	g_signal_connect_swapped(button,
+				 "clicked",
+				 G_CALLBACK(gtk_widget_destroy), page);
+	g_signal_connect(hbox,
+			 "style-set",
+			 G_CALLBACK(nsgtk_tab_update_size),
+			 button);
 
 	/* pack the widgets into the label box */
 	gtk_box_pack_start(GTK_BOX(hbox), favicon, FALSE, FALSE, 0);
@@ -355,25 +362,19 @@ nserror nsgtk_notebook_create(GtkBuilder *builder, GtkNotebook **notebook_out)
 }
 
 /* exported interface documented in gtk/tabs.h */
-void nsgtk_tab_add(struct gui_window *gw,
+nserror
+nsgtk_tab_add_page(GtkNotebook *notebook,
 		   GtkWidget *tab_contents,
 		   bool background,
 		   const char *title,
 		   GdkPixbuf *icon_pixbuf)
 {
-	GtkNotebook *notebook;
 	GtkWidget *tabBox;
 	gint remember;
 	gint pages;
 	gint newpage;
 
-	g_object_set_data(G_OBJECT(tab_contents), "gui_window", gw);
-
-	notebook = nsgtk_scaffolding_notebook(nsgtk_get_scaffold(gw));
-
-	tabBox = nsgtk_tab_label_setup(gw, title, icon_pixbuf);
-
-	nsgtk_window_set_tab(gw, tabBox);
+	tabBox = nsgtk_tab_label_setup(tab_contents, title, icon_pixbuf);
 
 	remember = gtk_notebook_get_current_page(notebook);
 
@@ -391,48 +392,85 @@ void nsgtk_tab_add(struct gui_window *gw,
 		gtk_notebook_set_current_page(notebook, newpage);
 	}
 
+	return NSERROR_OK;
+}
+
+
+/* exported interface documented in gtk/tabs.h */
+void nsgtk_tab_add(struct gui_window *gw,
+		   GtkWidget *tab_contents,
+		   bool background,
+		   const char *title,
+		   GdkPixbuf *icon_pixbuf)
+{
+	GtkNotebook *notebook;
+
+	g_object_set_data(G_OBJECT(tab_contents), "gui_window", gw);
+
+	notebook = nsgtk_scaffolding_notebook(nsgtk_get_scaffold(gw));
+
+	nsgtk_tab_add_page(notebook, tab_contents, background, title, icon_pixbuf);
+
 	gtk_widget_grab_focus(GTK_WIDGET(nsgtk_scaffolding_urlbar(
 			nsgtk_get_scaffold(gw))));
 }
 
 
 /* exported interface documented in gtk/tabs.h */
-nserror nsgtk_tab_set_icon(struct gui_window *gw, GdkPixbuf *pixbuf)
+nserror nsgtk_tab_set_icon(GtkWidget *page, GdkPixbuf *pixbuf)
 {
-	GtkWidget *favicon;
-	GtkWidget *tab;
+	GtkImage *favicon;
+	GtkWidget *tab_label;
+	GtkNotebook *notebook;
 
 	if (pixbuf == NULL) {
 		return NSERROR_INVALID;
 	}
+	notebook = GTK_NOTEBOOK(gtk_widget_get_ancestor(page, GTK_TYPE_NOTEBOOK));
+	if (notebook == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
 
-	tab = nsgtk_window_get_tab(gw);
-	if (tab == NULL) {
+	tab_label = gtk_notebook_get_tab_label(notebook, page);
+	if (tab_label == NULL) {
 		return NSERROR_INVALID;
 	}
 
-	favicon = g_object_get_data(G_OBJECT(tab), "favicon");
+	favicon = GTK_IMAGE(g_object_get_data(G_OBJECT(tab_label), "favicon"));
 
-	gtk_image_set_from_pixbuf(GTK_IMAGE(favicon), pixbuf);
+	gtk_image_set_from_pixbuf(favicon, pixbuf);
 
 	return NSERROR_OK;
 }
 
 
 /* exported interface documented in gtk/tabs.h */
-void nsgtk_tab_set_title(struct gui_window *g, const char *title)
+nserror nsgtk_tab_set_title(GtkWidget *page, const char *title)
 {
-	GtkWidget *label;
-	GtkWidget *tab;
+	GtkLabel *label;
+	GtkWidget *tab_label;
+	GtkNotebook *notebook;
 
-	tab = nsgtk_window_get_tab(g);
-	if (tab == NULL) {
-		return;
+	if (title == NULL) {
+		return NSERROR_INVALID;
 	}
 
-	label = g_object_get_data(G_OBJECT(tab), "label");
-	gtk_label_set_text(GTK_LABEL(label), title);
-	gtk_widget_set_tooltip_text(tab, title);
+	notebook = GTK_NOTEBOOK(gtk_widget_get_ancestor(page, GTK_TYPE_NOTEBOOK));
+	if (notebook == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	tab_label = gtk_notebook_get_tab_label(notebook, page);
+	if (tab_label == NULL) {
+		return NSERROR_INVALID;
+	}
+
+	label = GTK_LABEL(g_object_get_data(G_OBJECT(tab_label), "label"));
+
+	gtk_label_set_text(label, title);
+	gtk_widget_set_tooltip_text(tab_label, title);
+
+	return NSERROR_OK;
 }
 
 /* exported interface documented in gtk/tabs.h */

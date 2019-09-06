@@ -31,11 +31,13 @@
 #include <gdk/gdkkeysyms.h>
 #include <gdk-pixbuf/gdk-pixdata.h>
 
-#include "netsurf/inttypes.h"
+#include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/nsoption.h"
 #include "utils/messages.h"
+#include "utils/nsurl.h"
+#include "netsurf/inttypes.h"
 #include "netsurf/content.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
@@ -45,7 +47,6 @@
 #include "netsurf/keypress.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
-#include "utils/nsurl.h"
 
 #include "gtk/selection.h"
 #include "gtk/warn.h"
@@ -940,7 +941,7 @@ gui_window_set_icon(struct gui_window *gw, struct hlcache_handle *icon)
 		gw->icon = favicon_pixbuf;
 	}
 
-	nsgtk_tab_set_icon(gw, gw->icon);
+	nsgtk_tab_set_icon(gw->container, gw->icon);
 }
 
 
@@ -1378,6 +1379,22 @@ static nserror gui_window_set_url(struct gui_window *gw, nsurl *url)
 
 
 /**
+ * GTK window UI callback when core changes the current title
+ *
+ * \param gw The gui window on which the url has been set.
+ * \param url The new url.
+ */
+static void gui_window_set_title(struct gui_window *gw, const char *title)
+{
+
+	if ((title != NULL) && (title[0] != '\0')) {
+		nsgtk_tab_set_title(gw->container, title);
+	}
+	nsgtk_scaffolding_set_title(gw, title);
+}
+
+
+/**
  * GTK UI callback when search provider details are updated.
  *
  * \param name The providers name.
@@ -1425,6 +1442,7 @@ static struct gui_window_table window_table = {
 	.event = gui_window_event,
 
 	.set_icon = gui_window_set_icon,
+	.set_title = gui_window_set_title,
 	.set_status = gui_window_set_status,
 	.set_pointer = gui_window_set_pointer,
 	.place_caret = gui_window_place_caret,
@@ -1432,8 +1450,7 @@ static struct gui_window_table window_table = {
 	.file_gadget_open = gui_window_file_gadget_open,
 	.set_url = gui_window_set_url,
 
-	/* from scaffold */
-	.set_title = nsgtk_window_set_title,
+
 };
 
 struct gui_window_table *nsgtk_window_table = &window_table;
@@ -1464,20 +1481,6 @@ unsigned long nsgtk_window_get_signalhandler(struct gui_window *g, int i)
 GtkLayout *nsgtk_window_get_layout(struct gui_window *g)
 {
 	return g->layout;
-}
-
-
-/* exported interface documented in window.h */
-GtkWidget *nsgtk_window_get_tab(struct gui_window *g)
-{
-	return g->tab;
-}
-
-
-/* exported interface documented in window.h */
-void nsgtk_window_set_tab(struct gui_window *g, GtkWidget *w)
-{
-	g->tab = w;
 }
 
 
