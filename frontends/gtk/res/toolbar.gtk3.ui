@@ -169,7 +169,7 @@
         <property name="can_focus">False</property>
         <property name="layout_style">end</property>
         <child>
-          <object class="GtkButton" id="rese">
+          <object class="GtkButton" id="resetdefault">
             <property name="label" translatable="yes">Reset</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
@@ -212,7 +212,8 @@
       </object>
       <packing>
         <property name="expand">False</property>
-        <property name="fill">True</property>
+        <property name="fill">False</property>
+        <property name="padding">6</property>
         <property name="position">2</property>
       </packing>
     </child>
