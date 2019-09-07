@@ -78,3 +78,13 @@ user_agent_string(void)
 	return core_user_agent_string;
 }
 
+/* Public API documented in useragent.h */
+void
+free_user_agent_string(void)
+{
+	if (core_user_agent_string != NULL) {
+		/* Nasty cast because we need to de-const it to free it */
+		free((void *)core_user_agent_string);
+		core_user_agent_string = NULL;
+	}
+}

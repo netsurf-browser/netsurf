@@ -27,4 +27,11 @@
  */
 const char * user_agent_string(void);
 
+/** Free any memory allocated for the user_agent_string
+ *
+ * After calling this, the value returned by \ref user_agent_string()
+ * is to be considered invalid.
+ */
+void free_user_agent_string(void);
+
 #endif
