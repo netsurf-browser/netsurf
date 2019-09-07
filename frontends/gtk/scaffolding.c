@@ -1191,16 +1191,6 @@ static nserror nsgtk_search_connect_signals(struct nsgtk_scaffolding *gs)
 }
 
 
-/* exported interface documented in gtk/scaffolding.h */
-struct nsgtk_scaffolding *nsgtk_current_scaffolding(void)
-{
-	if (scaf_current == NULL) {
-		scaf_current = scaf_list;
-	}
-	return scaf_current;
-}
-
-
 /* exported function documented in gtk/scaffolding.h */
 void nsgtk_scaffolding_set_title(struct gui_window *gw, const char *title)
 {
@@ -1297,9 +1287,12 @@ struct gtk_search *nsgtk_scaffolding_search(struct nsgtk_scaffolding *g)
 }
 
 /* exported interface documented in gtk/scaffolding.h */
-GtkMenuBar *nsgtk_scaffolding_menu_bar(struct nsgtk_scaffolding *g)
+GtkMenuBar *nsgtk_scaffolding_menu_bar(struct nsgtk_scaffolding *gs)
 {
-	return g->menu_bar->bar_menu;
+	if (gs == NULL) {
+		return NULL;
+	}
+	return gs->menu_bar->bar_menu;
 }
 
 /* exported interface documented in gtk/scaffolding.h */
@@ -1353,6 +1346,8 @@ void nsgtk_scaffolding_set_top_level(struct gui_window *gw)
 
 	sc = nsgtk_get_scaffold(gw);
 	assert(sc != NULL);
+
+	scaf_current = sc;
 
 	sc->top_level = gw;
 
@@ -1463,6 +1458,28 @@ nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g,
 	nsgtk_menu_popup_at_pointer(gtkmenu, NULL);
 }
 
+/* exported interface documented in gtk/scaffolding.h */
+struct nsgtk_scaffolding *nsgtk_current_scaffolding(void)
+{
+	if (scaf_current == NULL) {
+		scaf_current = scaf_list;
+	}
+	return scaf_current;
+}
+
+/* exported interface documented in gtk/scaffolding.h */
+struct nsgtk_scaffolding *nsgtk_scaffolding_from_notebook(GtkNotebook *notebook)
+{
+	struct nsgtk_scaffolding *gs;
+	gs = scaf_list;
+	while (gs != NULL) {
+		if (gs->notebook == notebook) {
+			break;
+		}
+		gs = gs->next;
+	}
+	return gs;
+}
 
 /* exported interface documented in gtk/scaffolding.h */
 struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)

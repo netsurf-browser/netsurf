@@ -153,5 +153,12 @@ void nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g, gdouble x, gdou
  */
 void nsgtk_scaffolding_set_title(struct gui_window *gw, const char *title);
 
+/**
+ * find which scaffolding contains a gtk notebook
+ *
+ * \param notebook The notebook to search for.
+ * \return The scaffolding containing the notebook or NULL if not found
+ */
+struct nsgtk_scaffolding *nsgtk_scaffolding_from_notebook(GtkNotebook *notebook);
 
 #endif /* NETSURF_GTK_SCAFFOLDING_H */

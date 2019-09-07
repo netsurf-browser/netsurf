@@ -173,36 +173,49 @@ nsgtk_tab_switch_page_after(GtkNotebook *notebook,
 {
 	GtkWidget *srcpage;
 	GtkWidget *addpage;
-	struct gui_window *gw;
-	nserror error;
+	GtkMenuBar *menubar;
+	struct gui_window *gw = NULL;
+	nserror res = NSERROR_INVALID;
 
 	addpage = g_object_get_data(G_OBJECT(notebook), "addtab");
 
-	if (selpage == addpage) {
-		if ((srcpagenum != -1) &&
-		    (srcpagenum != (gint)selpagenum)) {
-			/* ensure the add tab is not actually selected */
-			NSLOG(netsurf, INFO, "src %d sel %d", srcpagenum,
-			      selpagenum);
-			srcpage = gtk_notebook_get_nth_page(notebook, srcpagenum);
-			gw = g_object_get_data(G_OBJECT(srcpage), "gui_window");
-			if ((gw != NULL) && (nsgtk_get_scaffold(gw) != NULL)) {
-				error = nsgtk_window_item_activate(gw, NEWTAB_BUTTON);
-				if (error != NSERROR_OK) {
-					NSLOG(netsurf, INFO,
-					      "Failed to open new tab.");
-				}
-			}
-		}
-	} else {
+	/* check if trying to select the "add page" tab */
+	if (selpage != addpage) {
 		NSLOG(netsurf, INFO, "sel %d", selpagenum);
-		/* tab with page in it */
+		menubar = nsgtk_scaffolding_menu_bar(nsgtk_scaffolding_from_notebook(notebook));
 		gw = g_object_get_data(G_OBJECT(selpage), "gui_window");
 		if (gw != NULL) {
+			/* tab with web page in it */
 			nsgtk_scaffolding_set_top_level(gw);
+			gtk_widget_show(GTK_WIDGET(addpage));
+			gtk_widget_set_sensitive(GTK_WIDGET(menubar), true);
+		} else {
+			/* tab with non browser content (e.g. tb customize) */
+			gtk_widget_hide(GTK_WIDGET(addpage));
+			gtk_widget_set_sensitive(GTK_WIDGET(menubar), false);
 		}
+		return;
+	}
+
+	NSLOG(netsurf, INFO, "src %d sel %d", srcpagenum, selpagenum);
+
+	/* ensure the add tab is not already selected */
+	if ((srcpagenum == -1) || (srcpagenum == (gint)selpagenum)) {
+		return;
+	}
+
+	srcpage = gtk_notebook_get_nth_page(notebook, srcpagenum);
+
+	gw = g_object_get_data(G_OBJECT(srcpage), "gui_window");
+
+	if (gw != NULL) {
+		res = nsgtk_window_item_activate(gw, NEWTAB_BUTTON);
+	}
+	if (res != NSERROR_OK) {
+		NSLOG(netsurf, INFO, "Failed to open new tab.");
 	}
 }
+
 
 /**
  * The tab reordered gtk signal handler
