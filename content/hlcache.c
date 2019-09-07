@@ -660,6 +660,9 @@ void hlcache_finalise(void)
 	NSLOG(netsurf, INFO, "hit/miss %d/%d", hlcache->hit_count,
 	      hlcache->miss_count);
 
+	/* De-schedule ourselves */
+	guit->misc->schedule(-1, hlcache_clean, NULL);
+
 	free(hlcache);
 	hlcache = NULL;
 
