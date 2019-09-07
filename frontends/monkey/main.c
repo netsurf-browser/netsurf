@@ -380,6 +380,12 @@ main(int argc, char **argv)
 	urldb_load(nsoption_charp(url_file));
 	urldb_load_cookies(nsoption_charp(cookie_file));
 
+	/* Free resource paths now we're done finding resources */
+	for (char **s = respaths; *s != NULL; s++) {
+		free(*s);
+	}
+	free(respaths);
+
 	ret = monkey_register_handler("QUIT", quit_handler);
 	if (ret != NSERROR_OK) {
 		die("quit handler failed to register");
@@ -420,6 +426,9 @@ main(int argc, char **argv)
 
 	/* finalise logging */
 	nslog_finalise();
+
+	/* And free any monkey-specific bits */
+	monkey_free_handlers();
 
 	return 0;
 }

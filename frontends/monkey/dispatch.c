@@ -29,7 +29,7 @@
 
 typedef struct cmdhandler {
 	struct cmdhandler *r_next, *r_prev;
-	const char *cmd;
+	char *cmd;
 	handle_command_fn fn;
 } monkey_cmdhandler_t;
 
@@ -47,6 +47,17 @@ monkey_register_handler(const char *cmd, handle_command_fn fn)
 	ret->fn = fn;
 	RING_INSERT(handler_ring, ret);
 	return NSERROR_OK;
+}
+
+void
+monkey_free_handlers(void)
+{
+	while (handler_ring != NULL) {
+		monkey_cmdhandler_t *handler = handler_ring;
+		RING_REMOVE(handler_ring, handler);
+		free(handler->cmd);
+		free(handler);
+	}
 }
 
 void
