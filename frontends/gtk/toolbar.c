@@ -1518,6 +1518,8 @@ void nsgtk_toolbar_customization_init(struct nsgtk_scaffolding *g)
 	nsgtk_toolbar_window_open(g);
 }
 #endif
+
+
 /**
  * create a toolbar customization tab
  *
@@ -1587,6 +1589,49 @@ static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
 
 	return TRUE;
 }
+
+/**
+ * create a new browser window
+ *
+ * creates a browser window with default url depending on user choices.
+ *
+ * \param bw The browser window to pass for existing window/
+ * \param intab true if the new window should be in a tab else false
+ *                for new window.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+nsgtk_browser_window_create(struct browser_window *bw, bool intab)
+{
+	nserror res = NSERROR_OK;
+	nsurl *url = NULL;
+	int flags = BW_CREATE_HISTORY;
+
+	if (intab) {
+		flags |= BW_CREATE_TAB;
+	}
+
+	if (!nsoption_bool(new_blank)) {
+		const char *addr;
+		if (nsoption_charp(homepage_url) != NULL) {
+			addr = nsoption_charp(homepage_url);
+		} else {
+			addr = NETSURF_HOMEPAGE;
+		}
+		res = nsurl_create(addr, &url);
+	}
+
+	if (res == NSERROR_OK) {
+		res = browser_window_create(flags, url, NULL, bw, NULL);
+	}
+
+	if (url != NULL) {
+		nsurl_unref(url);
+	}
+
+	return res;
+}
+
 
 /**
  * \return toolbar item id when a widget is an element of the scaffolding
@@ -2245,26 +2290,8 @@ newwindow_button_clicked_cb(GtkWidget *widget, gpointer data)
 {
 	nserror res;
 	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
-	struct browser_window *bw;
-	const char *addr;
-	nsurl *url;
 
-	if (nsoption_charp(homepage_url) != NULL) {
-		addr = nsoption_charp(homepage_url);
-	} else {
-		addr = NETSURF_HOMEPAGE;
-	}
-
-	res = nsurl_create(addr, &url);
-	if (res == NSERROR_OK) {
-		bw = tb->get_bw(tb->get_ctx);
-		res = browser_window_create(BW_CREATE_HISTORY,
-					      url,
-					      NULL,
-					      bw,
-					      NULL);
-		nsurl_unref(url);
-	}
+	res = nsgtk_browser_window_create(tb->get_bw(tb->get_ctx), false);
 	if (res != NSERROR_OK) {
 		nsgtk_warning(messages_get_errorcode(res), 0);
 	}
@@ -2283,34 +2310,10 @@ newwindow_button_clicked_cb(GtkWidget *widget, gpointer data)
 static gboolean
 newtab_button_clicked_cb(GtkWidget *widget, gpointer data)
 {
-	nserror res = NSERROR_OK;
-	nsurl *url = NULL;
+	nserror res;
 	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
-	struct browser_window *bw;
 
-	if (!nsoption_bool(new_blank)) {
-		const char *addr;
-		if (nsoption_charp(homepage_url) != NULL) {
-			addr = nsoption_charp(homepage_url);
-		} else {
-			addr = NETSURF_HOMEPAGE;
-		}
-		res = nsurl_create(addr, &url);
-	}
-
-	if (res == NSERROR_OK) {
-		bw = tb->get_bw(tb->get_ctx);
-
-		res = browser_window_create(BW_CREATE_HISTORY |
-					    BW_CREATE_TAB,
-					    url,
-					    NULL,
-					    bw,
-					    NULL);
-	}
-	if (url != NULL) {
-		nsurl_unref(url);
-	}
+	res = nsgtk_browser_window_create(tb->get_bw(tb->get_ctx), true);
 	if (res != NSERROR_OK) {
 		nsgtk_warning(messages_get_errorcode(res), 0);
 	}
