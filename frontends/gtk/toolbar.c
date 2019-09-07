@@ -212,6 +212,7 @@ struct nsgtk_theme {
 /* forward declaration */
 void nsgtk_toolbar_connect_all(struct nsgtk_scaffolding *g);
 int nsgtk_toolbar_get_id_from_widget(GtkWidget *widget, struct nsgtk_scaffolding *g);
+static nserror toolbar_item_create(nsgtk_toolbar_button id, struct nsgtk_toolbar_item **item_out);
 
 
 /* define data plus and data minus handlers */
@@ -1520,75 +1521,6 @@ void nsgtk_toolbar_customization_init(struct nsgtk_scaffolding *g)
 #endif
 
 
-/**
- * create a toolbar customization tab
- *
- * this is completely different approach to previous implementation. it
- *  is not modal and the toolbar configuration is performed completely
- *  within the tab. once the user is happy they can apply the change or
- *  cancel as they see fit while continuing to use the browser as usual.
- */
-static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
-{
-	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
-	struct nsgtk_toolbar_customization *tbc;
-	nserror res;
-	GtkBuilder *builder;
-	GtkNotebook *notebook;
-	struct gui_window *gw;
-
-	/* create builder */
-	res = nsgtk_builder_new_from_resname("toolbar", &builder);
-	if (res != NSERROR_OK) {
-		NSLOG(netsurf, INFO, "Toolbar UI builder init failed");
-		return TRUE;
-	}
-	gtk_builder_connect_signals(builder, NULL);
-
-	/* create nsgtk_toolbar_customization which has nsgtk_toolbar
-	 * at the front so we can reuse functions that take
-	 * nsgtk_toolbar
-	 */
-	tbc = calloc(1, sizeof(struct nsgtk_toolbar_customization));
-	if (tbc == NULL) {
-		g_object_unref(builder);
-		return TRUE;
-	}
-
-	/* get container box widget which forms a page of the tabs */
-	tbc->container = GTK_WIDGET(gtk_builder_get_object(builder, "tabBox"));
-	if (tbc->container == NULL) {
-		free(tbc);
-		g_object_unref(builder);
-		NSLOG(netsurf, ERROR, "dammit");
-		return TRUE;
-	}
-
-	/* get toolbar widget from builder */
-	/* populate toolbar widget in edit mode */
-	/* attach handlers to widgets */
-	/* use layout box for widgets to drag to/from */
-	/* save and update on apply button then discard */
-	/* discard button causes destruction */
-	/* close and cleanup on destroy signal */
-
-
-	gw = tb->get_ctx; /** \todo stop assuming the context is a gui window */
-	notebook = nsgtk_scaffolding_notebook(nsgtk_get_scaffold(gw));
-
-	nsgtk_tab_add_page(notebook,
-			   tbc->container,
-			   false,
-			   messages_get("gtkCustomizeToolbarTitle"),
-			   favicon_pixbuf);
-
-	/* safe to drop the reference to the builder as the container is
-	 * referenced by the notebook now.
-	 */
-	g_object_unref(builder);
-
-	return TRUE;
-}
 
 /**
  * create a new browser window
@@ -1976,6 +1908,115 @@ nsgtk_saveas_dialog(struct browser_window *bw,
 /*
  * Toolbar button clicked handlers
  */
+
+/**
+ * create a toolbar customization tab
+ *
+ * this is completely different approach to previous implementation. it
+ *  is not modal and the toolbar configuration is performed completely
+ *  within the tab. once the user is happy they can apply the change or
+ *  cancel as they see fit while continuing to use the browser as usual.
+ */
+static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct nsgtk_toolbar_customization *tbc;
+	nserror res;
+	GtkBuilder *builder;
+	GtkNotebook *notebook;
+	struct gui_window *gw;
+	int bidx;
+
+	/* create builder */
+	res = nsgtk_builder_new_from_resname("toolbar", &builder);
+	if (res != NSERROR_OK) {
+		NSLOG(netsurf, INFO, "Toolbar UI builder init failed");
+		return TRUE;
+	}
+	gtk_builder_connect_signals(builder, NULL);
+
+	/* create nsgtk_toolbar_customization which has nsgtk_toolbar
+	 * at the front so we can reuse functions that take
+	 * nsgtk_toolbar
+	 */
+	tbc = calloc(1, sizeof(struct nsgtk_toolbar_customization));
+	if (tbc == NULL) {
+		g_object_unref(builder);
+		return TRUE;
+	}
+
+	/* get container box widget which forms a page of the tabs */
+	tbc->container = GTK_WIDGET(gtk_builder_get_object(builder, "tabBox"));
+	if (tbc->container == NULL) {
+		free(tbc);
+		g_object_unref(builder);
+		return TRUE;
+	}
+
+	/* get toolbar widget from builder */
+
+	tbc->toolbar.widget = GTK_TOOLBAR(gtk_builder_get_object(builder, "toolbar"));
+	gtk_toolbar_set_show_arrow(tbc->toolbar.widget, TRUE);
+
+	/* populate toolbar widget in edit mode */
+	for (bidx = BACK_BUTTON; bidx < PLACEHOLDER_BUTTON; bidx++) {
+		res = toolbar_item_create(bidx, &tbc->toolbar.buttons[bidx]);
+		if (res != NSERROR_OK) {
+			for (bidx-- ; bidx >= BACK_BUTTON; bidx--) {
+				free(tbc->toolbar.buttons[bidx]);
+			}
+			free(tbc);
+			return res;
+		}
+	}
+
+	res = apply_user_button_customization(&tbc->toolbar);
+	if (res != NSERROR_OK) {
+		free(tbc);
+		return res;
+	}
+
+	edit_mode = true;
+	res = populate_gtk_toolbar_widget(&tbc->toolbar);
+	edit_mode = false;
+	if (res != NSERROR_OK) {
+		free(tbc);
+		return res;
+	}
+
+	res = nsgtk_toolbar_update(&tbc->toolbar);
+	if (res != NSERROR_OK) {
+		free(tbc);
+		return res;
+	}
+
+	gtk_widget_show_all(GTK_WIDGET(tbc->toolbar.widget));
+
+	/* attach handlers to toolbar widgets */
+
+	/* use layout box for widgets to drag to/from */
+	/* save and update on apply button then discard */
+	/* discard button causes destruction */
+	/* close and cleanup on destroy signal */
+
+
+	gw = tb->get_ctx; /** \todo stop assuming the context is a gui window */
+	notebook = nsgtk_scaffolding_notebook(nsgtk_get_scaffold(gw));
+
+	nsgtk_tab_add_page(notebook,
+			   tbc->container,
+			   false,
+			   messages_get("gtkCustomizeToolbarTitle"),
+			   favicon_pixbuf);
+
+	/* safe to drop the reference to the builder as the container is
+	 * referenced by the notebook now.
+	 */
+	g_object_unref(builder);
+
+	return TRUE;
+}
+
 
 /**
  * callback for all toolbar items widget size allocation
@@ -3374,6 +3415,7 @@ static gboolean openmenu_button_clicked_cb(GtkWidget *widget, gpointer data)
 
 	return TRUE;
 }
+
 
 /**
  * create a toolbar item
