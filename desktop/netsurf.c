@@ -33,6 +33,7 @@
 #include "utils/string.h"
 #include "utils/utf8.h"
 #include "utils/messages.h"
+#include "utils/useragent.h"
 #include "content/content_factory.h"
 #include "content/fetchers.h"
 #include "content/hlcache.h"
@@ -230,6 +231,8 @@ void netsurf_exit(void)
 
 	NSLOG(netsurf, INFO, "Closing fetches");
 	fetcher_quit();
+	/* Now the fetchers are done, our user-agent string can go */
+	free_user_agent_string();
 
 	/* dump any remaining cache entries */
 	image_cache_fini();
