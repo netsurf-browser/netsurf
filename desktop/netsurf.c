@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <libwapcaplet/libwapcaplet.h>
+#include <dom/dom.h>
 
 #include "netsurf/inttypes.h"
 #include "utils/config.h"
@@ -253,6 +254,9 @@ void netsurf_exit(void)
 	messages_destroy();
 
 	corestrings_fini();
+	if (dom_namespace_finalise() != DOM_NO_ERR) {
+		NSLOG(netsurf, WARNING, "Unable to finalise DOM namespace strings");
+	}
 	NSLOG(netsurf, INFO, "Remaining lwc strings:");
 	lwc_iterate_strings(netsurf_lwc_iterator, NULL);
 
