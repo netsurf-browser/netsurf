@@ -1205,52 +1205,7 @@ static gboolean nsgtk_toolbar_delete(GtkWidget *widget, GdkEvent *event,
 	return TRUE;
 }
 
-/**
- * called when a widget is dropped onto the store window
- */
-static gboolean
-nsgtk_toolbar_store_return(GtkWidget *widget, GdkDragContext *gdc,
-		gint x, gint y, guint time, gpointer data)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-	int q, i;
 
-	if ((window->fromstore) || (window->currentbutton == -1)) {
-		window->currentbutton = -1;
-		return FALSE;
-	}
-	if (nsgtk_scaffolding_button(g, window->currentbutton)->location
-			!= -1) {
-		/* 'move' all widgets further right, one place to the left
-		 * in logical schema */
-		for (i = nsgtk_scaffolding_button(g, window->currentbutton)->
-				location + 1; i < PLACEHOLDER_BUTTON; i++) {
-			q = nsgtk_toolbar_get_id_at_location(g, i);
-			if (q == -1)
-				continue;
-			nsgtk_scaffolding_button(g, q)->location--;
-		}
-		gtk_container_remove(GTK_CONTAINER(
-				nsgtk_scaffolding_toolbar(g)), GTK_WIDGET(
-				nsgtk_scaffolding_button(g,
-				window->currentbutton)->button));
-		nsgtk_scaffolding_button(g, window->currentbutton)->location
-				= -1;
-	}
-	window->currentbutton = -1;
-	gtk_drag_finish(gdc, TRUE, TRUE, time);
-	return FALSE;
-}
-
-/**
- * called when hovering above the store
- */
-static gboolean
-nsgtk_toolbar_store_action(GtkWidget *widget, GdkDragContext *gdc,
-		gint x, gint y, guint time, gpointer data)
-{
-	return FALSE;
-}
 
 /**
  * create store window
@@ -1446,8 +1401,94 @@ void nsgtk_toolbar_customisation_init(struct nsgtk_scaffolding *g)
 }
 #endif
 
+/**
+ * find the toolbar item with a given location.
+ *
+ * \param tb the toolbar instance
+ * \param locaction the location to search for
+ * \return the item id for a location
+ */
+static nsgtk_toolbar_button
+itemid_from_location(struct nsgtk_toolbar *tb, int location)
+{
+	int iidx;
+	for (iidx = BACK_BUTTON; iidx < PLACEHOLDER_BUTTON; iidx++) {
+		if (tb->buttons[iidx]->location == location) {
+			break;
+		}
+	}
+	return iidx;
+}
+
 
 /**
+ * customisation container handler for drag drop signal
+ *
+ * called when a widget is dropped onto the store window
+ */
+static gboolean
+customisation_container_drag_drop_cb(GtkWidget *widget,
+				     GdkDragContext *gdc,
+				     gint x, gint y,
+				     guint time,
+				     gpointer data)
+{
+	struct nsgtk_toolbar_customisation *tbc;
+	tbc = (struct nsgtk_toolbar_customisation *)data;
+	int location;
+	int itemid;
+
+	if ((tbc->dragfrom) || (tbc->dragitem == -1)) {
+		tbc->dragitem = -1;
+		return FALSE;
+	}
+
+	if (tbc->toolbar.buttons[tbc->dragitem]->location == INACTIVE_LOCATION) {
+		tbc->dragitem = -1;
+		gtk_drag_finish(gdc, TRUE, TRUE, time);
+		return FALSE;
+
+	}
+
+	/* update the locations for all the subsequent toolbar items */
+	for (location = tbc->toolbar.buttons[tbc->dragitem]->location;
+	     location < PLACEHOLDER_BUTTON;
+	     location++) {
+		itemid = itemid_from_location(&tbc->toolbar, location);
+		if (itemid == PLACEHOLDER_BUTTON) {
+			break;
+		}
+		tbc->toolbar.buttons[itemid]->location--;
+	}
+
+	tbc->toolbar.buttons[tbc->dragitem]->location = -1;
+	gtk_container_remove(GTK_CONTAINER(tbc->toolbar.widget),
+			     GTK_WIDGET(tbc->toolbar.buttons[tbc->dragitem]->button));
+
+	tbc->dragitem = -1;
+	gtk_drag_finish(gdc, TRUE, TRUE, time);
+	return FALSE;
+}
+
+/**
+ * customisation container handler for drag motion signal
+ *
+ * called when hovering above the store
+ */
+static gboolean
+customisation_container_drag_motion_cb(GtkWidget *widget,
+				       GdkDragContext *gdc,
+				       gint x, gint y,
+				       guint time,
+				       gpointer data)
+{
+	return FALSE;
+}
+
+
+/**
+ * customisation toolbar handler for drag drop signal
+ *
  * called when a widget is dropped onto the toolbar
  */
 static gboolean
@@ -1814,24 +1855,6 @@ static nserror populate_gtk_toolbar_widget(struct nsgtk_toolbar *tb)
 }
 
 
-/**
- * find the toolbar item with a given location.
- *
- * \param tb the toolbar instance
- * \param locaction the location to search for
- * \return the item id for a location
- */
-static nsgtk_toolbar_button
-itemid_from_location(struct nsgtk_toolbar *tb, int location)
-{
-	int iidx;
-	for (iidx = BACK_BUTTON; iidx < PLACEHOLDER_BUTTON; iidx++) {
-		if (tb->buttons[iidx]->location == location) {
-			break;
-		}
-	}
-	return iidx;
-}
 
 /**
  * find the toolbar item with a given gtk widget.
@@ -2275,7 +2298,7 @@ static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
 				 tbc->container);
 
 #if 0
-	g_signal_connect(GTK_WIDGET(gtk_builder_get_object(builder, "close")),
+	g_signal_connect(GTK_WIDGET(gtk_builder_get_object(builder, "apply")),
 			 "clicked",
 			 G_CALLBACK(nsgtk_toolbar_persist),
 			 g);
@@ -2290,16 +2313,17 @@ static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
 			 G_CALLBACK(nsgtk_toolbar_delete),
 			 g);
 
+
+#endif
 	g_signal_connect(tbc->container,
 			 "drag-drop",
-			 G_CALLBACK(nsgtk_toolbar_store_return),
-			 g);
+			 G_CALLBACK(customisation_container_drag_drop_cb),
+			 tbc);
 
 	g_signal_connect(tbc->container,
 			 "drag-motion",
-			 G_CALLBACK(nsgtk_toolbar_store_action),
-			 g);
-#endif
+			 G_CALLBACK(customisation_container_drag_motion_cb),
+			 tbc);
 
 
 	nsgtk_tab_add_page(notebook,
