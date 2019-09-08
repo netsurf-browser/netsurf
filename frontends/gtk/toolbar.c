@@ -94,8 +94,8 @@ struct nsgtk_toolbar_item {
 	 */
 	gboolean (*bhandler)(GtkWidget *widget, gpointer data);
 
-	void *dataplus; /* customization -> toolbar */
-	void *dataminus; /* customization -> store */
+	void *dataplus; /* customisation -> toolbar */
+	void *dataminus; /* customisation -> store */
 };
 
 
@@ -140,7 +140,7 @@ struct nsgtk_toolbar {
 /**
  * toolbar cusomisation context
  */
-struct nsgtk_toolbar_customization {
+struct nsgtk_toolbar_customisation {
 	/**
 	 * first entry is a toolbar widget so a customisation widget
 	 *   can be cast to toolbar and back.
@@ -152,22 +152,27 @@ struct nsgtk_toolbar_customization {
 	 */
 	GtkWidget *container;
 
+	/**
+	 * The vertical box into which the available tools are shown
+	 */
+	GtkBox *toolbox;
+
+	/**
+	 * widget handles for items in the customisation toolbox area
+	 */
+	GtkToolItem *items[PLACEHOLDER_BUTTON];
+
+	/**
+	 * which item is being dragged
+	 */
+	int dragitem; /* currentbutton */
+	/**
+	 * true if item being dragged onto toolbar, false if from toolbar
+	 */
+	bool dragfrom; /*fromstore */
+
 };
 
-/**
- * toolbar customization window context
- */
-struct nsgtk_toolbar_custom_store {
-	GtkWidget *window;
-	GtkWidget *store_buttons[PLACEHOLDER_BUTTON];
-	GtkWidget *widgetvbox;
-	GtkWidget *currentbar;
-	char numberh; /* current horizontal location while adding */
-	GtkBuilder *builder; /* button widgets to store */
-	int buttonlocations[PLACEHOLDER_BUTTON];
-	int currentbutton;
-	bool fromstore;
-};
 
 static bool edit_mode = false;
 
@@ -176,7 +181,7 @@ static bool edit_mode = false;
 
 /* the 'standard' width of a button that makes sufficient of its label
 visible */
-#define NSGTK_BUTTON_WIDTH 111
+#define NSGTK_BUTTON_WIDTH 130
 
 /* the 'standard' height of a button that fits as many toolbars as
 possible into the store */
@@ -185,8 +190,6 @@ possible into the store */
 /* the 'normal' width of the websearch bar */
 #define NSGTK_WEBSEARCH_WIDTH 150
 
-static struct nsgtk_toolbar_custom_store store;
-static struct nsgtk_toolbar_custom_store *window = &store;
 
 
 enum image_sets {
@@ -225,8 +228,10 @@ nsgtk_toolbar_##name##_data_plus(GtkWidget *widget,			\
 				 guint time,				\
 				 gpointer data)				\
 {									\
-	window->currentbutton = identifier;				\
-	window->fromstore = true;					\
+	struct nsgtk_toolbar_customisation *tbc;			\
+	tbc = (struct nsgtk_toolbar_customisation *)data;		\
+	tbc->dragitem = identifier;					\
+	tbc->dragfrom = true;						\
 	return TRUE;							\
 }									\
 static gboolean								\
@@ -237,8 +242,10 @@ nsgtk_toolbar_##name##_data_minus(GtkWidget *widget,			\
 				  guint time,				\
 				  gpointer data)			\
 {									\
-	window->currentbutton = identifier;				\
-	window->fromstore = false;					\
+	struct nsgtk_toolbar_customisation *tbc;			\
+	tbc = (struct nsgtk_toolbar_customisation *)data;		\
+	tbc->dragitem = identifier;					\
+	tbc->dragfrom = false;						\
 	return TRUE;							\
 }
 
@@ -676,10 +683,10 @@ make_toolbar_item_websearch(void)
  * \param theme the theme to make the widgets from
  * \return gtk widget
  */
-static GtkWidget *
+static GtkToolItem *
 make_toolbar_item(nsgtk_toolbar_button i, struct nsgtk_theme *theme)
 {
-	GtkWidget *w = NULL;
+	GtkToolItem *w = NULL;
 
 	switch(i) {
 
@@ -691,12 +698,12 @@ make_toolbar_item(nsgtk_toolbar_button i, struct nsgtk_theme *theme)
 		if (nsgtk_stock_lookup(q, &item) &&			\
 		    (item.label != NULL) &&				\
 		    ((label = remove_underscores(item.label, false)) != NULL)) { \
-			w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(	\
-					   theme->image[p##_BUTTON]), label)); \
+			w = gtk_tool_button_new(GTK_WIDGET(	\
+					   theme->image[p##_BUTTON]), label); \
 			free(label);					\
 		} else {						\
-			w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(	\
-					   theme->image[p##_BUTTON]), q)); \
+			w = gtk_tool_button_new(GTK_WIDGET(	\
+					   theme->image[p##_BUTTON]), q); \
 		}							\
 		break;							\
 	}
@@ -709,20 +716,22 @@ make_toolbar_item(nsgtk_toolbar_button i, struct nsgtk_theme *theme)
 #undef MAKE_STOCKBUTTON
 
 	case HISTORY_BUTTON:
-		w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(
-				theme->image[HISTORY_BUTTON]), "H"));
+		w = gtk_tool_button_new(GTK_WIDGET(
+				theme->image[HISTORY_BUTTON]), "H");
+		/* set history widget minimum width */
+		gtk_widget_set_size_request(GTK_WIDGET(w), 20, -1);
 		break;
 
 	case URL_BAR_ITEM:
-		w = GTK_WIDGET(make_toolbar_item_url_bar());
+		w = make_toolbar_item_url_bar();
 		break;
 
 	case THROBBER_ITEM:
-		w = GTK_WIDGET(make_toolbar_item_throbber());
+		w = make_toolbar_item_throbber();
 		break;
 
 	case WEBSEARCH_ITEM:
-		w = GTK_WIDGET(make_toolbar_item_websearch());
+		w = make_toolbar_item_websearch();
 		break;
 
 /* gtk_tool_button_new accepts NULL args */
@@ -730,9 +739,9 @@ make_toolbar_item(nsgtk_toolbar_button i, struct nsgtk_theme *theme)
 	case p##_BUTTON: {						\
 		char *label = NULL;					\
 		label = remove_underscores(messages_get(#q), false);	\
-		w = GTK_WIDGET(gtk_tool_button_new(			\
+		w = gtk_tool_button_new(			\
 					GTK_WIDGET(theme->image[p##_BUTTON]), \
-					label));			\
+					label);			\
 		if (label != NULL) {					\
 			free(label);					\
 		}							\
@@ -789,16 +798,36 @@ make_toolbar_item(nsgtk_toolbar_button i, struct nsgtk_theme *theme)
 
 	}
 
-	if (w == NULL) {
-		nsgtk_warning(messages_get("NoMemory"), 0);
-	}
-
 	return w;
 }
+
+/**
+ * target entry for drag source
+ */
+static GtkTargetEntry target_entry = {
+	 (char *)"nsgtk_button_data",
+	 GTK_TARGET_SAME_APP,
+	 0
+};
+
 #if 0
 
-static GtkTargetEntry entry = {(char *)"nsgtk_button_data",
-		GTK_TARGET_SAME_APP, 0};
+/**
+ * toolbar customisation window context
+ */
+struct nsgtk_toolbar_custom_store {
+	GtkWidget *window;
+	GtkWidget *store_buttons[PLACEHOLDER_BUTTON];
+	GtkWidget *widgetvbox;
+	GtkWidget *currentbar;
+	char numberh; /* current horizontal location while adding */
+	GtkBuilder *builder; /* button widgets to store */
+	int buttonlocations[PLACEHOLDER_BUTTON];
+	int currentbutton;
+	bool fromstore;
+};
+static struct nsgtk_toolbar_custom_store store;
+static struct nsgtk_toolbar_custom_store *window = &store;
 
 /* exported interface documented in gtk/scaffolding.h */
 static GtkToolbar *nsgtk_scaffolding_toolbar(struct nsgtk_scaffolding *g)
@@ -844,107 +873,7 @@ static void nsgtk_scaffolding_reset_offset(struct nsgtk_scaffolding *g)
 	//g->offset = 0;
 }
 
-/**
- * called when a widget is dropped onto the toolbar
- */
-static gboolean
-nsgtk_toolbar_data(GtkWidget *widget,
-		   GdkDragContext *gdc,
-		   gint x,
-		   gint y,
-		   guint time,
-		   gpointer data)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-	int ind = gtk_toolbar_get_drop_index(nsgtk_scaffolding_toolbar(g),
-			x, y);
-	int q, i;
-	if (window->currentbutton == -1)
-		return TRUE;
-	struct nsgtk_theme *theme =
-		nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR, false);
-	if (theme == NULL) {
-		nsgtk_warning(messages_get("NoMemory"), 0);
-		return TRUE;
-	}
-	if (nsgtk_scaffolding_button(g, window->currentbutton)->location
-			!= -1) {
-		/* widget was already in the toolbar; so replace */
-		if (nsgtk_scaffolding_button(g, window->currentbutton)->
-				location < ind)
-			ind--;
-		gtk_container_remove(GTK_CONTAINER(
-				nsgtk_scaffolding_toolbar(g)), GTK_WIDGET(
-				nsgtk_scaffolding_button(g,
-				window->currentbutton)->button));
-		/* 'move' all widgets further right than the original location,
-		 * one place to the left in logical schema */
-		for (i = nsgtk_scaffolding_button(g, window->currentbutton)->
-				location + 1; i < PLACEHOLDER_BUTTON; i++) {
-			q = nsgtk_toolbar_get_id_at_location(g, i);
-			if (q == -1)
-				continue;
-			nsgtk_scaffolding_button(g, q)->location--;
-		}
-		nsgtk_scaffolding_button(g, window->currentbutton)->
-				location = -1;
-	}
-	nsgtk_scaffolding_button(g, window->currentbutton)->button =
-			GTK_TOOL_ITEM(make_toolbar_item(window->currentbutton, theme));
-	free(theme);
-	if (nsgtk_scaffolding_button(g, window->currentbutton)->button
-			== NULL) {
-		nsgtk_warning("NoMemory", 0);
-		return TRUE;
-	}
-	/* update logical schema */
-	nsgtk_scaffolding_reset_offset(g);
-	/* 'move' all widgets further right than the new location, one place to
-	 * the right in logical schema */
-	for (i = PLACEHOLDER_BUTTON - 1; i >= ind; i--) {
-		q = nsgtk_toolbar_get_id_at_location(g, i);
-		if (q == -1)
-			continue;
-		nsgtk_scaffolding_button(g, q)->location++;
-	}
-	nsgtk_scaffolding_button(g, window->currentbutton)->location = ind;
 
-	/* complete action */
-	GtkToolItem *current_button;
-
-	current_button = GTK_TOOL_ITEM(nsgtk_scaffolding_button(g, window->currentbutton)->button);
-
-	gtk_toolbar_insert(nsgtk_scaffolding_toolbar(g), current_button, ind);
-
-	gtk_tool_item_set_use_drag_window(current_button, TRUE);
-	gtk_drag_source_set(GTK_WIDGET(current_button),
-			    GDK_BUTTON1_MASK, &entry, 1,
-			    GDK_ACTION_COPY);
-	nsgtk_toolbar_temp_connect(g, window->currentbutton);
-	gtk_widget_show_all(GTK_WIDGET(current_button));
-
-
-	window->currentbutton = -1;
-
-	return TRUE;
-}
-
-/**
- * connected to toolbutton drop; perhaps one day it'll work properly so it may
- * replace the global current_button
- */
-static gboolean
-nsgtk_toolbar_move_complete(GtkWidget *widget,
-			    GdkDragContext *gdc,
-			    gint x,
-			    gint y,
-			    GtkSelectionData *selection,
-			    guint info,
-			    guint time,
-			    gpointer data)
-{
-	return FALSE;
-}
 
 /**
  * called when hovering an item above the toolbar
@@ -964,15 +893,6 @@ nsgtk_toolbar_action(GtkWidget *widget, GdkDragContext *gdc, gint x,
 	return FALSE;
 }
 
-/**
- * called when hovering stops
- */
-static void
-nsgtk_toolbar_clear(GtkWidget *widget, GdkDragContext *gdc, guint time,
-		gpointer data)
-{
-	gtk_toolbar_set_drop_highlight_item(GTK_TOOLBAR(widget), NULL, 0);
-}
 
 /**
  * add item to toolbar.
@@ -1178,7 +1098,7 @@ static void nsgtk_toolbar_cast(struct nsgtk_scaffolding *g)
 /**
  * save toolbar settings to file
  */
-static nserror nsgtk_toolbar_customization_save(struct nsgtk_scaffolding *g)
+static nserror nsgtk_toolbar_customisation_save(struct nsgtk_scaffolding *g)
 {
 	char *choices = NULL;
 	char *order;
@@ -1232,7 +1152,7 @@ static gboolean nsgtk_toolbar_persist(GtkWidget *widget, gpointer data)
 
 	edit_mode = false;
 	/* save state to file, update toolbars for all windows */
-	nsgtk_toolbar_customization_save(g);
+	nsgtk_toolbar_customisation_save(g);
 	nsgtk_toolbar_cast(g);
 	nsgtk_toolbar_set_physical(g);
 	nsgtk_toolbar_close(g);
@@ -1440,7 +1360,7 @@ static void nsgtk_toolbar_window_open(struct nsgtk_scaffolding *g)
  * All buttons as well as window clicks are desensitized; then buttons
  * in the front window are changed to movable buttons
  */
-void nsgtk_toolbar_customization_init(struct nsgtk_scaffolding *g)
+void nsgtk_toolbar_customisation_init(struct nsgtk_scaffolding *g)
 {
 	int i;
 	struct nsgtk_scaffolding *list;
@@ -1500,15 +1420,21 @@ void nsgtk_toolbar_customization_init(struct nsgtk_scaffolding *g)
 
 	/* add move button listeners */
 	g_signal_connect(GTK_WIDGET(nsgtk_scaffolding_toolbar(g)),
-			"drag-drop", G_CALLBACK(nsgtk_toolbar_data), g);
+			"drag-drop",
+			 G_CALLBACK(nsgtk_toolbar_data),
+			 g);
 	g_signal_connect(GTK_WIDGET(nsgtk_scaffolding_toolbar(g)),
-			"drag-data-received", G_CALLBACK(
-			nsgtk_toolbar_move_complete), g);
+			"drag-data-received",
+			 G_CALLBACK(nsgtk_toolbar_move_complete),
+			 g);
 	g_signal_connect(GTK_WIDGET(nsgtk_scaffolding_toolbar(g)),
-			"drag-motion", G_CALLBACK(nsgtk_toolbar_action), g);
+			"drag-motion",
+			 G_CALLBACK(nsgtk_toolbar_action),
+			 g);
 	g_signal_connect(GTK_WIDGET(nsgtk_scaffolding_toolbar(g)),
-			"drag-leave", G_CALLBACK(
-			nsgtk_toolbar_clear), g);
+			"drag-leave",
+			 G_CALLBACK(nsgtk_toolbar_clear),
+			 g);
 
 	/* set data types */
 	gtk_drag_dest_set(GTK_WIDGET(nsgtk_scaffolding_toolbar(g)),
@@ -1521,6 +1447,152 @@ void nsgtk_toolbar_customization_init(struct nsgtk_scaffolding *g)
 #endif
 
 
+/**
+ * called when a widget is dropped onto the toolbar
+ */
+static gboolean
+customisation_toolbar_drag_drop_cb(GtkWidget *widget,
+				   GdkDragContext *gdc,
+				   gint x,
+				   gint y,
+				   guint time,
+				   gpointer data)
+{
+#if 0
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
+	int ind = gtk_toolbar_get_drop_index(nsgtk_scaffolding_toolbar(g),
+			x, y);
+	int q, i;
+	if (window->currentbutton == -1)
+		return TRUE;
+	struct nsgtk_theme *theme =
+		nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR, false);
+	if (theme == NULL) {
+		nsgtk_warning(messages_get("NoMemory"), 0);
+		return TRUE;
+	}
+	if (nsgtk_scaffolding_button(g, window->currentbutton)->location
+			!= -1) {
+		/* widget was already in the toolbar; so replace */
+		if (nsgtk_scaffolding_button(g, window->currentbutton)->
+				location < ind)
+			ind--;
+		gtk_container_remove(GTK_CONTAINER(
+				nsgtk_scaffolding_toolbar(g)), GTK_WIDGET(
+				nsgtk_scaffolding_button(g,
+				window->currentbutton)->button));
+		/* 'move' all widgets further right than the original location,
+		 * one place to the left in logical schema */
+		for (i = nsgtk_scaffolding_button(g, window->currentbutton)->
+				location + 1; i < PLACEHOLDER_BUTTON; i++) {
+			q = nsgtk_toolbar_get_id_at_location(g, i);
+			if (q == -1)
+				continue;
+			nsgtk_scaffolding_button(g, q)->location--;
+		}
+		nsgtk_scaffolding_button(g, window->currentbutton)->
+				location = -1;
+	}
+	nsgtk_scaffolding_button(g, window->currentbutton)->button =
+			GTK_TOOL_ITEM(make_toolbar_item(window->currentbutton, theme));
+	free(theme);
+	if (nsgtk_scaffolding_button(g, window->currentbutton)->button
+			== NULL) {
+		nsgtk_warning("NoMemory", 0);
+		return TRUE;
+	}
+	/* update logical schema */
+	nsgtk_scaffolding_reset_offset(g);
+	/* 'move' all widgets further right than the new location, one place to
+	 * the right in logical schema */
+	for (i = PLACEHOLDER_BUTTON - 1; i >= ind; i--) {
+		q = nsgtk_toolbar_get_id_at_location(g, i);
+		if (q == -1)
+			continue;
+		nsgtk_scaffolding_button(g, q)->location++;
+	}
+	nsgtk_scaffolding_button(g, window->currentbutton)->location = ind;
+
+	/* complete action */
+	GtkToolItem *current_button;
+
+	current_button = GTK_TOOL_ITEM(nsgtk_scaffolding_button(g, window->currentbutton)->button);
+
+	gtk_toolbar_insert(nsgtk_scaffolding_toolbar(g), current_button, ind);
+
+	gtk_tool_item_set_use_drag_window(current_button, TRUE);
+	gtk_drag_source_set(GTK_WIDGET(current_button),
+			    GDK_BUTTON1_MASK, &entry, 1,
+			    GDK_ACTION_COPY);
+	nsgtk_toolbar_temp_connect(g, window->currentbutton);
+	gtk_widget_show_all(GTK_WIDGET(current_button));
+
+
+	window->currentbutton = -1;
+#endif
+	return TRUE;
+}
+
+
+/**
+ * customisation toolbar handler for drag data received signal
+ *
+ * connected to toolbutton drop; perhaps one day it'll work properly
+ * so it may replace the global current_button
+ */
+static gboolean
+customisation_toolbar_drag_data_received_cb(GtkWidget *widget,
+			    GdkDragContext *gdc,
+			    gint x,
+			    gint y,
+			    GtkSelectionData *selection,
+			    guint info,
+			    guint time,
+			    gpointer data)
+{
+	return FALSE;
+}
+
+
+/**
+ * customisation toolbar handler for drag motion signal
+ *
+ * called when hovering an item above the toolbar
+ */
+static gboolean
+customisation_toolbar_drag_motion_cb(GtkWidget *widget,
+				     GdkDragContext *gdc,
+				     gint x,
+				     gint y,
+				     guint time,
+				     gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	GtkToolItem *item;
+	gint position;
+
+	item = gtk_tool_button_new(NULL, NULL);
+	position = gtk_toolbar_get_drop_index(tb->widget, x, y);
+
+	gtk_toolbar_set_drop_highlight_item(tb->widget, item, position);
+
+	return FALSE; /* drag not in drop zone */
+}
+
+
+/**
+ * customisation toolbar handler for drag leave signal
+ *
+ * called when hovering stops
+ */
+static void
+customisation_toolbar_drag_leave_cb(GtkWidget *widget,
+				    GdkDragContext *gdc,
+				    guint time,
+		gpointer data)
+{
+	gtk_toolbar_set_drop_highlight_item(GTK_TOOLBAR(widget), NULL, 0);
+}
 
 /**
  * create a new browser window
@@ -1606,11 +1678,11 @@ void nsgtk_toolbar_connect_all(struct nsgtk_scaffolding *g)
  * GTK specific user option string is a set of fields arranged as
  * [itemreference];[itemlocation]|[itemreference];[itemlocation]| etc
  *
- * \param tb The toolbar to apply customization to
+ * \param tb The toolbar to apply customisation to
  * \param NSERROR_OK on success else error code.
  */
 static nserror
-apply_user_button_customization(struct nsgtk_toolbar *tb)
+apply_user_button_customisation(struct nsgtk_toolbar *tb)
 {
 	int i, ii;
 	char *buffer;
@@ -1685,8 +1757,8 @@ add_item_to_toolbar(struct nsgtk_toolbar *tb,
 
 		if (tb->buttons[bidx]->location == location) {
 
-			tb->buttons[bidx]->button = GTK_TOOL_ITEM(
-					make_toolbar_item(bidx, theme));
+			tb->buttons[bidx]->button = make_toolbar_item(bidx,
+								      theme);
 
 			/* set widgets initial sensitivity */
 			gtk_widget_set_sensitive(GTK_WIDGET(tb->buttons[bidx]->button),
@@ -1905,12 +1977,168 @@ nsgtk_saveas_dialog(struct browser_window *bw,
 }
 
 
+/**
+ * connect all signals to widgets in a customisation
+ */
+static nserror
+toolbar_customisation_connect_signals(struct nsgtk_toolbar *tb)
+{
+	int iidx;
+
+	for (iidx = BACK_BUTTON; iidx < PLACEHOLDER_BUTTON; iidx++) {
+		/* skip inactive items in toolbar */
+		if (tb->buttons[iidx]->location == INACTIVE_LOCATION) {
+			continue;
+		}
+
+		/* set toolbar items to be a drag source */
+		gtk_tool_item_set_use_drag_window(tb->buttons[iidx]->button, TRUE);
+		gtk_drag_source_set(GTK_WIDGET(tb->buttons[iidx]->button),
+				    GDK_BUTTON1_MASK,
+				    &target_entry,
+				    1,
+				    GDK_ACTION_COPY);
+		g_signal_connect(tb->buttons[iidx]->button,
+				 "drag-data-get",
+				 G_CALLBACK(tb->buttons[iidx]->dataminus),
+				 tb);
+	}
+
+	/* add move button listeners */
+	g_signal_connect(tb->widget,
+			"drag-drop",
+			 G_CALLBACK(customisation_toolbar_drag_drop_cb),
+			 tb);
+	g_signal_connect(tb->widget,
+			"drag-data-received",
+			 G_CALLBACK(customisation_toolbar_drag_data_received_cb),
+			 tb);
+	g_signal_connect(tb->widget,
+			"drag-motion",
+			 G_CALLBACK(customisation_toolbar_drag_motion_cb),
+			 tb);
+	g_signal_connect(tb->widget,
+			"drag-leave",
+			 G_CALLBACK(customisation_toolbar_drag_leave_cb),
+			 tb);
+
+	/* set data types */
+	gtk_drag_dest_set(GTK_WIDGET(tb->widget),
+			  GTK_DEST_DEFAULT_MOTION | GTK_DEST_DEFAULT_DROP,
+			  &target_entry,
+			  1,
+			  GDK_ACTION_COPY);
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * add a row to a toolbar customisation toolbox
+ *
+ * \param tbc The toolbar customisation context
+ * \param startitem The item index of the beginning of the row
+ * \param enditem The item index of teh beginning of teh next row
+ * \return NSERROR_OK on successs else error
+ */
+static nserror
+add_toolbox_row(struct nsgtk_toolbar_customisation *tbc,
+		int startitem,
+		int enditem)
+{
+	GtkToolbar *rowbar;
+	int iidx;
+
+	rowbar = GTK_TOOLBAR(gtk_toolbar_new());
+	if (rowbar == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	gtk_toolbar_set_style(rowbar, GTK_TOOLBAR_BOTH);
+	gtk_toolbar_set_icon_size(rowbar, GTK_ICON_SIZE_LARGE_TOOLBAR);
+	gtk_box_pack_start(tbc->toolbox, GTK_WIDGET(rowbar), FALSE, FALSE, 0);
+
+	for (iidx = startitem; iidx < enditem; iidx++) {
+		if (tbc->items[iidx] == NULL) {
+			/* skip any widgets that failed to initialise */
+			continue;
+		}
+		gtk_widget_set_size_request(GTK_WIDGET(tbc->items[iidx]),
+					    NSGTK_BUTTON_WIDTH,
+					    NSGTK_BUTTON_HEIGHT);
+		gtk_tool_item_set_use_drag_window(tbc->items[iidx], TRUE);
+		gtk_drag_source_set(GTK_WIDGET(tbc->items[iidx]),
+				    GDK_BUTTON1_MASK,
+				    &target_entry,
+				    1,
+				    GDK_ACTION_COPY);
+		g_signal_connect(tbc->items[iidx],
+				 "drag-data-get",
+				 G_CALLBACK(tbc->toolbar.buttons[iidx]->dataplus),
+				 &tbc->toolbar);
+		gtk_toolbar_insert(rowbar, tbc->items[iidx], iidx - startitem);
+	}
+	return NSERROR_OK;
+}
+
+
+/**
+ * creates widgets in customisation toolbox
+ *
+ * \param tbc The toolbar customisation context
+ * \param width The width to layout the toolbox to
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+toolbar_customisation_create_toolbox(struct nsgtk_toolbar_customisation *tbc,
+				     int width)
+{
+	int columns; /* number of items in a single row */
+	int curcol; /* current column in creation */
+	int iidx; /* item index */
+	int startidx; /* index of item at start of row */
+	struct nsgtk_theme *theme;
+
+	theme =	nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR, true);
+	if (theme == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	/* ensure there are a minimum number of items per row */
+	columns = width / NSGTK_BUTTON_WIDTH;
+	if (columns < NSGTK_STORE_WIDTH) {
+		columns = NSGTK_STORE_WIDTH;
+	}
+
+	edit_mode = true;
+	curcol = 0;
+	for (iidx = startidx = BACK_BUTTON; iidx < PLACEHOLDER_BUTTON; iidx++) {
+		if (curcol >= columns) {
+			add_toolbox_row(tbc, startidx, iidx);
+			curcol = 0;
+			startidx = iidx;
+		}
+		tbc->items[iidx] = make_toolbar_item(iidx, theme);
+		if (tbc->items[iidx] != NULL) {
+			curcol++;
+		}
+	}
+	if (curcol > 0) {
+		add_toolbox_row(tbc, startidx, iidx);
+	}
+	edit_mode = false;
+
+	free(theme);
+
+	return NSERROR_OK;
+}
+
 /*
  * Toolbar button clicked handlers
  */
 
 /**
- * create a toolbar customization tab
+ * create a toolbar customisation tab
  *
  * this is completely different approach to previous implementation. it
  *  is not modal and the toolbar configuration is performed completely
@@ -1919,13 +2147,19 @@ nsgtk_saveas_dialog(struct browser_window *bw,
  */
 static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
 {
-	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
-	struct nsgtk_toolbar_customization *tbc;
+	struct nsgtk_toolbar_customisation *tbc;
 	nserror res;
 	GtkBuilder *builder;
-	GtkNotebook *notebook;
-	struct gui_window *gw;
-	int bidx;
+	GtkNotebook *notebook; /* notebook containing widget */
+	GtkAllocation notebook_alloc; /* notebook size allocation */
+	int iidx; /* item index */
+
+	/* obtain the notebook being added to */
+	notebook = GTK_NOTEBOOK(gtk_widget_get_ancestor(widget,
+							GTK_TYPE_NOTEBOOK));
+	if (notebook == NULL) {
+		return TRUE;
+	}
 
 	/* create builder */
 	res = nsgtk_builder_new_from_resname("toolbar", &builder);
@@ -1935,11 +2169,11 @@ static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
 	}
 	gtk_builder_connect_signals(builder, NULL);
 
-	/* create nsgtk_toolbar_customization which has nsgtk_toolbar
+	/* create nsgtk_toolbar_customisation which has nsgtk_toolbar
 	 * at the front so we can reuse functions that take
 	 * nsgtk_toolbar
 	 */
-	tbc = calloc(1, sizeof(struct nsgtk_toolbar_customization));
+	tbc = calloc(1, sizeof(struct nsgtk_toolbar_customisation));
 	if (tbc == NULL) {
 		g_object_unref(builder);
 		return TRUE;
@@ -1948,60 +2182,120 @@ static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
 	/* get container box widget which forms a page of the tabs */
 	tbc->container = GTK_WIDGET(gtk_builder_get_object(builder, "tabBox"));
 	if (tbc->container == NULL) {
-		free(tbc);
-		g_object_unref(builder);
-		return TRUE;
+		goto cutomize_button_clicked_cb_error;
 	}
 
-	/* get toolbar widget from builder */
+	/* vertical box for the toolbox to drag items into and out of */
+	tbc->toolbox = GTK_BOX(gtk_builder_get_object(builder, "toolbox"));
+	if (tbc->toolbox == NULL) {
+		goto cutomize_button_clicked_cb_error;
+	}
 
+	/* customisation toolbar container */
 	tbc->toolbar.widget = GTK_TOOLBAR(gtk_builder_get_object(builder, "toolbar"));
+	if (tbc->toolbar.widget == NULL) {
+		goto cutomize_button_clicked_cb_error;
+	}
+
+	/* build customisation toolbar */
 	gtk_toolbar_set_show_arrow(tbc->toolbar.widget, TRUE);
 
-	/* populate toolbar widget in edit mode */
-	for (bidx = BACK_BUTTON; bidx < PLACEHOLDER_BUTTON; bidx++) {
-		res = toolbar_item_create(bidx, &tbc->toolbar.buttons[bidx]);
+	for (iidx = BACK_BUTTON; iidx < PLACEHOLDER_BUTTON; iidx++) {
+		res = toolbar_item_create(iidx, &tbc->toolbar.buttons[iidx]);
 		if (res != NSERROR_OK) {
-			for (bidx-- ; bidx >= BACK_BUTTON; bidx--) {
-				free(tbc->toolbar.buttons[bidx]);
+			for (iidx-- ; iidx >= BACK_BUTTON; iidx--) {
+				free(tbc->toolbar.buttons[iidx]);
 			}
-			free(tbc);
-			return res;
+			goto cutomize_button_clicked_cb_error;
 		}
 	}
 
-	res = apply_user_button_customization(&tbc->toolbar);
+	res = apply_user_button_customisation(&tbc->toolbar);
 	if (res != NSERROR_OK) {
-		free(tbc);
-		return res;
+		goto cutomize_button_clicked_cb_error;
 	}
 
-	edit_mode = true;
+	/* populate toolbar widget */
 	res = populate_gtk_toolbar_widget(&tbc->toolbar);
-	edit_mode = false;
 	if (res != NSERROR_OK) {
-		free(tbc);
-		return res;
+		goto cutomize_button_clicked_cb_error;
 	}
 
+	/* ensure icon sizes and text labels on toolbar are set */
 	res = nsgtk_toolbar_update(&tbc->toolbar);
 	if (res != NSERROR_OK) {
-		free(tbc);
-		return res;
+		goto cutomize_button_clicked_cb_error;
 	}
 
-	gtk_widget_show_all(GTK_WIDGET(tbc->toolbar.widget));
-
 	/* attach handlers to toolbar widgets */
+	res = toolbar_customisation_connect_signals(&tbc->toolbar);
+	if (res != NSERROR_OK) {
+		goto cutomize_button_clicked_cb_error;
+	}
 
-	/* use layout box for widgets to drag to/from */
+	if (tbc->toolbar.buttons[URL_BAR_ITEM]->location != INACTIVE_LOCATION) {
+		GtkEntry *entry;
+		entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(tbc->toolbar.buttons[URL_BAR_ITEM]->button)));
+
+		gtk_widget_set_sensitive(GTK_WIDGET(entry), FALSE);
+	}
+
+	if (tbc->toolbar.buttons[WEBSEARCH_ITEM]->location != INACTIVE_LOCATION) {
+		GtkEntry *entry;
+		entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(tbc->toolbar.buttons[WEBSEARCH_ITEM]->button)));
+
+		gtk_widget_set_sensitive(GTK_WIDGET(entry), FALSE);
+	}
+
+	/* use toolbox for widgets to drag to/from */
+
+	gtk_widget_get_allocation(GTK_WIDGET(notebook), &notebook_alloc);
+
+	res = toolbar_customisation_create_toolbox(tbc, notebook_alloc.width);
+	if (res != NSERROR_OK) {
+		goto cutomize_button_clicked_cb_error;
+	}
+
+
 	/* save and update on apply button then discard */
 	/* discard button causes destruction */
 	/* close and cleanup on destroy signal */
 
+	/* configure the container */
+	gtk_window_set_accept_focus(GTK_WINDOW(tbc->container), FALSE);
 
-	gw = tb->get_ctx; /** \todo stop assuming the context is a gui window */
-	notebook = nsgtk_scaffolding_notebook(nsgtk_get_scaffold(gw));
+	gtk_drag_dest_set(GTK_WIDGET(tbc->container),
+			  GTK_DEST_DEFAULT_MOTION | GTK_DEST_DEFAULT_DROP,
+			  &target_entry,
+			  1,
+			  GDK_ACTION_COPY);
+#if 0
+	g_signal_connect(GTK_WIDGET(gtk_builder_get_object(builder, "close")),
+			 "clicked",
+			 G_CALLBACK(nsgtk_toolbar_persist),
+			 g);
+
+	g_signal_connect(GTK_WIDGET(gtk_builder_get_object(builder, "reset")),
+			 "clicked",
+			 G_CALLBACK(nsgtk_toolbar_reset),
+			 g);
+
+	g_signal_connect(tbc->container,
+			 "delete-event",
+			 G_CALLBACK(nsgtk_toolbar_delete),
+			 g);
+
+	g_signal_connect(tbc->container,
+			 "drag-drop",
+			 G_CALLBACK(nsgtk_toolbar_store_return),
+			 g);
+
+	g_signal_connect(tbc->container,
+			 "drag-motion",
+			 G_CALLBACK(nsgtk_toolbar_store_action),
+			 g);
+#endif
+
 
 	nsgtk_tab_add_page(notebook,
 			   tbc->container,
@@ -2009,12 +2303,19 @@ static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
 			   messages_get("gtkCustomizeToolbarTitle"),
 			   favicon_pixbuf);
 
+
 	/* safe to drop the reference to the builder as the container is
 	 * referenced by the notebook now.
 	 */
 	g_object_unref(builder);
 
 	return TRUE;
+
+ cutomize_button_clicked_cb_error:
+	free(tbc);
+	g_object_unref(builder);
+	return TRUE;
+
 }
 
 
@@ -3607,6 +3908,7 @@ static nserror toolbar_connect_signals(struct nsgtk_toolbar *tb)
 	return NSERROR_OK;
 }
 
+
 /**
  * signal handler for toolbar context menu
  *
@@ -3678,7 +3980,7 @@ nsgtk_toolbar_create(GtkBuilder *builder,
 		}
 	}
 
-	res = apply_user_button_customization(tb);
+	res = apply_user_button_customisation(tb);
 	if (res != NSERROR_OK) {
 		free(tb);
 		return res;
@@ -3694,14 +3996,6 @@ nsgtk_toolbar_create(GtkBuilder *builder,
 	if (res != NSERROR_OK) {
 		free(tb);
 		return res;
-	}
-
-	gtk_widget_show_all(GTK_WIDGET(tb->widget));
-
-	/* if there is a history widget set its size */
-	if (tb->buttons[HISTORY_BUTTON]->button != NULL) {
-		gtk_widget_set_size_request(GTK_WIDGET(
-			tb->buttons[HISTORY_BUTTON]->button), 20, -1);
 	}
 
 	res = toolbar_connect_signals(tb);
