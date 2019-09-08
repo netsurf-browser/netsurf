@@ -2180,7 +2180,7 @@ static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
 	}
 
 	/* get container box widget which forms a page of the tabs */
-	tbc->container = GTK_WIDGET(gtk_builder_get_object(builder, "tabBox"));
+	tbc->container = GTK_WIDGET(gtk_builder_get_object(builder, "customisation"));
 	if (tbc->container == NULL) {
 		goto cutomize_button_clicked_cb_error;
 	}
@@ -2262,13 +2262,18 @@ static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
 	/* close and cleanup on destroy signal */
 
 	/* configure the container */
-	gtk_window_set_accept_focus(GTK_WINDOW(tbc->container), FALSE);
-
 	gtk_drag_dest_set(GTK_WIDGET(tbc->container),
 			  GTK_DEST_DEFAULT_MOTION | GTK_DEST_DEFAULT_DROP,
 			  &target_entry,
 			  1,
 			  GDK_ACTION_COPY);
+
+	g_signal_connect_swapped(GTK_WIDGET(gtk_builder_get_object(builder,
+								   "discard")),
+				 "clicked",
+				 G_CALLBACK(gtk_widget_destroy),
+				 tbc->container);
+
 #if 0
 	g_signal_connect(GTK_WIDGET(gtk_builder_get_object(builder, "close")),
 			 "clicked",
