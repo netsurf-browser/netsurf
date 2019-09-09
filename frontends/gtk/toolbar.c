@@ -1422,6 +1422,31 @@ itemid_from_location(struct nsgtk_toolbar *tb, int location)
 
 
 /**
+ * connect signals to a toolbar item in a customisation toolbar
+ *
+ * \param tb The toolbar
+ * \param itemid The item id within to toolbar to connect
+ * \param NSERROR_OK on success
+ */
+static nserror
+toolbar_item_connect_signals(struct nsgtk_toolbar *tb, int itemid)
+{
+	/* set toolbar items to be a drag source */
+	gtk_tool_item_set_use_drag_window(tb->buttons[itemid]->button, TRUE);
+	gtk_drag_source_set(GTK_WIDGET(tb->buttons[itemid]->button),
+			    GDK_BUTTON1_MASK,
+			    &target_entry,
+			    1,
+			    GDK_ACTION_COPY);
+	g_signal_connect(tb->buttons[itemid]->button,
+			 "drag-data-get",
+			 G_CALLBACK(tb->buttons[itemid]->dataminus),
+			 tb);
+	return NSERROR_OK;
+}
+
+
+/**
  * customisation container handler for drag drop signal
  *
  * called when a widget is dropped onto the store window
@@ -1461,6 +1486,7 @@ customisation_container_drag_drop_cb(GtkWidget *widget,
 		tbc->toolbar.buttons[itemid]->location--;
 	}
 
+	/* remove existing item */
 	tbc->toolbar.buttons[tbc->dragitem]->location = -1;
 	gtk_container_remove(GTK_CONTAINER(tbc->toolbar.widget),
 			     GTK_WIDGET(tbc->toolbar.buttons[tbc->dragitem]->button));
@@ -1499,78 +1525,76 @@ customisation_toolbar_drag_drop_cb(GtkWidget *widget,
 				   guint time,
 				   gpointer data)
 {
-#if 0
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-	int ind = gtk_toolbar_get_drop_index(nsgtk_scaffolding_toolbar(g),
-			x, y);
-	int q, i;
-	if (window->currentbutton == -1)
+	struct nsgtk_toolbar_customisation *tbc;
+	tbc = (struct nsgtk_toolbar_customisation *)data;
+	gint position; /* drop position in toolbar */
+	struct nsgtk_theme *theme;
+	int location;
+	int itemid;
+	struct nsgtk_toolbar_item *dragitem; /* toolbar item being dragged */
+
+	position = gtk_toolbar_get_drop_index(tbc->toolbar.widget, x, y);
+	if (tbc->dragitem == -1) {
 		return TRUE;
-	struct nsgtk_theme *theme =
-		nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR, false);
+	}
+
+	/* pure conveiance variable */
+	dragitem = tbc->toolbar.buttons[tbc->dragitem];
+
+	/* deal with replacing existing item in toolbar */
+	if (dragitem->location != INACTIVE_LOCATION) {
+		if (dragitem->location < position) {
+			position--;
+		}
+
+		/* update the locations for all the subsequent toolbar items */
+		for (location = dragitem->location;
+		     location < PLACEHOLDER_BUTTON;
+		     location++) {
+			itemid = itemid_from_location(&tbc->toolbar, location);
+			if (itemid == PLACEHOLDER_BUTTON) {
+				break;
+			}
+			tbc->toolbar.buttons[itemid]->location--;
+		}
+
+		/* remove existing item */
+		dragitem->location = INACTIVE_LOCATION;
+		gtk_container_remove(GTK_CONTAINER(tbc->toolbar.widget),
+				     GTK_WIDGET(dragitem->button));
+	}
+
+	/* add dropped item into toolbar */
+	theme =	nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR, false);
 	if (theme == NULL) {
 		nsgtk_warning(messages_get("NoMemory"), 0);
 		return TRUE;
 	}
-	if (nsgtk_scaffolding_button(g, window->currentbutton)->location
-			!= -1) {
-		/* widget was already in the toolbar; so replace */
-		if (nsgtk_scaffolding_button(g, window->currentbutton)->
-				location < ind)
-			ind--;
-		gtk_container_remove(GTK_CONTAINER(
-				nsgtk_scaffolding_toolbar(g)), GTK_WIDGET(
-				nsgtk_scaffolding_button(g,
-				window->currentbutton)->button));
-		/* 'move' all widgets further right than the original location,
-		 * one place to the left in logical schema */
-		for (i = nsgtk_scaffolding_button(g, window->currentbutton)->
-				location + 1; i < PLACEHOLDER_BUTTON; i++) {
-			q = nsgtk_toolbar_get_id_at_location(g, i);
-			if (q == -1)
-				continue;
-			nsgtk_scaffolding_button(g, q)->location--;
-		}
-		nsgtk_scaffolding_button(g, window->currentbutton)->
-				location = -1;
-	}
-	nsgtk_scaffolding_button(g, window->currentbutton)->button =
-			GTK_TOOL_ITEM(make_toolbar_item(window->currentbutton, theme));
+
+	dragitem->button = make_toolbar_item(tbc->dragitem, theme);
+
 	free(theme);
-	if (nsgtk_scaffolding_button(g, window->currentbutton)->button
-			== NULL) {
+	if (dragitem->button == NULL) {
 		nsgtk_warning("NoMemory", 0);
 		return TRUE;
 	}
-	/* update logical schema */
-	nsgtk_scaffolding_reset_offset(g);
-	/* 'move' all widgets further right than the new location, one place to
-	 * the right in logical schema */
-	for (i = PLACEHOLDER_BUTTON - 1; i >= ind; i--) {
-		q = nsgtk_toolbar_get_id_at_location(g, i);
-		if (q == -1)
-			continue;
-		nsgtk_scaffolding_button(g, q)->location++;
+
+	/* update locations */
+	for (location = PLACEHOLDER_BUTTON; location >= position; location--) {
+		itemid = itemid_from_location(&tbc->toolbar, location);
+		if (itemid != PLACEHOLDER_BUTTON) {
+			tbc->toolbar.buttons[itemid]->location++;
+		}
 	}
-	nsgtk_scaffolding_button(g, window->currentbutton)->location = ind;
+	dragitem->location = position;
 
-	/* complete action */
-	GtkToolItem *current_button;
+	gtk_toolbar_insert(tbc->toolbar.widget,
+			   dragitem->button,
+			   dragitem->location);
 
-	current_button = GTK_TOOL_ITEM(nsgtk_scaffolding_button(g, window->currentbutton)->button);
-
-	gtk_toolbar_insert(nsgtk_scaffolding_toolbar(g), current_button, ind);
-
-	gtk_tool_item_set_use_drag_window(current_button, TRUE);
-	gtk_drag_source_set(GTK_WIDGET(current_button),
-			    GDK_BUTTON1_MASK, &entry, 1,
-			    GDK_ACTION_COPY);
-	nsgtk_toolbar_temp_connect(g, window->currentbutton);
-	gtk_widget_show_all(GTK_WIDGET(current_button));
-
-
-	window->currentbutton = -1;
-#endif
+	toolbar_item_connect_signals(&tbc->toolbar, tbc->dragitem);
+	gtk_widget_show_all(GTK_WIDGET(dragitem->button));
+	tbc->dragitem = -1;
 	return TRUE;
 }
 
@@ -1610,7 +1634,7 @@ customisation_toolbar_drag_motion_cb(GtkWidget *widget,
 {
 	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
 	GtkToolItem *item;
-	gint position;
+	gint position; /* position in toolbar */
 
 	item = gtk_tool_button_new(NULL, NULL);
 	position = gtk_toolbar_get_drop_index(tb->widget, x, y);
@@ -2010,21 +2034,9 @@ toolbar_customisation_connect_signals(struct nsgtk_toolbar *tb)
 
 	for (iidx = BACK_BUTTON; iidx < PLACEHOLDER_BUTTON; iidx++) {
 		/* skip inactive items in toolbar */
-		if (tb->buttons[iidx]->location == INACTIVE_LOCATION) {
-			continue;
+		if (tb->buttons[iidx]->location != INACTIVE_LOCATION) {
+			toolbar_item_connect_signals(tb, iidx);
 		}
-
-		/* set toolbar items to be a drag source */
-		gtk_tool_item_set_use_drag_window(tb->buttons[iidx]->button, TRUE);
-		gtk_drag_source_set(GTK_WIDGET(tb->buttons[iidx]->button),
-				    GDK_BUTTON1_MASK,
-				    &target_entry,
-				    1,
-				    GDK_ACTION_COPY);
-		g_signal_connect(tb->buttons[iidx]->button,
-				 "drag-data-get",
-				 G_CALLBACK(tb->buttons[iidx]->dataminus),
-				 tb);
 	}
 
 	/* add move button listeners */

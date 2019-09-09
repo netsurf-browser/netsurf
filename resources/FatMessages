@@ -3264,11 +3264,8 @@ fr.gtk.gtkCopylink:_Copier le lien
 it.gtk.gtkCopylink:Copia in_dirizzo link
 nl.gtk.gtkCopylink:Koppelingsloc_atie kopiëren
 
-en.gtk.gtkToolBarTitle:Toolbar custom button store
-de.gtk.gtkToolBarTitle:Benutzerdefinierter Ort für Toolbar-Icons
-fr.gtk.gtkToolBarTitle:Personaliser la barre d'outils
-it.gtk.gtkToolBarTitle:Pulsanti della barra strumenti
-nl.gtk.gtkToolBarTitle:Werkbalk aanpassen
+# GTK theme handling
+
 en.gtk.gtkAddThemeTitle:Select folder containing theme images
 de.gtk.gtkAddThemeTitle:Ordner mit Themenbildern auswählen
 fr.gtk.gtkAddThemeTitle:Sélectionner le dossier contenant des images de thèmes
@@ -3295,6 +3292,11 @@ de.gtk.gtkThemeAdd:Thema erfolgreich hinzugefügt
 fr.gtk.gtkThemeAdd:Le thème a été ajouté avec succes
 it.gtk.gtkThemeAdd:Il tema è stato aggiunto con successo
 nl.gtk.gtkThemeAdd:Thema is succesvol toegevoegd
+
+# GTK toolbar customisation
+
+en.gtk.gtkCustomizeToolbarTitle:Customise Toolbar
+en.gtk.gtkCustomizeToolbarInstructions:Drag toolbar items into and out of the toolbar.
 
 # GTK preferences dialog
 
@@ -6481,3 +6483,8 @@ nl.all.SetPassword:Stel wachtwoord in
 #it.all.MNGTitle:%s (Immagine MNG %lux%lu pixel)
 #nl.all.MNGTitle:%s (MNG-afbeelding %lux%lu punten)
 #en.all.LoginLabel:A website is requesting credentials for access.
+#en.gtk.gtkToolBarTitle:Toolbar custom button store
+#de.gtk.gtkToolBarTitle:Benutzerdefinierter Ort für Toolbar-Icons
+#fr.gtk.gtkToolBarTitle:Personaliser la barre d'outils
+#it.gtk.gtkToolBarTitle:Pulsanti della barra strumenti
+#nl.gtk.gtkToolBarTitle:Werkbalk aanpassen
