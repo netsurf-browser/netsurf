@@ -55,6 +55,11 @@ struct nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *gw);
 nserror nsgtk_window_update_all(void);
 
 /**
+ * every window will have its toolbar updated to reflect user settings
+ */
+nserror nsgtk_window_toolbar_update(void);
+
+/**
  * Windows associated with a scaffold will have their toolbar show state set
  */
 nserror nsgtk_window_toolbar_show(struct nsgtk_scaffolding *gs, bool show);

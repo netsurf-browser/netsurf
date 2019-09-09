@@ -1095,70 +1095,8 @@ static void nsgtk_toolbar_cast(struct nsgtk_scaffolding *g)
 
 
 
-/**
- * save toolbar settings to file
- */
-static nserror nsgtk_toolbar_customisation_save(struct nsgtk_scaffolding *g)
-{
-	char *choices = NULL;
-	char *order;
-	int order_len = PLACEHOLDER_BUTTON * 12; /* length of order buffer */
-	int tbidx;
-	char *cur;
-	int plen;
-
-	order = malloc(order_len);
-
-	if (order == NULL) {
-		return NSERROR_NOMEM;
-	}
-	cur = order;
-
-	for (tbidx = BACK_BUTTON; tbidx < PLACEHOLDER_BUTTON; tbidx++) {
-		plen = snprintf(cur,
-				order_len,
-				"%d;%d|",
-				tbidx,
-				nsgtk_scaffolding_button(g, tbidx)->location);
-		if (plen == order_len) {
-			/* ran out of space, bail early */
-			NSLOG(netsurf, INFO,
-			      "toolbar ordering exceeded available space");
-			break;
-		}
-		cur += plen;
-		order_len -= plen;
-	}
-
-	nsoption_set_charp(toolbar_order, order);
-
-	/* ensure choices are saved */
-	netsurf_mkpath(&choices, NULL, 2, nsgtk_config_home, "Choices");
-	if (choices != NULL) {
-		nsoption_write(choices, NULL, NULL);
-		free(choices);
-	}
-
-	return NSERROR_OK;
-}
 
 
-/**
- * when 'save settings' button is clicked
- */
-static gboolean nsgtk_toolbar_persist(GtkWidget *widget, gpointer data)
-{
-	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
-
-	edit_mode = false;
-	/* save state to file, update toolbars for all windows */
-	nsgtk_toolbar_customisation_save(g);
-	nsgtk_toolbar_cast(g);
-	nsgtk_toolbar_set_physical(g);
-	nsgtk_toolbar_close(g);
-	gtk_widget_destroy(window->window);
-	return TRUE;
-}
 
 /**
  * when 'reload defaults' button is clicked
@@ -1400,6 +1338,77 @@ void nsgtk_toolbar_customisation_init(struct nsgtk_scaffolding *g)
 	nsgtk_toolbar_window_open(g);
 }
 #endif
+
+
+/**
+ * save toolbar settings to file
+ */
+static nserror
+nsgtk_toolbar_customisation_save(struct nsgtk_toolbar_customisation *tbc)
+{
+	char *choices = NULL;
+	char *order;
+	int order_len;
+	int tbidx;
+	char *cur;
+	int plen;
+
+	order_len = PLACEHOLDER_BUTTON * 12; /* length of order buffer */
+	order = malloc(order_len);
+
+	if (order == NULL) {
+		return NSERROR_NOMEM;
+	}
+	cur = order;
+
+	for (tbidx = BACK_BUTTON; tbidx < PLACEHOLDER_BUTTON; tbidx++) {
+		plen = snprintf(cur,
+				order_len,
+				"%d;%d|",
+				tbidx,
+				tbc->toolbar.buttons[tbidx]->location);
+		if (plen == order_len) {
+			/* ran out of space, bail early */
+			NSLOG(netsurf, INFO,
+			      "toolbar ordering exceeded available space");
+			break;
+		}
+		cur += plen;
+		order_len -= plen;
+	}
+
+	nsoption_set_charp(toolbar_order, order);
+
+	/* ensure choices are saved */
+	netsurf_mkpath(&choices, NULL, 2, nsgtk_config_home, "Choices");
+	if (choices != NULL) {
+		nsoption_write(choices, NULL, NULL);
+		free(choices);
+	}
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * customisation apply handler for clicked signal
+ *
+ * when 'save settings' button is clicked
+ */
+static gboolean
+customisation_apply_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar_customisation *tbc;
+	tbc = (struct nsgtk_toolbar_customisation *)data;
+
+	/* save state to file, update toolbars for all windows */
+	nsgtk_toolbar_customisation_save(tbc);
+	nsgtk_window_toolbar_update();
+	gtk_widget_destroy(tbc->container);
+
+	return TRUE;
+}
+
 
 /**
  * find the toolbar item with a given location.
@@ -1654,7 +1663,7 @@ static void
 customisation_toolbar_drag_leave_cb(GtkWidget *widget,
 				    GdkDragContext *gdc,
 				    guint time,
-		gpointer data)
+				    gpointer data)
 {
 	gtk_toolbar_set_drop_highlight_item(GTK_TOOLBAR(widget), NULL, 0);
 }
@@ -2257,7 +2266,7 @@ static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
 	}
 
 	/* ensure icon sizes and text labels on toolbar are set */
-	res = nsgtk_toolbar_update(&tbc->toolbar);
+	res = nsgtk_toolbar_restyle(&tbc->toolbar);
 	if (res != NSERROR_OK) {
 		goto cutomize_button_clicked_cb_error;
 	}
@@ -2309,12 +2318,12 @@ static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
 				 G_CALLBACK(gtk_widget_destroy),
 				 tbc->container);
 
-#if 0
 	g_signal_connect(GTK_WIDGET(gtk_builder_get_object(builder, "apply")),
 			 "clicked",
-			 G_CALLBACK(nsgtk_toolbar_persist),
-			 g);
+			 G_CALLBACK(customisation_apply_clicked_cb),
+			 tbc);
 
+#if 0
 	g_signal_connect(GTK_WIDGET(gtk_builder_get_object(builder, "reset")),
 			 "clicked",
 			 G_CALLBACK(nsgtk_toolbar_reset),
@@ -4021,25 +4030,7 @@ nsgtk_toolbar_create(GtkBuilder *builder,
 		}
 	}
 
-	res = apply_user_button_customisation(tb);
-	if (res != NSERROR_OK) {
-		free(tb);
-		return res;
-	}
-
-	res = populate_gtk_toolbar_widget(tb);
-	if (res != NSERROR_OK) {
-		free(tb);
-		return res;
-	}
-
 	res = nsgtk_toolbar_update(tb);
-	if (res != NSERROR_OK) {
-		free(tb);
-		return res;
-	}
-
-	res = toolbar_connect_signals(tb);
 	if (res != NSERROR_OK) {
 		free(tb);
 		return res;
@@ -4059,7 +4050,7 @@ nserror nsgtk_toolbar_destroy(struct nsgtk_toolbar *tb)
 }
 
 /* exported interface documented in toolbar.h */
-nserror nsgtk_toolbar_update(struct nsgtk_toolbar *tb)
+nserror nsgtk_toolbar_restyle(struct nsgtk_toolbar *tb)
 {
 	/*
 	 * reset toolbar size allocation so icon size change affects
@@ -4244,4 +4235,33 @@ nserror nsgtk_toolbar_show(struct nsgtk_toolbar *tb, bool show)
 
 	}
 	return NSERROR_OK;
+}
+
+
+/* exported interface documented in toolbar.h */
+nserror nsgtk_toolbar_update(struct nsgtk_toolbar *tb)
+{
+	nserror res;
+
+	/* setup item locations based on user config */
+	res = apply_user_button_customisation(tb);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	/* populate toolbar widget */
+	res = populate_gtk_toolbar_widget(tb);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	/* ensure icon sizes and text labels on toolbar are set */
+	res = nsgtk_toolbar_restyle(tb);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	res = toolbar_connect_signals(tb);
+
+	return res;
 }

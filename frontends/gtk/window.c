@@ -1506,7 +1506,7 @@ nserror nsgtk_window_update_all(void)
 	struct gui_window *gw;
 	for (gw = window_list; gw != NULL; gw = gw->next) {
 		nsgtk_tab_options_changed(nsgtk_scaffolding_notebook(gw->scaffold));
-		nsgtk_toolbar_update(gw->toolbar);
+		nsgtk_toolbar_restyle(gw->toolbar);
 		/** \todo update search bar */
 		browser_window_schedule_reformat(gw->bw);
 	}
@@ -1522,6 +1522,17 @@ nserror nsgtk_window_toolbar_show(struct nsgtk_scaffolding *gs, bool show)
 		if (gw->scaffold == gs) {
 			nsgtk_toolbar_show(gw->toolbar, show);
 		}
+	}
+	return NSERROR_OK;
+}
+
+/* exported interface documented in window.h */
+nserror nsgtk_window_toolbar_update(void)
+{
+	struct gui_window *gw;
+	for (gw = window_list; gw != NULL; gw = gw->next) {
+		nsgtk_toolbar_update(gw->toolbar);
+
 	}
 	return NSERROR_OK;
 }
