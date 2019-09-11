@@ -181,7 +181,7 @@ static bool edit_mode = false;
 
 /* the 'standard' width of a button that makes sufficient of its label
 visible */
-#define NSGTK_BUTTON_WIDTH 130
+#define NSGTK_BUTTON_WIDTH 120
 
 /* the 'standard' height of a button that fits as many toolbars as
 possible into the store */
@@ -542,7 +542,7 @@ static char *remove_underscores(const char *s, bool replacespace)
  * create a gtk entry widget with a completion attached
  */
 static GtkToolItem *
-make_toolbar_item_throbber(void)
+make_toolbar_item_throbber(bool sensitivity)
 {
 	nserror res;
 	GtkToolItem *item;
@@ -571,6 +571,8 @@ make_toolbar_item_throbber(void)
 			gtk_container_add(GTK_CONTAINER(item), image);
 		}
 	}
+	gtk_widget_set_sensitive(GTK_WIDGET(item), sensitivity);
+
 	return item;
 }
 
@@ -580,7 +582,7 @@ make_toolbar_item_throbber(void)
  * create a gtk entry widget with a completion attached
  */
 static GtkToolItem *
-make_toolbar_item_url_bar(void)
+make_toolbar_item_url_bar(bool sensitivity)
 {
 	GtkToolItem *item;
 	GtkWidget *entry;
@@ -594,9 +596,16 @@ make_toolbar_item_url_bar(void)
 		return NULL;
 	}
 
-	gtk_entry_set_completion(GTK_ENTRY(entry), completion);
+	gtk_widget_set_sensitive(GTK_WIDGET(item), sensitivity);
+
 	gtk_container_add(GTK_CONTAINER(item), entry);
 	gtk_tool_item_set_expand(item, TRUE);
+
+	if (edit_mode) {
+		gtk_widget_set_sensitive(GTK_WIDGET(entry), FALSE);
+	} else {
+		gtk_entry_set_completion(GTK_ENTRY(entry), completion);
+	}
 
 	return item;
 }
@@ -606,48 +615,45 @@ make_toolbar_item_url_bar(void)
  * create web search toolbar item widget
  */
 static GtkToolItem *
-make_toolbar_item_websearch(void)
+make_toolbar_item_websearch(bool sensitivity)
 {
 	GtkToolItem *item;
+	nserror res;
+	GtkWidget *entry;
+	struct bitmap *bitmap;
+	GdkPixbuf *pixbuf = NULL;
+
+	entry = nsgtk_entry_new();
+	item = gtk_tool_item_new();
+
+	if ((entry == NULL) || (item == NULL)) {
+		return NULL;
+	}
+
+	gtk_widget_set_sensitive(GTK_WIDGET(item), sensitivity);
+
+	gtk_widget_set_size_request(entry, NSGTK_WEBSEARCH_WIDTH, -1);
+
+	res = search_web_get_provider_bitmap(&bitmap);
+	if ((res == NSERROR_OK) && (bitmap != NULL)) {
+		pixbuf = nsgdk_pixbuf_get_from_surface(bitmap->surface,
+						       16, 16);
+	}
+
+	if (pixbuf != NULL) {
+		nsgtk_entry_set_icon_from_pixbuf(entry,
+						 GTK_ENTRY_ICON_PRIMARY,
+						 pixbuf);
+	} else {
+		nsgtk_entry_set_icon_from_stock(entry,
+						GTK_ENTRY_ICON_PRIMARY,
+						NSGTK_STOCK_INFO);
+	}
+
+	gtk_container_add(GTK_CONTAINER(item), entry);
 
 	if (edit_mode) {
-		item = gtk_tool_button_new(
-				GTK_WIDGET(nsgtk_image_new_from_stock(
-						NSGTK_STOCK_FIND,
-						GTK_ICON_SIZE_LARGE_TOOLBAR)),
-				"[websearch]");
-	} else {
-		nserror res;
-		GtkWidget *entry;
-		struct bitmap *bitmap;
-		GdkPixbuf *pixbuf = NULL;
-
-		entry = nsgtk_entry_new();
-		item = gtk_tool_item_new();
-
-		if ((entry == NULL) || (item == NULL)) {
-			return NULL;
-		}
-
-		gtk_widget_set_size_request(entry, NSGTK_WEBSEARCH_WIDTH, -1);
-
-		res = search_web_get_provider_bitmap(&bitmap);
-		if ((res == NSERROR_OK) && (bitmap != NULL)) {
-			pixbuf = nsgdk_pixbuf_get_from_surface(bitmap->surface,
-							       16, 16);
-		}
-
-		if (pixbuf != NULL) {
-			nsgtk_entry_set_icon_from_pixbuf(entry,
-							 GTK_ENTRY_ICON_PRIMARY,
-							 pixbuf);
-		} else {
-			nsgtk_entry_set_icon_from_stock(entry,
-							GTK_ENTRY_ICON_PRIMARY,
-							NSGTK_STOCK_INFO);
-		}
-
-		gtk_container_add(GTK_CONTAINER(item), entry);
+		gtk_widget_set_sensitive(GTK_WIDGET(entry), FALSE);
 	}
 
 	return item;
@@ -662,114 +668,97 @@ make_toolbar_item_websearch(void)
  * \return gtk widget
  */
 static GtkToolItem *
-make_toolbar_item(nsgtk_toolbar_button i, struct nsgtk_theme *theme)
+make_toolbar_item(nsgtk_toolbar_button itemid,
+		  struct nsgtk_theme *theme,
+		  bool sensitivity)
 {
 	GtkToolItem *w = NULL;
 
-	switch(i) {
-
-/* gtk_tool_button_new() accepts NULL args */
-#define MAKE_STOCKBUTTON(p, q)					\
-	case p##_BUTTON: {					\
-		GtkStockItem item;					\
-		char *label = NULL;					\
-		if (nsgtk_stock_lookup(q, &item) &&			\
-		    (item.label != NULL) &&				\
-		    ((label = remove_underscores(item.label, false)) != NULL)) { \
-			w = gtk_tool_button_new(GTK_WIDGET(	\
-					   theme->image[p##_BUTTON]), label); \
-			free(label);					\
-		} else {						\
-			w = gtk_tool_button_new(GTK_WIDGET(	\
-					   theme->image[p##_BUTTON]), q); \
-		}							\
-		break;							\
-	}
+	switch(itemid) {
 
 /* gtk_tool_button_new accepts NULL args */
-#define MAKE_MENUBUTTON(p, q)						\
+#define MAKE_ITEM(p, q)							\
 	case p##_BUTTON: {						\
 		char *label = NULL;					\
 		label = remove_underscores(messages_get(#q), false);	\
-		w = gtk_tool_button_new(			\
-					GTK_WIDGET(theme->image[p##_BUTTON]), \
-					label);			\
+		w = gtk_tool_button_new(GTK_WIDGET(theme->image[p##_BUTTON]), \
+					label);				\
+		gtk_widget_set_sensitive(GTK_WIDGET(w), sensitivity);	\
 		if (label != NULL) {					\
 			free(label);					\
 		}							\
 		break;							\
 	}
 
-	MAKE_STOCKBUTTON(HOME, NSGTK_STOCK_HOME)
-	MAKE_STOCKBUTTON(BACK, NSGTK_STOCK_GO_BACK)
-	MAKE_STOCKBUTTON(FORWARD, NSGTK_STOCK_GO_FORWARD)
-	MAKE_STOCKBUTTON(STOP, NSGTK_STOCK_STOP)
-	MAKE_STOCKBUTTON(RELOAD, NSGTK_STOCK_REFRESH)
+	MAKE_ITEM(HOME, gtkHome)
+	MAKE_ITEM(BACK, gtkBack)
+	MAKE_ITEM(FORWARD, gtkForward)
+	MAKE_ITEM(STOP, Stop)
+	MAKE_ITEM(RELOAD, Reload)
+	MAKE_ITEM(NEWWINDOW, gtkNewWindow)
+	MAKE_ITEM(NEWTAB, gtkNewTab)
+	MAKE_ITEM(OPENFILE, gtkOpenFile)
+	MAKE_ITEM(CLOSETAB, gtkCloseTab)
+	MAKE_ITEM(CLOSEWINDOW, gtkCloseWindow)
+	MAKE_ITEM(SAVEPAGE, gtkSavePage)
+	MAKE_ITEM(PRINTPREVIEW, gtkPrintPreview)
+	MAKE_ITEM(PRINT, gtkPrint)
+	MAKE_ITEM(QUIT, gtkQuitMenu)
+	MAKE_ITEM(CUT, gtkCut)
+	MAKE_ITEM(COPY, gtkCopy)
+	MAKE_ITEM(PASTE, gtkPaste)
+	MAKE_ITEM(DELETE, gtkDelete)
+	MAKE_ITEM(SELECTALL, gtkSelectAll)
+	MAKE_ITEM(PREFERENCES, gtkPreferences)
+	MAKE_ITEM(ZOOMPLUS, gtkZoomPlus)
+	MAKE_ITEM(ZOOMMINUS, gtkZoomMinus)
+	MAKE_ITEM(ZOOMNORMAL, gtkZoomNormal)
+	MAKE_ITEM(FULLSCREEN, gtkFullScreen)
+	MAKE_ITEM(VIEWSOURCE, gtkViewSource)
+	MAKE_ITEM(CONTENTS, gtkContents)
+	MAKE_ITEM(ABOUT, gtkAbout)
+	MAKE_ITEM(PDF, gtkPDF)
+	MAKE_ITEM(PLAINTEXT, gtkPlainText)
+	MAKE_ITEM(DRAWFILE, gtkDrawFile)
+	MAKE_ITEM(POSTSCRIPT, gtkPostScript)
+	MAKE_ITEM(FIND, gtkFind)
+	MAKE_ITEM(DOWNLOADS, gtkDownloads)
+	MAKE_ITEM(SAVEWINDOWSIZE, gtkSaveWindowSize)
+	MAKE_ITEM(TOGGLEDEBUGGING, gtkToggleDebugging)
+	MAKE_ITEM(SAVEBOXTREE, gtkDebugBoxTree)
+	MAKE_ITEM(SAVEDOMTREE, gtkDebugDomTree)
+	MAKE_ITEM(LOCALHISTORY, gtkLocalHistory)
+	MAKE_ITEM(GLOBALHISTORY, gtkGlobalHistory)
+	MAKE_ITEM(ADDBOOKMARKS, gtkAddBookMarks)
+	MAKE_ITEM(SHOWBOOKMARKS, gtkShowBookMarks)
+	MAKE_ITEM(SHOWCOOKIES, gtkShowCookies)
+	MAKE_ITEM(OPENLOCATION, gtkOpenLocation)
+	MAKE_ITEM(NEXTTAB, gtkNextTab)
+	MAKE_ITEM(PREVTAB, gtkPrevTab)
+	MAKE_ITEM(GUIDE, gtkGuide)
+	MAKE_ITEM(INFO, gtkUserInformation)
+	MAKE_ITEM(OPENMENU, gtkOpenMenu)
 
-	MAKE_MENUBUTTON(NEWWINDOW, gtkNewWindow)
-	MAKE_MENUBUTTON(NEWTAB, gtkNewTab)
-	MAKE_MENUBUTTON(OPENFILE, gtkOpenFile)
-	MAKE_MENUBUTTON(CLOSETAB, gtkCloseTab)
-	MAKE_MENUBUTTON(CLOSEWINDOW, gtkCloseWindow)
-	MAKE_MENUBUTTON(SAVEPAGE, gtkSavePage)
-	MAKE_MENUBUTTON(PRINTPREVIEW, gtkPrintPreview)
-	MAKE_MENUBUTTON(PRINT, gtkPrint)
-	MAKE_MENUBUTTON(QUIT, gtkQuitMenu)
-	MAKE_MENUBUTTON(CUT, gtkCut)
-	MAKE_MENUBUTTON(COPY, gtkCopy)
-	MAKE_MENUBUTTON(PASTE, gtkPaste)
-	MAKE_MENUBUTTON(DELETE, gtkDelete)
-	MAKE_MENUBUTTON(SELECTALL, gtkSelectAll)
-	MAKE_MENUBUTTON(PREFERENCES, gtkPreferences)
-	MAKE_MENUBUTTON(ZOOMPLUS, gtkZoomPlus)
-	MAKE_MENUBUTTON(ZOOMMINUS, gtkZoomMinus)
-	MAKE_MENUBUTTON(ZOOMNORMAL, gtkZoomNormal)
-	MAKE_MENUBUTTON(FULLSCREEN, gtkFullScreen)
-	MAKE_MENUBUTTON(VIEWSOURCE, gtkViewSource)
-	MAKE_MENUBUTTON(CONTENTS, gtkContents)
-	MAKE_MENUBUTTON(ABOUT, gtkAbout)
-	MAKE_MENUBUTTON(PDF, gtkPDF)
-	MAKE_MENUBUTTON(PLAINTEXT, gtkPlainText)
-	MAKE_MENUBUTTON(DRAWFILE, gtkDrawFile)
-	MAKE_MENUBUTTON(POSTSCRIPT, gtkPostScript)
-	MAKE_MENUBUTTON(FIND, gtkFind)
-	MAKE_MENUBUTTON(DOWNLOADS, gtkDownloads)
-	MAKE_MENUBUTTON(SAVEWINDOWSIZE, gtkSaveWindowSize)
-	MAKE_MENUBUTTON(TOGGLEDEBUGGING, gtkToggleDebugging)
-	MAKE_MENUBUTTON(SAVEBOXTREE, gtkDebugBoxTree)
-	MAKE_MENUBUTTON(SAVEDOMTREE, gtkDebugDomTree)
-	MAKE_MENUBUTTON(LOCALHISTORY, gtkLocalHistory)
-	MAKE_MENUBUTTON(GLOBALHISTORY, gtkGlobalHistory)
-	MAKE_MENUBUTTON(ADDBOOKMARKS, gtkAddBookMarks)
-	MAKE_MENUBUTTON(SHOWBOOKMARKS, gtkShowBookMarks)
-	MAKE_MENUBUTTON(SHOWCOOKIES, gtkShowCookies)
-	MAKE_MENUBUTTON(OPENLOCATION, gtkOpenLocation)
-	MAKE_MENUBUTTON(NEXTTAB, gtkNextTab)
-	MAKE_MENUBUTTON(PREVTAB, gtkPrevTab)
-	MAKE_MENUBUTTON(GUIDE, gtkGuide)
-	MAKE_MENUBUTTON(INFO, gtkUserInformation)
-	MAKE_MENUBUTTON(OPENMENU, gtkOpenMenu)
-
-#undef MAKE_STOCKBUTTON
-#undef MAKE_MENUBUTTON
+#undef MAKE_ITEM
 
 	case HISTORY_BUTTON:
 		w = gtk_tool_button_new(GTK_WIDGET(
 				theme->image[HISTORY_BUTTON]), "H");
 		/* set history widget minimum width */
 		gtk_widget_set_size_request(GTK_WIDGET(w), 20, -1);
+		gtk_widget_set_sensitive(GTK_WIDGET(w), sensitivity);
 		break;
 
 	case URL_BAR_ITEM:
-		w = make_toolbar_item_url_bar();
+		w = make_toolbar_item_url_bar(sensitivity);
 		break;
 
 	case THROBBER_ITEM:
-		w = make_toolbar_item_throbber();
+		w = make_toolbar_item_throbber(sensitivity);
 		break;
 
 	case WEBSEARCH_ITEM:
-		w = make_toolbar_item_websearch();
+		w = make_toolbar_item_websearch(sensitivity);
 		break;
 
 	default:
@@ -1011,7 +1000,9 @@ customisation_toolbar_drag_drop_cb(GtkWidget *widget,
 		return TRUE;
 	}
 
-	dragitem->button = make_toolbar_item(tbc->dragitem, theme);
+	edit_mode = true;
+	dragitem->button = make_toolbar_item(tbc->dragitem, theme, true);
+	edit_mode = false;
 
 	free(theme);
 	if (dragitem->button == NULL) {
@@ -1247,12 +1238,8 @@ add_item_to_toolbar(struct nsgtk_toolbar *tb,
 
 		if (tb->buttons[bidx]->location == location) {
 
-			tb->buttons[bidx]->button = make_toolbar_item(bidx,
-								      theme);
-
-			/* set widgets initial sensitivity */
-			gtk_widget_set_sensitive(GTK_WIDGET(tb->buttons[bidx]->button),
-						 tb->buttons[bidx]->sensitivity);
+			tb->buttons[bidx]->button = make_toolbar_item(
+				bidx, theme, tb->buttons[bidx]->sensitivity);
 
 			gtk_toolbar_insert(tb->widget,
 					   tb->buttons[bidx]->button,
@@ -1492,12 +1479,28 @@ toolbar_customisation_connect_signals(struct nsgtk_toolbar *tb)
 }
 
 
+static void
+item_size_allocate_cb(GtkWidget *widget,
+		      GdkRectangle *alloc,
+		      gpointer user_data)
+{
+	if (alloc->width > NSGTK_BUTTON_WIDTH) {
+		alloc->width = NSGTK_BUTTON_WIDTH;
+	}
+	if (alloc->height > NSGTK_BUTTON_HEIGHT) {
+		alloc->height = NSGTK_BUTTON_HEIGHT;
+	}
+	//NSLOG(netsurf, ERROR, "w:%d h:%d", alloc->width, alloc->height);
+	gtk_widget_set_allocation(widget, alloc);
+}
+
+
 /**
  * add a row to a toolbar customisation toolbox
  *
  * \param tbc The toolbar customisation context
  * \param startitem The item index of the beginning of the row
- * \param enditem The item index of teh beginning of teh next row
+ * \param enditem The item index of the beginning of the next row
  * \return NSERROR_OK on successs else error
  */
 static nserror
@@ -1535,6 +1538,10 @@ add_toolbox_row(struct nsgtk_toolbar_customisation *tbc,
 				 "drag-data-get",
 				 G_CALLBACK(tbc->toolbar.buttons[iidx]->dataplus),
 				 &tbc->toolbar);
+		g_signal_connect(tbc->items[iidx],
+				 "size-allocate",
+				 G_CALLBACK(item_size_allocate_cb),
+				 NULL);
 		gtk_toolbar_insert(rowbar, tbc->items[iidx], iidx - startitem);
 	}
 	return NSERROR_OK;
@@ -1577,7 +1584,7 @@ toolbar_customisation_create_toolbox(struct nsgtk_toolbar_customisation *tbc,
 			curcol = 0;
 			startidx = iidx;
 		}
-		tbc->items[iidx] = make_toolbar_item(iidx, theme);
+		tbc->items[iidx] = make_toolbar_item(iidx, theme, true);
 		if (tbc->items[iidx] != NULL) {
 			curcol++;
 		}
@@ -1590,26 +1597,6 @@ toolbar_customisation_create_toolbox(struct nsgtk_toolbar_customisation *tbc,
 	free(theme);
 
 	return NSERROR_OK;
-}
-
-
-/**
- * customisation apply handler for clicked signal
- *
- * when 'save settings' button is clicked
- */
-static gboolean
-customisation_apply_clicked_cb(GtkWidget *widget, gpointer data)
-{
-	struct nsgtk_toolbar_customisation *tbc;
-	tbc = (struct nsgtk_toolbar_customisation *)data;
-
-	/* save state to file, update toolbars for all windows */
-	nsgtk_toolbar_customisation_save(tbc);
-	nsgtk_window_toolbar_update();
-	gtk_widget_destroy(tbc->container);
-
-	return TRUE;
 }
 
 
@@ -1659,6 +1646,27 @@ customisation_toolbar_update(struct nsgtk_toolbar_customisation *tbc)
 
 	return NSERROR_OK;
 }
+
+
+/**
+ * customisation apply handler for clicked signal
+ *
+ * when 'save settings' button is clicked
+ */
+static gboolean
+customisation_apply_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar_customisation *tbc;
+	tbc = (struct nsgtk_toolbar_customisation *)data;
+
+	/* save state to file, update toolbars for all windows */
+	nsgtk_toolbar_customisation_save(tbc);
+	nsgtk_window_toolbar_update();
+	gtk_widget_destroy(tbc->container);
+
+	return TRUE;
+}
+
 
 /**
  * customisation reset handler for clicked signal
@@ -1752,6 +1760,7 @@ static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
 			}
 			goto cutomize_button_clicked_cb_error;
 		}
+		tbc->toolbar.buttons[iidx]->sensitivity = true;
 	}
 
 	res = customisation_toolbar_update(tbc);
