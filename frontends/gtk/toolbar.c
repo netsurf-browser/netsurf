@@ -115,7 +115,7 @@ struct nsgtk_toolbar {
 	/**
 	 * Toolbar item contexts
 	 */
-	struct nsgtk_toolbar_item *buttons[PLACEHOLDER_BUTTON];
+	struct nsgtk_toolbar_item items[PLACEHOLDER_BUTTON];
 
 	/** entry widget holding the url of the current displayed page */
 	GtkWidget *url_bar;
@@ -176,7 +176,7 @@ struct nsgtk_toolbar_customisation {
 
 static bool edit_mode = false;
 
-/* the number of buttons that fit in the width of the store window */
+/* the number of items that fit in the width of the store window */
 #define NSGTK_STORE_WIDTH 6
 
 /* the 'standard' width of a button that makes sufficient of its label
@@ -213,7 +213,7 @@ struct nsgtk_theme {
 
 /* forward declaration */
 int nsgtk_toolbar_get_id_from_widget(GtkWidget *widget, struct nsgtk_scaffolding *g);
-static nserror toolbar_item_create(nsgtk_toolbar_button id, struct nsgtk_toolbar_item **item_out);
+static nserror toolbar_item_create(nsgtk_toolbar_button id, struct nsgtk_toolbar_item *item_out);
 
 
 /* define data plus and data minus handlers */
@@ -805,7 +805,7 @@ nsgtk_toolbar_customisation_save(struct nsgtk_toolbar_customisation *tbc)
 				order_len,
 				"%d;%d|",
 				tbidx,
-				tbc->toolbar.buttons[tbidx]->location);
+				tbc->toolbar.items[tbidx].location);
 		if (plen == order_len) {
 			/* ran out of space, bail early */
 			NSLOG(netsurf, INFO,
@@ -841,7 +841,7 @@ itemid_from_location(struct nsgtk_toolbar *tb, int location)
 {
 	int iidx;
 	for (iidx = BACK_BUTTON; iidx < PLACEHOLDER_BUTTON; iidx++) {
-		if (tb->buttons[iidx]->location == location) {
+		if (tb->items[iidx].location == location) {
 			break;
 		}
 	}
@@ -860,15 +860,15 @@ static nserror
 toolbar_item_connect_signals(struct nsgtk_toolbar *tb, int itemid)
 {
 	/* set toolbar items to be a drag source */
-	gtk_tool_item_set_use_drag_window(tb->buttons[itemid]->button, TRUE);
-	gtk_drag_source_set(GTK_WIDGET(tb->buttons[itemid]->button),
+	gtk_tool_item_set_use_drag_window(tb->items[itemid].button, TRUE);
+	gtk_drag_source_set(GTK_WIDGET(tb->items[itemid].button),
 			    GDK_BUTTON1_MASK,
 			    &target_entry,
 			    1,
 			    GDK_ACTION_COPY);
-	g_signal_connect(tb->buttons[itemid]->button,
+	g_signal_connect(tb->items[itemid].button,
 			 "drag-data-get",
-			 G_CALLBACK(tb->buttons[itemid]->dataminus),
+			 G_CALLBACK(tb->items[itemid].dataminus),
 			 tb);
 	return NSERROR_OK;
 }
@@ -896,7 +896,7 @@ customisation_container_drag_drop_cb(GtkWidget *widget,
 		return FALSE;
 	}
 
-	if (tbc->toolbar.buttons[tbc->dragitem]->location == INACTIVE_LOCATION) {
+	if (tbc->toolbar.items[tbc->dragitem].location == INACTIVE_LOCATION) {
 		tbc->dragitem = -1;
 		gtk_drag_finish(gdc, TRUE, TRUE, time);
 		return FALSE;
@@ -904,20 +904,20 @@ customisation_container_drag_drop_cb(GtkWidget *widget,
 	}
 
 	/* update the locations for all the subsequent toolbar items */
-	for (location = tbc->toolbar.buttons[tbc->dragitem]->location;
+	for (location = tbc->toolbar.items[tbc->dragitem].location;
 	     location < PLACEHOLDER_BUTTON;
 	     location++) {
 		itemid = itemid_from_location(&tbc->toolbar, location);
 		if (itemid == PLACEHOLDER_BUTTON) {
 			break;
 		}
-		tbc->toolbar.buttons[itemid]->location--;
+		tbc->toolbar.items[itemid].location--;
 	}
 
 	/* remove existing item */
-	tbc->toolbar.buttons[tbc->dragitem]->location = -1;
+	tbc->toolbar.items[tbc->dragitem].location = -1;
 	gtk_container_remove(GTK_CONTAINER(tbc->toolbar.widget),
-			     GTK_WIDGET(tbc->toolbar.buttons[tbc->dragitem]->button));
+			     GTK_WIDGET(tbc->toolbar.items[tbc->dragitem].button));
 
 	tbc->dragitem = -1;
 	gtk_drag_finish(gdc, TRUE, TRUE, time);
@@ -968,7 +968,7 @@ customisation_toolbar_drag_drop_cb(GtkWidget *widget,
 	}
 
 	/* pure conveiance variable */
-	dragitem = tbc->toolbar.buttons[tbc->dragitem];
+	dragitem = &tbc->toolbar.items[tbc->dragitem];
 
 	/* deal with replacing existing item in toolbar */
 	if (dragitem->location != INACTIVE_LOCATION) {
@@ -984,7 +984,7 @@ customisation_toolbar_drag_drop_cb(GtkWidget *widget,
 			if (itemid == PLACEHOLDER_BUTTON) {
 				break;
 			}
-			tbc->toolbar.buttons[itemid]->location--;
+			tbc->toolbar.items[itemid].location--;
 		}
 
 		/* remove existing item */
@@ -1014,7 +1014,7 @@ customisation_toolbar_drag_drop_cb(GtkWidget *widget,
 	for (location = PLACEHOLDER_BUTTON; location >= position; location--) {
 		itemid = itemid_from_location(&tbc->toolbar, location);
 		if (itemid != PLACEHOLDER_BUTTON) {
-			tbc->toolbar.buttons[itemid]->location++;
+			tbc->toolbar.items[itemid].location++;
 		}
 	}
 	dragitem->location = position;
@@ -1171,19 +1171,19 @@ apply_user_button_customisation(struct nsgtk_toolbar *tb)
 
 	/* set all button locations to inactive */
 	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
-		tb->buttons[i]->location = INACTIVE_LOCATION;
+		tb->items[i].location = INACTIVE_LOCATION;
 	}
 
 	/* if no user config is present apply the defaults */
 	if (nsoption_charp(toolbar_order) == NULL) {
-		tb->buttons[BACK_BUTTON]->location = 0;
-		tb->buttons[HISTORY_BUTTON]->location = 1;
-		tb->buttons[FORWARD_BUTTON]->location = 2;
-		tb->buttons[STOP_BUTTON]->location = 3;
-		tb->buttons[RELOAD_BUTTON]->location = 4;
-		tb->buttons[URL_BAR_ITEM]->location = 5;
-		tb->buttons[WEBSEARCH_ITEM]->location = 6;
-		tb->buttons[THROBBER_ITEM]->location = 7;
+		tb->items[BACK_BUTTON].location = 0;
+		tb->items[HISTORY_BUTTON].location = 1;
+		tb->items[FORWARD_BUTTON].location = 2;
+		tb->items[STOP_BUTTON].location = 3;
+		tb->items[RELOAD_BUTTON].location = 4;
+		tb->items[URL_BAR_ITEM].location = 5;
+		tb->items[WEBSEARCH_ITEM].location = 6;
+		tb->items[THROBBER_ITEM].location = 7;
 
 		return NSERROR_OK;
 	}
@@ -1207,7 +1207,7 @@ apply_user_button_customisation(struct nsgtk_toolbar *tb)
 				    (i < PLACEHOLDER_BUTTON) &&
 				    (ii >= -1) &&
 				    (ii < PLACEHOLDER_BUTTON)) {
-					tb->buttons[i]->location = ii;
+					tb->items[i].location = ii;
 				}
 			}
 		}
@@ -1236,13 +1236,13 @@ add_item_to_toolbar(struct nsgtk_toolbar *tb,
 
 	for (bidx = BACK_BUTTON; bidx < PLACEHOLDER_BUTTON; bidx++) {
 
-		if (tb->buttons[bidx]->location == location) {
+		if (tb->items[bidx].location == location) {
 
-			tb->buttons[bidx]->button = make_toolbar_item(
-				bidx, theme, tb->buttons[bidx]->sensitivity);
+			tb->items[bidx].button = make_toolbar_item(
+				bidx, theme, tb->items[bidx].sensitivity);
 
 			gtk_toolbar_insert(tb->widget,
-					   tb->buttons[bidx]->button,
+					   tb->items[bidx].button,
 					   location);
 			break;
 		}
@@ -1303,8 +1303,8 @@ itemid_from_gtktoolitem(struct nsgtk_toolbar *tb, GtkToolItem *toolitem)
 {
 	int iidx;
 	for (iidx = BACK_BUTTON; iidx < PLACEHOLDER_BUTTON; iidx++) {
-		if ((tb->buttons[iidx]->location != INACTIVE_LOCATION) &&
-		    (tb->buttons[iidx]->button == toolitem)) {
+		if ((tb->items[iidx].location != INACTIVE_LOCATION) &&
+		    (tb->items[iidx].button == toolitem)) {
 			break;
 		}
 	}
@@ -1445,7 +1445,7 @@ toolbar_customisation_connect_signals(struct nsgtk_toolbar *tb)
 
 	for (iidx = BACK_BUTTON; iidx < PLACEHOLDER_BUTTON; iidx++) {
 		/* skip inactive items in toolbar */
-		if (tb->buttons[iidx]->location != INACTIVE_LOCATION) {
+		if (tb->items[iidx].location != INACTIVE_LOCATION) {
 			toolbar_item_connect_signals(tb, iidx);
 		}
 	}
@@ -1536,7 +1536,7 @@ add_toolbox_row(struct nsgtk_toolbar_customisation *tbc,
 				    GDK_ACTION_COPY);
 		g_signal_connect(tbc->items[iidx],
 				 "drag-data-get",
-				 G_CALLBACK(tbc->toolbar.buttons[iidx]->dataplus),
+				 G_CALLBACK(tbc->toolbar.items[iidx].dataplus),
 				 &tbc->toolbar);
 		g_signal_connect(tbc->items[iidx],
 				 "size-allocate",
@@ -1632,14 +1632,14 @@ customisation_toolbar_update(struct nsgtk_toolbar_customisation *tbc)
 		return res;
 	}
 
-	if (tbc->toolbar.buttons[URL_BAR_ITEM]->location != INACTIVE_LOCATION) {
-		entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(tbc->toolbar.buttons[URL_BAR_ITEM]->button)));
+	if (tbc->toolbar.items[URL_BAR_ITEM].location != INACTIVE_LOCATION) {
+		entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(tbc->toolbar.items[URL_BAR_ITEM].button)));
 
 		gtk_widget_set_sensitive(GTK_WIDGET(entry), FALSE);
 	}
 
-	if (tbc->toolbar.buttons[WEBSEARCH_ITEM]->location != INACTIVE_LOCATION) {
-		entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(tbc->toolbar.buttons[WEBSEARCH_ITEM]->button)));
+	if (tbc->toolbar.items[WEBSEARCH_ITEM].location != INACTIVE_LOCATION) {
+		entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(tbc->toolbar.items[WEBSEARCH_ITEM].button)));
 
 		gtk_widget_set_sensitive(GTK_WIDGET(entry), FALSE);
 	}
@@ -1753,14 +1753,11 @@ static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
 	gtk_toolbar_set_show_arrow(tbc->toolbar.widget, TRUE);
 
 	for (iidx = BACK_BUTTON; iidx < PLACEHOLDER_BUTTON; iidx++) {
-		res = toolbar_item_create(iidx, &tbc->toolbar.buttons[iidx]);
+		res = toolbar_item_create(iidx, &tbc->toolbar.items[iidx]);
 		if (res != NSERROR_OK) {
-			for (iidx-- ; iidx >= BACK_BUTTON; iidx--) {
-				free(tbc->toolbar.buttons[iidx]);
-			}
 			goto cutomize_button_clicked_cb_error;
 		}
-		tbc->toolbar.buttons[iidx]->sensitivity = true;
+		tbc->toolbar.items[iidx].sensitivity = true;
 	}
 
 	res = customisation_toolbar_update(tbc);
@@ -1864,7 +1861,7 @@ toolbar_item_size_allocate_cb(GtkWidget *widget,
 	itemid = itemid_from_gtktoolitem(tb, GTK_TOOL_ITEM(widget));
 
 	if ((tb->toolbarmem == alloc->x) ||
-	    (tb->buttons[itemid]->location < tb->buttons[HISTORY_BUTTON]->location)) {
+	    (tb->items[itemid].location < tb->items[HISTORY_BUTTON].location)) {
 		/*
 		 * no reallocation after first adjustment,
 		 * no reallocation for buttons left of history button
@@ -1883,7 +1880,7 @@ toolbar_item_size_allocate_cb(GtkWidget *widget,
 			tb->offset = alloc->width - 20;
 		}
 		alloc->width = 20;
-	} else if (tb->buttons[itemid]->location <= tb->buttons[URL_BAR_ITEM]->location) {
+	} else if (tb->items[itemid].location <= tb->items[URL_BAR_ITEM].location) {
 		alloc->x -= tb->offset;
 		if (itemid == URL_BAR_ITEM) {
 			alloc->width += tb->offset;
@@ -1916,9 +1913,9 @@ back_button_clicked_cb(GtkWidget *widget, gpointer data)
 
 		browser_window_history_back(bw, false);
 
-		set_item_sensitivity(tb->buttons[BACK_BUTTON],
+		set_item_sensitivity(&tb->items[BACK_BUTTON],
 				browser_window_history_back_available(bw));
-		set_item_sensitivity(tb->buttons[FORWARD_BUTTON],
+		set_item_sensitivity(&tb->items[FORWARD_BUTTON],
 				browser_window_history_forward_available(bw));
 
 		nsgtk_local_history_hide();
@@ -1948,9 +1945,9 @@ forward_button_clicked_cb(GtkWidget *widget, gpointer data)
 
 		browser_window_history_forward(bw, false);
 
-		set_item_sensitivity(tb->buttons[BACK_BUTTON],
+		set_item_sensitivity(&tb->items[BACK_BUTTON],
 				browser_window_history_back_available(bw));
-		set_item_sensitivity(tb->buttons[FORWARD_BUTTON],
+		set_item_sensitivity(&tb->items[FORWARD_BUTTON],
 				browser_window_history_forward_available(bw));
 		nsgtk_local_history_hide();
 	}
@@ -3128,7 +3125,7 @@ openlocation_button_clicked_cb(GtkWidget *widget, gpointer data)
 	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
 	GtkToolItem *urltitem;
 
-	urltitem = tb->buttons[URL_BAR_ITEM]->button;
+	urltitem = tb->items[URL_BAR_ITEM].button;
 	if (urltitem != NULL) {
 		GtkEntry *entry;
 		entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(urltitem)));
@@ -3249,14 +3246,8 @@ static gboolean openmenu_button_clicked_cb(GtkWidget *widget, gpointer data)
  * create a toolbar item and set up its default handlers
  */
 static nserror
-toolbar_item_create(nsgtk_toolbar_button id,
-		    struct nsgtk_toolbar_item **item_out)
+toolbar_item_create(nsgtk_toolbar_button id, struct nsgtk_toolbar_item *item)
 {
-	struct nsgtk_toolbar_item *item;
-	item = calloc(1, sizeof(struct nsgtk_toolbar_item));
-	if (item == NULL) {
-		return NSERROR_NOMEM;
-	}
 	item->location = INACTIVE_LOCATION;
 
 	/* set item defaults from macro */
@@ -3278,11 +3269,9 @@ toolbar_item_create(nsgtk_toolbar_button id,
 #undef TOOLBAR_ITEM
 
 	case PLACEHOLDER_BUTTON:
-		free(item);
 		return NSERROR_INVALID;
 	}
 
-	*item_out = item;
 	return NSERROR_OK;
 }
 
@@ -3334,11 +3323,11 @@ static void next_throbber_frame(void *p)
 
 	tb->throb_frame++; /* advance to next frame */
 
-	res = set_throbber_frame(tb->buttons[THROBBER_ITEM]->button,
+	res = set_throbber_frame(tb->items[THROBBER_ITEM].button,
 				 tb->throb_frame);
 	if (res == NSERROR_BAD_SIZE) {
 		tb->throb_frame = 1;
-		res = set_throbber_frame(tb->buttons[THROBBER_ITEM]->button,
+		res = set_throbber_frame(tb->items[THROBBER_ITEM].button,
 					 tb->throb_frame);
 	}
 
@@ -3358,7 +3347,7 @@ toolbar_connect_signal(struct nsgtk_toolbar *tb, nsgtk_toolbar_button itemid)
 	struct nsgtk_toolbar_item *item;
 	GtkEntry *entry;
 
-	item = tb->buttons[itemid];
+	item = &tb->items[itemid];
 
 	if (item->button != NULL) {
 		g_signal_connect(item->button,
@@ -3495,11 +3484,8 @@ nsgtk_toolbar_create(GtkBuilder *builder,
 
 	/* allocate button contexts */
 	for (bidx = BACK_BUTTON; bidx < PLACEHOLDER_BUTTON; bidx++) {
-		res = toolbar_item_create(bidx, &tb->buttons[bidx]);
+		res = toolbar_item_create(bidx, &tb->items[bidx]);
 		if (res != NSERROR_OK) {
-			for (bidx-- ; bidx >= BACK_BUTTON; bidx--) {
-				free(tb->buttons[bidx]);
-			}
 			free(tb);
 			return res;
 		}
@@ -3581,8 +3567,8 @@ nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active)
 	if (active) {
 		nsgtk_schedule(THROBBER_FRAME_TIME, next_throbber_frame, tb);
 
-		set_item_sensitivity(tb->buttons[STOP_BUTTON], true);
-		set_item_sensitivity(tb->buttons[RELOAD_BUTTON], false);
+		set_item_sensitivity(&tb->items[STOP_BUTTON], true);
+		set_item_sensitivity(&tb->items[RELOAD_BUTTON], false);
 
 		return NSERROR_OK;
 	}
@@ -3590,15 +3576,15 @@ nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active)
 	/* stopping the throbber */
 	nsgtk_schedule(-1, next_throbber_frame, tb);
 	tb->throb_frame = 0;
-	res =  set_throbber_frame(tb->buttons[THROBBER_ITEM]->button,
+	res =  set_throbber_frame(tb->items[THROBBER_ITEM].button,
 				  tb->throb_frame);
 
 	/* adjust sensitivity of other items */
-	set_item_sensitivity(tb->buttons[STOP_BUTTON], false);
-	set_item_sensitivity(tb->buttons[RELOAD_BUTTON], true);
-	set_item_sensitivity(tb->buttons[BACK_BUTTON],
+	set_item_sensitivity(&tb->items[STOP_BUTTON], false);
+	set_item_sensitivity(&tb->items[RELOAD_BUTTON], true);
+	set_item_sensitivity(&tb->items[BACK_BUTTON],
 			     browser_window_history_back_available(bw));
-	set_item_sensitivity(tb->buttons[FORWARD_BUTTON],
+	set_item_sensitivity(&tb->items[FORWARD_BUTTON],
 			     browser_window_history_forward_available(bw));
 	nsgtk_local_history_hide();
 
@@ -3614,11 +3600,11 @@ nserror nsgtk_toolbar_set_url(struct nsgtk_toolbar *tb, nsurl *url)
 	const char *url_text = NULL;
 	GtkEntry *url_entry;
 
-	if (tb->buttons[URL_BAR_ITEM]->button == NULL) {
+	if (tb->items[URL_BAR_ITEM].button == NULL) {
 		/* no toolbar item */
 		return NSERROR_INVALID;
 	}
-	url_entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(tb->buttons[URL_BAR_ITEM]->button)));
+	url_entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(tb->items[URL_BAR_ITEM].button)));
 
 	if (nsoption_bool(display_decoded_idn) == true) {
 		if (nsurl_get_utf8(url, &idn_url_s, &idn_url_l) != NSERROR_OK) {
@@ -3647,12 +3633,12 @@ nsgtk_toolbar_set_websearch_image(struct nsgtk_toolbar *tb, GdkPixbuf *pixbuf)
 {
 	GtkWidget *entry;
 
-	if (tb->buttons[WEBSEARCH_ITEM]->button == NULL) {
+	if (tb->items[WEBSEARCH_ITEM].button == NULL) {
 		/* no toolbar item */
 		return NSERROR_INVALID;
 	}
 
-	entry = gtk_bin_get_child(GTK_BIN(tb->buttons[WEBSEARCH_ITEM]->button));
+	entry = gtk_bin_get_child(GTK_BIN(tb->items[WEBSEARCH_ITEM].button));
 
 	if (pixbuf != NULL) {
 		nsgtk_entry_set_icon_from_pixbuf(entry,
@@ -3680,7 +3666,7 @@ nsgtk_toolbar_item_activate(struct nsgtk_toolbar *tb,
 		return NSERROR_BAD_PARAMETER;
 	}
 
-	if (tb->buttons[itemid]->bhandler == NULL) {
+	if (tb->items[itemid].bhandler == NULL) {
 		return NSERROR_INVALID;
 	}
 
@@ -3688,13 +3674,13 @@ nsgtk_toolbar_item_activate(struct nsgtk_toolbar *tb,
 	 * if item has a widget in the current toolbar use that as the
 	 *   signal source otherwise use the toolbar widget itself.
 	 */
-	if (tb->buttons[itemid]->button != NULL) {
-		widget = GTK_WIDGET(tb->buttons[itemid]->button);
+	if (tb->items[itemid].button != NULL) {
+		widget = GTK_WIDGET(tb->items[itemid].button);
 	} else {
 		widget = GTK_WIDGET(tb->widget);
 	}
 
-	tb->buttons[itemid]->bhandler(widget, tb);
+	tb->items[itemid].bhandler(widget, tb);
 
 	return NSERROR_OK;
 }
