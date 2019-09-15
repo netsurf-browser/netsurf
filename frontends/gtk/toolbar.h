@@ -43,6 +43,7 @@ nserror nsgtk_toolbar_create(GtkBuilder *builder, struct browser_window *(*get_b
  */
 nserror nsgtk_toolbar_destroy(struct nsgtk_toolbar *toolbar);
 
+
 /**
  * Update the toolbar items being shown based on current settings
  *
@@ -50,6 +51,7 @@ nserror nsgtk_toolbar_destroy(struct nsgtk_toolbar *toolbar);
  * \return NSERROR_OK on success
  */
 nserror nsgtk_toolbar_update(struct nsgtk_toolbar *tb);
+
 
 /**
  * Update toolbar style and size based on current settings
@@ -111,10 +113,6 @@ nserror nsgtk_toolbar_item_activate(struct nsgtk_toolbar *tb, nsgtk_toolbar_butt
  */
 nserror nsgtk_toolbar_show(struct nsgtk_toolbar *tb, bool show);
 
-/**
- * sets up the images for scaffolding.
- */
-void nsgtk_theme_implement(struct nsgtk_scaffolding *g);
 
 /**
  * Initialise customization of toolbar entries

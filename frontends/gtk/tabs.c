@@ -286,7 +286,7 @@ nsgtk_tab_add_newtab(GtkNotebook *notebook)
 	tablabel = nsgtk_hbox_new(FALSE, 1);
 	tabcontents = nsgtk_hbox_new(FALSE, 1);
 
-	add = nsgtk_image_new_from_stock(NSGTK_STOCK_ADD, GTK_ICON_SIZE_MENU);
+	add = gtk_image_new_from_icon_name(NSGTK_STOCK_ADD, GTK_ICON_SIZE_MENU);
 
 	gtk_box_pack_start(GTK_BOX(tablabel), add, FALSE, FALSE, 0);
 

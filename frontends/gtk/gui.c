@@ -81,7 +81,6 @@ char *nsgtk_config_home; /* exported global defined in gtk/gui.h */
 
 GdkPixbuf *favicon_pixbuf; /** favicon default pixbuf */
 GdkPixbuf *win_default_icon_pixbuf; /** default window icon pixbuf */
-GdkPixbuf *arrow_down_pixbuf; /** arrow down pixbuf */
 
 GtkBuilder *warning_builder;
 
@@ -254,6 +253,26 @@ static nserror set_defaults(struct nsoption_s *defaults)
 }
 
 
+/**
+ * adds named icons into gtk theme
+ */
+static nserror nsgtk_add_named_icons_to_theme(void)
+{
+	#if GTK_CHECK_VERSION(3,14,0)
+	gtk_icon_theme_add_resource_path(gtk_icon_theme_get_default(),
+					  "/org/netsurf/icons");
+	#else
+	GdkPixbuf *pixbuf;
+	nserror res;
+
+	res = nsgdk_pixbuf_new_from_resname("icons/local-history.png", &pixbuf);
+	if (res != NSERROR_OK) {
+		pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, false, 8, 8, 32);
+	}
+	gtk_icon_theme_add_builtin_icon("local-history", 32, pixbuf);
+	#endif
+	return NSERROR_OK;
+}
 
 
 /**
@@ -313,12 +332,11 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 						false, 8, 16, 16);
 	}
 
-	/* arrow down icon */
-	res = nsgdk_pixbuf_new_from_resname("arrow_down_8x32.png",
-					    &arrow_down_pixbuf);
+	/* add named icons to gtk theme */
+	res = nsgtk_add_named_icons_to_theme();
 	if (res != NSERROR_OK) {
-		arrow_down_pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB,
-						   false, 8, 8, 32);
+		NSLOG(netsurf, INFO, "Unable to add named icons to GTK theme.");
+		return res;
 	}
 
 	/* initialise throbber */

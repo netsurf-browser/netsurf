@@ -2906,6 +2906,8 @@ nl.gtk.gtkUnknownSize:onbekend
 # gtk Menu / Button labels
 #
 
+en.gtk.gtkOpenMenu:Open Menu
+
 en.gtk.gtkFile:_File
 de.gtk.gtkFile:_Datei
 fr.gtk.gtkFile:_Fichier
@@ -3150,6 +3152,7 @@ fr.gtk.gtkDebugDomTree:Déboguer arbre _DOM
 it.gtk.gtkDebugDomTree:Debug albero _DOM
 nl.gtk.gtkDebugDomTree:_DOM-boom debuggen
 
+en.gtk.gtkStop:Stop
 en.gtk.gtkBack:_Back
 de.gtk.gtkBack:_Zurück
 fr.gtk.gtkBack:_Précédent

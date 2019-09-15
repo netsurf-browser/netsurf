@@ -178,16 +178,16 @@ enum {
 
 
 /**
- * Sets the icon shown in the entry at the specified position from a
- * stock image.
+ * Sets the icon shown in the entry at the specified position from an
+ *   icon name.
  *
- * Compatability interface for original deprecated in GTK 3.10
+ * Compatability interface for original introduced in 2.16
  *
  * \param entry The entry widget to set the icon on.
  * \param icon_pos The position of the icon.
  * \param stock_id the name of the stock item.
  */
-void nsgtk_entry_set_icon_from_stock(GtkWidget *entry, GtkEntryIconPosition icon_pos, const gchar *stock_id);
+void nsgtk_entry_set_icon_from_icon_name(GtkWidget *entry, GtkEntryIconPosition icon_pos, const gchar *stock_id);
 
 /**
  * Creates a GtkImage displaying a stock icon.

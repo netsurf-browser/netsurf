@@ -170,18 +170,18 @@ void nsgtk_entry_set_icon_from_pixbuf(GtkWidget *entry,
 
 
 /* exported interface documented in gtk/compat.h */
-void nsgtk_entry_set_icon_from_stock(GtkWidget *entry,
-				     GtkEntryIconPosition icon_pos,
-				     const gchar *id)
+void nsgtk_entry_set_icon_from_icon_name(GtkWidget *entry,
+					 GtkEntryIconPosition icon_pos,
+					 const gchar *id)
 {
 #ifdef NSGTK_USE_ICON_NAME
 	gtk_entry_set_icon_from_icon_name(GTK_ENTRY(entry), icon_pos, id);
 #else
 #if GTK_CHECK_VERSION(2,16,0)
-	gtk_entry_set_icon_from_stock(GTK_ENTRY(entry), icon_pos, id);
+	gtk_entry_set_icon_from_icon_name(GTK_ENTRY(entry), icon_pos, id);
 #else
-	GtkImage *image = GTK_IMAGE(gtk_image_new_from_stock(id,
-					GTK_ICON_SIZE_LARGE_TOOLBAR));
+	GtkImage *image;
+	image = GTK_IMAGE(gtk_image_new_from_stock(id, GTK_ICON_SIZE_LARGE_TOOLBAR));
 
 	if (image != NULL) {
 		sexy_icon_entry_set_icon(SEXY_ICON_ENTRY(entry),

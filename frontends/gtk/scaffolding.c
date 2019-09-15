@@ -53,6 +53,7 @@ struct nsgtk_menu {
 	GtkWidget *burger; /* right click menu */
 	GtkWidget *popup; /* popup menu entry */
 	void *mhandler; /* menu item handler */
+	const char *iconname; /* name of the icon to use */
 	bool sensitivity; /* menu item is sensitive */
 };
 
@@ -463,7 +464,7 @@ nsgtk_on_##name##_activate_menu(GtkMenuItem *widget, gpointer data)	\
 }
 #define TOOLBAR_ITEM_y(identifier, name)
 #define TOOLBAR_ITEM_n(identifier, name)
-#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate)	\
+#define TOOLBAR_ITEM(identifier, name, sensitivity, clicked, activate, label, iconame) \
 	TOOLBAR_ITEM_ ## activate(identifier, name)
 #include "gtk/toolbar_items.h"
 #undef TOOLBAR_ITEM_y
@@ -888,15 +889,18 @@ create_scaffolding_link_menu(struct nsgtk_scaffolding *g, GtkAccelGroup *group)
  */
 static nserror nsgtk_menu_initialise(struct nsgtk_scaffolding *g)
 {
-#define TOOLBAR_ITEM_p(identifier, name)				\
-	g->menus[identifier].mhandler = nsgtk_on_##name##_activate_menu;
-#define TOOLBAR_ITEM_y(identifier, name)				\
-	g->menus[identifier].mhandler = nsgtk_on_##name##_activate_menu;
-#define TOOLBAR_ITEM_n(identifier, name)				\
-	g->menus[identifier].mhandler = NULL;
-#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate)	\
+#define TOOLBAR_ITEM_p(identifier, name, iconame)				\
+	g->menus[identifier].mhandler = nsgtk_on_##name##_activate_menu; \
+	g->menus[identifier].iconname = iconame;
+#define TOOLBAR_ITEM_y(identifier, name, iconame)			\
+	g->menus[identifier].mhandler = nsgtk_on_##name##_activate_menu; \
+	g->menus[identifier].iconname = iconame;
+#define TOOLBAR_ITEM_n(identifier, name, iconame)			\
+	g->menus[identifier].mhandler = NULL;				\
+	g->menus[identifier].iconname = iconame;
+#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate, label, iconame) \
 	g->menus[identifier].sensitivity = snstvty;			\
-	TOOLBAR_ITEM_ ## activate(identifier, name)
+	TOOLBAR_ITEM_ ## activate(identifier, name, iconame)
 #include "gtk/toolbar_items.h"
 #undef TOOLBAR_ITEM_y
 #undef TOOLBAR_ITEM_n
@@ -1015,6 +1019,34 @@ static void nsgtk_menu_set_sensitivity(struct nsgtk_scaffolding *g)
 	}
 }
 
+/* set menu items to have icons */
+static void nsgtk_menu_set_icons(struct nsgtk_scaffolding *g)
+{
+	GtkWidget *img;
+	for (int i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
+		/* ensure there is an icon name */
+		if (g->menus[i].iconname == NULL) {
+			continue;
+		}
+
+		if (g->menus[i].main != NULL) {
+		img = gtk_image_new_from_icon_name(g->menus[i].iconname,
+						   GTK_ICON_SIZE_MENU);
+			nsgtk_image_menu_item_set_image(GTK_WIDGET(g->menus[i].main), img);
+		}
+		if (g->menus[i].burger != NULL) {
+		img = gtk_image_new_from_icon_name(g->menus[i].iconname,
+						   GTK_ICON_SIZE_MENU);
+			nsgtk_image_menu_item_set_image(GTK_WIDGET(g->menus[i].burger), img);
+		}
+		if (g->menus[i].popup != NULL) {
+		img = gtk_image_new_from_icon_name(g->menus[i].iconname,
+						   GTK_ICON_SIZE_MENU);
+			nsgtk_image_menu_item_set_image(GTK_WIDGET(g->menus[i].popup), img);
+		}
+	}
+}
+
 /**
  * create and initialise menus
  *
@@ -1069,6 +1101,7 @@ static nserror nsgtk_menus_create(struct nsgtk_scaffolding *gs)
 
 	/* set up the menu signal handlers */
 	nsgtk_menu_initialise(gs);
+	nsgtk_menu_set_icons(gs);
 	nsgtk_menu_connect_signals(gs);
 	nsgtk_menu_set_sensitivity(gs);
 
@@ -1578,9 +1611,6 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	gs->next = scaf_list;
 	gs->prev = NULL;
 	scaf_list = gs;
-
-	/* set icon images */
-	nsgtk_theme_implement(gs);
 
 	/* finally, show the window. */
 	gtk_widget_show(GTK_WIDGET(gs->window));

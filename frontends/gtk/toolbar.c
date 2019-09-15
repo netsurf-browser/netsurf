@@ -82,6 +82,27 @@
 #define THROBBER_FRAME_TIME (100)
 
 /**
+ * the minimum number of columns in the tool store
+ */
+#define NSGTK_MIN_STORE_COLUMNS 4
+
+/**
+ * the 'standard' width of a button that makes sufficient of its label visible
+ */
+#define NSGTK_BUTTON_WIDTH 120
+
+/**
+ * the 'standard' height of a button that fits as many toolbars as
+ *   possible into the store
+ */
+#define NSGTK_BUTTON_HEIGHT 70
+
+/**
+ * the 'normal' width of the websearch bar
+ */
+#define NSGTK_WEBSEARCH_WIDTH 150
+
+/**
  * toolbar item context
  */
 struct nsgtk_toolbar_item {
@@ -137,6 +158,7 @@ struct nsgtk_toolbar {
 	void *get_ctx;
 };
 
+
 /**
  * toolbar cusomisation context
  */
@@ -176,336 +198,9 @@ struct nsgtk_toolbar_customisation {
 
 static bool edit_mode = false;
 
-/* the number of items that fit in the width of the store window */
-#define NSGTK_STORE_WIDTH 6
-
-/* the 'standard' width of a button that makes sufficient of its label
-visible */
-#define NSGTK_BUTTON_WIDTH 120
-
-/* the 'standard' height of a button that fits as many toolbars as
-possible into the store */
-#define NSGTK_BUTTON_HEIGHT 70
-
-/* the 'normal' width of the websearch bar */
-#define NSGTK_WEBSEARCH_WIDTH 150
-
-
-enum image_sets {
-	IMAGE_SET_MAIN_MENU = 0,
-	IMAGE_SET_RCLICK_MENU,
-	IMAGE_SET_POPUP_MENU,
-	IMAGE_SET_BUTTONS,
-	IMAGE_SET_COUNT
-};
-
-typedef enum search_buttons {
-	SEARCH_BACK_BUTTON = 0,
-	SEARCH_FORWARD_BUTTON,
-	SEARCH_CLOSE_BUTTON,
-	SEARCH_BUTTONS_COUNT
-} nsgtk_search_buttons;
-
-struct nsgtk_theme {
-	GtkImage *image[PLACEHOLDER_BUTTON];
-	GtkImage *searchimage[SEARCH_BUTTONS_COUNT];
-};
-
 /* forward declaration */
-int nsgtk_toolbar_get_id_from_widget(GtkWidget *widget, struct nsgtk_scaffolding *g);
-static nserror toolbar_item_create(nsgtk_toolbar_button id, struct nsgtk_toolbar_item *item_out);
-
-
-/* define data plus and data minus handlers */
-#define TOOLBAR_ITEM(identifier, name, sensitivity, clicked, activate)	\
-static gboolean								\
-nsgtk_toolbar_##name##_data_plus(GtkWidget *widget,			\
-				 GdkDragContext *cont,			\
-				 GtkSelectionData *selection,		\
-				 guint info,				\
-				 guint time,				\
-				 gpointer data)				\
-{									\
-	struct nsgtk_toolbar_customisation *tbc;			\
-	tbc = (struct nsgtk_toolbar_customisation *)data;		\
-	tbc->dragitem = identifier;					\
-	tbc->dragfrom = true;						\
-	return TRUE;							\
-}									\
-static gboolean								\
-nsgtk_toolbar_##name##_data_minus(GtkWidget *widget,			\
-				  GdkDragContext *cont,			\
-				  GtkSelectionData *selection,		\
-				  guint info,				\
-				  guint time,				\
-				  gpointer data)			\
-{									\
-	struct nsgtk_toolbar_customisation *tbc;			\
-	tbc = (struct nsgtk_toolbar_customisation *)data;		\
-	tbc->dragitem = identifier;					\
-	tbc->dragfrom = false;						\
-	return TRUE;							\
-}
-
-#include "gtk/toolbar_items.h"
-
-#undef TOOLBAR_ITEM
-
-
-
-/**
- * get default image for buttons / menu items from gtk stock items.
- *
- * \param tbbutton button reference
- * \param iconsize The size of icons to select.
- * \param usedef Use the default image if not found.
- * \return default images.
- */
-static GtkImage *
-nsgtk_theme_image_default(nsgtk_toolbar_button tbbutton,
-			  GtkIconSize iconsize,
-			  bool usedef)
-{
-	GtkImage *image; /* The GTK image to return */
-
-	switch(tbbutton) {
-
-#define BUTTON_IMAGE(p, q)						\
-	case p##_BUTTON:					\
-		image = GTK_IMAGE(nsgtk_image_new_from_stock(q, iconsize)); \
-		break
-
-	BUTTON_IMAGE(BACK, NSGTK_STOCK_GO_BACK);
-	BUTTON_IMAGE(FORWARD, NSGTK_STOCK_GO_FORWARD);
-	BUTTON_IMAGE(STOP, NSGTK_STOCK_STOP);
-	BUTTON_IMAGE(RELOAD, NSGTK_STOCK_REFRESH);
-	BUTTON_IMAGE(HOME, NSGTK_STOCK_HOME);
-	BUTTON_IMAGE(NEWWINDOW, "gtk-new");
-	BUTTON_IMAGE(NEWTAB, "gtk-new");
-	BUTTON_IMAGE(OPENFILE, NSGTK_STOCK_OPEN);
-	BUTTON_IMAGE(CLOSETAB, NSGTK_STOCK_CLOSE);
-	BUTTON_IMAGE(CLOSEWINDOW, NSGTK_STOCK_CLOSE);
-	BUTTON_IMAGE(SAVEPAGE, NSGTK_STOCK_SAVE_AS);
-	BUTTON_IMAGE(PRINTPREVIEW, "gtk-print-preview");
-	BUTTON_IMAGE(PRINT, "gtk-print");
-	BUTTON_IMAGE(QUIT, "gtk-quit");
-	BUTTON_IMAGE(CUT, "gtk-cut");
-	BUTTON_IMAGE(COPY, "gtk-copy");
-	BUTTON_IMAGE(PASTE, "gtk-paste");
-	BUTTON_IMAGE(DELETE, "gtk-delete");
-	BUTTON_IMAGE(SELECTALL, "gtk-select-all");
-	BUTTON_IMAGE(FIND, NSGTK_STOCK_FIND);
-	BUTTON_IMAGE(PREFERENCES, "gtk-preferences");
-	BUTTON_IMAGE(ZOOMPLUS, "gtk-zoom-in");
-	BUTTON_IMAGE(ZOOMMINUS, "gtk-zoom-out");
-	BUTTON_IMAGE(ZOOMNORMAL, "gtk-zoom-100");
-	BUTTON_IMAGE(FULLSCREEN, "gtk-fullscreen");
-	BUTTON_IMAGE(VIEWSOURCE, "gtk-index");
-	BUTTON_IMAGE(CONTENTS, "gtk-help");
-	BUTTON_IMAGE(ABOUT, "gtk-about");
-	BUTTON_IMAGE(OPENMENU, NSGTK_STOCK_OPEN_MENU);
-#undef BUTTON_IMAGE
-
-	case HISTORY_BUTTON:
-		image = GTK_IMAGE(gtk_image_new_from_pixbuf(arrow_down_pixbuf));
-		break;
-
-	default:
-		image = NULL;
-		break;
-
-	}
-
-	if (usedef && (image == NULL)) {
-		image = GTK_IMAGE(nsgtk_image_new_from_stock("gtk-missing-image", iconsize));
-	}
-
-	return image;
-}
-
-
-/**
- * Get default image for search buttons / menu items from gtk stock items
- *
- * \param tbbutton search button reference
- * \param iconsize The size of icons to select.
- * \param usedef Use the default image if not found.
- * \return default search image.
- */
-static GtkImage *
-nsgtk_theme_searchimage_default(nsgtk_search_buttons tbbutton,
-				GtkIconSize iconsize,
-				bool usedef)
-{
-	GtkImage *image;
-
-	switch (tbbutton) {
-
-	case (SEARCH_BACK_BUTTON):
-		image = GTK_IMAGE(nsgtk_image_new_from_stock(
-					  NSGTK_STOCK_GO_BACK, iconsize));
-		break;
-
-	case (SEARCH_FORWARD_BUTTON):
-		image = GTK_IMAGE(nsgtk_image_new_from_stock(
-					  NSGTK_STOCK_GO_FORWARD, iconsize));
-		break;
-
-	case (SEARCH_CLOSE_BUTTON):
-		image = GTK_IMAGE(nsgtk_image_new_from_stock(
-					  NSGTK_STOCK_CLOSE, iconsize));
-		break;
-
-	default:
-		image = NULL;
-	}
-
-	if (usedef && (image == NULL)) {
-		image = GTK_IMAGE(nsgtk_image_new_from_stock(
-					  "gtk-missing-image", iconsize));
-	}
-
-	return image;
-}
-
-/**
- * initialise a theme structure with gtk images
- *
- * \param iconsize The size of icon to load
- * \param usedef use the default gtk icon if unset
- */
-static struct nsgtk_theme *nsgtk_theme_load(GtkIconSize iconsize, bool usedef)
-{
-	struct nsgtk_theme *theme;
-	int btnloop;
-
-	theme = malloc(sizeof(struct nsgtk_theme));
-	if (theme == NULL) {
-		return NULL;
-	}
-
-	for (btnloop = BACK_BUTTON;
-	     btnloop < PLACEHOLDER_BUTTON ;
-	     btnloop++) {
-		theme->image[btnloop] = nsgtk_theme_image_default(btnloop,
-								  iconsize,
-								  usedef);
-	}
-
-	for (btnloop = SEARCH_BACK_BUTTON;
-	     btnloop < SEARCH_BUTTONS_COUNT;
-	     btnloop++) {
-		theme->searchimage[btnloop] =
-			nsgtk_theme_searchimage_default(btnloop,
-							iconsize,
-							usedef);
-	}
-	return theme;
-}
-
-static struct nsgtk_toolbar_item *
-nsgtk_scaffolding_button(struct nsgtk_scaffolding *g, int i)
-{
-	return NULL;
-}
-
-/* exported function documented in gtk/toolbar.h */
-void nsgtk_theme_implement(struct nsgtk_scaffolding *g)
-{
-	struct nsgtk_theme *theme[IMAGE_SET_COUNT];
-	int i;
-	struct nsgtk_toolbar_item *button;
-	struct gtk_search *search;
-
-	theme[IMAGE_SET_MAIN_MENU] = nsgtk_theme_load(GTK_ICON_SIZE_MENU, false);
-	theme[IMAGE_SET_RCLICK_MENU] = nsgtk_theme_load(GTK_ICON_SIZE_MENU, false);
-	theme[IMAGE_SET_POPUP_MENU] = nsgtk_theme_load(GTK_ICON_SIZE_MENU, false);
-	theme[IMAGE_SET_BUTTONS] = nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR, false);
-
-	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
-		if ((i == URL_BAR_ITEM) || (i == THROBBER_ITEM) ||
-		    (i == WEBSEARCH_ITEM))
-			continue;
-
-		button = nsgtk_scaffolding_button(g, i);
-		if (button == NULL)
-			continue;
-
-		#if 0
-		/* gtk_image_menu_item_set_image accepts NULL image */
-		if ((button->main != NULL) &&
-		    (theme[IMAGE_SET_MAIN_MENU] != NULL)) {
-			nsgtk_image_menu_item_set_image(
-				GTK_WIDGET(button->main),
-				GTK_WIDGET(theme[IMAGE_SET_MAIN_MENU]->image[i]));
-			gtk_widget_show_all(GTK_WIDGET(button->main));
-		}
-		if ((button->rclick != NULL) &&
-		    (theme[IMAGE_SET_RCLICK_MENU] != NULL)) {
-			nsgtk_image_menu_item_set_image(GTK_WIDGET(button->rclick),
-						      GTK_WIDGET(
-							      theme[IMAGE_SET_RCLICK_MENU]->
-							      image[i]));
-			gtk_widget_show_all(GTK_WIDGET(button->rclick));
-		}
-		if ((button->popup != NULL) &&
-		    (theme[IMAGE_SET_POPUP_MENU] != NULL)) {
-			nsgtk_image_menu_item_set_image(GTK_WIDGET(button->popup),
-						      GTK_WIDGET(
-							      theme[IMAGE_SET_POPUP_MENU]->
-							      image[i]));
-			gtk_widget_show_all(GTK_WIDGET(button->popup));
-		}
-		#endif
-		if ((button->location != -1) &&
-		    (button->button != NULL) &&
-		    (theme[IMAGE_SET_BUTTONS] != NULL)) {
-			gtk_tool_button_set_icon_widget(
-				GTK_TOOL_BUTTON(button->button),
-				GTK_WIDGET(
-					theme[IMAGE_SET_BUTTONS]->
-					image[i]));
-			gtk_widget_show_all(GTK_WIDGET(button->button));
-		}
-	}
-
-	/* set search bar images */
-	search = nsgtk_scaffolding_search(g);
-	if ((search != NULL) && (theme[IMAGE_SET_MAIN_MENU] != NULL)) {
-		/* gtk_tool_button_set_icon_widget accepts NULL image */
-		if (search->buttons[SEARCH_BACK_BUTTON] != NULL) {
-			gtk_tool_button_set_icon_widget(
-				search->buttons[SEARCH_BACK_BUTTON],
-				GTK_WIDGET(theme[IMAGE_SET_MAIN_MENU]->
-					   searchimage[SEARCH_BACK_BUTTON]));
-			gtk_widget_show_all(GTK_WIDGET(
-						    search->buttons[SEARCH_BACK_BUTTON]));
-		}
-		if (search->buttons[SEARCH_FORWARD_BUTTON] != NULL) {
-			gtk_tool_button_set_icon_widget(
-				search->buttons[SEARCH_FORWARD_BUTTON],
-				GTK_WIDGET(theme[IMAGE_SET_MAIN_MENU]->
-					   searchimage[SEARCH_FORWARD_BUTTON]));
-			gtk_widget_show_all(GTK_WIDGET(
-						    search->buttons[
-							    SEARCH_FORWARD_BUTTON]));
-		}
-		if (search->buttons[SEARCH_CLOSE_BUTTON] != NULL) {
-			gtk_tool_button_set_icon_widget(
-				search->buttons[SEARCH_CLOSE_BUTTON],
-				GTK_WIDGET(theme[IMAGE_SET_MAIN_MENU]->
-					   searchimage[SEARCH_CLOSE_BUTTON]));
-			gtk_widget_show_all(GTK_WIDGET(
-						    search->buttons[SEARCH_CLOSE_BUTTON]));
-		}
-	}
-
-	for (i = 0; i < IMAGE_SET_COUNT; i++) {
-		if (theme[i] != NULL) {
-			free(theme[i]);
-		}
-	}
-}
+static nserror toolbar_item_create(nsgtk_toolbar_button id,
+				   struct nsgtk_toolbar_item *item_out);
 
 
 /**
@@ -555,9 +250,11 @@ make_toolbar_item_throbber(bool sensitivity)
 	}
 
 	if (edit_mode) {
+		const char *msg;
+		msg = messages_get("ToolThrob");
 		item = gtk_tool_button_new(
 				GTK_WIDGET(gtk_image_new_from_pixbuf(pixbuf)),
-				"[throbber]");
+				msg);
 	} else {
 		item = gtk_tool_item_new();
 
@@ -576,6 +273,7 @@ make_toolbar_item_throbber(bool sensitivity)
 	return item;
 }
 
+
 /**
  * create url bar toolbar item widget
  *
@@ -588,24 +286,34 @@ make_toolbar_item_url_bar(bool sensitivity)
 	GtkWidget *entry;
 	GtkEntryCompletion *completion;
 
-	item = gtk_tool_item_new();
 	entry = nsgtk_entry_new();
-	completion = gtk_entry_completion_new();
 
-	if ((entry == NULL) || (completion == NULL) || (item == NULL)) {
+	if (entry == NULL) {
 		return NULL;
 	}
 
-	gtk_widget_set_sensitive(GTK_WIDGET(item), sensitivity);
-
-	gtk_container_add(GTK_CONTAINER(item), entry);
-	gtk_tool_item_set_expand(item, TRUE);
-
 	if (edit_mode) {
-		gtk_widget_set_sensitive(GTK_WIDGET(entry), FALSE);
+		gtk_entry_set_width_chars(GTK_ENTRY(entry), 9);
+
+		item = gtk_tool_button_new(NULL, "URL");
+		gtk_tool_button_set_icon_widget(GTK_TOOL_BUTTON(item), entry);
 	} else {
-		gtk_entry_set_completion(GTK_ENTRY(entry), completion);
+		completion = gtk_entry_completion_new();
+		if (completion != NULL) {
+			gtk_entry_set_completion(GTK_ENTRY(entry), completion);
+		}
+
+		item = gtk_tool_item_new();
+		if (item == NULL) {
+			return NULL;
+		}
+
+		gtk_container_add(GTK_CONTAINER(item), entry);
+		gtk_tool_item_set_expand(item, TRUE);
+
 	}
+	gtk_widget_set_sensitive(GTK_WIDGET(item), TRUE);
+	gtk_widget_set_sensitive(GTK_WIDGET(entry), sensitivity);
 
 	return item;
 }
@@ -623,21 +331,16 @@ make_toolbar_item_websearch(bool sensitivity)
 	struct bitmap *bitmap;
 	GdkPixbuf *pixbuf = NULL;
 
-	entry = nsgtk_entry_new();
-	item = gtk_tool_item_new();
-
-	if ((entry == NULL) || (item == NULL)) {
-		return NULL;
-	}
-
-	gtk_widget_set_sensitive(GTK_WIDGET(item), sensitivity);
-
-	gtk_widget_set_size_request(entry, NSGTK_WEBSEARCH_WIDTH, -1);
-
 	res = search_web_get_provider_bitmap(&bitmap);
 	if ((res == NSERROR_OK) && (bitmap != NULL)) {
 		pixbuf = nsgdk_pixbuf_get_from_surface(bitmap->surface,
 						       16, 16);
+	}
+
+	entry = nsgtk_entry_new();
+
+	if (entry == NULL) {
+		return NULL;
 	}
 
 	if (pixbuf != NULL) {
@@ -645,15 +348,87 @@ make_toolbar_item_websearch(bool sensitivity)
 						 GTK_ENTRY_ICON_PRIMARY,
 						 pixbuf);
 	} else {
-		nsgtk_entry_set_icon_from_stock(entry,
-						GTK_ENTRY_ICON_PRIMARY,
-						NSGTK_STOCK_INFO);
+		nsgtk_entry_set_icon_from_icon_name(entry,
+						    GTK_ENTRY_ICON_PRIMARY,
+						    NSGTK_STOCK_INFO);
 	}
 
-	gtk_container_add(GTK_CONTAINER(item), entry);
+	if (edit_mode) {
+		gtk_entry_set_width_chars(GTK_ENTRY(entry), 9);
+
+		item = gtk_tool_button_new(NULL, "Web Search");
+		gtk_tool_button_set_icon_widget(GTK_TOOL_BUTTON(item),
+						entry);
+	} else {
+		gtk_widget_set_size_request(entry, NSGTK_WEBSEARCH_WIDTH, -1);
+
+		item = gtk_tool_item_new();
+		if (item == NULL) {
+			return NULL;
+		}
+
+		gtk_container_add(GTK_CONTAINER(item), entry);
+	}
+	gtk_widget_set_sensitive(GTK_WIDGET(item), TRUE);
+	gtk_widget_set_sensitive(GTK_WIDGET(entry), sensitivity);
+
+	return item;
+}
+
+
+/**
+ * create local history toolbar item widget
+ */
+static GtkToolItem *
+make_toolbar_item_history(bool sensitivity)
+{
+	GtkToolItem *item;
+	const char *msg = "H";
+	char *label = NULL;
 
 	if (edit_mode) {
-		gtk_widget_set_sensitive(GTK_WIDGET(entry), FALSE);
+		msg = messages_get("gtkLocalHistory");
+	}
+	label = remove_underscores(msg, false);
+	item = gtk_tool_button_new(NULL, label);
+	if (label != NULL) {
+		free(label);
+	}
+	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(item), "local-history");
+
+	/* set history widget minimum width */
+	gtk_widget_set_size_request(GTK_WIDGET(item), 20, -1);
+	gtk_widget_set_sensitive(GTK_WIDGET(item), sensitivity);
+
+	return item;
+}
+
+
+/**
+ * create generic button toolbar item widget
+ */
+static GtkToolItem *
+make_toolbar_item_button(const char *labelmsg,
+			 const char *iconname,
+			 bool sensitivity)
+{
+	GtkToolItem *item;
+	char *label = NULL;
+
+	label = remove_underscores(messages_get(labelmsg), false);
+
+	item = gtk_tool_button_new(NULL, label);
+	if (label != NULL) {
+		free(label);
+	}
+
+	if (item != NULL) {
+		gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(item), iconname);
+
+		gtk_widget_set_sensitive(GTK_WIDGET(item), sensitivity);
+		if (edit_mode) {
+			nsgtk_widget_set_margins(GTK_WIDGET(item), 0, 0);
+		}
 	}
 
 	return item;
@@ -669,104 +444,48 @@ make_toolbar_item_websearch(bool sensitivity)
  */
 static GtkToolItem *
 make_toolbar_item(nsgtk_toolbar_button itemid,
-		  struct nsgtk_theme *theme,
 		  bool sensitivity)
 {
-	GtkToolItem *w = NULL;
+	GtkToolItem *toolitem = NULL;
 
 	switch(itemid) {
+#define TOOLBAR_ITEM_y(identifier, label, iconame)
+#define TOOLBAR_ITEM_n(identifier, label, iconame)
+#define TOOLBAR_ITEM_b(identifier, label, iconame)		\
+	case identifier:					\
+		toolitem = make_toolbar_item_button(#label, iconame, sensitivity);\
+		break;
+#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate, label, iconame) \
+		TOOLBAR_ITEM_ ## clicked(identifier, label, iconame)
 
-/* gtk_tool_button_new accepts NULL args */
-#define MAKE_ITEM(p, q)							\
-	case p##_BUTTON: {						\
-		char *label = NULL;					\
-		label = remove_underscores(messages_get(#q), false);	\
-		w = gtk_tool_button_new(GTK_WIDGET(theme->image[p##_BUTTON]), \
-					label);				\
-		gtk_widget_set_sensitive(GTK_WIDGET(w), sensitivity);	\
-		if (label != NULL) {					\
-			free(label);					\
-		}							\
-		break;							\
-	}
+#include "gtk/toolbar_items.h"
 
-	MAKE_ITEM(HOME, gtkHome)
-	MAKE_ITEM(BACK, gtkBack)
-	MAKE_ITEM(FORWARD, gtkForward)
-	MAKE_ITEM(STOP, Stop)
-	MAKE_ITEM(RELOAD, Reload)
-	MAKE_ITEM(NEWWINDOW, gtkNewWindow)
-	MAKE_ITEM(NEWTAB, gtkNewTab)
-	MAKE_ITEM(OPENFILE, gtkOpenFile)
-	MAKE_ITEM(CLOSETAB, gtkCloseTab)
-	MAKE_ITEM(CLOSEWINDOW, gtkCloseWindow)
-	MAKE_ITEM(SAVEPAGE, gtkSavePage)
-	MAKE_ITEM(PRINTPREVIEW, gtkPrintPreview)
-	MAKE_ITEM(PRINT, gtkPrint)
-	MAKE_ITEM(QUIT, gtkQuitMenu)
-	MAKE_ITEM(CUT, gtkCut)
-	MAKE_ITEM(COPY, gtkCopy)
-	MAKE_ITEM(PASTE, gtkPaste)
-	MAKE_ITEM(DELETE, gtkDelete)
-	MAKE_ITEM(SELECTALL, gtkSelectAll)
-	MAKE_ITEM(PREFERENCES, gtkPreferences)
-	MAKE_ITEM(ZOOMPLUS, gtkZoomPlus)
-	MAKE_ITEM(ZOOMMINUS, gtkZoomMinus)
-	MAKE_ITEM(ZOOMNORMAL, gtkZoomNormal)
-	MAKE_ITEM(FULLSCREEN, gtkFullScreen)
-	MAKE_ITEM(VIEWSOURCE, gtkViewSource)
-	MAKE_ITEM(CONTENTS, gtkContents)
-	MAKE_ITEM(ABOUT, gtkAbout)
-	MAKE_ITEM(PDF, gtkPDF)
-	MAKE_ITEM(PLAINTEXT, gtkPlainText)
-	MAKE_ITEM(DRAWFILE, gtkDrawFile)
-	MAKE_ITEM(POSTSCRIPT, gtkPostScript)
-	MAKE_ITEM(FIND, gtkFind)
-	MAKE_ITEM(DOWNLOADS, gtkDownloads)
-	MAKE_ITEM(SAVEWINDOWSIZE, gtkSaveWindowSize)
-	MAKE_ITEM(TOGGLEDEBUGGING, gtkToggleDebugging)
-	MAKE_ITEM(SAVEBOXTREE, gtkDebugBoxTree)
-	MAKE_ITEM(SAVEDOMTREE, gtkDebugDomTree)
-	MAKE_ITEM(LOCALHISTORY, gtkLocalHistory)
-	MAKE_ITEM(GLOBALHISTORY, gtkGlobalHistory)
-	MAKE_ITEM(ADDBOOKMARKS, gtkAddBookMarks)
-	MAKE_ITEM(SHOWBOOKMARKS, gtkShowBookMarks)
-	MAKE_ITEM(SHOWCOOKIES, gtkShowCookies)
-	MAKE_ITEM(OPENLOCATION, gtkOpenLocation)
-	MAKE_ITEM(NEXTTAB, gtkNextTab)
-	MAKE_ITEM(PREVTAB, gtkPrevTab)
-	MAKE_ITEM(GUIDE, gtkGuide)
-	MAKE_ITEM(INFO, gtkUserInformation)
-	MAKE_ITEM(OPENMENU, gtkOpenMenu)
-
-#undef MAKE_ITEM
+#undef TOOLBAR_ITEM_b
+#undef TOOLBAR_ITEM_n
+#undef TOOLBAR_ITEM_y
+#undef TOOLBAR_ITEM
 
 	case HISTORY_BUTTON:
-		w = gtk_tool_button_new(GTK_WIDGET(
-				theme->image[HISTORY_BUTTON]), "H");
-		/* set history widget minimum width */
-		gtk_widget_set_size_request(GTK_WIDGET(w), 20, -1);
-		gtk_widget_set_sensitive(GTK_WIDGET(w), sensitivity);
+		toolitem = make_toolbar_item_history(sensitivity);
 		break;
 
 	case URL_BAR_ITEM:
-		w = make_toolbar_item_url_bar(sensitivity);
+		toolitem = make_toolbar_item_url_bar(sensitivity);
 		break;
 
 	case THROBBER_ITEM:
-		w = make_toolbar_item_throbber(sensitivity);
+		toolitem = make_toolbar_item_throbber(sensitivity);
 		break;
 
 	case WEBSEARCH_ITEM:
-		w = make_toolbar_item_websearch(sensitivity);
+		toolitem = make_toolbar_item_websearch(sensitivity);
 		break;
 
 	default:
 		break;
 
 	}
-
-	return w;
+	return toolitem;
 }
 
 /**
@@ -957,7 +676,6 @@ customisation_toolbar_drag_drop_cb(GtkWidget *widget,
 	struct nsgtk_toolbar_customisation *tbc;
 	tbc = (struct nsgtk_toolbar_customisation *)data;
 	gint position; /* drop position in toolbar */
-	struct nsgtk_theme *theme;
 	int location;
 	int itemid;
 	struct nsgtk_toolbar_item *dragitem; /* toolbar item being dragged */
@@ -993,18 +711,12 @@ customisation_toolbar_drag_drop_cb(GtkWidget *widget,
 				     GTK_WIDGET(dragitem->button));
 	}
 
-	/* add dropped item into toolbar */
-	theme =	nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR, false);
-	if (theme == NULL) {
-		nsgtk_warning(messages_get("NoMemory"), 0);
-		return TRUE;
-	}
 
 	edit_mode = true;
-	dragitem->button = make_toolbar_item(tbc->dragitem, theme, true);
+	dragitem->button = make_toolbar_item(tbc->dragitem,
+				tbc->toolbar.items[tbc->dragitem].sensitivity);
 	edit_mode = false;
 
-	free(theme);
 	if (dragitem->button == NULL) {
 		nsgtk_warning("NoMemory", 0);
 		return TRUE;
@@ -1134,23 +846,6 @@ nsgtk_browser_window_create(struct browser_window *bw, bool intab)
 }
 
 
-/**
- * \return toolbar item id when a widget is an element of the scaffolding
- * else -1
- */
-int nsgtk_toolbar_get_id_from_widget(GtkWidget *widget,
-				     struct nsgtk_scaffolding *g)
-{
-	int i;
-	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
-		if ((nsgtk_scaffolding_button(g, i)->location != -1)
-				&& (widget == GTK_WIDGET(
-				nsgtk_scaffolding_button(g, i)->button))) {
-			return i;
-		}
-	}
-	return -1;
-}
 
 
 /**
@@ -1228,9 +923,7 @@ apply_user_button_customisation(struct nsgtk_toolbar *tb)
  * \return NSERROR_OK on success else error code.
  */
 static nserror
-add_item_to_toolbar(struct nsgtk_toolbar *tb,
-		       struct nsgtk_theme *theme,
-		       int location)
+add_item_to_toolbar(struct nsgtk_toolbar *tb, int location)
 {
 	int bidx; /* button index */
 
@@ -1239,7 +932,7 @@ add_item_to_toolbar(struct nsgtk_toolbar *tb,
 		if (tb->items[bidx].location == location) {
 
 			tb->items[bidx].button = make_toolbar_item(
-				bidx, theme, tb->items[bidx].sensitivity);
+				bidx, tb->items[bidx].sensitivity);
 
 			gtk_toolbar_insert(tb->widget,
 					   tb->items[bidx].button,
@@ -1266,13 +959,7 @@ static void container_remove_widget(GtkWidget *widget, gpointer data)
  */
 static nserror populate_gtk_toolbar_widget(struct nsgtk_toolbar *tb)
 {
-	struct nsgtk_theme *theme; /* internal theme context */
 	int lidx; /* location index */
-
-	theme =	nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR, false);
-	if (theme == NULL) {
-		return NSERROR_NOMEM;
-	}
 
 	/* clear the toolbar container of all widgets */
 	gtk_container_foreach(GTK_CONTAINER(tb->widget),
@@ -1281,11 +968,10 @@ static nserror populate_gtk_toolbar_widget(struct nsgtk_toolbar *tb)
 
 	/* add widgets to toolbar */
 	for (lidx = 0; lidx < PLACEHOLDER_BUTTON; lidx++) {
-		add_item_to_toolbar(tb, theme, lidx);
+		add_item_to_toolbar(tb, lidx);
 	}
 
 	gtk_widget_show_all(GTK_WIDGET(tb->widget));
-	free(theme);
 
 	return NSERROR_OK;
 }
@@ -1490,7 +1176,6 @@ item_size_allocate_cb(GtkWidget *widget,
 	if (alloc->height > NSGTK_BUTTON_HEIGHT) {
 		alloc->height = NSGTK_BUTTON_HEIGHT;
 	}
-	//NSLOG(netsurf, ERROR, "w:%d h:%d", alloc->width, alloc->height);
 	gtk_widget_set_allocation(widget, alloc);
 }
 
@@ -1542,7 +1227,7 @@ add_toolbox_row(struct nsgtk_toolbar_customisation *tbc,
 				 "size-allocate",
 				 G_CALLBACK(item_size_allocate_cb),
 				 NULL);
-		gtk_toolbar_insert(rowbar, tbc->items[iidx], iidx - startitem);
+		gtk_toolbar_insert(rowbar, tbc->items[iidx], -1);
 	}
 	return NSERROR_OK;
 }
@@ -1563,17 +1248,11 @@ toolbar_customisation_create_toolbox(struct nsgtk_toolbar_customisation *tbc,
 	int curcol; /* current column in creation */
 	int iidx; /* item index */
 	int startidx; /* index of item at start of row */
-	struct nsgtk_theme *theme;
-
-	theme =	nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR, true);
-	if (theme == NULL) {
-		return NSERROR_NOMEM;
-	}
 
 	/* ensure there are a minimum number of items per row */
 	columns = width / NSGTK_BUTTON_WIDTH;
-	if (columns < NSGTK_STORE_WIDTH) {
-		columns = NSGTK_STORE_WIDTH;
+	if (columns < NSGTK_MIN_STORE_COLUMNS) {
+		columns = NSGTK_MIN_STORE_COLUMNS;
 	}
 
 	edit_mode = true;
@@ -1584,7 +1263,8 @@ toolbar_customisation_create_toolbox(struct nsgtk_toolbar_customisation *tbc,
 			curcol = 0;
 			startidx = iidx;
 		}
-		tbc->items[iidx] = make_toolbar_item(iidx, theme, true);
+		tbc->items[iidx] = make_toolbar_item(iidx,
+					tbc->toolbar.items[iidx].sensitivity);
 		if (tbc->items[iidx] != NULL) {
 			curcol++;
 		}
@@ -1593,8 +1273,6 @@ toolbar_customisation_create_toolbox(struct nsgtk_toolbar_customisation *tbc,
 		add_toolbox_row(tbc, startidx, iidx);
 	}
 	edit_mode = false;
-
-	free(theme);
 
 	return NSERROR_OK;
 }
@@ -1615,10 +1293,12 @@ customisation_toolbar_update(struct nsgtk_toolbar_customisation *tbc)
 	}
 
 	/* populate toolbar widget */
+	edit_mode = true;
 	res = populate_gtk_toolbar_widget(&tbc->toolbar);
 	if (res != NSERROR_OK) {
 		return res;
 	}
+	edit_mode = false;
 
 	/* ensure icon sizes and text labels on toolbar are set */
 	res = nsgtk_toolbar_restyle(&tbc->toolbar);
@@ -1757,7 +1437,11 @@ static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
 		if (res != NSERROR_OK) {
 			goto cutomize_button_clicked_cb_error;
 		}
-		tbc->toolbar.items[iidx].sensitivity = true;
+		if ((iidx == URL_BAR_ITEM) || (iidx == WEBSEARCH_ITEM)) {
+			tbc->toolbar.items[iidx].sensitivity = false;
+		} else {
+			tbc->toolbar.items[iidx].sensitivity = true;
+		}
 	}
 
 	res = customisation_toolbar_update(tbc);
@@ -3240,6 +2924,42 @@ static gboolean openmenu_button_clicked_cb(GtkWidget *widget, gpointer data)
 }
 
 
+/* define data plus and data minus handlers */
+#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate, label, iconame) \
+static gboolean								\
+nsgtk_toolbar_##name##_data_plus(GtkWidget *widget,			\
+				 GdkDragContext *cont,			\
+				 GtkSelectionData *selection,		\
+				 guint info,				\
+				 guint time,				\
+				 gpointer data)				\
+{									\
+	struct nsgtk_toolbar_customisation *tbc;			\
+	tbc = (struct nsgtk_toolbar_customisation *)data;		\
+	tbc->dragitem = identifier;					\
+	tbc->dragfrom = true;						\
+	return TRUE;							\
+}									\
+static gboolean								\
+nsgtk_toolbar_##name##_data_minus(GtkWidget *widget,			\
+				  GdkDragContext *cont,			\
+				  GtkSelectionData *selection,		\
+				  guint info,				\
+				  guint time,				\
+				  gpointer data)			\
+{									\
+	struct nsgtk_toolbar_customisation *tbc;			\
+	tbc = (struct nsgtk_toolbar_customisation *)data;		\
+	tbc->dragitem = identifier;					\
+	tbc->dragfrom = false;						\
+	return TRUE;							\
+}
+
+#include "gtk/toolbar_items.h"
+
+#undef TOOLBAR_ITEM
+
+
 /**
  * create a toolbar item
  *
@@ -3252,11 +2972,13 @@ toolbar_item_create(nsgtk_toolbar_button id, struct nsgtk_toolbar_item *item)
 
 	/* set item defaults from macro */
 	switch (id) {
-#define TOOLBAR_ITEM_y(name)					\
+#define TOOLBAR_ITEM_b(name)						\
 		item->bhandler = name##_button_clicked_cb;
-#define TOOLBAR_ITEM_n(name)			\
+#define TOOLBAR_ITEM_y(name)						\
+		item->bhandler = name##_button_clicked_cb;
+#define TOOLBAR_ITEM_n(name)						\
 		item->bhandler = NULL;
-#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate)	\
+#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate, label, iconame) \
 	case identifier:						\
 		item->sensitivity = snstvty;				\
 		item->dataplus = nsgtk_toolbar_##name##_data_plus;	\
@@ -3617,7 +3339,6 @@ nserror nsgtk_toolbar_set_url(struct nsgtk_toolbar *tb, nsurl *url)
 	}
 
 	gtk_entry_set_text(url_entry, url_text);
-	//gtk_editable_set_position(GTK_EDITABLE(url_entry), -1);
 
 	if (idn_url_s != NULL) {
 		free(idn_url_s);
@@ -3645,9 +3366,9 @@ nsgtk_toolbar_set_websearch_image(struct nsgtk_toolbar *tb, GdkPixbuf *pixbuf)
 						 GTK_ENTRY_ICON_PRIMARY,
 						 pixbuf);
 	} else {
-		nsgtk_entry_set_icon_from_stock(entry,
-						GTK_ENTRY_ICON_PRIMARY,
-						NSGTK_STOCK_INFO);
+		nsgtk_entry_set_icon_from_icon_name(entry,
+						    GTK_ENTRY_ICON_PRIMARY,
+						    NSGTK_STOCK_INFO);
 	}
 
 	return NSERROR_OK;
