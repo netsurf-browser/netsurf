@@ -635,7 +635,9 @@ void nsgtk_widget_set_margins(GtkWidget *widget, gint hmargin, gint vmargin)
 	gtk_widget_set_margin_top(widget, vmargin);
 	gtk_widget_set_margin_bottom(widget, vmargin);
 #else
-	gtk_misc_set_padding(GTK_MISC(widget), hmargin, vmargin);
+	if (GTK_IS_MISC(widget)) {
+		gtk_misc_set_padding(GTK_MISC(widget), hmargin, vmargin);
+	}
 #endif
 }
 

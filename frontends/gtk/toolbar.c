@@ -333,8 +333,7 @@ make_toolbar_item_websearch(bool sensitivity)
 
 	res = search_web_get_provider_bitmap(&bitmap);
 	if ((res == NSERROR_OK) && (bitmap != NULL)) {
-		pixbuf = nsgdk_pixbuf_get_from_surface(bitmap->surface,
-						       16, 16);
+		pixbuf = nsgdk_pixbuf_get_from_surface(bitmap->surface, 32, 32);
 	}
 
 	entry = nsgtk_entry_new();
@@ -347,6 +346,7 @@ make_toolbar_item_websearch(bool sensitivity)
 		nsgtk_entry_set_icon_from_pixbuf(entry,
 						 GTK_ENTRY_ICON_PRIMARY,
 						 pixbuf);
+		g_object_unref(pixbuf);
 	} else {
 		nsgtk_entry_set_icon_from_icon_name(entry,
 						    GTK_ENTRY_ICON_PRIMARY,
@@ -1284,7 +1284,6 @@ toolbar_customisation_create_toolbox(struct nsgtk_toolbar_customisation *tbc,
 static nserror
 customisation_toolbar_update(struct nsgtk_toolbar_customisation *tbc)
 {
-	GtkEntry *entry;
 	nserror res;
 
 	res = apply_user_button_customisation(&tbc->toolbar);
@@ -1310,18 +1309,6 @@ customisation_toolbar_update(struct nsgtk_toolbar_customisation *tbc)
 	res = toolbar_customisation_connect_signals(&tbc->toolbar);
 	if (res != NSERROR_OK) {
 		return res;
-	}
-
-	if (tbc->toolbar.items[URL_BAR_ITEM].location != INACTIVE_LOCATION) {
-		entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(tbc->toolbar.items[URL_BAR_ITEM].button)));
-
-		gtk_widget_set_sensitive(GTK_WIDGET(entry), FALSE);
-	}
-
-	if (tbc->toolbar.items[WEBSEARCH_ITEM].location != INACTIVE_LOCATION) {
-		entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(tbc->toolbar.items[WEBSEARCH_ITEM].button)));
-
-		gtk_widget_set_sensitive(GTK_WIDGET(entry), FALSE);
 	}
 
 	return NSERROR_OK;
@@ -1364,6 +1351,22 @@ customisation_reset_clicked_cb(GtkWidget *widget, gpointer data)
 	return TRUE;
 }
 
+
+/**
+ * customisation container delete handler
+ */
+static gboolean
+customisation_container_delete_cb(GtkWidget *widget,
+				  GdkEvent *event,
+				  gpointer data)
+{
+	struct nsgtk_toolbar_customisation *tbc;
+	tbc = (struct nsgtk_toolbar_customisation *)data;
+
+	free(tbc);
+
+	return FALSE;
+}
 
 /*
  * Toolbar button clicked handlers
@@ -1482,16 +1485,13 @@ static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
 			 G_CALLBACK(customisation_reset_clicked_cb),
 			 tbc);
 
-	/* close and cleanup on destroy signal */
-#if 0
-
+	/* close and cleanup on delete signal */
 	g_signal_connect(tbc->container,
 			 "delete-event",
-			 G_CALLBACK(nsgtk_toolbar_delete),
-			 g);
+			 G_CALLBACK(customisation_container_delete_cb),
+			 tbc);
 
 
-#endif
 	g_signal_connect(tbc->container,
 			 "drag-drop",
 			 G_CALLBACK(customisation_container_drag_drop_cb),

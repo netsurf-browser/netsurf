@@ -258,10 +258,10 @@ static nserror set_defaults(struct nsoption_s *defaults)
  */
 static nserror nsgtk_add_named_icons_to_theme(void)
 {
-	#if GTK_CHECK_VERSION(3,14,0)
+#if GTK_CHECK_VERSION(3,14,0)
 	gtk_icon_theme_add_resource_path(gtk_icon_theme_get_default(),
 					  "/org/netsurf/icons");
-	#else
+#else
 	GdkPixbuf *pixbuf;
 	nserror res;
 

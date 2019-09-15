@@ -424,8 +424,10 @@ void nsgtk_tab_add(struct gui_window *gw,
 
 	nsgtk_tab_add_page(notebook, tab_contents, background, title, icon_pixbuf);
 
+#if 0
 	gtk_widget_grab_focus(GTK_WIDGET(nsgtk_scaffolding_urlbar(
 			nsgtk_get_scaffold(gw))));
+#endif
 }
 
 

@@ -1408,11 +1408,15 @@ gui_search_web_provider_update(const char *name, struct bitmap *bitmap)
 	GdkPixbuf *pixbuf = NULL;
 
 	if (bitmap != NULL) {
-		pixbuf = nsgdk_pixbuf_get_from_surface(bitmap->surface, 16, 16);
+		pixbuf = nsgdk_pixbuf_get_from_surface(bitmap->surface, 32, 32);
 	}
 
 	for (gw = window_list; gw != NULL; gw = gw->next) {
 		nsgtk_toolbar_set_websearch_image(gw->toolbar, pixbuf);
+	}
+
+	if (pixbuf != NULL) {
+		g_object_unref(pixbuf);
 	}
 
 	return NSERROR_OK;
