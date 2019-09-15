@@ -270,7 +270,14 @@ static nserror nsgtk_add_named_icons_to_theme(void)
 		pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, false, 8, 8, 32);
 	}
 	gtk_icon_theme_add_builtin_icon("local-history", 32, pixbuf);
-	#endif
+
+	res = nsgdk_pixbuf_new_from_resname("icons/show-cookie.png", &pixbuf);
+	if (res != NSERROR_OK) {
+		pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, false, 8, 24, 24);
+	}
+	gtk_icon_theme_add_builtin_icon("show-cookie", 24, pixbuf);
+
+#endif
 	return NSERROR_OK;
 }
 

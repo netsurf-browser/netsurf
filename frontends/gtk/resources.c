@@ -96,6 +96,7 @@ static struct nsgtk_resource_s pixbuf_resource[] = {
 	RES_ENTRY("netsurf.xpm"),
 	RES_ENTRY("menu_cursor.png"),
 	RES_ENTRY("icons/local-history.png"),
+	RES_ENTRY("icons/show-cookie.png"),
 	RES_ENTRY("throbber/throbber0.png"),
 	RES_ENTRY("throbber/throbber1.png"),
 	RES_ENTRY("throbber/throbber2.png"),
