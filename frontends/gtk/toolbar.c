@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Mark Benjamin <netsurf-browser.org.MarkBenjamin@dfgh.net>
+ * Copyright 2019 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -18,7 +18,7 @@
 
 /**
  * \file
- * implementatio of toolbar to control browsing context
+ * implementation of toolbar to control browsing context
  */
 
 #include <stdlib.h>

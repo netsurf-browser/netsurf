@@ -16,25 +16,47 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NETSURF_GTK_SEARCH_H_
-#define _NETSURF_GTK_SEARCH_H_
-
 /**
  * \file
  * free text page search for gtk interfaces
  */
 
+#ifndef NETSURF_GTK_SEARCH_H_
+#define NETSURF_GTK_SEARCH_H_
+
 extern struct gui_search_table *nsgtk_search_table;
 
 struct nsgtk_scaffolding;
 
-void nsgtk_search_bar_toggle_visibility(struct nsgtk_scaffolding * g);
-gboolean nsgtk_search_entry_changed(GtkWidget *widget, gpointer data);
-gboolean nsgtk_search_entry_activate(GtkWidget *widget, gpointer data);
-gboolean nsgtk_search_entry_key(GtkWidget *widget, GdkEventKey *event, gpointer data);
-gboolean nsgtk_search_forward_button_clicked(GtkWidget *widget, gpointer data);
-gboolean nsgtk_search_back_button_clicked(GtkWidget *widget, gpointer data);
-gboolean nsgtk_search_close_button_clicked(GtkWidget *widget, gpointer data);
+struct gtk_search {
+	GtkToolbar *bar;
+	GtkEntry *entry;
+	GtkToolButton *back;
+	GtkToolButton *forward;
+	GtkToolButton *close;
+	GtkCheckButton *checkAll;
+	GtkCheckButton *caseSens;
 
-		
+	struct gui_window *gw;
+};
+
+/**
+ * create text search context
+ *
+ * \param builder the gtk builder containing the search toolbar
+ * \param search_out search context result
+ * \return NSERROR_OK and search_out updated
+ */
+nserror nsgtk_search_create(GtkBuilder *builder, struct gtk_search **search_out, struct gui_window *gw);
+
+/**
+ * update search toolbar size and style
+ */
+nserror nsgtk_search_restyle(struct gtk_search *search);
+
+/**
+ * toggle search bar visibility
+ */
+nserror nsgtk_search_toggle_visibility(struct gtk_search *search);
+
 #endif

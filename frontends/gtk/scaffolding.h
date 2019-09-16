@@ -29,15 +29,6 @@ struct gui_search_web_table;
 struct nsurl;
 
 
-struct gtk_search {
-	GtkToolbar *bar;
-	GtkEntry *entry;
-	GtkToolButton *buttons[3]; /* back, forward, */
-	GtkCheckButton *checkAll;
-	GtkCheckButton *caseSens;
-};
-
-
 /**
  * create a new scaffolding for a window.
  *

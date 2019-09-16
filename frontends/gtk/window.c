@@ -62,6 +62,7 @@
 #include "gtk/bitmap.h"
 #include "gtk/gdk.h"
 #include "gtk/resources.h"
+#include "gtk/search.h"
 #include "gtk/window.h"
 
 static GtkWidget *select_menu;
@@ -98,6 +99,9 @@ struct gui_window {
 
 	/** controls toolbar context */
 	struct nsgtk_toolbar *toolbar;
+
+	/** search toolbar context */
+	struct gtk_search *search;
 
 	/** The top level container (tabBox) */
 	GtkWidget *container;
@@ -779,6 +783,7 @@ gui_window_create(struct browser_window *bw,
 	g->input_method = gtk_im_multicontext_new();
 
 
+	/* create toolbar */
 	res = nsgtk_toolbar_create(tab_builder, bw_from_gw, g, &g->toolbar);
 	if (res != NSERROR_OK) {
 		free(g);
@@ -786,6 +791,13 @@ gui_window_create(struct browser_window *bw,
 		return NULL;
 	}
 
+	/* local page text search toolbar */
+	res = nsgtk_search_create(tab_builder, &g->search, g);
+	if (res != NSERROR_OK) {
+		free(g);
+		g_object_unref(tab_builder);
+		return NULL;
+	}
 
 	/* set a default favicon */
 	g_object_ref(favicon_pixbuf);
@@ -1468,6 +1480,13 @@ struct nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g)
 
 
 /* exported interface documented in window.h */
+struct gtk_search *nsgtk_window_get_search(struct gui_window *gw)
+{
+	return gw->search;
+}
+
+
+/* exported interface documented in window.h */
 struct browser_window *nsgtk_get_browser_window(struct gui_window *g)
 {
 	return g->bw;
@@ -1485,6 +1504,14 @@ unsigned long nsgtk_window_get_signalhandler(struct gui_window *g, int i)
 GtkLayout *nsgtk_window_get_layout(struct gui_window *g)
 {
 	return g->layout;
+}
+
+
+/* exported interface documented in window.h */
+nserror
+nsgtk_window_search_toggle(struct gui_window *gw)
+{
+	return nsgtk_search_toggle_visibility(gw->search);
 }
 
 
@@ -1511,7 +1538,7 @@ nserror nsgtk_window_update_all(void)
 	for (gw = window_list; gw != NULL; gw = gw->next) {
 		nsgtk_tab_options_changed(nsgtk_scaffolding_notebook(gw->scaffold));
 		nsgtk_toolbar_restyle(gw->toolbar);
-		/** \todo update search bar */
+		nsgtk_search_restyle(gw->search);
 		browser_window_schedule_reformat(gw->bw);
 	}
 	return NSERROR_OK;

@@ -16,7 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Compatibility functions for older GTK versions (interface)
  */
 
@@ -40,9 +41,6 @@
 #define NSGTK_STOCK_CANCEL "_Cancel"
 #define NSGTK_STOCK_CLEAR "edit-clear"
 #define NSGTK_STOCK_CLOSE "window-close"
-#define NSGTK_STOCK_FIND "edit-find"
-#define NSGTK_STOCK_GO_BACK "go-previous"
-#define NSGTK_STOCK_GO_FORWARD "go-next"
 #define NSGTK_STOCK_HOME "go-home"
 #define NSGTK_STOCK_INFO "dialog-information"
 #define NSGTK_STOCK_REFRESH "view-refresh"
@@ -57,9 +55,6 @@
 #define NSGTK_STOCK_CANCEL GTK_STOCK_CANCEL
 #define NSGTK_STOCK_CLEAR GTK_STOCK_CLEAR
 #define NSGTK_STOCK_CLOSE GTK_STOCK_CLOSE
-#define NSGTK_STOCK_FIND GTK_STOCK_FIND
-#define NSGTK_STOCK_GO_BACK GTK_STOCK_GO_BACK
-#define NSGTK_STOCK_GO_FORWARD GTK_STOCK_GO_FORWARD
 #define NSGTK_STOCK_HOME GTK_STOCK_HOME
 #define NSGTK_STOCK_INFO GTK_STOCK_INFO
 #define NSGTK_STOCK_REFRESH GTK_STOCK_REFRESH

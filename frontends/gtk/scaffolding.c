@@ -27,7 +27,6 @@
 #include "netsurf/browser_window.h"
 #include "desktop/browser_history.h"
 #include "desktop/hotlist.h"
-#include "desktop/search.h"
 
 #include "gtk/compat.h"
 #include "gtk/warn.h"
@@ -40,7 +39,6 @@
 #include "gtk/window.h"
 #include "gtk/completion.h"
 #include "gtk/tabs.h"
-#include "gtk/search.h"
 #include "gtk/resources.h"
 #include "gtk/scaffolding.h"
 
@@ -75,9 +73,6 @@ struct nsgtk_scaffolding {
 
 	/** tab widget holding displayed pages */
 	GtkNotebook *notebook;
-
-	/** In page text search context */
-	struct gtk_search *search;
 
 	/** menu bar hierarchy */
 	struct nsgtk_bar_submenu *menu_bar;
@@ -591,7 +586,8 @@ static gboolean nsgtk_on_find_activate_menu(GtkMenuItem *widget, gpointer data)
 {
 	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 
-	nsgtk_scaffolding_toggle_search_bar_visibility(g);
+	nsgtk_window_search_toggle(g->top_level);
+
 	return TRUE;
 }
 
@@ -1081,7 +1077,7 @@ static nserror nsgtk_menus_create(struct nsgtk_scaffolding *gs)
 
 	gs->menu_bar = nsgtk_menu_bar_create(menushell, group);
 
-	/* toolbar URL bar menu bar search bar signal handlers */
+	/* toolbar URL bar menu bar signal handlers */
 	g_signal_connect(gs->menu_bar->edit_submenu->edit,
 			 "show",
 			 G_CALLBACK(nsgtk_window_edit_menu_shown),
@@ -1109,119 +1105,8 @@ static nserror nsgtk_menus_create(struct nsgtk_scaffolding *gs)
 }
 
 
-/**
- * update search toolbar size and style
- */
-static nserror nsgtk_search_update(struct gtk_search *search)
-{
-	switch (nsoption_int(button_type)) {
 
-	case 1: /* Small icons */
-		gtk_toolbar_set_style(GTK_TOOLBAR(search->bar),
-				      GTK_TOOLBAR_ICONS);
-		gtk_toolbar_set_icon_size(GTK_TOOLBAR(search->bar),
-					  GTK_ICON_SIZE_SMALL_TOOLBAR);
-		break;
 
-	case 2: /* Large icons */
-		gtk_toolbar_set_style(GTK_TOOLBAR(search->bar),
-				      GTK_TOOLBAR_ICONS);
-		gtk_toolbar_set_icon_size(GTK_TOOLBAR(search->bar),
-					  GTK_ICON_SIZE_LARGE_TOOLBAR);
-		break;
-
-	case 3: /* Large icons with text */
-		gtk_toolbar_set_style(GTK_TOOLBAR(search->bar),
-				      GTK_TOOLBAR_BOTH);
-		gtk_toolbar_set_icon_size(GTK_TOOLBAR(search->bar),
-					  GTK_ICON_SIZE_LARGE_TOOLBAR);
-		break;
-
-	case 4: /* Text icons only */
-		gtk_toolbar_set_style(GTK_TOOLBAR(search->bar),
-				      GTK_TOOLBAR_TEXT);
-	default:
-		break;
-	}
-	return NSERROR_OK;
-}
-
-/**
- * create text search context
- */
-static nserror
-nsgtk_search_create(GtkBuilder *builder, struct gtk_search **search_out)
-{
-	struct gtk_search *search;
-
-	search = malloc(sizeof(struct gtk_search));
-	if (search == NULL) {
-		return NSERROR_NOMEM;
-	}
-
-	search->bar = GTK_TOOLBAR(gtk_builder_get_object(builder, "searchbar"));
-	search->entry = GTK_ENTRY(gtk_builder_get_object(builder,"searchEntry"));
-
-	search->buttons[0] = GTK_TOOL_BUTTON(gtk_builder_get_object(
-						builder,"searchBackButton"));
-	search->buttons[1] = GTK_TOOL_BUTTON(gtk_builder_get_object(
-						builder,"searchForwardButton"));
-	search->buttons[2] = GTK_TOOL_BUTTON(gtk_builder_get_object(
-						builder,"closeSearchButton"));
-	search->checkAll = GTK_CHECK_BUTTON(gtk_builder_get_object(
-						builder,"checkAllSearch"));
-	search->caseSens = GTK_CHECK_BUTTON(gtk_builder_get_object(
-						builder,"caseSensButton"));
-
-	nsgtk_search_update(search);
-
-	*search_out = search;
-
-	return NSERROR_OK;
-}
-
-/**
- * connect signals to search bar
- */
-static nserror nsgtk_search_connect_signals(struct nsgtk_scaffolding *gs)
-{
-	g_signal_connect(gs->search->buttons[1],
-			 "clicked",
-			 G_CALLBACK(nsgtk_search_forward_button_clicked),
-			 gs);
-
-	g_signal_connect(gs->search->buttons[0],
-			 "clicked",
-			 G_CALLBACK(nsgtk_search_back_button_clicked),
-			 gs);
-
-	g_signal_connect(gs->search->entry,
-			 "changed",
-			 G_CALLBACK(nsgtk_search_entry_changed),
-			 gs);
-
-	g_signal_connect(gs->search->entry,
-			 "activate",
-			 G_CALLBACK(nsgtk_search_entry_activate),
-			 gs);
-
-	g_signal_connect(gs->search->entry,
-			 "key-press-event",
-			 G_CALLBACK(nsgtk_search_entry_key),
-			 gs);
-
-	g_signal_connect(gs->search->buttons[2],
-			 "clicked",
-			 G_CALLBACK(nsgtk_search_close_button_clicked),
-			 gs);
-
-	g_signal_connect(gs->search->caseSens,
-			 "toggled",
-			 G_CALLBACK(nsgtk_search_entry_changed),
-			 gs);
-
-	return NSERROR_OK;
-}
 
 
 /* exported function documented in gtk/scaffolding.h */
@@ -1314,12 +1199,6 @@ GtkWidget *nsgtk_scaffolding_urlbar(struct nsgtk_scaffolding *g)
 
 
 /* exported interface documented in gtk/scaffolding.h */
-struct gtk_search *nsgtk_scaffolding_search(struct nsgtk_scaffolding *g)
-{
-	return g->search;
-}
-
-/* exported interface documented in gtk/scaffolding.h */
 GtkMenuBar *nsgtk_scaffolding_menu_bar(struct nsgtk_scaffolding *gs)
 {
 	if (gs == NULL) {
@@ -1346,26 +1225,6 @@ struct gui_window *nsgtk_scaffolding_top_level(struct nsgtk_scaffolding *g)
 
 
 /* exported interface documented in gtk/scaffolding.h */
-void nsgtk_scaffolding_toggle_search_bar_visibility(struct nsgtk_scaffolding *g)
-{
-	gboolean vis;
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-
-	g_object_get(G_OBJECT(g->search->bar), "visible", &vis, NULL);
-	if (vis) {
-		if (bw != NULL) {
-			browser_window_search_clear(bw);
-		}
-
-		gtk_widget_hide(GTK_WIDGET(g->search->bar));
-	} else {
-		gtk_widget_show(GTK_WIDGET(g->search->bar));
-		gtk_widget_grab_focus(GTK_WIDGET(g->search->entry));
-	}
-}
-
-
-/* exported interface documented in gtk/scaffolding.h */
 void nsgtk_scaffolding_set_top_level(struct gui_window *gw)
 {
 	struct browser_window *bw;
@@ -1386,9 +1245,6 @@ void nsgtk_scaffolding_set_top_level(struct gui_window *gw)
 
 	/* Synchronise the history (will also update the URL bar) */
 	scaffolding_update_context(sc);
-
-	/* clear effects of potential searches */
-	browser_window_search_clear(bw);
 
 	/* Ensure the window's title bar is updated */
 	nsgtk_scaffolding_set_title(gw, browser_window_get_title(bw));
@@ -1588,15 +1444,6 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 			       G_CALLBACK(nsgtk_window_tabs_remove),
 			       gs);
 
-
-	/* local page text search */
-	res = nsgtk_search_create(gs->builder, &gs->search);
-	if (res != NSERROR_OK) {
-		free(gs);
-		return NULL;
-	}
-
-	nsgtk_search_connect_signals(gs);
 
 	res = nsgtk_menus_create(gs);
 	if (res != NSERROR_OK) {

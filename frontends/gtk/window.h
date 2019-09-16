@@ -85,6 +85,14 @@ void nsgtk_window_destroy_browser(struct gui_window *gw);
  */
 unsigned long nsgtk_window_get_signalhandler(struct gui_window *gw, int i);
 
+
+/**
+ * toggle search visibility
+ *
+ * \param gw gui window handle
+ */
+nserror nsgtk_window_search_toggle(struct gui_window *gw);
+
 /**
  * get gtk layout from gui handle
  *
@@ -92,6 +100,11 @@ unsigned long nsgtk_window_get_signalhandler(struct gui_window *gw, int i);
  */
 GtkLayout *nsgtk_window_get_layout(struct gui_window *gw);
 
+
+/**
+ * get search from window handle
+ */
+struct gtk_search *nsgtk_window_get_search(struct gui_window *gw);
 
 /**
  * activate the handler for a item in a toolbar of a gui window
