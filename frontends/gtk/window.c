@@ -889,8 +889,8 @@ gui_window_create(struct browser_window *bw,
 	}
 	nsgtk_tab_add(g, g->container, tempback, messages_get("NewTab"), g->icon);
 
-	/* \todo move search bar properly */
-	gtk_widget_hide(GTK_WIDGET(gtk_builder_get_object(tab_builder, "searchbar")));
+	/* initialy should not be visible */
+	nsgtk_search_toggle_visibility(g->search);
 
 	/* safe to drop the reference to the tab_builder as the container is
 	 * referenced by the notebook now.

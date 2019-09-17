@@ -3301,6 +3301,15 @@ nl.gtk.gtkThemeAdd:Thema is succesvol toegevoegd
 en.gtk.gtkCustomizeToolbarTitle:Customise Toolbar
 en.gtk.gtkCustomizeToolbarInstructions:Drag toolbar items into and out of the toolbar.
 
+# GTK find in page
+
+en.gtk.gtkFindPlaceholder:Find in page
+en.gtk.gtkFindBack:Find Previous Occurrence
+en.gtk.gtkFindForward:Find _Next Occurrence
+en.gtk.gtkFindHighlightAll:Highlight All
+en.gtk.gtkFindMatchCase:Match Case
+en.gtk.gtkFindClose:Close Find Bar
+
 # GTK preferences dialog
 
 en.gtk.preferencesTitle:Netsurf Preferences

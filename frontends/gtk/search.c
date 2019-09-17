@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Mark Benjamin <netsurf-browser.org.MarkBenjamin@dfgh.net>
+ * Copyright 2019 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -19,30 +19,24 @@
 
 /**
  * \file
- * Free text search (front component)
+ * find in page gtk frontend implementation
+ *
+ * \todo this whole thing should be named find rather than search as
+ *         that generally means web search and is confusing.
  */
 
-#include <stdint.h>
-#include <ctype.h>
-#include <string.h>
-#include <gdk/gdkkeysyms.h>
+#include <stdbool.h>
+#include <gtk/gtk.h>
 
-#include "utils/config.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/nsurl.h"
 #include "utils/nsoption.h"
 #include "netsurf/search.h"
-#include "netsurf/browser_window.h"
 #include "desktop/search.h"
-#include "desktop/searchweb.h"
 
-#include "gtk/warn.h"
 #include "gtk/compat.h"
-#include "gtk/search.h"
 #include "gtk/toolbar_items.h"
-#include "gtk/scaffolding.h"
 #include "gtk/window.h"
+#include "gtk/search.h"
+
 
 /**
  * activate search forwards button in gui.
@@ -161,12 +155,9 @@ static gboolean nsgtk_search_entry_changed(GtkWidget *widget, gpointer data)
 
 	search = (struct gtk_search *)data;
 
-	nsgtk_search_set_forward_state(true, search->gw);
-	nsgtk_search_set_back_state(true, search->gw);
-
 	bw = nsgtk_get_browser_window(search->gw);
 
-	flags = SEARCH_FLAG_FORWARDS;
+	flags = 0;
 
 	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(search->caseSens))) {
 		flags |= SEARCH_FLAG_CASE_SENSITIVE;
@@ -241,14 +232,15 @@ nserror nsgtk_search_toggle_visibility(struct gtk_search *search)
 {
 	gboolean vis;
 
+	browser_window_search_clear(nsgtk_get_browser_window(search->gw));
+
 	g_object_get(G_OBJECT(search->bar), "visible", &vis, NULL);
 	if (vis) {
-		browser_window_search_clear(nsgtk_get_browser_window(search->gw));
-
 		gtk_widget_hide(GTK_WIDGET(search->bar));
 	} else {
 		gtk_widget_show(GTK_WIDGET(search->bar));
 		gtk_widget_grab_focus(GTK_WIDGET(search->entry));
+		nsgtk_search_entry_changed(GTK_WIDGET(search->entry), search);
 	}
 
 	return NSERROR_OK;
@@ -306,20 +298,18 @@ nsgtk_search_create(GtkBuilder *builder,
 
 	search->gw = gw;
 
-	search->bar = GTK_TOOLBAR(gtk_builder_get_object(builder,
-							"searchbar"));
-	search->entry = GTK_ENTRY(gtk_builder_get_object(builder,
-							"searchEntry"));
+	search->bar = GTK_TOOLBAR(gtk_builder_get_object(builder, "findbar"));
+	search->entry = GTK_ENTRY(gtk_builder_get_object(builder, "Find"));
 	search->back = GTK_TOOL_BUTTON(gtk_builder_get_object(builder,
-							"searchBackButton"));
+							"FindBack"));
 	search->forward = GTK_TOOL_BUTTON(gtk_builder_get_object(builder,
-							"searchForwardButton"));
+							"FindForward"));
 	search->close = GTK_TOOL_BUTTON(gtk_builder_get_object(builder,
-							"closeSearchButton"));
+							"FindClose"));
 	search->checkAll = GTK_CHECK_BUTTON(gtk_builder_get_object(builder,
-							"checkAllSearch"));
+							"FindHightlightAll"));
 	search->caseSens = GTK_CHECK_BUTTON(gtk_builder_get_object(builder,
-							"caseSensButton"));
+							"FindMatchCase"));
 
 	g_signal_connect(search->forward,
 			 "clicked",
@@ -356,7 +346,13 @@ nsgtk_search_create(GtkBuilder *builder,
 			 G_CALLBACK(nsgtk_search_entry_changed),
 			 search);
 
+	g_signal_connect(search->checkAll,
+			 "toggled",
+			 G_CALLBACK(nsgtk_search_entry_changed),
+			 search);
+
 	nsgtk_search_restyle(search);
+
 
 	*search_out = search;
 

@@ -1,6 +1,5 @@
 /*
- * Copyright 2006 Rob Kendrick <rjek@rjek.com>
- * Copyright 2009 Mark Benjamin <netsurf-browser.org.MarkBenjamin@dfgh.net>
+ * Copyright 2019 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -18,26 +17,25 @@
  */
 
 #include <gtk/gtk.h>
+#include <stdbool.h>
 
 #include "utils/utils.h"
 #include "utils/log.h"
-#include "utils/nsurl.h"
 #include "utils/messages.h"
+#include "utils/nsurl.h"
 #include "utils/nsoption.h"
 #include "netsurf/browser_window.h"
 #include "desktop/browser_history.h"
 #include "desktop/hotlist.h"
 
 #include "gtk/compat.h"
-#include "gtk/warn.h"
 #include "gtk/toolbar_items.h"
-#include "gtk/toolbar.h"
 #include "gtk/menu.h"
 #include "gtk/local_history.h"
-#include "gtk/download.h"
 #include "gtk/gui.h"
+#include "gtk/download.h"
 #include "gtk/window.h"
-#include "gtk/completion.h"
+#include "gtk/warn.h"
 #include "gtk/tabs.h"
 #include "gtk/resources.h"
 #include "gtk/scaffolding.h"
