@@ -1165,21 +1165,25 @@ bool html_keypress(struct content *c, uint32_t key)
 /**
  * Handle search.
  *
- * \param  c			content of type HTML
- * \param  context		front end private data
- * \param  flags		search flags
- * \param  string		search string
+ * \param c content of type HTML
+ * \param context front end private data
+ * \param flags search flags
+ * \param string search string
  */
-void html_search(struct content *c, void *context,
-		search_flags_t flags, const char *string)
+void
+html_search(struct content *c,
+	    void *context,
+	    search_flags_t flags,
+	    const char *string)
 {
 	html_content *html = (html_content *)c;
 
 	assert(c != NULL);
 
-	if (string != NULL && html->search_string != NULL &&
-			strcmp(string, html->search_string) == 0 &&
-			html->search != NULL) {
+	if ((string != NULL) &&
+	    (html->search_string != NULL) &&
+	    (strcmp(string, html->search_string) == 0) &&
+	    (html->search != NULL)) {
 		/* Continue prev. search */
 		search_step(html->search, flags, string);
 

@@ -60,11 +60,6 @@ void search_destroy_context(struct search_context *context);
 void search_step(struct search_context *context, search_flags_t flags,
 		const char * string);
 
-/**
- * Specifies whether all matches or just the current match should
- * be highlighted in the search text.
- */
-void search_show_all(bool all, struct search_context *context);
 
 /**
  * Determines whether any portion of the given text box should be
