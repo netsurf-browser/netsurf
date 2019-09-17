@@ -38,18 +38,26 @@
 #include "gtk/search.h"
 
 
+struct gtk_search {
+	GtkToolbar *bar;
+	GtkEntry *entry;
+	GtkToolButton *back;
+	GtkToolButton *forward;
+	GtkToolButton *close;
+	GtkCheckButton *checkAll;
+	GtkCheckButton *caseSens;
+
+	struct browser_window *bw;
+};
+
 /**
  * activate search forwards button in gui.
  *
  * \param active activate/inactivate
- * \param gw The gui window in which to activite the search button in.
+ * \param search the gtk search context
  */
-static void nsgtk_search_set_forward_state(bool active, struct gui_window *gw)
+static void nsgtk_search_set_forward_state(bool active, struct gtk_search *search)
 {
-	struct gtk_search *search;
-
-	search = nsgtk_window_get_search(gw);
-
 	gtk_widget_set_sensitive(GTK_WIDGET(search->forward), active);
 }
 
@@ -58,14 +66,10 @@ static void nsgtk_search_set_forward_state(bool active, struct gui_window *gw)
  * activate search back button in gui.
  *
  * \param active activate/inactivate
- * \param gw The gui window in which to activite the search button in.
+ * \param search the gtk search context
  */
-static void nsgtk_search_set_back_state(bool active, struct gui_window *gw)
+static void nsgtk_search_set_back_state(bool active, struct gtk_search *search)
 {
-	struct gtk_search *search;
-
-	search = nsgtk_window_get_search(gw);
-
 	gtk_widget_set_sensitive(GTK_WIDGET(search->back), active);
 }
 
@@ -77,12 +81,9 @@ static gboolean
 nsgtk_search_forward_button_clicked(GtkWidget *widget, gpointer data)
 {
 	struct gtk_search *search;
-	struct browser_window *bw;
 	search_flags_t flags;
 
 	search = (struct gtk_search *)data;
-
-	bw = nsgtk_get_browser_window(search->gw);
 
 	flags = SEARCH_FLAG_FORWARDS;
 
@@ -94,7 +95,8 @@ nsgtk_search_forward_button_clicked(GtkWidget *widget, gpointer data)
 		flags |= SEARCH_FLAG_SHOWALL;
 	}
 
-	browser_window_search(bw, search->gw, flags, gtk_entry_get_text(search->entry));
+	browser_window_search(search->bw, search, flags,
+			      gtk_entry_get_text(search->entry));
 
 	return TRUE;
 }
@@ -106,12 +108,9 @@ static gboolean
 nsgtk_search_back_button_clicked(GtkWidget *widget, gpointer data)
 {
 	struct gtk_search *search;
-	struct browser_window *bw;
 	search_flags_t flags;
 
 	search = (struct gtk_search *)data;
-
-	bw = nsgtk_get_browser_window(search->gw);
 
 	flags = 0;
 
@@ -123,7 +122,8 @@ nsgtk_search_back_button_clicked(GtkWidget *widget, gpointer data)
 		flags |= SEARCH_FLAG_SHOWALL;
 	}
 
-	browser_window_search(bw, search->gw, flags, gtk_entry_get_text(search->entry));
+	browser_window_search(search->bw, search, flags,
+			      gtk_entry_get_text(search->entry));
 
 	return TRUE;
 }
@@ -150,12 +150,9 @@ nsgtk_search_close_button_clicked(GtkWidget *widget, gpointer data)
 static gboolean nsgtk_search_entry_changed(GtkWidget *widget, gpointer data)
 {
 	struct gtk_search *search;
-	struct browser_window *bw;
 	search_flags_t flags;
 
 	search = (struct gtk_search *)data;
-
-	bw = nsgtk_get_browser_window(search->gw);
 
 	flags = 0;
 
@@ -167,7 +164,8 @@ static gboolean nsgtk_search_entry_changed(GtkWidget *widget, gpointer data)
 		flags |= SEARCH_FLAG_SHOWALL;
 	}
 
-	browser_window_search(bw, search->gw, flags, gtk_entry_get_text(search->entry));
+	browser_window_search(search->bw, search, flags,
+			      gtk_entry_get_text(search->entry));
 
 	return TRUE;
 }
@@ -178,15 +176,9 @@ static gboolean nsgtk_search_entry_changed(GtkWidget *widget, gpointer data)
 static gboolean nsgtk_search_entry_activate(GtkWidget *widget, gpointer data)
 {
 	struct gtk_search *search;
-	struct browser_window *bw;
 	search_flags_t flags;
 
 	search = (struct gtk_search *)data;
-
-	nsgtk_search_set_forward_state(true, search->gw);
-	nsgtk_search_set_back_state(true, search->gw);
-
-	bw = nsgtk_get_browser_window(search->gw);
 
 	flags = SEARCH_FLAG_FORWARDS;
 
@@ -198,7 +190,8 @@ static gboolean nsgtk_search_entry_activate(GtkWidget *widget, gpointer data)
 		flags |= SEARCH_FLAG_SHOWALL;
 	}
 
-	browser_window_search(bw, search->gw, flags, gtk_entry_get_text(search->entry));
+	browser_window_search(search->bw, search, flags,
+			      gtk_entry_get_text(search->entry));
 
 	return FALSE;
 }
@@ -232,7 +225,7 @@ nserror nsgtk_search_toggle_visibility(struct gtk_search *search)
 {
 	gboolean vis;
 
-	browser_window_search_clear(nsgtk_get_browser_window(search->gw));
+	browser_window_search_clear(search->bw);
 
 	g_object_get(G_OBJECT(search->bar), "visible", &vis, NULL);
 	if (vis) {
@@ -286,8 +279,8 @@ nserror nsgtk_search_restyle(struct gtk_search *search)
 /* exported interface documented in gtk/search.h */
 nserror
 nsgtk_search_create(GtkBuilder *builder,
-		    struct gtk_search **search_out,
-		    struct gui_window *gw)
+		    struct browser_window *bw,
+		    struct gtk_search **search_out)
 {
 	struct gtk_search *search;
 
@@ -296,7 +289,7 @@ nsgtk_search_create(GtkBuilder *builder,
 		return NSERROR_NOMEM;
 	}
 
-	search->gw = gw;
+	search->bw = bw;
 
 	search->bar = GTK_TOOLBAR(gtk_builder_get_object(builder, "findbar"));
 	search->entry = GTK_ENTRY(gtk_builder_get_object(builder, "Find"));

@@ -18,7 +18,7 @@
 
 /**
  * \file
- * free text page search for gtk interfaces
+ * free text page search for gtk interface
  */
 
 #ifndef NETSURF_GTK_SEARCH_H_
@@ -26,28 +26,17 @@
 
 extern struct gui_search_table *nsgtk_search_table;
 
-struct nsgtk_scaffolding;
-
-struct gtk_search {
-	GtkToolbar *bar;
-	GtkEntry *entry;
-	GtkToolButton *back;
-	GtkToolButton *forward;
-	GtkToolButton *close;
-	GtkCheckButton *checkAll;
-	GtkCheckButton *caseSens;
-
-	struct gui_window *gw;
-};
+struct gtk_search;
 
 /**
  * create text search context
  *
  * \param builder the gtk builder containing the search toolbar
- * \param search_out search context result
+ * \param bw The browsing context to run the find operations against
+ * \param search search context result
  * \return NSERROR_OK and search_out updated
  */
-nserror nsgtk_search_create(GtkBuilder *builder, struct gtk_search **search_out, struct gui_window *gw);
+nserror nsgtk_search_create(GtkBuilder *builder, struct browser_window *bw, struct gtk_search **search);
 
 /**
  * update search toolbar size and style

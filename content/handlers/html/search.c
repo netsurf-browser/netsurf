@@ -75,8 +75,8 @@ struct search_context {
 
 
 /* Exported function documented in search.h */
-struct search_context * search_create_context(struct content *c,
-		content_type type, void *gui_data)
+struct search_context *
+search_create_context(struct content *c, content_type type, void *gui_data)
 {
 	struct search_context *context;
 	struct list_entry *search_head;

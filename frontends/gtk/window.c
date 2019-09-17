@@ -792,7 +792,7 @@ gui_window_create(struct browser_window *bw,
 	}
 
 	/* local page text search toolbar */
-	res = nsgtk_search_create(tab_builder, &g->search, g);
+	res = nsgtk_search_create(tab_builder, g->bw, &g->search);
 	if (res != NSERROR_OK) {
 		free(g);
 		g_object_unref(tab_builder);
