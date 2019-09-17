@@ -102,11 +102,6 @@ GtkLayout *nsgtk_window_get_layout(struct gui_window *gw);
 
 
 /**
- * get search from window handle
- */
-struct gtk_search *nsgtk_window_get_search(struct gui_window *gw);
-
-/**
  * activate the handler for a item in a toolbar of a gui window
  *
  * \param gw The gui window handle

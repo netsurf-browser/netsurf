@@ -1480,13 +1480,6 @@ struct nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g)
 
 
 /* exported interface documented in window.h */
-struct gtk_search *nsgtk_window_get_search(struct gui_window *gw)
-{
-	return gw->search;
-}
-
-
-/* exported interface documented in window.h */
 struct browser_window *nsgtk_get_browser_window(struct gui_window *g)
 {
 	return g->bw;

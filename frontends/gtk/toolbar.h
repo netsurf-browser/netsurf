@@ -36,15 +36,6 @@ nserror nsgtk_toolbar_create(GtkBuilder *builder, struct browser_window *(*get_b
 
 
 /**
- * Destroy toolbar previously created
- *
- * \param toolbar A toolbar returned from a creation
- * \return NSERROR_OK on success
- */
-nserror nsgtk_toolbar_destroy(struct nsgtk_toolbar *toolbar);
-
-
-/**
  * Update the toolbar items being shown based on current settings
  *
  * \param toolbar A toolbar returned from a creation

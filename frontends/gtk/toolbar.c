@@ -1353,19 +1353,14 @@ customisation_reset_clicked_cb(GtkWidget *widget, gpointer data)
 
 
 /**
- * customisation container delete handler
+ * customisation container destroy handler
  */
-static gboolean
-customisation_container_delete_cb(GtkWidget *widget,
-				  GdkEvent *event,
-				  gpointer data)
+static void customisation_container_destroy_cb(GtkWidget *widget, gpointer data)
 {
 	struct nsgtk_toolbar_customisation *tbc;
 	tbc = (struct nsgtk_toolbar_customisation *)data;
 
 	free(tbc);
-
-	return FALSE;
 }
 
 /*
@@ -1487,8 +1482,8 @@ static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
 
 	/* close and cleanup on delete signal */
 	g_signal_connect(tbc->container,
-			 "delete-event",
-			 G_CALLBACK(customisation_container_delete_cb),
+			 "destroy",
+			 G_CALLBACK(customisation_container_destroy_cb),
 			 tbc);
 
 
@@ -3175,6 +3170,22 @@ toolbar_popup_context_menu_cb(GtkToolbar *toolbar,
 	return TRUE;
 }
 
+
+/**
+ * toolbar delete signal handler
+ */
+static void toolbar_destroy_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb;
+	tb = (struct nsgtk_toolbar *)data;
+
+	/* ensure any throbber scheduled is stopped */
+	nsgtk_schedule(-1, next_throbber_frame, tb);
+
+	free(tb);
+}
+
+
 /* exported interface documented in toolbar.h */
 nserror
 nsgtk_toolbar_create(GtkBuilder *builder,
@@ -3204,18 +3215,22 @@ nsgtk_toolbar_create(GtkBuilder *builder,
 			 G_CALLBACK(toolbar_popup_context_menu_cb),
 			 tb);
 
+	/* close and cleanup on delete signal */
+	g_signal_connect(tb->widget,
+			 "destroy",
+			 G_CALLBACK(toolbar_destroy_cb),
+			 tb);
+
 	/* allocate button contexts */
 	for (bidx = BACK_BUTTON; bidx < PLACEHOLDER_BUTTON; bidx++) {
 		res = toolbar_item_create(bidx, &tb->items[bidx]);
 		if (res != NSERROR_OK) {
-			free(tb);
 			return res;
 		}
 	}
 
 	res = nsgtk_toolbar_update(tb);
 	if (res != NSERROR_OK) {
-		free(tb);
 		return res;
 	}
 
@@ -3223,14 +3238,6 @@ nsgtk_toolbar_create(GtkBuilder *builder,
 	return NSERROR_OK;
 }
 
-
-/* exported interface documented in toolbar.h */
-nserror nsgtk_toolbar_destroy(struct nsgtk_toolbar *tb)
-{
-	/** \todo free buttons and destroy toolbar container (and widgets) */
-	free(tb);
-	return NSERROR_OK;
-}
 
 /* exported interface documented in toolbar.h */
 nserror nsgtk_toolbar_restyle(struct nsgtk_toolbar *tb)
@@ -3283,8 +3290,6 @@ nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active)
 	nserror res;
 	struct browser_window *bw;
 
-	bw = tb->get_bw(tb->get_ctx);
-
 	/* when activating the throbber simply schedule the next frame update */
 	if (active) {
 		nsgtk_schedule(THROBBER_FRAME_TIME, next_throbber_frame, tb);
@@ -3300,6 +3305,8 @@ nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active)
 	tb->throb_frame = 0;
 	res =  set_throbber_frame(tb->items[THROBBER_ITEM].button,
 				  tb->throb_frame);
+
+	bw = tb->get_bw(tb->get_ctx);
 
 	/* adjust sensitivity of other items */
 	set_item_sensitivity(&tb->items[STOP_BUTTON], false);
