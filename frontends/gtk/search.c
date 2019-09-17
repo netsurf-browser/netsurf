@@ -307,7 +307,7 @@ nsgtk_search_create(GtkBuilder *builder,
 	search->close = GTK_TOOL_BUTTON(gtk_builder_get_object(builder,
 							"FindClose"));
 	search->checkAll = GTK_CHECK_BUTTON(gtk_builder_get_object(builder,
-							"FindHightlightAll"));
+							"FindHighlightAll"));
 	search->caseSens = GTK_CHECK_BUTTON(gtk_builder_get_object(builder,
 							"FindMatchCase"));
 
