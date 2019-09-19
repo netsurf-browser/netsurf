@@ -22,12 +22,6 @@
 extern struct gui_window_table *nsgtk_window_table;
 extern struct gui_search_web_table *nsgtk_search_web_table;
 
-typedef enum nsgtk_window_signals {
-	NSGTK_WINDOW_SIGNAL_CLICK,
-	NSGTK_WINDOW_SIGNAL_REDRAW,
-	NSGTK_WINDOW_SIGNAL_COUNT
-} nsgtk_window_signal;
-
 extern struct gui_window *window_list;
 extern int temp_open_background;
 
@@ -77,13 +71,6 @@ int nsgtk_gui_window_update_targets(struct gui_window *gw);
  * \param gw gui window handle
  */
 void nsgtk_window_destroy_browser(struct gui_window *gw);
-
-/**
- * set signal handler
- *
- * \param gw gui window handle
- */
-unsigned long nsgtk_window_get_signalhandler(struct gui_window *gw, int i);
 
 
 /**

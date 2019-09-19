@@ -121,9 +121,6 @@ struct gui_window {
 	/** has the status pane had its first size operation yet? */
 	bool paned_sized;
 
-	/** to allow disactivation / resume of normal window behaviour */
-	gulong signalhandler[NSGTK_WINDOW_SIGNAL_COUNT];
-
 	/** The icon this window should have */
 	GdkPixbuf *icon;
 
@@ -831,8 +828,7 @@ gui_window_create(struct browser_window *bw,
 					       GTK_STATE_NORMAL,
 					       0, 0xffff, 0xffff, 0xffff);
 
-	g->signalhandler[NSGTK_WINDOW_SIGNAL_REDRAW] =
-		nsgtk_connect_draw_event(GTK_WIDGET(g->layout),
+	nsgtk_connect_draw_event(GTK_WIDGET(g->layout),
 				G_CALLBACK(nsgtk_window_draw_event), g);
 
 	/* helper macro to conect signals to callbacks */
@@ -842,8 +838,7 @@ gui_window_create(struct browser_window *bw,
 	/* layout signals */
 	CONNECT(g->layout, "motion-notify-event",
 			nsgtk_window_motion_notify_event, g);
-	g->signalhandler[NSGTK_WINDOW_SIGNAL_CLICK] =
-			CONNECT(g->layout, "button-press-event",
+	CONNECT(g->layout, "button-press-event",
 			nsgtk_window_button_press_event, g);
 	CONNECT(g->layout, "button-release-event",
 			nsgtk_window_button_release_event, g);
