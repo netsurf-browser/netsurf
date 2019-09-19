@@ -1482,13 +1482,6 @@ struct browser_window *nsgtk_get_browser_window(struct gui_window *g)
 
 
 /* exported interface documented in window.h */
-unsigned long nsgtk_window_get_signalhandler(struct gui_window *g, int i)
-{
-	return g->signalhandler[i];
-}
-
-
-/* exported interface documented in window.h */
 GtkLayout *nsgtk_window_get_layout(struct gui_window *g)
 {
 	return g->layout;
