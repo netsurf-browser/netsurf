@@ -287,6 +287,7 @@ nsgtk_tab_add_newtab(GtkNotebook *notebook)
 	tabcontents = nsgtk_hbox_new(FALSE, 1);
 
 	add = gtk_image_new_from_icon_name(NSGTK_STOCK_ADD, GTK_ICON_SIZE_MENU);
+	gtk_widget_set_tooltip_text(add, "New Tab");
 
 	gtk_box_pack_start(GTK_BOX(tablabel), add, FALSE, FALSE, 0);
 
@@ -424,10 +425,6 @@ void nsgtk_tab_add(struct gui_window *gw,
 
 	nsgtk_tab_add_page(notebook, tab_contents, background, title, icon_pixbuf);
 
-#if 0
-	gtk_widget_grab_focus(GTK_WIDGET(nsgtk_scaffolding_urlbar(
-			nsgtk_get_scaffold(gw))));
-#endif
 }
 
 
