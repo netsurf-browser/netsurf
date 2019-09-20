@@ -106,17 +106,41 @@
  * toolbar item context
  */
 struct nsgtk_toolbar_item {
+
+	/**
+	 * GTK widget in the toolbar
+	 */
 	GtkToolItem *button;
-	int location; /* in toolbar */
+
+	/**
+	 * location index in toolbar
+	 */
+	int location;
+
+	/**
+	 * if the item is currently sensitive in the toolbar
+	 */
 	bool sensitivity;
 
 	/**
-	 * button clicked handler
+	 * textural name used in serialising items
 	 */
-	gboolean (*bhandler)(GtkWidget *widget, gpointer data);
+	const char *name;
 
-	void *dataplus; /* customisation -> toolbar */
-	void *dataminus; /* customisation -> store */
+	/**
+	 * button clicked on toolbar handler
+	 */
+	gboolean (*clicked)(GtkWidget *widget, gpointer data);
+
+	/**
+	 * handler when dragging from customisation toolbox to toolbar
+	 */
+	void *dataplus;
+
+	/**
+	 * handler when dragging from toolbar to customisation toolbox
+	 */
+	void *dataminus;
 };
 
 
@@ -500,56 +524,6 @@ static GtkTargetEntry target_entry = {
 
 
 /**
- * save toolbar settings to file
- */
-static nserror
-nsgtk_toolbar_customisation_save(struct nsgtk_toolbar_customisation *tbc)
-{
-	char *choices = NULL;
-	char *order;
-	int order_len;
-	int tbidx;
-	char *cur;
-	int plen;
-
-	order_len = PLACEHOLDER_BUTTON * 12; /* length of order buffer */
-	order = malloc(order_len);
-
-	if (order == NULL) {
-		return NSERROR_NOMEM;
-	}
-	cur = order;
-
-	for (tbidx = BACK_BUTTON; tbidx < PLACEHOLDER_BUTTON; tbidx++) {
-		plen = snprintf(cur,
-				order_len,
-				"%d;%d|",
-				tbidx,
-				tbc->toolbar.items[tbidx].location);
-		if (plen == order_len) {
-			/* ran out of space, bail early */
-			NSLOG(netsurf, INFO,
-			      "toolbar ordering exceeded available space");
-			break;
-		}
-		cur += plen;
-		order_len -= plen;
-	}
-
-	nsoption_set_charp(toolbar_order, order);
-
-	/* ensure choices are saved */
-	netsurf_mkpath(&choices, NULL, 2, nsgtk_config_home, "Choices");
-	if (choices != NULL) {
-		nsoption_write(choices, NULL, NULL);
-		free(choices);
-	}
-
-	return NSERROR_OK;
-}
-
-
-/**
  * find the toolbar item with a given location.
  *
  * \param tb the toolbar instance
@@ -566,6 +540,72 @@ itemid_from_location(struct nsgtk_toolbar *tb, int location)
 		}
 	}
 	return iidx;
+}
+
+
+/**
+ * save toolbar settings to file
+ */
+static nserror
+nsgtk_toolbar_customisation_save(struct nsgtk_toolbar *tb)
+{
+	int iidx; /* item index */
+	char *order; /* item ordering */
+	char *start; /* start of next item name to be output */
+	int orderlen = 0; /* length of item ordering */
+	nsgtk_toolbar_button itemid;
+	int location;
+	char *choices = NULL;
+
+	for (iidx = BACK_BUTTON; iidx < PLACEHOLDER_BUTTON; iidx++) {
+		if (tb->items[iidx].location != INACTIVE_LOCATION) {
+			orderlen += strlen(tb->items[iidx].name);
+			orderlen++; /* allow for separator */
+		}
+	}
+
+	/* ensure there are some items to store */
+	if (orderlen == 0) {
+		return NSERROR_INVALID;
+	}
+
+	order = malloc(orderlen);
+	if (order == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	start = order;
+
+	for (location = BACK_BUTTON;
+	     location < PLACEHOLDER_BUTTON;
+	     location++) {
+		itemid = itemid_from_location(tb, location);
+		if (itemid == PLACEHOLDER_BUTTON) {
+			/* no more filled locations */
+			break;
+		}
+		start += snprintf(start,
+				orderlen - (start - order),
+				"%s/",
+				tb->items[itemid].name);
+
+		if ((start - order) >= orderlen) {
+			break;
+		}
+	}
+
+	order[orderlen - 1] = 0;
+
+	nsoption_set_charp(toolbar_items, order);
+
+	/* ensure choices are saved */
+	netsurf_mkpath(&choices, NULL, 2, nsgtk_config_home, "Choices");
+	if (choices != NULL) {
+		nsoption_write(choices, NULL, NULL);
+		free(choices);
+	}
+
+	return NSERROR_OK;
 }
 
 
@@ -861,56 +901,54 @@ nsgtk_browser_window_create(struct browser_window *bw, bool intab)
 static nserror
 apply_user_button_customisation(struct nsgtk_toolbar *tb)
 {
-	int i, ii;
-	char *buffer;
-	char *buffer1, *subbuffer, *ptr = NULL, *pter = NULL;
+	const char *tbitems; /* item order user config */
+	const char *start;
+	const char *end;
+	int iidx; /* item index */
+	int location = 0; /* location index */
 
 	/* set all button locations to inactive */
-	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
-		tb->items[i].location = INACTIVE_LOCATION;
+	for (iidx = BACK_BUTTON; iidx < PLACEHOLDER_BUTTON; iidx++) {
+		tb->items[iidx].location = INACTIVE_LOCATION;
 	}
 
-	/* if no user config is present apply the defaults */
-	if (nsoption_charp(toolbar_order) == NULL) {
-		tb->items[BACK_BUTTON].location = 0;
-		tb->items[HISTORY_BUTTON].location = 1;
-		tb->items[FORWARD_BUTTON].location = 2;
-		tb->items[STOP_BUTTON].location = 3;
-		tb->items[RELOAD_BUTTON].location = 4;
-		tb->items[URL_BAR_ITEM].location = 5;
-		tb->items[WEBSEARCH_ITEM].location = 6;
-		tb->items[THROBBER_ITEM].location = 7;
-
-		return NSERROR_OK;
+	tbitems = nsoption_charp(toolbar_items);
+	if (tbitems == NULL) {
+		tbitems = "";
 	}
 
-	buffer = strdup(nsoption_charp(toolbar_order));
-	if (buffer == NULL) {
-		return NSERROR_NOMEM;
-	}
+	end = tbitems;
+	while (*end != 0) {
+		start = end;
+		while ((*end != 0) && (*end !='/')) {
+			end++;
+		}
 
-	i = BACK_BUTTON;
-	ii = BACK_BUTTON;
-	buffer1 = strtok_r(buffer, "|", &ptr);
-	while (buffer1 != NULL) {
-		subbuffer = strtok_r(buffer1, ";", &pter);
-		if (subbuffer != NULL) {
-			i = atoi(subbuffer);
-			subbuffer = strtok_r(NULL, ";", &pter);
-			if (subbuffer != NULL) {
-				ii = atoi(subbuffer);
-				if ((i >= BACK_BUTTON) &&
-				    (i < PLACEHOLDER_BUTTON) &&
-				    (ii >= -1) &&
-				    (ii < PLACEHOLDER_BUTTON)) {
-					tb->items[i].location = ii;
-				}
+		for (iidx = BACK_BUTTON; iidx < PLACEHOLDER_BUTTON; iidx++) {
+			if (strncmp(tb->items[iidx].name, start, end - start) == 0) {
+				tb->items[iidx].location = location++;
+				break;
 			}
 		}
-		buffer1 = strtok_r(NULL, "|", &ptr);
+
+		if (*end == '/') {
+			end++;
+		}
 	}
 
-	free(buffer);
+	if (location == 0) {
+		/* completely failed to create any buttons so use defaults */
+		tb->items[BACK_BUTTON].location = location++;
+		tb->items[HISTORY_BUTTON].location = location++;
+		tb->items[FORWARD_BUTTON].location = location++;
+		tb->items[RELOADSTOP_BUTTON].location = location++;
+		tb->items[URL_BAR_ITEM].location = location++;
+		tb->items[WEBSEARCH_ITEM].location = location++;
+		tb->items[OPENMENU_BUTTON].location = location++;
+		tb->items[THROBBER_ITEM].location = location++;
+	}
+
+
 	return NSERROR_OK;
 }
 
@@ -1378,7 +1416,7 @@ customisation_apply_clicked_cb(GtkWidget *widget, gpointer data)
 	tbc = (struct nsgtk_toolbar_customisation *)data;
 
 	/* save state to file, update toolbars for all windows */
-	nsgtk_toolbar_customisation_save(tbc);
+	nsgtk_toolbar_customisation_save(&tbc->toolbar);
 	nsgtk_window_toolbar_update();
 	gtk_widget_destroy(tbc->container);
 
@@ -3047,17 +3085,18 @@ toolbar_item_create(nsgtk_toolbar_button id, struct nsgtk_toolbar_item *item)
 	/* set item defaults from macro */
 	switch (id) {
 #define TOOLBAR_ITEM_b(name)						\
-		item->bhandler = name##_button_clicked_cb;
+		item->clicked = name##_button_clicked_cb;
 #define TOOLBAR_ITEM_y(name)						\
-		item->bhandler = name##_button_clicked_cb;
+		item->clicked = name##_button_clicked_cb;
 #define TOOLBAR_ITEM_n(name)						\
-		item->bhandler = NULL;
-#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate, label, iconame) \
+		item->clicked = NULL;
+#define TOOLBAR_ITEM(identifier, iname, snstvty, clicked, activate, label, iconame) \
 	case identifier:						\
+		item->name = #iname;					\
 		item->sensitivity = snstvty;				\
-		item->dataplus = nsgtk_toolbar_##name##_data_plus;	\
-		item->dataminus = nsgtk_toolbar_##name##_data_minus;	\
-		TOOLBAR_ITEM_ ## clicked(name)				\
+		item->dataplus = nsgtk_toolbar_##iname##_data_plus;	\
+		item->dataminus = nsgtk_toolbar_##iname##_data_minus;	\
+		TOOLBAR_ITEM_ ## clicked(iname)				\
 		break;
 #include "gtk/toolbar_items.h"
 #undef TOOLBAR_ITEM_y
@@ -3185,10 +3224,10 @@ toolbar_connect_signal(struct nsgtk_toolbar *tb, nsgtk_toolbar_button itemid)
 		break;
 
 	default:
-		if ((item->bhandler != NULL) && (item->button != NULL)) {
+		if ((item->clicked != NULL) && (item->button != NULL)) {
 			g_signal_connect(item->button,
 					 "clicked",
-					 G_CALLBACK(item->bhandler),
+					 G_CALLBACK(item->clicked),
 					 tb);
 		}
 		break;
@@ -3475,7 +3514,7 @@ nsgtk_toolbar_item_activate(struct nsgtk_toolbar *tb,
 		return NSERROR_BAD_PARAMETER;
 	}
 
-	if (tb->items[itemid].bhandler == NULL) {
+	if (tb->items[itemid].clicked == NULL) {
 		return NSERROR_INVALID;
 	}
 
@@ -3489,7 +3528,7 @@ nsgtk_toolbar_item_activate(struct nsgtk_toolbar *tb,
 		widget = GTK_WIDGET(tb->widget);
 	}
 
-	tb->items[itemid].bhandler(widget, tb);
+	tb->items[itemid].clicked(widget, tb);
 
 	return NSERROR_OK;
 }

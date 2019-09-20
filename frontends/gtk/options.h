@@ -16,8 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NETSURF_GTK_OPTIONS_H_
-#define _NETSURF_GTK_OPTIONS_H_
+#ifndef NETSURF_GTK_OPTIONS_H_
+#define NETSURF_GTK_OPTIONS_H_
 
 /* currently nothing here */
 
@@ -72,4 +72,7 @@ NSOPTION_INTEGER(developer_view, 0)
 NSOPTION_INTEGER(position_tab, 0)
 
 /* Toolbar customisation */
-NSOPTION_STRING(toolbar_order, NULL)
+NSOPTION_STRING(toolbar_items, NULL)
+
+/* The menu and tool bars that are shown */
+NSOPTION_STRING(toolbar_show, NULL)
