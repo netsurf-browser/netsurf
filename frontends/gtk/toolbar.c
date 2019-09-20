@@ -138,13 +138,14 @@ struct nsgtk_toolbar {
 	 */
 	struct nsgtk_toolbar_item items[PLACEHOLDER_BUTTON];
 
-	/** entry widget holding the url of the current displayed page */
-	GtkWidget *url_bar;
-
-	/** Current frame of throbber animation */
+	/**
+	 * Current frame of throbber animation
+	 */
 	int throb_frame;
 
-	/** Web search widget */
+	/**
+	 * Web search widget
+	 */
 	GtkWidget *webSearchEntry;
 
 	/**
@@ -1021,6 +1022,56 @@ set_item_sensitivity(struct nsgtk_toolbar_item *item, bool sensitivity)
 
 
 /**
+ * set an item to its alternative action
+ *
+ * this is currently only used for the stop/reload button where we
+ *   also reuse the item sensitivity for the state indicator.
+ *
+ * \param tb the toolbar instance
+ */
+static nserror set_item_action(struct nsgtk_toolbar *tb, int itemid, bool alt)
+{
+	const char *iconname;
+	char *label = NULL;
+
+	if (itemid != RELOADSTOP_BUTTON) {
+		return NSERROR_INVALID;
+	}
+	if (tb->items[itemid].location == -1) {
+		return NSERROR_OK;
+	}
+	tb->items[itemid].sensitivity = alt;
+
+	if (tb->items[itemid].button == NULL) {
+		return NSERROR_INVALID;
+	}
+
+	if (tb->items[itemid].sensitivity) {
+		iconname = NSGTK_STOCK_REFRESH;
+		label = remove_underscores(messages_get("Reload"), false);
+
+	} else {
+		iconname = NSGTK_STOCK_STOP;
+		label = remove_underscores(messages_get("gtkStop"), false);
+
+	}
+	gtk_tool_button_set_label(GTK_TOOL_BUTTON(tb->items[itemid].button),
+				  label);
+
+	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(tb->items[itemid].button),
+				      iconname);
+
+	gtk_widget_set_sensitive(GTK_WIDGET(tb->items[itemid].button), TRUE);
+
+	if (label != NULL) {
+		free(label);
+	}
+
+	return NSERROR_OK;
+}
+
+
+/**
  * cause the toolbar browsing context to navigate to a new url.
  *
  * \param tb the toolbar context.
@@ -1671,6 +1722,34 @@ reload_button_clicked_cb(GtkWidget *widget, gpointer data)
 	browser_window_search_clear(bw);
 
 	browser_window_reload(bw, true);
+
+	return TRUE;
+}
+
+
+/**
+ * handler for reload/stop tool bar item clicked signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE
+ */
+static gboolean
+reloadstop_button_clicked_cb(GtkWidget *widget, gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+
+	bw = tb->get_bw(tb->get_ctx);
+
+	/* clear potential search effects */
+	browser_window_search_clear(bw);
+
+	if (tb->items[RELOADSTOP_BUTTON].sensitivity) {
+		browser_window_reload(bw, true);
+	} else {
+		browser_window_stop(tb->get_bw(tb->get_ctx));
+	}
 
 	return TRUE;
 }
@@ -3296,6 +3375,7 @@ nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active)
 
 		set_item_sensitivity(&tb->items[STOP_BUTTON], true);
 		set_item_sensitivity(&tb->items[RELOAD_BUTTON], false);
+		set_item_action(tb, RELOADSTOP_BUTTON, false);
 
 		return NSERROR_OK;
 	}
@@ -3311,6 +3391,7 @@ nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active)
 	/* adjust sensitivity of other items */
 	set_item_sensitivity(&tb->items[STOP_BUTTON], false);
 	set_item_sensitivity(&tb->items[RELOAD_BUTTON], true);
+	set_item_action(tb, RELOADSTOP_BUTTON, true);
 	set_item_sensitivity(&tb->items[BACK_BUTTON],
 			     browser_window_history_back_available(bw));
 	set_item_sensitivity(&tb->items[FORWARD_BUTTON],

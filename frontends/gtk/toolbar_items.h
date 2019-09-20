@@ -73,6 +73,7 @@ typedef enum {
 	ABOUT_BUTTON,
 	OPENMENU_BUTTON,
 	CUSTOMIZE_BUTTON,
+	RELOADSTOP_BUTTON,
 	PLACEHOLDER_BUTTON /* size indicator; array maximum indices */
 } nsgtk_toolbar_button;    /* PLACEHOLDER_BUTTON - 1 */
 
@@ -149,6 +150,7 @@ TOOLBAR_ITEM(INFO_BUTTON, info, true, y, p, gtkUserInformation, "dialog-informat
 TOOLBAR_ITEM(ABOUT_BUTTON, about, true, b, p, gtkAbout, "help-about")
 TOOLBAR_ITEM(OPENMENU_BUTTON, openmenu, true, b, n, gtkOpenMenu, NSGTK_STOCK_OPEN_MENU)
 TOOLBAR_ITEM(CUSTOMIZE_BUTTON, cutomize, true, y, p, , NULL)
+TOOLBAR_ITEM(RELOADSTOP_BUTTON, reloadstop, true, b, n, Reload, NSGTK_STOCK_REFRESH)
 
 #ifdef TOOLBAR_ITEM_SET
 #undef TOOLBAR_ITEM
