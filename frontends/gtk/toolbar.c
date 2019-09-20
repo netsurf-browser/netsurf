@@ -221,8 +221,6 @@ struct nsgtk_toolbar_customisation {
 };
 
 
-static bool edit_mode = false;
-
 /* forward declaration */
 static nserror toolbar_item_create(nsgtk_toolbar_button id,
 				   struct nsgtk_toolbar_item *item_out);
@@ -262,7 +260,7 @@ static char *remove_underscores(const char *s, bool replacespace)
  * create a gtk entry widget with a completion attached
  */
 static GtkToolItem *
-make_toolbar_item_throbber(bool sensitivity)
+make_toolbar_item_throbber(bool sensitivity, bool edit)
 {
 	nserror res;
 	GtkToolItem *item;
@@ -274,7 +272,7 @@ make_toolbar_item_throbber(bool sensitivity)
 		return NULL;
 	}
 
-	if (edit_mode) {
+	if (edit) {
 		const char *msg;
 		msg = messages_get("ToolThrob");
 		item = gtk_tool_button_new(
@@ -305,7 +303,7 @@ make_toolbar_item_throbber(bool sensitivity)
  * create a gtk entry widget with a completion attached
  */
 static GtkToolItem *
-make_toolbar_item_url_bar(bool sensitivity)
+make_toolbar_item_url_bar(bool sensitivity, bool edit)
 {
 	GtkToolItem *item;
 	GtkWidget *entry;
@@ -317,7 +315,7 @@ make_toolbar_item_url_bar(bool sensitivity)
 		return NULL;
 	}
 
-	if (edit_mode) {
+	if (edit) {
 		gtk_entry_set_width_chars(GTK_ENTRY(entry), 9);
 
 		item = gtk_tool_button_new(NULL, "URL");
@@ -348,7 +346,7 @@ make_toolbar_item_url_bar(bool sensitivity)
  * create web search toolbar item widget
  */
 static GtkToolItem *
-make_toolbar_item_websearch(bool sensitivity)
+make_toolbar_item_websearch(bool sensitivity, bool edit)
 {
 	GtkToolItem *item;
 	nserror res;
@@ -378,7 +376,7 @@ make_toolbar_item_websearch(bool sensitivity)
 						    NSGTK_STOCK_INFO);
 	}
 
-	if (edit_mode) {
+	if (edit) {
 		gtk_entry_set_width_chars(GTK_ENTRY(entry), 9);
 
 		item = gtk_tool_button_new(NULL, "Web Search");
@@ -405,13 +403,13 @@ make_toolbar_item_websearch(bool sensitivity)
  * create local history toolbar item widget
  */
 static GtkToolItem *
-make_toolbar_item_history(bool sensitivity)
+make_toolbar_item_history(bool sensitivity, bool edit)
 {
 	GtkToolItem *item;
 	const char *msg = "H";
 	char *label = NULL;
 
-	if (edit_mode) {
+	if (edit) {
 		msg = messages_get("gtkLocalHistory");
 	}
 	label = remove_underscores(msg, false);
@@ -435,7 +433,8 @@ make_toolbar_item_history(bool sensitivity)
 static GtkToolItem *
 make_toolbar_item_button(const char *labelmsg,
 			 const char *iconname,
-			 bool sensitivity)
+			 bool sensitivity,
+			 bool edit)
 {
 	GtkToolItem *item;
 	char *label = NULL;
@@ -451,7 +450,7 @@ make_toolbar_item_button(const char *labelmsg,
 		gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(item), iconname);
 
 		gtk_widget_set_sensitive(GTK_WIDGET(item), sensitivity);
-		if (edit_mode) {
+		if (edit) {
 			nsgtk_widget_set_margins(GTK_WIDGET(item), 0, 0);
 		}
 	}
@@ -468,42 +467,46 @@ make_toolbar_item_button(const char *labelmsg,
  * \return gtk widget
  */
 static GtkToolItem *
-make_toolbar_item(nsgtk_toolbar_button itemid,
-		  bool sensitivity)
+make_toolbar_item(nsgtk_toolbar_button itemid, bool sensitivity)
 {
 	GtkToolItem *toolitem = NULL;
 
 	switch(itemid) {
 #define TOOLBAR_ITEM_y(identifier, label, iconame)
 #define TOOLBAR_ITEM_n(identifier, label, iconame)
+#define TOOLBAR_ITEM_t(identifier, label, iconame)		\
+	case identifier:					\
+		toolitem = make_toolbar_item_button(#label, iconame, sensitivity, false); \
+		break;
 #define TOOLBAR_ITEM_b(identifier, label, iconame)		\
 	case identifier:					\
-		toolitem = make_toolbar_item_button(#label, iconame, sensitivity);\
+		toolitem = make_toolbar_item_button(#label, iconame, sensitivity, false); \
 		break;
 #define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate, label, iconame) \
 		TOOLBAR_ITEM_ ## clicked(identifier, label, iconame)
 
 #include "gtk/toolbar_items.h"
 
+#undef TOOLBAR_ITEM_t
 #undef TOOLBAR_ITEM_b
 #undef TOOLBAR_ITEM_n
 #undef TOOLBAR_ITEM_y
 #undef TOOLBAR_ITEM
 
 	case HISTORY_BUTTON:
-		toolitem = make_toolbar_item_history(sensitivity);
+		toolitem = make_toolbar_item_history(sensitivity, false);
 		break;
 
 	case URL_BAR_ITEM:
-		toolitem = make_toolbar_item_url_bar(sensitivity);
+		toolitem = make_toolbar_item_url_bar(sensitivity, false);
 		break;
 
 	case THROBBER_ITEM:
-		toolitem = make_toolbar_item_throbber(sensitivity);
+		toolitem = make_toolbar_item_throbber(sensitivity, false);
 		break;
 
 	case WEBSEARCH_ITEM:
-		toolitem = make_toolbar_item_websearch(sensitivity);
+		toolitem = make_toolbar_item_websearch(sensitivity, false);
 		break;
 
 	default:
@@ -512,6 +515,61 @@ make_toolbar_item(nsgtk_toolbar_button itemid,
 	}
 	return toolitem;
 }
+
+
+/**
+ * widget factory for creation of toolbar item widgets for the toolbox
+ *
+ * \param itemid the id of the widget
+ * \return gtk tool item widget
+ */
+static GtkToolItem *
+make_toolbox_item(nsgtk_toolbar_button itemid)
+{
+	GtkToolItem *toolitem = NULL;
+
+	switch(itemid) {
+#define TOOLBAR_ITEM_y(identifier, label, iconame)
+#define TOOLBAR_ITEM_n(identifier, label, iconame)
+#define TOOLBAR_ITEM_t(identifier, label, iconame)
+#define TOOLBAR_ITEM_b(identifier, label, iconame)		\
+	case identifier:					\
+		toolitem = make_toolbar_item_button(#label, iconame, true, true); \
+		break;
+#define TOOLBAR_ITEM(identifier, name, snstvty, clicked, activate, label, iconame) \
+		TOOLBAR_ITEM_ ## clicked(identifier, label, iconame)
+
+#include "gtk/toolbar_items.h"
+
+#undef TOOLBAR_ITEM_t
+#undef TOOLBAR_ITEM_b
+#undef TOOLBAR_ITEM_n
+#undef TOOLBAR_ITEM_y
+#undef TOOLBAR_ITEM
+
+	case HISTORY_BUTTON:
+		toolitem = make_toolbar_item_history(true, true);
+		break;
+
+	case URL_BAR_ITEM:
+		toolitem = make_toolbar_item_url_bar(false, true);
+		break;
+
+	case THROBBER_ITEM:
+		toolitem = make_toolbar_item_throbber(true, true);
+		break;
+
+	case WEBSEARCH_ITEM:
+		toolitem = make_toolbar_item_websearch(false, true);
+		break;
+
+	default:
+		break;
+
+	}
+	return toolitem;
+}
+
 
 /**
  * target entry for drag source
@@ -753,10 +811,7 @@ customisation_toolbar_drag_drop_cb(GtkWidget *widget,
 	}
 
 
-	edit_mode = true;
-	dragitem->button = make_toolbar_item(tbc->dragitem,
-				tbc->toolbar.items[tbc->dragitem].sensitivity);
-	edit_mode = false;
+	dragitem->button = make_toolbox_item(tbc->dragitem);
 
 	if (dragitem->button == NULL) {
 		nsgtk_warning("NoMemory", 0);
@@ -887,8 +942,6 @@ nsgtk_browser_window_create(struct browser_window *bw, bool intab)
 }
 
 
-
-
 /**
  * Apply the user toolbar button settings from configuration
  *
@@ -954,36 +1007,6 @@ apply_user_button_customisation(struct nsgtk_toolbar *tb)
 
 
 /**
- * append item to gtk toolbar container
- *
- * \param tb toolbar
- * \param theme in use
- * \param location item location being appended
- * \return NSERROR_OK on success else error code.
- */
-static nserror
-add_item_to_toolbar(struct nsgtk_toolbar *tb, int location)
-{
-	int bidx; /* button index */
-
-	for (bidx = BACK_BUTTON; bidx < PLACEHOLDER_BUTTON; bidx++) {
-
-		if (tb->items[bidx].location == location) {
-
-			tb->items[bidx].button = make_toolbar_item(
-				bidx, tb->items[bidx].sensitivity);
-
-			gtk_toolbar_insert(tb->widget,
-					   tb->items[bidx].button,
-					   location);
-			break;
-		}
-	}
-	return NSERROR_OK;
-}
-
-
-/**
  * callback function to remove a widget from a container
  */
 static void container_remove_widget(GtkWidget *widget, gpointer data)
@@ -994,11 +1017,15 @@ static void container_remove_widget(GtkWidget *widget, gpointer data)
 
 
 /**
- * populates the gtk toolbar container with widgets in correct order
+ * populates a toolbar with widgets in correct order
+ *
+ * \param tb toolbar
+ * \return NSERROR_OK on success else error code.
  */
 static nserror populate_gtk_toolbar_widget(struct nsgtk_toolbar *tb)
 {
-	int lidx; /* location index */
+	int location; /* location index */
+	int itemid;
 
 	/* clear the toolbar container of all widgets */
 	gtk_container_foreach(GTK_CONTAINER(tb->widget),
@@ -1006,8 +1033,53 @@ static nserror populate_gtk_toolbar_widget(struct nsgtk_toolbar *tb)
 			      tb->widget);
 
 	/* add widgets to toolbar */
-	for (lidx = 0; lidx < PLACEHOLDER_BUTTON; lidx++) {
-		add_item_to_toolbar(tb, lidx);
+	for (location = 0; location < PLACEHOLDER_BUTTON; location++) {
+		itemid = itemid_from_location(tb, location);
+		if (itemid == PLACEHOLDER_BUTTON) {
+			break;
+		}
+		tb->items[location].button =
+			make_toolbar_item(location,
+					  tb->items[location].sensitivity);
+
+		gtk_toolbar_insert(tb->widget,
+				   tb->items[location].button,
+				   location);
+	}
+
+	gtk_widget_show_all(GTK_WIDGET(tb->widget));
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * populates the customization toolbar with widgets in correct order
+ *
+ * \param tb toolbar
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror customisation_toolbar_populate(struct nsgtk_toolbar *tb)
+{
+	int location; /* location index */
+	int itemid;
+
+	/* clear the toolbar container of all widgets */
+	gtk_container_foreach(GTK_CONTAINER(tb->widget),
+			      container_remove_widget,
+			      tb->widget);
+
+	/* add widgets to toolbar */
+	for (location = 0; location < PLACEHOLDER_BUTTON; location++) {
+		itemid = itemid_from_location(tb, location);
+		if (itemid == PLACEHOLDER_BUTTON) {
+			break;
+		}
+		tb->items[location].button = make_toolbox_item(location);
+
+		gtk_toolbar_insert(tb->widget,
+				   tb->items[location].button,
+				   location);
 	}
 
 	gtk_widget_show_all(GTK_WIDGET(tb->widget));
@@ -1344,7 +1416,6 @@ toolbar_customisation_create_toolbox(struct nsgtk_toolbar_customisation *tbc,
 		columns = NSGTK_MIN_STORE_COLUMNS;
 	}
 
-	edit_mode = true;
 	curcol = 0;
 	for (iidx = startidx = BACK_BUTTON; iidx < PLACEHOLDER_BUTTON; iidx++) {
 		if (curcol >= columns) {
@@ -1352,8 +1423,7 @@ toolbar_customisation_create_toolbox(struct nsgtk_toolbar_customisation *tbc,
 			curcol = 0;
 			startidx = iidx;
 		}
-		tbc->items[iidx] = make_toolbar_item(iidx,
-					tbc->toolbar.items[iidx].sensitivity);
+		tbc->items[iidx] = make_toolbox_item(iidx);
 		if (tbc->items[iidx] != NULL) {
 			curcol++;
 		}
@@ -1361,7 +1431,6 @@ toolbar_customisation_create_toolbox(struct nsgtk_toolbar_customisation *tbc,
 	if (curcol > 0) {
 		add_toolbox_row(tbc, startidx, iidx);
 	}
-	edit_mode = false;
 
 	return NSERROR_OK;
 }
@@ -1381,12 +1450,10 @@ customisation_toolbar_update(struct nsgtk_toolbar_customisation *tbc)
 	}
 
 	/* populate toolbar widget */
-	edit_mode = true;
-	res = populate_gtk_toolbar_widget(&tbc->toolbar);
+	res = customisation_toolbar_populate(&tbc->toolbar);
 	if (res != NSERROR_OK) {
 		return res;
 	}
-	edit_mode = false;
 
 	/* ensure icon sizes and text labels on toolbar are set */
 	res = nsgtk_toolbar_restyle(&tbc->toolbar);
@@ -1523,11 +1590,6 @@ static gboolean cutomize_button_clicked_cb(GtkWidget *widget, gpointer data)
 		res = toolbar_item_create(iidx, &tbc->toolbar.items[iidx]);
 		if (res != NSERROR_OK) {
 			goto cutomize_button_clicked_cb_error;
-		}
-		if ((iidx == URL_BAR_ITEM) || (iidx == WEBSEARCH_ITEM)) {
-			tbc->toolbar.items[iidx].sensitivity = false;
-		} else {
-			tbc->toolbar.items[iidx].sensitivity = true;
 		}
 	}
 
@@ -3084,6 +3146,8 @@ toolbar_item_create(nsgtk_toolbar_button id, struct nsgtk_toolbar_item *item)
 
 	/* set item defaults from macro */
 	switch (id) {
+#define TOOLBAR_ITEM_t(name)						\
+		item->clicked = name##_button_clicked_cb;
 #define TOOLBAR_ITEM_b(name)						\
 		item->clicked = name##_button_clicked_cb;
 #define TOOLBAR_ITEM_y(name)						\
@@ -3098,7 +3162,10 @@ toolbar_item_create(nsgtk_toolbar_button id, struct nsgtk_toolbar_item *item)
 		item->dataminus = nsgtk_toolbar_##iname##_data_minus;	\
 		TOOLBAR_ITEM_ ## clicked(iname)				\
 		break;
+
 #include "gtk/toolbar_items.h"
+
+#undef TOOLBAR_ITEM_t
 #undef TOOLBAR_ITEM_y
 #undef TOOLBAR_ITEM_n
 #undef TOOLBAR_ITEM

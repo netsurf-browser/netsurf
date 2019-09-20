@@ -23,11 +23,13 @@ typedef enum {
 	BACK_BUTTON = 0,
 	HISTORY_BUTTON,
 	FORWARD_BUTTON,
+	RELOADSTOP_BUTTON,
+	URL_BAR_ITEM,
+	WEBSEARCH_ITEM,
+	OPENMENU_BUTTON,
 	STOP_BUTTON,
 	RELOAD_BUTTON,
 	HOME_BUTTON,
-	URL_BAR_ITEM,
-	WEBSEARCH_ITEM,
 	THROBBER_ITEM,
 	NEWWINDOW_BUTTON,
 	NEWTAB_BUTTON,
@@ -71,9 +73,7 @@ typedef enum {
 	GUIDE_BUTTON,
 	INFO_BUTTON,
 	ABOUT_BUTTON,
-	OPENMENU_BUTTON,
 	CUSTOMIZE_BUTTON,
-	RELOADSTOP_BUTTON,
 	PLACEHOLDER_BUTTON /* size indicator; array maximum indices */
 } nsgtk_toolbar_button;    /* PLACEHOLDER_BUTTON - 1 */
 
@@ -85,9 +85,10 @@ typedef enum {
  *   - name (identifier)
  *   - initial sensitivity (true/false)
  *   - if there is a toolbar click signal handler (y/n) and it is available in
- *          the toolbar as a button (b, implies y)
+ *          the toolbar and toolbox as a button (b, implies y) if the item is
+ *          available as a button but not placed in the toolbox (t, implies y)
  *   - if there is a menu activate signal handler (y/n) and it calls the
-            toolbar click handler directly. (p, implies y)
+ *          toolbar click handler directly. (p, implies y)
  *   - item label as a netsurf message (identifier)
  *   - icon image name ("string")
  */
@@ -100,8 +101,8 @@ typedef enum {
 TOOLBAR_ITEM(BACK_BUTTON, back, false, b, p, gtkBack, "go-previous")
 TOOLBAR_ITEM(HISTORY_BUTTON, history, true, y, n, , "local-history")
 TOOLBAR_ITEM(FORWARD_BUTTON, forward, false, b, p, gtkForward, "go-next")
-TOOLBAR_ITEM(STOP_BUTTON, stop, false, b, p, gtkStop, NSGTK_STOCK_STOP)
-TOOLBAR_ITEM(RELOAD_BUTTON, reload, true, b, p, Reload, NSGTK_STOCK_REFRESH)
+TOOLBAR_ITEM(STOP_BUTTON, stop, false, t, p, gtkStop, NSGTK_STOCK_STOP)
+TOOLBAR_ITEM(RELOAD_BUTTON, reload, true, t, p, Reload, NSGTK_STOCK_REFRESH)
 TOOLBAR_ITEM(HOME_BUTTON, home, true, b, p, gtkHome, NSGTK_STOCK_HOME)
 TOOLBAR_ITEM(URL_BAR_ITEM, url_bar, true, n, n, , NULL)
 TOOLBAR_ITEM(WEBSEARCH_ITEM, websearch, true, n, n, , NULL)
