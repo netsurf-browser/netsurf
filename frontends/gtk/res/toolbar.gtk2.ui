@@ -25,8 +25,9 @@
         <property name="label" translatable="yes">gtkCustomizeToolbarInstructions</property>
       </object>
       <packing>
-        <property name="expand">True</property>
+        <property name="expand">False</property>
         <property name="fill">True</property>
+        <property name="padding">6</property>
         <property name="position">1</property>
       </packing>
     </child>
