@@ -113,4 +113,5 @@ new_blank:0
 hotlist_path:/home/vince/.netsurf/Hotlist
 developer_view:0
 position_tab:0
-toolbar_order:
+toolbar_items:
+bar_show:
