@@ -49,7 +49,9 @@ static char *testnam(char *out)
 {
 	static int count = 0;
 	static char name[64];
-	snprintf(name, 64, "/tmp/nsoptiontest%d", count);
+	int pid;
+	pid=getpid();
+	snprintf(name, 64, "/tmp/nsoptiontest%d%d", pid, count);
 	count++;
 	return name;
 }
