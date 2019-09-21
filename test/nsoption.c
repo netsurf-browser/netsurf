@@ -33,6 +33,10 @@
 #include "utils/log.h"
 #include "utils/nsoption.h"
 
+#ifndef TESTROOT
+#define TESTROOT "/tmp"
+#endif
+
 const char *test_choices_path = "test/data/Choices";
 const char *test_choices_short_path = "test/data/Choices-short";
 const char *test_choices_all_path = "test/data/Choices-all";
@@ -51,7 +55,7 @@ static char *testnam(char *out)
 	static char name[64];
 	int pid;
 	pid=getpid();
-	snprintf(name, 64, "/tmp/nsoptiontest%d%d", pid, count);
+	snprintf(name, 64, TESTROOT"/nsoptiontest%d%d", pid, count);
 	count++;
 	return name;
 }
