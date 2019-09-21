@@ -524,14 +524,19 @@ make_toolbar_item(nsgtk_toolbar_button itemid, bool sensitivity)
  * \return gtk tool item widget
  */
 static GtkToolItem *
-make_toolbox_item(nsgtk_toolbar_button itemid)
+make_toolbox_item(nsgtk_toolbar_button itemid, bool bar)
 {
 	GtkToolItem *toolitem = NULL;
 
 	switch(itemid) {
 #define TOOLBAR_ITEM_y(identifier, label, iconame)
 #define TOOLBAR_ITEM_n(identifier, label, iconame)
-#define TOOLBAR_ITEM_t(identifier, label, iconame)
+#define TOOLBAR_ITEM_t(identifier, label, iconame)		\
+	case identifier:					\
+		if (bar) {						\
+			toolitem = make_toolbar_item_button(#label, iconame, true, true); \
+		}							\
+		break;
 #define TOOLBAR_ITEM_b(identifier, label, iconame)		\
 	case identifier:					\
 		toolitem = make_toolbar_item_button(#label, iconame, true, true); \
@@ -811,7 +816,7 @@ customisation_toolbar_drag_drop_cb(GtkWidget *widget,
 	}
 
 
-	dragitem->button = make_toolbox_item(tbc->dragitem);
+	dragitem->button = make_toolbox_item(tbc->dragitem, true);
 
 	if (dragitem->button == NULL) {
 		nsgtk_warning("NoMemory", 0);
@@ -978,7 +983,8 @@ apply_user_button_customisation(struct nsgtk_toolbar *tb)
 		}
 
 		for (iidx = BACK_BUTTON; iidx < PLACEHOLDER_BUTTON; iidx++) {
-			if (strncmp(tb->items[iidx].name, start, end - start) == 0) {
+			if (((ssize_t)strlen(tb->items[iidx].name) == (end - start)) &&
+			    (strncmp(tb->items[iidx].name, start, end - start) == 0)) {
 				tb->items[iidx].location = location++;
 				break;
 			}
@@ -1038,12 +1044,12 @@ static nserror populate_gtk_toolbar_widget(struct nsgtk_toolbar *tb)
 		if (itemid == PLACEHOLDER_BUTTON) {
 			break;
 		}
-		tb->items[location].button =
-			make_toolbar_item(location,
-					  tb->items[location].sensitivity);
+		tb->items[itemid].button =
+			make_toolbar_item(itemid,
+					  tb->items[itemid].sensitivity);
 
 		gtk_toolbar_insert(tb->widget,
-				   tb->items[location].button,
+				   tb->items[itemid].button,
 				   location);
 	}
 
@@ -1075,10 +1081,10 @@ static nserror customisation_toolbar_populate(struct nsgtk_toolbar *tb)
 		if (itemid == PLACEHOLDER_BUTTON) {
 			break;
 		}
-		tb->items[location].button = make_toolbox_item(location);
+		tb->items[itemid].button = make_toolbox_item(itemid, true);
 
 		gtk_toolbar_insert(tb->widget,
-				   tb->items[location].button,
+				   tb->items[itemid].button,
 				   location);
 	}
 
@@ -1423,7 +1429,7 @@ toolbar_customisation_create_toolbox(struct nsgtk_toolbar_customisation *tbc,
 			curcol = 0;
 			startidx = iidx;
 		}
-		tbc->items[iidx] = make_toolbox_item(iidx);
+		tbc->items[iidx] = make_toolbox_item(iidx, false);
 		if (tbc->items[iidx] != NULL) {
 			curcol++;
 		}
