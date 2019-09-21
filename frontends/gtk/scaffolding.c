@@ -48,7 +48,10 @@ struct nsgtk_menu {
 	GtkWidget *main; /* main menu entry */
 	GtkWidget *burger; /* right click menu */
 	GtkWidget *popup; /* popup menu entry */
-	void *mhandler; /* menu item handler */
+	/**
+	 * menu item handler
+	 */
+	gboolean (*mhandler)(GtkMenuItem *widget, gpointer data);
 	const char *iconname; /* name of the icon to use */
 	bool sensitivity; /* menu item is sensitive */
 };
