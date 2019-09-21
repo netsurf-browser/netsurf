@@ -589,6 +589,55 @@ static gboolean nsgtk_on_find_activate_menu(GtkMenuItem *widget, gpointer data)
 	return TRUE;
 }
 
+static nserror get_bar_show(bool *menu, bool *tool)
+{
+	const char *cur_bar_show;
+
+	*menu = false;
+	*tool = false;
+
+	cur_bar_show = nsoption_charp(bar_show);
+	if (cur_bar_show != NULL) {
+		if (strcmp(cur_bar_show, "menu/tool") == 0) {
+			*menu = true;
+			*tool = true;
+		} else if (strcmp(cur_bar_show, "menu") == 0) {
+			*menu = true;
+		} else if (strcmp(cur_bar_show, "tool") == 0) {
+			*tool = true;
+		}
+	}
+
+	return NSERROR_OK;
+}
+
+static nserror set_bar_show(const char *bar, bool show)
+{
+	bool menu;
+	bool tool;
+	const char *new_bar_show;
+
+	get_bar_show(&menu, &tool);
+
+	if (strcmp(bar, "menu") == 0) {
+		menu = show;
+	} else if (strcmp(bar, "tool") == 0) {
+		tool = show;
+	}
+
+	if ((menu == true) && (tool == true)) {
+		new_bar_show = "menu/tool";
+	} else if (menu == true) {
+		new_bar_show = "menu";
+	} else if (tool == true) {
+		new_bar_show = "tool";
+	} else {
+		new_bar_show = "none";
+	}
+	nsoption_set_charp(bar_show, strdup(new_bar_show));
+
+	return NSERROR_OK;
+}
 
 static gboolean
 nsgtk_on_menubar_activate_menu(GtkMenuItem *widget, gpointer data)
@@ -617,7 +666,7 @@ nsgtk_on_menubar_activate_menu(GtkMenuItem *widget, gpointer data)
 		}
 
 		gtk_widget_show(GTK_WIDGET(gs->menu_bar->bar_menu));
-
+		set_bar_show("menu", true);
 	} else {
 		if (gtk_check_menu_item_get_active(bmcmi) == TRUE) {
 			gtk_check_menu_item_set_active(bmcmi, FALSE);
@@ -632,6 +681,7 @@ nsgtk_on_menubar_activate_menu(GtkMenuItem *widget, gpointer data)
 		}
 
 		gtk_widget_hide(GTK_WIDGET(gs->menu_bar->bar_menu));
+		set_bar_show("menu", false);
 	}
 	return TRUE;
 }
@@ -664,6 +714,7 @@ nsgtk_on_toolbar_activate_menu(GtkMenuItem *widget, gpointer data)
 		}
 
 		nsgtk_window_toolbar_show(gs, true);
+		set_bar_show("tool", true);
 	} else {
 		if (gtk_check_menu_item_get_active(bmcmi) == TRUE) {
 			gtk_check_menu_item_set_active(bmcmi, FALSE);
@@ -678,6 +729,7 @@ nsgtk_on_toolbar_activate_menu(GtkMenuItem *widget, gpointer data)
 		}
 
 		nsgtk_window_toolbar_show(gs, false);
+		set_bar_show("tool", false);
 	}
 	return TRUE;
 }
@@ -792,6 +844,7 @@ create_scaffolding_burger_menu(struct nsgtk_scaffolding *gs,
 	return nmenu;
 }
 
+
 /**
  * Create and connect handlers to popup menu.
  *
@@ -800,7 +853,8 @@ create_scaffolding_burger_menu(struct nsgtk_scaffolding *gs,
  * \return menu structure on success or NULL on error.
  */
 static struct nsgtk_popup_menu *
-create_scaffolding_popup_menu(struct nsgtk_scaffolding *gs, GtkAccelGroup *group)
+create_scaffolding_popup_menu(struct nsgtk_scaffolding *gs,
+			      GtkAccelGroup *group)
 {
 	struct nsgtk_popup_menu *nmenu;
 
@@ -1013,6 +1067,7 @@ static void nsgtk_menu_set_sensitivity(struct nsgtk_scaffolding *g)
 	}
 }
 
+
 /* set menu items to have icons */
 static void nsgtk_menu_set_icons(struct nsgtk_scaffolding *g)
 {
@@ -1040,6 +1095,7 @@ static void nsgtk_menu_set_icons(struct nsgtk_scaffolding *g)
 		}
 	}
 }
+
 
 /**
  * create and initialise menus
@@ -1101,10 +1157,6 @@ static nserror nsgtk_menus_create(struct nsgtk_scaffolding *gs)
 
 	return NSERROR_OK;
 }
-
-
-
-
 
 
 /* exported function documented in gtk/scaffolding.h */
@@ -1187,12 +1239,6 @@ GtkWindow* nsgtk_scaffolding_window(struct nsgtk_scaffolding *g)
 GtkNotebook* nsgtk_scaffolding_notebook(struct nsgtk_scaffolding *g)
 {
 	return g->notebook;
-}
-
-/* exported interface documented in gtk/scaffolding.h */
-GtkWidget *nsgtk_scaffolding_urlbar(struct nsgtk_scaffolding *g)
-{
-	return NULL;//g->url_bar;
 }
 
 
@@ -1373,6 +1419,8 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 {
 	nserror res;
 	struct nsgtk_scaffolding *gs;
+	bool menu;
+	bool tool;
 
 	gs = calloc(1, sizeof(*gs));
 	if (gs == NULL) {
@@ -1456,6 +1504,14 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	gs->next = scaf_list;
 	gs->prev = NULL;
 	scaf_list = gs;
+
+	/* set menu and tool bar visibility */
+	get_bar_show(&menu, &tool);
+	if (menu) {
+		gtk_widget_show(GTK_WIDGET(gs->menu_bar->bar_menu));
+	} else {
+		gtk_widget_hide(GTK_WIDGET(gs->menu_bar->bar_menu));
+	}
 
 	/* finally, show the window. */
 	gtk_widget_show(GTK_WIDGET(gs->window));

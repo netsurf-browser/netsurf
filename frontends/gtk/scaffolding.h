@@ -79,12 +79,6 @@ GtkWindow *nsgtk_scaffolding_window(struct nsgtk_scaffolding *g);
  */
 GtkNotebook *nsgtk_scaffolding_notebook(struct nsgtk_scaffolding *g);
 
-/**
- * Get the gtk url bar from a scaffold.
- */
-GtkWidget *nsgtk_scaffolding_urlbar(struct nsgtk_scaffolding *g);
-
-
 struct gtk_search *nsgtk_scaffolding_search(struct nsgtk_scaffolding *g);
 
 GtkMenuBar *nsgtk_scaffolding_menu_bar(struct nsgtk_scaffolding *g);

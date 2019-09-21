@@ -707,6 +707,22 @@ static struct browser_window *bw_from_gw(void *data)
 }
 
 
+static bool get_tool_bar_show(void)
+{
+	const char *cur_bar_show;
+
+	cur_bar_show = nsoption_charp(bar_show);
+	if (cur_bar_show != NULL) {
+		if (strcmp(cur_bar_show, "menu/tool") == 0) {
+			return true;
+		} else if (strcmp(cur_bar_show, "tool") == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+
 /**
  * Create and open a gtk container (window or tab) for a browsing context.
  *
@@ -886,6 +902,9 @@ gui_window_create(struct browser_window *bw,
 
 	/* initialy should not be visible */
 	nsgtk_search_toggle_visibility(g->search);
+
+	/* set toolbar visibility from user option */
+	nsgtk_toolbar_show(g->toolbar, get_tool_bar_show());
 
 	/* safe to drop the reference to the tab_builder as the container is
 	 * referenced by the notebook now.

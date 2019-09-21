@@ -3608,7 +3608,6 @@ nserror nsgtk_toolbar_show(struct nsgtk_toolbar *tb, bool show)
 		gtk_widget_show(GTK_WIDGET(tb->widget));
 	} else {
 		gtk_widget_hide(GTK_WIDGET(tb->widget));
-
 	}
 	return NSERROR_OK;
 }

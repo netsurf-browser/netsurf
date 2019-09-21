@@ -75,4 +75,4 @@ NSOPTION_INTEGER(position_tab, 0)
 NSOPTION_STRING(toolbar_items, NULL)
 
 /* The menu and tool bars that are shown */
-NSOPTION_STRING(toolbar_show, NULL)
+NSOPTION_STRING(bar_show, NULL)
