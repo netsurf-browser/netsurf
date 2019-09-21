@@ -184,8 +184,7 @@ GTK_RESOURCES_LIST := \
 	languages SearchEngines ca-bundle.txt \
 	default.css adblock.css quirks.css internal.css \
 	credits.html licence.html welcome.html maps.html Messages \
-	default.ico favicon.png netsurf.png netsurf.xpm netsurf-16x16.xpm \
-	arrow_down_8x32.png
+	default.ico favicon.png netsurf.png netsurf.xpm netsurf-16x16.xpm
 
 GTK_RESOURCES_LIST := \
 	$(addprefix $(NSGTK_RESOURCES_DIR)/, $(GTK_RESOURCES_LIST)) \
