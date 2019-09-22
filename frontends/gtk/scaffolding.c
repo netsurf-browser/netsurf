@@ -801,20 +801,72 @@ static void nsgtk_menu_connect_signals(struct nsgtk_scaffolding *g)
 					 g);
 		}
 	}
+}
+
+
+/**
+ * Create and connect handlers to bar menu.
+ *
+ * \param gs scaffolding to attach popup menu to.
+ * \param group The accelerator group to use for the popup.
+ * \param showmenu if the bar menu should be shown
+ * \param showtool if the toolabar should be shown
+ * \return menu structure on success or NULL on error.
+ */
+static struct nsgtk_bar_submenu *
+create_scaffolding_bar_menu(struct nsgtk_scaffolding *gs,
+			    GtkAccelGroup *group,
+			    bool showmenu,
+			    bool showtool)
+{
+	GtkMenuShell *menushell;
+	struct nsgtk_bar_submenu *nmenu;
+
+	menushell = GTK_MENU_SHELL(gtk_builder_get_object(gs->builder,
+							  "menubar"));
+
+	nmenu = nsgtk_menu_bar_create(menushell, group);
+	if (nmenu == NULL) {
+		return NULL;
+	}
+
+	/* set menu bar visibility */
+	if (showmenu) {
+		gtk_widget_show(GTK_WIDGET(nmenu->bar_menu));
+	} else {
+		gtk_widget_hide(GTK_WIDGET(nmenu->bar_menu));
+	}
+
+	/* set checks correct way on toolbar submenu */
+	gtk_check_menu_item_set_active(nmenu->view_submenu->toolbars_submenu->menubar_menuitem, showmenu);
+	gtk_check_menu_item_set_active(nmenu->view_submenu->toolbars_submenu->toolbar_menuitem, showtool);
+
+	/* bar menu signal handlers for edit controls */
+	g_signal_connect(nmenu->edit_submenu->edit,
+			 "show",
+			 G_CALLBACK(nsgtk_window_edit_menu_shown),
+			 gs);
+
+	g_signal_connect(nmenu->edit_submenu->edit,
+			 "hide",
+			 G_CALLBACK(nsgtk_window_edit_menu_hidden),
+			 gs);
 
 	/*
 	 * attach signal handlers for menubar and toolbar visibility toggling
 	 */
-	g_signal_connect(g->menu_bar->view_submenu->toolbars_submenu->menubar_menuitem,
+	g_signal_connect(nmenu->view_submenu->toolbars_submenu->menubar_menuitem,
 			 "toggled",
 			 G_CALLBACK(nsgtk_on_menubar_activate_menu),
-			 g);
+			 gs);
 
-	g_signal_connect(g->menu_bar->view_submenu->toolbars_submenu->toolbar_menuitem,
+	g_signal_connect(nmenu->view_submenu->toolbars_submenu->toolbar_menuitem,
 			 "toggled",
 			 G_CALLBACK(nsgtk_on_toolbar_activate_menu),
-			 g);
+			 gs);
 
+
+	return nmenu;
 }
 
 
@@ -823,11 +875,15 @@ static void nsgtk_menu_connect_signals(struct nsgtk_scaffolding *g)
  *
  * \param g scaffolding to attach popup menu to.
  * \param group The accelerator group to use for the popup.
+ * \param showbar if the bar menu should be shown
+ * \param showtool if the toolabar should be shown
  * \return menu structure on success or NULL on error.
  */
 static struct nsgtk_burger_menu *
 create_scaffolding_burger_menu(struct nsgtk_scaffolding *gs,
-			       GtkAccelGroup *group)
+			       GtkAccelGroup *group,
+			       bool showbar,
+			       bool showtool)
 {
 	struct nsgtk_burger_menu *nmenu;
 
@@ -836,6 +892,11 @@ create_scaffolding_burger_menu(struct nsgtk_scaffolding *gs,
 	if (nmenu == NULL) {
 		return NULL;
 	}
+
+	/* set checks correct way on toolbar submenu */
+	gtk_check_menu_item_set_active(nmenu->view_submenu->toolbars_submenu->menubar_menuitem, showbar);
+	gtk_check_menu_item_set_active(nmenu->view_submenu->toolbars_submenu->toolbar_menuitem, showtool);
+
 	g_signal_connect(nmenu->view_submenu->toolbars_submenu->menubar_menuitem,
 			 "toggled",
 			 G_CALLBACK(nsgtk_on_menubar_activate_menu),
@@ -851,13 +912,17 @@ create_scaffolding_burger_menu(struct nsgtk_scaffolding *gs,
 /**
  * Create and connect handlers to popup menu.
  *
- * \param g scaffolding to attach popup menu to.
+ * \param gs scaffolding to attach popup menu to.
  * \param group The accelerator group to use for the popup.
+ * \param showbar if the bar menu should be shown
+ * \param showtool if the toolabar should be shown
  * \return menu structure on success or NULL on error.
  */
 static struct nsgtk_popup_menu *
 create_scaffolding_popup_menu(struct nsgtk_scaffolding *gs,
-			      GtkAccelGroup *group)
+			      GtkAccelGroup *group,
+			      bool showbar,
+			      bool showtool)
 {
 	struct nsgtk_popup_menu *nmenu;
 
@@ -866,6 +931,9 @@ create_scaffolding_popup_menu(struct nsgtk_scaffolding *gs,
 	if (nmenu == NULL) {
 		return NULL;
 	}
+	/* set checks correct way on toolbar submenu */
+	gtk_check_menu_item_set_active(nmenu->toolbars_submenu->menubar_menuitem, showbar);
+	gtk_check_menu_item_set_active(nmenu->toolbars_submenu->toolbar_menuitem, showtool);
 
 	g_signal_connect(nmenu->popup_menu,
 			 "hide",
@@ -1122,34 +1190,19 @@ static void nsgtk_menu_set_icons(struct nsgtk_scaffolding *g)
  */
 static nserror nsgtk_menus_create(struct nsgtk_scaffolding *gs)
 {
-	GtkMenuShell *menushell;
 	GtkAccelGroup *group;
+	bool showmenu; /* show menubar */
+	bool showtool; /* show toolbar */
 
-	menushell = GTK_MENU_SHELL(gtk_builder_get_object(gs->builder,
-							  "menubar"));
+	get_bar_show(&showmenu, &showtool);
 
 	group = gtk_accel_group_new();
 
 	gtk_window_add_accel_group(gs->window, group);
 
-	gs->menu_bar = nsgtk_menu_bar_create(menushell, group);
-
-	/* toolbar URL bar menu bar signal handlers */
-	g_signal_connect(gs->menu_bar->edit_submenu->edit,
-			 "show",
-			 G_CALLBACK(nsgtk_window_edit_menu_shown),
-			 gs);
-
-	g_signal_connect(gs->menu_bar->edit_submenu->edit,
-			 "hide",
-			 G_CALLBACK(nsgtk_window_edit_menu_hidden),
-			 gs);
-
-
-	gs->burger_menu = create_scaffolding_burger_menu(gs, group);
-
-	gs->popup_menu = create_scaffolding_popup_menu(gs, group);
-
+	gs->menu_bar = create_scaffolding_bar_menu(gs, group, showmenu, showtool);
+	gs->burger_menu = create_scaffolding_burger_menu(gs, group, showmenu, showtool);
+	gs->popup_menu = create_scaffolding_popup_menu(gs, group, showmenu, showtool);
 	gs->link_menu = create_scaffolding_link_menu(gs, group);
 
 	/* set up the menu signal handlers */
@@ -1422,8 +1475,6 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 {
 	nserror res;
 	struct nsgtk_scaffolding *gs;
-	bool menu;
-	bool tool;
 
 	gs = calloc(1, sizeof(*gs));
 	if (gs == NULL) {
@@ -1507,14 +1558,6 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	gs->next = scaf_list;
 	gs->prev = NULL;
 	scaf_list = gs;
-
-	/* set menu and tool bar visibility */
-	get_bar_show(&menu, &tool);
-	if (menu) {
-		gtk_widget_show(GTK_WIDGET(gs->menu_bar->bar_menu));
-	} else {
-		gtk_widget_hide(GTK_WIDGET(gs->menu_bar->bar_menu));
-	}
 
 	/* finally, show the window. */
 	gtk_widget_show(GTK_WIDGET(gs->window));
