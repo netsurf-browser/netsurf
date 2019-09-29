@@ -300,10 +300,11 @@ void browser_window_stop(struct browser_window *bw);
 /**
  * Reload the page in a browser window.
  *
- * \param  bw  browser window
- * \param  all whether to reload all objects associated with the page
+ * \param bw browser window
+ * \param all whether to reload all objects associated with the page
+ * \return NSERROR_OK on success else error code.
  */
-void browser_window_reload(struct browser_window *bw, bool all);
+nserror browser_window_reload(struct browser_window *bw, bool all);
 
 
 /**
