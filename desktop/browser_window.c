@@ -3394,6 +3394,9 @@ browser_window__navigate_internal_real(struct browser_window *bw,
 	case NSERROR_OK:
 		bw->loading_content = c;
 		browser_window_start_throbber(bw);
+		if (bw->window != NULL) {
+			guit->window->set_icon(bw->window, NULL);
+		}
 		if (bw->internal_nav == false) {
 			res = browser_window_refresh_url_bar_internal(bw,
 								      params->url);
