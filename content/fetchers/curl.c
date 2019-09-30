@@ -38,8 +38,6 @@
 #include <strings.h>
 #include <time.h>
 #include <sys/stat.h>
-#include <openssl/ssl.h>
-#include <openssl/x509v3.h>
 
 #include <libwapcaplet/libwapcaplet.h>
 #include <nsutils/time.h>
@@ -62,10 +60,14 @@
 #include "content/fetchers/curl.h"
 #include "content/urldb.h"
 
-/** maximum number of progress notifications per second */
+/**
+ * maximum number of progress notifications per second
+ */
 #define UPDATES_PER_SECOND 2
 
-/* the ciphersuites we are willing to use */
+/**
+ * The ciphersuites the browser is prepared to use
+ */
 #define CIPHER_LIST						\
 	/* disable everything */				\
 	"-ALL:"							\
@@ -79,6 +81,46 @@
 	"AES128-SHA:"						\
 	/* Remove any PFS suites using weak DSA key exchange */	\
 	"-DSS"
+
+/* Open SSL compatability for certificate handling */
+#ifdef WITH_OPENSSL
+
+#include <openssl/ssl.h>
+#include <openssl/x509v3.h>
+
+/* OpenSSL 1.0.x to 1.1.0 certificate reference counting changed
+ * LibreSSL declares its OpenSSL version as 2.1 but only supports the old way
+ */
+#if (defined(LIBRESSL_VERSION_NUMBER) || (OPENSSL_VERSION_NUMBER < 0x1010000fL))
+static int ns_X509_up_ref(X509 *cert)
+{
+	cert->references++;
+	return 1;
+}
+
+static void ns_X509_free(X509 *cert)
+{
+	cert->references--;
+	if (cert->references == 0) {
+		X509_free(cert);
+	}
+}
+#else
+#define ns_X509_up_ref X509_up_ref
+#define ns_X509_free X509_free
+#endif
+
+#else /* WITH_OPENSSL */
+
+typedef char X509;
+
+static void ns_X509_free(X509 *cert)
+{
+	free(cert);
+}
+
+#endif /* WITH_OPENSSL */
+
 
 /** SSL certificate info */
 struct cert_info {
@@ -107,7 +149,7 @@ struct curl_fetch_info {
 	struct curl_httppost *post_multipart;	/**< Multipart post data, or 0. */
 	uint64_t last_progress_update;	/**< Time of last progress update */
 	int cert_depth; /**< deepest certificate in use */
-	struct cert_info cert_data[MAX_SSL_CERTS];	/**< HTTPS certificate data */
+	struct cert_info cert_data[MAX_SSL_CERTS]; /**< HTTPS certificate data */
 };
 
 /** curl handle cache entry */
@@ -143,28 +185,6 @@ static char fetch_proxy_userpwd[100];
 /** Interlock to prevent initiation during callbacks */
 static bool inside_curl = false;
 
-
-/* OpenSSL 1.0.x to 1.1.0 certificate reference counting changed
- * LibreSSL declares its OpenSSL version as 2.1 but only supports the old way
- */
-#if (defined(LIBRESSL_VERSION_NUMBER) || (OPENSSL_VERSION_NUMBER < 0x1010000fL))
-static int ns_X509_up_ref(X509 *cert)
-{
-	cert->references++;
-	return 1;
-}
-
-static void ns_X509_free(X509 *cert)
-{
-	cert->references--;
-	if (cert->references == 0) {
-		X509_free(cert);
-	}
-}
-#else
-#define ns_X509_up_ref X509_up_ref
-#define ns_X509_free X509_free
-#endif
 
 /**
  * Initialise a cURL fetcher.
@@ -375,7 +395,7 @@ fetch_curl_setup(struct fetch *parent_fetch,
 	}
 	fetch->last_progress_update = 0;
 
-	/* TLS defaults */
+	/* Clear certificate chain data */
 	memset(fetch->cert_data, 0, sizeof(fetch->cert_data));
 	fetch->cert_depth = -1;
 
@@ -442,6 +462,8 @@ failed:
 	return NULL;
 }
 
+
+#ifdef WITH_OPENSSL
 
 /**
  * Report the certificate information in the fetch to the users
@@ -768,6 +790,9 @@ fetch_curl_sslctxfun(CURL *curl_handle, void *_sslctx, void *parm)
 }
 
 
+#endif /* WITH_OPENSSL */
+
+
 /**
  * Set options specific for a fetch.
  *
@@ -866,10 +891,12 @@ static CURLcode fetch_curl_set_options(struct curl_fetch_info *f)
 		/* do verification */
 		SETOPT(CURLOPT_SSL_VERIFYPEER, 1L);
 		SETOPT(CURLOPT_SSL_VERIFYHOST, 2L);
+#ifdef WITH_OPENSSL
 		if (curl_with_openssl) {
 			SETOPT(CURLOPT_SSL_CTX_FUNCTION, fetch_curl_sslctxfun);
 			SETOPT(CURLOPT_SSL_CTX_DATA, f);
 		}
+#endif
 	}
 
 	return CURLE_OK;
@@ -1634,7 +1661,6 @@ nserror fetch_curl_register(void)
 	SETOPT(CURLOPT_LOW_SPEED_TIME, 180L);
 	SETOPT(CURLOPT_NOSIGNAL, 1L);
 	SETOPT(CURLOPT_CONNECTTIMEOUT, nsoption_uint(curl_fetch_timeout));
-	SETOPT(CURLOPT_SSL_CIPHER_LIST, CIPHER_LIST);
 
 	if (nsoption_charp(ca_bundle) &&
 	    strcmp(nsoption_charp(ca_bundle), "")) {
@@ -1648,11 +1674,16 @@ nserror fetch_curl_register(void)
 	}
 
 	/* Detect whether the SSL CTX function API works */
-	curl_with_openssl = true;
 	code = curl_easy_setopt(fetch_blank_curl,
 			CURLOPT_SSL_CTX_FUNCTION, NULL);
 	if (code != CURLE_OK) {
 		curl_with_openssl = false;
+	} else {
+		/* only set the cipher list with openssl otherwise the
+		 *  fetch fails with "Unknown cipher in list"
+		 */
+		SETOPT(CURLOPT_SSL_CIPHER_LIST, CIPHER_LIST);
+		curl_with_openssl = true;
 	}
 
 	NSLOG(netsurf, INFO, "cURL %slinked against openssl",
