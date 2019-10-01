@@ -1592,6 +1592,18 @@ nserror fetch_curl_register(void)
 		.finalise = fetch_curl_finalise
 	};
 
+#if LIBCURL_VERSION_NUM >= 0x073800
+	/* version 7.56.0 can select which SSL backend to use */
+	CURLsslset setres;
+
+	setres = curl_global_sslset(CURLSSLBACKEND_OPENSSL, NULL, NULL);
+	if (setres == CURLSSLSET_OK) {
+		curl_with_openssl = true;
+	} else {
+		curl_with_openssl = false;
+	}
+#endif
+
 	NSLOG(netsurf, INFO, "curl_version %s", curl_version());
 
 	code = curl_global_init(CURL_GLOBAL_ALL);
@@ -1673,17 +1685,24 @@ nserror fetch_curl_register(void)
 		SETOPT(CURLOPT_CAPATH, nsoption_charp(ca_path));
 	}
 
-	/* Detect whether the SSL CTX function API works */
-	code = curl_easy_setopt(fetch_blank_curl,
-			CURLOPT_SSL_CTX_FUNCTION, NULL);
+#if LIBCURL_VERSION_NUM < 0x073800
+	/*
+	 * before 7.56.0 Detect openssl from whether the SSL CTX
+	 *  function API works
+	 */
+	code = curl_easy_setopt(fetch_blank_curl, CURLOPT_SSL_CTX_FUNCTION, NULL);
 	if (code != CURLE_OK) {
 		curl_with_openssl = false;
 	} else {
+		curl_with_openssl = true;
+	}
+#endif
+
+	if (curl_with_openssl) {
 		/* only set the cipher list with openssl otherwise the
 		 *  fetch fails with "Unknown cipher in list"
 		 */
 		SETOPT(CURLOPT_SSL_CIPHER_LIST, CIPHER_LIST);
-		curl_with_openssl = true;
 	}
 
 	NSLOG(netsurf, INFO, "cURL %slinked against openssl",
