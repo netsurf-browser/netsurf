@@ -32,28 +32,28 @@
 # ----------------------------------------------------------------------------
 
 # Enable NetSurf's use of libcurl for fetching over http(s)
-# Valid options: YES, NO				  (highly recommended)
+# Valid options: YES, NO, AUTO				  (highly recommended)
 NETSURF_USE_CURL := YES
 
-# Enable NetSurf's use of openssl for fetching over https
-# Valid options: YES, NO
-NETSURF_USE_OPENSSL := YES
+# Enable NetSurf's use of openssl for processing certificates
+# Valid options: YES, NO, AUTO
+NETSURF_USE_OPENSSL := AUTO
 
 # Enable NetSurf's use of libnsbmp for displaying BMPs and ICOs
-# Valid options: YES, NO
-NETSURF_USE_BMP := YES
+# Valid options: YES, NO, AUTO
+NETSURF_USE_BMP := AUTO
 
 # Enable NetSurf's use of libnsgif for displaying GIFs
-# Valid options: YES, NO				  (highly recommended)
-NETSURF_USE_GIF := YES
+# Valid options: YES, NO, AUTO				  (highly recommended)
+NETSURF_USE_GIF := AUTO
 
 # Enable NetSurf's use of libjpeg for displaying JPEGs
 # Valid options: YES, NO				  (highly recommended)
 NETSURF_USE_JPEG := YES
 
 # Enable NetSurf's use of libpng for displaying PNGs.
-# Valid options: YES, NO	                          (highly recommended)
-NETSURF_USE_PNG := YES
+# Valid options: YES, NO, AUTO	                          (highly recommended)
+NETSURF_USE_PNG := AUTO
 
 # Enable NetSurf's use of gstreamer for displaying videos
 # Valid options: YES, NO
