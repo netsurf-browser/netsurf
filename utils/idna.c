@@ -27,7 +27,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <libutf8proc/utf8proc.h>
 
 #include "netsurf/inttypes.h"
 
@@ -39,14 +38,6 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 
-
-int32_t idna_contexto[] = {
-	/* CONTEXTO codepoints which have a rule defined */
-	0x00b7, 0x0375, 0x05f3, 0x05f4, 0x30fb, 0x0660, 0x0661,
-	0x0662, 0x0663, 0x0664, 0x0665, 0x0666, 0x0667, 0x0668,
-	0x0669, 0x06f0, 0x06f1, 0x06f2, 0x06f3, 0x06f4, 0x06f5,
-	0x06f6, 0x06f7, 0x06f8, 0x06f9, 0
-};
 
 /**
  * Convert punycode status into nserror.
@@ -83,6 +74,108 @@ static nserror punycode_status_to_nserror(enum punycode_status status)
 	}
 	return ret;
 }
+
+
+/**
+ * Convert a host label in UCS-4 to an ACE version
+ *
+ * \param ucs4_label UCS-4 NFC string containing host label
+ * \param len Length of host label (in characters/codepoints)
+ * \param ace_label ASCII-compatible encoded version
+ * \param out_len Length of ace_label
+ * \return NSERROR_OK on success, appropriate error otherwise
+ *
+ * If return value != NSERROR_OK, output will be left untouched.
+ */
+static nserror
+idna__ucs4_to_ace(int32_t *ucs4_label,
+		  size_t len,
+		  char **ace_label,
+		  size_t *out_len)
+{
+	char punycode[65]; /* max length of host label + NULL */
+	size_t output_length = 60; /* punycode length - 4 - 1 */
+	nserror ret;
+
+	punycode[0] = 'x';
+	punycode[1] = 'n';
+	punycode[2] = '-';
+	punycode[3] = '-';
+
+	ret = punycode_status_to_nserror(punycode_encode(len,
+			(const punycode_uint *)ucs4_label, NULL,
+			&output_length, punycode + 4));
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
+
+	output_length += SLEN("xn--");
+	punycode[output_length] = '\0';
+
+	*ace_label = strdup(punycode);
+	*out_len = output_length;
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * Convert a host label in ACE format to UCS-4
+ *
+ * \param ace_label ASCII string containing host label
+ * \param ace_len Length of host label
+ * \param ucs4_label Pointer to hold UCS4 decoded version
+ * \param ucs4_len Pointer to hold length of ucs4_label
+ * \return NSERROR_OK on success, appropriate error otherwise
+ *
+ * If return value != NSERROR_OK, output will be left untouched.
+ */
+static nserror
+idna__ace_to_ucs4(const char *ace_label,
+		  size_t ace_len,
+		  int32_t **ucs4_label,
+		  size_t *ucs4_len)
+{
+	int32_t *ucs4;
+	nserror ret;
+	size_t output_length = ace_len; /* never exceeds input length */
+
+	/* The header should always have been checked before calling */
+	assert((ace_label[0] == 'x') && (ace_label[1] == 'n') &&
+		(ace_label[2] == '-') && (ace_label[3] == '-'));
+
+	ucs4 = malloc(output_length * 4);
+	if (ucs4 == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	ret = punycode_status_to_nserror(punycode_decode(ace_len - 4,
+		ace_label + 4, &output_length, (punycode_uint *)ucs4, NULL));
+	if (ret != NSERROR_OK) {
+		free(ucs4);
+		return ret;
+	}
+
+	ucs4[output_length] = '\0';
+
+	*ucs4_label = ucs4;
+	*ucs4_len = output_length;
+
+	return NSERROR_OK;
+}
+
+
+#ifdef WITH_UTF8PROC
+
+#include <libutf8proc/utf8proc.h>
+
+int32_t idna_contexto[] = {
+	/* CONTEXTO codepoints which have a rule defined */
+	0x00b7, 0x0375, 0x05f3, 0x05f4, 0x30fb, 0x0660, 0x0661,
+	0x0662, 0x0663, 0x0664, 0x0665, 0x0666, 0x0667, 0x0668,
+	0x0669, 0x06f0, 0x06f1, 0x06f2, 0x06f3, 0x06f4, 0x06f5,
+	0x06f6, 0x06f7, 0x06f8, 0x06f9, 0
+};
 
 /**
  * Find the IDNA property of a UCS-4 codepoint
@@ -306,119 +399,6 @@ idna__ucs4_to_utf8(const int32_t *ucs4_label,
 
 
 /**
- * Convert a host label in UCS-4 to an ACE version
- *
- * \param ucs4_label	UCS-4 NFC string containing host label
- * \param len	Length of host label (in characters/codepoints)
- * \param ace_label	ASCII-compatible encoded version
- * \param out_len	Length of ace_label
- * \return NSERROR_OK on success, appropriate error otherwise
- *
- * If return value != NSERROR_OK, output will be left untouched.
- */
-static nserror
-idna__ucs4_to_ace(int32_t *ucs4_label,
-		  size_t len,
-		  char **ace_label,
-		  size_t *out_len)
-{
-	char punycode[65]; /* max length of host label + NULL */
-	size_t output_length = 60; /* punycode length - 4 - 1 */
-	nserror ret;
-
-	punycode[0] = 'x';
-	punycode[1] = 'n';
-	punycode[2] = '-';
-	punycode[3] = '-';
-
-	ret = punycode_status_to_nserror(punycode_encode(len,
-			(const punycode_uint *)ucs4_label, NULL,
-			&output_length, punycode + 4));
-	if (ret != NSERROR_OK) {
-		return ret;
-	}
-
-	output_length += SLEN("xn--");
-	punycode[output_length] = '\0';
-
-	*ace_label = strdup(punycode);
-	*out_len = output_length;
-
-	return NSERROR_OK;
-}
-
-
-/**
- * Convert a host label in ACE format to UCS-4
- *
- * \param ace_label	ASCII string containing host label
- * \param ace_len	Length of host label
- * \param ucs4_label	Pointer to hold UCS4 decoded version
- * \param ucs4_len	Pointer to hold length of ucs4_label
- * \return NSERROR_OK on success, appropriate error otherwise
- *
- * If return value != NSERROR_OK, output will be left untouched.
- */
-static nserror
-idna__ace_to_ucs4(const char *ace_label,
-		  size_t ace_len,
-		  int32_t **ucs4_label,
-		  size_t *ucs4_len)
-{
-	int32_t *ucs4;
-	nserror ret;
-	size_t output_length = ace_len; /* never exceeds input length */
-
-	/* The header should always have been checked before calling */
-	assert((ace_label[0] == 'x') && (ace_label[1] == 'n') &&
-		(ace_label[2] == '-') && (ace_label[3] == '-'));
-
-	ucs4 = malloc(output_length * 4);
-	if (ucs4 == NULL) {
-		return NSERROR_NOMEM;
-	}
-
-	ret = punycode_status_to_nserror(punycode_decode(ace_len - 4,
-		ace_label + 4, &output_length, (punycode_uint *)ucs4, NULL));
-	if (ret != NSERROR_OK) {
-		free(ucs4);
-		return ret;
-	}
-
-	ucs4[output_length] = '\0';
-
-	*ucs4_label = ucs4;
-	*ucs4_len = output_length;
-
-	return NSERROR_OK;
-}
-
-
-/**
- * Find the length of a host label
- *
- * \param host	String containing a host or FQDN
- * \param max_length	Length of host string to search (in bytes)
- * \return Distance to next separator character or end of string
- */
-static size_t idna__host_label_length(const char *host, size_t max_length)
-{
-	const char *p = host;
-	size_t length = 0;
-
-	while (length < max_length) {
-		if ((*p == '.') || (*p == ':') || (*p == '\0')) {
-			break;
-		}
-		length++;
-		p++;
-	}
-
-	return length;
-}
-
-
-/**
  * Check if a host label is valid for IDNA2008
  *
  * \param label	Host label to check (UCS-4)
@@ -506,6 +486,155 @@ static bool idna__is_valid(int32_t *label, size_t len)
 
 
 /**
+ * Verify an ACE label is valid
+ *
+ * \param label	Host label to check
+ * \param len	Length of label
+ * \return true if valid, false otherwise
+ */
+static bool idna__verify(const char *label, size_t len)
+{
+	nserror error;
+	int32_t *ucs4;
+	char *ace;
+	ssize_t ucs4_len;
+	size_t u_ucs4_len, ace_len;
+
+	/* Convert our ACE label back to UCS-4 */
+	error = idna__ace_to_ucs4(label, len, &ucs4, &u_ucs4_len);
+	if (error != NSERROR_OK) {
+		return false;
+	}
+
+	/* Perform NFC normalisation */
+	ucs4_len = utf8proc_normalize_utf32(ucs4, u_ucs4_len,
+		UTF8PROC_STABLE | UTF8PROC_COMPOSE);
+	if (ucs4_len < 0) {
+		free(ucs4);
+		return false;
+	}
+
+	/* Convert the UCS-4 label back to ACE */
+	error = idna__ucs4_to_ace(ucs4, (size_t)ucs4_len,
+				&ace, &ace_len);
+	free(ucs4);
+	if (error != NSERROR_OK) {
+		return false;
+	}
+
+	/* Check if it matches the input */
+	if ((len == ace_len) && (strncmp(label, ace, len) == 0)) {
+		free(ace);
+		return true;
+	}
+
+	NSLOG(netsurf, INFO, "Re-encoded ACE label %s does not match input",
+	      ace);
+	free(ace);
+
+	return false;
+}
+
+
+#else /* WITH_UTF8PROC */
+
+
+/**
+ * Convert a UTF-8 string to UCS-4
+ *
+ * \param utf8_label	UTF-8 string containing host label
+ * \param len	Length of host label (in bytes)
+ * \param ucs4_label	Pointer to update with the output
+ * \param ucs4_len	Pointer to update with the length
+ * \return NSERROR_OK on success, appropriate error otherwise
+ *
+ * If return value != NSERROR_OK, output will be left untouched.
+ */
+static nserror
+idna__utf8_to_ucs4(const char *utf8_label,
+		   size_t len,
+		   int32_t **ucs4_label,
+		   size_t *ucs4_len)
+{
+	return NSERROR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Convert a UCS-4 string to UTF-8
+ *
+ * \param ucs4_label	UCS-4 string containing host label
+ * \param ucs4_len	Length of host label (in bytes)
+ * \param utf8_label	Pointer to update with the output
+ * \param utf8_len	Pointer to update with the length
+ * \return NSERROR_OK on success, appropriate error otherwise
+ *
+ * If return value != NSERROR_OK, output will be left untouched.
+ */
+static nserror
+idna__ucs4_to_utf8(const int32_t *ucs4_label,
+		   size_t ucs4_len,
+		   char **utf8_label,
+		   size_t *utf8_len)
+{
+	return NSERROR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Check if a host label is valid for IDNA2008
+ *
+ * \param label	Host label to check (UCS-4)
+ * \param len	Length of host label (in characters/codepoints)
+ * \return true if compliant, false otherwise
+ */
+static bool idna__is_valid(int32_t *label, size_t len)
+{
+	return true;
+}
+
+
+/**
+ * Verify an ACE label is valid
+ *
+ * \param label	Host label to check
+ * \param len	Length of label
+ * \return true if valid, false otherwise
+ */
+static bool idna__verify(const char *label, size_t len)
+{
+	return true;
+}
+
+
+#endif /* WITH_UTF8PROC */
+
+
+/**
+ * Find the length of a host label
+ *
+ * \param host	String containing a host or FQDN
+ * \param max_length	Length of host string to search (in bytes)
+ * \return Distance to next separator character or end of string
+ */
+static size_t idna__host_label_length(const char *host, size_t max_length)
+{
+	const char *p = host;
+	size_t length = 0;
+
+	while (length < max_length) {
+		if ((*p == '.') || (*p == ':') || (*p == '\0')) {
+			break;
+		}
+		length++;
+		p++;
+	}
+
+	return length;
+}
+
+
+/**
  * Check if a host label is LDH
  *
  * \param label	Host label to check
@@ -560,57 +689,6 @@ static bool idna__is_ace(const char *label, size_t len)
 }
 
 
-/**
- * Verify an ACE label is valid
- *
- * \param label	Host label to check
- * \param len	Length of label
- * \return true if valid, false otherwise
- */
-static bool idna__verify(const char *label, size_t len)
-{
-	nserror error;
-	int32_t *ucs4;
-	char *ace;
-	ssize_t ucs4_len;
-	size_t u_ucs4_len, ace_len;
-
-	/* Convert our ACE label back to UCS-4 */
-	error = idna__ace_to_ucs4(label, len, &ucs4, &u_ucs4_len);
-	if (error != NSERROR_OK) {
-		return false;
-	}
-
-	/* Perform NFC normalisation */
-	ucs4_len = utf8proc_normalize_utf32(ucs4, u_ucs4_len,
-		UTF8PROC_STABLE | UTF8PROC_COMPOSE);
-	if (ucs4_len < 0) {
-		free(ucs4);
-		return false;
-	}
-
-	/* Convert the UCS-4 label back to ACE */
-	error = idna__ucs4_to_ace(ucs4, (size_t)ucs4_len,
-				&ace, &ace_len);
-	free(ucs4);
-	if (error != NSERROR_OK) {
-		return false;
-	}
-
-	/* Check if it matches the input */
-	if ((len == ace_len) && (strncmp(label, ace, len) == 0)) {
-		free(ace);
-		return true;
-	}
-
-	NSLOG(netsurf, INFO, "Re-encoded ACE label %s does not match input",
-	      ace);
-	free(ace);
-
-	return false;
-}
-
-
 /* exported interface documented in idna.h */
 nserror
 idna_encode(const char *host, size_t len, char **ace_host, size_t *ace_len)
@@ -631,8 +709,9 @@ idna_encode(const char *host, size_t len, char **ace_host, size_t *ace_len)
 			/* This string is IDN or invalid */
 
 			/* Convert to Unicode */
-			if ((error = idna__utf8_to_ucs4(host, label_len,
-					&ucs4_host, &ucs4_len)) != NSERROR_OK) {
+			error = idna__utf8_to_ucs4(host, label_len,
+						   &ucs4_host, &ucs4_len);
+			if (error != NSERROR_OK) {
 				return error;
 			}
 
@@ -710,7 +789,7 @@ idna_decode(const char *ace_host, size_t ace_len, char **host, size_t *host_len)
 
 			/* Decode to Unicode */
 			error = idna__ace_to_ucs4(ace_host, label_len,
-					&ucs4_host, &ucs4_len);
+						  &ucs4_host, &ucs4_len);
 			if (error != NSERROR_OK) {
 				return error;
 			}

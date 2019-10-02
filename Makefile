@@ -528,7 +528,6 @@ $(eval $(call feature_switch,DUKTAPE,Javascript (Duktape),,,,,))
 $(eval $(call pkg_config_find_and_add,libcss,CSS))
 $(eval $(call pkg_config_find_and_add,libdom,DOM))
 $(eval $(call pkg_config_find_and_add,libnsutils,nsutils))
-$(eval $(call pkg_config_find_and_add,libutf8proc,utf8proc))
 
 # Common libraries without pkg-config support
 LDFLAGS += -lz
@@ -554,6 +553,7 @@ else
 endif
 $(eval $(call pkg_config_find_and_add_enabled,OPENSSL,openssl,OpenSSL))
 
+$(eval $(call pkg_config_find_and_add_enabled,UTF8PROC,libutf8proc,utf8))
 $(eval $(call pkg_config_find_and_add_enabled,WEBP,libwebp,WEBP))
 $(eval $(call pkg_config_find_and_add_enabled,PNG,libpng,PNG))
 $(eval $(call pkg_config_find_and_add_enabled,BMP,libnsbmp,BMP))

@@ -89,6 +89,14 @@ NETSURF_BUILTIN_LOG_FILTER := "(level:WARNING || cat:jserrors)"
 # if the logging level is set to verbose
 NETSURF_BUILTIN_VERBOSE_FILTER := "(level:VERBOSE || cat:jserrors)"
 
+# Force using glibc internal iconv implementation instead of external libiconv
+# Valid options: YES, NO
+NETSURF_USE_LIBICONV_PLUG := YES
+
+# Enable use of utf8proc for international domain name processing
+# Valid options: YES, NO, AUTO	                          (highly recommended)
+NETSURF_USE_UTF8PROC := YES
+
 # Enable stripping the NetSurf binary
 # Valid options: YES, NO
 NETSURF_STRIP_BINARY := NO
@@ -103,10 +111,6 @@ NETSURF_UA_FORMAT_STRING := "NetSurf/%d.%d (%s)"
 # home page, and it can be changed by editing the end of gui_init2() in
 # riscos/gui.c
 NETSURF_HOMEPAGE := "about:welcome"
-
-# Force using glibc internal iconv implementation instead of external libiconv
-# Valid options: YES, NO
-NETSURF_USE_LIBICONV_PLUG := YES
 
 # Enable building the source object cache filesystem based backing store.
 # implementation.

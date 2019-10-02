@@ -16,12 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * NetSurf international domain name handling (interface).
+/**
+ * \file
+ * interface to international domain name handling.
  */
 
-#ifndef _NETSURF_UTILS_IDNA_H_
-#define _NETSURF_UTILS_IDNA_H_
+#ifndef NETSURF_UTILS_IDNA_H_
+#define NETSURF_UTILS_IDNA_H_
 
 /**
  * Unicode canonical combining class for virama
