@@ -144,6 +144,7 @@ BASE_TESTCFLAGS := -std=c99 -g \
 	-DNETSURF_BUILTIN_LOG_FILTER=\"level:WARNING\" \
 	-DNETSURF_BUILTIN_VERBOSE_FILTER=\"level:DEBUG\" \
 	-DTESTROOT=\"$(TESTROOT)\" \
+	-DWITH_UTF8PROC \
 	$(SAN_FLAGS) \
 	$(shell pkg-config --cflags libcurl libparserutils libwapcaplet libdom libnsutils libutf8proc) \
 	$(LIB_CFLAGS)
