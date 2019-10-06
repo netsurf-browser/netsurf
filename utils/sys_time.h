@@ -18,13 +18,25 @@
 
 /**
  * \file
- * \brief BSD style time functions
+ * BSD style timeval macros
+ *
+ * BSD added macros for manipulating timeval which have become standard on
+ *  modern c libraries but for compatability where they are missing it is
+ *  necessary to provide fallbacks.
  */
 
-#ifndef _NETSURF_UTILS_SYS_TIME_H_
-#define _NETSURF_UTILS_SYS_TIME_H_
+#ifndef NETSURF_UTILS_SYS_TIME_H_
+#define NETSURF_UTILS_SYS_TIME_H_
 
 #include <sys/time.h>
+
+#ifndef timerclear
+#define	timerclear(a) (a)->tv_sec = (a)->tv_usec = 0
+#endif
+
+#ifndef timerisset
+#define	timerisset(a) ((a)->tv_sec || (a)->tv_usec)
+#endif
 
 #ifndef timeradd
 #define timeradd(a, aa, result)						\
@@ -48,6 +60,12 @@
 			(result)->tv_usec += 1000000;			\
 		}							\
 	} while (0)
+#endif
+
+#ifndef timercmp
+#define timercmp(a, aa, cmp)						\
+	((a)->tv_sec cmp (aa)->tv_sec || \
+	 (a)->tv_sec == (aa)->tv_sec && (a)->tv_usec cmp (aa)->tv_usec)
 #endif
 
 #endif
