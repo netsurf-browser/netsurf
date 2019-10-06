@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Content for image/ico (implementation)
+/**
+ * \file
+ * implementation for image/ico content handler
  */
 
 #include <stdbool.h>
@@ -39,8 +40,7 @@
 typedef struct nsico_content {
 	struct content base;
 
-	struct ico_collection *ico;	/** ICO collection data */
-
+	struct ico_collection *ico; /** ICO collection data */
 } nsico_content;
 
 /**

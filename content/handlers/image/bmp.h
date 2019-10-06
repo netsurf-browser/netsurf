@@ -17,16 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Content for image/bmp (interface).
+/**
+ * \file
+ * interface to image/bmp content handler initialisation.
  */
 
-#ifndef _NETSURF_IMAGE_BMP_H_
-#define _NETSURF_IMAGE_BMP_H_
-
-#include <libnsbmp.h>
-
-extern bmp_bitmap_callback_vt bmp_bitmap_callbacks; /** Only to be used by ICO code.  */
+#ifndef NETSURF_IMAGE_BMP_H_
+#define NETSURF_IMAGE_BMP_H_
 
 nserror nsbmp_init(void);
 
