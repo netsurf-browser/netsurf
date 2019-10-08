@@ -63,7 +63,13 @@
 #include "gtk/gdk.h"
 #include "gtk/resources.h"
 #include "gtk/search.h"
+#include "gtk/throbber.h"
 #include "gtk/window.h"
+
+/**
+ * time (in ms) between throbber animation frame updates
+ */
+#define THROBBER_FRAME_TIME (100)
 
 static GtkWidget *select_menu;
 static struct form_control *select_menu_control;
@@ -126,6 +132,9 @@ struct gui_window {
 
 	/** The input method to use with this window */
 	GtkIMContext *input_method;
+
+	/** current frame of throbber */
+	int throb_frame;
 
 	/** list for cleanup */
 	struct gui_window *next, *prev;
@@ -688,7 +697,9 @@ nsgtk_paned_size_allocate_event(GtkWidget *widget,
 
 
 /**
- * destroy the browsing context as there is nothing to display it now
+ * handler for gtk destroy signal on window container
+ *
+ * destroy the browsing context as there is will be nothing to display it now
  */
 static void window_destroy(GtkWidget *widget, gpointer data)
 {
@@ -697,6 +708,14 @@ static void window_destroy(GtkWidget *widget, gpointer data)
 	browser_window_destroy(gw->bw);
 
 	g_object_unref(gw->input_method);
+
+	/* free any existing icon */
+	if (gw->icon != NULL) {
+		g_object_unref(gw->icon);
+		gw->icon = NULL;
+	}
+
+	free(gw);
 }
 
 
@@ -720,6 +739,35 @@ static bool get_tool_bar_show(void)
 		}
 	}
 	return false;
+}
+
+
+/**
+ * Make the throbber advance to next frame.
+ *
+ * scheduled callback to update the throbber
+ *
+ * \param p The context passed when scheduled.
+ */
+static void next_throbber_frame(void *p)
+{
+	struct gui_window *gw = p;
+	nserror res;
+	GdkPixbuf *pixbuf;
+
+	gw->throb_frame++; /* advance to next frame */
+
+	res = nsgtk_throbber_get_frame(gw->throb_frame, &pixbuf);
+	if (res == NSERROR_BAD_SIZE) {
+		gw->throb_frame = 1;
+		res = nsgtk_throbber_get_frame(gw->throb_frame, &pixbuf);
+	}
+
+	if (res == NSERROR_OK) {
+		nsgtk_tab_set_icon(gw->container, pixbuf);
+		/* only schedule next frame if there are no errors */
+		nsgtk_schedule(THROBBER_FRAME_TIME, next_throbber_frame, p);
+	}
 }
 
 
@@ -915,21 +963,25 @@ gui_window_create(struct browser_window *bw,
 }
 
 
-static void gui_window_destroy(struct gui_window *g)
+static void gui_window_destroy(struct gui_window *gw)
 {
-	NSLOG(netsurf, INFO, "gui_window: %p", g);
-	assert(g != NULL);
-	assert(g->bw != NULL);
-	NSLOG(netsurf, INFO, "scaffolding: %p", g->scaffold);
+	NSLOG(netsurf, INFO, "gui_window: %p", gw);
+	assert(gw != NULL);
+	assert(gw->bw != NULL);
+	NSLOG(netsurf, INFO, "scaffolding: %p", gw->scaffold);
 
-	if (g->prev) {
-		g->prev->next = g->next;
+	/* kill off any throbber that might be running */
+	nsgtk_schedule(-1, next_throbber_frame, gw);
+
+	/* remove from window list */
+	if (gw->prev) {
+		gw->prev->next = gw->next;
 	} else {
-		window_list = g->next;
+		window_list = gw->next;
 	}
 
-	if (g->next) {
-		g->next->prev = g->prev;
+	if (gw->next) {
+		gw->next->prev = gw->prev;
 	}
 
 	NSLOG(netsurf, INFO, "window list head: %p", window_list);
@@ -967,7 +1019,10 @@ gui_window_set_icon(struct gui_window *gw, struct hlcache_handle *icon)
 		gw->icon = favicon_pixbuf;
 	}
 
-	nsgtk_tab_set_icon(gw->container, gw->icon);
+	/* only set icon if throbber not running */
+	if (gw->throb_frame == 0) {
+		nsgtk_tab_set_icon(gw->container, gw->icon);
+	}
 }
 
 
@@ -1353,6 +1408,25 @@ gui_window_file_gadget_open(struct gui_window *g,
 
 
 /**
+ * handle throbber changing state
+ */
+static nserror throbber(struct gui_window *gw, bool active)
+{
+	nsgtk_toolbar_throbber(gw->toolbar, active);
+	nsgtk_scaffolding_throbber(gw, active);
+	if (active) {
+		nsgtk_schedule(THROBBER_FRAME_TIME, next_throbber_frame, gw);
+	} else {
+		nsgtk_schedule(-1, next_throbber_frame, gw);
+		gw->throb_frame = 0;
+		/* set tab back to favicon */
+		nsgtk_tab_set_icon(gw->container, gw->icon);
+	}
+	return NSERROR_OK;
+}
+
+
+/**
  * GTK window UI callback to process miscellaneous events
  *
  * \param gw The window receiving the event.
@@ -1376,13 +1450,11 @@ gui_window_event(struct gui_window *gw, enum gui_window_event event)
 		break;
 
 	case GW_EVENT_START_THROBBER:
-		nsgtk_toolbar_throbber(gw->toolbar, true);
-		nsgtk_scaffolding_throbber(gw, true);
+		throbber(gw, true);
 		break;
 
 	case GW_EVENT_STOP_THROBBER:
-		nsgtk_toolbar_throbber(gw->toolbar, false);
-		nsgtk_scaffolding_throbber(gw, false);
+		throbber(gw, false);
 		break;
 
 	default:
@@ -1556,6 +1628,7 @@ nserror nsgtk_window_toolbar_show(struct nsgtk_scaffolding *gs, bool show)
 	}
 	return NSERROR_OK;
 }
+
 
 /* exported interface documented in window.h */
 nserror nsgtk_window_toolbar_update(void)
