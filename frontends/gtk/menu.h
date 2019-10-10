@@ -210,27 +210,82 @@ struct nsgtk_link_menu {
 	GtkWidget *copy_menuitem;
 };
 
+
 /**
  * Create main menubar menu.
  */
 struct nsgtk_bar_submenu *nsgtk_menu_bar_create(GtkMenuShell *menubar, GtkAccelGroup *group);
 
+
 /**
  * Generate burger menu.
+ *
+ * \param accelerator group to use with menu
+ * \return new menu structure or NULL on error
  */
 struct nsgtk_burger_menu *nsgtk_burger_menu_create(GtkAccelGroup *group);
+
 
 /**
  * Generate right click popup menu.
  *
+ * \param accelerator group to use with menu
+ * \return new menu structure or NULL on error
  */
 struct nsgtk_popup_menu *nsgtk_popup_menu_create(GtkAccelGroup *group);
+
 
 /**
  * Generate context sensitive link popup menu.
  *
+ * \param accelerator group to use with menu
+ * \return new menu structure or NULL on error
  */
 struct nsgtk_link_menu *nsgtk_link_menu_create(GtkAccelGroup *group);
+
+
+/**
+ * destroy bar menu
+ *
+ * destroys the gtk widgets associated with menu and frees all storage.
+ *
+ * \param menu menu to destroy
+ * \return NSERROR_OK and menu destroyed on success else error code
+ */
+nserror nsgtk_menu_bar_destroy(struct nsgtk_bar_submenu *menu);
+
+
+/**
+ * destroy burger menu
+ *
+ * destroys the gtk widgets associated with menu and frees all storage.
+ *
+ * \param menu menu to destroy
+ * \return NSERROR_OK and menu destroyed on success else error code
+ */
+nserror nsgtk_burger_menu_destroy(struct nsgtk_burger_menu *menu);
+
+
+/**
+ * destroy popup menu
+ *
+ * destroys the gtk widgets associated with menu and frees all storage.
+ *
+ * \param menu menu to destroy
+ * \return NSERROR_OK and menu destroyed on success else error code
+ */
+nserror nsgtk_popup_menu_destroy(struct nsgtk_popup_menu *menu);
+
+
+/**
+ * destroy link menu
+ *
+ * destroys the gtk widgets associated with menu and frees all storage.
+ *
+ * \param menu menu to destroy
+ * \return NSERROR_OK and menu destroyed on success else error code
+ */
+nserror nsgtk_link_menu_destroy(struct nsgtk_link_menu *menu);
 
 
 #endif

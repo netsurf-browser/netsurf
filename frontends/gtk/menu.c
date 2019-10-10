@@ -263,8 +263,8 @@ nsgtk_menu_toolbars_submenu(GtkAccelGroup *group)
 * \param group the 'global' in a gtk sense accelerator reference
 */
 
-static struct nsgtk_developer_submenu *nsgtk_menu_developer_submenu(
-		GtkAccelGroup *group)
+static struct nsgtk_developer_submenu *
+nsgtk_menu_developer_submenu(GtkAccelGroup *group)
 {
 	struct nsgtk_developer_submenu *dmenu =
 			malloc(sizeof(struct nsgtk_developer_submenu));
@@ -422,7 +422,6 @@ static struct nsgtk_nav_menu *nsgtk_menu_nav_submenu(GtkAccelGroup *group)
 	IMAGE_ITEM(nav, showbookmarks, gtkShowBookMarks, ret, group);
 	ADD_SEP(nav, ret);
 	IMAGE_ITEM(nav, openlocation, gtkOpenLocation, ret, group);
-
 
 	return ret;
 }
@@ -596,4 +595,74 @@ nsgtk_link_menu_create(GtkAccelGroup *group)
 	IMAGE_ITEM(link, copy, gtkCopylink, nmenu, group);
 
 	return nmenu;
+}
+
+
+/* exported function documented in gtk/menu.h */
+nserror nsgtk_menu_bar_destroy(struct nsgtk_bar_submenu *menu)
+{
+	gtk_widget_destroy(GTK_WIDGET(menu->bar_menu));
+
+	free(menu->file_submenu->export_submenu);
+	free(menu->file_submenu);
+	free(menu->edit_submenu);
+	free(menu->view_submenu->tabs_submenu);
+	free(menu->view_submenu->toolbars_submenu);
+	free(menu->view_submenu->scaleview_submenu);
+	free(menu->view_submenu);
+	free(menu->nav_submenu);
+	free(menu->tabs_submenu);
+	free(menu->tools_submenu->developer_submenu);
+	free(menu->tools_submenu);
+	free(menu->help_submenu);
+	free(menu);
+
+	return NSERROR_OK;
+}
+
+/* exported function documented in gtk/menu.h */
+nserror nsgtk_burger_menu_destroy(struct nsgtk_burger_menu *menu)
+{
+	gtk_widget_destroy(GTK_WIDGET(menu->burger_menu));
+
+	free(menu->file_submenu->export_submenu);
+	free(menu->file_submenu);
+	free(menu->edit_submenu);
+	free(menu->view_submenu->tabs_submenu);
+	free(menu->view_submenu->toolbars_submenu);
+	free(menu->view_submenu->scaleview_submenu);
+	free(menu->view_submenu);
+	free(menu->nav_submenu);
+	free(menu->tabs_submenu);
+	free(menu->tools_submenu->developer_submenu);
+	free(menu->tools_submenu);
+	free(menu->help_submenu);
+	free(menu);
+
+	return NSERROR_OK;
+}
+
+
+/* exported function documented in gtk/menu.h */
+nserror nsgtk_popup_menu_destroy(struct nsgtk_popup_menu *menu)
+{
+	gtk_widget_destroy(GTK_WIDGET(menu->popup_menu));
+
+	free(menu->toolbars_submenu);
+	free(menu->tools_submenu->developer_submenu);
+	free(menu->tools_submenu);
+	free(menu);
+
+	return NSERROR_OK;
+}
+
+
+/* exported function documented in gtk/menu.h */
+nserror nsgtk_link_menu_destroy(struct nsgtk_link_menu *menu)
+{
+	gtk_widget_destroy(GTK_WIDGET(menu->link_menu));
+
+	free(menu);
+
+	return NSERROR_OK;
 }

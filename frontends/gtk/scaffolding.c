@@ -87,7 +87,7 @@ struct nsgtk_scaffolding {
 	/** link popup menu */
 	struct nsgtk_link_menu *link_menu;
 
-	/** menu entries widgets for sensativity adjustment */
+	/** menu entries widgets for sensitivity adjustment */
 	struct nsgtk_menu menus[PLACEHOLDER_BUTTON];
 };
 
@@ -200,6 +200,14 @@ static void scaffolding_window_destroy(GtkWidget *widget, gpointer data)
 	}
 
 	NSLOG(netsurf, INFO, "scaffold list head: %p", scaf_list);
+
+	/* ensure menu resources are freed */
+	nsgtk_menu_bar_destroy(gs->menu_bar);
+	nsgtk_burger_menu_destroy(gs->burger_menu);
+	nsgtk_popup_menu_destroy(gs->popup_menu);
+	nsgtk_link_menu_destroy(gs->link_menu);
+
+	free(gs);
 
 	if (scaf_list == NULL) {
 		/* no more open windows - stop the browser */
@@ -1008,7 +1016,7 @@ create_scaffolding_link_menu(struct nsgtk_scaffolding *g, GtkAccelGroup *group)
  */
 static nserror nsgtk_menu_initialise(struct nsgtk_scaffolding *g)
 {
-#define TOOLBAR_ITEM_p(identifier, name, iconame)				\
+#define TOOLBAR_ITEM_p(identifier, name, iconame)			\
 	g->menus[identifier].mhandler = nsgtk_on_##name##_activate_menu; \
 	g->menus[identifier].iconname = iconame;
 #define TOOLBAR_ITEM_y(identifier, name, iconame)			\
@@ -1392,6 +1400,7 @@ nserror nsgtk_scaffolding_toolbar_context_menu(struct nsgtk_scaffolding *gs)
 
 	return NSERROR_OK;
 }
+
 
 /* exported interface documented in gtk/scaffolding.h */
 nserror nsgtk_scaffolding_burger_menu(struct nsgtk_scaffolding *gs)
