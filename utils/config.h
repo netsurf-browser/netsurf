@@ -23,14 +23,23 @@
 
 /* Try to detect which features the target OS supports */
 
-#if (defined(_GNU_SOURCE) && !defined(__APPLE__) || defined(__amigaos4__) || defined(__HAIKU__) || (defined(_POSIX_C_SOURCE) && ((_POSIX_C_SOURCE - 0) >= 200809L)) && !defined(__riscos__))
+#if (defined(_GNU_SOURCE) && \
+     !defined(__APPLE__) || \
+     defined(__amigaos4__) || \
+     defined(__HAIKU__) || \
+     (defined(_POSIX_C_SOURCE) && ((_POSIX_C_SOURCE - 0) >= 200809L)) && \
+     !defined(__riscos__))
 #define HAVE_STRNDUP
 #else
 #undef HAVE_STRNDUP
 char *strndup(const char *s, size_t n);
 #endif
 
-#if (defined(_GNU_SOURCE) || defined(__APPLE__) || defined(__HAIKU__) || defined(__OpenBSD__))
+#if (defined(_GNU_SOURCE) || \
+     defined(__APPLE__) || \
+     defined(__HAIKU__) || \
+     defined(__OpenBSD__) &&\
+     !defined(__serenity__))
 #define HAVE_STRCASESTR
 #else
 #undef HAVE_STRCASESTR
@@ -134,8 +143,10 @@ char *realpath(const char *path, char *resolved_path);
 #endif
 
 /* amiga */
-#if defined(__amigaos4__) || defined(__AMIGA__) || \
-		defined(nsatari)
+#if (defined(__amigaos4__) ||			\
+     defined(__AMIGA__) ||			\
+     defined(nsatari) ||			\
+     defined(__serenity__))
 	#define NO_IPV6
 #endif
 
