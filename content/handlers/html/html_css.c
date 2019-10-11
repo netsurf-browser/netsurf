@@ -30,9 +30,9 @@
 #include <strings.h>
 #include <stdlib.h>
 
+#include "utils/config.h"
 #include "utils/nsoption.h"
 #include "utils/corestrings.h"
-#include "utils/config.h"
 #include "utils/log.h"
 #include "netsurf/misc.h"
 #include "netsurf/content.h"
