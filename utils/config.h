@@ -16,8 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NETSURF_UTILS_CONFIG_H_
-#define _NETSURF_UTILS_CONFIG_H_
+#ifndef NETSURF_UTILS_CONFIG_H_
+#define NETSURF_UTILS_CONFIG_H_
 
 #include <stddef.h>
 
@@ -35,10 +35,10 @@
 char *strndup(const char *s, size_t n);
 #endif
 
-#if (defined(_GNU_SOURCE) || \
-     defined(__APPLE__) || \
-     defined(__HAIKU__) || \
-     defined(__OpenBSD__) &&\
+#if ((defined(_GNU_SOURCE) ||			\
+      defined(__APPLE__) ||			\
+      defined(__HAIKU__) ||			\
+      defined(__OpenBSD__)) &&			\
      !defined(__serenity__))
 #define HAVE_STRCASESTR
 #else
@@ -68,12 +68,16 @@ char *strchrnul(const char *s, int c);
 #endif
 
 #define HAVE_SYS_SELECT
-#define HAVE_INETATON
 #define HAVE_POSIX_INET_HEADERS
 #if (defined(_WIN32))
-#undef HAVE_INETATON
 #undef HAVE_SYS_SELECT
 #undef HAVE_POSIX_INET_HEADERS
+#endif
+
+#define HAVE_INETATON
+#if (defined(_WIN32) || \
+     defined(__serenity__))
+#undef HAVE_INETATON
 #endif
 
 #define HAVE_INETPTON
@@ -113,8 +117,14 @@ char *realpath(const char *path, char *resolved_path);
 #endif
 
 #define HAVE_SCANDIR
-#if (defined(_WIN32))
+#if (defined(_WIN32) ||				\
+     defined(__serenity__))
 #undef HAVE_SCANDIR
+#endif
+
+#define HAVE_REGEX
+#if (defined(__serenity__))
+#undef HAVE_REGEX
 #endif
 
 /* This section toggles build options on and off.
@@ -142,7 +152,7 @@ char *realpath(const char *path, char *resolved_path);
     #define WITH_MMAP
 #endif
 
-/* amiga */
+/* IPv6 */
 #if (defined(__amigaos4__) ||			\
      defined(__AMIGA__) ||			\
      defined(nsatari) ||			\

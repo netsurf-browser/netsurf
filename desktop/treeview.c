@@ -26,11 +26,11 @@
 
 #include <string.h>
 
+#include "utils/config.h"
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/nsurl.h"
 #include "utils/nsoption.h"
-#include "utils/config.h"
 #include "netsurf/bitmap.h"
 #include "netsurf/content.h"
 #include "netsurf/plotters.h"

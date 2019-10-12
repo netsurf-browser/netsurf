@@ -24,7 +24,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
+#include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include "utils/messages.h"
 #include "utils/dirent.h"
@@ -172,6 +174,7 @@ nserror vsnstrjoin(char **str, size_t *size, char sep, size_t nelm, va_list ap)
 	return NSERROR_OK;
 }
 
+
 /* exported interface documented in utils/utils.h */
 nserror snstrjoin(char **str, size_t *size, char sep, size_t nelm, ...)
 {
@@ -263,12 +266,12 @@ char *strcasestr(const char *haystack, const char *needle)
 
 #endif
 
+
 #ifndef HAVE_STRNDUP
 
 /**
  * Duplicate up to n characters of a string.
  */
-
 char *strndup(const char *s, size_t n)
 {
 	size_t len;
@@ -393,6 +396,7 @@ char *strchrnul (const char *s, int c_in)
 #endif
 
 #ifndef HAVE_UTSNAME
+
 #include "utils/utsname.h"
 
 int uname(struct utsname *buf) {
@@ -404,9 +408,11 @@ int uname(struct utsname *buf) {
 
 	return 0;
 }
+
 #endif
 
 #ifndef HAVE_REALPATH
+
 char *realpath(const char *path, char *resolved_path)
 {
 	char *ret;
@@ -419,8 +425,9 @@ char *realpath(const char *path, char *resolved_path)
 	return ret;
 }
 
-#ifndef HAVE_INETATON
+#endif
 
+#ifndef HAVE_INETATON
 
 int inet_aton(const char *cp, struct in_addr *inp)
 {
@@ -469,5 +476,41 @@ int inet_pton(int af, const char *src, void *dst)
 
 #endif
 
+
+#ifndef HAVE_REGEX
+
+#include "utils/regex.h"
+
+int
+regcomp(regex_t *restrict preg, const char *restrictregex, int cflags)
+{
+	return 0;
+}
+
+size_t
+regerror(int errorcode,
+	 const regex_t *restrict preg,
+	 char *restrict errbuf,
+	 size_t errbuf_size)
+{
+	if ((errbuf != NULL) && (errbuf_size != 0)) {
+		*errbuf = 0;
+	}
+	return 0;
+}
+
+int
+regexec(const regex_t *restrict preg,
+	const char *restrict string,
+	size_t nmatch,
+	regmatch_t pmatch[restrict],
+	int eflags)
+{
+	return REG_NOMATCH;
+}
+
+void regfree(regex_t *preg)
+{
+}
 
 #endif
