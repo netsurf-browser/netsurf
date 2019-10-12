@@ -31,7 +31,7 @@
 #include <sys/time.h>
 
 #ifndef timerclear
-#define	timerclear(a) (a)->tv_sec = (a)->tv_usec = 0
+#define	timerclear(a) ((a)->tv_sec = (a)->tv_usec = 0)
 #endif
 
 #ifndef timerisset
@@ -64,8 +64,8 @@
 
 #ifndef timercmp
 #define timercmp(a, aa, cmp)						\
-	((a)->tv_sec cmp (aa)->tv_sec || \
-	 (a)->tv_sec == (aa)->tv_sec && (a)->tv_usec cmp (aa)->tv_usec)
+	(((a)->tv_sec cmp (aa)->tv_sec) ||				\
+	 ((a)->tv_sec == (aa)->tv_sec && (a)->tv_usec cmp (aa)->tv_usec))
 #endif
 
 #endif
