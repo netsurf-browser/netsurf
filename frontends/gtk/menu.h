@@ -145,7 +145,6 @@ struct nsgtk_bar_submenu {
 	struct nsgtk_edit_menu	*edit_submenu;
 	struct nsgtk_view_menu	*view_submenu;
 	struct nsgtk_nav_menu	*nav_submenu;
-	struct nsgtk_tabs_submenu	*tabs_submenu;
 	struct nsgtk_tools_menu	*tools_submenu;
 	struct nsgtk_help_menu	*help_submenu;
 };
@@ -164,9 +163,6 @@ struct nsgtk_burger_menu {
 
 	GtkWidget *nav_menuitem;
 	struct nsgtk_nav_menu *nav_submenu;
-
-	GtkWidget *tabs_menuitem;
-	struct nsgtk_tabs_submenu *tabs_submenu;
 
 	GtkWidget *tools_menuitem;
 	struct nsgtk_tools_menu *tools_submenu;

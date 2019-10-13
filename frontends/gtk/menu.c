@@ -611,7 +611,6 @@ nserror nsgtk_menu_bar_destroy(struct nsgtk_bar_submenu *menu)
 	free(menu->view_submenu->scaleview_submenu);
 	free(menu->view_submenu);
 	free(menu->nav_submenu);
-	free(menu->tabs_submenu);
 	free(menu->tools_submenu->developer_submenu);
 	free(menu->tools_submenu);
 	free(menu->help_submenu);
@@ -633,7 +632,6 @@ nserror nsgtk_burger_menu_destroy(struct nsgtk_burger_menu *menu)
 	free(menu->view_submenu->scaleview_submenu);
 	free(menu->view_submenu);
 	free(menu->nav_submenu);
-	free(menu->tabs_submenu);
 	free(menu->tools_submenu->developer_submenu);
 	free(menu->tools_submenu);
 	free(menu->help_submenu);

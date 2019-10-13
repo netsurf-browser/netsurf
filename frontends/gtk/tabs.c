@@ -312,14 +312,19 @@ nsgtk_tab_add_newtab(GtkNotebook *notebook)
 static void
 nsgtk_tab_visibility_update(GtkNotebook *notebook, GtkWidget *child, guint page)
 {
-	gint pagec = gtk_notebook_get_n_pages(notebook);
-	GtkWidget *addpage = g_object_get_data(G_OBJECT(notebook), "addtab");
+	gint pagec;
+	GtkWidget *addpage;
 
-	if (addpage != NULL) {
-		pagec--; /* skip the add tab */
-		if ((gint)page == pagec) {
-			/* ensure the add new tab cannot be current */
-			gtk_notebook_set_current_page(notebook, page - 1);
+	pagec = gtk_notebook_get_n_pages(notebook);
+	if (pagec > 1) {
+		addpage = g_object_get_data(G_OBJECT(notebook), "addtab");
+		if (addpage != NULL) {
+			pagec--; /* skip the add tab */
+			if ((gint)page == pagec) {
+				/* ensure the add new tab cannot be current */
+				gtk_notebook_set_current_page(notebook,
+							      page - 1);
+			}
 		}
 	}
 

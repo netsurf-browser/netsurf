@@ -75,6 +75,9 @@ struct nsgtk_scaffolding {
 	/** tab widget holding displayed pages */
 	GtkNotebook *notebook;
 
+	/** handler id for tabs remove callback */
+	gulong tabs_remove_handler_id;
+
 	/** menu bar hierarchy */
 	struct nsgtk_bar_submenu *menu_bar;
 
@@ -171,8 +174,6 @@ popup_menu_show(struct nsgtk_popup_menu *menu, bool nav, bool cnp)
 }
 
 
-/* event handlers and support functions for them */
-
 /**
  * resource cleanup function for window destruction.
  *
@@ -206,6 +207,8 @@ static void scaffolding_window_destroy(GtkWidget *widget, gpointer data)
 	nsgtk_burger_menu_destroy(gs->burger_menu);
 	nsgtk_popup_menu_destroy(gs->popup_menu);
 	nsgtk_link_menu_destroy(gs->link_menu);
+
+	g_signal_handler_disconnect(gs->notebook, gs->tabs_remove_handler_id);
 
 	free(gs);
 
@@ -425,6 +428,8 @@ nsgtk_window_tabs_remove(GtkNotebook *notebook,
 			 guint page_num,
 			 struct nsgtk_scaffolding *gs)
 {
+	gboolean visible;
+
 	/* if the scaffold is being destroyed it is not useful to
 	 * update the state, further many of the widgets may have
 	 * already been destroyed.
@@ -439,7 +444,7 @@ nsgtk_window_tabs_remove(GtkNotebook *notebook,
 		return;
 	}
 
-	gboolean visible = gtk_notebook_get_show_tabs(gs->notebook);
+	visible = gtk_notebook_get_show_tabs(gs->notebook);
 	g_object_set(gs->menu_bar->view_submenu->tabs_menuitem,
 		     "visible", visible, NULL);
 	g_object_set(gs->burger_menu->view_submenu->tabs_menuitem,
@@ -1548,7 +1553,7 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 			       "page-added",
 			       G_CALLBACK(nsgtk_window_tabs_add),
 			       gs);
-	g_signal_connect_after(gs->notebook,
+	gs->tabs_remove_handler_id = g_signal_connect_after(gs->notebook,
 			       "page-removed",
 			       G_CALLBACK(nsgtk_window_tabs_remove),
 			       gs);
