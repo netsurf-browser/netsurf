@@ -19,12 +19,11 @@
 #ifndef GTK_DOWNLOAD_H
 #define GTK_DOWNLOAD_H
 
-#include <gtk/gtk.h>
-
 /**
  * download operation table for gtk
  */
 extern struct gui_download_table *nsgtk_download_table;
+
 
 /**
  * Initialise download window ready for use.
@@ -33,9 +32,27 @@ extern struct gui_download_table *nsgtk_download_table;
  */
 nserror nsgtk_download_init(void);
 
-void nsgtk_download_destroy (void);
+
+/**
+ * Destroy download window
+ */
+void nsgtk_download_destroy(void);
+
+
+/**
+ * Check with user if download is in progress they want to complete
+ *
+ * \param parent The parent window for the prompt dialog.
+ * \return true if the user wants to continue else false.
+ */
 bool nsgtk_check_for_downloads(GtkWindow *parent);
+
+
+/**
+ * Show the download window
+ *
+ * \param parent The parent window to use for the shown window
+ */
 void nsgtk_download_show(GtkWindow *parent);
-void nsgtk_download_add(gchar *url, gchar *destination);
 
 #endif
