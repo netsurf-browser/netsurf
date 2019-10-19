@@ -37,22 +37,31 @@
 #define SLEN(x) (sizeof((x)) - 1)
 
 struct test_pairs {
-	const unsigned long test;
+	const unsigned long long int test;
 	const char* res;
 };
 
 static const struct test_pairs human_friendly_bytesize_test_vec[] = {
-	{ 0, "0.00Bytes" },
-	{ 1024, "1024.00Bytes" },
-	{ 1025, "1.00kBytes" },
-	{ 1048576, "1024.00kBytes" },
-	{ 1048577, "1.00MBytes" },
-	{ 1073741824, "1024.00MBytes" },
-	{ 1073741888, "1024.00MBytes" }, /* spot the rounding error */
-	{ 1073741889, "1.00GBytes" },
-	{ 2147483648, "2.00GBytes" },
-	{ 3221225472, "3.00GBytes" },
-	{ 4294967295, "4.00GBytes" },
+	{                  0ULL,         "0Bytes" },
+	{               0x2AULL,        "42Bytes" },
+	{              0x400ULL,      "1024Bytes" },
+	{              0x401ULL,    "1.00KiBytes" },
+	{             0xA9AEULL,   "42.42KiBytes" },
+	{           0x100000ULL, "1024.00KiBytes" },
+	{           0x100001ULL,    "1.00MiBytes" },
+	{          0x2A6B852ULL,   "42.42MiBytes" },
+	{         0x40000000ULL, "1024.00MiBytes" },
+	{         0x40000001ULL,    "1.00GiBytes" },
+	{         0x80000000ULL,    "2.00GiBytes" },
+	{         0xC0000000ULL,    "3.00GiBytes" },
+	{        0x100000000ULL,    "4.00GiBytes" },
+	{      0x10000000000ULL, "1024.00GiBytes" },
+	{      0x10000000001ULL,    "1.00TiBytes" },
+	{    0x4000000000000ULL, "1024.00TiBytes" },
+	{    0x4000000000001ULL,    "1.00PiBytes" },
+	{ 0x1000000000000000ULL, "1024.00PiBytes" },
+	{ 0x1000000000000100ULL,    "1.00EiBytes" }, /* precision loss */
+	{ 0xFFFFFFFFFFFFFFFFULL,   "16.00EiBytes" },
 };
 
 /**

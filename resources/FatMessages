@@ -119,6 +119,7 @@ nl.all.FrameDrag:frames aan het aanpassen
 # Units
 # =====
 #
+# Decimal prefix
 en.all.Bytes: B
 de.all.Bytes: B
 fr.all.Bytes: octets
@@ -139,7 +140,13 @@ de.all.GBytes: GB
 fr.all.GBytes: Go
 it.all.GBytes: GB
 nl.all.GBytes: GB
-
+# Binary prefix
+en.all.KiBytes: KiB
+en.all.MiBytes: MiB
+en.all.GiBytes: GiB
+en.all.TiBytes: TiB
+en.all.PiBytes: PiB
+en.all.EiBytes: EiB
 
 # Content Forms
 # =============

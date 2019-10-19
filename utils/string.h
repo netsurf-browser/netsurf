@@ -64,7 +64,7 @@ char *cnv_space2nbsp(const char *s);
  * @param bytesize The size in bytes.
  * @return A human readable string representing the size.
  */
-char *human_friendly_bytesize(unsigned long bytesize);
+char *human_friendly_bytesize(unsigned long long int bytesize);
 
 
 /**
