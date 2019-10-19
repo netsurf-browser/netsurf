@@ -89,8 +89,8 @@ struct gui_download_window {
 
 	GString *name;
 	GString *time_left;
-	gint size_total;
-	gint size_downloaded;
+	unsigned long long int size_total;
+	unsigned long long int size_downloaded;
 	gint progress;
 	gfloat time_remaining;
 	gfloat start_time;
@@ -418,7 +418,9 @@ static gboolean nsgtk_download_update(gboolean force_update)
 	GList *list;
 	gchar *text;
 	gboolean update, pulse_mode = FALSE;
-	gint downloaded = 0, total = 0, dls = 0;
+	unsigned long long int downloaded = 0;
+	unsigned long long int total = 0;
+	gint dls = 0;
 	gfloat percent, elapsed = g_timer_elapsed(dl_ctx.timer, NULL);
 
 	dl_ctx.num_active = 0;
@@ -439,9 +441,8 @@ static gboolean nsgtk_download_update(gboolean force_update)
 				dl->time_remaining = (dl->size_total -
 						      dl->size_downloaded)/
 					dl->speed;
-				dl->progress = (gfloat)
-					dl->size_downloaded /
-					dl->size_total * 100;
+				dl->progress = (double)dl->size_downloaded /
+					(double)dl->size_total * 100;
 			} else {
 				dl->progress++;
 			}
@@ -473,9 +474,9 @@ static gboolean nsgtk_download_update(gboolean force_update)
 		gtk_progress_bar_pulse(dl_ctx.progress);
 		gtk_progress_bar_set_text(dl_ctx.progress, text);
 	} else {
-		percent = total != 0 ? (gfloat)downloaded / total : 0;
+		percent = total != 0 ? (double)downloaded / (double)total : 0;
 		text = g_strdup_printf(messages_get("gtkProgressBar"),
-				       floor(percent*100), dls);
+				       floor(percent * 100), dls);
 		gtk_progress_bar_set_fraction(dl_ctx.progress,
 					      percent);
 		gtk_progress_bar_set_text(dl_ctx.progress, text);
@@ -763,7 +764,7 @@ static struct gui_download_window *
 gui_download_window_create(download_context *ctx, struct gui_window *gui)
 {
 	nsurl *url;
-	unsigned long total_size;
+	unsigned long long int total_size;
 	gchar *domain;
 	gchar *destination;
 	gboolean unknown_size;
