@@ -42,7 +42,7 @@ struct download_context {
 	struct gui_window *parent;		/**< Parent window */
 
 	lwc_string *mime_type;			/**< MIME type of download */
-	unsigned long total_length;		/**< Length of data, in bytes */
+	unsigned long long int total_length;	/**< Length of data, in bytes */
 	char *filename;				/**< Suggested filename */
 
 	struct gui_download_window *window;	/**< GUI download window */
@@ -94,7 +94,7 @@ static nserror download_context_process_headers(download_context *ctx)
 {
 	const char *http_header;
 	http_content_type *content_type;
-	unsigned long length;
+	unsigned long long int length;
 	nserror error;
 
 	/* Retrieve and parse Content-Type */
@@ -108,10 +108,11 @@ static nserror download_context_process_headers(download_context *ctx)
 
 	/* Retrieve and parse Content-Length */
 	http_header = llcache_handle_get_header(ctx->llcache, "Content-Length");
-	if (http_header == NULL)
+	if (http_header == NULL) {
 		length = 0;
-	else
-		length = strtoul(http_header, NULL, 10);
+	} else {
+		length = strtoull(http_header, NULL, 10);
+	}
 
 	/* Retrieve and parse Content-Disposition */
 	http_header = llcache_handle_get_header(ctx->llcache, 
@@ -299,7 +300,8 @@ const char *download_context_get_mime_type(const download_context *ctx)
 }
 
 /* See download.h for documentation */
-unsigned long download_context_get_total_length(const download_context *ctx)
+unsigned long long int
+download_context_get_total_length(const download_context *ctx)
 {
 	return ctx->total_length;
 }

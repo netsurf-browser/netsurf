@@ -91,7 +91,7 @@ const char *download_context_get_mime_type(const download_context *ctx);
  * \param ctx  Context to retrieve byte length from
  * \return Total length, in bytes, or 0 if unknown
  */
-unsigned long download_context_get_total_length(const download_context *ctx);
+unsigned long long int download_context_get_total_length(const download_context *ctx);
 
 /**
  * Retrieve the filename for a download
