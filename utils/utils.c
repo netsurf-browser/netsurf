@@ -290,7 +290,7 @@ char *human_friendly_bytesize(unsigned long long int bsize) {
  * string to unsigned long long
  *
  */
-unsigned long long int _strtoull(const char *nptr, char **endptr, int base)
+unsigned long long int strtoull(const char *nptr, char **endptr, int base)
 {
 	return (unsigned long long int)strtoul(nptr, endptr, base);
 }
