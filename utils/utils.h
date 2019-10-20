@@ -75,10 +75,6 @@
 #define ceilf(x) (float)ceil((double)x)
 #endif
 
-#if !defined(__amigaos4__) && defined(__AMIGA__)
-#define strtoull(n,e,b) (unsigned long long int)strtoul(n,e,b)
-#endif
-
 /**
  * Calculate length of constant C string.
  *

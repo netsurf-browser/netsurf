@@ -67,6 +67,14 @@ char *strcasestr(const char *haystack, const char *needle);
 char *strchrnul(const char *s, int c);
 #endif
 
+/*
+ * amigaos3 declares this but does not have it in its actual library
+ */
+#define HAVE_STRTOULL
+#if !defined(__amigaos4__) && defined(__AMIGA__)
+#undef HAVE_STRTOULL
+#endif
+
 #define HAVE_SYS_SELECT
 #define HAVE_POSIX_INET_HEADERS
 #if (defined(_WIN32))

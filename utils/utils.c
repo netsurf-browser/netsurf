@@ -283,6 +283,19 @@ char *human_friendly_bytesize(unsigned long long int bsize) {
 }
 
 
+#ifndef HAVE_STRTOULL
+/**
+ * string to unsigned long long
+ *
+ */
+unsigned long long int _strtoull(const char *nptr, char **endptr, int base)
+{
+	return (unsigned long long int)strtoul(nptr, endptr, base);
+}
+
+#endif
+
+
 #ifndef HAVE_STRCASESTR
 
 /**
