@@ -284,6 +284,8 @@ char *human_friendly_bytesize(unsigned long long int bsize) {
 
 
 #ifndef HAVE_STRTOULL
+#include <stdlib.h>
+
 /**
  * string to unsigned long long
  *
