@@ -189,6 +189,35 @@ save_complete_save_buffer(save_complete_ctx *ctx,
 	return true;
 }
 
+
+/**
+ * perform a posix regexec on a string without a null terminator
+ */
+static int
+snregexec(const regex_t *preg,
+	 const char *string,
+	 size_t stringlen,
+	 size_t nmatch,
+	 regmatch_t pmatch[],
+	 int eflags)
+{
+	char *strbuf;
+	int matches;
+
+	strbuf = calloc(1, stringlen + 1);
+	if (strbuf == NULL) {
+		return -1;
+	}
+	memcpy(strbuf, string, stringlen);
+
+	matches = regexec(preg, strbuf, nmatch, pmatch, eflags);
+
+	free(strbuf);
+
+	return matches;
+}
+
+
 /**
  * Rewrite stylesheet \@import rules for save complete.
  *
@@ -239,11 +268,14 @@ save_complete_rewrite_stylesheet_urls(save_complete_ctx *ctx,
 		int import_url_len = 0;
 		nsurl *url = NULL;
 		regmatch_t match[11];
-		int m = regexec(&save_complete_import_re,
-				(const char *)source + offset,
-				11,
-				match,
-				0);
+		int m;
+
+		m = snregexec(&save_complete_import_re,
+			     (const char *)source + offset,
+			     size - offset,
+			     11,
+			     match,
+			     0);
 		if (m)
 			break;
 
@@ -453,7 +485,7 @@ save_complete_save_html_object(save_complete_ctx *ctx, hlcache_handle *obj)
 	if (type == NULL)
 		return false;
 
-	result = save_complete_save_buffer(ctx, filename, 
+	result = save_complete_save_buffer(ctx, filename,
 			obj_data, obj_size, type);
 
 	lwc_string_unref(type);
@@ -658,7 +690,7 @@ static bool save_complete_handle_attr_value(save_complete_ctx *ctx,
 	 * 4)   background   any (except those above)
 	 */
 	/* 1 */
-	if (name_len == SLEN("data") && 
+	if (name_len == SLEN("data") &&
 			strncasecmp(name_data, "data", name_len) == 0) {
 		if (node_len == SLEN("object") &&
 				strncasecmp(node_data,
@@ -673,13 +705,13 @@ static bool save_complete_handle_attr_value(save_complete_ctx *ctx,
 	/* 2 */
 	else if (name_len == SLEN("href") &&
 			strncasecmp(name_data, "href", name_len) == 0) {
-		if ((node_len == SLEN("a") && 
+		if ((node_len == SLEN("a") &&
 				strncasecmp(node_data, "a", node_len) == 0) ||
 			(node_len == SLEN("area") &&
-				strncasecmp(node_data, "area", 
+				strncasecmp(node_data, "area",
 					node_len) == 0) ||
-			(node_len == SLEN("link") && 
-				strncasecmp(node_data, "link", 
+			(node_len == SLEN("link") &&
+				strncasecmp(node_data, "link",
 					node_len) == 0)) {
 			return save_complete_rewrite_url_value(ctx,
 					value_data, value_len);
@@ -687,7 +719,7 @@ static bool save_complete_handle_attr_value(save_complete_ctx *ctx,
 			return save_complete_write_value(ctx,
 					value_data, value_len);
 		}
-	} 
+	}
 	/* 3 */
 	else if (name_len == SLEN("src") &&
 			strncasecmp(name_data, "src", name_len) == 0) {
@@ -754,7 +786,7 @@ static bool save_complete_handle_attr(save_complete_ctx *ctx,
 
 	if (value != NULL) {
 		fputc('=', ctx->fp);
-		if (save_complete_handle_attr_value(ctx, node_name, 
+		if (save_complete_handle_attr_value(ctx, node_name,
 				name, value) == false) {
 			dom_string_unref(value);
 			dom_string_unref(name);
@@ -824,7 +856,7 @@ static bool save_complete_handle_element(save_complete_ctx *ctx,
 			strncasecmp(name_data, "base", name_len) == 0) {
 		/* Elide BASE elements from the output */
 		process = false;
-	} else if (name_len == SLEN("meta") && 
+	} else if (name_len == SLEN("meta") &&
 			strncasecmp(name_data, "meta", name_len) == 0) {
 		/* Don't emit close tags for META elements */
 		if (event_type == EVENT_LEAVE) {
@@ -862,8 +894,8 @@ static bool save_complete_handle_element(save_complete_ctx *ctx,
 					process = false;
 			}
 		}
-	} else if (event_type == EVENT_LEAVE && 
-			((name_len == SLEN("link") && 
+	} else if (event_type == EVENT_LEAVE &&
+			((name_len == SLEN("link") &&
 			strncasecmp(name_data, "link", name_len) == 0))) {
 		/* Don't emit close tags for void elements */
 		process = false;
@@ -989,7 +1021,7 @@ static bool save_complete_node_handler(dom_node *node,
 				if (ret != NSERROR_OK)
 					return false;
 
-				fwrite(escaped, sizeof(*escaped), 
+				fwrite(escaped, sizeof(*escaped),
 						strlen(escaped), ctx->fp);
 
 				free(escaped);
@@ -1175,7 +1207,7 @@ static bool save_complete_inventory(save_complete_ctx *ctx)
 	}
 
 	for (entry = ctx->list; entry != NULL; entry = entry->next) {
-		fprintf(fp, "%p %s\n", entry->content, 
+		fprintf(fp, "%p %s\n", entry->content,
 				nsurl_access(hlcache_handle_get_url(
 						entry->content)));
 	}
@@ -1239,14 +1271,16 @@ void save_complete_init(void)
 }
 
 /* Documented in save_complete.h */
-bool save_complete(hlcache_handle *c, const char *path,
-		save_complete_set_type_cb set_type)
+bool
+save_complete(hlcache_handle *c,
+	      const char *path,
+	      save_complete_set_type_cb set_type)
 {
 	bool result;
 	save_complete_ctx ctx;
 
 	save_complete_ctx_initialise(&ctx, path, set_type);
-	
+
 	result = save_complete_save_html(&ctx, c, true);
 
 	if (result) {
@@ -1257,4 +1291,3 @@ bool save_complete(hlcache_handle *c, const char *path,
 
 	return result;
 }
-
