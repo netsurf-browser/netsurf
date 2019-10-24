@@ -140,14 +140,16 @@ save_complete_ctx_find_content(save_complete_ctx *ctx, const nsurl *url)
 }
 
 
-static bool save_complete_ctx_has_content(save_complete_ctx *ctx,
-		struct hlcache_handle *content)
+static bool
+save_complete_ctx_has_content(save_complete_ctx *ctx,
+			      struct hlcache_handle *content)
 {
 	save_complete_entry *entry;
 
-	for (entry = ctx->list; entry != NULL; entry = entry->next)
+	for (entry = ctx->list; entry != NULL; entry = entry->next) {
 		if (entry->content == content)
 			return true;
+	}
 
 	return false;
 }
@@ -409,8 +411,10 @@ save_complete_save_stylesheet(save_complete_ctx *ctx, hlcache_handle *css)
 	return result;
 }
 
-static bool save_complete_save_imported_sheets(save_complete_ctx *ctx,
-		struct nscss_import *imports, uint32_t import_count)
+static bool
+save_complete_save_imported_sheets(save_complete_ctx *ctx,
+				   struct nscss_import *imports,
+				   uint32_t import_count)
 {
 	uint32_t i;
 
@@ -425,8 +429,9 @@ static bool save_complete_save_imported_sheets(save_complete_ctx *ctx,
 	return true;
 }
 
-static bool save_complete_save_html_stylesheet(save_complete_ctx *ctx,
-		struct html_stylesheet *sheet)
+static bool
+save_complete_save_html_stylesheet(save_complete_ctx *ctx,
+				   struct html_stylesheet *sheet)
 {
 	if (sheet->sheet == NULL)
 		return true;
@@ -756,8 +761,10 @@ static bool save_complete_handle_attr_value(save_complete_ctx *ctx,
 	}
 }
 
-static bool save_complete_handle_attr(save_complete_ctx *ctx,
-		dom_string *node_name, dom_attr *attr)
+static bool
+save_complete_handle_attr(save_complete_ctx *ctx,
+			  dom_string *node_name,
+			  dom_attr *attr)
 {
 	dom_string *name;
 	const char *name_data;
@@ -800,8 +807,10 @@ static bool save_complete_handle_attr(save_complete_ctx *ctx,
 	return true;
 }
 
-static bool save_complete_handle_attrs(save_complete_ctx *ctx,
-		dom_string *node_name, dom_namednodemap *attrs)
+static bool
+save_complete_handle_attrs(save_complete_ctx *ctx,
+			   dom_string *node_name,
+			   dom_namednodemap *attrs)
 {
 	uint32_t length, i;
 	dom_exception error;
@@ -831,8 +840,10 @@ static bool save_complete_handle_attrs(save_complete_ctx *ctx,
 	return true;
 }
 
-static bool save_complete_handle_element(save_complete_ctx *ctx,
-		dom_node *node, save_complete_event_type event_type)
+static bool
+save_complete_handle_element(save_complete_ctx *ctx,
+			     dom_node *node,
+			     save_complete_event_type event_type)
 {
 	dom_string *name;
 	dom_namednodemap *attrs;
@@ -853,12 +864,12 @@ static bool save_complete_handle_element(save_complete_ctx *ctx,
 	name_data = dom_string_data(name);
 	name_len = dom_string_byte_length(name);
 
-	if (name_len == SLEN("base") &&
-			strncasecmp(name_data, "base", name_len) == 0) {
+	if ((name_len == SLEN("base")) &&
+	    (strncasecmp(name_data, "base", name_len) == 0)) {
 		/* Elide BASE elements from the output */
 		process = false;
-	} else if (name_len == SLEN("meta") &&
-			strncasecmp(name_data, "meta", name_len) == 0) {
+	} else if ((name_len == SLEN("meta")) &&
+		   (strncasecmp(name_data, "meta", name_len) == 0)) {
 		/* Don't emit close tags for META elements */
 		if (event_type == EVENT_LEAVE) {
 			process = false;
@@ -866,7 +877,8 @@ static bool save_complete_handle_element(save_complete_ctx *ctx,
 			/* Elide meta charsets */
 			dom_string *value;
 			error = dom_element_get_attribute(node,
-					corestring_dom_http_equiv, &value);
+						  corestring_dom_http_equiv,
+						  &value);
 			if (error != DOM_NO_ERR) {
 				dom_string_unref(name);
 				return false;
@@ -908,8 +920,9 @@ static bool save_complete_handle_element(save_complete_ctx *ctx,
 	}
 
 	fputc('<', ctx->fp);
-	if (event_type == EVENT_LEAVE)
+	if (event_type == EVENT_LEAVE) {
 		fputc('/', ctx->fp);
+	}
 	fwrite(name_data, sizeof(*name_data), name_len, ctx->fp);
 
 	if (event_type == EVENT_ENTER) {
@@ -979,8 +992,10 @@ static bool save_complete_handle_element(save_complete_ctx *ctx,
 	return true;
 }
 
-static bool save_complete_node_handler(dom_node *node,
-		save_complete_event_type event_type, void *ctxin)
+static bool
+save_complete_node_handler(dom_node *node,
+			   save_complete_event_type event_type,
+			   void *ctxin)
 {
 	save_complete_ctx *ctx = ctxin;
 	dom_node_type type;
@@ -1098,8 +1113,10 @@ static bool save_complete_node_handler(dom_node *node,
 	return true;
 }
 
-static bool save_complete_save_html_document(save_complete_ctx *ctx,
-		hlcache_handle *c, bool index)
+static bool
+save_complete_save_html_document(save_complete_ctx *ctx,
+				 hlcache_handle *c,
+				 bool index)
 {
 	nserror ret;
 	FILE *fp;
@@ -1134,8 +1151,9 @@ static bool save_complete_save_html_document(save_complete_ctx *ctx,
 
 	doc = html_get_document(c);
 
-	if (save_complete_libdom_treewalk((dom_node *) doc,
-			save_complete_node_handler, ctx) == false) {
+	if (save_complete_libdom_treewalk((dom_node *)doc,
+					  save_complete_node_handler,
+					  ctx) == false) {
 		free(fname);
 		guit->misc->warning("NoMemory", 0);
 		fclose(fp);
@@ -1164,8 +1182,10 @@ static bool save_complete_save_html_document(save_complete_ctx *ctx,
  * \param  index  true to save as "index"
  * \return  true on success, false on error and error reported
  */
-static bool save_complete_save_html(save_complete_ctx *ctx, hlcache_handle *c,
-		bool index)
+static bool
+save_complete_save_html(save_complete_ctx *ctx,
+			hlcache_handle *c,
+			bool index)
 {
 	if (content_get_type(c) != CONTENT_HTML)
 		return false;
