@@ -1272,6 +1272,13 @@ void save_complete_init(void)
 }
 
 /* Documented in save_complete.h */
+nserror save_complete_finalise(void)
+{
+	regfree(&save_complete_import_re);
+	return NSERROR_OK;
+}
+
+/* Documented in save_complete.h */
 bool
 save_complete(hlcache_handle *c,
 	      const char *path,

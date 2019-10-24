@@ -543,6 +543,12 @@ static void gui_quit(void)
 		      messages_get_errorcode(res));
 	}
 
+	res = save_complete_finalise();
+	if (res != NSERROR_OK) {
+		NSLOG(netsurf, INFO, "Error finalising save complete: %s",
+		      messages_get_errorcode(res));
+	}
+
 	free(nsgtk_config_home);
 
 	gtk_fetch_filetype_fin();

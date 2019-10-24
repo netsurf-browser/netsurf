@@ -44,6 +44,12 @@ typedef void (*save_complete_set_type_cb)(const char *path,
  */
 void save_complete_init(void);
 
+
+/**
+ * Finalise save complete module.
+ */
+nserror save_complete_finalise(void);
+
 /**
  * Save an HTML page with all dependencies.
  *
