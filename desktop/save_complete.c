@@ -792,6 +792,7 @@ static bool save_complete_handle_attr(save_complete_ctx *ctx,
 			dom_string_unref(name);
 			return false;
 		}
+		dom_string_unref(value);
 	}
 
 	dom_string_unref(name);
