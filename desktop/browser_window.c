@@ -1208,10 +1208,10 @@ browser_window__handle_error(struct browser_window *bw,
 	case NSERROR_BAD_REDIRECT:
 		/* The message is already filled out */
 		break;
-	case NSERROR_UNKNOWN:
-		message = messages_get_errorcode(code);
-		break;
 	default:
+		if (message == NULL) {
+			message = messages_get_errorcode(code);
+		}
 		break;
 	}
 
