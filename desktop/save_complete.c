@@ -370,8 +370,10 @@ save_complete_save_stylesheet(save_complete_ctx *ctx, hlcache_handle *css)
 	char filename[32];
 	bool result;
 
-	if (save_complete_ctx_has_content(ctx, css))
+	if (save_complete_ctx_find_content(ctx,
+			hlcache_handle_get_url(css)) != NULL) {
 		return true;
+	}
 
 	if (save_complete_ctx_add_content(ctx, css) == false) {
 		guit->misc->warning("NoMemory", 0);
@@ -473,8 +475,10 @@ save_complete_save_html_object(save_complete_ctx *ctx, hlcache_handle *obj)
 	if (obj_data == NULL)
 		return true;
 
-	if (save_complete_ctx_has_content(ctx, obj))
+	if (save_complete_ctx_find_content(ctx,
+			hlcache_handle_get_url(obj)) != NULL) {
 		return true;
+	}
 
 	if (save_complete_ctx_add_content(ctx, obj) == false) {
 		guit->misc->warning("NoMemory", 0);
