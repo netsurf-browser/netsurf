@@ -147,7 +147,8 @@ save_complete_ctx_has_content(save_complete_ctx *ctx,
 	save_complete_entry *entry;
 
 	for (entry = ctx->list; entry != NULL; entry = entry->next) {
-		if (entry->content == content)
+		if (hlcache_handle_get_content(entry->content) ==
+		    hlcache_handle_get_content(content))
 			return true;
 	}
 
