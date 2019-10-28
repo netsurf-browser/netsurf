@@ -2354,6 +2354,7 @@ static nserror llcache_fetch_cert_error(llcache_object *object)
 	return error;
 }
 
+
 /**
  * Handle a TLS connection setup failure
  *
@@ -2376,7 +2377,7 @@ static nserror llcache_fetch_ssl_error(llcache_object *object)
 	/* Make no attempt to downgrade if HSTS is in use
 	 * (i.e. assume server does TLS properly) */
 	if (object->fetch.hsts_in_use ||
-			object->fetch.tried_with_tls_downgrade) {
+	    object->fetch.tried_with_tls_downgrade) {
 		/* Have already tried to downgrade, so give up */
 		llcache_event event;
 
@@ -2399,6 +2400,46 @@ static nserror llcache_fetch_ssl_error(llcache_object *object)
 
 	return error;
 }
+
+
+/**
+ * handle time out while trying to fetch.
+ *
+ * \param object Object being fetched
+ * \return NSERROR_OK on success otherwise error code
+ */
+static nserror llcache_fetch_timeout(llcache_object *object)
+{
+	llcache_event event;
+
+	/* The fetch has already been cleaned up by the fetcher but
+	 * we would like to retry if we can.
+	 */
+	if (object->fetch.retries_remaining > 1) {
+		object->fetch.retries_remaining--;
+		return llcache_object_refetch(object);
+	}
+
+	/* The fetch has has already been cleaned up by the fetcher */
+	object->fetch.state = LLCACHE_FETCH_COMPLETE;
+	object->fetch.fetch = NULL;
+
+	/* Release candidate, if any */
+	if (object->candidate != NULL) {
+		object->candidate->candidate_count--;
+		object->candidate = NULL;
+	}
+
+	/* Invalidate cache control data */
+	llcache_invalidate_cache_control_data(object);
+
+	event.type = LLCACHE_EVENT_ERROR;
+	event.data.error.code = NSERROR_TIMEOUT;
+	event.data.error.msg = NULL;
+
+	return llcache_send_event_to_users(object, &event);
+}
+
 
 /**
  * Construct a sorted list of objects available for writeout operation.
@@ -2732,6 +2773,7 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 		error = llcache_fetch_redirect(object,
 				msg->data.redirect, &object);
 		break;
+
 	case FETCH_NOTMODIFIED:
 		/* Conditional request determined that cached object is fresh */
 		error = llcache_fetch_notmodified(object, &object);
@@ -2744,6 +2786,7 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 				msg->data.header_or_data.buf,
 				msg->data.header_or_data.len);
 		break;
+
 	case FETCH_FINISHED:
 		/* Finished fetching */
 	{
@@ -2775,14 +2818,9 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 	/* Out-of-band information */
 	case FETCH_TIMEDOUT:
 		/* Timed out while trying to fetch. */
-		/* The fetch has already been cleaned up by the fetcher but
-		 * we would like to retry if we can. */
-		if (object->fetch.retries_remaining > 1) {
-			object->fetch.retries_remaining--;
-			error = llcache_object_refetch(object);
-			break;
-		}
-		/* Fall through */
+		error = llcache_fetch_timeout(object);
+		break;
+
 	case FETCH_ERROR:
 		/* An error occurred while fetching */
 		/* The fetch has has already been cleaned up by the fetcher */
@@ -2807,6 +2845,7 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 		error = llcache_send_event_to_users(object, &event);
 
 		break;
+
 	case FETCH_PROGRESS:
 		/* Progress update */
 		event.type = LLCACHE_EVENT_PROGRESS;
@@ -2815,6 +2854,7 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 		error = llcache_send_event_to_users(object, &event);
 
 		break;
+
 	case FETCH_CERTS:
 		/* Certificate information from the fetch */
 		/** \todo CERTS - Should we persist this on the object and
@@ -2826,6 +2866,7 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 
 		error = llcache_send_event_to_users(object, &event);
 		break;
+
 	/* Events requiring action */
 	case FETCH_AUTH:
 		/* Need Authentication */
@@ -2838,6 +2879,7 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 
 		error = llcache_fetch_auth(object, msg->data.auth.realm);
 		break;
+
 	case FETCH_CERT_ERR:
 		/* Something went wrong when validating TLS certificates */
 
@@ -2849,6 +2891,7 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 
 		error = llcache_fetch_cert_error(object);
 		break;
+
 	case FETCH_SSL_ERR:
 		/* TLS connection setup failed */
 

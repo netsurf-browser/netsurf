@@ -62,6 +62,7 @@ typedef enum {
 	NSERROR_BAD_REDIRECT,           /**< Fetch encountered a bad redirect */
 	NSERROR_BAD_AUTH,               /**< Fetch needs authentication data */
 	NSERROR_BAD_CERTS,              /**< Fetch needs certificate chain check */
+	NSERROR_TIMEOUT,                /**< Operation timed out */
 } nserror;
 
 #endif

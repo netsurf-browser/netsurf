@@ -459,6 +459,7 @@ de.all.DirectoryError:Verzeichnis '%s' existiert bereits.
 fr.all.DirectoryError:répertoire '%s' existe déjà
 it.all.DirectoryError:La directory '%s' è già esistente
 nl.all.DirectoryError:map '%s' bestaat reeds
+en.all.Timeout:This site took too long to respond
 
 # error messages for RISC OS
 #

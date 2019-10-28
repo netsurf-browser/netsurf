@@ -333,6 +333,10 @@ const char *messages_get_errorcode(nserror code)
 	case NSERROR_BAD_CERTS:
 		/* Certificate chain verification failure */
 		return messages_get_ctx("CertificateVerificationNeeded", messages_hash);
+
+	case NSERROR_TIMEOUT:
+		/* Operation timed out */
+		return messages_get_ctx("Timeout", messages_hash);
 	}
 
 	/* The switch has no default, so the compiler should tell us when we
