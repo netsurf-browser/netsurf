@@ -90,6 +90,11 @@ static const char *authentication_description_fallback = "The site %s is request
 static const char *privacy_description_fallback = "A privacy error occurred while communicating with %s this may be a site configuration error or an attempt to steal private information (passwords, messages or credit cards)";
 
 /**
+ * timeout query description if messages fails to retrieve usable text
+ */
+static const char *timeout_description_fallback = "A connection to %s could not be established. The site may be temporarily unavailable or too busy to respond.";
+
+/**
  * issue fetch callbacks with locking
  */
 static inline bool
@@ -939,15 +944,18 @@ fetch_about_query_auth_handler_aborted:
 
 
 /**
- * generate the description of the privacy query
+ * generate a query description
  */
-static nserror get_privacy_description(struct nsurl *url, char **out_str)
+static nserror
+get_query_description(struct nsurl *url,
+		      const char *key,
+		      const char *fallback,
+		      char **out_str)
 {
 	nserror res;
 	char *url_s;
 	size_t url_l;
 	char *str = NULL;
-	const char *key = "PrivacyDescription";
 
 	/* get the host in question */
 	res = nsurl_get(url, NSURL_HOST, &url_s, &url_l);
@@ -967,10 +975,10 @@ static nserror get_privacy_description(struct nsurl *url, char **out_str)
 		 *  fall back to basic english.
 		 */
 		int slen;
-		slen = snprintf(str, 0, privacy_description_fallback, url_s) + 1;
+		slen = snprintf(str, 0, fallback, url_s) + 1;
 		str = malloc(slen);
 		if (str != NULL) {
-			snprintf(str, slen, privacy_description_fallback, url_s);
+			snprintf(str, slen, fallback, url_s);
 		}
 	}
 
@@ -1049,7 +1057,10 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 		goto fetch_about_query_ssl_handler_aborted;
 	}
 
-	res = get_privacy_description(siteurl, &description);
+	res = get_query_description(siteurl,
+				    "PrivacyDescription",
+				    privacy_description_fallback,
+				    &description);
 	if (res == NSERROR_OK) {
 		res = ssenddataf(ctx, "<div><p>%s</p></div>", description);
 		free(description);
@@ -1099,6 +1110,129 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 	return true;
 
 fetch_about_query_ssl_handler_aborted:
+	nsurl_unref(siteurl);
+
+	return false;
+}
+
+
+/**
+ * Handler to generate about scheme timeout query page
+ *
+ * \param ctx The fetcher context.
+ * \return true if handled false if aborted.
+ */
+static bool fetch_about_query_timeout_handler(struct fetch_about_context *ctx)
+{
+	nserror res;
+	char *url_s;
+	size_t url_l;
+	const char *reason = "";
+	const char *title;
+	struct nsurl *siteurl = NULL;
+	char *description = NULL;
+	const struct fetch_multipart_data *curmd; /* mutipart data iterator */
+
+	/* extract parameters from multipart post data */
+	curmd = ctx->multipart;
+	while (curmd != NULL) {
+		if (strcmp(curmd->name, "siteurl") == 0) {
+			res = nsurl_create(curmd->value, &siteurl);
+			if (res != NSERROR_OK) {
+				return fetch_about_srverror(ctx);
+			}
+		} else if (strcmp(curmd->name, "reason") == 0) {
+			reason = curmd->value;
+		}
+		curmd = curmd->next;
+	}
+
+	if (siteurl == NULL) {
+		return fetch_about_srverror(ctx);
+	}
+
+	/* content is going to return ok */
+	fetch_set_http_code(ctx->fetchh, 200);
+
+	/* content type */
+	if (fetch_about_send_header(ctx, "Content-Type: text/html; charset=utf-8")) {
+		goto fetch_about_query_timeout_handler_aborted;
+	}
+
+	title = messages_get("TimeoutTitle");
+	res = ssenddataf(ctx,
+			"<html>\n<head>\n"
+			"<title>%s</title>\n"
+			"<link rel=\"stylesheet\" type=\"text/css\" "
+			"href=\"resource:internal.css\">\n"
+			"</head>\n"
+			"<body id =\"timeout\">\n"
+			"<h1>%s</h1>\n",
+			title, title);
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_timeout_handler_aborted;
+	}
+
+	res = ssenddataf(ctx,
+			 "<form method=\"post\""
+			 " enctype=\"multipart/form-data\">");
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_timeout_handler_aborted;
+	}
+
+	res = get_query_description(siteurl,
+				    "TimeoutDescription",
+				    timeout_description_fallback,
+				    &description);
+	if (res == NSERROR_OK) {
+		res = ssenddataf(ctx, "<div><p>%s</p></div>", description);
+		free(description);
+		if (res != NSERROR_OK) {
+			goto fetch_about_query_timeout_handler_aborted;
+		}
+	}
+	res = ssenddataf(ctx, "<div><p>%s</p></div>", reason);
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_timeout_handler_aborted;
+	}
+
+	res = ssenddataf(ctx,
+			 "<div id=\"buttons\">"
+			 "<input type=\"submit\" id=\"back\" name=\"back\" "
+			 "value=\"%s\" class=\"default-action\">"
+			 "<input type=\"submit\" id=\"retry\" name=\"retry\" "
+			 "value=\"%s\">"
+			 "</div>",
+			 messages_get("Backtoprevious"),
+			 messages_get("TryAgain"));
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_timeout_handler_aborted;
+	}
+
+	res = nsurl_get(siteurl, NSURL_COMPLETE, &url_s, &url_l);
+	if (res != NSERROR_OK) {
+		url_s = strdup("");
+	}
+	res = ssenddataf(ctx,
+			 "<input type=\"hidden\" name=\"siteurl\" value=\"%s\">",
+			 url_s);
+	free(url_s);
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_timeout_handler_aborted;
+	}
+
+	res = ssenddataf(ctx, "</form></body>\n</html>\n");
+	if (res != NSERROR_OK) {
+		goto fetch_about_query_timeout_handler_aborted;
+	}
+
+	fetch_about_send_finished(ctx);
+
+	nsurl_unref(siteurl);
+
+	return true;
+
+fetch_about_query_timeout_handler_aborted:
 	nsurl_unref(siteurl);
 
 	return false;
@@ -1210,6 +1344,13 @@ struct about_handlers about_handler_list[] = {
 		SLEN("query/ssl"),
 		NULL,
 		fetch_about_query_privacy_handler,
+		true
+	},
+	{
+		"query/timeout",
+		SLEN("query/timeout"),
+		NULL,
+		fetch_about_query_timeout_handler,
 		true
 	}
 };

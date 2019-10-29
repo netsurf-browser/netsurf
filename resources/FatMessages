@@ -1087,6 +1087,15 @@ en.all.SSLCertErrRevoked:The certificate has been revoked by the issuer.
 en.all.SSLCertErrHostnameMismatch:The certificate is for a different host than the server
 
 
+# Timeout error interface
+# =======================
+#
+en.all.TimeoutTitle:Connection timed out
+en.all.TimeoutDescription: A connection to %s could not be established. The site may be temporarily unavailable or too busy to respond.
+en.all.Backtoprevious: Back
+en.all.TryAgain: Try Again
+
+
 # SSL certificate viewer
 # ======================
 #

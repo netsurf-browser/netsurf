@@ -343,3 +343,41 @@ body#privacy div#buttons {
 body#privacy div#buttons input#back {
   margin-right: 1em;
 }
+
+/*
+ * timeout query styling
+ */
+
+body#timeout {
+  max-width: 45em;
+}
+
+body#timeout h1 {
+  padding: 0.8em 0.4em 0.5em 0.4em;
+  border-bottom: 0.1em solid #444;
+  margin: 0 0 1.3em 0;
+  background: #c55;
+  color: white;
+}
+
+body#timeout form {
+  /* Just to center the form on the page */
+  margin: 0 auto;
+  /* To see the outline of the form */
+  padding: 1em;
+  border: 1px solid #CCC;
+  border-radius: 1em;
+}
+
+body#timeout form div + div {
+  margin-top: 1em;
+}
+
+body#timeout div#buttons {
+    text-align: right;
+    margin-right: 1em;
+}
+
+body#timeout div#buttons input#back {
+  margin-right: 1em;
+}

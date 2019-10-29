@@ -148,6 +148,7 @@ CORESTRING_LWC_VALUE(no_cache, "no-cache");
 CORESTRING_LWC_VALUE(no_store, "no-store");
 CORESTRING_LWC_VALUE(query_auth, "query/auth");
 CORESTRING_LWC_VALUE(query_ssl, "query/ssl");
+CORESTRING_LWC_VALUE(query_timeout, "query/timeout");
 
 /* mime types */
 CORESTRING_LWC_VALUE(multipart_form_data, "multipart/form-data");
@@ -360,6 +361,7 @@ CORESTRING_DOM_VALUE(html_namespace, "http://www.w3.org/1999/xhtml");
 CORESTRING_NSURL(about_blank, "about:blank");
 CORESTRING_NSURL(about_query_ssl, "about:query/ssl");
 CORESTRING_NSURL(about_query_auth, "about:query/auth");
+CORESTRING_NSURL(about_query_timeout, "about:query/timeout");
 
 #undef CORESTRING_LWC_STRING
 #undef CORESTRING_DOM_STRING
