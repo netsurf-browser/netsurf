@@ -25,7 +25,7 @@
 #
 # The split-messages tool requires keys for all languages to be
 #  grouped together but language order is not important. If a key for a
-#  specific language is ommited the default language value will be used
+#  specific language is omitted the default language value will be used
 #  instead (currently en)
 #
 # If you find something tagged 'all', but it is only relevant to a specific
@@ -1099,8 +1099,8 @@ en.all.TryAgain: Try Again
 # Fetch error interface
 # =======================
 #
-en.all.FetchErrorTitle:Error occured fetching page
-en.all.FetchErrorDescription:An error occoured when connecting to %s
+en.all.FetchErrorTitle:Error occurred fetching page
+en.all.FetchErrorDescription:An error occurred when connecting to %s
 
 
 # SSL certificate viewer

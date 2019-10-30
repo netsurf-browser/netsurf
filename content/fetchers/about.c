@@ -79,25 +79,6 @@ struct about_handlers {
 	bool hidden; /**< If entry should be hidden in listing */
 };
 
-/**
- * authentication query description if messages fails to retrieve usable text
- */
-static const char *authentication_description_fallback = "The site %s is requesting your username and password. The realm is \"%s\"";
-
-/**
- * privacy query description if messages fails to retrieve usable text
- */
-static const char *privacy_description_fallback = "A privacy error occurred while communicating with %s this may be a site configuration error or an attempt to steal private information (passwords, messages or credit cards)";
-
-/**
- * timeout query description if messages fails to retrieve usable text
- */
-static const char *timeout_description_fallback = "A connection to %s could not be established. The site may be temporarily unavailable or too busy to respond.";
-
-/**
- * fetcherror query description if messages fails to retrieve usable text
- */
-static const char *fetcherror_description_fallback = "An error occoured when connecting to %s";
 
 /**
  * issue fetch callbacks with locking
@@ -740,7 +721,6 @@ get_authentication_description(struct nsurl *url,
 	char *url_s;
 	size_t url_l;
 	char *str = NULL;
-	int slen;
 	const char *key;
 
 	res = nsurl_get(url, NSURL_HOST, &url_s, &url_l);
@@ -755,23 +735,46 @@ get_authentication_description(struct nsurl *url,
 	}
 
 	str = messages_get_buff(key, url_s, realm);
-	NSLOG(netsurf, INFO,
-	      "key:%s url:%s realm:%s str:%s", key, url_s, realm, str);
-
-	if ((str != NULL) && (strcmp(key, str) != 0)) {
+	if (str != NULL) {
+		NSLOG(netsurf, INFO,
+		      "key:%s url:%s realm:%s str:%s",
+		      key, url_s, realm, str);
 		*out_str = str;
 	} else {
-		/* no message so fallback */
-		slen = snprintf(str, 0, authentication_description_fallback,
-				url_s, realm) + 1;
-		str = malloc(slen);
-		if (str == NULL) {
-			res = NSERROR_NOMEM;
-		} else {
-			snprintf(str, slen, authentication_description_fallback,
-				 url_s, realm);
-			*out_str = str;
-		}
+		res = NSERROR_NOMEM;
+	}
+
+	free(url_s);
+
+	return res;
+}
+
+
+/**
+ * generate a generic query description
+ */
+static nserror
+get_query_description(struct nsurl *url,
+		      const char *key,
+		      char **out_str)
+{
+	nserror res;
+	char *url_s;
+	size_t url_l;
+	char *str = NULL;
+
+	/* get the host in question */
+	res = nsurl_get(url, NSURL_HOST, &url_s, &url_l);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	/* obtain the description with the url substituted */
+	str = messages_get_buff(key, url_s);
+	if (str == NULL) {
+		res = NSERROR_NOMEM;
+	} else {
+		*out_str = str;
 	}
 
 	free(url_s);
@@ -949,56 +952,6 @@ fetch_about_query_auth_handler_aborted:
 
 
 /**
- * generate a query description
- */
-static nserror
-get_query_description(struct nsurl *url,
-		      const char *key,
-		      const char *fallback,
-		      char **out_str)
-{
-	nserror res;
-	char *url_s;
-	size_t url_l;
-	char *str = NULL;
-
-	/* get the host in question */
-	res = nsurl_get(url, NSURL_HOST, &url_s, &url_l);
-	if (res != NSERROR_OK) {
-		return res;
-	}
-
-	/* obtain the description with the url substituted */
-	str = messages_get_buff(key, url_s);
-	if ((str != NULL) && (strcmp(key, str) == 0)) {
-		/* the returned string was simply the key */
-		free(str);
-		str = NULL;
-	}
-	if (str == NULL) {
-		/* failed to get suitable translated message text so
-		 *  fall back to basic english.
-		 */
-		int slen;
-		slen = snprintf(str, 0, fallback, url_s) + 1;
-		str = malloc(slen);
-		if (str != NULL) {
-			snprintf(str, slen, fallback, url_s);
-		}
-	}
-
-	if (str == NULL) {
-		res = NSERROR_NOMEM;
-	} else {
-		*out_str = str;
-	}
-	free(url_s);
-
-	return res;
-}
-
-
-/**
  * Handler to generate about scheme privacy query page
  *
  * \param ctx The fetcher context.
@@ -1064,7 +1017,6 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 
 	res = get_query_description(siteurl,
 				    "PrivacyDescription",
-				    privacy_description_fallback,
 				    &description);
 	if (res == NSERROR_OK) {
 		res = ssenddataf(ctx, "<div><p>%s</p></div>", description);
@@ -1187,7 +1139,6 @@ static bool fetch_about_query_timeout_handler(struct fetch_about_context *ctx)
 
 	res = get_query_description(siteurl,
 				    "TimeoutDescription",
-				    timeout_description_fallback,
 				    &description);
 	if (res == NSERROR_OK) {
 		res = ssenddataf(ctx, "<div><p>%s</p></div>", description);
@@ -1311,7 +1262,6 @@ fetch_about_query_fetcherror_handler(struct fetch_about_context *ctx)
 
 	res = get_query_description(siteurl,
 				    "FetchErrorDescription",
-				    fetcherror_description_fallback,
 				    &description);
 	if (res == NSERROR_OK) {
 		res = ssenddataf(ctx, "<div><p>%s</p></div>", description);

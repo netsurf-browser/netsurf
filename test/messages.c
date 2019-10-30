@@ -118,8 +118,7 @@ START_TEST(message_get_buff_test)
 	ck_assert_int_eq(res, NSERROR_OK);
 
 	buf = messages_get_buff("DefinitelyNotAKey");
-	ck_assert_str_eq(buf, "DefinitelyNotAKey");
-	free(buf);
+	ck_assert(buf == NULL);
 
 	buf = messages_get_buff("NoMemory");
 	ck_assert_str_eq(buf, "NetSurf is running out of memory. Please free some memory and try again.");

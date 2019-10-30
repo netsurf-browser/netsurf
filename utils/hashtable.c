@@ -347,10 +347,12 @@ const char *hash_get(struct hash_table *ht, const char *key)
 	h = hash_string_fnv(key, &key_length);
 	c = h % ht->nchains;
 
-	for (e = ht->chain[c]; e; e = e->next)
+	for (e = ht->chain[c]; e; e = e->next) {
 		if ((key_length == e->key_length) &&
-				(memcmp(key, e->pairing, key_length) == 0))
+		    (memcmp(key, e->pairing, key_length) == 0)) {
 			return e->pairing + key_length + 1;
+		}
+	}
 
 	return NULL;
 }

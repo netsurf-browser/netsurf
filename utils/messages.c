@@ -42,8 +42,66 @@
 /** Messages are stored in a fixed-size hash table. */
 #define HASH_SIZE 101
 
-/** The hash table used to store the standard Messages file for the old API */
+/**
+ * The hash table used to store the standard Messages file for the old API
+ */
 static struct hash_table *messages_hash = NULL;
+
+
+/**
+ * Create a message context
+ *
+ * generate a message context populated with english fallbacks for
+ *   some formatted messages.
+ */
+static struct hash_table *messages_create_ctx(int hash_size)
+{
+	struct hash_table *nctx;
+	const struct {
+		const char *key;
+		const char *value;
+	} fallback[] = {
+		{ "LoginDescription",
+		  "The site %s is requesting your username and password. "
+		  "The realm is \"%s\""},
+		{ "PrivacyDescription",
+		  "A privacy error occurred while communicating with %s this "
+		  "may be a site configuration error or an attempt to steal "
+		  "private information (passwords, messages or credit cards)"},
+		{ "TimeoutDescription",
+		  "A connection to %s could not be established. The site may "
+		  "be temporarily unavailable or too busy to respond."},
+		{ "FetchErrorDescription",
+		  "An error occurred when connecting to %s"},
+		{ NULL, NULL}
+	};
+	nctx = hash_create(hash_size);
+
+	if (nctx != NULL) {
+		int floop;
+		for (floop = 0; fallback[floop].key != NULL; floop++) {
+			hash_add(nctx,
+				 fallback[floop].key,
+				 fallback[floop].value);
+		}
+	}
+
+	return nctx;
+}
+
+/**
+ * Free memory used by a messages hash.
+ * The context will not be valid after this function returns.
+ *
+ * \param  ctx  context of messages file to free
+ */
+static void messages_destroy_ctx(struct hash_table *ctx)
+{
+	if (ctx == NULL)
+		return;
+
+	hash_destroy(ctx);
+}
 
 
 /**
@@ -66,7 +124,7 @@ static nserror messages_load_ctx(const char *path, struct hash_table **ctx)
 		return hash_add_file(*ctx, path);
 	}
 
-	nctx = hash_create(HASH_SIZE);
+	nctx = messages_create_ctx(HASH_SIZE);
 	if (nctx == NULL) {
 		NSLOG(netsurf, INFO,
 		      "Unable to create hash table for messages file %s",
@@ -115,21 +173,6 @@ messages_get_ctx(const char *key, struct hash_table *ctx)
 }
 
 
-/**
- * Free memory used by a messages hash.
- * The context will not be valid after this function returns.
- *
- * \param  ctx  context of messages file to free
- */
-static void messages_destroy_ctx(struct hash_table *ctx)
-{
-	if (ctx == NULL)
-		return;
-
-	hash_destroy(ctx);
-}
-
-
 /* exported interface documented in messages.h */
 nserror messages_add_from_file(const char *path)
 {
@@ -148,7 +191,7 @@ nserror messages_add_from_inline(const uint8_t *data, size_t size)
 {
 	/* ensure the hash table is initialised */
 	if (messages_hash == NULL) {
-		messages_hash = hash_create(HASH_SIZE);
+		messages_hash = messages_create_ctx(HASH_SIZE);
 	}
 	if (messages_hash == NULL) {
 		NSLOG(netsurf, INFO, "Unable to create hash table");
@@ -156,6 +199,7 @@ nserror messages_add_from_inline(const uint8_t *data, size_t size)
 	}
 	return hash_add_inline(messages_hash, data, size);
 }
+
 
 /* exported interface documented in messages.h */
 char *messages_get_buff(const char *key, ...)
@@ -165,7 +209,17 @@ char *messages_get_buff(const char *key, ...)
 	int buff_len = 0;
 	va_list ap;
 
-	msg_fmt = messages_get_ctx(key, messages_hash);
+	assert(key != NULL);
+
+	if (messages_hash == NULL) {
+		return NULL;
+	}
+
+	msg_fmt = hash_get(messages_hash, key);
+
+	if (msg_fmt == NULL) {
+		return NULL;
+	}
 
 	va_start(ap, key);
 	buff_len = vsnprintf(buff, buff_len, msg_fmt, ap);
