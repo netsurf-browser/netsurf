@@ -1096,6 +1096,13 @@ en.all.Backtoprevious: Back
 en.all.TryAgain: Try Again
 
 
+# Fetch error interface
+# =======================
+#
+en.all.FetchErrorTitle:Error occured fetching page
+en.all.FetchErrorDescription:An error occoured when connecting to %s
+
+
 # SSL certificate viewer
 # ======================
 #

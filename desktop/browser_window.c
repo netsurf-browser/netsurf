@@ -1217,6 +1217,50 @@ browser_window__handle_timeout(struct browser_window *bw, nsurl *url)
 
 
 /**
+ * Handle non specific errors during a fetch
+ */
+static nserror
+browser_window__handle_fetcherror(struct browser_window *bw,
+				  const char *reason,
+				  nsurl *url)
+{
+	struct browser_fetch_parameters params;
+	nserror err;
+
+	memset(&params, 0, sizeof(params));
+
+	params.url = nsurl_ref(corestring_nsurl_about_query_fetcherror);
+	params.referrer = nsurl_ref(url);
+	params.flags = BW_NAVIGATE_HISTORY | BW_NAVIGATE_NO_TERMINAL_HISTORY_UPDATE | BW_NAVIGATE_INTERNAL;
+
+	err = fetch_multipart_data_new_kv(&params.post_multipart,
+					  "siteurl",
+					  nsurl_access(url));
+	if (err != NSERROR_OK) {
+		goto out;
+	}
+
+	err = fetch_multipart_data_new_kv(&params.post_multipart,
+					  "reason",
+					  reason);
+	if (err != NSERROR_OK) {
+		goto out;
+	}
+
+	/* Now we issue the fetch */
+	bw->internal_nav = true;
+	err = browser_window__navigate_internal(bw, &params);
+	if (err != NSERROR_OK) {
+		goto out;
+	}
+
+ out:
+	browser_window__free_fetch_parameters(&params);
+	return err;
+}
+
+
+/**
  * Handle errors during content fetch
  */
 static nserror
@@ -1226,39 +1270,14 @@ browser_window__handle_error(struct browser_window *bw,
 {
 	const char *message = event->data.errordata.errormsg;
 	nserror code = event->data.errordata.errorcode;
-	bool do_warning = true;
 	nserror res;
 	nsurl *url = hlcache_handle_get_url(c);
 
 	/* Unexpected OK? */
 	assert(code != NSERROR_OK);
 
-	switch (code) {
-	case NSERROR_BAD_AUTH:
-		do_warning = false;
-		break;
-	case NSERROR_BAD_CERTS:
-		do_warning = false;
-		break;
-	case NSERROR_BAD_REDIRECT:
-		/* The message is already filled out */
-		break;
-	case NSERROR_TIMEOUT:
-		do_warning = false;
-		break;
-	default:
-		if (message == NULL) {
-			message = messages_get_errorcode(code);
-		}
-		break;
-	}
-
-	if (do_warning) {
-		browser_window_set_status(bw, message);
-		/* Only warn the user about errors in top-level windows */
-		if (bw->browser_window_type == BROWSER_WINDOW_NORMAL) {
-			guit->misc->warning(message, NULL);
-		}
+	if (message == NULL) {
+		message = messages_get_errorcode(code);
 	}
 
 	if (c == bw->loading_content) {
@@ -1274,13 +1293,17 @@ browser_window__handle_error(struct browser_window *bw,
 	case NSERROR_BAD_AUTH:
 		res = browser_window__handle_login(bw, message, url);
 		break;
+
 	case NSERROR_BAD_CERTS:
 		res = browser_window__handle_bad_certs(bw, url);
 		break;
+
 	case NSERROR_TIMEOUT:
 		res = browser_window__handle_timeout(bw, url);
 		break;
+
 	default:
+		res = browser_window__handle_fetcherror(bw, message, url);
 		break;
 	}
 
@@ -2410,6 +2433,8 @@ is_internal_navigate_url(nsurl *url)
 				} else if (path == corestring_lwc_query_ssl) {
 					is_internal = true;
 				} else if (path == corestring_lwc_query_timeout) {
+					is_internal = true;
+				} else if (path == corestring_lwc_query_fetcherror) {
 					is_internal = true;
 				}
 			}
@@ -3614,6 +3639,42 @@ navigate_internal_query_timeout(struct browser_window *bw,
 
 
 /**
+ * Internal navigation handler for the fetch error query page.
+ *
+ * If the parameters indicate we're processing a *response* from the handler
+ * then we deal with that, otherwise we pass it on to the about: handler
+ */
+static nserror
+navigate_internal_query_fetcherror(struct browser_window *bw,
+				   struct browser_fetch_parameters *params)
+{
+	bool is_retry = false, is_back = false;
+
+	NSLOG(netsurf, INFO, "bw:%p params:%p", bw, params);
+
+	assert(params->post_multipart != NULL);
+
+	is_retry = fetch_multipart_data_find(params->post_multipart, "retry") != NULL;
+	is_back = fetch_multipart_data_find(params->post_multipart, "back") != NULL;
+
+	if (is_back) {
+		/* do a rough-and-ready nav to the old 'current'
+		 * parameters, with any post data stripped away
+		 */
+		return browser_window__reload_current_parameters(bw);
+	}
+
+	if (is_retry) {
+		/* Finally navigate to the original loading parameters */
+		bw->internal_nav = false;
+		return navigate_internal_real(bw, &bw->loading_parameters);
+	}
+
+	return navigate_internal_real(bw, params);
+}
+
+
+/**
  * dispatch to internal query handlers or normal navigation
  *
  * Here we determine if we're navigating to an internal query URI and
@@ -3650,6 +3711,10 @@ browser_window__navigate_internal(struct browser_window *bw,
 	if (path == corestring_lwc_query_timeout) {
 		lwc_string_unref(path);
 		return navigate_internal_query_timeout(bw, params);
+	}
+	if (path == corestring_lwc_query_fetcherror) {
+		lwc_string_unref(path);
+		return navigate_internal_query_fetcherror(bw, params);
 	}
 	lwc_string_unref(path);
 
