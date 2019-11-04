@@ -21,8 +21,8 @@
  * Save HTML document with dependencies (interface).
  */
 
-#ifndef _NETSURF_DESKTOP_SAVE_COMPLETE_H_
-#define _NETSURF_DESKTOP_SAVE_COMPLETE_H_
+#ifndef NETSURF_DESKTOP_SAVE_COMPLETE_H_
+#define NETSURF_DESKTOP_SAVE_COMPLETE_H_
 
 #include <stdbool.h>
 
@@ -56,9 +56,9 @@ nserror save_complete_finalise(void);
  * \param  c         CONTENT_HTML to save
  * \param  path      Native path to directory to save in to (must exist)
  * \param  set_type  Callback to set type of a file, or NULL
- * \return  true on success, false on error and error reported
+ * \return NSERROR_OK on success else error code
  */
-bool save_complete(struct hlcache_handle *c, const char *path,
+nserror save_complete(struct hlcache_handle *c, const char *path,
 		save_complete_set_type_cb set_type);
 
 #endif
