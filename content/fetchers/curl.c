@@ -1325,9 +1325,9 @@ static void fetch_curl_poll(lwc_string *scheme_ignored)
 	do {
 		codem = curl_multi_perform(fetch_curl_multi, &running);
 		if (codem != CURLM_OK && codem != CURLM_CALL_MULTI_PERFORM) {
-			NSLOG(netsurf, WARNING, "curl_multi_perform: %i %s",
+			NSLOG(netsurf, WARNING,
+			      "curl_multi_perform: %i %s",
 			      codem, curl_multi_strerror(codem));
-			guit->misc->warning("MiscError", curl_multi_strerror(codem));
 			return;
 		}
 	} while (codem == CURLM_CALL_MULTI_PERFORM);
