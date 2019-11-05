@@ -1841,20 +1841,24 @@ bool html_redraw_box(const html_content *html, struct box *box,
 
 	/* scrollbars */
 	if (((box->style && box->type != BOX_BR &&
-			box->type != BOX_TABLE && box->type != BOX_INLINE &&
-			(overflow_x == CSS_OVERFLOW_SCROLL ||
-			 overflow_x == CSS_OVERFLOW_AUTO ||
-			 overflow_y == CSS_OVERFLOW_SCROLL ||
-			 overflow_y == CSS_OVERFLOW_AUTO)) ||
-			(box->object && content_get_type(box->object) ==
-			CONTENT_HTML)) && box->parent != NULL) {
+	      box->type != BOX_TABLE && box->type != BOX_INLINE &&
+	      (overflow_x == CSS_OVERFLOW_SCROLL ||
+	       overflow_x == CSS_OVERFLOW_AUTO ||
+	       overflow_y == CSS_OVERFLOW_SCROLL ||
+	       overflow_y == CSS_OVERFLOW_AUTO)) ||
+	     (box->object && content_get_type(box->object) ==
+	      CONTENT_HTML)) && box->parent != NULL) {
+		nserror res;
 
 		has_x_scroll = box_hscrollbar_present(box);
 		has_y_scroll = box_vscrollbar_present(box);
 
-		if (!box_handle_scrollbars((struct content *)html,
-				box, has_x_scroll, has_y_scroll))
+		res = box_handle_scrollbars((struct content *)html,
+					    box, has_x_scroll, has_y_scroll);
+		if (res != NSERROR_OK) {
+			NSLOG(netsurf, INFO, "%s", messages_get_errorcode(res));
 			return false;
+		}
 
 		if (box->scroll_x != NULL)
 			scrollbar_redraw(box->scroll_x,

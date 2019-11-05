@@ -3486,8 +3486,6 @@ navigate_internal_real(struct browser_window *bw,
 
 	default: /* report error to user */
 		browser_window_set_status(bw, messages_get_errorcode(res));
-		/** @todo should the caller report the error? */
-		guit->misc->warning(messages_get_errorcode(res), NULL);
 		break;
 
 	}
@@ -4445,8 +4443,6 @@ browser_window_find_target(struct browser_window *bw,
 	 * that begin with an underscore. */
 	if (target[0] != '_') {
 		bw_target->name = strdup(target);
-		if (!bw_target->name)
-			guit->misc->warning("NoMemory", NULL);
 	}
 	return bw_target;
 }

@@ -353,8 +353,19 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth, bool style);
  */
 bool box_extract_link(const struct html_content *content, const struct dom_string *dsrel, struct nsurl *base, struct nsurl **result);
 
-bool box_handle_scrollbars(struct content *c, struct box *box,
+/**
+ * Applies the given scroll setup to a box. This includes scroll
+ * creation/deletion as well as scroll dimension updates.
+ *
+ * \param c		content in which the box is located
+ * \param box		the box to handle the scrolls for
+ * \param bottom	whether the horizontal scrollbar should be present
+ * \param right		whether the vertical scrollbar should be present
+ * \return		true on success false otherwise
+ */
+nserror box_handle_scrollbars(struct content *c, struct box *box,
 		bool bottom, bool right);
+
 bool box_vscrollbar_present(const struct box *box);
 bool box_hscrollbar_present(const struct box *box);
 
