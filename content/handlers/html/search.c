@@ -87,13 +87,11 @@ search_create_context(struct content *c, content_type type, void *gui_data)
 
 	context = malloc(sizeof(struct search_context));
 	if (context == NULL) {
-		guit->misc->warning("NoMemory", 0);
 		return NULL;
 	}
 
 	search_head = malloc(sizeof(struct list_entry));
 	if (search_head == NULL) {
-		guit->misc->warning("NoMemory", 0);
 		free(context);
 		return NULL;
 	}

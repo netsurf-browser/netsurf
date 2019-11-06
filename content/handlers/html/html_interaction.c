@@ -1101,7 +1101,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	}
 
 	if (res != NSERROR_OK) {
-		guit->misc->warning(messages_get_errorcode(res), NULL);
+		NSLOG(netsurf, ERROR, "%s", messages_get_errorcode(res));
 	}
 
 }
