@@ -1119,16 +1119,17 @@ bool html_keypress(struct content *c, uint32_t key)
 {
 	html_content *html = (html_content *) c;
 	struct selection *sel = &html->sel;
-	struct box *box;
 
 	switch (html->focus_type) {
 	case HTML_FOCUS_CONTENT:
-		box = html->focus_owner.content;
-		return content_keypress(box->object, key);
+		return content_keypress(html->focus_owner.content->object, key);
 
 	case HTML_FOCUS_TEXTAREA:
-		box = html->focus_owner.textarea;
-		return box_textarea_keypress(html, box, key);
+		if (box_textarea_keypress(html, html->focus_owner.textarea, key) == NSERROR_OK) {
+			return true;
+		} else {
+			return false;
+		}
 
 	default:
 		/* Deal with it below */

@@ -38,13 +38,13 @@
 #include "html/form_internal.h"
 
 
-bool box_textarea_keypress(html_content *html, struct box *box, uint32_t key)
+nserror box_textarea_keypress(html_content *html, struct box *box, uint32_t key)
 {
 	struct form_control *gadget = box->gadget;
 	struct textarea *ta = gadget->data.text.ta;
 	struct form* form = box->gadget->form;
 	struct content *c = (struct content *) html;
-	nserror res;
+	nserror res = NSERROR_OK;
 
 	assert(ta != NULL);
 
@@ -57,12 +57,8 @@ bool box_textarea_keypress(html_content *html, struct box *box, uint32_t key)
 						  html->bw,
 						  form,
 						  NULL);
-				if (res != NSERROR_OK) {
-					guit->misc->warning(messages_get_errorcode(res), NULL);
-				}
-
 			}
-			return true;
+			break;
 
 		case NS_KEY_TAB:
 		{
@@ -70,20 +66,20 @@ bool box_textarea_keypress(html_content *html, struct box *box, uint32_t key)
 			/* Find next text entry field that is actually
 			 * displayed (i.e. has an associated box) */
 			for (next_input = gadget->next;
-					next_input &&
-					((next_input->type != GADGET_TEXTBOX &&
-					next_input->type != GADGET_TEXTAREA &&
-					next_input->type != GADGET_PASSWORD) ||
-					!next_input->box);
-					next_input = next_input->next)
+			     next_input &&
+				     ((next_input->type != GADGET_TEXTBOX &&
+				       next_input->type != GADGET_TEXTAREA &&
+				       next_input->type != GADGET_PASSWORD) ||
+				      !next_input->box);
+			     next_input = next_input->next)
 				;
-			if (!next_input)
-				return true;
 
-			textarea_set_caret(ta, -1);
-			textarea_set_caret(next_input->data.text.ta, 0);
+			if (next_input != NULL) {
+				textarea_set_caret(ta, -1);
+				textarea_set_caret(next_input->data.text.ta, 0);
+			}
 		}
-			return true;
+			break;
 
 		case NS_KEY_SHIFT_TAB:
 		{
@@ -91,28 +87,31 @@ bool box_textarea_keypress(html_content *html, struct box *box, uint32_t key)
 			/* Find previous text entry field that is actually
 			 * displayed (i.e. has an associated box) */
 			for (prev_input = gadget->prev;
-					prev_input &&
-					((prev_input->type != GADGET_TEXTBOX &&
-					prev_input->type != GADGET_TEXTAREA &&
-					prev_input->type != GADGET_PASSWORD) ||
-					!prev_input->box);
-					prev_input = prev_input->prev)
+			     prev_input &&
+				     ((prev_input->type != GADGET_TEXTBOX &&
+				       prev_input->type != GADGET_TEXTAREA &&
+				       prev_input->type != GADGET_PASSWORD) ||
+				      !prev_input->box);
+			     prev_input = prev_input->prev)
 				;
-			if (!prev_input)
-				return true;
 
-			textarea_set_caret(ta, -1);
-			textarea_set_caret(prev_input->data.text.ta, 0);
+			if (prev_input != NULL) {
+				textarea_set_caret(ta, -1);
+				textarea_set_caret(prev_input->data.text.ta, 0);
+			}
 		}
-			return true;
+			break;
 
 		default:
 			/* Pass to textarea widget */
+			if (!textarea_keypress(ta, key)) {
+				res = NSERROR_INVALID;
+			}
 			break;
 		}
 	}
 
-	return textarea_keypress(ta, key);
+	return res;
 }
 
 

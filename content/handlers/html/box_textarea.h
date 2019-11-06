@@ -45,8 +45,8 @@ bool box_textarea_create_textarea(struct html_content *html,
  * \param html    html content object
  * \param box     box with textarea widget
  * \param key     keypress
- * \return true iff keypress handled
+ * \return NSERROR_OK iff keypress handled
  */
-bool box_textarea_keypress(struct html_content *html, struct box *box, uint32_t key);
+nserror box_textarea_keypress(struct html_content *html, struct box *box, uint32_t key);
 
 #endif
