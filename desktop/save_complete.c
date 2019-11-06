@@ -420,7 +420,7 @@ save_complete_save_imported_sheets(save_complete_ctx *ctx,
 				   struct nscss_import *imports,
 				   uint32_t import_count)
 {
-	nserror res;
+	nserror res = NSERROR_OK;
 	uint32_t i;
 
 	for (i = 0; i < import_count; i++) {
