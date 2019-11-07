@@ -1486,10 +1486,11 @@ form_encode_item(const char *item,
 }
 
 /* exported interface documented in html/form_internal.h */
-bool form_open_select_menu(void *client_data,
-		struct form_control *control,
-		select_menu_redraw_callback callback,
-		struct content *c)
+nserror
+form_open_select_menu(void *client_data,
+		      struct form_control *control,
+		      select_menu_redraw_callback callback,
+		      struct content *c)
 {
 	int line_height_with_spacing;
 	struct box *box;
@@ -1497,15 +1498,14 @@ bool form_open_select_menu(void *client_data,
 	int total_height;
 	struct form_select_menu *menu;
 	html_content *html = (html_content *)c;
-
+	nserror res;
 
 	/* if the menu is opened for the first time */
 	if (control->data.select.menu == NULL) {
 
 		menu = calloc(1, sizeof (struct form_select_menu));
 		if (menu == NULL) {
-			guit->misc->warning("NoMemory", 0);
-			return false;
+			return NSERROR_NOMEM;
 		}
 
 		control->data.select.menu = menu;
@@ -1513,9 +1513,8 @@ bool form_open_select_menu(void *client_data,
 		box = control->box;
 
 		menu->width = box->width +
-				box->border[RIGHT].width +
-				box->border[LEFT].width +
-				box->padding[RIGHT] + box->padding[LEFT];
+			box->border[RIGHT].width + box->padding[RIGHT] +
+			box->border[LEFT].width + box->padding[LEFT];
 
 		font_plot_style_from_css(&html->len_ctx, control->box->style,
 				&fstyle);
@@ -1535,28 +1534,31 @@ bool form_open_select_menu(void *client_data,
 		menu->height = total_height;
 
 		if (menu->height > MAX_SELECT_HEIGHT) {
-
 			menu->height = MAX_SELECT_HEIGHT;
 		}
+
 		menu->client_data = client_data;
 		menu->callback = callback;
-		if (scrollbar_create(false,
-				menu->height,
-				total_height,
-				menu->height,
-				control,
-				form_select_menu_scroll_callback,
-				&(menu->scrollbar)) != NSERROR_OK) {
+		res = scrollbar_create(false,
+				       menu->height,
+				       total_height,
+				       menu->height,
+				       control,
+				       form_select_menu_scroll_callback,
+				       &(menu->scrollbar));
+		if (res != NSERROR_OK) {
+			control->data.select.menu = NULL;
 			free(menu);
-			return false;
+			return res;
 		}
 		menu->c = c;
+	} else {
+		menu = control->data.select.menu;
 	}
-	else menu = control->data.select.menu;
 
 	menu->callback(client_data, 0, 0, menu->width, menu->height);
 
-	return true;
+	return NSERROR_OK;
 }
 
 

@@ -716,9 +716,15 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			if (mouse & BROWSER_MOUSE_CLICK_1 &&
 			    nsoption_bool(core_select_menu)) {
 				html->visible_select_menu = gadget;
-				form_open_select_menu(c, gadget,
+				res = form_open_select_menu(c, gadget,
 						form_select_menu_callback,
 						c);
+				if (res != NSERROR_OK) {
+					NSLOG(netsurf, ERROR,
+					      "%s",
+					      messages_get_errorcode(res));
+					html->visible_select_menu = NULL;
+				}
 				pointer = BROWSER_POINTER_DEFAULT;
 			} else if (mouse & BROWSER_MOUSE_CLICK_1) {
 				msg_data.select_menu.gadget = gadget;

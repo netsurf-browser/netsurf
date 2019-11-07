@@ -200,13 +200,13 @@ bool form_successful_controls(struct form *form,
 /**
  * Open a select menu for a select form control, creating it if necessary.
  *
- * \param client_data  data passed to the redraw callback
- * \param control  The select form control for which the menu is being opened
- * \param redraw_callback  The callback to redraw the select menu.
- * \param c  The content the select menu is opening for.
- * \return false on memory exhaustion, true otherwise
+ * \param client_data data passed to the redraw callback
+ * \param control The select form control for which the menu is being opened
+ * \param redraw_callback The callback to redraw the select menu.
+ * \param c The content the select menu is opening for.
+ * \return NSERROR_OK on sucess else error code.
  */
-bool form_open_select_menu(void *client_data,
+nserror form_open_select_menu(void *client_data,
 		struct form_control *control,
 		select_menu_redraw_callback redraw_callback,
 		struct content *c);
