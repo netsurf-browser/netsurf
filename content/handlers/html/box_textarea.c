@@ -43,24 +43,32 @@ nserror box_textarea_keypress(html_content *html, struct box *box, uint32_t key)
 	struct form_control *gadget = box->gadget;
 	struct textarea *ta = gadget->data.text.ta;
 	struct form* form = box->gadget->form;
-	struct content *c = (struct content *) html;
+	struct content *c = (struct content *)html;
 	nserror res = NSERROR_OK;
 
 	assert(ta != NULL);
 
-	if (gadget->type != GADGET_TEXTAREA) {
-		switch (key) {
-		case NS_KEY_NL:
-		case NS_KEY_CR:
-			if (form) {
-				res = form_submit(content_get_url(c),
-						  html->bw,
-						  form,
-						  NULL);
-			}
-			break;
+	if (gadget->type == GADGET_TEXTAREA) {
+		if (textarea_keypress(ta, key)) {
+			return NSERROR_OK;
+		} else {
+			return NSERROR_INVALID;
+		}
+	}
 
-		case NS_KEY_TAB:
+	/* non textarea input */
+	switch (key) {
+	case NS_KEY_NL:
+	case NS_KEY_CR:
+		if (form) {
+			res = form_submit(content_get_url(c),
+					  html->bw,
+					  form,
+					  NULL);
+		}
+		break;
+
+	case NS_KEY_TAB:
 		{
 			struct form_control *next_input;
 			/* Find next text entry field that is actually
@@ -79,9 +87,9 @@ nserror box_textarea_keypress(html_content *html, struct box *box, uint32_t key)
 				textarea_set_caret(next_input->data.text.ta, 0);
 			}
 		}
-			break;
+		break;
 
-		case NS_KEY_SHIFT_TAB:
+	case NS_KEY_SHIFT_TAB:
 		{
 			struct form_control *prev_input;
 			/* Find previous text entry field that is actually
@@ -100,15 +108,14 @@ nserror box_textarea_keypress(html_content *html, struct box *box, uint32_t key)
 				textarea_set_caret(prev_input->data.text.ta, 0);
 			}
 		}
-			break;
+		break;
 
-		default:
-			/* Pass to textarea widget */
-			if (!textarea_keypress(ta, key)) {
-				res = NSERROR_INVALID;
-			}
-			break;
+	default:
+		/* Pass to textarea widget */
+		if (!textarea_keypress(ta, key)) {
+			res = NSERROR_INVALID;
 		}
+		break;
 	}
 
 	return res;
