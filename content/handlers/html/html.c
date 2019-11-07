@@ -2296,10 +2296,11 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 		ret = guit->utf8->local_to_utf8(buffer, file_len, &utf8_buff);
 		if (ret != NSERROR_OK) {
 			/* bad encoding shouldn't happen */
+			NSLOG(netsurf, ERROR,
+			      "local to utf8 encoding failed (%s)",
+			      messages_get_errorcode(ret));
 			assert(ret != NSERROR_BAD_ENCODING);
-			NSLOG(netsurf, INFO, "local to utf8 encoding failed");
 			free(buffer);
-			guit->misc->warning("NoMemory", NULL);
 			return true;
 		}
 
