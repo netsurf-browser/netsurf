@@ -50,6 +50,8 @@
 #include "utils/corestrings.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "utils/log.h"
+#include "utils/time.h"
 #include "utils/ring.h"
 #include "utils/file.h"
 #include "netsurf/fetch.h"
@@ -156,18 +158,25 @@ fetch_file_setup(struct fetch *fetchh,
 
 	/* Scan request headers looking for If-None-Match */
 	for (i = 0; headers[i] != NULL; i++) {
-		if (strncasecmp(headers[i], "If-None-Match:", 
-				SLEN("If-None-Match:")) == 0) {
-			/* If-None-Match: "12345678" */
-			const char *d = headers[i] + SLEN("If-None-Match:");
+		if (strncasecmp(headers[i], "If-None-Match:",
+				SLEN("If-None-Match:")) != 0) {
+			continue;
+		}
 
-			/* Scan to first digit, if any */
-			while (*d != '\0' && (*d < '0' || '9' < *d))
-				d++;
+		/* If-None-Match: "12345678" */
+		const char *d = headers[i] + SLEN("If-None-Match:");
 
-			/* Convert to time_t */
-			if (*d != '\0')
-				ctx->file_etag = atoi(d);
+		/* Scan to first digit, if any */
+		while (*d != '\0' && (*d < '0' || '9' < *d))
+			d++;
+
+		/* Convert to time_t */
+		if (*d != '\0') {
+			ret = nsc_snptimet(d, strlen(d), &ctx->file_etag);
+			if (ret != NSERROR_OK) {
+				NSLOG(fetch, WARNING,
+						"Bad If-None-Match value");
+			}
 		}
 	}
 
