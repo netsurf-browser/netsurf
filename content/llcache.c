@@ -1798,16 +1798,18 @@ llcache_object_retrieve(nsurl *url,
 
 		scheme = nsurl_get_component(defragmented_url, NSURL_SCHEME);
 
-		if (lwc_string_caseless_isequal(scheme, corestring_lwc_http,
+		/* nsurl ensures lower case schemes, and corestrings are lower
+		 * case, so it's safe to use case-sensitive comparison. */
+		if (lwc_string_isequal(scheme, corestring_lwc_http,
 				&match) == lwc_error_ok &&
 				(match == false) &&
-		    lwc_string_caseless_isequal(scheme, corestring_lwc_https,
+		    lwc_string_isequal(scheme, corestring_lwc_https,
 				&match) == lwc_error_ok &&
 				(match == false) &&
-		    lwc_string_caseless_isequal(scheme, corestring_lwc_resource,
+		    lwc_string_isequal(scheme, corestring_lwc_resource,
 				&match) == lwc_error_ok &&
 				(match == false) &&
-		    lwc_string_caseless_isequal(scheme, corestring_lwc_file,
+		    lwc_string_isequal(scheme, corestring_lwc_file,
 				&match) == lwc_error_ok &&
 				(match == false)) {
 			uncachable = true;
