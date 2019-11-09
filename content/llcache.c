@@ -1792,7 +1792,7 @@ llcache_object_retrieve(nsurl *url,
 		/* POST requests are never cached */
 		uncachable = true;
 	} else {
-		/* only http and https schemes are cached */
+		/* only http(s), resource, and file schemes are cached */
 		lwc_string *scheme;
 		bool match;
 
@@ -1800,13 +1800,17 @@ llcache_object_retrieve(nsurl *url,
 
 		if (lwc_string_caseless_isequal(scheme, corestring_lwc_http,
 				&match) == lwc_error_ok &&
+				(match == false) &&
+		    lwc_string_caseless_isequal(scheme, corestring_lwc_https,
+				&match) == lwc_error_ok &&
+				(match == false) &&
+		    lwc_string_caseless_isequal(scheme, corestring_lwc_resource,
+				&match) == lwc_error_ok &&
+				(match == false) &&
+		    lwc_string_caseless_isequal(scheme, corestring_lwc_file,
+				&match) == lwc_error_ok &&
 				(match == false)) {
-			if (lwc_string_caseless_isequal(scheme,
-					corestring_lwc_https, &match) ==
-					lwc_error_ok &&
-					(match == false)) {
-				uncachable = true;
-			}
+			uncachable = true;
 		}
 		lwc_string_unref(scheme);
 	}
