@@ -1520,6 +1520,43 @@ format_error:
 }
 
 /**
+ * Check whether a scheme is cachable.
+ *
+ * \param url  URL to check.
+ * \return true iff url has a cachable scheme.
+ */
+static inline bool llcache__scheme_is_cachable(const nsurl *url)
+{
+	lwc_string *scheme = nsurl_get_component(url, NSURL_SCHEME);
+	bool cachable = false;
+	bool match;
+
+	/* nsurl ensures lower case schemes, and corestrings are lower
+	 * case, so it's safe to use case-sensitive comparison. */
+	if ((lwc_string_isequal(scheme, corestring_lwc_http,
+			&match) == lwc_error_ok &&
+			(match == true)) ||
+	    (lwc_string_isequal(scheme, corestring_lwc_https,
+			&match) == lwc_error_ok &&
+			(match == true)) ||
+	    (lwc_string_isequal(scheme, corestring_lwc_data,
+			&match) == lwc_error_ok &&
+			(match == true)) ||
+	    (lwc_string_isequal(scheme, corestring_lwc_resource,
+			&match) == lwc_error_ok &&
+			(match == true)) ||
+	    (lwc_string_isequal(scheme, corestring_lwc_file,
+			&match) == lwc_error_ok &&
+			(match == true))) {
+		cachable = true;
+	}
+
+	lwc_string_unref(scheme);
+
+	return cachable;
+}
+
+/**
  * Attempt to retrieve an object from persistent storage.
  *
  * \param object The object to populate from persistent store.
@@ -1792,34 +1829,8 @@ llcache_object_retrieve(nsurl *url,
 		/* POST requests are never cached */
 		uncachable = true;
 	} else {
-		/* only http(s), data, resource, and file schemes are cached */
-		lwc_string *scheme;
-		bool match;
-
-		scheme = nsurl_get_component(defragmented_url, NSURL_SCHEME);
-
-		/* nsurl ensures lower case schemes, and corestrings are lower
-		 * case, so it's safe to use case-sensitive comparison. */
-		if (lwc_string_isequal(scheme, corestring_lwc_http,
-				&match) == lwc_error_ok &&
-				(match == false) &&
-		    lwc_string_isequal(scheme, corestring_lwc_https,
-				&match) == lwc_error_ok &&
-				(match == false) &&
-		    lwc_string_isequal(scheme, corestring_lwc_data,
-				&match) == lwc_error_ok &&
-				(match == false) &&
-		    lwc_string_isequal(scheme, corestring_lwc_resource,
-				&match) == lwc_error_ok &&
-				(match == false) &&
-		    lwc_string_isequal(scheme, corestring_lwc_file,
-				&match) == lwc_error_ok &&
-				(match == false)) {
-			uncachable = true;
-		}
-		lwc_string_unref(scheme);
+		uncachable = !llcache__scheme_is_cachable(defragmented_url);
 	}
-
 
 	if (uncachable) {
 		/* Create new object */
