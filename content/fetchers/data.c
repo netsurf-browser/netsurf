@@ -82,6 +82,29 @@ static void fetch_data_send_callback(const fetch_msg *msg,
 	c->locked = false;
 }
 
+static void fetch_data_send_header(struct fetch_data_context *ctx,
+		const char *fmt, ...)
+{
+	char header[64];
+	fetch_msg msg = {
+		.type = FETCH_HEADER,
+		.data.header_or_data.buf = (const uint8_t *) header,
+	};
+	va_list ap;
+	int len;
+
+	va_start(ap, fmt);
+	len = vsnprintf(header, sizeof(header), fmt, ap);
+	va_end(ap);
+
+	if (len >= (int)sizeof(header) || len < 0) {
+		return;
+	}
+
+	msg.data.header_or_data.len = len;
+	fetch_data_send_callback(&msg, ctx);
+}
+
 static void *fetch_data_setup(struct fetch *parent_fetch, nsurl *url,
 		 bool only_2xx, bool downgrade_tls, const char *post_urlenc,
 		 const struct fetch_multipart_data *post_multipart,
@@ -242,8 +265,6 @@ static void fetch_data_poll(lwc_string *scheme)
 
 		/* Only process non-aborted fetches */
 		if (c->aborted == false && fetch_data_process(c) == true) {
-			char header[64];
-
 			fetch_set_http_code(c->parent_fetch, 200);
 			NSLOG(netsurf, INFO,
 			      "setting data: MIME type to %s, length to %"PRIsizet,
@@ -253,22 +274,12 @@ static void fetch_data_poll(lwc_string *scheme)
 			 * Therefore, we _must_ check for this after _every_
 			 * call to fetch_data_send_callback().
 			 */
-			snprintf(header, sizeof header, "Content-Type: %s",
+			fetch_data_send_header(c, "Content-Type: %s",
 					c->mimetype);
-			msg.type = FETCH_HEADER;
-			msg.data.header_or_data.buf = (const uint8_t *) header;
-			msg.data.header_or_data.len = strlen(header);
-			fetch_data_send_callback(&msg, c); 
 
 			if (c->aborted == false) {
-				snprintf(header, sizeof header, 
-					 "Content-Length: %" PRIsizet,
-					 c->datalen);
-				msg.type = FETCH_HEADER;
-				msg.data.header_or_data.buf = 
-						(const uint8_t *) header;
-				msg.data.header_or_data.len = strlen(header);
-				fetch_data_send_callback(&msg, c);
+				fetch_data_send_header(c, "Content-Length: %"
+						PRIsizet, c->datalen);
 			}
 
 			if (c->aborted == false) {
