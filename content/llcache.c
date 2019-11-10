@@ -1520,6 +1520,34 @@ format_error:
 }
 
 /**
+ * Check whether a scheme is persistable.
+ *
+ * \param url  URL to check.
+ * \return true iff url has a persistable scheme.
+ */
+static inline bool llcache__scheme_is_persistable(const nsurl *url)
+{
+	lwc_string *scheme = nsurl_get_component(url, NSURL_SCHEME);
+	bool persistable = false;
+	bool match;
+
+	/* nsurl ensures lower case schemes, and corestrings are lower
+	 * case, so it's safe to use case-sensitive comparison. */
+	if ((lwc_string_isequal(scheme, corestring_lwc_http,
+			&match) == lwc_error_ok &&
+			(match == true)) ||
+	    (lwc_string_isequal(scheme, corestring_lwc_https,
+			&match) == lwc_error_ok &&
+			(match == true))) {
+		persistable = true;
+	}
+
+	lwc_string_unref(scheme);
+
+	return persistable;
+}
+
+/**
  * Check whether a scheme is cachable.
  *
  * \param url  URL to check.
@@ -1577,6 +1605,12 @@ llcache_object_fetch_persistent(llcache_object *object,
 	nserror error;
 	nsurl *referer_clone = NULL;
 	llcache_post_data *post_clone = NULL;
+
+	if (!llcache__scheme_is_persistable(object->url)) {
+		/* Don't bother looking up non-http(s) stuff; we don't
+		 * persist it. */
+		return NSERROR_NOT_FOUND;
+	}
 
 	object->cache.req_time = time(NULL);
 	object->cache.fin_time = object->cache.req_time;
@@ -2493,6 +2527,11 @@ build_candidate_list(struct llcache_object ***lst_out, int *lst_len_out)
 
 	for (object = llcache->cached_objects; object != NULL; object = next) {
 		next = object->next;
+
+		/* Only consider http(s) for the disc cache. */
+		if (!llcache__scheme_is_persistable(object->url)) {
+			continue;
+		}
 
 		remaining_lifetime = llcache_object_rfc2616_remaining_lifetime(
 				&object->cache);
