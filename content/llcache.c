@@ -1792,7 +1792,7 @@ llcache_object_retrieve(nsurl *url,
 		/* POST requests are never cached */
 		uncachable = true;
 	} else {
-		/* only http(s), resource, and file schemes are cached */
+		/* only http(s), data, resource, and file schemes are cached */
 		lwc_string *scheme;
 		bool match;
 
@@ -1804,6 +1804,9 @@ llcache_object_retrieve(nsurl *url,
 				&match) == lwc_error_ok &&
 				(match == false) &&
 		    lwc_string_isequal(scheme, corestring_lwc_https,
+				&match) == lwc_error_ok &&
+				(match == false) &&
+		    lwc_string_isequal(scheme, corestring_lwc_data,
 				&match) == lwc_error_ok &&
 				(match == false) &&
 		    lwc_string_isequal(scheme, corestring_lwc_resource,
