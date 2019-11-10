@@ -283,6 +283,12 @@ static void fetch_data_poll(lwc_string *scheme)
 			}
 
 			if (c->aborted == false) {
+				/* Set max-age to 1 year. */
+				fetch_data_send_header(c, "Cache-Control: "
+						"max-age=31536000");
+			}
+
+			if (c->aborted == false) {
 				msg.type = FETCH_DATA;
 				msg.data.header_or_data.buf = 
 						(const uint8_t *) c->data;
