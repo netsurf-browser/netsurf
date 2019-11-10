@@ -122,19 +122,21 @@ static bool fetch_resource_send_header(struct fetch_resource_context *ctx,
 	fetch_msg msg;
 	char header[64];
 	va_list ap;
+	int len;
 
 	va_start(ap, fmt);
-
-	vsnprintf(header, sizeof header, fmt, ap);
-
+	len = vsnprintf(header, sizeof header, fmt, ap);
 	va_end(ap);
+
+	if (len >= (int)sizeof(header) || len < 0) {
+		return false;
+	}
 
 	msg.type = FETCH_HEADER;
 	msg.data.header_or_data.buf = (const uint8_t *) header;
-	msg.data.header_or_data.len = strlen(header);
-	fetch_resource_send_callback(&msg, ctx);
+	msg.data.header_or_data.len = len;
 
-	return ctx->aborted;
+	return fetch_resource_send_callback(&msg, ctx);
 }
 
 
