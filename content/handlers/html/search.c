@@ -269,20 +269,18 @@ static const char *find_pattern(const char *string, int s_len,
  * Add a new entry to the list of matches
  *
  * \param start_idx Offset of match start within textual representation
- * \param end_idx   Offset of match end
- * \param context   The search context to add the entry to.
+ * \param end_idx Offset of match end
+ * \param context The search context to add the entry to.
  * \return Pointer to added entry, NULL iff failed.
  */
-
-static struct list_entry *add_entry(unsigned start_idx, unsigned end_idx,
-		struct search_context *context)
+static struct list_entry *
+add_entry(unsigned start_idx, unsigned end_idx,	struct search_context *context)
 {
 	struct list_entry *entry;
 
 	/* found string in box => add to list */
 	entry = calloc(1, sizeof(*entry));
 	if (!entry) {
-		guit->misc->warning("NoMemory", 0);
 		return NULL;
 	}
 
@@ -293,10 +291,11 @@ static struct list_entry *add_entry(unsigned start_idx, unsigned end_idx,
 	entry->next = 0;
 	entry->prev = context->found->prev;
 
-	if (context->found->prev == NULL)
+	if (context->found->prev == NULL) {
 		context->found->next = entry;
-	else
+	} else {
 		context->found->prev->next = entry;
+	}
 
 	context->found->prev = entry;
 
