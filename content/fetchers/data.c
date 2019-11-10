@@ -74,6 +74,14 @@ static bool fetch_data_can_fetch(const nsurl *url)
 	return true;
 }
 
+static void fetch_data_send_callback(const fetch_msg *msg,
+		struct fetch_data_context *c)
+{
+	c->locked = true;
+	fetch_send_callback(msg, c->parent_fetch);
+	c->locked = false;
+}
+
 static void *fetch_data_setup(struct fetch *parent_fetch, nsurl *url,
 		 bool only_2xx, bool downgrade_tls, const char *post_urlenc,
 		 const struct fetch_multipart_data *post_multipart,
@@ -117,14 +125,6 @@ static void fetch_data_abort(void *ctx)
 	 * The poll loop itself will perform the appropriate cleanup.
 	 */
 	c->aborted = true;
-}
-
-static void fetch_data_send_callback(const fetch_msg *msg, 
-		struct fetch_data_context *c) 
-{
-	c->locked = true;
-	fetch_send_callback(msg, c->parent_fetch);
-	c->locked = false;
 }
 
 static bool fetch_data_process(struct fetch_data_context *c)
