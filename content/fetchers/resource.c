@@ -195,6 +195,11 @@ static bool fetch_resource_data_handler(struct fetch_resource_context *ctx)
 		goto fetch_resource_data_aborted;
 	}
 
+	/* create max-age of 1 year */
+	if (fetch_resource_send_header(ctx,
+			"Cache-Control: max-age=31536000")) {
+		goto fetch_resource_data_aborted;
+	}
 
 	msg.type = FETCH_DATA;
 	msg.data.header_or_data.buf = (const uint8_t *) ctx->entry->data;
