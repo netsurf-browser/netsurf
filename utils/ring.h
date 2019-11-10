@@ -66,24 +66,6 @@
 /** Find the element (by hostname) in the given ring, leave it in the
  * provided element variable
  */
-#define RING_FINDBYHOST(ring, element, hostname) \
-	/*LOG("RING_FINDBYHOST(%s, %s)", #ring, hostname);*/ \
-	if (ring) { \
-		bool found = false; \
-		element = ring; \
-		do { \
-			if (strcasecmp(element->host, hostname) == 0) { \
-				found = true; \
-				break; \
-			} \
-			element = element->r_next; \
-		} while (element != ring); \
-		if (!found) element = 0; \
-	} else element = 0
-
-/** Find the element (by hostname) in the given ring, leave it in the
- * provided element variable
- */
 #define RING_FINDBYLWCHOST(ring, element, lwc_hostname) \
 	/*LOG("RING_FINDBYHOST(%s, %s)", #ring, hostname);*/ \
 	if (ring) { \
@@ -108,19 +90,6 @@
 		sizevar = 0; \
 		do { \
 			sizevar++; \
-			p = p->r_next; \
-		} while (p != ring); \
-	} else sizevar = 0
-
-/** Count the number of elements in the ring which match the provided hostname */
-#define RING_COUNTBYHOST(ringtype, ring, sizevar, hostname) \
-	/*LOG("RING_COUNTBYHOST(%s, %s)", #ring, hostname);*/ \
-	if (ring) { \
-		ringtype *p = ring; \
-		sizevar = 0; \
-		do { \
-			if (strcasecmp(p->host, hostname) == 0) \
-				sizevar++; \
 			p = p->r_next; \
 		} while (p != ring); \
 	} else sizevar = 0
