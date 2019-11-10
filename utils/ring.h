@@ -136,7 +136,7 @@
 			/* nsurl guarantees lowercase host */ \
 			if (lwc_string_isequal(p->host, lwc_hostname, \
 					&matches) == lwc_error_ok) \
-                		if (matches) \
+				if (matches) \
 					sizevar++; \
 			p = p->r_next; \
 		} while (p != ring); \
