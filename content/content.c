@@ -538,14 +538,6 @@ void content__request_redraw(struct content *c,
 	data.redraw.width = width;
 	data.redraw.height = height;
 
-	data.redraw.full_redraw = true;
-
-	data.redraw.object = c;
-	data.redraw.object_x = 0;
-	data.redraw.object_y = 0;
-	data.redraw.object_width = c->width;
-	data.redraw.object_height = c->height;
-
 	content_broadcast(c, CONTENT_MSG_REDRAW, &data);
 }
 

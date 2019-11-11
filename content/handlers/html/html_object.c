@@ -191,7 +191,6 @@ html_object_callback(hlcache_handle *object,
 			data.redraw.y = y + box->padding[TOP];
 			data.redraw.width = box->width;
 			data.redraw.height = box->height;
-			data.redraw.full_redraw = true;
 
 			content_broadcast(&c->base, CONTENT_MSG_REDRAW, &data);
 		}
@@ -289,53 +288,39 @@ html_object_callback(hlcache_handle *object,
 					break;
 				}
 
-				data.redraw.object_width = box->width;
-				data.redraw.object_height = box->height;
-
 				/* Add offset to box */
 				data.redraw.x += x;
 				data.redraw.y += y;
-				data.redraw.object_x += x;
-				data.redraw.object_y += y;
-
-				content_broadcast(&c->base,
-						CONTENT_MSG_REDRAW, &data);
-				break;
 
 			} else {
 				/* Non-background case */
-				if (hlcache_handle_get_content(object) ==
-						event->data.redraw.object) {
+				int w = content_get_width(object);
+				int h = content_get_height(object);
 
-					int w = content_get_width(object);
-					int h = content_get_height(object);
-
-					if (w != 0) {
-						data.redraw.x =
-							data.redraw.x *
+				if (w != 0 && box->width != w) {
+					/* Not showing image at intrinsic
+					 * width; need to scale the redraw
+					 * request area. */
+					data.redraw.x = data.redraw.x *
 							box->width / w;
-						data.redraw.width =
+					data.redraw.width =
 							data.redraw.width *
 							box->width / w;
-					}
+				}
 
-					if (h != 0) {
-						data.redraw.y =
-							data.redraw.y *
+				if (h != 0 && box->height != w) {
+					/* Not showing image at intrinsic
+					 * height; need to scale the redraw
+					 * request area. */
+					data.redraw.y = data.redraw.y *
 							box->height / h;
-						data.redraw.height =
+					data.redraw.height =
 							data.redraw.height *
 							box->height / h;
-					}
-
-					data.redraw.object_width = box->width;
-					data.redraw.object_height = box->height;
 				}
 
 				data.redraw.x += x + box->padding[LEFT];
 				data.redraw.y += y + box->padding[TOP];
-				data.redraw.object_x += x + box->padding[LEFT];
-				data.redraw.object_y += y + box->padding[TOP];
 			}
 
 			content_broadcast(&c->base, CONTENT_MSG_REDRAW, &data);

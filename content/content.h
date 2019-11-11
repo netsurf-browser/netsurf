@@ -131,15 +131,6 @@ union content_msg_data {
 	/** CONTENT_MSG_REDRAW - Area of content which needs redrawing */
 	struct {
 		int x, y, width, height;
-		/** Redraw the area fully. If false, object must be set,
-		 * and only the object will be redrawn. */
-		bool full_redraw;
-		/** Object to redraw if full_redraw is false. */
-		struct content *object;
-		/** Coordinates to plot object at. */
-		int object_x, object_y;
-		/** Dimensions to plot object with. */
-		int object_width, object_height;
 	} redraw;
 	/** CONTENT_MSG_REFRESH - Minimum delay  */
 	int delay;

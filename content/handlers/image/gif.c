@@ -173,11 +173,9 @@ static void nsgif_animate(void *p)
 
 	/* redraw background (true) or plot on top (false) */
 	if (gif->current_frame > 0) {
-		data.redraw.full_redraw = 
-				gif->gif->frames[f - 1].redraw_required;
 		/* previous frame needed clearing: expand the redraw area to
 		 * cover it */
-		if (data.redraw.full_redraw) {
+		if (gif->gif->frames[f - 1].redraw_required) {
 			if (data.redraw.x >
 					(int)(gif->gif->frames[f - 1].redraw_x)) {
 				data.redraw.width += data.redraw.x -
@@ -207,27 +205,7 @@ static void nsgif_animate(void *p)
 					data.redraw.y +
 					gif->gif->frames[f - 1].redraw_height;
 		}
-	} else {
-		/* do advanced check */
-		if ((data.redraw.x == 0) && (data.redraw.y == 0) &&
-				(data.redraw.width == (int)(gif->gif->width)) &&
-				(data.redraw.height == (int)(gif->gif->height))) {
-			data.redraw.full_redraw = !gif->gif->frames[f].opaque;
-		} else {
-			data.redraw.full_redraw = true;
-			data.redraw.x = 0;
-			data.redraw.y = 0;
-			data.redraw.width = gif->gif->width;
-			data.redraw.height = gif->gif->height;
-		}
 	}
-
-	/* other data */
-	data.redraw.object = (struct content *) gif;
-	data.redraw.object_x = 0;
-	data.redraw.object_y = 0;
-	data.redraw.object_width = gif->base.width;
-	data.redraw.object_height = gif->base.height;
 
 	content_broadcast(&gif->base, CONTENT_MSG_REDRAW, &data);
 }
