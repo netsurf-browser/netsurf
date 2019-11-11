@@ -86,10 +86,7 @@ static void fetch_data_send_header(struct fetch_data_context *ctx,
 		const char *fmt, ...)
 {
 	char header[64];
-	fetch_msg msg = {
-		.type = FETCH_HEADER,
-		.data.header_or_data.buf = (const uint8_t *) header,
-	};
+	fetch_msg msg;
 	va_list ap;
 	int len;
 
@@ -101,7 +98,9 @@ static void fetch_data_send_header(struct fetch_data_context *ctx,
 		return;
 	}
 
+	msg.type = FETCH_HEADER;
 	msg.data.header_or_data.len = len;
+	msg.data.header_or_data.buf = (const uint8_t *)header;
 	fetch_data_send_callback(&msg, ctx);
 }
 
