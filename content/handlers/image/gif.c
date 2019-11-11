@@ -154,8 +154,10 @@ static void nsgif_animate(void *p)
 	/* Continue animating if we should */
 	if (gif->gif->loop_count >= 0) {
 		delay = gif->gif->frames[gif->current_frame].frame_delay;
-		if (delay < nsoption_int(minimum_gif_delay))
-			delay = nsoption_int(minimum_gif_delay);
+		if (delay <= 1) {
+			/* Assuming too fast to be intended, set default. */
+			delay = 10;
+		}
 		guit->misc->schedule(delay * 10, nsgif_animate, gif);
 	}
 
