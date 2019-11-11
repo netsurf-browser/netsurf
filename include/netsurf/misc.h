@@ -22,8 +22,8 @@
  * Interface to platform-specific miscellaneous browser operation table.
  */
 
-#ifndef _NETSURF_MISC_H_
-#define _NETSURF_MISC_H_
+#ifndef NETSURF_MISC_H_
+#define NETSURF_MISC_H_
 
 struct form_control;
 struct gui_window;
@@ -56,17 +56,6 @@ struct gui_misc_table {
 	 *
 	 */
 	nserror (*schedule)(int t, void (*callback)(void *p), void *p);
-
-	/**
-	 * Warn the user of an event.
-	 *
-	 * \param[in] message A warning looked up in the message
-	 *                      translation table
-	 * \param[in] detail Additional text to be displayed or NULL.
-	 * \return NSERROR_OK on success or error code if there was a
-	 *           faliure displaying the message to the user.
-	 */
-	nserror (*warning)(const char *message, const char *detail);
 
 
 	/* Optional entries */

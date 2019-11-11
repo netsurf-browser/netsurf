@@ -245,7 +245,6 @@ static bool nslog_stream_configure(FILE *fptr)
 
 static struct gui_misc_table monkey_misc_table = {
 	.schedule = monkey_schedule,
-	.warning = monkey_warn_user,
 
 	.quit = monkey_quit,
 	.launch_url = gui_launch_url,

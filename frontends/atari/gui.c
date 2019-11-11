@@ -1109,7 +1109,6 @@ static struct gui_fetch_table atari_fetch_table = {
 
 static struct gui_misc_table atari_misc_table = {
     .schedule = atari_schedule,
-    .warning = atari_warn_user,
 
     .quit = gui_quit,
 };

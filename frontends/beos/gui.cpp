@@ -993,7 +993,6 @@ static struct gui_fetch_table beos_fetch_table = {
 
 static struct gui_misc_table beos_misc_table = {
 	beos_schedule,
-        beos_warn_user,
 	gui_quit,
 	gui_launch_url,
 	NULL, //cert_verify

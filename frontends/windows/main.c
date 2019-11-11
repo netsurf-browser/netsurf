@@ -310,7 +310,6 @@ static nserror nsw32_messages_init(char **respaths)
 
 static struct gui_misc_table win32_misc_table = {
 	.schedule = win32_schedule,
-	.warning = win32_warning,
 };
 
 /**

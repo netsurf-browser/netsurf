@@ -1139,7 +1139,6 @@ static nserror nsgtk_option_init(int *pargc, char** argv)
 
 static struct gui_misc_table nsgtk_misc_table = {
 	.schedule = nsgtk_schedule,
-	.warning = nsgtk_warning,
 
 	.quit = gui_quit,
 	.launch_url = gui_launch_url,

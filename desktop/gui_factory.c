@@ -678,9 +678,6 @@ static nserror verify_misc_register(struct gui_misc_table *gmt)
 	if (gmt->schedule == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
-	if (gmt->warning == NULL) {
-		return NSERROR_BAD_PARAMETER;
-	}
 
 	/* fill in the optional entries with defaults */
 	if (gmt->quit == NULL) {

@@ -2136,7 +2136,6 @@ static struct gui_window_table framebuffer_window_table = {
 
 static struct gui_misc_table framebuffer_misc_table = {
 	.schedule = framebuffer_schedule,
-	.warning = fb_warn_user,
 
 	.quit = gui_quit,
 };

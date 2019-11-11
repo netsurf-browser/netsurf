@@ -6368,7 +6368,6 @@ static struct gui_search_web_table amiga_search_web_table = {
 
 static struct gui_misc_table amiga_misc_table = {
 	.schedule = ami_schedule,
-	.warning = amiga_warn_user,
 
 	.quit = gui_quit,
 	.launch_url = gui_launch_url,
