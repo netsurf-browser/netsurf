@@ -31,8 +31,10 @@
 #include "content/content_protected.h"
 #include "desktop/selection.h"
 
+
 struct gui_layout_table;
 struct scrollbar_msg_data;
+struct content_redraw_data;
 
 typedef enum {
 	HTML_DRAG_NONE,			/** No drag */
@@ -83,11 +85,6 @@ union html_focus_owner {
 	bool self;
 	struct box *textarea;
 	struct box *content;
-};
-
-struct html_scrollbar_data {
-	struct content *c;
-	struct box *box;
 };
 
 /**
@@ -299,19 +296,6 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 bool html_redraw_inline_borders(struct box *box, struct rect b,
 		const struct rect *clip, float scale, bool first, bool last,
 		const struct redraw_context *ctx);
-
-/* in html/html_interaction.c */
-void html_mouse_track(struct content *c, struct browser_window *bw,
-			browser_mouse_state mouse, int x, int y);
-void html_mouse_action(struct content *c, struct browser_window *bw,
-			browser_mouse_state mouse, int x, int y);
-bool html_keypress(struct content *c, uint32_t key);
-void html_overflow_scroll_callback(void *client_data,
-		struct scrollbar_msg_data *scrollbar_data);
-void html_search(struct content *c, void *context,
-		search_flags_t flags, const char *string);
-void html_search_clear(struct content *c);
-
 
 /* in html/html_script.c */
 dom_hubbub_error html_process_script(void *ctx, dom_node *node);

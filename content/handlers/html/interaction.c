@@ -55,6 +55,7 @@
 #include "html/html_internal.h"
 #include "html/imagemap.h"
 #include "html/search.h"
+#include "html/interaction.h"
 
 /**
  * Get pointer shape for given box
@@ -221,22 +222,6 @@ static size_t html_selection_drag_end(struct html_content *html,
 
 
 /**
- * Handle mouse tracking (including drags) in an HTML content window.
- *
- * \param  c	  content of type html
- * \param  bw	  browser window
- * \param  mouse  state of mouse buttons and modifier keys
- * \param  x	  coordinate of mouse
- * \param  y	  coordinate of mouse
- */
-
-void html_mouse_track(struct content *c, struct browser_window *bw,
-		browser_mouse_state mouse, int x, int y)
-{
-	html_mouse_action(c, bw, mouse, x, y);
-}
-
-/**
  * Helper for file gadgets to store their filename.
  *
  * Stores the filename unencoded on the dom node associated with the
@@ -334,23 +319,200 @@ html_overflow_scroll_drag_end(struct scrollbar *scrollbar,
 
 
 /**
- * Handle mouse clicks and movements in an HTML content window.
+ * handle html mouse action when select menu is open
  *
- * \param  c	  content of type html
- * \param  bw	  browser window
- * \param  mouse  state of mouse buttons and modifier keys
- * \param  x	  coordinate of mouse
- * \param  y	  coordinate of mouse
- *
- * This function handles both hovering and clicking. It is important that the
- * code path is identical (except that hovering doesn't carry out the action),
- * so that the status bar reflects exactly what will happen. Having separate
- * code paths opens the possibility that an attacker will make the status bar
- * show some harmless action where clicking will be harmful.
  */
+static nserror
+mouse_action_select_menu(html_content *html,
+			 struct browser_window *bw,
+			 browser_mouse_state mouse,
+			 int x, int y)
+{
+	struct box *box;
+	int box_x = 0;
+	int box_y = 0;
+	const char *status;
+	int width, height;
+	struct hlcache_handle *bw_content;
 
-void html_mouse_action(struct content *c, struct browser_window *bw,
-		browser_mouse_state mouse, int x, int y)
+	assert(html->visible_select_menu != NULL);
+
+	box = html->visible_select_menu->box;
+	box_coords(box, &box_x, &box_y);
+
+	box_x -= box->border[LEFT].width;
+	box_y += box->height + box->border[BOTTOM].width +
+		box->padding[BOTTOM] + box->padding[TOP];
+
+	status = form_select_mouse_action(html->visible_select_menu,
+					  mouse,
+					  x - box_x,
+					  y - box_y);
+	if (status != NULL) {
+		/* set status if menu still open */
+		union content_msg_data msg_data;
+		msg_data.explicit_status_text = status;
+		content_broadcast((struct content *)html,
+				  CONTENT_MSG_STATUS,
+				  &msg_data);
+		return NSERROR_OK;
+	}
+
+	/* close menu and redraw where it was */
+	form_select_get_dimensions(html->visible_select_menu, &width, &height);
+
+	html->visible_select_menu = NULL;
+
+	bw_content = browser_window_get_content(bw);
+	content_request_redraw(bw_content,
+			       box_x,
+			       box_y,
+			       width,
+			       height);
+	return NSERROR_OK;
+}
+
+
+/**
+ * handle html mouse action when a selection drag is being performed
+ *
+ */
+static nserror
+mouse_action_drag_selection(html_content *html,
+			    struct browser_window *bw,
+			    browser_mouse_state mouse,
+			    int x, int y)
+{
+	struct box *box;
+	int dir = -1;
+	int dx, dy;
+	size_t idx;
+	union html_drag_owner drag_owner;
+	int pixel_offset;
+	plot_font_style_t fstyle;
+
+	if (!mouse) {
+		/* End of selection drag */
+		if (selection_dragging_start(&html->sel)) {
+			dir = 1;
+		}
+
+		idx = html_selection_drag_end(html, mouse, x, y, dir);
+
+		if (idx != 0) {
+			selection_track(&html->sel, mouse, idx);
+		}
+
+		drag_owner.no_owner = true;
+		html_set_drag_type(html, HTML_DRAG_NONE, drag_owner, NULL);
+
+		return NSERROR_OK;
+	}
+
+	if (selection_dragging_start(&html->sel)) {
+		dir = 1;
+	}
+
+	box = box_pick_text_box(html, x, y, dir, &dx, &dy);
+	if (box != NULL) {
+		font_plot_style_from_css(&html->len_ctx, box->style, &fstyle);
+
+		guit->layout->position(&fstyle,
+				       box->text,
+				       box->length,
+				       dx,
+				       &idx,
+				       &pixel_offset);
+
+		selection_track(&html->sel, mouse, box->byte_offset + idx);
+	}
+	return NSERROR_OK;
+}
+
+
+/**
+ * handle html mouse action when a scrollbar drag is being performed
+ *
+ */
+static nserror
+mouse_action_drag_scrollbar(html_content *html,
+			    struct browser_window *bw,
+			    browser_mouse_state mouse,
+			    int x, int y)
+{
+	struct scrollbar *scr;
+	struct html_scrollbar_data *data;
+	struct box *box;
+	int box_x = 0;
+	int box_y = 0;
+	const char *status;
+	int scroll_mouse_x = 0, scroll_mouse_y = 0;
+	scrollbar_mouse_status scrollbar_status;
+
+	scr = html->drag_owner.scrollbar;
+
+	if (!mouse) {
+		/* drag end: scrollbar */
+		html_overflow_scroll_drag_end(scr, mouse, x, y);
+	}
+
+	data = scrollbar_get_data(scr);
+
+	box = data->box;
+
+	box_coords(box, &box_x, &box_y);
+
+	if (scrollbar_is_horizontal(scr)) {
+		scroll_mouse_x = x - box_x ;
+		scroll_mouse_y = y - (box_y + box->padding[TOP] +
+				      box->height + box->padding[BOTTOM] -
+				      SCROLLBAR_WIDTH);
+		scrollbar_status = scrollbar_mouse_action(scr,
+							  mouse,
+							  scroll_mouse_x,
+							  scroll_mouse_y);
+	} else {
+		scroll_mouse_x = x - (box_x + box->padding[LEFT] +
+				      box->width + box->padding[RIGHT] -
+				      SCROLLBAR_WIDTH);
+		scroll_mouse_y = y - box_y;
+
+		scrollbar_status = scrollbar_mouse_action(scr,
+							  mouse,
+							  scroll_mouse_x,
+							  scroll_mouse_y);
+	}
+	status = scrollbar_mouse_status_to_message(scrollbar_status);
+
+	if (status != NULL) {
+		union content_msg_data msg_data;
+
+		msg_data.explicit_status_text = status;
+		content_broadcast((struct content *)html,
+				  CONTENT_MSG_STATUS,
+				  &msg_data);
+	}
+
+	return NSERROR_OK;
+}
+
+
+/* exported interface documented in html/interaction.h */
+nserror html_mouse_track(struct content *c,
+			 struct browser_window *bw,
+			 browser_mouse_state mouse,
+			 int x, int y)
+{
+	return html_mouse_action(c, bw, mouse, x, y);
+}
+
+
+/* exported interface documented in html/interaction.h */
+nserror
+html_mouse_action(struct content *c,
+		  struct browser_window *bw,
+		  browser_mouse_state mouse,
+		  int x, int y)
 {
 	html_content *html = (html_content *) c;
 	enum { ACTION_NONE, ACTION_SUBMIT, ACTION_GO } action = ACTION_NONE;
@@ -383,7 +545,6 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	browser_drag_type drag_type = browser_window_get_drag_type(bw);
 	union content_msg_data msg_data;
 	struct dom_node *node = html->layout->node; /* Default to the <HTML> */
-	union html_drag_owner drag_owner;
 	union html_selection_owner sel_owner;
 	bool click = mouse & (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_PRESS_2 |
 			BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2 |
@@ -399,112 +560,16 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	}
 
 	if (html->visible_select_menu != NULL) {
-		box = html->visible_select_menu->box;
-		box_coords(box, &box_x, &box_y);
-
-		box_x -= box->border[LEFT].width;
-		box_y += box->height + box->border[BOTTOM].width +
-				box->padding[BOTTOM] + box->padding[TOP];
-		status = form_select_mouse_action(html->visible_select_menu,
-				mouse, x - box_x, y - box_y);
-		if (status != NULL) {
-			msg_data.explicit_status_text = status;
-			content_broadcast(c, CONTENT_MSG_STATUS, &msg_data);
-		} else {
-			int width, height;
-			struct hlcache_handle *bw_content;
-			form_select_get_dimensions(html->visible_select_menu,
-					&width, &height);
-			html->visible_select_menu = NULL;
-			bw_content = browser_window_get_content(bw);
-			content_request_redraw(bw_content,box_x, box_y,
-					       width, height);
-		}
-		return;
+		return mouse_action_select_menu(html, bw, mouse, x, y);
 	}
 
 	if (html->drag_type == HTML_DRAG_SELECTION) {
-		/* Selection drag */
-		struct box *box;
-		int dir = -1;
-		int dx, dy;
-
-		if (!mouse) {
-			/* End of selection drag */
-			int dir = -1;
-			size_t idx;
-
-			if (selection_dragging_start(&html->sel))
-				dir = 1;
-
-			idx = html_selection_drag_end(html, mouse, x, y, dir);
-
-			if (idx != 0)
-				selection_track(&html->sel, mouse, idx);
-
-			drag_owner.no_owner = true;
-			html_set_drag_type(html, HTML_DRAG_NONE,
-					drag_owner, NULL);
-			return;
-		}
-
-		if (selection_dragging_start(&html->sel))
-			dir = 1;
-
-		box = box_pick_text_box(html, x, y, dir, &dx, &dy);
-
-		if (box != NULL) {
-			int pixel_offset;
-			size_t idx;
-			plot_font_style_t fstyle;
-
-			font_plot_style_from_css(&html->len_ctx,
-					box->style, &fstyle);
-
-			guit->layout->position(&fstyle,
-					       box->text, box->length,
-					       dx, &idx, &pixel_offset);
-
-			selection_track(&html->sel, mouse,
-					box->byte_offset + idx);
-		}
-		return;
+		return mouse_action_drag_selection(html, bw, mouse, x, y);
 	}
 
 	if (html->drag_type == HTML_DRAG_SCROLLBAR) {
-		struct scrollbar *scr = html->drag_owner.scrollbar;
-		struct html_scrollbar_data *data = scrollbar_get_data(scr);
+		return mouse_action_drag_scrollbar(html, bw, mouse, x, y);
 
-		if (!mouse) {
-			/* drag end: scrollbar */
-			html_overflow_scroll_drag_end(scr, mouse, x, y);
-		}
-
-		box = data->box;
-		box_coords(box, &box_x, &box_y);
-		if (scrollbar_is_horizontal(scr)) {
-			scroll_mouse_x = x - box_x ;
-			scroll_mouse_y = y - (box_y + box->padding[TOP] +
-					box->height + box->padding[BOTTOM] -
-					SCROLLBAR_WIDTH);
-			status = scrollbar_mouse_status_to_message(
-					scrollbar_mouse_action(scr, mouse,
-							scroll_mouse_x,
-							scroll_mouse_y));
-		} else {
-			scroll_mouse_x = x - (box_x + box->padding[LEFT] +
-					box->width + box->padding[RIGHT] -
-					SCROLLBAR_WIDTH);
-			scroll_mouse_y = y - box_y;
-			status = scrollbar_mouse_status_to_message(
-					scrollbar_mouse_action(scr, mouse,
-							scroll_mouse_x,
-							scroll_mouse_y));
-		}
-
-		msg_data.explicit_status_text = status;
-		content_broadcast(c, CONTENT_MSG_STATUS, &msg_data);
-		return;
 	}
 
 	if (html->drag_type == HTML_DRAG_TEXTAREA_SELECTION ||

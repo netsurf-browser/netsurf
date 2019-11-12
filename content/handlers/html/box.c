@@ -33,6 +33,7 @@
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/talloc.h"
+#include "utils/nsurl.h"
 #include "netsurf/misc.h"
 #include "netsurf/content.h"
 #include "netsurf/mouse.h"
@@ -40,10 +41,12 @@
 #include "css/dump.h"
 #include "desktop/scrollbar.h"
 #include "desktop/gui_internal.h"
+#include "desktop/search.h"
 
 #include "html/box.h"
 #include "html/form_internal.h"
 #include "html/html_internal.h"
+#include "html/interaction.h"
 
 #define box_is_float(box) (box->type == BOX_FLOAT_LEFT || \
 		box->type == BOX_FLOAT_RIGHT)

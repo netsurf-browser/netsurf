@@ -57,6 +57,7 @@
 #include "html/html.h"
 #include "html/html_save.h"
 #include "html/html_internal.h"
+#include "html/interaction.h"
 #include "html/box.h"
 #include "html/form_internal.h"
 #include "html/imagemap.h"
