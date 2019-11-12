@@ -23,6 +23,7 @@
 
 #include <stdbool.h>
 #include <string.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <libwapcaplet/libwapcaplet.h>
 #include <nsutils/base64.h>
