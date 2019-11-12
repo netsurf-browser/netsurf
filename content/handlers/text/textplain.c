@@ -611,7 +611,7 @@ static content_type textplain_content_type(void)
  * \param x	  coordinate of mouse
  * \param y	  coordinate of mouse
  */
-static void
+static nserror
 textplain_mouse_action(struct content *c,
 		       struct browser_window *bw,
 		       browser_mouse_state mouse,
@@ -647,6 +647,8 @@ textplain_mouse_action(struct content *c,
 
 	msg_data.pointer = pointer;
 	content_broadcast(c, CONTENT_MSG_POINTER, &msg_data);
+
+	return NSERROR_OK;
 }
 
 
@@ -659,7 +661,7 @@ textplain_mouse_action(struct content *c,
  * \param  x	  coordinate of mouse
  * \param  y	  coordinate of mouse
  */
-static void
+static nserror
 textplain_mouse_track(struct content *c,
 		      struct browser_window *bw,
 		      browser_mouse_state mouse,
@@ -697,6 +699,8 @@ textplain_mouse_track(struct content *c,
 		textplain_mouse_action(c, bw, mouse, x, y);
 		break;
 	}
+
+	return NSERROR_OK;
 }
 
 

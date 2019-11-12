@@ -52,9 +52,9 @@ struct content_handler {
 	void (*reformat)(struct content *c, int width, int height);
 	void (*destroy)(struct content *c);
 	void (*stop)(struct content *c);
-	void (*mouse_track)(struct content *c, struct browser_window *bw,
+	nserror (*mouse_track)(struct content *c, struct browser_window *bw,
 			browser_mouse_state mouse, int x, int y);
-	void (*mouse_action)(struct content *c, struct browser_window *bw,
+	nserror (*mouse_action)(struct content *c, struct browser_window *bw,
 			browser_mouse_state mouse, int x, int y);
 	bool (*keypress)(struct content *c, uint32_t key);
 	bool (*redraw)(struct content *c, struct content_redraw_data *data,

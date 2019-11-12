@@ -585,7 +585,7 @@ html_mouse_action(struct content *c,
 				x - box_x, y - box_y);
 
 		/* TODO: Set appropriate statusbar message */
-		return;
+		return NSERROR_OK;
 	}
 
 	if (html->drag_type == HTML_DRAG_CONTENT_SELECTION ||
@@ -596,7 +596,7 @@ html_mouse_action(struct content *c,
 		box_coords(box, &box_x, &box_y);
 		content_mouse_track(box->object, bw, mouse,
 				x - box_x, y - box_y);
-		return;
+		return NSERROR_OK;
 	}
 
 	/* Content related drags handled by now */
@@ -809,7 +809,7 @@ html_mouse_action(struct content *c,
 				/** \todo Find a way to not ignore errors */
 				coords = calloc(1, sizeof(*coords));
 				if (coords == NULL) {
-					return;
+					return NSERROR_OK;
 				}
 				coords->x = x - gadget_box_x;
 				coords->y = y - gadget_box_y;
@@ -818,7 +818,7 @@ html_mouse_action(struct content *c,
 					    corestring_dom___ns_key_image_coords_node_data,
 					    coords, html__image_coords_dom_user_data_handler,
 					    &oldcoords) != DOM_NO_ERR)
-					return;
+					return NSERROR_OK;
 				free(oldcoords);
 			}
 			/* Fall through */
@@ -1165,6 +1165,7 @@ html_mouse_action(struct content *c,
 		NSLOG(netsurf, ERROR, "%s", messages_get_errorcode(res));
 	}
 
+	return res;
 }
 
 
