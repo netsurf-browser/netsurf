@@ -599,16 +599,6 @@ html_mouse_action(struct content *c,
 		return;
 	}
 
-	if (html->drag_type == HTML_DRAG_CONTENT_SELECTION) {
-		box = html->drag_owner.content;
-		assert(box->object != NULL);
-
-		box_coords(box, &box_x, &box_y);
-		content_mouse_track(box->object, bw, mouse,
-				x - box_x, y - box_y);
-		return;
-	}
-
 	/* Content related drags handled by now */
 	assert(html->drag_type == HTML_DRAG_NONE);
 
