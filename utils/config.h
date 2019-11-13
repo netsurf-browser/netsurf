@@ -21,6 +21,13 @@
 
 #include <stddef.h>
 
+#if defined(__NetBSD__)
+#include <sys/param.h>
+#if (defined(__NetBSD_Version__) && __NetBSD_Prereq__(8,0,0))
+#define NetBSD_v8
+#endif
+#endif
+
 /* Try to detect which features the target OS supports */
 
 #if (defined(_GNU_SOURCE) && \
@@ -38,6 +45,7 @@ char *strndup(const char *s, size_t n);
 #if ((defined(_GNU_SOURCE) ||			\
       defined(__APPLE__) ||			\
       defined(__HAIKU__) ||			\
+      defined(__NetBSD__) ||			\
       defined(__OpenBSD__)) &&			\
      !defined(__serenity__))
 #define HAVE_STRCASESTR
@@ -66,7 +74,9 @@ char *strcasestr(const char *haystack, const char *needle);
 /* For some reason, UnixLib defines this unconditionally. Assume we're using
  *  UnixLib if building for RISC OS.
  */
-#if ((defined(_GNU_SOURCE) && !defined(__APPLE__)) || defined(__riscos__))
+#if ((defined(_GNU_SOURCE) && !defined(__APPLE__)) ||	\
+     defined(__riscos__) || \
+     defined(NetBSD_v8))
 #define HAVE_STRCHRNUL
 #else
 #undef HAVE_STRCHRNUL
