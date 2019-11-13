@@ -49,7 +49,13 @@ char *strcasestr(const char *haystack, const char *needle);
 /* Although these platforms might have strftime or strptime they
  *  appear not to support the time_t seconds format specifier.
  */
-#if (defined(_WIN32) || defined(__riscos__) || defined(__HAIKU__) || defined(__BEOS__) || defined(__amigaos4__) || defined(__AMIGA__) || defined(__MINT__))
+#if (defined(_WIN32) ||	      \
+     defined(__riscos__) ||   \
+     defined(__HAIKU__) ||    \
+     defined(__BEOS__) ||     \
+     defined(__amigaos4__) || \
+     defined(__AMIGA__) ||    \
+     defined(__MINT__))
 #undef HAVE_STRPTIME
 #undef HAVE_STRFTIME
 #else
