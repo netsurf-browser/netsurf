@@ -614,31 +614,34 @@ html_mouse_action(struct content *c,
 
 	nserror res = NSERROR_OK;
 
+	/* handle open select menu */
 	if (html->visible_select_menu != NULL) {
 		return mouse_action_select_menu(html, bw, mouse, x, y);
 	}
 
-	if (html->drag_type == HTML_DRAG_SELECTION) {
+	/* handle content drag */
+	switch (html->drag_type) {
+	case HTML_DRAG_SELECTION:
 		return mouse_action_drag_selection(html, bw, mouse, x, y);
-	}
 
-	if (html->drag_type == HTML_DRAG_SCROLLBAR) {
+	case HTML_DRAG_SCROLLBAR:
 		return mouse_action_drag_scrollbar(html, bw, mouse, x, y);
 
-	}
-
-	if (html->drag_type == HTML_DRAG_TEXTAREA_SELECTION ||
-	    html->drag_type == HTML_DRAG_TEXTAREA_SCROLLBAR) {
+	case HTML_DRAG_TEXTAREA_SELECTION:
+	case HTML_DRAG_TEXTAREA_SCROLLBAR:
 		return mouse_action_drag_textarea(html, bw, mouse, x, y);
-	}
 
-	if (html->drag_type == HTML_DRAG_CONTENT_SELECTION ||
-	    html->drag_type == HTML_DRAG_CONTENT_SCROLL) {
+	case HTML_DRAG_CONTENT_SELECTION:
+	case HTML_DRAG_CONTENT_SCROLL:
 		return mouse_action_drag_content(html, bw, mouse, x, y);
-	}
 
-	/* Content related drags handled by now */
-	assert(html->drag_type == HTML_DRAG_NONE);
+	case HTML_DRAG_NONE:
+		break;
+
+	default:
+		/* Unknown content related drag type */
+		assert(0);
+	}
 
 	/* search the box tree for a link, imagemap, form control, or
 	 * box with scrollbars
