@@ -334,8 +334,15 @@ mouse_action_select_menu(html_content *html,
 	const char *status;
 	int width, height;
 	struct hlcache_handle *bw_content;
+	browser_drag_type bw_drag_type;
 
 	assert(html->visible_select_menu != NULL);
+
+	bw_drag_type = browser_window_get_drag_type(bw);
+	if (bw_drag_type != DRAGGING_NONE && !mouse) {
+		/* drag end: select menu */
+		form_select_mouse_drag_end(html->visible_select_menu, mouse, x, y);
+	}
 
 	box = html->visible_select_menu->box;
 	box_coords(box, &box_x, &box_y);
@@ -542,7 +549,6 @@ html_mouse_action(struct content *c,
 	plot_font_style_t fstyle;
 	int scroll_mouse_x = 0, scroll_mouse_y = 0;
 	int padding_left, padding_right, padding_top, padding_bottom;
-	browser_drag_type drag_type = browser_window_get_drag_type(bw);
 	union content_msg_data msg_data;
 	struct dom_node *node = html->layout->node; /* Default to the <HTML> */
 	union html_selection_owner sel_owner;
@@ -551,13 +557,6 @@ html_mouse_action(struct content *c,
 			BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2);
 
 	nserror res = NSERROR_OK;
-
-	if (drag_type != DRAGGING_NONE && !mouse &&
-			html->visible_select_menu != NULL) {
-		/* drag end: select menu */
-		form_select_mouse_drag_end(html->visible_select_menu,
-				mouse, x, y);
-	}
 
 	if (html->visible_select_menu != NULL) {
 		return mouse_action_select_menu(html, bw, mouse, x, y);
