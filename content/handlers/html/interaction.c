@@ -504,6 +504,62 @@ mouse_action_drag_scrollbar(html_content *html,
 }
 
 
+/**
+ * handle mouse actions while dragging in a text area
+ */
+static nserror
+mouse_action_drag_textarea(html_content *html,
+			    struct browser_window *bw,
+			    browser_mouse_state mouse,
+			    int x, int y)
+{
+	struct box *box;
+	int box_x = 0;
+	int box_y = 0;
+
+	box = html->drag_owner.textarea;
+
+	assert(box->gadget != NULL);
+	assert(box->gadget->type == GADGET_TEXTAREA ||
+	       box->gadget->type == GADGET_PASSWORD ||
+	       box->gadget->type == GADGET_TEXTBOX);
+
+	box_coords(box, &box_x, &box_y);
+	textarea_mouse_action(box->gadget->data.text.ta,
+			      mouse,
+			      x - box_x,
+			      y - box_y);
+
+	/* TODO: Set appropriate statusbar message */
+	return NSERROR_OK;
+}
+
+
+/**
+ * handle mouse actions while dragging in a content
+ */
+static nserror
+mouse_action_drag_content(html_content *html,
+			  struct browser_window *bw,
+			  browser_mouse_state mouse,
+			  int x, int y)
+{
+	struct box *box;
+	int box_x = 0;
+	int box_y = 0;
+
+	box = html->drag_owner.content;
+	assert(box->object != NULL);
+
+	box_coords(box, &box_x, &box_y);
+	content_mouse_track(box->object,
+			    bw, mouse,
+			    x - box_x,
+			    y - box_y);
+	return NSERROR_OK;
+}
+
+
 /* exported interface documented in html/interaction.h */
 nserror html_mouse_track(struct content *c,
 			 struct browser_window *bw,
@@ -572,30 +628,13 @@ html_mouse_action(struct content *c,
 	}
 
 	if (html->drag_type == HTML_DRAG_TEXTAREA_SELECTION ||
-			html->drag_type == HTML_DRAG_TEXTAREA_SCROLLBAR) {
-		box = html->drag_owner.textarea;
-		assert(box->gadget != NULL);
-		assert(box->gadget->type == GADGET_TEXTAREA ||
-				box->gadget->type == GADGET_PASSWORD ||
-				box->gadget->type == GADGET_TEXTBOX);
-
-		box_coords(box, &box_x, &box_y);
-		textarea_mouse_action(box->gadget->data.text.ta, mouse,
-				x - box_x, y - box_y);
-
-		/* TODO: Set appropriate statusbar message */
-		return NSERROR_OK;
+	    html->drag_type == HTML_DRAG_TEXTAREA_SCROLLBAR) {
+		return mouse_action_drag_textarea(html, bw, mouse, x, y);
 	}
 
 	if (html->drag_type == HTML_DRAG_CONTENT_SELECTION ||
-			html->drag_type == HTML_DRAG_CONTENT_SCROLL) {
-		box = html->drag_owner.content;
-		assert(box->object != NULL);
-
-		box_coords(box, &box_x, &box_y);
-		content_mouse_track(box->object, bw, mouse,
-				x - box_x, y - box_y);
-		return NSERROR_OK;
+	    html->drag_type == HTML_DRAG_CONTENT_SCROLL) {
+		return mouse_action_drag_content(html, bw, mouse, x, y);
 	}
 
 	/* Content related drags handled by now */
