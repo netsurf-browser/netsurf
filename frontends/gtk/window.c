@@ -303,6 +303,22 @@ nsgtk_window_motion_notify_event(GtkWidget *widget,
 }
 
 /**
+ * GTK signal handler for focus-out-event on layout
+ *
+ * when focus leaves the layout widget ensure the caret is cleared
+ */
+static gboolean
+nsgtk_window_focus_out_event(GtkWidget *widget,
+			     GdkEvent *event,
+			     gpointer data)
+{
+	struct gui_window *g = data;
+
+	browser_window_remove_caret(g->bw, true);
+	return FALSE;
+}
+
+/**
  * GTK signal handler for button-press-event on layout
  */
 static gboolean
@@ -914,6 +930,8 @@ gui_window_create(struct browser_window *bw,
 			nsgtk_window_size_allocate_event, g);
 	CONNECT(g->layout, "scroll-event",
 			nsgtk_window_scroll_event, g);
+	CONNECT(g->layout, "focus-out-event",
+			nsgtk_window_focus_out_event, g);
 
 	/* status pane signals */
 	CONNECT(g->paned, "size-allocate",
