@@ -640,7 +640,7 @@ html_mouse_action(struct content *c,
 
 	default:
 		/* Unknown content related drag type */
-		assert(0);
+		assert(0 && "Unknown content related drag type");
 	}
 
 	/* search the box tree for a link, imagemap, form control, or
