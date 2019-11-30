@@ -72,6 +72,25 @@ nsgtk_tab_update_size(GtkWidget *hbox,
 
 
 /**
+ * gtk event handler for button release on tab hbox
+ */
+static gboolean
+nsgtk_tab_button_release(GtkWidget *widget,
+			 GdkEventButton *event,
+			 gpointer user_data)
+{
+	GtkWidget *page;
+
+	if ((event->type == GDK_BUTTON_RELEASE) && (event->button == 2)) {
+		page = (GtkWidget *)user_data;
+		gtk_widget_destroy(page);
+		return TRUE;
+	}
+	return FALSE;
+}
+
+
+/**
  * Create a notebook tab label
  *
  * \param page The page content widget
@@ -83,10 +102,15 @@ nsgtk_tab_label_setup(GtkWidget *page,
 		      const char *title,
 		      GdkPixbuf *icon_pixbuf)
 {
-	GtkWidget *hbox, *favicon, *label, *button, *close;
+	GtkWidget *ebox, *hbox, *favicon, *label, *button, *close;
 
 	/* horizontal box */
 	hbox = nsgtk_hbox_new(FALSE, 3);
+
+	/* event box */
+	ebox = gtk_event_box_new();
+	gtk_widget_set_events(ebox, GDK_BUTTON_PRESS_MASK);
+	gtk_container_add(GTK_CONTAINER(ebox), hbox);
 
 	/* construct a favicon */
 	favicon = gtk_image_new();
@@ -102,7 +126,7 @@ nsgtk_tab_label_setup(GtkWidget *page,
 	nsgtk_widget_set_margins(label, 0, 0);
 	gtk_widget_show(label);
 
-	/* construct a close button and attach signals */
+	/* construct a close button  */
 	button = gtk_button_new();
 
 	close = nsgtk_image_new_from_stock(NSGTK_STOCK_CLOSE,
@@ -112,26 +136,34 @@ nsgtk_tab_label_setup(GtkWidget *page,
 	gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE);
 	gtk_widget_set_tooltip_text(button, "Close this tab.");
 
-	g_signal_connect_swapped(button,
-				 "clicked",
-				 G_CALLBACK(gtk_widget_destroy), page);
-	g_signal_connect(hbox,
-			 "style-set",
-			 G_CALLBACK(nsgtk_tab_update_size),
-			 button);
-
 	/* pack the widgets into the label box */
 	gtk_box_pack_start(GTK_BOX(hbox), favicon, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(hbox), label, TRUE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
 
-	g_object_set_data(G_OBJECT(hbox), "favicon", favicon);
-	g_object_set_data(G_OBJECT(hbox), "label", label);
-	g_object_set_data(G_OBJECT(hbox), "close-button", button);
+	/* make the icon and label widgets findable by name */
+	g_object_set_data(G_OBJECT(ebox), "favicon", favicon);
+	g_object_set_data(G_OBJECT(ebox), "label", label);
 
-	gtk_widget_show_all(hbox);
+	/* attach signal handlers */
+	g_signal_connect_swapped(button,
+				 "clicked",
+				 G_CALLBACK(gtk_widget_destroy), page);
 
-	return hbox;
+	g_signal_connect(hbox,
+			 "style-set",
+			 G_CALLBACK(nsgtk_tab_update_size),
+			 button);
+
+	g_signal_connect(ebox,
+			 "button-release-event",
+			 G_CALLBACK(nsgtk_tab_button_release),
+			 page);
+
+
+	gtk_widget_show_all(ebox);
+
+	return ebox;
 }
 
 
