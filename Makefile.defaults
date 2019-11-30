@@ -82,7 +82,7 @@ NETSURF_USE_NSPSL := AUTO
 NETSURF_USE_NSLOG := AUTO
 # The minimum logging level *compiled* into netsurf
 # Valid options are: DEEPDEBUG, DEBUG, VERBOSE, INFO, WARNING, ERROR, CRITICAL
-NETSURF_LOG_LEVEL := INFO
+NETSURF_LOG_LEVEL := VERBOSE
 # The log filter set during log initialisation before options are available
 NETSURF_BUILTIN_LOG_FILTER := "(level:WARNING || cat:jserrors)"
 # The log filter set during log initialisation before options are available
