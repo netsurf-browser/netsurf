@@ -175,6 +175,9 @@ struct llcache_object {
 	size_t source_len;	     /**< Byte length of source data */
 	size_t source_alloc;	     /**< Allocated size of source buffer */
 
+	size_t ssl_cert_count;       /**< The number of SSL certificates stored */
+	struct ssl_cert_info *ssl_certs;    /**< SSL certificate information if count is non-zero */
+
 	llcache_store_state store_state; /**< where the data for the object is stored */
 
 	llcache_object_user *users;  /**< List of users */
@@ -965,6 +968,12 @@ static nserror llcache_object_destroy(llcache_object *object)
 
 	NSLOG(llcache, DEBUG, "Destroying object %p, %s", object,
 	      nsurl_access(object->url));
+
+	if (object->ssl_cert_count != 0) {
+		free(object->ssl_certs);
+		object->ssl_certs = NULL;
+		object->ssl_cert_count = 0;
+	}
 
 	if (object->source_data != NULL) {
 		if (object->store_state == LLCACHE_STATE_DISC) {
@@ -2916,9 +2925,17 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 
 	case FETCH_CERTS:
 		/* Certificate information from the fetch */
-		/** \todo CERTS - Should we persist this on the object and
-		 * then catch up new users etc?
-		 */
+
+		/* Persist the data onto our object */
+		object->ssl_certs = calloc(sizeof(struct ssl_cert_info),
+					   msg->data.certs.num_certs);
+		if (object->ssl_certs != NULL) {
+			object->ssl_cert_count = msg->data.certs.num_certs;
+			memcpy(object->ssl_certs, msg->data.certs.certs,
+			       sizeof(struct ssl_cert_info) * object->ssl_cert_count);
+		}
+
+		/* Now pass on the event */
 		event.type = LLCACHE_EVENT_GOT_CERTS;
 		event.data.certs.certs = msg->data.certs.certs;
 		event.data.certs.num = msg->data.certs.num_certs;
@@ -3122,6 +3139,40 @@ static nserror llcache_object_notify_users(llcache_object *object)
 		if (handle->state == LLCACHE_FETCH_INIT &&
 				objstate > LLCACHE_FETCH_INIT) {
 			handle->state = LLCACHE_FETCH_HEADERS;
+
+			/* Emit any certificate data we hold */
+			if (object->ssl_cert_count > 0) {
+				event.type = LLCACHE_EVENT_GOT_CERTS;
+				event.data.certs.certs = object->ssl_certs;
+				event.data.certs.num = object->ssl_cert_count;
+				error = handle->cb(handle, &event, handle->pw);
+			} else {
+				error = NSERROR_OK;
+			}
+
+			if (user->queued_for_delete) {
+				next_user = user->next;
+				llcache_object_remove_user(object, user);
+				llcache_object_user_destroy(user);
+
+				if (error != NSERROR_OK)
+					return error;
+
+				continue;
+			} else if (error == NSERROR_NEED_DATA) {
+				/* User requested replay */
+				handle->state = LLCACHE_FETCH_HEADERS;
+
+				/* Continue with the next user -- we'll
+				 * reemit the event next time round */
+				user->iterator_target = false;
+				next_user = user->next;
+				llcache_users_not_caught_up();
+				continue;
+			} else if (error != NSERROR_OK) {
+				user->iterator_target = false;
+				return error;
+			}
 		}
 
 		/* User: HEADERS, Obj: DATA, COMPLETE => User->DATA */
@@ -3315,6 +3366,18 @@ llcache_object_snapshot(llcache_object *object,	llcache_object **snapshot)
 		}
 	}
 
+	if (object->ssl_cert_count != 0) {
+		newobj->ssl_certs = calloc(sizeof(struct ssl_cert_info),
+					   object->ssl_cert_count);
+		if (newobj->ssl_certs == NULL) {
+			llcache_object_destroy(newobj);
+			return NSERROR_NOMEM;
+		}
+		memcpy(newobj->ssl_certs, object->ssl_certs,
+		       sizeof(struct ssl_cert_info) * object->ssl_cert_count);
+		newobj->ssl_cert_count = object->ssl_cert_count;
+	}
+
 	newobj->fetch.state = LLCACHE_FETCH_COMPLETE;
 
 	*snapshot = newobj;
@@ -3351,6 +3414,8 @@ total_object_size(llcache_object *object)
 			tot += strlen(object->headers[hdrc].value);
 		}
 	}
+
+	tot += object->ssl_cert_count * sizeof(struct ssl_cert_info);
 
 	return tot;
 }
