@@ -1497,6 +1497,7 @@ llcache_process_metadata(llcache_object *object)
 	nserror res;
 	uint8_t *metadata = NULL;
 	size_t metadatalen = 0;
+	size_t remaining = 0;
 	nsurl *metadataurl;
 	unsigned int line;
 	char *ln;
@@ -1508,6 +1509,8 @@ llcache_process_metadata(llcache_object *object)
 	time_t completion_time;
 	size_t num_headers;
 	size_t hloop;
+	size_t ssl_cert_count = 0;
+	struct ssl_cert_info *ssl_certs = NULL;
 
 	NSLOG(llcache, INFO, "Retrieving metadata");
 
@@ -1522,10 +1525,20 @@ llcache_process_metadata(llcache_object *object)
 
 	NSLOG(llcache, INFO, "Processing retrieved data");
 
+	/* metadata is stored as a sequence of NULL terminated strings
+	 * which we call 'line's here.
+	 */
+
+	/* We track remaining data because as we extend this data structure
+	 * we need to know if we should continue to parse
+	 */
+	remaining = metadatalen;
+
 	/* metadata line 1 is the url the metadata referrs to */
 	line = 1;
 	ln = (char *)metadata;
 	lnsize = strlen(ln);
+	remaining -= lnsize + 1;
 
 	if (lnsize < 7) {
 		res = NSERROR_INVALID;
@@ -1559,6 +1572,7 @@ llcache_process_metadata(llcache_object *object)
 	line = 2;
 	ln += lnsize + 1;
 	lnsize = strlen(ln);
+	remaining -= lnsize + 1;
 
 	if ((lnsize < 1) || (sscanf(ln, "%" PRIsizet, &source_length) != 1)) {
 		res = NSERROR_INVALID;
@@ -1570,6 +1584,7 @@ llcache_process_metadata(llcache_object *object)
 	line = 3;
 	ln += lnsize + 1;
 	lnsize = strlen(ln);
+	remaining -= lnsize + 1;
 
 	res = nsc_snptimet(ln, lnsize, &request_time);
 	if (res != NSERROR_OK)
@@ -1580,6 +1595,7 @@ llcache_process_metadata(llcache_object *object)
 	line = 4;
 	ln += lnsize + 1;
 	lnsize = strlen(ln);
+	remaining -= lnsize + 1;
 
 	res = nsc_snptimet(ln, lnsize, &response_time);
 	if (res != NSERROR_OK)
@@ -1590,6 +1606,7 @@ llcache_process_metadata(llcache_object *object)
 	line = 5;
 	ln += lnsize + 1;
 	lnsize = strlen(ln);
+	remaining -= lnsize + 1;
 
 	res = nsc_snptimet(ln, lnsize, &completion_time);
 	if (res != NSERROR_OK)
@@ -1600,6 +1617,7 @@ llcache_process_metadata(llcache_object *object)
 	line = 6;
 	ln += lnsize + 1;
 	lnsize = strlen(ln);
+	remaining -= lnsize + 1;
 
 	if ((lnsize < 1) || (sscanf(ln, "%" PRIsizet, &num_headers) != 1)) {
 		res = NSERROR_INVALID;
@@ -1611,6 +1629,7 @@ llcache_process_metadata(llcache_object *object)
 		line++;
 		ln += lnsize + 1;
 		lnsize = strlen(ln);
+		remaining -= lnsize + 1;
 
 		res = llcache_fetch_process_header(object,
 						   (uint8_t *)ln,
@@ -1619,6 +1638,110 @@ llcache_process_metadata(llcache_object *object)
 			goto format_error;
 	}
 
+	if (remaining == 0) {
+		goto skip_ssl_certificates;
+	}
+
+	/* Next line is the number of SSL certificates*/
+	line++;
+	ln += lnsize + 1;
+	lnsize = strlen(ln);
+	remaining -= lnsize + 1;
+
+	if ((lnsize < 1) || (sscanf(ln, "%" PRIsizet, &ssl_cert_count) != 1)) {
+		res = NSERROR_INVALID;
+		goto format_error;
+	}
+
+	if (ssl_cert_count == 0) {
+		goto skip_ssl_certificates;
+	}
+
+	ssl_certs = calloc(sizeof(struct ssl_cert_info), ssl_cert_count);
+	if (ssl_certs == NULL) {
+		res = NSERROR_NOMEM;
+		goto format_error;
+	}
+
+	for (hloop = 0; hloop < ssl_cert_count; hloop++) {
+		struct ssl_cert_info *cert = &ssl_certs[hloop];
+		int errcode;
+		/* Certificate version */
+		line++;
+		ln += lnsize + 1;
+		lnsize = strlen(ln);
+		remaining -= lnsize + 1;
+		if ((lnsize < 1) || (sscanf(ln, "%ld", &cert->version) != 1)) {
+			res = NSERROR_INVALID;
+			goto format_error;
+		}
+		/* Not before */
+		line++;
+		ln += lnsize + 1;
+		lnsize = strlen(ln);
+		remaining -= lnsize + 1;
+		memcpy(&cert->not_before, ln, lnsize);
+		/* Not after */
+		line++;
+		ln += lnsize + 1;
+		lnsize = strlen(ln);
+		remaining -= lnsize + 1;
+		memcpy(&cert->not_after, ln, lnsize);
+		/* Signature type */
+		line++;
+		ln += lnsize + 1;
+		lnsize = strlen(ln);
+		remaining -= lnsize + 1;
+		if ((lnsize < 1) || (sscanf(ln, "%d", &cert->sig_type) != 1)) {
+			res = NSERROR_INVALID;
+			goto format_error;
+		}
+		/* Serial Number */
+		line++;
+		ln += lnsize + 1;
+		lnsize = strlen(ln);
+		remaining -= lnsize + 1;
+		memcpy(&cert->serialnum, ln, lnsize);
+		/* issuer */
+		line++;
+		ln += lnsize + 1;
+		lnsize = strlen(ln);
+		remaining -= lnsize + 1;
+		memcpy(&cert->issuer, ln, lnsize);
+		/* subject */
+		line++;
+		ln += lnsize + 1;
+		lnsize = strlen(ln);
+		remaining -= lnsize + 1;
+		memcpy(&cert->subject, ln, lnsize);
+		/* Certificate type */
+		line++;
+		ln += lnsize + 1;
+		lnsize = strlen(ln);
+		remaining -= lnsize + 1;
+		if ((lnsize < 1) || (sscanf(ln, "%d", &cert->cert_type) != 1)) {
+			res = NSERROR_INVALID;
+			goto format_error;
+		}
+		/* Certificate error code */
+		line++;
+		ln += lnsize + 1;
+		lnsize = strlen(ln);
+		remaining -= lnsize + 1;
+		if ((lnsize < 1) || (sscanf(ln, "%d", &errcode) != 1)) {
+			res = NSERROR_INVALID;
+			goto format_error;
+		}
+		if (errcode < SSL_CERT_ERR_OK ||
+		    errcode > SSL_CERT_ERR_MAX_KNOWN) {
+			/* Error with the cert code, assume UNKNOWN */
+			cert->err = SSL_CERT_ERR_UNKNOWN;
+		} else {
+			cert->err = (ssl_cert_err)errcode;
+		}
+	}
+
+skip_ssl_certificates:
 	guit->llcache->release(object->url, BACKING_STORE_META);
 
 	/* update object on successful parse of metadata  */
@@ -1631,6 +1754,9 @@ llcache_process_metadata(llcache_object *object)
 	object->cache.res_time = response_time;
 	object->cache.fin_time = completion_time;
 
+	object->ssl_cert_count = ssl_cert_count;
+	object->ssl_certs = ssl_certs;
+
 	/* object stored in backing store */
 	object->store_state = LLCACHE_STATE_DISC;
 
@@ -1641,6 +1767,10 @@ format_error:
 	      "metadata error on line %d error code %d\n",
 	      line, res);
 	guit->llcache->release(object->url, BACKING_STORE_META);
+
+	if (ssl_certs != NULL) {
+		free(ssl_certs);
+	}
 
 	return res;
 }

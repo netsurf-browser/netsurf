@@ -27,6 +27,9 @@
 
 /**
  * ssl certificate error status
+ *
+ * Do not reorder / remove entries because these may be persisted to the disk
+ * cache as simple ints.
  */
 typedef enum {
 	SSL_CERT_ERR_OK,	/**< Nothing wrong with this certificate */
@@ -40,6 +43,9 @@ typedef enum {
 	SSL_CERT_ERR_REVOKED,	/**< This certificate has been revoked */
 	SSL_CERT_ERR_HOSTNAME_MISMATCH, /**< This certificate host did not match the server */
 } ssl_cert_err;
+
+/** Always the max known ssl certificate error type */
+#define SSL_CERT_ERR_MAX_KNOWN SSL_CERT_ERR_HOSTNAME_MISMATCH
 
 /**
  * ssl certificate information for certificate error message
