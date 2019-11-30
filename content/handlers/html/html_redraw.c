@@ -1224,7 +1224,6 @@ bool html_redraw_box(const html_content *html, struct box *box,
 	struct rect rect;
 	int x_scrolled, y_scrolled;
 	struct box *bg_box = NULL;
-	bool has_x_scroll, has_y_scroll;
 	css_computed_clip_rect css_rect;
 	enum css_overflow_e overflow_x = CSS_OVERFLOW_VISIBLE;
 	enum css_overflow_e overflow_y = CSS_OVERFLOW_VISIBLE;
@@ -1849,9 +1848,13 @@ bool html_redraw_box(const html_content *html, struct box *box,
 	     (box->object && content_get_type(box->object) ==
 	      CONTENT_HTML)) && box->parent != NULL) {
 		nserror res;
+		bool has_x_scroll = (overflow_x == CSS_OVERFLOW_SCROLL);
+		bool has_y_scroll = (overflow_y == CSS_OVERFLOW_SCROLL);
 
-		has_x_scroll = box_hscrollbar_present(box);
-		has_y_scroll = box_vscrollbar_present(box);
+		has_x_scroll |= (overflow_x == CSS_OVERFLOW_AUTO) &&
+				box_hscrollbar_present(box);
+		has_y_scroll |= (overflow_y == CSS_OVERFLOW_AUTO) &&
+				box_vscrollbar_present(box);
 
 		res = box_handle_scrollbars((struct content *)html,
 					    box, has_x_scroll, has_y_scroll);
