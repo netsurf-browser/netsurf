@@ -2998,17 +2998,20 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 
 		err = dom_attr_get_name(attr, &name);
 		if (err != DOM_NO_ERR) {
+			dom_node_unref(attr);
 			dom_namednodemap_unref(attrs);
 			return false;
 		}
 
 		if (dom_string_caseless_lwc_isequal(name, corestring_lwc_src)) {
+			dom_node_unref(attr);
 			dom_string_unref(name);
 			continue;
 		}
 
 		err = dom_attr_get_value(attr, &value);
 		if (err != DOM_NO_ERR) {
+			dom_node_unref(attr);
 			dom_string_unref(name);
 			dom_namednodemap_unref(attrs);
 			return false;
@@ -3016,6 +3019,7 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 
 		param = talloc(content->bctx, struct object_param);
 		if (param == NULL) {
+			dom_node_unref(attr);
 			dom_string_unref(value);
 			dom_string_unref(name);
 			dom_namednodemap_unref(attrs);
@@ -3030,6 +3034,7 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 
 		dom_string_unref(value);
 		dom_string_unref(name);
+		dom_node_unref(attr);
 
 		if (param->name == NULL || param->value == NULL ||
 				param->valuetype == NULL) {
