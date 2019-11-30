@@ -1135,6 +1135,8 @@ browser_window__handle_bad_certs(struct browser_window *bw,
 	memset(&params, 0, sizeof(params));
 
 	params.url = nsurl_ref(corestring_nsurl_about_query_ssl);
+	params.referrer = nsurl_ref(url);
+	params.flags = BW_NAVIGATE_HISTORY | BW_NAVIGATE_NO_TERMINAL_HISTORY_UPDATE | BW_NAVIGATE_INTERNAL;
 
 	err = fetch_multipart_data_new_kv(&params.post_multipart,
 					  "siteurl",
