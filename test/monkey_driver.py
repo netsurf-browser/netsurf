@@ -174,7 +174,7 @@ def load_test_plan(path):
     plan = []
     with open(path, 'r') as stream:
         try:
-            plan = (yaml.load(stream))
+            plan = (yaml.load(stream, Loader=yaml.CSafeLoader))
         except Exception as exc:
             print(exc)
     return plan
