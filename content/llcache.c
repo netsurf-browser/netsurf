@@ -1251,11 +1251,22 @@ llcache_serialise_metadata(llcache_object *object,
 
 	allocsize += 10 + 1; /* space for number of header entries */
 
+	allocsize += 10 + 1; /* space for number of SSL certificates */
+
 	allocsize += nsurl_length(object->url) + 1;
 
 	for (hloop = 0 ; hloop < object->num_headers ; hloop++) {
 		allocsize += strlen(object->headers[hloop].name) + 1;
 		allocsize += strlen(object->headers[hloop].value) + 1;
+	}
+
+	for (hloop = 0; hloop < object->ssl_cert_count; hloop++) {
+		allocsize += (10 + 1) * 4; /* version, sig_type, cert_type, err */
+		allocsize += strlen(object->ssl_certs[hloop].not_before) + 1;
+		allocsize += strlen(object->ssl_certs[hloop].not_after) + 1;
+		allocsize += strlen(object->ssl_certs[hloop].serialnum) + 1;
+		allocsize += strlen(object->ssl_certs[hloop].issuer) + 1;
+		allocsize += strlen(object->ssl_certs[hloop].subject) + 1;
 	}
 
 	data = malloc(allocsize);
@@ -1330,6 +1341,112 @@ llcache_serialise_metadata(llcache_object *object,
 			       "%s:%s",
 			       object->headers[hloop].name,
 			       object->headers[hloop].value);
+		if (use < 0) {
+			goto operror;
+		}
+		use++; /* does not count the null */
+		if (use > datasize)
+			goto overflow;
+		op += use;
+		datasize -= use;
+	}
+
+	/* number of ssl certificates */
+	use = snprintf(op, datasize, "%" PRIsizet, object->ssl_cert_count);
+	if (use < 0) {
+		goto operror;
+	}
+	use++; /* does not count the null */
+	if (use > datasize)
+		goto overflow;
+	op += use;
+	datasize -= use;
+
+	/* SSL certificates */
+	for (hloop = 0; hloop < object->ssl_cert_count; hloop++) {
+		struct ssl_cert_info *cert = &(object->ssl_certs[hloop]);
+		/* Certificate version */
+		use = snprintf(op, datasize, "%ld", cert->version);
+		if (use < 0) {
+			goto operror;
+		}
+		use++; /* does not count the null */
+		if (use > datasize)
+			goto overflow;
+		op += use;
+		datasize -= use;
+		/* not_before */
+		use = snprintf(op, datasize, "%s", cert->not_before);
+		if (use < 0) {
+			goto operror;
+		}
+		use++; /* does not count the null */
+		if (use > datasize)
+			goto overflow;
+		op += use;
+		datasize -= use;
+		/* not_after */
+		use = snprintf(op, datasize, "%s", cert->not_after);
+		if (use < 0) {
+			goto operror;
+		}
+		use++; /* does not count the null */
+		if (use > datasize)
+			goto overflow;
+		op += use;
+		datasize -= use;
+		/* Signature type */
+		use = snprintf(op, datasize, "%d", cert->sig_type);
+		if (use < 0) {
+			goto operror;
+		}
+		use++; /* does not count the null */
+		if (use > datasize)
+			goto overflow;
+		op += use;
+		datasize -= use;
+		/* serialnum */
+		use = snprintf(op, datasize, "%s", cert->serialnum);
+		if (use < 0) {
+			goto operror;
+		}
+		use++; /* does not count the null */
+		if (use > datasize)
+			goto overflow;
+		op += use;
+		datasize -= use;
+		/* issuer */
+		use = snprintf(op, datasize, "%s", cert->issuer);
+		if (use < 0) {
+			goto operror;
+		}
+		use++; /* does not count the null */
+		if (use > datasize)
+			goto overflow;
+		op += use;
+		datasize -= use;
+		/* subject */
+		use = snprintf(op, datasize, "%s", cert->subject);
+		if (use < 0) {
+			goto operror;
+		}
+		use++; /* does not count the null */
+		if (use > datasize)
+			goto overflow;
+		op += use;
+		datasize -= use;
+		/* Certificate type */
+		use = snprintf(op, datasize, "%d", cert->cert_type);
+		if (use < 0) {
+			goto operror;
+		}
+		use++; /* does not count the null */
+		if (use > datasize)
+			goto overflow;
+		op += use;
+		datasize -= use;
+		/* Certificate error code */
+		use = snprintf(op, datasize, "%d", (int)(cert->err));
 		if (use < 0) {
 			goto operror;
 		}
