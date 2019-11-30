@@ -55,13 +55,14 @@ def run_test(verbose, parts):
 
 def print_usage():
     print('Usage:')
-    print('  ' + sys.argv[0] + ' [-v] [-h] [-d <division>]')
+    print('  ' + sys.argv[0] + ' [-v] [-h] [-d <division>] [-g group]')
 
 def parse_argv(argv):
     verbose = False
-    division = 'index'
+    division = None
+    group = None
     try:
-        opts, args = getopt.getopt(argv, "hvd:", [])
+        opts, args = getopt.getopt(argv, "hvd:g:", [])
     except getopt.GetoptError:
         print_usage()
         sys.exit(2)
@@ -73,14 +74,22 @@ def parse_argv(argv):
             verbose = True
         elif opt == '-d':
             division = arg
+        elif opt == '-g':
+            group = arg
 
-    return verbose, division
+    return verbose, division, group
 
 def main():
-    verbose, division = parse_argv(sys.argv[1:])
+    verbose, division, group = parse_argv(sys.argv[1:])
 
     print("Fetching tests...")
-    data = parse.urlencode({"division": division}).encode()
+    data_dict = {}
+    if division is not None:
+        data_dict['division'] = division
+    if group is not None:
+        data_dict['group'] = group
+
+    data = parse.urlencode(data_dict).encode()
     req = request.Request(BASE_PATH, data=data)
     index = request.urlopen(req)
     index = index.read()
