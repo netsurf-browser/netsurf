@@ -820,7 +820,8 @@ static nserror browser_window_content_ready(struct browser_window *bw)
 
 	/* Indicate page status may have changed */
 	if (res == NSERROR_OK) {
-		res = guit->window->event(bw->window, GW_EVENT_PAGE_INFO_CHANGE);
+		struct browser_window *root = browser_window_get_root(bw);
+		res = guit->window->event(root->window, GW_EVENT_PAGE_INFO_CHANGE);
 	}
 
 	return res;
