@@ -1315,8 +1315,6 @@ browser_window__handle_error(struct browser_window *bw,
 		break;
 	}
 
-	browser_window_stop_throbber(bw);
-
 	return NSERROR_OK;
 }
 
