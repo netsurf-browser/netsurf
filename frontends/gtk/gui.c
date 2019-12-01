@@ -69,7 +69,6 @@
 #include "gtk/schedule.h"
 #include "gtk/selection.h"
 #include "gtk/search.h"
-#include "gtk/ssl_cert.h"
 #include "gtk/bitmap.h"
 #include "gtk/resources.h"
 #include "gtk/layout_pango.h"

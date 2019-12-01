@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2019 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,22 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NETSURF_GTK_SSL_CERT_H
-#define NETSURF_GTK_SSL_CERT_H 1
-
-struct nsurl;
-struct ssl_cert_info;
+#ifndef NETSURF_GTK_PAGE_INFO_H
+#define NETSURF_GTK_PAGE_INFO_H 1
 
 /**
- * Prompt the user to verify a certificate with issuse.
+ * Page information window
  *
- * \param url The URL being verified.
- * \param certs The certificate to be verified
- * \param num The number of certificates to be verified.
- * \param cb Callback upon user decision.
- * \param cbpw Context pointer passed to cb
+ * \param bw the browser window to get page information for
  * \return NSERROR_OK or error code if prompt creation failed.
  */
-nserror gtk_cert_verify(struct nsurl *url, const struct ssl_cert_info *certs, unsigned long num, nserror (*cb)(bool proceed, void *pw), void *cbpw);
+nserror nsgtk_page_info(struct browser_window *bw);
 
 #endif

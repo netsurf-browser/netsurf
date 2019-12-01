@@ -28,12 +28,13 @@
 #include "utils/log.h"
 #include "netsurf/keypress.h"
 #include "netsurf/plotters.h"
+#include "netsurf/browser_window.h"
 #include "desktop/sslcert_viewer.h"
 
 #include "gtk/plotters.h"
 #include "gtk/scaffolding.h"
 #include "gtk/resources.h"
-#include "gtk/ssl_cert.h"
+#include "gtk/page_info.h"
 #include "gtk/corewindow.h"
 
 
@@ -166,15 +167,23 @@ nsgtk_crtvrfy_draw(struct nsgtk_corewindow *nsgtk_cw, struct rect *r)
 	return NSERROR_OK;
 }
 
-/* exported interface documented in gtk/ssl_cert.h */
-nserror gtk_cert_verify(struct nsurl *url,
-			const struct ssl_cert_info *certs,
-			unsigned long num,
-			nserror (*cb)(bool proceed, void *pw),
-			void *cbpw)
+static nserror dummy_cb(bool proceed, void *pw)
+{
+	return NSERROR_OK;
+}
+
+/* exported interface documented in gtk/page_info.h */
+nserror nsgtk_page_info(struct browser_window *bw)
 {
 	struct nsgtk_crtvrfy_window *ncwin;
 	nserror res;
+
+	size_t num;
+	struct ssl_cert_info *chain;
+	struct nsurl *url;
+
+	browser_window_get_ssl_chain(bw, &num, &chain);
+	url = browser_window_access_url(bw);
 
 	ncwin = malloc(sizeof(struct nsgtk_crtvrfy_window));
 	if (ncwin == NULL) {
@@ -236,7 +245,7 @@ nserror gtk_cert_verify(struct nsurl *url,
 	}
 
 	/* initialise certificate viewing interface */
-	res = sslcert_viewer_create_session_data(num, url, cb, cbpw, certs,
+	res = sslcert_viewer_create_session_data(num, url, dummy_cb, NULL, chain,
 					   &ncwin->ssl_data);
 	if (res != NSERROR_OK) {
 		g_object_unref(G_OBJECT(ncwin->dlg));

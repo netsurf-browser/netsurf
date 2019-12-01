@@ -69,6 +69,7 @@
 #include "gtk/about.h"
 #include "gtk/gdk.h"
 #include "gtk/bitmap.h"
+#include "gtk/page_info.h"
 #include "gtk/toolbar.h"
 
 /**
@@ -301,6 +302,9 @@ make_toolbar_item_throbber(bool sensitivity, bool edit)
  * create url bar toolbar item widget
  *
  * create a gtk entry widget with a completion attached
+ *
+ * \param sensitivity if the entry should be created sensitive to input
+ * \param edit if the entry should be editable
  */
 static GtkToolItem *
 make_toolbar_item_url_bar(bool sensitivity, bool edit)
@@ -314,6 +318,9 @@ make_toolbar_item_url_bar(bool sensitivity, bool edit)
 	if (entry == NULL) {
 		return NULL;
 	}
+	nsgtk_entry_set_icon_from_icon_name(entry,
+					    GTK_ENTRY_ICON_PRIMARY,
+					    NSGTK_STOCK_INFO);
 
 	if (edit) {
 		gtk_entry_set_width_chars(GTK_ENTRY(entry), 9);
@@ -1941,6 +1948,31 @@ url_entry_changed_cb(GtkWidget *widget, GdkEventKey *event, gpointer data)
 
 
 /**
+ * callback for url entry widget icon button release
+ *
+ * handler connected to url entry widget for the icon release signal
+ *
+ * \param widget The widget the signal is being delivered to.
+ * \param event The key change event that changed the entry.
+ * \param data The toolbar context passed when the signal was connected
+ * \return TRUE to allow activation.
+ */
+static void
+url_entry_icon_release_cb(GtkEntry *entry,
+			   GtkEntryIconPosition icon_pos,
+			   GdkEvent *event,
+			   gpointer data)
+{
+	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
+	struct browser_window *bw;
+
+	bw = tb->get_bw(tb->get_ctx);
+
+	nsgtk_page_info(bw);
+}
+
+
+/**
  * handler for web search tool bar entry item activate signal
  *
  * handler connected to web search entry widget for the activate signal
@@ -3275,6 +3307,10 @@ toolbar_connect_signal(struct nsgtk_toolbar *tb, nsgtk_toolbar_button itemid)
 		g_signal_connect(GTK_WIDGET(entry),
 				 "changed",
 				 G_CALLBACK(url_entry_changed_cb),
+				 tb);
+		g_signal_connect(GTK_WIDGET(entry),
+				 "icon-release",
+				 G_CALLBACK(url_entry_icon_release_cb),
 				 tb);
 
 		nsgtk_completion_connect_signals(entry,

@@ -169,7 +169,7 @@ S_FRONTEND := gui.c schedule.c layout_pango.c bitmap.c plotters.c	\
 	selection.c window.c fetch.c download.c menu.c print.c		\
 	search.c tabs.c toolbar.c gettext.c compat.c viewdata.c		\
 	viewsource.c preferences.c about.c resources.c corewindow.c	\
-	local_history.c global_history.c cookies.c hotlist.c ssl_cert.c
+	local_history.c global_history.c cookies.c hotlist.c page_info.c
 
 # This is the final source build list
 # Note this is deliberately *not* expanded here as common and image
