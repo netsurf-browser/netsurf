@@ -59,7 +59,7 @@
 static struct gui_window *window_list = NULL;
 
 /** The main window class name */
-static const char windowclassname_main[] = "nswsmainwindow";
+static const LPCWSTR windowclassname_main = L"nswsmainwindow";
 
 /** width of the throbber element */
 #define NSWS_THROBBER_WIDTH 24
@@ -143,9 +143,9 @@ static HWND nsws_window_create(HINSTANCE hInstance, struct gui_window *gw)
 	NSLOG(netsurf, INFO,
 	      "creating hInstance %p GUI window %p",
 	      hInstance, gw);
-	hwnd = CreateWindowEx(0,
+	hwnd = CreateWindowExW(0,
 			      windowclassname_main,
-			      "NetSurf Browser",
+			      L"NetSurf Browser",
 			      WS_OVERLAPPEDWINDOW |
 			      WS_CLIPCHILDREN |
 			      WS_CLIPSIBLINGS |
@@ -1345,7 +1345,7 @@ nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		 */
 		GetClientRect(hwnd, &rmain);
 		PostMessage(hwnd, WM_SIZE, 0, MAKELPARAM(rmain.right, rmain.bottom));
-		return DefWindowProc(hwnd, msg, wparam, lparam);
+		return DefWindowProcW(hwnd, msg, wparam, lparam);
 	}
 
 
@@ -1353,7 +1353,7 @@ nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	if (gw == NULL) {
 		NSLOG(netsurf, INFO,
 		      "Unable to find gui window structure for hwnd %p", hwnd);
-		return DefWindowProc(hwnd, msg, wparam, lparam);
+		return DefWindowProcW(hwnd, msg, wparam, lparam);
 	}
 
 	switch (msg) {
@@ -1386,7 +1386,7 @@ nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 	}
 
-	return DefWindowProc(hwnd, msg, wparam, lparam);
+	return DefWindowProcW(hwnd, msg, wparam, lparam);
 }
 
 
@@ -1529,6 +1529,8 @@ static void win32_window_update_extent(struct gui_window *gw)
 static void win32_window_set_title(struct gui_window *w, const char *title)
 {
 	char *fulltitle;
+	int wlen;
+	LPWSTR enctitle;
 
 	if (w == NULL) {
 		return;
@@ -1537,14 +1539,32 @@ static void win32_window_set_title(struct gui_window *w, const char *title)
 	NSLOG(netsurf, INFO, "%p, title %s", w, title);
 	fulltitle = malloc(strlen(title) + SLEN("  -  NetSurf") + 1);
 	if (fulltitle == NULL) {
-		win32_warning("NoMemory", 0);
+		NSLOG(netsurf, ERROR, "%s",
+		      messages_get_errorcode(NSERROR_NOMEM));
 		return;
 	}
 
 	strcpy(fulltitle, title);
 	strcat(fulltitle, "  -  NetSurf");
 
-	SendMessage(w->main, WM_SETTEXT, 0, (LPARAM)fulltitle);
+	wlen = MultiByteToWideChar(CP_UTF8, 0, fulltitle, -1, NULL, 0);
+	if (wlen == 0) {
+		NSLOG(netsurf, ERROR, "failed encoding \"%s\"", fulltitle);
+		free(fulltitle);
+		return;
+	}
+
+	enctitle = malloc(2 * (wlen + 1));
+	if (enctitle == NULL) {
+		NSLOG(netsurf, ERROR, "%s encoding \"%s\" len %d",
+		      messages_get_errorcode(NSERROR_NOMEM), fulltitle, wlen);
+		free(fulltitle);
+		return;
+	}
+
+	MultiByteToWideChar(CP_UTF8, 0, fulltitle, -1, enctitle, wlen);
+	SetWindowTextW(w->main, enctitle);
+	free(enctitle);
 	free(fulltitle);
 }
 
@@ -1908,7 +1928,7 @@ nserror
 nsws_create_main_class(HINSTANCE hinstance)
 {
 	nserror ret = NSERROR_OK;
-	WNDCLASSEX wc;
+	WNDCLASSEXW wc;
 
 	/* main window */
 	wc.cbSize = sizeof(WNDCLASSEX);
@@ -1924,7 +1944,7 @@ nsws_create_main_class(HINSTANCE hinstance)
 	wc.lpszClassName = windowclassname_main;
 	wc.hIconSm = LoadIcon(hinstance, MAKEINTRESOURCE(IDR_NETSURF_ICON));
 
-	if (RegisterClassEx(&wc) == 0) {
+	if (RegisterClassExW(&wc) == 0) {
 		win_perror("MainWindowClass");
 		ret = NSERROR_INIT_FAILED;
 	}
