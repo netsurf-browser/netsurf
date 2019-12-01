@@ -44,6 +44,7 @@
 #include "netsurf/content.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/utf8.h"
+#include "netsurf/keypress.h"
 #include "netsurf/layout.h"
 #include "netsurf/misc.h"
 #include "content/hlcache.h"
@@ -117,6 +118,84 @@ bool fire_generic_dom_event(dom_string *type, dom_node *target,
 	NSLOG(netsurf, INFO, "Dispatching '%*s' against %p",
 	      dom_string_length(type), dom_string_data(type), target);
 	result = fire_dom_event(evt, target);
+	dom_event_unref(evt);
+	return result;
+}
+
+/* Exported interface, see html_internal.h */
+bool fire_dom_keyboard_event(dom_string *type, dom_node *target,
+		bool bubbles, bool cancelable, uint32_t key)
+{
+	bool is_special = key <= 0x001F || (0x007F <= key && key <= 0x009F);
+	dom_string *dom_key = NULL;
+	dom_keyboard_event *evt;
+	dom_exception exc;
+	bool result;
+
+	if (is_special) {
+		switch (key) {
+		case NS_KEY_ESCAPE:
+			dom_key = dom_string_ref(corestring_dom_Escape);
+			break;
+		case NS_KEY_LEFT:
+			dom_key = dom_string_ref(corestring_dom_ArrowLeft);
+			break;
+		case NS_KEY_RIGHT:
+			dom_key = dom_string_ref(corestring_dom_ArrowRight);
+			break;
+		case NS_KEY_UP:
+			dom_key = dom_string_ref(corestring_dom_ArrowUp);
+			break;
+		case NS_KEY_DOWN:
+			dom_key = dom_string_ref(corestring_dom_ArrowDown);
+			break;
+		case NS_KEY_PAGE_UP:
+			dom_key = dom_string_ref(corestring_dom_PageUp);
+			break;
+		case NS_KEY_PAGE_DOWN:
+			dom_key = dom_string_ref(corestring_dom_PageDown);
+			break;
+		case NS_KEY_TEXT_START:
+			dom_key = dom_string_ref(corestring_dom_Home);
+			break;
+		case NS_KEY_TEXT_END:
+			dom_key = dom_string_ref(corestring_dom_End);
+			break;
+		default:
+			dom_key = NULL;
+			break;
+		}
+	} else {
+		char utf8[6];
+		size_t length = utf8_from_ucs4(key, utf8);
+		utf8[length] = '\0';
+
+		exc = dom_string_create((const uint8_t *)utf8, strlen(utf8),
+				&dom_key);
+		if (exc != DOM_NO_ERR) {
+			return exc;
+		}
+	}
+
+	exc = dom_keyboard_event_create(&evt);
+	if (exc != DOM_NO_ERR) {
+		dom_string_unref(dom_key);
+		return false;
+	}
+
+	exc = dom_keyboard_event_init(evt, type, bubbles, cancelable, NULL,
+			dom_key, NULL, DOM_KEY_LOCATION_STANDARD, false,
+			false, false, false, false, false);
+	dom_string_unref(dom_key);
+	if (exc != DOM_NO_ERR) {
+		dom_event_unref(evt);
+		return false;
+	}
+
+	NSLOG(netsurf, INFO, "Dispatching '%*s' against %p",
+			dom_string_length(type), dom_string_data(type), target);
+
+	result = fire_dom_event((dom_event *) evt, target);
 	dom_event_unref(evt);
 	return result;
 }
