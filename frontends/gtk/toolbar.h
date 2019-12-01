@@ -64,6 +64,15 @@ nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active);
 
 
 /**
+ * Page info has changed state
+ *
+ * \param toolbar A toolbar returned from a creation
+ * \return NSERROR_OK on success
+ */
+nserror nsgtk_toolbar_page_info_change(struct nsgtk_toolbar *tb);
+
+
+/**
  * Update the toolbar url entry
  *
  * \param toolbar A toolbar returned from a creation

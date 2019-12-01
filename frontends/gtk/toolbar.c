@@ -320,7 +320,7 @@ make_toolbar_item_url_bar(bool sensitivity, bool edit)
 	}
 	nsgtk_entry_set_icon_from_icon_name(entry,
 					    GTK_ENTRY_ICON_PRIMARY,
-					    "page-info-local");
+					    "page-info-internal");
 
 	if (edit) {
 		gtk_entry_set_width_chars(GTK_ENTRY(entry), 9);
@@ -3547,6 +3547,61 @@ nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active)
 	nsgtk_local_history_hide();
 
 	return res;
+}
+
+
+/* exported interface documented in toolbar.h */
+nserror nsgtk_toolbar_page_info_change(struct nsgtk_toolbar *tb)
+{
+	GtkEntry *url_entry;
+	browser_window_page_info_state pistate;
+	struct browser_window *bw;
+	const char *icon_name;
+
+	if (tb->items[URL_BAR_ITEM].button == NULL) {
+		/* no toolbar item */
+		return NSERROR_INVALID;
+	}
+	url_entry = GTK_ENTRY(gtk_bin_get_child(GTK_BIN(tb->items[URL_BAR_ITEM].button)));
+
+	bw = tb->get_bw(tb->get_ctx);
+
+	pistate = browser_window_get_page_info_state(bw);
+
+	switch (pistate) {
+	case PAGE_STATE_INTERNAL:
+		icon_name = "page-info-internal";
+		break;
+
+	case PAGE_STATE_LOCAL:
+		icon_name = "page-info-local";
+		break;
+
+	case PAGE_STATE_INSECURE:
+		icon_name = "page-info-insecure";
+		break;
+
+	case PAGE_STATE_SECURE_OVERRIDE:
+		icon_name = "page-info-warning";
+		break;
+
+	case PAGE_STATE_SECURE_ISSUES:
+		icon_name = "page-info-warning";
+		break;
+
+	case PAGE_STATE_SECURE:
+		icon_name = "page-info-secure";
+		break;
+
+	default:
+		icon_name = "page-info-internal";
+		break;
+	}
+
+	nsgtk_entry_set_icon_from_icon_name(GTK_WIDGET(url_entry),
+					    GTK_ENTRY_ICON_PRIMARY,
+					    icon_name);
+	return NSERROR_OK;
 }
 
 

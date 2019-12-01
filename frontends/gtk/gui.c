@@ -258,34 +258,72 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	return NSERROR_OK;
 }
 
+#if GTK_CHECK_VERSION(3,14,0)
 
 /**
  * adds named icons into gtk theme
  */
 static nserror nsgtk_add_named_icons_to_theme(void)
 {
-#if GTK_CHECK_VERSION(3,14,0)
 	gtk_icon_theme_add_resource_path(gtk_icon_theme_get_default(),
 					  "/org/netsurf/icons");
-#else
-	GdkPixbuf *pixbuf;
-	nserror res;
-
-	res = nsgdk_pixbuf_new_from_resname("icons/local-history.png", &pixbuf);
-	if (res != NSERROR_OK) {
-		pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, false, 8, 8, 32);
-	}
-	gtk_icon_theme_add_builtin_icon("local-history", 32, pixbuf);
-
-	res = nsgdk_pixbuf_new_from_resname("icons/show-cookie.png", &pixbuf);
-	if (res != NSERROR_OK) {
-		pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, false, 8, 24, 24);
-	}
-	gtk_icon_theme_add_builtin_icon("show-cookie", 24, pixbuf);
-
-#endif
 	return NSERROR_OK;
 }
+
+#else
+
+static nserror
+add_builtin_icon(const char *prefix, const char *name, int x, int y)
+{
+	GdkPixbuf *pixbuf;
+	nserror res;
+	char *resname;
+	int resnamelen;
+
+	 /* resource name string length allowing for / .png and termination */
+	resnamelen = strlen(prefix) + strlen(name) + 5 + 1 + 4 + 1;
+	resname = malloc(resnamelen);
+	if (resname == NULL) {
+		return NSERROR_NOMEM;
+	}
+	snprintf(resname, resnamelen, "icons%s/%s.png", prefix, name);
+
+	res = nsgdk_pixbuf_new_from_resname(resname, &pixbuf);
+	NSLOG(netsurf, WARNING, "%d %s", res, resname);
+	free(resname);
+	if (res != NSERROR_OK) {
+		pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, false, 8, x, y);
+	}
+	gtk_icon_theme_add_builtin_icon(name, y, pixbuf);
+
+	return NSERROR_OK;
+}
+
+/**
+ * adds named icons into gtk theme
+ */
+static nserror nsgtk_add_named_icons_to_theme(void)
+{
+	/* these must also be in gtk/resources.c pixbuf_resource *and*
+	 * gtk/res/netsurf.gresource.xml 
+	 */
+	add_builtin_icon("", "local-history", 8, 32);
+	add_builtin_icon("", "show-cookie", 24, 24);
+	add_builtin_icon("/24x24/actions", "page-info-insecure", 24, 24);
+	add_builtin_icon("/24x24/actions", "page-info-internal", 24, 24);
+	add_builtin_icon("/24x24/actions", "page-info-local", 24, 24);
+	add_builtin_icon("/24x24/actions", "page-info-secure", 24, 24);
+	add_builtin_icon("/24x24/actions", "page-info-warning", 24, 24);
+	add_builtin_icon("/48x48/actions", "page-info-insecure", 48, 48);
+	add_builtin_icon("/48x48/actions", "page-info-internal", 48, 48);
+	add_builtin_icon("/48x48/actions", "page-info-local", 48, 48);
+	add_builtin_icon("/48x48/actions", "page-info-secure", 48, 48);
+	add_builtin_icon("/48x48/actions", "page-info-warning", 48, 48);
+
+	return NSERROR_OK;
+}
+
+#endif
 
 
 /**

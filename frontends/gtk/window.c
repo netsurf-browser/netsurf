@@ -1445,6 +1445,15 @@ static nserror throbber(struct gui_window *gw, bool active)
 
 
 /**
+ * handle page info changing
+ */
+static nserror page_info_change(struct gui_window *gw)
+{
+	nsgtk_toolbar_page_info_change(gw->toolbar);
+	return NSERROR_OK;
+}
+
+/**
  * GTK window UI callback to process miscellaneous events
  *
  * \param gw The window receiving the event.
@@ -1473,6 +1482,10 @@ gui_window_event(struct gui_window *gw, enum gui_window_event event)
 
 	case GW_EVENT_STOP_THROBBER:
 		throbber(gw, false);
+		break;
+
+	case GW_EVENT_PAGE_INFO_CHANGE:
+		page_info_change(gw);
 		break;
 
 	default:

@@ -7,9 +7,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="17.0129cm"
-   height="17.0122cm"
-   viewBox="842.6016 303.4219 2411.2813 2411.1719"
+   width="19.683775cm"
+   height="19.707985cm"
+   viewBox="842.6016 303.4219 2789.8313 2793.2508"
    version="1.0"
    id="svg43"
    sodipodi:docname="page-info-internal.svg"
@@ -28,64 +28,22 @@
   <defs
      id="defs47">
     <filter
-       style="color-interpolation-filters:sRGB;"
-       inkscape:label="Duochrome"
-       id="filter398">
+       style="color-interpolation-filters:sRGB"
+       inkscape:label="Greyscale"
+       id="filter3860">
       <feColorMatrix
-         type="luminanceToAlpha"
-         result="colormatrix1"
-         id="feColorMatrix378" />
-      <feFlood
-         flood-opacity="1"
-         flood-color="rgb(163,163,163)"
-         result="flood1"
-         id="feFlood380" />
-      <feComposite
-         in2="colormatrix1"
-         operator="out"
-         result="composite1"
-         id="feComposite382" />
-      <feFlood
-         flood-opacity="1"
-         flood-color="rgb(128,128,128)"
-         result="flood2"
-         id="feFlood384" />
-      <feComposite
-         in2="colormatrix1"
-         result="composite2"
-         operator="in"
-         id="feComposite386" />
-      <feComposite
-         in="composite2"
-         in2="composite1"
-         k2="1"
-         k3="1"
-         operator="arithmetic"
-         result="composite3"
-         id="feComposite388" />
+         values="0.26 0.72 -0.04 0 0 0.26 0.72 -0.04 0 0 0.26 0.72 -0.04 0 0 0 0 0 1 0 "
+         id="feColorMatrix3858"
+         result="fbSourceGraphic" />
       <feColorMatrix
-         in="composite3"
-         type="matrix"
-         values="2 -1 0 0 0 0 2 -1 0 0 -1 0 2 0 0 0 0 0 1 0 "
-         result="colormatrix2"
-         id="feColorMatrix390" />
-      <feComposite
-         in="colormatrix2"
-         in2="composite3"
-         operator="arithmetic"
-         k2="0"
-         result="composite4"
-         id="feComposite392" />
-      <feBlend
-         in="composite4"
-         in2="composite3"
-         mode="normal"
-         result="blend"
-         id="feBlend394" />
-      <feComposite
-         in2="SourceGraphic"
-         operator="in"
-         id="feComposite396" />
+         result="fbSourceGraphicAlpha"
+         in="fbSourceGraphic"
+         values="0 0 0 -1 0 0 0 0 -1 0 0 0 0 -1 0 0 0 0 1 0"
+         id="feColorMatrix3862" />
+      <feColorMatrix
+         id="feColorMatrix3864"
+         values="0.26 0.72 -0.04 0 0 0.26 0.72 -0.04 0 0 0.26 0.72 -0.04 0 0 0 0 0 1 0 "
+         in="fbSourceGraphic" />
     </filter>
   </defs>
   <sodipodi:namedview
@@ -97,15 +55,15 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="640"
-     inkscape:window-height="480"
+     inkscape:window-width="1354"
+     inkscape:window-height="678"
      id="namedview45"
      showgrid="false"
-     inkscape:zoom="0.36704053"
-     inkscape:cx="321.50361"
-     inkscape:cy="312.56631"
-     inkscape:window-x="466"
-     inkscape:window-y="194"
+     inkscape:zoom="0.73408106"
+     inkscape:cx="218.20267"
+     inkscape:cy="428.1062"
+     inkscape:window-x="0"
+     inkscape:window-y="28"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg43" />
   <desc
@@ -114,14 +72,10 @@
   Source document: ADFS::Pan.$.Public.Michael.NetSurf.SVN.trunk.art.logo.emblem.NetSurf
 </desc>
   <g
-     transform="matrix(1 0 0 -1 0 3018.0156)"
+     transform="matrix(1,0,0,-1,188.36093,3206.6654)"
      stroke-miterlimit="16"
-     fill-rule="evenodd"
-     clip-rule="evenodd"
-     stroke-linejoin="bevel"
-     stroke-linecap="butt"
      id="g41"
-     style="filter:url(#filter398)">
+     style="clip-rule:evenodd;fill-rule:evenodd;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:16;filter:url(#filter3860)">
     <g
        id="g39">
       <defs
@@ -144,63 +98,75 @@
         </radialGradient>
       </defs>
       <path
-         d="M886.7266 1509.0156 C886.7266 2150.4844 1406.5859 2670.4766 2048.1719 2670.4766 2689.8672 2670.4766 3209.7578 2150.4844 3209.7578 1509.0156 3209.7578 867.5938 2689.8672 347.5469 2048.3203 347.5469 1406.5859 347.5469 886.7266 867.5938 886.7266 1509.0156 Z"
-         stroke="#000000"
-         stroke-width="88.3516"
-         fill="url(#_Fill0)"
-         id="path11" />
+         d="m 886.7266,1509.0156 c 0,641.4688 519.8593,1161.461 1161.4453,1161.461 641.6953,0 1161.5859,-519.9922 1161.5859,-1161.461 0,-641.4218 -519.8906,-1161.4687 -1161.4375,-1161.4687 -641.7344,0 -1161.5937,520.0469 -1161.5937,1161.4687 z"
+         id="path11"
+         inkscape:connector-curvature="0"
+         style="fill:url(#_Fill0);stroke:#000000;stroke-width:88.35160065" />
       <path
-         d="M2819.9219 1695.4375 2746.9844 1897.4609 2913.6016 1997.75 2719.0781 2089.1406 2765.9219 2277.7422 2563.8984 2204.7969 2463.5781 2371.4766 2372.2188 2176.8984 2183.5938 2223.7109 2256.5625 2021.7109 2089.8906 1921.3672 2284.5156 1830.0391 2237.625 1641.4375 2439.6484 1714.3516 2539.9453 1547.7031 2631.3281 1742.2734 2819.9219 1695.4375 Z"
-         fill="#ffffff"
-         id="path13" />
+         d="m 2819.9219,1695.4375 -72.9375,202.0234 166.6172,100.2891 -194.5235,91.3906 46.8438,188.6016 -202.0235,-72.9453 -100.3203,166.6797 -91.3593,-194.5782 -188.625,46.8125 72.9687,-202 -166.6719,-100.3437 194.625,-91.3281 -46.8906,-188.6016 202.0234,72.9141 100.2969,-166.6485 91.3828,194.5703 z"
+         id="path13"
+         inkscape:connector-curvature="0"
+         style="fill:#ffffff" />
       <path
-         d="M1527.625 2475.9219 1474.6953 2274.1563 1386.2422 2291.8438 1446.375 2511.2969 1527.625 2475.9219 Z"
-         fill="#000000"
-         id="path15" />
+         d="m 1527.625,2475.9219 -52.9297,-201.7656 -88.4531,17.6875 60.1328,219.4531 z"
+         id="path15"
+         inkscape:connector-curvature="0"
+         style="fill:#000000" />
       <path
-         d="M1432.1094 2069.1016 1414.4297 1863.8906 1333.2031 1867.3125 1350.9141 2083.1328 1432.1094 2069.1016 Z"
-         fill="#000000"
-         id="path17" />
+         d="m 1432.1094,2069.1016 -17.6797,-205.211 -81.2266,3.4219 17.711,215.8203 z"
+         id="path17"
+         inkscape:connector-curvature="0"
+         style="fill:#000000" />
       <path
-         d="M1414.4297 1651.625 1446.375 1450.0469 1357.9688 1432.3359 1333.2031 1647.8906 1414.4297 1651.625 Z"
-         fill="#000000"
-         id="path19" />
+         d="m 1414.4297,1651.625 31.9453,-201.5781 -88.4062,-17.711 -24.7657,215.5547 z"
+         id="path19"
+         inkscape:connector-curvature="0"
+         style="fill:#000000" />
       <path
-         d="M1495.8047 1244.8594 1577.2109 1060.8359 1499.4297 1025.5156 1414.5859 1223.2891 1495.8047 1244.8594 Z"
-         fill="#000000"
-         id="path21" />
+         d="m 1495.8047,1244.8594 81.4062,-184.0235 -77.7812,-35.3203 -84.8438,197.7735 z"
+         id="path21"
+         inkscape:connector-curvature="0"
+         style="fill:#000000" />
       <path
-         d="M1676.3594 873.3906 1796.5234 710.5469 1725.7578 654.0156 1602.1094 830.5703 1676.3594 873.3906 Z"
-         fill="#000000"
-         id="path23" />
+         d="m 1676.3594,873.3906 120.164,-162.8437 -70.7656,-56.5313 -123.6484,176.5547 z"
+         id="path23"
+         inkscape:connector-curvature="0"
+         style="fill:#000000" />
       <path
-         d="M1927.3594 540.7344 2079.5625 385.1641 1994.7188 342.7578 1863.8828 487.2656 1927.3594 540.7344 Z"
-         fill="#000000"
-         id="path25" />
+         d="m 1927.3594,540.7344 152.2031,-155.5703 -84.8437,-42.4063 -130.836,144.5078 z"
+         id="path25"
+         inkscape:connector-curvature="0"
+         style="fill:#000000" />
       <path
-         d="M1018.2656 1046.625 1195.1563 972.4297 1174.0234 898.1094 1021.875 944.1094 1018.2656 1046.625 Z"
-         fill="#000000"
-         id="path27" />
+         d="m 1018.2656,1046.625 176.8907,-74.1953 -21.1329,-74.3203 -152.1484,46 z"
+         id="path27"
+         inkscape:connector-curvature="0"
+         style="fill:#000000" />
       <path
-         d="M1396.7891 929.9219 1609.0234 915.7891 1605.5859 827.3828 1386.2422 848.6484 1396.7891 929.9219 Z"
-         fill="#000000"
-         id="path29" />
+         d="m 1396.7891,929.9219 212.2343,-14.1328 -3.4375,-88.4063 -219.3437,21.2656 z"
+         id="path29"
+         inkscape:connector-curvature="0"
+         style="fill:#000000" />
       <path
-         d="M1817.8203 912.2109 2026.4766 933.4766 2037.0859 848.6484 1821.2891 827.3828 1817.8203 912.2109 Z"
-         fill="#000000"
-         id="path31" />
+         d="m 1817.8203,912.2109 208.6563,21.2657 10.6093,-84.8282 -215.7968,-21.2656 z"
+         id="path31"
+         inkscape:connector-curvature="0"
+         style="fill:#000000" />
       <path
-         d="M2231.6641 965.0859 2433.2969 1014.8516 2458.0469 929.9219 2249.375 880.4375 2231.6641 965.0859 Z"
-         fill="#000000"
-         id="path33" />
+         d="m 2231.6641,965.0859 201.6328,49.7657 24.75,-84.9297 -208.6719,-49.4844 z"
+         id="path33"
+         inkscape:connector-curvature="0"
+         style="fill:#000000" />
       <path
-         d="M2635.0625 1081.7656 2822.4063 1167.0156 2857.8125 1092.6563 2666.8594 1000.6172 2635.0625 1081.7656 Z"
-         fill="#000000"
-         id="path35" />
+         d="m 2635.0625,1081.7656 187.3438,85.25 35.4062,-74.3593 -190.9531,-92.0391 z"
+         id="path35"
+         inkscape:connector-curvature="0"
+         style="fill:#000000" />
       <path
-         d="M2992.4063 1279.6094 3133.7656 1421.6719 3211.5859 1372.0859 3048.8047 1212.8828 2992.4063 1279.6094 Z"
-         fill="#000000"
-         id="path37" />
+         d="m 2992.4063,1279.6094 141.3593,142.0625 77.8203,-49.586 -162.7812,-159.2031 z"
+         id="path37"
+         inkscape:connector-curvature="0"
+         style="fill:#000000" />
     </g>
   </g>
 </svg>
