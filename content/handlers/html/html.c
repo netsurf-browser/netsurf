@@ -2680,6 +2680,7 @@ html_saw_insecure_objects(struct content *c)
 			if (content_saw_insecure_objects(obj->content))
 				return true;
 		}
+		obj = obj->next;
 	}
 
 	/* Now check the script list */
