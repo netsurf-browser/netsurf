@@ -77,6 +77,28 @@ static const char *html_types[] = {
 	"text/html"
 };
 
+/**
+ * Fire an event at the DOM
+ *
+ * Helper that swallows DOM errors.
+ *
+ * \param[in] event   the event to fire at the DOM
+ * \param[in] target  the event target
+ * \return true on success
+ */
+static bool fire_dom_event(dom_event *event, dom_node *target)
+{
+	dom_exception exc;
+	bool result;
+
+	exc = dom_event_target_dispatch_event(target, event, &result);
+	if (exc != DOM_NO_ERR) {
+		return false;
+	}
+
+	return result;
+}
+
 /* Exported interface, see html_internal.h */
 bool fire_generic_dom_event(dom_string *type, dom_node *target,
 		bool bubbles, bool cancelable)
@@ -94,10 +116,7 @@ bool fire_generic_dom_event(dom_string *type, dom_node *target,
 	}
 	NSLOG(netsurf, INFO, "Dispatching '%*s' against %p",
 	      dom_string_length(type), dom_string_data(type), target);
-	exc = dom_event_target_dispatch_event(target, evt, &result);
-	if (exc != DOM_NO_ERR) {
-		result = false;
-	}
+	result = fire_dom_event(evt, target);
 	dom_event_unref(evt);
 	return result;
 }
