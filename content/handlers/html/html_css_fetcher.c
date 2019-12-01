@@ -31,6 +31,7 @@
 
 #include "netsurf/inttypes.h"
 #include "utils/config.h"
+#include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/ring.h"
 #include "utils/nsurl.h"
@@ -284,7 +285,6 @@ static void html_css_fetcher_poll(lwc_string *scheme)
 /* exported interface documented in html_internal.h */
 nserror html_css_fetcher_register(void)
 {
-	lwc_string *scheme;
 	const struct fetcher_operation_table html_css_fetcher_ops = {
 		.initialise = html_css_fetcher_initialise,
 		.acceptable = html_css_fetcher_can_fetch,
@@ -296,13 +296,7 @@ nserror html_css_fetcher_register(void)
 		.finalise = html_css_fetcher_finalise
 	};
 
-	if (lwc_intern_string("x-ns-css", SLEN("x-ns-css"),
-			      &scheme) != lwc_error_ok) {
-		NSLOG(netsurf, INFO, "could not intern \"x-ns-css\".");
-		return NSERROR_INIT_FAILED;
-	}
-
-	return fetcher_add(scheme, &html_css_fetcher_ops);
+	return fetcher_add(corestring_lwc_x_ns_css, &html_css_fetcher_ops);
 }
 
 /* exported interface documented in html_internal.h */
