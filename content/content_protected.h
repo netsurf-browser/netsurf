@@ -83,6 +83,7 @@ struct content_handler {
 	void (*add_user)(struct content *c);
 	void (*remove_user)(struct content *c);
 	bool (*exec)(struct content *c, const char *src, size_t srclen);
+	bool (*saw_insecure_objects)(struct content *c);
 
         /** handler dependant content sensitive internal data interface. */
 	void * (*get_internal)(const struct content *c, void *context);

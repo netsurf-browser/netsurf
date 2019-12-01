@@ -328,6 +328,11 @@ nserror html_script_free(html_content *htmlc);
  */
 nserror html_script_invalidate_ctx(html_content *htmlc);
 
+/**
+ * Check if any of the scripts loaded were insecure
+ */
+bool html_saw_insecure_scripts(html_content *htmlc);
+
 /* in html/html_forms.c */
 struct form *html_forms_get_forms(const char *docenc, dom_html_document *doc);
 struct form_control *html_forms_get_control_for_node(struct form *forms,
@@ -346,6 +351,9 @@ void html_css_fini(void);
 nserror html_css_new_stylesheets(html_content *c);
 nserror html_css_quirks_stylesheets(html_content *c);
 nserror html_css_free_stylesheets(html_content *html);
+
+/** Return if any of the stylesheets were loaded insecurely */
+bool html_saw_insecure_stylesheets(html_content *html);
 
 bool html_css_process_link(html_content *htmlc, dom_node *node);
 bool html_css_process_style(html_content *htmlc, dom_node *node);

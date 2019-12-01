@@ -2667,6 +2667,34 @@ out_no_string:
 	return result;
 }
 
+/* See \ref content_saw_insecure_objects */
+static bool
+html_saw_insecure_objects(struct content *c)
+{
+	html_content *htmlc = (html_content *)c;
+	struct content_html_object *obj = htmlc->object_list;
+
+	/* Check through the object list */
+	while (obj != NULL) {
+		if (obj->content != NULL) {
+			if (content_saw_insecure_objects(obj->content))
+				return true;
+		}
+	}
+
+	/* Now check the script list */
+	if (html_saw_insecure_scripts(htmlc)) {
+		return true;
+	}
+
+	/* Now check stylesheets */
+	if (html_saw_insecure_stylesheets(htmlc)) {
+		return true;
+	}
+
+	return false;
+}
+
 /**
  * Compute the type of a content
  *
@@ -2710,6 +2738,7 @@ static const content_handler html_content_handler = {
 	.get_encoding = html_encoding,
 	.type = html_content_type,
 	.exec = html_exec,
+	.saw_insecure_objects = html_saw_insecure_objects,
 	.no_share = true,
 };
 

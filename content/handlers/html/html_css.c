@@ -487,6 +487,23 @@ struct html_stylesheet *html_get_stylesheets(hlcache_handle *h, unsigned int *n)
 	return c->stylesheets;
 }
 
+/* exported interface documented in html/html_internal.h */
+bool html_saw_insecure_stylesheets(html_content *html)
+{
+	struct html_stylesheet *s;
+	unsigned int i;
+
+	for (i = 0, s = html->stylesheets; i < html->stylesheet_count;
+	     i++, s++) {
+		if (s->sheet != NULL) {
+			if (content_saw_insecure_objects(s->sheet)) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
 
 /* exported interface documented in html/html_internal.h */
 nserror html_css_free_stylesheets(html_content *html)

@@ -4649,7 +4649,8 @@ browser_window_page_info_state browser_window_get_page_info_state(
 	assert(bw != NULL);
 
 	/* Do we have any parameters?  If not -- UNKNOWN */
-	if (bw->current_parameters.url == NULL) {
+	if (bw->current_parameters.url == NULL ||
+	    bw->current_content == NULL) {
 		return PAGE_STATE_UNKNOWN;
 	}
 
@@ -4688,8 +4689,10 @@ browser_window_page_info_state browser_window_get_page_info_state(
 		return PAGE_STATE_SECURE_OVERRIDE;
 	}
 
-	/** \todo Determine if sub-elements of this fetch were insecure */
-	/* If so, return PAGE_STATE_SECURE_ISSUES */
+	/* If we've seen insecure content internally then we need to say so */
+	if (content_saw_insecure_objects(bw->current_content)) {
+		return PAGE_STATE_SECURE_ISSUES;
+	}
 
 	/* All is well, return secure state */
 	return PAGE_STATE_SECURE;

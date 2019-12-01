@@ -590,6 +590,31 @@ html_process_script(void *ctx, dom_node *node)
 }
 
 /* exported internal interface documented in html/html_internal.h */
+bool html_saw_insecure_scripts(html_content *htmlc)
+{
+	struct html_script *s;
+	unsigned int i;
+
+	for (i = 0, s = htmlc->scripts; i != htmlc->scripts_count; i++, s++) {
+		if (s->type == HTML_SCRIPT_INLINE) {
+			/* Inline scripts are no less secure than their
+			 * containing HTML content
+			 */
+			continue;
+		}
+		if (s->data.handle == NULL) {
+			/* We've not begun loading this? */
+			continue;
+		}
+		if (content_saw_insecure_objects(s->data.handle)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* exported internal interface documented in html/html_internal.h */
 nserror html_script_free(html_content *html)
 {
 	unsigned int i;

@@ -28,6 +28,7 @@
 #include "netsurf/inttypes.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/corestrings.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/bitmap.h"
 #include "netsurf/content.h"
@@ -561,6 +562,50 @@ bool content_exec(struct hlcache_handle *h, const char *src, size_t srclen)
 	}
 
 	return c->handler->exec(c, src, srclen);
+}
+
+/* exported interface, documented in content/content.h */
+bool content_saw_insecure_objects(struct hlcache_handle *h)
+{
+	struct content *c = hlcache_handle_get_content(h);
+	lwc_string *scheme = nsurl_get_component(content_get_url(c), NSURL_SCHEME);
+	bool match;
+
+	/* Is this an internal scheme? If so, we trust here and stop */
+	if ((lwc_string_isequal(scheme, corestring_lwc_about,
+				&match) == lwc_error_ok &&
+	     (match == true)) ||
+	    (lwc_string_isequal(scheme, corestring_lwc_data,
+				&match) == lwc_error_ok &&
+	     (match == true)) ||
+	    (lwc_string_isequal(scheme, corestring_lwc_resource,
+				&match) == lwc_error_ok &&
+	     (match == true))) {
+		/* No insecurity to find */
+		return false;
+	}
+
+	/* Okay, not internal, am *I* secure? */
+	if ((lwc_string_isequal(scheme, corestring_lwc_https,
+				&match) == lwc_error_ok)
+	    && (match == false)) {
+		/* I did see something insecure -- ME! */
+		return true;
+	}
+
+	/* I am supposed to be secure, but was I overridden */
+	if (urldb_get_cert_permissions(content_get_url(c))) {
+		/* I was https:// but I was overridden, that's no good */
+		return true;
+	}
+
+	/* Otherwise try and chain through the handler */
+	if (c->handler->saw_insecure_objects != NULL) {
+		return c->handler->saw_insecure_objects(c);
+	}
+
+	/* If we can't see insecure objects, we can't see them */
+	return false;
 }
 
 /* exported interface, documented in content/content.h */

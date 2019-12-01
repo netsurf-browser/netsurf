@@ -420,5 +420,17 @@ bool content_is_locked(struct hlcache_handle *h);
  */
 bool content_exec(struct hlcache_handle *h, const char *src, size_t srclen);
 
+/**
+ * Determine if the content referred to any insecure objects.
+ *
+ * Query the content to determine if any of its referred objects were loaded
+ * in a manner not considered secure.  For a content to be recursively
+ * secure it must only load over https and must not have certificate overrides
+ * in place.
+ *
+ * \param h The handle to the content
+ * \return Whether the content referred to any insecure objects
+ */
+bool content_saw_insecure_objects(struct hlcache_handle *h);
 
 #endif
