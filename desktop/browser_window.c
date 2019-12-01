@@ -4671,6 +4671,7 @@ browser_window_page_info_state browser_window_get_page_info_state(
 	    (lwc_string_isequal(scheme, corestring_lwc_resource,
 				&match) == lwc_error_ok &&
 	     (match == true))) {
+		lwc_string_unref(scheme);
 		return PAGE_STATE_INTERNAL;
 	}
 
@@ -4678,6 +4679,7 @@ browser_window_page_info_state browser_window_get_page_info_state(
 	if (lwc_string_isequal(scheme, corestring_lwc_file,
 			       &match) == lwc_error_ok &&
 	    match == true) {
+		lwc_string_unref(scheme);
 		return PAGE_STATE_LOCAL;
 	}
 
@@ -4686,8 +4688,11 @@ browser_window_page_info_state browser_window_get_page_info_state(
 			&match) == lwc_error_ok &&
 			(match == false))) {
 		/* Some remote content, not https, therefore insecure */
+		lwc_string_unref(scheme);
 		return PAGE_STATE_INSECURE;
 	}
+
+	lwc_string_unref(scheme);
 
 	/* Did we have to override this SSL setting? */
 	if (urldb_get_cert_permissions(bw->current_parameters.url)) {

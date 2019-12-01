@@ -592,6 +592,7 @@ bool content_saw_insecure_objects(struct hlcache_handle *h)
 				&match) == lwc_error_ok &&
 	     (match == true))) {
 		/* No insecurity to find */
+		lwc_string_unref(scheme);
 		return false;
 	}
 
@@ -600,9 +601,11 @@ bool content_saw_insecure_objects(struct hlcache_handle *h)
 				&match) == lwc_error_ok)
 	    && (match == false)) {
 		/* I did see something insecure -- ME! */
+		lwc_string_unref(scheme);
 		return true;
 	}
 
+	lwc_string_unref(scheme);
 	/* I am supposed to be secure, but was I overridden */
 	if (urldb_get_cert_permissions(url)) {
 		/* I was https:// but I was overridden, that's no good */
