@@ -588,6 +588,16 @@ def run_test_step_action_js_exec(ctx, step):
     win.js_exec(cmd)
 
 
+def run_test_step_action_page_info_state(ctx, step):
+    print(get_indent(ctx) + "Action: " + step["action"])
+    assert_browser(ctx)
+    tag = step['window']
+    win = ctx['windows'].get(tag)
+    assert win is not None
+    match = step['match']
+    assert win.page_info_state == match
+
+
 def run_test_step_action_quit(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     assert_browser(ctx)
@@ -619,6 +629,8 @@ STEP_HANDLERS = {
     "clear-log":     run_test_step_action_clear_log,
     "wait-log":      run_test_step_action_wait_log,
     "js-exec":       run_test_step_action_js_exec,
+    "page-info-state":
+                     run_test_step_action_page_info_state,
     "quit":          run_test_step_action_quit,
 }
 

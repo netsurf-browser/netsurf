@@ -406,6 +406,7 @@ class BrowserWindow:
         self.plotted = []
         self.plotting = False
         self.log_entries = []
+        self.page_info_state = "UNKNOWN"
 
     def kill(self):
         self.browser.farmer.tell_monkey("WINDOW DESTROY %s" % self.winid)
@@ -518,6 +519,9 @@ class BrowserWindow:
 
     def handle_window_CONSOLE_LOG(self, _src, src, folding, level, *msg):
         self.log_entries.append((src, folding == "FOLDABLE", level, " ".join(msg)))
+
+    def handle_window_PAGE_STATUS(self, _status, status):
+        self.page_info_state = status
 
     def load_page(self, url=None, referer=None):
         if url is not None:
