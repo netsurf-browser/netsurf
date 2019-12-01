@@ -119,6 +119,12 @@ enum gui_window_event {
 	 * selection started
 	 */
 	GW_EVENT_START_SELECTION,
+
+	/**
+	 * Page status has changed and so the padlock should be
+	 * updated.
+	 */
+	GW_EVENT_PAGE_INFO_CHANGE,
 };
 
 /**

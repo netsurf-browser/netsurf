@@ -818,6 +818,11 @@ static nserror browser_window_content_ready(struct browser_window *bw)
 		browser_window_create_iframes(bw, html_get_iframe(bw->current_content));
 	}
 
+	/* Indicate page status may have changed */
+	if (res == NSERROR_OK) {
+		res = guit->window->event(bw->window, GW_EVENT_PAGE_INFO_CHANGE);
+	}
+
 	return res;
 }
 
