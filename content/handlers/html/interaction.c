@@ -1223,6 +1223,42 @@ bool html_keypress(struct content *c, uint32_t key)
 	html_content *html = (html_content *) c;
 	struct selection *sel = &html->sel;
 
+	/** \todo
+	 * At the moment, the front end interface for keypress only gives
+	 * us a UCS4 key value.  This doesn't doesn't have all the information
+	 * we need to fill out the event properly.  We don't get to know about
+	 * modifier keys, and things like CTRL+C are passed in as
+	 * \ref NS_KEY_COPY_SELECTION, a magic value outside the valid Unicode
+	 * range.
+	 *
+	 * We need to:
+	 *
+	 * 1. Update the front end interface so that both press and release
+	 *    events reach the core.
+	 * 2. Stop encoding the special keys like \ref NS_KEY_COPY_SELECTION as
+	 *    magic values in the front ends, so we just get the events, e.g.:
+	 *    1. Press ctrl
+	 *    2. Press c
+	 *    3. Release c
+	 *    4. Release ctrl
+	 * 3. Pass all the new info to the DOM KeyboardEvent events.
+	 * 4. If there is a focused element, fire the event at that, instead of
+	 *    `html->layout->node`.
+	 * 5. Rebuild the \ref NS_KEY_COPY_SELECTION values from the info we
+	 *    now get given, and use that for the code below this
+	 *    \ref fire_dom_keyboard_event call.
+	 * 6. Move the code after this \ref fire_dom_keyboard_event call into
+	 *    the default action handler for DOM events.
+	 *
+	 * This will mean that if the JavaScript event listener does
+	 * `event.preventDefault()` then we won't handle the event when
+	 * we're not supposed to.
+	 */
+	if (html->layout != NULL && html->layout->node != NULL) {
+		fire_dom_keyboard_event(corestring_dom_keydown,
+				html->layout->node, true, true, key);
+	}
+
 	switch (html->focus_type) {
 	case HTML_FOCUS_CONTENT:
 		return content_keypress(html->focus_owner.content->object, key);
