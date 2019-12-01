@@ -4652,13 +4652,13 @@ browser_window_page_info_state browser_window_get_page_info_state(
 
 	assert(bw != NULL);
 
-	/* Do we have any parameters?  If not -- UNKNOWN */
-	if (bw->current_parameters.url == NULL ||
-	    bw->current_content == NULL) {
+	/* Do we have any content?  If not -- UNKNOWN */
+	if (bw->current_content == NULL) {
 		return PAGE_STATE_UNKNOWN;
 	}
 
-	scheme = nsurl_get_component(bw->current_parameters.url, NSURL_SCHEME);
+	scheme = nsurl_get_component(
+		hlcache_handle_get_url(bw->current_content), NSURL_SCHEME);
 
 	/* Is this an internal scheme? */
 	if ((lwc_string_isequal(scheme, corestring_lwc_about,
