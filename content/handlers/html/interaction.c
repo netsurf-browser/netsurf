@@ -1172,7 +1172,7 @@ html_mouse_action(struct content *c,
 
 	/* fire dom click event */
 	if (mouse & BROWSER_MOUSE_CLICK_1) {
-		fire_dom_event(corestring_dom_click, node, true, true);
+		fire_generic_dom_event(corestring_dom_click, node, true, true);
 	}
 
 	/* deferred actions that can cause this browser_window to be destroyed

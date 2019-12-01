@@ -401,7 +401,7 @@ nserror html_object_abort_objects(html_content *html);
  * Construct an event and fire it at the DOM
  *
  */
-bool fire_dom_event(dom_string *type, dom_node *target,
+bool fire_generic_dom_event(dom_string *type, dom_node *target,
 		    bool bubbles, bool cancelable);
 
 /* Useful dom_string pointers */
