@@ -852,6 +852,36 @@ handle_error:
 	return false;
 }
 
+static const char* dukky_event_proto(dom_event *evt)
+{
+	const char *ret = PROTO_NAME(EVENT);
+	dom_string *type = NULL;
+	dom_exception err;
+
+	err = dom_event_get_type(evt, &type);
+	if (err != DOM_NO_ERR) {
+		goto out;
+	}
+
+	if (dom_string_isequal(type, corestring_dom_keydown)) {
+		ret = PROTO_NAME(KEYBOARDEVENT);
+		goto out;
+	} else if (dom_string_isequal(type, corestring_dom_keyup)) {
+		ret = PROTO_NAME(KEYBOARDEVENT);
+		goto out;
+	} else if (dom_string_isequal(type, corestring_dom_keypress)) {
+		ret = PROTO_NAME(KEYBOARDEVENT);
+		goto out;
+	}
+
+out:
+	if (type != NULL) {
+		dom_string_unref(type);
+	}
+
+	return ret;
+}
+
 /*** New style event handling ***/
 
 void dukky_push_event(duk_context *ctx, dom_event *evt)
@@ -868,7 +898,7 @@ void dukky_push_event(duk_context *ctx, dom_event *evt)
 		duk_pop(ctx);
 		/* ... events */
 		duk_push_pointer(ctx, evt);
-		if (dukky_create_object(ctx, PROTO_NAME(EVENT), 1) != DUK_EXEC_SUCCESS) {
+		if (dukky_create_object(ctx, dukky_event_proto(evt), 1) != DUK_EXEC_SUCCESS) {
 			/* ... events err */
 			duk_pop(ctx);
 			/* ... events */
