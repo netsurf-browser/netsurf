@@ -150,6 +150,7 @@ CORESTRING_LWC_VALUE(query_auth, "query/auth");
 CORESTRING_LWC_VALUE(query_ssl, "query/ssl");
 CORESTRING_LWC_VALUE(query_timeout, "query/timeout");
 CORESTRING_LWC_VALUE(query_fetcherror, "query/fetcherror");
+CORESTRING_LWC_VALUE(x_ns_css, "x-ns-css");
 
 /* mime types */
 CORESTRING_LWC_VALUE(multipart_form_data, "multipart/form-data");
