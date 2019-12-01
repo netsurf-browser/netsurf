@@ -68,6 +68,7 @@ struct dom_html_br_element;
 /* events */
 
 #include "Event.bnd"
+#include "KeyboardEvent.bnd"
 
 init MutationEvent(struct dom_mutation_event *evt::evt);
 init UIEvent(struct dom_ui_event *evt::evt);
@@ -76,7 +77,6 @@ init MutationNameEvent(struct dom_mutation_name_event *evt::evt);
 init MouseWheelEvent(struct dom_mouse_wheel_event *evt::evt);
 init MouseMultiWheelEvent(struct dom_mouse_multi_wheel_event *evt::evt);
 init MouseEvent(struct dom_mouse_event *evt::evt);
-init KeyboardEvent(struct dom_keyboard_event *evt::evt);
 init DocumentEvent(struct dom_document_event *evt::evt);
 init CustomEvent(struct dom_custom_event *evt::evt);
 init CompositionEvent(struct dom_ui_event *evt::evt);
