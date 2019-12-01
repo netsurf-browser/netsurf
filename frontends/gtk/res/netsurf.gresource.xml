@@ -66,6 +66,16 @@
     <file>icons/hotlist-add.png</file>
     <file>icons/hotlist-rmv.png</file>
     <file>icons/search.png</file>
+    <file>icons/24x24/actions/page-info-insecure.png</file>
+    <file>icons/24x24/actions/page-info-internal.png</file>
+    <file>icons/24x24/actions/page-info-local.png</file>
+    <file>icons/24x24/actions/page-info-secure.png</file>
+    <file>icons/24x24/actions/page-info-warning.png</file>
+    <file>icons/48x48/actions/page-info-insecure.png</file>
+    <file>icons/48x48/actions/page-info-internal.png</file>
+    <file>icons/48x48/actions/page-info-local.png</file>
+    <file>icons/48x48/actions/page-info-secure.png</file>
+    <file>icons/48x48/actions/page-info-warning.png</file>
     <file>languages</file>
     <file>accelerators</file>
   </gresource>

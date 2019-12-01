@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="17.0129cm"
+   height="17.0122cm"
+   viewBox="842.6016 303.4219 2411.2813 2411.1719"
+   version="1.0"
+   id="svg43"
+   sodipodi:docname="page-info-internal.svg"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)">
+  <metadata
+     id="metadata49">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs47">
+    <filter
+       style="color-interpolation-filters:sRGB;"
+       inkscape:label="Duochrome"
+       id="filter398">
+      <feColorMatrix
+         type="luminanceToAlpha"
+         result="colormatrix1"
+         id="feColorMatrix378" />
+      <feFlood
+         flood-opacity="1"
+         flood-color="rgb(163,163,163)"
+         result="flood1"
+         id="feFlood380" />
+      <feComposite
+         in2="colormatrix1"
+         operator="out"
+         result="composite1"
+         id="feComposite382" />
+      <feFlood
+         flood-opacity="1"
+         flood-color="rgb(128,128,128)"
+         result="flood2"
+         id="feFlood384" />
+      <feComposite
+         in2="colormatrix1"
+         result="composite2"
+         operator="in"
+         id="feComposite386" />
+      <feComposite
+         in="composite2"
+         in2="composite1"
+         k2="1"
+         k3="1"
+         operator="arithmetic"
+         result="composite3"
+         id="feComposite388" />
+      <feColorMatrix
+         in="composite3"
+         type="matrix"
+         values="2 -1 0 0 0 0 2 -1 0 0 -1 0 2 0 0 0 0 0 1 0 "
+         result="colormatrix2"
+         id="feColorMatrix390" />
+      <feComposite
+         in="colormatrix2"
+         in2="composite3"
+         operator="arithmetic"
+         k2="0"
+         result="composite4"
+         id="feComposite392" />
+      <feBlend
+         in="composite4"
+         in2="composite3"
+         mode="normal"
+         result="blend"
+         id="feBlend394" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="in"
+         id="feComposite396" />
+    </filter>
+  </defs>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="640"
+     inkscape:window-height="480"
+     id="namedview45"
+     showgrid="false"
+     inkscape:zoom="0.36704053"
+     inkscape:cx="321.50361"
+     inkscape:cy="312.56631"
+     inkscape:window-x="466"
+     inkscape:window-y="194"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg43" />
+  <desc
+     id="desc2">
+  Exported by the ArtWorks SVGExport module.
+  Source document: ADFS::Pan.$.Public.Michael.NetSurf.SVN.trunk.art.logo.emblem.NetSurf
+</desc>
+  <g
+     transform="matrix(1 0 0 -1 0 3018.0156)"
+     stroke-miterlimit="16"
+     fill-rule="evenodd"
+     clip-rule="evenodd"
+     stroke-linejoin="bevel"
+     stroke-linecap="butt"
+     id="g41"
+     style="filter:url(#filter398)">
+    <g
+       id="g39">
+      <defs
+         id="defs9">
+        <radialGradient
+           id="_Fill0"
+           gradientUnits="userSpaceOnUse"
+           cx="1431.0469"
+           cy="2198.4453"
+           r="2142.9219"
+           spreadMethod="pad">
+          <stop
+             offset="0"
+             stop-color="#b8f5ff"
+             id="stop4" />
+          <stop
+             offset="1"
+             stop-color="#0097ff"
+             id="stop6" />
+        </radialGradient>
+      </defs>
+      <path
+         d="M886.7266 1509.0156 C886.7266 2150.4844 1406.5859 2670.4766 2048.1719 2670.4766 2689.8672 2670.4766 3209.7578 2150.4844 3209.7578 1509.0156 3209.7578 867.5938 2689.8672 347.5469 2048.3203 347.5469 1406.5859 347.5469 886.7266 867.5938 886.7266 1509.0156 Z"
+         stroke="#000000"
+         stroke-width="88.3516"
+         fill="url(#_Fill0)"
+         id="path11" />
+      <path
+         d="M2819.9219 1695.4375 2746.9844 1897.4609 2913.6016 1997.75 2719.0781 2089.1406 2765.9219 2277.7422 2563.8984 2204.7969 2463.5781 2371.4766 2372.2188 2176.8984 2183.5938 2223.7109 2256.5625 2021.7109 2089.8906 1921.3672 2284.5156 1830.0391 2237.625 1641.4375 2439.6484 1714.3516 2539.9453 1547.7031 2631.3281 1742.2734 2819.9219 1695.4375 Z"
+         fill="#ffffff"
+         id="path13" />
+      <path
+         d="M1527.625 2475.9219 1474.6953 2274.1563 1386.2422 2291.8438 1446.375 2511.2969 1527.625 2475.9219 Z"
+         fill="#000000"
+         id="path15" />
+      <path
+         d="M1432.1094 2069.1016 1414.4297 1863.8906 1333.2031 1867.3125 1350.9141 2083.1328 1432.1094 2069.1016 Z"
+         fill="#000000"
+         id="path17" />
+      <path
+         d="M1414.4297 1651.625 1446.375 1450.0469 1357.9688 1432.3359 1333.2031 1647.8906 1414.4297 1651.625 Z"
+         fill="#000000"
+         id="path19" />
+      <path
+         d="M1495.8047 1244.8594 1577.2109 1060.8359 1499.4297 1025.5156 1414.5859 1223.2891 1495.8047 1244.8594 Z"
+         fill="#000000"
+         id="path21" />
+      <path
+         d="M1676.3594 873.3906 1796.5234 710.5469 1725.7578 654.0156 1602.1094 830.5703 1676.3594 873.3906 Z"
+         fill="#000000"
+         id="path23" />
+      <path
+         d="M1927.3594 540.7344 2079.5625 385.1641 1994.7188 342.7578 1863.8828 487.2656 1927.3594 540.7344 Z"
+         fill="#000000"
+         id="path25" />
+      <path
+         d="M1018.2656 1046.625 1195.1563 972.4297 1174.0234 898.1094 1021.875 944.1094 1018.2656 1046.625 Z"
+         fill="#000000"
+         id="path27" />
+      <path
+         d="M1396.7891 929.9219 1609.0234 915.7891 1605.5859 827.3828 1386.2422 848.6484 1396.7891 929.9219 Z"
+         fill="#000000"
+         id="path29" />
+      <path
+         d="M1817.8203 912.2109 2026.4766 933.4766 2037.0859 848.6484 1821.2891 827.3828 1817.8203 912.2109 Z"
+         fill="#000000"
+         id="path31" />
+      <path
+         d="M2231.6641 965.0859 2433.2969 1014.8516 2458.0469 929.9219 2249.375 880.4375 2231.6641 965.0859 Z"
+         fill="#000000"
+         id="path33" />
+      <path
+         d="M2635.0625 1081.7656 2822.4063 1167.0156 2857.8125 1092.6563 2666.8594 1000.6172 2635.0625 1081.7656 Z"
+         fill="#000000"
+         id="path35" />
+      <path
+         d="M2992.4063 1279.6094 3133.7656 1421.6719 3211.5859 1372.0859 3048.8047 1212.8828 2992.4063 1279.6094 Z"
+         fill="#000000"
+         id="path37" />
+    </g>
+  </g>
+</svg>

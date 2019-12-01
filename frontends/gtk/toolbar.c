@@ -320,7 +320,7 @@ make_toolbar_item_url_bar(bool sensitivity, bool edit)
 	}
 	nsgtk_entry_set_icon_from_icon_name(entry,
 					    GTK_ENTRY_ICON_PRIMARY,
-					    NSGTK_STOCK_INFO);
+					    "page-info-local");
 
 	if (edit) {
 		gtk_entry_set_width_chars(GTK_ENTRY(entry), 9);
