@@ -404,6 +404,48 @@ gui_window_console_log(struct gui_window *g,
 	      (int)msglen, msg);
 }
 
+static void
+gui_window_report_page_info(struct gui_window *g)
+{
+	const char *state = "***WAH***";
+
+	switch (browser_window_get_page_info_state(g->bw)) {
+	case PAGE_STATE_UNKNOWN:
+		state = "UNKNOWN";
+		break;
+
+	case PAGE_STATE_INTERNAL:
+		state = "INTERNAL";
+		break;
+
+	case PAGE_STATE_LOCAL:
+		state = "LOCAL";
+		break;
+
+	case PAGE_STATE_INSECURE:
+		state = "INSECURE";
+		break;
+
+	case PAGE_STATE_SECURE_OVERRIDE:
+		state = "SECURE_OVERRIDE";
+		break;
+
+	case PAGE_STATE_SECURE_ISSUES:
+		state = "SECURE_ISSUES";
+		break;
+
+	case PAGE_STATE_SECURE:
+		state = "SECURE";
+		break;
+
+	default:
+		assert(0 && "Monkey needs some lovin' here");
+		break;
+	}
+	moutf(MOUT_WINDOW, "PAGE_STATUS WIN %u STATUS %s",
+	      g->win_num, state);
+}
+
 /**** Handlers ****/
 
 static void
@@ -716,6 +758,10 @@ gui_window_event(struct gui_window *gw, enum gui_window_event event)
 
 	case GW_EVENT_STOP_THROBBER:
 		gui_window_stop_throbber(gw);
+		break;
+
+	case GW_EVENT_PAGE_INFO_CHANGE:
+		gui_window_report_page_info(gw);
 		break;
 
 	default:
