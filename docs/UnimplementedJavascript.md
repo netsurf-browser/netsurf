@@ -48,15 +48,7 @@ getter | UIEvent::view(user);
 getter | UIEvent::detail(long);
 method | CompositionEvent::initCompositionEvent();
 getter | CompositionEvent::data(string);
-method | KeyboardEvent::getModifierState();
 method | KeyboardEvent::initKeyboardEvent();
-getter | KeyboardEvent::key(string);
-getter | KeyboardEvent::code(string);
-getter | KeyboardEvent::location(unsigned long);
-getter | KeyboardEvent::ctrlKey(boolean);
-getter | KeyboardEvent::shiftKey(boolean);
-getter | KeyboardEvent::altKey(boolean);
-getter | KeyboardEvent::metaKey(boolean);
 getter | KeyboardEvent::repeat(boolean);
 getter | KeyboardEvent::isComposing(boolean);
 getter | KeyboardEvent::charCode(unsigned long);
@@ -1506,7 +1498,6 @@ getter | Document::doctype(user);
 getter | Document::domain(string);
 setter | Document::domain(string);
 getter | Document::referrer(string);
-setter | Document::cookie(string);
 getter | Document::lastModified(string);
 getter | Document::readyState(user);
 getter | Document::title(string);
@@ -1587,5 +1578,5 @@ method | EventListener::handleEvent();
 method | CustomEvent::initCustomEvent();
 getter | CustomEvent::detail(any);
 
- 1581 unimplemented bindings
+ 1572 unimplemented bindings
 
