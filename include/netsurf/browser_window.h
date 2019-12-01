@@ -42,6 +42,7 @@ struct form_control;
 struct nsurl;
 struct rect;
 struct redraw_context;
+struct ssl_cert_info;
 enum content_debug;
 
 /**
@@ -57,6 +58,19 @@ typedef enum {
 	DRAGGING_CONTENT_SCROLLBAR,
 	DRAGGING_OTHER
 } browser_drag_type;
+
+/**
+ * Browser window page information states
+ */
+typedef enum {
+	PAGE_STATE_UNKNOWN,		/**< Unable to determine */
+	PAGE_STATE_INTERNAL,		/**< Page loaded from internal handler */
+	PAGE_STATE_LOCAL,		/**< Page loaded from file:/// etc */
+	PAGE_STATE_INSECURE,		/**< Insecure page load */
+	PAGE_STATE_SECURE_OVERRIDE,	/**< Secure load, but had to override */
+	PAGE_STATE_SECURE_ISSUES,	/**< Secure load, but has insecure elements */
+	PAGE_STATE_SECURE,		/**< Secure load */
+} browser_window_page_info_state;
 
 typedef enum {
 	BW_EDITOR_NONE		=  0,		/**< No selection, no editing */
@@ -739,5 +753,36 @@ nserror browser_window_console_log(struct browser_window *bw,
 				   const char *msg,
 				   size_t msglen,
 				   browser_window_console_flags flags);
+
+/**
+ * Request the current browser window page info state.
+ *
+ * The page information state is an indicator enumeration to be used by
+ * frontends to indicate to the user if the page they are viewing is able
+ * to be trusted.  This is often shown as a padlock of some kind.
+ *
+ * This is also used by the internal page information corewindow to render
+ * to the user what the situation is.
+ *
+ * \param bw The browser window
+ * \return The state of the browser window
+ */
+browser_window_page_info_state browser_window_get_page_info_state(
+	struct browser_window *bw);
+
+/**
+ * Request the current browser window SSL certificate chain.
+ *
+ * When the page has SSL information, this will retrieve the certificate chain.
+ *
+ * If there is no chain available, this will return NSERROR_NOT_FOUND
+ *
+ * \param bw The browser window
+ * \param num Pointer to be filled out with chain length
+ * \param chain Pointer to be filled out with chain base
+ * \return Whether or not the chain is available
+ */
+nserror browser_window_get_ssl_chain(struct browser_window *bw, size_t *num,
+				     struct ssl_cert_info **chain);
 
 #endif

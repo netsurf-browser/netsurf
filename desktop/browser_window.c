@@ -4638,3 +4638,75 @@ browser_window__reload_current_parameters(struct browser_window *bw)
 	memset(&bw->current_parameters, 0, sizeof(bw->current_parameters));
 	return browser_window__navigate_internal(bw, &bw->loading_parameters);
 }
+
+/* Exported interface, documented in browser_window.h */
+browser_window_page_info_state browser_window_get_page_info_state(
+	struct browser_window *bw)
+{
+	lwc_string *scheme;
+	bool match;
+
+	assert(bw != NULL);
+
+	/* Do we have any parameters?  If not -- UNKNOWN */
+	if (bw->current_parameters.url == NULL) {
+		return PAGE_STATE_UNKNOWN;
+	}
+
+	scheme = nsurl_get_component(bw->current_parameters.url, NSURL_SCHEME);
+
+	/* Is this an internal scheme? */
+	if ((lwc_string_isequal(scheme, corestring_lwc_about,
+				&match) == lwc_error_ok &&
+	     (match == true)) ||
+	    (lwc_string_isequal(scheme, corestring_lwc_data,
+				&match) == lwc_error_ok &&
+	     (match == true)) ||
+	    (lwc_string_isequal(scheme, corestring_lwc_resource,
+				&match) == lwc_error_ok &&
+	     (match == true))) {
+		return PAGE_STATE_INTERNAL;
+	}
+
+	/* Is this file:/// ? */
+	if (lwc_string_isequal(scheme, corestring_lwc_file,
+			       &match) == lwc_error_ok &&
+	    match == true) {
+		return PAGE_STATE_LOCAL;
+	}
+
+	/* If not https, from here on down that'd be insecure */
+	if ((lwc_string_isequal(scheme, corestring_lwc_https,
+			&match) == lwc_error_ok &&
+			(match == false))) {
+		/* Some remote content, not https, therefore insecure */
+		return PAGE_STATE_INSECURE;
+	}
+
+	/* Did we have to override this SSL setting? */
+	if (urldb_get_cert_permissions(bw->current_parameters.url)) {
+		return PAGE_STATE_SECURE_OVERRIDE;
+	}
+
+	/** \todo Determine if sub-elements of this fetch were insecure */
+	/* If so, return PAGE_STATE_SECURE_ISSUES */
+
+	/* All is well, return secure state */
+	return PAGE_STATE_SECURE;
+}
+
+/* Exported interface, documented in browser_window.h */
+nserror browser_window_get_ssl_chain(struct browser_window *bw, size_t *num,
+				     struct ssl_cert_info **chain)
+{
+	assert(bw != NULL);
+
+	if (bw->current_ssl_info.num == 0) {
+		return NSERROR_NOT_FOUND;
+	}
+
+	*num = bw->current_ssl_info.num;
+	*chain = &(bw->current_ssl_info.certs[0]);
+
+	return NSERROR_OK;
+}
