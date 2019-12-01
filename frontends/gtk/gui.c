@@ -289,7 +289,7 @@ add_builtin_icon(const char *prefix, const char *name, int x, int y)
 	snprintf(resname, resnamelen, "icons%s/%s.png", prefix, name);
 
 	res = nsgdk_pixbuf_new_from_resname(resname, &pixbuf);
-	NSLOG(netsurf, WARNING, "%d %s", res, resname);
+	NSLOG(netsurf, DEEPDEBUG, "%d %s", res, resname);
 	free(resname);
 	if (res != NSERROR_OK) {
 		pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, false, 8, x, y);
