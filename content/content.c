@@ -569,7 +569,8 @@ bool content_exec(struct hlcache_handle *h, const char *src, size_t srclen)
 bool content_saw_insecure_objects(struct hlcache_handle *h)
 {
 	struct content *c = hlcache_handle_get_content(h);
-	lwc_string *scheme = nsurl_get_component(content_get_url(c), NSURL_SCHEME);
+	struct nsurl *url = hlcache_handle_get_url(h);
+	lwc_string *scheme = nsurl_get_component(url, NSURL_SCHEME);
 	bool match;
 
 	/* Is this an internal scheme? If so, we trust here and stop */
@@ -580,6 +581,14 @@ bool content_saw_insecure_objects(struct hlcache_handle *h)
 				&match) == lwc_error_ok &&
 	     (match == true)) ||
 	    (lwc_string_isequal(scheme, corestring_lwc_resource,
+				&match) == lwc_error_ok &&
+	     (match == true)) ||
+	    /* Our internal x-ns-css scheme is secure */
+	    (lwc_string_isequal(scheme, corestring_lwc_x_ns_css,
+				&match) == lwc_error_ok &&
+	     (match == true)) ||
+	    /* We also treat file: as "not insecure" here */
+	    (lwc_string_isequal(scheme, corestring_lwc_file,
 				&match) == lwc_error_ok &&
 	     (match == true))) {
 		/* No insecurity to find */
@@ -595,13 +604,13 @@ bool content_saw_insecure_objects(struct hlcache_handle *h)
 	}
 
 	/* I am supposed to be secure, but was I overridden */
-	if (urldb_get_cert_permissions(content_get_url(c))) {
+	if (urldb_get_cert_permissions(url)) {
 		/* I was https:// but I was overridden, that's no good */
 		return true;
 	}
 
 	/* Otherwise try and chain through the handler */
-	if (c->handler->saw_insecure_objects != NULL) {
+	if (c != NULL && c->handler->saw_insecure_objects != NULL) {
 		return c->handler->saw_insecure_objects(c);
 	}
 
