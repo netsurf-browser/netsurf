@@ -38,6 +38,7 @@
 #include "content/content_protected.h"
 #include "content/content_debug.h"
 #include "content/hlcache.h"
+#include "content/urldb.h"
 
 #define URL_FMT_SPC "%.140s"
 
