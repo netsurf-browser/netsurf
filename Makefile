@@ -105,11 +105,11 @@ endif
 
 # Default target is GTK backend
 ifeq ($(TARGET),)
-  TARGET := gtk
+  TARGET := gtk2
 endif
 
 # valid values for the TARGET
-VLDTARGET := riscos gtk gtk3 beos amiga amigaos3 framebuffer windows atari monkey
+VLDTARGET := riscos gtk2 gtk3 beos amiga amigaos3 framebuffer windows atari monkey
 
 # Check for valid TARGET
 ifeq ($(filter $(VLDTARGET),$(TARGET)),)
@@ -301,7 +301,8 @@ else
                   override NETSURF_GTK_MAJOR := 3
                   SUBTARGET = $(NETSURF_GTK_MAJOR)
                 else
-	          ifeq ($(TARGET),gtk)
+	          ifeq ($(TARGET),gtk2)
+                    override TARGET := gtk
                     ifeq ($(origin NETSURF_GTK_MAJOR),undefined)
                       override NETSURF_GTK_MAJOR := 2
                     else

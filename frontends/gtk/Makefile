@@ -59,13 +59,7 @@ LDFLAGS += -lm
 NSGTK_RESOURCES_DIR := $(FRONTEND_RESOURCES_DIR)
 
 # The gtk binary target.
-ifeq ($(NETSURF_GTK_MAJOR),2)
-    # gtk2 builds have no major suffix
-    EXETARGET := nsgtk
-else
-    # gtk3 and later builds use the major version suffix
-    EXETARGET := nsgtk$(NETSURF_GTK_MAJOR)
-endif
+EXETARGET := nsgtk$(NETSURF_GTK_MAJOR)
 
 # The filter and target for split messages
 MESSAGES_FILTER=gtk
