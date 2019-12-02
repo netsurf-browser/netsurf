@@ -105,7 +105,7 @@ endif
 
 # Default target is GTK backend
 ifeq ($(TARGET),)
-  TARGET := gtk2
+  TARGET := gtk3
 endif
 
 # valid values for the TARGET
