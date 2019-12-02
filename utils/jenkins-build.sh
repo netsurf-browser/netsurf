@@ -191,7 +191,7 @@ case ${TARGET} in
 	;;
 
 
-    "gtk")
+    "gtk2")
 	case ${HOST} in
 	    "x86_64-linux-gnu")
 		;;
@@ -219,7 +219,7 @@ case ${TARGET} in
 
 	IDENTIFIER="${HOST}-${IDENTIFIER}"
 	OLD_IDENTIFIER="${HOST}-${OLD_IDENTIFIER}"
-	PKG_SRC=nsgtk
+	PKG_SRC=nsgtk2
 	PKG_SFX=
 	;;
 
