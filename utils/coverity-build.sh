@@ -36,8 +36,8 @@
 
 COVERITY_PROJECT="NetSurf+Browser"
 
-# build gtk, framebuffer and monkey frontend by default
-TARGETS="gtk framebuffer monkey"
+# build gtk2, framebuffer and monkey frontend by default
+TARGETS="gtk2 framebuffer monkey"
 
 # setup build environment
 export PREFIX=${PREFIX:-${JENKINS_HOME}/artifacts-${HOST}}
