@@ -296,7 +296,8 @@ nserror html_css_fetcher_register(void)
 		.finalise = html_css_fetcher_finalise
 	};
 
-	return fetcher_add(corestring_lwc_x_ns_css, &html_css_fetcher_ops);
+	return fetcher_add(lwc_string_ref(corestring_lwc_x_ns_css),
+			&html_css_fetcher_ops);
 }
 
 /* exported interface documented in html_internal.h */
