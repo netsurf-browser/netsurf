@@ -482,7 +482,11 @@ fetch_curl_report_certs_upstream(struct curl_fetch_info *f)
 	memset(ssl_certs, 0, sizeof(ssl_certs));
 
 	for (depth = 0; depth <= f->cert_depth; depth++) {
-		assert(certs[depth].cert != NULL);
+		if (certs[depth].cert == NULL) {
+			/* This certificate is missing, skip it */
+			ssl_certs[depth].err = SSL_CERT_ERR_CERT_MISSING;
+			continue;
+		}
 
 		/* get certificate version */
 		ssl_certs[depth].version = X509_get_version(certs[depth].cert);
