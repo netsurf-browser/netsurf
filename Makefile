@@ -303,13 +303,8 @@ else
                 else
 	          ifeq ($(TARGET),gtk2)
                     override TARGET := gtk
-                    ifeq ($(origin NETSURF_GTK_MAJOR),undefined)
-                      override NETSURF_GTK_MAJOR := 2
-                    else
-                      ifneq ($(NETSURF_GTK_MAJOR),2)
-                        SUBTARGET = $(NETSURF_GTK_MAJOR)
-                      endif
-                    endif
+                    override NETSURF_GTK_MAJOR := 2
+                    SUBTARGET = $(NETSURF_GTK_MAJOR)
                   endif
                 endif
               endif
