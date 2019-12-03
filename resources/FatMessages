@@ -1085,6 +1085,7 @@ en.all.SSLCertErrSelfSigned:The certificate is self signed.
 en.all.SSLCertErrChainSelfSigned:The certificate chain is self signed.
 en.all.SSLCertErrRevoked:The certificate has been revoked by the issuer.
 en.all.SSLCertErrHostnameMismatch:The certificate is for a different host than the server
+en.all.SSLCertErrCertMissing:The certificate was missing from the chain.
 
 
 # Timeout error interface

@@ -445,6 +445,10 @@ const char *messages_get_sslcode(ssl_cert_err code)
 		/* Common name is invalid */
 		return messages_get_ctx("SSLCertErrHostnameMismatch", messages_hash);
 
+	case SSL_CERT_ERR_CERT_MISSING:
+		/* Common name is invalid */
+		return messages_get_ctx("SSLCertErrCertMissing", messages_hash);
+
 	}
 
 	/* The switch has no default, so the compiler should tell us when we

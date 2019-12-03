@@ -42,6 +42,7 @@ typedef enum {
 	SSL_CERT_ERR_CHAIN_SELF_SIGNED, /**< This certificate chain is self signed */
 	SSL_CERT_ERR_REVOKED,	/**< This certificate has been revoked */
 	SSL_CERT_ERR_HOSTNAME_MISMATCH, /**< This certificate host did not match the server */
+	SSL_CERT_ERR_CERT_MISSING, /**< This certificate was missing from the chain, its data is useless */
 } ssl_cert_err;
 
 /** Always the max known ssl certificate error type */
