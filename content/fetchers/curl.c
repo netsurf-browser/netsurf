@@ -662,16 +662,16 @@ fetch_curl_verify_callback(int verify_ok, X509_STORE_CTX *x509_ctx)
 	depth = X509_STORE_CTX_get_error_depth(x509_ctx);
 	fetch = X509_STORE_CTX_get_app_data(x509_ctx);
 
-	/* record the max depth */
-	if (depth > fetch->cert_depth) {
-		fetch->cert_depth = depth;
-	}
-
 	/* certificate chain is excessively deep so fail verification */
 	if (depth >= MAX_SSL_CERTS) {
 		X509_STORE_CTX_set_error(x509_ctx,
 					 X509_V_ERR_CERT_CHAIN_TOO_LONG);
 		return 0;
+	}
+
+	/* record the max depth */
+	if (depth > fetch->cert_depth) {
+		fetch->cert_depth = depth;
 	}
 
 	/* save the certificate by incrementing the reference count and
