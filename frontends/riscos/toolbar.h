@@ -304,7 +304,6 @@ int ro_toolbar_full_height(struct toolbar *toolbar);
  *
  * \param *toolbar		the toolbar to start throbbing.
  */
-
 void ro_toolbar_start_throbbing(struct toolbar *toolbar);
 
 
@@ -537,6 +536,15 @@ bool ro_toolbar_get_editing(struct toolbar *toolbar);
  */
 
 bool ro_toolbar_toggle_edit(struct toolbar *toolbar);
+
+
+/**
+ * Update the page information indicator.
+ *
+ * \param toolbar the toolbar to update the page info in.
+ */
+void ro_toolbar_page_info_change(struct toolbar *toolbar);
+
 
 #endif
 

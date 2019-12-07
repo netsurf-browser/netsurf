@@ -323,8 +323,17 @@ bool ro_gui_url_bar_set_content_favicon(struct url_bar *url_bar,
  * \param *url_bar		The URL bar to update.
  * \return			true if successful; else false.
  */
-
 bool ro_gui_url_bar_update_urlsuggest(struct url_bar *url_bar);
+
+
+/**
+ * Update the page info icon
+ *
+ * \param url_bar The URL bar to update.
+ * \return true if successful; else false.
+ */
+bool ro_gui_url_bar_page_info_change(struct url_bar *url_bar);
+
 
 #endif
 

@@ -3762,7 +3762,6 @@ static void gui_window_start_throbber(struct gui_window *g)
 }
 
 
-
 /**
  * Update the interface to reflect page loading stopped.
  *
@@ -3777,6 +3776,20 @@ static void gui_window_stop_throbber(struct gui_window *g)
 	g->active = false;
 }
 
+
+/**
+ * Update the interface to reflect change in page info status
+ *
+ * \param gw window with start of load
+ */
+static void gui_window_page_info_change(struct gui_window *gw)
+{
+	if (gw->toolbar != NULL) {
+		ro_toolbar_page_info_change(gw->toolbar);
+	}
+}
+
+
 /**
  * set favicon
  */
@@ -3788,7 +3801,6 @@ gui_window_set_icon(struct gui_window *g, struct hlcache_handle *icon)
 
 	ro_toolbar_set_site_favicon(g->toolbar, icon);
 }
-
 
 
 /**
@@ -4172,6 +4184,10 @@ ro_gui_window_event(struct gui_window *gw, enum gui_window_event event)
 	case GW_EVENT_START_SELECTION:
 		/* from textselection */
 		gui_start_selection(gw);
+		break;
+
+	case GW_EVENT_PAGE_INFO_CHANGE:
+		gui_window_page_info_change(gw);
 		break;
 
 	default:

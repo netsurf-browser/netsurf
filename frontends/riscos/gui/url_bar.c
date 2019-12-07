@@ -57,10 +57,13 @@
 #define URLBAR_HEIGHT 52
 #define URLBAR_FAVICON_SIZE 16
 #define URLBAR_HOTLIST_SIZE 17
+#define URLBAR_PGINFO_WIDTH ((26) * 2)
 #define URLBAR_FAVICON_WIDTH ((5 + URLBAR_FAVICON_SIZE + 5) * 2)
 #define URLBAR_HOTLIST_WIDTH ((5 + URLBAR_HOTLIST_SIZE + 5) * 2)
 #define URLBAR_MIN_WIDTH 52
 #define URLBAR_GRIGHT_GUTTER 8
+
+#define URLBAR_PGINFO_NAME_LENGTH 12
 #define URLBAR_FAVICON_NAME_LENGTH 12
 
 struct url_bar {
@@ -73,8 +76,12 @@ struct url_bar {
 	/** The window and icon details. */
 	wimp_w			window;
 	os_box			extent;
+	osspriteop_area			*sprites;
 
 	wimp_i			container_icon;
+
+	char			pginfo_sprite[URLBAR_PGINFO_NAME_LENGTH];
+	os_box			pginfo_extent;
 
 	char			favicon_sprite[URLBAR_FAVICON_NAME_LENGTH];
 	int			favicon_type;
@@ -147,6 +154,7 @@ struct url_bar *ro_gui_url_bar_create(struct theme_descriptor *theme)
 	/* Set up default parameters. */
 
 	url_bar->theme = theme;
+	url_bar->sprites = ro_gui_theme_get_sprites(theme);
 
 	url_bar->display = false;
 	url_bar->shaded = false;
@@ -165,6 +173,14 @@ struct url_bar *ro_gui_url_bar_create(struct theme_descriptor *theme)
 	url_bar->text_icon = -1;
 	url_bar->suggest_icon = -1;
 
+	url_bar->pginfo_extent.x0 = 0;
+	url_bar->pginfo_extent.y0 = 0;
+	url_bar->pginfo_extent.x1 = 0;
+	url_bar->pginfo_extent.y1 = 0;
+	strncpy(url_bar->pginfo_sprite,
+		"pgiinternal",
+		URLBAR_PGINFO_NAME_LENGTH);
+
 	url_bar->favicon_extent.x0 = 0;
 	url_bar->favicon_extent.y0 = 0;
 	url_bar->favicon_extent.x1 = 0;
@@ -173,8 +189,9 @@ struct url_bar *ro_gui_url_bar_create(struct theme_descriptor *theme)
 	url_bar->favicon_height = 0;
 	url_bar->favicon_content = NULL;
 	url_bar->favicon_type = 0;
-	strncpy(url_bar->favicon_sprite, "Ssmall_xxx",
-			URLBAR_FAVICON_NAME_LENGTH);
+	strncpy(url_bar->favicon_sprite,
+		"Ssmall_xxx",
+		URLBAR_FAVICON_NAME_LENGTH);
 
 	url_bar->hotlist.set = false;
 	url_bar->hotlist.extent.x0 = 0;
@@ -272,7 +289,7 @@ static bool ro_gui_url_bar_icon_resize(struct url_bar *url_bar, bool full)
 	/* Position the Text icon. */
 
 	if (url_bar->text_icon != -1) {
-		x0 = url_bar->extent.x0 + URLBAR_FAVICON_WIDTH;
+		x0 = url_bar->extent.x0 + URLBAR_PGINFO_WIDTH + URLBAR_FAVICON_WIDTH;
 		x1 = url_bar->extent.x1 - eig.x - URLBAR_HOTLIST_WIDTH -
 				url_bar->suggest_x - URLBAR_GRIGHT_GUTTER;
 
@@ -300,10 +317,18 @@ static bool ro_gui_url_bar_icon_resize(struct url_bar *url_bar, bool full)
 		}
 	}
 
+	/* Position the page info icon. */
+
+	url_bar->pginfo_extent.x0 = url_bar->extent.x0 + eig.x;
+	url_bar->pginfo_extent.x1 = url_bar->extent.x0 + URLBAR_PGINFO_WIDTH;
+	url_bar->pginfo_extent.y0 = centre - (URLBAR_HEIGHT / 2) + eig.y;
+	url_bar->pginfo_extent.y1 = url_bar->pginfo_extent.y0 + URLBAR_HEIGHT
+			- 2 * eig.y;
+
 	/* Position the Favicon icon. */
 
-	url_bar->favicon_extent.x0 = url_bar->extent.x0 + eig.x;
-	url_bar->favicon_extent.x1 = url_bar->extent.x0 + URLBAR_FAVICON_WIDTH;
+	url_bar->favicon_extent.x0 = url_bar->extent.x0 + URLBAR_PGINFO_WIDTH ;
+	url_bar->favicon_extent.x1 = url_bar->extent.x0 + URLBAR_PGINFO_WIDTH + URLBAR_FAVICON_WIDTH;
 	url_bar->favicon_extent.y0 = centre - (URLBAR_HEIGHT / 2) + eig.y;
 	url_bar->favicon_extent.y1 = url_bar->favicon_extent.y0 + URLBAR_HEIGHT
 			- 2 * eig.y;
@@ -512,7 +537,7 @@ bool ro_gui_url_bar_rebuild(struct url_bar *url_bar,
 	ro_gui_wimp_get_sprite_dimensions((osspriteop_area *) -1,
 		suggest_icon, &url_bar->suggest_x, &url_bar->suggest_y);
 
-	url_bar->x_min = URLBAR_FAVICON_WIDTH + URLBAR_MIN_WIDTH +
+	url_bar->x_min = URLBAR_PGINFO_WIDTH + URLBAR_FAVICON_WIDTH + URLBAR_MIN_WIDTH +
 			URLBAR_HOTLIST_WIDTH + URLBAR_GRIGHT_GUTTER +
 			url_bar->suggest_x;
 	url_bar->y_min = (url_bar->suggest_y > URLBAR_HEIGHT) ?
@@ -588,7 +613,7 @@ bool ro_gui_url_bar_set_extent(struct url_bar *url_bar,
 	if (url_bar->window != NULL && !url_bar->hidden) {
 		if (stretch) {
 			xwimp_force_redraw(url_bar->window,
-					x0 + URLBAR_FAVICON_WIDTH, y0,
+					x0 + URLBAR_PGINFO_WIDTH + URLBAR_FAVICON_WIDTH, y0,
 					(x1 > url_bar->extent.x1) ?
 					x1 : url_bar->extent.x1, y1);
 		} else {
@@ -629,12 +654,25 @@ void ro_gui_url_bar_redraw(struct url_bar *url_bar, wimp_draw *redraw)
 {
 	wimp_icon icon;
 	struct rect clip;
+	bool draw_pginfo = true;
 	bool draw_favicon = true;
 	bool draw_hotlist = true;
 
 	/* Test for a valid URL bar */
 	if (url_bar == NULL || url_bar->hidden)
 		return;
+
+	if ((redraw->clip.x0 - (redraw->box.x0 - redraw->xscroll)) >
+				(url_bar->pginfo_extent.x1) ||
+			(redraw->clip.y0 - (redraw->box.y1 - redraw->yscroll)) >
+				(url_bar->pginfo_extent.y1) ||
+			(redraw->clip.x1 - (redraw->box.x0 - redraw->xscroll)) <
+				(url_bar->pginfo_extent.x0) ||
+			(redraw->clip.y1 - (redraw->box.y1 - redraw->yscroll)) <
+				(url_bar->pginfo_extent.y0)) {
+		/* page info not in redraw area */
+		draw_pginfo = false;
+	}
 
 	if ((redraw->clip.x0 - (redraw->box.x0 - redraw->xscroll)) >
 				(url_bar->favicon_extent.x1) ||
@@ -658,6 +696,25 @@ void ro_gui_url_bar_redraw(struct url_bar *url_bar, wimp_draw *redraw)
 				(url_bar->hotlist.extent.y0)) {
 		/* Hotlist icon not in redraw area */
 		draw_hotlist = false;
+	}
+
+	if (draw_pginfo) {
+		icon.flags = wimp_ICON_SPRITE |
+			wimp_ICON_INDIRECTED |
+			wimp_ICON_FILLED |
+			wimp_ICON_HCENTRED |
+			wimp_ICON_VCENTRED |
+			(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
+		icon.data.indirected_sprite.id = (osspriteop_id)url_bar->pginfo_sprite;
+		icon.data.indirected_sprite.area = url_bar->sprites;
+		icon.data.indirected_sprite.size = 12;
+
+		icon.extent.x0 = url_bar->pginfo_extent.x0;
+		icon.extent.x1 = url_bar->pginfo_extent.x1;
+		icon.extent.y0 = url_bar->pginfo_extent.y0;
+		icon.extent.y1 = url_bar->pginfo_extent.y1;
+
+		xwimp_plot_icon(&icon);
 	}
 
 	if (draw_favicon) {
@@ -1195,7 +1252,6 @@ bool ro_gui_url_bar_test_for_text_field_keypress(struct url_bar *url_bar,
 
 
 /* This is an exported interface documented in url_bar.h */
-
 bool ro_gui_url_bar_set_site_favicon(struct url_bar *url_bar,
 		struct hlcache_handle *h)
 {
@@ -1251,7 +1307,58 @@ bool ro_gui_url_bar_set_site_favicon(struct url_bar *url_bar,
 
 
 /* This is an exported interface documented in url_bar.h */
+bool ro_gui_url_bar_page_info_change(struct url_bar *url_bar)
+{
+	browser_window_page_info_state pistate;
+	const char *icon_name;
+	struct gui_window *g;
 
+	g = ro_gui_toolbar_lookup(url_bar->window);
+
+	pistate = browser_window_get_page_info_state(g->bw);
+
+	switch (pistate) {
+	case PAGE_STATE_LOCAL:
+		icon_name = "pgilocal";
+		break;
+
+	case PAGE_STATE_INSECURE:
+		icon_name = "pgiinsecure";
+		break;
+
+	case PAGE_STATE_SECURE_OVERRIDE:
+		icon_name = "pgiwarning";
+		break;
+
+	case PAGE_STATE_SECURE_ISSUES:
+		icon_name = "pgiwarning";
+		break;
+
+	case PAGE_STATE_SECURE:
+		icon_name = "pgisecure";
+		break;
+
+	case PAGE_STATE_INTERNAL:
+	default:
+		icon_name = "pgiinternal";
+		break;
+	}
+
+	strncpy(url_bar->pginfo_sprite,	icon_name, URLBAR_PGINFO_NAME_LENGTH);
+
+	if (!url_bar->hidden) {
+		xwimp_force_redraw(url_bar->window,
+			url_bar->pginfo_extent.x0,
+			url_bar->pginfo_extent.y0,
+			url_bar->pginfo_extent.x1,
+			url_bar->pginfo_extent.y1);
+	}
+
+	return true;
+}
+
+
+/* This is an exported interface documented in url_bar.h */
 bool ro_gui_url_bar_set_content_favicon(struct url_bar *url_bar,
 		struct gui_window *g)
 {

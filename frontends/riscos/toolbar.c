@@ -420,7 +420,7 @@ bool ro_toolbar_rebuild(struct toolbar *toolbar)
 		ro_gui_wimp_event_transfer(old_window, toolbar->toolbar_handle);
 	}
 
-	/* The help prefix changes from edit to non-edit more. */
+	/* The help prefix changes from edit to non-edit mode. */
 
 	ro_gui_wimp_event_set_help_prefix(toolbar->toolbar_handle,
 			(toolbar->editing) ?
@@ -1538,7 +1538,6 @@ void ro_toolbar_start_throbbing(struct toolbar *toolbar)
 
 
 /* This is an exported interface documented in toolbar.h */
-
 void ro_toolbar_stop_throbbing(struct toolbar *toolbar)
 {
 	if (toolbar != NULL && toolbar->throbber != NULL)
@@ -1547,7 +1546,16 @@ void ro_toolbar_stop_throbbing(struct toolbar *toolbar)
 
 
 /* This is an exported interface documented in toolbar.h */
+void ro_toolbar_page_info_change(struct toolbar *toolbar)
+{
+	if (toolbar == NULL || toolbar->url == NULL)
+		return;
 
+	ro_gui_url_bar_page_info_change(toolbar->url);
+}
+
+
+/* This is an exported interface documented in toolbar.h */
 void ro_toolbar_throb(struct toolbar *toolbar)
 {
 	if (toolbar != NULL && toolbar->throbber != NULL)
@@ -1656,7 +1664,6 @@ bool ro_toolbar_get_url_field_extent(struct toolbar *toolbar, os_box *extent)
 
 
 /* This is an exported interface documented in toolbar.h */
-
 void ro_toolbar_set_site_favicon(struct toolbar *toolbar,
 		struct hlcache_handle *h)
 {
@@ -1668,7 +1675,6 @@ void ro_toolbar_set_site_favicon(struct toolbar *toolbar,
 
 
 /* This is an exported interface documented in toolbar.h */
-
 void ro_toolbar_set_content_favicon(struct toolbar *toolbar,
 		struct gui_window *g)
 {
