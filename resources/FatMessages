@@ -4084,7 +4084,7 @@ nl.ro.HelpToolbarFav:Dit is het websitesymbool: een kleine logo dat meegeleverd 
 en.ro.HelpToolbarHot:\Thotlist indicator: if lit, the current address is in the hotlist.|M\Sto add the current address to the hotlist.|M\Ato remove the current address from the hotlist.
 de.ro.HelpToolbarHot:\Thotlist indicator: if lit, the current address is in the hotlist.|M\Sto add the current address to the hotlist.|M\Ato remove the current address from the hotlist.
 fr.ro.HelpToolbarHot:\Thotlist indicator: if lit, the current address is in the hotlist.|M\Sto add the current address to the hotlist.|M\Ato remove the current address from the hotlist.
-it.ro.HelpToolbarHot:\Tindicatore segnalibri: se acceso significa che il corrente indirizzo \E8 presente nei segnalibri.|M\Sper aggiungere il corrente indirizzo ai segnalibri.|M\Aper rimuovere il corrente indirizzo dai segnalibri.
+it.ro.HelpToolbarHot:\Tindicatore segnalibri: se acceso significa che il corrente indirizzo è presente nei segnalibri.|M\Sper aggiungere il corrente indirizzo ai segnalibri.|M\Aper rimuovere il corrente indirizzo dai segnalibri.
 nl.ro.HelpToolbarHot:Dit is de favorietenindicator: wanneer deze oplicht, staat het webadres al in de favorietenlijst.|MKlik met KIES om het adres aan de favorietenlijst toe te voegen.|MKlik met PASAAN om het adres uit de favorietenlijst te verwijderen.
 
 en.ro.HelpStatus0:\Tstatus bar resizer.|MDrag to alter the size of the status bar.
@@ -5168,7 +5168,7 @@ nl.ro.HelpCacheConfig:Diverse bufferinstelligen kunnen in dit venster gewijzigd 
 en.ro.HelpCacheConfig3:\Tamount of memory to be used for caching content.
 de.ro.HelpCacheConfig3:Speichergröße, die verwendet wird um Inhalte zwischenzuspeichern.
 fr.ro.HelpCacheConfig3:\Tla quantité de mémoire à utiliser pour le contenu du cache.
-it.ro.HelpCacheConfig3:\Tquantit\E0 di memoria da usare per il contenuto della cache.
+it.ro.HelpCacheConfig3:\Tquantità di memoria da usare per il contenuto della cache.
 nl.ro.HelpCacheConfig3:Dit invoerveld toont de hoeveelheid geheugen die wordt gebruikt om de pagina-inhoud te bufferen.
 en.ro.HelpCacheConfig4:\Sreduce the amount of memory.
 de.ro.HelpCacheConfig4:Klicken mit AUSWAHL verringert die Größe des Cachespeichers.
@@ -5183,7 +5183,7 @@ nl.ro.HelpCacheConfig5:Klik met KIES om de geheugenruimte groter te maken.
 en.ro.HelpCacheConfig10:\Tamount of disc space to be used for caching content between sessions.
 de.ro.HelpCacheConfig10:\Tamount of disc space to be used for caching content between sessions.
 fr.ro.HelpCacheConfig10:\Tamount of disc space to be used for caching content between sessions.
-it.ro.HelpCacheConfig10:\Tquantit\E0 di spazio su disco da usare per il contenuto della cache tra le sessioni.
+it.ro.HelpCacheConfig10:\Tquantità di spazio su disco da usare per il contenuto della cache tra le sessioni.
 nl.ro.HelpCacheConfig10:Dit invoerveld toont de hoeveelheid schijfruimte die wordt gebruikt om de pagina-inhoud tussen sessies te bufferen.
 en.ro.HelpCacheConfig11:\Sreduce the amount of memory.
 de.ro.HelpCacheConfig11:Klicken mit AUSWAHL verringert die Größe des Cachespeichers.
