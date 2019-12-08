@@ -115,6 +115,14 @@ static const css_border_style_func border_style_funcs[4] = {
 	[LEFT]   = css_computed_border_left_style,
 };
 
+/** Layout helper: Check for CSS border on given side. */
+static inline bool lh__have_border(
+		enum box_side side,
+		const css_computed_style *style)
+{
+	return border_style_funcs[side](style) != CSS_BORDER_STYLE_NONE;
+}
+
 /** Array of per-side access functions for computed style border colors. */
 static const css_border_color_func border_color_funcs[4] = {
 	[TOP]    = css_computed_border_top_color,
@@ -307,8 +315,7 @@ calculate_mbp_width(const css_unit_ctx *unit_len_ctx,
 
 	/* border */
 	if (border) {
-		if (border_style_funcs[side](style) !=
-				CSS_BORDER_STYLE_NONE) {
+		if (lh__have_border(side, style)) {
 			border_width_funcs[side](style, &value, &unit);
 
 			*fixed += FIXTOINT(css_unit_len2device_px(
