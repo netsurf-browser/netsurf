@@ -213,6 +213,12 @@ enum
 	GID_FORWARD,
 	GID_THROBBER,
 	GID_SEARCH_ICON,
+	GID_PAGEINFO,
+	GID_PAGEINFO_INSECURE_BM,
+	GID_PAGEINFO_INTERNAL_BM,
+	GID_PAGEINFO_LOCAL_BM,
+	GID_PAGEINFO_SECURE_BM,
+	GID_PAGEINFO_WARNING_BM,
 	GID_FAVE,
 	GID_FAVE_ADD,
 	GID_FAVE_RMV,
@@ -2238,6 +2244,7 @@ static void ami_gui_scroller_update(struct gui_window_2 *gwin)
 	}
 }
 
+/* For future use
 static void ami_gui_console_log_clear(struct gui_window *g)
 {
 	if(g->shared->objects[GID_LOG] != NULL) {
@@ -2256,6 +2263,7 @@ static void ami_gui_console_log_clear(struct gui_window *g)
 						TAG_DONE);
 	}
 }
+*/
 
 static void ami_gui_console_log_add(struct gui_window *g)
 {
@@ -4534,6 +4542,7 @@ gui_window_create(struct browser_window *bw,
 	char closetab[100],closetab_s[100],closetab_g[100];
 	char addtab[100],addtab_s[100],addtab_g[100];
 	char fave[100], unfave[100];
+	char pi_insecure[100], pi_internal[100], pi_local[100], pi_secure[100], pi_warning[100];
 	char tabthrobber[100];
 	ULONG refresh_mode = WA_SmartRefresh;
 	ULONG defer_layout = TRUE;
@@ -4755,6 +4764,12 @@ gui_window_create(struct browser_window *bw,
 		g->shared->helphints[GID_ADDTAB] =
 			translate_escape_chars(messages_get("HelpToolbarAddTab"));
 
+		g->shared->helphints[GID_PAGEINFO_INSECURE_BM] = ami_utf8_easy(messages_get("PageInfoInsecure"));
+		g->shared->helphints[GID_PAGEINFO_LOCAL_BM] = ami_utf8_easy(messages_get("PageInfoLocal"));
+		g->shared->helphints[GID_PAGEINFO_SECURE_BM] = ami_utf8_easy(messages_get("PageInfoSecure"));
+		g->shared->helphints[GID_PAGEINFO_WARNING_BM] = ami_utf8_easy(messages_get("PageInfoWarning"));
+		g->shared->helphints[GID_PAGEINFO_INTERNAL_BM] = ami_utf8_easy(messages_get("PageInfoInternal"));
+
 		ami_get_theme_filename(nav_west, "theme_nav_west", false);
 		ami_get_theme_filename(nav_west_s, "theme_nav_west_s", false);
 		ami_get_theme_filename(nav_west_g, "theme_nav_west_g", false);
@@ -4779,6 +4794,11 @@ gui_window_create(struct browser_window *bw,
 		ami_get_theme_filename(tabthrobber, "theme_tab_loading", false);
 		ami_get_theme_filename(fave, "theme_fave", false);
 		ami_get_theme_filename(unfave, "theme_unfave", false);
+		ami_get_theme_filename(pi_insecure, "theme_pageinfo_insecure", false);
+		ami_get_theme_filename(pi_internal, "theme_pageinfo_internal", false);
+		ami_get_theme_filename(pi_local, "theme_pageinfo_local", false);
+		ami_get_theme_filename(pi_secure, "theme_pageinfo_secure", false);
+		ami_get_theme_filename(pi_warning, "theme_pageinfo_warning", false);
 
 		g->shared->objects[GID_FAVE_ADD] = BitMapObj,
 					BITMAP_SourceFile, fave,
@@ -4807,6 +4827,37 @@ gui_window_create(struct browser_window *bw,
 					BITMAP_Screen, scrn,
 					BITMAP_Masking, TRUE,
 					BitMapEnd;
+
+		g->shared->objects[GID_PAGEINFO_INSECURE_BM] = BitMapObj,
+					BITMAP_SourceFile, pi_insecure,
+					BITMAP_Screen, scrn,
+					BITMAP_Masking, TRUE,
+					BitMapEnd;
+
+		g->shared->objects[GID_PAGEINFO_INTERNAL_BM] = BitMapObj,
+					BITMAP_SourceFile, pi_internal,
+					BITMAP_Screen, scrn,
+					BITMAP_Masking, TRUE,
+					BitMapEnd;
+
+		g->shared->objects[GID_PAGEINFO_LOCAL_BM] = BitMapObj,
+					BITMAP_SourceFile, pi_local,
+					BITMAP_Screen, scrn,
+					BITMAP_Masking, TRUE,
+					BitMapEnd;
+
+		g->shared->objects[GID_PAGEINFO_SECURE_BM] = BitMapObj,
+					BITMAP_SourceFile, pi_secure,
+					BITMAP_Screen, scrn,
+					BITMAP_Masking, TRUE,
+					BitMapEnd;
+
+		g->shared->objects[GID_PAGEINFO_WARNING_BM] = BitMapObj,
+					BITMAP_SourceFile, pi_warning,
+					BITMAP_Screen, scrn,
+					BITMAP_Masking, TRUE,
+					BitMapEnd;
+
 
 		if(ClickTabBase->lib_Version < 53)
 		{
@@ -4964,6 +5015,14 @@ gui_window_create(struct browser_window *bw,
 							SPACE_Transparent, TRUE,
 						//	SPACE_RenderHook, &g->shared->favicon_hook,
 						SpaceEnd,
+						CHILD_WeightedWidth, 0,
+						CHILD_WeightedHeight, 0,
+						LAYOUT_AddChild, g->shared->objects[GID_PAGEINFO] = ButtonObj,
+							GA_ID, GID_PAGEINFO,
+							GA_RelVerify, TRUE,
+							GA_ReadOnly, TRUE,
+							BUTTON_RenderImage, g->shared->objects[GID_PAGEINFO_INTERNAL_BM],
+						ButtonEnd,
 						CHILD_WeightedWidth, 0,
 						CHILD_WeightedHeight, 0,
 						LAYOUT_AddChild, g->shared->objects[GID_URL] =
@@ -5335,6 +5394,11 @@ static void gui_window_destroy(struct gui_window *g)
 	DisposeObject(g->shared->objects[GID_TABS_FLAG]);
 	DisposeObject(g->shared->objects[GID_FAVE_ADD]);
 	DisposeObject(g->shared->objects[GID_FAVE_RMV]);
+	DisposeObject(g->shared->objects[GID_PAGEINFO_INSECURE_BM]);
+	DisposeObject(g->shared->objects[GID_PAGEINFO_INTERNAL_BM]);
+	DisposeObject(g->shared->objects[GID_PAGEINFO_LOCAL_BM]);
+	DisposeObject(g->shared->objects[GID_PAGEINFO_SECURE_BM]);
+	DisposeObject(g->shared->objects[GID_PAGEINFO_WARNING_BM]);
 
 	ami_gui_opts_websearch_free(g->shared->web_search_list);
 	if(g->shared->search_bm) DisposeObject(g->shared->search_bm);
@@ -6005,6 +6069,53 @@ static void gui_window_new_content(struct gui_window *g)
 	ami_gui_scroller_update(g->shared);
 }
 
+static nserror gui_page_info_change(struct gui_window *gw)
+{
+	int bm_idx;
+	browser_window_page_info_state pistate;
+	struct gui_window_2 *gwin = ami_gui_get_gui_window_2(gw);
+	struct browser_window *bw = ami_gui_get_browser_window(gw);
+
+	pistate = browser_window_get_page_info_state(bw);
+
+	switch(pistate) {
+		case PAGE_STATE_INTERNAL:
+			bm_idx = GID_PAGEINFO_INTERNAL_BM;
+		break;
+
+		case PAGE_STATE_LOCAL:
+			bm_idx = GID_PAGEINFO_LOCAL_BM;
+		break;
+
+		case PAGE_STATE_INSECURE:
+			bm_idx = GID_PAGEINFO_INSECURE_BM;
+		break;
+
+		case PAGE_STATE_SECURE_OVERRIDE:
+			bm_idx = GID_PAGEINFO_WARNING_BM;
+		break;
+
+		case PAGE_STATE_SECURE_ISSUES:
+			bm_idx = GID_PAGEINFO_WARNING_BM;
+		break;
+
+		case PAGE_STATE_SECURE:
+			bm_idx = GID_PAGEINFO_SECURE_BM;
+		break;
+
+		default:
+			bm_idx = GID_PAGEINFO_INTERNAL_BM;
+		break;
+	}
+
+	RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_PAGEINFO], gwin->win, NULL,
+				BUTTON_RenderImage, gwin->objects[bm_idx],
+				GA_HintInfo, gwin->helphints[bm_idx],
+				TAG_DONE);
+
+	return NSERROR_OK;
+}
+
 static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 		const struct rect *rect)
 {
@@ -6317,6 +6428,10 @@ gui_window_event(struct gui_window *gw, enum gui_window_event event)
 
 	case GW_EVENT_STOP_THROBBER:
 		gui_window_stop_throbber(gw);
+		break;
+
+	case GW_EVENT_PAGE_INFO_CHANGE:
+		gui_page_info_change(gw);
 		break;
 
 	default:

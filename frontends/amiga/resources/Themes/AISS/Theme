@@ -31,6 +31,11 @@ theme_tab_loading:*TBImages:list_download
 theme_search:*TBImages:list_search
 theme_fave:*TBImages:list_favouriteadd
 theme_unfave:*TBImages:list_favourite
+theme_pageinfo_insecure:*TBImages:list_warning
+theme_pageinfo_internal:*TBImages:list_info
+theme_pageinfo_local:*TBImages:list_info
+theme_pageinfo_secure:*TBImages:list_securezone
+theme_pageinfo_warning:*TBImages:list_warning
 ptr_default:*PROGDIR:Resources/Pointers/Default
 ptr_point:*PROGDIR:Resources/Pointers/Point
 ptr_caret:*PROGDIR:Resources/Pointers/Caret

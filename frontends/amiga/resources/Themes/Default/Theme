@@ -44,6 +44,11 @@ theme_tab_loading:
 theme_search:search.png
 theme_fave:*PROGDIR:Resources/icons/hotlist-add.png
 theme_unfave:*PROGDIR:Resources/icons/hotlist-rmv.png
+theme_pageinfo_insecure:*PROGDIR:Resources/icons/16x16/actions/page-info-insecure.png
+theme_pageinfo_internal:*PROGDIR:Resources/icons/16x16/actions/page-info-internal.png
+theme_pageinfo_local:*PROGDIR:Resources/icons/16x16/actions/page-info-local.png
+theme_pageinfo_secure:*PROGDIR:Resources/icons/16x16/actions/page-info-secure.png
+theme_pageinfo_warning:*PROGDIR:Resources/icons/16x16/actions/page-info-warning.png
 ptr_default:*PROGDIR:Resources/Pointers/Default
 ptr_point:*PROGDIR:Resources/Pointers/Point
 ptr_caret:*PROGDIR:Resources/Pointers/Caret
