@@ -5024,8 +5024,6 @@ layout_absolute(struct box *box,
 				containing_block->padding[RIGHT];
 		containing_block->height += containing_block->padding[TOP] +
 				containing_block->padding[BOTTOM];
-	} else {
-		/** \todo inline containers */
 	}
 
 	layout_compute_offsets(&content->unit_len_ctx, box, containing_block,
