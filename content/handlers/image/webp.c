@@ -129,7 +129,7 @@ webp_cache_convert(struct content *c)
 
 	rowstride = guit->bitmap->get_rowstride(bitmap);
 
-	decoded = WebPDecodeBGRAInto(source_data,
+	decoded = WebPDecodeRGBAInto(source_data,
 				     source_size,
 				     pixels,
 				     webpfeatures.width * webpfeatures.height * 4,
@@ -139,6 +139,8 @@ webp_cache_convert(struct content *c)
 		guit->bitmap->destroy(bitmap);
 		return NULL;
 	}
+
+	guit->bitmap->modified(bitmap);
 
 	return bitmap;
 }
