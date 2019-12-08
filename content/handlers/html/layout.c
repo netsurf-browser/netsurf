@@ -123,6 +123,50 @@ static inline bool lh__have_border(
 	return border_style_funcs[side](style) != CSS_BORDER_STYLE_NONE;
 }
 
+/** Layout helper: Check whether box is a float. */
+static inline bool lh__box_is_float_box(const struct box *b)
+{
+	return b->type == BOX_FLOAT_LEFT ||
+	       b->type == BOX_FLOAT_RIGHT;
+}
+
+/** Layout helper: Check whether box takes part in inline flow. */
+static inline bool lh__box_is_inline_flow(const struct box *b)
+{
+	return b->type == BOX_INLINE ||
+	       b->type == BOX_INLINE_BLOCK ||
+	       b->type == BOX_TEXT ||
+	       b->type == BOX_INLINE_END;
+}
+
+/** Layout helper: Check whether box is inline level. (Includes BR.) */
+static inline bool lh__box_is_inline_level(const struct box *b)
+{
+	return lh__box_is_inline_flow(b) ||
+	       b->type == BOX_BR;
+}
+
+/** Layout helper: Check whether box is inline level. (Includes BR, floats.) */
+static inline bool lh__box_is_inline_content(const struct box *b)
+{
+	return lh__box_is_float_box(b) ||
+	       lh__box_is_inline_level(b);
+}
+
+/** Layout helper: Check whether box is an object. */
+static inline bool lh__box_is_object(const struct box *b)
+{
+	return b->object ||
+	       (b->flags & (IFRAME | REPLACE_DIM));
+}
+
+/** Layout helper: Check whether box is replaced. */
+static inline bool lh__box_is_replace(const struct box *b)
+{
+	return b->gadget ||
+	       lh__box_is_object(b);
+}
+
 /** Array of per-side access functions for computed style border colors. */
 static const css_border_color_func border_color_funcs[4] = {
 	[TOP]    = css_computed_border_top_color,
@@ -595,11 +639,7 @@ layout_minmax_line(struct box *first,
 		css_fixed value = 0;
 		css_unit unit = CSS_UNIT_PX;
 
-		assert(b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK ||
-				b->type == BOX_FLOAT_LEFT ||
-				b->type == BOX_FLOAT_RIGHT ||
-				b->type == BOX_BR || b->type == BOX_TEXT ||
-				b->type == BOX_INLINE_END);
+		assert(lh__box_is_inline_content(b));
 
 		NSLOG(layout, DEBUG, "%p: min %i, max %i", b, min, max);
 
@@ -608,7 +648,7 @@ layout_minmax_line(struct box *first,
 			break;
 		}
 
-		if (b->type == BOX_FLOAT_LEFT || b->type == BOX_FLOAT_RIGHT) {
+		if (lh__box_is_float_box(b)) {
 			assert(b->children);
 			if (b->children->type == BOX_BLOCK)
 				layout_minmax_block(b->children, font_func,
@@ -675,8 +715,7 @@ layout_minmax_line(struct box *first,
 			continue;
 		}
 
-		if (!b->object && !(b->flags & IFRAME) && !b->gadget &&
-				!(b->flags & REPLACE_DIM)) {
+		if (lh__box_is_replace(b) == false) {
 			/* inline non-replaced, 10.3.1 and 10.6.1 */
 			bool no_wrap_box;
 			if (!b->text)
@@ -1001,8 +1040,7 @@ static void layout_minmax_block(
 	}
 
 	/* set whether the minimum width is of any interest for this box */
-	if (((block->parent && (block->parent->type == BOX_FLOAT_LEFT ||
-			block->parent->type == BOX_FLOAT_RIGHT)) ||
+	if (((block->parent && lh__box_is_float_box(block->parent)) ||
 			block->type == BOX_INLINE_BLOCK) &&
 			wtype != CSS_WIDTH_SET) {
 		/* box shrinks to fit; need minimum width */
@@ -3216,20 +3254,14 @@ layout_line(struct box *first,
 	for (x = 0, b = first; x <= x1 - x0 && b != 0; b = b->next) {
 		int min_width, max_width, min_height, max_height;
 
-		assert(b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK ||
-				b->type == BOX_FLOAT_LEFT ||
-				b->type == BOX_FLOAT_RIGHT ||
-				b->type == BOX_BR || b->type == BOX_TEXT ||
-				b->type == BOX_INLINE_END);
-
+		assert(lh__box_is_inline_content(b));
 
 		NSLOG(layout, DEBUG,  "pass 1: b %p, x %i", b, x);
-
 
 		if (b->type == BOX_BR)
 			break;
 
-		if (b->type == BOX_FLOAT_LEFT || b->type == BOX_FLOAT_RIGHT)
+		if (lh__box_is_float_box(b))
 			continue;
 		if (b->type == BOX_INLINE_BLOCK &&
 				(css_computed_position(b->style) ==
@@ -3295,8 +3327,7 @@ layout_line(struct box *first,
 			continue;
 		}
 
-		if (!b->object && !(b->flags & IFRAME) && !b->gadget &&
-				!(b->flags & REPLACE_DIM)) {
+		if (lh__box_is_replace(b) == false) {
 			/* inline non-replaced, 10.3.1 and 10.6.1 */
 			b->height = line_height(&content->unit_len_ctx,
 					b->style ? b->style :
@@ -3456,10 +3487,7 @@ layout_line(struct box *first,
 						CSS_POSITION_FIXED)) {
 			b->x = x + space_after;
 
-		} else if (b->type == BOX_INLINE ||
-				b->type == BOX_INLINE_BLOCK ||
-				b->type == BOX_TEXT ||
-				b->type == BOX_INLINE_END) {
+		} else if (lh__box_is_inline_flow(b)) {
 			assert(b->width != UNKNOWN_WIDTH);
 
 			x_previous = x;
@@ -3798,9 +3826,7 @@ layout_line(struct box *first,
 			d->y = *y;
 			continue;
 		} else if ((d->type == BOX_INLINE &&
-				((d->object || d->gadget) == false) &&
-				!(d->flags & IFRAME) &&
-				!(d->flags & REPLACE_DIM)) ||
+				lh__box_is_replace(d) == false) ||
 				d->type == BOX_BR ||
 				d->type == BOX_TEXT ||
 				d->type == BOX_INLINE_END) {
@@ -3921,8 +3947,7 @@ static bool layout_inline_container(struct box *inline_container, int width,
 				whitespace == CSS_WHITE_SPACE_PRE_WRAP);
 		}
 
-		if ((!c->object && !(c->flags & REPLACE_DIM) &&
-				!(c->flags & IFRAME) &&
+		if ((lh__box_is_object(c) == false &&
 				c->text && (c->length || is_pre)) ||
 				c->type == BOX_BR)
 			has_text_children = true;
@@ -4102,8 +4127,7 @@ layout_block_context(struct box *block,
 		lm = rm = 0;
 
 		if (box->type == BOX_BLOCK || box->flags & IFRAME) {
-			if (!box->object && !(box->flags & IFRAME) &&
-					!(box->flags & REPLACE_DIM) &&
+			if (lh__box_is_object(box) == false &&
 					box->style &&
 					(overflow_x != CSS_OVERFLOW_VISIBLE ||
 					 overflow_y != CSS_OVERFLOW_VISIBLE)) {
