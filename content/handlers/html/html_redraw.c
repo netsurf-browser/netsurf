@@ -1841,6 +1841,7 @@ bool html_redraw_box(const html_content *html, struct box *box,
 	/* scrollbars */
 	if (((box->style && box->type != BOX_BR &&
 	      box->type != BOX_TABLE && box->type != BOX_INLINE &&
+	      (box->gadget == NULL || box->gadget->type != GADGET_TEXTAREA) &&
 	      (overflow_x == CSS_OVERFLOW_SCROLL ||
 	       overflow_x == CSS_OVERFLOW_AUTO ||
 	       overflow_y == CSS_OVERFLOW_SCROLL ||
