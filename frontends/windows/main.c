@@ -308,6 +308,55 @@ static nserror nsw32_messages_init(char **respaths)
 	return res;
 }
 
+
+/**
+ * Construct a unix style argc/argv
+ */
+static nserror win32_to_unix_commandline(int *argc_out, char ***argv_out)
+{
+	int argc = 0;
+	char **argv;
+	int cura;
+	LPWSTR *argvw;
+
+	argvw = CommandLineToArgvW(GetCommandLineW(), &argc);
+	if (argvw == NULL) {
+		return NSERROR_INVALID;
+	}
+
+	argv = malloc(sizeof(char *) * argc);
+	if (argv == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	for (cura = 0; cura < argc; cura++) {
+
+		len = wcstombs(NULL, argvw[cura], 0) + 1;
+		if (len > 0) {
+			argv[cura] = malloc(len);
+			if (argv[cura] == NULL) {
+				free(argv);
+				return NSERROR_NOMEM;
+			}
+		} else {
+			free(argv);
+			return NSERROR_INVALID;
+		}
+
+		wcstombs(argv[cura], argvw[cura], len);
+		/* alter windows-style forward slash flags to hyphen flags. */
+		if (argv[cura][0] == '/') {
+			argv[cura][0] = '-';
+		}
+	}
+
+	*argc_out = argc;
+	*argv_out = argv;
+
+	return NSERROR_OK;
+}
+
+
 static struct gui_misc_table win32_misc_table = {
 	.schedule = win32_schedule,
 };
@@ -319,9 +368,8 @@ int WINAPI
 WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 {
 	char **argv = NULL;
-	int argc = 0, argctemp = 0;
+	int argc = 0;
 	size_t len;
-	LPWSTR *argvw;
 	nserror ret;
 	const char *addr;
 	nsurl *url;
@@ -347,27 +395,10 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 
 	setbuf(stderr, NULL);
 
-	/* Construct a unix style argc/argv */
-	if (SLEN(lpcli) > 0) {
-		argvw = CommandLineToArgvW(GetCommandLineW(), &argc);
-	}
-
-	argv = malloc(sizeof(char *) * argc);
-	while (argctemp < argc) {
-		len = wcstombs(NULL, argvw[argctemp], 0) + 1;
-		if (len > 0) {
-			argv[argctemp] = malloc(len);
-		}
-
-		if (argv[argctemp] != NULL) {
-			wcstombs(argv[argctemp], argvw[argctemp], len);
-			/* alter windows-style forward slash flags to
-			 * hyphen flags.
-			 */
-			if (argv[argctemp][0] == '/')
-				argv[argctemp][0] = '-';
-		}
-		argctemp++;
+	ret = win32_to_unix_commandline(&argc, &argv);
+	if (ret != NSERROR_OK) {
+		/* no log as logging requires this for initialisation */
+		return 1;
 	}
 
 	/* initialise logging - not fatal if it fails but not much we
