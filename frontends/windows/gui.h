@@ -22,13 +22,22 @@
 
 struct gui_window;
 
+/**
+ * win32 application instance handle.
+ *
+ * This handle is set in the main windows entry point.
+ */
 extern HINSTANCE hinst;
 
-/** Directory where all configuration files are held. */
-extern char *nsw32_config_home;
+/**
+ * path to where all user config files are held.
+ */
+extern char *G_config_path;
 
-/** resource search path vector. */
-extern char **respaths;
+/**
+ * resource search path vector.
+ */
+extern char **G_resource_pathv;
 
 /* bounding box */
 typedef struct bbox_s {

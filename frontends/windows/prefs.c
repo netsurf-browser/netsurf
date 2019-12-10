@@ -699,7 +699,7 @@ nserror nsws_prefs_save(void)
 	char *choices = NULL;
 	nserror res;
 
-	res = netsurf_mkpath(&choices, NULL, 2, nsw32_config_home, "Choices");
+	res = netsurf_mkpath(&choices, NULL, 2, G_config_path, "Choices");
 	if (res == NSERROR_OK) {
 		nsoption_write(choices, NULL, NULL);
 		free(choices);

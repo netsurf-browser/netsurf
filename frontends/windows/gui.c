@@ -41,12 +41,14 @@
 #include "windows/window.h"
 #include "windows/gui.h"
 
-/**
- * win32 application instance handle.
- *
- * This handle is set in the main windows entry point.
- */
+/* exported global defined in windows/gui.h */
 HINSTANCE hinst;
+
+/* exported global defined in windows/gui.h */
+char **G_resource_pathv;
+
+/* exported global defined in windows/gui.h */
+char *G_config_path;
 
 static bool win32_quit = false;
 
