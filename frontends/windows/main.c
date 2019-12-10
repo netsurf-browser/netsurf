@@ -190,6 +190,11 @@ static nserror set_defaults(struct nsoption_s *defaults)
 			      &ptr);
 	if (res_len > 0) {
 		nsoption_setnull_charp(ca_bundle, strdup(buf));
+	} else {
+		ptr = filepath_sfind(G_resource_pathv, buf, "ca-bundle.crt");
+		if (ptr != NULL) {
+			nsoption_setnull_charp(ca_bundle, strdup(buf));
+		}
 	}
 
 
