@@ -1849,9 +1849,11 @@ bool box_object(BOX_SPECIAL_PARAMS)
 				/* The first non-param child is the start of
 				 * the alt html. Therefore, we should break
 				 * out of this loop. */
+				dom_string_unref(name);
 				dom_node_unref(c);
 				break;
 			}
+			dom_string_unref(name);
 
 			param = talloc(params, struct object_param);
 			if (param == NULL) {
