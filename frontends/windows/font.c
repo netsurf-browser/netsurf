@@ -93,23 +93,31 @@ HFONT get_font(const plot_font_style_t *style)
 {
 	char *face = NULL;
 	DWORD family;
+	int nHeight;
+	HDC hdc;
+	HFONT font;
+
 	switch(style->family) {
 	case PLOT_FONT_FAMILY_SERIF:
 		face = strdup(nsoption_charp(font_serif));
 		family = FF_ROMAN | DEFAULT_PITCH;
 		break;
+
 	case PLOT_FONT_FAMILY_MONOSPACE:
 		face = strdup(nsoption_charp(font_mono));
 		family = FF_MODERN | DEFAULT_PITCH;
 		break;
+
 	case PLOT_FONT_FAMILY_CURSIVE:
 		face = strdup(nsoption_charp(font_cursive));
 		family = FF_SCRIPT | DEFAULT_PITCH;
 		break;
+
 	case PLOT_FONT_FAMILY_FANTASY:
 		face = strdup(nsoption_charp(font_fantasy));
 		family = FF_DECORATIVE | DEFAULT_PITCH;
 		break;
+
 	case PLOT_FONT_FAMILY_SANS_SERIF:
 	default:
 		face = strdup(nsoption_charp(font_sans));
@@ -117,30 +125,30 @@ HFONT get_font(const plot_font_style_t *style)
 		break;
 	}
 
-	int nHeight = -10;
+	nHeight = -10;
 
-	HDC hdc = GetDC(font_hwnd);
+	hdc = GetDC(font_hwnd);
 	nHeight = -MulDiv(style->size, GetDeviceCaps(hdc, LOGPIXELSY), 72 * PLOT_STYLE_SCALE);
 	ReleaseDC(font_hwnd, hdc);
 
-	HFONT font = CreateFont(
-		nHeight, /* height */
-		0, /* width */
-		0, /* escapement*/
-		0, /* orientation */
-		style->weight,
-		(style->flags & FONTF_ITALIC) ? TRUE : FALSE,
-		FALSE, /* underline */
-		FALSE, /* strike */
-		DEFAULT_CHARSET, /* for locale */
-		OUT_DEFAULT_PRECIS, /* general 'best match' */
-		CLIP_DEFAULT_PRECIS,
-		DEFAULT_QUALITY,
-		family,
-		face /* name of font face */
-		);
-	if (face != NULL)
+	font = CreateFont(nHeight, /* height */
+			  0, /* width */
+			  0, /* escapement*/
+			  0, /* orientation */
+			  style->weight,
+			  (style->flags & FONTF_ITALIC) ? TRUE : FALSE,
+			  FALSE, /* underline */
+			  FALSE, /* strike */
+			  DEFAULT_CHARSET, /* for locale */
+			  OUT_DEFAULT_PRECIS, /* general 'best match' */
+			  CLIP_DEFAULT_PRECIS,
+			  DEFAULT_QUALITY,
+			  family,
+			  face); /* name of font face */
+
+	if (face != NULL) {
 		free(face);
+	}
 
 	if (font == NULL) {
 		if (style->family == PLOT_FONT_FAMILY_MONOSPACE) {
@@ -149,50 +157,67 @@ HFONT get_font(const plot_font_style_t *style)
 			font = (HFONT) GetStockObject(ANSI_VAR_FONT);
 		}
 	}
-	if (font == NULL)
+
+	if (font == NULL) {
 		font = (HFONT) GetStockObject(SYSTEM_FONT);
+	}
+
 	return font;
 }
+
+/* size of temporary wide character string for computing string width */
+#define WSTRLEN 4096
 
 
 /**
  * Measure the width of a string.
  *
  * \param[in] style plot style for this text
- * \param[in] string UTF-8 string to measure
- * \param[in] length length of string, in bytes
+ * \param[in] utf8str string encoded in UTF-8 to measure
+ * \param[in] utf8len length of string, in bytes
  * \param[out] width updated to width of string[0..length)
  * \return NSERROR_OK on success otherwise appropriate error code
  */
 static nserror
 win32_font_width(const plot_font_style_t *style,
-		 const char *string,
-		 size_t length,
+		 const char *utf8str,
+		 size_t utf8len,
 		 int *width)
 {
+	nserror ret = NSERROR_OK;
 	HDC hdc;
 	HFONT font;
 	HFONT fontbak;
-	SIZE s;
-	nserror ret = NSERROR_OK;
+	SIZE sizl; /* size in logical units */
+	BOOL wres;
+	int wclen; /* wide char length */
+	static WCHAR wstr[WSTRLEN]; /* temporary wide char string */
 
-	if (length == 0) {
+	if (utf8len == 0) {
 		*width = 0;
-	} else {
-		hdc = GetDC(NULL);
-		font = get_font(style);
-		fontbak = SelectObject(hdc, font);
-
-		/* may well need to convert utf-8 to lpctstr */
-		if (GetTextExtentPoint32A(hdc, string, length, &s) != 0) {
-			*width = s.cx;
-		} else {
-			ret = NSERROR_UNKNOWN;
-		}
-		font = SelectObject(hdc, fontbak);
-		DeleteObject(font);
-		ReleaseDC(NULL, hdc);
+		return ret;
 	}
+
+	hdc = GetDC(NULL);
+	font = get_font(style);
+	fontbak = SelectObject(hdc, font);
+
+	wclen = MultiByteToWideChar(CP_UTF8, 0, utf8str, utf8len, wstr, WSTRLEN);
+	if (wclen != 0) {
+		wres = GetTextExtentPoint32W(hdc, wstr, wclen, &sizl);
+		if (wres == FALSE) {
+			ret = NSERROR_INVALID;
+		} else {
+			*width = sizl.cx;
+		}
+	} else {
+		ret = NSERROR_NOSPACE;
+	}
+
+	font = SelectObject(hdc, fontbak);
+	DeleteObject(font);
+	ReleaseDC(NULL, hdc);
+
 	return ret;
 }
 
@@ -200,19 +225,19 @@ win32_font_width(const plot_font_style_t *style,
 /**
  * Find the position in a string where an x coordinate falls.
  *
- * \param  style	css_style for this text, with style->font_size.size ==
+ * \param  style css_style for this text, with style->font_size.size ==
  *			CSS_FONT_SIZE_LENGTH
- * \param  string	UTF-8 string to measure
- * \param  length	length of string
- * \param  x		x coordinate to search for
- * \param  char_offset	updated to offset in string of actual_x, [0..length]
- * \param  actual_x	updated to x coordinate of character closest to x
+ * \param  utf8str string to measure encoded in UTF-8
+ * \param  utf8len length of string
+ * \param  x coordinate to search for
+ * \param  char_offset updated to offset in string of actual_x, [0..length]
+ * \param  actual_x updated to x coordinate of character closest to x
  * \return NSERROR_OK on success otherwise appropriate error code
  */
 static nserror
 win32_font_position(const plot_font_style_t *style,
-		    const char *string,
-		    size_t length,
+		    const char *utf8str,
+		    size_t utf8len,
 		    int x,
 		    size_t *char_offset,
 		    int *actual_x)
@@ -224,25 +249,28 @@ win32_font_position(const plot_font_style_t *style,
 	int offset;
 	nserror ret = NSERROR_OK;
 
-	if ((length == 0) || (x < 1)) {
+	/* deal with zero length input or invalid search co-ordiate */
+	if ((utf8len == 0) || (x < 1)) {
 		*char_offset = 0;
 		*actual_x = 0;
-	} else {
-		hdc = GetDC(NULL);
-		font = get_font(style);
-		fontbak = SelectObject(hdc, font);
-
-		if ((GetTextExtentExPointA(hdc, string, length, x, &offset, NULL,&s) != 0) &&
-		    (GetTextExtentPoint32A(hdc, string, offset, &s) != 0)) {
-			*char_offset = (size_t)offset;
-			*actual_x = s.cx;
-		} else {
-			ret = NSERROR_UNKNOWN;
-		}
-		font = SelectObject(hdc, fontbak);
-		DeleteObject(font);
-		ReleaseDC(NULL, hdc);
+		return ret;
 	}
+
+	hdc = GetDC(NULL);
+	font = get_font(style);
+	fontbak = SelectObject(hdc, font);
+
+	if ((GetTextExtentExPointA(hdc, utf8str, utf8len, x, &offset, NULL, &s) != 0) &&
+	    (GetTextExtentPoint32A(hdc, utf8str, offset, &s) != 0)) {
+		*char_offset = (size_t)offset;
+		*actual_x = s.cx;
+	} else {
+		ret = NSERROR_UNKNOWN;
+	}
+
+	font = SelectObject(hdc, fontbak);
+	DeleteObject(font);
+	ReleaseDC(NULL, hdc);
 
 	return ret;
 }
@@ -256,7 +284,7 @@ win32_font_position(const plot_font_style_t *style,
  * \param  string	UTF-8 string to measure
  * \param  length	length of string
  * \param  x		width available
- * \param  char_offset	updated to offset in string of actual_x, [0..length]
+ * \param[out] offset updated to offset in string of actual_x, [0..length]
  * \param  actual_x	updated to x coordinate of character closest to x
  * \return NSERROR_OK on success otherwise appropriate error code
  *
@@ -269,52 +297,48 @@ win32_font_split(const plot_font_style_t *style,
 		 const char *string,
 		 size_t length,
 		 int x,
-		 size_t *char_offset,
+		 size_t *offset,
 		 int *actual_x)
 {
+	nserror res;
 	int c_off;
-	nserror ret = NSERROR_UNKNOWN;
 
-	if (win32_font_position(style,
-				string,
-				length,
-				x,
-				char_offset,
-				actual_x) == NSERROR_OK) {
-		c_off = *char_offset;
-		if (*char_offset == length) {
-			ret = NSERROR_OK;
-		} else {
-			bool success;
-			while ((string[*char_offset] != ' ') &&
-			       (*char_offset > 0)) {
-				(*char_offset)--;
-			}
+	/* get the offset into teh string on the proposed position */
+	res = win32_font_position(style, string, length, x, offset, actual_x);
+	if (res != NSERROR_OK) {
+		return res;
+	}
 
-			if (*char_offset == 0) {
-				*char_offset = c_off;
-				while ((*char_offset < length) &&
-				       (string[*char_offset] != ' ')) {
-					(*char_offset)++;
-				}
-			}
+	/* return the whole string fits in the proposed length */
+	if (*offset == length) {
+		return NSERROR_OK;
+	}
 
-			success = win32_font_width(style,
-						   string,
-						   *char_offset,
-						   actual_x);
-			if (success) {
-				ret = NSERROR_OK;
-			}
+	c_off = *offset;
+
+	/* walk backwards through string looking for space to break on */
+	while ((string[*offset] != ' ') &&
+	       (*offset > 0)) {
+		(*offset)--;
+	}
+
+	/* walk forwards through string looking for space if back failed */
+	if (*offset == 0) {
+		*offset = c_off;
+		while ((*offset < length) &&
+		       (string[*offset] != ' ')) {
+			(*offset)++;
 		}
 	}
 
+	/* find the actual string width of the break */
+	res = win32_font_width(style, string, *offset, actual_x);
 
 	NSLOG(netsurf, DEEPDEBUG,
 	      "ret %d Split %u chars at %ipx: Split at char %i (%ipx) - %.*s",
-	      ret, length, x, *char_offset, *actual_x, *char_offset, string);
+	      res, length, x, *offset, *actual_x, *offset, string);
 
-	return ret;
+	return res;
 }
 
 
