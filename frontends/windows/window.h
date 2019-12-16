@@ -27,7 +27,7 @@ extern struct gui_window_table *win32_window_table;
 struct browser_mouse {
        struct gui_window *gui;
        struct box *box;
-       
+
        double pressed_x;
        double pressed_y;
        bool waiting;
@@ -61,6 +61,8 @@ struct gui_window {
 	struct browser_mouse *mouse; /**< mouse state */
 
 	HACCEL acceltable; /**< accelerators */
+
+	HBITMAP hPageInfo[8]; /**< page info handles */
 
 	int scrollx; /**< current scroll location */
 	int scrolly; /**< current scroll location */
