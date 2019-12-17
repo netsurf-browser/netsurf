@@ -47,9 +47,6 @@ NSOPTION_INTEGER(button_type, 0)
 /* disallow popup windows */
 NSOPTION_BOOL(disable_popups, false)
 
-/* disable content plugins */
-NSOPTION_BOOL(disable_plugins, false)
-
 /* number of days to keep history data */
 NSOPTION_INTEGER(history_age, 0)
 

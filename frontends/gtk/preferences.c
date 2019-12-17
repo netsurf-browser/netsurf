@@ -412,9 +412,6 @@ TOGGLEBUTTON_SIGNALS(checkHideAdverts, block_advertisements)
 /* enable javascript */
 TOGGLEBUTTON_SIGNALS(checkEnableJavascript, enable_javascript)
 
-/* disable plugins */
-TOGGLEBUTTON_SIGNALS(checkDisablePlugins, disable_plugins)
-
 /* high quality image scaling */
 TOGGLEBUTTON_SIGNALS(checkResampleImages, render_resample)
 

@@ -983,26 +983,6 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkCheckButton" id="checkDisablePlugins">
-                                <property name="label" translatable="yes">preferencesControlDisable</property>
-                                <property name="use_action_appearance">False</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">False</property>
-                                <property name="halign">start</property>
-                                <property name="use_action_appearance">False</property>
-                                <property name="xalign">0.5</property>
-                                <property name="draw_indicator">True</property>
-                                <signal name="toggled" handler="nsgtk_preferences_checkDisablePlugins_toggled" swapped="no"/>
-                                <signal name="realize" handler="nsgtk_preferences_checkDisablePlugins_realize" swapped="no"/>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">False</property>
-                                <property name="position">3</property>
-                              </packing>
-                            </child>
-                            <child>
                               <object class="GtkCheckButton" id="checkResampleImages">
                                 <property name="label" translatable="yes">preferencesControlHigh</property>
                                 <property name="use_action_appearance">False</property>
@@ -1019,7 +999,7 @@
                               <packing>
                                 <property name="expand">True</property>
                                 <property name="fill">True</property>
-                                <property name="position">4</property>
+                                <property name="position">3</property>
                               </packing>
                             </child>
                             <child>
@@ -1064,7 +1044,7 @@
                               <packing>
                                 <property name="expand">True</property>
                                 <property name="fill">True</property>
-                                <property name="position">5</property>
+                                <property name="position">4</property>
                               </packing>
                             </child>
                           </object>
