@@ -284,6 +284,15 @@ convert_script_sync_cb(hlcache_handle *script,
 	struct html_script *s;
 	script_handler_t *script_handler;
 	dom_hubbub_error err;
+	unsigned int active_sync_scripts = 0;
+
+	/* Count sync scripts which have yet to complete (other than us) */
+	for (i = 0, s = parent->scripts; i != parent->scripts_count; i++, s++) {
+		if (s->type == HTML_SCRIPT_SYNC &&
+		    s->data.handle != script && s->already_started == false) {
+			active_sync_scripts++;
+		}
+	}
 
 	/* Find script */
 	for (i = 0, s = parent->scripts; i != parent->scripts_count; i++, s++) {
@@ -314,7 +323,7 @@ convert_script_sync_cb(hlcache_handle *script,
 		}
 
 		/* continue parse */
-		if (parent->parser != NULL) {
+		if (parent->parser != NULL && active_sync_scripts == 0) {
 			err = dom_hubbub_parser_pause(parent->parser, false);
 			if (err != DOM_HUBBUB_OK) {
 				NSLOG(netsurf, INFO, "unpause returned 0x%x", err);
@@ -338,7 +347,7 @@ convert_script_sync_cb(hlcache_handle *script,
 		s->already_started = true;
 
 		/* continue parse */
-		if (parent->parser != NULL) {
+		if (parent->parser != NULL && active_sync_scripts == 0) {
 			err = dom_hubbub_parser_pause(parent->parser, false);
 			if (err != DOM_HUBBUB_OK) {
 				NSLOG(netsurf, INFO, "unpause returned 0x%x", err);
