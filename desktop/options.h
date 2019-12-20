@@ -16,7 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Option available on all platforms
  *
  * Non-platform specific options can be added by editing this file 
@@ -27,8 +28,8 @@
  *   with different macro definitions so there is no guard
  */
 
-#ifndef _NETSURF_DESKTOP_OPTIONS_H_
-#define _NETSURF_DESKTOP_OPTIONS_H_
+#ifndef NETSURF_DESKTOP_OPTIONS_H_
+#define NETSURF_DESKTOP_OPTIONS_H_
 
 #include "netsurf/types.h"
 
@@ -166,12 +167,6 @@ NSOPTION_INTEGER(window_width, 0)
 
 /** default height of new windows */
 NSOPTION_INTEGER(window_height, 0)
-
-/** width of screen when above options were saved */
-NSOPTION_INTEGER(window_screen_width, 0)
-
-/** height of screen when above options were saved */
-NSOPTION_INTEGER(window_screen_height, 0)
 
 /** default size of status bar vs. h scroll bar */
 NSOPTION_INTEGER(toolbar_status_size, 6667)

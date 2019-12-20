@@ -16,12 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * RISC OS specific options.
+/**
+ * \file
+ * Option specific to RISC OS
+ *
+ * Platform specific options for RISC OS can be added by editing this file
+ *
+ * Global optionsshould be added in the desktop options.h.
+ *
+ * This header is specificaly intented to be included multiple times
+ *   with different macro definitions so there is no guard
  */
 
-#ifndef _NETSURF_RISCOS_OPTIONS_H_
-#define _NETSURF_RISCOS_OPTIONS_H_
+#ifndef NETSURF_RISCOS_OPTIONS_H_
+#define NETSURF_RISCOS_OPTIONS_H_
 
 #include "riscos/tinct.h"
 
@@ -66,3 +74,13 @@ NSOPTION_BOOL(thumbnail_iconise, true)
 NSOPTION_BOOL(interactive_help, true)
 NSOPTION_BOOL(external_hotlists, false)
 NSOPTION_STRING(external_hotlist_app, NULL)
+
+/**
+ * width of screen when window_width option was saved
+ */
+NSOPTION_INTEGER(window_screen_width, 0)
+
+/**
+ * height of screen when window_heigh option was saved
+ */
+NSOPTION_INTEGER(window_screen_height, 0)
