@@ -23,9 +23,6 @@
 
 #endif
 
-/* High quality image scaling */
-NSOPTION_BOOL(render_resample, true)
-
 /* clear downloads */
 NSOPTION_BOOL(downloads_clear, false)
 

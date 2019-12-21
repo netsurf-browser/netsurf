@@ -412,9 +412,6 @@ TOGGLEBUTTON_SIGNALS(checkHideAdverts, block_advertisements)
 /* enable javascript */
 TOGGLEBUTTON_SIGNALS(checkEnableJavascript, enable_javascript)
 
-/* high quality image scaling */
-TOGGLEBUTTON_SIGNALS(checkResampleImages, render_resample)
-
 /* load and display of images */
 G_MODULE_EXPORT void
 nsgtk_preferences_comboboxLoadImages_changed(GtkComboBox *combo,

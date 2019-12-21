@@ -99,7 +99,6 @@ sys_colour_ThreeDShadow:000000
 sys_colour_Window:000000
 sys_colour_WindowFrame:000000
 sys_colour_WindowText:000000
-render_resample:1
 downloads_clear:0
 request_overwrite:1
 downloads_directory:/home/vince

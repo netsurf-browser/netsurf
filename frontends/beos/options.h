@@ -18,13 +18,12 @@
  */
 
 
-#ifndef _NETSURF_BEOS_OPTIONS_H_
-#define _NETSURF_BEOS_OPTIONS_H_
+#ifndef NETSURF_BEOS_OPTIONS_H_
+#define NETSURF_BEOS_OPTIONS_H_
 
 /* currently nothing here */
 
 #endif
 
-NSOPTION_BOOL(render_resample, false)
 NSOPTION_STRING(url_file, NULL)
 
