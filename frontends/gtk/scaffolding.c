@@ -18,6 +18,7 @@
 
 #include <gtk/gtk.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "utils/utils.h"
 #include "utils/log.h"

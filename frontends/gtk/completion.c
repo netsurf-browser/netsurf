@@ -21,6 +21,8 @@
  * Implementation of url entry completion.
  */
 
+#include <stdlib.h>
+
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
