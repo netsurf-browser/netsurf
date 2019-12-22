@@ -335,12 +335,16 @@ void ro_gui_dialog_close(wimp_w close)
 {
 	int i;
 	wimp_caret caret;
+	wimp_w parent = -1;
 	os_error *error;
 
 	/* Check if we're a persistent window */
 	for (i = 0; i < MAX_PERSISTENT; i++) {
 		if (persistent_dialog[i].dialog == close) {
 			/* We are => invalidate record */
+			if (persistent_dialog[i].parent != NULL) {
+				parent = persistent_dialog[i].parent;
+			}
 			persistent_dialog[i].parent = NULL;
 			persistent_dialog[i].dialog = NULL;
 			break;
@@ -363,7 +367,7 @@ void ro_gui_dialog_close(wimp_w close)
 		/* Check if we are a persistent window */
 		if (i < MAX_PERSISTENT) {
 			error = xwimp_set_caret_position(
-					persistent_dialog[i].parent,
+					parent,
 					wimp_ICON_WINDOW, -100, -100,
 					32, -1);
 			/* parent may have been closed first */
