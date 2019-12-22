@@ -21,6 +21,8 @@
  * Processing for html content css operations.
  */
 
+#include "utils/config.h"
+
 #define _GNU_SOURCE /* strcasestr needs this for string.h */
 
 #include <assert.h>
@@ -30,7 +32,6 @@
 #include <strings.h>
 #include <stdlib.h>
 
-#include "utils/config.h"
 #include "utils/nsoption.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"

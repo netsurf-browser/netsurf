@@ -22,11 +22,11 @@
  * Treeview handling implementation.
  */
 
-#define _GNU_SOURCE /* strcasestr needs this for string.h */
+#include "utils/config.h"
 
+#define _GNU_SOURCE /* strcasestr needs this for string.h */
 #include <string.h>
 
-#include "utils/config.h"
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/nsurl.h"
