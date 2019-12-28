@@ -1242,7 +1242,7 @@ static void layout_minmax_block(
  */
 static void layout_handle_box_sizing(
 		const css_unit_ctx *unit_len_ctx,
-		struct box *box,
+		const struct box *box,
 		int available_width,
 		bool setwidth,
 		int *dimension)
