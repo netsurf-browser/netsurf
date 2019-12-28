@@ -1293,7 +1293,7 @@ static void
 layout_find_dimensions(const css_unit_ctx *unit_len_ctx,
 		       int available_width,
 		       int viewport_height,
-		       struct box *box,
+		       const struct box *box,
 		       const css_computed_style *style,
 		       int *width,
 		       int *height,
