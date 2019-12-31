@@ -115,7 +115,11 @@ class MonkeyFarmer(asyncore.dispatcher):
         self.buffer += cmd.encode('utf-8')
 
     def monkey_says(self, line):
-        line = line.decode('utf-8')
+        try:
+            line = line.decode('utf-8')
+        except UnicodeDecodeError:
+            print("WARNING: Unicode decode error")
+            line = line.decode('utf-8', 'replace')
         if not self.quiet:
             print("<<< {}".format(line))
         self.discussion.append(("<", line))
