@@ -24,6 +24,20 @@ MONKEY_PATH = "./nsmonkey"
 
 mp.set_start_method('fork')
 
+def decode_trace(s):
+    import re
+    from subprocess import getoutput
+    addr_re = re.compile(r"./nsmonkey\(\+(0x[0-9a-f]+)\)")
+    def decode_line(l):
+        caps = addr_re.findall(l);
+        if caps:
+            return getoutput(
+                "addar2line -e {} {} 2>/dev/null || echo './nsmonkey(+{})'".format(
+                    MONKEY_PATH, caps[0], caps[0]))
+        else:
+            return l
+    return "\n".join(decode_line(l) for l in s.split("\n"))
+
 def child_run_test(verbose, parts):
     outcapture = StringIO()
     errcapture = StringIO()
@@ -38,7 +52,7 @@ def child_run_test(verbose, parts):
         sys.stderr = olderr
         print("FAIL:")
         print("STDOUT:\n{}\n".format(outcapture.getvalue()))
-        print("STDERR:\n{}\n".format(errcapture.getvalue()))
+        print("STDERR:\n{}\n".format(decode_trace(errcapture.getvalue())))
         print("RERAISE:")
         raise
     else:
