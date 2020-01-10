@@ -316,6 +316,29 @@ static void monkey_run(void)
 	}
 }
 
+#ifndef NDEBUG
+#include <execinfo.h>
+static void *backtrace_buffer[4096];
+
+void
+__assert_fail(const char *__assertion, const char *__file,
+	      unsigned int __line, const char *__function)
+{
+	int frames;
+	fprintf(stderr, "MONKEY: Assertion failure!\n%s:%d: %s: Assertion `%s` failed.\n",
+		__file, __line, __function, __assertion);
+
+	frames = backtrace(&backtrace_buffer[0], 4096);
+	if (frames > 0 && frames < 4096) {
+		fprintf(stderr, "Backtrace:\n");
+		fflush(stderr);
+		backtrace_symbols_fd(&backtrace_buffer[0], frames, 2);
+	}
+
+        abort();
+}
+#endif
+
 int
 main(int argc, char **argv)
 {
