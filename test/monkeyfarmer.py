@@ -32,6 +32,44 @@ import socket
 import subprocess
 import time
 import errno
+import sys
+
+class StderrEcho(asyncore.dispatcher):
+    def __init__(self, sockend):
+        asyncore.dispatcher.__init__(self, sock=sockend)
+        self.incoming = b""
+
+    def handle_connect(self):
+        pass
+
+    def handle_close(self):
+        # the pipe to the monkey process has closed
+        self.close()
+
+    def handle_read(self):
+        try:
+            got = self.recv(8192)
+            if not got:
+                return
+        except socket.error as error:
+            if error.errno == errno.EAGAIN or error.errno == errno.EWOULDBLOCK:
+                return
+            else:
+                raise
+
+        self.incoming += got
+        if b"\n" in self.incoming:
+            lines = self.incoming.split(b"\n")
+            self.incoming = lines.pop()
+            for line in lines:
+                try:
+                    line = line.decode('utf-8')
+                except UnicodeDecodeError:
+                    print("WARNING: Unicode decode error")
+                    line = line.decode('utf-8', 'replace')
+
+                sys.stderr.write("{}\n".format(line))
+
 
 class MonkeyFarmer(asyncore.dispatcher):
 
@@ -42,6 +80,10 @@ class MonkeyFarmer(asyncore.dispatcher):
 
         asyncore.dispatcher.__init__(self, sock=mine)
 
+        (mine2, monkeyserr) = socket.socketpair()
+
+        self._errwrapper = StderrEcho(mine2)
+
         if wrapper is not None:
             new_cmd = list(wrapper)
             new_cmd.extend(monkey_cmd)
@@ -51,9 +93,11 @@ class MonkeyFarmer(asyncore.dispatcher):
             monkey_cmd,
             stdin=monkeys,
             stdout=monkeys,
-            close_fds=[mine])
+            stderr=monkeyserr,
+            close_fds=[mine, mine2])
 
         monkeys.close()
+        monkeyserr.close()
 
         self.buffer = b""
         self.incoming = b""
