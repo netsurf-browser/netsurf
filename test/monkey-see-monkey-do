@@ -32,7 +32,7 @@ def decode_trace(s):
         caps = addr_re.findall(l);
         if caps:
             return getoutput(
-                "addar2line -e {} {} 2>/dev/null || echo './nsmonkey(+{})'".format(
+                "addr2line -e {} {} 2>/dev/null || echo './nsmonkey(+{})'".format(
                     MONKEY_PATH, caps[0], caps[0]))
         else:
             return l
