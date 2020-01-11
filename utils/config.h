@@ -151,6 +151,12 @@ char *realpath(const char *path, char *resolved_path);
 #undef HAVE_REGEX
 #endif
 
+/* execinfo available for backtrace */
+#if ((defined(__linux__) && defined(__GLIBC__) && !defined(__UCLIBC__)) || \
+     defined(__APPLE__))
+#define HAVE_EXECINFO
+#endif
+
 /* This section toggles build options on and off.
  * Simply undefine a symbol to turn the relevant feature off.
  *
