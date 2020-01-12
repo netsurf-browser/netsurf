@@ -24,19 +24,27 @@ MONKEY_PATH = "./nsmonkey"
 
 mp.set_start_method('fork')
 
+def decode_trace_line(l):
+    from re import findall, match
+    from subprocess import getstatusoutput
+
+    caps = findall(r'./nsmonkey\(\+(0x[0-9a-f]+)\)', l);
+    if not caps:
+        return l
+
+    exitcode, output = getstatusoutput(
+        "addr2line -e {} -a -p -f -C {} 2>/dev/null".format(
+            MONKEY_PATH, caps[0]))
+    if exitcode != 0:
+        return './nsmonkey(+{})'.format(caps[0])
+
+    m = match(r'0x(.+): (.+) at (.+):(.+)', output)
+
+    return '{}:{}({})[0x{}]'.format(
+        m.group(3), m.group(4), m.group(2), m.group(1))
+
 def decode_trace(s):
-    import re
-    from subprocess import getoutput
-    addr_re = re.compile(r"./nsmonkey\(\+(0x[0-9a-f]+)\)")
-    def decode_line(l):
-        caps = addr_re.findall(l);
-        if caps:
-            return getoutput(
-                "addr2line -e {} {} 2>/dev/null || echo './nsmonkey(+{})'".format(
-                    MONKEY_PATH, caps[0], caps[0]))
-        else:
-            return l
-    return "\n".join(decode_line(l) for l in s.split("\n"))
+    return "\n".join(decode_trace_line(l) for l in s.split("\n"))
 
 def child_run_test(verbose, parts):
     outcapture = StringIO()
