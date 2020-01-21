@@ -38,10 +38,10 @@
 #
 en.all.NetSurf:NetSurf
 
-en.all.NetSurfCopyright:© 2003-2019 The NetSurf Developers
-de.all.NetSurfCopyright:© 2003-2019 die NetSurf Entwickler
-nl.all.NetSurfCopyright:© 2003-2019 De NetSurf-ontwikkelaars
-it.all.NetSurfCopyright:© 2003-2019 A cura degli sviluppatori di NetSurf
+en.all.NetSurfCopyright:© 2003-2020 The NetSurf Developers
+de.all.NetSurfCopyright:© 2003-2020 die NetSurf Entwickler
+nl.all.NetSurfCopyright:© 2003-2020 De NetSurf-ontwikkelaars
+it.all.NetSurfCopyright:© 2003-2020 A cura degli sviluppatori di NetSurf
 
 
 # General
@@ -62,7 +62,7 @@ nl.all.No:Nee
 en.all.Replace:Replace file
 de.all.Replace:Überschreiben
 fr.all.Replace:Remplacer le fichier
-it.all.Replace:Sostituire il file
+it.all.Replace:Sostituisci il file
 nl.all.Replace:Vervang bestand
 en.all.DontReplace:Don't replace
 de.all.DontReplace:Abbrechen
@@ -174,22 +174,29 @@ fr.all.Form_Many:(Plusieurs)
 it.all.Form_Many:(Molti)
 nl.all.Form_Many:(Veel)
 en.all.Form_Drop:Drop file here
+it.all.Form_Drop:Sposta il file qui
 en.gtk.Form_Drop:Click to select file
 fr.gtk.Form_Drop:Cliquer pour sélectionner fichier
+it.gtk.Form_Drop:Clicca per selezionare il file
 nl.gtk.Form_Drop:Klik om bestand te selecteren
 en.ro.Form_Drop:Drop file here
 fr.ro.Form_Drop:Déposer fichier ici
+it.ro.Form_Drop:Sposta il file qui
 en.ami.Form_Drop:Click or drop file here
 fr.ami.Form_Drop:Cliquer ou déposer fichier ici]
+it.ami.Form_Drop:Clicca o sposta il file qui
 nl.ami.Form_Drop:Sleep bestand hierheen
 en.beos.Form_Drop:Drop file here
 fr.beos.Form_Drop:Drop file here
+it.beos.Form_Drop:Sposta il file qui
 nl.beos.Form_Drop:Sleep bestand hierheen
 en.fb.Form_Drop:Click to select file
 fr.fb.Form_Drop:Cliquer pour sélectionner fichier
+it.fb.Form_Drop:Clicca per selezionare il file
 nl.fb.Form_Drop:Klik om bestand te selecteren
 en.osx.Form_Drop:Click to select file
 fr.osx.Form_Drop:Cliquer pour sélectionner fichier
+it.osx.Form_Drop:Clicca per selezionare il file
 de.all.Form_Drop:Datei hier hinziehen
 fr.all.Form_Drop:Déposer les fichiers ici
 it.all.Form_Drop:Inserisci un file qui
@@ -197,7 +204,7 @@ nl.all.Form_Drop:Bestand hier plaatsen
 en.all.FormSelect:Click to choose a form item
 de.all.FormSelect:Anklicken öffnet Auswahlmenü
 fr.all.FormSelect:Cliquer pour choisir un item de formulaire
-it.all.FormSelect:Clicca per scegliere un oggetto del modulo
+it.all.FormSelect:Clicca per scegliere un oggetto del form
 nl.all.FormSelect:Klikken selecteert een formulieritem
 en.all.FormCheckbox:Click to check this option
 de.all.FormCheckbox:Anklicken um die Option an/abzuschalten
@@ -212,12 +219,12 @@ nl.all.FormRadio:Klikken kiest deze optie
 en.all.FormSubmit:Send form to %s
 de.all.FormSubmit:Daten übertragen an %s
 fr.all.FormSubmit:Envoyer le formulaire à %s
-it.all.FormSubmit:Invia il risultato del modulo a: %s
+it.all.FormSubmit:Invia il risultato del form a: %s
 nl.all.FormSubmit:Informatie versturen naar %s
 en.all.FormBadSubmit:Warning: form can not be submitted
 de.all.FormBadSubmit:Achtung: Daten können nicht gesendet werden
 fr.all.FormBadSubmit:Alerte : le formulaire n'a pas pu être envoyé
-it.all.FormBadSubmit:Attenzione: Il modulo non può essere inviato
+it.all.FormBadSubmit:Attenzione: Il form non può essere inviato
 nl.all.FormBadSubmit:Waarschuwing: informatie kan niet verzonden worden
 en.all.FormButton:Warning: button can not be activated
 de.all.FormButton:Achtung: Schaltknopf kann nicht aktiviert werden
@@ -237,7 +244,7 @@ nl.all.FormTextbox:Klikken om dit veld te bewerken
 en.all.FormReset:Reset form (not implemented)
 de.all.FormReset:Zurücksetzen (nicht implementiert)
 fr.all.FormReset:Effacer le formulaire (non implémenté)
-it.all.FormReset:Resetta il modulo
+it.all.FormReset:Resetta il form
 nl.all.FormReset:Formulier opnieuw instellen (niet geïmplemented)
 en.all.FormFile:Drop a file here to upload it
 de.all.FormFile:Zum Upload Datei hierhin ziehen und fallenlassen
@@ -460,6 +467,7 @@ fr.all.DirectoryError:répertoire '%s' existe déjà
 it.all.DirectoryError:La directory '%s' è già esistente
 nl.all.DirectoryError:map '%s' bestaat reeds
 en.all.Timeout:This site took too long to respond
+it.all.Timeout:Questo sito sta impiegando troppo a rispondere
 
 # error messages for RISC OS
 #
@@ -530,6 +538,7 @@ it.ro.PrintErrorRO2:La stampante sembra essere occupata.
 nl.ro.PrintErrorRO2:De printer lijkt al bezig te zijn.
 en.ro.SprIsNull:Unable to convert image to sprite
 de.ro.SprIsNull:Bild nicht in Sprite konvertierbar
+it.ro.SprIsNull:Impossibile convertire l'immagine in sprite.
 nl.ro.SprIsNull:Afbeelding kan niet worden omgezet in een sprite.
 
 # Error messages for Amiga
@@ -542,12 +551,12 @@ nl.ami.CompError:Niet te openen
 en.ami.BMConvErr:NetSurf requires guigfx.library to display images in this mode
 de.ami.BMConvErr:NetSurf benötigt die guigfx.library für Bilder in diesem Mode
 fr.ami.BMConvErr:NetSurf requires guigfx.library to display images in this mode
-it.ami.BMConvErr:NetSurf richiede guigfx.library per la visualizzazione delle immagini in questa modalità
+it.ami.BMConvErr:NetSurf richiede la guigfx.library per visualizzare le immagini in questa modalità
 nl.ami.BMConvErr:NetSurf requires guigfx.library to display images in this mode
 en.ami.MultiTabClose:Are you sure you want to close multiple tabs?
 de.ami.MultiTabClose:Wirklich mehrere Tabs schließen?
 fr.ami.MultiTabClose:Are you sure you want to close multiple tabs?
-it.ami.MultiTabClose:Sono rimaste aperte più schede, sei sicuro di voler uscire da NetSurf?
+it.ami.MultiTabClose:Sono rimaste aperte più schede, sei sicuro di voler chiudere NetSurf?
 nl.ami.MultiTabClose:Er zijn meerdere tabbladen geopend. Tabbladen allemaal sluiten?
 en.ami.TCPIPShutdown:The TCP/IP stack has signalled that it is about to shutdown and NetSurf must exit.  NetSurf will quit in 5 seconds unless this shutdown is aborted.
 de.ami.TCPIPShutdown:Der TCP/IP Stack geht grad' zur Hölle und reißt Netsurf mit sich. In genau 5 Sekunden - es sei denn, der Shutdown wird abgebrochen.
@@ -824,7 +833,7 @@ nl.all.HTTP401:Niet geautoriseerd
 en.all.HTTP402:Payment required
 de.all.HTTP402:Payment required
 fr.all.HTTP402:Paiment nécessaire
-it.all.HTTP402:Richiesto di pagamento
+it.all.HTTP402:Richiesta di pagamento
 nl.all.HTTP402:Betalende toegang
 en.all.HTTP403:Forbidden
 de.all.HTTP403:Forbidden
@@ -1018,10 +1027,13 @@ nl.all.CaseSens:Hoofdlettergevoelig
 # (authentication) dialog box.
 #
 en.all.LoginTitle:Authentication Requested
+it.all.LoginTitle:Richiesta di Autentificazione
 fr.all.LoginTitle:Authentification demandée
 en.all.LoginDescription:The site %s with realm "%s" is requesting credentials for access.
+it.all.LoginDescription:Il sito %s con elementi di tipo realm "%s" richiede delle credenziali per l'accesso.
 fr.all.LoginDescription:Le site %s avec le royaume "%s" demande des informations d'identification pour l'accès.
 en.all.LoginAgain:The credentials for the site %s and realm "%s" were rejected.
+it.all.LoginAgain:Le credenziali per il sito %s ed il realm "%s" sono state rifiutate.
 fr.all.LoginAgain:Les identifiants pour le site %s et le royaume "%s" ont été rejetés.
 en.all.Host:Host
 de.all.Host:Host
@@ -1031,7 +1043,7 @@ nl.all.Host:Server
 en.all.Realm:Realm
 de.all.Realm:Realm
 fr.all.Realm:Domaine
-it.all.Realm:Tipo
+it.all.Realm:Realm
 nl.all.Realm:Gebied
 en.all.Username:Username
 de.all.Username:Benutzername
@@ -1061,47 +1073,65 @@ nl.all.Cancel:Annuleer
 en.all.PrivacyTitle:Privacy error
 de.all.PrivacyTitle:Datenschutzfehler
 fr.all.PrivacyTitle:Erreur de confidentialité
-it.all.PrivacyTitle:Errore di privacy
+it.all.PrivacyTitle:Errore della privacy
 nl.all.PrivacyTitle:Privacyfout
 en.all.PrivacyDescription:A privacy error occurred while communicating with %s this may be a site configuration error or an attempt to steal private information (passwords, messages or credit cards)
+it.all.PrivacyDescription:Si è verificato un errore della privacy durante la comunicazione con %s fai attenzione, questo potrebbe essere un errore di configurazione del sito oppure un tentativo di rubare informazioni private (password, messaggi o numeri di carte di credito)
 en.all.Proceed:Proceed
 de.all.Proceed:Vorgehen
 fr.all.Proceed:Procéder
-it.all.Proceed:Procedere
+it.all.Proceed:Procedi
 nl.all.Proceed:Doorgaan
 en.all.Backtosafety:Back to safety
 de.all.Backtosafety:Zurück zur Sicherheit
 fr.all.Backtosafety:Retour a la sécurité
-it.all.Backtosafety:Ritorno alla sicurezza
+it.all.Backtosafety:Torna al modo sicuro
 nl.all.Backtosafety:Terug naar veiligheid
 
 en.all.SSLCertErrOk:The certificate has no errors.
+it.all.SSLCertErrOk:Il certificato non contiene errori.
 en.all.SSLCertErrUnknown:An unknown error occoured while processing the certificate.
+it.all.SSLCertErrUnknown:Si è verificato un problema sconosciuto durante l'elaborazione del certificato.
 en.all.SSLCertErrBadIssuer:The issuer of this certificate is not known. This may occour if the browser cannot access the certificate authority (CA) bundle.
+it.all.SSLCertErrBadIssuer:L'emittente di questo certificato è sconosciuto. Questo può verificarsi se il browser non è in grado di accedere al pacchetto dell'autorità di certificazione (CA).
 en.all.SSLCertErrBadSig:The certificate is improperly signed.
+it.all.SSLCertErrBadSig:Il certificato non è stato firmato correttamente.
 en.all.SSLCertErrTooYoung:The certificate is not yet valid.
+it.all.SSLCertErrTooYoung:Il certificato non è ancora valido.
 en.all.SSLCertErrTooOld:The certificate has expired.
+it.all.SSLCertErrTooOld:Il certificato è scaduto.
 en.all.SSLCertErrSelfSigned:The certificate is self signed.
+it.all.SSLCertErrSelfSigned:Il certificato è autofirmato.
 en.all.SSLCertErrChainSelfSigned:The certificate chain is self signed.
+it.all.SSLCertErrChainSelfSigned:La catena dei certificati è autofirmata.
 en.all.SSLCertErrRevoked:The certificate has been revoked by the issuer.
-en.all.SSLCertErrHostnameMismatch:The certificate is for a different host than the server
+it.all.SSLCertErrRevoked:Il certificato è stato revocato dall'emittente.
+en.all.SSLCertErrHostnameMismatch:The certificate is for a different host than the server.
+it.all.SSLCertErrHostnameMismatch:Il certificato è per un host diverso rispetto al server.
 en.all.SSLCertErrCertMissing:The certificate was missing from the chain.
+it.all.SSLCertErrCertMissing:Il certificato mancava dalla catena.
 
 
 # Timeout error interface
 # =======================
 #
 en.all.TimeoutTitle:Connection timed out
+it.all.TimeoutTitle:Connessione scaduta
 en.all.TimeoutDescription: A connection to %s could not be established. The site may be temporarily unavailable or too busy to respond.
+it.all.TimeoutDescription: La connessione a %s non può essere stabilita. Il sito potrebbe essere temporaneamente indisponibile o troppo occupato per rispondere.
 en.all.Backtoprevious:Back
+it.all.Backtoprevious:Indietro
 en.all.TryAgain:Try Again
+it.all.TryAgain:Ricarica
 
 
 # Fetch error interface
 # =======================
 #
 en.all.FetchErrorTitle:Error occurred fetching page
+it.all.FetchErrorTitle:Errore durante il recupero della pagina
 en.all.FetchErrorDescription:An error occurred when connecting to %s
+it.all.FetchErrorDescription:Si è verificato un errore durante la connessione a %s
 
 
 # SSL certificate viewer
@@ -1158,12 +1188,12 @@ nl.all.SSL_Certificate_Serial:Serienr.: %ld
 en.all.SSL_Certificate_Accept:Accept
 de.all.SSL_Certificate_Accept:Accept
 fr.all.SSL_Certificate_Accept:Accepter
-it.all.SSL_Certificate_Accept:Accetta
+it.all.SSL_Certificate_Accept:_Accetta
 nl.all.SSL_Certificate_Accept:Accepteer
 en.all.SSL_Certificate_Reject:Reject
 de.all.SSL_Certificate_Reject:Reject
 fr.all.SSL_Certificate_Reject:Rejeter
-it.all.SSL_Certificate_Reject:Rifiuta
+it.all.SSL_Certificate_Reject:_Rifiuta
 nl.all.SSL_Certificate_Reject:Weiger
 
 
@@ -1355,78 +1385,78 @@ nl.ami.TreeEdit:Wijzig titel
 en.all.TreeviewLabelTitle:Title
 de.all.TreeviewLabelTitle:Title
 fr.all.TreeviewLabelTitle:Titre
-it.all.TreeviewLabelTitle:Titolo
+it.all.TreeviewLabelTitle:Titolo:
 nl.all.TreeviewLabelTitle:Titel:
 en.all.TreeviewLabelURL:URL
 de.all.TreeviewLabelURL:URL
 fr.all.TreeviewLabelURL:URL
-it.all.TreeviewLabelURL:URL
+it.all.TreeviewLabelURL:URL:
 nl.all.TreeviewLabelURL:Adres:
 en.all.TreeviewLabelLastVisit:Last visit
 de.all.TreeviewLabelLastVisit:Last visit
 fr.all.TreeviewLabelLastVisit:Dernière visite
-it.all.TreeviewLabelLastVisit:Ultima visita
+it.all.TreeviewLabelLastVisit:Ultima visita:
 nl.all.TreeviewLabelLastVisit:Laatste bezoek:
 en.all.TreeviewLabelVisits:Visits
 de.all.TreeviewLabelVisits:Visits
 fr.all.TreeviewLabelVisits:Visites
-it.all.TreeviewLabelVisits:Visite
+it.all.TreeviewLabelVisits:Visite:
 nl.all.TreeviewLabelVisits:Bezocht:
 en.all.TreeviewLabelPeriod:Period
 de.all.TreeviewLabelPeriod:Period
 fr.all.TreeviewLabelPeriod:Période
-it.all.TreeviewLabelPeriod:Periodo
+it.all.TreeviewLabelPeriod:Periodo:
 nl.all.TreeviewLabelPeriod:Periode:
 
 en.all.TreeviewLabelName:Name
 de.all.TreeviewLabelName:Name
 fr.all.TreeviewLabelName:Nom
-it.all.TreeviewLabelName:Nome
+it.all.TreeviewLabelName:Nome:
 nl.all.TreeviewLabelName:Naam:
 en.all.TreeviewLabelContent:Content
 de.all.TreeviewLabelContent:Content
 fr.all.TreeviewLabelContent:Contenu
-it.all.TreeviewLabelContent:Contenuto
+it.all.TreeviewLabelContent:Contenuto:
 nl.all.TreeviewLabelContent:Inhoud:
 en.all.TreeviewLabelDomain:Domain
 de.all.TreeviewLabelDomain:Domain
 fr.all.TreeviewLabelDomain:Domaine
-it.all.TreeviewLabelDomain:Dominio
+it.all.TreeviewLabelDomain:Dominio:
 nl.all.TreeviewLabelDomain:Domein:
 en.all.TreeviewLabelPath:Path
 de.all.TreeviewLabelPath:Path
 fr.all.TreeviewLabelPath:Chemin
-it.all.TreeviewLabelPath:Percorso
+it.all.TreeviewLabelPath:Percorso:
 nl.all.TreeviewLabelPath:Pad:
 en.all.TreeviewLabelExpires:Expires
 de.all.TreeviewLabelExpires:Expires
 fr.all.TreeviewLabelExpires:Expire
-it.all.TreeviewLabelExpires:Scadenza
+it.all.TreeviewLabelExpires:Scadenza:
 nl.all.TreeviewLabelExpires:Verloopt:
 en.all.TreeviewLabelLastUsed:Last used
 de.all.TreeviewLabelLastUsed:Last used
 fr.all.TreeviewLabelLastUsed:Les dernières utilisées
-it.all.TreeviewLabelLastUsed:Ultimo utilizzo
+it.all.TreeviewLabelLastUsed:Ultimo utilizzo:
 nl.all.TreeviewLabelLastUsed:Laatst gebruikt:
 en.all.TreeviewLabelRestrictions:Restrictions
 de.all.TreeviewLabelRestrictions:Restrictions
 fr.all.TreeviewLabelRestrictions:Restrictions
-it.all.TreeviewLabelRestrictions:Restrizioni
+it.all.TreeviewLabelRestrictions:Restrizioni:
 nl.all.TreeviewLabelRestrictions:Beperkingen:
 en.all.TreeviewLabelVersion:Version
 de.all.TreeviewLabelVersion:Version
 fr.all.TreeviewLabelVersion:Version
-it.all.TreeviewLabelVersion:Versione
+it.all.TreeviewLabelVersion:Versione:
 nl.all.TreeviewLabelVersion:Versie:
 en.all.TreeviewLabelPersistent:Persistent
 de.all.TreeviewLabelPersistent:Persistent
 fr.all.TreeviewLabelPersistent:Persistant
-it.all.TreeviewLabelPersistent:Persistenza
+it.all.TreeviewLabelPersistent:Persistenza:
 nl.all.TreeviewLabelPersistent:Permanent:
 en.all.TreeviewLabelDomainFolder:Domain folder
 de.all.TreeviewLabelDomainFolder:Domain folder
 fr.all.TreeviewLabelDomainFolder:Dossier de domaine
-it.all.TreeviewLabelDomainFolder:Cartella dominio
+it.all.TreeviewLabelDomainFolder:Cartella dominio:
 nl.all.TreeviewLabelDomainFolder:Domeinmap:
 
 en.all.TreeviewLabelSerial:Serial
@@ -1715,6 +1745,7 @@ nl.all.Saturday:Zaterdag
 en.all.Info:Info
 de.all.Info:Information
 fr.all.Info:Information
+it.all.Info:Informazioni
 nl.all.Info:Informatie
 en.ro.AppHelpNoShortcut:Help...
 de.ro.AppHelpNoShortcut:Hilfe...
@@ -1780,7 +1811,7 @@ nl.all.Navigate:Navigeer
 en.all.View:Display
 de.all.View:Anzeige
 fr.all.View:Affichage
-it.all.View:Display
+it.all.View:Mostra
 nl.all.View:Weergave
 en.all.Utilities:Utilities
 de.all.Utilities:Werkzeuge
@@ -1797,6 +1828,7 @@ nl.all.Help:Hulp
 #
 en.ro.PageInfo:Info  ^F1
 fr.ro.PageInfo:Information  ^F1
+it.ro.PageInfo:Informazioni  ^F1
 nl.ro.PageInfo:Informatie  ^F1
 en.ro.Save:Save  F3
 de.ro.Save:Speichern  F3
@@ -1829,6 +1861,7 @@ fr.ro.NewWindow:Nouvelle fenêtre  ^N
 it.ro.NewWindow:Nuova finestra  ^N
 nl.ro.NewWindow:Nieuw venster  ^N
 en.beos.NewWindowNSAccel:N
+it.beos.NewWindowNSAccel:N
 en.ro.ViewSrc:View source...  F8
 de.ro.ViewSrc:Quellcode...  F8
 fr.ro.ViewSrc:Voir le source...  F8
@@ -1840,15 +1873,18 @@ fr.beos.ViewSrc:Voir le source...
 it.beos.ViewSrc:Mostra sorgente...
 nl.beos.ViewSrc:Toon HTML...
 en.beos.ViewSrcAccel:U
+it.beos.ViewSrcAccel:U
 
 # Main -> Page -> Export menu
 #
 en.ro.Draw:Draw  ⇑^F3
 fr.ro.Draw:Dessiner  ⇑^F3
+it.ro.Draw:Draw  �^F3
 nl.ro.Draw:Draw-bestand  ⇑^F3
 
 en.all.PDF:PDF
 fr.all.PDF:PDF
+it.all.PDF:PDF
 nl.all.PDF:PDF
 
 en.ro.Text:Text  ^F3
@@ -1860,10 +1896,12 @@ nl.ro.Text:Tekstbestand  ^F3
 #
 en.ro.URI:Acorn URI
 fr.ro.URI:Acorn URI
+it.ro.URI:Acorn URI
 nl.ro.URI:Acorn-URI
 
 en.ro.URL:ANT URL
 fr.ro.URL:ANT URL
+it.ro.URL:ANT URL
 nl.ro.URL:ANT-URL
 
 en.all.LinkText:Text
@@ -1875,6 +1913,7 @@ nl.all.LinkText:Tekstbestand
 #
 en.all.ObjInfo:Info
 fr.all.ObjInfo:Information
+fr.all.ObjInfo:Informazioni
 nl.all.ObjInfo:Informatie
 en.all.ObjSave:Save
 de.all.ObjSave:Speichern
@@ -1895,9 +1934,11 @@ nl.all.ObjReload:Herlaad
 # Main -> Object -> Object -> Export menu
 #
 en.all.Sprite:Sprite
+it.all.Sprite:Sprite
 nl.all.Sprite:Sprite-bestand
 
 en.all.ObjDraw:Draw
+it.all.ObjDraw:Draw
 nl.all.ObjDraw:Draw-bestand
 
 # Main -> Object -> Link menu
@@ -1934,24 +1975,28 @@ fr.all.Home:Page d'accueil
 it.all.Home:Pagina iniziale
 nl.all.Home:Startpagina
 en.beos.HomeAccel:H
+it.beos.HomeAccel:H
 en.all.Back:Back one page
 de.all.Back:Eine Seite zurück
 fr.all.Back:Retour
 it.all.Back:Indietro
 nl.all.Back:Vorige pagina
 en.beos.BackAccel:←
+it.beos.BackAccel:�
 en.all.Forward:Forward one page
 de.all.Forward:Eine Seite vor
 fr.all.Forward:Avancer
 it.all.Forward:Avanti
 nl.all.Forward:Volgende pagina
 en.beos.ForwardAccel:→
+it.beos.ForwardAccel:�
 en.all.UpLevel:Up one level
 de.all.UpLevel:Eine Ebene hoch
 fr.all.UpLevel:Remonter d'un niveau
 it.all.UpLevel:Livello superiore
 nl.all.UpLevel:Niveau omhoog
 en.beos.UpLevelAccel:↑
+it.beos.UpLevelAccel:�
 en.ro.Reload:Reload this page  ^F5
 de.ro.Reload:Seite erneut laden  ^F5
 fr.ro.Reload:Recharger cette page  ^F5
@@ -1963,12 +2008,14 @@ fr.beos.Reload:Recharger cette page
 it.beos.Reload:Ricarica
 nl.beos.Reload:Herlaad pagina
 en.beos.ReloadAccel:R
+it.beos.ReloadAccel:R
 en.all.Stop:Stop loading this page
 de.all.Stop:Ladevorgang abbrechen
 fr.all.Stop:Arrêter le chargement de la page
 it.all.Stop:Interrompi
 nl.all.Stop:Breek ophaalproces af
 en.beos.StopAccel:S
+it.beos.StopAccel:S
 
 # Main -> Display menu
 #
@@ -2039,7 +2086,7 @@ nl.all.ToolStatus:Statusbalk
 en.all.RenderAnims:Buffer animations
 de.all.RenderAnims:Animationen zwischenspeichern
 fr.all.RenderAnims:Tamponner les animations
-it.all.RenderAnims:Blocca le animazioni
+it.all.RenderAnims:Buffer animazioni
 nl.all.RenderAnims:Buffer animaties
 en.all.RenderAll:Buffer all rendering
 de.all.RenderAll:Alles zwischenspeichern
@@ -2280,7 +2327,7 @@ nl.all.Link:Koppeling
 en.all.All:All
 de.all.All:Alles
 fr.all.All:Tout
-it.all.All:Tutti
+it.all.All:Tutto
 nl.all.All:Alles
 en.all.Folders:Directories
 de.all.Folders:Verzeichnisse
@@ -2379,7 +2426,7 @@ nl.all.ImgStyle2:Kleurbenadering
 en.all.ImgStyle3:Error diffused
 de.all.ImgStyle3:Error-Diffusion
 fr.all.ImgStyle3:Avec diffusion d'erreur
-it.all.ImgStyle3:Diffusione errore
+it.all.ImgStyle3:Errore diffuso
 nl.all.ImgStyle3:Foutdiffusie
 
 # Menu items used in the Amiga version.
@@ -2693,17 +2740,17 @@ nl.all.ExternalApp:Open in ander programma
 en.all.Download:%s of %s  •  %s/s  •  %s remaining
 de.all.Download:%s von %s • %s/s • noch %s
 fr.all.Download:%s de %s  •  %s/s  •  %s restants
-it.all.Download:%s di %s  ?  %s/s  ?  %s al termine
+it.all.Download:%s di %s  �  %s/s  �  %s al termine
 nl.all.Download:%s van %s  •  %s/s  •  nog %s
 en.all.DownloadU:%s of unknown  •  %s/s  •  %s total
 de.all.DownloadU:%s von unbekannt • %s/s • bisher %s
 fr.all.DownloadU:%s sur inconnu  •  %s/s  •  %s total
-it.all.DownloadU:%s sconosciuto  ?  %s/s  ?  %s totale
+it.all.DownloadU:%s sconosciuto  �  %s/s  �  %s totale
 nl.all.DownloadU:%s van onbekend  •  %s/s  •  %s totaal
 en.all.Downloaded:%s complete  •  average %s/s  •  %s total
 de.all.Downloaded:%s komplett • etwa %s/s • gesamt %s
 fr.all.Downloaded:%s effectués  •  moyenne %s/s  •  %s total
-it.all.Downloaded:%s completato  ?  media di %s/s  ?  %s totale
+it.all.Downloaded:%s completato  �  average %s/s  �  %s totale
 nl.all.Downloaded:%s compleet • gemiddeld %s/s • %s totaal
 en.all.Unwritten:Writing data to file failed.
 de.all.Unwritten:Schreiben der Datei ist fehlgeschlagen.
@@ -2747,7 +2794,7 @@ nl.ami.amiDownloadComplete:NetSurf: Download voltooid
 en.ami.amiSizeExisting:Existing file size:
 de.ami.amiSizeExisting:Größe der vorhandenen Datei:
 fr.ami.amiSizeExisting:Existing file size:
-it.ami.amiSizeExisting:Dimensione del file esistente:
+it.ami.amiSizeExisting:Dimensione del file originale:
 nl.ami.amiSizeExisting:Bestaande bestandsgrootte:
 en.ami.amiSizeNew:New file size:
 de.ami.amiSizeNew:Größe der neuen Datei:
@@ -2769,7 +2816,7 @@ nl.gtk.gtkSizeInfo:%s van %s
 en.gtk.gtkProgressBar:%.0f%% of %u files
 de.gtk.gtkProgressBar:%.0f%% von %u Dateien
 fr.gtk.gtkProgressBar:%.0f%% de %u fichiers
-it.gtk.gtkProgressBar:%. di %% su %u file
+it.gtk.gtkProgressBar:%.0f%% di %u file
 nl.gtk.gtkProgressBar:%.0f%% van %u bestanden
 en.gtk.gtkProgressBarPulse:Downloading %u files
 de.gtk.gtkProgressBarPulse:Lade %u Dateien herunter
@@ -2817,7 +2864,7 @@ nl.gtk.gtkError: Fout
 en.gtk.gtkComplete: Complete 
 de.gtk.gtkComplete: Vollständig 
 fr.gtk.gtkComplete: Terminé 
-it.gtk.gtkComplete: Completo 
+it.gtk.gtkComplete: Completato 
 nl.gtk.gtkComplete: Voltooid 
 en.gtk.gtkCanceled: Canceled 
 de.gtk.gtkCanceled: Abgebrochen 
@@ -2900,7 +2947,7 @@ nl.gtk.gtkplainSave:Als tekst bewaren
 en.gtk.gtkcompleteSave:Export complete page as a folder
 de.gtk.gtkcompleteSave:Seite komplett speichern
 fr.gtk.gtkcompleteSave:Enregistrer page web complète
-it.gtk.gtkcompleteSave:Salva l'intera pagina web
+it.gtk.gtkcompleteSave:Salva pagina web completa
 nl.gtk.gtkcompleteSave:Complete webpagina bewaren
 en.gtk.gtkSaveConfirm:File saved
 de.gtk.gtkSaveConfirm:Datei gespeichert
@@ -2932,6 +2979,7 @@ nl.gtk.gtkUnknownSize:onbekend
 #
 
 en.gtk.gtkOpenMenu:Open Menu
+it.gtk.gtkOpenMenu:Apri menu
 
 en.gtk.gtkFile:_File
 de.gtk.gtkFile:_Datei
@@ -2972,7 +3020,7 @@ nl.gtk.gtkNewTab:Nieuw _Tabblad
 en.gtk.gtkNewWindow:_New Window
 de.gtk.gtkNewWindow:_Neues Fenster
 fr.gtk.gtkNewWindow:_Nouvelle Fenêtre
-it.gtk.gtkNewWindow:_Nuova finestra
+it.gtk.gtkNewWindow:Nuova _finestra
 nl.gtk.gtkNewWindow:_Nieuw venster
 en.gtk.gtkOpenFile:_Open File
 de.gtk.gtkOpenFile:Datei öffnen
@@ -3007,12 +3055,12 @@ nl.gtk.gtkDrawFile:Draw-bestand...
 en.gtk.gtkPostScript:PostScript…
 de.gtk.gtkPostScript:PostScript..
 fr.gtk.gtkPostScript:PostScript...
-it.gtk.gtkPostScript:PostScript...
+it.gtk.gtkPostScript:File PostScript...
 nl.gtk.gtkPostScript:PostScript...
 en.gtk.gtkPDF:PDF…
 de.gtk.gtkPDF:PDF..
 fr.gtk.gtkPDF:PDF...
-it.gtk.gtkPDF:PDF...
+it.gtk.gtkPDF:File PDF...
 nl.gtk.gtkPDF:PDF...
 en.gtk.gtkPrintPreview:Print Preview…
 de.gtk.gtkPrintPreview:Druckvorschau...
@@ -3033,7 +3081,7 @@ nl.gtk.gtkQuitMenu:A_fsluiten
 en.gtk.gtkCut:Cu_t
 de.gtk.gtkCut:Ausschneiden
 fr.gtk.gtkCut:Cou_per
-it.gtk.gtkCut:Ta_glia
+it.gtk.gtkCut:_Taglia
 nl.gtk.gtkCut:K_nippen
 en.gtk.gtkCopy:_Copy
 de.gtk.gtkCopy:Kopieren
@@ -3048,28 +3096,28 @@ nl.gtk.gtkPaste:_Plakken
 en.gtk.gtkDelete:_Delete
 de.gtk.gtkDelete:Löschen
 fr.gtk.gtkDelete:_Supprimer
-it.gtk.gtkDelete:_Cancella
+it.gtk.gtkDelete:Ca_ncella
 nl.gtk.gtkDelete:_Verwijderen
 en.gtk.gtkSelectAll:Select _All
 de.gtk.gtkSelectAll:_Alles auswählen
 fr.gtk.gtkSelectAll:_Tout sélectionner
-it.gtk.gtkSelectAll:Seleziona _Tutto
+it.gtk.gtkSelectAll:_Seleziona Tutto
 nl.gtk.gtkSelectAll:_Alles selecteren
 en.gtk.gtkFind:_Find…
 de.gtk.gtkFind:_Finden..
 fr.gtk.gtkFind:_Rechercher...
-it.gtk.gtkFind:_Trova...
+it.gtk.gtkFind:T_rova...
 nl.gtk.gtkFind:_Zoeken...
 en.gtk.gtkPreferences:P_references
 de.gtk.gtkPreferences:Einstellungen
 fr.gtk.gtkPreferences:P_références
-it.gtk.gtkPreferences:P_referenze
+it.gtk.gtkPreferences:_Preferenze
 nl.gtk.gtkPreferences:V_oorkeuren
 
 en.gtk.gtkStop:_Stop
 de.gtk.gtkStop:_Stop
 fr.gtk.gtkStop:_Arrêter
-it.gtk.gtkStop:_Stoppa
+it.gtk.gtkStop:_Stop
 nl.gtk.gtkStop:_Stoppen
 en.gtk.gtkReload:_Reload
 de.gtk.gtkReload:Neu laden
@@ -3079,12 +3127,12 @@ nl.gtk.gtkReload:Ver_nieuwen
 en.gtk.gtkScaleView:_Scale View
 de.gtk.gtkScaleView:Ansicht skalieren
 fr.gtk.gtkScaleView:_Zoom
-it.gtk.gtkScaleView:_Scala
+it.gtk.gtkScaleView:S_cala
 nl.gtk.gtkScaleView:_Zoomen
 en.gtk.gtkZoomPlus:Zoom _in
 de.gtk.gtkZoomPlus:Here_inzoomen
 fr.gtk.gtkZoomPlus:Zoom _avant
-it.gtk.gtkZoomPlus:_Incrementa zoom
+it.gtk.gtkZoomPlus:_Aumenta zoom
 nl.gtk.gtkZoomPlus:_Inzoomen
 en.gtk.gtkZoomMinus:Zoom _out
 de.gtk.gtkZoomMinus:Herausz_oomen
@@ -3099,7 +3147,7 @@ nl.gtk.gtkZoomNormal:_Originele grootte
 en.gtk.gtkFullScreen:_Fullscreen
 de.gtk.gtkFullScreen:_Vollbild
 fr.gtk.gtkFullScreen:_Plein écran
-it.gtk.gtkFullScreen:_Tutto schermo
+it.gtk.gtkFullScreen:Tutto scher_mo
 nl.gtk.gtkFullScreen:_Volledig scherm
 en.gtk.gtkPageSource:Page S_ource
 de.gtk.gtkPageSource: Q_uelltext anzeigen
@@ -3191,7 +3239,7 @@ nl.gtk.gtkForward:_Vooruit
 en.gtk.gtkHome:_Home
 de.gtk.gtkHome:_Startseite
 fr.gtk.gtkHome:_Accueil
-it.gtk.gtkHome:_Home
+it.gtk.gtkHome:_Pagina iniziale
 nl.gtk.gtkHome:_Beginpagina
 en.gtk.gtkLocalHistory:_Local History…
 de.gtk.gtkLocalHistory:_Lokaler Verlauf
@@ -3206,7 +3254,7 @@ nl.gtk.gtkGlobalHistory:Browser_geschiedenis
 en.gtk.gtkAddBookMarks:_Add to Bookmarks…
 de.gtk.gtkAddBookMarks:_Lesezeichen hinzufügen..
 fr.gtk.gtkAddBookMarks:_Ajouter un marque-page..
-it.gtk.gtkAddBookMarks:_Aggiungi ai segnalibri...
+it.gtk.gtkAddBookMarks:Aggiungi ai _segnalibri...
 nl.gtk.gtkAddBookMarks:_Aan bladwijzers toevoegen...
 en.gtk.gtkShowBookMarks:_Show Bookmarks…
 de.gtk.gtkShowBookMarks:Le_sezeichen anzeigen..
@@ -3221,7 +3269,7 @@ nl.gtk.gtkShowCookies:_Cookies beheren...
 en.gtk.gtkOpenLocation:_Open Location…
 de.gtk.gtkOpenLocation:_Ort öffnen..
 fr.gtk.gtkOpenLocation:_Ouvrir un site..
-it.gtk.gtkOpenLocation:_Apri indirizzo...
+it.gtk.gtkOpenLocation:Apri in_dirizzo...
 nl.gtk.gtkOpenLocation:Locatie _openen..
 
 en.gtk.gtkNextTab:_Next tab
@@ -3248,12 +3296,12 @@ nl.gtk.gtkContents:_Inhoud
 en.gtk.gtkGuide:User _guide…
 de.gtk.gtkGuide:H_andbuch
 fr.gtk.gtkGuide:_Guide utilisateur
-it.gtk.gtkGuide:_Guida in linea...
+it.gtk.gtkGuide:_Guida in linea
 nl.gtk.gtkGuide:Gebruiks_aanwijzing...
 en.gtk.gtkUserInformation:User _information…
 de.gtk.gtkUserInformation:Benutzer_information
 fr.gtk.gtkUserInformation:_Information utilisateur
-it.gtk.gtkUserInformation:Informazioni _utente...
+it.gtk.gtkUserInformation:Informazioni _utente
 nl.gtk.gtkUserInformation:Gebruikers_informatie...
 en.gtk.gtkAbout:_About…
 de.gtk.gtkAbout:Ü_ber
@@ -3279,7 +3327,7 @@ nl.gtk.gtkOpenwin:Koppeling openen in nieuw _venster
 en.gtk.gtkSavelink:Save Lin_k
 de.gtk.gtkSavelink:Lin_k speichern..
 fr.gtk.gtkSavelink:Enregistrer li_en
-it.gtk.gtkSavelink:Salva Lin_k
+it.gtk.gtkSavelink:Salva lin_k
 nl.gtk.gtkSavelink:_Koppeling opslaan als...
 en.gtk.gtkBookmarklink:Bookmark _Link
 de.gtk.gtkBookmarklink:_Link als Bookmark
@@ -3324,511 +3372,639 @@ nl.gtk.gtkThemeAdd:Thema is succesvol toegevoegd
 # GTK toolbar customisation
 
 en.gtk.gtkCustomizeToolbarTitle:Customise Toolbar
+it.gtk.gtkCustomizeToolbarTitle:Personalizza barra strumenti
 en.gtk.gtkCustomizeToolbarInstructions:Drag toolbar items into and out of the toolbar.
+it.gtk.gtkCustomizeToolbarInstructions:Trascina elementi della barra strumenti dentro e fuori la barra.
 
 # GTK find in page
 
 en.gtk.gtkFindPlaceholder:Find in page
+it.gtk.gtkFindPlaceholder:Trova nella pagina
 en.gtk.gtkFindBack:Find Previous Occurrence
+it.gtk.gtkFindBack:Trova occorrenza _precedente
 en.gtk.gtkFindForward:Find _Next Occurrence
+it.gtk.gtkFindForward:Trova occorrenza _successiva
 en.gtk.gtkFindHighlightAll:Highlight All
+it.gtk.gtkFindHighlightAll:Evidenzia tutto
 en.gtk.gtkFindMatchCase:Match Case
+it.gtk.gtkFindMatchCase:Marca corrispondenze
 en.gtk.gtkFindClose:Close Find Bar
+it.gtk.gtkFindClose:Chiudi finestra di ricerca
 
 # GTK preferences dialog
 
 en.gtk.preferencesTitle:Netsurf Preferences
 de.gtk.preferencesTitle:Netsurf Einstellungen
 fr.gtk.preferencesTitle:Préférences de Netsurf
+it.gtk.preferencesTitle:Preferenze di Netsurf
 nl.gtk.preferencesTitle:Netsurf-voorkeuren
 
 # Main tab
 en.gtk.preferencesMainTabtitle:Main
 de.gtk.preferencesMainTabtitle:Allgemein
 fr.gtk.preferencesMainTabtitle:Accueil/Principal
+it.gtk.preferencesMainTabtitle:Principale
 nl.gtk.preferencesMainTabtitle:Algemeen
 en.gtk.preferencesStartup:<b>Startup</b>
 de.gtk.preferencesStartup:<b>Starten</b>
 fr.gtk.preferencesStartup:<b>Démarrage</b>
+it.gtk.preferencesStartup:<b>Avvio</b>
 nl.gtk.preferencesStartup:<b>Opstarten</b>
 en.gtk.preferencesStartupPage:Page:
 de.gtk.preferencesStartupPage:Seite:
 fr.gtk.preferencesStartupPage:Page:
+it.gtk.preferencesStartupPage:Pagina:
 nl.gtk.preferencesStartupPage:Pagina:
 en.gtk.preferencesStartupPageTooltip:The default startup page
 de.gtk.preferencesStartupPageTooltip:Die Standard Startseite
 fr.gtk.preferencesStartupPageTooltip:La page de démarrage par défaut
+it.gtk.preferencesStartupPageTooltip:Pagina di avvio predefinita
 nl.gtk.preferencesStartupPageTooltip:De standaard startpagina
 en.gtk.preferencesStartupPageDefault:Use Default Page
 de.gtk.preferencesStartupPageDefault:Standard Seite nutzen
 fr.gtk.preferencesStartupPageDefault:Utiliser la page par défaut
+it.gtk.preferencesStartupPageDefault:Usa pagina predefinita
 nl.gtk.preferencesStartupPageDefault:Standaard herstellen
 en.gtk.preferencesStartupPageCurrent:Use Current Page
 de.gtk.preferencesStartupPageCurrent:aktuelle Seite nehmen
 fr.gtk.preferencesStartupPageCurrent:Utiliser la page en cours
+it.gtk.preferencesStartupPageCurrent:Usa pagina corrente
 nl.gtk.preferencesStartupPageCurrent:Huidige pagina gebruiken
 en.gtk.preferencesSearch:<b>Search</b>
 de.gtk.preferencesSearch:<b>Suchen</b>
 fr.gtk.preferencesSearch:<b>Recherche</b>
+it.gtk.preferencesSearch:<b>Cerca</b>
 nl.gtk.preferencesSearch:<b>Zoeken</b>
 en.gtk.preferencesSearchURLBar:Search from URL bar
 de.gtk.preferencesSearchURLBar:Adressleiste zum Suchen
 fr.gtk.preferencesSearchURLBar:Recherche depuis la barre d'URL
+it.gtk.preferencesSearchURLBar:Cerca da barra URL
 nl.gtk.preferencesSearchURLBar:Standaardzoekmachine
 en.gtk.preferencesSearchProvider:Provider:
 de.gtk.preferencesSearchProvider:Anbieter:
 fr.gtk.preferencesSearchProvider:Fournisseur :
+it.gtk.preferencesSearchProvider:Provider:
 nl.gtk.preferencesSearchProvider:Zoeken met:
 en.gtk.preferencesSearchProviderTooltip:The default web search provider
 de.gtk.preferencesSearchProviderTooltip:Voreingestellter Suchanbieter
 fr.gtk.preferencesSearchProviderTooltip:Le fournisseur de recherche sur le web par défaut
+it.gtk.preferencesSearchProviderTooltip:Provider di ricerca web predefinito
 nl.gtk.preferencesSearchProviderTooltip:Kies de standaardzoekmachine. NetSurf gebruikt deze in de zoekbalk.
 en.gtk.preferencesDownloads:<b>Downloads</b>
 de.gtk.preferencesDownloads:<b>Downloads</b>
 fr.gtk.preferencesDownloads:<b>Téléchargements</b>
+it.gtk.preferencesDownloads:<b>Download</b>
 nl.gtk.preferencesDownloads:<b>Downloads</b>
 en.gtk.preferencesDownloadsRemove:Remove download from list when complete
 de.gtk.preferencesDownloadsRemove:abgeschlossene Downloads auslisten
 fr.gtk.preferencesDownloadsRemove:Retirer le téléchargement de la liste une fois terminé
+it.gtk.preferencesDownloadsRemove:Rimuovi download dalla lista al completamento
 nl.gtk.preferencesDownloadsRemove:Downloadvermeldingen verwijderen
 en.gtk.preferencesDownloadsConfirm:Confirm before overwriting files
 de.gtk.preferencesDownloadsConfirm:Überschreiben bestätigen
 fr.gtk.preferencesDownloadsConfirm:Confirmer avant d'écraser des fichiers
+it.gtk.preferencesDownloadsConfirm:Conferma prima di sovrascrivere
 nl.gtk.preferencesDownloadsConfirm:Overschrijven van bestand bevestigen
 en.gtk.preferencesDownloadsLocation:Location:
 de.gtk.preferencesDownloadsLocation:Zielort:
 fr.gtk.preferencesDownloadsLocation:Emplacement :
+it.gtk.preferencesDownloadsLocation:Percorso:
 nl.gtk.preferencesDownloadsLocation:Bestanden opslaan in:
 en.gtk.preferencesDownloadsLocationTooltip:The default location downloaded files are put
 de.gtk.preferencesDownloadsLocationTooltip:Speicherort für Downloads
 fr.gtk.preferencesDownloadsLocationTooltip:L'emplacement par défaut des fichiers téléchargés sont mis
+it.gtk.preferencesDownloadsLocationTooltip:Percorso predefinito dove scaricare i file
 nl.gtk.preferencesDownloadsLocationTooltip:De standaardplaats waar gedownloade bestanden worden opgeslagen
 
 # Appearance tab
 en.gtk.preferencesAppearanceTabtitle:Appearance
 de.gtk.preferencesAppearanceTabtitle:Aussehen
 fr.gtk.preferencesAppearanceTabtitle:Apparence
+it.gtk.preferencesAppearanceTabtitle:Aspetto
 nl.gtk.preferencesAppearanceTabtitle:Vormgeving
 en.gtk.preferencesThemes:<b>Themes</b>
 de.gtk.preferencesThemes:<b>Themen</b>
 fr.gtk.preferencesThemes:<b>Thèmes</b>
+it.gtk.preferencesThemes:<b>Temi</b>
 nl.gtk.preferencesThemes:<b>Thema's</b>
 en.gtk.preferencesThemesAdd:Add Theme...
 de.gtk.preferencesThemesAdd:Thema hinzu...
 fr.gtk.preferencesThemesAdd:Ajouter thème...
+it.gtk.preferencesThemesAdd:Aggiungi tema...
 nl.gtk.preferencesThemesAdd:Thema toevoegen...
 en.gtk.preferencesTabs:<b>Tabs</b>
 de.gtk.preferencesTabs:<b>Tabs</b>
 fr.gtk.preferencesTabs:<b>Onglets</b>
+it.gtk.preferencesTabs:<b>Schede</b>
 nl.gtk.preferencesTabs:<b>Tabbladen</b>
 en.gtk.preferencesTabsAlways:Always show tab bar
 de.gtk.preferencesTabsAlways:Tableiste immer anzeigen
 fr.gtk.preferencesTabsAlways:Toujours afficher la barre d'onglet
+it.gtk.preferencesTabsAlways:Mostra sempre la barra delle schede
 nl.gtk.preferencesTabsAlways:De tabbladenwerkbalk verbergen wanneer slechts één tabblad is geopend
 en.gtk.preferencesTabsSwitch:Switch to newly opened tabs immediately
 de.gtk.preferencesTabsSwitch:neue Tabs sofort in Vordergrund
 fr.gtk.preferencesTabsSwitch:Passer à l'onglet nouvellement ouvert immédiatement
+it.gtk.preferencesTabsSwitch:Passa immediatamente alle nuove schede aperte
 nl.gtk.preferencesTabsSwitch:Naar vanuit koppeling geopende nieuwe tabbladen schakelen
 en.gtk.preferencesTabsNewly:Newly opened tabs are blank
 de.gtk.preferencesTabsNewly:neue Tabs als leere Seite
 fr.gtk.preferencesTabsNewly:Onglet récemment ouvert est vièrge
+it.gtk.preferencesTabsNewly:Le nuove schede aperte sono vuote
 nl.gtk.preferencesTabsNewly:Geopende nieuwe tabbladen zijn leeg inplaats van de startpagina
 en.gtk.preferencesTabsPosition:Position:
 de.gtk.preferencesTabsPosition:Position:
 fr.gtk.preferencesTabsPosition:Position :
+it.gtk.preferencesTabsPosition:Posizione:
 nl.gtk.preferencesTabsPosition:Positie in venster:
 en.gtk.preferencesTools:<b>Tools</b>
 de.gtk.preferencesTools:<b>Tools</b>
 fr.gtk.preferencesTools:<b>Outils</b>
+it.gtk.preferencesTools:<b>Strumenti</b>
 nl.gtk.preferencesTools:<b>Ontwikkelaarshulpmiddelen</b>
 en.gtk.preferencesDeveloperView:Open developer views in a
 de.gtk.preferencesDeveloperView:Entwickleransicht öffnen in
 fr.gtk.preferencesDeveloperView:Vues de développement s'ouvrent dans
+it.gtk.preferencesDeveloperView:Apri visualizzazione sviluppatori in
 nl.gtk.preferencesDeveloperView:Informatie voor ontwikkelaars openen in
 en.gtk.preferencesDeveloperViewWindow:Window
 de.gtk.preferencesDeveloperViewWindow:Fenster
 fr.gtk.preferencesDeveloperViewWindow:un fenêtre
+it.gtk.preferencesDeveloperViewWindow:Finestra
 nl.gtk.preferencesDeveloperViewWindow:Venster
 en.gtk.preferencesDeveloperViewTab:Tab
 de.gtk.preferencesDeveloperViewTab:Tab
 fr.gtk.preferencesDeveloperViewTab:un onglet
+it.gtk.preferencesDeveloperViewTab:Scheda
 nl.gtk.preferencesDeveloperViewTab:Tabblad
 en.gtk.preferencesDeveloperViewEditor:Editor
 de.gtk.preferencesDeveloperViewEditor:Editor
 fr.gtk.preferencesDeveloperViewEditor:Éditeur
+it.gtk.preferencesDeveloperViewEditor:Editor di testo
 nl.gtk.preferencesDeveloperViewEditor:Tekst-editor
 en.gtk.preferencesURLbar:<b>URLbar</b>
 de.gtk.preferencesURLbar:<b>Adressleiste</b>
 fr.gtk.preferencesURLbar:<b>Barre URL</b>
+it.gtk.preferencesURLbar:<b>Barra indirizzi</b>
 nl.gtk.preferencesURLbar:<b>Locatiebalk</b>
 en.gtk.preferencesURLbarDisplay:Display recently visited URLs as you type
 de.gtk.preferencesURLbarDisplay:benutzte URLs während Eingabe zeigen
 fr.gtk.preferencesURLbarDisplay:Afficher les URL visités récemment lorsque vous tapez
+it.gtk.preferencesURLbarDisplay:Mostra gli URL visitati di recente durante la digitazione
 nl.gtk.preferencesURLbarDisplay:Automatisch aanvullen vanuit de browsergeschiedenis tijdens het typen
 en.gtk.preferencesToolbar:<b>Toolbar</b>
 de.gtk.preferencesToolbar:<b>Knopfleiste</b>
 fr.gtk.preferencesToolbar:<b>Barre d'outils</b>
+it.gtk.preferencesToolbar:<b>Barra strumenti</b>
 nl.gtk.preferencesToolbar:<b>Werkbalk</b>
 en.gtk.preferencesToolbarButtons:Buttons:
 de.gtk.preferencesToolbarButtons:Gestalt:
 fr.gtk.preferencesToolbarButtons:Boutons :
+it.gtk.preferencesToolbarButtons:Pulsanti:
 nl.gtk.preferencesToolbarButtons:Knoppen:
+
 # Theme list
 en.gtk.preferencesThemeTypeDefault:Default
 de.gtk.preferencesThemeTypeDefault:Standard
 fr.gtk.preferencesThemeTypeDefault:Défaut
+it.gtk.preferencesThemeTypeDefault:Predefinito
 nl.gtk.preferencesThemeTypeDefault:Standaard
 # Tab position list
 en.gtk.preferencesTabLocTop:Top
 de.gtk.preferencesTabLocTop:Oben
 fr.gtk.preferencesTabLocTop:Haut
+it.gtk.preferencesTabLocTop:In alto
 nl.gtk.preferencesTabLocTop:Bovenaan
 en.gtk.preferencesTabLocLeft:Left
 de.gtk.preferencesTabLocLeft:Links
 fr.gtk.preferencesTabLocLeft:Gauche
+it.gtk.preferencesTabLocLeft:A sinistra
 nl.gtk.preferencesTabLocLeft:Links
 en.gtk.preferencesTabLocBottom:Bottom
 de.gtk.preferencesTabLocBottom:Unten
 fr.gtk.preferencesTabLocBottom:Bas
+it.gtk.preferencesTabLocBottom:In basso
 nl.gtk.preferencesTabLocBottom:Onderaan
 en.gtk.preferencesTabLocRight:Right
 de.gtk.preferencesTabLocRight:Rechts
 fr.gtk.preferencesTabLocRight:Droite
+it.gtk.preferencesTabLocRight:A destra
 nl.gtk.preferencesTabLocRight:Rechts
 # button list
 en.gtk.preferencesButtonTypeSmall:Small Icons
 de.gtk.preferencesButtonTypeSmall:Kleine Icons
 fr.gtk.preferencesButtonTypeSmall:Petites icônes
+it.gtk.preferencesButtonTypeSmall:Pulsanti piccoli
 nl.gtk.preferencesButtonTypeSmall:Kleine pictogrammen
 en.gtk.preferencesButtonTypeLarge:Large Icons
 de.gtk.preferencesButtonTypeLarge:Große Icons
 fr.gtk.preferencesButtonTypeLarge:Grandes icônes
+it.gtk.preferencesButtonTypeLarge:Pulsanti grandi
 nl.gtk.preferencesButtonTypeLarge:Grote pictogrammen
 en.gtk.preferencesButtonTypeLargeText:Large Icons and Text
 de.gtk.preferencesButtonTypeLargeText:Große Icons mit Text
 fr.gtk.preferencesButtonTypeLargeText:Grandes icônes et texte
+it.gtk.preferencesButtonTypeLargeText:Pulsanti grandi e testo
 nl.gtk.preferencesButtonTypeLargeText:Grote pictogrammen en tekst
 en.gtk.preferencesButtonTypeText:Text only
 de.gtk.preferencesButtonTypeText:Text ohne Icons
 fr.gtk.preferencesButtonTypeText:Texte uniquement
+it.gtk.preferencesButtonTypeText:Solo testo
 nl.gtk.preferencesButtonTypeText:Alleen tekst
-
 # content tab
 en.gtk.preferencesContentTabtitle:Content
 de.gtk.preferencesContentTabtitle:Inhalte
 fr.gtk.preferencesContentTabtitle:Contenu
+it.gtk.preferencesContentTabtitle:Contenuto
 nl.gtk.preferencesContentTabtitle:Inhoud
 en.gtk.preferencesControl:<b>Control</b>
 de.gtk.preferencesControl:<b>Steuerung</b>
 fr.gtk.preferencesControl:<b>Contrôle</b>
+it.gtk.preferencesControl:<b>Controlli</b>
 nl.gtk.preferencesControl:<b>Opties</b>
 en.gtk.preferencesControlPrevent:Prevent pop-up windows
 de.gtk.preferencesControlPrevent:Pop-Up Fenster blocken
 fr.gtk.preferencesControlPrevent:Empêcher fenêtres pop-up
+it.gtk.preferencesControlPrevent:Blocca finestre pop-up (AdBlock)
 nl.gtk.preferencesControlPrevent:Pop-upvensters blokkeren
 en.gtk.preferencesControlHide:Hide Adverts
 de.gtk.preferencesControlHide:Werbung unterdrücken
 fr.gtk.preferencesControlHide:Cacher les publicités
+it.gtk.preferencesControlHide:Nascondi pubblicità
 nl.gtk.preferencesControlHide:Advertenties verbergen
 en.gtk.preferencesControlEnable:Enable JavaScript
 de.gtk.preferencesControlEnable:JavaScript einschalten
 fr.gtk.preferencesControlEnable:Activer JavaScript
+it.gtk.preferencesControlEnable:Attiva JavaScript
 nl.gtk.preferencesControlEnable:JavaScript inschakelen
 en.gtk.preferencesControlDisable:Disable plug-ins
 de.gtk.preferencesControlDisable:Plug-Ins abschalten
 fr.gtk.preferencesControlDisable:Désactiver modules externes
+it.gtk.preferencesControlDisable:Disattiva Plugins
 nl.gtk.preferencesControlDisable:Plug-ins uitschakelen
 en.gtk.preferencesControlHigh:High quality image scaling
 de.gtk.preferencesControlHigh:Bildskalierung hoher Qualität
 fr.gtk.preferencesControlHigh:Haute qualité d'image redimensionnée
+it.gtk.preferencesControlHigh:Scala immagini in alta qualità
 nl.gtk.preferencesControlHigh:Schalen op hoge beeldkwaliteit
 en.gtk.preferencesControlLoad:Load and display
 de.gtk.preferencesControlLoad:laden und anzeigen
 fr.gtk.preferencesControlLoad:Charger et visualiser
+it.gtk.preferencesControlLoad:Carica e visualizza
 nl.gtk.preferencesControlLoad:Laad en toon
 en.gtk.preferencesAnimation:<b>Animation</b>
 de.gtk.preferencesAnimation:<b>Animation</b>
 fr.gtk.preferencesAnimation:<b>Animation</b>
+it.gtk.preferencesAnimation:<b>Animazione</b>
 nl.gtk.preferencesAnimation:<b>Animaties</b>
 en.gtk.preferencesAnimationEnable:Enable
 de.gtk.preferencesAnimationEnable:zulassen
 fr.gtk.preferencesAnimationEnable:Activer
+it.gtk.preferencesAnimationEnable:Attiva
 nl.gtk.preferencesAnimationEnable:Ingeschakeld
 en.gtk.preferencesAnimationMinimum:Minimum time between frames:
 de.gtk.preferencesAnimationMinimum:minimale Zeit zwischen Frames:
 fr.gtk.preferencesAnimationMinimum:Temps minimal entre cadres/frames/images/photo :
+it.gtk.preferencesAnimationMinimum:Limita velocità fotogrammi al secondo:
 nl.gtk.preferencesAnimationMinimum:Minimum tijd tussen opeenvolgende animatiebeelden:
 en.gtk.preferencesAnimationMinimumTooltip:Do not update animations any more often than this.
 de.gtk.preferencesAnimationMinimumTooltip:Animation nicht öfter als so aktualisieren
 fr.gtk.preferencesAnimationMinimumTooltip:Ne pas mettre à jour les animations plus souvent que cela.
+it.gtk.preferencesAnimationMinimumTooltip:Non aggiornare le animazioni più di cosi.
 nl.gtk.preferencesAnimationMinimumTooltip:Animaties niet vaker actualiseren dan dit.
 en.gtk.preferencesFonts:<b>Fonts</b>
 de.gtk.preferencesFonts:<b>Fonts</b>
 fr.gtk.preferencesFonts:<b>Fontes/Polices</b>
+it.gtk.preferencesFonts:<b>Font</b>
 nl.gtk.preferencesFonts:<b>Lettertypen</b>
 en.gtk.preferencesFontsDefault:Default
 de.gtk.preferencesFontsDefault:Standard
 fr.gtk.preferencesFontsDefault:Défaut
+it.gtk.preferencesFontsDefault:Predefinito
 nl.gtk.preferencesFontsDefault:Standaard
 en.gtk.preferencesFontsSize:Size
 de.gtk.preferencesFontsSize:Größe
 fr.gtk.preferencesFontsSize:Taille
+it.gtk.preferencesFontsSize:Dimensione
 nl.gtk.preferencesFontsSize:Grootte
 en.gtk.preferencesFontsSizeTooltip:The base-line font size to use.
 de.gtk.preferencesFontsSizeTooltip:Die Standardgröße für Basisschriften.
 fr.gtk.preferencesFontsSizeTooltip:La taille de la fonte/police de base à utiliser.
+it.gtk.preferencesFontsSizeTooltip:Dimensione base del carattere di linea da utilizzare.
 nl.gtk.preferencesFontsSizeTooltip:Het standaardlettertype te gebruiken voor webpagina's.
 en.gtk.preferencesFontsPreview:_Preview
 de.gtk.preferencesFontsPreview:Vorschau
 fr.gtk.preferencesFontsPreview:A_perçu
+it.gtk.preferencesFontsPreview:_Anteprima
 nl.gtk.preferencesFontsPreview:_Voorbeeld
 en.gtk.preferencesLanguage:<b>Language</b>
 de.gtk.preferencesLanguage:<b>Sprache</b>
 fr.gtk.preferencesLanguage:<b>Langue</b>
+it.gtk.preferencesLanguage:<b>Lingua</b>
 nl.gtk.preferencesLanguage:<b>Talen</b>
 en.gtk.preferencesLanguagePreferred:Preferred language:
 de.gtk.preferencesLanguagePreferred:bevorzugte Sprache:
 fr.gtk.preferencesLanguagePreferred:Langue préférée :
+it.gtk.preferencesLanguagePreferred:Lingua preferita:
 nl.gtk.preferencesLanguagePreferred:Voorkeurtaal:
 en.gtk.preferencesLanguagePreferredTooltip:The preferred language for web pages
 de.gtk.preferencesLanguagePreferredTooltip:Die gewünschte Sprache für Webseiten
 fr.gtk.preferencesLanguagePreferredTooltip:La langue préférée pour les pages Web
+it.gtk.preferencesLanguagePreferredTooltip:Lingua preferita delle pagine web
 nl.gtk.preferencesLanguagePreferredTooltip:De voorkeurtaal voor webpagina's
 # Image loading list
 en.gtk.preferencesImageLoadBoth:foreground and background images
 de.gtk.preferencesImageLoadBoth:Vorder- und Hintergrundbilder
 fr.gtk.preferencesImageLoadBoth:Images d'avant-plan et d'arrière-plan
+it.gtk.preferencesImageLoadBoth:Immagini in primo piano e di sfondo
 nl.gtk.preferencesImageLoadBoth:voorgrond- en achtergrondafbeeldingen
 en.gtk.preferencesImageLoadFore:foreground images
 de.gtk.preferencesImageLoadFore:Vordergrundbilder
 fr.gtk.preferencesImageLoadFore:Images d'avant-plan
+it.gtk.preferencesImageLoadFore:Immagini in primo piano
 nl.gtk.preferencesImageLoadFore:voorgrondafbeeldingen
 en.gtk.preferencesImageLoadBack:background images
 de.gtk.preferencesImageLoadBack:Hintergrundbilder
 fr.gtk.preferencesImageLoadBack:Images d'arrière-plan
+it.gtk.preferencesImageLoadBack:Immagini di sfondo
 nl.gtk.preferencesImageLoadBack:achtergrondafbeeldingen
 en.gtk.preferencesImageLoadNone:no images
 de.gtk.preferencesImageLoadNone:Keine Bidlder
 fr.gtk.preferencesImageLoadNone:pas d'images
+it.gtk.preferencesImageLoadNone:Nessuna immagine
 nl.gtk.preferencesImageLoadNone:geen afbeeldingen
 # font type list
 en.gtk.preferencesFonttypeSans:Sans-serif
 de.gtk.preferencesFonttypeSans:Sans-serif
 fr.gtk.preferencesFonttypeSans:Sans-serif
+it.gtk.preferencesFonttypeSans:Sans-serif
 nl.gtk.preferencesFonttypeSans:Schreefloos
 en.gtk.preferencesFonttypeSerif:Serif
 de.gtk.preferencesFonttypeSerif:Serif
 fr.gtk.preferencesFonttypeSerif:Serif
+it.gtk.preferencesFonttypeSerif:Serif
 nl.gtk.preferencesFonttypeSerif:Met schreef
 en.gtk.preferencesFonttypeMonospace:Monospace
 de.gtk.preferencesFonttypeMonospace:Monospace
 fr.gtk.preferencesFonttypeMonospace:Monospace
+it.gtk.preferencesFonttypeMonospace:Monospaziato
 nl.gtk.preferencesFonttypeMonospace:Monospace
 en.gtk.preferencesFonttypeCursive:Cursive
 de.gtk.preferencesFonttypeCursive:Kursiv
 fr.gtk.preferencesFonttypeCursive:Cursive
+it.gtk.preferencesFonttypeCursive:Corsivo
 nl.gtk.preferencesFonttypeCursive:Cursief
 en.gtk.preferencesFonttypeFantasy:Fantasy
 de.gtk.preferencesFonttypeFantasy:Fantasy
 fr.gtk.preferencesFonttypeFantasy:Fantasy
+it.gtk.preferencesFonttypeFantasy:Fantasia
 nl.gtk.preferencesFonttypeFantasy:Fantasie
 en.gtk.preferencesPrivacyTabtitle:Privacy
 de.gtk.preferencesPrivacyTabtitle:Privates
 fr.gtk.preferencesPrivacyTabtitle:Confidentialité
+it.gtk.preferencesPrivacyTabtitle:Privacy
 nl.gtk.preferencesPrivacyTabtitle:Privacy
 en.gtk.preferencesGeneral:<b>General</b>
 de.gtk.preferencesGeneral:<b>Generelles</b>
 fr.gtk.preferencesGeneral:<b>Général</b>
+it.gtk.preferencesGeneral:<b>Generale</b>
 nl.gtk.preferencesGeneral:<b>Algemeen</b>
 en.gtk.preferencesGeneralReferral:Enable referral submission
 de.gtk.preferencesGeneralReferral:Referenzen erlauben
 fr.gtk.preferencesGeneralReferral:Permettre l'envoi du referer en entête
+it.gtk.preferencesGeneralReferral:Permetti invio informazioni sul referral
 nl.gtk.preferencesGeneralReferral:Referentie versturen inschakelen
 en.gtk.preferencesGeneralDNT:Enable sending "Do Not Track" request
 de.gtk.preferencesGeneralDNT:Webseiten sollen nicht nachverfolgen dürfen
 fr.gtk.preferencesGeneralDNT:Activer l'envoi d'une requête "Ne pas suivre à la trace"
+it.gtk.preferencesGeneralDNT:Attiva invio per la richiesta di non tracciamento
 nl.gtk.preferencesGeneralDNT:Websites laten weten dat gebruiker niet gevolgd wil worden
 en.gtk.preferencesHistory:<b>History</b>
 de.gtk.preferencesHistory:<b>History</b>
 fr.gtk.preferencesHistory:<b>Historque</b>
+it.gtk.preferencesHistory:<b>Cronologia</b>
 nl.gtk.preferencesHistory:<b>Geschiedenis</b>
 en.gtk.preferencesHistoryShow:Local history shows URL in tooltip
 de.gtk.preferencesHistoryShow:History (lokal) zeigt die URL in der Hilfe an
 fr.gtk.preferencesHistoryShow:Historique local dans une infobulle
+it.gtk.preferencesHistoryShow:Mostra cronologia locale dell'URL nella descrizione comandi
 nl.gtk.preferencesHistoryShow:Venstergeschiedenis toont webadres in een tipkader
 en.gtk.preferencesHistoryRemember:Remember browsing history for up to
 de.gtk.preferencesHistoryRemember:History merken für bis zu
 fr.gtk.preferencesHistoryRemember:Conserver l'historique de navigation pendant
+it.gtk.preferencesHistoryRemember:Ricorda cronologia di navigazione in
 nl.gtk.preferencesHistoryRemember:Browsergeschiedenis onthouden voor
 en.gtk.preferencesHistoryDays:days
 de.gtk.preferencesHistoryDays:Tage(n)
 fr.gtk.preferencesHistoryDays:jours
+it.gtk.preferencesHistoryDays:giorni
 nl.gtk.preferencesHistoryDays:dag(en)
 en.gtk.preferencesCache:<b>Cache</b>
 de.gtk.preferencesCache:<b>Cache</b>
 fr.gtk.preferencesCache:<b>Cache</b>
+it.gtk.preferencesCache:<b>Cache</b>
 nl.gtk.preferencesCache:<b>Buffer</b>
 en.gtk.preferencesCacheMemory:Memory cache size
 de.gtk.preferencesCacheMemory:RAM Cache
 fr.gtk.preferencesCacheMemory:Taille du cache mémoire
+it.gtk.preferencesCacheMemory:Dimensione memoria cache
 nl.gtk.preferencesCacheMemory:Grootte geheugenbuffer
 en.gtk.preferencesCacheDisc:Disc cache size
 de.gtk.preferencesCacheDisc:Festplatten Cache
 fr.gtk.preferencesCacheDisc:Taille du cache disque
+it.gtk.preferencesCacheDisc:Dimensione memoria disco
 nl.gtk.preferencesCacheDisc:Grootte schijfbuffer
 en.gtk.preferencesCacheExpire:Expire cache entries after
 de.gtk.preferencesCacheExpire:Einträge verfallen nach
 fr.gtk.preferencesCacheExpire:Les entrées du cache expirent après un délai de
+it.gtk.preferencesCacheExpire:Le voci della cache scadono dopo
 nl.gtk.preferencesCacheExpire:Buffergegevens vervallen na
 en.gtk.preferencesCacheMaintenance:Maintenance
 de.gtk.preferencesCacheMaintenance:Aufräumen
 fr.gtk.preferencesCacheMaintenance:Maintenance
+it.gtk.preferencesCacheMaintenance:Manutenzione
 nl.gtk.preferencesCacheMaintenance:Onderhoud
 en.gtk.preferencesCacheDays:days
 de.gtk.preferencesCacheDays:Tage(n)
 fr.gtk.preferencesCacheDays:jours
+it.gtk.preferencesCacheDays:giorni
 nl.gtk.preferencesCacheDays:dag(en)
 en.gtk.preferencesNetworkTabtitle:Network
 de.gtk.preferencesNetworkTabtitle:Netzwerk
 fr.gtk.preferencesNetworkTabtitle:Réseau
+it.gtk.preferencesNetworkTabtitle:Rete
 nl.gtk.preferencesNetworkTabtitle:Netwerk
 en.gtk.preferencesProxy:<b>HTTP Proxy</b>
 de.gtk.preferencesProxy:<b>HTTP Proxy</b>
 fr.gtk.preferencesProxy:<b>Proxy HTTP</b>
+it.gtk.preferencesProxy:<b>Proxy HTTP</b>
 nl.gtk.preferencesProxy:<b>HTTP-proxy</b>
 en.gtk.preferencesProxyType:Proxy type
 de.gtk.preferencesProxyType:Proxytyp
 fr.gtk.preferencesProxyType:Type de Proxy
+it.gtk.preferencesProxyType:Tipo di Proxy
 nl.gtk.preferencesProxyType:Proxy-type
 en.gtk.preferencesProxyHost:Host
 de.gtk.preferencesProxyHost:Host
 fr.gtk.preferencesProxyHost:Hôte
+it.gtk.preferencesProxyHost:Host
 nl.gtk.preferencesProxyHost:Proxy-server
 en.gtk.preferencesProxyUsername:Username
 de.gtk.preferencesProxyUsername:Benutzer
 fr.gtk.preferencesProxyUsername:Nom d'utilisateur
+it.gtk.preferencesProxyUsername:Nome utente
 nl.gtk.preferencesProxyUsername:Gebruikersnaam
 en.gtk.preferencesProxyPassword:Password
 de.gtk.preferencesProxyPassword:Passwort
 fr.gtk.preferencesProxyPassword:Mot de passe
+it.gtk.preferencesProxyPassword:Password
 nl.gtk.preferencesProxyPassword:Wachtwoord
 en.gtk.preferencesProxyNoproxy:No Proxy For
 de.gtk.preferencesProxyNoproxy:Kein Proxy für
 fr.gtk.preferencesProxyNoproxy:Pas de proxy pour
+it.gtk.preferencesProxyNoproxy:No Proxy Per
 nl.gtk.preferencesProxyNoproxy:Geen proxy voor
 en.gtk.preferencesProxyTypeTooltip:The type of HTTP proxy server.
 de.gtk.preferencesProxyTypeTooltip:Der Type des HTTP Proxy-Servers.
 fr.gtk.preferencesProxyTypeTooltip:Le type de serveur proxy HTTP.
+it.gtk.preferencesProxyTypeTooltip:Il tipo di server Proxy HTTP.
 nl.gtk.preferencesProxyTypeTooltip:Het type van de HTTP-proxy-server.
 en.gtk.preferencesProxyHostTooltip:Host name of your proxy server.
 de.gtk.preferencesProxyHostTooltip:Hostname des Proxy-Servers.
 fr.gtk.preferencesProxyHostTooltip:Nom d'hôte du serveur proxy.
+it.gtk.preferencesProxyHostTooltip:Nome host del tuo server Proxy.
 nl.gtk.preferencesProxyHostTooltip:Adres van de proxy-server.
 en.gtk.preferencesProxyPortTooltip:Port number to connect to on proxy server.
 de.gtk.preferencesProxyPortTooltip:Portnummer für die Verbindung zum Proxy.
 fr.gtk.preferencesProxyPortTooltip:Le numéro de port pour se connecter au serveur proxy.
+it.gtk.preferencesProxyPortTooltip:Numero della porta per l'accesso al server Proxy.
 nl.gtk.preferencesProxyPortTooltip:Poortnummer om te verbinden met de proxy-server.
 en.gtk.preferencesProxyUsernameTooltip:Username to access the proxy.
 de.gtk.preferencesProxyUsernameTooltip:Username für die Verbindung zum Proxy.
 fr.gtk.preferencesProxyUsernameTooltip:Nom d'utilisateur pour accéder au proxy.
+it.gtk.preferencesProxyUsernameTooltip:Nome utente per l'accesso al Proxy.
 nl.gtk.preferencesProxyUsernameTooltip:Gebruikersnaam voor toegang tot de proxy.
 en.gtk.preferencesProxyNoproxyTooltip:Comma separated list of host names that should not be proxied.
 de.gtk.preferencesProxyNoproxyTooltip:Liste von Hosts, die kein Proxy sein sollen. Komma trennt Einträge.
 fr.gtk.preferencesProxyNoproxyTooltip:Liste des noms d'hôtes séparés par des virgules qui ne devraient pas être traitées par le proxy.
+it.gtk.preferencesProxyNoproxyTooltip:Elenco separato da virgole dei nomi host che non devono essere sottoposti a Proxy.
 nl.gtk.preferencesProxyNoproxyTooltip:Lijst van ip-adressen of servernamen die niet via de proxy mogen lopen, gescheiden door komma's.
 
 en.gtk.preferencesFetching:<b>Fetching</b>
 de.gtk.preferencesFetching:<b>Daten holen (Fetch)</b>
 fr.gtk.preferencesFetching:<b>Connexions</b>
+it.gtk.preferencesFetching:<b>Connessioni</b>
 nl.gtk.preferencesFetching:<b>Verbindingen</b>
 en.gtk.preferencesFetchingMax:Maximum fetchers
 de.gtk.preferencesFetchingMax:Verbindungen maximal
 fr.gtk.preferencesFetchingMax:Nombre maximum de connexions
+it.gtk.preferencesFetchingMax:Numero massimo di connessioni
 nl.gtk.preferencesFetchingMax:Maximum aantal
 en.gtk.preferencesFetchingPerhost:Fetches per host
 de.gtk.preferencesFetchingPerhost:Verbindungen pro Host
 fr.gtk.preferencesFetchingPerhost:Nombre de connexions par hôte
+it.gtk.preferencesFetchingPerhost:Connessioni per host
 nl.gtk.preferencesFetchingPerhost:Aantal verbindingen per server
 en.gtk.preferencesFetchingCached:Cached connections
 de.gtk.preferencesFetchingCached:gepufferte Verbindungen
 fr.gtk.preferencesFetchingCached:Connexions en cache
+it.gtk.preferencesFetchingCached:Connessioni su cache
 nl.gtk.preferencesFetchingCached:Gebufferde verbindingen
 en.gtk.preferencesFetchingMaxTooltip:Maximum number of concurrent items to fetch at once.
 de.gtk.preferencesFetchingMaxTooltip:Maximale Anzahl paralleler Verbindungen.
 fr.gtk.preferencesFetchingMaxTooltip:Nombre maximum d'éléments simultanés à récupérer
+it.gtk.preferencesFetchingMaxTooltip:Numero massimo di elementi simultanei da recuperare in contemporanea.
 nl.gtk.preferencesFetchingMaxTooltip:Maximum aantal verbindingen die simultaan items ophalen.
 en.gtk.preferencesFetchingPerhostTooltip:Maximum number of item fetches per web server.
 de.gtk.preferencesFetchingPerhostTooltip:Maximale Zahl je Webserver.
 fr.gtk.preferencesFetchingPerhostTooltip:Nombre maximum d'élément à extrair pour chaque serveur Web.
+it.gtk.preferencesFetchingPerhostTooltip:Numero massimo di elementi da recuperare per server Web.
 nl.gtk.preferencesFetchingPerhostTooltip:Maximum aantal verbinden per webserver.
 en.gtk.preferencesFetchingCachedTooltip:Number of connections to keep in case they are needed again.
 de.gtk.preferencesFetchingCachedTooltip:Zahl offengehaltener Verbindungen für den Fall, daß sie nochmal benötigt werden.
 fr.gtk.preferencesFetchingCachedTooltip:Nombre de connexions à maintenir dans le cas où elles seront nécessaires à nouveau.
+it.gtk.preferencesFetchingCachedTooltip:Numero di connessioni da conservare nel caso in cui siano di nuovo necessarie.
 nl.gtk.preferencesFetchingCachedTooltip:Aantal verbindingen te bufferen voor het geval ze zijn weer nodig.
 # Proxy type list
 en.gtk.preferencesProxyTypeDirect:Direct connection
 de.gtk.preferencesProxyTypeDirect:Direktverbindung
 fr.gtk.preferencesProxyTypeDirect:Connexion directe
+it.gtk.preferencesProxyTypeDirect:Connessione diretta
 nl.gtk.preferencesProxyTypeDirect:Directe verbinding
 en.gtk.preferencesProxyTypeManual:Manual with no authentication
 de.gtk.preferencesProxyTypeManual:Manuell ohne Authentifizierung
 fr.gtk.preferencesProxyTypeManual:Manuel sans authentification
+it.gtk.preferencesProxyTypeManual:Manuale senza autentificazione
 nl.gtk.preferencesProxyTypeManual:Handmatig zonder authenticatie
 en.gtk.preferencesProxyTypeBasic:Manual with basic authentication
 de.gtk.preferencesProxyTypeBasic:Manuell mit einfacher Prüfung
 fr.gtk.preferencesProxyTypeBasic:Manuel avec authentification basique
+it.gtk.preferencesProxyTypeBasic:Manuale con autentificazione base
 nl.gtk.preferencesProxyTypeBasic:Handmatig met basisauthenticatie
 en.gtk.preferencesProxyTypeNLTM:Manual with - authentication
 de.gtk.preferencesProxyTypeNLTM:Manuell mit - Authentifizierung
 fr.gtk.preferencesProxyTypeNLTM:Manuel avec l'authentification NTLM
+it.gtk.preferencesProxyTypeNLTM:Manuale con autentificazione NTLM
 nl.gtk.preferencesProxyTypeNLTM:Handmatig via NTLM-authenticatie
 en.gtk.preferencesProxyTypeSystem:System settings
 de.gtk.preferencesProxyTypeSystem:System
 fr.gtk.preferencesProxyTypeSystem:Paramètres du système
+it.gtk.preferencesProxyTypeSystem:Impostazioni di sistema
 nl.gtk.preferencesProxyTypeSystem:Systeeminstellingen
 en.gtk.preferencesPDFTabtitle:PDF
 de.gtk.preferencesPDFTabtitle:PDF (Dokumente)
 fr.gtk.preferencesPDFTabtitle:PDF
+it.gtk.preferencesPDFTabtitle:Documento PDF
 nl.gtk.preferencesPDFTabtitle:PDF-uitvoer
 en.gtk.preferencesAppearance:<b>Appearance</b>
 de.gtk.preferencesAppearance:<b>Aussehen</b>
 fr.gtk.preferencesAppearance:<b>Apparence</b>
+it.gtk.preferencesAppearance:<b>Aspetto</b>
 nl.gtk.preferencesAppearance:<b>Opmaak</b>
 en.gtk.preferencesAppearanceImages:No images in output
 de.gtk.preferencesAppearanceImages:Bilder unterdrücken
 fr.gtk.preferencesAppearanceImages:Aucune image de rendu/restituée
+it.gtk.preferencesAppearanceImages:Nessuna immagine in output
 nl.gtk.preferencesAppearanceImages:Geen afbeeldingen in uitvoer
 en.gtk.preferencesAppearanceBackground:No background images in output
 de.gtk.preferencesAppearanceBackground:keine Hintergrundbilder
 fr.gtk.preferencesAppearanceBackground:Aucune image d'arrière-plan de rendu/restituée
+it.gtk.preferencesAppearanceBackground:Nessuna immagine di sfondo in output
 nl.gtk.preferencesAppearanceBackground:Geen achtergrondafbeeldingen in uitvoer
 en.gtk.preferencesAppearanceScalefit:Scale output to fit page
 de.gtk.preferencesAppearanceScalefit:Ausgabe auf Seitengröße skalieren
 fr.gtk.preferencesAppearanceScalefit:Adapter à la page
+it.gtk.preferencesAppearanceScalefit:Scala output per adattarlo alla pagina
 nl.gtk.preferencesAppearanceScalefit:Uitvoer passend maken aan pagina
 en.gtk.preferencesAppearanceScale:Scale output
 de.gtk.preferencesAppearanceScale:Skalierung
 fr.gtk.preferencesAppearanceScale:Adapter
+it.gtk.preferencesAppearanceScale:Scala output
 nl.gtk.preferencesAppearanceScale:Schaal
 en.gtk.preferencesMargins:<b>Margins</b>
 de.gtk.preferencesMargins:<b>Ränder</b>
 fr.gtk.preferencesMargins:<b>Marges</b>
+it.gtk.preferencesMargins:<b>Margini</b>
 nl.gtk.preferencesMargins:<b>Marges</b>
 en.gtk.preferencesMarginsMeasurements:measurements in mm
 de.gtk.preferencesMarginsMeasurements:Messen in mm
 fr.gtk.preferencesMarginsMeasurements:Mesures en mm
+it.gtk.preferencesMarginsMeasurements:Misura in mm
 nl.gtk.preferencesMarginsMeasurements:eenheden in millimeters
 en.gtk.preferencesGeneration:<b>Generation</b>
 de.gtk.preferencesGeneration:<b>Erstellung</b>
 fr.gtk.preferencesGeneration:<b>Generation</b>
+it.gtk.preferencesGeneration:<b>Generazione</b>
 nl.gtk.preferencesGeneration:<b>Genereren</b>
 en.gtk.preferencesGenerationCompressed:Output is compressed
 de.gtk.preferencesGenerationCompressed:Ausgabe komprimieren
 fr.gtk.preferencesGenerationCompressed:La restitution est compressée
+it.gtk.preferencesGenerationCompressed:L'output è compresso
 nl.gtk.preferencesGenerationCompressed:Uitvoer wordt gecomprimeerd
 en.gtk.preferencesGenerationPassword:Output has a password
 de.gtk.preferencesGenerationPassword:Dokument hat Passwort
 fr.gtk.preferencesGenerationPassword:La restitution possède un mot de passe
+it.gtk.preferencesGenerationPassword:L'output ha una password
 nl.gtk.preferencesGenerationPassword:Uitvoer wordt met wachtwoord beveiligd
 
 
@@ -3992,7 +4168,7 @@ nl.all.ThemeApplyErr:Een fout ontstond tijdens het toevoegen van het opgehaalde 
 en.ami.More:More
 de.ami.More:Mehr
 fr.ami.More:More
-it.ami.More:Di più 
+it.ami.More:Altro
 nl.ami.More:Meer
 
 
@@ -4059,7 +4235,7 @@ nl.ro.HelpToolbar10:Dit is de Zoek-knop.|MKlik met KIES om naar een stuk tekst o
 en.ro.HelpToolbar11:\Tup button.|M\Straverse up one level on the current website
 de.ro.HelpToolbar11:Das ist der Aufwärtsknopf.|MKlicken mit AUSWAHL führt auf die nächsthöhere Ebene der innerhalb Webseite.
 fr.ro.HelpToolbar11:\Tle bouton haut.|M\Sremonte d'un niveau sur le site web en cours.
-it.ro.HelpToolbar11:\Tsale di un livello rispetto al corrente indirizzo
+it.ro.HelpToolbar11:\Tsali di un livello rispetto all'indirizzo corrente
 nl.ro.HelpToolbar11:Dit is de Omhoog-knop.|MKlik met KIES om 1 niveau omhoog te gaan in de websitehiërarchie.|MKlik met PASAAN om 1 niveau omhoog te gaan in de websitehiërarchie en deze in een nieuw browservenster te openen.
 en.ro.HelpToolbar14:\TURL bar.|MType in the address of a site to visit and press Return to go there.
 de.ro.HelpToolbar14:Das ist die Adressleiste.|MHier die Adresse (URL) eingeben und Entertaste drücken, um eine neue Seite zu laden.
@@ -4090,7 +4266,7 @@ nl.ro.HelpToolbarHot:Dit is de favorietenindicator: wanneer deze oplicht, staat 
 en.ro.HelpStatus0:\Tstatus bar resizer.|MDrag to alter the size of the status bar.
 de.ro.HelpStatus0:Das ist die Begrenzung der Statusanzeige.|MKlicken und Ziehen verändert die Länge der Statusanzeige.
 fr.ro.HelpStatus0:\Tla glissière de la barre d'état.|MDéplacez-la pour changer la taille de la barre d'état.
-it.ro.HelpStatus0:\Ttrascina per modificare la dimensione della barra di stato
+it.ro.HelpStatus0:\Ttrascina per modificare le dimensioni della barra di stato
 nl.ro.HelpStatus0:Dit is statusbalkaanpasser.|MVersleep het om de grootte van de statusbalk te wijzigen.
 en.ro.HelpStatus1:\Tstatus bar.|MIt displays information on what the browser \w is doing.
 de.ro.HelpStatus1:Das ist die Statusanzeige|MSie zeigt an, was gerade im Browserfenster geschieht.
@@ -4116,7 +4292,7 @@ nl.ro.HelpIconMenu2:Verplaats de muispijl naar rechts om een venster te openen.
 en.ro.HelpIconMenu2-0:\Renter an address to visit.
 de.ro.HelpIconMenu2-0:Erlaubt die Eingabe einer Web-Adresse.
 fr.ro.HelpIconMenu2-0:\Rentrer une adresse à visiter.
-it.ro.HelpIconMenu2-0:\Rdigita un indirizzo da visitare
+it.ro.HelpIconMenu2-0:\Rdigita un indirizzo da aprire
 nl.ro.HelpIconMenu2-0:Verplaats de muispijl naar rechts om een webadres in te voeren en vervolgens de locatie te bezoeken.
 en.ro.HelpIconMenu2-1:\Sopen the hotlist management \w.
 de.ro.HelpIconMenu2-1:Klicken mit AUSWAHL öffnet die Hotlist.
@@ -4397,7 +4573,7 @@ nl.ro.HelpBrowserMenu4-1:Verplaats de muispijl naar rechts om de afbeeldingsmoge
 en.ro.HelpBrowserMenu4-1-0:\Stoggle the display of foreground images.
 de.ro.HelpBrowserMenu4-1-0:\Stoggle the display of foreground images.
 fr.ro.HelpBrowserMenu4-1-0:\Stoggle the display of foreground images.
-it.ro.HelpBrowserMenu4-1-0:\SAlterna la visualizzazione delle immagini in primo piano.
+it.ro.HelpBrowserMenu4-1-0:\Salterna la visualizzazione delle immagini in primo piano.
 nl.ro.HelpBrowserMenu4-1-0:Klik met KIES om het tonen van voorgrondafbeeldingen aan of uit te zetten.
 en.ro.HelpBrowserMenu4-1-1:\Stoggle the display of background images.
 de.ro.HelpBrowserMenu4-1-1:Schaltet Hintergrundbilder ein/aus.
@@ -4517,7 +4693,7 @@ nl.ro.HelpBrowserMenu5-1-1:Klik met KIES om de browsergeschiedenis te openen.
 en.ro.HelpBrowserMenu5-2:\Rmanage your cookies.
 de.ro.HelpBrowserMenu5-2:Cookies bearbeiten.
 fr.ro.HelpBrowserMenu5-2:\Rgérer vos favoris.
-it.ro.HelpBrowserMenu5-2:\Rgestisci i tuoi cookie
+it.ro.HelpBrowserMenu5-2:\Rgestisci i tuoi cookie.
 nl.ro.HelpBrowserMenu5-2:Verplaats de muispijl naar rechts om de cookies te beheren.
 en.ro.HelpBrowserMenu5-2-0:\Sopen the cookie management \w.
 de.ro.HelpBrowserMenu5-2-0:Anklicken um die gespeicherten Cookies anzusehen und zu bearbeiten.
@@ -4552,17 +4728,17 @@ nl.ro.HelpBrowserMenu6-2:Klik met KIES om de gebruikersinformatie in een nieuw b
 en.ro.HelpBrowserMenu6-3:\Sopen the about:credits page in a new \w.
 de.ro.HelpBrowserMenu6-3:\Sopen the about:credits page in a new \w.
 fr.ro.HelpBrowserMenu6-3:\Sopen the about:credits page in a new \w.
-it.ro.HelpBrowserMenu6-3:\Sapri la pagina about:credits in una nuova finestra
+it.ro.HelpBrowserMenu6-3:\Sapri la pagina informazioni:ringraziamenti in una nuova finestra
 nl.ro.HelpBrowserMenu6-3:Klik met KIES om de bijdragenpagina "about:credits" in een nieuw browservenster te openen.
 en.ro.HelpBrowserMenu6-4:\Sopen the about:licence page in a new \w.
 de.ro.HelpBrowserMenu6-4:\Sopen the about:licence page in a new \w.
 fr.ro.HelpBrowserMenu6-4:\Sopen the about:licence page in a new \w.
-it.ro.HelpBrowserMenu6-4:\Sapri la pagina about:licence in una nuova finestra
+it.ro.HelpBrowserMenu6-4:\Sapri la pagina informazioni:licenza in una nuova finestra
 nl.ro.HelpBrowserMenu6-4:Klik met KIES om de licentiepagina "about:licence" in een nieuw browservenster te openen.
 en.ro.HelpBrowserMenu6-5:\Srun Help.
 de.ro.HelpBrowserMenu6-5:Lädt die interaktive Hilfe.
 fr.ro.HelpBrowserMenu6-5:\Slancer Help.
-it.ro.HelpBrowserMenu6-5:\Savvia la guida in linea
+it.ro.HelpBrowserMenu6-5:\Sapri la guida in linea.
 nl.ro.HelpBrowserMenu6-5:Klik met KIES om het interactieve hulpprogramma !Help op te starten.
 
 en.ro.HelpBrowser-1:Click \s on a link to follow it.|MClick \a on a link to open it in a new \w.|MShift+\s click on a link to download the link target contents.|MShift+\a click to save the link target address.
@@ -4652,12 +4828,12 @@ nl.ro.HelpSearch:Gebruik dit venster om te zoeken naar tekst in de pagina.
 en.ro.HelpSearch0:Enter the search text. # matches any single character, * matches 0 or more characters.
 de.ro.HelpSearch0:Suchtext hier eingeben. # steht für exakt ein beliebiges Zeichen. * steht für 0 oder mehrere Zeichen.
 fr.ro.HelpSearch0:Entrer la chaîne de recherche. # remplace n'importe quel caractère, * correspond à 0 ou plus caractères.
-it.ro.HelpSearch0:Enter the search text. # matches any single character, * matches 0 or more characters.
+it.ro.HelpSearch0:Inserisci un testo da cercare. # corrispondenza di ogni singolo carattere, * corrispondenza di 0 o più caratteri.
 nl.ro.HelpSearch0:Voer in dit veld de zoekreeks in. # staat voor 1 willekeurig letterteken, * staat voor 0 of meerdere lettertekens.
 en.ro.HelpSearch1:Choose whether the search should regard upper and lower case characters as different.
 de.ro.HelpSearch1:Wählt ob nach Groß- und Kleinschreibung unterschieden werden soll.
 fr.ro.HelpSearch1:Choisir si la recherche accorde de l'importance à la casse (minuscules/MAJUSCULES).
-it.ro.HelpSearch1:Choose whether the search should regard upper and lower case characters as different.
+it.ro.HelpSearch1:Scegli se la ricerca deve considerare i caratteri maiuscoli e minuscoli come diversi.
 nl.ro.HelpSearch1:Kies of een zoekopdracht rekening moet houden met hoofd- en kleine letters.
 en.ro.HelpSearch2:\Smove to the next match.
 de.ro.HelpSearch2:Klicken mit AUSWAHL findet den nächsten Treffer.
@@ -4678,12 +4854,12 @@ nl.ro.HelpSearch4:Klik met KIES om het zoeken te stoppen en dit venster te sluit
 en.ro.HelpHotFolder:Use this \w to set the directory name.
 de.ro.HelpHotFolder:Dieses Fenster verwenden, um den Verzeichnis-Namen festzulegen.
 fr.ro.HelpHotFolder:Utiliser cette \w pour définir le nom de répertoire.
-it.ro.HelpHotFolder:Usa questa \w per impostare il nome della directory.
+it.ro.HelpHotFolder:Usa questa finestra per impostare il nome della directory.
 nl.ro.HelpHotFolder:Gebruik dit venster om de mapnaam in te voeren.
 en.ro.HelpHotEntry:Use this \w to set the entry details.
 de.ro.HelpHotEntry:Dieses Fenster verwenden, um die Details des Eintrages festzulegen.
 fr.ro.HelpHotEntry:Utiliser cette \w pour définir les détails de cette entrée.
-it.ro.HelpHotEntry:Usa questa \w per impostare i dettagli dell'immissione.
+it.ro.HelpHotEntry:Usa questa finestra per impostare i dettagli dell'immissione.
 nl.ro.HelpHotEntry:Gebruik dit om details van dit item in te voeren.
 en.ro.HelpHotlist:\Thotlist management window.
 de.ro.HelpHotlist:Das ist das Hotlist Fenster.
@@ -4713,12 +4889,12 @@ nl.ro.HelpHotlist3:Klik met KIES om de details van dit item te verbergen.
 en.ro.HelpHotlist4:\Sselect this directory.|MDouble-click \s to open this directory.
 de.ro.HelpHotlist4:Klicken mit AUSWAHL markiert dieses Verzeichnis.|MDoppelklicken um das Verzeichnis zu öffnen.
 fr.ro.HelpHotlist4:\Ssélectionner ce répertoire.|MDouble-cliquer \s pour ouvrir ce répertoire.
-it.ro.HelpHotlist4:\Sseleziona questa directory.|MDoppio-click \s per aprire questa directory.
+it.ro.HelpHotlist4:\Sseleziona questa directory.|MFai doppio-click \s per aprire questa directory.
 nl.ro.HelpHotlist4:Klik met KIES om deze map te selecteren.|MDubbelklik met KIES om deze map te openen en alle bijbehorende items uit te klappen.
 en.ro.HelpHotlist5:\Sselect this entry.|MDouble-click \s to launch this URL.
 de.ro.HelpHotlist5:Klicken mit AUSWAHL markiert diesen Eintrag.|MDoppelklicken öffnet diesen Eintrag in einem neuen Browserfenster.
 fr.ro.HelpHotlist5:\Ssélectionner cette entrée.|MDouble-cliquer \s pour lancer cette URL.
-it.ro.HelpHotlist5:\Sseleziona questo elemento.|MDoppio-click \s per avviare questo URL.
+it.ro.HelpHotlist5:\Sseleziona questo elemento.|MFai doppio-click \s per avviare questo URL.
 nl.ro.HelpHotlist5:Klik met KIES om dit item te selecteren.|MDubbelklik met om de inhoud van dit adres in een nieuw browservenster te openen.
 en.ro.HelpHotlist6:Release the mouse buttons to complete your selection.
 de.ro.HelpHotlist6:Maustasten loslassen, um die Auswahl abzuschließen.
@@ -4734,17 +4910,17 @@ nl.ro.HelpHotlist7:Laat de muisknop(pen) los om de selectie te kunnen verplaatse
 en.ro.HelpHotToolbar0:\Tdelete button.|M\Sdelete the current selection.
 de.ro.HelpHotToolbar0:Löscht die markierten Einträge und Verzeichnisse.
 fr.ro.HelpHotToolbar0:\Tle bouton Supprimer.|M\Ssupprimer la sélection courante.
-it.ro.HelpHotToolbar0:\Tcancella pulsante.|M\Scancella la selezione corrente.
+it.ro.HelpHotToolbar0:\Tpulsante cancella.|M\Scancella la selezione corrente.
 nl.ro.HelpHotToolbar0:Dit is de Verwijder-knop.|MKlik met KIES om deze selectie te verwijderen.
 en.ro.HelpHotToolbar1:\Texpand entries button.|M\Sexpand all addresses in the hotlist.|M\Acollapse all addresses in the hotlist.|MExpanded addresses show additional details, such as a visit counter.
 de.ro.HelpHotToolbar1:Expandiert Einträge.|MKlicken mit AUSWAHL expandiert alle / alle markierten Einträge.|MKlicken mit SPEZIAL faltet alle / alle markierten Einträge zusammen.|MBei expandierten Einträgen werden zusätzliche Informationen angezeigt.
 fr.ro.HelpHotToolbar1:\Tle bouton de déploiement des entrées.|M\Sdéployer toutes les entrées ou seulement celle de la sélection courante.|M\ARegrouper toutes les entrées ou seulement celles de la sélection courante.|MLes entrées déployées affichent des infos supplémentaires, comme un compteur de visite.
-it.ro.HelpHotToolbar1:\Texpand entries button.|M\Sexpand all addresses in the hotlist.|M\Acollapse all addresses in the hotlist.|MExpanded addresses show additional details, such as a visit counter.
+it.ro.HelpHotToolbar1:\Tpulsante espandi voci.|M\Sespande tutti gli indirizzi dei segnalibri.|M\Araggruppa tutti gli indirizzi nei segnalibri.|MEspandi gli indirizzi mostrando dettagli addizionali quali ad esempio il numero delle visite.
 nl.ro.HelpHotToolbar1:Dit is de Detail-knop.|MKlik met KIES om alle favorieten uit te klappen.|MKlik met PASAAN om alle favorieten in te klappen.|MUitgeklapte favorieten tonen aanvullende details, zoals een bezoekteller.
 en.ro.HelpHotToolbar2:\Topen directories button.|M\Sopen all directories in the hotlist.|M\Aclose all directories in the hotlist.
 de.ro.HelpHotToolbar2:Öffnet Verzeichnisse.|MKlicken mit AUSWAHL öffnet alle / alle markierten Verzeichnisse.|MKlicken mit SPEZIAL schließt alle / alle markierten Verzeichnisse.
 fr.ro.HelpHotToolbar2:\Tle bouton d'ouverture de répertoires.|M\Souvrir tous les répertoires ou seulement ceux de la sélection courante.|M\Afermer tous les répertoires ou seulement ceux de la sélection courante.
-it.ro.HelpHotToolbar2:\Topen directories button.|M\Sopen all directories in the hotlist.|M\Aclose all directories in the hotlist.
+it.ro.HelpHotToolbar2:\Tpulsante apri directory.|M\Sapri tutte le directory dei segnalibri.|M\Achiudi tutte le directory dei segnalibri.
 nl.ro.HelpHotToolbar2:Dit is de Open map-knop.|MKlik met KIES om alle mappen in de favorietenlijst te openen.|MKlik met PASAAN om alle mappen in de favorietenlijst te sluiten.
 en.ro.HelpHotToolbar3:\Tlaunch button.|M\Slaunch the current selection.
 de.ro.HelpHotToolbar3:Lädt alle markierten Einträge in jeweils ein neues Browserfenster.
@@ -4754,13 +4930,13 @@ nl.ro.HelpHotToolbar3:Dit is de Ga naar-knop.|MKlik met KIES om alle pagina's in
 en.ro.HelpHotToolbar4:\Tcreate button.|M\Screate a new directory.
 de.ro.HelpHotToolbar4:Erzeugt neue Einträge oder Verzeichnisse.|MKlicken mit AUSWAHL erstellt ein neues Verzeichnis.
 fr.ro.HelpHotToolbar4:\Tle bouton Créer.|M\Scréer un nouveau répertoire.
-it.ro.HelpHotToolbar4:\Tcrea pulsante.|M\Screa una nuova directory.
+it.ro.HelpHotToolbar4:\Tpulsante crea.|M\Screa una nuova directory.
 nl.ro.HelpHotToolbar4:Dit is de Nieuwe map-knop.|MKlik met KIES om een nieuwe map aan te maken.
 
 en.ro.HelpHotlistMenu0:\Rperform an operation on the hotlist.
 de.ro.HelpHotlistMenu0:Untermenü Hotlist. Bearbeiten der Hotlist.
 fr.ro.HelpHotlistMenu0:\Raccomplir une opération sur les favoris.
-it.ro.HelpHotlistMenu0:\Rperform an operation on the hotlist.
+it.ro.HelpHotlistMenu0:\Resegui un'operazione nei segnalibri.
 nl.ro.HelpHotlistMenu0:Verplaats de muispijl naar rechts om een operatie uit te voeren op de favorietenlijst.
 en.ro.HelpHotlistMenu0-0:\Rcreate a new item.
 de.ro.HelpHotlistMenu0-0:Neues Element in die Hotlist einfügen.
@@ -4785,12 +4961,12 @@ nl.ro.HelpHotlistMenu0-1:Verplaats de muispijl naar rechts om de favorietenlijst
 en.ro.HelpHotlistMenu0-2:\Rexpand items within the hotlist.
 de.ro.HelpHotlistMenu0-2:Öffnen von Verzeichnissen und Anzeigen von Zusatzinformationen.
 fr.ro.HelpHotlistMenu0-2:\Rdéployer les items dans la liste des favoris.
-it.ro.HelpHotlistMenu0-2:\Respandi gli elementi all'interno del segnalibro.
+it.ro.HelpHotlistMenu0-2:\Respandi gli elementi all'interno dei segnalibri.
 nl.ro.HelpHotlistMenu0-2:Verplaats de muispijl naar rechts om bepaalde items in de favorietenlijst uit te klappen.
 en.ro.HelpHotlistMenu0-2-0:\Sopen all directories and show all entry details.
 de.ro.HelpHotlistMenu0-2-0:Öffnet alle Verzeichnisse und zeigt zu Einträgen die Zusatzinformationen an.
 fr.ro.HelpHotlistMenu0-2-0:\Souvrir tous les répertoires et afficher tous les détails connus sur les entrées.
-it.ro.HelpHotlistMenu0-2-0:\Sapri tutte le directory e mostra in dettaglio tutte le immissioni
+it.ro.HelpHotlistMenu0-2-0:\Sapri tutte le directory e mostra in dettaglio tutte le immissioni.
 nl.ro.HelpHotlistMenu0-2-0:Klik met KIES om alle mappen te openen en alle details van de favorieten te tonen.
 en.ro.HelpHotlistMenu0-2-1:\Sopen all directories.
 de.ro.HelpHotlistMenu0-2-1:Öffnet alle Verzeichnisse.
@@ -4800,12 +4976,12 @@ nl.ro.HelpHotlistMenu0-2-1:Klik met KIES om alle mappen te openen en de bijbehor
 en.ro.HelpHotlistMenu0-2-2:\Sshow all entry details.
 de.ro.HelpHotlistMenu0-2-2:Zeigt die Zusatzinformationen zu den Einträgen an.
 fr.ro.HelpHotlistMenu0-2-2:\Smontrer tous les détails sur les entrées.
-it.ro.HelpHotlistMenu0-2-2:\Smostra tutti i dettagli dell'elemento
+it.ro.HelpHotlistMenu0-2-2:\Smostra tutti i dettagli dell'elemento.
 nl.ro.HelpHotlistMenu0-2-2:Klik met KIES om alle details van de favorieten te tonen.
 en.ro.HelpHotlistMenu0-3:\Rcollapse items within the hotlist.
 de.ro.HelpHotlistMenu0-3:Schließen von Verzeichnissen und Ausblenden der Zusatzinformationen.
 fr.ro.HelpHotlistMenu0-3:\Rregrouper les items dans la liste des favoris.
-it.ro.HelpHotlistMenu0-3:\Rraggruppa gli elementi all'interno del segnalibro.
+it.ro.HelpHotlistMenu0-3:\Rraggruppa gli elementi all'interno dei segnalibri.
 nl.ro.HelpHotlistMenu0-3:Verplaats de muispijl naar rechts om bepaalde items in de favorietenlijst in te klappen.
 en.ro.HelpHotlistMenu0-3-0:\Sclose all directories and hide all entry details.
 de.ro.HelpHotlistMenu0-3-0:Schließt alle Verzeichnisse und versteckt die Zusatzinformationen bei Einträgen.
@@ -4825,17 +5001,17 @@ nl.ro.HelpHotlistMenu0-3-2:Klik met KIES om alle details in de favorietenlijst t
 en.ro.HelpHotlistMenu0-4:\Rcontrol the display of NetSurf's toolbars.
 de.ro.HelpHotlistMenu0-4:Knopfleisteneinstellungen vornehmen.
 fr.ro.HelpHotlistMenu0-4:\Rcontroler l'affichage des barres d'outils de Netsurf.
-it.ro.HelpHotlistMenu0-4:\Rcontrol the display of NetSurf's toolbars.
+it.ro.HelpHotlistMenu0-4:\Rcontrolla la visualizzazione delle barre strumenti di NetSurf.
 nl.ro.HelpHotlistMenu0-4:Verplaats de muispijl naar rechts om de gereedschapbalken aan te passen.
 en.ro.HelpHotlistMenu0-4-0:\Stoggle the display of the toolbar buttons.
 de.ro.HelpHotlistMenu0-4-0:Anklicken um die Knopfleiste ein- bzw. auszuschalten.
 fr.ro.HelpHotlistMenu0-4-0:\Sbasculer l'affichage des boutons de la barre d'outils.
-it.ro.HelpHotlistMenu0-4-0:\Stoggle the display of the toolbar buttons.
+it.ro.HelpHotlistMenu0-4-0:\Salterna la visualizzazione dei pulsanti della barra strumenti.
 nl.ro.HelpHotlistMenu0-4-0:Klik met KIES om het tonen van de knoppen van de gereedschapbalk aan of uit te zetten.
 en.ro.HelpHotlistMenu0-4-1:\Stoggle toolbar edit mode.
 de.ro.HelpHotlistMenu0-4-1:Anklicken zum Bearbeiten der Knopfleiste.
 fr.ro.HelpHotlistMenu0-4-1:\Sbasculer le mode d'édition de barre d'outils.
-it.ro.HelpHotlistMenu0-4-1:\Stoggle toolbar edit mode.
+it.ro.HelpHotlistMenu0-4-1:\Salterna la modalità di modifica della barra strumenti.
 nl.ro.HelpHotlistMenu0-4-1:Klik met KIES om de aanpasmodus van de gereedschapbalk in of uit te schakelen. Wanneer ingeschakelt, verschijnt er een balk onder de gereedschapbalk met extra knoppen die van en naar deze balk gesleept kunnen worden om deze aan te passen.
 en.ro.HelpHotlistMenu1:\Roperate on the current selection.
 de.ro.HelpHotlistMenu1:Untermenü Auswahl. Bearbeiten der markierten Hotlist Elemente.
@@ -4860,7 +5036,7 @@ nl.ro.HelpHotlistMenu1-2:Klik met KIES om deze selectie uit de favorietenlijst t
 en.ro.HelpHotlistMenu1-3:\Sreset statistics, such as visit count, for selected items.
 de.ro.HelpHotlistMenu1-3:Setzt für die markierten Einträge die Statistik, z.B. Anzahl der Seitenbesuche, zurück.
 fr.ro.HelpHotlistMenu1-3:\Sremettre à zéro les statistiques, comme le compteur de visite, pour les items sélectionnés.
-it.ro.HelpHotlistMenu1-3:\Sreset statistics, such as visit count, for selected items.
+it.ro.HelpHotlistMenu1-3:\Sresetta le statistiche del contatore delle visite per gli oggetti selezionati.
 nl.ro.HelpHotlistMenu1-3:Klik met KIES om de statistische gegevens van de geselecteerde items opnieuw in te stellen. Voorbeeld: de bezoekteller wordt weer op 0 gezet.
 en.ro.HelpHotlistMenu2:\Sselect all the items in the hotlist.
 de.ro.HelpHotlistMenu2:Markiert alle Elemente der Hotlist.
@@ -4881,28 +5057,28 @@ nl.ro.HelpGHistory:Dit venster toont de browsergeschiedenis.
 en.ro.HelpGHistoryToolbar0:\Tdelete button.|M\Sdelete the current selection.
 de.ro.HelpGHistoryToolbar0:Entfernt markierte Bereiche.|MAnklicken mit AUSWAHL löscht die vorher markierten Bereiche aus der History.
 fr.ro.HelpGHistoryToolbar0:\Tle bouton de suppression.|M\Ssupprimer la sélection en cours.
-it.ro.HelpGHistoryToolbar0:\Tdelete button.|M\Sdelete the current selection.
+it.ro.HelpGHistoryToolbar0:\Tpulsante cancella.|M\Scancella la selezione corrente.
 nl.ro.HelpGHistoryToolbar0:Dit is de Verwijder-knop.|MKlik met KIES om deze selectie te verwijderen.
 en.ro.HelpGHistoryToolbar1:\Texpand entries button.|M\Sexpand all entries in the history.|M\Acollapse all entries in the history.|MExpanded entries show additional details, such as a visit counter.
 de.ro.HelpGHistoryToolbar1:Expandiert Einträge.|MAnklicken mit AUSWAHL expandiert alle Adressen.|MAnklicken mit SPEZIAL macht die Expansion aller Adressen rückgängig.|MIn expandierten Adressen werden Zusatzinformationen angezeigt.
 fr.ro.HelpGHistoryToolbar1:\Tle bouton de déploiement des entrées.|M\Sdéployer toutes les adresses des favoris.|M\Aregrouper toutes les adresses des favoris.|MLes adresses déployées apportent des détails supplémentaires, comme un compteur de visites.
-it.ro.HelpGHistoryToolbar1:\Texpand entries button.|M\Sexpand all entries in the history.|M\Acollapse all entries in the history.|MExpanded entries show additional details, such as a visit counter.
+it.ro.HelpGHistoryToolbar1:\Tpulsante espandi voci.|M\Sespandi tutte le voci nella cronologia.|M\Araggruppa tutte le voci nella cronologia.|ML'espansione delle voci mostra dettagli addizionali quali ad esempio il numero delle visite.
 nl.ro.HelpGHistoryToolbar1:Dit is de Detail-knop.|MKlik met KIES om alle items in de broswergeschiedenis uit te klappen.|MKlik met PASAAN om alle items in te klappen.|MUitgeklapte items tonen aanvullende details, zoals een bezoekteller.
 en.ro.HelpGHistoryToolbar2:\Topen sections button.|M\Sopen all sections in the global history.|M\Aclose all sections in the global history.
 de.ro.HelpGHistoryToolbar2:Öffnet Verzeichnisse.|MAnklicken mit AUSWAHL öffnet alle Verzeichnisse.|MAnklicken mit SPEZIAL schließt alle geöffneten Verzeichnisse.
 fr.ro.HelpGHistoryToolbar2:\Tle bouton d'ouverture de répertoires.|M\Souvrir tous les répertoires des favoris.|M\Afermer tous les répertoires des favoris.
-it.ro.HelpGHistoryToolbar2:\Topen sections button.|M\Sopen all sections in the global history.|M\Aclose all sections in the global history.
+it.ro.HelpGHistoryToolbar2:\Tpulsante apri sezioni.|M\Sapri tutte le sezioni nella cronologia globale.|M\Achiudi tutte le sezioni nella cronologia globale.
 nl.ro.HelpGHistoryToolbar2:Dit is de Open tijdsmappen-knop.|MKlik met KIES om alle tijdsmappen in de browsergeschiedenis te openen.|MKlik met PASAAN om alle tijdsmappen te sluiten.
 en.ro.HelpGHistoryToolbar3:\Tlaunch button.|M\Slaunch the current selection.
 de.ro.HelpGHistoryToolbar3:Lädt Webseiten.|MAnklicken mit AUSWAHL öffnet die markierten Webseiten in je einem neuen Browserfenster.
 fr.ro.HelpGHistoryToolbar3:\Tle bouton de lancement.|M\Slancer la sélection en cours.
-it.ro.HelpGHistoryToolbar3:\Tlaunch button.|M\Slaunch the current selection.
+it.ro.HelpGHistoryToolbar3:\Tpulsante di avvio.|M\Savvia la selezione corrente.
 nl.ro.HelpGHistoryToolbar3:Dit is de Ga naar-knop.|MKlik met KIES om alle pagina's in deze selectie in nieuwe browservensters te openen.
 
 en.ro.HelpGHistoryMenu0:\Rperform an operation on global history.
 de.ro.HelpGHistoryMenu0:Die globale History bearbeiten.
 fr.ro.HelpGHistoryMenu0:\Reffectuer une opération sur l'historique global.
-it.ro.HelpGHistoryMenu0:\Rperform an operation on global history.
+it.ro.HelpGHistoryMenu0:\Resegui un'operazione nella cronologia globale.
 nl.ro.HelpGHistoryMenu0:Verplaats de muispijl naar rechts om een operatie uit te voeren op de browsergeschiedenis.
 en.ro.HelpGHistoryMenu0-0:\Rexport global history as an HTML file.
 de.ro.HelpGHistoryMenu0-0:Speichert die History (global) als HTML Datei.
@@ -4927,7 +5103,7 @@ nl.ro.HelpGHistoryMenu0-1-1:Klik met KIES om alle mappen te openen en de bijbeho
 en.ro.HelpGHistoryMenu0-1-2:\Sshow all entry details.
 de.ro.HelpGHistoryMenu0-1-2:Zeigt die Details der sichtbaren Einträge an.
 fr.ro.HelpGHistoryMenu0-1-2:\Smontrer le détail de toutes les entrées.
-it.ro.HelpGHistoryMenu0-1-2:\Smostra tutte le immissioni in dettaglio
+it.ro.HelpGHistoryMenu0-1-2:\Smostra tutte le immissioni in dettaglio.
 nl.ro.HelpGHistoryMenu0-1-2:Klik met KIES om alle itemdetails te tonen.
 en.ro.HelpGHistoryMenu0-2:\Rcollapse items within global history.
 de.ro.HelpGHistoryMenu0-2:Weniger Information anzeigen
@@ -4952,17 +5128,17 @@ nl.ro.HelpGHistoryMenu0-2-2:Klik met KIES om alle itemdetails te verbergen.
 en.ro.HelpGHistoryMenu0-3:\Rcontrol the display of NetSurf's toolbars.
 de.ro.HelpGHistoryMenu0-3:Die Iconleiste der globalen History verändern.
 fr.ro.HelpGHistoryMenu0-3:\Rcontroler l'affichage des barre d'outils de NetSurf.
-it.ro.HelpGHistoryMenu0-3:\Rcontrol the display of NetSurf's toolbars.
+it.ro.HelpGHistoryMenu0-3:\Rcontrolla la visualizzazione delle barre strumenti di NetSurf.
 nl.ro.HelpGHistoryMenu0-3:Verplaats de muispijl naar rechts om de gereedschapbalken aan te passen.
 en.ro.HelpGHistoryMenu0-3-0:\Stoggle the display of the toolbar buttons.
 de.ro.HelpGHistoryMenu0-3-0:Iconleiste an- oder abschalten.
 fr.ro.HelpGHistoryMenu0-3-0:\Sbasculer l'affichage des boutons de la barre d'outils.
-it.ro.HelpGHistoryMenu0-3-0:\Stoggle the display of the toolbar buttons.
+it.ro.HelpGHistoryMenu0-3-0:\Salterna la visualizzazione dei pulsanti della barra strumenti.
 nl.ro.HelpGHistoryMenu0-3-0:Klik met KIES om het tonen van de knoppen op de gereedschapbalk aan of uit te zetten.
 en.ro.HelpGHistoryMenu0-3-1:\Stoggle toolbar edit mode.
 de.ro.HelpGHistoryMenu0-3-1:Iconleiste bearbeiten.
 fr.ro.HelpGHistoryMenu0-3-1:\Sbasculer le mode d'édition de la barre d'outils.
-it.ro.HelpGHistoryMenu0-3-1:\Stoggle toolbar edit mode.
+it.ro.HelpGHistoryMenu0-3-1:\Salterna la modalità di modifica della barra strumenti.
 nl.ro.HelpGHistoryMenu0-3-1:Klik met KIES om de aanpasmodus van de gereedschapbalk in of uit te schakelen. Wanneer ingeschakelt, verschijnt er een balk onder de gereedschapbalk met extra knoppen die van en naar deze balk gesleept kunnen worden om deze aan te passen.
 en.ro.HelpGHistoryMenu1:\Roperate on the current selection.
 de.ro.HelpGHistoryMenu1:Die aktuelle Auswahl bearbeiten.
@@ -4982,7 +5158,7 @@ nl.ro.HelpGHistoryMenu1-1:Klik met KIES om deze selectie uit de browsergeschiede
 en.ro.HelpGHistoryMenu1-2:\Sreset statistics, such as visit count, for selected items.
 de.ro.HelpGHistoryMenu1-2:Setzt die Besuchsstatistik der markierten Einträge zurück.
 fr.ro.HelpGHistoryMenu1-2:\Sremettre à zéro les statistiques, comme le compteur de visites, pour les items sélectionnés.
-it.ro.HelpGHistoryMenu1-2:\Sreset statistics, such as visit count, for selected items.
+it.ro.HelpGHistoryMenu1-2:\Sresetta le statistiche del contatore delle visite per gli oggetti selezionati.
 nl.ro.HelpGHistoryMenu1-2:Klik met KIES om de statistische gegevens van de geselecteerde items opnieuw in te stellen. Voorbeeld: de bezoekteller wordt weer op 0 gezet.
 en.ro.HelpGHistoryMenu2:\Sselect all the items in the history.
 de.ro.HelpGHistoryMenu2:Markiert alle Elemente der globalen History.
@@ -5003,23 +5179,23 @@ nl.ro.HelpCookies:Dit is het cookiebeheervenster.
 en.ro.HelpCookiesToolbar0:\Tdelete button.|M\Sdelete the current selection.
 de.ro.HelpCookiesToolbar0:Dies ist der Löschschalter.|MAnklicken löscht alle markierten Einträge.
 fr.ro.HelpCookiesToolbar0:\Tbouton de suppression.|M\Ssupprimer la sélection en cours.
-it.ro.HelpCookiesToolbar0:\Tdelete button.|M\Sdelete the current selection.
+it.ro.HelpCookiesToolbar0:\Tpulsante cancella.|M\Scancella la selezione corrente.
 nl.ro.HelpCookiesToolbar0:Dit is de Verwijder-knop.|MKlik met KIES om deze selectie te verwijderen.
 en.ro.HelpCookiesToolbar1:\Texpand cookies button.|M\Sexpand all cookies in the list.|M\Acollapse all cookies in the list.|MExpanded cookies show additional details.
 de.ro.HelpCookiesToolbar1:Dies ist der Schalter zum Expandieren der Einträge.|MKlicken mit AUSWAHL expandiert alle Cookies.|MKlicken mit SPEZIAL versteckt die Zusatzinformationen wieder.|MIn expandierten Cookies werden zusätzliche Informationen angezeigt. 
 fr.ro.HelpCookiesToolbar1:\Tdéployer le bouton de cookies.|M\Sdéployer tous les cookies de la liste.|M\Aregrouper tous les cookies de la liste.|MDéployer les cookies permet l'affichage d'informations supplémentaires.
-it.ro.HelpCookiesToolbar1:\Texpand cookies button.|M\Sexpand all cookies in the list.|M\Acollapse all cookies in the list.|MExpanded cookies show additional details.
+it.ro.HelpCookiesToolbar1:\Tpulsante espandi cookie.|M\Sespandi tutti i cookie nella lista.|M\Araggruppa tutti i cookie nella lista.|ML'espansione dei cookie serve a mostrare dettagli addizionali.
 nl.ro.HelpCookiesToolbar1:Dit is de Detail-knop.|MKlik met KIES om alle cookies uit te klappen.|MKlik met PASAAN om alle cookies in te klappen.|MUitgeklapte cookies tonen aanvullende details,
 en.ro.HelpCookiesToolbar2:\Topen directories button.|M\Sopen all directories in the list.|M\Aclose all directories in the list.
 de.ro.HelpCookiesToolbar2:Öffnet und schließt Verzeichnisse|MKlicken mit AUSWAHL öffnet alle Verzeichnisse der Liste.|MKlicken mit SPEZIAL schließt alle Verzeichnisse.
 fr.ro.HelpCookiesToolbar2:\Touvrir le bouton de répertoires.|M\Souvrir tous les répertoires de la liste.|M\Afermer tous les répertoires de la liste.
-it.ro.HelpCookiesToolbar2:\Topen directories button.|M\Sopen all directories in the list.|M\Aclose all directories in the list.
+it.ro.HelpCookiesToolbar2:\Tpulsante apri directory.|M\Sapri tutte le directory nella lista.|M\Achiudi tutte le directory nella lista.
 nl.ro.HelpCookiesToolbar2:Dit is de Open map-knop.|MKlik met KIES om alle mappen in het cookiesbeheervenster te openen.|MKlik met PASAAN om alle mappen in het cookiesbeheervenster te sluiten.
 
 en.ro.HelpCookiesMenu0:\Rperform an operation on the cookie list.
 de.ro.HelpCookiesMenu0:Die gesamte Liste bearbeiten.
 fr.ro.HelpCookiesMenu0:\Raccomplir une opération sur la liste de cookies.
-it.ro.HelpCookiesMenu0:\Rperform an operation on the cookie list.
+it.ro.HelpCookiesMenu0:\Resegui un'operazione nella lista dei cookie.
 nl.ro.HelpCookiesMenu0:Verplaats de muispijl naar rechts om een operatie uit te voeren op de opgeslagen cookies.
 en.ro.HelpCookiesMenu0-0:\Rexpand items within the cookie list.
 de.ro.HelpCookiesMenu0-0:Menü zum Expandieren der Einträge der Liste.
@@ -5029,7 +5205,7 @@ nl.ro.HelpCookiesMenu0-0:Verplaats de muispijl naar rechts om bepaalde items in 
 en.ro.HelpCookiesMenu0-0-0:\Sopen all directories and show all cookie details.
 de.ro.HelpCookiesMenu0-0-0:Klicken mit AUSWAHL öffnet alle Verzeichnisse und zeigt Details zu allen angezeigten Cookies.
 fr.ro.HelpCookiesMenu0-0-0:\Souvrir tous les répertoires et montrer le détail de tous les cookies.
-it.ro.HelpCookiesMenu0-0-0:\Sapri tutte le directory e mostra in dettaglio tutti i cookie
+it.ro.HelpCookiesMenu0-0-0:\Sapri tutte le directory e mostra in dettaglio tutti i cookie.
 nl.ro.HelpCookiesMenu0-0-0:Klik met KIES om alle mappen te openen en alle cookiedetails te tonen.
 en.ro.HelpCookiesMenu0-0-1:\Sopen all directories.
 de.ro.HelpCookiesMenu0-0-1:Klicken mit AUSWAHL öffnet alle Verzeichnisse.
@@ -5039,7 +5215,7 @@ nl.ro.HelpCookiesMenu0-0-1:Klik met KIES om alle mappen te openen en de bijbehor
 en.ro.HelpCookiesMenu0-0-2:\Sshow all cookie details.
 de.ro.HelpCookiesMenu0-0-2:Klicken mit AUSWAHL zeigt Details zu allen angezeigten Cookies.
 fr.ro.HelpCookiesMenu0-0-2:\Smontrer le détail de tous les cookies.
-it.ro.HelpCookiesMenu0-0-2:\Smostra in dettaglio tutti i cookie
+it.ro.HelpCookiesMenu0-0-2:\Smostra in dettaglio tutti i cookie.
 nl.ro.HelpCookiesMenu0-0-2:Klik met KIES om alle cookiedetails te tonen.
 en.ro.HelpCookiesMenu0-1:\Rcollapse items within the cookie list.
 de.ro.HelpCookiesMenu0-1:Menü zum Schließen der Einträge der Liste.
@@ -5064,17 +5240,17 @@ nl.ro.HelpCookiesMenu0-1-2:Klik met KIES om alle cookiedetails te verbergen.
 en.ro.HelpCookiesMenu0-2:\Rcontrol the display of NetSurf's toolbars.
 de.ro.HelpCookiesMenu0-2:Die Iconleiste verändern.
 fr.ro.HelpCookiesMenu0-2:\Rcontroler l'affichage des barres d'outils de Netsurf.
-it.ro.HelpCookiesMenu0-2:\Rcontrol the display of NetSurf's toolbars.
+it.ro.HelpCookiesMenu0-2:\Rcontrolla la visualizzazione delle barre strumenti di NetSurf.
 nl.ro.HelpCookiesMenu0-2:Verplaats de muispijl naar rechts om de gereedschapbalken aan te passen.
 en.ro.HelpCookiesMenu0-2-0:\Stoggle the display of the toolbar buttons.
 de.ro.HelpCookiesMenu0-2-0:Klicken mit AUSWAHL um die Iconleiste an- oder abzuschalten.
 fr.ro.HelpCookiesMenu0-2-0:\Sbasculer l'affichage des boutons de la barre d'outils.
-it.ro.HelpCookiesMenu0-2-0:\Stoggle the display of the toolbar buttons.
+it.ro.HelpCookiesMenu0-2-0:\Salterna la visualizzazione dei pulsanti della barra strumenti.
 nl.ro.HelpCookiesMenu0-2-0:Klik met KIES om het tonen van de knoppen op de gereedschapbalk aan of uit te zetten.
 en.ro.HelpCookiesMenu0-2-1:\Stoggle toolbar edit mode.
 de.ro.HelpCookiesMenu0-2-1:Klicken mit AUSWAHL um die Iconleiste zu bearbeiten.
 fr.ro.HelpCookiesMenu0-2-1:\Sbasculer le mode d'édition de la barre d'outils.
-it.ro.HelpCookiesMenu0-2-1:\Stoggle toolbar edit mode.
+it.ro.HelpCookiesMenu0-2-1:\Salterna la modalità di modifica della barra strumenti.
 nl.ro.HelpCookiesMenu0-2-1:Klik met KIES om de aanpasmodus van de gereedschapbalk in of uit te schakelen. Wanneer ingeschakelt, verschijnt er een balk onder de gereedschapbalk met extra knoppen die van en naar deze balk gesleept kunnen worden om deze aan te passen.
 en.ro.HelpCookiesMenu1:\Roperate on the current selection.
 de.ro.HelpCookiesMenu1:Die ausgewählten Einträge bearbeiten.
@@ -5157,7 +5333,7 @@ nl.ro.HelpConfigure8:Thema-instellingen.|MKlik op dit symbool om een weergavethe
 en.ro.HelpConfigure9:Security and Privacy configuration tool
 de.ro.HelpConfigure9:Sicherheitseinstellungen und Privatsphäre
 fr.ro.HelpConfigure9:Outil de configuration de la sécurité et de la confidentialité
-it.ro.HelpConfigure9:Strumento di configurazione per Sicurezza e la Privacy
+it.ro.HelpConfigure9:Strumento di configurazione della Sicurezza e della Privacy
 nl.ro.HelpConfigure9:Veiligheid en Privacy-instellingen|MKlik op dit symbool om de veiligheids- en privacyinstellingen aan te passen.
 
 en.ro.HelpCacheConfig:\Tcache configuration \w.
@@ -5173,7 +5349,7 @@ nl.ro.HelpCacheConfig3:Dit invoerveld toont de hoeveelheid geheugen die wordt ge
 en.ro.HelpCacheConfig4:\Sreduce the amount of memory.
 de.ro.HelpCacheConfig4:Klicken mit AUSWAHL verringert die Größe des Cachespeichers.
 fr.ro.HelpCacheConfig4:\Sréduire la quantité de mémoire.
-it.ro.HelpCacheConfig4:\Sriduce la quantità di memoria.
+it.ro.HelpCacheConfig4:\Sriduci la quantità di memoria.
 nl.ro.HelpCacheConfig4:Klik met KIES om de geheugenruimte kleiner te maken.
 en.ro.HelpCacheConfig5:\Sincrease the amount of memory.
 de.ro.HelpCacheConfig5:Klicken mit AUSWAHL vergrößert die Größe des Cachespeichers.
@@ -5188,7 +5364,7 @@ nl.ro.HelpCacheConfig10:Dit invoerveld toont de hoeveelheid schijfruimte die wor
 en.ro.HelpCacheConfig11:\Sreduce the amount of memory.
 de.ro.HelpCacheConfig11:Klicken mit AUSWAHL verringert die Größe des Cachespeichers.
 fr.ro.HelpCacheConfig11:\Sréduire la quantité de mémoire.
-it.ro.HelpCacheConfig11:\Sriduce la quantità di memoria.
+it.ro.HelpCacheConfig11:\Sriduci la quantità di memoria.
 nl.ro.HelpCacheConfig11:Klik met KIES om de schijfruimte kleiner te maken.
 en.ro.HelpCacheConfig12:\Sincrease the amount of memory.
 de.ro.HelpCacheConfig12:Klicken mit AUSWAHL vergrößert die Größe des Cachespeichers.
@@ -5198,12 +5374,12 @@ nl.ro.HelpCacheConfig12:Klik met KIES om de schijfruimte groter te maken.
 en.ro.HelpCacheConfig15:\Tmaximum number of days that content will be retained in the disc cache.
 de.ro.HelpCacheConfig15:\Tmaximum number of days that content will be retained in the disc cache.
 fr.ro.HelpCacheConfig15:\Tmaximum number of days that content will be retained in the disc cache.
-it.ro.HelpCacheConfig15:\Tmaximum number of days that content will be retained in the disc cache.
+it.ro.HelpCacheConfig15:\Tnumero massimo di giorni in cui il contenuto verrà conservato nella cache del disco.
 nl.ro.HelpCacheConfig15:Dit is het maximum aantal dagen dat de gebufferde pagina-inhoud op de schijf opgeslagen blijft.
 en.ro.HelpCacheConfig16:\Sreduce the number of days.
 de.ro.HelpCacheConfig16:\Sreduce the number of days.
 fr.ro.HelpCacheConfig16:\Sreduce the number of days.
-it.ro.HelpCacheConfig16:\Sriduce il numero di giorni.
+it.ro.HelpCacheConfig16:\Sriduci il numero di giorni.
 nl.ro.HelpCacheConfig16:Klik met KIES om het aantal dagen te verlagen.
 en.ro.HelpCacheConfig17:\Sincrease the number of days.
 de.ro.HelpCacheConfig17:\Sincrease the number of days.
@@ -5213,17 +5389,17 @@ nl.ro.HelpCacheConfig17:Klik met KIES om het aantal dagen te verhogen.
 en.ro.HelpCacheConfig19:\Sreset the Cache options back to their default values.
 de.ro.HelpCacheConfig19:Stellt die Standardeinstellungen wieder her.
 fr.ro.HelpCacheConfig19:\Srevenir aux valeurs par défaut des options du Cache.
-it.ro.HelpCacheConfig19:\Sreset the Cache options back to their default values.
+it.ro.HelpCacheConfig19:\Sresetta le opzioni della cache ai valori predefiniti.
 nl.ro.HelpCacheConfig19:Klik met KIES om de bufferinstellingen in dit venster terug te zetten op de standaardwaarden.
 en.ro.HelpCacheConfig20:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
 de.ro.HelpCacheConfig20:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
 fr.ro.HelpCacheConfig20:\Sfermer cette fenêtre sans sauver les changements.|M\Arevenir aux options de Cache précédemment sauvegardées.
-it.ro.HelpCacheConfig20:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+it.ro.HelpCacheConfig20:\Schiudi questa finestra senza salvare le modifiche.|M\Aripristina le opzioni della cache all'ultima configurazione salvata.
 nl.ro.HelpCacheConfig20:Klik met KIES om dit venster te sluiten zonder dat de gemaakte wijzigingen worden bewaard.|MKlik met PASAAN om de gemaakte wijzigingen ongedaan te maken; het venster wordt hierbij niet gesloten.
 en.ro.HelpCacheConfig21:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 de.ro.HelpCacheConfig21:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
 fr.ro.HelpCacheConfig21:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
-it.ro.HelpCacheConfig21:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+it.ro.HelpCacheConfig21:\Ssalva queste impostazioni e chiudi la finestra.|M\Asalva queste impostazioni senza chiudere la finestra.
 nl.ro.HelpCacheConfig21:Klik met KIES om de gemaakte wijzigingen te bewaren en dit venster te sluiten.|MKlikken met PASAAN heeft hetzelfde effect, alleen wordt het huidige venster dan niet gesloten.
 
 en.ro.HelpConnectConfig:\Tconnection configuration \w
@@ -5234,7 +5410,7 @@ nl.ro.HelpConnectConfig:Diverse verbindingsinstellingen kunnen in dit venster ge
 en.ro.HelpConnectConfig3:\Tcurrently selected proxy type.|MUse the menu to select a proxy type.
 de.ro.HelpConnectConfig3:Aktuell gewählter Proxytyp.|MMit dem Menü kann ein anderer Typ eingestellt werden.
 fr.ro.HelpConnectConfig3:\Tle type de proxy sélectionné en ce moment.|MUtiliser le menu pour choisir un type de proxy.
-it.ro.HelpConnectConfig3:\Tcurrently selected proxy type.|MUse the menu to select a proxy type.
+it.ro.HelpConnectConfig3:\Ttipo di proxy correntemente selezionato.|MUsa il menu per selezionare il tipo di proxy.
 nl.ro.HelpConnectConfig3:Dit is het huidige geselecteerde proxy-type.|MKlik op het symbool hiernaast om een proxy-type te selecteren.
 en.ro.HelpConnectConfig4:\Sselect a proxy type.
 de.ro.HelpConnectConfig4:Klicken mit AUSWAHL um einen anderen Proxytyp auszuwählen.
@@ -5254,42 +5430,42 @@ nl.ro.HelpConnectConfig8:Voer hier het poortnummer in voor de proxy.
 en.ro.HelpConnectConfig10:You can enter a username for proxies that require authentication here.
 de.ro.HelpConnectConfig10:Hier kann ein Username eingegeben werden, wenn der Proxy das erfordert.
 fr.ro.HelpConnectConfig10:Vous pouvez entrer ici un nom d'utilisateur pour les proxies nécessitant une authentification.
-it.ro.HelpConnectConfig10:Inserisci un nome utente per i proxy che richiedano un'autentificazione.
+it.ro.HelpConnectConfig10:Inserisci un nome utente per i proxy che richiedono autentificazione.
 nl.ro.HelpConnectConfig10:Voer hier een gebruikersnaam in voor proxies die authenticifering vereisen.
 en.ro.HelpConnectConfig12:You can enter a password for proxies that require authentication here.
 de.ro.HelpConnectConfig12:Hier kann das zum Usernamen gehörige Passwort eingegeben werden.
 fr.ro.HelpConnectConfig12:Vous pouvez entrer ici un mot de passe pour les proxies nécessitant une authentification.
-it.ro.HelpConnectConfig12:Inserisci una password per i proxy che richiedano un'autentificazione.
+it.ro.HelpConnectConfig12:Inserisci una password per i proxy che richiedono autentificazione.
 nl.ro.HelpConnectConfig12:Voer hier een wachtwoord in voor proxies die authenticifering vereisen.
 en.ro.HelpConnectConfig16:\Tmaximum number of simultaneous fetches that NetSurf will perform.
 de.ro.HelpConnectConfig16:Das ist die Maximalzahl simultaner Fetches, die NetSurf verwenden soll.
 fr.ro.HelpConnectConfig16:\Tle nombre maximum de télechargements simultanés que NetSurf peut effectuer.
-it.ro.HelpConnectConfig16:\Tmaximum number of simultaneous fetches that NetSurf will perform.
+it.ro.HelpConnectConfig16:\Tnumero massimo di tentativi simultanei che NetSurf dovrà eseguire.
 nl.ro.HelpConnectConfig16:Dit is het maximaal aantal simultaan uit te voeren ophaalopdrachten.
 en.ro.HelpConnectConfig17:\Sreduce the maximum number of simultaneous fetches.
 de.ro.HelpConnectConfig17:Klicken mit AUSWAHL verringert die Maximalzahl simultaner Fetches. 
 fr.ro.HelpConnectConfig17:\Sréduire le nombre de téléchargements simultanés.
-it.ro.HelpConnectConfig17:\Sreduce the maximum number of simultaneous fetches.
+it.ro.HelpConnectConfig17:\Sriduci il numero massimo di tentativi simultanei.
 nl.ro.HelpConnectConfig17:Klik met KIES om het maximaal aantal simultaan uit te voeren ophaalopdrachten te verlagen.
 en.ro.HelpConnectConfig18:\Sincrease the maximum number of simultaneous fetches.
 de.ro.HelpConnectConfig18:Klicken mit AUSWAHL vergrößert die Maximalzahl simultaner Fetches.
 fr.ro.HelpConnectConfig18:\Saugmenter le nombre de téléchargements simultanés.
-it.ro.HelpConnectConfig18:\Sincrease the maximum number of simultaneous fetches.
+it.ro.HelpConnectConfig18:\Saumenta il numero massimo di tentativi simultanei.
 nl.ro.HelpConnectConfig18:Klik met KIES om het maximaal aantal simultaan uit te voeren ophaaldopdrachten te verhogen.
 en.ro.HelpConnectConfig20:\Tmaximum number of simultaneous fetches that NetSurf will perform per host.
 de.ro.HelpConnectConfig20:Das ist die Maximalzahl simultaner Fetches, die je Host von NetSurf verwendet werden.
 fr.ro.HelpConnectConfig20:\Tle nombre maximum de téléchargements simultanés que Netsurf peut effectuer par hôte.
-it.ro.HelpConnectConfig20:\Tmaximum number of simultaneous fetches that NetSurf will perform per host.
+it.ro.HelpConnectConfig20:\Tnumero massimo di tentativi simultanei che NetSurf dovrà eseguire per host.
 nl.ro.HelpConnectConfig20:Dit is het maximaal aantal simultaan uit te voeren ophaalopdrachten per host.
 en.ro.HelpConnectConfig21:\Sreduce the maximum number of simultaneous fetches per host.
 de.ro.HelpConnectConfig21:Klicken mit AUSWAHL verringert die Maximalzahl simultaner Fetches je Host.
 fr.ro.HelpConnectConfig21:\Sréduire le nombre maximum de téléchargements simultanés par hôte.
-it.ro.HelpConnectConfig21:\Sreduce the maximum number of simultaneous fetches per host.
+it.ro.HelpConnectConfig21:\Sriduci il numero massimo di tentativi simultanei per host.
 nl.ro.HelpConnectConfig21:Klik met KIES om het maximaal aantal simultaan uit te voeren ophaalopdrachten per host te verlagen.
 en.ro.HelpConnectConfig22:\Sincrease the maximum number of simultaneous fetches per host.
 de.ro.HelpConnectConfig22:Klicken mit AUSWAHL vergrößert die Maximalzahl simultaner Fetches je Host.
 fr.ro.HelpConnectConfig22:\Saugmenter le nombre maximum de téléchargements simultanés par hôte.
-it.ro.HelpConnectConfig22:\Sincrease the maximum number of simultaneous fetches per host.
+it.ro.HelpConnectConfig22:\Saumenta il numero massimo di tentativi simultanei per host.
 nl.ro.HelpConnectConfig22:Klik met KIES om het maximaal aantal simultaan uit te voeren ophaalopdrachten per host te verhogen.
 en.ro.HelpConnectConfig24:\Tmaximum number of persistent connections.
 de.ro.HelpConnectConfig24:Das ist die Maximalzahl aufrechtzuerhaltender Verbindungen.
@@ -5309,63 +5485,63 @@ nl.ro.HelpConnectConfig26:Klik met KIES om het maximum aantal langdurige verbind
 en.ro.HelpConnectConfig27:\Sreset the Connection options back to their default values.
 de.ro.HelpConnectConfig27:Stellt die Standardeinstellungen wieder her.
 fr.ro.HelpConnectConfig27:\Srevenir aux valeurs par défaut des options de Connexion.
-it.ro.HelpConnectConfig27:\Sreset the Connection options back to their default values.
+it.ro.HelpConnectConfig27:\Sresetta le opzioni di connessioni ai valori predefiniti.
 nl.ro.HelpConnectConfig27:Klik met KIES om de verbindingsinstellingen in dit venster terug te zetten op de standaardwaarden.
 en.ro.HelpConnectConfig28:\Sclose this \w without saving changes.|M\Areturn the connection options to the last saved configuration.
 de.ro.HelpConnectConfig28:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
 fr.ro.HelpConnectConfig28:\Sfermer cette fenêtre sans sauvegarder les changements.|M\Arevenir aux options de Connexion précédemment sauvegardées.
-it.ro.HelpConnectConfig28:\Sclose this \w without saving changes.|M\Areturn the connection options to the last saved configuration.
+it.ro.HelpConnectConfig28:\Schiudi questa finestra senza salvare le modifiche.|M\Aripristina le opzioni della connessione all'ultima configurazione salvata.
 nl.ro.HelpConnectConfig28:Klik met KIES om dit venster te sluiten zonder dat de gemaakte wijzigingen worden bewaard.|MKlik met PASAAN om de gemaakte wijzigingen ongedaan te maken; het venster wordt hierbij niet gesloten.
 en.ro.HelpConnectConfig29:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 de.ro.HelpConnectConfig29:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
 fr.ro.HelpConnectConfig29:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
-it.ro.HelpConnectConfig29:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+it.ro.HelpConnectConfig29:\Ssalva queste impostazioni e chiudi la finestra.|M\Asalva queste impostazioni senza chiudere la finestra.
 nl.ro.HelpConnectConfig29:Klik met KIES om de gemaakte wijzigingen te bewaren en dit venster te sluiten.|MKlikken met PASAAN heeft hetzelfde effect, alleen wordt het huidige venster dan niet gesloten.
 
 en.ro.HelpContentConfig:\Tcontent configuration \w
 de.ro.HelpContentConfig:Fenster zur Einstellung des Browserverhaltens bei bestimmten Seiteninhalten
 fr.ro.HelpContentConfig:\Tla fenêtre de configuration du Contenu
-it.ro.HelpContentConfig:\Tconfigurazione dei contenuti \w
+it.ro.HelpContentConfig:\Tconfigurazione del contenuto \w
 nl.ro.HelpContentConfig:Het gedrag van de browser kan in dit venster gewijzigd worden.
 en.ro.HelpContentConfig2:This indicates whether NetSurf will attempt to block advertisements on web pages|MIn rare circumstances, this option may cause valid content to be blocked too.
 de.ro.HelpContentConfig2:Stellt ein, ob NetSurf versuchen soll, die auf Webseiten eingeblendete Werbung automatisch zu unterdrücken.|MIn seltenen Fällen wird dadurch jedoch auch 'echter' Seiteninhalt geblockt.
 fr.ro.HelpContentConfig2:Ceci indique si Netsurf doit essayer de bloquer les pubs sur les pages web.|MEn de rares circonstances, cette option peut également bloquer du contenu valide.
-it.ro.HelpContentConfig2:This indicates whether NetSurf will attempt to block advertisements on web pages|MIn rare circumstances, this option may cause valid content to be blocked too.
+it.ro.HelpContentConfig2:Indica se NetSurf tenterà di bloccare gli annunci pubblicitari sulle pagine Web|MNota che in rare circostanze questa opzione potrebbe causare il blocco anche di contenuti validi.
 nl.ro.HelpContentConfig2:Deze optie geeft aan of NetSurf advertenties op webpagina's probeert te blokkeren.|MIn zeldzame situaties, kan deze optie ook zinvolle informatie blokkeren.
 en.ro.HelpContentConfig3:This indicates whether NetSurf will stop web sites from automatically opening new windows on your desktop.
 de.ro.HelpContentConfig3:Stellt ein, ob NetSurf das automatische Öffnen neuer Fenster auf dem Desktop unterbinden soll.
 fr.ro.HelpContentConfig3:Ceci indique si Netsurf doit empêcher les sites web d'ouvrir automatiquement de nouvelles fenêtres sur votre Bureau.
-it.ro.HelpContentConfig3:This indicates whether NetSurf will stop web sites from automatically opening new windows on your desktop.
+it.ro.HelpContentConfig3:Indica se NetSurf impedirà ai siti Web di aprire automaticamente nuove finestre sul desktop.
 nl.ro.HelpContentConfig3:Deze optie geeft aan of NetSurf websites, die automatisch nieuwe pagina's proberen te openen blokkeerd.
 en.ro.HelpContentConfig4:This indicates whether NetSurf will allow external plug-ins to handle additional types of content, such as Flash.
 de.ro.HelpContentConfig4:Stellt ein, ob externe Pluginroutinen genutzt werden dürfen, um Zusatzinhalte darzustellen (z.B. Flash).
 fr.ro.HelpContentConfig4:Ceci indique si Netsurf doit autoriser les plug-ins externes à manipuler des types de contenu supplémentaires, comme le Flash.
-it.ro.HelpContentConfig4:This indicates whether NetSurf will allow external plug-ins to handle additional types of content, such as Flash.
+it.ro.HelpContentConfig4:Indica se NetSurf consentirà ai plug-in esterni di gestire tipi di contenuto aggiuntivi come il Flash.
 nl.ro.HelpContentConfig4:Deze optie geeft aan of NetSurf externe plug-ins, voor aanvullende soorten inhoud zoals Flash toestaat.
 en.ro.HelpContentConfig7:This indicates whether NetSurf will allow links to open in new windows.
 de.ro.HelpContentConfig7:Stellt ein, ob NetSurf erlaubt, daß Links beim Aufruf neue Browserfenster öffnen dürfen.
 fr.ro.HelpContentConfig7:This indicates whether NetSurf will allow links to open in new windows.
-it.ro.HelpContentConfig7:This indicates whether NetSurf will allow links to open in new windows.
+it.ro.HelpContentConfig7:Indica se NetSurf consentirà l'apertura dei link in nuove finestre.
 nl.ro.HelpContentConfig7:Deze optie geeft aan of NetSurf toestaat, dat koppelingen in een nieuwe venster geopend mogen worden.
 en.ro.HelpContentConfig8:\Sreset the Content options back to their default values.
 de.ro.HelpContentConfig8:Stellt die Standardeinstellungen wieder her.
 fr.ro.HelpContentConfig8:\Srevenir aux valeurs par défaut des options du Contenu.
-it.ro.HelpContentConfig8:\Sreset the Content options back to their default values.
+it.ro.HelpContentConfig8:\Sresetta le opzioni del contenuto ai valori predefiniti.
 nl.ro.HelpContentConfig8:Klik met KIES om de instellingen in dit venster terug te zetten op de standaardwaarden.
 en.ro.HelpContentConfig9:\Sclose this \w without saving changes.|M\Areturn the content options to the last saved configuration.
 de.ro.HelpContentConfig9:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
 fr.ro.HelpContentConfig9:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options de Contenu précédemment sauvegardées.
-it.ro.HelpContentConfig9:\Sclose this \w without saving changes.|M\Areturn the content options to the last saved configuration.
+it.ro.HelpContentConfig9:\Schiudi questa finestra senza salvare le modifiche.|M\Aripristina le opzioni del contenuto all'ultima configurazione salvata.
 nl.ro.HelpContentConfig9:Klik met KIES om dit venster te sluiten zonder dat de gemaakte wijzigingen worden bewaard.|MKlik met PASAAN om de gemaakte wijzigingen ongedaan te maken; het venster wordt hierbij niet gesloten.
 en.ro.HelpContentConfig10:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 de.ro.HelpContentConfig10:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
 fr.ro.HelpContentConfig10:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
-it.ro.HelpContentConfig10:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+it.ro.HelpContentConfig10:\Ssalva queste impostazioni e chiudi la finestra.|M\Asalva queste impostazioni senza chiudere la finestra.
 nl.ro.HelpContentConfig10:Klik met KIES om de gemaakte wijzigingen te bewaren en dit venster te sluiten.|MKlikken met PASAAN heeft hetzelfde effect, alleen wordt het huidige venster dan niet gesloten.
 en.ro.HelpContentConfig11:This indicates whether NetSurf will disable executing JavaScript.
 de.ro.HelpContentConfig11:This indicates whether NetSurf will disable executing JavaScript.
 fr.ro.HelpContentConfig11:This indicates whether NetSurf will disable executing JavaScript.
-it.ro.HelpContentConfig11:This indicates whether NetSurf will disable executing JavaScript.
+it.ro.HelpContentConfig11:Indica se NetSurf disabiliterà l'esecuzione di JavaScript.
 nl.ro.HelpContentConfig11:Deze optie geeft aan of het uitvoeren van JavaScript-scripts is uitgeschakeld.
 en.ro.HelpFontConfig:\Tfont configuration \w
 de.ro.HelpFontConfig:Konfigurationsfenster zur Einstellung der verwendeten Schriftarten
@@ -5375,7 +5551,7 @@ nl.ro.HelpFontConfig:De instellingen voor de verschillende tekststijlen kunnen i
 en.ro.HelpFontConfig3:\Tcurrently selected sans-serif font.|MNetSurf will use this font wherever a web page specifies a sans-serif typeface.
 de.ro.HelpFontConfig3:Das ist die aktuell gewählte Schriftart für Sans-serif.|MNetSurf wird diese Schriftart überall dort verwenden, wo von der Webseite ein Schriftbild in Sans-serif vorgegeben wird.
 fr.ro.HelpFontConfig3:\Tla fonte sans-sérif actuellement sélectionnée.|MNetsurf utilisera cette fonte à chaque fois qu'une page web spécifiera une police sans-sérif.
-it.ro.HelpFontConfig3:\Tcurrently selected sans-serif font.|MNetSurf will use this font wherever a web page specifies a sans-serif typeface.
+it.ro.HelpFontConfig3:\Tfont sans-serif correntemente selezionato.|MNetSurf utilizzerà questo font ovunque una pagina Web specifichi un carattere tipografico di tipo sans-serif.
 nl.ro.HelpFontConfig3:Dit is momenteel het geselecteerde schreefloos lettertype.|MNetSurf gebruikt dit lettertype wanneer een webpagina om deze tekststijl vraagt.
 en.ro.HelpFontConfig4:\Sselect a sans-serif font.
 de.ro.HelpFontConfig4:Klicken mit AUSWAHL, um eine Schriftart auszuwählen.
@@ -5385,7 +5561,7 @@ nl.ro.HelpFontConfig4:Klik met KIES om een schreefloos lettertype te selecteren.
 en.ro.HelpFontConfig6:\Tcurrently selected serif font.|MNetSurf will use this font wherever a web page specifies a serif typeface.
 de.ro.HelpFontConfig6:Das ist die aktuell gewählte Schriftart für Serif.|MNetSurf wird diese Schriftart überall dort verwenden, wo von der Webseite ein Schriftbild in Serif vorgegeben wird.
 fr.ro.HelpFontConfig6:\Tla fonte sérif actuellement sélectionnée.|MNetsurf utilisera cette fonte à chaque fois qu'une page web spécifiera une police sérif.
-it.ro.HelpFontConfig6:\Tcurrently selected serif font.|MNetSurf will use this font wherever a web page specifies a serif typeface.
+it.ro.HelpFontConfig6:\Tfont serif correntemente selezionato.|MNetSurf utilizzerà questo font ovunque una pagina Web specifichi un carattere tipografico di tipo serif.
 nl.ro.HelpFontConfig6:Dit is momenteel het geselecteerde lettertype met schreef.|MNetSurf gebruikt dit lettertype wanneer een webpagina om deze tekststijl vraagt.
 en.ro.HelpFontConfig7:\Sselect a sans-serif font.
 de.ro.HelpFontConfig7:Klicken mit AUSWAHL, um eine Schriftart auszuwählen.
@@ -5395,7 +5571,7 @@ nl.ro.HelpFontConfig7:Klik met KIES om een lettertype met schreef te selecteren.
 en.ro.HelpFontConfig9:\Tcurrently selected monospace font.|MNetSurf will use this font wherever a web page specifies a monospace typeface.
 de.ro.HelpFontConfig9:Das ist die aktuell gewählte Schriftart für Monospace.|MNetSurf wird diese Schriftart überall dort verwenden, wo von der Webseite ein Schriftbild in Monospace vorgegeben wird.
 fr.ro.HelpFontConfig9:\Tla fonte sérif actuellement sélectionnée.|MNetsurf utilisera cette fonte à chaque fois qu'une page web spécifiera une police monospace.
-it.ro.HelpFontConfig9:\Tcurrently selected monospace font.|MNetSurf will use this font wherever a web page specifies a monospace typeface.
+it.ro.HelpFontConfig9:\Tfont monospaziato correntemente selezionato.|MNetSurf utilizzerà questo font ovunque una pagina Web specifichi un carattere tipografico di tipo monospaziato.
 nl.ro.HelpFontConfig9:Dit is momenteel het geselecteerde monospace-lettertype.|MNetSurf gebruikt dit lettertype wanneer een webpagina om deze tekststijl vraagt.
 en.ro.HelpFontConfig10:\Sselect a monospace font.
 de.ro.HelpFontConfig10:Klicken mit AUSWAHL, um eine Schriftart auszuwählen.
@@ -5405,7 +5581,7 @@ nl.ro.HelpFontConfig10:Klik met KIES om een monospace-lettertype te selecteren.
 en.ro.HelpFontConfig12:\Tcurrently selected cursive font.|MNetSurf will use this font wherever a web page specifies a cursive typeface.
 de.ro.HelpFontConfig12:Das ist die aktuell gewählte Schriftart für Kursiv.|MNetSurf wird diese Schriftart überall dort verwenden, wo von der Webseite ein Schriftbild in Kursiv vorgegeben wird.
 fr.ro.HelpFontConfig12:\Tla fonte cursive actuellement sélectionnée.|MNetsurf utilisera cette fonte à chaque fois qu'une page web spécifiera une police cursive.
-it.ro.HelpFontConfig12:\Tcurrently selected cursive font.|MNetSurf will use this font wherever a web page specifies a cursive typeface.
+it.ro.HelpFontConfig12:\Tfont corsivo correntemente selezionato.|MNetSurf utilizzerà questo font ovunque una pagina Web specifichi un carattere tipografico di tipo corsivo.
 nl.ro.HelpFontConfig12:Dit is momenteel het geselecteerde cursieve lettertype.|MNetSurf gebruikt dit lettertype wanneer een webpagina om deze tekststijl vraagt.
 en.ro.HelpFontConfig13:\Sselect a cursive font.
 de.ro.HelpFontConfig13:Klicken mit AUSWAHL, um eine Schriftart auszuwählen.
@@ -5415,7 +5591,7 @@ nl.ro.HelpFontConfig13:Klik met KIES om een cursieve lettertype te selecteren.
 en.ro.HelpFontConfig15:\Tcurrently selected fantasy font.|MNetSurf will use this font wherever a web page specifies a fantasy typeface.
 de.ro.HelpFontConfig15:Das ist die aktuell gewählte Schriftart für Fantasy.|MNetSurf wird diese Schriftart überall dort verwenden, wo von der Webseite ein Schriftbild in Fantasy vorgegeben wird.
 fr.ro.HelpFontConfig15:\Tla fonte fantaisie actuellement sélectionnée.|MNetsurf utilisera cette fonte à chaque fois qu'une page web spécifiera une police fantaisie.
-it.ro.HelpFontConfig15:\Tcurrently selected fantasy font.|MNetSurf will use this font wherever a web page specifies a fantasy typeface.
+it.ro.HelpFontConfig15:\Tfont fantasia correntemente selezionato.|MNetSurf utilizzerà questo font ovunque una pagina Web specifichi un carattere tipografico di tipo fantasia.
 nl.ro.HelpFontConfig15:Dit is momenteel het geselecteerde fantasie-lettertype.|MNetSurf gebruikt dit lettertype wanneer een webpagina om deze tekststijl vraagt.
 en.ro.HelpFontConfig16:\Sselect a fantasy font.
 de.ro.HelpFontConfig16:Klicken mit AUSWAHL, um eine Schriftart auszuwählen.
@@ -5425,7 +5601,7 @@ nl.ro.HelpFontConfig16:Klik met KIES om een fantasie-lettertype te selecteren.
 en.ro.HelpFontConfig18:\Tcurrently selected font family.|MNetSurf will use this wherever a web page does not specify a typeface.
 de.ro.HelpFontConfig18:Das ist die aktuell gewählte Schriftart für die Standardtextanzeige.|MNetSurf wird diese Schriftart überall dort verwenden, wo von der Webseite KEIN bestimmtes Schriftbild vorgegeben wird.
 fr.ro.HelpFontConfig18:\Tla famille de fontes actuellement sélectionnée.|MNetsurf utilisera cette fonte à chaque fois qu'une page web ne spécifiera aucune police.
-it.ro.HelpFontConfig18:\Tcurrently selected font family.|MNetSurf will use this wherever a web page does not specify a typeface.
+it.ro.HelpFontConfig18:\Tfamiglia font correntemente selezionata.|MNetSurf lo utilizzerà laddove una pagina Web non specifichi un carattere tipografico.
 nl.ro.HelpFontConfig18:Dit is momenteel het geselecteerde lettertypesoort.|MNetSurf gebruikt dit lettertype als een webpagina geen lettertypesoort specificeerd.
 en.ro.HelpFontConfig19:\Sselect a default font family.
 de.ro.HelpFontConfig19:Klicken mit AUSWAHL, um eine Schriftart auszuwählen.
@@ -5435,47 +5611,47 @@ nl.ro.HelpFontConfig19:Klik met KIES om een standaardlettertypesoort te selecter
 en.ro.HelpFontConfig23:You can enter a default font size here.|MNetSurf will use this wherever a web page does not specify a font size of its own.
 de.ro.HelpFontConfig23:Hier kann eine Standarfontgröße gewählt werden.|MNetSurf wird diese Größe immer dann verwenden, wenn von der Webseite keine eigene Schriftgröße eingestellt wird.
 fr.ro.HelpFontConfig23:Vous pouvez entrer ici une taille par défaut.|MNetsurf l'utilisera chaque fois qu'une page web ne spécifiera pas de taille de fonte.
-it.ro.HelpFontConfig23:You can enter a default font size here.|MNetSurf will use this wherever a web page does not specify a font size of its own.
+it.ro.HelpFontConfig23:Puoi inserire qui la dimensione predefinita del carattere.|MNetSurf lo utilizzerà laddove una pagina Web non specifichi una propria dimensione del carattere.
 nl.ro.HelpFontConfig23:In dit veld kan een standaardlettergrootte ingevoerd worden.|MNetSurf gebruikt deze lettergrootte waar een webpagina niet van zichzelf de grootte specificeerd.
 en.ro.HelpFontConfig24:\Sreduce the default font size.
 de.ro.HelpFontConfig24:Klicken mit AUSWAHL verkleinert die Standardfontgröße.
 fr.ro.HelpFontConfig24:\Sréduire la taille de fonte.
-it.ro.HelpFontConfig24:\Sriduce la dimensione del font predefinito
+it.ro.HelpFontConfig24:\Sriduci la dimensione del font predefinito.
 nl.ro.HelpFontConfig24:Klik met KIES om de standaardlettergrootte te verkleinen
 en.ro.HelpFontConfig25:\Sincrease the default font size.
 de.ro.HelpFontConfig25:Klicken mit AUSWAHL vergrößert die Standardfontgröße.
 fr.ro.HelpFontConfig25:\Saugmenter la taille de fonte.
-it.ro.HelpFontConfig25:\Saumenta la dimensione del font predefinita
+it.ro.HelpFontConfig25:\Saumenta la dimensione del font predefinito.
 nl.ro.HelpFontConfig25:Klik met KIES om de standaardlettergrootte te vergroten.
 en.ro.HelpFontConfig28:You can enter a minimum font size here.|MNetSurf will not allow web pages to display smaller text than this.
 de.ro.HelpFontConfig28:Hier kann eine minimale Schriftgröße eingestellt werden.|MNetSurf wird keine Darstellung von noch kleineren Schriften zulassen.
 fr.ro.HelpFontConfig28:Vous pouvez entrer ici une taille de fonte minimum.|MNetsurf ne permettra pas aux pages web d'afficher un texte ayant une taille plus petite.
-it.ro.HelpFontConfig28:You can enter a minimum font size here.|MNetSurf will not allow web pages to display smaller text than this.
+it.ro.HelpFontConfig28:Puoi inserire qui la dimensione minima del carattere.|MNetSurf non consentirà alle pagine Web di visualizzare un testo più piccolo di questo.
 nl.ro.HelpFontConfig28:In dit veld kan een minimum lettertypegrootte ingevoerd worden.|MNetSurf staat webpagina's dan niet toe om kleinere lettertypes te tonen.
 en.ro.HelpFontConfig29:\Sreduce the minimum font size.
 de.ro.HelpFontConfig29:Klicken mit AUSWAHL verkleinert die minimal zugelassene Schriftgröße.
 fr.ro.HelpFontConfig29:\Sréduire la taille de fonte minimum.
-it.ro.HelpFontConfig29:\Sriduce la dimensione minima del font
+it.ro.HelpFontConfig29:\Sriduci la dimensione minima del font.
 nl.ro.HelpFontConfig29:Klik met KIES om de minimum lettergrootte te verkleinen.
 en.ro.HelpFontConfig30:\Sincrease the minimum font size.
 de.ro.HelpFontConfig30:Klicken mit AUSWAHL vergrößert die minimal zugelassene Schriftgröße.
 fr.ro.HelpFontConfig30:\Saugmenter la taille de fonte minimum.
-it.ro.HelpFontConfig30:\Saumenta la dimensione minima del font
+it.ro.HelpFontConfig30:\Saumenta la dimensione minima del font.
 nl.ro.HelpFontConfig30:Klik met KIES om de minimum lettergrootte te vergroten.
 en.ro.HelpFontConfig32:\Sreset the Font options back to their default values.
 de.ro.HelpFontConfig32:Stellt die Standardeinstellungen wieder her.
 fr.ro.HelpFontConfig32:\Srevenir aux valeurs par défaut des options de Fontes.
-it.ro.HelpFontConfig32:\Sripristina le impostazioni dei font ai loro valori originali
+it.ro.HelpFontConfig32:\Sresetta le impostazioni dei font ai valori predefiniti.
 nl.ro.HelpFontConfig32:Klik met KIES om de lettertype-instellingen in dit venster terug te zetten op de standaardwaarden.
 en.ro.HelpFontConfig33:\Sclose this \w without saving changes.|M\Areturn the font options to the last saved configuration.
 de.ro.HelpFontConfig33:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
 fr.ro.HelpFontConfig33:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options de Fontes précédemment sauvegardées.
-it.ro.HelpFontConfig33:\Sclose this \w without saving changes.|M\Areturn the font options to the last saved configuration.
+it.ro.HelpFontConfig33:\Schiudi questa finestra senza salvare le modifiche.|M\Aripristina le opzioni dei font all'ultima configurazione salvata.
 nl.ro.HelpFontConfig33:Klik met KIES om dit venster te sluiten zonder dat de gemaakte wijzigingen worden bewaard.|MKlik met PASAAN om de gemaakte wijzigingen ongedaan te maken; het venster wordt hierbij niet gesloten.
 en.ro.HelpFontConfig34:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 de.ro.HelpFontConfig34:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
 fr.ro.HelpFontConfig34:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
-it.ro.HelpFontConfig34:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+it.ro.HelpFontConfig34:\Ssalva queste impostazioni e chiudi la finestra.|M\Asalva queste impostazioni senza chiudere la finestra.
 nl.ro.HelpFontConfig34:Klik met KIES om de gemaakte wijzigingen te bewaren en dit venster te sluiten.|MKlikken met PASAAN heeft hetzelfde effect, alleen wordt het huidige venster dan niet gesloten.
 
 en.ro.HelpHomeConfig:\Thome page configuration \w
@@ -5486,32 +5662,32 @@ nl.ro.HelpHomeConfig:De begin/startpagina kan in dit venster gewijzigd worden.
 en.ro.HelpHomeConfig3:You can enter a default home page address here.
 de.ro.HelpHomeConfig3:Hier kann die Webadresse der Homepage eingegeben werden.
 fr.ro.HelpHomeConfig3:Vous pouvez entrer ici une page d'accueil par défaut.
-it.ro.HelpHomeConfig3:Puoi inserire l'indirizzo della pagina iniziale qui.
+it.ro.HelpHomeConfig3:Puoi inserire qui l'indirizzo della pagina iniziale.
 nl.ro.HelpHomeConfig3:Voer hier een standaard begin-/startpagina-adres in.
 en.ro.HelpHomeConfig4:\Sselect a recently typed URL.|MThese addresses have recently been typed into a NetSurf browser \w's URL bar.
 de.ro.HelpHomeConfig4:Klicken mit AUSWAHL zur schnellen Auswahl einer Adresse.|MDie angezeigten Adressen wurden in letzter Zeit in die Adressleiste eines Browserfensters eingegeben.
 fr.ro.HelpHomeConfig4:\Ssélectionner une URL récemment tapée.|MCes adresses ont été récemment tapées dans la barre d'URL du navigateur Netsurf.
-it.ro.HelpHomeConfig4:\Sselect a recently typed URL.|MThese addresses have recently been typed into a NetSurf browser \w's URL bar.
+it.ro.HelpHomeConfig4:\Sseleziona un URL digitato di recente.|MQuesti indirizzi sono stati digitati recentemente nella barra indirizzi del browser NetSurf.
 nl.ro.HelpHomeConfig4:Klik met KIES om een recent bezochte pagina te selecteren als startpagina.
 en.ro.HelpHomeConfig5:This indicates whether NetSurf will open a browser \w on start-up.
 de.ro.HelpHomeConfig5:Stellt ein, ob NetSurf beim Starten automatisch ein Browserfenster öffnet.
 fr.ro.HelpHomeConfig5:Ceci indique si Netsurf doit ouvrir une fenêtre de navigation au démarrage.
-it.ro.HelpHomeConfig5:This indicates whether NetSurf will open a browser \w on start-up.
+it.ro.HelpHomeConfig5:Indica se NetSurf aprirà  una finestra del browser all'avvio.
 nl.ro.HelpHomeConfig5:Deze optie geeft aan of NetSurf automatisch een browservenster opent nadat het programma is opgestart.
 en.ro.HelpHomeConfig6:\Sreset the Home page options back to their default values.
 de.ro.HelpHomeConfig6:Stellt die Standardeinstellungen wieder her.
 fr.ro.HelpHomeConfig6:\Srevenir aux valeurs par défaut des options de Page d'accueil.
-it.ro.HelpHomeConfig6:\Sreset the Home page options back to their default values.
+it.ro.HelpHomeConfig6:\Sresetta le opzioni della pagina iniziale ai valori predefiniti.
 nl.ro.HelpHomeConfig6:Klik met KIES om de startpagina-instellingen in dit venster terug te zetten op de standaardwaarden.
 en.ro.HelpHomeConfig7:\Sclose this \w without saving changes.|M\Areturn the home options to the last saved configuration.
 de.ro.HelpHomeConfig7:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
 fr.ro.HelpHomeConfig7:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options de Page d'accueil précédemment sauvegardées.
-it.ro.HelpHomeConfig7:\Sclose this \w without saving changes.|M\Areturn the home options to the last saved configuration.
+it.ro.HelpHomeConfig7:\Schiudi questa finestra senza salvare le modifiche.|M\Aripristina le opzioni della home all'ultima configurazione salvata.
 nl.ro.HelpHomeConfig7:Klik met KIES om dit venster te sluiten zonder dat de gemaakte wijzigingen worden bewaard.|MKlik met PASAAN om de gemaakte wijzigingen ongedaan te maken; het venster wordt hierbij niet gesloten.
 en.ro.HelpHomeConfig8:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 de.ro.HelpHomeConfig8:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
 fr.ro.HelpHomeConfig8:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
-it.ro.HelpHomeConfig8:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+it.ro.HelpHomeConfig8:\Ssalva queste impostazioni e chiudi la finestra.|M\Asalva queste impostazioni senza chiudere la finestra.
 nl.ro.HelpHomeConfig8:Klik met KIES om de gemaakte wijzigingen te bewaren en dit venster te sluiten.|MKlikken met PASAAN heeft hetzelfde effect, alleen wordt het huidige venster dan niet gesloten.
 
 en.ro.HelpImageConfig:\Timage configuration \w
@@ -5522,37 +5698,37 @@ nl.ro.HelpImageConfig:De verwerking van afbeeldingen kan in dit venster gewijzig
 en.ro.HelpImageConfig3:\Tcurrently selected foreground image quality.
 de.ro.HelpImageConfig3:Das ist die aktuell gewählte Qualität für die Darstellung der Vordergrundbilder.
 fr.ro.HelpImageConfig3:\Tla qualité d'image de premier plan sélectionnée actuellement.
-it.ro.HelpImageConfig3:\Tcurrently selected foreground image quality.
+it.ro.HelpImageConfig3:\Tqualità dell'immagine in primo piano correntemente selezionata.
 nl.ro.HelpImageConfig3:Dit is momenteel de geselecteerde voorgrondafbeeldingskwaliteit.
 en.ro.HelpImageConfig4:\Sselect a foreground image quality setting.|MError diffused provides the highest quality.
 de.ro.HelpImageConfig4:Klicken mit AUSWAHL zur Wahl der Anzeigequalität für Vordergrundbilder.|MError-Diffusion bietet die beste Qualität.
 fr.ro.HelpImageConfig4:\Schoisir un réglage de qualité pour les images de premier plan.|MAvec diffusion d'erreur correspond à la meilleure qualité.
-it.ro.HelpImageConfig4:\Sselect a foreground image quality setting.|MError diffused provides the highest quality.
+it.ro.HelpImageConfig4:\Sseleziona una impostazione per la qualità dell'immagine in primo piano.|ML'errore diffuso fornisce la qualità migliore.
 nl.ro.HelpImageConfig4:Klik met KIES om een bepaalde voorgrondafbeeldingskwaliteit te selecteren.|MFoutdiffusie biedt de hoogstmogelijke kwaliteit.
 en.ro.HelpImageConfig6:\Tcurrently selected background image quality.
 de.ro.HelpImageConfig6:Das ist die aktuell gewählte Qualität für die Darstellung der Hintergrundbilder.
 fr.ro.HelpImageConfig6:\Tla qualité d'image de fond sélectionnée actuellement.
-it.ro.HelpImageConfig6:\Tcurrently selected background image quality.
+it.ro.HelpImageConfig6:\Tqualità dell'immagine di sfondo correntemente selezionata.
 nl.ro.HelpImageConfig6:Dit is momenteel de geselecteerde achtergrondafbeeldingskwaliteit.
 en.ro.HelpImageConfig7:\Sselect a background image quality setting.|MError diffused provides the highest quality.
 de.ro.HelpImageConfig7:Klicken mit AUSWAHL zur Wahl der Anzeigequalität für Hintergrundbilder.|MError-Diffusion bietet die beste Qualität.
 fr.ro.HelpImageConfig7:\Schoisir un réglage de qualité pour les images de fond.|MAvec diffusion d'erreur correspond à la meilleure qualité.
-it.ro.HelpImageConfig7:\Sselect a background image quality setting.|MError diffused provides the highest quality.
+it.ro.HelpImageConfig7:\Sseleziona una impostazione per la qualità dell'immagine di sfondo.|ML'errore diffuso fornisce la qualità migliore.
 nl.ro.HelpImageConfig7:Klik met KIES om een bepaalde achtergrondafbeeldingskwaliteit te selecteren.|MFoutdiffusie biedt de hoogstmogelijke kwaliteit.
 en.ro.HelpImageConfig8:\Timage quality preview image.|MThe optimum results are achived with both foreground and background image quality set to error diffused.|MThe user guide provides more information on the implications of these options.
 de.ro.HelpImageConfig8:Das ist das Vorschaubild.|MDie qualitativ besten Anzeigeresultate werden erzielt, wenn Vorder- und Hintergrundbilder per Error-Diffusion dargestellt werden.|MGenauere Informationen gibt es in der Dokumentation.
 fr.ro.HelpImageConfig8:\Timage de prévisualisation de qualité d'image.|MLes résultats optimaux sont obtenus avec des images de premier plan et de fond avec diffusion d'erreur.|MLe guide utilisateur fournit plus d'informations quant aux implications de cette option.
-it.ro.HelpImageConfig8:\Timage quality preview image.|MThe optimum results are achived with both foreground and background image quality set to error diffused.|MThe user guide provides more information on the implications of these options.
+it.ro.HelpImageConfig8:\TQualità immagine di anteprima.|MI risultati ottimali vengono raggiunti impostando la qualità dell'immagine in primo piano e di sfondo su errore diffuso.|MLa guida in linea fornisce ulteriori informazioni sulle implicazioni di queste opzioni.
 nl.ro.HelpImageConfig8:Dit is een kwaliteitsvoorbeeldafbeelding.|MSelecteer foutdiffusie voor zowel voorgrond- als achtergrond voor de beste kwaliteit.|MDe gebruikershandleiding geeft meer informatie over de implicaties van deze mogelijkheden.
 en.ro.HelpImageConfig12:You can enter the minimum time between animation frames here.|MA very low setting can cause your computer to slow down when rapid animations are displayed and is not suitable for slow computers.
 de.ro.HelpImageConfig12:Hier kann die minimale Zeitverzögerung zwischen den Frames einer Animation vorgegeben werden.|MSehr niedrige Werte können bei raschen Animationen hohe Rechenleistungen erfordern und sind darum nicht geeignet für langsamere Computer.
 fr.ro.HelpImageConfig12:Vous pouvez entrer ici le temps minimum entre deux images d'animation.|MUn réglage trop bas peut ralentir les animations affichées et ne convient pas à des ordinateurs lents.
-it.ro.HelpImageConfig12:You can enter the minimum time between animation frames here.|MA very low setting can cause your computer to slow down when rapid animations are displayed and is not suitable for slow computers.
+it.ro.HelpImageConfig12:Puoi inserire qui il tempo minimo tra i frame di animazione.|MUn'impostazione molto bassa potrebbe rallentare il computer qualora vengano visualizzate animazioni rapide, potrebbe quindi non essere adatta su computer lenti.
 nl.ro.HelpImageConfig12:In dit veld kan de minimumtijd ingevoerd worden tussen de opeenvolgende animatiebeelden.|MEen lage waarde kan er toe leiden dat het systeem traag wordt bij het tonen van snelle animaties en is niet geschikt voor langzame systemen.
 en.ro.HelpImageConfig13:\Sreduce the minimum time between animation frames.
 de.ro.HelpImageConfig13:Klicken mit AUSWAHL verkleinert die minimale Wartezeit zwischen aufeinanderfolgenden Einzelbildern einer Animation.
 fr.ro.HelpImageConfig13:\Sréduire le temps minimum entre deux images d'animation.
-it.ro.HelpImageConfig13:\Sriduce il tempo di intervallo minimo tra i frame di animazione.
+it.ro.HelpImageConfig13:\Sriduci il tempo di intervallo minimo tra i frame di animazione.
 nl.ro.HelpImageConfig13:Klik met KIES om de minimumtijd tussen animatie-afbeeldingen te verkleinen.
 en.ro.HelpImageConfig14:\Sincrease the minimum time between animation frames.
 de.ro.HelpImageConfig14:Klicken mit AUSWAHL vergrößert die minimale Wartezeit zwischen aufeinanderfolgenden Einzelbildern einer Animation.
@@ -5562,22 +5738,22 @@ nl.ro.HelpImageConfig14:Klik met KIES om de minimumtijd tussen animatie-afbeeldi
 en.ro.HelpImageConfig16:This indicates whether NetSurf will disable animations on web pages.|MWhen animations are disabled, NetSurf will show the first frame as a static image.
 de.ro.HelpImageConfig16:Erlaubt das Abschalten der Animationsdarstellung auf Webseiten.|MSind die Animationen abgeschaltet, wird von NetSurf lediglich das erste Einzelbild der Animationsfolge als einfaches Bild angezeigt.
 fr.ro.HelpImageConfig16:Ceci indique si Netsurf doit annuler les animations des pages web.|MLorsque les animations sont désactivées, Netsurf utilisera la première image comme image statique.
-it.ro.HelpImageConfig16:This indicates whether NetSurf will disable animations on web pages.|MWhen animations are disabled, NetSurf will show the first frame as a static image.
+it.ro.HelpImageConfig16:Indica se NetSurf disabiliterà le animazioni sulle pagine Web.|MQuando le animazioni sono disabilitate NetSurf mostrerà il primo fotogramma come immagine statica.
 nl.ro.HelpImageConfig16:Deze optie geeft aan of animaties getoond worden.|MWanneer animaties niet worden getoond, dan wordt de eerste beeld van de animatie als een statische afbeelding getoond.
 en.ro.HelpImageConfig17:\Sreset the Image options back to their default values.
 de.ro.HelpImageConfig17:Stellt die Bildoptionen zurück auf die Standardwerte.
 fr.ro.HelpImageConfig17:\Srevenir aux valeurs par défaut des options d'Image.
-it.ro.HelpImageConfig17:\Sreset the Image options back to their default values.
+it.ro.HelpImageConfig17:\Sresetta le opzioni della immagini ai valori predefiniti.
 nl.ro.HelpImageConfig17:Klik met KIES om de instellingen in dit venster terug te zetten op de standaardwaarden.
 en.ro.HelpImageConfig18:\Sclose this \w without saving changes.|M\Areturn the image options to the last saved configuration.
 de.ro.HelpImageConfig18:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.            
 fr.ro.HelpImageConfig18:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options d'Image précédemment sauvegardées.
-it.ro.HelpImageConfig18:\Sclose this \w without saving changes.|M\Areturn the image options to the last saved configuration.
+it.ro.HelpImageConfig18:\Schiudi questa finestra senza salvare le modifiche.|M\Aripristina le opzioni delle immagini all'ultima configurazione salvata.
 nl.ro.HelpImageConfig18:Klik met KIES om dit venster te sluiten zonder dat de gemaakte wijzigingen worden bewaard.|MKlik met PASAAN om de gemaakte wijzigingen ongedaan te maken; het venster wordt hierbij niet gesloten.
 en.ro.HelpImageConfig19:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 de.ro.HelpImageConfig19:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.               
 fr.ro.HelpImageConfig19:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
-it.ro.HelpImageConfig19:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+it.ro.HelpImageConfig19:\Ssalva queste impostazioni e chiudi la finestra.|M\Asalva queste impostazioni senza chiudere la finestra.
 nl.ro.HelpImageConfig19:Klik met KIES om de gemaakte wijzigingen te bewaren en dit venster te sluiten.|MKlikken met PASAAN heeft hetzelfde effect, alleen wordt het huidige venster dan niet gesloten.
 
 en.ro.HelpInterfaceConfig:\Tinterface configuration \w
@@ -5588,52 +5764,52 @@ nl.ro.HelpInterfaceConfig:De interface-instellingen kunnen in dit venster gewijz
 en.ro.HelpInterfaceConfig2:This indicates whether NetSurf will strip file extensions when saving files to disc.
 de.ro.HelpInterfaceConfig2:Beim Abspeichern von Dateien auf einen Datenträger werden die Dateinamenserweiterungen (Extensions) aus dem Dateinamen entfernt.
 fr.ro.HelpInterfaceConfig2:Ceci indique si Netsurf supprime les extensions de fichiers lors d'une sauvegarde sur disque.
-it.ro.HelpInterfaceConfig2:This indicates whether NetSurf will strip file extensions when saving files to disc.
+it.ro.HelpInterfaceConfig2:Indica se NetSurf rimuoverà le estensioni dei file durante il salvataggio dei file su disco.
 nl.ro.HelpInterfaceConfig2:Deze optie geeft aan of bestandsextensies verwijderd zullen worden bij het bewaren.
 en.ro.HelpInterfaceConfig3:This indicates whether NetSurf will ask for confirmation before overwriting files of the same name.
 de.ro.HelpInterfaceConfig3:Beim Abspeichern wird vor dem Überschreiben namensgleicher Dateien von NetSurf nachgefragt, ob dies so erfolgen soll.
 fr.ro.HelpInterfaceConfig3:Ceci indique si Netsurf doit demander confirmation avant d'écraser des fichiers portant le même nom.
-it.ro.HelpInterfaceConfig3:This indicates whether NetSurf will ask for confirmation before overwriting files of the same name.
+it.ro.HelpInterfaceConfig3:Indica se NetSurf chiederà conferma prima di sovrascrivere i file con lo stesso nome.
 nl.ro.HelpInterfaceConfig3:Deze optie geeft aan of er toestemming wordt gevraagd voor het overschrijven van bestanden met dezelfde naam.
 en.ro.HelpInterfaceConfig6:This indicates whether NetSurf's URL suggestion feature is enabled.|MURL suggestion shows options for completing URLs as you type into NetSurf's URL bar.
 de.ro.HelpInterfaceConfig6:Fantastisches Feature zum automatischen Vorschlagen von URL Adressen bei deren Eingabe.|MDiese Funktion zeigt bei der Eingabe von Webadressen in die Adressleiste mögliche sinnvolle Adressvorschläge während des Eintippens an.
 fr.ro.HelpInterfaceConfig6:Ceci indique si la fontion de suggestion d'URL de Netsurf est activée.|MLa suggestion d'URL montre les possibilités de complétion d'URL au fur et à mesure où elles sont tapées dans la barre.
-it.ro.HelpInterfaceConfig6:This indicates whether NetSurf's URL suggestion feature is enabled.|MURL suggestion shows options for completing URLs as you type into NetSurf's URL bar.
+it.ro.HelpInterfaceConfig6:Indica se la funzione di suggerimento URL di NetSurf sarà abilitata.|MIl suggerimento URL mostra le opzioni per il completamento degli URL durante la digitazione nella barra indirizzi di NetSurf.
 nl.ro.HelpInterfaceConfig6:Deze optie geeft aan of het geven van adressuggesties is ingesteld.|MAdressuggestie geeft tijdens het typen van een adres een suggestie van het complete webadres.
 en.ro.HelpInterfaceConfig7:This indicates whether the URL for the item under the pointer in NetSurf's local history \w will be displayed.
 de.ro.HelpInterfaceConfig7:In der lokalen History werden die Adressen der besuchten Webseiten schwebend über den zugehörigen Bildern eingeblendet.
 fr.ro.HelpInterfaceConfig7:Ceci indique si l'URL de l'item sous le pointeur dans la fenêtre d'historique local doit être affiché.
-it.ro.HelpInterfaceConfig7:This indicates whether the URL for the item under the pointer in NetSurf's local history \w will be displayed.
+it.ro.HelpInterfaceConfig7:Indica se verrà visualizzato l'URL dell'elemento sotto il puntatore del mouse nella finestra della cronologia locale di NetSurf.
 nl.ro.HelpInterfaceConfig7:Deze optie geeft aan of het adres van een item onder de muisaanwijzer in de venstergeschiedenis zal worden getoond.
 en.ro.HelpInterfaceConfig10:This indicates whether NetSurf will use a thumbnail when iconising windows to the Pinboard.
 de.ro.HelpInterfaceConfig10:Beim verkleinernden Ablegen eines Browserfensters auf dem Desktophintergrund (Iconisieren) wird von NetSurf ein fensterspezifisches Icon erzeugt, welches den aktuellen Seiteninhalt wiedergibt.
 fr.ro.HelpInterfaceConfig10:Ceci indique si Netsurf doit utiliser une miniature lors de l'iconisation vers le Punaiseur (Pinboard).
-it.ro.HelpInterfaceConfig10:This indicates whether NetSurf will use a thumbnail when iconising windows to the Pinboard.
+it.ro.HelpInterfaceConfig10:Indica se NetSurf utilizzerà una miniatura quando si iconificano le finestre nella Pinboard.
 nl.ro.HelpInterfaceConfig10:Deze optie geeft aan of er een miniatuur van de pagina wordt getoond bij het symboliseren van vensters naar het prikbord.
 en.ro.HelpInterfaceConfig11:\Sreset the Interface options back to their default values.
 de.ro.HelpInterfaceConfig11:Stellt die Standardeinstellungen wieder her.
 fr.ro.HelpInterfaceConfig11:\Srevenir aux valeurs par défaut des options d'Interface.
-it.ro.HelpInterfaceConfig11:\Sreset the Interface options back to their default values.
+it.ro.HelpInterfaceConfig11:\Sresetta le opzioni dell'interfaccia ai valori predefiniti.
 nl.ro.HelpInterfaceConfig11:Klik met KIES om de instellingen in dit venster terug te zetten op de standaardwaarden.
 en.ro.HelpInterfaceConfig12:\Sclose this \w without saving changes.|M\Areturn the interface options to the last saved configuration.
 de.ro.HelpInterfaceConfig12:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
 fr.ro.HelpInterfaceConfig12:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options d'Interface précédemment sauvegardées.
-it.ro.HelpInterfaceConfig12:\Sclose this \w without saving changes.|M\Areturn the interface options to the last saved configuration.
+it.ro.HelpInterfaceConfig12:\Schiudi questa finestra senza salvare le modifiche.|M\Aripristina le opzioni dell'interfaccia all'ultima configurazione salvata.
 nl.ro.HelpInterfaceConfig12:Klik met KIES om dit venster te sluiten zonder dat de gemaakte wijzigingen worden bewaard.|MKlik met PASAAN om de gemaakte wijzigingen ongedaan te maken; het venster wordt hierbij niet gesloten.
 en.ro.HelpInterfaceConfig13:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 de.ro.HelpInterfaceConfig13:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
 fr.ro.HelpInterfaceConfig13:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
-it.ro.HelpInterfaceConfig13:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+it.ro.HelpInterfaceConfig13:\Ssalva queste impostazioni e chiudi la finestra.|M\Asalva queste impostazioni senza chiudere la finestra.
 nl.ro.HelpInterfaceConfig13:Klik met KIES om de gemaakte wijzigingen te bewaren en dit venster te sluiten.|MKlikken met PASAAN heeft hetzelfde effect, alleen wordt het huidige venster dan niet gesloten.
 en.ro.HelpInterfaceConfig16:This indicates whether NetSurf will use an external hotlist client if available, in preference to the internal hotlist.
 de.ro.HelpInterfaceConfig16:Erlaubt das Benutzen eines externen Programmes zur Verwaltung der Hotlist.
 fr.ro.HelpInterfaceConfig16:This indicates whether NetSurf will use an external hotlist client if available, in preference to the internal hotlist.
-it.ro.HelpInterfaceConfig16:This indicates whether NetSurf will use an external hotlist client if available, in preference to the internal hotlist.
+it.ro.HelpInterfaceConfig16:Indica se NetSurf tenterà di utilizzare un client segnalibri esterno se disponibile, al posto di quello interno.
 nl.ro.HelpInterfaceConfig16:Deze optie geeft aan of de favorietenlijst via een extern programma (indien beschikbaar) beheerd mogen worden.
 en.ro.HelpInterfaceConfig18:\Tthe path to a hotlist application which will be used to display the hotlist.
 de.ro.HelpInterfaceConfig18:\Tder Pfad zu einer Anwendung, die die Hotlist verwalten kann.
 fr.ro.HelpInterfaceConfig18:\Tthe path to a hotlist application which will be used to display the hotlist.
-it.ro.HelpInterfaceConfig18:\Tthe path to a hotlist application which will be used to display the hotlist.
+it.ro.HelpInterfaceConfig18:\Til percorso di un'applicazione esterna da utilizzare per la visualizzazione dei segnalibri.
 nl.ro.HelpInterfaceConfig18:Voer in dit invoerveld het pad in van een extern programma dat de favorietenlijst mag beheren.
 
 en.ro.HelpLanguageConfig:\Tlanguage configuration \w
@@ -5644,17 +5820,17 @@ nl.ro.HelpLanguageConfig:Diverse taalinstellingen kunnen in dit venster gewijzig
 en.ro.HelpLanguageConfig3:\Tcurrently selected interface language.|MThe interface language is the language used for NetSurf's messages and dialogue boxes.
 de.ro.HelpLanguageConfig3:Das ist die aktuell eingestellte Sprache für die Bedienoberfläche.|MDiese Sprache wird genutzt, um NetSurf's Meldungen, Texte der Dialogboxen, Menüs darzustellen.
 fr.ro.HelpLanguageConfig3:\Tla langue d'interface sélectionnée actuellement.|MLa langue d'interface est la langue utilisée pour les messages et les boîtes de dialogue de Netsurf.
-it.ro.HelpLanguageConfig3:\Tcurrently selected interface language.|MThe interface language is the language used for NetSurf's messages and dialogue boxes.
+it.ro.HelpLanguageConfig3:\Tla lingua dell'interfaccia correntemente selezionata.|MLa lingua dell'interfaccia � la lingua utilizzata per i messaggi e le finestre di dialogo di NetSurf.
 nl.ro.HelpLanguageConfig3:Dit is momenteel de geselecteerde gebruikersinterfacetaal.|MDe interfacetaal is de taal voor de melding- en dialoogvensters.
 en.ro.HelpLanguageConfig4:\Sselect an interface language.
 de.ro.HelpLanguageConfig4:Klicken mit AUSWAHL zum Auswählen einer Oberflächensprache.
 fr.ro.HelpLanguageConfig4:\Schoisir une langue d'interface.
-it.ro.HelpLanguageConfig4:\Sseleziona un'interfaccia di lingua.
+it.ro.HelpLanguageConfig4:\Sseleziona una lingua per l'interfaccia.
 nl.ro.HelpLanguageConfig4:Klik met KIES om de gebruikersinterfacetaal te kiezen.
 en.ro.HelpLanguageConfig6:\Tcurrently selected web page language.|MIf a web site provides a choice of languages, NetSurf will request the page in your preferred language.
 de.ro.HelpLanguageConfig6:Das ist die aktuelle Sprache zur Anzeige auf Webseiten.|MWenn eine Webseite die Darstellung in verschiedenen Sprachen anbietet, wird NetSurf die Webseite in der hier eingestellten bevorzugten Sprache abrufen.
 fr.ro.HelpLanguageConfig6:\Tla langue de page web sélectionnée actuellement.|MSi un site web fournit un choix de langues, Netsurf demandera la page dans votre langue favorite.
-it.ro.HelpLanguageConfig6:\Tcurrently selected web page language.|MIf a web site provides a choice of languages, NetSurf will request the page in your preferred language.
+it.ro.HelpLanguageConfig6:\Tla lingua della pagina web correntemente selezionata.|MSe un sito Web offre una scelta di lingue, NetSurf richiederà la pagina nella tua lingua preferita.
 nl.ro.HelpLanguageConfig6:Dit is momenteel de geselecteerde webpaginataal.|MWanneer een pagina meerdere taalmogelijkheden biedt, zal de NetSurf de pagina in de gewenste taal proberen op te vragen.
 en.ro.HelpLanguageConfig7:\Sselect a preferred web page language.
 de.ro.HelpLanguageConfig7:Klicken mit AUSWAHL zum Auswählen einer Webseitensprache.
@@ -5664,17 +5840,17 @@ nl.ro.HelpLanguageConfig7:Klik met KIES om de gewenste webpaginataal te kiezen.
 en.ro.HelpLanguageConfig8:\Sreset the Language options back to their default values.
 de.ro.HelpLanguageConfig8:Stellt die Standardeinstellungen wieder her.
 fr.ro.HelpLanguageConfig8:\Srevenir aux valeurs par défaut des options de Langue.
-it.ro.HelpLanguageConfig8:\Sreset the Language options back to their default values.
+it.ro.HelpLanguageConfig8:\Sresetta le opzioni della lingua ai valori predefiniti.
 nl.ro.HelpLanguageConfig8:Klik met KIES om de instellingen in dit venster terug te zetten op de standaardwaarden.
 en.ro.HelpLanguageConfig9:\Sclose this \w without saving changes.|M\Areturn the language options to the last saved configuration.
 de.ro.HelpLanguageConfig9:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
 fr.ro.HelpLanguageConfig9:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options de Langue précédemment sauvegardées.
-it.ro.HelpLanguageConfig9:\Sclose this \w without saving changes.|M\Areturn the language options to the last saved configuration.
+it.ro.HelpLanguageConfig9:\Schiudi questa finestra senza salvare le modifiche.|M\Aripristina le opzioni della lingua all'ultima configurazione salvata.
 nl.ro.HelpLanguageConfig9:Klik met KIES om dit venster te sluiten zonder dat de gemaakte wijzigingen worden bewaard.|MKlik met PASAAN om de gemaakte wijzigingen ongedaan te maken; het venster wordt hierbij niet gesloten.
 en.ro.HelpLanguageConfig10:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 de.ro.HelpLanguageConfig10:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
 fr.ro.HelpLanguageConfig10:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
-it.ro.HelpLanguageConfig10:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+it.ro.HelpLanguageConfig10:\Ssalva queste impostazioni e chiudi la finestra.|M\Asalva queste impostazioni senza chiudere la finestra.
 nl.ro.HelpLanguageConfig10:Klik met KIES om de gemaakte wijzigingen te bewaren en dit venster te sluiten.|MKlikken met PASAAN heeft hetzelfde effect, alleen wordt het huidige venster dan niet gesloten.
 
 en.ro.HelpSecurityConfig:\Tsecurity configuration \w
@@ -5685,17 +5861,17 @@ nl.ro.HelpSecurityConfig:De privacy- en veiligheidsinstellingen kunnen in dit ve
 en.ro.HelpSecurityConfig2:This indicates whether NetSurf will send site referral information to web servers.|MWhen this is enabled NetSurf will tell the web server of a new page the address of the site you came from, after following a link.
 de.ro.HelpSecurityConfig2:NetSurf sendet Seitenreferenzinformationen an Webserver.|MIst diese Option gewählt, schickt NetSurf an den Server einer neuen Webseite die Adresse der Seite von der aus die aktuelle über einen Link aufgerufen wurde.
 fr.ro.HelpSecurityConfig2:Ceci indique si Netsurf doit envoyer l'information de renvoi de site aux serveurs web.|MLorsque ceci est activé Netsurf signalera au serveur web d'une nouvelle page l'adresse du site d'où vous venez, après avoir suivi un lien.
-it.ro.HelpSecurityConfig2:This indicates whether NetSurf will send site referral information to web servers.|MWhen this is enabled NetSurf will tell the web server of a new page the address of the site you came from, after following a link.
+it.ro.HelpSecurityConfig2:Indica se NetSurf invierà  le informazioni di riferimento del sito ai server Web.|MQuando questo � abilitato, NetSurf comunicherà  al server Web di una nuova pagina l'indirizzo del sito dal quale proveniva, dopo aver seguito un link.
 nl.ro.HelpSecurityConfig2:Deze optie geeft aan of site-gerelateerde informatie naar webservers wordt meegezonden.|MIndien toegestaan, ontvangt de webserver informatie over de vorige pagina waar, via een koppeling, vandaan is gekomen.
 en.ro.HelpSecurityConfig6:You can enter the length of time that items are stored in global history here.
 de.ro.HelpSecurityConfig6:Hier kann die Zeitdauer in Tagen angegeben werden, bis zu deren Ablauf Objekte in der globalen History gespeichert bleiben.
 fr.ro.HelpSecurityConfig6:Vous pouvez entrer ici la durée de stockage des items dans l'historique global.
-it.ro.HelpSecurityConfig6:You can enter the length of time that items are stored in global history here.
+it.ro.HelpSecurityConfig6:Puoi inserire qui il periodo di tempo nel quale gli oggetti verranno memorizzati nella cronologia globale.
 nl.ro.HelpSecurityConfig6:In dit veld kan de tijdsduur ingevoerd worden, dat items bewaard worden in de browsergeschiedenis.
 en.ro.HelpSecurityConfig7:\Sreduce the global history duration.
 de.ro.HelpSecurityConfig7:Klicken mit AUSWAHL verkürzt die Aufbewahrungszeit von Seiten in der globalen History.
 fr.ro.HelpSecurityConfig7:\Sréduire la durée de l'historique global.
-it.ro.HelpSecurityConfig7:\Sriduce la durata della cronologia globale.
+it.ro.HelpSecurityConfig7:\Sriduci la durata della cronologia globale.
 nl.ro.HelpSecurityConfig7:Klik met KIES om de tijdsduur van de browsergeschiedenis per dag te verminderen.
 en.ro.HelpSecurityConfig8:\Sincrease the global history duration.
 de.ro.HelpSecurityConfig8:Klicken mit AUSWAHL verlängert die Aufbewahrungszeit von Seiten in der globalen History.
@@ -5705,44 +5881,44 @@ nl.ro.HelpSecurityConfig8:Klik met KIES om de tijdsduur van de browsergeschieden
 en.ro.HelpSecurityConfig10:\Sreset the Security options back to their default values.
 de.ro.HelpSecurityConfig10:Stellt die Standardeinstellungen wieder her.
 fr.ro.HelpSecurityConfig10:\Srevenir aux valeurs par défaut des options de Sécurité.
-it.ro.HelpSecurityConfig10:\Sreset the Security options back to their default values.
+it.ro.HelpSecurityConfig10:\Sresetta le opzioni di sicurezza ai valori predefiniti.
 nl.ro.HelpSecurityConfig10:Klik met KIES om de instellingen in dit venster terug te zetten op de standaardwaarden.
 en.ro.HelpSecurityConfig11:\Sclose this \w without saving changes.|M\Areturn the security options to the last saved configuration.
 de.ro.HelpSecurityConfig11:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.                                  
 fr.ro.HelpSecurityConfig11:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options de Sécurité précédemment sauvegardées.
-it.ro.HelpSecurityConfig11:\Sclose this \w without saving changes.|M\Areturn the security options to the last saved configuration.
+it.ro.HelpSecurityConfig11:\Schiudi questa finestra senza salvare le modifiche.|M\Aripristina le opzioni di sicurezza all'ultima configurazione salvata.
 nl.ro.HelpSecurityConfig11:Klik met KIES om dit venster te sluiten zonder dat de gemaakte wijzigingen worden bewaard.|MKlik met PASAAN om de gemaakte wijzigingen ongedaan te maken; het venster wordt hierbij niet gesloten.
 en.ro.HelpSecurityConfig12:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 de.ro.HelpSecurityConfig12:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.                                     
 fr.ro.HelpSecurityConfig12:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
-it.ro.HelpSecurityConfig12:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+it.ro.HelpSecurityConfig12:\Ssalva queste impostazioni e chiudi la finestra.|M\Asalva queste impostazioni senza chiudere la finestra.
 nl.ro.HelpSecurityConfig12:Klik met KIES om de gemaakte wijzigingen te bewaren en dit venster te sluiten.|MKlikken met PASAAN heeft hetzelfde effect, alleen wordt het huidige venster dan niet gesloten.
 
 en.ro.HelpThemeConfig:\Ttheme configuration \w
 de.ro.HelpThemeConfig:Fenster zur Auswahl des Anzeigethemas
 fr.ro.HelpThemeConfig:\Tla fenêtre de configuration de thème
-it.ro.HelpThemeConfig:\Tconfigurazione del tema \w
+it.ro.HelpThemeConfig:\Tconfigurazione dei temi \w
 nl.ro.HelpThemeConfig:Het thema kan in dit venster gewijzigd worden.
 en.ro.HelpThemeConfig2:\Sreset the Theme options back to their default values.
 de.ro.HelpThemeConfig2:Stellt die Standardeinstellungen wieder her.
 fr.ro.HelpThemeConfig2:\Srevenir aux valeurs par défaut des options de Thème.
-it.ro.HelpThemeConfig2:\Sreset the Theme options back to their default values.
+it.ro.HelpThemeConfig2:\Sresetta le opzioni del tema ai valori predefiniti.
 nl.ro.HelpThemeConfig2:Klik met KIES om de instellingen in dit venster terug te zetten op de standaardwaarden.
 en.ro.HelpThemeConfig3:\Sclose this \w without saving changes.|M\Areturn the theme options to the last saved configuration.
 de.ro.HelpThemeConfig3:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
 fr.ro.HelpThemeConfig3:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options de Thème précédemment sauvegardées.
-it.ro.HelpThemeConfig3:\Sclose this \w without saving changes.|M\Areturn the theme options to the last saved configuration.
+it.ro.HelpThemeConfig3:\Schiudi questa finestra senza salvare le modifiche.|M\Aripristina le opzioni dei temi all'ultima configurazione salvata.
 nl.ro.HelpThemeConfig3:Klik met KIES om dit venster te sluiten zonder dat de gemaakte wijzigingen worden bewaard.|MKlik met PASAAN om de gemaakte wijzigingen ongedaan te maken; het venster wordt hierbij niet gesloten.
 en.ro.HelpThemeConfig4:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 de.ro.HelpThemeConfig4:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.   
 fr.ro.HelpThemeConfig4:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
-it.ro.HelpThemeConfig4:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+it.ro.HelpThemeConfig4:\Ssalva queste impostazioni e chiudi la finestra.|M\Asalva queste impostazioni senza chiudere la finestra.
 nl.ro.HelpThemeConfig4:Klik met KIES om de gemaakte wijzigingen te bewaren en dit venster te sluiten.|MKlikken met PASAAN heeft hetzelfde effect, alleen wordt het huidige venster dan niet gesloten.
 
 en.ro.HelpThemePConfig:This pane shows the available themes.|MThe selected icon theme is used for NetSurf browser \ws, the hotlist, global history and cookie management.
 de.ro.HelpThemePConfig:Dieser Dialog zeigt die verfügbaren Themen.|MDas ausgewählte Thema wird bei der Anzeige von Browserfenster, Cookieverwaltung, Hotlist und History eingesetzt.
 fr.ro.HelpThemePConfig:Cette fenêtre indique les thèmes disponibles.|MLe thème de l'icône sélectionnée est utilisée pour les fenêtres de navigation de Netsurf, la liste des favoris et l'historique global.
-it.ro.HelpThemePConfig:This pane shows the available themes.|MThe selected icon theme is used for NetSurf browser \ws, the hotlist, global history and cookie management.
+it.ro.HelpThemePConfig:Questo pannello mostra i temi disponibili.|MIl tema delle icone selezionato verrà  usato dal browser NetSurf \ws, dai segnalibri, dalla cronologia globale e dal gestore dei cookie.
 nl.ro.HelpThemePConfig:Dit deelvenster toont de beschikbare thema's.|MHet geselecteerde thema wordt gebruikt in de NetSurf-browservensters, de favorietenlijst en de browsergeschiedenis.
 
 # Amiga HelpHint (tooltip) text
@@ -5761,7 +5937,7 @@ nl.ami.HelpToolbarForward:Volgende\nLMB: Springt naar de volgende pagina in de v
 en.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
 de.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
 fr.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
-it.ami.HelpToolbarStop:Stoppa
+it.ami.HelpToolbarStop:Stop
 nl.ami.HelpToolbarStop:Stop\nLMB: Stopt het laden van de pagina
 en.ami.HelpToolbarReload:Reload\nLMB: Reloads the page\nShift+LMB: Reloads the page and all objects
 de.ami.HelpToolbarReload:Reload\nLMB: Reloads the page\nShift+LMB: Reloads the page and all objects
@@ -5781,7 +5957,7 @@ nl.ami.HelpToolbarURL:Webadresbalk\nVoor een webadres in en druk op Enter\nSugge
 en.ami.HelpToolbarWebSearch:Web search bar\nType text and press Return to search using your default search provider
 de.ami.HelpToolbarWebSearch:Websuchleiste\nText eingeben und Enter drücken um mit der Standardsuchmaschine zu suchen
 fr.ami.HelpToolbarWebSearch:Web search bar\nType text and press Return to search using your default search provider
-it.ami.HelpToolbarWebSearch:Digita una voce in base al provider scelto e premi invio
+it.ami.HelpToolbarWebSearch:Digita un testo in base al provider di ricerca predefinito e premi invio
 nl.ami.HelpToolbarWebSearch:Web-zoekbalk\nVoer de tekst in en druk op Enter om te zoeken met behulp van de standaard ingestelde zoekmachine
 en.ami.HelpToolbarAddTab:Add tab\nLMB: Adds a new blank tab
 de.ami.HelpToolbarAddTab:Tab hinzufügen.
@@ -5789,10 +5965,15 @@ fr.ami.HelpToolbarAddTab:Add tab\nLMB: Adds a new blank tab
 it.ami.HelpToolbarAddTab:Apri una nuova scheda
 nl.ami.HelpToolbarAddTab:Tabblad toevoegen\nLMB: Een nieuwe leeg tabblad wordt geopend
 en.ami.PageInfoInsecure:Insecure
+it.ami.PageInfoInsecure:Non sicuro
 en.ami.PageInfoLocal:Local
+it.ami.PageInfoLocal:Locale
 en.ami.PageInfoSecure:Secure
+it.ami.PageInfoSecure:Sicuro
 en.ami.PageInfoWarning:Warning
+it.ami.PageInfoWarning:Avviso
 en.ami.PageInfoInternal:Internal
+it.ami.PageInfoInternal:Interno
 
 
 # Configuration tokens
@@ -6416,6 +6597,7 @@ it.all.Bottom:Inferiore
 nl.all.Bottom:Onder
 
 en.all.MM:mm
+de.all.MM:mm
 fr.all.MM:mm
 nl.all.MM:mm
 it.all.MM:mm
@@ -6455,6 +6637,7 @@ de.all.FitPage:Seite einpassen
 fr.all.FitPage:Adapter la page
 it.all.FitPage:Adatta pagina
 nl.all.FitPage:Maak pagina passend
+
 en.all.CompressPDF:Compress PDF
 de.all.CompressPDF:PDF komprimieren
 fr.all.CompressPDF:Compresser le PDF
@@ -6525,6 +6708,7 @@ nl.all.SetPassword:Stel wachtwoord in
 #it.all.MNGTitle:%s (Immagine MNG %lux%lu pixel)
 #nl.all.MNGTitle:%s (MNG-afbeelding %lux%lu punten)
 #en.all.LoginLabel:A website is requesting credentials for access.
+#it.all.LoginLabel:Il sito web richiede delle credenziali per l'accesso.
 #en.gtk.gtkToolBarTitle:Toolbar custom button store
 #de.gtk.gtkToolBarTitle:Benutzerdefinierter Ort für Toolbar-Icons
 #fr.gtk.gtkToolBarTitle:Personaliser la barre d'outils
