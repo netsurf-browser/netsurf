@@ -1,6 +1,8 @@
 Development
 ===========
 
+[TOC]
+
 # Working with the team
 
 Generally it is sensible to check with the other developers if you are

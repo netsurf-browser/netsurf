@@ -1,6 +1,8 @@
 User Interface
 ==============
 
+[TOC]
+
 Netsurf is divided into a series of frontends which provide a user
 interface around common core functionality. Each frontend is a
 distinct implementation for a specific GUI toolkit.
