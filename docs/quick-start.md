@@ -6,14 +6,14 @@ Last Updated: 21st January 2020
 This document provides steps for building NetSurf.
 
 These instructions use a shell script to perform several operations.
-This script has only been tested with the bash and zsh bourne style
-shell interpreters. The latest version of this script should be
-retrieved from the official NetSurf source repository.
+  This script has only been tested with the bash and zsh bourne style
+  shell interpreters. The latest version of this script should be
+  retrieved from the official NetSurf source repository.
 
 This shell script is used by the NetSurf Developers but you should
-satisfy yourself that the script is not malicious. It should be noted
-that the building the browser will also be executing shell code and
-requires a similar level of trust.
+  satisfy yourself that the script is not malicious. It should be noted
+  that building the browser will also be executing shell code and
+  requires a similar level of trust.
 
 
 Native build
