@@ -1316,7 +1316,7 @@ nserror nsurl_create(const char * const url_s, nsurl **url)
 	}
 
 	e = nsurl__components_to_string(&c, NSURL_WITH_FRAGMENT,
-			sizeof(nsurl), (char **)url, &length);
+			offsetof(nsurl, string), (char **)url, &length);
 	if (e != NSERROR_OK) {
 		return e;
 	}
@@ -1554,7 +1554,7 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	}
 
 	error = nsurl__components_to_string(&c, NSURL_WITH_FRAGMENT,
-			sizeof(nsurl), (char **)joined, &length);
+			offsetof(nsurl, string), (char **)joined, &length);
 	if (error != NSERROR_OK) {
 		return error;
 	}
