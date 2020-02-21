@@ -285,9 +285,11 @@ html_proceed_to_done(html_content *html)
 		}
 		break;
 	case CONTENT_STATUS_DONE:
+		/* fallthrough */
+	case CONTENT_STATUS_LOADING:
 		return NSERROR_OK;
 	default:
-		NSLOG(netsurf, ERROR, "Content status unexpectedly not READY/DONE");
+		NSLOG(netsurf, ERROR, "Content status unexpectedly not LOADING/READY/DONE");
 		break;
 	}
 	return NSERROR_UNKNOWN;
