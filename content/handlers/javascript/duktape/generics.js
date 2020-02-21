@@ -27,6 +27,29 @@ var NetSurf = {
 	    },
 	});
     },
+    /* The make-proxy call for nodemap-type objects */
+    makeNodeMapProxy: function(inner) {
+	return new Proxy(inner, {
+	    has: function(target, key) {
+		if (typeof key == 'number') {
+		    return (key >= 0) && (key < target.length);
+		} else {
+		    return target.getNamedItem(key) || (key in target);
+		}
+	    },
+	    get: function(target, key) {
+		if (typeof key == 'number') {
+		    return target.item(key);
+		} else {
+		    var attr = target.getNamedItem(key);
+		    if (attr) {
+			return attr;
+		    }
+		    return target[key];
+		}
+	    },
+	});
+    },
     consoleFormatter: function Formatter() {
 
 	if (arguments.length == 0) {
