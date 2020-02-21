@@ -40,7 +40,7 @@
  *
  * This is used to test all the out of memory paths in initialisation.
  */
-#define CORESTRING_TEST_COUNT 435
+#define CORESTRING_TEST_COUNT 480
 
 START_TEST(corestrings_test)
 {
@@ -53,8 +53,12 @@ START_TEST(corestrings_test)
 	res = corestrings_fini();
 
 	malloc_limit(UINT_MAX);
-
-	ck_assert_int_eq(ires, NSERROR_NOMEM);
+	
+	if (_i < CORESTRING_TEST_COUNT) {
+		ck_assert_int_eq(ires, NSERROR_NOMEM);
+	} else {
+		ck_assert_int_eq(ires, NSERROR_OK);
+	}
 	ck_assert_int_eq(res, NSERROR_OK);
 }
 END_TEST
@@ -65,7 +69,7 @@ static TCase *corestrings_case_create(void)
 	TCase *tc;
 	tc = tcase_create("corestrings");
 
-	tcase_add_loop_test(tc, corestrings_test, 0, CORESTRING_TEST_COUNT);
+	tcase_add_loop_test(tc, corestrings_test, 0, CORESTRING_TEST_COUNT + 1);
 
 	return tc;
 }
