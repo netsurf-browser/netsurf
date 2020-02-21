@@ -273,7 +273,7 @@ prototype Window()
 	duk_put_prop_string(ctx, 0, #v)
 	/* https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects */
 	/* ** Value properties */
-	EXPOSE(infinity);
+	EXPOSE(Infinity);
 	EXPOSE(NaN);
 	EXPOSE(undefined);
 	EXPOSE(null);
