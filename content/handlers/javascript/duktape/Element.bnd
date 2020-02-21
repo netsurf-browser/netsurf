@@ -514,3 +514,31 @@ out:
 	}
 	return 0;
 %}
+
+getter Element::attributes()
+%{
+	dom_exception exc;
+	dom_namednodemap *nmap = NULL;
+	duk_set_top(ctx, 0);
+	duk_push_this(ctx);
+	duk_get_prop_string(ctx, 0, MAGIC(attributes));
+	if (duk_is_undefined(ctx, -1)) {
+		duk_pop(ctx);
+		exc = dom_node_get_attributes(priv->parent.node, &nmap);
+		if (exc != DOM_NO_ERR) return 0;
+		dukky_push_generics(ctx, "makeNodeMapProxy");
+		duk_push_pointer(ctx, nmap);
+		if (dukky_create_object(ctx, PROTO_NAME(NAMEDNODEMAP), 1) != DUK_EXEC_SUCCESS) {
+			dom_namednodemap_unref(nmap);
+			return 0;
+		}
+		dom_namednodemap_unref(nmap);
+		if (dukky_pcall(ctx, 1, false) != 0) {
+			NSLOG(dukky, DEBUG, "Unable to construct nodelist?");
+			return 0; /* coerced to undefined */
+		}
+		duk_dup(ctx, -1);
+		duk_put_prop_string(ctx, 0, MAGIC(attributes));
+	}
+	return 1;
+%}
