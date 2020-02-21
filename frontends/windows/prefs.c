@@ -230,13 +230,6 @@ static BOOL CALLBACK options_appearance_dialog_handler(HWND hwnd,
 		sub = GetDlgItem(hwnd, IDC_PREFS_NOANIMATION);
 		SendMessage(sub, BM_SETCHECK, (WPARAM)((nsoption_bool(animate_images))
 						       ? BST_UNCHECKED : BST_CHECKED),	0);
-
-		if (nsoption_int(minimum_gif_delay) != 0) {
-			sub = GetDlgItem(hwnd, IDC_PREFS_ANIMATIONDELAY);
-			snprintf(number, 6, "%.1f", nsoption_int(minimum_gif_delay) /
-				 100.0);
-			SendMessage(sub, WM_SETTEXT, 0, (LPARAM)number);
-		}
 		break;
 
 	case WM_NOTIFY:
@@ -268,18 +261,6 @@ static BOOL CALLBACK options_appearance_dialog_handler(HWND hwnd,
 			nsoption_set_bool(animate_images,
 					  (IsDlgButtonChecked(hwnd, IDC_PREFS_NOANIMATION) == BST_CHECKED) ? true : false);
 
-
-			sub = GetDlgItem(hwnd, IDC_PREFS_ANIMATIONDELAY);
-			len = SendMessage(sub, WM_GETTEXTLENGTH, 0, 0);
-			temp = malloc(len + 1);
-			if (temp != NULL) {
-				SendMessage(sub, WM_GETTEXT, (WPARAM)
-					    (len + 1), (LPARAM) temp);
-				nsoption_set_int(minimum_gif_delay,
-						 (int)(100 * strtod(temp, NULL)));
-				free(temp);
-			}
-
 			break;
 
 		case UDN_DELTAPOS: {
@@ -292,11 +273,6 @@ static BOOL CALLBACK options_appearance_dialog_handler(HWND hwnd,
 			case IDC_PREFS_FONT_MINSIZE_SPIN:
 				change_spinner(GetDlgItem(hwnd, IDC_PREFS_FONT_MINSIZE), 0.1  * ud->iDelta, 1.0, 50.0);
 				return TRUE;
-
-			case IDC_PREFS_ANIMATIONDELAY_SPIN:
-				change_spinner(GetDlgItem(hwnd, IDC_PREFS_ANIMATIONDELAY), 0.1  * ud->iDelta, 0.1, 100.0);
-				return TRUE;
-
 			}
 		}
 			break;
