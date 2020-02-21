@@ -44,7 +44,6 @@ General Options
  disc_cache_age       | int    | 28        | Preferred expiry age of disc cache in days. 
  block_advertisements | bool   | false     | Whether to block advertisements  
  do_not_track         | bool   | false     | Disable website tracking [1]     
- minimum_gif_delay    | int    | 10        | Minimum GIF animation delay      
  send_referer         | bool   | true      | Whether to send the referer HTTP header.
  foreground_images    | bool   | true      | Whether to fetch foreground images 
  background_images    | bool   | true      | Whether to fetch background images 
