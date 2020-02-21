@@ -48,7 +48,6 @@
 extern char options[PATH_MAX];
 extern GRECT desk_area;
 
-static float tmp_option_minimum_gif_delay;
 static unsigned tmp_option_memory_cache_size;
 static unsigned int tmp_option_disc_cache_size;
 static unsigned int tmp_option_expire_url;
@@ -308,10 +307,6 @@ static void display_settings(void)
               INPUT_MIN_REFLOW_PERIOD_MAX_LEN );
 
 
-    tmp_option_minimum_gif_delay = (float)nsoption_int(minimum_gif_delay) / (float)100;
-    snprintf( spare, 255, "%01.1f", tmp_option_minimum_gif_delay );
-    set_text( SETTINGS_EDIT_MIN_GIF_DELAY, spare, 3 );
-
     /* "Network" tab: */
     set_text( SETTINGS_EDIT_PROXY_HOST, nsoption_charp(http_proxy_host),
               INPUT_PROXY_HOST_MAX_LEN );
@@ -464,11 +459,6 @@ static void form_event(int index, int external)
         break;
 
     case SETTINGS_CB_ENABLE_ANIMATION:
-        if( checked ) {
-            ENABLE_OBJ( SETTINGS_EDIT_MIN_GIF_DELAY );
-        } else {
-            DISABLE_OBJ( SETTINGS_EDIT_MIN_GIF_DELAY );
-        }
         break;
 
     case SETTINGS_BT_SEL_FONT_RENDERER:
@@ -697,23 +687,6 @@ static void form_event(int index, int external)
         OBJ_REDRAW(SETTINGS_EDIT_HISTORY_AGE);
         break;
 
-    case SETTINGS_INC_GIF_DELAY:
-    case SETTINGS_DEC_GIF_DELAY:
-        if( index == SETTINGS_INC_GIF_DELAY )
-            tmp_option_minimum_gif_delay += 0.1;
-        else
-            tmp_option_minimum_gif_delay -= 0.1;
-
-        if( tmp_option_minimum_gif_delay < 0.1 )
-            tmp_option_minimum_gif_delay = 0.1;
-        if( tmp_option_minimum_gif_delay > 9.0 )
-            tmp_option_minimum_gif_delay = 9.0;
-        snprintf( spare, 255, "%01.1f", tmp_option_minimum_gif_delay );
-        set_text( SETTINGS_EDIT_MIN_GIF_DELAY, spare, 3 );
-        is_button = true;
-        OBJ_REDRAW(SETTINGS_EDIT_MIN_GIF_DELAY);
-        break;
-
     case SETTINGS_INC_MIN_FONT_SIZE:
     case SETTINGS_DEC_MIN_FONT_SIZE:
         if( index == SETTINGS_INC_MIN_FONT_SIZE )
@@ -817,8 +790,6 @@ static void apply_settings(void)
                       OBJ_SELECTED(SETTINGS_CB_TRANSPARENCY));
     nsoption_set_bool(animate_images,
                       OBJ_SELECTED(SETTINGS_CB_ENABLE_ANIMATION));
-    nsoption_set_int(minimum_gif_delay,
-                     (int)(tmp_option_minimum_gif_delay*100+0.5));
     /*	nsoption_set_bool(incremental_reflow,
     			  OBJ_SELECTED(SETTINGS_CB_INCREMENTAL_REFLOW));*/
     nsoption_set_int(min_reflow_period, tmp_option_min_reflow_period);
