@@ -60,6 +60,7 @@ nserror html_script_exec(html_content *c, bool allow_defer)
 	unsigned int i;
 	struct html_script *s;
 	script_handler_t *script_handler;
+	bool have_run_something = false;
 
 	if (c->jscontext == NULL) {
 		return NSERROR_BAD_PARAMETER;
@@ -96,6 +97,7 @@ nserror html_script_exec(html_content *c, bool allow_defer)
 						s->data.handle, &size );
 				script_handler(c->jscontext, data, size,
 					       nsurl_access(hlcache_handle_get_url(s->data.handle)));
+				have_run_something = true;
 				/* We have to re-acquire this here since the
 				 * c->scripts array may have been reallocated
 				 * as a result of executing this script.
@@ -108,7 +110,11 @@ nserror html_script_exec(html_content *c, bool allow_defer)
 		}
 	}
 
-	return html_proceed_to_done(c);
+	if (have_run_something) {
+		return html_proceed_to_done(c);
+	}
+
+	return NSERROR_OK;
 }
 
 /* create new html script entry */
