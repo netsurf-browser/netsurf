@@ -11,6 +11,7 @@
 class Element {
 	prologue %{
 #include <utils/corestrings.h>
+#include <dom/bindings/hubbub/parser.h>
 %};
 };
 
@@ -391,3 +392,125 @@ setter Element::className ()
 	return 0;
 %}
 
+getter Element::innerHTML()
+%{
+	duk_push_lstring(ctx, "", 0);
+	return 1;
+%}
+
+setter Element::innerHTML()
+%{
+	duk_size_t size;
+	const char *s = duk_safe_to_lstring(ctx, 0, &size);
+	dom_hubbub_parser_params parse_params;
+	dom_hubbub_error error;
+	dom_hubbub_parser *parser = NULL;
+	struct dom_document *doc = NULL;
+	struct dom_document_fragment *fragment = NULL;
+	dom_exception exc;
+	struct dom_node *child = NULL, *html = NULL, *body = NULL;
+	struct dom_nodelist *bodies = NULL;
+
+	exc = dom_node_get_owner_document(priv->parent.node, &doc);
+	if (exc != DOM_NO_ERR) goto out;
+
+	parse_params.enc = "UTF-8";
+	parse_params.fix_enc = true;
+	parse_params.enable_script = false;
+	parse_params.msg = NULL;
+	parse_params.script = NULL;
+	parse_params.ctx = NULL;
+	parse_params.daf = NULL;
+
+	error = dom_hubbub_fragment_parser_create(&parse_params,
+						  doc,
+						  &parser,
+						  &fragment);
+	if (error != DOM_HUBBUB_OK) {
+		NSLOG(netsurf, ERROR, "Unable to create fragment parser!");
+		goto out;
+	}
+
+	error = dom_hubbub_parser_parse_chunk(parser, (const uint8_t*)s, size);
+	if (error != DOM_HUBBUB_OK) {
+		NSLOG(netsurf, ERROR, "Unable to parse HTML chunk");
+		goto out;
+	}
+	error = dom_hubbub_parser_completed(parser);
+	if (error != DOM_HUBBUB_OK) {
+		NSLOG(netsurf, ERROR, "Unable to complete parser");
+		goto out;
+	}
+
+	/* Parse is finished, transfer contents of fragment into node */
+
+	/* 1. empty this node */
+	exc = dom_node_get_first_child(priv->parent.node, &child);
+	if (exc != DOM_NO_ERR) goto out;
+	while (child != NULL) {
+		struct dom_node *cref;
+		exc = dom_node_remove_child(priv->parent.node, child, &cref);
+		if (exc != DOM_NO_ERR) goto out;
+		dom_node_unref(child);
+		child = NULL;
+		dom_node_unref(cref);
+		exc = dom_node_get_first_child(priv->parent.node, &child);
+		if (exc != DOM_NO_ERR) goto out;
+	}
+
+	/* 2. the first child in the fragment will be an HTML element
+	 * because that's how hubbub works, walk through that to the body
+	 * element hubbub will have created, we want to migrate that element's
+	 * children into ourself.
+	 */
+	exc = dom_node_get_first_child(fragment, &html);
+	if (exc != DOM_NO_ERR) goto out;
+
+	/* We can then ask that HTML element to give us its body */
+	exc = dom_element_get_elements_by_tag_name(html, corestring_dom_BODY, &bodies);
+	if (exc != DOM_NO_ERR) goto out;
+
+	/* And now we can get the body which will be the zeroth body */
+	exc = dom_nodelist_item(bodies, 0, &body);
+	if (exc != DOM_NO_ERR) goto out;
+
+	/* 3. Migrate the children */
+	exc = dom_node_get_first_child(body, &child);
+	if (exc != DOM_NO_ERR) goto out;
+	while (child != NULL) {
+		struct dom_node *cref;
+		exc = dom_node_remove_child(body, child, &cref);
+		if (exc != DOM_NO_ERR) goto out;
+		dom_node_unref(cref);
+		exc = dom_node_append_child(priv->parent.node, child, &cref);
+		if (exc != DOM_NO_ERR) goto out;
+		dom_node_unref(cref);
+		dom_node_unref(child);
+		child = NULL;
+		exc = dom_node_get_first_child(body, &child);
+		if (exc != DOM_NO_ERR) goto out;
+	}
+out:
+	if (parser != NULL) {
+		dom_hubbub_parser_destroy(parser);
+	}
+	if (doc != NULL) {
+		dom_node_unref(doc);
+	}
+	if (fragment != NULL) {
+		dom_node_unref(fragment);
+	}
+	if (child != NULL) {
+		dom_node_unref(child);
+	}
+	if (html != NULL) {
+		dom_node_unref(html);
+	}
+	if (bodies != NULL) {
+		dom_nodelist_unref(bodies);
+	}
+	if (body != NULL) {
+		dom_node_unref(body);
+	}
+	return 0;
+%}
