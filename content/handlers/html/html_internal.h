@@ -396,6 +396,12 @@ nserror html_object_close_objects(html_content *html);
 nserror html_object_open_objects(html_content *html, struct browser_window *bw);
 nserror html_object_abort_objects(html_content *html);
 
+/**
+ * Complete the HTML content state machine *iff* all scripts are finished
+ */
+nserror html_proceed_to_done(html_content *html);
+
+
 /* Events */
 /**
  * Construct an event and fire it at the DOM

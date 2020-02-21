@@ -268,11 +268,29 @@ static void html_box_convert_done(html_content *c, bool success)
 
 	content_set_ready(&c->base);
 
-	if (c->base.active == 0) {
-		content_set_done(&c->base);
-	}
+	html_proceed_to_done(c);
 
 	dom_node_unref(html);
+}
+
+/* Documented in html_internal.h */
+nserror
+html_proceed_to_done(html_content *html)
+{
+	switch (content__get_status(&html->base)) {
+	case CONTENT_STATUS_READY:
+		if (html->base.active == 0) {
+			content_set_done(&html->base);
+			return NSERROR_OK;
+		}
+		break;
+	case CONTENT_STATUS_DONE:
+		return NSERROR_OK;
+	default:
+		NSLOG(netsurf, ERROR, "Content status unexpectedly not READY/DONE");
+		break;
+	}
+	return NSERROR_UNKNOWN;
 }
 
 

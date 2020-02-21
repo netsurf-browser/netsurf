@@ -108,7 +108,7 @@ nserror html_script_exec(html_content *c, bool allow_defer)
 		}
 	}
 
-	return NSERROR_OK;
+	return html_proceed_to_done(c);
 }
 
 /* create new html script entry */
@@ -208,7 +208,7 @@ convert_script_async_cb(hlcache_handle *script,
 	 * scripts as they come in.
 	 */
 	else if (parent->conversion_begun) {
-		html_script_exec(parent, false);
+		return html_script_exec(parent, false);
 	}
 
 	return NSERROR_OK;
