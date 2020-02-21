@@ -433,6 +433,27 @@ method Document::createEvent ()
 	return 1;
 %}
 
+getter Document::implementation ()
+%{
+	/* Create a new DOMImplementation instance */
+	duk_push_this(ctx);
+	duk_get_prop_string(ctx, -1, MAGIC(DOMImplementation));
+	if (duk_is_undefined(ctx, -1)) {
+		duk_pop(ctx);
+
+		if (dukky_create_object(ctx,
+					PROTO_NAME(DOMIMPLEMENTATION),
+					0) != DUK_EXEC_SUCCESS) {
+			return duk_error(ctx,
+				  DUK_ERR_ERROR,
+				  "Unable to create dom implementation object");
+		}
+		duk_dup(ctx, -1);
+		duk_put_prop_string(ctx, -3, MAGIC(DOMImplementation));
+	}
+	return 1;
+%}
+
 getter Document::onabort();
 setter Document::onabort();
 getter Document::onautocompleteerror();
