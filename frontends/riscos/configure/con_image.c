@@ -38,11 +38,6 @@
 #define IMAGE_BACKGROUND_FIELD 6
 #define IMAGE_BACKGROUND_MENU 7
 #define IMAGE_CURRENT_DISPLAY 8
-#define IMAGE_SPEED_TEXT 11
-#define IMAGE_SPEED_FIELD 12
-#define IMAGE_SPEED_DEC 13
-#define IMAGE_SPEED_INC 14
-#define IMAGE_SPEED_CS 15
 #define IMAGE_DISABLE_ANIMATION 16
 #define IMAGE_DEFAULT_BUTTON 17
 #define IMAGE_CANCEL_BUTTON 18
@@ -88,8 +83,6 @@ bool ro_gui_options_image_initialise(wimp_w w)
 					image_quality_menu->entries[i].
 						data.indirected_text.text, true);
 	}
-	ro_gui_set_icon_decimal(w, IMAGE_SPEED_FIELD,
-				nsoption_int(minimum_gif_delay), 2);
 	ro_gui_set_icon_selected_state(w, IMAGE_DISABLE_ANIMATION,
 				       !nsoption_bool(animate_images));
 	ro_gui_options_update_shading(w);
@@ -99,11 +92,7 @@ bool ro_gui_options_image_initialise(wimp_w w)
 			IMAGE_FOREGROUND_MENU, image_quality_menu);
 	ro_gui_wimp_event_register_menu_gright(w, IMAGE_BACKGROUND_FIELD,
 			IMAGE_BACKGROUND_MENU, image_quality_menu);
-	ro_gui_wimp_event_register_text_field(w, IMAGE_SPEED_TEXT);
-	ro_gui_wimp_event_register_numeric_field(w, IMAGE_SPEED_FIELD,
-			IMAGE_SPEED_INC, IMAGE_SPEED_DEC, 0, 6000, 10, 2);
 	ro_gui_wimp_event_register_checkbox(w, IMAGE_DISABLE_ANIMATION);
-	ro_gui_wimp_event_register_text_field(w, IMAGE_SPEED_CS);
 	ro_gui_wimp_event_register_redraw_window(w,
 			ro_gui_options_image_redraw);
 	ro_gui_wimp_event_register_mouse_click(w,
@@ -218,8 +207,6 @@ bool ro_gui_options_image_click(wimp_pointer *pointer)
 					IMAGE_BACKGROUND_FIELD,
 					image_quality_menu->entries[2].
 						data.indirected_text.text, true);
-			ro_gui_set_icon_decimal(pointer->w, IMAGE_SPEED_FIELD,
-					10, 2);
 			ro_gui_set_icon_selected_state(pointer->w,
 					IMAGE_DISABLE_ANIMATION, false);
 		case IMAGE_DISABLE_ANIMATION:
@@ -245,11 +232,6 @@ void ro_gui_options_update_shading(wimp_w w)
 	bool shaded;
 
 	shaded = ro_gui_get_icon_selected_state(w, IMAGE_DISABLE_ANIMATION);
-	ro_gui_set_icon_shaded_state(w, IMAGE_SPEED_TEXT, shaded);
-	ro_gui_set_icon_shaded_state(w, IMAGE_SPEED_FIELD, shaded);
-	ro_gui_set_icon_shaded_state(w, IMAGE_SPEED_DEC, shaded);
-	ro_gui_set_icon_shaded_state(w, IMAGE_SPEED_INC, shaded);
-	ro_gui_set_icon_shaded_state(w, IMAGE_SPEED_CS, shaded);
 }
 
 bool ro_gui_options_image_ok(wimp_w w)
@@ -257,9 +239,6 @@ bool ro_gui_options_image_ok(wimp_w w)
 	ro_gui_options_image_read(w, 
 				  (unsigned int *)&nsoption_int(plot_bg_quality),
 				  (unsigned int *)&nsoption_int(plot_fg_quality));
-
-	nsoption_set_int(minimum_gif_delay,
-			 ro_gui_get_icon_decimal(w, IMAGE_SPEED_FIELD, 2));
 
 	nsoption_set_bool(animate_images,
 			  !ro_gui_get_icon_selected_state(w,

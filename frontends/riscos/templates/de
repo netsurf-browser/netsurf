@@ -858,56 +858,6 @@ wimp_window {
     text_and_sprite.validation:""
   }
   wimp_icon {
-    extent:20,-404,208,-360
-    icon_flags:wimp_ICON_TEXT | wimp_ICON_VCENTRED | wimp_ICON_INDIRECTED | wimp_ICON_RJUSTIFIED
-    icon_esg:0
-    icon_fg:wimp_COLOUR_BLACK
-    icon_bg:wimp_COLOUR_VERY_LIGHT_GREY
-    text.text:"Speedlimit"
-    text.size:12
-    text.validation:""
-  }
-  wimp_icon {
-    extent:212,-408,380,-356
-    icon_flags:wimp_ICON_TEXT | wimp_ICON_BORDER | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | wimp_ICON_FILLED | wimp_ICON_INDIRECTED | wimp_BUTTON_WRITABLE
-    icon_esg:0
-    icon_fg:wimp_COLOUR_BLACK
-    icon_bg:wimp_COLOUR_WHITE
-    text.text:"12.34"
-    text.size:*
-    text.validation:"Pptr_write;Kta"
-  }
-  wimp_icon {
-    extent:396,-400,428,-368
-    icon_flags:wimp_ICON_TEXT | wimp_ICON_SPRITE | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | wimp_ICON_INDIRECTED | wimp_BUTTON_REPEAT
-    icon_esg:0
-    icon_fg:wimp_COLOUR_BLACK
-    icon_bg:wimp_COLOUR_VERY_LIGHT_GREY
-    text_and_sprite.text:""
-    text_and_sprite.size:*
-    text_and_sprite.validation:"r5;sdown,pdown"
-  }
-  wimp_icon {
-    extent:428,-400,460,-368
-    icon_flags:wimp_ICON_TEXT | wimp_ICON_SPRITE | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | wimp_ICON_INDIRECTED | wimp_BUTTON_REPEAT
-    icon_esg:0
-    icon_fg:wimp_COLOUR_BLACK
-    icon_bg:wimp_COLOUR_VERY_LIGHT_GREY
-    text_and_sprite.text:""
-    text_and_sprite.size:*
-    text_and_sprite.validation:"r5;sup,pup"
-  }
-  wimp_icon {
-    extent:468,-404,612,-360
-    icon_flags:wimp_ICON_TEXT | wimp_ICON_VCENTRED | wimp_ICON_INDIRECTED | wimp_ICON_RJUSTIFIED
-    icon_esg:0
-    icon_fg:wimp_COLOUR_BLACK
-    icon_bg:wimp_COLOUR_VERY_LIGHT_GREY
-    text.text:"Sekunden"
-    text.size:*
-    text.validation:""
-  }
-  wimp_icon {
     extent:212,-460,640,-416
     icon_flags:wimp_ICON_TEXT | wimp_ICON_SPRITE | wimp_ICON_VCENTRED | wimp_ICON_INDIRECTED | wimp_BUTTON_RADIO
     icon_esg:0
