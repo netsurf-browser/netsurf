@@ -475,9 +475,6 @@ nsgtk_preferences_comboboxLoadImages_realize(GtkWidget *widget,
 /* enable animation */
 TOGGLEBUTTON_SIGNALS(checkEnableAnimations, animate_images)
 
-/* frame time */
-SPINBUTTON_SIGNALS(spinAnimationSpeed, minimum_gif_delay, 100.0)
-
 /* Fonts */
 
 /* default font */
