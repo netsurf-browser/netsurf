@@ -20,7 +20,6 @@ disc_cache_size:1073741824
 disc_cache_age:28
 block_advertisements:0
 do_not_track:0
-minimum_gif_delay:10
 send_referer:1
 foreground_images:1
 background_images:1

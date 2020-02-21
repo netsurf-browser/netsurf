@@ -105,9 +105,6 @@ NSOPTION_BOOL(block_advertisements, false)
  * http://www.w3.org/Submission/2011/SUBM-web-tracking-protection-20110224/#dnt-uas */
 NSOPTION_BOOL(do_not_track, false)
 
-/** Minimum GIF animation delay */
-NSOPTION_INTEGER(minimum_gif_delay, 10)
-
 /** Whether to send the referer HTTP header */
 NSOPTION_BOOL(send_referer, true)
 
