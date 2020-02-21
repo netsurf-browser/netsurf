@@ -116,7 +116,6 @@ enum
 	GID_OPTS_NATIVEBM,
 	GID_OPTS_SCALEQ,
 	GID_OPTS_DITHERQ,
-	GID_OPTS_ANIMSPEED,
 	GID_OPTS_ANIMDISABLE,
 	GID_OPTS_DPI_Y,
 	GID_OPTS_FONT_SANS,
@@ -377,7 +376,6 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	gadlab[GID_OPTS_NATIVEBM] = (char *)ami_utf8_easy((char *)messages_get("CacheNative"));
 	gadlab[GID_OPTS_SCALEQ] = (char *)ami_utf8_easy((char *)messages_get("ScaleQuality"));
 	gadlab[GID_OPTS_DITHERQ] = (char *)ami_utf8_easy((char *)messages_get("DitherQuality"));
-	gadlab[GID_OPTS_ANIMSPEED] = (char *)ami_utf8_easy((char *)messages_get("AnimSpeedLimit"));
 	gadlab[GID_OPTS_DPI_Y] = (char *)ami_utf8_easy((char *)messages_get("ResolutionY"));
 	gadlab[GID_OPTS_ANIMDISABLE] = (char *)ami_utf8_easy((char *)messages_get("AnimDisable"));
 	gadlab[GID_OPTS_FONT_SANS] = (char *)ami_utf8_easy((char *)messages_get("FontSans"));
@@ -423,7 +421,6 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	gadlab[LAB_OPTS_WINTITLE] = (char *)ami_utf8_easy((char *)messages_get("Preferences"));
 	gadlab[LAB_OPTS_RESTART] = (char *)ami_utf8_easy((char *)messages_get("NeedRestart"));
 	gadlab[LAB_OPTS_DAYS] = (char *)ami_utf8_easy((char *)messages_get("Days"));
-	gadlab[LAB_OPTS_SECS] = (char *)ami_utf8_easy((char *)messages_get("AnimSpeedFrames"));
 	gadlab[LAB_OPTS_PT] = (char *)ami_utf8_easy((char *)messages_get("Pt"));
 	gadlab[LAB_OPTS_MM] = (char *)ami_utf8_easy((char *)messages_get("MM"));
 	gadlab[LAB_OPTS_MB] = (char *)ami_utf8_easy((char *)messages_get("MBytes"));
@@ -514,12 +511,11 @@ void ami_gui_opts_open(void)
 	ULONG proxytype = 0;
 	BOOL screenmodedisabled = FALSE, screennamedisabled = FALSE;
 	BOOL proxyhostdisabled = TRUE, proxyauthdisabled = TRUE, proxybypassdisabled = FALSE;
-	BOOL disableanims, animspeeddisabled = FALSE, acceptlangdisabled = FALSE;
+	BOOL disableanims, acceptlangdisabled = FALSE;
 	BOOL scaleselected = nsoption_bool(scale_quality), scaledisabled = FALSE;
 	BOOL ditherdisable = TRUE;
 	BOOL download_notify_disabled = FALSE, tab_always_show_disabled = FALSE;
 	BOOL ptr_disable = FALSE;
-	char animspeed[10];
 	char *homepage_url_lc = ami_utf8_easy(nsoption_charp(homepage_url));
 
 	struct TextAttr fontsans, fontserif, fontmono, fontcursive, fontfantasy;
@@ -583,17 +579,13 @@ void ami_gui_opts_open(void)
 		proxybypassdisabled = TRUE;
 	}
 
-	sprintf(animspeed,"%.2f",(float)(nsoption_int(minimum_gif_delay)/100.0));
-
 	if(nsoption_bool(animate_images))
 	{
 		disableanims = FALSE;
-		animspeeddisabled = FALSE;
 	}
 	else
 	{
 		disableanims = TRUE;
-		animspeeddisabled = TRUE;
 	}
 
 	if(nsoption_bool(accept_lang_locale))
@@ -1071,24 +1063,6 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_ANIMS],
-									LAYOUT_AddChild, LayoutHObj,
-										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
-										LAYOUT_AddChild, gow->objects[GID_OPTS_ANIMSPEED] = StringObj,
-											GA_ID, GID_OPTS_ANIMSPEED,
-											GA_RelVerify, TRUE,
-											GA_Disabled, animspeeddisabled,
-											STRINGA_HookType, SHK_FLOAT,
-											STRINGA_TextVal, animspeed,
-											STRINGA_BufferPos,0,
-										StringEnd,
-										CHILD_WeightedWidth, 0,
-										CHILD_Label, LabelObj,
-											LABEL_Text, gadlab[LAB_OPTS_SECS],
-										LabelEnd,
-									LayoutEnd,
-									CHILD_Label, LabelObj,
-										LABEL_Text, gadlab[GID_OPTS_ANIMSPEED],
-									LabelEnd,
 		                			LAYOUT_AddChild, gow->objects[GID_OPTS_ANIMDISABLE] = CheckBoxObj,
       	              					GA_ID, GID_OPTS_ANIMDISABLE,
          	           					GA_RelVerify, TRUE,
@@ -1684,7 +1658,6 @@ void ami_gui_opts_open(void)
 static void ami_gui_opts_use(bool save)
 {
 	ULONG data, id = 0;
-	float animspeed;
 	struct TextAttr *tattr;
 	char *dot;
 	bool rescan_fonts = false;
@@ -1834,10 +1807,6 @@ static void ami_gui_opts_use(bool save)
 	}
 
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_DITHERQ],(ULONG *)&nsoption_int(dither_quality));
-
-	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_ANIMSPEED],(ULONG *)&data);
-	animspeed = strtof((char *)data, NULL);
-	nsoption_set_int(minimum_gif_delay, (int)(animspeed * 100));
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_ANIMDISABLE],(ULONG *)&data);
 	if(data) { 
@@ -2250,8 +2219,6 @@ static BOOL ami_gui_opts_event(void *w)
 					break;
 
 					case GID_OPTS_ANIMDISABLE:
-						RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_ANIMSPEED],
-							gow->win,NULL, GA_Disabled, code, TAG_DONE);
 					break;
 
 					case GID_OPTS_FONT_SANS:
