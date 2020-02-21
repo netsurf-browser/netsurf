@@ -171,9 +171,6 @@ getter | Element::prefix(string);
 getter | Element::localName(string);
 getter | Element::tagName(string);
 getter | Element::classList(user);
-getter | Element::attributes(user);
-getter | Element::innerHTML(string);
-setter | Element::innerHTML(string);
 getter | Element::outerHTML(string);
 setter | Element::outerHTML(string);
 getter | Element::children(user);
@@ -1443,17 +1440,13 @@ getter | Attr::textContent(string);
 setter | Attr::textContent(string);
 getter | Attr::ownerElement(user);
 getter | Attr::specified(boolean);
-method | NamedNodeMap::item();
-method | NamedNodeMap::getNamedItem();
 method | NamedNodeMap::getNamedItemNS();
 method | NamedNodeMap::setNamedItem();
 method | NamedNodeMap::setNamedItemNS();
 method | NamedNodeMap::removeNamedItem();
 method | NamedNodeMap::removeNamedItemNS();
-getter | NamedNodeMap::length(unsigned long);
 method | DOMImplementation::createDocumentType();
 method | DOMImplementation::createDocument();
-method | DOMImplementation::createHTMLDocument();
 method | DOMImplementation::hasFeature();
 method | Document::getElementsByTagNameNS();
 method | Document::getElementsByClassName();
@@ -1486,7 +1479,6 @@ method | Document::query();
 method | Document::queryAll();
 method | Document::querySelector();
 method | Document::querySelectorAll();
-getter | Document::implementation(user);
 getter | Document::URL(string);
 getter | Document::documentURI(string);
 getter | Document::origin(string);
@@ -1578,5 +1570,5 @@ method | EventListener::handleEvent();
 method | CustomEvent::initCustomEvent();
 getter | CustomEvent::detail(any);
 
- 1572 unimplemented bindings
+ 1564 unimplemented bindings
 
