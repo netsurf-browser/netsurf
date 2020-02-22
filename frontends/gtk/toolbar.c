@@ -926,7 +926,7 @@ nsgtk_browser_window_create(struct browser_window *bw, bool intab)
 {
 	nserror res = NSERROR_OK;
 	nsurl *url = NULL;
-	int flags = BW_CREATE_HISTORY;
+	int flags = BW_CREATE_HISTORY | BW_CREATE_FOREGROUND;
 
 	if (intab) {
 		flags |= BW_CREATE_TAB;
@@ -1995,16 +1995,14 @@ static gboolean websearch_entry_activate_cb(GtkWidget *widget, gpointer data)
 			      SEARCH_WEB_OMNI_SEARCHONLY,
 			      &url);
 	if (res == NSERROR_OK) {
-		temp_open_background = 0;
 		bw = tb->get_bw(tb->get_ctx);
 
 		res = browser_window_create(
-			BW_CREATE_HISTORY | BW_CREATE_TAB,
+			BW_CREATE_HISTORY | BW_CREATE_TAB | BW_CREATE_FOREGROUND,
 			url,
 			NULL,
 			bw,
 			NULL);
-		temp_open_background = -1;
 		nsurl_unref(url);
 	}
 	if (res != NSERROR_OK) {

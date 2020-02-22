@@ -143,9 +143,6 @@ struct gui_window {
 /**< first entry in window list */
 struct gui_window *window_list = NULL;
 
-/** flag controlling opening of tabs in the background */
-int temp_open_background = -1;
-
 static void
 nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
 			  gpointer user_data)
@@ -806,8 +803,12 @@ gui_window_create(struct browser_window *bw,
 		  gui_window_create_flags flags)
 {
 	struct gui_window *g; /* what is being created to return */
-	bool tempback;
+	bool open_in_background = !(nsoption_bool(focus_new));
 	GtkBuilder* tab_builder;
+
+	/* If there is a foreground request, override user preference */
+	if (flags & GW_CREATE_FOREGROUND)
+		open_in_background = false;
 
 	nserror res;
 
@@ -953,18 +954,9 @@ gui_window_create(struct browser_window *bw,
 		nsgtk_window_input_method_commit, g);
 
 	/* add the tab container to the scaffold notebook */
-	switch (temp_open_background) {
-	case -1:
-		tempback = !(nsoption_bool(focus_new));
-		break;
-	case 0:
-		tempback = false;
-		break;
-	default:
-		tempback = true;
-		break;
-	}
-	nsgtk_tab_add(g, g->container, tempback, messages_get("NewTab"), g->icon);
+	nsgtk_tab_add(g, g->container,
+		      open_in_background,
+		      messages_get("NewTab"), g->icon);
 
 	/* initialy should not be visible */
 	nsgtk_search_toggle_visibility(g->search);

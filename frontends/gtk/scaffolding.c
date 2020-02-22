@@ -547,8 +547,6 @@ nsgtk_on_link_opentab_activate_menu(GtkMenuItem *widget, gpointer data)
 	if (current_menu_features.link == NULL)
 		return FALSE;
 
-	temp_open_background = 1;
-
 	err = browser_window_create(BW_CREATE_CLONE |
 				    BW_CREATE_HISTORY |
 				    BW_CREATE_TAB,
@@ -556,8 +554,6 @@ nsgtk_on_link_opentab_activate_menu(GtkMenuItem *widget, gpointer data)
 	if (err != NSERROR_OK) {
 		nsgtk_warning(messages_get_errorcode(err), 0);
 	}
-
-	temp_open_background = -1;
 
 	return TRUE;
 }
