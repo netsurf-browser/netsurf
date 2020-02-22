@@ -3592,9 +3592,6 @@ nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active)
 			     browser_window_history_forward_available(bw));
 	nsgtk_local_history_hide();
 
-	/* update the url bar, for the final time */
-	browser_window_refresh_url_bar(bw);
-
 	return res;
 }
 
