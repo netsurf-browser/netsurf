@@ -109,6 +109,9 @@ enum browser_window_create_flags {
 	 *    have that option.
 	 */
 	BW_CREATE_UNVERIFIABLE		= (1 << 3),
+
+	/** Request foreground opening. */
+	BW_CREATE_FOREGROUND		= (1 << 4),
 };
 
 /** flags to browser_window_navigate  */

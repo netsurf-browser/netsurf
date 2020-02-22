@@ -66,7 +66,8 @@ typedef enum {
 typedef enum {
 	GW_CREATE_NONE = 0, /**< New window */
 	GW_CREATE_CLONE = (1 << 0), /**< Clone existing window */
-	GW_CREATE_TAB = (1 << 1) /**< Create tab in same window as existing */
+	GW_CREATE_TAB = (1 << 1), /**< Create tab in same window as existing */
+	GW_CREATE_FOREGROUND = (1 << 2), /**< Request this window/tab is foregrounded */
 } gui_window_create_flags;
 
 /**
