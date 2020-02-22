@@ -500,6 +500,9 @@ static void nsgtk_main(void)
 		FD_ZERO(&write_fd_set);
 		FD_ZERO(&exc_fd_set);
 
+		while (gtk_events_pending())
+			gtk_main_iteration_do(TRUE);
+
 		schedule_run();
 
 		fetch_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
