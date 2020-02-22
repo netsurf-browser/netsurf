@@ -100,7 +100,7 @@ struct core_window_callback_table {
 	 * \param[out] returns vertical scroll in px
 	 * \return NSERROR_OK on success or appropriate error code
 	 */
-	nserror (*get_scroll)(struct core_window *cw, int *x, int *y);
+	nserror (*get_scroll)(const struct core_window *cw, int *x, int *y);
 
 	/**
 	 * Get window viewport dimensions
@@ -110,7 +110,7 @@ struct core_window_callback_table {
 	 * \param[out] height to be set to viewport height in px
 	 * \return NSERROR_OK on success or appropriate error code
 	 */
-	nserror (*get_window_dimensions)(struct core_window *cw,
+	nserror (*get_window_dimensions)(const struct core_window *cw,
 			int *width, int *height);
 
 	/**

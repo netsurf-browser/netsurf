@@ -826,7 +826,8 @@ ami_cw_invalidate_area(struct core_window *cw, const struct rect *r)
 
 
 static nserror
-ami_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
+ami_cw_get_window_dimensions(const struct core_window *cw,
+		int *width, int *height)
 {
 	struct ami_corewindow *ami_cw = (struct ami_corewindow *)cw;
 
@@ -867,7 +868,7 @@ ami_cw_update_size(struct core_window *cw, int width, int height)
 
 
 static nserror
-ami_cw_get_scroll(struct core_window *cw, int *x, int *y)
+ami_cw_get_scroll(const struct core_window *cw, int *x, int *y)
 {
 	struct ami_corewindow *ami_cw = (struct ami_corewindow *)cw;
 	ULONG win_x0, win_y0;

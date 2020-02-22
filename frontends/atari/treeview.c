@@ -484,7 +484,7 @@ atari_treeview_set_scroll(struct core_window *cw, int x, int y)
 }
 
 static nserror
-atari_treeview_get_scroll(struct core_window *cw, int *x, int *y)
+atari_treeview_get_scroll(const struct core_window *cw, int *x, int *y)
 {
 	/* TODO */
 	return NSERROR_NOT_IMPLEMENTED;
@@ -499,7 +499,7 @@ atari_treeview_get_scroll(struct core_window *cw, int *x, int *y)
  * \param height	to be set to viewport height in px, if non NULL
  */
 static nserror
-atari_treeview_get_window_dimensions(struct core_window *cw,
+atari_treeview_get_window_dimensions(const struct core_window *cw,
 				     int *width,
 				     int *height)
 {

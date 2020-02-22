@@ -832,7 +832,7 @@ ro_cw_update_size(struct core_window *cw, int width, int height)
  * Callback from the core to scroll the visible content.
  */
 static nserror
-ro_cw_get_scroll(struct core_window *cw, int *x, int *y)
+ro_cw_get_scroll(const struct core_window *cw, int *x, int *y)
 {
 	struct ro_corewindow *ro_cw = (struct ro_corewindow *)cw;
 	wimp_window_state state = {
@@ -888,7 +888,8 @@ ro_cw_set_scroll(struct core_window *cw, int x, int y)
  * \param[out] height to be set to viewport height in px
  */
 static nserror
-ro_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
+ro_cw_get_window_dimensions(const struct core_window *cw,
+		int *width, int *height)
 {
 	struct ro_corewindow *ro_cw = (struct ro_corewindow *)cw;
 	os_error *error;

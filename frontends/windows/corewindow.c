@@ -466,7 +466,7 @@ nsw32_cw_set_scroll(struct core_window *cw, int x, int y)
 
 
 static nserror
-nsw32_cw_get_scroll(struct core_window *cw, int *x, int *y)
+nsw32_cw_get_scroll(const struct core_window *cw, int *x, int *y)
 {
 	/** /todo call getscroll apropriately */
 	return NSERROR_NOT_IMPLEMENTED;
@@ -481,7 +481,8 @@ nsw32_cw_get_scroll(struct core_window *cw, int *x, int *y)
  * \param[out] height to be set to viewport height in px
  */
 static nserror
-nsw32_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
+nsw32_cw_get_window_dimensions(const struct core_window *cw,
+		int *width, int *height)
 {
 	struct nsw32_corewindow *nsw32_cw = (struct nsw32_corewindow *)cw;
 

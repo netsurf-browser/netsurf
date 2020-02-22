@@ -633,7 +633,7 @@ nsgtk_cw_set_scroll(struct core_window *cw, int x, int y)
  * \param r rectangle that needs scrolling.
  */
 static nserror
-nsgtk_cw_get_scroll(struct core_window *cw, int *x, int *y)
+nsgtk_cw_get_scroll(const struct core_window *cw, int *x, int *y)
 {
 	struct nsgtk_corewindow *nsgtk_cw = (struct nsgtk_corewindow *)cw;
 	GtkAdjustment *vadj;
@@ -660,7 +660,8 @@ nsgtk_cw_get_scroll(struct core_window *cw, int *x, int *y)
  * \param[out] height to be set to viewport height in px
  */
 static nserror
-nsgtk_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
+nsgtk_cw_get_window_dimensions(const struct core_window *cw,
+		int *width, int *height)
 {
 	struct nsgtk_corewindow *nsgtk_cw = (struct nsgtk_corewindow *)cw;
 	GtkAdjustment *vadj;

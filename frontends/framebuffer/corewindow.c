@@ -160,7 +160,7 @@ fb_cw_set_scroll(struct core_window *cw, int x, int y)
 
 
 static nserror
-fb_cw_get_scroll(struct core_window *cw, int *x, int *y)
+fb_cw_get_scroll(const struct core_window *cw, int *x, int *y)
 {
 /*	struct fb_corewindow *fb_cw = (struct fb_corewindow *)cw;
 
@@ -171,7 +171,8 @@ fb_cw_get_scroll(struct core_window *cw, int *x, int *y)
 
 
 static nserror
-fb_cw_get_window_dimensions(struct core_window *cw, int *width, int *height)
+fb_cw_get_window_dimensions(const struct core_window *cw,
+		int *width, int *height)
 {
 	struct fb_corewindow *fb_cw = (struct fb_corewindow *)cw;
 
