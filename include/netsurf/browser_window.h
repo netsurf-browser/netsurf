@@ -231,7 +231,7 @@ nserror browser_window_navigate_up(struct browser_window *bw, bool new_window);
  *
  * \note guaranteed to return a valid nsurl ptr, never returns NULL.
  */
-struct nsurl* browser_window_access_url(struct browser_window *bw);
+struct nsurl* browser_window_access_url(const struct browser_window *bw);
 
 /**
  * Access a browser window's URL.

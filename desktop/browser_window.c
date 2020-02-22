@@ -3788,7 +3788,7 @@ nserror browser_window_navigate_up(struct browser_window *bw, bool new_window)
 
 
 /* Exported interface, documented in include/netsurf/browser_window.h */
-nsurl* browser_window_access_url(struct browser_window *bw)
+nsurl* browser_window_access_url(const struct browser_window *bw)
 {
 	assert(bw != NULL);
 
