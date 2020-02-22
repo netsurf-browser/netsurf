@@ -1320,6 +1320,27 @@ browser_window__handle_error(struct browser_window *bw,
 
 
 /**
+ * Update URL bar for a given browser window to given URL
+ *
+ * \param bw	Browser window to update URL bar for.
+ * \param url	URL for content displayed by bw including any fragment.
+ */
+static inline nserror
+browser_window_refresh_url_bar_internal(struct browser_window *bw, nsurl *url)
+{
+	assert(bw);
+	assert(url);
+
+	if ((bw->parent != NULL) || (bw->window == NULL)) {
+		/* Not root window or no gui window so do not set a URL */
+		return NSERROR_OK;
+	}
+
+	return guit->window->set_url(bw->window, url);
+}
+
+
+/**
  * Browser window content event callback handler.
  */
 static nserror
@@ -1393,6 +1414,7 @@ browser_window_callback(hlcache_handle *c, const hlcache_event *event, void *pw)
 		if (urldb_add_url(event->data.redirect.from)) {
 			urldb_update_url_visit_data(event->data.redirect.from);
 		}
+		browser_window_refresh_url_bar_internal(bw, event->data.redirect.to);
 		break;
 
 	case CONTENT_MSG_STATUS:
@@ -1770,27 +1792,6 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 	browser_window__free_fetch_parameters(&bw->loading_parameters);
 	NSLOG(netsurf, INFO, "Status text cache match:miss %d:%d",
 	      bw->status.match, bw->status.miss);
-}
-
-
-/**
- * Update URL bar for a given browser window to given URL
- *
- * \param bw	Browser window to update URL bar for.
- * \param url	URL for content displayed by bw including any fragment.
- */
-static inline nserror
-browser_window_refresh_url_bar_internal(struct browser_window *bw, nsurl *url)
-{
-	assert(bw);
-	assert(url);
-
-	if ((bw->parent != NULL) || (bw->window == NULL)) {
-		/* Not root window or no gui window so do not set a URL */
-		return NSERROR_OK;
-	}
-
-	return guit->window->set_url(bw->window, url);
 }
 
 
@@ -3165,15 +3166,9 @@ nserror browser_window_refresh_url_bar(struct browser_window *bw)
 		/* no content so return about:blank */
 		ret = browser_window_refresh_url_bar_internal(bw,
 						corestring_nsurl_about_blank);
-	} else if (bw->throbbing) {
-		/* We're throbbing, so show the loading parameters url,
-		 * or if there isn't one, the current parameters url
-		 */
-		if (bw->loading_parameters.url != NULL) {
-			url = bw->loading_parameters.url;
-		} else {
-			url = bw->current_parameters.url;
-		}
+	} else if (bw->throbbing && bw->loading_parameters.url != NULL) {
+		/* Throbbing and we have loading parameters, use those */
+		url = bw->loading_parameters.url;
 		ret = browser_window_refresh_url_bar_internal(bw, url);
 	} else if (bw->frag_id == NULL) {
 		if (bw->internal_nav) {
