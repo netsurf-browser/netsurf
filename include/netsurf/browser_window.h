@@ -112,6 +112,9 @@ enum browser_window_create_flags {
 
 	/** Request foreground opening. */
 	BW_CREATE_FOREGROUND		= (1 << 4),
+
+	/** Request location bar focus. */
+	BW_CREATE_FOCUS_LOCATION	= (1 << 5),
 };
 
 /** flags to browser_window_navigate  */

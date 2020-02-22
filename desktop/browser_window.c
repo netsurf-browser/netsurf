@@ -3044,6 +3044,8 @@ browser_window_create(enum browser_window_create_flags flags,
 		gw_flags |= GW_CREATE_CLONE;
 	if (flags & BW_CREATE_FOREGROUND)
 		gw_flags |= GW_CREATE_FOREGROUND;
+	if (flags & BW_CREATE_FOCUS_LOCATION)
+		gw_flags |= GW_CREATE_FOCUS_LOCATION;
 
 	ret->window = guit->window->create(ret,
 					   (existing != NULL) ? existing->window : NULL,
