@@ -262,9 +262,6 @@ static void scaffolding_update_context(struct nsgtk_scaffolding *g)
 
 	nsgtk_scaffolding_set_sensitivity(g);
 
-	/* update the url bar, particularly necessary when tabbing */
-	browser_window_refresh_url_bar(bw);
-
 	nsgtk_local_history_hide();
 }
 
@@ -1353,7 +1350,7 @@ void nsgtk_scaffolding_set_top_level(struct gui_window *gw)
 
 	sc->top_level = gw;
 
-	/* Synchronise the history (will also update the URL bar) */
+	/* Synchronise the history */
 	scaffolding_update_context(sc);
 
 	/* Ensure the window's title bar is updated */
