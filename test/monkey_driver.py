@@ -265,7 +265,7 @@ def run_test_step_action_window_close(ctx, step):
     tag = step['window']
     assert ctx['windows'].get(tag) is not None
     win = ctx['windows'].pop(tag)
-    timeout = int(step.get('timeout', 5))
+    timeout = int(step.get('timeout', 30))
     win.kill()
     win.wait_until_dead(timeout=timeout)
     assert not win.alive
