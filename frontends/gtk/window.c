@@ -908,7 +908,7 @@ gui_window_create(struct browser_window *bw,
 
 	/* set the default background colour of the drawing area to white. */
 	nsgtk_widget_override_background_color(GTK_WIDGET(g->layout),
-					       GTK_STATE_NORMAL,
+					       GTK_STATE_FLAG_NORMAL,
 					       0, 0xffff, 0xffff, 0xffff);
 
 	nsgtk_connect_draw_event(GTK_WIDGET(g->layout),

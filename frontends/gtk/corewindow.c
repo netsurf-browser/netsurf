@@ -757,7 +757,7 @@ nserror nsgtk_corewindow_init(struct nsgtk_corewindow *nsgtk_cw)
 
 	nsgtk_widget_override_background_color(
 		GTK_WIDGET(nsgtk_cw->drawing_area),
-		GTK_STATE_NORMAL,
+		GTK_STATE_FLAG_NORMAL,
 		0, 0xffff, 0xffff, 0xffff);
 
 	return NSERROR_OK;
