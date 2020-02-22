@@ -969,6 +969,13 @@ gui_window_create(struct browser_window *bw,
 	 */
 	g_object_unref(tab_builder);
 
+	/* Finally we need to focus the location bar if requested */
+	if (flags & GW_CREATE_FOCUS_LOCATION) {
+		if (nsgtk_window_item_activate(g, OPENLOCATION_BUTTON) != NSERROR_OK) {
+			NSLOG(netsurf, WARNING, "Unable to focus location input");
+		}
+	}
+
 	return g;
 }
 

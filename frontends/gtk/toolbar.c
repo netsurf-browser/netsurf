@@ -926,7 +926,7 @@ nsgtk_browser_window_create(struct browser_window *bw, bool intab)
 {
 	nserror res = NSERROR_OK;
 	nsurl *url = NULL;
-	int flags = BW_CREATE_HISTORY | BW_CREATE_FOREGROUND;
+	int flags = BW_CREATE_HISTORY | BW_CREATE_FOREGROUND | BW_CREATE_FOCUS_LOCATION;
 
 	if (intab) {
 		flags |= BW_CREATE_TAB;
