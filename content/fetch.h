@@ -34,6 +34,9 @@ struct content;
 struct fetch;
 struct ssl_cert_info;
 
+/**
+ * Fetcher message types
+ */
 typedef enum {
 	FETCH_PROGRESS,
 	FETCH_HEADER,
@@ -49,6 +52,9 @@ typedef enum {
 	FETCH_SSL_ERR
 } fetch_msg_type;
 
+/**
+ * Fetcher message data
+ */
 typedef struct fetch_msg {
 	fetch_msg_type type;
 
