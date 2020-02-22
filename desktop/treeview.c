@@ -2497,7 +2497,7 @@ static void treeview_redraw_tree(
 		const int x,
 		const int y,
 		int *render_y_in_out,
-		struct rect *r,
+		const struct rect *r,
 		struct content_redraw_data *data,
 		const struct redraw_context *ctx)
 {
@@ -2716,7 +2716,7 @@ static void treeview_redraw_search(
 		const int x,
 		const int y,
 		int *render_y_in_out,
-		struct rect *r,
+		const struct rect *r,
 		struct content_redraw_data *data,
 		const struct redraw_context *ctx)
 {
