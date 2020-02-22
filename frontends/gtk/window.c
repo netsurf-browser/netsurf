@@ -862,7 +862,9 @@ gui_window_create(struct browser_window *bw,
 
 
 	/* create toolbar */
-	res = nsgtk_toolbar_create(tab_builder, bw_from_gw, g, &g->toolbar);
+	res = nsgtk_toolbar_create(tab_builder, bw_from_gw, g,
+				   !!(flags & GW_CREATE_FOCUS_LOCATION),
+				   &g->toolbar);
 	if (res != NSERROR_OK) {
 		free(g);
 		g_object_unref(tab_builder);

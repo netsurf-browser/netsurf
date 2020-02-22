@@ -144,6 +144,25 @@ struct nsgtk_toolbar_item {
 	void *dataminus;
 };
 
+/**
+ * Location focus state machine
+ *
+ * 1. If we don't care, we're in LFS_IDLE
+ * 2. When we create a new toolbar, we can put it into
+ *    LFS_WANT which means that we want the url bar to focus
+ * 3. When we start throbbing if we're in LFS_WANT we move to LFS_THROB
+ * 4. When we stop throbbing, if we're in LFS_THROB we move to LFS_LAST
+ *
+ * While not in LFS_IDLE, if the url bar is updated and we previously had it
+ * fully selected then we reselect it all.  If we're in LFS_LAST we move to
+ * LFS_IDLE at that point.
+ */
+typedef enum {
+	LFS_IDLE, /**< Nothing to do */
+	LFS_WANT, /**< Want focus, will apply */
+	LFS_THROB, /**< Want focus, we have started throbbing */
+	LFS_LAST, /**< Last chance for a focus update */
+} nsgtk_toolbar_location_focus_state;
 
 /**
  * control toolbar context
@@ -182,6 +201,11 @@ struct nsgtk_toolbar {
 	 * context passed to get_bw function
 	 */
 	void *get_ctx;
+
+	/**
+	 * Location focus state machine, current state
+	 */
+	nsgtk_toolbar_location_focus_state loc_focus;
 };
 
 
@@ -3416,6 +3440,7 @@ nserror
 nsgtk_toolbar_create(GtkBuilder *builder,
 		     struct browser_window *(*get_bw)(void *ctx),
 		     void *get_ctx,
+		     bool want_location_focus,
 		     struct nsgtk_toolbar **tb_out)
 {
 	nserror res;
@@ -3431,6 +3456,11 @@ nsgtk_toolbar_create(GtkBuilder *builder,
 	tb->get_ctx = get_ctx;
 	/* set the throbber start frame. */
 	tb->throb_frame = 0;
+	if (want_location_focus) {
+		tb->loc_focus = LFS_WANT;
+	} else {
+		tb->loc_focus = LFS_IDLE;
+	}
 
 	tb->widget = GTK_TOOLBAR(gtk_builder_get_object(builder, "toolbar"));
 	gtk_toolbar_set_show_arrow(tb->widget, TRUE);
@@ -3514,6 +3544,24 @@ nserror nsgtk_toolbar_throbber(struct nsgtk_toolbar *tb, bool active)
 {
 	nserror res;
 	struct browser_window *bw;
+
+	/* Manage the location focus state */
+	switch (tb->loc_focus) {
+	case LFS_IDLE:
+		break;
+	case LFS_WANT:
+		if (active) {
+			tb->loc_focus = LFS_THROB;
+		}
+		break;
+	case LFS_THROB:
+		if (!active) {
+			tb->loc_focus = LFS_LAST;
+		}
+		break;
+	case LFS_LAST:
+		break;
+	}
 
 	/* when activating the throbber simply schedule the next frame update */
 	if (active) {
@@ -3627,7 +3675,23 @@ nserror nsgtk_toolbar_set_url(struct nsgtk_toolbar *tb, nsurl *url)
 		url_text = nsurl_access(url);
 	}
 
-	gtk_entry_set_text(url_entry, url_text);
+	if (strcmp(url_text, gtk_entry_get_text(url_entry)) != 0) {
+		/* The URL bar content has changed, we need to update it */
+		gint startpos, endpos;
+		bool was_selected;
+		gtk_editable_get_selection_bounds(GTK_EDITABLE(url_entry),
+						  &startpos, &endpos);
+		was_selected = gtk_widget_is_focus(GTK_WIDGET(url_entry)) &&
+			startpos == 0 &&
+			endpos == gtk_entry_get_text_length(url_entry);
+		gtk_entry_set_text(url_entry, url_text);
+		if (was_selected && tb->loc_focus != LFS_IDLE) {
+			gtk_widget_grab_focus(GTK_WIDGET(url_entry));
+			if (tb->loc_focus == LFS_LAST) {
+				tb->loc_focus = LFS_IDLE;
+			}
+		}
+	}
 
 	if (idn_url_s != NULL) {
 		free(idn_url_s);
