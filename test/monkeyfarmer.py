@@ -464,6 +464,10 @@ class BrowserWindow:
         while self.alive:
             self.browser.farmer.loop(once=True)
             if (time.time() - now) > timeout:
+                print("*** Timed out waiting for window to be destroyed")
+                print("*** URL was: {}".format(self.url))
+                print("*** Title was: {}".format(self.title))
+                print("*** Status was: {}".format(self.status))
                 break
 
     def go(self, url, referer=None):
