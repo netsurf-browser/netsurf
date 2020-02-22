@@ -115,6 +115,9 @@ struct gui_window {
 	/** display widget for this page or frame */
 	GtkLayout *layout;
 
+	/** The container for the layout etc */
+	GtkWidget *grid;
+
 	/** handle to the the visible tab */
 	GtkWidget *tab;
 
@@ -856,6 +859,7 @@ gui_window_create(struct browser_window *bw,
 	/* Construct our primary elements */
 	g->container = GTK_WIDGET(gtk_builder_get_object(tab_builder, "tabBox"));
 	g->layout = GTK_LAYOUT(gtk_builder_get_object(tab_builder, "layout"));
+	g->grid = GTK_WIDGET(gtk_builder_get_object(tab_builder, "tabContents"));
 	g->status_bar = GTK_LABEL(gtk_builder_get_object(tab_builder, "status_bar"));
 	g->paned = GTK_PANED(gtk_builder_get_object(tab_builder, "hpaned1"));
 	g->input_method = gtk_im_multicontext_new();
@@ -1186,6 +1190,7 @@ static void gui_window_update_extent(struct gui_window *g)
 
 	if (browser_window_get_extents(g->bw, true, &w, &h) == NSERROR_OK) {
 		gtk_layout_set_size(g->layout, w, h);
+		gtk_widget_queue_resize(g->grid);
 	}
 }
 
