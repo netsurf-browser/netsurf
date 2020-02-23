@@ -762,8 +762,8 @@ static void gui_set_clipboard(const char *buffer, size_t length,
 }
 
 static nserror
-gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
-		unsigned long num, nserror (*cb)(bool proceed, void *pw),
+gui_cert_verify(nsurl *url, const struct cert_chain *chain,
+		nserror (*cb)(bool proceed, void *pw),
 		void *cbpw)
 {
         struct sslcert_session_data *data;
@@ -781,8 +781,7 @@ gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
                 cb(false, cbpw);
         } else if(b == 3) {
                 // Inspect
-                sslcert_viewer_create_session_data(num, url, cb, cbpw, certs,
-                                                   &data);
+                sslcert_viewer_create_session_data(url, cb, cbpw, chain, &data);
                 atari_sslcert_viewer_open(data);
         }
 	return NSERROR_OK;

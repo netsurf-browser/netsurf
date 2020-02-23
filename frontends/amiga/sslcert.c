@@ -298,7 +298,7 @@ ami_crtvrfy_create_window(struct ami_crtvrfy_window *crtvrfy_win)
 
 /* exported interface documented in amiga/ssl_cert.h */
 nserror ami_cert_verify(struct nsurl *url,
-						const struct ssl_cert_info *certs,
+						const struct cert_chain *chain,
 						unsigned long num,
 						nserror (*cb)(bool proceed, void *pw),
 						void *cbpw)
@@ -346,8 +346,7 @@ nserror ami_cert_verify(struct nsurl *url,
 	}
 
 	/* initialise certificate viewing interface */
-	res = sslcert_viewer_create_session_data(num, url, cb, cbpw, certs,
-									   &ncwin->ssl_data);
+	res = sslcert_viewer_create_session_data(url, cb, cbpw, chain, &ncwin->ssl_data);
 	if (res != NSERROR_OK) {
 		ami_utf8_free(ncwin->core.wintitle);
 		ami_utf8_free(ncwin->sslerr);

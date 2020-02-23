@@ -41,7 +41,7 @@ void ro_gui_cert_initialise(void);
  * \param cb Callback upon user decision.
  * \param cbpw Context pointer passed to cb
  */
-nserror gui_cert_verify(struct nsurl *url, const struct ssl_cert_info *certs, unsigned long num, nserror (*cb)(bool proceed, void *pw), void *cbpw);
+nserror gui_cert_verify(struct nsurl *url, const struct cert_chain *chain, nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 #endif
 

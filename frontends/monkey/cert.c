@@ -40,8 +40,8 @@ static uint32_t cert_ctr = 0;
 
 nserror
 gui_cert_verify(nsurl *url,
-		const struct ssl_cert_info *certs,
-		unsigned long num, nserror (*cb)(bool proceed, void *pw),
+		const struct cert_chain *chain,
+		nserror (*cb)(bool proceed, void *pw),
 		void *cbpw)
 {
 	struct monkey_cert *mcrt_ctx;
