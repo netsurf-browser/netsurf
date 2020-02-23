@@ -121,43 +121,6 @@ struct llcache_store_parameters {
 
 	size_t limit; /**< The backing store upper bound target size */
 	size_t hysteresis; /**< The hysteresis around the target size */
-
-	/** log2 of the default maximum number of entries the cache
-	 * can track.
-	 *
-	 * If unset this defaults to 16 (65536 entries) The cache
-	 * control file takes precedence so cache data remains
-	 * portable between builds with differing defaults.
-	 */
-	unsigned int entry_size;
-
-	/** log2 of the default number of entries in the mapping between
-	 * the url and cache entries.
-	 *
-	 * @note This is exposing an internal implementation detail of
-	 * the filesystem based default backing store implementation.
-	 * However it is likely any backing store implementation will
-	 * need some way to map url to cache entries so it is a
-	 * generally useful configuration value.
-	 *
-	 * Too small a value will cause unecessary collisions and
-	 * cache misses and larger values cause proportionaly larger
-	 * amounts of memory to be used.
-	 *
-	 * The "birthday paradox" means that the hash will experience
-	 * a collision in every 2^(address_size/2) urls the cache
-	 * stores.
-	 *
-	 * A value of 20 means one object stored in every 1024 will
-	 * cause a collion and a cache miss while using two megabytes
-	 * of storage.
-	 *
-	 * If unset this defaults to 20 (1048576 entries using two
-	 * megabytes) The cache control file takes precedence so cache
-	 * data remains portable between builds with differing
-	 * defaults.
-	 */
-	unsigned int address_size;
 };
 
 /**

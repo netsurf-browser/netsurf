@@ -49,6 +49,7 @@
 #include "utils/nsurl.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/hashmap.h"
 #include "desktop/gui_internal.h"
 #include "netsurf/misc.h"
 
@@ -61,19 +62,10 @@
 #define DEFAULT_ENTRY_SIZE 16
 
 /** Backing store file format version */
-#define CONTROL_VERSION 130
+#define CONTROL_VERSION 200
 
 /** Number of milliseconds after a update before control data maintenance is performed  */
 #define CONTROL_MAINT_TIME 10000
-
-/** Get address from ident */
-#define BS_ADDRESS(ident, state) ((ident) & ((1 << state->ident_bits) - 1))
-
-/** Lookup store entry index from ident */
-#define BS_ENTRY_INDEX(ident, state) state->addrmap[(ident) & ((1 << state->ident_bits) - 1)]
-
-/** Get store entry from ident. */
-#define BS_ENTRY(ident, state) state->entries[state->addrmap[(ident) & ((1 << state->ident_bits) - 1)]]
 
 /** Filename of serialised entries */
 #define ENTRIES_FNAME "entries"
@@ -184,8 +176,8 @@ struct store_entry_element {
  * @note Order is important to avoid excessive structure packing overhead.
  */
 struct store_entry {
+	nsurl *url; /**< The URL for this entry */
 	int64_t last_used; /**< UNIX time the entry was last used */
-	entry_ident_t ident; /**< entry identifier */
 	uint16_t use_count; /**< number of times this entry has been accessed */
 	uint8_t flags; /**< entry flags */
 	/** Entry element (data or meta) specific information */
@@ -219,28 +211,15 @@ struct store_state {
 	size_t limit; /**< The backing store upper bound target size */
 	size_t hysteresis; /**< The hysteresis around the target size */
 
-	unsigned int ident_bits; /**< log2 number of bits to use for address. */
-
-
-	/* cache entry management */
-	struct store_entry *entries; /**< store entries. */
-	unsigned int entry_bits; /**< log2 number of bits in entry index. */
-	unsigned int last_entry; /**< index of last usable entry. */
+	/**
+	 * The cache object hash
+	 */
+	hashmap_t *entries;
 
 	/** flag indicating if the entries have been made persistent
 	 * since they were last changed.
 	 */
 	bool entries_dirty;
-
-	/**
-	 * URL identifier to entry index mapping.
-	 *
-	 * This is an open coded index on the entries URL field and
-	 * provides a computationally inexpensive way to go from the
-	 * URL to an entry.
-	 */
-	entry_index_t *addrmap;
-
 
 	/** small block indexes */
 	struct block_file blocks[ENTRY_ELEM_COUNT][BLOCK_FILE_COUNT];
@@ -273,60 +252,44 @@ struct store_state {
  */
 struct store_state *storestate;
 
-
-/**
- * Remove a backing store entry from the entry table.
+/* Entries hashmap parameters
  *
- * This finds the store entry associated with the given key and
- * removes it from the table. The removed entry is returned but is
- * only valid until the next set_store_entry call.
- *
- * @param[in] state The store state to use.
- * @param[in, out] bse Pointer to the entry to be removed.
- * @return NSERROR_OK and \a bse updated on success or NSERROR_NOT_FOUND
- *         if no entry corresponds to the URL.
+ * Our hashmap has nsurl keys and store_entry values
  */
-static nserror
-remove_store_entry(struct store_state *state, struct store_entry **bse)
+
+static bool
+entries_hashmap_key_eq(void *key1, void *key2)
 {
-	entry_index_t sei; /* store entry index */
-
-	/* sei is index to entry to be removed, we swap it to the end
-	 * of the table so there are no gaps and the returned entry is
-	 * held in storage with reasonable lifetime.
-	 */
-
-	sei = BS_ENTRY_INDEX((*bse)->ident, state);
-
-	/* remove entry from map */
-	BS_ENTRY_INDEX((*bse)->ident, state) = 0;
-
-	/* global allocation accounting  */
-	state->total_alloc -= state->entries[sei].elem[ENTRY_ELEM_DATA].size;
-	state->total_alloc -= state->entries[sei].elem[ENTRY_ELEM_META].size;
-
-	state->last_entry--;
-
-	if (sei == state->last_entry) {
-		/* the removed entry was the last one, how convenient */
-		*bse = &state->entries[sei];
-	} else {
-		/* need to swap entries */
-		struct store_entry tent;
-
-		tent = state->entries[sei];
-		state->entries[sei] = state->entries[state->last_entry];
-		state->entries[state->last_entry] = tent;
-
-		/* update map for moved entry */
-		BS_ENTRY_INDEX(state->entries[sei].ident, state) = sei;
-
-		*bse = &state->entries[state->last_entry];
-	}
-
-	return NSERROR_OK;
+	return nsurl_compare((nsurl *)key1, (nsurl *)key2, NSURL_COMPLETE);
 }
 
+static void *
+entries_hashmap_value_alloc(void *key)
+{
+	struct store_entry *ent = calloc(1, sizeof(struct store_entry));
+	if (ent != NULL) {
+		ent->url = nsurl_ref(key);
+	}
+	return ent;
+}
+
+static void
+entries_hashmap_value_destroy(void *value)
+{
+	struct store_entry *ent = value;
+	/** \todo Do we need to do any disk cleanup here?  if so, meep! */
+	nsurl_unref(ent->url);
+	free(ent);
+}
+
+static hashmap_parameters_t entries_hashmap_parameters = {
+	.key_clone = (hashmap_key_clone_t)nsurl_ref,
+	.key_destroy = (hashmap_key_destroy_t)nsurl_unref,
+	.key_hash = (hashmap_key_hash_t)nsurl_hash,
+	.key_eq = entries_hashmap_key_eq,
+	.value_alloc = entries_hashmap_value_alloc,
+	.value_destroy = entries_hashmap_value_destroy,
+};
 
 /**
  * Generate a filename for an object.
@@ -484,13 +447,15 @@ invalidate_element(struct store_state *state,
 		char *fname;
 
 		/* unlink the file from disc */
-		fname = store_fname(state, bse->ident, elem_idx);
+		fname = store_fname(state, nsurl_hash(bse->url), elem_idx);
 		if (fname == NULL) {
 			return NSERROR_NOMEM;
 		}
 		unlink(fname);
 		free(fname);
 	}
+
+	state->total_alloc -= bse->elem[elem_idx].size;
 
 	return NSERROR_OK;
 }
@@ -519,28 +484,26 @@ invalidate_entry(struct store_state *state, struct store_entry *bse)
 		 * This entry cannot be immediately removed as it has
 		 * associated allocation so wait for allocation release.
 		 */
-		NSLOG(netsurf, INFO,
+		NSLOG(netsurf, DEBUG,
 		      "invalidating entry with referenced allocation");
 		return NSERROR_OK;
 	}
 
-	NSLOG(netsurf, INFO, "Removing entry for %p", bse);
-
-	/* remove the entry from the index */
-	ret = remove_store_entry(state, &bse);
-	if (ret != NSERROR_OK) {
-		return ret;
-	}
+	NSLOG(netsurf, VERBOSE, "Removing entry for %s", nsurl_access(bse->url));
 
 	ret = invalidate_element(state, bse, ENTRY_ELEM_META);
 	if (ret != NSERROR_OK) {
-		NSLOG(netsurf, INFO, "Error invalidating metadata element");
+		NSLOG(netsurf, ERROR, "Error invalidating metadata element");
 	}
 
 	ret = invalidate_element(state, bse, ENTRY_ELEM_DATA);
 	if (ret != NSERROR_OK) {
-		NSLOG(netsurf, INFO, "Error invalidating data element");
+		NSLOG(netsurf, ERROR, "Error invalidating data element");
 	}
+
+	/* As our final act we remove bse from the cache */
+	hashmap_remove(state->entries, bse->url);
+	/* From now, bse is invalid memory */
 
 	return NSERROR_OK;
 }
@@ -551,8 +514,8 @@ invalidate_entry(struct store_state *state, struct store_entry *bse)
  */
 static int compar(const void *va, const void *vb)
 {
-	const struct store_entry *a = &BS_ENTRY(*(entry_ident_t *)va, storestate);
-	const struct store_entry *b = &BS_ENTRY(*(entry_ident_t *)vb, storestate);
+	const struct store_entry *a = *(const struct store_entry **)va;
+	const struct store_entry *b = *(const struct store_entry **)vb;
 
 	/* consider the allocation flags - if an entry has an
 	 * allocation it is considered more valuable as it cannot be
@@ -591,6 +554,22 @@ static int compar(const void *va, const void *vb)
 	return 0;
 }
 
+typedef struct {
+	struct store_entry **elist;
+	size_t ent_count;
+} eviction_state_t;
+
+/**
+ * Iterator for gathering entries to compute eviction order
+ */
+static bool
+entry_eviction_iterator_cb(void *key, void *value, void *ctx)
+{
+	eviction_state_t *estate = ctx;
+	struct store_entry *ent = value;
+	estate->elist[estate->ent_count++] = ent;
+	return false;
+}
 
 /**
  * Evict entries from backing store as per configuration.
@@ -608,15 +587,14 @@ static int compar(const void *va, const void *vb)
  */
 static nserror store_evict(struct store_state *state)
 {
-	entry_ident_t *elist; /* sorted list of entry identifiers */
-	unsigned int ent;
-	unsigned int ent_count;
-	size_t removed; /* size of removed entries */
+	size_t ent = 0;
+	size_t removed = 0; /* size of removed entries */
 	nserror ret = NSERROR_OK;
+	size_t old_count;
+	eviction_state_t estate;
 
 	/* check if the cache has exceeded configured limit */
-	if ((state->total_alloc < state->limit) &&
-	    (state->last_entry < (1U << state->entry_bits))) {
+	if (state->total_alloc < state->limit) {
 		/* cache within limits */
 		return NSERROR_OK;
 	}
@@ -627,24 +605,31 @@ static nserror store_evict(struct store_state *state)
 	      state->hysteresis);
 
 	/* allocate storage for the list */
-	elist = malloc(sizeof(entry_ident_t) * state->last_entry);
-	if (elist == NULL) {
+	old_count = hashmap_count(state->entries);
+	estate.ent_count = 0;
+	estate.elist = malloc(sizeof(struct state_entry*) * old_count);
+	if (estate.elist == NULL) {
 		return NSERROR_NOMEM;
 	}
 
-	/* sort the list avoiding entry 0 which is the empty sentinel */
-	for (ent = 1; ent < state->last_entry; ent++) {
-		elist[ent - 1] = state->entries[ent].ident;
+	if (hashmap_iterate(state->entries, entry_eviction_iterator_cb, &estate)) {
+		NSLOG(netsurf, WARNING, "Unexpected termination of eviction iterator");
+		free(estate.elist);
+		return NSERROR_UNKNOWN;
 	}
-	ent_count = ent - 1; /* important to keep this as the entry count will change when entries are removed */
-	qsort(elist, ent_count, sizeof(entry_ident_t), compar);
+
+	if (old_count != estate.ent_count) {
+		NSLOG(netsurf, WARNING, "Incorrect entry count after eviction iterator");
+		free(estate.elist);
+		return NSERROR_UNKNOWN;
+	}
+
+	qsort(estate.elist, estate.ent_count, sizeof(struct state_entry*), compar);
 
 	/* evict entries in listed order */
 	removed = 0;
-	for (ent = 0; ent < ent_count; ent++) {
-		struct store_entry *bse;
-
-		bse = &BS_ENTRY(elist[ent], state);
+	for (ent = 0; ent < estate.ent_count; ent++) {
+		struct store_entry *bse = estate.elist[ent];
 
 		removed += bse->elem[ENTRY_ELEM_DATA].size;
 		removed += bse->elem[ENTRY_ELEM_META].size;
@@ -659,14 +644,55 @@ static nserror store_evict(struct store_state *state)
 		}
 	}
 
-	free(elist);
+	free(estate.elist);
 
-	NSLOG(netsurf, INFO, "removed %"PRIsizet" in %d entries", removed,
-	      ent);
+	NSLOG(netsurf, INFO,
+	      "removed %"PRIsizet" in %"PRIsizet" entries, %"PRIsizet" remaining in %"PRIsizet" entries",
+	      removed, ent, state->total_alloc, old_count - ent);
 
 	return ret;
 }
 
+/**
+ * Write a single store entry to disk
+ *
+ * To serialise a single store entry for now we write out a 32bit int
+ * which is the length of the url, then that many bytes of the url.
+ * Then we write out the full store entry struct as-is, which includes
+ * a useless nsurl pointer.
+ */
+static nserror
+write_entry(struct store_entry *ent, int fd)
+{
+	uint32_t len = strlen(nsurl_access(ent->url));
+	if (write(fd, &len, sizeof(len)) != sizeof(len))
+		return NSERROR_SAVE_FAILED;
+	if (write(fd, nsurl_access(ent->url), len) != len)
+		return NSERROR_SAVE_FAILED;
+	if (write(fd, ent, sizeof(*ent)) != sizeof(*ent))
+		return NSERROR_SAVE_FAILED;
+
+	return NSERROR_OK;
+}
+
+typedef struct {
+	int fd;
+	size_t written;
+} write_entry_iteration_state;
+
+/**
+ * Callback for iterating the entries hashmap
+ */
+static bool
+write_entry_iterator(void *key, void *value, void *ctx)
+{
+	/* We ignore the key */
+	struct store_entry *ent = value;
+	write_entry_iteration_state *state = ctx;
+	state->written++;
+	/* We stop early if we fail to write this entry */
+	return write_entry(ent, state->fd) != NSERROR_OK;
+}
 
 /**
  * Write filesystem entries to file.
@@ -678,12 +704,12 @@ static nserror store_evict(struct store_state *state)
  */
 static nserror write_entries(struct store_state *state)
 {
-	int fd;
 	char *tname = NULL; /* temporary file name for atomic replace */
 	char *fname = NULL; /* target filename */
-	size_t entries_size;
-	size_t written;
+	write_entry_iteration_state weistate;
 	nserror ret;
+
+	memset(&weistate, 0, sizeof(weistate));
 
 	if (state->entries_dirty == false) {
 		/* entries have not been updated since last write */
@@ -695,24 +721,21 @@ static nserror write_entries(struct store_state *state)
 		return ret;
 	}
 
-	fd = open(tname, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-	if (fd == -1) {
+	weistate.fd = open(tname, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+	if (weistate.fd == -1) {
 		free(tname);
 		return NSERROR_SAVE_FAILED;
 	}
 
-	entries_size = state->last_entry * sizeof(struct store_entry);
-
-	written = (size_t)write(fd, state->entries, entries_size);
-
-	close(fd);
-
-	/* check all data was written */
-	if (written != entries_size) {
+	if (hashmap_iterate(state->entries, write_entry_iterator, &weistate)) {
+		/* The iteration ended early, so we failed */
+		close(weistate.fd);
 		unlink(tname);
 		free(tname);
 		return NSERROR_SAVE_FAILED;
 	}
+
+	close(weistate.fd);
 
 	ret = netsurf_mkpath(&fname, NULL, 2, state->path, ENTRIES_FNAME);
 	if (ret != NSERROR_OK) {
@@ -729,6 +752,8 @@ static nserror write_entries(struct store_state *state)
 		free(fname);
 		return NSERROR_SAVE_FAILED;
 	}
+
+	NSLOG(netsurf, INFO, "Wrote out %"PRIsizet" entries", weistate.written);
 
 	return NSERROR_OK;
 }
@@ -777,7 +802,7 @@ static nserror write_blocks(struct store_state *state)
 				   &state->blocks[elem_idx][bfidx].use_map[0],
 				   BLOCK_USE_MAP_SIZE);
 			if (wr != BLOCK_USE_MAP_SIZE) {
-				NSLOG(netsurf, INFO,
+				NSLOG(netsurf, DEBUG,
 				      "writing block file %d use index on file number %d failed",
 				      elem_idx,
 				      bfidx);
@@ -836,21 +861,21 @@ static nserror set_block_extents(struct store_state *state)
 		return NSERROR_OK;
 	}
 
-	NSLOG(netsurf, INFO, "Starting");
+	NSLOG(netsurf, DEBUG, "Starting");
 	for (elem_idx = 0; elem_idx < ENTRY_ELEM_COUNT; elem_idx++) {
 		for (bfidx = 0; bfidx < BLOCK_FILE_COUNT; bfidx++) {
 			if (state->blocks[elem_idx][bfidx].fd != -1) {
 				/* ensure block file is correct extent */
 				ftr = ftruncate(state->blocks[elem_idx][bfidx].fd, 1U << (log2_block_size[elem_idx] + BLOCK_ENTRY_COUNT));
 				if (ftr == -1) {
-					NSLOG(netsurf, INFO,
+					NSLOG(netsurf, ERROR,
 					      "Truncate failed errno:%d",
 					      errno);
 				}
 			}
 		}
 	}
-	NSLOG(netsurf, INFO, "Complete");
+	NSLOG(netsurf, DEBUG, "Complete");
 
 	state->blocks_opened = false;
 
@@ -866,7 +891,7 @@ static nserror set_block_extents(struct store_state *state)
  *
  * \param s store state to maintain.
  */
-static void control_maintinance(void *s)
+static void control_maintenance(void *s)
 {
 	struct store_state *state = s;
 
@@ -892,36 +917,22 @@ static void control_maintinance(void *s)
 static nserror
 get_store_entry(struct store_state *state, nsurl *url, struct store_entry **bse)
 {
-	entry_ident_t ident;
-	unsigned int sei; /* store entry index */
+	struct store_entry *ent;
 
-	NSLOG(netsurf, INFO, "url:%s", nsurl_access(url));
+	ent = hashmap_lookup(state->entries, url);
 
-	/* use the url hash as the entry identifier */
-	ident = nsurl_hash(url);
-
-	sei = BS_ENTRY_INDEX(ident, state);
-
-	if (sei == 0) {
-		NSLOG(netsurf, INFO, "Failed to find ident 0x%x in index",
-		      ident);
+	if (ent == NULL) {
 		return NSERROR_NOT_FOUND;
 	}
 
-	if (state->entries[sei].ident != ident) {
-		/* entry ident did not match */
-		NSLOG(netsurf, INFO, "ident did not match entry");
-		return NSERROR_NOT_FOUND;
-	}
+	*bse = ent;
 
-	*bse = &state->entries[sei];
-
-	state->entries[sei].last_used = time(NULL);
-	state->entries[sei].use_count++;
+	ent->last_used = time(NULL);
+	ent->use_count++;
 
 	state->entries_dirty = true;
 
-	guit->misc->schedule(CONTROL_MAINT_TIME, control_maintinance, state);
+	guit->misc->schedule(CONTROL_MAINT_TIME, control_maintenance, state);
 
 	return NSERROR_OK;
 }
@@ -979,13 +990,11 @@ set_store_entry(struct store_state *state,
 		const size_t datalen,
 		struct store_entry **bse)
 {
-	entry_ident_t ident;
-	entry_index_t sei; /* store entry index */
 	struct store_entry *se;
 	nserror ret;
 	struct store_entry_element *elem;
 
-	NSLOG(netsurf, INFO, "url:%s", nsurl_access(url));
+	NSLOG(netsurf, DEBUG, "url:%s", nsurl_access(url));
 
 	/* evict entries as required and ensure there is at least one
 	 * new entry available.
@@ -995,40 +1004,12 @@ set_store_entry(struct store_state *state,
 		return ret;
 	}
 
-	/* use the url hash as the entry identifier */
-	ident = nsurl_hash(url);
-
-	/* get the entry index from the ident */
-	sei = BS_ENTRY_INDEX(ident, state);
-	if (sei == 0) {
-		/* allocating the next available entry */
-		sei = state->last_entry;
-		state->last_entry++;
-		BS_ENTRY_INDEX(ident, state) = sei;
-
-		/* the entry */
-		se = &state->entries[sei];
-
-		/* clear the new entry */
-		memset(se, 0, sizeof(struct store_entry));
-	} else {
-		/* index found existing entry */
-
-		/* the entry */
-		se = &state->entries[sei];
-
-		if (se->ident != ident) {
-			/** @todo Is there a better heuristic than
-			 * first come, first served? Should we check
-			 * to see if the old entry is in use and if
-			 * not prefer the newly stored entry instead?
-			 */
-			NSLOG(netsurf, INFO,
-			      "Entry index collision trying to replace %x with %x",
-			      se->ident,
-			      ident);
-			return NSERROR_PERMISSION;
-		}
+	se = hashmap_lookup(state->entries, url);
+	if (se == NULL) {
+		se = hashmap_insert(state->entries, url);
+	}
+	if (se == NULL) {
+		return NSERROR_NOMEM;
 	}
 
 	/* the entry element */
@@ -1039,13 +1020,12 @@ set_store_entry(struct store_state *state,
 		/* this entry cannot be removed as it has associated
 		 * allocation.
 		 */
-		NSLOG(netsurf, INFO,
+		NSLOG(netsurf, ERROR,
 		      "attempt to overwrite entry with in use data");
 		return NSERROR_PERMISSION;
 	}
 
 	/* set the common entry data */
-	se->ident = ident;
 	se->use_count = 1;
 	se->last_used = time(NULL);
 
@@ -1066,7 +1046,7 @@ set_store_entry(struct store_state *state,
 
 	/* ensure control maintenance scheduled. */
 	state->entries_dirty = true;
-	guit->misc->schedule(CONTROL_MAINT_TIME, control_maintinance, state);
+	guit->misc->schedule(CONTROL_MAINT_TIME, control_maintenance, state);
 
 	*bse = se;
 
@@ -1099,7 +1079,7 @@ store_open(struct store_state *state,
 
 	fname = store_fname(state, ident, elem_idx);
 	if (fname == NULL) {
-		NSLOG(netsurf, INFO, "filename error");
+		NSLOG(netsurf, ERROR, "filename error");
 		return -1;
 	}
 
@@ -1107,14 +1087,14 @@ store_open(struct store_state *state,
 	if (openflags & O_CREAT) {
 		ret = netsurf_mkdir_all(fname);
 		if (ret != NSERROR_OK) {
-			NSLOG(netsurf, INFO,
+			NSLOG(netsurf, WARNING,
 			      "file path \"%s\" could not be created", fname);
 			free(fname);
 			return -1;
 		}
 	}
 
-	NSLOG(netsurf, INFO, "opening %s", fname);
+	NSLOG(netsurf, DEBUG, "opening %s", fname);
 	fd = open(fname, openflags, S_IRUSR | S_IWUSR);
 
 	free(fname);
@@ -1122,57 +1102,6 @@ store_open(struct store_state *state,
 	return fd;
 }
 
-/**
- * Construct address ident to filesystem entry map
- *
- * To allow a filesystem entry to be found from it's identifier we
- * construct an mapping index. This is a hash map from the entries URL
- * (its unique key) to filesystem entry.
- *
- * As the entire entry list must be iterated over to construct the map
- * we also compute the total storage in use.
- *
- * @param state The backing store global state.
- * @return NSERROR_OK on success or NSERROR_NOMEM if the map storage
- *         could not be allocated.
- */
-static nserror
-build_entrymap(struct store_state *state)
-{
-	unsigned int eloop;
-
-	NSLOG(netsurf, INFO, "Allocating %"PRIsizet" bytes for max of %d buckets",
-	      (1 << state->ident_bits) * sizeof(entry_index_t),
-	      1 << state->ident_bits);
-
-	state->addrmap = calloc(1 << state->ident_bits, sizeof(entry_index_t));
-	if (state->addrmap == NULL) {
-		return NSERROR_NOMEM;
-	}
-
-	state->total_alloc = 0;
-
-	for (eloop = 1; eloop < state->last_entry; eloop++) {
-
-		NSLOG(llcache, DEEPDEBUG,
-		      "entry:%d ident:0x%08x used:%d",
-		      eloop,
-		      BS_ADDRESS(state->entries[eloop].ident, state),
-		      state->entries[eloop].use_count);
-
-		/* update the address map to point at the entry */
-		BS_ENTRY_INDEX(state->entries[eloop].ident, state) = eloop;
-
-		/* account for the storage space */
-		state->total_alloc += state->entries[eloop].elem[ENTRY_ELEM_DATA].size;
-		state->total_alloc += state->entries[eloop].elem[ENTRY_ELEM_META].size;
-		/* ensure entry does not have any allocation state */
-		state->entries[eloop].elem[ENTRY_ELEM_DATA].flags &= ~(ENTRY_ELEM_FLAG_HEAP | ENTRY_ELEM_FLAG_MMAP);
-		state->entries[eloop].elem[ENTRY_ELEM_META].flags &= ~(ENTRY_ELEM_FLAG_HEAP | ENTRY_ELEM_FLAG_MMAP);
-	}
-
-	return NSERROR_OK;
-}
 
 /**
  * Unlink entries file
@@ -1206,46 +1135,74 @@ unlink_entries(struct store_state *state)
 static nserror
 read_entries(struct store_state *state)
 {
-	int fd;
-	ssize_t rd;
-	size_t entries_size;
 	char *fname = NULL;
+	char *url;
+	nsurl *nsurl;
 	nserror ret;
+	size_t read_entries = 0;
+	struct store_entry *ent;
+	int fd;
 
 	ret = netsurf_mkpath(&fname, NULL, 2, state->path, ENTRIES_FNAME);
 	if (ret != NSERROR_OK) {
 		return ret;
 	}
 
-	entries_size = (1 << state->entry_bits) * sizeof(struct store_entry);
-
-	NSLOG(netsurf, INFO,
-	      "Allocating %"PRIsizet" bytes for max of %d entries of %"PRIsizet" length elements %"PRIsizet" length",
-	      entries_size,
-	      1 << state->entry_bits,
-	      sizeof(struct store_entry),
-	      sizeof(struct store_entry_element));
-
-	state->entries = calloc(1, entries_size);
+	state->entries = hashmap_create(&entries_hashmap_parameters);
 	if (state->entries == NULL) {
 		free(fname);
 		return NSERROR_NOMEM;
 	}
 
 	fd = open(fname, O_RDWR);
-	free(fname);
 	if (fd != -1) {
-		rd = read(fd, state->entries, entries_size);
-		close(fd);
-		if (rd > 0) {
-			state->last_entry = rd / sizeof(struct store_entry);
-			NSLOG(netsurf, INFO, "Read %d entries",
-			      state->last_entry);
+		uint32_t urllen;
+		while (read(fd, &urllen, sizeof(urllen)) == sizeof(urllen)) {
+			url = calloc(1, urllen+1);
+			if (read(fd, url, urllen) != urllen) {
+				free(url);
+				close(fd);
+				free(fname);
+				return NSERROR_INIT_FAILED;
+			}
+			ret = nsurl_create(url, &nsurl);
+			if (ret != NSERROR_OK) {
+				free(url);
+				close(fd);
+				free(fname);
+				return ret;
+			}
+			free(url);
+			/* We have to be careful here about nsurl refs */
+			ent = hashmap_insert(state->entries, nsurl);
+			if (ent == NULL) {
+				nsurl_unref(nsurl);
+				close(fd);
+				free(fname);
+				return NSERROR_NOMEM;
+			}
+			/* At this point, ent actually owns a ref of nsurl */
+			if (read(fd, ent, sizeof(*ent)) != sizeof(*ent)) {
+				/* The read failed, so reset the ptr */
+				ent->url = nsurl; /* It already had a ref */
+				nsurl_unref(nsurl);
+				close(fd);
+				free(fname);
+				return NSERROR_INIT_FAILED;
+			}
+			ent->url = nsurl; /* It already owns a ref */
+			nsurl_unref(nsurl);
+			NSLOG(netsurf, DEBUG, "Successfully read entry for %s", nsurl_access(ent->url));
+			read_entries++;
+			state->total_alloc += ent->elem[ENTRY_ELEM_DATA].size;
+			state->total_alloc += ent->elem[ENTRY_ELEM_META].size;
 		}
-	} else {
-		/* could rebuild entries from fs */
-		state->last_entry = 1;
+		close(fd);
 	}
+
+	NSLOG(netsurf, INFO, "Read %"PRIsizet" entries from cache", read_entries);
+
+	free(fname);
 	return NSERROR_OK;
 }
 
@@ -1283,7 +1240,7 @@ read_blocks(struct store_state *state)
 					  &state->blocks[elem_idx][bfidx].use_map[0],
 					  BLOCK_USE_MAP_SIZE);
 				if (rd <= 0) {
-					NSLOG(netsurf, INFO,
+					NSLOG(netsurf, ERROR,
 					      "reading block file %d use index on file number %d failed",
 					      elem_idx,
 					      bfidx);
@@ -1382,9 +1339,6 @@ write_control(struct store_state *state)
 	}
 
 	fprintf(fcontrol, "%u%c", CONTROL_VERSION, 0);
-	fprintf(fcontrol, "%u%c", state->entry_bits, 0);
-	fprintf(fcontrol, "%u%c", state->ident_bits, 0);
-	fprintf(fcontrol, "%u%c", state->last_entry, 0);
 
 	fclose(fcontrol);
 
@@ -1404,8 +1358,6 @@ read_control(struct store_state *state)
 	nserror ret;
 	FILE *fcontrol;
 	unsigned int ctrlversion;
-	unsigned int addrbits;
-	unsigned int entrybits;
 	char *fname = NULL;
 
 	ret = netsurf_mkpath(&fname, NULL, 2, state->path, "control");
@@ -1443,26 +1395,7 @@ read_control(struct store_state *state)
 		goto control_error;
 	}
 
-	/* second line is log2 max number of entries */
-	if (fscanf(fcontrol, "%u", &entrybits) != 1) {
-		goto control_error;
-	}
-	if (fgetc(fcontrol) != 0) {
-		goto control_error;
-	}
-
-	/* second line is log2 size of address hash */
-	if (fscanf(fcontrol, "%u", &addrbits) != 1) {
-		goto control_error;
-	}
-	if (fgetc(fcontrol) != 0) {
-		goto control_error;
-	}
-
 	fclose(fcontrol);
-
-	state->entry_bits = entrybits;
-	state->ident_bits = addrbits;
 
 	return NSERROR_OK;
 
@@ -1515,22 +1448,10 @@ initialise(const struct llcache_store_parameters *parameters)
 	newstate->limit = parameters->limit;
 	newstate->hysteresis = parameters->hysteresis;
 
-	if (parameters->address_size == 0) {
-		newstate->ident_bits = DEFAULT_IDENT_SIZE;
-	} else {
-		newstate->ident_bits = parameters->address_size;
-	}
-
-	if (parameters->entry_size == 0) {
-		newstate->entry_bits = DEFAULT_ENTRY_SIZE;
-	} else {
-		newstate->entry_bits = parameters->entry_size;
-	}
-
 	/* read store control and create new if required */
 	ret = read_control(newstate);
 	if (ret != NSERROR_OK) {
-		NSLOG(netsurf, INFO, "read control failed %s",
+		NSLOG(netsurf, ERROR, "read control failed %s",
 		      messages_get_errorcode(ret));
 		ret = write_control(newstate);
 		if (ret == NSERROR_OK) {
@@ -1545,13 +1466,6 @@ initialise(const struct llcache_store_parameters *parameters)
 		return ret;
 	}
 
-	/* ensure the maximum number of entries can be represented in
-	 * the type available to store it.
-	 */
-	if (newstate->entry_bits > (8 * sizeof(entry_index_t))) {
-		newstate->entry_bits = (8 * sizeof(entry_index_t));
-	}
-
 	/* read filesystem entries */
 	ret = read_entries(newstate);
 	if (ret != NSERROR_OK) {
@@ -1561,21 +1475,11 @@ initialise(const struct llcache_store_parameters *parameters)
 		return ret;
 	}
 
-	/* build entry hash map */
-	ret = build_entrymap(newstate);
-	if (ret != NSERROR_OK) {
-		/* that obviously went well */
-		free(newstate->entries);
-		free(newstate->path);
-		free(newstate);
-		return ret;
-	}
-
+	/* read blocks */
 	ret = read_blocks(newstate);
 	if (ret != NSERROR_OK) {
 		/* oh dear */
-		free(newstate->addrmap);
-		free(newstate->entries);
+		hashmap_destroy(newstate->entries);
 		free(newstate->path);
 		free(newstate);
 		return ret;
@@ -1586,12 +1490,10 @@ initialise(const struct llcache_store_parameters *parameters)
 	NSLOG(netsurf, INFO, "FS backing store init successful");
 
 	NSLOG(netsurf, INFO,
-	      "path:%s limit:%"PRIsizet" hyst:%"PRIsizet" addr:%d entries:%d",
+	      "path:%s limit:%"PRIsizet" hyst:%"PRIsizet,
 	      newstate->path,
 	      newstate->limit,
-	      newstate->hysteresis,
-	      newstate->ident_bits,
-	      newstate->entry_bits);
+	      newstate->hysteresis);
 	NSLOG(netsurf, INFO, "Using %"PRIu64"/%"PRIsizet,
 	      newstate->total_alloc, newstate->limit);
 
@@ -1614,7 +1516,7 @@ finalise(void)
 	unsigned int op_count;
 
 	if (storestate != NULL) {
-		guit->misc->schedule(-1, control_maintinance, storestate);
+		guit->misc->schedule(-1, control_maintenance, storestate);
 		write_entries(storestate);
 		write_blocks(storestate);
 
@@ -1643,8 +1545,7 @@ finalise(void)
 			      0);
 		}
 
-		free(storestate->addrmap);
-		free(storestate->entries);
+		hashmap_destroy(storestate->entries);
 		free(storestate->path);
 		free(storestate);
 		storestate = NULL;
@@ -1676,7 +1577,7 @@ static nserror store_write_block(struct store_state *state,
 		state->blocks[elem_idx][bf].fd = store_open(state, bf,
 				elem_idx + ENTRY_ELEM_COUNT, O_CREAT | O_RDWR);
 		if (state->blocks[elem_idx][bf].fd == -1) {
-			NSLOG(netsurf, INFO, "Open failed errno %d", errno);
+			NSLOG(netsurf, ERROR, "Open failed errno %d", errno);
 			return NSERROR_SAVE_FAILED;
 		}
 
@@ -1691,7 +1592,7 @@ static nserror store_write_block(struct store_state *state,
 		    bse->elem[elem_idx].size,
 		    offst);
 	if (wr != (ssize_t)bse->elem[elem_idx].size) {
-		NSLOG(netsurf, INFO,
+		NSLOG(netsurf, ERROR,
 		      "Write failed %"PRIssizet" of %d bytes from %p at 0x%jx block %d errno %d",
 		      wr,
 		      bse->elem[elem_idx].size,
@@ -1726,10 +1627,10 @@ static nserror store_write_file(struct store_state *state,
 	int fd;
 	int err;
 
-	fd = store_open(state, bse->ident, elem_idx, O_CREAT | O_WRONLY);
+	fd = store_open(state, nsurl_hash(bse->url), elem_idx, O_CREAT | O_WRONLY);
 	if (fd < 0) {
 		perror("");
-		NSLOG(netsurf, INFO, "Open failed %d errno %d", fd, errno);
+		NSLOG(netsurf, ERROR, "Open failed %d errno %d", fd, errno);
 		return NSERROR_SAVE_FAILED;
 	}
 
@@ -1738,7 +1639,7 @@ static nserror store_write_file(struct store_state *state,
 
 	close(fd);
 	if (wr != (ssize_t)bse->elem[elem_idx].size) {
-		NSLOG(netsurf, INFO,
+		NSLOG(netsurf, ERROR,
 		      "Write failed %"PRIssizet" of %d bytes from %p errno %d",
 		      wr,
 		      bse->elem[elem_idx].size,
@@ -1749,7 +1650,7 @@ static nserror store_write_file(struct store_state *state,
 		return NSERROR_SAVE_FAILED;
 	}
 
-	NSLOG(netsurf, INFO, "Wrote %"PRIssizet" bytes from %p", wr,
+	NSLOG(netsurf, VERBOSE, "Wrote %"PRIssizet" bytes from %p", wr,
 	      bse->elem[elem_idx].data);
 
 	return NSERROR_OK;
@@ -1791,7 +1692,7 @@ store(nsurl *url,
 	/* set the store entry up */
 	ret = set_store_entry(storestate, url, elem_idx, data, datalen, &bse);
 	if (ret != NSERROR_OK) {
-		NSLOG(netsurf, INFO, "store entry setting failed");
+		NSLOG(netsurf, ERROR, "store entry setting failed");
 		return ret;
 	}
 
@@ -1814,7 +1715,7 @@ static nserror entry_release_alloc(struct store_entry_element *elem)
 	if ((elem->flags & ENTRY_ELEM_FLAG_HEAP) != 0) {
 		elem->ref--;
 		if (elem->ref == 0) {
-			NSLOG(netsurf, INFO, "freeing %p", elem->data);
+			NSLOG(netsurf, DEEPDEBUG, "freeing %p", elem->data);
 			free(elem->data);
 			elem->flags &= ~ENTRY_ELEM_FLAG_HEAP;
 		}
@@ -1846,7 +1747,7 @@ static nserror store_read_block(struct store_state *state,
 		state->blocks[elem_idx][bf].fd = store_open(state, bf,
 				elem_idx + ENTRY_ELEM_COUNT, O_CREAT | O_RDWR);
 		if (state->blocks[elem_idx][bf].fd == -1) {
-			NSLOG(netsurf, INFO, "Open failed errno %d", errno);
+			NSLOG(netsurf, ERROR, "Open failed errno %d", errno);
 			return NSERROR_SAVE_FAILED;
 		}
 
@@ -1861,7 +1762,7 @@ static nserror store_read_block(struct store_state *state,
 		   bse->elem[elem_idx].size,
 		   offst);
 	if (rd != (ssize_t)bse->elem[elem_idx].size) {
-		NSLOG(netsurf, INFO,
+		NSLOG(netsurf, ERROR,
 		      "Failed reading %"PRIssizet" of %d bytes into %p from 0x%jx block %d errno %d",
 		      rd,
 		      bse->elem[elem_idx].size,
@@ -1872,7 +1773,7 @@ static nserror store_read_block(struct store_state *state,
 		return NSERROR_SAVE_FAILED;
 	}
 
-	NSLOG(netsurf, INFO,
+	NSLOG(netsurf, DEEPDEBUG,
 	      "Read %"PRIssizet" bytes into %p from 0x%jx block %d", rd,
 	      bse->elem[elem_idx].data, (uintmax_t)offst,
 	      bse->elem[elem_idx].block);
@@ -1898,9 +1799,9 @@ static nserror store_read_file(struct store_state *state,
 	size_t tot = 0; /* total size */
 
 	/* separate file in backing store */
-	fd = store_open(storestate, bse->ident, elem_idx, O_RDONLY);
+	fd = store_open(storestate, nsurl_hash(bse->url), elem_idx, O_RDONLY);
 	if (fd < 0) {
-		NSLOG(netsurf, INFO, "Open failed %d errno %d", fd, errno);
+		NSLOG(netsurf, ERROR, "Open failed %d errno %d", fd, errno);
 		/** @todo should this invalidate the entry? */
 		return NSERROR_NOT_FOUND;
 	}
@@ -1910,7 +1811,7 @@ static nserror store_read_file(struct store_state *state,
 			  bse->elem[elem_idx].data + tot,
 			  bse->elem[elem_idx].size - tot);
 		if (rd <= 0) {
-			NSLOG(netsurf, INFO,
+			NSLOG(netsurf, ERROR,
 			      "read error returned %"PRIssizet" errno %d",
 			      rd,
 			      errno);
@@ -1922,7 +1823,7 @@ static nserror store_read_file(struct store_state *state,
 
 	close(fd);
 
-	NSLOG(netsurf, INFO, "Read %"PRIsizet" bytes into %p", tot,
+	NSLOG(netsurf, DEEPDEBUG, "Read %"PRIsizet" bytes into %p", tot,
 	      bse->elem[elem_idx].data);
 
 	return ret;
@@ -1956,13 +1857,13 @@ fetch(nsurl *url,
 	/* fetch store entry */
 	ret = get_store_entry(storestate, url, &bse);
 	if (ret != NSERROR_OK) {
-		NSLOG(netsurf, INFO, "entry not found");
+		NSLOG(netsurf, DEBUG, "Entry for %s not found", nsurl_access(url));
 		storestate->miss_count++;
 		return ret;
 	}
 	storestate->hit_count++;
 
-	NSLOG(netsurf, INFO, "retrieving cache data for url:%s",
+	NSLOG(netsurf, DEBUG, "retrieving cache data for url:%s",
 	      nsurl_access(url));
 
 	/* calculate the entry element index */
@@ -1978,7 +1879,7 @@ fetch(nsurl *url,
 		/* use the existing allocation and bump the ref count. */
 		elem->ref++;
 
-		NSLOG(netsurf, INFO,
+		NSLOG(netsurf, DEEPDEBUG,
 		      "Using existing entry (%p) allocation %p refs:%d", bse,
 		      elem->data, elem->ref);
 
@@ -1986,11 +1887,11 @@ fetch(nsurl *url,
 		/* allocate from the heap */
 		elem->data = malloc(elem->size);
 		if (elem->data == NULL) {
-			NSLOG(netsurf, INFO,
+			NSLOG(netsurf, ERROR,
 			      "Failed to create new heap allocation");
 			return NSERROR_NOMEM;
 		}
-		NSLOG(netsurf, INFO, "Created new heap allocation %p",
+		NSLOG(netsurf, DEEPDEBUG, "Created new heap allocation %p",
 		      elem->data);
 
 		/* mark the entry as having a valid heap allocation */
@@ -2040,7 +1941,7 @@ static nserror release(nsurl *url, enum backing_store_flags bsflags)
 
 	ret = get_store_entry(storestate, url, &bse);
 	if (ret != NSERROR_OK) {
-		NSLOG(netsurf, INFO, "entry not found");
+		NSLOG(netsurf, WARNING, "entry not found");
 		return ret;
 	}
 
