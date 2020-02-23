@@ -766,3 +766,23 @@ nserror page_info_mouse_action(
 
 	return NSERROR_OK;
 }
+
+/* Exported interface documented in desktop/page_info.h */
+bool page_info_keypress(
+		struct page_info *pi,
+		int32_t key)
+{
+	return NSERROR_OK;
+}
+
+/* Exported interface documented in desktop/page_info.h */
+nserror page_info_get_size(
+		struct page_info *pi,
+		int *width,
+		int *height)
+{
+	*width = pi->width;
+	*height = pi->height;
+
+	return NSERROR_OK;
+}
