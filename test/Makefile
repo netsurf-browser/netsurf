@@ -7,6 +7,7 @@ TESTS := \
 	nsoption \
 	bloom \
 	hashtable \
+	hashmap \
 	urlescape \
 	utils \
 	messages \
@@ -51,6 +52,10 @@ bloom_SRCS := utils/bloom.c test/bloom.c
 
 # hash table test sources
 hashtable_SRCS := utils/hashtable.c test/log.c test/hashtable.c
+
+# hashmap test sources
+hashmap_SRCS := $(NSURL_SOURCES) utils/hashmap.c utils/corestrings.c test/log.c test/hashmap.c
+hashmap_LD := -lmalloc_fig
 
 # url escape test sources
 urlescape_SRCS := utils/url.c test/log.c test/urlescape.c
