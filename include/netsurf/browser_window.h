@@ -789,4 +789,33 @@ browser_window_page_info_state browser_window_get_page_info_state(
  */
 nserror browser_window_get_ssl_chain(struct browser_window *bw, struct cert_chain **chain);
 
+/**
+ * Get the number of cookies in use for the current page.
+ *
+ * \param bw  A browser window.
+ * \return Number of cookies in use, or 0 on error.
+ */
+int browser_window_get_cookie_count(
+		const struct browser_window *bw);
+
+/**
+ * Open cookie viewer for the current page.
+ *
+ * \param bw  A browser window.
+ * \return NSERROR_OK, or appropriate error otherwise.
+ */
+nserror browser_window_show_cookies(
+		const struct browser_window *bw);
+
+/**
+ * Show the certificate page for the current page.
+ *
+ * Does nothing for a page without certificates.
+ *
+ * \param bw  A browser window.
+ * \return NSERROR_OK, or appropriate error otherwise.
+ */
+nserror browser_window_show_certificates(
+		const struct browser_window *bw);
+
 #endif

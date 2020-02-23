@@ -4721,3 +4721,27 @@ browser_window_get_ssl_chain(struct browser_window *bw,
 
 	return NSERROR_OK;
 }
+
+/* Exported interface, documented in browser_window.h */
+int browser_window_get_cookie_count(
+		const struct browser_window *bw)
+{
+	/** \todo Implement cookie count */
+	return 0;
+}
+
+/* Exported interface, documented in browser_window.h */
+nserror browser_window_show_cookies(
+		const struct browser_window *bw)
+{
+	/** \todo Implement show cookies */
+	return NSERROR_OK;
+}
+
+/* Exported interface, documented in browser_window.h */
+nserror browser_window_show_certificates(
+		const struct browser_window *bw)
+{
+	/** \todo Implement show certificates */
+	return NSERROR_OK;
+}
