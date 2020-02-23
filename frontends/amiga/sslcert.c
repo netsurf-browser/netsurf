@@ -298,10 +298,9 @@ ami_crtvrfy_create_window(struct ami_crtvrfy_window *crtvrfy_win)
 
 /* exported interface documented in amiga/ssl_cert.h */
 nserror ami_cert_verify(struct nsurl *url,
-						const struct cert_chain *chain,
-						unsigned long num,
-						nserror (*cb)(bool proceed, void *pw),
-						void *cbpw)
+			const struct cert_chain *chain,
+			nserror (*cb)(bool proceed, void *pw),
+			void *cbpw)
 {
 	struct ami_crtvrfy_window *ncwin;
 	nserror res;
