@@ -41,7 +41,7 @@
 /**
  * GTK certificate viewing window context
  */
-struct nsgtk_crtvrfy_window {
+struct nsgtk_pi_window {
 	/** GTK core window context */
 	struct nsgtk_corewindow core;
 	/** GTK builder for window */
@@ -56,46 +56,46 @@ struct nsgtk_crtvrfy_window {
 /**
  * destroy a previously created certificate view
  */
-static nserror nsgtk_crtvrfy_destroy(struct nsgtk_crtvrfy_window *crtvrfy_win)
+static nserror nsgtk_pi_destroy(struct nsgtk_pi_window *pi_win)
 {
 	nserror res;
 
-	res = sslcert_viewer_fini(crtvrfy_win->ssl_data);
+	res = sslcert_viewer_fini(pi_win->ssl_data);
 	if (res == NSERROR_OK) {
-		res = nsgtk_corewindow_fini(&crtvrfy_win->core);
-		gtk_widget_destroy(GTK_WIDGET(crtvrfy_win->dlg));
-		g_object_unref(G_OBJECT(crtvrfy_win->builder));
-		free(crtvrfy_win);
+		res = nsgtk_corewindow_fini(&pi_win->core);
+		gtk_widget_destroy(GTK_WIDGET(pi_win->dlg));
+		g_object_unref(G_OBJECT(pi_win->builder));
+		free(pi_win);
 	}
 	return res;
 }
 
 static void
-nsgtk_crtvrfy_accept(GtkButton *w, gpointer data)
+nsgtk_pi_accept(GtkButton *w, gpointer data)
 {
-	struct nsgtk_crtvrfy_window *crtvrfy_win;
-	crtvrfy_win = (struct nsgtk_crtvrfy_window *)data;
+	struct nsgtk_pi_window *pi_win;
+	pi_win = (struct nsgtk_pi_window *)data;
 
-	sslcert_viewer_accept(crtvrfy_win->ssl_data);
+	sslcert_viewer_accept(pi_win->ssl_data);
 
-	nsgtk_crtvrfy_destroy(crtvrfy_win);
+	nsgtk_pi_destroy(pi_win);
 }
 
 static void
-nsgtk_crtvrfy_reject(GtkWidget *w, gpointer data)
+nsgtk_pi_reject(GtkWidget *w, gpointer data)
 {
-	struct nsgtk_crtvrfy_window *crtvrfy_win;
-	crtvrfy_win = (struct nsgtk_crtvrfy_window *)data;
+	struct nsgtk_pi_window *pi_win;
+	pi_win = (struct nsgtk_pi_window *)data;
 
-	sslcert_viewer_reject(crtvrfy_win->ssl_data);
+	sslcert_viewer_reject(pi_win->ssl_data);
 
-	nsgtk_crtvrfy_destroy(crtvrfy_win);
+	nsgtk_pi_destroy(pi_win);
 }
 
 static gboolean
-nsgtk_crtvrfy_delete_event(GtkWidget *w, GdkEvent  *event, gpointer data)
+nsgtk_pi_delete_event(GtkWidget *w, GdkEvent  *event, gpointer data)
 {
-	nsgtk_crtvrfy_reject(w, data);
+	nsgtk_pi_reject(w, data);
 	return FALSE;
 }
 
@@ -109,15 +109,15 @@ nsgtk_crtvrfy_delete_event(GtkWidget *w, GdkEvent  *event, gpointer data)
  * \return NSERROR_OK on success otherwise appropriate error code
  */
 static nserror
-nsgtk_crtvrfy_mouse(struct nsgtk_corewindow *nsgtk_cw,
+nsgtk_pi_mouse(struct nsgtk_corewindow *nsgtk_cw,
 		    browser_mouse_state mouse_state,
 		    int x, int y)
 {
-	struct nsgtk_crtvrfy_window *crtvrfy_win;
+	struct nsgtk_pi_window *pi_win;
 	/* technically degenerate container of */
-	crtvrfy_win = (struct nsgtk_crtvrfy_window *)nsgtk_cw;
+	pi_win = (struct nsgtk_pi_window *)nsgtk_cw;
 
-	sslcert_viewer_mouse_action(crtvrfy_win->ssl_data, mouse_state, x, y);
+	sslcert_viewer_mouse_action(pi_win->ssl_data, mouse_state, x, y);
 
 	return NSERROR_OK;
 }
@@ -130,14 +130,14 @@ nsgtk_crtvrfy_mouse(struct nsgtk_corewindow *nsgtk_cw,
  * \return NSERROR_OK on success otherwise appropriate error code
  */
 static nserror
-nsgtk_crtvrfy_key(struct nsgtk_corewindow *nsgtk_cw, uint32_t nskey)
+nsgtk_pi_key(struct nsgtk_corewindow *nsgtk_cw, uint32_t nskey)
 {
-	struct nsgtk_crtvrfy_window *crtvrfy_win;
+	struct nsgtk_pi_window *pi_win;
 
 	/* technically degenerate container of */
-	crtvrfy_win = (struct nsgtk_crtvrfy_window *)nsgtk_cw;
+	pi_win = (struct nsgtk_pi_window *)nsgtk_cw;
 
-	if (sslcert_viewer_keypress(crtvrfy_win->ssl_data, nskey)) {
+	if (sslcert_viewer_keypress(pi_win->ssl_data, nskey)) {
 		return NSERROR_OK;
 	}
 	return NSERROR_NOT_IMPLEMENTED;
@@ -151,19 +151,19 @@ nsgtk_crtvrfy_key(struct nsgtk_corewindow *nsgtk_cw, uint32_t nskey)
  * \return NSERROR_OK on success otherwise appropriate error code
  */
 static nserror
-nsgtk_crtvrfy_draw(struct nsgtk_corewindow *nsgtk_cw, struct rect *r)
+nsgtk_pi_draw(struct nsgtk_corewindow *nsgtk_cw, struct rect *r)
 {
 	struct redraw_context ctx = {
 		.interactive = true,
 		.background_images = true,
 		.plot = &nsgtk_plotters
 	};
-	struct nsgtk_crtvrfy_window *crtvrfy_win;
+	struct nsgtk_pi_window *pi_win;
 
 	/* technically degenerate container of */
-	crtvrfy_win = (struct nsgtk_crtvrfy_window *)nsgtk_cw;
+	pi_win = (struct nsgtk_pi_window *)nsgtk_cw;
 
-	sslcert_viewer_redraw(crtvrfy_win->ssl_data, 0, 0, r, &ctx);
+	sslcert_viewer_redraw(pi_win->ssl_data, 0, 0, r, &ctx);
 
 	return NSERROR_OK;
 }
@@ -176,7 +176,7 @@ static nserror dummy_cb(bool proceed, void *pw)
 /* exported interface documented in gtk/page_info.h */
 nserror nsgtk_page_info(struct browser_window *bw)
 {
-	struct nsgtk_crtvrfy_window *ncwin;
+	struct nsgtk_pi_window *ncwin;
 	nserror res;
 
 	struct cert_chain *chain;
@@ -189,7 +189,7 @@ nserror nsgtk_page_info(struct browser_window *bw)
 	}
 	url = browser_window_access_url(bw);
 
-	ncwin = malloc(sizeof(struct nsgtk_crtvrfy_window));
+	ncwin = malloc(sizeof(struct nsgtk_pi_window));
 	if (ncwin == NULL) {
 		return NSERROR_NOMEM;
 	}
@@ -219,27 +219,27 @@ nserror nsgtk_page_info(struct browser_window *bw)
 	/* make the delete event call our destructor */
 	g_signal_connect(G_OBJECT(ncwin->dlg),
 			 "delete_event",
-			 G_CALLBACK(nsgtk_crtvrfy_delete_event),
+			 G_CALLBACK(nsgtk_pi_delete_event),
 			 ncwin);
 
 	/* accept button */
 	g_signal_connect(G_OBJECT(gtk_builder_get_object(ncwin->builder,
 							 "sslaccept")),
 			 "clicked",
-			 G_CALLBACK(nsgtk_crtvrfy_accept),
+			 G_CALLBACK(nsgtk_pi_accept),
 			 ncwin);
 
 	/* reject button */
 	g_signal_connect(G_OBJECT(gtk_builder_get_object(ncwin->builder,
 							 "sslreject")),
 			 "clicked",
-			 G_CALLBACK(nsgtk_crtvrfy_reject),
+			 G_CALLBACK(nsgtk_pi_reject),
 			 ncwin);
 
 	/* initialise GTK core window */
-	ncwin->core.draw = nsgtk_crtvrfy_draw;
-	ncwin->core.key = nsgtk_crtvrfy_key;
-	ncwin->core.mouse = nsgtk_crtvrfy_mouse;
+	ncwin->core.draw = nsgtk_pi_draw;
+	ncwin->core.key = nsgtk_pi_key;
+	ncwin->core.mouse = nsgtk_pi_mouse;
 
 	res = nsgtk_corewindow_init(&ncwin->core);
 	if (res != NSERROR_OK) {
