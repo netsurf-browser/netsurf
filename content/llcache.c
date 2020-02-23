@@ -3769,6 +3769,11 @@ void llcache_finalise(void)
 	llcache_object *object, *next;
 	uint64_t total_bandwidth = 0; /* total bandwidth */
 
+	/* Attempt to persist anything we have left lying around */
+	llcache_persist(NULL);
+	/* Now clear the persistence callback */
+	guit->misc->schedule(-1, llcache_persist, NULL);
+
 	/* Clean uncached objects */
 	for (object = llcache->uncached_objects; object != NULL; object = next) {
 		llcache_object_user *user, *next_user;
