@@ -1403,6 +1403,9 @@ nserror hotlist_fini(void)
 
 	/* Destroy the hotlist treeview */
 	err = treeview_destroy(hl_ctx.tree);
+	if (err != NSERROR_OK) {
+		NSLOG(netsurf, INFO, "Problem destroying the hotlist treeview.");
+	}
 	hl_ctx.built = false;
 
 	/* Free hotlist treeview entry fields */
