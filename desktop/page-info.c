@@ -183,7 +183,7 @@ struct page_info_entry {
 	union {
 		struct page_info_text text;
 		struct page_info_item item;
-	};
+	} u;
 };
 
 /**
@@ -195,32 +195,38 @@ struct page_info_entry pi__entries[PI_ENTRY__COUNT] = {
 	},
 	[PI_ENTRY_DOMAIN] = {
 		.type = PAGE_INFO_ENTRY_TYPE_TEXT,
-		.text = {
-			.style = &pi__domain,
+		.u = {
+			.text = {
+				.style = &pi__domain,
+			},
 		},
 	},
 	[PI_ENTRY_CERT] = {
 		.type = PAGE_INFO_ENTRY_TYPE_ITEM,
-		.item = {
+		.u = {
 			.item = {
-				.style = &pi__item,
+				.item = {
+					.style = &pi__item,
+				},
+				.detail = {
+					.style = &pi__item_detail,
+				},
+				.hover_bg = &pi__hover,
 			},
-			.detail = {
-				.style = &pi__item_detail,
-			},
-			.hover_bg = &pi__hover,
 		},
 	},
 	[PI_ENTRY_COOKIES] = {
 		.type = PAGE_INFO_ENTRY_TYPE_ITEM,
-		.item = {
+		.u = {
 			.item = {
-				.style = &pi__item,
+				.item = {
+					.style = &pi__item,
+				},
+				.detail = {
+					.style = &pi__item_detail,
+				},
+				.hover_bg = &pi__hover,
 			},
-			.detail = {
-				.style = &pi__item_detail,
-			},
-			.hover_bg = &pi__hover,
 		},
 	},
 };
@@ -358,36 +364,37 @@ static nserror page_info__measure_text(
 		switch (entry->type) {
 		case PAGE_INFO_ENTRY_TYPE_TEXT:
 			err = page_info__measure_text_entry(
-					&entry->text);
+					&entry->u.text);
 			if (err != NSERROR_OK) {
 				return err;
 			}
 			if (i == PI_ENTRY_DOMAIN) {
-				entry->text.padding_bottom =
-						entry->text.height * 3 / 2;
+				entry->u.text.padding_bottom =
+						entry->u.text.height * 3 / 2;
 			}
 			break;
 
 		case PAGE_INFO_ENTRY_TYPE_ITEM:
 			err = page_info__measure_text_entry(
-					&entry->item.item);
+					&entry->u.item.item);
 			if (err != NSERROR_OK) {
 				return err;
 			}
 			err = page_info__measure_text_entry(
-					&entry->item.detail);
+					&entry->u.item.detail);
 			if (err != NSERROR_OK) {
 				return err;
 			}
-			padding = entry->item.item.height / 4;
-			entry->item.padding_top = padding;
-			entry->item.padding_bottom = padding;
+			padding = entry->u.item.item.height / 4;
+			entry->u.item.padding_top = padding;
+			entry->u.item.padding_bottom = padding;
 
 			break;
 		}
 	}
 
-	pi->window_padding = pi->entries[PI_ENTRY_DOMAIN].item.item.height / 2;
+	pi->window_padding = pi->entries[PI_ENTRY_DOMAIN]
+			.u.item.item.height / 2;
 
 	return NSERROR_OK;
 }
@@ -426,13 +433,13 @@ static nserror page_info__set_text(
 	assert(pi != NULL);
 	assert(pi->state < PAGE_STATE__COUNT);
 
-	pi->entries[PI_ENTRY_HEADER].text.style = &pi__heading[pi->state];
-	pi->entries[PI_ENTRY_HEADER].text.text = header[pi->state];
-	pi->entries[PI_ENTRY_DOMAIN].text.text = (pi->domain) ?
+	pi->entries[PI_ENTRY_HEADER].u.text.style = &pi__heading[pi->state];
+	pi->entries[PI_ENTRY_HEADER].u.text.text = header[pi->state];
+	pi->entries[PI_ENTRY_DOMAIN].u.text.text = (pi->domain) ?
 			lwc_string_data(pi->domain) : "<No domain>";
 
-	pi->entries[PI_ENTRY_CERT].item.item.text = "Certificate: ";
-	pi->entries[PI_ENTRY_CERT].item.detail.text = certificate[pi->state];
+	pi->entries[PI_ENTRY_CERT].u.item.item.text = "Certificate: ";
+	pi->entries[PI_ENTRY_CERT].u.item.detail.text = certificate[pi->state];
 
 	printed = snprintf(pi->cookie_text, sizeof(pi->cookie_text),
 			"(%u in use)", pi->cookies);
@@ -442,8 +449,8 @@ static nserror page_info__set_text(
 	} else if ((unsigned) printed >= sizeof(pi->cookie_text)) {
 		return NSERROR_NOSPACE;
 	}
-	pi->entries[PI_ENTRY_COOKIES].item.item.text = "Cookies: ";
-	pi->entries[PI_ENTRY_COOKIES].item.detail.text = pi->cookie_text;
+	pi->entries[PI_ENTRY_COOKIES].u.item.item.text = "Cookies: ";
+	pi->entries[PI_ENTRY_COOKIES].u.item.detail.text = pi->cookie_text;
 
 	return page_info__measure_text(pi);
 }
@@ -487,23 +494,23 @@ static nserror page_info__layout(
 
 		switch (entry->type) {
 		case PAGE_INFO_ENTRY_TYPE_TEXT:
-			cur_y += entry->text.height;
-			if (max_x < entry->text.width) {
-				max_x = entry->text.width;
+			cur_y += entry->u.text.height;
+			if (max_x < entry->u.text.width) {
+				max_x = entry->u.text.width;
 			}
-			cur_y += entry->text.padding_bottom;
+			cur_y += entry->u.text.padding_bottom;
 			break;
 
 		case PAGE_INFO_ENTRY_TYPE_ITEM:
 		{
-			int full_width = entry->item.item.width +
-					entry->item.detail.width;
-			cur_y += entry->item.padding_top;
-			cur_y += entry->item.item.height;
+			int full_width = entry->u.item.item.width +
+					entry->u.item.detail.width;
+			cur_y += entry->u.item.padding_top;
+			cur_y += entry->u.item.item.height;
 			if (max_x < full_width) {
 				max_x = full_width;
 			}
-			cur_y += entry->item.padding_bottom;
+			cur_y += entry->u.item.padding_bottom;
 		}
 			break;
 		}
@@ -623,43 +630,43 @@ nserror page_info_redraw(
 		switch (entry->type) {
 		case PAGE_INFO_ENTRY_TYPE_TEXT:
 			err = page_info__redraw_text_entry(
-					&entry->text,
+					&entry->u.text,
 					cur_x, cur_y,
 					&new_ctx);
 			if (err != NSERROR_OK) {
 				goto cleanup;
 			}
-			cur_y += entry->text.height;
-			cur_y += entry->text.padding_bottom;
+			cur_y += entry->u.text.height;
+			cur_y += entry->u.text.padding_bottom;
 			break;
 
 		case PAGE_INFO_ENTRY_TYPE_ITEM:
-			if (entry->item.hover) {
+			if (entry->u.item.hover) {
 				r.y0 = cur_y;
-				r.y1 = cur_y + entry->item.padding_top +
-						entry->item.item.height +
-						entry->item.padding_bottom;
+				r.y1 = cur_y + entry->u.item.padding_top +
+						entry->u.item.item.height +
+						entry->u.item.padding_bottom;
 				new_ctx.plot->rectangle(&new_ctx,
 						&pi__hover, &r);
 			}
-			cur_y += entry->item.padding_top;
+			cur_y += entry->u.item.padding_top;
 			err = page_info__redraw_text_entry(
-					&entry->item.item,
+					&entry->u.item.item,
 					cur_x, cur_y,
 					&new_ctx);
 			if (err != NSERROR_OK) {
 				goto cleanup;
 			}
-			cur_x += entry->item.item.width;
+			cur_x += entry->u.item.item.width;
 			err = page_info__redraw_text_entry(
-					&entry->item.detail,
+					&entry->u.item.detail,
 					cur_x, cur_y,
 					&new_ctx);
 			if (err != NSERROR_OK) {
 				goto cleanup;
 			}
-			cur_y += entry->item.item.height;
-			cur_y += entry->item.padding_bottom;
+			cur_y += entry->u.item.item.height;
+			cur_y += entry->u.item.padding_bottom;
 			break;
 		}
 	}
@@ -728,14 +735,14 @@ nserror page_info_mouse_action(
 
 		switch (entry->type) {
 		case PAGE_INFO_ENTRY_TYPE_TEXT:
-			cur_y += entry->text.height;
-			cur_y += entry->text.padding_bottom;
+			cur_y += entry->u.text.height;
+			cur_y += entry->u.text.padding_bottom;
 			break;
 
 		case PAGE_INFO_ENTRY_TYPE_ITEM:
-			height = entry->item.padding_top +
-			         entry->item.item.height +
-			         entry->item.padding_bottom;
+			height = entry->u.item.padding_top +
+			         entry->u.item.item.height +
+			         entry->u.item.padding_bottom;
 
 			if (y >= cur_y && y < cur_y + height) {
 				hovering = true;
@@ -745,7 +752,7 @@ nserror page_info_mouse_action(
 					return err;
 				}
 			}
-			if (entry->item.hover != hovering) {
+			if (entry->u.item.hover != hovering) {
 				int w, h;
 				struct rect r = {
 					.x0 = 0,
@@ -758,7 +765,7 @@ nserror page_info_mouse_action(
 
 				pi->cw_t->invalidate(pi->cw_h, &r);
 			}
-			entry->item.hover = hovering;
+			entry->u.item.hover = hovering;
 			cur_y += height;
 			break;
 		}
