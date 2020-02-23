@@ -153,13 +153,16 @@ typedef struct plot_font_style {
 	(((((c0 & 0xff00ff) + (c1 & 0xff00ff)) >> 1) & 0xff00ff) |	\
 	 ((((c0 & 0x00ff00) + (c1 & 0x00ff00)) >> 1) & 0x00ff00))
 
+/* Get the percieved lightness of the supplied colour, c0. */
+#define colour_lightness(c0)						\
+	((((c0 & 0x0000ff) *  77) >>  8) +				\
+	 (((c0 & 0x00ff00) * 151) >> 16) +				\
+	 (((c0 & 0xff0000) *  28) >> 24))
+
 /* Choose either black or white, depending on which is furthest from the
  * percieved lightness of the supplied colour, c0. */
 #define colour_to_bw_furthest(c0)					\
-	((((((c0 & 0x0000ff) *  77) >>  8) +				\
-	   (((c0 & 0x00ff00) * 151) >> 16) +				\
-	   (((c0 & 0xff0000) *  28) >> 24)) >				\
-	  (0xff / 2)) ? 0x000000 : 0xffffff)
+	((colour_lightness(c0) > (0xff / 2)) ? 0x000000 : 0xffffff)
 
 /* Mix two colours according to the proportion given by p, where 0 <= p <= 255
  * p = 0 gives result ==> c1,  p = 255 gives result ==> c0 */
