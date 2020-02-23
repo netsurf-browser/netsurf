@@ -540,7 +540,11 @@ exec_inline_script(html_content *c, dom_node *node, dom_string *mimetype)
 	nscript->already_started = true;
 
 	/* ensure script handler for content type */
-	dom_string_intern(mimetype, &lwcmimetype);
+	exc = dom_string_intern(mimetype, &lwcmimetype);
+	if (exc != DOM_NO_ERR) {
+		return DOM_HUBBUB_DOM;
+	}
+
 	script_handler = select_script_handler(content_factory_type_from_mime_type(lwcmimetype));
 	lwc_string_unref(lwcmimetype);
 
