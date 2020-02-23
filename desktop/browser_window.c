@@ -3590,15 +3590,26 @@ navigate_internal_query_ssl(struct browser_window *bw,
 			    struct browser_fetch_parameters *params)
 {
 	bool is_proceed = false, is_back = false;
+	const char *siteurl = NULL;
+	nsurl *siteurl_ns;
 
 	assert(params->post_multipart != NULL);
 
 	is_proceed = fetch_multipart_data_find(params->post_multipart, "proceed") != NULL;
 	is_back = fetch_multipart_data_find(params->post_multipart, "back") != NULL;
+	siteurl = fetch_multipart_data_find(params->post_multipart, "siteurl");
 
-	if (!(is_proceed || is_back)) {
+	if (!(is_proceed || is_back) || siteurl == NULL) {
 		/* This is a request, so pass it on */
 		return navigate_internal_real(bw, params);
+	}
+
+	if (nsurl_create(siteurl, &siteurl_ns) != NSERROR_OK) {
+		NSLOG(netsurf, ERROR, "Unable to reset ssl loading parameters");
+	} else {
+		/* In order that we may proceed, replace the loading parameters */
+		nsurl_unref(bw->loading_parameters.url);
+		bw->loading_parameters.url = siteurl_ns;
 	}
 
 	return browser_window__handle_ssl_query_response(is_proceed, bw);
@@ -4693,7 +4704,7 @@ browser_window_page_info_state browser_window_get_page_info_state(
 	lwc_string_unref(scheme);
 
 	/* Did we have to override this SSL setting? */
-	if (urldb_get_cert_permissions(bw->current_parameters.url)) {
+	if (urldb_get_cert_permissions(hlcache_handle_get_url(bw->current_content))) {
 		return PAGE_STATE_SECURE_OVERRIDE;
 	}
 
