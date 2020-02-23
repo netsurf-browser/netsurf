@@ -412,7 +412,7 @@ static nserror page_info__set_text(
 {
 	int printed;
 	static const char *header[PAGE_STATE__COUNT] = {
-		[PAGE_STATE_UNKNOWN]         = "Provenience unknown",
+		[PAGE_STATE_UNKNOWN]         = "Provenance unknown",
 		[PAGE_STATE_INTERNAL]        = "NetSurf data",
 		[PAGE_STATE_LOCAL]           = "Local data",
 		[PAGE_STATE_INSECURE]        = "Connection not secure",
