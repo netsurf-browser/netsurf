@@ -1194,8 +1194,13 @@ read_entries(struct store_state *state)
 			nsurl_unref(nsurl);
 			NSLOG(netsurf, DEBUG, "Successfully read entry for %s", nsurl_access(ent->url));
 			read_entries++;
+			/* Note the size allocation */
 			state->total_alloc += ent->elem[ENTRY_ELEM_DATA].size;
 			state->total_alloc += ent->elem[ENTRY_ELEM_META].size;
+			/* And ensure we don't pretend to have this in memory yet */
+			ent->elem[ENTRY_ELEM_DATA].flags &= ~(ENTRY_ELEM_FLAG_HEAP | ENTRY_ELEM_FLAG_MMAP);
+			ent->elem[ENTRY_ELEM_META].flags &= ~(ENTRY_ELEM_FLAG_HEAP | ENTRY_ELEM_FLAG_MMAP);
+
 		}
 		close(fd);
 	}
