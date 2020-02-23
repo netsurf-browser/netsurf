@@ -75,10 +75,7 @@ typedef struct fetch_msg {
 			const char *realm;
 		} auth;
 
-		struct {
-			const struct ssl_cert_info *certs;
-			size_t num_certs;
-		} certs;
+		const struct cert_chain *chain;
 	} data;
 } fetch_msg;
 

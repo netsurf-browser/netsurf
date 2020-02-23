@@ -30,7 +30,7 @@
 #include "utils/errors.h"
 #include "utils/nsurl.h"
 
-struct ssl_cert_info;
+struct cert_chain;
 struct fetch_multipart_data;
 
 /** Handle for low-level cache object */
@@ -83,26 +83,23 @@ typedef enum {
  * and must be copied if it is desirable to retain.
  */
 typedef struct {
-	llcache_event_type type;	/**< Type of event */
+	llcache_event_type type;            /**< Type of event */
 	union {
 		struct {
-			const uint8_t *buf;	/**< Buffer of data */
-			size_t len;	/**< Length of buffer, in bytes */
-		} data;			/**< Received data */
+			const uint8_t *buf; /**< Buffer of data */
+			size_t len;	    /**< Byte length of buffer */
+		} data;                     /**< Received data */
 		struct {
-			nserror code;		/**< The error code */
-			const char *msg;	/**< Error message */
+			nserror code;       /**< The error code */
+			const char *msg;    /**< Error message */
 		} error;
-		const char *progress_msg;	/**< Progress message */
+		const char *progress_msg;   /**< Progress message */
 		struct {
-			nsurl *from;	/**< Redirect origin */
-			nsurl *to;	/**< Redirect target */
-		} redirect;		/**< Fetch URL redirect occured */
-		struct {
-			const struct ssl_cert_info *certs; /**< The chain */
-			size_t num;		/**< Number of certs in chain */
-		} certs;
-	} data;				/**< Event data */
+			nsurl *from;	    /**< Redirect origin */
+			nsurl *to;	    /**< Redirect target */
+		} redirect;                 /**< Fetch URL redirect occured */
+		const struct cert_chain *chain;    /**< Certificate chain */
+	} data;				    /**< Event data */
 } llcache_event;
 
 /**
@@ -171,17 +168,17 @@ struct llcache_parameters {
 	size_t hysteresis; /**< The hysteresis around the target size */
 
 	/** The minimum lifetime to consider sending objects to backing store.*/
-	int minimum_lifetime; 
+	int minimum_lifetime;
 
 	/** The minimum bandwidth to allow the backing store to
 	 * use in bytes/second
 	 */
-	size_t minimum_bandwidth; 
+	size_t minimum_bandwidth;
 
 	/** The maximum bandwidth to allow the backing store to use in
 	 * bytes/second
 	 */
-	size_t maximum_bandwidth; 
+	size_t maximum_bandwidth;
 
 	/** The time quantum over which to calculate the bandwidth values
 	 */

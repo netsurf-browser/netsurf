@@ -52,6 +52,7 @@ struct nsgtk_crtvrfy_window {
 	struct sslcert_session_data *ssl_data;
 };
 
+
 /**
  * destroy a previously created certificate view
  */
@@ -178,11 +179,14 @@ nserror nsgtk_page_info(struct browser_window *bw)
 	struct nsgtk_crtvrfy_window *ncwin;
 	nserror res;
 
-	size_t num;
-	struct ssl_cert_info *chain;
+	struct cert_chain *chain;
 	struct nsurl *url;
 
-	browser_window_get_ssl_chain(bw, &num, &chain);
+	res = browser_window_get_ssl_chain(bw, &chain);
+	if (res != NSERROR_OK) {
+		NSLOG(netsurf, WARNING, "Unable to get certificate chain");
+		return NSERROR_INVALID;
+	}
 	url = browser_window_access_url(bw);
 
 	ncwin = malloc(sizeof(struct nsgtk_crtvrfy_window));
@@ -245,8 +249,8 @@ nserror nsgtk_page_info(struct browser_window *bw)
 	}
 
 	/* initialise certificate viewing interface */
-	res = sslcert_viewer_create_session_data(num, url, dummy_cb, NULL, chain,
-					   &ncwin->ssl_data);
+	res = sslcert_viewer_create_session_data(
+		url, dummy_cb, NULL, chain, &ncwin->ssl_data);
 	if (res != NSERROR_OK) {
 		g_object_unref(G_OBJECT(ncwin->dlg));
 		free(ncwin);

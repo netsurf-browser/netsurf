@@ -639,8 +639,7 @@ static nserror gui_default_launch_url(struct nsurl *url)
 
 
 static nserror gui_default_cert_verify(nsurl *url,
-				    const struct ssl_cert_info *certs,
-				    unsigned long num,
+				    const struct cert_chain *chain,
 				    nserror (*cb)(bool proceed, void *pw),
 				    void *cbpw)
 {

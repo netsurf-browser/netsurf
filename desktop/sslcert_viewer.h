@@ -32,16 +32,15 @@ struct redraw_context;
 struct core_window_callback_table;
 struct rect;
 struct nsurl;
-struct ssl_cert_info;
+struct cert_chain;
 
 /**
  * Create ssl certificate viewer session data.
  *
- * \param num		The number of certificates in the chain
  * \param url		Address of the page we're inspecting certificates of
  * \param cb		Low level cache callback
  * \param cbpw		Low level cache private data
- * \param certs		The SSL certificates
+ * \param chain		The SSL certificate chain
  * \param ssl_d		Updated to SSL certificate session data
  * \return NSERROR_OK on success, appropriate error otherwise
  *
@@ -49,8 +48,10 @@ struct ssl_cert_info;
  * sslcert_viewer_fini destroys the session data.
  */
 nserror sslcert_viewer_create_session_data(
-		unsigned long num, struct nsurl *url, nserror (*cb)(bool proceed, void *pw),
-		void *cbpw, const struct ssl_cert_info *certs,
+		struct nsurl *url,
+		nserror (*cb)(bool proceed, void *pw),
+		void *cbpw,
+		const struct cert_chain *chain,
 		struct sslcert_session_data **ssl_d);
 
 
@@ -65,7 +66,8 @@ nserror sslcert_viewer_create_session_data(
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror sslcert_viewer_init(struct core_window_callback_table *cw_t,
-		void *core_window_handle, struct sslcert_session_data *ssl_d);
+			    void *core_window_handle,
+			    struct sslcert_session_data *ssl_d);
 
 
 /**

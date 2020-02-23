@@ -48,22 +48,67 @@ typedef enum {
 /** Always the max known ssl certificate error type */
 #define SSL_CERT_ERR_MAX_KNOWN SSL_CERT_ERR_HOSTNAME_MISMATCH
 
+/** maximum number of X509 certificates in chain for TLS connection */
+#define MAX_CERT_DEPTH 10
+
 /**
- * ssl certificate information for certificate error message
+ * X509 certificate chain
  */
-struct ssl_cert_info {
-	long version;		/**< Certificate version */
-	char not_before[32];	/**< Valid from date */
-	char not_after[32];	/**< Valid to date */
-	int sig_type;		/**< Signature type */
-	char serialnum[64];	/**< Serial number */
-	char issuer[256];	/**< Issuer details */
-	char subject[256];	/**< Subject details */
-	int cert_type;		/**< Certificate type */
-	ssl_cert_err err;	/**< Whatever is wrong with this certificate */
+struct cert_chain {
+	/**
+	 * the number of certificates in the chain
+	 * */
+	size_t depth;
+	struct {
+		/**
+		 * Whatever is wrong with this certificate
+		 */
+		ssl_cert_err err;
+
+		/**
+		 * data in Distinguished Encoding Rules (DER) format
+		 */
+		uint8_t *der;
+
+		/**
+		 * DER length
+		 */
+		size_t der_length;
+	} certs[MAX_CERT_DEPTH];
 };
 
-/** maximum number of X509 certificates in chain for TLS connection */
-#define MAX_SSL_CERTS 10
+/**
+ * create new certificate chain
+ *
+ * \param dpth the depth to set in the new chain.
+ * \param chain_out A pointer to recive the new chain.
+ * \return NSERROR_OK on success or NSERROR_NOMEM on memory exhaustion
+ */
+nserror cert_chain_alloc(size_t depth, struct cert_chain **chain_out);
+
+/**
+ * duplicate a certificate chain
+ *
+ * \param src The certificate chain to copy from
+ * \param dst_out A pointer to recive the duplicated chain
+ * \return NSERROR_OK on success or NSERROR_NOMEM on memory exhaustion
+ */
+nserror cert_chain_dup(const struct cert_chain *src, struct cert_chain **dst_out);
+
+/**
+ * free a certificate chain
+ *
+ * \param chain The certificate chain to free
+ * \return NSERROR_OK on success
+ */
+nserror cert_chain_free(struct cert_chain *chain);
+
+/**
+ * total number of data bytes in a chain
+ *
+ * \param chain The chain to size
+ * \return the number of bytes used by the chain
+ */
+size_t cert_chain_size(const struct cert_chain *chain);
 
 #endif /* NETSURF_SSL_CERTS_H_ */

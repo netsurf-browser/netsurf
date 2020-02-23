@@ -423,8 +423,10 @@ static nserror hlcache_migrate_ctx(hlcache_retrieval_ctx *ctx,
  * \param pw	  Pointer to client-specific data
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-static nserror hlcache_llcache_callback(llcache_handle *handle,
-		const llcache_event *event, void *pw)
+static nserror
+hlcache_llcache_callback(llcache_handle *handle,
+			 const llcache_event *event,
+			 void *pw)
 {
 	hlcache_retrieval_ctx *ctx = pw;
 	lwc_string *effective_type = NULL;
@@ -439,8 +441,7 @@ static nserror hlcache_llcache_callback(llcache_handle *handle,
 			hlcache_event hlevent;
 
 			hlevent.type = CONTENT_MSG_SSL_CERTS;
-			hlevent.data.certs.certs = event->data.certs.certs;
-			hlevent.data.certs.num = event->data.certs.num;
+			hlevent.data.chain = event->data.chain;
 
 			ctx->handle->cb(ctx->handle, &hlevent, ctx->handle->pw);
 		}

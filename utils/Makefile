@@ -13,6 +13,7 @@ S_UTILS := \
 	messages.c \
 	nsoption.c \
 	punycode.c \
+	ssl_certs.c \
 	talloc.c \
 	time.c \
 	url.c \

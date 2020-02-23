@@ -743,9 +743,10 @@ static nserror browser_window_content_ready(struct browser_window *bw)
 		browser_window__free_fetch_parameters(&bw->current_parameters);
 		bw->current_parameters = bw->loading_parameters;
 		memset(&bw->loading_parameters, 0, sizeof(bw->loading_parameters));
-		/* Transfer the SSL info */
-		bw->current_ssl_info = bw->loading_ssl_info;
-		bw->loading_ssl_info.num = 0;
+		/* Transfer the certificate chain */
+		cert_chain_free(bw->current_cert_chain);
+		bw->current_cert_chain = bw->loading_cert_chain;
+		bw->loading_cert_chain = NULL;
 	}
 
 	/* Format the new content to the correct dimensions */
@@ -1136,7 +1137,7 @@ browser_window__handle_bad_certs(struct browser_window *bw,
 	nserror err;
 	/* Initially we don't know WHY the SSL cert was bad */
 	const char *reason = messages_get_sslcode(SSL_CERT_ERR_UNKNOWN);
-	size_t n;
+	size_t depth;
 
 	memset(&params, 0, sizeof(params));
 
@@ -1151,12 +1152,14 @@ browser_window__handle_bad_certs(struct browser_window *bw,
 		goto out;
 	}
 
-	for (n = 0; n < bw->loading_ssl_info.num; ++n) {
-		size_t idx = bw->loading_ssl_info.num - (n + 1);
-		ssl_cert_err err = bw->loading_ssl_info.certs[idx].err;
-		if (err != SSL_CERT_ERR_OK) {
-			reason = messages_get_sslcode(err);
-			break;
+	if (bw->loading_cert_chain != NULL) {
+		for (depth = 0; depth < bw->loading_cert_chain->depth; ++depth) {
+			size_t idx = bw->loading_cert_chain->depth - (depth + 1);
+			ssl_cert_err err = bw->loading_cert_chain->certs[idx].err;
+			if (err != SSL_CERT_ERR_OK) {
+				reason = messages_get_sslcode(err);
+				break;
+			}
 		}
 	}
 
@@ -1175,8 +1178,7 @@ browser_window__handle_bad_certs(struct browser_window *bw,
 	}
 
 	err = guit->misc->cert_verify(url,
-				      bw->loading_ssl_info.certs,
-				      bw->loading_ssl_info.num,
+				      bw->loading_cert_chain,
 				      browser_window__handle_ssl_query_response,
 				      bw);
 
@@ -1352,11 +1354,8 @@ browser_window_callback(hlcache_handle *c, const hlcache_event *event, void *pw)
 	switch (event->type) {
 	case CONTENT_MSG_SSL_CERTS:
 		/* SSL certificate information has arrived, store it */
-		assert(event->data.certs.num < MAX_SSL_CERTS);
-		memcpy(&bw->loading_ssl_info.certs[0],
-		       event->data.certs.certs,
-		       sizeof(struct ssl_cert_info) * event->data.certs.num);
-		bw->loading_ssl_info.num = event->data.certs.num;
+		cert_chain_free(bw->loading_cert_chain);
+		cert_chain_dup(event->data.chain, &bw->loading_cert_chain);
 		break;
 
 	case CONTENT_MSG_LOG:
@@ -3431,7 +3430,8 @@ navigate_internal_real(struct browser_window *bw,
 	fetch_is_post = (params->post_urlenc != NULL || params->post_multipart != NULL);
 
 	/* Clear SSL info for load */
-	bw->loading_ssl_info.num = 0;
+	cert_chain_free(bw->loading_cert_chain);
+	bw->loading_cert_chain = NULL;
 
 	/* Set up retrieval parameters */
 	if (!(params->flags & BW_NAVIGATE_UNVERIFIABLE)) {
@@ -4707,17 +4707,17 @@ browser_window_page_info_state browser_window_get_page_info_state(
 }
 
 /* Exported interface, documented in browser_window.h */
-nserror browser_window_get_ssl_chain(struct browser_window *bw, size_t *num,
-				     struct ssl_cert_info **chain)
+nserror
+browser_window_get_ssl_chain(struct browser_window *bw,
+			     struct cert_chain **chain)
 {
 	assert(bw != NULL);
 
-	if (bw->current_ssl_info.num == 0) {
+	if (bw->current_cert_chain == NULL) {
 		return NSERROR_NOT_FOUND;
 	}
 
-	*num = bw->current_ssl_info.num;
-	*chain = &(bw->current_ssl_info.certs[0]);
+	*chain = bw->current_cert_chain;
 
 	return NSERROR_OK;
 }

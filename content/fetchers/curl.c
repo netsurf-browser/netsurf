@@ -149,7 +149,7 @@ struct curl_fetch_info {
 	struct curl_httppost *post_multipart;	/**< Multipart post data, or 0. */
 	uint64_t last_progress_update;	/**< Time of last progress update */
 	int cert_depth; /**< deepest certificate in use */
-	struct cert_info cert_data[MAX_SSL_CERTS]; /**< HTTPS certificate data */
+	struct cert_info cert_data[MAX_CERT_DEPTH]; /**< HTTPS certificate data */
 };
 
 /** curl handle cache entry */
@@ -471,128 +471,37 @@ failed:
 static void
 fetch_curl_report_certs_upstream(struct curl_fetch_info *f)
 {
-	int depth;
+	size_t depth;
 	BIO *mem;
-	BUF_MEM *buf;
-	const ASN1_INTEGER *asn1_num;
-	BIGNUM *bignum;
-	struct ssl_cert_info ssl_certs[MAX_SSL_CERTS];
+	BUF_MEM *buf[MAX_CERT_DEPTH];
+	struct cert_chain chain;
 	fetch_msg msg;
-	struct cert_info *certs = f->cert_data;
-	memset(ssl_certs, 0, sizeof(ssl_certs));
+	struct cert_info *certs;
 
-	for (depth = 0; depth <= f->cert_depth; depth++) {
+	memset(&chain, 0, sizeof(chain));
+
+	certs = f->cert_data;
+	chain.depth = f->cert_depth + 1; /* 0 indexed certificate depth */
+
+	for (depth = 0; depth < chain.depth; depth++) {
 		if (certs[depth].cert == NULL) {
 			/* This certificate is missing, skip it */
-			ssl_certs[depth].err = SSL_CERT_ERR_CERT_MISSING;
+			chain.certs[depth].err = SSL_CERT_ERR_CERT_MISSING;
 			continue;
 		}
-
-		/* get certificate version */
-		ssl_certs[depth].version = X509_get_version(certs[depth].cert);
-
-		/* not before date */
-		mem = BIO_new(BIO_s_mem());
-		ASN1_TIME_print(mem, X509_get_notBefore(certs[depth].cert));
-		BIO_get_mem_ptr(mem, &buf);
-		(void) BIO_set_close(mem, BIO_NOCLOSE);
-		BIO_free(mem);
-		memcpy(ssl_certs[depth].not_before,
-		       buf->data,
-		       min(sizeof(ssl_certs[depth].not_before) - 1,
-			   (unsigned)buf->length));
-		ssl_certs[depth].not_before[min(sizeof(ssl_certs[depth].not_before) - 1,
-					    (unsigned)buf->length)] = 0;
-		BUF_MEM_free(buf);
-
-		/* not after date */
-		mem = BIO_new(BIO_s_mem());
-		ASN1_TIME_print(mem,
-				X509_get_notAfter(certs[depth].cert));
-		BIO_get_mem_ptr(mem, &buf);
-		(void) BIO_set_close(mem, BIO_NOCLOSE);
-		BIO_free(mem);
-		memcpy(ssl_certs[depth].not_after,
-		       buf->data,
-		       min(sizeof(ssl_certs[depth].not_after) - 1,
-			   (unsigned)buf->length));
-		ssl_certs[depth].not_after[min(sizeof(ssl_certs[depth].not_after) - 1,
-					   (unsigned)buf->length)] = 0;
-		BUF_MEM_free(buf);
-
-		/* signature type */
-		ssl_certs[depth].sig_type =
-			X509_get_signature_type(certs[depth].cert);
-
-		/* serial number */
-		asn1_num = X509_get_serialNumber(certs[depth].cert);
-		if (asn1_num != NULL) {
-			bignum = ASN1_INTEGER_to_BN(asn1_num, NULL);
-			if (bignum != NULL) {
-				char *tmp = BN_bn2hex(bignum);
-				if (tmp != NULL) {
-					strncpy(ssl_certs[depth].serialnum,
-						tmp,
-						sizeof(ssl_certs[depth].serialnum));
-					ssl_certs[depth].serialnum[sizeof(ssl_certs[depth].serialnum)-1] = '\0';
-					OPENSSL_free(tmp);
-				}
-				BN_free(bignum);
-				bignum = NULL;
-			}
-		}
-
-		/* issuer name */
-		mem = BIO_new(BIO_s_mem());
-		X509_NAME_print_ex(mem,
-				   X509_get_issuer_name(certs[depth].cert),
-				   0, XN_FLAG_SEP_CPLUS_SPC |
-				   XN_FLAG_DN_REV | XN_FLAG_FN_NONE);
-		BIO_get_mem_ptr(mem, &buf);
-		(void) BIO_set_close(mem, BIO_NOCLOSE);
-		BIO_free(mem);
-		memcpy(ssl_certs[depth].issuer,
-		       buf->data,
-		       min(sizeof(ssl_certs[depth].issuer) - 1,
-			   (unsigned) buf->length));
-		ssl_certs[depth].issuer[min(sizeof(ssl_certs[depth].issuer) - 1,
-					(unsigned) buf->length)] = 0;
-		BUF_MEM_free(buf);
-
-		/* subject */
-		mem = BIO_new(BIO_s_mem());
-		X509_NAME_print_ex(mem,
-				   X509_get_subject_name(certs[depth].cert),
-				   0,
-				   XN_FLAG_SEP_CPLUS_SPC |
-				   XN_FLAG_DN_REV |
-				   XN_FLAG_FN_NONE);
-		BIO_get_mem_ptr(mem, &buf);
-		(void) BIO_set_close(mem, BIO_NOCLOSE);
-		BIO_free(mem);
-		memcpy(ssl_certs[depth].subject,
-		       buf->data,
-		       min(sizeof(ssl_certs[depth].subject) - 1,
-			   (unsigned)buf->length));
-		ssl_certs[depth].subject[min(sizeof(ssl_certs[depth].subject) - 1,
-					 (unsigned) buf->length)] = 0;
-		BUF_MEM_free(buf);
-
-		/* type of certificate */
-		ssl_certs[depth].cert_type =
-			X509_certificate_type(certs[depth].cert,
-					      X509_get_pubkey(certs[depth].cert));
 
 		/* error code (if any) */
 		switch (certs[depth].err) {
 		case X509_V_OK:
-			ssl_certs[depth].err = SSL_CERT_ERR_OK;
+			chain.certs[depth].err = SSL_CERT_ERR_OK;
 			break;
+
 		case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
 			/* fallthrough */
 		case X509_V_ERR_UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY:
-			ssl_certs[depth].err = SSL_CERT_ERR_BAD_ISSUER;
+			chain.certs[depth].err = SSL_CERT_ERR_BAD_ISSUER;
 			break;
+
 		case X509_V_ERR_UNABLE_TO_DECRYPT_CERT_SIGNATURE:
 			/* fallthrough */
 		case X509_V_ERR_UNABLE_TO_DECRYPT_CRL_SIGNATURE:
@@ -600,41 +509,66 @@ fetch_curl_report_certs_upstream(struct curl_fetch_info *f)
 		case X509_V_ERR_CERT_SIGNATURE_FAILURE:
 			/* fallthrough */
 		case X509_V_ERR_CRL_SIGNATURE_FAILURE:
-			ssl_certs[depth].err = SSL_CERT_ERR_BAD_SIG;
+			chain.certs[depth].err = SSL_CERT_ERR_BAD_SIG;
 			break;
+
 		case X509_V_ERR_CERT_NOT_YET_VALID:
 			/* fallthrough */
 		case X509_V_ERR_CRL_NOT_YET_VALID:
-			ssl_certs[depth].err = SSL_CERT_ERR_TOO_YOUNG;
+			chain.certs[depth].err = SSL_CERT_ERR_TOO_YOUNG;
 			break;
+
 		case X509_V_ERR_CERT_HAS_EXPIRED:
 			/* fallthrough */
 		case X509_V_ERR_CRL_HAS_EXPIRED:
-			ssl_certs[depth].err = SSL_CERT_ERR_TOO_OLD;
+			chain.certs[depth].err = SSL_CERT_ERR_TOO_OLD;
 			break;
+
 		case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
-			ssl_certs[depth].err = SSL_CERT_ERR_SELF_SIGNED;
+			chain.certs[depth].err = SSL_CERT_ERR_SELF_SIGNED;
 			break;
+
 		case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
-			ssl_certs[depth].err = SSL_CERT_ERR_CHAIN_SELF_SIGNED;
+			chain.certs[depth].err = SSL_CERT_ERR_CHAIN_SELF_SIGNED;
 			break;
+
 		case X509_V_ERR_CERT_REVOKED:
-			ssl_certs[depth].err = SSL_CERT_ERR_REVOKED;
+			chain.certs[depth].err = SSL_CERT_ERR_REVOKED;
 			break;
+
 		case X509_V_ERR_HOSTNAME_MISMATCH:
-			ssl_certs[depth].err = SSL_CERT_ERR_HOSTNAME_MISMATCH;
+			chain.certs[depth].err = SSL_CERT_ERR_HOSTNAME_MISMATCH;
 			break;
+
 		default:
-			ssl_certs[depth].err = SSL_CERT_ERR_UNKNOWN;
+			chain.certs[depth].err = SSL_CERT_ERR_UNKNOWN;
 			break;
 		}
+
+		/*
+		 * get certificate in Distinguished Encoding Rules (DER) format.
+		 */
+		mem = BIO_new(BIO_s_mem());
+		i2d_X509_bio(mem, certs[depth].cert);
+		BIO_get_mem_ptr(mem, &buf[depth]);
+		(void) BIO_set_close(mem, BIO_NOCLOSE);
+		BIO_free(mem);
+
+		chain.certs[depth].der = (uint8_t *)buf[depth]->data;
+		chain.certs[depth].der_length = buf[depth]->length;
 	}
 
 	msg.type = FETCH_CERTS;
-	msg.data.certs.certs = ssl_certs;
-	msg.data.certs.num_certs = depth;
+	msg.data.chain = &chain;
 
 	fetch_send_callback(&msg, f->fetch_handle);
+
+	/* release the openssl memory buffer */
+	for (depth = 0; depth < chain.depth; depth++) {
+		if (buf[depth] != NULL) {
+			BUF_MEM_free(buf[depth]);
+		}
+	}
 }
 
 
@@ -667,7 +601,7 @@ fetch_curl_verify_callback(int verify_ok, X509_STORE_CTX *x509_ctx)
 	fetch = X509_STORE_CTX_get_app_data(x509_ctx);
 
 	/* certificate chain is excessively deep so fail verification */
-	if (depth >= MAX_SSL_CERTS) {
+	if (depth >= MAX_CERT_DEPTH) {
 		X509_STORE_CTX_set_error(x509_ctx,
 					 X509_V_ERR_CERT_CHAIN_TOO_LONG);
 		return 0;
@@ -1098,8 +1032,11 @@ static void fetch_curl_free(void *vf)
 		curl_formfree(f->post_multipart);
 	}
 
-	for (i = 0; i < MAX_SSL_CERTS && f->cert_data[i].cert; i++) {
-		ns_X509_free(f->cert_data[i].cert);
+	/* free certificate data */
+	for (i = 0; i < MAX_CERT_DEPTH; i++) {
+		if (f->cert_data[i].cert != NULL) {
+			ns_X509_free(f->cert_data[i].cert);
+		}
 	}
 
 	free(f);

@@ -44,7 +44,7 @@ struct object_params;
 struct rect;
 struct redraw_context;
 struct llcache_query_msg;
-struct ssl_cert_info;
+struct cert_chain;
 
 /** Status of a content */
 typedef enum {
@@ -118,10 +118,7 @@ union content_msg_data {
 	 * CONTENT_MSG_SSL_CERTS - The certificate chain from the
 	 *   underlying fetch
 	 */
-	struct {
-		const struct ssl_cert_info *certs; /**< The chain */
-		size_t num; /**< The number of certs in the chain */
-	} certs;
+	const struct cert_chain *chain;
 
 	/**
 	 * CONTENT_MSG_ERROR - Error from content or underlying fetch

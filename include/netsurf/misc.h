@@ -27,7 +27,7 @@
 
 struct form_control;
 struct gui_window;
-struct ssl_cert_info;
+struct cert_chain;
 struct nsurl;
 
 /**
@@ -81,8 +81,7 @@ struct gui_misc_table {
 	 * \return NSERROR_OK on sucess else error and cb never called
 	 */
 	nserror (*cert_verify)(struct nsurl *url,
-			const struct ssl_cert_info *certs,
-			unsigned long num,
+			const struct cert_chain *chain,
 			nserror (*cb)(bool proceed, void *pw),
 			void *cbpw);
 

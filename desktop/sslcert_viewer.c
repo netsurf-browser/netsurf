@@ -52,6 +52,21 @@ enum sslcert_viewer_field {
 typedef nserror (*response_cb)(bool proceed, void *pw);
 
 /**
+ * ssl certificate information for certificate error message
+ */
+struct ssl_cert_info {
+	long version;		/**< Certificate version */
+	char not_before[32];	/**< Valid from date */
+	char not_after[32];	/**< Valid to date */
+	int sig_type;		/**< Signature type */
+	char serialnum[64];	/**< Serial number */
+	char issuer[256];	/**< Issuer details */
+	char subject[256];	/**< Subject details */
+	int cert_type;		/**< Certificate type */
+	ssl_cert_err err;       /**< Whatever is wrong with this certificate */
+};
+
+/**
  * ssl certificate verification context.
  */
 struct sslcert_session_data {
@@ -473,38 +488,183 @@ nserror sslcert_viewer_fini(struct sslcert_session_data *ssl_d)
 	return err;
 }
 
+#ifdef WITH_OPENSSL
+
+#include <openssl/ssl.h>
+#include <openssl/x509v3.h>
+
+static nserror
+der_to_certinfo(const uint8_t *der,
+		size_t der_length,
+		struct ssl_cert_info *info)
+{
+	BIO *mem;
+	BUF_MEM *buf;
+	const ASN1_INTEGER *asn1_num;
+	BIGNUM *bignum;
+	X509 *cert;		/**< Pointer to certificate */
+
+	if (der == NULL) {
+		return NSERROR_OK;
+	}
+
+	cert = d2i_X509(NULL, &der, der_length);
+	if (cert == NULL) {
+		return NSERROR_INVALID;
+	}
+
+	/* get certificate version */
+	info->version = X509_get_version(cert);
+
+	/* not before date */
+	mem = BIO_new(BIO_s_mem());
+	ASN1_TIME_print(mem, X509_get_notBefore(cert));
+	BIO_get_mem_ptr(mem, &buf);
+	(void) BIO_set_close(mem, BIO_NOCLOSE);
+	BIO_free(mem);
+	memcpy(info->not_before,
+	       buf->data,
+	       min(sizeof(info->not_before) - 1, (unsigned)buf->length));
+	info->not_before[min(sizeof(info->not_before) - 1, (unsigned)buf->length)] = 0;
+	BUF_MEM_free(buf);
+
+	/* not after date */
+	mem = BIO_new(BIO_s_mem());
+	ASN1_TIME_print(mem,
+			X509_get_notAfter(cert));
+	BIO_get_mem_ptr(mem, &buf);
+	(void) BIO_set_close(mem, BIO_NOCLOSE);
+	BIO_free(mem);
+	memcpy(info->not_after,
+	       buf->data,
+	       min(sizeof(info->not_after) - 1, (unsigned)buf->length));
+	info->not_after[min(sizeof(info->not_after) - 1, (unsigned)buf->length)] = 0;
+	BUF_MEM_free(buf);
+
+	/* signature type */
+	info->sig_type = X509_get_signature_type(cert);
+
+	/* serial number */
+	asn1_num = X509_get_serialNumber(cert);
+	if (asn1_num != NULL) {
+		bignum = ASN1_INTEGER_to_BN(asn1_num, NULL);
+		if (bignum != NULL) {
+			char *tmp = BN_bn2hex(bignum);
+			if (tmp != NULL) {
+				strncpy(info->serialnum,
+					tmp,
+					sizeof(info->serialnum));
+				info->serialnum[sizeof(info->serialnum)-1] = '\0';
+				OPENSSL_free(tmp);
+			}
+			BN_free(bignum);
+			bignum = NULL;
+		}
+	}
+
+	/* issuer name */
+	mem = BIO_new(BIO_s_mem());
+	X509_NAME_print_ex(mem,
+			   X509_get_issuer_name(cert),
+			   0, XN_FLAG_SEP_CPLUS_SPC |
+			   XN_FLAG_DN_REV | XN_FLAG_FN_NONE);
+	BIO_get_mem_ptr(mem, &buf);
+	(void) BIO_set_close(mem, BIO_NOCLOSE);
+	BIO_free(mem);
+	memcpy(info->issuer,
+	       buf->data,
+	       min(sizeof(info->issuer) - 1, (unsigned) buf->length));
+	info->issuer[min(sizeof(info->issuer) - 1, (unsigned) buf->length)] = 0;
+	BUF_MEM_free(buf);
+
+	/* subject */
+	mem = BIO_new(BIO_s_mem());
+	X509_NAME_print_ex(mem,
+			   X509_get_subject_name(cert),
+			   0,
+			   XN_FLAG_SEP_CPLUS_SPC |
+			   XN_FLAG_DN_REV |
+			   XN_FLAG_FN_NONE);
+	BIO_get_mem_ptr(mem, &buf);
+	(void) BIO_set_close(mem, BIO_NOCLOSE);
+	BIO_free(mem);
+	memcpy(info->subject,
+	       buf->data,
+	       min(sizeof(info->subject) - 1, (unsigned)buf->length));
+	info->subject[min(sizeof(info->subject) - 1, (unsigned) buf->length)] = 0;
+	BUF_MEM_free(buf);
+
+	/* type of certificate */
+	info->cert_type = X509_certificate_type(cert, X509_get_pubkey(cert));
+
+	X509_free(cert);
+
+	return NSERROR_OK;
+}
+#else
+static nserror
+der_to_certinfo(uint8_t *der, size_t der_length, struct ssl_cert_info *info)
+{
+	return NSERROR_NOT_IMPLEMENTED;
+}
+#endif
+
+/* copy certificate data */
+static nserror
+convert_chain_to_cert_info(const struct cert_chain *chain,
+			   struct ssl_cert_info **cert_info_out)
+{
+	struct ssl_cert_info *certs;
+	size_t depth;
+	nserror res;
+
+	certs = calloc(chain->depth, sizeof(struct ssl_cert_info));
+	if (certs == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	for (depth = 0; depth < chain->depth;depth++) {
+		res = der_to_certinfo(chain->certs[depth].der,
+				      chain->certs[depth].der_length,
+				      certs + depth);
+		if (res != NSERROR_OK) {
+			free(certs);
+			return res;
+		}
+		certs[depth].err = chain->certs[depth].err;
+	}
+
+	*cert_info_out = certs;
+	return NSERROR_OK;
+}
 
 /* Exported interface, documented in sslcert_viewer.h */
 nserror
-sslcert_viewer_create_session_data(unsigned long num,
-				   struct nsurl *url,
+sslcert_viewer_create_session_data(struct nsurl *url,
 				   nserror (*cb)(bool proceed, void *pw),
 				   void *cbpw,
-				   const struct ssl_cert_info *certs,
+				   const struct cert_chain *chain,
 				   struct sslcert_session_data **ssl_d)
 {
 	struct sslcert_session_data *data;
-
+	nserror res;
 	assert(url != NULL);
-	assert(certs != NULL);
+	assert(chain != NULL);
 
 	data = malloc(sizeof(struct sslcert_session_data));
 	if (data == NULL) {
 		*ssl_d = NULL;
 		return NSERROR_NOMEM;
 	}
-
-	/* copy certificate data */
-	data->certs = malloc(num * sizeof(struct ssl_cert_info));
-	if (data->certs == NULL) {
+	res = convert_chain_to_cert_info(chain, &data->certs);
+	if (res != NSERROR_OK) {
 		free(data);
 		*ssl_d = NULL;
-		return NSERROR_NOMEM;
+		return res;
 	}
-	memcpy(data->certs, certs, num * sizeof(struct ssl_cert_info));
 
 	data->url = nsurl_ref(url);
-	data->num = num;
+	data->num = chain->depth;
 	data->cb = cb;
 	data->cbpw = cbpw;
 

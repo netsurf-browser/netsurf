@@ -89,13 +89,6 @@ struct browser_fetch_parameters {
 	bool parent_quirks;			     /**< Optional parent quirks */
 };
 
-/**
- * The SSL context for a fetch, as provided by the fetchers
- */
-struct browser_ssl_info {
-	struct ssl_cert_info certs[MAX_SSL_CERTS];  /**< The certificate chain */
-	size_t num; /**< The number of certificates in the chain */
-};
 
 /**
  * Browser window data.
@@ -113,9 +106,9 @@ struct browser_window {
 	struct browser_fetch_parameters current_parameters;
 
 	/**
-	 * The SSL information for the current content
+	 * The certificate chain for the current content
 	 */
-	struct browser_ssl_info current_ssl_info;
+	struct cert_chain *current_cert_chain;
 
 	/**
 	 * Content handle of page in process of being loaded or NULL
@@ -129,9 +122,9 @@ struct browser_window {
 	struct browser_fetch_parameters loading_parameters;
 
 	/**
-	 * The SSL information for the loading content
+	 * The certificate chain for the loading content
 	 */
-	struct browser_ssl_info loading_ssl_info;
+	struct cert_chain *loading_cert_chain;
 
 	/**
 	 * Favicon

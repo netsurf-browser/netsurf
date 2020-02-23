@@ -36,6 +36,7 @@
 #include <string.h>
 #include <strings.h>
 #include <nsutils/time.h>
+#include <nsutils/base64.h>
 
 #include "netsurf/inttypes.h"
 #include "utils/config.h"
@@ -175,8 +176,7 @@ struct llcache_object {
 	size_t source_len;	     /**< Byte length of source data */
 	size_t source_alloc;	     /**< Allocated size of source buffer */
 
-	size_t ssl_cert_count;       /**< The number of SSL certificates stored */
-	struct ssl_cert_info *ssl_certs;    /**< SSL certificate information if count is non-zero */
+	struct cert_chain *chain;    /**< Certificate chain from the fetch */
 
 	llcache_store_state store_state; /**< where the data for the object is stored */
 
@@ -969,11 +969,7 @@ static nserror llcache_object_destroy(llcache_object *object)
 	NSLOG(llcache, DEBUG, "Destroying object %p, %s", object,
 	      nsurl_access(object->url));
 
-	if (object->ssl_cert_count != 0) {
-		free(object->ssl_certs);
-		object->ssl_certs = NULL;
-		object->ssl_cert_count = 0;
-	}
+	cert_chain_free(object->chain);
 
 	if (object->source_data != NULL) {
 		if (object->store_state == LLCACHE_STATE_DISC) {
@@ -1240,6 +1236,13 @@ llcache_serialise_metadata(llcache_object *object,
 	char *op;
 	unsigned int hloop;
 	int use;
+	size_t cert_chain_depth;
+
+	if (object->chain != NULL) {
+		cert_chain_depth = object->chain->depth;
+	} else {
+		cert_chain_depth = 0;
+	}
 
 	allocsize = 10 + 1; /* object length */
 
@@ -1251,22 +1254,19 @@ llcache_serialise_metadata(llcache_object *object,
 
 	allocsize += 10 + 1; /* space for number of header entries */
 
-	allocsize += 10 + 1; /* space for number of SSL certificates */
-
-	allocsize += nsurl_length(object->url) + 1;
-
 	for (hloop = 0 ; hloop < object->num_headers ; hloop++) {
 		allocsize += strlen(object->headers[hloop].name) + 1;
 		allocsize += strlen(object->headers[hloop].value) + 1;
 	}
 
-	for (hloop = 0; hloop < object->ssl_cert_count; hloop++) {
-		allocsize += (10 + 1) * 4; /* version, sig_type, cert_type, err */
-		allocsize += strlen(object->ssl_certs[hloop].not_before) + 1;
-		allocsize += strlen(object->ssl_certs[hloop].not_after) + 1;
-		allocsize += strlen(object->ssl_certs[hloop].serialnum) + 1;
-		allocsize += strlen(object->ssl_certs[hloop].issuer) + 1;
-		allocsize += strlen(object->ssl_certs[hloop].subject) + 1;
+	allocsize += nsurl_length(object->url) + 1;
+
+	/* space for number of DER formatted certificates */
+	allocsize += 10 + 1;
+
+	for (hloop = 0; hloop < cert_chain_depth; hloop++) {
+		allocsize += 10 + 1; /* error status */
+		allocsize += 4 * ((object->chain->certs[hloop].der_length + 2) / 3);
 	}
 
 	data = malloc(allocsize);
@@ -1351,8 +1351,8 @@ llcache_serialise_metadata(llcache_object *object,
 		datasize -= use;
 	}
 
-	/* number of ssl certificates */
-	use = snprintf(op, datasize, "%" PRIsizet, object->ssl_cert_count);
+	/* number of DER formatted ssl certificates */
+	use = snprintf(op, datasize, "%" PRIsizet, cert_chain_depth);
 	if (use < 0) {
 		goto operror;
 	}
@@ -1363,96 +1363,41 @@ llcache_serialise_metadata(llcache_object *object,
 	datasize -= use;
 
 	/* SSL certificates */
-	for (hloop = 0; hloop < object->ssl_cert_count; hloop++) {
-		struct ssl_cert_info *cert = &(object->ssl_certs[hloop]);
-		/* Certificate version */
-		use = snprintf(op, datasize, "%ld", cert->version);
-		if (use < 0) {
-			goto operror;
-		}
-		use++; /* does not count the null */
-		if (use > datasize)
-			goto overflow;
-		op += use;
-		datasize -= use;
-		/* not_before */
-		use = snprintf(op, datasize, "%s", cert->not_before);
-		if (use < 0) {
-			goto operror;
-		}
-		use++; /* does not count the null */
-		if (use > datasize)
-			goto overflow;
-		op += use;
-		datasize -= use;
-		/* not_after */
-		use = snprintf(op, datasize, "%s", cert->not_after);
-		if (use < 0) {
-			goto operror;
-		}
-		use++; /* does not count the null */
-		if (use > datasize)
-			goto overflow;
-		op += use;
-		datasize -= use;
-		/* Signature type */
-		use = snprintf(op, datasize, "%d", cert->sig_type);
-		if (use < 0) {
-			goto operror;
-		}
-		use++; /* does not count the null */
-		if (use > datasize)
-			goto overflow;
-		op += use;
-		datasize -= use;
-		/* serialnum */
-		use = snprintf(op, datasize, "%s", cert->serialnum);
-		if (use < 0) {
-			goto operror;
-		}
-		use++; /* does not count the null */
-		if (use > datasize)
-			goto overflow;
-		op += use;
-		datasize -= use;
-		/* issuer */
-		use = snprintf(op, datasize, "%s", cert->issuer);
-		if (use < 0) {
-			goto operror;
-		}
-		use++; /* does not count the null */
-		if (use > datasize)
-			goto overflow;
-		op += use;
-		datasize -= use;
-		/* subject */
-		use = snprintf(op, datasize, "%s", cert->subject);
-		if (use < 0) {
-			goto operror;
-		}
-		use++; /* does not count the null */
-		if (use > datasize)
-			goto overflow;
-		op += use;
-		datasize -= use;
-		/* Certificate type */
-		use = snprintf(op, datasize, "%d", cert->cert_type);
-		if (use < 0) {
-			goto operror;
-		}
-		use++; /* does not count the null */
-		if (use > datasize)
-			goto overflow;
-		op += use;
-		datasize -= use;
+	for (hloop = 0; hloop < cert_chain_depth; hloop++) {
+		size_t output_length;
+		nsuerror res;
+
 		/* Certificate error code */
-		use = snprintf(op, datasize, "%d", (int)(cert->err));
+		use = snprintf(op, datasize, "%d",
+			       (int)(object->chain->certs[hloop].err));
 		if (use < 0) {
 			goto operror;
 		}
 		use++; /* does not count the null */
 		if (use > datasize)
 			goto overflow;
+		op += use;
+		datasize -= use;
+
+		/* DER certificate data in base64 encoding */
+		if (object->chain->certs[hloop].der != NULL) {
+			output_length = datasize;
+			res = nsu_base64_encode(
+				object->chain->certs[hloop].der,
+				object->chain->certs[hloop].der_length,
+				(uint8_t *)op,
+				&output_length);
+			if (res != NSUERROR_OK) {
+				goto operror;
+			}
+			use = output_length;
+		} else {
+			use = 0;
+		}
+		use++; /* allow for null */
+		if (use > datasize)
+			goto overflow;
+		*(op + output_length) = 0;
 		op += use;
 		datasize -= use;
 	}
@@ -1510,7 +1455,7 @@ llcache_process_metadata(llcache_object *object)
 	size_t num_headers;
 	size_t hloop;
 	size_t ssl_cert_count = 0;
-	struct ssl_cert_info *ssl_certs = NULL;
+	struct cert_chain *chain = NULL;
 
 	NSLOG(llcache, INFO, "Retrieving metadata");
 
@@ -1642,7 +1587,7 @@ llcache_process_metadata(llcache_object *object)
 		goto skip_ssl_certificates;
 	}
 
-	/* Next line is the number of SSL certificates*/
+	/* Next line is the number of DER base64 encoded certificates */
 	line++;
 	ln += lnsize + 1;
 	lnsize = strlen(ln);
@@ -1657,72 +1602,20 @@ llcache_process_metadata(llcache_object *object)
 		goto skip_ssl_certificates;
 	}
 
-	ssl_certs = calloc(sizeof(struct ssl_cert_info), ssl_cert_count);
-	if (ssl_certs == NULL) {
-		res = NSERROR_NOMEM;
+	if (ssl_cert_count > MAX_CERT_DEPTH) {
+		res = NSERROR_INVALID;
+		goto format_error;
+	}
+
+	res = cert_chain_alloc(ssl_cert_count, &chain);
+	if (res != NSERROR_OK) {
 		goto format_error;
 	}
 
 	for (hloop = 0; hloop < ssl_cert_count; hloop++) {
-		struct ssl_cert_info *cert = &ssl_certs[hloop];
 		int errcode;
-		/* Certificate version */
-		line++;
-		ln += lnsize + 1;
-		lnsize = strlen(ln);
-		remaining -= lnsize + 1;
-		if ((lnsize < 1) || (sscanf(ln, "%ld", &cert->version) != 1)) {
-			res = NSERROR_INVALID;
-			goto format_error;
-		}
-		/* Not before */
-		line++;
-		ln += lnsize + 1;
-		lnsize = strlen(ln);
-		remaining -= lnsize + 1;
-		memcpy(&cert->not_before, ln, lnsize);
-		/* Not after */
-		line++;
-		ln += lnsize + 1;
-		lnsize = strlen(ln);
-		remaining -= lnsize + 1;
-		memcpy(&cert->not_after, ln, lnsize);
-		/* Signature type */
-		line++;
-		ln += lnsize + 1;
-		lnsize = strlen(ln);
-		remaining -= lnsize + 1;
-		if ((lnsize < 1) || (sscanf(ln, "%d", &cert->sig_type) != 1)) {
-			res = NSERROR_INVALID;
-			goto format_error;
-		}
-		/* Serial Number */
-		line++;
-		ln += lnsize + 1;
-		lnsize = strlen(ln);
-		remaining -= lnsize + 1;
-		memcpy(&cert->serialnum, ln, lnsize);
-		/* issuer */
-		line++;
-		ln += lnsize + 1;
-		lnsize = strlen(ln);
-		remaining -= lnsize + 1;
-		memcpy(&cert->issuer, ln, lnsize);
-		/* subject */
-		line++;
-		ln += lnsize + 1;
-		lnsize = strlen(ln);
-		remaining -= lnsize + 1;
-		memcpy(&cert->subject, ln, lnsize);
-		/* Certificate type */
-		line++;
-		ln += lnsize + 1;
-		lnsize = strlen(ln);
-		remaining -= lnsize + 1;
-		if ((lnsize < 1) || (sscanf(ln, "%d", &cert->cert_type) != 1)) {
-			res = NSERROR_INVALID;
-			goto format_error;
-		}
+		nsuerror nsures;
+
 		/* Certificate error code */
 		line++;
 		ln += lnsize + 1;
@@ -1735,9 +1628,25 @@ llcache_process_metadata(llcache_object *object)
 		if (errcode < SSL_CERT_ERR_OK ||
 		    errcode > SSL_CERT_ERR_MAX_KNOWN) {
 			/* Error with the cert code, assume UNKNOWN */
-			cert->err = SSL_CERT_ERR_UNKNOWN;
+			chain->certs[hloop].err = SSL_CERT_ERR_UNKNOWN;
 		} else {
-			cert->err = (ssl_cert_err)errcode;
+			chain->certs[hloop].err = (ssl_cert_err)errcode;
+		}
+
+		/* base64 encoded DER certificate data */
+		line++;
+		ln += lnsize + 1;
+		lnsize = strlen(ln);
+		remaining -= lnsize + 1;
+		if (lnsize > 0) {
+			nsures = nsu_base64_decode_alloc((const uint8_t *)ln,
+					lnsize,
+					&chain->certs[hloop].der,
+					&chain->certs[hloop].der_length);
+			if (nsures != NSUERROR_OK) {
+				res = NSERROR_NOMEM;
+				goto format_error;
+			}
 		}
 	}
 
@@ -1754,8 +1663,7 @@ skip_ssl_certificates:
 	object->cache.res_time = response_time;
 	object->cache.fin_time = completion_time;
 
-	object->ssl_cert_count = ssl_cert_count;
-	object->ssl_certs = ssl_certs;
+	object->chain = chain;
 
 	/* object stored in backing store */
 	object->store_state = LLCACHE_STATE_DISC;
@@ -1768,9 +1676,7 @@ format_error:
 	      line, res);
 	guit->llcache->release(object->url, BACKING_STORE_META);
 
-	if (ssl_certs != NULL) {
-		free(ssl_certs);
-	}
+	cert_chain_free(chain);
 
 	return res;
 }
@@ -3173,21 +3079,15 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 	case FETCH_CERTS:
 		/* Certificate information from the fetch */
 
-		/* Persist the data onto our object */
-		object->ssl_certs = calloc(sizeof(struct ssl_cert_info),
-					   msg->data.certs.num_certs);
-		if (object->ssl_certs != NULL) {
-			object->ssl_cert_count = msg->data.certs.num_certs;
-			memcpy(object->ssl_certs, msg->data.certs.certs,
-			       sizeof(struct ssl_cert_info) * object->ssl_cert_count);
+		/* Persist the chain onto our object */
+		error = cert_chain_dup(msg->data.chain, &object->chain);
+		if (error != NSERROR_OK) {
+			/* Now pass on the event */
+			event.type = LLCACHE_EVENT_GOT_CERTS;
+			event.data.chain = msg->data.chain;
+
+			error = llcache_send_event_to_users(object, &event);
 		}
-
-		/* Now pass on the event */
-		event.type = LLCACHE_EVENT_GOT_CERTS;
-		event.data.certs.certs = msg->data.certs.certs;
-		event.data.certs.num = msg->data.certs.num_certs;
-
-		error = llcache_send_event_to_users(object, &event);
 		break;
 
 	/* Events requiring action */
@@ -3388,10 +3288,9 @@ static nserror llcache_object_notify_users(llcache_object *object)
 			handle->state = LLCACHE_FETCH_HEADERS;
 
 			/* Emit any certificate data we hold */
-			if (object->ssl_cert_count > 0) {
+			if (object->chain != NULL) {
 				event.type = LLCACHE_EVENT_GOT_CERTS;
-				event.data.certs.certs = object->ssl_certs;
-				event.data.certs.num = object->ssl_cert_count;
+				event.data.chain = object->chain;
 				error = handle->cb(handle, &event, handle->pw);
 			} else {
 				error = NSERROR_OK;
@@ -3613,16 +3512,12 @@ llcache_object_snapshot(llcache_object *object,	llcache_object **snapshot)
 		}
 	}
 
-	if (object->ssl_cert_count != 0) {
-		newobj->ssl_certs = calloc(sizeof(struct ssl_cert_info),
-					   object->ssl_cert_count);
-		if (newobj->ssl_certs == NULL) {
+	if (object->chain != NULL) {
+		error = cert_chain_dup(object->chain, &newobj->chain);
+		if (error != NSERROR_OK) {
 			llcache_object_destroy(newobj);
-			return NSERROR_NOMEM;
+			return error;
 		}
-		memcpy(newobj->ssl_certs, object->ssl_certs,
-		       sizeof(struct ssl_cert_info) * object->ssl_cert_count);
-		newobj->ssl_cert_count = object->ssl_cert_count;
 	}
 
 	newobj->fetch.state = LLCACHE_FETCH_COMPLETE;
@@ -3662,7 +3557,7 @@ total_object_size(llcache_object *object)
 		}
 	}
 
-	tot += object->ssl_cert_count * sizeof(struct ssl_cert_info);
+	tot += cert_chain_size(object->chain);
 
 	return tot;
 }

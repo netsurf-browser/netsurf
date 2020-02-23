@@ -42,7 +42,7 @@ struct form_control;
 struct nsurl;
 struct rect;
 struct redraw_context;
-struct ssl_cert_info;
+struct cert_chain;
 enum content_debug;
 
 /**
@@ -784,11 +784,9 @@ browser_window_page_info_state browser_window_get_page_info_state(
  * If there is no chain available, this will return NSERROR_NOT_FOUND
  *
  * \param bw The browser window
- * \param num Pointer to be filled out with chain length
- * \param chain Pointer to be filled out with chain base
+ * \param chain Pointer to be filled out with certificate chain
  * \return Whether or not the chain is available
  */
-nserror browser_window_get_ssl_chain(struct browser_window *bw, size_t *num,
-				     struct ssl_cert_info **chain);
+nserror browser_window_get_ssl_chain(struct browser_window *bw, struct cert_chain **chain);
 
 #endif
