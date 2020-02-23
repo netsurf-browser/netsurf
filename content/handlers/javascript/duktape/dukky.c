@@ -179,7 +179,7 @@ dukky_push_node_stacked(duk_context *ctx)
 	/* ... node nodeptr klass nodes */
 	duk_pop_3(ctx);
 	/* ... node */
-	{
+	if (NSLOG_COMPILED_MIN_LEVEL <= NSLOG_LEVEL_DEEPDEBUG) {
 		duk_dup(ctx, -1);
 		const char * what = duk_safe_to_string(ctx, -1);
 		NSLOG(dukky, DEEPDEBUG, "Created: %s", what);
@@ -479,7 +479,7 @@ dukky_push_node(duk_context *ctx, struct dom_node *node)
 		/* ... node nodes */
 		duk_pop(ctx);
 		/* ... node */
-		{
+		if (NSLOG_COMPILED_MIN_LEVEL <= NSLOG_LEVEL_DEEPDEBUG) {
 			duk_dup(ctx, -1);
 			const char * what = duk_safe_to_string(ctx, -1);
 			NSLOG(dukky, DEEPDEBUG, "Found it memoised: %s", what);
