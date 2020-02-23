@@ -139,6 +139,7 @@ CORESTRING_LWC_STRING(_blank);
 CORESTRING_LWC_STRING(_parent);
 CORESTRING_LWC_STRING(_self);
 CORESTRING_LWC_STRING(_top);
+CORESTRING_LWC_STRING(443);
 
 /* unusual lwc strings */
 CORESTRING_LWC_VALUE(shortcut_icon, "shortcut icon");
