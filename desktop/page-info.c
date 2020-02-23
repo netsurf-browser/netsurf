@@ -675,3 +675,94 @@ cleanup:
 
 	return NSERROR_OK;
 }
+
+/**
+ * Handle any clicks on an item.
+ *
+ * \param[in] pi       The page info window handle.
+ * \param[in] mouse    The current mouse state.
+ * \param[in] clicked  The page info window entry to consider clicks on.
+ * \return NSERROR_OK on success, appropriate error code otherwise.
+ */
+static nserror page_info__handle_item_click(
+		struct page_info *pi,
+		enum browser_mouse_state mouse,
+		enum pi_entry clicked)
+{
+	nserror err;
+
+	if (!(mouse & BROWSER_MOUSE_CLICK_1)) {
+		return NSERROR_OK;
+	}
+
+	switch (clicked) {
+	case PI_ENTRY_CERT:
+		err = browser_window_show_certificates(pi->bw);
+		break;
+	case PI_ENTRY_COOKIES:
+		err = browser_window_show_cookies(pi->bw);
+		break;
+	default:
+		err = NSERROR_OK;
+		break;
+	}
+
+	return err;
+}
+
+/* Exported interface documented in desktop/page_info.h */
+nserror page_info_mouse_action(
+		struct page_info *pi,
+		enum browser_mouse_state mouse,
+		int x,
+		int y)
+{
+	int cur_y = 0;
+	nserror err;
+
+	cur_y += pi->window_padding;
+	for (unsigned i = 0; i < PI_ENTRY__COUNT; i++) {
+		struct page_info_entry *entry = pi->entries + i;
+		bool hovering = false;
+		int height;
+
+		switch (entry->type) {
+		case PAGE_INFO_ENTRY_TYPE_TEXT:
+			cur_y += entry->text.height;
+			cur_y += entry->text.padding_bottom;
+			break;
+
+		case PAGE_INFO_ENTRY_TYPE_ITEM:
+			height = entry->item.padding_top +
+			         entry->item.item.height +
+			         entry->item.padding_bottom;
+
+			if (y >= cur_y && y < cur_y + height) {
+				hovering = true;
+				err = page_info__handle_item_click(
+						pi, mouse, i);
+				if (err != NSERROR_OK) {
+					return err;
+				}
+			}
+			if (entry->item.hover != hovering) {
+				int w, h;
+				struct rect r = {
+					.x0 = 0,
+					.y0 = cur_y,
+					.y1 = cur_y + height,
+				};
+				pi->cw_t->get_window_dimensions(
+						pi->cw_h, &w, &h);
+				r.x1 = (pi->width > w) ? pi->width : w;
+
+				pi->cw_t->invalidate(pi->cw_h, &r);
+			}
+			entry->item.hover = hovering;
+			cur_y += height;
+			break;
+		}
+	}
+
+	return NSERROR_OK;
+}
