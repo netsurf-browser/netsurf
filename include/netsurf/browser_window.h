@@ -70,6 +70,7 @@ typedef enum {
 	PAGE_STATE_SECURE_OVERRIDE,	/**< Secure load, but had to override */
 	PAGE_STATE_SECURE_ISSUES,	/**< Secure load, but has insecure elements */
 	PAGE_STATE_SECURE,		/**< Secure load */
+	PAGE_STATE__COUNT,		/**< Count of number of valid page states */
 } browser_window_page_info_state;
 
 typedef enum {
