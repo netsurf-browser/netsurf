@@ -170,8 +170,7 @@ nsw32_sslcert_viewer_close(struct nsw32_corewindow *nsw32_cw)
 
 /* exported interface documented in nsw32/ssl_cert.h */
 nserror nsw32_cert_verify(struct nsurl *url,
-			  const struct ssl_cert_info *certs,
-			  unsigned long num,
+			  const struct cert_chain *chain,
 			  nserror (*cb)(bool proceed, void *pw),
 			  void *cbpw)
 {
@@ -184,8 +183,7 @@ nserror nsw32_cert_verify(struct nsurl *url,
 	}
 
 	/* initialise certificate viewing interface */
-	res = sslcert_viewer_create_session_data(num, url, cb, cbpw, certs,
-						 &ncwin->ssl_data);
+	res = sslcert_viewer_create_session_data(url, cb, cbpw, chain, &ncwin->ssl_data);
 	if (res != NSERROR_OK) {
 		free(ncwin);
 		return res;

@@ -19,7 +19,7 @@
 #ifndef AMIGA_SSLCERT_H
 #define AMIGA_SSLCERT_H
 struct nsurl;
-struct ssl_cert_info;
+struct cert_chain;
 
 /**
  * Prompt the user to verify a certificate with issues.
@@ -32,7 +32,7 @@ struct ssl_cert_info;
  * \return NSERROR_OK or error code if prompt creation failed.
  */
 nserror ami_cert_verify(struct nsurl *url, 
-		const struct ssl_cert_info *certs, unsigned long num,
+		const struct cert_chain *chain,
 		nserror (*cb)(bool proceed, void *pw), void *cbpw);
 #endif
 

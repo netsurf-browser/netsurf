@@ -25,7 +25,7 @@
 #define NETSURF_WINDOWS_SSL_CERT_H 1
 
 struct nsurl;
-struct ssl_cert_info;
+struct cert_chain;
 
 /**
  * Prompt the user to verify a certificate with issuse.
@@ -37,7 +37,7 @@ struct ssl_cert_info;
  * \param cbpw Context pointer passed to cb
  * \return NSERROR_OK or error code if prompt creation failed.
  */
-nserror nsw32_cert_verify(struct nsurl *url, const struct ssl_cert_info *certs, unsigned long num, nserror (*cb)(bool proceed, void *pw), void *cbpw);
+nserror nsw32_cert_verify(struct nsurl *url, const struct cert_chain *certs, nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 /**
  * Create the ssl viewer window class.
