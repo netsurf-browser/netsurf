@@ -774,7 +774,7 @@ nserror browser_window_console_log(struct browser_window *bw,
  * \return The state of the browser window
  */
 browser_window_page_info_state browser_window_get_page_info_state(
-	struct browser_window *bw);
+		const struct browser_window *bw);
 
 /**
  * Request the current browser window SSL certificate chain.

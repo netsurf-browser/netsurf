@@ -4644,7 +4644,7 @@ browser_window__reload_current_parameters(struct browser_window *bw)
 
 /* Exported interface, documented in browser_window.h */
 browser_window_page_info_state browser_window_get_page_info_state(
-	struct browser_window *bw)
+		const struct browser_window *bw)
 {
 	lwc_string *scheme;
 	bool match;
