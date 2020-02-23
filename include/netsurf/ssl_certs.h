@@ -25,6 +25,8 @@
 #ifndef NETSURF_SSL_CERTS_H_
 #define NETSURF_SSL_CERTS_H_
 
+struct nsurl;
+
 /**
  * ssl certificate error status
  *
@@ -106,6 +108,15 @@ nserror cert_chain_dup_into(const struct cert_chain *src, struct cert_chain *dst
  * \return NSERROR_OK on success or NSERROR_NOMEM on memory exhaustion
  */
 nserror cert_chain_dup(const struct cert_chain *src, struct cert_chain **dst_out);
+
+/**
+ * create a certificate chain from a fetch query string
+ *
+ * \param url The url to convert the query from
+ * \param dst_out A pointer to recive the duplicated chain
+ * \return NSERROR_OK on success or NSERROR_NOMEM on memory exhaustion
+ */
+nserror cert_chain_from_query(struct nsurl *url, struct cert_chain **chain_out);
 
 /**
  * free a certificate chain

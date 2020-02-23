@@ -24,9 +24,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <nsutils/base64.h>
 
 #include "utils/errors.h"
 #include "utils/log.h"
+#include "utils/nsurl.h"
 
 #include "netsurf/ssl_certs.h"
 
@@ -124,6 +126,91 @@ cert_chain_dup(const struct cert_chain *src, struct cert_chain **dst_out)
 	}
 
 	*dst_out = dst;
+	return NSERROR_OK;
+}
+
+
+#define MIN_CERT_LEN 64
+
+static nserror
+process_query_section(const char *str, size_t len, struct cert_chain* chain)
+{
+	nsuerror nsures;
+
+	if ((len > (5 + MIN_CERT_LEN)) &&
+	    (strncmp(str, "cert=", 5) == 0)) {
+		/* possible certificate entry */
+		nsures = nsu_base64_decode_alloc_url(
+			(const uint8_t *)str + 5,
+			len - 5,
+			&chain->certs[chain->depth].der,
+			&chain->certs[chain->depth].der_length);
+		if (nsures == NSUERROR_OK) {
+			chain->depth++;
+		}
+	} else if ((len > 8) &&
+		   (strncmp(str, "certerr=", 8) == 0)) {
+		/* certificate entry error code */
+		if (chain->depth > 0) {
+			chain->certs[chain->depth - 1].err = strtoul(str + 8, NULL, 10);
+		}
+	}
+	return NSERROR_OK;
+}
+
+/*
+ * create a certificate chain from a fetch query string
+ *
+ * exported interface documented in netsurf/ssl_certs.h
+ */
+nserror cert_chain_from_query(struct nsurl *url, struct cert_chain **chain_out)
+{
+	struct cert_chain* chain;
+	nserror res;
+	char *querystr;
+	size_t querylen;
+	size_t kvstart;
+	size_t kvlen;
+
+	res = nsurl_get(url, NSURL_QUERY, &querystr, &querylen);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	if (querylen < MIN_CERT_LEN) {
+		free(querystr);
+		return NSERROR_NEED_DATA;
+	}
+
+	res = cert_chain_alloc(0, &chain);
+	if (res != NSERROR_OK) {
+		free(querystr);
+		return res;
+	}
+
+	for (kvlen = 0, kvstart = 0; kvstart < querylen; kvstart += kvlen) {
+		/* get query section length */
+		kvlen = 0;
+		while (((kvstart + kvlen) < querylen) &&
+		       (querystr[kvstart + kvlen] != '&')) {
+			kvlen++;
+		}
+
+		res = process_query_section(querystr + kvstart, kvlen, chain);
+		if (res != NSERROR_OK) {
+			break;
+		}
+		kvlen++; /* account for & separator */
+	}
+	free(querystr);
+
+	if (chain->depth > 0) {
+		*chain_out = chain;
+	} else {
+		free(chain);
+		return NSERROR_INVALID;
+	}
+
 	return NSERROR_OK;
 }
 

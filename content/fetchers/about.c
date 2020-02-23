@@ -261,7 +261,7 @@ static bool fetch_about_licence_handler(struct fetch_about_context *ctx)
 
 
 /**
- * Handler to generate about:cache page.
+ * Handler to generate about:imagecache page.
  *
  * Shows details of current image cache.
  *
@@ -391,6 +391,276 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 	return true;
 
 fetch_about_imagecache_handler_aborted:
+	return false;
+}
+
+
+/**
+ * ssl certificate information for certificate chain
+ */
+struct ssl_cert_info {
+	long version;		/**< Certificate version */
+	char not_before[32];	/**< Valid from date */
+	char not_after[32];	/**< Valid to date */
+	int sig_type;		/**< Signature type */
+	char serialnum[64];	/**< Serial number */
+	char issuer[256];	/**< Issuer details */
+	char subject[256];	/**< Subject details */
+	int cert_type;		/**< Certificate type */
+	ssl_cert_err err;       /**< Whatever is wrong with this certificate */
+};
+
+#ifdef WITH_OPENSSL
+
+#include <openssl/ssl.h>
+#include <openssl/x509v3.h>
+
+static nserror
+der_to_certinfo(const uint8_t *der,
+		size_t der_length,
+		struct ssl_cert_info *info)
+{
+	BIO *mem;
+	BUF_MEM *buf;
+	const ASN1_INTEGER *asn1_num;
+	BIGNUM *bignum;
+	X509 *cert;		/**< Pointer to certificate */
+
+	if (der == NULL) {
+		return NSERROR_OK;
+	}
+
+	cert = d2i_X509(NULL, &der, der_length);
+	if (cert == NULL) {
+		return NSERROR_INVALID;
+	}
+
+	/* get certificate version */
+	info->version = X509_get_version(cert);
+
+	/* not before date */
+	mem = BIO_new(BIO_s_mem());
+	ASN1_TIME_print(mem, X509_get_notBefore(cert));
+	BIO_get_mem_ptr(mem, &buf);
+	(void) BIO_set_close(mem, BIO_NOCLOSE);
+	BIO_free(mem);
+	memcpy(info->not_before,
+	       buf->data,
+	       min(sizeof(info->not_before) - 1, (unsigned)buf->length));
+	info->not_before[min(sizeof(info->not_before) - 1, (unsigned)buf->length)] = 0;
+	BUF_MEM_free(buf);
+
+	/* not after date */
+	mem = BIO_new(BIO_s_mem());
+	ASN1_TIME_print(mem,
+			X509_get_notAfter(cert));
+	BIO_get_mem_ptr(mem, &buf);
+	(void) BIO_set_close(mem, BIO_NOCLOSE);
+	BIO_free(mem);
+	memcpy(info->not_after,
+	       buf->data,
+	       min(sizeof(info->not_after) - 1, (unsigned)buf->length));
+	info->not_after[min(sizeof(info->not_after) - 1, (unsigned)buf->length)] = 0;
+	BUF_MEM_free(buf);
+
+	/* signature type */
+	info->sig_type = X509_get_signature_type(cert);
+
+	/* serial number */
+	asn1_num = X509_get_serialNumber(cert);
+	if (asn1_num != NULL) {
+		bignum = ASN1_INTEGER_to_BN(asn1_num, NULL);
+		if (bignum != NULL) {
+			char *tmp = BN_bn2hex(bignum);
+			if (tmp != NULL) {
+				strncpy(info->serialnum,
+					tmp,
+					sizeof(info->serialnum));
+				info->serialnum[sizeof(info->serialnum)-1] = '\0';
+				OPENSSL_free(tmp);
+			}
+			BN_free(bignum);
+			bignum = NULL;
+		}
+	}
+
+	/* issuer name */
+	mem = BIO_new(BIO_s_mem());
+	X509_NAME_print_ex(mem,
+			   X509_get_issuer_name(cert),
+			   0, XN_FLAG_SEP_CPLUS_SPC |
+			   XN_FLAG_DN_REV | XN_FLAG_FN_NONE);
+	BIO_get_mem_ptr(mem, &buf);
+	(void) BIO_set_close(mem, BIO_NOCLOSE);
+	BIO_free(mem);
+	memcpy(info->issuer,
+	       buf->data,
+	       min(sizeof(info->issuer) - 1, (unsigned) buf->length));
+	info->issuer[min(sizeof(info->issuer) - 1, (unsigned) buf->length)] = 0;
+	BUF_MEM_free(buf);
+
+	/* subject */
+	mem = BIO_new(BIO_s_mem());
+	X509_NAME_print_ex(mem,
+			   X509_get_subject_name(cert),
+			   0,
+			   XN_FLAG_SEP_CPLUS_SPC |
+			   XN_FLAG_DN_REV |
+			   XN_FLAG_FN_NONE);
+	BIO_get_mem_ptr(mem, &buf);
+	(void) BIO_set_close(mem, BIO_NOCLOSE);
+	BIO_free(mem);
+	memcpy(info->subject,
+	       buf->data,
+	       min(sizeof(info->subject) - 1, (unsigned)buf->length));
+	info->subject[min(sizeof(info->subject) - 1, (unsigned) buf->length)] = 0;
+	BUF_MEM_free(buf);
+
+	/* type of certificate */
+	info->cert_type = X509_certificate_type(cert, X509_get_pubkey(cert));
+
+	X509_free(cert);
+
+	return NSERROR_OK;
+}
+
+/* copy certificate data */
+static nserror
+convert_chain_to_cert_info(const struct cert_chain *chain,
+			   struct ssl_cert_info **cert_info_out)
+{
+	struct ssl_cert_info *certs;
+	size_t depth;
+	nserror res;
+
+	certs = calloc(chain->depth, sizeof(struct ssl_cert_info));
+	if (certs == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	for (depth = 0; depth < chain->depth;depth++) {
+		res = der_to_certinfo(chain->certs[depth].der,
+				      chain->certs[depth].der_length,
+				      certs + depth);
+		if (res != NSERROR_OK) {
+			free(certs);
+			return res;
+		}
+		certs[depth].err = chain->certs[depth].err;
+	}
+
+	*cert_info_out = certs;
+	return NSERROR_OK;
+}
+
+#else
+static nserror
+convert_chain_to_cert_info(const struct cert_chain *chain,
+			   struct ssl_cert_info **cert_info_out)
+{
+	return NSERROR_NOT_IMPLEMENTED;
+}
+#endif
+
+
+/**
+ * Handler to generate about:certificate page.
+ *
+ * Shows details of a certificate chain
+ *
+ * \param ctx The fetcher context.
+ * \return true if handled false if aborted.
+ */
+static bool fetch_about_certificate_handler(struct fetch_about_context *ctx)
+{
+	int code = 200;
+	nserror res;
+	struct cert_chain *chain = NULL;
+
+
+	/* content is going to return ok */
+	fetch_set_http_code(ctx->fetchh, code);
+
+	/* content type */
+	if (fetch_about_send_header(ctx, "Content-Type: text/html"))
+		goto fetch_about_certificate_handler_aborted;
+
+	/* page head */
+	res = ssenddataf(ctx,
+			 "<html>\n<head>\n"
+			"<title>NetSurf Browser Certificate Viewer</title>\n"
+			"<link rel=\"stylesheet\" type=\"text/css\" "
+			"href=\"resource:internal.css\">\n"
+			"</head>\n"
+			"<body id =\"certificate\">\n"
+			"<p class=\"banner\">"
+			"<a href=\"http://www.netsurf-browser.org/\">"
+			"<img src=\"resource:netsurf.png\" alt=\"NetSurf\"></a>"
+			"</p>\n"
+			"<h1>NetSurf Browser Certificate Viewer</h1>\n");
+	if (res != NSERROR_OK) {
+		goto fetch_about_certificate_handler_aborted;
+	}
+
+	res = cert_chain_from_query(ctx->url, &chain);
+	if (res != NSERROR_OK) {
+		res = ssenddataf(ctx, "<p>Could not process that</p>\n");
+		if (res != NSERROR_OK) {
+			goto fetch_about_certificate_handler_aborted;
+		}
+	} else {
+		struct ssl_cert_info *cert_info;
+		res = convert_chain_to_cert_info(chain, &cert_info);
+		if (res == NSERROR_OK) {
+			size_t depth;
+			for (depth = 0; depth < chain->depth; depth++) {
+				res = ssenddataf(ctx,
+						 "<h2>Certificate: %d</h2>\n"
+						 "<p>Subject: %s</p>"
+						 "<p>Serial Number: %s</p>"
+						 "<p>Type: %i</p>"
+						 "<p>Version: %ld</p>"
+						 "<p>Issuer: %s</p>"
+						 "<p>Valid From: %s</p>"
+						 "<p>Valid Untill: %s</p>",
+						 depth,
+						 cert_info[depth].subject,
+						 cert_info[depth].serialnum,
+						 cert_info[depth].cert_type,
+						 cert_info[depth].version,
+						 cert_info[depth].issuer,
+						 cert_info[depth].not_before,
+						 cert_info[depth].not_after);
+				if (res != NSERROR_OK) {
+					goto fetch_about_certificate_handler_aborted;
+				}
+
+			}
+			free(cert_info);
+		} else {
+			res = ssenddataf(ctx,
+					 "<p>Invalid certificate data</p>\n");
+			if (res != NSERROR_OK) {
+				goto fetch_about_certificate_handler_aborted;
+			}
+		}
+	}
+
+
+	/* page footer */
+	res = ssenddataf(ctx, "</body>\n</html>\n");
+	if (res != NSERROR_OK) {
+		goto fetch_about_certificate_handler_aborted;
+	}
+
+	fetch_about_send_finished(ctx);
+
+	cert_chain_free(chain);
+
+	return true;
+
+fetch_about_certificate_handler_aborted:
+	cert_chain_free(chain);
 	return false;
 }
 
@@ -1380,6 +1650,14 @@ struct about_handlers about_handler_list[] = {
 		SLEN("blank"),
 		NULL,
 		fetch_about_blank_handler,
+		true
+	},
+	{
+		/* details about a certificate */
+		"certificate",
+		SLEN("certificate"),
+		NULL,
+		fetch_about_certificate_handler,
 		true
 	},
 	{
