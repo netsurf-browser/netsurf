@@ -49,6 +49,7 @@
 
 #include "netsurf/browser_window.h"
 #include "desktop/system_colour.h"
+#include "desktop/page-info.h"
 #include "desktop/searchweb.h"
 #include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
@@ -206,6 +207,11 @@ nserror netsurf_init(const char *store_path)
 
 	js_initialise();
 
+	ret = page_info_init();
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
+
 	return NSERROR_OK;
 }
 
@@ -220,7 +226,10 @@ void netsurf_exit(void)
 	
 	NSLOG(netsurf, INFO, "Closing GUI");
 	guit->misc->quit();
-	
+
+	NSLOG(netsurf, INFO, "Finalising page-info module");
+	page_info_fini();
+
 	NSLOG(netsurf, INFO, "Finalising JavaScript");
 	js_finalise();
 
