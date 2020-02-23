@@ -188,6 +188,39 @@ typedef struct plot_font_style {
 #define blue_from_colour(c)						\
 	((c >> 16) & 0xff)
 
+/** Colour components */
+enum plot_colour_component {
+	PLOT_COLOUR_COMPONENT_RED,
+	PLOT_COLOUR_COMPONENT_GREEN,
+	PLOT_COLOUR_COMPONENT_BLUE,
+	PLOT_COLOUR_COMPONENT_ALPHA,
+};
+
+/**
+ * Engorge a particular colour channel.
+ *
+ * \param[in] col   The colour to engorge a component of.
+ * \param[in] dark  Whether col is a dark colour.
+ * \param[in] comp  Colour component to engorge.
+ */
+static inline colour colour_engorge_component(
+		colour col,
+		bool dark,
+		enum plot_colour_component comp)
+{
+	static const colour mask[PLOT_COLOUR_COMPONENT_ALPHA] = {
+		[PLOT_COLOUR_COMPONENT_RED]   = 0x0000ff,
+		[PLOT_COLOUR_COMPONENT_GREEN] = 0x00ff00,
+		[PLOT_COLOUR_COMPONENT_BLUE]  = 0xff0000,
+	};
+	colour d = dark ? darken_colour(col) : double_darken_colour(col);
+	colour l = dark ? double_lighten_colour(col) : lighten_colour(col);
+
+	assert(comp < PLOT_COLOUR_COMPONENT_ALPHA);
+
+	return (mask[comp] & l) | (~mask[comp] & d);
+}
+
 
 /* global fill styles */
 extern plot_style_t *plot_style_fill_white;
