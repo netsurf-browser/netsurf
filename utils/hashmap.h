@@ -62,6 +62,16 @@ typedef void* (*hashmap_value_alloc_t)(void *);
 typedef void (*hashmap_value_destroy_t)(void *);
 
 /**
+ * Hashmap iteration callback function type.
+ *
+ * First parameter is the key, second is the value.
+ * The final parameter is the context pointer for the iteration.
+ *
+ * Return true to stop iterating early
+ */
+typedef bool (*hashmap_iteration_cb_t)(void *, void *, void *);
+
+/**
  * Parameters for hashmaps
  */
 typedef struct {
@@ -163,5 +173,17 @@ void *hashmap_insert(hashmap_t *hashmap, void *key);
  */
 bool hashmap_remove(hashmap_t *hashmap, void *key);
 
+/**
+ * Iterate the hashmap
+ *
+ * For each key/value pair in the hashmap, call the callback passing in
+ * the key and value.  During iteration you MUST NOT mutate the hashmap.
+ *
+ * \param hashmap The hashmap to iterate
+ * \param cb The callback for each key,value pair
+ * \param ctx The callback context
+ * \return Whether or not we stopped iteration early
+ */
+bool hashmap_iterate(hashmap_t *hashmap, hashmap_iteration_cb_t cb, void *ctx);
 
 #endif

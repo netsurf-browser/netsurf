@@ -151,6 +151,20 @@ static hashmap_parameters_t test_params = {
 	.value_destroy = value_destroy,
 };
 
+/* Iteration helpers */
+
+static size_t iteration_counter = 0;
+static size_t iteration_stop = 0;
+static char iteration_ctx = 0;
+
+static bool
+hashmap_test_iterator_cb(void *key, void *value, void *ctx)
+{
+	ck_assert(ctx == &iteration_ctx);
+	iteration_counter++;
+	return iteration_counter == iteration_stop;
+}
+
 /* Fixtures for basic tests */
 
 static hashmap_t *test_hashmap = NULL;
@@ -230,6 +244,35 @@ START_TEST(insert_then_lookup)
 }
 END_TEST
 
+START_TEST(iterate_empty)
+{
+	iteration_stop = iteration_counter = 0;
+	ck_assert(hashmap_iterate(test_hashmap, hashmap_test_iterator_cb, &iteration_ctx) == false);
+	ck_assert_int_eq(iteration_counter, 0);
+}
+END_TEST
+
+START_TEST(iterate_one)
+{
+	iteration_stop = iteration_counter = 0;
+        hashmap_test_value_t *value = hashmap_insert(test_hashmap, corestring_nsurl_about_blank);
+	ck_assert(value != NULL);
+	ck_assert(hashmap_iterate(test_hashmap, hashmap_test_iterator_cb, &iteration_ctx) == false);
+	ck_assert_int_eq(iteration_counter, 1);
+}
+END_TEST
+
+START_TEST(iterate_one_and_stop)
+{
+	iteration_stop = 1;
+	iteration_counter = 0;
+        hashmap_test_value_t *value = hashmap_insert(test_hashmap, corestring_nsurl_about_blank);
+	ck_assert(value != NULL);
+	ck_assert(hashmap_iterate(test_hashmap, hashmap_test_iterator_cb, &iteration_ctx) == true);
+	ck_assert_int_eq(iteration_counter, 1);
+}
+END_TEST
+
 static TCase *basic_api_case_create(void)
 {
 	TCase *tc;
@@ -245,7 +288,11 @@ static TCase *basic_api_case_create(void)
 	tcase_add_test(tc, remove_not_present);
 	tcase_add_test(tc, insert_then_remove);
 	tcase_add_test(tc, insert_then_lookup);
-
+	
+	tcase_add_test(tc, iterate_empty);
+	tcase_add_test(tc, iterate_one);
+	tcase_add_test(tc, iterate_one_and_stop);
+	
 	return tc;
 }
 
@@ -374,6 +421,57 @@ START_TEST(chain_add_all_twice_remove_all)
 }
 END_TEST
 
+START_TEST(chain_add_all_twice_remove_all_iterate)
+{
+	case_pair *chain_case;
+	size_t chain_count = 0;
+	
+	for (chain_case = chain_pairs;
+	     chain_case->url != NULL;
+	     chain_case++) {
+		ck_assert(hashmap_lookup(test_hashmap, chain_case->nsurl) == NULL);
+		ck_assert(hashmap_insert(test_hashmap, chain_case->nsurl) != NULL);
+		chain_count++;
+	}
+	
+	iteration_counter = 0;
+	iteration_stop = 0;
+	ck_assert(hashmap_iterate(test_hashmap, hashmap_test_iterator_cb, &iteration_ctx) == false);
+	ck_assert_int_eq(iteration_counter, chain_count);
+	
+	for (chain_case = chain_pairs;
+	     chain_case->url != NULL;
+	     chain_case++) {
+		ck_assert(hashmap_lookup(test_hashmap, chain_case->nsurl) != NULL);
+		ck_assert(hashmap_insert(test_hashmap, chain_case->nsurl) != NULL);
+	}
+
+	iteration_counter = 0;
+	iteration_stop = 0;
+	ck_assert(hashmap_iterate(test_hashmap, hashmap_test_iterator_cb, &iteration_ctx) == false);
+	ck_assert_int_eq(iteration_counter, chain_count);
+	
+	iteration_counter = 0;
+	iteration_stop = chain_count;
+	ck_assert(hashmap_iterate(test_hashmap, hashmap_test_iterator_cb, &iteration_ctx) == true);
+	ck_assert_int_eq(iteration_counter, chain_count);
+	
+	for (chain_case = chain_pairs;
+	     chain_case->url != NULL;
+	     chain_case++) {
+		ck_assert(hashmap_remove(test_hashmap, chain_case->nsurl) == true);
+	}
+
+	iteration_counter = 0;
+	iteration_stop = chain_count;
+	ck_assert(hashmap_iterate(test_hashmap, hashmap_test_iterator_cb, &iteration_ctx) == false);
+	ck_assert_int_eq(iteration_counter, 0);
+	
+	ck_assert_int_eq(keys, 0);
+	ck_assert_int_eq(values, 0);
+}
+END_TEST
+
 #define CHAIN_TEST_MALLOC_COUNT_MAX 60
 
 START_TEST(chain_add_all_remove_all_alloc)
@@ -431,6 +529,7 @@ static TCase *chain_case_create(void)
 	tcase_add_test(tc, chain_add_remove_all);
 	tcase_add_test(tc, chain_add_all_remove_all);
 	tcase_add_test(tc, chain_add_all_twice_remove_all);
+	tcase_add_test(tc, chain_add_all_twice_remove_all_iterate);
 
 	tcase_add_loop_test(tc, chain_add_all_remove_all_alloc, 0, CHAIN_TEST_MALLOC_COUNT_MAX + 1);
 	
