@@ -87,6 +87,18 @@ struct cert_chain {
 nserror cert_chain_alloc(size_t depth, struct cert_chain **chain_out);
 
 /**
+ * duplicate a certificate chain into an existing chain
+ *
+ * \param src The certificate chain to copy from
+ * \param dst The chain to overwrite with a copy of src
+ * \return NSERROR_OK on success or NSERROR_NOMEM on memory exhaustion
+ *
+ * NOTE: if this returns NSERROR_NOMEM then the destination chain will have
+ * some amount of content and should be cleaned up with cert_chain_free.
+ */
+nserror cert_chain_dup_into(const struct cert_chain *src, struct cert_chain *dst);
+
+/**
  * duplicate a certificate chain
  *
  * \param src The certificate chain to copy from

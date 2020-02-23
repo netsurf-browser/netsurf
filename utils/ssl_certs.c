@@ -54,6 +54,43 @@ cert_chain_alloc(size_t depth, struct cert_chain **chain_out)
 
 
 /*
+ * duplicate certificate chain into existing chain
+ *
+ * exported interface documented in netsurf/ssl_certs.h
+ */
+nserror
+cert_chain_dup_into(const struct cert_chain *src, struct cert_chain *dst)
+{
+	size_t depth;
+	for (depth = 0; depth < dst->depth; depth++) {
+		if (dst->certs[depth].der != NULL) {
+			free(dst->certs[depth].der);
+			dst->certs[depth].der = NULL;
+		}
+	}
+
+	dst->depth = src->depth;
+
+	for (depth = 0; depth < src->depth; depth++) {
+		dst->certs[depth].err = src->certs[depth].err;
+		dst->certs[depth].der_length = src->certs[depth].der_length;
+		if (src->certs[depth].der != NULL) {
+			dst->certs[depth].der = malloc(src->certs[depth].der_length);
+			if (dst->certs[depth].der == NULL) {
+				return NSERROR_NOMEM;
+			}
+			memcpy(dst->certs[depth].der,
+			       src->certs[depth].der,
+			       src->certs[depth].der_length);
+		}
+
+	}
+
+	return NSERROR_OK;
+}
+
+
+/*
  * duplicate certificate chain
  *
  * exported interface documented in netsurf/ssl_certs.h
