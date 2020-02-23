@@ -197,7 +197,7 @@ basic_fixture_teardown(void)
 
 START_TEST(empty_hashmap_create_destroy)
 {
-	/* Do nothing in here, all the checks are in the fixture */
+	ck_assert_int_eq(hashmap_count(test_hashmap), 0);
 }
 END_TEST
 
@@ -213,6 +213,7 @@ START_TEST(insert_works)
         hashmap_test_value_t *value = hashmap_insert(test_hashmap, corestring_nsurl_about_blank);
 	ck_assert(value != NULL);
 	ck_assert(value->key == corestring_nsurl_about_blank);
+	ck_assert_int_eq(hashmap_count(test_hashmap), 1);
 }
 END_TEST
 
@@ -229,9 +230,11 @@ START_TEST(insert_then_remove)
 	ck_assert(value->key == corestring_nsurl_about_blank);
 	ck_assert_int_eq(keys, 1);
 	ck_assert_int_eq(values, 1);
+	ck_assert_int_eq(hashmap_count(test_hashmap), 1);
 	ck_assert(hashmap_remove(test_hashmap, corestring_nsurl_about_blank) == true);
 	ck_assert_int_eq(keys, 0);
 	ck_assert_int_eq(values, 0);
+	ck_assert_int_eq(hashmap_count(test_hashmap), 0);
 }
 END_TEST
 
@@ -450,6 +453,7 @@ START_TEST(chain_add_all_twice_remove_all_iterate)
 	iteration_stop = 0;
 	ck_assert(hashmap_iterate(test_hashmap, hashmap_test_iterator_cb, &iteration_ctx) == false);
 	ck_assert_int_eq(iteration_counter, chain_count);
+	ck_assert_int_eq(hashmap_count(test_hashmap), chain_count);
 	
 	iteration_counter = 0;
 	iteration_stop = chain_count;
@@ -469,6 +473,7 @@ START_TEST(chain_add_all_twice_remove_all_iterate)
 	
 	ck_assert_int_eq(keys, 0);
 	ck_assert_int_eq(values, 0);
+	ck_assert_int_eq(hashmap_count(test_hashmap), 0);
 }
 END_TEST
 

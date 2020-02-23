@@ -55,6 +55,11 @@ struct hashmap_s {
 	 * The number of buckets in this map
 	 */
 	uint32_t bucket_count;
+	
+	/**
+	 * The number of entries in this map
+	 */
+	size_t entry_count;
 };
 
 /* Exported function, documented in hashmap.h */
@@ -65,14 +70,16 @@ hashmap_create(hashmap_parameters_t *params)
 
 	ret->params = params;
 	ret->bucket_count = DEFAULT_HASHMAP_BUCKETS;
+	ret->entry_count = 0;
 	ret->buckets = malloc(ret->bucket_count * sizeof(hashmap_entry_t *));
-	memset(ret->buckets, 0, ret->bucket_count * sizeof(hashmap_entry_t *));
 
 	if (ret->buckets == NULL) {
 		free(ret);
 		return NULL;
 	}
-	
+
+	memset(ret->buckets, 0, ret->bucket_count * sizeof(hashmap_entry_t *));
+
 	return ret;
 }
 
@@ -176,7 +183,9 @@ hashmap_insert(hashmap_t *hashmap, void *key)
 	}
 
 	hashmap->buckets[bucket] = entry;
-	
+
+	hashmap->entry_count++;
+
 	return entry->value;
 
 err:
@@ -207,6 +216,7 @@ hashmap_remove(hashmap_t *hashmap, void *key)
 				}
 				*entry->prevptr = entry->next;
 				free(entry);
+				hashmap->entry_count--;
 				return true;
 			}
 		}
@@ -232,4 +242,11 @@ hashmap_iterate(hashmap_t *hashmap, hashmap_iteration_cb_t cb, void *ctx)
 	}
 
 	return false;
+}
+
+/* Exported function, documented in hashmap.h */
+size_t
+hashmap_count(hashmap_t *hashmap)
+{
+	return hashmap->entry_count;
 }

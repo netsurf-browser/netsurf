@@ -186,4 +186,12 @@ bool hashmap_remove(hashmap_t *hashmap, void *key);
  */
 bool hashmap_iterate(hashmap_t *hashmap, hashmap_iteration_cb_t cb, void *ctx);
 
+/**
+ * Get the number of entries in this map
+ *
+ * \param hashmap The hashmap to retrieve the entry count from
+ * \return The number of entries in the hashmap
+ */
+size_t hashmap_count(hashmap_t *hashmap);
+
 #endif
