@@ -221,7 +221,8 @@ setter Node::nodeValue()
 	if (exc != DOM_NO_ERR) return 0;
 	exc = dom_node_set_node_value(priv->node, content);
 	dom_string_unref(content);
-	return 0;
+	if (exc != DOM_NO_ERR) return 0;
+	return 1;
 %}
 
 getter Node::textContent()
