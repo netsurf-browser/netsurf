@@ -340,7 +340,7 @@ static bool html_process_link(html_content *c, dom_node *node)
 			corestring_dom_hreflang, &atr_string);
 	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
 		/* get a lwc string containing the href lang */
-		exc = dom_string_intern(atr_string, &link.hreflang);
+		(void)dom_string_intern(atr_string, &link.hreflang);
 		dom_string_unref(atr_string);
 	}
 
@@ -348,7 +348,7 @@ static bool html_process_link(html_content *c, dom_node *node)
 			corestring_dom_type, &atr_string);
 	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
 		/* get a lwc string containing the type */
-		exc = dom_string_intern(atr_string, &link.type);
+		(void)dom_string_intern(atr_string, &link.type);
 		dom_string_unref(atr_string);
 	}
 
@@ -356,7 +356,7 @@ static bool html_process_link(html_content *c, dom_node *node)
 			corestring_dom_media, &atr_string);
 	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
 		/* get a lwc string containing the media */
-		exc = dom_string_intern(atr_string, &link.media);
+		(void)dom_string_intern(atr_string, &link.media);
 		dom_string_unref(atr_string);
 	}
 
@@ -364,7 +364,7 @@ static bool html_process_link(html_content *c, dom_node *node)
 			corestring_dom_sizes, &atr_string);
 	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
 		/* get a lwc string containing the sizes */
-		exc = dom_string_intern(atr_string, &link.sizes);
+		(void)dom_string_intern(atr_string, &link.sizes);
 		dom_string_unref(atr_string);
 	}
 
