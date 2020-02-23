@@ -85,11 +85,12 @@ hashmap_destroy(hashmap_t *hashmap)
 
 	for (bucket = 0; bucket < hashmap->bucket_count; bucket++) {
 		for (entry = hashmap->buckets[bucket];
-		     entry != NULL;
-		     entry = entry->next) {
+		     entry != NULL;) {
+			hashmap_entry_t *next = entry->next;
 			hashmap->params->value_destroy(entry->value);
 			hashmap->params->key_destroy(entry->key);
 			free(entry);
+			entry = next;
 		}
 	}
 
