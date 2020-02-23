@@ -561,3 +561,117 @@ void page_info_destroy(
 	}
 	free(pi);
 }
+
+/**
+ * Render a text entry.
+ *
+ * \param[in] pit  The page info window handle.
+ * \param[in] x    X-coordinate to plot at.
+ * \param[in] y    Y-coordinate to plot at.
+ * \param[in] ctx  Current redraw context.
+ * \return NSERROR_OK on success, appropriate error code otherwise.
+ */
+static nserror page_info__redraw_text_entry(
+		const struct page_info_text *pit,
+		int x,
+		int y,
+		const struct redraw_context *ctx)
+{
+	int baseline = (pit->height * 3 + 2) / 4;
+
+	ctx->plot->text(ctx, pit->style, x, y + baseline,
+			pit->text, strlen(pit->text));
+
+	return NSERROR_OK;
+}
+
+/* Exported interface documented in desktop/page_info.h */
+nserror page_info_redraw(
+		const struct page_info *pi,
+		int x,
+		int y,
+		const struct rect *clip,
+		const struct redraw_context *ctx)
+{
+	struct redraw_context new_ctx = *ctx;
+	struct rect r = {
+		.x0 = clip->x0 + x,
+		.y0 = clip->y0 + y,
+		.x1 = clip->x1 + x,
+		.y1 = clip->y1 + y,
+	};
+	int cur_y = 0;
+	nserror err;
+
+	/* Start knockout rendering if it's available for this plotter. */
+	if (ctx->plot->option_knockout) {
+		bool res = knockout_plot_start(ctx, &new_ctx);
+		if (res == false) {
+			return NSERROR_UNKNOWN;
+		}
+	}
+
+	/* Set up clip rectangle and draw background. */
+	new_ctx.plot->clip(&new_ctx, &r);
+	new_ctx.plot->rectangle(&new_ctx, &pi__bg, &r);
+
+	cur_y += pi->window_padding;
+	for (unsigned i = 0; i < PI_ENTRY__COUNT; i++) {
+		const struct page_info_entry *entry = pi->entries + i;
+		int cur_x = pi->window_padding;
+
+		switch (entry->type) {
+		case PAGE_INFO_ENTRY_TYPE_TEXT:
+			err = page_info__redraw_text_entry(
+					&entry->text,
+					cur_x, cur_y,
+					&new_ctx);
+			if (err != NSERROR_OK) {
+				goto cleanup;
+			}
+			cur_y += entry->text.height;
+			cur_y += entry->text.padding_bottom;
+			break;
+
+		case PAGE_INFO_ENTRY_TYPE_ITEM:
+			if (entry->item.hover) {
+				r.y0 = cur_y;
+				r.y1 = cur_y + entry->item.padding_top +
+						entry->item.item.height +
+						entry->item.padding_bottom;
+				new_ctx.plot->rectangle(&new_ctx,
+						&pi__hover, &r);
+			}
+			cur_y += entry->item.padding_top;
+			err = page_info__redraw_text_entry(
+					&entry->item.item,
+					cur_x, cur_y,
+					&new_ctx);
+			if (err != NSERROR_OK) {
+				goto cleanup;
+			}
+			cur_x += entry->item.item.width;
+			err = page_info__redraw_text_entry(
+					&entry->item.detail,
+					cur_x, cur_y,
+					&new_ctx);
+			if (err != NSERROR_OK) {
+				goto cleanup;
+			}
+			cur_y += entry->item.item.height;
+			cur_y += entry->item.padding_bottom;
+			break;
+		}
+	}
+
+cleanup:
+	/* Rendering complete */
+	if (ctx->plot->option_knockout) {
+		bool res = knockout_plot_end(ctx);
+		if (res == false) {
+			return NSERROR_UNKNOWN;
+		}
+	}
+
+	return NSERROR_OK;
+}
