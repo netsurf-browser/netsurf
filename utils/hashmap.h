@@ -32,6 +32,36 @@
 typedef struct hashmap_s hashmap_t;
 
 /**
+ * Key cloning function type
+ */
+typedef void* (*hashmap_key_clone_t)(void *);
+
+/**
+ * Key destructor function type
+ */
+typedef void (*hashmap_key_destroy_t)(void *);
+
+/**
+ * Key hashing function type
+ */
+typedef uint32_t (*hashmap_key_hash_t)(void *);
+
+/**
+ * Key comparison function type
+ */
+typedef bool (*hashmap_key_eq_t)(void *, void*);
+
+/**
+ * Value allocation function type
+ */
+typedef void* (*hashmap_value_alloc_t)(void *);
+
+/**
+ * Value destructor function type
+ */
+typedef void (*hashmap_value_destroy_t)(void *);
+
+/**
  * Parameters for hashmaps
  */
 typedef struct {
@@ -39,12 +69,12 @@ typedef struct {
 	 * A function which when called will clone a key and give
 	 * ownership of the returned object to the hashmap
 	 */
-	void * (*key_clone)(void *key);
+	hashmap_key_clone_t key_clone;
 
 	/**
 	 * A function which when given a key will return its hash.
 	 */
-	uint32_t (*key_hash)(void *key);
+	hashmap_key_hash_t key_hash;
 	
 	/**
 	 * A function to compare two keys and return if they are equal.
@@ -52,22 +82,22 @@ typedef struct {
 	 * as the function is a full equality model.
 	 * (i.e. key1 == key2 => key2 == key1)
 	 */
-	bool (*key_eq)(void *key1, void *key2);
+	hashmap_key_eq_t key_eq;
 	 
 	/**
 	 * A function which when called will destroy a key object
 	 */
-	void (*key_destroy)(void *key);
+	hashmap_key_destroy_t key_destroy;
 
 	/**
 	 * A function which when called will allocate a value object
 	 */
-	void * (*value_alloc)(void *key);
+	hashmap_value_alloc_t value_alloc;
 
 	/**
 	 * A function which when called will destroy a value object
 	 */
-	void (*value_destroy)(void *value);
+	hashmap_value_destroy_t value_destroy;
 } hashmap_parameters_t;
 
 
