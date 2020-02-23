@@ -43,6 +43,7 @@
 #include <nsutils/time.h>
 
 #include "utils/corestrings.h"
+#include "utils/hashmap.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -121,6 +122,94 @@ static void ns_X509_free(X509 *cert)
 
 #endif /* WITH_OPENSSL */
 
+/* SSL certificate chain cache */
+
+/* We're only interested in the hostname and port */
+static uint32_t
+curl_fetch_ssl_key_hash(void *key)
+{
+	nsurl *url = key;
+	lwc_string *hostname = nsurl_get_component(url, NSURL_HOST);
+	lwc_string *port = nsurl_get_component(url, NSURL_PORT);
+	uint32_t hash;
+
+	if (port == NULL)
+		port = lwc_string_ref(corestring_lwc_443);
+
+	hash = lwc_string_hash_value(hostname) ^ lwc_string_hash_value(port);
+
+	lwc_string_unref(hostname);
+	lwc_string_unref(port);
+
+	return hash;
+}
+
+/* We only compare the hostname and port */
+static bool
+curl_fetch_ssl_key_eq(void *key1, void *key2)
+{
+	nsurl *url1 = key1;
+	nsurl *url2 = key2;
+	lwc_string *hostname1 = nsurl_get_component(url1, NSURL_HOST);
+	lwc_string *hostname2 = nsurl_get_component(url2, NSURL_HOST);
+	lwc_string *port1 = nsurl_get_component(url1, NSURL_PORT);
+	lwc_string *port2 = nsurl_get_component(url2, NSURL_PORT);
+	bool iseq = false;
+
+	if (port1 == NULL)
+		port1 = lwc_string_ref(corestring_lwc_443);
+	if (port2 == NULL)
+		port2 = lwc_string_ref(corestring_lwc_443);
+
+	if (lwc_string_isequal(hostname1, hostname2, &iseq) != lwc_error_ok)
+		goto out;
+	if (!iseq)
+		goto out;
+
+	iseq = false;
+	if (lwc_string_isequal(port1, port2, &iseq) != lwc_error_ok)
+		goto out;
+
+out:
+	lwc_string_unref(hostname1);
+	lwc_string_unref(hostname2);
+	lwc_string_unref(port1);
+	lwc_string_unref(port2);
+
+	return iseq;
+}
+
+static void *
+curl_fetch_ssl_value_alloc(void *key)
+{
+	struct cert_chain *out;
+
+	if (cert_chain_alloc(0, &out) != NSERROR_OK) {
+		return NULL;
+	}
+
+	return out;
+}
+
+static void
+curl_fetch_ssl_value_destroy(void *value)
+{
+	struct cert_chain *chain = value;
+	if (cert_chain_free(chain) != NSERROR_OK) {
+		NSLOG(netsurf, WARNING, "Problem freeing SSL certificate chain");
+	}
+}
+
+static hashmap_parameters_t curl_fetch_ssl_hashmap_parameters = {
+	.key_clone = (hashmap_key_clone_t)nsurl_ref,
+	.key_destroy = (hashmap_key_destroy_t)nsurl_unref,
+	.key_eq = curl_fetch_ssl_key_eq,
+	.key_hash = curl_fetch_ssl_key_hash,
+	.value_alloc = curl_fetch_ssl_value_alloc,
+	.value_destroy = curl_fetch_ssl_value_destroy,
+};
+
+static hashmap_t *curl_fetch_ssl_hashmap = NULL;
 
 /** SSL certificate info */
 struct cert_info {
@@ -132,6 +221,7 @@ struct cert_info {
 struct curl_fetch_info {
 	struct fetch *fetch_handle; /**< The fetch handle we're parented by. */
 	CURL * curl_handle;	/**< cURL handle if being fetched, or 0. */
+	bool sent_ssl_chain;	/**< Have we tried to send the SSL chain */
 	bool had_headers;	/**< Headers have been processed. */
 	bool abort;		/**< Abort requested. */
 	bool stopped;		/**< Download stopped on purpose. */
@@ -224,6 +314,10 @@ static void fetch_curl_finalise(lwc_string *scheme)
 			      "curl_multi_cleanup failed: ignoring");
 
 		curl_global_cleanup();
+
+		NSLOG(netsurf, DEBUG, "Cleaning up SSL cert chain hashmap");
+		hashmap_destroy(curl_fetch_ssl_hashmap);
+		curl_fetch_ssl_hashmap = NULL;
 	}
 
 	/* Free anything remaining in the cached curl handle ring */
@@ -373,6 +467,7 @@ fetch_curl_setup(struct fetch *parent_fetch,
 
 	/* construct a new fetch structure */
 	fetch->curl_handle = NULL;
+	fetch->sent_ssl_chain = false;
 	fetch->had_headers = false;
 	fetch->abort = false;
 	fetch->stopped = false;
@@ -466,16 +561,31 @@ failed:
 #ifdef WITH_OPENSSL
 
 /**
+ * Retrieve the ssl cert chain for the fetch, creating a blank one if needed
+ */
+static struct cert_chain *
+fetch_curl_get_cached_chain(struct curl_fetch_info *f)
+{
+	struct cert_chain *chain;
+
+	chain = hashmap_lookup(curl_fetch_ssl_hashmap, f->url);
+	if (chain == NULL) {
+		chain = hashmap_insert(curl_fetch_ssl_hashmap, f->url);
+	}
+
+	return chain;
+}
+
+/**
  * Report the certificate information in the fetch to the users
  */
 static void
-fetch_curl_report_certs_upstream(struct curl_fetch_info *f)
+fetch_curl_store_certs_in_cache(struct curl_fetch_info *f)
 {
 	size_t depth;
 	BIO *mem;
 	BUF_MEM *buf[MAX_CERT_DEPTH];
-	struct cert_chain chain;
-	fetch_msg msg;
+	struct cert_chain chain, *cached_chain;
 	struct cert_info *certs;
 
 	memset(&chain, 0, sizeof(chain));
@@ -558,10 +668,12 @@ fetch_curl_report_certs_upstream(struct curl_fetch_info *f)
 		chain.certs[depth].der_length = buf[depth]->length;
 	}
 
-	msg.type = FETCH_CERTS;
-	msg.data.chain = &chain;
-
-	fetch_send_callback(&msg, f->fetch_handle);
+	/* Now dup that chain into the cache */
+	cached_chain = fetch_curl_get_cached_chain(f);
+	if (cert_chain_dup_into(&chain, cached_chain) != NSERROR_OK) {
+		/* Something went wrong storing the chain, give up */
+		hashmap_remove(curl_fetch_ssl_hashmap, f->url);
+	}
 
 	/* release the openssl memory buffer */
 	for (depth = 0; depth < chain.depth; depth++) {
@@ -571,6 +683,26 @@ fetch_curl_report_certs_upstream(struct curl_fetch_info *f)
 	}
 }
 
+/**
+ * Report the certificate information in the fetch to the users
+ */
+static void
+fetch_curl_report_certs_upstream(struct curl_fetch_info *f)
+{
+	fetch_msg msg;
+	struct cert_chain *chain;
+
+	chain = hashmap_lookup(curl_fetch_ssl_hashmap, f->url);
+
+	if (chain != NULL) {
+		msg.type = FETCH_CERTS;
+		msg.data.chain = chain;
+
+		fetch_send_callback(&msg, f->fetch_handle);
+	}
+
+	f->sent_ssl_chain = true;
+}
 
 /**
  * OpenSSL Certificate verification callback
@@ -673,7 +805,7 @@ static int fetch_curl_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm)
 		ok = X509_verify_cert(x509_ctx);
 	}
 
-	fetch_curl_report_certs_upstream(f);
+	fetch_curl_store_certs_in_cache(f);
 
 	return ok;
 }
@@ -1430,6 +1562,10 @@ fetch_curl_header(char *data, size_t size, size_t nmemb, void *_f)
 		return 0;
 	}
 
+	if (f->sent_ssl_chain == false) {
+		fetch_curl_report_certs_upstream(f);
+	}
+
 	msg.type = FETCH_HEADER;
 	msg.data.header_or_data.buf = (const uint8_t *) data;
 	msg.data.header_or_data.len = size;
@@ -1652,6 +1788,12 @@ nserror fetch_curl_register(void)
 	/* cURL initialised okay, register the fetchers */
 
 	data = curl_version_info(CURLVERSION_NOW);
+
+	curl_fetch_ssl_hashmap = hashmap_create(&curl_fetch_ssl_hashmap_parameters);
+	if (curl_fetch_ssl_hashmap == NULL) {
+		NSLOG(netsurf, CRITICAL, "Unable to initialise SSL certificate hashmap");
+		return NSERROR_NOMEM;
+	}
 
 	for (i = 0; data->protocols[i]; i++) {
 		if (strcmp(data->protocols[i], "http") == 0) {
