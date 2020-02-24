@@ -62,7 +62,7 @@
 #define DEFAULT_ENTRY_SIZE 16
 
 /** Backing store file format version */
-#define CONTROL_VERSION 201
+#define CONTROL_VERSION 202
 
 /** Number of milliseconds after a update before control data maintenance is performed  */
 #define CONTROL_MAINT_TIME 10000
@@ -1461,8 +1461,22 @@ initialise(const struct llcache_store_parameters *parameters)
 	/* read store control and create new if required */
 	ret = read_control(newstate);
 	if (ret != NSERROR_OK) {
-		NSLOG(netsurf, ERROR, "read control failed %s",
-		      messages_get_errorcode(ret));
+		if (ret == NSERROR_NOT_FOUND) {
+			NSLOG(netsurf, INFO, "cache control file not found, making fresh");
+		} else {
+			NSLOG(netsurf, ERROR, "read control failed %s",
+			      messages_get_errorcode(ret));
+			ret = netsurf_recursive_rm(newstate->path);
+			if (ret != NSERROR_OK) {
+				NSLOG(netsurf, WARNING, "Error `%s` while removing `%s`",
+				      messages_get_errorcode(ret), newstate->path);
+				NSLOG(netsurf, WARNING, "Unable to clean up partial cache state.");
+				NSLOG(netsurf, WARNING, "Funky behaviour may ensue.");
+			} else {
+				NSLOG(netsurf, INFO, "Successfully removed old cache from `%s`",
+				      newstate->path);
+			}
+		}
 		ret = write_control(newstate);
 		if (ret == NSERROR_OK) {
 			unlink_entries(newstate);
