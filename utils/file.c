@@ -26,6 +26,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "desktop/gui_internal.h"
 
@@ -35,6 +36,7 @@
 #include "utils/nsurl.h"
 #include "utils/string.h"
 #include "utils/file.h"
+#include "utils/dirent.h"
 
 /**
  * Generate a posix path from one or more component elemnts.
@@ -306,4 +308,77 @@ nserror netsurf_path_to_nsurl(const char *path, struct nsurl **url)
 nserror netsurf_mkdir_all(const char *fname)
 {
 	return guit->file->mkdir_all(fname);
+}
+
+/* exported interface documented in utils/file.h */
+nserror
+netsurf_recursive_rm(const char *path)
+{
+	struct dirent **listing = NULL; /* directory entry listing */
+	int nentries, ent;
+	nserror ret = NSERROR_OK;
+	struct stat ent_stat; /* stat result of leaf entry */
+	char *leafpath = NULL;
+	const char *leafname;
+
+	nentries = scandir(path, &listing, 0, alphasort);
+
+	if (nentries < 0) {
+		switch (errno) {
+		case ENOENT:
+			return NSERROR_NOT_FOUND;
+		default:
+			return NSERROR_UNKNOWN;
+		}
+	}
+
+	for (ent = 0; ent < nentries; ent++) {
+		leafname = listing[ent]->d_name;
+		if (strcmp(leafname, ".") == 0 ||
+		    strcmp(leafname, "..") == 0)
+			continue;
+		ret = netsurf_mkpath(&leafpath, NULL, 2, path, leafname);
+		if (ret != NSERROR_OK) goto out;
+		if (stat(leafpath, &ent_stat) != 0) {
+			goto out_via_errno;
+		}
+		if (S_ISDIR(ent_stat.st_mode)) {
+			ret = netsurf_recursive_rm(leafpath);
+			if (ret != NSERROR_OK) goto out;
+		} else {
+			if (unlink(leafpath) != 0) {
+				goto out_via_errno;
+			}
+		}
+		free(leafpath);
+		leafpath = NULL;
+	}
+
+	if (rmdir(path) != 0) {
+		goto out_via_errno;
+	}
+
+	goto out;
+
+out_via_errno:
+	switch (errno) {
+	case ENOENT:
+		ret = NSERROR_NOT_FOUND;
+		break;
+	default:
+		ret = NSERROR_UNKNOWN;
+	}
+out:
+	if (listing != NULL) {
+		for (ent = 0; ent < nentries; ent++) {
+			free(listing[ent]);
+		}
+		free(listing);
+	}
+
+	if (leafpath != NULL) {
+		free(leafpath);
+	}
+
+	return ret;
 }

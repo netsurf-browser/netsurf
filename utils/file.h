@@ -172,4 +172,15 @@ nserror netsurf_path_to_nsurl(const char *path, struct nsurl **url);
  */
 nserror netsurf_mkdir_all(const char *fname);
 
+/**
+ * Recursively remove a directory
+ *
+ * If this returns a failure code, there's an unpredictable amount left
+ * unremoved.
+ *
+ * @param path The path to recursively remove
+ * @return NSERROR_OK on success, or an error code on failure.
+ */
+nserror netsurf_recursive_rm(const char *path);
+
 #endif
