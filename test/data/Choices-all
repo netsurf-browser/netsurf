@@ -16,6 +16,7 @@ font_fantasy:Serif
 accept_language:en
 accept_charset:
 memory_cache_size:12582912
+disc_cache_path:
 disc_cache_size:1073741824
 disc_cache_age:28
 block_advertisements:0
