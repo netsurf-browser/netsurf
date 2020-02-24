@@ -667,7 +667,7 @@ write_entry(struct store_entry *ent, int fd)
 	uint32_t len = strlen(nsurl_access(ent->url));
 	if (write(fd, &len, sizeof(len)) != sizeof(len))
 		return NSERROR_SAVE_FAILED;
-	if (write(fd, nsurl_access(ent->url), len) != len)
+	if (write(fd, nsurl_access(ent->url), len) != (ssize_t)len)
 		return NSERROR_SAVE_FAILED;
 	if (write(fd, ent, sizeof(*ent)) != sizeof(*ent))
 		return NSERROR_SAVE_FAILED;
@@ -1164,7 +1164,7 @@ read_entries(struct store_state *state)
 				free(fname);
 				return NSERROR_NOMEM;
 			}
-			if (read(fd, url, urllen) != urllen) {
+			if (read(fd, url, urllen) != (ssize_t)urllen) {
 				free(url);
 				close(fd);
 				free(fname);
