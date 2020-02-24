@@ -31,6 +31,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#include "netsurf/plot_style.h"
+
 #include "utils/log.h"
 #include "testament.h"
 #include "utils/corestrings.h"
@@ -43,6 +45,8 @@
 #include "content/fetchers.h"
 #include "content/fetchers/about.h"
 #include "image/image_cache.h"
+
+#include "desktop/system_colour.h"
 
 struct fetch_about_context;
 
@@ -577,6 +581,28 @@ static bool fetch_about_certificate_handler(struct fetch_about_context *ctx)
 	nserror res;
 	struct cert_chain *chain = NULL;
 
+	colour bg;
+	colour fg;
+	colour border;
+	colour outside;
+
+	res = ns_system_colour_char("Window", &bg);
+	if (res != NSERROR_OK) {
+		return false;
+	}
+
+	res = ns_system_colour_char("WindowText", &fg);
+	if (res != NSERROR_OK) {
+		return false;
+	}
+
+	outside = mix_colour(fg, bg, 0x0c);
+	border = mix_colour(fg, bg, 0x40);
+
+	bg = colour_rb_swap(bg);
+	fg = colour_rb_swap(fg);
+	border = colour_rb_swap(border);
+	outside = colour_rb_swap(outside);
 
 	/* content is going to return ok */
 	fetch_set_http_code(ctx->fetchh, code);
@@ -587,17 +613,27 @@ static bool fetch_about_certificate_handler(struct fetch_about_context *ctx)
 
 	/* page head */
 	res = ssenddataf(ctx,
-			 "<html>\n<head>\n"
+			"<html>\n<head>\n"
 			"<title>NetSurf Browser Certificate Viewer</title>\n"
 			"<link rel=\"stylesheet\" type=\"text/css\" "
-			"href=\"resource:internal.css\">\n"
+					"href=\"resource:internal.css\">\n"
+			"<style>\n"
+			"html {\n"
+			"\tbackground-color: #%06x;\n"
+			"}\n"
+			"body {\n"
+			"\tcolor: #%06x;\n"
+			"\tbackground-color: #%06x;\n"
+			"\tborder-color: #%06x;\n"
+			"}\n"
+			"h2 {\n"
+			"\tborder-color: #%06x;\n"
+			"}\n"
+			"</style>\n"
 			"</head>\n"
 			"<body id =\"certificate\">\n"
-			"<p class=\"banner\">"
-			"<a href=\"http://www.netsurf-browser.org/\">"
-			"<img src=\"resource:netsurf.png\" alt=\"NetSurf\"></a>"
-			"</p>\n"
-			"<h1>NetSurf Browser Certificate Viewer</h1>\n");
+			"<h1>Certificate</h1>\n",
+			outside, fg, bg, border, border);
 	if (res != NSERROR_OK) {
 		goto fetch_about_certificate_handler_aborted;
 	}

@@ -40,7 +40,8 @@ h1 {
 h2 {
 	font-size: 160%;
 	padding-top: 5mm;
-	border-top: 1px solid black; }
+	border-top-width: 1px;
+	border-top-style: solid; }
 
 h3 {
 	font-size: 140%;
