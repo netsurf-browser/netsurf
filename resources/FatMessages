@@ -468,6 +468,7 @@ it.all.DirectoryError:La directory '%s' è già esistente
 nl.all.DirectoryError:map '%s' bestaat reeds
 en.all.Timeout:This site took too long to respond
 it.all.Timeout:Questo sito sta impiegando troppo a rispondere
+en.all.BadURL:The given URL was not able to be parsed
 
 # error messages for RISC OS
 #
