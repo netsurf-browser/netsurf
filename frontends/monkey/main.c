@@ -37,6 +37,7 @@
 #include "netsurf/url_db.h"
 #include "netsurf/cookie_db.h"
 #include "content/fetch.h"
+#include "content/backing_store.h"
 
 #include "monkey/output.h"
 #include "monkey/dispatch.h"
@@ -355,6 +356,7 @@ main(int argc, char **argv)
 		.fetch = monkey_fetch_table,
 		.bitmap = monkey_bitmap_table,
 		.layout = monkey_layout_table,
+                .llcache = filesystem_llcache_table,
 	};
 
 	ret = netsurf_register(&monkey_table);
