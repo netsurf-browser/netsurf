@@ -246,6 +246,7 @@ static void fetch_data_poll(lwc_string *scheme)
 {
 	fetch_msg msg;
 	struct fetch_data_context *c, *next;
+	bool was_last_item = false;
 	
 	if (ring == NULL) return;
 	
@@ -314,14 +315,28 @@ static void fetch_data_poll(lwc_string *scheme)
 		 * processing this item may have added to the ring.
 		 */
 		next = c->r_next;
+		was_last_item = next == c;
 
 		fetch_remove_from_queues(c->parent_fetch);
 		fetch_free(c->parent_fetch);
 
+		/* Having called into the fetch machinery, our ring might
+		 * have been updated
+		 */
+		if (was_last_item) {
+			/* We were previously the last item in the ring
+			 * so let's reset to the head of the ring
+			 * and try again
+			 */
+			c = ring;
+		} else {
+			c = next;
+		}
+
 		/* Advance to next ring entry, exiting if we've reached
 		 * the start of the ring or the ring has become empty
 		 */
-	} while ( (c = next) != ring && ring != NULL);
+	} while (ring != NULL);
 }
 
 nserror fetch_data_register(void)
