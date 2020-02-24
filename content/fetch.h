@@ -39,18 +39,26 @@ struct ssl_cert_info;
  */
 typedef enum {
 	FETCH_PROGRESS,
+	FETCH_CERTS,
 	FETCH_HEADER,
 	FETCH_DATA,
+	/* Anything after here is a completed fetch of some kind. */
 	FETCH_FINISHED,
 	FETCH_TIMEDOUT,
 	FETCH_ERROR,
 	FETCH_REDIRECT,
 	FETCH_NOTMODIFIED,
-	FETCH_CERTS,
 	FETCH_AUTH,
 	FETCH_CERT_ERR,
 	FETCH_SSL_ERR
 } fetch_msg_type;
+
+/** Minimum finished message type.
+ *
+ * If a fetch does not progress this far, it's an error and the fetch machinery
+ * will send FETCH_ERROR to the llcache on fetch_free()
+ */
+#define FETCH_MIN_FINISHED_MSG FETCH_FINISHED
 
 /**
  * Fetcher message data

@@ -98,6 +98,7 @@ struct fetch {
 	int fetcherd;           /**< Fetcher descriptor for this fetch */
 	void *fetcher_handle;	/**< The handle for the fetcher. */
 	bool fetch_is_active;	/**< This fetch is active. */
+	fetch_msg_type last_msg;/**< The last message sent for this fetch */
 	struct fetch *r_prev;	/**< Previous active fetch in ::fetch_ring. */
 	struct fetch *r_next;	/**< Next active fetch in ::fetch_ring. */
 };
@@ -593,6 +594,20 @@ void fetch_abort(struct fetch *f)
 /* exported interface documented in content/fetch.h */
 void fetch_free(struct fetch *f)
 {
+	if (f->last_msg < FETCH_MIN_FINISHED_MSG) {
+		/* We didn't finish, so tell our user that an error occurred */
+		fetch_msg msg;
+
+		msg.type = FETCH_ERROR;
+		msg.data.error = "FetchFailedToFinish";
+
+		NSLOG(fetch, CRITICAL,
+		      "During the fetch of %s, the fetcher did not finish.",
+		      nsurl_access(f->url));
+
+		fetch_send_callback(&msg, f);
+	}
+
 	NSLOG(fetch, DEBUG,
 	      "Freeing fetch %p, fetcher %p",
 	      f,
@@ -788,6 +803,7 @@ fetch_multipart_data_new_kv(struct fetch_multipart_data **list,
 void
 fetch_send_callback(const fetch_msg *msg, struct fetch *fetch)
 {
+	fetch->last_msg = msg->type;
 	fetch->callback(msg, fetch->p);
 }
 

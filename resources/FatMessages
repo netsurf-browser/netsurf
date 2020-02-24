@@ -1133,6 +1133,9 @@ it.all.FetchErrorTitle:Errore durante il recupero della pagina
 en.all.FetchErrorDescription:An error occurred when connecting to %s
 it.all.FetchErrorDescription:Si è verificato un errore durante la connessione a %s
 
+# Generic fetcher failure (really a programming error)
+en.all.FetchFailedToFinish:The fetcher for this request failed to complete
+
 
 # SSL certificate viewer
 # ======================
