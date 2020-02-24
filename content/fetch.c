@@ -804,7 +804,9 @@ fetch_multipart_data_new_kv(struct fetch_multipart_data **list,
 void
 fetch_send_callback(const fetch_msg *msg, struct fetch *fetch)
 {
-	fetch->last_msg = msg->type;
+	/* Bump the last_msg to the greatest seen msg */
+	if (msg->type > fetch->last_msg)
+		fetch->last_msg = msg->type;
 	fetch->callback(msg, fetch->p);
 }
 
