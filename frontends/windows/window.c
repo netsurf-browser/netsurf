@@ -1120,9 +1120,10 @@ nsws_window_command(HWND hwnd,
 	case IDM_NAV_HOME:
 	{
 		nsurl *url;
+		ret = nsurl_create(nsoption_charp(homepage_url), &url);
 
-		if (nsurl_create(nsoption_charp(homepage_url), &url) != NSERROR_OK) {
-			win32_warning("NoMemory", 0);
+		if (ret != NSERROR_OK) {
+			win32_report_nserror(ret, 0);
 		} else {
 			browser_window_navigate(gw->bw,
 						url,
@@ -1952,13 +1953,15 @@ bool nsws_window_go(HWND hwnd, const char *urltxt)
 {
 	struct gui_window *gw;
 	nsurl *url;
+	nserror ret;
 
 	gw = nsws_get_gui_window(hwnd);
 	if (gw == NULL)
 		return false;
+	ret = nsurl_create(urltxt, &url);
 
-	if (nsurl_create(urltxt, &url) != NSERROR_OK) {
-		win32_warning("NoMemory", 0);
+	if (ret != NSERROR_OK) {
+		win32_report_nserror(ret, 0);
 	} else {
 		browser_window_navigate(gw->bw,
 					url,
