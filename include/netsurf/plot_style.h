@@ -188,6 +188,12 @@ typedef struct plot_font_style {
 #define blue_from_colour(c)						\
 	((c >> 16) & 0xff)
 
+/* Swap red and blue channels in a colour */
+#define colour_rb_swap(c)						\
+	(((0x000000ff & c) << 16) |					\
+	 ((0x0000ff00 & c)      ) |					\
+	 ((0x00ff0000 & c) >> 16))
+
 /** Colour components */
 enum plot_colour_component {
 	PLOT_COLOUR_COMPONENT_RED,
