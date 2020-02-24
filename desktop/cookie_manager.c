@@ -545,6 +545,19 @@ void cookie_manager_remove(const struct cookie_data *data)
 }
 
 
+/* exported interface documented in cookie_manager.h */
+nserror cookie_manager_set_search_string(
+		const char *string)
+{
+	/* If we don't have a cookie manager at the moment, just return */
+	if (cm_ctx.tree == NULL) {
+		return NSERROR_NOT_FOUND;
+	}
+
+	return treeview_set_search_string(cm_ctx.tree, string);
+}
+
+
 /**
  * Initialise the treeview entry feilds
  *

@@ -76,6 +76,15 @@ bool cookie_manager_add(const struct cookie_data *data);
 void cookie_manager_remove(const struct cookie_data *data);
 
 /**
+ * Set the cookie manager search string.
+ *
+ * \param string  Sering to set as search string.
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror cookie_manager_set_search_string(
+		const char *string);
+
+/**
  * Redraw the cookies manager.
  *
  * \param x	X coordinate to render treeview at
