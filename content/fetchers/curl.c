@@ -161,9 +161,8 @@ curl_fetch_ssl_key_eq(void *key1, void *key2)
 	if (port2 == NULL)
 		port2 = lwc_string_ref(corestring_lwc_443);
 
-	if (lwc_string_isequal(hostname1, hostname2, &iseq) != lwc_error_ok)
-		goto out;
-	if (!iseq)
+	if (lwc_string_isequal(hostname1, hostname2, &iseq) != lwc_error_ok ||
+			iseq == false)
 		goto out;
 
 	iseq = false;
