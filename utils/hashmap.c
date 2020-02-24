@@ -67,6 +67,9 @@ hashmap_t *
 hashmap_create(hashmap_parameters_t *params)
 {
 	hashmap_t *ret = malloc(sizeof(hashmap_t));
+	if (ret == NULL) {
+		return NULL;
+	}
 
 	ret->params = params;
 	ret->bucket_count = DEFAULT_HASHMAP_BUCKETS;
