@@ -495,4 +495,15 @@ void treeview_edit_selection(treeview *tree);
  */
 int treeview_get_height(treeview *tree);
 
+
+/**
+ * Set the search string for a treeview with \ref TREEVIEW_SEARCHABLE
+ *
+ * \param tree  Tree to set the search string for.
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror treeview_set_search_string(
+		treeview *tree,
+		const char *string);
+
 #endif

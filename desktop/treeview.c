@@ -4839,6 +4839,29 @@ int treeview_get_height(treeview *tree)
 	return height + search_height;
 }
 
+/* Exported interface, documented in treeview.h */
+nserror treeview_set_search_string(
+		treeview *tree,
+		const char *string)
+{
+	if (!(tree->flags & TREEVIEW_SEARCHABLE)) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (string == NULL || strlen(string) == 0) {
+		tree->search.active = false;
+		tree->search.search = false;
+		return treeview__search(tree, "", 0);
+	}
+
+	tree->search.active = true;
+	tree->search.search = true;
+	if (!textarea_set_text(tree->search.textarea, string)) {
+		return NSERROR_UNKNOWN;
+	}
+
+	return NSERROR_OK;
+}
 
 /**
  * Initialise the plot styles from CSS system colour values.
