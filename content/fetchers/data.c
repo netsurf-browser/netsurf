@@ -135,7 +135,6 @@ static void fetch_data_free(void *ctx)
 	nsurl_unref(c->url);
 	free(c->data);
 	free(c->mimetype);
-	RING_REMOVE(ring, c);
 	free(ctx);
 }
 
@@ -245,14 +244,14 @@ static bool fetch_data_process(struct fetch_data_context *c)
 static void fetch_data_poll(lwc_string *scheme)
 {
 	fetch_msg msg;
-	struct fetch_data_context *c, *next;
-	bool was_last_item = false;
-	
-	if (ring == NULL) return;
+	struct fetch_data_context *c, *save_ring = NULL;
 	
 	/* Iterate over ring, processing each pending fetch */
-	c = ring;
-	do {
+	while (ring != NULL) {
+		/* Take the first entry from the ring */
+		c = ring;
+		RING_REMOVE(ring, c);
+
 		/* Ignore fetches that have been flagged as locked.
 		 * This allows safe re-entrant calls to this function.
 		 * Re-entrancy can occur if, as a result of a callback,
@@ -260,7 +259,7 @@ static void fetch_data_poll(lwc_string *scheme)
 		 * again.
 		 */
 		if (c->locked == true) {
-			next = c->r_next;
+			RING_INSERT(save_ring, c);
 			continue;
 		}
 
@@ -311,32 +310,15 @@ static void fetch_data_poll(lwc_string *scheme)
 			assert(c->locked == false);
 		}
 
-		/* Compute next fetch item at the last possible moment as
-		 * processing this item may have added to the ring.
-		 */
-		next = c->r_next;
-		was_last_item = next == c;
-
+		/* And now finish */
 		fetch_remove_from_queues(c->parent_fetch);
 		fetch_free(c->parent_fetch);
+	}
 
-		/* Having called into the fetch machinery, our ring might
-		 * have been updated
-		 */
-		if (was_last_item) {
-			/* We were previously the last item in the ring
-			 * so let's reset to the head of the ring
-			 * and try again
-			 */
-			c = ring;
-		} else {
-			c = next;
-		}
-
-		/* Advance to next ring entry, exiting if we've reached
-		 * the start of the ring or the ring has become empty
-		 */
-	} while (ring != NULL);
+	/* Finally, if we saved any fetches which were locked, put them back
+	 * into the ring for next time
+	 */
+	ring = save_ring;
 }
 
 nserror fetch_data_register(void)

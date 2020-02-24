@@ -406,7 +406,6 @@ static void fetch_resource_free(void *ctx)
 	struct fetch_resource_context *c = ctx;
 	if (c->url != NULL)
 		nsurl_unref(c->url);
-	RING_REMOVE(ring, c);
 	free(ctx);
 }
 
@@ -432,14 +431,13 @@ static void fetch_resource_abort(void *ctx)
 /** callback to poll for additional resource fetch contents */
 static void fetch_resource_poll(lwc_string *scheme)
 {
-	struct fetch_resource_context *c, *next;
-	bool was_last_item = false;
+	struct fetch_resource_context *c, *save_ring = NULL;
 
-	if (ring == NULL) return;
+	while (ring != NULL) {
+		/* Take the first entry from the ring */
+		c = ring;
+		RING_REMOVE(ring, c);
 
-	/* Iterate over ring, processing each pending fetch */
-	c = ring;
-	do {
 		/* Ignore fetches that have been flagged as locked.
 		 * This allows safe re-entrant calls to this function.
 		 * Re-entrancy can occur if, as a result of a callback,
@@ -447,7 +445,7 @@ static void fetch_resource_poll(lwc_string *scheme)
 		 * again.
 		 */
 		if (c->locked == true) {
-			next = c->r_next;
+			RING_INSERT(save_ring, c);
 			continue;
 		}
 
@@ -457,32 +455,15 @@ static void fetch_resource_poll(lwc_string *scheme)
 			c->handler(c);
 		}
 
-		/* Compute next fetch item at the last possible moment
-		 * as processing this item may have added to the ring
-		 */
-		next = c->r_next;
-		was_last_item = next == c;
-
+		/* And now finish */
 		fetch_remove_from_queues(c->fetchh);
 		fetch_free(c->fetchh);
+	}
 
-		/* Having called into the fetch machinery, our ring might
-		 * have been updated
-		 */
-		if (was_last_item) {
-			/* We were previously the last item in the ring
-			 * so let's reset to the head of the ring
-			 * and try again
-			 */
-			c = ring;
-		} else {
-			c = next;
-		}
-
-		/* Advance to next ring entry, exiting if we've reached
-		 * the start of the ring or the ring has become empty
-		 */
-	} while (ring != NULL);
+	/* Finally, if we saved any fetches which were locked, put them back
+	 * into the ring for next time
+	 */
+	ring = save_ring;
 }
 
 nserror fetch_resource_register(void)
