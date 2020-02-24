@@ -34,6 +34,10 @@
 #define PRId64 "lld"
 #endif
 
+#ifndef PRIu64
+#define PRIu64 "llu"
+#endif
+
 /* Windows does not have sizet formating codes */
 #if defined(_WIN32)
 
