@@ -68,7 +68,7 @@ nserror page_info_fini(void);
 nserror page_info_create(
 		const struct core_window_callback_table *cw_t,
 		struct core_window *cw_h,
-		const struct browser_window *bw,
+		struct browser_window *bw,
 		struct page_info **pi_out);
 
 /**

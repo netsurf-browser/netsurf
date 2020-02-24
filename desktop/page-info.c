@@ -238,7 +238,7 @@ struct page_info {
 	const struct core_window_callback_table *cw_t;
 	struct core_window *cw_h;
 
-	const struct browser_window *bw;
+	struct browser_window *bw;
 	lwc_string *domain;
 
 	browser_window_page_info_state state;
@@ -464,7 +464,7 @@ static nserror page_info__set_text(
  */
 static nserror page_info__create_from_bw(
 		struct page_info *pi,
-		const struct browser_window *bw)
+		struct browser_window *bw)
 {
 	nsurl *url = browser_window_access_url(bw);
 
@@ -527,7 +527,7 @@ static nserror page_info__layout(
 nserror page_info_create(
 		const struct core_window_callback_table *cw_t,
 		struct core_window *cw_h,
-		const struct browser_window *bw,
+		struct browser_window *bw,
 		struct page_info **pi_out)
 {
 	struct page_info *pi;
