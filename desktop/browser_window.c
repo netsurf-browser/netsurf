@@ -1289,6 +1289,8 @@ browser_window__handle_error(struct browser_window *bw,
 
 	if (message == NULL) {
 		message = messages_get_errorcode(code);
+	} else {
+		message = messages_get(message);
 	}
 
 	if (c == bw->loading_content) {
