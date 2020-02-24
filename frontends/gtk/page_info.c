@@ -29,7 +29,7 @@
 #include "netsurf/keypress.h"
 #include "netsurf/plotters.h"
 #include "netsurf/browser_window.h"
-#include "desktop/sslcert_viewer.h"
+#include "desktop/page-info.h"
 
 #include "gtk/plotters.h"
 #include "gtk/scaffolding.h"
@@ -48,8 +48,8 @@ struct nsgtk_pi_window {
 	GtkBuilder *builder;
 	/** GTK dialog window being shown */
 	GtkDialog *dlg;
-	/** SSL certificate viewer context data */
-	struct sslcert_session_data *ssl_data;
+	/** Core page-info window */
+	struct page_info *pi;
 };
 
 
@@ -60,13 +60,12 @@ static nserror nsgtk_pi_destroy(struct nsgtk_pi_window *pi_win)
 {
 	nserror res;
 
-	res = sslcert_viewer_fini(pi_win->ssl_data);
-	if (res == NSERROR_OK) {
-		res = nsgtk_corewindow_fini(&pi_win->core);
-		gtk_widget_destroy(GTK_WIDGET(pi_win->dlg));
-		g_object_unref(G_OBJECT(pi_win->builder));
-		free(pi_win);
-	}
+	page_info_destroy(pi_win->pi);
+	res = nsgtk_corewindow_fini(&pi_win->core);
+	gtk_widget_destroy(GTK_WIDGET(pi_win->dlg));
+	g_object_unref(G_OBJECT(pi_win->builder));
+	free(pi_win);
+
 	return res;
 }
 
@@ -76,8 +75,6 @@ nsgtk_pi_accept(GtkButton *w, gpointer data)
 	struct nsgtk_pi_window *pi_win;
 	pi_win = (struct nsgtk_pi_window *)data;
 
-	sslcert_viewer_accept(pi_win->ssl_data);
-
 	nsgtk_pi_destroy(pi_win);
 }
 
@@ -86,8 +83,6 @@ nsgtk_pi_reject(GtkWidget *w, gpointer data)
 {
 	struct nsgtk_pi_window *pi_win;
 	pi_win = (struct nsgtk_pi_window *)data;
-
-	sslcert_viewer_reject(pi_win->ssl_data);
 
 	nsgtk_pi_destroy(pi_win);
 }
@@ -117,7 +112,7 @@ nsgtk_pi_mouse(struct nsgtk_corewindow *nsgtk_cw,
 	/* technically degenerate container of */
 	pi_win = (struct nsgtk_pi_window *)nsgtk_cw;
 
-	sslcert_viewer_mouse_action(pi_win->ssl_data, mouse_state, x, y);
+	page_info_mouse_action(pi_win->pi, mouse_state, x, y);
 
 	return NSERROR_OK;
 }
@@ -137,7 +132,7 @@ nsgtk_pi_key(struct nsgtk_corewindow *nsgtk_cw, uint32_t nskey)
 	/* technically degenerate container of */
 	pi_win = (struct nsgtk_pi_window *)nsgtk_cw;
 
-	if (sslcert_viewer_keypress(pi_win->ssl_data, nskey)) {
+	if (page_info_keypress(pi_win->pi, nskey)) {
 		return NSERROR_OK;
 	}
 	return NSERROR_NOT_IMPLEMENTED;
@@ -163,13 +158,8 @@ nsgtk_pi_draw(struct nsgtk_corewindow *nsgtk_cw, struct rect *r)
 	/* technically degenerate container of */
 	pi_win = (struct nsgtk_pi_window *)nsgtk_cw;
 
-	sslcert_viewer_redraw(pi_win->ssl_data, 0, 0, r, &ctx);
+	page_info_redraw(pi_win->pi, 0, 0, r, &ctx);
 
-	return NSERROR_OK;
-}
-
-static nserror dummy_cb(bool proceed, void *pw)
-{
 	return NSERROR_OK;
 }
 
@@ -178,16 +168,6 @@ nserror nsgtk_page_info(struct browser_window *bw)
 {
 	struct nsgtk_pi_window *ncwin;
 	nserror res;
-
-	struct cert_chain *chain;
-	struct nsurl *url;
-
-	res = browser_window_get_ssl_chain(bw, &chain);
-	if (res != NSERROR_OK) {
-		NSLOG(netsurf, WARNING, "Unable to get certificate chain");
-		return NSERROR_INVALID;
-	}
-	url = browser_window_access_url(bw);
 
 	ncwin = malloc(sizeof(struct nsgtk_pi_window));
 	if (ncwin == NULL) {
@@ -248,18 +228,9 @@ nserror nsgtk_page_info(struct browser_window *bw)
 		return res;
 	}
 
-	/* initialise certificate viewing interface */
-	res = sslcert_viewer_create_session_data(
-		url, dummy_cb, NULL, chain, &ncwin->ssl_data);
-	if (res != NSERROR_OK) {
-		g_object_unref(G_OBJECT(ncwin->dlg));
-		free(ncwin);
-		return res;
-	}
-
-	res = sslcert_viewer_init(ncwin->core.cb_table,
-				  (struct core_window *)ncwin,
-				  ncwin->ssl_data);
+	res = page_info_create(ncwin->core.cb_table,
+			(struct core_window *)ncwin,
+			bw, &ncwin->pi);
 	if (res != NSERROR_OK) {
 		g_object_unref(G_OBJECT(ncwin->dlg));
 		free(ncwin);
