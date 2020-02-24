@@ -200,7 +200,6 @@ endif
 	$(Q)$(RM) $(ATARI_TARGET_DIR)res/messages
 	$(Q)$(SPLIT_MESSAGES) -l en -p atari -f messages -o $(ATARI_TARGET_DIR)res/messages resources/FatMessages
 	$(Q)cp resources/en/welcome.html $(ATARI_TARGET_DIR)res/welcome.html
-	$(Q)cp resources/en/maps.html $(ATARI_TARGET_DIR)res/maps.html
 	$(Q)cp resources/en/licence.html $(ATARI_TARGET_DIR)res/licence.html
 	$(Q)cp resources/en/credits.html $(ATARI_TARGET_DIR)res/credits.html
 

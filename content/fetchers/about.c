@@ -686,28 +686,6 @@ static bool fetch_about_welcome_handler(struct fetch_about_context *ctx)
 
 
 /**
- * Handler to generate about scheme maps page
- *
- * \param ctx The fetcher context.
- * \return true if handled false if aborted.
- */
-static bool fetch_about_maps_handler(struct fetch_about_context *ctx)
-{
-	fetch_msg msg;
-
-	/* content is going to return redirect */
-	fetch_set_http_code(ctx->fetchh, 302);
-
-	msg.type = FETCH_REDIRECT;
-	msg.data.redirect = "resource:maps.html";
-
-	fetch_about_send_callback(&msg, ctx);
-
-	return true;
-}
-
-
-/**
  * generate the description of the login query
  */
 static nserror
@@ -1351,13 +1329,6 @@ struct about_handlers about_handler_list[] = {
 		SLEN("welcome"),
 		NULL,
 		fetch_about_welcome_handler,
-		false
-	},
-	{
-		"maps",
-		SLEN("maps"),
-		NULL,
-		fetch_about_maps_handler,
 		false
 	},
 	{

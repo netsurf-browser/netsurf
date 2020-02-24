@@ -217,7 +217,7 @@ EXETARGET := nsfb
 
 NETSURF_FRAMEBUFFER_RESOURCE_LIST := adblock.css credits.html	\
 	default.css internal.css licence.html			\
-	netsurf.png quirks.css welcome.html maps.html
+	netsurf.png quirks.css welcome.html
 
 install-framebuffer:
 	$(VQ)echo " INSTALL: $(DESTDIR)/$(PREFIX)"

@@ -177,7 +177,7 @@ SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_RESOURCE) $(S_FRONTEND)
 GTK_RESOURCES_LIST := \
 	languages SearchEngines ca-bundle.txt \
 	default.css adblock.css quirks.css internal.css \
-	credits.html licence.html welcome.html maps.html Messages \
+	credits.html licence.html welcome.html Messages \
 	default.ico favicon.png netsurf.png netsurf.xpm netsurf-16x16.xpm
 
 GTK_RESOURCES_LIST := \

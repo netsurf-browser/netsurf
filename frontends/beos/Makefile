@@ -110,7 +110,7 @@ RDEF_IMP_BEOS := $(addprefix $(OBJROOT)/,$(subst /,_,$(RDEF_IMP_BEOS)))
 RDEP_BEOS := \
 	adblock.css beosdefault.css default.css internal.css quirks.css	\
 	netsurf.png favicon.png ca-bundle.txt \
-	credits.html licence.html welcome.html maps.html SearchEngines
+	credits.html licence.html welcome.html SearchEngines
 
 RDEP_BEOS := $(addprefix $(FRONTEND_RESOURCES_DIR)/,$(RDEP_BEOS))	\
 	$(wildcard $(FRONTEND_RESOURCES_DIR)/icons/*.png)		\

@@ -124,7 +124,6 @@ static struct nsgtk_resource_s direct_resource[] = {
 	RES_ENTRY("welcome.html"),
 	RES_ENTRY("credits.html"),
 	RES_ENTRY("licence.html"),
-	RES_ENTRY("maps.html"),
 	RES_ENTRY("default.css"),
 	RES_ENTRY("adblock.css"),
 	RES_ENTRY("internal.css"),

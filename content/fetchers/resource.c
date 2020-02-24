@@ -56,7 +56,6 @@ static const char *fetch_resource_paths[] = {
 	"credits.html",
 	"licence.html",
 	"welcome.html",
-	"maps.html",
 	"favicon.ico",
 	"default.ico",
 	"netsurf.png",
