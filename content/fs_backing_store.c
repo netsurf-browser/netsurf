@@ -1159,6 +1159,11 @@ read_entries(struct store_state *state)
 		uint32_t urllen;
 		while (read(fd, &urllen, sizeof(urllen)) == sizeof(urllen)) {
 			url = calloc(1, urllen+1);
+			if (url == NULL) {
+				close(fd);
+				free(fname);
+				return NSERROR_NOMEM;
+			}
 			if (read(fd, url, urllen) != urllen) {
 				free(url);
 				close(fd);
