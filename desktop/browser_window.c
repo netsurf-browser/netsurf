@@ -57,6 +57,7 @@
 #include "html/box.h"
 #include "javascript/js.h"
 
+#include "desktop/cookie_manager.h"
 #include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
 #include "desktop/download.h"
@@ -4745,8 +4746,19 @@ int browser_window_get_cookie_count(
 nserror browser_window_show_cookies(
 		const struct browser_window *bw)
 {
-	/** \todo Implement show cookies */
-	return NSERROR_OK;
+	nserror err;
+	nsurl *url = browser_window_access_url(bw);
+	lwc_string *host = nsurl_get_component(url, NSURL_HOST);
+	const char *string = (host != NULL) ? lwc_string_data(host) : NULL;
+
+	/** \todo Ensure cookie manager is open.  (Ask front end.) */
+
+	err = cookie_manager_set_search_string(string);
+
+	if (host != NULL) {
+		lwc_string_unref(host);
+	}
+	return err;
 }
 
 /* Exported interface, documented in browser_window.h */
