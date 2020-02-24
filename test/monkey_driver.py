@@ -234,8 +234,12 @@ def run_test_step_action_launch(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     assert ctx.get('browser') is None
     assert ctx.get('windows') is None
+    monkey_cmd = [ctx["monkey"]]
+    for option in step.get('launch-options', []):
+        monkey_cmd.append("--{}".format(option))
+    print(get_indent(ctx) + "        " + "Command line: " + repr(monkey_cmd))
     ctx['browser'] = DriverBrowser(
-        monkey_cmd=[ctx["monkey"]],
+        monkey_cmd=monkey_cmd,
         quiet=True,
         wrapper=ctx.get("wrapper"))
     assert_browser(ctx)
