@@ -76,7 +76,7 @@
 /** log2 block data address length (64k) */
 #define BLOCK_ADDR_LEN 16
 
-/** log2 number of entries per block file(4k) */
+/** log2 number of entries per block file(1024) */
 #define BLOCK_ENTRY_COUNT 10
 
 /** log2 number of data block files */
@@ -85,7 +85,7 @@
 /** log2 size of data blocks (8k) */
 #define BLOCK_DATA_SIZE 13
 
-/** log2 size of metadata blocks (1k) */
+/** log2 size of metadata blocks (8k) */
 #define BLOCK_META_SIZE 13
 
 /** length in bytes of a block files use map */
