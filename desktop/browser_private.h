@@ -283,7 +283,8 @@ struct browser_window {
  * \param existing  The existing window if cloning, else NULL
  */
 nserror browser_window_initialise_common(enum browser_window_create_flags flags,
-		struct browser_window *bw, struct browser_window *existing);
+		struct browser_window *bw,
+		const struct browser_window *existing);
 
 
 /**
@@ -331,7 +332,8 @@ void browser_window_set_status(struct browser_window *bw, const char *text);
  * \param  bw     browser window to set the type of the current drag for
  * \return  root browser window
  */
-struct browser_window * browser_window_get_root(struct browser_window *bw);
+struct browser_window * browser_window_get_root(
+		struct browser_window *bw);
 
 
 /**

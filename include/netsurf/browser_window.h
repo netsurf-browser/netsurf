@@ -817,6 +817,6 @@ nserror browser_window_show_cookies(
  * \return NSERROR_OK, or appropriate error otherwise.
  */
 nserror browser_window_show_certificates(
-		const struct browser_window *bw);
+		struct browser_window *bw);
 
 #endif

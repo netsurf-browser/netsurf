@@ -3090,7 +3090,7 @@ browser_window_create(enum browser_window_create_flags flags,
 nserror
 browser_window_initialise_common(enum browser_window_create_flags flags,
 				 struct browser_window *bw,
-				 struct browser_window *existing)
+				 const struct browser_window *existing)
 {
 	nserror err;
 	assert(bw);
@@ -4765,7 +4765,7 @@ nserror browser_window_show_cookies(
 }
 
 /* Exported interface, documented in browser_window.h */
-nserror browser_window_show_certificates(const struct browser_window *bw)
+nserror browser_window_show_certificates(struct browser_window *bw)
 {
 	nserror res;
 	nsurl *url;
