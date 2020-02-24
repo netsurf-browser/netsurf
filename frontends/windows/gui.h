@@ -68,6 +68,16 @@ void win32_set_quit(bool q);
 nserror win32_warning(const char *warning, const char *detail);
 
 /**
+ * Warn the user of an unexpected nserror.
+ *
+ * \param[in] error The nserror to report
+ * \param[in] detail Additional text to be displayed or NULL.
+ * \return NSERROR_OK on success or error code if there was a
+ *           faliure displaying the message to the user.
+ */
+nserror win32_report_nserror(nserror error, const char *detail);
+
+/**
  * add a modeless dialog to the special handling list
  */
 nserror nsw32_add_dialog(HWND hwndDlg);
