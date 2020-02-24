@@ -1265,6 +1265,7 @@ nsws_window_command(HWND hwnd,
 	case IDC_MAIN_LAUNCH_URL:
 	{
 		nsurl *url;
+		nserror err;
 
 		if (GetFocus() != gw->urlbar)
 			break;
@@ -1274,8 +1275,10 @@ nsws_window_command(HWND hwnd,
 		SendMessage(gw->urlbar, WM_GETTEXT, (WPARAM)(len + 1), (LPARAM)addr);
 		NSLOG(netsurf, INFO, "launching %s\n", addr);
 
-		if (nsurl_create(addr, &url) != NSERROR_OK) {
-			win32_warning("NoMemory", 0);
+		err = nsurl_create(addr, &url);
+
+		if (err != NSERROR_OK) {
+			win32_report_nserror(err, 0);
 		} else {
 			browser_window_navigate(gw->bw,
 						url,
