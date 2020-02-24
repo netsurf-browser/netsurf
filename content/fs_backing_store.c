@@ -647,7 +647,7 @@ static nserror store_evict(struct store_state *state)
 	free(estate.elist);
 
 	NSLOG(netsurf, INFO,
-	      "removed %"PRIsizet" in %"PRIsizet" entries, %"PRIsizet" remaining in %"PRIsizet" entries",
+	      "removed %"PRIsizet" in %"PRIsizet" entries, %"PRIu64" remaining in %"PRIsizet" entries",
 	      removed, ent, state->total_alloc, old_count - ent);
 
 	return ret;
