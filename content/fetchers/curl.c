@@ -676,6 +676,9 @@ fetch_curl_store_certs_in_cache(struct curl_fetch_info *f)
 
 	/* release the openssl memory buffer */
 	for (depth = 0; depth < chain.depth; depth++) {
+		if (chain.certs[depth].err == SSL_CERT_ERR_CERT_MISSING) {
+			continue;
+		}
 		if (buf[depth] != NULL) {
 			BUF_MEM_free(buf[depth]);
 		}
