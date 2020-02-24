@@ -62,7 +62,7 @@
 #define DEFAULT_ENTRY_SIZE 16
 
 /** Backing store file format version */
-#define CONTROL_VERSION 200
+#define CONTROL_VERSION 201
 
 /** Number of milliseconds after a update before control data maintenance is performed  */
 #define CONTROL_MAINT_TIME 10000
@@ -77,7 +77,7 @@
 #define BLOCK_ADDR_LEN 16
 
 /** log2 number of entries per block file(4k) */
-#define BLOCK_ENTRY_COUNT 12
+#define BLOCK_ENTRY_COUNT 10
 
 /** log2 number of data block files */
 #define BLOCK_FILE_COUNT (BLOCK_ADDR_LEN - BLOCK_ENTRY_COUNT)
@@ -86,7 +86,7 @@
 #define BLOCK_DATA_SIZE 13
 
 /** log2 size of metadata blocks (1k) */
-#define BLOCK_META_SIZE 10
+#define BLOCK_META_SIZE 13
 
 /** length in bytes of a block files use map */
 #define BLOCK_USE_MAP_SIZE (1 << (BLOCK_ENTRY_COUNT - 3))
