@@ -1364,7 +1364,6 @@ llcache_serialise_metadata(llcache_object *object,
 
 	/* SSL certificates */
 	for (hloop = 0; hloop < cert_chain_depth; hloop++) {
-		size_t output_length;
 		nsuerror res;
 
 		/* Certificate error code */
@@ -1381,7 +1380,7 @@ llcache_serialise_metadata(llcache_object *object,
 
 		/* DER certificate data in base64 encoding */
 		if (object->chain->certs[hloop].der != NULL) {
-			output_length = datasize;
+			size_t output_length = datasize;
 			res = nsu_base64_encode(
 				object->chain->certs[hloop].der,
 				object->chain->certs[hloop].der_length,
@@ -1397,8 +1396,8 @@ llcache_serialise_metadata(llcache_object *object,
 		use++; /* allow for null */
 		if (use > datasize)
 			goto overflow;
-		*(op + output_length) = 0;
 		op += use;
+		*(op - 1) = 0;
 		datasize -= use;
 	}
 
