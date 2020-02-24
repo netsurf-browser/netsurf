@@ -164,7 +164,10 @@ nserror netsurf_init(const char *store_path)
 	hlcache_parameters.llcache.store.hysteresis = (hlcache_parameters.llcache.store.limit * 20) / 100;;
 
 	/* set the path to the backing store */
-	hlcache_parameters.llcache.store.path = store_path;
+	hlcache_parameters.llcache.store.path =
+		nsoption_charp(disc_cache_path) ?
+		nsoption_charp(disc_cache_path) :
+		store_path;
 
 	/* image handler bitmap cache */
 	ret = image_cache_init(&image_cache_parameters);
