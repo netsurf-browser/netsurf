@@ -585,6 +585,7 @@ fetch_start(nsurl *url,
 void fetch_abort(struct fetch *f)
 {
 	assert(f);
+	f->last_msg = FETCH__INTERNAL_ABORTED;
 	NSLOG(fetch, DEBUG,
 	      "fetch %p, fetcher %p, url '%s'", f, f->fetcher_handle,
 	     nsurl_access(f->url));

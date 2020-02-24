@@ -61,6 +61,12 @@ typedef enum {
 #define FETCH_MIN_FINISHED_MSG FETCH_FINISHED
 
 /**
+ * This message is actually an internal message used to indicate
+ * that a fetch was aborted.  Do not send this, nor expect it.
+ */
+#define FETCH__INTERNAL_ABORTED FETCH_ERROR
+
+/**
  * Fetcher message data
  */
 typedef struct fetch_msg {
