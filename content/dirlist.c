@@ -28,7 +28,11 @@
 #include "utils/nsurl.h"
 #include "utils/messages.h"
 
+#include "netsurf/types.h"
+#include "netsurf/plot_style.h"
+
 #include "content/dirlist.h"
+#include "desktop/system_colour.h"
 
 static int dirlist_filesize_calculate(unsigned long *bytesize);
 static int dirlist_filesize_value(unsigned long bytesize);
@@ -136,7 +140,34 @@ bool dirlist_generate_hide_columns(int flags, char *buffer, int buffer_length)
 
 bool dirlist_generate_title(const char *title, char *buffer, int buffer_length)
 {
+	nserror err;
 	int error;
+
+	colour bg;
+	colour fg;
+	colour odd;
+	colour even;
+	colour border;
+
+	err = ns_system_colour_char("Window", &bg);
+	if (err != NSERROR_OK) {
+		return false;
+	}
+
+	err = ns_system_colour_char("WindowText", &fg);
+	if (err != NSERROR_OK) {
+		return false;
+	}
+
+	odd = mix_colour(fg, bg, 0x18);
+	even = mix_colour(fg, bg, 0x0c);
+	border = mix_colour(fg, bg, 0x40);
+
+	bg = colour_rb_swap(bg);
+	fg = colour_rb_swap(fg);
+	odd = colour_rb_swap(odd);
+	even = colour_rb_swap(even);
+	border = colour_rb_swap(border);
 
 	if (title == NULL)
 		title = "";
@@ -144,10 +175,33 @@ bool dirlist_generate_title(const char *title, char *buffer, int buffer_length)
 	error = snprintf(buffer, buffer_length,
 			"</style>\n"
 			"<title>%s</title>\n"
+			"<style>\n"
+			"html {\n"
+			"\tbackground-color: #%06x;\n"
+			"}\n"
+			"body {\n"
+			"\tcolor: #%06x;\n"
+			"\tbackground-color: #%06x;\n"
+			"\tborder-color: #%06x;\n"
+			"}\n"
+			"body#dirlist h1 {\n"
+			"\tborder-color: #%06x;\n"
+			"}\n"
+			"body#dirlist a.odd {\n"
+			"\tbackground-color: #%06x;\n"
+			"}\n"
+			"body#dirlist a.even {\n"
+			"\tbackground-color: #%06x;\n"
+			"}\n"
+			"body#dirlist a + a>span {\n"
+			"\tborder-color: #%06x;\n"
+			"}\n"
+			"</style>\n"
 			"</head>\n"
 			"<body id=\"dirlist\">\n"
 			"<h1>%s</h1>\n",
-			title, title);
+			title, even, fg, bg, border, border, odd,
+			even, border, title);
 	if (error < 0 || error >= buffer_length)
 		/* Error or buffer too small */
 		return false;
