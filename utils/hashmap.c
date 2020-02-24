@@ -55,7 +55,7 @@ struct hashmap_s {
 	 * The number of buckets in this map
 	 */
 	uint32_t bucket_count;
-	
+
 	/**
 	 * The number of entries in this map
 	 */
