@@ -449,12 +449,28 @@ static int fb_browser_window_destroy(fbtk_widget_t *widget,
 	return 0;
 }
 
+static void
+framebuffer_surface_iterator(void *ctx, const char *name, enum nsfb_type_e type)
+{
+	const char *arg0 = ctx;
 
+	fprintf(stderr, "%s: %s\n", arg0, name);
+}
+
+static enum nsfb_type_e fetype = NSFB_SURFACE_COUNT;
 static const char *fename;
 static int febpp;
 static int fewidth;
 static int feheight;
 static const char *feurl;
+
+static void
+framebuffer_pick_default_fename(void *ctx, const char *name, enum nsfb_type_e type)
+{
+	if (type < fetype) {
+		fename = name;
+	}
+}
 
 static bool
 process_cmdline(int argc, char** argv)
@@ -467,7 +483,8 @@ process_cmdline(int argc, char** argv)
 
 	NSLOG(netsurf, INFO, "argc %d, argv %p", argc, argv);
 
-	fename = "sdl";
+	nsfb_enumerate_surface_types(framebuffer_pick_default_fename, NULL);
+
 	febpp = 32;
 
 	fewidth = nsoption_int(window_width);
@@ -515,6 +532,16 @@ process_cmdline(int argc, char** argv)
 
 	if (optind < argc) {
 		feurl = argv[optind];
+	}
+
+	if (nsfb_type_from_name(fename) == NSFB_SURFACE_NONE) {
+		if (strcmp(fename, "?") != 0) {
+			fprintf(stderr,
+				"%s: Unknown surface `%s`\n", argv[0], fename);
+		}
+		fprintf(stderr, "%s: Valid surface names are:\n", argv[0]);
+		nsfb_enumerate_surface_types(framebuffer_surface_iterator, argv[0]);
+		return false;
 	}
 
 	return true;
