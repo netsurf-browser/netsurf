@@ -165,7 +165,7 @@ TESTLDFLAGS := -L$(TESTROOT) \
 
 # malloc faliure injection generator
 $(TESTROOT)/libmalloc_fig.so:test/malloc_fig.c
-	$(CC) -shared -fPIC -I. -std=c99 $(TEST_WARNFLAGS) $^ -o $@
+	$(CC) -shared -fPIC -I. -std=c99 $(TEST_WARNFLAGS) $^ -ldl -o $@
 
 # Source files for all tests being compiled
 TESTSOURCES :=
