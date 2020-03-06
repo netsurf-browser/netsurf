@@ -38,7 +38,7 @@
 #include "utils/file.h"
 #include "utils/dirent.h"
 
-#ifdef __AMIGA__
+#ifdef nsamiga
 #include "frontends/amiga/os3support.h"
 #endif
 
