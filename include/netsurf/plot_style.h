@@ -214,7 +214,7 @@ static inline colour colour_engorge_component(
 		bool dark,
 		enum plot_colour_component comp)
 {
-	static const colour mask[PLOT_COLOUR_COMPONENT_ALPHA] = {
+	static const colour msk[PLOT_COLOUR_COMPONENT_ALPHA] = {
 		[PLOT_COLOUR_COMPONENT_RED]   = 0x0000ff,
 		[PLOT_COLOUR_COMPONENT_GREEN] = 0x00ff00,
 		[PLOT_COLOUR_COMPONENT_BLUE]  = 0xff0000,
@@ -224,7 +224,7 @@ static inline colour colour_engorge_component(
 
 	assert(comp < PLOT_COLOUR_COMPONENT_ALPHA);
 
-	return (mask[comp] & l) | (~mask[comp] & d);
+	return (msk[comp] & l) | (~msk[comp] & d);
 }
 
 
