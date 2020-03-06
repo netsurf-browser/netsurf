@@ -28,7 +28,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <dirent.h>
 
 #include <proto/bullet.h>
 #include <proto/exec.h>
@@ -180,6 +179,12 @@ char *strsep(char **s1, const char *s2)
 		}
 	}
 	return p1;
+}
+
+int alphasort(const struct dirent **d1, const struct dirent **d2)
+{
+	/*\todo stub function, needs writing, preferably into clib2 */
+	return 0;
 }
 
 int scandir(const char *dir, struct dirent ***namelist,

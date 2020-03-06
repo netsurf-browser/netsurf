@@ -27,6 +27,7 @@
 #ifndef __amigaos4__
 
 #include <stdint.h>
+#include <dirent.h>
 
 #include <proto/exec.h>
 #include <proto/dos.h>
@@ -257,6 +258,10 @@ char *ASPrintf(const char *fmt, ...);
 
 /* C */
 char *strlwr(char *str);
+int alphasort(const struct dirent **d1, const struct dirent **d2);
+int scandir(const char *dir, struct dirent ***namelist,
+  int (*filter)(const struct dirent *),
+  int (*compar)(const struct dirent **, const struct dirent **));
 #endif
 #endif
 

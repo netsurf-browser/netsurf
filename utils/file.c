@@ -38,6 +38,10 @@
 #include "utils/file.h"
 #include "utils/dirent.h"
 
+#ifdef __AMIGA__
+#include "frontends/amiga/os3support.h"
+#endif
+
 /**
  * Generate a posix path from one or more component elemnts.
  *
