@@ -12,7 +12,7 @@ endif
 
 $(eval $(call feature_enabled,AMIGA_ICON,-DWITH_AMIGA_ICON,,Amiga icon))
 $(eval $(call feature_enabled,AMIGA_DATATYPES,-DWITH_AMIGA_DATATYPES,,DataTypes))
-$(eval $(call feature_enabled,AMISSL,-DWITH_AMISSL -D__NO_NET_API -D__NO_NETINCLUDE_ERRNO -I$(GCCSDK_INSTALL_ENV)/netinclude,-lamisslauto,AmiSSL))
+$(eval $(call feature_enabled,AMISSL,-DWITH_AMISSL -DWITH_OPENSSL -D__NO_NET_API -D__NO_NETINCLUDE_ERRNO -I$(GCCSDK_INSTALL_ENV)/netinclude,-lamisslauto,AmiSSL))
 
 CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include
 CFLAGS += $(shell $(PKG_CONFIG) --cflags tre)
