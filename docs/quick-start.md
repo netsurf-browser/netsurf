@@ -77,7 +77,7 @@ To build the native front end (the GTK front end on Linux, BSDs, etc)
   you could do:
 
       $ make
-      $ ./nsgtk
+      $ ./nsgtk3
 
 To build the framebuffer front end, you could do:
 

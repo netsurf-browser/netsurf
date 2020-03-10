@@ -29,11 +29,8 @@
   checkouts smaller and making sure changes to one set of resources updates
   the other.
 
-  The binary that the build system produces is called "nsgtk".  There is also
-  a shell script called "netsurf" that will set up the environment and launch
-  the nsgtk binary.  Do not ship this shell script with your package.  It is
-  included only as a convience for launching NetSurf from the build tree.
-  Instead, you should move nsgtk to /usr/bin/netsurf (or wherever your
+  The binary that the build system produces is called "nsgtk3".
+  You should install nsgtk3 to `/usr/bin/netsurf` (or wherever your
   distribution's packaging policy suggests) and copy the contents of
   gtk/res/ (dereferencing the symlinks, obviously) to /usr/share/netsurf (or
   wherever your packaging policy suggests).

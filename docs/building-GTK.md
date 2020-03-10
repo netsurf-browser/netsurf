@@ -171,13 +171,10 @@ below. Or turn off the complaining features in a Makefile.config
 file. You may need to "make clean" before attempting to build after
 installing the dependencies.
 
-Run NetSurf by executing the "test-nsgtk" shell script:
+Run NetSurf by executing "nsgtk3":
 
-    $ ./test-nsgtk
+    $ ./nsgtk3
 
-This script makes it easy to run the nsgtk binary from the build tree. It
-sets up some environment variables which enable NetSurf to find its
-resources.
 
 ### Builtin resources
 
