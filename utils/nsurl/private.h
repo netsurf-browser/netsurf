@@ -174,49 +174,4 @@ static inline void nsurl__components_destroy(struct nsurl_components *c)
 		lwc_string_unref(c->fragment);
 }
 
-
-
-#ifdef NSURL_DEBUG
-/**
- * Dump a NetSurf URL's internal components
- *
- * \param url	The NetSurf URL to dump components of
- */
-static inline void nsurl__dump(const nsurl *url)
-{
-	if (url->components.scheme)
-		NSLOG(netsurf, DEEPDEBUG, "  Scheme: %s",
-				lwc_string_data(url->components.scheme));
-
-	if (url->components.username)
-		NSLOG(netsurf, DEEPDEBUG, "Username: %s",
-				lwc_string_data(url->components.username));
-
-	if (url->components.password)
-		NSLOG(netsurf, DEEPDEBUG, "Password: %s",
-				lwc_string_data(url->components.password));
-
-	if (url->components.host)
-		NSLOG(netsurf, DEEPDEBUG, "    Host: %s",
-				lwc_string_data(url->components.host));
-
-	if (url->components.port)
-		NSLOG(netsurf, DEEPDEBUG, "    Port: %s",
-				lwc_string_data(url->components.port));
-
-	if (url->components.path)
-		NSLOG(netsurf, DEEPDEBUG, "    Path: %s",
-				lwc_string_data(url->components.path));
-
-	if (url->components.query)
-		NSLOG(netsurf, DEEPDEBUG, "   Query: %s",
-				lwc_string_data(url->components.query));
-
-	if (url->components.fragment)
-		NSLOG(netsurf, DEEPDEBUG, "Fragment: %s",
-				lwc_string_data(url->components.fragment));
-}
-#endif
-
-
 #endif

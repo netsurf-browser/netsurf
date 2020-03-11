@@ -369,4 +369,14 @@ nserror nsurl_nice(const nsurl *url, char **result, bool remove_extensions);
  */
 nserror nsurl_parent(const nsurl *url, nsurl **new_url);
 
+/**
+ * Dump a NetSurf URL's internal components to stderr
+ *
+ * This is helper functionality for developers, and shouldn't be called
+ * generally.
+ *
+ * \param url	The NetSurf URL to dump components of
+ */
+void nsurl_dump(const nsurl *url);
+
 #endif

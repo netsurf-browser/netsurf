@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <inttypes.h>
 
 #include "utils/ascii.h"
 #include "utils/corestrings.h"
@@ -954,4 +955,37 @@ nserror nsurl_parent(const nsurl *url, nsurl **new_url)
 	(*new_url)->count = 1;
 
 	return NSERROR_OK;
+}
+
+/* exported interface, documented in nsurl.h */
+void nsurl_dump(const nsurl *url)
+{
+	fprintf(stderr, "nsurl components for %p "
+			"(refs: %i hash: %"PRIx32"):\n",
+			url, url->count, url->hash);
+
+	if (url->components.scheme)
+		fprintf(stderr, "  Scheme: %s\n",
+				lwc_string_data(url->components.scheme));
+	if (url->components.username)
+		fprintf(stderr, "Username: %s\n",
+				lwc_string_data(url->components.username));
+	if (url->components.password)
+		fprintf(stderr, "Password: %s\n",
+				lwc_string_data(url->components.password));
+	if (url->components.host)
+		fprintf(stderr, "    Host: %s\n",
+				lwc_string_data(url->components.host));
+	if (url->components.port)
+		fprintf(stderr, "    Port: %s\n",
+				lwc_string_data(url->components.port));
+	if (url->components.path)
+		fprintf(stderr, "    Path: %s\n",
+				lwc_string_data(url->components.path));
+	if (url->components.query)
+		fprintf(stderr, "   Query: %s\n",
+				lwc_string_data(url->components.query));
+	if (url->components.fragment)
+		fprintf(stderr, "Fragment: %s\n",
+				lwc_string_data(url->components.fragment));
 }
