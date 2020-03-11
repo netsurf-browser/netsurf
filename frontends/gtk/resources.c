@@ -87,6 +87,7 @@ static struct nsgtk_resource_s ui_resource[] = {
 	RES_ENTRY("cookies"),
 	RES_ENTRY("viewdata"),
 	RES_ENTRY("warning"),
+	RES_ENTRY("pageinfo"),
 	{ NULL, 0, NSGTK_RESOURCE_FILE, NULL },
 };
 

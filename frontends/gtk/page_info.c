@@ -26,6 +26,7 @@
 #include <gtk/gtk.h>
 
 #include "utils/log.h"
+#include "utils/messages.h"
 #include "netsurf/keypress.h"
 #include "netsurf/plotters.h"
 #include "netsurf/browser_window.h"
@@ -46,51 +47,29 @@ struct nsgtk_pi_window {
 	struct nsgtk_corewindow core;
 	/** GTK builder for window */
 	GtkBuilder *builder;
-	/** GTK dialog window being shown */
-	GtkDialog *dlg;
+	/** GTK window being shown */
+	GtkWindow *dlg;
 	/** Core page-info window */
 	struct page_info *pi;
 };
 
 
 /**
- * destroy a previously created certificate view
+ * destroy a previously created page information window
  */
-static nserror nsgtk_pi_destroy(struct nsgtk_pi_window *pi_win)
+static gboolean
+nsgtk_pi_delete_event(GtkWidget *w, GdkEvent  *event, gpointer data)
 {
-	nserror res;
+	struct nsgtk_pi_window *pi_win;
+	pi_win = (struct nsgtk_pi_window *)data;
 
 	page_info_destroy(pi_win->pi);
-	res = nsgtk_corewindow_fini(&pi_win->core);
+
+	nsgtk_corewindow_fini(&pi_win->core);
 	gtk_widget_destroy(GTK_WIDGET(pi_win->dlg));
 	g_object_unref(G_OBJECT(pi_win->builder));
 	free(pi_win);
 
-	return res;
-}
-
-static void
-nsgtk_pi_accept(GtkButton *w, gpointer data)
-{
-	struct nsgtk_pi_window *pi_win;
-	pi_win = (struct nsgtk_pi_window *)data;
-
-	nsgtk_pi_destroy(pi_win);
-}
-
-static void
-nsgtk_pi_reject(GtkWidget *w, gpointer data)
-{
-	struct nsgtk_pi_window *pi_win;
-	pi_win = (struct nsgtk_pi_window *)data;
-
-	nsgtk_pi_destroy(pi_win);
-}
-
-static gboolean
-nsgtk_pi_delete_event(GtkWidget *w, GdkEvent  *event, gpointer data)
-{
-	nsgtk_pi_reject(w, data);
 	return FALSE;
 }
 
@@ -169,51 +148,34 @@ nserror nsgtk_page_info(struct browser_window *bw)
 	struct nsgtk_pi_window *ncwin;
 	nserror res;
 
-	ncwin = malloc(sizeof(struct nsgtk_pi_window));
+	ncwin = calloc(1, sizeof(struct nsgtk_pi_window));
 	if (ncwin == NULL) {
 		return NSERROR_NOMEM;
 	}
 
-	res = nsgtk_builder_new_from_resname("ssl", &ncwin->builder);
+	res = nsgtk_builder_new_from_resname("pageinfo", &ncwin->builder);
 	if (res != NSERROR_OK) {
-		NSLOG(netsurf, INFO, "SSL UI builder init failed");
+		NSLOG(netsurf, CRITICAL, "Page Info UI builder init failed %s", messages_get_errorcode(res));
 		free(ncwin);
 		return res;
 	}
 
 	gtk_builder_connect_signals(ncwin->builder, NULL);
 
-	ncwin->dlg = GTK_DIALOG(gtk_builder_get_object(ncwin->builder,
-						       "wndSSLProblem"));
+	ncwin->dlg = GTK_WINDOW(gtk_builder_get_object(ncwin->builder,
+						       "PGIWindow"));
 
 	/* set parent for transient dialog */
 	gtk_window_set_transient_for(GTK_WINDOW(ncwin->dlg),
 		     nsgtk_scaffolding_window(nsgtk_current_scaffolding()));
 
-	ncwin->core.scrolled = GTK_SCROLLED_WINDOW(
-		gtk_builder_get_object(ncwin->builder, "SSLScrolled"));
-
 	ncwin->core.drawing_area = GTK_DRAWING_AREA(
-		gtk_builder_get_object(ncwin->builder, "SSLDrawingArea"));
+		gtk_builder_get_object(ncwin->builder, "PGIDrawingArea"));
 
 	/* make the delete event call our destructor */
 	g_signal_connect(G_OBJECT(ncwin->dlg),
 			 "delete_event",
 			 G_CALLBACK(nsgtk_pi_delete_event),
-			 ncwin);
-
-	/* accept button */
-	g_signal_connect(G_OBJECT(gtk_builder_get_object(ncwin->builder,
-							 "sslaccept")),
-			 "clicked",
-			 G_CALLBACK(nsgtk_pi_accept),
-			 ncwin);
-
-	/* reject button */
-	g_signal_connect(G_OBJECT(gtk_builder_get_object(ncwin->builder,
-							 "sslreject")),
-			 "clicked",
-			 G_CALLBACK(nsgtk_pi_reject),
 			 ncwin);
 
 	/* initialise GTK core window */

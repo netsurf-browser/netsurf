@@ -224,6 +224,10 @@ nsgtk_cw_motion_notify_event(GtkWidget *widget,
 	struct nsgtk_corewindow_mouse *mouse = &nsgtk_cw->mouse_state;
 
 	if (mouse->pressed == false) {
+		nsgtk_cw->mouse(nsgtk_cw,
+				BROWSER_MOUSE_HOVER,
+				event->x,
+				event->y);
 		return TRUE;
 	}
 
@@ -610,18 +614,20 @@ static nserror
 nsgtk_cw_set_scroll(struct core_window *cw, int x, int y)
 {
 	struct nsgtk_corewindow *nsgtk_cw = (struct nsgtk_corewindow *)cw;
-	GtkAdjustment *vadj;
-	GtkAdjustment *hadj;
 
-	vadj = gtk_scrolled_window_get_vadjustment(nsgtk_cw->scrolled);
-	hadj = gtk_scrolled_window_get_hadjustment(nsgtk_cw->scrolled);
+	if (nsgtk_cw->scrolled != NULL) {
+		GtkAdjustment *vadj;
+		GtkAdjustment *hadj;
 
-	assert(vadj != NULL);
-	assert(hadj != NULL);
+		vadj = gtk_scrolled_window_get_vadjustment(nsgtk_cw->scrolled);
+		hadj = gtk_scrolled_window_get_hadjustment(nsgtk_cw->scrolled);
 
-	gtk_adjustment_set_value(vadj, y);
-	gtk_adjustment_set_value(hadj, x);
+		assert(vadj != NULL);
+		assert(hadj != NULL);
 
+		gtk_adjustment_set_value(vadj, y);
+		gtk_adjustment_set_value(hadj, x);
+	}
 	return NSERROR_OK;
 }
 
@@ -636,18 +642,23 @@ static nserror
 nsgtk_cw_get_scroll(const struct core_window *cw, int *x, int *y)
 {
 	struct nsgtk_corewindow *nsgtk_cw = (struct nsgtk_corewindow *)cw;
-	GtkAdjustment *vadj;
-	GtkAdjustment *hadj;
 
-	vadj = gtk_scrolled_window_get_vadjustment(nsgtk_cw->scrolled);
-	hadj = gtk_scrolled_window_get_hadjustment(nsgtk_cw->scrolled);
+	if (nsgtk_cw->scrolled != NULL) {
+		GtkAdjustment *vadj;
+		GtkAdjustment *hadj;
 
-	assert(vadj != NULL);
-	assert(hadj != NULL);
+		vadj = gtk_scrolled_window_get_vadjustment(nsgtk_cw->scrolled);
+		hadj = gtk_scrolled_window_get_hadjustment(nsgtk_cw->scrolled);
 
-	*y = (int)(gtk_adjustment_get_value(vadj));
-	*x = (int)(gtk_adjustment_get_value(hadj));
+		assert(vadj != NULL);
+		assert(hadj != NULL);
 
+		*y = (int)(gtk_adjustment_get_value(vadj));
+		*x = (int)(gtk_adjustment_get_value(hadj));
+	} else {
+		*x = 0;
+		*y = 0;
+	}
 	return NSERROR_OK;
 }
 
@@ -664,18 +675,25 @@ nsgtk_cw_get_window_dimensions(const struct core_window *cw,
 		int *width, int *height)
 {
 	struct nsgtk_corewindow *nsgtk_cw = (struct nsgtk_corewindow *)cw;
-	GtkAdjustment *vadj;
-	GtkAdjustment *hadj;
-	gdouble page;
+	if (nsgtk_cw->scrolled != NULL) {
+		GtkAdjustment *vadj;
+		GtkAdjustment *hadj;
+		gdouble page;
 
-	hadj = gtk_scrolled_window_get_hadjustment(nsgtk_cw->scrolled);
-	g_object_get(hadj, "page-size", &page, NULL);
-	*width = page;
+		hadj = gtk_scrolled_window_get_hadjustment(nsgtk_cw->scrolled);
+		g_object_get(hadj, "page-size", &page, NULL);
+		*width = page;
 
-	vadj = gtk_scrolled_window_get_vadjustment(nsgtk_cw->scrolled);
-	g_object_get(vadj, "page-size", &page, NULL);
-	*height = page;
-
+		vadj = gtk_scrolled_window_get_vadjustment(nsgtk_cw->scrolled);
+		g_object_get(vadj, "page-size", &page, NULL);
+		*height = page;
+	} else {
+		GtkAllocation allocation;
+		gtk_widget_get_allocation(GTK_WIDGET(nsgtk_cw->drawing_area),
+					  &allocation);
+		*width = allocation.width;
+		*height = allocation.height;
+	}
 	return NSERROR_OK;
 }
 
