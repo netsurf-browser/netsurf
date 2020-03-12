@@ -84,7 +84,7 @@ fbtk_click(fbtk_widget_t *widget, nsfb_event_t *event)
 	x = fbtk_get_absx(clicked);
 	y = fbtk_get_absy(clicked);
 
-	NSLOG(netsurf, INFO, "clicked %p at %d,%d", clicked, x, y);
+	NSLOG(netsurf, DEEPDEBUG, "clicked %p at %d,%d", clicked, x, y);
 
 	/* post the click */
 	fbtk_post_callback(clicked, FBTK_CBT_CLICK, event, cloc.x0 - x, cloc.y0 - y);

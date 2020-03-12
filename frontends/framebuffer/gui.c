@@ -153,7 +153,7 @@ widget_scroll_y(struct gui_window *gw, int y, bool abs)
 	int content_width, content_height;
 	int height;
 
-	NSLOG(netsurf, INFO, "window scroll");
+	NSLOG(netsurf, DEEPDEBUG, "window scroll");
 	if (abs) {
 		bwidget->pany = y - bwidget->scrolly;
 	} else {
@@ -237,7 +237,8 @@ fb_pan(fbtk_widget_t *widget,
 	height = fbtk_get_height(widget);
 	width = fbtk_get_width(widget);
 
-	NSLOG(netsurf, INFO, "panning %d, %d", bwidget->panx, bwidget->pany);
+	NSLOG(netsurf, DEEPDEBUG, "panning %d, %d",
+			bwidget->panx, bwidget->pany);
 
 	x = fbtk_get_absx(widget);
 	y = fbtk_get_absy(widget);
@@ -665,7 +666,8 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	    cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
-	NSLOG(netsurf, INFO, "browser window clicked at %d,%d", cbi->x, cbi->y);
+	NSLOG(netsurf, DEEPDEBUG, "browser window clicked at %d,%d",
+			cbi->x, cbi->y);
 
 	switch (cbi->event->type) {
 	case NSFB_EVENT_KEY_DOWN:
