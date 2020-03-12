@@ -1788,6 +1788,11 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 
 	browser_window_history_destroy(bw);
 
+	cert_chain_free(bw->current_cert_chain);
+	cert_chain_free(bw->loading_cert_chain);
+	bw->current_cert_chain = NULL;
+	bw->loading_cert_chain = NULL;
+
 	free(bw->name);
 	free(bw->status.text);
 	bw->status.text = NULL;
