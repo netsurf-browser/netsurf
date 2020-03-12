@@ -463,7 +463,7 @@ fetch_start(nsurl *url,
 	lwc_string *scheme;
 	bool match;
 
-	fetch = malloc(sizeof (*fetch));
+	fetch = calloc(1, sizeof (*fetch));
 	if (fetch == NULL) {
 		return NSERROR_NOMEM;
 	}
@@ -487,13 +487,6 @@ fetch_start(nsurl *url,
 	fetch->url = nsurl_ref(url);
 	fetch->verifiable = verifiable;
 	fetch->p = p;
-	fetch->http_code = 0;
-	fetch->r_prev = NULL;
-	fetch->r_next = NULL;
-	fetch->referer = NULL;
-	fetch->send_referer = false;
-	fetch->fetcher_handle = NULL;
-	fetch->fetch_is_active = false;
 	fetch->host = nsurl_get_component(url, NSURL_HOST);
 
 	if (referer != NULL) {
