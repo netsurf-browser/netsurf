@@ -916,7 +916,7 @@ nserror nsurl_parent(const nsurl *url, nsurl **new_url)
 	} else if (old_path_len == new_path_len) {
 		lwc_path = lwc_string_ref(url->components.path);
 	} else {
-		if (lwc_intern_string(path, old_path_len - new_path_len,
+		if (lwc_intern_string(path, new_path_len,
 				&lwc_path) != lwc_error_ok) {
 			free(*new_url);
 			return NSERROR_NOMEM;
