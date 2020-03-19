@@ -75,7 +75,7 @@ class MonkeyFarmer(asyncore.dispatcher):
 
     # pylint: disable=locally-disabled, too-many-instance-attributes
 
-    def __init__(self, monkey_cmd, online, quiet=False, *, wrapper=None):
+    def __init__(self, monkey_cmd, monkey_env, online, quiet=False, *, wrapper=None):
         (mine, monkeys) = socket.socketpair()
 
         asyncore.dispatcher.__init__(self, sock=mine)
@@ -91,6 +91,7 @@ class MonkeyFarmer(asyncore.dispatcher):
 
         self.monkey = subprocess.Popen(
             monkey_cmd,
+            env=monkey_env,
             stdin=monkeys,
             stdout=monkeys,
             stderr=monkeyserr,
@@ -206,9 +207,10 @@ class Browser:
 
     # pylint: disable=locally-disabled, too-many-instance-attributes, dangerous-default-value, invalid-name
 
-    def __init__(self, monkey_cmd=["./nsmonkey"], quiet=False, *, wrapper=None):
+    def __init__(self, monkey_cmd=["./nsmonkey"], monkey_env=None, quiet=False, *, wrapper=None):
         self.farmer = MonkeyFarmer(
             monkey_cmd=monkey_cmd,
+            monkey_env=monkey_env,
             online=self.on_monkey_line,
             quiet=quiet,
             wrapper=wrapper)

@@ -22,6 +22,7 @@ runs tests in monkey as defined in a yaml file
 
 # pylint: disable=locally-disabled, missing-docstring
 
+import os
 import sys
 import getopt
 import time
@@ -232,18 +233,35 @@ def conds_met(ctx, conds):
 
 def run_test_step_action_launch(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
+
+    # ensure browser is not already launched
     assert ctx.get('browser') is None
     assert ctx.get('windows') is None
+
+    # build command line switches list
     monkey_cmd = [ctx["monkey"]]
     for option in step.get('launch-options', []):
         monkey_cmd.append("--{}".format(option))
     print(get_indent(ctx) + "        " + "Command line: " + repr(monkey_cmd))
+
+    # build command environment
+    monkey_env = os.environ.copy()
+    for envkey, envvalue in step.get('environment', {}).items():
+        monkey_env[envkey] = envvalue
+        print(get_indent(ctx) + "        " + envkey + "=" + envvalue)
+    if 'language' in step.keys():
+        monkey_env['LANGUAGE'] = step['language']
+
+    # create browser object
     ctx['browser'] = DriverBrowser(
         monkey_cmd=monkey_cmd,
+        monkey_env=monkey_env,
         quiet=True,
         wrapper=ctx.get("wrapper"))
     assert_browser(ctx)
     ctx['windows'] = dict()
+
+    # set user options
     for option in step.get('options', []):
         print(get_indent(ctx) + "        " + option)
         ctx['browser'].pass_options(option)
