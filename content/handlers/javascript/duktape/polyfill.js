@@ -1,6 +1,6 @@
 /* Polyfiller for Duktape for NetSurf
  *
- * This JavaScript will be loaded into compartments before the generics
+ * This JavaScript will be loaded into heaps before the generics
  *
  * We only care for the side-effects of this, be careful.
  */

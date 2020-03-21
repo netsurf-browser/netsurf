@@ -216,8 +216,8 @@ window_remove_callback_by_handle(duk_context *ctx,
 	} RING_ITERATE_END(window->schedule_ring, sched);
 }
 
-/* This is the dodgy compartment closedown method */
-static duk_ret_t dukky_window_closedown_compartment(duk_context *ctx)
+/* This is the dodgy thread closedown method */
+static duk_ret_t dukky_window_closedown_thread(duk_context *ctx)
 {
 	window_private_t *priv = NULL;
 
@@ -230,7 +230,7 @@ static duk_ret_t dukky_window_closedown_compartment(duk_context *ctx)
 		return 0;
 	}
 
-	NSLOG(dukky, DEEPDEBUG, "Closing down compartment");
+	NSLOG(dukky, DEEPDEBUG, "Closing down thread");
 	while (priv->schedule_ring != NULL) {
 		window_remove_callback_by_handle(ctx,
 						 priv,
@@ -361,10 +361,10 @@ prototype Window()
 	/* ** WebAssembly */
 	/* As yet, Duktape lacks WA */
 #undef EXPOSE
-	/* Add s3kr1t method to close the compartment */
+	/* Add s3kr1t method to close the JS thread (browsing context) */
 	duk_dup(ctx, 0);
-	duk_push_string(ctx, MAGIC(closedownCompartment));
-	duk_push_c_function(ctx, dukky_window_closedown_compartment, DUK_VARARGS);
+	duk_push_string(ctx, MAGIC(closedownThread));
+	duk_push_c_function(ctx, dukky_window_closedown_thread, DUK_VARARGS);
 	duk_def_prop(ctx, -3,
 		     DUK_DEFPROP_HAVE_VALUE |
 		     DUK_DEFPROP_HAVE_WRITABLE |
