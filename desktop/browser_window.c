@@ -702,6 +702,10 @@ browser_window_convert_to_download(struct browser_window *bw,
 	/* remove content from browser window */
 	hlcache_handle_release(bw->loading_content);
 	bw->loading_content = NULL;
+	if (bw->loading_jsthread != NULL) {
+		js_destroythread(bw->loading_jsthread);
+		bw->loading_jsthread = NULL;
+	}
 
 	browser_window_stop_throbber(bw);
 }
@@ -719,10 +723,15 @@ static nserror browser_window_content_ready(struct browser_window *bw)
 	if (bw->current_content != NULL) {
 		content_close(bw->current_content);
 		hlcache_handle_release(bw->current_content);
+		if (bw->current_jsthread != NULL) {
+			js_destroythread(bw->current_jsthread);
+		}
 	}
 
 	bw->current_content = bw->loading_content;
+	bw->current_jsthread = bw->loading_jsthread;
 	bw->loading_content = NULL;
+	bw->loading_jsthread = NULL;
 
 	if (!bw->internal_nav) {
 		/* Transfer the fetch parameters */
@@ -1280,6 +1289,10 @@ browser_window__handle_error(struct browser_window *bw,
 
 	if (c == bw->loading_content) {
 		bw->loading_content = NULL;
+		if (bw->loading_jsthread != NULL) {
+			js_destroythread(bw->loading_jsthread);
+			bw->loading_jsthread = NULL;
+		}
 	} else if (c == bw->current_content) {
 		bw->current_content = NULL;
 		browser_window_remove_caret(bw, false);
@@ -1486,18 +1499,16 @@ browser_window_callback(hlcache_handle *c, const hlcache_event *event, void *pw)
 		break;
 
 	case CONTENT_MSG_GETTHREAD:
-		{
-			/* only the content object created by the browser
-			 * window requires a new global compartment object
-			 */
-			jsthread *thread;
-			assert(bw->loading_content == c);
-			if (js_newthread(bw->jsheap,
-					 bw,
-					 hlcache_handle_get_content(c),
-					 &thread) == NSERROR_OK) {
-				*(event->data.jsthread) = thread;
-			}
+		/* only the content object created by the browser
+		 * window requires a new javascript thread object
+		 */
+		assert(bw->loading_content == c);
+		assert(bw->loading_jsthread == NULL);
+		if (js_newthread(bw->jsheap,
+				 bw,
+				 hlcache_handle_get_content(c),
+				 &bw->loading_jsthread) == NSERROR_OK) {
+			*(event->data.jsthread) = bw->loading_jsthread;
 		}
 		break;
 
@@ -1741,10 +1752,20 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 		bw->loading_content = NULL;
 	}
 
+	if (bw->loading_jsthread != NULL) {
+		js_destroythread(bw->loading_jsthread);
+		bw->loading_jsthread = NULL;
+	}
+
 	if (bw->current_content != NULL) {
 		content_close(bw->current_content);
 		hlcache_handle_release(bw->current_content);
 		bw->current_content = NULL;
+	}
+
+	if (bw->current_jsthread != NULL) {
+		js_destroythread(bw->current_jsthread);
+		bw->current_jsthread = NULL;
 	}
 
 	if (bw->favicon.loading != NULL) {
@@ -1766,6 +1787,7 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 
 	if (bw->jsheap != NULL) {
 		js_destroyheap(bw->jsheap);
+		bw->jsheap = NULL;
 	}
 
 	/* These simply free memory, so are safe here */
@@ -4069,6 +4091,10 @@ void browser_window_stop(struct browser_window *bw)
 		hlcache_handle_abort(bw->loading_content);
 		hlcache_handle_release(bw->loading_content);
 		bw->loading_content = NULL;
+		if (bw->loading_jsthread != NULL) {
+			js_destroythread(bw->loading_jsthread);
+			bw->loading_jsthread = NULL;
+		}
 	}
 
 	if (bw->current_content != NULL &&
