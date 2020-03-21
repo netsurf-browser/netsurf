@@ -25,14 +25,32 @@
 
 #include "utils/errors.h"
 
-typedef struct jscontext jscontext;
-typedef struct jsobject jsobject;
-
 struct dom_event;
 struct dom_document;
 struct dom_node;
 struct dom_element;
 struct dom_string;
+
+/**
+ * JavaScript interpreter heap
+ *
+ * In order to try and be moderately performant, we create a heap
+ * per browser window.  This heap is shared by all browsing contexts
+ * we end up creating in that window.
+ */
+typedef struct jsheap jsheap;
+
+/**
+ * JavaScript interpreter thread
+ *
+ * When we create a browsing context itself (window+content) we have
+ * to create a JS thread to attach to the browsing context.
+ *
+ * JS threads are associated with heaps and will be destroyed when
+ * the heap is destroyed.  They can be shut down manually though
+ * and should be for object lifetime safety reasons.
+ */
+typedef struct jsthread jsthread;
 
 /**
  * Initialise javascript interpreter
@@ -45,41 +63,51 @@ void js_initialise(void);
 void js_finalise(void);
 
 /**
- * Create a new javascript context.
+ * Create a new javascript heap.
  *
- * There is usually one context per browsing context (browser window)
+ * There is usually one heap per browser window.
  *
  * \param timeout elapsed wallclock time (in seconds) before \a callback is called
- * \param jsctx Updated to the created JS context
+ * \param heap Updated to the created JS heap
  * \return NSERROR_OK on success, appropriate error otherwise.
  */
-nserror js_newcontext(int timeout, jscontext **jsctx);
+nserror js_newheap(int timeout, jsheap **heap);
 
 /**
- * Destroy a previously created context
+ * Destroy a previously created heap.
+ *
+ * \param heap The heap to destroy
  */
-void js_destroycontext(jscontext *ctx);
+void js_destroyheap(jsheap *heap);
 
 /**
- * Create a new javascript compartment
+ * Create a new javascript thread
  *
  * This is called once for a page with javascript script tags on
- * it. It constructs a fresh global window object.
+ * it. It constructs a fresh global window object and prepares the JS
+ * browsing context.  It's important that threads are shut down cleanly
+ * when the browsing context is going to be cleaned up.
+ *
+ * \param heap The heap to create the thread within
+ * \param win_priv The value to give to the Window constructor as the window
+ * \param doc_priv The value to give to the Document constructor as the document
+ * \param thread Updated to the created thread
+ * \return NSERROR_OK on success, appropriate error otherwise
  */
-jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv);
+nserror js_newthread(jsheap *heap, void *win_priv, void *doc_priv, jsthread **thread);
 
 /**
  * execute some javascript in a context
  */
-bool js_exec(jscontext *ctx, const uint8_t *txt, size_t txtlen, const char *name);
+bool js_exec(jsthread *thread, const uint8_t *txt, size_t txtlen, const char *name);
 
 /**
  * fire an event at a dom node
  */
-bool js_fire_event(jscontext *ctx, const char *type, struct dom_document *doc, struct dom_node *target);
+bool js_fire_event(jsthread *thread, const char *type, struct dom_document *doc, struct dom_node *target);
 
 bool
-js_dom_event_add_listener(jscontext *ctx,
+js_dom_event_add_listener(jsthread *thread,
 			  struct dom_document *document,
 			  struct dom_node *node,
 			  struct dom_string *event_type_dom,
@@ -94,7 +122,7 @@ js_dom_event_add_listener(jscontext *ctx,
  * by the context provided.  The JS implementation must then scan the element
  * for on* attributes and register appropriate listeners for those handlers.
  */
-void js_handle_new_element(jscontext *ctx, struct dom_element *node);
+void js_handle_new_element(jsthread *thread, struct dom_element *node);
 
 /**
  * Handle an event propagation finished callback.
@@ -104,6 +132,6 @@ void js_handle_new_element(jscontext *ctx, struct dom_element *node);
  * it may need to perform before the DOM finishes and the event may end up
  * freed.
  */
-void js_event_cleanup(jscontext *ctx, struct dom_event *evt);
+void js_event_cleanup(jsthread *thread, struct dom_event *evt);
 
 #endif /* NETSURF_JAVASCRIPT_JS_H_ */

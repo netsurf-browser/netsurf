@@ -72,7 +72,7 @@ typedef enum {
 	CONTENT_MSG_REFRESH,   /**< wants refresh */
 	CONTENT_MSG_DOWNLOAD,  /**< download, not for display */
 	CONTENT_MSG_LINK,      /**< RFC5988 link */
-	CONTENT_MSG_GETCTX,    /**< Javascript context */
+	CONTENT_MSG_GETTHREAD, /**< Javascript thread */
 	CONTENT_MSG_GETDIMS,   /**< Get viewport dimensions. */
 	CONTENT_MSG_SCROLL,    /**< Request to scroll content */
 	CONTENT_MSG_DRAGSAVE,  /**< Allow drag saving of content */
@@ -180,9 +180,9 @@ union content_msg_data {
 	struct content_rfc5988_link *rfc5988_link;
 
 	/**
-	 * CONTENT_MSG_GETCTX - Javascript context
+	 * CONTENT_MSG_GETTHREAD - Javascript context (thread)
 	 */
-	struct jscontext **jscontext;
+	struct jsthread **jsthread;
 
 	/**
 	 * CONTENT_MSG_GETDIMS - Get the viewport dimensions

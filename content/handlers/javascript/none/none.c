@@ -35,35 +35,36 @@ void js_finalise(void)
 {
 }
 
-nserror js_newcontext(int timeout, jscontext **jsctx)
+nserror js_newheap(int timeout, jsheap **heap)
 {
-	*jsctx = NULL;
+	*heap = NULL;
 	return NSERROR_OK;
 }
 
-void js_destroycontext(jscontext *ctx)
+void js_destroyheap(jsheap *heap)
 {
 }
 
-jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
+nserror js_newthread(jsheap *heap, void *win_priv, void *doc_priv, jsthread **thread)
 {
-	return NULL;
+	*thread = NULL;
+	return NSERROR_NOT_IMPLEMENTED;
 }
 
-bool js_exec(jscontext *ctx, const uint8_t *txt, size_t txtlen, const char *name)
-{
-	return true;
-}
-
-bool js_fire_event(jscontext *ctx, const char *type, struct dom_document *doc, struct dom_node *target)
+bool js_exec(jsthread *thread, const uint8_t *txt, size_t txtlen, const char *name)
 {
 	return true;
 }
 
-void js_handle_new_element(jscontext *ctx, struct dom_element *node)
+bool js_fire_event(jsthread *thread, const char *type, struct dom_document *doc, struct dom_node *target)
+{
+	return true;
+}
+
+void js_handle_new_element(jsthread *thread, struct dom_element *node)
 {
 }
 
-void js_event_cleanup(jscontext *ctx, struct dom_event *evt)
+void js_event_cleanup(jsthread *thread, struct dom_event *evt)
 {
 }

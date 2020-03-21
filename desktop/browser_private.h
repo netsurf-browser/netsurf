@@ -263,7 +263,8 @@ struct browser_window {
 	bool can_edit;
 
 	/** current javascript context */
-	struct jscontext *jsctx;
+	struct jsheap *jsheap;
+	struct jsthread *jsthread;
 
 	/** cache of the currently displayed status text. */
 	struct {

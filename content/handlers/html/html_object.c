@@ -340,8 +340,9 @@ html_object_callback(hlcache_handle *object,
 		/* Don't care about favicons that aren't on top level content */
 		break;
 
-	case CONTENT_MSG_GETCTX:
-		*(event->data.jscontext) = NULL;
+	case CONTENT_MSG_GETTHREAD:
+		/* Objects don't have JS threads */
+		*(event->data.jsthread) = NULL;
 		break;
 
 	case CONTENT_MSG_GETDIMS:

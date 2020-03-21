@@ -1485,15 +1485,19 @@ browser_window_callback(hlcache_handle *c, const hlcache_event *event, void *pw)
 		}
 		break;
 
-	case CONTENT_MSG_GETCTX:
-		/* only the content object created by the browser
-		 * window requires a new global compartment object
-		 */
-		assert(bw->loading_content == c);
-		if (js_newcompartment(bw->jsctx,
-				      bw,
-				      hlcache_handle_get_content(c)) != NULL) {
-			*(event->data.jscontext) = bw->jsctx;
+	case CONTENT_MSG_GETTHREAD:
+		{
+			/* only the content object created by the browser
+			 * window requires a new global compartment object
+			 */
+			jsthread *thread;
+			assert(bw->loading_content == c);
+			if (js_newthread(bw->jsheap,
+					 bw,
+					 hlcache_handle_get_content(c),
+					 &thread) == NSERROR_OK) {
+				*(event->data.jsthread) = thread;
+			}
 		}
 		break;
 
@@ -1760,8 +1764,8 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 		bw->box = NULL;
 	}
 
-	if (bw->jsctx != NULL) {
-		js_destroycontext(bw->jsctx);
+	if (bw->jsheap != NULL) {
+		js_destroyheap(bw->jsheap);
 	}
 
 	/* These simply free memory, so are safe here */
@@ -3085,7 +3089,7 @@ browser_window_initialise_common(enum browser_window_create_flags flags,
 	assert(bw);
 
 	/* new javascript context for each window/(i)frame */
-	err = js_newcontext(nsoption_int(script_timeout), &bw->jsctx);
+	err = js_newheap(nsoption_int(script_timeout), &bw->jsheap);
 	if (err != NSERROR_OK)
 		return err;
 

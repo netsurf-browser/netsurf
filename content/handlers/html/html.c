@@ -757,8 +757,8 @@ void html_finish_conversion(html_content *htmlc)
 	 * object, but with its target set to the Document object (and
 	 * the currentTarget set to the Window object)
 	 */
-	if (htmlc->jscontext != NULL) {
-		js_fire_event(htmlc->jscontext, "load", htmlc->document, NULL);
+	if (htmlc->jsthread != NULL) {
+		js_fire_event(htmlc->jsthread, "load", htmlc->document, NULL);
 	}
 
 	/* convert dom tree to box tree */
@@ -896,20 +896,20 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 			}
 			if (htmlc->enable_scripting) {
 				/* ensure javascript context is available */
-				if (htmlc->jscontext == NULL) {
+				if (htmlc->jsthread == NULL) {
 					union content_msg_data msg_data;
 
-					msg_data.jscontext = &htmlc->jscontext;
+					msg_data.jsthread = &htmlc->jsthread;
 					content_broadcast(&htmlc->base,
-							CONTENT_MSG_GETCTX,
+							CONTENT_MSG_GETTHREAD,
 							&msg_data);
 					NSLOG(netsurf, INFO,
 					      "javascript context: %p (htmlc: %p)",
-					      htmlc->jscontext,
+					      htmlc->jsthread,
 					      htmlc);
 				}
-				if (htmlc->jscontext != NULL) {
-					js_handle_new_element(htmlc->jscontext,
+				if (htmlc->jsthread != NULL) {
+					js_handle_new_element(htmlc->jsthread,
 							(dom_element *) node);
 				}
 			}
@@ -1015,8 +1015,8 @@ dom_default_action_finished_cb(struct dom_event *evt, void *pw)
 {
 	html_content *htmlc = pw;
 
-	if (htmlc->jscontext != NULL)
-		js_event_cleanup(htmlc->jscontext, evt);
+	if (htmlc->jsthread != NULL)
+		js_event_cleanup(htmlc->jsthread, evt);
 }
 
 /* callback function selector
@@ -1136,7 +1136,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	c->search_string = NULL;
 	c->scripts_count = 0;
 	c->scripts = NULL;
-	c->jscontext = NULL;
+	c->jsthread = NULL;
 
 	c->enable_scripting = nsoption_bool(enable_javascript);
 	c->base.active = 1; /* The html content itself is active */

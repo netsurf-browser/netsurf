@@ -42,7 +42,7 @@
 #include "html/html.h"
 #include "html/html_internal.h"
 
-typedef bool (script_handler_t)(struct jscontext *jscontext, const uint8_t *data, size_t size, const char *name);
+typedef bool (script_handler_t)(struct jsthread *jsthread, const uint8_t *data, size_t size, const char *name);
 
 
 static script_handler_t *select_script_handler(content_type ctype)
@@ -62,7 +62,7 @@ nserror html_script_exec(html_content *c, bool allow_defer)
 	script_handler_t *script_handler;
 	bool have_run_something = false;
 
-	if (c->jscontext == NULL) {
+	if (c->jsthread == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
 
@@ -95,7 +95,7 @@ nserror html_script_exec(html_content *c, bool allow_defer)
 				size_t size;
 				data = content_get_source_data(
 						s->data.handle, &size );
-				script_handler(c->jscontext, data, size,
+				script_handler(c->jsthread, data, size,
 					       nsurl_access(hlcache_handle_get_url(s->data.handle)));
 				have_run_something = true;
 				/* We have to re-acquire this here since the
@@ -319,12 +319,12 @@ convert_script_sync_cb(hlcache_handle *script,
 
 		/* attempt to execute script */
 		script_handler = select_script_handler(content_get_type(s->data.handle));
-		if (script_handler != NULL && parent->jscontext != NULL) {
+		if (script_handler != NULL && parent->jsthread != NULL) {
 			/* script has a handler */
 			const uint8_t *data;
 			size_t size;
 			data = content_get_source_data(s->data.handle, &size );
-			script_handler(parent->jscontext, data, size,
+			script_handler(parent->jsthread, data, size,
 				       nsurl_access(hlcache_handle_get_url(s->data.handle)));
 		}
 
@@ -549,7 +549,7 @@ exec_inline_script(html_content *c, dom_node *node, dom_string *mimetype)
 	lwc_string_unref(lwcmimetype);
 
 	if (script_handler != NULL) {
-		script_handler(c->jscontext,
+		script_handler(c->jsthread,
 			       (const uint8_t *)dom_string_data(script),
 			       dom_string_byte_length(script),
 			       "?inline script?");
@@ -575,13 +575,13 @@ html_process_script(void *ctx, dom_node *node)
 	/* We should only ever be here if scripting was enabled for this
 	 * content so it's correct to make a javascript context if there
 	 * isn't one already. */
-	if (c->jscontext == NULL) {
+	if (c->jsthread == NULL) {
 		union content_msg_data msg_data;
 
-		msg_data.jscontext = &c->jscontext;
-		content_broadcast(&c->base, CONTENT_MSG_GETCTX, &msg_data);
-		NSLOG(netsurf, INFO, "javascript context %p ", c->jscontext);
-		if (c->jscontext == NULL) {
+		msg_data.jsthread = &c->jsthread;
+		content_broadcast(&c->base, CONTENT_MSG_GETTHREAD, &msg_data);
+		NSLOG(netsurf, INFO, "javascript context %p ", c->jsthread);
+		if (c->jsthread == NULL) {
 			/* no context and it could not be created, abort */
 			return DOM_HUBBUB_OK;
 		}
@@ -668,6 +668,6 @@ nserror html_script_free(html_content *html)
 /* exported internal interface documented in html/html_internal.h */
 nserror html_script_invalidate_ctx(html_content *htmlc)
 {
-	htmlc->jscontext = NULL;
+	htmlc->jsthread = NULL;
 	return NSERROR_OK;
 }
