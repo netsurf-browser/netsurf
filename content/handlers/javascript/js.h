@@ -97,6 +97,20 @@ void js_destroyheap(jsheap *heap);
 nserror js_newthread(jsheap *heap, void *win_priv, void *doc_priv, jsthread **thread);
 
 /**
+ * Destroy a javascript thread
+ *
+ * This should be called when the browsing context is done with the thread.
+ *
+ * Essentially it should be called when the content is about to be destroyed
+ * but in reality it can be called when the browser window relinquishes its
+ * handle on the content since nominally the browser window itself owns
+ * the thread.
+ *
+ * \param thread The thread to be destroyed
+ */
+void js_destroythread(jsthread *thread);
+
+/**
  * execute some javascript in a context
  */
 bool js_exec(jsthread *thread, const uint8_t *txt, size_t txtlen, const char *name);

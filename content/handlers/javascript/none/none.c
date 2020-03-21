@@ -51,6 +51,10 @@ nserror js_newthread(jsheap *heap, void *win_priv, void *doc_priv, jsthread **th
 	return NSERROR_NOT_IMPLEMENTED;
 }
 
+void js_destroythread(jsthread *thread)
+{
+}
+
 bool js_exec(jsthread *thread, const uint8_t *txt, size_t txtlen, const char *name)
 {
 	return true;
