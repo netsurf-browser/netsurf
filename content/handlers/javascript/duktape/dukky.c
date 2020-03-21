@@ -59,6 +59,7 @@
 struct jsheap {
 	duk_context *ctx; /**< duktape base context */
 	duk_uarridx_t next_thread; /**< monotonic thread counter */
+	unsigned int live_threads; /**< number of live threads */
 	uint64_t exec_start_time;
 };
 
@@ -66,6 +67,8 @@ struct jsheap {
  * dukky javascript thread
  */
 struct jsthread {
+	bool pending_destroy; /**< Whether this thread is pending destruction */
+	unsigned int in_use; /**< The number of times this thread is in use */
 	jsheap *heap; /**< The heap this thread belongs to */
 	duk_context *ctx; /**< The duktape thread context */
 	duk_uarridx_t thread_idx; /**< The thread number */
@@ -621,6 +624,7 @@ js_newheap(int timeout, jsheap **heap)
 /* exported interface documented in js.h */
 void js_destroyheap(jsheap *heap)
 {
+	assert(heap->live_threads == 0);
 	NSLOG(dukky, DEBUG, "Destroying duktape javascript context");
 	duk_destroy_heap(heap->ctx);
 	free(heap);
@@ -652,6 +656,7 @@ nserror js_newthread(jsheap *heap, void *win_priv, void *doc_priv, jsthread **th
 	ret->ctx = duk_require_context(heap->ctx, -1);
 	ret->thread_idx = heap->next_thread++;
 	duk_put_prop_index(heap->ctx, -2, ret->thread_idx);
+	heap->live_threads++;
 	duk_pop(heap->ctx); /* ... */
 	duk_push_int(CTX, 0);
 	duk_push_int(CTX, 1);
@@ -738,11 +743,16 @@ nserror js_newthread(jsheap *heap, void *win_priv, void *doc_priv, jsthread **th
 #undef CTX
 #define CTX (thread->ctx)
 
-
-/* exported interface documented in js.h */
-void js_destroythread(jsthread *thread)
+/**
+ * Destroy a Duktape thread
+ */
+static void dukky_destroythread(jsthread *thread)
 {
 	jsheap *heap = thread->heap;
+
+	assert(thread->in_use == 0);
+	assert(thread->pending_destroy = true);
+
 	/* Closing down the extant thread */
 	NSLOG(dukky, DEBUG, "Closing down extant thread %p in heap %p", thread, heap);
 	duk_get_global_string(CTX, MAGIC(closedownThread));
@@ -759,6 +769,33 @@ void js_destroythread(jsthread *thread)
 	/* Finally give the heap a chance to clean up */
 	duk_gc(heap->ctx, 0);
 	duk_gc(heap->ctx, DUK_GC_COMPACT);
+	heap->live_threads--;
+}
+
+/* exported interface documented in js.h */
+void js_destroythread(jsthread *thread)
+{
+	thread->pending_destroy = true;
+	if (thread->in_use == 0) {
+		dukky_destroythread(thread);
+	}
+}
+
+static void dukky_enter_thread(jsthread *thread)
+{
+	assert(thread != NULL);
+	thread->in_use++;
+}
+
+static void dukky_leave_thread(jsthread *thread)
+{
+	assert(thread != NULL);
+	assert(thread->in_use > 0);
+
+	thread->in_use--;
+	if (thread->in_use == 0 && thread->pending_destroy == true) {
+		dukky_destroythread(thread);
+	}
 }
 
 duk_bool_t dukky_check_timeout(void *udata)
@@ -845,11 +882,14 @@ void dukky_log_stack_frame(duk_context *ctx, const char * reason)
 bool
 js_exec(jsthread *thread, const uint8_t *txt, size_t txtlen, const char *name)
 {
+	bool ret = false;
 	assert(thread);
 
 	if (txt == NULL || txtlen == 0) {
 		return false;
 	}
+
+	dukky_enter_thread(thread);
 
 	duk_set_top(CTX, 0);
 	NSLOG(dukky, DEEPDEBUG, "Running %"PRIsizet" bytes from %s", txtlen, name);
@@ -877,11 +917,14 @@ js_exec(jsthread *thread, const uint8_t *txt, size_t txtlen, const char *name)
 	if (duk_get_top(CTX) == 0) duk_push_boolean(CTX, false);
 	NSLOG(dukky, DEEPDEBUG, "Returning %s",
 	      duk_get_boolean(CTX, 0) ? "true" : "false");
-	return duk_get_boolean(CTX, 0);
+	ret = duk_get_boolean(CTX, 0);
+	goto out;
 
 handle_error:
 	dukky_dump_error(CTX);
-	return false;
+out:
+	dukky_leave_thread(thread);
+	return ret;
 }
 
 static const char* dukky_event_proto(dom_event *evt)
@@ -1406,6 +1449,8 @@ void js_handle_new_element(jsthread *thread, struct dom_element *node)
 	if (exc != DOM_NO_ERR) return;
 	if (map == NULL) return;
 
+	dukky_enter_thread(thread);
+
 	exc = dom_namednodemap_get_length(map, &siz);
 	if (exc != DOM_NO_ERR) goto out;
 
@@ -1455,11 +1500,14 @@ out:
 		dom_node_unref(attr);
 
 	dom_namednodemap_unref(map);
+
+	dukky_leave_thread(thread);
 }
 
 void js_event_cleanup(jsthread *thread, struct dom_event *evt)
 {
 	assert(thread);
+	dukky_enter_thread(thread);
 	/* ... */
 	duk_get_global_string(CTX, EVENT_MAGIC);
 	/* ... EVENT_MAP */
@@ -1469,6 +1517,7 @@ void js_event_cleanup(jsthread *thread, struct dom_event *evt)
 	/* ... EVENT_MAP */
 	duk_pop(CTX);
 	/* ... */
+	dukky_leave_thread(thread);
 }
 
 bool js_fire_event(jsthread *thread, const char *type, struct dom_document *doc, struct dom_node *target)
@@ -1507,6 +1556,7 @@ bool js_fire_event(jsthread *thread, const char *type, struct dom_document *doc,
 		dom_event_unref(evt);
 		return true;
 	}
+	dukky_enter_thread(thread);
 	/* ... */
 	duk_get_global_string(CTX, HANDLER_MAGIC);
 	/* ... handlers */
@@ -1523,6 +1573,7 @@ bool js_fire_event(jsthread *thread, const char *type, struct dom_document *doc,
 		exc = dom_html_document_get_body(doc, &body);
 		if (exc != DOM_NO_ERR) {
 			dom_event_unref(evt);
+			dukky_leave_thread(thread);
 			return true;
 		}
 		dukky_push_node(CTX, (struct dom_node *)body);
@@ -1533,6 +1584,7 @@ bool js_fire_event(jsthread *thread, const char *type, struct dom_document *doc,
 			dom_node_unref(body);
 			/* ... handlers */
 			duk_pop(CTX);
+			dukky_leave_thread(thread);
 			return true;
 		}
 		/* Unref the body, we don't need it any more */
@@ -1574,6 +1626,7 @@ bool js_fire_event(jsthread *thread, const char *type, struct dom_document *doc,
 		/* ... */
 		js_event_cleanup(thread, evt);
 		dom_event_unref(evt);
+		dukky_leave_thread(thread);
 		return true;
 	}
 	/* ... result */
@@ -1581,5 +1634,6 @@ bool js_fire_event(jsthread *thread, const char *type, struct dom_document *doc,
 	/* ... */
 	js_event_cleanup(thread, evt);
 	dom_event_unref(evt);
+	dukky_leave_thread(thread);
 	return true;
 }
