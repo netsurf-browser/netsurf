@@ -608,7 +608,7 @@ void js_finalise(void)
 
 /* exported interface documented in js.h */
 nserror
-js_newcontext(int timeout, jscallback *cb, void *cbctx, jscontext **jsctx)
+js_newcontext(int timeout, jscontext **jsctx)
 {
 	duk_context *ctx;
 	jscontext *ret = calloc(1, sizeof(*ret));

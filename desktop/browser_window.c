@@ -330,22 +330,6 @@ browser_window__get_contextual_content(struct browser_window *bw,
 
 
 /**
- * slow script handler
- */
-static bool slow_script(void *ctx)
-{
-	static int count = 0;
-	NSLOG(netsurf, INFO, "Continuing execution %d", count);
-	count++;
-	if (count > 1) {
-		count = 0;
-		return false;
-	}
-	return true;
-}
-
-
-/**
  * implements the download operation of a window navigate
  */
 static nserror
@@ -3101,8 +3085,7 @@ browser_window_initialise_common(enum browser_window_create_flags flags,
 	assert(bw);
 
 	/* new javascript context for each window/(i)frame */
-	err = js_newcontext(nsoption_int(script_timeout),
-			    slow_script, NULL, &bw->jsctx);
+	err = js_newcontext(nsoption_int(script_timeout), &bw->jsctx);
 	if (err != NSERROR_OK)
 		return err;
 

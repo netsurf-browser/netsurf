@@ -35,8 +35,7 @@ void js_finalise(void)
 {
 }
 
-nserror js_newcontext(int timeout, jscallback *cb, void *cbctx,
-		jscontext **jsctx)
+nserror js_newcontext(int timeout, jscontext **jsctx)
 {
 	*jsctx = NULL;
 	return NSERROR_OK;
