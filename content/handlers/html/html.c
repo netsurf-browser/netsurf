@@ -1969,6 +1969,7 @@ html_open(struct content *c,
 static nserror html_close(struct content *c)
 {
 	html_content *htmlc = (html_content *) c;
+	nserror ret = NSERROR_OK;
 
 	selection_clear(&htmlc->sel, false);
 
@@ -1982,7 +1983,12 @@ static nserror html_close(struct content *c)
 	/* remove all object references from the html content */
 	html_object_close_objects(htmlc);
 
-	return NSERROR_OK;
+	if (htmlc->jsthread != NULL) {
+		/* Close, but do not destroy (yet) the JS thread */
+		ret = js_closethread(htmlc->jsthread);
+	}
+
+	return ret;
 }
 
 
