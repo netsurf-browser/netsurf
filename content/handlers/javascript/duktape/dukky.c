@@ -59,6 +59,7 @@
 struct jsheap {
 	duk_context *ctx; /**< duktape base context */
 	duk_uarridx_t next_thread; /**< monotonic thread counter */
+	bool pending_destroy; /**< Whether this heap is pending destruction */
 	unsigned int live_threads; /**< number of live threads */
 	uint64_t exec_start_time;
 };
@@ -621,13 +622,22 @@ js_newheap(int timeout, jsheap **heap)
 }
 
 
-/* exported interface documented in js.h */
-void js_destroyheap(jsheap *heap)
+static void dukky_destroyheap(jsheap *heap)
 {
+	assert(heap->pending_destroy == true);
 	assert(heap->live_threads == 0);
 	NSLOG(dukky, DEBUG, "Destroying duktape javascript context");
 	duk_destroy_heap(heap->ctx);
 	free(heap);
+}
+
+/* exported interface documented in js.h */
+void js_destroyheap(jsheap *heap)
+{
+	heap->pending_destroy = true;
+	if (heap->live_threads == 0) {
+		dukky_destroyheap(heap);
+	}
 }
 
 /* Just for here, the CTX is in ret, not thread */
@@ -638,6 +648,7 @@ nserror js_newthread(jsheap *heap, void *win_priv, void *doc_priv, jsthread **th
 {
 	jsthread *ret;
 	assert(heap != NULL);
+	assert(heap->pending_destroy == false);
 
 	ret = calloc(1, sizeof (*ret));
 	if (ret == NULL) {
@@ -770,6 +781,11 @@ static void dukky_destroythread(jsthread *thread)
 	duk_gc(heap->ctx, 0);
 	duk_gc(heap->ctx, DUK_GC_COMPACT);
 	heap->live_threads--;
+
+	/* And if the heap should now go, blow it away */
+	if (heap->pending_destroy == true && heap->live_threads == 0) {
+		dukky_destroyheap(heap);
+	}
 }
 
 /* exported interface documented in js.h */
