@@ -333,7 +333,7 @@ def run_test_step_action_reload(ctx, step):
 
 def run_test_step_action_sleep_ms(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
-    conds = step['conditions']
+    conds = step.get('conditions', {})
     sleep_time = step['time']
     sleep = 0
     have_repeat = False
