@@ -1792,6 +1792,28 @@ fetch_about_config_handler_aborted:
 	return false;
 }
 
+static bool
+fetch_about_404_handler(struct fetch_about_context *ctx)
+{
+	nserror res;
+
+	/* content is going to return 404 */
+	fetch_set_http_code(ctx->fetchh, 404);
+
+	/* content type */
+	if (fetch_about_send_header(ctx, "Content-Type: text/plain; charset=utf-8")) {
+		return false;
+	}
+
+	res = ssenddataf(ctx, "Unknown page: %s", nsurl_access(ctx->url));
+	if (res != NSERROR_OK) {
+		return false;
+	}
+
+	fetch_about_send_finished(ctx);
+
+	return true;
+}
 
 /**
  * callback to initialise the about scheme fetcher.
@@ -1866,10 +1888,10 @@ fetch_about_setup(struct fetch *fetchh,
 	for (handler_loop = 0;
 	     handler_loop < about_handler_list_len;
 	     handler_loop++) {
-		ctx->handler = about_handler_list[handler_loop].handler;
 		if (lwc_string_isequal(path,
 				       about_handler_list[handler_loop].lname,
 				       &match) == lwc_error_ok && match) {
+			ctx->handler = about_handler_list[handler_loop].handler;
 			break;
 		}
 	}
@@ -1949,7 +1971,11 @@ static void fetch_about_poll(lwc_string *scheme)
 		/* Only process non-aborted fetches */
 		if (c->aborted == false) {
 			/* about fetches can be processed in one go */
-			c->handler(c);
+			if (c->handler == NULL) {
+				fetch_about_404_handler(c);
+			} else {
+				c->handler(c);
+			}
 		}
 
 		/* And now finish */
