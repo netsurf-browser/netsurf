@@ -3732,7 +3732,9 @@ browser_window__navigate_internal(struct browser_window *bw,
 		lwc_string_unref(path);
 		return navigate_internal_query_fetcherror(bw, params);
 	}
-	lwc_string_unref(path);
+	if (path != NULL) {
+		lwc_string_unref(path);
+	}
 
 	/* Fall through to a normal about: fetch */
 
