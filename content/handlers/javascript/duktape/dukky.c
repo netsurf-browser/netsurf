@@ -754,6 +754,26 @@ nserror js_newthread(jsheap *heap, void *win_priv, void *doc_priv, jsthread **th
 #undef CTX
 #define CTX (thread->ctx)
 
+/* exported interface documented in js.h */
+nserror js_closethread(jsthread *thread)
+{
+	/* We can always close down a thread, it might just confuse
+	 * the code running, though we don't mind since we're in the
+	 * process of destruction at this point
+	 */
+	duk_int_t top = duk_get_top(CTX);
+
+	/* Closing down the extant thread */
+	NSLOG(dukky, DEBUG, "Closing down extant thread %p in heap %p", thread, thread->heap);
+	duk_get_global_string(CTX, MAGIC(closedownThread));
+	dukky_pcall(CTX, 0, true);
+
+	/* Restore whatever stack we had */
+	duk_set_top(CTX, top);
+
+	return NSERROR_OK;
+}
+
 /**
  * Destroy a Duktape thread
  */

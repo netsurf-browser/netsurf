@@ -97,14 +97,27 @@ void js_destroyheap(jsheap *heap);
 nserror js_newthread(jsheap *heap, void *win_priv, void *doc_priv, jsthread **thread);
 
 /**
+ * Close a javascript thread
+ *
+ * This should be called when the HTML content which owns the thread is
+ * being closed.  This is a separate process from destroying the thread
+ * and merely disconnects any callbacks and thus hopefully stops
+ * additional JS things from triggering.  If any code runs and attempts to
+ * register callbacks after closedown, they will fail.
+ *
+ * \param thread The thread to close down
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror js_closethread(jsthread *thread);
+
+/**
  * Destroy a javascript thread
  *
  * This should be called when the browsing context is done with the thread.
  *
- * Essentially it should be called when the content is about to be destroyed
- * but in reality it can be called when the browser window relinquishes its
- * handle on the content since nominally the browser window itself owns
- * the thread.
+ * This will be called when the HTML content associated with the browsing
+ * context is being destroyed.  The thread should have already been closed
+ * down during the HTML content close.
  *
  * \param thread The thread to be destroyed
  */
