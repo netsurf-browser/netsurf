@@ -374,32 +374,50 @@ def run_test_step_action_repeat(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     tag = step['tag']
     assert ctx['repeats'].get(tag) is None
+    # initialise the loop continue conditional
     ctx['repeats'][tag] = {"loop": True, }
 
-    if 'min' in step.keys():
-        ctx['repeats'][tag]["i"] = step["min"]
-    else:
-        ctx['repeats'][tag]["i"] = 0
-
-    if 'step' in step.keys():
-        ctx['repeats'][tag]["step"] = step["step"]
-    else:
-        ctx['repeats'][tag]["step"] = 1
-
     if 'values' in step.keys():
+        # value iterator
         ctx['repeats'][tag]['values'] = step["values"]
+        ctx['repeats'][tag]["max"] = len(step["values"])
+        ctx['repeats'][tag]["i"] = 0
+        ctx['repeats'][tag]["step"] = 1
     else:
+        # numeric iterator
         ctx['repeats'][tag]['values'] = None
+
+        if 'min' in step.keys():
+            ctx['repeats'][tag]["i"] = step["min"]
+        else:
+            ctx['repeats'][tag]["i"] = 0
+
+        if 'step' in step.keys():
+            ctx['repeats'][tag]["step"] = step["step"]
+        else:
+            ctx['repeats'][tag]["step"] = 1
+
+        if 'max' in step.keys():
+            ctx['repeats'][tag]["max"] = step["max"]
+        else:
+            ctx['repeats'][tag]["max"] = None
 
     while ctx['repeats'][tag]["loop"]:
         ctx['repeats'][tag]["start"] = time.time()
         ctx["depth"] += 1
+
+        # run through steps for this iteration
         for stp in step["steps"]:
             run_test_step(ctx, stp)
+
+        # increment iterator
         ctx['repeats'][tag]["i"] += ctx['repeats'][tag]["step"]
-        if ctx['repeats'][tag]['values'] is not None:
-            if ctx['repeats'][tag]["i"] >= len(ctx['repeats'][tag]['values']):
+
+        # check for end condition
+        if ctx['repeats'][tag]["max"] is not None:
+            if ctx['repeats'][tag]["i"] >= ctx['repeats'][tag]["max"]:
                 ctx['repeats'][tag]["loop"] = False
+
         ctx["depth"] -= 1
 
 
