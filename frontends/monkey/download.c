@@ -34,6 +34,7 @@ struct gui_download_window {
 	struct gui_download_window *r_next;
 	struct gui_download_window *r_prev;
 	struct gui_window *g;
+	download_context *dlctx;
 	uint32_t dwin_num;
 	char *host; /* ignore */
 };
@@ -49,6 +50,7 @@ gui_download_window_create(download_context *ctx,
 		return NULL;
 	ret->g = parent;
 	ret->dwin_num = dwin_ctr++;
+	ret->dlctx = ctx;
   
 	RING_INSERT(dw_ring, ret);
   
@@ -79,6 +81,7 @@ gui_download_window_done(struct gui_download_window *dw)
 {
 	moutf(MOUT_DOWNLOAD, "DONE DWIN %u", dw->dwin_num);
 	RING_REMOVE(dw_ring, dw);
+	download_context_destroy(dw->dlctx);
 	free(dw);
 }
 
