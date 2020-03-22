@@ -701,6 +701,7 @@ browser_window_convert_to_download(struct browser_window *bw,
 
 	/* remove content from browser window */
 	hlcache_handle_release(bw->loading_content);
+	bw->loading_content = NULL;
 
 	browser_window_stop_throbber(bw);
 }
