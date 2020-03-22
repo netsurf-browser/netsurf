@@ -643,6 +643,8 @@ def run_test_step_action_quit(ctx, step):
     assert_browser(ctx)
     browser = ctx.pop('browser')
     assert browser.quit_and_wait()
+    # clean up context as all windows have gone away after browser quit
+    ctx.pop('windows')
 
 
 STEP_HANDLERS = {
