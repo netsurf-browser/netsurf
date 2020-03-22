@@ -664,10 +664,3 @@ nserror html_script_free(html_content *html)
 
 	return NSERROR_OK;
 }
-
-/* exported internal interface documented in html/html_internal.h */
-nserror html_script_invalidate_ctx(html_content *htmlc)
-{
-	htmlc->jsthread = NULL;
-	return NSERROR_OK;
-}

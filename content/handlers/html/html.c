@@ -1637,12 +1637,6 @@ static void html_stop(struct content *c)
 {
 	html_content *htmlc = (html_content *) c;
 
-	/* invalidate the html content reference to the javascript context
-	 * as it is about to become invalid and must not be used any
-	 * more.
-	 */
-	html_script_invalidate_ctx(htmlc);
-
 	switch (c->status) {
 	case CONTENT_STATUS_LOADING:
 		/* Still loading; simply flag that we've been aborted
@@ -1853,6 +1847,14 @@ static void html_destroy(struct content *c)
 	if (html->base_url)
 		nsurl_unref(html->base_url);
 
+	/* At this point we can be moderately confident the JS is offline
+	 * so we destroy the JS thread.
+	 */
+	if (html->jsthread != NULL) {
+		js_destroythread(html->jsthread);
+		html->jsthread = NULL;
+	}
+
 	if (html->parser != NULL) {
 		dom_hubbub_parser_destroy(html->parser);
 		html->parser = NULL;
@@ -1976,12 +1978,6 @@ static nserror html_close(struct content *c)
 
 	/* clear the html content reference to the browser window */
 	htmlc->bw = NULL;
-
-	/* invalidate the html content reference to the javascript context
-	 * as it is about to become invalid and must not be used any
-	 * more.
-	 */
-	html_script_invalidate_ctx(htmlc);
 
 	/* remove all object references from the html content */
 	html_object_close_objects(htmlc);

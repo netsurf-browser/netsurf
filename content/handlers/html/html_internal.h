@@ -321,14 +321,6 @@ nserror html_script_exec(html_content *htmlc, bool allow_defer);
 nserror html_script_free(html_content *htmlc);
 
 /**
- * Ensure the html content javascript context is invalidated.
- *
- * \param htmlc html content.
- * \return NSERROR_OK or error code.
- */
-nserror html_script_invalidate_ctx(html_content *htmlc);
-
-/**
  * Check if any of the scripts loaded were insecure
  */
 bool html_saw_insecure_scripts(html_content *htmlc);

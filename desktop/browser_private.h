@@ -265,12 +265,6 @@ struct browser_window {
 	/** current javascript context */
 	struct jsheap *jsheap;
 
-	/** The JS thread (if any) for the current content */
-	struct jsthread *current_jsthread;
-
-	/** The JS thread (if any) for the loading content */
-	struct jsthread *loading_jsthread;
-
 	/** cache of the currently displayed status text. */
 	struct {
 		char *text; /**< Current status bar text. */
