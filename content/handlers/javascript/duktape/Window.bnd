@@ -12,6 +12,7 @@ class Window {
 	private struct browser_window * win;
 	private struct html_content * htmlc;
 	private struct window_schedule_s * schedule_ring;
+	private bool closed_down;
 	prologue %{
 #include "utils/corestrings.h"
 #include "utils/nsurl.h"
@@ -230,6 +231,8 @@ static duk_ret_t dukky_window_closedown_thread(duk_context *ctx)
 		return 0;
 	}
 
+	priv->closed_down = true;
+
 	NSLOG(dukky, DEEPDEBUG, "Closing down thread");
 	while (priv->schedule_ring != NULL) {
 		window_remove_callback_by_handle(ctx,
@@ -249,6 +252,7 @@ init Window(struct browser_window *win, struct html_content *htmlc)
 	priv->win = win;
 	priv->htmlc = htmlc;
 	priv->schedule_ring = NULL;
+	priv->closed_down = false;
 	NSLOG(netsurf, DEEPDEBUG, "win=%p htmlc=%p", priv->win, priv->htmlc);
 
 	NSLOG(netsurf, DEEPDEBUG,
@@ -481,6 +485,11 @@ method Window::setTimeout()
 %{
 	duk_idx_t argc = duk_get_top(ctx);
 	duk_int_t timeout = 10;
+
+	if (priv->closed_down == true) {
+		return 0; /* coerced to undefined */
+	}
+
 	if (argc >= 2) {
 		timeout = duk_get_int(ctx, 1);
 	}
@@ -496,6 +505,11 @@ method Window::setInterval()
 %{
 	duk_idx_t argc = duk_get_top(ctx);
 	duk_int_t timeout = 10;
+
+	if (priv->closed_down == true) {
+		return 0; /* coerced to undefined */
+	}
+
 	if (argc >= 2) {
 		timeout = duk_get_int(ctx, 1);
 	}
