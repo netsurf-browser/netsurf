@@ -65,47 +65,9 @@ functions.
 
 # Integration testing
 
-The monkey frontend is used to perform complex tests involving
-operating the browser as a user might (opening windows, navigating to
-websites and rendering the contents etc.)
-
-A test is written as a set of operations in a yaml file. A test can be
-run using the monkey_driver.py python script
-
-    $ ./test/monkey_driver.py -m ./nsmonkey -t test/monkey-tests/start-stop.yaml
-
-There are very few tests within the netsurf repository. The large
-majority of integration tests are held within the
-[netsurf-test](http://source.netsurf-browser.org/netsurf-test.git/)
-repository.
-
-To allow more effective use of these tests additional infrastructure
-has been constructed to allow groupings of tests to be run. This is
-used extensively by the CI system to perform integration testing on
-every commit.
-
-Each test is a member of a group and the tests within each group are
-run together. Groups are listed within division index files. To run
-the integration tests the monkey-see-monkey-do python script is
-used. It downloads the test plan for a division from the netsurf test
-infrastructrure and executes it.
-
-    $ ./test/monkey-see-monkey-do
-    Fetching tests...
-    Parsing tests...
-    Running tests...
-    Start group: initial
-      [ Basic checks that the browser can start and stop ]
-      => Run test: start-stop-no-js.yaml
-      => Run test: basic-navigation.yaml
-      => Run test: start-stop.yaml
-    Start group: no-networking
-      [ Tests that require no networking ]
-      => Run test: resource-scheme.yaml
-    Start group: ecmascript
-      [ ECMAScript tests ]
-    PASS
-
+NetSurf [integration tests](docs/integration-testing.md) use the
+monkey frontend to operate the browser as a whole. These tests open
+windows, navigate to websites and render contents as a user might.
 
 # Documented API
 
