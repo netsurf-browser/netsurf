@@ -1,8 +1,9 @@
 NetSurf Integration Testing
 ===========================
 
-Overview
---------
+[TOC]
+
+# Overview
 
 The monkey frontend is used to perform complex tests involving
 operating the browser as a user might (opening windows, navigating to
@@ -26,8 +27,7 @@ known behaviours such as delays or returning specific content to
 extend test capabilities.
 
 
-Running a test
---------------
+# Running a test
 
 An individual test can be run using the monkey_driver.py python script
 from within the NetSurf repository
@@ -43,8 +43,7 @@ For example to wrap execution under valgrind memory checker
     $ ./test/monkey_driver.py -m ./nsmonkey -w 'valgrind -v --track-origins=yes' -t test/monkey-tests/start-stop.yaml
 
 
-Running more than one test
---------------------------
+# Running more than one test
 
 Each test is a member of a group and the tests within each group are
 run together. Groups are listed within division index files. A group
@@ -88,8 +87,7 @@ group to be executed.
       => Run test: resource-scheme.yaml
     PASS
 
-Test files
-----------
+# Test files
 
 Each test is a individual [YAML](https://en.wikipedia.org/wiki/YAML)
 file and consists of associative arrays (key/value pairs), lists and
@@ -114,10 +112,9 @@ then quits it without ever opening a window to browse to a page
     - action: quit
 
 
-Actions
--------
+# Actions
 
-### launch
+## launch
 
 Start a browser instance. A test will generally have a single launch
 action paired with a quit action.
@@ -145,18 +142,19 @@ The following launch action would start a browser:
  * The user options `enable_javascript` and `send_referer` set to false.
  * The `LANGUAGE` environment variable set to `en`
 
-    - action: launch
-	  launch-options:
-	  - verbose
-	  environment:
-	    NETSURFRES: /home/netsurf/resources
-      options:
-      - enable_javascript=0
-	  - send_referer=0
-	  language: en
+```
+- action: launch
+  launch-options:
+  - verbose
+  environment:
+    NETSURFRES: /home/netsurf/resources
+  options:
+  - enable_javascript=0
+  - send_referer=0
+  language: en
+```
 
-
-### window-new
+## window-new
 
 Open a new browser window. The test may open as many browser windows
 as necessary and they are usually paired with a `window-close` action
@@ -175,7 +173,7 @@ referred to with the win1 identifier:
       tag: win1
 
 
-### window-close
+## window-close
 
 Closes a previously opened window. The window is identified with the
 `window` key, the value of this must be a previously created window
@@ -185,7 +183,7 @@ identifier or an assert will occur.
       window: win1
 
 
-### navigate
+## navigate
 
 Cause a window to start navigating to a new URL.
 
@@ -215,7 +213,7 @@ navigation in a loop with different values.
       repeaturl: urls
 
 
-### reload
+## reload
 
 Cause a window to (re)navigate to the current URL
 
@@ -226,7 +224,7 @@ assert will occur.
     - action: reload
 	  window: win1
 
-### stop
+## stop
 
 Cause a window to immediately stop any navigation.
 
@@ -237,7 +235,7 @@ assert will occur.
     - action: stop
 	  window: win1
 
-### sleep-ms
+## sleep-ms
 
 Wait for time to pass before continuing to next action.
 
@@ -280,7 +278,7 @@ action is delaying.
       - action: quit
 
 
-### block
+## block
 
 Wait for conditions to be met before continuing. This is similar to
 the `sleep-ms` action except that it will wait forever for the
@@ -295,7 +293,7 @@ terminate the block.
         status: complete
 
 
-### repeat
+## repeat
 
 Repeat a set of actions.
 
@@ -354,7 +352,7 @@ Note that `min` ,`step` and `max` are ignored if there is a `values` key
           status: complete
 
 
-### timer-start
+## timer-start
 
 Start a timer.
 
@@ -364,7 +362,7 @@ The identifier for the timer is set with the `timer` key.
       timer: timer1
 
 
-### timer-restart
+## timer-restart
 
 Re-start a timer
 
@@ -373,7 +371,8 @@ The identifier for the timer is set with the `timer` key.
     - action: timer-restart
       timer: timer1
 
-### timer-stop
+
+## timer-stop
 
 Stop a timer
 
@@ -383,7 +382,7 @@ The identifier for the timer is set with the `timer` key.
       timer: timer1
 
 
-### timer-check
+## timer-check
 
 Check a timer meets a condition.
 
@@ -392,7 +391,7 @@ The identifier for the timer is set with the `timer` key.
 The conditional is set with the `condition` key which must be present.
 
 
-### plot-check
+## plot-check
 
 Perform a plot of a previously navigated window.
 
@@ -422,7 +421,7 @@ The checks available are:
       - bitmap-count: 1
 
 
-### click
+## click
 
 Perform a user mouse click on a specified window.
 
@@ -449,7 +448,7 @@ not specified is `single`
         text: "about:Choices"
 
 
-### wait-loading
+## wait-loading
 
 Wait for the navigated page to start loading before moving to the next
 action.
@@ -462,7 +461,7 @@ assert will occur.
       window: win1
 
 
-### add-auth
+## add-auth
 
 Add basic authentication details for a navigation.
 
@@ -478,7 +477,7 @@ answer the challenge.
       password: bar
 
 
-### remove-auth
+## remove-auth
 
 Remove a previously added authentication details.
 
@@ -489,17 +488,17 @@ Remove a previously added authentication details.
       password: bar
 
 
-### add-cert
+## add-cert
 
 Add certificate error handler for a url.
 
 
-### remove-cert
+## remove-cert
 
 Remove certificate error handler for a url.
 
 
-### clear-log
+## clear-log
 
 Clear log for a window.
 
@@ -508,7 +507,7 @@ value of this must be a previously created window identifier or an
 assert will occur.
 
 
-### wait-log
+## wait-log
 
 Wait for string to appear in log output.
 
@@ -518,7 +517,7 @@ assert will occur.
 
 The keys `source` `foldable` `level` and `substring` must be specified
 
-### js-exec
+## js-exec
 
 Execute javascript in a window.
 
@@ -529,7 +528,7 @@ assert will occur.
 The `cmd` key contains the javascript to execute.
 
 
-### page-info-state
+## page-info-state
 
 Check the page information status matches an expected value.
 
@@ -540,6 +539,6 @@ assert will occur.
 The value of the `match` key is compared to the windows page
 information status and an assert occurs if there is a mismatch.
 
-### quit
+## quit
 
 This causes a previously launched browser instance to exit cleanly.
