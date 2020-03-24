@@ -1,7 +1,7 @@
 NetSurf Unit Testing
 ====================
 
-[toc]
+[TOC]
 
 # Overview
 
