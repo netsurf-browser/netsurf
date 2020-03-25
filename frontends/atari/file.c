@@ -234,7 +234,7 @@ static nserror atari_mkdir_all(const char *fname)
 
 	dname = strdup(fname);
 
-	sep = strrchr(dname, '/');
+	sep = strrchr(dname, '\\');
 	if (sep == NULL) {
 		/* no directory separator path is just filename so its ok */
 		free(dname);
@@ -251,13 +251,13 @@ static nserror atari_mkdir_all(const char *fname)
 		}
 		return NSERROR_NOT_DIRECTORY;
 	}
-	*sep = '/'; /* restore separator */
+	*sep = '\\'; /* restore separator */
 
 	sep = dname;
-	while (*sep == '/') {
+	while (*sep == '\\') {
 		sep++;
 	}
-	while ((sep = strchr(sep, '/')) != NULL) {
+	while ((sep = strchr(sep, '\\')) != NULL) {
 		*sep = 0;
 		if (stat(dname, &sb) != 0) {
 			if (nsmkdir(dname, S_IRWXU) != 0) {
@@ -272,9 +272,9 @@ static nserror atari_mkdir_all(const char *fname)
 				return NSERROR_NOT_DIRECTORY;
 			}
 		}
-		*sep = '/'; /* restore separator */
+		*sep = '\\'; /* restore separator */
 		/* skip directory separators */
-		while (*sep == '/') {
+		while (*sep == '\\') {
 			sep++;
 		}
 	}
