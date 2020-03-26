@@ -600,6 +600,13 @@ CXXFLAGS += -DNETSURF_BUILTIN_LOG_FILTER=\"$(NETSURF_BUILTIN_LOG_FILTER)\"
 CFLAGS += -DNETSURF_BUILTIN_VERBOSE_FILTER=\"$(NETSURF_BUILTIN_VERBOSE_FILTER)\"
 CXXFLAGS += -DNETSURF_BUILTIN_VERBOSE_FILTER=\"$(NETSURF_BUILTIN_VERBOSE_FILTER)\"
 
+# Determine if the C compiler supports statement expressions
+# This is needed to permit certain optimisations in our library headers
+ifneq ($(shell $(CC) -dM -E - < /dev/null | grep __GNUC__),)
+CFLAGS += -DSTMTEXPR=1
+CXXFLAGS += -DSTMTEXPR=1
+endif
+
 # ----------------------------------------------------------------------------
 # General make rules
 # ----------------------------------------------------------------------------
