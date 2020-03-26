@@ -55,16 +55,13 @@
 
 #include "content/backing_store.h"
 
-/** Default number of bits of the ident to use in index hash */
-#define DEFAULT_IDENT_SIZE 20
-
-/** Default number of bits to use for an entry index. */
-#define DEFAULT_ENTRY_SIZE 16
-
 /** Backing store file format version */
 #define CONTROL_VERSION 202
 
-/** Number of milliseconds after a update before control data maintenance is performed  */
+/**
+ * Number of milliseconds after a update before control data
+ * maintenance is performed
+ */
 #define CONTROL_MAINT_TIME 10000
 
 /** Filename of serialised entries */
