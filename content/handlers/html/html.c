@@ -1642,6 +1642,10 @@ static void html_stop(struct content *c)
 		/* Still loading; simply flag that we've been aborted
 		 * html_convert/html_finish_conversion will do the rest */
 		htmlc->aborted = true;
+		if (htmlc->jsthread != NULL) {
+			/* Close the JS thread to cancel out any callbacks */
+			js_closethread(htmlc->jsthread);
+		}
 		break;
 
 	case CONTENT_STATUS_READY:
