@@ -173,17 +173,20 @@ redraw_entry(struct history *history,
 	rect.y0 = entry->y - 1 + y;
 	rect.x1 = entry->x + x + LOCAL_HISTORY_WIDTH;
 	rect.y1 = entry->y + y + LOCAL_HISTORY_HEIGHT;
-	res = ctx->plot->rectangle(ctx, pstyle, &rect);
-	if (res != NSERROR_OK) {
-		return res;
-	}
 
-	/* If this is the cursor, show that */
-	if (entry == cursor) {
+	/* Border */
+	if (entry != cursor) {
+		/* Not cursor position */
+		res = ctx->plot->rectangle(ctx, pstyle, &rect);
+		if (res != NSERROR_OK) {
+			return res;
+		}
+	} else {
+		/* Cursor position */
 		rect.x0 -= 1;
 		rect.y0 -= 1;
-		rect.x1 += 2;
-		rect.y1 += 2;
+		rect.x1 += 1;
+		rect.y1 += 1;
 		ctx->plot->rectangle(ctx, &pstyle_rect_cursor, &rect);
 	}
 
