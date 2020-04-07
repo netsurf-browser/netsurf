@@ -125,12 +125,6 @@ input.default-action {
 body#dirlist {
 	padding-bottom: 2em; }
 
-body#dirlist h1 {
-	padding: 5mm;
-	margin: 0;
-	border-bottom-width: 2px;
-	border-bottom-style: solid; }
-
 body#dirlist p {
 	padding: 2px 5mm;
 	margin: 0; }
