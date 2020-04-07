@@ -36,6 +36,7 @@
 #include "utils/log.h"
 #include "testament.h"
 #include "utils/corestrings.h"
+#include "utils/nscolour.h"
 #include "utils/nsoption.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
@@ -782,6 +783,51 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 	return true;
 
 fetch_about_config_handler_aborted:
+	return false;
+}
+
+
+/**
+ * Handler to generate the nscolours stylesheet
+ *
+ * \param ctx The fetcher context.
+ * \return true if handled false if aborted.
+ */
+static bool fetch_about_nscolours_handler(struct fetch_about_context *ctx)
+{
+	nserror res;
+	const char *stylesheet;
+
+	/* content is going to return ok */
+	fetch_set_http_code(ctx->fetchh, 200);
+
+	/* content type */
+	if (fetch_about_send_header(ctx, "Content-Type: text/css; charset=utf-8")) {
+		goto aborted;
+	}
+
+	res = nscolour_get_stylesheet(&stylesheet);
+	if (res != NSERROR_OK) {
+		goto aborted;
+	}
+
+	res = ssenddataf(ctx,
+			"html {\n"
+			"\tbackground-color: #%06x;\n"
+			"}\n"
+			"%s",
+			colour_rb_swap(nscolours[NSCOLOUR_WIN_ODD_BG]),
+			stylesheet);
+	if (res != NSERROR_OK) {
+		goto aborted;
+	}
+
+	fetch_about_send_finished(ctx);
+
+	return true;
+
+aborted:
+
 	return false;
 }
 
