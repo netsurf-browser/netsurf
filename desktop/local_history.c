@@ -24,14 +24,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "utils/errors.h"
 #include "utils/nsurl.h"
+#include "utils/errors.h"
+
 #include "netsurf/types.h"
 #include "netsurf/layout.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/core_window.h"
 #include "netsurf/plotters.h"
 #include "netsurf/keypress.h"
+
+#include "utils/nscolour.h"
 
 #include "desktop/cw_helper.h"
 #include "desktop/gui_internal.h"
@@ -310,33 +313,19 @@ local_history_init(struct core_window_callback_table *cw_t,
 		   struct browser_window *bw,
 		   struct local_history_session **session)
 {
-	nserror res;
 	struct local_history_session *nses;
 
-	res = ns_system_colour_char("Window", &pstyle_bg.fill_colour);
-	if (res != NSERROR_OK) {
-		return res;
-	}
-	pfstyle_node.background = pstyle_bg.fill_colour;
-	pfstyle_node_sel.background = pstyle_bg.fill_colour;
+	pstyle_bg.fill_colour = nscolours[NSCOLOUR_WIN_EVEN_BG];
+	pstyle_line.stroke_colour = nscolours[NSCOLOUR_WIN_EVEN_BORDER];
 
-	res = ns_system_colour_char("GrayText", &pstyle_line.stroke_colour);
-	if (res != NSERROR_OK) {
-		return res;
-	}
 	pstyle_rect.stroke_colour = pstyle_line.stroke_colour;
-	pfstyle_node.foreground = pstyle_line.stroke_colour;
+	pstyle_rect_sel.stroke_colour = nscolours[NSCOLOUR_WIN_EVEN_BORDER];
+	pstyle_rect_cursor.stroke_colour = nscolours[NSCOLOUR_SEL_BG];
 
-	res = ns_system_colour_char("ButtonText", &pstyle_rect_sel.stroke_colour);
-	if (res != NSERROR_OK) {
-		return res;
-	}
-	pfstyle_node_sel.foreground = pstyle_rect_sel.stroke_colour;
-
-	res = ns_system_colour_char("Highlight", &pstyle_rect_cursor.stroke_colour);
-	if (res != NSERROR_OK) {
-		return res;
-	}
+	pfstyle_node.foreground = nscolours[NSCOLOUR_WIN_EVEN_FG];
+	pfstyle_node.background = nscolours[NSCOLOUR_WIN_EVEN_BG];
+	pfstyle_node_sel.foreground = nscolours[NSCOLOUR_WIN_EVEN_FG];
+	pfstyle_node_sel.background = nscolours[NSCOLOUR_WIN_EVEN_BG];
 
 	nses = calloc(1, sizeof(struct local_history_session));
 	if (nses == NULL) {
