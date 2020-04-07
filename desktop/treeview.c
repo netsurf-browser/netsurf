@@ -30,6 +30,7 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/nsurl.h"
+#include "utils/nscolour.h"
 #include "utils/nsoption.h"
 #include "netsurf/bitmap.h"
 #include "netsurf/content.h"
@@ -4871,75 +4872,45 @@ nserror treeview_set_search_string(
  */
 static nserror treeview_init_plot_styles(int font_pt_size)
 {
-	nserror res;
-
 	/* Background colour */
 	plot_style_even.bg.stroke_type = PLOT_OP_TYPE_NONE;
 	plot_style_even.bg.stroke_width = 0;
 	plot_style_even.bg.stroke_colour = 0;
 	plot_style_even.bg.fill_type = PLOT_OP_TYPE_SOLID;
-	res = ns_system_colour_char("Window", &plot_style_even.bg.fill_colour);
-	if (res != NSERROR_OK) {
-		return res;
-	}
+	plot_style_even.bg.fill_colour = nscolours[NSCOLOUR_WIN_EVEN_BG];
 
 	/* Text colour */
 	plot_style_even.text.family = PLOT_FONT_FAMILY_SANS_SERIF;
 	plot_style_even.text.size = font_pt_size;
 	plot_style_even.text.weight = 400;
 	plot_style_even.text.flags = FONTF_NONE;
-	res = ns_system_colour_char("WindowText", &plot_style_even.text.foreground);
-	if (res != NSERROR_OK) {
-		return res;
-	}
-	res = ns_system_colour_char("Window", &plot_style_even.text.background);
-	if (res != NSERROR_OK) {
-		return res;
-	}
+	plot_style_even.text.foreground = nscolours[NSCOLOUR_WIN_EVEN_FG];
+	plot_style_even.text.background = nscolours[NSCOLOUR_WIN_EVEN_BG];
 
 	/* Entry field text colour */
 	plot_style_even.itext = plot_style_even.text;
-	plot_style_even.itext.foreground = mix_colour(
-		plot_style_even.text.foreground,
-		plot_style_even.text.background,
-		255 * 10 / 16);
+	plot_style_even.itext.foreground = nscolours[NSCOLOUR_WIN_EVEN_FG_FADED];
 
 	/* Selected background colour */
 	plot_style_even.sbg = plot_style_even.bg;
-	res = ns_system_colour_char("Highlight", &plot_style_even.sbg.fill_colour);
-	if (res != NSERROR_OK) {
-		return res;
-	}
+	plot_style_even.sbg.fill_colour = nscolours[NSCOLOUR_SEL_BG];
 
 	/* Selected text colour */
 	plot_style_even.stext = plot_style_even.text;
-	res = ns_system_colour_char("HighlightText", &plot_style_even.stext.foreground);
-	if (res != NSERROR_OK) {
-		return res;
-	}
-	res = ns_system_colour_char("Highlight", &plot_style_even.stext.background);
-	if (res != NSERROR_OK) {
-		return res;
-	}
+	plot_style_even.stext.foreground = nscolours[NSCOLOUR_SEL_FG];
+	plot_style_even.stext.background = nscolours[NSCOLOUR_SEL_BG];
 
 	/* Selected entry field text colour */
 	plot_style_even.sitext = plot_style_even.stext;
-	plot_style_even.sitext.foreground = mix_colour(
-		plot_style_even.stext.foreground,
-		plot_style_even.stext.background,
-		255 * 25 / 32);
+	plot_style_even.sitext.foreground = nscolours[NSCOLOUR_SEL_FG_SUBTLE];
 
 	/* Odd numbered node styles */
 	plot_style_odd.bg = plot_style_even.bg;
-	plot_style_odd.bg.fill_colour = mix_colour(
-		plot_style_even.bg.fill_colour,
-		plot_style_even.text.foreground, 255 * 15 / 16);
+	plot_style_odd.bg.fill_colour = nscolours[NSCOLOUR_WIN_ODD_BG];
 	plot_style_odd.text = plot_style_even.text;
 	plot_style_odd.text.background = plot_style_odd.bg.fill_colour;
 	plot_style_odd.itext = plot_style_odd.text;
-	plot_style_odd.itext.foreground = mix_colour(
-		plot_style_odd.text.foreground,
-		plot_style_odd.text.background, 255 * 10 / 16);
+	plot_style_odd.itext.foreground = nscolours[NSCOLOUR_WIN_EVEN_FG_FADED];
 
 	plot_style_odd.sbg = plot_style_even.sbg;
 	plot_style_odd.stext = plot_style_even.stext;
