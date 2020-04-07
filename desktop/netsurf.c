@@ -28,6 +28,8 @@
 
 #include "netsurf/inttypes.h"
 #include "utils/config.h"
+#include "utils/errors.h"
+#include "utils/nscolour.h"
 #include "utils/nsoption.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"
@@ -132,6 +134,10 @@ nserror netsurf_init(const char *store_path)
 
 	/* corestrings init */
 	ret = corestrings_init();
+	if (ret != NSERROR_OK)
+		return ret;
+
+	ret = nscolour_update();
 	if (ret != NSERROR_OK)
 		return ret;
 
