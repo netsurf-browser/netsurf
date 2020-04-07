@@ -247,7 +247,7 @@ struct format_test_vec_s format_test_vec[] = {
 	},
 	{
 		NSOPTION_sys_colour_ActiveBorder,
-		"<tr><th>sys_colour_ActiveBorder</th><td>colour</td><td>default</td><td><span style=\"background-color: #d3d3d3; color: #000000; font-family:Monospace; \">#D3D3D3</span></td></tr>",
+		"<tr><th>sys_colour_ActiveBorder</th><td>colour</td><td>default</td><td><span style=\"font-family:Monospace;\">#D3D3D3</span> <span style=\"background-color: #d3d3d3; border: 1px solid #000000; display: inline-block; width: 1em; height: 1em;\"></span></td></tr>",
 		"sys_colour_ActiveBorder:d3d3d3"
 	},
 };
