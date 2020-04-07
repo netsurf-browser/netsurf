@@ -185,3 +185,82 @@ nserror nscolour_update(void)
 
 	return NSERROR_OK;
 }
+
+/* Exported interface, documented in utils/nscolour.h */
+nserror nscolour_get_stylesheet(const char **stylesheet_out)
+{
+	static char buffer[640];
+	int ret;
+
+	assert(stylesheet_out != NULL);
+
+	ret = snprintf(buffer, sizeof(buffer),
+			".ns-odd-bg {\n"
+			"\tbackground-color: #%06x;\n"
+			"}\n"
+			".ns-odd-bg-hover {\n"
+			"\tbackground-color: #%06x;\n"
+			"}\n"
+			".ns-odd-fg {\n"
+			"\tcolor: #%06x;\n"
+			"}\n"
+			".ns-odd-fg-subtle {\n"
+			"\tcolor: #%06x;\n"
+			"}\n"
+			".ns-odd-fg-faded {\n"
+			"\tcolor: #%06x;\n"
+			"}\n"
+			".ns-odd-fg-good {\n"
+			"\tcolor: #%06x;\n"
+			"}\n"
+			".ns-odd-fg-bad {\n"
+			"\tcolor: #%06x;\n"
+			"}\n"
+			".ns-even-bg {\n"
+			"\tbackground-color: #%06x;\n"
+			"}\n"
+			".ns-even-bg-hover {\n"
+			"\tbackground-color: #%06x;\n"
+			"}\n"
+			".ns-even-fg {\n"
+			"\tcolor: #%06x;\n"
+			"}\n"
+			".ns-even-fg-subtle {\n"
+			"\tcolor: #%06x;\n"
+			"}\n"
+			".ns-even-fg-faded {\n"
+			"\tcolor: #%06x;\n"
+			"}\n"
+			".ns-even-fg-good {\n"
+			"\tcolor: #%06x;\n"
+			"}\n"
+			".ns-even-fg-bad {\n"
+			"\tcolor: #%06x;\n"
+			"}\n"
+			".ns-border {\n"
+			"\tborder-color: #%06x;\n"
+			"}\n",
+			colour_rb_swap(nscolours[NSCOLOUR_WIN_ODD_BG]),
+			colour_rb_swap(nscolours[NSCOLOUR_WIN_ODD_BG_HOVER]),
+			colour_rb_swap(nscolours[NSCOLOUR_WIN_ODD_FG]),
+			colour_rb_swap(nscolours[NSCOLOUR_WIN_ODD_FG_SUBTLE]),
+			colour_rb_swap(nscolours[NSCOLOUR_WIN_ODD_FG_FADED]),
+			colour_rb_swap(nscolours[NSCOLOUR_WIN_ODD_FG_GOOD]),
+			colour_rb_swap(nscolours[NSCOLOUR_WIN_ODD_FG_BAD]),
+			colour_rb_swap(nscolours[NSCOLOUR_WIN_EVEN_BG]),
+			colour_rb_swap(nscolours[NSCOLOUR_WIN_EVEN_BG_HOVER]),
+			colour_rb_swap(nscolours[NSCOLOUR_WIN_EVEN_FG]),
+			colour_rb_swap(nscolours[NSCOLOUR_WIN_EVEN_FG_SUBTLE]),
+			colour_rb_swap(nscolours[NSCOLOUR_WIN_EVEN_FG_FADED]),
+			colour_rb_swap(nscolours[NSCOLOUR_WIN_EVEN_FG_GOOD]),
+			colour_rb_swap(nscolours[NSCOLOUR_WIN_EVEN_FG_BAD]),
+			colour_rb_swap(nscolours[NSCOLOUR_WIN_EVEN_BORDER]));
+	assert(ret > 0 && (size_t)ret < sizeof(buffer));
+	if (ret < 0 || (size_t)ret >= sizeof(buffer)) {
+		/* Error or buffer too small */
+		return NSERROR_NOSPACE;
+	}
+
+	*stylesheet_out = buffer;
+	return NSERROR_OK;
+}

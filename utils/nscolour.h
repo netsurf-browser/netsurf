@@ -68,4 +68,11 @@ extern colour nscolours[];
  */
 nserror nscolour_update(void);
 
+/**
+ * Get a pointer to a stylesheet for nscolours.
+ *
+ * \return NSERROR_OK on success, or appropriate error otherwise.
+ */
+nserror nscolour_get_stylesheet(const char **stylesheet_out);
+
 #endif
