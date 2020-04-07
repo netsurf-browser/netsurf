@@ -27,6 +27,7 @@
 
 #include "utils/nsurl.h"
 #include "utils/messages.h"
+#include "utils/nscolour.h"
 
 #include "netsurf/types.h"
 #include "netsurf/plot_style.h"
@@ -140,37 +141,17 @@ bool dirlist_generate_hide_columns(int flags, char *buffer, int buffer_length)
 
 bool dirlist_generate_title(const char *title, char *buffer, int buffer_length)
 {
+	const char *stylesheet;
 	nserror err;
 	int error;
 
-	colour bg;
-	colour fg;
-	colour odd;
-	colour even;
-	colour border;
-
-	err = ns_system_colour_char("Window", &bg);
-	if (err != NSERROR_OK) {
-		return false;
-	}
-
-	err = ns_system_colour_char("WindowText", &fg);
-	if (err != NSERROR_OK) {
-		return false;
-	}
-
-	odd = mix_colour(fg, bg, 0x18);
-	even = mix_colour(fg, bg, 0x0c);
-	border = mix_colour(fg, bg, 0x40);
-
-	bg = colour_rb_swap(bg);
-	fg = colour_rb_swap(fg);
-	odd = colour_rb_swap(odd);
-	even = colour_rb_swap(even);
-	border = colour_rb_swap(border);
-
 	if (title == NULL)
 		title = "";
+
+	err = nscolour_get_stylesheet(&stylesheet);
+	if (err != NSERROR_OK) {
+		return false;
+	}
 
 	error = snprintf(buffer, buffer_length,
 			"</style>\n"
@@ -179,29 +160,14 @@ bool dirlist_generate_title(const char *title, char *buffer, int buffer_length)
 			"html {\n"
 			"\tbackground-color: #%06x;\n"
 			"}\n"
-			"body {\n"
-			"\tcolor: #%06x;\n"
-			"\tbackground-color: #%06x;\n"
-			"\tborder-color: #%06x;\n"
-			"}\n"
-			"body#dirlist h1 {\n"
-			"\tborder-color: #%06x;\n"
-			"}\n"
-			"body#dirlist a.odd {\n"
-			"\tbackground-color: #%06x;\n"
-			"}\n"
-			"body#dirlist a.even {\n"
-			"\tbackground-color: #%06x;\n"
-			"}\n"
-			"body#dirlist a + a>span {\n"
-			"\tborder-color: #%06x;\n"
-			"}\n"
+			"%s"
 			"</style>\n"
 			"</head>\n"
-			"<body id=\"dirlist\">\n"
-			"<h1>%s</h1>\n",
-			title, even, fg, bg, border, border, odd,
-			even, border, title);
+			"<body id=\"dirlist\" class=\"ns-even-bg ns-even-fg ns-border\">\n"
+			"<h1 class=\"ns-border\">%s</h1>\n",
+			title,
+			colour_rb_swap(nscolours[NSCOLOUR_WIN_ODD_BG]),
+			stylesheet, title);
 	if (error < 0 || error >= buffer_length)
 		/* Error or buffer too small */
 		return false;
@@ -338,14 +304,14 @@ bool dirlist_generate_row(bool even, bool directory, nsurl *url, char *name,
 
 	error = snprintf(buffer, buffer_length,
 			"<a href=\"%s\" class=\"%s %s\">\n"
-			"\t<span class=\"name\">%s</span>\n"
-			"\t<span class=\"type\">%s</span>\n"
-			"\t<span class=\"size\">%s</span>"
-			"<span class=\"size\">%s</span>\n"
-			"\t<span class=\"date\">%s</span>\n"
-			"\t<span class=\"time\">%s</span>\n"
-			"</a>\n",
-			 nsurl_access(url), even ? "even" : "odd",
+			"\t<span class=\"name ns-border\">%s</span>\n"
+			"\t<span class=\"type ns-border\">%s</span>\n"
+			"\t<span class=\"size ns-border\">%s</span>"
+			"<span class=\"size ns-border\">%s</span>\n"
+			"\t<span class=\"date ns-border\">%s</span>\n"
+			"\t<span class=\"time ns-border\">%s</span>\n"
+			"</a>\n", nsurl_access(url),
+			even ? "even ns-even-bg" : "odd  ns-odd-bg",
 			directory ? "dir" : "file",
 			name, mimetype, size_string, unit, date, time);
 	if (error < 0 || error >= buffer_length)
