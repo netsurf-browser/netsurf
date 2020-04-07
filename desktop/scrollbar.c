@@ -29,6 +29,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "utils/nscolour.h"
 #include "utils/nsoption.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
@@ -250,28 +251,16 @@ scrollbar_redraw(struct scrollbar *s,
 
 	plot_style_t bg_fill_style = {
 		.fill_type = PLOT_OP_TYPE_SOLID,
+		.fill_colour = nscolours[NSCOLOUR_SCROLL_WELL],
 	};
 	plot_style_t fg_fill_style = {
 		.fill_type = PLOT_OP_TYPE_SOLID,
+		.fill_colour = nscolours[NSCOLOUR_BUTTON_BG],
 	};
 	plot_style_t arrow_fill_style = {
 		.fill_type = PLOT_OP_TYPE_SOLID,
+		.fill_colour = nscolours[NSCOLOUR_BUTTON_FG],
 	};
-
-	res = ns_system_colour_char("Scrollbar", &bg_fill_style.fill_colour);
-	if (res != NSERROR_OK) {
-		return res;
-	}
-
-	res = ns_system_colour_char("ButtonFace", &fg_fill_style.fill_colour);
-	if (res != NSERROR_OK) {
-		return res;
-	}
-
-	res = ns_system_colour_char("ButtonText", &arrow_fill_style.fill_colour);
-	if (res != NSERROR_OK) {
-		return res;
-	}
 
 	area.x0 = x;
 	area.y0 = y;
