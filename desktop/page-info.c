@@ -27,6 +27,7 @@
 #include "css/utils.h"
 
 #include "utils/nsurl.h"
+#include "utils/nscolour.h"
 
 #include "netsurf/mouse.h"
 #include "netsurf/layout.h"
@@ -256,58 +257,32 @@ struct page_info {
 /* Exported interface documented in desktop/page_info.h */
 nserror page_info_init(void)
 {
-	bool dark_on_light;
-	nserror err;
-	colour good;
-	colour bad;
-	colour bg;
-	colour fg;
+	pi__bg.fill_colour = nscolours[NSCOLOUR_WIN_EVEN_BG];
+	pi__hover.fill_colour = nscolours[NSCOLOUR_WIN_EVEN_BG_HOVER];
 
-	err = ns_system_colour_char("Window", &bg);
-	if (err != NSERROR_OK) {
-		return err;
-	}
+	pi__domain.background = nscolours[NSCOLOUR_WIN_EVEN_BG];
+	pi__domain.foreground = nscolours[NSCOLOUR_WIN_EVEN_FG];
 
-	err = ns_system_colour_char("WindowText", &fg);
-	if (err != NSERROR_OK) {
-		return err;
-	}
+	pi__item.background = nscolours[NSCOLOUR_WIN_EVEN_BG];
+	pi__item.foreground = nscolours[NSCOLOUR_WIN_EVEN_FG];
 
-	dark_on_light = colour_lightness(bg) > colour_lightness(fg);
+	pi__item_detail.background = nscolours[NSCOLOUR_WIN_EVEN_BG];
+	pi__item_detail.foreground = nscolours[NSCOLOUR_WIN_EVEN_FG_FADED];
 
-	pi__bg.fill_colour = bg;
-	pi__hover.fill_colour = dark_on_light?
-			darken_colour(bg) :
-			lighten_colour(bg);
-
-	pi__domain.background = bg;
-	pi__domain.foreground = fg;
-
-	pi__item.background = bg;
-	pi__item.foreground = fg;
-
-	pi__item_detail.background = bg;
-	pi__item_detail.foreground = blend_colour(bg, fg);
-
-	good = colour_engorge_component(fg,
-			dark_on_light, PLOT_COLOUR_COMPONENT_GREEN);
-	bad = colour_engorge_component(fg,
-			dark_on_light, PLOT_COLOUR_COMPONENT_RED);
-
-	pi__heading[PAGE_STATE_UNKNOWN].background = bg;
-	pi__heading[PAGE_STATE_UNKNOWN].foreground = bad;
-	pi__heading[PAGE_STATE_INTERNAL].background = bg;
-	pi__heading[PAGE_STATE_INTERNAL].foreground = fg;
-	pi__heading[PAGE_STATE_LOCAL].background = bg;
-	pi__heading[PAGE_STATE_LOCAL].foreground = fg;
-	pi__heading[PAGE_STATE_INSECURE].background = bg;
-	pi__heading[PAGE_STATE_INSECURE].foreground = bad;
-	pi__heading[PAGE_STATE_SECURE_OVERRIDE].background = bg;
-	pi__heading[PAGE_STATE_SECURE_OVERRIDE].foreground = bad;
-	pi__heading[PAGE_STATE_SECURE_ISSUES].background = bg;
-	pi__heading[PAGE_STATE_SECURE_ISSUES].foreground = bad;
-	pi__heading[PAGE_STATE_SECURE].background = bg;
-	pi__heading[PAGE_STATE_SECURE].foreground = good;
+	pi__heading[PAGE_STATE_UNKNOWN].background = nscolours[NSCOLOUR_WIN_EVEN_BG];
+	pi__heading[PAGE_STATE_UNKNOWN].foreground = nscolours[NSCOLOUR_WIN_EVEN_FG_BAD];
+	pi__heading[PAGE_STATE_INTERNAL].background = nscolours[NSCOLOUR_WIN_EVEN_BG];
+	pi__heading[PAGE_STATE_INTERNAL].foreground = nscolours[NSCOLOUR_WIN_EVEN_FG];
+	pi__heading[PAGE_STATE_LOCAL].background = nscolours[NSCOLOUR_WIN_EVEN_BG];
+	pi__heading[PAGE_STATE_LOCAL].foreground = nscolours[NSCOLOUR_WIN_EVEN_FG];
+	pi__heading[PAGE_STATE_INSECURE].background = nscolours[NSCOLOUR_WIN_EVEN_BG];
+	pi__heading[PAGE_STATE_INSECURE].foreground = nscolours[NSCOLOUR_WIN_EVEN_FG_BAD];
+	pi__heading[PAGE_STATE_SECURE_OVERRIDE].background = nscolours[NSCOLOUR_WIN_EVEN_BG];
+	pi__heading[PAGE_STATE_SECURE_OVERRIDE].foreground = nscolours[NSCOLOUR_WIN_EVEN_FG_BAD];
+	pi__heading[PAGE_STATE_SECURE_ISSUES].background = nscolours[NSCOLOUR_WIN_EVEN_BG];
+	pi__heading[PAGE_STATE_SECURE_ISSUES].foreground = nscolours[NSCOLOUR_WIN_EVEN_FG_BAD];
+	pi__heading[PAGE_STATE_SECURE].background = nscolours[NSCOLOUR_WIN_EVEN_BG];
+	pi__heading[PAGE_STATE_SECURE].foreground = nscolours[NSCOLOUR_WIN_EVEN_FG_GOOD];
 
 	return NSERROR_OK;
 }
