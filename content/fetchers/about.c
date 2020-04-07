@@ -282,6 +282,7 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 	unsigned int cent_loop = 0;
 	int elen = 0; /* entry length */
 	nserror res;
+	bool even = false;
 
 	/* content is going to return ok */
 	fetch_set_http_code(ctx->fetchh, code);
@@ -293,16 +294,12 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 	/* page head */
 	res = ssenddataf(ctx,
 			 "<html>\n<head>\n"
-			"<title>NetSurf Browser Image Cache Status</title>\n"
+			"<title>Image Cache Status</title>\n"
 			"<link rel=\"stylesheet\" type=\"text/css\" "
 			"href=\"resource:internal.css\">\n"
 			"</head>\n"
-			"<body id =\"cachelist\">\n"
-			"<p class=\"banner\">"
-			"<a href=\"http://www.netsurf-browser.org/\">"
-			"<img src=\"resource:netsurf.png\" alt=\"NetSurf\"></a>"
-			"</p>\n"
-			"<h1>NetSurf Browser Image Cache Status</h1>\n");
+			"<body id =\"cachelist\" class=\"ns-even-bg ns-even-fg ns-border\">\n"
+			"<h1 class=\"ns-border\">Image Cache Status</h1>\n");
 	if (res != NSERROR_OK) {
 		goto fetch_about_imagecache_handler_aborted;
 	}
@@ -324,7 +321,7 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 				"(from %v images converted more than once)"
 				"</p>\n"
 		"<p>Bitmap of size %w had most (%x) conversions</p>\n"
-		"<h2>Current image cache contents</h2>\n");
+		"<h2 class=\"ns-border\">Current contents</h2>\n");
 	if (slen >= (int) (sizeof(buffer))) {
 		goto fetch_about_imagecache_handler_aborted; /* overflow */
 	}
@@ -355,19 +352,35 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 
 	slen = 0;
 	do {
-		elen = image_cache_snentryf(buffer + slen,
-					   sizeof buffer - slen,
-				cent_loop,
-				"<a href=\"%U\">"
-				"<span>%e</span>"
-				"<span>%k</span>"
-				"<span>%r</span>"
-				"<span>%c</span>"
-				"<span>%a</span>"
-				"<span>%g</span>"
-				"<span>%s</span>"
-				"<span>%o</span>"
-				"</a>\n");
+		if (even) {
+			elen = image_cache_snentryf(buffer + slen,
+						   sizeof buffer - slen,
+					cent_loop,
+					"<a href=\"%U\">"
+					"<span class=\"ns-border\">%e</span>"
+					"<span class=\"ns-border\">%k</span>"
+					"<span class=\"ns-border\">%r</span>"
+					"<span class=\"ns-border\">%c</span>"
+					"<span class=\"ns-border\">%a</span>"
+					"<span class=\"ns-border\">%g</span>"
+					"<span class=\"ns-border\">%s</span>"
+					"<span class=\"ns-border\">%o</span>"
+					"</a>\n");
+		} else {
+			elen = image_cache_snentryf(buffer + slen,
+						   sizeof buffer - slen,
+					cent_loop,
+					"<a class=\"ns-odd-bg\" href=\"%U\">"
+					"<span class=\"ns-border\">%e</span>"
+					"<span class=\"ns-border\">%k</span>"
+					"<span class=\"ns-border\">%r</span>"
+					"<span class=\"ns-border\">%c</span>"
+					"<span class=\"ns-border\">%a</span>"
+					"<span class=\"ns-border\">%g</span>"
+					"<span class=\"ns-border\">%s</span>"
+					"<span class=\"ns-border\">%o</span>"
+					"</a>\n");
+		}
 		if (elen <= 0)
 			break; /* last option */
 
@@ -381,6 +394,7 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 			/* normal addition */
 			slen += elen;
 			cent_loop++;
+			even = !even;
 		}
 	} while (elen > 0);
 
@@ -582,29 +596,6 @@ static bool fetch_about_certificate_handler(struct fetch_about_context *ctx)
 	nserror res;
 	struct cert_chain *chain = NULL;
 
-	colour bg;
-	colour fg;
-	colour border;
-	colour outside;
-
-	res = ns_system_colour_char("Window", &bg);
-	if (res != NSERROR_OK) {
-		return false;
-	}
-
-	res = ns_system_colour_char("WindowText", &fg);
-	if (res != NSERROR_OK) {
-		return false;
-	}
-
-	outside = mix_colour(fg, bg, 0x0c);
-	border = mix_colour(fg, bg, 0x40);
-
-	bg = colour_rb_swap(bg);
-	fg = colour_rb_swap(fg);
-	border = colour_rb_swap(border);
-	outside = colour_rb_swap(outside);
-
 	/* content is going to return ok */
 	fetch_set_http_code(ctx->fetchh, code);
 
@@ -618,23 +609,9 @@ static bool fetch_about_certificate_handler(struct fetch_about_context *ctx)
 			"<title>NetSurf Browser Certificate Viewer</title>\n"
 			"<link rel=\"stylesheet\" type=\"text/css\" "
 					"href=\"resource:internal.css\">\n"
-			"<style>\n"
-			"html {\n"
-			"\tbackground-color: #%06x;\n"
-			"}\n"
-			"body {\n"
-			"\tcolor: #%06x;\n"
-			"\tbackground-color: #%06x;\n"
-			"\tborder-color: #%06x;\n"
-			"}\n"
-			"h2 {\n"
-			"\tborder-color: #%06x;\n"
-			"}\n"
-			"</style>\n"
 			"</head>\n"
-			"<body id =\"certificate\">\n"
-			"<h1>Certificate</h1>\n",
-			outside, fg, bg, border, border);
+			"<body class=\"ns-even-bg ns-even-fg ns-border\">\n"
+			"<h1 class=\"ns-border\">Certificate</h1>\n");
 	if (res != NSERROR_OK) {
 		goto fetch_about_certificate_handler_aborted;
 	}
@@ -652,14 +629,14 @@ static bool fetch_about_certificate_handler(struct fetch_about_context *ctx)
 			size_t depth;
 			for (depth = 0; depth < chain->depth; depth++) {
 				res = ssenddataf(ctx,
-						 "<h2>Certificate: %d</h2>\n"
+						 "<h2 class=\"ns-border\">Certificate: %d</h2>\n"
 						 "<p>Subject: %s</p>"
 						 "<p>Serial Number: %s</p>"
 						 "<p>Type: %i</p>"
 						 "<p>Version: %ld</p>"
 						 "<p>Issuer: %s</p>"
 						 "<p>Valid From: %s</p>"
-						 "<p>Valid Untill: %s</p>",
+						 "<p>Valid Until: %s</p>",
 						 depth,
 						 cert_info[depth].subject,
 						 cert_info[depth].serialnum,
@@ -716,6 +693,7 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 	unsigned int opt_loop = 0;
 	int elen = 0; /* entry length */
 	nserror res;
+	bool even = false;
 
 	/* content is going to return ok */
 	fetch_set_http_code(ctx->fetchh, 200);
@@ -726,23 +704,21 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 	}
 
 	res = ssenddataf(ctx,
-			 "<html>\n<head>\n"
-			 "<title>NetSurf Browser Config</title>\n"
-			 "<link rel=\"stylesheet\" type=\"text/css\" "
-			 "href=\"resource:internal.css\">\n"
-			 "</head>\n"
-			 "<body id =\"configlist\">\n"
-			 "<p class=\"banner\">"
-			 "<a href=\"http://www.netsurf-browser.org/\">"
-			 "<img src=\"resource:netsurf.png\""
-			 " alt=\"NetSurf\"></a>"
-			 "</p>\n"
-			 "<h1>NetSurf Browser Config</h1>\n"
-			 "<table class=\"config\">\n"
-			 "<tr><th>Option</th>"
-			 "<th>Type</th>"
-			 "<th>Provenance</th>"
-			 "<th>Setting</th></tr>\n");
+			"<html>\n<head>\n"
+			"<title>NetSurf Browser Config</title>\n"
+			"<link rel=\"stylesheet\" type=\"text/css\" "
+			"href=\"resource:internal.css\">\n"
+			"</head>\n"
+			"<body "
+				"id =\"configlist\" "
+				"class=\"ns-even-bg ns-even-fg ns-border\" "
+				"style=\"overflow: hidden;\">\n"
+			"<h1 class=\"ns-border\">NetSurf Browser Config</h1>\n"
+			"<table class=\"config\">\n"
+			"<tr><th>Option</th>"
+			"<th>Type</th>"
+			"<th>Provenance</th>"
+			"<th>Setting</th></tr>\n");
 	if (res != NSERROR_OK) {
 		goto fetch_about_config_handler_aborted;
 	}
@@ -751,10 +727,27 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 	msg.data.header_or_data.buf = (const uint8_t *) buffer;
 
 	do {
-		elen = nsoption_snoptionf(buffer + slen,
-					 sizeof buffer - slen,
-					 opt_loop,
-					 "<tr><th>%k</th><td>%t</td><td>%p</td><td>%V</td></tr>\n");
+		if (even) {
+			elen = nsoption_snoptionf(buffer + slen,
+					sizeof buffer - slen,
+					opt_loop,
+					"<tr>"
+						"<th class=\"ns-border\">%k</th>"
+						"<td class=\"ns-border\">%t</td>"
+						"<td class=\"ns-border\">%p</td>"
+						"<td class=\"ns-border\">%V</td>"
+					"</tr>\n");
+		} else {
+			elen = nsoption_snoptionf(buffer + slen,
+					sizeof buffer - slen,
+					opt_loop,
+					"<tr class=\"ns-odd-bg\">"
+						"<th class=\"ns-border\">%k</th>"
+						"<td class=\"ns-border\">%t</td>"
+						"<td class=\"ns-border\">%p</td>"
+						"<td class=\"ns-border\">%V</td>"
+					"</tr>\n");
+		}
 		if (elen <= 0)
 			break; /* last option */
 
@@ -768,6 +761,7 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 			/* normal addition */
 			slen += elen;
 			opt_loop++;
+			even = !even;
 		}
 	} while (elen > 0);
 
@@ -1162,17 +1156,15 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 		goto fetch_about_query_auth_handler_aborted;
 	}
 
-
 	title = messages_get("LoginTitle");
-
 	res = ssenddataf(ctx,
 			"<html>\n<head>\n"
 			"<title>%s</title>\n"
 			"<link rel=\"stylesheet\" type=\"text/css\" "
 			"href=\"resource:internal.css\">\n"
 			"</head>\n"
-			"<body id =\"authentication\">\n"
-			"<h1>%s</h1>\n",
+			"<body class=\"ns-even-bg ns-even-fg ns-border\" id =\"authentication\">\n"
+			"<h1 class=\"ns-border\">%s</h1>\n",
 			title, title);
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_auth_handler_aborted;
@@ -1331,8 +1323,8 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 			"<link rel=\"stylesheet\" type=\"text/css\" "
 			"href=\"resource:internal.css\">\n"
 			"</head>\n"
-			"<body id =\"privacy\">\n"
-			"<h1>%s</h1>\n",
+			"<body class=\"ns-even-bg ns-even-fg ns-border\" id =\"privacy\">\n"
+			"<h1 class=\"ns-border ns-odd-fg-bad\">%s</h1>\n",
 			title, title);
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_ssl_handler_aborted;
@@ -1453,8 +1445,8 @@ static bool fetch_about_query_timeout_handler(struct fetch_about_context *ctx)
 			"<link rel=\"stylesheet\" type=\"text/css\" "
 			"href=\"resource:internal.css\">\n"
 			"</head>\n"
-			"<body id =\"timeout\">\n"
-			"<h1>%s</h1>\n",
+			"<body class=\"ns-even-bg ns-even-fg ns-border\" id =\"timeout\">\n"
+			"<h1 class=\"ns-border ns-odd-fg-bad\">%s</h1>\n",
 			title, title);
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_timeout_handler_aborted;
@@ -1576,8 +1568,8 @@ fetch_about_query_fetcherror_handler(struct fetch_about_context *ctx)
 			"<link rel=\"stylesheet\" type=\"text/css\" "
 			"href=\"resource:internal.css\">\n"
 			"</head>\n"
-			"<body id =\"fetcherror\">\n"
-			"<h1>%s</h1>\n",
+			"<body class=\"ns-even-bg ns-even-fg ns-border\" id =\"fetcherror\">\n"
+			"<h1 class=\"ns-border ns-odd-fg-bad\">%s</h1>\n",
 			title, title);
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_fetcherror_handler_aborted;
@@ -1712,6 +1704,13 @@ struct about_handlers about_handler_list[] = {
 		true
 	},
 	{
+		"nscolours.css",
+		SLEN("nscolours.css"),
+		NULL,
+		fetch_about_nscolours_handler,
+		true
+	},
+	{
 		"logo",
 		SLEN("logo"),
 		NULL,
@@ -1795,16 +1794,12 @@ static bool fetch_about_about_handler(struct fetch_about_context *ctx)
 
 	res = ssenddataf(ctx,
 			"<html>\n<head>\n"
-			"<title>NetSurf List of About pages</title>\n"
+			"<title>List of NetSurf pages</title>\n"
 			"<link rel=\"stylesheet\" type=\"text/css\" "
 			"href=\"resource:internal.css\">\n"
 			"</head>\n"
-			"<body id =\"aboutlist\">\n"
-			"<p class=\"banner\">"
-			"<a href=\"http://www.netsurf-browser.org/\">"
-			"<img src=\"resource:netsurf.png\" alt=\"NetSurf\"></a>"
-			"</p>\n"
-			"<h1>NetSurf List of About pages</h1>\n"
+			"<body class=\"ns-even-bg ns-even-fg ns-border\">\n"
+			"<h1 class =\"ns-border\">List of NetSurf pages</h1>\n"
 			"<ul>\n");
 	if (res != NSERROR_OK) {
 		goto fetch_about_config_handler_aborted;

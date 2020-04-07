@@ -110,7 +110,8 @@ dd > ul {
 .footer p {
 	margin-top: 1.5em;
 	padding-top: 0.4em;
-	border-top: 2px solid #94adff; }
+	border-top-width: 2px;
+	border-top-style: solid; }
 
 input.default-action {
 	color: white;
@@ -196,7 +197,11 @@ body#dirlist span.size + span.size {
  */
 
 body#configlist table.config {
-	border-spacing: 0; }
+	border-spacing: 0;
+	font-size: 85%;
+	margin: 1.3em 0;
+	width: 100%;
+	box-sizing: border-box }
 
 body#configlist table.config tr:nth-child(2n-1) {
 	background: #eee; }
@@ -204,13 +209,18 @@ body#configlist table.config tr:nth-child(2n-1) {
 body#configlist table.config tr:first-child th {
 	text-align: left;
 	font-weight: bold;
-	font-family: sans-serif;
-	background: #ddd; }
+	font-family: sans-serif; }
 
 body#configlist table.config tr th {
 	text-align: left;
 	font-weight: normal;
 	font-family: monospace; }
+
+body#configlist table.config tr+tr th,
+body#configlist table.config tr+tr td {
+	border-top-width: 1px;
+	border-top-style: solid;
+}
 
 body#configlist table.config td, body#configlist table.config th {
 	padding-left: 1em; }
@@ -224,7 +234,7 @@ body#configlist table.config tr *:nth-child(4) {
 	padding-right: 1em; }
 
 body#configlist .null-content {
-        font-style: italic; }
+	font-style: italic; }
 
 
 /*
@@ -238,22 +248,18 @@ p.imagecachelist {
 	display: table;
 }
 
-p.imagecachelist a:nth-child(2n+3) {
-	background: #e8edff;
-}
-
 p.imagecachelist strong, p.imagecachelist a {
 	display: table-row;
 }
 
-p.imagecachelist strong span {
-	background: #c8d5ff;
-}
-
 p.imagecachelist span {
-	border-top: 1px solid #bcf;
 	padding: 2px 0.5em;
 	display: table-cell;
+}
+
+p.imagecachelist a+a span {
+	border-top-width: 1px;
+	border-top-style: solid;
 }
 
 /*
@@ -264,21 +270,11 @@ body#authentication {
     max-width: 45em;
 }
 
-body#authentication h1 {
-  padding: 0.8em 0.4em 0.5em 0.4em;
-  border-bottom: 0.1em solid #444;
-  margin: 0 0 1.3em 0;
-  background: #777;
-  color: white;
-}
-
 body#authentication form {
   /* Just to center the form on the page */
   margin: 0 auto;
   /* To see the outline of the form */
   padding: 1em;
-  border: 1px solid #CCC;
-  border-radius: 1em;
 }
 
 body#authentication table {
@@ -328,21 +324,11 @@ body#privacy {
   max-width: 45em;
 }
 
-body#privacy h1 {
-  padding: 0.8em 0.4em 0.5em 0.4em;
-  border-bottom: 0.1em solid #444;
-  margin: 0 0 1.3em 0;
-  background: #c55;
-  color: white;
-}
-
 body#privacy form {
   /* Just to center the form on the page */
   margin: 0 auto;
   /* To see the outline of the form */
   padding: 1em;
-  border: 1px solid #CCC;
-  border-radius: 1em;
 }
 
 body#privacy form div + div {
@@ -366,21 +352,11 @@ body#timeout {
   max-width: 45em;
 }
 
-body#timeout h1 {
-  padding: 0.8em 0.4em 0.5em 0.4em;
-  border-bottom: 0.1em solid #444;
-  margin: 0 0 1.3em 0;
-  background: #c55;
-  color: white;
-}
-
 body#timeout form {
   /* Just to center the form on the page */
   margin: 0 auto;
   /* To see the outline of the form */
   padding: 1em;
-  border: 1px solid #CCC;
-  border-radius: 1em;
 }
 
 body#timeout form div + div {
@@ -404,21 +380,11 @@ body#fetcherror {
   max-width: 45em;
 }
 
-body#fetcherror h1 {
-  padding: 0.8em 0.4em 0.5em 0.4em;
-  border-bottom: 0.1em solid #444;
-  margin: 0 0 1.3em 0;
-  background: #c55;
-  color: white;
-}
-
 body#fetcherror form {
   /* Just to center the form on the page */
   margin: 0 auto;
   /* To see the outline of the form */
   padding: 1em;
-  border: 1px solid #CCC;
-  border-radius: 1em;
 }
 
 body#fetcherror form div + div {
