@@ -37,13 +37,21 @@ a:active {
 
 h1 {
 	font-size: 200%;
-	font-weight: bold; }
+	font-weight: bold;
+	padding: 5mm;
+	margin: 0;
+	border-bottom-width: 2px;
+	border-bottom-style: solid; }
 
 h2 {
 	font-size: 160%;
 	padding-top: 5mm;
 	border-top-width: 1px;
 	border-top-style: solid; }
+
+h1+h2 {
+	border-top: none;
+}
 
 h3 {
 	font-size: 140%;
