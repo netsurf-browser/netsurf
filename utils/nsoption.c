@@ -383,9 +383,7 @@ nsoption_output_value_html(struct nsoption_s *option,
 		break;
 
 	case OPTION_COLOUR:
-		rgbcolour = (((0x000000FF & option->value.c) << 16) |
-			     ((0x0000FF00 & option->value.c) << 0) |
-			     ((0x00FF0000 & option->value.c) >> 16));
+		rgbcolour = colour_rb_swap(option->value.c);
 		slen = snprintf(string + pos,
 				size - pos,
 				"<span style=\"background-color: #%06x; "
