@@ -124,6 +124,11 @@ typedef struct plot_font_style {
 } plot_font_style_t;
 
 
+/* Darken a colour by taking seven eighths of each channel's intensity */
+#define half_darken_colour(c1)				 		\
+	((((7 * (c1 & 0xff00ff)) >> 3) & 0xff00ff) |			\
+	 (((7 * (c1 & 0x00ff00)) >> 3) & 0x00ff00))
+
 /* Darken a colour by taking three quarters of each channel's intensity */
 #define darken_colour(c1)				 		\
 	((((3 * (c1 & 0xff00ff)) >> 2) & 0xff00ff) |			\
@@ -133,6 +138,12 @@ typedef struct plot_font_style {
 #define double_darken_colour(c1)					\
 	((((9 * (c1 & 0xff00ff)) >> 4) & 0xff00ff) |			\
 	 (((9 * (c1 & 0x00ff00)) >> 4) & 0x00ff00))
+
+/* Lighten a colour by taking seven eighths of each channel's intensity
+ * and adding a full one eighth intensity */
+#define half_lighten_colour(c1)						\
+	(((((7 * (c1 & 0xff00ff)) >> 3) + 0x200020) & 0xff00ff) |	\
+	 ((((7 * (c1 & 0x00ff00)) >> 3) + 0x002000) & 0x00ff00))
 
 /* Lighten a colour by taking 12/16ths of each channel's intensity
  * and adding a full 4/16ths intensity */
