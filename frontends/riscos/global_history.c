@@ -367,6 +367,7 @@ global_history_menu_select(wimp_w w,
  */
 static nserror ro_global_history_init(void)
 {
+	os_error *error;
 	struct ro_global_history_window *ncwin;
 	nserror res;
 	static const struct ns_menu global_history_menu_def = {
@@ -411,7 +412,15 @@ static nserror ro_global_history_init(void)
 	}
 
 	/* create window from template */
-	ncwin->core.wh = wimp_create_window(dialog_global_history_template);
+	error = xwimp_create_window(dialog_global_history_template,
+				    &ncwin->core.wh);
+	if (error) {
+		NSLOG(netsurf, INFO, "xwimp_create_window: 0x%x: %s",
+		      error->errnum, error->errmess);
+		ro_warn_user("WimpError", error->errmess);
+		free(ncwin);
+		return NSERROR_NOMEM;
+	}
 
 	ro_gui_set_window_title(ncwin->core.wh, messages_get("GlobalHistory"));
 
