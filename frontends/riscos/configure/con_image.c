@@ -38,10 +38,10 @@
 #define IMAGE_BACKGROUND_FIELD 6
 #define IMAGE_BACKGROUND_MENU 7
 #define IMAGE_CURRENT_DISPLAY 8
-#define IMAGE_DISABLE_ANIMATION 16
-#define IMAGE_DEFAULT_BUTTON 17
-#define IMAGE_CANCEL_BUTTON 18
-#define IMAGE_OK_BUTTON 19
+#define IMAGE_DISABLE_ANIMATION 11
+#define IMAGE_DEFAULT_BUTTON 12
+#define IMAGE_CANCEL_BUTTON 13
+#define IMAGE_OK_BUTTON 14
 
 static bool ro_gui_options_image_click(wimp_pointer *pointer);
 static bool ro_gui_options_image_ok(wimp_w w);
