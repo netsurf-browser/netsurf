@@ -300,6 +300,9 @@ bool html_redraw_inline_borders(struct box *box, struct rect b,
 /* in html/html_script.c */
 dom_hubbub_error html_process_script(void *ctx, dom_node *node);
 
+/* in html/html.c */
+bool html_exec(struct content *c, const char *src, size_t srclen);
+
 /**
  * Attempt script execution for defer and async scripts
  *

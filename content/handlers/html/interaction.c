@@ -572,6 +572,7 @@ struct mouse_action_state {
 		      ACTION_NOSEND, /**< do not send status and pointer message */
 		      ACTION_SUBMIT,
 		      ACTION_GO,
+		      ACTION_JS,
 		} action;
 	} result;
 
@@ -1057,6 +1058,28 @@ html_object_mouse_action(html_content *html,
 
 
 /**
+ * determine if a url has a javascript scheme
+ *
+ * \param urm The url to check.
+ * \return true if the url is a javascript scheme else false
+ */
+static bool is_javascript_navigate_url(nsurl *url)
+{
+	bool is_js = false;
+	lwc_string *scheme;
+
+	scheme = nsurl_get_component(url, NSURL_SCHEME);
+	if (scheme != NULL) {
+		if (scheme == corestring_lwc_javascript) {
+			is_js = true;
+		}
+		lwc_string_unref(scheme);
+	}
+	return is_js;
+}
+
+
+/**
  * process mouse activity on a link
  */
 static nserror
@@ -1125,11 +1148,16 @@ link_mouse_action(html_content *html,
 				  &msg_data);
 
 	} else if (mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) {
-		mas->result.action = ACTION_GO;
+		if (is_javascript_navigate_url(mas->link.url)) {
+			mas->result.action = ACTION_JS;
+		} else {
+			mas->result.action = ACTION_GO;
+		}
 	}
 
 	return NSERROR_OK;
 }
+
 
 
 /**
@@ -1296,10 +1324,11 @@ mouse_action_drag_none(html_content *html,
 		       browser_mouse_state mouse,
 		       int x, int y)
 {
+	nserror res;
 	struct content *c = (struct content *)html;
 	union content_msg_data msg_data;
+	lwc_string *path;
 
-	nserror res;
 	/**
 	 * computed state
 	 *
@@ -1395,6 +1424,16 @@ mouse_action_drag_none(html_content *html,
 				NULL);
 		break;
 
+	case ACTION_JS:
+		path = nsurl_get_component(mas.link.url, NSURL_PATH);
+		if (path != NULL) {
+			html_exec(c,
+				  lwc_string_data(path),
+				  lwc_string_length(path));
+			lwc_string_unref(path);
+		}
+		break;
+
 	case ACTION_NOSEND:
 	case ACTION_NONE:
 		res = NSERROR_OK;
@@ -1462,7 +1501,7 @@ html_mouse_action(struct content *c,
 	if (res != NSERROR_OK) {
 		NSLOG(netsurf, ERROR, "%s", messages_get_errorcode(res));
 	}
-	
+
 	return res;
 }
 

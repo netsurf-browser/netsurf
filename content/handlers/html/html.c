@@ -2707,7 +2707,7 @@ bool html_get_id_offset(hlcache_handle *h, lwc_string *frag_id, int *x, int *y)
 	return false;
 }
 
-static bool html_exec(struct content *c, const char *src, size_t srclen)
+bool html_exec(struct content *c, const char *src, size_t srclen)
 {
 	html_content *htmlc = (html_content *)c;
 	bool result = false;
