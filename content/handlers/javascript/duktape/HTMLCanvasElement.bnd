@@ -1,0 +1,18 @@
+/* HTML canvas element binding using duktape and libdom
+ *
+ * Copyright 2020 Vincent Sanders <vince@netsurf-browser.org>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * Released under the terms of the MIT License,
+ *         http://www.opensource.org/licenses/mit-license
+ */
+
+init HTMLCanvasElement(struct dom_html_element *html_canvas_element::html_element);
+
+getter HTMLCanvasElement::width();
+setter HTMLCanvasElement::width();
+
+getter HTMLCanvasElement::height();
+setter HTMLCanvasElement::height();
+

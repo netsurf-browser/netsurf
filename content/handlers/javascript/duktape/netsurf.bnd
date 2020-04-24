@@ -109,6 +109,7 @@ init TrackEvent(struct dom_event *evt::evt);
 #include "HTMLBodyElement.bnd"
 #include "HTMLButtonElement.bnd"
 #include "HTMLBRElement.bnd"
+#include "HTMLCanvasElement.bnd"
 #include "HTMLDivElement.bnd"
 #include "HTMLFontElement.bnd"
 #include "HTMLFormElement.bnd"
@@ -149,7 +150,6 @@ init TrackEvent(struct dom_event *evt::evt);
 
 init HTMLUnknownElement(struct dom_html_element *html_unknown_element::html_element);
 init HTMLDirectoryElement(struct dom_html_element *html_directory_element::html_element);
-init HTMLCanvasElement(struct dom_html_element *html_canvas_element::html_element);
 init HTMLTemplateElement(struct dom_html_element *html_template_element::html_element);
 init HTMLDialogElement(struct dom_html_element *html_dialog_element::html_element);
 init HTMLMenuItemElement(struct dom_html_element *html_menu_item_element::html_element);
