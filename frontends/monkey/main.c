@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <signal.h>
 
 #include "utils/config.h"
 #include "utils/sys_time.h"
@@ -340,6 +341,28 @@ __assert_fail(const char *__assertion, const char *__file,
 
         abort();
 }
+
+static void
+signal_handler(int sig)
+{
+	int frames;
+	fprintf(stderr, "Caught signal %s (%d)\n",
+		((sig == SIGSEGV) ? "SIGSEGV" :
+		 ((sig == SIGILL) ? "SIGILL" :
+		  ((sig == SIGFPE) ? "SIGFPE" :
+		   ((sig == SIGBUS) ? "SIGBUS" :
+		    "unknown signal")))),
+		sig);
+	frames = backtrace(&backtrace_buffer[0], 4096);
+	if (frames > 0 && frames < 4096) {
+		fprintf(stderr, "Backtrace:\n");
+		fflush(stderr);
+		backtrace_symbols_fd(&backtrace_buffer[0], frames, 2);
+	}
+
+        abort();
+}
+
 #endif
 
 int
@@ -358,6 +381,15 @@ main(int argc, char **argv)
 		.layout = monkey_layout_table,
                 .llcache = filesystem_llcache_table,
 	};
+
+#if (!defined(NDEBUG) && defined(HAVE_EXECINFO))
+	/* Catch segfault, illegal instructions and fp exceptions */
+	signal(SIGSEGV, signal_handler);
+	signal(SIGILL, signal_handler);
+	signal(SIGFPE, signal_handler);
+	/* It's unlikely, but SIGBUS could happen on some platforms */
+	signal(SIGBUS, signal_handler);
+#endif
 
 	ret = netsurf_register(&monkey_table);
 	if (ret != NSERROR_OK) {
