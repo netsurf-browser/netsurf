@@ -235,9 +235,38 @@ static duk_ret_t dukky_window_closedown_thread(duk_context *ctx)
 
 	NSLOG(dukky, DEEPDEBUG, "Closing down thread");
 	while (priv->schedule_ring != NULL) {
+		window_schedule_t *to_remove = NULL;
+		// Find a schedule item to remove
+		RING_ITERATE_START(window_schedule_t, priv->schedule_ring, sched) {
+			if (sched->running == false) {
+				// This one is not running, we can remove it
+				to_remove = sched;
+				RING_ITERATE_STOP(window->schedule_ring, sched);
+			} else if (sched->repeat_timeout != 0) {
+				// This one is running and has yet to be
+				// cancelled, so prevent it rescheduling itself
+				NSLOG(dukky, DEEPDEBUG,
+				      "Cancelling in-train callback %"PRIsizet,
+				      sched->handle);
+				sched->repeat_timeout = 0;
+			}
+		} RING_ITERATE_END(priv->schedule_ring, sched);
+
+		if (to_remove == NULL) {
+			// We didn't find any non-running callbacks
+			// so let's log that and break out of the closedown
+			// loop so we can continue and hopefully close down
+			NSLOG(dukky, DEEPDEBUG,
+			      "Leaving in-train callbacks to unwind");
+			break;
+		}
+		
+		// Remove the handle we found, this will reduce the callback
+		// scheduler ring by one and perhaps leave it empty so we can
+		// finish the closedown.
 		window_remove_callback_by_handle(ctx,
 						 priv,
-						 priv->schedule_ring->handle);
+						 to_remove->handle);
 	}
 
 	return 0;
