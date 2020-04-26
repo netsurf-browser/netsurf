@@ -369,8 +369,20 @@ nserror box_handle_scrollbars(struct content *c, struct box *box,
 bool box_vscrollbar_present(const struct box *box);
 bool box_hscrollbar_present(const struct box *box);
 
+/**
+ * Construct a box tree from an xml tree and stylesheets.
+ *
+ * \param n   xml tree
+ * \param c   content of type CONTENT_HTML to construct box tree in
+ * \param cb  callback to report conversion completion
+ * \return    netsurf error code indicating status of call
+ */
 nserror dom_to_box(struct dom_node *n, struct html_content *c,
 		   box_construct_complete_cb cb, void **box_conversion_context);
+
+/**
+ * aborts any ongoing box construction
+ */
 nserror cancel_dom_to_box(void *box_conversion_context);
 
 bool box_normalise_block(
