@@ -925,6 +925,11 @@ js_exec(jsthread *thread, const uint8_t *txt, size_t txtlen, const char *name)
 		return false;
 	}
 
+	if (thread->pending_destroy) {
+		NSLOG(dukky, DEEPDEBUG, "Skipping exec call because thread is dead");
+		return false;
+	}
+
 	dukky_enter_thread(thread);
 
 	duk_set_top(CTX, 0);
