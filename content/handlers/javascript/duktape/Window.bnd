@@ -277,6 +277,9 @@ static duk_ret_t dukky_window_closedown_thread(duk_context *ctx)
 
 init Window(struct browser_window *win, struct html_content *htmlc)
 %{
+	/* It makes no sense if win or htmlc are NULL */
+	assert(win != NULL);
+	assert(htmlc != NULL);
 	/* element window */
 	priv->win = win;
 	priv->htmlc = htmlc;

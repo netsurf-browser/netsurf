@@ -51,7 +51,7 @@ write_log_entry(duk_context *ctx, unsigned int group, browser_window_console_fla
 	duk_size_t msglen;
 	const char *msg = duk_safe_to_lstring(ctx, 0, &msglen);
 
-	if (priv_win == NULL ||
+	if (priv_win == NULL || priv_win->win == NULL ||
 	    browser_window_console_log(priv_win->win, BW_CS_SCRIPT_CONSOLE,
 				       msg, msglen,
 				       flags) != NSERROR_OK) {
