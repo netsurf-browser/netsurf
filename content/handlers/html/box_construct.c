@@ -1884,42 +1884,6 @@ static bool box_textarea(dom_node *n,
 
 
 /**
- * special element table entry
- */
-struct element_entry {
-	char name[10];	 /* element type */
-	bool (*convert)(dom_node *n,
-			html_content *content,
-			struct box *box,
-			bool *convert_children);
-};
-
-
-/**
- * special element handler table
- *
- * \note the table must be sorted ascending alphabeticaly by name
- */
-static const struct element_entry element_table[] = {
-	{"a", box_a},
-	{"body", box_body},
-	{"br", box_br},
-	{"button", box_button},
-	{"embed", box_embed},
-	{"frameset", box_frameset},
-	{"iframe", box_iframe},
-	{"img", box_image},
-	{"input", box_input},
-	{"noscript", box_noscript},
-	{"object", box_object},
-	{"pre", box_pre},
-	{"select", box_select},
-	{"textarea", box_textarea}
-};
-#define ELEMENT_TABLE_COUNT (sizeof(element_table) / sizeof(element_table[0]))
-
-
-/**
  * Extract transient construction properties
  *
  * \param n      Current DOM node to convert
@@ -2260,6 +2224,89 @@ box_construct_marker(struct box *box,
 
 
 /**
+ * call an elements special handler
+ */
+static bool
+convert_special_elements(dom_node *node,
+			 html_content *content,
+			 struct box *box,
+			 bool *convert_children)
+{
+	dom_exception exc;
+	dom_html_element_type tag_type;
+	bool res;
+
+	exc = dom_html_element_get_tag_type(node, &tag_type);
+	if (exc != DOM_NO_ERR) {
+		tag_type = DOM_HTML_ELEMENT_TYPE__UNKNOWN;
+	}
+
+	switch (tag_type) {
+	case DOM_HTML_ELEMENT_TYPE_A:
+		res =  box_a(node, content, box, convert_children);
+		break;
+
+	case DOM_HTML_ELEMENT_TYPE_BODY:
+		res = box_body(node, content, box, convert_children);
+		break;
+
+	case DOM_HTML_ELEMENT_TYPE_BR:
+		res = box_br(node, content, box, convert_children);
+		break;
+
+	case DOM_HTML_ELEMENT_TYPE_BUTTON:
+		res = box_button(node, content, box, convert_children);
+		break;
+
+	case DOM_HTML_ELEMENT_TYPE_EMBED:
+		res = box_embed(node, content, box, convert_children);
+		break;
+
+	case DOM_HTML_ELEMENT_TYPE_FRAMESET:
+		res = box_frameset(node, content, box, convert_children);
+		break;
+
+	case DOM_HTML_ELEMENT_TYPE_IFRAME:
+		res = box_iframe(node, content, box, convert_children);
+		break;
+
+	case DOM_HTML_ELEMENT_TYPE_IMG:
+		res = box_image(node, content, box, convert_children);
+		break;
+
+	case DOM_HTML_ELEMENT_TYPE_INPUT:
+		res = box_input(node, content, box, convert_children);
+		break;
+
+	case DOM_HTML_ELEMENT_TYPE_NOSCRIPT:
+		res = box_noscript(node, content, box, convert_children);
+		break;
+
+	case DOM_HTML_ELEMENT_TYPE_OBJECT:
+		res = box_object(node, content, box, convert_children);
+		break;
+
+	case DOM_HTML_ELEMENT_TYPE_PRE:
+		res = box_pre(node, content, box, convert_children);
+		break;
+
+	case DOM_HTML_ELEMENT_TYPE_SELECT:
+		res = box_select(node, content, box, convert_children);
+		break;
+
+	case DOM_HTML_ELEMENT_TYPE_TEXTAREA:
+		res = box_textarea(node, content, box, convert_children);
+		break;
+
+	default:
+		res = true;
+	}
+
+	return res;
+}
+
+
+/**
  * Construct the box tree for an XML element.
  *
  * \param ctx               Tree construction context
@@ -2273,7 +2320,6 @@ box_construct_element(struct box_construct_ctx *ctx, bool *convert_children)
 	lwc_string *id = NULL;
 	struct box *box = NULL, *old_box;
 	css_select_results *styles = NULL;
-	struct element_entry *element;
 	lwc_string *bgimage_uri;
 	dom_exception err;
 	struct box_construct_props props;
@@ -2395,22 +2441,11 @@ box_construct_element(struct box_construct_ctx *ctx, bool *convert_children)
 				props.node_is_root)];
 	}
 
-	err = dom_node_get_node_name(ctx->n, &s);
-	if (err != DOM_NO_ERR || s == NULL)
+	if (convert_special_elements(ctx->n,
+				     ctx->content,
+				     box,
+				     convert_children) == false) {
 		return false;
-
-	/* Special elements */
-	element = bsearch(dom_string_data(s), element_table,
-			ELEMENT_TABLE_COUNT, sizeof(element_table[0]),
-			(int (*)(const void *, const void *)) strcasecmp);
-
-	dom_string_unref(s);
-
-	if (element != NULL) {
-		/* A special convert function exists for this element */
-		if (element->convert(ctx->n, ctx->content, box,
-				convert_children) == false)
-			return false;
 	}
 
 	/* Handle the :before pseudo element */
