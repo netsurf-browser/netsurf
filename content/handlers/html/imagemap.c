@@ -36,6 +36,7 @@
 #include "content/hlcache.h"
 
 #include "html/box.h"
+#include "html/box_construct.h"
 #include "html/html_internal.h"
 #include "html/imagemap.h"
 

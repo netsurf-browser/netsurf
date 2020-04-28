@@ -60,6 +60,7 @@
 #include "html/html_internal.h"
 #include "html/interaction.h"
 #include "html/box.h"
+#include "html/box_construct.h"
 #include "html/form_internal.h"
 #include "html/imagemap.h"
 #include "html/layout.h"
@@ -212,7 +213,7 @@ static void html_box_convert_done(html_content *c, bool success)
 	dom_exception exc; /* returned by libdom functions */
 	dom_node *html;
 
-	NSLOG(netsurf, INFO, "Done XML to box (%p)", c);
+	NSLOG(netsurf, INFO, "DOM to box conversion complete (content %p)", c);
 
 	c->box_conversion_context = NULL;
 

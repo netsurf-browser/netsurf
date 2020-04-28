@@ -97,26 +97,17 @@ static int box_talloc_destructor(struct box *b)
 	return 0;
 }
 
-/**
- * Create a box tree node.
- *
- * \param  styles       selection results for the box, or NULL
- * \param  style        computed style for the box (not copied), or 0
- * \param  style_owned  whether style is owned by this box
- * \param  href         href for the box (copied), or 0
- * \param  target       target for the box (not copied), or 0
- * \param  title        title for the box (not copied), or 0
- * \param  id           id for the box (not copied), or 0
- * \param  context      context for allocations
- * \return  allocated and initialised box, or 0 on memory exhaustion
- *
- * styles is always owned by the box, if it is set.
- * style is only owned by the box in the case of implied boxes.
- */
 
-struct box * box_create(css_select_results *styles, css_computed_style *style,
-		bool style_owned, nsurl *href, const char *target,
-		const char *title, lwc_string *id, void *context)
+/* Exported function documented in html/box.h */
+struct box *
+box_create(css_select_results *styles,
+	   css_computed_style *style,
+	   bool style_owned,
+	   nsurl *href,
+	   const char *target,
+	   const char *title,
+	   lwc_string *id,
+	   void *context)
 {
 	unsigned int i;
 	struct box *box;
@@ -177,13 +168,8 @@ struct box * box_create(css_select_results *styles, css_computed_style *style,
 	return box;
 }
 
-/**
- * Add a child to a box tree node.
- *
- * \param  parent  box giving birth
- * \param  child   box to link as last child of parent
- */
 
+/* Exported function documented in html/box.h */
 void box_add_child(struct box *parent, struct box *child)
 {
 	assert(parent);
@@ -202,13 +188,7 @@ void box_add_child(struct box *parent, struct box *child)
 }
 
 
-/**
- * Insert a new box as a sibling to a box in a tree.
- *
- * \param  box      box already in tree
- * \param  new_box  box to link into tree as next sibling
- */
-
+/* Exported function documented in html/box.h */
 void box_insert_sibling(struct box *box, struct box *new_box)
 {
 	new_box->parent = box->parent;
@@ -222,12 +202,7 @@ void box_insert_sibling(struct box *box, struct box *new_box)
 }
 
 
-/**
- * Unlink a box from the box tree and then free it recursively.
- *
- * \param  box  box to unlink and free recursively.
- */
-
+/* Exported function documented in html/box.h */
 void box_unlink_and_free(struct box *box)
 {
 	struct box *parent = box->parent;
@@ -250,14 +225,7 @@ void box_unlink_and_free(struct box *box)
 }
 
 
-/**
- * Free a box tree recursively.
- *
- * \param  box  box to free recursively
- *
- * The box and all its children is freed.
- */
-
+/* Exported function documented in html/box.h */
 void box_free(struct box *box)
 {
 	struct box *child, *next;
@@ -273,12 +241,7 @@ void box_free(struct box *box)
 }
 
 
-/**
- * Free the data in a single box structure.
- *
- * \param  box  box to free
- */
-
+/* Exported function documented in html/box.h */
 void box_free_box(struct box *box)
 {
 	if (!(box->flags & CLONE)) {
@@ -296,14 +259,7 @@ void box_free_box(struct box *box)
 }
 
 
-/**
- * Find the absolute coordinates of a box.
- *
- * \param  box  the box to calculate coordinates of
- * \param  x    updated to x coordinate
- * \param  y    updated to y coordinate
- */
-
+/* Exported function documented in html/box.h */
 void box_coords(struct box *box, int *x, int *y)
 {
 	*x = box->x;
@@ -321,13 +277,7 @@ void box_coords(struct box *box, int *x, int *y)
 }
 
 
-/**
- * Find the bounds of a box.
- *
- * \param  box  the box to calculate bounds of
- * \param  r    receives bounds
- */
-
+/* Exported function documented in html/box.h */
 void box_bounds(struct box *box, struct rect *r)
 {
 	int width, height;
@@ -359,7 +309,6 @@ void box_bounds(struct box *box, struct rect *r)
  *
  * This is a helper function for box_at_point().
  */
-
 static bool box_contains_point(
 		const nscss_len_ctx *len_ctx,
 		const struct box *box,
@@ -471,7 +420,9 @@ static bool box_contains_point(
 }
 
 
-/** Direction to move in a box-tree walk */
+/**
+ * Direction to move in a box-tree walk
+ */
 enum box_walk_dir {
 	BOX_WALK_CHILDREN,
 	BOX_WALK_PARENT,
@@ -492,8 +443,8 @@ enum box_walk_dir {
  *
  * If no box can be found in given direction, NULL is returned.
  */
-static inline struct box *box_move_xy(struct box *b, enum box_walk_dir dir,
-		int *x, int *y)
+static inline struct box *
+box_move_xy(struct box *b, enum box_walk_dir dir, int *x, int *y)
 {
 	struct box *rb = NULL;
 
@@ -665,35 +616,12 @@ skip_children:
 }
 
 
-
-/**
- * Find the boxes at a point.
- *
- * \param  len_ctx  CSS length conversion context for document.
- * \param  box      box to search children of
- * \param  x        point to find, in global document coordinates
- * \param  y        point to find, in global document coordinates
- * \param  box_x    position of box, in global document coordinates, updated
- *                  to position of returned box, if any
- * \param  box_y    position of box, in global document coordinates, updated
- *                  to position of returned box, if any
- * \return  box at given point, or 0 if none found
- *
- * To find all the boxes in the hierarchy at a certain point, use code like
- * this:
- * \code
- *	struct box *box = top_of_document_to_search;
- *	int box_x = 0, box_y = 0;
- *
- *	while ((box = box_at_point(len_ctx, box, x, y, &box_x, &box_y))) {
- *		// process box
- *	}
- * \endcode
- */
-
-struct box *box_at_point(const nscss_len_ctx *len_ctx,
-		struct box *box, const int x, const int y,
-		int *box_x, int *box_y)
+/* Exported function documented in html/box.h */
+struct box *
+box_at_point(const nscss_len_ctx *len_ctx,
+	     struct box *box,
+	     const int x, const int y,
+	     int *box_x, int *box_y)
 {
 	bool skip_children;
 	bool physically;
@@ -742,10 +670,14 @@ struct box *box_at_point(const nscss_len_ctx *len_ctx,
  *		    updated if box is nearer than existing nearest
  * \return true if mouse point is inside box
  */
-
-static bool box_nearer_text_box(struct box *box, int bx, int by,
-		int x, int y, int dir, struct box **nearest, int *tx, int *ty,
-		int *nr_xd, int *nr_yd)
+static bool
+box_nearer_text_box(struct box *box,
+		    int bx, int by,
+		    int x, int y,
+		    int dir,
+		    struct box **nearest,
+		    int *tx, int *ty,
+		    int *nr_xd, int *nr_yd)
 {
 	int w = box->padding[LEFT] + box->width + box->padding[RIGHT];
 	int h = box->padding[TOP] + box->height + box->padding[BOTTOM];
@@ -814,7 +746,6 @@ static bool box_nearer_text_box(struct box *box, int bx, int by,
  *		    updated if a descendant of box is nearer than old nearest
  * \return true if mouse point is inside text_box
  */
-
 static bool box_nearest_text_box(struct box *box, int bx, int by,
 		int fx, int fy, int x, int y, int dir, struct box **nearest,
 		int *tx, int *ty, int *nr_xd, int *nr_yd)
@@ -885,21 +816,12 @@ static bool box_nearest_text_box(struct box *box, int bx, int by,
 }
 
 
-/**
- * Peform pick text on browser window contents to locate the box under
- * the mouse pointer, or nearest in the given direction if the pointer is
- * not over a text box.
- *
- * \param html	an HTML content
- * \param x	coordinate of mouse
- * \param y	coordinate of mouse
- * \param dir	direction to search (-1 = above-left, +1 = below-right)
- * \param dx	receives x ordinate of mouse relative to text box
- * \param dy	receives y ordinate of mouse relative to text box
- */
-
-struct box *box_pick_text_box(struct html_content *html,
-		int x, int y, int dir, int *dx, int *dy)
+/* Exported function documented in html/box.h */
+struct box *
+box_pick_text_box(struct html_content *html,
+		  int x, int y,
+		  int dir,
+		  int *dx, int *dy)
 {
 	struct box *text_box = NULL;
 	struct box *box;
@@ -947,14 +869,7 @@ struct box *box_pick_text_box(struct html_content *html,
 }
 
 
-/**
- * Find a box based upon its id attribute.
- *
- * \param  box  box tree to search
- * \param  id   id to look for
- * \return  the box or 0 if not found
- */
-
+/* Exported function documented in html/box.h */
 struct box *box_find_by_id(struct box *box, lwc_string *id)
 {
 	struct box *a, *b;
@@ -974,13 +889,7 @@ struct box *box_find_by_id(struct box *box, lwc_string *id)
 }
 
 
-/**
- * Determine if a box is visible when the tree is rendered.
- *
- * \param  box  box to check
- * \return  true iff the box is rendered
- */
-
+/* Exported function documented in html/box.h */
 bool box_visible(struct box *box)
 {
 	/* visibility: hidden */
@@ -992,10 +901,7 @@ bool box_visible(struct box *box)
 }
 
 
-/**
- * Print a box tree to a file.
- */
-
+/* Exported function documented in html/box.h */
 void box_dump(FILE *stream, struct box *box, unsigned int depth, bool style)
 {
 	unsigned int i;
@@ -1218,13 +1124,8 @@ box_handle_scrollbars(struct content *c,
 	return NSERROR_OK;
 }
 
-/**
- * Determine if a box has a vertical scrollbar.
- *
- * \param  box  scrolling box
- * \return the box has a vertical scrollbar
- */
 
+/* exported interface documented in html/box.h */
 bool box_vscrollbar_present(const struct box * const box)
 {
 	return box->padding[TOP] + box->height + box->padding[BOTTOM] +
@@ -1232,13 +1133,7 @@ bool box_vscrollbar_present(const struct box * const box)
 }
 
 
-/**
- * Determine if a box has a horizontal scrollbar.
- *
- * \param  box  scrolling box
- * \return the box has a horizontal scrollbar
- */
-
+/* exported interface documented in html/box.h */
 bool box_hscrollbar_present(const struct box * const box)
 {
 	return box->padding[LEFT] + box->width + box->padding[RIGHT] +

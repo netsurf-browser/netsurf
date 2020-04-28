@@ -51,6 +51,8 @@
 
 #include "html/html.h"
 #include "html/box.h"
+#include "html/box_construct.h"
+#include "html/box_normalise.h"
 #include "html/box_textarea.h"
 #include "html/form_internal.h"
 #include "html/html_internal.h"
@@ -3139,7 +3141,7 @@ static void convert_xml_to_box(struct box_construct_ctx *ctx)
 }
 
 
-/* Exported function, documented in box.h */
+/* exported function documented in html/box_construct.h */
 nserror
 dom_to_box(dom_node *n,
 	   html_content *c,
@@ -3175,7 +3177,7 @@ dom_to_box(dom_node *n,
 }
 
 
-/* Exported function, see box.h */
+/* exported function documented in html/box_construct.h */
 nserror cancel_dom_to_box(void *box_conversion_context)
 {
 	struct box_construct_ctx *ctx = box_conversion_context;
@@ -3193,7 +3195,7 @@ nserror cancel_dom_to_box(void *box_conversion_context)
 }
 
 
-/* Exported function, see box.h */
+/* exported function documented in html/box_construct.h */
 struct box *box_for_node(dom_node *n)
 {
 	struct box *box = NULL;
@@ -3208,59 +3210,7 @@ struct box *box_for_node(dom_node *n)
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* exported function documented in html/box.h */
+/* exported function documented in html/box_construct.h */
 bool
 box_extract_link(const html_content *content,
 		 const dom_string *dsrel,

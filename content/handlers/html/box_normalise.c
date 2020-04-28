@@ -21,7 +21,7 @@
 
 /**
  * \file
- * Box tree normalisation (implementation).
+ * Box tree normalisation implementation.
  */
 
 #include <assert.h>
@@ -33,6 +33,7 @@
 #include "css/select.h"
 
 #include "html/box.h"
+#include "html/box_normalise.h"
 #include "html/html_internal.h"
 #include "html/table.h"
 
@@ -66,98 +67,171 @@ struct columns {
 };
 
 
-static bool box_normalise_table(
-		struct box *table,
-		const struct box *root,
-		html_content *c);
-static bool box_normalise_table_spans(
-		struct box *table,
-		const struct box *root,
-		struct span_info *spans,
-		html_content *c);
-static bool box_normalise_table_row_group(
-		struct box *row_group,
-		const struct box *root,
-		struct columns *col_info,
-		html_content *c);
-static bool box_normalise_table_row(
-		struct box *row,
-		const struct box *root,
-		struct columns *col_info,
-		html_content *c);
-static bool calculate_table_row(struct columns *col_info,
-		unsigned int col_span, unsigned int row_span,
-		unsigned int *start_column, struct box *cell);
-static bool box_normalise_inline_container(
-		struct box *cont,
-		const struct box *root,
-		html_content *c);
-
 /**
- * Ensure the box tree is correctly nested by adding and removing nodes.
+ * Compute the column index at which the current cell begins.
+ * Additionally, update the column record to reflect row spanning.
  *
- * \param block  box of type BLOCK, INLINE_BLOCK, or TABLE_CELL
- * \param root   root box of document
- * \param c      content of boxes
- * \return true on success, false on memory exhaustion
- *
- * The tree is modified to satisfy the following:
- * \code
- * parent               permitted child nodes
- * BLOCK, INLINE_BLOCK  BLOCK, INLINE_CONTAINER, TABLE
- * INLINE_CONTAINER     INLINE, INLINE_BLOCK, FLOAT_LEFT, FLOAT_RIGHT, BR, TEXT
- * INLINE, TEXT         none
- * TABLE                at least 1 TABLE_ROW_GROUP
- * TABLE_ROW_GROUP      at least 1 TABLE_ROW
- * TABLE_ROW            at least 1 TABLE_CELL
- * TABLE_CELL           BLOCK, INLINE_CONTAINER, TABLE (same as BLOCK)
- * FLOAT_(LEFT|RIGHT)   exactly 1 BLOCK or TABLE
- * \endcode
+ * \param col_info      Column record
+ * \param col_span      Number of columns that current cell spans
+ * \param row_span      Number of rows that current cell spans
+ * \param start_column  Pointer to location to receive column index
+ * \param cell		Box for current table cell
+ * \return  true on success, false on memory exhaustion
  */
+static bool
+calculate_table_row(struct columns *col_info,
+		    unsigned int col_span,
+		    unsigned int row_span,
+		    unsigned int *start_column,
+		    struct box *cell)
+{
+	unsigned int cell_start_col = col_info->current_column;
+	unsigned int cell_end_col;
+	unsigned int i;
+	struct span_info *spans;
+	struct box *rg = cell->parent->parent; /* Cell's row group */
 
-bool box_normalise_block(
-		struct box *block,
-		const struct box *root,
-		html_content *c)
+	/* Skip columns with cells spanning from above */
+	/* TODO: Need to ignore cells spanning from above that belong to
+	 *       different row group.  We don't have that info here. */
+	while (col_info->spans[cell_start_col].row_span != 0 &&
+			col_info->spans[cell_start_col].rg == rg) {
+		cell_start_col++;
+	}
+
+	/* Update current column with calculated start */
+	col_info->current_column = cell_start_col;
+
+	/* If this cell has a colspan of 0, then assume 1.
+	 * No other browser supports colspan=0, anyway. */
+	if (col_span == 0)
+		col_span = 1;
+
+	cell_end_col = cell_start_col + col_span;
+
+	if (col_info->num_columns < cell_end_col) {
+		/* It appears that this row has more columns than
+		 * the maximum recorded for the table so far.
+		 * Allocate more span records. */
+		spans = realloc(col_info->spans,
+				sizeof *spans * (cell_end_col + 1));
+		if (spans == NULL)
+			return false;
+
+		col_info->spans = spans;
+		col_info->num_columns = cell_end_col;
+
+		/* Mark new final column as sentinel */
+		col_info->spans[cell_end_col].row_span = 0;
+		col_info->spans[cell_end_col].auto_row = false;
+	}
+
+	/* This cell may span multiple columns. If it also wants to span
+	 * multiple rows, temporarily assume it spans 1 row only. This will
+	 * be fixed up in box_normalise_table_spans() */
+	for (i = cell_start_col; i < cell_end_col; i++) {
+		col_info->spans[i].row_span = (row_span == 0) ? 1 : row_span;
+		col_info->spans[i].auto_row = (row_span == 0);
+		col_info->spans[i].rg = rg;
+	}
+
+	/* Update current column with calculated end. */
+	col_info->current_column = cell_end_col;
+
+	*start_column = cell_start_col;
+
+	return true;
+}
+
+
+static bool
+box_normalise_table_row(struct box *row,
+			const struct box *root,
+			struct columns *col_info,
+			html_content * c)
 {
 	struct box *child;
 	struct box *next_child;
-	struct box *table;
+	struct box *cell = NULL;
 	css_computed_style *style;
+	unsigned int i;
 	nscss_select_ctx ctx;
 
-	assert(block != NULL);
-	assert(root != NULL);
+	assert(row != NULL);
+	assert(row->type == BOX_TABLE_ROW);
 
 	ctx.root_style = root->style;
 
 #ifdef BOX_NORMALISE_DEBUG
-	NSLOG(netsurf, INFO, "block %p, block->type %u", block, block->type);
+	NSLOG(netsurf, INFO, "row %p", row);
 #endif
 
-	assert(block->type == BOX_BLOCK || block->type == BOX_INLINE_BLOCK ||
-			block->type == BOX_TABLE_CELL);
-
-	for (child = block->children; child != NULL; child = next_child) {
-#ifdef BOX_NORMALISE_DEBUG
-		NSLOG(netsurf, INFO, "child %p, child->type = %d", child,
-		      child->type);
-#endif
-
-		next_child = child->next;	/* child may be destroyed */
+	for (child = row->children; child != NULL; child = next_child) {
+		next_child = child->next;
 
 		switch (child->type) {
-		case BOX_BLOCK:
+		case BOX_TABLE_CELL:
 			/* ok */
 			if (box_normalise_block(child, root, c) == false)
 				return false;
+			cell = child;
 			break;
+		case BOX_BLOCK:
 		case BOX_INLINE_CONTAINER:
-			if (box_normalise_inline_container(child, root, c) == false)
-				return false;
-			break;
 		case BOX_TABLE:
-			if (box_normalise_table(child, root, c) == false)
+		case BOX_TABLE_ROW_GROUP:
+		case BOX_TABLE_ROW:
+			/* insert implied table cell */
+			assert(row->style != NULL);
+
+			ctx.ctx = c->select_ctx;
+			ctx.quirks = (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL);
+			ctx.base_url = c->base_url;
+			ctx.universal = c->universal;
+
+			style = nscss_get_blank_style(&ctx, row->style);
+			if (style == NULL)
+				return false;
+
+			cell = box_create(NULL, style, true, row->href,
+					row->target, NULL, NULL, c->bctx);
+			if (cell == NULL) {
+				css_computed_style_destroy(style);
+				return false;
+			}
+			cell->type = BOX_TABLE_CELL;
+
+			if (child->prev == NULL)
+				row->children = cell;
+			else
+				child->prev->next = cell;
+
+			cell->prev = child->prev;
+
+			while (child != NULL && (
+					child->type == BOX_BLOCK ||
+					child->type == BOX_INLINE_CONTAINER ||
+					child->type == BOX_TABLE ||
+					child->type == BOX_TABLE_ROW_GROUP ||
+					child->type == BOX_TABLE_ROW)) {
+				box_add_child(cell, child);
+
+				next_child = child->next;
+				child->next = NULL;
+				child = next_child;
+			}
+
+			assert(cell->last != NULL);
+
+			cell->last->next = NULL;
+			cell->next = next_child = child;
+			if (cell->next != NULL)
+				cell->next->prev = cell;
+			else
+				row->last = cell;
+			cell->parent = row;
+
+			if (box_normalise_block(cell, root, c) == false)
 				return false;
 			break;
 		case BOX_INLINE:
@@ -171,71 +245,365 @@ bool box_normalise_block(
 			   container by convert_xml_to_box() */
 			assert(0);
 			break;
-		case BOX_TABLE_ROW_GROUP:
+		default:
+			assert(0);
+		}
+
+		if (calculate_table_row(col_info, cell->columns, cell->rows,
+				&cell->start_column, cell) == false)
+			return false;
+	}
+
+
+	/* Update row spanning details for all columns */
+	for (i = 0; i < col_info->num_columns; i++) {
+		if (col_info->spans[i].row_span != 0 &&
+				col_info->spans[i].auto_row == false) {
+			/* This cell spans rows, and is not an auto row.
+			 * Reduce number of rows left to span */
+			col_info->spans[i].row_span--;
+		}
+	}
+
+	/* Reset current column for next row */
+	col_info->current_column = 0;
+
+	/* Increment row counter */
+	col_info->num_rows++;
+
+#ifdef BOX_NORMALISE_DEBUG
+	NSLOG(netsurf, INFO, "row %p done", row);
+#endif
+
+	return true;
+}
+
+
+static bool
+box_normalise_table_row_group(struct box *row_group,
+			      const struct box *root,
+			      struct columns *col_info,
+			      html_content * c)
+{
+	struct box *child;
+	struct box *next_child;
+	struct box *row;
+	css_computed_style *style;
+	nscss_select_ctx ctx;
+	unsigned int group_row_count = 0;
+
+	assert(row_group != 0);
+	assert(row_group->type == BOX_TABLE_ROW_GROUP);
+
+	ctx.root_style = root->style;
+
+#ifdef BOX_NORMALISE_DEBUG
+	NSLOG(netsurf, INFO, "row_group %p", row_group);
+#endif
+
+	for (child = row_group->children; child != NULL; child = next_child) {
+		next_child = child->next;
+
+		switch (child->type) {
 		case BOX_TABLE_ROW:
+			/* ok */
+			group_row_count++;
+			if (box_normalise_table_row(child, root, col_info,
+					c) == false)
+				return false;
+			break;
+		case BOX_BLOCK:
+		case BOX_INLINE_CONTAINER:
+		case BOX_TABLE:
+		case BOX_TABLE_ROW_GROUP:
 		case BOX_TABLE_CELL:
-			/* insert implied table */
-			assert(block->style != NULL);
+			/* insert implied table row */
+			assert(row_group->style != NULL);
 
 			ctx.ctx = c->select_ctx;
 			ctx.quirks = (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL);
 			ctx.base_url = c->base_url;
 			ctx.universal = c->universal;
 
-			style = nscss_get_blank_style(&ctx, block->style);
+			style = nscss_get_blank_style(&ctx, row_group->style);
 			if (style == NULL)
 				return false;
 
-			table = box_create(NULL, style, true, block->href,
-					block->target, NULL, NULL, c->bctx);
-			if (table == NULL) {
+			row = box_create(NULL, style, true, row_group->href,
+					row_group->target, NULL, NULL, c->bctx);
+			if (row == NULL) {
 				css_computed_style_destroy(style);
 				return false;
 			}
-			table->type = BOX_TABLE;
+			row->type = BOX_TABLE_ROW;
 
 			if (child->prev == NULL)
-				block->children = table;
+				row_group->children = row;
 			else
-				child->prev->next = table;
+				child->prev->next = row;
 
-			table->prev = child->prev;
+			row->prev = child->prev;
 
 			while (child != NULL && (
+					child->type == BOX_BLOCK ||
+					child->type == BOX_INLINE_CONTAINER ||
+					child->type == BOX_TABLE ||
 					child->type == BOX_TABLE_ROW_GROUP ||
-					child->type == BOX_TABLE_ROW ||
 					child->type == BOX_TABLE_CELL)) {
-				box_add_child(table, child);
+				box_add_child(row, child);
 
 				next_child = child->next;
 				child->next = NULL;
 				child = next_child;
 			}
 
-			table->last->next = NULL;
-			table->next = next_child = child;
-			if (table->next != NULL)
-				table->next->prev = table;
-			else
-				block->last = table;
-			table->parent = block;
+			assert(row->last != NULL);
 
-			if (box_normalise_table(table, root, c) == false)
+			row->last->next = NULL;
+			row->next = next_child = child;
+			if (row->next != NULL)
+				row->next->prev = row;
+			else
+				row_group->last = row;
+			row->parent = row_group;
+
+			group_row_count++;
+			if (box_normalise_table_row(row, root, col_info,
+					c) == false)
 				return false;
+			break;
+		case BOX_INLINE:
+		case BOX_INLINE_END:
+		case BOX_INLINE_BLOCK:
+		case BOX_FLOAT_LEFT:
+		case BOX_FLOAT_RIGHT:
+		case BOX_BR:
+		case BOX_TEXT:
+			/* should have been wrapped in inline
+			   container by convert_xml_to_box() */
+			assert(0);
 			break;
 		default:
 			assert(0);
 		}
 	}
 
+	if (row_group->children == NULL) {
+#ifdef BOX_NORMALISE_DEBUG
+		NSLOG(netsurf, INFO,
+		      "row_group->children == 0, inserting implied row");
+#endif
+
+		assert(row_group->style != NULL);
+
+		ctx.ctx = c->select_ctx;
+		ctx.quirks = (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL);
+		ctx.base_url = c->base_url;
+		ctx.universal = c->universal;
+
+		style = nscss_get_blank_style(&ctx, row_group->style);
+		if (style == NULL) {
+			return false;
+		}
+
+		row = box_create(NULL, style, true, row_group->href,
+				row_group->target, NULL, NULL, c->bctx);
+		if (row == NULL) {
+			css_computed_style_destroy(style);
+			return false;
+		}
+		row->type = BOX_TABLE_ROW;
+
+		row->parent = row_group;
+		row_group->children = row_group->last = row;
+
+		group_row_count = 1;
+
+		/* Keep table's row count in sync */
+		col_info->num_rows++;
+	}
+
+	row_group->rows = group_row_count;
+
+#ifdef BOX_NORMALISE_DEBUG
+	NSLOG(netsurf, INFO, "row_group %p done", row_group);
+#endif
+
 	return true;
 }
 
 
-bool box_normalise_table(
-		struct box *table,
-		const struct box *root,
-		html_content * c)
+/**
+ * Normalise table cell column/row counts for colspan/rowspan = 0.
+ * Additionally, generate empty cells.
+ *
+ * \param table  Table to process
+ * \param root   root box of document
+ * \param spans  Array of length table->columns for use in empty cell detection
+ * \param c      Content containing table
+ * \return True on success, false on memory exhaustion.
+ */
+static bool
+box_normalise_table_spans(struct box *table,
+			  const struct box *root,
+			  struct span_info *spans,
+			  html_content *c)
+{
+	struct box *table_row_group;
+	struct box *table_row;
+	struct box *table_cell;
+	unsigned int rows_left = table->rows;
+	unsigned int group_rows_left;
+	unsigned int col;
+	nscss_select_ctx ctx;
+
+	ctx.root_style = root->style;
+
+	/* Clear span data */
+	memset(spans, 0, table->columns * sizeof(struct span_info));
+
+	/* Scan table, filling in width and height of table cells with
+	 * colspan = 0 and rowspan = 0. Also generate empty cells */
+	for (table_row_group = table->children;
+	     table_row_group != NULL;
+	     table_row_group = table_row_group->next) {
+
+		group_rows_left = table_row_group->rows;
+
+		for (table_row = table_row_group->children;
+		     table_row != NULL;
+		     table_row = table_row->next) {
+
+			for (table_cell = table_row->children;
+			     table_cell != NULL;
+			     table_cell = table_cell->next) {
+
+				/* colspan = 0 -> colspan = 1 */
+				if (table_cell->columns == 0) {
+					table_cell->columns = 1;
+				}
+
+				/* if rowspan is 0 it is expanded to
+				 * the number of rows left in the row
+				 * group
+				 */
+				if (table_cell->rows == 0) {
+					table_cell->rows = group_rows_left;
+				}
+
+				/* limit rowspans within group */
+				if (table_cell->rows > group_rows_left) {
+					table_cell->rows = group_rows_left;
+				}
+
+				/* Record span information */
+				for (col = table_cell->start_column;
+						col < table_cell->start_column +
+						table_cell->columns; col++) {
+					spans[col].row_span = table_cell->rows;
+				}
+			}
+
+			/* Reduce span count of each column */
+			for (col = 0; col < table->columns; col++) {
+				if (spans[col].row_span == 0) {
+					unsigned int start = col;
+					css_computed_style *style;
+					struct box *cell, *prev;
+
+					/* If it's already zero, then we need
+					 * to generate an empty cell for the
+					 * gap in the row that spans as many
+					 * columns as remain blank.
+					 */
+					assert(table_row->style != NULL);
+
+					/* Find width of gap */
+					while (col < table->columns &&
+							spans[col].row_span ==
+							0) {
+						col++;
+					}
+
+					ctx.ctx = c->select_ctx;
+					ctx.quirks = (c->quirks ==
+						DOM_DOCUMENT_QUIRKS_MODE_FULL);
+					ctx.base_url = c->base_url;
+					ctx.universal = c->universal;
+
+					style = nscss_get_blank_style(&ctx,
+							table_row->style);
+					if (style == NULL)
+						return false;
+
+					cell = box_create(NULL, style, true,
+							table_row->href,
+							table_row->target,
+							NULL, NULL, c->bctx);
+					if (cell == NULL) {
+						css_computed_style_destroy(
+								style);
+						return false;
+					}
+					cell->type = BOX_TABLE_CELL;
+
+					cell->rows = 1;
+					cell->columns = col - start;
+					cell->start_column = start;
+
+					/* Find place to insert cell */
+					for (prev = table_row->children;
+							prev != NULL;
+							prev = prev->next) {
+						if (prev->start_column +
+							prev->columns ==
+								start)
+							break;
+						if (prev->next == NULL)
+							break;
+					}
+
+					/* Insert it */
+					if (prev == NULL) {
+						if (table_row->children != NULL)
+							table_row->children->
+								prev = cell;
+						else
+							table_row->last = cell;
+
+						cell->next =
+							table_row->children;
+						table_row->children = cell;
+					} else {
+						if (prev->next != NULL)
+							prev->next->prev = cell;
+						else
+							table_row->last = cell;
+
+						cell->next = prev->next;
+						prev->next = cell;
+						cell->prev = prev;
+					}
+					cell->parent = table_row;
+				} else {
+					spans[col].row_span--;
+				}
+			}
+
+			assert(rows_left > 0);
+
+			rows_left--;
+		}
+
+		group_rows_left--;
+	}
+
+	return true;
+}
+
+
+static bool
+box_normalise_table(struct box *table, const struct box *root, html_content * c)
 {
 	struct box *child;
 	struct box *next_child;
@@ -431,544 +799,10 @@ bool box_normalise_table(
 }
 
 
-/**
- * Normalise table cell column/row counts for colspan/rowspan = 0.
- * Additionally, generate empty cells.
- *
- * \param table  Table to process
- * \param root   root box of document
- * \param spans  Array of length table->columns for use in empty cell detection
- * \param c      Content containing table
- * \return True on success, false on memory exhaustion.
- */
-
-bool box_normalise_table_spans(
-		struct box *table,
-		const struct box *root,
-		struct span_info *spans,
-		html_content *c)
-{
-	struct box *table_row_group;
-	struct box *table_row;
-	struct box *table_cell;
-	unsigned int rows_left = table->rows;
-	unsigned int group_rows_left;
-	unsigned int col;
-	nscss_select_ctx ctx;
-
-	ctx.root_style = root->style;
-
-	/* Clear span data */
-	memset(spans, 0, table->columns * sizeof(struct span_info));
-
-	/* Scan table, filling in width and height of table cells with
-	 * colspan = 0 and rowspan = 0. Also generate empty cells */
-	for (table_row_group = table->children;
-	     table_row_group != NULL;
-	     table_row_group = table_row_group->next) {
-
-		group_rows_left = table_row_group->rows;
-
-		for (table_row = table_row_group->children;
-		     table_row != NULL;
-		     table_row = table_row->next) {
-
-			for (table_cell = table_row->children;
-			     table_cell != NULL;
-			     table_cell = table_cell->next) {
-
-				/* colspan = 0 -> colspan = 1 */
-				if (table_cell->columns == 0) {
-					table_cell->columns = 1;
-				}
-
-				/* if rowspan is 0 it is expanded to
-				 * the number of rows left in the row
-				 * group
-				 */
-				if (table_cell->rows == 0) {
-					table_cell->rows = group_rows_left;
-				}
-
-				/* limit rowspans within group */
-				if (table_cell->rows > group_rows_left) {
-					table_cell->rows = group_rows_left;
-				}
-
-				/* Record span information */
-				for (col = table_cell->start_column;
-						col < table_cell->start_column +
-						table_cell->columns; col++) {
-					spans[col].row_span = table_cell->rows;
-				}
-			}
-
-			/* Reduce span count of each column */
-			for (col = 0; col < table->columns; col++) {
-				if (spans[col].row_span == 0) {
-					unsigned int start = col;
-					css_computed_style *style;
-					struct box *cell, *prev;
-
-					/* If it's already zero, then we need
-					 * to generate an empty cell for the
-					 * gap in the row that spans as many
-					 * columns as remain blank.
-					 */
-					assert(table_row->style != NULL);
-
-					/* Find width of gap */
-					while (col < table->columns &&
-							spans[col].row_span ==
-							0) {
-						col++;
-					}
-
-					ctx.ctx = c->select_ctx;
-					ctx.quirks = (c->quirks ==
-						DOM_DOCUMENT_QUIRKS_MODE_FULL);
-					ctx.base_url = c->base_url;
-					ctx.universal = c->universal;
-
-					style = nscss_get_blank_style(&ctx,
-							table_row->style);
-					if (style == NULL)
-						return false;
-
-					cell = box_create(NULL, style, true,
-							table_row->href,
-							table_row->target,
-							NULL, NULL, c->bctx);
-					if (cell == NULL) {
-						css_computed_style_destroy(
-								style);
-						return false;
-					}
-					cell->type = BOX_TABLE_CELL;
-
-					cell->rows = 1;
-					cell->columns = col - start;
-					cell->start_column = start;
-
-					/* Find place to insert cell */
-					for (prev = table_row->children;
-							prev != NULL;
-							prev = prev->next) {
-						if (prev->start_column +
-							prev->columns ==
-								start)
-							break;
-						if (prev->next == NULL)
-							break;
-					}
-
-					/* Insert it */
-					if (prev == NULL) {
-						if (table_row->children != NULL)
-							table_row->children->
-								prev = cell;
-						else
-							table_row->last = cell;
-
-						cell->next =
-							table_row->children;
-						table_row->children = cell;
-					} else {
-						if (prev->next != NULL)
-							prev->next->prev = cell;
-						else
-							table_row->last = cell;
-
-						cell->next = prev->next;
-						prev->next = cell;
-						cell->prev = prev;
-					}
-					cell->parent = table_row;
-				} else {
-					spans[col].row_span--;
-				}
-			}
-
-			assert(rows_left > 0);
-
-			rows_left--;
-		}
-
-		group_rows_left--;
-	}
-
-	return true;
-}
-
-
-bool box_normalise_table_row_group(
-		struct box *row_group,
-		const struct box *root,
-		struct columns *col_info,
-		html_content * c)
-{
-	struct box *child;
-	struct box *next_child;
-	struct box *row;
-	css_computed_style *style;
-	nscss_select_ctx ctx;
-	unsigned int group_row_count = 0;
-
-	assert(row_group != 0);
-	assert(row_group->type == BOX_TABLE_ROW_GROUP);
-
-	ctx.root_style = root->style;
-
-#ifdef BOX_NORMALISE_DEBUG
-	NSLOG(netsurf, INFO, "row_group %p", row_group);
-#endif
-
-	for (child = row_group->children; child != NULL; child = next_child) {
-		next_child = child->next;
-
-		switch (child->type) {
-		case BOX_TABLE_ROW:
-			/* ok */
-			group_row_count++;
-			if (box_normalise_table_row(child, root, col_info,
-					c) == false)
-				return false;
-			break;
-		case BOX_BLOCK:
-		case BOX_INLINE_CONTAINER:
-		case BOX_TABLE:
-		case BOX_TABLE_ROW_GROUP:
-		case BOX_TABLE_CELL:
-			/* insert implied table row */
-			assert(row_group->style != NULL);
-
-			ctx.ctx = c->select_ctx;
-			ctx.quirks = (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL);
-			ctx.base_url = c->base_url;
-			ctx.universal = c->universal;
-
-			style = nscss_get_blank_style(&ctx, row_group->style);
-			if (style == NULL)
-				return false;
-
-			row = box_create(NULL, style, true, row_group->href,
-					row_group->target, NULL, NULL, c->bctx);
-			if (row == NULL) {
-				css_computed_style_destroy(style);
-				return false;
-			}
-			row->type = BOX_TABLE_ROW;
-
-			if (child->prev == NULL)
-				row_group->children = row;
-			else
-				child->prev->next = row;
-
-			row->prev = child->prev;
-
-			while (child != NULL && (
-					child->type == BOX_BLOCK ||
-					child->type == BOX_INLINE_CONTAINER ||
-					child->type == BOX_TABLE ||
-					child->type == BOX_TABLE_ROW_GROUP ||
-					child->type == BOX_TABLE_CELL)) {
-				box_add_child(row, child);
-
-				next_child = child->next;
-				child->next = NULL;
-				child = next_child;
-			}
-
-			assert(row->last != NULL);
-
-			row->last->next = NULL;
-			row->next = next_child = child;
-			if (row->next != NULL)
-				row->next->prev = row;
-			else
-				row_group->last = row;
-			row->parent = row_group;
-
-			group_row_count++;
-			if (box_normalise_table_row(row, root, col_info,
-					c) == false)
-				return false;
-			break;
-		case BOX_INLINE:
-		case BOX_INLINE_END:
-		case BOX_INLINE_BLOCK:
-		case BOX_FLOAT_LEFT:
-		case BOX_FLOAT_RIGHT:
-		case BOX_BR:
-		case BOX_TEXT:
-			/* should have been wrapped in inline
-			   container by convert_xml_to_box() */
-			assert(0);
-			break;
-		default:
-			assert(0);
-		}
-	}
-
-	if (row_group->children == NULL) {
-#ifdef BOX_NORMALISE_DEBUG
-		NSLOG(netsurf, INFO,
-		      "row_group->children == 0, inserting implied row");
-#endif
-
-		assert(row_group->style != NULL);
-
-		ctx.ctx = c->select_ctx;
-		ctx.quirks = (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL);
-		ctx.base_url = c->base_url;
-		ctx.universal = c->universal;
-
-		style = nscss_get_blank_style(&ctx, row_group->style);
-		if (style == NULL) {
-			return false;
-		}
-
-		row = box_create(NULL, style, true, row_group->href,
-				row_group->target, NULL, NULL, c->bctx);
-		if (row == NULL) {
-			css_computed_style_destroy(style);
-			return false;
-		}
-		row->type = BOX_TABLE_ROW;
-
-		row->parent = row_group;
-		row_group->children = row_group->last = row;
-
-		group_row_count = 1;
-
-		/* Keep table's row count in sync */
-		col_info->num_rows++;
-	}
-
-	row_group->rows = group_row_count;
-
-#ifdef BOX_NORMALISE_DEBUG
-	NSLOG(netsurf, INFO, "row_group %p done", row_group);
-#endif
-
-	return true;
-}
-
-
-bool box_normalise_table_row(
-		struct box *row,
-		const struct box *root,
-		struct columns *col_info,
-		html_content * c)
-{
-	struct box *child;
-	struct box *next_child;
-	struct box *cell = NULL;
-	css_computed_style *style;
-	unsigned int i;
-	nscss_select_ctx ctx;
-
-	assert(row != NULL);
-	assert(row->type == BOX_TABLE_ROW);
-
-	ctx.root_style = root->style;
-
-#ifdef BOX_NORMALISE_DEBUG
-	NSLOG(netsurf, INFO, "row %p", row);
-#endif
-
-	for (child = row->children; child != NULL; child = next_child) {
-		next_child = child->next;
-
-		switch (child->type) {
-		case BOX_TABLE_CELL:
-			/* ok */
-			if (box_normalise_block(child, root, c) == false)
-				return false;
-			cell = child;
-			break;
-		case BOX_BLOCK:
-		case BOX_INLINE_CONTAINER:
-		case BOX_TABLE:
-		case BOX_TABLE_ROW_GROUP:
-		case BOX_TABLE_ROW:
-			/* insert implied table cell */
-			assert(row->style != NULL);
-
-			ctx.ctx = c->select_ctx;
-			ctx.quirks = (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL);
-			ctx.base_url = c->base_url;
-			ctx.universal = c->universal;
-
-			style = nscss_get_blank_style(&ctx, row->style);
-			if (style == NULL)
-				return false;
-
-			cell = box_create(NULL, style, true, row->href,
-					row->target, NULL, NULL, c->bctx);
-			if (cell == NULL) {
-				css_computed_style_destroy(style);
-				return false;
-			}
-			cell->type = BOX_TABLE_CELL;
-
-			if (child->prev == NULL)
-				row->children = cell;
-			else
-				child->prev->next = cell;
-
-			cell->prev = child->prev;
-
-			while (child != NULL && (
-					child->type == BOX_BLOCK ||
-					child->type == BOX_INLINE_CONTAINER ||
-					child->type == BOX_TABLE ||
-					child->type == BOX_TABLE_ROW_GROUP ||
-					child->type == BOX_TABLE_ROW)) {
-				box_add_child(cell, child);
-
-				next_child = child->next;
-				child->next = NULL;
-				child = next_child;
-			}
-
-			assert(cell->last != NULL);
-
-			cell->last->next = NULL;
-			cell->next = next_child = child;
-			if (cell->next != NULL)
-				cell->next->prev = cell;
-			else
-				row->last = cell;
-			cell->parent = row;
-
-			if (box_normalise_block(cell, root, c) == false)
-				return false;
-			break;
-		case BOX_INLINE:
-		case BOX_INLINE_END:
-		case BOX_INLINE_BLOCK:
-		case BOX_FLOAT_LEFT:
-		case BOX_FLOAT_RIGHT:
-		case BOX_BR:
-		case BOX_TEXT:
-			/* should have been wrapped in inline
-			   container by convert_xml_to_box() */
-			assert(0);
-			break;
-		default:
-			assert(0);
-		}
-
-		if (calculate_table_row(col_info, cell->columns, cell->rows,
-				&cell->start_column, cell) == false)
-			return false;
-	}
-
-
-	/* Update row spanning details for all columns */
-	for (i = 0; i < col_info->num_columns; i++) {
-		if (col_info->spans[i].row_span != 0 &&
-				col_info->spans[i].auto_row == false) {
-			/* This cell spans rows, and is not an auto row.
-			 * Reduce number of rows left to span */
-			col_info->spans[i].row_span--;
-		}
-	}
-
-	/* Reset current column for next row */
-	col_info->current_column = 0;
-
-	/* Increment row counter */
-	col_info->num_rows++;
-
-#ifdef BOX_NORMALISE_DEBUG
-	NSLOG(netsurf, INFO, "row %p done", row);
-#endif
-
-	return true;
-}
-
-
-/**
- * Compute the column index at which the current cell begins.
- * Additionally, update the column record to reflect row spanning.
- *
- * \param col_info      Column record
- * \param col_span      Number of columns that current cell spans
- * \param row_span      Number of rows that current cell spans
- * \param start_column  Pointer to location to receive column index
- * \param cell		Box for current table cell
- * \return  true on success, false on memory exhaustion
- */
-
-bool calculate_table_row(struct columns *col_info,
-		unsigned int col_span, unsigned int row_span,
-		unsigned int *start_column, struct box *cell)
-{
-	unsigned int cell_start_col = col_info->current_column;
-	unsigned int cell_end_col;
-	unsigned int i;
-	struct span_info *spans;
-	struct box *rg = cell->parent->parent; /* Cell's row group */
-
-	/* Skip columns with cells spanning from above */
-	/* TODO: Need to ignore cells spanning from above that belong to
-	 *       different row group.  We don't have that info here. */
-	while (col_info->spans[cell_start_col].row_span != 0 &&
-			col_info->spans[cell_start_col].rg == rg) {
-		cell_start_col++;
-	}
-
-	/* Update current column with calculated start */
-	col_info->current_column = cell_start_col;
-
-	/* If this cell has a colspan of 0, then assume 1.
-	 * No other browser supports colspan=0, anyway. */
-	if (col_span == 0)
-		col_span = 1;
-
-	cell_end_col = cell_start_col + col_span;
-
-	if (col_info->num_columns < cell_end_col) {
-		/* It appears that this row has more columns than
-		 * the maximum recorded for the table so far.
-		 * Allocate more span records. */
-		spans = realloc(col_info->spans,
-				sizeof *spans * (cell_end_col + 1));
-		if (spans == NULL)
-			return false;
-
-		col_info->spans = spans;
-		col_info->num_columns = cell_end_col;
-
-		/* Mark new final column as sentinel */
-		col_info->spans[cell_end_col].row_span = 0;
-		col_info->spans[cell_end_col].auto_row = false;
-	}
-
-	/* This cell may span multiple columns. If it also wants to span
-	 * multiple rows, temporarily assume it spans 1 row only. This will
-	 * be fixed up in box_normalise_table_spans() */
-	for (i = cell_start_col; i < cell_end_col; i++) {
-		col_info->spans[i].row_span = (row_span == 0) ? 1 : row_span;
-		col_info->spans[i].auto_row = (row_span == 0);
-		col_info->spans[i].rg = rg;
-	}
-
-	/* Update current column with calculated end. */
-	col_info->current_column = cell_end_col;
-
-	*start_column = cell_start_col;
-
-	return true;
-}
-
-
-bool box_normalise_inline_container(
-		struct box *cont,
-		const struct box *root,
-		html_content * c)
+static bool
+box_normalise_inline_container(struct box *cont,
+			       const struct box *root,
+			       html_content * c)
 {
 	struct box *child;
 	struct box *next_child;
@@ -1042,6 +876,122 @@ bool box_normalise_inline_container(
 #ifdef BOX_NORMALISE_DEBUG
 	NSLOG(netsurf, INFO, "cont %p done", cont);
 #endif
+
+	return true;
+}
+
+
+/* Exported function documented in html/box_normalise.h */
+bool
+box_normalise_block(struct box *block, const struct box *root, html_content *c)
+{
+	struct box *child;
+	struct box *next_child;
+	struct box *table;
+	css_computed_style *style;
+	nscss_select_ctx ctx;
+
+	assert(block != NULL);
+	assert(root != NULL);
+
+	ctx.root_style = root->style;
+
+#ifdef BOX_NORMALISE_DEBUG
+	NSLOG(netsurf, INFO, "block %p, block->type %u", block, block->type);
+#endif
+
+	assert(block->type == BOX_BLOCK || block->type == BOX_INLINE_BLOCK ||
+			block->type == BOX_TABLE_CELL);
+
+	for (child = block->children; child != NULL; child = next_child) {
+#ifdef BOX_NORMALISE_DEBUG
+		NSLOG(netsurf, INFO, "child %p, child->type = %d", child,
+		      child->type);
+#endif
+
+		next_child = child->next;	/* child may be destroyed */
+
+		switch (child->type) {
+		case BOX_BLOCK:
+			/* ok */
+			if (box_normalise_block(child, root, c) == false)
+				return false;
+			break;
+		case BOX_INLINE_CONTAINER:
+			if (box_normalise_inline_container(child, root, c) == false)
+				return false;
+			break;
+		case BOX_TABLE:
+			if (box_normalise_table(child, root, c) == false)
+				return false;
+			break;
+		case BOX_INLINE:
+		case BOX_INLINE_END:
+		case BOX_INLINE_BLOCK:
+		case BOX_FLOAT_LEFT:
+		case BOX_FLOAT_RIGHT:
+		case BOX_BR:
+		case BOX_TEXT:
+			/* should have been wrapped in inline
+			   container by convert_xml_to_box() */
+			assert(0);
+			break;
+		case BOX_TABLE_ROW_GROUP:
+		case BOX_TABLE_ROW:
+		case BOX_TABLE_CELL:
+			/* insert implied table */
+			assert(block->style != NULL);
+
+			ctx.ctx = c->select_ctx;
+			ctx.quirks = (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL);
+			ctx.base_url = c->base_url;
+			ctx.universal = c->universal;
+
+			style = nscss_get_blank_style(&ctx, block->style);
+			if (style == NULL)
+				return false;
+
+			table = box_create(NULL, style, true, block->href,
+					block->target, NULL, NULL, c->bctx);
+			if (table == NULL) {
+				css_computed_style_destroy(style);
+				return false;
+			}
+			table->type = BOX_TABLE;
+
+			if (child->prev == NULL)
+				block->children = table;
+			else
+				child->prev->next = table;
+
+			table->prev = child->prev;
+
+			while (child != NULL && (
+					child->type == BOX_TABLE_ROW_GROUP ||
+					child->type == BOX_TABLE_ROW ||
+					child->type == BOX_TABLE_CELL)) {
+				box_add_child(table, child);
+
+				next_child = child->next;
+				child->next = NULL;
+				child = next_child;
+			}
+
+			table->last->next = NULL;
+			table->next = next_child = child;
+			if (table->next != NULL)
+				table->next->prev = table;
+			else
+				block->last = table;
+			table->parent = block;
+
+			if (box_normalise_table(table, root, c) == false)
+				return false;
+			break;
+		default:
+			assert(0);
+		}
+	}
 
 	return true;
 }
