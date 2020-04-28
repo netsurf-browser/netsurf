@@ -880,6 +880,25 @@ box_button(dom_node *n,
 
 
 /**
+ * Canvas element
+ */
+static bool
+box_canvas(dom_node *n,
+	     html_content *content,
+	     struct box *box,
+	     bool *convert_children)
+{
+	/* If scripting is not enabled display the contents of canvas */
+	if (!content->enable_scripting) {
+		return true;
+	}
+	*convert_children = false;
+
+	return true;
+}
+
+
+/**
  * Embedded object (not in any HTML specification:
  * see http://wp.netscape.com/assist/net_sites/new_html3_prop.html )
  */
@@ -2260,6 +2279,10 @@ convert_special_elements(dom_node *node,
 		res = box_button(node, content, box, convert_children);
 		break;
 
+	case DOM_HTML_ELEMENT_TYPE_CANVAS:
+		res = box_canvas(node, content, box, convert_children);
+		break;
+
 	case DOM_HTML_ELEMENT_TYPE_EMBED:
 		res = box_embed(node, content, box, convert_children);
 		break;
@@ -2456,9 +2479,10 @@ box_construct_element(struct box_construct_ctx *ctx, bool *convert_children)
 				box->styles->styles[CSS_PSEUDO_ELEMENT_BEFORE]);
 	}
 
-	if (box->type == BOX_NONE || (ns_computed_display(box->style,
-			props.node_is_root) == CSS_DISPLAY_NONE &&
-			props.node_is_root == false)) {
+	if (box->type == BOX_NONE ||
+	    (ns_computed_display(box->style,
+				 props.node_is_root) == CSS_DISPLAY_NONE &&
+	     props.node_is_root == false)) {
 		css_select_results_destroy(styles);
 		box->styles = NULL;
 		box->style = NULL;
