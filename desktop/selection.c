@@ -33,6 +33,7 @@
 #include "utils/utils.h"
 #include "netsurf/form.h"
 #include "html/box.h"
+#include "html/box_inspect.h"
 #include "html/html_internal.h"
 #include "html/font.h"
 #include "text/textplain.h"

@@ -35,6 +35,7 @@
 #include "content/hlcache.h"
 #include "html/html.h"
 #include "html/box.h"
+#include "html/box_inspect.h"
 
 #include "desktop/browser_private.h"
 #include "desktop/frames.h"

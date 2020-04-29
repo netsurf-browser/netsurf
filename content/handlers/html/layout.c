@@ -60,6 +60,7 @@
 #include "html/html_save.h"
 #include "html/html_internal.h"
 #include "html/box.h"
+#include "html/box_inspect.h"
 #include "html/font.h"
 #include "html/form_internal.h"
 #include "html/layout.h"

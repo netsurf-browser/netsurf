@@ -38,6 +38,7 @@
 #define SCROLL_BOTTOM	 INT_MAX
 
 struct scrollbar;
+struct redraw_context;
 
 /**
  * scrollbar message types

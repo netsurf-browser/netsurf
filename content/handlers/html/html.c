@@ -61,6 +61,7 @@
 #include "html/interaction.h"
 #include "html/box.h"
 #include "html/box_construct.h"
+#include "html/box_inspect.h"
 #include "html/form_internal.h"
 #include "html/imagemap.h"
 #include "html/layout.h"

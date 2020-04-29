@@ -33,6 +33,7 @@
 #include "css/select.h"
 
 #include "html/box.h"
+#include "html/box_manipulate.h"
 #include "html/box_normalise.h"
 #include "html/html_internal.h"
 #include "html/table.h"

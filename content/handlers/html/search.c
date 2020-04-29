@@ -40,6 +40,7 @@
 
 #include "text/textplain.h"
 #include "html/box.h"
+#include "html/box_inspect.h"
 #include "html/html.h"
 #include "html/html_internal.h"
 #include "html/search.h"

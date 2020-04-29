@@ -19,6 +19,21 @@
 /**
  * \file
  * HTML Box tree normalise interface.
+ *
+ * A box tree is "normalized" if the following is satisfied:
+ * \code
+ * parent               permitted child nodes
+ * BLOCK, INLINE_BLOCK  BLOCK, INLINE_CONTAINER, TABLE
+ * INLINE_CONTAINER     INLINE, INLINE_BLOCK, FLOAT_LEFT, FLOAT_RIGHT, BR, TEXT,
+ *                      INLINE_END
+ * INLINE               none
+ * TABLE                at least 1 TABLE_ROW_GROUP
+ * TABLE_ROW_GROUP      at least 1 TABLE_ROW
+ * TABLE_ROW            at least 1 TABLE_CELL
+ * TABLE_CELL           BLOCK, INLINE_CONTAINER, TABLE (same as BLOCK)
+ * FLOAT_(LEFT|RIGHT)   exactly 1 BLOCK or TABLE
+ * \endcode
+ *
  */
 
 #ifndef NETSURF_HTML_BOX_NORMALISE_H
