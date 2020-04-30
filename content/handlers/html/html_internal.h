@@ -376,15 +376,10 @@ nserror html_css_fetcher_add_item(dom_string *data, nsurl *base_url,
  * \param  url               URL of object to fetch (copied)
  * \param  box               box that will contain the object
  * \param  permitted_types   bitmap of acceptable types
- * \param  available_width   estimate of width of object
- * \param  available_height  estimate of height of object
  * \param  background        this is a background image
  * \return  true on success, false on memory exhaustion
  */
-bool html_fetch_object(html_content *c, nsurl *url, struct box *box,
-		content_type permitted_types,
-		int available_width, int available_height,
-		bool background);
+bool html_fetch_object(html_content *c, nsurl *url, struct box *box, content_type permitted_types, bool background);
 
 nserror html_object_free_objects(html_content *html);
 nserror html_object_close_objects(html_content *html);

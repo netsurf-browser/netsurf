@@ -687,7 +687,7 @@ static bool html_process_img(html_content *c, dom_node *node)
 	dom_string_unref(src);
 
 	/* Speculatively fetch the image */
-	success = html_fetch_object(c, url, NULL, CONTENT_IMAGE, 0, 0, false);
+	success = html_fetch_object(c, url, NULL, CONTENT_IMAGE, false);
 	nsurl_unref(url);
 
 	return success;

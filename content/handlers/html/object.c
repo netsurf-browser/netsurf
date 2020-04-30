@@ -677,10 +677,12 @@ nserror html_object_free_objects(html_content *html)
 
 
 /* exported interface documented in html/html_internal.h */
-bool html_fetch_object(html_content *c, nsurl *url, struct box *box,
-		content_type permitted_types,
-		int available_width, int available_height,
-		bool background)
+bool
+html_fetch_object(html_content *c,
+		  nsurl *url,
+		  struct box *box,
+		  content_type permitted_types,
+		  bool background)
 {
 	struct content_html_object *object;
 	hlcache_child_context child;
@@ -706,10 +708,14 @@ bool html_fetch_object(html_content *c, nsurl *url, struct box *box,
 	object->background = background;
 
 	error = hlcache_handle_retrieve(url,
-			HLCACHE_RETRIEVE_SNIFF_TYPE,
-			content_get_url(&c->base), NULL,
-			html_object_callback, object, &child,
-			object->permitted_types, &object->content);
+					HLCACHE_RETRIEVE_SNIFF_TYPE,
+					content_get_url(&c->base),
+					NULL,
+					html_object_callback,
+					object,
+					&child,
+					object->permitted_types,
+					&object->content);
 	if (error != NSERROR_OK) {
 		free(object);
 		return error != NSERROR_NOMEM;

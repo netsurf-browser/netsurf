@@ -470,9 +470,11 @@ box_construct_marker(struct box *box,
 		if (error != NSERROR_OK)
 			return false;
 
-		if (html_fetch_object(ctx->content, url, marker, image_types,
-				ctx->content->base.available_width, 1000, false) ==
-				false) {
+		if (html_fetch_object(ctx->content,
+				      url,
+				      marker,
+				      image_types,
+				      false) ==	false) {
 			nsurl_unref(url);
 			return false;
 		}
@@ -705,10 +707,11 @@ box_construct_element(struct box_construct_ctx *ctx, bool *convert_children)
 		error = nsurl_create(lwc_string_data(bgimage_uri), &url);
 		if (error == NSERROR_OK) {
 			/* Fetch image if we got a valid URL */
-			if (html_fetch_object(ctx->content, url, box,
-					image_types,
-					ctx->content->base.available_width,
-					1000, true) == false) {
+			if (html_fetch_object(ctx->content,
+					      url,
+					      box,
+					      image_types,
+					      true) == false) {
 				nsurl_unref(url);
 				return false;
 			}

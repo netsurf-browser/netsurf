@@ -956,8 +956,7 @@ box_embed(dom_node *n,
 
 	/* start fetch */
 	box->flags |= IS_REPLACED;
-	return html_fetch_object(content, params->data, box, CONTENT_ANY,
-			content->base.available_width, 1000, false);
+	return html_fetch_object(content, params->data, box, CONTENT_ANY, false);
 }
 
 
@@ -1189,8 +1188,7 @@ box_image(dom_node *n,
 
 	/* start fetch */
 	box->flags |= IS_REPLACED;
-	ok = html_fetch_object(content, url, box, image_types,
-			content->base.available_width, 1000, false);
+	ok = html_fetch_object(content, url, box, image_types, false);
 	nsurl_unref(url);
 
 	wtype = css_computed_width(box->style, &value, &wunit);
@@ -1332,11 +1330,11 @@ box_input(dom_node *n,
 				 */
 				if (nsurl_compare(url, content->base_url,
 						NSURL_COMPLETE) == false) {
-					if (!html_fetch_object(content, url,
-							box, image_types,
-							content->base.
-							available_width,
-							1000, false)) {
+					if (!html_fetch_object(content,
+							       url,
+							       box,
+							       image_types,
+							       false)) {
 						nsurl_unref(url);
 						goto no_memory;
 					}
@@ -1613,9 +1611,10 @@ box_object(dom_node *n,
 	/* start fetch (MIME type is ok or not specified) */
 	box->flags |= IS_REPLACED;
 	if (!html_fetch_object(content,
-			params->data ? params->data : params->classid,
-			box, CONTENT_ANY, content->base.available_width, 1000,
-			false))
+			       params->data ? params->data : params->classid,
+			       box,
+			       CONTENT_ANY,
+			       false))
 		return false;
 
 	*convert_children = false;
