@@ -38,6 +38,7 @@
 #include "desktop/gui_internal.h"
 
 #include "html/html_internal.h"
+#include "html/object.h"
 #include "html/box.h"
 #include "html/box_manipulate.h"
 #include "html/box_construct.h"

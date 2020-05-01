@@ -44,6 +44,7 @@
 #include "html/box.h"
 #include "html/box_inspect.h"
 #include "html/html_internal.h"
+#include "html/object.h"
 
 /* break reference loop */
 static void html_object_refresh(void *p);
@@ -489,6 +490,7 @@ html_object_callback(hlcache_handle *object,
 	return NSERROR_OK;
 }
 
+
 /**
  * Start a fetch for an object required by a page, replacing an existing object.
  *
@@ -496,7 +498,6 @@ html_object_callback(hlcache_handle *object,
  * \param  url             URL of object to fetch (copied)
  * \return  true on success, false on memory exhaustion
  */
-
 static bool html_replace_object(struct content_html_object *object, nsurl *url)
 {
 	html_content *c;
@@ -549,7 +550,6 @@ static bool html_replace_object(struct content_html_object *object, nsurl *url)
 /**
  * schedule callback for object refresh
  */
-
 static void html_object_refresh(void *p)
 {
 	struct content_html_object *object = p;
@@ -571,6 +571,8 @@ static void html_object_refresh(void *p)
 	}
 }
 
+
+/* exported interface documented in html/object.h */
 nserror html_object_open_objects(html_content *html, struct browser_window *bw)
 {
 	struct content_html_object *object, *next;
@@ -592,6 +594,8 @@ nserror html_object_open_objects(html_content *html, struct browser_window *bw)
 	return NSERROR_OK;
 }
 
+
+/* exported interface documented in html/object.h */
 nserror html_object_abort_objects(html_content *htmlc)
 {
 	struct content_html_object *object;
@@ -632,6 +636,8 @@ nserror html_object_abort_objects(html_content *htmlc)
 	return NSERROR_OK;
 }
 
+
+/* exported interface documented in html/object.h */
 nserror html_object_close_objects(html_content *html)
 {
 	struct content_html_object *object, *next;
@@ -654,6 +660,8 @@ nserror html_object_close_objects(html_content *html)
 	return NSERROR_OK;
 }
 
+
+/* exported interface documented in html/object.h */
 nserror html_object_free_objects(html_content *html)
 {
 	while (html->object_list != NULL) {
@@ -675,8 +683,7 @@ nserror html_object_free_objects(html_content *html)
 }
 
 
-
-/* exported interface documented in html/html_internal.h */
+/* exported interface documented in html/object.h */
 bool
 html_fetch_object(html_content *c,
 		  nsurl *url,
