@@ -34,7 +34,7 @@
 #include "netsurf/form.h"
 #include "html/box.h"
 #include "html/box_inspect.h"
-#include "html/html_internal.h"
+#include "html/private.h"
 #include "html/font.h"
 #include "text/textplain.h"
 #include "netsurf/browser_window.h"

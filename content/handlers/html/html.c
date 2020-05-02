@@ -56,7 +56,8 @@
 #include "desktop/gui_internal.h"
 
 #include "html/html.h"
-#include "html/html_internal.h"
+#include "html/private.h"
+#include "html/css.h"
 #include "html/object.h"
 #include "html/html_save.h"
 #include "html/interaction.h"
@@ -2816,7 +2817,7 @@ html_saw_insecure_objects(struct content *c)
 	}
 
 	/* Now check stylesheets */
-	if (html_saw_insecure_stylesheets(htmlc)) {
+	if (html_css_saw_insecure_stylesheets(htmlc)) {
 		return true;
 	}
 
@@ -2894,12 +2895,8 @@ error:
 	return error;
 }
 
-/**
- * Get the browser window containing an HTML content
- *
- * \param  c	HTML content
- * \return the browser window
- */
+
+/* exported function documented in html/private.h */
 struct browser_window *html_get_browser_window(struct content *c)
 {
 	html_content *html = (html_content *) c;

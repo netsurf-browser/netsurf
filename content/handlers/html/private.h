@@ -21,8 +21,8 @@
  * Private data for text/html content.
  */
 
-#ifndef NETSURF_HTML_HTML_INTERNAL_H
-#define NETSURF_HTML_HTML_INTERNAL_H
+#ifndef NETSURF_HTML_PRIVATE_H
+#define NETSURF_HTML_PRIVATE_H
 
 #include <libcss/libcss.h>
 #include <dom/bindings/hubbub/parser.h>
@@ -205,8 +205,10 @@ typedef struct html_content {
 	/** HTML content's own text selection object */
 	struct selection sel;
 
-	/** Open core-handled form SELECT menu,
-	 *  or NULL if none currently open. */
+	/**
+	 * Open core-handled form SELECT menu, or NULL if none
+	 *  currently open.
+	 */
 	struct form_control *visible_select_menu;
 
 	/** Context for free text search, or NULL if none */
@@ -216,51 +218,31 @@ typedef struct html_content {
 
 } html_content;
 
-/** Render padding and margin box outlines in html_redraw(). */
+/**
+ * Render padding and margin box outlines in html_redraw().
+ */
 extern bool html_redraw_debug;
 
-void html__redraw_a_box(html_content *html, struct box *box);
+
+/* in html/html.c */
 
 /**
- * Set our drag status, and inform whatever owns the content
+ * redraw a box
  *
- * \param html		HTML content
- * \param drag_type	Type of drag
- * \param drag_owner	What owns the drag
- * \param rect		Pointer movement bounds
+ * \param htmlc HTML content
+ * \param box The box to redraw.
  */
-void html_set_drag_type(html_content *html, html_drag_type drag_type,
-		union html_drag_owner drag_owner, const struct rect *rect);
+void html__redraw_a_box(html_content *htmlc, struct box *box);
+
 
 /**
- * Set our selection status, and inform whatever owns the content
+ * Get the browser window containing an HTML content
  *
- * \param html			HTML content
- * \param selection_type	Type of selection
- * \param selection_owner	What owns the selection
- * \param read_only		True iff selection is read only
+ * \param c HTML content
+ * \return the browser window
  */
-void html_set_selection(html_content *html, html_selection_type selection_type,
-		union html_selection_owner selection_owner, bool read_only);
-
-/**
- * Set our input focus, and inform whatever owns the content
- *
- * \param html			HTML content
- * \param focus_type		Type of input focus
- * \param focus_owner		What owns the focus
- * \param hide_caret		True iff caret to be hidden
- * \param x			Carret x-coord rel to owner
- * \param y			Carret y-coord rel to owner
- * \param height		Carret height
- * \param clip			Carret clip rect
- */
-void html_set_focus(html_content *html, html_focus_type focus_type,
-		union html_focus_owner focus_owner, bool hide_caret,
-		int x, int y, int height, const struct rect *clip);
-
-
 struct browser_window *html_get_browser_window(struct content *c);
+
 
 /**
  * Complete conversion of an HTML document
@@ -268,6 +250,7 @@ struct browser_window *html_get_browser_window(struct content *c);
  * \param htmlc Content to convert
  */
 void html_finish_conversion(html_content *htmlc);
+
 
 /**
  * Test if an HTML content conversion can begin
@@ -277,6 +260,7 @@ void html_finish_conversion(html_content *htmlc);
  */
 bool html_can_begin_conversion(html_content *htmlc);
 
+
 /**
  * Begin conversion of an HTML document
  *
@@ -284,24 +268,12 @@ bool html_can_begin_conversion(html_content *htmlc);
  */
 bool html_begin_conversion(html_content *htmlc);
 
-/* in html/html_redraw.c */
-bool html_redraw(struct content *c, struct content_redraw_data *data,
-		const struct rect *clip, const struct redraw_context *ctx);
 
-/* in html/html_redraw_border.c */
-bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
-		int p_width, int p_height, const struct rect *clip, float scale,
-		const struct redraw_context *ctx);
-
-bool html_redraw_inline_borders(struct box *box, struct rect b,
-		const struct rect *clip, float scale, bool first, bool last,
-		const struct redraw_context *ctx);
-
-/* in html/html_script.c */
-dom_hubbub_error html_process_script(void *ctx, dom_node *node);
-
-/* in html/html.c */
+/**
+ * execute some text as a script element
+ */
 bool html_exec(struct content *c, const char *src, size_t srclen);
+
 
 /**
  * Attempt script execution for defer and async scripts
@@ -315,6 +287,7 @@ bool html_exec(struct content *c, const char *src, size_t srclen);
  */
 nserror html_script_exec(html_content *htmlc, bool allow_defer);
 
+
 /**
  * Free all script resources and references for a html content.
  *
@@ -323,41 +296,46 @@ nserror html_script_exec(html_content *htmlc, bool allow_defer);
  */
 nserror html_script_free(html_content *htmlc);
 
+
 /**
  * Check if any of the scripts loaded were insecure
  */
 bool html_saw_insecure_scripts(html_content *htmlc);
 
-/* in html/html_forms.c */
+
+/**
+ * Complete the HTML content state machine *iff* all scripts are finished
+ */
+nserror html_proceed_to_done(html_content *html);
+
+
+/* in html/redraw.c */
+bool html_redraw(struct content *c, struct content_redraw_data *data,
+		const struct rect *clip, const struct redraw_context *ctx);
+
+
+/* in html/redraw_border.c */
+bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
+		int p_width, int p_height, const struct rect *clip, float scale,
+		const struct redraw_context *ctx);
+
+
+bool html_redraw_inline_borders(struct box *box, struct rect b,
+		const struct rect *clip, float scale, bool first, bool last,
+		const struct redraw_context *ctx);
+
+
+/* in html/script.c */
+dom_hubbub_error html_process_script(void *ctx, dom_node *node);
+
+
+/* in html/forms.c */
 struct form *html_forms_get_forms(const char *docenc, dom_html_document *doc);
 struct form_control *html_forms_get_control_for_node(struct form *forms,
 		dom_node *node);
 
-/* in html/html_css.c */
-nserror html_css_init(void);
-void html_css_fini(void);
 
-/**
- * Initialise core stylesheets for a content
- *
- * \param c content structure to update
- * \return nserror
- */
-nserror html_css_new_stylesheets(html_content *c);
-nserror html_css_quirks_stylesheets(html_content *c);
-nserror html_css_free_stylesheets(html_content *html);
-
-/** Return if any of the stylesheets were loaded insecurely */
-bool html_saw_insecure_stylesheets(html_content *html);
-
-bool html_css_process_link(html_content *htmlc, dom_node *node);
-bool html_css_process_style(html_content *htmlc, dom_node *node);
-bool html_css_update_style(html_content *c, dom_node *style);
-
-nserror html_css_new_selection_context(html_content *c,
-		css_select_ctx **ret_select_ctx);
-
-/* in html/html_css_fetcher.c */
+/* in html/css_fetcher.c */
 /**
  * Register the fetcher for the pseudo x-ns-css scheme.
  *
@@ -366,11 +344,6 @@ nserror html_css_new_selection_context(html_content *c,
 nserror html_css_fetcher_register(void);
 nserror html_css_fetcher_add_item(dom_string *data, nsurl *base_url,
 		uint32_t *key);
-
-/**
- * Complete the HTML content state machine *iff* all scripts are finished
- */
-nserror html_proceed_to_done(html_content *html);
 
 
 /* Events */

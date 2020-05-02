@@ -39,7 +39,7 @@
 #include "netsurf/browser_window.h"
 #include "netsurf/keypress.h"
 #include "html/box.h"
-#include "html/html_internal.h"
+#include "html/private.h"
 #include "html/layout.h"
 
 #include "desktop/browser_private.h"

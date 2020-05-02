@@ -30,7 +30,7 @@
 #include "netsurf/css.h"
 
 #include "html/box.h"
-#include "html/html_internal.h"
+#include "html/private.h"
 
 
 static plot_style_t plot_style_bdr = {

@@ -26,7 +26,7 @@
 #include "utils/log.h"
 
 #include "html/form_internal.h"
-#include "html/html_internal.h"
+#include "html/private.h"
 
 /**
  * process form element from dom

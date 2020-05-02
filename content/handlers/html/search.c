@@ -42,7 +42,7 @@
 #include "html/box.h"
 #include "html/box_inspect.h"
 #include "html/html.h"
-#include "html/html_internal.h"
+#include "html/private.h"
 #include "html/search.h"
 
 #ifndef NOF_ELEMENTS

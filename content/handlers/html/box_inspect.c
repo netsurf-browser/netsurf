@@ -34,9 +34,9 @@
 #include "css/dump.h"
 #include "desktop/scrollbar.h"
 
+#include "html/private.h"
 #include "html/box.h"
 #include "html/box_inspect.h"
-#include "html/html_internal.h"
 
 /**
  * Direction to move in a box-tree walk

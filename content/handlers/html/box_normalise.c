@@ -32,11 +32,11 @@
 #include "utils/errors.h"
 #include "css/select.h"
 
+#include "html/private.h"
+#include "html/table.h"
 #include "html/box.h"
 #include "html/box_manipulate.h"
 #include "html/box_normalise.h"
-#include "html/html_internal.h"
-#include "html/table.h"
 
 /* Define to enable box normalise debug */
 #undef BOX_NORMALISE_DEBUG

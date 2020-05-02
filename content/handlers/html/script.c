@@ -40,7 +40,7 @@
 #include "content/hlcache.h"
 
 #include "html/html.h"
-#include "html/html_internal.h"
+#include "html/private.h"
 
 typedef bool (script_handler_t)(struct jsthread *jsthread, const uint8_t *data, size_t size, const char *name);
 

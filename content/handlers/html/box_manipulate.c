@@ -32,11 +32,11 @@
 #include "netsurf/mouse.h"
 #include "desktop/scrollbar.h"
 
+#include "html/private.h"
+#include "html/form_internal.h"
+#include "html/interaction.h"
 #include "html/box.h"
 #include "html/box_manipulate.h"
-#include "html/form_internal.h"
-#include "html/html_internal.h"
-#include "html/interaction.h"
 
 
 /**

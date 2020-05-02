@@ -37,7 +37,7 @@
 
 #include "html/box.h"
 #include "html/box_construct.h"
-#include "html/html_internal.h"
+#include "html/private.h"
 #include "html/imagemap.h"
 
 #define HASH_SIZE 31 /* fixed size hash table */

@@ -39,7 +39,7 @@
 #include "content/fetch.h"
 #include "content/fetchers.h"
 
-#include "html/html_internal.h"
+#include "html/private.h"
 
 typedef struct html_css_fetcher_item {
 	uint32_t key;

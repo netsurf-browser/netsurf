@@ -52,13 +52,13 @@
 #include "desktop/textarea.h"
 #include "desktop/gui_internal.h"
 
+#include "html/html.h"
+#include "html/private.h"
+#include "html/layout.h"
 #include "html/box.h"
 #include "html/box_inspect.h"
 #include "html/font.h"
 #include "html/form_internal.h"
-#include "html/html.h"
-#include "html/html_internal.h"
-#include "html/layout.h"
 
 #define MAX_SELECT_HEIGHT 210
 #define SELECT_LINE_SPACING 0.2

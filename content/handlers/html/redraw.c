@@ -58,7 +58,7 @@
 #include "html/box_manipulate.h"
 #include "html/font.h"
 #include "html/form_internal.h"
-#include "html/html_internal.h"
+#include "html/private.h"
 #include "html/layout.h"
 #include "html/search.h"
 

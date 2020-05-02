@@ -53,7 +53,7 @@
 #include "html/box_inspect.h"
 #include "html/font.h"
 #include "html/form_internal.h"
-#include "html/html_internal.h"
+#include "html/private.h"
 #include "html/imagemap.h"
 #include "html/search.h"
 #include "html/interaction.h"

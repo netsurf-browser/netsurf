@@ -42,13 +42,17 @@
 #include "desktop/gui_internal.h"
 
 #include "html/html.h"
-#include "html/html_internal.h"
+#include "html/private.h"
+#include "html/css.h"
 
 static nsurl *html_default_stylesheet_url;
 static nsurl *html_adblock_stylesheet_url;
 static nsurl *html_quirks_stylesheet_url;
 static nsurl *html_user_stylesheet_url;
 
+/**
+ * Convert css error to netsurf error.
+ */
 static nserror css_error_to_nserror(css_error error)
 {
 	switch (error) {
@@ -82,10 +86,10 @@ static nserror css_error_to_nserror(css_error error)
 	return NSERROR_CSS;
 }
 
+
 /**
  * Callback for fetchcache() for stylesheets.
  */
-
 static nserror
 html_convert_css_callback(hlcache_handle *css,
 			  const hlcache_event *event,
@@ -141,6 +145,7 @@ html_convert_css_callback(hlcache_handle *css,
 	return NSERROR_OK;
 }
 
+
 static nserror
 html_stylesheet_from_domnode(html_content *c,
 			     dom_node *node,
@@ -195,6 +200,7 @@ html_stylesheet_from_domnode(html_content *c,
 	return NSERROR_OK;
 }
 
+
 /**
  * Process an inline stylesheet in the document.
  *
@@ -202,7 +208,6 @@ html_stylesheet_from_domnode(html_content *c,
  * \param  style  xml node of style element
  * \return  true on success, false if an error occurred
  */
-
 static struct html_stylesheet *
 html_create_style_element(html_content *c, dom_node *style)
 {
@@ -254,8 +259,9 @@ html_create_style_element(html_content *c, dom_node *style)
 	return c->stylesheets + (c->stylesheet_count - 1);
 }
 
-static bool html_css_process_modified_style(html_content *c,
-		struct html_stylesheet *s)
+
+static bool
+html_css_process_modified_style(html_content *c, struct html_stylesheet *s)
 {
 	hlcache_handle *sheet = NULL;
 	nserror error;
@@ -291,6 +297,10 @@ static bool html_css_process_modified_style(html_content *c,
 	return true;
 }
 
+
+/**
+ * process a stylesheet that has been modified.
+ */
 static void html_css_process_modified_styles(void *pw)
 {
 	html_content *c = pw;
@@ -310,6 +320,8 @@ static void html_css_process_modified_styles(void *pw)
 	}
 }
 
+
+/* exported function documented in html/css.h */
 bool html_css_update_style(html_content *c, dom_node *style)
 {
 	unsigned int i;
@@ -337,6 +349,8 @@ bool html_css_update_style(html_content *c, dom_node *style)
 	return true;
 }
 
+
+/* exported function documented in html/css.h */
 bool html_css_process_style(html_content *c, dom_node *node)
 {
 	unsigned int i;
@@ -368,6 +382,8 @@ bool html_css_process_style(html_content *c, dom_node *node)
 	return true;
 }
 
+
+/* exported function documented in html/css.h */
 bool html_css_process_link(html_content *htmlc, dom_node *node)
 {
 	dom_string *rel, *type_attr, *media, *href;
@@ -475,6 +491,7 @@ no_memory:
 	return false;
 }
 
+
 /* exported interface documented in html/html.h */
 struct html_stylesheet *html_get_stylesheets(hlcache_handle *h, unsigned int *n)
 {
@@ -488,8 +505,9 @@ struct html_stylesheet *html_get_stylesheets(hlcache_handle *h, unsigned int *n)
 	return c->stylesheets;
 }
 
-/* exported interface documented in html/html_internal.h */
-bool html_saw_insecure_stylesheets(html_content *html)
+
+/* exported function documented in html/css.h */
+bool html_css_saw_insecure_stylesheets(html_content *html)
 {
 	struct html_stylesheet *s;
 	unsigned int i;
@@ -506,7 +524,8 @@ bool html_saw_insecure_stylesheets(html_content *html)
 	return false;
 }
 
-/* exported interface documented in html/html_internal.h */
+
+/* exported function documented in html/css.h */
 nserror html_css_free_stylesheets(html_content *html)
 {
 	unsigned int i;
@@ -526,7 +545,8 @@ nserror html_css_free_stylesheets(html_content *html)
 	return NSERROR_OK;
 }
 
-/* exported interface documented in html/html_internal.h */
+
+/* exported function documented in html/css.h */
 nserror html_css_quirks_stylesheets(html_content *c)
 {
 	nserror ns_error = NSERROR_OK;
@@ -554,7 +574,8 @@ nserror html_css_quirks_stylesheets(html_content *c)
 	return ns_error;
 }
 
-/* exported interface documented in html/html_internal.h */
+
+/* exported function documented in html/css.h */
 nserror html_css_new_stylesheets(html_content *c)
 {
 	nserror ns_error;
@@ -624,6 +645,8 @@ nserror html_css_new_stylesheets(html_content *c)
 	return ns_error;
 }
 
+
+/* exported function documented in html/css.h */
 nserror
 html_css_new_selection_context(html_content *c, css_select_ctx **ret_select_ctx)
 {
@@ -686,6 +709,8 @@ html_css_new_selection_context(html_content *c, css_select_ctx **ret_select_ctx)
 	return NSERROR_OK;
 }
 
+
+/* exported function documented in html/css.h */
 nserror html_css_init(void)
 {
 	nserror error;
@@ -715,6 +740,8 @@ nserror html_css_init(void)
 	return error;
 }
 
+
+/* exported function documented in html/css.h */
 void html_css_fini(void)
 {
 	if (html_user_stylesheet_url != NULL) {
