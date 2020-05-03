@@ -24,7 +24,6 @@
 #ifndef NETSURF_HTML_PRIVATE_H
 #define NETSURF_HTML_PRIVATE_H
 
-#include <libcss/libcss.h>
 #include <dom/bindings/hubbub/parser.h>
 
 #include "netsurf/types.h"
