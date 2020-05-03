@@ -180,6 +180,7 @@ struct form *form_new(void *node, const char *action, const char *target,
  */
 void form_free(struct form *form);
 
+
 /**
  * Create a struct form_control.
  *
@@ -189,13 +190,37 @@ void form_free(struct form *form);
  */
 struct form_control *form_new_control(void *node, form_control_type type);
 
+
+/**
+ * Add a control to the list of controls in a form.
+ *
+ * \param form  The form to add the control to
+ * \param control  The control to add
+ */
 void form_add_control(struct form *form, struct form_control *control);
+
+
+/**
+ * Free a struct form_control.
+ *
+ * \param  control  structure to free
+ */
 void form_free_control(struct form_control *control);
+
+
+/**
+ * Add an option to a form select control.
+ *
+ * \param  control   form control of type GADGET_SELECT
+ * \param  value     value of option, used directly (not copied)
+ * \param  text      text for option, used directly (not copied)
+ * \param  selected  this option is selected
+ * \param  node      the DOM node this option is associated with
+ * \return  true on success, false on memory exhaustion
+ */
 bool form_add_option(struct form_control *control, char *value, char *text,
 		     bool selected, void *node);
-bool form_successful_controls(struct form *form,
-		struct form_control *submit_button,
-		struct fetch_multipart_data **successful_controls);
+
 
 /**
  * Open a select menu for a select form control, creating it if necessary.
@@ -210,10 +235,6 @@ nserror form_open_select_menu(void *client_data,
 		struct form_control *control,
 		select_menu_redraw_callback redraw_callback,
 		struct content *c);
-
-
-void form_select_menu_callback(void *client_data,
-		int x, int y, int width, int height);
 
 
 /**
@@ -240,14 +261,69 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 		float scale, const struct rect *clip,
 		const struct redraw_context *ctx);
 
+
+/**
+ * Check whether a clipping rectangle is completely contained in the
+ * select menu.
+ *
+ * \param control  the select menu to check the clipping rectangle for
+ * \param scale    the current browser window scale
+ * \param clip     the clipping rectangle
+ * \return true if inside false otherwise
+ */
 bool form_clip_inside_select_menu(struct form_control *control, float scale,
 		const struct rect *clip);
+
+
+/**
+ * Handle mouse action for the currently opened select menu.
+ *
+ * \param control the select menu which received the mouse action
+ * \param mouse current mouse state
+ * \param x X coordinate of click
+ * \param y Y coordinate of click
+ * \return text for the browser status bar or NULL if the menu has to be closed
+ */
 const char *form_select_mouse_action(struct form_control *control,
 		enum browser_mouse_state mouse, int x, int y);
+
+
+/**
+ * Handle mouse drag end for the currently opened select menu.
+ *
+ * \param control the select menu which received the mouse drag end
+ * \param mouse current mouse state
+ * \param x X coordinate of drag end
+ * \param y Y coordinate of drag end
+ */
 void form_select_mouse_drag_end(struct form_control *control,
 		enum browser_mouse_state mouse, int x, int y);
+
+
+/**
+ * Get the dimensions of a select menu.
+ *
+ * \param control	the select menu to get the dimensions of
+ * \param width		gets updated to menu width
+ * \param height	gets updated to menu height
+ */
 void form_select_get_dimensions(struct form_control *control,
 		int *width, int *height);
+
+
+/**
+ * Callback for the core select menu.
+ */
+void form_select_menu_callback(void *client_data,
+		int x, int y, int width, int height);
+
+
+/**
+ * Set a radio form control and clear the others in the group.
+ *
+ * \param radio form control of type GADGET_RADIO
+ */
+void form_radio_set(struct form_control *radio);
 
 /**
  * navigate browser window based on form submission.
@@ -260,9 +336,12 @@ void form_select_get_dimensions(struct form_control *control,
 nserror form_submit(struct nsurl *page_url, struct browser_window *target,
 		struct form *form, struct form_control *submit_button);
 
-void form_radio_set(struct form_control *radio);
 
+/**
+ * Update gadget value.
+ */
 void form_gadget_update_value(struct form_control *control, char *value);
+
 
 /**
  * Synchronise this gadget with its associated DOM node.

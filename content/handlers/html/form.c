@@ -89,253 +89,81 @@ static plot_font_style_t plot_fstyle_entry = {
 	.foreground = 0x000000,
 };
 
-static char *form_acceptable_charset(struct form *form);
-static char *form_encode_item(const char *item, uint32_t len, const char *charset,
-		const char *fallback);
-static void form_select_menu_clicked(struct form_control *control,
-		int x, int y);
-static void form_select_menu_scroll_callback(void *client_data,
-		struct scrollbar_msg_data *scrollbar_data);
-
-/* exported interface documented in html/form_internal.h */
-struct form *form_new(void *node, const char *action, const char *target,
-		form_method method, const char *charset,
-		const char *doc_charset)
-{
-	struct form *form;
-
-	form = calloc(1, sizeof *form);
-	if (!form)
-		return NULL;
-
-	form->action = strdup(action != NULL ? action : "");
-	if (form->action == NULL) {
-		free(form);
-		return NULL;
-	}
-
-	form->target = target != NULL ? strdup(target) : NULL;
-	if (target != NULL && form->target == NULL) {
-		free(form->action);
-		free(form);
-		return NULL;
-	}
-
-	form->method = method;
-
-	form->accept_charsets = charset != NULL ? strdup(charset) : NULL;
-	if (charset != NULL && form->accept_charsets == NULL) {
-		free(form->target);
-		free(form->action);
-		free(form);
-		return NULL;
-	}
-
-	form->document_charset = doc_charset != NULL ? strdup(doc_charset)
-						     : NULL;
-	if (doc_charset && form->document_charset == NULL) {
-		free(form->accept_charsets);
-		free(form->target);
-		free(form->action);
-		free(form);
-		return NULL;
-	}
-
-	form->node = node;
-
-	return form;
-}
-
-
-/* exported interface documented in html/form_internal.h */
-void form_free(struct form *form)
-{
-	struct form_control *c, *d;
-
-	for (c = form->controls; c != NULL; c = d) {
-		d = c->next;
-
-		form_free_control(c);
-	}
-
-	free(form->action);
-	free(form->target);
-	free(form->accept_charsets);
-	free(form->document_charset);
-
-	free(form);
-}
-
-/* exported interface documented in html/form_internal.h */
-struct form_control *form_new_control(void *node, form_control_type type)
-{
-	struct form_control *control;
-
-	control = calloc(1, sizeof *control);
-	if (control == NULL)
-		return NULL;
-
-	control->node = node;
-	control->type = type;
-
-	return control;
-}
-
 
 /**
- * Add a control to the list of controls in a form.
+ * Convert a string from UTF-8 to the specified charset
+ * As a final fallback, this will attempt to convert to ISO-8859-1.
  *
- * \param form  The form to add the control to
- * \param control  The control to add
- */
-void form_add_control(struct form *form, struct form_control *control)
-{
-	if (form == NULL) {
-		return;
-	}
-
-	control->form = form;
-
-	if (form->controls != NULL) {
-		assert(form->last_control);
-
-		form->last_control->next = control;
-		control->prev = form->last_control;
-		control->next = NULL;
-		form->last_control = control;
-	} else {
-		form->controls = form->last_control = control;
-	}
-}
-
-
-/**
- * Free a struct form_control.
+ * \todo Return charset used?
  *
- * \param  control  structure to free
+ * \param item String to convert
+ * \param len Length of string to convert
+ * \param charset Destination charset
+ * \param fallback Fallback charset (may be NULL),
+ *                 used iff converting to charset fails
+ * \return Pointer to converted string (on heap, caller frees), or NULL
  */
-void form_free_control(struct form_control *control)
+static char *
+form_encode_item(const char *item,
+		 uint32_t len,
+		 const char *charset,
+		 const char *fallback)
 {
-	struct form_control *c;
-	assert(control != NULL);
+	nserror err;
+	char *ret = NULL;
+	char cset[256];
 
-	NSLOG(netsurf, INFO, "Control:%p name:%p value:%p initial:%p",
-	      control, control->name, control->value, control->initial_value);
-	free(control->name);
-	free(control->value);
-	free(control->initial_value);
-	if (control->last_synced_value != NULL) {
-		free(control->last_synced_value);
-	}
+	if (!item || !charset)
+		return NULL;
 
-	if (control->type == GADGET_SELECT) {
-		struct form_option *option, *next;
+	snprintf(cset, sizeof cset, "%s//TRANSLIT", charset);
 
-		for (option = control->data.select.items; option;
-				option = next) {
-			next = option->next;
-			NSLOG(netsurf, INFO,
-			      "select option:%p text:%p value:%p", option,
-			      option->text, option->value);
-			free(option->text);
-			free(option->value);
-			free(option);
-		}
-		if (control->data.select.menu != NULL) {
-			form_free_select_menu(control);
-		}
-	}
+	err = utf8_to_enc(item, cset, 0, &ret);
+	if (err == NSERROR_BAD_ENCODING) {
+		/* charset not understood, try without transliteration */
+		snprintf(cset, sizeof cset, "%s", charset);
+		err = utf8_to_enc(item, cset, len, &ret);
 
-	if (control->type == GADGET_TEXTAREA ||
-			control->type == GADGET_TEXTBOX ||
-			control->type == GADGET_PASSWORD) {
+		if (err == NSERROR_BAD_ENCODING) {
+			/* nope, try fallback charset (if any) */
+			if (fallback) {
+				snprintf(cset, sizeof cset,
+						"%s//TRANSLIT", fallback);
+				err = utf8_to_enc(item, cset, 0, &ret);
 
-		if (control->data.text.initial != NULL) {
-			dom_string_unref(control->data.text.initial);
-		}
-
-		if (control->data.text.ta != NULL) {
-			textarea_destroy(control->data.text.ta);
-		}
-	}
-
-	/* unlink the control from the form */
-	if (control->form != NULL) {
-		for (c = control->form->controls; c != NULL; c = c->next) {
-			if (c->next == control) {
-				c->next = control->next;
-				if (control->form->last_control == control)
-					control->form->last_control = c;
-				break;
+				if (err == NSERROR_BAD_ENCODING) {
+					/* and without transliteration */
+					snprintf(cset, sizeof cset,
+							"%s", fallback);
+					err = utf8_to_enc(item, cset, 0, &ret);
+				}
 			}
-			if (c == control) {
-				/* can only happen if control was first control */
-				control->form->controls = control->next;
-				if (control->form->last_control == control)
-					control->form->controls =
-						control->form->last_control = NULL;
-				break;
+
+			if (err == NSERROR_BAD_ENCODING) {
+				/* that also failed, use 8859-1 */
+				err = utf8_to_enc(item, "ISO-8859-1//TRANSLIT",
+						0, &ret);
+				if (err == NSERROR_BAD_ENCODING) {
+					/* and without transliteration */
+					err = utf8_to_enc(item, "ISO-8859-1",
+							0, &ret);
+				}
 			}
 		}
 	}
-
-	if (control->node_value != NULL) {
-		dom_string_unref(control->node_value);
+	if (err == NSERROR_NOMEM) {
+		return NULL;
 	}
 
-	free(control);
+	return ret;
 }
 
 
 /**
- * Add an option to a form select control.
- *
- * \param  control   form control of type GADGET_SELECT
- * \param  value     value of option, used directly (not copied)
- * \param  text      text for option, used directly (not copied)
- * \param  selected  this option is selected
- * \param  node      the DOM node this option is associated with
- * \return  true on success, false on memory exhaustion
+ * string allocation size for numeric values in multipart data
  */
-bool form_add_option(struct form_control *control, char *value, char *text,
-		     bool selected, void *node)
-{
-	struct form_option *option;
-
-	assert(control);
-	assert(control->type == GADGET_SELECT);
-
-	option = calloc(1, sizeof *option);
-	if (!option)
-		return false;
-
-	option->value = value;
-	option->text = text;
-
-	/* add to linked list */
-	if (control->data.select.items == 0)
-		control->data.select.items = option;
-	else
-		control->data.select.last_item->next = option;
-	control->data.select.last_item = option;
-
-	/* set selected */
-	if (selected && (control->data.select.num_selected == 0 ||
-			control->data.select.multiple)) {
-		option->selected = option->initial_selected = true;
-		control->data.select.num_selected++;
-		control->data.select.current = option;
-	}
-
-	control->data.select.num_items++;
-
-	option->node = node;
-
-	return true;
-}
-
-/** string allocation size for numeric values in multipart data */
 #define FETCH_DATA_INT_VALUE_SIZE 20
+
 
 /**
  * append split key name and integer value to a multipart data list
@@ -464,6 +292,7 @@ fetch_data_list_add(dom_string *name,
 	return NSERROR_OK;
 }
 
+
 /**
  * process form HTMLTextAreaElement into multipart data.
  *
@@ -537,6 +366,7 @@ form_dom_to_data_textarea(dom_html_text_area_element *text_area_element,
 	return res;
 }
 
+
 static nserror
 form_dom_to_data_select_option(dom_html_option_element *option_element,
 			      dom_string *keyname,
@@ -578,6 +408,7 @@ form_dom_to_data_select_option(dom_html_option_element *option_element,
 
 	return res;
 }
+
 
 /**
  * process form HTMLSelectElement into multipart data.
@@ -680,6 +511,7 @@ form_dom_to_data_select(dom_html_select_element *select_element,
 	return res;
 }
 
+
 static nserror
 form_dom_to_data_input_submit(dom_html_input_element *input_element,
 			      dom_string *inputname,
@@ -718,7 +550,6 @@ form_dom_to_data_input_submit(dom_html_input_element *input_element,
 
 	return res;
 }
-
 
 
 static nserror
@@ -777,6 +608,7 @@ form_dom_to_data_input_image(dom_html_input_element *input_element,
 	return res;
 }
 
+
 static nserror
 form_dom_to_data_input_checkbox(dom_html_input_element *input_element,
 				dom_string *inputname,
@@ -826,6 +658,7 @@ form_dom_to_data_input_checkbox(dom_html_input_element *input_element,
 	return res;
 }
 
+
 static nserror
 form_dom_to_data_input_file(dom_html_input_element *input_element,
 			    dom_string *inputname,
@@ -869,6 +702,7 @@ form_dom_to_data_input_file(dom_html_input_element *input_element,
 	return res;
 }
 
+
 static nserror
 form_dom_to_data_input_text(dom_html_input_element *input_element,
 			    dom_string *inputname,
@@ -898,6 +732,7 @@ form_dom_to_data_input_text(dom_html_input_element *input_element,
 
 	return res;
 }
+
 
 /**
  * process form input element into multipart data.
@@ -1023,6 +858,7 @@ form_dom_to_data_input(dom_html_input_element *input_element,
 	return res;
 }
 
+
 /**
  * process form HTMLButtonElement into multipart data.
  *
@@ -1128,6 +964,68 @@ form_dom_to_data_button(dom_html_button_element *button_element,
 	dom_string_unref(inputname);
 
 	return res;
+}
+
+
+/**
+ * Find an acceptable character set encoding with which to submit the form
+ *
+ * \param form  The form
+ * \return Pointer to charset name (on heap, caller should free) or NULL
+ */
+static char *form_acceptable_charset(struct form *form)
+{
+	char *temp, *c;
+
+	if (!form->accept_charsets) {
+		/* no accept-charsets attribute for this form */
+		if (form->document_charset) {
+			/* document charset present, so use it */
+			return strdup(form->document_charset);
+		} else {
+			/* no document charset, so default to 8859-1 */
+			return strdup("ISO-8859-1");
+		}
+	}
+
+	/* make temporary copy of accept-charsets attribute */
+	temp = strdup(form->accept_charsets);
+	if (!temp)
+		return NULL;
+
+	/* make it upper case */
+	for (c = temp; *c; c++) {
+		*c = ascii_to_upper(*c);
+	}
+
+	/* is UTF-8 specified? */
+	c = strstr(temp, "UTF-8");
+	if (c) {
+		free(temp);
+		return strdup("UTF-8");
+	}
+
+	/* dispense with temporary copy */
+	free(temp);
+
+	/* according to RFC2070, the accept-charsets attribute of the
+	 * form element contains a space and/or comma separated list */
+	c = form->accept_charsets;
+
+	/** \todo an improvement would be to choose an encoding
+	 * acceptable to the server which covers as much of the input
+	 * values as possible. Additionally, we need to handle the
+	 * case where none of the acceptable encodings cover all the
+	 * textual input values.  For now, we just extract the first
+	 * element of the charset list
+	 */
+	while (*c && !ascii_is_space(*c)) {
+		if (*c == ',')
+			break;
+		c++;
+	}
+
+	return strndup(form->accept_charsets, c - form->accept_charsets);
 }
 
 
@@ -1357,134 +1255,314 @@ form_url_encode(struct form *form,
 	return NSERROR_OK;
 }
 
+
 /**
- * Find an acceptable character set encoding with which to submit the form
- *
- * \param form  The form
- * \return Pointer to charset name (on heap, caller should free) or NULL
+ * Callback for the select menus scroll
  */
-char *form_acceptable_charset(struct form *form)
+static void
+form_select_menu_scroll_callback(void *client_data,
+				 struct scrollbar_msg_data *scrollbar_data)
 {
-	char *temp, *c;
+	struct form_control *control = client_data;
+	struct form_select_menu *menu = control->data.select.menu;
+	html_content *html = (html_content *)menu->c;
 
-	if (!form->accept_charsets) {
-		/* no accept-charsets attribute for this form */
-		if (form->document_charset) {
-			/* document charset present, so use it */
-			return strdup(form->document_charset);
-		} else {
-			/* no document charset, so default to 8859-1 */
-			return strdup("ISO-8859-1");
-		}
-	}
-
-	/* make temporary copy of accept-charsets attribute */
-	temp = strdup(form->accept_charsets);
-	if (!temp)
-		return NULL;
-
-	/* make it upper case */
-	for (c = temp; *c; c++) {
-		*c = ascii_to_upper(*c);
-	}
-
-	/* is UTF-8 specified? */
-	c = strstr(temp, "UTF-8");
-	if (c) {
-		free(temp);
-		return strdup("UTF-8");
-	}
-
-	/* dispense with temporary copy */
-	free(temp);
-
-	/* according to RFC2070, the accept-charsets attribute of the
-	 * form element contains a space and/or comma separated list */
-	c = form->accept_charsets;
-
-	/** \todo an improvement would be to choose an encoding
-	 * acceptable to the server which covers as much of the input
-	 * values as possible. Additionally, we need to handle the
-	 * case where none of the acceptable encodings cover all the
-	 * textual input values.  For now, we just extract the first
-	 * element of the charset list
-	 */
-	while (*c && !ascii_is_space(*c)) {
-		if (*c == ',')
+	switch (scrollbar_data->msg) {
+		case SCROLLBAR_MSG_MOVED:
+			menu->callback(menu->client_data,
+					0, 0,
+					menu->width,
+					menu->height);
 			break;
-		c++;
-	}
+		case SCROLLBAR_MSG_SCROLL_START:
+		{
+			struct rect rect = {
+				.x0 = scrollbar_data->x0,
+				.y0 = scrollbar_data->y0,
+				.x1 = scrollbar_data->x1,
+				.y1 = scrollbar_data->y1
+			};
 
-	return strndup(form->accept_charsets, c - form->accept_charsets);
+			browser_window_set_drag_type(html->bw,
+					DRAGGING_CONTENT_SCROLLBAR, &rect);
+
+			menu->scroll_capture = true;
+		}
+			break;
+		case SCROLLBAR_MSG_SCROLL_FINISHED:
+			menu->scroll_capture = false;
+
+			browser_window_set_drag_type(html->bw,
+					DRAGGING_NONE, NULL);
+			break;
+		default:
+			break;
+	}
 }
 
+
 /**
- * Convert a string from UTF-8 to the specified charset
- * As a final fallback, this will attempt to convert to ISO-8859-1.
+ * Process a selection from a form select menu.
  *
- * \todo Return charset used?
- *
- * \param item String to convert
- * \param len Length of string to convert
- * \param charset Destination charset
- * \param fallback Fallback charset (may be NULL),
- *                 used iff converting to charset fails
- * \return Pointer to converted string (on heap, caller frees), or NULL
+ * \param  html The html content handle for the form
+ * \param  control  form control with menu
+ * \param  item	    index of item selected from the menu
+ * \return NSERROR_OK or appropriate error code.
  */
-char *
-form_encode_item(const char *item,
-		 uint32_t len,
-		 const char *charset,
-		 const char *fallback)
+static nserror
+form__select_process_selection(html_content *html,
+			       struct form_control *control,
+			       int item)
 {
-	nserror err;
-	char *ret = NULL;
-	char cset[256];
+	struct box *inline_box;
+	struct form_option *o;
+	int count;
+	nserror ret = NSERROR_OK;
 
-	if (!item || !charset)
-		return NULL;
+	assert(control != NULL);
+	assert(html != NULL);
 
-	snprintf(cset, sizeof cset, "%s//TRANSLIT", charset);
+	/**
+	 * \todo Even though the form code is effectively part of the html
+	 *        content handler, poking around inside contents is not good
+	 */
 
-	err = utf8_to_enc(item, cset, 0, &ret);
-	if (err == NSERROR_BAD_ENCODING) {
-		/* charset not understood, try without transliteration */
-		snprintf(cset, sizeof cset, "%s", charset);
-		err = utf8_to_enc(item, cset, len, &ret);
+	inline_box = control->box->children->children;
 
-		if (err == NSERROR_BAD_ENCODING) {
-			/* nope, try fallback charset (if any) */
-			if (fallback) {
-				snprintf(cset, sizeof cset,
-						"%s//TRANSLIT", fallback);
-				err = utf8_to_enc(item, cset, 0, &ret);
+	for (count = 0, o = control->data.select.items;
+			o != NULL;
+			count++, o = o->next) {
+		if (!control->data.select.multiple && o->selected) {
+			o->selected = false;
+			dom_html_option_element_set_selected(o->node, false);
+		}
 
-				if (err == NSERROR_BAD_ENCODING) {
-					/* and without transliteration */
-					snprintf(cset, sizeof cset,
-							"%s", fallback);
-					err = utf8_to_enc(item, cset, 0, &ret);
+		if (count == item) {
+			if (control->data.select.multiple) {
+				if (o->selected) {
+					o->selected = false;
+					dom_html_option_element_set_selected(
+							o->node, false);
+					control->data.select.num_selected--;
+				} else {
+					o->selected = true;
+					dom_html_option_element_set_selected(
+							o->node, true);
+					control->data.select.num_selected++;
 				}
-			}
-
-			if (err == NSERROR_BAD_ENCODING) {
-				/* that also failed, use 8859-1 */
-				err = utf8_to_enc(item, "ISO-8859-1//TRANSLIT",
-						0, &ret);
-				if (err == NSERROR_BAD_ENCODING) {
-					/* and without transliteration */
-					err = utf8_to_enc(item, "ISO-8859-1",
-							0, &ret);
-				}
+			} else {
+				dom_html_option_element_set_selected(
+						o->node, true);
+				o->selected = true;
 			}
 		}
+
+		if (o->selected) {
+			control->data.select.current = o;
+		}
 	}
-	if (err == NSERROR_NOMEM) {
-		return NULL;
+
+	talloc_free(inline_box->text);
+	inline_box->text = 0;
+
+	if (control->data.select.num_selected == 0) {
+		inline_box->text = talloc_strdup(html->bctx,
+				messages_get("Form_None"));
+	} else if (control->data.select.num_selected == 1) {
+		inline_box->text = talloc_strdup(html->bctx,
+				control->data.select.current->text);
+	} else {
+		inline_box->text = talloc_strdup(html->bctx,
+				messages_get("Form_Many"));
 	}
+
+	if (!inline_box->text) {
+		ret = NSERROR_NOMEM;
+		inline_box->length = 0;
+	} else {
+		inline_box->length = strlen(inline_box->text);
+	}
+	inline_box->width = control->box->width;
+
+	html__redraw_a_box(html, control->box);
 
 	return ret;
 }
+
+
+/**
+ * Handle a click on the area of the currently opened select menu.
+ *
+ * \param control the select menu which received the click
+ * \param x X coordinate of click
+ * \param y Y coordinate of click
+ */
+static void form_select_menu_clicked(struct form_control *control, int x, int y)
+{
+	struct form_select_menu *menu = control->data.select.menu;
+	struct form_option *option;
+	html_content *html = (html_content *)menu->c;
+	int line_height, line_height_with_spacing;
+	int item_bottom_y;
+	int scroll, i;
+
+	scroll = scrollbar_get_offset(menu->scrollbar);
+
+	line_height = menu->line_height;
+	line_height_with_spacing = line_height +
+			line_height * SELECT_LINE_SPACING;
+
+	option = control->data.select.items;
+	item_bottom_y = line_height_with_spacing;
+	i = 0;
+	while (option && item_bottom_y < scroll + y) {
+		item_bottom_y += line_height_with_spacing;
+		option = option->next;
+		i++;
+	}
+
+	if (option != NULL) {
+		form__select_process_selection(html, control, i);
+	}
+
+	menu->callback(menu->client_data, 0, 0, menu->width, menu->height);
+}
+
+
+/* exported interface documented in html/form_internal.h */
+void form_add_control(struct form *form, struct form_control *control)
+{
+	if (form == NULL) {
+		return;
+	}
+
+	control->form = form;
+
+	if (form->controls != NULL) {
+		assert(form->last_control);
+
+		form->last_control->next = control;
+		control->prev = form->last_control;
+		control->next = NULL;
+		form->last_control = control;
+	} else {
+		form->controls = form->last_control = control;
+	}
+}
+
+
+/* exported interface documented in html/form_internal.h */
+void form_free_control(struct form_control *control)
+{
+	struct form_control *c;
+	assert(control != NULL);
+
+	NSLOG(netsurf, INFO, "Control:%p name:%p value:%p initial:%p",
+	      control, control->name, control->value, control->initial_value);
+	free(control->name);
+	free(control->value);
+	free(control->initial_value);
+	if (control->last_synced_value != NULL) {
+		free(control->last_synced_value);
+	}
+
+	if (control->type == GADGET_SELECT) {
+		struct form_option *option, *next;
+
+		for (option = control->data.select.items; option;
+				option = next) {
+			next = option->next;
+			NSLOG(netsurf, INFO,
+			      "select option:%p text:%p value:%p", option,
+			      option->text, option->value);
+			free(option->text);
+			free(option->value);
+			free(option);
+		}
+		if (control->data.select.menu != NULL) {
+			form_free_select_menu(control);
+		}
+	}
+
+	if (control->type == GADGET_TEXTAREA ||
+			control->type == GADGET_TEXTBOX ||
+			control->type == GADGET_PASSWORD) {
+
+		if (control->data.text.initial != NULL) {
+			dom_string_unref(control->data.text.initial);
+		}
+
+		if (control->data.text.ta != NULL) {
+			textarea_destroy(control->data.text.ta);
+		}
+	}
+
+	/* unlink the control from the form */
+	if (control->form != NULL) {
+		for (c = control->form->controls; c != NULL; c = c->next) {
+			if (c->next == control) {
+				c->next = control->next;
+				if (control->form->last_control == control)
+					control->form->last_control = c;
+				break;
+			}
+			if (c == control) {
+				/* can only happen if control was first control */
+				control->form->controls = control->next;
+				if (control->form->last_control == control)
+					control->form->controls =
+						control->form->last_control = NULL;
+				break;
+			}
+		}
+	}
+
+	if (control->node_value != NULL) {
+		dom_string_unref(control->node_value);
+	}
+
+	free(control);
+}
+
+
+/* exported interface documented in html/form_internal.h */
+bool form_add_option(struct form_control *control, char *value, char *text,
+		     bool selected, void *node)
+{
+	struct form_option *option;
+
+	assert(control);
+	assert(control->type == GADGET_SELECT);
+
+	option = calloc(1, sizeof *option);
+	if (!option)
+		return false;
+
+	option->value = value;
+	option->text = text;
+
+	/* add to linked list */
+	if (control->data.select.items == 0)
+		control->data.select.items = option;
+	else
+		control->data.select.last_item->next = option;
+	control->data.select.last_item = option;
+
+	/* set selected */
+	if (selected && (control->data.select.num_selected == 0 ||
+			control->data.select.multiple)) {
+		option->selected = option->initial_selected = true;
+		control->data.select.num_selected++;
+		control->data.select.current = option;
+	}
+
+	control->data.select.num_items++;
+
+	option->node = node;
+
+	return true;
+}
+
 
 /* exported interface documented in html/form_internal.h */
 nserror
@@ -1574,9 +1652,12 @@ void form_free_select_menu(struct form_control *control)
 
 
 /* exported interface documented in html/form_internal.h */
-bool form_redraw_select_menu(struct form_control *control, int x, int y,
-		float scale, const struct rect *clip,
-		const struct redraw_context *ctx)
+bool
+form_redraw_select_menu(struct form_control *control,
+			int x, int y,
+			float scale,
+			const struct rect *clip,
+			const struct redraw_context *ctx)
 {
 	struct box *box;
 	struct form_select_menu *menu = control->data.select.menu;
@@ -1720,17 +1801,12 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 	return true;
 }
 
-/**
- * Check whether a clipping rectangle is completely contained in the
- * select menu.
- *
- * \param control  the select menu to check the clipping rectangle for
- * \param scale    the current browser window scale
- * \param clip     the clipping rectangle
- * \return true if inside false otherwise
- */
-bool form_clip_inside_select_menu(struct form_control *control, float scale,
-		const struct rect *clip)
+
+/* private interface described in html/form_internal.h */
+bool
+form_clip_inside_select_menu(struct form_control *control,
+			     float scale,
+			     const struct rect *clip)
 {
 	struct form_select_menu *menu = control->data.select.menu;
 	int width, height;
@@ -1744,98 +1820,15 @@ bool form_clip_inside_select_menu(struct form_control *control, float scale,
 		height *= scale;
 	}
 
-	if (clip->x0 >= 0 && clip->x1 <= width &&
-			clip->y0 >= 0 && clip->y1 <= height)
+	if (clip->x0 >= 0 &&
+	    clip->x1 <= width &&
+	    clip->y0 >= 0 &&
+	    clip->y1 <= height)
 		return true;
 
 	return false;
 }
 
-
-/**
- * Process a selection from a form select menu.
- *
- * \param  html The html content handle for the form
- * \param  control  form control with menu
- * \param  item	    index of item selected from the menu
- * \return NSERROR_OK or appropriate error code.
- */
-static nserror form__select_process_selection(html_content *html,
-		struct form_control *control, int item)
-{
-	struct box *inline_box;
-	struct form_option *o;
-	int count;
-	nserror ret = NSERROR_OK;
-
-	assert(control != NULL);
-	assert(html != NULL);
-
-	/** \todo Even though the form code is effectively part of the html
-	 *        content handler, poking around inside contents is not good
-	 */
-
-	inline_box = control->box->children->children;
-
-	for (count = 0, o = control->data.select.items;
-			o != NULL;
-			count++, o = o->next) {
-		if (!control->data.select.multiple && o->selected) {
-			o->selected = false;
-			dom_html_option_element_set_selected(o->node, false);
-		}
-
-		if (count == item) {
-			if (control->data.select.multiple) {
-				if (o->selected) {
-					o->selected = false;
-					dom_html_option_element_set_selected(
-							o->node, false);
-					control->data.select.num_selected--;
-				} else {
-					o->selected = true;
-					dom_html_option_element_set_selected(
-							o->node, true);
-					control->data.select.num_selected++;
-				}
-			} else {
-				dom_html_option_element_set_selected(
-						o->node, true);
-				o->selected = true;
-			}
-		}
-
-		if (o->selected) {
-			control->data.select.current = o;
-		}
-	}
-
-	talloc_free(inline_box->text);
-	inline_box->text = 0;
-
-	if (control->data.select.num_selected == 0) {
-		inline_box->text = talloc_strdup(html->bctx,
-				messages_get("Form_None"));
-	} else if (control->data.select.num_selected == 1) {
-		inline_box->text = talloc_strdup(html->bctx,
-				control->data.select.current->text);
-	} else {
-		inline_box->text = talloc_strdup(html->bctx,
-				messages_get("Form_Many"));
-	}
-
-	if (!inline_box->text) {
-		ret = NSERROR_NOMEM;
-		inline_box->length = 0;
-	} else {
-		inline_box->length = strlen(inline_box->text);
-	}
-	inline_box->width = control->box->width;
-
-	html__redraw_a_box(html, control->box);
-
-	return ret;
-}
 
 /* exported interface documented in netsurf/form.h */
 nserror form_select_process_selection(struct form_control *control, int item)
@@ -1844,6 +1837,7 @@ nserror form_select_process_selection(struct form_control *control, int item)
 
 	return form__select_process_selection(control->html, control, item);
 }
+
 
 /* exported interface documented in netsurf/form.h */
 struct form_option *
@@ -1859,11 +1853,13 @@ form_select_get_option(struct form_control *control, int item)
 	return opt;
 }
 
+
 /* exported interface documented in netsurf/form.h */
 char *form_control_get_name(struct form_control *control)
 {
 	return control->name;
 }
+
 
 /* exported interface documented in netsurf/form.h */
 nserror form_control_bounding_rect(struct form_control *control, struct rect *r)
@@ -1873,56 +1869,11 @@ nserror form_control_bounding_rect(struct form_control *control, struct rect *r)
 }
 
 
-/**
- * Handle a click on the area of the currently opened select menu.
- *
- * \param control	the select menu which received the click
- * \param x		X coordinate of click
- * \param y		Y coordinate of click
- */
-void form_select_menu_clicked(struct form_control *control, int x, int y)
-{
-	struct form_select_menu *menu = control->data.select.menu;
-	struct form_option *option;
-	html_content *html = (html_content *)menu->c;
-	int line_height, line_height_with_spacing;
-	int item_bottom_y;
-	int scroll, i;
-
-	scroll = scrollbar_get_offset(menu->scrollbar);
-
-	line_height = menu->line_height;
-	line_height_with_spacing = line_height +
-			line_height * SELECT_LINE_SPACING;
-
-	option = control->data.select.items;
-	item_bottom_y = line_height_with_spacing;
-	i = 0;
-	while (option && item_bottom_y < scroll + y) {
-		item_bottom_y += line_height_with_spacing;
-		option = option->next;
-		i++;
-	}
-
-	if (option != NULL) {
-		form__select_process_selection(html, control, i);
-	}
-
-	menu->callback(menu->client_data, 0, 0, menu->width, menu->height);
-}
-
-/**
- * Handle mouse action for the currently opened select menu.
- *
- * \param control	the select menu which received the mouse action
- * \param mouse		current mouse state
- * \param x		X coordinate of click
- * \param y		Y coordinate of click
- * \return		text for the browser status bar or NULL if the menu has
- *			to be closed
- */
-const char *form_select_mouse_action(struct form_control *control,
-		browser_mouse_state mouse, int x, int y)
+/* private interface described in html/form_internal.h */
+const char *
+form_select_mouse_action(struct form_control *control,
+			 browser_mouse_state mouse,
+			 int x, int y)
 {
 	struct form_select_menu *menu = control->data.select.menu;
 	int x0, y0, x1, y1, scrollbar_x;
@@ -1967,16 +1918,12 @@ const char *form_select_mouse_action(struct form_control *control,
 	return status;
 }
 
-/**
- * Handle mouse drag end for the currently opened select menu.
- *
- * \param control	the select menu which received the mouse drag end
- * \param mouse		current mouse state
- * \param x		X coordinate of drag end
- * \param y		Y coordinate of drag end
- */
-void form_select_mouse_drag_end(struct form_control *control,
-		browser_mouse_state mouse, int x, int y)
+
+/* private interface described in html/form_internal.h */
+void
+form_select_mouse_drag_end(struct form_control *control,
+			   browser_mouse_state mouse,
+			   int x, int y)
 {
 	int x0, y0, x1, y1;
 	int box_x, box_y;
@@ -2007,61 +1954,14 @@ void form_select_mouse_drag_end(struct form_control *control,
 	y1 = menu->height;
 
 
-	if (x > x0 && x < x1 - SCROLLBAR_WIDTH && y >  y0 && y < y1)
+	if (x > x0 && x < x1 - SCROLLBAR_WIDTH && y >  y0 && y < y1) {
 		/* handle drag end above the option area like a regular click */
 		form_select_menu_clicked(control, x, y);
-}
-
-/**
- * Callback for the select menus scroll
- */
-void form_select_menu_scroll_callback(void *client_data,
-		struct scrollbar_msg_data *scrollbar_data)
-{
-	struct form_control *control = client_data;
-	struct form_select_menu *menu = control->data.select.menu;
-	html_content *html = (html_content *)menu->c;
-
-	switch (scrollbar_data->msg) {
-		case SCROLLBAR_MSG_MOVED:
-			menu->callback(menu->client_data,
-					0, 0,
-					menu->width,
-					menu->height);
-			break;
-		case SCROLLBAR_MSG_SCROLL_START:
-		{
-			struct rect rect = {
-				.x0 = scrollbar_data->x0,
-				.y0 = scrollbar_data->y0,
-				.x1 = scrollbar_data->x1,
-				.y1 = scrollbar_data->y1
-			};
-
-			browser_window_set_drag_type(html->bw,
-					DRAGGING_CONTENT_SCROLLBAR, &rect);
-
-			menu->scroll_capture = true;
-		}
-			break;
-		case SCROLLBAR_MSG_SCROLL_FINISHED:
-			menu->scroll_capture = false;
-
-			browser_window_set_drag_type(html->bw,
-					DRAGGING_NONE, NULL);
-			break;
-		default:
-			break;
 	}
 }
 
-/**
- * Get the dimensions of a select menu.
- *
- * \param control	the select menu to get the dimensions of
- * \param width		gets updated to menu width
- * \param height	gets updated to menu height
- */
+
+/* private interface described in html/form_internal.h */
 void form_select_get_dimensions(struct form_control *control,
 		int *width, int *height)
 {
@@ -2069,9 +1969,8 @@ void form_select_get_dimensions(struct form_control *control,
 	*height = control->data.select.menu->height;
 }
 
-/**
- * Callback for the core select menu.
- */
+
+/* private interface described in html/form_internal.h */
 void form_select_menu_callback(void *client_data,
 		int x, int y, int width, int height)
 {
@@ -2091,12 +1990,7 @@ void form_select_menu_callback(void *client_data,
 }
 
 
-/**
- * Set a radio form control and clear the others in the group.
- *
- * \param radio form control of type GADGET_RADIO
- */
-
+/* private interface described in html/form_internal.h */
 void form_radio_set(struct form_control *radio)
 {
 	struct form_control *control;
@@ -2211,6 +2105,8 @@ form_submit(nsurl *page_url,
 	return res;
 }
 
+
+/* exported interface documented in html/form_internal.h */
 void form_gadget_update_value(struct form_control *control, char *value)
 {
 	switch (control->type) {
@@ -2250,7 +2146,8 @@ void form_gadget_update_value(struct form_control *control, char *value)
 	form_gadget_sync_with_dom(control);
 }
 
-/* Exported API, see form_internal.h */
+
+/* Exported API, see html/form_internal.h */
 void
 form_gadget_sync_with_dom(struct form_control *control)
 {
@@ -2353,4 +2250,94 @@ out:
 	if (value != NULL)
 		dom_string_unref(value);
 	control->syncing = false;
+}
+
+
+/* exported interface documented in html/form_internal.h */
+struct form *
+form_new(void *node,
+	 const char *action,
+	 const char *target,
+	 form_method method,
+	 const char *charset,
+	 const char *doc_charset)
+{
+	struct form *form;
+
+	form = calloc(1, sizeof *form);
+	if (!form)
+		return NULL;
+
+	form->action = strdup(action != NULL ? action : "");
+	if (form->action == NULL) {
+		free(form);
+		return NULL;
+	}
+
+	form->target = target != NULL ? strdup(target) : NULL;
+	if (target != NULL && form->target == NULL) {
+		free(form->action);
+		free(form);
+		return NULL;
+	}
+
+	form->method = method;
+
+	form->accept_charsets = charset != NULL ? strdup(charset) : NULL;
+	if (charset != NULL && form->accept_charsets == NULL) {
+		free(form->target);
+		free(form->action);
+		free(form);
+		return NULL;
+	}
+
+	form->document_charset = doc_charset != NULL ? strdup(doc_charset)
+						     : NULL;
+	if (doc_charset && form->document_charset == NULL) {
+		free(form->accept_charsets);
+		free(form->target);
+		free(form->action);
+		free(form);
+		return NULL;
+	}
+
+	form->node = node;
+
+	return form;
+}
+
+
+/* exported interface documented in html/form_internal.h */
+void form_free(struct form *form)
+{
+	struct form_control *c, *d;
+
+	for (c = form->controls; c != NULL; c = d) {
+		d = c->next;
+
+		form_free_control(c);
+	}
+
+	free(form->action);
+	free(form->target);
+	free(form->accept_charsets);
+	free(form->document_charset);
+
+	free(form);
+}
+
+
+/* exported interface documented in html/form_internal.h */
+struct form_control *form_new_control(void *node, form_control_type type)
+{
+	struct form_control *control;
+
+	control = calloc(1, sizeof *control);
+	if (control == NULL)
+		return NULL;
+
+	control->node = node;
+	control->type = type;
+
+	return control;
 }
