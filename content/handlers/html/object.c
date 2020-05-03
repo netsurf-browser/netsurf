@@ -125,10 +125,35 @@ html_object_done(struct box *box,
 	}
 }
 
-/**
- * Callback for hlcache_handle_retrieve() for objects.
- */
 
+/**
+ * Callback for hlcache_handle_retrieve() for objects with no box.
+ */
+static nserror
+html_object_nobox_callback(hlcache_handle *object,
+			   const hlcache_event *event,
+			   void *pw)
+{
+	struct content_html_object *chobject = pw;
+
+	switch (event->type) {
+	case CONTENT_MSG_ERROR:
+		hlcache_handle_release(object);
+
+		chobject->content = NULL;
+		break;
+
+	default:
+		break;
+	}
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * Callback for hlcache_handle_retrieve() for objects with a box.
+ */
 static nserror
 html_object_callback(hlcache_handle *object,
 		     const hlcache_event *event,
@@ -140,9 +165,6 @@ html_object_callback(hlcache_handle *object,
 	struct box *box;
 
 	box = o->box;
-	if (box == NULL && event->type != CONTENT_MSG_ERROR) {
-		return NSERROR_OK;
-	}
 
 	switch (event->type) {
 	case CONTENT_MSG_LOADING:
@@ -204,14 +226,12 @@ html_object_callback(hlcache_handle *object,
 
 		o->content = NULL;
 
-		if (box != NULL) {
-			c->base.active--;
-			NSLOG(netsurf, INFO, "%d fetches active",
-			      c->base.active);
+		c->base.active--;
+		NSLOG(netsurf, INFO, "%d fetches active", c->base.active);
 
-			content_add_error(&c->base, "?", 0);
-			html_object_failed(box, c, o->background);
-		}
+		content_add_error(&c->base, "?", 0);
+		html_object_failed(box, c, o->background);
+
 		break;
 
 	case CONTENT_MSG_REDRAW:
@@ -693,6 +713,7 @@ html_fetch_object(html_content *c,
 		  bool background)
 {
 	struct content_html_object *object;
+	hlcache_handle_callback object_callback;
 	hlcache_child_context child;
 	nserror error;
 
@@ -708,6 +729,12 @@ html_fetch_object(html_content *c,
 		return false;
 	}
 
+	if (box == NULL) {
+		object_callback = html_object_nobox_callback;
+	} else {
+		object_callback = html_object_callback;
+	}
+
 	object->parent = (struct content *) c;
 	object->next = NULL;
 	object->content = NULL;
@@ -719,7 +746,7 @@ html_fetch_object(html_content *c,
 					HLCACHE_RETRIEVE_SNIFF_TYPE,
 					content_get_url(&c->base),
 					NULL,
-					html_object_callback,
+					object_callback,
 					object,
 					&child,
 					object->permitted_types,
