@@ -29,11 +29,28 @@
 
 struct box;
 
-bool table_calculate_column_types(
-		const nscss_len_ctx *len_ctx,
-		struct box *table);
-void table_used_border_for_cell(
-		const nscss_len_ctx *len_ctx,
-		struct box *cell);
+
+/**
+ * Determine the column width types for a table.
+ *
+ * \param len_ctx Length conversion context
+ * \param table box of type BOX_TABLE
+ * \return true on success, false on memory exhaustion
+ *
+ * The table->col array is allocated and type and width are filled in for each
+ * column.
+ */
+bool table_calculate_column_types(const nscss_len_ctx *len_ctx,	struct box *table);
+
+
+/**
+ * Calculate used values of border-{trbl}-{style,color,width} for table cells.
+ *
+ * \param len_ctx Length conversion context
+ * \param cell Table cell to consider
+ *
+ * \post \a cell's border array is populated
+ */
+void table_used_border_for_cell(const nscss_len_ctx *len_ctx, struct box *cell);
 
 #endif
