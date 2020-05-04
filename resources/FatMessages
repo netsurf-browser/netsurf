@@ -1091,9 +1091,9 @@ nl.all.Backtosafety:Terug naar veiligheid
 
 en.all.SSLCertErrOk:The certificate has no errors.
 it.all.SSLCertErrOk:Il certificato non contiene errori.
-en.all.SSLCertErrUnknown:An unknown error occoured while processing the certificate.
+en.all.SSLCertErrUnknown:An unknown error occurred while processing the certificate.
 it.all.SSLCertErrUnknown:Si è verificato un problema sconosciuto durante l'elaborazione del certificato.
-en.all.SSLCertErrBadIssuer:The issuer of this certificate is not known. This may occour if the browser cannot access the certificate authority (CA) bundle.
+en.all.SSLCertErrBadIssuer:The issuer of this certificate is not known. This may occur if the browser cannot access the certificate authority (CA) bundle.
 it.all.SSLCertErrBadIssuer:L'emittente di questo certificato è sconosciuto. Questo può verificarsi se il browser non è in grado di accedere al pacchetto dell'autorità di certificazione (CA).
 en.all.SSLCertErrBadSig:The certificate is improperly signed.
 it.all.SSLCertErrBadSig:Il certificato non è stato firmato correttamente.
