@@ -1310,6 +1310,10 @@ static void fetch_curl_done(CURL *curl_handle, CURLcode result)
 
 	fetch_curl_stop(f);
 
+	if (f->sent_ssl_chain == false) {
+		fetch_curl_report_certs_upstream(f);
+	}
+
 	if (abort_fetch) {
 		; /* fetch was aborted: no callback */
 	} else if (finished) {
