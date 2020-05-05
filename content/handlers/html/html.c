@@ -300,13 +300,26 @@ html_proceed_to_done(html_content *html)
 }
 
 
-/** process link node */
-static bool html_process_link(html_content *c, dom_node *node)
+/**
+ * process a LINK element being inserted into the DOM
+ *
+ * \note only the http-equiv attribute for refresh is currently considered
+ *
+ * \param htmlc The html content containing the DOM
+ * \param n The DOM node being inserted
+ * \return NSERROR_OK on success else appropriate error code
+ */
+static bool html_process_inserted_link(html_content *c, dom_node *node)
 {
 	struct content_rfc5988_link link; /* the link added to the content */
 	dom_exception exc; /* returned by libdom functions */
 	dom_string *atr_string;
 	nserror error;
+
+	/* Handle stylesheet loading */
+	html_css_process_link(c, (dom_node *)node);
+
+	/* try Generic link handling */
 
 	memset(&link, 0, sizeof(struct content_rfc5988_link));
 
@@ -417,14 +430,21 @@ static bool html_process_title(html_content *c, dom_node *node)
 	return success;
 }
 
-static bool html_process_base(html_content *c, dom_node *node)
+
+/**
+ * process a base element being inserted into the DOM
+ *
+ * \param htmlc The html content containing the DOM
+ * \param node The DOM node being inserted
+ * \return NSERROR_OK on success else appropriate error code
+ */
+static bool html_process_inserted_base(html_content *htmlc, dom_node *node)
 {
 	dom_exception exc; /* returned by libdom functions */
 	dom_string *atr_string;
 
 	/* get href attribute if present */
-	exc = dom_element_get_attribute(node,
-			corestring_dom_href, &atr_string);
+	exc = dom_element_get_attribute(node, corestring_dom_href, &atr_string);
 	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
 		nsurl *url;
 		nserror error;
@@ -433,20 +453,22 @@ static bool html_process_base(html_content *c, dom_node *node)
 		error = nsurl_create(dom_string_data(atr_string), &url);
 		dom_string_unref(atr_string);
 		if (error == NSERROR_OK) {
-			if (c->base_url != NULL)
-				nsurl_unref(c->base_url);
-			c->base_url = url;
+			if (htmlc->base_url != NULL) {
+				nsurl_unref(htmlc->base_url);
+			}
+			htmlc->base_url = url;
 		}
 	}
 
 
 	/* get target attribute if present and not already set */
-	if (c->base_target != NULL) {
+	if (htmlc->base_target != NULL) {
 		return true;
 	}
 
 	exc = dom_element_get_attribute(node,
-			corestring_dom_target, &atr_string);
+					corestring_dom_target,
+					&atr_string);
 	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
 		/* Validation rules from the HTML5 spec for the base element:
 		 *  The target must be one of _blank, _self, _parent, or
@@ -462,7 +484,7 @@ static bool html_process_base(html_content *c, dom_node *node)
 						corestring_lwc__parent) ||
 				dom_string_caseless_lwc_isequal(atr_string,
 						corestring_lwc__top)) {
-			c->base_target = strdup(dom_string_data(atr_string));
+			htmlc->base_target = strdup(dom_string_data(atr_string));
 		}
 		dom_string_unref(atr_string);
 	}
@@ -470,7 +492,17 @@ static bool html_process_base(html_content *c, dom_node *node)
 	return true;
 }
 
-static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
+
+/**
+ * process a META element being inserted into the DOM
+ *
+ * \note only the http-equiv attribute for refresh is currently considered
+ *
+ * \param htmlc The html content containing the DOM
+ * \param n The DOM node being inserted
+ * \return NSERROR_OK on success else appropriate error code
+ */
+static nserror html_process_inserted_meta(html_content *c, dom_node *n)
 {
 	union content_msg_data msg_data;
 	const char *url, *end, *refresh = NULL;
@@ -480,6 +512,11 @@ static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
 	dom_exception exc;
 	nsurl *nsurl;
 	nserror error = NSERROR_OK;
+
+	if (c->refresh) {
+		/* refresh already delt with */
+		return NSERROR_OK;
+	}
 
 	exc = dom_element_get_attribute(n, corestring_dom_http_equiv, &equiv);
 	if (exc != DOM_NO_ERR) {
@@ -567,8 +604,7 @@ static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
 		/* Just delay specified, so refresh current page */
 		dom_string_unref(content);
 
-		c->base.refresh = nsurl_ref(
-				content_get_url(&c->base));
+		c->base.refresh = nsurl_ref(content_get_url(&c->base));
 
 		content_broadcast(&c->base, CONTENT_MSG_REFRESH, &msg_data);
 
@@ -649,8 +685,9 @@ static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
 
 			c->base.refresh = nsurl;
 
-			content_broadcast(&c->base, CONTENT_MSG_REFRESH,
-					&msg_data);
+			content_broadcast(&c->base,
+					  CONTENT_MSG_REFRESH,
+					  &msg_data);
 			c->refresh = true;
 		}
 
@@ -663,7 +700,34 @@ static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
 	return error;
 }
 
-static bool html_process_img(html_content *c, dom_node *node)
+
+/**
+ * Process title element being inserted into the DOM.
+ *
+ * https://html.spec.whatwg.org/multipage/semantics.html#the-title-element
+ *
+ * \param htmlc The html content containing the DOM
+ * \param node The DOM node being inserted
+ * \return NSERROR_OK on success else appropriate error code
+ */
+static nserror html_process_inserted_title(html_content *htmlc, dom_node *node)
+{
+	if (htmlc->title == NULL) {
+		/* only the first title is considered */
+		htmlc->title = dom_node_ref(node);
+	}
+	return NSERROR_OK;
+}
+
+
+/**
+ * Process img element being inserted into the DOM.
+ *
+ * \param htmlc The html content containing the DOM
+ * \param node The DOM node being inserted
+ * \return NSERROR_OK on success else appropriate error code
+ */
+static bool html_process_inserted_img(html_content *htmlc, dom_node *node)
 {
 	dom_string *src;
 	nsurl *url;
@@ -681,7 +745,7 @@ static bool html_process_img(html_content *c, dom_node *node)
 		return true;
 	}
 
-	err = nsurl_join(c->base_url, dom_string_data(src), &url);
+	err = nsurl_join(htmlc->base_url, dom_string_data(src), &url);
 	if (err != NSERROR_OK) {
 		dom_string_unref(src);
 		return false;
@@ -689,7 +753,7 @@ static bool html_process_img(html_content *c, dom_node *node)
 	dom_string_unref(src);
 
 	/* Speculatively fetch the image */
-	success = html_fetch_object(c, url, NULL, CONTENT_IMAGE, false);
+	success = html_fetch_object(htmlc, url, NULL, CONTENT_IMAGE, false);
 	nsurl_unref(url);
 
 	return success;
@@ -854,72 +918,76 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 	html_content *htmlc = pw;
 
 	exc = dom_event_get_target(evt, &node);
-	if ((exc == DOM_NO_ERR) && (node != NULL)) {
-		exc = dom_node_get_node_type(node, &type);
-		if ((exc == DOM_NO_ERR) && (type == DOM_ELEMENT_NODE)) {
-			/* an element node has been inserted */
-			dom_html_element_type tag_type;
+	if ((exc != DOM_NO_ERR) || (node == NULL)) {
+		/* failed to obtain the event target node */
+		return;
+	}
 
-			exc = dom_html_element_get_tag_type(node, &tag_type);
-			if (exc != DOM_NO_ERR) {
-				tag_type = DOM_HTML_ELEMENT_TYPE__UNKNOWN;
+	exc = dom_node_get_node_type(node, &type);
+	if ((exc == DOM_NO_ERR) && (type == DOM_ELEMENT_NODE)) {
+		/* an element node has been inserted */
+		dom_html_element_type tag_type;
+
+		exc = dom_html_element_get_tag_type(node, &tag_type);
+		if (exc != DOM_NO_ERR) {
+			tag_type = DOM_HTML_ELEMENT_TYPE__UNKNOWN;
+		}
+
+		switch (tag_type) {
+		case DOM_HTML_ELEMENT_TYPE_BASE:
+			html_process_inserted_base(htmlc, (dom_node *)node);
+			break;
+
+		case DOM_HTML_ELEMENT_TYPE_IMG:
+			html_process_inserted_img(htmlc, (dom_node *)node);
+			break;
+
+		case DOM_HTML_ELEMENT_TYPE_LINK:
+			html_process_inserted_link(htmlc, (dom_node *)node);
+			break;
+
+		case DOM_HTML_ELEMENT_TYPE_META:
+			html_process_inserted_meta(htmlc, (dom_node *)node);
+			break;
+
+		case DOM_HTML_ELEMENT_TYPE_STYLE:
+			html_css_process_style(htmlc, (dom_node *)node);
+			break;
+
+		case DOM_HTML_ELEMENT_TYPE_SCRIPT:
+			dom_SCRIPT_showed_up(htmlc,
+					     (dom_html_script_element *)node);
+			break;
+
+		case DOM_HTML_ELEMENT_TYPE_TITLE:
+			html_process_inserted_title(htmlc, (dom_node *)node);
+			break;
+
+		default:
+			break;
+		}
+
+		if (htmlc->enable_scripting) {
+			/* ensure javascript context is available */
+			if (htmlc->jsthread == NULL) {
+				union content_msg_data msg_data;
+
+				msg_data.jsthread = &htmlc->jsthread;
+				content_broadcast(&htmlc->base,
+						  CONTENT_MSG_GETTHREAD,
+						  &msg_data);
+				NSLOG(netsurf, INFO,
+				      "javascript context: %p (htmlc: %p)",
+				      htmlc->jsthread,
+				      htmlc);
 			}
-
-			switch (tag_type) {
-			case DOM_HTML_ELEMENT_TYPE_LINK:
-				/* Handle stylesheet loading */
-				html_css_process_link(htmlc, (dom_node *)node);
-				/* Generic link handling */
-				html_process_link(htmlc, (dom_node *)node);
-				break;
-			case DOM_HTML_ELEMENT_TYPE_META:
-				if (htmlc->refresh)
-					break;
-				html_meta_refresh_process_element(htmlc,
-						(dom_node *)node);
-				break;
-			case DOM_HTML_ELEMENT_TYPE_TITLE:
-				if (htmlc->title != NULL)
-					break;
-				htmlc->title = dom_node_ref(node);
-				break;
-			case DOM_HTML_ELEMENT_TYPE_BASE:
-				html_process_base(htmlc, (dom_node *)node);
-				break;
-			case DOM_HTML_ELEMENT_TYPE_IMG:
-				html_process_img(htmlc, (dom_node *) node);
-				break;
-			case DOM_HTML_ELEMENT_TYPE_STYLE:
-				html_css_process_style(htmlc, (dom_node *) node);
-				break;
-			case DOM_HTML_ELEMENT_TYPE_SCRIPT:
-				dom_SCRIPT_showed_up(htmlc, (dom_html_script_element *) node);
-				break;
-			default:
-				break;
-			}
-			if (htmlc->enable_scripting) {
-				/* ensure javascript context is available */
-				if (htmlc->jsthread == NULL) {
-					union content_msg_data msg_data;
-
-					msg_data.jsthread = &htmlc->jsthread;
-					content_broadcast(&htmlc->base,
-							CONTENT_MSG_GETTHREAD,
-							&msg_data);
-					NSLOG(netsurf, INFO,
-					      "javascript context: %p (htmlc: %p)",
-					      htmlc->jsthread,
-					      htmlc);
-				}
-				if (htmlc->jsthread != NULL) {
-					js_handle_new_element(htmlc->jsthread,
-							(dom_element *) node);
-				}
+			if (htmlc->jsthread != NULL) {
+				js_handle_new_element(htmlc->jsthread,
+						      (dom_element *) node);
 			}
 		}
-		dom_node_unref(node);
 	}
+	dom_node_unref(node);
 }
 
 /* callback for DOMNodeInsertedIntoDocument end type */
@@ -2738,41 +2806,41 @@ bool html_exec(struct content *c, const char *src, size_t srclen)
 		NSLOG(netsurf, DEEPDEBUG, "Unable to retrieve body element");
 		goto out_no_body;
 	}
-	
+
 	err = dom_document_create_text_node(htmlc->document, dom_src, &text_node);
 	if (err != DOM_NO_ERR) {
 		NSLOG(netsurf, DEEPDEBUG, "Unable to exec, could not create text node");
 		goto out_no_text_node;
 	}
-	
+
 	err = dom_document_create_element(htmlc->document, corestring_dom_SCRIPT, &script_node);
 	if (err != DOM_NO_ERR) {
 		NSLOG(netsurf, DEEPDEBUG, "Unable to exec, could not create script node");
 		goto out_no_script_node;
 	}
-	
+
 	err = dom_node_append_child(script_node, text_node, &spare_node);
 	if (err != DOM_NO_ERR) {
 		NSLOG(netsurf, DEEPDEBUG, "Unable to exec, could not insert code node into script node");
 		goto out_unparented;
 	}
 	dom_node_unref(spare_node); /* We do not need the spare ref at all */
-	
+
 	err = dom_node_append_child(body_node, script_node, &spare_node);
 	if (err != DOM_NO_ERR) {
 		NSLOG(netsurf, DEEPDEBUG, "Unable to exec, could not insert script node into document body");
 		goto out_unparented;
 	}
 	dom_node_unref(spare_node); /* Again no need for the spare ref */
-	
+
 	/* We successfully inserted the node into the DOM */
-	
+
 	result = true;
-	
+
 	/* Now we unwind, starting by removing the script from wherever it
 	 * ended up parented
 	 */
-	
+
 	err = dom_node_get_parent_node(script_node, &spare_node);
 	if (err == DOM_NO_ERR && spare_node != NULL) {
 		dom_node *second_spare;
@@ -2871,6 +2939,8 @@ static const content_handler html_content_handler = {
 	.no_share = true,
 };
 
+
+/* exported function documented in html/html.h */
 nserror html_init(void)
 {
 	uint32_t i;
