@@ -23,12 +23,19 @@
  */
 
 #include "utils/errors.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 #include "netsurf/browser.h"
 #include "css/utils.h"
 
 /* exported interface documented in netsurf/browser.h */
 nserror browser_set_dpi(int dpi)
 {
+	if (dpi < 72 || dpi > 250) {
+		int bad = dpi;
+		dpi = min(max(dpi, 72), 250);
+		NSLOG(netsurf, INFO, "Clamping invalid DPI %d to %d", bad, dpi);
+	}
 	nscss_screen_dpi = INTTOFIX(dpi);
 
 	return NSERROR_OK;
