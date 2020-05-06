@@ -149,13 +149,6 @@ struct content {
 
 	unsigned long total_size;	/**< Total data size, 0 if unknown. */
 	long http_code;			/**< HTTP status code, 0 if not HTTP. */
-
-	/** Array of first n rendering errors or warnings. */
-	struct {
-		const char *token;
-		unsigned int line;	/**< Line no, 0 if not applicable. */
-	} error_list[40];
-	unsigned int error_count;	/**< Number of valid error entries. */
 };
 
 extern const char * const content_type_name[];

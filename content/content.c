@@ -113,7 +113,6 @@ nserror content__init(struct content *c, const content_handler *handler,
 	c->locked = false;
 	c->total_size = 0;
 	c->http_code = 0;
-	c->error_count = 0;
 
 	content_set_status(c, messages_get("Loading"));
 
