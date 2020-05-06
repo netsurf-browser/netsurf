@@ -1067,12 +1067,6 @@ nserror content_debug(struct hlcache_handle *h, enum content_debug op)
 }
 
 
-void content_add_error(struct content *c, const char *token,
-		unsigned int line)
-{
-}
-
-
 /* exported interface documented in content/content.h */
 struct content_rfc5988_link *
 content_find_rfc5988_link(hlcache_handle *h, lwc_string *rel)

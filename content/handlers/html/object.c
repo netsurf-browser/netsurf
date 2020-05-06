@@ -229,7 +229,6 @@ html_object_callback(hlcache_handle *object,
 		c->base.active--;
 		NSLOG(netsurf, INFO, "%d fetches active", c->base.active);
 
-		content_add_error(&c->base, "?", 0);
 		html_object_failed(box, c, o->background);
 
 		break;

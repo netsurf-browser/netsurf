@@ -176,9 +176,6 @@ void content_broadcast(struct content *c, content_msg msg,
  */
 void content_broadcast_error(struct content *c, nserror errorcode, const char *msg);
 
-void content_add_error(struct content *c, const char *token,
-		unsigned int line);
-
 bool content__add_rfc5988_link(struct content *c, 
 		const struct content_rfc5988_link *link);
 struct content_rfc5988_link *content__free_rfc5988_link(

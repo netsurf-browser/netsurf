@@ -127,7 +127,6 @@ html_convert_css_callback(hlcache_handle *css,
 		s->sheet = NULL;
 		parent->base.active--;
 		NSLOG(netsurf, INFO, "%d fetches active", parent->base.active);
-		content_add_error(&parent->base, "?", 0);
 		break;
 
 	case CONTENT_MSG_POINTER:

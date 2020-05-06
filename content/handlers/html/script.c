@@ -195,7 +195,6 @@ convert_script_async_cb(hlcache_handle *script,
 		s->data.handle = NULL;
 		parent->base.active--;
 		NSLOG(netsurf, INFO, "%d fetches active", parent->base.active);
-		content_add_error(&parent->base, "?", 0);
 
 		break;
 
@@ -259,7 +258,6 @@ convert_script_defer_cb(hlcache_handle *script,
 		s->data.handle = NULL;
 		parent->base.active--;
 		NSLOG(netsurf, INFO, "%d fetches active", parent->base.active);
-		content_add_error(&parent->base, "?", 0);
 
 		break;
 
@@ -348,7 +346,6 @@ convert_script_sync_cb(hlcache_handle *script,
 		parent->base.active--;
 
 		NSLOG(netsurf, INFO, "%d fetches active", parent->base.active);
-		content_add_error(&parent->base, "?", 0);
 
 		s->already_started = true;
 
