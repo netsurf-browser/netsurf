@@ -30,6 +30,7 @@
 
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "utils/nsurl.h"
 #include "netsurf/plotters.h"
 #include "netsurf/content.h"
 #include "content/content_protected.h"

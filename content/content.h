@@ -287,40 +287,86 @@ union content_msg_data {
 
 
 /* The following are for hlcache */
+
+/**
+ * Destroy and free a content.
+ *
+ * Calls the destroy function for the content, and frees the structure.
+ */
 void content_destroy(struct content *c);
 
+/**
+ * Register a user for callbacks.
+ *
+ * \param c the content to register
+ * \param callback the user callback function
+ * \param pw callback private data
+ * \return true on success, false otherwise on memory exhaustion
+ *
+ * The callback will be called when content_broadcast() is
+ * called with the content.
+ */
+bool content_add_user(struct content *h,
+		      void (*callback)(
+				       struct content *c,
+				       content_msg msg,
+				       const union content_msg_data *data,
+				       void *pw),
+		      void *pw);
 
-bool content_add_user(
-		struct content *h,
-		void (*callback)(
-				struct content *c,
-				content_msg msg,
-				const union content_msg_data *data,
-				void *pw),
-		void *pw);
+/**
+ * Remove a callback user.
+ *
+ * The callback function and pw must be identical to those passed to
+ * content_add_user().
+ *
+ * \param c Content to remove user from
+ * \param callback passed when added
+ * \param ctx Context passed when added
+ */
+void content_remove_user(struct content *c,
+			 void (*callback)(
+					  struct content *c,
+					  content_msg msg,
+					  const union content_msg_data *data,
+					  void *pw),
+			 void *ctx);
 
 
-void content_remove_user(
-		struct content *c,
-		void (*callback)(
-				struct content *c,
-				content_msg msg,
-				const union content_msg_data *data,
-				void *pw),
-		void *pw);
-
-
+/**
+ * Count users for the content.
+ *
+ * \param c Content to consider
+ */
 uint32_t content_count_users(struct content *c);
 
 
+/**
+ * Determine if quirks mode matches
+ *
+ * \param c Content to consider
+ * \param quirks  Quirks mode to match
+ * \return True if quirks match, false otherwise
+ */
 bool content_matches_quirks(struct content *c, bool quirks);
 
-
+/**
+ * Determine if a content is shareable
+ *
+ * \param c  Content to consider
+ * \return True if content is shareable, false otherwise
+ */
 bool content_is_shareable(struct content *c);
 
-/* only used by cocoa apple image handling and for getting nsurl of content */
+/**
+ * Retrieve the low-level cache handle for a content
+ *
+ * \note only used by hlcache
+ *
+ * \param c Content to retrieve from
+ * \return Low-level cache handle
+ */
 const struct llcache_handle *content_get_llcache_handle(struct content *c);
-
 
 /**
  * Retrieve URL associated with content
@@ -330,35 +376,123 @@ const struct llcache_handle *content_get_llcache_handle(struct content *c);
  */
 struct nsurl *content_get_url(struct content *c);
 
+/**
+ * Clone a content object in its current state.
+ *
+ * \param c  Content to clone
+ * \return Clone of \a c
+ */
 struct content *content_clone(struct content *c);
 
+/**
+ * Abort a content object
+ *
+ * \param c The content object to abort
+ * \return NSERROR_OK on success, otherwise appropriate error
+ */
 nserror content_abort(struct content *c);
 
 /* Client functions */
+
+/**
+ * Get whether a content can reformat
+ *
+ * \param h  content to check
+ * \return whether the content can reformat
+ */
 bool content_can_reformat(struct hlcache_handle *h);
 
+/**
+ * Reformat to new size.
+ *
+ * Calls the reformat function for the content.
+ */
 void content_reformat(struct hlcache_handle *h, bool background,
 		int width, int height);
 
+/**
+ * Request a redraw of an area of a content
+ *
+ * \param h	  high-level cache handle
+ * \param x	  x co-ord of left edge
+ * \param y	  y co-ord of top edge
+ * \param width	  Width of rectangle
+ * \param height  Height of rectangle
+ */
 void content_request_redraw(struct hlcache_handle *h,
 		int x, int y, int width, int height);
 
+/**
+ * Handle mouse movements in a content window.
+ *
+ * \param  h	  Content handle
+ * \param  bw	  browser window
+ * \param  mouse  state of mouse buttons and modifier keys
+ * \param  x	  coordinate of mouse
+ * \param  y	  coordinate of mouse
+ */
 void content_mouse_track(struct hlcache_handle *h, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
 
+/**
+ * Handle mouse clicks and movements in a content window.
+ *
+ * \param  h	  Content handle
+ * \param  bw	  browser window
+ * \param  mouse  state of mouse buttons and modifier keys
+ * \param  x	  coordinate of mouse
+ * \param  y	  coordinate of mouse
+ *
+ * This function handles both hovering and clicking. It is important that the
+ * code path is identical (except that hovering doesn't carry out the action),
+ * so that the status bar reflects exactly what will happen. Having separate
+ * code paths opens the possibility that an attacker will make the status bar
+ * show some harmless action where clicking will be harmful.
+ */
 void content_mouse_action(struct hlcache_handle *h, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
 
+/**
+ * Handle keypresses.
+ *
+ * \param  h	Content handle
+ * \param  key	The UCS4 character codepoint
+ * \return true if key handled, false otherwise
+ */
 bool content_keypress(struct hlcache_handle *h, uint32_t key);
 
 
+/**
+ * A window containing the content has been opened.
+ *
+ * \param h	 handle to content that has been opened
+ * \param bw	 browser window containing the content
+ * \param page   content of type CONTENT_HTML containing h, or NULL if not an
+ *		   object within a page
+ * \param params object parameters, or NULL if not an object
+ *
+ * Calls the open function for the content.
+ */
 nserror content_open(struct hlcache_handle *h, struct browser_window *bw,
 		struct content *page, struct object_params *params);
 
+/**
+ * The window containing the content has been closed.
+ *
+ * Calls the close function for the content.
+ */
 nserror content_close(struct hlcache_handle *h);
 
+/**
+ * Tell a content that any selection it has, or one of its objects
+ * has, must be cleared.
+ */
 void content_clear_selection(struct hlcache_handle *h);
 
+/**
+ * Get a text selection from a content.  Ownership is passed to the caller,
+ * who must free() it.
+ */
 char * content_get_selection(struct hlcache_handle *h);
 
 /**
@@ -372,15 +506,39 @@ char * content_get_selection(struct hlcache_handle *h);
 nserror content_get_contextual_content(struct hlcache_handle *h,
 		int x, int y, struct browser_window_features *data);
 
+/**
+ * scroll content at coordnate
+ *
+ * \param[in] h Handle to content to examine.
+ * \param[in] x The x coordinate to examine.
+ * \param[in] y The y coordinate to examine.
+ */
 bool content_scroll_at_point(struct hlcache_handle *h,
 		int x, int y, int scrx, int scry);
 
+/**
+ * Drag and drop a file at coordinate
+ *
+ * \param[in] h Handle to content to examine.
+ * \param[in] x The x coordinate to examine.
+ * \param[in] y The y coordinate to examine.
+ */
 bool content_drop_file_at_point(struct hlcache_handle *h,
 		int x, int y, char *file);
 
+/**
+ * Search a content
+ *
+ * \param[in] h Handle to content to search.
+ */
 void content_search(struct hlcache_handle *h, void *context,
 		search_flags_t flags, const char *string);
 
+/**
+ * Clear a search
+ *
+ * \param[in] h Handle to content to clear search from.
+ */
 void content_search_clear(struct hlcache_handle *h);
 
 

@@ -27,6 +27,7 @@
 #include "utils/log.h"
 #include "utils/ascii.h"
 #include "utils/string.h"
+#include "utils/nsurl.h"
 #include "javascript/js.h"
 
 #include "html/private.h"

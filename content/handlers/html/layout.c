@@ -47,6 +47,7 @@
 #include "utils/talloc.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"
+#include "utils/nsurl.h"
 #include "netsurf/inttypes.h"
 #include "netsurf/content.h"
 #include "netsurf/browser_window.h"

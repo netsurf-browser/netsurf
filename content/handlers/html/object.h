@@ -27,6 +27,7 @@
 struct html_content;
 struct browser_window;
 struct box;
+struct nsurl;
 
 /**
  * Start a fetch for an object required by a page.
@@ -42,7 +43,7 @@ struct box;
  * \param background this is a background image
  * \return true on success, false on memory exhaustion
  */
-bool html_fetch_object(struct html_content *c, nsurl *url, struct box *box, content_type permitted_types, bool background);
+bool html_fetch_object(struct html_content *c, struct nsurl *url, struct box *box, content_type permitted_types, bool background);
 
 /**
  * release memory of content objects associated with a HTML content

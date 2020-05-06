@@ -33,6 +33,7 @@
 #include "utils/talloc.h"
 #include "utils/string.h"
 #include "utils/ascii.h"
+#include "utils/nsurl.h"
 #include "netsurf/misc.h"
 #include "css/select.h"
 #include "desktop/gui_internal.h"
@@ -68,7 +69,7 @@ struct box_construct_props {
 	/** Style from which to inherit, or NULL if none */
 	const css_computed_style *parent_style;
 	/** Current link target, or NULL if none */
-	nsurl *href;
+	struct nsurl *href;
 	/** Current frame target, or NULL if none */
 	const char *target;
 	/** Current title attribute, or NULL if none */

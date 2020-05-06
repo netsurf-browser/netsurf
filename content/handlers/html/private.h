@@ -107,7 +107,7 @@ typedef struct html_content {
 	dom_hubbub_encoding_source encoding_source;
 
 	/** Base URL (may be a copy of content->url). */
-	nsurl *base_url;
+	struct nsurl *base_url;
 	/** Base target */
 	char *base_target;
 
@@ -341,7 +341,7 @@ struct form_control *html_forms_get_control_for_node(struct form *forms,
  * \return NSERROR_OK on successful registration or error code on failure.
  */
 nserror html_css_fetcher_register(void);
-nserror html_css_fetcher_add_item(dom_string *data, nsurl *base_url,
+nserror html_css_fetcher_add_item(dom_string *data, struct nsurl *base_url,
 		uint32_t *key);
 
 

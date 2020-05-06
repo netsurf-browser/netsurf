@@ -49,34 +49,156 @@ const char * const content_status_name[] = {
 	"ERROR"
 };
 
-static nserror content_llcache_callback(llcache_handle *llcache,
-		const llcache_event *event, void *pw);
-static void content_convert(struct content *c);
+
+/**
+ * All data has arrived, convert for display.
+ *
+ * Calls the convert function for the content.
+ *
+ * - If the conversion succeeds, but there is still some processing required
+ *   (eg. loading images), the content gets status CONTENT_STATUS_READY, and a
+ *   CONTENT_MSG_READY is sent to all users.
+ * - If the conversion succeeds and is complete, the content gets status
+ *   CONTENT_STATUS_DONE, and CONTENT_MSG_READY then CONTENT_MSG_DONE are sent.
+ * - If the conversion fails, CONTENT_MSG_ERROR is sent. The content will soon
+ *   be destroyed and must no longer be used.
+ */
+static void content_convert(struct content *c)
+{
+	assert(c);
+	assert(c->status == CONTENT_STATUS_LOADING ||
+	       c->status == CONTENT_STATUS_ERROR);
+
+	if (c->status != CONTENT_STATUS_LOADING)
+		return;
+
+	if (c->locked == true)
+		return;
+
+	NSLOG(netsurf, INFO, "content "URL_FMT_SPC" (%p)",
+	      nsurl_access_log(llcache_handle_get_url(c->llcache)), c);
+
+	if (c->handler->data_complete != NULL) {
+		c->locked = true;
+		if (c->handler->data_complete(c) == false) {
+			content_set_error(c);
+		}
+		/* Conversion to the READY state will unlock the content */
+	} else {
+		content_set_ready(c);
+		content_set_done(c);
+	}
+}
 
 
 /**
- * Initialise a new content structure.
+ * Handler for low-level cache events
  *
- * \param c                 Content to initialise
- * \param handler           Content handler
- * \param imime_type        MIME type of content
- * \param params            HTTP parameters
- * \param llcache           Source data handle
- * \param fallback_charset  Fallback charset
- * \param quirks            Quirkiness of content
+ * \param llcache  Low-level cache handle
+ * \param event	   Event details
+ * \param pw	   Pointer to our context
  * \return NSERROR_OK on success, appropriate error otherwise
  */
+static nserror
+content_llcache_callback(llcache_handle *llcache,
+			 const llcache_event *event, void *pw)
+{
+	struct content *c = pw;
+	union content_msg_data msg_data;
+	nserror error = NSERROR_OK;
 
-nserror content__init(struct content *c, const content_handler *handler,
-		lwc_string *imime_type, const struct http_parameter *params,
-		llcache_handle *llcache, const char *fallback_charset,
-		bool quirks)
+	switch (event->type) {
+	case LLCACHE_EVENT_GOT_CERTS:
+		/* Will never happen: handled in hlcache */
+		break;
+	case LLCACHE_EVENT_HAD_HEADERS:
+		/* Will never happen: handled in hlcache */
+		break;
+	case LLCACHE_EVENT_HAD_DATA:
+		if (c->handler->process_data != NULL) {
+			if (c->handler->process_data(c,
+						     (const char *) event->data.data.buf,
+						     event->data.data.len) == false) {
+				llcache_handle_abort(c->llcache);
+				c->status = CONTENT_STATUS_ERROR;
+				/** \todo It's not clear what error this is */
+				error = NSERROR_NOMEM;
+			}
+		}
+		break;
+	case LLCACHE_EVENT_DONE:
+		{
+			size_t source_size;
+
+			(void) llcache_handle_get_source_data(llcache, &source_size);
+
+			content_set_status(c, messages_get("Processing"));
+			msg_data.explicit_status_text = NULL;
+			content_broadcast(c, CONTENT_MSG_STATUS, &msg_data);
+
+			content_convert(c);
+		}
+		break;
+	case LLCACHE_EVENT_ERROR:
+		/** \todo Error page? */
+		c->status = CONTENT_STATUS_ERROR;
+		msg_data.errordata.errorcode = event->data.error.code;
+		msg_data.errordata.errormsg = event->data.error.msg;
+		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
+		break;
+	case LLCACHE_EVENT_PROGRESS:
+		content_set_status(c, event->data.progress_msg);
+		msg_data.explicit_status_text = NULL;
+		content_broadcast(c, CONTENT_MSG_STATUS, &msg_data);
+		break;
+	case LLCACHE_EVENT_REDIRECT:
+		msg_data.redirect.from = event->data.redirect.from;
+		msg_data.redirect.to = event->data.redirect.to;
+		content_broadcast(c, CONTENT_MSG_REDIRECT, &msg_data);
+		break;
+	}
+
+	return error;
+}
+
+
+/**
+ * update content status message
+ *
+ * \param c the content to update.
+ */
+static void content_update_status(struct content *c)
+{
+	if (c->status == CONTENT_STATUS_LOADING ||
+	    c->status == CONTENT_STATUS_READY) {
+		/* Not done yet */
+		snprintf(c->status_message, sizeof (c->status_message),
+			 "%s%s%s", messages_get("Fetching"),
+			 c->sub_status[0] != '\0' ? ", " : " ",
+			 c->sub_status);
+	} else {
+		snprintf(c->status_message, sizeof (c->status_message),
+			 "%s (%.1fs)", messages_get("Done"),
+			 (float) c->time / 1000);
+	}
+}
+
+
+/* exported interface documented in content/protected.h */
+nserror
+content__init(struct content *c,
+	      const content_handler *handler,
+	      lwc_string *imime_type,
+	      const struct http_parameter *params,
+	      llcache_handle *llcache,
+	      const char *fallback_charset,
+	      bool quirks)
 {
 	struct content_user *user_sentinel;
 	nserror error;
 
 	NSLOG(netsurf, INFO, "url "URL_FMT_SPC" -> %p",
-			nsurl_access_log(llcache_handle_get_url(llcache)), c);
+	      nsurl_access_log(llcache_handle_get_url(llcache)), c);
 
 	user_sentinel = calloc(1, sizeof(struct content_user));
 	if (user_sentinel == NULL) {
@@ -118,7 +240,7 @@ nserror content__init(struct content *c, const content_handler *handler,
 
 	/* Finally, claim low-level cache events */
 	error = llcache_handle_change_callback(llcache,
-			content_llcache_callback, c);
+					       content_llcache_callback, c);
 	if (error != NSERROR_OK) {
 		lwc_string_unref(c->mime_type);
 		return error;
@@ -127,81 +249,8 @@ nserror content__init(struct content *c, const content_handler *handler,
 	return NSERROR_OK;
 }
 
-/**
- * Handler for low-level cache events
- *
- * \param llcache  Low-level cache handle
- * \param event	   Event details
- * \param pw	   Pointer to our context
- * \return NSERROR_OK on success, appropriate error otherwise
- */
-nserror content_llcache_callback(llcache_handle *llcache,
-		const llcache_event *event, void *pw)
-{
-	struct content *c = pw;
-	union content_msg_data msg_data;
-	nserror error = NSERROR_OK;
 
-	switch (event->type) {
-	case LLCACHE_EVENT_GOT_CERTS:
-		/* Will never happen: handled in hlcache */
-		break;
-	case LLCACHE_EVENT_HAD_HEADERS:
-		/* Will never happen: handled in hlcache */
-		break;
-	case LLCACHE_EVENT_HAD_DATA:
-		if (c->handler->process_data != NULL) {
-			if (c->handler->process_data(c,
-					(const char *) event->data.data.buf,
-					event->data.data.len) == false) {
-				llcache_handle_abort(c->llcache);
-				c->status = CONTENT_STATUS_ERROR;
-				/** \todo It's not clear what error this is */
-				error = NSERROR_NOMEM;
-			}
-		}
-		break;
-	case LLCACHE_EVENT_DONE:
-	{
-		size_t source_size;
-
-		(void) llcache_handle_get_source_data(llcache, &source_size);
-
-		content_set_status(c, messages_get("Processing"));
-		msg_data.explicit_status_text = NULL;
-		content_broadcast(c, CONTENT_MSG_STATUS, &msg_data);
-
-		content_convert(c);
-	}
-		break;
-	case LLCACHE_EVENT_ERROR:
-		/** \todo Error page? */
-		c->status = CONTENT_STATUS_ERROR;
-		msg_data.errordata.errorcode = event->data.error.code;
-		msg_data.errordata.errormsg = event->data.error.msg;
-		content_broadcast(c, CONTENT_MSG_ERROR, &msg_data);
-		break;
-	case LLCACHE_EVENT_PROGRESS:
-		content_set_status(c, event->data.progress_msg);
-		msg_data.explicit_status_text = NULL;
-		content_broadcast(c, CONTENT_MSG_STATUS, &msg_data);
-		break;
-	case LLCACHE_EVENT_REDIRECT:
-		msg_data.redirect.from = event->data.redirect.from;
-		msg_data.redirect.to = event->data.redirect.to;
-		content_broadcast(c, CONTENT_MSG_REDIRECT, &msg_data);
-		break;
-	}
-
-	return error;
-}
-
-/**
- * Get whether a content can reformat
- *
- * \param h  content to check
- * \return whether the content can reformat
- */
+/* exported interface documented in content/content.h */
 bool content_can_reformat(hlcache_handle *h)
 {
 	struct content *c = hlcache_handle_get_content(h);
@@ -213,32 +262,7 @@ bool content_can_reformat(hlcache_handle *h)
 }
 
 
-static void content_update_status(struct content *c)
-{
-	if (c->status == CONTENT_STATUS_LOADING ||
-			c->status == CONTENT_STATUS_READY) {
-		/* Not done yet */
-		snprintf(c->status_message, sizeof (c->status_message),
-				"%s%s%s", messages_get("Fetching"),
-				c->sub_status[0] != '\0' ? ", " : " ",
-				c->sub_status);
-	} else {
-		snprintf(c->status_message, sizeof (c->status_message),
-				"%s (%.1fs)", messages_get("Done"),
-				(float) c->time / 1000);
-	}
-}
-
-
-/**
- * Updates content with new status.
- *
- * The textual status contained in the content is updated with given string.
- *
- * \param c The content to set status in.
- * \param status_message new textual status
- */
-
+/* exported interface documented in content/protected.h */
 void content_set_status(struct content *c, const char *status_message)
 {
 	size_t len = strlen(status_message);
@@ -253,51 +277,7 @@ void content_set_status(struct content *c, const char *status_message)
 }
 
 
-/**
- * All data has arrived, convert for display.
- *
- * Calls the convert function for the content.
- *
- * - If the conversion succeeds, but there is still some processing required
- *   (eg. loading images), the content gets status CONTENT_STATUS_READY, and a
- *   CONTENT_MSG_READY is sent to all users.
- * - If the conversion succeeds and is complete, the content gets status
- *   CONTENT_STATUS_DONE, and CONTENT_MSG_READY then CONTENT_MSG_DONE are sent.
- * - If the conversion fails, CONTENT_MSG_ERROR is sent. The content will soon
- *   be destroyed and must no longer be used.
- */
-
-void content_convert(struct content *c)
-{
-	assert(c);
-	assert(c->status == CONTENT_STATUS_LOADING ||
-			c->status == CONTENT_STATUS_ERROR);
-
-	if (c->status != CONTENT_STATUS_LOADING)
-		return;
-
-	if (c->locked == true)
-		return;
-
-	NSLOG(netsurf, INFO, "content "URL_FMT_SPC" (%p)",
-		nsurl_access_log(llcache_handle_get_url(c->llcache)), c);
-
-	if (c->handler->data_complete != NULL) {
-		c->locked = true;
-		if (c->handler->data_complete(c) == false) {
-			content_set_error(c);
-		}
-		/* Conversion to the READY state will unlock the content */
-	} else {
-		content_set_ready(c);
-		content_set_done(c);
-	}
-}
-
-/**
- * Put a content in status CONTENT_STATUS_READY and unlock the content.
- */
-
+/* exported interface documented in content/protected.h */
 void content_set_ready(struct content *c)
 {
 	/* The content must be locked at this point, as it can only
@@ -310,10 +290,8 @@ void content_set_ready(struct content *c)
 	content_broadcast(c, CONTENT_MSG_READY, NULL);
 }
 
-/**
- * Put a content in status CONTENT_STATUS_DONE.
- */
 
+/* exported interface documented in content/protected.h */
 void content_set_done(struct content *c)
 {
 	uint64_t now_ms;
@@ -326,38 +304,32 @@ void content_set_done(struct content *c)
 	content_broadcast(c, CONTENT_MSG_DONE, NULL);
 }
 
-/**
- * Put a content in status CONTENT_STATUS_ERROR and unlock the content.
- *
- * \note We expect the caller to broadcast an error report if needed.
- */
 
+/* exported interface documented in content/protected.h */
 void content_set_error(struct content *c)
 {
 	c->locked = false;
 	c->status = CONTENT_STATUS_ERROR;
 }
 
-/**
- * Reformat to new size.
- *
- * Calls the reformat function for the content.
- */
 
+/* exported interface documented in content/content.h */
 void content_reformat(hlcache_handle *h, bool background,
-		int width, int height)
+		      int width, int height)
 {
 	content__reformat(hlcache_handle_get_content(h), background,
-			width, height);
+			  width, height);
 }
 
-void content__reformat(struct content *c, bool background,
-		int width, int height)
+
+/* exported interface documented in content/protected.h */
+void
+content__reformat(struct content *c, bool background, int width, int height)
 {
 	union content_msg_data data;
 	assert(c != 0);
 	assert(c->status == CONTENT_STATUS_READY ||
-			c->status == CONTENT_STATUS_DONE);
+	       c->status == CONTENT_STATUS_DONE);
 	assert(c->locked == false);
 
 	c->available_width = width;
@@ -374,19 +346,14 @@ void content__reformat(struct content *c, bool background,
 }
 
 
-/**
- * Destroy and free a content.
- *
- * Calls the destroy function for the content, and frees the structure.
- */
-
+/* exported interface documented in content/content.h */
 void content_destroy(struct content *c)
 {
 	struct content_rfc5988_link *link;
 
 	assert(c);
 	NSLOG(netsurf, INFO, "content %p %s", c,
-			nsurl_access_log(llcache_handle_get_url(c->llcache)));
+	      nsurl_access_log(llcache_handle_get_url(c->llcache)));
 	assert(c->locked == false);
 
 	if (c->handler->destroy != NULL)
@@ -422,18 +389,12 @@ void content_destroy(struct content *c)
 }
 
 
-/**
- * Handle mouse movements in a content window.
- *
- * \param  h	  Content handle
- * \param  bw	  browser window
- * \param  mouse  state of mouse buttons and modifier keys
- * \param  x	  coordinate of mouse
- * \param  y	  coordinate of mouse
- */
-
-void content_mouse_track(hlcache_handle *h, struct browser_window *bw,
-		browser_mouse_state mouse, int x, int y)
+/* exported interface documented in content/content.h */
+void
+content_mouse_track(hlcache_handle *h,
+		    struct browser_window *bw,
+		    browser_mouse_state mouse,
+		    int x, int y)
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != NULL);
@@ -451,24 +412,12 @@ void content_mouse_track(hlcache_handle *h, struct browser_window *bw,
 }
 
 
-/**
- * Handle mouse clicks and movements in a content window.
- *
- * \param  h	  Content handle
- * \param  bw	  browser window
- * \param  mouse  state of mouse buttons and modifier keys
- * \param  x	  coordinate of mouse
- * \param  y	  coordinate of mouse
- *
- * This function handles both hovering and clicking. It is important that the
- * code path is identical (except that hovering doesn't carry out the action),
- * so that the status bar reflects exactly what will happen. Having separate
- * code paths opens the possibility that an attacker will make the status bar
- * show some harmless action where clicking will be harmful.
- */
-
-void content_mouse_action(hlcache_handle *h, struct browser_window *bw,
-		browser_mouse_state mouse, int x, int y)
+/* exported interface documented in content/content.h */
+void
+content_mouse_action(hlcache_handle *h,
+		     struct browser_window *bw,
+		     browser_mouse_state mouse,
+		     int x, int y)
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != NULL);
@@ -480,14 +429,7 @@ void content_mouse_action(hlcache_handle *h, struct browser_window *bw,
 }
 
 
-/**
- * Handle keypresses.
- *
- * \param  h	Content handle
- * \param  key	The UCS4 character codepoint
- * \return true if key handled, false otherwise
- */
-
+/* exported interface documented in content/content.h */
 bool content_keypress(struct hlcache_handle *h, uint32_t key)
 {
 	struct content *c = hlcache_handle_get_content(h);
@@ -500,34 +442,18 @@ bool content_keypress(struct hlcache_handle *h, uint32_t key)
 }
 
 
-/**
- * Request a redraw of an area of a content
- *
- * \param h	  high-level cache handle
- * \param x	  x co-ord of left edge
- * \param y	  y co-ord of top edge
- * \param width	  Width of rectangle
- * \param height  Height of rectangle
- */
+/* exported interface documented in content/content.h */
 void content_request_redraw(struct hlcache_handle *h,
-		int x, int y, int width, int height)
+			    int x, int y, int width, int height)
 {
 	content__request_redraw(hlcache_handle_get_content(h),
-			x, y, width, height);
+				x, y, width, height);
 }
 
 
-/**
- * Request a redraw of an area of a content
- *
- * \param c	  Content
- * \param x	  x co-ord of left edge
- * \param y	  y co-ord of top edge
- * \param width	  Width of rectangle
- * \param height  Height of rectangle
- */
+/* exported interface, documented in content/protected.h */
 void content__request_redraw(struct content *c,
-		int x, int y, int width, int height)
+			     int x, int y, int width, int height)
 {
 	union content_msg_data data;
 
@@ -541,6 +467,7 @@ void content__request_redraw(struct content *c,
 
 	content_broadcast(c, CONTENT_MSG_REDRAW, &data);
 }
+
 
 /* exported interface, documented in content/content.h */
 bool content_exec(struct hlcache_handle *h, const char *src, size_t srclen)
@@ -563,6 +490,7 @@ bool content_exec(struct hlcache_handle *h, const char *src, size_t srclen)
 
 	return c->handler->exec(c, src, srclen);
 }
+
 
 /* exported interface, documented in content/content.h */
 bool content_saw_insecure_objects(struct hlcache_handle *h)
@@ -620,9 +548,13 @@ bool content_saw_insecure_objects(struct hlcache_handle *h)
 	return false;
 }
 
+
 /* exported interface, documented in content/content.h */
-bool content_redraw(hlcache_handle *h, struct content_redraw_data *data,
-		const struct rect *clip, const struct redraw_context *ctx)
+bool
+content_redraw(hlcache_handle *h,
+	       struct content_redraw_data *data,
+	       const struct rect *clip,
+	       const struct redraw_context *ctx)
 {
 	struct content *c = hlcache_handle_get_content(h);
 
@@ -643,8 +575,10 @@ bool content_redraw(hlcache_handle *h, struct content_redraw_data *data,
 
 
 /* exported interface, documented in content/content.h */
-bool content_scaled_redraw(struct hlcache_handle *h,
-		int width, int height, const struct redraw_context *ctx)
+bool
+content_scaled_redraw(struct hlcache_handle *h,
+		      int width, int height,
+		      const struct redraw_context *ctx)
 {
 	struct content *c = hlcache_handle_get_content(h);
 	struct redraw_context new_ctx = *ctx;
@@ -710,32 +644,22 @@ bool content_scaled_redraw(struct hlcache_handle *h,
 	return plot_ok;
 }
 
-/**
- * Register a user for callbacks.
- *
- * \param  c	     the content to register
- * \param  callback  the callback function
- * \param  pw	     callback private data
- * \return true on success, false otherwise on memory exhaustion
- *
- * The callback will be called when content_broadcast() is
- * called with the content.
- */
 
-bool content_add_user(
-		struct content *c,
-		void (*callback)(
-				struct content *c,
-				content_msg msg,
-				const union content_msg_data *data,
-				void *pw),
-		void *pw)
+/* exported interface documented in content/content.h */
+bool
+content_add_user(struct content *c,
+		 void (*callback)(
+				  struct content *c,
+				  content_msg msg,
+				  const union content_msg_data *data,
+				  void *pw),
+		 void *pw)
 {
 	struct content_user *user;
 
 	NSLOG(netsurf, INFO, "content "URL_FMT_SPC" (%p), user %p %p",
-			nsurl_access_log(llcache_handle_get_url(c->llcache)),
-			c, callback, pw);
+	      nsurl_access_log(llcache_handle_get_url(c->llcache)),
+	      c, callback, pw);
 	user = malloc(sizeof(struct content_user));
 	if (!user)
 		return false;
@@ -751,31 +675,25 @@ bool content_add_user(
 }
 
 
-/**
- * Remove a callback user.
- *
- * The callback function and pw must be identical to those passed to
- * content_add_user().
- */
-
-void content_remove_user(
-		struct content *c,
-		void (*callback)(
-				struct content *c,
-				content_msg msg,
-				const union content_msg_data *data,
-				void *pw),
-		void *pw)
+/* exported interface documented in content/content.h */
+void
+content_remove_user(struct content *c,
+		    void (*callback)(
+				     struct content *c,
+				     content_msg msg,
+				     const union content_msg_data *data,
+				     void *pw),
+		    void *pw)
 {
 	struct content_user *user, *next;
 	NSLOG(netsurf, INFO, "content "URL_FMT_SPC" (%p), user %p %p",
-			nsurl_access_log(llcache_handle_get_url(c->llcache)),
-			c, callback, pw);
+	      nsurl_access_log(llcache_handle_get_url(c->llcache)),
+	      c, callback, pw);
 
 	/* user_list starts with a sentinel */
 	for (user = c->user_list; user->next != 0 &&
-			!(user->next->callback == callback &&
-				user->next->pw == pw); user = user->next)
+		     !(user->next->callback == callback &&
+		       user->next->pw == pw); user = user->next)
 		;
 	if (user->next == 0) {
 		NSLOG(netsurf, INFO, "user not found in list");
@@ -791,10 +709,8 @@ void content_remove_user(
 	free(next);
 }
 
-/**
- * Count users for the content.
- */
 
+/* exported interface documented in content/content.h */
 uint32_t content_count_users(struct content *c)
 {
 	struct content_user *user;
@@ -810,13 +726,8 @@ uint32_t content_count_users(struct content *c)
 	return counter - 1; /* Subtract 1 for the sentinel */
 }
 
-/**
- * Determine if quirks mode matches
- *
- * \param c       Content to consider
- * \param quirks  Quirks mode to match
- * \return True if quirks match, false otherwise
- */
+
+/* exported interface documented in content/content.h */
 bool content_matches_quirks(struct content *c, bool quirks)
 {
 	if (c->handler->matches_quirks == NULL)
@@ -825,23 +736,17 @@ bool content_matches_quirks(struct content *c, bool quirks)
 	return c->handler->matches_quirks(c, quirks);
 }
 
-/**
- * Determine if a content is shareable
- *
- * \param c  Content to consider
- * \return True if content is shareable, false otherwise
- */
+
+/* exported interface documented in content/content.h */
 bool content_is_shareable(struct content *c)
 {
 	return c->handler->no_share == false;
 }
 
-/**
- * Send a message to all users.
- */
 
+/* exported interface documented in content/protected.h */
 void content_broadcast(struct content *c, content_msg msg,
-		const union content_msg_data *data)
+		       const union content_msg_data *data)
 {
 	struct content_user *user, *next;
 	assert(c);
@@ -854,8 +759,10 @@ void content_broadcast(struct content *c, content_msg msg,
 	}
 }
 
+
 /* exported interface documented in content_protected.h */
-void content_broadcast_error(struct content *c, nserror errorcode, const char *msg)
+void
+content_broadcast_error(struct content *c, nserror errorcode, const char *msg)
 {
 	struct content_user *user, *next;
 	union content_msg_data data;
@@ -869,24 +776,13 @@ void content_broadcast_error(struct content *c, nserror errorcode, const char *m
 		next = user->next;  /* user may be destroyed during callback */
 		if (user->callback != 0) {
 			user->callback(c, CONTENT_MSG_ERROR,
-					&data, user->pw);
+				       &data, user->pw);
 		}
 	}
 }
 
 
-/**
- * A window containing the content has been opened.
- *
- * \param h	 handle to content that has been opened
- * \param bw	 browser window containing the content
- * \param page   content of type CONTENT_HTML containing h, or NULL if not an
- *		   object within a page
- * \param params object parameters, or NULL if not an object
- *
- * Calls the open function for the content.
- */
-
+/* exported interface, documented in content/content.h */
 nserror
 content_open(hlcache_handle *h,
 	     struct browser_window *bw,
@@ -899,7 +795,7 @@ content_open(hlcache_handle *h,
 	c = hlcache_handle_get_content(h);
 	assert(c != 0);
 	NSLOG(netsurf, INFO, "content %p %s", c,
-			nsurl_access_log(llcache_handle_get_url(c->llcache)));
+	      nsurl_access_log(llcache_handle_get_url(c->llcache)));
 	if (c->handler->open != NULL) {
 		res = c->handler->open(c, bw, page, params);
 	} else {
@@ -909,12 +805,7 @@ content_open(hlcache_handle *h,
 }
 
 
-/**
- * The window containing the content has been closed.
- *
- * Calls the close function for the content.
- */
-
+/* exported interface, documented in content/content.h */
 nserror content_close(hlcache_handle *h)
 {
 	struct content *c;
@@ -932,7 +823,7 @@ nserror content_close(hlcache_handle *h)
 	}
 
 	NSLOG(netsurf, INFO, "content %p %s", c,
-			nsurl_access_log(llcache_handle_get_url(c->llcache)));
+	      nsurl_access_log(llcache_handle_get_url(c->llcache)));
 	if (c->handler->close != NULL) {
 		res = c->handler->close(c);
 	} else {
@@ -942,11 +833,7 @@ nserror content_close(hlcache_handle *h)
 }
 
 
-/**
- * Tell a content that any selection it has, or one of its objects has, must be
- * cleared.
- */
-
+/* exported interface, documented in content/content.h */
 void content_clear_selection(hlcache_handle *h)
 {
 	struct content *c = hlcache_handle_get_content(h);
@@ -957,11 +844,7 @@ void content_clear_selection(hlcache_handle *h)
 }
 
 
-/**
- * Get a text selection from a content.  Ownership is passed to the caller,
- * who must free() it.
- */
-
+/* exported interface, documented in content/content.h */
 char * content_get_selection(hlcache_handle *h)
 {
 	struct content *c = hlcache_handle_get_content(h);
@@ -973,9 +856,12 @@ char * content_get_selection(hlcache_handle *h)
 		return NULL;
 }
 
+
 /* exported interface documented in content/content.h */
-nserror content_get_contextual_content(struct hlcache_handle *h,
-		int x, int y, struct browser_window_features *data)
+nserror
+content_get_contextual_content(struct hlcache_handle *h,
+			       int x, int y,
+			       struct browser_window_features *data)
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
@@ -989,8 +875,11 @@ nserror content_get_contextual_content(struct hlcache_handle *h,
 }
 
 
-bool content_scroll_at_point(struct hlcache_handle *h,
-		int x, int y, int scrx, int scry)
+/* exported interface, documented in content/content.h */
+bool
+content_scroll_at_point(struct hlcache_handle *h,
+			int x, int y,
+			int scrx, int scry)
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
@@ -1002,8 +891,11 @@ bool content_scroll_at_point(struct hlcache_handle *h,
 }
 
 
-bool content_drop_file_at_point(struct hlcache_handle *h,
-		int x, int y, char *file)
+/* exported interface, documented in content/content.h */
+bool
+content_drop_file_at_point(struct hlcache_handle *h,
+			   int x, int y,
+			   char *file)
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
@@ -1015,8 +907,12 @@ bool content_drop_file_at_point(struct hlcache_handle *h,
 }
 
 
-void content_search(struct hlcache_handle *h, void *context,
-		search_flags_t flags, const char *string)
+/* exported interface, documented in content/content.h */
+void
+content_search(struct hlcache_handle *h,
+	       void *context,
+	       search_flags_t flags,
+	       const char *string)
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
@@ -1027,6 +923,7 @@ void content_search(struct hlcache_handle *h, void *context,
 }
 
 
+/* exported interface, documented in content/content.h */
 void content_search_clear(struct hlcache_handle *h)
 {
 	struct content *c = hlcache_handle_get_content(h);
@@ -1037,8 +934,10 @@ void content_search_clear(struct hlcache_handle *h)
 	}
 }
 
+
 /* exported interface documented in content/content.h */
-nserror content_debug_dump(struct hlcache_handle *h, FILE *f, enum content_debug op)
+nserror
+content_debug_dump(struct hlcache_handle *h, FILE *f, enum content_debug op)
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
@@ -1049,6 +948,7 @@ nserror content_debug_dump(struct hlcache_handle *h, FILE *f, enum content_debug
 
 	return c->handler->debug_dump(c, f, op);
 }
+
 
 /* exported interface documented in content/content.h */
 nserror content_debug(struct hlcache_handle *h, enum content_debug op)
@@ -1077,7 +977,7 @@ content_find_rfc5988_link(hlcache_handle *h, lwc_string *rel)
 
 	while (link != NULL) {
 		if (lwc_string_caseless_isequal(link->rel, rel,
-				&rel_match) == lwc_error_ok && rel_match) {
+						&rel_match) == lwc_error_ok && rel_match) {
 			break;
 		}
 		link = link->next;
@@ -1085,6 +985,8 @@ content_find_rfc5988_link(hlcache_handle *h, lwc_string *rel)
 	return link;
 }
 
+
+/* exported interface documented in content/protected.h */
 struct content_rfc5988_link *
 content__free_rfc5988_link(struct content_rfc5988_link *link)
 {
@@ -1111,8 +1013,11 @@ content__free_rfc5988_link(struct content_rfc5988_link *link)
 	return next;
 }
 
-bool content__add_rfc5988_link(struct content *c,
-		const struct content_rfc5988_link *link)
+
+/* exported interface documented in content/protected.h */
+bool
+content__add_rfc5988_link(struct content *c,
+			  const struct content_rfc5988_link *link)
 {
 	struct content_rfc5988_link *newlink;
 	union content_msg_data msg_data;
@@ -1160,7 +1065,6 @@ bool content__add_rfc5988_link(struct content *c,
 }
 
 
-
 /* exported interface documented in content/content.h */
 nsurl *content_get_url(struct content *c)
 {
@@ -1188,6 +1092,7 @@ lwc_string *content_get_mime_type(hlcache_handle *h)
 {
 	return content__get_mime_type(hlcache_handle_get_content(h));
 }
+
 
 /* exported interface documented in content/content_protected.h */
 lwc_string *content__get_mime_type(struct content *c)
@@ -1221,6 +1126,7 @@ const char *content_get_title(hlcache_handle *h)
 	return content__get_title(hlcache_handle_get_content(h));
 }
 
+
 /* exported interface documented in content/content_protected.h */
 const char *content__get_title(struct content *c)
 {
@@ -1228,7 +1134,7 @@ const char *content__get_title(struct content *c)
 		return NULL;
 
 	return c->title != NULL ? c->title :
-			nsurl_access(llcache_handle_get_url(c->llcache));
+		nsurl_access(llcache_handle_get_url(c->llcache));
 }
 
 
@@ -1237,6 +1143,7 @@ content_status content_get_status(hlcache_handle *h)
 {
 	return content__get_status(hlcache_handle_get_content(h));
 }
+
 
 /* exported interface documented in content/content_protected.h */
 content_status content__get_status(struct content *c)
@@ -1254,6 +1161,7 @@ const char *content_get_status_message(hlcache_handle *h)
 	return content__get_status_message(hlcache_handle_get_content(h));
 }
 
+
 /* exported interface documented in content/content_protected.h */
 const char *content__get_status_message(struct content *c)
 {
@@ -1269,6 +1177,7 @@ int content_get_width(hlcache_handle *h)
 {
 	return content__get_width(hlcache_handle_get_content(h));
 }
+
 
 /* exported interface documented in content/content_protected.h */
 int content__get_width(struct content *c)
@@ -1286,6 +1195,7 @@ int content_get_height(hlcache_handle *h)
 	return content__get_height(hlcache_handle_get_content(h));
 }
 
+
 /* exported interface documented in content/content_protected.h */
 int content__get_height(struct content *c)
 {
@@ -1301,6 +1211,7 @@ int content_get_available_width(hlcache_handle *h)
 {
 	return content__get_available_width(hlcache_handle_get_content(h));
 }
+
 
 /* exported interface documented in content/content_protected.h */
 int content__get_available_width(struct content *c)
@@ -1318,6 +1229,7 @@ const uint8_t *content_get_source_data(hlcache_handle *h, size_t *size)
 	return content__get_source_data(hlcache_handle_get_content(h), size);
 }
 
+
 /* exported interface documented in content/content_protected.h */
 const uint8_t *content__get_source_data(struct content *c, size_t *size)
 {
@@ -1330,11 +1242,13 @@ const uint8_t *content__get_source_data(struct content *c, size_t *size)
 	return llcache_handle_get_source_data(c->llcache, size);
 }
 
+
 /* exported interface documented in content/content.h */
 void content_invalidate_reuse_data(hlcache_handle *h)
 {
 	content__invalidate_reuse_data(hlcache_handle_get_content(h));
 }
+
 
 /* exported interface documented in content/content_protected.h */
 void content__invalidate_reuse_data(struct content *c)
@@ -1346,11 +1260,13 @@ void content__invalidate_reuse_data(struct content *c)
 	llcache_handle_invalidate_cache_data(c->llcache);
 }
 
+
 /* exported interface documented in content/content.h */
 nsurl *content_get_refresh_url(hlcache_handle *h)
 {
 	return content__get_refresh_url(hlcache_handle_get_content(h));
 }
+
 
 /* exported interface documented in content/content_protected.h */
 nsurl *content__get_refresh_url(struct content *c)
@@ -1427,14 +1343,16 @@ bool content_get_quirks(hlcache_handle *h)
 
 
 /* exported interface documented in content/content.h */
-const char *content_get_encoding(hlcache_handle *h, enum content_encoding_type op)
+const char *
+content_get_encoding(hlcache_handle *h, enum content_encoding_type op)
 {
 	return content__get_encoding(hlcache_handle_get_content(h), op);
 }
 
 
 /* exported interface documented in content/content_protected.h */
-const char *content__get_encoding(struct content *c, enum content_encoding_type op)
+const char *
+content__get_encoding(struct content *c, enum content_encoding_type op)
 {
 	const char *encoding = NULL;
 
@@ -1461,12 +1379,8 @@ bool content__is_locked(struct content *c)
 	return c->locked;
 }
 
-/**
- * Retrieve the low-level cache handle for a content
- *
- * \param c Content to retrieve from
- * \return Low-level cache handle
- */
+
+/* exported interface documented in content/content.h */
 const llcache_handle *content_get_llcache_handle(struct content *c)
 {
 	if (c == NULL)
@@ -1475,12 +1389,8 @@ const llcache_handle *content_get_llcache_handle(struct content *c)
 	return c->llcache;
 }
 
-/**
- * Clone a content object in its current state.
- *
- * \param c  Content to clone
- * \return Clone of \a c
- */
+
+/* exported interface documented in content/protected.h */
 struct content *content_clone(struct content *c)
 {
 	struct content *nc;
@@ -1493,13 +1403,8 @@ struct content *content_clone(struct content *c)
 	return nc;
 };
 
-/**
- * Clone a content's data members
- *
- * \param c   Content to clone
- * \param nc  Content to populate
- * \return NSERROR_OK on success, appropriate error otherwise
- */
+
+/* exported interface documented in content/protected.h */
 nserror content__clone(const struct content *c, struct content *nc)
 {
 	nserror error;
@@ -1564,12 +1469,8 @@ nserror content__clone(const struct content *c, struct content *nc)
 	return NSERROR_OK;
 }
 
-/**
- * Abort a content object
- *
- * \param c The content object to abort
- * \return NSERROR_OK on success, otherwise appropriate error
- */
+
+/* exported interface documented in content/content.h */
 nserror content_abort(struct content *c)
 {
 	NSLOG(netsurf, INFO, "Aborting %p", c);

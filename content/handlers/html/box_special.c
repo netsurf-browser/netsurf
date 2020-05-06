@@ -36,6 +36,7 @@
 #include "utils/talloc.h"
 #include "utils/string.h"
 #include "utils/ascii.h"
+#include "utils/nsurl.h"
 #include "netsurf/plot_style.h"
 #include "css/hints.h"
 #include "desktop/frame_types.h"

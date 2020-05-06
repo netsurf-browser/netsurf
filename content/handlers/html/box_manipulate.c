@@ -28,6 +28,7 @@
 
 #include "utils/errors.h"
 #include "utils/talloc.h"
+#include "utils/nsurl.h"
 #include "netsurf/types.h"
 #include "netsurf/mouse.h"
 #include "desktop/scrollbar.h"

@@ -24,18 +24,25 @@
  * The content functions manipulate struct contents, which correspond to URLs.
  */
 
-#ifndef _NETSURF_CONTENT_CONTENT_PROTECTED_H_
-#define _NETSURF_CONTENT_CONTENT_PROTECTED_H_
+#ifndef NETSURF_CONTENT_CONTENT_PROTECTED_H_
+#define NETSURF_CONTENT_CONTENT_PROTECTED_H_
 
 #include <stdio.h>
 
-#include "utils/nsurl.h"
 #include "netsurf/content_type.h"
 #include "content/content.h"
 
+struct nsurl;
 struct content_redraw_data;
 struct http_parameter;
+struct llcache_handle;
+struct object_params;
 
+/**
+ * Content operation function table
+ *
+ * function table implementing a content type.
+ */
 struct content_handler {
 	void (*fini)(void);
 
@@ -46,7 +53,7 @@ struct content_handler {
                           const char *fallback_charset, bool quirks,
                           struct content **c);
 
-	bool (*process_data)(struct content *c, 
+	bool (*process_data)(struct content *c,
 			const char *data, unsigned int size);
 	bool (*data_complete)(struct content *c);
 	void (*reformat)(struct content *c, int width, int height);
@@ -85,14 +92,20 @@ struct content_handler {
 	bool (*exec)(struct content *c, const char *src, size_t srclen);
 	bool (*saw_insecure_objects)(struct content *c);
 
-        /** handler dependant content sensitive internal data interface. */
+        /**
+	 * handler dependant content sensitive internal data interface.
+	 */
 	void * (*get_internal)(const struct content *c, void *context);
 
-	/** There must be one content per user for this type. */
+	/**
+	 * There must be one content per user for this type.
+	 */
 	bool no_share;
 };
 
-/** Linked list of users of a content. */
+/**
+ * Linked list of users of a content.
+ */
 struct content_user
 {
 	void (*callback)(
@@ -105,68 +118,180 @@ struct content_user
 	struct content_user *next;
 };
 
-/** Corresponds to a single URL. */
+/**
+ * Content which corresponds to a single URL.
+ */
 struct content {
-	struct llcache_handle *llcache; /**< Low-level cache object */
+	/**
+	 * Low-level cache object
+	 */
+	struct llcache_handle *llcache;
 
-	lwc_string *mime_type;	/**< Original MIME type of data */
+	/**
+	 * Original MIME type of data
+	 */
+	lwc_string *mime_type;
 
-	const struct content_handler *handler;	/**< Handler for content */
+	/**
+	 * Handler for content
+	 */
+	const struct content_handler *handler;
 
-	content_status status;	/**< Current status. */
+	/**
+	 * Current status.
+	 */
+	content_status status;
 
-	int width, height;	/**< Dimensions, if applicable. */
-	int available_width;	/**< Viewport width. */
-	int available_height;	/**< Viewport height. */
+	/**
+	 * Width dimension, if applicable.
+	 */
+	int width;
+	/**
+	 * Height dimension, if applicable.
+	 */
+	int height;
+	/**
+	 * Viewport width.
+	 */
+	int available_width;
+	/**
+	 * Viewport height.
+	 */
+	int available_height;
 
-	bool quirks;		/**< Content is in quirks mode */
-	char *fallback_charset;	/**< Fallback charset, or NULL */
+	/**
+	 * Content is in quirks mode
+	 */
+	bool quirks;
+	/**
+	 * Fallback charset, or NULL
+	 */
+	char *fallback_charset;
 
-	nsurl *refresh;		/**< URL for refresh request */
+	/**
+	 * URL for refresh request
+	 */
+	struct nsurl *refresh;
 
-	struct content_rfc5988_link *links; /**< list of metadata links */
+	/**
+	 * list of metadata links
+	 */
+	struct content_rfc5988_link *links;
 
-	/** Creation timestamp when LOADING or READY.
-	 * Total time in ms when DONE.
+	/**
+	 * Creation timestamp when LOADING or READY.  Total time in ms
+	 * when DONE.
 	 */
 	uint64_t time;
 
-	uint64_t reformat_time;	/**< Earliest time to attempt a period
-                                 * reflow while fetching a page's objects.
-                                 */
+	/**
+	 * Earliest time to attempt a period reflow while fetching a
+	 * page's objects.
+	 */
+	uint64_t reformat_time;
 
-	unsigned int size;		/**< Estimated size of all data
-					  associated with this content */
-	char *title;			/**< Title for browser window. */
-	unsigned int active;		/**< Number of child fetches or
-					  conversions currently in progress. */
-	struct content_user *user_list;	/**< List of users. */
-	char status_message[120];	/**< Full text for status bar. */
-	char sub_status[80];		/**< Status of content. */
-	/** Content is being processed: data structures may be inconsistent
-	 * and content must not be redrawn or modified. */
+	/**
+	 * Estimated size of all data associated with this content
+	 */
+	unsigned int size;
+	/**
+	 * Title for browser window.
+	 */
+	char *title;
+	/**
+	 * Number of child fetches or conversions currently in progress.
+	 */
+	unsigned int active;
+	/**
+	 * List of users.
+	 */
+	struct content_user *user_list;
+	/**
+	 * Full text for status bar.
+	 */
+	char status_message[120];
+	/**
+	 * Status of content.
+	 */
+	char sub_status[80];
+	/**
+	 * Content is being processed: data structures may be
+	 * inconsistent and content must not be redrawn or modified.
+	 */
 	bool locked;
 
-	unsigned long total_size;	/**< Total data size, 0 if unknown. */
-	long http_code;			/**< HTTP status code, 0 if not HTTP. */
+	/**
+	 * Total data size, 0 if unknown.
+	 */
+	unsigned long total_size;
+	/**
+	 * HTTP status code, 0 if not HTTP.
+	 */
+	long http_code;
 };
 
 extern const char * const content_type_name[];
 extern const char * const content_status_name[];
 
+
+/**
+ * Initialise a new base content structure.
+ *
+ * \param c                 Content to initialise
+ * \param handler           Content handler
+ * \param imime_type        MIME type of content
+ * \param params            HTTP parameters
+ * \param llcache           Source data handle
+ * \param fallback_charset  Fallback charset
+ * \param quirks            Quirkiness of content
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
 nserror content__init(struct content *c, const struct content_handler *handler,
 		lwc_string *imime_type, const struct http_parameter *params,
 		struct llcache_handle *llcache, const char *fallback_charset,
 		bool quirks);
+
+/**
+ * Clone a content's data members
+ *
+ * \param c   Content to clone
+ * \param nc  Content to populate
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
 nserror content__clone(const struct content *c, struct content *nc);
 
+/**
+ * Put a content in status CONTENT_STATUS_READY and unlock the content.
+ */
 void content_set_ready(struct content *c);
+
+/**
+ * Put a content in status CONTENT_STATUS_DONE.
+ */
 void content_set_done(struct content *c);
+
+/**
+ * Put a content in status CONTENT_STATUS_ERROR and unlock the content.
+ *
+ * \note We expect the caller to broadcast an error report if needed.
+ */
 void content_set_error(struct content *c);
 
+/**
+ * Updates content with new status.
+ *
+ * The textual status contained in the content is updated with given string.
+ *
+ * \param c The content to set status in.
+ * \param status_message new textual status
+ */
 void content_set_status(struct content *c, const char *status_message);
-void content_broadcast(struct content *c, content_msg msg,
-		const union content_msg_data *data);
+
+/**
+ * Send a message to all users.
+ */
+void content_broadcast(struct content *c, content_msg msg, const union content_msg_data *data);
+
 /**
  * Send an error message to all users.
  *
@@ -176,16 +301,42 @@ void content_broadcast(struct content *c, content_msg msg,
  */
 void content_broadcast_error(struct content *c, nserror errorcode, const char *msg);
 
-bool content__add_rfc5988_link(struct content *c, 
-		const struct content_rfc5988_link *link);
-struct content_rfc5988_link *content__free_rfc5988_link(
-		struct content_rfc5988_link *link);
+/**
+ * associate a metadata link with a content.
+ *
+ * \param c content to add link to
+ * \param link The rfc5988 link to add
+ */
+bool content__add_rfc5988_link(struct content *c, const struct content_rfc5988_link *link);
 
-void content__reformat(struct content *c, bool background,
-		int width, int height);
-void content__request_redraw(struct content *c,
-		int x, int y, int width, int height);
+/**
+ * free a rfc5988 link
+ *
+ * \param link The link to free
+ * \return The next link in the chain
+ */
+struct content_rfc5988_link *content__free_rfc5988_link(struct content_rfc5988_link *link);
 
+/**
+ * cause a content to be reformatted.
+ *
+ * \param c content to be reformatted
+ * \param background perform reformat in background
+ * \param width The available width to reformat content in
+ * \param height The available height to reformat content in
+ */
+void content__reformat(struct content *c, bool background, int width, int height);
+
+/**
+ * Request a redraw of an area of a content
+ *
+ * \param c	  Content
+ * \param x	  x co-ord of left edge
+ * \param y	  y co-ord of top edge
+ * \param width	  Width of rectangle
+ * \param height  Height of rectangle
+ */
+void content__request_redraw(struct content *c, int x, int y, int width, int height);
 
 /**
  * Retrieve mime-type of content
@@ -270,7 +421,7 @@ void content__invalidate_reuse_data(struct content *c);
  * \param c Content to retrieve refresh URL from
  * \return Pointer to URL or NULL if none
  */
-nsurl *content__get_refresh_url(struct content *c);
+struct nsurl *content__get_refresh_url(struct content *c);
 
 /**
  * Retrieve the bitmap contained in an image content
