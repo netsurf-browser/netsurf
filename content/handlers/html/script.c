@@ -36,6 +36,7 @@
 #include "netsurf/content.h"
 #include "javascript/js.h"
 #include "content/content_protected.h"
+#include "content/content_factory.h"
 #include "content/fetch.h"
 #include "content/hlcache.h"
 

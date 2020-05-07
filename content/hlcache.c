@@ -38,6 +38,7 @@
 #include "content/hlcache.h"
 // Note, this is *ONLY* so that we can abort cleanly during shutdown of the cache
 #include "content/content_protected.h"
+#include "content/content_factory.h"
 
 typedef struct hlcache_entry hlcache_entry;
 typedef struct hlcache_retrieval_ctx hlcache_retrieval_ctx;

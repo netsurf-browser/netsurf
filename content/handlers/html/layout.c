@@ -52,6 +52,7 @@
 #include "netsurf/content.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/layout.h"
+#include "content/content.h"
 #include "content/content_protected.h"
 #include "css/utils.h"
 #include "desktop/scrollbar.h"

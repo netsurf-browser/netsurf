@@ -49,6 +49,7 @@
 #include "netsurf/content.h"
 #include "content/llcache.h"
 #include "content/content_protected.h"
+#include "content/content_factory.h"
 #include "desktop/gui_internal.h"
 
 #include "image/rsvg.h"

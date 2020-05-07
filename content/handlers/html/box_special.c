@@ -40,6 +40,7 @@
 #include "netsurf/plot_style.h"
 #include "css/hints.h"
 #include "desktop/frame_types.h"
+#include "content/content_factory.h"
 
 #include "html/html.h"
 #include "html/private.h"

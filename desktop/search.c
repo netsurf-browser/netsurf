@@ -23,6 +23,7 @@
  * Free text search (core)
  */
 
+#include "utils/errors.h"
 #include "content/content.h"
 #include "netsurf/types.h"
 #include "netsurf/browser_window.h"

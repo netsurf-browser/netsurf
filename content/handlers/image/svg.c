@@ -34,6 +34,7 @@
 #include "netsurf/plotters.h"
 #include "netsurf/content.h"
 #include "content/content_protected.h"
+#include "content/content_factory.h"
 
 #include "image/svg.h"
 

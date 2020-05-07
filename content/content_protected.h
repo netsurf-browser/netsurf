@@ -28,15 +28,24 @@
 #define NETSURF_CONTENT_CONTENT_PROTECTED_H_
 
 #include <stdio.h>
+#include <libwapcaplet/libwapcaplet.h>
 
 #include "netsurf/content_type.h"
-#include "content/content.h"
+#include "desktop/search.h" /* search flags enum */
+#include "netsurf/mouse.h" /* mouse state enums */
 
 struct nsurl;
 struct content_redraw_data;
+union content_msg_data;
 struct http_parameter;
 struct llcache_handle;
 struct object_params;
+struct content;
+struct redraw_context;
+struct rect;
+struct browser_window_features;
+
+typedef struct content_handler content_handler;
 
 /**
  * Content operation function table
@@ -456,5 +465,109 @@ const char *content__get_encoding(struct content *c, enum content_encoding_type 
  * \return true iff locked, else false
  */
 bool content__is_locked(struct content *c);
+
+/**
+ * Destroy and free a content.
+ *
+ * Calls the destroy function for the content, and frees the structure.
+ */
+void content_destroy(struct content *c);
+
+/**
+ * Register a user for callbacks.
+ *
+ * \param c the content to register
+ * \param callback the user callback function
+ * \param pw callback private data
+ * \return true on success, false otherwise on memory exhaustion
+ *
+ * The callback will be called when content_broadcast() is
+ * called with the content.
+ */
+bool content_add_user(struct content *h,
+		      void (*callback)(
+				       struct content *c,
+				       content_msg msg,
+				       const union content_msg_data *data,
+				       void *pw),
+		      void *pw);
+
+/**
+ * Remove a callback user.
+ *
+ * The callback function and pw must be identical to those passed to
+ * content_add_user().
+ *
+ * \param c Content to remove user from
+ * \param callback passed when added
+ * \param ctx Context passed when added
+ */
+void content_remove_user(struct content *c,
+			 void (*callback)(
+					  struct content *c,
+					  content_msg msg,
+					  const union content_msg_data *data,
+					  void *pw),
+			 void *ctx);
+
+
+/**
+ * Count users for the content.
+ *
+ * \param c Content to consider
+ */
+uint32_t content_count_users(struct content *c);
+
+
+/**
+ * Determine if quirks mode matches
+ *
+ * \param c Content to consider
+ * \param quirks  Quirks mode to match
+ * \return True if quirks match, false otherwise
+ */
+bool content_matches_quirks(struct content *c, bool quirks);
+
+/**
+ * Determine if a content is shareable
+ *
+ * \param c  Content to consider
+ * \return True if content is shareable, false otherwise
+ */
+bool content_is_shareable(struct content *c);
+
+/**
+ * Retrieve the low-level cache handle for a content
+ *
+ * \note only used by hlcache
+ *
+ * \param c Content to retrieve from
+ * \return Low-level cache handle
+ */
+const struct llcache_handle *content_get_llcache_handle(struct content *c);
+
+/**
+ * Retrieve URL associated with content
+ *
+ * \param c  Content to retrieve URL from
+ * \return Pointer to URL, or NULL if not found.
+ */
+struct nsurl *content_get_url(struct content *c);
+
+/**
+ * Clone a content object in its current state.
+ *
+ * \param c  Content to clone
+ * \return Clone of \a c
+ */
+struct content *content_clone(struct content *c);
+
+/**
+ * Abort a content object
+ *
+ * \param c The content object to abort
+ * \return NSERROR_OK on success, otherwise appropriate error
+ */
+nserror content_abort(struct content *c);
 
 #endif

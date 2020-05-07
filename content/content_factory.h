@@ -46,13 +46,12 @@ nserror HNAME##_init(void)						\
 
 struct content;
 struct llcache_handle;
-
-typedef struct content_handler content_handler;
+struct content_handler;
 
 void content_factory_fini(void);
 
 nserror content_factory_register_handler(const char *mime_type,
-		const content_handler *handler);
+		const struct content_handler *handler);
 
 struct content *content_factory_create_content(struct llcache_handle *llcache, 
 		const char *fallback_charset, bool quirks,

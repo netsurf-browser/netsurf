@@ -22,12 +22,14 @@
  * Implementation of HTML content DOM event handling.
  */
 
+#include "utils/config.h"
 #include "utils/corestrings.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/ascii.h"
 #include "utils/string.h"
 #include "utils/nsurl.h"
+#include "content/content.h"
 #include "javascript/js.h"
 
 #include "html/private.h"

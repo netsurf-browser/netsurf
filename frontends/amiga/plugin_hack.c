@@ -35,6 +35,7 @@
 #include "amiga/filetype.h"
 #include "amiga/plugin_hack.h"
 #include "content/content_protected.h"
+#include "content/content_factory.h"
 #include "content/llcache.h"
 
 

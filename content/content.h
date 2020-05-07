@@ -24,14 +24,13 @@
  * The content functions manipulate struct contents, which correspond to URLs.
  */
 
-#ifndef _NETSURF_CONTENT_CONTENT_H_
-#define _NETSURF_CONTENT_CONTENT_H_
+#ifndef NETSURF_CONTENT_CONTENT_H_
+#define NETSURF_CONTENT_CONTENT_H_
 
 #include <libwapcaplet/libwapcaplet.h>
 
-#include "utils/errors.h"
-#include "content/content_factory.h"
 #include "desktop/search.h" /* search flags enum */
+#include "netsurf/content_type.h"
 #include "netsurf/mouse.h" /* mouse state enums */
 #include "netsurf/console.h" /* console state and flags enums */
 
@@ -43,47 +42,7 @@ struct hlcache_handle;
 struct object_params;
 struct rect;
 struct redraw_context;
-struct llcache_query_msg;
 struct cert_chain;
-
-/** Status of a content */
-typedef enum {
-	CONTENT_STATUS_LOADING,	/**< Content is being fetched or
-				  converted and is not safe to display. */
-	CONTENT_STATUS_READY,	/**< Some parts of content still being
-				  loaded, but can be displayed. */
-	CONTENT_STATUS_DONE,	/**< All finished. */
-	CONTENT_STATUS_ERROR	/**< Error occurred, content will be
-				  destroyed imminently. */
-} content_status;
-
-/** Used in callbacks to indicate what has occurred. */
-typedef enum {
-	CONTENT_MSG_LOG,       /**< Content wishes to log something */
-	CONTENT_MSG_SSL_CERTS, /**< Content is from SSL and this is its chain */
-	CONTENT_MSG_LOADING,   /**< fetching or converting */
-	CONTENT_MSG_READY,     /**< may be displayed */
-	CONTENT_MSG_DONE,      /**< finished */
-	CONTENT_MSG_ERROR,     /**< error occurred */
-	CONTENT_MSG_REDIRECT,  /**< fetch url redirect occured */
-	CONTENT_MSG_STATUS,    /**< new status string */
-	CONTENT_MSG_REFORMAT,  /**< content_reformat done */
-	CONTENT_MSG_REDRAW,    /**< needs redraw (eg. new animation frame) */
-	CONTENT_MSG_REFRESH,   /**< wants refresh */
-	CONTENT_MSG_DOWNLOAD,  /**< download, not for display */
-	CONTENT_MSG_LINK,      /**< RFC5988 link */
-	CONTENT_MSG_GETTHREAD, /**< Javascript thread */
-	CONTENT_MSG_GETDIMS,   /**< Get viewport dimensions. */
-	CONTENT_MSG_SCROLL,    /**< Request to scroll content */
-	CONTENT_MSG_DRAGSAVE,  /**< Allow drag saving of content */
-	CONTENT_MSG_SAVELINK,  /**< Allow URL to be saved */
-	CONTENT_MSG_POINTER,   /**< Wants a specific mouse pointer set */
-	CONTENT_MSG_SELECTION, /**< A selection made or cleared */
-	CONTENT_MSG_CARET,     /**< Caret movement / hiding */
-	CONTENT_MSG_DRAG,      /**< A drag started or ended */
-	CONTENT_MSG_SELECTMENU,/**< Create a select menu */
-	CONTENT_MSG_GADGETCLICK/**< A gadget has been clicked on (mainly for file) */
-} content_msg;
 
 
 /** RFC5988 metadata link */
@@ -285,114 +244,6 @@ union content_msg_data {
 	} gadget_click;
 };
 
-
-/* The following are for hlcache */
-
-/**
- * Destroy and free a content.
- *
- * Calls the destroy function for the content, and frees the structure.
- */
-void content_destroy(struct content *c);
-
-/**
- * Register a user for callbacks.
- *
- * \param c the content to register
- * \param callback the user callback function
- * \param pw callback private data
- * \return true on success, false otherwise on memory exhaustion
- *
- * The callback will be called when content_broadcast() is
- * called with the content.
- */
-bool content_add_user(struct content *h,
-		      void (*callback)(
-				       struct content *c,
-				       content_msg msg,
-				       const union content_msg_data *data,
-				       void *pw),
-		      void *pw);
-
-/**
- * Remove a callback user.
- *
- * The callback function and pw must be identical to those passed to
- * content_add_user().
- *
- * \param c Content to remove user from
- * \param callback passed when added
- * \param ctx Context passed when added
- */
-void content_remove_user(struct content *c,
-			 void (*callback)(
-					  struct content *c,
-					  content_msg msg,
-					  const union content_msg_data *data,
-					  void *pw),
-			 void *ctx);
-
-
-/**
- * Count users for the content.
- *
- * \param c Content to consider
- */
-uint32_t content_count_users(struct content *c);
-
-
-/**
- * Determine if quirks mode matches
- *
- * \param c Content to consider
- * \param quirks  Quirks mode to match
- * \return True if quirks match, false otherwise
- */
-bool content_matches_quirks(struct content *c, bool quirks);
-
-/**
- * Determine if a content is shareable
- *
- * \param c  Content to consider
- * \return True if content is shareable, false otherwise
- */
-bool content_is_shareable(struct content *c);
-
-/**
- * Retrieve the low-level cache handle for a content
- *
- * \note only used by hlcache
- *
- * \param c Content to retrieve from
- * \return Low-level cache handle
- */
-const struct llcache_handle *content_get_llcache_handle(struct content *c);
-
-/**
- * Retrieve URL associated with content
- *
- * \param c  Content to retrieve URL from
- * \return Pointer to URL, or NULL if not found.
- */
-struct nsurl *content_get_url(struct content *c);
-
-/**
- * Clone a content object in its current state.
- *
- * \param c  Content to clone
- * \return Clone of \a c
- */
-struct content *content_clone(struct content *c);
-
-/**
- * Abort a content object
- *
- * \param c The content object to abort
- * \return NSERROR_OK on success, otherwise appropriate error
- */
-nserror content_abort(struct content *c);
-
-/* Client functions */
 
 /**
  * Get whether a content can reformat

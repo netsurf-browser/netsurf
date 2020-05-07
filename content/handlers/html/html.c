@@ -48,6 +48,7 @@
 #include "netsurf/layout.h"
 #include "netsurf/misc.h"
 #include "content/hlcache.h"
+#include "content/content_factory.h"
 #include "desktop/selection.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"

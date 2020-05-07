@@ -26,8 +26,10 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "utils/errors.h"
 #include "utils/config.h"
 #include "content/content_protected.h"
+#include "content/content_factory.h"
 #include "content/hlcache.h"
 #include "utils/log.h"
 #include "utils/messages.h"

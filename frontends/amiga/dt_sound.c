@@ -36,6 +36,7 @@
 #include "html/box.h"
 #include "content/llcache.h"
 #include "content/content_protected.h"
+#include "content/content_factory.h"
 
 #include "amiga/filetype.h"
 #include "amiga/datatypes.h"

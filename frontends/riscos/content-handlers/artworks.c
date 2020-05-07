@@ -38,7 +38,9 @@
 #include "utils/utils.h"
 #include "netsurf/plotters.h"
 #include "netsurf/content.h"
+#include "content/content.h"
 #include "content/content_protected.h"
+#include "content/content_factory.h"
 #include "content/llcache.h"
 
 #include "riscos/content-handlers/artworks.h"

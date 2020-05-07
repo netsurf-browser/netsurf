@@ -33,6 +33,7 @@
 #include "netsurf/content.h"
 #include "content/llcache.h"
 #include "content/content_protected.h"
+#include "content/content_factory.h"
 #include "desktop/gui_internal.h"
 
 #include "image/bmp.h"
@@ -87,10 +88,14 @@ static nserror nsbmp_create_bmp_data(nsbmp_content *bmp)
 	return NSERROR_OK;
 }
 
-static nserror nsbmp_create(const content_handler *handler,
-		lwc_string *imime_type, const struct http_parameter *params,
-		llcache_handle *llcache, const char *fallback_charset,
-		bool quirks, struct content **c)
+static nserror
+nsbmp_create(const struct content_handler *handler,
+	     lwc_string *imime_type,
+	     const struct http_parameter *params,
+	     llcache_handle *llcache,
+	     const char *fallback_charset,
+	     bool quirks,
+	     struct content **c)
 {
 	nsbmp_content *bmp;
 	nserror error;

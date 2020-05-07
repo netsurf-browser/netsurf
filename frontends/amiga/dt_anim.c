@@ -40,7 +40,9 @@
 #include "netsurf/plotters.h"
 #include "netsurf/bitmap.h"
 #include "netsurf/content.h"
+#include "content/content.h"
 #include "content/content_protected.h"
+#include "content/content_factory.h"
 #include "content/llcache.h"
 
 #include "amiga/bitmap.h"

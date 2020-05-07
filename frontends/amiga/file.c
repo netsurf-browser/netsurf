@@ -29,6 +29,7 @@
 #include "utils/nsurl.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/content.h"
+#include "content/content_factory.h"
 #include "desktop/save_complete.h"
 #include "desktop/save_pdf.h"
 #include "desktop/save_text.h"

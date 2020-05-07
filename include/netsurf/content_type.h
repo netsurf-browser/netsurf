@@ -18,7 +18,7 @@
 
 /**
  * \file
- * Declaration of content type enumerations.
+ * Declaration of content enumerations.
  *
  * The content enumerations are defined here.
  */
@@ -28,16 +28,26 @@
 
 /** Debugging dump operations */
 enum content_debug {
-	CONTENT_DEBUG_RENDER, /** Debug the contents rendering. */
-	CONTENT_DEBUG_DOM,    /** Debug the contents Document Object. */
-	CONTENT_DEBUG_REDRAW  /** Debug redraw operations. */
+	/** Debug the contents rendering. */
+	CONTENT_DEBUG_RENDER,
+
+	/** Debug the contents Document Object. */
+	CONTENT_DEBUG_DOM,
+
+	/** Debug redraw operations. */
+	CONTENT_DEBUG_REDRAW
 };
+
 
 /** Content encoding information types */
 enum content_encoding_type {
-	CONTENT_ENCODING_NORMAL, /** The content encoding */
-	CONTENT_ENCODING_SOURCE  /** The content encoding source */
+	/** The content encoding */
+	CONTENT_ENCODING_NORMAL,
+
+	/** The content encoding source */
+	CONTENT_ENCODING_SOURCE
 };
+
 
 /** The type of a content. */
 typedef enum {
@@ -71,6 +81,100 @@ typedef enum {
 	/** Any content matches */
 	CONTENT_ANY		= 0x7f
 } content_type;
+
+
+/** Status of a content */
+typedef enum {
+	/** Content is being fetched or converted and is not safe to display. */
+	CONTENT_STATUS_LOADING,
+
+	/** Some parts of content still being loaded, but can be displayed. */
+	CONTENT_STATUS_READY,
+
+	/** Content has completed all processing. */
+	CONTENT_STATUS_DONE,
+
+	/** Error occurred, content will be destroyed imminently. */
+	CONTENT_STATUS_ERROR
+} content_status;
+
+
+/**
+ * Used in callbacks to indicate what has occurred.
+ */
+typedef enum {
+	/** Content wishes to log something */
+	CONTENT_MSG_LOG,
+
+	/** Content is from SSL and this is its chain */
+	CONTENT_MSG_SSL_CERTS,
+
+	/** fetching or converting */
+	CONTENT_MSG_LOADING,
+
+	/** may be displayed */
+	CONTENT_MSG_READY,
+
+	/** content has finished processing */
+	CONTENT_MSG_DONE,
+
+	/** error occurred */
+	CONTENT_MSG_ERROR,
+
+	/** fetch url redirect occured */
+	CONTENT_MSG_REDIRECT,
+
+	/** new status string */
+	CONTENT_MSG_STATUS,
+
+	/** content_reformat done */
+	CONTENT_MSG_REFORMAT,
+
+	/** needs redraw (eg. new animation frame) */
+	CONTENT_MSG_REDRAW,
+
+	/** wants refresh */
+	CONTENT_MSG_REFRESH,
+
+	/** download, not for display */
+	CONTENT_MSG_DOWNLOAD,
+
+	/** RFC5988 link */
+	CONTENT_MSG_LINK,
+
+	/** Javascript thread */
+	CONTENT_MSG_GETTHREAD,
+
+	/** Get viewport dimensions. */
+	CONTENT_MSG_GETDIMS,
+
+	/** Request to scroll content */
+	CONTENT_MSG_SCROLL,
+
+	/** Allow drag saving of content */
+	CONTENT_MSG_DRAGSAVE,
+
+	/** Allow URL to be saved */
+	CONTENT_MSG_SAVELINK,
+
+	/** Wants a specific mouse pointer set */
+	CONTENT_MSG_POINTER,
+
+	/** A selection made or cleared */
+	CONTENT_MSG_SELECTION,
+
+	/** Caret movement / hiding */
+	CONTENT_MSG_CARET,
+
+	/** A drag started or ended */
+	CONTENT_MSG_DRAG,
+
+	/** Create a select menu */
+	CONTENT_MSG_SELECTMENU,
+
+	/** A gadget has been clicked on (mainly for file) */
+	CONTENT_MSG_GADGETCLICK
+} content_msg;
 
 
 #endif

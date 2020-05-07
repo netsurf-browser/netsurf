@@ -45,6 +45,7 @@
 #include "netsurf/plotters.h"
 #include "netsurf/layout.h"
 #include "content/content_protected.h"
+#include "content/content_factory.h"
 #include "content/hlcache.h"
 #include "css/utils.h"
 #include "utils/nsoption.h"
