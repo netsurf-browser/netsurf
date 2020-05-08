@@ -1108,93 +1108,79 @@ static void gui_window_update_extent(struct gui_window *g)
 	g->view->UnlockLooper();
 }
 
-/* some cursors like those in Firefox */
-// XXX: move to separate file or resource ?
+static BCursorID gui_haiku_pointer(gui_pointer_shape shape)
+{
+	switch (shape) {
+	case GUI_POINTER_POINT: /* link */
+		return B_CURSOR_ID_FOLLOW_LINK;
 
-const uint8 kLinkCursorBits[] = {
-	16,		/* cursor size */
-	1,		/* bits per pixel */
-	2,		/* vertical hot spot */
-	2,		/* horizontal hot spot */
+	case GUI_POINTER_CARET: /* input */
+		return B_CURSOR_ID_I_BEAM;
 
-	/* data */
-	0x00, 0x00, 0x00, 0x00, 0x38, 0x00, 0x24, 0x00, 0x24, 0x00, 0x13, 0xe0, 0x12, 0x5c, 0x09, 0x2a, 
-	0x08, 0x01, 0x3c, 0x21, 0x4c, 0x71, 0x42, 0x71, 0x30, 0xf9, 0x0c, 0xf9, 0x02, 0x02, 0x01, 0x00,
+	case GUI_POINTER_MENU:
+		return B_CURSOR_ID_CONTEXT_MENU;
 
-	/* mask */
-	0x00, 0x00, 0x00, 0x00, 0x38, 0x00, 0x3c, 0x00, 0x3c, 0x00, 0x1f, 0xe0, 0x1f, 0xfc, 0x0f, 0xfe, 
-	0x0f, 0xff, 0x3f, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x3f, 0xff, 0x0f, 0xff, 0x03, 0xfc, 0x01, 0xe0
-};
+	case GUI_POINTER_UP:
+		return B_CURSOR_ID_RESIZE_NORTH;
 
-const uint8 kWatchCursorBits[] = {
-	16,		/* cursor size */
-	1,		/* bits per pixel */
-	0,		/* vertical hot spot */
-	1,		/* horizontal hot spot */
+	case GUI_POINTER_DOWN:
+		return B_CURSOR_ID_RESIZE_SOUTH;
 
-	/* data */
-	0x70, 0x00, 0x48, 0x00, 0x48, 0x00, 0x27, 0xc0, 0x24, 0xb8, 0x12, 0x54, 0x10, 0x02, 0x78, 0x02, 
-	0x98, 0x02, 0x84, 0x02, 0x60, 0x3a, 0x18, 0x46, 0x04, 0x8a, 0x02, 0x92, 0x01, 0x82, 0x00, 0x45,
+	case GUI_POINTER_LEFT:
+		return B_CURSOR_ID_RESIZE_WEST;
 
-	/* mask */
-	0x70, 0x00, 0x78, 0x00, 0x78, 0x00, 0x3f, 0xc0, 0x3f, 0xf8, 0x1f, 0xfc, 0x1f, 0xfe, 0x7f, 0xfe, 
-	0xff, 0xfe, 0xff, 0xfe, 0x7f, 0xfe, 0x1f, 0xfe, 0x07, 0xfe, 0x03, 0xfe, 0x01, 0xfe, 0x00, 0x7f
-};
+	case GUI_POINTER_RIGHT:
+		return B_CURSOR_ID_RESIZE_EAST;
 
-const uint8 kWatch2CursorBits[] = {
-	16,		/* cursor size */
-	1,		/* bits per pixel */
-	0,		/* vertical hot spot */
-	1,		/* horizontal hot spot */
+	case GUI_POINTER_RU:
+		return B_CURSOR_ID_RESIZE_NORTH_EAST;
 
-	/* data */
-	0x70, 0x00, 0x48, 0x00, 0x48, 0x00, 0x27, 0xc0, 0x24, 0xb8, 0x12, 0x54, 0x10, 0x02, 0x78, 0x02, 
-	0x98, 0x02, 0x84, 0x02, 0x60, 0x3a, 0x18, 0x46, 0x04, 0xa2, 0x02, 0x92, 0x01, 0xa2, 0x00, 0x45,
+	case GUI_POINTER_LD:
+		return B_CURSOR_ID_RESIZE_SOUTH_WEST;
 
-	/* mask */
-	0x70, 0x00, 0x78, 0x00, 0x78, 0x00, 0x3f, 0xc0, 0x3f, 0xf8, 0x1f, 0xfc, 0x1f, 0xfe, 0x7f, 0xfe, 
-	0xff, 0xfe, 0xff, 0xfe, 0x7f, 0xfe, 0x1f, 0xfe, 0x07, 0xfe, 0x03, 0xfe, 0x01, 0xfe, 0x00, 0x7f
-};
+	case GUI_POINTER_LU:
+		return B_CURSOR_ID_RESIZE_NORTH_WEST;
 
+	case GUI_POINTER_RD:
+		return B_CURSOR_ID_RESIZE_SOUTH_EAST;
+
+	case GUI_POINTER_CROSS:
+		return B_CURSOR_ID_CROSS_HAIR;
+
+	case GUI_POINTER_MOVE:
+		return B_CURSOR_ID_MOVE;
+
+	case GUI_POINTER_WAIT:
+	case GUI_POINTER_PROGRESS:
+		return B_CURSOR_ID_PROGRESS;
+
+	case GUI_POINTER_NO_DROP:
+	case GUI_POINTER_NOT_ALLOWED:
+		return B_CURSOR_ID_NOT_ALLOWED;
+
+	case GUI_POINTER_HELP:
+		return B_CURSOR_ID_HELP;
+
+	case GUI_POINTER_DEFAULT:
+	default:
+		break;
+	}
+	return B_CURSOR_ID_SYSTEM_DEFAULT;
+}
 
 static void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
-	BCursor *cursor = NULL;
-	bool allocated = false;
-
 	if (g->current_pointer == shape)
 		return;
 
 	g->current_pointer = shape;
 
-	switch (shape) {
-	case GUI_POINTER_POINT:
-		cursor = new BCursor(kLinkCursorBits);
-		allocated = true;
-		break;
-	case GUI_POINTER_CARET:
-		cursor = (BCursor *)B_CURSOR_I_BEAM;
-		break;
-	case GUI_POINTER_WAIT:
-		cursor = new BCursor(kWatchCursorBits);
-		allocated = true;
-		break;
-	case GUI_POINTER_PROGRESS:
-		cursor = new BCursor(kWatch2CursorBits);
-		allocated = true;
-		break;
-	default:
-		cursor = (BCursor *)B_CURSOR_SYSTEM_DEFAULT;
-		allocated = false;
-	}
+	BCursor cursor(gui_haiku_pointer(shape));
 
 	if (g->view && g->view->LockLooper()) {
-		g->view->SetViewCursor(cursor);
+		g->view->SetViewCursor(&cursor);
 		g->view->UnlockLooper();
 	}
-
-	if (allocated)
-		delete cursor;
 }
 
 static void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
