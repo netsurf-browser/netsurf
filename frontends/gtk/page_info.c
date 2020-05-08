@@ -29,8 +29,10 @@
 #include "utils/messages.h"
 #include "netsurf/keypress.h"
 #include "netsurf/plotters.h"
+#include "netsurf/misc.h"
 #include "netsurf/browser_window.h"
 #include "desktop/page-info.h"
+#include "desktop/gui_internal.h"
 
 #include "gtk/plotters.h"
 #include "gtk/scaffolding.h"
@@ -74,6 +76,15 @@ nsgtk_pi_delete_event(GtkWidget *w, GdkEvent  *event, gpointer data)
 }
 
 /**
+ * Called to cause the page-info window to close cleanly
+ */
+static void
+nsgtk_pi_close_callback(void *pw)
+{
+	nsgtk_pi_delete_event(NULL, NULL, pw);
+}
+
+/**
  * callback for mouse action for certificate verify on core window
  *
  * \param nsgtk_cw The nsgtk core window structure.
@@ -88,10 +99,16 @@ nsgtk_pi_mouse(struct nsgtk_corewindow *nsgtk_cw,
 		    int x, int y)
 {
 	struct nsgtk_pi_window *pi_win;
+	bool did_something = false;
 	/* technically degenerate container of */
 	pi_win = (struct nsgtk_pi_window *)nsgtk_cw;
 
-	page_info_mouse_action(pi_win->pi, mouse_state, x, y);
+	if (page_info_mouse_action(pi_win->pi, mouse_state, x, y, &did_something) == NSERROR_OK) {
+		if (did_something == true) {
+			/* Something happened so we need to close ourselves */
+			guit->misc->schedule(0, nsgtk_pi_close_callback, pi_win);
+		}
+	}
 
 	return NSERROR_OK;
 }
@@ -147,6 +164,7 @@ nserror nsgtk_page_info(struct browser_window *bw)
 {
 	struct nsgtk_pi_window *ncwin;
 	nserror res;
+	GtkWindow *scaffwin = nsgtk_scaffolding_window(nsgtk_current_scaffolding());
 
 	ncwin = calloc(1, sizeof(struct nsgtk_pi_window));
 	if (ncwin == NULL) {
@@ -165,9 +183,19 @@ nserror nsgtk_page_info(struct browser_window *bw)
 	ncwin->dlg = GTK_WINDOW(gtk_builder_get_object(ncwin->builder,
 						       "PGIWindow"));
 
-	/* set parent for transient dialog */
-	gtk_window_set_transient_for(GTK_WINDOW(ncwin->dlg),
-		     nsgtk_scaffolding_window(nsgtk_current_scaffolding()));
+	/* Configure for transient behaviour */
+	gtk_window_set_type_hint(GTK_WINDOW(ncwin->dlg),
+				 GDK_WINDOW_TYPE_HINT_DROPDOWN_MENU);
+
+	gtk_window_set_modal(GTK_WINDOW(ncwin->dlg), TRUE);
+
+	gtk_window_group_add_window(gtk_window_get_group(scaffwin),
+				    GTK_WINDOW(ncwin->dlg));
+
+	gtk_window_set_transient_for(GTK_WINDOW(ncwin->dlg), scaffwin);
+
+	gtk_window_set_screen(GTK_WINDOW(ncwin->dlg),
+			      gtk_widget_get_screen(GTK_WIDGET(scaffwin)));
 
 	ncwin->core.drawing_area = GTK_DRAWING_AREA(
 		gtk_builder_get_object(ncwin->builder, "PGIDrawingArea"));
@@ -175,6 +203,16 @@ nserror nsgtk_page_info(struct browser_window *bw)
 	/* make the delete event call our destructor */
 	g_signal_connect(G_OBJECT(ncwin->dlg),
 			 "delete_event",
+			 G_CALLBACK(nsgtk_pi_delete_event),
+			 ncwin);
+	/* Ditto if we lose the grab */
+	g_signal_connect(G_OBJECT(ncwin->dlg),
+			 "grab-broken-event",
+			 G_CALLBACK(nsgtk_pi_delete_event),
+			 ncwin);
+	/* Handle button press events */
+	g_signal_connect(G_OBJECT(ncwin->dlg),
+			 "button-press-event",
 			 G_CALLBACK(nsgtk_pi_delete_event),
 			 ncwin);
 
@@ -200,6 +238,8 @@ nserror nsgtk_page_info(struct browser_window *bw)
 	}
 
 	gtk_widget_show(GTK_WIDGET(ncwin->dlg));
+
+	gtk_widget_grab_focus(GTK_WIDGET(ncwin->dlg));
 
 	return NSERROR_OK;
 }
