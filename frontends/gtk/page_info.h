@@ -27,4 +27,14 @@
  */
 nserror nsgtk_page_info(struct browser_window *bw);
 
+/**
+ * Position the given page information window at the given
+ * coordinates.
+ *
+ * \param pi the page info window to position
+ * \param x the X coordinate for the top left of the window
+ * \param y the Y coordinate for the top left of the window
+ */
+void nsgtk_page_info_set_position(struct nsgtk_pi_window *pi, int x, int y);
+
 #endif

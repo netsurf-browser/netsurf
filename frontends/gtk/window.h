@@ -19,6 +19,8 @@
 #ifndef NETSURF_GTK_WINDOW_H
 #define NETSURF_GTK_WINDOW_H 1
 
+struct nsgtk_pi_window;
+
 extern struct gui_window_table *nsgtk_window_table;
 extern struct gui_search_web_table *nsgtk_search_web_table;
 
@@ -95,5 +97,13 @@ GtkLayout *nsgtk_window_get_layout(struct gui_window *gw);
  */
 nserror nsgtk_window_item_activate(struct gui_window *gw, nsgtk_toolbar_button itemid);
 
+/**
+ * position page_info appropriately
+ *
+ * \param gw The gui window handle to position relative to
+ * \param win The page-info window to position
+ */
+nserror nsgtk_window_position_page_info(struct gui_window *gw,
+					struct nsgtk_pi_window *win);
 
 #endif /* NETSURF_GTK_WINDOW_H */

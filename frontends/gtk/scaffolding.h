@@ -27,6 +27,7 @@ struct hlcache_handle;
 struct gui_window;
 struct gui_search_web_table;
 struct nsurl;
+struct nsgtk_pi_window;
 
 
 /**
@@ -54,6 +55,15 @@ nserror nsgtk_scaffolding_throbber(struct gui_window* gw, bool active);
  * open the toolbar context menu
  */
 nserror nsgtk_scaffolding_toolbar_context_menu(struct nsgtk_scaffolding *gs);
+
+/**
+ * Position the page-info popup in the right place
+ *
+ * \param gs The scaffolding to position relative to
+ * \param win The page-info window to position
+ */
+nserror nsgtk_scaffolding_position_page_info(struct nsgtk_scaffolding *gs,
+					     struct nsgtk_pi_window *win);
 
 /**
  * open the burger menu

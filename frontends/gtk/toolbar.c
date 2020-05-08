@@ -3799,3 +3799,27 @@ nserror nsgtk_toolbar_update(struct nsgtk_toolbar *tb)
 
 	return res;
 }
+
+/* exported interface documented in toolbar.h */
+nserror nsgtk_toolbar_position_page_info(struct nsgtk_toolbar *tb,
+					 struct nsgtk_pi_window *win)
+{
+	struct nsgtk_toolbar_item *item = &tb->items[URL_BAR_ITEM];
+	GtkWidget *widget = GTK_WIDGET(gtk_bin_get_child(GTK_BIN(item->button)));
+	gint rootx, rooty, x, y;
+
+	if (gtk_widget_translate_coordinates(widget,
+					     gtk_widget_get_toplevel(widget),
+					     0,
+					     gtk_widget_get_allocated_height(widget) - 1,
+					     &x, &y) != TRUE) {
+		return NSERROR_UNKNOWN;
+	}
+
+	gtk_window_get_position(GTK_WINDOW(gtk_widget_get_toplevel(widget)),
+				&rootx, &rooty);
+
+	nsgtk_page_info_set_position(win, rootx + x + 4, rooty + y + 4);
+
+	return NSERROR_OK;
+}

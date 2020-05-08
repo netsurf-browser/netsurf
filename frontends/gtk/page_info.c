@@ -197,6 +197,10 @@ nserror nsgtk_page_info(struct browser_window *bw)
 	gtk_window_set_screen(GTK_WINDOW(ncwin->dlg),
 			      gtk_widget_get_screen(GTK_WIDGET(scaffwin)));
 
+	/* Attempt to place the window in the right place */
+	nsgtk_scaffolding_position_page_info(nsgtk_current_scaffolding(),
+					     ncwin);
+
 	ncwin->core.drawing_area = GTK_DRAWING_AREA(
 		gtk_builder_get_object(ncwin->builder, "PGIDrawingArea"));
 
@@ -242,4 +246,13 @@ nserror nsgtk_page_info(struct browser_window *bw)
 	gtk_widget_grab_focus(GTK_WIDGET(ncwin->dlg));
 
 	return NSERROR_OK;
+}
+
+/* exported interface documented in gtk/page_info.h */
+void
+nsgtk_page_info_set_position(struct nsgtk_pi_window *win, int x, int y)
+{
+	NSLOG(netsurf, INFO, "win=%p x=%d y=%d", win, x, y);
+
+	gtk_window_move(GTK_WINDOW(win->dlg), x, y);
 }

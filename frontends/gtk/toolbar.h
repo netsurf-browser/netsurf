@@ -117,6 +117,15 @@ nserror nsgtk_toolbar_item_activate(struct nsgtk_toolbar *tb, nsgtk_toolbar_butt
  */
 nserror nsgtk_toolbar_show(struct nsgtk_toolbar *tb, bool show);
 
+/**
+ * position the page info window appropriately
+ *
+ * \param tb The toolbar to position relative to
+ * \param win The page-info window to position
+ */
+nserror nsgtk_toolbar_position_page_info(struct nsgtk_toolbar *tb,
+					 struct nsgtk_pi_window *win);
+
 
 /**
  * Initialise customization of toolbar entries

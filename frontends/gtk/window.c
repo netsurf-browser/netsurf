@@ -1677,3 +1677,10 @@ nserror nsgtk_window_toolbar_update(void)
 	}
 	return NSERROR_OK;
 }
+
+/* exported interface documented in window.h */
+nserror nsgtk_window_position_page_info(struct gui_window *gw,
+					struct nsgtk_pi_window *win)
+{
+	return nsgtk_toolbar_position_page_info(gw->toolbar, win);
+}

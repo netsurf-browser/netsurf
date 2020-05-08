@@ -1574,3 +1574,10 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 	return gs;
 }
+
+/* exported interface documented in gtk/scaffolding.h */
+nserror nsgtk_scaffolding_position_page_info(struct nsgtk_scaffolding *gs,
+					     struct nsgtk_pi_window *win)
+{
+	return nsgtk_window_position_page_info(gs->top_level, win);
+}
