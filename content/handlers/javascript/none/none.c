@@ -20,6 +20,7 @@
  * Dummy implementation of javascript engine functions.
  */
 
+#include "utils/errors.h"
 #include "content/content.h"
 #include "utils/nsoption.h"
 
