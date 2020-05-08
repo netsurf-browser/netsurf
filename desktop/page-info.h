@@ -106,13 +106,15 @@ nserror page_info_redraw(
  * \param[in] mouse  The current mouse state
  * \param[in] x      The current mouse X coordinate
  * \param[in] y      The current mouse Y coordinate
+ * \param[out] did_something Set to true if this resulted in some action
  * \return NSERROR_OK on success, appropriate error code otherwise.
  */
 nserror page_info_mouse_action(
 		struct page_info *pi,
 		enum browser_mouse_state mouse,
 		int x,
-		int y);
+		int y,
+		bool *did_something);
 
 /**
  * Key press handling.

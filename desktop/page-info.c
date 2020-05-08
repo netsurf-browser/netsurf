@@ -664,12 +664,14 @@ cleanup:
  * \param[in] pi       The page info window handle.
  * \param[in] mouse    The current mouse state.
  * \param[in] clicked  The page info window entry to consider clicks on.
+ * \param[out] did_something Set to true if this click did something
  * \return NSERROR_OK on success, appropriate error code otherwise.
  */
 static nserror page_info__handle_item_click(
 		struct page_info *pi,
 		enum browser_mouse_state mouse,
-		enum pi_entry clicked)
+		enum pi_entry clicked,
+		bool *did_something)
 {
 	nserror err;
 
@@ -680,9 +682,11 @@ static nserror page_info__handle_item_click(
 	switch (clicked) {
 	case PI_ENTRY_CERT:
 		err = browser_window_show_certificates(pi->bw);
+		*did_something = true;
 		break;
 	case PI_ENTRY_COOKIES:
 		err = browser_window_show_cookies(pi->bw);
+		*did_something = true;
 		break;
 	default:
 		err = NSERROR_OK;
@@ -697,7 +701,8 @@ nserror page_info_mouse_action(
 		struct page_info *pi,
 		enum browser_mouse_state mouse,
 		int x,
-		int y)
+		int y,
+		bool *did_something)
 {
 	int cur_y = 0;
 	nserror err;
@@ -722,7 +727,7 @@ nserror page_info_mouse_action(
 			if (y >= cur_y && y < cur_y + height) {
 				hovering = true;
 				err = page_info__handle_item_click(
-						pi, mouse, i);
+						pi, mouse, i, did_something);
 				if (err != NSERROR_OK) {
 					return err;
 				}
