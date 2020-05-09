@@ -119,6 +119,14 @@ nserror cert_chain_dup(const struct cert_chain *src, struct cert_chain **dst_out
 nserror cert_chain_from_query(struct nsurl *url, struct cert_chain **chain_out);
 
 /**
+ * create a fetch query string from a certificate chain
+ *
+ *
+ * \return NSERROR_OK on success or NSERROR_NOMEM on memory exhaustion
+ */
+nserror cert_chain_to_query(struct cert_chain *chain, struct nsurl **url_out);
+
+/**
  * free a certificate chain
  *
  * \param chain The certificate chain to free

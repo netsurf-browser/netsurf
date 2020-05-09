@@ -132,6 +132,9 @@ cert_chain_dup(const struct cert_chain *src, struct cert_chain **dst_out)
 
 #define MIN_CERT_LEN 64
 
+/**
+ * process a part of a query extracting the certificate of an error code
+ */
 static nserror
 process_query_section(const char *str, size_t len, struct cert_chain* chain)
 {
@@ -214,6 +217,76 @@ nserror cert_chain_from_query(struct nsurl *url, struct cert_chain **chain_out)
 	return NSERROR_OK;
 }
 
+
+/*
+ * create a fetch query string from a certificate chain
+ *
+ * exported interface documented in netsurf/ssl_certs.h
+ */
+nserror cert_chain_to_query(struct cert_chain *chain, struct nsurl **url_out )
+{
+	nserror res;
+	nsurl *url;
+	size_t allocsize;
+	size_t urlstrlen;
+	uint8_t *urlstr;
+	size_t depth;
+
+	allocsize = 20;
+	for (depth = 0; depth < chain->depth; depth++) {
+		allocsize += 7; /* allow for &cert= */
+		allocsize += 4 * ((chain->certs[depth].der_length + 2) / 3);
+		if (chain->certs[depth].err != SSL_CERT_ERR_OK) {
+			allocsize += 20; /* allow for &certerr=4000000000 */
+		}
+	}
+
+	urlstr = malloc(allocsize);
+	if (urlstr == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	urlstrlen = snprintf((char *)urlstr, allocsize, "about:certificate");
+	for (depth = 0; depth < chain->depth; depth++) {
+		nsuerror nsures;
+		size_t output_length;
+
+		urlstrlen += snprintf((char *)urlstr + urlstrlen,
+				      allocsize - urlstrlen,
+				      "&cert=");
+
+		output_length = allocsize - urlstrlen;
+		nsures = nsu_base64_encode_url(
+			chain->certs[depth].der,
+			chain->certs[depth].der_length,
+			(uint8_t *)urlstr + urlstrlen,
+			&output_length);
+		if (nsures != NSUERROR_OK) {
+			free(urlstr);
+			return (nserror)nsures;
+		}
+		urlstrlen += output_length;
+
+		if (chain->certs[depth].err != SSL_CERT_ERR_OK) {
+			urlstrlen += snprintf((char *)urlstr + urlstrlen,
+					      allocsize - urlstrlen,
+					      "&certerr=%d",
+					      chain->certs[depth].err);
+		}
+
+	}
+	urlstr[17] = '?';
+	urlstr[urlstrlen] = 0;
+
+	res = nsurl_create((const char *)urlstr, &url);
+	free(urlstr);
+
+	if (res == NSERROR_OK) {
+		*url_out = url;
+	}
+
+	return res;
+}
 
 /*
  * free certificate chain

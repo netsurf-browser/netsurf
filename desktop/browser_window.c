@@ -4769,65 +4769,23 @@ nserror browser_window_show_certificates(struct browser_window *bw)
 {
 	nserror res;
 	nsurl *url;
-	size_t allocsize;
-	size_t urlstrlen;
-	uint8_t *urlstr;
-	size_t depth;
 
 	if (bw->current_cert_chain == NULL) {
 		return NSERROR_NOT_FOUND;
 	}
 
-	allocsize = 20;
-	for (depth = 0; depth < bw->current_cert_chain->depth; depth++) {
-		allocsize += 7; /* allow for &cert= */
-		allocsize += 4 * ((bw->current_cert_chain->certs[depth].der_length + 2) / 3);
+	res = cert_chain_to_query(bw->current_cert_chain, &url);
+	if (res == NSERROR_OK) {
+		res = browser_window_create(BW_CREATE_HISTORY |
+					    BW_CREATE_FOREGROUND |
+					    BW_CREATE_TAB,
+					    url,
+					    NULL,
+					    bw,
+					    NULL);
+
+		nsurl_unref(url);
 	}
-
-	urlstr = malloc(allocsize);
-	if (urlstr == NULL) {
-		return NSERROR_NOMEM;
-	}
-
-	urlstrlen = snprintf((char *)urlstr, allocsize, "about:certificate");
-	for (depth = 0; depth < bw->current_cert_chain->depth; depth++) {
-		nsuerror nsures;
-		size_t output_length;
-
-		urlstrlen += snprintf((char *)urlstr + urlstrlen,
-				      allocsize - urlstrlen,
-				      "&cert=");
-
-		output_length = allocsize - urlstrlen;
-		nsures = nsu_base64_encode_url(
-			bw->current_cert_chain->certs[depth].der,
-			bw->current_cert_chain->certs[depth].der_length,
-			(uint8_t *)urlstr + urlstrlen,
-			&output_length);
-		if (nsures != NSUERROR_OK) {
-			free(urlstr);
-			return (nserror)nsures;
-		}
-		urlstrlen += output_length;
-	}
-	urlstr[17] = '?';
-	urlstr[urlstrlen] = 0;
-
-	res = nsurl_create((const char *)urlstr, &url);
-	free(urlstr);
-	if (res != NSERROR_OK) {
-		return res;
-	}
-
-	res = browser_window_create(BW_CREATE_HISTORY |
-				    BW_CREATE_FOREGROUND |
-				    BW_CREATE_TAB,
-				    url,
-				    NULL,
-				    bw,
-				    NULL);
-
-	nsurl_unref(url);
 
 	return res;
 }
