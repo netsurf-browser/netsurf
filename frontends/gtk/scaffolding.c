@@ -1581,3 +1581,9 @@ nserror nsgtk_scaffolding_position_page_info(struct nsgtk_scaffolding *gs,
 {
 	return nsgtk_window_position_page_info(gs->top_level, win);
 }
+
+/* exported interface documented in gtk/scaffolding.h */
+nserror nsgtk_scaffolding_position_local_history(struct nsgtk_scaffolding *gs)
+{
+	return nsgtk_window_position_local_history(gs->top_level);
+}

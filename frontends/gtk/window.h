@@ -106,4 +106,11 @@ nserror nsgtk_window_item_activate(struct gui_window *gw, nsgtk_toolbar_button i
 nserror nsgtk_window_position_page_info(struct gui_window *gw,
 					struct nsgtk_pi_window *win);
 
+/**
+ * position local_history appropriately
+ *
+ * \param gw The gui window handle to position relative to
+ */
+nserror nsgtk_window_position_local_history(struct gui_window *gw);
+
 #endif /* NETSURF_GTK_WINDOW_H */

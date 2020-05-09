@@ -34,6 +34,11 @@ struct browser_window;
 nserror nsgtk_local_history_present(GtkWindow *parent, struct browser_window *bw);
 
 /**
+ * set the local history window position.
+ */
+void nsgtk_local_history_set_position(int x, int y);
+
+/**
  * hide the local history window from being visible.
  *
  * \return NSERROR_OK on success else appropriate error code on faliure.

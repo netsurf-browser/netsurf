@@ -66,6 +66,13 @@ nserror nsgtk_scaffolding_position_page_info(struct nsgtk_scaffolding *gs,
 					     struct nsgtk_pi_window *win);
 
 /**
+ * Position the local-history popup in the right place
+ *
+ * \param gs The scaffolding to position relative to
+ */
+nserror nsgtk_scaffolding_position_local_history(struct nsgtk_scaffolding *gs);
+
+/**
  * open the burger menu
  */
 nserror nsgtk_scaffolding_burger_menu(struct nsgtk_scaffolding *gs);

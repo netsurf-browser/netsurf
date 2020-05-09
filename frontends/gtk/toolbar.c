@@ -3800,14 +3800,33 @@ nserror nsgtk_toolbar_update(struct nsgtk_toolbar *tb)
 	return res;
 }
 
-/* exported interface documented in toolbar.h */
-nserror nsgtk_toolbar_position_page_info(struct nsgtk_toolbar *tb,
-					 struct nsgtk_pi_window *win)
+/**
+ * Find the correct location for popping up a window for the chosen item.
+ *
+ * \param tb The toolbar to select from
+ * \param item_idx The toolbar item to select from
+ * \param out_x Filled with an appropriate X coordinate
+ * \param out_y Filled with an appropriate Y coordinate
+ */
+static nserror
+nsgtk_toolbar_get_icon_window_position(struct nsgtk_toolbar *tb,
+				       int item_idx,
+				       int *out_x,
+				       int *out_y)
 {
-	struct nsgtk_toolbar_item *item = &tb->items[URL_BAR_ITEM];
-	GtkWidget *widget = GTK_WIDGET(gtk_bin_get_child(GTK_BIN(item->button)));
+	struct nsgtk_toolbar_item *item = &tb->items[item_idx];
+	GtkWidget *widget = GTK_WIDGET(item->button);
 	GtkAllocation alloc;
 	gint rootx, rooty, x, y;
+
+	switch (item_idx) {
+	case URL_BAR_ITEM:
+		widget = GTK_WIDGET(gtk_bin_get_child(GTK_BIN(item->button)));
+		break;
+	default:
+		/* Nothing to do here */
+		break;
+	}
 
 	nsgtk_widget_get_allocation(widget, &alloc);
 
@@ -3822,7 +3841,40 @@ nserror nsgtk_toolbar_position_page_info(struct nsgtk_toolbar *tb,
 	gtk_window_get_position(GTK_WINDOW(gtk_widget_get_toplevel(widget)),
 				&rootx, &rooty);
 
-	nsgtk_page_info_set_position(win, rootx + x + 4, rooty + y + 4);
+	*out_x = rootx + x + 4;
+	*out_y = rooty + y + 4;
+
+	return NSERROR_OK;
+}
+
+nserror nsgtk_toolbar_position_page_info(struct nsgtk_toolbar *tb,
+					 struct nsgtk_pi_window *win)
+{
+	nserror res;
+	int x, y;
+
+	res = nsgtk_toolbar_get_icon_window_position(tb, URL_BAR_ITEM, &x, &y);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	nsgtk_page_info_set_position(win, x, y);
+
+	return NSERROR_OK;
+}
+
+/* exported interface documented in toolbar.h */
+nserror nsgtk_toolbar_position_local_history(struct nsgtk_toolbar *tb)
+{
+	nserror res;
+	int x, y;
+
+	res = nsgtk_toolbar_get_icon_window_position(tb, HISTORY_BUTTON, &x, &y);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	nsgtk_local_history_set_position(x, y);
 
 	return NSERROR_OK;
 }

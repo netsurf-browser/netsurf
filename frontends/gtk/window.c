@@ -1684,3 +1684,9 @@ nserror nsgtk_window_position_page_info(struct gui_window *gw,
 {
 	return nsgtk_toolbar_position_page_info(gw->toolbar, win);
 }
+
+/* exported interface documented in window.h */
+nserror nsgtk_window_position_local_history(struct gui_window *gw)
+{
+	return nsgtk_toolbar_position_local_history(gw->toolbar);
+}

@@ -35,6 +35,7 @@
 #include "gtk/resources.h"
 #include "gtk/corewindow.h"
 #include "gtk/local_history.h"
+#include "gtk/scaffolding.h"
 
 struct nsgtk_local_history_window {
 	struct nsgtk_corewindow core;
@@ -158,6 +159,12 @@ nsgtk_local_history_init(struct browser_window *bw,
 	ncwin->wnd = GTK_WINDOW(gtk_builder_get_object(ncwin->builder,
 						       "wndHistory"));
 
+	/* Configure for transient behaviour */
+	gtk_window_set_type_hint(GTK_WINDOW(ncwin->wnd),
+				 GDK_WINDOW_TYPE_HINT_DROPDOWN_MENU);
+	gtk_window_set_modal(GTK_WINDOW(ncwin->wnd), TRUE);
+
+
 	ncwin->core.scrolled = GTK_SCROLLED_WINDOW(
 		gtk_builder_get_object(ncwin->builder,
 				       "HistoryScrolled"));
@@ -171,6 +178,16 @@ nsgtk_local_history_init(struct browser_window *bw,
 			 "delete_event",
 			 G_CALLBACK(gtk_widget_hide_on_delete),
 			 NULL);
+	/* Ditto if we lose the grab */
+	g_signal_connect(G_OBJECT(ncwin->wnd),
+			 "grab-broken-event",
+			 G_CALLBACK(gtk_widget_hide_on_delete),
+			 ncwin);
+	/* Handle button press events */
+	g_signal_connect(G_OBJECT(ncwin->wnd),
+			 "button-press-event",
+			 G_CALLBACK(gtk_widget_hide_on_delete),
+			 ncwin);
 
 	ncwin->core.draw = nsgtk_local_history_draw;
 	ncwin->core.key = nsgtk_local_history_key;
@@ -206,7 +223,11 @@ nserror nsgtk_local_history_present(GtkWindow *parent,
 	int width, height;
 	res = nsgtk_local_history_init(bw, &local_history_window);
 	if (res == NSERROR_OK) {
+		gtk_window_group_add_window(gtk_window_get_group(parent),
+					    local_history_window->wnd);
 		gtk_window_set_transient_for(local_history_window->wnd, parent);
+		gtk_window_set_screen(local_history_window->wnd,
+				      gtk_widget_get_screen(GTK_WIDGET(parent)));
 
 		gtk_window_get_size(parent, &prnt_width, &prnt_height);
 
@@ -224,7 +245,11 @@ nserror nsgtk_local_history_present(GtkWindow *parent,
 		}
 		gtk_window_resize(local_history_window->wnd, width, height);
 
-		gtk_window_present(local_history_window->wnd);
+		/* Attempt to place the window in the right place */
+		nsgtk_scaffolding_position_local_history(nsgtk_current_scaffolding());
+
+		gtk_widget_show(GTK_WIDGET(local_history_window->wnd));
+		gtk_widget_grab_focus(GTK_WIDGET(local_history_window->wnd));
 
 		local_history_scroll_to_cursor(local_history_window->session);
 	}
@@ -268,4 +293,12 @@ nserror nsgtk_local_history_destroy(void)
 
 	return res;
 
+}
+
+/* exported function documented gtk/history.h */
+void nsgtk_local_history_set_position(int x, int y)
+{
+	NSLOG(netsurf, INFO, "x=%d y=%d", x, y);
+
+	gtk_window_move(local_history_window->wnd, x, y);
 }
