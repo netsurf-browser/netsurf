@@ -3806,12 +3806,15 @@ nserror nsgtk_toolbar_position_page_info(struct nsgtk_toolbar *tb,
 {
 	struct nsgtk_toolbar_item *item = &tb->items[URL_BAR_ITEM];
 	GtkWidget *widget = GTK_WIDGET(gtk_bin_get_child(GTK_BIN(item->button)));
+	GtkAllocation alloc;
 	gint rootx, rooty, x, y;
+
+	nsgtk_widget_get_allocation(widget, &alloc);
 
 	if (gtk_widget_translate_coordinates(widget,
 					     gtk_widget_get_toplevel(widget),
 					     0,
-					     gtk_widget_get_allocated_height(widget) - 1,
+					     alloc.height - 1,
 					     &x, &y) != TRUE) {
 		return NSERROR_UNKNOWN;
 	}
