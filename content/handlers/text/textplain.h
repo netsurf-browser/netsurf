@@ -31,7 +31,6 @@
 
 struct content;
 struct hlcache_handle;
-struct http_parameter;
 struct rect;
 
 /**

@@ -23,22 +23,16 @@
  * plain text content handling implementation.
  */
 
-#include <assert.h>
-#include <errno.h>
-#include <stddef.h>
-#include <string.h>
-#include <strings.h>
-#include <math.h>
-
 #include <parserutils/input/inputstream.h>
-#include <parserutils/charset/utf8.h>
 
+#include "utils/errors.h"
 #include "utils/corestrings.h"
 #include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/utf8.h"
+#include "utils/nsoption.h"
 #include "netsurf/content.h"
 #include "netsurf/keypress.h"
 #include "netsurf/browser_window.h"
@@ -47,9 +41,6 @@
 #include "content/content_protected.h"
 #include "content/content_factory.h"
 #include "content/hlcache.h"
-#include "css/utils.h"
-#include "utils/nsoption.h"
-#include "desktop/search.h"
 #include "desktop/selection.h"
 #include "desktop/gui_internal.h"
 
@@ -61,6 +52,9 @@ struct textplain_line {
 	size_t	length;
 };
 
+/**
+ * plain text content
+ */
 typedef struct textplain_content {
 	struct content base;
 
@@ -195,7 +189,7 @@ no_memory:
 static nserror
 textplain_create(const content_handler *handler,
 		 lwc_string *imime_type,
-		 const http_parameter *params,
+		 const struct http_parameter *params,
 		 llcache_handle *llcache,
 		 const char *fallback_charset,
 		 bool quirks,
