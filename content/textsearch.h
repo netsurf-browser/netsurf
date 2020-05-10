@@ -21,32 +21,26 @@
  * Interface to HTML searching.
  */
 
-#ifndef NETSURF_HTML_SEARCH_H
-#define NETSURF_HTML_SEARCH_H
+#ifndef NETSURF_CONTENT_SEARCH_H
+#define NETSURF_CONTENT_SEARCH_H
 
 #include <ctype.h>
 #include <string.h>
 
 #include "desktop/search.h"
 
-struct search_context;
+struct textsearch_context;
+struct content;
 
 /**
  * create a search_context
  *
- * \param c       The content the search_context is connected to
- * \param type    The content type of c
+ * \param c The content the search_context is connected to
  * \param context A context pointer passed to the provider routines.
- * \return A new search context or NULL on error.
+ * \param search_out A pointer to recive the new text search context
+ * \return NSERROR_OK on success and \a search_out updated else error code
  */
-struct search_context *search_create_context(struct content *c,
-				      content_type type, void *context);
-
-/**
- * Ends the search process, invalidating all state
- * freeing the list of found boxes
- */
-void search_destroy_context(struct search_context *context);
+nserror content_textsearch_create(struct content *c, void *context, struct textsearch_context **textsearch_out);
 
 /**
  * Begins/continues the search process
@@ -57,25 +51,30 @@ void search_destroy_context(struct search_context *context);
  * \param flags   The flags forward/back etc
  * \param string  The string to match
  */
-void search_step(struct search_context *context, search_flags_t flags,
-		const char * string);
+nserror content_textsearch_step(struct textsearch_context *textsearch, search_flags_t flags, const char *string);
 
+/**
+ * Ends the search process, invalidating all state freeing the list of
+ * found boxes.
+ */
+nserror content_textsearch_destroy(struct textsearch_context *textsearch);
 
 /**
  * Determines whether any portion of the given text box should be
  * selected because it matches the current search string.
  *
- * \param c            The content to hilight within.
+ * \param textsearch The search context to hilight entries from.
+ * \param c The content to highlight within.
  * \param start_offset byte offset within text of string to be checked
  * \param end_offset   byte offset within text
  * \param start_idx    byte offset within string of highlight start
  * \param end_idx      byte offset of highlight end
- * \param context      The search context to hilight entries from.
  * \return true iff part of the box should be highlighted
  */
-bool search_term_highlighted(struct content *c,
-		unsigned start_offset, unsigned end_offset,
-		unsigned *start_idx, unsigned *end_idx,
-		struct search_context *context);
+bool content_textsearch_ishighlighted(struct textsearch_context *textsearch,
+				      unsigned start_offset,
+				      unsigned end_offset,
+				      unsigned *start_idx,
+				      unsigned *end_idx);
 
 #endif

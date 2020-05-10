@@ -41,10 +41,10 @@
 #include "content/content_protected.h"
 #include "content/content_factory.h"
 #include "content/hlcache.h"
+#include "content/textsearch.h"
 #include "desktop/selection.h"
 #include "desktop/gui_internal.h"
 
-#include "html/search.h"
 #include "text/textplain.h"
 
 struct textplain_line {
@@ -71,7 +71,7 @@ typedef struct textplain_content {
 	struct selection sel;	/** Selection state */
 
 	/** Context for free text search, or NULL if none */
-	struct search_context *search;
+	struct textsearch_context *search;
 	/** Current search string, or NULL if none */
 	char *search_string;
 } textplain_content;
@@ -753,7 +753,7 @@ static void textplain_search_clear(struct content *c)
 	text->search_string = NULL;
 
 	if (text->search != NULL) {
-		search_destroy_context(text->search);
+		content_textsearch_destroy(text->search);
 	}
 	text->search = NULL;
 }
@@ -771,14 +771,16 @@ static void textplain_search(struct content *c, void *gui_data,
 			     search_flags_t flags, const char *string)
 {
 	textplain_content *text = (textplain_content *) c;
+	nserror res;
 
 	assert(c != NULL);
 
-	if (string != NULL && text->search_string != NULL &&
+	if (string != NULL &&
+	    text->search_string != NULL &&
 	    strcmp(string, text->search_string) == 0 &&
 	    text->search != NULL) {
 		/* Continue prev. search */
-		search_step(text->search, flags, string);
+		content_textsearch_step(text->search, flags, string);
 
 	} else if (string != NULL) {
 		/* New search */
@@ -788,17 +790,16 @@ static void textplain_search(struct content *c, void *gui_data,
 			return;
 
 		if (text->search != NULL) {
-			search_destroy_context(text->search);
+			content_textsearch_destroy(text->search);
 			text->search = NULL;
 		}
 
-		text->search = search_create_context(c, CONTENT_TEXTPLAIN,
-						     gui_data);
-
-		if (text->search == NULL)
+		res = content_textsearch_create(c, gui_data, &text->search);
+		if (res != NSERROR_OK) {
 			return;
+		}
 
-		search_step(text->search, flags, string);
+		content_textsearch_step(text->search, flags, string);
 
 	} else {
 		/* Clear search */
@@ -839,7 +840,6 @@ text_draw(const char *utf8_text,
 	    float scale,
 	    textplain_content *text,
 	    const struct selection *sel,
-	    struct search_context *search,
 	    const struct redraw_context *ctx)
 {
 	bool highlighted = false;
@@ -868,13 +868,12 @@ text_draw(const char *utf8_text,
 
 		/* what about the current search operation, if any? */
 		if (!highlighted &&
-		    (search != NULL) &&
-		    search_term_highlighted((struct content *)text,
-					    offset,
-					    offset + len,
-					    &start_idx,
-					    &end_idx,
-					    search)) {
+		    (text->search != NULL) &&
+		    content_textsearch_ishighlighted(text->search,
+						     offset,
+						     offset + len,
+						     &start_idx,
+						     &end_idx)) {
 			highlighted = true;
 		}
 
@@ -1125,7 +1124,6 @@ textplain_redraw(struct content *c,
 				       data->scale,
 				       text,
 				       &text->sel,
-				       text->search,
 				       ctx)) {
 				return false;
 			}
@@ -1165,15 +1163,17 @@ textplain_redraw(struct content *c,
 						highlighted = true;
 				}
 
-				if (!highlighted && (text->search != NULL)) {
+				if (!highlighted &&
+				    (text->search != NULL)) {
 					unsigned start_idx, end_idx;
-					if (search_term_highlighted(c,
-								    tab_ofst,
-								    tab_ofst + 1,
-								    &start_idx,
-								    &end_idx,
-								    text->search))
+					if (content_textsearch_ishighlighted(
+						    text->search,
+						    tab_ofst,
+						    tab_ofst + 1,
+						    &start_idx,
+						    &end_idx)) {
 						highlighted = true;
+					}
 				}
 
 				if (highlighted) {
@@ -1228,7 +1228,7 @@ static nserror textplain_close(struct content *c)
 	textplain_content *text = (textplain_content *) c;
 
 	if (text->search != NULL) {
-		search_destroy_context(text->search);
+		content_textsearch_destroy(text->search);
 	}
 
 	text->bw = NULL;

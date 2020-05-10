@@ -20,34 +20,27 @@
 
 /**
  * \file
- * Free text search (core)
+ * Free text search
  */
 
-#include <ctype.h>
-#include <string.h>
-#include <dom/dom.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
 
-#include "utils/config.h"
-#include "utils/log.h"
-#include "utils/messages.h"
+#include "utils/errors.h"
 #include "utils/utils.h"
 #include "content/content.h"
-#include "content/hlcache.h"
 #include "desktop/selection.h"
 #include "netsurf/search.h"
-#include "netsurf/misc.h"
+#include "netsurf/content_type.h"
 #include "desktop/gui_internal.h"
 
 #include "text/textplain.h"
 #include "html/box.h"
 #include "html/box_inspect.h"
-#include "html/html.h"
 #include "html/private.h"
-#include "html/search.h"
 
-#ifndef NOF_ELEMENTS
-#define NOF_ELEMENTS(array) (sizeof(array)/sizeof(*(array)))
-#endif
+#include "content/textsearch.h"
 
 
 struct list_entry {
@@ -63,7 +56,10 @@ struct list_entry {
 	struct list_entry *next;
 };
 
-struct search_context {
+/**
+ * The context for a free text search
+ */
+struct textsearch_context {
 	void *gui_p;
 	struct content *c;
 	struct list_entry *found;
@@ -75,75 +71,35 @@ struct search_context {
 };
 
 
-/* Exported function documented in search.h */
-struct search_context *
-search_create_context(struct content *c, content_type type, void *gui_data)
-{
-	struct search_context *context;
-	struct list_entry *search_head;
-
-	if (type != CONTENT_HTML && type != CONTENT_TEXTPLAIN) {
-		return NULL;
-	}
-
-	context = malloc(sizeof(struct search_context));
-	if (context == NULL) {
-		return NULL;
-	}
-
-	search_head = malloc(sizeof(struct list_entry));
-	if (search_head == NULL) {
-		free(context);
-		return NULL;
-	}
-
-	search_head->start_idx = 0;
-	search_head->end_idx = 0;
-	search_head->start_box = NULL;
-	search_head->end_box = NULL;
-	search_head->sel = NULL;
-	search_head->prev = NULL;
-	search_head->next = NULL;
-
-	context->found = search_head;
-	context->current = NULL;
-	context->string = NULL;
-	context->prev_case_sens = false;
-	context->newsearch = true;
-	context->c = c;
-	context->is_html = (type == CONTENT_HTML) ? true : false;
-	context->gui_p = gui_data;
-
-	return context;
-}
 
 
 /**
  * Release the memory used by the list of matches,
  * deleting selection objects too
  */
-
-static void free_matches(struct search_context *context)
+static void free_matches(struct textsearch_context *textsearch)
 {
-	struct list_entry *a;
-	struct list_entry *b;
+	struct list_entry *cur;
+	struct list_entry *nxt;
 
-	a = context->found->next;
+	cur = textsearch->found->next;
 
-	/* empty the list before clearing and deleting the
-	 * selections because the the clearing updates the
-	 * screen immediately, causing nested accesses to the list */
+	/*
+	 * empty the list before clearing and deleting the selections
+	 * because the the clearing may update the toolkit immediately,
+	 * causing nested accesses to the list
+	 */
 
-	context->found->prev = NULL;
-	context->found->next = NULL;
+	textsearch->found->prev = NULL;
+	textsearch->found->next = NULL;
 
-	for (; a; a = b) {
-		b = a->next;
-		if (a->sel) {
-			selection_clear(a->sel, true);
-			selection_destroy(a->sel);
+	for (; cur; cur = nxt) {
+		nxt = cur->next;
+		if (cur->sel) {
+			selection_clear(cur->sel, true);
+			selection_destroy(cur->sel);
 		}
-		free(a);
+		free(cur);
 	}
 }
 
@@ -159,10 +115,13 @@ static void free_matches(struct search_context *context)
  * \param  m_len      accepts length of match in bytes
  * \return pointer to first match, NULL if none
  */
-
-static const char *find_pattern(const char *string, int s_len,
-		const char *pattern, int p_len, bool case_sens,
-		unsigned int *m_len)
+static const char *
+find_pattern(const char *string,
+	     int s_len,
+	     const char *pattern,
+	     int p_len,
+	     bool case_sens,
+	     unsigned int *m_len)
 {
 	struct { const char *ss, *s, *p; bool first; } context[16];
 	const char *ep = pattern + p_len;
@@ -275,7 +234,9 @@ static const char *find_pattern(const char *string, int s_len,
  * \return Pointer to added entry, NULL iff failed.
  */
 static struct list_entry *
-add_entry(unsigned start_idx, unsigned end_idx,	struct search_context *context)
+add_entry(unsigned start_idx,
+	  unsigned end_idx,
+	  struct textsearch_context *context)
 {
 	struct list_entry *entry;
 
@@ -289,7 +250,7 @@ add_entry(unsigned start_idx, unsigned end_idx,	struct search_context *context)
 	entry->end_idx = end_idx;
 	entry->sel = NULL;
 
-	entry->next = 0;
+	entry->next = NULL;
 	entry->prev = context->found->prev;
 
 	if (context->found->prev == NULL) {
@@ -305,7 +266,7 @@ add_entry(unsigned start_idx, unsigned end_idx,	struct search_context *context)
 
 
 /**
- * Finds all occurrences of a given string in the html box tree
+ * Finds all occurrences of a given string in an html box
  *
  * \param pattern   the string pattern to search for
  * \param p_len     pattern length
@@ -314,9 +275,12 @@ add_entry(unsigned start_idx, unsigned end_idx,	struct search_context *context)
  * \param context   The search context to add the entry to.
  * \return true on success, false on memory allocation failure
  */
-static bool find_occurrences_html(const char *pattern, int p_len,
-		struct box *cur, bool case_sens,
-		struct search_context *context)
+static bool
+find_occurrences_html_box(const char *pattern,
+			  int p_len,
+			  struct box *cur,
+			  bool case_sens,
+			  struct textsearch_context *context)
 {
 	struct box *a;
 
@@ -330,9 +294,14 @@ static bool find_occurrences_html(const char *pattern, int p_len,
 			unsigned match_length;
 			unsigned match_offset;
 			const char *new_text;
-			const char *pos = find_pattern(text, length,
-					pattern, p_len, case_sens,
-					&match_length);
+			const char *pos;
+
+			pos = find_pattern(text,
+					   length,
+					   pattern,
+					   p_len,
+					   case_sens,
+					   &match_length);
 			if (!pos)
 				break;
 
@@ -340,9 +309,8 @@ static bool find_occurrences_html(const char *pattern, int p_len,
 			match_offset = pos - cur->text;
 
 			entry = add_entry(cur->byte_offset + match_offset,
-						cur->byte_offset +
-							match_offset +
-							match_length, context);
+					  cur->byte_offset + match_offset + match_length,
+					  context);
 			if (!entry)
 				return false;
 
@@ -357,14 +325,46 @@ static bool find_occurrences_html(const char *pattern, int p_len,
 
 	/* and recurse */
 	for (a = cur->children; a; a = a->next) {
-		if (!find_occurrences_html(pattern, p_len, a, case_sens,
-				context))
+		if (!find_occurrences_html_box(pattern,
+					       p_len,
+					       a,
+					       case_sens,
+					       context))
 			return false;
 	}
 
 	return true;
 }
 
+/**
+ * Finds all occurrences of a given string in the html box tree
+ *
+ * \param pattern   the string pattern to search for
+ * \param p_len     pattern length
+ * \param c The content to search
+ * \param csens whether to perform a case sensitive search
+ * \param context   The search context to add the entry to.
+ * \return true on success, false on memory allocation failure
+ */
+static bool
+find_occurrences_html(const char *pattern,
+		      int p_len,
+		      struct content *c,
+		      bool csens,
+		      struct textsearch_context *context)
+{
+	html_content *html = (html_content *)c;
+
+	if (html->layout == NULL) {
+		return false;
+	}
+
+	return find_occurrences_html_box(pattern,
+					 p_len,
+					 html->layout,
+					 csens,
+					 context);
+}
 
 /**
  * Finds all occurrences of a given string in a textplain content
@@ -376,34 +376,41 @@ static bool find_occurrences_html(const char *pattern, int p_len,
  * \param context   The search context to add the entry to.
  * \return true on success, false on memory allocation failure
  */
-
-static bool find_occurrences_text(const char *pattern, int p_len,
-		struct content *c, bool case_sens,
-		struct search_context *context)
+static bool
+find_occurrences_text(const char *pattern,
+		      int p_len,
+		      struct content *c,
+		      bool case_sens,
+		      struct textsearch_context *context)
 {
 	int nlines = textplain_line_count(c);
 	int line;
 
 	for(line = 0; line < nlines; line++) {
 		size_t offset, length;
-		const char *text = textplain_get_line(c, line,
-				&offset, &length);
+		const char *text;
+
+		text = textplain_get_line(c, line, &offset, &length);
 		if (text) {
 			while (length > 0) {
 				struct list_entry *entry;
 				unsigned match_length;
 				size_t start_idx;
 				const char *new_text;
-				const char *pos = find_pattern(text, length,
-						pattern, p_len, case_sens,
-						&match_length);
+				const char *pos;
+
+				pos = find_pattern(text, length,
+						    pattern, p_len,
+						    case_sens,
+						    &match_length);
 				if (!pos)
 					break;
 
 				/* found string in line => add to list */
 				start_idx = offset + (pos - text);
-				entry = add_entry(start_idx, start_idx +
-						match_length, context);
+				entry = add_entry(start_idx,
+						  start_idx + match_length,
+						  context);
 				if (!entry)
 					return false;
 
@@ -423,7 +430,7 @@ static bool find_occurrences_text(const char *pattern, int p_len,
  * Specifies whether all matches or just the current match should
  * be highlighted in the search text.
  */
-static void search_show_all(bool all, struct search_context *context)
+static void search_show_all(bool all, struct textsearch_context *context)
 {
 	struct list_entry *a;
 
@@ -473,11 +480,10 @@ static void search_show_all(bool all, struct search_context *context)
 static void
 search_text(const char *string,
 	    int string_len,
-	    struct search_context *context,
+	    struct textsearch_context *context,
 	    search_flags_t flags)
 {
 	struct rect bounds;
-	struct box *box = NULL;
 	union content_msg_data msg_data;
 	bool case_sensitive, forwards, showall;
 
@@ -488,16 +494,6 @@ search_text(const char *string,
 
 	if (context->c == NULL)
 		return;
-
-	if (context->is_html == true) {
-		html_content *html = (html_content *)context->c;
-
-		box = html->layout;
-
-		if (!box)
-			return;
-	}
-
 
 	/* check if we need to start a new search or continue an old one */
 	if ((context->newsearch) ||
@@ -520,18 +516,18 @@ search_text(const char *string,
 
 		if (context->is_html == true) {
 			res = find_occurrences_html(string, string_len,
-					box, case_sensitive, context);
+					context->c, case_sensitive, context);
 		} else {
 			res = find_occurrences_text(string, string_len,
 					context->c, case_sensitive, context);
 		}
 
+		guit->search->hourglass(false, context->gui_p);
+
 		if (!res) {
 			free_matches(context);
-			guit->search->hourglass(false, context->gui_p);
 			return;
 		}
-		guit->search->hourglass(false, context->gui_p);
 
 		context->prev_case_sens = case_sensitive;
 
@@ -587,76 +583,136 @@ search_text(const char *string,
 }
 
 
-/* Exported function documented in search.h */
-void
-search_step(struct search_context *context,
-	    search_flags_t flags,
-	    const char *string)
+/* Exported function documented in context/textsearch.h */
+nserror
+content_textsearch_step(struct textsearch_context *textsearch,
+			search_flags_t flags,
+			const char *string)
 {
 	int string_len;
 	int i = 0;
 
-	assert(context != NULL);
+	assert(textsearch != NULL);
 
-	guit->search->add_recent(string, context->gui_p);
+	guit->search->add_recent(string, textsearch->gui_p);
 
 	string_len = strlen(string);
-	for (i = 0; i < string_len; i++)
+	for (i = 0; i < string_len; i++) {
 		if (string[i] != '#' && string[i] != '*')
 			break;
-	if (i >= string_len) {
-		union content_msg_data msg_data;
-		free_matches(context);
+	}
 
-		guit->search->status(true, context->gui_p);
-		guit->search->back_state(false, context->gui_p);
-		guit->search->forward_state(false, context->gui_p);
+	if (i < string_len) {
+		search_text(string, string_len, textsearch, flags);
+	} else {
+		union content_msg_data msg_data;
+		free_matches(textsearch);
+
+		guit->search->status(true, textsearch->gui_p);
+		guit->search->back_state(false, textsearch->gui_p);
+		guit->search->forward_state(false, textsearch->gui_p);
 
 		msg_data.scroll.area = false;
 		msg_data.scroll.x0 = 0;
 		msg_data.scroll.y0 = 0;
-		content_broadcast(context->c, CONTENT_MSG_SCROLL, &msg_data);
-		return;
+		content_broadcast(textsearch->c, CONTENT_MSG_SCROLL, &msg_data);
 	}
-	search_text(string, string_len, context, flags);
+
+	return NSERROR_OK;
 }
 
 
-/* Exported function documented in search.h */
-bool search_term_highlighted(struct content *c,
-		unsigned start_offset, unsigned end_offset,
-		unsigned *start_idx, unsigned *end_idx,
-		struct search_context *context)
+/* Exported function documented in content/textsearch.h */
+bool
+content_textsearch_ishighlighted(struct textsearch_context *textsearch,
+				 unsigned start_offset,
+				 unsigned end_offset,
+				 unsigned *start_idx,
+				 unsigned *end_idx)
 {
-	if (c == context->c) {
-		struct list_entry *a;
-		for (a = context->found->next; a; a = a->next)
-			if (a->sel && selection_defined(a->sel) &&
-					selection_highlighted(a->sel,
-						start_offset, end_offset,
-						start_idx, end_idx))
-				return true;
+	struct list_entry *cur;
+
+	for (cur = textsearch->found->next; cur != NULL; cur = cur->next) {
+		if (cur->sel &&
+		    selection_defined(cur->sel) &&
+		    selection_highlighted(cur->sel,
+					  start_offset,
+					  end_offset,
+					  start_idx,
+					  end_idx)) {
+			return true;
+		}
 	}
 
 	return false;
 }
 
 
+/* Exported function documented in content/textsearch.h */
+nserror
+content_textsearch_create(struct content *c,
+			  void *gui_data,
+			  struct textsearch_context **textsearch_out)
+{
+	struct textsearch_context *context;
+	struct list_entry *search_head;
+	content_type type;
+
+	type = c->handler->type();
+
+	if (type != CONTENT_HTML && type != CONTENT_TEXTPLAIN) {
+		return NSERROR_NOT_IMPLEMENTED;
+	}
+
+	context = malloc(sizeof(struct textsearch_context));
+	if (context == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	search_head = malloc(sizeof(struct list_entry));
+	if (search_head == NULL) {
+		free(context);
+		return NSERROR_NOMEM;
+	}
+
+	search_head->start_idx = 0;
+	search_head->end_idx = 0;
+	search_head->start_box = NULL;
+	search_head->end_box = NULL;
+	search_head->sel = NULL;
+	search_head->prev = NULL;
+	search_head->next = NULL;
+
+	context->found = search_head;
+	context->current = NULL;
+	context->string = NULL;
+	context->prev_case_sens = false;
+	context->newsearch = true;
+	context->c = c;
+	context->is_html = (type == CONTENT_HTML) ? true : false;
+	context->gui_p = gui_data;
+
+	*textsearch_out = context;
+
+	return NSERROR_OK;
+}
 
 
 /* Exported function documented in search.h */
-void search_destroy_context(struct search_context *context)
+nserror content_textsearch_destroy(struct textsearch_context *textsearch)
 {
-	assert(context != NULL);
+	assert(textsearch != NULL);
 
-	if (context->string != NULL) {
-		guit->search->add_recent(context->string, context->gui_p);
-		free(context->string);
+	if (textsearch->string != NULL) {
+		guit->search->add_recent(textsearch->string, textsearch->gui_p);
+		free(textsearch->string);
 	}
 
-	guit->search->forward_state(true, context->gui_p);
-	guit->search->back_state(true, context->gui_p);
+	guit->search->forward_state(true, textsearch->gui_p);
+	guit->search->back_state(true, textsearch->gui_p);
 
-	free_matches(context);
-	free(context);
+	free_matches(textsearch);
+	free(textsearch);
+
+	return NSERROR_OK;
 }

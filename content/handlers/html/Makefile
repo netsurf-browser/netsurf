@@ -20,5 +20,4 @@ S_HTML := box_construct.c	\
 	redraw.c		\
 	redraw_border.c		\
 	script.c		\
-	search.c		\
 	table.c

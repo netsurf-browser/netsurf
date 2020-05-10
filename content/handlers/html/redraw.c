@@ -47,6 +47,7 @@
 #include "netsurf/layout.h"
 #include "content/content.h"
 #include "content/content_protected.h"
+#include "content/textsearch.h"
 #include "css/utils.h"
 #include "desktop/selection.h"
 #include "desktop/print.h"
@@ -61,7 +62,6 @@
 #include "html/form_internal.h"
 #include "html/private.h"
 #include "html/layout.h"
-#include "html/search.h"
 
 
 bool html_redraw_debug = false;
@@ -167,7 +167,7 @@ text_redraw(const char *utf8_text,
 	    bool excluded,
 	    struct content *c,
 	    const struct selection *sel,
-	    struct search_context *search,
+	    struct textsearch_context *search,
 	    const struct redraw_context *ctx)
 {
 	bool highlighted = false;
@@ -184,18 +184,23 @@ text_redraw(const char *utf8_text,
 		unsigned end_idx;
 
 		/* first try the browser window's current selection */
-		if (selection_defined(sel) && selection_highlighted(sel,
-					offset, offset + len,
-					&start_idx, &end_idx)) {
+		if (selection_defined(sel) &&
+		    selection_highlighted(sel,
+					  offset,
+					  offset + len,
+					  &start_idx,
+					  &end_idx)) {
 			highlighted = true;
 		}
 
 		/* what about the current search operation, if any? */
-		if (!highlighted && (search != NULL) &&
-				search_term_highlighted(c,
-						offset, offset + len,
-						&start_idx, &end_idx,
-						search)) {
+		if (!highlighted &&
+		    (search != NULL) &&
+		    content_textsearch_ishighlighted(search,
+						     offset,
+						     offset + len,
+						     &start_idx,
+						     &end_idx)) {
 			highlighted = true;
 		}
 

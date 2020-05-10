@@ -49,6 +49,7 @@
 #include "netsurf/misc.h"
 #include "content/hlcache.h"
 #include "content/content_factory.h"
+#include "content/textsearch.h"
 #include "desktop/selection.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"
@@ -69,7 +70,6 @@
 #include "html/form_internal.h"
 #include "html/imagemap.h"
 #include "html/layout.h"
-#include "html/search.h"
 
 #define CHUNK 4096
 
@@ -1327,7 +1327,7 @@ static nserror html_close(struct content *c)
 	selection_clear(&htmlc->sel, false);
 
 	if (htmlc->search != NULL) {
-		search_destroy_context(htmlc->search);
+		content_textsearch_destroy(htmlc->search);
 	}
 
 	/* clear the html content reference to the browser window */

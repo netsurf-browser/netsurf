@@ -41,6 +41,7 @@
 #include "netsurf/layout.h"
 #include "netsurf/keypress.h"
 #include "content/hlcache.h"
+#include "content/textsearch.h"
 #include "desktop/frames.h"
 #include "desktop/scrollbar.h"
 #include "desktop/selection.h"
@@ -55,7 +56,6 @@
 #include "html/form_internal.h"
 #include "html/private.h"
 #include "html/imagemap.h"
-#include "html/search.h"
 #include "html/interaction.h"
 
 /**
@@ -1602,17 +1602,18 @@ bool html_keypress(struct content *c, uint32_t key)
  * Handle search.
  *
  * \param c content of type HTML
- * \param context front end private data
+ * \param fe_ctx front end private data
  * \param flags search flags
  * \param string search string
  */
 void
 html_search(struct content *c,
-	    void *context,
+	    void *fe_ctx,
 	    search_flags_t flags,
 	    const char *string)
 {
 	html_content *html = (html_content *)c;
+	nserror res;
 
 	assert(c != NULL);
 
@@ -1621,7 +1622,7 @@ html_search(struct content *c,
 	    (strcmp(string, html->search_string) == 0) &&
 	    (html->search != NULL)) {
 		/* Continue prev. search */
-		search_step(html->search, flags, string);
+		content_textsearch_step(html->search, flags, string);
 
 	} else if (string != NULL) {
 		/* New search */
@@ -1631,16 +1632,16 @@ html_search(struct content *c,
 			return;
 
 		if (html->search != NULL) {
-			search_destroy_context(html->search);
+			content_textsearch_destroy(html->search);
 			html->search = NULL;
 		}
 
-		html->search = search_create_context(c, CONTENT_HTML, context);
-
-		if (html->search == NULL)
+		res = content_textsearch_create(c, fe_ctx, &html->search);
+		if (res != NSERROR_OK) {
 			return;
+		}
 
-		search_step(html->search, flags, string);
+		content_textsearch_step(html->search, flags, string);
 
 	} else {
 		/* Clear search */
@@ -1653,9 +1654,9 @@ html_search(struct content *c,
 
 
 /**
- * Terminate a search.
+ * Terminate a text search.
  *
- * \param  c			content of type HTML
+ * \param c content of type HTML
  */
 void html_search_clear(struct content *c)
 {
@@ -1667,7 +1668,7 @@ void html_search_clear(struct content *c)
 	html->search_string = NULL;
 
 	if (html->search != NULL) {
-		search_destroy_context(html->search);
+		content_textsearch_destroy(html->search);
 	}
 	html->search = NULL;
 }
