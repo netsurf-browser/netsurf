@@ -210,11 +210,6 @@ typedef struct html_content {
 	 */
 	struct form_control *visible_select_menu;
 
-	/** Context for free text search, or NULL if none */
-	struct textsearch_context *search;
-	/** Search string or NULL */
-	char *search_string;
-
 } html_content;
 
 /**

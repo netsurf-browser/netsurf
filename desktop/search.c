@@ -37,7 +37,7 @@ void browser_window_search(struct browser_window *bw, void *context,
 {
 	if ((bw != NULL) &&
 	    (bw->current_content != NULL)) {
-		content_search(bw->current_content, context, flags, string);
+		content_textsearch(bw->current_content, context, flags, string);
 	}
 }
 
@@ -46,6 +46,6 @@ void browser_window_search_clear(struct browser_window *bw)
 {
 	if ((bw != NULL) &&
 	    (bw->current_content != NULL)) {
-		content_search_clear(bw->current_content);
+		content_textsearch_clear(bw->current_content);
 	}
 }

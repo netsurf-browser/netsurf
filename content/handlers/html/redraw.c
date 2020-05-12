@@ -167,7 +167,6 @@ text_redraw(const char *utf8_text,
 	    bool excluded,
 	    struct content *c,
 	    const struct selection *sel,
-	    struct textsearch_context *search,
 	    const struct redraw_context *ctx)
 {
 	bool highlighted = false;
@@ -195,8 +194,8 @@ text_redraw(const char *utf8_text,
 
 		/* what about the current search operation, if any? */
 		if (!highlighted &&
-		    (search != NULL) &&
-		    content_textsearch_ishighlighted(search,
+		    (c->textsearch.context != NULL) &&
+		    content_textsearch_ishighlighted(c->textsearch.context,
 						     offset,
 						     offset + len,
 						     &start_idx,
@@ -1138,11 +1137,19 @@ static bool html_redraw_text_box(const html_content *html, struct box *box,
 	font_plot_style_from_css(&html->len_ctx, box->style, &fstyle);
 	fstyle.background = current_background_color;
 
-	if (!text_redraw(box->text, box->length, box->byte_offset,
-			box->space, &fstyle, x, y,
-			clip, box->height, scale, excluded,
-			(struct content *)html, &html->sel,
-			html->search, ctx))
+	if (!text_redraw(box->text,
+			 box->length,
+			 box->byte_offset,
+			 box->space,
+			 &fstyle,
+			 x, y,
+			 clip,
+			 box->height,
+			 scale,
+			 excluded,
+			 (struct content *)html,
+			 &html->sel,
+			 ctx))
 		return false;
 
 	return true;

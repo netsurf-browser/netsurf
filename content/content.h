@@ -378,19 +378,22 @@ bool content_drop_file_at_point(struct hlcache_handle *h,
 		int x, int y, char *file);
 
 /**
- * Search a content
+ * Free text search a content
  *
  * \param[in] h Handle to content to search.
+ * \param[in] context The context passed to gui table search handlers
+ * \param[in] flags The flags that control the search
+ * \param[in] The string being searched for.
+ * \retun NSERROR_OK on success else error code on faliure
  */
-void content_search(struct hlcache_handle *h, void *context,
-		search_flags_t flags, const char *string);
+nserror content_textsearch(struct hlcache_handle *h, void *context, search_flags_t flags, const char *string);
 
 /**
  * Clear a search
  *
  * \param[in] h Handle to content to clear search from.
  */
-void content_search_clear(struct hlcache_handle *h);
+nserror content_textsearch_clear(struct hlcache_handle *h);
 
 
 /**

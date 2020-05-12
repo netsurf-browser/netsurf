@@ -36,6 +36,7 @@
 #include "desktop/gui_internal.h"
 
 #include "content/content_protected.h"
+#include "content/textsearch.h"
 #include "content/content_debug.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
@@ -235,6 +236,9 @@ content__init(struct content *c,
 	c->locked = false;
 	c->total_size = 0;
 	c->http_code = 0;
+
+	c->textsearch.string = NULL;
+	c->textsearch.context = NULL;
 
 	content_set_status(c, messages_get("Loading"));
 
@@ -824,6 +828,12 @@ nserror content_close(hlcache_handle *h)
 
 	NSLOG(netsurf, INFO, "content %p %s", c,
 	      nsurl_access_log(llcache_handle_get_url(c->llcache)));
+
+	if (c->textsearch.context != NULL) {
+		content_textsearch_destroy(c->textsearch.context);
+		c->textsearch.context = NULL;
+	}
+
 	if (c->handler->close != NULL) {
 		res = c->handler->close(c);
 	} else {
@@ -907,31 +917,84 @@ content_drop_file_at_point(struct hlcache_handle *h,
 }
 
 
+/**
+ * Terminate a search.
+ *
+ * \param c content to clear
+ */
+static nserror content_textsearch__clear(struct content *c)
+{
+	free(c->textsearch.string);
+	c->textsearch.string = NULL;
+
+	if (c->textsearch.context != NULL) {
+		content_textsearch_destroy(c->textsearch.context);
+		c->textsearch.context = NULL;
+	}
+	return NSERROR_OK;
+}
+
 /* exported interface, documented in content/content.h */
-void
-content_search(struct hlcache_handle *h,
-	       void *context,
-	       search_flags_t flags,
-	       const char *string)
+nserror
+content_textsearch(struct hlcache_handle *h,
+		   void *context,
+		   search_flags_t flags,
+		   const char *string)
 {
 	struct content *c = hlcache_handle_get_content(h);
-	assert(c != 0);
+	nserror res;
 
-	if (c->handler->search != NULL) {
-		c->handler->search(c, context, flags, string);
+	assert(c != NULL);
+
+	if (string != NULL &&
+	    c->textsearch.string != NULL &&
+	    c->textsearch.context != NULL &&
+	    strcmp(string, c->textsearch.string) == 0) {
+		/* Continue prev. search */
+		content_textsearch_step(c->textsearch.context, flags, string);
+
+	} else if (string != NULL) {
+		/* New search */
+		free(c->textsearch.string);
+		c->textsearch.string = strdup(string);
+		if (c->textsearch.string == NULL) {
+			return NSERROR_NOMEM;
+		}
+
+		if (c->textsearch.context != NULL) {
+			content_textsearch_destroy(c->textsearch.context);
+			c->textsearch.context = NULL;
+		}
+
+		res = content_textsearch_create(c,
+						context,
+						&c->textsearch.context);
+		if (res != NSERROR_OK) {
+			return res;
+		}
+
+		content_textsearch_step(c->textsearch.context, flags, string);
+
+	} else {
+		/* Clear search */
+		content_textsearch__clear(c);
+
+		free(c->textsearch.string);
+		c->textsearch.string = NULL;
 	}
+
+	return NSERROR_OK;
 }
 
 
+
 /* exported interface, documented in content/content.h */
-void content_search_clear(struct hlcache_handle *h)
+nserror content_textsearch_clear(struct hlcache_handle *h)
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
 
-	if (c->handler->search_clear != NULL) {
-		c->handler->search_clear(c);
-	}
+	return(content_textsearch__clear(c));
 }
 
 

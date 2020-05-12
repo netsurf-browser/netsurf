@@ -87,9 +87,6 @@ struct content_handler {
 			int scrx, int scry);
 	bool (*drop_file_at_point)(struct content *c, int x, int y,
 			char *file);
-	void (*search)(struct content *c, void *context, search_flags_t flags,
-		       const char *string);
-	void (*search_clear)(struct content *c);
 	nserror (*debug_dump)(struct content *c, FILE *f, enum content_debug op);
 	nserror (*debug)(struct content *c, enum content_debug op);
 	nserror (*clone)(const struct content *old, struct content **newc);
@@ -237,6 +234,14 @@ struct content {
 	 * HTTP status code, 0 if not HTTP.
 	 */
 	long http_code;
+
+	/**
+	 * Free text search state
+	 */
+	struct {
+		char *string;
+		struct textsearch_context *context;
+	} textsearch;
 };
 
 extern const char * const content_type_name[];

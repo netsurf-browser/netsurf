@@ -481,8 +481,6 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	c->selection_owner.none = true;
 	c->focus_type = HTML_FOCUS_SELF;
 	c->focus_owner.self = true;
-	c->search = NULL;
-	c->search_string = NULL;
 	c->scripts_count = 0;
 	c->scripts = NULL;
 	c->jsthread = NULL;
@@ -1325,10 +1323,6 @@ static nserror html_close(struct content *c)
 	nserror ret = NSERROR_OK;
 
 	selection_clear(&htmlc->sel, false);
-
-	if (htmlc->search != NULL) {
-		content_textsearch_destroy(htmlc->search);
-	}
 
 	/* clear the html content reference to the browser window */
 	htmlc->bw = NULL;
@@ -2204,8 +2198,6 @@ static const content_handler html_content_handler = {
 	.get_contextual_content = html_get_contextual_content,
 	.scroll_at_point = html_scroll_at_point,
 	.drop_file_at_point = html_drop_file_at_point,
-	.search = html_search,
-	.search_clear = html_search_clear,
 	.debug_dump = html_debug_dump,
 	.debug = html_debug,
 	.clone = html_clone,

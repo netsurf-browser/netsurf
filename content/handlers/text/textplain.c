@@ -70,10 +70,6 @@ typedef struct textplain_content {
 
 	struct selection sel;	/** Selection state */
 
-	/** Context for free text search, or NULL if none */
-	struct textsearch_context *search;
-	/** Current search string, or NULL if none */
-	char *search_string;
 } textplain_content;
 
 
@@ -738,77 +734,6 @@ static bool textplain_keypress(struct content *c, uint32_t key)
 }
 
 
-/**
- * Terminate a search.
- *
- * \param c content of type text
- */
-static void textplain_search_clear(struct content *c)
-{
-	textplain_content *text = (textplain_content *) c;
-
-	assert(c != NULL);
-
-	free(text->search_string);
-	text->search_string = NULL;
-
-	if (text->search != NULL) {
-		content_textsearch_destroy(text->search);
-	}
-	text->search = NULL;
-}
-
-
-/**
- * Handle search.
- *
- * \param c         content of type text
- * \param gui_data  front end private data
- * \param flags     search flags
- * \param string    search string
- */
-static void textplain_search(struct content *c, void *gui_data,
-			     search_flags_t flags, const char *string)
-{
-	textplain_content *text = (textplain_content *) c;
-	nserror res;
-
-	assert(c != NULL);
-
-	if (string != NULL &&
-	    text->search_string != NULL &&
-	    strcmp(string, text->search_string) == 0 &&
-	    text->search != NULL) {
-		/* Continue prev. search */
-		content_textsearch_step(text->search, flags, string);
-
-	} else if (string != NULL) {
-		/* New search */
-		free(text->search_string);
-		text->search_string = strdup(string);
-		if (text->search_string == NULL)
-			return;
-
-		if (text->search != NULL) {
-			content_textsearch_destroy(text->search);
-			text->search = NULL;
-		}
-
-		res = content_textsearch_create(c, gui_data, &text->search);
-		if (res != NSERROR_OK) {
-			return;
-		}
-
-		content_textsearch_step(text->search, flags, string);
-
-	} else {
-		/* Clear search */
-		textplain_search_clear(c);
-
-		free(text->search_string);
-		text->search_string = NULL;
-	}
-}
 
 
 /**
@@ -868,8 +793,8 @@ text_draw(const char *utf8_text,
 
 		/* what about the current search operation, if any? */
 		if (!highlighted &&
-		    (text->search != NULL) &&
-		    content_textsearch_ishighlighted(text->search,
+		    (text->base.textsearch.context != NULL) &&
+		    content_textsearch_ishighlighted(text->base.textsearch.context,
 						     offset,
 						     offset + len,
 						     &start_idx,
@@ -1164,10 +1089,10 @@ textplain_redraw(struct content *c,
 				}
 
 				if (!highlighted &&
-				    (text->search != NULL)) {
+				    (c->textsearch.context != NULL)) {
 					unsigned start_idx, end_idx;
 					if (content_textsearch_ishighlighted(
-						    text->search,
+						    c->textsearch.context,
 						    tab_ofst,
 						    tab_ofst + 1,
 						    &start_idx,
@@ -1226,10 +1151,6 @@ textplain_open(struct content *c,
 static nserror textplain_close(struct content *c)
 {
 	textplain_content *text = (textplain_content *) c;
-
-	if (text->search != NULL) {
-		content_textsearch_destroy(text->search);
-	}
 
 	text->bw = NULL;
 
@@ -1305,8 +1226,6 @@ static const content_handler textplain_content_handler = {
 	.mouse_track = textplain_mouse_track,
 	.mouse_action = textplain_mouse_action,
 	.keypress = textplain_keypress,
-	.search = textplain_search,
-	.search_clear = textplain_search_clear,
 	.redraw = textplain_redraw,
 	.open = textplain_open,
 	.close = textplain_close,
