@@ -24,34 +24,11 @@
 #ifndef NETSURF_CONTENT_SEARCH_H
 #define NETSURF_CONTENT_SEARCH_H
 
-#include <ctype.h>
-#include <string.h>
-
 #include "desktop/search.h"
 
 struct textsearch_context;
 struct content;
 
-/**
- * create a search_context
- *
- * \param c The content the search_context is connected to
- * \param context A context pointer passed to the provider routines.
- * \param search_out A pointer to recive the new text search context
- * \return NSERROR_OK on success and \a search_out updated else error code
- */
-nserror content_textsearch_create(struct content *c, void *context, struct textsearch_context **textsearch_out);
-
-/**
- * Begins/continues the search process
- *
- * \note that this may be called many times for a single search.
- *
- * \param context The search context in use.
- * \param flags   The flags forward/back etc
- * \param string  The string to match
- */
-nserror content_textsearch_step(struct textsearch_context *textsearch, search_flags_t flags, const char *string);
 
 /**
  * Ends the search process, invalidating all state freeing the list of

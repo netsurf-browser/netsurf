@@ -23,6 +23,8 @@
  * Free text search (core)
  */
 
+#include <stdbool.h>
+
 #include "utils/errors.h"
 #include "content/content.h"
 #include "netsurf/types.h"
