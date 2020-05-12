@@ -28,7 +28,7 @@
 
 struct textsearch_context;
 struct content;
-
+struct box;
 
 /**
  * Ends the search process, invalidating all state freeing the list of
@@ -53,5 +53,30 @@ bool content_textsearch_ishighlighted(struct textsearch_context *textsearch,
 				      unsigned end_offset,
 				      unsigned *start_idx,
 				      unsigned *end_idx);
+
+/**
+ * Find the first occurrence of 'match' in 'string' and return its index
+ *
+ * \param  string     the string to be searched (unterminated)
+ * \param  s_len      length of the string to be searched
+ * \param  pattern    the pattern for which we are searching (unterminated)
+ * \param  p_len      length of pattern
+ * \param  case_sens  true iff case sensitive match required
+ * \param  m_len      accepts length of match in bytes
+ * \return pointer to first match, NULL if none
+ */
+const char *content_textsearch_find_pattern(const char *string, int s_len, const char *pattern, int p_len, bool case_sens, unsigned int *m_len);
+
+/**
+ * Add a new entry to the list of matches
+ *
+ * \param context The search context to add the entry to.
+ * \param start_idx Offset of match start within textual representation
+ * \param end_idx Offset of match end
+ * \param start A pointer for the start
+ * \param end A pointer for the end
+ * \return NSERROR_OK on sucess else error code on faliure
+ */
+nserror content_textsearch_add_match(struct textsearch_context *context, unsigned start_idx, unsigned end_idx, struct box *start_ptr, struct box *end_ptr);
 
 #endif

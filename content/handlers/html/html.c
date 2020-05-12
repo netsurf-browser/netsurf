@@ -2179,6 +2179,153 @@ static void html_fini(void)
 	html_css_fini();
 }
 
+/**
+ * Finds all occurrences of a given string in an html box
+ *
+ * \param pattern   the string pattern to search for
+ * \param p_len     pattern length
+ * \param cur       pointer to the current box
+ * \param case_sens whether to perform a case sensitive search
+ * \param context   The search context to add the entry to.
+ * \return true on success, false on memory allocation failure
+ */
+static nserror
+find_occurrences_html_box(const char *pattern,
+			  int p_len,
+			  struct box *cur,
+			  bool case_sens,
+			  struct textsearch_context *context)
+{
+	struct box *a;
+	nserror res = NSERROR_OK;
+
+	/* ignore this box, if there's no visible text */
+	if (!cur->object && cur->text) {
+		const char *text = cur->text;
+		unsigned length = cur->length;
+
+		while (length > 0) {
+			unsigned match_length;
+			unsigned match_offset;
+			const char *new_text;
+			const char *pos;
+
+			pos = content_textsearch_find_pattern(text,
+					   length,
+					   pattern,
+					   p_len,
+					   case_sens,
+					   &match_length);
+			if (!pos)
+				break;
+
+			/* found string in box => add to list */
+			match_offset = pos - cur->text;
+
+			res = content_textsearch_add_match(context,
+					cur->byte_offset + match_offset,
+					cur->byte_offset + match_offset + match_length,
+					cur,
+					cur);
+			if (res != NSERROR_OK) {
+				return res;
+			}
+
+			new_text = pos + match_length;
+			length -= (new_text - text);
+			text = new_text;
+		}
+	}
+
+	/* and recurse */
+	for (a = cur->children; a; a = a->next) {
+		res = find_occurrences_html_box(pattern,
+						p_len,
+						a,
+						case_sens,
+						context);
+		if (res != NSERROR_OK) {
+			return res;
+		}
+	}
+
+	return res;
+}
+
+/**
+ * Finds all occurrences of a given string in the html box tree
+ *
+ * \param pattern   the string pattern to search for
+ * \param p_len     pattern length
+ * \param c The content to search
+ * \param csens whether to perform a case sensitive search
+ * \param context   The search context to add the entry to.
+ * \return true on success, false on memory allocation failure
+ */
+static nserror
+html_textsearch_find(struct content *c,
+		     struct textsearch_context *context,
+		     const char *pattern,
+		     int p_len,
+		     bool csens)
+{
+	html_content *html = (html_content *)c;
+
+	if (html->layout == NULL) {
+		return NSERROR_INVALID;
+	}
+
+	return find_occurrences_html_box(pattern,
+					 p_len,
+					 html->layout,
+					 csens,
+					 context);
+}
+
+
+static nserror
+html_textsearch_bounds(struct content *c,
+		       unsigned start_idx,
+		       unsigned end_idx,
+		       struct box *start_box,
+		       struct box *end_box,
+		       struct rect *bounds)
+{
+	/* get box position and jump to it */
+	box_coords(start_box, &bounds->x0, &bounds->y0);
+	/* \todo: move x0 in by correct idx */
+	box_coords(end_box, &bounds->x1, &bounds->y1);
+	/* \todo: move x1 in by correct idx */
+	bounds->x1 += end_box->width;
+	bounds->y1 += end_box->height;
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * create a selection object suitable for this content
+ */
+static nserror
+html_create_selection(struct content *c, struct selection **sel_out)
+{
+	html_content *html = (html_content *)c;
+	struct selection *sel;
+	sel = selection_create(c, true);
+	if (sel == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	selection_init(sel, html->layout, &html->len_ctx);
+
+	*sel_out = sel;
+	return NSERROR_OK;
+}
+
+
+/**
+ * HTML content handler function table
+ */
 static const content_handler html_content_handler = {
 	.fini = html_fini,
 	.create = html_create,
@@ -2205,6 +2352,9 @@ static const content_handler html_content_handler = {
 	.type = html_content_type,
 	.exec = html_exec,
 	.saw_insecure_objects = html_saw_insecure_objects,
+	.textsearch_find = html_textsearch_find,
+	.textsearch_bounds = html_textsearch_bounds,
+	.create_selection = html_create_selection,
 	.no_share = true,
 };
 

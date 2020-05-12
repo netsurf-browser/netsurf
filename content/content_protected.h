@@ -44,6 +44,9 @@ struct content;
 struct redraw_context;
 struct rect;
 struct browser_window_features;
+struct textsearch_context;
+struct box;
+struct selection;
 
 typedef struct content_handler content_handler;
 
@@ -97,6 +100,21 @@ struct content_handler {
 	void (*remove_user)(struct content *c);
 	bool (*exec)(struct content *c, const char *src, size_t srclen);
 	bool (*saw_insecure_objects)(struct content *c);
+
+	/**
+	 * content specific free text search find
+	 */
+	nserror (*textsearch_find)(struct content *c, struct textsearch_context *context, const char *pattern, int p_len, bool case_sens);
+
+	/**
+	 * get bounds of free text search match
+	 */
+	nserror (*textsearch_bounds)(struct content *c, unsigned start_idx, unsigned end_idx, struct box *start_ptr, struct box *end_ptr, struct rect *bounds_out);
+
+	/**
+	 * create a selection object
+	 */
+	nserror (*create_selection)(struct content *c, struct selection **sel_out);
 
         /**
 	 * handler dependant content sensitive internal data interface.

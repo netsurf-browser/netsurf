@@ -1212,6 +1212,107 @@ textplain_coord_from_offset(const char *text, size_t offset, size_t length)
 	return x;
 }
 
+/**
+ * Finds all occurrences of a given string in a textplain content
+ *
+ * \param c the content to be searched
+ * \param context The search context to add the entry to.
+ * \param pattern the string pattern to search for
+ * \param p_len pattern length
+ * \param case_sens whether to perform a case sensitive search
+ * \return NSERROR_OK on success else error code on faliure
+ */
+static nserror
+textplain_textsearch_find(struct content *c,
+			  struct textsearch_context *context,
+			  const char *pattern,
+			  int p_len,
+			  bool case_sens)
+{
+	int nlines = textplain_line_count(c);
+	int line;
+	nserror res = NSERROR_OK;
+
+	for(line = 0; line < nlines; line++) {
+		size_t offset, length;
+		const char *text;
+
+		text = textplain_get_line(c, line, &offset, &length);
+		if (text) {
+			while (length > 0) {
+				unsigned match_length;
+				size_t start_idx;
+				const char *new_text;
+				const char *pos;
+
+				pos = content_textsearch_find_pattern(
+						text,
+						length,
+						pattern,
+						p_len,
+						case_sens,
+						&match_length);
+				if (!pos)
+					break;
+
+				/* found string in line => add to list */
+				start_idx = offset + (pos - text);
+				res = content_textsearch_add_match(context,
+						start_idx,
+						start_idx + match_length,
+						NULL,
+						NULL);
+				if (res != NSERROR_OK) {
+					return res;
+				}
+
+				new_text = pos + match_length;
+				offset += (new_text - text);
+				length -= (new_text - text);
+				text = new_text;
+			}
+		}
+	}
+
+	return res;
+}
+
+
+/**
+ * get bounds of a free text search match
+ */
+static nserror
+textplain_textsearch_bounds(struct content *c,
+			    unsigned start_idx,
+			    unsigned end_idx,
+			    struct box *start_box,
+			    struct box *end_box,
+			    struct rect *bounds)
+{
+	textplain_coords_from_range(c, start_idx, end_idx, bounds);
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * create a selection object suitable for this content
+ */
+static nserror
+textplain_create_selection(struct content *c, struct selection **sel_out)
+{
+	struct selection *sel;
+	sel = selection_create(c, false);
+	if (sel == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	selection_init(sel, NULL, NULL);
+
+	*sel_out = sel;
+	return NSERROR_OK;
+}
+
 
 /**
  * plain text content handler table
@@ -1232,6 +1333,9 @@ static const content_handler textplain_content_handler = {
 	.get_selection = textplain_get_selection,
 	.clone = textplain_clone,
 	.type = textplain_content_type,
+	.textsearch_find = textplain_textsearch_find,
+	.textsearch_bounds = textplain_textsearch_bounds,
+	.create_selection = textplain_create_selection,
 	.no_share = true,
 };
 
