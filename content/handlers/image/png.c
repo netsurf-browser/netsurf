@@ -602,6 +602,7 @@ static const content_handler nspng_content_handler = {
 	.redraw = image_cache_redraw,
 	.get_internal = image_cache_get_internal,
 	.type = image_cache_content_type,
+	.is_opaque = image_cache_is_opaque,
 	.no_share = false,
 };
 

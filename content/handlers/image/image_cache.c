@@ -859,6 +859,17 @@ void *image_cache_get_internal(const struct content *c, void *context)
 }
 
 /* exported interface documented in image_cache.h */
+bool image_cache_is_opaque(struct content *c)
+{
+	struct bitmap *bmp;
+	bmp = image_cache_get_bitmap(c);
+	if (bmp != NULL) {
+		return guit->bitmap->get_opaque(bmp);
+	}
+	return false;
+}
+
+/* exported interface documented in image_cache.h */
 content_type image_cache_content_type(void)
 {
 	return CONTENT_IMAGE;

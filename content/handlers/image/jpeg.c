@@ -414,6 +414,7 @@ static const content_handler nsjpeg_content_handler = {
 	.clone = nsjpeg_clone,
 	.get_internal = image_cache_get_internal,
 	.type = image_cache_content_type,
+	.is_opaque = image_cache_is_opaque,
 	.no_share = false,
 };
 

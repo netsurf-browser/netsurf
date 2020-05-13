@@ -84,7 +84,7 @@ static nserror nsico_create_ico_data(nsico_content *c)
 }
 
 
-static nserror nsico_create(const content_handler *handler, 
+static nserror nsico_create(const content_handler *handler,
 		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
@@ -251,7 +251,7 @@ static void *nsico_get_internal(const struct content *c, void *context)
 	nsico_content *ico = (nsico_content *) c;
 	/* TODO: Pick best size for purpose.
 	 *       Currently assumes it's for a URL bar. */
-	struct bmp_image *bmp; 
+	struct bmp_image *bmp;
 
 	bmp = ico_find(ico->ico, 16, 16);
 	if (bmp == NULL) {
@@ -276,6 +276,33 @@ static content_type nsico_content_type(void)
 	return CONTENT_IMAGE;
 }
 
+static bool nsico_is_opaque(struct content *c)
+{
+	nsico_content *ico = (nsico_content *) c;
+	struct bmp_image *bmp;
+
+	/**
+	 * \todo Pick best size for purpose. Currently assumes
+	 *         it's for a URL bar.
+	 */
+	bmp = ico_find(ico->ico, 16, 16);
+	if (bmp == NULL) {
+		/* return error */
+		NSLOG(netsurf, INFO, "Failed to select icon");
+		return false;
+	}
+
+	if (bmp->decoded == false) {
+		if (bmp_decode(bmp) != BMP_OK) {
+			return false;
+		}
+
+		guit->bitmap->modified(bmp->bitmap);
+	}
+
+	return guit->bitmap->get_opaque(bmp->bitmap);
+}
+
 static const content_handler nsico_content_handler = {
 	.create = nsico_create,
 	.data_complete = nsico_convert,
@@ -284,6 +311,7 @@ static const content_handler nsico_content_handler = {
 	.clone = nsico_clone,
 	.get_internal = nsico_get_internal,
 	.type = nsico_content_type,
+	.is_opaque = nsico_is_opaque,
 	.no_share = false,
 };
 

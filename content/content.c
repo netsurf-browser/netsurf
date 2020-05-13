@@ -33,7 +33,6 @@
 #include "netsurf/bitmap.h"
 #include "netsurf/content.h"
 #include "desktop/knockout.h"
-#include "desktop/gui_internal.h"
 
 #include "content/content_protected.h"
 #include "content/textsearch.h"
@@ -1294,21 +1293,13 @@ bool content_get_opaque(hlcache_handle *h)
 /* exported interface documented in content/content_protected.h */
 bool content__get_opaque(struct content *c)
 {
-	bool opaque = false;
-
 	if ((c != NULL) &&
 	    (c->handler != NULL) &&
-	    (c->handler->type != NULL) &&
-	    (c->handler->type() == CONTENT_IMAGE) &&
-	    (c->handler->get_internal != NULL) ) {
-		struct bitmap *bitmap = NULL;
-		bitmap = c->handler->get_internal(c, NULL);
-		if (bitmap != NULL) {
-			opaque = guit->bitmap->get_opaque(bitmap);
-		}
+	    (c->handler->is_opaque != NULL)) {
+		return c->handler->is_opaque(c);
 	}
 
-	return opaque;
+	return false;
 }
 
 

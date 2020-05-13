@@ -48,6 +48,7 @@
 #include "content/content.h"
 #include "content/content_protected.h"
 #include "content/content_factory.h"
+#include "desktop/gui_internal.h"
 
 #include "amiga/os3support.h"
 #include "amiga/bitmap.h"
@@ -87,6 +88,17 @@ static void *amiga_icon_get_internal(const struct content *c, void *context)
 	return icon_c->bitmap;
 }
 
+static bool amiga_icon_is_opaque(struct content *c)
+{
+	amiga_icon_content *icon_c = (amiga_icon_content *)c;
+
+	if (icon_c->bitmap != NULL) {
+		return guit->bitmap->get_opaque(icon_c->bitmap);
+	}
+
+	return false;
+}
+
 static const content_handler amiga_icon_content_handler = {
 	.create = amiga_icon_create,
 	.data_complete = amiga_icon_convert,
@@ -95,6 +107,7 @@ static const content_handler amiga_icon_content_handler = {
 	.clone = amiga_icon_clone,
 	.get_internal = amiga_icon_get_internal,
 	.type = amiga_icon_content_type,
+	.is_opaque = amiga_icon_is_opaque,
 	.no_share = false,
 };
 

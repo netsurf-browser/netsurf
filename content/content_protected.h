@@ -119,7 +119,16 @@ struct content_handler {
         /**
 	 * handler dependant content sensitive internal data interface.
 	 */
-	void * (*get_internal)(const struct content *c, void *context);
+	void *(*get_internal)(const struct content *c, void *context);
+
+	/**
+	 * are the content contents opaque.
+	 *
+	 * Determine if this content would obscure (not mix with) any background
+	 *
+	 * \param c The content to check
+	 */
+	bool (*is_opaque)(struct content *c);
 
 	/**
 	 * There must be one content per user for this type.

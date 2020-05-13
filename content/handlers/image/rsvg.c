@@ -316,6 +316,19 @@ static content_type rsvg_content_type(void)
 	return CONTENT_IMAGE;
 }
 
+
+static bool rsvg_content_is_opaque(struct content *c)
+{
+	rsvg_content *d = (rsvg_content *) c;
+
+	if (d->bitmap != NULL) {
+		return guit->bitmap->get_opaque(d->bitmap);
+	}
+
+	return false;
+}
+
+
 static const content_handler rsvg_content_handler = {
 	.create = rsvg_create,
 	.process_data = rsvg_process_data,
@@ -325,6 +338,7 @@ static const content_handler rsvg_content_handler = {
 	.clone = rsvg_clone,
 	.get_internal = rsvg_get_internal,
 	.type = rsvg_content_type,
+	.is_opaque = rsvg_content_is_opaque,
 	.no_share = false,
 };
 

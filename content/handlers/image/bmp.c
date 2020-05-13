@@ -264,6 +264,16 @@ static content_type nsbmp_content_type(void)
 	return CONTENT_IMAGE;
 }
 
+static bool nsbmp_content_is_opaque(struct content *c)
+{
+	nsbmp_content *bmp = (nsbmp_content *)c;
+
+	if (bmp->bitmap != NULL) {
+		return guit->bitmap->get_opaque(bmp->bitmap);
+	}
+
+	return false;
+}
 
 static const content_handler nsbmp_content_handler = {
 	.create = nsbmp_create,
@@ -273,6 +283,7 @@ static const content_handler nsbmp_content_handler = {
 	.clone = nsbmp_clone,
 	.get_internal = nsbmp_get_internal,
 	.type = nsbmp_content_type,
+	.is_opaque = nsbmp_content_is_opaque,
 	.no_share = false,
 };
 

@@ -170,7 +170,8 @@ int image_cache_snsummaryf(char *string, size_t size, const char *fmt);
 
 /********* Image content handler generic cache callbacks ************/
 
-/** Generic content redraw callback
+/**
+ * Generic content redraw callback
  *
  * May be used by image content handlers as their redraw
  * callback. Performs all neccissary cache lookups and conversions and
@@ -184,6 +185,8 @@ bool image_cache_redraw(struct content *c,
 void image_cache_destroy(struct content *c);
 
 void *image_cache_get_internal(const struct content *c, void *context);
+
+bool image_cache_is_opaque(struct content *c);
 
 content_type image_cache_content_type(void);
 
