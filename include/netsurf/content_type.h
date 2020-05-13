@@ -173,7 +173,10 @@ typedef enum {
 	CONTENT_MSG_SELECTMENU,
 
 	/** A gadget has been clicked on (mainly for file) */
-	CONTENT_MSG_GADGETCLICK
+	CONTENT_MSG_GADGETCLICK,
+
+	/** A free text search action has occurred */
+	CONTENT_MSG_TEXTSEARCH
 } content_msg;
 
 

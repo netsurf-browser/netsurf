@@ -242,6 +242,50 @@ union content_msg_data {
 	struct {
 		struct form_control *gadget;
 	} gadget_click;
+
+	/**
+	 * CONTENT_MSG_TEXTSEARCH - Free text search action
+	 */
+	struct {
+		/**
+		 * The type of text search operation
+		 */
+		enum {
+		      /**
+		       * Free text search find operation has started or finished
+		       */
+		      CONTENT_TEXTSEARCH_FIND,
+		      /**
+		       * Free text search match state has changed
+		       */
+		      CONTENT_TEXTSEARCH_MATCH,
+		      /**
+		       * Free text search back available state changed
+		       */
+		      CONTENT_TEXTSEARCH_BACK,
+		      /**
+		       * Free text search forward available state changed
+		       */
+		      CONTENT_TEXTSEARCH_FORWARD,
+		      /**
+		       * add a search query string to the recent searches
+		       */
+		      CONTENT_TEXTSEARCH_RECENT
+		} type;
+		/**
+		 * context passed to browser_window_search()
+		 */
+		void *ctx;
+		/**
+		 * state for operation
+		 */
+		bool state;
+		/**
+		 * search string
+		 */
+		const char *string;
+	} textsearch;
+
 };
 
 

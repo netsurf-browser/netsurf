@@ -46,6 +46,7 @@
 #include "utils/nsoption.h"
 #include "netsurf/misc.h"
 #include "netsurf/window.h"
+#include "netsurf/search.h"
 #include "netsurf/content.h"
 #include "netsurf/plotters.h"
 #include "content/content_debug.h"
@@ -1656,6 +1657,37 @@ browser_window_callback(hlcache_handle *c, const hlcache_event *event, void *pw)
 						       event->data.gadget_click.gadget);
 		}
 
+		break;
+
+
+	case CONTENT_MSG_TEXTSEARCH:
+		switch (event->data.textsearch.type) {
+		case CONTENT_TEXTSEARCH_FIND:
+			guit->search->hourglass(event->data.textsearch.state,
+						event->data.textsearch.ctx);
+			break;
+
+		case CONTENT_TEXTSEARCH_MATCH:
+			guit->search->status(event->data.textsearch.state,
+					     event->data.textsearch.ctx);
+			break;
+
+		case CONTENT_TEXTSEARCH_BACK:
+			guit->search->back_state(event->data.textsearch.state,
+						 event->data.textsearch.ctx);
+			break;
+
+		case CONTENT_TEXTSEARCH_FORWARD:
+			guit->search->forward_state(event->data.textsearch.state,
+						    event->data.textsearch.ctx);
+			break;
+
+		case CONTENT_TEXTSEARCH_RECENT:
+			guit->search->add_recent(event->data.textsearch.string,
+						 event->data.textsearch.ctx);
+
+			break;
+		}
 		break;
 
 	default:
