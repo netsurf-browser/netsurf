@@ -192,6 +192,23 @@ body#dirlist span.size + span.size {
 	padding-right: 0; }
 
 
+/*
+ * certificate display style
+ */
+body#certificate table.info {
+    width: 90%;
+    margin: 1.2em auto 0;
+}
+
+body#certificate table.info th {
+	width: 14em;
+    	text-align: right;
+	font-weight: bold;
+	font-family: sans-serif;
+	padding-right: 1em;
+}
+
+
 /* 
  * configuration listing style 
  */

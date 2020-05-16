@@ -413,31 +413,362 @@ fetch_about_imagecache_handler_aborted:
 	return false;
 }
 
+/**
+ * certificate name parameters
+ */
+struct ns_cert_name {
+	char *common_name;
+	char *organisation;
+	char *organisation_unit;
+	char *locality;
+	char *province;
+	char *country;
+};
 
 /**
- * ssl certificate information for certificate chain
+ * Certificate public key parameters
  */
-struct ssl_cert_info {
+struct ns_cert_pkey {
+	char *algor;
+	int size;
+	char *modulus;
+	char *exponent;
+	char *curve;
+	char *public;
+};
+
+/**
+ * certificate information for certificate chain
+ */
+struct ns_cert_info {
+	struct ns_cert_name subject_name; /**< Subject details */
+	struct ns_cert_name issuer_name; /**< Issuer details */
+	struct ns_cert_pkey public_key; /**< public key details */
 	long version;		/**< Certificate version */
-	char not_before[32];	/**< Valid from date */
-	char not_after[32];	/**< Valid to date */
+	char *not_before;	/**< Valid from date */
+	char *not_after;	/**< Valid to date */
 	int sig_type;		/**< Signature type */
-	char serialnum[64];	/**< Serial number */
-	char issuer[256];	/**< Issuer details */
-	char subject[256];	/**< Subject details */
-	int cert_type;		/**< Certificate type */
+	char *sig_algor;        /**< Signature Algorithm */
+	char *serialnum;	/**< Serial number */
 	ssl_cert_err err;       /**< Whatever is wrong with this certificate */
 };
+
+/**
+ * free all resources associated with a certificate information structure
+ */
+static nserror free_ns_cert_info(struct ns_cert_info *cinfo)
+{
+	free(cinfo->subject_name.common_name);
+	free(cinfo->subject_name.organisation);
+	free(cinfo->subject_name.organisation_unit);
+	free(cinfo->subject_name.locality);
+	free(cinfo->subject_name.province);
+	free(cinfo->subject_name.country);
+	free(cinfo->issuer_name.common_name);
+	free(cinfo->issuer_name.organisation);
+	free(cinfo->issuer_name.organisation_unit);
+	free(cinfo->issuer_name.locality);
+	free(cinfo->issuer_name.province);
+	free(cinfo->issuer_name.country);
+	free(cinfo->public_key.algor);
+	free(cinfo->public_key.modulus);
+	free(cinfo->public_key.exponent);
+	free(cinfo->public_key.curve);
+	free(cinfo->public_key.public);
+	free(cinfo->not_before);
+	free(cinfo->not_after);
+	free(cinfo->sig_algor);
+	free(cinfo->serialnum);
+	free(cinfo);
+
+	return NSERROR_OK;
+}
 
 #ifdef WITH_OPENSSL
 
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 
+/**
+ * extract certificate name information
+ *
+ * \param xname The X509 name to convert. The reference is borrowed so is not freeed
+ * \param iname The info structure to recive the extracted parameters.
+ * \return NSERROR_OK on success else error code
+ */
+static nserror
+xname_to_info(X509_NAME *xname, struct ns_cert_name *iname)
+{
+	int entryidx;
+	int entrycnt;
+	X509_NAME_ENTRY *entry; /* current name entry */
+	ASN1_STRING *value;
+	const unsigned char *value_str;
+	ASN1_OBJECT *name;
+	int name_nid;
+	char **field;
+
+	entrycnt = X509_NAME_entry_count(xname);
+
+	for (entryidx = 0; entryidx < entrycnt; entryidx++) {
+		entry = X509_NAME_get_entry(xname, entryidx);
+		name = X509_NAME_ENTRY_get_object(entry);
+		name_nid = OBJ_obj2nid(name);
+		value = X509_NAME_ENTRY_get_data(entry);
+		value_str = ASN1_STRING_get0_data(value);
+
+		switch (name_nid) {
+		case NID_commonName:
+			field = &iname->common_name;
+			break;
+		case NID_countryName:
+			field = &iname->country;
+			break;
+		case NID_localityName:
+			field = &iname->locality;
+			break;
+		case NID_stateOrProvinceName:
+			field = &iname->province;
+			break;
+		case NID_organizationName:
+			field = &iname->organisation;
+			break;
+		case NID_organizationalUnitName:
+			field = &iname->organisation_unit;
+			break;
+		default :
+			field = NULL;
+			break;
+		}
+		if (field != NULL) {
+			*field = strdup((const char *)value_str);
+			NSLOG(netsurf, DEEPDEBUG,
+			      "NID:%d value: %s", name_nid, *field);
+		} else {
+			NSLOG(netsurf, DEEPDEBUG, "NID:%d", name_nid);
+		}
+	}
+
+	/*
+	 * ensure the common name is set to something, this being
+	 *  missing means the certificate is broken but this should be
+	 *  robust in the face of bad data
+	 */
+	if (iname->common_name == NULL) {
+		iname->common_name = strdup("Unknown");
+	}
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * duplicate a hex formatted string inserting the colons
+ */
+static char *hexdup(const char *hex)
+{
+	int hexlen;
+	char *dst;
+	char *out;
+	int cn = 0;
+
+	hexlen = strlen(hex);
+	dst = malloc(((hexlen * 3) + 1) / 2);
+
+	if (dst != NULL) {
+		for (out = dst; *hex != 0; hex++) {
+			if (cn == 2) {
+				cn = 0;
+				*out++ = ':';
+			}
+			*out++ = *hex;
+			cn++;
+		}
+		*out = 0;
+	}
+	return dst;
+}
+
+/**
+ * extract RSA key information to info structure
+ *
+ * \param rsa The RSA key to examine. The reference is dropped on return
+ * \param ikey The public key info structure to fill
+ * \rerun NSERROR_OK on success else error code.
+ */
+static nserror
+rsa_to_info(RSA *rsa, struct ns_cert_pkey *ikey)
+{
+	char *tmp;
+
+	if (rsa == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	ikey->algor = strdup("RSA");
+
+	ikey->size = RSA_bits(rsa);
+
+	tmp = BN_bn2hex(RSA_get0_n(rsa));
+	if (tmp != NULL) {
+		ikey->modulus = hexdup(tmp);
+		OPENSSL_free(tmp);
+	}
+
+	tmp = BN_bn2dec(RSA_get0_e(rsa));
+	if (tmp != NULL) {
+		ikey->exponent = strdup(tmp);
+		OPENSSL_free(tmp);
+	}
+
+	RSA_free(rsa);
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * extract DSA key information to info structure
+ *
+ * \param dsa The RSA key to examine. The reference is dropped on return
+ * \param ikey The public key info structure to fill
+ * \rerun NSERROR_OK on success else error code.
+ */
+static nserror
+dsa_to_info(DSA *dsa, struct ns_cert_pkey *ikey)
+{
+	if (dsa == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	ikey->algor = strdup("DSA");
+
+	ikey->size = DSA_bits(dsa);
+
+	DSA_free(dsa);
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * extract DH key information to info structure
+ *
+ * \param dsa The RSA key to examine. The reference is dropped on return
+ * \param ikey The public key info structure to fill
+ * \rerun NSERROR_OK on success else error code.
+ */
+static nserror
+dh_to_info(DH *dh, struct ns_cert_pkey *ikey)
+{
+	if (dh == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	ikey->algor = strdup("Diffie Hellman");
+
+	ikey->size = DH_bits(dh);
+
+	DH_free(dh);
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * extract EC key information to info structure
+ *
+ * \param ec The EC key to examine. The reference is dropped on return
+ * \param ikey The public key info structure to fill
+ * \rerun NSERROR_OK on success else error code.
+ */
+static nserror
+ec_to_info(EC_KEY *ec, struct ns_cert_pkey *ikey)
+{
+	const EC_GROUP *ecgroup;
+	const EC_POINT *ecpoint;
+	BN_CTX *bnctx;
+	char *ecpoint_hex;
+
+	if (ec == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	ikey->algor = strdup("Elliptic Curve");
+
+	ecgroup = EC_KEY_get0_group(ec);
+
+	if (ecgroup != NULL) {
+		ikey->size = EC_GROUP_get_degree(ecgroup);
+
+		ikey->curve = strdup(OBJ_nid2ln(EC_GROUP_get_curve_name(ecgroup)));
+
+		ecpoint = EC_KEY_get0_public_key(ec);
+		if (ecpoint != NULL) {
+			bnctx = BN_CTX_new();
+			ecpoint_hex = EC_POINT_point2hex(ecgroup,
+							 ecpoint,
+							 POINT_CONVERSION_UNCOMPRESSED,
+							 bnctx);
+			ikey->public = hexdup(ecpoint_hex);
+			OPENSSL_free(ecpoint_hex);
+			BN_CTX_free(bnctx);
+		}
+	}
+	EC_KEY_free(ec);
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * extract public key information to info structure
+ *
+ * \param pkey the public key to examine. The reference is dropped on return
+ * \param ikey The public key info structure to fill
+ * \rerun NSERROR_OK on success else error code.
+ */
+static nserror
+pkey_to_info(EVP_PKEY *pkey, struct ns_cert_pkey *ikey)
+{
+	nserror res;
+
+	if (pkey == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	switch (EVP_PKEY_base_id(pkey)) {
+	case EVP_PKEY_RSA:
+		res = rsa_to_info(EVP_PKEY_get1_RSA(pkey), ikey);
+		break;
+
+	case EVP_PKEY_DSA:
+		res = dsa_to_info(EVP_PKEY_get1_DSA(pkey), ikey);
+		break;
+
+	case EVP_PKEY_DH:
+		res = dh_to_info(EVP_PKEY_get1_DH(pkey), ikey);
+		break;
+
+	case EVP_PKEY_EC:
+		res = ec_to_info(EVP_PKEY_get1_EC_KEY(pkey), ikey);
+		break;
+
+	default:
+		res = NSERROR_NOT_IMPLEMENTED;
+		break;
+	}
+
+	EVP_PKEY_free(pkey);
+
+	return res;
+}
+
+
 static nserror
 der_to_certinfo(const uint8_t *der,
 		size_t der_length,
-		struct ssl_cert_info *info)
+		struct ns_cert_info *info)
 {
 	BIO *mem;
 	BUF_MEM *buf;
@@ -454,8 +785,13 @@ der_to_certinfo(const uint8_t *der,
 		return NSERROR_INVALID;
 	}
 
-	/* get certificate version */
-	info->version = X509_get_version(cert);
+	/*
+	 * get certificate version
+	 *
+	 * \note this is defined by standards (X.509 et al) to be one
+	 *        less than the certificate version.
+	 */
+	info->version = X509_get_version(cert) + 1;
 
 	/* not before date */
 	mem = BIO_new(BIO_s_mem());
@@ -463,10 +799,10 @@ der_to_certinfo(const uint8_t *der,
 	BIO_get_mem_ptr(mem, &buf);
 	(void) BIO_set_close(mem, BIO_NOCLOSE);
 	BIO_free(mem);
-	memcpy(info->not_before,
-	       buf->data,
-	       min(sizeof(info->not_before) - 1, (unsigned)buf->length));
-	info->not_before[min(sizeof(info->not_before) - 1, (unsigned)buf->length)] = 0;
+	info->not_before = calloc(1, buf->length + 1);
+	if (info->not_before != NULL) {
+		memcpy(info->not_before, buf->data, (unsigned)buf->length);
+	}
 	BUF_MEM_free(buf);
 
 	/* not after date */
@@ -476,14 +812,27 @@ der_to_certinfo(const uint8_t *der,
 	BIO_get_mem_ptr(mem, &buf);
 	(void) BIO_set_close(mem, BIO_NOCLOSE);
 	BIO_free(mem);
-	memcpy(info->not_after,
-	       buf->data,
-	       min(sizeof(info->not_after) - 1, (unsigned)buf->length));
-	info->not_after[min(sizeof(info->not_after) - 1, (unsigned)buf->length)] = 0;
+	info->not_after = calloc(1, buf->length + 1);
+	if (info->not_after != NULL) {
+		memcpy(info->not_after, buf->data, (unsigned)buf->length);
+	}
 	BUF_MEM_free(buf);
 
 	/* signature type */
 	info->sig_type = X509_get_signature_type(cert);
+
+	/* signature algorithm */
+#if (OPENSSL_VERSION_NUMBER < 0x1000200fL)
+	int pkey_nid = OBJ_obj2nid(cert->cert_info->key->algor->algorithm);
+#else
+	int pkey_nid = X509_get_signature_nid(cert);
+#endif
+	if (pkey_nid != NID_undef) {
+		const char* sslbuf = OBJ_nid2ln(pkey_nid);
+		if (sslbuf != NULL) {
+			info->sig_algor = strdup(sslbuf);
+		}
+	}
 
 	/* serial number */
 	asn1_num = X509_get_serialNumber(cert);
@@ -492,10 +841,7 @@ der_to_certinfo(const uint8_t *der,
 		if (bignum != NULL) {
 			char *tmp = BN_bn2hex(bignum);
 			if (tmp != NULL) {
-				strncpy(info->serialnum,
-					tmp,
-					sizeof(info->serialnum));
-				info->serialnum[sizeof(info->serialnum)-1] = '\0';
+				info->serialnum = hexdup(tmp);
 				OPENSSL_free(tmp);
 			}
 			BN_free(bignum);
@@ -504,39 +850,13 @@ der_to_certinfo(const uint8_t *der,
 	}
 
 	/* issuer name */
-	mem = BIO_new(BIO_s_mem());
-	X509_NAME_print_ex(mem,
-			   X509_get_issuer_name(cert),
-			   0, XN_FLAG_SEP_CPLUS_SPC |
-			   XN_FLAG_DN_REV | XN_FLAG_FN_NONE);
-	BIO_get_mem_ptr(mem, &buf);
-	(void) BIO_set_close(mem, BIO_NOCLOSE);
-	BIO_free(mem);
-	memcpy(info->issuer,
-	       buf->data,
-	       min(sizeof(info->issuer) - 1, (unsigned) buf->length));
-	info->issuer[min(sizeof(info->issuer) - 1, (unsigned) buf->length)] = 0;
-	BUF_MEM_free(buf);
+	xname_to_info(X509_get_issuer_name(cert), &info->issuer_name);
 
 	/* subject */
-	mem = BIO_new(BIO_s_mem());
-	X509_NAME_print_ex(mem,
-			   X509_get_subject_name(cert),
-			   0,
-			   XN_FLAG_SEP_CPLUS_SPC |
-			   XN_FLAG_DN_REV |
-			   XN_FLAG_FN_NONE);
-	BIO_get_mem_ptr(mem, &buf);
-	(void) BIO_set_close(mem, BIO_NOCLOSE);
-	BIO_free(mem);
-	memcpy(info->subject,
-	       buf->data,
-	       min(sizeof(info->subject) - 1, (unsigned)buf->length));
-	info->subject[min(sizeof(info->subject) - 1, (unsigned) buf->length)] = 0;
-	BUF_MEM_free(buf);
+	xname_to_info(X509_get_subject_name(cert), &info->subject_name);
 
-	/* type of certificate */
-	info->cert_type = X509_certificate_type(cert, X509_get_pubkey(cert));
+	/* public key */
+	pkey_to_info(X509_get_pubkey(cert), &info->public_key);
 
 	X509_free(cert);
 
@@ -546,13 +866,13 @@ der_to_certinfo(const uint8_t *der,
 /* copy certificate data */
 static nserror
 convert_chain_to_cert_info(const struct cert_chain *chain,
-			   struct ssl_cert_info **cert_info_out)
+			   struct ns_cert_info **cert_info_out)
 {
-	struct ssl_cert_info *certs;
+	struct ns_cert_info *certs;
 	size_t depth;
 	nserror res;
 
-	certs = calloc(chain->depth, sizeof(struct ssl_cert_info));
+	certs = calloc(chain->depth, sizeof(struct ns_cert_info));
 	if (certs == NULL) {
 		return NSERROR_NOMEM;
 	}
@@ -575,12 +895,224 @@ convert_chain_to_cert_info(const struct cert_chain *chain,
 #else
 static nserror
 convert_chain_to_cert_info(const struct cert_chain *chain,
-			   struct ssl_cert_info **cert_info_out)
+			   struct ns_cert_info **cert_info_out)
 {
 	return NSERROR_NOT_IMPLEMENTED;
 }
 #endif
 
+
+static nserror
+format_certificate_name(struct fetch_about_context *ctx,
+			struct ns_cert_name *cert_name)
+{
+	nserror res;
+	res = ssenddataf(ctx,
+			 "<tr><th>Common Name</th><td>%s</td></tr>\n",
+			 cert_name->common_name);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	if (cert_name->organisation != NULL) {
+		res = ssenddataf(ctx,
+				 "<tr><th>Organisation</th><td>%s</td></tr>\n",
+				 cert_name->organisation);
+		if (res != NSERROR_OK) {
+			return res;
+		}
+	}
+
+	if (cert_name->organisation_unit != NULL) {
+		res = ssenddataf(ctx,
+				 "<tr><th>Organisation Unit</th><td>%s</td></tr>\n",
+				 cert_name->organisation_unit);
+		if (res != NSERROR_OK) {
+			return res;
+		}
+	}
+
+	if (cert_name->locality != NULL) {
+		res = ssenddataf(ctx,
+				 "<tr><th>Locality</th><td>%s</td></tr>\n",
+				 cert_name->locality);
+		if (res != NSERROR_OK) {
+			return res;
+		}
+	}
+
+	if (cert_name->province != NULL) {
+		res = ssenddataf(ctx,
+				 "<tr><th>Privince</th><td>%s</td></tr>\n",
+				 cert_name->province);
+		if (res != NSERROR_OK) {
+			return res;
+		}
+	}
+
+	if (cert_name->country != NULL) {
+		res = ssenddataf(ctx,
+				 "<tr><th>Country</th><td>%s</td></tr>\n",
+				 cert_name->country);
+		if (res != NSERROR_OK) {
+			return res;
+		}
+	}
+
+	return res;
+}
+
+static nserror
+format_certificate(struct fetch_about_context *ctx,
+		   struct ns_cert_info *cert_info)
+{
+	nserror res;
+
+	res = ssenddataf(ctx,
+			 "<h2 class=\"ns-border\">Certificate: %s</h2>\n",
+			 cert_info->subject_name.common_name);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	res = ssenddataf(ctx,
+			 "<table class=\"info\">\n"
+			 "<tr><th>Issued To</th><td><hr></td></tr>\n");
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	res = format_certificate_name(ctx, &cert_info->subject_name);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	res = ssenddataf(ctx,
+			 "</table>\n");
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	res = ssenddataf(ctx,
+			 "<table class=\"info\">\n"
+			 "<tr><th>Issued By</th><td><hr></td></tr>\n");
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	res = format_certificate_name(ctx, &cert_info->issuer_name);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	res = ssenddataf(ctx,
+			 "</table>\n");
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	res = ssenddataf(ctx,
+			 "<table class=\"info\">\n"
+			 "<tr><th>Validity</th><td><hr></td></tr>\n"
+			 "<tr><th>Valid From</th><td>%s</td></tr>\n"
+			 "<tr><th>Valid Until</th><td>%s</td></tr>\n"
+			 "</table>\n",
+			 cert_info->not_before,
+			 cert_info->not_after);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	if (cert_info->public_key.algor != NULL) {
+		res = ssenddataf(ctx,
+				 "<table class=\"info\">\n"
+				 "<tr><th>Public Key</th><td><hr></td></tr>\n"
+				 "<tr><th>Algorithm</th><td>%s</td></tr>\n"
+				 "<tr><th>Key Size</th><td>%d</td></tr>\n",
+				 cert_info->public_key.algor,
+				 cert_info->public_key.size);
+		if (res != NSERROR_OK) {
+			return res;
+		}
+
+
+		if (cert_info->public_key.exponent != NULL) {
+			res = ssenddataf(ctx,
+					 "<tr><th>Exponent</th><td>%s</td></tr>\n",
+					 cert_info->public_key.exponent);
+			if (res != NSERROR_OK) {
+				return res;
+			}
+		}
+
+		if (cert_info->public_key.modulus != NULL) {
+			res = ssenddataf(ctx,
+					 "<tr><th>Modulus</th><td>%s</td></tr>\n",
+					 cert_info->public_key.modulus);
+			if (res != NSERROR_OK) {
+				return res;
+			}
+		}
+
+		if (cert_info->public_key.curve != NULL) {
+			res = ssenddataf(ctx,
+					 "<tr><th>Curve</th><td>%s</td></tr>\n",
+					 cert_info->public_key.curve);
+			if (res != NSERROR_OK) {
+				return res;
+			}
+		}
+
+		if (cert_info->public_key.public != NULL) {
+			res = ssenddataf(ctx,
+					 "<tr><th>Public Value</th><td>%s</td></tr>\n",
+					 cert_info->public_key.public);
+			if (res != NSERROR_OK) {
+				return res;
+			}
+		}
+
+		res = ssenddataf(ctx, "</table>\n");
+		if (res != NSERROR_OK) {
+			return res;
+		}
+
+
+	}
+
+	res = ssenddataf(ctx,
+			 "<table class=\"info\">\n"
+			 "<tr><th>Miscellaneous</th><td><hr></td></tr>\n");
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	if (cert_info->serialnum != NULL) {
+		res = ssenddataf(ctx,
+				 "<tr><th>Serial Number</th><td>%s</td></tr>\n",
+				 cert_info->serialnum);
+		if (res != NSERROR_OK) {
+			return res;
+		}
+	}
+
+	if (cert_info->sig_algor != NULL) {
+		res = ssenddataf(ctx,
+				 "<tr><th>Signature Algorithm</th>"
+				 "<td>%s</td></tr>\n",
+				 cert_info->sig_algor);
+		if (res != NSERROR_OK) {
+			return res;
+		}
+	}
+
+	res = ssenddataf(ctx,
+			 "<tr><th>Version</th><td>%ld</td></tr>\n"
+			 "</table>\n",
+			 cert_info->version);
+
+	return res;
+}
 
 /**
  * Handler to generate about:certificate page.
@@ -610,7 +1142,7 @@ static bool fetch_about_certificate_handler(struct fetch_about_context *ctx)
 			"<link rel=\"stylesheet\" type=\"text/css\" "
 					"href=\"resource:internal.css\">\n"
 			"</head>\n"
-			"<body class=\"ns-even-bg ns-even-fg ns-border\">\n"
+			"<body id=\"certificate\" class=\"ns-even-bg ns-even-fg ns-border\">\n"
 			"<h1 class=\"ns-border\">Certificate</h1>\n");
 	if (res != NSERROR_OK) {
 		goto fetch_about_certificate_handler_aborted;
@@ -623,34 +1155,18 @@ static bool fetch_about_certificate_handler(struct fetch_about_context *ctx)
 			goto fetch_about_certificate_handler_aborted;
 		}
 	} else {
-		struct ssl_cert_info *cert_info;
+		struct ns_cert_info *cert_info;
 		res = convert_chain_to_cert_info(chain, &cert_info);
 		if (res == NSERROR_OK) {
 			size_t depth;
 			for (depth = 0; depth < chain->depth; depth++) {
-				res = ssenddataf(ctx,
-						 "<h2 class=\"ns-border\">Certificate: %d</h2>\n"
-						 "<p>Subject: %s</p>"
-						 "<p>Serial Number: %s</p>"
-						 "<p>Type: %i</p>"
-						 "<p>Version: %ld</p>"
-						 "<p>Issuer: %s</p>"
-						 "<p>Valid From: %s</p>"
-						 "<p>Valid Until: %s</p>",
-						 depth,
-						 cert_info[depth].subject,
-						 cert_info[depth].serialnum,
-						 cert_info[depth].cert_type,
-						 cert_info[depth].version,
-						 cert_info[depth].issuer,
-						 cert_info[depth].not_before,
-						 cert_info[depth].not_after);
+				res = format_certificate(ctx, cert_info + depth);
 				if (res != NSERROR_OK) {
 					goto fetch_about_certificate_handler_aborted;
 				}
 
 			}
-			free(cert_info);
+			free_ns_cert_info(cert_info);
 		} else {
 			res = ssenddataf(ctx,
 					 "<p>Invalid certificate data</p>\n");
