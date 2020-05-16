@@ -132,6 +132,7 @@ fetch_about_send_header(struct fetch_about_context *ctx, const char *fmt, ...)
 static nserror ssenddataf(struct fetch_about_context *ctx, const char *fmt, ...)
 {
 	char buffer[1024];
+	char *dbuff;
 	fetch_msg msg;
 	va_list ap;
 	int slen;
@@ -142,18 +143,39 @@ static nserror ssenddataf(struct fetch_about_context *ctx, const char *fmt, ...)
 
 	va_end(ap);
 
-	if (slen >= (int)sizeof(buffer)) {
+	if (slen < (int)sizeof(buffer)) {
+		msg.type = FETCH_DATA;
+		msg.data.header_or_data.buf = (const uint8_t *) buffer;
+		msg.data.header_or_data.len = slen;
+
+		if (fetch_about_send_callback(&msg, ctx)) {
+			return NSERROR_INVALID;
+		}
+
+		return NSERROR_OK;
+	}
+
+	dbuff = malloc(slen + 1);
+	if (dbuff == NULL) {
 		return NSERROR_NOSPACE;
 	}
 
+	va_start(ap, fmt);
+
+	slen = vsnprintf(dbuff, slen + 1, fmt, ap);
+
+	va_end(ap);
+
 	msg.type = FETCH_DATA;
-	msg.data.header_or_data.buf = (const uint8_t *) buffer;
+	msg.data.header_or_data.buf = (const uint8_t *)dbuff;
 	msg.data.header_or_data.len = slen;
 
 	if (fetch_about_send_callback(&msg, ctx)) {
+		free(dbuff);
 		return NSERROR_INVALID;
 	}
 
+	free(dbuff);
 	return NSERROR_OK;
 }
 
