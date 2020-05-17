@@ -511,6 +511,90 @@ static nserror free_ns_cert_info(struct ns_cert_info *cinfo)
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 
+/* OpenSSL 1.0.x, 1.0.2, 1.1.0 and 1.1.1 API all changed
+ * LibreSSL declares its OpenSSL version as 2.1 but only supports 1.0.x API
+ */
+#if (defined(LIBRESSL_VERSION_NUMBER) || (OPENSSL_VERSION_NUMBER < 0x1010000fL))
+/* 1.0.x */
+
+#if (defined(LIBRESSL_VERSION_NUMBER) || (OPENSSL_VERSION_NUMBER < 0x1000200fL))
+/* pre 1.0.2 */
+static int ns_X509_get_signature_nid(X509 *cert)
+{
+	return OBJ_obj2nid(cert->cert_info->key->algor->algorithm);
+}
+#else
+#define ns_X509_get_signature_nid X509_get_signature_nid
+#endif
+
+static const char *ns_ASN1_STRING_get0_data(ASN1_STRING *asn1str)
+{
+	return (const cahr *)ASN1_STRING_data(asn1str);
+}
+
+static const BIGNUM *ns_RSA_get0_n(const RSA *d)
+{
+	return d->n;
+}
+
+static const BIGNUM *ns_RSA_get0_e(const RSA *d)
+{
+	return d->e;
+}
+
+static int ns_RSA_bits(const RSA *rsa)
+{
+	return RSA_size(rsa) * 8;
+}
+
+static int ns_DSA_bits(const DSA *dsa)
+{
+	return DSA_size(dsa) * 8;
+}
+
+static int ns_DH_bits(const DH *dh)
+{
+	return DH_size(dh) * 8;
+}
+
+#elif (OPENSSL_VERSION_NUMBER < 0x1010100fL)
+/* 1.1.0 */
+#define ns_X509_get_signature_nid X509_get_signature_nid
+#define ns_ASN1_STRING_get0_data ASN1_STRING_get0_data
+
+static const BIGNUM *ns_RSA_get0_n(const RSA *r)
+{
+	const BIGNUM *n;
+	const BIGNUM *e;
+	const BIGNUM *d;
+	RSA_get0_key(r, &n, &e, &d);
+	return n;
+}
+
+static const BIGNUM *ns_RSA_get0_e(const RSA *r)
+{
+	const BIGNUM *n;
+	const BIGNUM *e;
+	const BIGNUM *d;
+	RSA_get0_key(r, &n, &e, &d);
+	return e;
+}
+
+#define ns_RSA_bits RSA_bits
+#define ns_DSA_bits DSA_bits
+#define ns_DH_bits DH_bits
+
+#else
+/* 1.1.1 and later */
+#define ns_X509_get_signature_nid X509_get_signature_nid
+#define ns_ASN1_STRING_get0_data ASN1_STRING_get0_data
+#define ns_RSA_get0_n RSA_get0_n
+#define ns_RSA_get0_e RSA_get0_e
+#define ns_RSA_bits RSA_bits
+#define ns_DSA_bits DSA_bits
+#define ns_DH_bits DH_bits
+#endif
+
 /**
  * extract certificate name information
  *
@@ -537,8 +621,7 @@ xname_to_info(X509_NAME *xname, struct ns_cert_name *iname)
 		name = X509_NAME_ENTRY_get_object(entry);
 		name_nid = OBJ_obj2nid(name);
 		value = X509_NAME_ENTRY_get_data(entry);
-		value_str = ASN1_STRING_get0_data(value);
-
+		value_str = ns_ASN1_STRING_get0_data(value);
 		switch (name_nid) {
 		case NID_commonName:
 			field = &iname->common_name;
@@ -629,15 +712,15 @@ rsa_to_info(RSA *rsa, struct ns_cert_pkey *ikey)
 
 	ikey->algor = strdup("RSA");
 
-	ikey->size = RSA_bits(rsa);
+	ikey->size = ns_RSA_bits(rsa);
 
-	tmp = BN_bn2hex(RSA_get0_n(rsa));
+	tmp = BN_bn2hex(ns_RSA_get0_n(rsa));
 	if (tmp != NULL) {
 		ikey->modulus = hexdup(tmp);
 		OPENSSL_free(tmp);
 	}
 
-	tmp = BN_bn2dec(RSA_get0_e(rsa));
+	tmp = BN_bn2dec(ns_RSA_get0_e(rsa));
 	if (tmp != NULL) {
 		ikey->exponent = strdup(tmp);
 		OPENSSL_free(tmp);
@@ -665,7 +748,7 @@ dsa_to_info(DSA *dsa, struct ns_cert_pkey *ikey)
 
 	ikey->algor = strdup("DSA");
 
-	ikey->size = DSA_bits(dsa);
+	ikey->size = ns_DSA_bits(dsa);
 
 	DSA_free(dsa);
 
@@ -689,7 +772,7 @@ dh_to_info(DH *dh, struct ns_cert_pkey *ikey)
 
 	ikey->algor = strdup("Diffie Hellman");
 
-	ikey->size = DH_bits(dh);
+	ikey->size = ns_DH_bits(dh);
 
 	DH_free(dh);
 
@@ -844,11 +927,7 @@ der_to_certinfo(const uint8_t *der,
 	info->sig_type = X509_get_signature_type(cert);
 
 	/* signature algorithm */
-#if (OPENSSL_VERSION_NUMBER < 0x1000200fL)
-	int pkey_nid = OBJ_obj2nid(cert->cert_info->key->algor->algorithm);
-#else
-	int pkey_nid = X509_get_signature_nid(cert);
-#endif
+	int pkey_nid = ns_X509_get_signature_nid(cert);
 	if (pkey_nid != NID_undef) {
 		const char* sslbuf = OBJ_nid2ln(pkey_nid);
 		if (sslbuf != NULL) {
