@@ -1071,6 +1071,71 @@ format_certificate_name(struct fetch_about_context *ctx,
 	return res;
 }
 
+
+static nserror
+format_certificate_public_key(struct fetch_about_context *ctx,
+			      struct ns_cert_pkey *public_key)
+{
+	nserror res;
+
+	if (public_key->algor == NULL) {
+		/* skip the table if no algorithm name */
+		return NSERROR_OK;
+	}
+
+	res = ssenddataf(ctx,
+			 "<table class=\"info\">\n"
+			 "<tr><th>Public Key</th><td><hr></td></tr>\n"
+			 "<tr><th>Algorithm</th><td>%s</td></tr>\n"
+			 "<tr><th>Key Size</th><td>%d</td></tr>\n",
+			 public_key->algor,
+			 public_key->size);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+
+	if (public_key->exponent != NULL) {
+		res = ssenddataf(ctx,
+				 "<tr><th>Exponent</th><td>%s</td></tr>\n",
+				 public_key->exponent);
+		if (res != NSERROR_OK) {
+			return res;
+		}
+	}
+
+	if (public_key->modulus != NULL) {
+		res = ssenddataf(ctx,
+				 "<tr><th>Modulus</th><td>%s</td></tr>\n",
+				 public_key->modulus);
+		if (res != NSERROR_OK) {
+			return res;
+		}
+	}
+
+	if (public_key->curve != NULL) {
+		res = ssenddataf(ctx,
+				 "<tr><th>Curve</th><td>%s</td></tr>\n",
+				 public_key->curve);
+		if (res != NSERROR_OK) {
+			return res;
+		}
+	}
+
+	if (public_key->public != NULL) {
+		res = ssenddataf(ctx,
+				 "<tr><th>Public Value</th><td>%s</td></tr>\n",
+				 public_key->public);
+		if (res != NSERROR_OK) {
+			return res;
+		}
+	}
+
+	res = ssenddataf(ctx, "</table>\n");
+
+	return res;
+}
+
 static nserror
 format_certificate(struct fetch_about_context *ctx,
 		   struct ns_cert_info *cert_info)
@@ -1132,61 +1197,9 @@ format_certificate(struct fetch_about_context *ctx,
 		return res;
 	}
 
-	if (cert_info->public_key.algor != NULL) {
-		res = ssenddataf(ctx,
-				 "<table class=\"info\">\n"
-				 "<tr><th>Public Key</th><td><hr></td></tr>\n"
-				 "<tr><th>Algorithm</th><td>%s</td></tr>\n"
-				 "<tr><th>Key Size</th><td>%d</td></tr>\n",
-				 cert_info->public_key.algor,
-				 cert_info->public_key.size);
-		if (res != NSERROR_OK) {
-			return res;
-		}
-
-
-		if (cert_info->public_key.exponent != NULL) {
-			res = ssenddataf(ctx,
-					 "<tr><th>Exponent</th><td>%s</td></tr>\n",
-					 cert_info->public_key.exponent);
-			if (res != NSERROR_OK) {
-				return res;
-			}
-		}
-
-		if (cert_info->public_key.modulus != NULL) {
-			res = ssenddataf(ctx,
-					 "<tr><th>Modulus</th><td>%s</td></tr>\n",
-					 cert_info->public_key.modulus);
-			if (res != NSERROR_OK) {
-				return res;
-			}
-		}
-
-		if (cert_info->public_key.curve != NULL) {
-			res = ssenddataf(ctx,
-					 "<tr><th>Curve</th><td>%s</td></tr>\n",
-					 cert_info->public_key.curve);
-			if (res != NSERROR_OK) {
-				return res;
-			}
-		}
-
-		if (cert_info->public_key.public != NULL) {
-			res = ssenddataf(ctx,
-					 "<tr><th>Public Value</th><td>%s</td></tr>\n",
-					 cert_info->public_key.public);
-			if (res != NSERROR_OK) {
-				return res;
-			}
-		}
-
-		res = ssenddataf(ctx, "</table>\n");
-		if (res != NSERROR_OK) {
-			return res;
-		}
-
-
+	res = format_certificate_public_key(ctx, &cert_info->public_key);
+	if (res != NSERROR_OK) {
+		return res;
 	}
 
 	res = ssenddataf(ctx,
