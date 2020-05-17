@@ -527,9 +527,9 @@ static int ns_X509_get_signature_nid(X509 *cert)
 #define ns_X509_get_signature_nid X509_get_signature_nid
 #endif
 
-static const char *ns_ASN1_STRING_get0_data(ASN1_STRING *asn1str)
+static const unsigned char *ns_ASN1_STRING_get0_data(ASN1_STRING *asn1str)
 {
-	return (const char *)ASN1_STRING_data(asn1str);
+	return (const unsigned char *)ASN1_STRING_data(asn1str);
 }
 
 static const BIGNUM *ns_RSA_get0_n(const RSA *d)
