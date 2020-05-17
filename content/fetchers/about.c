@@ -669,6 +669,9 @@ xname_to_info(X509_NAME *xname, struct ns_cert_name *iname)
 
 /**
  * duplicate a hex formatted string inserting the colons
+ *
+ * \todo only uses html entity as separator because netsurfs line breaking
+ *       fails otherwise.
  */
 static char *hexdup(const char *hex)
 {
@@ -678,13 +681,18 @@ static char *hexdup(const char *hex)
 	int cn = 0;
 
 	hexlen = strlen(hex);
-	dst = malloc(((hexlen * 3) + 1) / 2);
+	/* allow space fox XXYY to XX&#58;YY&#58; */
+	dst = malloc(((hexlen * 7) + 6) / 2);
 
 	if (dst != NULL) {
 		for (out = dst; *hex != 0; hex++) {
 			if (cn == 2) {
 				cn = 0;
-				*out++ = ':';
+				*out++ = '&';
+				*out++ = '#';
+				*out++ = '5';
+				*out++ = '8';
+				*out++ = ';';
 			}
 			*out++ = *hex;
 			cn++;
