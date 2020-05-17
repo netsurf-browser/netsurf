@@ -472,6 +472,8 @@ struct ns_cert_info {
 	int sig_type;		/**< Signature type */
 	char *sig_algor;        /**< Signature Algorithm */
 	char *serialnum;	/**< Serial number */
+	char *sha1fingerprint; /**< fingerprint shar1 encoded */
+	char *sha256fingerprint; /**< fingerprint shar256 encoded */
 	ssl_cert_err err;       /**< Whatever is wrong with this certificate */
 };
 
@@ -701,6 +703,43 @@ static char *hexdup(const char *hex)
 	}
 	return dst;
 }
+
+
+/**
+ * create a hex formatted string inserting the colons from binary data
+ *
+ * \todo only uses html entity as separator because netsurfs line breaking
+ *       fails otherwise.
+ */
+static char *bindup(unsigned char *bin, unsigned int binlen)
+{
+	char *dst;
+	char *out;
+	unsigned int idx;
+	const char hex[] = { '0', '1', '2', '3', '4', '5', '6', '7',
+			     '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+
+	/* allow space fox XY to expand to XX&#58;YY&#58; */
+	dst = malloc(binlen * 7);
+
+	if (dst != NULL) {
+		out = dst;
+		for (idx = 0; idx < binlen; idx++) {
+			*out++ = hex[(bin[idx] & 0xf0) >> 4];
+			*out++ = hex[bin[idx] & 0xf];
+
+			*out++ = '&';
+			*out++ = '#';
+			*out++ = '5';
+			*out++ = '8';
+			*out++ = ';';
+		}
+		out -= 5;
+		*out = 0;
+	}
+	return dst;
+}
+
 
 /**
  * extract RSA key information to info structure
@@ -958,6 +997,33 @@ der_to_certinfo(const uint8_t *der,
 		}
 	}
 
+	/* fingerprints */
+	const EVP_MD *digest;
+	unsigned int dig_len;
+	unsigned char *buff;
+	int rc;
+
+	digest = EVP_sha1();
+	buff = malloc(EVP_MD_size(digest));
+	if (buff != NULL) {
+		rc = X509_digest(cert, digest, buff, &dig_len);
+		if ((rc == 1) && (dig_len == (unsigned int)EVP_MD_size(digest))) {
+			info->sha1fingerprint = bindup(buff, dig_len);
+		}
+		free(buff);
+	}
+
+	digest = EVP_sha256();
+	buff = malloc(EVP_MD_size(digest));
+	if (buff != NULL) {
+		rc = X509_digest(cert, digest, buff, &dig_len);
+		if ((rc == 1) && (dig_len == (unsigned int)EVP_MD_size(digest))) {
+			info->sha256fingerprint = bindup(buff, dig_len);
+		}
+		free(buff);
+	}
+
+
 	/* issuer name */
 	xname_to_info(X509_get_issuer_name(cert), &info->issuer_name);
 
@@ -1137,6 +1203,49 @@ format_certificate_public_key(struct fetch_about_context *ctx,
 }
 
 static nserror
+format_certificate_fingerprint(struct fetch_about_context *ctx,
+			      struct ns_cert_info *cert_info)
+{
+	nserror res;
+
+	if ((cert_info->sha1fingerprint == NULL) &&
+	    (cert_info->sha256fingerprint == NULL))  {
+		/* skip the table if no fingerprints */
+		return NSERROR_OK;
+	}
+
+
+	res = ssenddataf(ctx,
+			 "<table class=\"info\">\n"
+			 "<tr><th>Fingerprints</th><td><hr></td></tr>\n");
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	if (cert_info->sha256fingerprint != NULL) {
+		res = ssenddataf(ctx,
+				 "<tr><th>SHA-256</th><td>%s</td></tr>\n",
+				 cert_info->sha256fingerprint);
+		if (res != NSERROR_OK) {
+			return res;
+		}
+	}
+
+	if (cert_info->sha1fingerprint != NULL) {
+		res = ssenddataf(ctx,
+				 "<tr><th>SHA-1</th><td>%s</td></tr>\n",
+				 cert_info->sha1fingerprint);
+		if (res != NSERROR_OK) {
+			return res;
+		}
+	}
+
+	res = ssenddataf(ctx, "</table>\n");
+
+	return res;
+}
+
+static nserror
 format_certificate(struct fetch_about_context *ctx,
 		   struct ns_cert_info *cert_info)
 {
@@ -1232,6 +1341,12 @@ format_certificate(struct fetch_about_context *ctx,
 			 "<tr><th>Version</th><td>%ld</td></tr>\n"
 			 "</table>\n",
 			 cert_info->version);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	res = format_certificate_fingerprint(ctx, cert_info);
+
 
 	return res;
 }
