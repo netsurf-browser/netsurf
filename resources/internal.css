@@ -196,16 +196,22 @@ body#dirlist span.size + span.size {
  * certificate display style
  */
 body#certificate table.info {
-    width: 90%;
-    margin: 1.2em auto 0;
+	width: 90%;
+	margin: 1.2em auto 0;
 }
 
 body#certificate table.info th {
 	width: 14em;
-    	text-align: right;
+	vertical-align: top;
+	text-align: right;
 	font-weight: bold;
 	font-family: sans-serif;
 	padding-right: 1em;
+}
+
+body#certificate table.info td.data {
+	font-family: monospace;
+	font-size: 90%;
 }
 
 

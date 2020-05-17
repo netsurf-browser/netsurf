@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#include "netsurf/inttypes.h"
 #include "netsurf/plot_style.h"
 
 #include "utils/log.h"
@@ -1172,7 +1173,7 @@ format_certificate_public_key(struct fetch_about_context *ctx,
 
 	if (public_key->modulus != NULL) {
 		res = ssenddataf(ctx,
-				 "<tr><th>Modulus</th><td>%s</td></tr>\n",
+				 "<tr><th>Modulus</th><td class=\"data\">%s</td></tr>\n",
 				 public_key->modulus);
 		if (res != NSERROR_OK) {
 			return res;
@@ -1224,7 +1225,7 @@ format_certificate_fingerprint(struct fetch_about_context *ctx,
 
 	if (cert_info->sha256fingerprint != NULL) {
 		res = ssenddataf(ctx,
-				 "<tr><th>SHA-256</th><td>%s</td></tr>\n",
+				 "<tr><th>SHA-256</th><td class=\"data\">%s</td></tr>\n",
 				 cert_info->sha256fingerprint);
 		if (res != NSERROR_OK) {
 			return res;
@@ -1233,7 +1234,7 @@ format_certificate_fingerprint(struct fetch_about_context *ctx,
 
 	if (cert_info->sha1fingerprint != NULL) {
 		res = ssenddataf(ctx,
-				 "<tr><th>SHA-1</th><td>%s</td></tr>\n",
+				 "<tr><th>SHA-1</th><td class=\"data\">%s</td></tr>\n",
 				 cert_info->sha1fingerprint);
 		if (res != NSERROR_OK) {
 			return res;
@@ -1247,13 +1248,14 @@ format_certificate_fingerprint(struct fetch_about_context *ctx,
 
 static nserror
 format_certificate(struct fetch_about_context *ctx,
-		   struct ns_cert_info *cert_info)
+		   struct ns_cert_info *cert_info,
+		   size_t depth)
 {
 	nserror res;
 
 	res = ssenddataf(ctx,
-			 "<h2 class=\"ns-border\">Certificate: %s</h2>\n",
-			 cert_info->subject_name.common_name);
+			 "<h2 id=\"%"PRIsizet"\" class=\"ns-border\">%s</h2>\n",
+			 depth, cert_info->subject_name.common_name);
 	if (res != NSERROR_OK) {
 		return res;
 	}
@@ -1396,14 +1398,40 @@ static bool fetch_about_certificate_handler(struct fetch_about_context *ctx)
 		res = convert_chain_to_cert_info(chain, &cert_info);
 		if (res == NSERROR_OK) {
 			size_t depth;
+			res = ssenddataf(ctx, "<ul>\n");
+			if (res != NSERROR_OK) {
+				free_ns_cert_info(cert_info);
+				goto fetch_about_certificate_handler_aborted;
+			}
+
 			for (depth = 0; depth < chain->depth; depth++) {
-				res = format_certificate(ctx, cert_info + depth);
+				res = ssenddataf(ctx, "<li><a href=\"#%"PRIsizet"\">%s</a></li>\n",
+						depth, (cert_info + depth)
+							->subject_name
+								.common_name);
 				if (res != NSERROR_OK) {
+					free_ns_cert_info(cert_info);
+					goto fetch_about_certificate_handler_aborted;
+				}
+
+			}
+
+			for (depth = 0; depth < chain->depth; depth++) {
+				res = format_certificate(ctx, cert_info + depth,
+						depth);
+				if (res != NSERROR_OK) {
+					free_ns_cert_info(cert_info);
 					goto fetch_about_certificate_handler_aborted;
 				}
 
 			}
 			free_ns_cert_info(cert_info);
+
+			res = ssenddataf(ctx, "</ul>\n");
+			if (res != NSERROR_OK) {
+				free_ns_cert_info(cert_info);
+				goto fetch_about_certificate_handler_aborted;
+			}
 		} else {
 			res = ssenddataf(ctx,
 					 "<p>Invalid certificate data</p>\n");
