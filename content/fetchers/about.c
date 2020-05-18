@@ -461,6 +461,14 @@ struct ns_cert_pkey {
 };
 
 /**
+ * Certificate subject alternative name
+ */
+struct ns_cert_san {
+	struct ns_cert_san *next;
+	char *name;
+};
+
+/**
  * certificate information for certificate chain
  */
 struct ns_cert_info {
@@ -475,6 +483,7 @@ struct ns_cert_info {
 	char *serialnum;	/**< Serial number */
 	char *sha1fingerprint; /**< fingerprint shar1 encoded */
 	char *sha256fingerprint; /**< fingerprint shar256 encoded */
+	struct ns_cert_san *san; /**< subject alternative names */
 	ssl_cert_err err;       /**< Whatever is wrong with this certificate */
 };
 
@@ -483,6 +492,8 @@ struct ns_cert_info {
  */
 static nserror free_ns_cert_info(struct ns_cert_info *cinfo)
 {
+	struct ns_cert_san *san;
+
 	free(cinfo->subject_name.common_name);
 	free(cinfo->subject_name.organisation);
 	free(cinfo->subject_name.organisation_unit);
@@ -504,6 +515,16 @@ static nserror free_ns_cert_info(struct ns_cert_info *cinfo)
 	free(cinfo->not_after);
 	free(cinfo->sig_algor);
 	free(cinfo->serialnum);
+
+	/* free san list avoiding use after free */
+	san = cinfo->san;
+	while (san != NULL) {
+		struct ns_cert_san *next;
+		next = san->next;
+		free(san);
+		san = next;
+	}
+
 	free(cinfo);
 
 	return NSERROR_OK;
@@ -917,6 +938,44 @@ pkey_to_info(EVP_PKEY *pkey, struct ns_cert_pkey *ikey)
 	return res;
 }
 
+static nserror san_to_info(X509 *cert, struct ns_cert_san **prev_next)
+{
+	int idx;
+	int san_names_nb = -1;
+	const GENERAL_NAME *current_name;
+	const unsigned char *dns_name;
+	struct ns_cert_san *isan;
+
+	STACK_OF(GENERAL_NAME) *san_names = NULL;
+
+	san_names = X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
+	if (san_names == NULL) {
+		return NSERROR_OK;
+	}
+
+	san_names_nb = sk_GENERAL_NAME_num(san_names);
+
+	/* Check each name within the extension */
+	for (idx = 0; idx < san_names_nb; idx++) {
+		current_name = sk_GENERAL_NAME_value(san_names, idx);
+
+		if (current_name->type == GEN_DNS) {
+			/* extract DNS name into info structure */
+			dns_name = ns_ASN1_STRING_get0_data(current_name->d.dNSName);
+
+			isan = malloc(sizeof(struct ns_cert_san));
+			if (isan != NULL) {
+				isan->name = strdup((const char *)dns_name);
+				isan->next = NULL;
+				*prev_next = isan;
+				prev_next = &isan->next;
+			}
+		}
+	}
+	sk_GENERAL_NAME_pop_free(san_names, GENERAL_NAME_free);
+
+	return NSERROR_OK;
+}
 
 static nserror
 der_to_certinfo(const uint8_t *der,
@@ -1024,6 +1083,8 @@ der_to_certinfo(const uint8_t *der,
 		free(buff);
 	}
 
+	/* subject alternative names */
+	san_to_info(cert, &info->san);
 
 	/* issuer name */
 	xname_to_info(X509_get_issuer_name(cert), &info->issuer_name);
@@ -1136,6 +1197,43 @@ format_certificate_name(struct fetch_about_context *ctx,
 	}
 
 	return res;
+}
+
+/**
+ * output formatted certificate subject alternate names
+ */
+static nserror
+format_certificate_san(struct fetch_about_context *ctx,
+			      struct ns_cert_san *san)
+{
+	nserror res;
+
+	if (san == NULL) {
+		return NSERROR_OK;
+	}
+
+	res = ssenddataf(ctx,
+			 "<table class=\"info\">\n"
+			 "<tr><th>Alternative Names</th><td><hr></td></tr>\n");
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	while (san != NULL) {
+		res = ssenddataf(ctx,
+				 "<tr><th>DNS Name</th><td>%s</td></tr>\n",
+				 san->name);
+		if (res != NSERROR_OK) {
+			return res;
+		}
+
+		san = san->next;
+	}
+
+	res = ssenddataf(ctx, "</table>\n");
+
+	return res;
+
 }
 
 
@@ -1318,6 +1416,11 @@ format_certificate(struct fetch_about_context *ctx,
 			 "</table>\n",
 			 cert_info->not_before,
 			 cert_info->not_after);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	res = format_certificate_san(ctx, cert_info->san);
 	if (res != NSERROR_OK) {
 		return res;
 	}
