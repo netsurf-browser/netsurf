@@ -1260,6 +1260,13 @@ format_certificate(struct fetch_about_context *ctx,
 		return res;
 	}
 
+	if (cert_info->err != SSL_CERT_ERR_OK) {
+		res = ssenddataf(ctx,
+				 "<div class=\"error\">\n"
+				 "<p><b>%s</b></p>\n",
+				 messages_get_sslcode(cert_info->err));
+	}
+
 	res = ssenddataf(ctx,
 			 "<table class=\"info\">\n"
 			 "<tr><th>Issued To</th><td><hr></td></tr>\n");
@@ -1348,7 +1355,13 @@ format_certificate(struct fetch_about_context *ctx,
 	}
 
 	res = format_certificate_fingerprint(ctx, cert_info);
+	if (res != NSERROR_OK) {
+		return res;
+	}
 
+	if (cert_info->err != SSL_CERT_ERR_OK) {
+		res = ssenddataf(ctx, "</div>\n");
+	}
 
 	return res;
 }
@@ -1416,6 +1429,12 @@ static bool fetch_about_certificate_handler(struct fetch_about_context *ctx)
 
 			}
 
+			res = ssenddataf(ctx, "</ul>\n");
+			if (res != NSERROR_OK) {
+				free_ns_cert_info(cert_info);
+				goto fetch_about_certificate_handler_aborted;
+			}
+
 			for (depth = 0; depth < chain->depth; depth++) {
 				res = format_certificate(ctx, cert_info + depth,
 						depth);
@@ -1427,11 +1446,6 @@ static bool fetch_about_certificate_handler(struct fetch_about_context *ctx)
 			}
 			free_ns_cert_info(cert_info);
 
-			res = ssenddataf(ctx, "</ul>\n");
-			if (res != NSERROR_OK) {
-				free_ns_cert_info(cert_info);
-				goto fetch_about_certificate_handler_aborted;
-			}
 		} else {
 			res = ssenddataf(ctx,
 					 "<p>Invalid certificate data</p>\n");

@@ -214,6 +214,10 @@ body#certificate table.info td.data {
 	font-size: 90%;
 }
 
+body#certificate div.error {
+    background: #FFEAEA;
+}
+
 
 /* 
  * configuration listing style 
