@@ -1262,9 +1262,16 @@ format_certificate(struct fetch_about_context *ctx,
 
 	if (cert_info->err != SSL_CERT_ERR_OK) {
 		res = ssenddataf(ctx,
-				 "<div class=\"error\">\n"
-				 "<p><b>%s</b></p>\n",
+				 "<table class=\"info\">\n"
+				 "<tr class=\"ns-even-fg-bad\">"
+				 "<th>Fault</th>"
+				 "<td>%s</td>"
+				 "</tr>"
+				 "</table>\n",
 				 messages_get_sslcode(cert_info->err));
+		if (res != NSERROR_OK) {
+			return res;
+		}
 	}
 
 	res = ssenddataf(ctx,
@@ -1357,10 +1364,6 @@ format_certificate(struct fetch_about_context *ctx,
 	res = format_certificate_fingerprint(ctx, cert_info);
 	if (res != NSERROR_OK) {
 		return res;
-	}
-
-	if (cert_info->err != SSL_CERT_ERR_OK) {
-		res = ssenddataf(ctx, "</div>\n");
 	}
 
 	return res;
