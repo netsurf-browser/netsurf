@@ -26,11 +26,7 @@
 #ifndef NETSURF_HTML_TEXTPLAIN_H
 #define NETSURF_HTML_TEXTPLAIN_H
 
-#include <stddef.h>
-#include "netsurf/mouse.h"
-
 struct content;
-struct hlcache_handle;
 struct rect;
 
 /**
@@ -42,37 +38,12 @@ nserror textplain_init(void);
 
 
 /**
- * Retrieve number of lines in content
- *
- * \param[in] c Content to retrieve line count from
- * \return Number of lines
- */
-unsigned long textplain_line_count(struct content *c);
-
-
-/**
  * Retrieve the size (in bytes) of text data
  *
  * \param[in] c Content to retrieve size of
  * \return Size, in bytes, of data
  */
 size_t textplain_size(struct content *c);
-
-
-/**
- * Return byte offset within UTF8 textplain content.
- *
- * given the co-ordinates of a point within a textplain content. 'dir'
- * specifies the direction in which to search (-1 = above-left, +1 =
- * below-right) if the co-ordinates are not contained within a line.
- *
- * \param[in] c   content of type CONTENT_TEXTPLAIN
- * \param[in] x   x ordinate of point
- * \param[in] y   y ordinate of point
- * \param[in] dir direction of search if not within line
- * \return byte offset of character containing (or nearest to) point
- */
-size_t textplain_offset_from_coords(struct content *c, int x, int y, int dir);
 
 
 /**
@@ -86,31 +57,6 @@ size_t textplain_offset_from_coords(struct content *c, int x, int y, int dir);
  */
 void textplain_coords_from_range(struct content *c,
 		unsigned start, unsigned end, struct rect *r);
-
-/**
- * Return a pointer to the requested line of text.
- *
- * \param[in] c        content of type CONTENT_TEXTPLAIN
- * \param[in] lineno   line number
- * \param[out] poffset receives byte offset of line start within text
- * \param[out] plen    receives length of returned line
- * \return pointer to text, or NULL if invalid line number
- */
-char *textplain_get_line(struct content *c, unsigned lineno,
-		size_t *poffset, size_t *plen);
-
-
-/**
- * Find line number of byte in text
- *
- * Given a byte offset within the text, return the line number
- * of the line containing that offset.
- *
- * \param[in] c       content of type CONTENT_TEXTPLAIN
- * \param[in] offset  byte offset within textual representation
- * \return line number, or -1 if offset invalid (larger than size)
- */
-int textplain_find_line(struct content *c, unsigned offset);
 
 
 /**

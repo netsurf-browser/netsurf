@@ -594,6 +594,94 @@ static content_type textplain_content_type(void)
 
 
 /**
+ * Return byte offset within UTF8 textplain content.
+ *
+ * given the co-ordinates of a point within a textplain content. 'dir'
+ * specifies the direction in which to search (-1 = above-left, +1 =
+ * below-right) if the co-ordinates are not contained within a line.
+ *
+ * \param[in] c   content of type CONTENT_TEXTPLAIN
+ * \param[in] x   x ordinate of point
+ * \param[in] y   y ordinate of point
+ * \param[in] dir direction of search if not within line
+ * \return byte offset of character containing (or nearest to) point
+ */
+static size_t
+textplain_offset_from_coords(struct content *c, int x, int y, int dir)
+{
+	textplain_content *textc = (textplain_content *) c;
+	float line_height = textplain_line_height();
+	struct textplain_line *line;
+	const char *text;
+	unsigned nlines;
+	size_t length;
+	int idx;
+
+	assert(c != NULL);
+
+	y = (int)((float)(y - MARGIN) / line_height);
+	x -= MARGIN;
+
+	nlines = textc->physical_line_count;
+	if (!nlines)
+		return 0;
+
+	if (y <= 0) y = 0;
+	else if ((unsigned)y >= nlines)
+		y = nlines - 1;
+
+	line = &textc->physical_line[y];
+	text = textc->utf8_data + line->start;
+	length = line->length;
+	idx = 0;
+
+	while (x > 0) {
+		size_t next_offset = 0;
+		int width = INT_MAX;
+
+		while (next_offset < length && text[next_offset] != '\t') {
+			next_offset = utf8_next(text, length, next_offset);
+		}
+
+		if (next_offset < length) {
+			guit->layout->width(&textplain_style,
+					    text,
+					    next_offset,
+					    &width);
+		}
+
+		if (x <= width) {
+			int pixel_offset;
+			size_t char_offset;
+
+			guit->layout->position(&textplain_style,
+					       text, next_offset, x,
+					       &char_offset, &pixel_offset);
+
+			idx += char_offset;
+			break;
+		}
+
+		x -= width;
+		length -= next_offset;
+		text += next_offset;
+		idx += next_offset;
+
+		/* check if it's within the tab */
+		width = textplain_tab_width - (width % textplain_tab_width);
+		if (x <= width) break;
+
+		x -= width;
+		length--;
+		text++;
+		idx++;
+	}
+
+	return line->start + idx;
+}
+
+
+/**
  * Handle mouse clicks and movements in a TEXTPLAIN content window.
  *
  * \param c	  content of type textplain
@@ -1212,6 +1300,91 @@ textplain_coord_from_offset(const char *text, size_t offset, size_t length)
 	return x;
 }
 
+
+/**
+ * Retrieve number of lines in content
+ *
+ * \param[in] c Content to retrieve line count from
+ * \return Number of lines
+ */
+static unsigned long textplain_line_count(struct content *c)
+{
+	textplain_content *text = (textplain_content *) c;
+
+	assert(c != NULL);
+
+	return text->physical_line_count;
+}
+
+
+/**
+ * Return a pointer to the requested line of text.
+ *
+ * \param[in] c        content of type CONTENT_TEXTPLAIN
+ * \param[in] lineno   line number
+ * \param[out] poffset receives byte offset of line start within text
+ * \param[out] plen    receives length of returned line
+ * \return pointer to text, or NULL if invalid line number
+ */
+static char *
+textplain_get_line(struct content *c,
+		   unsigned lineno,
+		   size_t *poffset,
+		   size_t *plen)
+{
+	textplain_content *text = (textplain_content *) c;
+	struct textplain_line *line;
+
+	assert(c != NULL);
+
+	if (lineno >= text->physical_line_count)
+		return NULL;
+	line = &text->physical_line[lineno];
+
+	*poffset = line->start;
+	*plen = line->length;
+	return text->utf8_data + line->start;
+}
+
+
+/**
+ * Find line number of byte in text
+ *
+ * Given a byte offset within the text, return the line number
+ * of the line containing that offset.
+ *
+ * \param[in] c       content of type CONTENT_TEXTPLAIN
+ * \param[in] offset  byte offset within textual representation
+ * \return line number, or -1 if offset invalid (larger than size)
+ */
+static int textplain_find_line(struct content *c, unsigned offset)
+{
+	textplain_content *text = (textplain_content *) c;
+	struct textplain_line *line;
+	int nlines;
+	int lineno = 0;
+
+	assert(c != NULL);
+
+	line = text->physical_line;
+	nlines = text->physical_line_count;
+
+	if (offset > text->utf8_data_size) {
+		return -1;
+	}
+
+/* \todo - implement binary search here */
+	while (lineno < nlines && line[lineno].start < offset) {
+		lineno++;
+	}
+	if (line[lineno].start > offset) {
+		lineno--;
+	}
+
+	return lineno;
+}
+
+
 /**
  * Finds all occurrences of a given string in a textplain content
  *
@@ -1369,15 +1542,6 @@ nserror textplain_init(void)
 }
 
 
-/* exported interface documented in html/textplain.h */
-unsigned long textplain_line_count(struct content *c)
-{
-	textplain_content *text = (textplain_content *) c;
-
-	assert(c != NULL);
-
-	return text->physical_line_count;
-}
 
 
 /* exported interface documented in html/textplain.h */
@@ -1388,81 +1552,6 @@ size_t textplain_size(struct content *c)
 	assert(c != NULL);
 
 	return text->utf8_data_size;
-}
-
-
-/* exported interface documented in html/textplain.h */
-size_t textplain_offset_from_coords(struct content *c, int x, int y, int dir)
-{
-	textplain_content *textc = (textplain_content *) c;
-	float line_height = textplain_line_height();
-	struct textplain_line *line;
-	const char *text;
-	unsigned nlines;
-	size_t length;
-	int idx;
-
-	assert(c != NULL);
-
-	y = (int)((float)(y - MARGIN) / line_height);
-	x -= MARGIN;
-
-	nlines = textc->physical_line_count;
-	if (!nlines)
-		return 0;
-
-	if (y <= 0) y = 0;
-	else if ((unsigned)y >= nlines)
-		y = nlines - 1;
-
-	line = &textc->physical_line[y];
-	text = textc->utf8_data + line->start;
-	length = line->length;
-	idx = 0;
-
-	while (x > 0) {
-		size_t next_offset = 0;
-		int width = INT_MAX;
-
-		while (next_offset < length && text[next_offset] != '\t') {
-			next_offset = utf8_next(text, length, next_offset);
-		}
-
-		if (next_offset < length) {
-			guit->layout->width(&textplain_style,
-					    text,
-					    next_offset,
-					    &width);
-		}
-
-		if (x <= width) {
-			int pixel_offset;
-			size_t char_offset;
-
-			guit->layout->position(&textplain_style,
-					       text, next_offset, x,
-					       &char_offset, &pixel_offset);
-
-			idx += char_offset;
-			break;
-		}
-
-		x -= width;
-		length -= next_offset;
-		text += next_offset;
-		idx += next_offset;
-
-		/* check if it's within the tab */
-		width = textplain_tab_width - (width % textplain_tab_width);
-		if (x <= width) break;
-
-		x -= width;
-		length--;
-		text++;
-		idx++;
-	}
-
-	return line->start + idx;
 }
 
 
@@ -1517,57 +1606,6 @@ textplain_coords_from_range(struct content *c,
 	}
 
 	r->y1 = (int)(MARGIN + (lineno + 1) * line_height);
-}
-
-
-/* exported interface documented in html/textplain.h */
-char *
-textplain_get_line(struct content *c,
-		   unsigned lineno,
-		   size_t *poffset,
-		   size_t *plen)
-{
-	textplain_content *text = (textplain_content *) c;
-	struct textplain_line *line;
-
-	assert(c != NULL);
-
-	if (lineno >= text->physical_line_count)
-		return NULL;
-	line = &text->physical_line[lineno];
-
-	*poffset = line->start;
-	*plen = line->length;
-	return text->utf8_data + line->start;
-}
-
-
-/* exported interface documented in html/textplain.h */
-int textplain_find_line(struct content *c, unsigned offset)
-{
-	textplain_content *text = (textplain_content *) c;
-	struct textplain_line *line;
-	int nlines;
-	int lineno = 0;
-
-	assert(c != NULL);
-
-	line = text->physical_line;
-	nlines = text->physical_line_count;
-
-	if (offset > text->utf8_data_size) {
-		return -1;
-	}
-
-/* \todo - implement binary search here */
-	while (lineno < nlines && line[lineno].start < offset) {
-		lineno++;
-	}
-	if (line[lineno].start > offset) {
-		lineno--;
-	}
-
-	return lineno;
 }
 
 
