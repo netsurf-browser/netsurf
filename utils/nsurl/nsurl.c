@@ -237,6 +237,15 @@ lwc_string *nsurl_get_component(const nsurl *url, nsurl_component part)
 
 
 /* exported interface, documented in nsurl.h */
+enum nsurl_scheme_type nsurl_get_scheme_type(const nsurl *url)
+{
+	assert(url != NULL);
+
+	return url->components.scheme_type;
+}
+
+
+/* exported interface, documented in nsurl.h */
 bool nsurl_has_component(const nsurl *url, nsurl_component part)
 {
 	assert(url != NULL);

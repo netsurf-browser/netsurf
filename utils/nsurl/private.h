@@ -25,18 +25,6 @@
 #include "utils/utils.h"
 
 
-/** A type for URL schemes */
-enum nsurl_scheme_type {
-	NSURL_SCHEME_OTHER,
-	NSURL_SCHEME_HTTP,
-	NSURL_SCHEME_HTTPS,
-	NSURL_SCHEME_FILE,
-	NSURL_SCHEME_FTP,
-	NSURL_SCHEME_MAILTO,
-	NSURL_SCHEME_DATA
-};
-
-
 /**
  * nsurl components
  *

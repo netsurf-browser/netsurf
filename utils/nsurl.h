@@ -30,6 +30,16 @@
 /** NetSurf URL object */
 typedef struct nsurl nsurl;
 
+/** A type for URL schemes */
+enum nsurl_scheme_type {
+	NSURL_SCHEME_OTHER,
+	NSURL_SCHEME_HTTP,
+	NSURL_SCHEME_HTTPS,
+	NSURL_SCHEME_FILE,
+	NSURL_SCHEME_FTP,
+	NSURL_SCHEME_MAILTO,
+	NSURL_SCHEME_DATA
+};
 
 typedef enum nsurl_component {
 	NSURL_SCHEME		= (1 << 0),
@@ -143,6 +153,15 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
  *    NSURL_FRAGMENT
  */
 lwc_string *nsurl_get_component(const nsurl *url, nsurl_component part);
+
+
+/**
+ * Get the scheme type from a NetSurf URL object
+ *
+ * \param url   NetSurf URL object
+ * \return The URL scheme type.
+ */
+enum nsurl_scheme_type nsurl_get_scheme_type(const nsurl *url);
 
 
 /**
