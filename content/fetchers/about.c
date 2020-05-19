@@ -972,7 +972,17 @@ static nserror san_to_info(X509 *cert, struct ns_cert_san **prev_next)
 			}
 		}
 	}
-	sk_GENERAL_NAME_pop_free(san_names, GENERAL_NAME_free);
+
+	/* AmiSSL can't cope with the "correct" mechanism of freeing
+	 * the GENERAL_NAME stack, which is:
+	 * sk_GENERAL_NAME_pop_free(san_names, GENERAL_NAME_free);
+	 * So instead we do this open-coded loop which does the same:
+	 */
+	for (idx = 0; idx < san_names_nb; idx++) {
+		GENERAL_NAME *entry = sk_GENERAL_NAME_pop(san_names);
+		GENERAL_NAME_free(entry);
+	}
+	sk_GENERAL_NAME_free(san_names);
 
 	return NSERROR_OK;
 }
