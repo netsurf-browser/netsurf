@@ -462,10 +462,17 @@ static nserror page_info__layout(
 {
 	int cur_y = 0;
 	int max_x = 0;
+	enum nsurl_scheme_type scheme;
+
+	scheme = nsurl_get_scheme_type(browser_window_access_url(pi->bw));
 
 	cur_y += pi->window_padding;
 	for (unsigned i = 0; i < PI_ENTRY__COUNT; i++) {
 		struct page_info_entry *entry = pi->entries + i;
+
+		if (i == PI_ENTRY_CERT && scheme != NSURL_SCHEME_HTTPS) {
+			continue;
+		}
 
 		switch (entry->type) {
 		case PAGE_INFO_ENTRY_TYPE_TEXT:
@@ -576,6 +583,7 @@ nserror page_info_redraw(
 		const struct redraw_context *ctx)
 {
 	struct redraw_context new_ctx = *ctx;
+	enum nsurl_scheme_type scheme;
 	struct rect r = {
 		.x0 = clip->x0 + x,
 		.y0 = clip->y0 + y,
@@ -584,6 +592,8 @@ nserror page_info_redraw(
 	};
 	int cur_y = 0;
 	nserror err;
+
+	scheme = nsurl_get_scheme_type(browser_window_access_url(pi->bw));
 
 	/* Start knockout rendering if it's available for this plotter. */
 	if (ctx->plot->option_knockout) {
@@ -601,6 +611,10 @@ nserror page_info_redraw(
 	for (unsigned i = 0; i < PI_ENTRY__COUNT; i++) {
 		const struct page_info_entry *entry = pi->entries + i;
 		int cur_x = pi->window_padding;
+
+		if (i == PI_ENTRY_CERT && scheme != NSURL_SCHEME_HTTPS) {
+			continue;
+		}
 
 		switch (entry->type) {
 		case PAGE_INFO_ENTRY_TYPE_TEXT:
@@ -704,14 +718,21 @@ nserror page_info_mouse_action(
 		int y,
 		bool *did_something)
 {
+	enum nsurl_scheme_type scheme;
 	int cur_y = 0;
 	nserror err;
+
+	scheme = nsurl_get_scheme_type(browser_window_access_url(pi->bw));
 
 	cur_y += pi->window_padding;
 	for (unsigned i = 0; i < PI_ENTRY__COUNT; i++) {
 		struct page_info_entry *entry = pi->entries + i;
 		bool hovering = false;
 		int height;
+
+		if (i == PI_ENTRY_CERT && scheme != NSURL_SCHEME_HTTPS) {
+			continue;
+		}
 
 		switch (entry->type) {
 		case PAGE_INFO_ENTRY_TYPE_TEXT:
