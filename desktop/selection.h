@@ -58,19 +58,6 @@ struct selection
 };
 
 
-struct selection *selection_create(struct content *c, bool is_html);
-void selection_prepare(struct selection *s, struct content *c, bool is_html);
-void selection_destroy(struct selection *s);
-
-void selection_init(
-		struct selection *s,
-		struct box *root,
-		const nscss_len_ctx *len_ctx);
-void selection_reinit(struct selection *s, struct box *root);
-
-/* struct box *selection_root(struct selection *s); */
-#define selection_root(s) ((s)->root)
-
 /* bool selection_defined(struct selection *s); */
 #define selection_defined(s) ((s)->defined)
 
@@ -80,26 +67,154 @@ void selection_reinit(struct selection *s, struct box *root);
 /* bool selection_dragging_start(struct selection *s); */
 #define selection_dragging_start(s) ((s)->drag_state == DRAG_START)
 
-void selection_clear(struct selection *s, bool redraw);
-void selection_select_all(struct selection *s);
-
-void selection_set_start(struct selection *s, unsigned idx);
-void selection_set_end(struct selection *s, unsigned idx);
-
-bool selection_click(struct selection *s, browser_mouse_state mouse,
-		unsigned idx);
-void selection_track(struct selection *s, browser_mouse_state mouse,
-		unsigned idx);
-
-bool selection_copy_to_clipboard(struct selection *s);
-char * selection_get_copy(struct selection *s);
-
 /** Handles completion of a drag operation */
 /* void selection_drag_end(struct selection *s); */
 #define selection_drag_end(s) ((s)->drag_state = DRAG_NONE)
 
-bool selection_highlighted(const struct selection *s,
-		unsigned start, unsigned end,
-		unsigned *start_idx, unsigned *end_idx);
+/**
+ * Creates a new selection object associated with a browser window.
+ *
+ * Used from text and html content handlers
+ *
+ * \return new selection context
+ */
+struct selection *selection_create(struct content *c, bool is_html);
+
+/**
+ * Prepare a newly created selection object for use.
+ *
+ * Used from text and html content handlers, riscos frontend
+ *
+ * \param  s		selection object
+ * \param  c		content
+ * \param  is_html	true if content is html false if content is textplain
+ */
+void selection_prepare(struct selection *s, struct content *c, bool is_html);
+
+/**
+ * Destroys a selection object clearing it if nesessary
+ *
+ * Used from content textsearch
+ *
+ * \param s selection object
+ */
+void selection_destroy(struct selection *s);
+
+/**
+ * Initialise the selection object to use the given box subtree as its root,
+ * ie. selections are confined to that subtree.
+ *
+ * Used from text and html content handlers
+ *
+ * \param s selection object
+ * \param root the root box for html document or NULL for text/plain
+ */
+void selection_init(struct selection *s, struct box *root, const nscss_len_ctx *len_ctx);
+
+/**
+ * Initialise the selection object to use the given box subtree as its root,
+ * ie. selections are confined to that subtree, whilst maintaining the current
+ * selection whenever possible because, for example, it's just the page being
+ * resized causing the layout to change.
+ *
+ * Used from html content handler
+ *
+ * \param s selection object
+ * \param root the root box for html document or NULL for text/plain
+ */
+void selection_reinit(struct selection *s, struct box *root);
+
+/**
+ * Clears the current selection, optionally causing the screen to be updated.
+ *
+ * Used from text and html content handlers
+ *
+ * \param s selection object
+ * \param redraw true iff the previously selected region of the browser
+ *                window should be redrawn
+ */
+void selection_clear(struct selection *s, bool redraw);
+
+/**
+ * Selects all the text within the box subtree controlled by
+ * this selection object, updating the screen accordingly.
+ *
+ * Used from text and html content handlers
+ *
+ * \param s selection object
+ */
+void selection_select_all(struct selection *s);
+
+/**
+ * Set the position of the current selection, updating the screen.
+ *
+ * Used from content textsearch
+ *
+ * \param s selection object
+ * \param start byte offset within textual representation
+ * \param end byte offset within textual representation
+ */
+void selection_set_position(struct selection *s, unsigned start, unsigned end);
+
+/**
+ * Handles mouse clicks (including drag starts) in or near a selection
+ *
+ * Used from text and html content handlers
+ *
+ * \param s selection object
+ * \param mouse state of mouse buttons and modifier keys
+ * \param idx byte offset within textual representation
+ * \return true iff the click has been handled by the selection code
+ */
+bool selection_click(struct selection *s, browser_mouse_state mouse, unsigned idx);
+
+/**
+ * Handles movements related to the selection, eg. dragging of start and
+ * end points.
+ *
+ * Used from text and html content handlers
+ *
+ * \param  s      selection object
+ * \param  mouse  state of mouse buttons and modifier keys
+ * \param  idx    byte offset within text representation
+ */
+void selection_track(struct selection *s, browser_mouse_state mouse, unsigned idx);
+
+/**
+ * Copy the selected contents to the clipboard
+ *
+ * Used from text and html content handlers
+ *
+ * \param s  selection
+ * \return true iff successful
+ */
+bool selection_copy_to_clipboard(struct selection *s);
+
+/**
+ * Get copy of selection as string
+ *
+ * Used from text and html content handlers
+ *
+ * \param s  selection
+ * \return string of selected text, or NULL.  Ownership passed to caller.
+ */
+char *selection_get_copy(struct selection *s);
+
+
+/**
+ * Tests whether a text range lies partially within the selection, if there is
+ * a selection defined, returning the start and end indexes of the bytes
+ * that should be selected.
+ *
+ * Used from text and html content handlers, content textsearch
+ *
+ * \param  s          the selection object
+ * \param  start      byte offset of start of text
+ * \param  end        byte offset of end of text
+ * \param  start_idx  receives the start index (in bytes) of the highlighted portion
+ * \param  end_idx    receives the end index (in bytes)
+ * \return true iff part of the given box lies within the selection
+ */
+bool selection_highlighted(const struct selection *s, unsigned start, unsigned end, unsigned *start_idx, unsigned *end_idx);
 
 #endif

@@ -149,7 +149,6 @@ static void free_matches(struct textsearch_context *textsearch)
 	for (; cur; cur = nxt) {
 		nxt = cur->next;
 		if (cur->sel) {
-			selection_clear(cur->sel, true);
 			selection_destroy(cur->sel);
 		}
 		free(cur);
@@ -171,7 +170,6 @@ static void search_show_all(bool all, struct textsearch_context *context)
 		if (!all && a != context->current) {
 			add = false;
 			if (a->sel) {
-				selection_clear(a->sel, true);
 				selection_destroy(a->sel);
 				a->sel = NULL;
 			}
@@ -182,8 +180,9 @@ static void search_show_all(bool all, struct textsearch_context *context)
 			res = context->c->handler->create_selection(context->c,
 								    &a->sel);
 			if (res == NSERROR_OK) {
-				selection_set_start(a->sel, a->start_idx);
-				selection_set_end(a->sel, a->end_idx);
+				selection_set_position(a->sel,
+						       a->start_idx,
+						       a->end_idx);
 			}
 		}
 	}

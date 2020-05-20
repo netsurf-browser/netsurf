@@ -17,8 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
-  * Text selection within browser windows (implementation).
+/**
+ * \file
+  * implementation of text selection within browser windows.
   */
 
 #include <assert.h>
@@ -76,21 +77,6 @@ typedef bool (*seln_traverse_handler)(const char *text, size_t length,
 		const char *whitespace_text, size_t whitespace_length);
 
 
-static bool redraw_handler(const char *text, size_t length,
-		struct box *box, const nscss_len_ctx *len_ctx,
-		void *handle, const char *whitespace_text,
-		size_t whitespace_length);
-static void selection_redraw(struct selection *s, unsigned start_idx,
-		unsigned end_idx);
-static bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
-		unsigned *start_offset, unsigned *end_offset);
-static bool traverse_tree(struct box *box, const nscss_len_ctx *len_ctx,
-		unsigned start_idx, unsigned end_idx,
-		seln_traverse_handler handler,
-		void *handle, save_text_whitespace *before, bool *first,
-		bool do_marker);
-static unsigned selection_label_subtree(struct box *box, unsigned idx);
-
 /**
  * Get the browser window containing the content a selection object belongs to.
  *
@@ -107,126 +93,6 @@ static struct browser_window * selection_get_browser_window(struct selection *s)
 
 
 /**
- * Creates a new selection object associated with a browser window.
- *
- * \return new selection context
- */
-
-struct selection *selection_create(struct content *c, bool is_html)
-{
-	struct selection *s = calloc(1, sizeof(struct selection));
-	if (s) {
-		selection_prepare(s, c, is_html);
-	}
-
-	return s;
-}
-
-/**
- * Prepare a newly created selection object for use.
- *
- * \param  s		selection object
- * \param  c		content
- * \param  is_html	true if content is html false if content is textplain
- */
-
-void selection_prepare(struct selection *s, struct content *c, bool is_html)
-{
-	if (s) {
-		s->c = c;
-		s->is_html = is_html;
-		s->root = NULL;
-		s->drag_state = DRAG_NONE;
-		s->max_idx = 0;
-		selection_clear(s, false);
-	}
-}
-
-
-/**
- * Destroys a selection object, without updating the
- * owning window (caller should call selection_clear()
- * first if update is desired)
- *
- * \param  s       selection object
- */
-
-void selection_destroy(struct selection *s)
-{
-	if (s != NULL)
-		free(s);
-}
-
-
-/**
- * Initialise the selection object to use the given box subtree as its root,
- * ie. selections are confined to that subtree, whilst maintaining the current
- * selection whenever possible because, for example, it's just the page being
- * resized causing the layout to change.
- *
- * \param  s     selection object
- * \param  root  the root box for html document or NULL for text/plain
- */
-
-void selection_reinit(struct selection *s, struct box *root)
-{
-	unsigned root_idx;
-
-	assert(s);
-
-	root_idx = 0;
-
-	s->root = root;
-	if (root) {
-		s->max_idx = selection_label_subtree(root, root_idx);
-	} else {
-		if (s->is_html == false)
-			s->max_idx = textplain_size(s->c);
-		else
-			s->max_idx = 0;
-	}
-
-	if (s->defined) {
-		if (s->end_idx > s->max_idx) s->end_idx = s->max_idx;
-		if (s->start_idx > s->max_idx) s->start_idx = s->max_idx;
-		s->defined = (s->end_idx > s->start_idx);
-	}
-}
-
-
-/**
- * Initialise the selection object to use the given box subtree as its root,
- * ie. selections are confined to that subtree.
- *
- * \param  s     selection object
- * \param  root  the root box for html document or NULL for text/plain
- */
-
-void selection_init(
-		struct selection *s,
-		struct box *root,
-		const nscss_len_ctx *len_ctx)
-{
-	if (s->defined)
-		selection_clear(s, true);
-
-	s->defined = false;
-	s->start_idx = 0;
-	s->end_idx = 0;
-	s->drag_state = DRAG_NONE;
-	if (len_ctx != NULL) {
-		s->len_ctx = *len_ctx;
-	} else {
-		s->len_ctx.vw = 0;
-		s->len_ctx.vh = 0;
-		s->len_ctx.root_style = NULL;
-	}
-
-	selection_reinit(s, root);
-}
-
-
-/**
  * Label each text box in the given box subtree with its position
  * in a textual representation of the content.
  *
@@ -234,8 +100,7 @@ void selection_init(
  * \param idx current position within textual representation
  * \return updated position
  */
-
-unsigned selection_label_subtree(struct box *box, unsigned idx)
+static unsigned selection_label_subtree(struct box *box, unsigned idx)
 {
 	struct box *child = box->children;
 
@@ -257,150 +122,6 @@ unsigned selection_label_subtree(struct box *box, unsigned idx)
 
 
 /**
- * Handles mouse clicks (including drag starts) in or near a selection
- *
- * \param  s      selection object
- * \param  mouse  state of mouse buttons and modifier keys
- * \param  idx    byte offset within textual representation
- *
- * \return true iff the click has been handled by the selection code
- */
-
-bool selection_click(struct selection *s, browser_mouse_state mouse,
-		unsigned idx)
-{
-	browser_mouse_state modkeys =
-			(mouse & (BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_2));
-	int pos = -1;  /* 0 = inside selection, 1 = after it */
-	struct browser_window *top = selection_get_browser_window(s);
-	top = browser_window_get_root(top);
-
-	if (selection_defined(s)) {
-		if (idx > s->start_idx) {
-			if (idx <= s->end_idx)
-				pos = 0;
-			else
-				pos = 1;
-		}
-	}
-
-	if (!pos &&
-		((mouse & BROWSER_MOUSE_DRAG_1) ||
-		 (modkeys && (mouse & BROWSER_MOUSE_DRAG_2)))) {
-		/* drag-saving selection */
-		char *sel = selection_get_copy(s);
-		guit->window->drag_save_selection(top->window, sel);
-		free(sel);
-	}
-	else if (!modkeys) {
-		if (pos && (mouse & BROWSER_MOUSE_PRESS_1)) {
-		/* Clear the selection if mouse is pressed outside the
-		 * selection, Otherwise clear on release (to allow for drags) */
-
-			selection_clear(s, true);
-		} else if (mouse & BROWSER_MOUSE_DRAG_1) {
-			/* start new selection drag */
-
-			selection_clear(s, true);
-			
-			selection_set_start(s, idx);
-			selection_set_end(s, idx);
-
-			s->drag_state = DRAG_END;
-
-			guit->window->event(top->window, GW_EVENT_START_SELECTION);
-		}
-		else if (mouse & BROWSER_MOUSE_DRAG_2) {
-
-			/* adjust selection, but only if there is one */
-			if (!selection_defined(s))
-				return false;	/* ignore Adjust drags */
-
-			if (pos >= 0) {
-				selection_set_end(s, idx);
-
-				s->drag_state = DRAG_END;
-			}
-			else {
-				selection_set_start(s, idx);
-
-				s->drag_state = DRAG_START;
-			}
-
-			guit->window->event(top->window, GW_EVENT_START_SELECTION);
-		}
-		else if (mouse & BROWSER_MOUSE_CLICK_2) {
-
-			/* ignore Adjust clicks when there's no selection */
-			if (!selection_defined(s))
-				return false;
-
-			if (pos >= 0)
-				selection_set_end(s, idx);
-			else
-				selection_set_start(s, idx);
-			s->drag_state = DRAG_NONE;
-		}
-		else
-			return false;
-	}
-	else {
-		/* not our problem */
-		return false;
-	}
-
-	/* this mouse click is selection-related */
-	return true;
-}
-
-
-/**
- * Handles movements related to the selection, eg. dragging of start and
- * end points.
- *
- * \param  s      selection object
- * \param  mouse  state of mouse buttons and modifier keys
- * \param  idx    byte offset within text representation
- */
-
-void selection_track(struct selection *s, browser_mouse_state mouse,
-		unsigned idx)
-{
-	if (!mouse) {
-		s->drag_state = DRAG_NONE;
-	}
-
-	switch (s->drag_state) {
-
-		case DRAG_START:
-			if (idx > s->end_idx) {
-				unsigned old_end = s->end_idx;
-				selection_set_end(s, idx);
-				selection_set_start(s, old_end);
-				s->drag_state = DRAG_END;
-			}
-			else
-				selection_set_start(s, idx);
-			break;
-
-		case DRAG_END:
-			if (idx < s->start_idx) {
-				unsigned old_start = s->start_idx;
-				selection_set_start(s, idx);
-				selection_set_end(s, old_start);
-				s->drag_state = DRAG_START;
-			}
-			else
-				selection_set_end(s, idx);
-			break;
-
-		default:
-			break;
-	}
-}
-
-
-/**
  * Tests whether a text box lies partially within the given range of
  * byte offsets, returning the start and end indexes of the bytes
  * that are enclosed.
@@ -412,9 +133,12 @@ void selection_track(struct selection *s, browser_mouse_state mouse,
  * \param  end_offset    receives the end offset of the selected part
  * \return true iff the range encloses at least part of the box
  */
-
-bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
-		unsigned *start_offset, unsigned *end_offset)
+static bool
+selected_part(struct box *box,
+	      unsigned start_idx,
+	      unsigned end_idx,
+	      unsigned *start_offset,
+	      unsigned *end_offset)
 {
 	size_t box_length = box->length + SPACE_LEN(box);
 
@@ -452,8 +176,9 @@ bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
 
 
 /**
- * Traverse the given box subtree, calling the handler function (with its handle)
- * for all boxes that lie (partially) within the given range
+ * Traverse the given box subtree, calling the handler function (with
+ * its handle) for all boxes that lie (partially) within the given
+ * range
  *
  * \param  box        box subtree
  * \param  len_ctx    Length conversion context.
@@ -466,13 +191,16 @@ bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
  * \param  do_marker  whether deal enter any marker box
  * \return false iff traversal abandoned part-way through
  */
-
-bool traverse_tree(
-		struct box *box, const nscss_len_ctx *len_ctx,
-		unsigned start_idx, unsigned end_idx,
-		seln_traverse_handler handler,
-		void *handle, save_text_whitespace *before, bool *first,
-		bool do_marker)
+static bool
+traverse_tree(struct box *box,
+	      const nscss_len_ctx *len_ctx,
+	      unsigned start_idx,
+	      unsigned end_idx,
+	      seln_traverse_handler handler,
+	      void *handle,
+	      save_text_whitespace *before,
+	      bool *first,
+	      bool do_marker)
 {
 	struct box *child;
 	const char *whitespace_text = "";
@@ -563,45 +291,6 @@ bool traverse_tree(
 
 
 /**
- * Traverse the current selection, calling the handler function (with its
- * handle) for all boxes that lie (partially) within the given range
- *
- * \param s       The selection context.
- * \param handler handler function to call
- * \param handle  handle to pass
- * \return false iff traversal abandoned part-way through
- */
-
-static bool selection_traverse(struct selection *s,
-		seln_traverse_handler handler, void *handle)
-{
-	save_text_whitespace before = WHITESPACE_NONE;
-	bool first = true;
-	const char *text;
-	size_t length;
-
-	if (!selection_defined(s))
-		return true;	/* easy case, nothing to do */
-
-	if (s->root) {
-		/* HTML */
-		return traverse_tree(s->root, &s->len_ctx,
-				s->start_idx, s->end_idx,
-				handler, handle,
-				&before, &first, false);
-	}
-
-	/* Text */
-	text = textplain_get_raw_data(s->c, s->start_idx, s->end_idx, &length);
-
-	if (text && !handler(text, length, NULL, NULL, handle, NULL, 0))
-		return false;
-
-	return true;
-}
-
-
-/**
  * Selection traversal handler for redrawing the screen when the selection
  * has been altered.
  *
@@ -614,10 +303,14 @@ static bool selection_traverse(struct selection *s,
  * \param  whitespace_length  length of whitespace_text
  * \return true iff successful and traversal should continue
  */
-
-bool redraw_handler(const char *text, size_t length, struct box *box,
-		const nscss_len_ctx *len_ctx, void *handle,
-		const char *whitespace_text, size_t whitespace_length)
+static bool
+redraw_handler(const char *text,
+	       size_t length,
+	       struct box *box,
+	       const nscss_len_ctx *len_ctx,
+	       void *handle,
+	       const char *whitespace_text,
+	       size_t whitespace_length)
 {
 	if (box) {
 		struct rdw_info *r = (struct rdw_info*)handle;
@@ -662,8 +355,8 @@ bool redraw_handler(const char *text, size_t length, struct box *box,
  * \param  start_idx  start offset (bytes) within the textual representation
  * \param  end_idx    end offset (bytes) within the textual representation
  */
-
-void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
+static void
+selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
 {
 	struct rdw_info rdw;
 
@@ -691,6 +384,100 @@ void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
 
 
 /**
+ * Set the start position of the current selection, updating the screen.
+ *
+ * \param s selection object
+ * \param offset byte offset within textual representation
+ */
+static void selection_set_start(struct selection *s, unsigned offset)
+{
+	bool was_defined;
+	unsigned old_start;
+
+	old_start = s->start_idx;
+	s->start_idx = offset;
+
+	was_defined = s->defined;
+	s->defined = (s->start_idx < s->end_idx);
+
+	if (was_defined) {
+		if (offset < old_start) {
+			selection_redraw(s, s->start_idx, old_start);
+		} else {
+			selection_redraw(s, old_start, s->start_idx);
+		}
+	} else if (s->defined) {
+		selection_redraw(s, s->start_idx, s->end_idx);
+	}
+}
+
+
+/**
+ * Set the end position of the current selection, updating the screen.
+ *
+ * \param s selection object
+ * \param offset byte offset within textual representation
+ */
+static void selection_set_end(struct selection *s, unsigned offset)
+{
+	bool was_defined = selection_defined(s);
+	unsigned old_end = s->end_idx;
+
+	s->end_idx = offset;
+	s->defined = (s->start_idx < s->end_idx);
+
+	if (was_defined) {
+		if (offset < old_end)
+			selection_redraw(s, s->end_idx, old_end);
+		else
+			selection_redraw(s, old_end, s->end_idx);
+	}
+	else if (selection_defined(s))
+		selection_redraw(s, s->start_idx, s->end_idx);
+}
+
+
+/**
+ * Traverse the current selection, calling the handler function (with its
+ * handle) for all boxes that lie (partially) within the given range
+ *
+ * \param s       The selection context.
+ * \param handler handler function to call
+ * \param handle  handle to pass
+ * \return false iff traversal abandoned part-way through
+ */
+static bool
+selection_traverse(struct selection *s,
+		   seln_traverse_handler handler,
+		   void *handle)
+{
+	save_text_whitespace before = WHITESPACE_NONE;
+	bool first = true;
+	const char *text;
+	size_t length;
+
+	if (!selection_defined(s))
+		return true;	/* easy case, nothing to do */
+
+	if (s->root) {
+		/* HTML */
+		return traverse_tree(s->root, &s->len_ctx,
+				s->start_idx, s->end_idx,
+				handler, handle,
+				&before, &first, false);
+	}
+
+	/* Text */
+	text = textplain_get_raw_data(s->c, s->start_idx, s->end_idx, &length);
+
+	if (text && !handler(text, length, NULL, NULL, handle, NULL, 0))
+		return false;
+
+	return true;
+}
+
+
+/**
  * Append text to selection string.
  *
  * \param text text to be added
@@ -700,9 +487,12 @@ void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
  * \param sel_string string to append to, may be resized
  * \return true iff successful
  */
-
-static bool selection_string_append(const char *text, size_t length, bool space,
-		plot_font_style_t *style, struct selection_string *sel_string)
+static bool
+selection_string_append(const char *text,
+			size_t length,
+			bool space,
+			plot_font_style_t *style,
+			struct selection_string *sel_string)
 {
 	size_t new_length = sel_string->length + length + (space ? 1 : 0) + 1;
 
@@ -768,7 +558,6 @@ static bool selection_string_append(const char *text, size_t length, bool space,
  * \param  whitespace_length  length of whitespace_text
  * \return true iff successful and traversal should continue
  */
-
 static bool selection_copy_handler(const char *text, size_t length,
 		struct box *box, const nscss_len_ctx *len_ctx,
 		void *handle, const char *whitespace_text,
@@ -808,13 +597,227 @@ static bool selection_copy_handler(const char *text, size_t length,
 }
 
 
-/**
- * Get copy of selection as string
- *
- * \param s  selection
- * \return string of selected text, or NULL.  Ownership passed to caller.
- */
+/* exported interface documented in desktop/selection.h */
+struct selection *selection_create(struct content *c, bool is_html)
+{
+	struct selection *s = calloc(1, sizeof(struct selection));
+	if (s) {
+		selection_prepare(s, c, is_html);
+	}
 
+	return s;
+}
+
+
+/* exported interface documented in desktop/selection.h */
+void selection_prepare(struct selection *s, struct content *c, bool is_html)
+{
+	if (s) {
+		s->c = c;
+		s->is_html = is_html;
+		s->root = NULL;
+		s->drag_state = DRAG_NONE;
+		s->max_idx = 0;
+		selection_clear(s, false);
+	}
+}
+
+
+/* exported interface documented in desktop/selection.h */
+void selection_destroy(struct selection *s)
+{
+	if (s == NULL) {
+		return;
+	}
+
+	selection_clear(s, true);
+	free(s);
+}
+
+
+/* exported interface documented in desktop/selection.h */
+void selection_reinit(struct selection *s, struct box *root)
+{
+	unsigned root_idx;
+
+	assert(s);
+
+	root_idx = 0;
+
+	s->root = root;
+	if (root) {
+		s->max_idx = selection_label_subtree(root, root_idx);
+	} else {
+		if (s->is_html == false)
+			s->max_idx = textplain_size(s->c);
+		else
+			s->max_idx = 0;
+	}
+
+	if (s->defined) {
+		if (s->end_idx > s->max_idx) s->end_idx = s->max_idx;
+		if (s->start_idx > s->max_idx) s->start_idx = s->max_idx;
+		s->defined = (s->end_idx > s->start_idx);
+	}
+}
+
+
+/* exported interface documented in desktop/selection.h */
+void
+selection_init(struct selection *s,
+	       struct box *root,
+	       const nscss_len_ctx *len_ctx)
+{
+	if (s->defined) {
+		selection_clear(s, true);
+	}
+
+	s->defined = false;
+	s->start_idx = 0;
+	s->end_idx = 0;
+	s->drag_state = DRAG_NONE;
+	if (len_ctx != NULL) {
+		s->len_ctx = *len_ctx;
+	} else {
+		s->len_ctx.vw = 0;
+		s->len_ctx.vh = 0;
+		s->len_ctx.root_style = NULL;
+	}
+
+	selection_reinit(s, root);
+}
+
+
+/* exported interface documented in desktop/selection.h */
+bool
+selection_click(struct selection *s,
+		browser_mouse_state mouse,
+		unsigned idx)
+{
+	browser_mouse_state modkeys =
+			(mouse & (BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_2));
+	int pos = -1;  /* 0 = inside selection, 1 = after it */
+	struct browser_window *top = selection_get_browser_window(s);
+	top = browser_window_get_root(top);
+
+	if (selection_defined(s)) {
+		if (idx > s->start_idx) {
+			if (idx <= s->end_idx)
+				pos = 0;
+			else
+				pos = 1;
+		}
+	}
+
+	if (!pos &&
+		((mouse & BROWSER_MOUSE_DRAG_1) ||
+		 (modkeys && (mouse & BROWSER_MOUSE_DRAG_2)))) {
+		/* drag-saving selection */
+		char *sel = selection_get_copy(s);
+		guit->window->drag_save_selection(top->window, sel);
+		free(sel);
+	}
+	else if (!modkeys) {
+		if (pos && (mouse & BROWSER_MOUSE_PRESS_1)) {
+		/* Clear the selection if mouse is pressed outside the
+		 * selection, Otherwise clear on release (to allow for drags) */
+
+			selection_clear(s, true);
+		} else if (mouse & BROWSER_MOUSE_DRAG_1) {
+			/* start new selection drag */
+
+			selection_clear(s, true);
+
+			selection_set_start(s, idx);
+			selection_set_end(s, idx);
+
+			s->drag_state = DRAG_END;
+
+			guit->window->event(top->window, GW_EVENT_START_SELECTION);
+		}
+		else if (mouse & BROWSER_MOUSE_DRAG_2) {
+
+			/* adjust selection, but only if there is one */
+			if (!selection_defined(s))
+				return false;	/* ignore Adjust drags */
+
+			if (pos >= 0) {
+				selection_set_end(s, idx);
+
+				s->drag_state = DRAG_END;
+			}
+			else {
+				selection_set_start(s, idx);
+
+				s->drag_state = DRAG_START;
+			}
+
+			guit->window->event(top->window, GW_EVENT_START_SELECTION);
+		}
+		else if (mouse & BROWSER_MOUSE_CLICK_2) {
+
+			/* ignore Adjust clicks when there's no selection */
+			if (!selection_defined(s))
+				return false;
+
+			if (pos >= 0)
+				selection_set_end(s, idx);
+			else
+				selection_set_start(s, idx);
+			s->drag_state = DRAG_NONE;
+		}
+		else
+			return false;
+	}
+	else {
+		/* not our problem */
+		return false;
+	}
+
+	/* this mouse click is selection-related */
+	return true;
+}
+
+
+/* exported interface documented in desktop/selection.h */
+void
+selection_track(struct selection *s, browser_mouse_state mouse, unsigned idx)
+{
+	if (!mouse) {
+		s->drag_state = DRAG_NONE;
+	}
+
+	switch (s->drag_state) {
+
+		case DRAG_START:
+			if (idx > s->end_idx) {
+				unsigned old_end = s->end_idx;
+				selection_set_end(s, idx);
+				selection_set_start(s, old_end);
+				s->drag_state = DRAG_END;
+			}
+			else
+				selection_set_start(s, idx);
+			break;
+
+		case DRAG_END:
+			if (idx < s->start_idx) {
+				unsigned old_start = s->start_idx;
+				selection_set_start(s, idx);
+				selection_set_end(s, old_start);
+				s->drag_state = DRAG_START;
+			}
+			else
+				selection_set_end(s, idx);
+			break;
+
+		default:
+			break;
+	}
+}
+
+
+/* exported interface documented in desktop/selection.h */
 char *selection_get_copy(struct selection *s)
 {
 	struct selection_string sel_string = {
@@ -841,13 +844,7 @@ char *selection_get_copy(struct selection *s)
 }
 
 
-
-/**
- * Copy the selected contents to the clipboard
- *
- * \param s  selection
- * \return true iff successful
- */
+/* exported interface documented in desktop/selection.h */
 bool selection_copy_to_clipboard(struct selection *s)
 {
 	struct selection_string sel_string = {
@@ -878,14 +875,7 @@ bool selection_copy_to_clipboard(struct selection *s)
 }
 
 
-/**
- * Clears the current selection, optionally causing the screen to be updated.
- *
- * \param  s       selection object
- * \param  redraw  true iff the previously selected region of the browser
- *                window should be redrawn
- */
-
+/* exported interface documented in desktop/selection.h */
 void selection_clear(struct selection *s, bool redraw)
 {
 	int old_start, old_end;
@@ -905,91 +895,32 @@ void selection_clear(struct selection *s, bool redraw)
 }
 
 
-/**
- * Selects all the text within the box subtree controlled by
- * this selection object, updating the screen accordingly.
- *
- * \param  s  selection object
- */
-
+/* exported interface documented in desktop/selection.h */
 void selection_select_all(struct selection *s)
 {
 	assert(s);
 	s->defined = true;
-	
+
 	selection_set_start(s, 0);
 	selection_set_end(s, s->max_idx);
 }
 
 
-/**
- * Set the start position of the current selection, updating the screen.
- *
- * \param  s       selection object
- * \param  offset  byte offset within textual representation
- */
-
-void selection_set_start(struct selection *s, unsigned offset)
+/* exported interface documented in desktop/selection.h */
+void selection_set_position(struct selection *s, unsigned start, unsigned end)
 {
-	bool was_defined = selection_defined(s);
-	unsigned old_start = s->start_idx;
-	
-	s->start_idx = offset;
-	s->defined = (s->start_idx < s->end_idx);
-	
-	if (was_defined) {
-		if (offset < old_start)
-			selection_redraw(s, s->start_idx, old_start);
-		else
-			selection_redraw(s, old_start, s->start_idx);
-	}
-	else if (selection_defined(s))
-		selection_redraw(s, s->start_idx, s->end_idx);
+	selection_set_start(s, start);
+	selection_set_end(s, end);
 }
 
 
-/**
- * Set the end position of the current selection, updating the screen.
- *
- * \param  s       selection object
- * \param  offset  byte offset within textual representation
- */
-
-void selection_set_end(struct selection *s, unsigned offset)
-{
-	bool was_defined = selection_defined(s);
-	unsigned old_end = s->end_idx;
-
-	s->end_idx = offset;
-	s->defined = (s->start_idx < s->end_idx);
-
-	if (was_defined) {
-		if (offset < old_end)
-			selection_redraw(s, s->end_idx, old_end);
-		else
-			selection_redraw(s, old_end, s->end_idx);
-	}
-	else if (selection_defined(s))
-		selection_redraw(s, s->start_idx, s->end_idx);
-}
-
-
-/**
- * Tests whether a text range lies partially within the selection, if there is
- * a selection defined, returning the start and end indexes of the bytes
- * that should be selected.
- *
- * \param  s          the selection object
- * \param  start      byte offset of start of text
- * \param  end        byte offset of end of text
- * \param  start_idx  receives the start index (in bytes) of the highlighted portion
- * \param  end_idx    receives the end index (in bytes)
- * \return true iff part of the given box lies within the selection
- */
-
-bool selection_highlighted(const struct selection *s,
-		unsigned start, unsigned end,
-		unsigned *start_idx, unsigned *end_idx)
+/* exported interface documented in desktop/selection.h */
+bool
+selection_highlighted(const struct selection *s,
+		      unsigned start,
+		      unsigned end,
+		      unsigned *start_idx,
+		      unsigned *end_idx)
 {
 	/* caller should have checked first for efficiency */
 	assert(s);
