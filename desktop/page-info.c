@@ -454,6 +454,36 @@ static nserror page_info__create_from_bw(
 }
 
 /**
+ * Check whether an entry is relevant.
+ *
+ * \param[in] entry   The page info entry to consider.
+ * \param[in] scheme  URL scheme that the page info is for.
+ * \return true if the entry should be hidden, otherwise false.
+ */
+static inline bool page_info__hide_entry(
+		enum pi_entry entry,
+		enum nsurl_scheme_type scheme)
+{
+	switch (entry) {
+	case PI_ENTRY_CERT:
+		if (scheme != NSURL_SCHEME_HTTPS) {
+			return true;
+		}
+		break;
+	case PI_ENTRY_COOKIES:
+		if (scheme != NSURL_SCHEME_HTTP &&
+		    scheme != NSURL_SCHEME_HTTPS) {
+			return true;
+		}
+		break;
+	default:
+		break;
+	}
+
+	return false;
+}
+
+/**
  * Lay out the page info window.
  *
  * \param[in] pi  The page info window handle.
@@ -469,7 +499,7 @@ static nserror page_info__layout(
 	for (unsigned i = 0; i < PI_ENTRY__COUNT; i++) {
 		struct page_info_entry *entry = pi->entries + i;
 
-		if (i == PI_ENTRY_CERT && pi->scheme != NSURL_SCHEME_HTTPS) {
+		if (page_info__hide_entry(i, pi->scheme)) {
 			continue;
 		}
 
@@ -608,7 +638,7 @@ nserror page_info_redraw(
 		const struct page_info_entry *entry = pi->entries + i;
 		int cur_x = pi->window_padding;
 
-		if (i == PI_ENTRY_CERT && pi->scheme != NSURL_SCHEME_HTTPS) {
+		if (page_info__hide_entry(i, pi->scheme)) {
 			continue;
 		}
 
@@ -723,7 +753,7 @@ nserror page_info_mouse_action(
 		bool hovering = false;
 		int height;
 
-		if (i == PI_ENTRY_CERT && pi->scheme != NSURL_SCHEME_HTTPS) {
+		if (page_info__hide_entry(i, pi->scheme)) {
 			continue;
 		}
 
