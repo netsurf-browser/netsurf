@@ -1220,6 +1220,7 @@ default_mouse_action(html_content *html,
 					       &pixel_offset);
 
 			if (selection_click(&html->sel,
+					    html->bw,
 					    mouse,
 					    mas->text.box->byte_offset + idx)) {
 				/* key presses must be directed at the

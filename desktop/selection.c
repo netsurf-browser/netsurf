@@ -78,21 +78,6 @@ typedef bool (*seln_traverse_handler)(const char *text, size_t length,
 
 
 /**
- * Get the browser window containing the content a selection object belongs to.
- *
- * \param  s	selection object
- * \return the browser window
- */
-static struct browser_window * selection_get_browser_window(struct selection *s)
-{
-	if (s->is_html)
-		return html_get_browser_window(s->c);
-	else
-		return textplain_get_browser_window(s->c);
-}
-
-
-/**
  * Label each text box in the given box subtree with its position
  * in a textual representation of the content.
  *
@@ -691,13 +676,14 @@ selection_init(struct selection *s,
 /* exported interface documented in desktop/selection.h */
 bool
 selection_click(struct selection *s,
+		struct browser_window *top,
 		browser_mouse_state mouse,
 		unsigned idx)
 {
 	browser_mouse_state modkeys =
 			(mouse & (BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_2));
 	int pos = -1;  /* 0 = inside selection, 1 = after it */
-	struct browser_window *top = selection_get_browser_window(s);
+
 	top = browser_window_get_root(top);
 
 	if (selection_defined(s)) {

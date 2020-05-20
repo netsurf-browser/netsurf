@@ -28,6 +28,7 @@
 #include "content/handlers/css/utils.h"
 
 struct box;
+struct browser_window;
 
 typedef enum {
 	DRAG_NONE,
@@ -166,7 +167,7 @@ void selection_set_position(struct selection *s, unsigned start, unsigned end);
  * \param idx byte offset within textual representation
  * \return true iff the click has been handled by the selection code
  */
-bool selection_click(struct selection *s, browser_mouse_state mouse, unsigned idx);
+bool selection_click(struct selection *s, struct browser_window *top, browser_mouse_state mouse, unsigned idx);
 
 /**
  * Handles movements related to the selection, eg. dragging of start and

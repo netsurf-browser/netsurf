@@ -706,7 +706,7 @@ textplain_mouse_action(struct content *c,
 	browser_window_set_drag_type(bw, DRAGGING_NONE, NULL);
 
 	idx = textplain_offset_from_coords(c, x, y, dir);
-	if (selection_click(&text->sel, mouse, idx)) {
+	if (selection_click(&text->sel, text->bw, mouse, idx)) {
 
 		if (selection_dragging(&text->sel)) {
 			browser_window_set_drag_type(bw,
@@ -1633,16 +1633,4 @@ textplain_get_raw_data(struct content *c,
 	*plen = end - start;
 
 	return text->utf8_data + start;
-}
-
-
-/* exported interface documented in html/textplain.h */
-struct browser_window *textplain_get_browser_window(struct content *c)
-{
-	textplain_content *text = (textplain_content *) c;
-
-	assert(c != NULL);
-	assert(c->handler == &textplain_content_handler);
-
-	return text->bw;
 }

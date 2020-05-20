@@ -73,12 +73,4 @@ void textplain_coords_from_range(struct content *c,
 char *textplain_get_raw_data(struct content *c, unsigned start, unsigned end, size_t *plen);
 
 
-/**
- * Get the browser window containing a textplain content
- *
- * \param[in] c text/plain content
- * \return the browser window
- */
-struct browser_window *textplain_get_browser_window(struct content *c);
-
 #endif

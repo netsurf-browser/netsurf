@@ -230,15 +230,6 @@ void html__redraw_a_box(html_content *htmlc, struct box *box);
 
 
 /**
- * Get the browser window containing an HTML content
- *
- * \param c HTML content
- * \return the browser window
- */
-struct browser_window *html_get_browser_window(struct content *c);
-
-
-/**
  * Complete conversion of an HTML document
  *
  * \param htmlc Content to convert

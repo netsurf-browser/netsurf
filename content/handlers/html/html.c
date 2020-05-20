@@ -2383,15 +2383,3 @@ error:
 
 	return error;
 }
-
-
-/* exported function documented in html/private.h */
-struct browser_window *html_get_browser_window(struct content *c)
-{
-	html_content *html = (html_content *) c;
-
-	assert(c != NULL);
-	assert(c->handler == &html_content_handler);
-
-	return html->bw;
-}
