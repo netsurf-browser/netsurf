@@ -335,13 +335,10 @@ redraw_handler(const char *text,
 	struct rdw_info *r = (struct rdw_info*)handle;
 	int width, height;
 	int x, y;
-	plot_font_style_t fstyle;
 
 	if (!box) {
 		return true;
 	}
-
-	font_plot_style_from_css(len_ctx, box->style, &fstyle);
 
 	/* \todo - it should be possible to reduce the redrawn area by
 	 * considering the 'text', 'length' and 'space' parameters */
