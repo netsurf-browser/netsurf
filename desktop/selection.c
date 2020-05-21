@@ -19,8 +19,8 @@
 
 /**
  * \file
-  * implementation of text selection within browser windows.
-  */
+ * implementation of text selection within browser windows.
+ */
 
 #include <assert.h>
 #include <stdio.h>
@@ -72,9 +72,13 @@ struct selection_string {
 };
 
 
-typedef bool (*seln_traverse_handler)(const char *text, size_t length,
-		struct box *box, const nscss_len_ctx *len_ctx, void *handle,
-		const char *whitespace_text, size_t whitespace_length);
+typedef bool (*seln_traverse_handler)(const char *text,
+				      size_t length,
+				      struct box *box,
+				      const nscss_len_ctx *len_ctx,
+				      void *handle,
+				      const char *whitespace_text,
+				      size_t whitespace_length);
 
 
 /**
@@ -91,12 +95,14 @@ static unsigned selection_label_subtree(struct box *box, unsigned idx)
 
 	box->byte_offset = idx;
 
-	if (box->text)
+	if (box->text) {
 		idx += box->length + SPACE_LEN(box);
+	}
 
 	while (child) {
-		if (child->list_marker)
+		if (child->list_marker) {
 			idx = selection_label_subtree(child->list_marker, idx);
+		}
 
 		idx = selection_label_subtree(child, idx);
 		child = child->next;
@@ -111,11 +117,11 @@ static unsigned selection_label_subtree(struct box *box, unsigned idx)
  * byte offsets, returning the start and end indexes of the bytes
  * that are enclosed.
  *
- * \param  box           box to be tested
- * \param  start_idx     byte offset of start of range
- * \param  end_idx       byte offset of end of range
- * \param  start_offset  receives the start offset of the selected part
- * \param  end_offset    receives the end offset of the selected part
+ * \param box box to be tested
+ * \param start_idx byte offset of start of range
+ * \param end_idx byte offset of end of range
+ * \param start_offset receives the start offset of the selected part
+ * \param end_offset receives the end offset of the selected part
  * \return true iff the range encloses at least part of the box
  */
 static bool
@@ -128,27 +134,28 @@ selected_part(struct box *box,
 	size_t box_length = box->length + SPACE_LEN(box);
 
 	if (box_length > 0) {
-		if (box->byte_offset >= start_idx &&
-			box->byte_offset + box_length <= end_idx) {
+		if ((box->byte_offset >= start_idx) &&
+		    (box->byte_offset + box_length <= end_idx)) {
 
 			/* fully enclosed */
 			*start_offset = 0;
 			*end_offset = box_length;
 			return true;
-		}
-		else if (box->byte_offset + box_length > start_idx &&
-			box->byte_offset < end_idx) {
+		} else if ((box->byte_offset + box_length > start_idx) &&
+			   (box->byte_offset < end_idx)) {
 			/* partly enclosed */
 			int offset = 0;
 			int len;
 
-			if (box->byte_offset < start_idx)
+			if (box->byte_offset < start_idx) {
 				offset = start_idx - box->byte_offset;
+			}
 
 			len = box_length - offset;
 
-			if (box->byte_offset + box_length > end_idx)
+			if (box->byte_offset + box_length > end_idx) {
 				len = end_idx - (box->byte_offset + offset);
+			}
 
 			*start_offset = offset;
 			*end_offset = offset + len;
@@ -165,15 +172,15 @@ selected_part(struct box *box,
  * its handle) for all boxes that lie (partially) within the given
  * range
  *
- * \param  box        box subtree
- * \param  len_ctx    Length conversion context.
- * \param  start_idx  start of range within textual representation (bytes)
- * \param  end_idx    end of range
- * \param  handler    handler function to call
- * \param  handle     handle to pass
- * \param  before     type of whitespace to place before next encountered text
- * \param  first      whether this is the first box with text
- * \param  do_marker  whether deal enter any marker box
+ * \param box        box subtree
+ * \param len_ctx    Length conversion context.
+ * \param start_idx  start of range within textual representation (bytes)
+ * \param end_idx    end of range
+ * \param handler    handler function to call
+ * \param handle     handle to pass
+ * \param before     type of whitespace to place before next encountered text
+ * \param first      whether this is the first box with text
+ * \param do_marker  whether deal enter any marker box
  * \return false iff traversal abandoned part-way through
  */
 static bool
@@ -194,7 +201,9 @@ traverse_tree(struct box *box,
 	assert(box);
 
 	/* If selection starts inside marker */
-	if (box->parent && box->parent->list_marker == box && !do_marker) {
+	if (box->parent &&
+	    box->parent->list_marker == box &&
+	    !do_marker) {
 		/* set box to main list element */
 		box = box->parent;
 	}
@@ -203,15 +212,23 @@ traverse_tree(struct box *box,
 	if (box->list_marker) {
 		/* do the marker box before continuing with the rest of the
 		 * list element */
-		if (!traverse_tree(box->list_marker, len_ctx,
-				start_idx, end_idx, handler, handle,
-				before, first, true))
+		if (!traverse_tree(box->list_marker,
+				   len_ctx,
+				   start_idx,
+				   end_idx,
+				   handler,
+				   handle,
+				   before,
+				   first,
+				   true)) {
 			return false;
+		}
 	}
 
 	/* we can prune this subtree, it's after the selection */
-	if (box->byte_offset >= end_idx)
+	if (box->byte_offset >= end_idx) {
 		return true;
+	}
 
 	/* read before calling the handler in case it modifies the tree */
 	child = box->children;
@@ -219,26 +236,36 @@ traverse_tree(struct box *box,
 	/* If nicely formatted output of the selected text is required, work
 	 * out what whitespace should be placed before the next bit of text */
 	if (before) {
-		save_text_solve_whitespace(box, first, before, &whitespace_text,
-				&whitespace_length);
-	}
-	else {
+		save_text_solve_whitespace(box,
+					   first,
+					   before,
+					   &whitespace_text,
+					   &whitespace_length);
+	} else {
 		whitespace_text = NULL;
 	}
-	if (box->type != BOX_BR &&
-			!((box->type == BOX_FLOAT_LEFT ||
-			box->type == BOX_FLOAT_RIGHT) &&
-			!box->text)) {
+
+	if ((box->type != BOX_BR) &&
+	    !((box->type == BOX_FLOAT_LEFT ||
+	       box->type == BOX_FLOAT_RIGHT) &&
+	      !box->text)) {
 		unsigned start_offset;
 		unsigned end_offset;
 
-		if (selected_part(box, start_idx, end_idx, &start_offset,
-				&end_offset)) {
-			if (!handler(box->text + start_offset, min(box->length,
-					end_offset) - start_offset,
-					box, len_ctx, handle, whitespace_text,
-					whitespace_length))
+		if (selected_part(box,
+				  start_idx,
+				  end_idx,
+				  &start_offset,
+				  &end_offset)) {
+			if (!handler(box->text + start_offset,
+				     min(box->length, end_offset) - start_offset,
+				     box,
+				     len_ctx,
+				     handle,
+				     whitespace_text,
+				     whitespace_length)) {
 				return false;
+			}
 			if (before) {
 				*first = false;
 				*before = WHITESPACE_NONE;
@@ -263,9 +290,17 @@ traverse_tree(struct box *box,
 			 * the tree */
 			struct box *next = child->next;
 
-			if (!traverse_tree(child, len_ctx, start_idx, end_idx,
-					handler, handle, before, first, false))
+			if (!traverse_tree(child,
+					   len_ctx,
+					   start_idx,
+					   end_idx,
+					   handler,
+					   handle,
+					   before,
+					   first,
+					   false)) {
 				return false;
+			}
 
 			child = next;
 		}
@@ -297,38 +332,42 @@ redraw_handler(const char *text,
 	       const char *whitespace_text,
 	       size_t whitespace_length)
 {
-	if (box) {
-		struct rdw_info *r = (struct rdw_info*)handle;
-		int width, height;
-		int x, y;
-		plot_font_style_t fstyle;
+	struct rdw_info *r = (struct rdw_info*)handle;
+	int width, height;
+	int x, y;
+	plot_font_style_t fstyle;
 
-		font_plot_style_from_css(len_ctx, box->style, &fstyle);
-
-		/* \todo - it should be possible to reduce the redrawn area by
-		 * considering the 'text', 'length' and 'space' parameters */
-		box_coords(box, &x, &y);
-
-		width = box->padding[LEFT] + box->width + box->padding[RIGHT];
-		height = box->padding[TOP] + box->height + box->padding[BOTTOM];
-
-		if (box->type == BOX_TEXT && box->space != 0)
-			width += box->space;
-
-		if (r->inited) {
-			if (x < r->r.x0) r->r.x0 = x;
-			if (y < r->r.y0) r->r.y0 = y;
-			if (x + width > r->r.x1) r->r.x1 = x + width;
-			if (y + height > r->r.y1) r->r.y1 = y + height;
-		}
-		else {
-			r->inited = true;
-			r->r.x0 = x;
-			r->r.y0 = y;
-			r->r.x1 = x + width;
-			r->r.y1 = y + height;
-		}
+	if (!box) {
+		return true;
 	}
+
+	font_plot_style_from_css(len_ctx, box->style, &fstyle);
+
+	/* \todo - it should be possible to reduce the redrawn area by
+	 * considering the 'text', 'length' and 'space' parameters */
+	box_coords(box, &x, &y);
+
+	width = box->padding[LEFT] + box->width + box->padding[RIGHT];
+	height = box->padding[TOP] + box->height + box->padding[BOTTOM];
+
+	if ((box->type == BOX_TEXT) &&
+	    (box->space != 0)) {
+		width += box->space;
+	}
+
+	if (r->inited) {
+		if (x < r->r.x0) r->r.x0 = x;
+		if (y < r->r.y0) r->r.y0 = y;
+		if (x + width > r->r.x1) r->r.x1 = x + width;
+		if (y + height > r->r.y1) r->r.y1 = y + height;
+	} else {
+		r->inited = true;
+		r->r.x0 = x;
+		r->r.y0 = y;
+		r->r.x1 = x + width;
+		r->r.y1 = y + height;
+	}
+
 	return true;
 }
 
@@ -336,9 +375,9 @@ redraw_handler(const char *text,
 /**
  * Redraws the given range of text.
  *
- * \param  s          selection object
- * \param  start_idx  start offset (bytes) within the textual representation
- * \param  end_idx    end offset (bytes) within the textual representation
+ * \param s selection object
+ * \param start_idx start offset (bytes) within the textual representation
+ * \param end_idx end offset (bytes) within the textual representation
  */
 static void
 selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
@@ -349,22 +388,34 @@ selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
 	rdw.inited = false;
 
 	if (s->root) {
-		if (!traverse_tree(s->root, &s->len_ctx, start_idx, end_idx,
-				redraw_handler, &rdw,
-				NULL, NULL, false))
+		if (!traverse_tree(s->root,
+				   &s->len_ctx,
+				   start_idx,
+				   end_idx,
+				   redraw_handler,
+				   &rdw,
+				   NULL,
+				   NULL,
+				   false))
 			return;
-	}
-	else {
-		if (s->is_html == false && end_idx > start_idx) {
-			textplain_coords_from_range(s->c, start_idx,
-							end_idx, &rdw.r);
+	} else {
+		if ((s->is_html == false) &&
+		    (end_idx > start_idx)) {
+			textplain_coords_from_range(s->c,
+						    start_idx,
+						    end_idx,
+						    &rdw.r);
 			rdw.inited = true;
 		}
 	}
 
-	if (rdw.inited)
-		content__request_redraw(s->c, rdw.r.x0, rdw.r.y0,
-				rdw.r.x1 - rdw.r.x0, rdw.r.y1 - rdw.r.y0);
+	if (rdw.inited) {
+		content__request_redraw(s->c,
+					rdw.r.x0,
+					rdw.r.y0,
+					rdw.r.x1 - rdw.r.x0,
+					rdw.r.y1 - rdw.r.y0);
+	}
 }
 
 
@@ -405,20 +456,24 @@ static void selection_set_start(struct selection *s, unsigned offset)
  */
 static void selection_set_end(struct selection *s, unsigned offset)
 {
-	bool was_defined = selection_defined(s);
-	unsigned old_end = s->end_idx;
+	bool was_defined;
+	unsigned old_end;
 
+	old_end = s->end_idx;
 	s->end_idx = offset;
+
+	was_defined = s->defined;
 	s->defined = (s->start_idx < s->end_idx);
 
 	if (was_defined) {
-		if (offset < old_end)
+		if (offset < old_end) {
 			selection_redraw(s, s->end_idx, old_end);
-		else
+		} else {
 			selection_redraw(s, old_end, s->end_idx);
-	}
-	else if (selection_defined(s))
+		}
+	} else if (s->defined) {
 		selection_redraw(s, s->start_idx, s->end_idx);
+	}
 }
 
 
@@ -426,7 +481,7 @@ static void selection_set_end(struct selection *s, unsigned offset)
  * Traverse the current selection, calling the handler function (with its
  * handle) for all boxes that lie (partially) within the given range
  *
- * \param s       The selection context.
+ * \param s The selection context.
  * \param handler handler function to call
  * \param handle  handle to pass
  * \return false iff traversal abandoned part-way through
@@ -441,22 +496,25 @@ selection_traverse(struct selection *s,
 	const char *text;
 	size_t length;
 
-	if (!selection_defined(s))
+	if (!s->defined) {
 		return true;	/* easy case, nothing to do */
+	}
 
 	if (s->root) {
 		/* HTML */
 		return traverse_tree(s->root, &s->len_ctx,
-				s->start_idx, s->end_idx,
-				handler, handle,
-				&before, &first, false);
+				     s->start_idx, s->end_idx,
+				     handler, handle,
+				     &before, &first, false);
 	}
 
 	/* Text */
 	text = textplain_get_raw_data(s->c, s->start_idx, s->end_idx, &length);
 
-	if (text && !handler(text, length, NULL, NULL, handle, NULL, 0))
+	if (text &&
+	    !handler(text, length, NULL, NULL, handle, NULL, 0)) {
 		return false;
+	}
 
 	return true;
 }
@@ -485,20 +543,22 @@ selection_string_append(const char *text,
 		/* Add text run style */
 		nsclipboard_styles *new_styles;
 
-		if (sel_string->n_styles == 0)
+		if (sel_string->n_styles == 0) {
 			assert(sel_string->length == 0);
+		}
 
 		new_styles = realloc(sel_string->styles,
-				(sel_string->n_styles + 1) *
-				sizeof(nsclipboard_styles));
-		if (new_styles == NULL)
+				     (sel_string->n_styles + 1) *
+				     sizeof(nsclipboard_styles));
+		if (new_styles == NULL) {
 			return false;
+		}
 
 		sel_string->styles = new_styles;
 
 		sel_string->styles[sel_string->n_styles].style = *style;
 		sel_string->styles[sel_string->n_styles].start =
-				sel_string->length;
+			sel_string->length;
 
 		sel_string->n_styles++;
 	}
@@ -509,8 +569,9 @@ selection_string_append(const char *text,
 		char *new_buff;
 
 		new_buff = realloc(sel_string->buffer, new_alloc);
-		if (new_buff == NULL)
+		if (new_buff == NULL) {
 			return false;
+		}
 
 		sel_string->buffer = new_buff;
 		sel_string->buffer_len = new_alloc;
@@ -520,8 +581,9 @@ selection_string_append(const char *text,
 	memcpy(sel_string->buffer + sel_string->length, text, length);
 	sel_string->length += length;
 
-	if (space)
+	if (space) {
 		sel_string->buffer[sel_string->length++] = ' ';
+	}
 
 	/* Ensure NULL termination */
 	sel_string->buffer[sel_string->length] = '\0';
@@ -543,19 +605,27 @@ selection_string_append(const char *text,
  * \param  whitespace_length  length of whitespace_text
  * \return true iff successful and traversal should continue
  */
-static bool selection_copy_handler(const char *text, size_t length,
-		struct box *box, const nscss_len_ctx *len_ctx,
-		void *handle, const char *whitespace_text,
-		size_t whitespace_length)
+static bool
+selection_copy_handler(const char *text,
+		       size_t length,
+		       struct box *box,
+		       const nscss_len_ctx *len_ctx,
+		       void *handle,
+		       const char *whitespace_text,
+		       size_t whitespace_length)
 {
 	bool add_space = false;
 	plot_font_style_t style;
 	plot_font_style_t *pstyle = NULL;
 
 	/* add any whitespace which precedes the text from this box */
-	if (whitespace_text != NULL && whitespace_length > 0) {
+	if (whitespace_text != NULL &&
+	    whitespace_length > 0) {
 		if (!selection_string_append(whitespace_text,
-				whitespace_length, false, pstyle, handle)) {
+					     whitespace_length,
+					     false,
+					     pstyle,
+					     handle)) {
 			return false;
 		}
 	}
@@ -575,8 +645,9 @@ static bool selection_copy_handler(const char *text, size_t length,
 	}
 
 	/* add the text from this box */
-	if (!selection_string_append(text, length, add_space, pstyle, handle))
+	if (!selection_string_append(text, length, add_space, pstyle, handle)) {
 		return false;
+	}
 
 	return true;
 }
@@ -585,7 +656,8 @@ static bool selection_copy_handler(const char *text, size_t length,
 /* exported interface documented in desktop/selection.h */
 struct selection *selection_create(struct content *c, bool is_html)
 {
-	struct selection *s = calloc(1, sizeof(struct selection));
+	struct selection *s;
+	s = calloc(1, sizeof(struct selection));
 	if (s) {
 		selection_prepare(s, c, is_html);
 	}
@@ -633,15 +705,20 @@ void selection_reinit(struct selection *s, struct box *root)
 	if (root) {
 		s->max_idx = selection_label_subtree(root, root_idx);
 	} else {
-		if (s->is_html == false)
+		if (s->is_html == false) {
 			s->max_idx = textplain_size(s->c);
-		else
+		} else {
 			s->max_idx = 0;
+		}
 	}
 
 	if (s->defined) {
-		if (s->end_idx > s->max_idx) s->end_idx = s->max_idx;
-		if (s->start_idx > s->max_idx) s->start_idx = s->max_idx;
+		if (s->end_idx > s->max_idx) {
+			s->end_idx = s->max_idx;
+		}
+		if (s->start_idx > s->max_idx) {
+			s->start_idx = s->max_idx;
+		}
 		s->defined = (s->end_idx > s->start_idx);
 	}
 }
@@ -680,35 +757,39 @@ selection_click(struct selection *s,
 		browser_mouse_state mouse,
 		unsigned idx)
 {
-	browser_mouse_state modkeys =
-			(mouse & (BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_2));
+	browser_mouse_state modkeys;
 	int pos = -1;  /* 0 = inside selection, 1 = after it */
+
+	modkeys = (mouse & (BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_2));
 
 	top = browser_window_get_root(top);
 
 	if (selection_defined(s)) {
 		if (idx > s->start_idx) {
-			if (idx <= s->end_idx)
+			if (idx <= s->end_idx) {
 				pos = 0;
-			else
+			} else {
 				pos = 1;
+			}
 		}
 	}
 
 	if (!pos &&
-		((mouse & BROWSER_MOUSE_DRAG_1) ||
-		 (modkeys && (mouse & BROWSER_MOUSE_DRAG_2)))) {
+	    ((mouse & BROWSER_MOUSE_DRAG_1) ||
+	     (modkeys && (mouse & BROWSER_MOUSE_DRAG_2)))) {
 		/* drag-saving selection */
 		char *sel = selection_get_copy(s);
 		guit->window->drag_save_selection(top->window, sel);
 		free(sel);
-	}
-	else if (!modkeys) {
+	} else if (!modkeys) {
 		if (pos && (mouse & BROWSER_MOUSE_PRESS_1)) {
-		/* Clear the selection if mouse is pressed outside the
-		 * selection, Otherwise clear on release (to allow for drags) */
+			/* Clear the selection if mouse is pressed
+			 * outside the selection, Otherwise clear on
+			 * release (to allow for drags)
+			 */
 
 			selection_clear(s, true);
+
 		} else if (mouse & BROWSER_MOUSE_DRAG_1) {
 			/* start new selection drag */
 
@@ -719,43 +800,48 @@ selection_click(struct selection *s,
 
 			s->drag_state = DRAG_END;
 
-			guit->window->event(top->window, GW_EVENT_START_SELECTION);
-		}
-		else if (mouse & BROWSER_MOUSE_DRAG_2) {
+			guit->window->event(top->window,
+					    GW_EVENT_START_SELECTION);
+
+		} else if (mouse & BROWSER_MOUSE_DRAG_2) {
 
 			/* adjust selection, but only if there is one */
-			if (!selection_defined(s))
+			if (!selection_defined(s)) {
 				return false;	/* ignore Adjust drags */
+			}
 
 			if (pos >= 0) {
 				selection_set_end(s, idx);
 
 				s->drag_state = DRAG_END;
-			}
-			else {
+			} else {
 				selection_set_start(s, idx);
 
 				s->drag_state = DRAG_START;
 			}
 
-			guit->window->event(top->window, GW_EVENT_START_SELECTION);
-		}
-		else if (mouse & BROWSER_MOUSE_CLICK_2) {
+			guit->window->event(top->window,
+					    GW_EVENT_START_SELECTION);
+
+		} else if (mouse & BROWSER_MOUSE_CLICK_2) {
 
 			/* ignore Adjust clicks when there's no selection */
-			if (!selection_defined(s))
+			if (!selection_defined(s)) {
 				return false;
+			}
 
-			if (pos >= 0)
+			if (pos >= 0) {
 				selection_set_end(s, idx);
-			else
+			} else {
 				selection_set_start(s, idx);
+			}
 			s->drag_state = DRAG_NONE;
-		}
-		else
+
+		} else {
 			return false;
-	}
-	else {
+		}
+
+	} else {
 		/* not our problem */
 		return false;
 	}
@@ -775,30 +861,30 @@ selection_track(struct selection *s, browser_mouse_state mouse, unsigned idx)
 
 	switch (s->drag_state) {
 
-		case DRAG_START:
-			if (idx > s->end_idx) {
-				unsigned old_end = s->end_idx;
-				selection_set_end(s, idx);
-				selection_set_start(s, old_end);
-				s->drag_state = DRAG_END;
-			}
-			else
-				selection_set_start(s, idx);
-			break;
+	case DRAG_START:
+		if (idx > s->end_idx) {
+			unsigned old_end = s->end_idx;
+			selection_set_end(s, idx);
+			selection_set_start(s, old_end);
+			s->drag_state = DRAG_END;
+		} else {
+			selection_set_start(s, idx);
+		}
+		break;
 
-		case DRAG_END:
-			if (idx < s->start_idx) {
-				unsigned old_start = s->start_idx;
-				selection_set_start(s, idx);
-				selection_set_end(s, old_start);
-				s->drag_state = DRAG_START;
-			}
-			else
-				selection_set_end(s, idx);
-			break;
+	case DRAG_END:
+		if (idx < s->start_idx) {
+			unsigned old_start = s->start_idx;
+			selection_set_start(s, idx);
+			selection_set_end(s, old_start);
+			s->drag_state = DRAG_START;
+		} else {
+			selection_set_end(s, idx);
+		}
+		break;
 
-		default:
-			break;
+	default:
+		break;
 	}
 }
 
@@ -842,8 +928,9 @@ bool selection_copy_to_clipboard(struct selection *s)
 		.styles = NULL
 	};
 
-	if (s == NULL || !s->defined)
+	if (s == NULL || !s->defined) {
 		return false;
+	}
 
 	if (!selection_traverse(s, selection_copy_handler, &sel_string)) {
 		free(sel_string.buffer);
@@ -851,8 +938,10 @@ bool selection_copy_to_clipboard(struct selection *s)
 		return false;
 	}
 
-	guit->clipboard->set(sel_string.buffer, sel_string.length,
-			sel_string.styles, sel_string.n_styles);
+	guit->clipboard->set(sel_string.buffer,
+			     sel_string.length,
+			     sel_string.styles,
+			     sel_string.n_styles);
 
 	free(sel_string.buffer);
 	free(sel_string.styles);
@@ -868,7 +957,8 @@ void selection_clear(struct selection *s, bool redraw)
 	bool was_defined;
 
 	assert(s);
-	was_defined = selection_defined(s);
+
+	was_defined = s->defined;
 	old_start = s->start_idx;
 	old_end = s->end_idx;
 
@@ -876,8 +966,9 @@ void selection_clear(struct selection *s, bool redraw)
 	s->start_idx = 0;
 	s->end_idx = 0;
 
-	if (redraw && was_defined)
+	if (redraw && was_defined) {
 		selection_redraw(s, old_start, old_end);
+	}
 }
 
 
@@ -910,10 +1001,12 @@ selection_highlighted(const struct selection *s,
 {
 	/* caller should have checked first for efficiency */
 	assert(s);
-	assert(selection_defined(s));
+	assert(s->defined);
 
-	if (end <= s->start_idx || start >= s->end_idx)
+	if ((end <= s->start_idx) ||
+	    (start >= s->end_idx)) {
 		return false;
+	}
 
 	*start_idx = (s->start_idx >= start) ? (s->start_idx - start) : 0;
 	*end_idx = min(end, s->end_idx) - start;
