@@ -179,13 +179,12 @@ ami_pageinfo_create_window(struct ami_pageinfo_window *pageinfo_win, ULONG left,
 
 	ami_cw->objects[GID_CW_WIN] = WindowObj,
   	    WA_ScreenTitle, ami_gui_get_screen_title(),
-       	WA_Title, ami_cw->wintitle,
        	WA_Activate, TRUE,
-       	WA_DepthGadget, TRUE,
-       	WA_DragBar, TRUE,
-       	WA_CloseGadget, TRUE,
-       	WA_SizeGadget, TRUE,
-		WA_SizeBBottom, TRUE,
+       	WA_DepthGadget, FALSE,
+       	WA_DragBar, FALSE,
+       	WA_CloseGadget, FALSE,
+       	WA_SizeGadget, FALSE,
+       	WA_Borderless, TRUE,
 		WA_Left, left,
 		WA_Top, top,
 		WA_PubScreen, scrn,
@@ -198,15 +197,13 @@ ami_pageinfo_create_window(struct ami_pageinfo_window *pageinfo_win, ULONG left,
 		WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE |
 				IDCMP_SIZEVERIFY | IDCMP_REFRESHWINDOW,
 		WINDOW_SharedPort, ami_gui_get_shared_msgport(),
-		WINDOW_HorizProp, 1,
-		WINDOW_VertProp, 1,
 		WINDOW_UserData, pageinfo_win,
 		WINDOW_IconifyGadget, FALSE,
 		WINDOW_ParentGroup, ami_cw->objects[GID_CW_MAIN] = LayoutVObj,
 			LAYOUT_AddChild, ami_cw->objects[GID_CW_DRAW] = SpaceObj,
 				GA_ID, GID_CW_DRAW,
 				SPACE_Transparent, TRUE,
-				SPACE_BevelStyle, BVS_DISPLAY,
+				SPACE_BevelStyle, BVS_BOX,
 				GA_RelVerify, TRUE,
    			SpaceEnd,
 		EndGroup,
@@ -269,7 +266,12 @@ nserror ami_pageinfo_open(struct browser_window *bw, ULONG left, ULONG top)
 	}
 
 	if(page_info_get_size(ncwin->pi, &width, &height) == NSERROR_OK) {
-		SetAttrs(ncwin->core.objects[GID_CW_WIN], WA_InnerWidth, width, WA_InnerHeight, height, TAG_DONE);
+		/* Set window to the correct size.
+		 * TODO: this should really set the size of ncwin->core.objects[GID_CW_DRAW]
+		 * and let the window adjust, here we've hardcoded to add 6x4px as that's
+		 * what window.class does before v45.
+		 */
+		SetAttrs(ncwin->core.objects[GID_CW_WIN], WA_InnerWidth, width + 6, WA_InnerHeight, height + 4, TAG_DONE);
 	}
 
 	return NSERROR_OK;
