@@ -170,6 +170,8 @@ MENUHANDLER(delete_selected)
 
 MENUHANDLER(select_all)
 {
+	hotlist_keypress(NS_KEY_ESCAPE);
+	hotlist_keypress(NS_KEY_ESCAPE);
 	hotlist_keypress(NS_KEY_SELECT_ALL);
 	return TRUE;
 }

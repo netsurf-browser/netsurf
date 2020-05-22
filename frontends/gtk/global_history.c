@@ -107,6 +107,8 @@ MENUHANDLER(delete_selected)
 
 MENUHANDLER(delete_all)
 {
+	global_history_keypress(NS_KEY_ESCAPE);
+	global_history_keypress(NS_KEY_ESCAPE);
 	global_history_keypress(NS_KEY_SELECT_ALL);
 	global_history_keypress(NS_KEY_DELETE_LEFT);
 	return TRUE;
@@ -114,12 +116,16 @@ MENUHANDLER(delete_all)
 
 MENUHANDLER(select_all)
 {
+	global_history_keypress(NS_KEY_ESCAPE);
+	global_history_keypress(NS_KEY_ESCAPE);
 	global_history_keypress(NS_KEY_SELECT_ALL);
 	return TRUE;
 }
 
 MENUHANDLER(clear_selection)
 {
+	global_history_keypress(NS_KEY_ESCAPE);
+	global_history_keypress(NS_KEY_ESCAPE);
 	global_history_keypress(NS_KEY_CLEAR_SELECTION);
 	return TRUE;
 }

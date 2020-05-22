@@ -98,6 +98,8 @@ MENUHANDLER(delete_selected)
 
 MENUHANDLER(delete_all)
 {
+	cookie_manager_keypress(NS_KEY_ESCAPE);
+	cookie_manager_keypress(NS_KEY_ESCAPE);
 	cookie_manager_keypress(NS_KEY_SELECT_ALL);
 	cookie_manager_keypress(NS_KEY_DELETE_LEFT);
 	return TRUE;
@@ -105,6 +107,8 @@ MENUHANDLER(delete_all)
 
 MENUHANDLER(select_all)
 {
+	cookie_manager_keypress(NS_KEY_ESCAPE);
+	cookie_manager_keypress(NS_KEY_ESCAPE);
 	cookie_manager_keypress(NS_KEY_SELECT_ALL);
 	return TRUE;
 }
