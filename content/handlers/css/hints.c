@@ -1233,6 +1233,68 @@ static void css_hint_height_width_textarea(
 	}
 }
 
+static void css_hint_height_width_canvas(
+		nscss_select_ctx *ctx,
+		dom_node *node)
+{
+	struct css_hint *hint = &hint_ctx.hints[hint_ctx.len];
+	dom_string *attr = NULL;
+	dom_exception err;
+	bool set_dim = false;
+
+	err = dom_element_get_attribute(node,
+			corestring_dom_height, &attr);
+
+	if (err == DOM_NO_ERR && attr != NULL) {
+		if (parse_dimension(
+				(const char *)dom_string_data(attr), true,
+				&hint->data.length.value,
+				&hint->data.length.unit)) {
+			hint->prop = CSS_PROP_HEIGHT;
+			hint->data.length.unit = CSS_UNIT_PX;
+			hint->status = CSS_HEIGHT_SET;
+			css_hint_advance(&hint);
+			set_dim = true;
+		}
+		dom_string_unref(attr);
+	}
+	if (set_dim == false) {
+		/* canvas defaults to 150px tall */
+		hint->prop = CSS_PROP_HEIGHT;
+		hint->data.length.unit = CSS_UNIT_PX;
+		hint->data.length.value = INTTOFIX(150);
+		hint->status = CSS_HEIGHT_SET;
+		css_hint_advance(&hint);
+	} else {
+		set_dim = false;
+	}
+
+	err = dom_element_get_attribute(node,
+			corestring_dom_width, &attr);
+
+	if (err == DOM_NO_ERR && attr != NULL) {
+		if (parse_dimension(
+				(const char *)dom_string_data(attr), true,
+				&hint->data.length.value,
+				&hint->data.length.unit)) {
+			hint->prop = CSS_PROP_WIDTH;
+			hint->data.length.unit = CSS_UNIT_PX;
+			hint->status = CSS_WIDTH_SET;
+			css_hint_advance(&hint);
+			set_dim = true;
+		}
+		dom_string_unref(attr);
+	}
+	if (set_dim == false) {
+		/* canvas defaults to 300px wide */
+		hint->prop = CSS_PROP_WIDTH;
+		hint->data.length.unit = CSS_UNIT_PX;
+		hint->data.length.value = INTTOFIX(300);
+		hint->status = CSS_WIDTH_SET;
+		css_hint_advance(&hint);
+	}
+}
+
 static void css_hint_width_input(
 		nscss_select_ctx *ctx,
 		dom_node *node)
@@ -1605,6 +1667,9 @@ css_error node_presentational_hint(void *pw, void *node,
 		break;
 	case DOM_HTML_ELEMENT_TYPE_BODY:
 		css_hint_body_color(pw, node);
+		break;
+	case DOM_HTML_ELEMENT_TYPE_CANVAS:
+		css_hint_height_width_canvas(pw, node);
 		break;
 	default:
 		break;
