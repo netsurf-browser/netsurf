@@ -1169,7 +1169,7 @@ fb_url_enter(void *pw, char *text)
 
 	error = nsurl_create(text, &url);
 	if (error != NSERROR_OK) {
-		fb_warn_user(messages_get_errorcode(error), 0);
+		fb_warn_user("Errorcode:", messages_get_errorcode(error));
 	} else {
 		browser_window_navigate(bw, url, NULL, BW_NAVIGATE_HISTORY,
 				NULL, NULL, NULL);
@@ -2266,7 +2266,7 @@ main(int argc, char** argv)
 		nsurl_unref(url);
 	}
 	if (ret != NSERROR_OK) {
-		fb_warn_user(messages_get_errorcode(ret), 0);
+		fb_warn_user("Errorcode:", messages_get_errorcode(ret));
 	} else {
 		framebuffer_run();
 
