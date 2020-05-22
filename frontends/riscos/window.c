@@ -71,6 +71,7 @@
 #include "riscos/dialog.h"
 #include "riscos/local_history.h"
 #include "riscos/global_history.h"
+#include "riscos/pageinfo.h"
 #include "riscos/gui.h"
 #include "riscos/gui/status_bar.h"
 #include "riscos/help.h"
@@ -865,6 +866,10 @@ ro_gui_window_toolbar_click(void *data,
 		case TOOLBAR_URL_ADJUST_HOTLIST:
 			ro_gui_window_action_remove_bookmark(g);
 			break;
+
+		case TOOLBAR_URL_SELECT_PGINFO:
+		case TOOLBAR_URL_ADJUST_PGINFO:
+			ro_gui_pageinfo_present(g);
 
 		default:
 			break;

@@ -49,6 +49,7 @@
 #include "riscos/gui.h"
 #include "riscos/window.h"
 #include "riscos/hotlist.h"
+#include "riscos/pageinfo.h"
 #include "riscos/menus.h"
 #include "riscos/save.h"
 #include "riscos/toolbar.h"
@@ -188,6 +189,9 @@ void ro_gui_dialog_init(void)
 
 	/* cookies window */
 	ro_gui_cookies_initialise();
+
+	/* page info window */
+	ro_gui_pageinfo_initialise();
 }
 
 

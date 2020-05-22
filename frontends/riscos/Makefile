@@ -67,6 +67,7 @@ S_FRONTEND :=			\
 	menus.c			\
 	message.c		\
 	mouse.c			\
+	pageinfo.c		\
 	palettes.c		\
 	plotters.c		\
 	print.c			\

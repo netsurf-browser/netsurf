@@ -76,8 +76,16 @@ nserror page_info_create(
  *
  * \param[in] pi  The page info window handle.
  */
-void page_info_destroy(
-		struct page_info *pi);
+nserror page_info_destroy(struct page_info *pi);
+
+/**
+ * change the browser window the page information refers to
+ *
+ * \param[in] pgi The page info window context
+ * \param[in] bw The new browser window
+ * \return NSERROR_OK on sucess else error code.
+ */
+nserror page_info_set(struct page_info *pgi, struct browser_window *bw);
 
 /**
  * Redraw the page info window.
