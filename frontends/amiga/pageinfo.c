@@ -94,7 +94,11 @@ ami_pageinfo_close_cb(void *p)
 static BOOL
 ami_pageinfo_event(struct ami_corewindow *ami_cw, ULONG result)
 {
-	/* we don't have any events on this window yet */
+	if((result & WMHI_CLASSMASK) == WMHI_INACTIVE) {
+		/* Window went inactive, so close it */
+		ami_pageinfo_destroy(ami_cw);
+		return TRUE;
+	}
 	return FALSE;
 }
 
@@ -188,7 +192,7 @@ ami_pageinfo_create_window(struct ami_pageinfo_window *pageinfo_win, ULONG left,
 		WA_ReportMouse, TRUE,
 		refresh_mode, TRUE,
 		WA_IDCMP, IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
-				IDCMP_RAWKEY | IDCMP_IDCMPUPDATE |
+				IDCMP_RAWKEY | IDCMP_IDCMPUPDATE | IDCMP_INACTIVEWINDOW |
 				IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY | IDCMP_REFRESHWINDOW,
 		WINDOW_IDCMPHook, &ami_cw->idcmp_hook,
 		WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE |
