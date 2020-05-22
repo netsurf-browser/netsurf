@@ -25,7 +25,7 @@
  * \param bw the browser window 
  * \return NSERROR_OK or error code if window creation failed.
  */
-nserror ami_pageinfo_open(struct browser_window *bw);
+nserror ami_pageinfo_open(struct browser_window *bw, ULONG left, ULONG top);
 
 #endif
 

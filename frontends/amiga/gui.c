@@ -3000,8 +3000,21 @@ static BOOL ami_gui_event(void *w)
 					break;
 
 					case GID_PAGEINFO:
-						if(ami_pageinfo_open(gwin->gw->bw) != NSERROR_OK) {
-							NSLOG(netsurf, INFO, "Unable to open page info window");
+						{
+							ULONG w_top, w_left;
+							ULONG g_top, g_left, g_height;
+
+							GetAttr(WA_Top, gwin->objects[OID_MAIN], &w_top);
+							GetAttr(WA_Left, gwin->objects[OID_MAIN], &w_left);
+							GetAttr(GA_Top, gwin->objects[GID_PAGEINFO], &g_top);
+							GetAttr(GA_Left, gwin->objects[GID_PAGEINFO], &g_left);
+							GetAttr(GA_Height, gwin->objects[GID_PAGEINFO], &g_height);
+														
+							if(ami_pageinfo_open(gwin->gw->bw,
+											w_left + g_left,
+											w_top + g_top + g_height) != NSERROR_OK) {
+								NSLOG(netsurf, INFO, "Unable to open page info window");
+							}
 						}
 					break;
 

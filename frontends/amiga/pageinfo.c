@@ -163,7 +163,7 @@ ami_pageinfo_draw(struct ami_corewindow *ami_cw, int x, int y, struct rect *r, s
 }
 
 static nserror
-ami_pageinfo_create_window(struct ami_pageinfo_window *pageinfo_win)
+ami_pageinfo_create_window(struct ami_pageinfo_window *pageinfo_win, ULONG left, ULONG top)
 {
 	struct ami_corewindow *ami_cw = (struct ami_corewindow *)&pageinfo_win->core;
 	ULONG refresh_mode = WA_SmartRefresh;
@@ -182,7 +182,8 @@ ami_pageinfo_create_window(struct ami_pageinfo_window *pageinfo_win)
        	WA_CloseGadget, TRUE,
        	WA_SizeGadget, TRUE,
 		WA_SizeBBottom, TRUE,
-		WA_Height, scrn->Height / 2,
+		WA_Left, left,
+		WA_Top, top,
 		WA_PubScreen, scrn,
 		WA_ReportMouse, TRUE,
 		refresh_mode, TRUE,
@@ -197,7 +198,6 @@ ami_pageinfo_create_window(struct ami_pageinfo_window *pageinfo_win)
 		WINDOW_VertProp, 1,
 		WINDOW_UserData, pageinfo_win,
 		WINDOW_IconifyGadget, FALSE,
-		WINDOW_Position, WPOS_CENTERSCREEN,
 		WINDOW_ParentGroup, ami_cw->objects[GID_CW_MAIN] = LayoutVObj,
 			LAYOUT_AddChild, ami_cw->objects[GID_CW_DRAW] = SpaceObj,
 				GA_ID, GID_CW_DRAW,
@@ -216,10 +216,11 @@ ami_pageinfo_create_window(struct ami_pageinfo_window *pageinfo_win)
 }
 
 /* exported interface documented in amiga/pageinfo.h */
-nserror ami_pageinfo_open(struct browser_window *bw)
+nserror ami_pageinfo_open(struct browser_window *bw, ULONG left, ULONG top)
 {
 	struct ami_pageinfo_window *ncwin;
 	nserror res;
+	int width, height;
 
 	ncwin = calloc(1, sizeof(struct ami_pageinfo_window));
 	if (ncwin == NULL) {
@@ -228,7 +229,7 @@ nserror ami_pageinfo_open(struct browser_window *bw)
 
 	ncwin->core.wintitle = ami_utf8_easy((char *)messages_get("PageInfo"));
 
-	res = ami_pageinfo_create_window(ncwin);
+	res = ami_pageinfo_create_window(ncwin, left, top);
 	if (res != NSERROR_OK) {
 		NSLOG(netsurf, INFO, "Page info init failed");
 		ami_utf8_free(ncwin->core.wintitle);
@@ -261,6 +262,10 @@ nserror ami_pageinfo_open(struct browser_window *bw)
 		DisposeObject(ncwin->core.objects[GID_CW_WIN]);
 		free(ncwin);
 		return res;
+	}
+
+	if(page_info_get_size(ncwin->pi, &width, &height) == NSERROR_OK) {
+		SetAttrs(ncwin->core.objects[GID_CW_WIN], WA_InnerWidth, width, WA_InnerHeight, height, TAG_DONE);
 	}
 
 	return NSERROR_OK;
