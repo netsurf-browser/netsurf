@@ -1888,7 +1888,7 @@ it.beos.ViewSrcAccel:U
 #
 en.ro.Draw:Draw  ⇑^F3
 fr.ro.Draw:Dessiner  ⇑^F3
-it.ro.Draw:Draw  �^F3
+it.ro.Draw:Draw  �^F3
 nl.ro.Draw:Draw-bestand  ⇑^F3
 
 en.all.PDF:PDF
@@ -1991,21 +1991,21 @@ fr.all.Back:Retour
 it.all.Back:Indietro
 nl.all.Back:Vorige pagina
 en.beos.BackAccel:←
-it.beos.BackAccel:�
+it.beos.BackAccel:�
 en.all.Forward:Forward one page
 de.all.Forward:Eine Seite vor
 fr.all.Forward:Avancer
 it.all.Forward:Avanti
 nl.all.Forward:Volgende pagina
 en.beos.ForwardAccel:→
-it.beos.ForwardAccel:�
+it.beos.ForwardAccel:�
 en.all.UpLevel:Up one level
 de.all.UpLevel:Eine Ebene hoch
 fr.all.UpLevel:Remonter d'un niveau
 it.all.UpLevel:Livello superiore
 nl.all.UpLevel:Niveau omhoog
 en.beos.UpLevelAccel:↑
-it.beos.UpLevelAccel:�
+it.beos.UpLevelAccel:�
 en.ro.Reload:Reload this page  ^F5
 de.ro.Reload:Seite erneut laden  ^F5
 fr.ro.Reload:Recharger cette page  ^F5
@@ -2749,17 +2749,17 @@ nl.all.ExternalApp:Open in ander programma
 en.all.Download:%s of %s  •  %s/s  •  %s remaining
 de.all.Download:%s von %s • %s/s • noch %s
 fr.all.Download:%s de %s  •  %s/s  •  %s restants
-it.all.Download:%s di %s  �  %s/s  �  %s al termine
+it.all.Download:%s di %s  �  %s/s  �  %s al termine
 nl.all.Download:%s van %s  •  %s/s  •  nog %s
 en.all.DownloadU:%s of unknown  •  %s/s  •  %s total
 de.all.DownloadU:%s von unbekannt • %s/s • bisher %s
 fr.all.DownloadU:%s sur inconnu  •  %s/s  •  %s total
-it.all.DownloadU:%s sconosciuto  �  %s/s  �  %s totale
+it.all.DownloadU:%s sconosciuto  �  %s/s  �  %s totale
 nl.all.DownloadU:%s van onbekend  •  %s/s  •  %s totaal
 en.all.Downloaded:%s complete  •  average %s/s  •  %s total
 de.all.Downloaded:%s komplett • etwa %s/s • gesamt %s
 fr.all.Downloaded:%s effectués  •  moyenne %s/s  •  %s total
-it.all.Downloaded:%s completato  �  average %s/s  �  %s totale
+it.all.Downloaded:%s completato  �  average %s/s  �  %s totale
 nl.all.Downloaded:%s compleet • gemiddeld %s/s • %s totaal
 en.all.Unwritten:Writing data to file failed.
 de.all.Unwritten:Schreiben der Datei ist fehlgeschlagen.
@@ -5829,7 +5829,7 @@ nl.ro.HelpLanguageConfig:Diverse taalinstellingen kunnen in dit venster gewijzig
 en.ro.HelpLanguageConfig3:\Tcurrently selected interface language.|MThe interface language is the language used for NetSurf's messages and dialogue boxes.
 de.ro.HelpLanguageConfig3:Das ist die aktuell eingestellte Sprache für die Bedienoberfläche.|MDiese Sprache wird genutzt, um NetSurf's Meldungen, Texte der Dialogboxen, Menüs darzustellen.
 fr.ro.HelpLanguageConfig3:\Tla langue d'interface sélectionnée actuellement.|MLa langue d'interface est la langue utilisée pour les messages et les boîtes de dialogue de Netsurf.
-it.ro.HelpLanguageConfig3:\Tla lingua dell'interfaccia correntemente selezionata.|MLa lingua dell'interfaccia � la lingua utilizzata per i messaggi e le finestre di dialogo di NetSurf.
+it.ro.HelpLanguageConfig3:\Tla lingua dell'interfaccia correntemente selezionata.|MLa lingua dell'interfaccia � la lingua utilizzata per i messaggi e le finestre di dialogo di NetSurf.
 nl.ro.HelpLanguageConfig3:Dit is momenteel de geselecteerde gebruikersinterfacetaal.|MDe interfacetaal is de taal voor de melding- en dialoogvensters.
 en.ro.HelpLanguageConfig4:\Sselect an interface language.
 de.ro.HelpLanguageConfig4:Klicken mit AUSWAHL zum Auswählen einer Oberflächensprache.
@@ -5870,7 +5870,7 @@ nl.ro.HelpSecurityConfig:De privacy- en veiligheidsinstellingen kunnen in dit ve
 en.ro.HelpSecurityConfig2:This indicates whether NetSurf will send site referral information to web servers.|MWhen this is enabled NetSurf will tell the web server of a new page the address of the site you came from, after following a link.
 de.ro.HelpSecurityConfig2:NetSurf sendet Seitenreferenzinformationen an Webserver.|MIst diese Option gewählt, schickt NetSurf an den Server einer neuen Webseite die Adresse der Seite von der aus die aktuelle über einen Link aufgerufen wurde.
 fr.ro.HelpSecurityConfig2:Ceci indique si Netsurf doit envoyer l'information de renvoi de site aux serveurs web.|MLorsque ceci est activé Netsurf signalera au serveur web d'une nouvelle page l'adresse du site d'où vous venez, après avoir suivi un lien.
-it.ro.HelpSecurityConfig2:Indica se NetSurf invierà  le informazioni di riferimento del sito ai server Web.|MQuando questo � abilitato, NetSurf comunicherà  al server Web di una nuova pagina l'indirizzo del sito dal quale proveniva, dopo aver seguito un link.
+it.ro.HelpSecurityConfig2:Indica se NetSurf invierà  le informazioni di riferimento del sito ai server Web.|MQuando questo � abilitato, NetSurf comunicherà  al server Web di una nuova pagina l'indirizzo del sito dal quale proveniva, dopo aver seguito un link.
 nl.ro.HelpSecurityConfig2:Deze optie geeft aan of site-gerelateerde informatie naar webservers wordt meegezonden.|MIndien toegestaan, ontvangt de webserver informatie over de vorige pagina waar, via een koppeling, vandaan is gekomen.
 en.ro.HelpSecurityConfig6:You can enter the length of time that items are stored in global history here.
 de.ro.HelpSecurityConfig6:Hier kann die Zeitdauer in Tagen angegeben werden, bis zu deren Ablauf Objekte in der globalen History gespeichert bleiben.
