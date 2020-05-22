@@ -40,6 +40,7 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"
+#include "utils/corestrings.h"
 #include "netsurf/content.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/plotters.h"
@@ -1242,6 +1243,9 @@ bool html_redraw_box(const html_content *html, struct box *box,
 	css_computed_clip_rect css_rect;
 	enum css_overflow_e overflow_x = CSS_OVERFLOW_VISIBLE;
 	enum css_overflow_e overflow_y = CSS_OVERFLOW_VISIBLE;
+	dom_exception exc;
+	dom_html_element_type tag_type;
+
 
 	if (html_redraw_printing && (box->flags & PRINTED))
 		return true;
@@ -1743,6 +1747,15 @@ bool html_redraw_box(const html_content *html, struct box *box,
 			return false;
 	}
 
+	if (box->node != NULL) {
+		exc = dom_html_element_get_tag_type(box->node, &tag_type);
+		if (exc != DOM_NO_ERR) {
+			tag_type = DOM_HTML_ELEMENT_TYPE__UNKNOWN;
+		}
+	} else {
+		tag_type = DOM_HTML_ELEMENT_TYPE__UNKNOWN;
+	}
+
 	if (box->object && width != 0 && height != 0) {
 		struct content_redraw_data obj_data;
 
@@ -1796,7 +1809,22 @@ bool html_redraw_box(const html_content *html, struct box *box,
 					    obj, sizeof(obj) - 1) != NSERROR_OK)
 				return false;
 		}
-
+	} else if (tag_type == DOM_HTML_ELEMENT_TYPE_CANVAS &&
+		   box->node != NULL &&
+		   box->flags & REPLACE_DIM) {
+		/* Canvas to draw */
+		struct bitmap *bitmap = NULL;
+		exc = dom_node_get_user_data(box->node,
+					     corestring_dom___ns_key_canvas_node_data,
+					     &bitmap);
+		if (exc != DOM_NO_ERR) {
+			bitmap = NULL;
+		}
+		if (bitmap != NULL &&
+		    ctx->plot->bitmap(ctx, bitmap, x + padding_left, y + padding_top,
+				      width, height, current_background_color,
+				      BITMAPF_NONE) != NSERROR_OK)
+			return false;
 	} else if (box->iframe) {
 		/* Offset is passed to browser window redraw unscaled */
 		browser_window_redraw(box->iframe,
