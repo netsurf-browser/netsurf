@@ -23,8 +23,6 @@
 
 #include "utils/config.h"
 
-#define _GNU_SOURCE /* strcasestr needs this for string.h */
-
 #include <assert.h>
 #include <ctype.h>
 #include <stdint.h>
