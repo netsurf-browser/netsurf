@@ -35,7 +35,6 @@ class DriverBrowser(Browser):
     def __init__(self, *args, **kwargs):
         super(DriverBrowser, self).__init__(*args, **kwargs)
         self.auth = []
-        self.cert = []
 
     def add_auth(self, url, realm, username, password):
         self.auth.append((url, realm, username, password))
@@ -86,46 +85,6 @@ class DriverBrowser(Browser):
         else:
             print("401: No candidate found, cancelling login box")
             logwin.destroy()
-
-    def add_cert(self, url):
-        # add sll certificate error exception
-        self.cert.append(url)
-
-    def remove_cert(self, url):
-        keep = []
-
-        def matches(first, second):
-            if first is None or second is None:
-                return True
-            return first == second
-
-        for iurl in self.cert:
-            if not matches(url, iurl):
-                keep.append(iurl)
-        self.cert = keep
-
-    def handle_ready_sslcert(self, cwin):
-
-        def matches(first, second):
-            if first is None or second is None:
-                return True
-            return first == second
-
-        candidates = []
-        for url in self.cert:
-            score = 0
-            if matches(url, cwin.url):
-                score += 1
-            if score > 0:
-                candidates.append((score, url))
-        if candidates:
-            candidates.sort()
-            (score, url) = candidates[-1]
-            print("SSLCert: Found candidate {} with score {}".format(url, score))
-            cwin.go()
-        else:
-            print("SSLCert: No candidate found, cancelling sslcert box")
-            cwin.destroy()
 
 
 def print_usage():
@@ -212,19 +171,19 @@ def conds_met(ctx, conds):
         elif 'window' in cond.keys():
             status = cond['status']
             window = cond['window']
-            assert status == "complete"  # TODO: Add more status support?
+            assert status == "complete" or status == "loading"  # TODO: Add more status support?
             if window == "*all*":
                 # all windows must be not throbbing
                 throbbing = False
                 for win in ctx['windows'].items():
                     if win[1].throbbing:
                         throbbing = True
-                if not throbbing:
-                    return True
+                # throbbing and want loading => true
+                # not throbbing and want complete => true
+                return (status == "loading") == throbbing
             else:
                 win = ctx['windows'][window]
-                if win.throbbing is False:
-                    return True
+                return win.throbbing == (status == "loading")
         else:
             raise AssertionError("Unknown condition: {}".format(repr(cond)))
 
@@ -576,23 +535,6 @@ def run_test_step_action_remove_auth(ctx, step):
                         step.get("username"), step.get("password"))
 
 
-def run_test_step_action_add_cert(ctx, step):
-    print(get_indent(ctx) + "Action:" + step["action"])
-    assert_browser(ctx)
-    browser = ctx['browser']
-    browser.add_cert(step.get("url"))
-
-
-def run_test_step_action_remove_cert(ctx, step):
-
-    # pylint: disable=locally-disabled, invalid-name
-
-    print(get_indent(ctx) + "Action:" + step["action"])
-    assert_browser(ctx)
-    browser = ctx['browser']
-    browser.remove_cert(step.get("url"))
-
-
 def run_test_step_action_clear_log(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     assert_browser(ctx)
@@ -666,8 +608,6 @@ STEP_HANDLERS = {
     "wait-loading":  run_test_step_action_wait_loading,
     "add-auth":      run_test_step_action_add_auth,
     "remove-auth":   run_test_step_action_remove_auth,
-    "add-cert":      run_test_step_action_add_cert,
-    "remove-cert":   run_test_step_action_remove_cert,
     "clear-log":     run_test_step_action_clear_log,
     "wait-log":      run_test_step_action_wait_log,
     "js-exec":       run_test_step_action_js_exec,

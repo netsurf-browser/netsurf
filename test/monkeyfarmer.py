@@ -216,7 +216,6 @@ class Browser:
             wrapper=wrapper)
         self.windows = {}
         self.logins = {}
-        self.sslcerts = {}
         self.current_draw_target = None
         self.started = False
         self.stopped = False
@@ -288,18 +287,6 @@ class Browser:
                 if win.alive and win.ready:
                     self.handle_ready_login(win)
 
-    def handle_SSLCERT(self, action, _lwin, winid, *args):
-        if action == "VERIFY":
-            new_win = SSLCertWindow(self, winid, *args)
-            self.sslcerts[winid] = new_win
-            self.handle_ready_sslcert(new_win)
-        else:
-            win = self.sslcerts.get(winid, None)
-            if win is None:
-                print("    Unknown ssl cert window id {}".format(winid))
-            else:
-                win.handle(action, *args)
-
     def handle_PLOT(self, *args):
         if self.current_draw_target is not None:
             self.current_draw_target.handle_plot(*args)
@@ -321,44 +308,6 @@ class Browser:
 
         # Override this method to do useful stuff
         lwin.destroy()
-
-    def handle_ready_sslcert(self, cwin):
-
-        # pylint: disable=locally-disabled, no-self-use
-
-        # Override this method to do useful stuff
-        cwin.destroy()
-
-
-class SSLCertWindow:
-
-    # pylint: disable=locally-disabled, invalid-name
-
-    def __init__(self, browser, winid, _url, *url):
-        self.alive = True
-        self.browser = browser
-        self.winid = winid
-        self.url = " ".join(url)
-
-    def handle(self, action, _str="STR"):
-        if action == "DESTROY":
-            self.alive = False
-        else:
-            raise AssertionError("Unknown action {} for sslcert window".format(action))
-
-    def _wait_dead(self):
-        while self.alive:
-            self.browser.farmer.loop(once=True)
-
-    def go(self):
-        assert self.alive
-        self.browser.farmer.tell_monkey("SSLCERT GO {}".format(self.winid))
-        self._wait_dead()
-
-    def destroy(self):
-        assert self.alive
-        self.browser.farmer.tell_monkey("SSLCERT DESTROY {}".format(self.winid))
-        self._wait_dead()
 
 
 class LoginWindow:
@@ -679,9 +628,6 @@ def farmer_test():
             lwin.send_username("foo")
             lwin.send_password("bar")
             lwin.go()
-
-        def handle_ready_sslcert(self, cwin):
-            cwin.destroy()
 
     fbbrowser = FooBarLogin(quiet=True)
     win = fbbrowser.new_window()

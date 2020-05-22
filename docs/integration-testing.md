@@ -292,6 +292,7 @@ terminate the block.
       - window: win1
         status: complete
 
+valid `status` values are `complete` or `loading`.
 
 ## repeat
 
@@ -486,16 +487,6 @@ Remove a previously added authentication details.
       realm: Fake Realm
       username: foo
       password: bar
-
-
-## add-cert
-
-Add certificate error handler for a url.
-
-
-## remove-cert
-
-Remove certificate error handler for a url.
 
 
 ## clear-log
