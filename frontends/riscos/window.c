@@ -64,6 +64,7 @@
 #include "netsurf/keypress.h"
 #include "desktop/browser_history.h"
 #include "desktop/cookie_manager.h"
+#include "desktop/searchweb.h"
 
 #include "riscos/bitmap.h"
 #include "riscos/buffer.h"
@@ -990,17 +991,18 @@ ro_gui_window_toolbar_click(void *data,
  * \param g gui_window to update
  * \param url1 url to be launched
  */
-static void ro_gui_window_launch_url(struct gui_window *g, const char *url1)
+static void ro_gui_window_launch_url(struct gui_window *g, const char *url_s)
 {
 	nserror error;
 	nsurl *url;
 
-	if (url1 == NULL)
+	if (url_s == NULL) {
 		return;
+	}
 
 	ro_gui_url_complete_close();
 
-	error = nsurl_create(url1, &url);
+	error = search_web_omni(url_s, SEARCH_WEB_OMNI_NONE, &url);
 	if (error != NSERROR_OK) {
 		ro_warn_user(messages_get_errorcode(error), 0);
 	} else {
@@ -1424,8 +1426,7 @@ ro_gui_window_handle_local_keypress(struct gui_window *g,
 		if (is_toolbar) {
 			const char *toolbar_url;
 			toolbar_url = ro_toolbar_get_url(g->toolbar);
-			if (toolbar_url != NULL)
-				ro_gui_window_launch_url(g, toolbar_url);
+			ro_gui_window_launch_url(g, toolbar_url);
 		}
 		return true;
 
