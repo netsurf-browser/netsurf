@@ -1125,6 +1125,7 @@ browser_window__handle_bad_certs(struct browser_window *bw,
 	/* Initially we don't know WHY the SSL cert was bad */
 	const char *reason = messages_get_sslcode(SSL_CERT_ERR_UNKNOWN);
 	size_t depth;
+	nsurl *chainurl = NULL;
 
 	memset(&params, 0, sizeof(params));
 
@@ -1157,6 +1158,20 @@ browser_window__handle_bad_certs(struct browser_window *bw,
 		goto out;
 	}
 
+	err = cert_chain_to_query(bw->loading_cert_chain, &chainurl);
+
+	if (err != NSERROR_OK) {
+		goto out;
+	}
+
+	err = fetch_multipart_data_new_kv(&params.post_multipart,
+					  "chainurl",
+					  nsurl_access(chainurl));
+
+	if (err != NSERROR_OK) {
+		goto out;
+	}
+
 	/* Now we issue the fetch */
 	bw->internal_nav = true;
 	err = browser_window__navigate_internal(bw, &params);
@@ -1166,6 +1181,8 @@ browser_window__handle_bad_certs(struct browser_window *bw,
 
  out:
 	browser_window__free_fetch_parameters(&params);
+	if (chainurl != NULL)
+		nsurl_unref(chainurl);
 	return err;
 }
 

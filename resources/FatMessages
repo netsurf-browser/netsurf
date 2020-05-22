@@ -1078,6 +1078,11 @@ it.all.PrivacyTitle:Errore della privacy
 nl.all.PrivacyTitle:Privacyfout
 en.all.PrivacyDescription:A privacy error occurred while communicating with %s this may be a site configuration error or an attempt to steal private information (passwords, messages or credit cards)
 it.all.PrivacyDescription:Si è verificato un errore della privacy durante la comunicazione con %s fai attenzione, questo potrebbe essere un errore di configurazione del sito oppure un tentativo di rubare informazioni private (password, messaggi o numeri di carte di credito)
+en.all.ViewCertificates:View certificate details
+de.all.ViewCertificates:Zertifikatdetails anzeigen
+fr.all.ViewCertificates:Afficher les détails du certificat
+it.all.ViewCertificates:Visualizza i dettagli del certificato
+nl.all.ViewCertificates:Bekijk certificaatdetails
 en.all.Proceed:Proceed
 de.all.Proceed:Vorgehen
 fr.all.Proceed:Procéder

@@ -2199,6 +2199,7 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 	const char *title;
 	struct nsurl *siteurl = NULL;
 	char *description = NULL;
+	const char *chainurl = "";
 	const struct fetch_multipart_data *curmd; /* mutipart data iterator */
 
 	/* extract parameters from multipart post data */
@@ -2211,6 +2212,8 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 			}
 		} else if (strcmp(curmd->name, "reason") == 0) {
 			reason = curmd->value;
+		} else if (strcmp(curmd->name, "chainurl") == 0) {
+			chainurl = curmd->value;
 		}
 		curmd = curmd->next;
 	}
@@ -2258,7 +2261,12 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 			goto fetch_about_query_ssl_handler_aborted;
 		}
 	}
-	res = ssenddataf(ctx, "<div><p>%s</p></div>", reason);
+	res = ssenddataf(ctx,
+			 "<div><p>%s</p></div>"
+			 "<div><p><a href=\"%s\" target=\"_blank\">%s</a></p></div>",
+			 reason,
+			 chainurl,
+			 messages_get("ViewCertificates"));
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_ssl_handler_aborted;
 	}
