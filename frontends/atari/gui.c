@@ -65,6 +65,7 @@
 #include "atari/filetype.h"
 #include "atari/bitmap.h"
 #include "atari/font.h"
+#include "atari/options.h"
 #include "cflib.h"
 
 static bool atari_quit = false;
