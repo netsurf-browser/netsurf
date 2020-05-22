@@ -915,6 +915,12 @@ static void treeview__search_cancel(treeview *tree, bool drop_focus)
 		return;
 	}
 
+	if (textarea_get_text(tree->search.textarea, NULL, 0) == 1) {
+		// If there's no text in the search box, we drop focus on a
+		// cancel.  Note '1' because it includes the trailing \0
+		drop_focus = true;
+	}
+
 	if (drop_focus) {
 		tree->search.active = false;
 		textarea_set_caret(tree->search.textarea, -1);
