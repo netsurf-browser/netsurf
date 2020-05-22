@@ -1285,8 +1285,9 @@ nserror nsgtk_scaffolding_destroy_all(void)
 
 	/* iterate all scaffolding windows and destroy them */
 	while (gs != NULL) {
+		struct nsgtk_scaffolding *next = gs->next;
 		gtk_widget_destroy(GTK_WIDGET(gs->window));
-		gs = gs->next;
+		gs = next;
 	}
 	return NSERROR_OK;
 }
