@@ -51,7 +51,7 @@ endif
 
 # S_MONKEY are sources purely for the MONKEY build
 S_FRONTEND := main.c output.c filetype.c schedule.c bitmap.c plot.c browser.c \
-	download.c 401login.c cert.c layout.c dispatch.c fetch.c
+	download.c 401login.c layout.c dispatch.c fetch.c
 
 
 # This is the final source build list

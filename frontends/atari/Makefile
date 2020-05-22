@@ -85,7 +85,6 @@ S_FRONTEND := \
 	clipboard.c \
 	ctxmenu.c \
 	cookies.c \
-	certview.c \
 	deskmenu.c \
 	download.c \
 	encoding.c \

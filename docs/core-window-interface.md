@@ -10,7 +10,7 @@ The currently available user interfaces are:
  - Cookies
  - Global history
  - Hotlist
- - SSL certificate view
+ - SSL certificate view (obsolete, but used as an example here)
  - local history
 
 Although not currently included in future additional user interfaces

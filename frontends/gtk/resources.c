@@ -77,7 +77,6 @@ static struct nsgtk_resource_s ui_resource[] = {
 	RES_ENTRY("netsurf"),
 	RES_ENTRY("tabcontents"),
 	RES_ENTRY("password"),
-	RES_ENTRY("ssl"),
 	RES_ENTRY("toolbar"),
 	RES_ENTRY("downloads"),
 	RES_ENTRY("globalhistory"),

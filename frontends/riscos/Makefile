@@ -53,7 +53,7 @@ S_FRONTEND := assert.c bitmap.c buffer.c configure.c gui.c	\
 	search.c searchweb.c textarea.c	textselection.c theme.c		\
 	theme_install.c toolbar.c url_suggest.c wimp.c wimp_event.c	\
 	ucstables.c uri.c url_complete.c url_protocol.c	window.c	\
-	corewindow.c cookies.c sslcert.c hotlist.c			\
+	corewindow.c cookies.c hotlist.c			\
 	local_history.c global_history.c				\
 	$(addprefix content-handlers/,artworks.c awrender.s draw.c	\
 	sprite.c)							\

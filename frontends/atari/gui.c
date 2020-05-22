@@ -52,7 +52,6 @@
 #include "atari/toolbar.h"
 #include "atari/hotlist.h"
 #include "atari/cookies.h"
-#include "atari/certview.h"
 #include "atari/history.h"
 #include "atari/encoding.h"
 #include "atari/res/netsurf.rsh"
@@ -759,32 +758,6 @@ static void gui_set_clipboard(const char *buffer, size_t length,
 	}
 	free(clip);
     }
-}
-
-static nserror
-gui_cert_verify(nsurl *url, const struct cert_chain *chain,
-		nserror (*cb)(bool proceed, void *pw),
-		void *cbpw)
-{
-        struct sslcert_session_data *data;
-        NSLOG(netsurf, INFO, "url %s", nsurl_access(url));
-
-        // TODO: localize string
-        int b = form_alert(1, "[2][SSL Verify failed, continue?][Continue|Abort|Details...]");
-        if(b == 1){
-                // Accept
-                urldb_set_cert_permissions(url, true);
-                cb(true, cbpw);
-        } else if(b == 2) {
-                // Reject
-                urldb_set_cert_permissions(url, false);
-                cb(false, cbpw);
-        } else if(b == 3) {
-                // Inspect
-                sslcert_viewer_create_session_data(url, cb, cbpw, chain, &data);
-                atari_sslcert_viewer_open(data);
-        }
-	return NSERROR_OK;
 }
 
 void gui_set_input_gui_window(struct gui_window *gw)

@@ -73,7 +73,6 @@
 #include "riscos/query.h"
 #include "riscos/window.h"
 #include "riscos/iconbar.h"
-#include "riscos/sslcert.h"
 #include "riscos/local_history.h"
 #include "riscos/global_history.h"
 #include "riscos/cookies.h"

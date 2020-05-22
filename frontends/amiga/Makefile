@@ -48,7 +48,7 @@ S_FRONTEND := gui.c history.c hotlist.c schedule.c file.c	\
 	plotters.c object.c menu.c save_pdf.c arexx.c version.c		\
 	cookies.c ctxmenu.c clipboard.c help.c font_scan.c		\
 	launch.c search.c history_local.c download.c iff_dr2d.c		\
-	sslcert.c gui_options.c print.c	theme.c	drag.c icon.c libs.c	\
+	gui_options.c print.c	theme.c	drag.c icon.c libs.c	\
 	datatypes.c dt_picture.c dt_anim.c dt_sound.c plugin_hack.c	\
 	stringview/stringview.c stringview/urlhistory.c rtg.c		\
 	agclass/amigaguide_class.c os3support.c font_diskfont.c		\

@@ -638,14 +638,6 @@ static nserror gui_default_launch_url(struct nsurl *url)
 }
 
 
-static nserror gui_default_cert_verify(nsurl *url,
-				    const struct cert_chain *chain,
-				    nserror (*cb)(bool proceed, void *pw),
-				    void *cbpw)
-{
-	return NSERROR_NOT_IMPLEMENTED;
-}
-
 static nserror gui_default_401login_open(
 	nsurl *url, const char *realm,
 	const char *username, const char *password,
@@ -684,9 +676,6 @@ static nserror verify_misc_register(struct gui_misc_table *gmt)
 	}
 	if (gmt->launch_url == NULL) {
 		gmt->launch_url = gui_default_launch_url;
-	}
-	if (gmt->cert_verify == NULL) {
-		gmt->cert_verify = gui_default_cert_verify;
 	}
 	if (gmt->login == NULL) {
 		gmt->login = gui_default_401login_open;

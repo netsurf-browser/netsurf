@@ -26,7 +26,6 @@ enum monkey_output_type {
 	MOUT_GENERIC,
 	MOUT_WINDOW,
 	MOUT_LOGIN,
-	MOUT_SSLCERT,
 	MOUT_DOWNLOAD,
 	MOUT_PLOT,
 };

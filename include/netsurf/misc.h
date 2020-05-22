@@ -71,21 +71,6 @@ struct gui_misc_table {
 	nserror (*launch_url)(struct nsurl *url);
 
 	/**
-	 * Prompt the user to verify a certificate with issuse.
-	 *
-	 * \param url The URL being verified.
-	 * \param certs The certificate to be verified
-	 * \param num The number of certificates to be verified.
-	 * \param cb Callback upon user decision.
-	 * \param cbpw Context pointer passed to cb
-	 * \return NSERROR_OK on sucess else error and cb never called
-	 */
-	nserror (*cert_verify)(struct nsurl *url,
-			const struct cert_chain *chain,
-			nserror (*cb)(bool proceed, void *pw),
-			void *cbpw);
-
-	/**
 	 * Retrieve username/password for a given url+realm if there is one
 	 * stored in a frontend-specific way (e.g. gnome-keyring)
 	 *

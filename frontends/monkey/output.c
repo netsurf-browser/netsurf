@@ -31,7 +31,6 @@ static const char *type_text[]={
 	"GENERIC",
 	"WINDOW",
 	"LOGIN",
-	"SSLCERT",
 	"DOWNLOAD",
 	"PLOT",
 };

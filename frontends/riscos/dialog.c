@@ -51,7 +51,6 @@
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
 #include "riscos/save.h"
-#include "riscos/sslcert.h"
 #include "riscos/toolbar.h"
 #include "riscos/url_complete.h"
 #include "riscos/url_suggest.h"
@@ -177,9 +176,6 @@ void ro_gui_dialog_init(void)
 	/* core window based initialisation done last to allow any
 	 * associated dialogues to be set up first.
 	 */
-
-	/* certificate verification window */
-	ro_gui_cert_initialise();
 
 	/* hotlist window */
 	ro_gui_hotlist_initialise();

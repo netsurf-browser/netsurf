@@ -44,7 +44,6 @@ struct tree;
 struct node;
 struct history;
 struct css_style;
-struct ssl_cert_info;
 struct nsurl;
 struct hlcache_handle;
 

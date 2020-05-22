@@ -160,7 +160,6 @@
 #include "amiga/selectmenu.h"
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
-#include "amiga/sslcert.h"
 
 #define AMINS_SCROLLERPEN NUMDRIPENS
 #define NSA_KBD_SCROLL_PX 10

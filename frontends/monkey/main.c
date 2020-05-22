@@ -43,7 +43,6 @@
 #include "monkey/output.h"
 #include "monkey/dispatch.h"
 #include "monkey/browser.h"
-#include "monkey/cert.h"
 #include "monkey/401login.h"
 #include "monkey/filetype.h"
 #include "monkey/fetch.h"
@@ -250,7 +249,6 @@ static struct gui_misc_table monkey_misc_table = {
 
 	.quit = monkey_quit,
 	.launch_url = gui_launch_url,
-	.cert_verify = gui_cert_verify,
 	.login = gui_401login_open,
 };
 
@@ -464,11 +462,6 @@ main(int argc, char **argv)
 		die("login handler failed to register");
 	}
 
-	ret = monkey_register_handler("SSLCERT", monkey_sslcert_handle_command);
-	if (ret != NSERROR_OK) {
-		die("sslcert handler failed to register");
-	}
-	
 
 	moutf(MOUT_GENERIC, "STARTED");
 	monkey_run();

@@ -1164,14 +1164,6 @@ browser_window__handle_bad_certs(struct browser_window *bw,
 		goto out;
 	}
 
-	err = guit->misc->cert_verify(url,
-				      bw->loading_cert_chain,
-				      browser_window__handle_ssl_query_response,
-				      bw);
-
-	if (err == NSERROR_NOT_IMPLEMENTED) {
-		err = NSERROR_OK;
-	}
  out:
 	browser_window__free_fetch_parameters(&params);
 	return err;
