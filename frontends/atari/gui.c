@@ -29,6 +29,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/corestrings.h"
+#include "utils/nsoption.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/layout.h"
 #include "netsurf/window.h"
@@ -65,7 +66,6 @@
 #include "atari/filetype.h"
 #include "atari/bitmap.h"
 #include "atari/font.h"
-#include "atari/options.h"
 #include "cflib.h"
 
 static bool atari_quit = false;
