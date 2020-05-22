@@ -184,6 +184,13 @@ static nserror html_process_inserted_canvas(html_content *htmlc, dom_node *node)
 	unsigned long width = 300, height = 150;
 	struct bitmap *bitmap, *oldbitmap = NULL;
 
+	if (!htmlc->enable_scripting) {
+		/* No point processing this element, we're not going to
+		 * render it
+		 */
+		return NSERROR_OK;
+	}
+
 	exc = dom_element_get_attribute(node,
 					corestring_dom_width,
 					&width_s);
