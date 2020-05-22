@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2019 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2020 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -152,6 +152,7 @@
 #include "amiga/menu.h"
 #include "amiga/misc.h"
 #include "amiga/nsoption.h"
+#include "amiga/pageinfo.h"
 #include "amiga/plotters.h"
 #include "amiga/plugin_hack.h"
 #include "amiga/print.h"
@@ -2998,6 +2999,12 @@ static BOOL ami_gui_event(void *w)
 						ami_gui_history(gwin, false);
 					break;
 
+					case GID_PAGEINFO:
+						if(ami_pageinfo_open(gwin->gw->bw) != NSERROR_OK) {
+							NSLOG(netsurf, INFO, "Unable to open page info window");
+						}
+					break;
+
 					case GID_FAVE:
 						GetAttr(STRINGA_TextVal,
 							(Object *)gwin->objects[GID_URL],
@@ -5019,7 +5026,7 @@ gui_window_create(struct browser_window *bw,
 						LAYOUT_AddChild, g->shared->objects[GID_PAGEINFO] = ButtonObj,
 							GA_ID, GID_PAGEINFO,
 							GA_RelVerify, TRUE,
-							GA_ReadOnly, TRUE,
+							GA_ReadOnly, FALSE,
 							BUTTON_RenderImage, g->shared->objects[GID_PAGEINFO_INTERNAL_BM],
 						ButtonEnd,
 						CHILD_WeightedWidth, 0,
