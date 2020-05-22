@@ -200,4 +200,8 @@ init HTMLFormControlsCollection(struct dom_html_collection *coll);
 init HTMLOptionsCollection(struct dom_html_collection *coll);
 init HTMLPropertiesCollection(struct dom_html_collection *coll);
 
+/* Stuff to do with canvasses */
+
+#include "CanvasRenderingContext2D.bnd"
+#include "ImageData.bnd"
 
