@@ -686,27 +686,6 @@ fetch_curl_store_certs_in_cache(struct curl_fetch_info *f)
 }
 
 /**
- * Report the certificate information in the fetch to the users
- */
-static void
-fetch_curl_report_certs_upstream(struct curl_fetch_info *f)
-{
-	fetch_msg msg;
-	struct cert_chain *chain;
-
-	chain = hashmap_lookup(curl_fetch_ssl_hashmap, f->url);
-
-	if (chain != NULL) {
-		msg.type = FETCH_CERTS;
-		msg.data.chain = chain;
-
-		fetch_send_callback(&msg, f->fetch_handle);
-	}
-
-	f->sent_ssl_chain = true;
-}
-
-/**
  * OpenSSL Certificate verification callback
  *
  * Called for each certificate in a chain being verified. OpenSSL
@@ -863,6 +842,28 @@ fetch_curl_sslctxfun(CURL *curl_handle, void *_sslctx, void *parm)
 
 
 #endif /* WITH_OPENSSL */
+
+
+/**
+ * Report the certificate information in the fetch to the users
+ */
+static void
+fetch_curl_report_certs_upstream(struct curl_fetch_info *f)
+{
+	fetch_msg msg;
+	struct cert_chain *chain;
+
+	chain = hashmap_lookup(curl_fetch_ssl_hashmap, f->url);
+
+	if (chain != NULL) {
+		msg.type = FETCH_CERTS;
+		msg.data.chain = chain;
+
+		fetch_send_callback(&msg, f->fetch_handle);
+	}
+
+	f->sent_ssl_chain = true;
+}
 
 
 /**
