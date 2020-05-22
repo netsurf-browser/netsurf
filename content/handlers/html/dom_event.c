@@ -200,7 +200,7 @@ static nserror html_process_inserted_canvas(html_content *htmlc, dom_node *node)
 		char * ended;
 		unsigned long width_n = strtoul(ptr, &ended, 10);
 
-		if (ended == endptr) {
+		if (ended == endptr || strcasecmp(ended, "px") == 0) {
 			/* parsed it all */
 			width = width_n;
 		}
@@ -217,7 +217,7 @@ static nserror html_process_inserted_canvas(html_content *htmlc, dom_node *node)
 		char * ended;
 		unsigned long height_n = strtoul(ptr, &ended, 10);
 
-		if (ended == endptr) {
+		if (ended == endptr || strcasecmp(ended, "px") == 0) {
 			/* parsed it all */
 			height = height_n;
 		}
