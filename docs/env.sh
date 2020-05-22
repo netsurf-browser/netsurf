@@ -198,7 +198,7 @@ if [ "x${HOST}" = "x" ]; then
         HOST=${TARGET_ABI}
     fi
 else
-    HOST_CC_LIST="${HOST}-cc ${HOST}-gcc /opt/netsurf/${HOST}/cross/bin/${HOST}-cc /opt/netsurf/${HOST}/cross/bin/${HOST}-gcc"
+    HOST_CC_LIST="/opt/netsurf/${HOST}/cross/bin/${HOST}-cc /opt/netsurf/${HOST}/cross/bin/${HOST}-gcc ${HOST}-cc ${HOST}-gcc"
     for HOST_CC_V in $(echo ${HOST_CC_LIST});do
         HOST_CC=$(${WHICH_CMD} ${HOST_CC_V})
         if [ "x${HOST_CC}" != "x" ];then
@@ -213,9 +213,13 @@ else
     HOST_CC_MACHINE=$(${HOST_CC} -dumpmachine 2>/dev/null)
 
     if [ "${HOST_CC_MACHINE}" != "${HOST}" ];then
-        echo "Compiler dumpmachine differes from HOST setting"
+        echo "Compiler dumpmachine differs from HOST setting"
         return 2
     fi
+
+    NS_ENV_CC="${HOST_CC}"
+    export NS_ENV_CC
+
     unset HOST_CC_LIST HOST_CC_V HOST_CC HOST_CC_MACHINE
 fi
 
