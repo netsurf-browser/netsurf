@@ -212,7 +212,8 @@ method CanvasRenderingContext2D::putImageData()
 	    clipx < 0 || clipy < 0 || /* Input in range */
 	    (clipx + clipw) > idpriv->width || /* Input in range */
 	    (clipy + cliph) > idpriv->height) { /* Input in range */
-		return duk_error(ctx, DUK_ERR_RANGE_ERROR, "invalid inputs");
+		return duk_error(ctx, DUK_ERR_RANGE_ERROR, "invalid inputs: (%d,%d) (%d,%d) (%d,%d) (Me: %d,%d) (Img: %d,%d)",
+				 x,y,clipx,clipy,clipw,cliph, priv->width, priv->height, idpriv->width, idpriv->height);
 	}
 
 	bitmap_base = guit->bitmap->get_buffer(priv->bitmap);
