@@ -824,6 +824,13 @@ box_canvas(dom_node *n,
 	}
 	*convert_children = false;
 
+	if (box->style &&
+	    ns_computed_display(box->style, box_is_root(n)) == CSS_DISPLAY_NONE)
+		return true;
+
+	/* This is replaced content */
+	box->flags |= IS_REPLACED | REPLACE_DIM;
+
 	return true;
 }
 
