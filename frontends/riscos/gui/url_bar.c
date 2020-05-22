@@ -67,7 +67,7 @@ struct url_bar {
 	/** The window and icon details. */
 	wimp_w			window;
 	os_box			extent;
-	osspriteop_area			*sprites;
+	osspriteop_area		*sprites;
 
 	wimp_i			container_icon;
 
@@ -898,6 +898,23 @@ void ro_gui_url_bar_redraw(struct url_bar *url_bar, wimp_draw *redraw)
 	}
 }
 
+/**
+ * check if os point is inside an os box
+ *
+ * \param pos The coordinate of the point
+ * \param box The box to check against
+ * \return true if point is inside the box else false
+ */
+static inline bool is_point_in_box(os_coord *pos, os_box *box)
+{
+	if (pos->x < box->x0 ||
+	    pos->x > box->x1 ||
+	    pos->y < box->y0 ||
+	    pos->y > box->y1) {
+		return false;
+	}
+	return true;
+}
 
 /* This is an exported interface documented in url_bar.h */
 bool
@@ -917,23 +934,16 @@ ro_gui_url_bar_click(struct url_bar *url_bar,
 	pos.x = pointer->pos.x - state->visible.x0 + state->xscroll;
 	pos.y = pointer->pos.y - state->visible.y1 + state->yscroll;
 
-	if (pos.x < url_bar->extent.x0 ||
-	    pos.x > url_bar->extent.x1 ||
-	    pos.y < url_bar->extent.y0 ||
-	    pos.y > url_bar->extent.y1) {
+	if (!is_point_in_box(&pos, &url_bar->extent)) {
 		return false;
 	}
 
 	/* If we have a Select or Adjust click, check if it originated on the
 	 * hotlist icon; if it did, return an event.
 	 */
-
 	if (pointer->buttons == wimp_SINGLE_SELECT ||
 	    pointer->buttons == wimp_SINGLE_ADJUST) {
-		if (pos.x >= url_bar->hotlist.extent.x0 &&
-		    pos.x <= url_bar->hotlist.extent.x1 &&
-		    pos.y >= url_bar->hotlist.extent.y0 &&
-		    pos.y <= url_bar->hotlist.extent.y1) {
+		if (is_point_in_box(&pos, &url_bar->hotlist.extent)) {
 			if (pointer->buttons == wimp_SINGLE_SELECT &&
 			    action != NULL) {
 				*action = TOOLBAR_URL_SELECT_HOTLIST;
@@ -943,12 +953,23 @@ ro_gui_url_bar_click(struct url_bar *url_bar,
 			}
 			return true;
 		}
+
+		if (is_point_in_box(&pos, &url_bar->pginfo_extent)) {
+			if (pointer->buttons == wimp_SINGLE_SELECT &&
+			    action != NULL) {
+				*action = TOOLBAR_URL_SELECT_PGINFO;
+			} else if (pointer->buttons == wimp_SINGLE_ADJUST &&
+				   action != NULL) {
+				*action = TOOLBAR_URL_ADJUST_PGINFO;
+			}
+			return true;
+		}
+
 	}
 
 	/* If we find a Select or Adjust drag, check if it originated on the
 	 * URL bar or over the favicon.  If either, then return an event.
 	 */
-
 	if (pointer->buttons == wimp_DRAG_SELECT ||
 	    pointer->buttons == wimp_DRAG_ADJUST) {
 		if (pointer->i == url_bar->text_icon) {
@@ -958,10 +979,7 @@ ro_gui_url_bar_click(struct url_bar *url_bar,
 			return true;
 		}
 
-		if (pos.x >= url_bar->favicon_extent.x0 &&
-		    pos.x <= url_bar->favicon_extent.x1 &&
-		    pos.y >= url_bar->favicon_extent.y0 &&
-		    pos.y <= url_bar->favicon_extent.y1) {
+		if (is_point_in_box(&pos, &url_bar->favicon_extent)) {
 			if (action != NULL) {
 				*action = TOOLBAR_URL_DRAG_FAVICON;
 			}
