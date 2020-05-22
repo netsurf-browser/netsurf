@@ -635,7 +635,7 @@ nserror page_info_redraw(
 		.x1 = clip->x1 + x,
 		.y1 = clip->y1 + y,
 	};
-	int cur_y = 0;
+	int cur_y = y;
 	nserror err;
 
 	/* Start knockout rendering if it's available for this plotter. */
@@ -653,7 +653,7 @@ nserror page_info_redraw(
 	cur_y += pi->window_padding;
 	for (unsigned i = 0; i < PI_ENTRY__COUNT; i++) {
 		const struct page_info_entry *entry = pi->entries + i;
-		int cur_x = pi->window_padding;
+		int cur_x = x + pi->window_padding;
 
 		if (page_info__hide_entry(i, pi->scheme)) {
 			continue;
