@@ -2,6 +2,7 @@
   <head>
     <meta charset="UTF-8" />
     <title>Conway's Game of Life</title>
+    <link rel="stylesheet" type="text/css" href="resource:internal.css">
     <style>
       canvas#surface {
         width: 50vmin;
@@ -10,16 +11,18 @@
       }
     </style>
   </head>
-  <body>
-    <h1>Conway's Game of Life</h1>
-    <div><input id="running" type="checkbox" /> Run</div>
-    <div>
-      <canvas id="surface" width="50" height="50">
-        Sorry, you can't play Game of Life if JavaScript is turned off
-      </canvas>
-    </div>
-    <div>
-      <button id="random">Randomise</button>
+  <body class="ns-even-bg ns-even-fg ns-border">
+    <h1 class="ns-border">Conway's Game of Life</h1>
+    <div style="margin: 1em;">
+      <div><input id="running" type="checkbox" /> Run</div>
+      <div>
+        <canvas id="surface" width="50" height="50">
+          Sorry, you can't play Game of Life if JavaScript is turned off
+        </canvas>
+      </div>
+      <div>
+        <button id="random">Randomise</button>
+      </div>
     </div>
   </body>
   <script>
