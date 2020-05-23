@@ -1148,7 +1148,7 @@ static bool html_redraw_text_box(const html_content *html, struct box *box,
 			 scale,
 			 excluded,
 			 (struct content *)html,
-			 &html->sel,
+			 html->sel,
 			 ctx))
 		return false;
 

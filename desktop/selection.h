@@ -30,26 +30,8 @@ struct box;
 struct browser_window;
 struct plot_font_style;
 struct selection_string;
-
-typedef enum {
-	DRAG_NONE,
-	DRAG_START,
-	DRAG_END
-} seln_drag_state;
-
-struct selection {
-	struct content *c;
-	struct box *root;
-
-	unsigned max_idx;  /* total bytes in text representation */
-
-	unsigned start_idx;  /* offset in bytes within text representation */
-	unsigned end_idx;
-
-	bool defined;
-
-	seln_drag_state drag_state;
-};
+struct selection;
+struct content;
 
 /**
  * determine if a selecion is active

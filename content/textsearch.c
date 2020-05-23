@@ -180,6 +180,7 @@ static void search_show_all(bool all, struct textsearch_context *context)
 
 			a->sel = selection_create(context->c);
 			if (a->sel != NULL) {
+				selection_init(a->sel);
 				selection_set_position(a->sel,
 						       a->start_idx,
 						       a->end_idx);

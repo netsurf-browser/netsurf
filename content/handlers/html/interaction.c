@@ -401,14 +401,14 @@ mouse_action_drag_selection(html_content *html,
 
 	if (!mouse) {
 		/* End of selection drag */
-		if (selection_dragging_start(&html->sel)) {
+		if (selection_dragging_start(html->sel)) {
 			dir = 1;
 		}
 
 		idx = html_selection_drag_end(html, mouse, x, y, dir);
 
 		if (idx != 0) {
-			selection_track(&html->sel, mouse, idx);
+			selection_track(html->sel, mouse, idx);
 		}
 
 		drag_owner.no_owner = true;
@@ -417,7 +417,7 @@ mouse_action_drag_selection(html_content *html,
 		return NSERROR_OK;
 	}
 
-	if (selection_dragging_start(&html->sel)) {
+	if (selection_dragging_start(html->sel)) {
 		dir = 1;
 	}
 
@@ -432,7 +432,7 @@ mouse_action_drag_selection(html_content *html,
 				       &idx,
 				       &pixel_offset);
 
-		selection_track(&html->sel, mouse, box->byte_offset + idx);
+		selection_track(html->sel, mouse, box->byte_offset + idx);
 	}
 	return NSERROR_OK;
 }
@@ -1219,7 +1219,7 @@ default_mouse_action(html_content *html,
 					       &idx,
 					       &pixel_offset);
 
-			if (selection_click(&html->sel,
+			if (selection_click(html->sel,
 					    html->bw,
 					    mouse,
 					    mas->text.box->byte_offset + idx)) {
@@ -1229,7 +1229,7 @@ default_mouse_action(html_content *html,
 				html_drag_type drag_type;
 				union html_drag_owner drag_owner;
 
-				if (selection_dragging(&html->sel)) {
+				if (selection_dragging(html->sel)) {
 					drag_type = HTML_DRAG_SELECTION;
 					drag_owner.no_owner = true;
 					html_set_drag_type(html,
@@ -1244,10 +1244,10 @@ default_mouse_action(html_content *html,
 
 		} else if (mouse & BROWSER_MOUSE_PRESS_1) {
 			sel_owner.none = true;
-			selection_clear(&html->sel, true);
+			selection_clear(html->sel, true);
 		}
 
-		if (selection_active(&html->sel)) {
+		if (selection_active(html->sel)) {
 			sel_owner.none = false;
 			html_set_selection(html,
 					   HTML_SELECTION_SELF,
@@ -1518,7 +1518,7 @@ html_mouse_action(struct content *c,
 bool html_keypress(struct content *c, uint32_t key)
 {
 	html_content *html = (html_content *) c;
-	struct selection *sel = &html->sel;
+	struct selection *sel = html->sel;
 
 	/** \todo
 	 * At the moment, the front end interface for keypress only gives
@@ -1763,7 +1763,7 @@ void html_set_selection(html_content *html, html_selection_type selection_type,
 		case HTML_SELECTION_SELF:
 			if (same_type)
 				break;
-			selection_clear(&html->sel, true);
+			selection_clear(html->sel, true);
 			break;
 		case HTML_SELECTION_TEXTAREA:
 			if (same_type && html->selection_owner.textarea ==

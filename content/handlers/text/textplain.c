@@ -69,7 +69,7 @@ typedef struct textplain_content {
 	int formatted_width;
 	struct browser_window *bw;
 
-	struct selection sel;	/** Selection state */
+	struct selection *sel; /** Selection state */
 
 } textplain_content;
 
@@ -168,8 +168,7 @@ textplain_create_internal(textplain_content *c, lwc_string *encoding)
 	c->physical_line_count = 0;
 	c->formatted_width = 0;
 	c->bw = NULL;
-
-	selection_prepare(&c->sel, (struct content *)c);
+	c->sel = selection_create((struct content *)c);
 
 	return NSERROR_OK;
 
@@ -538,6 +537,10 @@ static void textplain_destroy(struct content *c)
 	if (text->utf8_data != NULL) {
 		free(text->utf8_data);
 	}
+
+	if (text->sel != NULL) {
+		selection_destroy(text->sel);
+	}
 }
 
 
@@ -707,9 +710,9 @@ textplain_mouse_action(struct content *c,
 	browser_window_set_drag_type(bw, DRAGGING_NONE, NULL);
 
 	idx = textplain_offset_from_coords(c, x, y, dir);
-	if (selection_click(&text->sel, text->bw, mouse, idx)) {
+	if (selection_click(text->sel, text->bw, mouse, idx)) {
 
-		if (selection_dragging(&text->sel)) {
+		if (selection_dragging(text->sel)) {
 			browser_window_set_drag_type(bw,
 						     DRAGGING_SELECTION, NULL);
 			status = messages_get("Selecting");
@@ -753,11 +756,11 @@ textplain_mouse_track(struct content *c,
 		int dir = -1;
 		size_t idx;
 
-		if (selection_dragging_start(&text->sel))
+		if (selection_dragging_start(text->sel))
 			dir = 1;
 
 		idx = textplain_offset_from_coords(c, x, y, dir);
-		selection_track(&text->sel, mouse, idx);
+		selection_track(text->sel, mouse, idx);
 
 		browser_window_set_drag_type(bw, DRAGGING_NONE, NULL);
 	}
@@ -768,10 +771,10 @@ textplain_mouse_track(struct content *c,
 		int dir = -1;
 		size_t idx;
 
-		if (selection_dragging_start(&text->sel)) dir = 1;
+		if (selection_dragging_start(text->sel)) dir = 1;
 
 		idx = textplain_offset_from_coords(c, x, y, dir);
-		selection_track(&text->sel, mouse, idx);
+		selection_track(text->sel, mouse, idx);
 	}
 		break;
 
@@ -794,7 +797,7 @@ textplain_mouse_track(struct content *c,
 static bool textplain_keypress(struct content *c, uint32_t key)
 {
 	textplain_content *text = (textplain_content *) c;
-	struct selection *sel = &text->sel;
+	struct selection *sel = text->sel;
 
 	switch (key) {
 	case NS_KEY_COPY_SELECTION:
@@ -1129,7 +1132,7 @@ textplain_redraw(struct content *c,
 				       line_height,
 				       data->scale,
 				       text,
-				       &text->sel,
+				       text->sel,
 				       ctx)) {
 				return false;
 			}
@@ -1156,7 +1159,7 @@ textplain_redraw(struct content *c,
 
 			if (bw) {
 				unsigned tab_ofst = line[lineno].start + next_offset;
-				struct selection *sel = &text->sel;
+				struct selection *sel = text->sel;
 				bool highlighted = false;
 
 				unsigned start_idx, end_idx;
@@ -1220,7 +1223,7 @@ textplain_open(struct content *c,
 	text->bw = bw;
 
 	/* text selection */
-	selection_init(&text->sel);
+	selection_init(text->sel);
 
 	return NSERROR_OK;
 }
@@ -1246,7 +1249,7 @@ static char *textplain_get_selection(struct content *c)
 {
 	textplain_content *text = (textplain_content *) c;
 
-	return selection_get_copy(&text->sel);
+	return selection_get_copy(text->sel);
 }
 
 

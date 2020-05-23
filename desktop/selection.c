@@ -45,6 +45,26 @@ struct selection_string {
 };
 
 
+typedef enum {
+	DRAG_NONE,
+	DRAG_START,
+	DRAG_END
+} seln_drag_state;
+
+struct selection {
+	struct content *c;
+	struct box *root;
+
+	unsigned max_idx;  /* total bytes in text representation */
+
+	unsigned start_idx;  /* offset in bytes within text representation */
+	unsigned end_idx;
+
+	bool defined;
+
+	seln_drag_state drag_state;
+};
+
 /**
  * Redraws the given range of text.
  *
@@ -236,7 +256,6 @@ struct selection *selection_create(struct content *c)
 	sel = calloc(1, sizeof(struct selection));
 	if (sel) {
 		selection_prepare(sel, c);
-		selection_init(sel);
 	}
 
 	return sel;

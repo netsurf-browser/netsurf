@@ -493,7 +493,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 		return NSERROR_NOMEM;
 	}
 
-	selection_prepare(&c->sel, (struct content *)c);
+	c->sel = selection_create((struct content *)c);
 
 	nerror = http_parameter_list_find_item(params, corestring_lwc_charset, &charset);
 	if (nerror == NSERROR_OK) {
@@ -1056,7 +1056,7 @@ static void html_reformat(struct content *c, int width, int height)
 	if (c->height < layout->y + layout->descendant_y1)
 		c->height = layout->y + layout->descendant_y1;
 
-	selection_reinit(&htmlc->sel);
+	selection_reinit(htmlc->sel);
 
 	htmlc->reflowing = false;
 	htmlc->had_initial_layout = true;
@@ -1184,6 +1184,8 @@ static void html_destroy(struct content *c)
 		}
 	}
 
+	selection_destroy(html->sel);
+
 	/* Destroy forms */
 	for (f = html->forms; f != NULL; f = g) {
 		g = f->prev;
@@ -1304,7 +1306,7 @@ html_open(struct content *c,
 	html->drag_owner.no_owner = true;
 
 	/* text selection */
-	selection_init(&html->sel);
+	selection_init(html->sel);
 	html->selection_type = HTML_SELECTION_NONE;
 	html->selection_owner.none = true;
 
@@ -1323,7 +1325,7 @@ static nserror html_close(struct content *c)
 	html_content *htmlc = (html_content *) c;
 	nserror ret = NSERROR_OK;
 
-	selection_clear(&htmlc->sel, false);
+	selection_clear(htmlc->sel, false);
 
 	/* clear the html content reference to the browser window */
 	htmlc->bw = NULL;
@@ -1359,7 +1361,7 @@ static void html_clear_selection(struct content *c)
 		break;
 	case HTML_SELECTION_SELF:
 		assert(html->selection_owner.none == false);
-		selection_clear(&html->sel, true);
+		selection_clear(html->sel, true);
 		break;
 	case HTML_SELECTION_CONTENT:
 		content_clear_selection(html->selection_owner.content->object);
@@ -1388,7 +1390,7 @@ static char *html_get_selection(struct content *c)
 				gadget->data.text.ta);
 	case HTML_SELECTION_SELF:
 		assert(html->selection_owner.none == false);
-		return selection_get_copy(&html->sel);
+		return selection_get_copy(html->sel);
 	case HTML_SELECTION_CONTENT:
 		return content_get_selection(
 				html->selection_owner.content->object);

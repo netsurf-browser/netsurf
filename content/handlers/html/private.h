@@ -28,13 +28,13 @@
 
 #include "netsurf/types.h"
 #include "content/content_protected.h"
-#include "desktop/selection.h"
 #include "content/handlers/css/utils.h"
 
 
 struct gui_layout_table;
 struct scrollbar_msg_data;
 struct content_redraw_data;
+struct selection;
 
 typedef enum {
 	HTML_DRAG_NONE,			/** No drag */
@@ -203,7 +203,7 @@ typedef struct html_content {
 	union html_focus_owner focus_owner;
 
 	/** HTML content's own text selection object */
-	struct selection sel;
+	struct selection *sel;
 
 	/**
 	 * Open core-handled form SELECT menu, or NULL if none
