@@ -997,6 +997,7 @@ static struct gui_misc_table beos_misc_table = {
 	gui_launch_url,
 	NULL, //401login
 	NULL, // pdf_password (if we have Haru support)
+	NULL, // present_cookies
 };
 
 
