@@ -2431,6 +2431,7 @@ static struct gui_misc_table riscos_misc_table = {
 
 	.quit = gui_quit,
 	.launch_url = gui_launch_url,
+	.present_cookies = ro_gui_cookies_present,
 };
 
 

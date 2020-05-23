@@ -41,7 +41,7 @@ void ro_gui_cookies_initialise(void);
  *
  * \return NSERROR_OK on success else appropriate error code on faliure.
  */
-nserror ro_gui_cookies_present(void);
+nserror ro_gui_cookies_present(const char *search_term);
 
 /**
  * Free any resources allocated for the cookie window.

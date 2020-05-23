@@ -232,7 +232,7 @@ bool ro_gui_iconbar_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		ro_gui_global_history_present();
 		return true;
 	case COOKIES_SHOW:
-		ro_gui_cookies_present();
+		ro_gui_cookies_present(NULL);
 		return true;
 	case CHOICES_SHOW:
 		ro_gui_configure_show();

@@ -447,7 +447,7 @@ static nserror ro_cookie_init(void)
 
 
 /* exported interface documented in riscos/cookies.h */
-nserror ro_gui_cookies_present(void)
+nserror ro_gui_cookies_present(const char *search_term)
 {
 	nserror res;
 
@@ -457,6 +457,9 @@ nserror ro_gui_cookies_present(void)
 		ro_gui_dialog_open_top(cookie_window->core.wh,
 				       cookie_window->core.toolbar,
 				       600, 800);
+		if (search_term != NULL) {
+			res = cookie_manager_set_search_string(search_term);
+		}
 	} else {
 		NSLOG(netsurf, INFO, "Failed presenting code %d", res);
 	}

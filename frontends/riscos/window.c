@@ -2638,7 +2638,7 @@ ro_gui_window_menu_select(wimp_w w,
 
 		/* cookies actions */
 	case COOKIES_SHOW:
-		ro_gui_cookies_present();
+		ro_gui_cookies_present(NULL);
 		break;
 
 	case COOKIES_DELETE:
