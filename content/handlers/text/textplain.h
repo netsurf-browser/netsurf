@@ -46,18 +46,4 @@ nserror textplain_init(void);
 size_t textplain_size(struct content *c);
 
 
-/**
- * Return a pointer to the raw UTF-8 data, as opposed to the reformatted
- * text to fit the window width. Thus only hard newlines are preserved
- * in the saved/copied text of a selection.
- *
- * \param[in] c     content of type CONTENT_TEXTPLAIN
- * \param[in] start starting byte offset within UTF-8 text
- * \param[in] end   ending byte offset
- * \param[out] plen receives validated length
- * \return pointer to text, or NULL if no text
- */
-char *textplain_get_raw_data(struct content *c, unsigned start, unsigned end, size_t *plen);
-
-
 #endif

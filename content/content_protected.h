@@ -47,6 +47,7 @@ struct browser_window_features;
 struct textsearch_context;
 struct box;
 struct selection;
+struct selection_string;
 
 typedef struct content_handler content_handler;
 
@@ -112,7 +113,10 @@ struct content_handler {
 	nserror (*textsearch_bounds)(struct content *c, unsigned start_idx, unsigned end_idx, struct box *start_ptr, struct box *end_ptr, struct rect *bounds_out);
 
 	/**
-	 * cause a region of the content to be marked invalid and hence redraw
+	 * redraw an area of selected text
+	 *
+	 * The defined text selection will cause an area of the
+	 *   content to be marked as invalid and hence redrawn.
 	 *
 	 * \param c The content being redrawn
 	 * \param start_idx The start index of the text region to be redrawn
@@ -120,6 +124,11 @@ struct content_handler {
 	 * \return NSERROR_OK on success else error code
 	 */
 	nserror (*textselection_redraw)(struct content *c, unsigned start_idx, unsigned end_idx);
+
+	/**
+	 * copy selected text into selection string possibly with formatting
+	 */
+	nserror (*textselection_copy)(struct content *c, unsigned start_idx, unsigned end_idx, struct selection_string *selstr);
 
 	/**
 	 * create a selection object

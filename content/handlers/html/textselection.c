@@ -277,6 +277,7 @@ html_create_selection(struct content *c, struct selection **sel_out)
 	return NSERROR_OK;
 }
 
+/* exported interface documented in html/textselection.h */
 nserror
 html_textselection_redraw(struct content *c,
 			  unsigned start_idx,
@@ -299,5 +300,231 @@ html_textselection_redraw(struct content *c,
 					rdw.r.y1 - rdw.r.y0);
 	}
 
+	return NSERROR_OK;
+}
+
+/**
+ * Selection traversal routine for appending text to a string
+ *
+ * \param  text         pointer to text being added, or NULL for newline
+ * \param  length       length of text to be appended (bytes)
+ * \param  box          pointer to text box, or NULL if from textplain
+ * \param  len_ctx      Length conversion context
+ * \param  handle       selection string to append to
+ * \param  whitespace_text    whitespace to place before text for formatting
+ *                            may be NULL
+ * \param  whitespace_length  length of whitespace_text
+ * \return true iff successful and traversal should continue
+ */
+static bool
+selection_copy(const char *text,
+		       size_t length,
+		       struct box *box,
+		       const nscss_len_ctx *len_ctx,
+		       struct selection_string *handle,
+		       const char *whitespace_text,
+		       size_t whitespace_length)
+{
+	bool add_space = false;
+	plot_font_style_t style;
+	plot_font_style_t *pstyle = NULL;
+
+	/* add any whitespace which precedes the text from this box */
+	if (whitespace_text != NULL &&
+	    whitespace_length > 0) {
+		if (!selection_string_append(whitespace_text,
+					     whitespace_length,
+					     false,
+					     pstyle,
+					     handle)) {
+			return false;
+		}
+	}
+
+	if (box != NULL) {
+		/* HTML */
+		add_space = (box->space != 0);
+
+		if (box->style != NULL) {
+			/* Override default font style */
+			font_plot_style_from_css(len_ctx, box->style, &style);
+			pstyle = &style;
+		} else {
+			/* If there's no style, there must be no text */
+			assert(box->text == NULL);
+		}
+	}
+
+	/* add the text from this box */
+	if (!selection_string_append(text, length, add_space, pstyle, handle)) {
+		return false;
+	}
+
+	return true;
+}
+
+
+/**
+ * Traverse the given box subtree, calling selection copy for all
+ * boxes that lie (partially) within the given range
+ *
+ * \param box        box subtree
+ * \param len_ctx    Length conversion context.
+ * \param start_idx  start of range within textual representation (bytes)
+ * \param end_idx    end of range
+ * \param handler    handler function to call
+ * \param handle     handle to pass
+ * \param before     type of whitespace to place before next encountered text
+ * \param first      whether this is the first box with text
+ * \param do_marker  whether deal enter any marker box
+ * \return false iff traversal abandoned part-way through
+ */
+static bool
+traverse_tree(struct box *box,
+	      const nscss_len_ctx *len_ctx,
+	      unsigned start_idx,
+	      unsigned end_idx,
+	      struct selection_string *selstr,
+	      save_text_whitespace *before,
+	      bool *first,
+	      bool do_marker)
+{
+	struct box *child;
+	const char *whitespace_text = "";
+	size_t whitespace_length = 0;
+
+	assert(box);
+
+	/* If selection starts inside marker */
+	if (box->parent &&
+	    box->parent->list_marker == box &&
+	    !do_marker) {
+		/* set box to main list element */
+		box = box->parent;
+	}
+
+	/* If box has a list marker */
+	if (box->list_marker) {
+		/* do the marker box before continuing with the rest of the
+		 * list element */
+		if (!traverse_tree(box->list_marker,
+				   len_ctx,
+				   start_idx,
+				   end_idx,
+				   selstr,
+				   before,
+				   first,
+				   true)) {
+			return false;
+		}
+	}
+
+	/* we can prune this subtree, it's after the selection */
+	if (box->byte_offset >= end_idx) {
+		return true;
+	}
+
+	/* read before calling the handler in case it modifies the tree */
+	child = box->children;
+
+	/* If nicely formatted output of the selected text is required, work
+	 * out what whitespace should be placed before the next bit of text */
+	if (before) {
+		save_text_solve_whitespace(box,
+					   first,
+					   before,
+					   &whitespace_text,
+					   &whitespace_length);
+	} else {
+		whitespace_text = NULL;
+	}
+
+	if ((box->type != BOX_BR) &&
+	    !((box->type == BOX_FLOAT_LEFT ||
+	       box->type == BOX_FLOAT_RIGHT) &&
+	      !box->text)) {
+		unsigned start_offset;
+		unsigned end_offset;
+
+		if (selected_part(box,
+				  start_idx,
+				  end_idx,
+				  &start_offset,
+				  &end_offset)) {
+			if (!selection_copy(box->text + start_offset,
+					    min(box->length, end_offset) - start_offset,
+					    box,
+					    len_ctx,
+					    selstr,
+					    whitespace_text,
+					    whitespace_length)) {
+				return false;
+			}
+			if (before) {
+				*first = false;
+				*before = WHITESPACE_NONE;
+			}
+		}
+	}
+
+	/* find the first child that could lie partially within the selection;
+	 * this is important at the top-levels of the tree for pruning subtrees
+	 * that lie entirely before the selection */
+
+	if (child) {
+		struct box *next = child->next;
+
+		while (next && next->byte_offset < start_idx) {
+			child = next;
+			next = child->next;
+		}
+
+		while (child) {
+			/* read before calling the handler in case it modifies
+			 * the tree */
+			struct box *next = child->next;
+
+			if (!traverse_tree(child,
+					   len_ctx,
+					   start_idx,
+					   end_idx,
+					   selstr,
+					   before,
+					   first,
+					   false)) {
+				return false;
+			}
+
+			child = next;
+		}
+	}
+
+	return true;
+}
+
+/* exported interface documented in html/textselection.h */
+nserror
+html_textselection_copy(struct content *c,
+			unsigned start_idx,
+			unsigned end_idx,
+			struct selection_string *selstr)
+{
+	html_content *html = (html_content *)c;
+	save_text_whitespace before = WHITESPACE_NONE;
+	bool first = true;
+	bool res;
+
+	res = traverse_tree(html->layout,
+			    &html->len_ctx,
+			    start_idx,
+			    end_idx,
+			    selstr,
+			    &before,
+			    &first,
+			    false);
+
+	if (res == false) {
+		return NSERROR_NOMEM;
+	}
 	return NSERROR_OK;
 }

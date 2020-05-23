@@ -29,6 +29,8 @@
 
 struct box;
 struct browser_window;
+struct plot_font_style;
+struct selection_string;
 
 typedef enum {
 	DRAG_NONE,
@@ -217,5 +219,12 @@ char *selection_get_copy(struct selection *s);
  * \return true iff part of the given box lies within the selection
  */
 bool selection_highlighted(const struct selection *s, unsigned start, unsigned end, unsigned *start_idx, unsigned *end_idx);
+
+bool
+selection_string_append(const char *text,
+			size_t length,
+			bool space,
+			struct plot_font_style *style,
+			struct selection_string *sel_string);
 
 #endif

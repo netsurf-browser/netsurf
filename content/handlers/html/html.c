@@ -2336,6 +2336,7 @@ static const content_handler html_content_handler = {
 	.textsearch_find = html_textsearch_find,
 	.textsearch_bounds = html_textsearch_bounds,
 	.textselection_redraw = html_textselection_redraw,
+	.textselection_copy = html_textselection_copy,
 	.create_selection = html_create_selection,
 	.no_share = true,
 };

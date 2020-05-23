@@ -1514,6 +1514,43 @@ textplain_coords_from_range(struct content *c,
 
 
 /**
+ * Return a pointer to the raw UTF-8 data, as opposed to the reformatted
+ * text to fit the window width. Thus only hard newlines are preserved
+ * in the saved/copied text of a selection.
+ *
+ * \param[in] c     content of type CONTENT_TEXTPLAIN
+ * \param[in] start starting byte offset within UTF-8 text
+ * \param[in] end   ending byte offset
+ * \param[out] plen receives validated length
+ * \return pointer to text, or NULL if no text
+ */
+static char *
+textplain_get_raw_data(struct content *c,
+		       unsigned start,
+		       unsigned end,
+		       size_t *plen)
+{
+	textplain_content *text = (textplain_content *) c;
+	size_t utf8_size;
+
+	assert(c != NULL);
+
+	utf8_size = text->utf8_data_size;
+
+	/* any text at all? */
+	if (!utf8_size) return NULL;
+
+	/* clamp to valid offset range */
+	if (start >= utf8_size) start = utf8_size;
+	if (end >= utf8_size) end = utf8_size;
+
+	*plen = end - start;
+
+	return text->utf8_data + start;
+}
+
+
+/**
  * get bounds of a free text search match
  */
 static nserror
@@ -1570,6 +1607,23 @@ textplain_textselection_redraw(struct content *c,
 	return NSERROR_OK;
 }
 
+static nserror
+textplain_textselection_copy(struct content *c,
+			     unsigned start_idx,
+			     unsigned end_idx,
+			     struct selection_string *selstr)
+{
+	const char *text;
+	size_t length;
+	bool res;
+
+	text = textplain_get_raw_data(c, start_idx, end_idx, &length);
+	res = selection_string_append(text, length, false, NULL, selstr);
+	if (res == false) {
+		return NSERROR_NOMEM;
+	}
+	return NSERROR_OK;
+}
 
 /**
  * plain text content handler table
@@ -1593,6 +1647,7 @@ static const content_handler textplain_content_handler = {
 	.textsearch_find = textplain_textsearch_find,
 	.textsearch_bounds = textplain_textsearch_bounds,
 	.textselection_redraw = textplain_textselection_redraw,
+	.textselection_copy = textplain_textselection_copy,
 	.create_selection = textplain_create_selection,
 	.no_share = true,
 };
@@ -1643,28 +1698,4 @@ size_t textplain_size(struct content *c)
 
 
 
-/* exported interface documented in html/textplain.h */
-char *
-textplain_get_raw_data(struct content *c,
-		       unsigned start,
-		       unsigned end,
-		       size_t *plen)
-{
-	textplain_content *text = (textplain_content *) c;
-	size_t utf8_size;
 
-	assert(c != NULL);
-
-	utf8_size = text->utf8_data_size;
-
-	/* any text at all? */
-	if (!utf8_size) return NULL;
-
-	/* clamp to valid offset range */
-	if (start >= utf8_size) start = utf8_size;
-	if (end >= utf8_size) end = utf8_size;
-
-	*plen = end - start;
-
-	return text->utf8_data + start;
-}
