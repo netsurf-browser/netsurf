@@ -22,32 +22,17 @@
  * implementation of text selection within browser windows.
  */
 
-#include <assert.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
-#include <dom/dom.h>
 
-#include "utils/log.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
-#include "netsurf/form.h"
-#include "html/box.h"
-#include "html/box_inspect.h"
-#include "html/private.h"
-#include "html/font.h"
-#include "text/textplain.h"
-#include "netsurf/browser_window.h"
-
-#include "netsurf/mouse.h"
-#include "desktop/browser_private.h"
-#include "netsurf/plotters.h"
-#include "desktop/save_text.h"
-#include "desktop/selection.h"
 #include "netsurf/clipboard.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/window.h"
+#include "utils/utils.h"
+#include "content/content_protected.h"
+
+#include "desktop/browser_private.h"
 #include "desktop/gui_internal.h"
+#include "desktop/selection.h"
 
 
 struct selection_string {
@@ -334,7 +319,7 @@ selection_click(struct selection *s,
 
 	top = browser_window_get_root(top);
 
-	if (selection_defined(s)) {
+	if (s->defined) {
 		if (idx > s->start_idx) {
 			if (idx <= s->end_idx) {
 				pos = 0;
@@ -376,7 +361,7 @@ selection_click(struct selection *s,
 		} else if (mouse & BROWSER_MOUSE_DRAG_2) {
 
 			/* adjust selection, but only if there is one */
-			if (!selection_defined(s)) {
+			if (!s->defined) {
 				return false;	/* ignore Adjust drags */
 			}
 
@@ -396,7 +381,7 @@ selection_click(struct selection *s,
 		} else if (mouse & BROWSER_MOUSE_CLICK_2) {
 
 			/* ignore Adjust clicks when there's no selection */
-			if (!selection_defined(s)) {
+			if (!s->defined) {
 				return false;
 			}
 
@@ -521,7 +506,7 @@ bool selection_copy_to_clipboard(struct selection *s)
 
 
 /* exported interface documented in desktop/selection.h */
-void selection_clear(struct selection *s, bool redraw)
+bool selection_clear(struct selection *s, bool redraw)
 {
 	int old_start, old_end;
 	bool was_defined;
@@ -539,6 +524,8 @@ void selection_clear(struct selection *s, bool redraw)
 	if (redraw && was_defined) {
 		selection_redraw(s, old_start, old_end);
 	}
+
+	return was_defined;
 }
 
 
@@ -569,9 +556,11 @@ selection_highlighted(const struct selection *s,
 		      unsigned *start_idx,
 		      unsigned *end_idx)
 {
-	/* caller should have checked first for efficiency */
 	assert(s);
-	assert(s->defined);
+
+	if (!s->defined) {
+		return false;
+	}
 
 	if ((end <= s->start_idx) ||
 	    (start >= s->end_idx)) {
@@ -582,4 +571,25 @@ selection_highlighted(const struct selection *s,
 	*end_idx = min(end, s->end_idx) - start;
 
 	return true;
+}
+
+/* exported interface documented in desktop/selection.h */
+bool selection_active(struct selection *s)
+{
+	return s->defined;
+}
+
+bool selection_dragging(struct selection *s)
+{
+	return s->drag_state != DRAG_NONE;
+}
+
+bool selection_dragging_start(struct selection *s)
+{
+	return s->drag_state == DRAG_START;
+}
+
+void selection_drag_end(struct selection *s)
+{
+	s->drag_state = DRAG_NONE;
 }

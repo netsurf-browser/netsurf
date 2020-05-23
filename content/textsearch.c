@@ -165,7 +165,6 @@ static void free_matches(struct textsearch_context *textsearch)
 static void search_show_all(bool all, struct textsearch_context *context)
 {
 	struct list_entry *a;
-	nserror res;
 
 	for (a = context->found->next; a; a = a->next) {
 		bool add = true;
@@ -628,7 +627,6 @@ content_textsearch_ishighlighted(struct textsearch_context *textsearch,
 
 	for (cur = textsearch->found->next; cur != NULL; cur = cur->next) {
 		if (cur->sel &&
-		    selection_defined(cur->sel) &&
 		    selection_highlighted(cur->sel,
 					  start_offset,
 					  end_offset,

@@ -1247,7 +1247,7 @@ default_mouse_action(html_content *html,
 			selection_clear(&html->sel, true);
 		}
 
-		if (selection_defined(&html->sel)) {
+		if (selection_active(&html->sel)) {
 			sel_owner.none = false;
 			html_set_selection(html,
 					   HTML_SELECTION_SELF,
@@ -1586,13 +1586,8 @@ bool html_keypress(struct content *c, uint32_t key)
 		return true;
 
 	case NS_KEY_ESCAPE:
-		if (selection_defined(sel)) {
-			selection_clear(sel, true);
-			return true;
-		}
-
 		/* if there's no selection, leave Escape for the caller */
-		return false;
+		return selection_clear(sel, true);
 	}
 
 	return false;

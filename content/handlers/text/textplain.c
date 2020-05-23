@@ -810,19 +810,12 @@ static bool textplain_keypress(struct content *c, uint32_t key)
 		return true;
 
 	case NS_KEY_ESCAPE:
-		if (selection_defined(sel)) {
-			selection_clear(sel, true);
-			return true;
-		}
-
 		/* if there's no selection, leave Escape for the caller */
-		return false;
+		return selection_clear(sel, true);
 	}
 
 	return false;
 }
-
-
 
 
 /**
@@ -871,8 +864,7 @@ text_draw(const char *utf8_text,
 		unsigned end_idx;
 
 		/* first try the browser window's current selection */
-		if (selection_defined(sel) &&
-		    selection_highlighted(sel,
+		if (selection_highlighted(sel,
 					  offset,
 					  offset + len,
 					  &start_idx,
@@ -1167,15 +1159,15 @@ textplain_redraw(struct content *c,
 				struct selection *sel = &text->sel;
 				bool highlighted = false;
 
-				if (selection_defined(sel)) {
-					unsigned start_idx, end_idx;
-					if (selection_highlighted(sel,
-								  tab_ofst,
-								  tab_ofst + 1,
-								  &start_idx,
-								  &end_idx))
-						highlighted = true;
+				unsigned start_idx, end_idx;
+				if (selection_highlighted(sel,
+							  tab_ofst,
+							  tab_ofst + 1,
+							  &start_idx,
+							  &end_idx)) {
+					highlighted = true;
 				}
+
 
 				if (!highlighted &&
 				    (c->textsearch.context != NULL)) {
@@ -1682,9 +1674,3 @@ size_t textplain_size(struct content *c)
 
 	return text->utf8_data_size;
 }
-
-
-
-
-
-

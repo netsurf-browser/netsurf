@@ -184,8 +184,7 @@ text_redraw(const char *utf8_text,
 		unsigned end_idx;
 
 		/* first try the browser window's current selection */
-		if (selection_defined(sel) &&
-		    selection_highlighted(sel,
+		if (selection_highlighted(sel,
 					  offset,
 					  offset + len,
 					  &start_idx,

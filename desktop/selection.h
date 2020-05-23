@@ -20,8 +20,8 @@
   * Text selection within browser windows (interface).
   */
 
-#ifndef _NETSURF_DESKTOP_SELECTION_H_
-#define _NETSURF_DESKTOP_SELECTION_H_
+#ifndef NETSURF_DESKTOP_SELECTION_H_
+#define NETSURF_DESKTOP_SELECTION_H_
 
 #include <stdbool.h>
 #include "netsurf/mouse.h"
@@ -37,13 +37,7 @@ typedef enum {
 	DRAG_END
 } seln_drag_state;
 
-
-/* this structure should be treated as opaque outside selection.c
-   (it's defined here to accelerate selection_defined(s) for reduced
-   impact on redraw code) */
-
-struct selection
-{
+struct selection {
 	struct content *c;
 	struct box *root;
 
@@ -57,19 +51,19 @@ struct selection
 	seln_drag_state drag_state;
 };
 
+/**
+ * determine if a selecion is active
+ */
+bool selection_active(struct selection *s);
 
-/* bool selection_defined(struct selection *s); */
-#define selection_defined(s) ((s)->defined)
+bool selection_dragging(struct selection *s);
 
-/* bool selection_dragging(struct selection *s); */
-#define selection_dragging(s) ((s)->drag_state != DRAG_NONE)
+bool selection_dragging_start(struct selection *s);
 
-/* bool selection_dragging_start(struct selection *s); */
-#define selection_dragging_start(s) ((s)->drag_state == DRAG_START)
-
-/** Handles completion of a drag operation */
-/* void selection_drag_end(struct selection *s); */
-#define selection_drag_end(s) ((s)->drag_state = DRAG_NONE)
+/**
+ * Handles completion of a drag operation
+ */
+void selection_drag_end(struct selection *s);
 
 /**
  * Creates a new selection object associated with a browser window.
@@ -129,8 +123,9 @@ void selection_reinit(struct selection *s);
  * \param s selection object
  * \param redraw true iff the previously selected region of the browser
  *                window should be redrawn
+ * \return true if selection was cleared false if not
  */
-void selection_clear(struct selection *s, bool redraw);
+bool selection_clear(struct selection *s, bool redraw);
 
 /**
  * Selects all the text within the box subtree controlled by
