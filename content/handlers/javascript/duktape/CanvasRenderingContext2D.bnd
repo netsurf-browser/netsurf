@@ -58,6 +58,150 @@ static void redraw_node(dom_node *node)
 	dom_node_unref(doc);
 }
 
+/**
+ * deal with events from the DOM for canvas node user data
+ *
+ * \param operation The DOM operation happening
+ * \param key The user data key
+ * \param data The user data (our bitmap)
+ * \param src The DOM node emitting the event (our <canvas>)
+ * \param dst The target DOM node if applicable
+ */
+static void
+canvas2d_user_data_handler(dom_node_operation operation,
+			   dom_string *key,
+			   void *data,
+			   struct dom_node *src,
+			   struct dom_node *dst)
+{
+	struct bitmap *newbitmap, *bitmap = (struct bitmap*)data, *oldbitmap = NULL;
+	int width, height;
+	size_t stride;
+
+	if (dom_string_isequal(key,corestring_dom___ns_key_canvas_node_data) == false || data == NULL) {
+		/* Not for us */
+		return;
+	}
+
+	switch (operation) {
+	case DOM_NODE_CLONED:
+		width = guit->bitmap->get_width(bitmap);
+		height = guit->bitmap->get_height(bitmap);
+		stride = guit->bitmap->get_rowstride(bitmap);
+		newbitmap = guit->bitmap->create(width, height,
+						 BITMAP_NEW);
+		if (newbitmap != NULL) {
+			if (guit->bitmap->get_rowstride(newbitmap) == stride) {
+				// Compatible bitmap, bung the data over
+				memcpy(guit->bitmap->get_buffer(newbitmap),
+				       guit->bitmap->get_buffer(bitmap),
+				       stride * height);
+				guit->bitmap->modified(newbitmap);
+			}
+		}
+		if (dom_node_set_user_data(dst,
+					   corestring_dom___ns_key_canvas_node_data,
+					   newbitmap, canvas2d_user_data_handler,
+					   &oldbitmap) == DOM_NO_ERR) {
+			if (oldbitmap != NULL)
+				guit->bitmap->destroy(oldbitmap);
+		}
+		break;
+
+	case DOM_NODE_RENAMED:
+	case DOM_NODE_IMPORTED:
+	case DOM_NODE_ADOPTED:
+		break;
+
+	case DOM_NODE_DELETED:
+		guit->bitmap->destroy(bitmap);
+		break;
+	default:
+		NSLOG(netsurf, INFO, "User data operation not handled.");
+		assert(0);
+	}
+}
+
+/**
+ * Give the canvas element an appropriately sized bitmap
+ *
+ * \param node The DOM node being inserted
+ * \param[out] bitmap_out The bitmap created
+ * \return NSERROR_OK on success else appropriate error code
+ */
+static nserror canvas2d_create_bitmap(dom_node *node, struct bitmap **bitmap_out)
+{
+	dom_exception exc;
+	dom_string *width_s = NULL, *height_s = NULL;
+	unsigned long width = 300, height = 150;
+	struct bitmap *bitmap, *oldbitmap = NULL;
+
+	exc = dom_element_get_attribute(node,
+					corestring_dom_width,
+					&width_s);
+	if (exc == DOM_NO_ERR && width_s != NULL) {
+		const char *ptr = (const char *)dom_string_data(width_s);
+		const char *endptr = ptr + dom_string_length(width_s);
+		char * ended;
+		unsigned long width_n = strtoul(ptr, &ended, 10);
+
+		if (ended == endptr || strcasecmp(ended, "px") == 0) {
+			/* parsed it all */
+			width = width_n;
+		}
+
+		dom_string_unref(width_s);
+	}
+
+	exc = dom_element_get_attribute(node,
+					corestring_dom_height,
+					&height_s);
+	if (exc == DOM_NO_ERR && height_s != NULL) {
+		const char *ptr = (const char *)dom_string_data(height_s);
+		const char *endptr = ptr + dom_string_length(height_s);
+		char * ended;
+		unsigned long height_n = strtoul(ptr, &ended, 10);
+
+		if (ended == endptr || strcasecmp(ended, "px") == 0) {
+			/* parsed it all */
+			height = height_n;
+		}
+
+		dom_string_unref(height_s);
+	}
+
+	bitmap = guit->bitmap->create(
+		(int)width, (int)height,
+		BITMAP_NEW);
+
+	if (bitmap == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	memset(guit->bitmap->get_buffer(bitmap),
+	       0, /* Transparent black */
+	       height * guit->bitmap->get_rowstride(bitmap));
+	guit->bitmap->modified(bitmap);
+
+	exc = dom_node_set_user_data(node,
+				     corestring_dom___ns_key_canvas_node_data,
+				     bitmap,
+				     canvas2d_user_data_handler,
+				     &oldbitmap);
+
+	if (exc != DOM_NO_ERR) {
+		guit->bitmap->destroy(bitmap);
+		return NSERROR_DOM;
+	}
+
+	assert(oldbitmap == NULL);
+
+	if (bitmap_out != NULL)
+		*bitmap_out = bitmap;
+
+	return NSERROR_OK;
+}
+
 /* prologue ends */
 %};
 };
@@ -76,6 +220,18 @@ init CanvasRenderingContext2D(struct dom_html_element *canvas)
 				     corestring_dom___ns_key_canvas_node_data,
 				     &bitmap);
 	assert(exc == DOM_NO_ERR);
+
+	if (bitmap == NULL) {
+		if (canvas2d_create_bitmap((dom_node *)canvas,
+					   &bitmap) != NSERROR_OK) {
+			priv->bitmap = NULL;
+			priv->width = -1;
+			priv->height = -1;
+			priv->stride = 0;
+			return;
+		}
+	}
+
 	assert(bitmap != NULL);
 
 	priv->bitmap = bitmap;
@@ -139,6 +295,9 @@ method CanvasRenderingContext2D::getImageData()
 	image_data_private_t *idpriv;
 	uint8_t *bitmap_base;
 
+	if (priv->bitmap == NULL)
+		return duk_generic_error(ctx, "Canvas in bad state, sorry");
+
 	if (width < 1 || height < 1 ||
 	    (x + width) > priv->width || (y + height) > priv->height) {
 		return duk_error(ctx, DUK_ERR_RANGE_ERROR, "invalid (%d,%d) (%dx%d)", x, y, width, height);
@@ -190,6 +349,9 @@ method CanvasRenderingContext2D::putImageData()
 	if (!dukky_instanceof(ctx, 0, PROTO_NAME(IMAGEDATA))) {
 		return duk_generic_error(ctx, "Expected ImageData as first argument");
 	}
+
+	if (priv->bitmap == NULL)
+		return duk_generic_error(ctx, "Canvas in bad state, sorry");
 
 	duk_get_prop_string(ctx, 0, dukky_magic_string_private);
 	idpriv = duk_get_pointer(ctx, -1);
