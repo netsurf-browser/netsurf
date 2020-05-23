@@ -206,6 +206,16 @@ static nserror gui_launch_url(struct nsurl *url)
 	return NSERROR_OK;
 }
 
+static nserror gui_present_cookies(const char *search_term)
+{
+	if (search_term != NULL) {
+		moutf(MOUT_GENERIC, "PRESENT_COOKIES %s", search_term);
+	} else {
+		moutf(MOUT_GENERIC, "PRESENT_COOKIES");
+	}
+	return NSERROR_OK;
+}
+
 static void quit_handler(int argc, char **argv)
 {
 	monkey_done = true;
@@ -250,6 +260,7 @@ static struct gui_misc_table monkey_misc_table = {
 	.quit = monkey_quit,
 	.launch_url = gui_launch_url,
 	.login = gui_401login_open,
+	.present_cookies = gui_present_cookies,
 };
 
 static void monkey_run(void)
