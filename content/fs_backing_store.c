@@ -1609,24 +1609,24 @@ static nserror store_write_block(struct store_state *state,
 	offst = (unsigned int)bi << log2_block_size[elem_idx];
 
 	wr = nsu_pwrite(state->blocks[elem_idx][bf].fd,
-		    bse->elem[elem_idx].data,
-		    bse->elem[elem_idx].size,
-		    offst);
+			bse->elem[elem_idx].data,
+			bse->elem[elem_idx].size,
+			offst);
 	if (wr != (ssize_t)bse->elem[elem_idx].size) {
 		NSLOG(netsurf, ERROR,
-		      "Write failed %"PRIssizet" of %d bytes from %p at 0x%jx block %d errno %d",
+		      "Write failed %"PRIssizet" of %d bytes from %p at 0x%"PRIsizet"x block %d errno %d",
 		      wr,
 		      bse->elem[elem_idx].size,
 		      bse->elem[elem_idx].data,
-		      (uintmax_t)offst,
+		      (size_t)offst,
 		      bse->elem[elem_idx].block,
 		      errno);
 		return NSERROR_SAVE_FAILED;
 	}
 
 	NSLOG(netsurf, INFO,
-	      "Wrote %"PRIssizet" bytes from %p at 0x%jx block %d", wr,
-	      bse->elem[elem_idx].data, (uintmax_t)offst,
+	      "Wrote %"PRIssizet" bytes from %p at 0x%"PRIsizet"x block %d", wr,
+	      bse->elem[elem_idx].data, (size_t)offst,
 	      bse->elem[elem_idx].block);
 
 	return NSERROR_OK;
@@ -1779,24 +1779,24 @@ static nserror store_read_block(struct store_state *state,
 	offst = (unsigned int)bi << log2_block_size[elem_idx];
 
 	rd = nsu_pread(state->blocks[elem_idx][bf].fd,
-		   bse->elem[elem_idx].data,
-		   bse->elem[elem_idx].size,
-		   offst);
+		       bse->elem[elem_idx].data,
+		       bse->elem[elem_idx].size,
+		       offst);
 	if (rd != (ssize_t)bse->elem[elem_idx].size) {
 		NSLOG(netsurf, ERROR,
-		      "Failed reading %"PRIssizet" of %d bytes into %p from 0x%jx block %d errno %d",
+		      "Failed reading %"PRIssizet" of %d bytes into %p from 0x%"PRIsizet"x block %d errno %d",
 		      rd,
 		      bse->elem[elem_idx].size,
 		      bse->elem[elem_idx].data,
-		      (uintmax_t)offst,
+		      (size_t)offst,
 		      bse->elem[elem_idx].block,
 		      errno);
 		return NSERROR_SAVE_FAILED;
 	}
 
 	NSLOG(netsurf, DEEPDEBUG,
-	      "Read %"PRIssizet" bytes into %p from 0x%jx block %d", rd,
-	      bse->elem[elem_idx].data, (uintmax_t)offst,
+	      "Read %"PRIssizet" bytes into %p from 0x%"PRIsizet"x block %d", rd,
+	      bse->elem[elem_idx].data, (size_t)offst,
 	      bse->elem[elem_idx].block);
 
 	return NSERROR_OK;
