@@ -2199,7 +2199,7 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 	const char *title;
 	struct nsurl *siteurl = NULL;
 	char *description = NULL;
-	const char *chainurl = "";
+	const char *chainurl = NULL;
 	const struct fetch_multipart_data *curmd; /* mutipart data iterator */
 
 	/* extract parameters from multipart post data */
@@ -2261,16 +2261,24 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 			goto fetch_about_query_ssl_handler_aborted;
 		}
 	}
-	res = ssenddataf(ctx,
-			 "<div><p>%s</p></div>"
-			 "<div><p><a href=\"%s\" target=\"_blank\">%s</a></p></div>",
-			 reason,
-			 chainurl,
-			 messages_get("ViewCertificates"));
+
+	if (chainurl == NULL) {
+		res = ssenddataf(ctx,
+				 "<div><p>%s</p></div>"
+				 "<div><p>%s</p></div>",
+				 reason,
+				 messages_get("ViewCertificatesNotPossible"));
+	} else {
+		res = ssenddataf(ctx,
+				 "<div><p>%s</p></div>"
+				 "<div><p><a href=\"%s\" target=\"_blank\">%s</a></p></div>",
+				 reason,
+				 chainurl,
+				 messages_get("ViewCertificates"));
+	}
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_ssl_handler_aborted;
 	}
-
 	res = ssenddataf(ctx,
 			 "<div id=\"buttons\">"
 			 "<input type=\"submit\" id=\"back\" name=\"back\" "

@@ -1149,25 +1149,23 @@ browser_window__handle_bad_certs(struct browser_window *bw,
 				break;
 			}
 		}
+
+		err = cert_chain_to_query(bw->loading_cert_chain, &chainurl);
+		if (err != NSERROR_OK) {
+			goto out;
+		}
+
+		err = fetch_multipart_data_new_kv(&params.post_multipart,
+						  "chainurl",
+						  nsurl_access(chainurl));
+		if (err != NSERROR_OK) {
+			goto out;
+		}
 	}
 
 	err = fetch_multipart_data_new_kv(&params.post_multipart,
 					  "reason",
 					  reason);
-	if (err != NSERROR_OK) {
-		goto out;
-	}
-
-	err = cert_chain_to_query(bw->loading_cert_chain, &chainurl);
-
-	if (err != NSERROR_OK) {
-		goto out;
-	}
-
-	err = fetch_multipart_data_new_kv(&params.post_multipart,
-					  "chainurl",
-					  nsurl_access(chainurl));
-
 	if (err != NSERROR_OK) {
 		goto out;
 	}

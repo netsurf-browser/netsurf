@@ -1083,6 +1083,11 @@ de.all.ViewCertificates:Zertifikatdetails anzeigen
 fr.all.ViewCertificates:Afficher les détails du certificat
 it.all.ViewCertificates:Visualizza i dettagli del certificato
 nl.all.ViewCertificates:Bekijk certificaatdetails
+en.all.ViewCertificatesNotPossible:Certificate information is not available for viewing
+de.all.ViewCertificatesNotPossible:Zertifikatinformationen können nicht angezeigt werden
+fr.all.ViewCertificatesNotPossible:Les informations du certificat ne sont pas disponibles pour la visualisation
+it.all.ViewCertificatesNotPossible:Le informazioni sul certificato non sono disponibili per la visualizzazione
+nl.all.ViewCertificatesNotPossible:Certificaatinformatie is niet beschikbaar voor weergave
 en.all.Proceed:Proceed
 de.all.Proceed:Vorgehen
 fr.all.Proceed:Procéder
