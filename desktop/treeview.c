@@ -2050,9 +2050,9 @@ treeview_create(treeview **tree,
 	if (flags & TREEVIEW_SEARCHABLE) {
 		(*tree)->search.textarea = treeview__create_textarea(
 				*tree, 600, tree_g.line_height,
-				plot_style_even.text.background,
-				plot_style_even.text.background,
-				plot_style_even.text.foreground,
+				nscolours[NSCOLOUR_TEXT_INPUT_BG],
+				nscolours[NSCOLOUR_TEXT_INPUT_BG],
+				nscolours[NSCOLOUR_TEXT_INPUT_FG],
 				plot_style_odd.text,
 				treeview_textarea_search_callback);
 		if ((*tree)->search.textarea == NULL) {
