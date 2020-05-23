@@ -1,0 +1,122 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Conway's Game of Life</title>
+    <style>
+      canvas#surface {
+        width: 50vmin;
+        height: 50vmin;
+        border: 2px solid black;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Conway's Game of Life</h1>
+    <div><input id="running" type="checkbox" /> Run</div>
+    <div>
+      <canvas id="surface" width="50" height="50">
+        Sorry, you can't play Game of Life if JavaScript is turned off
+      </canvas>
+    </div>
+    <div>
+      <button id="random">Randomise</button>
+    </div>
+  </body>
+  <script>
+    (function () {
+      const running = document.getElementById("running");
+      const surface = document.getElementById("surface");
+      const context = surface.getContext("2d");
+      const width = surface.width;
+      const height = surface.height;
+      var frame = context.createImageData(width, height);
+      var drawto = context.createImageData(width, height);
+      function getOffset(x, y) {
+        if (x < 0) {
+          x = width + x;
+        }
+        if (y < 0) {
+          y = height + y;
+        }
+        if (x >= width) {
+          x = x - width;
+        }
+        if (y >= height) {
+          y = y - height;
+        }
+        return (y * width + x) * 4;
+      }
+      function getCell(x, y) {
+        const offset = getOffset(x, y);
+        return frame.data[offset + 3] != 0;
+      }
+      function setCell(x, y) {
+        const offset = getOffset(x, y);
+        drawto.data[offset + 3] = 255;
+      }
+      function clearCell(x, y) {
+        const offset = getOffset(x, y);
+        drawto.data[offset + 3] = 0;
+      }
+      function countNeighbours(x, y) {
+        return (
+          getCell(x - 1, y - 1) +
+          getCell(x, y - 1) +
+          getCell(x + 1, y - 1) +
+          getCell(x - 1, y) +
+          getCell(x + 1, y) +
+          getCell(x - 1, y + 1) +
+          getCell(x, y + 1) +
+          getCell(x + 1, y + 1)
+        );
+      }
+      function flip() {
+        var temp = frame;
+        context.putImageData(drawto, 0, 0);
+        frame = drawto;
+        drawto = temp;
+      }
+      /* Game of life is run on a timer */
+      setInterval(function () {
+        if (!running.checked) {
+          return;
+        }
+        console.log("Frame");
+        /* To do a frame of GoL we compute by consuming frame and writing to drawto */
+        for (var y = 0; y < height; y++) {
+          for (var x = 0; x < width; x++) {
+            const neighbours = countNeighbours(x, y);
+            if (getCell(x, y)) {
+              if (neighbours == 2 || neighbours == 3) {
+                setCell(x, y); // live, 2/3 neigh => stay alive
+              } else {
+                clearCell(x, y); // live, <2/>3 neigh => dies
+              }
+            } else {
+              if (neighbours == 3) {
+                setCell(x, y); // dead, 3 neigh => born
+              } else {
+                clearCell(x, y); // dead, !3 neigh => stay dead
+              }
+            }
+          }
+        }
+        flip();
+      }, 100);
+      document.getElementById("random").addEventListener("click", function () {
+        var ofs = 3;
+        for (var y = 0; y < height; y++) {
+          for (var x = 0; x < width; x++) {
+            if (Math.random() < 0.5) {
+              drawto.data[ofs] = 0;
+            } else {
+              drawto.data[ofs] = 255;
+            }
+            ofs += 4;
+          }
+        }
+        flip();
+      });
+    })();
+  </script>
+</html>
