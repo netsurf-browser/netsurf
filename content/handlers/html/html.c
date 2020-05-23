@@ -1304,7 +1304,7 @@ html_open(struct content *c,
 	html->drag_owner.no_owner = true;
 
 	/* text selection */
-	selection_init(&html->sel, html->layout, &html->len_ctx);
+	selection_init(&html->sel, html->layout);
 	html->selection_type = HTML_SELECTION_NONE;
 	html->selection_owner.none = true;
 

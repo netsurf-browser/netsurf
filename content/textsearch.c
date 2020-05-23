@@ -23,6 +23,8 @@
  */
 
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdlib.h>
 
 #include "utils/errors.h"
 #include "utils/utils.h"

@@ -355,9 +355,7 @@ void selection_reinit(struct selection *s, struct box *root)
 
 /* exported interface documented in desktop/selection.h */
 void
-selection_init(struct selection *s,
-	       struct box *root,
-	       const nscss_len_ctx *len_ctx)
+selection_init(struct selection *s, struct box *root)
 {
 	if (s->defined) {
 		selection_clear(s, true);
@@ -367,13 +365,6 @@ selection_init(struct selection *s,
 	s->start_idx = 0;
 	s->end_idx = 0;
 	s->drag_state = DRAG_NONE;
-	if (len_ctx != NULL) {
-		s->len_ctx = *len_ctx;
-	} else {
-		s->len_ctx.vw = 0;
-		s->len_ctx.vh = 0;
-		s->len_ctx.root_style = NULL;
-	}
 
 	selection_reinit(s, root);
 }

@@ -42,6 +42,7 @@
 #include "content/content_factory.h"
 #include "content/hlcache.h"
 #include "content/textsearch.h"
+#include "content/handlers/css/utils.h"
 #include "desktop/selection.h"
 #include "desktop/gui_internal.h"
 
@@ -1227,7 +1228,7 @@ textplain_open(struct content *c,
 	text->bw = bw;
 
 	/* text selection */
-	selection_init(&text->sel, NULL, NULL);
+	selection_init(&text->sel, NULL);
 
 	return NSERROR_OK;
 }
@@ -1579,7 +1580,7 @@ textplain_create_selection(struct content *c, struct selection **sel_out)
 		return NSERROR_NOMEM;
 	}
 
-	selection_init(sel, NULL, NULL);
+	selection_init(sel, NULL);
 
 	*sel_out = sel;
 	return NSERROR_OK;

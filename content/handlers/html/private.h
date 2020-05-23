@@ -29,6 +29,7 @@
 #include "netsurf/types.h"
 #include "content/content_protected.h"
 #include "desktop/selection.h"
+#include "content/handlers/css/utils.h"
 
 
 struct gui_layout_table;

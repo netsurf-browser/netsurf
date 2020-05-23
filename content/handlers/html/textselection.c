@@ -271,7 +271,7 @@ html_create_selection(struct content *c, struct selection **sel_out)
 		return NSERROR_NOMEM;
 	}
 
-	selection_init(sel, html->layout, &html->len_ctx);
+	selection_init(sel, html->layout);
 
 	*sel_out = sel;
 	return NSERROR_OK;

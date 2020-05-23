@@ -25,7 +25,6 @@
 
 #include <stdbool.h>
 #include "netsurf/mouse.h"
-#include "content/handlers/css/utils.h"
 
 struct box;
 struct browser_window;
@@ -47,7 +46,6 @@ struct selection
 {
 	struct content *c;
 	struct box *root;
-	nscss_len_ctx len_ctx;
 
 	unsigned max_idx;  /* total bytes in text representation */
 
@@ -112,7 +110,7 @@ void selection_destroy(struct selection *s);
  * \param s selection object
  * \param root the root box for html document or NULL for text/plain
  */
-void selection_init(struct selection *s, struct box *root, const nscss_len_ctx *len_ctx);
+void selection_init(struct selection *s, struct box *root);
 
 /**
  * Initialise the selection object to use the given box subtree as its root,
