@@ -116,6 +116,14 @@ struct gui_misc_table {
 	 */
 	void (*pdf_password)(char **owner_pass, char **user_pass, char *path);
 
+	/**
+	 * Request that the cookie manager be displayed
+	 *
+	 * \param search_term The search term to be set (NULL if no search)
+	 *
+	 * \return NSERROR_OK on success
+	 */
+	nserror (*present_cookies)(const char *search_term);
 };
 
 #endif

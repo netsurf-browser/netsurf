@@ -657,6 +657,12 @@ gui_default_pdf_password(char **owner_pass, char **user_pass, char *path)
 	save_pdf(path);
 }
 
+static nserror
+gui_default_present_cookies(const char *search_term)
+{
+	return NSERROR_NOT_IMPLEMENTED;
+}
+
 /** verify misc table is valid */
 static nserror verify_misc_register(struct gui_misc_table *gmt)
 {
@@ -682,6 +688,9 @@ static nserror verify_misc_register(struct gui_misc_table *gmt)
 	}
 	if (gmt->pdf_password == NULL) {
 		gmt->pdf_password = gui_default_pdf_password;
+	}
+	if (gmt->present_cookies == NULL) {
+		gmt->present_cookies = gui_default_present_cookies;
 	}
 	return NSERROR_OK;
 }

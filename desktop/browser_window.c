@@ -4802,9 +4802,7 @@ nserror browser_window_show_cookies(
 	lwc_string *host = nsurl_get_component(url, NSURL_HOST);
 	const char *string = (host != NULL) ? lwc_string_data(host) : NULL;
 
-	/** \todo Ensure cookie manager is open.  (Ask front end.) */
-
-	err = cookie_manager_set_search_string(string);
+	err = guit->misc->present_cookies(string);
 
 	if (host != NULL) {
 		lwc_string_unref(host);
