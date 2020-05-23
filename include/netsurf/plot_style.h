@@ -170,6 +170,11 @@ typedef struct plot_font_style {
 	 (((c0 & 0x00ff00) * 151) >> 16) +				\
 	 (((c0 & 0xff0000) *  28) >> 24))
 
+/* Choose either black or white, depending on which is nearest to the
+ * percieved lightness of the supplied colour, c0. */
+#define colour_to_bw_nearest(c0)					\
+	((colour_lightness(c0) > (0xff / 2)) ? 0xffffff : 0x000000)
+
 /* Choose either black or white, depending on which is furthest from the
  * percieved lightness of the supplied colour, c0. */
 #define colour_to_bw_furthest(c0)					\
