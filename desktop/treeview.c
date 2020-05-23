@@ -2149,7 +2149,8 @@ treeview_node_expand_internal(treeview *tree, treeview_node *node)
 {
 	treeview_node *child;
 	struct treeview_node_entry *e;
-	int additional_height = 0;
+	int additional_height_folders = 0;
+	int additional_height_entries = 0;
 	int i;
 
 	assert(tree != NULL);
@@ -2177,7 +2178,7 @@ treeview_node_expand_internal(treeview *tree, treeview_node *node)
 						    &(child->text.width));
 			}
 
-			additional_height += child->height;
+			additional_height_folders += child->height;
 
 			child = child->next_sib;
 		} while (child != NULL);
@@ -2199,7 +2200,7 @@ treeview_node_expand_internal(treeview *tree, treeview_node *node)
 			}
 
 			/* Add height for field */
-			additional_height += tree_g.line_height;
+			additional_height_entries += tree_g.line_height;
 		}
 
 		break;
@@ -2218,17 +2219,18 @@ treeview_node_expand_internal(treeview *tree, treeview_node *node)
 	for (struct treeview_node *n = node;
 			(n != NULL) && (n->flags & TV_NFLAGS_EXPANDED);
 			n = n->parent) {
-		n->height += additional_height;
+		n->height += additional_height_entries +
+				additional_height_folders;
 	}
 
 	if (tree->search.search &&
 			node->type == TREE_NODE_ENTRY &&
 			node->flags & TV_NFLAGS_MATCHED) {
-		tree->search.height += additional_height;
+		tree->search.height += additional_height_entries;
 	}
 
 	/* Inform front end of change in dimensions */
-	if (additional_height != 0) {
+	if (additional_height_entries + additional_height_folders != 0) {
 		treeview__cw_update_size(tree, -1,
 				treeview__get_display_height(tree));
 	}
@@ -2274,7 +2276,8 @@ struct treeview_contract_data {
 static nserror treeview_node_contract_cb(treeview_node *n, void *ctx, bool *end)
 {
 	struct treeview_contract_data *data = ctx;
-	int h_reduction;
+	int h_reduction_folder = 0;
+	int h_reduction_entry = 0;
 
 	assert(n != NULL);
 	assert(n->type != TREE_NODE_ROOT);
@@ -2287,17 +2290,30 @@ static nserror treeview_node_contract_cb(treeview_node *n, void *ctx, bool *end)
 		return NSERROR_OK;
 	}
 
-	h_reduction = n->height - tree_g.line_height;
 
-	assert(h_reduction >= 0);
+	switch (n->type) {
+	case TREE_NODE_FOLDER:
+		h_reduction_folder = n->height - tree_g.line_height;
+		break;
+
+	case TREE_NODE_ENTRY:
+		h_reduction_entry = n->height - tree_g.line_height;
+		break;
+
+	default:
+		break;
+	}
+
+
+	assert(h_reduction_folder + h_reduction_entry >= 0);
 	for (struct treeview_node *node = n;
 			(node != NULL) && (node->flags & TV_NFLAGS_EXPANDED);
 			node = node->parent) {
-		node->height -= h_reduction;
+		node->height -= h_reduction_folder + h_reduction_entry;
 	}
 
 	if (data->tree->search.search) {
-		data->tree->search.height -= h_reduction;
+		data->tree->search.height -= h_reduction_entry;
 	}
 
 	n->flags ^= TV_NFLAGS_EXPANDED;
