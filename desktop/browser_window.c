@@ -4780,8 +4780,17 @@ browser_window_get_ssl_chain(struct browser_window *bw,
 int browser_window_get_cookie_count(
 		const struct browser_window *bw)
 {
-	/** \todo Implement cookie count */
-	return 0;
+	char *cookies = urldb_get_cookie(browser_window_access_url(bw), true);
+	int count = 0;
+
+	for (char *c = cookies; *c != '\0'; c++) {
+		if (*c == ';')
+			count++;
+	}
+
+	free(cookies);
+
+	return count;
 }
 
 /* Exported interface, documented in browser_window.h */
