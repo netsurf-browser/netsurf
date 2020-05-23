@@ -183,6 +183,14 @@ nserror nscolour_update(void)
 		return res;
 	}
 
+	nscolours[NSCOLOUR_TEXT_INPUT_BG] =
+			colour_to_bw_nearest(nscolours[NSCOLOUR_WIN_EVEN_BG]);
+	nscolours[NSCOLOUR_TEXT_INPUT_FG] =
+			colour_to_bw_nearest(nscolours[NSCOLOUR_WIN_EVEN_FG]);
+	nscolours[NSCOLOUR_TEXT_INPUT_FG_SUBTLE] =
+			blend_colour(nscolours[NSCOLOUR_TEXT_INPUT_BG],
+			             nscolours[NSCOLOUR_TEXT_INPUT_FG]);
+
 	return NSERROR_OK;
 }
 
