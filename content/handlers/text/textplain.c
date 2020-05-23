@@ -1592,10 +1592,12 @@ textplain_textselection_copy(struct content *c,
 {
 	const char *text;
 	size_t length;
-	bool res;
+	bool res = false;
 
 	text = textplain_get_raw_data(c, start_idx, end_idx, &length);
-	res = selection_string_append(text, length, false, NULL, selstr);
+	if (text != NULL) {
+		res = selection_string_append(text, length, false, NULL, selstr);
+	}
 	if (res == false) {
 		return NSERROR_NOMEM;
 	}
