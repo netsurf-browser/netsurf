@@ -6509,6 +6509,7 @@ static struct gui_misc_table amiga_misc_table = {
 
 	.quit = gui_quit,
 	.launch_url = gui_launch_url,
+	.present_cookies = ami_cookies_present,
 };
 
 /** Normal entry point from OS */

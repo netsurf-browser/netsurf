@@ -336,7 +336,7 @@ HOOKF(void, ami_menu_item_browser_globalhistory, APTR, window, struct IntuiMessa
 
 HOOKF(void, ami_menu_item_browser_cookies, APTR, window, struct IntuiMessage *)
 {
-	ami_cookies_present();
+	ami_cookies_present(NULL);
 }
 
 HOOKF(void, ami_menu_item_browser_foreimg, APTR, window, struct IntuiMessage *)

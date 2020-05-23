@@ -20,6 +20,6 @@
 #define AMIGA_COOKIES_H
 
 /** Open the cookie viewer */
-nserror ami_cookies_present(void);
+nserror ami_cookies_present(const char *search_term);
 #endif
 

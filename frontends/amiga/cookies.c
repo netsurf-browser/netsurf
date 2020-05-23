@@ -345,7 +345,7 @@ ami_cookies_create_window(struct ami_cookie_window *cookie_win)
 }
 
 /* exported interface documented in amiga/cookies.h */
-nserror ami_cookies_present(void)
+nserror ami_cookies_present(const char *search_term)
 {
 	struct ami_cookie_window *ncwin;
 	nserror res;
@@ -395,6 +395,10 @@ nserror ami_cookies_present(void)
 
 	cookie_window = ncwin;
 
-	return NSERROR_OK;
+	if (search_term != NULL) {
+		res = cookie_manager_set_search_string(search_term);
+	}
+
+	return res;
 }
 
