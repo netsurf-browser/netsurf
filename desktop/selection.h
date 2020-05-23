@@ -53,7 +53,6 @@ struct selection
 	unsigned end_idx;
 
 	bool defined;
-	bool is_html;
 
 	seln_drag_state drag_state;
 };
@@ -79,7 +78,7 @@ struct selection
  *
  * \return new selection context
  */
-struct selection *selection_create(struct content *c, bool is_html);
+struct selection *selection_create(struct content *c);
 
 /**
  * Prepare a newly created selection object for use.
@@ -88,9 +87,8 @@ struct selection *selection_create(struct content *c, bool is_html);
  *
  * \param  s		selection object
  * \param  c		content
- * \param  is_html	true if content is html false if content is textplain
  */
-void selection_prepare(struct selection *s, struct content *c, bool is_html);
+void selection_prepare(struct selection *s, struct content *c);
 
 /**
  * Destroys a selection object clearing it if nesessary

@@ -493,7 +493,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 		return NSERROR_NOMEM;
 	}
 
-	selection_prepare(&c->sel, (struct content *)c, true);
+	selection_prepare(&c->sel, (struct content *)c);
 
 	nerror = http_parameter_list_find_item(params, corestring_lwc_charset, &charset);
 	if (nerror == NSERROR_OK) {

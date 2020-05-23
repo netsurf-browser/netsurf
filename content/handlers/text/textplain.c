@@ -169,7 +169,7 @@ textplain_create_internal(textplain_content *c, lwc_string *encoding)
 	c->formatted_width = 0;
 	c->bw = NULL;
 
-	selection_prepare(&c->sel, (struct content *)c, false);
+	selection_prepare(&c->sel, (struct content *)c);
 
 	return NSERROR_OK;
 
@@ -1575,12 +1575,10 @@ static nserror
 textplain_create_selection(struct content *c, struct selection **sel_out)
 {
 	struct selection *sel;
-	sel = selection_create(c, false);
+	sel = selection_create(c);
 	if (sel == NULL) {
 		return NSERROR_NOMEM;
 	}
-
-	selection_init(sel);
 
 	*sel_out = sel;
 	return NSERROR_OK;

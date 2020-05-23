@@ -49,13 +49,6 @@
 #include "netsurf/window.h"
 #include "desktop/gui_internal.h"
 
-/**
- * Text selection works by labelling each node in the box tree with its
- * start index in the textual representation of the tree's content.
- */
-
-#define SPACE_LEN(b) ((b->space == 0) ? 0 : 1)
-
 
 struct selection_string {
 	char *buffer;
@@ -65,8 +58,6 @@ struct selection_string {
 	int n_styles;
 	nsclipboard_styles *styles;
 };
-
-
 
 
 /**
@@ -254,24 +245,24 @@ selection_string_append(const char *text,
 
 
 /* exported interface documented in desktop/selection.h */
-struct selection *selection_create(struct content *c, bool is_html)
+struct selection *selection_create(struct content *c)
 {
-	struct selection *s;
-	s = calloc(1, sizeof(struct selection));
-	if (s) {
-		selection_prepare(s, c, is_html);
+	struct selection *sel;
+	sel = calloc(1, sizeof(struct selection));
+	if (sel) {
+		selection_prepare(sel, c);
+		selection_init(sel);
 	}
 
-	return s;
+	return sel;
 }
 
 
 /* exported interface documented in desktop/selection.h */
-void selection_prepare(struct selection *s, struct content *c, bool is_html)
+void selection_prepare(struct selection *s, struct content *c)
 {
 	if (s) {
 		s->c = c;
-		s->is_html = is_html;
 		s->root = NULL;
 		s->drag_state = DRAG_NONE;
 		s->max_idx = 0;

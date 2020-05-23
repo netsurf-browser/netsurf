@@ -265,12 +265,10 @@ nserror
 html_create_selection(struct content *c, struct selection **sel_out)
 {
 	struct selection *sel;
-	sel = selection_create(c, true);
+	sel = selection_create(c);
 	if (sel == NULL) {
 		return NSERROR_NOMEM;
 	}
-
-	selection_init(sel);
 
 	*sel_out = sel;
 	return NSERROR_OK;
