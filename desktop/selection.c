@@ -67,35 +67,6 @@ struct selection_string {
 };
 
 
-/**
- * Label each text box in the given box subtree with its position
- * in a textual representation of the content.
- *
- * \param box The box at root of subtree
- * \param idx current position within textual representation
- * \return updated position
- */
-static unsigned selection_label_subtree(struct box *box, unsigned idx)
-{
-	struct box *child = box->children;
-
-	box->byte_offset = idx;
-
-	if (box->text) {
-		idx += box->length + SPACE_LEN(box);
-	}
-
-	while (child) {
-		if (child->list_marker) {
-			idx = selection_label_subtree(child->list_marker, idx);
-		}
-
-		idx = selection_label_subtree(child, idx);
-		child = child->next;
-	}
-
-	return idx;
-}
 
 
 /**
@@ -322,23 +293,12 @@ void selection_destroy(struct selection *s)
 
 
 /* exported interface documented in desktop/selection.h */
-void selection_reinit(struct selection *s, struct box *root)
+void selection_reinit(struct selection *s)
 {
-	unsigned root_idx;
+	s->max_idx = 0;
 
-	assert(s);
-
-	root_idx = 0;
-
-	s->root = root;
-	if (root) {
-		s->max_idx = selection_label_subtree(root, root_idx);
-	} else {
-		if (s->is_html == false) {
-			s->max_idx = textplain_size(s->c);
-		} else {
-			s->max_idx = 0;
-		}
+	if (s->c->handler->textselection_get_end != NULL) {
+		s->c->handler->textselection_get_end(s->c, &s->max_idx);
 	}
 
 	if (s->defined) {
@@ -354,8 +314,7 @@ void selection_reinit(struct selection *s, struct box *root)
 
 
 /* exported interface documented in desktop/selection.h */
-void
-selection_init(struct selection *s, struct box *root)
+void selection_init(struct selection *s)
 {
 	if (s->defined) {
 		selection_clear(s, true);
@@ -366,7 +325,7 @@ selection_init(struct selection *s, struct box *root)
 	s->end_idx = 0;
 	s->drag_state = DRAG_NONE;
 
-	selection_reinit(s, root);
+	selection_reinit(s);
 }
 
 

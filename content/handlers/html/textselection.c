@@ -264,14 +264,13 @@ coords_from_range(struct box *box,
 nserror
 html_create_selection(struct content *c, struct selection **sel_out)
 {
-	html_content *html = (html_content *)c;
 	struct selection *sel;
 	sel = selection_create(c, true);
 	if (sel == NULL) {
 		return NSERROR_NOMEM;
 	}
 
-	selection_init(sel, html->layout);
+	selection_init(sel);
 
 	*sel_out = sel;
 	return NSERROR_OK;
@@ -526,5 +525,49 @@ html_textselection_copy(struct content *c,
 	if (res == false) {
 		return NSERROR_NOMEM;
 	}
+	return NSERROR_OK;
+}
+
+
+/**
+ * Label each text box in the given box subtree with its position
+ * in a textual representation of the content.
+ *
+ * \param box The box at root of subtree
+ * \param idx current position within textual representation
+ * \return updated position
+ */
+static unsigned selection_label_subtree(struct box *box, unsigned idx)
+{
+	struct box *child = box->children;
+
+	box->byte_offset = idx;
+
+	if (box->text) {
+		idx += box->length + SPACE_LEN(box);
+	}
+
+	while (child) {
+		if (child->list_marker) {
+			idx = selection_label_subtree(child->list_marker, idx);
+		}
+
+		idx = selection_label_subtree(child, idx);
+		child = child->next;
+	}
+
+	return idx;
+}
+
+/* exported interface documented in html/textselection.h */
+nserror
+html_textselection_get_end(struct content *c, unsigned *end_idx)
+{
+	html_content *html = (html_content *)c;
+	unsigned root_idx;
+
+	root_idx = 0;
+
+	*end_idx = selection_label_subtree(html->layout, root_idx);
 	return NSERROR_OK;
 }

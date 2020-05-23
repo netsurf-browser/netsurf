@@ -108,9 +108,8 @@ void selection_destroy(struct selection *s);
  * Used from text and html content handlers
  *
  * \param s selection object
- * \param root the root box for html document or NULL for text/plain
  */
-void selection_init(struct selection *s, struct box *root);
+void selection_init(struct selection *s);
 
 /**
  * Initialise the selection object to use the given box subtree as its root,
@@ -121,9 +120,8 @@ void selection_init(struct selection *s, struct box *root);
  * Used from html content handler
  *
  * \param s selection object
- * \param root the root box for html document or NULL for text/plain
  */
-void selection_reinit(struct selection *s, struct box *root);
+void selection_reinit(struct selection *s);
 
 /**
  * Clears the current selection, optionally causing the screen to be updated.

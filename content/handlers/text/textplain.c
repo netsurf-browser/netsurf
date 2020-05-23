@@ -1228,7 +1228,7 @@ textplain_open(struct content *c,
 	text->bw = bw;
 
 	/* text selection */
-	selection_init(&text->sel, NULL);
+	selection_init(&text->sel);
 
 	return NSERROR_OK;
 }
@@ -1580,7 +1580,7 @@ textplain_create_selection(struct content *c, struct selection **sel_out)
 		return NSERROR_NOMEM;
 	}
 
-	selection_init(sel, NULL);
+	selection_init(sel);
 
 	*sel_out = sel;
 	return NSERROR_OK;
@@ -1626,6 +1626,13 @@ textplain_textselection_copy(struct content *c,
 	return NSERROR_OK;
 }
 
+static nserror
+textplain_textselection_get_end(struct content *c, unsigned *end_idx)
+{
+	*end_idx = textplain_size(c);
+	return NSERROR_OK;
+}
+
 /**
  * plain text content handler table
  */
@@ -1649,6 +1656,7 @@ static const content_handler textplain_content_handler = {
 	.textsearch_bounds = textplain_textsearch_bounds,
 	.textselection_redraw = textplain_textselection_redraw,
 	.textselection_copy = textplain_textselection_copy,
+	.textselection_get_end = textplain_textselection_get_end,
 	.create_selection = textplain_create_selection,
 	.no_share = true,
 };

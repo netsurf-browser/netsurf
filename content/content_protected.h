@@ -131,6 +131,15 @@ struct content_handler {
 	nserror (*textselection_copy)(struct content *c, unsigned start_idx, unsigned end_idx, struct selection_string *selstr);
 
 	/**
+	 * get maximum index of text section.
+	 *
+	 * \param[in] c The content to measure
+	 * \param[out] end_idx pointer to value to recive result
+	 * \return NSERROR_OK and \a end_idx updated else error code
+	 */
+	nserror (*textselection_get_end)(struct content *c, unsigned *end_idx);
+
+	/**
 	 * create a selection object
 	 */
 	nserror (*create_selection)(struct content *c, struct selection **sel_out);

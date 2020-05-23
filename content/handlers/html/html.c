@@ -1056,7 +1056,7 @@ static void html_reformat(struct content *c, int width, int height)
 	if (c->height < layout->y + layout->descendant_y1)
 		c->height = layout->y + layout->descendant_y1;
 
-	selection_reinit(&htmlc->sel, htmlc->layout);
+	selection_reinit(&htmlc->sel);
 
 	htmlc->reflowing = false;
 	htmlc->had_initial_layout = true;
@@ -1304,7 +1304,7 @@ html_open(struct content *c,
 	html->drag_owner.no_owner = true;
 
 	/* text selection */
-	selection_init(&html->sel, html->layout);
+	selection_init(&html->sel);
 	html->selection_type = HTML_SELECTION_NONE;
 	html->selection_owner.none = true;
 
@@ -2337,6 +2337,7 @@ static const content_handler html_content_handler = {
 	.textsearch_bounds = html_textsearch_bounds,
 	.textselection_redraw = html_textselection_redraw,
 	.textselection_copy = html_textselection_copy,
+	.textselection_get_end = html_textselection_get_end,
 	.create_selection = html_create_selection,
 	.no_share = true,
 };
