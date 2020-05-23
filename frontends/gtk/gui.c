@@ -1183,6 +1183,7 @@ static struct gui_misc_table nsgtk_misc_table = {
 	.quit = gui_quit,
 	.launch_url = gui_launch_url,
 	.pdf_password = nsgtk_pdf_password,
+	.present_cookies = nsgtk_cookies_present,
 };
 
 

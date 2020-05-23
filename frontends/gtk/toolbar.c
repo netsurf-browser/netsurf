@@ -3022,7 +3022,7 @@ static gboolean
 showcookies_button_clicked_cb(GtkWidget *widget, gpointer data)
 {
 	nserror res;
-	res = nsgtk_cookies_present();
+	res = nsgtk_cookies_present(NULL);
 	if (res != NSERROR_OK) {
 		NSLOG(netsurf, INFO, "Unable to initialise cookies window.");
 	}

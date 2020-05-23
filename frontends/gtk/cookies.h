@@ -28,7 +28,7 @@
  *
  * \return NSERROR_OK on success else appropriate error code on faliure.
  */
-nserror nsgtk_cookies_present(void);
+nserror nsgtk_cookies_present(const char *search_term);
 
 /**
  * Free any resources allocated for the cookie window.
