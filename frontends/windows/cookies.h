@@ -35,7 +35,7 @@
  *
  * \return NSERROR_OK on success else appropriate error code on faliure.
  */
-nserror nsw32_cookies_present(HINSTANCE hinstance);
+nserror nsw32_cookies_present(const char *search_term);
 
 /**
  * Free any resources allocated for the cookie window.

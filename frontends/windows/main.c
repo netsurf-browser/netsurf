@@ -43,6 +43,7 @@
 
 #include "windows/findfile.h"
 #include "windows/file.h"
+#include "windows/cookies.h"
 #include "windows/drawable.h"
 #include "windows/corewindow.h"
 #include "windows/download.h"
@@ -370,6 +371,7 @@ static nserror win32_to_unix_commandline(int *argc_out, char ***argv_out)
 
 static struct gui_misc_table win32_misc_table = {
 	.schedule = win32_schedule,
+	.present_cookies = nsw32_cookies_present,
 };
 
 /**

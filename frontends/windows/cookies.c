@@ -34,6 +34,7 @@
 #include "windows/plot.h"
 #include "windows/corewindow.h"
 #include "windows/cookies.h"
+#include "windows/gui.h"
 
 
 struct nsw32_cookie_window {
@@ -170,13 +171,16 @@ static nserror nsw32_cookie_init(HINSTANCE hInstance)
 
 
 /* exported interface documented in windows/cookie.h */
-nserror nsw32_cookies_present(HINSTANCE hInstance)
+nserror nsw32_cookies_present(const char *search_term)
 {
 	nserror res;
 
-	res = nsw32_cookie_init(hInstance);
+	res = nsw32_cookie_init(hinst);
 	if (res == NSERROR_OK) {
 		ShowWindow(cookie_window->core.hWnd, SW_SHOWNORMAL);
+		if (search_term != NULL) {
+			res = cookie_manager_set_search_string(search_term);
+		}
 	}
 	return res;
 }
