@@ -70,6 +70,7 @@
 #include "html/form_internal.h"
 #include "html/imagemap.h"
 #include "html/layout.h"
+#include "html/textselection.h"
 
 #define CHUNK 4096
 
@@ -2304,26 +2305,6 @@ html_textsearch_bounds(struct content *c,
 
 
 /**
- * create a selection object suitable for this content
- */
-static nserror
-html_create_selection(struct content *c, struct selection **sel_out)
-{
-	html_content *html = (html_content *)c;
-	struct selection *sel;
-	sel = selection_create(c, true);
-	if (sel == NULL) {
-		return NSERROR_NOMEM;
-	}
-
-	selection_init(sel, html->layout, &html->len_ctx);
-
-	*sel_out = sel;
-	return NSERROR_OK;
-}
-
-
-/**
  * HTML content handler function table
  */
 static const content_handler html_content_handler = {
@@ -2354,6 +2335,7 @@ static const content_handler html_content_handler = {
 	.saw_insecure_objects = html_saw_insecure_objects,
 	.textsearch_find = html_textsearch_find,
 	.textsearch_bounds = html_textsearch_bounds,
+	.textselection_redraw = html_textselection_redraw,
 	.create_selection = html_create_selection,
 	.no_share = true,
 };

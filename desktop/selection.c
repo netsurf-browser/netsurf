@@ -310,63 +310,6 @@ traverse_tree(struct box *box,
 }
 
 
-/**
- * Selection traversal handler for redrawing the screen when the selection
- * has been altered.
- *
- * \param  text		pointer to text string
- * \param  length	length of text to be appended (bytes)
- * \param  box		pointer to text box being (partially) added
- * \param  handle	unused handle, we don't need one
- * \param  whitespace_text    whitespace to place before text for formatting
- *                            may be NULL
- * \param  whitespace_length  length of whitespace_text
- * \return true iff successful and traversal should continue
- */
-static bool
-redraw_handler(const char *text,
-	       size_t length,
-	       struct box *box,
-	       const nscss_len_ctx *len_ctx,
-	       void *handle,
-	       const char *whitespace_text,
-	       size_t whitespace_length)
-{
-	struct rdw_info *r = (struct rdw_info*)handle;
-	int width, height;
-	int x, y;
-
-	if (!box) {
-		return true;
-	}
-
-	/* \todo - it should be possible to reduce the redrawn area by
-	 * considering the 'text', 'length' and 'space' parameters */
-	box_coords(box, &x, &y);
-
-	width = box->padding[LEFT] + box->width + box->padding[RIGHT];
-	height = box->padding[TOP] + box->height + box->padding[BOTTOM];
-
-	if ((box->type == BOX_TEXT) &&
-	    (box->space != 0)) {
-		width += box->space;
-	}
-
-	if (r->inited) {
-		if (x < r->r.x0) r->r.x0 = x;
-		if (y < r->r.y0) r->r.y0 = y;
-		if (x + width > r->r.x1) r->r.x1 = x + width;
-		if (y + height > r->r.y1) r->r.y1 = y + height;
-	} else {
-		r->inited = true;
-		r->r.x0 = x;
-		r->r.y0 = y;
-		r->r.x1 = x + width;
-		r->r.y1 = y + height;
-	}
-
-	return true;
-}
 
 
 /**
@@ -376,43 +319,20 @@ redraw_handler(const char *text,
  * \param start_idx start offset (bytes) within the textual representation
  * \param end_idx end offset (bytes) within the textual representation
  */
-static void
+static nserror
 selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
 {
-	struct rdw_info rdw;
+	nserror res;
 
-	assert(end_idx >= start_idx);
-	rdw.inited = false;
-
-	if (s->root) {
-		if (!traverse_tree(s->root,
-				   &s->len_ctx,
-				   start_idx,
-				   end_idx,
-				   redraw_handler,
-				   &rdw,
-				   NULL,
-				   NULL,
-				   false))
-			return;
+	if (s->c->handler->textselection_redraw != NULL) {
+		res = s->c->handler->textselection_redraw(s->c,
+							  start_idx,
+							  end_idx);
 	} else {
-		if ((s->is_html == false) &&
-		    (end_idx > start_idx)) {
-			textplain_coords_from_range(s->c,
-						    start_idx,
-						    end_idx,
-						    &rdw.r);
-			rdw.inited = true;
-		}
+		res = NSERROR_NOT_IMPLEMENTED;
 	}
 
-	if (rdw.inited) {
-		content__request_redraw(s->c,
-					rdw.r.x0,
-					rdw.r.y0,
-					rdw.r.x1 - rdw.r.x0,
-					rdw.r.y1 - rdw.r.y0);
-	}
+	return res;
 }
 
 

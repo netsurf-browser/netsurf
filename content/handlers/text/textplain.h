@@ -47,19 +47,6 @@ size_t textplain_size(struct content *c);
 
 
 /**
- * Given a range of byte offsets within a UTF8 textplain content,
- * return a box that fully encloses the text
- *
- * \param[in] c     content of type CONTENT_TEXTPLAIN
- * \param[in] start byte offset of start of text range
- * \param[in] end   byte offset of end
- * \param[out] r    rectangle to be completed
- */
-void textplain_coords_from_range(struct content *c,
-		unsigned start, unsigned end, struct rect *r);
-
-
-/**
  * Return a pointer to the raw UTF-8 data, as opposed to the reformatted
  * text to fit the window width. Thus only hard newlines are preserved
  * in the saved/copied text of a selection.

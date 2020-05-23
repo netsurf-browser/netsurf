@@ -1452,111 +1452,15 @@ textplain_textsearch_find(struct content *c,
 
 
 /**
- * get bounds of a free text search match
+ * Given a range of byte offsets within a UTF8 textplain content,
+ * return a box that fully encloses the text
+ *
+ * \param[in] c     content of type CONTENT_TEXTPLAIN
+ * \param[in] start byte offset of start of text range
+ * \param[in] end   byte offset of end
+ * \param[out] r    rectangle to be completed
  */
-static nserror
-textplain_textsearch_bounds(struct content *c,
-			    unsigned start_idx,
-			    unsigned end_idx,
-			    struct box *start_box,
-			    struct box *end_box,
-			    struct rect *bounds)
-{
-	textplain_coords_from_range(c, start_idx, end_idx, bounds);
-
-	return NSERROR_OK;
-}
-
-
-/**
- * create a selection object suitable for this content
- */
-static nserror
-textplain_create_selection(struct content *c, struct selection **sel_out)
-{
-	struct selection *sel;
-	sel = selection_create(c, false);
-	if (sel == NULL) {
-		return NSERROR_NOMEM;
-	}
-
-	selection_init(sel, NULL, NULL);
-
-	*sel_out = sel;
-	return NSERROR_OK;
-}
-
-
-/**
- * plain text content handler table
- */
-static const content_handler textplain_content_handler = {
-	.fini = textplain_fini,
-	.create = textplain_create,
-	.process_data = textplain_process_data,
-	.data_complete = textplain_convert,
-	.reformat = textplain_reformat,
-	.destroy = textplain_destroy,
-	.mouse_track = textplain_mouse_track,
-	.mouse_action = textplain_mouse_action,
-	.keypress = textplain_keypress,
-	.redraw = textplain_redraw,
-	.open = textplain_open,
-	.close = textplain_close,
-	.get_selection = textplain_get_selection,
-	.clone = textplain_clone,
-	.type = textplain_content_type,
-	.textsearch_find = textplain_textsearch_find,
-	.textsearch_bounds = textplain_textsearch_bounds,
-	.create_selection = textplain_create_selection,
-	.no_share = true,
-};
-
-
-/* exported interface documented in html/textplain.h */
-nserror textplain_init(void)
-{
-	lwc_error lerror;
-	nserror error;
-
-	lerror = lwc_intern_string("Windows-1252",
-				   SLEN("Windows-1252"),
-				   &textplain_default_charset);
-	if (lerror != lwc_error_ok) {
-		return NSERROR_NOMEM;
-	}
-
-	error = content_factory_register_handler("text/plain",
-						 &textplain_content_handler);
-	if (error != NSERROR_OK) {
-		lwc_string_unref(textplain_default_charset);
-	}
-
-	error = content_factory_register_handler("application/json",
-						 &textplain_content_handler);
-	if (error != NSERROR_OK) {
-		lwc_string_unref(textplain_default_charset);
-	}
-
-	return error;
-}
-
-
-
-
-/* exported interface documented in html/textplain.h */
-size_t textplain_size(struct content *c)
-{
-	textplain_content *text = (textplain_content *) c;
-
-	assert(c != NULL);
-
-	return text->utf8_data_size;
-}
-
-
-/* exported interface documented in html/textplain.h */
-void
+static void
 textplain_coords_from_range(struct content *c,
 			    unsigned start,
 			    unsigned end,
@@ -1607,6 +1511,136 @@ textplain_coords_from_range(struct content *c,
 
 	r->y1 = (int)(MARGIN + (lineno + 1) * line_height);
 }
+
+
+/**
+ * get bounds of a free text search match
+ */
+static nserror
+textplain_textsearch_bounds(struct content *c,
+			    unsigned start_idx,
+			    unsigned end_idx,
+			    struct box *start_box,
+			    struct box *end_box,
+			    struct rect *bounds)
+{
+	textplain_coords_from_range(c, start_idx, end_idx, bounds);
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * create a selection object suitable for this content
+ */
+static nserror
+textplain_create_selection(struct content *c, struct selection **sel_out)
+{
+	struct selection *sel;
+	sel = selection_create(c, false);
+	if (sel == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	selection_init(sel, NULL, NULL);
+
+	*sel_out = sel;
+	return NSERROR_OK;
+}
+
+
+/**
+ * invalidate a region based on offsets into the text cauing a redraw
+ */
+static nserror
+textplain_textselection_redraw(struct content *c,
+			       unsigned start_idx,
+			       unsigned end_idx)
+{
+	struct rect r;
+
+	if (end_idx <= start_idx) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	textplain_coords_from_range(c, start_idx, end_idx, &r);
+
+	content__request_redraw(c, r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0);
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * plain text content handler table
+ */
+static const content_handler textplain_content_handler = {
+	.fini = textplain_fini,
+	.create = textplain_create,
+	.process_data = textplain_process_data,
+	.data_complete = textplain_convert,
+	.reformat = textplain_reformat,
+	.destroy = textplain_destroy,
+	.mouse_track = textplain_mouse_track,
+	.mouse_action = textplain_mouse_action,
+	.keypress = textplain_keypress,
+	.redraw = textplain_redraw,
+	.open = textplain_open,
+	.close = textplain_close,
+	.get_selection = textplain_get_selection,
+	.clone = textplain_clone,
+	.type = textplain_content_type,
+	.textsearch_find = textplain_textsearch_find,
+	.textsearch_bounds = textplain_textsearch_bounds,
+	.textselection_redraw = textplain_textselection_redraw,
+	.create_selection = textplain_create_selection,
+	.no_share = true,
+};
+
+
+/* exported interface documented in html/textplain.h */
+nserror textplain_init(void)
+{
+	lwc_error lerror;
+	nserror error;
+
+	lerror = lwc_intern_string("Windows-1252",
+				   SLEN("Windows-1252"),
+				   &textplain_default_charset);
+	if (lerror != lwc_error_ok) {
+		return NSERROR_NOMEM;
+	}
+
+	error = content_factory_register_handler("text/plain",
+						 &textplain_content_handler);
+	if (error != NSERROR_OK) {
+		lwc_string_unref(textplain_default_charset);
+	}
+
+	error = content_factory_register_handler("application/json",
+						 &textplain_content_handler);
+	if (error != NSERROR_OK) {
+		lwc_string_unref(textplain_default_charset);
+	}
+
+	return error;
+}
+
+
+
+
+/* exported interface documented in html/textplain.h */
+size_t textplain_size(struct content *c)
+{
+	textplain_content *text = (textplain_content *) c;
+
+	assert(c != NULL);
+
+	return text->utf8_data_size;
+}
+
+
+
 
 
 /* exported interface documented in html/textplain.h */

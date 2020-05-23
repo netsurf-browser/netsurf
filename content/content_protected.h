@@ -112,6 +112,16 @@ struct content_handler {
 	nserror (*textsearch_bounds)(struct content *c, unsigned start_idx, unsigned end_idx, struct box *start_ptr, struct box *end_ptr, struct rect *bounds_out);
 
 	/**
+	 * cause a region of the content to be marked invalid and hence redraw
+	 *
+	 * \param c The content being redrawn
+	 * \param start_idx The start index of the text region to be redrawn
+	 * \param end_idx The end index of teh text region to be redrawn
+	 * \return NSERROR_OK on success else error code
+	 */
+	nserror (*textselection_redraw)(struct content *c, unsigned start_idx, unsigned end_idx);
+
+	/**
 	 * create a selection object
 	 */
 	nserror (*create_selection)(struct content *c, struct selection **sel_out);
