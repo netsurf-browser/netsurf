@@ -57,16 +57,6 @@ void selection_drag_end(struct selection *s);
 struct selection *selection_create(struct content *c);
 
 /**
- * Prepare a newly created selection object for use.
- *
- * Used from text and html content handlers, riscos frontend
- *
- * \param  s		selection object
- * \param  c		content
- */
-void selection_prepare(struct selection *s, struct content *c);
-
-/**
  * Destroys a selection object clearing it if nesessary
  *
  * Used from content textsearch

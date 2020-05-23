@@ -255,23 +255,14 @@ struct selection *selection_create(struct content *c)
 	struct selection *sel;
 	sel = calloc(1, sizeof(struct selection));
 	if (sel) {
-		selection_prepare(sel, c);
+		sel->c = c;
+		sel->root = NULL;
+		sel->drag_state = DRAG_NONE;
+		sel->max_idx = 0;
+		selection_clear(sel, false);
 	}
 
 	return sel;
-}
-
-
-/* exported interface documented in desktop/selection.h */
-void selection_prepare(struct selection *s, struct content *c)
-{
-	if (s) {
-		s->c = c;
-		s->root = NULL;
-		s->drag_state = DRAG_NONE;
-		s->max_idx = 0;
-		selection_clear(s, false);
-	}
 }
 
 
