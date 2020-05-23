@@ -139,11 +139,6 @@ struct content_handler {
 	 */
 	nserror (*textselection_get_end)(struct content *c, unsigned *end_idx);
 
-	/**
-	 * create a selection object
-	 */
-	nserror (*create_selection)(struct content *c, struct selection **sel_out);
-
         /**
 	 * handler dependant content sensitive internal data interface.
 	 */

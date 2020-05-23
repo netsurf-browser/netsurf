@@ -179,9 +179,8 @@ static void search_show_all(bool all, struct textsearch_context *context)
 
 		if (add && !a->sel) {
 
-			res = context->c->handler->create_selection(context->c,
-								    &a->sel);
-			if (res == NSERROR_OK) {
+			a->sel = selection_create(context->c);
+			if (a->sel != NULL) {
 				selection_set_position(a->sel,
 						       a->start_idx,
 						       a->end_idx);
@@ -426,8 +425,7 @@ content_textsearch_create(struct content *c,
 	content_type type;
 
 	if ((c->handler->textsearch_find == NULL) ||
-	    (c->handler->textsearch_bounds == NULL) ||
-	    (c->handler->create_selection == NULL)){
+	    (c->handler->textsearch_bounds == NULL)) {
 		/*
 		 * content has no free text find handler so searching
 		 *   is unsupported.

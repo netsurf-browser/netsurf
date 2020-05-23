@@ -258,22 +258,6 @@ coords_from_range(struct box *box,
 }
 
 
-/**
- * create a selection object suitable for this content
- */
-nserror
-html_create_selection(struct content *c, struct selection **sel_out)
-{
-	struct selection *sel;
-	sel = selection_create(c);
-	if (sel == NULL) {
-		return NSERROR_NOMEM;
-	}
-
-	*sel_out = sel;
-	return NSERROR_OK;
-}
-
 /* exported interface documented in html/textselection.h */
 nserror
 html_textselection_redraw(struct content *c,

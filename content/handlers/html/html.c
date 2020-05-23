@@ -2338,7 +2338,6 @@ static const content_handler html_content_handler = {
 	.textselection_redraw = html_textselection_redraw,
 	.textselection_copy = html_textselection_copy,
 	.textselection_get_end = html_textselection_get_end,
-	.create_selection = html_create_selection,
 	.no_share = true,
 };
 

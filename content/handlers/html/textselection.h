@@ -27,11 +27,6 @@
 struct content;
 struct selection;
 
-/**
- * create a selection object suitable for this content
- */
-nserror html_create_selection(struct content *c, struct selection **sel_out);
-
 nserror html_textselection_redraw(struct content *c, unsigned start_idx, unsigned end_idx);
 
 nserror html_textselection_copy(struct content *c, unsigned start_idx, unsigned end_idx, struct selection_string *selstr);

@@ -1569,23 +1569,6 @@ textplain_textsearch_bounds(struct content *c,
 
 
 /**
- * create a selection object suitable for this content
- */
-static nserror
-textplain_create_selection(struct content *c, struct selection **sel_out)
-{
-	struct selection *sel;
-	sel = selection_create(c);
-	if (sel == NULL) {
-		return NSERROR_NOMEM;
-	}
-
-	*sel_out = sel;
-	return NSERROR_OK;
-}
-
-
-/**
  * invalidate a region based on offsets into the text cauing a redraw
  */
 static nserror
@@ -1655,7 +1638,6 @@ static const content_handler textplain_content_handler = {
 	.textselection_redraw = textplain_textselection_redraw,
 	.textselection_copy = textplain_textselection_copy,
 	.textselection_get_end = textplain_textselection_get_end,
-	.create_selection = textplain_create_selection,
 	.no_share = true,
 };
 
