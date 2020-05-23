@@ -12,10 +12,10 @@
 init HTMLCanvasElement(struct dom_html_element *html_canvas_element::html_element);
 
 getter HTMLCanvasElement::width();
-/* setter HTMLCanvasElement::width(); */
+setter HTMLCanvasElement::width();
 
 getter HTMLCanvasElement::height();
-/* setter HTMLCanvasElement::height(); */
+setter HTMLCanvasElement::height();
 
 method HTMLCanvasElement::getContext()
 %{

@@ -9,11 +9,12 @@
  */
 
 class CanvasRenderingContext2D {
-      private struct dom_html_element *canvas;
+      private struct dom_html_canvas_element *canvas;
       private struct bitmap *bitmap;
       private int width;
       private int height;
       private size_t stride;
+      private dom_event_listener *listener;
       prologue %{
 /* prologue */
 #include "desktop/gui_internal.h"
@@ -202,25 +203,105 @@ static nserror canvas2d_create_bitmap(dom_node *node, struct bitmap **bitmap_out
 	return NSERROR_OK;
 }
 
+/**
+ * Handle subtree modified events for our canvas node
+ *
+ * If width or height has changed relative to our priv, then
+ * we need to recreate the bitmap and reset our cached width
+ * and height values in order to be safe.  Plus redraw ourselves.
+ *
+ * \param evt The event which occurred
+ * \param pw The private pointer for our canvas object
+ */
+static void
+canvas2d__handle_dom_event(dom_event *evt, void *pw)
+{
+	canvas_rendering_context2d_private_t *priv = pw;
+	dom_ulong width;
+	dom_ulong height;
+	dom_exception exc;
+	struct bitmap *newbitmap, *oldbitmap = NULL;
+	size_t stride;
+	dom_event_flow_phase phase;
+	
+	exc = dom_event_get_event_phase(evt, &phase);
+	assert(exc == DOM_NO_ERR);
+	/* If we're not being hit right now, we're not up for it */
+	if (phase != DOM_AT_TARGET) return;
+	
+	/* Rather than being complex about things, let's just work out
+	 * what the width and height are and hope nothing else matters
+	 */
+	
+	exc = dom_html_canvas_element_get_width(priv->canvas, &width);
+	if (exc != DOM_NO_ERR) return;
+	exc = dom_html_canvas_element_get_height(priv->canvas, &height);
+	if (exc != DOM_NO_ERR) return;
+	
+	if ((int)height == priv->height && (int)width == priv->width) return;
+	
+	/* Okay, we need to reallocate our bitmap and re-cache values */
+	
+	newbitmap = guit->bitmap->create(width, height, BITMAP_NEW);
+	stride = guit->bitmap->get_rowstride(newbitmap);
+
+	if (newbitmap != NULL) {
+		memset(guit->bitmap->get_buffer(newbitmap),
+		       0,
+		       stride * height);
+		guit->bitmap->modified(newbitmap);
+	}
+
+	if (dom_node_set_user_data(priv->canvas,
+				   corestring_dom___ns_key_canvas_node_data,
+				   newbitmap, canvas2d_user_data_handler,
+				   &oldbitmap) == DOM_NO_ERR) {
+		if (oldbitmap != NULL)
+			guit->bitmap->destroy(oldbitmap);
+	} else {
+		guit->bitmap->destroy(newbitmap);
+		/* We'll stick with the old, odd though that might be */
+		return;
+	}
+
+	/* Cache the new values */
+	priv->width = (int)width;
+	priv->height = (int)height;
+	priv->stride = stride;
+	priv->bitmap = newbitmap;
+}
+	
 /* prologue ends */
 %};
 };
 
-init CanvasRenderingContext2D(struct dom_html_element *canvas)
+init CanvasRenderingContext2D(struct dom_html_canvas_element *canvas)
 %{
 	struct bitmap *bitmap;
 	dom_exception exc;
 
 	assert(canvas != NULL);
-
+	
 	priv->canvas = canvas;
 	dom_node_ref(canvas);
-
+	
+	exc = dom_event_listener_create(canvas2d__handle_dom_event,
+					priv,
+					&priv->listener);
+	assert(exc == DOM_NO_ERR);
+	
+	exc = dom_event_target_add_event_listener(
+		canvas,
+		corestring_dom_DOMSubtreeModified,
+		priv->listener,
+		false);
+	assert(exc == DOM_NO_ERR);
+	
 	exc = dom_node_get_user_data(canvas,
 				     corestring_dom___ns_key_canvas_node_data,
 				     &bitmap);
 	assert(exc == DOM_NO_ERR);
-
+	
 	if (bitmap == NULL) {
 		if (canvas2d_create_bitmap((dom_node *)canvas,
 					   &bitmap) != NSERROR_OK) {
@@ -233,7 +314,7 @@ init CanvasRenderingContext2D(struct dom_html_element *canvas)
 	}
 
 	assert(bitmap != NULL);
-
+	
 	priv->bitmap = bitmap;
 	priv->width = guit->bitmap->get_width(bitmap);
 	priv->height = guit->bitmap->get_height(bitmap);
@@ -242,12 +323,66 @@ init CanvasRenderingContext2D(struct dom_html_element *canvas)
 
 fini CanvasRenderingContext2D()
 %{
+	dom_exception exc;
+	exc = dom_event_target_remove_event_listener(
+		priv->canvas,
+		corestring_dom_DOMSubtreeModified,
+		priv->listener,
+		false);
+	assert(exc == DOM_NO_ERR);
+	dom_event_listener_unref(priv->listener);
 	dom_node_unref(priv->canvas);
 %}
 
 getter CanvasRenderingContext2D::canvas()
 %{
 	dukky_push_node(ctx, (dom_node *)priv->canvas);
+	return 1;
+%}
+
+getter CanvasRenderingContext2D::width()
+%{
+	dom_exception exc;
+	dom_ulong width;
+	
+	exc = dom_html_canvas_element_get_width(priv->canvas, &width);
+	if (exc != DOM_NO_ERR) return 0;
+	
+	duk_push_number(ctx, (duk_double_t)width);
+	return 1;
+%}
+
+setter CanvasRenderingContext2D::width()
+%{
+	dom_exception exc;
+	dom_ulong width = duk_get_uint(ctx, 0);
+
+	exc = dom_html_canvas_element_set_width(priv->canvas, width);
+	if (exc != DOM_NO_ERR) return 0;
+
+	return 1;
+%}
+
+getter CanvasRenderingContext2D::height()
+%{
+	dom_exception exc;
+	dom_ulong height;
+	
+	exc = dom_html_canvas_element_get_height(priv->canvas, &height);
+	if (exc != DOM_NO_ERR) return 0;
+	
+	duk_push_number(ctx, (duk_double_t)height);
+	return 1;
+%}
+
+setter CanvasRenderingContext2D::height()
+%{
+	dom_exception exc;
+	dom_ulong height = duk_get_uint(ctx, 0);
+
+	exc = dom_html_canvas_element_set_height(priv->canvas, height);
+	if (exc != DOM_NO_ERR) return 0;
+
 	return 1;
 %}
 
