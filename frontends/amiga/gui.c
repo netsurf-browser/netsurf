@@ -3253,6 +3253,56 @@ static void ami_gui_appicon_remove(struct gui_window_2 *gwin)
 	}
 }
 
+static nserror gui_page_info_change(struct gui_window *gw)
+{
+	int bm_idx;
+	browser_window_page_info_state pistate;
+	struct gui_window_2 *gwin = ami_gui_get_gui_window_2(gw);
+	struct browser_window *bw = ami_gui_get_browser_window(gw);
+
+	/* if this isn't the visible tab, don't do anything */
+	if((gwin == NULL) || (gwin->gw != gw)) return NSERROR_OK;
+
+	pistate = browser_window_get_page_info_state(bw);
+
+	switch(pistate) {
+		case PAGE_STATE_INTERNAL:
+			bm_idx = GID_PAGEINFO_INTERNAL_BM;
+		break;
+
+		case PAGE_STATE_LOCAL:
+			bm_idx = GID_PAGEINFO_LOCAL_BM;
+		break;
+
+		case PAGE_STATE_INSECURE:
+			bm_idx = GID_PAGEINFO_INSECURE_BM;
+		break;
+
+		case PAGE_STATE_SECURE_OVERRIDE:
+			bm_idx = GID_PAGEINFO_WARNING_BM;
+		break;
+
+		case PAGE_STATE_SECURE_ISSUES:
+			bm_idx = GID_PAGEINFO_WARNING_BM;
+		break;
+
+		case PAGE_STATE_SECURE:
+			bm_idx = GID_PAGEINFO_SECURE_BM;
+		break;
+
+		default:
+			bm_idx = GID_PAGEINFO_INTERNAL_BM;
+		break;
+	}
+
+	RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_PAGEINFO], gwin->win, NULL,
+				BUTTON_RenderImage, gwin->objects[bm_idx],
+				GA_HintInfo, gwin->helphints[bm_idx],
+				TAG_DONE);
+
+	return NSERROR_OK;
+}
+
 static void ami_handle_appmsg(void)
 {
 	struct AppMessage *appmsg;
@@ -3605,6 +3655,7 @@ static void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 		ami_throbber_redraw_schedule(0, gwin->gw);
 
 		gui_window_set_icon(gwin->gw, gwin->gw->favicon);
+		gui_page_info_change(gwin->gw);
 	}
 
 	ami_gui_free_space_box(bbox);
@@ -6086,53 +6137,6 @@ static void gui_window_new_content(struct gui_window *g)
 	ami_gui_menu_update_disabled(g, c);
 	ami_gui_update_hotlist_button(g->shared);
 	ami_gui_scroller_update(g->shared);
-}
-
-static nserror gui_page_info_change(struct gui_window *gw)
-{
-	int bm_idx;
-	browser_window_page_info_state pistate;
-	struct gui_window_2 *gwin = ami_gui_get_gui_window_2(gw);
-	struct browser_window *bw = ami_gui_get_browser_window(gw);
-
-	pistate = browser_window_get_page_info_state(bw);
-
-	switch(pistate) {
-		case PAGE_STATE_INTERNAL:
-			bm_idx = GID_PAGEINFO_INTERNAL_BM;
-		break;
-
-		case PAGE_STATE_LOCAL:
-			bm_idx = GID_PAGEINFO_LOCAL_BM;
-		break;
-
-		case PAGE_STATE_INSECURE:
-			bm_idx = GID_PAGEINFO_INSECURE_BM;
-		break;
-
-		case PAGE_STATE_SECURE_OVERRIDE:
-			bm_idx = GID_PAGEINFO_WARNING_BM;
-		break;
-
-		case PAGE_STATE_SECURE_ISSUES:
-			bm_idx = GID_PAGEINFO_WARNING_BM;
-		break;
-
-		case PAGE_STATE_SECURE:
-			bm_idx = GID_PAGEINFO_SECURE_BM;
-		break;
-
-		default:
-			bm_idx = GID_PAGEINFO_INTERNAL_BM;
-		break;
-	}
-
-	RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_PAGEINFO], gwin->win, NULL,
-				BUTTON_RenderImage, gwin->objects[bm_idx],
-				GA_HintInfo, gwin->helphints[bm_idx],
-				TAG_DONE);
-
-	return NSERROR_OK;
 }
 
 static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
