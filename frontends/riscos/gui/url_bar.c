@@ -1190,28 +1190,24 @@ ro_gui_url_bar_set_url(struct url_bar *url_bar,
 		local_url = url;
 	}
 
-	/* Copy the text into the icon buffer. If the text is too long, blank
-	 * the buffer and warn the user.
+	/* Copy the text into the icon buffer. If the text is too long, truncate
+	 * for URL bar and log the full URL.
 	 */
 	if (strlen(local_url) >= url_bar->text.size) {
-		url_bar->text.buffer[0] = '\0';
-		ro_warn_user("LongURL", NULL);
-		NSLOG(netsurf, INFO,
-		      "Long URL (%zu chars): %s",
+		NSLOG(netsurf, WARNING,
+		      "URL too long to show in URL bar (%zu chars): %s",
 		      strlen(url), url);
-	} else {
-		strncpy(url_bar->text.buffer,
-			local_url,
-			url_bar->text.size - 1);
-		url_bar->text.buffer[url_bar->text.size - 1] = '\0';
 	}
+
+	strncpy(url_bar->text.buffer, local_url, url_bar->text.size - 1);
+	url_bar->text.buffer[url_bar->text.size - 1] = '\0';
 
 	if (local_text != NULL) {
 		free(local_text);
 	}
 
 	/* Set the hotlist flag. */
-	if (nsurl_create(url_bar->text.buffer, &n) == NSERROR_OK) {
+	if (nsurl_create(url, &n) == NSERROR_OK) {
 		ro_gui_url_bar_set_hotlist(url_bar, ro_gui_hotlist_has_page(n));
 		nsurl_unref(n);
 	}
