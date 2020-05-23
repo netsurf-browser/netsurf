@@ -173,17 +173,19 @@ def conds_met(ctx, conds):
             window = cond['window']
             assert status == "complete" or status == "loading"  # TODO: Add more status support?
             if window == "*all*":
-                # all windows must be not throbbing
+                # all windows must be complete, or any still loading
                 throbbing = False
                 for win in ctx['windows'].items():
                     if win[1].throbbing:
                         throbbing = True
                 # throbbing and want loading => true
                 # not throbbing and want complete => true
-                return (status == "loading") == throbbing
+                if (status == "loading") == throbbing:
+                    return True
             else:
                 win = ctx['windows'][window]
-                return win.throbbing == (status == "loading")
+                if win.throbbing == (status == "loading"):
+                    return True
         else:
             raise AssertionError("Unknown condition: {}".format(repr(cond)))
 
