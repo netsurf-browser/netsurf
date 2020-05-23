@@ -361,6 +361,26 @@ static inline void treeview__cw_invalidate_area(
 
 
 /**
+ * Corewindow callback wrapper: Request a full redraw of the window
+ *
+ * \param[in] tree The treeview to request redraw on.
+ */
+static inline void treeview__cw_full_redraw(
+		const struct treeview *tree)
+{
+	if (tree->cw_t != NULL) {
+		static const struct rect r = {
+			.x0 = 0,
+			.y0 = 0,
+			.x1 = REDRAW_MAX,
+			.y1 = REDRAW_MAX,
+		};
+		tree->cw_t->invalidate(tree->cw_h, &r);
+	}
+}
+
+
+/**
  * Get height used by treeview's search bar (or 0 if not present).
  *
  * \param tree    Treeview object to check.
@@ -4889,6 +4909,8 @@ nserror treeview_set_search_string(
 	if (!textarea_set_text(tree->search.textarea, string)) {
 		return NSERROR_UNKNOWN;
 	}
+
+	treeview__cw_full_redraw(tree);
 
 	return NSERROR_OK;
 }
