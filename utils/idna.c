@@ -802,7 +802,7 @@ idna_decode(const char *ace_host, size_t ace_len, char **host, size_t *host_len)
 				return error;
 			}
 
-			memcpy(fqdn_p, output, output_len * 4);
+			memcpy(fqdn_p, output, output_len);
 			free(output);
 			fqdn_p += output_len;
 			fqdn_len += output_len;
