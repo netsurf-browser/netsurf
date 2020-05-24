@@ -1122,7 +1122,7 @@ ro_gui_window_scroll_action(struct gui_window *g,
 		step_x = SCROLL_TOP;
 		break;
 	default:
-		step_x = (visible_x * (scroll_x>>2)) >> 2;
+		step_x = (32 * (scroll_x / 4));
 		break;
 	}
 
@@ -1148,7 +1148,9 @@ ro_gui_window_scroll_action(struct gui_window *g,
 		step_y = SCROLL_TOP;
 		break;
 	default:
-		step_y = -((visible_y * (scroll_y>>2)) >> 2);
+		step_y = -(32 * (scroll_y / 4));
+		NSLOG(netsurf, INFO, "Extended scroll request with N=%i",
+				(int) scroll_y);
 		break;
 	}
 
