@@ -270,7 +270,73 @@ canvas2d__handle_dom_event(dom_event *evt, void *pw)
 	priv->stride = stride;
 	priv->bitmap = newbitmap;
 }
-	
+
+typedef struct {
+	uint8_t *ptr;
+	size_t stride;
+	ssize_t width;
+	ssize_t height;
+} raw_bitmap;
+
+typedef struct {
+	raw_bitmap src;
+	raw_bitmap dst;
+	/* These are relative to the destination top/left */
+	ssize_t dst_x;
+	ssize_t dst_y;
+	/* These are relative to the source top/left */
+	ssize_t x1;
+	ssize_t y1;
+	/* And these are +1, so a 1x1 copy will have x2==x1+1 etc */
+	ssize_t x2;
+	ssize_t y2;
+} copy_operation;
+
+/**
+ * Copy from src to dst
+ *
+ * Note, this is destructive to its copy_operation input
+ *
+ * \param op The copy operation to perform
+ * \return Whether the destination bitmap was altered
+ */
+static bool
+canvas2d__copy_bitmap_to_bitmap(copy_operation *op)
+{
+	/* Constrain src rectangle to src bitmap size */
+	if (op->x1 < 0) op->x1 = 0;
+	if (op->y1 < 0) op->y1 = 0;
+	if (op->x2 > op->src.width) op->x2 = op->src.width;
+	if (op->y2 > op->src.height) op->y2 = op->src.height;
+	/* Offset the rectangle into dst coordinates */
+	op->x1 += op->dst_x;
+	op->x2 += op->dst_x;
+	op->y1 += op->dst_y;
+	op->y2 += op->dst_y;
+	/* Constrain dst rectangle to dst bitmap */
+	if (op->x1 < 0) op->x1 = 0;
+	if (op->y1 < 0) op->y1 = 0;
+	if (op->x2 > op->dst.width) op->x2 = op->dst.width;
+	if (op->y2 > op->dst.height) op->y2 = op->dst.height;
+	/* If we have nothing to copy, stop now */
+	if ((op->x2 - op->x1) < 1 ||
+	    (op->y2 - op->y1) < 1)
+		return false;
+	/* Okay, stuff to copy, so let's begin */
+	op->src.ptr +=
+		(op->src.stride * (op->y1 - op->dst_y)) + /* move down y1 rows */
+		(op->x1 - op->dst_x) * 4; /* and across x1 pixels */
+	op->dst.ptr +=
+		(op->dst.stride * op->y1) + /* down down y1 rows */
+		(op->x1 * 4); /* and across x1 pixels */
+	for (ssize_t rowctr = op->y2 - op->y1; rowctr > 0; --rowctr) {
+		memcpy(op->dst.ptr, op->src.ptr, (op->x2 - op->x1) * 4);
+		op->src.ptr += op->src.stride;
+		op->dst.ptr += op->dst.stride;
+	}
+	return true;
+}
+
 /* prologue ends */
 %};
 };
@@ -428,15 +494,10 @@ method CanvasRenderingContext2D::getImageData()
 	int width = duk_get_int(ctx, 2);
 	int height = duk_get_int(ctx, 3);
 	image_data_private_t *idpriv;
-	uint8_t *src_base, *dst_base;
+	copy_operation copyop;
 
 	if (priv->bitmap == NULL)
 		return duk_generic_error(ctx, "Canvas in bad state, sorry");
-
-	if (width < 1 || height < 1 ||
-	    (x + width) > priv->width || (y + height) > priv->height) {
-		return duk_error(ctx, DUK_ERR_RANGE_ERROR, "invalid (%d,%d) (%dx%d)", x, y, width, height);
-	}
 
 	duk_push_int(ctx, width);
 	duk_push_int(ctx, height);
@@ -456,13 +517,30 @@ method CanvasRenderingContext2D::getImageData()
 	/* We now have access to the imagedata private, so we need to copy
 	 * the pixel range out of ourselves
 	 */
-	src_base = guit->bitmap->get_buffer(priv->bitmap);
-	dst_base = idpriv->data;
-	for (int yy = y; yy < (y+height); ++yy) {
-		memcpy(dst_base, src_base + (x * 4), width * 4);
-		src_base += priv->stride;
-		dst_base += (width * 4);
-	}
+	copyop.src.ptr = guit->bitmap->get_buffer(priv->bitmap);
+	copyop.src.stride = priv->stride;
+	copyop.src.width = priv->width;
+	copyop.src.height = priv->height;
+
+	copyop.dst.ptr = idpriv->data;
+	copyop.dst.stride = idpriv->width * 4;
+	copyop.dst.width = idpriv->width;
+	copyop.dst.height = idpriv->height;
+
+	/* Copying to top/left of our new bitmap */
+	copyop.dst_x = 0;
+	copyop.dst_y = 0;
+
+	/* Copying from x,y for width,height */
+	copyop.x1 = x;
+	copyop.x2 = x + width;
+	copyop.y1 = y;
+	copyop.y2 = y + height;
+
+	/* We don't care if the copy operation wrote or not because
+	 * we don't need to invalidate ImageData objects
+	 */
+	(void)canvas2d__copy_bitmap_to_bitmap(&copyop);
 	return 1;
 %}
 
@@ -474,13 +552,7 @@ method CanvasRenderingContext2D::putImageData()
 	 * copy the clip rectangle (defaults to whole image)
 	 */
 	image_data_private_t *idpriv;
-	int x = duk_to_int(ctx, 1);
-	int y = duk_to_int(ctx, 2);
-	int clipx = 0;
-	int clipy = 0;
-	int clipw = 0;
-	int cliph = 0;
-	uint8_t *bitmap_base;
+	copy_operation copyop;
 
 	if (!dukky_instanceof(ctx, 0, PROTO_NAME(IMAGEDATA))) {
 		return duk_generic_error(ctx, "Expected ImageData as first argument");
@@ -493,39 +565,39 @@ method CanvasRenderingContext2D::putImageData()
 	idpriv = duk_get_pointer(ctx, -1);
 	duk_pop(ctx);
 
+	/* Copying from the input ImageData object */
+	copyop.src.ptr = idpriv->data;
+	copyop.src.stride = idpriv->width * 4;
+	copyop.src.width = idpriv->width;
+	copyop.src.height = idpriv->height;
+
+	/* Copying to ourselves */
+	copyop.dst.ptr = guit->bitmap->get_buffer(priv->bitmap);
+	copyop.dst.stride = priv->stride;
+	copyop.dst.width = priv->width;
+	copyop.dst.height = priv->height;
+
+	/* X Y target coordinates */
+	copyop.dst_x = duk_to_int(ctx, 1);
+	copyop.dst_y = duk_to_int(ctx, 2);
+
 	if (duk_get_top(ctx) < 7) {
 		/* Clipping data not provided */
-		clipw = idpriv->width;
-		cliph = idpriv->height;
+		copyop.x1 = 0;
+		copyop.y1 = 0;
+		copyop.x2 = idpriv->width;
+		copyop.y2 = idpriv->height;
 	} else {
-		clipx = duk_to_int(ctx, 3);
-		clipy = duk_to_int(ctx, 4);
-		clipw = duk_to_int(ctx, 5);
-		cliph = duk_to_int(ctx, 6);
+		copyop.x1 = duk_to_int(ctx, 3);
+		copyop.y1 = duk_to_int(ctx, 4);
+		copyop.x2 = copyop.x1 + duk_to_int(ctx, 5);
+		copyop.y2 = copyop.y1 + duk_to_int(ctx, 6);
 	}
 
-	if (x < 0 || y < 0 ||  /* Not positioning negative */
-	    (x + clipx + clipw) > priv->width || /* RHS not beyond bounds */
-	    (y + clipy + cliph) > priv->height || /* bottom not beyond bounds */
-	    clipx < 0 || clipy < 0 || /* Input in range */
-	    (clipx + clipw) > idpriv->width || /* Input in range */
-	    (clipy + cliph) > idpriv->height) { /* Input in range */
-		return duk_error(ctx, DUK_ERR_RANGE_ERROR, "invalid inputs: (%d,%d) (%d,%d) (%d,%d) (Me: %d,%d) (Img: %d,%d)",
-				 x,y,clipx,clipy,clipw,cliph, priv->width, priv->height, idpriv->width, idpriv->height);
+	if (canvas2d__copy_bitmap_to_bitmap(&copyop)) {
+		guit->bitmap->modified(priv->bitmap);
+		redraw_node((dom_node *)(priv->canvas));
 	}
-
-	bitmap_base = guit->bitmap->get_buffer(priv->bitmap);
-
-	for (int yy = clipy; yy < (clipy + cliph); yy++) {
-		uint8_t *dst_row = bitmap_base + ((y + yy) * priv->stride);
-		uint8_t *src_row = idpriv->data + (yy * idpriv->width * 4);
-		memcpy(dst_row + ((x + clipx) * 4),
-		       src_row + (clipx * 4),
-		       clipw * 4);
-	}
-	guit->bitmap->modified(priv->bitmap);
-
-	redraw_node((dom_node *)(priv->canvas));
 
 	return 0;
 %}
