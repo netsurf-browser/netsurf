@@ -144,9 +144,23 @@ static void ro_cw_scroll(wimp_scroll *scroll)
 	int page_y;
 	struct ro_corewindow *ro_cw;
 	wimp_open open;
+	wimp_window_state state;
 
 	ro_cw = (struct ro_corewindow *)ro_gui_wimp_event_get_user_data(scroll->w);
 	NSLOG(netsurf, INFO, "RO corewindow context %p", ro_cw);
+
+	state.w = ro_cw->wh;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		NSLOG(netsurf, INFO, "xwimp_get_window_state: 0x%x: %s",
+		      error->errnum, error->errmess);
+		return;
+	}
+
+	/* Don't try to update window if it's closed */
+	if (!(state.flags & wimp_WINDOW_OPEN)) {
+		return;
+	}
 
 	page_x = scroll->visible.x1 - scroll->visible.x0 - 32;
 	page_y = scroll->visible.y1 - scroll->visible.y0 - 32;
