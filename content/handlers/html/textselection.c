@@ -1,8 +1,5 @@
 /*
- * Copyright 2006 James Bursa <bursa@users.sourceforge.net>
- * Copyright 2006 Richard Wilson <info@tinct.net>
- * Copyright 2008 Michael Drake <tlsa@netsurf-browser.org>
- * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net>
+ * Copyright 2020 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -21,53 +18,30 @@
 
 /**
  * \file
- * implementation of user interaction with a CONTENT_HTML.
+ * implementation of text selection for a HTML content.
  */
 
-#include <assert.h>
-#include <stdbool.h>
+#include <stdlib.h>
 
-#include <dom/dom.h>
-
-#include "utils/corestrings.h"
-#include "utils/messages.h"
+#include "utils/errors.h"
 #include "utils/utils.h"
-#include "utils/log.h"
-#include "utils/nsoption.h"
-#include "netsurf/content.h"
-#include "netsurf/browser_window.h"
-#include "netsurf/mouse.h"
-#include "netsurf/misc.h"
-#include "netsurf/layout.h"
-#include "netsurf/keypress.h"
-#include "content/hlcache.h"
-#include "content/textsearch.h"
-#include "desktop/frames.h"
-#include "desktop/scrollbar.h"
+#include "netsurf/types.h"
+#include "netsurf/plot_style.h"
 #include "desktop/selection.h"
-#include "desktop/textarea.h"
-#include "javascript/js.h"
-#include "desktop/gui_internal.h"
 #include "desktop/save_text.h"
 
+#include "html/private.h"
 #include "html/box.h"
-#include "html/box_textarea.h"
 #include "html/box_inspect.h"
 #include "html/font.h"
-#include "html/form_internal.h"
-#include "html/private.h"
-#include "html/imagemap.h"
 #include "html/textselection.h"
 
 #define SPACE_LEN(b) ((b->space == 0) ? 0 : 1)
-
-
 
 struct rdw_info {
 	bool inited;
 	struct rect r;
 };
-
 
 
 /**
@@ -126,18 +100,17 @@ selected_part(struct box *box,
 
 
 /**
- * Traverse the given box subtree, calling the handler function (with
- * its handle) for all boxes that lie (partially) within the given
- * range
+ * Traverse the given box subtree adding the boxes inside the
+ *   selection to the coordinate range.
  *
  * \param box box subtree
  * \param start_idx start of range within textual representation (bytes)
  * \param end_idx end of range
  * \param rdwi redraw range to fill in
  * \param do_marker whether deal enter any marker box
- * \return false iff traversal abandoned part-way through
+ * \return NSERROR_OK on success else error code
  */
-static bool
+static nserror
 coords_from_range(struct box *box,
 		  unsigned start_idx,
 		  unsigned end_idx,
@@ -145,6 +118,7 @@ coords_from_range(struct box *box,
 		  bool do_marker)
 {
 	struct box *child;
+	nserror res;
 
 	assert(box);
 
@@ -160,18 +134,19 @@ coords_from_range(struct box *box,
 	if (box->list_marker) {
 		/* do the marker box before continuing with the rest of the
 		 * list element */
-		if (!coords_from_range(box->list_marker,
-				       start_idx,
-				       end_idx,
-				       rdwi,
-				       true)) {
-			return false;
+		res = coords_from_range(box->list_marker,
+					start_idx,
+					end_idx,
+					rdwi,
+					true);
+		if (res != NSERROR_OK) {
+			return res;
 		}
 	}
 
 	/* we can prune this subtree, it's after the selection */
 	if (box->byte_offset >= end_idx) {
-		return true;
+		return NSERROR_OK;
 	}
 
 	/* read before calling the handler in case it modifies the tree */
@@ -181,10 +156,10 @@ coords_from_range(struct box *box,
 	    !((box->type == BOX_FLOAT_LEFT ||
 	       box->type == BOX_FLOAT_RIGHT) &&
 	      !box->text)) {
-		unsigned start_offset;
-		unsigned end_offset;
+		unsigned start_off;
+		unsigned end_off;
 
-		if (selected_part(box, start_idx, end_idx, &start_offset, &end_offset)) {
+		if (selected_part(box, start_idx, end_idx, &start_off, &end_off)) {
 			int width, height;
 			int x, y;
 
@@ -242,69 +217,44 @@ coords_from_range(struct box *box,
 			 * the tree */
 			struct box *next = child->next;
 
-			if (!coords_from_range(child,
-					       start_idx,
-					       end_idx,
-					       rdwi,
-					       false)) {
-				return false;
+			res = coords_from_range(child,
+						start_idx,
+						end_idx,
+						rdwi,
+						false);
+			if (res != NSERROR_OK) {
+				return res;
 			}
 
 			child = next;
 		}
 	}
 
-	return true;
-}
-
-
-/* exported interface documented in html/textselection.h */
-nserror
-html_textselection_redraw(struct content *c,
-			  unsigned start_idx,
-			  unsigned end_idx)
-{
-	html_content *html = (html_content *)c;
-	struct rdw_info rdw;
-
-	rdw.inited = false;
-
-	if (!coords_from_range(html->layout, start_idx, end_idx, &rdw, false)) {
-		return NSERROR_BAD_PARAMETER;
-	}
-
-	if (rdw.inited) {
-		content__request_redraw(c,
-					rdw.r.x0,
-					rdw.r.y0,
-					rdw.r.x1 - rdw.r.x0,
-					rdw.r.y1 - rdw.r.y0);
-	}
-
 	return NSERROR_OK;
 }
 
+
 /**
- * Selection traversal routine for appending text to a string
+ * Append the contents of a box to a selection along with style information
  *
- * \param  text         pointer to text being added, or NULL for newline
- * \param  length       length of text to be appended (bytes)
- * \param  box          pointer to text box, or NULL if from textplain
- * \param  len_ctx      Length conversion context
- * \param  handle       selection string to append to
- * \param  whitespace_text    whitespace to place before text for formatting
+ * \param text         pointer to text being added, or NULL for newline
+ * \param length       length of text to be appended (bytes)
+ * \param box          pointer to text box, or NULL if from textplain
+ * \param len_ctx      Length conversion context
+ * \param handle       selection string to append to
+ * \param whitespace_text    whitespace to place before text for formatting
  *                            may be NULL
- * \param  whitespace_length  length of whitespace_text
- * \return true iff successful and traversal should continue
+ * \param whitespace_length  length of whitespace_text
+ * \return NSERROR_OK iff successful and traversal should continue else error code
  */
-static bool
-selection_copy(const char *text,
-		       size_t length,
-		       struct box *box,
-		       const nscss_len_ctx *len_ctx,
-		       struct selection_string *handle,
-		       const char *whitespace_text,
-		       size_t whitespace_length)
+static nserror
+selection_copy_box(const char *text,
+		   size_t length,
+		   struct box *box,
+		   const nscss_len_ctx *len_ctx,
+		   struct selection_string *handle,
+		   const char *whitespace_text,
+		   size_t whitespace_length)
 {
 	bool add_space = false;
 	plot_font_style_t style;
@@ -318,7 +268,7 @@ selection_copy(const char *text,
 					     false,
 					     pstyle,
 					     handle)) {
-			return false;
+			return NSERROR_NOMEM;
 		}
 	}
 
@@ -338,10 +288,10 @@ selection_copy(const char *text,
 
 	/* add the text from this box */
 	if (!selection_string_append(text, length, add_space, pstyle, handle)) {
-		return false;
+		return NSERROR_NOMEM;
 	}
 
-	return true;
+	return NSERROR_OK;
 }
 
 
@@ -358,18 +308,19 @@ selection_copy(const char *text,
  * \param before     type of whitespace to place before next encountered text
  * \param first      whether this is the first box with text
  * \param do_marker  whether deal enter any marker box
- * \return false iff traversal abandoned part-way through
+ * \return NSERROR_OK on sucess else error code
  */
-static bool
-traverse_tree(struct box *box,
-	      const nscss_len_ctx *len_ctx,
-	      unsigned start_idx,
-	      unsigned end_idx,
-	      struct selection_string *selstr,
-	      save_text_whitespace *before,
-	      bool *first,
-	      bool do_marker)
+static nserror
+selection_copy(struct box *box,
+	       const nscss_len_ctx *len_ctx,
+	       unsigned start_idx,
+	       unsigned end_idx,
+	       struct selection_string *selstr,
+	       save_text_whitespace *before,
+	       bool *first,
+	       bool do_marker)
 {
+	nserror res;
 	struct box *child;
 	const char *whitespace_text = "";
 	size_t whitespace_length = 0;
@@ -388,21 +339,22 @@ traverse_tree(struct box *box,
 	if (box->list_marker) {
 		/* do the marker box before continuing with the rest of the
 		 * list element */
-		if (!traverse_tree(box->list_marker,
-				   len_ctx,
-				   start_idx,
-				   end_idx,
-				   selstr,
-				   before,
-				   first,
-				   true)) {
-			return false;
+		res = selection_copy(box->list_marker,
+				     len_ctx,
+				     start_idx,
+				     end_idx,
+				     selstr,
+				     before,
+				     first,
+				     true);
+		if (res != NSERROR_OK) {
+			return res;
 		}
 	}
 
 	/* we can prune this subtree, it's after the selection */
 	if (box->byte_offset >= end_idx) {
-		return true;
+		return NSERROR_OK;
 	}
 
 	/* read before calling the handler in case it modifies the tree */
@@ -424,22 +376,19 @@ traverse_tree(struct box *box,
 	    !((box->type == BOX_FLOAT_LEFT ||
 	       box->type == BOX_FLOAT_RIGHT) &&
 	      !box->text)) {
-		unsigned start_offset;
-		unsigned end_offset;
+		unsigned start_off;
+		unsigned end_off;
 
-		if (selected_part(box,
-				  start_idx,
-				  end_idx,
-				  &start_offset,
-				  &end_offset)) {
-			if (!selection_copy(box->text + start_offset,
-					    min(box->length, end_offset) - start_offset,
-					    box,
-					    len_ctx,
-					    selstr,
-					    whitespace_text,
-					    whitespace_length)) {
-				return false;
+		if (selected_part(box, start_idx, end_idx, &start_off, &end_off)) {
+			res = selection_copy_box(box->text + start_off,
+						 min(box->length, end_off) - start_off,
+						 box,
+						 len_ctx,
+						 selstr,
+						 whitespace_text,
+						 whitespace_length);
+			if (res != NSERROR_OK) {
+				return res;
 			}
 			if (before) {
 				*first = false;
@@ -465,48 +414,22 @@ traverse_tree(struct box *box,
 			 * the tree */
 			struct box *next = child->next;
 
-			if (!traverse_tree(child,
-					   len_ctx,
-					   start_idx,
-					   end_idx,
-					   selstr,
-					   before,
-					   first,
-					   false)) {
-				return false;
+			res = selection_copy(child,
+					     len_ctx,
+					     start_idx,
+					     end_idx,
+					     selstr,
+					     before,
+					     first,
+					     false);
+			if (res != NSERROR_OK) {
+				return res;
 			}
 
 			child = next;
 		}
 	}
 
-	return true;
-}
-
-/* exported interface documented in html/textselection.h */
-nserror
-html_textselection_copy(struct content *c,
-			unsigned start_idx,
-			unsigned end_idx,
-			struct selection_string *selstr)
-{
-	html_content *html = (html_content *)c;
-	save_text_whitespace before = WHITESPACE_NONE;
-	bool first = true;
-	bool res;
-
-	res = traverse_tree(html->layout,
-			    &html->len_ctx,
-			    start_idx,
-			    end_idx,
-			    selstr,
-			    &before,
-			    &first,
-			    false);
-
-	if (res == false) {
-		return NSERROR_NOMEM;
-	}
 	return NSERROR_OK;
 }
 
@@ -541,6 +464,58 @@ static unsigned selection_label_subtree(struct box *box, unsigned idx)
 	return idx;
 }
 
+
+/* exported interface documented in html/textselection.h */
+nserror
+html_textselection_redraw(struct content *c,
+			  unsigned start_idx,
+			  unsigned end_idx)
+{
+	nserror res;
+	html_content *html = (html_content *)c;
+	struct rdw_info rdw;
+
+	rdw.inited = false;
+
+	res = coords_from_range(html->layout, start_idx, end_idx, &rdw, false);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	if (rdw.inited) {
+		content__request_redraw(c,
+					rdw.r.x0,
+					rdw.r.y0,
+					rdw.r.x1 - rdw.r.x0,
+					rdw.r.y1 - rdw.r.y0);
+	}
+
+	return NSERROR_OK;
+}
+
+
+/* exported interface documented in html/textselection.h */
+nserror
+html_textselection_copy(struct content *c,
+			unsigned start_idx,
+			unsigned end_idx,
+			struct selection_string *selstr)
+{
+	html_content *html = (html_content *)c;
+	save_text_whitespace before = WHITESPACE_NONE;
+	bool first = true;
+
+	return selection_copy(html->layout,
+			      &html->len_ctx,
+			      start_idx,
+			      end_idx,
+			      selstr,
+			      &before,
+			      &first,
+			      false);
+}
+
+
 /* exported interface documented in html/textselection.h */
 nserror
 html_textselection_get_end(struct content *c, unsigned *end_idx)
@@ -551,5 +526,6 @@ html_textselection_get_end(struct content *c, unsigned *end_idx)
 	root_idx = 0;
 
 	*end_idx = selection_label_subtree(html->layout, root_idx);
+
 	return NSERROR_OK;
 }
