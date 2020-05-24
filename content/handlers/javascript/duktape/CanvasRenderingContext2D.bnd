@@ -428,7 +428,7 @@ method CanvasRenderingContext2D::getImageData()
 	int width = duk_get_int(ctx, 2);
 	int height = duk_get_int(ctx, 3);
 	image_data_private_t *idpriv;
-	uint8_t *bitmap_base;
+	uint8_t *src_base, *dst_base;
 
 	if (priv->bitmap == NULL)
 		return duk_generic_error(ctx, "Canvas in bad state, sorry");
@@ -456,11 +456,12 @@ method CanvasRenderingContext2D::getImageData()
 	/* We now have access to the imagedata private, so we need to copy
 	 * the pixel range out of ourselves
 	 */
-	bitmap_base = guit->bitmap->get_buffer(priv->bitmap);
+	src_base = guit->bitmap->get_buffer(priv->bitmap);
+	dst_base = idpriv->data;
 	for (int yy = y; yy < (y+height); ++yy) {
-		uint8_t *src_base = bitmap_base + (priv->stride * yy);
-		uint8_t *dst_base = idpriv->data + (width * 4);
-		memcpy(dst_base + (x * 4), src_base + (x * 4), width * 4);
+		memcpy(dst_base, src_base + (x * 4), width * 4);
+		src_base += priv->stride;
+		dst_base += (width * 4);
 	}
 	return 1;
 %}
