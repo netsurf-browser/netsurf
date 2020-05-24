@@ -1149,8 +1149,6 @@ ro_gui_window_scroll_action(struct gui_window *g,
 		break;
 	default:
 		step_y = -(32 * (scroll_y / 4));
-		NSLOG(netsurf, INFO, "Extended scroll request with N=%i",
-				(int) scroll_y);
 		break;
 	}
 
