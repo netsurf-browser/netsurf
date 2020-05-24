@@ -889,7 +889,11 @@ ro_cw_set_scroll(struct core_window *cw, int x, int y)
 	state.xscroll =  x * 2;
 	state.yscroll = -y * 2;
 
-	ro_cw_open(PTR_WIMP_OPEN(&state));
+	/* only update the window if it is open */
+	if (state.flags & wimp_WINDOW_OPEN) {
+		update_scrollbars(ro_cw, PTR_WIMP_OPEN(&state));
+	}
+
 	return NSERROR_OK;
 }
 
