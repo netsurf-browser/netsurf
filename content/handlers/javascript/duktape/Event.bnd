@@ -182,8 +182,8 @@ method Event::initEvent ()
 	cancellable = duk_get_boolean(ctx, 2);
 
 	exc = dom_event_init(priv->evt, text_str, bubbles, cancellable);
+	dom_string_unref(text_str);
 	if (exc != DOM_NO_ERR) {
-		dom_string_unref(text_str);
 		return 0;
 	}
 
