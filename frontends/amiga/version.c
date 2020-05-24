@@ -25,7 +25,7 @@
  * problems created by "0" not being a valid AmigaOS revision number.
  */
 #define NETSURF_VERSION_MAJOR "3"
-#define NETSURF_VERSION_MINOR_EXTERNAL "10"
+#define NETSURF_VERSION_MINOR_EXTERNAL "11"
 #if defined(CI_BUILD)
 #define NETSURF_VERSION_MINOR CI_BUILD
 #else
