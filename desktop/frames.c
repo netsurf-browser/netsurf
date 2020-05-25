@@ -181,20 +181,35 @@ void browser_window_handle_scrollbars(struct browser_window *bw)
 		scrollbar_make_pair(bw->scroll_x, bw->scroll_y);
 }
 
+/* exported function documented in desktop/frames.h */
+nserror browser_window_invalidate_iframe(struct browser_window *bw)
+{
+	html_redraw_a_box(bw->parent->current_content, bw->box);
+	return NSERROR_OK;
+}
 
 /* exported function documented in desktop/frames.h */
-nserror browser_window_create_iframes(struct browser_window *bw,
-		struct content_html_iframe *iframe)
+nserror browser_window_create_iframes(struct browser_window *bw)
 {
+	nserror ret = NSERROR_OK;
 	struct browser_window *window;
 	struct content_html_iframe *cur;
 	struct rect rect;
 	int iframes = 0;
 	int index;
-	nserror ret = NSERROR_OK;
+	struct content_html_iframe *iframe;
 
+	bw->iframe_count = 0;
+
+	/* only html contents can have iframes */
+	if (content_get_type(bw->current_content) != CONTENT_HTML) {
+		return NSERROR_OK;
+	}
+
+	/* obtain the iframes for this content */
+	iframe = html_get_iframe(bw->current_content);
 	if (iframe == NULL) {
-		return NSERROR_BAD_PARAMETER;
+		return NSERROR_OK;
 	}
 
 	/* Count iframe list and allocate enough space within the
@@ -272,12 +287,7 @@ nserror browser_window_create_iframes(struct browser_window *bw,
 }
 
 
-/**
- * Recalculate iframe positions following a resize.
- *
- * \param  bw	    The browser window to reposition iframes for
- */
-
+/* exported function documented in desktop/frames.h */
 void browser_window_recalculate_iframes(struct browser_window *bw)
 {
 	struct browser_window *window;
@@ -293,123 +303,23 @@ void browser_window_recalculate_iframes(struct browser_window *bw)
 }
 
 
-/* exported interface documented in desktop/frames.h */
-nserror browser_window_create_frameset(struct browser_window *bw,
-		struct content_html_frames *frameset)
+/* exported function documented in desktop/frames.h */
+nserror browser_window_destroy_iframes(struct browser_window *bw)
 {
-	int row, col, index;
-	struct content_html_frames *frame;
-	struct browser_window *window;
-	hlcache_handle *parent;
+	int i;
 
-	assert(bw && frameset);
-
-	/* 1. Create children */
-	assert(bw->children == NULL);
-	assert(frameset->cols + frameset->rows != 0);
-
-	bw->children = calloc((frameset->cols * frameset->rows), sizeof(*bw));
-	if (!bw->children) {
-		return NSERROR_NOMEM;
-	}
-
-	bw->cols = frameset->cols;
-	bw->rows = frameset->rows;
-	for (row = 0; row < bw->rows; row++) {
-		for (col = 0; col < bw->cols; col++) {
-			index = (row * bw->cols) + col;
-			frame = &frameset->children[index];
-			window = &bw->children[index];
-
-			/* Initialise common parts */
-			browser_window_initialise_common(BW_CREATE_NONE,
-					window, NULL);
-
-			/* window characteristics */
-			if (frame->children)
-				window->browser_window_type =
-						BROWSER_WINDOW_FRAMESET;
-			else
-				window->browser_window_type =
-						BROWSER_WINDOW_FRAME;
-			window->scrolling = frame->scrolling;
-			window->border = frame->border;
-			window->border_colour = frame->border_colour;
-			window->no_resize = frame->no_resize;
-			window->frame_width = frame->width;
-			window->frame_height = frame->height;
-			window->margin_width = frame->margin_width;
-			window->margin_height = frame->margin_height;
-			if (frame->name) {
-				window->name = strdup(frame->name);
-				if (!window->name) {
-					free(bw->children);
-					bw->children = NULL;
-					return NSERROR_NOMEM;
-				}
+	if (bw->iframes != NULL) {
+		for (i = 0; i < bw->iframe_count; i++) {
+			if (bw->iframes[i].box != NULL) {
+				bw->iframes[i].box->iframe = NULL;
+				bw->iframes[i].box = NULL;
 			}
-
-			window->scale = bw->scale;
-
-			/* linking */
-			window->parent = bw;
-
-			if (window->name)
-				NSLOG(netsurf, INFO, "Created frame '%s'",
-				      window->name);
-			else
-				NSLOG(netsurf, INFO,
-				      "Created frame (unnamed)");
+			browser_window_destroy_internal(&bw->iframes[i]);
 		}
+		free(bw->iframes);
+		bw->iframes = NULL;
+		bw->iframe_count = 0;
 	}
-
-	/* 2. Calculate dimensions */
-	browser_window_update_extent(bw);
-	browser_window_recalculate_frameset(bw);
-
-	/* 3. Recurse for grandchildren */
-	for (row = 0; row < bw->rows; row++) {
-		for (col = 0; col < bw->cols; col++) {
-			index = (row * bw->cols) + col;
-			frame = &frameset->children[index];
-			window = &bw->children[index];
-
-			if (frame->children)
-				browser_window_create_frameset(window, frame);
-		}
-	}
-
-	/* Use the URL of the first ancestor window containing html content
-	 * as the referer */
-	for (window = bw; window->parent; window = window->parent) {
-		if (window->current_content &&
-				content_get_type(window->current_content) ==
-				CONTENT_HTML)
-			break;
-	}
-
-	parent = window->current_content;
-
-	/* 4. Launch content */
-	for (row = 0; row < bw->rows; row++) {
-		for (col = 0; col < bw->cols; col++) {
-			index = (row * bw->cols) + col;
-			frame = &frameset->children[index];
-			window = &bw->children[index];
-
-			if (frame->url) {
-				browser_window_navigate(window,
-					frame->url,
-					hlcache_handle_get_url(parent),
-					BW_NAVIGATE_HISTORY |
-					BW_NAVIGATE_UNVERIFIABLE,
-					NULL,
-					NULL,
-					parent);
-			}
-		}
-	}
-
 	return NSERROR_OK;
 }
 
@@ -417,10 +327,9 @@ nserror browser_window_create_frameset(struct browser_window *bw,
 /**
  * Recalculate frameset positions following a resize.
  *
- * \param  bw	    The browser window to reposition framesets for
+ * \param bw The browser window to reposition framesets for
  */
-
-void browser_window_recalculate_frameset(struct browser_window *bw)
+static void browser_window_recalculate_frameset_internal(struct browser_window *bw)
 {
 	int widths[bw->cols][bw->rows];
 	int heights[bw->cols][bw->rows];
@@ -646,9 +555,177 @@ void browser_window_recalculate_frameset(struct browser_window *bw)
 			x += widths[col][row];
 
 			if (window->children)
-				browser_window_recalculate_frameset(window);
+				browser_window_recalculate_frameset_internal(window);
 		}
 	}
+}
+
+
+/**
+ * Create and open a frameset for a browser window.
+ *
+ * \param[in,out] bw The browser window to create the frameset for
+ * \param[in] frameset The frameset to create
+ * \return NSERROR_OK or error code on faliure
+ */
+static nserror
+browser_window_create_frameset_internal(struct browser_window *bw,
+					struct content_html_frames *frameset)
+{
+	int row, col, index;
+	struct content_html_frames *frame;
+	struct browser_window *window;
+	hlcache_handle *parent;
+
+	assert(bw && frameset);
+
+	/* 1. Create children */
+	assert(bw->children == NULL);
+	assert(frameset->cols + frameset->rows != 0);
+
+	bw->children = calloc((frameset->cols * frameset->rows), sizeof(*bw));
+	if (!bw->children) {
+		return NSERROR_NOMEM;
+	}
+
+	bw->cols = frameset->cols;
+	bw->rows = frameset->rows;
+	for (row = 0; row < bw->rows; row++) {
+		for (col = 0; col < bw->cols; col++) {
+			index = (row * bw->cols) + col;
+			frame = &frameset->children[index];
+			window = &bw->children[index];
+
+			/* Initialise common parts */
+			browser_window_initialise_common(BW_CREATE_NONE,
+					window, NULL);
+
+			/* window characteristics */
+			if (frame->children)
+				window->browser_window_type =
+						BROWSER_WINDOW_FRAMESET;
+			else
+				window->browser_window_type =
+						BROWSER_WINDOW_FRAME;
+			window->scrolling = frame->scrolling;
+			window->border = frame->border;
+			window->border_colour = frame->border_colour;
+			window->no_resize = frame->no_resize;
+			window->frame_width = frame->width;
+			window->frame_height = frame->height;
+			window->margin_width = frame->margin_width;
+			window->margin_height = frame->margin_height;
+			if (frame->name) {
+				window->name = strdup(frame->name);
+				if (!window->name) {
+					free(bw->children);
+					bw->children = NULL;
+					return NSERROR_NOMEM;
+				}
+			}
+
+			window->scale = bw->scale;
+
+			/* linking */
+			window->parent = bw;
+
+			if (window->name)
+				NSLOG(netsurf, INFO, "Created frame '%s'",
+				      window->name);
+			else
+				NSLOG(netsurf, INFO,
+				      "Created frame (unnamed)");
+		}
+	}
+
+	/* 2. Calculate dimensions */
+	browser_window_update_extent(bw);
+	browser_window_recalculate_frameset_internal(bw);
+
+	/* 3. Recurse for grandchildren */
+	for (row = 0; row < bw->rows; row++) {
+		for (col = 0; col < bw->cols; col++) {
+			index = (row * bw->cols) + col;
+			frame = &frameset->children[index];
+			window = &bw->children[index];
+
+			if (frame->children)
+				browser_window_create_frameset_internal(window, frame);
+		}
+	}
+
+	/* Use the URL of the first ancestor window containing html content
+	 * as the referer */
+	for (window = bw; window->parent; window = window->parent) {
+		if (window->current_content &&
+				content_get_type(window->current_content) ==
+				CONTENT_HTML)
+			break;
+	}
+
+	parent = window->current_content;
+
+	/* 4. Launch content */
+	for (row = 0; row < bw->rows; row++) {
+		for (col = 0; col < bw->cols; col++) {
+			index = (row * bw->cols) + col;
+			frame = &frameset->children[index];
+			window = &bw->children[index];
+
+			if (frame->url) {
+				browser_window_navigate(window,
+					frame->url,
+					hlcache_handle_get_url(parent),
+					BW_NAVIGATE_HISTORY |
+					BW_NAVIGATE_UNVERIFIABLE,
+					NULL,
+					NULL,
+					parent);
+			}
+		}
+	}
+
+	return NSERROR_OK;
+}
+
+
+/* exported interface documented in desktop/frames.h */
+nserror browser_window_create_frameset(struct browser_window *bw)
+{
+	struct content_html_frames *frameset;
+
+	if (content_get_type(bw->current_content) != CONTENT_HTML) {
+		return NSERROR_OK;
+	}
+
+	frameset = html_get_frameset(bw->current_content);
+	if (frameset == NULL) {
+		return NSERROR_OK;
+	}
+
+	return browser_window_create_frameset_internal(bw, frameset);
+}
+
+
+
+
+/**
+ * Recalculate frameset positions following a resize.
+ *
+ * \param bw The browser window to reposition framesets for
+ */
+
+void browser_window_recalculate_frameset(struct browser_window *bw)
+{
+	if (content_get_type(bw->current_content) != CONTENT_HTML) {
+		return;
+	}
+
+	if (html_get_frameset(bw->current_content) == NULL) {
+		return;
+	}
+
+	browser_window_recalculate_frameset_internal(bw);
 }
 
 
@@ -703,7 +780,7 @@ void browser_window_resize_frame(struct browser_window *bw, int x, int y)
 	}
 
 	if (change) {
-		browser_window_recalculate_frameset(parent);
+		browser_window_recalculate_frameset_internal(parent);
 	}
 }
 

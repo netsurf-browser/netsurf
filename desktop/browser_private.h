@@ -288,6 +288,13 @@ nserror browser_window_initialise_common(enum browser_window_create_flags flags,
 
 
 /**
+ * Release all memory associated with a browser window.
+ *
+ * \param bw browser window
+ */
+nserror browser_window_destroy_internal(struct browser_window *bw);
+
+/**
  * Get the dimensions of the area a browser window occupies
  *
  * \param  bw      The browser window to get dimensions of

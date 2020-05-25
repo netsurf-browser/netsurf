@@ -716,18 +716,18 @@ box_a(dom_node *n,
 	if (err == DOM_NO_ERR && s != NULL) {
 		if (dom_string_caseless_lwc_isequal(s,
 				corestring_lwc__blank))
-			box->target = TARGET_BLANK;
+			box->target = "_blank";
 		else if (dom_string_caseless_lwc_isequal(s,
 				corestring_lwc__top))
-			box->target = TARGET_TOP;
+			box->target = "_top";
 		else if (dom_string_caseless_lwc_isequal(s,
 				corestring_lwc__parent))
-			box->target = TARGET_PARENT;
+			box->target = "_parent";
 		else if (dom_string_caseless_lwc_isequal(s,
 				corestring_lwc__self))
 			/* the default may have been overridden by a
 			 * <base target=...>, so this is different to 0 */
-			box->target = TARGET_SELF;
+			box->target = "_self";
 		else {
 			/* 6.16 says that frame names must begin with [a-zA-Z]
 			 * This doesn't match reality, so just take anything */

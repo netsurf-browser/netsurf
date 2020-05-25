@@ -16,12 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Frame and frameset creation and manipulation (interface).
  */
 
-#ifndef _NETSURF_DESKTOP_FRAMES_H_
-#define _NETSURF_DESKTOP_FRAMES_H_
+#ifndef NETSURF_DESKTOP_FRAMES_H_
+#define NETSURF_DESKTOP_FRAMES_H_
 
 struct scrollbar_msg_data;
 struct content_html_iframe;
@@ -30,23 +31,40 @@ struct content_html_frames;
 /**
  * Create and open iframes for a browser window.
  *
- * \param bw	  The browser window to create iframes for.
- * \param iframe  The iframes to create from.
+ * \param bw The browser window to create iframes for.
  * \return NSERROR_OK or error code on faliure.
  */
-nserror browser_window_create_iframes(struct browser_window *bw,
-		struct content_html_iframe *iframe);
+nserror browser_window_create_iframes(struct browser_window *bw);
+
+/**
+ * Recalculate iframe positions following a resize.
+ *
+ * \param bw The browser window to reposition iframes for
+ */
 void browser_window_recalculate_iframes(struct browser_window *bw);
+
+/**
+ * Invalidate an iframe causing a redraw.
+ *
+ * \param bw The browser window to invalidate
+ */
+nserror browser_window_invalidate_iframe(struct browser_window *bw);
+
+/**
+ * Destroy iframes opened in browser_window_create_iframes()
+ *
+ * \param bw The browser window to destroy iframes for.
+ * \return NSERROR_OK
+ */
+nserror browser_window_destroy_iframes(struct browser_window *bw);
 
 /**
  * Create and open a frameset for a browser window.
  *
  * \param[in,out] bw The browser window to create the frameset for
- * \param[in] frameset The frameset to create
  * \return NSERROR_OK or error code on faliure
  */
-nserror browser_window_create_frameset(struct browser_window *bw,
-		struct content_html_frames *frameset);
+nserror browser_window_create_frameset(struct browser_window *bw);
 
 void browser_window_recalculate_frameset(struct browser_window *bw);
 bool browser_window_frame_resize_start(struct browser_window *bw,

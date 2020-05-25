@@ -85,12 +85,6 @@ struct box_construct_props {
 
 static const content_type image_types = CONTENT_IMAGE;
 
-/* the strings are not important, since we just compare the pointers */
-const char *TARGET_SELF = "_self";
-const char *TARGET_PARENT = "_parent";
-const char *TARGET_TOP = "_top";
-const char *TARGET_BLANK = "_blank";
-
 /**
  * mapping from CSS display to box type this table must be in sync
  * with libcss' css_display enum

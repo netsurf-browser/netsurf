@@ -56,7 +56,6 @@
 #include "css/utils.h"
 #include "html/form_internal.h"
 #include "html/html.h"
-#include "html/box.h"
 #include "javascript/js.h"
 
 #include "desktop/cookie_manager.h"
@@ -88,9 +87,6 @@
  */
 #define FRAME_DEPTH 8
 
-/* Have to forward declare browser_window_destroy_internal */
-static void browser_window_destroy_internal(struct browser_window *bw);
-
 /* Forward declare internal navigation function */
 static nserror browser_window__navigate_internal(
 	struct browser_window *bw, struct browser_fetch_parameters *params);
@@ -113,14 +109,6 @@ static void browser_window_destroy_children(struct browser_window *bw)
 		bw->children = NULL;
 		bw->rows = 0;
 		bw->cols = 0;
-	}
-	if (bw->iframes) {
-		for (i = 0; i < bw->iframe_count; i++) {
-			browser_window_destroy_internal(&bw->iframes[i]);
-		}
-		free(bw->iframes);
-		bw->iframes = NULL;
-		bw->iframe_count = 0;
 	}
 }
 
@@ -798,7 +786,8 @@ static void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 		/** @todo don't do this if the user has scrolled */
 		frag_scroll(bw);
 
-		html_redraw_a_box(bw->parent->current_content, bw->box);
+		browser_window_invalidate_iframe(bw);
+
 		break;
 
 	case BROWSER_WINDOW_FRAME:
@@ -919,15 +908,10 @@ static nserror browser_window_content_ready(struct browser_window *bw)
 	browser_window_set_status(bw, content_get_status_message(bw->current_content));
 
 	/* frames */
-	if ((content_get_type(bw->current_content) == CONTENT_HTML) &&
-	    (html_get_frameset(bw->current_content) != NULL)) {
-		res = browser_window_create_frameset(bw, html_get_frameset(bw->current_content));
-	}
+	res = browser_window_create_frameset(bw);
 
-	if (content_get_type(bw->current_content) == CONTENT_HTML &&
-	    html_get_iframe(bw->current_content) != NULL) {
-		browser_window_create_iframes(bw, html_get_iframe(bw->current_content));
-	}
+	/* iframes */
+	res = browser_window_create_iframes(bw);
 
 	/* Indicate page status may have changed */
 	if (res == NSERROR_OK) {
@@ -1004,6 +988,7 @@ browser_window__handle_ssl_query_response(bool proceed, void *pw)
 		browser_window_stop(bw);
 		browser_window_remove_caret(bw, false);
 		browser_window_destroy_children(bw);
+		browser_window_destroy_iframes(bw);
 	}
 
 	if (!proceed) {
@@ -1149,6 +1134,7 @@ browser_window__handle_userpass_response(nsurl *url,
 		browser_window_stop(bw);
 		browser_window_remove_caret(bw, false);
 		browser_window_destroy_children(bw);
+		browser_window_destroy_iframes(bw);
 	}
 	bw->internal_nav = false;
 	return browser_window__navigate_internal(bw, &bw->loading_parameters);
@@ -1560,14 +1546,12 @@ browser_window_callback(hlcache_handle *c, const hlcache_event *event, void *pw)
 		break;
 
 	case CONTENT_MSG_REFORMAT:
-		if (c == bw->current_content &&
-		    content_get_type(c) == CONTENT_HTML) {
-			/* reposition frames */
-			if (html_get_frameset(c) != NULL)
-				browser_window_recalculate_frameset(bw);
-			/* reflow iframe positions */
-			if (html_get_iframe(c) != NULL)
-				browser_window_recalculate_iframes(bw);
+		if (c == bw->current_content) {
+			/* recompute frameset */
+			browser_window_recalculate_frameset(bw);
+
+			/* recompute iframe positions, sizes and scrollbars */
+			browser_window_recalculate_iframes(bw);
 		}
 
 		/* Hide any caret, but don't remove it */
@@ -1848,21 +1832,13 @@ static void scheduled_reformat(void *vbw)
 	}
 }
 
-
-/**
- * Release all memory associated with a browser window.
- *
- * \param bw browser window
- */
-static void browser_window_destroy_internal(struct browser_window *bw)
+/* exported interface documented in desktop/browser_private.h */
+nserror browser_window_destroy_internal(struct browser_window *bw)
 {
 	assert(bw);
 
-	NSLOG(netsurf, INFO, "Destroying window");
-
-	if (bw->children != NULL || bw->iframes != NULL) {
-		browser_window_destroy_children(bw);
-	}
+	browser_window_destroy_children(bw);
+	browser_window_destroy_iframes(bw);
 
 	/* Destroy scrollbars */
 	if (bw->scroll_x != NULL) {
@@ -1926,11 +1902,6 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 		bw->favicon.current = NULL;
 	}
 
-	if (bw->box != NULL) {
-		bw->box->iframe = NULL;
-		bw->box = NULL;
-	}
-
 	if (bw->jsheap != NULL) {
 		js_destroyheap(bw->jsheap);
 		bw->jsheap = NULL;
@@ -1956,6 +1927,8 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 	browser_window__free_fetch_parameters(&bw->loading_parameters);
 	NSLOG(netsurf, INFO, "Status text cache match:miss %d:%d",
 	      bw->status.match, bw->status.miss);
+
+	return NSERROR_OK;
 }
 
 
@@ -1991,7 +1964,7 @@ browser_window_set_scale_internal(struct browser_window *bw, float scale)
 		res = browser_window_set_scale_internal(&bw->children[i], scale);
 	}
 
-	/* sale iframes */
+	/* scale iframes */
 	for (i = 0; i < bw->iframe_count; i++) {
 		res = browser_window_set_scale_internal(&bw->iframes[i], scale);
 	}
@@ -3487,6 +3460,7 @@ browser_window_navigate(struct browser_window *bw,
 	browser_window_stop(bw);
 	browser_window_remove_caret(bw, false);
 	browser_window_destroy_children(bw);
+	browser_window_destroy_iframes(bw);
 
 	/* Set up the fetch parameters */
 	memset(&params, 0, sizeof(params));
@@ -4389,7 +4363,7 @@ browser_window_find_target(struct browser_window *bw,
 		target = html_get_base_target(c);
 	}
 	if (target == NULL) {
-		target = TARGET_SELF;
+		target = "_self";
 	}
 
 	/* allow the simple case of target="_blank" to be ignored if requested
@@ -4401,7 +4375,7 @@ browser_window_find_target(struct browser_window *bw,
 		/* not a mouse button 2 click
 		 * not a mouse button 1 click with ctrl pressed
 		 * configured to ignore target="_blank" */
-		if ((target == TARGET_BLANK) || (!strcasecmp(target, "_blank")))
+		if (!strcasecmp(target, "_blank"))
 			return bw;
 	}
 
@@ -4412,8 +4386,7 @@ browser_window_find_target(struct browser_window *bw,
 	     ((mouse & BROWSER_MOUSE_CLICK_1) &&
 	      (mouse & BROWSER_MOUSE_MOD_2))) ||
 	    ((nsoption_bool(button_2_tab)) &&
-	     ((target == TARGET_BLANK) ||
-	      (!strcasecmp(target, "_blank"))))) {
+	     (!strcasecmp(target, "_blank")))) {
 		/* open in new tab if:
 		 * - button_2 opens in new tab and button_2 was pressed
 		 * OR
@@ -4439,8 +4412,7 @@ browser_window_find_target(struct browser_window *bw,
 		    ((mouse & BROWSER_MOUSE_CLICK_1) &&
 		     (mouse & BROWSER_MOUSE_MOD_2))) ||
 		   ((!nsoption_bool(button_2_tab)) &&
-		    ((target == TARGET_BLANK) ||
-		     (!strcasecmp(target, "_blank"))))) {
+		    (!strcasecmp(target, "_blank")))) {
 		/* open in new window if:
 		 * - button_2 doesn't open in new tabs and button_2 was pressed
 		 * OR
@@ -4460,14 +4432,13 @@ browser_window_find_target(struct browser_window *bw,
 			return bw;
 		}
 		return bw_target;
-	} else if ((target == TARGET_SELF) || (!strcasecmp(target, "_self"))) {
+	} else if (!strcasecmp(target, "_self")) {
 		return bw;
-	} else if ((target == TARGET_PARENT) ||
-		   (!strcasecmp(target, "_parent"))) {
+	} else if (!strcasecmp(target, "_parent")) {
 		if (bw->parent)
 			return bw->parent;
 		return bw;
-	} else if ((target == TARGET_TOP) || (!strcasecmp(target, "_top"))) {
+	} else if (!strcasecmp(target, "_top")) {
 		while (bw->parent)
 			bw = bw->parent;
 		return bw;
