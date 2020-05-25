@@ -1465,7 +1465,7 @@ browser_window_callback(hlcache_handle *c, const hlcache_event *event, void *pw)
 					    .y1 = event->data.redraw.y + event->data.redraw.height
 			};
 
-			browser_window_update_box(bw, &rect);
+			browser_window_invalidate_rect(bw, &rect);
 		}
 		break;
 
@@ -4065,7 +4065,7 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 			rect.x1 = rect.x0 + bw->width;
 			rect.y1 = rect.y0 + bw->height;
 
-			browser_window_update_box(bw, &rect);
+			browser_window_invalidate_rect(bw, &rect);
 		}
 		break;
 
@@ -4077,8 +4077,9 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 }
 
 
-/* Exported interface, documented in netsurf/browser_window.h */
-void browser_window_update_box(struct browser_window *bw, struct rect *rect)
+/* Exported interface, documented in browser/browser_private.h */
+nserror
+browser_window_invalidate_rect(struct browser_window *bw, struct rect *rect)
 {
 	int pos_x;
 	int pos_y;
@@ -4103,7 +4104,7 @@ void browser_window_update_box(struct browser_window *bw, struct rect *rect)
 	rect->x1 *= top->scale;
 	rect->y1 *= top->scale;
 
-	guit->window->invalidate(top->window, rect);
+	return guit->window->invalidate(top->window, rect);
 }
 
 

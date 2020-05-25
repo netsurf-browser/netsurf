@@ -69,7 +69,7 @@ void browser_window_scroll_callback(void *client_data,
 			rect.x1 = rect.x0 + bw->width;
 			rect.y1 = rect.y0 + bw->height;
 
-			browser_window_update_box(bw, &rect);
+			browser_window_invalidate_rect(bw, &rect);
 		}
 		break;
 	case SCROLLBAR_MSG_SCROLL_START:
