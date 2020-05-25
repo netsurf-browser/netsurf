@@ -74,9 +74,9 @@ static void amiga_dt_anim_destroy(struct content *c);
 static bool amiga_dt_anim_redraw(struct content *c,
 		struct content_redraw_data *data, const struct rect *clip,
 		const struct redraw_context *ctx);
-static void amiga_dt_anim_open(struct content *c, struct browser_window *bw,
+static nserror amiga_dt_anim_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct object_params *params);
-static void amiga_dt_anim_close(struct content *c);
+static nserror amiga_dt_anim_close(struct content *c);
 static nserror amiga_dt_anim_clone(const struct content *old, struct content **newc);
 static content_type amiga_dt_anim_content_type(void);
 
@@ -290,18 +290,18 @@ bool amiga_dt_anim_redraw(struct content *c,
  * \param  box     box containing c, or 0 if not an object
  * \param  params  object parameters, or 0 if not an object
  */
-void amiga_dt_anim_open(struct content *c, struct browser_window *bw,
+nserror amiga_dt_anim_open(struct content *c, struct browser_window *bw,
 	struct content *page, struct object_params *params)
 {
 	NSLOG(netsurf, INFO, "amiga_dt_anim_open");
 
-	return;
+	return NSERROR_OK;
 }
 
-void amiga_dt_anim_close(struct content *c)
+nserror amiga_dt_anim_close(struct content *c)
 {
 	NSLOG(netsurf, INFO, "amiga_dt_anim_close");
-	return;
+	return NSERROR_OK;
 }
 
 void amiga_dt_anim_reformat(struct content *c, int width, int height)

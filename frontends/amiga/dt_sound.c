@@ -58,7 +58,7 @@ static void amiga_dt_sound_destroy(struct content *c);
 static bool amiga_dt_sound_redraw(struct content *c,
 		struct content_redraw_data *data, const struct rect *clip,
 		const struct redraw_context *ctx);
-static void amiga_dt_sound_open(struct content *c, struct browser_window *bw,
+static nserror amiga_dt_sound_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct object_params *params);
 static nserror amiga_dt_sound_clone(const struct content *old, struct content **newc);
 static content_type amiga_dt_sound_content_type(void);
@@ -221,7 +221,7 @@ bool amiga_dt_sound_redraw(struct content *c,
 }
 
 
-void amiga_dt_sound_open(struct content *c, struct browser_window *bw,
+nserror amiga_dt_sound_open(struct content *c, struct browser_window *bw,
 	struct content *page, struct object_params *params)
 {
 	amiga_dt_sound_content *plugin = (amiga_dt_sound_content *) c;
@@ -248,7 +248,7 @@ void amiga_dt_sound_open(struct content *c, struct browser_window *bw,
 	if(plugin->dto && (plugin->immediate == true))
 		amiga_dt_sound_play(plugin->dto);
 
-	return;
+	return NSERROR_OK;
 }
 
 

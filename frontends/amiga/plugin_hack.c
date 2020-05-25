@@ -53,9 +53,9 @@ static void amiga_plugin_hack_destroy(struct content *c);
 static bool amiga_plugin_hack_redraw(struct content *c,
 		struct content_redraw_data *data, const struct rect *clip,
 		const struct redraw_context *ctx);
-static void amiga_plugin_hack_open(struct content *c, struct browser_window *bw,
+static nserror amiga_plugin_hack_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct object_params *params);
-static void amiga_plugin_hack_close(struct content *c);
+static nserror amiga_plugin_hack_close(struct content *c);
 static nserror amiga_plugin_hack_clone(const struct content *old, struct content **newc);
 static content_type amiga_plugin_hack_content_type(void);
 
@@ -186,7 +186,7 @@ bool amiga_plugin_hack_redraw(struct content *c,
  *                 object within a page
  * \param  params  object parameters, or 0 if not an object
  */
-void amiga_plugin_hack_open(struct content *c, struct browser_window *bw,
+nserror amiga_plugin_hack_open(struct content *c, struct browser_window *bw,
 	struct content *page, struct object_params *params)
 {
 	NSLOG(netsurf, INFO, "amiga_plugin_hack_open %s",
@@ -199,13 +199,13 @@ void amiga_plugin_hack_open(struct content *c, struct browser_window *bw,
 		c->height = 0;
 	}
 
-	return;
+	return NSERROR_OK;
 }
 
-void amiga_plugin_hack_close(struct content *c)
+nserror amiga_plugin_hack_close(struct content *c)
 {
 	NSLOG(netsurf, INFO, "amiga_plugin_hack_close");
-	return;
+	return NSERROR_OK;
 }
 
 void amiga_plugin_hack_reformat(struct content *c, int width, int height)
