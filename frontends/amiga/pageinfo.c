@@ -99,9 +99,9 @@ static BOOL
 ami_pageinfo_event(struct ami_corewindow *ami_cw, ULONG result)
 {
 	if((result & WMHI_CLASSMASK) == WMHI_INACTIVE) {
-		/* Window went inactive, so close it */
-		ami_pageinfo_destroy(ami_cw);
-		return TRUE;
+		/* Window went inactive, so schedule to close it */
+		ami_schedule(0, ami_pageinfo_close_cb, pageinfo_win);
+		/* NB: do not return TRUE here as we're still open for now */
 	}
 	return FALSE;
 }
