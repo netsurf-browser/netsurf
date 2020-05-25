@@ -67,9 +67,13 @@ ami_pageinfo_destroy(struct ami_corewindow *ami_cw)
 {
 	nserror res;
 	struct ami_pageinfo_window *pageinfo_win = (struct ami_pageinfo_window *)ami_cw;
-	res = page_info_destroy(pageinfo_win->pi);
-	if (res == NSERROR_OK) {
-		ami_corewindow_fini(&pageinfo_win->core); /* closes the window for us */
+	if(pageinfo_win->pi != NULL) {
+		res = page_info_destroy(pageinfo_win->pi);
+
+		if (res == NSERROR_OK) {
+			pageinfo_win->pi = NULL;
+			ami_corewindow_fini(&pageinfo_win->core); /* closes the window for us */
+		}
 	}
 }
 
