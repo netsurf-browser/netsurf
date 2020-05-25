@@ -709,6 +709,129 @@ browser_window_convert_to_download(struct browser_window *bw,
 
 
 /**
+ * scroll to a fragment if present
+ *
+ * \param bw browser window
+ * \return true if the scroll was sucessful
+ */
+static bool frag_scroll(struct browser_window *bw)
+{
+	struct rect rect;
+
+	if (bw->frag_id == NULL) {
+		return false;
+	}
+
+	if (!html_get_id_offset(bw->current_content,
+				bw->frag_id,
+				&rect.x0,
+				&rect.y0)) {
+		return false;
+	}
+
+	rect.x1 = rect.x0;
+	rect.y1 = rect.y0;
+	if (browser_window_set_scroll(bw, &rect) == NSERROR_OK) {
+		if (bw->current_content != NULL &&
+		    bw->history != NULL &&
+		    bw->history->current != NULL) {
+			browser_window_history_update(bw, bw->current_content);
+		}
+		return true;
+	}
+	return false;
+}
+
+
+/**
+ * Redraw browser window, set extent to content, and update title.
+ *
+ * \param  bw		  browser_window
+ * \param  scroll_to_top  move view to top of page
+ */
+static void browser_window_update(struct browser_window *bw, bool scroll_to_top)
+{
+	static const struct rect zrect = {
+		.x0 = 0,
+		.y0 = 0,
+		.x1 = 0,
+		.y1 = 0
+	};
+
+	if (bw->current_content == NULL) {
+		return;
+	}
+
+	switch (bw->browser_window_type) {
+
+	case BROWSER_WINDOW_NORMAL:
+		/* Root browser window, constituting a front end window/tab */
+		guit->window->set_title(bw->window,
+					content_get_title(bw->current_content));
+
+		browser_window_update_extent(bw);
+
+		/* if frag_id exists, then try to scroll to it */
+		/** @todo don't do this if the user has scrolled */
+		if (!frag_scroll(bw)) {
+			if (scroll_to_top) {
+				browser_window_set_scroll(bw, &zrect);
+			}
+		}
+
+		guit->window->invalidate(bw->window, NULL);
+
+		break;
+
+	case BROWSER_WINDOW_IFRAME:
+		/* Internal iframe browser window */
+		assert(bw->parent != NULL);
+		assert(bw->parent->current_content != NULL);
+
+		browser_window_update_extent(bw);
+
+		if (scroll_to_top) {
+			browser_window_set_scroll(bw, &zrect);
+		}
+
+		/* if frag_id exists, then try to scroll to it */
+		/** @todo don't do this if the user has scrolled */
+		frag_scroll(bw);
+
+		html_redraw_a_box(bw->parent->current_content, bw->box);
+		break;
+
+	case BROWSER_WINDOW_FRAME:
+		{
+			struct rect rect;
+			browser_window_update_extent(bw);
+
+			if (scroll_to_top) {
+				browser_window_set_scroll(bw, &zrect);
+			}
+
+			/* if frag_id exists, then try to scroll to it */
+			/** @todo don't do this if the user has scrolled */
+			frag_scroll(bw);
+
+			rect.x0 = scrollbar_get_offset(bw->scroll_x);
+			rect.y0 = scrollbar_get_offset(bw->scroll_y);
+			rect.x1 = rect.x0 + bw->width;
+			rect.y1 = rect.y0 + bw->height;
+
+			browser_window_invalidate_rect(bw, &rect);
+		}
+		break;
+
+	default:
+	case BROWSER_WINDOW_FRAMESET:
+		/* Nothing to do */
+		break;
+	}
+}
+
+
+/**
  * handle message for content ready on browser window
  */
 static nserror browser_window_content_ready(struct browser_window *bw)
@@ -1837,41 +1960,6 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 
 
 /**
- * scroll to a fragment if present
- *
- * \param bw browser window
- * \return true if the scroll was sucessful
- */
-static bool frag_scroll(struct browser_window *bw)
-{
-	struct rect rect;
-
-	if (bw->frag_id == NULL) {
-		return false;
-	}
-
-	if (!html_get_id_offset(bw->current_content,
-				bw->frag_id,
-				&rect.x0,
-				&rect.y0)) {
-		return false;
-	}
-
-	rect.x1 = rect.x0;
-	rect.y1 = rect.y0;
-	if (browser_window_set_scroll(bw, &rect) == NSERROR_OK) {
-		if (bw->current_content != NULL &&
-		    bw->history != NULL &&
-		    bw->history->current != NULL) {
-			browser_window_history_update(bw, bw->current_content);
-		}
-		return true;
-	}
-	return false;
-}
-
-
-/**
  * Set browser window scale.
  *
  * \param bw Browser window.
@@ -2589,7 +2677,7 @@ browser_window_redraw(struct browser_window *bw,
 			/* Set current child */
 			child = &bw->children[cur_child];
 
-			/* Get frame edge box in global coordinates */
+			/* Get frame edge area in global coordinates */
 			content_clip.x0 = (x + child->x) * child->scale;
 			content_clip.y0 = (y + child->y) * child->scale;
 			content_clip.x1 = content_clip.x0 +
@@ -3990,89 +4078,6 @@ browser_window_set_dimensions(struct browser_window *bw, int width, int height)
 		NSLOG(netsurf, INFO,
 		      "Asked to set dimensions of front end window.");
 		assert(0);
-	}
-}
-
-
-/* Exported interface, documented in netsurf/browser_window.h */
-void browser_window_update(struct browser_window *bw, bool scroll_to_top)
-{
-	static const struct rect zrect = {
-		.x0 = 0,
-		.y0 = 0,
-		.x1 = 0,
-		.y1 = 0
-	};
-
-	if (bw->current_content == NULL) {
-		return;
-	}
-
-	switch (bw->browser_window_type) {
-
-	case BROWSER_WINDOW_NORMAL:
-		/* Root browser window, constituting a front end window/tab */
-		guit->window->set_title(bw->window,
-					content_get_title(bw->current_content));
-
-		browser_window_update_extent(bw);
-
-		/* if frag_id exists, then try to scroll to it */
-		/** @todo don't do this if the user has scrolled */
-		if (!frag_scroll(bw)) {
-			if (scroll_to_top) {
-				browser_window_set_scroll(bw, &zrect);
-			}
-		}
-
-		guit->window->invalidate(bw->window, NULL);
-
-		break;
-
-	case BROWSER_WINDOW_IFRAME:
-		/* Internal iframe browser window */
-		assert(bw->parent != NULL);
-		assert(bw->parent->current_content != NULL);
-
-		browser_window_update_extent(bw);
-
-		if (scroll_to_top) {
-			browser_window_set_scroll(bw, &zrect);
-		}
-
-		/* if frag_id exists, then try to scroll to it */
-		/** @todo don't do this if the user has scrolled */
-		frag_scroll(bw);
-
-		html_redraw_a_box(bw->parent->current_content, bw->box);
-		break;
-
-	case BROWSER_WINDOW_FRAME:
-		{
-			struct rect rect;
-			browser_window_update_extent(bw);
-
-			if (scroll_to_top) {
-				browser_window_set_scroll(bw, &zrect);
-			}
-
-			/* if frag_id exists, then try to scroll to it */
-			/** @todo don't do this if the user has scrolled */
-			frag_scroll(bw);
-
-			rect.x0 = scrollbar_get_offset(bw->scroll_x);
-			rect.y0 = scrollbar_get_offset(bw->scroll_y);
-			rect.x1 = rect.x0 + bw->width;
-			rect.y1 = rect.y0 + bw->height;
-
-			browser_window_invalidate_rect(bw, &rect);
-		}
-		break;
-
-	default:
-	case BROWSER_WINDOW_FRAMESET:
-		/* Nothing to do */
-		break;
 	}
 }
 

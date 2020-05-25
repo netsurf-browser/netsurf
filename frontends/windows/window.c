@@ -1364,8 +1364,6 @@ nsws_window_resize(struct gui_window *gw,
 	}
 	nsws_window_update_forward_back(gw);
 
-	browser_window_update(gw->bw, false);
-
 	if (gw->toolbar != NULL) {
 		SendMessage(gw->toolbar, TB_SETSTATE,
 			    (WPARAM) IDM_NAV_STOP,

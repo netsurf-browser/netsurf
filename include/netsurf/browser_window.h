@@ -302,15 +302,6 @@ void browser_window_set_dimensions(struct browser_window *bw,
 
 
 /**
- * Redraw browser window, set extent to content, and update title.
- *
- * \param  bw		  browser_window
- * \param  scroll_to_top  move view to top of page
- */
-void browser_window_update(struct browser_window *bw, bool scroll_to_top);
-
-
-/**
  * Stop all fetching activity in a browser window.
  *
  * \param bw The browser window to stop activity in.
