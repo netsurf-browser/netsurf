@@ -1,7 +1,7 @@
 /*
  * Copyright 2008 Michael Drake <tlsa@netsurf-browser.org>
  * Copyright 2010 Daniel Silverstone <dsilvers@digital-scurf.org>
- * Copyright 2010 Vincent Sanders <vince@netsurf-browser.org>
+ * Copyright 2010-2020 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -26,51 +26,41 @@
 
 #include "utils/config.h"
 
-#include <assert.h>
-#include <limits.h>
-#include <stdbool.h>
-#include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
-#include <strings.h>
 #include <math.h>
 #include <nsutils/time.h>
-#include <nsutils/base64.h>
 
-#include "utils/corestrings.h"
+#include "utils/errors.h"
 #include "utils/log.h"
+#include "utils/corestrings.h"
 #include "utils/messages.h"
-#include "utils/nsurl.h"
-#include "utils/utils.h"
-#include "utils/utf8.h"
 #include "utils/nsoption.h"
-#include "netsurf/misc.h"
+#include "netsurf/types.h"
+#include "netsurf/browser_window.h"
 #include "netsurf/window.h"
-#include "netsurf/search.h"
+#include "netsurf/misc.h"
 #include "netsurf/content.h"
+#include "netsurf/search.h"
 #include "netsurf/plotters.h"
-#include "content/content_debug.h"
-#include "content/fetch.h"
+#include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "css/utils.h"
-#include "html/form_internal.h"
+#include "content/content_debug.h"
+
 #include "html/html.h"
+#include "html/form_internal.h"
 #include "javascript/js.h"
 
-#include "desktop/cookie_manager.h"
-#include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
+#include "desktop/scrollbar.h"
+#include "desktop/gui_internal.h"
 #include "desktop/download.h"
 #include "desktop/frames.h"
 #include "desktop/global_history.h"
+#include "desktop/textinput.h"
 #include "desktop/hotlist.h"
 #include "desktop/knockout.h"
-#include "desktop/scrollbar.h"
-#include "desktop/selection.h"
-#include "desktop/theme.h"
-#include "desktop/gui_internal.h"
-#include "desktop/textinput.h"
+#include "desktop/browser_history.h"
 
 /**
  * smallest scale that can be applied to a browser window
