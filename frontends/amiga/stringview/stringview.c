@@ -161,7 +161,7 @@ static uint32 myStringSearch( Class *cl, Object *obj )
 	if(searchString)
 	{
 		searchString += 3;
-		if (bufpos >= searchString - data->SearchBuffer)
+		if (bufpos >= (uint32)(searchString - data->SearchBuffer))
 			bufpos -= searchString - data->SearchBuffer;
 	}
 	else
@@ -848,7 +848,7 @@ Class *MakeStringClass( void )
 
 	if ( cl )
 	{
-		cl->cl_Dispatcher.h_Entry = (uint32(*)())myStringClassDispatcher;
+		cl->cl_Dispatcher.h_Entry = (uint32(*)(void))myStringClassDispatcher;
 	}
 
     URLHistory_Init();
