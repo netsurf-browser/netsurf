@@ -1095,6 +1095,7 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 	const char *encname = (const char *)ObtainCharsetInfo(DFCS_NUMBER, codeset,
 							DFCS_MIMENAME);
 	nsoption_set_charp(local_charset, strdup(encname));
+	nsoption_set_int(local_codeset, codeset);
 #else
 	nsoption_set_bool(download_notify, false);
 	nsoption_set_bool(font_antialiasing, false);

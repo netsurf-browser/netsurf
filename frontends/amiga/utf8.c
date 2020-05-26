@@ -38,16 +38,18 @@ static nserror ami_utf8_codesets(const char *string, size_t len, char **result, 
 	ULONG utf8_tag, local_tag;
 
 	if(to_local == false) {
-		local_tag = CSA_SourceCodeset;
+		local_tag = CSA_SourceMIBenum;
 		utf8_tag = CSA_DestMIBenum;
 	} else {
 		utf8_tag = CSA_SourceMIBenum;
-		local_tag = CSA_DestCodeset;
+		local_tag = CSA_DestMIBenum;
 	}
 
 	out = CodesetsConvertStr(CSA_Source, string,
 						CSA_SourceLen, len,
-						local_tag, CodesetsFindA(nsoption_charp(local_charset), NULL),
+#ifdef __amigaos4__
+						local_tag, nsoption_int(local_codeset),
+#endif
 						utf8_tag, CS_MIBENUM_UTF_8,
 						CSA_MapForeignChars, TRUE,
 						TAG_DONE);

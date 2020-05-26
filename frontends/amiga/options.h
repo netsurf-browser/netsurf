@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 - 2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2020 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -89,12 +89,22 @@ NSOPTION_INTEGER(redraw_tile_size_y, 0)
 NSOPTION_INTEGER(monitor_aspect_x, 0)
 NSOPTION_INTEGER(monitor_aspect_y, 0)
 NSOPTION_BOOL(accept_lang_locale, true)
+
+/* Local charset when using iconv */
 NSOPTION_STRING(local_charset, "ISO-8859-1")
+
 #ifdef __amigaos4__
-/* Options relevant for OS4 only */
+/** Options relevant for OS4 only **/
+
+/* Local charset IANA number when using codesets */
+NSOPTION_INTEGER(local_codeset, 0)
+
+/* Use ExtMem */
 NSOPTION_BOOL(use_extmem, true)
+
 #else
-/* Options relevant for OS3 only */
+/** Options relevant for OS3 only **/
+
 NSOPTION_BOOL(friend_bitmap, false)
 #endif
 
