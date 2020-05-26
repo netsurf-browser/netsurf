@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2014-2020 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -189,6 +189,7 @@ AMINS_LIB_STRUCT(Locale);
 AMINS_LIB_STRUCT(P96);
 AMINS_LIB_STRUCT(Workbench);
 
+AMINS_LIB_STRUCT(Codesets);
 AMINS_LIB_STRUCT(GuiGFX);
 
 AMINS_CLASS_STRUCT(ARexx);
@@ -248,7 +249,8 @@ bool ami_libs_open(void)
 		AMINS_LIB_OPEN("Picasso96API.library",  0, P96,         "main",        1, false)
 
 	/* Non-OS provided libraries */
-	AMINS_LIB_OPEN("guigfx.library",    9, GuiGFX,   "main",        1, false)
+	AMINS_LIB_OPEN("codesets.library",    6, Codesets,   "main",        1, false)
+	AMINS_LIB_OPEN("guigfx.library",      9, GuiGFX,     "main",        1, false)
 
 	/* NB: timer.device is opened in schedule.c (ultimately by the scheduler process).
 	 * The library base and interface are obtained there, rather than here, due to
@@ -324,6 +326,7 @@ void ami_libs_close(void)
 	AMINS_CLASS_CLOSE(Window)
 
 	/* Libraries */
+	AMINS_LIB_CLOSE(Codesets)
 	AMINS_LIB_CLOSE(GuiGFX)
 
 	AMINS_LIB_CLOSE(Asl)

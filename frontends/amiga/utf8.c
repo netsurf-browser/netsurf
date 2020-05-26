@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2020 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -22,6 +22,7 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include <proto/codesets.h>
 #include <proto/exec.h>
 #include <proto/utility.h>
 
@@ -31,20 +32,58 @@
 
 #include "amiga/utf8.h"
 
+static nserror ami_utf8_codesets(const char *string, size_t len, char **result, bool to_local)
+{
+	char *out;
+	ULONG utf8_tag, local_tag;
+
+	if(to_local == false) {
+		local_tag = CSA_SourceCodeset;
+		utf8_tag = CSA_DestMIBenum;
+	} else {
+		utf8_tag = CSA_SourceMIBenum;
+		local_tag = CSA_DestCodeset;
+	}
+
+	out = CodesetsConvertStr(CSA_Source, string,
+						CSA_SourceLen, len,
+						local_tag, CodesetsFindA(nsoption_charp(local_charset), NULL),
+						utf8_tag, CS_MIBENUM_UTF_8,
+						CSA_MapForeignChars, TRUE,
+						TAG_DONE);
+
+	if(out != NULL) {
+		*result = strdup(out);
+		CodesetsFreeA(out, NULL);
+	} else {
+		return NSERROR_BAD_ENCODING;
+	}
+
+	return NSERROR_OK;
+}
+
 nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 {
-	return utf8_from_enc(string, nsoption_charp(local_charset), len, result, NULL);
+	if(__builtin_expect((CodesetsBase == NULL), 0)) {
+		return utf8_from_enc(string, nsoption_charp(local_charset), len, result, NULL);
+	} else {
+		return ami_utf8_codesets(string, len, result, false);
+	}
 }
 
 nserror utf8_to_local_encoding(const char *string, size_t len, char **result)
 {
-	nserror err = NSERROR_NOMEM;
-	char *local_charset = ASPrintf("%s//IGNORE", nsoption_charp(local_charset));
-	if(local_charset) {
-		err = utf8_to_enc(string, local_charset, len, result);
-		FreeVec(local_charset);
+	if(__builtin_expect((CodesetsBase == NULL), 0)) {
+		nserror err = NSERROR_NOMEM;
+		char *local_charset = ASPrintf("%s//IGNORE", nsoption_charp(local_charset));
+		if(local_charset) {
+			err = utf8_to_enc(string, local_charset, len, result);
+			FreeVec(local_charset);
+		}
+		return err;
+	} else {
+		return ami_utf8_codesets(string, len, result, true);
 	}
-	return err;
 }
 
 void ami_utf8_free(char *ptr)
