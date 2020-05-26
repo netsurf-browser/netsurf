@@ -349,6 +349,11 @@ static nserror amiga_nsfont_split(const plot_font_style_t *fstyle,
  */
 static struct ami_font_cache_node *ami_font_open(const char *font, bool critical)
 {
+	if(font == NULL) {
+		NSLOG(netsurf, INFO, "Requested NULL font");
+		return NULL;
+	}
+
 	struct ami_font_cache_node *nodedata = ami_font_cache_locate(font);
 	if(nodedata) return nodedata;
 
