@@ -11,18 +11,24 @@ content/handlers/javascript/duktape/dukky.c: \
 
 BINDINGS := $(wildcard content/handlers/javascript/duktape/*.bnd)
 
+# Host tool to convert file to comiled data
+#
+$(TOOLROOT)/xxd: utils/xxd.c $(TOOLROOT)/created
+	$(VQ)echo "BUILD CC: $@"
+	$(Q)$(BUILD_CC) $(BUILD_CFLAGS) -o $@ $< $(BUILD_LDFLAGS)
+
 # Generator for the C include representing the generics.js
-$(OBJROOT)/duktape/generics.js.inc: content/handlers/javascript/duktape/generics.js
+$(OBJROOT)/duktape/generics.js.inc: content/handlers/javascript/duktape/generics.js $(TOOLROOT)/xxd
 	$(Q)$(MKDIR) -p $(OBJROOT)/duktape
 	$(VQ)echo "     XXD: $<"
-	$(Q)xxd -i $< $@.tmp
+	$(Q)$(TOOLROOT)/xxd -i $< $@.tmp
 	$(Q)sed -e 's/content_handlers_javascript_duktape_generics_js/generics_js/' $@.tmp > $@
 
 # Generator for the C include representing the polyfill.js
-$(OBJROOT)/duktape/polyfill.js.inc: content/handlers/javascript/duktape/polyfill.js
+$(OBJROOT)/duktape/polyfill.js.inc: content/handlers/javascript/duktape/polyfill.js $(TOOLROOT)/xxd
 	$(Q)$(MKDIR) -p $(OBJROOT)/duktape
 	$(VQ)echo "     XXD: $<"
-	$(Q)xxd -i $< $@.tmp
+	$(Q)$(TOOLROOT)/xxd -i $< $@.tmp
 	$(Q)sed -e 's/content_handlers_javascript_duktape_polyfill_js/polyfill_js/' $@.tmp > $@
 
 # ensure genbind generates debugging files
