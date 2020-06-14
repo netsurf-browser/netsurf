@@ -11,12 +11,6 @@ content/handlers/javascript/duktape/dukky.c: \
 
 BINDINGS := $(wildcard content/handlers/javascript/duktape/*.bnd)
 
-# Host tool to convert file to comiled data
-#
-$(TOOLROOT)/xxd: utils/xxd.c $(TOOLROOT)/created
-	$(VQ)echo "BUILD CC: $@"
-	$(Q)$(BUILD_CC) $(BUILD_CFLAGS) -o $@ $< $(BUILD_LDFLAGS)
-
 # Generator for the C include representing the generics.js
 $(OBJROOT)/duktape/generics.js.inc: content/handlers/javascript/duktape/generics.js $(TOOLROOT)/xxd
 	$(Q)$(MKDIR) -p $(OBJROOT)/duktape

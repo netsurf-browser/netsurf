@@ -24,3 +24,15 @@ S_UTILS := \
 	utils.c
 
 S_UTILS := $(addprefix utils/,$(S_UTILS))
+
+# Host tool to convert file to comiled data
+#
+$(TOOLROOT)/xxd: utils/xxd.c $(TOOLROOT)/created
+	$(VQ)echo "BUILD CC: $@"
+	$(Q)$(BUILD_CC) $(BUILD_CFLAGS) -o $@ $< $(BUILD_LDFLAGS)
+
+# Host tool to convert file to comiled data
+#
+$(TOOLROOT)/split-messages: utils/split-messages.c $(TOOLROOT)/created
+	$(VQ)echo "BUILD CC: $@"
+	$(Q)$(BUILD_CC) $(BUILD_CFLAGS) -o $@ $< $(BUILD_LDFLAGS)

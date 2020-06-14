@@ -150,6 +150,9 @@ VQ=@
 
 # Override this only if the host compiler is called something different
 BUILD_CC := cc
+BUILD_CFLAGS = -g -W -Wall -Wundef -Wpointer-arith -Wcast-align \
+	-Wwrite-strings -Wmissing-declarations -Wuninitialized \
+	-Wno-unused-parameter
 
 ifeq ($(TARGET),riscos)
   ifeq ($(HOST),riscos)

@@ -187,7 +187,7 @@ sub usage ()
     print(STDERR <<TXT );
 usage:
      $0 -l lang-code [-d def-lang-code] [-W warning] \
-	   [-o output-file] [-i input-file] [-p platform] [-f format]
+	   [-o output-file] [-i input-file] [-p platform] [-f format] [-z]
 
      $0 -l lang-code ... [input-file [output-file]]
 
