@@ -35,4 +35,4 @@ $(TOOLROOT)/xxd: utils/xxd.c $(TOOLROOT)/created
 #
 $(TOOLROOT)/split-messages: utils/split-messages.c $(TOOLROOT)/created
 	$(VQ)echo "BUILD CC: $@"
-	$(Q)$(BUILD_CC) $(BUILD_CFLAGS) -o $@ $< $(BUILD_LDFLAGS)
+	$(Q)$(BUILD_CC) $(BUILD_CFLAGS) -o $@ $< $(BUILD_LDFLAGS) -lz

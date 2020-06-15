@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <zlib.h>
 
 #include "errors.h"
 
@@ -456,25 +457,32 @@ fatmessages_read(struct param *param, struct trnsltn_entry **tlist)
 static nserror
 message_write(struct param *param, struct trnsltn_entry *tlist)
 {
-	FILE *outf;
+	gzFile outf;
+	const char *mode;
 
-	outf = fopen(param->outfilename, "w");
+	if (param->compress == 0) {
+		mode = "wbT";
+	} else {
+		mode = "wb9";
+	}
+
+	outf = gzopen(param->outfilename, mode);
 	if (outf == NULL) {
 		perror("Unable to open output file");
 		return NSERROR_PERMISSION;
 	}
 
-	fprintf(outf,
+	gzprintf(outf,
 		"# This messages file is automatically generated from %s\n"
 		"# at build-time.  Please go and edit that instead of this.\n\n",
 		param->infilename);
 
 	while (tlist != NULL) {
-		fprintf(outf, "%s:%s\n", tlist->key, tlist->value);
+		gzprintf(outf, "%s:%s\n", tlist->key, tlist->value);
 		tlist = tlist->next;
 	}
 
-	fclose(outf);
+	gzclose(outf);
 
 	return NSERROR_OK;
 }
