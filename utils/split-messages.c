@@ -172,8 +172,13 @@ static nserror process_cmdline(int argc, char **argv, struct param *param)
 	return NSERROR_OK;
 }
 
-/***
- * extract key/value from a line
+
+/**
+ * extract key/value from a line of input
+ *
+ * \retun NSERROR_OK and key_out and value_out updated
+ *        NSERROR_NOT_FOUND if not a key/value input line
+ *        NSERROR_INVALID if the line is and invalid format (missing colon)
  */
 static nserror
 get_key_value(char *line, ssize_t linelen, char **key_out, char **value_out)
@@ -223,6 +228,10 @@ get_key_value(char *line, ssize_t linelen, char **key_out, char **value_out)
 	return NSERROR_OK;
 }
 
+
+/**
+ * extract language, platform and token elements from a string
+ */
 static nserror
 get_lang_plat_tok(char *str, char **lang_out, char **plat_out, char **tok_out)
 {
@@ -259,6 +268,9 @@ get_lang_plat_tok(char *str, char **lang_out, char **plat_out, char **tok_out)
 }
 
 
+/**
+ * reverse order of entries in a translation list
+ */
 static nserror
 translation_list_reverse(struct trnsltn_entry **tlist)
 {
@@ -280,6 +292,7 @@ translation_list_reverse(struct trnsltn_entry **tlist)
 	*tlist = prev;
 	return NSERROR_OK;
 }
+
 
 /**
  * find a translation entry from a key
@@ -312,6 +325,9 @@ translation_from_key(struct trnsltn_entry *tlist,
 }
 
 
+/**
+ * create and link an entry into translation list
+ */
 static nserror
 translation_add(struct trnsltn_entry **tlist,
 		const char *lang,
@@ -334,6 +350,9 @@ translation_add(struct trnsltn_entry **tlist,
 }
 
 
+/**
+ * replace key and value on a translation entry
+ */
 static nserror
 translation_replace(struct trnsltn_entry *tran,
 		const char *lang,
@@ -349,6 +368,7 @@ translation_replace(struct trnsltn_entry *tran,
 
 	return NSERROR_OK;
 }
+
 
 /**
  * process a line of the input file
@@ -395,7 +415,8 @@ messageline(struct param *param,
 				 * new entry is in selected language and
 				 * current entry is not
 				 */
-				res = translation_replace(tran, lang, tok, value);			} else if ((strcmp(lang, param->fallback) != 0) &&
+				res = translation_replace(tran, lang, tok, value);
+			} else if ((strcmp(lang, param->fallback) != 0) &&
 				   (strcmp(tran->lang, param->fallback) != 0)) {
 				/*
 				 * new entry is in fallback language and
@@ -417,6 +438,9 @@ messageline(struct param *param,
 }
 
 
+/**
+ * read fatmessages file and create a translation entry list
+ */
 static nserror
 fatmessages_read(struct param *param, struct trnsltn_entry **tlist)
 {
@@ -454,6 +478,10 @@ fatmessages_read(struct param *param, struct trnsltn_entry **tlist)
 	return res;
 }
 
+
+/**
+ * write output in NetSurf messages format
+ */
 static nserror
 message_write(struct param *param, struct trnsltn_entry *tlist)
 {
