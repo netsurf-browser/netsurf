@@ -123,7 +123,15 @@ S_FRONTEND := \
 # Note this is deliberately *not* expanded here as common and image
 #   are not yet available
 SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_FRONTEND)
+
+# ---------------------------------------------------------------------------
+# Target setup
+# ---------------------------------------------------------------------------
+
 EXETARGET := ns$(SUBTARGET)$(PRGSUFFIX)
+
+# The filter and target for split messages
+MESSAGES_FILTER=atari
 
 # ----------------------------------------------------------------------------
 # Install target
@@ -139,10 +147,6 @@ ATARI_FONT_TMP_DIR := $(DEPROOT)/../
 ATARI_FONT_SOURCE_DIR := $(ATARI_FONT_TMP_DIR)$(ATARI_FONT_NAME)/
 ATARI_GENERIC_RESOURCES := de en it ja nl
 ATARI_RESOURCES := $(addprefix resources/,$(ATARI_GENERIC_RESOURCES))
-
-# ----------------------------------------------------------------------------
-# Install target
-# ----------------------------------------------------------------------------
 
 install-atari:
 
@@ -196,8 +200,7 @@ endif
 	$(Q)cp resources/internal.css $(ATARI_TARGET_DIR)res/internal.css
 	$(Q)cp resources/SearchEngines $(ATARI_TARGET_DIR)res/search
 	$(Q)cp resources/ca-bundle $(ATARI_TARGET_DIR)res/cabundle
-	$(Q)$(RM) $(ATARI_TARGET_DIR)res/messages
-	$(Q)$(SPLIT_MESSAGES) -l en -p atari -f messages -o $(ATARI_TARGET_DIR)res/messages resources/FatMessages
+	$(Q)$(INSTALL) -m 644 -T $(MESSAGES_TARGET)/en/Messages $(ATARI_TARGET_DIR)res/messages
 	$(Q)cp resources/en/welcome.html $(ATARI_TARGET_DIR)res/welcome.html
 	$(Q)cp resources/en/licence.html $(ATARI_TARGET_DIR)res/licence.html
 	$(Q)cp resources/en/credits.html $(ATARI_TARGET_DIR)res/credits.html

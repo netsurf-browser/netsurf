@@ -86,10 +86,9 @@ NSIS_VERBOSE := 0
 endif
 
 # installer messages generation
-$(OBJROOT)/messages-en: resources/FatMessages
-	$(VQ)echo "MSGSPLIT: Language: en Filter: win"
-	$(Q)$(RM) $@
-	$(Q)$(SPLIT_MESSAGES) -l en -p win -f messages -o $@ $<
+$(OBJROOT)/messages-en: $(MESSAGES_TARGET)/en/Messages
+	$(VQ)echo "   MSGCP: $< $@"
+	$(Q)$(INSTALL) -m 644 -T $< $@
 
 netsurf-installer.exe: $(EXETARGET) $(WIN_RES_INS_OBJ)
 	$(VQ)echo "MAKENSIS: $@"

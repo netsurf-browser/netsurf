@@ -138,7 +138,6 @@ MKDIR=mkdir
 TOUCH=touch
 STRIP?=strip
 INSTALL?=install
-SPLIT_MESSAGES=$(PERL) utils/split-messages.pl
 
 # build verbosity
 ifeq ($(V),1)
