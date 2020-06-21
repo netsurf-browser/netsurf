@@ -676,11 +676,11 @@ S_COMMON := \
 # 1 = Language
 define split_messages
 
-$$(MESSAGES_TARGET)/$(1)/Messages: resources/FatMessages
+$$(MESSAGES_TARGET)/$(1)/Messages: resources/FatMessages $$(TOOLROOT)/split-messages
 	$$(VQ)echo "MSGSPLIT: Language: $(1) Filter: $$(MESSAGES_FILTER)"
 	$$(Q)$$(MKDIR) -p $$(MESSAGES_TARGET)/$(1)
 	$$(Q)$$(RM) $$@
-	$$(Q)$$(SPLIT_MESSAGES) -l $(1) -p $$(MESSAGES_FILTER) -f messages -o $$@ -z $$<
+	$$(Q)$$(TOOLROOT)/split-messages -l $(1) -p $$(MESSAGES_FILTER) -f messages -o $$@ -z $$<
 
 CLEAN_MESSAGES += $$(MESSAGES_TARGET)/$(1)/Messages
 MESSAGES += $$(MESSAGES_TARGET)/$(1)/Messages
