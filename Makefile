@@ -638,6 +638,12 @@ POSTEXES :=
 include frontends/Makefile
 
 # ----------------------------------------------------------------------------
+# Build tools setup
+# ----------------------------------------------------------------------------
+
+include tools/Makefile
+
+# ----------------------------------------------------------------------------
 # General source file setup
 # ----------------------------------------------------------------------------
 
@@ -743,10 +749,6 @@ clean-target:
 	$(Q)$(RM) $(EXETARGET)
 CLEANS += clean-target
 
-clean-testament:
-	$(VQ)echo "   CLEAN: testament.h"
-	$(Q)$(RM) $(OBJROOT)/testament.h
-CLEANS += clean-testament
 
 clean-builddir:
 	$(VQ)echo "   CLEAN: $(OBJROOT)"
@@ -754,10 +756,7 @@ clean-builddir:
 CLEANS += clean-builddir
 
 
-.PHONY: all-program testament
-
-testament $(OBJROOT)/testament.h:
-	$(Q)$(PERL) utils/git-testament.pl $(CURDIR) $(OBJROOT)/testament.h
+.PHONY: all-program
 
 all-program: $(EXETARGET) $(POSTEXES)
 

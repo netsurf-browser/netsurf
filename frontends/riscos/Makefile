@@ -178,7 +178,7 @@ netsurf.zip: $(EXETARGET)
 	$(eval $@_TMPDIR := $(shell mktemp -d))
 	$(Q) $(RM) $@
 	$(Q) cp -rLvp $(FRONTEND_SOURCE_DIR)/appdir $($@_TMPDIR)/!NetSurf
-	$(Q) $(CURDIR)/utils/git-date.sh $(FRONTEND_SOURCE_DIR)/distribution
+	$(Q) $(CURDIR)/tools/git-date.sh $(FRONTEND_SOURCE_DIR)/distribution
 	$(Q) rsync --archive --verbose $(FRONTEND_SOURCE_DIR)/distribution/!Boot $($@_TMPDIR)
 	$(Q) rsync --archive --verbose $(FRONTEND_SOURCE_DIR)/distribution/!System $($@_TMPDIR)
 	$(Q) rsync --archive --verbose $(FRONTEND_SOURCE_DIR)/distribution/3rdParty $($@_TMPDIR)
