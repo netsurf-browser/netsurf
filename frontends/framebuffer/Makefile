@@ -122,27 +122,10 @@ FB_IMAGE_throbber6 := throbber/throbber6.png
 FB_IMAGE_throbber7 := throbber/throbber7.png
 FB_IMAGE_throbber8 := throbber/throbber8.png
 
-# local compiler flags
-ifeq ($(HOST),OpenBSD)
-    BUILD_CFLAGS += $(shell $(PKG_CONFIG) --cflags libpng)
-    BUILD_LDFLAGS += $(shell $(PKG_CONFIG) --libs libpng)
-else
-  ifeq ($(HOST),FreeBSD)
-      BUILD_CFLAGS += $(shell $(PKG_CONFIG) --cflags libpng)
-      BUILD_LDFLAGS += $(shell $(PKG_CONFIG) --libs libpng)
-  else
-      BUILD_CFLAGS +=
-      BUILD_LDFLAGS += -lpng
-  endif
-endif
-
-# Host tool to convert image bitmaps to source code.
-#
-# convert_image dependd on fb_bitmap.h so that if we change that
+# make convert_image depend on fbtk.h so that if we change that
 # header, we get new images built.
-$(TOOLROOT)/convert_image: $(TOOLROOT)/created $(FRONTEND_SOURCE_DIR)/convert_image.c $(FRONTEND_SOURCE_DIR)/fbtk.h
-	$(VQ)echo "BUILD CC: $@"
-	$(Q)$(BUILD_CC) $(BUILD_CFLAGS) -o $@ $(FRONTEND_SOURCE_DIR)/convert_image.c $(BUILD_LDFLAGS)
+$(TOOLROOT)/convert_image: $(FRONTEND_SOURCE_DIR)/fbtk.h
+
 
 # 1: input file
 # 2: output file
@@ -163,11 +146,6 @@ $(eval $(foreach V,$(filter FB_IMAGE_%,$(.VARIABLES)),$(call convert_image,$(FRO
 
 # Internal fonts to generate
 FB_FONT_internal_ns-sans := fonts/glyph_data
-
-# Internal font conversion
-$(TOOLROOT)/convert_font: $(TOOLROOT)/created $(FRONTEND_SOURCE_DIR)/convert_font.c
-	$(VQ)echo "BUILD CC: $@"
-	$(Q)$(BUILD_CC) -o $@ $(FRONTEND_SOURCE_DIR)/convert_font.c
 
 # 1: input file
 # 2: output source code file

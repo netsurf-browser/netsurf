@@ -271,7 +271,7 @@ struct font_data {
 	int glyphs;
 };
 
-bool generate_font_header(const char *path, struct font_data *data)
+static bool generate_font_header(const char *path, struct font_data *data)
 {
 	FILE *fp;
 	int s;
@@ -307,7 +307,7 @@ bool generate_font_header(const char *path, struct font_data *data)
 
 }
 
-bool generate_font_source(const char *path, struct font_data *data)
+static bool generate_font_source(const char *path, struct font_data *data)
 {
 	int s, i, y;
 	int limit;
@@ -624,7 +624,7 @@ uint8_t frag[16][5] = {
 	  THREE_S__ }
 };
 
-void build_codepoint(int id, bool italic, uint8_t *code_point)
+static void build_codepoint(int id, bool italic, uint8_t *code_point)
 {
 	int shift = 0;
 	int l;
@@ -1002,7 +1002,7 @@ static bool parse_chunk(struct parse_context *ctx, const char *buf, size_t len,
 }
 
 
-bool load_font(const char *path, struct font_data **data)
+static bool load_font(const char *path, struct font_data **data)
 {
 	struct parse_context ctx;
 	struct font_data *d;
@@ -1033,7 +1033,7 @@ bool load_font(const char *path, struct font_data **data)
 	/* Find filesize */
 	fseek(fp, 0L, SEEK_END);
 	file_len = ftell(fp);
-	if (file_len == -1) {
+	if ((long)file_len == -1) {
 		LOG(LOG_ERROR, "Could not size input file\n");
 		free(d);
 		fclose(fp);
