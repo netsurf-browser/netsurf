@@ -63,6 +63,26 @@ $(TOOLROOT)/convert_image: utils/convert_image.c $(TOOLROOT)/created
 
 
 # Build too to perform font conversion
+#
 $(TOOLROOT)/convert_font: utils/convert_font.c $(TOOLROOT)/created
 	$(VQ)echo "BUILD CC: $@"
 	$(Q)$(BUILD_CC) $(BUILD_CFLAGS) -o $@ $<
+
+
+# idna
+#
+IDNA_UNICODE_MAJOR=11
+
+utils/DerivedJoiningType.txt:
+	curl -o $@ "https://www.unicode.org/Public/$(IDNA_UNICODE_MAJOR).0.0/ucd/extracted/DerivedJoiningType.txt"
+
+utils/IdnaMappingTable.txt:
+	curl -o $@ "https://www.unicode.org/Public/idna/$(IDNA_UNICODE_MAJOR).0.0/IdnaMappingTable.txt"
+
+utils/idna-tables-properties.csv:
+	curl -o $@ "https://www.iana.org/assignments/idna-tables-$(IDNA_UNICODE_MAJOR).0.0/idna-tables-properties.csv"
+
+
+utils/idna_props.h: utils/DerivedJoiningType.txt utils/idna-tables-properties.csv
+	$(VQ)echo "    IDNA: $@"
+	$(Q)$(PERL) utils/idna-derived-props-gen.pl -o $@ -p utils/idna-tables-properties.csv -j utils/DerivedJoiningType.txt
