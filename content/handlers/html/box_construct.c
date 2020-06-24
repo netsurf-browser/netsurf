@@ -25,6 +25,7 @@
  * Implementation of conversion from DOM tree to box tree.
  */
 
+#include <string.h>
 #include <dom/dom.h>
 
 #include "utils/errors.h"
@@ -967,20 +968,20 @@ box_text_transform(char *s, unsigned int len, enum css_text_transform_e tt)
 		case CSS_TEXT_TRANSFORM_UPPERCASE:
 			for (i = 0; i < len; ++i)
 				if ((unsigned char) s[i] < 0x80)
-					s[i] = toupper(s[i]);
+					s[i] = ascii_to_upper(s[i]);
 			break;
 		case CSS_TEXT_TRANSFORM_LOWERCASE:
 			for (i = 0; i < len; ++i)
 				if ((unsigned char) s[i] < 0x80)
-					s[i] = tolower(s[i]);
+					s[i] = ascii_to_lower(s[i]);
 			break;
 		case CSS_TEXT_TRANSFORM_CAPITALIZE:
 			if ((unsigned char) s[0] < 0x80)
-				s[0] = toupper(s[0]);
+				s[0] = ascii_to_upper(s[0]);
 			for (i = 1; i < len; ++i)
 				if ((unsigned char) s[i] < 0x80 &&
-						isspace(s[i - 1]))
-					s[i] = toupper(s[i]);
+						ascii_is_space(s[i - 1]))
+					s[i] = ascii_to_upper(s[i]);
 			break;
 		default:
 			break;
