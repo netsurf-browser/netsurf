@@ -23,6 +23,7 @@
  * plain text content handling implementation.
  */
 
+#include <string.h>
 #include <parserutils/input/inputstream.h>
 
 #include "utils/errors.h"

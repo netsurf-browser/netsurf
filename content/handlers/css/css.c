@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
 #include <assert.h>
 #include <libwapcaplet/libwapcaplet.h>
 #include <dom/dom.h>

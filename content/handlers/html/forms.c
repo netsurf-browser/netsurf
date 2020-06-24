@@ -21,6 +21,8 @@
  * HTML form handling implementation
  */
 
+#include <string.h>
+
 #include "utils/config.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"

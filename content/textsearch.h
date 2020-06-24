@@ -28,7 +28,26 @@
 
 struct textsearch_context;
 struct content;
+struct hlcache_handle;
 struct box;
+
+/**
+ * Free text search a content
+ *
+ * \param[in] h Handle to content to search.
+ * \param[in] context The context passed to gui table search handlers
+ * \param[in] flags The flags that control the search
+ * \param[in] The string being searched for.
+ * \retun NSERROR_OK on success else error code on faliure
+ */
+nserror content_textsearch(struct hlcache_handle *h, void *context, search_flags_t flags, const char *string);
+
+/**
+ * Clear a search
+ *
+ * \param[in] h Handle to content to clear search from.
+ */
+nserror content_textsearch_clear(struct hlcache_handle *h);
 
 /**
  * Ends the search process, invalidating all state freeing the list of

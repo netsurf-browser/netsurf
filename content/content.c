@@ -23,6 +23,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <nsutils/time.h>
 
 #include "netsurf/inttypes.h"

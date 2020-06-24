@@ -29,7 +29,6 @@
 
 #include <libwapcaplet/libwapcaplet.h>
 
-#include "desktop/search.h" /* search flags enum */
 #include "netsurf/content_type.h"
 #include "netsurf/mouse.h" /* mouse state enums */
 #include "netsurf/console.h" /* console state and flags enums */
@@ -420,24 +419,6 @@ bool content_scroll_at_point(struct hlcache_handle *h,
  */
 bool content_drop_file_at_point(struct hlcache_handle *h,
 		int x, int y, char *file);
-
-/**
- * Free text search a content
- *
- * \param[in] h Handle to content to search.
- * \param[in] context The context passed to gui table search handlers
- * \param[in] flags The flags that control the search
- * \param[in] The string being searched for.
- * \retun NSERROR_OK on success else error code on faliure
- */
-nserror content_textsearch(struct hlcache_handle *h, void *context, search_flags_t flags, const char *string);
-
-/**
- * Clear a search
- *
- * \param[in] h Handle to content to clear search from.
- */
-nserror content_textsearch_clear(struct hlcache_handle *h);
 
 
 /**

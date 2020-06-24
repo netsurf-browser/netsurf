@@ -23,6 +23,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "netsurf/clipboard.h"
 #include "netsurf/browser_window.h"

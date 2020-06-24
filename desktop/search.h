@@ -16,11 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NETSURF_DESKTOP_SEARCH_H_
-#define _NETSURF_DESKTOP_SEARCH_H_
+/**
+ * \file
+ * Browseing window text search interface
+ */
 
-#include <ctype.h>
-#include <string.h>
+#ifndef NETSURF_DESKTOP_SEARCH_H_
+#define NETSURF_DESKTOP_SEARCH_H_
 
 struct browser_window;
 

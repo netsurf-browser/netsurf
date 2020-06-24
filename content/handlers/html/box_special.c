@@ -26,6 +26,7 @@
  * Implementation of special element handling conversion.
  */
 
+#include <string.h>
 #include <stdbool.h>
 #include <dom/dom.h>
 

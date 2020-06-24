@@ -22,6 +22,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "utils/utils.h"
 #include "utils/log.h"

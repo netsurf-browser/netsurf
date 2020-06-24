@@ -22,6 +22,8 @@
  * Implementation of HTML content DOM event handling.
  */
 
+#include <string.h>
+
 #include "utils/config.h"
 #include "utils/corestrings.h"
 #include "utils/nsoption.h"

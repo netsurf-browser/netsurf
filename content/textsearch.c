@@ -25,9 +25,11 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "utils/errors.h"
 #include "utils/utils.h"
+#include "utils/ascii.h"
 #include "netsurf/types.h"
 #include "desktop/selection.h"
 
@@ -507,11 +509,11 @@ content_textsearch_find_pattern(const char *string,
 			if (ch != '#') {
 				/* scan forwards until we find a match for
 				   this char */
-				if (!case_sens) ch = toupper(ch);
+				if (!case_sens) ch = ascii_to_upper(ch);
 				while (s < es) {
 					if (case_sens) {
 						if (*s == ch) break;
-					} else if (toupper(*s) == ch)
+					} else if (ascii_to_upper(*s) == ch)
 						break;
 					s++;
 				}
@@ -548,7 +550,7 @@ content_textsearch_find_pattern(const char *string,
 				if (case_sens)
 					matches = (*s == ch);
 				else
-					matches = (toupper(*s) == toupper(ch));
+					matches = (ascii_to_upper(*s) == ascii_to_upper(ch));
 			}
 			if (matches && first) {
 				ss = s;  /* remember first non-'*' char */

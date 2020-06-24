@@ -26,7 +26,7 @@
 #include <stdbool.h>
 
 #include "utils/errors.h"
-#include "content/content.h"
+#include "content/textsearch.h"
 #include "netsurf/types.h"
 #include "netsurf/browser_window.h"
 

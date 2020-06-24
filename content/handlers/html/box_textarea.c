@@ -21,6 +21,7 @@
  * Box tree treeview box replacement (implementation).
  */
 
+#include <string.h>
 #include <dom/dom.h>
 
 #include "utils/config.h"
