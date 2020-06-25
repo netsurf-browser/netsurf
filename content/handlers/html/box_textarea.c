@@ -30,7 +30,6 @@
 #include "netsurf/keypress.h"
 #include "netsurf/misc.h"
 #include "desktop/textarea.h"
-#include "desktop/gui_internal.h"
 
 #include "html/private.h"
 #include "html/interaction.h"

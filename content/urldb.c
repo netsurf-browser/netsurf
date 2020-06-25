@@ -111,7 +111,6 @@
 #include "utils/http.h"
 #include "netsurf/bitmap.h"
 #include "desktop/cookie_manager.h"
-#include "desktop/gui_internal.h"
 
 #include "content/content.h"
 #include "content/urldb.h"

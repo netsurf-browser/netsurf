@@ -34,8 +34,6 @@
 #include "content/content.h"
 #include "javascript/js.h"
 
-#include "desktop/gui_internal.h"
-#include "desktop/gui_table.h"
 #include "netsurf/bitmap.h"
 
 #include "html/private.h"

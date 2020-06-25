@@ -50,7 +50,6 @@
 #include "desktop/knockout.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"
-#include "desktop/gui_internal.h"
 
 #include "html/html.h"
 #include "html/private.h"
