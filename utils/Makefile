@@ -82,7 +82,9 @@ utils/IdnaMappingTable.txt:
 utils/idna-tables-properties.csv:
 	curl -o $@ "https://www.iana.org/assignments/idna-tables-$(IDNA_UNICODE_MAJOR).0.0/idna-tables-properties.csv"
 
-
+# the idna props header must be explicitly rebuilt
+ifneq ($(filter $(MAKECMDGOALS),utils/idna_props.h),)
 utils/idna_props.h: utils/DerivedJoiningType.txt utils/idna-tables-properties.csv
 	$(VQ)echo "    IDNA: $@"
 	$(Q)$(PERL) utils/idna-derived-props-gen.pl -o $@ -p utils/idna-tables-properties.csv -j utils/DerivedJoiningType.txt
+endif
