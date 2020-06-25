@@ -24,6 +24,8 @@
 #ifndef NETSURF_HTML_INTERACTION_H
 #define NETSURF_HTML_INTERACTION_H
 
+#include "desktop/search.h" /* search flags enum */
+
 /**
  * Context for scrollbar
  */

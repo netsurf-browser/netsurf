@@ -31,7 +31,6 @@
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "netsurf/content_type.h"
-#include "desktop/search.h" /* search flags enum */
 #include "netsurf/mouse.h" /* mouse state enums */
 
 struct nsurl;
@@ -43,6 +42,7 @@ struct object_params;
 struct content;
 struct redraw_context;
 struct rect;
+struct browser_window;
 struct browser_window_features;
 struct textsearch_context;
 struct box;
