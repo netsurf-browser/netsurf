@@ -125,12 +125,12 @@ typedef struct plot_font_style {
 
 
 /* Darken a colour by taking seven eighths of each channel's intensity */
-#define half_darken_colour(c1)				 		\
+#define half_darken_colour(c1)						\
 	((((7 * (c1 & 0xff00ff)) >> 3) & 0xff00ff) |			\
 	 (((7 * (c1 & 0x00ff00)) >> 3) & 0x00ff00))
 
 /* Darken a colour by taking three quarters of each channel's intensity */
-#define darken_colour(c1)				 		\
+#define darken_colour(c1)						\
 	((((3 * (c1 & 0xff00ff)) >> 2) & 0xff00ff) |			\
 	 (((3 * (c1 & 0x00ff00)) >> 2) & 0x00ff00))
 
@@ -164,11 +164,24 @@ typedef struct plot_font_style {
 	(((((c0 & 0xff00ff) + (c1 & 0xff00ff)) >> 1) & 0xff00ff) |	\
 	 ((((c0 & 0x00ff00) + (c1 & 0x00ff00)) >> 1) & 0x00ff00))
 
-/* Get the percieved lightness of the supplied colour, c0. */
+/**
+ * Obtain the luminance of a colour according to ITU BT.601
+ *
+ * ITU BT.601 formula is
+ * Y = 0.299 R + 0.587 G + 0.114 B
+ * actual values are
+ * Y = 76/255 R + 150/255 G + 29/255 B
+ * Y = 0.298 R + 0.588 G + 0.113 B
+ *
+ * @note if additional performance is required this could be altered to
+ *       Y = 0.375 R + 0.5 G + 0.125 B
+ *       with
+ *       Y = (R << 1 + R + G << 2 + B) >> 3
+ */
 #define colour_lightness(c0)						\
 	((((c0 & 0x0000ff) *  77) >>  8) +				\
 	 (((c0 & 0x00ff00) * 151) >> 16) +				\
-	 (((c0 & 0xff0000) *  28) >> 24))
+	 (((c0 & 0xff0000) *  30) >> 24))
 
 /* Choose either black or white, depending on which is nearest to the
  * percieved lightness of the supplied colour, c0. */
