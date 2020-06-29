@@ -20,21 +20,6 @@ h1, h2, h3, h4, h5, h6, h7, p, ul, dl, ol, table {
 	margin-left: 5mm;
 	margin-right: 5mm; }
 
-a:link {
-	text-decoration: underline;
-	color: #00f; }
-
-a:visited {
-	text-decoration: underline;
-	color: #60a; }
-
-a:hover {
-	text-decoration: none; }
-
-a:active {
-	text-decoration: underline;
-	color: #f00; }
-
 h1 {
 	font-size: 200%;
 	font-weight: bold;
@@ -87,24 +72,9 @@ dd > ul {
 	padding-left: 0;
 	margin-bottom: 1em; }
 
-.banner {
-	margin: 0;
-	padding: 0;
-	background-color: #94adff;
-	color: black;
-	text-align: left; }
-
-.banner img {
-	border: none;
-	color: #000;
-	height: 86px;
-	width: 308px;
-	display: block; }
-
 .footer {
 	clear: both;
 	font-style: italic;
-	color:#666;
 	text-align: right; }
 
 .footer p {
