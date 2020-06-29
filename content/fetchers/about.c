@@ -1642,7 +1642,7 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 			elen = nsoption_snoptionf(buffer + slen,
 					sizeof buffer - slen,
 					opt_loop,
-					"<tr>"
+					"<tr class=\"ns-even-bg\">"
 						"<th class=\"ns-border\">%k</th>"
 						"<td class=\"ns-border\">%t</td>"
 						"<td class=\"ns-border\">%p</td>"

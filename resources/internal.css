@@ -226,9 +226,6 @@ body#configlist table.config {
 	width: 100%;
 	box-sizing: border-box }
 
-body#configlist table.config tr:nth-child(2n-1) {
-	background: #eee; }
-
 body#configlist table.config tr:first-child th {
 	text-align: left;
 	font-weight: bold;
