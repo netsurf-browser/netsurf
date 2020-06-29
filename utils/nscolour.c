@@ -68,24 +68,31 @@ static nserror nscolour__get(
 {
 	nserror res;
 	bool dark_mode;
-	colour bg_temp;
+	colour bg_sys;
 
 	assert(name_bg != NULL);
 	assert(name_fg != NULL);
 	assert(bg != NULL);
 	assert(fg != NULL);
 
-	res = ns_system_colour_char(name_bg, &bg_temp);
+	/* user configured background colour */
+	res = ns_system_colour_char(name_bg, &bg_sys);
 	if (res != NSERROR_OK) {
 		return res;
 	}
 
+	/* user configured foreground colour */
 	res = ns_system_colour_char(name_fg, fg);
 	if (res != NSERROR_OK) {
 		return res;
 	}
 
-	*bg = mix_colour(bg_temp, *fg, 255 * bg_num / bg_den);
+	/* if there is a valid background fraction apply it */
+	if (bg_num < bg_den) {
+		*bg = mix_colour(bg_sys, *fg, 255 * bg_num / bg_den);
+	} else {
+		*bg = bg_sys;
+	}
 
 	dark_mode = colour_lightness(*fg) > colour_lightness(*bg);
 
@@ -114,7 +121,7 @@ static nserror nscolour__get(
 	}
 
 	if (border != NULL) {
-		*border = mix_colour(*fg, bg_temp, 255 * 8 / 32);
+		*border = mix_colour(*fg, bg_sys, 255 * 8 / 32);
 	}
 
 	return NSERROR_OK;
