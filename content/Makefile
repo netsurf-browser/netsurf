@@ -3,7 +3,6 @@
 S_CONTENT :=			\
 	content.c		\
 	content_factory.c	\
-	dirlist.c		\
 	fetch.c			\
 	hlcache.c		\
 	llcache.c		\
@@ -18,10 +17,12 @@ ifeq ($(NETSURF_FS_BACKING_STORE),YES)
 endif
 
 
-# Content fetchers sources
+# Content fetcher sources
 include content/fetchers/Makefile
 
-# Content handlers
+S_FETCHERS := $(addprefix content/,$(S_FETCHERS))
+
+# Content handler sources
 include content/handlers/Makefile
 
 S_CONTENT := $(addprefix content/,$(S_CONTENT))

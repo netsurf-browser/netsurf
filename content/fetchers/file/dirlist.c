@@ -32,7 +32,7 @@
 #include "netsurf/types.h"
 #include "netsurf/plot_style.h"
 
-#include "content/dirlist.h"
+#include "dirlist.h"
 #include "desktop/system_colour.h"
 
 static int dirlist_filesize_calculate(unsigned long *bytesize);

@@ -16,14 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Generate HTML content for displaying directory listings (interface).
+/**
+ * \file
+ * interface to generate HTML content for displaying directory listings.
  *
  * These functions should in general be called via the content interface.
  */
 
-#ifndef _NETSURF_CONTENT_DIRLIST_H_
-#define _NETSURF_CONTENT_DIRLIST_H_
+#ifndef NETSURF_CONTENT_DIRLIST_H_
+#define NETSURF_CONTENT_DIRLIST_H_
 
 #include <stdbool.h>
 

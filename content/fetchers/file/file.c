@@ -57,10 +57,10 @@
 #include "netsurf/fetch.h"
 #include "desktop/gui_internal.h"
 
-#include "content/dirlist.h"
 #include "content/fetch.h"
 #include "content/fetchers.h"
-#include "content/fetchers/file.h"
+#include "dirlist.h"
+#include "file.h"
 
 /* Maximum size of read buffer */
 #define FETCH_FILE_MAX_BUF_SIZE (1024 * 1024)
