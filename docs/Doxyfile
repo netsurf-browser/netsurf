@@ -813,6 +813,7 @@ INPUT                  = docs \
                          desktop \
                          content \
                          content/fetchers \
+                         content/fetchers/file \
                          content/handlers/image \
                          content/handlers/css \
                          content/handlers/javascript \
