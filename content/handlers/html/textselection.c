@@ -448,7 +448,7 @@ static unsigned selection_label_subtree(struct box *box, unsigned idx)
 
 	assert(box != NULL);
 
-	box = box->children;
+	child = box->children;
 
 	box->byte_offset = idx;
 
