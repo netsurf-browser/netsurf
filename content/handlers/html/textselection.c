@@ -444,7 +444,11 @@ selection_copy(struct box *box,
  */
 static unsigned selection_label_subtree(struct box *box, unsigned idx)
 {
-	struct box *child = box->children;
+	struct box *child;
+
+	assert(box != NULL);
+
+	box = box->children;
 
 	box->byte_offset = idx;
 
@@ -474,6 +478,10 @@ html_textselection_redraw(struct content *c,
 	nserror res;
 	html_content *html = (html_content *)c;
 	struct rdw_info rdw;
+
+	if (html->layout == NULL) {
+		return NSERROR_INVALID;
+	}
 
 	rdw.inited = false;
 
@@ -505,6 +513,10 @@ html_textselection_copy(struct content *c,
 	save_text_whitespace before = WHITESPACE_NONE;
 	bool first = true;
 
+	if (html->layout == NULL) {
+		return NSERROR_INVALID;
+	}
+
 	return selection_copy(html->layout,
 			      &html->len_ctx,
 			      start_idx,
@@ -522,6 +534,10 @@ html_textselection_get_end(struct content *c, unsigned *end_idx)
 {
 	html_content *html = (html_content *)c;
 	unsigned root_idx;
+
+	if (html->layout == NULL) {
+		return NSERROR_INVALID;
+	}
 
 	root_idx = 0;
 
