@@ -26,24 +26,12 @@
 #ifndef NETSURF_HTML_TEXTPLAIN_H
 #define NETSURF_HTML_TEXTPLAIN_H
 
-struct content;
-struct rect;
-
 /**
  * Initialise the text content handler
  *
  * \return NSERROR_OK on success else appropriate error code.
  */
 nserror textplain_init(void);
-
-
-/**
- * Retrieve the size (in bytes) of text data
- *
- * \param[in] c Content to retrieve size of
- * \return Size, in bytes, of data
- */
-size_t textplain_size(struct content *c);
 
 
 #endif
