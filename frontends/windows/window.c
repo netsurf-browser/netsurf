@@ -416,7 +416,11 @@ nsws_window_urlbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	/* override messages */
 	switch (msg) {
 	case WM_CHAR:
-		if (wparam == 13) {
+		if (wparam == 1) {
+			/* handle ^A */
+			SendMessage(hwnd, EM_SETSEL, 0, -1);
+			return 1;
+		} else if (wparam == 13) {
 			SendMessage(gw->main, WM_COMMAND, IDC_MAIN_LAUNCH_URL, 0);
 			return 0;
 		}
