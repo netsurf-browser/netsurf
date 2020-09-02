@@ -185,7 +185,7 @@ GTK_RESOURCES_LIST := \
 	$(wildcard $(NSGTK_RESOURCES_DIR)/*.gtk$(NETSURF_GTK_MAJOR).ui)
 
 # translations with more than just Messages files
-GTK_TRANSLATIONS_HTML := de en fr it ja nl
+GTK_TRANSLATIONS_HTML := de en fr it ja nl zh_CN
 
 # destination for installed resources is the first entry in the gtk resource path
 NSGTK_RESOURCES_DESTDIR := $(DESTDIR)$(word 1,$(subst :, ,$(NETSURF_GTK_RES_PATH)))

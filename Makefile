@@ -128,7 +128,7 @@ MESSAGES:=
 # The filter applied to the fat (full) messages to generate split messages
 MESSAGES_FILTER=any
 # The languages in the fat messages to convert
-MESSAGES_LANGUAGES=de en fr it nl
+MESSAGES_LANGUAGES=de en fr it nl zh_CN
 # The target directory for the split messages
 MESSAGES_TARGET=resources
 

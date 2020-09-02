@@ -6,5 +6,6 @@
     <file>de/Messages</file>
     <file>fr/Messages</file>
     <file>it/Messages</file>
+    <file>zh_CN/Messages</file>
   </gresource>
 </gresources>
