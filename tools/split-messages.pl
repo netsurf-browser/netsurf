@@ -85,7 +85,7 @@ sub main ()
     }
 
     # double check the options are sane (and we weren't asked for the help)
-    if( !$opt_ok || $opt{help} || $opt{lang} !~ /^[a-z]{2}$/ || $opt{dlang} !~ /^[a-z]{2}$/ )
+    if( !$opt_ok || $opt{help} || $opt{lang} !~ /^[a-z]{2}(?:_[A-Z]{2})?$/ || $opt{dlang} !~ /^[a-z]{2}(?:_[A-Z]{2})?$/ )
     {
         usage();
     }
@@ -109,7 +109,7 @@ sub main ()
         /^\s*$/ && next;
 
         # only parsing things that look like message lines:
-        if( /^([a-z]{2}).([^.]+).([^:]+):(.*)/ )
+        if( /^([a-z]{2}(?:_[A-Z]{2})?).([^.]+).([^:]+):(.*)/ )
         {
             my( $lang, $plat, $key, $val ) = ( $1, $2, $3, $4 );
 
