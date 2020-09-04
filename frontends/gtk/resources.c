@@ -345,11 +345,6 @@ init_pixbuf_resource(char **respath, struct nsgtk_resource_s *resource)
  */
 static nserror init_ui_resource(char **respath, struct nsgtk_resource_s *ui_res)
 {
-#if GTK_CHECK_VERSION(3,0,0)
-	int gtkv = 3;
-#else
-	int gtkv = 2;
-#endif
 	int resnamelen;
 	char *resname;
 	struct nsgtk_resource_s resource;
@@ -361,7 +356,7 @@ static nserror init_ui_resource(char **respath, struct nsgtk_resource_s *ui_res)
 	if (resname == NULL) {
 		return NSERROR_NOMEM;
 	}
-	snprintf(resname, resnamelen, "%s.gtk%d.ui", ui_res->name, gtkv);
+	snprintf(resname, resnamelen, "%s.ui", ui_res->name);
 	resource.name = resname;
 	resource.len = ui_res->len;
 	resource.path = NULL;
