@@ -62,6 +62,56 @@ Overview
    the GTK frontend is a vastly superior choice. The framebuffer
    frontend will appear exceptionally limited on such capable systems.
 
+Running
+=======
+
+  The framebuffer frontend is executed with the nsfb command. This
+   command takes parameters to control the operation of the
+   browser. The 'Configuring' section describes the available options
+   in detail.
+
+  The selection of the display surface is controlled with the -f
+   switch, the available display surfaces can be shown by passing '?'
+   as the parameter.
+
+    $ ./nsfb -f ?
+    ./nsfb: Valid surface names are:
+    ./nsfb: ram
+    ./nsfb: sdl
+    ./nsfb: x
+    ./nsfb: vnc
+    ./nsfb: wld
+
+  The avilable surfaces are dependant on what was compiled into the
+   nsfb library.
+
+  Common issues
+  -------------
+
+  - The browser appears to "hang" with no output
+
+    This is often cause by the unintentianal selection of the debug
+     "ram" surface. In this case the browser is in fact operating but
+     the output is being rendered to a memory buffer. the solution is
+     to explictly select the intended surface using the -f switch
+
+  - The displayed browser interface has no visible icons
+
+    This is generally because the necessary resources are not availale
+     on the resource search path.
+
+  - There is no displayed text.
+
+    The font configuration is incorrect either it has been compiled
+      wrongly or the configured freetype font is not available
+
+  - The browser messages are "bad"
+
+    If the browser messages are being emited as unrecognisable short
+     text symbols or in the wrong language it is likely the Messages
+     file could not be located. This can be confirmed by looking for
+     the text "Message translations failed to load" in the verbose log
+     output (run the browser with the -v switch)
 
 Configuring
 ===========
@@ -72,11 +122,11 @@ Configuring
    for details.
 
   As with any NetSurf frontend run-time configuration is read from a
-   "Choices" file. This file is a simple key:value list and is located
-   in "${HOME}/.netsurf/Choices".
+   "Choices" file. This file is a simple key:value list and by default
+   is located in "${HOME}/.netsurf/Choices".
 
-  The standard values supported by the NetSurf core are documented in
-   the Options document. In addition to these there are a number of
+  The standard [core user options](docs/netsurf-options.md) are
+   available. In addition to the core options there are a number of
    values to control specific aspects of the framebuffer version.
 
   Toolkit Options

@@ -525,7 +525,7 @@ process_cmdline(int argc, char** argv)
 
 		default:
 			fprintf(stderr,
-				"Usage: %s [-f frontend] [-b bpp] url\n",
+				"Usage: %s [-f frontend] [-b bpp] [-w width] [-h height] <url>\n",
 				argv[0]);
 			return false;
 		}

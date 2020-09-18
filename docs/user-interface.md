@@ -31,7 +31,7 @@ Frontend specific to the Haiku OS
 
 ## framebuffer
 
-There is a basic user guide for the[framebuffer](docs/using-framebuffer.md)
+There is a basic user guide for the [framebuffer](docs/using-framebuffer.md)
 
 ## gtk
 

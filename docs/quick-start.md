@@ -84,6 +84,8 @@ To build the framebuffer front end, you could do:
       $ make TARGET=framebuffer
       $ ./nsfb
 
+More detailed documentation on using the [framebuffer](docs/using-framebuffer.md)
+  frontend are available.
 
 Cross Compiling
 ===============
