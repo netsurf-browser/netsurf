@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 Vincent Sanders <vince@netsurf-browser.org>
+ * Copyright 2020 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf.
  *
@@ -18,17 +18,20 @@
 
 /**
  * \file
- * about scheme URL method handler
+ * about scheme imagecache handler interface
  */
 
-#ifndef NETSURF_CONTENT_FETCHERS_ABOUT_ABOUT_H
-#define NETSURF_CONTENT_FETCHERS_ABOUT_ABOUT_H
+#ifndef NETSURF_CONTENT_FETCHERS_ABOUT_IMAGECACHE_H
+#define NETSURF_CONTENT_FETCHERS_ABOUT_IMAGECACHE_H
 
 /**
- * Register about scheme handler.
+ * Handler to generate about scheme imagecache page.
  *
- * \return NSERROR_OK on successful registration or error code on failure.
+ * Shows details of current image cache.
+ *
+ * \param ctx The fetcher context.
+ * \return true if handled false if aborted.
  */
-nserror fetch_about_register(void);
+bool fetch_about_imagecache_handler(struct fetch_about_context *ctx);
 
 #endif

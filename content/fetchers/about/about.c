@@ -45,13 +45,12 @@
 
 #include "content/fetch.h"
 #include "content/fetchers.h"
-#include "image/image_cache.h"
 
 #include "desktop/system_colour.h"
 
+#include "private.h"
+#include "imagecache.h"
 #include "about.h"
-
-struct fetch_about_context;
 
 typedef bool (*fetch_about_handler)(struct fetch_about_context *);
 
@@ -87,10 +86,11 @@ struct about_handlers {
 };
 
 
+
 /**
  * issue fetch callbacks with locking
  */
-static inline bool
+static bool
 fetch_about_send_callback(const fetch_msg *msg, struct fetch_about_context *ctx)
 {
 	ctx->locked = true;
@@ -100,7 +100,8 @@ fetch_about_send_callback(const fetch_msg *msg, struct fetch_about_context *ctx)
 	return ctx->aborted;
 }
 
-static inline bool
+/* exported interface documented in about/private.h */
+bool
 fetch_about_send_finished(struct fetch_about_context *ctx)
 {
 	fetch_msg msg;
@@ -108,7 +109,16 @@ fetch_about_send_finished(struct fetch_about_context *ctx)
 	return fetch_about_send_callback(&msg, ctx);
 }
 
-static bool
+/* exported interface documented in about/private.h */
+bool fetch_about_set_http_code(struct fetch_about_context *ctx, long code)
+{
+	fetch_set_http_code(ctx->fetchh, code);
+
+	return ctx->aborted;
+}
+
+/* exported interface documented in about/private.h */
+bool
 fetch_about_send_header(struct fetch_about_context *ctx, const char *fmt, ...)
 {
 	char header[64];
@@ -128,10 +138,26 @@ fetch_about_send_header(struct fetch_about_context *ctx, const char *fmt, ...)
 	return fetch_about_send_callback(&msg, ctx);
 }
 
-/**
- * send formatted data on a fetch
- */
-static nserror ssenddataf(struct fetch_about_context *ctx, const char *fmt, ...)
+/* exported interface documented in about/private.h */
+nserror
+fetch_about_senddata(struct fetch_about_context *ctx, const uint8_t *data, size_t data_len)
+{
+	fetch_msg msg;
+
+	msg.type = FETCH_DATA;
+	msg.data.header_or_data.buf = data;
+	msg.data.header_or_data.len = data_len;
+
+	if (fetch_about_send_callback(&msg, ctx)) {
+		return NSERROR_INVALID;
+	}
+
+	return NSERROR_OK;
+}
+
+/* exported interface documented in about/private.h */
+nserror
+fetch_about_ssenddataf(struct fetch_about_context *ctx, const char *fmt, ...)
 {
 	char buffer[1024];
 	char *dbuff;
@@ -198,7 +224,7 @@ static bool fetch_about_srverror(struct fetch_about_context *ctx)
 	if (fetch_about_send_header(ctx, "Content-Type: text/plain"))
 		return false;
 
-	res = ssenddataf(ctx, "Server error 500");
+	res = fetch_about_ssenddataf(ctx, "Server error 500");
 	if (res != NSERROR_OK) {
 		return false;
 	}
@@ -289,153 +315,6 @@ static bool fetch_about_licence_handler(struct fetch_about_context *ctx)
 }
 
 
-/**
- * Handler to generate about:imagecache page.
- *
- * Shows details of current image cache.
- *
- * \param ctx The fetcher context.
- * \return true if handled false if aborted.
- */
-static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
-{
-	fetch_msg msg;
-	char buffer[2048]; /* output buffer */
-	int code = 200;
-	int slen;
-	unsigned int cent_loop = 0;
-	int elen = 0; /* entry length */
-	nserror res;
-	bool even = false;
-
-	/* content is going to return ok */
-	fetch_set_http_code(ctx->fetchh, code);
-
-	/* content type */
-	if (fetch_about_send_header(ctx, "Content-Type: text/html"))
-		goto fetch_about_imagecache_handler_aborted;
-
-	/* page head */
-	res = ssenddataf(ctx,
-			 "<html>\n<head>\n"
-			"<title>Image Cache Status</title>\n"
-			"<link rel=\"stylesheet\" type=\"text/css\" "
-			"href=\"resource:internal.css\">\n"
-			"</head>\n"
-			"<body id =\"cachelist\" class=\"ns-even-bg ns-even-fg ns-border\">\n"
-			"<h1 class=\"ns-border\">Image Cache Status</h1>\n");
-	if (res != NSERROR_OK) {
-		goto fetch_about_imagecache_handler_aborted;
-	}
-
-	/* image cache summary */
-	slen = image_cache_snsummaryf(buffer, sizeof(buffer),
-		"<p>Configured limit of %a hysteresis of %b</p>\n"
-		"<p>Total bitmap size in use %c (in %d)</p>\n"
-		"<p>Age %es</p>\n"
-		"<p>Peak size %f (in %g)</p>\n"
-		"<p>Peak image count %h (size %i)</p>\n"
-		"<p>Cache total/hit/miss/fail (counts) %j/%k/%l/%m "
-				"(%pj%%/%pk%%/%pl%%/%pm%%)</p>\n"
-		"<p>Cache total/hit/miss/fail (size) %n/%o/%q/%r "
-				"(%pn%%/%po%%/%pq%%/%pr%%)</p>\n"
-		"<p>Total images never rendered: %s "
-				"(includes %t that were converted)</p>\n"
-		"<p>Total number of excessive conversions: %u "
-				"(from %v images converted more than once)"
-				"</p>\n"
-		"<p>Bitmap of size %w had most (%x) conversions</p>\n"
-		"<h2 class=\"ns-border\">Current contents</h2>\n");
-	if (slen >= (int) (sizeof(buffer))) {
-		goto fetch_about_imagecache_handler_aborted; /* overflow */
-	}
-
-	/* send image cache summary */
-	msg.type = FETCH_DATA;
-	msg.data.header_or_data.buf = (const uint8_t *) buffer;
-	msg.data.header_or_data.len = slen;
-	if (fetch_about_send_callback(&msg, ctx)) {
-		goto fetch_about_imagecache_handler_aborted;
-	}
-
-	/* image cache entry table */
-	res = ssenddataf(ctx, "<p class=\"imagecachelist\">\n"
-			"<strong>"
-			"<span>Entry</span>"
-			"<span>Content Key</span>"
-			"<span>Redraw Count</span>"
-			"<span>Conversion Count</span>"
-			"<span>Last Redraw</span>"
-			"<span>Bitmap Age</span>"
-			"<span>Bitmap Size</span>"
-			"<span>Source</span>"
-			"</strong>\n");
-	if (res != NSERROR_OK) {
-		goto fetch_about_imagecache_handler_aborted;
-	}
-
-	slen = 0;
-	do {
-		if (even) {
-			elen = image_cache_snentryf(buffer + slen,
-						   sizeof buffer - slen,
-					cent_loop,
-					"<a href=\"%U\">"
-					"<span class=\"ns-border\">%e</span>"
-					"<span class=\"ns-border\">%k</span>"
-					"<span class=\"ns-border\">%r</span>"
-					"<span class=\"ns-border\">%c</span>"
-					"<span class=\"ns-border\">%a</span>"
-					"<span class=\"ns-border\">%g</span>"
-					"<span class=\"ns-border\">%s</span>"
-					"<span class=\"ns-border\">%o</span>"
-					"</a>\n");
-		} else {
-			elen = image_cache_snentryf(buffer + slen,
-						   sizeof buffer - slen,
-					cent_loop,
-					"<a class=\"ns-odd-bg\" href=\"%U\">"
-					"<span class=\"ns-border\">%e</span>"
-					"<span class=\"ns-border\">%k</span>"
-					"<span class=\"ns-border\">%r</span>"
-					"<span class=\"ns-border\">%c</span>"
-					"<span class=\"ns-border\">%a</span>"
-					"<span class=\"ns-border\">%g</span>"
-					"<span class=\"ns-border\">%s</span>"
-					"<span class=\"ns-border\">%o</span>"
-					"</a>\n");
-		}
-		if (elen <= 0)
-			break; /* last option */
-
-		if (elen >= (int) (sizeof buffer - slen)) {
-			/* last entry would not fit in buffer, submit buffer */
-			msg.data.header_or_data.len = slen;
-			if (fetch_about_send_callback(&msg, ctx))
-				goto fetch_about_imagecache_handler_aborted;
-			slen = 0;
-		} else {
-			/* normal addition */
-			slen += elen;
-			cent_loop++;
-			even = !even;
-		}
-	} while (elen > 0);
-
-	slen += snprintf(buffer + slen, sizeof buffer - slen,
-			 "</p>\n</body>\n</html>\n");
-
-	msg.data.header_or_data.len = slen;
-	if (fetch_about_send_callback(&msg, ctx))
-		goto fetch_about_imagecache_handler_aborted;
-
-	fetch_about_send_finished(ctx);
-
-	return true;
-
-fetch_about_imagecache_handler_aborted:
-	return false;
-}
 
 /**
  * certificate name parameters
@@ -1155,7 +1034,7 @@ format_certificate_name(struct fetch_about_context *ctx,
 			struct ns_cert_name *cert_name)
 {
 	nserror res;
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<tr><th>Common Name</th><td>%s</td></tr>\n",
 			 cert_name->common_name);
 	if (res != NSERROR_OK) {
@@ -1163,7 +1042,7 @@ format_certificate_name(struct fetch_about_context *ctx,
 	}
 
 	if (cert_name->organisation != NULL) {
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 				 "<tr><th>Organisation</th><td>%s</td></tr>\n",
 				 cert_name->organisation);
 		if (res != NSERROR_OK) {
@@ -1172,7 +1051,7 @@ format_certificate_name(struct fetch_about_context *ctx,
 	}
 
 	if (cert_name->organisation_unit != NULL) {
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 				 "<tr><th>Organisation Unit</th><td>%s</td></tr>\n",
 				 cert_name->organisation_unit);
 		if (res != NSERROR_OK) {
@@ -1181,7 +1060,7 @@ format_certificate_name(struct fetch_about_context *ctx,
 	}
 
 	if (cert_name->locality != NULL) {
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 				 "<tr><th>Locality</th><td>%s</td></tr>\n",
 				 cert_name->locality);
 		if (res != NSERROR_OK) {
@@ -1190,7 +1069,7 @@ format_certificate_name(struct fetch_about_context *ctx,
 	}
 
 	if (cert_name->province != NULL) {
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 				 "<tr><th>Privince</th><td>%s</td></tr>\n",
 				 cert_name->province);
 		if (res != NSERROR_OK) {
@@ -1199,7 +1078,7 @@ format_certificate_name(struct fetch_about_context *ctx,
 	}
 
 	if (cert_name->country != NULL) {
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 				 "<tr><th>Country</th><td>%s</td></tr>\n",
 				 cert_name->country);
 		if (res != NSERROR_OK) {
@@ -1223,7 +1102,7 @@ format_certificate_san(struct fetch_about_context *ctx,
 		return NSERROR_OK;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<table class=\"info\">\n"
 			 "<tr><th>Alternative Names</th><td><hr></td></tr>\n");
 	if (res != NSERROR_OK) {
@@ -1231,7 +1110,7 @@ format_certificate_san(struct fetch_about_context *ctx,
 	}
 
 	while (san != NULL) {
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 				 "<tr><th>DNS Name</th><td>%s</td></tr>\n",
 				 san->name);
 		if (res != NSERROR_OK) {
@@ -1241,7 +1120,7 @@ format_certificate_san(struct fetch_about_context *ctx,
 		san = san->next;
 	}
 
-	res = ssenddataf(ctx, "</table>\n");
+	res = fetch_about_ssenddataf(ctx, "</table>\n");
 
 	return res;
 
@@ -1259,7 +1138,7 @@ format_certificate_public_key(struct fetch_about_context *ctx,
 		return NSERROR_OK;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<table class=\"info\">\n"
 			 "<tr><th>Public Key</th><td><hr></td></tr>\n"
 			 "<tr><th>Algorithm</th><td>%s</td></tr>\n"
@@ -1272,7 +1151,7 @@ format_certificate_public_key(struct fetch_about_context *ctx,
 
 
 	if (public_key->exponent != NULL) {
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 				 "<tr><th>Exponent</th><td>%s</td></tr>\n",
 				 public_key->exponent);
 		if (res != NSERROR_OK) {
@@ -1281,7 +1160,7 @@ format_certificate_public_key(struct fetch_about_context *ctx,
 	}
 
 	if (public_key->modulus != NULL) {
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 				 "<tr><th>Modulus</th><td class=\"data\">%s</td></tr>\n",
 				 public_key->modulus);
 		if (res != NSERROR_OK) {
@@ -1290,7 +1169,7 @@ format_certificate_public_key(struct fetch_about_context *ctx,
 	}
 
 	if (public_key->curve != NULL) {
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 				 "<tr><th>Curve</th><td>%s</td></tr>\n",
 				 public_key->curve);
 		if (res != NSERROR_OK) {
@@ -1299,7 +1178,7 @@ format_certificate_public_key(struct fetch_about_context *ctx,
 	}
 
 	if (public_key->public != NULL) {
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 				 "<tr><th>Public Value</th><td>%s</td></tr>\n",
 				 public_key->public);
 		if (res != NSERROR_OK) {
@@ -1307,7 +1186,7 @@ format_certificate_public_key(struct fetch_about_context *ctx,
 		}
 	}
 
-	res = ssenddataf(ctx, "</table>\n");
+	res = fetch_about_ssenddataf(ctx, "</table>\n");
 
 	return res;
 }
@@ -1325,7 +1204,7 @@ format_certificate_fingerprint(struct fetch_about_context *ctx,
 	}
 
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<table class=\"info\">\n"
 			 "<tr><th>Fingerprints</th><td><hr></td></tr>\n");
 	if (res != NSERROR_OK) {
@@ -1333,7 +1212,7 @@ format_certificate_fingerprint(struct fetch_about_context *ctx,
 	}
 
 	if (cert_info->sha256fingerprint != NULL) {
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 				 "<tr><th>SHA-256</th><td class=\"data\">%s</td></tr>\n",
 				 cert_info->sha256fingerprint);
 		if (res != NSERROR_OK) {
@@ -1342,7 +1221,7 @@ format_certificate_fingerprint(struct fetch_about_context *ctx,
 	}
 
 	if (cert_info->sha1fingerprint != NULL) {
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 				 "<tr><th>SHA-1</th><td class=\"data\">%s</td></tr>\n",
 				 cert_info->sha1fingerprint);
 		if (res != NSERROR_OK) {
@@ -1350,7 +1229,7 @@ format_certificate_fingerprint(struct fetch_about_context *ctx,
 		}
 	}
 
-	res = ssenddataf(ctx, "</table>\n");
+	res = fetch_about_ssenddataf(ctx, "</table>\n");
 
 	return res;
 }
@@ -1362,7 +1241,7 @@ format_certificate(struct fetch_about_context *ctx,
 {
 	nserror res;
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<h2 id=\"%"PRIsizet"\" class=\"ns-border\">%s</h2>\n",
 			 depth, cert_info->subject_name.common_name);
 	if (res != NSERROR_OK) {
@@ -1370,7 +1249,7 @@ format_certificate(struct fetch_about_context *ctx,
 	}
 
 	if (cert_info->err != SSL_CERT_ERR_OK) {
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 				 "<table class=\"info\">\n"
 				 "<tr class=\"ns-even-fg-bad\">"
 				 "<th>Fault</th>"
@@ -1383,7 +1262,7 @@ format_certificate(struct fetch_about_context *ctx,
 		}
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<table class=\"info\">\n"
 			 "<tr><th>Issued To</th><td><hr></td></tr>\n");
 	if (res != NSERROR_OK) {
@@ -1395,13 +1274,13 @@ format_certificate(struct fetch_about_context *ctx,
 		return res;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "</table>\n");
 	if (res != NSERROR_OK) {
 		return res;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<table class=\"info\">\n"
 			 "<tr><th>Issued By</th><td><hr></td></tr>\n");
 	if (res != NSERROR_OK) {
@@ -1413,13 +1292,13 @@ format_certificate(struct fetch_about_context *ctx,
 		return res;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "</table>\n");
 	if (res != NSERROR_OK) {
 		return res;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<table class=\"info\">\n"
 			 "<tr><th>Validity</th><td><hr></td></tr>\n"
 			 "<tr><th>Valid From</th><td>%s</td></tr>\n"
@@ -1441,7 +1320,7 @@ format_certificate(struct fetch_about_context *ctx,
 		return res;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<table class=\"info\">\n"
 			 "<tr><th>Miscellaneous</th><td><hr></td></tr>\n");
 	if (res != NSERROR_OK) {
@@ -1449,7 +1328,7 @@ format_certificate(struct fetch_about_context *ctx,
 	}
 
 	if (cert_info->serialnum != NULL) {
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 				 "<tr><th>Serial Number</th><td>%s</td></tr>\n",
 				 cert_info->serialnum);
 		if (res != NSERROR_OK) {
@@ -1458,7 +1337,7 @@ format_certificate(struct fetch_about_context *ctx,
 	}
 
 	if (cert_info->sig_algor != NULL) {
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 				 "<tr><th>Signature Algorithm</th>"
 				 "<td>%s</td></tr>\n",
 				 cert_info->sig_algor);
@@ -1467,7 +1346,7 @@ format_certificate(struct fetch_about_context *ctx,
 		}
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<tr><th>Version</th><td>%ld</td></tr>\n"
 			 "</table>\n",
 			 cert_info->version);
@@ -1505,7 +1384,7 @@ static bool fetch_about_certificate_handler(struct fetch_about_context *ctx)
 		goto fetch_about_certificate_handler_aborted;
 
 	/* page head */
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			"<html>\n<head>\n"
 			"<title>NetSurf Browser Certificate Viewer</title>\n"
 			"<link rel=\"stylesheet\" type=\"text/css\" "
@@ -1519,7 +1398,7 @@ static bool fetch_about_certificate_handler(struct fetch_about_context *ctx)
 
 	res = cert_chain_from_query(ctx->url, &chain);
 	if (res != NSERROR_OK) {
-		res = ssenddataf(ctx, "<p>Could not process that</p>\n");
+		res = fetch_about_ssenddataf(ctx, "<p>Could not process that</p>\n");
 		if (res != NSERROR_OK) {
 			goto fetch_about_certificate_handler_aborted;
 		}
@@ -1528,14 +1407,14 @@ static bool fetch_about_certificate_handler(struct fetch_about_context *ctx)
 		res = convert_chain_to_cert_info(chain, &cert_info);
 		if (res == NSERROR_OK) {
 			size_t depth;
-			res = ssenddataf(ctx, "<ul>\n");
+			res = fetch_about_ssenddataf(ctx, "<ul>\n");
 			if (res != NSERROR_OK) {
 				free_ns_cert_info(cert_info);
 				goto fetch_about_certificate_handler_aborted;
 			}
 
 			for (depth = 0; depth < chain->depth; depth++) {
-				res = ssenddataf(ctx, "<li><a href=\"#%"PRIsizet"\">%s</a></li>\n",
+				res = fetch_about_ssenddataf(ctx, "<li><a href=\"#%"PRIsizet"\">%s</a></li>\n",
 						depth, (cert_info + depth)
 							->subject_name
 								.common_name);
@@ -1546,7 +1425,7 @@ static bool fetch_about_certificate_handler(struct fetch_about_context *ctx)
 
 			}
 
-			res = ssenddataf(ctx, "</ul>\n");
+			res = fetch_about_ssenddataf(ctx, "</ul>\n");
 			if (res != NSERROR_OK) {
 				free_ns_cert_info(cert_info);
 				goto fetch_about_certificate_handler_aborted;
@@ -1564,7 +1443,7 @@ static bool fetch_about_certificate_handler(struct fetch_about_context *ctx)
 			free_ns_cert_info(cert_info);
 
 		} else {
-			res = ssenddataf(ctx,
+			res = fetch_about_ssenddataf(ctx,
 					 "<p>Invalid certificate data</p>\n");
 			if (res != NSERROR_OK) {
 				goto fetch_about_certificate_handler_aborted;
@@ -1574,7 +1453,7 @@ static bool fetch_about_certificate_handler(struct fetch_about_context *ctx)
 
 
 	/* page footer */
-	res = ssenddataf(ctx, "</body>\n</html>\n");
+	res = fetch_about_ssenddataf(ctx, "</body>\n</html>\n");
 	if (res != NSERROR_OK) {
 		goto fetch_about_certificate_handler_aborted;
 	}
@@ -1615,7 +1494,7 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 		goto fetch_about_config_handler_aborted;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			"<html>\n<head>\n"
 			"<title>NetSurf Browser Config</title>\n"
 			"<link rel=\"stylesheet\" type=\"text/css\" "
@@ -1717,7 +1596,7 @@ static bool fetch_about_nscolours_handler(struct fetch_about_context *ctx)
 		goto aborted;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			"html {\n"
 			"\tbackground-color: #%06x;\n"
 			"}\n"
@@ -1826,13 +1705,13 @@ static bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 	if (fetch_about_send_header(ctx, "Content-Type: text/plain"))
 		goto fetch_about_testament_handler_aborted;
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 		"# Automatically generated by NetSurf build system\n\n");
 	if (res != NSERROR_OK) {
 		goto fetch_about_testament_handler_aborted;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 #if defined(WT_BRANCHISTRUNK) || defined(WT_BRANCHISMASTER)
 			"# This is a *DEVELOPMENT* build from the main line.\n\n"
 #elif defined(WT_BRANCHISTAG) && (WT_MODIFIED == 0)
@@ -1857,31 +1736,31 @@ static bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 		goto fetch_about_testament_handler_aborted;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 		"Built by %s (%s) from %s at revision %s on %s\n\n",
 		GECOS, USERNAME, WT_BRANCHPATH, WT_REVID, WT_COMPILEDATE);
 	if (res != NSERROR_OK) {
 		goto fetch_about_testament_handler_aborted;
 	}
 
-	res = ssenddataf(ctx, "Built on %s in %s\n\n", WT_HOSTNAME, WT_ROOT);
+	res = fetch_about_ssenddataf(ctx, "Built on %s in %s\n\n", WT_HOSTNAME, WT_ROOT);
 	if (res != NSERROR_OK) {
 		goto fetch_about_testament_handler_aborted;
 	}
 
 	if (WT_MODIFIED > 0) {
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 				"Working tree has %d modification%s\n\n",
 				WT_MODIFIED, WT_MODIFIED == 1 ? "" : "s");
 	} else {
-		res = ssenddataf(ctx, "Working tree is not modified.\n");
+		res = fetch_about_ssenddataf(ctx, "Working tree is not modified.\n");
 	}
 	if (res != NSERROR_OK) {
 		goto fetch_about_testament_handler_aborted;
 	}
 
 	for (modidx = 0; modidx < WT_MODIFIED; ++modidx) {
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 				 "  %s  %s\n",
 				 modifications[modidx].modtype,
 				 modifications[modidx].leaf);
@@ -2069,7 +1948,7 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 	}
 
 	title = messages_get("LoginTitle");
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			"<html>\n<head>\n"
 			"<title>%s</title>\n"
 			"<link rel=\"stylesheet\" type=\"text/css\" "
@@ -2082,7 +1961,7 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 		goto fetch_about_query_auth_handler_aborted;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<form method=\"post\""
 			 " enctype=\"multipart/form-data\">");
 	if (res != NSERROR_OK) {
@@ -2095,19 +1974,19 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 					     password,
 					     &description);
 	if (res == NSERROR_OK) {
-		res = ssenddataf(ctx, "<p>%s</p>", description);
+		res = fetch_about_ssenddataf(ctx, "<p>%s</p>", description);
 		free(description);
 		if (res != NSERROR_OK) {
 			goto fetch_about_query_auth_handler_aborted;
 		}
 	}
 
-	res = ssenddataf(ctx, "<table>");
+	res = fetch_about_ssenddataf(ctx, "<table>");
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_auth_handler_aborted;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<tr>"
 			 "<th><label for=\"name\">%s:</label></th>"
 			 "<td><input type=\"text\" id=\"username\" "
@@ -2118,7 +1997,7 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 		goto fetch_about_query_auth_handler_aborted;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<tr>"
 			 "<th><label for=\"password\">%s:</label></th>"
 			 "<td><input type=\"password\" id=\"password\" "
@@ -2129,12 +2008,12 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 		goto fetch_about_query_auth_handler_aborted;
 	}
 
-	res = ssenddataf(ctx, "</table>");
+	res = fetch_about_ssenddataf(ctx, "</table>");
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_auth_handler_aborted;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<div id=\"buttons\">"
 			 "<input type=\"submit\" id=\"login\" name=\"login\" "
 			 "value=\"%s\" class=\"default-action\">"
@@ -2151,7 +2030,7 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 	if (res != NSERROR_OK) {
 		url_s = strdup("");
 	}
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<input type=\"hidden\" name=\"siteurl\" value=\"%s\">",
 			 url_s);
 	free(url_s);
@@ -2159,14 +2038,14 @@ static bool fetch_about_query_auth_handler(struct fetch_about_context *ctx)
 		goto fetch_about_query_auth_handler_aborted;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<input type=\"hidden\" name=\"realm\" value=\"%s\">",
 			 realm);
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_auth_handler_aborted;
 	}
 
-	res = ssenddataf(ctx, "</form></body>\n</html>\n");
+	res = fetch_about_ssenddataf(ctx, "</form></body>\n</html>\n");
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_auth_handler_aborted;
 	}
@@ -2232,7 +2111,7 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 	}
 
 	title = messages_get("PrivacyTitle");
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			"<html>\n<head>\n"
 			"<title>%s</title>\n"
 			"<link rel=\"stylesheet\" type=\"text/css\" "
@@ -2245,7 +2124,7 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 		goto fetch_about_query_ssl_handler_aborted;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<form method=\"post\""
 			 " enctype=\"multipart/form-data\">");
 	if (res != NSERROR_OK) {
@@ -2256,7 +2135,7 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 				    "PrivacyDescription",
 				    &description);
 	if (res == NSERROR_OK) {
-		res = ssenddataf(ctx, "<div><p>%s</p></div>", description);
+		res = fetch_about_ssenddataf(ctx, "<div><p>%s</p></div>", description);
 		free(description);
 		if (res != NSERROR_OK) {
 			goto fetch_about_query_ssl_handler_aborted;
@@ -2264,13 +2143,13 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 	}
 
 	if (chainurl == NULL) {
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 				 "<div><p>%s</p></div>"
 				 "<div><p>%s</p></div>",
 				 reason,
 				 messages_get("ViewCertificatesNotPossible"));
 	} else {
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 				 "<div><p>%s</p></div>"
 				 "<div><p><a href=\"%s\" target=\"_blank\">%s</a></p></div>",
 				 reason,
@@ -2280,7 +2159,7 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_ssl_handler_aborted;
 	}
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<div id=\"buttons\">"
 			 "<input type=\"submit\" id=\"back\" name=\"back\" "
 			 "value=\"%s\" class=\"default-action\">"
@@ -2297,7 +2176,7 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 	if (res != NSERROR_OK) {
 		url_s = strdup("");
 	}
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<input type=\"hidden\" name=\"siteurl\" value=\"%s\">",
 			 url_s);
 	free(url_s);
@@ -2305,7 +2184,7 @@ static bool fetch_about_query_privacy_handler(struct fetch_about_context *ctx)
 		goto fetch_about_query_ssl_handler_aborted;
 	}
 
-	res = ssenddataf(ctx, "</form></body>\n</html>\n");
+	res = fetch_about_ssenddataf(ctx, "</form></body>\n</html>\n");
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_ssl_handler_aborted;
 	}
@@ -2367,7 +2246,7 @@ static bool fetch_about_query_timeout_handler(struct fetch_about_context *ctx)
 	}
 
 	title = messages_get("TimeoutTitle");
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			"<html>\n<head>\n"
 			"<title>%s</title>\n"
 			"<link rel=\"stylesheet\" type=\"text/css\" "
@@ -2380,7 +2259,7 @@ static bool fetch_about_query_timeout_handler(struct fetch_about_context *ctx)
 		goto fetch_about_query_timeout_handler_aborted;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<form method=\"post\""
 			 " enctype=\"multipart/form-data\">");
 	if (res != NSERROR_OK) {
@@ -2391,18 +2270,18 @@ static bool fetch_about_query_timeout_handler(struct fetch_about_context *ctx)
 				    "TimeoutDescription",
 				    &description);
 	if (res == NSERROR_OK) {
-		res = ssenddataf(ctx, "<div><p>%s</p></div>", description);
+		res = fetch_about_ssenddataf(ctx, "<div><p>%s</p></div>", description);
 		free(description);
 		if (res != NSERROR_OK) {
 			goto fetch_about_query_timeout_handler_aborted;
 		}
 	}
-	res = ssenddataf(ctx, "<div><p>%s</p></div>", reason);
+	res = fetch_about_ssenddataf(ctx, "<div><p>%s</p></div>", reason);
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_timeout_handler_aborted;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<div id=\"buttons\">"
 			 "<input type=\"submit\" id=\"back\" name=\"back\" "
 			 "value=\"%s\" class=\"default-action\">"
@@ -2419,7 +2298,7 @@ static bool fetch_about_query_timeout_handler(struct fetch_about_context *ctx)
 	if (res != NSERROR_OK) {
 		url_s = strdup("");
 	}
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<input type=\"hidden\" name=\"siteurl\" value=\"%s\">",
 			 url_s);
 	free(url_s);
@@ -2427,7 +2306,7 @@ static bool fetch_about_query_timeout_handler(struct fetch_about_context *ctx)
 		goto fetch_about_query_timeout_handler_aborted;
 	}
 
-	res = ssenddataf(ctx, "</form></body>\n</html>\n");
+	res = fetch_about_ssenddataf(ctx, "</form></body>\n</html>\n");
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_timeout_handler_aborted;
 	}
@@ -2490,7 +2369,7 @@ fetch_about_query_fetcherror_handler(struct fetch_about_context *ctx)
 	}
 
 	title = messages_get("FetchErrorTitle");
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			"<html>\n<head>\n"
 			"<title>%s</title>\n"
 			"<link rel=\"stylesheet\" type=\"text/css\" "
@@ -2503,7 +2382,7 @@ fetch_about_query_fetcherror_handler(struct fetch_about_context *ctx)
 		goto fetch_about_query_fetcherror_handler_aborted;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<form method=\"post\""
 			 " enctype=\"multipart/form-data\">");
 	if (res != NSERROR_OK) {
@@ -2514,18 +2393,18 @@ fetch_about_query_fetcherror_handler(struct fetch_about_context *ctx)
 				    "FetchErrorDescription",
 				    &description);
 	if (res == NSERROR_OK) {
-		res = ssenddataf(ctx, "<div><p>%s</p></div>", description);
+		res = fetch_about_ssenddataf(ctx, "<div><p>%s</p></div>", description);
 		free(description);
 		if (res != NSERROR_OK) {
 			goto fetch_about_query_fetcherror_handler_aborted;
 		}
 	}
-	res = ssenddataf(ctx, "<div><p>%s</p></div>", reason);
+	res = fetch_about_ssenddataf(ctx, "<div><p>%s</p></div>", reason);
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_fetcherror_handler_aborted;
 	}
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<div id=\"buttons\">"
 			 "<input type=\"submit\" id=\"back\" name=\"back\" "
 			 "value=\"%s\" class=\"default-action\">"
@@ -2542,7 +2421,7 @@ fetch_about_query_fetcherror_handler(struct fetch_about_context *ctx)
 	if (res != NSERROR_OK) {
 		url_s = strdup("");
 	}
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			 "<input type=\"hidden\" name=\"siteurl\" value=\"%s\">",
 			 url_s);
 	free(url_s);
@@ -2550,7 +2429,7 @@ fetch_about_query_fetcherror_handler(struct fetch_about_context *ctx)
 		goto fetch_about_query_fetcherror_handler_aborted;
 	}
 
-	res = ssenddataf(ctx, "</form></body>\n</html>\n");
+	res = fetch_about_ssenddataf(ctx, "</form></body>\n</html>\n");
 	if (res != NSERROR_OK) {
 		goto fetch_about_query_fetcherror_handler_aborted;
 	}
@@ -2720,7 +2599,7 @@ static bool fetch_about_about_handler(struct fetch_about_context *ctx)
 	if (fetch_about_send_header(ctx, "Content-Type: text/html"))
 		goto fetch_about_config_handler_aborted;
 
-	res = ssenddataf(ctx,
+	res = fetch_about_ssenddataf(ctx,
 			"<html>\n<head>\n"
 			"<title>List of NetSurf pages</title>\n"
 			"<link rel=\"stylesheet\" type=\"text/css\" "
@@ -2739,7 +2618,7 @@ static bool fetch_about_about_handler(struct fetch_about_context *ctx)
 		if (about_handler_list[abt_loop].hidden)
 			continue;
 
-		res = ssenddataf(ctx,
+		res = fetch_about_ssenddataf(ctx,
 			       "<li><a href=\"about:%s\">about:%s</a></li>\n",
 			       about_handler_list[abt_loop].name,
 			       about_handler_list[abt_loop].name);
@@ -2748,7 +2627,7 @@ static bool fetch_about_about_handler(struct fetch_about_context *ctx)
 		}
 	}
 
-	res = ssenddataf(ctx, "</ul>\n</body>\n</html>\n");
+	res = fetch_about_ssenddataf(ctx, "</ul>\n</body>\n</html>\n");
 	if (res != NSERROR_OK) {
 		goto fetch_about_config_handler_aborted;
 	}
@@ -2774,7 +2653,7 @@ fetch_about_404_handler(struct fetch_about_context *ctx)
 		return false;
 	}
 
-	res = ssenddataf(ctx, "Unknown page: %s", nsurl_access(ctx->url));
+	res = fetch_about_ssenddataf(ctx, "Unknown page: %s", nsurl_access(ctx->url));
 	if (res != NSERROR_OK) {
 		return false;
 	}

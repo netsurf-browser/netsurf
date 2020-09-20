@@ -40,6 +40,7 @@
 #include "utils/errors.h"
 #include "netsurf/content_type.h"
 
+struct content;
 struct content_redraw_data;
 struct redraw_context;
 
