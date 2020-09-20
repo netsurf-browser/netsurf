@@ -53,7 +53,7 @@
 #include "content/fetch.h"
 #include "content/fetchers.h"
 #include "content/fetchers/resource.h"
-#include "content/fetchers/about.h"
+#include "content/fetchers/about/about.h"
 #include "content/fetchers/curl.h"
 #include "content/fetchers/data.h"
 #include "content/fetchers/file/file.h"
