@@ -49,6 +49,7 @@
 #include "desktop/system_colour.h"
 
 #include "private.h"
+#include "blank.h"
 #include "imagecache.h"
 #include "about.h"
 
@@ -235,40 +236,6 @@ static bool fetch_about_srverror(struct fetch_about_context *ctx)
 }
 
 
-/**
- * Handler to generate about scheme cache page.
- *
- * \param ctx The fetcher context.
- * \return true if handled false if aborted.
- */
-static bool fetch_about_blank_handler(struct fetch_about_context *ctx)
-{
-	fetch_msg msg;
-	const char buffer[2] = { ' ', '\0' };
-
-	/* content is going to return ok */
-	fetch_set_http_code(ctx->fetchh, 200);
-
-	/* content type */
-	if (fetch_about_send_header(ctx, "Content-Type: text/html"))
-		goto fetch_about_blank_handler_aborted;
-
-	msg.type = FETCH_DATA;
-	msg.data.header_or_data.buf = (const uint8_t *) buffer;
-	msg.data.header_or_data.len = strlen(buffer);
-
-	if (fetch_about_send_callback(&msg, ctx))
-		goto fetch_about_blank_handler_aborted;
-
-	msg.type = FETCH_FINISHED;
-
-	fetch_about_send_callback(&msg, ctx);
-
-	return true;
-
-fetch_about_blank_handler_aborted:
-	return false;
-}
 
 
 /**
