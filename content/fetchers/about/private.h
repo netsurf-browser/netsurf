@@ -56,4 +56,8 @@ nserror fetch_about_ssenddataf(struct fetch_about_context *ctx, const char *fmt,
  */
 bool fetch_about_send_finished(struct fetch_about_context *ctx);
 
+/**
+ */
+struct nsurl *fetch_about_get_url(struct fetch_about_context *ctx);
+
 #endif
