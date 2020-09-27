@@ -25,6 +25,7 @@
 #define NETSURF_CONTENT_FETCHERS_ABOUT_PRIVATE_H
 
 struct fetch_about_context;
+struct fetch_multipart_data;
 
 /**
  * set http response code on about response
@@ -43,8 +44,7 @@ bool fetch_about_send_header(struct fetch_about_context *ctx, const char *fmt, .
 /**
  * send data on the about response
  */
-nserror
-fetch_about_senddata(struct fetch_about_context *ctx, const uint8_t *data, size_t data_len);
+nserror fetch_about_senddata(struct fetch_about_context *ctx, const uint8_t *data, size_t data_len);
 
 /**
  * send formatted data on the about response
@@ -57,7 +57,21 @@ nserror fetch_about_ssenddataf(struct fetch_about_context *ctx, const char *fmt,
 bool fetch_about_send_finished(struct fetch_about_context *ctx);
 
 /**
+ * Generate a 500 server error respnse
+ *
+ * \param ctx The fetcher context.
+ * \return true if handled false if aborted.
+ */
+bool fetch_about_srverror(struct fetch_about_context *ctx);
+
+/**
+ * get the fetch url
  */
 struct nsurl *fetch_about_get_url(struct fetch_about_context *ctx);
+
+/**
+ * get multipart fetch data
+ */
+const struct fetch_multipart_data *fetch_about_get_multipart(struct fetch_about_context *ctx);
 
 #endif

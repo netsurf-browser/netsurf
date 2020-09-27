@@ -7,6 +7,8 @@ S_FETCHER_ABOUT := \
 	choices.c \
 	config.c \
 	imagecache.c \
+	query.c \
+	query_privacy.c \
 	testament.c
 
 # The following files depend on the testament
