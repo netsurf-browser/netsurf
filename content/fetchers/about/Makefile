@@ -9,6 +9,7 @@ S_FETCHER_ABOUT := \
 	imagecache.c \
 	query.c \
 	query_auth.c \
+	query_fetcherror.c \
 	query_privacy.c \
 	query_timeout.c \
 	testament.c
