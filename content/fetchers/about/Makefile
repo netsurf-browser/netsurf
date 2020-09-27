@@ -8,6 +8,7 @@ S_FETCHER_ABOUT := \
 	config.c \
 	imagecache.c \
 	query.c \
+	query_auth.c \
 	query_privacy.c \
 	testament.c
 
