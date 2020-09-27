@@ -10,6 +10,7 @@ S_FETCHER_ABOUT := \
 	query.c \
 	query_auth.c \
 	query_privacy.c \
+	query_timeout.c \
 	testament.c
 
 # The following files depend on the testament
