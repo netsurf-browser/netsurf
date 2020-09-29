@@ -26,26 +26,23 @@
  * information from the browser from a known, fixed URL.
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include "netsurf/inttypes.h"
-#include "netsurf/plot_style.h"
 
-#include "utils/log.h"
+#include "utils/errors.h"
+#include "utils/nsurl.h"
 #include "utils/corestrings.h"
-#include "utils/nscolour.h"
-#include "utils/nsoption.h"
 #include "utils/utils.h"
-#include "utils/messages.h"
 #include "utils/ring.h"
 
 #include "content/fetch.h"
 #include "content/fetchers.h"
-
-#include "desktop/system_colour.h"
 
 #include "private.h"
 #include "about.h"
@@ -54,6 +51,7 @@
 #include "config.h"
 #include "choices.h"
 #include "imagecache.h"
+#include "nscolours.h"
 #include "query.h"
 #include "query_auth.h"
 #include "query_fetcherror.h"
@@ -295,51 +293,6 @@ static bool fetch_about_licence_handler(struct fetch_about_context *ctx)
 	fetch_about_send_callback(&msg, ctx);
 
 	return true;
-}
-
-
-/**
- * Handler to generate the nscolours stylesheet
- *
- * \param ctx The fetcher context.
- * \return true if handled false if aborted.
- */
-static bool fetch_about_nscolours_handler(struct fetch_about_context *ctx)
-{
-	nserror res;
-	const char *stylesheet;
-
-	/* content is going to return ok */
-	fetch_set_http_code(ctx->fetchh, 200);
-
-	/* content type */
-	if (fetch_about_send_header(ctx, "Content-Type: text/css; charset=utf-8")) {
-		goto aborted;
-	}
-
-	res = nscolour_get_stylesheet(&stylesheet);
-	if (res != NSERROR_OK) {
-		goto aborted;
-	}
-
-	res = fetch_about_ssenddataf(ctx,
-			"html {\n"
-			"\tbackground-color: #%06x;\n"
-			"}\n"
-			"%s",
-			colour_rb_swap(nscolours[NSCOLOUR_WIN_ODD_BG]),
-			stylesheet);
-	if (res != NSERROR_OK) {
-		goto aborted;
-	}
-
-	fetch_about_send_finished(ctx);
-
-	return true;
-
-aborted:
-
-	return false;
 }
 
 
