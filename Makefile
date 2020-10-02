@@ -732,7 +732,7 @@ else
 	$(Q)$(RM) $(EXETARGET:,ff8=,e1f)
 endif
 	$(VQ)echo "LINKDEPS: $(EXETARGET)"
-	$(Q)echo -n "$(EXETARGET) $(DEPROOT)/link.d: " > $@
+	$(Q)echo -n "$(EXETARGET) $(DEPROOT)/link.d: " > $(DEPROOT)/link.d
 	$(Q)$(PERL) tools/linktrace-to-depfile.pl < $(DEPROOT)/link-raw.d >> $(DEPROOT)/link.d
 ifeq ($(NETSURF_STRIP_BINARY),YES)
 	$(VQ)echo "   STRIP: $(EXETARGET)"
