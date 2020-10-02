@@ -609,6 +609,10 @@ CFLAGS += -DSTMTEXPR=1
 CXXFLAGS += -DSTMTEXPR=1
 endif
 
+# We trace during link so that we can determine if a libary changes under us in
+# order to re-link.  This *may* be gcc specific, so may need tweaks in future.
+LDFLAGS += -Wl,--trace
+
 # ----------------------------------------------------------------------------
 # General make rules
 # ----------------------------------------------------------------------------
@@ -718,15 +722,18 @@ OBJECTS := $(sort $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.c,%.o,$(patsu
 # Include directory flags
 IFLAGS = $(addprefix -I,$(INCLUDE_DIRS))
 
-$(EXETARGET): $(OBJECTS) $(RESOURCES) $(MESSAGES)
+$(EXETARGET): $(OBJECTS) $(RESOURCES) $(MESSAGES) tools/linktrace-to-depfile.pl
 	$(VQ)echo "    LINK: $(EXETARGET)"
 ifneq ($(TARGET)$(SUBTARGET),riscos-elf)
-	$(Q)$(CC) -o $(EXETARGET) $(OBJECTS) $(LDFLAGS)
+	$(Q)$(CC) -o $(EXETARGET) $(OBJECTS) $(LDFLAGS) > $(DEPROOT)/link-raw.d
 else
-	$(Q)$(CXX) -o $(EXETARGET:,ff8=,e1f) $(OBJECTS) $(LDFLAGS)
+	$(Q)$(CXX) -o $(EXETARGET:,ff8=,e1f) $(OBJECTS) $(LDFLAGS) > $(DEPROOT)/link-raw.d
 	$(Q)$(ELF2AIF) $(EXETARGET:,ff8=,e1f) $(EXETARGET)
 	$(Q)$(RM) $(EXETARGET:,ff8=,e1f)
 endif
+	$(VQ)echo "LINKDEPS: $(EXETARGET)"
+	$(Q)echo -n "$(EXETARGET) $(DEPROOT)/link.d: " > $@
+	$(Q)$(PERL) tools/linktrace-to-depfile.pl < $(DEPROOT)/link-raw.d >> $(DEPROOT)/link.d
 ifeq ($(NETSURF_STRIP_BINARY),YES)
 	$(VQ)echo "   STRIP: $(EXETARGET)"
 	$(Q)$(STRIP) $(EXETARGET)
@@ -742,7 +749,6 @@ ifeq ($(TARGET),beos)
 	$(VQ)echo " MIMESET: $(EXETARGET)"
 	$(Q)$(BEOS_MIMESET) $(EXETARGET)
 endif
-
 
 clean-target:
 	$(VQ)echo "   CLEAN: $(EXETARGET)"
@@ -855,6 +861,7 @@ $(eval $(foreach SOURCE,$(filter %.m,$(SOURCES)), \
 
 ifeq ($(filter $(MAKECMDGOALS),clean test coverage),)
 -include $(sort $(addprefix $(DEPROOT)/,$(DEPFILES)))
+-include $(DEPROOT)/link.d
 endif
 
 # And rules to build the objects themselves...
