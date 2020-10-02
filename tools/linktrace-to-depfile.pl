@@ -7,8 +7,9 @@ my %deps;
 
 while (my $line = <>) {
    chomp $line;
-   if ($line =~ /\(([^)]+)/) {
-      $deps{abs_path($1)} = 1;
+   $line =~ s/[()]/ /g;
+   for my $word (split(/\s+/, $line)) {
+      $deps{abs_path($word)} = 1 if ($word =~ /\.a$/);
    }
 }
 
