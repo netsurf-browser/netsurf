@@ -500,13 +500,21 @@ message_write(struct param *param, struct trnsltn_entry *tlist)
 		return NSERROR_PERMISSION;
 	}
 
-	gzprintf(outf,
+	if (gzprintf(outf,
 		"# This messages file is automatically generated from %s\n"
 		"# at build-time.  Please go and edit that instead of this.\n\n",
-		param->infilename);
+		param->infilename) < 1) {
+		gzclose(outf);
+		unlink(param->outfilename);
+		return NSERROR_NOSPACE;
+	};
 
 	while (tlist != NULL) {
-		gzprintf(outf, "%s:%s\n", tlist->key, tlist->value);
+		if (gzprintf(outf, "%s:%s\n", tlist->key, tlist->value) < 1) {
+			gzclose(outf);
+			unlink(param->outfilename);
+			return NSERROR_NOSPACE;
+		}
 		tlist = tlist->next;
 	}
 
