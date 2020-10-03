@@ -785,7 +785,7 @@ static void dukky_destroythread(jsthread *thread)
 	jsheap *heap = thread->heap;
 
 	assert(thread->in_use == 0);
-	assert(thread->pending_destroy = true);
+	assert(thread->pending_destroy == true);
 
 	/* Closing down the extant thread */
 	NSLOG(dukky, DEBUG, "Closing down extant thread %p in heap %p", thread, heap);
