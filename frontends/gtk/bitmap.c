@@ -478,6 +478,10 @@ bitmap_render(struct bitmap *bitmap, struct hlcache_handle *content)
 	 * aspect ratio of the required thumbnail. */
 	cheight = ((cwidth * dheight) + (dwidth / 2)) / dwidth;
 
+	/* At this point, we MUST have decided to render something non-zero sized */
+	assert(cwidth > 0);
+	assert(cheight > 0);
+
 	/*  Create surface to render into */
 	surface = cairo_surface_create_similar(dsurface, CAIRO_CONTENT_COLOR_ALPHA, cwidth, cheight);
 
