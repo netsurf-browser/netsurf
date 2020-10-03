@@ -2599,13 +2599,13 @@ browser_window_redraw(struct browser_window *bw,
 	struct rect content_clip;
 	nserror res;
 
-	x /= bw->scale;
-	y /= bw->scale;
-
 	if (bw == NULL) {
 		NSLOG(netsurf, INFO, "NULL browser window");
 		return false;
 	}
+
+	x /= bw->scale;
+	y /= bw->scale;
 
 	if ((bw->current_content == NULL) &&
 	    (bw->children == NULL)) {
