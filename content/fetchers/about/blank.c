@@ -48,7 +48,8 @@ bool fetch_about_blank_handler(struct fetch_about_context *ctx)
 	if (fetch_about_send_header(ctx, "Content-Type: text/html"))
 		goto fetch_about_blank_handler_aborted;
 
-	fetch_about_senddata(ctx, (const uint8_t *) buffer, strlen(buffer));
+	if (fetch_about_senddata(ctx, (const uint8_t *) buffer, strlen(buffer)) != NSERROR_OK)
+		goto fetch_about_blank_handler_aborted;
 
 	fetch_about_send_finished(ctx);
 
