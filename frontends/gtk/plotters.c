@@ -432,8 +432,8 @@ nsgtk_plot_path(const struct redraw_context *ctx,
 	n_ctm.yx = transform[1];
 	n_ctm.xy = transform[2];
 	n_ctm.yy = transform[3];
-	n_ctm.x0 = transform[4];
-	n_ctm.y0 = transform[5];
+	n_ctm.x0 = transform[4] + old_ctm.x0;
+	n_ctm.y0 = transform[5] + old_ctm.y0;
 
 	cairo_set_matrix(current_cr, &n_ctm);
 
