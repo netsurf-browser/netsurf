@@ -49,6 +49,7 @@
 #include "blank.h"
 #include "certificate.h"
 #include "config.h"
+#include "chart.h"
 #include "choices.h"
 #include "imagecache.h"
 #include "nscolours.h"
@@ -439,6 +440,14 @@ struct about_handlers about_handler_list[] = {
 		SLEN("certificate"),
 		NULL,
 		fetch_about_certificate_handler,
+		true
+	},
+	{
+		/* chart generator */
+		"chart",
+		SLEN("chart"),
+		NULL,
+		fetch_about_chart_handler,
 		true
 	},
 	{

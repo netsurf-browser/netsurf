@@ -4,6 +4,7 @@ S_FETCHER_ABOUT := \
 	about.c \
 	blank.c \
 	certificate.c \
+	chart.c \
 	choices.c \
 	config.c \
 	imagecache.c \

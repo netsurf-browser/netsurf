@@ -70,9 +70,23 @@ bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 		"<p>Peak size %f (in %g)</p>\n"
 		"<p>Peak image count %h (size %i)</p>\n"
 		"<p>Cache total/hit/miss/fail (counts) %j/%k/%l/%m "
-				"(%pj%%/%pk%%/%pl%%/%pm%%)</p>\n"
+		"(%pj%%/%pk%%/%pl%%/%pm%%)"
+		"<img width=200 height=100 src=\"about:chart?type=pie&width=200&height=100&labels=hit,miss,fail&values=%k,%l,%m\" />"
+		"</p>\n");
+	if (slen >= (int) (sizeof(buffer))) {
+		goto fetch_about_imagecache_handler_aborted; /* overflow */
+	}
+
+	res = fetch_about_senddata(ctx, (const uint8_t *)buffer, slen);
+	if (res != NSERROR_OK) {
+		goto fetch_about_imagecache_handler_aborted;
+	}
+
+	/* image cache summary */
+	slen = image_cache_snsummaryf(buffer, sizeof(buffer),
 		"<p>Cache total/hit/miss/fail (size) %n/%o/%q/%r "
-				"(%pn%%/%po%%/%pq%%/%pr%%)</p>\n"
+				"(%pn%%/%po%%/%pq%%/%pr%%)"
+		"<img width=200 height=100 src=\"about:chart?type=pie&width=200&height=100&labels=hit,miss,fail&values=%o,%q,%r\" /></p>\n"
 		"<p>Total images never rendered: %s "
 				"(includes %t that were converted)</p>\n"
 		"<p>Total number of excessive conversions: %u "
