@@ -36,21 +36,35 @@ static nserror ami_utf8_codesets(const char *string, size_t len, char **result, 
 {
 	char *out;
 	ULONG utf8_tag, local_tag;
+	static struct codeset *utf8_cs = NULL;
+	static struct codeset *local_cs = NULL;
+
+	if(local_cs == NULL) CodesetsFind(NULL,
+#ifdef __amigaos4__
+						CSA_MIBenum, nsoption_int(local_codeset),
+#else
+						NULL,
+#endif
+					TAG_DONE);
+
+     if(utf8_cs == NULL) CodesetsFind(NULL,
+                           CSA_MIBenum, CS_MIBENUM_UTF_8,
+                           TAG_DONE);
 
 	if(to_local == false) {
-		local_tag = CSA_SourceMIBenum;
-		utf8_tag = CSA_DestMIBenum;
+		local_tag = CSA_SourceCodeset;
+		utf8_tag = CSA_DestCodeset;
 	} else {
-		utf8_tag = CSA_SourceMIBenum;
-		local_tag = CSA_DestMIBenum;
+		utf8_tag = CSA_SourceCodeset;
+		local_tag = CSA_DestCodeset;
 	}
 
 	out = CodesetsConvertStr(CSA_Source, string,
 						CSA_SourceLen, len,
 #ifdef __amigaos4__
-						local_tag, nsoption_int(local_codeset),
+						local_tag, local_cs,
 #endif
-						utf8_tag, CS_MIBENUM_UTF_8,
+						utf8_tag, utf8_cs,
 						CSA_MapForeignChars, TRUE,
 						TAG_DONE);
 
