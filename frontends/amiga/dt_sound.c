@@ -23,6 +23,8 @@
 #ifdef WITH_AMIGA_DATATYPES
 #include "amiga/os3support.h"
 
+#include <string.h>
+
 #include <proto/datatypes.h>
 #include <proto/dos.h>
 #include <proto/intuition.h>

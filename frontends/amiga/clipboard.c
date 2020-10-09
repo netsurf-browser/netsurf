@@ -17,6 +17,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <proto/iffparse.h>
 #include <proto/intuition.h>
 #include <proto/exec.h>

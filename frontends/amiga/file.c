@@ -22,6 +22,8 @@
 #include <proto/icon.h>
 #include <workbench/icon.h>
 
+#include <string.h>
+
 #include "utils/utils.h"
 #include "utils/nsoption.h"
 #include "utils/file.h"

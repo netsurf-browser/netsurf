@@ -25,6 +25,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 #include <proto/datatypes.h>
 #include <proto/dos.h>
 #include <proto/intuition.h>
