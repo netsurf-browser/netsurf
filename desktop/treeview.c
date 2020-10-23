@@ -952,6 +952,34 @@ static void treeview__search_cancel(treeview *tree, bool drop_focus)
 	treeview__cw_invalidate_area(tree, &r);
 }
 
+/**
+ * Convert from treeview drag to core window drag type.
+ *
+ * \param[in]  tree  A treeview.
+ * \return Core window drag type.
+ */
+static core_window_drag_status treeview__get_cw_drag_type(
+		const treeview *tree)
+{
+	assert(tree != NULL);
+
+	switch (tree->drag.type) {
+	case TV_DRAG_NONE:
+		return CORE_WINDOW_DRAG_NONE;
+
+	case TV_DRAG_SELECTION:
+		return CORE_WINDOW_DRAG_SELECTION;
+
+	case TV_DRAG_TEXTAREA: /* Fall through.*/
+	case TV_DRAG_SEARCH:
+		return CORE_WINDOW_DRAG_TEXT_SELECTION;
+
+	case TV_DRAG_MOVE:
+		return CORE_WINDOW_DRAG_MOVE;
+	}
+
+	return CORE_WINDOW_DRAG_NONE;
+}
 
 /**
  * Callback for textarea_create, in desktop/treeview.h
@@ -978,7 +1006,8 @@ static void treeview_textarea_search_callback(void *data,
 			/* Textarea drag started */
 			tree->drag.type = TV_DRAG_SEARCH;
 		}
-		treeview__cw_drag_status(tree, tree->drag.type);
+		treeview__cw_drag_status(tree,
+				treeview__get_cw_drag_type(tree));
 		break;
 
 	case TEXTAREA_MSG_REDRAW_REQUEST:
@@ -4217,7 +4246,8 @@ static void treeview_textarea_callback(void *data, struct textarea_msg *msg)
 			/* Textarea drag started */
 			tree->drag.type = TV_DRAG_TEXTAREA;
 		}
-		treeview__cw_drag_status(tree, tree->drag.type);
+		treeview__cw_drag_status(tree,
+				treeview__get_cw_drag_type(tree));
 		break;
 
 	case TEXTAREA_MSG_REDRAW_REQUEST:
