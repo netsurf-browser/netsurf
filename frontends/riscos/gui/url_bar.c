@@ -40,6 +40,7 @@
 #include "riscos/url_suggest.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
+#include "riscos/wimputils.h"
 #include "riscos/window.h"
 #include "riscos/ucstables.h"
 #include "riscos/filetype.h"
@@ -983,11 +984,13 @@ ro_gui_url_bar_click(struct url_bar *url_bar,
 	 */
 	if (pointer->buttons == wimp_DRAG_SELECT ||
 	    pointer->buttons == wimp_DRAG_ADJUST) {
-		if (pointer->i == url_bar->text.icon) {
-			if (action != NULL) {
-				*action = TOOLBAR_URL_DRAG_URL;
+		if (ns_wimp_has_text_selection()) {
+			if (pointer->i == url_bar->text.icon) {
+				if (action != NULL) {
+					*action = TOOLBAR_URL_DRAG_URL;
+				}
+				return true;
 			}
-			return true;
 		}
 
 		if (is_point_in_box(&pos, &url_bar->favicon.extent)) {
