@@ -24,6 +24,9 @@
 #define riscos_wimputils_h_
 
 #include <oslib/wimp.h>
+#include <oslib/wimpreadsysinfo.h>
+
+#include "utils/log.h"
 
 /* Magical union to permit aliasing of wimp_window_state and wimp_open
  * Do not use this directly. Use the macros, instead. */
@@ -61,5 +64,28 @@ typedef union vdu_var_list {
 } vdu_var_list;
 
 #define PTR_OS_VDU_VAR_LIST(l) ((os_vdu_var_list *) (vdu_var_list *) (l))
+
+/**
+ * Check whether the OS supports text selection in writiable icons.
+ *
+ * \return true if text-selection is supported, false otherwise.
+ */
+bool ns_wimp_has_text_selection(void)
+{
+	wimp_colour bg;
+	wimp_colour fg;
+	os_error *error;
+	wimpreadsysinfotextselection_flags flags;
+
+	error = xwimpreadsysinfo_text_selection(&bg, &fg, &flags);
+	if (error) {
+		NSLOG(netsurf, WARNING,
+				"xwimpreadsysinfo_text_selection: 0x%x: %s",
+				error->errnum, error->errmess);
+		return false;
+	}
+
+	return (flags & wimpreadsysinfotextselectionflags_ENABLED);
+}
 
 #endif
