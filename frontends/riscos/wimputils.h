@@ -70,7 +70,7 @@ typedef union vdu_var_list {
  *
  * \return true if text-selection is supported, false otherwise.
  */
-bool ns_wimp_has_text_selection(void)
+static inline bool ns_wimp_has_text_selection(void)
 {
 	wimp_colour bg;
 	wimp_colour fg;
