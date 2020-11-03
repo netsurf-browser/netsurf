@@ -984,7 +984,7 @@ ro_gui_url_bar_click(struct url_bar *url_bar,
 	 */
 	if (pointer->buttons == wimp_DRAG_SELECT ||
 	    pointer->buttons == wimp_DRAG_ADJUST) {
-		if (ns_wimp_has_text_selection()) {
+		if (!ns_wimp_has_text_selection()) {
 			if (pointer->i == url_bar->text.icon) {
 				if (action != NULL) {
 					*action = TOOLBAR_URL_DRAG_URL;
