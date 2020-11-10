@@ -1115,18 +1115,20 @@ bool ro_toolbar_click(wimp_pointer *pointer)
 		return true;
 	}
 
-	/* Nothing else has handled this, so try passing it to the
-	 * URL Complete module.
-	 *
-	 * \TODO -- This should really move into the URL Bar module, as
-	 *          URL Complete is really an extension to that.
-	 */
-
-	if (toolbar->url != NULL && toolbar->url_display &&
-			ro_gui_url_bar_test_for_text_field_click(toolbar->url,
-				pointer)) {
-		ro_gui_url_complete_start(toolbar);
-		return true;
+	if (pointer->buttons != wimp_DRAG_SELECT &&
+	    pointer->buttons != wimp_DRAG_ADJUST) {
+		/* Nothing else has handled this click, so try passing it to
+		 * the URL Complete module.
+		 *
+		 * \TODO -- This should really move into the URL Bar module, as
+		 *          URL Complete is really an extension to that.
+		 */
+		if (toolbar->url != NULL && toolbar->url_display &&
+				ro_gui_url_bar_test_for_text_field_click(
+						toolbar->url, pointer)) {
+			ro_gui_url_complete_start(toolbar);
+			return true;
+		}
 	}
 
 	return false;
