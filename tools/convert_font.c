@@ -290,14 +290,14 @@ static bool generate_font_header(const char *path, struct font_data *data)
 
 
 	for (s = 0; s < 4; s++) {
-		fprintf(fp, "const uint8_t *%s_section_table;\n",
+		fprintf(fp, "extern const uint8_t *%s_section_table;\n",
 			var_lables[s]);
-		fprintf(fp, "const uint16_t *%s_sections;\n",
+		fprintf(fp, "extern const uint16_t *%s_sections;\n",
 			var_lables[s]);
 
 	}
 
-	fprintf(fp, "const uint8_t *font_glyph_data;\n");
+	fprintf(fp, "extern const uint8_t *font_glyph_data;\n");
 
 	fprintf(fp, "\n\n");
 
