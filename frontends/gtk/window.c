@@ -391,12 +391,25 @@ nsgtk_window_button_release_event(GtkWidget *widget,
 	bool shift = event->state & GDK_SHIFT_MASK;
 	bool ctrl = event->state & GDK_CONTROL_MASK;
 
+	switch (event->button) {
+	case 8:
+		nsgtk_toolbar_item_activate(g->toolbar, BACK_BUTTON);
+		break;
+	case 9:
+		nsgtk_toolbar_item_activate(g->toolbar, FORWARD_BUTTON);
+		break;
+	default:
+		NSLOG(netsurf, DEBUG, "event button %d", event->button);
+		break;
+	}
+
 	/* If the mouse state is PRESS then we are waiting for a release to emit
 	 * a click event, otherwise just reset the state to nothing */
-	if (g->mouse.state & BROWSER_MOUSE_PRESS_1)
+	if (g->mouse.state & BROWSER_MOUSE_PRESS_1) {
 		g->mouse.state ^= (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1);
-	else if (g->mouse.state & BROWSER_MOUSE_PRESS_2)
+	} else if (g->mouse.state & BROWSER_MOUSE_PRESS_2) {
 		g->mouse.state ^= (BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2);
+	}
 
 	/* Handle modifiers being removed */
 	if (g->mouse.state & BROWSER_MOUSE_MOD_1 && !shift)

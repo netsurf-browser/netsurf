@@ -87,6 +87,7 @@ static browser_mouse_state nsgtk_cw_gdkbutton_to_nsstate(GdkEventButton *event)
 	}
 
 	if (event->state & GDK_MOD1_MASK) {
+		/* usually alt */
 		ms |= BROWSER_MOUSE_MOD_3;
 	}
 
