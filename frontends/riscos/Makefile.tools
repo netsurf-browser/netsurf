@@ -1,0 +1,52 @@
+# -*- mode: makefile-gmake -*-
+##
+## RISC OS target tool setup
+##
+
+ifeq ($(HOST),riscos)
+  # Build for RO on RO
+  GCCSDK_INSTALL_ENV := <NSLibs$$Dir>
+  CCRES := ccres
+  TPLEXT :=
+  MAKERUN := makerun
+  SQUEEZE := squeeze
+  RUNEXT :=
+  CC := gcc
+  CXX := g++
+  EXEEXT :=
+  PKG_CONFIG :=
+else
+  # Cross-build for RO (either using GCCSDK 3.4.6 - AOF,
+  # either using GCCSDK 4 - ELF)
+  ifeq ($(origin GCCSDK_INSTALL_ENV),undefined)
+    ifneq ($(realpath /opt/netsurf/arm-unknown-riscos/env),)
+      GCCSDK_INSTALL_ENV := /opt/netsurf/arm-unknown-riscos/env
+    else
+      GCCSDK_INSTALL_ENV := /home/riscos/env
+    endif
+  endif
+   ifeq ($(origin GCCSDK_INSTALL_CROSSBIN),undefined)
+    ifneq ($(realpath /opt/netsurf/arm-unknown-riscos/cross/bin),)
+      GCCSDK_INSTALL_CROSSBIN := /opt/netsurf/arm-unknown-riscos/cross/bin
+    else
+      GCCSDK_INSTALL_CROSSBIN := /home/riscos/cross/bin
+    endif
+  endif
+
+  CCRES := $(GCCSDK_INSTALL_CROSSBIN)/ccres
+  TPLEXT := ,fec
+  MAKERUN := $(GCCSDK_INSTALL_CROSSBIN)/makerun
+  SQUEEZE := $(GCCSDK_INSTALL_CROSSBIN)/squeeze
+  RUNEXT := ,feb
+  CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
+  ifneq (,$(findstring arm-unknown-riscos-gcc,$(CC)))
+    SUBTARGET := -elf
+    EXEEXT := ,e1f
+    ELF2AIF := $(GCCSDK_INSTALL_CROSSBIN)/elf2aif
+  else
+   SUBTARGET := -aof
+   EXEEXT := ,ff8
+  endif
+  CXX := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*g++)
+  PKG_CONFIG := $(GCCSDK_INSTALL_ENV)/ro-pkg-config
+endif
