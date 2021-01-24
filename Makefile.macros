@@ -27,6 +27,7 @@ define feature_enabled
   endif
 endef
 
+
 # A macro that conditionaly adds flags to the build with a uniform display.
 #
 # 1: Feature name (ie, NETSURF_USE_BMP -> BMP)
@@ -56,6 +57,7 @@ define feature_switch
   endif
 endef
 
+
 # Extend flags with appropriate values from pkg-config for enabled features
 #
 # 1: pkg-config required modules for feature
@@ -81,6 +83,7 @@ define pkg_config_find_and_add
     endif
   endif
 endef
+
 
 # Extend flags with appropriate values from pkg-config for enabled features
 #
@@ -134,4 +137,113 @@ define pkg_config_find_and_add_enabled
       $$(error NETSURF_USE_$(1) must be YES, NO, or AUTO)
     endif
   endif
+endef
+
+
+# Message splitting rule generation macro
+#
+# 1 = Language
+define split_messages
+
+$$(MESSAGES_TARGET)/$(1)/Messages: resources/FatMessages $$(TOOLROOT)/split-messages
+	$$(VQ)echo "MSGSPLIT: Language: $(1) Filter: $$(MESSAGES_FILTER)"
+	$$(Q)$$(MKDIR) -p $$(MESSAGES_TARGET)/$(1)
+	$$(Q)$$(RM) $$@
+	$$(Q)$$(TOOLROOT)/split-messages -l $(1) -p $$(MESSAGES_FILTER) -f messages -o $$@ -z $$<
+
+CLEAN_MESSAGES += $$(MESSAGES_TARGET)/$(1)/Messages
+MESSAGES += $$(MESSAGES_TARGET)/$(1)/Messages
+
+endef
+
+
+# Now some macros which build the make system
+
+# Extend dependancy files for c source files
+#
+# 1 = Source file
+# 2 = dep filename, no prefix
+# 3 = obj filename, no prefix
+define dependency_generate_c
+DEPFILES += $(2)
+
+endef
+
+
+# Extend dependancy files for s source files
+#
+# 1 = Source file
+# 2 = dep filename, no prefix
+# 3 = obj filename, no prefix
+define dependency_generate_s
+DEPFILES += $(2)
+
+endef
+
+
+# Rule generator to compile c files
+#
+# 1 = Source file
+# 2 = obj filename, no prefix
+# 3 = dep filename, no prefix
+ifeq ($(CC_MAJOR),2)
+# simpler deps tracking for gcc2...
+define compile_target_c
+$$(OBJROOT)/$(2): $(1) $$(OBJROOT)/created $$(DEPROOT)/created
+	$$(VQ)echo "     DEP: $(1)"
+	$$(Q)$$(RM) $$(DEPROOT)/$(3)
+	$$(Q)$$(CC) $$(IFLAGS) $$(CFLAGS) -MM  \
+		    $(1) | sed 's,^.*:,$$(DEPROOT)/$(3) $$(OBJROOT)/$(2):,' \
+		    > $$(DEPROOT)/$(3)
+	$$(VQ)echo " COMPILE: $(1)"
+	$$(Q)$$(RM) $$(OBJROOT)/$(2)
+	$$(Q)$$(CC) $$(COMMON_WARNFLAGS) $$(CWARNFLAGS) $$(IFLAGS) $$(CFLAGS) $(CFLAGS_ENV) -o $$(OBJROOT)/$(2) -c $(1)
+
+endef
+else
+define compile_target_c
+$$(OBJROOT)/$(2): $(1) $$(OBJROOT)/created $$(DEPROOT)/created
+	$$(VQ)echo " COMPILE: $(1)"
+	$$(Q)$$(RM) $$(DEPROOT)/$(3)
+	$$(Q)$$(RM) $$(OBJROOT)/$(2)
+	$$(Q)$$(CC) $$(COMMON_WARNFLAGS) $$(CWARNFLAGS) $$(IFLAGS) $$(CFLAGS) $(CFLAGS_ENV) \
+		    -MMD -MT '$$(DEPROOT)/$(3) $$(OBJROOT)/$(2)' \
+		    -MF $$(DEPROOT)/$(3) -o $$(OBJROOT)/$(2) -c $(1)
+
+endef
+endif
+
+
+# Rule generator to compile cpp files
+#
+# 1 = Source file
+# 2 = obj filename, no prefix
+# 3 = dep filename, no prefix
+define compile_target_cpp
+$$(OBJROOT)/$(2): $(1) $$(OBJROOT)/created $$(DEPROOT)/created
+	$$(VQ)echo "     DEP: $(1)"
+	$$(Q)$$(RM) $$(DEPROOT)/$(3)
+	$$(Q)$$(CC) $$(IFLAGS) $$(CXXFLAGS) $$(COMMON_WARNFLAGS) $$(CXXWARNFLAGS) -MM  \
+		    $(1) | sed 's,^.*:,$$(DEPROOT)/$(3) $$(OBJROOT)/$(2):,' \
+		    > $$(DEPROOT)/$(3)
+	$$(VQ)echo " COMPILE: $(1)"
+	$$(Q)$$(RM) $$(OBJROOT)/$(2)
+	$$(Q)$$(CXX) $$(COMMON_WARNFLAGS) $$(CXXWARNFLAGS) $$(IFLAGS) $$(CXXFLAGS) $(CXXFLAGS_ENV) -o $$(OBJROOT)/$(2) -c $(1)
+
+endef
+
+
+# Rule generator to compile s files
+#
+# 1 = Source file
+# 2 = obj filename, no prefix
+# 3 = dep filename, no prefix
+define compile_target_s
+$$(OBJROOT)/$(2): $(1) $$(OBJROOT)/created $$(DEPROOT)/created
+	$$(VQ)echo "ASSEMBLE: $(1)"
+	$$(Q)$$(RM) $$(DEPROOT)/$(3)
+	$$(Q)$$(RM) $$(OBJROOT)/$(2)
+	$$(Q)$$(CC) $$(ASFLAGS) -MMD -MT '$$(DEPROOT)/$(3) $$(OBJROOT)/$(2)' \
+		    -MF $$(DEPROOT)/$(3) -o $$(OBJROOT)/$(2) -c $(1)
+
 endef

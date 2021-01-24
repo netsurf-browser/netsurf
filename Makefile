@@ -300,20 +300,6 @@ S_COMMON := \
 # Message targets
 # ----------------------------------------------------------------------------
 
-# Message splitting rule generation macro
-# 1 = Language
-define split_messages
-
-$$(MESSAGES_TARGET)/$(1)/Messages: resources/FatMessages $$(TOOLROOT)/split-messages
-	$$(VQ)echo "MSGSPLIT: Language: $(1) Filter: $$(MESSAGES_FILTER)"
-	$$(Q)$$(MKDIR) -p $$(MESSAGES_TARGET)/$(1)
-	$$(Q)$$(RM) $$@
-	$$(Q)$$(TOOLROOT)/split-messages -l $(1) -p $$(MESSAGES_FILTER) -f messages -o $$@ -z $$<
-
-CLEAN_MESSAGES += $$(MESSAGES_TARGET)/$(1)/Messages
-MESSAGES += $$(MESSAGES_TARGET)/$(1)/Messages
-
-endef
 
 # generate the message file rules
 $(eval $(foreach LANG,$(MESSAGES_LANGUAGES), \
@@ -364,7 +350,7 @@ ifeq ($(TARGET),beos)
 	$(Q)$(BEOS_SETVER) $(EXETARGET) \
                 -app $(VERSION_MAJ) $(VERSION_MIN) 0 d 0 \
                 -short "NetSurf $(VERSION_FULL)" \
-                -long "NetSurf $(VERSION_FULL) © 2003 - 2016 The NetSurf Developers"
+                -long "NetSurf $(VERSION_FULL) © 2003 - 2021 The NetSurf Developers"
 	$(VQ)echo " MIMESET: $(EXETARGET)"
 	$(Q)$(BEOS_MIMESET) $(EXETARGET)
 endif
@@ -388,79 +374,6 @@ all-program: $(EXETARGET) $(POSTEXES)
 .SUFFIXES:
 
 DEPFILES :=
-# Now some macros which build the make system
-
-# 1 = Source file
-# 2 = dep filename, no prefix
-# 3 = obj filename, no prefix
-define dependency_generate_c
-DEPFILES += $(2)
-
-endef
-
-# 1 = Source file
-# 2 = dep filename, no prefix
-# 3 = obj filename, no prefix
-define dependency_generate_s
-DEPFILES += $(2)
-
-endef
-
-# 1 = Source file
-# 2 = obj filename, no prefix
-# 3 = dep filename, no prefix
-ifeq ($(CC_MAJOR),2)
-# simpler deps tracking for gcc2...
-define compile_target_c
-$$(OBJROOT)/$(2): $(1) $$(OBJROOT)/created $$(DEPROOT)/created
-	$$(VQ)echo "     DEP: $(1)"
-	$$(Q)$$(RM) $$(DEPROOT)/$(3)
-	$$(Q)$$(CC) $$(IFLAGS) $$(CFLAGS) -MM  \
-		    $(1) | sed 's,^.*:,$$(DEPROOT)/$(3) $$(OBJROOT)/$(2):,' \
-		    > $$(DEPROOT)/$(3)
-	$$(VQ)echo " COMPILE: $(1)"
-	$$(Q)$$(RM) $$(OBJROOT)/$(2)
-	$$(Q)$$(CC) $$(COMMON_WARNFLAGS) $$(CWARNFLAGS) $$(IFLAGS) $$(CFLAGS) $(CFLAGS_ENV) -o $$(OBJROOT)/$(2) -c $(1)
-
-endef
-else
-define compile_target_c
-$$(OBJROOT)/$(2): $(1) $$(OBJROOT)/created $$(DEPROOT)/created
-	$$(VQ)echo " COMPILE: $(1)"
-	$$(Q)$$(RM) $$(DEPROOT)/$(3)
-	$$(Q)$$(RM) $$(OBJROOT)/$(2)
-	$$(Q)$$(CC) $$(COMMON_WARNFLAGS) $$(CWARNFLAGS) $$(IFLAGS) $$(CFLAGS) $(CFLAGS_ENV) \
-		    -MMD -MT '$$(DEPROOT)/$(3) $$(OBJROOT)/$(2)' \
-		    -MF $$(DEPROOT)/$(3) -o $$(OBJROOT)/$(2) -c $(1)
-
-endef
-endif
-
-define compile_target_cpp
-$$(OBJROOT)/$(2): $(1) $$(OBJROOT)/created $$(DEPROOT)/created
-	$$(VQ)echo "     DEP: $(1)"
-	$$(Q)$$(RM) $$(DEPROOT)/$(3)
-	$$(Q)$$(CC) $$(IFLAGS) $$(CXXFLAGS) $$(COMMON_WARNFLAGS) $$(CXXWARNFLAGS) -MM  \
-		    $(1) | sed 's,^.*:,$$(DEPROOT)/$(3) $$(OBJROOT)/$(2):,' \
-		    > $$(DEPROOT)/$(3)
-	$$(VQ)echo " COMPILE: $(1)"
-	$$(Q)$$(RM) $$(OBJROOT)/$(2)
-	$$(Q)$$(CXX) $$(COMMON_WARNFLAGS) $$(CXXWARNFLAGS) $$(IFLAGS) $$(CXXFLAGS) $(CXXFLAGS_ENV) -o $$(OBJROOT)/$(2) -c $(1)
-
-endef
-
-# 1 = Source file
-# 2 = obj filename, no prefix
-# 3 = dep filename, no prefix
-define compile_target_s
-$$(OBJROOT)/$(2): $(1) $$(OBJROOT)/created $$(DEPROOT)/created
-	$$(VQ)echo "ASSEMBLE: $(1)"
-	$$(Q)$$(RM) $$(DEPROOT)/$(3)
-	$$(Q)$$(RM) $$(OBJROOT)/$(2)
-	$$(Q)$$(CC) $$(ASFLAGS) -MMD -MT '$$(DEPROOT)/$(3) $$(OBJROOT)/$(2)' \
-		    -MF $$(DEPROOT)/$(3) -o $$(OBJROOT)/$(2) -c $(1)
-
-endef
 
 # Rules to construct dep lines for each object...
 $(eval $(foreach SOURCE,$(filter %.c,$(SOURCES)), \
