@@ -155,10 +155,10 @@ nserror netsurf_init(const char *store_path)
 	hlcache_parameters.llcache.fetch_attempts = nsoption_uint(max_retried_fetches);
 
 	/* image cache is 25% of total memory cache size */
-	image_cache_parameters.limit = (hlcache_parameters.llcache.limit * 25) / 100;
+	image_cache_parameters.limit = hlcache_parameters.llcache.limit / 4;
 
 	/* image cache hysteresis is 20% of the image cache size */
-	image_cache_parameters.hysteresis = (image_cache_parameters.limit * 20) / 100;
+	image_cache_parameters.hysteresis = image_cache_parameters.limit / 5;
 
 	/* account for image cache use from total */
 	hlcache_parameters.llcache.limit -= image_cache_parameters.limit;
@@ -167,7 +167,7 @@ nserror netsurf_init(const char *store_path)
 	hlcache_parameters.llcache.store.limit = nsoption_uint(disc_cache_size);
 
 	/* set backing store hysterissi to 20% */
-	hlcache_parameters.llcache.store.hysteresis = (hlcache_parameters.llcache.store.limit * 20) / 100;;
+	hlcache_parameters.llcache.store.hysteresis = hlcache_parameters.llcache.store.limit / 5;
 
 	/* set the path to the backing store */
 	hlcache_parameters.llcache.store.path =
