@@ -523,7 +523,7 @@ list_counter_style_value(char *text,
 		res = text_len-2;
 	}
 	text[res++] = '.';
-	text[res++] = 0;
+	text[res] = 0;
 
 	return res;
 }
