@@ -16,6 +16,7 @@ S_HTML := box_construct.c	\
 	imagemap.c		\
 	interaction.c		\
 	layout.c		\
+	list_counter_style.c	\
 	object.c		\
 	redraw.c		\
 	redraw_border.c		\
