@@ -70,6 +70,93 @@ map_aval_to_symbols(char *buf, const size_t buflen,
 
 
 /**
+ * generate numeric symbol values
+ *
+ * fills array with numeric values that represent the input value
+ *
+ * \param ares Buffer to recive the converted values
+ * \param alen the length of \a ares buffer
+ * \param value The value to convert
+ * \param slen The number of symbols in the alphabet
+ * \return The length a complete conversion which may be larger than \a alen
+ */
+static size_t
+calc_numeric_system(uint8_t *ares,
+		    const size_t alen,
+		    int value,
+		    unsigned char slen)
+{
+	size_t idx = 0;
+	uint8_t *first;
+	uint8_t *last;
+
+	/* generate alphabet values in ascending order */
+	while (value > 0) {
+		if (idx < alen) ares[idx] = value % slen;
+		idx++;
+		value = value / slen;
+	}
+
+	/* put the values in decending order */
+	first = ares;
+	if (idx < alen) {
+		last = first + (idx - 1);
+	} else {
+		last = first + (alen - 1);
+	}
+	while (first < last) {
+		*first ^= *last;
+		*last ^= *first;
+		*first ^= *last;
+		first++;
+		last--;
+	}
+
+	return idx;
+}
+
+
+/**
+ * generate addative symbol values
+ *
+ * fills array with numeric values that represent the input value
+ *
+ * \param ares Buffer to recive the converted values
+ * \param alen the length of \a ares buffer
+ * \param value The value to convert
+ * \param wlen The number of weights
+ * \return The length a complete conversion which may be larger than \a alen
+ */
+static size_t
+calc_additive_system(uint8_t *ares,
+		    const size_t alen,
+		    int value,
+		    const int weights[],
+		    unsigned char wlen)
+{
+	size_t widx; /* weight index */
+	size_t aidx = 0;
+	size_t idx;
+	size_t times; /* number of times a weight occours */
+
+	/* iterate over the available weights */
+	for (widx = 0; widx < wlen;widx++) {
+		times = value / weights[widx];
+		if (times > 0) {
+			for (idx=0;idx < times;idx++) {
+				if (aidx < alen) ares[aidx] = widx;
+				aidx++;
+			}
+
+			value -= times * weights[widx];
+		}
+	}
+
+	return aidx;
+}
+
+
+/**
  * generate alphabet symbol values for latin and greek labelling
  *
  * fills array with alphabet values suitable for the input value
@@ -81,10 +168,10 @@ map_aval_to_symbols(char *buf, const size_t buflen,
  * \return The length a complete conversion which may be larger than \a alen
  */
 static size_t
-calc_alphabet_values(uint8_t *ares,
-		     const size_t alen,
-		     int value,
-		     unsigned char slen)
+calc_alphabet_system(uint8_t *ares,
+		       const size_t alen,
+		       int value,
+		       unsigned char slen)
 {
 	size_t idx = 0;
 	uint8_t *first;
@@ -120,10 +207,13 @@ calc_alphabet_values(uint8_t *ares,
 /**
  * Roman numeral conversion
  *
- * \return The number of characters that are nesesary for full output
+ * \return The number of numerals that are nesesary for full output
  */
 static int
-ntoromannumeral(char *buf, const size_t maxlen, int value, const char *C)
+calc_roman_system(uint8_t *buf,
+		  const size_t maxlen,
+		  int value,
+		  unsigned char slen)
 {
 	const int S[]  = {    0,   2,   4,   2,   4,   2,   4 };
 	const int D[]  = { 1000, 500, 100,  50,  10,   5,   1 };
@@ -131,6 +221,8 @@ ntoromannumeral(char *buf, const size_t maxlen, int value, const char *C)
 	size_t k = 0; /* index into output buffer */
 	unsigned int i = 0; /* index into maps */
 	int r, r2;
+
+	assert(slen == 7);
 
 	while (value > 0) {
 		if (D[i] <= value) {
@@ -143,15 +235,15 @@ ntoromannumeral(char *buf, const size_t maxlen, int value, const char *C)
 			if (i < L && r2 >= S[i+1]) {
 				/* will violate repeat boundary on next pass */
 				value = value - (r2 * D[i+1]);
-				if (k < maxlen) buf[k++] = C[i+1];
-				if (k < maxlen) buf[k++] = C[i-1];
+				if (k < maxlen) buf[k++] = i+1;
+				if (k < maxlen) buf[k++] = i-1;
 			} else if (S[i] && r >= S[i]) {
 				/* violated repeat boundary on this pass */
-				if (k < maxlen) buf[k++] = C[i];
-				if (k < maxlen) buf[k++] = C[i-1];
+				if (k < maxlen) buf[k++] = i;
+				if (k < maxlen) buf[k++] = i-1;
 			} else {
 				while (r-- > 0 && k < maxlen) {
-					buf[k++] = C[i];
+					buf[k++] = i;
 				}
 			}
 		}
@@ -167,19 +259,43 @@ ntoromannumeral(char *buf, const size_t maxlen, int value, const char *C)
 /**
  * lower case roman numeral
  */
-static int ntolcromannumeral(char *buf, const size_t maxlen, int value)
+static int ntolcromannumeral(char *buf, const size_t buflen, int value)
 {
-	const char C[] = {  'm', 'd', 'c', 'l', 'x', 'v', 'i' };
-	return ntoromannumeral(buf, maxlen, value, C);
+	size_t alen;
+	uint8_t aval[20];
+	const char symtab[][4] = {
+		"m", "d", "c", "l", "x", "v", "i"
+	};
+	const size_t symtablen = sizeof(symtab) / 4;
+
+	alen = calc_roman_system(aval, sizeof(aval), value, symtablen);
+	if (alen >= sizeof(aval)) {
+		*buf = '?';
+		return 1;
+	}
+
+	return map_aval_to_symbols(buf, buflen, aval, alen, symtab, symtablen);
 }
 
 /**
  * upper case roman numeral
  */
-static int ntoucromannumeral(char *buf, const size_t maxlen, int value)
+static int ntoucromannumeral(char *buf, const size_t buflen, int value)
 {
-	const char C[] = {  'M', 'D', 'C', 'L', 'X', 'V', 'I' };
-	return ntoromannumeral(buf, maxlen, value, C);
+	size_t alen;
+	uint8_t aval[20];
+	const char symtab[][4] = {
+		"M", "D", "C", "L", "X", "V", "I"
+	};
+	const size_t symtablen = sizeof(symtab) / 4;
+
+	alen = calc_roman_system(aval, sizeof(aval), value, symtablen);
+	if (alen >= sizeof(aval)) {
+		*buf = '?';
+		return 1;
+	}
+
+	return map_aval_to_symbols(buf, buflen, aval, alen, symtab, symtablen);
 }
 
 
@@ -196,7 +312,7 @@ static int ntolcalpha(char *buf, const size_t buflen, int value)
 	};
 	const size_t symtablen = sizeof(symtab) / 4;
 
-	alen = calc_alphabet_values(aval, sizeof(aval), value, symtablen);
+	alen = calc_alphabet_system(aval, sizeof(aval), value, symtablen);
 	if (alen >= sizeof(aval)) {
 		*buf = '?';
 		return 1;
@@ -216,7 +332,7 @@ static int ntoucalpha(char *buf, const size_t buflen, int value)
 	};
 	const size_t symtablen = sizeof(symtab) / 4;
 
-	alen = calc_alphabet_values(aval, sizeof(aval), value, symtablen);
+	alen = calc_alphabet_system(aval, sizeof(aval), value, symtablen);
 	if (alen >= sizeof(aval)) {
 		*buf = '?';
 		return 1;
@@ -236,7 +352,7 @@ static int ntolcgreek(char *buf, const size_t buflen, int value)
 	};
 	const size_t symtablen = sizeof(symtab) / 4;
 
-	alen = calc_alphabet_values(aval, sizeof(aval), value, symtablen);
+	alen = calc_alphabet_system(aval, sizeof(aval), value, symtablen);
 	if (alen >= sizeof(aval)) {
 		*buf = '?';
 		return 1;
@@ -245,6 +361,101 @@ static int ntolcgreek(char *buf, const size_t buflen, int value)
 	return map_aval_to_symbols(buf, buflen, aval, alen, symtab, symtablen);
 }
 
+#if 0
+static int ntolchex(char *buf, const size_t buflen, int value)
+{
+	size_t alen;
+	uint8_t aval[20];
+	const char symtab[][4] = {
+		"0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+		"a", "b", "c", "d", "e", "f"
+	};
+	const size_t symtablen = sizeof(symtab) / 4;
+
+	alen = calc_numeric_system(aval, sizeof(aval), value, symtablen);
+	if (alen >= sizeof(aval)) {
+		*buf = '?';
+		return 1;
+	}
+
+	return map_aval_to_symbols(buf, buflen, aval, alen, symtab, symtablen);
+}
+#endif
+
+static int ntodecimal(char *buf, const size_t buflen, int value)
+{
+	size_t alen;
+	uint8_t aval[20];
+	const char symtab[][4] = {
+		"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
+	};
+	const size_t symtablen = sizeof(symtab) / 4;
+
+	alen = calc_numeric_system(aval, sizeof(aval), value, symtablen);
+	if (alen >= sizeof(aval)) {
+		*buf = '?';
+		return 1;
+	}
+
+	return map_aval_to_symbols(buf, buflen, aval, alen, symtab, symtablen);
+}
+
+static int ntoarmenian(char *buf, const size_t buflen, int value)
+{
+	size_t alen;
+	uint8_t aval[20];
+	const char symtab[][4] = {
+		"Ք", "Փ", "Ւ", "Ց", "Ր", "Տ", "Վ", "Ս", "Ռ",
+		"Ջ", "Պ", "Չ", "Ո", "Շ", "Ն", "Յ", "Մ", "Ճ",
+		"Ղ", "Ձ", "Հ", "Կ", "Ծ", "Խ", "Լ", "Ի", "Ժ",
+		"Թ", "Ը", "Է", "Զ", "Ե", "Դ", "Գ", "Բ", "Ա"
+	};
+	const int weighttab[] = {
+		9000, 8000, 7000, 6000, 5000, 4000, 3000, 2000, 1000,
+		900,  800,  700,  600,  500,  400,  300,  200,  100,
+		90,   80,   70,   60,   50,   40,   30,   20,   10,
+		9,    8,    7,    6,    5,    4,    3,    2,    1
+	};
+	const size_t symtablen = sizeof(symtab) / 4;
+
+	alen = calc_additive_system(aval, sizeof(aval), value, weighttab, symtablen);
+	if (alen >= sizeof(aval)) {
+		*buf = '?';
+		return 1;
+	}
+
+	return map_aval_to_symbols(buf, buflen, aval, alen, symtab, symtablen);
+}
+
+
+static int ntogeorgian(char *buf, const size_t buflen, int value)
+{
+	size_t alen;
+	uint8_t aval[20];
+	const char symtab[][4] = {
+		"ჵ",
+		"ჰ", "ჯ", "ჴ", "ხ", "ჭ", "წ", "ძ", "ც", "ჩ",
+		"შ", "ყ", "ღ", "ქ", "ფ", "ჳ", "ტ", "ს", "რ",
+		"ჟ", "პ", "ო", "ჲ", "ნ", "მ", "ლ", "კ", "ი",
+		"თ", "ჱ", "ზ", "ვ", "ე", "დ", "გ", "ბ", "ა",
+	};
+	const int weighttab[] = {
+		                                                10000,
+		9000, 8000, 7000, 6000, 5000, 4000, 3000, 2000, 1000,
+		900,  800,  700,  600,  500,  400,  300,  200,  100,
+		90,   80,   70,   60,   50,   40,   30,   20,   10,
+		9,    8,    7,    6,    5,    4,    3,    2,    1
+	};
+	const size_t symtablen = sizeof(symtab) / 4;
+
+	alen = calc_additive_system(aval, sizeof(aval), value, weighttab, symtablen);
+	if (alen >= sizeof(aval)) {
+		*buf = '?';
+		return 1;
+	}
+
+	return map_aval_to_symbols(buf, buflen, aval, alen, symtab, symtablen);
+}
 
 /**
  * format value into a list marker with a style
@@ -288,10 +499,16 @@ list_counter_style_value(char *text,
 		break;
 
 	case CSS_LIST_STYLE_TYPE_ARMENIAN:
+		res = ntoarmenian(text, text_len, value);
+		break;
+
 	case CSS_LIST_STYLE_TYPE_GEORGIAN:
+		res = ntogeorgian(text, text_len, value);
+		break;
+
 	case CSS_LIST_STYLE_TYPE_DECIMAL:
 	default:
-		res = snprintf(text, text_len, "%u", value);
+		res = ntodecimal(text, text_len, value);
 		break;
 	}
 
