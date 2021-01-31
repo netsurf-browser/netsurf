@@ -1579,6 +1579,50 @@ static void css_hint_white_space_nowrap(
 	}
 }
 
+static void css_hint_list(
+		nscss_select_ctx *ctx,
+		dom_node *node)
+{
+	struct css_hint *hint = &(hint_ctx.hints[hint_ctx.len]);
+	dom_exception err;
+	dom_string *attr;
+
+	err = dom_element_get_attribute(node, corestring_dom_type, &attr);
+	if (err == DOM_NO_ERR && attr != NULL) {
+		const char *attr_str = dom_string_data(attr);
+		size_t attr_len = dom_string_byte_length(attr);
+		enum css_list_style_type_e type = CSS_LIST_STYLE_TYPE_INHERIT;
+
+		if (attr_len == 1) {
+			switch (attr_str[0]) {
+			case 'a':
+				type = CSS_LIST_STYLE_TYPE_LOWER_ALPHA;
+				break;
+			case 'A':
+				type = CSS_LIST_STYLE_TYPE_UPPER_ALPHA;
+				break;
+			case 'i':
+				type = CSS_LIST_STYLE_TYPE_LOWER_ROMAN;
+				break;
+			case 'I':
+				type = CSS_LIST_STYLE_TYPE_UPPER_ROMAN;
+				break;
+			case '1':
+				type = CSS_LIST_STYLE_TYPE_DECIMAL;
+				break;
+			}
+		}
+
+		if (type != CSS_LIST_STYLE_TYPE_INHERIT) {
+			hint->prop = CSS_PROP_LIST_STYLE_TYPE;
+			hint->status = type;
+			css_hint_advance(&hint);
+		}
+
+		dom_string_unref(attr);
+	}
+}
+
 
 /* Exported function, documeted in css/hints.h */
 css_error node_presentational_hint(void *pw, void *node,
@@ -1670,6 +1714,9 @@ css_error node_presentational_hint(void *pw, void *node,
 		break;
 	case DOM_HTML_ELEMENT_TYPE_CANVAS:
 		css_hint_height_width_canvas(pw, node);
+		break;
+	case DOM_HTML_ELEMENT_TYPE_OL:
+		css_hint_list(pw, node);
 		break;
 	default:
 		break;
