@@ -41,13 +41,39 @@ struct list_counter_style {
 		const unsigned int length;
 		const symbol_t value;
 	} pad;
-	const symbol_t prefix;
-	const symbol_t postfix;
+	const char *prefix;
+	const char *postfix;
 	const symbol_t *symbols; /**< array of symbols which represent this style */
 	const int *weights; /**< symbol weights for additive schemes */
 	const size_t items; /**< items in symbol and weight table */
 	size_t (*calc)(uint8_t *ares, const size_t alen, int value, const struct list_counter_style *cstyle); /**< function to calculate the system */
 };
+
+/**
+ * Copy a null-terminated UTF-8 string to buffer at offset, if there is space
+ *
+ * \param[in] buf    The output buffer
+ * \param[in] buflen The length of \a buf
+ * \param[in] pos    Current position in \a buf
+ * \param[in] str    The string to copy into \a buf
+ * \return The number of bytes needed in the output buffer which may be
+ *         larger than \a buflen but the buffer will not be overrun
+ */
+static inline size_t
+copy_string(char *buf, const size_t buflen, size_t pos, const char *str)
+{
+	size_t sidx = 0; /* current string index */
+
+	while (str[sidx] != '\0') {
+		if (pos < buflen) {
+			buf[pos] = str[sidx];
+		}
+		pos++;
+		sidx++;
+	}
+
+	return sidx;
+}
 
 /**
  * Copy a UTF-8 symbol to buffer at offset, if there is space
@@ -115,8 +141,8 @@ map_aval_to_symbols(char *buf, const size_t buflen,
 	}
 
 	/* postfix */
-	oidx += copy_symbol(buf, buflen, oidx,
-			(cstyle->postfix[0] != '\0') ?
+	oidx += copy_string(buf, buflen, oidx,
+			(cstyle->postfix != NULL) ?
 					cstyle->postfix : postfix);
 
 	return oidx;
