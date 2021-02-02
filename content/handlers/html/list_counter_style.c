@@ -41,14 +41,39 @@ struct list_counter_style {
 		const unsigned int length;
 		const symbol_t value;
 	} pad;
-	const char *prefix;
-	const char *postfix;
+	symbol_t prefix;
+	symbol_t postfix;
 	const symbol_t *symbols; /**< array of symbols which represent this style */
 	const int *weights; /**< symbol weights for additive schemes */
 	const size_t items; /**< items in symbol and weight table */
 	size_t (*calc)(uint8_t *ares, const size_t alen, int value, const struct list_counter_style *cstyle); /**< function to calculate the system */
 };
 
+/**
+ * Copy a UTF-8 symbol to buffer at offset, if there is space
+ *
+ * \param[in] buf    The output buffer
+ * \param[in] buflen The length of \a buf
+ * \param[in] pos    Current position in \a buf
+ * \param[in] symbol The symbol to copy into \a buf
+ * \return The number of bytes needed in the output buffer which may be
+ *         larger than \a buflen but the buffer will not be overrun
+ */
+static inline size_t
+copy_symbol(char *buf, const size_t buflen, size_t pos, const symbol_t symbol)
+{
+	size_t sidx = 0; /* current symbol index */
+
+	while ((sidx < sizeof(symbol_t)) && (symbol[sidx] != '\0')) {
+		if (pos < buflen) {
+			buf[pos] = symbol[sidx];
+		}
+		pos++;
+		sidx++;
+	}
+
+	return sidx;
+}
 
 /**
  * maps alphabet values to output values with a symbol table
@@ -71,53 +96,28 @@ map_aval_to_symbols(char *buf, const size_t buflen,
 		    const struct list_counter_style *cstyle)
 {
 	size_t oidx = 0;
-	size_t pidx; /* padding index */
 	size_t aidx; /* numeral index */
-	size_t sidx; /* current symbol index */
-	const char *postfix = "."; /* default postfix string */
+	const symbol_t postfix = "."; /* default postfix string */
 
 	/* add padding if required */
 	if (alen < cstyle->pad.length) {
+		size_t pidx; /* padding index */
 		for (pidx=cstyle->pad.length - alen; pidx > 0; pidx--) {
-			sidx=0;
-			while ((sidx < 4) &&
-			       (cstyle->pad.value[sidx] != 0)) {
-				if (oidx < buflen) {
-					buf[oidx] = cstyle->pad.value[sidx];
-				}
-				oidx++;
-				sidx++;
-			}
+			oidx += copy_symbol(buf, buflen, oidx,
+					cstyle->pad.value);
 		}
 	}
 
 	/* map symbols */
 	for (aidx=0; aidx < alen; aidx++) {
-		sidx=0;
-		while ((sidx < 4) &&
-		       (cstyle->symbols[aval[aidx]][sidx] != 0)) {
-			if (oidx < buflen) {
-				buf[oidx] = cstyle->symbols[aval[aidx]][sidx];
-			}
-			oidx++;
-			sidx++;
-		}
+		oidx += copy_symbol(buf, buflen, oidx,
+				cstyle->symbols[aval[aidx]]);
 	}
-
 
 	/* postfix */
-	if (cstyle->postfix != NULL) {
-		postfix = cstyle->postfix;
-	}
-	sidx=0;
-	while ((sidx < 4) &&
-	       (postfix[sidx] != 0)) {
-		if (oidx < buflen) {
-			buf[oidx] = postfix[sidx];
-		}
-		oidx++;
-		sidx++;
-	}
+	oidx += copy_symbol(buf, buflen, oidx,
+			(cstyle->postfix[0] != '\0') ?
+					cstyle->postfix : postfix);
 
 	return oidx;
 }
