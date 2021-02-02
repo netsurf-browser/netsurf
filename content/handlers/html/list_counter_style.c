@@ -22,11 +22,32 @@
  */
 
 #include <stddef.h>
-#include <stdio.h>
 
 #include "css/select.h"
 
 #include "html/list_counter_style.h"
+
+
+#define SYMBOL_SIZE 4
+typedef char symbol_t[SYMBOL_SIZE];
+
+struct list_counter_style {
+	const char *name; /**< style name for debug purposes */
+	struct {
+		const int start; /**< first acceptable value for this style */
+		const int end; /**< last acceptable value for this style */
+	} range;
+	struct {
+		const unsigned int length;
+		const symbol_t value;
+	} pad;
+	const char *prefix;
+	const char *postfix;
+	const symbol_t *symbols; /**< array of symbols which represent this style */
+	const int *weights; /**< symbol weights for additive schemes */
+	const size_t items; /**< items in symbol and weight table */
+	size_t (*calc)(uint8_t *ares, const size_t alen, int value, const struct list_counter_style *cstyle); /**< function to calculate the system */
+};
 
 
 /**
@@ -44,27 +65,60 @@
  * \return The number of bytes needed in the output buffer whichmay be
  *         larger than \a buflen but the buffer will not be overrun
  */
-static int
+static size_t
 map_aval_to_symbols(char *buf, const size_t buflen,
 		    const uint8_t *aval, const size_t alen,
-		    const char symtab[][4], const size_t symtablen)
+		    const struct list_counter_style *cstyle)
 {
-	size_t oidx;
-	size_t aidx;
-	int sidx;
+	size_t oidx = 0;
+	size_t pidx; /* padding index */
+	size_t aidx; /* numeral index */
+	size_t sidx; /* current symbol index */
+	const char *postfix = "."; /* default postfix string */
 
-	oidx = 0;
+	/* add padding if required */
+	if (alen < cstyle->pad.length) {
+		for (pidx=cstyle->pad.length - alen; pidx > 0; pidx--) {
+			sidx=0;
+			while ((sidx < 4) &&
+			       (cstyle->pad.value[sidx] != 0)) {
+				if (oidx < buflen) {
+					buf[oidx] = cstyle->pad.value[sidx];
+				}
+				oidx++;
+				sidx++;
+			}
+		}
+	}
+
+	/* map symbols */
 	for (aidx=0; aidx < alen; aidx++) {
 		sidx=0;
 		while ((sidx < 4) &&
-		       (symtab[aval[aidx]][sidx] != 0)) {
+		       (cstyle->symbols[aval[aidx]][sidx] != 0)) {
 			if (oidx < buflen) {
-				buf[oidx] = symtab[aval[aidx]][sidx];
+				buf[oidx] = cstyle->symbols[aval[aidx]][sidx];
 			}
 			oidx++;
 			sidx++;
 		}
 	}
+
+
+	/* postfix */
+	if (cstyle->postfix != NULL) {
+		postfix = cstyle->postfix;
+	}
+	sidx=0;
+	while ((sidx < 4) &&
+	       (postfix[sidx] != 0)) {
+		if (oidx < buflen) {
+			buf[oidx] = postfix[sidx];
+		}
+		oidx++;
+		sidx++;
+	}
+
 	return oidx;
 }
 
@@ -84,7 +138,7 @@ static size_t
 calc_numeric_system(uint8_t *ares,
 		    const size_t alen,
 		    int value,
-		    unsigned char slen)
+		    const struct list_counter_style *cstyle)
 {
 	size_t idx = 0;
 	uint8_t *first;
@@ -92,9 +146,11 @@ calc_numeric_system(uint8_t *ares,
 
 	/* generate alphabet values in ascending order */
 	while (value > 0) {
-		if (idx < alen) ares[idx] = value % slen;
+		if (idx < alen) {
+			ares[idx] = value % cstyle->items;
+		}
 		idx++;
-		value = value / slen;
+		value = value / cstyle->items;
 	}
 
 	/* put the values in decending order */
@@ -129,10 +185,9 @@ calc_numeric_system(uint8_t *ares,
  */
 static size_t
 calc_additive_system(uint8_t *ares,
-		    const size_t alen,
-		    int value,
-		    const int weights[],
-		    unsigned char wlen)
+		     const size_t alen,
+		     int value,
+		     const struct list_counter_style *cstyle)
 {
 	size_t widx; /* weight index */
 	size_t aidx = 0;
@@ -140,15 +195,17 @@ calc_additive_system(uint8_t *ares,
 	size_t times; /* number of times a weight occours */
 
 	/* iterate over the available weights */
-	for (widx = 0; widx < wlen;widx++) {
-		times = value / weights[widx];
+	for (widx = 0; widx < cstyle->items;widx++) {
+		times = value / cstyle->weights[widx];
 		if (times > 0) {
 			for (idx=0;idx < times;idx++) {
-				if (aidx < alen) ares[aidx] = widx;
+				if (aidx < alen) {
+					ares[aidx] = widx;
+				}
 				aidx++;
 			}
 
-			value -= times * weights[widx];
+			value -= times * cstyle->weights[widx];
 		}
 	}
 
@@ -169,9 +226,9 @@ calc_additive_system(uint8_t *ares,
  */
 static size_t
 calc_alphabet_system(uint8_t *ares,
-		       const size_t alen,
-		       int value,
-		       unsigned char slen)
+		     const size_t alen,
+		     int value,
+		     const struct list_counter_style *cstyle)
 {
 	size_t idx = 0;
 	uint8_t *first;
@@ -180,9 +237,11 @@ calc_alphabet_system(uint8_t *ares,
 	/* generate alphabet values in ascending order */
 	while (value > 0) {
 		--value;
-		if (idx < alen) ares[idx] = value % slen;
+		if (idx < alen) {
+			ares[idx] = value % cstyle->items;
+		}
 		idx++;
-		value = value / slen;
+		value = value / cstyle->items;
 	}
 
 	/* put the values in decending order */
@@ -209,11 +268,11 @@ calc_alphabet_system(uint8_t *ares,
  *
  * \return The number of numerals that are nesesary for full output
  */
-static int
+static size_t
 calc_roman_system(uint8_t *buf,
 		  const size_t maxlen,
 		  int value,
-		  unsigned char slen)
+		  const struct list_counter_style *cstyle)
 {
 	const int S[]  = {    0,   2,   4,   2,   4,   2,   4 };
 	const int D[]  = { 1000, 500, 100,  50,  10,   5,   1 };
@@ -222,7 +281,7 @@ calc_roman_system(uint8_t *buf,
 	unsigned int i = 0; /* index into maps */
 	int r, r2;
 
-	assert(slen == 7);
+	assert(cstyle->items == 7);
 
 	while (value > 0) {
 		if (D[i] <= value) {
@@ -256,274 +315,215 @@ calc_roman_system(uint8_t *buf,
 }
 
 
-/**
- * lower case roman numeral
- */
-static int ntolcromannumeral(char *buf, const size_t buflen, int value)
-{
-	size_t alen;
-	uint8_t aval[20];
-	const char symtab[][4] = {
-		"m", "d", "c", "l", "x", "v", "i"
-	};
-	const size_t symtablen = sizeof(symtab) / 4;
-
-	alen = calc_roman_system(aval, sizeof(aval), value, symtablen);
-	if (alen >= sizeof(aval)) {
-		*buf = '?';
-		return 1;
-	}
-
-	return map_aval_to_symbols(buf, buflen, aval, alen, symtab, symtablen);
-}
-
-/**
- * upper case roman numeral
- */
-static int ntoucromannumeral(char *buf, const size_t buflen, int value)
-{
-	size_t alen;
-	uint8_t aval[20];
-	const char symtab[][4] = {
-		"M", "D", "C", "L", "X", "V", "I"
-	};
-	const size_t symtablen = sizeof(symtab) / 4;
-
-	alen = calc_roman_system(aval, sizeof(aval), value, symtablen);
-	if (alen >= sizeof(aval)) {
-		*buf = '?';
-		return 1;
-	}
-
-	return map_aval_to_symbols(buf, buflen, aval, alen, symtab, symtablen);
-}
+/* tables for all the counter styles */
 
 
+static const symbol_t georgian_symbols[] = {
+	                                        "ჵ",
+	"ჰ", "ჯ", "ჴ", "ხ", "ჭ", "წ", "ძ", "ც", "ჩ",
+	"შ", "ყ", "ღ", "ქ", "ფ", "ჳ", "ტ", "ს", "რ",
+	"ჟ", "პ", "ო", "ჲ", "ნ", "მ", "ლ", "კ", "ი",
+	"თ", "ჱ", "ზ", "ვ", "ე", "დ", "გ", "ბ", "ა",
+};
+static const int georgian_weights[] = {
+	                                                10000,
+	9000, 8000, 7000, 6000, 5000, 4000, 3000, 2000, 1000,
+	900,  800,  700,  600,  500,  400,  300,  200,  100,
+	90,   80,   70,   60,   50,   40,   30,   20,   10,
+	9,    8,    7,    6,    5,    4,    3,    2,    1
+};
+static struct list_counter_style lcs_georgian =	{
+	.name="georgian",
+	.range.start = 1,
+	.range.end = 19999,
+	.symbols = georgian_symbols,
+	.weights = georgian_weights,
+	.items = (sizeof(georgian_symbols) / SYMBOL_SIZE),
+	.calc = calc_additive_system,
+};
 
 
-static int ntolcalpha(char *buf, const size_t buflen, int value)
-{
-	size_t alen;
-	uint8_t aval[20];
-	const char symtab[][4] = {
-		"a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
-		"k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
-		"u", "v", "w", "x", "y", "z"
-	};
-	const size_t symtablen = sizeof(symtab) / 4;
+static const symbol_t armenian_symbols[] = {
+	"Ք", "Փ", "Ւ", "Ց", "Ր", "Տ", "Վ", "Ս", "Ռ",
+	"Ջ", "Պ", "Չ", "Ո", "Շ", "Ն", "Յ", "Մ", "Ճ",
+	"Ղ", "Ձ", "Հ", "Կ", "Ծ", "Խ", "Լ", "Ի", "Ժ",
+	"Թ", "Ը", "Է", "Զ", "Ե", "Դ", "Գ", "Բ", "Ա"
+};
+static const int armenian_weights[] = {
+	9000, 8000, 7000, 6000, 5000, 4000, 3000, 2000, 1000,
+	900,  800,  700,  600,  500,  400,  300,  200,  100,
+	90,   80,   70,   60,   50,   40,   30,   20,   10,
+	9,    8,    7,    6,    5,    4,    3,    2,    1
+};
+static struct list_counter_style lcs_armenian =	{
+	.name = "armenian",
+	.range.start = 1,
+	.range.end = 9999,
+	.symbols = armenian_symbols,
+	.weights = armenian_weights,
+	.items = (sizeof(armenian_symbols) / SYMBOL_SIZE),
+	.calc = calc_additive_system,
+};
 
-	alen = calc_alphabet_system(aval, sizeof(aval), value, symtablen);
-	if (alen >= sizeof(aval)) {
-		*buf = '?';
-		return 1;
-	}
 
-	return map_aval_to_symbols(buf, buflen, aval, alen, symtab, symtablen);
-}
+static const symbol_t decimal_symbols[] = {
+	"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
+};
+static struct list_counter_style lcs_decimal = {
+	.name = "decimal",
+	.symbols = decimal_symbols,
+	.items = (sizeof(decimal_symbols) / SYMBOL_SIZE),
+	.calc = calc_numeric_system,
+};
 
-static int ntoucalpha(char *buf, const size_t buflen, int value)
-{
-	size_t alen;
-	uint8_t aval[20];
-	const char symtab[][4] = {
-		"A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
-		"K", "L", "M", "N", "O", "P", "Q", "R", "S", "T",
-		"U", "V", "W", "X", "Y", "Z"
-	};
-	const size_t symtablen = sizeof(symtab) / 4;
 
-	alen = calc_alphabet_system(aval, sizeof(aval), value, symtablen);
-	if (alen >= sizeof(aval)) {
-		*buf = '?';
-		return 1;
-	}
+static struct list_counter_style lcs_decimal_leading_zero = {
+	.name = "decimal-leading-zero",
+	.pad.length = 2,
+	.pad.value = "0",
+	.symbols = decimal_symbols,
+	.items = (sizeof(decimal_symbols) / SYMBOL_SIZE),
+	.calc = calc_numeric_system,
+};
 
-	return map_aval_to_symbols(buf, buflen, aval, alen, symtab, symtablen);
-}
 
-static int ntolcgreek(char *buf, const size_t buflen, int value)
-{
-	size_t alen;
-	uint8_t aval[20];
-	const char symtab[][4] = {
-		"α", "β", "γ", "δ", "ε", "ζ", "η", "θ", "ι", "κ",
-		"λ", "μ", "ν", "ξ", "ο", "π", "ρ", "σ", "τ", "υ",
-		"φ", "χ", "ψ", "ω"
-	};
-	const size_t symtablen = sizeof(symtab) / 4;
+static const symbol_t lower_greek_symbols[] = {
+	"α", "β", "γ", "δ", "ε", "ζ", "η", "θ", "ι", "κ",
+	"λ", "μ", "ν", "ξ", "ο", "π", "ρ", "σ", "τ", "υ",
+	"φ", "χ", "ψ", "ω"
+};
+static struct list_counter_style lcs_lower_greek = {
+	.name="lower-greek",
+	.symbols = lower_greek_symbols,
+	.items = (sizeof(lower_greek_symbols) / SYMBOL_SIZE),
+	.calc = calc_alphabet_system,
+};
 
-	alen = calc_alphabet_system(aval, sizeof(aval), value, symtablen);
-	if (alen >= sizeof(aval)) {
-		*buf = '?';
-		return 1;
-	}
 
-	return map_aval_to_symbols(buf, buflen, aval, alen, symtab, symtablen);
-}
+static const symbol_t upper_alpha_symbols[] = {
+	"A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
+	"K", "L", "M", "N", "O", "P", "Q", "R", "S", "T",
+	"U", "V", "W", "X", "Y", "Z"
+};
+static struct list_counter_style lcs_upper_alpha = {
+	.name="upper-alpha",
+	.symbols = upper_alpha_symbols,
+	.items = (sizeof(upper_alpha_symbols) / SYMBOL_SIZE),
+	.calc = calc_alphabet_system,
+};
+
+
+static const symbol_t lower_alpha_symbols[] = {
+	"a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
+	"k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
+	"u", "v", "w", "x", "y", "z"
+};
+static struct list_counter_style lcs_lower_alpha = {
+	.name="lower-alpha",
+	.symbols = lower_alpha_symbols,
+	.items = (sizeof(lower_alpha_symbols) / SYMBOL_SIZE),
+	.calc = calc_alphabet_system,
+};
+
+
+static const symbol_t upper_roman_symbols[] = {
+	"M", "D", "C", "L", "X", "V", "I"
+};
+static struct list_counter_style lcs_upper_roman = {
+	.name="upper-roman",
+	.symbols = upper_roman_symbols,
+	.items = (sizeof(upper_roman_symbols) / SYMBOL_SIZE),
+	.calc = calc_roman_system,
+};
+
+
+static const symbol_t lower_roman_symbols[] = {
+	"m", "d", "c", "l", "x", "v", "i"
+};
+static struct list_counter_style lcs_lower_roman = {
+	.name="lower-roman",
+	.symbols = lower_roman_symbols,
+	.items = (sizeof(lower_roman_symbols) / SYMBOL_SIZE),
+	.calc = calc_roman_system,
+};
 
 #if 0
-static int ntolchex(char *buf, const size_t buflen, int value)
-{
-	size_t alen;
-	uint8_t aval[20];
-	const char symtab[][4] = {
-		"0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-		"a", "b", "c", "d", "e", "f"
-	};
-	const size_t symtablen = sizeof(symtab) / 4;
-
-	alen = calc_numeric_system(aval, sizeof(aval), value, symtablen);
-	if (alen >= sizeof(aval)) {
-		*buf = '?';
-		return 1;
-	}
-
-	return map_aval_to_symbols(buf, buflen, aval, alen, symtab, symtablen);
-}
+static const symbol_t lower_hexidecimal_symbols[] = {
+	"0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+	"a", "b", "c", "d", "e", "f"
+};
+static struct list_counter_style lcs_lower_hexidecimal = {
+	.name="lower_hexidecimal",
+	.symbols = lower_hexidecimal_symbols,
+	.items = (sizeof(lower_hexidecimal_symbols) / SYMBOL_SIZE),
+	.calc = calc_numeric_system,
+};
 #endif
 
-static int ntodecimal(char *buf, const size_t buflen, int value)
-{
-	size_t alen;
-	uint8_t aval[20];
-	const char symtab[][4] = {
-		"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
-	};
-	const size_t symtablen = sizeof(symtab) / 4;
 
-	alen = calc_numeric_system(aval, sizeof(aval), value, symtablen);
-	if (alen >= sizeof(aval)) {
-		*buf = '?';
-		return 1;
-	}
-
-	return map_aval_to_symbols(buf, buflen, aval, alen, symtab, symtablen);
-}
-
-static int ntoarmenian(char *buf, const size_t buflen, int value)
-{
-	size_t alen;
-	uint8_t aval[20];
-	const char symtab[][4] = {
-		"Ք", "Փ", "Ւ", "Ց", "Ր", "Տ", "Վ", "Ս", "Ռ",
-		"Ջ", "Պ", "Չ", "Ո", "Շ", "Ն", "Յ", "Մ", "Ճ",
-		"Ղ", "Ձ", "Հ", "Կ", "Ծ", "Խ", "Լ", "Ի", "Ժ",
-		"Թ", "Ը", "Է", "Զ", "Ե", "Դ", "Գ", "Բ", "Ա"
-	};
-	const int weighttab[] = {
-		9000, 8000, 7000, 6000, 5000, 4000, 3000, 2000, 1000,
-		900,  800,  700,  600,  500,  400,  300,  200,  100,
-		90,   80,   70,   60,   50,   40,   30,   20,   10,
-		9,    8,    7,    6,    5,    4,    3,    2,    1
-	};
-	const size_t symtablen = sizeof(symtab) / 4;
-
-	alen = calc_additive_system(aval, sizeof(aval), value, weighttab, symtablen);
-	if (alen >= sizeof(aval)) {
-		*buf = '?';
-		return 1;
-	}
-
-	return map_aval_to_symbols(buf, buflen, aval, alen, symtab, symtablen);
-}
-
-
-static int ntogeorgian(char *buf, const size_t buflen, int value)
-{
-	size_t alen;
-	uint8_t aval[20];
-	const char symtab[][4] = {
-		"ჵ",
-		"ჰ", "ჯ", "ჴ", "ხ", "ჭ", "წ", "ძ", "ც", "ჩ",
-		"შ", "ყ", "ღ", "ქ", "ფ", "ჳ", "ტ", "ს", "რ",
-		"ჟ", "პ", "ო", "ჲ", "ნ", "მ", "ლ", "კ", "ი",
-		"თ", "ჱ", "ზ", "ვ", "ე", "დ", "გ", "ბ", "ა",
-	};
-	const int weighttab[] = {
-		                                                10000,
-		9000, 8000, 7000, 6000, 5000, 4000, 3000, 2000, 1000,
-		900,  800,  700,  600,  500,  400,  300,  200,  100,
-		90,   80,   70,   60,   50,   40,   30,   20,   10,
-		9,    8,    7,    6,    5,    4,    3,    2,    1
-	};
-	const size_t symtablen = sizeof(symtab) / 4;
-
-	alen = calc_additive_system(aval, sizeof(aval), value, weighttab, symtablen);
-	if (alen >= sizeof(aval)) {
-		*buf = '?';
-		return 1;
-	}
-
-	return map_aval_to_symbols(buf, buflen, aval, alen, symtab, symtablen);
-}
-
-/**
- * format value into a list marker with a style
- *
- * The value is a one based index into the list. This means for
- *   numeric printing the value must be incremented by one.
- */
+/* exported interface defined in html/list_counter_style.h */
 size_t
 list_counter_style_value(char *text,
 			 size_t text_len,
 			 enum css_list_style_type_e list_style_type,
-			 unsigned int value)
+			 int value)
 {
-	int res = -1;
+	size_t alen;
+	uint8_t aval[20];
+	struct list_counter_style *cstyle;
 
 	switch (list_style_type) {
 	case CSS_LIST_STYLE_TYPE_DECIMAL_LEADING_ZERO:
-		res = snprintf(text, text_len, "%02u", value);
+		cstyle = &lcs_decimal_leading_zero;
 		break;
 
 	case CSS_LIST_STYLE_TYPE_LOWER_ROMAN:
-		res = ntolcromannumeral(text, text_len, value);
+		cstyle = &lcs_lower_roman;
 		break;
 
 	case CSS_LIST_STYLE_TYPE_UPPER_ROMAN:
-		res = ntoucromannumeral(text, text_len, value);
+		cstyle = &lcs_upper_roman;
 		break;
 
 	case CSS_LIST_STYLE_TYPE_LOWER_ALPHA:
 	case CSS_LIST_STYLE_TYPE_LOWER_LATIN:
-		res = ntolcalpha(text, text_len, value);
+		cstyle = &lcs_lower_alpha;
 		break;
 
 	case CSS_LIST_STYLE_TYPE_UPPER_ALPHA:
 	case CSS_LIST_STYLE_TYPE_UPPER_LATIN:
-		res = ntoucalpha(text, text_len, value);
+		cstyle = &lcs_upper_alpha;
 		break;
 
 	case CSS_LIST_STYLE_TYPE_LOWER_GREEK:
-		res = ntolcgreek(text, text_len, value);
+		cstyle = &lcs_lower_greek;
 		break;
 
 	case CSS_LIST_STYLE_TYPE_ARMENIAN:
-		res = ntoarmenian(text, text_len, value);
+		cstyle = &lcs_armenian;
 		break;
 
 	case CSS_LIST_STYLE_TYPE_GEORGIAN:
-		res = ntogeorgian(text, text_len, value);
+		cstyle = &lcs_georgian;
 		break;
 
 	case CSS_LIST_STYLE_TYPE_DECIMAL:
 	default:
-		res = ntodecimal(text, text_len, value);
+		cstyle = &lcs_decimal;
 		break;
 	}
 
-	/* deal with error */
-	if (res < 0) {
-		text[0] = 0;
-		return 0;
+	alen = cstyle->calc(aval, sizeof(aval), value, cstyle);
+
+	/* ensure it is possible to calculate with the selected system */
+	if ((alen == 0) || (alen >= sizeof(aval))) {
+		/* retry in decimal */
+		alen = lcs_decimal.calc(aval, sizeof(aval), value, &lcs_decimal);
+		if ((alen == 0) || (alen >= sizeof(aval))) {
+			/* failed in decimal, give up */
+			return 0;
+		}
 	}
 
-	/* deal with overflow */
-	if ((size_t)res >= (text_len-2)) {
-		res = text_len-2;
-	}
-	text[res++] = '.';
-	text[res] = 0;
-
-	return res;
+	return map_aval_to_symbols(text, text_len, aval, alen, cstyle);
 }

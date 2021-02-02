@@ -30,16 +30,16 @@
 /**
  * format value into a list marker with a style
  *
- * \param text The buffer to recive the output
- * \param text_len The length available in \a text
- * \param list_style_type The css list style type
- * \param value The value to style
- * \return The size of data placed in \a text
+ * \param text buffer to recive the result
+ * \param text_len The length of the \a text buffer
+ * \param list_style_type the css list style.
+ * \param value The value to format.
+ * \return The length of the complete output which may exceed \a text_len
  */
 size_t
 list_counter_style_value(char *text,
 			 size_t text_len,
 			 enum css_list_style_type_e list_style_type,
-			 unsigned int value);
+			 int value);
 
 #endif

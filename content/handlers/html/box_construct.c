@@ -398,10 +398,10 @@ static unsigned int compute_list_marker_index(struct box *last)
 }
 
 /**
- * maximum length of a list marker
+ * initial length of a list marker buffer
  *
  * enough for 9,999,999,999,999,999,999 in decimal
- * or six characters for 3byte utf8
+ * or five characters for 4byte utf8
  */
 #define LIST_MARKER_SIZE 20
 
@@ -423,6 +423,7 @@ box_construct_marker(struct box *box,
 	lwc_string *image_uri;
 	struct box *marker;
 	enum css_list_style_type_e list_style_type;
+	size_t counter_len;
 
 	marker = box_create(NULL, box->style, false, NULL, NULL, title,
 			NULL, ctx->bctx);
@@ -454,7 +455,7 @@ box_construct_marker(struct box *box,
 		break;
 
 	case CSS_LIST_STYLE_TYPE_NONE:
-		marker->text = 0;
+		marker->text = NULL;
 		marker->length = 0;
 		break;
 
@@ -462,13 +463,29 @@ box_construct_marker(struct box *box,
 		marker->rows = compute_list_marker_index(parent->last);
 
 		marker->text = talloc_array(ctx->bctx, char, LIST_MARKER_SIZE);
-		if (marker->text == NULL)
+		if (marker->text == NULL) {
 			return false;
+		}
 
-		marker->length = list_counter_style_value(marker->text,
-							  LIST_MARKER_SIZE,
-							  list_style_type,
-							  marker->rows);
+		counter_len = list_counter_style_value(marker->text,
+						       LIST_MARKER_SIZE,
+						       list_style_type,
+						       marker->rows);
+		if (counter_len > LIST_MARKER_SIZE) {
+			/* use computed size as marker did not fit allocation */
+			marker->text = talloc_realloc(ctx->bctx,
+						      marker->text,
+						      char,
+						      counter_len);
+			if (marker->text == NULL) {
+				return false;
+			}
+			counter_len = list_counter_style_value(marker->text,
+							       counter_len,
+							       list_style_type,
+							       marker->rows);
+		}
+		marker->length = counter_len;
 		break;
 
 	}
