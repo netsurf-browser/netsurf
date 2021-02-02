@@ -41,8 +41,8 @@ struct list_counter_style {
 		const unsigned int length;
 		const symbol_t value;
 	} pad;
-	symbol_t prefix;
-	symbol_t postfix;
+	const symbol_t prefix;
+	const symbol_t postfix;
 	const symbol_t *symbols; /**< array of symbols which represent this style */
 	const int *weights; /**< symbol weights for additive schemes */
 	const size_t items; /**< items in symbol and weight table */
