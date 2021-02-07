@@ -47,7 +47,6 @@
 #include "html/box_special.h"
 #include "html/box_normalise.h"
 #include "html/form_internal.h"
-#include "html/list_counter_style.h"
 
 /**
  * Context for box tree construction
@@ -424,6 +423,7 @@ box_construct_marker(struct box *box,
 	struct box *marker;
 	enum css_list_style_type_e list_style_type;
 	size_t counter_len;
+	css_error css_res;
 
 	marker = box_create(NULL, box->style, false, NULL, NULL, title,
 			NULL, ctx->bctx);
@@ -467,25 +467,36 @@ box_construct_marker(struct box *box,
 			return false;
 		}
 
-		counter_len = list_counter_style_value(marker->text,
-						       LIST_MARKER_SIZE,
-						       list_style_type,
-						       marker->rows);
-		if (counter_len > LIST_MARKER_SIZE) {
-			/* use computed size as marker did not fit allocation */
-			marker->text = talloc_realloc(ctx->bctx,
-						      marker->text,
-						      char,
-						      counter_len);
-			if (marker->text == NULL) {
-				return false;
-			}
-			counter_len = list_counter_style_value(marker->text,
+		css_res = css_computed_format_list_style(box->style,
+					       marker->rows,
+					       marker->text,
+					       LIST_MARKER_SIZE,
+					       &counter_len);
+		if (css_res == CSS_OK) {
+			if (counter_len > LIST_MARKER_SIZE) {
+				/*
+				 * use computed size as marker did not fit
+				 *  in default allocation 
+				 */
+				marker->text = talloc_realloc(ctx->bctx,
+							      marker->text,
+							      char,
+							      counter_len);
+				if (marker->text == NULL) {
+					return false;
+				}
+				css_computed_format_list_style(box->style,
+							       marker->rows,
+							       marker->text,
 							       counter_len,
-							       list_style_type,
-							       marker->rows);
+							       &counter_len);
+			}
+			marker->length = counter_len;
+		} else {
+			/* failed to format marker so use none type */
+			marker->text = NULL;
+			marker->length = 0;
 		}
-		marker->length = counter_len;
 		break;
 
 	}
