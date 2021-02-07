@@ -400,9 +400,14 @@ The window to be rendered is identified with the `window` key, the
 value of this must be a previously created window identifier or an
 assert will occur.
 
+The `area` key allows control of the area to be redraw. The parameters are on two forms:
+
+ * A sequence of four numbers in the form `x0 y0 x1 y1`
+ * The keyword extent which attempt to plot the entire extent of the canvas
+
 An optional list of checks may be specified with the `checks` key. If
 any check is not satisfied an assert will occur and the test will
-fail.
+fail. Multiple checks can be specified and all most pass successfully.
 
 The checks available are:
 
@@ -416,8 +421,10 @@ The checks available are:
 
     - action: plot-check
       window: win1
+	  area: extent
       checks:
       - text-contains: NetSurf
+      - text-contains: Browser
 	  - text-not-contains: Chrome
       - bitmap-count: 1
 

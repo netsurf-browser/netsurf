@@ -217,7 +217,7 @@ def run_test_step_action_launch(ctx, step):
     ctx['browser'] = DriverBrowser(
         monkey_cmd=monkey_cmd,
         monkey_env=monkey_env,
-        quiet=True,
+        quiet=False,
         wrapper=ctx.get("wrapper"))
     assert_browser(ctx)
     ctx['windows'] = dict()
@@ -436,13 +436,26 @@ def run_test_step_action_plot_check(ctx, step):
     print(get_indent(ctx) + "Action: " + step["action"])
     assert_browser(ctx)
     win = ctx['windows'][step['window']]
+
+    if 'area' in step.keys():
+        if step["area"] == "extent":
+            # ought to capture the extent updates and use that, instead use a
+            # big area and have the browser clip it
+            area=["0","0","1000","1000000"]
+        else:
+            area = [step["area"]]
+    else:
+        area = None
+
+    # get the list of checks
     if 'checks' in step.keys():
         checks = step['checks']
     else:
         checks = {}
+
     all_text_list = []
     bitmaps = []
-    for plot in win.redraw():
+    for plot in win.redraw(coords=area):
         if plot[0] == 'TEXT':
             all_text_list.extend(plot[6:])
         if plot[0] == 'BITMAP':
