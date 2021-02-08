@@ -217,7 +217,7 @@ def run_test_step_action_launch(ctx, step):
     ctx['browser'] = DriverBrowser(
         monkey_cmd=monkey_cmd,
         monkey_env=monkey_env,
-        quiet=False,
+        quiet=True,
         wrapper=ctx.get("wrapper"))
     assert_browser(ctx)
     ctx['windows'] = dict()
