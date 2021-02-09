@@ -4505,6 +4505,79 @@ layout__ordered_list_count(
 	box->rows = count;
 }
 
+/**
+ * Set up the marker text for a numerical list item.
+ *
+ * \param[in]  content  The HTML content.
+ * \param[in]  box      The list item's main box.
+ */
+static void
+layout__set_numerical_marker_text(
+		const html_content *content,
+		struct box *box)
+{
+	struct box *marker = box->list_marker;
+	size_t counter_len;
+	css_error css_res;
+	enum {
+		/**
+		 * initial length of a list marker buffer
+		 *
+		 * enough for 9,999,999,999,999,999,999 in decimal
+		 * or five characters for 4-byte UTF-8.
+		 */
+		LIST_MARKER_SIZE = 20,
+	};
+
+	marker->text = talloc_array(content->bctx, char, LIST_MARKER_SIZE);
+	if (marker->text == NULL) {
+		return;
+	}
+
+	css_res = css_computed_format_list_style(box->style, marker->rows,
+			marker->text, LIST_MARKER_SIZE, &counter_len);
+	if (css_res == CSS_OK) {
+		if (counter_len > LIST_MARKER_SIZE) {
+			/* Use computed size as marker did not fit in
+			 * default allocation. */
+			marker->text = talloc_realloc(content->bctx,
+					marker->text,
+					char,
+					counter_len);
+			if (marker->text == NULL) {
+				return;
+			}
+			css_computed_format_list_style(box->style,
+					marker->rows, marker->text,
+					counter_len, &counter_len);
+		}
+		marker->length = counter_len;
+	}
+}
+
+/**
+ * Find out if box's style represents a numerical list style type.
+ *
+ * \param[in]  b  Box with style to test.
+ * \return true if box has numerical list style type, false otherwise.
+ */
+static bool
+layout__list_item_is_numerical(
+		const struct box *b)
+{
+	enum css_list_style_type_e t = css_computed_list_style_type(b->style);
+
+	switch (t) {
+	case CSS_LIST_STYLE_TYPE_DISC:   /* Fall through. */
+	case CSS_LIST_STYLE_TYPE_CIRCLE: /* Fall through. */
+	case CSS_LIST_STYLE_TYPE_SQUARE: /* Fall through. */
+	case CSS_LIST_STYLE_TYPE_NONE:
+		return false;
+
+	default:
+		return true;
+	}
+}
 
 /**
  * Layout list markers.
@@ -4521,6 +4594,12 @@ layout_lists(const html_content *content, struct box *box)
 	for (child = box->children; child; child = child->next) {
 		if (child->list_marker) {
 			marker = child->list_marker;
+			if (layout__list_item_is_numerical(child)) {
+				if (marker->text == NULL) {
+					layout__set_numerical_marker_text(
+							content, child);
+				}
+			}
 			if (marker->object) {
 				marker->width =
 					content_get_width(marker->object);

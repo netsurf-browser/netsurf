@@ -350,61 +350,6 @@ box_construct_generate(dom_node *n,
 
 
 /**
- * compute the index for a list marker
- *
- * calculates a one based index of a list item
- */
-static unsigned int compute_list_marker_index(struct box *last)
-{
-	/* Drill down into last child of parent
-	 * to find the list marker (if any)
-	 *
-	 * Floated list boxes end up as:
-	 *
-	 * parent
-	 *   BOX_INLINE_CONTAINER
-	 *     BOX_FLOAT_{LEFT,RIGHT}
-	 *       BOX_BLOCK <-- list box
-	 *        ...
-	 */
-	while ((last != NULL) && (last->list_marker == NULL)) {
-		struct box *last_inner = last;
-
-		while (last_inner != NULL) {
-			if (last_inner->list_marker != NULL) {
-				break;
-			}
-			if (last_inner->type == BOX_INLINE_CONTAINER ||
-			    last_inner->type == BOX_FLOAT_LEFT ||
-			    last_inner->type == BOX_FLOAT_RIGHT) {
-				last_inner = last_inner->last;
-			} else {
-				last_inner = NULL;
-			}
-		}
-		if (last_inner != NULL) {
-			last = last_inner;
-		} else {
-			last = last->prev;
-		}
-	}
-
-	if ((last == NULL) || (last->list_marker == NULL)) {
-		return 1;
-	}
-
-	return last->list_marker->rows + 1;
-}
-
-/**
- * initial length of a list marker buffer
- *
- * enough for 9,999,999,999,999,999,999 in decimal
- * or five characters for 4byte utf8
- */
-#define LIST_MARKER_SIZE 20
-
-/**
  * Construct a list marker box
  *
  * \param box      Box to attach marker to
@@ -422,8 +367,6 @@ box_construct_marker(struct box *box,
 	lwc_string *image_uri;
 	struct box *marker;
 	enum css_list_style_type_e list_style_type;
-	size_t counter_len;
-	css_error css_res;
 
 	marker = box_create(NULL, box->style, false, NULL, NULL, title,
 			NULL, ctx->bctx);
@@ -454,51 +397,13 @@ box_construct_marker(struct box *box,
 		marker->length = 3;
 		break;
 
+	default:
+		/* Numerical list counters get handled in layout. */
+		/* Fall through. */
 	case CSS_LIST_STYLE_TYPE_NONE:
 		marker->text = NULL;
 		marker->length = 0;
 		break;
-
-	default:
-		marker->rows = compute_list_marker_index(parent->last);
-
-		marker->text = talloc_array(ctx->bctx, char, LIST_MARKER_SIZE);
-		if (marker->text == NULL) {
-			return false;
-		}
-
-		css_res = css_computed_format_list_style(box->style,
-					       marker->rows,
-					       marker->text,
-					       LIST_MARKER_SIZE,
-					       &counter_len);
-		if (css_res == CSS_OK) {
-			if (counter_len > LIST_MARKER_SIZE) {
-				/*
-				 * use computed size as marker did not fit
-				 *  in default allocation 
-				 */
-				marker->text = talloc_realloc(ctx->bctx,
-							      marker->text,
-							      char,
-							      counter_len);
-				if (marker->text == NULL) {
-					return false;
-				}
-				css_computed_format_list_style(box->style,
-							       marker->rows,
-							       marker->text,
-							       counter_len,
-							       &counter_len);
-			}
-			marker->length = counter_len;
-		} else {
-			/* failed to format marker so use none type */
-			marker->text = NULL;
-			marker->length = 0;
-		}
-		break;
-
 	}
 
 	if (css_computed_list_style_image(box->style, &image_uri) == CSS_LIST_STYLE_IMAGE_URI &&
