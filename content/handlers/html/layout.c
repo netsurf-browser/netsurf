@@ -4510,9 +4510,7 @@ layout__ordered_list_count(
  * Layout list markers.
  */
 static void
-layout_lists(struct box *box,
-	     const struct gui_layout_table *font_func,
-	     const nscss_len_ctx *len_ctx)
+layout_lists(const html_content *content, struct box *box)
 {
 	struct box *child;
 	struct box *marker;
@@ -4529,14 +4527,17 @@ layout_lists(struct box *box,
 				marker->x = -marker->width;
 				marker->height =
 					content_get_height(marker->object);
-				marker->y = (line_height(len_ctx,
+				marker->y = (line_height(
+						&content->len_ctx,
 						marker->style) -
 						marker->height) / 2;
 			} else if (marker->text) {
 				if (marker->width == UNKNOWN_WIDTH) {
-					font_plot_style_from_css(len_ctx,
-							marker->style, &fstyle);
-					font_func->width(&fstyle,
+					font_plot_style_from_css(
+							&content->len_ctx,
+							marker->style,
+							&fstyle);
+					content->font_func->width(&fstyle,
 							marker->text,
 							marker->length,
 							&marker->width);
@@ -4544,7 +4545,8 @@ layout_lists(struct box *box,
 				}
 				marker->x = -marker->width;
 				marker->y = 0;
-				marker->height = line_height(len_ctx,
+				marker->height = line_height(
+						&content->len_ctx,
 						marker->style);
 			} else {
 				marker->x = 0;
@@ -4555,7 +4557,7 @@ layout_lists(struct box *box,
 			/* Gap between marker and content */
 			marker->x -= 4;
 		}
-		layout_lists(child, font_func, len_ctx);
+		layout_lists(content, child);
 	}
 }
 
@@ -5533,7 +5535,7 @@ bool layout_document(html_content *content, int width, int height)
 					 doc->children->margin[BOTTOM]);
 	}
 
-	layout_lists(doc, font_func, &content->len_ctx);
+	layout_lists(content, doc);
 	layout_position_absolute(doc, doc, 0, 0, content);
 	layout_position_relative(&content->len_ctx, doc, doc, 0, 0);
 
