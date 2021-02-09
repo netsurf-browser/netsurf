@@ -47,6 +47,7 @@
 #include "utils/talloc.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"
+#include "utils/corestrings.h"
 #include "utils/nsurl.h"
 #include "netsurf/inttypes.h"
 #include "netsurf/content.h"
@@ -4412,6 +4413,100 @@ layout_block_context(struct box *block,
 
 
 /**
+ * Check a node's tag type.
+ *
+ * Assumes node is an HTML element.
+ *
+ * \param[in]  node  Node to ckeck tag type of.
+ * \param[in]  type  Tag type to test for.
+ * \return true if if node has given type, false otherwise.
+ */
+static inline bool
+layout__check_element_type(
+		const dom_node *node,
+		dom_html_element_type type)
+{
+	dom_html_element_type node_type;
+	dom_exception exc;
+
+	exc = dom_html_element_get_tag_type(node, &node_type);
+	if (exc != DOM_NO_ERR) {
+		return false;
+	}
+
+	return node_type == type;
+}
+
+
+/**
+ * Handle list item counting, if this is a list owner box.
+ *
+ * \param[in]  box  Box to do list item counting for.
+ */
+static void
+layout__ordered_list_count(
+		struct box *box)
+{
+	dom_html_element_type tag_type;
+	dom_exception exc;
+	dom_node *child;
+	unsigned count;
+
+	if (box->node == NULL) {
+		return;
+	}
+
+	exc = dom_html_element_get_tag_type(box->node, &tag_type);
+	if (exc != DOM_NO_ERR) {
+		return;
+	}
+
+	if (tag_type != DOM_HTML_ELEMENT_TYPE_OL &&
+	    tag_type != DOM_HTML_ELEMENT_TYPE_UL) {
+		return;
+	}
+
+	exc = dom_node_get_first_child(box->node, &child);
+	if (exc != DOM_NO_ERR) {
+		return;
+	}
+
+	count = 1;
+	while (child != NULL) {
+		dom_node *temp_node;
+
+		if (layout__check_element_type(child,
+				DOM_HTML_ELEMENT_TYPE_LI)) {
+			struct box *child_box;
+
+			if (dom_node_get_user_data(child,
+					corestring_dom___ns_key_box_node_data,
+					&child_box) != DOM_NO_ERR) {
+				dom_node_unref(child);
+				return;
+			}
+
+			if (child_box != NULL &&
+			    child_box->list_marker != NULL) {
+				child_box->list_marker->rows = count;
+				count++;
+			}
+		}
+
+		exc = dom_node_get_next_sibling(child, &temp_node);
+		dom_node_unref(child);
+		if (exc != DOM_NO_ERR) {
+			return;
+		}
+
+		child = temp_node;
+	}
+
+	box->rows = count;
+}
+
+
+/**
  * Layout list markers.
  */
 static void
@@ -4422,6 +4517,8 @@ layout_lists(struct box *box,
 	struct box *child;
 	struct box *marker;
 	plot_font_style_t fstyle;
+
+	layout__ordered_list_count(box);
 
 	for (child = box->children; child; child = child->next) {
 		if (child->list_marker) {

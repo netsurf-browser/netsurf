@@ -404,7 +404,6 @@ struct box {
 	 */
 	struct column *col;
 
-
 	/**
 	 * List marker box if this is a list-item, or NULL.
 	 */
