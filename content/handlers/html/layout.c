@@ -4439,6 +4439,48 @@ layout__check_element_type(
 
 
 /**
+ * Helper to get attribute value from a LI node.
+ *
+ * \param[in]  li_node    DOM node for the LI element;
+ * \param[out] value_out  Returns the value on success.
+ * \return true if node has value, otherwise false.
+ */
+static bool
+layout__get_li_value(dom_node *li_node, dom_long *value_out)
+{
+	dom_exception exc;
+	dom_long value;
+	bool has_value;
+
+	/** \todo
+	 * dom_html_li_element_get_value() is rubbish and we can't tell
+	 * a lack of value attribute or invalid value from a perfectly
+	 * valid '-1'.
+	 *
+	 * This helps for the common case of no value.  However we should
+	 * fix libdom to have some kind of sane interface to get numerical
+	 * attributes.
+	 */
+	exc = dom_element_has_attribute(li_node,
+			corestring_dom_value,
+			&has_value);
+	if (exc != DOM_NO_ERR || has_value == false) {
+		return false;
+	}
+
+	exc = dom_html_li_element_get_value(
+			(dom_html_li_element *)li_node,
+			&value);
+	if (exc != DOM_NO_ERR) {
+		return false;
+	}
+
+	*value_out = value;
+	return true;
+}
+
+
+/**
  * Handle list item counting, if this is a list owner box.
  *
  * \param[in]  box  Box to do list item counting for.
@@ -4451,6 +4493,7 @@ layout__ordered_list_count(
 	dom_exception exc;
 	dom_node *child;
 	unsigned count;
+	unsigned next;
 
 	if (box->node == NULL) {
 		return;
@@ -4472,6 +4515,7 @@ layout__ordered_list_count(
 	}
 
 	count = 1;
+	next = 1;
 	while (child != NULL) {
 		dom_node *temp_node;
 
@@ -4488,7 +4532,14 @@ layout__ordered_list_count(
 
 			if (child_box != NULL &&
 			    child_box->list_marker != NULL) {
-				child_box->list_marker->rows = count;
+				dom_long value;
+				if (layout__get_li_value(child, &value)) {
+					child_box->list_marker->rows = value;
+					next = value + 1;
+				} else {
+					child_box->list_marker->rows = next;
+					next++;
+				}
 				count++;
 			}
 		}
