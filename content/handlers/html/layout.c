@@ -4517,6 +4517,98 @@ layout__get_ol_start(dom_node *ol_node, dom_long *start_out)
 
 
 /**
+ * Helper to get reversed attribute value from a OL node.
+ *
+ * \param[in]  ol_node    DOM node for the OL element;
+ * \return true if node has reversed, otherwise false.
+ */
+static bool
+layout__get_ol_reversed(dom_node *ol_node)
+{
+	dom_exception exc;
+	bool has_reversed;
+
+	exc = dom_element_has_attribute(ol_node,
+			corestring_dom_reversed,
+			&has_reversed);
+	if (exc != DOM_NO_ERR) {
+		return false;
+	}
+
+	return has_reversed;
+}
+
+
+/**
+ * Get the number of list items for a list owner.
+ *
+ * \param[in]  list_owner  DOM node to count list items for.
+ * \param[in]  count_out   Returns list item count on success.
+ * \return true on success, otherwise false.
+ */
+static bool
+layout__get_list_item_count(
+		dom_node *list_owner, int *count_out)
+{
+	dom_html_element_type tag_type;
+	dom_exception exc;
+	dom_node *child;
+	int count;
+
+	if (list_owner == NULL) {
+		return false;
+	}
+
+	exc = dom_html_element_get_tag_type(list_owner, &tag_type);
+	if (exc != DOM_NO_ERR) {
+		return false;
+	}
+
+	if (tag_type != DOM_HTML_ELEMENT_TYPE_OL &&
+	    tag_type != DOM_HTML_ELEMENT_TYPE_UL) {
+		return false;
+	}
+
+	exc = dom_node_get_first_child(list_owner, &child);
+	if (exc != DOM_NO_ERR) {
+		return false;
+	}
+
+	count = 0;
+	while (child != NULL) {
+		dom_node *temp_node;
+
+		if (layout__check_element_type(child,
+				DOM_HTML_ELEMENT_TYPE_LI)) {
+			struct box *child_box;
+			if (dom_node_get_user_data(child,
+					corestring_dom___ns_key_box_node_data,
+					&child_box) != DOM_NO_ERR) {
+				dom_node_unref(child);
+				return false;
+			}
+
+			if (child_box != NULL &&
+			    child_box->list_marker != NULL) {
+				count++;
+			}
+		}
+
+		exc = dom_node_get_next_sibling(child, &temp_node);
+		dom_node_unref(child);
+		if (exc != DOM_NO_ERR) {
+			return false;
+		}
+
+		child = temp_node;
+	}
+
+	*count_out = count;
+	return true;
+}
+
+
+/**
  * Handle list item counting, if this is a list owner box.
  *
  * \param[in]  box  Box to do list item counting for.
@@ -4547,7 +4639,16 @@ layout__ordered_list_count(
 
 	next = 1;
 	if (tag_type == DOM_HTML_ELEMENT_TYPE_OL) {
-		layout__get_ol_start(box->node, &next);
+		bool have_start = layout__get_ol_start(box->node, &next);
+		bool have_reversed = layout__get_ol_reversed(box->node);
+
+		if (have_reversed) {
+			step = -1;
+		}
+
+		if (!have_start && have_reversed) {
+			layout__get_list_item_count(box->node, &next);
+		}
 	}
 
 	exc = dom_node_get_first_child(box->node, &child);
