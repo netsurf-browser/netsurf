@@ -4528,6 +4528,7 @@ layout__ordered_list_count(
 	dom_html_element_type tag_type;
 	dom_exception exc;
 	dom_node *child;
+	int step = 1;
 	int next;
 
 	if (box->node == NULL) {
@@ -4578,7 +4579,7 @@ layout__ordered_list_count(
 				} else {
 					marker->list_value = next;
 				}
-				next++;
+				next += step;
 			}
 		}
 
