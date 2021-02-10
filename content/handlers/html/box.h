@@ -405,6 +405,11 @@ struct box {
 	struct column *col;
 
 	/**
+	 * List item value.
+	 */
+	int list_value;
+
+	/**
 	 * List marker box if this is a list-item, or NULL.
 	 */
 	struct box *list_marker;

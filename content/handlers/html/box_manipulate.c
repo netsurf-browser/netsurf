@@ -143,6 +143,7 @@ box_create(css_select_results *styles,
 	box->float_container = NULL;
 	box->next_float = NULL;
 	box->cached_place_below_level = 0;
+	box->list_value = 1;
 	box->list_marker = NULL;
 	box->col = NULL;
 	box->gadget = NULL;

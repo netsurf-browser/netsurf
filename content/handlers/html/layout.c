@@ -4481,6 +4481,42 @@ layout__get_li_value(dom_node *li_node, dom_long *value_out)
 
 
 /**
+ * Helper to get start attribute value from a OL node.
+ *
+ * \param[in]  ol_node    DOM node for the OL element;
+ * \param[out] start_out  Returns the value on success.
+ * \return true if node has value, otherwise false.
+ */
+static bool
+layout__get_ol_start(dom_node *ol_node, dom_long *start_out)
+{
+	dom_exception exc;
+	dom_long start;
+	bool has_start;
+
+	/** \todo
+	 * see layout__get_li_value().
+	 */
+	exc = dom_element_has_attribute(ol_node,
+			corestring_dom_start,
+			&has_start);
+	if (exc != DOM_NO_ERR || has_start == false) {
+		return false;
+	}
+
+	exc = dom_html_olist_element_get_start(
+			(dom_html_olist_element *)ol_node,
+			&start);
+	if (exc != DOM_NO_ERR) {
+		return false;
+	}
+
+	*start_out = start;
+	return true;
+}
+
+
+/**
  * Handle list item counting, if this is a list owner box.
  *
  * \param[in]  box  Box to do list item counting for.
@@ -4492,8 +4528,7 @@ layout__ordered_list_count(
 	dom_html_element_type tag_type;
 	dom_exception exc;
 	dom_node *child;
-	unsigned count;
-	unsigned next;
+	int next;
 
 	if (box->node == NULL) {
 		return;
@@ -4509,13 +4544,16 @@ layout__ordered_list_count(
 		return;
 	}
 
+	next = 1;
+	if (tag_type == DOM_HTML_ELEMENT_TYPE_OL) {
+		layout__get_ol_start(box->node, &next);
+	}
+
 	exc = dom_node_get_first_child(box->node, &child);
 	if (exc != DOM_NO_ERR) {
 		return;
 	}
 
-	count = 1;
-	next = 1;
 	while (child != NULL) {
 		dom_node *temp_node;
 
@@ -4533,14 +4571,14 @@ layout__ordered_list_count(
 			if (child_box != NULL &&
 			    child_box->list_marker != NULL) {
 				dom_long value;
+				struct box *marker = child_box->list_marker;
 				if (layout__get_li_value(child, &value)) {
-					child_box->list_marker->rows = value;
-					next = value + 1;
+					marker->list_value = value;
+					next = marker->list_value;
 				} else {
-					child_box->list_marker->rows = next;
-					next++;
+					marker->list_value = next;
 				}
-				count++;
+				next++;
 			}
 		}
 
@@ -4552,8 +4590,6 @@ layout__ordered_list_count(
 
 		child = temp_node;
 	}
-
-	box->rows = count;
 }
 
 /**
@@ -4585,7 +4621,7 @@ layout__set_numerical_marker_text(
 		return;
 	}
 
-	css_res = css_computed_format_list_style(box->style, marker->rows,
+	css_res = css_computed_format_list_style(box->style, marker->list_value,
 			marker->text, LIST_MARKER_SIZE, &counter_len);
 	if (css_res == CSS_OK) {
 		if (counter_len > LIST_MARKER_SIZE) {
@@ -4599,7 +4635,7 @@ layout__set_numerical_marker_text(
 				return;
 			}
 			css_computed_format_list_style(box->style,
-					marker->rows, marker->text,
+					marker->list_value, marker->text,
 					counter_len, &counter_len);
 		}
 		marker->length = counter_len;
