@@ -4674,14 +4674,13 @@ static void
 layout_lists(const html_content *content, struct box *box)
 {
 	struct box *child;
-	struct box *marker;
-	plot_font_style_t fstyle;
 
 	layout__ordered_list_count(box);
 
 	for (child = box->children; child; child = child->next) {
 		if (child->list_marker) {
-			marker = child->list_marker;
+			struct box *marker = child->list_marker;
+
 			if (layout__list_item_is_numerical(child)) {
 				if (marker->text == NULL) {
 					layout__set_numerical_marker_text(
@@ -4700,6 +4699,7 @@ layout_lists(const html_content *content, struct box *box)
 						marker->height) / 2;
 			} else if (marker->text) {
 				if (marker->width == UNKNOWN_WIDTH) {
+					plot_font_style_t fstyle;
 					font_plot_style_from_css(
 							&content->len_ctx,
 							marker->style,
