@@ -120,6 +120,7 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 		if(!(PushChunk(iffh,0,ID_NAME,IFFSIZE_UNKNOWN)))
 		{
 			WriteChunkBytes(iffh,url,strlen(url));
+			WriteChunkBytes(iffh,"\0",1);
 			PopChunk(iffh);
 		}
 
@@ -185,6 +186,7 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 			attr->DashPattern = 1;
 			attr->EdgeValue = findcolour(diagram->shape[i].stroke);
 		}
+
 		attr->EdgeThick = (float) diagram->shape[i].stroke_width;
 
 		if(!(PushChunk(iffh,0,ID_ATTR,IFFSIZE_UNKNOWN)))
@@ -281,7 +283,7 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 					if(!(PushChunk(iffh, 0, ID_FONS, IFFSIZE_UNKNOWN)))
 					{
 						WriteChunkBytes(iffh, fons, sizeof(struct fons_struct));
-						WriteChunkBytes(iffh, "Topaz\0", 6);
+						WriteChunkBytes(iffh, "Helvetica\0", 6);
 						PopChunk(iffh);
 					}
 					free(fons);
