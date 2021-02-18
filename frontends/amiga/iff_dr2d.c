@@ -283,7 +283,7 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 					if(!(PushChunk(iffh, 0, ID_FONS, IFFSIZE_UNKNOWN)))
 					{
 						WriteChunkBytes(iffh, fons, sizeof(struct fons_struct));
-						WriteChunkBytes(iffh, "Helvetica\0", 6);
+						WriteChunkBytes(iffh, "Helvetica\0", 10);
 						PopChunk(iffh);
 					}
 					free(fons);
