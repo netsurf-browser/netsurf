@@ -143,14 +143,14 @@ struct gui_bitmap_table {
 	int (*get_height)(void *bitmap);
 
 	/**
-	 * The the *bytes* per pixel.
+	 * Get the *bytes* per pixel.
 	 *
 	 * \param bitmap The bitmap
 	 */
 	size_t (*get_bpp)(void *bitmap);
 
 	/**
-	 * Savde a bitmap to disc.
+	 * Save a bitmap to disc.
 	 *
 	 * \param bitmap The bitmap to save
 	 * \param path The path to save the bitmap to.

@@ -43,12 +43,10 @@
 #include "netsurf/cookie_db.h"
 #include "netsurf/browser.h"
 #include "netsurf/browser_window.h"
-#include "netsurf/misc.h"
 #include "netsurf/netsurf.h"
 #include "content/fetch.h"
 #include "content/backing_store.h"
 #include "desktop/save_complete.h"
-#include "desktop/save_pdf.h"
 #include "desktop/searchweb.h"
 #include "desktop/hotlist.h"
 
@@ -70,6 +68,7 @@
 #include "gtk/selection.h"
 #include "gtk/search.h"
 #include "gtk/bitmap.h"
+#include "gtk/misc.h"
 #include "gtk/resources.h"
 #include "gtk/layout_pango.h"
 #include "gtk/accelerator.h"
@@ -327,13 +326,13 @@ static nserror nsgtk_add_named_icons_to_theme(void)
 
 
 /**
- * Initialize GTK specific parts of the browser.
+ * setup GTK specific parts of the browser.
  *
  * \param argc The number of arguments on the command line
  * \param argv A string vector of command line arguments.
  * \respath A string vector of the path elements of resources
  */
-static nserror nsgtk_init(int argc, char** argv, char **respath)
+static nserror nsgtk_setup(int argc, char** argv, char **respath)
 {
 	char buf[PATH_MAX];
 	char *resource_filename;
@@ -480,136 +479,9 @@ static bool nslog_stream_configure(FILE *fptr)
 }
 
 
-/**
- * Run the gtk event loop.
- *
- * The same as the standard gtk_main loop except this ensures active
- * FD are added to the gtk poll event set.
- */
-static void nsgtk_main(void)
-{
-	fd_set read_fd_set, write_fd_set, exc_fd_set;
-	int max_fd;
-	GPollFD *fd_list[1000];
-	unsigned int fd_count;
-
-	while (!nsgtk_complete) {
-		max_fd = -1;
-		fd_count = 0;
-		FD_ZERO(&read_fd_set);
-		FD_ZERO(&write_fd_set);
-		FD_ZERO(&exc_fd_set);
-
-		while (gtk_events_pending())
-			gtk_main_iteration_do(TRUE);
-
-		schedule_run();
-
-		fetch_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
-		for (int i = 0; i <= max_fd; i++) {
-			if (FD_ISSET(i, &read_fd_set)) {
-				GPollFD *fd = malloc(sizeof *fd);
-				fd->fd = i;
-				fd->events = G_IO_IN | G_IO_HUP | G_IO_ERR;
-				g_main_context_add_poll(0, fd, 0);
-				fd_list[fd_count++] = fd;
-			}
-			if (FD_ISSET(i, &write_fd_set)) {
-				GPollFD *fd = malloc(sizeof *fd);
-				fd->fd = i;
-				fd->events = G_IO_OUT | G_IO_ERR;
-				g_main_context_add_poll(0, fd, 0);
-				fd_list[fd_count++] = fd;
-			}
-			if (FD_ISSET(i, &exc_fd_set)) {
-				GPollFD *fd = malloc(sizeof *fd);
-				fd->fd = i;
-				fd->events = G_IO_ERR;
-				g_main_context_add_poll(0, fd, 0);
-				fd_list[fd_count++] = fd;
-			}
-		}
-
-		gtk_main_iteration();
-
-		for (unsigned int i = 0; i != fd_count; i++) {
-			g_main_context_remove_poll(0, fd_list[i]);
-			free(fd_list[i]);
-		}
-	}
-}
 
 
-static void gui_quit(void)
-{
-	nserror res;
 
-	NSLOG(netsurf, INFO, "Quitting GUI");
-
-	/* Ensure all scaffoldings are destroyed before we go into exit */
-	nsgtk_download_destroy();
-	urldb_save_cookies(nsoption_charp(cookie_jar));
-	urldb_save(nsoption_charp(url_file));
-
-	res = nsgtk_cookies_destroy();
-	if (res != NSERROR_OK) {
-		NSLOG(netsurf, INFO, "Error finalising cookie viewer: %s",
-		      messages_get_errorcode(res));
-	}
-
-	res = nsgtk_local_history_destroy();
-	if (res != NSERROR_OK) {
-		NSLOG(netsurf, INFO,
-		      "Error finalising local history viewer: %s",
-		      messages_get_errorcode(res));
-	}
-
-	res = nsgtk_global_history_destroy();
-	if (res != NSERROR_OK) {
-		NSLOG(netsurf, INFO,
-		      "Error finalising global history viewer: %s",
-		      messages_get_errorcode(res));
-	}
-
-	res = nsgtk_hotlist_destroy();
-	if (res != NSERROR_OK) {
-		NSLOG(netsurf, INFO, "Error finalising hotlist viewer: %s",
-		      messages_get_errorcode(res));
-	}
-
-	res = hotlist_fini();
-	if (res != NSERROR_OK) {
-		NSLOG(netsurf, INFO, "Error finalising hotlist: %s",
-		      messages_get_errorcode(res));
-	}
-
-	res = save_complete_finalise();
-	if (res != NSERROR_OK) {
-		NSLOG(netsurf, INFO, "Error finalising save complete: %s",
-		      messages_get_errorcode(res));
-	}
-
-	free(nsgtk_config_home);
-
-	gtk_fetch_filetype_fin();
-}
-
-static nserror gui_launch_url(struct nsurl *url)
-{
-	gboolean ok;
-	GError *error = NULL;
-
-	ok = nsgtk_show_uri(NULL, nsurl_access(url), GDK_CURRENT_TIME, &error);
-	if (ok == TRUE) {
-		return NSERROR_OK;
-	}
-
-	if (error) {
-		nsgtk_warning(messages_get("URIOpenError"), error->message);
-		g_error_free(error);
-	}
-	return NSERROR_NO_FETCH_HANDLER;
-}
 
 /* exported function documented in gtk/warn.h */
 nserror nsgtk_warning(const char *warning, const char *detail)
@@ -637,127 +509,6 @@ nserror nsgtk_warning(const char *warning, const char *detail)
 }
 
 
-static void nsgtk_PDF_set_pass(GtkButton *w, gpointer data)
-{
-	char **owner_pass = ((void **)data)[0];
-	char **user_pass = ((void **)data)[1];
-	GtkWindow *wnd = ((void **)data)[2];
-	GtkBuilder *password_builder = ((void **)data)[3];
-	char *path = ((void **)data)[4];
-
-	char *op, *op1;
-	char *up, *up1;
-
-	op = strdup(gtk_entry_get_text(
-			GTK_ENTRY(gtk_builder_get_object(password_builder,
-					"entryPDFOwnerPassword"))));
-	op1 = strdup(gtk_entry_get_text(
-			GTK_ENTRY(gtk_builder_get_object(password_builder,
-					"entryPDFOwnerPassword1"))));
-	up = strdup(gtk_entry_get_text(
-			GTK_ENTRY(gtk_builder_get_object(password_builder,
-					"entryPDFUserPassword"))));
-	up1 = strdup(gtk_entry_get_text(
-			GTK_ENTRY(gtk_builder_get_object(password_builder,
-					"entryPDFUserPassword1"))));
-
-
-	if (op[0] == '\0') {
-		gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(password_builder,
-				"labelInfo")),
-				"Owner password must be at least 1 character long:");
-		free(op);
-		free(up);
-	} else if (!strcmp(op, up)) {
-		gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(password_builder,
-				"labelInfo")),
-				"User and owner passwords must be different:");
-		free(op);
-		free(up);
-	} else if (!strcmp(op, op1) && !strcmp(up, up1)) {
-
-		*owner_pass = op;
-		if (up[0] == '\0')
-			free(up);
-		else
-			*user_pass = up;
-
-		free(data);
-		gtk_widget_destroy(GTK_WIDGET(wnd));
-		g_object_unref(G_OBJECT(password_builder));
-
-		save_pdf(path);
-
-		free(path);
-	} else {
-		gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(password_builder,
-				"labelInfo")), "Passwords not confirmed:");
-		free(op);
-		free(up);
-	}
-
-	free(op1);
-	free(up1);
-}
-
-static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data)
-{
-	GtkWindow *wnd = ((void **)data)[2];
-	GtkBuilder *password_builder = ((void **)data)[3];
-	char *path = ((void **)data)[4];
-
-	free(data);
-
-	gtk_widget_destroy(GTK_WIDGET(wnd));
-	g_object_unref(G_OBJECT(password_builder));
-
-	save_pdf(path);
-
-	free(path);
-}
-
-static void nsgtk_pdf_password(char **owner_pass, char **user_pass, char *path)
-{
-	GtkButton *ok, *no;
-	GtkWindow *wnd;
-	void **data;
-	GtkBuilder *password_builder;
-	nserror res;
-
-	res = nsgtk_builder_new_from_resname("password", &password_builder);
-	if (res != NSERROR_OK) {
-		NSLOG(netsurf, INFO, "Password UI builder init failed");
-		return;
-	}
-
-	gtk_builder_connect_signals(password_builder, NULL);
-
-	wnd = GTK_WINDOW(gtk_builder_get_object(password_builder,
-						"wndPDFPassword"));
-
-	data = malloc(5 * sizeof(void *));
-
-	*owner_pass = NULL;
-	*user_pass = NULL;
-
-	data[0] = owner_pass;
-	data[1] = user_pass;
-	data[2] = wnd;
-	data[3] = password_builder;
-	data[4] = path;
-
-	ok = GTK_BUTTON(gtk_builder_get_object(password_builder,
-					       "buttonPDFSetPassword"));
-	no = GTK_BUTTON(gtk_builder_get_object(password_builder,
-					       "buttonPDFNoPassword"));
-
-	g_signal_connect(G_OBJECT(ok), "clicked",
-			 G_CALLBACK(nsgtk_PDF_set_pass), (gpointer)data);
-	g_signal_connect(G_OBJECT(no), "clicked",
-			 G_CALLBACK(nsgtk_PDF_no_pass), (gpointer)data);
-
-	gtk_widget_show(GTK_WIDGET(wnd));
-}
 
 
 uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
@@ -1177,14 +928,6 @@ static nserror nsgtk_option_init(int *pargc, char** argv)
 	return NSERROR_OK;
 }
 
-static struct gui_misc_table nsgtk_misc_table = {
-	.schedule = nsgtk_schedule,
-
-	.quit = gui_quit,
-	.launch_url = gui_launch_url,
-	.pdf_password = nsgtk_pdf_password,
-	.present_cookies = nsgtk_cookies_present,
-};
 
 
 static nserror nsgtk_messages_init(char **respaths)
@@ -1207,6 +950,135 @@ static nserror nsgtk_messages_init(char **respaths)
 	return ret;
 }
 
+
+/**
+ * Run the gtk event loop.
+ *
+ * The same as the standard gtk_main loop except this ensures active
+ * FD are added to the gtk poll event set.
+ */
+static void nsgtk_main(void)
+{
+	fd_set read_fd_set, write_fd_set, exc_fd_set;
+	int max_fd;
+	GPollFD *fd_list[1000];
+	unsigned int fd_count;
+
+	while (!nsgtk_complete) {
+		max_fd = -1;
+		fd_count = 0;
+		FD_ZERO(&read_fd_set);
+		FD_ZERO(&write_fd_set);
+		FD_ZERO(&exc_fd_set);
+
+		while (gtk_events_pending())
+			gtk_main_iteration_do(TRUE);
+
+		schedule_run();
+
+		fetch_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
+		for (int i = 0; i <= max_fd; i++) {
+			if (FD_ISSET(i, &read_fd_set)) {
+				GPollFD *fd = malloc(sizeof *fd);
+				fd->fd = i;
+				fd->events = G_IO_IN | G_IO_HUP | G_IO_ERR;
+				g_main_context_add_poll(0, fd, 0);
+				fd_list[fd_count++] = fd;
+			}
+			if (FD_ISSET(i, &write_fd_set)) {
+				GPollFD *fd = malloc(sizeof *fd);
+				fd->fd = i;
+				fd->events = G_IO_OUT | G_IO_ERR;
+				g_main_context_add_poll(0, fd, 0);
+				fd_list[fd_count++] = fd;
+			}
+			if (FD_ISSET(i, &exc_fd_set)) {
+				GPollFD *fd = malloc(sizeof *fd);
+				fd->fd = i;
+				fd->events = G_IO_ERR;
+				g_main_context_add_poll(0, fd, 0);
+				fd_list[fd_count++] = fd;
+			}
+		}
+
+		gtk_main_iteration();
+
+		for (unsigned int i = 0; i != fd_count; i++) {
+			g_main_context_remove_poll(0, fd_list[i]);
+			free(fd_list[i]);
+		}
+	}
+}
+
+
+/**
+ * finalise the browser
+ */
+static void nsgtk_finalise(void)
+{
+	nserror res;
+
+	NSLOG(netsurf, INFO, "Quitting GUI");
+
+	/* Ensure all scaffoldings are destroyed before we go into exit */
+	nsgtk_download_destroy();
+	urldb_save_cookies(nsoption_charp(cookie_jar));
+	urldb_save(nsoption_charp(url_file));
+
+	res = nsgtk_cookies_destroy();
+	if (res != NSERROR_OK) {
+		NSLOG(netsurf, INFO, "Error finalising cookie viewer: %s",
+		      messages_get_errorcode(res));
+	}
+
+	res = nsgtk_local_history_destroy();
+	if (res != NSERROR_OK) {
+		NSLOG(netsurf, INFO,
+		      "Error finalising local history viewer: %s",
+		      messages_get_errorcode(res));
+	}
+
+	res = nsgtk_global_history_destroy();
+	if (res != NSERROR_OK) {
+		NSLOG(netsurf, INFO,
+		      "Error finalising global history viewer: %s",
+		      messages_get_errorcode(res));
+	}
+
+	res = nsgtk_hotlist_destroy();
+	if (res != NSERROR_OK) {
+		NSLOG(netsurf, INFO, "Error finalising hotlist viewer: %s",
+		      messages_get_errorcode(res));
+	}
+
+	res = hotlist_fini();
+	if (res != NSERROR_OK) {
+		NSLOG(netsurf, INFO, "Error finalising hotlist: %s",
+		      messages_get_errorcode(res));
+	}
+
+	res = save_complete_finalise();
+	if (res != NSERROR_OK) {
+		NSLOG(netsurf, INFO, "Error finalising save complete: %s",
+		      messages_get_errorcode(res));
+	}
+
+	free(nsgtk_config_home);
+
+	gtk_fetch_filetype_fin();
+
+	/* common finalisation */
+	netsurf_exit();
+
+	/* finalise options */
+	nsoption_finalise(nsoptions, nsoptions_default);
+
+	/* finalise logging */
+	nslog_finalise();
+
+}
+
+
 /**
  * Main entry point from OS.
  */
@@ -1215,7 +1087,7 @@ int main(int argc, char** argv)
 	char *cache_home = NULL;
 	nserror ret;
 	struct netsurf_table nsgtk_table = {
-		.misc = &nsgtk_misc_table,
+		.misc = nsgtk_misc_table,
 		.window = nsgtk_window_table,
 		.clipboard = nsgtk_clipboard_table,
 		.download = nsgtk_download_table,
@@ -1304,22 +1176,17 @@ int main(int argc, char** argv)
 	}
 
 	/* gtk specific initalisation and main run loop */
-	ret = nsgtk_init(argc, argv, respaths);
+	ret = nsgtk_setup(argc, argv, respaths);
 	if (ret != NSERROR_OK) {
-		fprintf(stderr, "NetSurf gtk initialise failed (%s)\n",
+		fprintf(stderr, "NetSurf gtk setup failed (%s)\n",
 			messages_get_errorcode(ret));
-	} else {
-		nsgtk_main();
-	}
+		nsgtk_finalise();
+		return 2;
+	} 
 
-	/* common finalisation */
-	netsurf_exit();
+	nsgtk_main();
 
-	/* finalise options */
-	nsoption_finalise(nsoptions, nsoptions_default);
-
-	/* finalise logging */
-	nslog_finalise();
-
+	nsgtk_finalise();
+	
 	return 0;
 }

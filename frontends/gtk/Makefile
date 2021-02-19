@@ -166,11 +166,11 @@ endif
 # ----------------------------------------------------------------------------
 
 # S_FRONTEND are sources purely for the GTK frontend
-S_FRONTEND := gui.c schedule.c layout_pango.c bitmap.c plotters.c	\
-	scaffolding.c gdk.c completion.c throbber.c accelerator.c \
-	selection.c window.c fetch.c download.c menu.c print.c		\
-	search.c tabs.c toolbar.c gettext.c compat.c viewdata.c		\
-	viewsource.c preferences.c about.c resources.c corewindow.c	\
+S_FRONTEND := gui.c misc.c schedule.c layout_pango.c bitmap.c plotters.c \
+	scaffolding.c gdk.c completion.c throbber.c accelerator.c        \
+	selection.c window.c fetch.c download.c menu.c print.c		 \
+	search.c tabs.c toolbar.c gettext.c compat.c viewdata.c		 \
+	viewsource.c preferences.c about.c resources.c corewindow.c	 \
 	local_history.c global_history.c cookies.c hotlist.c page_info.c
 
 # This is the final source build list
