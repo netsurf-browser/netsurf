@@ -4411,20 +4411,17 @@ layout_block_context(struct box *block,
 	return true;
 }
 
-
 /**
- * Check a node's tag type.
+ * Get a dom node's element tag type.
  *
- * Assumes node is an HTML element.
- *
- * \param[in]  node  Node to ckeck tag type of.
- * \param[in]  type  Tag type to test for.
- * \return true if if node has given type, false otherwise.
+ * \param[in]  node  Node to get tag type of.
+ * \param[in]  type  Returns element tag type on success.
+ * \return true if on success, false otherwise.
  */
-static inline bool
-layout__check_element_type(
+static bool
+layout__get_element_tag(
 		const dom_node *node,
-		dom_html_element_type type)
+		dom_html_element_type *type)
 {
 	dom_html_element_type element_type;
 	dom_node_type node_type;
@@ -4438,6 +4435,29 @@ layout__check_element_type(
 
 	exc = dom_html_element_get_tag_type(node, &element_type);
 	if (exc != DOM_NO_ERR) {
+		return false;
+	}
+
+	*type = element_type;
+	return true;
+}
+
+
+/**
+ * Check a node's tag type.
+ *
+ * \param[in]  node  Node to check tag type of.
+ * \param[in]  type  Tag type to test for.
+ * \return true if if node has given type, false otherwise.
+ */
+static inline bool
+layout__check_element_type(
+		const dom_node *node,
+		dom_html_element_type type)
+{
+	dom_html_element_type element_type;
+
+	if (!layout__get_element_tag(node, &element_type)) {
 		return false;
 	}
 
@@ -4566,8 +4586,7 @@ layout__get_list_item_count(
 		return false;
 	}
 
-	exc = dom_html_element_get_tag_type(list_owner, &tag_type);
-	if (exc != DOM_NO_ERR) {
+	if (!layout__get_element_tag(list_owner, &tag_type)) {
 		return false;
 	}
 
@@ -4634,8 +4653,7 @@ layout__ordered_list_count(
 		return;
 	}
 
-	exc = dom_html_element_get_tag_type(box->node, &tag_type);
-	if (exc != DOM_NO_ERR) {
+	if (!layout__get_element_tag(box->node, &tag_type)) {
 		return;
 	}
 
