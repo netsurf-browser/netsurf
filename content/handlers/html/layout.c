@@ -4426,15 +4426,22 @@ layout__check_element_type(
 		const dom_node *node,
 		dom_html_element_type type)
 {
-	dom_html_element_type node_type;
+	dom_html_element_type element_type;
+	dom_node_type node_type;
 	dom_exception exc;
 
-	exc = dom_html_element_get_tag_type(node, &node_type);
+	exc = dom_node_get_node_type(node, &node_type);
+	if (exc != DOM_NO_ERR ||
+	    node_type != DOM_ELEMENT_NODE) {
+		return false;
+	}
+
+	exc = dom_html_element_get_tag_type(node, &element_type);
 	if (exc != DOM_NO_ERR) {
 		return false;
 	}
 
-	return node_type == type;
+	return element_type == type;
 }
 
 
