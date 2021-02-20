@@ -75,27 +75,175 @@
 
 bool nsgtk_complete = false;
 
-char *nsgtk_config_home; /* exported global defined in gtk/gui.h */
+/* exported global defined in gtk/gui.h */
+char *nsgtk_config_home;
 
-GdkPixbuf *favicon_pixbuf; /** favicon default pixbuf */
-GdkPixbuf *win_default_icon_pixbuf; /** default window icon pixbuf */
+/** favicon default pixbuf */
+GdkPixbuf *favicon_pixbuf;
+
+/** default window icon pixbuf */
+GdkPixbuf *win_default_icon_pixbuf;
 
 GtkBuilder *warning_builder;
 
-char **respaths; /** resource search path vector */
+/** resource search path vector */
+char **respaths;
 
-/**
- * Cause an abnormal program termination.
- *
- * \note This never returns and is intended to terminate without any cleanup.
- *
- * \param error The message to display to the user.
- */
-static void die(const char * const error)
+
+/* exported function documented in gtk/warn.h */
+nserror nsgtk_warning(const char *warning, const char *detail)
 {
-	fprintf(stderr, "%s", error);
-	exit(EXIT_FAILURE);
+	char buf[300];	/* 300 is the size the RISC OS GUI uses */
+	static GtkWindow *nsgtk_warning_window;
+	GtkLabel *WarningLabel;
+
+	NSLOG(netsurf, INFO, "%s %s", warning, detail ? detail : "");
+	fflush(stdout);
+
+	nsgtk_warning_window = GTK_WINDOW(gtk_builder_get_object(warning_builder, "wndWarning"));
+	WarningLabel = GTK_LABEL(gtk_builder_get_object(warning_builder,
+							"labelWarning"));
+
+	snprintf(buf, sizeof(buf), "%s %s", messages_get(warning),
+		 detail ? detail : "");
+	buf[sizeof(buf) - 1] = 0;
+
+	gtk_label_set_text(WarningLabel, buf);
+
+	gtk_widget_show_all(GTK_WIDGET(nsgtk_warning_window));
+
+	return NSERROR_OK;
 }
+
+
+/* exported interface documented in gtk/gui.h */
+uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
+{
+	/* this function will need to become much more complex to support
+	 * everything that the RISC OS version does.  But this will do for
+	 * now.  I hope.
+	 */
+	switch (key->keyval) {
+
+	case GDK_KEY(Tab):
+		return NS_KEY_TAB;
+
+	case GDK_KEY(BackSpace):
+		if (key->state & GDK_SHIFT_MASK)
+			return NS_KEY_DELETE_LINE_START;
+		else
+			return NS_KEY_DELETE_LEFT;
+
+	case GDK_KEY(Delete):
+		if (key->state & GDK_SHIFT_MASK)
+			return NS_KEY_DELETE_LINE_END;
+		else
+			return NS_KEY_DELETE_RIGHT;
+
+	case GDK_KEY(Linefeed):
+		return 13;
+
+	case GDK_KEY(Return):
+		return 10;
+
+	case GDK_KEY(Left):
+	case GDK_KEY(KP_Left):
+		return NS_KEY_LEFT;
+
+	case GDK_KEY(Right):
+	case GDK_KEY(KP_Right):
+		return NS_KEY_RIGHT;
+
+	case GDK_KEY(Up):
+	case GDK_KEY(KP_Up):
+		return NS_KEY_UP;
+
+	case GDK_KEY(Down):
+	case GDK_KEY(KP_Down):
+		return NS_KEY_DOWN;
+
+	case GDK_KEY(Home):
+	case GDK_KEY(KP_Home):
+		if (key->state & GDK_CONTROL_MASK)
+			return NS_KEY_LINE_START;
+		else
+			return NS_KEY_TEXT_START;
+
+	case GDK_KEY(End):
+	case GDK_KEY(KP_End):
+		if (key->state & GDK_CONTROL_MASK)
+			return NS_KEY_LINE_END;
+		else
+			return NS_KEY_TEXT_END;
+
+	case GDK_KEY(Page_Up):
+	case GDK_KEY(KP_Page_Up):
+		return NS_KEY_PAGE_UP;
+
+	case GDK_KEY(Page_Down):
+	case GDK_KEY(KP_Page_Down):
+		return NS_KEY_PAGE_DOWN;
+
+	case 'a':
+		if (key->state & GDK_CONTROL_MASK)
+			return NS_KEY_SELECT_ALL;
+		return gdk_keyval_to_unicode(key->keyval);
+
+	case 'u':
+		if (key->state & GDK_CONTROL_MASK)
+			return NS_KEY_DELETE_LINE;
+		return gdk_keyval_to_unicode(key->keyval);
+
+	case 'c':
+		if (key->state & GDK_CONTROL_MASK)
+			return NS_KEY_COPY_SELECTION;
+		return gdk_keyval_to_unicode(key->keyval);
+
+	case 'v':
+		if (key->state & GDK_CONTROL_MASK)
+			return NS_KEY_PASTE;
+		return gdk_keyval_to_unicode(key->keyval);
+
+	case 'x':
+		if (key->state & GDK_CONTROL_MASK)
+			return NS_KEY_CUT_SELECTION;
+		return gdk_keyval_to_unicode(key->keyval);
+
+	case 'Z':
+	case 'y':
+		if (key->state & GDK_CONTROL_MASK)
+			return NS_KEY_REDO;
+		return gdk_keyval_to_unicode(key->keyval);
+
+	case 'z':
+		if (key->state & GDK_CONTROL_MASK)
+			return NS_KEY_UNDO;
+		return gdk_keyval_to_unicode(key->keyval);
+
+	case GDK_KEY(Escape):
+		return NS_KEY_ESCAPE;
+
+		/* Modifiers - do nothing for now */
+	case GDK_KEY(Shift_L):
+	case GDK_KEY(Shift_R):
+	case GDK_KEY(Control_L):
+	case GDK_KEY(Control_R):
+	case GDK_KEY(Caps_Lock):
+	case GDK_KEY(Shift_Lock):
+	case GDK_KEY(Meta_L):
+	case GDK_KEY(Meta_R):
+	case GDK_KEY(Alt_L):
+	case GDK_KEY(Alt_R):
+	case GDK_KEY(Super_L):
+	case GDK_KEY(Super_R):
+	case GDK_KEY(Hyper_L):
+	case GDK_KEY(Hyper_R):
+		return 0;
+
+	}
+	return gdk_keyval_to_unicode(key->keyval);
+}
+
 
 /**
  * Create an array of valid paths to search for resources.
@@ -151,6 +299,176 @@ nsgtk_init_resource_path(const char *config_home)
 	free(resource_path);
 
 	return respath;
+}
+
+
+/**
+ * create directory name and check it is acessible and a directory.
+ */
+static nserror
+check_dirname(const char *path, const char *leaf, char **dirname_out)
+{
+	nserror ret;
+	char *dirname = NULL;
+	struct stat dirname_stat;
+
+	ret = netsurf_mkpath(&dirname, NULL, 2, path, leaf);
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
+
+	/* ensure access is possible and the entry is actualy
+	 * a directory.
+	 */
+	if (stat(dirname, &dirname_stat) == 0) {
+		if (S_ISDIR(dirname_stat.st_mode)) {
+			if (access(dirname, R_OK | W_OK) == 0) {
+				*dirname_out = dirname;
+				return NSERROR_OK;
+			} else {
+				ret = NSERROR_PERMISSION;
+			}
+		} else {
+			ret = NSERROR_NOT_DIRECTORY;
+		}
+	} else {
+		ret = NSERROR_NOT_FOUND;
+	}
+
+	free(dirname);
+
+	return ret;
+}
+
+
+/**
+ * Get the path to the config directory.
+ *
+ * @param config_home_out Path to configuration directory.
+ * @return NSERROR_OK on sucess and \a config_home_out updated else error code.
+ */
+static nserror get_config_home(char **config_home_out)
+{
+	nserror ret;
+	char *home_dir;
+	char *xdg_config_dir;
+	char *config_home;
+
+	home_dir = getenv("HOME");
+
+	/* The old $HOME/.netsurf/ directory should be used if it
+	 * exists and is accessible.
+	 */
+	if (home_dir != NULL) {
+		ret = check_dirname(home_dir, ".netsurf", &config_home);
+		if (ret == NSERROR_OK) {
+			NSLOG(netsurf, INFO, "\"%s\"", config_home);
+			*config_home_out = config_home;
+			return ret;
+		}
+	}
+
+	/* $XDG_CONFIG_HOME defines the base directory
+	 * relative to which user specific configuration files
+	 * should be stored.
+	 */
+	xdg_config_dir = getenv("XDG_CONFIG_HOME");
+
+	if ((xdg_config_dir == NULL) || (*xdg_config_dir == 0)) {
+		/* If $XDG_CONFIG_HOME is either not set or empty, a
+		 * default equal to $HOME/.config should be used.
+		 */
+
+		/** @todo the meaning of empty is never defined so I
+		 * am assuming it is a zero length string but is it
+		 * supposed to mean "whitespace" and if so what counts
+		 * as whitespace? (are tabs etc. counted or should
+		 * isspace() be used)
+		 */
+
+		/* the HOME envvar is required */
+		if (home_dir == NULL) {
+			return NSERROR_NOT_DIRECTORY;
+		}
+
+		ret = check_dirname(home_dir, ".config/netsurf", &config_home);
+		if (ret != NSERROR_OK) {
+			return ret;
+		}
+	} else {
+		ret = check_dirname(xdg_config_dir, "netsurf", &config_home);
+		if (ret != NSERROR_OK) {
+			return ret;
+		}
+	}
+
+	NSLOG(netsurf, INFO, "\"%s\"", config_home);
+
+	*config_home_out = config_home;
+	return NSERROR_OK;
+}
+
+
+static nserror create_config_home(char **config_home_out)
+{
+	char *config_home = NULL;
+	char *home_dir;
+	char *xdg_config_dir;
+	nserror ret;
+
+	NSLOG(netsurf, INFO, "Attempting to create configuration directory");
+
+	/* $XDG_CONFIG_HOME defines the base directory
+	 * relative to which user specific configuration files
+	 * should be stored.
+	 */
+	xdg_config_dir = getenv("XDG_CONFIG_HOME");
+
+	if ((xdg_config_dir == NULL) || (*xdg_config_dir == 0)) {
+		home_dir = getenv("HOME");
+
+		if ((home_dir == NULL) || (*home_dir == 0)) {
+			return NSERROR_NOT_DIRECTORY;
+		}
+
+		ret = netsurf_mkpath(&config_home, NULL, 4, home_dir, ".config","netsurf", "/");
+		if (ret != NSERROR_OK) {
+			return ret;
+		}
+	} else {
+		ret = netsurf_mkpath(&config_home, NULL, 3, xdg_config_dir, "netsurf", "/");
+		if (ret != NSERROR_OK) {
+			return ret;
+		}
+	}
+
+	/* ensure all elements of path exist (the trailing / is required) */
+	ret = netsurf_mkdir_all(config_home);
+	if (ret != NSERROR_OK) {
+		free(config_home);
+		return ret;
+	}
+
+	/* strip the trailing separator */
+	config_home[strlen(config_home) - 1] = 0;
+
+	NSLOG(netsurf, INFO, "\"%s\"", config_home);
+
+	*config_home_out = config_home;
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * Ensures output logging stream is correctly configured
+ */
+static bool nslog_stream_configure(FILE *fptr)
+{
+	/* set log stream to be non-buffering */
+	setbuf(fptr, NULL);
+
+	return true;
 }
 
 
@@ -249,13 +567,260 @@ static nserror set_defaults(struct nsoption_s *defaults)
 
 	/* set default items in toolbar */
 	nsoption_set_charp(toolbar_items,
-	  strdup("back/history/forward/reloadstop/url_bar/websearch/openmenu"));
+			   strdup("back/history/forward/reloadstop/url_bar/websearch/openmenu"));
 
 	/* set default for menu and tool bar visibility */
 	nsoption_set_charp(bar_show, strdup("tool"));
 
 	return NSERROR_OK;
 }
+
+
+/**
+ * Initialise user options
+ *
+ * Initialise the browser configuration options. These are set by:
+ *  - set generic defaults suitable for the gtk frontend
+ *  - user choices loaded from Choices file
+ *  - command line parameters
+ */
+static nserror nsgtk_option_init(int *pargc, char** argv)
+{
+	nserror ret;
+	char *choices = NULL;
+
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
+
+	/* Attempt to load the user choices */
+	ret = netsurf_mkpath(&choices, NULL, 2, nsgtk_config_home, "Choices");
+	if (ret == NSERROR_OK) {
+		nsoption_read(choices, nsoptions);
+		free(choices);
+	}
+
+	/* overide loaded options with those from commandline */
+	nsoption_commandline(pargc, argv, nsoptions);
+
+	/* ensure all options fall within sensible bounds */
+
+	/* Attempt to handle nonsense status bar widths.  These may exist
+	 * in people's Choices as the GTK front end used to abuse the
+	 * status bar width option by using it for an absolute value in px.
+	 * The GTK front end now correctly uses it as a proportion of window
+	 * width.  Here we assume that a value of less than 15% is wrong
+	 * and set to the default two thirds. */
+	if (nsoption_int(toolbar_status_size) < 1500) {
+		nsoption_set_int(toolbar_status_size, 6667);
+	}
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * initialise message translation
+ */
+static nserror nsgtk_messages_init(char **respaths)
+{
+	const char *messages;
+	nserror ret;
+	const uint8_t *data;
+	size_t data_size;
+
+	ret = nsgtk_data_from_resname("Messages", &data, &data_size);
+	if (ret == NSERROR_OK) {
+		ret = messages_add_from_inline(data, data_size);
+	} else {
+		/* Obtain path to messages */
+		ret = nsgtk_path_from_resname("Messages", &messages);
+		if (ret == NSERROR_OK) {
+			ret = messages_add_from_file(messages);
+		}
+	}
+	return ret;
+}
+
+
+/**
+ * Get the path to the cache directory.
+ *
+ * @param cache_home_out Path to cache directory.
+ * @return NSERROR_OK on sucess and \a cache_home_out updated else error code.
+ */
+static nserror get_cache_home(char **cache_home_out)
+{
+	nserror ret;
+	char *xdg_cache_dir;
+	char *cache_home;
+	char *home_dir;
+
+	/* $XDG_CACHE_HOME defines the base directory relative to
+	 * which user specific non-essential data files should be
+	 * stored.
+	 */
+	xdg_cache_dir = getenv("XDG_CACHE_HOME");
+
+	if ((xdg_cache_dir == NULL) || (*xdg_cache_dir == 0)) {
+		/* If $XDG_CACHE_HOME is either not set or empty, a
+		 * default equal to $HOME/.cache should be used.
+		 */
+
+		home_dir = getenv("HOME");
+
+		/* the HOME envvar is required */
+		if (home_dir == NULL) {
+			return NSERROR_NOT_DIRECTORY;
+		}
+
+		ret = check_dirname(home_dir, ".cache/netsurf", &cache_home);
+		if (ret != NSERROR_OK) {
+			return ret;
+		}
+	} else {
+		ret = check_dirname(xdg_cache_dir, "netsurf", &cache_home);
+		if (ret != NSERROR_OK) {
+			return ret;
+		}
+	}
+
+	NSLOG(netsurf, INFO, "\"%s\"", cache_home);
+
+	*cache_home_out = cache_home;
+	return NSERROR_OK;
+}
+
+
+/**
+ * create a cache directory
+ */
+static nserror create_cache_home(char **cache_home_out)
+{
+	char *cache_home = NULL;
+	char *home_dir;
+	char *xdg_cache_dir;
+	nserror ret;
+
+	NSLOG(netsurf, INFO, "Attempting to create cache directory");
+
+	/* $XDG_CACHE_HOME defines the base directory
+	 * relative to which user specific cache files
+	 * should be stored.
+	 */
+	xdg_cache_dir = getenv("XDG_CACHE_HOME");
+
+	if ((xdg_cache_dir == NULL) || (*xdg_cache_dir == 0)) {
+		home_dir = getenv("HOME");
+
+		if ((home_dir == NULL) || (*home_dir == 0)) {
+			return NSERROR_NOT_DIRECTORY;
+		}
+
+		ret = netsurf_mkpath(&cache_home, NULL, 4, home_dir, ".cache", "netsurf", "/");
+		if (ret != NSERROR_OK) {
+			return ret;
+		}
+	} else {
+		ret = netsurf_mkpath(&cache_home, NULL, 3, xdg_cache_dir, "netsurf", "/");
+		if (ret != NSERROR_OK) {
+			return ret;
+		}
+	}
+
+	/* ensure all elements of path exist (the trailing / is required) */
+	ret = netsurf_mkdir_all(cache_home);
+	if (ret != NSERROR_OK) {
+		free(cache_home);
+		return ret;
+	}
+
+	/* strip the trailing separator */
+	cache_home[strlen(cache_home) - 1] = 0;
+
+	NSLOG(netsurf, INFO, "\"%s\"", cache_home);
+
+	*cache_home_out = cache_home;
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * GTK specific initialisation
+ */
+static nserror nsgtk_init(int *pargc, char ***pargv, char **cache_home)
+{
+	nserror ret;
+
+	/* Locate the correct user configuration directory path */
+	ret = get_config_home(&nsgtk_config_home);
+	if (ret == NSERROR_NOT_FOUND) {
+		/* no config directory exists yet so try to create one */
+		ret = create_config_home(&nsgtk_config_home);
+	}
+	if (ret != NSERROR_OK) {
+		NSLOG(netsurf, INFO,
+		      "Unable to locate a configuration directory.");
+		nsgtk_config_home = NULL;
+	}
+
+	/* Initialise gtk */
+	gtk_init(pargc, pargv);
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, pargc, *pargv);
+
+	/* build the common resource path list */
+	respaths = nsgtk_init_resource_path(nsgtk_config_home);
+	if (respaths == NULL) {
+		fprintf(stderr, "Unable to locate resources\n");
+		return 1;
+	}
+
+	/* initialise the gtk resource handling */
+	ret = nsgtk_init_resources(respaths);
+	if (ret != NSERROR_OK) {
+		fprintf(stderr, "GTK resources failed to initialise (%s)\n",
+			messages_get_errorcode(ret));
+		return ret;
+	}
+
+	/* Initialise user options */
+	ret = nsgtk_option_init(pargc, *pargv);
+	if (ret != NSERROR_OK) {
+		fprintf(stderr, "Options failed to initialise (%s)\n",
+			messages_get_errorcode(ret));
+		return ret;
+	}
+
+	/* Initialise translated messages */
+	ret = nsgtk_messages_init(respaths);
+	if (ret != NSERROR_OK) {
+		fprintf(stderr, "Unable to load translated messages (%s)\n",
+			messages_get_errorcode(ret));
+		NSLOG(netsurf, INFO, "Unable to load translated messages");
+		/** \todo decide if message load faliure should be fatal */
+	}
+
+	/* Locate the correct user cache directory path */
+	ret = get_cache_home(cache_home);
+	if (ret == NSERROR_NOT_FOUND) {
+		/* no cache directory exists yet so try to create one */
+		ret = create_cache_home(cache_home);
+	}
+	if (ret != NSERROR_OK) {
+		NSLOG(netsurf, INFO, "Unable to locate a cache directory.");
+	}
+
+
+	return NSERROR_OK;
+}
+
 
 #if GTK_CHECK_VERSION(3,14,0)
 
@@ -265,7 +830,7 @@ static nserror set_defaults(struct nsoption_s *defaults)
 static nserror nsgtk_add_named_icons_to_theme(void)
 {
 	gtk_icon_theme_add_resource_path(gtk_icon_theme_get_default(),
-					  "/org/netsurf/icons");
+					 "/org/netsurf/icons");
 	return NSERROR_OK;
 }
 
@@ -279,7 +844,7 @@ add_builtin_icon(const char *prefix, const char *name, int x, int y)
 	char *resname;
 	int resnamelen;
 
-	 /* resource name string length allowing for / .png and termination */
+	/* resource name string length allowing for / .png and termination */
 	resnamelen = strlen(prefix) + strlen(name) + 5 + 1 + 4 + 1;
 	resname = malloc(resnamelen);
 	if (resname == NULL) {
@@ -298,13 +863,14 @@ add_builtin_icon(const char *prefix, const char *name, int x, int y)
 	return NSERROR_OK;
 }
 
+
 /**
  * adds named icons into gtk theme
  */
 static nserror nsgtk_add_named_icons_to_theme(void)
 {
 	/* these must also be in gtk/resources.c pixbuf_resource *and*
-	 * gtk/res/netsurf.gresource.xml 
+	 * gtk/res/netsurf.gresource.xml
 	 */
 	add_builtin_icon("", "local-history", 8, 32);
 	add_builtin_icon("", "show-cookie", 24, 24);
@@ -466,491 +1032,6 @@ static nserror nsgtk_setup(int argc, char** argv, char **respath)
 }
 
 
-
-/**
- * Ensures output logging stream is correctly configured
- */
-static bool nslog_stream_configure(FILE *fptr)
-{
-	/* set log stream to be non-buffering */
-	setbuf(fptr, NULL);
-
-	return true;
-}
-
-
-
-
-
-
-/* exported function documented in gtk/warn.h */
-nserror nsgtk_warning(const char *warning, const char *detail)
-{
-	char buf[300];	/* 300 is the size the RISC OS GUI uses */
-	static GtkWindow *nsgtk_warning_window;
-	GtkLabel *WarningLabel;
-
-	NSLOG(netsurf, INFO, "%s %s", warning, detail ? detail : "");
-	fflush(stdout);
-
-	nsgtk_warning_window = GTK_WINDOW(gtk_builder_get_object(warning_builder, "wndWarning"));
-	WarningLabel = GTK_LABEL(gtk_builder_get_object(warning_builder,
-							"labelWarning"));
-
-	snprintf(buf, sizeof(buf), "%s %s", messages_get(warning),
-			detail ? detail : "");
-	buf[sizeof(buf) - 1] = 0;
-
-	gtk_label_set_text(WarningLabel, buf);
-
-	gtk_widget_show_all(GTK_WIDGET(nsgtk_warning_window));
-
-	return NSERROR_OK;
-}
-
-
-
-
-uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
-{
-	/* this function will need to become much more complex to support
-	 * everything that the RISC OS version does.  But this will do for
-	 * now.  I hope.
-	 */
-	switch (key->keyval) {
-
-	case GDK_KEY(Tab):
-		return NS_KEY_TAB;
-
-	case GDK_KEY(BackSpace):
-		if (key->state & GDK_SHIFT_MASK)
-			return NS_KEY_DELETE_LINE_START;
-		else
-			return NS_KEY_DELETE_LEFT;
-
-	case GDK_KEY(Delete):
-		if (key->state & GDK_SHIFT_MASK)
-			return NS_KEY_DELETE_LINE_END;
-		else
-			return NS_KEY_DELETE_RIGHT;
-
-	case GDK_KEY(Linefeed):
-		return 13;
-
-	case GDK_KEY(Return):
-		return 10;
-
-	case GDK_KEY(Left):
-	case GDK_KEY(KP_Left):
-		return NS_KEY_LEFT;
-
-	case GDK_KEY(Right):
-	case GDK_KEY(KP_Right):
-		return NS_KEY_RIGHT;
-
-	case GDK_KEY(Up):
-	case GDK_KEY(KP_Up):
-		return NS_KEY_UP;
-
-	case GDK_KEY(Down):
-	case GDK_KEY(KP_Down):
-		return NS_KEY_DOWN;
-
-	case GDK_KEY(Home):
-	case GDK_KEY(KP_Home):
-		if (key->state & GDK_CONTROL_MASK)
-			return NS_KEY_LINE_START;
-		else
-			return NS_KEY_TEXT_START;
-
-	case GDK_KEY(End):
-	case GDK_KEY(KP_End):
-		if (key->state & GDK_CONTROL_MASK)
-			return NS_KEY_LINE_END;
-		else
-			return NS_KEY_TEXT_END;
-
-	case GDK_KEY(Page_Up):
-	case GDK_KEY(KP_Page_Up):
-		return NS_KEY_PAGE_UP;
-
-	case GDK_KEY(Page_Down):
-	case GDK_KEY(KP_Page_Down):
-		return NS_KEY_PAGE_DOWN;
-
-	case 'a':
-		if (key->state & GDK_CONTROL_MASK)
-			return NS_KEY_SELECT_ALL;
-		return gdk_keyval_to_unicode(key->keyval);
-
-	case 'u':
-		if (key->state & GDK_CONTROL_MASK)
-			return NS_KEY_DELETE_LINE;
-		return gdk_keyval_to_unicode(key->keyval);
-
-	case 'c':
-		if (key->state & GDK_CONTROL_MASK)
-			return NS_KEY_COPY_SELECTION;
-		return gdk_keyval_to_unicode(key->keyval);
-
-	case 'v':
-		if (key->state & GDK_CONTROL_MASK)
-			return NS_KEY_PASTE;
-		return gdk_keyval_to_unicode(key->keyval);
-
-	case 'x':
-		if (key->state & GDK_CONTROL_MASK)
-			return NS_KEY_CUT_SELECTION;
-		return gdk_keyval_to_unicode(key->keyval);
-
-	case 'Z':
-	case 'y':
-		if (key->state & GDK_CONTROL_MASK)
-			return NS_KEY_REDO;
-		return gdk_keyval_to_unicode(key->keyval);
-
-	case 'z':
-		if (key->state & GDK_CONTROL_MASK)
-			return NS_KEY_UNDO;
-		return gdk_keyval_to_unicode(key->keyval);
-
-	case GDK_KEY(Escape):
-		return NS_KEY_ESCAPE;
-
-		/* Modifiers - do nothing for now */
-	case GDK_KEY(Shift_L):
-	case GDK_KEY(Shift_R):
-	case GDK_KEY(Control_L):
-	case GDK_KEY(Control_R):
-	case GDK_KEY(Caps_Lock):
-	case GDK_KEY(Shift_Lock):
-	case GDK_KEY(Meta_L):
-	case GDK_KEY(Meta_R):
-	case GDK_KEY(Alt_L):
-	case GDK_KEY(Alt_R):
-	case GDK_KEY(Super_L):
-	case GDK_KEY(Super_R):
-	case GDK_KEY(Hyper_L):
-	case GDK_KEY(Hyper_R):
-		return 0;
-
-	}
-	return gdk_keyval_to_unicode(key->keyval);
-}
-
-
-/**
- * create directory name and check it is acessible and a directory.
- */
-static nserror
-check_dirname(const char *path, const char *leaf, char **dirname_out)
-{
-	nserror ret;
-	char *dirname = NULL;
-	struct stat dirname_stat;
-
-	ret = netsurf_mkpath(&dirname, NULL, 2, path, leaf);
-	if (ret != NSERROR_OK) {
-		return ret;
-	}
-
-	/* ensure access is possible and the entry is actualy
-	 * a directory.
-	 */
-	if (stat(dirname, &dirname_stat) == 0) {
-		if (S_ISDIR(dirname_stat.st_mode)) {
-			if (access(dirname, R_OK | W_OK) == 0) {
-				*dirname_out = dirname;
-				return NSERROR_OK;
-			} else {
-				ret = NSERROR_PERMISSION;
-			}
-		} else {
-			ret = NSERROR_NOT_DIRECTORY;
-		}
-	} else {
-		ret = NSERROR_NOT_FOUND;
-	}
-
-	free(dirname);
-
-	return ret;
-}
-
-/**
- * Get the path to the config directory.
- *
- * @param config_home_out Path to configuration directory.
- * @return NSERROR_OK on sucess and \a config_home_out updated else error code.
- */
-static nserror get_config_home(char **config_home_out)
-{
-	nserror ret;
-	char *home_dir;
-	char *xdg_config_dir;
-	char *config_home;
-
-	home_dir = getenv("HOME");
-
-	/* The old $HOME/.netsurf/ directory should be used if it
-	 * exists and is accessible.
-	 */
-	if (home_dir != NULL) {
-		ret = check_dirname(home_dir, ".netsurf", &config_home);
-		if (ret == NSERROR_OK) {
-			NSLOG(netsurf, INFO, "\"%s\"", config_home);
-			*config_home_out = config_home;
-			return ret;
-		}
-	}
-
-	/* $XDG_CONFIG_HOME defines the base directory
-	 * relative to which user specific configuration files
-	 * should be stored.
-	 */
-	xdg_config_dir = getenv("XDG_CONFIG_HOME");
-
-	if ((xdg_config_dir == NULL) || (*xdg_config_dir == 0)) {
-		/* If $XDG_CONFIG_HOME is either not set or empty, a
-		 * default equal to $HOME/.config should be used.
-		 */
-
-		/** @todo the meaning of empty is never defined so I
-		 * am assuming it is a zero length string but is it
-		 * supposed to mean "whitespace" and if so what counts
-		 * as whitespace? (are tabs etc. counted or should
-		 * isspace() be used)
-		 */
-
-		/* the HOME envvar is required */
-		if (home_dir == NULL) {
-			return NSERROR_NOT_DIRECTORY;
-		}
-
-		ret = check_dirname(home_dir, ".config/netsurf", &config_home);
-		if (ret != NSERROR_OK) {
-			return ret;
-		}
-	} else {
-		ret = check_dirname(xdg_config_dir, "netsurf", &config_home);
-		if (ret != NSERROR_OK) {
-			return ret;
-		}
-	}
-
-	NSLOG(netsurf, INFO, "\"%s\"", config_home);
-
-	*config_home_out = config_home;
-	return NSERROR_OK;
-}
-
-static nserror create_config_home(char **config_home_out)
-{
-	char *config_home = NULL;
-	char *home_dir;
-	char *xdg_config_dir;
-	nserror ret;
-
-	NSLOG(netsurf, INFO, "Attempting to create configuration directory");
-
-	/* $XDG_CONFIG_HOME defines the base directory
-	 * relative to which user specific configuration files
-	 * should be stored.
-	 */
-	xdg_config_dir = getenv("XDG_CONFIG_HOME");
-
-	if ((xdg_config_dir == NULL) || (*xdg_config_dir == 0)) {
-		home_dir = getenv("HOME");
-
-		if ((home_dir == NULL) || (*home_dir == 0)) {
-			return NSERROR_NOT_DIRECTORY;
-		}
-
-		ret = netsurf_mkpath(&config_home, NULL, 4, home_dir, ".config","netsurf", "/");
-		if (ret != NSERROR_OK) {
-			return ret;
-		}
-	} else {
-		ret = netsurf_mkpath(&config_home, NULL, 3, xdg_config_dir, "netsurf", "/");
-		if (ret != NSERROR_OK) {
-			return ret;
-		}
-	}
-
-	/* ensure all elements of path exist (the trailing / is required) */
-	ret = netsurf_mkdir_all(config_home);
-	if (ret != NSERROR_OK) {
-		free(config_home);
-		return ret;
-	}
-
-	/* strip the trailing separator */
-	config_home[strlen(config_home) - 1] = 0;
-
-	NSLOG(netsurf, INFO, "\"%s\"", config_home);
-
-	*config_home_out = config_home;
-
-	return NSERROR_OK;
-}
-
-/**
- * Get the path to the cache directory.
- *
- * @param cache_home_out Path to cache directory.
- * @return NSERROR_OK on sucess and \a cache_home_out updated else error code.
- */
-static nserror get_cache_home(char **cache_home_out)
-{
-	nserror ret;
-	char *xdg_cache_dir;
-	char *cache_home;
-	char *home_dir;
-
-	/* $XDG_CACHE_HOME defines the base directory relative to
-	 * which user specific non-essential data files should be
-	 * stored.
-	 */
-	xdg_cache_dir = getenv("XDG_CACHE_HOME");
-
-	if ((xdg_cache_dir == NULL) || (*xdg_cache_dir == 0)) {
-		/* If $XDG_CACHE_HOME is either not set or empty, a
-		 * default equal to $HOME/.cache should be used.
-		 */
-
-		home_dir = getenv("HOME");
-
-		/* the HOME envvar is required */
-		if (home_dir == NULL) {
-			return NSERROR_NOT_DIRECTORY;
-		}
-
-		ret = check_dirname(home_dir, ".cache/netsurf", &cache_home);
-		if (ret != NSERROR_OK) {
-			return ret;
-		}
-	} else {
-		ret = check_dirname(xdg_cache_dir, "netsurf", &cache_home);
-		if (ret != NSERROR_OK) {
-			return ret;
-		}
-	}
-
-	NSLOG(netsurf, INFO, "\"%s\"", cache_home);
-
-	*cache_home_out = cache_home;
-	return NSERROR_OK;
-}
-
-static nserror create_cache_home(char **cache_home_out)
-{
-	char *cache_home = NULL;
-	char *home_dir;
-	char *xdg_cache_dir;
-	nserror ret;
-
-	NSLOG(netsurf, INFO, "Attempting to create configuration directory");
-
-	/* $XDG_CACHE_HOME defines the base directory
-	 * relative to which user specific cache files
-	 * should be stored.
-	 */
-	xdg_cache_dir = getenv("XDG_CACHE_HOME");
-
-	if ((xdg_cache_dir == NULL) || (*xdg_cache_dir == 0)) {
-		home_dir = getenv("HOME");
-
-		if ((home_dir == NULL) || (*home_dir == 0)) {
-			return NSERROR_NOT_DIRECTORY;
-		}
-
-		ret = netsurf_mkpath(&cache_home, NULL, 4, home_dir, ".cache", "netsurf", "/");
-		if (ret != NSERROR_OK) {
-			return ret;
-		}
-	} else {
-		ret = netsurf_mkpath(&cache_home, NULL, 3, xdg_cache_dir, "netsurf", "/");
-		if (ret != NSERROR_OK) {
-			return ret;
-		}
-	}
-
-	/* ensure all elements of path exist (the trailing / is required) */
-	ret = netsurf_mkdir_all(cache_home);
-	if (ret != NSERROR_OK) {
-		free(cache_home);
-		return ret;
-	}
-
-	/* strip the trailing separator */
-	cache_home[strlen(cache_home) - 1] = 0;
-
-	NSLOG(netsurf, INFO, "\"%s\"", cache_home);
-
-	*cache_home_out = cache_home;
-
-	return NSERROR_OK;
-}
-
-static nserror nsgtk_option_init(int *pargc, char** argv)
-{
-	nserror ret;
-	char *choices = NULL;
-
-	/* user options setup */
-	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
-	if (ret != NSERROR_OK) {
-		return ret;
-	}
-
-	/* Attempt to load the user choices */
-	ret = netsurf_mkpath(&choices, NULL, 2, nsgtk_config_home, "Choices");
-	if (ret == NSERROR_OK) {
-		nsoption_read(choices, nsoptions);
-		free(choices);
-	}
-
-	/* overide loaded options with those from commandline */
-	nsoption_commandline(pargc, argv, nsoptions);
-
-	/* ensure all options fall within sensible bounds */
-
-	/* Attempt to handle nonsense status bar widths.  These may exist
-	 * in people's Choices as the GTK front end used to abuse the
-	 * status bar width option by using it for an absolute value in px.
-	 * The GTK front end now correctly uses it as a proportion of window
-	 * width.  Here we assume that a value of less than 15% is wrong
-	 * and set to the default two thirds. */
-	if (nsoption_int(toolbar_status_size) < 1500) {
-		nsoption_set_int(toolbar_status_size, 6667);
-	}
-
-	return NSERROR_OK;
-}
-
-
-
-static nserror nsgtk_messages_init(char **respaths)
-{
-	const char *messages;
-	nserror ret;
-	const uint8_t *data;
-	size_t data_size;
-
-	ret = nsgtk_data_from_resname("Messages", &data, &data_size);
-	if (ret == NSERROR_OK) {
-		ret = messages_add_from_inline(data, data_size);
-	} else {
-		/* Obtain path to messages */
-		ret = nsgtk_path_from_resname("Messages", &messages);
-		if (ret == NSERROR_OK) {
-			ret = messages_add_from_file(messages);
-		}
-	}
-	return ret;
-}
-
-
 /**
  * Run the gtk event loop.
  *
@@ -1084,8 +1165,8 @@ static void nsgtk_finalise(void)
  */
 int main(int argc, char** argv)
 {
+	nserror res;
 	char *cache_home = NULL;
-	nserror ret;
 	struct netsurf_table nsgtk_table = {
 		.misc = nsgtk_misc_table,
 		.window = nsgtk_window_table,
@@ -1099,94 +1180,43 @@ int main(int argc, char** argv)
 		.layout = nsgtk_layout_table,
 	};
 
-	ret = netsurf_register(&nsgtk_table);
-	if (ret != NSERROR_OK) {
-		die("NetSurf operation table failed registration\n");
-	}
-
-	/* Locate the correct user configuration directory path */
-	ret = get_config_home(&nsgtk_config_home);
-	if (ret == NSERROR_NOT_FOUND) {
-		/* no config directory exists yet so try to create one */
-		ret = create_config_home(&nsgtk_config_home);
-	}
-	if (ret != NSERROR_OK) {
-		NSLOG(netsurf, INFO,
-		      "Unable to locate a configuration directory.");
-		nsgtk_config_home = NULL;
-	}
-
-	/* Initialise gtk */
-	gtk_init(&argc, &argv);
-
-	/* initialise logging. Not fatal if it fails but not much we
-	 * can do about it either.
-	 */
-	nslog_init(nslog_stream_configure, &argc, argv);
-
-	/* build the common resource path list */
-	respaths = nsgtk_init_resource_path(nsgtk_config_home);
-	if (respaths == NULL) {
-		fprintf(stderr, "Unable to locate resources\n");
+	res = netsurf_register(&nsgtk_table);
+	if (res != NSERROR_OK) {
+		fprintf(stderr,
+			"NetSurf operation table failed registration (%s)\n",
+			messages_get_errorcode(res));
 		return 1;
 	}
 
-	/* initialise the gtk resource handling */
-	ret = nsgtk_init_resources(respaths);
-	if (ret != NSERROR_OK) {
-		fprintf(stderr, "GTK resources failed to initialise (%s)\n",
-			messages_get_errorcode(ret));
-		return 1;
-	}
-
-	/* Initialise user options */
-	ret = nsgtk_option_init(&argc, argv);
-	if (ret != NSERROR_OK) {
-		fprintf(stderr, "Options failed to initialise (%s)\n",
-			messages_get_errorcode(ret));
-		return 1;
-	}
-
-	/* Initialise translated messages */
-	ret = nsgtk_messages_init(respaths);
-	if (ret != NSERROR_OK) {
-		fprintf(stderr, "Unable to load translated messages (%s)\n",
-			messages_get_errorcode(ret));
-		NSLOG(netsurf, INFO, "Unable to load translated messages");
-		/** \todo decide if message load faliure should be fatal */
-	}
-
-	/* Locate the correct user cache directory path */
-	ret = get_cache_home(&cache_home);
-	if (ret == NSERROR_NOT_FOUND) {
-		/* no cache directory exists yet so try to create one */
-		ret = create_cache_home(&cache_home);
-	}
-	if (ret != NSERROR_OK) {
-		NSLOG(netsurf, INFO, "Unable to locate a cache directory.");
+	/* gtk specific initialisation */
+	res = nsgtk_init(&argc, &argv, &cache_home);
+	if (res != NSERROR_OK) {
+		fprintf(stderr, "NetSurf gtk failed to initialise (%s)\n",
+			messages_get_errorcode(res));
+		return 2;
 	}
 
 	/* core initialisation */
-	ret = netsurf_init(cache_home);
+	res = netsurf_init(cache_home);
 	free(cache_home);
-	if (ret != NSERROR_OK) {
+	if (res != NSERROR_OK) {
 		fprintf(stderr, "NetSurf core failed to initialise (%s)\n",
-			messages_get_errorcode(ret));
-		return 1;
+			messages_get_errorcode(res));
+		return 3;
 	}
 
 	/* gtk specific initalisation and main run loop */
-	ret = nsgtk_setup(argc, argv, respaths);
-	if (ret != NSERROR_OK) {
-		fprintf(stderr, "NetSurf gtk setup failed (%s)\n",
-			messages_get_errorcode(ret));
+	res = nsgtk_setup(argc, argv, respaths);
+	if (res != NSERROR_OK) {
 		nsgtk_finalise();
-		return 2;
-	} 
+		fprintf(stderr, "NetSurf gtk setup failed (%s)\n",
+			messages_get_errorcode(res));
+		return 4;
+	}
 
 	nsgtk_main();
 
 	nsgtk_finalise();
-	
+
 	return 0;
 }
