@@ -39,7 +39,7 @@ static const struct type_entry type_map[] = {
 	{0x188, "application/x-shockwave-flash"},
 	{0x695, "image/gif"},
 	{0x69c, "image/x-ms-bmp"},
-        {0xa66, "image/webp"},
+	{0xa66, "image/webp"},
 	{0xaad, "image/svg+xml"},
 	{0xaff, "image/x-drawfile"},
 	{0xb60, "image/png"},
