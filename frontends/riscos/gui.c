@@ -827,6 +827,7 @@ static void ro_msg_dataload(wimp_message *message)
 		case osfile_TYPE_TEXT:
 		case FILETYPE_ARTWORKS:
 		case FILETYPE_SVG:
+		case FILETYPE_WEBP:
 			/* display the actual file */
 			error = netsurf_path_to_nsurl(message->data.data_xfer.file_name, &url);
 			break;
@@ -929,7 +930,8 @@ static void ro_msg_datasave(wimp_message *message)
 		case osfile_TYPE_SPRITE:
 		case osfile_TYPE_TEXT:
 		case FILETYPE_ARTWORKS:
-		case FILETYPE_SVG: {
+		case FILETYPE_SVG:
+		case FILETYPE_WEBP: {
 			os_error *error;
 
 			dataxfer->your_ref = dataxfer->my_ref;

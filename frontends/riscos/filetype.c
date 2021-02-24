@@ -39,6 +39,7 @@ static const struct type_entry type_map[] = {
 	{0x188, "application/x-shockwave-flash"},
 	{0x695, "image/gif"},
 	{0x69c, "image/x-ms-bmp"},
+        {0xa66, "image/webp"},
 	{0xaad, "image/svg+xml"},
 	{0xaff, "image/x-drawfile"},
 	{0xb60, "image/png"},
@@ -269,6 +270,7 @@ int ro_content_native_type(struct hlcache_handle *c)
 	case FILETYPE_BMP: /* bmp */
 	case FILETYPE_ICO: /* ico */
 	case FILETYPE_PNG: /* png */
+	case FILETYPE_WEBP: /* webp */
 	case 0xff9: /* sprite */
 		return osfile_TYPE_SPRITE;
 	case FILETYPE_SVG: /* svg */

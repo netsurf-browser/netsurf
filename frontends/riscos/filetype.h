@@ -67,6 +67,9 @@
 #ifndef FILETYPE_SVG
 #define FILETYPE_SVG 0xaad
 #endif
+#ifndef FILETYPE_WEBP
+#define FILETYPE_WEBP 0xa66
+#endif
 
 /**
  * Determine the MIME type of a local file.
