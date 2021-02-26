@@ -73,7 +73,8 @@ static void die(const char * const error)
 	exit(EXIT_FAILURE);
 }
 
-/** obtain language from environment
+/**
+ * obtain language from environment
  *
  * start with GNU extension LANGUAGE environment variable and then try
  * POSIX variables LC_ALL, LC_MESSAGES and LANG
@@ -107,7 +108,8 @@ static const char *get_language(void)
 }
 
 
-/** provide a string vector of languages in preference order
+/**
+ * provide a string vector of languages in preference order
  *
  * environment variables are processed to aquire a colon separated
  * list of languages which are converted into a string vector. The
@@ -174,7 +176,16 @@ static const char * const *get_languagev(void)
 	return &langv[0];
 }
 
-/* Stolen from gtk/gui.c */
+/**
+ * Create an array of valid paths to search for resources.
+ *
+ * The idea is that all the complex path computation to find resources
+ * is performed here, once, rather than every time a resource is
+ * searched for.
+ *
+ * \param resource_path A shell style colon separated path list
+ * \return A string vector of valid paths where resources can be found
+ */
 static char **
 nsmonkey_init_resource(const char *resource_path)
 {

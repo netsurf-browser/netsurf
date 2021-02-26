@@ -49,15 +49,15 @@ struct gui_fetch_table {
 	/**
 	 * Translate resource to full url.
 	 *
-	 * @note Only used in resource fetcher
+	 * @note Only used in resource protocol fetcher
 	 *
-	 * Transforms a resource: path into a full URL. The returned URL
+	 * Transforms a resource protocol path into a full URL. The returned URL
 	 * is used as the target for a redirect. The caller takes ownership of
 	 * the returned nsurl including unrefing it when finished with it.
 	 *
 	 * \param path The path of the resource to locate.
-	 * \return A string containing the full URL of the target object or
-	 *         NULL if no suitable resource can be found.
+	 * \return A netsurf url object containing the full URL of the resource
+	 *         path or NULL if a suitable resource URL can not be generated.
 	 */
 	struct nsurl* (*get_resource_url)(const char *path);
 
