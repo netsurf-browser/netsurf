@@ -344,19 +344,40 @@ ns-pull()
 # clone all repositories
 ns-clone()
 {
+    SHALLOW=""
+    while [ $# -gt 0 ]
+    do
+        case "$1" in
+            -n | --not-netsurf) NS_BROWSER=
+                                shift
+                                ;;
+            -s | --shallow) SHALLOW="--depth 1"
+                            shift
+                            ;;
+            -*) echo "Error: Unknown option: $1" >&2
+                exit 1
+                ;;
+            *) # No more options
+               break
+               ;;
+        esac
+    done
+
     mkdir -p ${TARGET_WORKSPACE}
     for REPO in $(echo ${NS_BUILDSYSTEM} ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_RISCOS_LIBS} ${NS_TOOLS} ${NS_BROWSER}) ; do
         echo -n "     GIT: Cloning ${REPO}: "
         if [ -f ${TARGET_WORKSPACE}/${REPO}/.git/config ]; then
             echo "Repository already present"
         else
-            (cd ${TARGET_WORKSPACE} && git clone ${NS_GIT}/${REPO}.git; )
+            (cd ${TARGET_WORKSPACE} && git clone ${SHALLOW} ${NS_GIT}/${REPO}.git; )
         fi
     done
 
     # put current env.sh in place in workspace
-    if [ ! -f "${TARGET_WORKSPACE}/env.sh" -a -f ${TARGET_WORKSPACE}/${NS_BROWSER}/docs/env.sh ]; then
-        cp ${TARGET_WORKSPACE}/${NS_BROWSER}/docs/env.sh ${TARGET_WORKSPACE}/env.sh
+    if [ "x$NS_BROWSER" = "x" ]; then
+        if [ ! -f "${TARGET_WORKSPACE}/env.sh" -a -f ${TARGET_WORKSPACE}/${NS_BROWSER}/docs/env.sh ]; then
+            cp ${TARGET_WORKSPACE}/${NS_BROWSER}/docs/env.sh ${TARGET_WORKSPACE}/env.sh
+        fi
     fi
 }
 
