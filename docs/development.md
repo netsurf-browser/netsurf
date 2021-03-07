@@ -69,6 +69,12 @@ NetSurf [integration tests](docs/integration-testing.md) use the
 monkey frontend to operate the browser as a whole. These tests open
 windows, navigate to websites and render contents as a user might.
 
+# New frontend development
+
+[Implementing a new frotend](docs/implementing-new-frontend.md) for a
+toolkit can be challenging and this guide provides an overview and
+worked example.
+
 # Documented API
 
 The NetSurf code makes use of Doxygen for code documentation.
