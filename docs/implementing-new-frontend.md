@@ -1,8 +1,9 @@
-# Implementing a new frontend
+Implementing a new frontend
+===========================
 
 [TOC]
 
-## Introduction
+# Introduction
 
 NetSurf is divided into a series of frontends which provide a user
 interface around common core functionality.
@@ -35,7 +36,7 @@ objective C. However any language that can call C functions and
 example there have been experiments with JAVA using JNI but no current
 frontend is implemented using it.
 
-## Implementation complexity
+# Implementation complexity
 
 An absolutely minimal "proof of concept" frontend implementation (like
 the FLTK frontend that will be used as an example) is around 1,000
@@ -55,7 +56,7 @@ support with the [core window API](docs/core-window-interface.md).
 A frontend developer is free to implement any and all of this generic
 functionality thelselves in a manner more integrated into a toolkit.
 
-## Implementation
+# Implementation
 
 A frontend is generally named for the toolkit it is implementing (i.e
 gtk for the GTK+ toolkit). It is advisable to be as specific as
@@ -70,7 +71,7 @@ The only file outside this directory that much be changed is the
 `frontends/Makefile.hts` where a new entry must be added to the valid
 targets list.
 
-### Build system
+## Build system
 
 A frontend must provide three GNU Makefile fragments (these will be
 included from the core Makefile):
@@ -83,7 +84,7 @@ Source code modules can be named as the devloper desires within the
 frontend directory and should be added to the SOURCES variable as
 desired.
  
-### Program entry
+## Program entry
 
 Generally the entry point from the OS is the `main()` function and
 several frontends have a `main.cpp` where some have used `gui.c`.
@@ -96,7 +97,7 @@ The usual shape for the `main()` function is a six step process:
  5. Run the toolkits main loop while ensuring the Netsurf scheduled operations are also run at teh apropriate time.
  6. Finalisation on completion.
 
-### NetSurf operations tables
+## NetSurf operations tables
 
 The frontend will generally call netsurf interfaces to get a desired
 behaviour e.g. `browser_window_create()` to create a new browsing
@@ -119,7 +120,7 @@ In this context mandantory means the tables must be non NULL and do
 not have a suitable default. Each of the mandantory sets contain
 function pointers to implement operations.
 
-#### misc operation table
+### misc operation table
 
 The only mandantory operation in this table is schedule.
 
@@ -130,7 +131,7 @@ miliseconds.
 This callback is typicaly driven through the toolkits event loop and
 it is important such callbacks are not attempted from an operation.
 
-#### window operation table
+### window operation table
 
 The window operations (poorly named as already mentioned) are where
 the frontend is called to actually manipulate widgets in the
@@ -152,7 +153,7 @@ The mandantory window operations are:
  - event - deal with various window events from netsurf which have no additional parameters
 
 
-#### fetch operation table
+### fetch operation table
 
 The fetch operations allow the built in scheme fetchers (file, about, resource) to obtain additional information necessary to complete their operation.
 
@@ -160,7 +161,7 @@ The two mandantory operations are:
  - `filetype` - allows the file scheme to obtain a mime type from a file path e.g. `a.file.name.png` would result in `image/png`
  - `get_resource_url` - maps resource scheme paths to URL e.g. `resource:default.css` to `file:///usr/share/netsurf/default.css`
 
-#### bitmap operation table
+### bitmap operation table
 
 The bitmap table and all of its operations are mandantory only because
 the empty defaults have not been included as it is assumed a browser
@@ -169,7 +170,7 @@ will want to display images.
 All operations may be provided by stubs that return the failure codes
 until full implementations are made.
 
-#### layout operation table
+### layout operation table
 
 The layout table is used to layout text. All operations are given
 strings to manipulate encoded in UTF-8. There are three mandantory
@@ -178,7 +179,7 @@ operations:
  - `position` - Find the position in a string where an x coordinate falls.
  - `split` - Find where to split a string to make it fit a width.
 
-## Worked Example
+# Worked Example
 
 Rather than attempt to describe every aspect of an implementation we
 will rather work from an actual minimal example for the FLTK toolkit.
@@ -190,7 +191,7 @@ window on screen (and be able to click visible links). It is
 implemented in C++ as that is the FLTK implementation language but an
 equivalent implementation in other languages should be obvious.
 
-### Building
+## Building
 
 The [frontends/Makefile.hts](https://git.netsurf-browser.org/netsurf.git/diff/frontends/Makefile.hts?h=vince/fltk&id=04900e82e65f8669675538a66a01b56a3e473cb2)
 had the fltk target added to the VLDTARGET variable. This allows
@@ -205,20 +206,19 @@ comment suggests it is important the SOURCES variable is not expanded
 here so the S_FRONTEND variable is used to allow expansion at teh
 correct time in the build process.
 
-
 [Makefile.defaults](https://git.netsurf-browser.org/netsurf.git/diff/frontends/fltk/Makefile.defaults?h=vince/fltk&id=04900e82e65f8669675538a66a01b56a3e473cb2) 
 has the default setting to control the build parameters and file locations. These can be overriden by the `Makefile.config` at compile time.
 
 [Makefile.tools](https://git.netsurf-browser.org/netsurf.git/diff/frontends/fltk/Makefile.tools?h=vince/fltk&id=04900e82e65f8669675538a66a01b56a3e473cb2)
 allows the configuration of additional tools necessary to build for the target as a minimum pkg-config is usually required to find libraries.
  
-### Program entry
+## Program entry
 
 In our example program entry is the classical `main()` in the [main.cpp](https://git.netsurf-browser.org/netsurf.git/diff/frontends/fltk/main.cpp?h=vince/fltk&id=04900e82e65f8669675538a66a01b56a3e473cb2) module.
 
 This implements the six stage process outlined previously. 
 
-#### Operations table registration
+### Operations table registration
 
 The `netsurf_table` structure is initialised and passed to
 `netsurf_register()`. It should be noted that the approach taken here
@@ -227,7 +227,7 @@ table. The header for each module exposes just the pointer to the
 indivial operation set, this allows for all the operation functions to
 be static to their module and hence helps reduce global symbol usage.
 
-#### Frontend specific initialisation
+### Frontend specific initialisation
 
 Her it is implemented in `nsfltk_init()` this function performs all
 the operations specific to the frontend which must be initialised
@@ -238,12 +238,12 @@ It is nessesary to initialise netsurf logging and user options at this
 point. A more fully featured implementation would also initialise the
 message translation system here.
 
-#### Netsurf initialisation
+### Netsurf initialisation
 
 This is simply the call to `netsurf_init()` from this point the
 browser is fully operational and operations can and will be called.
 
-#### Frontend specific startup
+### Frontend specific startup
 
 Although the browser is running it has not yet been told to open a
 window or navigate to a page. Here `nsfltk_start()` examines the
@@ -254,7 +254,7 @@ the browser to open a new browsing context and start the navigation.
 A frontend may choose to implement more complex logic here but the
 example here is a good start.
 
-#### Toolkit run loop
+### Toolkit run loop
 
 The function `nsfltk_run()` runs the toolkit event loop. In this case it is using the generic scheduleing in the [misc.cpp](https://git.netsurf-browser.org/netsurf.git/diff/frontends/fltk/misc.cpp?h=vince/fltk&id=04900e82e65f8669675538a66a01b56a3e473cb2) module to ensure callbacks get made at the apropriate time.
 
@@ -269,7 +269,7 @@ A futher optimisation would be to obtain the set of file descriptors
 being used (with `fetch_fdset()`) for active fetches allowing for
 activity based fetch progress instead of the fallback polling method.
 
-#### finalisation
+### finalisation
 
 This simply finalises the browser stopping all activity and cleaning
 up any resource usage. After the call to `netsurf_exit()` no more
@@ -282,11 +282,11 @@ should be called.
 The finalisation of logging will ensure that any output buffers are
 flushed.
 
-### The window operation table
+## The window operation table
 
 Amongst all the boilerplate of the default implementation the only novel code is in the window operation table in the [window.cpp](https://git.netsurf-browser.org/netsurf.git/diff/frontends/fltk/window.cpp?h=vince/fltk&id=04900e82e65f8669675538a66a01b56a3e473cb2) module.
 
-#### `nsfltk_window_create`
+### `nsfltk_window_create`
 
 The create operation instansiates a new `NS_Window` object and
 references it in the gui_window structure which it returns to the
@@ -320,16 +320,16 @@ the second and third parameters to the draw call. When scrolling is
 required this is achived by altering these offsets.
 
 
-#### `nsfltk_window_invalidate()`
+### `nsfltk_window_invalidate()`
 
 This simply calls the damage method on the `Fl_Widget` class with the
 appropriate coordinate translation.
 
-#### `nsfltk_window_get_dimensions()`
+### `nsfltk_window_get_dimensions()`
 
 This obtains the fltk widget width and height and returns them.
 
-### The plotting interface
+## The plotting interface
 
 When the `NS_Widget::draw` method was discussed it was noted that a
 plotting context is built containing an operation table. That table is
@@ -340,7 +340,7 @@ and text have any implementation at all and even that simply sets a
 colour and performs the appropriate fltk draw function (`fl_line`,
 `fl_rect` and `fl_draw` respectively)
 
-## Conclusion
+# Conclusion
 
 Hopefully this breif overview and worked example should give the
 prospectinve frontend developer enough information to understand how
