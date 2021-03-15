@@ -423,9 +423,7 @@ css_error nscss_compute_font_size(void *pw, const css_hint *parent,
 		size->data.length.unit = parent_size.unit;
 	} else if (size->data.length.unit == CSS_UNIT_EM ||
 			size->data.length.unit == CSS_UNIT_EX ||
-			size->data.length.unit == CSS_UNIT_CAP ||
-			size->data.length.unit == CSS_UNIT_CH ||
-			size->data.length.unit == CSS_UNIT_IC) {
+			size->data.length.unit == CSS_UNIT_CH) {
 		size->data.length.value =
 			FMUL(size->data.length.value, parent_size.value);
 
@@ -435,20 +433,10 @@ css_error nscss_compute_font_size(void *pw, const css_hint *parent,
 			size->data.length.value = FMUL(size->data.length.value,
 					FLTTOFIX(0.6));
 			break;
-		case CSS_UNIT_CAP:
-			/* Height of captals.  1cap = 0.9em in NetSurf. */
-			size->data.length.value = FMUL(size->data.length.value,
-					FLTTOFIX(0.9));
-			break;
 		case CSS_UNIT_CH:
 			/* Width of '0'.  1ch = 0.4em in NetSurf. */
 			size->data.length.value = FMUL(size->data.length.value,
 					FLTTOFIX(0.4));
-			break;
-		case CSS_UNIT_IC:
-			/* Width of U+6C43.  1ic = 1.1em in NetSurf. */
-			size->data.length.value = FMUL(size->data.length.value,
-					FLTTOFIX(1.1));
 			break;
 		default:
 			/* No scaling required for EM. */
@@ -473,12 +461,6 @@ css_error nscss_compute_font_size(void *pw, const css_hint *parent,
 					size->data.length.value,
 					parent_size.value);
 		}
-	} else if (size->data.length.unit == CSS_UNIT_RLH) {
-		/** TODO: Convert root element line-height to absolute value. */
-		size->data.length.value = FMUL(size->data.length.value, FDIV(
-				INTTOFIX(nsoption_int(font_size)),
-				INTTOFIX(10)));
-		size->data.length.unit = CSS_UNIT_PT;
 	}
 
 	size->status = CSS_FONT_SIZE_DIMENSION;

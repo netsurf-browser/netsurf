@@ -91,11 +91,8 @@ css_fixed nscss_len2pt(
 	/* Length must not be relative */
 	assert(unit != CSS_UNIT_EM &&
 			unit != CSS_UNIT_EX &&
-			unit != CSS_UNIT_CAP &&
 			unit != CSS_UNIT_CH &&
-			unit != CSS_UNIT_IC &&
-			unit != CSS_UNIT_REM &&
-			unit != CSS_UNIT_RLH);
+			unit != CSS_UNIT_REM);
 
 	unit = css_utils__fudge_viewport_units(ctx, unit);
 
@@ -140,9 +137,7 @@ css_fixed nscss_len2px(
 	switch (unit) {
 	case CSS_UNIT_EM:
 	case CSS_UNIT_EX:
-	case CSS_UNIT_CAP:
 	case CSS_UNIT_CH:
-	case CSS_UNIT_IC:
 	{
 		css_fixed font_size = 0;
 		css_unit font_unit = CSS_UNIT_PT;
@@ -168,14 +163,8 @@ css_fixed nscss_len2px(
 		case CSS_UNIT_EX:
 			px_per_unit = FMUL(px_per_unit, FLTTOFIX(0.6));
 			break;
-		case CSS_UNIT_CAP:
-			px_per_unit = FMUL(px_per_unit, FLTTOFIX(0.9));
-			break;
 		case CSS_UNIT_CH:
 			px_per_unit = FMUL(px_per_unit, FLTTOFIX(0.4));
-			break;
-		case CSS_UNIT_IC:
-			px_per_unit = FMUL(px_per_unit, FLTTOFIX(1.1));
 			break;
 		default: break;
 		}
@@ -231,12 +220,6 @@ css_fixed nscss_len2px(
 		px_per_unit = FDIV(FMUL(font_size, F_96), F_72);
 		break;
 	}
-	/* 1rlh = <user_font_size>pt => 1rlh = (DPI/user_font_size)px */
-	case CSS_UNIT_RLH:
-		px_per_unit = FDIV(F_96, FDIV(
-				INTTOFIX(nsoption_int(font_size)),
-				INTTOFIX(10)));
-		break;
 	case CSS_UNIT_VH:
 		px_per_unit = FDIV(ctx->vh, F_100);
 		break;
