@@ -41,6 +41,7 @@
 
 #include "desktop/gui_internal.h"
 #include "desktop/browser_private.h"
+#include "desktop/local_history_private.h"
 #include "desktop/browser_history.h"
 
 /**
