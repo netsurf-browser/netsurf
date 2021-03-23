@@ -435,9 +435,7 @@ nserror browser_window_history_update(struct browser_window *bw,
 
 	history = bw->history;
 
-	if (!history ||
-	    !history->current ||
-	    !history->current->page.bitmap) {
+	if ((history == NULL) || (history->current == NULL)) {
 		return NSERROR_INVALID;
 	}
 
@@ -456,7 +454,7 @@ nserror browser_window_history_update(struct browser_window *bw,
 		guit->bitmap->render(history->current->page.bitmap, content);
 	}
 
-	if (bw->window != NULL &&
+	if ((bw->window != NULL) &&
 	    guit->window->get_scroll(bw->window, &sx, &sy)) {
 		int content_height = content_get_height(content);
 		int content_width = content_get_width(content);
@@ -490,9 +488,7 @@ browser_window_history_get_scroll(struct browser_window *bw,
 
 	history = bw->history;
 
-	if (!history ||
-	    !history->current ||
-	    !history->current->page.bitmap) {
+	if ((history== NULL) || (history->current == NULL)) {
 		return NSERROR_INVALID;
 	}
 
