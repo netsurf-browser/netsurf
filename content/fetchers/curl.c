@@ -889,7 +889,6 @@ static CURLcode fetch_curl_set_options(struct curl_fetch_info *f)
 	SETOPT(CURLOPT_WRITEDATA, f);
 	SETOPT(CURLOPT_WRITEHEADER, f);
 	SETOPT(CURLOPT_PROGRESSDATA, f);
-	SETOPT(CURLOPT_REFERER, fetch_get_referer_to_send(f->fetch_handle));
 	SETOPT(CURLOPT_HTTPHEADER, f->headers);
 	if (f->post_urlenc) {
 		SETOPT(CURLOPT_HTTPPOST, NULL);

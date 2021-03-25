@@ -47,6 +47,7 @@
 #include "utils/utils.h"
 #include "utils/time.h"
 #include "utils/http.h"
+#include "utils/nsoption.h"
 #include "netsurf/misc.h"
 #include "desktop/gui_internal.h"
 
@@ -807,6 +808,87 @@ static nserror llcache_fetch_process_header(llcache_object *object,
 }
 
 /**
+ * construct a Referer header appropriate for the request
+ *
+ * \param url The url being navigated to
+ * \param referer The referring url
+ * \param header_out A pointer to receive the header. The buffer must
+ *                    be freed by the caller.
+ * \return NSERROR_OK and \a header_out updated on success else error code
+ */
+static nserror get_referer_header(nsurl *url, nsurl *referer, char **header_out)
+{
+	nserror res = NSERROR_INVALID;
+	lwc_string *ref_scheme;
+	lwc_string *scheme;
+	bool match;
+	bool match1;
+	bool match2;
+	char *header;
+
+	/* Determine whether to send the Referer header */
+	if (!nsoption_bool(send_referer)) {
+		return NSERROR_INVALID;
+	}
+
+	scheme = nsurl_get_component(url, NSURL_SCHEME);
+	if (scheme == NULL) {
+		return NSERROR_BAD_URL;
+	}
+
+	ref_scheme = nsurl_get_component(referer, NSURL_SCHEME);
+	if (ref_scheme == NULL) {
+		/* referer has no scheme so no header */
+		lwc_string_unref(scheme);
+		return NSERROR_INVALID;
+	}
+
+	/* User permits us to send the header
+	 * Only send it if:
+	 *    1) The fetch and referer schemes match
+	 * or 2) The fetch is https and the referer is http
+	 *
+	 * This ensures that referer information is only sent
+	 * across schemes in the special case of an https
+	 * request from a page served over http. The inverse
+	 * (https -> http) should not send the referer (15.1.3)
+	 */
+	if (lwc_string_isequal(scheme, ref_scheme,
+			       &match) != lwc_error_ok) {
+		match = false;
+	}
+	if (lwc_string_isequal(scheme, corestring_lwc_https,
+			       &match1) != lwc_error_ok) {
+		match1 = false;
+	}
+	if (lwc_string_isequal(ref_scheme, corestring_lwc_http,
+			       &match2) != lwc_error_ok) {
+		match2 = false;
+	}
+	if (match == true || (match1 == true && match2 == true)) {
+		const size_t len = SLEN("Referer: ") +
+			nsurl_length(referer) + 1;
+
+		header = malloc(len);
+		if (header == NULL) {
+			res = NSERROR_NOMEM;
+		} else {
+			snprintf(header, len, "Referer: %s",
+				 nsurl_access(referer));
+
+			*header_out = header;
+			res = NSERROR_OK;
+		}
+	}
+
+
+	lwc_string_unref(scheme);
+	lwc_string_unref(ref_scheme);
+
+	return res;
+}
+
+/**
  * (Re)fetch an object
  *
  * Sets up headers and attempts to start an actual fetch from the
@@ -834,12 +916,13 @@ static nserror llcache_object_refetch(llcache_object *object)
 		}
 	}
 
-	/* Generate cache-control headers */
-	headers = malloc(3 * sizeof(char *));
+	/* Generate headers */
+	headers = malloc(4 * sizeof(char *));
 	if (headers == NULL) {
 		return NSERROR_NOMEM;
 	}
 
+	/* cache-control header for etag */
 	if (object->cache.etag != NULL) {
 		const size_t len = SLEN("If-None-Match: ") +
 				strlen(object->cache.etag) + 1;
@@ -856,6 +939,7 @@ static nserror llcache_object_refetch(llcache_object *object)
 		header_idx++;
 	}
 
+	/* cache-control header for modification time */
 	if (object->cache.last_modified != 0) {
 		/* Maximum length of an RFC 1123 date is 29 bytes */
 		const size_t len = SLEN("If-Modified-Since: ") + 29 + 1;
@@ -872,6 +956,15 @@ static nserror llcache_object_refetch(llcache_object *object)
 				rfc1123_date(object->cache.last_modified));
 
 		header_idx++;
+	}
+
+	/* Referer header */
+	if (object->fetch.referer != NULL) {
+		if (get_referer_header(object->url,
+				       object->fetch.referer,
+				       &headers[header_idx]) == NSERROR_OK) {
+			header_idx++;
+		}
 	}
 	headers[header_idx] = NULL;
 
@@ -3571,6 +3664,46 @@ total_object_size(llcache_object *object)
 	return tot;
 }
 
+/**
+ * Catch up the cache users with state changes from fetchers.
+ *
+ * \param ignored We ignore this because all our state comes from llcache.
+ */
+static void llcache_catch_up_all_users(void *ignored)
+{
+	llcache_object *object;
+
+	/* Assume after this we'll be all caught up.  If any user of a handle
+	 * defers then we'll invalidate all_caught_up and reschedule via
+	 * llcache_users_not_caught_up()
+	 */
+	llcache->all_caught_up = true;
+
+	/* Catch new users up with state of objects */
+	for (object = llcache->cached_objects; object != NULL;
+			object = object->next) {
+		llcache_object_notify_users(object);
+	}
+
+	for (object = llcache->uncached_objects; object != NULL;
+			object = object->next) {
+		llcache_object_notify_users(object);
+	}
+}
+
+/**
+ * Ask for ::llcache_catch_up_all_users to be scheduled ASAP to pump the
+ * user state machines.
+ */
+static void llcache_users_not_caught_up(void)
+{
+	if (llcache->all_caught_up) {
+		llcache->all_caught_up = false;
+		guit->misc->schedule(0, llcache_catch_up_all_users, NULL);
+	}
+}
+
+
 /******************************************************************************
  * Public API								      *
  ******************************************************************************/
@@ -3843,51 +3976,16 @@ void llcache_finalise(void)
 	llcache = NULL;
 }
 
-/**
- * Catch up the cache users with state changes from fetchers.
- *
- * \param ignored We ignore this because all our state comes from llcache.
- */
-static void llcache_catch_up_all_users(void *ignored)
-{
-	llcache_object *object;
-
-	/* Assume after this we'll be all caught up.  If any user of a handle
-	 * defers then we'll invalidate all_caught_up and reschedule via
-	 * llcache_users_not_caught_up()
-	 */
-	llcache->all_caught_up = true;
-
-	/* Catch new users up with state of objects */
-	for (object = llcache->cached_objects; object != NULL;
-			object = object->next) {
-		llcache_object_notify_users(object);
-	}
-
-	for (object = llcache->uncached_objects; object != NULL;
-			object = object->next) {
-		llcache_object_notify_users(object);
-	}
-}
-
-/**
- * Ask for ::llcache_catch_up_all_users to be scheduled ASAP to pump the
- * user state machines.
- */
-static void llcache_users_not_caught_up(void)
-{
-	if (llcache->all_caught_up) {
-		llcache->all_caught_up = false;
-		guit->misc->schedule(0, llcache_catch_up_all_users, NULL);
-	}
-}
 
 
 /* Exported interface documented in content/llcache.h */
-nserror llcache_handle_retrieve(nsurl *url, uint32_t flags,
-		nsurl *referer, const llcache_post_data *post,
-		llcache_handle_callback cb, void *pw,
-		llcache_handle **result)
+nserror
+llcache_handle_retrieve(nsurl *url,
+			uint32_t flags,
+			nsurl *referer,
+			const llcache_post_data *post,
+			llcache_handle_callback cb, void *pw,
+			llcache_handle **result)
 {
 	nserror error;
 	llcache_object_user *user;

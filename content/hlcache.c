@@ -673,11 +673,15 @@ void hlcache_finalise(void)
 }
 
 /* See hlcache.h for documentation */
-nserror hlcache_handle_retrieve(nsurl *url, uint32_t flags,
-		nsurl *referer, llcache_post_data *post,
-		hlcache_handle_callback cb, void *pw,
-		hlcache_child_context *child,
-		content_type accepted_types, hlcache_handle **result)
+nserror
+hlcache_handle_retrieve(nsurl *url,
+			uint32_t flags,
+			nsurl *referer,
+			llcache_post_data *post,
+			hlcache_handle_callback cb, void *pw,
+			hlcache_child_context *child,
+			content_type accepted_types,
+			hlcache_handle **result)
 {
 	hlcache_retrieval_ctx *ctx;
 	nserror error;

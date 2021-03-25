@@ -230,11 +230,6 @@ void fetch_free(struct fetch *f);
 void fetch_set_http_code(struct fetch *fetch, long http_code);
 
 /**
- * get the referer from the fetch
- */
-const char *fetch_get_referer_to_send(struct fetch *fetch);
-
-/**
  * set cookie data on a fetch
  */
 void fetch_set_cookie(struct fetch *fetch, const char *data);

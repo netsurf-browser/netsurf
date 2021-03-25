@@ -90,7 +90,6 @@ struct fetch {
 	fetch_callback callback;/**< Callback function. */
 	nsurl *url;		/**< URL. */
 	nsurl *referer;		/**< Referer URL. */
-	bool send_referer;	/**< Valid to send the referer */
 	bool verifiable;	/**< Transaction is verifiable */
 	void *p;		/**< Private data for callback. */
 	lwc_string *host;	/**< Host part of URL, interned */
@@ -461,7 +460,6 @@ fetch_start(nsurl *url,
 {
 	struct fetch *fetch;
 	lwc_string *scheme;
-	bool match;
 
 	fetch = calloc(1, sizeof (*fetch));
 	if (fetch == NULL) {
@@ -474,8 +472,8 @@ fetch_start(nsurl *url,
 
 	/* try and obtain a fetcher for this scheme */
 	fetch->fetcherd = get_fetcher_for_scheme(scheme);
+	lwc_string_unref(scheme);
 	if (fetch->fetcherd == -1) {
-		lwc_string_unref(scheme);
 		free(fetch);
 		return NSERROR_NO_FETCH_HANDLER;
 	}
@@ -490,47 +488,8 @@ fetch_start(nsurl *url,
 	fetch->host = nsurl_get_component(url, NSURL_HOST);
 
 	if (referer != NULL) {
-		lwc_string *ref_scheme;
 		fetch->referer = nsurl_ref(referer);
-
-		ref_scheme = nsurl_get_component(referer, NSURL_SCHEME);
-		/* Not a problem if referer has no scheme */
-
-		/* Determine whether to send the Referer header */
-		if (nsoption_bool(send_referer) && ref_scheme != NULL) {
-			/* User permits us to send the header
-			 * Only send it if:
-			 *    1) The fetch and referer schemes match
-			 * or 2) The fetch is https and the referer is http
-			 *
-			 * This ensures that referer information is only sent
-			 * across schemes in the special case of an https
-			 * request from a page served over http. The inverse
-			 * (https -> http) should not send the referer (15.1.3)
-			 */
-			bool match1;
-			bool match2;
-			if (lwc_string_isequal(scheme, ref_scheme,
-					       &match) != lwc_error_ok) {
-				match = false;
-			}
-			if (lwc_string_isequal(scheme, corestring_lwc_https,
-					       &match1) != lwc_error_ok) {
-				match1 = false;
-			}
-			if (lwc_string_isequal(ref_scheme, corestring_lwc_http,
-					       &match2) != lwc_error_ok) {
-				match2= false;
-			}
-			if (match == true || (match1 == true && match2 == true))
-				fetch->send_referer = true;
-		}
-		if (ref_scheme != NULL)
-			lwc_string_unref(ref_scheme);
 	}
-
-	/* these aren't needed past here */
-	lwc_string_unref(scheme);
 
 	/* try and set up the fetch */
 	fetch->fetcher_handle = fetchers[fetch->fetcherd].ops.setup(fetch, url,
@@ -839,13 +798,6 @@ void fetch_set_http_code(struct fetch *fetch, long http_code)
 	fetch->http_code = http_code;
 }
 
-/* exported interface documented in content/fetch.h */
-const char *fetch_get_referer_to_send(struct fetch *fetch)
-{
-	if (fetch->send_referer)
-		return nsurl_access(fetch->referer);
-	return NULL;
-}
 
 /* exported interface documented in content/fetch.h */
 void fetch_set_cookie(struct fetch *fetch, const char *data)
