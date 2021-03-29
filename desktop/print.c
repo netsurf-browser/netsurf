@@ -257,9 +257,9 @@ struct print_settings *print_make_settings(print_configuration configuration,
 	struct print_settings *settings;
 	css_fixed length = 0;
 	css_unit unit = CSS_UNIT_MM;
-	nscss_len_ctx len_ctx = {
-		.vw = DEFAULT_PAGE_WIDTH,
-		.vh = DEFAULT_PAGE_HEIGHT,
+	css_unit_ctx unit_len_ctx = {
+		.viewport_width  = DEFAULT_PAGE_WIDTH,
+		.viewport_height = DEFAULT_PAGE_HEIGHT,
 		.root_style = NULL,
 	};
 
@@ -277,17 +277,17 @@ struct print_settings *print_make_settings(print_configuration configuration,
 			settings->scale = DEFAULT_EXPORT_SCALE;
 
 			length = INTTOFIX(DEFAULT_MARGIN_LEFT_MM);
-			settings->margins[MARGINLEFT] = nscss_len2px(
-					&len_ctx, length, unit, NULL);
+			settings->margins[MARGINLEFT] = css_unit_len2device_px(
+					NULL, &unit_len_ctx, length, unit);
 			length = INTTOFIX(DEFAULT_MARGIN_RIGHT_MM);
-			settings->margins[MARGINRIGHT] = nscss_len2px(
-					&len_ctx, length, unit, NULL);
+			settings->margins[MARGINRIGHT] = css_unit_len2device_px(
+					NULL, &unit_len_ctx, length, unit);
 			length = INTTOFIX(DEFAULT_MARGIN_TOP_MM);
-			settings->margins[MARGINTOP] = nscss_len2px(
-					&len_ctx, length, unit, NULL);
+			settings->margins[MARGINTOP] = css_unit_len2device_px(
+					NULL, &unit_len_ctx, length, unit);
 			length = INTTOFIX(DEFAULT_MARGIN_BOTTOM_MM);
-			settings->margins[MARGINBOTTOM] = nscss_len2px(
-					&len_ctx, length, unit, NULL);
+			settings->margins[MARGINBOTTOM] = css_unit_len2device_px(
+					NULL, &unit_len_ctx, length, unit);
 			break;
 		/* use settings from the Export options tab */
 		case PRINT_OPTIONS:
@@ -303,17 +303,17 @@ struct print_settings *print_make_settings(print_configuration configuration,
 			settings->scale = (float)nsoption_int(export_scale) / 100;
 
 			length = INTTOFIX(nsoption_int(margin_left));
-			settings->margins[MARGINLEFT] = nscss_len2px(
-					&len_ctx, length, unit, NULL);
+			settings->margins[MARGINLEFT] = css_unit_len2device_px(
+					NULL, &unit_len_ctx, length, unit);
 			length = INTTOFIX(nsoption_int(margin_right));
-			settings->margins[MARGINRIGHT] = nscss_len2px(
-					&len_ctx, length, unit, NULL);
+			settings->margins[MARGINRIGHT] = css_unit_len2device_px(
+					NULL, &unit_len_ctx, length, unit);
 			length = INTTOFIX(nsoption_int(margin_top));
-			settings->margins[MARGINTOP] = nscss_len2px(
-					&len_ctx, length, unit, NULL);
+			settings->margins[MARGINTOP] = css_unit_len2device_px(
+					NULL, &unit_len_ctx, length, unit);
 			length = INTTOFIX(nsoption_int(margin_bottom));
-			settings->margins[MARGINBOTTOM] = nscss_len2px(
-					&len_ctx, length, unit, NULL);
+			settings->margins[MARGINBOTTOM] = css_unit_len2device_px(
+					NULL, &unit_len_ctx, length, unit);
 			break;
 		default:
 			return NULL;

@@ -1594,12 +1594,12 @@ form_open_select_menu(void *client_data,
 			box->border[RIGHT].width + box->padding[RIGHT] +
 			box->border[LEFT].width + box->padding[LEFT];
 
-		font_plot_style_from_css(&html->len_ctx, control->box->style,
-				&fstyle);
+		font_plot_style_from_css(&html->unit_len_ctx,
+				control->box->style, &fstyle);
 		menu->f_size = fstyle.size;
 
 		menu->line_height = FIXTOINT(FDIV((FMUL(FLTTOFIX(1.2),
-				FMUL(nscss_screen_dpi,
+				FMUL(html->unit_len_ctx.device_dpi,
 				INTTOFIX(fstyle.size / PLOT_STYLE_SCALE)))),
 				F_72));
 

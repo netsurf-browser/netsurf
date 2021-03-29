@@ -46,7 +46,7 @@ void box_bounds(struct box *box, struct rect *r);
 /**
  * Find the boxes at a point.
  *
- * \param  len_ctx  CSS length conversion context for document.
+ * \param  unit_len_ctx  CSS length conversion context for document.
  * \param  box      box to search children of
  * \param  x        point to find, in global document coordinates
  * \param  y        point to find, in global document coordinates
@@ -62,12 +62,12 @@ void box_bounds(struct box *box, struct rect *r);
  *	struct box *box = top_of_document_to_search;
  *	int box_x = 0, box_y = 0;
  *
- *	while ((box = box_at_point(len_ctx, box, x, y, &box_x, &box_y))) {
+ *	while ((box = box_at_point(unit_len_ctx, box, x, y, &box_x, &box_y))) {
  *		// process box
  *	}
  * \endcode
  */
-struct box *box_at_point(const nscss_len_ctx *len_ctx, struct box *box, const int x, const int y, int *box_x, int *box_y);
+struct box *box_at_point(const css_unit_ctx *unit_len_ctx, struct box *box, const int x, const int y, int *box_x, int *box_y);
 
 
 /**

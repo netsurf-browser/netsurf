@@ -190,7 +190,8 @@ box_normalise_table_row(struct box *row,
 			ctx.base_url = c->base_url;
 			ctx.universal = c->universal;
 
-			style = nscss_get_blank_style(&ctx, row->style);
+			style = nscss_get_blank_style(&ctx, &c->unit_len_ctx,
+					row->style);
 			if (style == NULL)
 				return false;
 
@@ -326,7 +327,8 @@ box_normalise_table_row_group(struct box *row_group,
 			ctx.base_url = c->base_url;
 			ctx.universal = c->universal;
 
-			style = nscss_get_blank_style(&ctx, row_group->style);
+			style = nscss_get_blank_style(&ctx, &c->unit_len_ctx,
+					row_group->style);
 			if (style == NULL)
 				return false;
 
@@ -402,7 +404,8 @@ box_normalise_table_row_group(struct box *row_group,
 		ctx.base_url = c->base_url;
 		ctx.universal = c->universal;
 
-		style = nscss_get_blank_style(&ctx, row_group->style);
+		style = nscss_get_blank_style(&ctx, &c->unit_len_ctx,
+				row_group->style);
 		if (style == NULL) {
 			return false;
 		}
@@ -533,6 +536,7 @@ box_normalise_table_spans(struct box *table,
 					ctx.universal = c->universal;
 
 					style = nscss_get_blank_style(&ctx,
+							&c->unit_len_ctx,
 							table_row->style);
 					if (style == NULL)
 						return false;
@@ -657,7 +661,8 @@ box_normalise_table(struct box *table, const struct box *root, html_content * c)
 			ctx.base_url = c->base_url;
 			ctx.universal = c->universal;
 
-			style = nscss_get_blank_style(&ctx, table->style);
+			style = nscss_get_blank_style(&ctx, &c->unit_len_ctx,
+					table->style);
 			if (style == NULL) {
 				free(col_info.spans);
 				return false;
@@ -744,7 +749,8 @@ box_normalise_table(struct box *table, const struct box *root, html_content * c)
 		ctx.base_url = c->base_url;
 		ctx.universal = c->universal;
 
-		style = nscss_get_blank_style(&ctx, table->style);
+		style = nscss_get_blank_style(&ctx, &c->unit_len_ctx,
+				table->style);
 		if (style == NULL) {
 			free(col_info.spans);
 			return false;
@@ -759,7 +765,8 @@ box_normalise_table(struct box *table, const struct box *root, html_content * c)
 		}
 		row_group->type = BOX_TABLE_ROW_GROUP;
 
-		style = nscss_get_blank_style(&ctx, row_group->style);
+		style = nscss_get_blank_style(&ctx, &c->unit_len_ctx,
+				row_group->style);
 		if (style == NULL) {
 			box_free(row_group);
 			free(col_info.spans);
@@ -948,7 +955,8 @@ box_normalise_block(struct box *block, const struct box *root, html_content *c)
 			ctx.base_url = c->base_url;
 			ctx.universal = c->universal;
 
-			style = nscss_get_blank_style(&ctx, block->style);
+			style = nscss_get_blank_style(&ctx, &c->unit_len_ctx,
+					block->style);
 			if (style == NULL)
 				return false;
 

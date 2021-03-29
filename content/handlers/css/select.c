@@ -91,10 +91,6 @@ static css_error set_libcss_node_data(void *pw, void *node,
 static css_error get_libcss_node_data(void *pw, void *node,
 		void **libcss_node_data);
 
-static css_error nscss_compute_font_size(void *pw, const css_hint *parent,
-		css_hint *size);
-
-
 /**
  * Selection callback table for libcss
  */
@@ -135,9 +131,8 @@ static css_select_handler selection_handler = {
 	node_is_lang,
 	node_presentational_hint,
 	ua_default_for_property,
-	nscss_compute_font_size,
 	set_libcss_node_data,
-	get_libcss_node_data
+	get_libcss_node_data,
 };
 
 /**
@@ -250,12 +245,15 @@ static void nscss_dom_user_data_handler(dom_node_operation operation,
  * \param ctx             CSS selection context
  * \param n               Element to select for
  * \param media           Permitted media types
+ * \param unit_unit_len_ctx    Unit length conversion context
  * \param inline_style    Inline style associated with element, or NULL
  * \return Pointer to selection results (containing computed styles),
  *         or NULL on failure
  */
 css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
-		const css_media *media, const css_stylesheet *inline_style)
+		const css_media *media,
+		const css_unit_ctx *unit_len_ctx,
+		const css_stylesheet *inline_style)
 {
 	css_computed_style *composed;
 	css_select_results *styles;
@@ -263,7 +261,7 @@ css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
 	css_error error;
 
 	/* Select style for node */
-	error = css_select_style(ctx->ctx, n, media, inline_style,
+	error = css_select_style(ctx->ctx, n, unit_len_ctx, media, inline_style,
 			&selection_handler, ctx, &styles);
 
 	if (error != CSS_OK || styles == NULL) {
@@ -278,8 +276,7 @@ css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
 		 * element's style */
 		error = css_computed_style_compose(ctx->parent_style,
 				styles->styles[CSS_PSEUDO_ELEMENT_NONE],
-				nscss_compute_font_size, ctx,
-				&composed);
+				unit_len_ctx, &composed);
 		if (error != CSS_OK) {
 			css_select_results_destroy(styles);
 			return NULL;
@@ -310,8 +307,7 @@ css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
 		error = css_computed_style_compose(
 				styles->styles[CSS_PSEUDO_ELEMENT_NONE],
 				styles->styles[pseudo_element],
-				nscss_compute_font_size, ctx,
-				&composed);
+				unit_len_ctx, &composed);
 		if (error != CSS_OK) {
 			/* TODO: perhaps this shouldn't be quite so
 			 * catastrophic? */
@@ -330,11 +326,13 @@ css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
 /**
  * Get a blank style
  *
- * \param ctx     CSS selection context
- * \param parent  Parent style to cascade inherited properties from
+ * \param ctx           CSS selection context
+ * \param unit_unit_len_ctx  Unit length conversion context
+ * \param parent        Parent style to cascade inherited properties from
  * \return Pointer to blank style, or NULL on failure
  */
 css_computed_style *nscss_get_blank_style(nscss_select_ctx *ctx,
+		const css_unit_ctx *unit_len_ctx,
 		const css_computed_style *parent)
 {
 	css_computed_style *partial, *composed;
@@ -349,7 +347,7 @@ css_computed_style *nscss_get_blank_style(nscss_select_ctx *ctx,
 	/* TODO: Do we really need to compose?  Initial style shouldn't
 	 * have any inherited properties. */
 	error = css_computed_style_compose(parent, partial,
-			nscss_compute_font_size, ctx, &composed);
+			unit_len_ctx, &composed);
 	css_computed_style_destroy(partial);
 	if (error != CSS_OK) {
 		css_computed_style_destroy(composed);
@@ -357,115 +355,6 @@ css_computed_style *nscss_get_blank_style(nscss_select_ctx *ctx,
 	}
 
 	return composed;
-}
-
-/**
- * Font size computation callback for libcss
- *
- * \param pw      Computation context
- * \param parent  Parent font size (absolute)
- * \param size    Font size to compute
- * \return CSS_OK on success
- *
- * \post \a size will be an absolute font size
- */
-css_error nscss_compute_font_size(void *pw, const css_hint *parent,
-		css_hint *size)
-{
-	/**
-	 * Table of font-size keyword scale factors
-	 *
-	 * These are multiplied by the configured default font size
-	 * to produce an absolute size for the relevant keyword
-	 */
-	static const css_fixed factors[] = {
-		FLTTOFIX(0.5625), /* xx-small */
-		FLTTOFIX(0.6250), /* x-small */
-		FLTTOFIX(0.8125), /* small */
-		FLTTOFIX(1.0000), /* medium */
-		FLTTOFIX(1.1250), /* large */
-		FLTTOFIX(1.5000), /* x-large */
-		FLTTOFIX(2.0000)  /* xx-large */
-	};
-	css_hint_length parent_size;
-
-	/* Grab parent size, defaulting to medium if none */
-	if (parent == NULL) {
-		parent_size.value = FDIV(FMUL(factors[CSS_FONT_SIZE_MEDIUM - 1],
-				INTTOFIX(nsoption_int(font_size))),
-				INTTOFIX(10));
-		parent_size.unit = CSS_UNIT_PT;
-	} else {
-		assert(parent->status == CSS_FONT_SIZE_DIMENSION);
-		assert(parent->data.length.unit != CSS_UNIT_EM);
-		assert(parent->data.length.unit != CSS_UNIT_EX);
-		assert(parent->data.length.unit != CSS_UNIT_PCT);
-
-		parent_size = parent->data.length;
-	}
-
-	assert(size->status != CSS_FONT_SIZE_INHERIT);
-
-	if (size->status < CSS_FONT_SIZE_LARGER) {
-		/* Keyword -- simple */
-		size->data.length.value = FDIV(FMUL(factors[size->status - 1],
-				INTTOFIX(nsoption_int(font_size))), F_10);
-		size->data.length.unit = CSS_UNIT_PT;
-	} else if (size->status == CSS_FONT_SIZE_LARGER) {
-		/** \todo Step within table, if appropriate */
-		size->data.length.value =
-				FMUL(parent_size.value, FLTTOFIX(1.2));
-		size->data.length.unit = parent_size.unit;
-	} else if (size->status == CSS_FONT_SIZE_SMALLER) {
-		/** \todo Step within table, if appropriate */
-		size->data.length.value =
-				FDIV(parent_size.value, FLTTOFIX(1.2));
-		size->data.length.unit = parent_size.unit;
-	} else if (size->data.length.unit == CSS_UNIT_EM ||
-			size->data.length.unit == CSS_UNIT_EX ||
-			size->data.length.unit == CSS_UNIT_CH) {
-		size->data.length.value =
-			FMUL(size->data.length.value, parent_size.value);
-
-		switch (size->data.length.unit) {
-		case CSS_UNIT_EX:
-			/* 1ex = 0.6em in NetSurf */
-			size->data.length.value = FMUL(size->data.length.value,
-					FLTTOFIX(0.6));
-			break;
-		case CSS_UNIT_CH:
-			/* Width of '0'.  1ch = 0.4em in NetSurf. */
-			size->data.length.value = FMUL(size->data.length.value,
-					FLTTOFIX(0.4));
-			break;
-		default:
-			/* No scaling required for EM. */
-			break;
-		}
-
-		size->data.length.unit = parent_size.unit;
-	} else if (size->data.length.unit == CSS_UNIT_PCT) {
-		size->data.length.value = FDIV(FMUL(size->data.length.value,
-				parent_size.value), INTTOFIX(100));
-		size->data.length.unit = parent_size.unit;
-	} else if (size->data.length.unit == CSS_UNIT_REM) {
-		nscss_select_ctx *ctx = pw;
-		if (parent == NULL) {
-			size->data.length.value = parent_size.value;
-			size->data.length.unit = parent_size.unit;
-		} else {
-			css_computed_font_size(ctx->root_style,
-					&parent_size.value,
-					&size->data.length.unit);
-			size->data.length.value = FMUL(
-					size->data.length.value,
-					parent_size.value);
-		}
-	}
-
-	size->status = CSS_FONT_SIZE_DIMENSION;
-
-	return CSS_OK;
 }
 
 /******************************************************************************

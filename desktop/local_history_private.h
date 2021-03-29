@@ -27,12 +27,12 @@
 #include "content/handlers/css/utils.h"
 
 #define LOCAL_HISTORY_WIDTH \
-		(FIXTOINT(nscss_pixels_css_to_physical(INTTOFIX(116))))
+		(FIXTOINT(css_unit_css2device_px(INTTOFIX(116), nscss_screen_dpi)))
 #define LOCAL_HISTORY_HEIGHT \
-		(FIXTOINT(nscss_pixels_css_to_physical(INTTOFIX(100))))
+		(FIXTOINT(css_unit_css2device_px(INTTOFIX(100), nscss_screen_dpi)))
 #define LOCAL_HISTORY_RIGHT_MARGIN \
-		(FIXTOINT(nscss_pixels_css_to_physical(INTTOFIX(50))))
+		(FIXTOINT(css_unit_css2device_px(INTTOFIX( 50), nscss_screen_dpi)))
 #define LOCAL_HISTORY_BOTTOM_MARGIN \
-		(FIXTOINT(nscss_pixels_css_to_physical(INTTOFIX(30))))
+		(FIXTOINT(css_unit_css2device_px(INTTOFIX( 30), nscss_screen_dpi)))
 
 #endif

@@ -133,7 +133,7 @@ static plot_font_flags_t plot_font_flags(enum css_font_style_e style,
 
 /* exported function documented in html/font.h */
 void font_plot_style_from_css(
-		const nscss_len_ctx *len_ctx,
+		const css_unit_ctx *unit_len_ctx,
 		const css_computed_style *css,
 		plot_font_style_t *fstyle)
 {
@@ -147,7 +147,8 @@ void font_plot_style_from_css(
 	fstyle->families = families;
 
 	css_computed_font_size(css, &length, &unit);
-	fstyle->size = FIXTOINT(FMUL(nscss_len2pt(len_ctx, length, unit),
+	fstyle->size = FIXTOINT(FMUL(css_unit_font_size_len2pt(css,
+				      unit_len_ctx, length, unit),
 				      INTTOFIX(PLOT_STYLE_SCALE)));
 
 	/* Clamp font size to configured minimum */

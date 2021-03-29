@@ -240,7 +240,7 @@ coords_from_range(struct box *box,
  * \param text         pointer to text being added, or NULL for newline
  * \param length       length of text to be appended (bytes)
  * \param box          pointer to text box, or NULL if from textplain
- * \param len_ctx      Length conversion context
+ * \param unit_len_ctx      Length conversion context
  * \param handle       selection string to append to
  * \param whitespace_text    whitespace to place before text for formatting
  *                            may be NULL
@@ -251,7 +251,7 @@ static nserror
 selection_copy_box(const char *text,
 		   size_t length,
 		   struct box *box,
-		   const nscss_len_ctx *len_ctx,
+		   const css_unit_ctx *unit_len_ctx,
 		   struct selection_string *handle,
 		   const char *whitespace_text,
 		   size_t whitespace_length)
@@ -278,7 +278,7 @@ selection_copy_box(const char *text,
 
 		if (box->style != NULL) {
 			/* Override default font style */
-			font_plot_style_from_css(len_ctx, box->style, &style);
+			font_plot_style_from_css(unit_len_ctx, box->style, &style);
 			pstyle = &style;
 		} else {
 			/* If there's no style, there must be no text */
@@ -300,7 +300,7 @@ selection_copy_box(const char *text,
  * boxes that lie (partially) within the given range
  *
  * \param box        box subtree
- * \param len_ctx    Length conversion context.
+ * \param unit_len_ctx    Length conversion context.
  * \param start_idx  start of range within textual representation (bytes)
  * \param end_idx    end of range
  * \param handler    handler function to call
@@ -312,7 +312,7 @@ selection_copy_box(const char *text,
  */
 static nserror
 selection_copy(struct box *box,
-	       const nscss_len_ctx *len_ctx,
+	       const css_unit_ctx *unit_len_ctx,
 	       unsigned start_idx,
 	       unsigned end_idx,
 	       struct selection_string *selstr,
@@ -340,7 +340,7 @@ selection_copy(struct box *box,
 		/* do the marker box before continuing with the rest of the
 		 * list element */
 		res = selection_copy(box->list_marker,
-				     len_ctx,
+				     unit_len_ctx,
 				     start_idx,
 				     end_idx,
 				     selstr,
@@ -383,7 +383,7 @@ selection_copy(struct box *box,
 			res = selection_copy_box(box->text + start_off,
 						 min(box->length, end_off) - start_off,
 						 box,
-						 len_ctx,
+						 unit_len_ctx,
 						 selstr,
 						 whitespace_text,
 						 whitespace_length);
@@ -415,7 +415,7 @@ selection_copy(struct box *box,
 			struct box *next = child->next;
 
 			res = selection_copy(child,
-					     len_ctx,
+					     unit_len_ctx,
 					     start_idx,
 					     end_idx,
 					     selstr,
@@ -518,7 +518,7 @@ html_textselection_copy(struct content *c,
 	}
 
 	return selection_copy(html->layout,
-			      &html->len_ctx,
+			      &html->unit_len_ctx,
 			      start_idx,
 			      end_idx,
 			      selstr,

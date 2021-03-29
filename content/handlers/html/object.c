@@ -265,18 +265,20 @@ html_object_callback(hlcache_handle *object,
 				if (hunit == CSS_UNIT_PCT) {
 					l = (width - w) * hpos / INTTOFIX(100);
 				} else {
-					l = FIXTOINT(nscss_len2px(&c->len_ctx,
-							hpos, hunit,
-							box->style));
+					l = FIXTOINT(css_unit_len2device_px(
+							box->style,
+							&c->unit_len_ctx,
+							hpos, hunit));
 				}
 
 				h = content_get_height(box->background);
 				if (vunit == CSS_UNIT_PCT) {
 					t = (height - h) * vpos / INTTOFIX(100);
 				} else {
-					t = FIXTOINT(nscss_len2px(&c->len_ctx,
-							vpos, vunit,
-							box->style));
+					t = FIXTOINT(css_unit_len2device_px(
+							box->style,
+							&c->unit_len_ctx,
+							vpos, vunit));
 				}
 
 				/* Redraw area depends on background-repeat */

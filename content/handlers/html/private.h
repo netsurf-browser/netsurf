@@ -112,9 +112,6 @@ typedef struct html_content {
 	/** Base target */
 	char *base_target;
 
-	/** CSS length conversion context for document. */
-	nscss_len_ctx len_ctx;
-
 	/** Content has been aborted in the LOADING state */
 	bool aborted;
 
@@ -162,6 +159,8 @@ typedef struct html_content {
 	css_select_ctx *select_ctx;
 	/**< Style selection media specification */
 	css_media media;
+	/** CSS length conversion context for document. */
+	css_unit_ctx unit_len_ctx;
 	/**< Universal selector */
 	lwc_string *universal;
 

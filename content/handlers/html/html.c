@@ -305,6 +305,9 @@ html_proceed_to_done(html_content *html)
 
 static void html_get_dimensions(html_content *htmlc)
 {
+	css_fixed device_dpi = nscss_screen_dpi;
+	unsigned f_size;
+	unsigned f_min;
 	unsigned w;
 	unsigned h;
 	union content_msg_data msg_data = {
@@ -316,13 +319,22 @@ static void html_get_dimensions(html_content *htmlc)
 
 	content_broadcast(&htmlc->base, CONTENT_MSG_GETDIMS, &msg_data);
 
-	htmlc->media.width  = nscss_pixels_physical_to_css(INTTOFIX(w));
-	htmlc->media.height = nscss_pixels_physical_to_css(INTTOFIX(h));
-	htmlc->media.client_font_size =
-			FDIV(INTTOFIX(nsoption_int(font_size)), F_10);
-	htmlc->media.client_line_height =
-			FMUL(nscss_len2px(NULL, htmlc->media.client_font_size,
-					CSS_UNIT_PT, NULL), FLTTOFIX(1.33));
+
+	w = css_unit_device2css_px(INTTOFIX(w), device_dpi);
+	h = css_unit_device2css_px(INTTOFIX(h), device_dpi);
+
+	htmlc->media.width  = w;
+	htmlc->media.height = h;
+	htmlc->unit_len_ctx.viewport_width  = w;
+	htmlc->unit_len_ctx.viewport_height = h;
+	htmlc->unit_len_ctx.device_dpi = device_dpi;
+
+	/** \todo Change nsoption font sizes to px. */
+	f_size = FDIV(FMUL(F_96, FDIV(INTTOFIX(nsoption_int(font_size)), F_10)), F_72);
+	f_min  = FDIV(FMUL(F_96, FDIV(INTTOFIX(nsoption_int(font_min_size)), F_10)), F_72);
+
+	htmlc->unit_len_ctx.font_size_default = f_size;
+	htmlc->unit_len_ctx.font_size_minimum = f_min;
 }
 
 /* exported function documented in html/html_internal.h */
@@ -1035,9 +1047,11 @@ static void html_reformat(struct content *c, int width, int height)
 
 	htmlc->reflowing = true;
 
-	htmlc->len_ctx.vw = nscss_pixels_physical_to_css(INTTOFIX(width));
-	htmlc->len_ctx.vh = nscss_pixels_physical_to_css(INTTOFIX(height));
-	htmlc->len_ctx.root_style = htmlc->layout->style;
+	htmlc->unit_len_ctx.viewport_width = css_unit_device2css_px(
+			INTTOFIX(width), htmlc->unit_len_ctx.device_dpi);
+	htmlc->unit_len_ctx.viewport_height = css_unit_device2css_px(
+			INTTOFIX(height), htmlc->unit_len_ctx.device_dpi);
+	htmlc->unit_len_ctx.root_style = htmlc->layout->style;
 
 	layout_document(htmlc, width, height);
 	layout = htmlc->layout;
@@ -1427,7 +1441,7 @@ html_get_contextual_content(struct content *c, int x, int y,
 	struct box *next;
 	int box_x = 0, box_y = 0;
 
-	while ((next = box_at_point(&html->len_ctx, box, x, y,
+	while ((next = box_at_point(&html->unit_len_ctx, box, x, y,
 			&box_x, &box_y)) != NULL) {
 		box = next;
 
@@ -1508,7 +1522,7 @@ html_scroll_at_point(struct content *c, int x, int y, int scrx, int scry)
 
 	/* TODO: invert order; visit deepest box first */
 
-	while ((next = box_at_point(&html->len_ctx, box, x, y,
+	while ((next = box_at_point(&html->unit_len_ctx, box, x, y,
 			&box_x, &box_y)) != NULL) {
 		box = next;
 
@@ -1657,7 +1671,7 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 	int box_x = 0, box_y = 0;
 
 	/* Scan box tree for boxes that can handle drop */
-	while ((next = box_at_point(&html->len_ctx, box, x, y,
+	while ((next = box_at_point(&html->unit_len_ctx, box, x, y,
 			&box_x, &box_y)) != NULL) {
 		box = next;
 
