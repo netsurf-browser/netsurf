@@ -39,7 +39,7 @@ static nserror ami_utf8_codesets(const char *string, size_t len, char **result, 
 	static struct codeset *utf8_cs = NULL;
 	static struct codeset *local_cs = NULL;
 
-	if(local_cs == NULL) CodesetsFind(NULL,
+	if(local_cs == NULL) local_cs = CodesetsFind(NULL,
 #ifdef __amigaos4__
 						CSA_MIBenum, nsoption_int(local_codeset),
 #else
@@ -47,7 +47,7 @@ static nserror ami_utf8_codesets(const char *string, size_t len, char **result, 
 #endif
 					TAG_DONE);
 
-     if(utf8_cs == NULL) CodesetsFind(NULL,
+     if(utf8_cs == NULL) utf8_cs = CodesetsFind(NULL,
                            CSA_MIBenum, CS_MIBENUM_UTF_8,
                            TAG_DONE);
 
