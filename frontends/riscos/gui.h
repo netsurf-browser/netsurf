@@ -165,6 +165,7 @@ void ro_gui_print_prepare(struct gui_window *g);
 extern const struct plotter_table ro_plotters;
 extern int ro_plot_origin_x;
 extern int ro_plot_origin_y;
+extern struct rect ro_plot_clip_rect;
 
 /* in theme_install.c */
 bool ro_gui_theme_install_apply(wimp_w w);

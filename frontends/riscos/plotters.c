@@ -39,6 +39,7 @@
 
 int ro_plot_origin_x = 0;
 int ro_plot_origin_y = 0;
+struct rect ro_plot_clip_rect;
 
 /** One version of the A9home OS is incapable of drawing patterned lines */
 bool ro_plot_patterned_lines = true;
@@ -114,6 +115,14 @@ ro_plot_clip(const struct redraw_context *ctx, const struct rect *clip)
 	int clip_y0 = clip->y1 * 2;
 	int clip_x1 = clip->x1 * 2;
 	int clip_y1 = clip->y0 * 2;
+
+	/* Avoid artefacts due to clip rectangle offsetting in EX0 EY0 modes.
+	 * The area the WIMP asked us to draw might have dimensions that are
+	 * not a multiple of 2. */
+	if (clip_x0 < ro_plot_clip_rect.x0) clip_x0 = ro_plot_clip_rect.x0;
+	if (clip_x1 > ro_plot_clip_rect.x1) clip_x1 = ro_plot_clip_rect.x1;
+	if (clip_y0 > ro_plot_clip_rect.y0) clip_y0 = ro_plot_clip_rect.y0;
+	if (clip_y1 < ro_plot_clip_rect.y1) clip_y1 = ro_plot_clip_rect.y1;
 
 	clip_x0 = ro_plot_origin_x + clip_x0;
 	clip_y0 = ro_plot_origin_y - clip_y0;

@@ -120,10 +120,15 @@ static void ro_cw_redraw(wimp_draw *redraw)
 		origin_x = redraw->box.x0 - redraw->xscroll;
 		origin_y = redraw->box.y1 + ro_cw->origin_y - redraw->yscroll;
 
-		r.x0 = (redraw->clip.x0 - origin_x) / 2;
-		r.y0 = (origin_y - redraw->clip.y1) / 2;
-		r.x1 = r.x0 + ((redraw->clip.x1 - redraw->clip.x0) / 2);
-		r.y1 = r.y0 + ((redraw->clip.y1 - redraw->clip.y0) / 2);
+		ro_plot_clip_rect.x0 = redraw->clip.x0 - origin_x;
+		ro_plot_clip_rect.y0 = origin_y - redraw->clip.y0;
+		ro_plot_clip_rect.x1 = redraw->clip.x1 - origin_x;
+		ro_plot_clip_rect.y1 = origin_y - redraw->clip.y1;
+
+		r.x0 = (ro_plot_clip_rect.x0    ) / 2; /* left   */
+		r.y0 = (ro_plot_clip_rect.y1    ) / 2; /* top    */
+		r.x1 = (ro_plot_clip_rect.x1 + 1) / 2; /* right  */
+		r.y1 = (ro_plot_clip_rect.y0 + 1) / 2; /* bottom */
 
 		/* call the draw callback */
 		ro_cw->draw(ro_cw, origin_x, origin_y, &r);

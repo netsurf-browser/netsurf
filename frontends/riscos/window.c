@@ -1685,13 +1685,19 @@ static void ro_gui_window_redraw(wimp_draw *redraw)
 		ro_plot_origin_x = redraw->box.x0 - redraw->xscroll;
 		ro_plot_origin_y = redraw->box.y1 - redraw->yscroll;
 
+		/* Adjust clip rect for origin. */
+		ro_plot_clip_rect.x0 = redraw->clip.x0 - ro_plot_origin_x;
+		ro_plot_clip_rect.y0 = ro_plot_origin_y - redraw->clip.y0;
+		ro_plot_clip_rect.x1 = redraw->clip.x1 - ro_plot_origin_x;
+		ro_plot_clip_rect.y1 = ro_plot_origin_y - redraw->clip.y1;
+
 		/* Convert OS redraw rectangle request coordinates into NetSurf
 		 * coordinates. NetSurf coordinates have origin at top left of
 		 * document and units are in px. */
-		clip.x0 = (redraw->clip.x0 - ro_plot_origin_x) / 2; /* left   */
-		clip.y0 = (ro_plot_origin_y - redraw->clip.y1) / 2; /* top    */
-		clip.x1 = (redraw->clip.x1 - ro_plot_origin_x) / 2; /* right  */
-		clip.y1 = (ro_plot_origin_y - redraw->clip.y0) / 2; /* bottom */
+		clip.x0 = (ro_plot_clip_rect.x0    ) / 2; /* left   */
+		clip.y0 = (ro_plot_clip_rect.y1    ) / 2; /* top    */
+		clip.x1 = (ro_plot_clip_rect.x1 + 1) / 2; /* right  */
+		clip.y1 = (ro_plot_clip_rect.y0 + 1) / 2; /* bottom */
 
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_open(redraw);
@@ -4715,10 +4721,19 @@ void ro_gui_window_update_boxes(void)
 		ro_plot_origin_y = update.box.y1 - update.yscroll;
 
 		while (more) {
-			clip.x0 = (update.clip.x0 - ro_plot_origin_x) / 2;
-			clip.y0 = (ro_plot_origin_y - update.clip.y1) / 2;
-			clip.x1 = (update.clip.x1 - ro_plot_origin_x) / 2;
-			clip.y1 = (ro_plot_origin_y - update.clip.y0) / 2;
+			/* Adjust clip rect for origin. */
+			ro_plot_clip_rect.x0 = update.clip.x0 - ro_plot_origin_x;
+			ro_plot_clip_rect.y0 = ro_plot_origin_y - update.clip.y0;
+			ro_plot_clip_rect.x1 = update.clip.x1 - ro_plot_origin_x;
+			ro_plot_clip_rect.y1 = ro_plot_origin_y - update.clip.y1;
+
+			/* Convert OS redraw rectangle request coordinates into
+			 * NetSurf coordinates. NetSurf coordinates have origin
+			 * at top left of document and units are in px. */
+			clip.x0 = (ro_plot_clip_rect.x0    ) / 2; /* left   */
+			clip.y0 = (ro_plot_clip_rect.y1    ) / 2; /* top    */
+			clip.x1 = (ro_plot_clip_rect.x1 + 1) / 2; /* right  */
+			clip.y1 = (ro_plot_clip_rect.y0 + 1) / 2; /* bottom */
 
 			if (use_buffer)
 				ro_gui_buffer_open(&update);
