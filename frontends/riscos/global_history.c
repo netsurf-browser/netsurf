@@ -444,6 +444,9 @@ static nserror ro_global_history_init(void)
 		return res;
 	}
 
+	NSLOG(netsurf, INFO, "Created global history corewindow: %p",
+			&ncwin->core);
+
 	res = global_history_init(ncwin->core.cb_table,
 				  (struct core_window *)ncwin);
 	if (res != NSERROR_OK) {

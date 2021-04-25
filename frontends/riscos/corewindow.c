@@ -52,6 +52,8 @@
 #define wimp_KEY_END wimp_KEY_COPY
 #endif
 
+static struct ro_corewindow *ro_cw_drag_cw;
+
 /**
  * Update a windows scrollbars.
  *
@@ -255,6 +257,11 @@ static void ro_cw_mouse_at(wimp_pointer *pointer, void *data)
 		      (unsigned int)pointer->w);
 		return;
 	}
+	if (ro_cw != ro_cw_drag_cw) {
+		NSLOG(netsurf, DEEPDEBUG, "Called without drag window: %p",
+				ro_cw);
+		return;
+	}
 	NSLOG(netsurf, INFO, "RO corewindow context %p", ro_cw);
 
 	/* Not a Menu click. */
@@ -391,6 +398,7 @@ ro_cw_drag_start(struct ro_corewindow *ro_cw,
 			ro_warn_user("WimpError", error->errmess);
 		}
 
+		ro_cw_drag_cw = ro_cw;
 		ro_mouse_drag_start(ro_cw_drag_end, ro_cw_mouse_at, NULL, NULL);
 	}
 }
@@ -1046,6 +1054,8 @@ ro_corewindow_init(struct ro_corewindow *ro_cw,
 	}
 
 	/* setup context for event handlers */
+	NSLOG(netsurf, INFO, "Setting corewindow %p for window handle %p",
+			ro_cw, ro_cw->wh);
 	ro_gui_wimp_event_set_user_data(ro_cw->wh, ro_cw);
 
 	/* register wimp events. */
