@@ -25,7 +25,7 @@
 
 #include "oslib/wimp.h"
 
-void ro_gui_buffer_open(wimp_draw *redraw);
+void ro_gui_buffer_open(const wimp_draw *redraw);
 void ro_gui_buffer_close(void);
 
 #endif

@@ -81,7 +81,7 @@ static os_mode mode;
  *
  * \param redraw the current WIMP redraw area to buffer
  */
-void ro_gui_buffer_open(wimp_draw *redraw)
+void ro_gui_buffer_open(const wimp_draw *redraw)
 {
 	int size;
 	int total_size;
