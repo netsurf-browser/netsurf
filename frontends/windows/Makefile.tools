@@ -15,5 +15,5 @@ ifneq ($(HOST),windows)
 else
   # Building on Windows
   CC := gcc
-  PKG_CONFIG :=
+  PKG_CONFIG := pkg-config
 endif
