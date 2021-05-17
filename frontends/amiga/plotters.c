@@ -257,11 +257,7 @@ void ami_plot_ra_free(struct gui_globals *gg)
 	ami_memory_chip_free(gg->tmprasbuf);
 	free(gg->areabuf);
 	DisposeLayerInfo(gg->layerinfo);
-	if(gg->palette_mapped == false) {
-		if(gg->bm) ami_rtg_freebitmap(gg->bm);
-	} else {
-		if(gg->bm) FreeBitMap(gg->bm);
-	}
+	if(gg->bm) ami_rtg_freebitmap(gg->bm);
 
 	if(gg->managed_pen_list == true) {
 		ami_plot_release_pens(gg->shared_pens);
