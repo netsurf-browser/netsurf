@@ -94,6 +94,7 @@ bool riscos_done = false;
 extern bool ro_plot_patterned_lines;
 
 int os_version = 0;
+bool os_alpha_sprite_supported = false;
 
 const char * const __dynamic_da_name = "NetSurf";	/**< For UnixLib. */
 int __dynamic_da_max_size = 128 * 1024 * 1024;	/**< For UnixLib. */
@@ -1110,6 +1111,33 @@ static void ro_gui_check_resolvers(void)
 	}
 }
 
+/**
+ * Set global variable for whether the OS version supports alpha channels.
+ */
+static void ro_gui__check_os_alpha_sprites(void)
+{
+	os_error *error;
+	int var_val;
+	bits psr;
+
+	psr = 0;
+	error = xos_read_mode_variable(alpha_SPRITE_MODE,
+			os_MODEVAR_MODE_FLAGS, &var_val, &psr);
+	if (error) {
+		NSLOG(netsurf, ERROR, "xos_read_mode_variable: 0x%x: %s",
+				error->errnum, error->errmess);
+		return;
+	}
+
+	if (var_val == (1 << 15)) {
+		os_alpha_sprite_supported = true;
+	} else {
+		os_alpha_sprite_supported = false;
+	}
+
+	NSLOG(netsurf, INFO, "OS supports alpha sprites: %s (%i)",
+			os_alpha_sprite_supported ? "yes" : "no", var_val);
+}
 
 /**
  * Initialise the RISC OS specific GUI.
@@ -1151,6 +1179,7 @@ static nserror gui_init(int argc, char** argv)
 	 * (remember that it's preferable to check for specific features
 	 * being present) */
 	xos_byte(osbyte_IN_KEY, 0, 0xff, &os_version, NULL);
+	ro_gui__check_os_alpha_sprites();
 
 	/* the first release version of the A9home OS is incapable of
 	   plotting patterned lines (presumably a fault in the hw acceleration) */

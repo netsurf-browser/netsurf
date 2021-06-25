@@ -34,6 +34,8 @@
 
 extern int os_version;
 
+extern bool os_alpha_sprite_supported;
+
 extern const char * NETSURF_DIR;
 
 struct toolbar;
