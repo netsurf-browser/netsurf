@@ -29,74 +29,6 @@
 #include "riscos/gui.h"
 #include "riscos/tinct.h"
 
-static bool image_redraw_tinct(osspriteop_id header, int x, int y,
-		int req_width, int req_height, int width, int height,
-		colour background_colour, bool repeatx, bool repeaty,
-		bool alpha, unsigned int tinct_options);
-static bool image_redraw_os(osspriteop_id header, int x, int y,
-		int req_width, int req_height, int width, int height);
-
-/**
- * Plot an image at the given coordinates using the method specified
- *
- * \param area              The sprite area containing the sprite
- * \param x                 Left edge of sprite
- * \param y                 Top edge of sprite
- * \param req_width         The requested width of the sprite
- * \param req_height        The requested height of the sprite
- * \param width             The actual width of the sprite
- * \param height            The actual height of the sprite
- * \param background_colour The background colour to blend to
- * \param repeatx           Repeat the image in the x direction
- * \param repeaty           Repeat the image in the y direction
- * \param background	    Use background image settings (otherwise foreground)
- * \param type              The plot method to use
- * \return true on success, false otherwise
- */
-bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
-		int req_height, int width, int height,
-		colour background_colour,
-		bool repeatx, bool repeaty, bool background, image_type type)
-{
-	unsigned int tinct_options;
-
-	/* failed decompression/loading can result in no image being present */
-	if (!area)
-		return false;
-
-	osspriteop_id header = (osspriteop_id)
-			((char*) area + area->first);
-	req_width *= 2;
-	req_height *= 2;
-	width *= 2;
-	height *= 2;
-	tinct_options = background ? nsoption_int(plot_bg_quality) :
-		nsoption_int(plot_fg_quality);
-	switch (type) {
-		case IMAGE_PLOT_TINCT_ALPHA:
-			return image_redraw_tinct(header, x, y,
-						req_width, req_height,
-						width, height,
-						background_colour,
-						repeatx, repeaty, true,
-						tinct_options);
-		case IMAGE_PLOT_TINCT_OPAQUE:
-			return image_redraw_tinct(header, x, y,
-						req_width, req_height,
-						width, height,
-						background_colour,
-						repeatx, repeaty, false,
-						tinct_options);
-		case IMAGE_PLOT_OS:
-			return image_redraw_os(header, x, y, req_width,
-						req_height, width, height);
-		default:
-			break;
-	}
-
-	return false;
-}
-
 /**
  * Plot an image at the given coordinates using tinct
  *
@@ -114,7 +46,7 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
  * \param tinct_options	    The base option set to use
  * \return true on success, false otherwise
  */
-bool image_redraw_tinct(osspriteop_id header, int x, int y,
+static bool image_redraw_tinct(osspriteop_id header, int x, int y,
 		int req_width, int req_height, int width, int height,
 		colour background_colour, bool repeatx, bool repeaty,
 		bool alpha, unsigned int tinct_options)
@@ -150,7 +82,6 @@ bool image_redraw_tinct(osspriteop_id header, int x, int y,
 	return true;
 }
 
-
 /**
  * Plot an image at the given coordinates using os_spriteop
  *
@@ -163,7 +94,7 @@ bool image_redraw_tinct(osspriteop_id header, int x, int y,
  * \param height     The actual height of the sprite
  * \return true on success, false otherwise
  */
-bool image_redraw_os(osspriteop_id header, int x, int y, int req_width,
+static bool image_redraw_os(osspriteop_id header, int x, int y, int req_width,
 		int req_height, int width, int height)
 {
 	int size;
@@ -226,4 +157,65 @@ bool image_redraw_os(osspriteop_id header, int x, int y, int req_width,
 	free(table);
 
 	return true;
+}
+
+/**
+ * Plot an image at the given coordinates using the method specified
+ *
+ * \param area              The sprite area containing the sprite
+ * \param x                 Left edge of sprite
+ * \param y                 Top edge of sprite
+ * \param req_width         The requested width of the sprite
+ * \param req_height        The requested height of the sprite
+ * \param width             The actual width of the sprite
+ * \param height            The actual height of the sprite
+ * \param background_colour The background colour to blend to
+ * \param repeatx           Repeat the image in the x direction
+ * \param repeaty           Repeat the image in the y direction
+ * \param background	    Use background image settings (otherwise foreground)
+ * \param type              The plot method to use
+ * \return true on success, false otherwise
+ */
+bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
+		int req_height, int width, int height,
+		colour background_colour,
+		bool repeatx, bool repeaty, bool background, image_type type)
+{
+	unsigned int tinct_options;
+
+	/* failed decompression/loading can result in no image being present */
+	if (!area)
+		return false;
+
+	osspriteop_id header = (osspriteop_id)
+			((char*) area + area->first);
+	req_width *= 2;
+	req_height *= 2;
+	width *= 2;
+	height *= 2;
+	tinct_options = background ? nsoption_int(plot_bg_quality) :
+		nsoption_int(plot_fg_quality);
+	switch (type) {
+		case IMAGE_PLOT_TINCT_ALPHA:
+			return image_redraw_tinct(header, x, y,
+						req_width, req_height,
+						width, height,
+						background_colour,
+						repeatx, repeaty, true,
+						tinct_options);
+		case IMAGE_PLOT_TINCT_OPAQUE:
+			return image_redraw_tinct(header, x, y,
+						req_width, req_height,
+						width, height,
+						background_colour,
+						repeatx, repeaty, false,
+						tinct_options);
+		case IMAGE_PLOT_OS:
+			return image_redraw_os(header, x, y, req_width,
+						req_height, width, height);
+		default:
+			break;
+	}
+
+	return false;
 }
