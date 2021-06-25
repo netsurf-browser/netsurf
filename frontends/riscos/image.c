@@ -92,10 +92,11 @@ static bool image_redraw_tinct(osspriteop_id header, int x, int y,
  * \param req_height The requested height of the sprite
  * \param width      The actual width of the sprite
  * \param height     The actual height of the sprite
+ * \param tile       Whether to tile the sprite
  * \return true on success, false otherwise
  */
 static bool image_redraw_os(osspriteop_id header, int x, int y, int req_width,
-		int req_height, int width, int height)
+		int req_height, int width, int height, bool tile)
 {
 	int size;
 	os_factors f;
@@ -141,10 +142,17 @@ static bool image_redraw_os(osspriteop_id header, int x, int y, int req_width,
 	f.xdiv = width;
 	f.ydiv = height;
 
-	error = xosspriteop_put_sprite_scaled(osspriteop_PTR,
-			osspriteop_UNSPECIFIED, header,
-			x, (int)(y - req_height),
-			osspriteop_USE_MASK, &f, table);
+	if (tile) {
+		error = xosspriteop_plot_tiled_sprite(osspriteop_PTR,
+				osspriteop_UNSPECIFIED, header,
+				x, (int)(y - req_height),
+				osspriteop_USE_MASK, &f, table);
+	} else {
+		error = xosspriteop_put_sprite_scaled(osspriteop_PTR,
+				osspriteop_UNSPECIFIED, header,
+				x, (int)(y - req_height),
+				osspriteop_USE_MASK, &f, table);
+	}
 	if (error) {
 		NSLOG(netsurf, INFO,
 		      "xosspriteop_put_sprite_scaled: 0x%x: %s",
@@ -212,7 +220,8 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 						tinct_options);
 		case IMAGE_PLOT_OS:
 			return image_redraw_os(header, x, y, req_width,
-						req_height, width, height);
+						req_height, width, height,
+						repeatx | repeaty);
 		default:
 			break;
 	}
