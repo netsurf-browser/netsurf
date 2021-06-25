@@ -168,6 +168,27 @@ static bool image_redraw_os(osspriteop_id header, int x, int y, int req_width,
 }
 
 /**
+ * Override a sprite's mode.
+ *
+ * Only replaces mode if existing mode matches \ref old.
+ *
+ * \param[in] area  The sprite area containing the sprite.
+ * \param[in] old   Existing sprite mode to check for.
+ * \param[in] new   Sprite mode to set if existing mode is expected.
+ */
+static inline void image__override_sprite_mode(
+		osspriteop_area *area,
+		os_mode old,
+		os_mode new)
+{
+	osspriteop_header *sprite = (osspriteop_header *)(area + 1);
+
+	if (sprite->mode == old) {
+		sprite->mode = new;
+	}
+}
+
+/**
  * Plot an image at the given coordinates using the method specified
  *
  * \param area              The sprite area containing the sprite
@@ -190,6 +211,8 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 		bool repeatx, bool repeaty, bool background, image_type type)
 {
 	unsigned int tinct_options;
+	bool tinct_avoid = false;
+	bool res = false;
 
 	/* failed decompression/loading can result in no image being present */
 	if (!area)
@@ -203,28 +226,57 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 	height *= 2;
 	tinct_options = background ? nsoption_int(plot_bg_quality) :
 		nsoption_int(plot_fg_quality);
+
+	if (os_alpha_sprite_supported) {
+		/* Ideally Tinct would be updated to understand that modern OS
+		 * versions can cope with alpha channels, and we could continue
+		 * to pass to Tinct.  The main drawback of fully avoiding Tinct
+		 * is that we lose the optimisation for tiling tiny bitmaps.
+		 */
+		if (tinct_options & tinct_USE_OS_SPRITE_OP) {
+			type = IMAGE_PLOT_OS;
+			tinct_avoid = true;
+		}
+	}
+
 	switch (type) {
 		case IMAGE_PLOT_TINCT_ALPHA:
-			return image_redraw_tinct(header, x, y,
+			res = image_redraw_tinct(header, x, y,
 						req_width, req_height,
 						width, height,
 						background_colour,
 						repeatx, repeaty, true,
 						tinct_options);
+			break;
+
 		case IMAGE_PLOT_TINCT_OPAQUE:
-			return image_redraw_tinct(header, x, y,
+			res = image_redraw_tinct(header, x, y,
 						req_width, req_height,
 						width, height,
 						background_colour,
 						repeatx, repeaty, false,
 						tinct_options);
+			break;
+
 		case IMAGE_PLOT_OS:
-			return image_redraw_os(header, x, y, req_width,
+			if (tinct_avoid) {
+				image__override_sprite_mode(area,
+						tinct_SPRITE_MODE,
+						alpha_SPRITE_MODE);
+			}
+			res = image_redraw_os(header, x, y, req_width,
 						req_height, width, height,
 						repeatx | repeaty);
+			if (tinct_avoid) {
+				image__override_sprite_mode(area,
+						alpha_SPRITE_MODE,
+						tinct_SPRITE_MODE);
+			}
+			break;
+
 		default:
 			break;
 	}
 
-	return false;
+	return res;
 }

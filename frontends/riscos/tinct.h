@@ -148,7 +148,16 @@
 */
 #define tinct_BACKGROUND_SHIFT	  0x08
 
-/*	Sprite mode
-*/
+/*      Sprite mode tinct
+ *
+ * Mode is: 32bpp 8:8:8:8 XXBBGGRR mode (a RISC OS 3.5+ type)
+ * We put alpha in the unused XX channel and Tinct treats it as alpha.
+ */
 #define tinct_SPRITE_MODE	  (os_mode)0x301680b5
+
+/*      Sprite mode alpha
+ *
+ * Mode is: 32bpp 8:8:8:8 AABBGGRR mode (a RISC OS 5 type)
+ */
+#define alpha_SPRITE_MODE	  (os_mode)0x78608051
 #endif
