@@ -1112,9 +1112,11 @@ static void ro_gui_check_resolvers(void)
 }
 
 /**
- * Set global variable for whether the OS version supports alpha channels.
+ * Determine whether the OS version supports alpha channels.
+ *
+ * \return true iff alpha channels are supported, false otherwise.
  */
-static void ro_gui__check_os_alpha_sprites(void)
+static bool ro_gui__os_alpha_sprites_supported(void)
 {
 	os_error *error;
 	int var_val;
@@ -1126,17 +1128,10 @@ static void ro_gui__check_os_alpha_sprites(void)
 	if (error) {
 		NSLOG(netsurf, ERROR, "xos_read_mode_variable: 0x%x: %s",
 				error->errnum, error->errmess);
-		return;
+		return false;
 	}
 
-	if (var_val == (1 << 15)) {
-		os_alpha_sprite_supported = true;
-	} else {
-		os_alpha_sprite_supported = false;
-	}
-
-	NSLOG(netsurf, INFO, "OS supports alpha sprites: %s (%i)",
-			os_alpha_sprite_supported ? "yes" : "no", var_val);
+	return (var_val == (1 << 15));
 }
 
 /**
@@ -1179,7 +1174,10 @@ static nserror gui_init(int argc, char** argv)
 	 * (remember that it's preferable to check for specific features
 	 * being present) */
 	xos_byte(osbyte_IN_KEY, 0, 0xff, &os_version, NULL);
-	ro_gui__check_os_alpha_sprites();
+
+	os_alpha_sprite_supported = ro_gui__os_alpha_sprites_supported();
+	NSLOG(netsurf, INFO, "OS supports alpha sprites: %s",
+			os_alpha_sprite_supported ? "yes" : "no");
 
 	/* the first release version of the A9home OS is incapable of
 	   plotting patterned lines (presumably a fault in the hw acceleration) */
