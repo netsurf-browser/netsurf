@@ -213,7 +213,7 @@ bool image_redraw_os(osspriteop_id header, int x, int y, int req_width,
 	error = xosspriteop_put_sprite_scaled(osspriteop_PTR,
 			osspriteop_UNSPECIFIED, header,
 			x, (int)(y - req_height),
-			8, &f, table);
+			osspriteop_USE_MASK, &f, table);
 	if (error) {
 		NSLOG(netsurf, INFO,
 		      "xosspriteop_put_sprite_scaled: 0x%x: %s",
