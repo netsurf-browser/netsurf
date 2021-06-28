@@ -144,16 +144,13 @@ struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit
 		if((depth > 8) && (force32bit == false)) friend = scrn->RastPort.BitMap;
 	}
 
-	/* OS3 is locked to using palette-mapped display even on RTG.
-	 * To change this, comment out the below and build with the similar OS4 lines above.
-	 * Various bits of RTG code are OS4-only and OS3 versions will need to be written,
-	 * however a brief test reveals a negative performance benefit, so this lock to a
-	 * palette-mapped display is most likely permanent.
-	 */
-#warning OS3 locked to palette-mapped modes
-	gg->palette_mapped = true;
-	palette_mapped = true;
-	if(depth > 8) depth = 8;
+	if(depth < 16) {
+		gg->palette_mapped = true;
+		if(force32bit == false) palette_mapped = true;
+	} else {
+		gg->palette_mapped = false;
+		if(force32bit == false) palette_mapped = false;
+	}
 #endif
 
 	/* Probably need to fix this next line */
