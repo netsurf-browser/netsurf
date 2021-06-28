@@ -750,7 +750,7 @@ static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *conte
 	plot_height = ((plot_width * bitmap->height) + (bitmap->width / 2)) /
 			bitmap->width;
 
-	bm_globals = ami_plot_ra_alloc(bitmap->width, bitmap->height, false);
+	bm_globals = ami_plot_ra_alloc(bitmap->width, bitmap->height, true, false);
 	ami_clearclipreg(bm_globals);
 
 	struct redraw_context ctx = {

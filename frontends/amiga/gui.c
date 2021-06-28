@@ -1321,7 +1321,7 @@ static void ami_openscreen(void)
 static void ami_openscreenfirst(void)
 {
 	ami_openscreen();
-	if(browserglob == NULL) browserglob = ami_plot_ra_alloc(0, 0, false);
+	if(browserglob == NULL) browserglob = ami_plot_ra_alloc(0, 0, false, false);
 	ami_theme_throbber_setup();
 }
 

@@ -110,7 +110,7 @@ static bool palette_mapped = true; /* palette-mapped state for the screen */
   */
 #define AREA_SIZE 25000
 
-struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool alloc_pen_list)
+struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit, bool alloc_pen_list)
 {
 	/* init shared bitmaps */
  	int depth = 32;
@@ -119,16 +119,16 @@ struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool alloc_pen_
 
 	struct gui_globals *gg = malloc(sizeof(struct gui_globals));
 
-	depth = GetBitMapAttr(scrn->RastPort.BitMap, BMA_DEPTH);
+	if(force32bit == false) depth = GetBitMapAttr(scrn->RastPort.BitMap, BMA_DEPTH);
 	NSLOG(netsurf, INFO, "Screen depth = %d", depth);
 
 #ifdef __amigaos4__
 	if(depth < 16) {
 		gg->palette_mapped = true;
-		palette_mapped = true;
+		if(force32bit == false) palette_mapped = true;
 	} else {
 		gg->palette_mapped = false;
-		palette_mapped = false;
+		if(force32bit == false) palette_mapped = false;
 	}
 #else
 	/* Friend BitMaps are weird.
@@ -141,15 +141,15 @@ struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool alloc_pen_
 	} else {
 		/* Force friend BitMaps on for obvious RTG screens under OS3.
 		 * If we get a bit smarter about this we can lose the user option. */
-		if(depth > 8) friend = scrn->RastPort.BitMap;
+		if((depth > 8) && (force32bit == false)) friend = scrn->RastPort.BitMap;
 	}
 
 	if(depth < 16) {
 		gg->palette_mapped = true;
-		palette_mapped = true;
+		if(force32bit == false) palette_mapped = true;
 	} else {
 		gg->palette_mapped = false;
-		palette_mapped = false;
+		if(force32bit == false) palette_mapped = false;
 	}
 #endif
 
@@ -177,7 +177,7 @@ struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool alloc_pen_
 		 * \todo use friend BitMaps but avoid CompositeTags() at non-32-bit
 		 * as that seems to be the cause of the problems.
 		 */
-		if(depth >= 24) friend = scrn->RastPort.BitMap;
+		if((depth >= 24) && (force32bit == false)) friend = scrn->RastPort.BitMap;
 #endif
 		gg->bm = ami_rtg_allocbitmap(width, height, 32, 0, friend, RGBFB_A8R8G8B8);
 	}

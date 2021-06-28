@@ -500,7 +500,7 @@ bool ami_print_begin(struct print_settings *ps)
 {
 	ami_print_info.gg = ami_plot_ra_alloc(ami_print_info.PED->ped_MaxXDots,
 				ami_print_info.PED->ped_MaxYDots,
-				false);
+				true, false);
 	if(!ami_print_info.gg) return false;
 
 	ami_print_info.page = 0;
