@@ -37,11 +37,10 @@ bool ami_plot_screen_is_palettemapped(void);
  * Alloc a plotter render area
  * \param width of render bitmap
  * \param height of render bitmap
- * \param force32bit allocate a 32-bit bitmap even if this does not match the screen
  * \param alloc_pen_list set to false to use own pen list (eg. if multiple pen lists will be required)
  * \returns pointer to render area
  */
-struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit, bool alloc_pen_list);
+struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool alloc_pen_list);
 
 /**
  * Free a plotter render area
