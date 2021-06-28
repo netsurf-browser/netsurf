@@ -26,9 +26,6 @@ struct BitMap *ami_rtg_allocbitmap(ULONG width, ULONG height, ULONG depth,
 	ULONG flags, struct BitMap *friend, RGBFTYPE format)
 {
 	if(P96Base == NULL) {
-#ifndef __amigaos4__
-		if(depth > 8) depth = 8;
-#endif
 		return AllocBitMap(width, height, depth, flags, friend);
 	} else {
 		return p96AllocBitMap(width, height, depth, flags, friend, format);
