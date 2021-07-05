@@ -473,6 +473,7 @@ css_error named_ancestor_node(void *pw, void *node,
 {
 	dom_element_named_ancestor_node(node, qname->name,
 			(struct dom_element **)ancestor);
+	dom_node_unref(*ancestor);
 
 	return CSS_OK;
 }
@@ -493,6 +494,7 @@ css_error named_parent_node(void *pw, void *node,
 {
 	dom_element_named_parent_node(node, qname->name,
 			(struct dom_element **)parent);
+	dom_node_unref(*parent);
 
 	return CSS_OK;
 }
@@ -642,6 +644,7 @@ css_error named_generic_sibling_node(void *pw, void *node,
 css_error parent_node(void *pw, void *node, void **parent)
 {
 	dom_element_parent_node(node, (struct dom_element **)parent);
+	dom_node_unref(*parent);
 
 	return CSS_OK;
 }
