@@ -51,7 +51,7 @@
 #include "desktop/gui_internal.h"
 #include "desktop/save_complete.h"
 
-regex_t save_complete_import_re;
+static regex_t save_complete_import_re;
 
 /** An entry in save_complete_list. */
 typedef struct save_complete_entry {
@@ -196,7 +196,7 @@ save_complete_save_buffer(save_complete_ctx *ctx,
  * perform a posix regexec on a string without a null terminator
  */
 static int
-snregexec(const regex_t *preg,
+snregexec(regex_t *preg,
 	 const char *string,
 	 size_t stringlen,
 	 size_t nmatch,
