@@ -1231,16 +1231,9 @@ static nserror gui_init(int argc, char** argv)
 	/* Initialise save complete functionality */
 	save_complete_init();
 
-	/* Initialise the font subsystem */
-	nsfont_init();
-
-	/* Load in visited URLs, Cookies, and hostlist */
+	/* Load in visited URLs and Cookies */
 	urldb_load(nsoption_charp(url_path));
 	urldb_load_cookies(nsoption_charp(cookie_file));
-	hotlist_init(nsoption_charp(hotlist_path),
-			nsoption_bool(external_hotlists) ?
-					NULL :
-					nsoption_charp(hotlist_save));
 
 	/* Initialise with the wimp */
 	error = xwimp_initialise(wimp_VERSION_RO38, task_name,
@@ -1270,6 +1263,15 @@ static nserror gui_init(int argc, char** argv)
 			ro_gui_selection_drag_claim);
 	ro_message_register_route(message_WINDOW_INFO,
 			ro_msg_window_info);
+
+	/* Initialise the font subsystem (must be after Wimp_Initialise) */
+	nsfont_init();
+
+	/* Initialise the hotlist (must be after fonts) */
+	hotlist_init(nsoption_charp(hotlist_path),
+			nsoption_bool(external_hotlists) ?
+					NULL :
+					nsoption_charp(hotlist_save));
 
 	/* Initialise global information */
 	ro_gui_get_screen_properties();
