@@ -106,7 +106,7 @@ static bool print_document(struct gui_window *g, const char *filename);
 static const char *print_declare_fonts(struct hlcache_handle *h);
 static void print_fonts_callback(void *context,
 		const char *font_name, unsigned int font_size,
-		const char *s8, unsigned short *s16, unsigned int n,
+		const uint8_t *s8, const uint32_t *s32, unsigned int n,
 		int x, int y);
 
 
@@ -998,7 +998,7 @@ end:
 
 void print_fonts_callback(void *context,
 		const char *font_name, unsigned int font_size,
-		const char *s8, unsigned short *s16, unsigned int n,
+		const uint8_t *s8, const uint32_t *s32, unsigned int n,
 		int x, int y)
 {
 	unsigned int i;
@@ -1009,7 +1009,7 @@ void print_fonts_callback(void *context,
 	(void) x;  /* unused */
 	(void) y;  /* unused */
 
-	assert(s8 || s16);
+	assert(s8 || s32);
 
 	/* check if the font name is new */
 	for (i = 0; i != print_fonts_count &&
