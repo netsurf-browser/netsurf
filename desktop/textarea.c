@@ -58,7 +58,7 @@ struct line_info {
 struct textarea_drag {
 	textarea_drag_type type;
 	union {
-		struct scrollbar* scrollbar;
+		struct scrollbar *scrollbar;
 	} data;
 };
 
@@ -625,7 +625,7 @@ static bool textarea_select(struct textarea *ta, int b_start, int b_end,
  * \param ta  Text area
  * \return True on success, false otherwise
  */
-static bool textarea_select_fragment(struct textarea * ta)
+static bool textarea_select_fragment(struct textarea *ta)
 {
 	int caret_pos;
 	size_t sel_start, sel_end;
@@ -676,7 +676,7 @@ static bool textarea_select_fragment(struct textarea * ta)
  * \param ta  textarea widget
  * \return True on success, false otherwise
  */
-static bool textarea_select_paragraph(struct textarea * ta)
+static bool textarea_select_paragraph(struct textarea *ta)
 {
 	int caret_pos;
 	size_t sel_start, sel_end;
@@ -1607,7 +1607,7 @@ static bool textarea_copy_to_undo_buffer(struct textarea *ta,
  * \param b_end		End byte index of replaced section (exclusive)
  * \param rep		Replacement UTF-8 text to insert
  * \param rep_len	Byte length of replacement UTF-8 text
- * \param add_to_clipboard	True iff replaced text to be added to clipboard
+ * \param add_to_clipboard	True if replaced text to be added to clipboard
  * \param byte_delta	Updated to change in byte count in textarea (ta->show)
  * \param r		Updated to area where redraw is required
  * \return false on memory exhaustion, true otherwise
@@ -2452,7 +2452,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 	struct textarea_msg msg;
 	struct rect r;	/**< Redraw rectangle */
 	char utf8[6];
-	unsigned int caret, length, b_off, b_len;
+	unsigned int caret, caret_copy, length, b_off, b_len;
 	int h_extent = ta->h_extent;
 	int v_extent = ta->v_extent;
 	int line;
@@ -2466,7 +2466,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 	/* Word separators */
 	static const char *sep = " .\n";
 
-	caret = textarea_get_caret(ta);
+	caret = caret_copy = textarea_get_caret(ta);
 	line = ta->caret_pos.line;
 	readonly = (ta->flags & TEXTAREA_READONLY ? true : false);
 
@@ -2760,6 +2760,50 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				textarea_clear_selection(ta);
 			}
 			break;
+		case NS_KEY_DELETE_WORD_LEFT:
+			if (readonly)
+				break;
+
+			/* If there is a selection, remove the selected
+			* characters */
+			if (ta->sel_start != -1) {
+				if (!textarea_replace_text(ta, ta->sel_start,
+						ta->sel_end, "", 0, false,
+						&byte_delta, &r))
+					return false;
+				caret = ta->sel_start;
+				textarea_clear_selection(ta);
+				redraw = true;
+				break;
+			}
+
+			if (caret == 0)
+				break;
+
+			/* caret goes left until a non-separator is
+			* encountered */
+			caret--;
+			while (strchr(sep, ta->show->data[caret]) != NULL &&
+					caret > 0)
+				caret--;
+
+			/* caret goes left until a separator is encountered */
+			for (; caret > 0; caret--) {
+				if (strchr(sep, ta->show->data[caret]) !=
+						NULL) {
+					caret++;
+					break;
+				}
+			}
+
+			/* Remove the characters from new caret position to
+			* original caret position */
+			if (!textarea_replace_text(ta, caret, caret_copy,
+					"", 0, false, &byte_delta, &r))
+				return false;
+
+			redraw = true;
+			break;
 		case NS_KEY_WORD_RIGHT:
 			if (readonly)
 				break;
@@ -2782,6 +2826,49 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if (ta->sel_start != -1) {
 				textarea_clear_selection(ta);
 			}
+			break;
+		case NS_KEY_DELETE_WORD_RIGHT:
+			if (readonly)
+				break;
+
+			/* If there is a selection, remove the selected
+			* characters */
+			if (ta->sel_start != -1) {
+				if (!textarea_replace_text(ta, ta->sel_start,
+						ta->sel_end, "", 0, false,
+						&byte_delta, &r))
+					return false;
+				caret = ta->sel_start;
+				textarea_clear_selection(ta);
+				redraw = true;
+				break;
+			}
+
+			if (caret == ta->show->len - 1)
+				break;
+
+			/* caret_copy goes right until a non-separator is
+			* encountered */
+			while (strchr(sep, ta->show->data[caret_copy]) != NULL
+					&& caret_copy < ta->show->len - 1)
+				caret_copy++;
+
+			/* caret_copy goes right until a separator is
+			* encountered */
+			for (; caret_copy < ta->show->len - 1; caret_copy++) {
+				if (strchr(sep, ta->show->data[caret_copy]) !=
+						NULL) {
+					break;
+				}
+			}
+
+			/* Remove all the characters from original caret
+			* position to caret_copy */
+			if (!textarea_replace_text(ta, caret, caret_copy,
+					"", 0, false, &byte_delta, &r))
+				return false;
+
+			redraw = true;
 			break;
 		case NS_KEY_DELETE_LINE:
 			if (readonly)
