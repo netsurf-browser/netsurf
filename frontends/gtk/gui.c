@@ -131,12 +131,16 @@ uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
 	case GDK_KEY(BackSpace):
 		if (key->state & GDK_SHIFT_MASK)
 			return NS_KEY_DELETE_LINE_START;
+		else if (key->state & GDK_CONTROL_MASK)
+			return NS_KEY_DELETE_WORD_LEFT;
 		else
 			return NS_KEY_DELETE_LEFT;
 
 	case GDK_KEY(Delete):
 		if (key->state & GDK_SHIFT_MASK)
 			return NS_KEY_DELETE_LINE_END;
+		else if (key->state & GDK_CONTROL_MASK)
+			return NS_KEY_DELETE_WORD_RIGHT;
 		else
 			return NS_KEY_DELETE_RIGHT;
 
