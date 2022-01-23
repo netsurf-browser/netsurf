@@ -152,10 +152,14 @@ uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
 
 	case GDK_KEY(Left):
 	case GDK_KEY(KP_Left):
+		if (key->state & GDK_CONTROL_MASK)
+			return NS_KEY_WORD_LEFT;
 		return NS_KEY_LEFT;
 
 	case GDK_KEY(Right):
 	case GDK_KEY(KP_Right):
+		if (key->state & GDK_CONTROL_MASK)
+			return NS_KEY_WORD_RIGHT;
 		return NS_KEY_RIGHT;
 
 	case GDK_KEY(Up):
