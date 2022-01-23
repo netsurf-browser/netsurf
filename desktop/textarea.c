@@ -2743,6 +2743,9 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 		case NS_KEY_WORD_LEFT:
 			if (readonly)
 				break;
+			if (ta->sel_start != -1) {
+				textarea_clear_selection(ta);
+			}
 			if (caret == 0)
 				break;
 			caret--;
@@ -2755,9 +2758,6 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 					caret++;
 					break;
 				}
-			}
-			if (ta->sel_start != -1) {
-				textarea_clear_selection(ta);
 			}
 			break;
 		case NS_KEY_DELETE_WORD_LEFT:
@@ -2807,6 +2807,11 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 		case NS_KEY_WORD_RIGHT:
 			if (readonly)
 				break;
+			if (ta->sel_start != -1) {
+				textarea_clear_selection(ta);
+			}
+			if (caret == ta->show->len - 1)
+				break;
 			if (strchr(sep, ta->show->data[caret]) != NULL &&
 					caret < ta->show->len - 1) {
 				while (strchr(sep, ta->show->data[caret]) !=
@@ -2823,9 +2828,6 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			while (strchr(sep, ta->show->data[caret]) != NULL &&
 					caret < ta->show->len - 1)
 				caret++;
-			if (ta->sel_start != -1) {
-				textarea_clear_selection(ta);
-			}
 			break;
 		case NS_KEY_DELETE_WORD_RIGHT:
 			if (readonly)
