@@ -223,6 +223,7 @@ bool ami_libs_open(void)
 #ifdef __amigaos4__
 	/* Libraries only needed on OS4 */
 	AMINS_LIB_OPEN("application.library",  53, Application, "application", 2, false)
+	AMINS_LIB_OPEN("dos.library",          37, DOS,         "main",        1, true)
 #else
 	/* Libraries we get automatically on OS4 but not OS3 */
 	AMINS_LIB_OPEN("utility.library",      37, Utility,     "main",        1, true)
@@ -231,7 +232,6 @@ bool ami_libs_open(void)
 	AMINS_LIB_OPEN("asl.library",          37, Asl,         "main",        1, true)
 	AMINS_LIB_OPEN("datatypes.library",    39, DataTypes,   "main",        1, true)
 	AMINS_LIB_OPEN("diskfont.library",     40, Diskfont,    "main",        1, true)
-	AMINS_LIB_OPEN("dos.library",          37, DOS,         "main",        1, true)
 	AMINS_LIB_OPEN("gadtools.library",     37, GadTools,    "main",        1, true)
 	AMINS_LIB_OPEN("graphics.library",     40, Graphics,    "main",        1, true)
 	AMINS_LIB_OPEN("icon.library",         44, Icon,        "main",        1, true)
@@ -332,7 +332,6 @@ void ami_libs_close(void)
 	AMINS_LIB_CLOSE(Asl)
 	AMINS_LIB_CLOSE(DataTypes)
 	AMINS_LIB_CLOSE(Diskfont)
-	AMINS_LIB_CLOSE(DOS)
 	AMINS_LIB_CLOSE(GadTools)
 	AMINS_LIB_CLOSE(Graphics)
 	AMINS_LIB_CLOSE(Icon)
@@ -345,6 +344,7 @@ void ami_libs_close(void)
 	AMINS_LIB_CLOSE(Workbench)
 #ifdef __amigaos4__
 	AMINS_LIB_CLOSE(Application)
+	AMINS_LIB_CLOSE(DOS)
 #else
 	AMINS_LIB_CLOSE(Utility)
 #endif
