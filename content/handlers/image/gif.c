@@ -34,7 +34,8 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <libnsgif.h>
+
+#include <nsgif.h>
 
 #include "utils/utils.h"
 #include "utils/messages.h"
@@ -51,13 +52,31 @@
 #include "image/image.h"
 #include "image/gif.h"
 
-typedef struct nsgif_content {
+typedef struct gif_content {
 	struct content base;
 
-	struct gif_animation *gif; /**< GIF animation data */
-	int current_frame;   /**< current frame to display [0...(max-1)] */
-} nsgif_content;
+	nsgif_t *gif; /**< GIF animation data */
+	uint32_t current_frame;   /**< current frame to display [0...(max-1)] */
+} gif_content;
 
+static inline nserror gif__nsgif_error_to_ns(nsgif_error gif_res)
+{
+	nserror err;
+
+	switch (gif_res) {
+	case NSGIF_OK:
+		err = NSERROR_OK;
+		break;
+	case NSGIF_ERR_OOM:
+		err = NSERROR_NOMEM;
+		break;
+	default:
+		err = NSERROR_GIF_ERROR;
+		break;
+	}
+
+	return err;
+}
 
 /**
  * Callback for libnsgif; forwards the call to bitmap_create()
@@ -66,44 +85,42 @@ typedef struct nsgif_content {
  * \param  height  width of image in pixels
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
-static void *nsgif_bitmap_create(int width, int height)
+static void *gif_bitmap_create(int width, int height)
 {
 	return guit->bitmap->create(width, height, BITMAP_NEW);
 }
 
-
-static nserror nsgif_create_gif_data(nsgif_content *c)
+static nserror gif_create_gif_data(gif_content *c)
 {
-	gif_bitmap_callback_vt gif_bitmap_callbacks = {
-		.bitmap_create = nsgif_bitmap_create,
-		.bitmap_destroy = guit->bitmap->destroy,
-		.bitmap_get_buffer = guit->bitmap->get_buffer,
-		.bitmap_set_opaque = guit->bitmap->set_opaque,
-		.bitmap_test_opaque = guit->bitmap->test_opaque,
-		.bitmap_modified = guit->bitmap->modified
+	nsgif_error gif_res;
+	const nsgif_bitmap_cb_vt gif_bitmap_callbacks = {
+		.create = gif_bitmap_create,
+		.destroy = guit->bitmap->destroy,
+		.get_buffer = guit->bitmap->get_buffer,
+		.set_opaque = guit->bitmap->set_opaque,
+		.test_opaque = guit->bitmap->test_opaque,
+		.modified = guit->bitmap->modified
 	};
 
-	/* Initialise our data structure */
-	c->gif = calloc(sizeof(gif_animation), 1);
-	if (c->gif == NULL) {
-		content_broadcast_error(&c->base, NSERROR_NOMEM, NULL);
-		return NSERROR_NOMEM;
+	gif_res = nsgif_create(&gif_bitmap_callbacks, &c->gif);
+	if (gif_res != NSGIF_OK) {
+		nserror err = gif__nsgif_error_to_ns(gif_res);
+		content_broadcast_error(&c->base, err, NULL);
+		return err;
 	}
-	gif_create(c->gif, &gif_bitmap_callbacks);
+
 	return NSERROR_OK;
 }
 
-
-
-static nserror nsgif_create(const content_handler *handler, 
-		lwc_string *imime_type, const struct http_parameter *params, 
+static nserror gif_create(const content_handler *handler,
+		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
 {
-	nsgif_content *result;
+	gif_content *result;
 	nserror error;
 
-	result = calloc(1, sizeof(nsgif_content));
+	result = calloc(1, sizeof(gif_content));
 	if (result == NULL)
 		return NSERROR_NOMEM;
 
@@ -114,7 +131,7 @@ static nserror nsgif_create(const content_handler *handler,
 		return error;
 	}
 
-	error = nsgif_create_gif_data(result);
+	error = gif_create_gif_data(result);
 	if (error != NSERROR_OK) {
 		free(result);
 		return error;
@@ -126,99 +143,65 @@ static nserror nsgif_create(const content_handler *handler,
 }
 
 /**
+ * Scheduler callback. Performs any necessary animation.
+ *
+ * \param p  The content to animate
+*/
+static void gif_animate_cb(void *p);
+
+/**
  * Performs any necessary animation.
  *
  * \param p  The content to animate
 */
-static void nsgif_animate(void *p)
+static nserror gif__animate(gif_content *gif, bool redraw)
 {
-	nsgif_content *gif = p;
-	union content_msg_data data;
-	int delay;
-	int f;
+	nsgif_error gif_res;
+	nsgif_rect_t rect;
+	uint32_t delay;
+	uint32_t f;
 
-	/* Advance by a frame, updating the loop count accordingly */
-	gif->current_frame++;
-	if (gif->current_frame == (int)gif->gif->frame_count_partial) {
-		gif->current_frame = 0;
-
-		/* A loop count of 0 has a special meaning of infinite */
-		if (gif->gif->loop_count != 0) {
-			gif->gif->loop_count--;
-			if (gif->gif->loop_count == 0) {
-				gif->current_frame =
-					gif->gif->frame_count_partial - 1;
-				gif->gif->loop_count = -1;
-			}
-		}
+	gif_res = nsgif_frame_prepare(gif->gif, &rect, &delay, &f);
+	if (gif_res != NSGIF_OK) {
+		return gif__nsgif_error_to_ns(gif_res);
 	}
+
+	gif->current_frame = f;
 
 	/* Continue animating if we should */
-	if (gif->gif->loop_count >= 0) {
-		delay = gif->gif->frames[gif->current_frame].frame_delay;
-		if (delay <= 1) {
-			/* Assuming too fast to be intended, set default. */
-			delay = 10;
-		}
-		guit->misc->schedule(delay * 10, nsgif_animate, gif);
+	if (nsoption_bool(animate_images) && delay != NSGIF_INFINITE) {
+		guit->misc->schedule(delay * 10, gif_animate_cb, gif);
 	}
 
-	if ((!nsoption_bool(animate_images)) ||
-	    (!gif->gif->frames[gif->current_frame].display)) {
-		return;
+	if (redraw) {
+		union content_msg_data data;
+
+		/* area within gif to redraw */
+		data.redraw.x = rect.x0;
+		data.redraw.y = rect.y0;
+		data.redraw.width  = rect.x1 - rect.x0;
+		data.redraw.height = rect.y1 - rect.y0;
+
+		content_broadcast(&gif->base, CONTENT_MSG_REDRAW, &data);
 	}
 
-	/* area within gif to redraw */
-	f = gif->current_frame;
-	data.redraw.x = gif->gif->frames[f].redraw_x;
-	data.redraw.y = gif->gif->frames[f].redraw_y;
-	data.redraw.width = gif->gif->frames[f].redraw_width;
-	data.redraw.height = gif->gif->frames[f].redraw_height;
-
-	/* redraw background (true) or plot on top (false) */
-	if (gif->current_frame > 0) {
-		/* previous frame needed clearing: expand the redraw area to
-		 * cover it */
-		if (gif->gif->frames[f - 1].redraw_required) {
-			if (data.redraw.x >
-					(int)(gif->gif->frames[f - 1].redraw_x)) {
-				data.redraw.width += data.redraw.x -
-					gif->gif->frames[f - 1].redraw_x;
-				data.redraw.x = 
-					gif->gif->frames[f - 1].redraw_x;
-			}
-			if (data.redraw.y >
-					(int)(gif->gif->frames[f - 1].redraw_y)) {
-				data.redraw.height += (data.redraw.y -
-					gif->gif->frames[f - 1].redraw_y);
-				data.redraw.y = 
-					gif->gif->frames[f - 1].redraw_y;
-			}
-			if ((int)(gif->gif->frames[f - 1].redraw_x +
-					gif->gif->frames[f - 1].redraw_width) >
-					(data.redraw.x + data.redraw.width))
-				data.redraw.width =
-					gif->gif->frames[f - 1].redraw_x -
-					data.redraw.x +
-					gif->gif->frames[f - 1].redraw_width;
-			if ((int)(gif->gif->frames[f - 1].redraw_y +
-					gif->gif->frames[f - 1].redraw_height) >
-					(data.redraw.y + data.redraw.height))
-				data.redraw.height =
-					gif->gif->frames[f - 1].redraw_y -
-					data.redraw.y +
-					gif->gif->frames[f - 1].redraw_height;
-		}
-	}
-
-	content_broadcast(&gif->base, CONTENT_MSG_REDRAW, &data);
+	return NSERROR_OK;
 }
 
-static bool nsgif_convert(struct content *c)
+static void gif_animate_cb(void *p)
 {
-	nsgif_content *gif = (nsgif_content *) c;
-	int res;
+	gif_content *gif = p;
+
+	gif__animate(gif, true);
+}
+
+static bool gif_convert(struct content *c)
+{
+	gif_content *gif = (gif_content *) c;
+	const nsgif_info_t *gif_info;
 	const uint8_t *data;
+	nsgif_error gif_err;
+	nserror err;
 	size_t size;
 	char *title;
 
@@ -226,37 +209,27 @@ static bool nsgif_convert(struct content *c)
 	data = content__get_source_data(c, &size);
 
 	/* Initialise the GIF */
-	do {
-		res = gif_initialise(gif->gif, size, (unsigned char *) data);
-		if (res != GIF_OK && res != GIF_WORKING && 
-				res != GIF_INSUFFICIENT_FRAME_DATA) {
-			nserror error = NSERROR_UNKNOWN;
-			switch (res) {
-			case GIF_FRAME_DATA_ERROR:
-			case GIF_INSUFFICIENT_DATA:
-			case GIF_DATA_ERROR:
-				error = NSERROR_GIF_ERROR;
-				break;
-			case GIF_INSUFFICIENT_MEMORY:
-				error = NSERROR_NOMEM;
-				break;
-			}
-			content_broadcast_error(c, error, NULL);
-			return false;
-		}
-	} while (res != GIF_OK && res != GIF_INSUFFICIENT_FRAME_DATA);
+	gif_err = nsgif_data_scan(gif->gif, size, data);
+	if (gif_err != NSGIF_OK) {
+		err = gif__nsgif_error_to_ns(gif_err);
+		content_broadcast_error(c, err, nsgif_strerror(gif_err));
+		return false;
+	}
+
+	gif_info = nsgif_get_info(gif->gif);
+	assert(gif_info != NULL);
 
 	/* Abort on bad GIFs */
-	if ((gif->gif->frame_count_partial == 0) || (gif->gif->width == 0) ||
-			(gif->gif->height == 0)) {
-		content_broadcast_error(c, NSERROR_GIF_ERROR, NULL);
+	if (gif_info->height == 0) {
+		err = gif__nsgif_error_to_ns(gif_err);
+		content_broadcast_error(c, err, "Zero height image.");
 		return false;
 	}
 
 	/* Store our content width, height and calculate size */
-	c->width = gif->gif->width;
-	c->height = gif->gif->height;
-	c->size += (gif->gif->width * gif->gif->height * 4) + 16 + 44;
+	c->width = gif_info->width;
+	c->height = gif_info->height;
+	c->size += (gif_info->width * gif_info->height * 4) + 16 + 44;
 
 	/* set title text */
 	title = messages_get_buff("GIFTitle",
@@ -267,12 +240,11 @@ static bool nsgif_convert(struct content *c)
 		free(title);
 	}
 
-	/* Schedule the animation if we have one */
-	gif->current_frame = 0;
-	if (gif->gif->frame_count_partial > 1)
-		guit->misc->schedule(gif->gif->frames[0].frame_delay * 10,
-					nsgif_animate,
-					c);
+	err = gif__animate(gif, false);
+	if (err != NSERROR_OK) {
+		content_broadcast_error(c, NSERROR_GIF_ERROR, NULL);
+		return false;
+	}
 
 	/* Exit as a success */
 	content_set_ready(c);
@@ -283,68 +255,51 @@ static bool nsgif_convert(struct content *c)
 	return true;
 }
 
-
 /**
  * Updates the GIF bitmap to display the current frame
  *
  * \param gif The gif context to update.
- * \return GIF_OK on success else apropriate error code.
+ * \return NSGIF_OK on success else apropriate error code.
  */
-static gif_result nsgif_get_frame(nsgif_content *gif)
+static nsgif_error gif_get_frame(gif_content *gif,
+		nsgif_bitmap_t **bitmap)
 {
-	int previous_frame, current_frame, frame;
-	gif_result res = GIF_OK;
-
-	current_frame = gif->current_frame;
+	uint32_t current_frame = gif->current_frame;
 	if (!nsoption_bool(animate_images)) {
 		current_frame = 0;
 	}
 
-	if (current_frame < gif->gif->decoded_frame) {
-		previous_frame = 0;
-	} else {
-		previous_frame = gif->gif->decoded_frame + 1;
-	}
-
-	for (frame = previous_frame; frame <= current_frame; frame++) {
-		res = gif_decode_frame(gif->gif, frame);
-	}
-
-	return res;
+	return nsgif_frame_decode(gif->gif, current_frame, bitmap);
 }
 
-static bool nsgif_redraw(struct content *c, struct content_redraw_data *data,
+static bool gif_redraw(struct content *c, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
-	nsgif_content *gif = (nsgif_content *) c;
+	gif_content *gif = (gif_content *) c;
+	nsgif_bitmap_t *bitmap;
 
-	if (gif->current_frame != gif->gif->decoded_frame) {
-		if (nsgif_get_frame(gif) != GIF_OK) {
-			return false;
-		}
+	if (gif_get_frame(gif, &bitmap) != NSGIF_OK) {
+		return false;
 	}
 
-	return image_bitmap_plot(gif->gif->frame_image, data, clip, ctx);
+	return image_bitmap_plot(bitmap, data, clip, ctx);
 }
 
-
-static void nsgif_destroy(struct content *c)
+static void gif_destroy(struct content *c)
 {
-	nsgif_content *gif = (nsgif_content *) c;
+	gif_content *gif = (gif_content *) c;
 
 	/* Free all the associated memory buffers */
-	guit->misc->schedule(-1, nsgif_animate, c);
-	gif_finalise(gif->gif);
-	free(gif->gif);
+	guit->misc->schedule(-1, gif_animate_cb, c);
+	nsgif_destroy(gif->gif);
 }
 
-
-static nserror nsgif_clone(const struct content *old, struct content **newc)
+static nserror gif_clone(const struct content *old, struct content **newc)
 {
-	nsgif_content *gif;
+	gif_content *gif;
 	nserror error;
 
-	gif = calloc(1, sizeof(nsgif_content));
+	gif = calloc(1, sizeof(gif_content));
 	if (gif == NULL)
 		return NSERROR_NOMEM;
 
@@ -355,7 +310,7 @@ static nserror nsgif_clone(const struct content *old, struct content **newc)
 	}
 
 	/* Simply replay creation and conversion of content */
-	error = nsgif_create_gif_data(gif);
+	error = gif_create_gif_data(gif);
 	if (error != NSERROR_OK) {
 		content_destroy(&gif->base);
 		return error;
@@ -363,7 +318,7 @@ static nserror nsgif_clone(const struct content *old, struct content **newc)
 
 	if (old->status == CONTENT_STATUS_READY ||
 			old->status == CONTENT_STATUS_DONE) {
-		if (nsgif_convert(&gif->base) == false) {
+		if (gif_convert(&gif->base) == false) {
 			content_destroy(&gif->base);
 			return NSERROR_CLONE_FAILED;
 		}
@@ -374,9 +329,9 @@ static nserror nsgif_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
-static void nsgif_add_user(struct content *c)
+static void gif_add_user(struct content *c)
 {
-	nsgif_content *gif = (nsgif_content *) c;
+	gif_content *gif = (gif_content *) c;
 
 	/* Ensure this content has already been converted.
 	 * If it hasn't, the animation will start at the conversion phase instead. */
@@ -384,67 +339,66 @@ static void nsgif_add_user(struct content *c)
 
 	if (content_count_users(c) == 1) {
 		/* First user, and content already converted, so start the animation. */
-		if (gif->gif->frame_count_partial > 1) {
-			guit->misc->schedule(gif->gif->frames[0].frame_delay * 10,
-				nsgif_animate, c);
+		if (nsgif_reset(gif->gif) == NSGIF_OK) {
+			gif__animate(gif, true);
 		}
 	}
 }
 
-static void nsgif_remove_user(struct content *c)
+static void gif_remove_user(struct content *c)
 {
 	if (content_count_users(c) == 1) {
 		/* Last user is about to be removed from this content, so stop the animation. */
-		guit->misc->schedule(-1, nsgif_animate, c);
+		guit->misc->schedule(-1, gif_animate_cb, c);
 	}
 }
 
-static void *nsgif_get_internal(const struct content *c, void *context)
+static nsgif_bitmap_t *gif_get_bitmap(
+		const struct content *c, void *context)
 {
-	nsgif_content *gif = (nsgif_content *) c;
+	gif_content *gif = (gif_content *) c;
+	nsgif_bitmap_t *bitmap;
 
-	if (gif->current_frame != gif->gif->decoded_frame) {
-		if (nsgif_get_frame(gif) != GIF_OK)
-			return NULL;
+	if (gif_get_frame(gif, &bitmap) != NSGIF_OK) {
+		return NULL;
 	}
 
-	return gif->gif->frame_image;
+	return bitmap;
 }
 
-static content_type nsgif_content_type(void)
+static content_type gif_content_type(void)
 {
 	return CONTENT_IMAGE;
 }
 
-static bool nsgif_content_is_opaque(struct content *c)
+static bool gif_content_is_opaque(struct content *c)
 {
-	nsgif_content *gif = (nsgif_content *) c;
+	gif_content *gif = (gif_content *) c;
+	nsgif_bitmap_t *bitmap;
 
-	if (gif->current_frame != gif->gif->decoded_frame) {
-		if (nsgif_get_frame(gif) != GIF_OK) {
-			return false;
-		}
+	if (gif_get_frame(gif, &bitmap) != NSGIF_OK) {
+		return false;
 	}
 
-	return guit->bitmap->get_opaque(gif->gif->frame_image);
+	return guit->bitmap->get_opaque(bitmap);
 }
 
-static const content_handler nsgif_content_handler = {
-	.create = nsgif_create,
-	.data_complete = nsgif_convert,
-	.destroy = nsgif_destroy,
-	.redraw = nsgif_redraw,
-	.clone = nsgif_clone,
-	.add_user = nsgif_add_user,
-	.remove_user = nsgif_remove_user,
-	.get_internal = nsgif_get_internal,
-	.type = nsgif_content_type,
-	.is_opaque = nsgif_content_is_opaque,
+static const content_handler gif_content_handler = {
+	.create = gif_create,
+	.data_complete = gif_convert,
+	.destroy = gif_destroy,
+	.redraw = gif_redraw,
+	.clone = gif_clone,
+	.add_user = gif_add_user,
+	.remove_user = gif_remove_user,
+	.get_internal = gif_get_bitmap,
+	.type = gif_content_type,
+	.is_opaque = gif_content_is_opaque,
 	.no_share = false,
 };
 
-static const char *nsgif_types[] = {
+static const char *gif_types[] = {
 	"image/gif"
 };
 
-CONTENT_FACTORY_REGISTER_TYPES(nsgif, nsgif_types, nsgif_content_handler);
+CONTENT_FACTORY_REGISTER_TYPES(nsgif, gif_types, gif_content_handler);
