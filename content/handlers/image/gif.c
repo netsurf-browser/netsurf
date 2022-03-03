@@ -37,6 +37,7 @@
 
 #include <nsgif.h>
 
+#include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
@@ -211,18 +212,21 @@ static bool gif_convert(struct content *c)
 	/* Initialise the GIF */
 	gif_err = nsgif_data_scan(gif->gif, size, data);
 	if (gif_err != NSGIF_OK) {
-		err = gif__nsgif_error_to_ns(gif_err);
-		content_broadcast_error(c, err, nsgif_strerror(gif_err));
-		return false;
+		NSLOG(netsurf, DEBUG, "%s", nsgif_strerror(gif_err));
+		/* Not fatal unless er have no frames. */
 	}
 
 	gif_info = nsgif_get_info(gif->gif);
 	assert(gif_info != NULL);
 
 	/* Abort on bad GIFs */
-	if (gif_info->height == 0) {
+	if (gif_info->frame_count == 0) {
 		err = gif__nsgif_error_to_ns(gif_err);
-		content_broadcast_error(c, err, "Zero height image.");
+		content_broadcast_error(c, err, "GIF with no frames.");
+		return false;
+	} else if (gif_info->width == 0 || gif_info->height == 0) {
+		err = gif__nsgif_error_to_ns(gif_err);
+		content_broadcast_error(c, err, "Zero size image.");
 		return false;
 	}
 
