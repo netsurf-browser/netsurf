@@ -103,7 +103,8 @@ static nserror gif_create_gif_data(gif_content *c)
 		.modified = guit->bitmap->modified
 	};
 
-	gif_res = nsgif_create(&gif_bitmap_callbacks, &c->gif);
+	gif_res = nsgif_create(&gif_bitmap_callbacks,
+			NSGIF_BITMAP_FMT_R8G8B8A8, &c->gif);
 	if (gif_res != NSGIF_OK) {
 		nserror err = gif__nsgif_error_to_ns(gif_res);
 		content_broadcast_error(&c->base, err, NULL);
