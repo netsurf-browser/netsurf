@@ -450,7 +450,6 @@ bool riscos_bitmap_save(void *vbitmap, const char *path, unsigned flags)
 static void bitmap_modified(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
-	bitmap->state |= BITMAP_MODIFIED;
 }
 
 
