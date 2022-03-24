@@ -249,21 +249,6 @@ void atari_bitmap_destroy(void *bitmap)
 
 
 /**
- * Save a bitmap in the platform's native format.
- *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- * \param  path    pathname for file
- * \param flags flags controlling how the bitmap is saved.
- * \return true on success, false on error and error reported
- */
-
-static bool bitmap_save(void *bitmap, const char *path, unsigned flags)
-{
-	return true;
-}
-
-
-/**
  * Sets whether a bitmap should be plotted opaque
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
@@ -434,7 +419,6 @@ static struct gui_bitmap_table bitmap_table = {
 	.get_rowstride = atari_bitmap_get_rowstride,
 	.get_width = atari_bitmap_get_width,
 	.get_height = atari_bitmap_get_height,
-	.save = bitmap_save,
 	.modified = bitmap_modified,
 	.render = bitmap_render,
 };
