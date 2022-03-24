@@ -480,20 +480,6 @@ static int bitmap_get_height(void *vbitmap)
 }
 
 
-/**
- * Find the bytes per pixel of a bitmap
- *
- * \param  vbitmap  a bitmap, as returned by bitmap_create()
- * \return bytes per pixel
- */
-static size_t bitmap_get_bpp(void *vbitmap)
-{
-	struct bitmap *bitmap = (struct bitmap *)vbitmap;
-	assert(bitmap);
-	return 4;
-}
-
-
 /* exported interface documented in riscos/bitmap.h */
 void riscos_bitmap_overlay_sprite(struct bitmap *bitmap,
 				  const osspriteop_header *s)
@@ -879,7 +865,6 @@ static struct gui_bitmap_table bitmap_table = {
 	.get_rowstride = bitmap_get_rowstride,
 	.get_width = bitmap_get_width,
 	.get_height = bitmap_get_height,
-	.get_bpp = bitmap_get_bpp,
 	.save = riscos_bitmap_save,
 	.modified = bitmap_modified,
 	.render = riscos_bitmap_render,
