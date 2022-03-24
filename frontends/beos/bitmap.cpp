@@ -216,20 +216,6 @@ static size_t bitmap_get_rowstride(void *vbitmap)
 
 
 /**
- * Find the bytes per pixels of a bitmap.
- *
- * \param  vbitmap  a bitmap, as returned by bitmap_create()
- * \return bytes per pixels of the bitmap
- */
-static size_t bitmap_get_bpp(void *vbitmap)
-{
-        struct bitmap *bitmap = (struct bitmap *)vbitmap;
-        assert(bitmap);
-        return 4;
-}
-
-
-/**
  * Free pretiles of a bitmap.
  *
  * \param bitmap The bitmap to free the pretiles of.
@@ -548,7 +534,6 @@ static struct gui_bitmap_table bitmap_table = {
         /*.get_rowstride =*/ bitmap_get_rowstride,
         /*.get_width =*/ bitmap_get_width,
         /*.get_height =*/ bitmap_get_height,
-        /*.get_bpp =*/ bitmap_get_bpp,
         /*.save =*/ bitmap_save,
         /*.modified =*/ bitmap_modified,
         /*.render =*/ bitmap_render,
