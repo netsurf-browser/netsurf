@@ -142,15 +142,6 @@ struct gui_bitmap_table {
 	int (*get_height)(void *bitmap);
 
 	/**
-	 * Save a bitmap to disc.
-	 *
-	 * \param bitmap The bitmap to save
-	 * \param path The path to save the bitmap to.
-	 * \param flags Flags affecting the save.
-	 */
-	bool (*save)(void *bitmap, const char *path, unsigned flags);
-
-	/**
 	 * Marks a bitmap as modified.
 	 *
 	 * \param bitmap The bitmap set as modified.
