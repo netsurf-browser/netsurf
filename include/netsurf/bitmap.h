@@ -56,7 +56,6 @@
 
 #define BITMAP_NEW		0
 #define BITMAP_OPAQUE		(1 << 0) /**< image is opaque */
-#define BITMAP_MODIFIED		(1 << 1) /**< buffer has been modified */
 #define BITMAP_CLEAR_MEMORY	(1 << 2) /**< memory should be wiped */
 
 struct content;
