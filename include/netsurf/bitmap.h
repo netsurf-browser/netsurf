@@ -67,7 +67,7 @@ struct hlcache_handle;
  * Bitmap operations.
  */
 struct gui_bitmap_table {
-	/* Mandantory entries */
+	/* Mandatory entries */
 
 	/**
 	 * Create a new bitmap.
