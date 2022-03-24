@@ -71,7 +71,6 @@ static nserror nsico_create_ico_data(nsico_content *c)
 		.bitmap_create = nsico_bitmap_create,
 		.bitmap_destroy = guit->bitmap->destroy,
 		.bitmap_get_buffer = guit->bitmap->get_buffer,
-		.bitmap_get_bpp = guit->bitmap->get_bpp
 	};
 
 	c->ico = calloc(sizeof(ico_collection), 1);
