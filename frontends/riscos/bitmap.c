@@ -864,7 +864,6 @@ static struct gui_bitmap_table bitmap_table = {
 	.get_rowstride = bitmap_get_rowstride,
 	.get_width = bitmap_get_width,
 	.get_height = bitmap_get_height,
-	.save = riscos_bitmap_save,
 	.modified = bitmap_modified,
 	.render = riscos_bitmap_render,
 };
