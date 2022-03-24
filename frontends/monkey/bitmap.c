@@ -104,7 +104,6 @@ static bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 static void bitmap_modified(void *bitmap)
 {
 	struct bitmap *bmap = bitmap;
-	bmap->state |= BITMAP_MODIFIED;
 }
 
 static int bitmap_get_width(void *bitmap)
