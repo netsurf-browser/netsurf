@@ -358,22 +358,12 @@ int atari_bitmap_get_height(void *bitmap)
 	return(bm->height);
 }
 
-
-/**
- *	Gets the number of BYTES per pixel.
- */
-static size_t bitmap_get_bpp(void *bitmap)
-{
-	struct bitmap *bm = bitmap;
-	return bm->bpp;
-}
-
 /* exported interface documented in atari/bitmap.h */
 bool atari_bitmap_resize(struct bitmap *img, HermesHandle hermes_h,
 		HermesFormat *fmt, int nw, int nh)
 {
 	unsigned int state = 0;
-	short bpp = bitmap_get_bpp( img );
+	short bpp = img->bpp;
 	int stride = atari_bitmap_get_rowstride( img );
 	int err;
 
@@ -444,7 +434,6 @@ static struct gui_bitmap_table bitmap_table = {
 	.get_rowstride = atari_bitmap_get_rowstride,
 	.get_width = atari_bitmap_get_width,
 	.get_height = atari_bitmap_get_height,
-	.get_bpp = bitmap_get_bpp,
 	.save = bitmap_save,
 	.modified = bitmap_modified,
 	.render = bitmap_render,
