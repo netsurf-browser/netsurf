@@ -815,7 +815,6 @@ static struct gui_bitmap_table bitmap_table = {
 	.get_rowstride = amiga_bitmap_get_rowstride,
 	.get_width = bitmap_get_width,
 	.get_height = bitmap_get_height,
-	.save = amiga_bitmap_save,
 	.modified = amiga_bitmap_modified,
 	.render = bitmap_render,
 };
