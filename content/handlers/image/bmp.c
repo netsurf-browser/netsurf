@@ -74,7 +74,6 @@ static nserror nsbmp_create_bmp_data(nsbmp_content *bmp)
 		.bitmap_create = nsbmp_bitmap_create,
 		.bitmap_destroy = guit->bitmap->destroy,
 		.bitmap_get_buffer = guit->bitmap->get_buffer,
-		.bitmap_get_bpp = guit->bitmap->get_bpp
 	};
 
 	bmp->bmp = calloc(sizeof(struct bmp_image), 1);
@@ -151,8 +150,7 @@ static bool nsbmp_convert(struct content *c)
 	/* Store our content width and description */
 	c->width = bmp->bmp->width;
 	c->height = bmp->bmp->height;
-	swidth = bmp->bmp->bitmap_callbacks.bitmap_get_bpp(bmp->bmp->bitmap) * 
-			bmp->bmp->width;
+	swidth = sizeof(uint32_t) * bmp->bmp->width;
 	c->size += (swidth * bmp->bmp->height) + 16 + 44;
 
 	/* set title text */
