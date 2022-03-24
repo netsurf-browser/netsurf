@@ -367,20 +367,6 @@ int bitmap_get_height(void *bitmap)
 	}
 }
 
-
-/**
- * Find the bytes per pixel of a bitmap
- *
- * \param  vbitmap  a bitmap, as returned by bitmap_create()
- * \return bytes per pixel
- */
-static size_t bitmap_get_bpp(void *vbitmap)
-{
-	struct bitmap *bitmap = (struct bitmap *)vbitmap;
-	assert(bitmap);
-	return 4;
-}
-
 static void ami_bitmap_argb_to_rgba(struct bitmap *bm)
 {
 	if(bm == NULL) return;
@@ -436,7 +422,7 @@ Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap)
 		{
 			bmhd->bmh_Width = (UWORD)bitmap_get_width(bitmap);
 			bmhd->bmh_Height = (UWORD)bitmap_get_height(bitmap);
-			bmhd->bmh_Depth = (UBYTE)bitmap_get_bpp(bitmap) * 8;
+			bmhd->bmh_Depth = (UBYTE)32;
 			if(!amiga_bitmap_get_opaque(bitmap)) bmhd->bmh_Masking = mskHasAlpha;
 		}
 
@@ -829,7 +815,6 @@ static struct gui_bitmap_table bitmap_table = {
 	.get_rowstride = amiga_bitmap_get_rowstride,
 	.get_width = bitmap_get_width,
 	.get_height = bitmap_get_height,
-	.get_bpp = bitmap_get_bpp,
 	.save = amiga_bitmap_save,
 	.modified = amiga_bitmap_modified,
 	.render = bitmap_render,
