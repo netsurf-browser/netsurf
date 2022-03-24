@@ -170,7 +170,7 @@ static void info_callback(png_structp png_s, png_infop info)
 	}
 
 	png_c->rowstride = guit->bitmap->get_rowstride(png_c->bitmap);
-	png_c->bpp = guit->bitmap->get_bpp(png_c->bitmap);
+	png_c->bpp = sizeof(uint32_t);
 
 	nspng_setup_transforms(png_s, info);
 
