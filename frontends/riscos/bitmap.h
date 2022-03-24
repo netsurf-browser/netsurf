@@ -19,6 +19,8 @@
 #ifndef _NETSURF_RISCOS_BITMAP_H_
 #define _NETSURF_RISCOS_BITMAP_H_
 
+#include "netsurf/bitmap.h"
+
 struct osspriteop_area;
 struct osspriteop_header;
 struct hlcache_handle;

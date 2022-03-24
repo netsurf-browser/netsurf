@@ -44,7 +44,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "netsurf/plotters.h"
-#include "netsurf/bitmap.h"
 #include "netsurf/content.h"
 
 #include "riscos/gui.h"
