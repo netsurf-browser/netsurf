@@ -173,7 +173,7 @@ bool amiga_dt_anim_convert(struct content *c)
 	size_t size;
 	UBYTE *bm_buffer;
 	struct BitMapHeader *bmh;
-	unsigned int bm_flags = BITMAP_NEW | BITMAP_OPAQUE;
+	unsigned int bm_flags = BITMAP_OPAQUE;
 	struct adtFrame adt_frame;
 	APTR clut;
 

@@ -107,9 +107,9 @@ webp_cache_convert(struct content *c)
 	}
 
 	if (webpfeatures.has_alpha == 0) {
-		bmap_flags = BITMAP_NEW | BITMAP_OPAQUE;
+		bmap_flags = BITMAP_OPAQUE;
 	} else {
-		bmap_flags = BITMAP_NEW;
+		bmap_flags = BITMAP_NONE;
 	}
 
 	/* create bitmap */

@@ -163,7 +163,7 @@ static void info_callback(png_structp png_s, png_infop info)
 	}
 
 	/* Claim the required memory for the converted PNG */
-	png_c->bitmap = guit->bitmap->create(width, height, BITMAP_NEW);
+	png_c->bitmap = guit->bitmap->create(width, height, BITMAP_NONE);
 	if (png_c->bitmap == NULL) {
 		/* Failed to create bitmap skip pre-conversion */
 		longjmp(png_jmpbuf(png_s), CBERR_NOPRE);
@@ -483,7 +483,7 @@ png_cache_convert(struct content *c)
 	height = png_get_image_height(png_ptr, info_ptr);
 
 	/* Claim the required memory for the converted PNG */
-	bitmap = guit->bitmap->create(width, height, BITMAP_NEW);
+	bitmap = guit->bitmap->create(width, height, BITMAP_NONE);
 	if (bitmap == NULL) {
 		/* cleanup and bail */
 		goto png_cache_convert_error;

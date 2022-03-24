@@ -54,12 +54,12 @@ typedef struct nsico_content {
  */
 static void *nsico_bitmap_create(int width, int height, unsigned int bmp_state)
 {
-	unsigned int bitmap_state = BITMAP_NEW;
+	unsigned int bitmap_state = BITMAP_NONE;
 
 	/* set bitmap state based on bmp state */
 	bitmap_state |= (bmp_state & BMP_OPAQUE) ? BITMAP_OPAQUE : 0;
 	bitmap_state |= (bmp_state & BMP_CLEAR_MEMORY) ?
-			BITMAP_CLEAR_MEMORY : 0;
+			BITMAP_CLEAR : 0;
 
 	/* return the created bitmap */
 	return guit->bitmap->create(width, height, bitmap_state);

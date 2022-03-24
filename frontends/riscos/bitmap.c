@@ -91,7 +91,7 @@ static bool bitmap_initialise(struct bitmap *bitmap)
 	assert(!bitmap->sprite_area);
 
 	area_size = 16 + 44 + bitmap->width * bitmap->height * 4;
-	if (bitmap->state & BITMAP_CLEAR_MEMORY)
+	if (bitmap->clear)
 		bitmap->sprite_area = calloc(1, area_size);
 	else
 		bitmap->sprite_area = malloc(area_size);
@@ -123,7 +123,7 @@ static bool bitmap_initialise(struct bitmap *bitmap)
 
 
 /* exported interface documented in riscos/bitmap.h */
-void *riscos_bitmap_create(int width, int height, unsigned int state)
+void *riscos_bitmap_create(int width, int height, enum gui_bitmap_flags flags)
 {
 	struct bitmap *bitmap;
 
@@ -135,7 +135,8 @@ void *riscos_bitmap_create(int width, int height, unsigned int state)
 		return NULL;
 	bitmap->width = width;
 	bitmap->height = height;
-	bitmap->state = state;
+	bitmap->opaque = (flags & BITMAP_OPAQUE) == BITMAP_OPAQUE;
+	bitmap->clear = (flags & BITMAP_CLEAR) == BITMAP_CLEAR;
 
 	return bitmap;
 }
@@ -172,10 +173,7 @@ static void bitmap_set_opaque(void *vbitmap, bool opaque)
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	assert(bitmap);
 
-	if (opaque)
-		bitmap->state |= BITMAP_OPAQUE;
-	else
-		bitmap->state &= ~BITMAP_OPAQUE;
+	bitmap->opaque = opaque;
 }
 
 
@@ -246,7 +244,7 @@ bool riscos_bitmap_get_opaque(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	assert(bitmap);
-	return (bitmap->state & BITMAP_OPAQUE);
+	return bitmap->opaque;
 }
 
 

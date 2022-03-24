@@ -201,7 +201,7 @@ bool amiga_icon_convert(struct content *c)
 		return false;
 	}
 
-	icon_c->bitmap = amiga_bitmap_create(width, height, BITMAP_NEW);
+	icon_c->bitmap = amiga_bitmap_create(width, height, BITMAP_NONE);
 	if (!icon_c->bitmap) {
 		msg_data.errordata.errorcode = NSERROR_NOMEM;
 		msg_data.errordata.errormsg = messages_get("NoMemory");

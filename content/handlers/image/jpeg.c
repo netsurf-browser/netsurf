@@ -235,7 +235,7 @@ jpeg_cache_convert(struct content *c)
 	height = cinfo.output_height;
 
 	/* create opaque bitmap (jpegs cannot be transparent) */
-	bitmap = guit->bitmap->create(width, height, BITMAP_NEW | BITMAP_OPAQUE);
+	bitmap = guit->bitmap->create(width, height, BITMAP_OPAQUE);
 	if (bitmap == NULL) {
 		/* empty bitmap could not be created */
 		jpeg_destroy_decompress(&cinfo);

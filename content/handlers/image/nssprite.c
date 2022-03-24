@@ -116,7 +116,7 @@ static bool nssprite_convert(struct content *c)
 
 	struct rosprite* sprite = sprite_area->sprites[0];
 
-	nssprite->bitmap = guit->bitmap->create(sprite->width, sprite->height, BITMAP_NEW);
+	nssprite->bitmap = guit->bitmap->create(sprite->width, sprite->height, BITMAP_NONE);
 	if (!nssprite->bitmap) {
 		content_broadcast_error(c, NSERROR_NOMEM, NULL);
 		return false;

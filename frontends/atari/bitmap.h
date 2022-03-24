@@ -90,7 +90,7 @@ int init_mfdb(int bpp, int w, int h, uint32_t flags, MFDB * out );
  * \param  state   a flag word indicating the initial state
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
-void *atari_bitmap_create(int w, int h, unsigned int state);
+void *atari_bitmap_create(int w, int h, enum gui_bitmap_flags flags);
 
 /**
  * Find the width of a pixel row in bytes.

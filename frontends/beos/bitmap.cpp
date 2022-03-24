@@ -114,28 +114,28 @@ static inline void nsbeos_rgba_to_bgra(void *src,
  * Create a bitmap.
  *
  * \param  width   width of image in pixels
- * \param  height  width of image in pixels
- * \param  state   a flag word indicating the initial state
+ * \param  height  height of image in pixels
+ * \param  bflags  flags for bitmap creation
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
-static void *bitmap_create(int width, int height, unsigned int state)
+static void *bitmap_create(int width, int height, enum gui_bitmap_flags flags)
 {
         struct bitmap *bmp = (struct bitmap *)malloc(sizeof(struct bitmap));
         if (bmp == NULL)
                 return NULL;
 
-        int32 flags = 0;
-        if (state & BITMAP_CLEAR_MEMORY)
-                flags |= B_BITMAP_CLEAR_TO_WHITE;
+        int32 Bflags = 0;
+        if (flags & BITMAP_CLEAR)
+                Bflags |= B_BITMAP_CLEAR_TO_WHITE;
 
         BRect frame(0, 0, width - 1, height - 1);
         //XXX: bytes per row ?
-        bmp->primary = new BBitmap(frame, flags, B_RGBA32);
-        bmp->shadow = new BBitmap(frame, flags, B_RGBA32);
+        bmp->primary = new BBitmap(frame, Bflags, B_RGBA32);
+        bmp->shadow = new BBitmap(frame, Bflags, B_RGBA32);
 
         bmp->pretile_x = bmp->pretile_y = bmp->pretile_xy = NULL;
 
-        bmp->opaque = (state & BITMAP_OPAQUE) != 0;
+        bmp->opaque = (flags & BITMAP_OPAQUE) != 0;
 
         return bmp;
 }

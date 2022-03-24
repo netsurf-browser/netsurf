@@ -47,19 +47,16 @@
  * \param  state   a flag word indicating the initial state
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
-static void *bitmap_create(int width, int height, unsigned int state)
+static void *bitmap_create(int width, int height, enum gui_bitmap_flags flags)
 {
-        nsfb_t *bm;
-
-        NSLOG(netsurf, INFO, "width %d, height %d, state %u", width, height,
-              state);
+	nsfb_t *bm;
 
 	bm = nsfb_new(NSFB_SURFACE_RAM);
 	if (bm == NULL) {
 		return NULL;
 	}
 
-	if ((state & BITMAP_OPAQUE) == 0) {
+	if ((flags & BITMAP_OPAQUE) == 0) {
 		nsfb_set_geometry(bm, width, height, NSFB_FMT_ABGR8888);
 	} else {
 		nsfb_set_geometry(bm, width, height, NSFB_FMT_XBGR8888);
@@ -70,9 +67,7 @@ static void *bitmap_create(int width, int height, unsigned int state)
 		return NULL;
 	}
 
-        NSLOG(netsurf, INFO, "bitmap %p", bm);
-
-        return bm;
+	return bm;
 }
 
 

@@ -108,7 +108,7 @@ static APTR pool_bitmap = NULL;
 static bool guigfx_warned = false;
 
 /* exported function documented in amiga/bitmap.h */
-void *amiga_bitmap_create(int width, int height, unsigned int state)
+void *amiga_bitmap_create(int width, int height, enum gui_bitmap_flags flags)
 {
 	struct bitmap *bitmap;
 
@@ -139,8 +139,7 @@ void *amiga_bitmap_create(int width, int height, unsigned int state)
 	bitmap->width = width;
 	bitmap->height = height;
 
-	if(state & BITMAP_OPAQUE) bitmap->opaque = true;
-		else bitmap->opaque = false;
+	bitmap->opaque = (flags & BITMAP_OPAQUE) == BITMAP_OPAQUE;
 
 	bitmap->nativebm = NULL;
 	bitmap->nativebmwidth = 0;

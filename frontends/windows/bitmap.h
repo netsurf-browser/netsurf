@@ -33,8 +33,6 @@ struct bitmap {
 
 struct bitmap *bitmap_scale(struct bitmap *prescale, int width, int height);
 
-void *win32_bitmap_create(int width, int height, unsigned int state);
-
 void win32_bitmap_destroy(void *bitmap);
 
 #endif

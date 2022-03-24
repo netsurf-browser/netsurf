@@ -90,7 +90,7 @@ canvas2d_user_data_handler(dom_node_operation operation,
 		height = guit->bitmap->get_height(bitmap);
 		stride = guit->bitmap->get_rowstride(bitmap);
 		newbitmap = guit->bitmap->create(width, height,
-						 BITMAP_NEW);
+						 BITMAP_NONE);
 		if (newbitmap != NULL) {
 			if (guit->bitmap->get_rowstride(newbitmap) == stride) {
 				// Compatible bitmap, bung the data over
@@ -173,7 +173,7 @@ static nserror canvas2d_create_bitmap(dom_node *node, struct bitmap **bitmap_out
 
 	bitmap = guit->bitmap->create(
 		(int)width, (int)height,
-		BITMAP_NEW);
+		BITMAP_NONE);
 
 	if (bitmap == NULL) {
 		return NSERROR_NOMEM;
@@ -242,7 +242,7 @@ canvas2d__handle_dom_event(dom_event *evt, void *pw)
 	
 	/* Okay, we need to reallocate our bitmap and re-cache values */
 	
-	newbitmap = guit->bitmap->create(width, height, BITMAP_NEW);
+	newbitmap = guit->bitmap->create(width, height, BITMAP_NONE);
 	stride = guit->bitmap->get_rowstride(newbitmap);
 
 	if (newbitmap != NULL) {

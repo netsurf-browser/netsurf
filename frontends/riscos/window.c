@@ -4568,7 +4568,7 @@ ro_gui_window_iconise(struct gui_window *g, wimp_full_message_window_info *wi)
 
 	/* create the thumbnail sprite */
 	bitmap = riscos_bitmap_create(width, height,
-			BITMAP_NEW | BITMAP_OPAQUE | BITMAP_CLEAR_MEMORY);
+			BITMAP_OPAQUE | BITMAP_CLEAR);
 	if (!bitmap) {
 		NSLOG(netsurf, INFO, "Thumbnail initialisation failed.");
 		return;

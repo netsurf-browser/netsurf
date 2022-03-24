@@ -187,7 +187,7 @@ static bool rsvg_convert(struct content *c)
 	c->height = rsvgsize.height;
 
 	if ((d->bitmap = guit->bitmap->create(c->width, c->height,
-			BITMAP_NEW)) == NULL) {
+			BITMAP_NONE)) == NULL) {
 		NSLOG(netsurf, INFO,
 		      "Failed to create bitmap for rsvg render.");
 		content_broadcast_error(c, NSERROR_NOMEM, NULL);

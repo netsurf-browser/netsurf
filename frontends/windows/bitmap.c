@@ -41,19 +41,19 @@
  * Create a bitmap.
  *
  * \param  width   width of image in pixels
- * \param  height  width of image in pixels
- * \param  state   a flag word indicating the initial state
+ * \param  height  height of image in pixels
+ * \param  state   flags   flags for bitmap creation
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
-void *win32_bitmap_create(int width, int height, unsigned int state)
+static void *win32_bitmap_create(int width, int height, enum gui_bitmap_flags flags)
 {
 	struct bitmap *bitmap;
 	BITMAPV5HEADER *pbmi;
 	HBITMAP windib;
 	uint8_t *pixdata;
 
-	NSLOG(netsurf, INFO, "width %d, height %d, state %u", width, height,
-	      state);
+	NSLOG(netsurf, INFO, "width %d, height %d, flags %u", width, height,
+	      (unsigned)flags);
 
 	pbmi = calloc(1, sizeof(BITMAPV5HEADER));
 	if (pbmi == NULL) {
@@ -91,7 +91,7 @@ void *win32_bitmap_create(int width, int height, unsigned int state)
 	bitmap->windib = windib;
 	bitmap->pbmi = pbmi;
 	bitmap->pixdata = pixdata;
-	if ((state & BITMAP_OPAQUE) != 0) {
+	if ((flags & BITMAP_OPAQUE) != 0) {
 		bitmap->opaque = true;
 	} else {
 		bitmap->opaque = false;
@@ -327,7 +327,7 @@ bitmap_render(struct bitmap *bitmap, struct hlcache_handle *content)
 	}
 
 	/* create a full size bitmap and plot into it */
-	fsbitmap = win32_bitmap_create(width, height, BITMAP_NEW | BITMAP_CLEAR_MEMORY | BITMAP_OPAQUE);
+	fsbitmap = win32_bitmap_create(width, height, BITMAP_CLEAR | BITMAP_OPAQUE);
 
 	SelectObject(bufferdc, fsbitmap->windib);
 

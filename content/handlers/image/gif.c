@@ -88,7 +88,7 @@ static inline nserror gif__nsgif_error_to_ns(nsgif_error gif_res)
  */
 static void *gif_bitmap_create(int width, int height)
 {
-	return guit->bitmap->create(width, height, BITMAP_NEW);
+	return guit->bitmap->create(width, height, BITMAP_NONE);
 }
 
 static nserror gif_create_gif_data(gif_content *c)

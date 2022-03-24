@@ -54,9 +54,12 @@
 #ifndef _NETSURF_BITMAP_H_
 #define _NETSURF_BITMAP_H_
 
-#define BITMAP_NEW		0
-#define BITMAP_OPAQUE		(1 << 0) /**< image is opaque */
-#define BITMAP_CLEAR_MEMORY	(1 << 2) /**< memory should be wiped */
+/** Bitmap creation flags. */
+enum gui_bitmap_flags {
+	BITMAP_NONE   = 0,
+	BITMAP_OPAQUE = (1 << 0), /**< image is opaque */
+	BITMAP_CLEAR  = (1 << 1), /**< memory should be wiped to 0 */
+};
 
 struct content;
 struct bitmap;
@@ -71,12 +74,12 @@ struct gui_bitmap_table {
 	/**
 	 * Create a new bitmap.
 	 *
-	 * \param width width of image in pixels
-	 * \param height width of image in pixels
-	 * \param state The state to create the bitmap in.
+	 * \param width   width of image in pixels
+	 * \param height  height of image in pixels
+	 * \param flags   flags for bitmap creation
 	 * \return A bitmap structure or NULL on error.
 	 */
-	void *(*create)(int width, int height, unsigned int state);
+	void *(*create)(int width, int height, enum gui_bitmap_flags flags);
 
 	/**
 	 * Destroy a bitmap.

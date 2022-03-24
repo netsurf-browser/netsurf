@@ -45,17 +45,17 @@
  * Create a bitmap.
  *
  * \param  width   width of image in pixels
- * \param  height  width of image in pixels
- * \param  state   a flag word indicating the initial state
+ * \param  height  height of image in pixels
+ * \param  flags   flags for bitmap creation
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
-static void *bitmap_create(int width, int height, unsigned int state)
+static void *bitmap_create(int width, int height, enum gui_bitmap_flags flags)
 {
 	struct bitmap *gbitmap;
 
 	gbitmap = calloc(1, sizeof(struct bitmap));
 	if (gbitmap != NULL) {
-		if ((state & BITMAP_OPAQUE) != 0) {
+		if ((flags & BITMAP_OPAQUE) != 0) {
 			gbitmap->surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24, width, height);
 		} else {
 			gbitmap->surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);

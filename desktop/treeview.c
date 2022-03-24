@@ -5077,7 +5077,7 @@ treeview_generate_triangle_bitmap(colour bg, colour fg, int size)
 	colour colour4 = fg;
 
 	/* Create the bitmap */
-	b = guit->bitmap->create(size, size, BITMAP_NEW | BITMAP_OPAQUE);
+	b = guit->bitmap->create(size, size, BITMAP_OPAQUE);
 	if (b == NULL)
 		return NULL;
 
@@ -5176,7 +5176,7 @@ treeview_generate_copy_bitmap(struct bitmap *orig, int size)
 	assert(size == guit->bitmap->get_height(orig));
 
 	/* Create the bitmap */
-	b = guit->bitmap->create(size, size, BITMAP_NEW | BITMAP_OPAQUE);
+	b = guit->bitmap->create(size, size, BITMAP_OPAQUE);
 	if (b == NULL)
 		return NULL;
 
@@ -5224,7 +5224,7 @@ treeview_generate_rotate_bitmap(struct bitmap *orig, int size)
 	assert(size == guit->bitmap->get_height(orig));
 
 	/* Create the bitmap */
-	b = guit->bitmap->create(size, size, BITMAP_NEW | BITMAP_OPAQUE);
+	b = guit->bitmap->create(size, size, BITMAP_OPAQUE);
 	if (b == NULL)
 		return NULL;
 

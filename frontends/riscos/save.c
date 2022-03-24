@@ -243,7 +243,7 @@ ro_gui_save_create_thumbnail(struct hlcache_handle *h, const char *name)
 	struct bitmap *bitmap;
 	osspriteop_area *area;
 
-	bitmap = riscos_bitmap_create(34, 34, BITMAP_NEW | BITMAP_OPAQUE | BITMAP_CLEAR_MEMORY);
+	bitmap = riscos_bitmap_create(34, 34, BITMAP_OPAQUE | BITMAP_CLEAR);
 	if (!bitmap) {
 		NSLOG(netsurf, INFO, "Thumbnail initialisation failed.");
 		return false;

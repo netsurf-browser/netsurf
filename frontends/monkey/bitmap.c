@@ -31,26 +31,26 @@ struct bitmap {
 	size_t rowstride;
 	int width;
 	int height;
-	unsigned int state;
+	bool opaque;
 };
 
-static void *bitmap_create(int width, int height, unsigned int state)
+static void *bitmap_create(int width, int height, enum gui_bitmap_flags flags)
 {
 	struct bitmap *ret = calloc(sizeof(*ret), 1);
 	if (ret == NULL)
 		return NULL;
-  
+
 	ret->width = width;
 	ret->height = height;
-	ret->state = state;
-  
+	ret->opaque = (flags & BITMAP_OPAQUE) == BITMAP_OPAQUE;
+
 	ret->ptr = calloc(width, height * 4);
-  
+
 	if (ret->ptr == NULL) {
 		free(ret);
 		return NULL;
 	}
-  
+
 	return ret;
 }
 
@@ -64,11 +64,8 @@ static void bitmap_destroy(void *bitmap)
 static void bitmap_set_opaque(void *bitmap, bool opaque)
 {
 	struct bitmap *bmap = bitmap;
-  
-	if (opaque)
-		bmap->state |= (BITMAP_OPAQUE);
-	else
-		bmap->state &= ~(BITMAP_OPAQUE);
+
+	bmap->opaque = opaque;
 }
 
 static bool bitmap_test_opaque(void *bitmap)
@@ -79,8 +76,8 @@ static bool bitmap_test_opaque(void *bitmap)
 static bool bitmap_get_opaque(void *bitmap)
 {
 	struct bitmap *bmap = bitmap;
-  
-	return (bmap->state & BITMAP_OPAQUE) == BITMAP_OPAQUE;
+
+	return bmap->opaque;
 }
 
 static unsigned char *bitmap_get_buffer(void *bitmap)
@@ -98,7 +95,7 @@ static size_t bitmap_get_rowstride(void *bitmap)
 
 static void bitmap_modified(void *bitmap)
 {
-	struct bitmap *bmap = bitmap;
+	return;
 }
 
 static int bitmap_get_width(void *bitmap)

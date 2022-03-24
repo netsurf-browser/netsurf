@@ -106,7 +106,7 @@ browser_window_history__clone_entry(struct history *history,
 		new_entry->page.bitmap = guit->bitmap->create(
 				LOCAL_HISTORY_WIDTH,
 				LOCAL_HISTORY_HEIGHT,
-				BITMAP_NEW | BITMAP_OPAQUE);
+				BITMAP_OPAQUE);
 
 		if (new_entry->page.bitmap != NULL) {
 			bmsrc_data = guit->bitmap->get_buffer(entry->page.bitmap);
@@ -388,7 +388,7 @@ browser_window_history_add(struct browser_window *bw,
 
 	entry->page.bitmap = guit->bitmap->create(
 			LOCAL_HISTORY_WIDTH, LOCAL_HISTORY_HEIGHT,
-			BITMAP_NEW | BITMAP_CLEAR_MEMORY | BITMAP_OPAQUE);
+			BITMAP_CLEAR | BITMAP_OPAQUE);
 	if (entry->page.bitmap != NULL) {
 		ret = guit->bitmap->render(entry->page.bitmap, content);
 		if (ret != NSERROR_OK) {

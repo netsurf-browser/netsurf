@@ -77,36 +77,36 @@ int init_mfdb(int bpp, int w, int h, uint32_t flags, MFDB * out )
  * \param  pixdata 	NULL or an memory address to use as the bitmap pixdata
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
-static void *atari_bitmap_create_ex( int w, int h, short bpp, int rowstride, unsigned int state, void * pixdata )
+static void *atari_bitmap_create_ex( int w, int h, short bpp, int rowstride, enum gui_bitmap_flags flags, void * pixdata )
 {
-    struct bitmap * bitmap;
+	struct bitmap * bitmap;
 
-    NSLOG(netsurf, INFO,
-	  "width %d (rowstride: %d, bpp: %d), height %d, state %u", w,
-	  rowstride, bpp, h, state);
+	NSLOG(netsurf, INFO,
+	  "width %d (rowstride: %d, bpp: %d), height %d, flags %u", w,
+	  rowstride, bpp, h, (unsigned)flags);
 
 	if( rowstride == 0) {
 		rowstride = bpp * w;
 	}
 
 	assert( rowstride >= (w * bpp) );
-    bitmap = calloc(1 , sizeof(struct bitmap) );
-    if (bitmap) {
+	bitmap = calloc(1 , sizeof(struct bitmap) );
+	if (bitmap) {
 		if( pixdata == NULL) {
-          	bitmap->pixdata = calloc(1, (rowstride * h)+128);
+			bitmap->pixdata = calloc(1, (rowstride * h)+128);
 		}
 		else {
 			bitmap->pixdata = pixdata;
 		}
 
-        if (bitmap->pixdata != NULL) {
+	if (bitmap->pixdata != NULL) {
 			bitmap->width = w;
 			bitmap->height = h;
-			bitmap->opaque = (state & BITMAP_OPAQUE) ? true : false;
+			bitmap->opaque = (flags & BITMAP_OPAQUE) ? true : false;
 			bitmap->bpp = bpp;
 			bitmap->resized = NULL;
 			bitmap->rowstride = rowstride;
-        } else {
+	} else {
 			free(bitmap);
 			bitmap=NULL;
 			NSLOG(netsurf, INFO, "Out of memory!");
@@ -118,9 +118,9 @@ static void *atari_bitmap_create_ex( int w, int h, short bpp, int rowstride, uns
 
 
 /* exported interface documented in atari/bitmap.h */
-void *atari_bitmap_create(int w, int h, unsigned int state)
+void *atari_bitmap_create(int w, int h, enum gui_bitmap_flags flags)
 {
-	return atari_bitmap_create_ex( w, h, NS_BMP_DEFAULT_BPP, w * NS_BMP_DEFAULT_BPP, state, NULL );
+	return atari_bitmap_create_ex( w, h, NS_BMP_DEFAULT_BPP, w * NS_BMP_DEFAULT_BPP, flags, NULL );
 }
 
 /**
@@ -347,7 +347,7 @@ int atari_bitmap_get_height(void *bitmap)
 bool atari_bitmap_resize(struct bitmap *img, HermesHandle hermes_h,
 		HermesFormat *fmt, int nw, int nh)
 {
-	unsigned int state = 0;
+	enum gui_bitmap_flags flags = 0;
 	short bpp = img->bpp;
 	int stride = atari_bitmap_get_rowstride( img );
 	int err;
@@ -364,9 +364,9 @@ bool atari_bitmap_resize(struct bitmap *img, HermesHandle hermes_h,
 
 	/* allocate the mem for resized bitmap */
 	if (img->opaque == true) {
-		state |= BITMAP_OPAQUE;
+		flags |= BITMAP_OPAQUE;
 	}
-	img->resized = atari_bitmap_create_ex( nw, nh, bpp, nw*bpp, state, NULL );
+	img->resized = atari_bitmap_create_ex( nw, nh, bpp, nw*bpp, flags, NULL );
 	if( img->resized == NULL ) {
 			printf("W: %d, H: %d, bpp: %d\n", nw, nh, bpp);
 			assert(img->resized);
