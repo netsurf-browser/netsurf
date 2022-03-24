@@ -247,32 +247,6 @@ static void bitmap_destroy(void *vbitmap)
 
 
 /**
- * Save a bitmap in the platform's native format.
- *
- * \param  vbitmap  a bitmap, as returned by bitmap_create()
- * \param  path     pathname for file
- * \param  flags    modify the behaviour of the save
- * \return true on success, false on error and error reported
- */
-static bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
-{
-        struct bitmap *bitmap = (struct bitmap *)vbitmap;
-        BTranslatorRoster *roster = BTranslatorRoster::Default();
-        BBitmapStream stream(bitmap->primary);
-        BFile file(path, B_WRITE_ONLY | B_CREATE_FILE);
-        uint32 type = B_PNG_FORMAT;
-
-        if (file.InitCheck() < B_OK)
-                return false;
-
-        if (roster->Translate(&stream, NULL, NULL, &file, type) < B_OK)
-                return false;
-
-        return true;
-}
-
-
-/**
  * The bitmap image has changed, so flush any persistant cache.
  *
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
@@ -534,7 +508,6 @@ static struct gui_bitmap_table bitmap_table = {
         /*.get_rowstride =*/ bitmap_get_rowstride,
         /*.get_width =*/ bitmap_get_width,
         /*.get_height =*/ bitmap_get_height,
-        /*.save =*/ bitmap_save,
         /*.modified =*/ bitmap_modified,
         /*.render =*/ bitmap_render,
 };
