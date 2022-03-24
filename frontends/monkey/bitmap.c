@@ -96,11 +96,6 @@ static size_t bitmap_get_rowstride(void *bitmap)
 	return bmap->width * 4;
 }
 
-static bool bitmap_save(void *bitmap, const char *path, unsigned flags)
-{
-	return true;
-}
-
 static void bitmap_modified(void *bitmap)
 {
 	struct bitmap *bmap = bitmap;
@@ -135,7 +130,6 @@ static struct gui_bitmap_table bitmap_table = {
 	.get_rowstride = bitmap_get_rowstride,
 	.get_width = bitmap_get_width,
 	.get_height = bitmap_get_height,
-	.save = bitmap_save,
 	.modified = bitmap_modified,
 	.render = bitmap_render,
 };
