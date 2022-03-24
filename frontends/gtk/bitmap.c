@@ -304,23 +304,6 @@ static void bitmap_destroy(void *vbitmap)
 
 
 /**
- * Save a bitmap in the platform's native format.
- *
- * \param  vbitmap  a bitmap, as returned by bitmap_create()
- * \param  path     pathname for file
- * \param  flags    modify the behaviour of the save
- * \return true on success, false on error and error reported
- */
-static bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
-{
-	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
-	assert(gbitmap);
-
-	return false;
-}
-
-
-/**
  * The bitmap image has changed, so flush any persistant cache.
  *
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
@@ -519,7 +502,6 @@ static struct gui_bitmap_table bitmap_table = {
 	.get_rowstride = bitmap_get_rowstride,
 	.get_width = nsgtk_bitmap_get_width,
 	.get_height = nsgtk_bitmap_get_height,
-	.save = bitmap_save,
 	.modified = bitmap_modified,
 	.render = bitmap_render,
 };
