@@ -251,12 +251,6 @@ static int bitmap_get_height(void *bitmap)
 	return(height);
 }
 
-/* get bytes per pixel */
-static size_t bitmap_get_bpp(void *bitmap)
-{
-	return 4;
-}
-
 /**
  * Render content into a bitmap.
  *
@@ -337,7 +331,6 @@ static struct gui_bitmap_table bitmap_table = {
 	.get_rowstride = bitmap_get_rowstride,
 	.get_width = bitmap_get_width,
 	.get_height = bitmap_get_height,
-	.get_bpp = bitmap_get_bpp,
 	.save = bitmap_save,
 	.modified = bitmap_modified,
 	.render = bitmap_render,
