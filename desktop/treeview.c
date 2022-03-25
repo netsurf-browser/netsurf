@@ -5091,58 +5091,68 @@ treeview_generate_triangle_bitmap(colour bg, colour fg, int size)
 		if (y < size / 2) {
 			/* Top half */
 			for (x = 0; x < y * 2; x++) {
-				*(pos++) = red_from_colour(colour4);
-				*(pos++) = green_from_colour(colour4);
-				*(pos++) = blue_from_colour(colour4);
-				*(pos++) = 0xff;
+				pos[0] = red_from_colour(colour4);
+				pos[1] = green_from_colour(colour4);
+				pos[2] = blue_from_colour(colour4);
+				pos[3] = 0xff;
+				pos += 4;
 			}
-			*(pos++) = red_from_colour(colour3);
-			*(pos++) = green_from_colour(colour3);
-			*(pos++) = blue_from_colour(colour3);
-			*(pos++) = 0xff;
-			*(pos++) = red_from_colour(colour1);
-			*(pos++) = green_from_colour(colour1);
-			*(pos++) = blue_from_colour(colour1);
-			*(pos++) = 0xff;
+			pos[0] = red_from_colour(colour3);
+			pos[1] = green_from_colour(colour3);
+			pos[2] = blue_from_colour(colour3);
+			pos[3] = 0xff;
+			pos += 4;
+			pos[0] = red_from_colour(colour1);
+			pos[1] = green_from_colour(colour1);
+			pos[2] = blue_from_colour(colour1);
+			pos[3] = 0xff;
+			pos += 4;
 			for (x = y * 2 + 2; x < size ; x++) {
-				*(pos++) = red_from_colour(colour0);
-				*(pos++) = green_from_colour(colour0);
-				*(pos++) = blue_from_colour(colour0);
-				*(pos++) = 0xff;
+				pos[0] = red_from_colour(colour0);
+				pos[1] = green_from_colour(colour0);
+				pos[2] = blue_from_colour(colour0);
+				pos[3] = 0xff;
+				pos += 4;
 			}
 		} else if ((y == size / 2) && (size & 0x1)) {
 			/* Middle row */
 			for (x = 0; x < size - 1; x++) {
-				*(pos++) = red_from_colour(colour4);
-				*(pos++) = green_from_colour(colour4);
-				*(pos++) = blue_from_colour(colour4);
-				*(pos++) = 0xff;
+				pos[0] = red_from_colour(colour4);
+				pos[1] = green_from_colour(colour4);
+				pos[2] = blue_from_colour(colour4);
+				pos[3] = 0xff;
+				pos += 4;
 			}
-			*(pos++) = red_from_colour(colour2);
-			*(pos++) = green_from_colour(colour2);
-			*(pos++) = blue_from_colour(colour2);
-			*(pos++) = 0xff;
+			pos[0] = red_from_colour(colour2);
+			pos[1] = green_from_colour(colour2);
+			pos[2] = blue_from_colour(colour2);
+			pos[3] = 0xff;
+			pos += 4;
 		} else {
 			/* Bottom half */
 			for (x = 0; x < (size - y - 1) * 2; x++) {
-				*(pos++) = red_from_colour(colour4);
-				*(pos++) = green_from_colour(colour4);
-				*(pos++) = blue_from_colour(colour4);
-				*(pos++) = 0xff;
+				pos[0] = red_from_colour(colour4);
+				pos[1] = green_from_colour(colour4);
+				pos[2] = blue_from_colour(colour4);
+				pos[3] = 0xff;
+				pos += 4;
 			}
-			*(pos++) = red_from_colour(colour3);
-			*(pos++) = green_from_colour(colour3);
-			*(pos++) = blue_from_colour(colour3);
-			*(pos++) = 0xff;
-			*(pos++) = red_from_colour(colour1);
-			*(pos++) = green_from_colour(colour1);
-			*(pos++) = blue_from_colour(colour1);
-			*(pos++) = 0xff;
+			pos[0] = red_from_colour(colour3);
+			pos[1] = green_from_colour(colour3);
+			pos[2] = blue_from_colour(colour3);
+			pos[3] = 0xff;
+			pos += 4;
+			pos[0] = red_from_colour(colour1);
+			pos[1] = green_from_colour(colour1);
+			pos[2] = blue_from_colour(colour1);
+			pos[3] = 0xff;
+			pos += 4;
 			for (x = (size - y) * 2; x < size ; x++) {
-				*(pos++) = red_from_colour(colour0);
-				*(pos++) = green_from_colour(colour0);
-				*(pos++) = blue_from_colour(colour0);
-				*(pos++) = 0xff;
+				pos[0] = red_from_colour(colour0);
+				pos[1] = green_from_colour(colour0);
+				pos[2] = blue_from_colour(colour0);
+				pos[3] = 0xff;
+				pos += 4;
 			}
 		}
 
