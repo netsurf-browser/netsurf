@@ -121,4 +121,53 @@ static inline enum bitmap_layout bitmap_sanitise_bitmap_layout(
 	return layout;
 }
 
+/**
+ * Convert bitmap from one format to another.
+ *
+ * Note that both formats should be sanitised.
+ *
+ * \param[in]  bitmap  The bitmap to convert.
+ * \param[in]  from    The current bitmap format specifier.
+ * \param[in]  to      The bitmap format to convert to.
+ */
+void bitmap_format_convert(void *bitmap,
+		const bitmap_fmt_t *from,
+		const bitmap_fmt_t *to);
+
+/**
+ * Convert a bitmap to the client bitmap format.
+ *
+ * \param[in]  bitmap       The bitmap to convert.
+ * \param[in]  current_fmt  The current bitmap format specifier.
+ */
+static inline void bitmap_format_to_client(
+		void *bitmap,
+		const bitmap_fmt_t *current_fmt)
+{
+	bitmap_fmt_t from = *current_fmt;
+
+	from.layout = bitmap_sanitise_bitmap_layout(from.layout);
+	if (from.layout != bitmap_fmt.layout) {
+		bitmap_format_convert(bitmap, &from, &bitmap_fmt);
+	}
+}
+
+/**
+ * Convert a bitmap to the client bitmap format.
+ *
+ * \param[in]  bitmap      The bitmap to convert.
+ * \param[in]  target_fmt  The target bitmap format specifier.
+ */
+static inline void bitmap_format_from_client(
+		void *bitmap,
+		const bitmap_fmt_t *target_fmt)
+{
+	bitmap_fmt_t to = *target_fmt;
+
+	to.layout = bitmap_sanitise_bitmap_layout(to.layout);
+	if (to.layout != bitmap_fmt.layout) {
+		bitmap_format_convert(bitmap, &bitmap_fmt, &to);
+	}
+}
+
 #endif

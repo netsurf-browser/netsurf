@@ -44,3 +44,36 @@ void bitmap_set_format(const bitmap_fmt_t *bitmap_format)
 	bitmap_fmt.layout = bitmap_sanitise_bitmap_layout(bitmap_fmt.layout);
 	bitmap_layout = bitmap__get_colour_layout(&bitmap_fmt);
 }
+
+/* Exported function, documented in desktop/bitmap.h */
+void bitmap_format_convert(void *bitmap,
+		const bitmap_fmt_t *fmt_from,
+		const bitmap_fmt_t *fmt_to)
+{
+	int width = guit->bitmap->get_width(bitmap);
+	int height = guit->bitmap->get_height(bitmap);
+	uint8_t *buffer = guit->bitmap->get_buffer(bitmap);
+	size_t rowstride = guit->bitmap->get_rowstride(bitmap);
+	struct bitmap_colour_layout to = bitmap__get_colour_layout(fmt_to);
+	struct bitmap_colour_layout from = bitmap__get_colour_layout(fmt_from);
+
+	NSLOG(netsurf, DEEPDEBUG, "Bitmap format conversion (%u --> %u)",
+			fmt_from->layout, fmt_to->layout);
+
+	for (int y = 0; y < height; y++) {
+		uint8_t *row = buffer;
+
+		for (int x = 0; x < width; x++) {
+			const uint32_t px = *((uint32_t *)(void *) row);
+
+			row[to.r] = ((const uint8_t *) &px)[from.r];
+			row[to.g] = ((const uint8_t *) &px)[from.g];
+			row[to.b] = ((const uint8_t *) &px)[from.b];
+			row[to.a] = ((const uint8_t *) &px)[from.a];
+
+			row += sizeof(uint32_t);
+		}
+
+		buffer += rowstride;
+	}
+}
