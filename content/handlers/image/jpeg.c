@@ -37,6 +37,7 @@
 #include "content/content_protected.h"
 #include "content/content_factory.h"
 #include "desktop/gui_internal.h"
+#include "desktop/bitmap.h"
 
 #include "image/image_cache.h"
 
@@ -296,6 +297,10 @@ jpeg_cache_convert(struct content *c)
 #endif
 		}
 	} while (cinfo.output_scanline != cinfo.output_height);
+
+	bitmap_format_to_client(bitmap, &(bitmap_fmt_t) {
+		.layout = BITMAP_LAYOUT_R8G8B8A8,
+	});
 	guit->bitmap->modified(bitmap);
 
 	jpeg_finish_decompress(&cinfo);
