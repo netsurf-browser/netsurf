@@ -38,6 +38,7 @@
 #include "content/content_protected.h"
 #include "content/content_factory.h"
 #include "desktop/gui_internal.h"
+#include "desktop/bitmap.h"
 
 #include "image/image_cache.h"
 
@@ -141,6 +142,9 @@ webp_cache_convert(struct content *c)
 		return NULL;
 	}
 
+	bitmap_format_to_client(bitmap, &(bitmap_fmt_t) {
+		.layout = BITMAP_LAYOUT_R8G8B8A8,
+	});
 	guit->bitmap->modified(bitmap);
 
 	return bitmap;
