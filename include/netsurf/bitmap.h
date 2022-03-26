@@ -115,6 +115,8 @@ struct gui_bitmap_table {
 	/**
 	 * Get the image buffer from a bitmap
 	 *
+	 * Note that all pixels must be 4-byte aligned.
+	 *
 	 * \param bitmap The bitmap to get the buffer from.
 	 * \return The image buffer or NULL if there is none.
 	 */
