@@ -61,9 +61,76 @@ enum gui_bitmap_flags {
 	BITMAP_CLEAR  = (1 << 1), /**< memory should be wiped to 0 */
 };
 
+/**
+ * NetSurf bitmap pixel layout.
+ *
+ * All pixels are 32 bits per pixel (bpp). The different layouts allow control
+ * over the ordering of colour channels. All colour channels are 8 bits wide.
+ */
+enum bitmap_layout {
+	/** Bite-wise RGBA: Byte order: 0xRR, 0xGG, 0xBB, 0xAA. */
+	BITMAP_LAYOUT_R8G8B8A8,
+
+	/** Bite-wise BGRA: Byte order: 0xBB, 0xGG, 0xRR, 0xAA. */
+	BITMAP_LAYOUT_B8G8R8A8,
+
+	/** Bite-wise ARGB: Byte order: 0xAA, 0xRR, 0xGG, 0xBB. */
+	BITMAP_LAYOUT_A8R8G8B8,
+
+	/** Bite-wise ABGR: Byte order: 0xAA, 0xBB, 0xGG, 0xRR. */
+	BITMAP_LAYOUT_A8B8G8R8,
+
+	/**
+	 * 32-bit RGBA (0xRRGGBBAA).
+	 *
+	 * * On little endian host, same as \ref BITMAP_LAYOUT_A8B8G8R8.
+	 * * On big endian host, same as \ref BITMAP_LAYOUT_R8G8B8A8.
+	 */
+	BITMAP_LAYOUT_RGBA8888,
+
+	/**
+	 * 32-bit BGRA (0xBBGGRRAA).
+	 *
+	 * * On little endian host, same as \ref BITMAP_LAYOUT_A8R8G8B8.
+	 * * On big endian host, same as \ref BITMAP_LAYOUT_B8G8R8A8.
+	 */
+	BITMAP_LAYOUT_BGRA8888,
+
+	/**
+	 * 32-bit ARGB (0xAARRGGBB).
+	 *
+	 * * On little endian host, same as \ref BITMAP_LAYOUT_B8G8R8A8.
+	 * * On big endian host, same as \ref BITMAP_LAYOUT_A8R8G8B8.
+	 */
+	BITMAP_LAYOUT_ARGB8888,
+
+	/**
+	 * 32-bit BGRA (0xAABBGGRR).
+	 *
+	 * * On little endian host, same as \ref BITMAP_LAYOUT_R8G8B8A8.
+	 * * On big endian host, same as \ref BITMAP_LAYOUT_A8B8G8R8.
+	 */
+	BITMAP_LAYOUT_ABGR8888,
+};
+
+/** Bitmap format specifier. */
+typedef struct bitmap_fmt {
+	enum bitmap_layout layout; /** Colour component layout. */
+} bitmap_fmt_t;
+
 struct content;
 struct bitmap;
 struct hlcache_handle;
+
+/**
+ * Set client bitmap format.
+ *
+ * Set this to ensure that the bitmaps decoded by the core are in the
+ * correct format for the front end.
+ *
+ * \param[in]  bitmap_format  The bitmap format specification to set.
+ */
+void bitmap_set_format(const bitmap_fmt_t *bitmap_format);
 
 /**
  * Bitmap operations.
