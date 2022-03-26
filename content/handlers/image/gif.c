@@ -49,6 +49,7 @@
 #include "content/content_protected.h"
 #include "content/content_factory.h"
 #include "desktop/gui_internal.h"
+#include "desktop/bitmap.h"
 
 #include "image/image.h"
 #include "image/gif.h"
@@ -80,6 +81,39 @@ static inline nserror gif__nsgif_error_to_ns(nsgif_error gif_res)
 }
 
 /**
+ * Get the image buffer from a bitmap
+ *
+ * Note that all pixels must be 4-byte aligned.
+ *
+ * \param bitmap The bitmap to get the buffer from.
+ * \return The image buffer or NULL if there is none.
+ */
+static unsigned char *nsgif__get_buffer(void *bitmap)
+{
+	bitmap_fmt_t gif_fmt = {
+		.layout = BITMAP_LAYOUT_R8G8B8A8,
+	};
+
+	bitmap_format_from_client(bitmap, &gif_fmt);
+	return guit->bitmap->get_buffer(bitmap);
+}
+
+/**
+ * Marks a bitmap as modified.
+ *
+ * \param bitmap The bitmap set as modified.
+ */
+static void nsgif__modified(void *bitmap)
+{
+	bitmap_fmt_t gif_fmt = {
+		.layout = BITMAP_LAYOUT_R8G8B8A8,
+	};
+
+	bitmap_format_to_client(bitmap, &gif_fmt);
+	guit->bitmap->modified(bitmap);
+}
+
+/**
  * Callback for libnsgif; forwards the call to bitmap_create()
  *
  * \param  width   width of image in pixels
@@ -97,10 +131,10 @@ static nserror gif_create_gif_data(gif_content *c)
 	const nsgif_bitmap_cb_vt gif_bitmap_callbacks = {
 		.create = gif_bitmap_create,
 		.destroy = guit->bitmap->destroy,
-		.get_buffer = guit->bitmap->get_buffer,
+		.get_buffer = nsgif__get_buffer,
 		.set_opaque = guit->bitmap->set_opaque,
 		.test_opaque = guit->bitmap->test_opaque,
-		.modified = guit->bitmap->modified
+		.modified = nsgif__modified
 	};
 
 	gif_res = nsgif_create(&gif_bitmap_callbacks,
