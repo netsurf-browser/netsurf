@@ -41,6 +41,7 @@
 #include "content/hlcache.h"
 #include "css/utils.h"
 
+#include "desktop/bitmap.h"
 #include "desktop/knockout.h"
 #include "desktop/textarea.h"
 #include "desktop/treeview.h"
@@ -5091,67 +5092,67 @@ treeview_generate_triangle_bitmap(colour bg, colour fg, int size)
 		if (y < size / 2) {
 			/* Top half */
 			for (x = 0; x < y * 2; x++) {
-				pos[0] = red_from_colour(colour4);
-				pos[1] = green_from_colour(colour4);
-				pos[2] = blue_from_colour(colour4);
-				pos[3] = 0xff;
+				pos[bitmap_layout.r] = red_from_colour(colour4);
+				pos[bitmap_layout.g] = green_from_colour(colour4);
+				pos[bitmap_layout.b] = blue_from_colour(colour4);
+				pos[bitmap_layout.a] = 0xff;
 				pos += 4;
 			}
-			pos[0] = red_from_colour(colour3);
-			pos[1] = green_from_colour(colour3);
-			pos[2] = blue_from_colour(colour3);
-			pos[3] = 0xff;
+			pos[bitmap_layout.r] = red_from_colour(colour3);
+			pos[bitmap_layout.g] = green_from_colour(colour3);
+			pos[bitmap_layout.b] = blue_from_colour(colour3);
+			pos[bitmap_layout.a] = 0xff;
 			pos += 4;
-			pos[0] = red_from_colour(colour1);
-			pos[1] = green_from_colour(colour1);
-			pos[2] = blue_from_colour(colour1);
-			pos[3] = 0xff;
+			pos[bitmap_layout.r] = red_from_colour(colour1);
+			pos[bitmap_layout.g] = green_from_colour(colour1);
+			pos[bitmap_layout.b] = blue_from_colour(colour1);
+			pos[bitmap_layout.a] = 0xff;
 			pos += 4;
 			for (x = y * 2 + 2; x < size ; x++) {
-				pos[0] = red_from_colour(colour0);
-				pos[1] = green_from_colour(colour0);
-				pos[2] = blue_from_colour(colour0);
-				pos[3] = 0xff;
+				pos[bitmap_layout.r] = red_from_colour(colour0);
+				pos[bitmap_layout.g] = green_from_colour(colour0);
+				pos[bitmap_layout.b] = blue_from_colour(colour0);
+				pos[bitmap_layout.a] = 0xff;
 				pos += 4;
 			}
 		} else if ((y == size / 2) && (size & 0x1)) {
 			/* Middle row */
 			for (x = 0; x < size - 1; x++) {
-				pos[0] = red_from_colour(colour4);
-				pos[1] = green_from_colour(colour4);
-				pos[2] = blue_from_colour(colour4);
-				pos[3] = 0xff;
+				pos[bitmap_layout.r] = red_from_colour(colour4);
+				pos[bitmap_layout.g] = green_from_colour(colour4);
+				pos[bitmap_layout.b] = blue_from_colour(colour4);
+				pos[bitmap_layout.a] = 0xff;
 				pos += 4;
 			}
-			pos[0] = red_from_colour(colour2);
-			pos[1] = green_from_colour(colour2);
-			pos[2] = blue_from_colour(colour2);
-			pos[3] = 0xff;
+			pos[bitmap_layout.r] = red_from_colour(colour2);
+			pos[bitmap_layout.g] = green_from_colour(colour2);
+			pos[bitmap_layout.b] = blue_from_colour(colour2);
+			pos[bitmap_layout.a] = 0xff;
 			pos += 4;
 		} else {
 			/* Bottom half */
 			for (x = 0; x < (size - y - 1) * 2; x++) {
-				pos[0] = red_from_colour(colour4);
-				pos[1] = green_from_colour(colour4);
-				pos[2] = blue_from_colour(colour4);
-				pos[3] = 0xff;
+				pos[bitmap_layout.r] = red_from_colour(colour4);
+				pos[bitmap_layout.g] = green_from_colour(colour4);
+				pos[bitmap_layout.b] = blue_from_colour(colour4);
+				pos[bitmap_layout.a] = 0xff;
 				pos += 4;
 			}
-			pos[0] = red_from_colour(colour3);
-			pos[1] = green_from_colour(colour3);
-			pos[2] = blue_from_colour(colour3);
-			pos[3] = 0xff;
+			pos[bitmap_layout.r] = red_from_colour(colour3);
+			pos[bitmap_layout.g] = green_from_colour(colour3);
+			pos[bitmap_layout.b] = blue_from_colour(colour3);
+			pos[bitmap_layout.a] = 0xff;
 			pos += 4;
-			pos[0] = red_from_colour(colour1);
-			pos[1] = green_from_colour(colour1);
-			pos[2] = blue_from_colour(colour1);
-			pos[3] = 0xff;
+			pos[bitmap_layout.r] = red_from_colour(colour1);
+			pos[bitmap_layout.g] = green_from_colour(colour1);
+			pos[bitmap_layout.b] = blue_from_colour(colour1);
+			pos[bitmap_layout.a] = 0xff;
 			pos += 4;
 			for (x = (size - y) * 2; x < size ; x++) {
-				pos[0] = red_from_colour(colour0);
-				pos[1] = green_from_colour(colour0);
-				pos[2] = blue_from_colour(colour0);
-				pos[3] = 0xff;
+				pos[bitmap_layout.r] = red_from_colour(colour0);
+				pos[bitmap_layout.g] = green_from_colour(colour0);
+				pos[bitmap_layout.b] = blue_from_colour(colour0);
+				pos[bitmap_layout.a] = 0xff;
 				pos += 4;
 			}
 		}
