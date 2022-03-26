@@ -25,10 +25,8 @@
 
 #include <nsutils/endian.h>
 
+#include "netsurf/types.h"
 #include "netsurf/bitmap.h"
-
-/** The client bitmap format. */
-extern bitmap_fmt_t bitmap_fmt;
 
 /** Pixel format: colour component order. */
 struct bitmap_colour_layout {
@@ -37,6 +35,12 @@ struct bitmap_colour_layout {
 	uint8_t b; /**< Byte offset within pixel to blue component. */
 	uint8_t a; /**< Byte offset within pixel to alpha component. */
 };
+
+/** The client bitmap format. */
+extern bitmap_fmt_t bitmap_fmt;
+
+/** The client bitmap colour channel layout. */
+extern struct bitmap_colour_layout bitmap_layout;
 
 /**
  * Get the colour layout for the given bitmap format.
@@ -84,9 +88,21 @@ static inline struct bitmap_colour_layout bitmap__get_colour_layout(
 	}
 }
 
-/* get a bitmap pixel (image/bitmap.h) into a plot colour */
-#define bitmap_pixel_to_colour(b) \
-	b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)
+/**
+ * Convert a bitmap pixel to a NetSurf colour (0xAARRGGBB).
+ *
+ * The bitmap must be in the client format.
+ *
+ * \param[in]  Pointer to a pixel in the bitmap's pixel data.
+ * \return The corresponding NetSurf colour.
+ */
+static inline colour bitmap_pixel_to_colour(const uint8_t *pixel)
+{
+	return (pixel[bitmap_layout.r] <<  0) |
+	       (pixel[bitmap_layout.g] <<  8) |
+	       (pixel[bitmap_layout.b] << 16) |
+	       (pixel[bitmap_layout.a] << 24);
+}
 
 /**
  * Sanitise bitmap pixel component layout.
