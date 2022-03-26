@@ -34,6 +34,7 @@
 #include "content/content_protected.h"
 #include "content/content_factory.h"
 #include "desktop/gui_internal.h"
+#include "desktop/bitmap.h"
 
 #include "image/image.h"
 #include "image/ico.h"
@@ -193,6 +194,9 @@ static bool nsico_redraw(struct content *c, struct content_redraw_data *data,
 			return false;
 		} else {
 			NSLOG(netsurf, INFO, "Decoding bitmap");
+			bitmap_format_to_client(bmp->bitmap, &(bitmap_fmt_t) {
+				.layout = BITMAP_LAYOUT_R8G8B8A8,
+			});
 			guit->bitmap->modified(bmp->bitmap);
 		}
 
@@ -263,6 +267,9 @@ static void *nsico_get_internal(const struct content *c, void *context)
 		if (bmp_decode(bmp) != BMP_OK) {
 			return NULL;
 		} else {
+			bitmap_format_to_client(bmp->bitmap, &(bitmap_fmt_t) {
+				.layout = BITMAP_LAYOUT_R8G8B8A8,
+			});
 			guit->bitmap->modified(bmp->bitmap);
 		}
 	}
@@ -296,6 +303,9 @@ static bool nsico_is_opaque(struct content *c)
 			return false;
 		}
 
+		bitmap_format_to_client(bmp->bitmap, &(bitmap_fmt_t) {
+			.layout = BITMAP_LAYOUT_R8G8B8A8,
+		});
 		guit->bitmap->modified(bmp->bitmap);
 	}
 
