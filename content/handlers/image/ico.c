@@ -173,6 +173,23 @@ static bool nsico_convert(struct content *c)
 	return true;
 }
 
+static bool nsico__decode(struct bmp_image *ico)
+{
+	if (ico->decoded == false) {
+		NSLOG(netsurf, DEBUG, "Decoding ICO %p", ico);
+		if (bmp_decode(ico) != BMP_OK) {
+			return false;
+		}
+
+		bitmap_format_to_client(ico->bitmap, &(bitmap_fmt_t) {
+			.layout = BITMAP_LAYOUT_R8G8B8A8,
+		});
+		guit->bitmap->modified(ico->bitmap);
+
+	}
+
+	return true;
+}
 
 static bool nsico_redraw(struct content *c, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx)
@@ -189,17 +206,8 @@ static bool nsico_redraw(struct content *c, struct content_redraw_data *data,
 	}
 
 	/* ensure its decided */
-	if (bmp->decoded == false) {
-		if (bmp_decode(bmp) != BMP_OK) {
-			return false;
-		} else {
-			NSLOG(netsurf, INFO, "Decoding bitmap");
-			bitmap_format_to_client(bmp->bitmap, &(bitmap_fmt_t) {
-				.layout = BITMAP_LAYOUT_R8G8B8A8,
-			});
-			guit->bitmap->modified(bmp->bitmap);
-		}
-
+	if (!nsico__decode(bmp)) {
+		return false;
 	}
 
 	return image_bitmap_plot(bmp->bitmap, data, clip, ctx);
@@ -263,15 +271,8 @@ static void *nsico_get_internal(const struct content *c, void *context)
 		return NULL;
 	}
 
-	if (bmp->decoded == false) {
-		if (bmp_decode(bmp) != BMP_OK) {
-			return NULL;
-		} else {
-			bitmap_format_to_client(bmp->bitmap, &(bitmap_fmt_t) {
-				.layout = BITMAP_LAYOUT_R8G8B8A8,
-			});
-			guit->bitmap->modified(bmp->bitmap);
-		}
+	if (!nsico__decode(bmp)) {
+		return NULL;
 	}
 
 	return bmp->bitmap;
@@ -298,15 +299,8 @@ static bool nsico_is_opaque(struct content *c)
 		return false;
 	}
 
-	if (bmp->decoded == false) {
-		if (bmp_decode(bmp) != BMP_OK) {
-			return false;
-		}
-
-		bitmap_format_to_client(bmp->bitmap, &(bitmap_fmt_t) {
-			.layout = BITMAP_LAYOUT_R8G8B8A8,
-		});
-		guit->bitmap->modified(bmp->bitmap);
+	if (!nsico__decode(bmp)) {
+		return false;
 	}
 
 	return guit->bitmap->get_opaque(bmp->bitmap);
