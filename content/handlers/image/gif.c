@@ -35,6 +35,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include <nsutils/assert.h>
+
 #include <nsgif.h>
 
 #include "utils/log.h"
@@ -81,39 +83,6 @@ static inline nserror gif__nsgif_error_to_ns(nsgif_error gif_res)
 }
 
 /**
- * Get the image buffer from a bitmap
- *
- * Note that all pixels must be 4-byte aligned.
- *
- * \param bitmap The bitmap to get the buffer from.
- * \return The image buffer or NULL if there is none.
- */
-static unsigned char *nsgif__get_buffer(void *bitmap)
-{
-	bitmap_fmt_t gif_fmt = {
-		.layout = BITMAP_LAYOUT_R8G8B8A8,
-	};
-
-	bitmap_format_from_client(bitmap, &gif_fmt);
-	return guit->bitmap->get_buffer(bitmap);
-}
-
-/**
- * Marks a bitmap as modified.
- *
- * \param bitmap The bitmap set as modified.
- */
-static void nsgif__modified(void *bitmap)
-{
-	bitmap_fmt_t gif_fmt = {
-		.layout = BITMAP_LAYOUT_R8G8B8A8,
-	};
-
-	bitmap_format_to_client(bitmap, &gif_fmt);
-	guit->bitmap->modified(bitmap);
-}
-
-/**
  * Callback for libnsgif; forwards the call to bitmap_create()
  *
  * \param  width   width of image in pixels
@@ -125,20 +94,37 @@ static void *gif_bitmap_create(int width, int height)
 	return guit->bitmap->create(width, height, BITMAP_NONE);
 }
 
+/**
+ * Convert client bitmap format to a LibNSGIF format specifier.
+ */
+static nsgif_bitmap_fmt_t nsgif__get_bitmap_format(void)
+{
+	ns_static_assert((int)BITMAP_LAYOUT_R8G8B8A8 == (int)NSGIF_BITMAP_FMT_R8G8B8A8);
+	ns_static_assert((int)BITMAP_LAYOUT_B8G8R8A8 == (int)NSGIF_BITMAP_FMT_B8G8R8A8);
+	ns_static_assert((int)BITMAP_LAYOUT_A8R8G8B8 == (int)NSGIF_BITMAP_FMT_A8R8G8B8);
+	ns_static_assert((int)BITMAP_LAYOUT_A8B8G8R8 == (int)NSGIF_BITMAP_FMT_A8B8G8R8);
+	ns_static_assert((int)BITMAP_LAYOUT_RGBA8888 == (int)NSGIF_BITMAP_FMT_RGBA8888);
+	ns_static_assert((int)BITMAP_LAYOUT_BGRA8888 == (int)NSGIF_BITMAP_FMT_BGRA8888);
+	ns_static_assert((int)BITMAP_LAYOUT_ARGB8888 == (int)NSGIF_BITMAP_FMT_ARGB8888);
+	ns_static_assert((int)BITMAP_LAYOUT_ABGR8888 == (int)NSGIF_BITMAP_FMT_ABGR8888);
+
+	return (nsgif_bitmap_fmt_t)bitmap_fmt.layout;
+}
+
 static nserror gif_create_gif_data(gif_content *c)
 {
 	nsgif_error gif_res;
 	const nsgif_bitmap_cb_vt gif_bitmap_callbacks = {
 		.create = gif_bitmap_create,
 		.destroy = guit->bitmap->destroy,
-		.get_buffer = nsgif__get_buffer,
+		.get_buffer = guit->bitmap->get_buffer,
 		.set_opaque = guit->bitmap->set_opaque,
 		.test_opaque = guit->bitmap->test_opaque,
-		.modified = nsgif__modified
+		.modified = guit->bitmap->modified,
 	};
 
 	gif_res = nsgif_create(&gif_bitmap_callbacks,
-			NSGIF_BITMAP_FMT_R8G8B8A8, &c->gif);
+			nsgif__get_bitmap_format(), &c->gif);
 	if (gif_res != NSGIF_OK) {
 		nserror err = gif__nsgif_error_to_ns(gif_res);
 		content_broadcast_error(&c->base, err, NULL);
