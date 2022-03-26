@@ -26,6 +26,7 @@
 #include "netsurf/bitmap.h"
 #include "netsurf/content.h"
 #include "desktop/gui_internal.h"
+#include "desktop/bitmap.h"
 
 #include "image/bmp.h"
 #include "image/gif.h"
@@ -124,7 +125,7 @@ bool image_bitmap_plot(struct bitmap *bitmap,
 		if (height == 1) {
 			/* optimise 1x1 bitmap plot */
 			pixel = guit->bitmap->get_buffer(bitmap);
-			fill_style.fill_colour = pixel_to_colour(pixel);
+			fill_style.fill_colour = bitmap_pixel_to_colour(pixel);
 
 			if (guit->bitmap->get_opaque(bitmap) ||
 			    ((fill_style.fill_colour & 0xff000000) == 0xff000000)) {

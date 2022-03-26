@@ -84,6 +84,10 @@ static inline struct bitmap_colour_layout bitmap__get_colour_layout(
 	}
 }
 
+/* get a bitmap pixel (image/bitmap.h) into a plot colour */
+#define bitmap_pixel_to_colour(b) \
+	b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)
+
 /**
  * Sanitise bitmap pixel component layout.
  *
