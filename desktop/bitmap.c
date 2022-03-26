@@ -34,7 +34,12 @@
 bitmap_fmt_t bitmap_fmt;
 
 /** The client bitmap colour channel layout. */
-struct bitmap_colour_layout bitmap_layout;
+struct bitmap_colour_layout bitmap_layout = {
+	.r = 0,
+	.g = 1,
+	.b = 2,
+	.a = 3,
+};
 
 /* Exported function, documented in include/netsurf/bitmap.h */
 void bitmap_set_format(const bitmap_fmt_t *bitmap_format)
