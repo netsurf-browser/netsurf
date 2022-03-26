@@ -51,6 +51,7 @@
 #include "content/content_protected.h"
 #include "content/content_factory.h"
 #include "desktop/gui_internal.h"
+#include "desktop/bitmap.h"
 
 #include "image/rsvg.h"
 
@@ -217,6 +218,9 @@ static bool rsvg_convert(struct content *c)
 				c->width, c->height,
 				guit->bitmap->get_rowstride(d->bitmap));
 
+	bitmap_format_to_client(d->bitmap, &(bitmap_fmt_t) {
+		.layout = BITMAP_LAYOUT_R8G8B8A8,
+	});
 	guit->bitmap->modified(d->bitmap);
 	content_set_ready(c);
 	content_set_done(c);
