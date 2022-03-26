@@ -32,6 +32,7 @@
 #include "content/content_protected.h"
 #include "content/content_factory.h"
 #include "desktop/gui_internal.h"
+#include "desktop/bitmap.h"
 
 #include "image/image_cache.h"
 #include "image/png.h"
@@ -508,6 +509,11 @@ png_cache_convert_error:
 	}
 
 	if (bitmap != NULL) {
+		bitmap_fmt_t png_fmt = {
+			.layout = BITMAP_LAYOUT_R8G8B8A8,
+		};
+
+		bitmap_format_to_client((struct bitmap *)bitmap, &png_fmt);
 		guit->bitmap->modified((struct bitmap *)bitmap);
 	}
 
@@ -536,6 +542,11 @@ static bool nspng_convert(struct content *c)
 
 	if (png_c->bitmap != NULL) {
 		guit->bitmap->set_opaque(png_c->bitmap, guit->bitmap->test_opaque(png_c->bitmap));
+		bitmap_fmt_t png_fmt = {
+			.layout = BITMAP_LAYOUT_R8G8B8A8,
+		};
+
+		bitmap_format_to_client(png_c->bitmap, &png_fmt);
 		guit->bitmap->modified(png_c->bitmap);
 	}
 
