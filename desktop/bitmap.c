@@ -41,6 +41,52 @@ struct bitmap_colour_layout bitmap_layout = {
 	.a = 3,
 };
 
+/**
+ * Get the colour layout for the given bitmap format.
+ *
+ * \param[in] fmt  Pixel format to get channel layout for,
+ * \return channel layout structure.
+ */
+static struct bitmap_colour_layout bitmap__get_colour_layout(
+		const bitmap_fmt_t *fmt)
+{
+	switch (fmt->layout) {
+	default:
+		/* Fall through. */
+	case BITMAP_LAYOUT_R8G8B8A8:
+		return (struct bitmap_colour_layout) {
+			.r = 0,
+			.g = 1,
+			.b = 2,
+			.a = 3,
+		};
+
+	case BITMAP_LAYOUT_B8G8R8A8:
+		return (struct bitmap_colour_layout) {
+			.b = 0,
+			.g = 1,
+			.r = 2,
+			.a = 3,
+		};
+
+	case BITMAP_LAYOUT_A8R8G8B8:
+		return (struct bitmap_colour_layout) {
+			.a = 0,
+			.r = 1,
+			.g = 2,
+			.b = 3,
+		};
+
+	case BITMAP_LAYOUT_A8B8G8R8:
+		return (struct bitmap_colour_layout) {
+			.a = 0,
+			.b = 1,
+			.g = 2,
+			.r = 3,
+		};
+	}
+}
+
 /* Exported function, documented in include/netsurf/bitmap.h */
 void bitmap_set_format(const bitmap_fmt_t *bitmap_format)
 {

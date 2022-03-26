@@ -43,52 +43,6 @@ extern bitmap_fmt_t bitmap_fmt;
 extern struct bitmap_colour_layout bitmap_layout;
 
 /**
- * Get the colour layout for the given bitmap format.
- *
- * \param[in] fmt  Pixel format to get channel layout for,
- * \return channel layout structure.
- */
-static inline struct bitmap_colour_layout bitmap__get_colour_layout(
-		const bitmap_fmt_t *fmt)
-{
-	switch (fmt->layout) {
-	default:
-		/* Fall through. */
-	case BITMAP_LAYOUT_R8G8B8A8:
-		return (struct bitmap_colour_layout) {
-			.r = 0,
-			.g = 1,
-			.b = 2,
-			.a = 3,
-		};
-
-	case BITMAP_LAYOUT_B8G8R8A8:
-		return (struct bitmap_colour_layout) {
-			.b = 0,
-			.g = 1,
-			.r = 2,
-			.a = 3,
-		};
-
-	case BITMAP_LAYOUT_A8R8G8B8:
-		return (struct bitmap_colour_layout) {
-			.a = 0,
-			.r = 1,
-			.g = 2,
-			.b = 3,
-		};
-
-	case BITMAP_LAYOUT_A8B8G8R8:
-		return (struct bitmap_colour_layout) {
-			.a = 0,
-			.b = 1,
-			.g = 2,
-			.r = 3,
-		};
-	}
-}
-
-/**
  * Convert a bitmap pixel to a NetSurf colour (0xAARRGGBB).
  *
  * The bitmap must be in the client format.
