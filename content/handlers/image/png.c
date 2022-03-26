@@ -119,8 +119,37 @@ static void nspng_setup_transforms(png_structp png_ptr, png_infop info_ptr)
 		png_set_gray_to_rgb(png_ptr);
 	}
 
+	switch (bitmap_fmt.layout) {
+	case BITMAP_LAYOUT_B8G8R8A8: /* Fall through. */
+	case BITMAP_LAYOUT_A8B8G8R8:
+		png_set_bgr(png_ptr);
+		break;
+	default:
+		/* RGB is the default. */
+		break;
+	}
+
 	if (!(color_type & PNG_COLOR_MASK_ALPHA)) {
-		png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
+		switch (bitmap_fmt.layout) {
+		case BITMAP_LAYOUT_A8R8G8B8: /* Fall through. */
+		case BITMAP_LAYOUT_A8B8G8R8:
+			png_set_filler(png_ptr, 0xff, PNG_FILLER_BEFORE);
+			break;
+
+		default:
+			png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
+			break;
+		}
+	} else {
+		switch (bitmap_fmt.layout) {
+		case BITMAP_LAYOUT_A8R8G8B8: /* Fall through. */
+		case BITMAP_LAYOUT_A8B8G8R8:
+			png_set_swap_alpha(png_ptr);
+			break;
+		default:
+			/* Alpha as final component is the default. */
+			break;
+		}
 	}
 
 	/* gamma correction - we use 2.2 as our screen gamma
@@ -509,11 +538,7 @@ png_cache_convert_error:
 	}
 
 	if (bitmap != NULL) {
-		bitmap_fmt_t png_fmt = {
-			.layout = BITMAP_LAYOUT_R8G8B8A8,
-		};
-
-		bitmap_format_to_client((struct bitmap *)bitmap, &png_fmt);
+		bitmap_format_to_client((struct bitmap *)bitmap, &bitmap_fmt);
 		guit->bitmap->modified((struct bitmap *)bitmap);
 	}
 
@@ -542,11 +567,7 @@ static bool nspng_convert(struct content *c)
 
 	if (png_c->bitmap != NULL) {
 		guit->bitmap->set_opaque(png_c->bitmap, guit->bitmap->test_opaque(png_c->bitmap));
-		bitmap_fmt_t png_fmt = {
-			.layout = BITMAP_LAYOUT_R8G8B8A8,
-		};
-
-		bitmap_format_to_client(png_c->bitmap, &png_fmt);
+		bitmap_format_to_client(png_c->bitmap, &bitmap_fmt);
 		guit->bitmap->modified(png_c->bitmap);
 	}
 
