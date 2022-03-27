@@ -23,6 +23,8 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
+
 #include <librosprite.h>
 
 #include "utils/utils.h"
@@ -129,19 +131,7 @@ static bool nssprite_convert(struct content *c)
 	}
 	unsigned char *spritebuf = (unsigned char *)sprite->image;
 
-	/* reverse byte order of each word */
-	for (uint32_t y = 0; y < sprite->height; y++) {
-		for (uint32_t x = 0; x < sprite->width; x++) {
-			int offset = 4 * (y * sprite->width + x);
-
-			*imagebuf = (spritebuf[offset] << 24) |
-					(spritebuf[offset + 1] << 16) |
-					(spritebuf[offset + 2] << 8) |
-					(spritebuf[offset + 3]);
-
-			imagebuf++;
-		}
-	}
+	memcpy(imagebuf, spritebuf, sprite->width * sprite->height * 4);
 
 	c->width = sprite->width;
 	c->height = sprite->height;
@@ -156,7 +146,7 @@ static bool nssprite_convert(struct content *c)
 	}
 
 	bitmap_format_to_client(nssprite->bitmap, &(bitmap_fmt_t) {
-		.layout = BITMAP_LAYOUT_R8G8B8A8,
+		.layout = BITMAP_LAYOUT_A8B8G8R8,
 	});
 	guit->bitmap->modified(nssprite->bitmap);
 
