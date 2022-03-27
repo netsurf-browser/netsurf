@@ -44,6 +44,7 @@
 #include "netsurf/browser.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/netsurf.h"
+#include "netsurf/bitmap.h"
 #include "content/fetch.h"
 #include "content/backing_store.h"
 #include "desktop/save_complete.h"
@@ -979,6 +980,11 @@ static nserror nsgtk_setup(int argc, char** argv, char **respath)
 	 */
 	browser_set_dpi(gdk_screen_get_resolution(gdk_screen_get_default()));
 	NSLOG(netsurf, INFO, "Set CSS DPI to %d", browser_get_dpi());
+
+	bitmap_set_format(&(bitmap_fmt_t) {
+		.layout = BITMAP_LAYOUT_ARGB8888,
+	});
+	NSLOG(netsurf, INFO, "Set bitmap format to 0xAARRGGBB (native endian)");
 
 	filepath_sfinddef(respath, buf, "mime.types", "/etc/");
 	gtk_fetch_filetype_init(buf);
