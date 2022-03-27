@@ -50,13 +50,8 @@
  */
 #define MIN_JPEG_SIZE 20
 
-#ifdef riscos
-/* We prefer the library to be configured with these options to save
- * copying data during decoding. */
-#if RGB_RED != 0 || RGB_GREEN != 1 || RGB_BLUE != 2 || RGB_PIXELSIZE != 4
-#warning JPEG library not optimally configured. Decoding will be slower.
-#endif
-/* but we don't care if we're not on RISC OS */
+#ifndef LIBJPEG_TURBO_VERSION
+#warning Using libjpeg (libjpeg-turbo is recommended)
 #endif
 
 static char nsjpeg_error_buffer[JMSG_LENGTH_MAX];
