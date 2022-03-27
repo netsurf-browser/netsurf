@@ -129,41 +129,6 @@ static bool rsvg_process_data(struct content *c, const char *data,
 	return true;
 }
 
-/** Convert Cairo's ARGB output to NetSurf's favoured ABGR format.  It converts
- * the data in-place. 
- *
- * \param pixels	Pixel data, in the form of ARGB.  This will
- *			be overwritten with new data in the form of ABGR.
- * \param width		Width of the bitmap
- * \param height	Height of the bitmap
- * \param rowstride	Number of bytes to skip after each row (this
- *			implementation requires this to be a multiple of 4.)
- */
-static inline void rsvg_argb_to_abgr(uint8_t *pixels, 
-		int width, int height, size_t rowstride)
-{
-	uint8_t *p = pixels;
-	int boff = 0, roff = 2;
-
-	if (endian_host_is_le() == false) {
-		boff = 1;
-		roff = 3;
-	}
-
-	for (int y = 0; y < height; y++) {
-		for (int x = 0; x < width; x++) {
-			/* Swap R and B */
-			const uint8_t r = p[4*x+roff];
-
-			p[4*x+roff] = p[4*x+boff];
-
-			p[4*x+boff] = r;
-		}
-
-		p += rowstride;
-	}
-}
-
 static bool rsvg_convert(struct content *c)
 {
 	rsvg_content *d = (rsvg_content *) c;
@@ -214,12 +179,9 @@ static bool rsvg_convert(struct content *c)
 	}
 
 	rsvg_handle_render_cairo(d->rsvgh, d->ct);
-	rsvg_argb_to_abgr(guit->bitmap->get_buffer(d->bitmap),
-				c->width, c->height,
-				guit->bitmap->get_rowstride(d->bitmap));
 
 	bitmap_format_to_client(d->bitmap, &(bitmap_fmt_t) {
-		.layout = BITMAP_LAYOUT_R8G8B8A8,
+		.layout = BITMAP_LAYOUT_ARGB8888,
 	});
 	guit->bitmap->modified(d->bitmap);
 	content_set_ready(c);
