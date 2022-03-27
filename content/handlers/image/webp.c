@@ -134,7 +134,7 @@ webp_cache_convert(struct content *c)
 	decoded = WebPDecodeRGBAInto(source_data,
 				     source_size,
 				     pixels,
-				     webpfeatures.width * webpfeatures.height * 4,
+				     rowstride * webpfeatures.height,
 				     rowstride);
 	if (decoded == NULL) {
 		/* decode failed */
