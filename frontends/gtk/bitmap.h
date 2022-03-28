@@ -26,7 +26,6 @@ extern struct gui_bitmap_table *nsgtk_bitmap_table;
 struct bitmap {
 	cairo_surface_t *surface; /* original cairo surface */
 	cairo_surface_t *scsurface; /* scaled surface */
-	bool converted; /** set if the surface data has been converted */
 };
 
 int nsgtk_bitmap_get_width(void *vbitmap);
