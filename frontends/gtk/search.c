@@ -25,6 +25,7 @@
  *         that generally means web search and is confusing.
  */
 
+#include <stdlib.h>
 #include <stdbool.h>
 #include <gtk/gtk.h>
 
