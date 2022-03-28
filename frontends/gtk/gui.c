@@ -983,6 +983,7 @@ static nserror nsgtk_setup(int argc, char** argv, char **respath)
 
 	bitmap_set_format(&(bitmap_fmt_t) {
 		.layout = BITMAP_LAYOUT_ARGB8888,
+		.pma = true,
 	});
 	NSLOG(netsurf, INFO, "Set bitmap format to 0xAARRGGBB (native endian)");
 

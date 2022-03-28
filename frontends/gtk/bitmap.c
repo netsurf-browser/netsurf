@@ -187,96 +187,12 @@ static bool bitmap_get_opaque(void *vbitmap)
 static unsigned char *bitmap_get_buffer(void *vbitmap)
 {
 	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
-	int pixel_loop;
-	int pixel_count;
 	uint8_t *pixels;
-	uint32_t t, r, g, b;
-	cairo_format_t fmt;
 
 	assert(gbitmap);
 
 	cairo_surface_flush(gbitmap->surface);
 	pixels = cairo_image_surface_get_data(gbitmap->surface);
-
-	if (!gbitmap->converted)
-		return pixels;
-
-	fmt = cairo_image_surface_get_format(gbitmap->surface);
-	pixel_count = cairo_image_surface_get_width(gbitmap->surface) *
-			cairo_image_surface_get_height(gbitmap->surface);
-
-	if (fmt == CAIRO_FORMAT_RGB24) {
-		/* Opaque image */
-		for (pixel_loop=0; pixel_loop < pixel_count; pixel_loop++) {
-			/* Cairo surface is ARGB, written in native endian */
-#if G_BYTE_ORDER == G_LITTLE_ENDIAN
-			b = pixels[4 * pixel_loop + 0];
-			g = pixels[4 * pixel_loop + 1];
-			r = pixels[4 * pixel_loop + 2];
-			t = pixels[4 * pixel_loop + 3];
-#else
-			t = pixels[4 * pixel_loop + 0];
-			r = pixels[4 * pixel_loop + 1];
-			g = pixels[4 * pixel_loop + 2];
-			b = pixels[4 * pixel_loop + 3];
-#endif
-
-			/* We asked core for 0xAARRGGBB (native endian). */
-#if G_BYTE_ORDER == G_LITTLE_ENDIAN
-			pixels[4 * pixel_loop + 0] = b;
-			pixels[4 * pixel_loop + 1] = g;
-			pixels[4 * pixel_loop + 2] = r;
-			pixels[4 * pixel_loop + 3] = t;
-#else
-			pixels[4 * pixel_loop + 0] = t;
-			pixels[4 * pixel_loop + 1] = r;
-			pixels[4 * pixel_loop + 2] = g;
-			pixels[4 * pixel_loop + 3] = b;
-#endif
-		}
-	} else {
-		/* Alpha image: de-multiply alpha */
-		for (pixel_loop=0; pixel_loop < pixel_count; pixel_loop++) {
-#if G_BYTE_ORDER == G_LITTLE_ENDIAN
-			b = pixels[4 * pixel_loop + 0];
-			g = pixels[4 * pixel_loop + 1];
-			r = pixels[4 * pixel_loop + 2];
-			t = pixels[4 * pixel_loop + 3];
-#else
-			t = pixels[4 * pixel_loop + 0];
-			r = pixels[4 * pixel_loop + 1];
-			g = pixels[4 * pixel_loop + 2];
-			b = pixels[4 * pixel_loop + 3];
-#endif
-
-			if (t != 0) {
-				r = (r << 8) / t;
-				g = (g << 8) / t;
-				b = (b << 8) / t;
-
-				r = (r > 255) ? 255 : r;
-				g = (g > 255) ? 255 : g;
-				b = (b > 255) ? 255 : b;
-			} else {
-				r = g = b = 0;
-			}
-
-			/* We asked core for 0xAARRGGBB (native endian). */
-#if G_BYTE_ORDER == G_LITTLE_ENDIAN
-			pixels[4 * pixel_loop + 0] = b;
-			pixels[4 * pixel_loop + 1] = g;
-			pixels[4 * pixel_loop + 2] = r;
-			pixels[4 * pixel_loop + 3] = t;
-#else
-			pixels[4 * pixel_loop + 0] = t;
-			pixels[4 * pixel_loop + 1] = r;
-			pixels[4 * pixel_loop + 2] = g;
-			pixels[4 * pixel_loop + 3] = b;
-#endif
-		}
-	}
-
-	gbitmap->converted = false;
 
 	return (unsigned char *) pixels;
 }
@@ -325,96 +241,10 @@ static void bitmap_destroy(void *vbitmap)
 static void bitmap_modified(void *vbitmap)
 {
 	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
-	int pixel_loop;
-	int pixel_count;
-	uint8_t *pixels;
-	uint32_t t, r, g, b;
-	cairo_format_t fmt;
 
 	assert(gbitmap);
 
-	fmt = cairo_image_surface_get_format(gbitmap->surface);
-
-	pixel_count = cairo_image_surface_get_width(gbitmap->surface) *
-		cairo_image_surface_get_height(gbitmap->surface);
-	pixels = cairo_image_surface_get_data(gbitmap->surface);
-
-	if (gbitmap->converted) {
-		cairo_surface_mark_dirty(gbitmap->surface);
-		return;
-	}
-
-	if (fmt == CAIRO_FORMAT_RGB24) {
-		/* Opaque image */
-		for (pixel_loop=0; pixel_loop < pixel_count; pixel_loop++) {
-			/* We asked core for 0xAARRGGBB (native endian). */
-#if G_BYTE_ORDER == G_LITTLE_ENDIAN
-			b = pixels[4 * pixel_loop + 0];
-			g = pixels[4 * pixel_loop + 1];
-			r = pixels[4 * pixel_loop + 2];
-			t = pixels[4 * pixel_loop + 3];
-#else
-			t = pixels[4 * pixel_loop + 0];
-			r = pixels[4 * pixel_loop + 1];
-			g = pixels[4 * pixel_loop + 2];
-			b = pixels[4 * pixel_loop + 3];
-#endif
-
-			/* Cairo surface is ARGB, written in native endian */
-#if G_BYTE_ORDER == G_LITTLE_ENDIAN
-			pixels[4 * pixel_loop + 0] = b;
-			pixels[4 * pixel_loop + 1] = g;
-			pixels[4 * pixel_loop + 2] = r;
-			pixels[4 * pixel_loop + 3] = t;
-#else
-			pixels[4 * pixel_loop + 0] = t;
-			pixels[4 * pixel_loop + 1] = r;
-			pixels[4 * pixel_loop + 2] = g;
-			pixels[4 * pixel_loop + 3] = b;
-#endif
-		}
-	} else {
-		/* Alpha image: pre-multiply alpha */
-		for (pixel_loop=0; pixel_loop < pixel_count; pixel_loop++) {
-			/* We asked core for 0xAARRGGBB (native endian). */
-#if G_BYTE_ORDER == G_LITTLE_ENDIAN
-			b = pixels[4 * pixel_loop + 0];
-			g = pixels[4 * pixel_loop + 1];
-			r = pixels[4 * pixel_loop + 2];
-			t = pixels[4 * pixel_loop + 3];
-#else
-			t = pixels[4 * pixel_loop + 0];
-			r = pixels[4 * pixel_loop + 1];
-			g = pixels[4 * pixel_loop + 2];
-			b = pixels[4 * pixel_loop + 3];
-#endif
-
-			if (t != 0) {
-				r = ((r * (t + 1)) >> 8) & 0xff;
-				g = ((g * (t + 1)) >> 8) & 0xff;
-				b = ((b * (t + 1)) >> 8) & 0xff;
-			} else {
-				r = g = b = 0;
-			}
-
-			/* Cairo surface is ARGB, written in native endian */
-#if G_BYTE_ORDER == G_LITTLE_ENDIAN
-			pixels[4 * pixel_loop + 0] = b;
-			pixels[4 * pixel_loop + 1] = g;
-			pixels[4 * pixel_loop + 2] = r;
-			pixels[4 * pixel_loop + 3] = t;
-#else
-			pixels[4 * pixel_loop + 0] = t;
-			pixels[4 * pixel_loop + 1] = r;
-			pixels[4 * pixel_loop + 2] = g;
-			pixels[4 * pixel_loop + 3] = b;
-#endif
-		}
-	}
-
 	cairo_surface_mark_dirty(gbitmap->surface);
-
-	gbitmap->converted = true;
 }
 
 /* exported interface documented in gtk/bitmap.h */
