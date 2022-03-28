@@ -33,6 +33,7 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "utils/config.h"
 #include "netsurf/inttypes.h"
 #include "utils/utils.h"
 #include "utils/errors.h"
