@@ -106,7 +106,8 @@ static const char *bitmap__layout_to_str(enum bitmap_layout layout)
 		[BITMAP_LAYOUT_ABGR8888] = "0xAABBGGRR (native endian)",
 	};
 
-	if (layout >= (sizeof(str)) / sizeof(*str)) {
+	if ((size_t)layout >= (sizeof(str)) / sizeof(*str) ||
+	    str[layout] == NULL) {
 		return "Unknown";
 	}
 
