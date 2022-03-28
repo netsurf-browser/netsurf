@@ -21,9 +21,11 @@
  * Implementation of netsurf miscellaneous operations table
  */
 
+#include <string.h>
 #include <stdbool.h>
 #include <gtk/gtk.h>
 
+#include "utils/config.h"
 #include "utils/errors.h"
 #include "utils/log.h"
 #include "utils/messages.h"
