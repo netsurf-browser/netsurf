@@ -112,6 +112,10 @@ webp_cache_convert(struct content *c)
 
 	if (webpfeatures.has_alpha == 0) {
 		bmap_flags = BITMAP_OPAQUE;
+		/* Image has no alpha. Premultiplied alpha makes no difference.
+		 * Optimisation: Avoid unnecessary conversion by copying format.
+		 */
+		webp_fmt.pma = bitmap_fmt.pma;
 	} else {
 		bmap_flags = BITMAP_NONE;
 	}
