@@ -985,7 +985,6 @@ static nserror nsgtk_setup(int argc, char** argv, char **respath)
 		.layout = BITMAP_LAYOUT_ARGB8888,
 		.pma = true,
 	});
-	NSLOG(netsurf, INFO, "Set bitmap format to 0xAARRGGBB (native endian)");
 
 	filepath_sfinddef(respath, buf, "mime.types", "/etc/");
 	gtk_fetch_filetype_init(buf);
