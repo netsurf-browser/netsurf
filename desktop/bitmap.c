@@ -87,12 +87,48 @@ static struct bitmap_colour_layout bitmap__get_colour_layout(
 	}
 }
 
+/**
+ * Get string for given pixel layout.
+ *
+ * \param[in] layout The pixel layout to get string for,
+ * \return String for given layout.
+ */
+static const char *bitmap__layout_to_str(enum bitmap_layout layout)
+{
+	const char *const str[] = {
+		[BITMAP_LAYOUT_R8G8B8A8] = "Byte-wise RGBA",
+		[BITMAP_LAYOUT_B8G8R8A8] = "Byte-wise BGRA",
+		[BITMAP_LAYOUT_A8R8G8B8] = "Byte-wise ARGB",
+		[BITMAP_LAYOUT_A8B8G8R8] = "Byte-wise ABGR",
+		[BITMAP_LAYOUT_RGBA8888] = "0xRRGGBBAA (native endian)",
+		[BITMAP_LAYOUT_BGRA8888] = "0xBBGGRRAA (native endian)",
+		[BITMAP_LAYOUT_ARGB8888] = "0xAARRGGBB (native endian)",
+		[BITMAP_LAYOUT_ABGR8888] = "0xAABBGGRR (native endian)",
+	};
+
+	if (layout >= (sizeof(str)) / sizeof(*str)) {
+		return "Unknown";
+	}
+
+	return str[layout];
+}
+
 /* Exported function, documented in include/netsurf/bitmap.h */
 void bitmap_set_format(const bitmap_fmt_t *bitmap_format)
 {
 	bitmap_fmt = *bitmap_format;
 
+	NSLOG(netsurf, INFO, "Setting core bitmap format to: %s%s",
+			bitmap__layout_to_str(bitmap_format->layout),
+			bitmap_format->pma ? " pre multiplied alpha" : "");
+
 	bitmap_fmt.layout = bitmap_sanitise_bitmap_layout(bitmap_fmt.layout);
+
+	if (bitmap_format->layout != bitmap_fmt.layout) {
+		NSLOG(netsurf, INFO, "Sanitised layout to: %s",
+				bitmap__layout_to_str(bitmap_fmt.layout));
+	}
+
 	bitmap_layout = bitmap__get_colour_layout(&bitmap_fmt);
 }
 
