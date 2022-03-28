@@ -538,8 +538,13 @@ png_cache_convert_error:
 	}
 
 	if (bitmap != NULL) {
-		bitmap_format_to_client((struct bitmap *)bitmap, &bitmap_fmt);
-		guit->bitmap->modified((struct bitmap *)bitmap);
+		bool opaque = guit->bitmap->test_opaque((void *)bitmap);
+		guit->bitmap->set_opaque((void *)bitmap, opaque);
+		bitmap_format_to_client((void *)bitmap, &(bitmap_fmt_t) {
+			.layout = bitmap_fmt.layout,
+			.pma = opaque ? bitmap_fmt.pma : false,
+		});
+		guit->bitmap->modified((void *)bitmap);
 	}
 
 	return (struct bitmap *)bitmap;
@@ -566,8 +571,12 @@ static bool nspng_convert(struct content *c)
 	}
 
 	if (png_c->bitmap != NULL) {
-		guit->bitmap->set_opaque(png_c->bitmap, guit->bitmap->test_opaque(png_c->bitmap));
-		bitmap_format_to_client(png_c->bitmap, &bitmap_fmt);
+		bool opaque = guit->bitmap->test_opaque(png_c->bitmap);
+		guit->bitmap->set_opaque(png_c->bitmap, opaque);
+		bitmap_format_to_client(png_c->bitmap, &(bitmap_fmt_t) {
+			.layout = bitmap_fmt.layout,
+			.pma = opaque ? bitmap_fmt.pma : false,
+		});
 		guit->bitmap->modified(png_c->bitmap);
 	}
 
