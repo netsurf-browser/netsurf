@@ -121,7 +121,7 @@ static inline void bitmap_format_to_client(
 	bitmap_fmt_t from = *current_fmt;
 
 	from.layout = bitmap_sanitise_bitmap_layout(from.layout);
-	if (from.layout != bitmap_fmt.layout) {
+	if (from.layout != bitmap_fmt.layout || from.pma != bitmap_fmt.pma) {
 		bitmap_format_convert(bitmap, &from, &bitmap_fmt);
 	}
 }
@@ -139,7 +139,7 @@ static inline void bitmap_format_from_client(
 	bitmap_fmt_t to = *target_fmt;
 
 	to.layout = bitmap_sanitise_bitmap_layout(to.layout);
-	if (to.layout != bitmap_fmt.layout) {
+	if (to.layout != bitmap_fmt.layout || to.pma != bitmap_fmt.pma) {
 		bitmap_format_convert(bitmap, &bitmap_fmt, &to);
 	}
 }

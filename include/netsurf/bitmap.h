@@ -115,7 +115,8 @@ enum bitmap_layout {
 
 /** Bitmap format specifier. */
 typedef struct bitmap_fmt {
-	enum bitmap_layout layout; /** Colour component layout. */
+	enum bitmap_layout layout; /**< Colour component layout. */
+	bool pma;                  /**< Premultiplied alpha. */
 } bitmap_fmt_t;
 
 struct content;
