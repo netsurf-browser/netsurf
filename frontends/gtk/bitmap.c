@@ -55,12 +55,11 @@ static void *bitmap_create(int width, int height, enum gui_bitmap_flags flags)
 
 	gbitmap = calloc(1, sizeof(struct bitmap));
 	if (gbitmap != NULL) {
-		if ((flags & BITMAP_OPAQUE) != 0) {
-			gbitmap->surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24, width, height);
-		} else {
-			gbitmap->surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+		if (flags & BITMAP_OPAQUE) {
+			gbitmap->opaque = true;
 		}
 
+		gbitmap->surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
 		if (cairo_surface_status(gbitmap->surface) != CAIRO_STATUS_SUCCESS) {
 			cairo_surface_destroy(gbitmap->surface);
 			free(gbitmap);
@@ -81,46 +80,8 @@ static void *bitmap_create(int width, int height, enum gui_bitmap_flags flags)
 static void bitmap_set_opaque(void *vbitmap, bool opaque)
 {
 	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
-	cairo_format_t fmt;
-	cairo_surface_t *nsurface = NULL;
 
-	assert(gbitmap);
-
-	fmt = cairo_image_surface_get_format(gbitmap->surface);
-	if (fmt == CAIRO_FORMAT_RGB24) {
-		if (opaque == false) {
-			/* opaque to transparent */
-			nsurface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
-					cairo_image_surface_get_width(gbitmap->surface),
-					cairo_image_surface_get_height(gbitmap->surface));
-
-		}
-
-	} else {
-		if (opaque == true) {
-			/* transparent to opaque */
-			nsurface = cairo_image_surface_create(CAIRO_FORMAT_RGB24,
-					cairo_image_surface_get_width(gbitmap->surface),
-					cairo_image_surface_get_height(gbitmap->surface));
-
-		}
-	}
-
-	if (nsurface != NULL) {
-		if (cairo_surface_status(nsurface) != CAIRO_STATUS_SUCCESS) {
-			cairo_surface_destroy(nsurface);
-		} else {
-			memcpy(cairo_image_surface_get_data(nsurface),
-			       cairo_image_surface_get_data(gbitmap->surface),
-			       cairo_image_surface_get_stride(gbitmap->surface) * cairo_image_surface_get_height(gbitmap->surface));
-			cairo_surface_destroy(gbitmap->surface);
-			gbitmap->surface = nsurface;
-
-			cairo_surface_mark_dirty(gbitmap->surface);
-
-		}
-
-	}
+	gbitmap->opaque = opaque;
 }
 
 
@@ -132,16 +93,8 @@ static void bitmap_set_opaque(void *vbitmap, bool opaque)
 static bool bitmap_get_opaque(void *vbitmap)
 {
 	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
-	cairo_format_t fmt;
 
-	assert(gbitmap);
-
-	fmt = cairo_image_surface_get_format(gbitmap->surface);
-	if (fmt == CAIRO_FORMAT_RGB24) {
-		return true;
-	}
-
-	return false;
+	return gbitmap->opaque;
 }
 
 
