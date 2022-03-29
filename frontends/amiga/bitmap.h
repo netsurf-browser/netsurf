@@ -176,14 +176,6 @@ void amiga_bitmap_modified(void *bitmap);
 void amiga_bitmap_set_opaque(void *bitmap, bool opaque);
 
 /**
- * Tests whether a bitmap has an opaque alpha channel
- *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- * \return whether the bitmap is opaque
- */
-bool amiga_bitmap_test_opaque(void *bitmap);
-
-/**
  * Gets whether a bitmap should be plotted opaque
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()

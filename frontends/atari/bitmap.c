@@ -269,40 +269,6 @@ static void bitmap_set_opaque(void *bitmap, bool opaque)
 }
 
 
-/**
- * Tests whether a bitmap has an opaque alpha channel
- *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- * \return whether the bitmap is opaque
- */
-static bool bitmap_test_opaque(void *bitmap)
-{
-	int tst;
-	struct bitmap *bm = bitmap;
-
-	if (bitmap == NULL) {
-		NSLOG(netsurf, INFO, "NULL bitmap!");
-		return false;
-	}
-
-    if( nsoption_int(atari_transparency) == 0 ){
-        return( true );
-    }
-
-	tst = bm->width * bm->height;
-
-	while (tst-- > 0) {
-		if (bm->pixdata[(tst << 2) + 3] != 0xff) {
-				NSLOG(netsurf, INFO,
-				      "bitmap %p has transparency", bm);
-					return false;
-		}
-	}
-	NSLOG(netsurf, INFO, "bitmap %p is opaque", bm);
-	return true;
-}
-
-
 /* exported interface documented in atari/bitmap.h */
 bool atari_bitmap_get_opaque(void *bitmap)
 {
@@ -414,7 +380,6 @@ static struct gui_bitmap_table bitmap_table = {
 	.destroy = atari_bitmap_destroy,
 	.set_opaque = bitmap_set_opaque,
 	.get_opaque = atari_bitmap_get_opaque,
-	.test_opaque = bitmap_test_opaque,
 	.get_buffer = bitmap_get_buffer,
 	.get_rowstride = atari_bitmap_get_rowstride,
 	.get_width = atari_bitmap_get_width,

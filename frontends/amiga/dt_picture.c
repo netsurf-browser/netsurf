@@ -202,7 +202,7 @@ static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
 			amiga_bitmap_get_rowstride(bitmap),
 			0, 0, c->width, c->height);
 
-		amiga_bitmap_set_opaque(bitmap, amiga_bitmap_test_opaque(bitmap));
+		amiga_bitmap_set_opaque(bitmap, bitmap_test_opaque(bitmap));
 		
 		DisposeDTObject(dto);
 		adt->dto = NULL;

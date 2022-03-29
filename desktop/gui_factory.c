@@ -560,10 +560,6 @@ static nserror verify_bitmap_register(struct gui_bitmap_table *gbt)
 		return NSERROR_BAD_PARAMETER;
 	}
 
-	if (gbt->test_opaque == NULL) {
-		return NSERROR_BAD_PARAMETER;
-	}
-
 	if (gbt->get_buffer == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}

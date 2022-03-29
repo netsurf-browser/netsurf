@@ -134,6 +134,14 @@ struct hlcache_handle;
 void bitmap_set_format(const bitmap_fmt_t *bitmap_format);
 
 /**
+ * Test whether a bitmap is completely opaque (no transparency).
+ *
+ * \param[in]  bitmap  The bitmap to test.
+ * \return Returns true if the bitmap is opaque, false otherwise.
+ */
+bool bitmap_test_opaque(void *bitmap);
+
+/**
  * Bitmap operations.
  */
 struct gui_bitmap_table {
@@ -171,14 +179,6 @@ struct gui_bitmap_table {
 	 * \return The bitmap opacity.
 	 */
 	bool (*get_opaque)(void *bitmap);
-
-	/**
-	 * Test if a bitmap is opaque.
-	 *
-	 * \param bitmap The bitmap to examine.
-	 * \return The bitmap opacity.
-	 */
-	bool (*test_opaque)(void *bitmap);
 
 	/**
 	 * Get the image buffer from a bitmap

@@ -119,7 +119,7 @@ static nserror gif_create_gif_data(gif_content *c)
 		.destroy = guit->bitmap->destroy,
 		.get_buffer = guit->bitmap->get_buffer,
 		.set_opaque = guit->bitmap->set_opaque,
-		.test_opaque = guit->bitmap->test_opaque,
+		.test_opaque = bitmap_test_opaque,
 		.modified = guit->bitmap->modified,
 	};
 

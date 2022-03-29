@@ -125,36 +125,6 @@ static void bitmap_set_opaque(void *vbitmap, bool opaque)
 
 
 /**
- * Tests whether a bitmap has an opaque alpha channel
- *
- * \param  vbitmap  a bitmap, as returned by bitmap_create()
- * \return whether the bitmap is opaque
- */
-static bool bitmap_test_opaque(void *vbitmap)
-{
-	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
-	unsigned char *pixels;
-	int pcount;
-	int ploop;
-
-	assert(gbitmap);
-
-	pixels = cairo_image_surface_get_data(gbitmap->surface);
-
-	pcount = cairo_image_surface_get_stride(gbitmap->surface) *
-		cairo_image_surface_get_height(gbitmap->surface);
-
-	for (ploop = 3; ploop < pcount; ploop += 4) {
-		if (pixels[ploop] != 0xff) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
-
-/**
  * Gets whether a bitmap should be plotted opaque
  *
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
@@ -356,7 +326,6 @@ static struct gui_bitmap_table bitmap_table = {
 	.destroy = bitmap_destroy,
 	.set_opaque = bitmap_set_opaque,
 	.get_opaque = bitmap_get_opaque,
-	.test_opaque = bitmap_test_opaque,
 	.get_buffer = bitmap_get_buffer,
 	.get_rowstride = bitmap_get_rowstride,
 	.get_width = nsgtk_bitmap_get_width,

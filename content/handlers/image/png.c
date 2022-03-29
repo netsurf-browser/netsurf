@@ -538,7 +538,7 @@ png_cache_convert_error:
 	}
 
 	if (bitmap != NULL) {
-		bool opaque = guit->bitmap->test_opaque((void *)bitmap);
+		bool opaque = bitmap_test_opaque((void *)bitmap);
 		guit->bitmap->set_opaque((void *)bitmap, opaque);
 		bitmap_format_to_client((void *)bitmap, &(bitmap_fmt_t) {
 			.layout = bitmap_fmt.layout,
@@ -571,7 +571,7 @@ static bool nspng_convert(struct content *c)
 	}
 
 	if (png_c->bitmap != NULL) {
-		bool opaque = guit->bitmap->test_opaque(png_c->bitmap);
+		bool opaque = bitmap_test_opaque(png_c->bitmap);
 		guit->bitmap->set_opaque(png_c->bitmap, opaque);
 		bitmap_format_to_client(png_c->bitmap, &(bitmap_fmt_t) {
 			.layout = bitmap_fmt.layout,

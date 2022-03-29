@@ -189,55 +189,6 @@ static size_t bitmap_get_rowstride(void *vbitmap)
 }
 
 
-/**
- * Tests whether a bitmap has an opaque alpha channel
- *
- * \param  vbitmap  a bitmap, as returned by bitmap_create()
- * \return whether the bitmap is opaque
- */
-static bool bitmap_test_opaque(void *vbitmap)
-{
-	struct bitmap *bitmap = (struct bitmap *) vbitmap;
-	unsigned char *sprite;
-	unsigned int width, height, size;
-	osspriteop_header *sprite_header;
-	unsigned *p, *ep;
-
-	assert(bitmap);
-
-	sprite = riscos_bitmap_get_buffer(bitmap);
-	if (!sprite)
-		return false;
-
-	width = bitmap_get_rowstride(bitmap);
-
-	sprite_header = (osspriteop_header *) (bitmap->sprite_area + 1);
-
-	height = (sprite_header->height + 1);
-	
-	size = width * height;
-	
-	p = (void *) sprite;
-
-	ep = (void *) (sprite + (size & ~31));
-	while (p < ep) {
-		/* \todo prefetch(p, 128)? */
-		if (((p[0] & p[1] & p[2] & p[3] & p[4] & p[5] & p[6] & p[7])
-				& 0xff000000U) != 0xff000000U)
-			return false;
-		p += 8;
-	}
-
-	ep = (void *) (sprite + size);
-	while (p < ep) {
-		if ((*p & 0xff000000U) != 0xff000000U) return false;
-		p++;
-	}
-
-	return true;
-}
-
-
 /* exported interface documented in riscos/bitmap.h */
 bool riscos_bitmap_get_opaque(void *vbitmap)
 {
@@ -856,7 +807,6 @@ static struct gui_bitmap_table bitmap_table = {
 	.destroy = riscos_bitmap_destroy,
 	.set_opaque = bitmap_set_opaque,
 	.get_opaque = riscos_bitmap_get_opaque,
-	.test_opaque = bitmap_test_opaque,
 	.get_buffer = riscos_bitmap_get_buffer,
 	.get_rowstride = bitmap_get_rowstride,
 	.get_width = bitmap_get_width,

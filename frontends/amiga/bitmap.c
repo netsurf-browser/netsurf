@@ -306,25 +306,6 @@ void amiga_bitmap_set_opaque(void *bitmap, bool opaque)
 
 
 /* exported function documented in amiga/bitmap.h */
-bool amiga_bitmap_test_opaque(void *bitmap)
-{
-	struct bitmap *bm = bitmap;
-	uint32 p = bm->width * bm->height;
-	uint32 a = 0;
-	uint32 *bmi = (uint32 *)amiga_bitmap_get_buffer(bm);
-
-	assert(bitmap);
-
-	for(a=0;a<p;a+=4)
-	{
-		if ((*bmi & 0x000000ffU) != 0x000000ffU) return false;
-		bmi++;
-	}
-	return true;
-}
-
-
-/* exported function documented in amiga/bitmap.h */
 bool amiga_bitmap_get_opaque(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
@@ -463,7 +444,7 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 				PBPAFMT_RGBA, amiga_bitmap_get_rowstride(bm), 0, 0,
 				bmh->bmh_Width, bmh->bmh_Height);
 
-			amiga_bitmap_set_opaque(bm, amiga_bitmap_test_opaque(bm));
+			amiga_bitmap_set_opaque(bm, bitmap_test_opaque(bm));
 		}
 		DisposeDTObject(dto);
 	}
@@ -809,7 +790,6 @@ static struct gui_bitmap_table bitmap_table = {
 	.destroy = amiga_bitmap_destroy,
 	.set_opaque = amiga_bitmap_set_opaque,
 	.get_opaque = amiga_bitmap_get_opaque,
-	.test_opaque = amiga_bitmap_test_opaque,
 	.get_buffer = amiga_bitmap_get_buffer,
 	.get_rowstride = amiga_bitmap_get_rowstride,
 	.get_width = bitmap_get_width,

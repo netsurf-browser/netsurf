@@ -311,3 +311,28 @@ void bitmap_format_convert(void *bitmap,
 		}
 	}
 }
+
+/* Exported function, documented in desktop/bitmap.h */
+bool bitmap_test_opaque(void *bitmap)
+{
+	int width = guit->bitmap->get_width(bitmap);
+	int height = guit->bitmap->get_height(bitmap);
+	size_t rowstride = guit->bitmap->get_rowstride(bitmap);
+	const uint8_t *buffer = guit->bitmap->get_buffer(bitmap);
+
+	width *= sizeof(uint32_t);
+
+	for (int y = 0; y < height; y++) {
+		const uint8_t *row = buffer;
+
+		for (int x = bitmap_layout.a; x < width; x += 4) {
+			if (row[x] != 0xff) {
+				return false;
+			}
+		}
+
+		buffer += rowstride;
+	}
+
+	return true;
+}

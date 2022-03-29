@@ -68,11 +68,6 @@ static void bitmap_set_opaque(void *bitmap, bool opaque)
 	bmap->opaque = opaque;
 }
 
-static bool bitmap_test_opaque(void *bitmap)
-{
-	return false;
-}
-
 static bool bitmap_get_opaque(void *bitmap)
 {
 	struct bitmap *bmap = bitmap;
@@ -122,7 +117,6 @@ static struct gui_bitmap_table bitmap_table = {
 	.destroy = bitmap_destroy,
 	.set_opaque = bitmap_set_opaque,
 	.get_opaque = bitmap_get_opaque,
-	.test_opaque = bitmap_test_opaque,
 	.get_buffer = bitmap_get_buffer,
 	.get_rowstride = bitmap_get_rowstride,
 	.get_width = bitmap_get_width,

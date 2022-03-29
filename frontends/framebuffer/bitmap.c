@@ -156,39 +156,6 @@ static void bitmap_set_opaque(void *bitmap, bool opaque)
 
 
 /**
- * Tests whether a bitmap has an opaque alpha channel
- *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- * \return whether the bitmap is opaque
- */
-static bool bitmap_test_opaque(void *bitmap)
-{
-        int tst;
-	nsfb_t *bm = bitmap;
-	unsigned char *bmpptr;
-	int width;
-	int height;
-
-	assert(bm != NULL);
-
-	nsfb_get_buffer(bm, &bmpptr, NULL);
-
-	nsfb_get_geometry(bm, &width, &height, NULL);
-
-        tst = width * height;
-
-        while (tst-- > 0) {
-                if (bmpptr[(tst << 2) + 3] != 0xff) {
-                        NSLOG(netsurf, INFO, "bitmap %p has transparency", bm);
-                        return false;
-                }
-        }
-        NSLOG(netsurf, INFO, "bitmap %p is opaque", bm);
-	return true;
-}
-
-
-/**
  * Gets weather a bitmap should be plotted opaque
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
@@ -307,7 +274,6 @@ static struct gui_bitmap_table bitmap_table = {
 	.destroy = bitmap_destroy,
 	.set_opaque = bitmap_set_opaque,
 	.get_opaque = framebuffer_bitmap_get_opaque,
-	.test_opaque = bitmap_test_opaque,
 	.get_buffer = bitmap_get_buffer,
 	.get_rowstride = bitmap_get_rowstride,
 	.get_width = bitmap_get_width,
