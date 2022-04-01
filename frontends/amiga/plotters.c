@@ -126,11 +126,34 @@ struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit
 	if(depth < 16) {
 		gg->palette_mapped = true;
 		if(force32bit == false) palette_mapped = true;
+		
+		bitmap_set_format(&(bitmap_fmt_t) {
+			.layout = BITMAP_LAYOUT_ARGB8888,
+			.pma = true,
+		});
+   	
+		NSLOG(netsurf, INFO, "Set bitmap format to 0xAARRGGBB (native endian) (PMA)");
+		
 	} else {
 		gg->palette_mapped = false;
-		if(force32bit == false) palette_mapped = false;
+		
+		bitmap_set_format(&(bitmap_fmt_t) {
+			.layout = BITMAP_LAYOUT_ARGB8888,
+			.pma = false,
+		});
+   	
+		NSLOG(netsurf, INFO, "Set bitmap format to 0xAARRGGBB (native endian)");
+
 	}
 #else
+ 	bitmap_set_format(&(bitmap_fmt_t) {
+		.layout = BITMAP_LAYOUT_ARGB8888,
+		.pma = true,
+	});
+   	
+ 	NSLOG(netsurf, INFO, "Set bitmap format to 0xAARRGGBB (native endian) (PMA)");
+
+
 	/* Friend BitMaps are weird.
 	 * For OS4, we shouldn't use a friend BitMap here (see below).
 	 * For OS3 AGA, we get no display blitted if we use a friend BitMap,
@@ -149,7 +172,6 @@ struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit
 		if(force32bit == false) palette_mapped = true;
 	} else {
 		gg->palette_mapped = false;
-		if(force32bit == false) palette_mapped = false;
 	}
 #endif
 
