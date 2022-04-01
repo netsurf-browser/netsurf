@@ -6670,6 +6670,12 @@ int main(int argc, char** argv)
 	win_destroyed = false;
 	ami_font_setdevicedpi(0); /* for early font requests, eg treeview init */
 
+ 	bitmap_set_format(&(bitmap_fmt_t) {
+ 		.layout = BITMAP_LAYOUT_ARGB8888,
+		.pma = true,
+ 	});
+ 	NSLOG(netsurf, INFO, "Set bitmap format to 0xAARRGGBB (native endian)");
+
 	window_list = NewObjList();
 
 	urldb_load(nsoption_charp(url_file));

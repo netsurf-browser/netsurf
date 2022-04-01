@@ -27,7 +27,7 @@
 
 #include "netsurf/bitmap.h"
 
-#define AMI_BITMAP_FORMAT RGBFB_R8G8B8A8
+#define AMI_BITMAP_FORMAT RGBFB_A8R8G8B8
 #define AMI_BITMAP_SCALE_ICON 0xFF
 
 extern struct gui_bitmap_table *amiga_bitmap_table;

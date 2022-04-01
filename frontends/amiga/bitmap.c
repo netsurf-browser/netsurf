@@ -347,26 +347,6 @@ int bitmap_get_height(void *bitmap)
 	}
 }
 
-static void ami_bitmap_argb_to_rgba(struct bitmap *bm)
-{
-	if(bm == NULL) return;
-	
-	ULONG *data = (ULONG *)amiga_bitmap_get_buffer(bm);
-	for(int i = 0; i < (bm->width * bm->height); i++) {
-		data[i] = (data[i] << 8) | (data[i] >> 24);
-	}
-}
-
-static void ami_bitmap_rgba_to_argb(struct bitmap *bm)
-{
-	if(bm == NULL) return;
-	
-	ULONG *data = (ULONG *)amiga_bitmap_get_buffer(bm);
-	for(int i = 0; i < (bm->width * bm->height); i++) {
-		data[i] = (data[ i] >> 8) | (data[i] << 24);
-	}
-}
-
 #ifdef BITMAP_DUMP
 void bitmap_dump(struct bitmap *bitmap)
 {
@@ -416,7 +396,7 @@ Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap)
 					TAG_DONE);
 
 		IDoMethod(dto, PDTM_WRITEPIXELARRAY, amiga_bitmap_get_buffer(bitmap),
-					PBPAFMT_RGBA, amiga_bitmap_get_rowstride(bitmap), 0, 0,
+					PBPAFMT_ARGB, amiga_bitmap_get_rowstride(bitmap), 0, 0,
 					bitmap_get_width(bitmap), bitmap_get_height(bitmap));
 	}
 
@@ -441,7 +421,7 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 			bm = amiga_bitmap_create(bmh->bmh_Width, bmh->bmh_Height, 0);
 
 			IDoMethod(dto, PDTM_READPIXELARRAY, amiga_bitmap_get_buffer(bm),
-				PBPAFMT_RGBA, amiga_bitmap_get_rowstride(bm), 0, 0,
+				PBPAFMT_ARGB, amiga_bitmap_get_rowstride(bm), 0, 0,
 				bmh->bmh_Width, bmh->bmh_Height);
 
 			amiga_bitmap_set_opaque(bm, bitmap_test_opaque(bm));
@@ -497,7 +477,6 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 					dithermode = DITHERMODE_FS;
 				}
 
-				ami_bitmap_rgba_to_argb(bitmap);
 				bitmap->drawhandle = ObtainDrawHandle(
 					NULL,
 					&rp,
@@ -514,7 +493,6 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 					ReleaseDrawHandle(bitmap->drawhandle);
 					bitmap->drawhandle = NULL;
 				}
-				ami_bitmap_argb_to_rgba(bitmap);
 			} else {
 				if(guigfx_warned == false) {
 					amiga_warn_user("BMConvErr", NULL);
@@ -664,7 +642,7 @@ PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width,
 
 	for(y=0; y<height; y++) {
 		for(x=0; x<width; x++) {
-			if ((*bmi & 0x000000ffU) <= (ULONG)nsoption_int(mask_alpha)) maskbit = 0;
+			if ((*bmi & 0xff000000U) <= (ULONG)nsoption_int(mask_alpha)) maskbit = 0;
 				else maskbit = 1;
 			bmi++;
 			bitmap->native_mask[(y*bpr) + (x/8)] |=
@@ -740,8 +718,6 @@ static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *conte
 					BLITA_DestX, 0,
 					BLITA_DestY, 0,
 					TAG_DONE);
-
-	ami_bitmap_argb_to_rgba(bitmap);
 
 	/**\todo In theory we should be able to move the bitmap to our native area
 		to try to avoid re-conversion (at the expense of memory) */
