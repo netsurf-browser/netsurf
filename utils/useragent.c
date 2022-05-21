@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "utils/config.h"
 #include "utils/utsname.h"
@@ -29,7 +30,7 @@
 static const char *core_user_agent_string = NULL;
 
 #ifndef NETSURF_UA_FORMAT_STRING
-#define NETSURF_UA_FORMAT_STRING "NetSurf/%d.%d (%s)"
+#define NETSURF_UA_FORMAT_STRING "Mozilla/5.0 (%s) NetSurf/%d.%d"
 #endif
 
 /**
@@ -46,12 +47,16 @@ user_agent_build_string(void)
 
         if (uname(&un) >= 0) {
                 sysname = un.sysname;
+                if (strcmp(sysname, "Linux") == 0) {
+			/* Force desktop, not mobile */
+                        sysname = "X11; Linux";
+                }
         }
 
         len = snprintf(NULL, 0, NETSURF_UA_FORMAT_STRING,
+                       sysname,
                        netsurf_version_major,
-                       netsurf_version_minor,
-                       sysname);
+                       netsurf_version_minor);
         ua_string = malloc(len + 1);
         if (!ua_string) {
                 /** \todo this needs handling better */
@@ -59,9 +64,9 @@ user_agent_build_string(void)
         }
         snprintf(ua_string, len + 1,
                  NETSURF_UA_FORMAT_STRING,
+                 sysname,
                  netsurf_version_major,
-                 netsurf_version_minor,
-                 sysname);
+                 netsurf_version_minor);
 
         core_user_agent_string = ua_string;
 

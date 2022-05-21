@@ -64,18 +64,19 @@
 ===================
 
   You may also want to change NetSurf's user agent string to include the
-  name of your distribution.  The user agent string is build by a function
+  name of your distribution.  The user agent string is built by a function
   kept in utils/useragent.c - you'll want to change the macro called
   NETSURF_UA_FORMAT_STRING.  It's processed via sprintf, so keep that in
-  mind when changing it.  The first two printf parameters are major and minor
-  version numbers, the second two are OS name (uname -s) and architecture
-  (uname -m).  You might want change this to something like:
+  mind when changing it.  The first format parameter is the OS name (uname -s)
+  and the remainder are major and minor version numbers.  You might want
+  to change this to something like:
 
-      "NetSurf/%d.%d (%s; %s; Debian GNU/Linux)"
+      "Mozilla/5.0 (%s; Debian GNU/Linux) NetSurf/%d.%d"
 
-  or similar.  Please don't be tempted to mention Mozilla or similar - let's
-  let that lie die.
+  or similar.
 
+  Note that the "Mozilla/5.0" prefix is a requirement to enable modern
+  web standards on many websites. It should not be removed or modified.
 
   Home page URL
 ===============
