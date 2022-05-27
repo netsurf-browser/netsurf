@@ -1360,7 +1360,7 @@ wimp_window {
     icon_fg:wimp_COLOUR_BLACK
     icon_bg:wimp_COLOUR_VERY_LIGHT_GREY
     text.text:"https://netsurf.sourceforge.net/netsurf.zip"
-    text.size:43
+    text.size:*
     text.validation:"R2"
   }
   wimp_icon {
