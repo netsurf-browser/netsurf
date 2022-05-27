@@ -968,13 +968,13 @@ static nserror hotlist_generate(void)
 		const char *url;
 		const char *msg_key;
 	} default_entries[] = {
-		{ "http://www.netsurf-browser.org/",
+		{ "https://www.netsurf-browser.org/",
 				"HotlistHomepage" },
-		{ "http://www.netsurf-browser.org/downloads/",
+		{ "https://www.netsurf-browser.org/downloads/",
 				"HotlistDownloads" },
-		{ "http://www.netsurf-browser.org/documentation",
+		{ "https://www.netsurf-browser.org/documentation",
 				"HotlistDocumentation" },
-		{ "http://www.netsurf-browser.org/contact",
+		{ "https://www.netsurf-browser.org/contact",
 				"HotlistContact" }
 	};
 	const int n_entries = sizeof(default_entries) /
@@ -1626,7 +1626,7 @@ nserror hotlist_add_entry(nsurl *url, const char *title, bool at_y, int y)
 	enum treeview_relationship rel;
 
 	if (url == NULL) {
-		err = nsurl_create("http://netsurf-browser.org/", &url);
+		err = nsurl_create("https://netsurf-browser.org/", &url);
 		if (err != NSERROR_OK) {
 			return err;
 		}

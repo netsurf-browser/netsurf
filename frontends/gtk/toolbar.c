@@ -3066,7 +3066,7 @@ contents_button_clicked_cb(GtkWidget *widget, gpointer data)
 	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
 	nserror res;
 
-	res = toolbar_navigate_to_url(tb, "http://www.netsurf-browser.org/documentation/");
+	res = toolbar_navigate_to_url(tb, "https://www.netsurf-browser.org/documentation/");
 	if (res != NSERROR_OK) {
 		nsgtk_warning(messages_get_errorcode(res), 0);
 	}
@@ -3087,7 +3087,7 @@ guide_button_clicked_cb(GtkWidget *widget, gpointer data)
 	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
 	nserror res;
 
-	res = toolbar_navigate_to_url(tb, "http://www.netsurf-browser.org/documentation/guide");
+	res = toolbar_navigate_to_url(tb, "https://www.netsurf-browser.org/documentation/guide");
 	if (res != NSERROR_OK) {
 		nsgtk_warning(messages_get_errorcode(res), 0);
 	}
@@ -3109,7 +3109,7 @@ info_button_clicked_cb(GtkWidget *widget, gpointer data)
 	struct nsgtk_toolbar *tb = (struct nsgtk_toolbar *)data;
 	nserror res;
 
-	res = toolbar_navigate_to_url(tb, "http://www.netsurf-browser.org/documentation/info");
+	res = toolbar_navigate_to_url(tb, "https://www.netsurf-browser.org/documentation/info");
 	if (res != NSERROR_OK) {
 		nsgtk_warning(messages_get_errorcode(res), 0);
 	}

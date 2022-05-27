@@ -53,7 +53,7 @@ static struct search_web_ctx_s {
 } search_web_ctx;
 
 
-static const char *default_providers = "Google|www.google.com|http://www.google.com/search?q=%s|http://www.google.com/favicon.ico|\n";
+static const char *default_providers = "Google|www.google.com|https://www.google.com/search?q=%s|https://www.google.com/favicon.ico|\n";
 
 static const char *default_search_icon_url = "resource:icons/search.png";
 
@@ -333,11 +333,11 @@ search_web_omni(const char *term,
 		}
 
 		/* try with adding default scheme */
-		eterm = malloc(strlen(term) + SLEN("http://") + 1);
+		eterm = malloc(strlen(term) + SLEN("https://") + 1);
 		if (eterm == NULL) {
 			return NSERROR_NOMEM;
 		}
-		sprintf(eterm, "http://%s", term);
+		sprintf(eterm, "https://%s", term);
 		ret = nsurl_create(eterm, &url);
 		free(eterm);
 		if (ret == NSERROR_OK) {

@@ -1250,17 +1250,17 @@ nsws_window_command(HWND hwnd,
 
 	case IDM_HELP_CONTENTS:
 		nsws_window_go(hwnd,
-			       "http://www.netsurf-browser.org/documentation/");
+			       "https://www.netsurf-browser.org/documentation/");
 		break;
 
 	case IDM_HELP_GUIDE:
 		nsws_window_go(hwnd,
-			       "http://www.netsurf-browser.org/documentation/guide");
+			       "https://www.netsurf-browser.org/documentation/guide");
 		break;
 
 	case IDM_HELP_INFO:
 		nsws_window_go(hwnd,
-			       "http://www.netsurf-browser.org/documentation/info");
+			       "https://www.netsurf-browser.org/documentation/info");
 		break;
 
 	case IDM_HELP_ABOUT:

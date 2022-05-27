@@ -1312,7 +1312,7 @@ ro_gui_window_handle_local_keypress(struct gui_window *g,
 	case IS_WIMP_KEY + wimp_KEY_F1:	/* Help. */
 	{
 		nserror error = nsurl_create(
-				"http://www.netsurf-browser.org/documentation/",
+				"https://www.netsurf-browser.org/documentation/",
 				&url);
 		if (error == NSERROR_OK) {
 			error = browser_window_create(BW_CREATE_HISTORY,
@@ -2574,7 +2574,7 @@ ro_gui_window_menu_select(wimp_w w,
 
 		/* help actions */
 	case HELP_OPEN_CONTENTS:
-		error = nsurl_create("http://www.netsurf-browser.org/documentation/", &url);
+		error = nsurl_create("https://www.netsurf-browser.org/documentation/", &url);
 		if (error == NSERROR_OK) {
 			error = browser_window_create(BW_CREATE_HISTORY,
 						      url,
@@ -2586,7 +2586,7 @@ ro_gui_window_menu_select(wimp_w w,
 		break;
 
 	case HELP_OPEN_GUIDE:
-		error = nsurl_create("http://www.netsurf-browser.org/documentation/guide", &url);
+		error = nsurl_create("https://www.netsurf-browser.org/documentation/guide", &url);
 		if (error == NSERROR_OK) {
 			error = browser_window_create(BW_CREATE_HISTORY,
 						      url,
@@ -2598,7 +2598,7 @@ ro_gui_window_menu_select(wimp_w w,
 		break;
 
 	case HELP_OPEN_INFORMATION:
-		error = nsurl_create("http://www.netsurf-browser.org/documentation/info", &url);
+		error = nsurl_create("https://www.netsurf-browser.org/documentation/info", &url);
 		if (error == NSERROR_OK) {
 			error = browser_window_create(BW_CREATE_HISTORY,
 						      url,

@@ -207,7 +207,7 @@ bool ro_gui_iconbar_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 
 	switch (action) {
 	case HELP_OPEN_CONTENTS:
-		error = nsurl_create("http://www.netsurf-browser.org/documentation/", &url);
+		error = nsurl_create("https://www.netsurf-browser.org/documentation/", &url);
 		if (error == NSERROR_OK) {
 			error = browser_window_create(BW_CREATE_HISTORY,
 					url,

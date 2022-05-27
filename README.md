@@ -15,13 +15,13 @@ Creating a new port
 
 Look at the existing front ends for example implementations.
 The framebuffer front end is simplest and most self-contained.
-Also, you can [contact the developers](http://www.netsurf-browser.org/contact/)
+Also, you can [contact the developers](https://www.netsurf-browser.org/contact/)
 for help.
 
 
 Further documentation
 ---------------------
 
-* [Developer documentation](http://www.netsurf-browser.org/developers/)
-* [Developer wiki](http://wiki.netsurf-browser.org/Documentation/)
-* [Code style guide](http://www.netsurf-browser.org/developers/StyleGuide.pdf)
+* [Developer documentation](https://www.netsurf-browser.org/developers/)
+* [Developer wiki](https://wiki.netsurf-browser.org/Documentation/)
+* [Code style guide](https://www.netsurf-browser.org/developers/StyleGuide.pdf)

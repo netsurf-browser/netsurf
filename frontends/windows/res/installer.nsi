@@ -20,9 +20,9 @@
 !endif
 
 # These will be displayed by the "Click here for support information" link in "Add/Remove Programs"
-!define HELPURL "http://www.netsurf-browser.org/" # "Support Information" link
-!define UPDATEURL "http://www.netsurf-browser.org/" # "Product Updates" link
-!define ABOUTURL "http://www.netsurf-browser.org/" # "Publisher" link
+!define HELPURL "https://www.netsurf-browser.org/" # "Support Information" link
+!define UPDATEURL "https://www.netsurf-browser.org/" # "Product Updates" link
+!define ABOUTURL "https://www.netsurf-browser.org/" # "Publisher" link
 # This is the size (in kB) of all the files copied into "Program Files"
 !define INSTALLSIZE 9000
 

@@ -62,7 +62,7 @@ enum search_web_omni_flags {
  * term. The flags allow control over the operation. By default the
  * operations are:
  *  - interpret the \a term as a url
- *  - if missing a scheme as a http: url
+ *  - if missing a scheme as a https: url
  *  - combined with the search providers url into a url for that provider.
  *
  * \param term The search term.
