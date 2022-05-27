@@ -43,6 +43,9 @@ If "<InetDBase$Path>" = "" Then Error Internet resources can not be found
 If "<Unicode$Path>" = "" Then Error NetSurf requires the !Unicode resource. This can be found, along with the Iconv module, at http://www.netsurf-browser.org/projects/iconv/
 If "<Inet$MimeMappings>" = "" Then Set Inet$MimeMappings InetDBase:MimeMap
 
+| Use OS copy of root CA bundle, if present
+IfThere InetDBase:CertData Then Set NetSurf$CABundle InetDBase:CertData Else Set NetSurf$CABundle NetSurf:Resources.ca-bundle
+
 | Define this alias for clarity
 | Syntax: NetSurfRMLoad <Path to module>
 Set Alias$NetSurfRMLoad IfThere %%*0 Then RMLoad %%*0

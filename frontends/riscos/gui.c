@@ -306,7 +306,7 @@ set_colour_from_wimp(struct nsoption_s *opts,
 static nserror set_defaults(struct nsoption_s *defaults)
 {
 	/* Set defaults for absent option strings */
-	nsoption_setnull_charp(ca_bundle, strdup("NetSurf:Resources.ca-bundle"));
+	nsoption_setnull_charp(ca_bundle, strdup("<NetSurf$CABundle>"));
 	nsoption_setnull_charp(cookie_file, strdup("NetSurf:Cookies"));
 	nsoption_setnull_charp(cookie_jar, strdup(CHOICES_PREFIX "Cookies"));
 
