@@ -365,13 +365,14 @@ static char *bindup(unsigned char *bin, unsigned int binlen)
 /**
  * extract RSA key information to info structure
  *
- * \param rsa The RSA key to examine. The reference is dropped on return
+ * \param pkey The RSA key to examine.
  * \param ikey The public key info structure to fill
  * \rerun NSERROR_OK on success else error code.
  */
 static nserror
-rsa_to_info(RSA *rsa, struct ns_cert_pkey *ikey)
+rsa_to_info(EVP_PKEY *pkey, struct ns_cert_pkey *ikey)
 {
+	RSA *rsa = EVP_PKEY_get1_RSA(pkey);
 	char *tmp;
 
 	if (rsa == NULL) {
@@ -403,13 +404,15 @@ rsa_to_info(RSA *rsa, struct ns_cert_pkey *ikey)
 /**
  * extract DSA key information to info structure
  *
- * \param dsa The RSA key to examine. The reference is dropped on return
+ * \param pkey The DSA key to examine.
  * \param ikey The public key info structure to fill
  * \rerun NSERROR_OK on success else error code.
  */
 static nserror
-dsa_to_info(DSA *dsa, struct ns_cert_pkey *ikey)
+dsa_to_info(EVP_PKEY *pkey, struct ns_cert_pkey *ikey)
 {
+	DSA *dsa = EVP_PKEY_get1_DSA(pkey);
+
 	if (dsa == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
@@ -427,13 +430,15 @@ dsa_to_info(DSA *dsa, struct ns_cert_pkey *ikey)
 /**
  * extract DH key information to info structure
  *
- * \param dsa The RSA key to examine. The reference is dropped on return
+ * \param pkey The DH key to examine.
  * \param ikey The public key info structure to fill
  * \rerun NSERROR_OK on success else error code.
  */
 static nserror
-dh_to_info(DH *dh, struct ns_cert_pkey *ikey)
+dh_to_info(EVP_PKEY *pkey, struct ns_cert_pkey *ikey)
 {
+	DH *dh = EVP_PKEY_get1_DH(pkey);
+
 	if (dh == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
@@ -451,17 +456,18 @@ dh_to_info(DH *dh, struct ns_cert_pkey *ikey)
 /**
  * extract EC key information to info structure
  *
- * \param ec The EC key to examine. The reference is dropped on return
+ * \param pkey The EC key to examine.
  * \param ikey The public key info structure to fill
  * \rerun NSERROR_OK on success else error code.
  */
 static nserror
-ec_to_info(EC_KEY *ec, struct ns_cert_pkey *ikey)
+ec_to_info(EVP_PKEY *pkey, struct ns_cert_pkey *ikey)
 {
 	const EC_GROUP *ecgroup;
 	const EC_POINT *ecpoint;
 	BN_CTX *bnctx;
 	char *ecpoint_hex;
+	EC_KEY *ec = EVP_PKEY_get1_EC_KEY(pkey);
 
 	if (ec == NULL) {
 		return NSERROR_BAD_PARAMETER;
@@ -512,19 +518,19 @@ pkey_to_info(EVP_PKEY *pkey, struct ns_cert_pkey *ikey)
 
 	switch (EVP_PKEY_base_id(pkey)) {
 	case EVP_PKEY_RSA:
-		res = rsa_to_info(EVP_PKEY_get1_RSA(pkey), ikey);
+		res = rsa_to_info(pkey, ikey);
 		break;
 
 	case EVP_PKEY_DSA:
-		res = dsa_to_info(EVP_PKEY_get1_DSA(pkey), ikey);
+		res = dsa_to_info(pkey, ikey);
 		break;
 
 	case EVP_PKEY_DH:
-		res = dh_to_info(EVP_PKEY_get1_DH(pkey), ikey);
+		res = dh_to_info(pkey, ikey);
 		break;
 
 	case EVP_PKEY_EC:
-		res = ec_to_info(EVP_PKEY_get1_EC_KEY(pkey), ikey);
+		res = ec_to_info(pkey, ikey);
 		break;
 
 	default:
