@@ -165,6 +165,39 @@ static const BIGNUM *ns_RSA_get0_e(const RSA *d)
 	return d->e;
 }
 
+static int ns_EVP_PKEY_get_bn_param(const EVP_PKEY *pkey,
+		const char *key_name, BIGNUM **bn) {
+	RSA *rsa;
+	BIGNUM *result = NULL;
+
+	/* Check parameters: only support allocation-form *bn */
+	if (pkey == NULL || key_name == NULL || bn == NULL || *bn != NULL)
+		return 0;
+
+	/* Only support RSA keys */
+	if (EVP_PKEY_base_id(pkey) != EVP_PKEY_RSA)
+		return 0;
+
+	rsa = EVP_PKEY_get1_RSA((EVP_PKEY *) pkey);
+	if (rsa == NULL)
+		return 0;
+
+	if (strcmp(key_name, "n") == 0) {
+		const BIGNUM *n = ns_RSA_get0_n(rsa);
+		if (n != NULL)
+			result = BN_dup(n);
+	} else if (strcmp(key_name, "e") == 0) {
+		const BIGNUM *e = ns_RSA_get0_e(rsa);
+		if (e != NULL)
+			result = BN_dup(e);
+	}
+
+	RSA_free(rsa);
+
+	*bn = result;
+
+	return (result != NULL) ? 1 : 0;
+}
 #elif (OPENSSL_VERSION_NUMBER < 0x1010100fL)
 /* 1.1.0 */
 #define ns_X509_get_signature_nid X509_get_signature_nid
@@ -188,12 +221,86 @@ static const BIGNUM *ns_RSA_get0_e(const RSA *r)
 	return e;
 }
 
-#else
-/* 1.1.1 and later */
+static int ns_EVP_PKEY_get_bn_param(const EVP_PKEY *pkey,
+		const char *key_name, BIGNUM **bn) {
+	RSA *rsa;
+	BIGNUM *result = NULL;
+
+	/* Check parameters: only support allocation-form *bn */
+	if (pkey == NULL || key_name == NULL || bn == NULL || *bn != NULL)
+		return 0;
+
+	/* Only support RSA keys */
+	if (EVP_PKEY_base_id(pkey) != EVP_PKEY_RSA)
+		return 0;
+
+	rsa = EVP_PKEY_get1_RSA((EVP_PKEY *) pkey);
+	if (rsa == NULL)
+		return 0;
+
+	if (strcmp(key_name, "n") == 0) {
+		const BIGNUM *n = ns_RSA_get0_n(rsa);
+		if (n != NULL)
+			result = BN_dup(n);
+	} else if (strcmp(key_name, "e") == 0) {
+		const BIGNUM *e = ns_RSA_get0_e(rsa);
+		if (e != NULL)
+			result = BN_dup(e);
+	}
+
+	RSA_free(rsa);
+
+	*bn = result;
+
+	return (result != NULL) ? 1 : 0;
+}
+#elif (OPENSSL_VERSION_NUMBER < 0x30000000L)
+/* 1.1.1  */
 #define ns_X509_get_signature_nid X509_get_signature_nid
 #define ns_ASN1_STRING_get0_data ASN1_STRING_get0_data
 #define ns_RSA_get0_n RSA_get0_n
 #define ns_RSA_get0_e RSA_get0_e
+
+static int ns_EVP_PKEY_get_bn_param(const EVP_PKEY *pkey,
+		const char *key_name, BIGNUM **bn) {
+	RSA *rsa;
+	BIGNUM *result = NULL;
+
+	/* Check parameters: only support allocation-form *bn */
+	if (pkey == NULL || key_name == NULL || bn == NULL || *bn != NULL)
+		return 0;
+
+	/* Only support RSA keys */
+	if (EVP_PKEY_base_id(pkey) != EVP_PKEY_RSA)
+		return 0;
+
+	rsa = EVP_PKEY_get1_RSA((EVP_PKEY *) pkey);
+	if (rsa == NULL)
+		return 0;
+
+	if (strcmp(key_name, "n") == 0) {
+		const BIGNUM *n = ns_RSA_get0_n(rsa);
+		if (n != NULL)
+			result = BN_dup(n);
+	} else if (strcmp(key_name, "e") == 0) {
+		const BIGNUM *e = ns_RSA_get0_e(rsa);
+		if (e != NULL)
+			result = BN_dup(e);
+	}
+
+	RSA_free(rsa);
+
+	*bn = result;
+
+	return (result != NULL) ? 1 : 0;
+}
+#else
+/* 3.x and later */
+#define ns_X509_get_signature_nid X509_get_signature_nid
+#define ns_ASN1_STRING_get0_data ASN1_STRING_get0_data
+#define ns_RSA_get0_n RSA_get0_n
+#define ns_RSA_get0_e RSA_get0_e
+#define ns_EVP_PKEY_get_bn_param EVP_PKEY_get_bn_param
 #endif
 
 /**
@@ -350,10 +457,15 @@ static char *bindup(unsigned char *bin, unsigned int binlen)
 static nserror
 rsa_to_info(EVP_PKEY *pkey, struct ns_cert_pkey *ikey)
 {
-	RSA *rsa = EVP_PKEY_get1_RSA(pkey);
+	BIGNUM *n = NULL, *e = NULL;
 	char *tmp;
 
-	if (rsa == NULL) {
+	if (ns_EVP_PKEY_get_bn_param(pkey, "n", &n) != 1) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (ns_EVP_PKEY_get_bn_param(pkey, "e", &e) != 1) {
+		BN_free(n);
 		return NSERROR_BAD_PARAMETER;
 	}
 
@@ -361,19 +473,20 @@ rsa_to_info(EVP_PKEY *pkey, struct ns_cert_pkey *ikey)
 
 	ikey->size = EVP_PKEY_bits(pkey);
 
-	tmp = BN_bn2hex(ns_RSA_get0_n(rsa));
+	tmp = BN_bn2hex(n);
 	if (tmp != NULL) {
 		ikey->modulus = hexdup(tmp);
 		OPENSSL_free(tmp);
 	}
 
-	tmp = BN_bn2dec(ns_RSA_get0_e(rsa));
+	tmp = BN_bn2dec(e);
 	if (tmp != NULL) {
 		ikey->exponent = strdup(tmp);
 		OPENSSL_free(tmp);
 	}
 
-	RSA_free(rsa);
+	BN_free(e);
+	BN_free(n);
 
 	return NSERROR_OK;
 }
