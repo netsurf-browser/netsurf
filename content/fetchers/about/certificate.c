@@ -165,21 +165,6 @@ static const BIGNUM *ns_RSA_get0_e(const RSA *d)
 	return d->e;
 }
 
-static int ns_RSA_bits(const RSA *rsa)
-{
-	return RSA_size(rsa) * 8;
-}
-
-static int ns_DSA_bits(const DSA *dsa)
-{
-	return DSA_size(dsa) * 8;
-}
-
-static int ns_DH_bits(const DH *dh)
-{
-	return DH_size(dh) * 8;
-}
-
 #elif (OPENSSL_VERSION_NUMBER < 0x1010100fL)
 /* 1.1.0 */
 #define ns_X509_get_signature_nid X509_get_signature_nid
@@ -203,19 +188,12 @@ static const BIGNUM *ns_RSA_get0_e(const RSA *r)
 	return e;
 }
 
-#define ns_RSA_bits RSA_bits
-#define ns_DSA_bits DSA_bits
-#define ns_DH_bits DH_bits
-
 #else
 /* 1.1.1 and later */
 #define ns_X509_get_signature_nid X509_get_signature_nid
 #define ns_ASN1_STRING_get0_data ASN1_STRING_get0_data
 #define ns_RSA_get0_n RSA_get0_n
 #define ns_RSA_get0_e RSA_get0_e
-#define ns_RSA_bits RSA_bits
-#define ns_DSA_bits DSA_bits
-#define ns_DH_bits DH_bits
 #endif
 
 /**
@@ -381,7 +359,7 @@ rsa_to_info(EVP_PKEY *pkey, struct ns_cert_pkey *ikey)
 
 	ikey->algor = strdup("RSA");
 
-	ikey->size = ns_RSA_bits(rsa);
+	ikey->size = EVP_PKEY_bits(pkey);
 
 	tmp = BN_bn2hex(ns_RSA_get0_n(rsa));
 	if (tmp != NULL) {
@@ -411,17 +389,9 @@ rsa_to_info(EVP_PKEY *pkey, struct ns_cert_pkey *ikey)
 static nserror
 dsa_to_info(EVP_PKEY *pkey, struct ns_cert_pkey *ikey)
 {
-	DSA *dsa = EVP_PKEY_get1_DSA(pkey);
-
-	if (dsa == NULL) {
-		return NSERROR_BAD_PARAMETER;
-	}
-
 	ikey->algor = strdup("DSA");
 
-	ikey->size = ns_DSA_bits(dsa);
-
-	DSA_free(dsa);
+	ikey->size = EVP_PKEY_bits(pkey);
 
 	return NSERROR_OK;
 }
@@ -437,17 +407,9 @@ dsa_to_info(EVP_PKEY *pkey, struct ns_cert_pkey *ikey)
 static nserror
 dh_to_info(EVP_PKEY *pkey, struct ns_cert_pkey *ikey)
 {
-	DH *dh = EVP_PKEY_get1_DH(pkey);
-
-	if (dh == NULL) {
-		return NSERROR_BAD_PARAMETER;
-	}
-
 	ikey->algor = strdup("Diffie Hellman");
 
-	ikey->size = ns_DH_bits(dh);
-
-	DH_free(dh);
+	ikey->size = EVP_PKEY_bits(pkey);
 
 	return NSERROR_OK;
 }
@@ -475,11 +437,11 @@ ec_to_info(EVP_PKEY *pkey, struct ns_cert_pkey *ikey)
 
 	ikey->algor = strdup("Elliptic Curve");
 
+	ikey->size = EVP_PKEY_bits(pkey);
+
 	ecgroup = EC_KEY_get0_group(ec);
 
 	if (ecgroup != NULL) {
-		ikey->size = EC_GROUP_get_degree(ecgroup);
-
 		ikey->curve = strdup(OBJ_nid2ln(EC_GROUP_get_curve_name(ecgroup)));
 
 		ecpoint = EC_KEY_get0_public_key(ec);
