@@ -40,6 +40,8 @@
  *      - PowerPC 64-bit
  *      - SPARC 32-bit
  *      - SPARC 64-bit
+ *      - RISC-V 32-bit
+ *      - RISC-V 64-bit
  *      - SuperH
  *      - Motorola 68k
  *      - Emscripten
@@ -284,6 +286,22 @@
 #define DUK_F_SPARC32
 #endif
 #endif
+
+/* RISC-V, https://github.com/riscv/riscv-toolchain-conventions#cc-preprocessor-definitions */
+#if defined(__riscv)
+#define DUK_F_RISCV
+#if defined(__riscv_xlen)
+#if (__riscv_xlen == 32)
+#define DUK_F_RISCV32
+#elif (__riscv_xlen == 64)
+#define DUK_F_RISCV64
+#else
+#error __riscv_xlen has unsupported value (not 32 or 64)
+#endif
+#else
+#error __riscv defined without __riscv_xlen
+#endif
+#endif  /* __riscv */
 
 /* SuperH */
 #if defined(__sh__) || \
@@ -751,7 +769,7 @@
 #define DUK_USE_BYTEORDER 3
 #endif
 #else  /* DUK_F_OLD_SOLARIS */
-#include <ast/endian.h>
+#include <sys/param.h>
 #endif  /* DUK_F_OLD_SOLARIS */
 
 #include <sys/param.h>
@@ -946,9 +964,7 @@
 #elif defined(DUK_F_PPC64)
 /* --- PowerPC 64-bit --- */
 #define DUK_USE_ARCH_STRING "ppc64"
-#if !defined(DUK_USE_BYTEORDER)
-#define DUK_USE_BYTEORDER 3
-#endif
+/* No forced byteorder (both little and big endian are possible). */
 #undef DUK_USE_PACKED_TVAL
 #define DUK_F_PACKED_TVAL_PROVIDED
 #elif defined(DUK_F_SPARC32)
@@ -961,6 +977,18 @@
 /* --- SPARC 64-bit --- */
 #define DUK_USE_ARCH_STRING "sparc64"
 /* SPARC byte order varies so rely on autodetection. */
+#undef DUK_USE_PACKED_TVAL
+#define DUK_F_PACKED_TVAL_PROVIDED
+#elif defined(DUK_F_RISCV32)
+/* --- RISC-V 32-bit --- */
+#define DUK_USE_ARCH_STRING "riscv32"
+#define DUK_USE_BYTEORDER 1
+#define DUK_USE_PACKED_TVAL
+#define DUK_F_PACKED_TVAL_PROVIDED
+#elif defined(DUK_F_RISCV64)
+/* --- RISC-V 64-bit --- */
+#define DUK_USE_ARCH_STRING "riscv64"
+#define DUK_USE_BYTEORDER 1
 #undef DUK_USE_PACKED_TVAL
 #define DUK_F_PACKED_TVAL_PROVIDED
 #elif defined(DUK_F_SUPERH)
@@ -1103,7 +1131,7 @@
 #define DUK_USE_FLEX_ZEROSIZE
 #endif
 
-#undef DUK_USE_GCC_PRAGMAS
+#define DUK_USE_CLANG_PRAGMAS
 #define DUK_USE_PACK_CLANG_ATTR
 
 #if defined(__clang__) && defined(__has_builtin)
@@ -1243,6 +1271,7 @@
 #define DUK_USE_FLEX_ZEROSIZE
 #endif
 
+/* Since 4.6 one can '#pragma GCC diagnostic push/pop'. */
 #if defined(DUK_F_GCC_VERSION) && (DUK_F_GCC_VERSION >= 40600)
 #define DUK_USE_GCC_PRAGMAS
 #else
@@ -2648,12 +2677,15 @@ typedef struct duk_hthread duk_context;
 #define DUK_WO_NORETURN(stmt) do { stmt } while (0)
 #endif
 
-#if !defined(DUK_UNREACHABLE)
+#if defined(DUK_UNREACHABLE)
+#define DUK_WO_UNREACHABLE(stmt) do { } while (0)
+#else
 /* Don't know how to declare unreachable point, so don't do it; this
  * may cause some spurious compilation warnings (e.g. "variable used
  * uninitialized").
  */
 #define DUK_UNREACHABLE()  do { } while (0)
+#define DUK_WO_UNREACHABLE(stmt) do { stmt } while (0)
 #endif
 
 #if !defined(DUK_LOSE_CONST)
@@ -2882,6 +2914,10 @@ typedef struct duk_hthread duk_context;
 #define DUK_USE_CACHE_ACTIVATION
 #define DUK_USE_CACHE_CATCHER
 #define DUK_USE_CALLSTACK_LIMIT 10000
+#define DUK_USE_CBOR_BUILTIN
+#define DUK_USE_CBOR_DEC_RECLIMIT 1000
+#define DUK_USE_CBOR_ENC_RECLIMIT 1000
+#define DUK_USE_CBOR_SUPPORT
 #define DUK_USE_COMPILER_RECLIMIT 2500
 #define DUK_USE_COROUTINE_SUPPORT
 #undef DUK_USE_CPP_EXCEPTIONS
@@ -2945,7 +2981,7 @@ typedef struct duk_hthread duk_context;
 #undef DUK_USE_GC_TORTURE
 #undef DUK_USE_GET_MONOTONIC_TIME
 #undef DUK_USE_GET_RANDOM_DOUBLE
-#undef DUK_USE_GLOBAL_BINDING
+#define DUK_USE_GLOBAL_BINDING
 #define DUK_USE_GLOBAL_BUILTIN
 #undef DUK_USE_HEAPPTR16
 #undef DUK_USE_HEAPPTR_DEC16
@@ -2953,6 +2989,7 @@ typedef struct duk_hthread duk_context;
 #define DUK_USE_HEX_FASTPATH
 #define DUK_USE_HEX_SUPPORT
 #define DUK_USE_HOBJECT_ARRAY_ABANDON_LIMIT 2
+#define DUK_USE_HOBJECT_ARRAY_ABANDON_MINSIZE 257
 #define DUK_USE_HOBJECT_ARRAY_FAST_RESIZE_LIMIT 9
 #define DUK_USE_HOBJECT_ARRAY_MINGROW_ADD 16
 #define DUK_USE_HOBJECT_ARRAY_MINGROW_DIVISOR 8
