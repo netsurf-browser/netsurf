@@ -33,7 +33,7 @@ ifeq ($(HOST),riscos)
   LDFLAGS += -LOSLib: -lOSLib32
 else
   LDFLAGS += -lOSLib32
-  ifeq ($(SUBTARGET),-elf)
+  ifeq ($(findstring -elf,$(SUBTARGET)),-elf)
     # Go for static builds & AIF binary at the moment:
     CFLAGS += -static
     LDFLAGS += -static
@@ -184,5 +184,5 @@ netsurf.zip: $(EXETARGET)
 	$(Q) rsync --archive --verbose $(FRONTEND_SOURCE_DIR)/distribution/3rdParty $($@_TMPDIR)
 	$(Q) cp $(FRONTEND_SOURCE_DIR)/distribution/ReadMe $($@_TMPDIR)
 	$(Q) cp $(FRONTEND_SOURCE_DIR)/distribution/LeesMij $($@_TMPDIR)
-	$(Q) cd $($@_TMPDIR) && /opt/netsurf/arm-unknown-riscos/env/bin/zip -9vr\, $(CURDIR)/$@ *
+	$(Q) cd $($@_TMPDIR) && $(ZIP) -9vr\, $(CURDIR)/$@ *
 	$(Q) $(RM) -rf $($@_TMPDIR)

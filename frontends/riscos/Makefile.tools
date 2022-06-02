@@ -15,21 +15,42 @@ ifeq ($(HOST),riscos)
   CXX := g++
   EXEEXT :=
   PKG_CONFIG :=
+  ZIP := zip
 else
-  # Cross-build for RO (either using GCCSDK 3.4.6 - AOF,
-  # either using GCCSDK 4 - ELF)
+  # Cross-build for RO
+  # Three options are available:
+  #   a. GCCSDK 3.4.6 - AOF             (machine: arm-unknown-riscos)
+  #   b. GCCSDK 4     - ELF             (machine: arm-unknown-riscos)
+  #   c. GCCSDK 8+    - ELF, using EABI (machine: arm-riscos-gnueabihf)
+  # GCCSDK 3.4.6 and 4 are distinguished by GCCSDK 3.4.6 binary names
+  # not having the machine prefix (e.g. gcc), whereas GCCSDK 4 binaries
+  # do (e.g. arm-unknown-riscos-gcc).
+
+  # Search for the toolchain install locations if we haven't been told
+  # The search order prefers GCCSDK 3.4.6/4 over 8+.
   ifeq ($(origin GCCSDK_INSTALL_ENV),undefined)
     ifneq ($(realpath /opt/netsurf/arm-unknown-riscos/env),)
       GCCSDK_INSTALL_ENV := /opt/netsurf/arm-unknown-riscos/env
     else
-      GCCSDK_INSTALL_ENV := /home/riscos/env
+      ifneq ($(realpath /opt/netsurf/arm-riscos-gnueabihf/env),)
+        GCCSDK_INSTALL_ENV := /opt/netsurf/arm-riscos-gnueabihf/env
+      else
+	# No NetSurf-specific toolchain found: try the "normal" GCCSDK path
+        GCCSDK_INSTALL_ENV := /home/riscos/env
+      endif
     endif
   endif
-   ifeq ($(origin GCCSDK_INSTALL_CROSSBIN),undefined)
+
+  ifeq ($(origin GCCSDK_INSTALL_CROSSBIN),undefined)
     ifneq ($(realpath /opt/netsurf/arm-unknown-riscos/cross/bin),)
       GCCSDK_INSTALL_CROSSBIN := /opt/netsurf/arm-unknown-riscos/cross/bin
     else
-      GCCSDK_INSTALL_CROSSBIN := /home/riscos/cross/bin
+      ifneq ($(realpath /opt/netsurf/arm-riscos-gnueabihf/cross/bin),)
+        GCCSDK_INSTALL_CROSSBIN := /opt/netsurf/arm-riscos-gnueabihf/cross/bin
+      else
+	# No NetSurf-specific toolchain found: try the "normal" GCCSDK path
+        GCCSDK_INSTALL_CROSSBIN := /home/riscos/cross/bin
+      endif
     endif
   endif
 
@@ -39,14 +60,27 @@ else
   SQUEEZE := $(GCCSDK_INSTALL_CROSSBIN)/squeeze
   RUNEXT := ,feb
   CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
+
+  # Work out what kind of toolchain we're dealing with
   ifneq (,$(findstring arm-unknown-riscos-gcc,$(CC)))
+    # GCCSDK 4
     SUBTARGET := -elf
     EXEEXT := ,e1f
     ELF2AIF := $(GCCSDK_INSTALL_CROSSBIN)/elf2aif
   else
-   SUBTARGET := -aof
-   EXEEXT := ,ff8
+   ifneq (,$(findstring arm-riscos-gnueabihf-gcc,$(CC)))
+     # GCCSDK 8+
+     SUBTARGET := -elfeabi
+     EXEEXT := ,e1f
+     ELF2AIF := $(GCCSDK_INSTALL_CROSSBIN)/elf2aif -e
+   else
+     # GCCSDK 3.4.6
+     SUBTARGET := -aof
+     EXEEXT := ,ff8
+   endif
   endif
+
   CXX := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*g++)
-  PKG_CONFIG := $(GCCSDK_INSTALL_ENV)/ro-pkg-config
+  PKG_CONFIG = PKG_CONFIG_LIBDIR="$(PREFIX)/lib/pkgconfig:$(GCCSDK_INSTALL_ENV)/lib/pkgconfig:$(GCCSDK_INSTALL_ENV)/share/pkgconfig" pkg-config
+  ZIP := $(GCCSDK_INSTALL_CROSSBIN)/zip
 endif
