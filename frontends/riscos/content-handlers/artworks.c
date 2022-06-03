@@ -93,7 +93,7 @@ struct awinfo_block {
 /* Assembler routines for interfacing with the ArtworksRenderer module */
 
 extern os_error *awrender_init(const char **doc,
-		unsigned long *doc_size,
+		size_t *doc_size,
 		void *routine,
 		void *workspace);
 
