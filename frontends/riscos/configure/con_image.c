@@ -209,6 +209,7 @@ bool ro_gui_options_image_click(wimp_pointer *pointer)
 						data.indirected_text.text, true);
 			ro_gui_set_icon_selected_state(pointer->w,
 					IMAGE_DISABLE_ANIMATION, false);
+			/* fall through */
 		case IMAGE_DISABLE_ANIMATION:
 			ro_gui_options_update_shading(pointer->w);
 			break;

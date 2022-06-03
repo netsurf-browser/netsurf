@@ -1018,7 +1018,7 @@ ro_gui_save_content(struct hlcache_handle *h, char *path, bool force_overwrite)
 			}
 			else
 				gui_save_current_type = GUI_SAVE_OBJECT_ORIG; /** \todo do this earlier? */
-			/* no break */
+			/* fall through */
 		case GUI_SAVE_SOURCE:
 		case GUI_SAVE_OBJECT_ORIG:
 			source_data = content_get_source_data(h, &source_size);
