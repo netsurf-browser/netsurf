@@ -329,12 +329,17 @@ IFLAGS = $(addprefix -I,$(INCLUDE_DIRS))
 
 $(EXETARGET): $(OBJECTS) $(RESOURCES) $(MESSAGES) tools/linktrace-to-depfile.pl
 	$(VQ)echo "    LINK: $(EXETARGET)"
-ifeq ($(TARGET)$(SUBTARGET),riscos-aof)
+ifneq ($(TARGET),riscos)
 	$(Q)$(CC) -o $(EXETARGET) $(OBJECTS) $(LDFLAGS) > $(DEPROOT)/link-raw.d
 else
+	@# RISC OS targets are a bit special: we need to convert ELF -> AIF
+  ifeq ($(SUBTARGET),riscos-aof)
+	$(Q)$(CC) -o $(EXETARGET) $(OBJECTS) $(LDFLAGS) > $(DEPROOT)/link-raw.d
+  else
 	$(Q)$(CXX) -o $(EXETARGET:,ff8=,e1f) $(OBJECTS) $(LDFLAGS) > $(DEPROOT)/link-raw.d
 	$(Q)$(ELF2AIF) $(EXETARGET:,ff8=,e1f) $(EXETARGET)
 	$(Q)$(RM) $(EXETARGET:,ff8=,e1f)
+  endif
 endif
 	$(VQ)echo "LINKDEPS: $(EXETARGET)"
 	$(Q)echo -n "$(EXETARGET) $(DEPROOT)/link.d: " > $(DEPROOT)/link.d
