@@ -32,6 +32,7 @@
 #include "oslib/wimp.h"
 
 #include "utils/log.h"
+#include "utils/utils.h"
 #include "riscos/gui.h"
 
 #include "riscos/gui/throbber.h"
@@ -385,7 +386,8 @@ bool ro_gui_throbber_animate(struct throbber *throbber)
 		throbber->current_frame = 1;
 
 	snprintf(sprite_name, THROBBER_SPRITE_NAME_LENGTH,
-			"throbber%i", throbber->current_frame);
+			"throbber%i",
+			min(max(throbber->current_frame, 0), 999));
 	ro_gui_set_icon_string(throbber->window, throbber->icon,
 			sprite_name, true);
 

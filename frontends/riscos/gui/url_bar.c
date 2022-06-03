@@ -1506,7 +1506,7 @@ ro_gui_url_bar_set_content_favicon(struct url_bar *url_bar,
 				   struct gui_window *g)
 {
 	int type = 0;
-	char sprite[URLBAR_FAVICON_NAME_LENGTH];
+	char sprite[URLBAR_FAVICON_NAME_LENGTH-1];
 	struct hlcache_handle *h;
 
 	if (url_bar == NULL ||
