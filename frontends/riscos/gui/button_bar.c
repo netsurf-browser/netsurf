@@ -189,7 +189,8 @@ struct button_bar *ro_gui_button_bar_create(struct theme_descriptor *theme,
 		icon->bar_next = NULL;
 
 		strncpy(icon->sprite, buttons[def].icon,
-				BUTTONBAR_SPRITE_NAME_LENGTH);
+				BUTTONBAR_SPRITE_NAME_LENGTH - 1);
+		icon->sprite[BUTTONBAR_SPRITE_NAME_LENGTH-1] = 0;
 		snprintf(icon->validation, BUTTONBAR_VALIDATION_LENGTH,
 				"R5;S%s,p%s", icon->sprite, icon->sprite);
 

@@ -3594,7 +3594,8 @@ static void gui_window_set_title(struct gui_window *g, const char *title)
 					title, scale_disp);
 		}
 	} else {
-		strncpy(g->title, title, sizeof(g->title));
+		strncpy(g->title, title, sizeof(g->title) - 1);
+		g->title[sizeof(g->title)-1] = 0;
 	}
 
 	ro_gui_set_window_title(g->window, g->title);

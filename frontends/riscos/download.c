@@ -313,8 +313,8 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 	/** @todo change this to take a reference to the nsurl and use
 	 * that value directly rather than using a fixed buffer.
 	 */
-	strncpy(dw->url, nsurl_access(url), sizeof dw->url);
-	dw->url[sizeof dw->url - 1] = 0;
+	strncpy(dw->url, nsurl_access(url), sizeof(dw->url) - 1);
+	dw->url[sizeof(dw->url) - 1] = 0;
 
 	dw->status[0] = 0;
 	gettimeofday(&dw->start_time, 0);
@@ -414,7 +414,8 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 		return 0;
 	}
 	else {
-		strncpy(dw->path, local_path, sizeof dw->path);
+		strncpy(dw->path, local_path, sizeof(dw->path) - 1);
+		dw->path[sizeof(dw->path)-1] = 0;
 		free(local_path);
 	}
 
@@ -484,7 +485,8 @@ static void gui_download_window_error(struct gui_download_window *dw,
 	riscos_schedule(-1, ro_gui_download_update_status_wrapper, dw);
 
 	/* place error message in status icon in red */
-	strncpy(dw->status, error_msg, sizeof dw->status);
+	strncpy(dw->status, error_msg, sizeof(dw->status) - 1);
+	dw->status[sizeof(dw->status)-1] = 0;
 	error = xwimp_set_icon_state(dw->window,
 			ICON_DOWNLOAD_STATUS,
 			wimp_COLOUR_RED << wimp_ICON_FG_COLOUR_SHIFT,
@@ -872,11 +874,11 @@ bool ro_gui_download_click(wimp_pointer *pointer)
 		ro_gui_drag_icon(x, y, sprite);
 
 	} else if (pointer->i == ICON_DOWNLOAD_DESTINATION) {
-		char command[256] = "Filer_OpenDir ";
+		char command[sizeof(dw->path) + 14 + 1] = "Filer_OpenDir ";
 		char *dot;
 
-		strncpy(command + 14, dw->path, 242);
-		command[255] = 0;
+		strncpy(command + 14, dw->path, sizeof(command) - 14 - 1);
+		command[sizeof(command) - 1] = 0;
 		dot = strrchr(command, '.');
 		if (dot) {
 			os_error *error;
@@ -1384,7 +1386,8 @@ bool ro_gui_download_save(struct gui_download_window *dw,
 	}
 
 	dw->saved = true;
-	strncpy(dw->path, file_name, sizeof dw->path);
+	strncpy(dw->path, file_name, sizeof(dw->path) - 1);
+	dw->path[sizeof(dw->path)-1] = 0;
 
 	if (!dw->send_dataload || dw->save_message.data.data_xfer.est_size != -1)
 		ro_gui_download_remember_dir(file_name);
