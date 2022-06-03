@@ -2966,7 +2966,7 @@ static void llcache_persist(void *p)
 		total_bandwidth = (total_written * 1000) / total_elapsed;
 
 		NSLOG(llcache, DEBUG,
-		      "Wrote %"PRIssizet" bytes in %lums bw:%lu %s",
+		      "Wrote %"PRIsizet" bytes in %lums bw:%lu %s",
 		      written, elapsed, (written * 1000) / elapsed,
 		      nsurl_access(lst[idx]->url) );
 
@@ -3034,7 +3034,7 @@ static void llcache_persist(void *p)
 	llcache->total_elapsed += total_elapsed;
 
 	NSLOG(llcache, DEBUG,
-	      "writeout size:%"PRIssizet" time:%lu bandwidth:%lubytes/s",
+	      "writeout size:%"PRIsizet" time:%lu bandwidth:%lubytes/s",
 	      total_written, total_elapsed, total_bandwidth);
 
 	NSLOG(llcache, DEBUG, "Rescheduling writeout in %dms", next);
@@ -3813,7 +3813,7 @@ void llcache_clean(bool purge)
 			llcache_size -=	object->source_len;
 
 			NSLOG(llcache, DEBUG,
-			      "Freeing source data for %p len:%"PRIssizet,
+			      "Freeing source data for %p len:%"PRIsizet,
 			      object, object->source_len);
 		}
 	}
@@ -3832,7 +3832,7 @@ void llcache_clean(bool purge)
 		    (object->store_state == LLCACHE_STATE_DISC) &&
 		    (object->source_data == NULL)) {
 			NSLOG(llcache, DEBUG,
-			     "discarding backed object len:%"PRIssizet" age:%ld (%p) %s",
+			     "discarding backed object len:%"PRIsizet" age:%ld (%p) %s",
 			      object->source_len,
 			      (long)(time(NULL) - object->last_used),
 			      object,
@@ -3862,7 +3862,7 @@ void llcache_clean(bool purge)
 		    (object->fetch.fetch == NULL) &&
 		    (object->store_state == LLCACHE_STATE_RAM)) {
 			NSLOG(llcache, DEBUG,
-			      "discarding fresh object len:%"PRIssizet" age:%ld (%p) %s",
+			      "discarding fresh object len:%"PRIsizet" age:%ld (%p) %s",
 			      object->source_len,
 			      (long)(time(NULL) - object->last_used),
 			      object,

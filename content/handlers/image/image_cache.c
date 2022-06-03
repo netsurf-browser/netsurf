@@ -632,15 +632,15 @@ case chr :					\
 				slen++;
 				break;
 
-			FMTCHR('a', PRIssizet, params.limit);
-			FMTCHR('b', PRIssizet, params.hysteresis);
-			FMTCHR('c', PRIssizet, total_bitmap_size);
+			FMTCHR('a', PRIsizet, params.limit);
+			FMTCHR('b', PRIsizet, params.hysteresis);
+			FMTCHR('c', PRIsizet, total_bitmap_size);
 			FMTCHR('d', "d", bitmap_count);
 			FMTCHR('e', "u", current_age / 1000);
-			FMTCHR('f', PRIssizet, max_bitmap_size);
+			FMTCHR('f', PRIsizet, max_bitmap_size);
 			FMTCHR('g', "d", max_bitmap_size_count);
 			FMTCHR('h', "d", max_bitmap_count);
-			FMTCHR('i', PRIssizet, max_bitmap_count_size);
+			FMTCHR('i', PRIsizet, max_bitmap_count_size);
 
 
 			case 'j':
@@ -770,7 +770,7 @@ image_cache_snentryf(char *string,
 				if (centry->bitmap != NULL) {
 					slen += snprintf(string + slen,
 							 size - slen,
-							 "%" PRIssizet,
+							 "%" PRIsizet,
 							 centry->bitmap_size);
 				} else {
 					slen += snprintf(string + slen,
