@@ -209,12 +209,18 @@ errblk		%	256
 @ os_error *awrender_init(byte **doc, size_t *doc_size, void *init_routine, void *init_workspace);
 
 		.global awrender_init
-awrender_init:	MOV	ip,sp
+awrender_init:
+#ifndef __ARM_EABI__
+		MOV	ip,sp
 		STMFD	sp!,{a1,a2,v1,v2,fp,ip,lr,pc}
 		SUB	fp,ip,#4
 		SUB	ip,sp,#512
 		CMP	ip,sl
 		BLMI	__rt_stkovf_split_big
+#else
+		STMFD	sp!,{a1,a2,v1,v2,fp,lr}
+		ADD	fp,sp,#4*4
+#endif
 
 		LDR	v2,=aw_temp
 		LDR	a1,[a1]
@@ -235,14 +241,18 @@ awrender_init:	MOV	ip,sp
 
 		@ return updated block ptr & size to caller
 
-		LDR	a2,[fp,#-28]
-		LDR	a3,[fp,#-24]
+		LDR	a2,[sp],#4
+		LDR	a3,[sp],#4
 		LDR	ip,[v2,#aw_rsz_block]
 		LDR	lr,[v2,#aw_rsz_size]
 		STR	ip,[a2]
 		STR	lr,[a3]
 
-		LDMEA	fp,{v1,v2,fp,sp,pc}
+#ifndef __ARM_EABI__
+		LDMDB	fp,{v1,v2,fp,sp,pc}
+#else
+		LDMIA	sp!,{v1,v2,fp,pc}
+#endif
 
 
 @ os_error *awrender_render(const char *doc,
@@ -258,37 +268,46 @@ awrender_init:	MOV	ip,sp
 @		void *workspace);
 
 		.global	awrender_render
-awrender_render:	MOV	ip,sp
-		STMFD	sp!,{v1-v4,fp,ip,lr,pc}
+awrender_render:
+#ifndef __ARM_EABI__
+		MOV	ip,sp
+		STMFD	sp!,{v1-v6,fp,ip,lr,pc}
 		SUB	fp,ip,#4
 		SUB	ip,sp,#512
 		CMP	ip,sl
 		BLMI	__rt_stkovf_split_big
+		ADD	ip,fp,#4			@ ip -> stacked args
+#else
+		MOV	ip,sp				@ ip -> stacked args
+		STMFD	sp!,{v1-v6,fp,lr}
+		ADD	fp,sp,#6*4
+#endif
 
-		LDR	R12,[fp,#20]
 		LDR	R14,=aw_temp
-		LDR	R5,[fp,#4]
-		LDR	R6,[fp,#12]
+		LDR	R5,[ip,#0]			@ rsz_block
+		LDR	R6,[ip,#8]			@ wysiwyg_setting
 		LDR	R4,[R5]				@ resizable block
-		LDR	R7,[fp,#16]
+		LDR	R7,[ip,#12]			@ output_dest
+		LDR	R8,[ip,#16]			@ doc_size
+		LDR	R9,[ip,#4]			@ rsz_size
 		STR	R4,[R14,#aw_rsz_block]
 		STR	R0,[R14,#aw_fixed_block]	@ document ptr
-		STR	R12,[R14,#aw_fixed_size]	@ document size
-		LDR	R12,[fp,#8]
+		STR	R8,[R14,#aw_fixed_size]		@ document size
 
 		STR	R5,[sp,#-4]!			@ ptr to receive block
-		STR	R12,[sp,#-4]!			@ ptr to receive size
+		STR	R9,[sp,#-4]!			@ ptr to receive size
 
-		LDR	R12,[R12]
+		LDR	R9,[R9]
 		ADR	R5,aw_callback
-		STR	R12,[R14,#aw_rsz_size]
+		STR	R9,[R14,#aw_rsz_size]
 
 		STR	sl,[R14,#aw_sl]
 		STR	fp,[R14,#aw_fp]
 
-		LDR	R12,[fp,#28]
+		LDR	R8,[ip,#20]			@ routine
+		LDR	R12,[ip,#24]			@ workspace
 		MOV	lr,pc
-		LDR	pc,[fp,#24]
+		MOV	pc,R8
 		MOVVC	a1,#0
 
 		@ return updated block ptr & size to caller
@@ -301,7 +320,11 @@ awrender_render:	MOV	ip,sp
 		STR	R5,[R12]
 		STR	R6,[R4]
 
-		LDMEA	fp,{v1-v4,fp,sp,pc}
+#ifndef __ARM_EABI__
+		LDMDB	fp,{v1-v6,fp,sp,pc}
+#else
+		LDMIA	sp!,{v1-v6,fp,pc}
+#endif
 
 
 @ Callback routine for block resizing
@@ -340,11 +363,18 @@ aw_callback:	TEQ	R11,#3
 		CMP	R1,R2
 		BLS	aw_read
 
-		STMFD	R13!,{R1,R10-R12,R14}
+		STMFD	R13!,{R1,R4,R10-R12,R14}
+#ifdef __ARM_EABI__
+		MOV	R4,R13			@ save original sp
+		BIC	R13,R13,#7		@ align to multiple of 8
+#endif
 		LDR	sl,[R11,#aw_sl]
 		LDR	fp,[R11,#aw_fp]
 		BL	realloc
-		LDMFD	R13!,{R1,R10-R12,R14}
+#ifdef __ARM_EABI__
+		MOV	R13,R4			@ restore unaligned sp
+#endif
+		LDMFD	R13!,{R1,R4,R10-R12,R14}
 
 		CMP	R0,#0			@ did it work?
 		BEQ	aw_nomem
@@ -359,7 +389,11 @@ aw_read:	@ return details of fixed block
 		SUBS	R11,R11,R11		@ clear V
 		MOV	PC,R14
 
-aw_nomem:	STMFD	R13!,{R10,R12,R14}
+aw_nomem:	STMFD	R13!,{R4,R10,R12,R14}
+#ifdef __ARM_EABI__
+		MOV	R4,R13			@ save original sp
+		BIC	R13,R13,#7		@ align to multiple of 8
+#endif
 		LDR	sl,[R11,#aw_sl]
 		LDR	fp,[R11,#aw_fp]
 		ADR	R0,tok_nomem
@@ -370,13 +404,17 @@ aw_nomem:	STMFD	R13!,{R10,R12,R14}
 		SUB	R0,R0,#4		@ error number already 0
 		MOV	R11,#0			@ restore reason code
 		CMP	PC,#1<<31		@ set V
-		LDMFD	R13!,{R10,R12,PC}
+#ifdef __ARM_EABI__
+		MOV	R13,R4			@ restore original sp
+#endif
+		LDMFD	R13!,{R4,R10,R12,PC}
 
 tok_nomem:	.asciz	"NoMemory"
 		.align
 
 		.bss
 
+		.align
 aw_temp:	.space	sizeof_aw
 		.type	aw_temp, %object
 		.size	aw_temp, . - aw_temp
