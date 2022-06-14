@@ -20,35 +20,13 @@
  * \file
  * Generic bitmap handling interface.
  *
- * This interface wraps the native platform-specific image format, so that
- * portable image convertors can be written.
+ * This interface wraps the native platform-specific image format.
  *
- * Bitmaps are required to be 32bpp with components in the order RR GG BB AA.
+ * Bitmaps are required to be 32bpp with 8-bit components. The components are
+ * red, green, blue, and alpha, in client specified order.
  *
- * For example, an opaque 1x1 pixel image would yield the following bitmap
- * data:
- *
- * > Red  : 0xff 0x00 0x00 0x00
- * > Green: 0x00 0xff 0x00 0x00
- * > Blue : 0x00 0x00 0xff 0x00
- *
- * Any attempt to read pixels by casting bitmap data to uint32_t or similar
- * will need to cater for the order of bytes in a word being different on
- * big and little endian systems. To avoid confusion, it is recommended
- * that pixel data is loaded as follows:
- *
- *   uint32_t read_pixel(const uint8_t *bmp)
- *   {
- *        //     red      green           blue              alpha
- *        return bmp[0] | (bmp[1] << 8) | (bmp[2] << 16) | (bmp[3] << 24);
- *    }
- *
- * and *not* as follows:
- *
- *    uint32_t read_pixel(const uint8_t *bmp)
- *    {
- *        return *((uint32_t *) bmp);
- *    }
+ * The component order may be set in the front ends by calling
+ * \ref bitmap_set_format().
  */
 
 #ifndef _NETSURF_BITMAP_H_
