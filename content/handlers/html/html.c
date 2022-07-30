@@ -458,6 +458,8 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	dom_hubbub_error error;
 	dom_exception err;
 	void *old_node_data;
+	const char *prefer_color_mode = (nsoption_bool(prefer_dark_mode)) ?
+			"dark" : "light";
 
 	c->parser = NULL;
 	c->parse_completed = false;
@@ -505,6 +507,13 @@ html_create_html_data(html_content *c, const http_parameter *params)
 		return NSERROR_NOMEM;
 	}
 
+	if (lwc_intern_string(prefer_color_mode, strlen(prefer_color_mode),
+			&c->media.prefers_color_scheme) != lwc_error_ok) {
+		lwc_string_unref(c->universal);
+		c->universal = NULL;
+		return NSERROR_NOMEM;
+	}
+
 	c->sel = selection_create((struct content *)c);
 
 	nerror = http_parameter_list_find_item(params, corestring_lwc_charset, &charset);
@@ -516,6 +525,8 @@ html_create_html_data(html_content *c, const http_parameter *params)
 		if (c->encoding == NULL) {
 			lwc_string_unref(c->universal);
 			c->universal = NULL;
+			lwc_string_unref(c->media.prefers_color_scheme);
+			c->media.prefers_color_scheme = NULL;
 			return NSERROR_NOMEM;
 
 		}
@@ -552,6 +563,8 @@ html_create_html_data(html_content *c, const http_parameter *params)
 
 		lwc_string_unref(c->universal);
 		c->universal = NULL;
+		lwc_string_unref(c->media.prefers_color_scheme);
+		c->media.prefers_color_scheme = NULL;
 
 		return libdom_hubbub_error_to_nserror(error);
 	}
@@ -568,6 +581,8 @@ html_create_html_data(html_content *c, const http_parameter *params)
 
 		lwc_string_unref(c->universal);
 		c->universal = NULL;
+		lwc_string_unref(c->media.prefers_color_scheme);
+		c->media.prefers_color_scheme = NULL;
 
 		NSLOG(netsurf, INFO, "Unable to set user data.");
 		return NSERROR_DOM;
@@ -1272,6 +1287,11 @@ static void html_destroy(struct content *c)
 	if (html->universal != NULL) {
 		lwc_string_unref(html->universal);
 		html->universal = NULL;
+	}
+
+	if (html->media.prefers_color_scheme != NULL) {
+		lwc_string_unref(html->media.prefers_color_scheme);
+		html->media.prefers_color_scheme = NULL;
 	}
 
 	/* Free stylesheets */
