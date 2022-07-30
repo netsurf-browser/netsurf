@@ -255,6 +255,9 @@ NSOPTION_BOOL(enable_PDF_compression, true)
 /** setting a password and encoding PDF documents */
 NSOPTION_BOOL(enable_PDF_password, false)
 
+/** whether to prefer dark mode (light on dark) */
+NSOPTION_BOOL(prefer_dark_mode, false)
+
 /******** System colours ********/
 NSOPTION_COLOUR(sys_colour_ActiveBorder, 0x00d3d3d3)
 NSOPTION_COLOUR(sys_colour_ActiveCaption, 0x00f1f1f1)
