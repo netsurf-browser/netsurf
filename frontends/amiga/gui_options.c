@@ -102,6 +102,9 @@ enum
 	GID_OPTS_SCREENNAME,
 	GID_OPTS_WIN_SIMPLE,
 	GID_OPTS_THEME,
+	GID_OPTS_THEMEPAGE,
+	GID_OPTS_DARK,
+	GID_OPTS_LIGHT,
 	GID_OPTS_PTRTRUE,
 	GID_OPTS_PTROS,
 	GID_OPTS_PROXY,
@@ -210,6 +213,7 @@ enum
 #define OPTS_LAST LAB_OPTS_LAST
 #define OPTS_MAX_TABS 10
 #define OPTS_MAX_SCREEN 4
+#define OPTS_MAX_THEMEPAGE 3
 #define OPTS_MAX_PROXY 5
 #define OPTS_MAX_NATIVEBM 4
 #define OPTS_MAX_DITHER 4
@@ -227,6 +231,7 @@ struct ami_gui_opts_window {
 #ifndef __amigaos4__
 	struct List clicktablist;
 	struct List screenoptslist;
+	struct List pagethemeoptslist;
 	struct List proxyoptslist;
 	struct List nativebmoptslist;
 	struct List ditheroptslist;
@@ -246,6 +251,7 @@ static struct ami_gui_opts_window *gow = NULL;
 
 static CONST_STRPTR tabs[OPTS_MAX_TABS];
 static STRPTR screenopts[OPTS_MAX_SCREEN];
+static CONST_STRPTR pagethemeopts[OPTS_MAX_THEMEPAGE];
 static CONST_STRPTR proxyopts[OPTS_MAX_PROXY];
 static CONST_STRPTR nativebmopts[OPTS_MAX_NATIVEBM];
 static CONST_STRPTR ditheropts[OPTS_MAX_DITHER];
@@ -333,6 +339,10 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	screenopts[2] = (char *)ami_utf8_easy((char *)messages_get("ScreenPublic"));
 	screenopts[3] = NULL;
 
+	pagethemeopts[0] = (char *)ami_utf8_easy((char *)messages_get("Light"));
+	pagethemeopts[1] = (char *)ami_utf8_easy((char *)messages_get("Dark"));
+	pagethemeopts[2] = NULL;
+
 	proxyopts[0] = (char *)ami_utf8_easy((char *)messages_get("ProxyNone"));
 	proxyopts[1] = (char *)ami_utf8_easy((char *)messages_get("ProxyNoAuth"));
 	proxyopts[2] = (char *)ami_utf8_easy((char *)messages_get("ProxyBasic"));
@@ -363,6 +373,10 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	gadlab[GID_OPTS_DONOTTRACK] = (char *)ami_utf8_easy((char *)messages_get("DoNotTrack"));
 	gadlab[GID_OPTS_FASTSCROLL] = (char *)ami_utf8_easy((char *)messages_get("FastScrolling"));
 	gadlab[GID_OPTS_WIN_SIMPLE] = (char *)ami_utf8_easy((char *)messages_get("SimpleRefresh"));
+	gadlab[GID_OPTS_THEME] = (char *)ami_utf8_easy((char *)messages_get("ThemeGUI"));
+	gadlab[GID_OPTS_THEMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("ThemePage"));
+	gadlab[GID_OPTS_DARK] = (char *)ami_utf8_easy((char *)messages_get("Dark"));
+	gadlab[GID_OPTS_LIGHT] = (char *)ami_utf8_easy((char *)messages_get("Light"));
 	gadlab[GID_OPTS_PTRTRUE] = (char *)ami_utf8_easy((char *)messages_get("TrueColour"));
 	gadlab[GID_OPTS_PTROS] = (char *)ami_utf8_easy((char *)messages_get("OSPointers"));
 	gadlab[GID_OPTS_PROXY] = (char *)ami_utf8_easy((char *)messages_get("ProxyType"));
@@ -466,6 +480,7 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 #ifndef __amigaos4__
 	ami_gui_opts_array_to_list(&gow->clicktablist, tabs, NSA_LIST_CLICKTAB);
 	ami_gui_opts_array_to_list(&gow->screenoptslist, screenopts, NSA_LIST_RADIO);
+	ami_gui_opts_array_to_list(&gow->pagethemeoptslist, pagethemeopts, NSA_LIST_CHOOSER);
 	ami_gui_opts_array_to_list(&gow->proxyoptslist, proxyopts, NSA_LIST_CHOOSER);
 	ami_gui_opts_array_to_list(&gow->nativebmoptslist, nativebmopts, NSA_LIST_CHOOSER);
 	ami_gui_opts_array_to_list(&gow->ditheroptslist, ditheropts, NSA_LIST_CHOOSER);
@@ -497,6 +512,7 @@ static void ami_gui_opts_free(struct ami_gui_opts_window *gow)
 #ifndef __amigaos4__
 	ami_gui_opts_free_list(&gow->clicktablist, NSA_LIST_CLICKTAB);
 	ami_gui_opts_free_list(&gow->screenoptslist, NSA_LIST_RADIO);
+	ami_gui_opts_free_list(&gow->pagethemeoptslist, NSA_LIST_CHOOSER);
 	ami_gui_opts_free_list(&gow->proxyoptslist, NSA_LIST_CHOOSER);
 	ami_gui_opts_free_list(&gow->nativebmoptslist, NSA_LIST_CHOOSER);
 	ami_gui_opts_free_list(&gow->ditheroptslist, NSA_LIST_CHOOSER);
@@ -858,6 +874,23 @@ void ami_gui_opts_open(void)
 										GETFILE_ReadOnly, TRUE,
 										GETFILE_FullFileExpand, FALSE,
 									GetFileEnd,
+									CHILD_Label, LabelObj,
+										LABEL_Text, gadlab[GID_OPTS_THEME],
+									LabelEnd,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_THEMEPAGE] = ChooserObj,
+										GA_ID, GID_OPTS_THEMEPAGE,
+										GA_RelVerify, TRUE,
+										CHOOSER_PopUp, TRUE,
+#ifdef __amigaos4__
+										CHOOSER_LabelArray, pagethemeopts,
+#else
+										CHOOSER_Labels, &gow->pagethemeoptslist,
+#endif
+										CHOOSER_Selected, nsoption_bool(os_mouse_pointers),
+									ChooserEnd,
+									CHILD_Label, LabelObj,
+										LABEL_Text, gadlab[GID_OPTS_THEMEPAGE],
+									LabelEnd,
 								LayoutEnd, // theme
 								CHILD_WeightedHeight, 0,
 								LAYOUT_AddChild, LayoutVObj,
@@ -1753,6 +1786,13 @@ static void ami_gui_opts_use(bool save)
 	
 	GetAttr(GETFILE_Drawer,gow->objects[GID_OPTS_THEME],(ULONG *)&data);
 	nsoption_set_charp(theme, (char *)strdup((char *)data));
+
+	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_THEMEPAGE],(ULONG *)&data);
+	if(data) {
+		nsoption_set_bool(prefer_dark_mode, true);
+	} else {
+		nsoption_set_bool(prefer_dark_mode, false);
+	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_PTRTRUE],(ULONG *)&data);
 	if (data) {

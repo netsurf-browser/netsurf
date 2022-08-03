@@ -2531,7 +2531,7 @@ zh_CN.beos.ViewSrcAccel:U
 #
 en.ro.Draw:Draw  ⇑^F3
 fr.ro.Draw:Dessiner  ⇑^F3
-it.ro.Draw:Draw  �^F3
+it.ro.Draw:Draw  �^F3
 nl.ro.Draw:Draw-bestand  ⇑^F3
 zh_CN.ro.Draw:绘图 ↑^F3
 
@@ -2659,7 +2659,7 @@ nl.all.Back:Vorige pagina
 zh_CN.all.Back:后退
 
 en.beos.BackAccel:←
-it.beos.BackAccel:�
+it.beos.BackAccel:�
 zh_CN.beos.BackAccel:←
 
 en.all.Forward:Forward one page
@@ -2670,7 +2670,7 @@ nl.all.Forward:Volgende pagina
 zh_CN.all.Forward:前进
 
 en.beos.ForwardAccel:→
-it.beos.ForwardAccel:�
+it.beos.ForwardAccel:�
 zh_CN.beos.ForwardAccel:→
 
 en.all.UpLevel:Up one level
@@ -2681,7 +2681,7 @@ nl.all.UpLevel:Niveau omhoog
 zh_CN.all.UpLevel:回到上级
 
 en.beos.UpLevelAccel:↑
-it.beos.UpLevelAccel:�
+it.beos.UpLevelAccel:�
 zh_CN.beos.UpLevelAccel:↑
 
 en.ro.Reload:Reload this page  ^F5
@@ -3654,21 +3654,21 @@ zh_CN.all.ExternalApp:在外部应用中打开
 en.all.Download:%s of %s  •  %s/s  •  %s remaining
 de.all.Download:%s von %s • %s/s • noch %s
 fr.all.Download:%s de %s  •  %s/s  •  %s restants
-it.all.Download:%s di %s  �  %s/s  �  %s al termine
+it.all.Download:%s di %s  ��  %s/s  ��  %s al termine
 nl.all.Download:%s van %s  •  %s/s  •  nog %s
 zh_CN.all.Download:第 %s 个，共 %s 个  •  %s/s  •  剩余 %s
 
 en.all.DownloadU:%s of unknown  •  %s/s  •  %s total
 de.all.DownloadU:%s von unbekannt • %s/s • bisher %s
 fr.all.DownloadU:%s sur inconnu  •  %s/s  •  %s total
-it.all.DownloadU:%s sconosciuto  �  %s/s  �  %s totale
+it.all.DownloadU:%s sconosciuto  ��  %s/s  ��  %s totale
 nl.all.DownloadU:%s van onbekend  •  %s/s  •  %s totaal
 zh_CN.all.DownloadU:未知 %s  •  %s/s  •  总共 %s
 
 en.all.Downloaded:%s complete  •  average %s/s  •  %s total
 de.all.Downloaded:%s komplett • etwa %s/s • gesamt %s
 fr.all.Downloaded:%s effectués  •  moyenne %s/s  •  %s total
-it.all.Downloaded:%s completato  �  average %s/s  �  %s totale
+it.all.Downloaded:%s completato  ��  average %s/s  ��  %s totale
 nl.all.Downloaded:%s compleet • gemiddeld %s/s • %s totaal
 zh_CN.all.Downloaded:完成 %s  •  平均 %s/s  •  总共 %s
 
@@ -7872,7 +7872,7 @@ zh_CN.ro.HelpLanguageConfig:\T语言配置 \w
 en.ro.HelpLanguageConfig3:\Tcurrently selected interface language.|MThe interface language is the language used for NetSurf's messages and dialogue boxes.
 de.ro.HelpLanguageConfig3:Das ist die aktuell eingestellte Sprache für die Bedienoberfläche.|MDiese Sprache wird genutzt, um NetSurf's Meldungen, Texte der Dialogboxen, Menüs darzustellen.
 fr.ro.HelpLanguageConfig3:\Tla langue d'interface sélectionnée actuellement.|MLa langue d'interface est la langue utilisée pour les messages et les boîtes de dialogue de Netsurf.
-it.ro.HelpLanguageConfig3:\Tla lingua dell'interfaccia correntemente selezionata.|MLa lingua dell'interfaccia � la lingua utilizzata per i messaggi e le finestre di dialogo di NetSurf.
+it.ro.HelpLanguageConfig3:\Tla lingua dell'interfaccia correntemente selezionata.|MLa lingua dell'interfaccia � la lingua utilizzata per i messaggi e le finestre di dialogo di NetSurf.
 nl.ro.HelpLanguageConfig3:Dit is momenteel de geselecteerde gebruikersinterfacetaal.|MDe interfacetaal is de taal voor de melding- en dialoogvensters.
 zh_CN.ro.HelpLanguageConfig3:\T当前选择的界面语言。|M界面语言是 NetSurf 浏览器消息和对话框使用的语言。
 
@@ -7928,7 +7928,7 @@ zh_CN.ro.HelpSecurityConfig:\T安全配置 \w
 en.ro.HelpSecurityConfig2:This indicates whether NetSurf will send site referral information to web servers.|MWhen this is enabled NetSurf will tell the web server of a new page the address of the site you came from, after following a link.
 de.ro.HelpSecurityConfig2:NetSurf sendet Seitenreferenzinformationen an Webserver.|MIst diese Option gewählt, schickt NetSurf an den Server einer neuen Webseite die Adresse der Seite von der aus die aktuelle über einen Link aufgerufen wurde.
 fr.ro.HelpSecurityConfig2:Ceci indique si Netsurf doit envoyer l'information de renvoi de site aux serveurs web.|MLorsque ceci est activé Netsurf signalera au serveur web d'une nouvelle page l'adresse du site d'où vous venez, après avoir suivi un lien.
-it.ro.HelpSecurityConfig2:Indica se NetSurf invierà  le informazioni di riferimento del sito ai server Web.|MQuando questo � abilitato, NetSurf comunicherà  al server Web di una nuova pagina l'indirizzo del sito dal quale proveniva, dopo aver seguito un link.
+it.ro.HelpSecurityConfig2:Indica se NetSurf invierà  le informazioni di riferimento del sito ai server Web.|MQuando questo � abilitato, NetSurf comunicherà  al server Web di una nuova pagina l'indirizzo del sito dal quale proveniva, dopo aver seguito un link.
 nl.ro.HelpSecurityConfig2:Deze optie geeft aan of site-gerelateerde informatie naar webservers wordt meegezonden.|MIndien toegestaan, ontvangt de webserver informatie over de vorige pagina waar, via een koppeling, vandaan is gekomen.
 zh_CN.ro.HelpSecurityConfig2:这表示 NetSurf 是否将站点推荐信息发送到网络服务器。|M启用此选项后，NetSurf 将在跟踪链接后将您的站点网址告知新网页的网络服务器。
 
@@ -8374,6 +8374,34 @@ fr.all.Theme:Thème
 it.all.Theme:Tema grafico
 nl.all.Theme:Thema
 zh_CN.all.Theme:主题
+
+en.ami.ThemeGUI:GUI theme
+de.ami.ThemeGUI:GUI theme
+fr.ami.ThemeGUI:GUI theme
+it.ami.ThemeGUI:GUI theme
+nl.ami.ThemeGUI:GUI theme
+zh_CN.ami.ThemeGUI:GUI theme
+
+en.ami.ThemePage:Preferred page theme
+de.ami.ThemePage:Preferred page theme
+fr.ami.ThemePage:Preferred page theme
+it.ami.ThemePage:Preferred page theme
+nl.ami.ThemePage:Preferred page theme
+zh_CN.ami.ThemePage:Preferred page theme
+
+en.ami.Light:Light
+de.ami.Light:Light
+fr.ami.Light:Light
+it.ami.Light:Light
+nl.ami.Light:Light
+zh_CN.ami.Light:Light
+
+en.ami.Dark:Dark
+de.ami.Dark:Dark
+fr.ami.Dark:Dark
+it.ami.Dark:Dark
+nl.ami.Dark:Dark
+zh_CN.ami.Dark:Dark
 
 en.all.MousePointers:Mouse pointers
 de.all.MousePointers:Mauszeiger
