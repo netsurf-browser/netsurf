@@ -886,7 +886,7 @@ void ami_gui_opts_open(void)
 #else
 										CHOOSER_Labels, &gow->pagethemeoptslist,
 #endif
-										CHOOSER_Selected, nsoption_bool(os_mouse_pointers),
+										CHOOSER_Selected, nsoption_bool(prefer_dark_mode),
 									ChooserEnd,
 									CHILD_Label, LabelObj,
 										LABEL_Text, gadlab[GID_OPTS_THEMEPAGE],
