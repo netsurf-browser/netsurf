@@ -27,6 +27,7 @@
 
 #include "riscos/image.h"
 #include "riscos/gui.h"
+#include "riscos/wimp.h"
 #include "riscos/tinct.h"
 
 /**
@@ -65,11 +66,11 @@ static bool image_redraw_tinct(osspriteop_id header, int x, int y,
 
 	if (alpha) {
 		error = _swix(Tinct_PlotScaledAlpha, _INR(2,7),
-				header, x, y - req_height,
+				header, x, y,
 				req_width, req_height, tinct_options);
 	} else {
 		error = _swix(Tinct_PlotScaled, _INR(2,7),
-				header, x, y - req_height,
+				header, x, y,
 				req_width, req_height, tinct_options);
 	}
 
@@ -144,13 +145,11 @@ static bool image_redraw_os(osspriteop_id header, int x, int y, int req_width,
 
 	if (tile) {
 		error = xosspriteop_plot_tiled_sprite(osspriteop_PTR,
-				osspriteop_UNSPECIFIED, header,
-				x, (int)(y - req_height),
+				osspriteop_UNSPECIFIED, header, x, y,
 				osspriteop_USE_MASK, &f, table);
 	} else {
 		error = xosspriteop_put_sprite_scaled(osspriteop_PTR,
-				osspriteop_UNSPECIFIED, header,
-				x, (int)(y - req_height),
+				osspriteop_UNSPECIFIED, header, x, y,
 				osspriteop_USE_MASK, &f, table);
 	}
 	if (error) {
@@ -220,10 +219,13 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 
 	osspriteop_id header = (osspriteop_id)
 			((char*) area + area->first);
+
 	req_width *= 2;
 	req_height *= 2;
 	width *= 2;
 	height *= 2;
+	y -= req_height;
+
 	tinct_options = background ? nsoption_int(plot_bg_quality) :
 		nsoption_int(plot_fg_quality);
 
@@ -236,6 +238,18 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 		if (tinct_options & tinct_USE_OS_SPRITE_OP) {
 			type = IMAGE_PLOT_OS;
 			tinct_avoid = true;
+		}
+	}
+
+	if (tinct_avoid) {
+		int xeig;
+		int yeig;
+
+		if (ro_gui_wimp_read_eig_factors(os_CURRENT_MODE,
+				&xeig, &yeig)) {
+
+			req_width  = (req_width  / 2) * (4 >> xeig);
+			req_height = (req_height / 2) * (4 >> yeig);
 		}
 	}
 
