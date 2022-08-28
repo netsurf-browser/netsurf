@@ -833,6 +833,7 @@ ro_gui_window_toolbar_click(void *data,
 	if (action_type == TOOLBAR_ACTION_URL) {
 		switch (action.url) {
 		case TOOLBAR_URL_DRAG_URL:
+		case TOOLBAR_URL_DRAG_FAVICON:
 		{
 			gui_save_type save_type;
 			nserror err;
