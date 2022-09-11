@@ -438,6 +438,7 @@ image_cache_init(const struct image_cache_parameters *image_cache_parameters)
 nserror image_cache_fini(void)
 {
 	unsigned int op_count;
+	uint64_t op_size;
 
 	guit->misc->schedule(-1, image_cache__background_update, image_cache);
 
@@ -452,6 +453,10 @@ nserror image_cache_fini(void)
 		image_cache->miss_count +
 		image_cache->fail_count;
 
+	op_size = image_cache->hit_size +
+		image_cache->miss_size +
+		image_cache->fail_size;
+
 	NSLOG(netsurf, INFO, "Age %ds", image_cache->current_age / 1000);
 	NSLOG(netsurf, INFO, "Peak size %"PRIsizet" (in %d)",
 	      image_cache->max_bitmap_size,
@@ -460,12 +465,7 @@ nserror image_cache_fini(void)
 	      image_cache->max_bitmap_count,
 	      image_cache->max_bitmap_count_size);
 
-	if (op_count > 0) {
-		uint64_t op_size;
-
-		op_size = image_cache->hit_size +
-			image_cache->miss_size +
-			image_cache->fail_size;
+	if ((op_count > 0) && (op_size >0)) {
 
 		NSLOG(netsurf, INFO,
 		      "Cache total/hit/miss/fail (counts) %d/%d/%d/%d (100%%/%d%%/%d%%/%d%%)",
