@@ -274,6 +274,10 @@ static char fetch_proxy_userpwd[100];
 /** Interlock to prevent initiation during callbacks */
 static bool inside_curl = false;
 
+static struct curl_blob cert_data = {
+	.flags = CURL_BLOB_NOCOPY,
+};
+
 
 /**
  * Initialise a cURL fetcher.
@@ -313,6 +317,9 @@ static void fetch_curl_finalise(lwc_string *scheme)
 			      "curl_multi_cleanup failed: ignoring");
 
 		curl_global_cleanup();
+
+		free(cert_data.data);
+		cert_data.data = NULL;
 
 		NSLOG(netsurf, DEBUG, "Cleaning up SSL cert chain hashmap");
 		hashmap_destroy(curl_fetch_ssl_hashmap);
@@ -1757,15 +1764,59 @@ nserror fetch_curl_register(void)
 	SETOPT(CURLOPT_NOSIGNAL, 1L);
 	SETOPT(CURLOPT_CONNECTTIMEOUT, nsoption_uint(curl_fetch_timeout));
 
-	if (nsoption_charp(ca_bundle) &&
-	    strcmp(nsoption_charp(ca_bundle), "")) {
-		NSLOG(netsurf, INFO, "ca_bundle: '%s'",
-		      nsoption_charp(ca_bundle));
-		SETOPT(CURLOPT_CAINFO, nsoption_charp(ca_bundle));
-	}
-	if (nsoption_charp(ca_path) && strcmp(nsoption_charp(ca_path), "")) {
-		NSLOG(netsurf, INFO, "ca_path: '%s'", nsoption_charp(ca_path));
-		SETOPT(CURLOPT_CAPATH, nsoption_charp(ca_path));
+	if ((nsoption_charp(ca_bundle) &&
+	     strcmp(nsoption_charp(ca_bundle), "")) &&
+	    (nsoption_charp(ca_path) == NULL ||
+	     strcmp(nsoption_charp(ca_path), "") == 0) &&
+	    cert_data.data == NULL) {
+		FILE *f;
+		long tell_len;
+
+		f = fopen(nsoption_charp(ca_bundle), "r");
+		if (f == NULL) {
+			goto curl_easy_setopt_failed;
+		}
+		if (fseek(f, 0, SEEK_END) != 0) {
+			fclose(f);
+			goto curl_easy_setopt_failed;
+		}
+
+		tell_len = ftell(f);
+		if (tell_len == -1) {
+			fclose(f);
+			goto curl_easy_setopt_failed;
+		}
+
+		if (fseek(f, 0, SEEK_SET) != 0) {
+			fclose(f);
+			goto curl_easy_setopt_failed;
+		}
+
+		cert_data.data = malloc(tell_len);
+		if (cert_data.data == NULL) {
+			fclose(f);
+			goto curl_easy_setopt_failed;
+		}
+		cert_data.len = fread(cert_data.data, 1, tell_len, f);
+
+		fclose(f);
+
+		NSLOG(netsurf, INFO, "ca_bundle: '%s' (as blob tell_len: %ld, len: %zu)",
+		      nsoption_charp(ca_bundle), tell_len, cert_data.len);
+		SETOPT(CURLOPT_CAINFO_BLOB, &cert_data);
+	} else {
+		if (nsoption_charp(ca_bundle) &&
+		    strcmp(nsoption_charp(ca_bundle), "")) {
+			NSLOG(netsurf, INFO, "ca_bundle: '%s'",
+			      nsoption_charp(ca_bundle));
+			SETOPT(CURLOPT_CAINFO, nsoption_charp(ca_bundle));
+		}
+		if (nsoption_charp(ca_path) &&
+		    strcmp(nsoption_charp(ca_path), "")) {
+			NSLOG(netsurf, INFO, "ca_path: '%s'",
+			      nsoption_charp(ca_path));
+			SETOPT(CURLOPT_CAPATH, nsoption_charp(ca_path));
+		}
 	}
 
 #if LIBCURL_VERSION_NUM < 0x073800
