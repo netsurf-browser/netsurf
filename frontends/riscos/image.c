@@ -172,17 +172,19 @@ static bool image_redraw_os(osspriteop_id header, int x, int y, int req_width,
  * Only replaces mode if existing mode matches \ref old.
  *
  * \param[in] area  The sprite area containing the sprite.
+ * \param[in] type  Requested plot mode.
  * \param[in] old   Existing sprite mode to check for.
  * \param[in] new   Sprite mode to set if existing mode is expected.
  */
 static inline void image__override_sprite_mode(
 		osspriteop_area *area,
+		image_type type,
 		os_mode old,
 		os_mode new)
 {
 	osspriteop_header *sprite = (osspriteop_header *)(area + 1);
 
-	if (sprite->mode == old) {
+	if (sprite->mode == old && type == IMAGE_PLOT_TINCT_ALPHA) {
 		sprite->mode = new;
 	}
 }
@@ -209,6 +211,7 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 		colour background_colour,
 		bool repeatx, bool repeaty, bool background, image_type type)
 {
+	image_type used_type = type;
 	unsigned int tinct_options;
 	bool tinct_avoid = false;
 	bool res = false;
@@ -236,7 +239,7 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 		 * is that we lose the optimisation for tiling tiny bitmaps.
 		 */
 		if (tinct_options & tinct_USE_OS_SPRITE_OP) {
-			type = IMAGE_PLOT_OS;
+			used_type = IMAGE_PLOT_OS;
 			tinct_avoid = true;
 		}
 	}
@@ -253,7 +256,7 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 		}
 	}
 
-	switch (type) {
+	switch (used_type) {
 		case IMAGE_PLOT_TINCT_ALPHA:
 			res = image_redraw_tinct(header, x, y,
 						req_width, req_height,
@@ -274,7 +277,7 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 
 		case IMAGE_PLOT_OS:
 			if (tinct_avoid) {
-				image__override_sprite_mode(area,
+				image__override_sprite_mode(area, type,
 						tinct_SPRITE_MODE,
 						alpha_SPRITE_MODE);
 			}
@@ -282,7 +285,7 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 						req_height, width, height,
 						repeatx | repeaty);
 			if (tinct_avoid) {
-				image__override_sprite_mode(area,
+				image__override_sprite_mode(area, type,
 						alpha_SPRITE_MODE,
 						tinct_SPRITE_MODE);
 			}
