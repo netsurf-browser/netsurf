@@ -864,6 +864,12 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	case CSS_DISPLAY_NONE:
 		fprintf(stream, "display: none ");
 		break;
+	case CSS_DISPLAY_FLEX:
+		fprintf(stream, "display: flex ");
+		break;
+	case CSS_DISPLAY_INLINE_FLEX:
+		fprintf(stream, "display: inline-flex ");
+		break;
 	default:
 		break;
 	}
