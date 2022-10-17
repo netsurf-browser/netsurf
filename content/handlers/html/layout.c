@@ -4433,9 +4433,9 @@ layout_compute_offsets(const css_unit_ctx *unit_len_ctx,
 	css_fixed value = 0;
 	css_unit unit = CSS_UNIT_PX;
 
-	assert(containing_block->width != UNKNOWN_WIDTH &&
-			containing_block->width != AUTO &&
-			containing_block->height != AUTO);
+	assert(containing_block->width != UNKNOWN_WIDTH);
+	assert(containing_block->width != AUTO);
+	assert(containing_block->height != AUTO);
 
 	/* left */
 	type = css_computed_left(box->style, &value, &unit);
