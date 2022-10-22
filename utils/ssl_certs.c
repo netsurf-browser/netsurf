@@ -248,12 +248,23 @@ nserror cert_chain_to_query(struct cert_chain *chain, struct nsurl **url_out )
 
 	urlstrlen = snprintf((char *)urlstr, allocsize, "about:certificate");
 	for (depth = 0; depth < chain->depth; depth++) {
+		int written;
 		nsuerror nsures;
 		size_t output_length;
 
-		urlstrlen += snprintf((char *)urlstr + urlstrlen,
-				      allocsize - urlstrlen,
-				      "&cert=");
+		written = snprintf((char *)urlstr + urlstrlen,
+					allocsize - urlstrlen,
+					"&cert=");
+		if (written < 0) {
+			free(urlstr);
+			return NSERROR_UNKNOWN;
+		}
+		if ((size_t)written >= allocsize - urlstrlen) {
+			free(urlstr);
+			return NSERROR_UNKNOWN;
+		}
+
+		urlstrlen += (size_t)written;
 
 		output_length = allocsize - urlstrlen;
 		nsures = nsu_base64_encode_url(
@@ -268,10 +279,20 @@ nserror cert_chain_to_query(struct cert_chain *chain, struct nsurl **url_out )
 		urlstrlen += output_length;
 
 		if (chain->certs[depth].err != SSL_CERT_ERR_OK) {
-			urlstrlen += snprintf((char *)urlstr + urlstrlen,
-					      allocsize - urlstrlen,
-					      "&certerr=%d",
-					      chain->certs[depth].err);
+			written = snprintf((char *)urlstr + urlstrlen,
+					allocsize - urlstrlen,
+					"&certerr=%d",
+					chain->certs[depth].err);
+			if (written < 0) {
+				free(urlstr);
+				return NSERROR_UNKNOWN;
+			}
+			if ((size_t)written >= allocsize - urlstrlen) {
+				free(urlstr);
+				return NSERROR_UNKNOWN;
+			}
+
+			urlstrlen += (size_t)written;
 		}
 
 	}
