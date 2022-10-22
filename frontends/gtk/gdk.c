@@ -73,7 +73,7 @@ nsgdk_pixbuf_get_from_surface(cairo_surface_t *surface, int scwidth, int scheigh
 
 	memset(gdk_pixbuf_get_pixels(pixbuf),
 	       0xff, 
-	       gdk_pixbuf_get_rowstride(pixbuf) * scheight);
+	       gdk_pixbuf_get_rowstride(pixbuf) * (size_t)scheight);
 
 	/* scale cairo surface into new surface the target size */
 	cairo_surface_flush(surface); /* ensure source surface is ready */
