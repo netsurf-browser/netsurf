@@ -39,6 +39,6 @@ getter ImageData::data()
 %{
 	duk_push_this(ctx);
 	duk_get_prop_string(ctx, -1, MAGIC(DATA));
-	duk_push_buffer_object(ctx, -1, 0, priv->width * priv->height * 4, DUK_BUFOBJ_UINT8CLAMPEDARRAY);
+	duk_push_buffer_object(ctx, -1, 0, priv->width * priv->height * 4llu, DUK_BUFOBJ_UINT8CLAMPEDARRAY);
 	return 1;
 %}
