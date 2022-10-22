@@ -1526,7 +1526,10 @@ static void urldb_dump_search(struct search_node *parent, int depth)
 	for (h = parent->data; h; h = h->parent) {
 		if (h->part) {
 			r = snprintf(&s[i], sl - i, "%s", h->part);
-			if ((i + r) > sl) {
+			if (r < 0) {
+				break;
+			}
+			if ((i + r) >= sl) {
 				break;
 			}
 			i += r;
