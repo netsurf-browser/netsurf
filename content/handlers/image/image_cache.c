@@ -528,7 +528,7 @@ nserror image_cache_add(struct content *content,
 		image_cache__link(centry);
 		centry->content = content;
 
-		centry->bitmap_size = content->width * content->height * 4;
+		centry->bitmap_size = content->width * content->height * 4llu;
 	}
 
 	NSLOG(netsurf, INFO, "centry %p, content %p, bitmap %p", centry,
