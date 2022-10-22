@@ -65,6 +65,7 @@ remove_backgrounds:0
 enable_loosening:1
 enable_PDF_compression:1
 enable_PDF_password:0
+prefer_dark_mode:0
 sys_colour_ActiveBorder:d3d3d3
 sys_colour_ActiveCaption:f1f1f1
 sys_colour_AppWorkspace:f1f1f1
