@@ -182,7 +182,7 @@ method Console::timeEnd()
 	duk_del_prop(ctx, 0);
 	duk_push_string(ctx, "Timer elapsed: ");
 	duk_insert(ctx, 0);
-	duk_push_sprintf(ctx, "%lu ms", (duk_uint_t)(time_ms - old_time_ms));
+	duk_push_sprintf(ctx, "%u ms", (duk_uint_t)(time_ms - old_time_ms));
 	write_log_entry(ctx, priv->group, BW_CS_FLAG_LEVEL_INFO);
 	return 0;
 %}
