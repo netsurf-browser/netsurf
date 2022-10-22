@@ -673,15 +673,22 @@ nsgtk_toolbar_customisation_save(struct nsgtk_toolbar *tb)
 	for (location = BACK_BUTTON;
 	     location < PLACEHOLDER_BUTTON;
 	     location++) {
+		int written;
 		itemid = itemid_from_location(tb, location);
 		if (itemid == PLACEHOLDER_BUTTON) {
 			/* no more filled locations */
 			break;
 		}
-		start += snprintf(start,
+		written = snprintf(start,
 				orderlen - (start - order),
 				"%s/",
 				tb->items[itemid].name);
+		if ((written < 0) ||
+		    (written >= orderlen - (start - order))) {
+			free(order);
+			return NSERROR_UNKNOWN;
+		}
+		start += written;
 
 		if ((start - order) >= orderlen) {
 			break;
