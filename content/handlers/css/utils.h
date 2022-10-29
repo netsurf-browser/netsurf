@@ -36,11 +36,9 @@ static inline uint8_t ns_computed_display(
 	uint8_t value = css_computed_display(style, root);
 
 	switch (value) {
-	case CSS_DISPLAY_FLEX:
 	case CSS_DISPLAY_GRID:
 		return CSS_DISPLAY_BLOCK;
 
-	case CSS_DISPLAY_INLINE_FLEX:
 	case CSS_DISPLAY_INLINE_GRID:
 		return CSS_DISPLAY_INLINE_BLOCK;
 
@@ -61,11 +59,9 @@ static inline uint8_t ns_computed_display_static(
 	uint8_t value = css_computed_display_static(style);
 
 	switch (value) {
-	case CSS_DISPLAY_FLEX:
 	case CSS_DISPLAY_GRID:
 		return CSS_DISPLAY_BLOCK;
 
-	case CSS_DISPLAY_INLINE_FLEX:
 	case CSS_DISPLAY_INLINE_GRID:
 		return CSS_DISPLAY_INLINE_BLOCK;
 
@@ -75,7 +71,6 @@ static inline uint8_t ns_computed_display_static(
 
 	return value;
 }
-
 
 static inline uint8_t ns_computed_min_height(
 		const css_computed_style *style,

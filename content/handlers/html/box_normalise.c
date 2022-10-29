@@ -177,6 +177,7 @@ box_normalise_table_row(struct box *row,
 				return false;
 			cell = child;
 			break;
+		case BOX_FLEX:
 		case BOX_BLOCK:
 		case BOX_INLINE_CONTAINER:
 		case BOX_TABLE:
@@ -211,6 +212,7 @@ box_normalise_table_row(struct box *row,
 			cell->prev = child->prev;
 
 			while (child != NULL && (
+					child->type == BOX_FLEX ||
 					child->type == BOX_BLOCK ||
 					child->type == BOX_INLINE_CONTAINER ||
 					child->type == BOX_TABLE ||
@@ -238,6 +240,7 @@ box_normalise_table_row(struct box *row,
 			break;
 		case BOX_INLINE:
 		case BOX_INLINE_END:
+		case BOX_INLINE_FLEX:
 		case BOX_INLINE_BLOCK:
 		case BOX_FLOAT_LEFT:
 		case BOX_FLOAT_RIGHT:
@@ -314,6 +317,7 @@ box_normalise_table_row_group(struct box *row_group,
 					c) == false)
 				return false;
 			break;
+		case BOX_FLEX:
 		case BOX_BLOCK:
 		case BOX_INLINE_CONTAINER:
 		case BOX_TABLE:
@@ -348,6 +352,7 @@ box_normalise_table_row_group(struct box *row_group,
 			row->prev = child->prev;
 
 			while (child != NULL && (
+					child->type == BOX_FLEX ||
 					child->type == BOX_BLOCK ||
 					child->type == BOX_INLINE_CONTAINER ||
 					child->type == BOX_TABLE ||
@@ -377,6 +382,7 @@ box_normalise_table_row_group(struct box *row_group,
 			break;
 		case BOX_INLINE:
 		case BOX_INLINE_END:
+		case BOX_INLINE_FLEX:
 		case BOX_INLINE_BLOCK:
 		case BOX_FLOAT_LEFT:
 		case BOX_FLOAT_RIGHT:
@@ -648,6 +654,7 @@ box_normalise_table(struct box *table, const struct box *root, html_content * c)
 				return false;
 			}
 			break;
+		case BOX_FLEX:
 		case BOX_BLOCK:
 		case BOX_INLINE_CONTAINER:
 		case BOX_TABLE:
@@ -686,6 +693,7 @@ box_normalise_table(struct box *table, const struct box *root, html_content * c)
 			row_group->prev = child->prev;
 
 			while (child != NULL && (
+					child->type == BOX_FLEX ||
 					child->type == BOX_BLOCK ||
 					child->type == BOX_INLINE_CONTAINER ||
 					child->type == BOX_TABLE ||
@@ -716,6 +724,7 @@ box_normalise_table(struct box *table, const struct box *root, html_content * c)
 			break;
 		case BOX_INLINE:
 		case BOX_INLINE_END:
+		case BOX_INLINE_FLEX:
 		case BOX_INLINE_BLOCK:
 		case BOX_FLOAT_LEFT:
 		case BOX_FLOAT_RIGHT:
@@ -806,6 +815,181 @@ box_normalise_table(struct box *table, const struct box *root, html_content * c)
 	return true;
 }
 
+static bool box_normalise_flex(
+		struct box *flex_container,
+		const struct box *root,
+		html_content *c)
+{
+	struct box *child;
+	struct box *next_child;
+	struct box *implied_flex_item;
+	css_computed_style *style;
+	nscss_select_ctx ctx;
+
+	assert(flex_container != NULL);
+	assert(root != NULL);
+
+	ctx.root_style = root->style;
+
+#ifdef BOX_NORMALISE_DEBUG
+	NSLOG(netsurf, INFO, "flex_container %p, flex_container->type %u",
+			flex_container, flex_container->type);
+#endif
+
+	assert(flex_container->type == BOX_FLEX ||
+	       flex_container->type == BOX_INLINE_FLEX);
+
+	for (child = flex_container->children; child != NULL; child = next_child) {
+#ifdef BOX_NORMALISE_DEBUG
+		NSLOG(netsurf, INFO, "child %p, child->type = %d",
+				child, child->type);
+#endif
+
+		next_child = child->next;	/* child may be destroyed */
+
+		switch (child->type) {
+		case BOX_FLEX:
+			/* ok */
+			if (box_normalise_flex(child, root, c) == false)
+				return false;
+			break;
+		case BOX_BLOCK:
+			/* ok */
+			if (box_normalise_block(child, root, c) == false)
+				return false;
+			break;
+		case BOX_INLINE_CONTAINER:
+			/* insert implied flex item */
+			assert(flex_container->style != NULL);
+
+			ctx.ctx = c->select_ctx;
+			ctx.quirks = (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL);
+			ctx.base_url = c->base_url;
+			ctx.universal = c->universal;
+
+			style = nscss_get_blank_style(&ctx, &c->unit_len_ctx,
+					flex_container->style);
+			if (style == NULL)
+				return false;
+
+			implied_flex_item = box_create(NULL, style, true,
+					flex_container->href,
+					flex_container->target,
+					NULL, NULL, c->bctx);
+			if (implied_flex_item == NULL) {
+				css_computed_style_destroy(style);
+				return false;
+			}
+			implied_flex_item->type = BOX_BLOCK;
+
+			if (child->prev == NULL)
+				flex_container->children = implied_flex_item;
+			else
+				child->prev->next = implied_flex_item;
+
+			implied_flex_item->prev = child->prev;
+
+			while (child != NULL &&
+					child->type == BOX_INLINE_CONTAINER) {
+				box_add_child(implied_flex_item, child);
+
+				next_child = child->next;
+				child->next = NULL;
+				child = next_child;
+			}
+
+			implied_flex_item->last->next = NULL;
+			implied_flex_item->next = next_child = child;
+			if (implied_flex_item->next != NULL)
+				implied_flex_item->next->prev = implied_flex_item;
+			else
+				flex_container->last = implied_flex_item;
+			implied_flex_item->parent = flex_container;
+
+			if (box_normalise_block(implied_flex_item,
+					root, c) == false)
+				return false;
+			break;
+
+		case BOX_TABLE:
+			if (box_normalise_table(child, root, c) == false)
+				return false;
+			break;
+		case BOX_INLINE:
+		case BOX_INLINE_END:
+		case BOX_INLINE_FLEX:
+		case BOX_INLINE_BLOCK:
+		case BOX_FLOAT_LEFT:
+		case BOX_FLOAT_RIGHT:
+		case BOX_BR:
+		case BOX_TEXT:
+			/* should have been wrapped in inline
+			   container by convert_xml_to_box() */
+			assert(0);
+			break;
+		case BOX_TABLE_ROW_GROUP:
+		case BOX_TABLE_ROW:
+		case BOX_TABLE_CELL:
+			/* insert implied table */
+			assert(flex_container->style != NULL);
+
+			ctx.ctx = c->select_ctx;
+			ctx.quirks = (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL);
+			ctx.base_url = c->base_url;
+			ctx.universal = c->universal;
+
+			style = nscss_get_blank_style(&ctx, &c->unit_len_ctx,
+					flex_container->style);
+			if (style == NULL)
+				return false;
+
+			implied_flex_item = box_create(NULL, style, true,
+					flex_container->href,
+					flex_container->target,
+					NULL, NULL, c->bctx);
+			if (implied_flex_item == NULL) {
+				css_computed_style_destroy(style);
+				return false;
+			}
+			implied_flex_item->type = BOX_TABLE;
+
+			if (child->prev == NULL)
+				flex_container->children = implied_flex_item;
+			else
+				child->prev->next = implied_flex_item;
+
+			implied_flex_item->prev = child->prev;
+
+			while (child != NULL && (
+					child->type == BOX_TABLE_ROW_GROUP ||
+					child->type == BOX_TABLE_ROW ||
+					child->type == BOX_TABLE_CELL)) {
+				box_add_child(implied_flex_item, child);
+
+				next_child = child->next;
+				child->next = NULL;
+				child = next_child;
+			}
+
+			implied_flex_item->last->next = NULL;
+			implied_flex_item->next = next_child = child;
+			if (implied_flex_item->next != NULL)
+				implied_flex_item->next->prev = implied_flex_item;
+			else
+				flex_container->last = implied_flex_item;
+			implied_flex_item->parent = flex_container;
+
+			if (box_normalise_table(implied_flex_item,
+					root, c) == false)
+				return false;
+			break;
+		default:
+			assert(0);
+		}
+	}
+
+	return true;
+}
 
 static bool
 box_normalise_inline_container(struct box *cont,
@@ -836,6 +1020,11 @@ box_normalise_inline_container(struct box *cont,
 			if (box_normalise_block(child, root, c) == false)
 				return false;
 			break;
+		case BOX_INLINE_FLEX:
+			/* ok */
+			if (box_normalise_flex(child, root, c) == false)
+				return false;
+			break;
 		case BOX_FLOAT_LEFT:
 		case BOX_FLOAT_RIGHT:
 			/* ok */
@@ -849,6 +1038,11 @@ box_normalise_inline_container(struct box *cont,
 				break;
 			case BOX_TABLE:
 				if (box_normalise_table(child->children, root,
+						c) == false)
+					return false;
+				break;
+			case BOX_FLEX:
+				if (box_normalise_flex(child->children, root,
 						c) == false)
 					return false;
 				break;
@@ -870,6 +1064,7 @@ box_normalise_inline_container(struct box *cont,
 				box_free(child);
 			}
 			break;
+		case BOX_FLEX:
 		case BOX_BLOCK:
 		case BOX_INLINE_CONTAINER:
 		case BOX_TABLE:
@@ -887,7 +1082,6 @@ box_normalise_inline_container(struct box *cont,
 
 	return true;
 }
-
 
 /* Exported function documented in html/box_normalise.h */
 bool
@@ -920,6 +1114,11 @@ box_normalise_block(struct box *block, const struct box *root, html_content *c)
 		next_child = child->next;	/* child may be destroyed */
 
 		switch (child->type) {
+		case BOX_FLEX:
+			/* ok */
+			if (box_normalise_flex(child, root, c) == false)
+				return false;
+			break;
 		case BOX_BLOCK:
 			/* ok */
 			if (box_normalise_block(child, root, c) == false)
@@ -935,6 +1134,7 @@ box_normalise_block(struct box *block, const struct box *root, html_content *c)
 			break;
 		case BOX_INLINE:
 		case BOX_INLINE_END:
+		case BOX_INLINE_FLEX:
 		case BOX_INLINE_BLOCK:
 		case BOX_FLOAT_LEFT:
 		case BOX_FLOAT_RIGHT:

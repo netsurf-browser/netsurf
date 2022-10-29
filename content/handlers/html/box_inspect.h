@@ -139,5 +139,17 @@ static inline bool box_is_first_child(struct box *b)
 	return (b->parent == NULL || b == b->parent->children);
 }
 
+static inline unsigned box_count_children(const struct box *b)
+{
+	const struct box *c = b->children;
+	unsigned count = 0;
+
+	while (c != NULL) {
+		count++;
+		c = c->next;
+	}
+
+	return count;
+}
 
 #endif

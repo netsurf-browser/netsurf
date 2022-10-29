@@ -724,6 +724,14 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth, bool style)
 		fprintf(stream, "TEXT ");
 		break;
 
+	case BOX_FLEX:
+		fprintf(stream, "FLEX ");
+		break;
+
+	case BOX_INLINE_FLEX:
+		fprintf(stream, "INLINE_FLEX ");
+		break;
+
 	default:
 		fprintf(stream, "Unknown box type ");
 	}
