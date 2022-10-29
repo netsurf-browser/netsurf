@@ -895,6 +895,8 @@ static void layout_minmax_block(
 	css_fixed height = 0;
 	css_unit hunit = CSS_UNIT_PX;
 	enum css_box_sizing_e bs = CSS_BOX_SIZING_CONTENT_BOX;
+	bool using_min_border_box = false;
+	bool using_max_border_box = false;
 	bool child_has_height = false;
 
 	assert(block->type == BOX_BLOCK ||
@@ -1030,23 +1032,40 @@ static void layout_minmax_block(
 	}
 
 	/* fixed width takes priority */
-	if (block->type != BOX_TABLE_CELL && wtype == CSS_WIDTH_SET &&
-			wunit != CSS_UNIT_PCT) {
-		min = max = FIXTOINT(css_unit_len2device_px(block->style,
-				&content->unit_len_ctx, width, wunit));
-		if (bs == CSS_BOX_SIZING_BORDER_BOX) {
-			int border_box_fixed = 0;
-			float border_box_frac = 0;
-			calculate_mbp_width(&content->unit_len_ctx,
-					block->style, LEFT,
-					false, true, true,
-					&border_box_fixed, &border_box_frac);
-			calculate_mbp_width(&content->unit_len_ctx,
-					block->style, RIGHT,
-					false, true, true,
-					&border_box_fixed, &border_box_frac);
-			if (min < border_box_fixed) {
-				min = max = border_box_fixed;
+	if (block->type != BOX_TABLE_CELL) {
+		bool border_box = bs == CSS_BOX_SIZING_BORDER_BOX;
+		enum css_max_width_e max_type;
+		enum css_min_width_e min_type;
+		css_unit unit = CSS_UNIT_PX;
+		css_fixed value = 0;
+
+		if (wtype == CSS_WIDTH_SET && wunit != CSS_UNIT_PCT) {
+			min = max = FIXTOINT(
+					css_unit_len2device_px(block->style,
+					&content->unit_len_ctx, width, wunit));
+			using_max_border_box = border_box;
+			using_min_border_box = border_box;
+		}
+
+		min_type = css_computed_min_width(block->style, &value, &unit);
+		if (min_type == CSS_MIN_WIDTH_SET && unit != CSS_UNIT_PCT) {
+			int val = FIXTOINT(css_unit_len2device_px(block->style,
+					&content->unit_len_ctx, value, unit));
+
+			if (min < val) {
+				min = val;
+				using_min_border_box = border_box;
+			}
+		}
+
+		max_type = css_computed_max_width(block->style, &value, &unit);
+		if (max_type == CSS_MAX_WIDTH_SET && unit != CSS_UNIT_PCT) {
+			int val = FIXTOINT(css_unit_len2device_px(block->style,
+					&content->unit_len_ctx, value, unit));
+
+			if (val >= 0 && max > val) {
+				max = val;
+				using_max_border_box = border_box;
 			}
 		}
 	}
@@ -1060,22 +1079,30 @@ static void layout_minmax_block(
 	/* add margins, border, padding to min, max widths */
 	/* Note: we don't know available width here so percentage margin
 	 * and paddings are wrong. */
-	if (bs == CSS_BOX_SIZING_BORDER_BOX && wtype == CSS_WIDTH_SET) {
-		/* Border and padding included in width, so just get margin */
-		calculate_mbp_width(&content->unit_len_ctx,
-				block->style, LEFT, true, false, false,
-				&extra_fixed, &extra_frac);
-		calculate_mbp_width(&content->unit_len_ctx,
-				block->style, RIGHT, true, false, false,
-				&extra_fixed, &extra_frac);
-	} else {
-		calculate_mbp_width(&content->unit_len_ctx,
-				block->style, LEFT, true, true, true,
-				&extra_fixed, &extra_frac);
-		calculate_mbp_width(&content->unit_len_ctx,
-				block->style, RIGHT, true, true, true,
-				&extra_fixed, &extra_frac);
+	calculate_mbp_width(&content->unit_len_ctx, block->style, LEFT,
+			false, true, true, &extra_fixed, &extra_frac);
+	calculate_mbp_width(&content->unit_len_ctx, block->style, RIGHT,
+			false, true, true, &extra_fixed, &extra_frac);
+
+	if (using_max_border_box) {
+		max -= extra_fixed;
+		max = max(max, 0);
 	}
+
+	if (using_min_border_box) {
+		min -= extra_fixed;
+		min = max(min, 0);
+	}
+
+	if (max < min) {
+		min = max;
+	}
+
+	calculate_mbp_width(&content->unit_len_ctx, block->style, LEFT,
+			true, false, false, &extra_fixed, &extra_frac);
+	calculate_mbp_width(&content->unit_len_ctx, block->style, RIGHT,
+			true, false, false, &extra_fixed, &extra_frac);
+
 	if (extra_fixed < 0)
 		extra_fixed = 0;
 	if (extra_frac < 0)
