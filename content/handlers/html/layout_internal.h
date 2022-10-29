@@ -181,7 +181,7 @@ static inline void calculate_mbp_width(
 		type = margin_funcs[side](style, &value, &unit);
 		if (type == CSS_MARGIN_SET) {
 			if (unit == CSS_UNIT_PCT) {
-				*frac += FIXTOINT(FDIV(value, F_100));
+				*frac += FIXTOFLT(FDIV(value, F_100));
 			} else {
 				*fixed += FIXTOINT(css_unit_len2device_px(
 						style, unit_len_ctx,
@@ -205,7 +205,7 @@ static inline void calculate_mbp_width(
 	if (padding) {
 		padding_funcs[side](style, &value, &unit);
 		if (unit == CSS_UNIT_PCT) {
-			*frac += FIXTOINT(FDIV(value, F_100));
+			*frac += FIXTOFLT(FDIV(value, F_100));
 		} else {
 			*fixed += FIXTOINT(css_unit_len2device_px(
 					style, unit_len_ctx,
