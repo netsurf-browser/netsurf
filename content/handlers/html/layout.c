@@ -70,15 +70,6 @@
 #include "html/layout_internal.h"
 #include "html/table.h"
 
-typedef uint8_t (*css_len_func)(
-		const css_computed_style *style,
-		css_fixed *length, css_unit *unit);
-typedef uint8_t (*css_border_style_func)(
-		const css_computed_style *style);
-typedef uint8_t (*css_border_color_func)(
-		const css_computed_style *style,
-		css_color *color);
-
 /** Array of per-side access functions for computed style margins. */
 const css_len_func margin_funcs[4] = {
 	[TOP]    = css_computed_margin_top,
