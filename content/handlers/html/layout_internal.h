@@ -106,9 +106,23 @@ static inline bool lh__box_is_float_box(const struct box *b)
 static inline bool lh__box_is_inline_flow(const struct box *b)
 {
 	return b->type == BOX_INLINE ||
+	       b->type == BOX_INLINE_FLEX ||
 	       b->type == BOX_INLINE_BLOCK ||
 	       b->type == BOX_TEXT ||
 	       b->type == BOX_INLINE_END;
+}
+
+/** Layout helper: Check whether box takes part in inline flow. */
+static inline bool lh__box_is_flex_container(const struct box *b)
+{
+	return b->type == BOX_FLEX ||
+	       b->type == BOX_INLINE_FLEX;
+}
+
+/** Layout helper: Check whether box takes part in inline flow. */
+static inline bool lh__box_is_flex_item(const struct box *b)
+{
+	return (b->parent != NULL) && lh__box_is_flex_container(b->parent);
 }
 
 /** Layout helper: Check whether box is inline level. (Includes BR.) */
@@ -145,6 +159,76 @@ static inline bool lh__have_border(
 		const css_computed_style *style)
 {
 	return border_style_funcs[side](style) != CSS_BORDER_STYLE_NONE;
+}
+
+static inline bool lh__box_is_absolute(const struct box *b)
+{
+	return css_computed_position(b->style) == CSS_POSITION_ABSOLUTE ||
+	       css_computed_position(b->style) == CSS_POSITION_FIXED;
+}
+
+static inline bool lh__flex_main_is_horizontal(const struct box *flex)
+{
+	const css_computed_style *style = flex->style;
+
+	assert(style != NULL);
+
+	switch (css_computed_flex_direction(style)) {
+	default:                        /* Fallthrough. */
+	case CSS_FLEX_DIRECTION_ROW:    /* Fallthrough. */
+	case CSS_FLEX_DIRECTION_ROW_REVERSE:
+		return true;
+	case CSS_FLEX_DIRECTION_COLUMN: /* Fallthrough. */
+	case CSS_FLEX_DIRECTION_COLUMN_REVERSE:
+		return false;
+	}
+}
+
+static inline int lh__non_auto_margin(const struct box *b, enum box_side side)
+{
+	return (b->margin[side] == AUTO) ? 0 : b->margin[side];
+}
+
+static inline int lh__delta_outer_height(const struct box *b)
+{
+	return b->padding[TOP] +
+	       b->padding[BOTTOM] +
+	       b->border[TOP].width +
+	       b->border[BOTTOM].width +
+	       lh__non_auto_margin(b, TOP) +
+	       lh__non_auto_margin(b, BOTTOM);
+}
+
+static inline int lh__delta_outer_width(const struct box *b)
+{
+	return b->padding[LEFT] +
+	       b->padding[RIGHT] +
+	       b->border[LEFT].width +
+	       b->border[RIGHT].width +
+	       lh__non_auto_margin(b, LEFT) +
+	       lh__non_auto_margin(b, RIGHT);
+}
+
+static inline int lh__delta_outer_main(
+		const struct box *flex,
+		const struct box *b)
+{
+	if (lh__flex_main_is_horizontal(flex)) {
+		return lh__delta_outer_width(b);
+	} else {
+		return lh__delta_outer_height(b);
+	}
+}
+
+static inline int lh__delta_outer_cross(
+		const struct box *flex,
+		const struct box *b)
+{
+	if (lh__flex_main_is_horizontal(flex) == false) {
+		return lh__delta_outer_width(b);
+	} else {
+		return lh__delta_outer_height(b);
+	}
 }
 
 /**

@@ -66,7 +66,9 @@ typedef enum {
 	BOX_BR,
 	BOX_TEXT,
 	BOX_INLINE_END,
-	BOX_NONE
+	BOX_NONE,
+	BOX_FLEX,
+	BOX_INLINE_FLEX,
 } box_type;
 
 

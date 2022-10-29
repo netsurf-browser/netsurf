@@ -86,28 +86,30 @@ struct box_construct_props {
 
 static const content_type image_types = CONTENT_IMAGE;
 
-/**
- * mapping from CSS display to box type this table must be in sync
- * with libcss' css_display enum
- */
+/* mapping from CSS display to box type
+ * this table must be in sync with libcss' css_display enum */
 static const box_type box_map[] = {
-	0, /* CSS_DISPLAY_INHERIT, */
-	BOX_INLINE, /* CSS_DISPLAY_INLINE, */
-	BOX_BLOCK, /* CSS_DISPLAY_BLOCK, */
-	BOX_BLOCK, /* CSS_DISPLAY_LIST_ITEM, */
-	BOX_INLINE, /* CSS_DISPLAY_RUN_IN, */
-	BOX_INLINE_BLOCK, /* CSS_DISPLAY_INLINE_BLOCK, */
-	BOX_TABLE, /* CSS_DISPLAY_TABLE, */
-	BOX_TABLE, /* CSS_DISPLAY_INLINE_TABLE, */
-	BOX_TABLE_ROW_GROUP, /* CSS_DISPLAY_TABLE_ROW_GROUP, */
-	BOX_TABLE_ROW_GROUP, /* CSS_DISPLAY_TABLE_HEADER_GROUP, */
-	BOX_TABLE_ROW_GROUP, /* CSS_DISPLAY_TABLE_FOOTER_GROUP, */
-	BOX_TABLE_ROW, /* CSS_DISPLAY_TABLE_ROW, */
-	BOX_NONE, /* CSS_DISPLAY_TABLE_COLUMN_GROUP, */
-	BOX_NONE, /* CSS_DISPLAY_TABLE_COLUMN, */
-	BOX_TABLE_CELL, /* CSS_DISPLAY_TABLE_CELL, */
-	BOX_INLINE, /* CSS_DISPLAY_TABLE_CAPTION, */
-	BOX_NONE /* CSS_DISPLAY_NONE */
+	BOX_BLOCK,           /* CSS_DISPLAY_INHERIT */
+	BOX_INLINE,          /* CSS_DISPLAY_INLINE */
+	BOX_BLOCK,           /* CSS_DISPLAY_BLOCK */
+	BOX_BLOCK,           /* CSS_DISPLAY_LIST_ITEM */
+	BOX_INLINE,          /* CSS_DISPLAY_RUN_IN */
+	BOX_INLINE_BLOCK,    /* CSS_DISPLAY_INLINE_BLOCK */
+	BOX_TABLE,           /* CSS_DISPLAY_TABLE */
+	BOX_TABLE,           /* CSS_DISPLAY_INLINE_TABLE */
+	BOX_TABLE_ROW_GROUP, /* CSS_DISPLAY_TABLE_ROW_GROUP */
+	BOX_TABLE_ROW_GROUP, /* CSS_DISPLAY_TABLE_HEADER_GROUP */
+	BOX_TABLE_ROW_GROUP, /* CSS_DISPLAY_TABLE_FOOTER_GROUP */
+	BOX_TABLE_ROW,       /* CSS_DISPLAY_TABLE_ROW */
+	BOX_NONE,            /* CSS_DISPLAY_TABLE_COLUMN_GROUP */
+	BOX_NONE,            /* CSS_DISPLAY_TABLE_COLUMN */
+	BOX_TABLE_CELL,      /* CSS_DISPLAY_TABLE_CELL */
+	BOX_INLINE,          /* CSS_DISPLAY_TABLE_CAPTION */
+	BOX_NONE,            /* CSS_DISPLAY_NONE */
+	BOX_FLEX,            /* CSS_DISPLAY_FLEX */
+	BOX_INLINE_FLEX,     /* CSS_DISPLAY_INLINE_FLEX */
+	BOX_BLOCK,           /* CSS_DISPLAY_GRID */
+	BOX_INLINE_BLOCK,    /* CSS_DISPLAY_INLINE_GRID */
 };
 
 
@@ -141,7 +143,6 @@ static inline bool box_is_root(dom_node *n)
 
 	return true;
 }
-
 
 /**
  * Extract transient construction properties
@@ -438,6 +439,23 @@ box_construct_marker(struct box *box,
 	return true;
 }
 
+static inline bool box__style_is_float(const struct box *box)
+{
+	return css_computed_float(box->style) == CSS_FLOAT_LEFT ||
+	       css_computed_float(box->style) == CSS_FLOAT_RIGHT;
+}
+
+static inline bool box__is_flex(const struct box *box)
+{
+	return box->type == BOX_FLEX || box->type == BOX_INLINE_FLEX;
+}
+
+static inline bool box__containing_block_is_flex(
+		const struct box_construct_props *props)
+{
+	return props->containing_block != NULL &&
+	       box__is_flex(props->containing_block);
+}
 
 /**
  * Construct the box tree for an XML element.
@@ -451,6 +469,7 @@ box_construct_element(struct box_construct_ctx *ctx, bool *convert_children)
 {
 	dom_string *title0, *s;
 	lwc_string *id = NULL;
+	enum css_display_e css_display;
 	struct box *box = NULL, *old_box;
 	css_select_results *styles = NULL;
 	lwc_string *bgimage_uri;
@@ -549,16 +568,15 @@ box_construct_element(struct box_construct_ctx *ctx, bool *convert_children)
 		dom_string_unref(s);
 	}
 
+	css_display = ns_computed_display_static(box->style);
+
 	/* Set box type from computed display */
 	if ((css_computed_position(box->style) == CSS_POSITION_ABSOLUTE ||
-			css_computed_position(box->style) ==
-					CSS_POSITION_FIXED) &&
-			(ns_computed_display_static(box->style) ==
-					CSS_DISPLAY_INLINE ||
-			 ns_computed_display_static(box->style) ==
-					CSS_DISPLAY_INLINE_BLOCK ||
-			 ns_computed_display_static(box->style) ==
-					CSS_DISPLAY_INLINE_TABLE)) {
+	     css_computed_position(box->style) == CSS_POSITION_FIXED) &&
+			(css_display == CSS_DISPLAY_INLINE ||
+			 css_display == CSS_DISPLAY_INLINE_BLOCK ||
+			 css_display == CSS_DISPLAY_INLINE_TABLE ||
+			 css_display == CSS_DISPLAY_INLINE_FLEX)) {
 		/* Special case for absolute positioning: make absolute inlines
 		 * into inline block so that the boxes are constructed in an
 		 * inline container as if they were not absolutely positioned.
@@ -572,6 +590,21 @@ box_construct_element(struct box_construct_ctx *ctx, bool *convert_children)
 		/* Normal mapping */
 		box->type = box_map[ns_computed_display(box->style,
 				props.node_is_root)];
+
+		if (props.containing_block->type == BOX_FLEX ||
+		    props.containing_block->type == BOX_INLINE_FLEX) {
+			/* Blockification */
+			switch (box->type) {
+			case BOX_INLINE_FLEX:
+				box->type = BOX_FLEX;
+				break;
+			case BOX_INLINE_BLOCK:
+				box->type = BOX_BLOCK;
+				break;
+			default:
+				break;
+			}
+		}
 	}
 
 	if (convert_special_elements(ctx->n,
@@ -587,10 +620,9 @@ box_construct_element(struct box_construct_ctx *ctx, bool *convert_children)
 				box->styles->styles[CSS_PSEUDO_ELEMENT_BEFORE]);
 	}
 
-	if (box->type == BOX_NONE ||
-	    (ns_computed_display(box->style,
-				 props.node_is_root) == CSS_DISPLAY_NONE &&
-	     props.node_is_root == false)) {
+	if (box->type == BOX_NONE || (ns_computed_display(box->style,
+			props.node_is_root) == CSS_DISPLAY_NONE &&
+			props.node_is_root == false)) {
 		css_select_results_destroy(styles);
 		box->styles = NULL;
 		box->style = NULL;
@@ -625,8 +657,9 @@ box_construct_element(struct box_construct_ctx *ctx, bool *convert_children)
 			(box->type == BOX_INLINE ||
 			 box->type == BOX_BR ||
 			 box->type == BOX_INLINE_BLOCK ||
-			 css_computed_float(box->style) == CSS_FLOAT_LEFT ||
-			 css_computed_float(box->style) == CSS_FLOAT_RIGHT) &&
+			 box->type == BOX_INLINE_FLEX ||
+			 (box__style_is_float(box) &&
+			  !box__containing_block_is_flex(&props))) &&
 			props.node_is_root == false) {
 		/* Found an inline child of a block without a current container
 		 * (i.e. this box is the first child of its parent, or was
@@ -674,6 +707,7 @@ box_construct_element(struct box_construct_ctx *ctx, bool *convert_children)
 		box->flags |= CONVERT_CHILDREN;
 
 	if (box->type == BOX_INLINE || box->type == BOX_BR ||
+			box->type == BOX_INLINE_FLEX ||
 			box->type == BOX_INLINE_BLOCK) {
 		/* Inline container must exist, as we'll have
 		 * created it above if it didn't */
@@ -690,6 +724,7 @@ box_construct_element(struct box_construct_ctx *ctx, bool *convert_children)
 		}
 
 		if (props.node_is_root == false &&
+				box__containing_block_is_flex(&props) == false &&
 				(css_computed_float(box->style) ==
 				CSS_FLOAT_LEFT ||
 				css_computed_float(box->style) ==
@@ -1341,7 +1376,6 @@ struct box *box_for_node(dom_node *n)
 
 	return box;
 }
-
 
 /* exported function documented in html/box_construct.h */
 bool
