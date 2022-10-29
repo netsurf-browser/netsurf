@@ -336,21 +336,21 @@ static struct flex_line_data *layout_flex__build_line(struct flex_ctx *ctx,
 	while (item_index < ctx->item.count) {
 		struct flex_item_data *item = &ctx->item.data[item_index];
 		struct box *b = item->box;
-		int main;
+		int pos_main;
 
-		main = ctx->horizontal ?
+		pos_main = ctx->horizontal ?
 				item->main_size :
 				b->height + lh__delta_outer_main(ctx->flex, b);
 
 		if (ctx->wrap == CSS_FLEX_WRAP_NOWRAP ||
-		    main + used_main <= available_main ||
+		    pos_main + used_main <= available_main ||
 		    lh__box_is_absolute(item->box) ||
 		    available_main == AUTO ||
 		    line->count == 0 ||
-		    main == 0) {
+		    pos_main == 0) {
 			if (lh__box_is_absolute(item->box) == false) {
 				line->main_size += item->main_size;
-				used_main += main;
+				used_main += pos_main;
 			}
 			item->line = ctx->line.count;
 			line->count++;
