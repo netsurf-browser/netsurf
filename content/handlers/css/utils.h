@@ -28,35 +28,49 @@ extern css_fixed nscss_screen_dpi;
 
 /**
  * Temporary helper wrappers for for libcss computed style getter, while
- * we don't support flexbox related property values.
+ * we don't support all values of display.
  */
-
 static inline uint8_t ns_computed_display(
 		const css_computed_style *style, bool root)
 {
 	uint8_t value = css_computed_display(style, root);
 
-	if (value == CSS_DISPLAY_FLEX) {
+	switch (value) {
+	case CSS_DISPLAY_FLEX:
+	case CSS_DISPLAY_GRID:
 		return CSS_DISPLAY_BLOCK;
 
-	} else if (value == CSS_DISPLAY_INLINE_FLEX) {
+	case CSS_DISPLAY_INLINE_FLEX:
+	case CSS_DISPLAY_INLINE_GRID:
 		return CSS_DISPLAY_INLINE_BLOCK;
+
+	default:
+		break;
 	}
 
 	return value;
 }
 
-
+/**
+ * Temporary helper wrappers for for libcss computed style getter, while
+ * we don't support all values of display.
+ */
 static inline uint8_t ns_computed_display_static(
 		const css_computed_style *style)
 {
 	uint8_t value = css_computed_display_static(style);
 
-	if (value == CSS_DISPLAY_FLEX) {
+	switch (value) {
+	case CSS_DISPLAY_FLEX:
+	case CSS_DISPLAY_GRID:
 		return CSS_DISPLAY_BLOCK;
 
-	} else if (value == CSS_DISPLAY_INLINE_FLEX) {
+	case CSS_DISPLAY_INLINE_FLEX:
+	case CSS_DISPLAY_INLINE_GRID:
 		return CSS_DISPLAY_INLINE_BLOCK;
+
+	default:
+		break;
 	}
 
 	return value;
