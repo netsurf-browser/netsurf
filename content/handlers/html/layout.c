@@ -283,7 +283,7 @@ static void layout_minmax_table(struct box *table,
 		return;
 
 	if (table_calculate_column_types(&content->unit_len_ctx, table) == false) {
-		NSLOG(netsurf, WARNING,
+		NSLOG(netsurf, ERROR,
 				"Could not establish table column types.");
 		return;
 	}
