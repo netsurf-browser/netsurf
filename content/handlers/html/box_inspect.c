@@ -660,7 +660,7 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth, bool style)
 	if (box->max_width != UNKNOWN_MAX_WIDTH) {
 		fprintf(stream, "min%i max%i ", box->min_width, box->max_width);
 	}
-	fprintf(stream, "(%i %i %i %i) ",
+	fprintf(stream, "desc(%i %i %i %i) ",
 		box->descendant_x0, box->descendant_y0,
 		box->descendant_x1, box->descendant_y1);
 
