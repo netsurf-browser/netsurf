@@ -383,15 +383,15 @@ static inline void layout_flex__item_freeze(
 			item->box, item->target_main_size);
 }
 
-static inline int layout_flex__remaining_free_space(
+static inline int layout_flex__remaining_free_main(
 		struct flex_ctx *ctx,
 		struct flex_line_data *line,
 		css_fixed *unfrozen_factor_sum,
-		int initial_free_space,
-		int available_space,
+		int initial_free_main,
+		int available_main,
 		bool grow)
 {
-	int remaining_free_space = available_space;
+	int remaining_free_main = available_main;
 	size_t item_count = line->first + line->count;
 
 	*unfrozen_factor_sum = 0;
@@ -400,9 +400,9 @@ static inline int layout_flex__remaining_free_space(
 		struct flex_item_data *item = &ctx->item.data[i];
 
 		if (item->freeze) {
-			remaining_free_space -= item->target_main_size;
+			remaining_free_main -= item->target_main_size;
 		} else {
-			remaining_free_space -= item->base_size;
+			remaining_free_main -= item->base_size;
 
 			*unfrozen_factor_sum += grow ?
 					item->grow : item->shrink;
@@ -410,17 +410,17 @@ static inline int layout_flex__remaining_free_space(
 	}
 
 	if (*unfrozen_factor_sum < F_1) {
-		int free_space = FIXTOINT(FMUL(INTTOFIX(initial_free_space),
+		int free_space = FIXTOINT(FMUL(INTTOFIX(initial_free_main),
 				*unfrozen_factor_sum));
 
-		if (free_space < remaining_free_space) {
-			remaining_free_space = free_space;
+		if (free_space < remaining_free_main) {
+			remaining_free_main = free_space;
 		}
 	}
 
-	NSLOG(flex, WARNING, "Remaining free space: %i", remaining_free_space);
+	NSLOG(flex, WARNING, "Remaining free space: %i", remaining_free_main);
 
-	return remaining_free_space;
+	return remaining_free_main;
 }
 
 static inline int layout_flex__get_min_max_violations(
@@ -479,11 +479,11 @@ static inline int layout_flex__get_min_max_violations(
 	return total_violation;
 }
 
-static inline void layout_flex__distribute_free_space(
+static inline void layout_flex__distribute_free_main(
 		struct flex_ctx *ctx,
 		struct flex_line_data *line,
 		css_fixed unfrozen_factor_sum,
-		int remaining_free_space,
+		int remaining_free_main,
 		bool grow)
 {
 	size_t item_count = line->first + line->count;
@@ -501,7 +501,7 @@ static inline void layout_flex__distribute_free_space(
 
 			item->target_main_size = item->base_size +
 					FIXTOINT(FMUL(
-					INTTOFIX(remaining_free_space),
+					INTTOFIX(remaining_free_main),
 					ratio));
 		}
 	} else {
@@ -542,7 +542,7 @@ static inline void layout_flex__distribute_free_space(
 
 			item->target_main_size = item->base_size -
 					FIXTOINT(FMUL(
-					INTTOFIX(abs(remaining_free_space)),
+					INTTOFIX(abs(remaining_free_main)),
 					ratio));
 		}
 	}
@@ -618,26 +618,27 @@ static bool layout_flex__resolve_line(
 		struct flex_line_data *line,
 		int available_width)
 {
-	bool grow = (line->main_size < available_width);
 	size_t item_count = line->first + line->count;
-	int available_space = available_width;
-	int initial_free_space;
+	int available_main = available_width;
+	int initial_free_main;
+	bool grow;
 
-	available_space = available_width;
+	available_main = available_width;
 	if (ctx->horizontal == false) {
-		available_space = ctx->flex->height;
-		if (available_space == AUTO) {
-			available_space = INT_MAX;
+		available_main = ctx->flex->height;
+		if (available_main == AUTO) {
+			available_main = INT_MAX;
 		}
 	}
 
-	initial_free_space = available_space;
+	grow = (line->main_size < available_main);
+	initial_free_main = available_main;
 
 	NSLOG(flex, WARNING, "box %p: line %zu: first: %zu, count: %zu",
 			ctx->flex, line - ctx->line.data,
 			line->first, line->count);
-	NSLOG(flex, WARNING, "Line main_size: %i, available_space: %i",
-			line->main_size, available_space);
+	NSLOG(flex, WARNING, "Line main_size: %i, available_main: %i",
+			line->main_size, available_main);
 
 	for (size_t i = line->first; i < item_count; i++) {
 		struct flex_item_data *item = &ctx->item.data[i];
@@ -659,31 +660,31 @@ static bool layout_flex__resolve_line(
 
 		/* 4. Calculate initial free space */
 		if (item->freeze) {
-			initial_free_space -= item->target_main_size;
+			initial_free_main -= item->target_main_size;
 		} else {
-			initial_free_space -= item->base_size;
+			initial_free_main -= item->base_size;
 		}
 	}
 
 	/* 5. Loop */
 	while (line->frozen < line->count) {
 		css_fixed unfrozen_factor_sum;
-		int remaining_free_space;
+		int remaining_free_main;
 		int total_violation;
 
 		NSLOG(flex, WARNING, "flex-container: %p: Resolver pass",
 				ctx->flex);
 
 		/* b */
-		remaining_free_space = layout_flex__remaining_free_space(ctx,
-				line, &unfrozen_factor_sum, initial_free_space,
-				available_space, grow);
+		remaining_free_main = layout_flex__remaining_free_main(ctx,
+				line, &unfrozen_factor_sum, initial_free_main,
+				available_main, grow);
 
 		/* c */
-		if (remaining_free_space != 0) {
-			layout_flex__distribute_free_space(ctx,
+		if (remaining_free_main != 0) {
+			layout_flex__distribute_free_main(ctx,
 					line, unfrozen_factor_sum,
-					remaining_free_space, grow);
+					remaining_free_main, grow);
 		}
 
 		/* d */
