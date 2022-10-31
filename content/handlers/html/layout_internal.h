@@ -231,6 +231,20 @@ static inline int lh__delta_outer_cross(
 	}
 }
 
+static inline int *lh__box_size_main(
+		bool horizontal,
+		struct box *b)
+{
+	return horizontal ? &b->width : &b->height;
+}
+
+static inline int *lh__box_size_cross(
+		bool horizontal,
+		struct box *b)
+{
+	return horizontal ? &b->height : &b->width;
+}
+
 /**
  * Determine width of margin, borders, and padding on one side of a box.
  *
