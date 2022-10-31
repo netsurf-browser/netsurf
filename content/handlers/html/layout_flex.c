@@ -174,6 +174,10 @@ static bool layout_flex_item(
 		break;
 	}
 
+	if (!success) {
+		NSLOG(flex, ERROR, "box %p: layout failed", b);
+	}
+
 	return success;
 }
 
@@ -215,7 +219,6 @@ static inline bool layout_flex__base_and_main_sizes(
 		}
 
 		if (!layout_flex_item(ctx, item, b->width)) {
-			NSLOG(flex, WARNING, "box %p: layout failed", b);
 			return false;
 		}
 	}
@@ -545,77 +548,64 @@ static inline void layout_flex__distribute_free_space(
 	}
 }
 
-static bool layout_flex__resolve_line_horizontal(
+static bool layout_flex__resolve_line_item_positions(
 		struct flex_ctx *ctx,
 		struct flex_line_data *line,
 		int available_width)
 {
+	enum box_side cross_start = ctx->horizontal ? TOP : LEFT;
+	enum box_side main_start = ctx->horizontal ? LEFT : TOP;
 	size_t item_count = line->first + line->count;
-	int x = ctx->flex->padding[LEFT];
+	int main_pos = ctx->flex->padding[main_start];
 
 	for (size_t i = line->first; i < item_count; i++) {
 		struct flex_item_data *item = &ctx->item.data[i];
 		struct box *b = item->box;
-		bool success = false;
+		int *box_pos_cross;
+		int *box_pos_main;
 
-		b->width = item->target_main_size - lh__delta_outer_width(b);
+		if (ctx->horizontal) {
+			bool success;
 
-		success = layout_flex_item(ctx, item, b->width);
-		if (!success) {
-			NSLOG(flex, WARNING, "box %p: layout failed", b);
-			return false;
-		}
+			b->width = item->target_main_size -
+					lh__delta_outer_width(b);
 
-		b->y = ctx->flex->padding[TOP] + ctx->cross_size +
-				lh__non_auto_margin(b, TOP) +
-				b->border[TOP].width;
-
-		b->x = x + lh__non_auto_margin(b, LEFT) +
-				b->border[LEFT].width;
-
-		if (lh__box_is_absolute(b) == false) {
-			int height;
-
-			height = b->height + lh__delta_outer_height(b);
-			if (line->cross_size < height) {
-				line->cross_size = height;
+			success = layout_flex_item(ctx, item, b->width);
+			if (!success) {
+				return false;
 			}
 
-			x += b->width + lh__delta_outer_width(b);
+			box_pos_main = &b->x;
+			box_pos_cross = &b->y;
+		} else {
+			box_pos_main = &b->y;
+			box_pos_cross = &b->x;
 		}
-	}
 
-	return true;
-}
+		*box_pos_cross = ctx->flex->padding[cross_start] +
+				ctx->cross_size +
+				lh__non_auto_margin(b, cross_start) +
+				b->border[cross_start].width;
 
-static bool layout_flex__resolve_line_vertical(
-		struct flex_ctx *ctx,
-		struct flex_line_data *line,
-		int available_width)
-{
-	size_t item_count = line->first + line->count;
-	int y = ctx->flex->padding[TOP];
+		*box_pos_main = main_pos + lh__non_auto_margin(b, main_start) +
+				b->border[main_start].width;
 
-	for (size_t i = line->first; i < item_count; i++) {
-		struct flex_item_data *item = &ctx->item.data[i];
-		struct box *b = item->box;
+		if (!lh__box_is_absolute(b)) {
+			int cross_size;
+			int *box_size_main;
+			int *box_size_cross;
 
-		b->x = ctx->flex->padding[LEFT] + ctx->cross_size +
-				lh__non_auto_margin(b, LEFT) +
-				b->border[LEFT].width;
+			box_size_main = lh__box_size_main(ctx->horizontal, b);
+			box_size_cross = lh__box_size_cross(ctx->horizontal, b);
 
-		b->y = y + lh__non_auto_margin(b, TOP) +
-				b->border[TOP].width;
-
-		if (lh__box_is_absolute(b) == false) {
-			int width;
-
-			width = b->width + lh__delta_outer_width(b);
-			if (line->cross_size < width) {
-				line->cross_size = width;
+			cross_size = *box_size_cross + lh__delta_outer_cross(
+					ctx->flex, b);
+			if (line->cross_size < cross_size) {
+				line->cross_size = cross_size;
 			}
 
-			y += b->height + lh__delta_outer_height(b);
+			main_pos += *box_size_main + lh__delta_outer_main(
+					ctx->flex, b);
 		}
 	}
 
@@ -712,16 +702,9 @@ static bool layout_flex__resolve_line(
 		}
 	}
 
-	if (ctx->horizontal) {
-		if (!layout_flex__resolve_line_horizontal(ctx,
-				line, available_width)) {
-			return false;
-		}
-	} else {
-		if (!layout_flex__resolve_line_vertical(ctx,
-				line, available_width)) {
-			return false;
-		}
+	if (!layout_flex__resolve_line_item_positions(ctx, line,
+			available_width)) {
+		return false;
 	}
 
 	return true;
