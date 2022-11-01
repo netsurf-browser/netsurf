@@ -314,7 +314,7 @@ static bool layout_flex_ctx__ensure_line(struct flex_ctx *ctx)
 }
 
 static struct flex_line_data *layout_flex__build_line(struct flex_ctx *ctx,
-		size_t item_index, int available_width, html_content *content)
+		size_t item_index, int available_width)
 {
 	struct flex_line_data *line;
 	int available_main;
@@ -713,16 +713,14 @@ static bool layout_flex__resolve_line(
 
 static bool layout_flex__collect_items_into_lines(
 		struct flex_ctx *ctx,
-		int available_width,
-		html_content *content)
+		int available_width)
 {
 	size_t pos = 0;
 
 	while (pos < ctx->item.count) {
 		struct flex_line_data *line;
 
-		line = layout_flex__build_line(ctx, pos,
-				available_width, content);
+		line = layout_flex__build_line(ctx, pos, available_width);
 		if (line == NULL) {
 			return false;
 		}
@@ -782,8 +780,7 @@ bool layout_flex(struct box *flex, int available_width,
 	layout_flex_ctx__populate_item_data(ctx, flex, available_width);
 
 	/* Place items onto lines. */
-	success = layout_flex__collect_items_into_lines(ctx,
-			available_width, content);
+	success = layout_flex__collect_items_into_lines(ctx, available_width);
 	if (!success) {
 		goto cleanup;
 	}
