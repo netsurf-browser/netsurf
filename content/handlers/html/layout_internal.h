@@ -184,6 +184,19 @@ static inline bool lh__flex_main_is_horizontal(const struct box *flex)
 	}
 }
 
+static inline bool lh__flex_direction_reversed(const struct box *flex)
+{
+	switch (css_computed_flex_direction(flex->style)) {
+	default:                             /* Fallthrough. */
+	case CSS_FLEX_DIRECTION_ROW_REVERSE: /* Fallthrough. */
+	case CSS_FLEX_DIRECTION_COLUMN_REVERSE:
+		return true;
+	case CSS_FLEX_DIRECTION_ROW: /* Fallthrough. */
+	case CSS_FLEX_DIRECTION_COLUMN:
+		return false;
+	}
+}
+
 static inline int lh__non_auto_margin(const struct box *b, enum box_side side)
 {
 	return (b->margin[side] == AUTO) ? 0 : b->margin[side];
