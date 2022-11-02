@@ -245,6 +245,35 @@ static inline int *lh__box_size_cross(
 	return horizontal ? &b->height : &b->width;
 }
 
+static inline bool lh__box_size_cross_is_auto(
+		bool horizontal,
+		struct box *b)
+{
+	css_fixed length;
+	css_unit unit;
+
+	if (horizontal) {
+		return css_computed_height(b->style,
+				&length, &unit) == CSS_HEIGHT_AUTO;
+	} else {
+		return css_computed_width(b->style,
+				&length, &unit) == CSS_WIDTH_AUTO;
+	}
+}
+
+static inline enum css_align_self_e lh__box_align_self(
+		const struct box *flex,
+		const struct box *item)
+{
+	enum css_align_self_e align_self = css_computed_align_self(item->style);
+
+	if (align_self == CSS_ALIGN_SELF_AUTO) {
+		align_self = css_computed_align_items(flex->style);
+	}
+
+	return align_self;
+}
+
 /**
  * Determine width of margin, borders, and padding on one side of a box.
  *
