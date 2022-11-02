@@ -333,7 +333,7 @@ ifneq ($(TARGET),riscos)
 	$(Q)$(CC) -o $(EXETARGET) $(OBJECTS) $(LDFLAGS) > $(DEPROOT)/link-raw.d
 else
 	@# RISC OS targets are a bit special: we need to convert ELF -> AIF
-  ifeq ($(SUBTARGET),riscos-aof)
+  ifeq ($(SUBTARGET),-aof)
 	$(Q)$(CC) -o $(EXETARGET) $(OBJECTS) $(LDFLAGS) > $(DEPROOT)/link-raw.d
   else
 	$(Q)$(CXX) -o $(EXETARGET:,ff8=,e1f) $(OBJECTS) $(LDFLAGS) > $(DEPROOT)/link-raw.d
