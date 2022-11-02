@@ -26,7 +26,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <errno.h>
 
 #include "desktop/gui_internal.h"
@@ -323,23 +322,12 @@ netsurf_recursive_rm(const char *path)
 	int nentries, ent;
 	nserror ret = NSERROR_OK;
 	struct stat ent_stat; /* stat result of leaf entry */
+	char *leafpath = NULL;
 	const char *leafname;
-	int dirfd;
-
-	dirfd = open(path, O_DIRECTORY);
-	if (dirfd == -1) {
-		switch (errno) {
-		case ENOENT:
-			return NSERROR_NOT_FOUND;
-		default:
-			return NSERROR_UNKNOWN;
-		}
-	}
 
 	nentries = scandir(path, &listing, 0, alphasort);
-	if (nentries < 0) {
-		close(dirfd);
 
+	if (nentries < 0) {
 		switch (errno) {
 		case ENOENT:
 			return NSERROR_NOT_FOUND;
@@ -353,26 +341,21 @@ netsurf_recursive_rm(const char *path)
 		if (strcmp(leafname, ".") == 0 ||
 		    strcmp(leafname, "..") == 0)
 			continue;
-		if (fstatat(dirfd, leafname, &ent_stat,
-				AT_SYMLINK_NOFOLLOW) != 0) {
+		ret = netsurf_mkpath(&leafpath, NULL, 2, path, leafname);
+		if (ret != NSERROR_OK) goto out;
+		if (stat(leafpath, &ent_stat) != 0) {
 			goto out_via_errno;
 		}
 		if (S_ISDIR(ent_stat.st_mode)) {
-			char *leafpath = NULL;
-
-			ret = netsurf_mkpath(&leafpath, NULL, 2, path, leafname);
-			if (ret != NSERROR_OK)
-				goto out;
-
 			ret = netsurf_recursive_rm(leafpath);
-			free(leafpath);
-			if (ret != NSERROR_OK)
-				goto out;
+			if (ret != NSERROR_OK) goto out;
 		} else {
-			if (unlinkat(dirfd, leafname, 0) != 0) {
+			if (unlink(leafpath) != 0) {
 				goto out_via_errno;
 			}
 		}
+		free(leafpath);
+		leafpath = NULL;
 	}
 
 	if (rmdir(path) != 0) {
@@ -397,7 +380,9 @@ out:
 		free(listing);
 	}
 
-	close(dirfd);
+	if (leafpath != NULL) {
+		free(leafpath);
+	}
 
 	return ret;
 }
