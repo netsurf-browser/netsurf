@@ -146,6 +146,15 @@ char *realpath(const char *path, char *resolved_path);
 #undef HAVE_SCANDIR
 #endif
 
+#define HAVE_DIRFD
+#define HAVE_UNLINKAT
+#define HAVE_FSTATAT
+#if (defined(_WIN32) || defined(__riscos__) || defined(__HAIKU__) || defined(__BEOS__) || defined(__amigaos4__) || defined(__AMIGA__) || defined(__MINT__))
+#undef HAVE_DIRFD
+#undef HAVE_UNLINKAT
+#undef HAVE_FSTATAT
+#endif
+
 #define HAVE_REGEX
 #if (defined(__serenity__))
 #undef HAVE_REGEX

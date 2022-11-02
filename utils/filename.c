@@ -29,10 +29,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
 #include "utils/dirent.h"
+#include "utils/errors.h"
+#include "utils/file.h"
 #include "utils/filename.h"
 #include "utils/log.h"
 #include "utils/utils.h"
@@ -55,7 +58,6 @@ static char filename_directory[256];
 
 static struct directory *filename_create_directory(const char *prefix);
 static bool filename_flush_directory(const char *folder, int depth);
-static bool filename_delete_recursive(char *folder);
 
 /**
  * Request a new, unique, filename.
@@ -272,6 +274,8 @@ bool filename_flush_directory(const char *folder, int depth)
 	}
 
 	parent = opendir(folder);
+	if (parent == NULL)
+		return false;
 
 	while ((entry = readdir(parent))) {
 		int written;
@@ -288,7 +292,12 @@ bool filename_flush_directory(const char *folder, int depth)
 			child[sizeof(child) - 1] = '\0';
 		}
 
+#if (defined(HAVE_DIRFD) && defined(HAVE_FSTATAT))
+		if (fstatat(dirfd(parent), entry->d_name, &statbuf,
+				AT_SYMLINK_NOFOLLOW) == -1) {
+#else
 		if (stat(child, &statbuf) == -1) {
+#endif
 			NSLOG(netsurf, INFO, "Unable to stat %s: %s", child,
 			      strerror(errno));
 			continue;
@@ -354,14 +363,20 @@ bool filename_flush_directory(const char *folder, int depth)
 
 		/* delete or recurse */
 		if (del) {
-			if (S_ISDIR(statbuf.st_mode))
-				filename_delete_recursive(child);
-
-			if (remove(child))
-				NSLOG(netsurf, INFO, "Failed to remove '%s'",
-				      child);
-			else
-				changed = true;
+			if (S_ISDIR(statbuf.st_mode)) {
+				changed = (netsurf_recursive_rm(child) ==
+					   NSERROR_OK);
+			} else {
+#if (defined(HAVE_DIRFD) && defined(HAVE_UNLINKAT))
+				if (unlinkat(dirfd(parent), entry->d_name, 0)) {
+#else
+				if (unlink(child)) {
+#endif
+					NSLOG(netsurf, INFO,
+					      "Failed to remove '%s'", child);
+				} else
+					changed = true;
+			}
 		} else {
 			while (filename_flush_directory(child, depth + 1));
 		}
@@ -370,61 +385,6 @@ bool filename_flush_directory(const char *folder, int depth)
 	closedir(parent);
 
 	return changed;
-}
-
-
-/**
- * Recursively deletes the contents of a directory
- *
- * \param folder the directory to delete
- * \return true on success, false otherwise
- */
-bool filename_delete_recursive(char *folder)
-{
-	DIR *parent;
-	struct dirent *entry;
-	char child[256];
-	struct stat statbuf;
-
-	parent = opendir(folder);
-
-	while ((entry = readdir(parent))) {
-		int written;
-
-		/* Ignore '.' and '..' */
-		if (strcmp(entry->d_name, ".") == 0 ||
-				strcmp(entry->d_name, "..") == 0)
-			continue;
-
-		written = snprintf(child, sizeof(child), "%s/%s",
-				folder, entry->d_name);
-		if (written == sizeof(child)) {
-			child[sizeof(child) - 1] = '\0';
-		}
-
-		if (stat(child, &statbuf) == -1) {
-			NSLOG(netsurf, INFO, "Unable to stat %s: %s", child,
-			      strerror(errno));
-			continue;
-		}
-
-		if (S_ISDIR(statbuf.st_mode)) {
-			if (!filename_delete_recursive(child)) {
-				closedir(parent);
-				return false;
-			}
-		}
-
-		if (remove(child)) {
-			NSLOG(netsurf, INFO, "Failed to remove '%s'", child);
-			closedir(parent);
-			return false;
-		}
-	}
-
-	closedir(parent);
-
-	return true;
 }
 
 

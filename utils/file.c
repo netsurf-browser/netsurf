@@ -26,6 +26,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <errno.h>
 
 #include "desktop/gui_internal.h"
@@ -318,16 +319,13 @@ nserror netsurf_mkdir_all(const char *fname)
 nserror
 netsurf_recursive_rm(const char *path)
 {
-	struct dirent **listing = NULL; /* directory entry listing */
-	int nentries, ent;
+	DIR *parent;
+	struct dirent *entry;
 	nserror ret = NSERROR_OK;
 	struct stat ent_stat; /* stat result of leaf entry */
-	char *leafpath = NULL;
-	const char *leafname;
 
-	nentries = scandir(path, &listing, 0, alphasort);
-
-	if (nentries < 0) {
+	parent = opendir(path);
+	if (parent == NULL) {
 		switch (errno) {
 		case ENOENT:
 			return NSERROR_NOT_FOUND;
@@ -336,26 +334,44 @@ netsurf_recursive_rm(const char *path)
 		}
 	}
 
-	for (ent = 0; ent < nentries; ent++) {
-		leafname = listing[ent]->d_name;
-		if (strcmp(leafname, ".") == 0 ||
-		    strcmp(leafname, "..") == 0)
+	while ((entry = readdir(parent))) {
+		char *leafpath = NULL;
+
+		if (strcmp(entry->d_name, ".") == 0 ||
+		    strcmp(entry->d_name, "..") == 0)
 			continue;
-		ret = netsurf_mkpath(&leafpath, NULL, 2, path, leafname);
-		if (ret != NSERROR_OK) goto out;
+
+		ret = netsurf_mkpath(&leafpath, NULL, 2, path, entry->d_name);
+		if (ret != NSERROR_OK)
+			goto out;
+
+#if (defined(HAVE_DIRFD) && defined(HAVE_FSTATAT))
+		if (fstatat(dirfd(parent), entry->d_name, &ent_stat,
+				AT_SYMLINK_NOFOLLOW) != 0) {
+#else
 		if (stat(leafpath, &ent_stat) != 0) {
+#endif
+			free(leafpath);
 			goto out_via_errno;
 		}
 		if (S_ISDIR(ent_stat.st_mode)) {
 			ret = netsurf_recursive_rm(leafpath);
-			if (ret != NSERROR_OK) goto out;
+			if (ret != NSERROR_OK) {
+				free(leafpath);
+				goto out;
+			}
 		} else {
+#if (defined(HAVE_DIRFD) && defined(HAVE_UNLINKAT))
+			if (unlinkat(dirfd(parent), entry->d_name, 0) != 0) {
+#else
 			if (unlink(leafpath) != 0) {
+#endif
+				free(leafpath);
 				goto out_via_errno;
 			}
 		}
+
 		free(leafpath);
-		leafpath = NULL;
 	}
 
 	if (rmdir(path) != 0) {
@@ -373,16 +389,7 @@ out_via_errno:
 		ret = NSERROR_UNKNOWN;
 	}
 out:
-	if (listing != NULL) {
-		for (ent = 0; ent < nentries; ent++) {
-			free(listing[ent]);
-		}
-		free(listing);
-	}
-
-	if (leafpath != NULL) {
-		free(leafpath);
-	}
+	closedir(parent);
 
 	return ret;
 }
