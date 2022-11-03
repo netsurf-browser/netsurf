@@ -16,6 +16,7 @@ ifeq ($(HOST),riscos)
   EXEEXT :=
   PKG_CONFIG :=
   ZIP := zip
+  SED :=
 else
   # Cross-build for RO
   # Four options are available:
@@ -95,4 +96,5 @@ else
   CXX := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*g++)
   PKG_CONFIG = PKG_CONFIG_LIBDIR="$(PREFIX)/lib/pkgconfig:$(GCCSDK_INSTALL_ENV)/lib/pkgconfig:$(GCCSDK_INSTALL_ENV)/share/pkgconfig" pkg-config
   ZIP := $(GCCSDK_INSTALL_CROSSBIN)/zip
+  SED := sed
 endif

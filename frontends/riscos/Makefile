@@ -114,6 +114,9 @@ MESSAGES_FILTER=ro
 $(FRONTEND_SOURCE_DIR)/appdir/!Run$(RUNEXT): $(FRONTEND_SOURCE_DIR)/scripts/Run $(EXETARGET)
 	$(VQ)echo " MAKERUN: $@"
 	$(Q)$(MAKERUN) $(EXETARGET) $< $@
+ifeq ($(findstring -elfeabi,$(SUBTARGET)),-elfeabi)
+	$(Q)$(SED) -i -e 's/^|\(RMEnsure ARMEABISupport\)/\1/' $@
+endif
 
 $(FRONTEND_SOURCE_DIR)/appdir/!Help$(RUNEXT): $(FRONTEND_SOURCE_DIR)/scripts/Help
 	$(VQ)echo "      CP: $@"

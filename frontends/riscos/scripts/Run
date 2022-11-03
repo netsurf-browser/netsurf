@@ -68,6 +68,10 @@ RMEnsure DrawFile 1.30 Error NetSurf requires the DrawFile module. This can be d
 RMEnsure SharedUnixLibrary 1.07 NetSurfRMLoad System:Modules.SharedULib
 RMEnsure SharedUnixLibrary 1.07 Error NetSurf requires SharedUnixLibrary 1.07 or later. Please use the RISC OS Configure app to update the computer's !System directory from the NetSurf archive.
 
+| Ensure ARMEABISupport is installed
+|RMEnsure ARMEABISupport 1.04 NetSurfRMLoad System:Modules.ARMEABISupport
+|RMEnsure ARMEABISupport 1.04 Error NetSurf requires ARMEABISupport 1.04 or later. Please use the RISC OS Configure app to update the computer's !System directory from the NetSurf archive.
+
 | Load AcornURI if it isn't already
 Unset NetSurf$Start_URI_Handler
 RMEnsure AcornURI 0.12 Set NetSurf$Start_URI_Handler 1
