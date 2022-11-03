@@ -22,6 +22,9 @@ RESOURCES = $(TPD_RISCOS)
 
 CFLAGS += -Driscos -std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE \
 	    -mpoke-function-name -fno-strict-aliasing
+ifeq ($(findstring -elfeabi,$(SUBTARGET)),-elfeabi)
+  CFLAGS += -funwind-tables
+endif
 
 CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include
 ifeq ($(HOST),riscos)
