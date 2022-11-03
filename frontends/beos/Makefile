@@ -151,7 +151,7 @@ install-beos:
 package-beos: $(PKGNAME)
 	$(VQ)echo Creating $(PKGNAME)
 
-$(PKGNAME): $(EXETARGET)
+$(PKGNAME): $(EXETARGET) $(POSTEXES)
 	$(Q)rm -rf $(HAIKU_TARGET_DIR)
 	$(Q)rm -rf $(PKGNAME)
 	$(Q)$(MKDIR) $(HAIKU_TARGET_DIR)

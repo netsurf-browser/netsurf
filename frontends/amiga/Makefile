@@ -80,7 +80,7 @@ AMIGA_DISTRIBUTION_FILES := $(FRONTEND_SOURCE_DIR)/dist/*
 AMIGA_PKG_DIR := $(FRONTEND_SOURCE_DIR)/pkg
 AMIGA_INSTALL_TARGET_DIR := NetSurf_Amiga
 
-netsurf.lha: $(EXETARGET)
+netsurf.lha: $(EXETARGET) $(POSTEXES)
 	$(VQ)echo Creating netsurf.lha
 	$(Q)rm -rf $(AMIGA_INSTALL_TARGET_DIR)
 	$(Q)$(MKDIR) -p $(AMIGA_INSTALL_TARGET_DIR)/NetSurf

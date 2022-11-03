@@ -161,7 +161,7 @@ $(ATARI_FONT_TMP_DIR)$(ATARI_FONT_NAME):
 package-atari: $(ATARI_FONT_TMP_DIR)$(ATARI_FONT_NAME) $(PKGNAME)
 	$(VQ)echo Creating $(PKGNAME)
 
-$(PKGNAME): $(EXETARGET)
+$(PKGNAME): $(EXETARGET) $(POSTEXES)
 ifneq ($(strip $(STRIP)),)
 	$(Q)echo Stripping symbols from $(EXETARGET) with $(STRIP)
 	$(Q)$(STRIP) $(EXETARGET)

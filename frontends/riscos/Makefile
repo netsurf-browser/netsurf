@@ -174,7 +174,7 @@ install-riscos:
 
 package-riscos: netsurf.zip
 
-netsurf.zip: $(EXETARGET)
+netsurf.zip: $(EXETARGET) $(POSTEXES)
 	$(eval $@_TMPDIR := $(shell mktemp -d))
 	$(Q) $(RM) $@
 	$(Q) cp -rLvp $(FRONTEND_SOURCE_DIR)/appdir $($@_TMPDIR)/!NetSurf

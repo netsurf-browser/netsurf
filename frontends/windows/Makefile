@@ -90,7 +90,7 @@ $(OBJROOT)/messages-en: $(MESSAGES_TARGET)/en/Messages
 	$(VQ)echo "   MSGCP: $< $@"
 	$(Q)$(INSTALL) -m 644 -T $< $@
 
-netsurf-installer.exe: $(EXETARGET) $(WIN_RES_INS_OBJ)
+netsurf-installer.exe: $(EXETARGET) $(POSTEXES) $(WIN_RES_INS_OBJ)
 	$(VQ)echo "MAKENSIS: $@"
 	$(Q)makensis -V$(NSIS_VERBOSE) -NOCD -DOBJROOT=$(OBJROOT) -DRESDIR=$(FRONTEND_RESOURCES_DIR) -DVERSIONMAJOR=$(VERSION_MAJ) -DVERSIONMINOR=$(VERSION_MIN) -DOUTFNAME=$@ $(FRONTEND_RESOURCES_DIR)/installer.nsi
 
