@@ -284,7 +284,7 @@ case "${HOST}" in
         # libraries required for the Darwin target abi
         NS_FRONTEND_LIBS="libsvgtiny libnsfb"
         ;;
-    arm-unknown-riscos|arm-riscos-gnueabihf)
+    arm-unknown-riscos|arm-riscos-gnueabi*)
         # tools required to build the browser for RISC OS
         NS_TOOLS="nsgenbind"
         # libraries required for the risc os target abi
