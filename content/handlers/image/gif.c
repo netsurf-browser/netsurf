@@ -68,9 +68,6 @@ static inline nserror gif__nsgif_error_to_ns(nsgif_error gif_res)
 	nserror err;
 
 	switch (gif_res) {
-	case NSGIF_OK:
-		err = NSERROR_OK;
-		break;
 	case NSGIF_ERR_OOM:
 		err = NSERROR_NOMEM;
 		break;
