@@ -233,9 +233,11 @@ static bool gif_convert(struct content *c)
 	/* Initialise the GIF */
 	gif_err = nsgif_data_scan(gif->gif, size, data);
 	if (gif_err != NSGIF_OK) {
-		NSLOG(netsurf, DEBUG, "%s", nsgif_strerror(gif_err));
-		/* Not fatal unless er have no frames. */
+		NSLOG(netsurf, INFO, "nsgif scan: %s", nsgif_strerror(gif_err));
+		/* Not fatal unless we have no frames. */
 	}
+
+	nsgif_data_complete(gif->gif);
 
 	gif_info = nsgif_get_info(gif->gif);
 	assert(gif_info != NULL);
