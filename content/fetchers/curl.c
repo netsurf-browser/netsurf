@@ -86,8 +86,6 @@
 	"EECDH+AESGCM:EDH+AESGCM:"				\
 	/* Enable PFS AES CBC suites */				\
 	"EECDH+AES:EDH+AES:"					\
-	/* Enable non-PFS fallback suite */			\
-	"AES128-SHA:"						\
 	/* Remove any PFS suites using weak DSA key exchange */	\
 	"-DSS"
 
