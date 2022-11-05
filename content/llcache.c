@@ -116,7 +116,7 @@ typedef struct {
 
 	bool tried_with_auth;		/**< Whether we've tried with auth */
 
-	bool tried_with_tls_downgrade;	/**< Whether we've tried TLS <= 1.0 */
+	bool tried_with_tls_downgrade;	/**< Whether we've tried TLS 1.2 */
 
 	bool tainted_tls;		/**< Whether the TLS transport is tainted */
 } llcache_fetch_ctx;

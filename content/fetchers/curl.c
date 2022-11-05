@@ -233,7 +233,7 @@ struct curl_fetch_info {
 	bool abort;		/**< Abort requested. */
 	bool stopped;		/**< Download stopped on purpose. */
 	bool only_2xx;		/**< Only HTTP 2xx responses acceptable. */
-	bool downgrade_tls;	/**< Downgrade to TLS <= 1.0 */
+	bool downgrade_tls;	/**< Downgrade to TLS 1.2 */
 	nsurl *url;		/**< URL of this fetch. */
 	lwc_string *host;	/**< The hostname of this fetch. */
 	struct curl_slist *headers;	/**< List of request headers. */
@@ -813,7 +813,8 @@ fetch_curl_sslctxfun(CURL *curl_handle, void *_sslctx, void *parm)
 {
 	struct curl_fetch_info *f = (struct curl_fetch_info *) parm;
 	SSL_CTX *sslctx = _sslctx;
-	long options = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+	long options = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 |
+			SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1;
 
 	/* set verify callback for each certificate in chain */
 	SSL_CTX_set_verify(sslctx, SSL_VERIFY_PEER, fetch_curl_verify_callback);
@@ -824,19 +825,14 @@ fetch_curl_sslctxfun(CURL *curl_handle, void *_sslctx, void *parm)
 					 parm);
 
 	if (f->downgrade_tls) {
-		/* Disable TLS 1.1/1.2 if the server can't cope with them */
-#ifdef SSL_OP_NO_TLSv1_1
-		options |= SSL_OP_NO_TLSv1_1;
-#endif
-#ifdef SSL_OP_NO_TLSv1_2
-		options |= SSL_OP_NO_TLSv1_2;
+		/* Disable TLS 1.3 if the server can't cope with it */
+#ifdef SSL_OP_NO_TLSv1_3
+		options |= SSL_OP_NO_TLSv1_3;
 #endif
 #ifdef SSL_MODE_SEND_FALLBACK_SCSV
 		/* Ensure server rejects the connection if downgraded too far */
 		SSL_CTX_set_mode(sslctx, SSL_MODE_SEND_FALLBACK_SCSV);
 #endif
-		/* Disable TLS1.2 ciphersuites */
-		SSL_CTX_set_cipher_list(sslctx, CIPHER_LIST ":-TLSv1.2");
 	}
 
 	SSL_CTX_set_options(sslctx, options);
