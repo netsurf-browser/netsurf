@@ -67,7 +67,15 @@
 #define UPDATES_PER_SECOND 2
 
 /**
- * The ciphersuites the browser is prepared to use
+ * The ciphersuites the browser is prepared to use for TLS1.3
+ */
+#define CIPHER_SUITES						\
+	"TLS_AES_256_GCM_SHA384:"				\
+	"TLS_CHACHA20_POLY1305_SHA256:"				\
+	"TLS_AES_128_GCM_SHA256"
+
+/**
+ * The ciphersuites the browser is prepared to use for TLS<1.3
  */
 #define CIPHER_LIST						\
 	/* disable everything */				\
@@ -1785,6 +1793,10 @@ nserror fetch_curl_register(void)
 		/* only set the cipher list with openssl otherwise the
 		 *  fetch fails with "Unknown cipher in list"
 		 */
+#if LIBCURL_VERSION_NUM >= 0x073d00
+		/* Need libcurl 7.61.0 or later */
+		SETOPT(CURLOPT_TLS13_CIPHERS, CIPHER_SUITES);
+#endif
 		SETOPT(CURLOPT_SSL_CIPHER_LIST, CIPHER_LIST);
 	}
 
