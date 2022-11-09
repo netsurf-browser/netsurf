@@ -38,7 +38,7 @@ jobs:
       run: |
           export TARGET_WORKSPACE="$(pwd)/projects"
           source docs/env.sh
-          ns-clone -n -s
+          ns-clone -d -s
           ns-make-tools install
           ns-make-libs install
 
