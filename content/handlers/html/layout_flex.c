@@ -42,6 +42,9 @@
 #include "html/box_inspect.h"
 #include "html/layout_internal.h"
 
+/**
+ * Flex item data
+ */
 struct flex_item_data {
 	enum css_flex_basis_e basis;
 	css_fixed basis_length;
@@ -66,6 +69,9 @@ struct flex_item_data {
 	bool max_violation;
 };
 
+/**
+ * Flex line data
+ */
 struct flex_line_data {
 	int main_size;
 	int cross_size;
@@ -77,6 +83,9 @@ struct flex_line_data {
 	size_t frozen;
 };
 
+/**
+ * Flex layout context
+ */
 struct flex_ctx {
 	html_content *content;
 	const struct box *flex;
@@ -103,6 +112,11 @@ struct flex_ctx {
 	} line;
 };
 
+/**
+ * Destroy a flex layout context
+ *
+ * \param[in] ctx  Flex layout context
+ */
 static void layout_flex_ctx__destroy(struct flex_ctx *ctx)
 {
 	if (ctx != NULL) {
@@ -112,6 +126,13 @@ static void layout_flex_ctx__destroy(struct flex_ctx *ctx)
 	}
 }
 
+/**
+ * Create a flex layout context
+ *
+ * \param[in] content  HTML content containing flex box
+ * \param[in] flex     Box to create layout context for
+ * \return flex layout context or NULL on error
+ */
 static struct flex_ctx *layout_flex_ctx__create(
 		html_content *content,
 		const struct box *flex)
@@ -148,6 +169,14 @@ static struct flex_ctx *layout_flex_ctx__create(
 	return ctx;
 }
 
+/**
+ * Perform layout on a flex item
+ *
+ * \param[in] ctx              Flex layout context
+ * \param[in] item             Item to lay out
+ * \param[in] available_width  Available width for item in pixels
+ * \return true on success false on failure
+ */
 static bool layout_flex_item(
 		const struct flex_ctx *ctx,
 		const struct flex_item_data *item,
@@ -186,6 +215,14 @@ static bool layout_flex_item(
 	return success;
 }
 
+/**
+ * Calculate an item's base and target main sizes.
+ *
+ * \param[in] ctx              Flex layout context
+ * \param[in] item             Item to get sizes of
+ * \param[in] available_width  Available width in pixels
+ * \return true on success false on failure
+ */
 static inline bool layout_flex__base_and_main_sizes(
 		const struct flex_ctx *ctx,
 		struct flex_item_data *item,
@@ -262,6 +299,13 @@ static inline bool layout_flex__base_and_main_sizes(
 	return true;
 }
 
+/**
+ * Fill out all item's data in a flex container.
+ *
+ * \param[in] ctx              Flex layout context
+ * \param[in] flex             Flex box
+ * \param[in] available_width  Available width in pixels
+ */
 static void layout_flex_ctx__populate_item_data(
 		const struct flex_ctx *ctx,
 		const struct box *flex,
@@ -297,6 +341,12 @@ static void layout_flex_ctx__populate_item_data(
 	}
 }
 
+/**
+ * Ensure context's lines array has a free space
+ *
+ * \param[in] ctx  Flex layout context
+ * \return true on success false on out of memory
+ */
 static bool layout_flex_ctx__ensure_line(struct flex_ctx *ctx)
 {
 	struct flex_line_data *temp;
@@ -319,6 +369,13 @@ static bool layout_flex_ctx__ensure_line(struct flex_ctx *ctx)
 	return true;
 }
 
+/**
+ * Assigns flex items to the line and returns the line
+ *
+ * \param[in] ctx         Flex layout context
+ * \param[in] item_index  Index to first item to assign to this line
+ * \return Pointer to the new line, or NULL on error.
+ */
 static struct flex_line_data *layout_flex__build_line(struct flex_ctx *ctx,
 		size_t item_index)
 {
@@ -371,6 +428,12 @@ static struct flex_line_data *layout_flex__build_line(struct flex_ctx *ctx,
 	return line;
 }
 
+/**
+ * Freeze an item on a line
+ *
+ * \param[in] line  Line to containing item
+ * \param[in] item  Item to freeze
+ */
 static inline void layout_flex__item_freeze(
 		struct flex_line_data *line,
 		struct flex_item_data *item)
@@ -383,6 +446,17 @@ static inline void layout_flex__item_freeze(
 			item->box, item->target_main_size);
 }
 
+/**
+ * Calculate remaining free space and unfrozen item factor sum
+ *
+ * \param[in]  ctx                  Flex layout context
+ * \param[in]  line                 Line to calculate free space on
+ * \param[out] unfrozen_factor_sum  Returns sum of unfrozen item's flex factors
+ * \param[in]  initial_free_main    Initial free space in main direction
+ * \param[in]  available_main       Available space in main direction
+ * \param[in]  grow                 Whether to grow or shrink
+ * return remaining free space on line
+ */
 static inline int layout_flex__remaining_free_main(
 		struct flex_ctx *ctx,
 		struct flex_line_data *line,
@@ -424,6 +498,13 @@ static inline int layout_flex__remaining_free_main(
 	return remaining_free_main;
 }
 
+/**
+ * Clamp flex item target main size and get min/max violations
+ *
+ * \param[in] ctx   Flex layout context
+ * \param[in] line  Line to align items on
+ * return total violation in pixels
+ */
 static inline int layout_flex__get_min_max_violations(
 		struct flex_ctx *ctx,
 		struct flex_line_data *line)
@@ -480,6 +561,17 @@ static inline int layout_flex__get_min_max_violations(
 	return total_violation;
 }
 
+/**
+ * Distribute remaining free space proportional to the flex factors.
+ *
+ * Remaining free space may be negative.
+ *
+ * \param[in] ctx                  Flex layout context
+ * \param[in] line                 Line to distribute free space on
+ * \param[in] unfrozen_factor_sum  Sum of unfrozen item's flex factors
+ * \param[in] remaining_free_main  Remaining free space in main direction
+ * \param[in] grow                 Whether to grow or shrink
+ */
 static inline void layout_flex__distribute_free_main(
 		struct flex_ctx *ctx,
 		struct flex_line_data *line,
@@ -549,7 +641,15 @@ static inline void layout_flex__distribute_free_main(
 	}
 }
 
-/** 9.7. Resolving Flexible Lengths */
+/**
+ * Resolve flexible item lengths along a line.
+ *
+ * See 9.7 of Tests CSS Flexible Box Layout Module Level 1.
+ *
+ * \param[in] ctx   Flex layout context
+ * \param[in] line  Line to resolve
+ * \return true on success, false on failure.
+ */
 static bool layout_flex__resolve_line(
 		struct flex_ctx *ctx,
 		struct flex_line_data *line)
@@ -638,6 +738,13 @@ static bool layout_flex__resolve_line(
 	return true;
 }
 
+/**
+ * Position items along a line
+ *
+ * \param[in] ctx   Flex layout context
+ * \param[in] line  Line to resolve
+ * \return true on success, false on failure.
+ */
 static bool layout_flex__place_line_items_main(
 		struct flex_ctx *ctx,
 		struct flex_line_data *line)
@@ -686,6 +793,12 @@ static bool layout_flex__place_line_items_main(
 	return true;
 }
 
+/**
+ * Collect items onto lines and place items along the lines
+ *
+ * \param[in] ctx   Flex layout context
+ * \return true on success, false on failure.
+ */
 static bool layout_flex__collect_items_into_lines(
 		struct flex_ctx *ctx)
 {
@@ -723,6 +836,13 @@ static bool layout_flex__collect_items_into_lines(
 	return true;
 }
 
+/**
+ * Align items on a line.
+ *
+ * \param[in] ctx    Flex layout context
+ * \param[in] line   Line to align items on
+ * \param[in] extra  Extra line width in pixels
+ */
 static void layout_flex__place_line_items_cross(struct flex_ctx *ctx,
 		struct flex_line_data *line, int extra)
 {
@@ -781,6 +901,11 @@ static void layout_flex__place_line_items_cross(struct flex_ctx *ctx,
 	}
 }
 
+/**
+ * Place the lines and align the items on the line.
+ *
+ * \param[in] ctx  Flex layout context
+ */
 static void layout_flex__place_lines(struct flex_ctx *ctx)
 {
 	bool reversed = ctx->wrap == CSS_FLEX_WRAP_WRAP_REVERSE;
