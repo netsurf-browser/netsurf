@@ -549,54 +549,6 @@ static inline void layout_flex__distribute_free_main(
 	}
 }
 
-static bool layout_flex__place_line_items_main(
-		struct flex_ctx *ctx,
-		struct flex_line_data *line)
-{
-	enum box_side main_start = ctx->horizontal ? LEFT : TOP;
-	size_t item_count = line->first + line->count;
-	int main_pos = ctx->flex->padding[main_start];
-
-	for (size_t i = line->first; i < item_count; i++) {
-		struct flex_item_data *item = &ctx->item.data[i];
-		struct box *b = item->box;
-		int *box_pos_main;
-
-		if (ctx->horizontal) {
-			b->width = item->target_main_size -
-					lh__delta_outer_width(b);
-
-			if (!layout_flex_item(ctx, item, b->width)) {
-				return false;
-			}
-		}
-
-		box_pos_main = ctx->horizontal ? &b->x : &b->y;
-		*box_pos_main = main_pos + lh__non_auto_margin(b, main_start) +
-				b->border[main_start].width;
-
-		if (!lh__box_is_absolute(b)) {
-			int cross_size;
-			int *box_size_main;
-			int *box_size_cross;
-
-			box_size_main = lh__box_size_main(ctx->horizontal, b);
-			box_size_cross = lh__box_size_cross(ctx->horizontal, b);
-
-			main_pos += *box_size_main + lh__delta_outer_main(
-					ctx->flex, b);
-
-			cross_size = *box_size_cross + lh__delta_outer_cross(
-					ctx->flex, b);
-			if (line->cross_size < cross_size) {
-				line->cross_size = cross_size;
-			}
-		}
-	}
-
-	return true;
-}
-
 /** 9.7. Resolving Flexible Lengths */
 static bool layout_flex__resolve_line(
 		struct flex_ctx *ctx,
@@ -683,8 +635,52 @@ static bool layout_flex__resolve_line(
 		}
 	}
 
-	if (!layout_flex__place_line_items_main(ctx, line)) {
-		return false;
+	return true;
+}
+
+static bool layout_flex__place_line_items_main(
+		struct flex_ctx *ctx,
+		struct flex_line_data *line)
+{
+	enum box_side main_start = ctx->horizontal ? LEFT : TOP;
+	size_t item_count = line->first + line->count;
+	int main_pos = ctx->flex->padding[main_start];
+
+	for (size_t i = line->first; i < item_count; i++) {
+		struct flex_item_data *item = &ctx->item.data[i];
+		struct box *b = item->box;
+		int *box_pos_main;
+
+		if (ctx->horizontal) {
+			b->width = item->target_main_size -
+					lh__delta_outer_width(b);
+
+			if (!layout_flex_item(ctx, item, b->width)) {
+				return false;
+			}
+		}
+
+		box_pos_main = ctx->horizontal ? &b->x : &b->y;
+		*box_pos_main = main_pos + lh__non_auto_margin(b, main_start) +
+				b->border[main_start].width;
+
+		if (!lh__box_is_absolute(b)) {
+			int cross_size;
+			int *box_size_main;
+			int *box_size_cross;
+
+			box_size_main = lh__box_size_main(ctx->horizontal, b);
+			box_size_cross = lh__box_size_cross(ctx->horizontal, b);
+
+			main_pos += *box_size_main + lh__delta_outer_main(
+					ctx->flex, b);
+
+			cross_size = *box_size_cross + lh__delta_outer_cross(
+					ctx->flex, b);
+			if (line->cross_size < cross_size) {
+				line->cross_size = cross_size;
+			}
+		}
 	}
 
 	return true;
@@ -711,6 +707,10 @@ static bool layout_flex__collect_items_into_lines(
 				pos, ctx->item.count);
 
 		if (!layout_flex__resolve_line(ctx, line)) {
+			return false;
+		}
+
+		if (!layout_flex__place_line_items_main(ctx, line)) {
 			return false;
 		}
 
