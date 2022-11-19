@@ -326,7 +326,7 @@ static struct flex_line_data *layout_flex__build_line(struct flex_ctx *ctx,
 	int used_main = 0;
 
 	if (!layout_flex_ctx__ensure_line(ctx)) {
-		return 0;
+		return NULL;
 	}
 
 	line = &ctx->line.data[ctx->line.count];
