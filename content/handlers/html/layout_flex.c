@@ -913,7 +913,7 @@ static void layout_flex__place_lines(struct flex_ctx *ctx)
 	int extra = 0;
 
 	if (ctx->available_cross != AUTO &&
-	    ctx->available_cross != ctx->cross_size &&
+	    ctx->available_cross > ctx->cross_size &&
 	    ctx->line.count > 0) {
 		extra = ctx->available_cross - ctx->cross_size;
 
