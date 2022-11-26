@@ -205,3 +205,7 @@ init HTMLPropertiesCollection(struct dom_html_collection *coll);
 #include "CanvasRenderingContext2D.bnd"
 #include "ImageData.bnd"
 
+/* CSS Object model */
+
+#include "CSSRule.bnd"
+#include "CSSStyleSheet.bnd"
