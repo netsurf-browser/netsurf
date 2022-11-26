@@ -168,48 +168,46 @@ nserror utf8_finalise(void)
  * Convert a string from one encoding to another
  *
  * \param string  The NULL-terminated string to convert
- * \param len     Length of input string to consider (in bytes), or 0
+ * \param slen    Length of input string to consider (in bytes), or 0
  * \param from    The encoding name to convert from
  * \param to      The encoding name to convert to
- * \param result  Pointer to location in which to store result.
- * \param result_len Pointer to location in which to store result length.
+ * \param result_out  Pointer to location in which to store result.
+ * \param result_len_out Pointer to location in which to store result length.
  * \return NSERROR_OK for no error, NSERROR_NOMEM on allocation error,
  *         NSERROR_BAD_ENCODING for a bad character encoding
  */
 static nserror
 utf8_convert(const char *string,
-	     size_t len,
+	     size_t slen,
 	     const char *from,
 	     const char *to,
-	     char **result,
-	     size_t *result_len)
+	     char **result_out,
+	     size_t *result_len_out)
 {
 	iconv_t cd;
-	char *temp, *out, *in;
-	size_t slen, rlen;
+	char *temp, *out, *in, *result;
+	size_t result_len;
 
-	assert(string && from && to && result);
+	assert(string && from && to && result_out);
 
-	if (string[0] == '\0') {
-		/* On AmigaOS, iconv() returns an error if we pass an
-		 * empty string.  This prevents iconv() being called as
-		 * there is no conversion necessary anyway. */
-		*result = strdup("");
-		if (!(*result)) {
-			*result = NULL;
-			return NSERROR_NOMEM;
-		}
-
-		return NSERROR_OK;
+	/* calculate the source length if not given */
+	if (slen==0) {
+		slen = strlen(string);
 	}
 
-	if (strcasecmp(from, to) == 0) {
-		/* conversion from an encoding to itself == strdup */
-		slen = len ? len : strlen(string);
-		*(result) = strndup(string, slen);
-		if (!(*result)) {
-			*(result) = NULL;
+	/* process the empty string separately avoiding any conversion
+	 * check for the source and destination encoding being the same
+	 *
+	 * This optimisation is necessary on AmigaOS as iconv()
+	 * returns an error if an empty string is passed.
+	 */
+	if ((slen == 0) || (strcasecmp(from, to) == 0)) {
+		*result_out = strndup(string, slen);
+		if (*result_out == NULL) {
 			return NSERROR_NOMEM;
+		}
+		if (result_len_out != NULL) {
+			*result_len_out = slen;
 		}
 
 		return NSERROR_OK;
@@ -220,10 +218,9 @@ utf8_convert(const char *string,
 	/* we cache the last used conversion descriptor,
 	 * so check if we're trying to use it here */
 	if (strncasecmp(last_cd.from, from, sizeof(last_cd.from)) == 0 &&
-			strncasecmp(last_cd.to, to, sizeof(last_cd.to)) == 0) {
+	    strncasecmp(last_cd.to, to, sizeof(last_cd.to)) == 0) {
 		cd = last_cd.cd;
-	}
-	else {
+	} else {
 		/* no match, so create a new cd */
 		cd = iconv_open(to, from);
 		if (cd == (iconv_t)-1) {
@@ -243,20 +240,19 @@ utf8_convert(const char *string,
 		last_cd.cd = cd;
 	}
 
-	slen = len ? len : strlen(string);
 	/* Worst case = ASCII -> UCS4, so allocate an output buffer
 	 * 4 times larger than the input buffer, and add 4 bytes at
 	 * the end for the NULL terminator
 	 */
-	rlen = slen * 4 + 4;
+	result_len = slen * 4 + 4;
 
-	temp = out = malloc(rlen);
+	temp = out = malloc(result_len);
 	if (!out) {
 		return NSERROR_NOMEM;
 	}
 
 	/* perform conversion */
-	if (iconv(cd, (void *) &in, &slen, &out, &rlen) == (size_t)-1) {
+	if (iconv(cd, (void *) &in, &slen, &out, &result_len) == (size_t)-1) {
 		free(temp);
 		/* clear the cached conversion descriptor as it's invalid */
 		if (last_cd.cd)
@@ -270,19 +266,22 @@ utf8_convert(const char *string,
 		return NSERROR_NOMEM;
 	}
 
-	*(result) = realloc(temp, out - temp + 4);
-	if (!(*result)) {
+	result_len = out - temp;
+
+	/* resize buffer allowing for null termination */
+	result = realloc(temp, result_len + 4);
+	if (result == NULL) {
 		free(temp);
-		*(result) = NULL; /* for sanity's sake */
 		return NSERROR_NOMEM;
 	}
 
 	/* NULL terminate - needs 4 characters as we may have
 	 * converted to UTF-32 */
-	memset((*result) + (out - temp), 0, 4);
+	memset(result + result_len, 0, 4);
 
-	if (result_len != NULL) {
-		*result_len = (out - temp);
+	*result_out = result;
+	if (result_len_out != NULL) {
+		*result_len_out = result_len;
 	}
 
 	return NSERROR_OK;
