@@ -185,7 +185,7 @@ get_cached_cd(const char *enc_from, const char *enc_to, iconv_t *cd_out)
 	}
 
 	/* and safely copy the to/from/cd data into last_cd */
-	snprintf(last_cd.from, sizeof(last_cd.from), enc_from);
+	snprintf(last_cd.from, sizeof(last_cd.from), "%s", enc_from);
 	snprintf(last_cd.to, sizeof(last_cd.to), "%s", enc_to);
 	*cd_out = last_cd.cd = cd;
 
