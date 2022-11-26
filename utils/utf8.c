@@ -365,11 +365,11 @@ utf8_convert_html_chunk(iconv_t cd,
 
 /* exported interface documented in utils/utf8.h */
 nserror
-utf8_to_html(const char *string, const char *encname, size_t len, char **result)
+utf8_to_html(const char *string, const char *encname, size_t len, char **result_out)
 {
 	iconv_t cd;
 	const char *in;
-	char *out, *origout;
+	char *out, *origout, *result;
 	size_t off, prev_off, inlen, outlen, origoutlen, esclen;
 	nserror ret;
 	char *pescape, escape[11];
@@ -452,11 +452,12 @@ utf8_to_html(const char *string, const char *encname, size_t len, char **result)
 	outlen -= 4;
 
 	/* Shrink-wrap */
-	*result = realloc(origout, origoutlen - outlen);
-	if (*result == NULL) {
+	result = realloc(origout, origoutlen - outlen);
+	if (result == NULL) {
 		free(origout);
 		return NSERROR_NOMEM;
 	}
+	*result_out = result;
 
 	return NSERROR_OK;
 }
