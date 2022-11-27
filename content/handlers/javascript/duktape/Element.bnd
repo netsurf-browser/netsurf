@@ -397,19 +397,29 @@ getter Element::classList ()
 	dom_exception exc;
 	dom_tokenlist *tokens;
 
-	exc = dom_tokenlist_create((dom_element *)priv->parent.node, corestring_dom_class, &tokens);
-	if (exc != DOM_NO_ERR) return 0; /* Coerced to undefined */
+	duk_set_top(ctx, 0);
+	duk_push_this(ctx);
+	duk_get_prop_string(ctx, 0, MAGIC(classList));
 
-	/* Create a settable tokenlist - While the IDL says this isn't settable, all browsers
-	 * seem to make it settable, so we'll permit it too
-	 */
-	duk_push_pointer(ctx, tokens);
-	if (dukky_create_object(ctx, PROTO_NAME(DOMSETTABLETOKENLIST), 1) != DUK_EXEC_SUCCESS) {
+	if (duk_is_undefined(ctx, -1)) {
+		duk_pop(ctx);
+		exc = dom_tokenlist_create((dom_element *)priv->parent.node, corestring_dom_class, &tokens);
+		if (exc != DOM_NO_ERR) return 0; /* Coerced to undefined */
+
+		/* Create a settable tokenlist - While the IDL says this isn't settable, all browsers
+		 * seem to make it settable, so we'll permit it too
+		 */
+		duk_push_pointer(ctx, tokens);
+		if (dukky_create_object(ctx, PROTO_NAME(DOMSETTABLETOKENLIST), 1) != DUK_EXEC_SUCCESS) {
+			dom_tokenlist_unref(tokens);
+			NSLOG(dukky, DEBUG, "Unable to create DOMSettableTokenList object");
+			return 0; /* Coerced to undefined */
+		}
 		dom_tokenlist_unref(tokens);
-		NSLOG(dukky, DEBUG, "Unable to create DOMSettableTokenList object");
-		return 0; /* Coerced to undefined */
+		duk_dup(ctx, -1);
+		duk_put_prop_string(ctx, 0, MAGIC(classList));
 	}
-	dom_tokenlist_unref(tokens);
+
 	return 1;
 %}
 
