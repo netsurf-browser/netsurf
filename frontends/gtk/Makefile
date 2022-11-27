@@ -11,6 +11,8 @@
 NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
 NETSURF_FEATURE_VIDEO_CFLAGS := -DWITH_VIDEO
 
+# determine if the rsvg library API version
+RSVG_API := $(shell $(PKG_CONFIG) --atleast-version=2.46 librsvg-2.0 && echo 246)
 $(eval $(call pkg_config_find_and_add_enabled,RSVG,librsvg-2.0,SVG))
 $(eval $(call pkg_config_find_and_add_enabled,VIDEO,gstreamer-0.10,Video))
 
