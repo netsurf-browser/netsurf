@@ -60,6 +60,8 @@ struct dom_html_br_element;
 #include "Document.bnd"
 #include "Node.bnd"
 #include "NodeList.bnd"
+#include "DOMTokenList.bnd"
+#include "DOMSettableTokenList.bnd"
 #include "NamedNodeMap.bnd"
 #include "Element.bnd"
 #include "HTMLCollection.bnd"

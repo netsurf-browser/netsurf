@@ -83,3 +83,21 @@ if (!Array.from) {
     };
   }());
 }
+
+// DOMTokenList formatter, in theory we can remove this if we do the stringifier IDL support
+
+DOMTokenList.prototype.toString = function () {
+  if (this.length == 0) {
+    return "";
+  }
+
+  var ret = this.item(0);
+  for (var index = 1; index < this.length; index++) {
+    ret = ret + " " + this.item(index);
+  }
+
+  return ret;
+}
+
+// Inherit the same toString for settable lists
+DOMSettableTokenList.prototype.toString = DOMTokenList.prototype.toString;
