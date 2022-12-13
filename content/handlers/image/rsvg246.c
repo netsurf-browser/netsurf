@@ -147,6 +147,7 @@ rsvg_cache_convert(struct content *c)
 static void rsvg__get_demensions(const rsvg_content *svgc,
 		int *width, int *height)
 {
+#if LIBRSVG_MAJOR_VERSION >= 2 && LIBRSVG_MINOR_VERSION >= 52
 	gdouble rwidth;
 	gdouble rheight;
 	gboolean gotsize;
@@ -168,7 +169,13 @@ static void rsvg__get_demensions(const rsvg_content *svgc,
 		*width = ink_rect.width;
 		*height = ink_rect.height;
 	}
+#else
+	RsvgDimensionData rsvgsize;
 
+	rsvg_handle_get_dimensions(svgc->rsvgh, &rsvgsize);
+	*width = rsvgsize.width;
+	*height = rsvgsize.height;
+#endif
 	NSLOG(netsurf, DEBUG, "rsvg width:%d height:%d.", *width, *height);
 }
 
