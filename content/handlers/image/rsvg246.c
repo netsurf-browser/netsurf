@@ -144,6 +144,33 @@ rsvg_cache_convert(struct content *c)
 	return bitmap;
 }
 
+static void rsvg__get_demensions(const rsvg_content *svgc,
+		int *width, int *height)
+{
+	gdouble rwidth;
+	gdouble rheight;
+	gboolean gotsize;
+
+	gotsize = rsvg_handle_get_intrinsic_size_in_pixels(svgc->rsvgh,
+							   &rwidth,
+							   &rheight);
+	if (gotsize == TRUE) {
+		*width = rwidth;
+		*height = rheight;
+	} else {
+		RsvgRectangle ink_rect;
+		RsvgRectangle logical_rect;
+		rsvg_handle_get_geometry_for_element(svgc->rsvgh,
+						     NULL,
+						     &ink_rect,
+						     &logical_rect,
+						     NULL);
+		*width = ink_rect.width;
+		*height = ink_rect.height;
+	}
+
+	NSLOG(netsurf, DEBUG, "rsvg width:%d height:%d.", *width, *height);
+}
 
 static bool rsvg_convert(struct content *c)
 {
@@ -152,8 +179,7 @@ static bool rsvg_convert(struct content *c)
 	size_t size; /* content data size */
 	GInputStream * istream;
 	GError *gerror = NULL;
-	gdouble rwidth, rheight;
-	gboolean gotsize;
+
 	/* check image header is valid and get width/height */
 
 	data = content__get_source_data(c, &size);
@@ -170,25 +196,7 @@ static bool rsvg_convert(struct content *c)
 		return false;
 	}
 
-	gotsize = rsvg_handle_get_intrinsic_size_in_pixels(svgc->rsvgh,
-							   &rwidth,
-							   &rheight);
-	if (gotsize == TRUE) {
-		c->width = rwidth;
-		c->height = rheight;
-	} else {
-		RsvgRectangle ink_rect;
-		RsvgRectangle logical_rect;
-		rsvg_handle_get_geometry_for_element(svgc->rsvgh,
-						     NULL,
-						     &ink_rect,
-						     &logical_rect,
-						     NULL);
-		c->width = ink_rect.width;
-		c->height = ink_rect.height;
-	}
-
-	NSLOG(netsurf, DEBUG, "rsvg width:%d height:%d.",c->width, c->height);
+	rsvg__get_demensions(svgc, &c->width, &c->height);
 
 	c->size = c->width * c->height * 4;
 
