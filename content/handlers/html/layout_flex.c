@@ -746,12 +746,12 @@ static bool layout_flex__place_line_items_main(
 		struct flex_ctx *ctx,
 		struct flex_line_data *line)
 {
-	enum box_side main_start = ctx->horizontal ? LEFT : TOP;
 	size_t item_count = line->first + line->count;
-	int main_pos = ctx->flex->padding[main_start];
 
 	for (size_t i = line->first; i < item_count; i++) {
+		enum box_side main_start = ctx->horizontal ? LEFT : TOP;
 		struct flex_item_data *item = &ctx->item.data[i];
+		int main_pos = ctx->flex->padding[main_start];
 		struct box *b = item->box;
 		int *box_pos_main;
 
