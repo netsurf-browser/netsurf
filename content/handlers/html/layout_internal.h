@@ -244,14 +244,14 @@ static inline int lh__delta_outer_cross(
 	}
 }
 
-static inline int *lh__box_size_main(
+static inline int *lh__box_size_main_ptr(
 		bool horizontal,
 		struct box *b)
 {
 	return horizontal ? &b->width : &b->height;
 }
 
-static inline int *lh__box_size_cross(
+static inline int *lh__box_size_cross_ptr(
 		bool horizontal,
 		struct box *b)
 {

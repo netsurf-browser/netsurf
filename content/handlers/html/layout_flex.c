@@ -773,8 +773,10 @@ static bool layout_flex__place_line_items_main(
 			int *box_size_main;
 			int *box_size_cross;
 
-			box_size_main = lh__box_size_main(ctx->horizontal, b);
-			box_size_cross = lh__box_size_cross(ctx->horizontal, b);
+			box_size_main = lh__box_size_main_ptr(
+					ctx->horizontal, b);
+			box_size_cross = lh__box_size_cross_ptr(
+					ctx->horizontal, b);
 
 			main_pos += *box_size_main + lh__delta_outer_main(
 					ctx->flex, b);
@@ -854,7 +856,7 @@ static void layout_flex__place_line_items_cross(struct flex_ctx *ctx,
 		int *box_pos_cross;
 
 		box_pos_cross = ctx->horizontal ? &b->y : &b->x;
-		box_size_cross = lh__box_size_cross(ctx->horizontal, b);
+		box_size_cross = lh__box_size_cross_ptr(ctx->horizontal, b);
 
 		cross_free_space = line->cross_size + extra - *box_size_cross -
 				lh__delta_outer_cross(ctx->flex, b);
