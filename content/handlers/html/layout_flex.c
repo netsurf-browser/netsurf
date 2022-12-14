@@ -98,6 +98,7 @@ struct flex_ctx {
 	int available_cross;
 
 	bool horizontal;
+	bool main_reversed;
 	enum css_flex_wrap_e wrap;
 
 	struct flex_items {
@@ -165,6 +166,7 @@ static struct flex_ctx *layout_flex_ctx__create(
 
 	ctx->wrap = css_computed_flex_wrap(flex->style);
 	ctx->horizontal = lh__flex_main_is_horizontal(flex);
+	ctx->main_reversed = lh__flex_direction_reversed(flex);
 
 	return ctx;
 }
@@ -736,6 +738,22 @@ static bool layout_flex__resolve_line(
 }
 
 /**
+ * Find box side representing the start of flex container in main direction.
+ *
+ * \param[in] ctx   Flex layout context.
+ * \return the start side.
+ */
+static enum box_side layout_flex__main_start_side(
+		const struct flex_ctx *ctx)
+{
+	if (ctx->horizontal) {
+		return (ctx->main_reversed) ? RIGHT : LEFT;
+	} else {
+		return (ctx->main_reversed) ? BOTTOM : TOP;
+	}
+}
+
+/**
  * Position items along a line
  *
  * \param[in] ctx   Flex layout context
@@ -746,13 +764,21 @@ static bool layout_flex__place_line_items_main(
 		struct flex_ctx *ctx,
 		struct flex_line_data *line)
 {
+	int main_pos = ctx->flex->padding[layout_flex__main_start_side(ctx)];
+	int post_multiplier = ctx->main_reversed ? 0 : 1;
+	int pre_multiplier = ctx->main_reversed ? -1 : 0;
 	size_t item_count = line->first + line->count;
+
+	if (ctx->main_reversed) {
+		main_pos = lh__box_size_main(ctx->horizontal, ctx->flex) -
+				main_pos;
+	}
 
 	for (size_t i = line->first; i < item_count; i++) {
 		enum box_side main_start = ctx->horizontal ? LEFT : TOP;
 		struct flex_item_data *item = &ctx->item.data[i];
-		int main_pos = ctx->flex->padding[main_start];
 		struct box *b = item->box;
+		int box_size_main;
 		int *box_pos_main;
 
 		if (ctx->horizontal) {
@@ -764,24 +790,26 @@ static bool layout_flex__place_line_items_main(
 			}
 		}
 
+		box_size_main = lh__box_size_main(ctx->horizontal, b);
 		box_pos_main = ctx->horizontal ? &b->x : &b->y;
+
+		if (!lh__box_is_absolute(b)) {
+			main_pos += pre_multiplier * (box_size_main +
+					lh__delta_outer_main(ctx->flex, b));
+		}
+
 		*box_pos_main = main_pos + lh__non_auto_margin(b, main_start) +
 				b->border[main_start].width;
 
 		if (!lh__box_is_absolute(b)) {
 			int cross_size;
-			int *box_size_main;
-			int *box_size_cross;
-
-			box_size_main = lh__box_size_main_ptr(
-					ctx->horizontal, b);
-			box_size_cross = lh__box_size_cross_ptr(
+			int box_size_cross = lh__box_size_cross(
 					ctx->horizontal, b);
 
-			main_pos += *box_size_main + lh__delta_outer_main(
-					ctx->flex, b);
+			main_pos += post_multiplier * (box_size_main +
+					lh__delta_outer_main(ctx->flex, b));
 
-			cross_size = *box_size_cross + lh__delta_outer_cross(
+			cross_size = box_size_cross + lh__delta_outer_cross(
 					ctx->flex, b);
 			if (line->cross_size < cross_size) {
 				line->cross_size = cross_size;
