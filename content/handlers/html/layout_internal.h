@@ -258,6 +258,20 @@ static inline int *lh__box_size_cross_ptr(
 	return horizontal ? &b->height : &b->width;
 }
 
+static inline int lh__box_size_main(
+		bool horizontal,
+		const struct box *b)
+{
+	return horizontal ? b->width : b->height;
+}
+
+static inline int lh__box_size_cross(
+		bool horizontal,
+		const struct box *b)
+{
+	return horizontal ? b->height : b->width;
+}
+
 static inline bool lh__box_size_cross_is_auto(
 		bool horizontal,
 		struct box *b)
