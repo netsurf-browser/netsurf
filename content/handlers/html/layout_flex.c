@@ -172,6 +172,38 @@ static struct flex_ctx *layout_flex_ctx__create(
 }
 
 /**
+ * Find box side representing the start of flex container in main direction.
+ *
+ * \param[in] ctx   Flex layout context.
+ * \return the start side.
+ */
+static enum box_side layout_flex__main_start_side(
+		const struct flex_ctx *ctx)
+{
+	if (ctx->horizontal) {
+		return (ctx->main_reversed) ? RIGHT : LEFT;
+	} else {
+		return (ctx->main_reversed) ? BOTTOM : TOP;
+	}
+}
+
+/**
+ * Find box side representing the end of flex container in main direction.
+ *
+ * \param[in] ctx   Flex layout context.
+ * \return the end side.
+ */
+static enum box_side layout_flex__main_end_side(
+		const struct flex_ctx *ctx)
+{
+	if (ctx->horizontal) {
+		return (ctx->main_reversed) ? LEFT : RIGHT;
+	} else {
+		return (ctx->main_reversed) ? TOP : BOTTOM;
+	}
+}
+
+/**
  * Perform layout on a flex item
  *
  * \param[in] ctx              Flex layout context
@@ -735,22 +767,6 @@ static bool layout_flex__resolve_line(
 	}
 
 	return true;
-}
-
-/**
- * Find box side representing the start of flex container in main direction.
- *
- * \param[in] ctx   Flex layout context.
- * \return the start side.
- */
-static enum box_side layout_flex__main_start_side(
-		const struct flex_ctx *ctx)
-{
-	if (ctx->horizontal) {
-		return (ctx->main_reversed) ? RIGHT : LEFT;
-	} else {
-		return (ctx->main_reversed) ? BOTTOM : TOP;
-	}
 }
 
 /**
