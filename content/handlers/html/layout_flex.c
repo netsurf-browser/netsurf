@@ -76,6 +76,9 @@ struct flex_line_data {
 	int main_size;
 	int cross_size;
 
+	int used_main_size;
+	int main_auto_margin_count;
+
 	int pos;
 
 	size_t first;
@@ -410,6 +413,8 @@ static bool layout_flex_ctx__ensure_line(struct flex_ctx *ctx)
 static struct flex_line_data *layout_flex__build_line(struct flex_ctx *ctx,
 		size_t item_index)
 {
+	enum box_side start_side = layout_flex__main_start_side(ctx);
+	enum box_side end_side = layout_flex__main_end_side(ctx);
 	struct flex_line_data *line;
 	int used_main = 0;
 
@@ -441,6 +446,13 @@ static struct flex_line_data *layout_flex__build_line(struct flex_ctx *ctx,
 			if (lh__box_is_absolute(item->box) == false) {
 				line->main_size += item->main_size;
 				used_main += pos_main;
+
+				if (b->margin[start_side] == AUTO) {
+					line->main_auto_margin_count++;
+				}
+				if (b->margin[end_side] == AUTO) {
+					line->main_auto_margin_count++;
+				}
 			}
 			item->line = ctx->line.count;
 			line->count++;
@@ -471,6 +483,10 @@ static inline void layout_flex__item_freeze(
 {
 	item->freeze = true;
 	line->frozen++;
+
+	if (!lh__box_is_absolute(item->box)){
+		line->used_main_size += item->target_main_size;
+	}
 
 	NSLOG(flex, DEEPDEBUG, "flex-item box: %p: "
 			"Frozen at target_main_size: %i",
