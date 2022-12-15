@@ -800,16 +800,33 @@ static bool layout_flex__place_line_items_main(
 	int post_multiplier = ctx->main_reversed ? 0 : 1;
 	int pre_multiplier = ctx->main_reversed ? -1 : 0;
 	size_t item_count = line->first + line->count;
+	int extra_remainder = 0;
+	int extra = 0;
 
 	if (ctx->main_reversed) {
 		main_pos = lh__box_size_main(ctx->horizontal, ctx->flex) -
 				main_pos;
 	}
 
+	if (ctx->available_main != AUTO &&
+	    ctx->available_main != UNKNOWN_WIDTH &&
+	    ctx->available_main > line->used_main_size) {
+		if (line->main_auto_margin_count > 0) {
+			extra = ctx->available_main - line->used_main_size;
+
+			extra_remainder = extra % line->main_auto_margin_count;
+			extra /= line->main_auto_margin_count;
+		}
+	}
+
 	for (size_t i = line->first; i < item_count; i++) {
+		enum box_side main_end = ctx->horizontal ? RIGHT : BOTTOM;
 		enum box_side main_start = ctx->horizontal ? LEFT : TOP;
 		struct flex_item_data *item = &ctx->item.data[i];
 		struct box *b = item->box;
+		int extra_total = 0;
+		int extra_post = 0;
+		int extra_pre = 0;
 		int box_size_main;
 		int *box_pos_main;
 
@@ -826,20 +843,30 @@ static bool layout_flex__place_line_items_main(
 		box_pos_main = ctx->horizontal ? &b->x : &b->y;
 
 		if (!lh__box_is_absolute(b)) {
-			main_pos += pre_multiplier * (box_size_main +
-					lh__delta_outer_main(ctx->flex, b));
+			if (b->margin[main_start] == AUTO) {
+				extra_pre = extra + extra_remainder;
+			}
+			if (b->margin[main_end] == AUTO) {
+				extra_post = extra + extra_remainder;
+			}
+			extra_total = extra_pre + extra_post;
+
+			main_pos += pre_multiplier *
+					(extra_total + box_size_main +
+					 lh__delta_outer_main(ctx->flex, b));
 		}
 
 		*box_pos_main = main_pos + lh__non_auto_margin(b, main_start) +
-				b->border[main_start].width;
+				extra_pre + b->border[main_start].width;
 
 		if (!lh__box_is_absolute(b)) {
 			int cross_size;
 			int box_size_cross = lh__box_size_cross(
 					ctx->horizontal, b);
 
-			main_pos += post_multiplier * (box_size_main +
-					lh__delta_outer_main(ctx->flex, b));
+			main_pos += post_multiplier *
+					(extra_total + box_size_main +
+					 lh__delta_outer_main(ctx->flex, b));
 
 			cross_size = box_size_cross + lh__delta_outer_cross(
 					ctx->flex, b);
