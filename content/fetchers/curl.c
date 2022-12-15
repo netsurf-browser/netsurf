@@ -1713,8 +1713,10 @@ nserror fetch_curl_register(void)
 #undef SETOPT
 #define SETOPT(option, value) \
 	mcode = curl_multi_setopt(fetch_curl_multi, option, value);	\
-	if (mcode != CURLM_OK)						\
-		goto curl_multi_setopt_failed;
+	if (mcode != CURLM_OK) {					\
+		NSLOG(netsurf, ERROR, "attempting curl_multi_setopt(%s, ...)", #option); \
+		goto curl_multi_setopt_failed;				\
+	}
 
 		SETOPT(CURLMOPT_MAXCONNECTS, maxconnects);
 		SETOPT(CURLMOPT_MAX_TOTAL_CONNECTIONS, maxconnects);
@@ -1734,8 +1736,10 @@ nserror fetch_curl_register(void)
 #undef SETOPT
 #define SETOPT(option, value) \
 	code = curl_easy_setopt(fetch_blank_curl, option, value);	\
-	if (code != CURLE_OK)						\
-		goto curl_easy_setopt_failed;
+	if (code != CURLE_OK) {						\
+		NSLOG(netsurf, ERROR, "attempting curl_easy_setopt(%s, ...)", #option); \
+		goto curl_easy_setopt_failed;				\
+	}
 
 	SETOPT(CURLOPT_ERRORBUFFER, fetch_error_buffer);
 	SETOPT(CURLOPT_DEBUGFUNCTION, fetch_curl_debug);
