@@ -649,6 +649,7 @@ static inline void layout_flex__distribute_free_main(
 		}
 	} else {
 		css_fixed scaled_shrink_factor_sum = 0;
+		css_fixed remainder = 0;
 
 		for (size_t i = line->first; i < item_count; i++) {
 			struct flex_item_data *item = &ctx->item.data[i];
@@ -667,6 +668,7 @@ static inline void layout_flex__distribute_free_main(
 		for (size_t i = line->first; i < item_count; i++) {
 			struct flex_item_data *item = &ctx->item.data[i];
 			css_fixed scaled_shrink_factor;
+			css_fixed result;
 			css_fixed ratio;
 
 			if (item->freeze) {
@@ -681,12 +683,13 @@ static inline void layout_flex__distribute_free_main(
 					item->shrink,
 					INTTOFIX(item->base_size));
 			ratio = FDIV(scaled_shrink_factor,
-				     scaled_shrink_factor_sum);
+			             scaled_shrink_factor_sum);
+			result = FMUL(INTTOFIX(abs(remaining_free_main)),
+			              ratio) + remainder;
 
 			item->target_main_size = item->base_size -
-					FIXTOINT(FMUL(
-					INTTOFIX(abs(remaining_free_main)),
-					ratio));
+					FIXTOINT(result);
+			remainder = FIXFRAC(result);
 		}
 	}
 }
