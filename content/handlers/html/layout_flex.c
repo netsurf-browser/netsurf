@@ -780,6 +780,10 @@ static bool layout_flex__resolve_line(
 		for (size_t i = line->first; i < item_count; i++) {
 			struct flex_item_data *item = &ctx->item.data[i];
 
+			if (item->freeze) {
+				continue;
+			}
+
 			if (total_violation == 0 ||
 			    (total_violation > 0 && item->min_violation) ||
 			    (total_violation < 0 && item->max_violation)) {
