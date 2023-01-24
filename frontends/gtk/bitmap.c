@@ -53,6 +53,10 @@ static void *bitmap_create(int width, int height, enum gui_bitmap_flags flags)
 {
 	struct bitmap *gbitmap;
 
+	if (width == 0 || height == 0) {
+		return NULL;
+	}
+
 	gbitmap = calloc(1, sizeof(struct bitmap));
 	if (gbitmap != NULL) {
 		if (flags & BITMAP_OPAQUE) {
