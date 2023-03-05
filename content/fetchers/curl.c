@@ -1792,8 +1792,12 @@ nserror fetch_curl_register(void)
 		 *  fetch fails with "Unknown cipher in list"
 		 */
 #if LIBCURL_VERSION_NUM >= 0x073d00
-		/* Need libcurl 7.61.0 or later */
-		SETOPT(CURLOPT_TLS13_CIPHERS, CIPHER_SUITES);
+		/* Need libcurl 7.61.0 or later built against OpenSSL with
+		 * TLS1.3 support */
+		code = curl_easy_setopt(fetch_blank_curl,
+				CURLOPT_TLS13_CIPHERS, CIPHER_SUITES);
+		if (code != CURLE_OK && code != CURLE_NOT_BUILT_IN)
+			goto curl_easy_setopt_failed;
 #endif
 		SETOPT(CURLOPT_SSL_CIPHER_LIST, CIPHER_LIST);
 	}
