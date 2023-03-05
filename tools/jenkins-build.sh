@@ -54,11 +54,16 @@ MAKE=make
 # NetSurf version number haiku needs it for package name
 NETSURF_VERSION="3.11"
 
+UPDATE_LATEST=yes
+
 # Ensure the combination of target and toolchain works and set build
 #   specific parameters too
 case ${TARGET} in
     "riscos")
 	case ${HOST} in
+	    "arm-riscos-gnueabi")
+		UPDATE_LATEST=no
+		;;
 	    "arm-unknown-riscos")
 		;;
 
@@ -69,6 +74,10 @@ case ${TARGET} in
 
 	esac
 
+	export GCCSDK_INSTALL_ENV=/opt/netsurf/${HOST}/env
+	export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${HOST}/cross/bin
+	IDENTIFIER="${HOST}-${IDENTIFIER}"
+	OLD_IDENTIFIER="${HOST}-${OLD_IDENTIFIER}"
 	PKG_SRC=netsurf
 	PKG_SFX=.zip
 	;;
@@ -285,6 +294,11 @@ case ${TARGET} in
 		MAKE=gmake
 		;;
 
+	    "arm-riscos-gnueabi")
+		export GCCSDK_INSTALL_ENV=/opt/netsurf/${HOST}/env
+		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${HOST}/cross/bin
+		;;
+
 	    "arm-unknown-riscos")
 		export GCCSDK_INSTALL_ENV=/opt/netsurf/${HOST}/env
 		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${HOST}/cross/bin
@@ -339,6 +353,11 @@ case ${TARGET} in
 
 	    x86_64-unknown-freebsd*)
 		MAKE=gmake
+		;;
+
+	    "arm-riscos-gnueabi")
+		export GCCSDK_INSTALL_ENV=/opt/netsurf/${HOST}/env
+		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${HOST}/cross/bin
 		;;
 
 	    "arm-unknown-riscos")
@@ -483,4 +502,7 @@ done
 ############ Expired package artifact removal and latest linking ##############
 
 
-ssh netsurf@ci.netsurf-browser.org "rm -f ${OLD_ARTIFACT_TARGETS} ${DESTDIR}/LATEST && echo "${NEW_ARTIFACT_TARGET}${PKG_SFX}" > ${DESTDIR}/LATEST"
+ssh netsurf@ci.netsurf-browser.org "rm -f ${OLD_ARTIFACT_TARGETS}"
+if [ ${UPDATE_LATEST} = "yes" ]; then
+    ssh netsurf@ci.netsurf-browser.org "rm -f ${DESTDIR}/LATEST && echo "${NEW_ARTIFACT_TARGET}${PKG_SFX}" > ${DESTDIR}/LATEST"
+fi
