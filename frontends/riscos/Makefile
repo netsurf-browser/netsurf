@@ -115,7 +115,7 @@ $(FRONTEND_SOURCE_DIR)/appdir/!Run$(RUNEXT): $(FRONTEND_SOURCE_DIR)/scripts/Run 
 	$(VQ)echo " MAKERUN: $@"
 	$(Q)$(MAKERUN) $(EXETARGET) $< $@
 ifeq ($(findstring -elfeabi,$(SUBTARGET)),-elfeabi)
-	$(Q)$(SED) -i -e 's/^|\(RMEnsure ARMEABISupport\)/\1/' $@
+	$(Q)$(SED) -i -e 's/^|\(RMEnsure ARMEABISupport\)/\1/' -e 's/SharedUnixLibrary 1\.07/SharedUnixLibrary 1.16/g' $@
 endif
 
 $(FRONTEND_SOURCE_DIR)/appdir/!Help$(RUNEXT): $(FRONTEND_SOURCE_DIR)/scripts/Help
