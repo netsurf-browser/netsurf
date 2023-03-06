@@ -7,9 +7,9 @@ Nicholas Clark and Peter Burwood.
 These contributors have expressed "no interest" in any further licensing or
 copyright in regards to UnixLib.
 
-Other sections are (c) 1999-2006 Nick Burrett, John Tytgat, Peter Naulls,
-Peter Teichmann, Alex Waugh, Christian Ludlam, Theo Markettos, Graham Shaw,
-James Bursa and John-Mark Bell.
+Other sections are (c) 1999-2011 Nick Burrett, John Tytgat, Peter Naulls,
+Lee Noar, Peter Teichmann, Alex Waugh, Christian Ludlam, Theo Markettos,
+Graham Shaw, James Bursa and John-Mark Bell.
 
 In January 2005, permission was obtained from all relevant contributors
 by Peter Naulls to license all past and present contributions to UnixLib
@@ -86,7 +86,7 @@ http://www.fsf.org/licenses/why-not-lgpl.html
 
 ===========================================================================
 
- Copyright (c) 1995-2005 UnixLib Developers
+ Copyright (c) 1995-2009 UnixLib Developers
  All rights reserved.
  
  Redistribution and use in source and binary forms, with or without
@@ -279,7 +279,6 @@ works together with the library.
 
   Note that it is possible for a library to be covered by the ordinary
 General Public License rather than by this special one.
-
 
                   GNU LIBRARY GENERAL PUBLIC LICENSE
    TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
@@ -631,8 +630,8 @@ safest to attach them to the start of each source file to most effectively
 convey the exclusion of warranty; and each file should have at least the
 "copyright" line and a pointer to where the full notice is found.
 
-     <one line to give the library's name and a brief idea of what it does.>
-    Copyright (C)  <year>   <name of author>
+    <one line to give the library's name and a brief idea of what it does.>
+    Copyright (C) <year>  <name of author>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -658,7 +657,7 @@ necessary.  Here is a sample; alter the names:
   Yoyodyne, Inc., hereby disclaims all copyright interest in the
   library `Frob' (a library for tweaking knobs) written by James Random Hacker.
 
-   <signature of Ty Coon>, 1 April 1990
+  <signature of Ty Coon>, 1 April 1990
   Ty Coon, President of Vice
 
 That's all there is to it!
