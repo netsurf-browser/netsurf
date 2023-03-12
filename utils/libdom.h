@@ -33,29 +33,6 @@
 #include <dom/bindings/hubbub/errors.h>
 
 /**
- * depth-first walk the dom calling callback for each element
- *
- * \param root the dom node to use as the root of the tree walk
- * \param callback The function called for each element
- * \param ctx The context passed to the callback.
- * \return true if all nodes were examined, false if the callback terminated
- *         the walk early.
- */
-bool libdom_treewalk(dom_node *root,
-		bool (*callback)(dom_node *node, dom_string *name, void *ctx),
-		void *ctx);
-
-/**
- * Search the descendants of a node for an element.
- *
- * \param  node		dom_node to search children of, or NULL
- * \param  element_name	name of element to find
- * \return  first child of node which is an element and matches name, or
- *          NULL if not found or parameter node is NULL
- */
-dom_node *libdom_find_element(dom_node *node, lwc_string *element_name);
-
-/**
  * Search children of a node for first named element 
  * \param  parent dom_node to search children of, or NULL
  * \param  element_name	name of element to find
