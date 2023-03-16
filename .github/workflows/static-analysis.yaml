@@ -23,6 +23,7 @@ jobs:
            sudo apt-get install --no-install-recommends -y
                bison
                build-essential
+               ccache
                flex
                git
                gperf
@@ -33,6 +34,12 @@ jobs:
                libpng-dev
                librsvg2-dev
                pkg-config
+
+    - name: ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ${{ github.job }}
+        max-size: 128M
 
     - name: Build and install project libs
       run: |

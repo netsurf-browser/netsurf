@@ -23,6 +23,7 @@ jobs:
            sudo apt-get install --no-install-recommends -y
                bison
                build-essential
+               ccache
                check
                clang
                flex
@@ -37,6 +38,12 @@ jobs:
                llvm
                pkg-config
                wbritish # Needed for `/usr/share/dict/words`, used by test
+
+    - name: ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ${{ github.job }}
+        max-size: 128M
 
     - name: Build and install project libs
       run: |
