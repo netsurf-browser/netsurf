@@ -440,7 +440,7 @@ static bool idna__is_valid(int32_t *label, size_t len)
 		/* 4. Check characters not DISALLOWED by RFC5892 */
 		if (idna_prop == IDNA_P_DISALLOWED) {
 			NSLOG(netsurf, INFO,
-			      "Check failed: character %"PRIsizet" (%x) is DISALLOWED",
+			      "Check failed: character %"PRIsizet" (%"PRIx32") is DISALLOWED",
 			      i,
 			      label[i]);
 			return false;
@@ -450,7 +450,7 @@ static bool idna__is_valid(int32_t *label, size_t len)
 		if (idna_prop == IDNA_P_CONTEXTJ) {
 			if (idna__contextj_rule(label, i, len) == false) {
 				NSLOG(netsurf, INFO,
-				      "Check failed: character %"PRIsizet" (%x) does not conform to CONTEXTJ rule",
+				      "Check failed: character %"PRIsizet" (%"PRIx32") does not conform to CONTEXTJ rule",
 				      i,
 				      label[i]);
 				return false;
@@ -462,7 +462,7 @@ static bool idna__is_valid(int32_t *label, size_t len)
 		if (idna_prop == IDNA_P_CONTEXTO) {
 			if (idna__contexto_rule(label[i]) == false) {
 				NSLOG(netsurf, INFO,
-				      "Check failed: character %"PRIsizet" (%x) has no CONTEXTO rule defined",
+				      "Check failed: character %"PRIsizet" (%"PRIx32") has no CONTEXTO rule defined",
 				      i,
 				      label[i]);
 				return false;
@@ -472,7 +472,7 @@ static bool idna__is_valid(int32_t *label, size_t len)
 		/* 7. Check characters are not UNASSIGNED */
 		if (idna_prop == IDNA_P_UNASSIGNED) {
 			NSLOG(netsurf, INFO,
-			      "Check failed: character %"PRIsizet" (%x) is UNASSIGNED",
+			      "Check failed: character %"PRIsizet" (%"PRIx32") is UNASSIGNED",
 			      i,
 			      label[i]);
 			return false;

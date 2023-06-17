@@ -32,6 +32,7 @@
 #include <string.h>
 #include <strings.h>
 
+#include "netsurf/inttypes.h"
 #include "netsurf/plot_style.h"
 #include "utils/errors.h"
 #include "utils/log.h"
@@ -112,7 +113,7 @@ strtooption(const char *value, struct nsoption_s *option)
 		break;
 
 	case OPTION_COLOUR:
-		if (sscanf(value, "%x", &rgbcolour) == 1) {
+		if (sscanf(value, "%"SCNx32"", &rgbcolour) == 1) {
 			option->value.c = (((0x000000FF & rgbcolour) << 16) |
 					   ((0x0000FF00 & rgbcolour) << 0) |
 					   ((0x00FF0000 & rgbcolour) >> 16));
@@ -323,7 +324,7 @@ nsoption_output(FILE *fp,
 			rgbcolour = (((0x000000FF & opts[entry].value.c) << 16) |
 				     ((0x0000FF00 & opts[entry].value.c) << 0) |
 				     ((0x00FF0000 & opts[entry].value.c) >> 16));
-			fprintf(fp, "%s:%06x\n",
+			fprintf(fp, "%s:%06"PRIx32"\n",
 				opts[entry].key,
 				rgbcolour);
 
@@ -387,9 +388,9 @@ nsoption_output_value_html(struct nsoption_s *option,
 		slen = snprintf(string + pos,
 				size - pos,
 				"<span style=\"font-family:Monospace;\">"
-					"#%06X"
+					"#%06"PRIX32
 				"</span> "
-				"<span style=\"background-color: #%06x; "
+				"<span style=\"background-color: #%06"PRIx32"; "
 					"border: 1px solid #%06x; "
 					"display: inline-block; "
 					"width: 1em; height: 1em;\">"
@@ -459,7 +460,7 @@ nsoption_output_value_text(struct nsoption_s *option,
 		rgbcolour = (((0x000000FF & option->value.c) << 16) |
 			     ((0x0000FF00 & option->value.c) << 0) |
 			     ((0x00FF0000 & option->value.c) >> 16));
-		slen = snprintf(string + pos, size - pos, "%06x", rgbcolour);
+		slen = snprintf(string + pos, size - pos, "%06"PRIx32"", rgbcolour);
 		break;
 
 	case OPTION_STRING:

@@ -29,6 +29,7 @@
 #include "utils/messages.h"
 #include "utils/nscolour.h"
 
+#include "netsurf/inttypes.h"
 #include "netsurf/types.h"
 #include "netsurf/plot_style.h"
 
@@ -158,7 +159,7 @@ bool dirlist_generate_title(const char *title, char *buffer, int buffer_length)
 			"<title>%s</title>\n"
 			"<style>\n"
 			"html {\n"
-			"\tbackground-color: #%06x;\n"
+			"\tbackground-color: #%06"PRIx32";\n"
 			"}\n"
 			"%s"
 			"</style>\n"

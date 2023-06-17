@@ -1156,7 +1156,7 @@ static void dukky_generic_event_handler(dom_event *evt, void *pw)
 		NSLOG(dukky, DEBUG, "Unable to find the event name");
 		return;
 	}
-	NSLOG(dukky, DEBUG, "Event's name is %*s", dom_string_length(name),
+	NSLOG(dukky, DEBUG, "Event's name is %*s", (int)dom_string_length(name),
 	      dom_string_data(name));
 	exc = dom_event_get_event_phase(evt, &phase);
 	if (exc != DOM_NO_ERR) {
@@ -1394,10 +1394,10 @@ void dukky_register_event_listener_for(duk_context *ctx,
 	if (exc != DOM_NO_ERR) {
 		NSLOG(dukky, DEBUG,
 		      "Unable to register listener for %p.%*s", ele,
-		      dom_string_length(name), dom_string_data(name));
+		      (int)dom_string_length(name), dom_string_data(name));
 	} else {
 		NSLOG(dukky, DEBUG, "have registered listener for %p.%*s",
-		      ele, dom_string_length(name), dom_string_data(name));
+		      ele, (int)dom_string_length(name), dom_string_data(name));
 	}
 	dom_event_listener_unref(listen);
 }

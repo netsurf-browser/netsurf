@@ -33,6 +33,7 @@
 #include "utils/nsoption.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"
+#include "netsurf/inttypes.h"
 #include "netsurf/misc.h"
 #include "netsurf/content.h"
 #include "content/hlcache.h"
@@ -173,7 +174,7 @@ html_stylesheet_from_domnode(html_content *c,
 
 	dom_string_unref(style);
 
-	snprintf(urlbuf, sizeof(urlbuf), "x-ns-css:%u", key);
+	snprintf(urlbuf, sizeof(urlbuf), "x-ns-css:%"PRIu32"", key);
 
 	error = nsurl_create(urlbuf, &url);
 	if (error != NSERROR_OK) {

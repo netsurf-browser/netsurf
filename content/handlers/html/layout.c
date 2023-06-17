@@ -4194,7 +4194,7 @@ layout__get_ol_reversed(dom_node *ol_node)
  */
 static bool
 layout__get_list_item_count(
-		dom_node *list_owner, int *count_out)
+		dom_node *list_owner, dom_long *count_out)
 {
 	dom_html_element_type tag_type;
 	dom_exception exc;
@@ -4266,7 +4266,7 @@ layout__ordered_list_count(
 	dom_exception exc;
 	dom_node *child;
 	int step = 1;
-	int next;
+	dom_long next;
 
 	if (box->node == NULL) {
 		return;

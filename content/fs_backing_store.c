@@ -1614,7 +1614,7 @@ static nserror store_write_block(struct store_state *state,
 			offst);
 	if (wr != (ssize_t)bse->elem[elem_idx].size) {
 		NSLOG(netsurf, ERROR,
-		      "Write failed %"PRIssizet" of %d bytes from %p at %"PRIsizet" block %d errno %d",
+		      "Write failed %"PRIssizet" of %"PRId32" bytes from %p at %"PRIsizet" block %d errno %d",
 		      wr,
 		      bse->elem[elem_idx].size,
 		      bse->elem[elem_idx].data,
@@ -1661,7 +1661,7 @@ static nserror store_write_file(struct store_state *state,
 	close(fd);
 	if (wr != (ssize_t)bse->elem[elem_idx].size) {
 		NSLOG(netsurf, ERROR,
-		      "Write failed %"PRIssizet" of %d bytes from %p errno %d",
+		      "Write failed %"PRIssizet" of %"PRId32" bytes from %p errno %d",
 		      wr,
 		      bse->elem[elem_idx].size,
 		      bse->elem[elem_idx].data,
@@ -1784,7 +1784,7 @@ static nserror store_read_block(struct store_state *state,
 		       offst);
 	if (rd != (ssize_t)bse->elem[elem_idx].size) {
 		NSLOG(netsurf, ERROR,
-		      "Failed reading %"PRIssizet" of %d bytes into %p from %"PRIsizet" block %d errno %d",
+		      "Failed reading %"PRIssizet" of %"PRId32" bytes into %p from %"PRIsizet" block %d errno %d",
 		      rd,
 		      bse->elem[elem_idx].size,
 		      bse->elem[elem_idx].data,

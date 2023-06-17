@@ -1923,7 +1923,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
 	llcache_object *obj, *newest = NULL;
 
 	NSLOG(llcache, DEBUG,
-	      "Searching cache for %s flags:%x referer:%s post:%p",
+	      "Searching cache for %s flags:%"PRIx32" referer:%s post:%p",
 	      nsurl_access(url), flags,
 	      referer==NULL?"":nsurl_access(referer),
 	      post);
@@ -2100,7 +2100,7 @@ llcache_object_retrieve(nsurl *url,
 	nsurl *defragmented_url;
 	bool uncachable = false;
 
-	NSLOG(llcache, DEBUG, "Retrieve %s (%x, %s, %p)", nsurl_access(url), flags,
+	NSLOG(llcache, DEBUG, "Retrieve %s (%"PRIx32", %s, %p)", nsurl_access(url), flags,
 		     referer==NULL?"":nsurl_access(referer), post);
 
 
@@ -3876,7 +3876,7 @@ void llcache_clean(bool purge)
 		}
 	}
 
-	NSLOG(llcache, DEBUG, "Size: %u (limit: %u)", llcache_size, limit);
+	NSLOG(llcache, DEBUG, "Size: %"PRIu32" (limit: %"PRIu32")", llcache_size, limit);
 }
 
 /* Exported interface documented in content/llcache.h */
@@ -3897,7 +3897,7 @@ llcache_initialise(const struct llcache_parameters *prm)
 	llcache->all_caught_up = true;
 
 	NSLOG(llcache, INFO,
-	      "llcache initialising with a limit of %d bytes",
+	      "llcache initialising with a limit of %"PRId32" bytes",
 	      llcache->limit);
 
 	/* backing store initialisation */

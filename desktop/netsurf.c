@@ -99,7 +99,7 @@
 
 static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 {
-	NSLOG(netsurf, WARNING, "[%3u] %.*s", str->refcnt,
+	NSLOG(netsurf, WARNING, "[%3"PRIu32"] %.*s", str->refcnt,
 	      (int)lwc_string_length(str), lwc_string_data(str));
 }
 

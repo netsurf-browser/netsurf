@@ -123,7 +123,7 @@ bool fire_generic_dom_event(dom_string *type, dom_node *target,
 		return false;
 	}
 	NSLOG(netsurf, INFO, "Dispatching '%*s' against %p",
-	      dom_string_length(type), dom_string_data(type), target);
+	      (int)dom_string_length(type), dom_string_data(type), target);
 	result = fire_dom_event(evt, target);
 	dom_event_unref(evt);
 	return result;
@@ -200,7 +200,7 @@ bool fire_dom_keyboard_event(dom_string *type, dom_node *target,
 	}
 
 	NSLOG(netsurf, INFO, "Dispatching '%*s' against %p",
-			dom_string_length(type), dom_string_data(type), target);
+			(int)dom_string_length(type), dom_string_data(type), target);
 
 	result = fire_dom_event((dom_event *) evt, target);
 	dom_event_unref(evt);

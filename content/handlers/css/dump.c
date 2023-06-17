@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <libcss/libcss.h>
 
+#include "netsurf/inttypes.h"
+
 #include "css/dump.h"
 #include "css/utils.h"
 
@@ -36,7 +38,7 @@ static void dump_css_fixed(FILE *stream, css_fixed f)
 	uint32_t fracpart = ((NSCSS_ABS(f) & 0x3ff) * 1000 + 500) / (1 << 10);
 #undef NSCSS_ABS
 
-	fprintf(stream, "%s%d.%03d", f < 0 ? "-" : "", uintpart, fracpart);
+	fprintf(stream, "%s%"PRId32".%03ld", f < 0 ? "-" : "", uintpart, fracpart);
 }
 
 /**
@@ -48,7 +50,7 @@ static void dump_css_fixed(FILE *stream, css_fixed f)
 static void dump_css_number(FILE *stream, css_fixed val)
 {
 	if (INTTOFIX(FIXTOINT(val)) == val)
-		fprintf(stream, "%d", FIXTOINT(val));
+		fprintf(stream, "%"PRId32"", FIXTOINT(val));
 	else
 		dump_css_fixed(stream, val);
 }
@@ -181,7 +183,7 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	val = css_computed_background_color(style, &color);
 	switch (val) {
 	case CSS_BACKGROUND_COLOR_COLOR:
-		fprintf(stream, "background-color: #%08x ", color);
+		fprintf(stream, "background-color: #%08"PRIx32" ", color);
 		break;
 	default:
 		break;
@@ -255,7 +257,7 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	val = css_computed_border_top_color(style, &color);
 	switch (val) {
 	case CSS_BORDER_COLOR_COLOR:
-		fprintf(stream, "border-top-color: #%08x ", color);
+		fprintf(stream, "border-top-color: #%08"PRIx32" ", color);
 		break;
 	default:
 		break;
@@ -265,7 +267,7 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	val = css_computed_border_right_color(style, &color);
 	switch (val) {
 	case CSS_BORDER_COLOR_COLOR:
-		fprintf(stream, "border-right-color: #%08x ", color);
+		fprintf(stream, "border-right-color: #%08"PRIx32" ", color);
 		break;
 	default:
 		break;
@@ -275,7 +277,7 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	val = css_computed_border_bottom_color(style, &color);
 	switch (val) {
 	case CSS_BORDER_COLOR_COLOR:
-		fprintf(stream, "border-bottom-color: #%08x ", color);
+		fprintf(stream, "border-bottom-color: #%08"PRIx32" ", color);
 		break;
 	default:
 		break;
@@ -285,7 +287,7 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	val = css_computed_border_left_color(style, &color);
 	switch (val) {
 	case CSS_BORDER_COLOR_COLOR:
-		fprintf(stream, "border-left-color: #%08x ", color);
+		fprintf(stream, "border-left-color: #%08"PRIx32" ", color);
 		break;
 	default:
 		break;
@@ -610,7 +612,7 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	/* color */
 	val = css_computed_color(style, &color);
 	if (val == CSS_COLOR_COLOR) {
-		fprintf(stream, "color: #%08x ", color);
+		fprintf(stream, "color: #%08"PRIx32" ", color);
 	}
 
 	/* content */
@@ -1353,7 +1355,7 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 		fprintf(stream, "outline-color: invert ");
 		break;
 	case CSS_OUTLINE_COLOR_COLOR:
-		fprintf(stream, "outline-color: #%08x ", color);
+		fprintf(stream, "outline-color: #%08"PRIx32" ", color);
 		break;
 	default:
 		break;
@@ -1820,7 +1822,7 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 		fprintf(stream, "z-index: auto ");
 		break;
 	case CSS_Z_INDEX_SET:
-		fprintf(stream, "z-index: %d ", zindex);
+		fprintf(stream, "z-index: %"PRId32" ", zindex);
 		break;
 	default:
 		break;

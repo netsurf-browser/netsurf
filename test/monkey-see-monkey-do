@@ -117,7 +117,7 @@ def main():
     index = index.read()
 
     print("Parsing tests...")
-    test_set = yaml.load_all(index)
+    test_set = yaml.load_all(index, Loader=yaml.FullLoader)
 
     print("Running tests...")
     ret = 0
