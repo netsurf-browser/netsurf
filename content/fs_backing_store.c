@@ -89,14 +89,6 @@
 #define BLOCK_USE_MAP_SIZE (1 << (BLOCK_ENTRY_COUNT - 3))
 
 /**
- * The type used to store index values referring to store entries. Care
- * must be taken with this type as it is used to build address to
- * entry mapping so changing the size will have large impacts on
- * memory usage.
- */
-typedef uint16_t entry_index_t;
-
-/**
  * The type used as a binary identifier for each entry derived from
  * the URL. A larger identifier will have fewer collisions but
  * requires proportionately more storage.
