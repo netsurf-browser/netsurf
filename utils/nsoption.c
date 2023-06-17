@@ -391,7 +391,7 @@ nsoption_output_value_html(struct nsoption_s *option,
 					"#%06"PRIX32
 				"</span> "
 				"<span style=\"background-color: #%06"PRIx32"; "
-					"border: 1px solid #%06x; "
+					"border: 1px solid #%06"PRIx32"; "
 					"display: inline-block; "
 					"width: 1em; height: 1em;\">"
 				"</span>",
@@ -460,7 +460,7 @@ nsoption_output_value_text(struct nsoption_s *option,
 		rgbcolour = (((0x000000FF & option->value.c) << 16) |
 			     ((0x0000FF00 & option->value.c) << 0) |
 			     ((0x00FF0000 & option->value.c) >> 16));
-		slen = snprintf(string + pos, size - pos, "%06"PRIx32"", rgbcolour);
+		slen = snprintf(string + pos, size - pos, "%06"PRIx32, rgbcolour);
 		break;
 
 	case OPTION_STRING:

@@ -487,7 +487,7 @@ form_dom_to_data_select(dom_html_select_element *select_element,
 						       &option_element);
 		if (exp != DOM_NO_ERR) {
 			NSLOG(netsurf, INFO,
-			      "Could not get options item %"PRId32"", option_index);
+			      "Could not get options item %"PRId32, option_index);
 			res = NSERROR_DOM;
 		} else {
 			res = form_dom_to_data_select_option(
@@ -1101,7 +1101,7 @@ form_dom_to_data(struct form *form,
 		exp = dom_html_collection_item(elements, element_idx, &element);
 		if (exp != DOM_NO_ERR) {
 			NSLOG(netsurf, INFO,
-			      "retrieving form element %"PRId32" failed with %d",
+			      "retrieving form element %"PRIu32" failed with %d",
 			      element_idx, exp);
 			res = NSERROR_DOM;
 			goto form_dom_to_data_error;
@@ -1111,7 +1111,7 @@ form_dom_to_data(struct form *form,
 		exp = dom_node_get_node_name(element, &nodename);
 		if (exp != DOM_NO_ERR) {
 			NSLOG(netsurf, INFO,
-			      "getting element node name %"PRId32" failed with %d",
+			      "getting element node name %"PRIu32" failed with %d",
 			      element_idx, exp);
 			dom_node_unref(element);
 			res = NSERROR_DOM;

@@ -38,7 +38,7 @@ static void dump_css_fixed(FILE *stream, css_fixed f)
 	uint32_t fracpart = ((NSCSS_ABS(f) & 0x3ff) * 1000 + 500) / (1 << 10);
 #undef NSCSS_ABS
 
-	fprintf(stream, "%s%"PRId32".%03ld", f < 0 ? "-" : "", uintpart, fracpart);
+	fprintf(stream, "%s%"PRIu32".%03"PRIu32, f < 0 ? "-" : "", uintpart, fracpart);
 }
 
 /**
@@ -50,7 +50,7 @@ static void dump_css_fixed(FILE *stream, css_fixed f)
 static void dump_css_number(FILE *stream, css_fixed val)
 {
 	if (INTTOFIX(FIXTOINT(val)) == val)
-		fprintf(stream, "%"PRId32"", FIXTOINT(val));
+		fprintf(stream, "%"PRId32, FIXTOINT(val));
 	else
 		dump_css_fixed(stream, val);
 }

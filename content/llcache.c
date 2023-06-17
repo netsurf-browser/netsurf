@@ -3897,7 +3897,7 @@ llcache_initialise(const struct llcache_parameters *prm)
 	llcache->all_caught_up = true;
 
 	NSLOG(llcache, INFO,
-	      "llcache initialising with a limit of %"PRId32" bytes",
+	      "llcache initialising with a limit of %"PRIu32" bytes",
 	      llcache->limit);
 
 	/* backing store initialisation */
