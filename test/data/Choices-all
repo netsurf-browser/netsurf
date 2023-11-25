@@ -26,6 +26,7 @@ foreground_images:1
 background_images:1
 animate_images:1
 enable_javascript:1
+author_level_css:1
 script_timeout:10
 expire_url:28
 font_default:0
