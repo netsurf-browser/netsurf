@@ -249,16 +249,19 @@ box_get_style(html_content *c,
 	      const css_computed_style *root_style,
 	      dom_node *n)
 {
-	dom_string *s;
-	dom_exception err;
+	dom_string *s = NULL;
 	css_stylesheet *inline_style = NULL;
 	css_select_results *styles;
 	nscss_select_ctx ctx;
 
 	/* Firstly, construct inline stylesheet, if any */
-	err = dom_element_get_attribute(n, corestring_dom_style, &s);
-	if (err != DOM_NO_ERR)
-		return NULL;
+	if (nsoption_bool(author_level_css)) {
+		dom_exception err;
+		err = dom_element_get_attribute(n, corestring_dom_style, &s);
+		if (err != DOM_NO_ERR) {
+			return NULL;
+		}
+	}
 
 	if (s != NULL) {
 		inline_style = nscss_create_inline_style(

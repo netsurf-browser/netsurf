@@ -683,6 +683,11 @@ html_css_new_selection_context(html_content *c, css_select_ctx **ret_select_ctx)
 			origin = CSS_ORIGIN_USER;
 		}
 
+		if (origin == CSS_ORIGIN_AUTHOR &&
+		    nsoption_bool(author_level_css) == false) {
+			continue;
+		}
+
 		if (hsheet->sheet != NULL) {
 			sheet = nscss_get_stylesheet(hsheet->sheet);
 		}

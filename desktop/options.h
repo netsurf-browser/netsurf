@@ -123,6 +123,9 @@ NSOPTION_BOOL(animate_images, true)
 /** Whether to execute javascript */
 NSOPTION_BOOL(enable_javascript, false)
 
+/** Whether to allow Author level CSS. */
+NSOPTION_BOOL(author_level_css, true)
+
 /** Maximum time (in seconds) to wait for a script to run */
 NSOPTION_INTEGER(script_timeout, 10)
 

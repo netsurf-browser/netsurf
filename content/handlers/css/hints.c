@@ -1587,6 +1587,10 @@ static void css_hint_list(
 	dom_exception err;
 	dom_string *attr;
 
+	if (nsoption_bool(author_level_css) == false) {
+		return;
+	}
+
 	err = dom_element_get_attribute(node, corestring_dom_type, &attr);
 	if (err == DOM_NO_ERR && attr != NULL) {
 		const char *attr_str = dom_string_data(attr);
