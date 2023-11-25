@@ -2305,7 +2305,7 @@ static bool layout_block_object(struct box *block)
 	NSLOG(layout, DEBUG,  "block %p, object %p, width %i", block,
 	      hlcache_handle_get_url(block->object), block->width);
 
-	if (content_get_type(block->object) == CONTENT_HTML) {
+	if (content_can_reformat(block->object)) {
 		content_reformat(block->object, false, block->width, 1);
 	} else {
 		/* Non-HTML objects */
@@ -2984,7 +2984,7 @@ layout_line(struct box *first,
 		}
 
 		/* Reformat object to new box size */
-		if (b->object && content_get_type(b->object) == CONTENT_HTML &&
+		if (b->object && content_can_reformat(b->object) &&
 				b->width !=
 				content_get_available_width(b->object)) {
 			css_fixed value = 0;
