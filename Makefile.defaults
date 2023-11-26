@@ -51,6 +51,10 @@ NETSURF_USE_GIF := AUTO
 # Valid options: YES, NO				  (highly recommended)
 NETSURF_USE_JPEG := YES
 
+# Enable NetSurf's use of libjxl for displaying JPEGXLs
+# Valid options: YES, NO, AUTO				  (highly recommended)
+NETSURF_USE_JPEGXL := AUTO
+
 # Enable NetSurf's use of libpng for displaying PNGs.
 # Valid options: YES, NO, AUTO	                          (highly recommended)
 NETSURF_USE_PNG := AUTO
