@@ -2842,11 +2842,7 @@ wimp_window {
   }
   wimp_icon {
     extent:32,-256,404,-212
-#ifdef WITH_PLUGIN
-    icon_flags:wimp_ICON_TEXT | wimp_ICON_SPRITE | wimp_ICON_VCENTRED | wimp_ICON_INDIRECTED | wimp_BUTTON_RADIO
-#else
     icon_flags:wimp_ICON_TEXT | wimp_ICON_SPRITE | wimp_ICON_VCENTRED | wimp_ICON_INDIRECTED | wimp_ICON_DELETED | wimp_BUTTON_RADIO
-#endif
     icon_esg:0
     icon_fg:wimp_COLOUR_BLACK
     icon_bg:wimp_COLOUR_VERY_LIGHT_GREY
