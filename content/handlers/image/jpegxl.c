@@ -49,7 +49,12 @@
 /**
  * output image format
  */
-static const JxlPixelFormat jxl_output_format = {4, JXL_TYPE_UINT8, JXL_LITTLE_ENDIAN, 0};
+static const JxlPixelFormat jxl_output_format = {
+	.num_channels = 4,
+	.data_type    = JXL_TYPE_UINT8,
+	.endianness   = JXL_LITTLE_ENDIAN,
+	.align        = 0,
+};
 
 /**
  * Content create entry point.
