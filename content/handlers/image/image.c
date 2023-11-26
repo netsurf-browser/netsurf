@@ -32,6 +32,7 @@
 #include "image/gif.h"
 #include "image/ico.h"
 #include "image/jpeg.h"
+#include "image/jpegxl.h"
 #include "image/nssprite.h"
 #include "image/png.h"
 #include "image/rsvg.h"
@@ -68,6 +69,12 @@ nserror image_init(void)
 
 #ifdef WITH_JPEG
 	error = nsjpeg_init();
+	if (error != NSERROR_OK)
+		return error;
+#endif
+
+#ifdef WITH_JPEGXL
+	error = nsjpegxl_init();
 	if (error != NSERROR_OK)
 		return error;
 #endif

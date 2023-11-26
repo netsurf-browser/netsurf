@@ -260,6 +260,13 @@ static nserror mimesniff__match_unknown_exact(const uint8_t *data, size_t len,
 		SIG(&corestring_lwc_application_x_gzip, "\x1f\x8b\x08", true),
 		SIG(&corestring_lwc_application_postscript, "%!PS-Adobe-",true),
 		SIG(&corestring_lwc_application_pdf, "%PDF-", false),
+		SIG(&corestring_lwc_image_jxl, "\xFF\x0A", true), /* containerless jpeg xl*/
+		{
+			(const uint8_t *)"\x00\x00\x00\x0CJXL \x0D\x0A\x87\x0A",
+			12,
+			true,
+			&corestring_lwc_image_jxl
+		}, /* containered jpeg xl*/
 		{ NULL, 0, false, NULL }
 	};
 #undef SIG
@@ -376,6 +383,12 @@ static nserror mimesniff__compute_image(lwc_string *official_type,
 		SIG(&corestring_lwc_image_jpeg, "\xff\xd8\xff"),
 		SIG(&corestring_lwc_image_bmp, "BM"),
 		SIG(&corestring_lwc_image_vnd_microsoft_icon, "\x00\x00\x01\x00"),
+		SIG(&corestring_lwc_image_jxl, "\xFF\x0A"), /* containerless jpeg xl*/
+		{
+			(const uint8_t *)"\x00\x00\x00\x0CJXL \x0D\x0A\x87\x0A",
+			12,
+			&corestring_lwc_image_jxl
+		}, /* containered jpeg xl*/
 		{ NULL, 0, NULL }
 	};
 #undef SIG

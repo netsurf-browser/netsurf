@@ -171,6 +171,7 @@ endif
 $(eval $(call pkg_config_find_and_add_enabled,OPENSSL,openssl,OpenSSL))
 
 $(eval $(call pkg_config_find_and_add_enabled,UTF8PROC,libutf8proc,utf8))
+$(eval $(call pkg_config_find_and_add_enabled,JPEGXL,libjxl,JPEGXL))
 $(eval $(call pkg_config_find_and_add_enabled,WEBP,libwebp,WEBP))
 $(eval $(call pkg_config_find_and_add_enabled,PNG,libpng,PNG))
 $(eval $(call pkg_config_find_and_add_enabled,BMP,libnsbmp,BMP))

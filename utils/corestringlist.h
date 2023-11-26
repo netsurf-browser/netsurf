@@ -167,6 +167,7 @@ CORESTRING_LWC_VALUE(application_octet_stream, "application/octet-stream");
 CORESTRING_LWC_VALUE(image_gif, "image/gif");
 CORESTRING_LWC_VALUE(image_png, "image/png");
 CORESTRING_LWC_VALUE(image_jpeg, "image/jpeg");
+CORESTRING_LWC_VALUE(image_jxl, "image/jxl");
 CORESTRING_LWC_VALUE(image_bmp, "image/bmp");
 CORESTRING_LWC_VALUE(image_vnd_microsoft_icon, "image/vnd.microsoft.icon");
 CORESTRING_LWC_VALUE(image_webp, "image/webp");
