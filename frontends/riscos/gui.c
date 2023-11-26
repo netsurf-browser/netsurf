@@ -144,27 +144,6 @@ static ns_wimp_message_list task_messages = {
 		message_URI_PROCESS,
 		message_URI_RETURN_RESULT,
 		message_INET_SUITE_OPEN_URL,
-#ifdef WITH_PLUGIN
-		message_PLUG_IN_OPENING,
-		message_PLUG_IN_CLOSED,
-		message_PLUG_IN_RESHAPE_REQUEST,
-		message_PLUG_IN_FOCUS,
-		message_PLUG_IN_URL_ACCESS,
-		message_PLUG_IN_STATUS,
-		message_PLUG_IN_BUSY,
-		message_PLUG_IN_STREAM_NEW,
-		message_PLUG_IN_STREAM_WRITE,
-		message_PLUG_IN_STREAM_WRITTEN,
-		message_PLUG_IN_STREAM_DESTROY,
-		message_PLUG_IN_OPEN,
-		message_PLUG_IN_CLOSE,
-		message_PLUG_IN_RESHAPE,
-		message_PLUG_IN_STREAM_AS_FILE,
-		message_PLUG_IN_NOTIFY,
-		message_PLUG_IN_ABORT,
-		message_PLUG_IN_ACTION,
-		/* message_PLUG_IN_INFORMED, (not provided by oslib) */
-#endif
 		message_PRINT_SAVE,
 		message_PRINT_ERROR,
 		message_PRINT_TYPE_ODD,
@@ -1779,51 +1758,6 @@ static void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 				ro_url_message_received(message);
 			}
 			break;
-#ifdef WITH_PLUGIN
-		case message_PLUG_IN_OPENING:
-			plugin_opening(message);
-			break;
-		case message_PLUG_IN_CLOSED:
-			plugin_closed(message);
-			break;
-		case message_PLUG_IN_RESHAPE_REQUEST:
-			plugin_reshape_request(message);
-			break;
-		case message_PLUG_IN_FOCUS:
-			break;
-		case message_PLUG_IN_URL_ACCESS:
-			plugin_url_access(message);
-			break;
-		case message_PLUG_IN_STATUS:
-			plugin_status(message);
-			break;
-		case message_PLUG_IN_BUSY:
-			break;
-		case message_PLUG_IN_STREAM_NEW:
-			plugin_stream_new(message);
-			break;
-		case message_PLUG_IN_STREAM_WRITE:
-			break;
-		case message_PLUG_IN_STREAM_WRITTEN:
-			plugin_stream_written(message);
-			break;
-		case message_PLUG_IN_STREAM_DESTROY:
-			break;
-		case message_PLUG_IN_OPEN:
-			if (event == wimp_USER_MESSAGE_ACKNOWLEDGE)
-				plugin_open_msg(message);
-			break;
-		case message_PLUG_IN_CLOSE:
-			if (event == wimp_USER_MESSAGE_ACKNOWLEDGE)
-				plugin_close_msg(message);
-			break;
-		case message_PLUG_IN_RESHAPE:
-		case message_PLUG_IN_STREAM_AS_FILE:
-		case message_PLUG_IN_NOTIFY:
-		case message_PLUG_IN_ABORT:
-		case message_PLUG_IN_ACTION:
-			break;
-#endif
 		case message_PRINT_SAVE:
 			if (event == wimp_USER_MESSAGE_ACKNOWLEDGE)
 				ro_print_save_bounce(message);
