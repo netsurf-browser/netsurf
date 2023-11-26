@@ -103,6 +103,15 @@ jpegxl_cache_convert(struct content *c)
 		NSLOG(netsurf, ERROR, "Unable to allocate decoder");
 		return NULL;
 	}
+
+	decstatus = JxlDecoderSetUnpremultiplyAlpha(jxldec, !bitmap_fmt.pma);
+	if (decstatus != JXL_DEC_SUCCESS) {
+		NSLOG(netsurf, ERROR, "unable to set premultiplied alpha status: %d",
+				decstatus);
+		JxlDecoderDestroy(jxldec);
+		return NULL;
+	}
+
 	decstatus= JxlDecoderSubscribeEvents(jxldec, JXL_DEC_FULL_IMAGE);
 	if (decstatus != JXL_DEC_SUCCESS) {
 		NSLOG(netsurf, ERROR, "Unable to subscribe");
