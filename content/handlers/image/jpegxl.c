@@ -79,20 +79,6 @@ nsjpegxl_create(const content_handler *handler,
 	return NSERROR_OK;
 }
 
-static void image_out_callback(void *opaque, size_t x, size_t y, size_t num_pixels, const void *pixels)
-{
-	struct bitmap * bitmap = opaque;
-	uint8_t * output;
-
-	output = guit->bitmap->get_buffer(bitmap);
-	if (output != NULL) {
-		/* bitmap buffer available */
-		memcpy(output + (x*jxl_output_format.num_channels) + (y * guit->bitmap->get_rowstride(bitmap)),
-		       pixels,
-		       num_pixels*jxl_output_format.num_channels);
-	}
-}
-
 /**
  * create a bitmap from jpeg xl content.
  */
@@ -105,6 +91,7 @@ jpegxl_cache_convert(struct content *c)
 	JxlBasicInfo binfo;
 	const uint8_t *src_data;
 	size_t src_size;
+	uint8_t * output;
 
 	jxldec = JxlDecoderCreate(NULL);
 	if (jxldec == NULL) {
@@ -154,14 +141,14 @@ jpegxl_cache_convert(struct content *c)
 	}
 
 	/* ensure buffer was allocated */
-	if (guit->bitmap->get_buffer(bitmap) == NULL) {
+	output = guit->bitmap->get_buffer(bitmap);
+	if (output == NULL) {
 		/* bitmap with no buffer available */
 		guit->bitmap->destroy(bitmap);
 		JxlDecoderDestroy(jxldec);
 		return NULL;
 	}
-
-	decstatus = JxlDecoderSetImageOutCallback(jxldec, &jxl_output_format, image_out_callback, bitmap);
+	decstatus = JxlDecoderSetImageOutBuffer(jxldec, &jxl_output_format, output, c->size);
 	if (decstatus != JXL_DEC_SUCCESS) {
 		NSLOG(netsurf, ERROR, "unable to set output buffer callback status:%d",decstatus);
 		guit->bitmap->destroy(bitmap);
