@@ -7449,12 +7449,12 @@ it.ro.HelpContentConfig3:Indica se NetSurf impedirà ai siti Web di aprire autom
 nl.ro.HelpContentConfig3:Deze optie geeft aan of NetSurf websites, die automatisch nieuwe pagina's proberen te openen blokkeerd.
 zh_CN.ro.HelpContentConfig3:这表示NetSurf是否会阻止网站在您的桌面上自动打开新窗口。
 
-en.ro.HelpContentConfig4:This indicates whether NetSurf will allow external plug-ins to handle additional types of content, such as Flash.
-de.ro.HelpContentConfig4:Stellt ein, ob externe Pluginroutinen genutzt werden dürfen, um Zusatzinhalte darzustellen (z.B. Flash).
-fr.ro.HelpContentConfig4:Ceci indique si Netsurf doit autoriser les plug-ins externes à manipuler des types de contenu supplémentaires, comme le Flash.
-it.ro.HelpContentConfig4:Indica se NetSurf consentirà ai plug-in esterni di gestire tipi di contenuto aggiuntivi come il Flash.
-nl.ro.HelpContentConfig4:Deze optie geeft aan of NetSurf externe plug-ins, voor aanvullende soorten inhoud zoals Flash toestaat.
-zh_CN.ro.HelpContentConfig4:这表示 NetSurf 是否允许外部插件来处理其他类型的内容，如 Flash 插件。
+en.ro.HelpContentConfig4:This indicates whether NetSurf will allow web pages to style their content with CSS.
+de.ro.HelpContentConfig4:This indicates whether NetSurf will allow web pages to style their content with CSS.
+fr.ro.HelpContentConfig4:This indicates whether NetSurf will allow web pages to style their content with CSS.
+it.ro.HelpContentConfig4:This indicates whether NetSurf will allow web pages to style their content with CSS.
+nl.ro.HelpContentConfig4:This indicates whether NetSurf will allow web pages to style their content with CSS.
+zh_CN.ro.HelpContentConfig4:This indicates whether NetSurf will allow web pages to style their content with CSS.
 
 en.ro.HelpContentConfig7:This indicates whether NetSurf will allow links to open in new windows.
 de.ro.HelpContentConfig7:Stellt ein, ob NetSurf erlaubt, daß Links beim Aufruf neue Browserfenster öffnen dürfen.

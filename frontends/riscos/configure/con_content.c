@@ -30,7 +30,7 @@
 
 #define CONTENT_BLOCK_ADVERTISEMENTS 2
 #define CONTENT_BLOCK_POPUPS 3
-#define CONTENT_NO_PLUGINS 4
+#define CONTENT_BLOCK_CSS 4
 #define CONTENT_TARGET_BLANK 7
 #define CONTENT_DEFAULT_BUTTON 8
 #define CONTENT_CANCEL_BUTTON 9
@@ -47,8 +47,8 @@ bool ro_gui_options_content_initialise(wimp_w w)
                                        nsoption_bool(block_advertisements));
 	ro_gui_set_icon_selected_state(w, CONTENT_BLOCK_POPUPS,
                                        nsoption_bool(block_popups));
-	ro_gui_set_icon_selected_state(w, CONTENT_NO_PLUGINS,
-                                       nsoption_bool(no_plugins));
+	ro_gui_set_icon_selected_state(w, CONTENT_BLOCK_CSS,
+                                       !nsoption_bool(author_level_css));
 	ro_gui_set_icon_selected_state(w, CONTENT_TARGET_BLANK,
                                        nsoption_bool(target_blank));
 	ro_gui_set_icon_selected_state(w, CONTENT_NO_JAVASCRIPT,
@@ -57,7 +57,7 @@ bool ro_gui_options_content_initialise(wimp_w w)
 	/* initialise all functions for a newly created window */
 	ro_gui_wimp_event_register_checkbox(w, CONTENT_BLOCK_ADVERTISEMENTS);
 	ro_gui_wimp_event_register_checkbox(w, CONTENT_BLOCK_POPUPS);
-	ro_gui_wimp_event_register_checkbox(w, CONTENT_NO_PLUGINS);
+	ro_gui_wimp_event_register_checkbox(w, CONTENT_BLOCK_CSS);
 	ro_gui_wimp_event_register_checkbox(w, CONTENT_TARGET_BLANK);
 	ro_gui_wimp_event_register_checkbox(w, CONTENT_NO_JAVASCRIPT);
 	ro_gui_wimp_event_register_button(w, CONTENT_DEFAULT_BUTTON,
@@ -78,7 +78,7 @@ void ro_gui_options_content_default(wimp_pointer *pointer)
 			false);
 	ro_gui_set_icon_selected_state(pointer->w, CONTENT_BLOCK_POPUPS,
 			false);
-	ro_gui_set_icon_selected_state(pointer->w, CONTENT_NO_PLUGINS,
+	ro_gui_set_icon_selected_state(pointer->w, CONTENT_BLOCK_CSS,
 			false);
 	ro_gui_set_icon_selected_state(pointer->w, CONTENT_TARGET_BLANK,
 			true);
@@ -93,8 +93,8 @@ bool ro_gui_options_content_ok(wimp_w w)
 
 	nsoption_set_bool(block_popups,
 			  ro_gui_get_icon_selected_state(w, CONTENT_BLOCK_POPUPS));
-	nsoption_set_bool(no_plugins,
-			  ro_gui_get_icon_selected_state(w, CONTENT_NO_PLUGINS));
+	nsoption_set_bool(author_level_css,
+			  !ro_gui_get_icon_selected_state(w, CONTENT_BLOCK_CSS));
 
 	nsoption_set_bool(target_blank,
 			  ro_gui_get_icon_selected_state(w, CONTENT_TARGET_BLANK));
