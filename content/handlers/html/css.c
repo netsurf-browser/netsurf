@@ -406,6 +406,10 @@ bool html_css_process_link(html_content *htmlc, dom_node *node)
 	}
 	dom_string_unref(rel);
 
+	if (nsoption_bool(author_level_css) == false) {
+		return true;
+	}
+
 	/* type='text/css' or not present */
 	exc = dom_element_get_attribute(node, corestring_dom_type, &type_attr);
 	if (exc == DOM_NO_ERR && type_attr != NULL) {
