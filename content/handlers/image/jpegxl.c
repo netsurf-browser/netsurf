@@ -97,6 +97,17 @@ jpegxl_cache_convert(struct content *c)
 	const uint8_t *src_data;
 	size_t src_size;
 	uint8_t * output;
+	bitmap_fmt_t jxl_fmt = {
+		/** TODO: At the moment we have to set the layout to the only
+		 *        pixel layout that libjxl supports. It looks like they
+		 *        plan to add support for decoding to other layouts
+		 *        in the future, as shown by the TODO in the docs:
+		 *
+		 * https://libjxl.readthedocs.io/en/latest/api_common.html#_CPPv414JxlPixelFormat
+		 */
+		.layout = BITMAP_LAYOUT_R8G8B8A8,
+		.pma    = bitmap_fmt.pma,
+	};
 
 	jxldec = JxlDecoderCreate(NULL);
 	if (jxldec == NULL) {
@@ -180,8 +191,9 @@ jpegxl_cache_convert(struct content *c)
 	
 	JxlDecoderDestroy(jxldec);
 
+	bitmap_format_to_client(bitmap, &jxl_fmt);
 	guit->bitmap->modified(bitmap);
-		
+
 	return bitmap;
 }
 
