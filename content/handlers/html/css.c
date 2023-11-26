@@ -396,10 +396,10 @@ bool html_css_process_link(html_content *htmlc, dom_node *node)
 	if (exc != DOM_NO_ERR || rel == NULL)
 		return true;
 
-	if (strcasestr(dom_string_data(rel), "stylesheet") == 0) {
+	if (strcasestr(dom_string_data(rel), "stylesheet") == NULL) {
 		dom_string_unref(rel);
 		return true;
-	} else if (strcasestr(dom_string_data(rel), "alternate") != 0) {
+	} else if (strcasestr(dom_string_data(rel), "alternate") != NULL) {
 		/* Ignore alternate stylesheets */
 		dom_string_unref(rel);
 		return true;
