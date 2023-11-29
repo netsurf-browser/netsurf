@@ -222,6 +222,16 @@ struct cert_info {
 	long err;		/**< OpenSSL error code */
 };
 
+#if LIBCURL_VERSION_NUM >= 0x072000 /* 7.32.0 depricated CURLOPT_PROGRESSFUNCTION*/
+#define NSCURLOPT_PROGRESS_FUNCTION CURLOPT_XFERINFOFUNCTION
+#define NSCURLOPT_PROGRESS_DATA CURLOPT_XFERINFODATA
+#define NSCURL_PROGRESS_T curl_off_t
+#else
+#define NSCURLOPT_PROGRESS_FUNCTION CURLOPT_PROGRESSFUNCTION
+#define NSCURLOPT_PROGRESS_DATA CURLOPT_PROGRESSDATA
+#define NSCURL_PROGRESS_T double
+#endif
+
 #if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 depricated curl_formadd */
 #define NSCURL_POSTDATA_T curl_mime
 #define NSCURL_POSTDATA_CURLOPT CURLOPT_MIMEPOST
@@ -1180,7 +1190,7 @@ static CURLcode fetch_curl_set_options(struct curl_fetch_info *f)
 	SETOPT(CURLOPT_PRIVATE, f);
 	SETOPT(CURLOPT_WRITEDATA, f);
 	SETOPT(CURLOPT_WRITEHEADER, f);
-	SETOPT(CURLOPT_PROGRESSDATA, f);
+	SETOPT(NSCURLOPT_PROGRESS_DATA, f);
 	SETOPT(CURLOPT_HTTPHEADER, f->headers);
 	code = fetch_curl_set_postdata(f);
 	if (code != CURLE_OK) {
@@ -1716,10 +1726,10 @@ static void fetch_curl_poll(lwc_string *scheme_ignored)
  */
 static int
 fetch_curl_progress(void *clientp,
-		    double dltotal,
-		    double dlnow,
-		    double ultotal,
-		    double ulnow)
+		    NSCURL_PROGRESS_T dltotal,
+		    NSCURL_PROGRESS_T dlnow,
+		    NSCURL_PROGRESS_T ultotal,
+		    NSCURL_PROGRESS_T ulnow)
 {
 	static char fetch_progress_buffer[256]; /**< Progress buffer for cURL */
 	struct curl_fetch_info *f = (struct curl_fetch_info *) clientp;
@@ -2033,7 +2043,7 @@ nserror fetch_curl_register(void)
 
 	SETOPT(CURLOPT_WRITEFUNCTION, fetch_curl_data);
 	SETOPT(CURLOPT_HEADERFUNCTION, fetch_curl_header);
-	SETOPT(CURLOPT_PROGRESSFUNCTION, fetch_curl_progress);
+	SETOPT(NSCURLOPT_PROGRESS_FUNCTION, fetch_curl_progress);
 	SETOPT(CURLOPT_NOPROGRESS, 0);
 	SETOPT(CURLOPT_USERAGENT, user_agent_string());
 	SETOPT(CURLOPT_ENCODING, "gzip");
