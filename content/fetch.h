@@ -94,6 +94,16 @@ typedef struct fetch_msg {
 } fetch_msg;
 
 /**
+ * Fetcher post data types
+ */
+typedef enum {
+	FETCH_POSTDATA_NONE,
+	FETCH_POSTDATA_URLENC,
+	FETCH_POSTDATA_MULTIPART,
+} fetch_postdata_type;
+
+
+/**
  * Fetch POST multipart data
  */
 struct fetch_multipart_data {
@@ -105,6 +115,20 @@ struct fetch_multipart_data {
 	char *rawfile; /**< Raw filename if file is true */
 	bool file; /**< Item is a file */
 };
+
+/**
+ * fetch POST data
+ */
+struct fetch_postdata {
+	fetch_postdata_type type;
+	union {
+		/** Url encoded POST string if type is FETCH_POSTDATA_URLENC */
+		char *urlenc;
+		/** Multipart post data if type is FETCH_POSTDATA_MULTIPART */
+		struct fetch_multipart_data *multipart;
+	} data;
+};
+
 
 typedef void (*fetch_callback)(const fetch_msg *msg, void *p);
 
