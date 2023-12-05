@@ -54,14 +54,14 @@ cookie, bookmark, history windows which require only minimal frontend
 support with the [core window API](docs/core-window-interface.md).
 
 A frontend developer is free to implement any and all of this generic
-functionality thelselves in a manner more integrated into a toolkit.
+functionality themselves in a manner more integrated into a toolkit.
 
 # Implementation
 
 A frontend is generally named for the toolkit it is implementing (i.e
 gtk for the GTK+ toolkit). It is advisable to be as specific as
 possible e.g. the frontend for the windows operating system should
-have been named win32 allowing for an impementation using a differnt
+have been named win32 allowing for an implementation using a different
 toolkit (e.g mfc)
 
 All the files needed for the frontend are contained in a single
@@ -80,7 +80,7 @@ included from the core Makefile):
  - `Makefile.defaults` - allows setting frontend specific makefile variables and overriding of the default core build variables.
  - `Makefile.tools` - allows setting up frontend specific build tooling (as a minimum a tool for the package configuration in PKG_CONFIG)
  
-Source code modules can be named as the devloper desires within the
+Source code modules can be named as the developer desires within the
 frontend directory and should be added to the SOURCES variable as
 desired.
  
@@ -94,16 +94,16 @@ The usual shape for the `main()` function is a six step process:
  2. The toolkit specific initialisation is performed (which may involve calling NetSurf provided utility functions for support operations like logging, message translations etc.)
  3. Initialise the NetSurf core. After this point all browser functionality is available and registered operations can be called.
  4. Perform toolkiit setup, usually opening the initial browsing window (perhaps according to user preferences)
- 5. Run the toolkits main loop while ensuring the Netsurf scheduled operations are also run at teh apropriate time.
+ 5. Run the toolkits main loop while ensuring the NetSurf scheduled operations are also run at the appropriate time.
  6. Finalisation on completion.
 
 ## NetSurf operations tables
 
-The frontend will generally call netsurf interfaces to get a desired
+The frontend will generally call NetSurf interfaces to get a desired
 behaviour e.g. `browser_window_create()` to create a new browsing
 context (the `browser_window_` prefix is historical and does not
 necessarily create a window e.g. on gtk it is more likely to open a
-tab in an existing window). To achive the desired operation some
+tab in an existing window). To achieve the desired operation some
 operations need to be performed by the frontend under control of
 NetSurf, these operations are listed in tables.
 
@@ -113,22 +113,22 @@ tables (and the tables themselves) must remain valid until
 `netsurf_exit()` is called.
 
 There are (currently) twelve sets of operation tables held in separate
-structures. Only five of these are mandantory (misc, window, fetch,
+structures. Only five of these are mandatory (misc, window, fetch,
 bitmap and layout).
 
-In this context mandantory means the tables must be non NULL and do
-not have a suitable default. Each of the mandantory sets contain
+In this context mandatory means the tables must be non NULL and do
+not have a suitable default. Each of the mandatory sets contain
 function pointers to implement operations.
 
 ### misc operation table
 
-The only mandantory operation in this table is schedule.
+The only mandatory operation in this table is schedule.
 
 When schedule is called the frontend must arrange for the passed
 callback to be called with the context parameter after a number of
-miliseconds.
+milliseconds.
 
-This callback is typicaly driven through the toolkits event loop and
+This callback is typically driven through the toolkits event loop and
 it is important such callbacks are not attempted from an operation.
 
 ### window operation table
@@ -143,27 +143,27 @@ generally assumed to contain at least a reference to the underlying
 `browser_window` which is provided in the initial create operation to
 allow subsequent use of various core functionality.
 
-The mandantory window operations are:
+The mandatory window operations are:
  - create - create a new browsing context widget in the frontend toolkit
- - destroy - destoy a previously created `gui_window`
+ - destroy - destroy a previously created `gui_window`
  - invalidate - mark an area of the browsing context viewport as requiring redraw (note no redraw should be attempted from here)
  - get_scroll - get the scroll offsets from the toolkit drawing widget
  - set_scroll - set the scroll offsets on the toolkit drawing widget
  - get_dimensions - get the dimensions of the toolkit drawing widget
- - event - deal with various window events from netsurf which have no additional parameters
+ - event - deal with various window events from NetSurf which have no additional parameters
 
 
 ### fetch operation table
 
 The fetch operations allow the built in scheme fetchers (file, about, resource) to obtain additional information necessary to complete their operation.
 
-The two mandantory operations are:
+The two mandatory operations are:
  - `filetype` - allows the file scheme to obtain a mime type from a file path e.g. `a.file.name.png` would result in `image/png`
  - `get_resource_url` - maps resource scheme paths to URL e.g. `resource:default.css` to `file:///usr/share/netsurf/default.css`
 
 ### bitmap operation table
 
-The bitmap table and all of its operations are mandantory only because
+The bitmap table and all of its operations are mandatory only because
 the empty defaults have not been included as it is assumed a browser
 will want to display images.
 
@@ -173,7 +173,7 @@ until full implementations are made.
 ### layout operation table
 
 The layout table is used to layout text. All operations are given
-strings to manipulate encoded in UTF-8. There are three mandantory
+strings to manipulate encoded in UTF-8. There are three mandatory
 operations:
  - `width` - Calculate the width of a string.
  - `position` - Find the position in a string where an x coordinate falls.
@@ -184,7 +184,7 @@ operations:
 Rather than attempt to describe every aspect of an implementation we
 will rather work from an actual minimal example for the FLTK toolkit.
 
-This is availble as a single commit (`git show 28ecbf82ed3024f51be4c87928fd91bacfc15cbc`) in the NetSurf source repository. Alternatively it can be [viewed in a web browser](https://git.netsurf-browser.org/netsurf.git/commit/?h=vince/fltk&id=28ecbf82ed3024f51be4c87928fd91bacfc15cbc).
+This is available as a single commit (`git show 28ecbf82ed3024f51be4c87928fd91bacfc15cbc`) in the NetSurf source repository. Alternatively it can be [viewed in a web browser](https://git.netsurf-browser.org/netsurf.git/commit/?h=vince/fltk&id=28ecbf82ed3024f51be4c87928fd91bacfc15cbc).
 
 This represents the absolute minimum implementation to get a browser
 window on screen (and be able to click visible links). It is
@@ -201,13 +201,13 @@ As previously described the three GNU Make files are added:
 
 [Makefile](https://git.netsurf-browser.org/netsurf.git/diff/frontends/fltk/Makefile?h=vince/fltk&id=28ecbf82ed3024f51be4c87928fd91bacfc15cbc)
 this shows how the flags are extended to add the fltk headers and
-library. Additionaly the list of sources are built here, as teh
+library. Additionally the list of sources are built here, as the
 comment suggests it is important the SOURCES variable is not expanded
-here so the S_FRONTEND variable is used to allow expansion at teh
+here so the S_FRONTEND variable is used to allow expansion at the
 correct time in the build process.
 
 [Makefile.defaults](https://git.netsurf-browser.org/netsurf.git/diff/frontends/fltk/Makefile.defaults?h=vince/fltk&id=28ecbf82ed3024f51be4c87928fd91bacfc15cbc) 
-has the default setting to control the build parameters and file locations. These can be overriden by the `Makefile.config` at compile time.
+has the default setting to control the build parameters and file locations. These can be overridden by the `Makefile.config` at compile time.
 
 [Makefile.tools](https://git.netsurf-browser.org/netsurf.git/diff/frontends/fltk/Makefile.tools?h=vince/fltk&id=28ecbf82ed3024f51be4c87928fd91bacfc15cbc)
 allows the configuration of additional tools necessary to build for the target as a minimum pkg-config is usually required to find libraries.
@@ -224,21 +224,21 @@ The `netsurf_table` structure is initialised and passed to
 `netsurf_register()`. It should be noted that the approach taken here
 and in most frontends is to have a source module for each operation
 table. The header for each module exposes just the pointer to the
-indivial operation set, this allows for all the operation functions to
+individual operation set, this allows for all the operation functions to
 be static to their module and hence helps reduce global symbol usage.
 
 ### Frontend specific initialisation
 
 Her it is implemented in `nsfltk_init()` this function performs all
 the operations specific to the frontend which must be initialised
-before netsurf itself. In some toolkits this would require calling the
+before NetSurf itself. In some toolkits this would require calling the
 toolkit initialisation (e.g. `gtk_init()`).
 
-It is nessesary to initialise netsurf logging and user options at this
+It is necessary to initialise NetSurf logging and user options at this
 point. A more fully featured implementation would also initialise the
 message translation system here.
 
-### Netsurf initialisation
+### NetSurf initialisation
 
 This is simply the call to `netsurf_init()` from this point the
 browser is fully operational and operations can and will be called.
@@ -256,7 +256,7 @@ example here is a good start.
 
 ### Toolkit run loop
 
-The function `nsfltk_run()` runs the toolkit event loop. In this case it is using the generic scheduleing in the [misc.cpp](https://git.netsurf-browser.org/netsurf.git/diff/frontends/fltk/misc.cpp?h=vince/fltk&id=28ecbf82ed3024f51be4c87928fd91bacfc15cbc) module to ensure callbacks get made at the apropriate time.
+The function `nsfltk_run()` runs the toolkit event loop. In this case it is using the generic scheduling in the [misc.cpp](https://git.netsurf-browser.org/netsurf.git/diff/frontends/fltk/misc.cpp?h=vince/fltk&id=28ecbf82ed3024f51be4c87928fd91bacfc15cbc) module to ensure callbacks get made at the appropriate time.
 
 There is a `nsfltk_done` boolean global checked here so when all the
 browser windows are closed the program will exit.
@@ -265,7 +265,7 @@ A more fully featured port might use the toolkits scheduling rather
 than open coding a solution with a linked list as is done
 here.
 
-A futher optimisation would be to obtain the set of file descriptors
+A further optimisation would be to obtain the set of file descriptors
 being used (with `fetch_fdset()`) for active fetches allowing for
 activity based fetch progress instead of the fallback polling method.
 
@@ -276,7 +276,7 @@ up any resource usage. After the call to `netsurf_exit()` no more
 operation calls will be made and all caches used by the core will be
 flushed.
 
-If user option chnages are to be made persistant `nsoption_finalise()`
+If user option changes are to be made persistent `nsoption_finalise()`
 should be called.
 
 The finalisation of logging will ensure that any output buffers are
@@ -293,7 +293,7 @@ references it in the gui_window structure which it returns to the
 caller. Technically we could simply return the `NS_Window` object as
 the gui_window pointer but this implementation is avoiding the cast.
 
-Secondly `Fl_Double_Window` is subclassed as `NS_Widget`. The sublass
+Secondly `Fl_Double_Window` is subclassed as `NS_Widget`. The subclass
 allows the close callback to be accessed so the global `nsfltk_done`
 boolean can be set during the destructor method.
 
@@ -303,11 +303,11 @@ more extensive implementation would add other window furniture here
 
 The implementation subclasses `Fl_Widget` implementing the draw
 method to render the browsing context and the handle method to handle
-mouse events to allow teh user to click.
+mouse events to allow the user to click.
 
 The `NS_Widget::handle()` method simply translates the mouse press
-event from widget coordinates to netsurf canvas cooridinates and maps
-teh mouse button state. The core is informed of these events using
+event from widget coordinates to NetSurf canvas coordinates and maps
+the mouse button state. The core is informed of these events using
 `browser_window_mouse_click()`
 
 The `NS_Widget::draw` method similarly translates the fltk toolkits
@@ -317,7 +317,7 @@ the plotting context to render the browsing context within the area
 specified. One thing to note here is the translation between the
 coordinates of the render area and the internal page canvas given as
 the second and third parameters to the draw call. When scrolling is
-required this is achived by altering these offsets.
+required this is achieved by altering these offsets.
 
 
 ### `nsfltk_window_invalidate()`
@@ -343,7 +343,7 @@ colour and performs the appropriate fltk draw function (`fl_line`,
 # Worked Example next steps
 
 The previous section outlined the absolute minimum
-implementation. Here we can exmaine some next steps taken to extend
+implementation. Here we can examine some next steps taken to extend
 the frontend.
 
 ## Improving the user interface
@@ -397,17 +397,17 @@ perceived functionality.
 
 The [core window interface](docs/core-window-interface.md) allows a
 frontend to use inbuilt rendering for several interfaces gaining a
-great deal of functionality for very litte code. This one interface
+great deal of functionality for very little code. This one interface
 set gives a cookie viewer,a local and global history viewer and a
 hotlist(bookmarks) viewer.
 
 # Conclusion
 
-Hopefully this breif overview and worked example should give the
-prospectinve frontend developer enough information to understand how
+Hopefully this brief overview and worked example should give the
+prospective frontend developer enough information to understand how
 to get started implementing a new frontend toolkit for NetSurf.
 
-As can be seen there is actualy very little novel code necessary to
+As can be seen there is actually very little novel code necessary to
 get started though I should mention that the move from "minimal" to
 "full" implementation is a large undertaking and it would be wise to
 talk with the NetSurf developers if undertaking such work.
