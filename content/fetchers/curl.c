@@ -1132,7 +1132,7 @@ fetch_curl_postdata_convert(CURL *chandle,
  */
 static CURLcode fetch_curl_set_postdata(struct curl_fetch_info *f)
 {
-	CURLcode code;
+	CURLcode code = CURLE_OK;
 
 #undef SETOPT
 #define SETOPT(option, value) { \
