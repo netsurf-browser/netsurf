@@ -938,12 +938,13 @@ fetch_curl_postdata_convert(CURL *chandle,
 {
 	curl_mime *cmime;
 	curl_mimepart *part;
-	CURLcode code;
+	CURLcode code = CURLE_OK;
 	size_t value_len;
 
 	cmime = curl_mime_init(chandle);
 	if (cmime == NULL) {
-		goto convert_failed;
+		NSLOG(netsurf, WARNING, "postdata conversion failed to curl mime context");
+		return NULL;
 	}
 
 	/* iterate post data */
@@ -1039,7 +1040,7 @@ fetch_curl_postdata_convert(CURL *chandle,
 	return cmime;
 
 convert_failed:
-	NSLOG(netsurf, INFO, "postdata conversion failed with curl code: %d", code);
+	NSLOG(netsurf, WARNING, "postdata conversion failed with curl code: %d", code);
 	curl_mime_free(cmime);
 	return NULL;
 }
