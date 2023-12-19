@@ -2,4 +2,4 @@
 |
 Set Unicode$Dir <Obey$Dir>
 SetMacro Unicode$Path <Unicode$Dir>.,Resources:$.Resources.Unicode.
-IconSprites Unicode:!Sprites
+IconSprites Unicode:Themes.!Sprites
