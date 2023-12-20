@@ -33,8 +33,8 @@ SetMacro NetSurf$ChoicesSave <Choices$Write>.WWW.NetSurf.Choices
 RMEnsure UtilityModule 3.00 Error NetSurf needs RISC OS 3 or later
 
 | Ensure Nested WIMP is installed
-| http://acorn.riscos.com/ (in the universal boot archive)
-RMEnsure WindowManager 3.80 Error NetSurf requires the Nested Window Manager. This can be obtained by downloading the Universal Boot sequence from http://acorn.riscos.com/
+| http://www.riscos.com/ftp_space/generic/uniboot/ (i.e. install universal boot)
+RMEnsure WindowManager 3.80 Error NetSurf requires the Nested Window Manager. This can be obtained by downloading the Universal Boot sequence from http://www.riscos.com/ftp_space/generic/uniboot/
 
 | Check for various key resources - can't do much if they don't exist
 If "<System$Path>" = "" Then Set System$Path_Message System resources not found.

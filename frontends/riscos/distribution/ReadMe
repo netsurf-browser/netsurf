@@ -31,7 +31,7 @@ Double click on !NetSurf in your chosen location to launch NetSurf.
 Note   NetSurf requires WindowManager 3.80 or later. This comes
        with RISC OS 4 and above. RISC OS 3 users should install
        the Universal Boot Sequence from:
-       http://acorn.riscos.com/riscos/releases/UniBoot/ or,
+       http://www.riscos.com/ftp_space/generic/uniboot/ or,
        alternatively, use the HardDisc4 and associated System
        resources provided by RISC OS Open:
        https://www.riscosopen.org/content/downloads/common
