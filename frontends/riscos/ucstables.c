@@ -398,49 +398,47 @@ static const char *localencodings[] = {
 	"ISO-8859-10//TRANSLIT",
 	"ISO-8859-13//TRANSLIT",
 	"ISO-8859-14//TRANSLIT",
-	"ISO-8859-16//TRANSLIT",
-#define CONT_ENC_END 116	/* RISC OS alphabet numbers lie in a
-				 * contiguous range [100,CONT_ENC_END]
-				 * _except_ for Cyrillic2, which doesn't.
-				 */
-	"CP866//TRANSLIT"	/* Cyrillic2 - 120 */
+	"ISO-8859-16//TRANSLIT", /* Latin10 - 116 */
+	NULL,			 /* UTF-16, if you believe HdrSrc (Unused) */
+	NULL,			 /* Unused */
+	NULL,			 /* Unused */
+	"CP866//TRANSLIT"	 /* Cyrillic2 - 120 */
 };
 
-static const struct special {
-	char local;		/**< Local 8bit representation */
-	char len;		/**< Length (in bytes) of UTF-8 character */
-	const char *utf;	/**< UTF-8 representation */
-} special_chars[] = {
-	{ 0x80, 3, "\xE2\x82\xAC" },	/* EURO SIGN */
-	{ 0x81, 2, "\xC5\xB4" },	/* LATIN CAPITAL LETTER W WITH CIRCUMFLEX */
-	{ 0x82, 2, "\xC5\xB5" },	/* LATIN SMALL LETTER W WITH CIRCUMFLEX */
-	{ 0x84, 3, "\xE2\x9C\x98" },	/* HEAVY BALLOT X */
-	{ 0x85, 2, "\xC5\xB6" },	/* LATIN CAPITAL LETTER Y WITH CIRCUMFLEX */
-	{ 0x86, 2, "\xC5\xB7" },	/* LATIN SMALL LETTER Y WITH CIRCUMFLEX */
-	{ 0x88, 3, "\xE2\x87\x90" },	/* LEFTWARDS DOUBLE ARROW */
-	{ 0x89, 3, "\xE2\x87\x92" },	/* RIGHTWARDS DOUBLE ARROW */
-	{ 0x8a, 3, "\xE2\x87\x93" },	/* DOWNWARDS DOUBLE ARROW */
-	{ 0x8b, 3, "\xE2\x87\x91" },	/* UPWARDS DOUBLE ARROW */
-	{ 0x8c, 3, "\xE2\x80\xA6" },	/* HORIZONTAL ELLIPSIS */
-	{ 0x8d, 3, "\xE2\x84\xA2" },	/* TRADE MARK SIGN */
-	{ 0x8e, 3, "\xE2\x80\xB0" },	/* PER MILLE SIGN */
-	{ 0x8f, 3, "\xE2\x80\xA2" },	/* BULLET */
-	{ 0x90, 3, "\xE2\x80\x98" },	/* LEFT SINGLE QUOTATION MARK */
-	{ 0x91, 3, "\xE2\x80\x99" },	/* RIGHT SINGLE QUOTATION MARK */
-	{ 0x92, 3, "\xE2\x80\xB9" },	/* SINGLE LEFT-POINTING ANGLE QUOTATION MARK */
-	{ 0x93, 3, "\xE2\x80\xBA" },	/* SINGLE RIGHT-POINTING ANGLE QUOTATION MARK */
-	{ 0x94, 3, "\xE2\x80\x9C" },	/* LEFT DOUBLE QUOTATION MARK */
-	{ 0x95, 3, "\xE2\x80\x9D" },	/* RIGHT DOUBLE QUOTATION MARK */
-	{ 0x96, 3, "\xE2\x80\x9E" },	/* DOUBLE LOW-9 QUOTATION MARK */
-	{ 0x97, 3, "\xE2\x80\x93" },	/* EN DASH */
-	{ 0x98, 3, "\xE2\x80\x94" },	/* EM DASH */
-	{ 0x99, 3, "\xE2\x88\x92" },	/* MINUS SIGN */
-	{ 0x9a, 2, "\xC5\x92" },	/* LATIN CAPITAL LIGATURE OE */
-	{ 0x9b, 2, "\xC5\x93" },	/* LATIN SMALL LIGATURE OE */
-	{ 0x9c, 3, "\xE2\x80\xA0" },	/* DAGGER */
-	{ 0x9d, 3, "\xE2\x80\xA1" },	/* DOUBLE DAGGER */
-	{ 0x9e, 3, "\xEF\xAC\x81" },	/* LATIN SMALL LIGATURE FI */
-	{ 0x9f, 3, "\xEF\xAC\x82" } 	/* LATIN SMALL LIGATURE FL */
+/* These are the Acorn Latin1 C1 block between [0x80,0x9f] */
+static const char *special_chars[] = {
+	"\xE2\x82\xAC",	/* EURO SIGN */
+	"\xC5\xB4",	/* LATIN CAPITAL LETTER W WITH CIRCUMFLEX */
+	"\xC5\xB5",	/* LATIN SMALL LETTER W WITH CIRCUMFLEX */
+	NULL,		/* unused */
+	"\xE2\x9C\x98",	/* HEAVY BALLOT X */
+	"\xC5\xB6",	/* LATIN CAPITAL LETTER Y WITH CIRCUMFLEX */
+	"\xC5\xB7",	/* LATIN SMALL LETTER Y WITH CIRCUMFLEX */
+	NULL,		/* unused */
+	"\xE2\x87\x90",	/* LEFTWARDS DOUBLE ARROW */
+	"\xE2\x87\x92",	/* RIGHTWARDS DOUBLE ARROW */
+	"\xE2\x87\x93",	/* DOWNWARDS DOUBLE ARROW */
+	"\xE2\x87\x91",	/* UPWARDS DOUBLE ARROW */
+	"\xE2\x80\xA6",	/* HORIZONTAL ELLIPSIS */
+	"\xE2\x84\xA2",	/* TRADE MARK SIGN */
+	"\xE2\x80\xB0",	/* PER MILLE SIGN */
+	"\xE2\x80\xA2",	/* BULLET */
+	"\xE2\x80\x98",	/* LEFT SINGLE QUOTATION MARK */
+	"\xE2\x80\x99",	/* RIGHT SINGLE QUOTATION MARK */
+	"\xE2\x80\xB9",	/* SINGLE LEFT-POINTING ANGLE QUOTATION MARK */
+	"\xE2\x80\xBA",	/* SINGLE RIGHT-POINTING ANGLE QUOTATION MARK */
+	"\xE2\x80\x9C",	/* LEFT DOUBLE QUOTATION MARK */
+	"\xE2\x80\x9D",	/* RIGHT DOUBLE QUOTATION MARK */
+	"\xE2\x80\x9E",	/* DOUBLE LOW-9 QUOTATION MARK */
+	"\xE2\x80\x93",	/* EN DASH */
+	"\xE2\x80\x94",	/* EM DASH */
+	"\xE2\x88\x92",	/* MINUS SIGN */
+	"\xC5\x92",	/* LATIN CAPITAL LIGATURE OE */
+	"\xC5\x93",	/* LATIN SMALL LIGATURE OE */
+	"\xE2\x80\xA0",	/* DAGGER */
+	"\xE2\x80\xA1",	/* DOUBLE DAGGER */
+	"\xEF\xAC\x81",	/* LATIN SMALL LIGATURE FI */
+	"\xEF\xAC\x82" 	/* LATIN SMALL LIGATURE FL */
 };
 
 
@@ -470,20 +468,22 @@ nserror utf8_to_local_encoding(const char *string, size_t len, char **result)
 
 	/* read system alphabet */
 	error = xosbyte1(osbyte_ALPHABET_NUMBER, 127, 0, &alphabet);
-	if (error)
+	/* Assume Latin1 for anything we know nothing about */
+	if (error || alphabet < territory_ALPHABET_BFONT ||
+			alphabet > territory_ALPHABET_CYRILLIC2)
 		alphabet = territory_ALPHABET_LATIN1;
 
 	/* UTF-8 -> simply copy string */
-	if (alphabet == 111 /* UTF-8 */) {
+	if (alphabet == territory_ALPHABET_UTF8) {
 		*result = strndup(string, len);
 		return NSERROR_OK;
 	}
 
 	/* get encoding name */
-	enc = (alphabet <= CONT_ENC_END ? localencodings[alphabet - 100]
-			      : (alphabet == 120 ?
-					localencodings[CONT_ENC_END - 100 + 1]
-						 : localencodings[0]));
+	enc = localencodings[alphabet - territory_ALPHABET_BFONT];
+	/* Assume Latin1 for any that are unused */
+	if (enc == NULL)
+		enc = localencodings[0];
 
 	/* create output buffer */
 	*(result) = malloc(len + 1);
@@ -498,13 +498,32 @@ nserror utf8_to_local_encoding(const char *string, size_t len, char **result)
 	 * characters and inserting appropriate output for characters
 	 * that iconv can't handle. */
 	for (off = 0; off < len; off = utf8_next(string, len, off)) {
-		if (string[off] != 0xE2 &&
-				string[off] != 0xC5 && string[off] != 0xEF)
+		/* Specials only start with C5/E2/EF */
+		if (string[off] != 0xC5 &&
+				string[off] != 0xE2 && string[off] != 0xEF)
 			continue;
 
+		/* Ignore truncated input */
+		if (off + 2 + (string[off] == 0xC5 ? 0 : 1) >= len)
+			continue;
+
+		/* Search to see if this character is special */
 		for (i = 0; i != NOF_ELEMENTS(special_chars); i++) {
-			if (strncmp(string + off, special_chars[i].utf,
-					special_chars[i].len) != 0)
+			/* Skip unused special char */
+			if (special_chars[i] == NULL)
+				continue;
+
+			/* Skip 2-byte non-match */
+			if (string[off] == 0xC5 &&
+				    (string[off] != special_chars[i][0] ||
+				    string[off+1] != special_chars[i][1]))
+				continue;
+
+			/* Skip 3-byte non-match */
+			if (string[off] != 0xC5 &&
+				    (string[off] != special_chars[i][0] ||
+				    string[off+1] != special_chars[i][1] ||
+				    string[off+2] != special_chars[i][2]))
 				continue;
 
 			/* 0 length has a special meaning to utf8_to_enc */
@@ -524,9 +543,13 @@ nserror utf8_to_local_encoding(const char *string, size_t len, char **result)
 				free(temp);
 			}
 
-			*cur_pos = special_chars[i].local;
+			/* Emit conversion for this special character */
+			*cur_pos = 0x80 + i;
 			*(++cur_pos) = '\0';
-			prev_off = off + special_chars[i].len;
+			prev_off = off + 2 + (string[off] == 0xC5 ? 0 : 1);
+
+			/* Return to outer loop to process remaining input */
+			break;
 		}
 	}
 
@@ -561,7 +584,7 @@ nserror utf8_to_local_encoding(const char *string, size_t len, char **result)
 nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 {
 	os_error *error;
-	int alphabet, i, num_specials = 0, result_alloc;
+	int alphabet, num_specials = 0, result_alloc;
 #define SPECIAL_CHUNK_SIZE 255
 	size_t off, prev_off, cur_off;
 	char *temp;
@@ -576,11 +599,13 @@ nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 
 	/* read system alphabet */
 	error = xosbyte1(osbyte_ALPHABET_NUMBER, 127, 0, &alphabet);
-	if (error)
+	/* Assume Latin1 for anything we know nothing about */
+	if (error || alphabet < territory_ALPHABET_BFONT ||
+			alphabet > territory_ALPHABET_CYRILLIC2)
 		alphabet = territory_ALPHABET_LATIN1;
 
 	/* UTF-8 -> simply copy string */
-	if (alphabet == 111 /* UTF-8 */) {
+	if (alphabet == territory_ALPHABET_UTF8) {
 		temp = strndup(string, len);
 		if (!temp)
 			return NSERROR_NOMEM;
@@ -590,10 +615,10 @@ nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 	}
 
 	/* get encoding name */
-	enc = (alphabet <= CONT_ENC_END ? localencodings[alphabet - 100]
-			      : (alphabet == 120 ?
-					localencodings[CONT_ENC_END - 100 + 1]
-						 : localencodings[0]));
+	enc = localencodings[alphabet - territory_ALPHABET_BFONT];
+	/* Assume Latin1 for any that are unused */
+	if (enc == NULL)
+		enc = localencodings[0];
 
 	/* create output buffer (oversized) */
 	result_alloc = (len * 4) + (3 * SPECIAL_CHUNK_SIZE) + 1;
@@ -610,52 +635,54 @@ nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 	 * characters and inserting appropriate output for characters
 	 * that iconv can't handle. */
 	for (off = 0; off < len; off++) {
+		/* Skip non-special characters */
 		if (string[off] < 0x80 || string[off] > 0x9f)
 			continue;
 
-		for (i = 0; i != NOF_ELEMENTS(special_chars); i++) {
-			if (string[off] != special_chars[i].local)
-				continue;
-
-			/* 0 length has a special meaning to utf8_from_enc */
-			if (off - prev_off > 0) {
-				err = utf8_from_enc(string + prev_off, enc,
-						    off - prev_off, &temp, NULL);
-				if (err != NSERROR_OK) {
-					assert(err != NSERROR_BAD_ENCODING);
-					NSLOG(netsurf, INFO,
-					      "utf8_from_enc failed");
-					free(*result);
-					return NSERROR_NOMEM;
-				}
-
-				strcat((*result) + cur_off, temp);
-
-				cur_off += strlen(temp);
-
-				free(temp);
+		/* 0 length has a special meaning to utf8_from_enc */
+		if (off - prev_off > 0) {
+			err = utf8_from_enc(string + prev_off, enc,
+					off - prev_off, &temp, NULL);
+			if (err != NSERROR_OK) {
+				assert(err != NSERROR_BAD_ENCODING);
+				NSLOG(netsurf, INFO, "utf8_from_enc failed");
+				free(*result);
+				return NSERROR_NOMEM;
 			}
 
-			strcat((*result) + cur_off, special_chars[i].utf);
+			strcat((*result) + cur_off, temp);
 
-			cur_off += special_chars[i].len;
+			cur_off += strlen(temp);
 
-			prev_off = off + 1;
+			free(temp);
+		}
 
-			num_specials++;
-			if (num_specials % SPECIAL_CHUNK_SIZE ==
-					SPECIAL_CHUNK_SIZE - 1) {
-				char *temp = realloc((*result),
-						result_alloc +
-						(3 * SPECIAL_CHUNK_SIZE));
-				if (!temp) {
-					free(*result);
-					return NSERROR_NOMEM;
-				}
+		/* Append UTF-8 encoded special character or U+FFFD if none */
+		if (special_chars[string[off]-0x80] != NULL) {
+			const char *special = special_chars[string[off]-0x80];
+			strcat((*result) + cur_off, special);
+			cur_off += 2 + (special[0] == 0xC5 ? 0 : 1);
+		} else {
+			strcat((*result) + cur_off, "\xef\xbf\xbd");
+			cur_off += 3;
+		}
 
-				*result = temp;
-				result_alloc += (3 * SPECIAL_CHUNK_SIZE);
+		prev_off = off + 1;
+
+		/* Resize output buffer if necessary */
+		num_specials++;
+		if (num_specials % SPECIAL_CHUNK_SIZE ==
+				SPECIAL_CHUNK_SIZE - 1) {
+			char *temp = realloc((*result),
+					result_alloc +
+					(3 * SPECIAL_CHUNK_SIZE));
+			if (!temp) {
+				free(*result);
+				return NSERROR_NOMEM;
 			}
+
+			*result = temp;
+			result_alloc += (3 * SPECIAL_CHUNK_SIZE);
 		}
 	}
 
