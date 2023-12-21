@@ -264,7 +264,7 @@ textplain_drain_input(textplain_content *c,
 		      parserutils_inputstream *stream,
 		      parserutils_error terminator)
 {
-	static const uint8_t *u_fffd = (const uint8_t *) "\xef\xbf\xfd";
+	static const uint8_t *u_fffd = (const uint8_t *) "\xef\xbf\xbd";
 	const uint8_t *ch;
 	size_t chlen, offset = 0;
 
