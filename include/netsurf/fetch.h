@@ -99,6 +99,23 @@ struct gui_fetch_table {
 	 */
 	char *(*mimetype)(const char *ro_path);
 
+	/**
+	 * Open a socket
+	 *
+	 * \param domain Communication domain
+	 * \param type Socket type
+	 * \param protocol Protocol
+	 * \return Socket descriptor on success, -1 on error and errno set
+	 */
+	int (*socket_open)(int domain, int type, int protocol);
+
+	/**
+	 * Close a socket
+	 *
+	 * \param socket Socket descriptor
+	 * \return 0 on success, -1 on error and errno set
+	 */
+	int (*socket_close)(int socket);
 };
 
 #endif

@@ -20,6 +20,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 #include "utils/config.h"
 #include "utils/errors.h"
@@ -497,6 +500,12 @@ static nserror verify_fetch_register(struct gui_fetch_table *gft)
 	}
 	if (gft->mimetype == NULL) {
 		gft->mimetype = gui_default_mimetype;
+	}
+	if (gft->socket_open == NULL) {
+		gft->socket_open = socket;
+	}
+	if (gft->socket_close == NULL) {
+		gft->socket_close = close;
 	}
 
 	return NSERROR_OK;
