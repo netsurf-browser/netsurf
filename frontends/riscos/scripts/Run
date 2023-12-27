@@ -95,6 +95,10 @@ RMEnsure Iconv 0.12 Error NetSurf requires Iconv 0.12 or later. Please use the R
 RMEnsure CryptRandom 0.13 NetSurfRMLoad System:Modules.CryptRand
 RMEnsure CryptRandom 0.13 Error NetSurf requires CryptRandom 0.13 or later.  Please use the RISC OS Configure app to update the computer's !System directory from the NetSurf archive.
 
+| Ensure SocketWatch
+RMEnsure SocketWatch 0.07 NetSurfRMLoad System:Modules.Network.SockWatch
+RMEnsure SocketWatch 0.07 Error NetSurf requires SocketWatch 0.07 or later. Please use the RISC OS Configure app to update the computer's !System directory from the NetSurf archive.
+
 | Disable SpecialFX, if present
 Set NetSurf$SpecialFX 1
 RMEnsure SpecialFX 1.00 Set NetSurf$SpecialFX 0
