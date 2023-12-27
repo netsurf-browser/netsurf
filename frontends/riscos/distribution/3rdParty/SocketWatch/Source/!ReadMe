@@ -1,0 +1,133 @@
+Document v0.07.  (C) Dickon Hood, see licence for details of copying etc.
+
+
+SocketWatch
+===========
+
+SocketWatch is a simple module designed to reduce the requirement of Wimp
+applications using sockets to constantly poll them using Null Wimp polls for
+data.
+
+If you're not a programmer, stop reading now, this will probably make little
+sense to you.  If you are a programmer, but don't write networking
+applications, again, this is unlikely to be of interest.
+
+
+Rationale
+---------
+
+At boot time, my machine loads and runs five seperate applications which
+require open sockets.  As none of these have support modules associated with
+them, I'm assuming that they are constantly polling the sockets they open on
+null polls.  This is inefficient.
+
+Sockets can be marked as asynchronous.  If they are, an Internet event (19)
+is generated whenever something interesting happens to them.  Events are only
+accessable to modules, however, and are useless in a Wimp environment.  The
+answer is to write a module which does that and notifies the parent
+application that something has happened.  If every application did this,
+there'd be another five or six modules running on my machine, all doing much
+the same job, which I don't need.
+
+This attempts to address the issue by implementing a module with an open
+interface, and one which is generic enough to be applicable to almost every
+app. which could want to use it.
+
+
+Usage
+-----
+
+SocketWatch relies upon a feature of Risc OS 3.1 and upwards, so won't work
+on ROS2.  Sorry, but there we go.
+
+Sockets are registered with the module.  At this point, the socket is marked
+as asynchronous (so the parent app. doesn't need to).  A pollword and bit
+number to set are also supplied.
+
+As some internal structure has to be created, a pollword of 0 is acceptable,
+and, if passed, the module will use one of the words in this structure as the
+pollword.  This is returned to the app. in r0.
+
+When an Internet event is triggered, the module scans all registered sockets. 
+If one is matched, the appropriate bit is set in the pollword.  This allows
+other bits to be reserved for other things.  Note, it is not an error for a
+socket to have multiple pollwords associated with it; there is no reason I
+can think of for two apps. to share one socket (*why* is another matter, but
+it shouldn't be an error); these may both register PWs for them.
+
+Usage with AcornSSL
+-------------------
+SocketWatch should only be used with the normal socket numbers, not the ssl 
+socket handles used by AcornSSL.
+However, it can be used for secure sockets with a sequence like:
+   Socket_Create              to get socket normal socket descriptor
+   AcornSSL_CreateSession     to get ssl socket
+   SocketWatch_Register       of normal socket descriptor
+
+SWIs
+----
+
+SWI SocketWatch_Register (0x52280)
+
+On entry: r0 => pollword, 0 for module to allocate one,
+          r1 =  bitmask to set if there's activity
+          r2 =  socket number.
+
+On exit:  r0 => pollword.
+          If an error is raised by Socket_Ioctl, r0 is => error block
+          and the socket is not registered.
+
+If the pollword passed is 0, one allocated from the internal structure will
+be returned.  Note that this is freed when at the time of deregistering and
+may not be used afterwards.
+
+
+
+SWI SocketWatch_Deregister (0x52281)
+
+On entry: r0 =  socket,
+          r1 => pollword.
+
+On exit:  all preserved.
+
+The socket is no longer watched.  If the pollword was allocated by the
+module, it is not valid once this call is called.
+
+
+
+SWI SocketWatch_AtomicReset (0x52282)
+
+On entry: r0 => pollword
+          r1 =  new value
+
+On exit:  r0 =  old value
+          r1 preserved.
+
+This SWI reads from r0, writes r1 to r0, then exits, all with IRQs off,
+making it an atomic operation (ie., one which may not be interrupted).  It is
+a problem with Pollwords in that they're used by IRQ or Callback code, yet
+read and reset by usermode code which can't disable IRQs easily.  This
+removes the problem where the app. reads the PW, IRQ routine sets a couple of
+bits, then the forground resets it.
+
+
+
+SWI SocketWatch_AllocPW (0x52283)
+
+On entry: -
+
+On exit:  r0 => 4 bytes of RAM which may be released by SWI
+SocketWatch_DeallocPW.
+
+ATM, this SWI claims four bytes of RMA; this isn't efficient, and may be
+changed in later releases.  The SWI is provided for convenience's sake.
+
+
+
+SWI SocketWatch_DeallocPW (0x52284)
+
+On entry: r0 => pollword, as allocated by SWI SocketWatch_AllocPW.
+
+On exit:  all preserved.
+
+ATM this calls OS_Module 7 to free the word.

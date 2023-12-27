@@ -1,0 +1,137 @@
+Name   : SocketWatch
+Purpose: Asynchronous socket operations without null polls
+Version: 0.07  (11-01-2019)
+Status : GNU GPL
+Authors: Dickon Hood, Frank de Bruijn
+
+This isn't an official release.
+
+In November 2003 I noticed SocketWatch 0.04y had a couple of bugs. After I had
+corrected them and was almost ready to release 0.05, I discovered the
+'official' place for SocketWatch was now on the Nettle site
+(http://nettle.sourceforge.net). So I contacted the Nettle maintainers, told
+them about the bugs and sent them all the work I had done on repairing it,
+more or less expecting to hear something about an official release 0.05 within
+a couple of months...
+
+Still nothing three months later, so I sent one more e-mail (which remained
+unanswered) and put 0.05 on my site.
+
+
+Installing
+==========
+The zip archive contains an application called !ModInst. Run it to install the
+module on your computer. If you want to install the module manually, you can
+find it in !ModInst.Resources.!System.310.Modules.Network.
+
+
+Source
+======
+The source code is provided as an ObjAsm file in the Source directory in the
+archive. If you want to assemble the module again, run the Build file. The
+module will be recreated and moved to the !ModInst application for
+installation.
+
+
+Version history
+===============
+11-01-2019  0.07
+----------------
+Catered for errors in SocketWatch_Register better.
+Added notes about use with AcornSSL.
+
+12-06-2012
+----------
+Removed dependency on private library (providing constants) so the source can
+be used stand alone. Added Build script (previous builds were done from
+StrongED, using a multipurpose ObjAsmRun script). Nothing changed otherwise.
+MD5 checksum still f2bb3f8d911d0b20a43d6ee135c3ae97.
+
+23-06-2006  0.06
+----------------
+Fixed small bug in the AtomicReset SWI (flags not restored in 26 bit mode, so
+IRQ bit not cleared). Not sure if this ever bothered anyone (think not as it
+was already present in 0.04y).
+Removed disabling interrupts in EventHandler as event handlers are entered
+with interrupts disabled.
+Also some more source clean ups and more comments added.
+MD5 checksum: f2bb3f8d911d0b20a43d6ee135c3ae97.
+
+14-08-2005
+----------------
+Moved the source to ObjAsm. No functional changes to the code. MD5 checksum
+still 90f3323981a0e287f488e9a59b2e5373. No new release.
+
+12-12-2003  0.05
+----------------
+First one by me. Came about when I was investigating a memory leak on my RPC.
+MD5 checksum of the module: 90f3323981a0e287f488e9a59b2e5373.
+
+The detailed list of changes below was for the benefit of the Nettle
+maintainers and originally sent to Ian in an e-mail on 11-12-2003.
+Use the single file source of 0.04y as a reference.
+
+- Most of the variable definitions from Flags% to r12End% aren't required. You
+  just need SockList% (with a FNdb(-4) instead of a FNdb(4)) and r12End%. The
+  rest was removed.
+- No flag definitions are needed. Removed.
+- Socket structure definitions and ErrorChunk%: no changes.
+- From the module header to EventHandler_GotOne32%: merely some optimisations.
+- Error texts: were placed near the routines that use them. This was mainly
+  cosmetic, but it had the added advantage of allowing me to replace all the
+  FNADRLs with simple ADRs.
+- GetBlock%: removed.
+- ReleaseBlock%: removed.
+- IsHexNum_lp1%: not required. Removed.
+- moveBytes%: not required. Removed.
+- From title string to SWI-handler: no real changes.
+- From Command% to CommandText%: moved the table and the help and syntax texts
+  for the commands to just before the SWDL_Code% routine and 'cleaned up' the
+  texts a bit, but that qualifies as cosmetic.
+- Syslog_Name%: not required. Removed.
+- Syslog_Version%: not required. Removed.
+- From Init% to FinalCode%: several changes, the most important one being the
+  removal of the claiming of a 16K block of temporary workspace which was
+  neither used nor released.
+  There's also the stacking of r7 to r9/r11. It's true that these registers
+  should be saved (according to the PRM) but only if they're modified. So why
+  bother if they're not? Replacing this with just stacking r14 enabled a
+  'cleaner' jump out of the routines on errors.
+  At the very beginning of Init%, I inserted a check for a value in r12 on
+  entry. This has to do with re-initialisation after a 'Tidy' operation. Not
+  sure if that's still required though (hasn't the 'Tidy' functionality been
+  blocked or removed from RISC OS these days or is that an unfounded rumour?).
+  I removed everything connected with the CRC-check, including the error text.
+  SocketWatch is the only module I've ever come across using something like
+  this and I honestly fail to see what use it is here. But if you do see that,
+  then by all means leave it in.
+  In Final% the (unused) ModuleDying% flag was set, but as that had been
+  removed anyway, so were the three instructions involved in this action.
+  Actually, as the variable Flags% was re-used to point at the module flags
+  word, this flag bit isn't set in the first word of the workspace at all. In
+  fact, on finalisation SocketWatch 0.04y sets bit 1 of the word 592 bytes
+  from the address r12 happens to point at. That *could* be in the unused 16K
+  block that was claimed on initialisation, but there's no guarantee. Nasty
+  (and no, I hadn't realised this yet when I wrote the comment on Flags% in
+  the Source_004y file...).
+  FinalCode% (renamed release%) was more or less integrated with Init% (sort
+  of 'glued to the bottom') but otherwise essentially unchanged, apart from
+  removing the call to ReleaseBlock% (including the stacking/unstacking of
+  r14) in favour of a simple MOV r0,#7 / SWI XOS_Module sequence).
+- SWI_Register% contained some code at the start (up to the Bvs instruction) I
+  couldn't make sense of. If you can, please enlighten me. I asked Dickon
+  about this in my first email to him and he didn't understand it anymore
+  either. So I removed it.
+  The rest is essentially unchanged (cosmetics only), but I did replace the
+  call to GetBlock% and the 'push' and 'pop' instructions around it with the
+  MOV/SWI instructions that were actually required here.
+- SWI_Deregister%: no changes except for replacing the call to ReleaseBlock%
+  and its surrounding 'push'/'pop' with the necessary MOV and SWI.
+- SWI_AtomicReset%: optimisations only.
+- SWI_AllocPW%: no changes.
+- SWI_DeallocPW%: no changes.
+- SWDL_Code%: cosmetic changes only.
+
+02-12-2002  0.04y
+-----------------
+By Dickon Hood. See the !ReadMe file.
