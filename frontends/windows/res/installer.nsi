@@ -13,7 +13,7 @@
   !define VERSIONMAJOR 3
 !endif
 !ifndef VERSIONMINOR
-  !define VERSIONMINOR 10
+  !define VERSIONMINOR 11
 !endif
 !ifndef VERSIONBUILD
   !define VERSIONBUILD 0
