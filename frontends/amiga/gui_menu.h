@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2017 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2024 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -78,13 +78,14 @@ enum {
 	  M_IMGFORE,
 	  M_IMGBACK,
 	 M_JS,
+	 M_CSS,
 	 M_BAR_B4,
 	 M_REDRAW,
 	/* Hotlist menu */
 	M_HOTLIST,
 	 M_HLADD,
 	 M_HLSHOW,
-	 M_BAR_H1, // 47
+	 M_BAR_H1, // 48
 	 AMI_MENU_HOTLIST, /* Where the hotlist entries start */
 	 AMI_MENU_HOTLIST_MAX = AMI_MENU_HOTLIST + AMI_HOTLIST_ITEMS,
 	/* Settings menu */

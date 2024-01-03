@@ -8589,6 +8589,13 @@ it.all.DPI:DPI
 nl.all.DPI:DPI
 zh_CN.all.DPI:DPI（Dot Per Inch 每英寸点数）
 
+en.ami.EnableCSS:Enable CSS
+de.ami.EnableCSS:CSS benutzen
+fr.ami.EnableCSS:Activer le CSS
+it.ami.EnableCSS:Attiva CSS
+nl.ami.EnableCSS:CSS ingeschakeld
+zh_CN.ami.EnableCSS:启用 CSS
+
 # Fonts tab
 #
 
