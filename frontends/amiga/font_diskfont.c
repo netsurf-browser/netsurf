@@ -100,7 +100,10 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 	tattr.ta_YSize = fstyle->size / PLOT_STYLE_SCALE;
 	NSLOG(netsurf, INFO, "font: %s/%d", tattr.ta_Name, tattr.ta_YSize);
 
-	if(prev_font != NULL) CloseFont(prev_font);
+	if(prev_font != NULL) {
+		CloseFont(prev_font);
+		prev_font = NULL;
+	}
 
 	if((bmfont = OpenDiskFont(&tattr))) {
 		SetRPAttrs(rp, RPTAG_Font, bmfont, TAG_DONE);
@@ -300,7 +303,14 @@ void ami_font_diskfont_init(void)
 
 void ami_font_diskfont_fini(void)
 {
-	if(prev_font != NULL) CloseFont(prev_font);
-	if(prev_fstyle != NULL) free(prev_fstyle);
+	if(prev_font != NULL) {
+		CloseFont(prev_font);
+		prev_font = NULL;
+	}
+
+	if(prev_fstyle != NULL) {
+		free(prev_fstyle);
+		prev_fstyle = NULL;
+	}
 }
 
