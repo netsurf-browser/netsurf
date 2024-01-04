@@ -3,13 +3,13 @@ Uploader:     chris@unsatisfactorysoftware.co.uk (Chris Young)
 Author:       NetSurf contributors (OS4 port by Chris Young)
 Type:         comm/www
 Version:      3.11 BETA
-Requires:     dev/misc/guigfxlib.lha util/libs/AmiSSL-4.3.lha
-Architecture: m68k-amigaos >= 3.5.0
+Requires:     dev/misc/guigfxlib.lha util/libs/AmiSSL-5.13-OS3.lha
+Architecture: m68k-amigaos >= 3.2.0
 
 This is NetSurf 3.11 BETA for AmigaOS 3.
 It is built off of the OS4 (Reaction) frontend.
 
-Requirements are AmigaOS 3.5 or 3.9, 32MB RAM.
+Requirements are AmigaOS 3.2, 3.5 or 3.9, 32MB RAM.
 
 THIS IS EARLY BETA QUALITY SOFTWARE FOR TESTING ONLY.
 ALL USE IS AT YOUR OWN RISK.  IT *WILL* CRASH!
