@@ -26,7 +26,6 @@ extern struct gui_window_table *win32_window_table;
 
 struct browser_mouse {
        struct gui_window *gui;
-       struct box *box;
 
        double pressed_x;
        double pressed_y;
