@@ -54,7 +54,6 @@ typedef enum {
 
 struct selection {
 	struct content *c;
-	struct box *root;
 
 	unsigned max_idx;  /* total bytes in text representation */
 
@@ -257,7 +256,6 @@ struct selection *selection_create(struct content *c)
 	sel = calloc(1, sizeof(struct selection));
 	if (sel) {
 		sel->c = c;
-		sel->root = NULL;
 		sel->drag_state = DRAG_NONE;
 		sel->max_idx = 0;
 		selection_clear(sel, false);
