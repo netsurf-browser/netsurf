@@ -40,6 +40,7 @@ CFLAGS += -fomit-frame-pointer
 ifeq ($(SUBTARGET),os3)
   NETSURF_USE_OPENSSL := NO
   NETSURF_USE_AMISSL := YES
+  NETSURF_FS_BACKING_STORE := NO
 else
   CFLAGS += -gstabs
 endif
