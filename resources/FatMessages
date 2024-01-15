@@ -1990,7 +1990,7 @@ zh_CN.all.TreeviewLabelExpires:过期
 
 en.all.TreeviewLabelLastUsed:Last used
 de.all.TreeviewLabelLastUsed:Last used
-fr.all.TreeviewLabelLastUsed:Les dernières utilisées
+fr.all.TreeviewLabelLastUsed:Dernière utilisation
 it.all.TreeviewLabelLastUsed:Ultimo utilizzo:
 nl.all.TreeviewLabelLastUsed:Laatst gebruikt:
 zh_CN.all.TreeviewLabelLastUsed:上次使用
@@ -4477,12 +4477,32 @@ it.gtk.gtkBookMarksTitle:Segnalibri di NetSurf
 nl.gtk.gtkBookMarksTitle:NetSurf-bladwijzers
 zh_CN.gtk.gtkBookMarksTitle:NetSurf 书签
 
-en.gtk.gtkShowCookies:Show _Cookies…
-de.gtk.gtkShowCookies:Zeige _Cookies…
+en.gtk.gtkShowCookies:Show _Cookies...
+de.gtk.gtkShowCookies:_Cookies verwalten...
 fr.gtk.gtkShowCookies:Afficher les _cookies…
 it.gtk.gtkShowCookies:Mostra _cookie...
-nl.gtk.gtkShowCookies:_Cookies beheren...
-zh_CN.gtk.gtkShowCookies:显示 Cookies(_C) …
+nl.gtk.gtkShowCookies:_Cookiesbeheer...
+zh_CN.gtk.gtkShowCookies:显示 _Cookies …
+
+en.gtk.gtkCookies:NetSurf Cookies
+de.gtk.gtkCookies:NetSurf Cookies
+fr.gtk.gtkCookies:Cookies de NetSurf
+it.gtk.gtkCookies:Cookie di NetSurf
+nl.gtk.gtkCookies:NetSurf-cookies
+zh_CN.gtk.gtkCookies:NetSurf Cookies
+
+en.gtk.gtkToggleCookies:_Cookies
+de.gtk.gtkToggleCookies:_Cookies
+fr.gtk.gtkToggleCookies:_Cookies
+it.gtk.gtkToggleCookies:_Cookie
+nl.gtk.gtkToggleCookies:_Cookies
+zh_CN.gtk.gtkToggleCookies:_Cookies
+
+en.gtk.gtkToggleDomains:_Domains
+de.gtk.gtkToggleDomains:_Domänen
+fr.gtk.gtkToggleDomains:_Domaines
+it.gtk.gtkToggleDomains:_Domini
+nl.gtk.gtkToggleDomains:_Domeinen
 
 en.gtk.gtkOpenLocation:_Open Location…
 de.gtk.gtkOpenLocation:_Ort öffnen..
