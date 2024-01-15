@@ -3073,7 +3073,7 @@ zh_CN.all.Edit:编辑
 
 en.ro.Launch:Launch  RETURN
 de.ro.Launch:Öffnen  RETURN
-fr.ro.Launch:Lancer  RETURN
+fr.ro.Launch:Visiter  RETURN
 it.ro.Launch:Avvia  INVIO
 nl.ro.Launch:Open  RETURN
 zh_CN.ro.Launch:启动 RETURN
@@ -4085,12 +4085,12 @@ it.gtk.gtkCloseWindow:_Chiudi finestra
 nl.gtk.gtkCloseWindow:_Venster sluiten
 zh_CN.gtk.gtkCloseWindow:关闭窗口(_C)
 
-en.gtk.gtkExport:Export
-de.gtk.gtkExport:Exportieren
-fr.gtk.gtkExport:Exporter
-it.gtk.gtkExport:Esporta
-nl.gtk.gtkExport:Exporteren
-zh_CN.gtk.gtkExport:导出
+en.gtk.gtkExport:_Export
+de.gtk.gtkExport:_Exportieren
+fr.gtk.gtkExport:_Exporter
+it.gtk.gtkExport:_Esporta
+nl.gtk.gtkExport:_Exporteren
+zh_CN.gtk.gtkExport:导出(_E)
 
 en.gtk.gtkSavePage:Complete Page…
 de.gtk.gtkSavePage:Seite speichern..
@@ -4176,12 +4176,67 @@ it.gtk.gtkDelete:Ca_ncella
 nl.gtk.gtkDelete:_Verwijderen
 zh_CN.gtk.gtkDelete:删除(_D)
 
+en.gtk.gtkDeleteAll:D_elete all
+de.gtk.gtkDeleteAll:All_es löschen
+fr.gtk.gtkDeleteAll:Supprim_er tout
+it.gtk.gtkDeleteAll:Canc_ella Tutto
+nl.gtk.gtkDeleteAll:All_es verwijderen
+
 en.gtk.gtkSelectAll:Select _All
 de.gtk.gtkSelectAll:_Alles auswählen
 fr.gtk.gtkSelectAll:_Tout sélectionner
 it.gtk.gtkSelectAll:_Seleziona Tutto
 nl.gtk.gtkSelectAll:_Alles selecteren
 zh_CN.gtk.gtkSelectAll:全选(_A)
+
+en.gtk.gtkClear:_Clear selection
+de.gtk.gtkClear:A_uswahl aufheben
+fr.gtk.gtkClear:E_ffacer la sélection
+it.gtk.gtkClear:A_nnulla selezione
+nl.gtk.gtkClear:Desele_cteer
+zh_CN.gtk.gtkClear:清除选择(_Z)
+
+en.gtk.gtkExpand:_Expand
+de.gtk.gtkExpand:_Expandieren
+fr.gtk.gtkExpand:Dév_elopper
+it.gtk.gtkExpand:_Espandi
+nl.gtk.gtkExpand:Klap _uit
+zh_CN.gtk.gtkExpand:扩展(_E)
+
+en.gtk.gtkCollapse:_Collapse
+de.gtk.gtkCollapse:_Zusammenfalten
+fr.gtk.gtkCollapse:_Réduire
+it.gtk.gtkCollapse:_Raggruppa
+nl.gtk.gtkCollapse:Klap _in
+zh_CN.gtk.gtkCollapse:崩溃(_C)
+
+en.gtk.gtkAll:_All
+de.gtk.gtkAll:_Alles
+fr.gtk.gtkAll:_Tout
+it.gtk.gtkAll:_Tutto
+nl.gtk.gtkAll:_Alles
+zh_CN.gtk.gtkAll:全部(_A)
+
+en.gtk.gtkFolders:_Directories
+de.gtk.gtkFolders:_Verzeichnisse
+fr.gtk.gtkFolders:_Dossiers
+it.gtk.gtkFolders:_Cartelle
+nl.gtk.gtkFolders:_Mappen
+zh_CN.gtk.gtkFolders:目录(_D)
+
+en.gtk.gtkLinks:Add_resses
+de.gtk.gtkLinks:Eint_räge
+fr.gtk.gtkLinks:Ad_resses
+it.gtk.gtkLinks:Indi_rizzi
+nl.gtk.gtkLinks:Ad_ressen
+zh_CN.gtk.gtkLinks:地址(_R)
+
+en.gtk.gtkLaunch:_Launch
+de.gtk.gtkLaunch:Ö_ffnen
+fr.gtk.gtkLaunch:_Visiter
+it.gtk.gtkLaunch:_Avvia
+nl.gtk.gtkLaunch:_Open
+zh_CN.gtk.gtkLaunch:启动(_L)
 
 en.gtk.gtkFind:_Find…
 de.gtk.gtkFind:_Finden..
@@ -4386,6 +4441,13 @@ fr.gtk.gtkGlobalHistory:Historique _global
 it.gtk.gtkGlobalHistory:Cronologia _globale
 nl.gtk.gtkGlobalHistory:Browser_geschiedenis
 zh_CN.gtk.gtkGlobalHistory:全局历史记录(_G) …
+
+en.gtk.gtkGlobalHistoryTitle:NetSurf Global History
+de.gtk.gtkGlobalHistoryTitle:NetSurf globaler Verlauf
+fr.gtk.gtkGlobalHistoryTitle:Historique global de NetSurf
+it.gtk.gtkGlobalHistoryTitle:NetSurf Global History
+nl.gtk.gtkGlobalHistoryTitle:NetSurf Global History
+zh_CN.gtk.gtkGlobalHistoryTitle:NetSurf Global History
 
 en.gtk.gtkAddBookMarks:_Add to Bookmarks…
 de.gtk.gtkAddBookMarks:_Lesezeichen hinzufügen..
