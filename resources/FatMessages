@@ -1669,6 +1669,56 @@ nl.all.SSL_Certificate_Reject:Weiger
 zh_CN.all.SSL_Certificate_Reject:拒绝
 
 
+# Page info popup
+# =======================
+#
+# This section contains tokens which are used in the page info
+# box (certificates, etc.)
+#
+en.all.PageInfoUnknown:Provenance unknown
+fr.all.PageInfoUnknown:Origine inconnue
+
+en.all.PageInfoInsecure:Connection not secure
+fr.all.PageInfoInsecure:Connexion non sécurisé
+it.all.PageInfoInsecure:Connessione non sicuro
+
+en.all.PageInfoLocal:Local data
+fr.all.PageInfoLocal:Données locales
+it.all.PageInfoLocal:Dati locali
+
+en.all.PageInfoSecure:Connection is secure
+fr.all.PageInfoSecure:La connexion est securisée
+it.all.PageInfoSecure:La connessione è sicuro
+
+en.all.PageInfoInternal:NetSurf data
+fr.all.PageInfoInternal:Données internes de NetSurf
+it.all.PageInfoInternal:Dati interni di NetSurf
+
+en.all.PageInfoCert:Certificate: 
+fr.all.PageInfoCert:Certificat : 
+
+en.all.PageInfoCertMissing:Missing
+fr.all.PageInfoCertMissing:Manquant
+
+en.all.PageInfoCertNone:None
+fr.all.PageInfoCertNone:Aucun
+
+en.all.PageInfoCertValid:Valid
+fr.all.PageInfoCertValid:Valide
+
+en.all.PageInfoCertInvalid:Not valid
+fr.all.PageInfoCertInvalid:Non valide
+
+en.all.PageInfoNoDomain:<No domain>
+fr.all.PageInfoNoDomain:<sans domaine>
+
+en.all.PageInfoCookies:Cookies: 
+fr.all.PageInfoCookies:Cookies : 
+
+en.all.PageInfoCookiesUsed:(%u in use)
+fr.all.PageInfoCookiesUsed:(%u utilisés)
+
+
 # Printing user interface
 # =======================
 #

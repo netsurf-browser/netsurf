@@ -26,6 +26,7 @@
 
 #include "css/utils.h"
 
+#include "utils/messages.h"
 #include "utils/nsurl.h"
 #include "utils/nscolour.h"
 
@@ -377,8 +378,6 @@ static nserror page_info__measure_text(
 /**
  * Set the text for the page_info window.
  *
- * \todo Use messages for internationalisation.
- *
  * \param[in] pi  The page info window handle.
  * \return NSERROR_OK on success, appropriate error code otherwise.
  */
@@ -386,45 +385,58 @@ static nserror page_info__set_text(
 		struct page_info *pi)
 {
 	int printed;
-	static const char *header[PAGE_STATE__COUNT] = {
-		[PAGE_STATE_UNKNOWN]         = "Provenance unknown",
-		[PAGE_STATE_INTERNAL]        = "NetSurf data",
-		[PAGE_STATE_LOCAL]           = "Local data",
-		[PAGE_STATE_INSECURE]        = "Connection not secure",
-		[PAGE_STATE_SECURE_OVERRIDE] = "Connection not secure",
-		[PAGE_STATE_SECURE_ISSUES]   = "Connection not secure",
-		[PAGE_STATE_SECURE]          = "Connection is secure",
-	};
-	static const char *certificate[PAGE_STATE__COUNT] = {
-		[PAGE_STATE_UNKNOWN]         = "Missing",
-		[PAGE_STATE_INTERNAL]        = "None",
-		[PAGE_STATE_LOCAL]           = "None",
-		[PAGE_STATE_INSECURE]        = "Not valid",
-		[PAGE_STATE_SECURE_OVERRIDE] = "Not valid",
-		[PAGE_STATE_SECURE_ISSUES]   = "Not valid",
-		[PAGE_STATE_SECURE]          = "Valid",
-	};
+	const char *header;
+	const char *certificate;
 
 	assert(pi != NULL);
 	assert(pi->state < PAGE_STATE__COUNT);
 
-	pi->entries[PI_ENTRY_HEADER].u.text.style = &pi__heading[pi->state];
-	pi->entries[PI_ENTRY_HEADER].u.text.text = header[pi->state];
-	pi->entries[PI_ENTRY_DOMAIN].u.text.text = (pi->domain) ?
-			lwc_string_data(pi->domain) : "<No domain>";
+	switch (pi->state) {
+	case PAGE_STATE_UNKNOWN:
+		header = messages_get("PageInfoUnknown");
+		certificate = messages_get("PageInfoCertMissing");
+		break;
 
-	pi->entries[PI_ENTRY_CERT].u.item.item.text = "Certificate: ";
-	pi->entries[PI_ENTRY_CERT].u.item.detail.text = certificate[pi->state];
+	case PAGE_STATE_INTERNAL:
+		header = messages_get("PageInfoInternal");
+		certificate = messages_get("PageInfoCertNone");
+		break;
+
+	case PAGE_STATE_LOCAL:
+		header = messages_get("PageInfoLocal");
+		certificate = messages_get("PageInfoCertNone");
+		break;
+
+	case PAGE_STATE_SECURE:
+		header = messages_get("PageInfoSecure");
+		certificate = messages_get("PageInfoCertValid");
+		break;
+
+	default:
+		header = messages_get("PageInfoInsecure");
+		certificate = messages_get("PageInfoCertInvalid");
+		break;
+	}
+
+	pi->entries[PI_ENTRY_HEADER].u.text.style = &pi__heading[pi->state];
+	pi->entries[PI_ENTRY_HEADER].u.text.text = header;
+	pi->entries[PI_ENTRY_DOMAIN].u.text.text = (pi->domain)
+			? lwc_string_data(pi->domain)
+			: messages_get("PageInfoNoDomain");
+
+	pi->entries[PI_ENTRY_CERT].u.item.item.text =
+			messages_get("PageInfoCert");
+	pi->entries[PI_ENTRY_CERT].u.item.detail.text = certificate;
 
 	printed = snprintf(pi->cookie_text, sizeof(pi->cookie_text),
-			"(%u in use)", pi->cookies);
+			messages_get("PageInfoCookiesUsed"), pi->cookies);
 	if (printed < 0) {
 		return NSERROR_UNKNOWN;
-
 	} else if ((unsigned) printed >= sizeof(pi->cookie_text)) {
 		return NSERROR_NOSPACE;
 	}
-	pi->entries[PI_ENTRY_COOKIES].u.item.item.text = "Cookies: ";
+	pi->entries[PI_ENTRY_COOKIES].u.item.item.text =
+			messages_get("PageInfoCookies");
 	pi->entries[PI_ENTRY_COOKIES].u.item.detail.text = pi->cookie_text;
 
 	return page_info__measure_text(pi);
