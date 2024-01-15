@@ -14,15 +14,18 @@
     <file preprocess="to-pixdata">throbber/throbber7.png</file>
     <file preprocess="to-pixdata">throbber/throbber8.png</file>
     <file>credits.html</file>
+    <file>fr/credits.html</file>
     <file>it/credits.html</file>
     <file>nl/credits.html</file>
     <file>zh_CN/credits.html</file>
     <file>licence.html</file>
+    <file>fr/licence.html</file>
     <file>it/licence.html</file>
     <file>nl/licence.html</file>
     <file>zh_CN/licence.html</file>
     <file>welcome.html</file>
     <file>de/welcome.html</file>
+    <file>fr/welcome.html</file>
     <file>it/welcome.html</file>
     <file>ja/welcome.html</file>
     <file>nl/welcome.html</file>
