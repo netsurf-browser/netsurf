@@ -3,7 +3,7 @@
   <!-- interface-requires gtk+ 3.0 -->
   <object class="GtkWindow" id="wndHotlist">
     <property name="can_focus">False</property>
-    <property name="title" translatable="yes">NetSurf Bookmarks</property>
+    <property name="title" translatable="yes">gtkBookMarksTitle</property>
     <property name="window_position">mouse</property>
     <property name="default_width">600</property>
     <property name="default_height">500</property>
@@ -21,7 +21,7 @@
                 <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">_File</property>
+                <property name="label" translatable="yes">gtkFile</property>
                 <property name="use_underline">True</property>
                 <child type="submenu">
                   <object class="GtkMenu" id="menu1">
@@ -32,7 +32,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">_Export</property>
+                        <property name="label" translatable="yes">gtkExport</property>
                         <property name="use_underline">True</property>
                       </object>
                     </child>
@@ -41,7 +41,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">New _folder</property>
+                        <property name="label" translatable="yes">gtkNewFolder</property>
                         <property name="use_underline">True</property>
                       </object>
                     </child>
@@ -50,7 +50,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">New _entry</property>
+                        <property name="label" translatable="yes">gtkAddBookMarks</property>
                         <property name="use_underline">True</property>
                       </object>
                     </child>
@@ -63,7 +63,7 @@
                 <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">_Edit</property>
+                <property name="label" translatable="yes">gtkEdit</property>
                 <property name="use_underline">True</property>
                 <child type="submenu">
                   <object class="GtkMenu" id="menu2">
@@ -74,7 +74,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">_Edit</property>
+                        <property name="label" translatable="yes">gtkEdit</property>
                         <property name="use_underline">True</property>
                       </object>
                     </child>
@@ -83,7 +83,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">_Delete</property>
+                        <property name="label" translatable="yes">gtkDelete</property>
                         <property name="use_underline">True</property>
                       </object>
                     </child>
@@ -92,7 +92,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">_Select all</property>
+                        <property name="label" translatable="yes">gtkSelectAll</property>
                         <property name="use_underline">True</property>
                       </object>
                     </child>
@@ -101,7 +101,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">_Clear selection</property>
+                        <property name="label" translatable="yes">gtkClear</property>
                         <property name="use_underline">True</property>
                       </object>
                     </child>
@@ -114,7 +114,7 @@
                 <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">_View</property>
+                <property name="label" translatable="yes">gtkView</property>
                 <property name="use_underline">True</property>
                 <child type="submenu">
                   <object class="GtkMenu" id="menu3">
@@ -125,7 +125,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">_Expand</property>
+                        <property name="label" translatable="yes">gtkExpand</property>
                         <property name="use_underline">True</property>
                         <child type="submenu">
                           <object class="GtkMenu" id="menu4">
@@ -136,7 +136,7 @@
                                 <property name="use_action_appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">_All</property>
+                                <property name="label" translatable="yes">gtkAll</property>
                                 <property name="use_underline">True</property>
                               </object>
                             </child>
@@ -145,7 +145,7 @@
                                 <property name="use_action_appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">_Directories</property>
+                                <property name="label" translatable="yes">gtkFolders</property>
                                 <property name="use_underline">True</property>
                               </object>
                             </child>
@@ -154,7 +154,7 @@
                                 <property name="use_action_appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">Add_resses</property>
+                                <property name="label" translatable="yes">gtkLinks</property>
                                 <property name="use_underline">True</property>
                               </object>
                             </child>
@@ -167,7 +167,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">_Collapse</property>
+                        <property name="label" translatable="yes">gtkCollapse</property>
                         <property name="use_underline">True</property>
                         <child type="submenu">
                           <object class="GtkMenu" id="menu5">
@@ -178,7 +178,7 @@
                                 <property name="use_action_appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">_All</property>
+                                <property name="label" translatable="yes">gtkAll</property>
                                 <property name="use_underline">True</property>
                               </object>
                             </child>
@@ -187,7 +187,7 @@
                                 <property name="use_action_appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">_Directories</property>
+                                <property name="label" translatable="yes">gtkFolders</property>
                                 <property name="use_underline">True</property>
                               </object>
                             </child>
@@ -196,7 +196,7 @@
                                 <property name="use_action_appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">Add_resses</property>
+                                <property name="label" translatable="yes">gtkLinks</property>
                                 <property name="use_underline">True</property>
                               </object>
                             </child>
@@ -213,7 +213,7 @@
                 <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">_Launch</property>
+                <property name="label" translatable="yes">gtkLaunch</property>
                 <property name="use_underline">True</property>
               </object>
             </child>

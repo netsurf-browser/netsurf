@@ -4224,6 +4224,13 @@ it.gtk.gtkFolders:_Cartelle
 nl.gtk.gtkFolders:_Mappen
 zh_CN.gtk.gtkFolders:目录(_D)
 
+en.gtk.gtkNewFolder:New _folder
+de.gtk.gtkNewFolder:Neues _Verzeichnis
+fr.gtk.gtkNewFolder:Nouveau _dossier
+it.gtk.gtkNewFolder:Nuova _cartella
+nl.gtk.gtkNewFolder:Nieuwe _map
+zh_CN.gtk.gtkNewFolder:新建文件夹(_F)
+
 en.gtk.gtkLinks:Add_resses
 de.gtk.gtkLinks:Eint_räge
 fr.gtk.gtkLinks:Ad_resses
@@ -4462,6 +4469,13 @@ fr.gtk.gtkShowBookMarks:_Afficher les marque-pages…
 it.gtk.gtkShowBookMarks:_Mostra segnalibri...
 nl.gtk.gtkShowBookMarks:Bladwijzers _beheren...
 zh_CN.gtk.gtkShowBookMarks:显示书签(_S) …
+
+en.gtk.gtkBookMarksTitle:NetSurf Bookmarks
+de.gtk.gtkBookMarksTitle:NetSurf Lesezeichen
+fr.gtk.gtkBookMarksTitle:Marque-pages de NetSurf
+it.gtk.gtkBookMarksTitle:Segnalibri di NetSurf
+nl.gtk.gtkBookMarksTitle:NetSurf-bladwijzers
+zh_CN.gtk.gtkBookMarksTitle:NetSurf 书签
 
 en.gtk.gtkShowCookies:Show _Cookies…
 de.gtk.gtkShowCookies:Zeige _Cookies…
