@@ -94,6 +94,7 @@ enum
 	GID_OPTS_FROMLOCALE,
 	GID_OPTS_HISTORY,
 	GID_OPTS_JAVASCRIPT,
+	GID_OPTS_ENABLECSS,
 	GID_OPTS_REFERRAL,
 	GID_OPTS_DONOTTRACK,
 	GID_OPTS_FASTSCROLL,
@@ -369,6 +370,7 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	gadlab[GID_OPTS_FROMLOCALE] = (char *)ami_utf8_easy((char *)messages_get("LocaleLang"));
 	gadlab[GID_OPTS_HISTORY] = (char *)ami_utf8_easy((char *)messages_get("HistoryAge"));
 	gadlab[GID_OPTS_JAVASCRIPT] = (char *)ami_utf8_easy((char *)messages_get("EnableJS"));
+	gadlab[GID_OPTS_ENABLECSS] = (char *)ami_utf8_easy((char *)messages_get("EnableCSS"));
 	gadlab[GID_OPTS_REFERRAL] = (char *)ami_utf8_easy((char *)messages_get("SendReferer"));
 	gadlab[GID_OPTS_DONOTTRACK] = (char *)ami_utf8_easy((char *)messages_get("DoNotTrack"));
 	gadlab[GID_OPTS_FASTSCROLL] = (char *)ami_utf8_easy((char *)messages_get("FastScrolling"));
@@ -1499,6 +1501,12 @@ void ami_gui_opts_open(void)
 										GA_Selected, !nsoption_bool(core_select_menu),
 										GA_Disabled, !ami_selectmenu_is_safe(),
            	    					CheckBoxEnd,
+	        	        			LAYOUT_AddChild, gow->objects[GID_OPTS_ENABLECSS] = CheckBoxObj,
+										GA_ID, GID_OPTS_ENABLECSS,
+										GA_RelVerify, TRUE,
+										GA_Text, gadlab[GID_OPTS_ENABLECSS],
+										GA_Selected, nsoption_bool(author_level_css),
+           	    					CheckBoxEnd,
 								LayoutEnd, // misc
 								CHILD_WeightedHeight, 0,
 
@@ -1742,7 +1750,14 @@ static void ami_gui_opts_use(bool save)
 	} else {
 		nsoption_set_bool(do_not_track, false);
 	}
-	
+
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_ENABLECSS],(ULONG *)&data);
+	if (data) {
+		nsoption_set_bool(author_level_css, true);
+	} else {
+		nsoption_set_bool(author_level_css, false);
+	}
+
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_FASTSCROLL],(ULONG *)&data);
 	if (data) {
 		nsoption_set_bool(faster_scroll, true);
