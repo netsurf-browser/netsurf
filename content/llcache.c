@@ -2207,10 +2207,17 @@ static nserror llcache_hsts_transform_url(nsurl *url, nsurl **result,
 	scheme = nsurl_get_component(url, NSURL_SCHEME);
 	if (lwc_string_caseless_isequal(scheme, corestring_lwc_http,
 			&match) != lwc_error_ok || match == false) {
-		/* Non-HTTP fetch: ignore */
+		/* Non-HTTP fetch: no transform required */
+		if (lwc_string_caseless_isequal(scheme, corestring_lwc_https,
+				&match) == lwc_error_ok && match) {
+			/* HTTPS: ask urldb if HSTS is enabled */
+			*hsts_in_use = urldb_get_hsts_enabled(url);
+		} else {
+			/* Anything else: no HSTS */
+			*hsts_in_use = false;
+		}
 		lwc_string_unref(scheme);
 		*result = nsurl_ref(url);
-		*hsts_in_use = false;
 		return error;
 	}
 	lwc_string_unref(scheme);
