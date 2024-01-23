@@ -1758,6 +1758,8 @@ static void ami_gui_opts_use(bool save)
 		nsoption_set_bool(author_level_css, false);
 	}
 
+	ami_gui_menu_set_checked(NULL, M_CSS, nsoption_bool(author_level_css));
+
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_FASTSCROLL],(ULONG *)&data);
 	if (data) {
 		nsoption_set_bool(faster_scroll, true);
