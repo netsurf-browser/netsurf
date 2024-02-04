@@ -80,14 +80,25 @@
 #define CIPHER_LIST						\
 	/* disable everything */				\
 	"-ALL:"							\
-	/* enable TLSv1.2 PFS suites */				\
-	"EECDH+AES+TLSv1.2:EDH+AES+TLSv1.2:"			\
-	/* enable PFS AES GCM suites */				\
-	"EECDH+AESGCM:EDH+AESGCM:"				\
-	/* Enable PFS AES CBC suites */				\
-	"EECDH+AES:EDH+AES:"					\
-	/* Remove any PFS suites using weak DSA key exchange */	\
-	"-DSS"
+	/* enable TLSv1.2 ECDHE AES GCM suites */		\
+	"EECDH+AESGCM+TLSv1.2:"					\
+	/* enable ECDHE CHACHA20/POLY1305 suites */		\
+	"EECDH+CHACHA20:"					\
+	/* Sort above by strength */				\
+	"@STRENGTH:"						\
+	/* enable ECDHE (auth=RSA, mac=SHA1) AES CBC suites */	\
+	"EECDH+aRSA+AES+SHA1"
+
+/**
+ * The legacy cipher suites the browser is prepared to use for TLS<1.3
+ */
+#define CIPHER_LIST_LEGACY					\
+	/* as above */						\
+	CIPHER_LIST":"						\
+	/* enable (non-PFS) RSA AES GCM suites */		\
+	"RSA+AESGCM:"						\
+	/* enable (non-PFS) RSA (mac=SHA1) AES CBC suites */	\
+	"RSA+AES+SHA1"
 
 /* Open SSL compatability for certificate handling */
 #ifdef WITH_OPENSSL
@@ -1240,6 +1251,12 @@ static CURLcode fetch_curl_set_options(struct curl_fetch_info *f)
 		}
 	} else {
 		SETOPT(CURLOPT_PROXY, NULL);
+	}
+
+
+	if (curl_with_openssl) {
+		SETOPT(CURLOPT_SSL_CIPHER_LIST,
+			f->downgrade_tls ? CIPHER_LIST_LEGACY : CIPHER_LIST);
 	}
 
 	/* Force-enable SSL session ID caching, as some distros are odd. */
