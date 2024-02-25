@@ -2002,20 +2002,33 @@ void form_radio_set(struct form_control *radio)
 	if (radio->selected)
 		return;
 
+	/* Clear selected state for other controls in
+	 * the same radio button group */
 	for (control = radio->form->controls;
 	     control != NULL;
 	     control = control->next) {
+		/* Only interested in radio inputs */
 		if (control->type != GADGET_RADIO)
 			continue;
 
+		/* Ignore ourself */
 		if (control == radio)
 			continue;
 
-		if ((control->name != NULL) &&
-		    (radio->name != NULL) &&
+		/* Ignore inputs where:
+		 *   a) this or the other control have no name attribute
+		 *   b) this or the other control have an empty name attribute
+		 *   c) the control names do not match
+		 */
+		if ((control->name == NULL) ||
+		    (radio->name == NULL) ||
+		    (control->name[0] == '\0') ||
+		    (radio->name[0] == '\0') ||
 		    strcmp(control->name, radio->name) != 0)
 			continue;
 
+		/* Other control is in the same radio button group: clear its
+		 * selected state */
 		if (control->selected) {
 			control->selected = false;
 			dom_html_input_element_set_checked(control->node, false);
