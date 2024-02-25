@@ -2002,13 +2002,18 @@ void form_radio_set(struct form_control *radio)
 	if (radio->selected)
 		return;
 
-	for (control = radio->form->controls; control;
-			control = control->next) {
+	for (control = radio->form->controls;
+	     control != NULL;
+	     control = control->next) {
 		if (control->type != GADGET_RADIO)
 			continue;
+
 		if (control == radio)
 			continue;
-		if (strcmp(control->name, radio->name) != 0)
+
+		if ((control->name != NULL) &&
+		    (radio->name != NULL) &&
+		    strcmp(control->name, radio->name) != 0)
 			continue;
 
 		if (control->selected) {
