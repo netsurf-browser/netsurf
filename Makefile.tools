@@ -1,0 +1,118 @@
+# -*- mode: makefile-gmake -*-
+##
+## Setup tools to build project including compiler
+##
+
+# Expected inputs:
+#
+# HOST
+# TARGET
+# SUBTARGET
+#
+# output:
+# variables:
+#   CC
+#   BUILD_CC
+#   CCACHE
+#   TOOLCHAIN
+#   PERL
+#   MKDIR
+#   TOUCH
+#   STRIP
+#   INSTALL
+#   CC_VERSION
+#   CC_MAJOR
+#   CC_MINOR
+#
+# macros:
+#   cc_ver_ge
+
+# Defaults for tools
+PERL=perl
+MKDIR=mkdir
+TOUCH=touch
+STRIP?=strip
+INSTALL?=install
+# Override this only if the host compiler is called something different
+BUILD_CC := cc
+
+# target specific tool overrides
+include frontends/$(TARGET)/Makefile.tools
+
+# CCACHE
+ifeq ($(origin CCACHE),undefined)
+  CCACHE=$(word 1,$(shell ccache -V 2>/dev/null))
+endif
+CC := $(CCACHE) $(CC)
+
+###############################################################################
+# Auto-detect the toolchain
+###############################################################################
+
+# Check for GCC first, as that's most likely
+# TODO: Using shell redirection like this probably hurts portability
+CC_SPECS := $(shell $(CC) -dumpspecs 2>&1)
+ifeq ($(findstring libgcc,$(CC_SPECS)),libgcc)
+  # Looks like GCC
+  TOOLCHAIN := gcc
+else
+  # Not GCC, so enquire further
+  ccvsn := $(shell $(CC) --version 2>&1)
+  ifeq ($(ccvsn),)
+    # Version string is blank
+    ifeq ($(BUILD),arm-unknown-riscos)
+      # For some reason we never see the output of SCL apps, so might be
+      # Norcroft.  However it might also be a GCC linked against a buggy
+      # UnixLib.
+      # TODO: Something more useful than blindly assuming GCC.
+      ccvsn := GCC
+      # ccvsn := Norcroft
+    endif
+  endif
+
+  ifeq ($(findstring lcc:,$(ccvsn)),lcc:)
+    # MCST LCC pretends to be gcc
+    TOOLCHAIN := gcc
+  endif
+
+  # "Norcroft ..."
+  ifeq ($(word 1,$(ccvsn)),Norcroft)
+    TOOLCHAIN := norcroft
+  endif
+  # "GCC ..."
+  ifeq ($(word 1,$(ccvsn)),GCC)
+    TOOLCHAIN := gcc
+  endif
+  # "clang ..."
+  ifeq ($(word 1,$(ccvsn)),clang)
+    TOOLCHAIN := clang
+  endif
+  ifeq ($(word 2,$(ccvsn)),clang)
+    # Some newer clangs have distributor as first word
+    # (ie, Debian, Apple, etc)
+    TOOLCHAIN := clang
+  endif
+  ifeq ($(word 2,$(ccvsn)),LLVM)
+    # Apple version is "Apple LLVM" to be differntly awkward
+    TOOLCHAIN := clang
+  endif
+  ifeq ($(word 1,$(ccvsn)),Open64)
+    TOOLCHAIN := open64
+  endif
+endif
+
+ifeq ($(TOOLCHAIN),)
+  $(error Unable to detect toolchain)
+endif
+
+
+###############################################################################
+# Compiler Versioning (to adjust warning flags)
+###############################################################################
+
+CC_VERSION := $(shell $(CC) -dumpfullversion -dumpversion)
+CC_MAJOR := $(word 1,$(subst ., ,$(CC_VERSION)))
+CC_MINOR := $(word 2,$(subst ., ,$(CC_VERSION)))
+define cc_ver_ge
+$(shell expr $(CC_MAJOR) \> $(1) \| \( $(CC_MAJOR) = $(1) \& $(CC_MINOR) \>= $(2) \) )
+endef

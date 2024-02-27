@@ -40,13 +40,6 @@ MESSAGES_LANGUAGES=de en fr it nl zh_CN
 # The target directory for the split messages
 MESSAGES_TARGET=resources
 
-# Defaults for tools
-PERL=perl
-MKDIR=mkdir
-TOUCH=touch
-STRIP?=strip
-INSTALL?=install
-
 # build verbosity
 ifeq ($(V),1)
   Q:=
@@ -55,31 +48,11 @@ else
 endif
 VQ=@
 
-# Override this only if the host compiler is called something different
-BUILD_CC := cc
-BUILD_CFLAGS = -g -W -Wall -Wundef -Wpointer-arith -Wcast-align \
-	-Wwrite-strings -Wmissing-declarations -Wuninitialized \
-	-Wno-unused-parameter
-
 # compute HOST, TARGET and SUBTARGET
 include frontends/Makefile.hts
 
-# target specific tool overrides
-include frontends/$(TARGET)/Makefile.tools
-
-# compiler versioning to adjust warning flags
-CC_VERSION := $(shell $(CC) -dumpfullversion -dumpversion)
-CC_MAJOR := $(word 1,$(subst ., ,$(CC_VERSION)))
-CC_MINOR := $(word 2,$(subst ., ,$(CC_VERSION)))
-define cc_ver_ge
-$(shell expr $(CC_MAJOR) \> $(1) \| \( $(CC_MAJOR) = $(1) \& $(CC_MINOR) \>= $(2) \) )
-endef
-
-# CCACHE
-ifeq ($(origin CCACHE),undefined)
-  CCACHE=$(word 1,$(shell ccache -V 2>/dev/null))
-endif
-CC := $(CCACHE) $(CC)
+# tools used in builds
+include Makefile.tools
 
 # Target paths
 OBJROOT = build/$(HOST)-$(TARGET)$(SUBTARGET)
@@ -97,6 +70,11 @@ include Makefile.macros
 # General flag setup
 # ----------------------------------------------------------------------------
 
+# host compiler flags
+BUILD_CFLAGS = -g -W -Wall -Wundef -Wpointer-arith -Wcast-align \
+	-Wwrite-strings -Wmissing-declarations -Wuninitialized \
+	-Wno-unused-parameter
+
 # Set up the warning flags here so that they can be overridden in the
 #   Makefile.config
 COMMON_WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wcast-align \
@@ -111,9 +89,14 @@ ifeq ($(call cc_ver_ge,4,6),1)
   COMMON_WARNFLAGS += -Wno-unused-but-set-variable
 endif
 
-# Implicit fallthrough warnings suppressed by comment
-ifeq ($(call cc_ver_ge,7,1),1)
-  COMMON_WARNFLAGS += -Wimplicit-fallthrough=3
+ifeq ($(TOOLCHAIN),gcc)
+  # Implicit fallthrough warnings suppressed by comment
+  ifeq ($(call cc_ver_ge,7,1),1)
+    COMMON_WARNFLAGS += -Wimplicit-fallthrough=3
+  endif
+else
+  # clang uses [[clang::fallthrough]] to annotate fallthrough instead of comments
+  COMMON_WARNFLAGS += -Wno-implicit-fallthrough
 endif
 
 # deal with chaging warning flags for different platforms
