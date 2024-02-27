@@ -432,7 +432,7 @@ nsws_window_urlbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			NSLOG(netsurf, INFO, "Destroyed font object");
 			DeleteObject(hFont);
 		}
-
+		/* Fall through */
 
 	case WM_NCDESTROY:
 		/* remove properties if window is being destroyed */

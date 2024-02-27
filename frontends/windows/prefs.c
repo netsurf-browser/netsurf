@@ -277,6 +277,7 @@ static BOOL CALLBACK options_appearance_dialog_handler(HWND hwnd,
 		}
 			break;
 		}
+		break;
 
 
 	case WM_COMMAND:
