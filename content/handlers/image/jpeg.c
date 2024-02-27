@@ -206,7 +206,9 @@ static inline void nsjpeg__decode_rgb(
 		uint8_t * volatile pixels,
 		size_t rowstride)
 {
+#if RGB_RED != 0 || RGB_GREEN != 1 || RGB_BLUE != 2 || RGB_PIXELSIZE != 4
 	int width = cinfo->output_width;
+#endif
 
 	do {
 		JSAMPROW scanlines[1] = {
