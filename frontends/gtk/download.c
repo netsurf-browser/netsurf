@@ -1022,7 +1022,7 @@ nserror nsgtk_download_init(void)
 
 
 /* exported interface documented in gtk/download.h */
-void nsgtk_download_destroy ()
+void nsgtk_download_destroy(void)
 {
 	nsgtk_download_do(nsgtk_download_store_cancel_item);
 }
