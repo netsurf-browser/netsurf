@@ -1465,7 +1465,7 @@ html_mouse_action(struct content *c,
 		  int x, int y)
 {
 	html_content *html = (html_content *)c;
-	nserror res;
+	nserror res = NSERROR_OK;
 
 	/* handle open select menu */
 	if (html->visible_select_menu != NULL) {
@@ -1493,7 +1493,7 @@ html_mouse_action(struct content *c,
 		break;
 
 	case HTML_DRAG_NONE:
-		res =  mouse_action_drag_none(html, bw, mouse, x, y);
+		res = mouse_action_drag_none(html, bw, mouse, x, y);
 		break;
 
 	default:
