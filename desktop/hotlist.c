@@ -193,29 +193,32 @@ static nserror hotlist_create_treeview_field_visits_data(
 		struct hotlist_entry *e, const struct url_data *data)
 {
 	char buffer[16];
-	const char *last_visited;
-	char *last_visited2;
-	int len;
+	char *last_visited = NULL;
+	size_t len = 0;
 
 	/* Last visited */
 	if (data->visits != 0) {
-		last_visited = ctime(&data->last_visit);
-		last_visited2 = strdup(last_visited);
-		len = 24;
+		const size_t lvsize = 256;
+		struct tm lvtime;
+
+		if (localtime_r(&data->last_visit, &lvtime) != NULL) {
+			last_visited = malloc(lvsize);
+			if (last_visited != NULL) {
+				len = strftime(last_visited, lvsize,
+						"%a %b %e %H:%M:%S %Y",
+						&lvtime);
+			}
+		}
 	} else {
-		last_visited2 = strdup("-");
+		last_visited = strdup("-");
 		len = 1;
 	}
-	if (last_visited2 == NULL) {
+	if (last_visited == NULL) {
 		return NSERROR_NOMEM;
-
-	} else if (len == 24) {
-		assert(last_visited2[24] == '\n');
-		last_visited2[24] = '\0';
 	}
 
 	e->data[HL_LAST_VISIT].field = hl_ctx.fields[HL_LAST_VISIT].field;
-	e->data[HL_LAST_VISIT].value = last_visited2;
+	e->data[HL_LAST_VISIT].value = last_visited;
 	e->data[HL_LAST_VISIT].value_len = len;
 
 	/* Visits */

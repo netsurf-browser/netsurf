@@ -232,10 +232,6 @@ cookie_manager_field_builder(enum cookie_manager_field field,
  *
  * The time should be converted to text in the users locacle
  *
- * \todo This should probably generate the user text using localtime
- * and strftime with the c format specifier. Currently ctime will
- * always generate output in the C locale.
- *
  * \param field Cookie manager treeview field to build
  * \param fdata Cookie manager entry field data to set
  * \param value Time to show in field
@@ -246,22 +242,20 @@ cookie_manager_field_builder_time(enum cookie_manager_field field,
 				  struct treeview_field_data *fdata,
 				  const time_t *value)
 {
-	const char *date;
-	char *date2;
+	struct tm ftime;
 
 	fdata->field = cm_ctx.fields[field].field;
+	fdata->value = NULL;
+	fdata->value_len = 0;
 
-	date = ctime(value);
-	date2 = strdup(date);
-	if (date2 == NULL) {
-		fdata->value = NULL;
-		fdata->value_len = 0;
-	} else {
-		assert(date2[24] == '\n');
-		date2[24] = '\0';
-
-		fdata->value = date2;
-		fdata->value_len = strlen(date2);
+	if (localtime_r(value, &ftime) != NULL) {
+		const size_t vsize = 256;
+		char *value = malloc(vsize);
+		if (value != NULL) {
+			fdata->value = value;
+			fdata->value_len = strftime(value, vsize,
+					"%a %b %e %H:%M:%S %Y", &ftime);
+		}
 	}
 
 	return NSERROR_OK;
