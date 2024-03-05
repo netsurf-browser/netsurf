@@ -242,19 +242,19 @@ cookie_manager_field_builder_time(enum cookie_manager_field field,
 				  struct treeview_field_data *fdata,
 				  const time_t *value)
 {
-	struct tm ftime;
+	struct tm *ftime;
 
 	fdata->field = cm_ctx.fields[field].field;
 	fdata->value = NULL;
 	fdata->value_len = 0;
 
-	if (localtime_r(value, &ftime) != NULL) {
+	if ((ftime = localtime(value)) != NULL) {
 		const size_t vsize = 256;
 		char *value = malloc(vsize);
 		if (value != NULL) {
 			fdata->value = value;
 			fdata->value_len = strftime(value, vsize,
-					"%a %b %e %H:%M:%S %Y", &ftime);
+					"%a %b %e %H:%M:%S %Y", ftime);
 		}
 	}
 

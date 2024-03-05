@@ -199,14 +199,14 @@ static nserror hotlist_create_treeview_field_visits_data(
 	/* Last visited */
 	if (data->visits != 0) {
 		const size_t lvsize = 256;
-		struct tm lvtime;
+		struct tm *lvtime;
 
-		if (localtime_r(&data->last_visit, &lvtime) != NULL) {
+		if ((lvtime = localtime(&data->last_visit)) != NULL) {
 			last_visited = malloc(lvsize);
 			if (last_visited != NULL) {
 				len = strftime(last_visited, lvsize,
 						"%a %b %e %H:%M:%S %Y",
-						&lvtime);
+						lvtime);
 			}
 		}
 	} else {

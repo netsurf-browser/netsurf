@@ -266,7 +266,7 @@ static nserror global_history_create_treeview_field_data(
 	const char *title = (data->title != NULL) ?
 			data->title : messages_get("NoTitle");
 	char buffer[16];
-	struct tm lvtime;
+	struct tm *lvtime;
 	char *last_visited = NULL;
 	size_t len = 0;
 
@@ -279,12 +279,12 @@ static nserror global_history_create_treeview_field_data(
 	e->data[GH_URL].value = nsurl_access(e->url);
 	e->data[GH_URL].value_len = nsurl_length(e->url);
 
-	if (localtime_r(&data->last_visit, &lvtime) != NULL) {
+	if ((lvtime = localtime(&data->last_visit)) != NULL) {
 		const size_t lvsize = 256;
 		last_visited = malloc(lvsize);
 		if (last_visited != NULL) {
 			len = strftime(last_visited, lvsize,
-					"%a %b %e %H:%M:%S %Y", &lvtime);
+					"%a %b %e %H:%M:%S %Y", lvtime);
 		}
 	}
 
