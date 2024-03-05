@@ -124,7 +124,7 @@ static bool nssprite_convert(struct content *c)
 		content_broadcast_error(c, NSERROR_NOMEM, NULL);
 		return false;
 	}
-	uint32_t* imagebuf = (uint32_t *)guit->bitmap->get_buffer(nssprite->bitmap);
+	uint32_t* imagebuf = (uint32_t *)(void *)guit->bitmap->get_buffer(nssprite->bitmap);
 	if (!imagebuf) {
 		content_broadcast_error(c, NSERROR_NOMEM, NULL);
 		return false;
