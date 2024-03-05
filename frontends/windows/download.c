@@ -169,7 +169,7 @@ nsws_download_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		case IDOK:
 			if (download1->downloaded != download1->size)
 				return TRUE;
-			/* Fall through */
+			fallthrough;
 
 		case IDCANCEL:
 			nsws_download_clear_data(download1);

@@ -90,13 +90,13 @@ ifeq ($(call cc_ver_ge,4,6),1)
 endif
 
 ifeq ($(TOOLCHAIN),gcc)
-  # Implicit fallthrough warnings suppressed by comment
+  # Implicit fallthrough warnings
   ifeq ($(call cc_ver_ge,7,1),1)
-    COMMON_WARNFLAGS += -Wimplicit-fallthrough=3
+    COMMON_WARNFLAGS += -Wimplicit-fallthrough=5
   endif
 else
-  # clang uses [[clang::fallthrough]] to annotate fallthrough instead of comments
-  COMMON_WARNFLAGS += -Wno-implicit-fallthrough
+  # non gcc has different warning syntax
+  COMMON_WARNFLAGS += -Wimplicit-fallthrough
 endif
 
 # deal with chaging warning flags for different platforms

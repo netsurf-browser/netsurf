@@ -25,6 +25,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "utils/utils.h"
 #include "utils/log.h"
 #include "netsurf/plotters.h"
 #include "netsurf/css.h"
@@ -121,7 +122,7 @@ html_redraw_border_plot(const int side,
 	switch (style) {
 	case CSS_BORDER_STYLE_DOTTED:
 		plot_style_bdr.stroke_type = PLOT_OP_TYPE_DOT;
-		/* fall through */
+		fallthrough;
 	case CSS_BORDER_STYLE_DASHED:
 		rect.x0 = (p[0] + p[2]) / 2;
 		rect.y0 = (p[1] + p[3]) / 2;
@@ -131,7 +132,7 @@ html_redraw_border_plot(const int side,
 		break;
 
 	case CSS_BORDER_STYLE_SOLID:
-		/* fall through to default */
+		/* solid is the default */
 	default:
 		if (rectangular || thickness == 1) {
 
@@ -190,7 +191,7 @@ html_redraw_border_plot(const int side,
 
 	case CSS_BORDER_STYLE_GROOVE:
 		light = 3 - light;
-		/* fall through */
+		fallthrough;
 	case CSS_BORDER_STYLE_RIDGE:
 		/* choose correct colours for each part of the border line */
 		if (light <= 1) {
@@ -300,7 +301,7 @@ html_redraw_border_plot(const int side,
 
 	case CSS_BORDER_STYLE_INSET:
 		light = (light + 2) % 4;
-		/* fall through */
+		fallthrough;
 	case CSS_BORDER_STYLE_OUTSET:
 		/* choose correct colours for each part of the border line */
 		switch (light) {

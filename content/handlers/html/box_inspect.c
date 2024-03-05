@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <dom/dom.h>
 
+#include "utils/utils.h"
 #include "utils/nsurl.h"
 #include "utils/errors.h"
 #include "netsurf/types.h"
@@ -212,7 +213,7 @@ box_move_xy(struct box *b, enum box_walk_dir dir, int *x, int *y)
 			rb = b;
 			break;
 		}
-		/* fall through */
+		fallthrough;
 
 	case BOX_WALK_NEXT_SIBLING:
 		do {

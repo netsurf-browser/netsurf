@@ -89,4 +89,31 @@
  */
 bool is_dir(const char *path);
 
+/**
+ * switch fall through
+ */
+#if defined __cplusplus && defined __has_cpp_attribute
+    #if __has_cpp_attribute(fallthrough) && __cplusplus >= __has_cpp_attribute(fallthrough)
+        #define fallthrough [[fallthrough]]
+    #elif __has_cpp_attribute(gnu::fallthrough) && __STDC_VERSION__ >= __has_cpp_attribute(gnu::fallthrough)
+        #define fallthrough [[gnu::fallthrough]]
+    #elif __has_cpp_attribute(clang::fallthrough) && __STDC_VERSION__ >= __has_cpp_attribute(clang::fallthrough)
+        #define fallthrough [[clang::fallthrough]]
+    #endif
+#elif defined __STDC_VERSION__ && defined __has_c_attribute
+    #if __has_c_attribute(fallthrough) && __STDC_VERSION__ >= __has_c_attribute(fallthrough)
+        #define fallthrough [[fallthrough]]
+    #endif
+#endif
+#if !defined fallthrough && defined __has_attribute
+    #if __has_attribute(__fallthrough__)
+        #define fallthrough __attribute__((__fallthrough__))
+    #endif
+#endif
+#if !defined fallthrough
+/*  early gcc and clang have no implicit fallthrough warning */
+    #define fallthrough do {} while(0)
+#endif
+
+
 #endif

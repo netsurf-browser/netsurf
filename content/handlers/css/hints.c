@@ -1650,22 +1650,22 @@ css_error node_presentational_hint(void *pw, void *node,
 		css_hint_width(pw, node);
 		css_hint_table_cell_border_padding(pw, node);
 		css_hint_white_space_nowrap(pw, node);
-		/* fall through */
+		fallthrough;
 	case DOM_HTML_ELEMENT_TYPE_TR:
 		css_hint_height(pw, node);
-		/* fall through */
+		fallthrough;
 	case DOM_HTML_ELEMENT_TYPE_THEAD:
 	case DOM_HTML_ELEMENT_TYPE_TBODY:
 	case DOM_HTML_ELEMENT_TYPE_TFOOT:
 		css_hint_text_align_special(pw, node);
-		/* fall through */
+		fallthrough;
 	case DOM_HTML_ELEMENT_TYPE_COL:
 		css_hint_vertical_align_table_cells(pw, node);
 		break;
 	case DOM_HTML_ELEMENT_TYPE_APPLET:
 	case DOM_HTML_ELEMENT_TYPE_IMG:
 		css_hint_margin_hspace_vspace(pw, node);
-		/* fall through */
+		fallthrough;
 	case DOM_HTML_ELEMENT_TYPE_EMBED:
 	case DOM_HTML_ELEMENT_TYPE_IFRAME:
 	case DOM_HTML_ELEMENT_TYPE_OBJECT:
@@ -1688,7 +1688,7 @@ css_error node_presentational_hint(void *pw, void *node,
 		break;
 	case DOM_HTML_ELEMENT_TYPE_CAPTION:
 		css_hint_caption_side(pw, node);
-		/* fall through */
+		fallthrough;
 	case DOM_HTML_ELEMENT_TYPE_DIV:
 		css_hint_text_align_special(pw, node);
 		break;

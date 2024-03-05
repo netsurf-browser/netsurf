@@ -495,6 +495,7 @@ exec_src_script(html_content *c,
 		switch (script_type) {
 		case HTML_SCRIPT_SYNC:
 			ret =  DOM_HUBBUB_HUBBUB_ERR | HUBBUB_PAUSED;
+			break;
 
 		case HTML_SCRIPT_ASYNC:
 			break;

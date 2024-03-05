@@ -960,7 +960,6 @@ static void layout_flex__place_line_items_cross(struct flex_ctx *ctx,
 
 		switch (lh__box_align_self(ctx->flex, b)) {
 		default:
-			/* Fall through. */
 		case CSS_ALIGN_SELF_STRETCH:
 			if (lh__box_size_cross_is_auto(ctx->horizontal, b)) {
 				*box_size_cross += cross_free_space;
@@ -970,7 +969,7 @@ static void layout_flex__place_line_items_cross(struct flex_ctx *ctx,
 					return;
 				}
 			}
-			/* Fall through. */
+			fallthrough;
 		case CSS_ALIGN_SELF_FLEX_START:
 			*box_pos_cross = ctx->flex->padding[cross_start] +
 					line->pos +
@@ -986,7 +985,6 @@ static void layout_flex__place_line_items_cross(struct flex_ctx *ctx,
 			break;
 
 		case CSS_ALIGN_SELF_BASELINE:
-			/* Fall through. */
 		case CSS_ALIGN_SELF_CENTER:
 			*box_pos_cross = ctx->flex->padding[cross_start] +
 					line->pos + cross_free_space / 2 +

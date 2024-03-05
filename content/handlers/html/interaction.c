@@ -899,7 +899,7 @@ gadget_mouse_action(html_content *html,
 			}
 			free(oldcoords);
 		}
-		/* Fall through */
+		fallthrough;
 
 	case GADGET_SUBMIT:
 		if (mas->gadget.control->form) {
@@ -1669,7 +1669,7 @@ void html_set_drag_type(html_content *html, html_drag_type drag_type,
 
 	case HTML_DRAG_SELECTION:
 		assert(drag_owner.no_owner == true);
-		/* Fall through */
+		fallthrough;
 	case HTML_DRAG_TEXTAREA_SELECTION:
 	case HTML_DRAG_CONTENT_SELECTION:
 		msg_data.drag.type = CONTENT_DRAG_SELECTION;
@@ -1800,7 +1800,7 @@ void html_set_selection(html_content *html, html_selection_type selection_type,
 		break;
 	case HTML_SELECTION_SELF:
 		assert(selection_owner.none == false);
-		/* fall through */
+		fallthrough;
 	case HTML_SELECTION_TEXTAREA:
 	case HTML_SELECTION_CONTENT:
 		msg_data.selection.selection = true;

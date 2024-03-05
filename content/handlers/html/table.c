@@ -26,6 +26,7 @@
 #include <dom/dom.h>
 
 #include "utils/log.h"
+#include "utils/utils.h"
 #include "utils/talloc.h"
 #include "css/utils.h"
 
@@ -93,27 +94,27 @@ table_border_is_more_eyecatching(const css_unit_ctx *unit_len_ctx,
 
 	/* 3b -- sort by style */
 	switch (a->style) {
-	case CSS_BORDER_STYLE_DOUBLE: impact++; /* Fall through */
-	case CSS_BORDER_STYLE_SOLID:  impact++; /* Fall through */
-	case CSS_BORDER_STYLE_DASHED: impact++; /* Fall through */
-	case CSS_BORDER_STYLE_DOTTED: impact++; /* Fall through */
-	case CSS_BORDER_STYLE_RIDGE:  impact++; /* Fall through */
-	case CSS_BORDER_STYLE_OUTSET: impact++; /* Fall through */
-	case CSS_BORDER_STYLE_GROOVE: impact++; /* Fall through */
-	case CSS_BORDER_STYLE_INSET:  impact++; /* Fall through */
+	case CSS_BORDER_STYLE_DOUBLE: impact++; fallthrough;
+	case CSS_BORDER_STYLE_SOLID:  impact++; fallthrough;
+	case CSS_BORDER_STYLE_DASHED: impact++; fallthrough;
+	case CSS_BORDER_STYLE_DOTTED: impact++; fallthrough;
+	case CSS_BORDER_STYLE_RIDGE:  impact++; fallthrough;
+	case CSS_BORDER_STYLE_OUTSET: impact++; fallthrough;
+	case CSS_BORDER_STYLE_GROOVE: impact++; fallthrough;
+	case CSS_BORDER_STYLE_INSET:  impact++; fallthrough;
 	default:
 		break;
 	}
 
 	switch (b->style) {
-	case CSS_BORDER_STYLE_DOUBLE: impact--; /* Fall through */
-	case CSS_BORDER_STYLE_SOLID:  impact--; /* Fall through */
-	case CSS_BORDER_STYLE_DASHED: impact--; /* Fall through */
-	case CSS_BORDER_STYLE_DOTTED: impact--; /* Fall through */
-	case CSS_BORDER_STYLE_RIDGE:  impact--; /* Fall through */
-	case CSS_BORDER_STYLE_OUTSET: impact--; /* Fall through */
-	case CSS_BORDER_STYLE_GROOVE: impact--; /* Fall through */
-	case CSS_BORDER_STYLE_INSET:  impact--; /* Fall through */
+	case CSS_BORDER_STYLE_DOUBLE: impact--; fallthrough;
+	case CSS_BORDER_STYLE_SOLID:  impact--; fallthrough;
+	case CSS_BORDER_STYLE_DASHED: impact--; fallthrough;
+	case CSS_BORDER_STYLE_DOTTED: impact--; fallthrough;
+	case CSS_BORDER_STYLE_RIDGE:  impact--; fallthrough;
+	case CSS_BORDER_STYLE_OUTSET: impact--; fallthrough;
+	case CSS_BORDER_STYLE_GROOVE: impact--; fallthrough;
+	case CSS_BORDER_STYLE_INSET:  impact--; fallthrough;
 	default:
 		break;
 	}
@@ -128,20 +129,20 @@ table_border_is_more_eyecatching(const css_unit_ctx *unit_len_ctx,
 
 	/** \todo COL/COL_GROUP */
 	switch (a_src) {
-	case BOX_TABLE_CELL:       impact++; /* Fall through */
-	case BOX_TABLE_ROW:        impact++; /* Fall through */
-	case BOX_TABLE_ROW_GROUP:  impact++; /* Fall through */
-	case BOX_TABLE:            impact++; /* Fall through */
+	case BOX_TABLE_CELL:       impact++; fallthrough;
+	case BOX_TABLE_ROW:        impact++; fallthrough;
+	case BOX_TABLE_ROW_GROUP:  impact++; fallthrough;
+	case BOX_TABLE:            impact++; fallthrough;
 	default:
 		break;
 	}
 
 	/** \todo COL/COL_GROUP */
 	switch (b_src) {
-	case BOX_TABLE_CELL:       impact--; /* Fall through */
-	case BOX_TABLE_ROW:        impact--; /* Fall through */
-	case BOX_TABLE_ROW_GROUP:  impact--; /* Fall through */
-	case BOX_TABLE:            impact--; /* Fall through */
+	case BOX_TABLE_CELL:       impact--; fallthrough;
+	case BOX_TABLE_ROW:        impact--; fallthrough;
+	case BOX_TABLE_ROW_GROUP:  impact--; fallthrough;
+	case BOX_TABLE:            impact--; fallthrough;
 	default:
 		break;
 	}

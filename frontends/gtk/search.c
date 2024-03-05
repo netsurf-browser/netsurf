@@ -270,6 +270,8 @@ nserror nsgtk_search_restyle(struct gtk_search *search)
 	case 4: /* Text icons only */
 		gtk_toolbar_set_style(GTK_TOOLBAR(search->bar),
 				      GTK_TOOLBAR_TEXT);
+		break;
+
 	default:
 		break;
 	}

@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include "utils/config.h"
+#include "utils/utils.h"
 #include "utils/corestrings.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
@@ -691,6 +692,7 @@ dom_default_action_DOMNodeInsertedIntoDocument_cb(struct dom_event *evt,
 			switch (tag_type) {
 			case DOM_HTML_ELEMENT_TYPE_SCRIPT:
 				dom_SCRIPT_showed_up(htmlc, (dom_html_script_element *) node);
+				fallthrough;
 			default:
 				break;
 			}
@@ -740,6 +742,7 @@ dom_default_action_DOMSubtreeModified_cb(struct dom_event *evt, void *pw)
 			case DOM_HTML_ELEMENT_TYPE_TEXTAREA:
 			case DOM_HTML_ELEMENT_TYPE_INPUT:
 				html_texty_element_update(htmlc, (dom_node *)node);
+				fallthrough;
 			default:
 				break;
 			}
