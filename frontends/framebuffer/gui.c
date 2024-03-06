@@ -1000,7 +1000,7 @@ fb_browser_window_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 				break;
 			}
 			/* Z or Y pressed but not undo or redo; */
-			/* Fall through */
+			fallthrough;
 
 		default:
 			ucs4 = fbtk_keycode_to_ucs4(cbi->event->value.keycode,
