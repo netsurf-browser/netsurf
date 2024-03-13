@@ -21,12 +21,11 @@
 #include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 
 #include "utils/config.h"
 #include "utils/errors.h"
 #include "utils/file.h"
+#include "utils/inet.h"
 #include "netsurf/bitmap.h"
 #include "content/hlcache.h"
 #include "content/backing_store.h"

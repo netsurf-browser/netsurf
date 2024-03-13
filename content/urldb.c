@@ -115,11 +115,6 @@
 #include "content/content.h"
 #include "content/urldb.h"
 
-#ifdef WITH_AMISSL
-/* AmiSSL needs everything to be using bsdsocket directly to avoid conflicts */
-#include <proto/bsdsocket.h>
-#endif
-
 /**
  * cookie entry.
  *

@@ -40,6 +40,11 @@
 #include <arpa/inet.h>
 #include <sys/select.h>
 
+#ifdef WITH_AMISSL
+/* AmiSSL needs everything to be using bsdsocket directly to avoid conflicts */
+#include <proto/bsdsocket.h>
+#endif
+
 #else
 
 #include <winsock2.h>
