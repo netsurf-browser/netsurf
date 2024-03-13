@@ -33,6 +33,7 @@
 
 #include "utils/log.h"
 #include "utils/utf8.h"
+#include "utils/utils.h"
 
 #include "riscos/gui.h"
 #include "riscos/oslib_pre7.h"
@@ -1023,7 +1024,7 @@ bool ro_textarea_key_press(wimp_key *key)
 
 				break;
 			}
-			/* fall through */
+			fallthrough;
 		case wimp_KEY_ESCAPE:
 			keypress = *key;
 			keypress.w = ta->parent;
