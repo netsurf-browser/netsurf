@@ -106,33 +106,11 @@
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 
-/* OpenSSL 1.0.x to 1.1.0 certificate reference counting changed
- * LibreSSL declares its OpenSSL version as 2.1 but only supports the old way
- */
-#if (defined(LIBRESSL_VERSION_NUMBER) || (OPENSSL_VERSION_NUMBER < 0x1010000fL))
-static int ns_X509_up_ref(X509 *cert)
-{
-	cert->references++;
-	return 1;
-}
-
-static void ns_X509_free(X509 *cert)
-{
-	cert->references--;
-	if (cert->references == 0) {
-		X509_free(cert);
-	}
-}
-#else
-#define ns_X509_up_ref X509_up_ref
-#define ns_X509_free X509_free
-#endif
-
 #else /* WITH_OPENSSL */
 
 typedef char X509;
 
-static void ns_X509_free(X509 *cert)
+static void X509_free(X509 *cert)
 {
 	free(cert);
 }
@@ -753,7 +731,7 @@ fetch_curl_verify_callback(int verify_ok, X509_STORE_CTX *x509_ctx)
 	 */
 	if (!fetch->cert_data[depth].cert) {
 		fetch->cert_data[depth].cert = X509_STORE_CTX_get_current_cert(x509_ctx);
-		ns_X509_up_ref(fetch->cert_data[depth].cert);
+		X509_up_ref(fetch->cert_data[depth].cert);
 		fetch->cert_data[depth].err = X509_STORE_CTX_get_error(x509_ctx);
 	}
 
@@ -1478,7 +1456,7 @@ static void fetch_curl_free(void *vf)
 	/* free certificate data */
 	for (i = 0; i < MAX_CERT_DEPTH; i++) {
 		if (f->cert_data[i].cert != NULL) {
-			ns_X509_free(f->cert_data[i].cert);
+			X509_free(f->cert_data[i].cert);
 		}
 	}
 
