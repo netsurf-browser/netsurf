@@ -45,6 +45,7 @@
 #ifdef WITH_AMISSL
 /* AmiSSL needs everything to be using bsdsocket directly to avoid conflicts */
 #include <proto/bsdsocket.h>
+#undef ns_close_socket
 #define ns_close_socket CloseSocket
 #endif
 
