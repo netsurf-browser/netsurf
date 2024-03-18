@@ -30,7 +30,23 @@ __ns_assert_fail(const char *__assertion, const char *__file,
 		 unsigned int __line, const char *__function)
 	__THROW __attribute__ ((__noreturn__));
 
-/* We use this to flush coverage data */
+#if __GNUC__ > 10
+
+/* We use this to dump coverage data in gcc 11 and later */
+extern void __gcov_dump(void);
+
+/* And here's our entry point */
+void
+__ns_assert_fail(const char *__assertion, const char *__file,
+		 unsigned int __line, const char *__function)
+{
+	__gcov_dump();
+	__assert_fail(__assertion, __file, __line, __function);
+}
+
+#else
+
+/* We use this to flush coverage data before gcc 11 */
 extern void __gcov_flush(void);
 
 /* And here's our entry point */
@@ -41,3 +57,4 @@ __ns_assert_fail(const char *__assertion, const char *__file,
 	__gcov_flush();
 	__assert_fail(__assertion, __file, __line, __function);
 }
+#endif
