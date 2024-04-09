@@ -26,10 +26,8 @@
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>
-#include <unistd.h>
 #include <unixlib/local.h>
 #include <fpu_control.h>
-#include <swis.h>
 #include <oslib/help.h>
 #include <oslib/uri.h>
 #include <oslib/inetsuite.h>
@@ -40,7 +38,6 @@
 #include <oslib/osbyte.h>
 #include <oslib/osmodule.h>
 #include <oslib/osfscontrol.h>
-#include <oslib/socket.h>
 
 #include "utils/utils.h"
 #include "utils/nsoption.h"
@@ -60,7 +57,6 @@
 #include "desktop/save_complete.h"
 #include "desktop/hotlist.h"
 #include "content/backing_store.h"
-#include "content/fetch.h"
 
 #include "riscos/gui.h"
 #include "riscos/bitmap.h"
@@ -117,13 +113,10 @@ static const char *task_name = "NetSurf";
 
 ro_gui_drag_type gui_current_drag_type;
 wimp_t task_handle; /**< RISC OS wimp task handle. */
+static clock_t gui_last_poll; /**< Time of last wimp_poll. */
 osspriteop_area *gui_sprites; /**< Sprite area containing pointer and hotlist sprites */
 
 #define DIR_SEP ('.')
-
-static void *pollword;
-static int *sockets_active;
-static size_t sockets_active_size;
 
 /**
  * Accepted wimp user messages.
@@ -395,19 +388,6 @@ static void ro_gui_cleanup(void)
 	xhourglass_off();
 	/* Uninstall NetSurf-specific fonts */
 	xos_cli("FontRemove NetSurf:Resources.Fonts.");
-	if (pollword != NULL) {
-		size_t i;
-		/* Deregister any remaining sockets from SocketWatch */
-		for (i = 0; i < sockets_active_size; i++) {
-			if (sockets_active[i] != -1) {
-				/* SocketWatch_Deregister */
-				(void) _swix(0x52281, _INR(0,1),
-						sockets_active[i], pollword);
-				sockets_active[i] = -1;
-			}
-		}
-		xosmodule_free(pollword);
-	}
 }
 
 
@@ -1133,101 +1113,6 @@ static bool ro_gui__os_alpha_sprites_supported(void)
 	return (var_val == (1 << 15));
 }
 
-static int ro_gui_socket_open(int domain, int type, int protocol)
-{
-	int sock = socket(domain, type, protocol);
-	if (sock != -1) {
-		size_t i;
-		int rosock;
-		_kernel_oserror *error;
-
-		rosock = __get_ro_socket(sock);
-		if (rosock == -1) {
-			close(sock);
-			errno = ENOMEM;
-			return -1;
-		}
-
-		/* SocketWatch_Register */
-		error = _swix(0x52280, _INR(0,2), pollword, 0x1, rosock);
-		if (error != NULL) {
-			close(sock);
-			errno = ENOMEM;
-			return -1;
-		}
-
-		/* Insert RISC OS socket handle into sockets_active */
-		for (i = 0; i < sockets_active_size; i++) {
-			if (sockets_active[i] == -1) {
-				sockets_active[i] = rosock;
-				break;
-			}
-		}
-		if (i == sockets_active_size) {
-			/* No free slots: expand table */
-			int *tmp = realloc(sockets_active,
-					sockets_active_size * 2 * sizeof(int));
-			if (tmp == NULL) {
-				/* SocketWatch_Deregister */
-				(void) _swix(0x52281, _INR(0,1), rosock, pollword);
-				close(sock);
-				errno = ENOMEM;
-				return -1;
-			}
-			memset(sockets_active + sockets_active_size, 0xff,
-					sockets_active_size * sizeof(int));
-			sockets_active_size *= 2;
-			sockets_active[i] = rosock;
-		}
-	}
-	return sock;
-}
-
-static int ro_gui_socket_close(int socket)
-{
-	int rosock;
-
-	rosock = __get_ro_socket(socket);
-	if (rosock != -1) {
-		size_t i;
-		/* Invalidate active sockets entry */
-		for (i = 0; i < sockets_active_size; i++) {
-			if (sockets_active[i] == rosock) {
-				sockets_active[i] = -1;
-				break;
-			}
-		}
-		/* SocketWatch_Deregister */
-		(void) _swix(0x52281, _INR(0,1), rosock, pollword);
-	}
-
-	return close(socket);
-}
-
-/**
- * Set up internet event handling
- */
-static os_error *ro_gui_init_internet_event(void)
-{
-	static os_error nomem = { 1, "No memory"};
-	os_error *error;
-
-	sockets_active = malloc(32 * sizeof(int));
-	if (sockets_active == NULL) {
-		return &nomem;
-	}
-	memset(sockets_active, 0xff, 32 * sizeof(int));
-	sockets_active_size = 32;
-
-	error = xosmodule_alloc(4, &pollword);
-	if (error != NULL) {
-		return error;
-	}
-
-	*((uint32_t*) pollword) = 0;
-	return NULL;
-}
-
 /**
  * Initialise the RISC OS specific GUI.
  *
@@ -1328,14 +1213,6 @@ static nserror gui_init(int argc, char** argv)
 	/* Load in visited URLs and Cookies */
 	urldb_load(nsoption_charp(url_path));
 	urldb_load_cookies(nsoption_charp(cookie_file));
-
-	/* Setup Internet event handling (must be after atexit) */
-	error = ro_gui_init_internet_event();
-	if (error != NULL) {
-		NSLOG(netsurf, INFO, "init_internet_event: 0x%x: %s",
-		      error->errnum, error->errmess);
-		die(error->errmess);
-	}
 
 	/* Initialise with the wimp */
 	error = xwimp_initialise(wimp_VERSION_RO38, task_name,
@@ -1960,14 +1837,6 @@ static void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
 				ro_gui_scroll(&(block->scroll));
 			break;
 
-		case wimp_POLLWORD_NON_ZERO:
-			/* simply reset pollword */
-			if (pollword != NULL) {
-				/* SocketWatch_AtomicReset */
-				_swix(0x52282, _INR(0,1), pollword, 0);
-			}
-			break;
-
 		case wimp_USER_MESSAGE:
 		case wimp_USER_MESSAGE_RECORDED:
 		case wimp_USER_MESSAGE_ACKNOWLEDGE:
@@ -1984,54 +1853,44 @@ static void riscos_poll(void)
 {
 	wimp_event_no event;
 	wimp_block block;
-	const wimp_poll_flags mask = wimp_MASK_LOSE | wimp_MASK_GAIN |
-		wimp_GIVEN_POLLWORD | wimp_SAVE_FP;
-	os_t t, track_poll_offset;
+	const wimp_poll_flags mask = wimp_MASK_LOSE | wimp_MASK_GAIN | wimp_SAVE_FP;
+	os_t track_poll_offset;
 
-	/* Drain pending non-pollword events until the first NULL event */
-	do {
-		xhourglass_off();
-		event = wimp_poll(wimp_MASK_POLLWORD | mask, &block, pollword);
-		xhourglass_on();
-
-		ro_gui_handle_event(event, &block);
-	} while (event != wimp_NULL_REASON_CODE);
-
-	/* Redraw window contents */
-	ro_gui_window_update_boxes();
-
-	/* Run scheduled callbacks, if any */
-	schedule_run();
-
-	/* Drive any active fetches. */
-	{
-		fd_set read_fd_set, write_fd_set, exc_fd_set;
-		int max_fd;
-
-		fetch_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
-	}
-
-	/* Poll wimp in the ordinary way. */
+	/* Poll wimp. */
 	xhourglass_off();
-	t = os_read_monotonic_time();
 	track_poll_offset = ro_mouse_poll_interval();
-	/* Work out how long we're prepared to wait for an event */
-	if (track_poll_offset > 0) {
-		t += track_poll_offset;
-	} else if (sched_active) {
-		t += 10;
-	} else {
-		t += 100;
-	}
-	/* And then clamp that to min(sched_time, t) */
-	if (sched_active && (sched_time - t) < 0) {
-		t = sched_time;
-	}
+	if (sched_active || (track_poll_offset > 0)) {
+		os_t t = os_read_monotonic_time();
 
-	event = wimp_poll_idle(mask, &block, t, pollword);
+		if (track_poll_offset > 0) {
+			t += track_poll_offset;
+		} else {
+			t += 10;
+		}
+
+		if (sched_active && (sched_time - t) < 0) {
+			t = sched_time;
+		}
+
+		event = wimp_poll_idle(mask, &block, t, 0);
+	} else {
+		event = wimp_poll(wimp_MASK_NULL | mask, &block, 0);
+	}
 
 	xhourglass_on();
+	gui_last_poll = clock();
 	ro_gui_handle_event(event, &block);
+
+	/* Only run scheduled callbacks on a null poll
+	 * We cannot do this in the null event handler, as that may be called
+	 * from gui_multitask(). Scheduled callbacks must only be run from the
+	 * top-level.
+	 */
+	if (event == wimp_NULL_REASON_CODE) {
+		schedule_run();
+	}
+
+	ro_gui_window_update_boxes();
 }
 
 
@@ -2530,8 +2389,6 @@ static struct gui_fetch_table riscos_fetch_table = {
 
 	.get_resource_url = gui_get_resource_url,
 	.mimetype = fetch_mimetype,
-	.socket_open = ro_gui_socket_open,
-	.socket_close = ro_gui_socket_close,
 };
 
 static struct gui_misc_table riscos_misc_table = {
