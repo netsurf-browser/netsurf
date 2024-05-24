@@ -631,7 +631,7 @@ monkey_window_handle_exec(int argc, char **argv)
 		moutf(MOUT_ERROR, "WINDOW NUM BAD");
 	} else {
 		/* Gather argv[4] onward into a string to pass to js_exec */
-		int total = 0;
+		int total = 1;
 		for (int i = 4; i < argc; ++i) {
 			total += strlen(argv[i]) + 1;
 		}
