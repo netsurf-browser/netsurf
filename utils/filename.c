@@ -100,7 +100,7 @@ const char *filename_request(void)
 
 	i = i % 99;
 
-	snprintf(filename_buffer, sizeof(filename_buffer), "%s%.2i", dir->prefix, i);
+	snprintf(filename_buffer, sizeof(filename_buffer), "%s%.2u", dir->prefix, (unsigned int)i);
 
 	return filename_buffer;
 }
