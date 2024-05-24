@@ -934,7 +934,7 @@ static bool textarea_reflow_multiline(struct textarea *ta,
 	assert(ta->flags & TEXTAREA_MULTILINE);
 
 	if (ta->lines == NULL) {
-		ta->lines = calloc(sizeof(struct line_info), LINE_CHUNK_SIZE);
+		ta->lines = calloc(LINE_CHUNK_SIZE, sizeof(struct line_info));
 		if (ta->lines == NULL) {
 			NSLOG(netsurf, INFO,
 			      "Failed to allocate memory for textarea lines");
