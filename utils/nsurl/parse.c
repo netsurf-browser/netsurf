@@ -32,6 +32,7 @@
  */
 
 #include <assert.h>
+#include <ctype.h>
 #include <libwapcaplet/libwapcaplet.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1256,6 +1257,29 @@ void nsurl__calc_hash(nsurl *url)
 	url->hash = hash;
 }
 
+/**
+ * Check that a hostname is valid
+ *
+ * Valid hostnames are valid DNS names.  This means they must consist only of
+ * the ASCII characters a-z A-Z 0-9 '.' or '-'.
+ *
+ * \param host	The hostname to check
+ * \return NSERROR_OK if the hostname is valid
+ */
+static nserror nsurl__check_host_valid(lwc_string *host)
+{
+	const char *chptr = lwc_string_data(host);
+	size_t nchrs = lwc_string_length(host);
+
+	while (nchrs--) {
+		const char ch = *chptr++;
+		if (!isalnum(ch) && !(ch == '.' || ch == '-')) {
+			/* Not alphanumeric dot or dash */
+			return NSERROR_INVALID;
+		}
+	}
+	return NSERROR_OK;
+}
 
 /******************************************************************************
  * NetSurf URL Public API                                                     *
@@ -1310,6 +1334,11 @@ nserror nsurl_create(const char * const url_s, nsurl **url)
 			&match) == lwc_error_ok && match == true)) {
 		/* http, https must have host */
 		if (c.host == NULL) {
+			nsurl__components_destroy(&c);
+			return NSERROR_BAD_URL;
+		}
+		/* host names must be a-z 0-9 hyphen and dot only */
+		if (nsurl__check_host_valid(c.host) != NSERROR_OK) {
 			nsurl__components_destroy(&c);
 			return NSERROR_BAD_URL;
 		}
