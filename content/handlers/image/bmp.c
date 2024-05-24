@@ -77,7 +77,7 @@ static nserror nsbmp_create_bmp_data(nsbmp_content *bmp)
 		.bitmap_get_buffer = guit->bitmap->get_buffer,
 	};
 
-	bmp->bmp = calloc(sizeof(struct bmp_image), 1);
+	bmp->bmp = calloc(1, sizeof(struct bmp_image));
 	if (bmp->bmp == NULL) {
 		content_broadcast_error(&bmp->base, NSERROR_NOMEM, NULL);
 		return NSERROR_NOMEM;

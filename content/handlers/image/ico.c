@@ -74,7 +74,7 @@ static nserror nsico_create_ico_data(nsico_content *c)
 		.bitmap_get_buffer = guit->bitmap->get_buffer,
 	};
 
-	c->ico = calloc(sizeof(ico_collection), 1);
+	c->ico = calloc(1, sizeof(ico_collection));
 	if (c->ico == NULL) {
 		content_broadcast_error(&c->base, NSERROR_NOMEM, NULL);
 		return NSERROR_NOMEM;
