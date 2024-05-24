@@ -45,7 +45,7 @@ static struct gui_download_window *
 gui_download_window_create(download_context *ctx,
                            struct gui_window *parent)
 {
-	struct gui_download_window *ret = calloc(sizeof(*ret), 1);
+	struct gui_download_window *ret = calloc(1, sizeof(*ret));
 	if (ret == NULL)
 		return NULL;
 	ret->g = parent;

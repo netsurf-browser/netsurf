@@ -36,7 +36,7 @@ struct bitmap {
 
 static void *bitmap_create(int width, int height, enum gui_bitmap_flags flags)
 {
-	struct bitmap *ret = calloc(sizeof(*ret), 1);
+	struct bitmap *ret = calloc(1, sizeof(*ret));
 	if (ret == NULL)
 		return NULL;
 

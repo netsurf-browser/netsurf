@@ -75,7 +75,7 @@ gui_window_create(struct browser_window *bw,
 		  struct gui_window *existing,
 		  gui_window_create_flags flags)
 {
-	struct gui_window *ret = calloc(sizeof(*ret), 1);
+	struct gui_window *ret = calloc(1, sizeof(*ret));
 	if (ret == NULL)
 		return NULL;
 

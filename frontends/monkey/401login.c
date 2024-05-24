@@ -56,7 +56,7 @@ gui_401login_open(struct nsurl *url,
 {
 	struct monkey401 *m401_ctx;
 
-	m401_ctx = calloc(sizeof(*m401_ctx), 1);
+	m401_ctx = calloc(1, sizeof(*m401_ctx));
 	if (m401_ctx == NULL) {
 		return NSERROR_NOMEM;
 	}
