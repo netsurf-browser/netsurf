@@ -139,7 +139,7 @@ window_alloc_new_callback(duk_context *ctx,
 			  int timeout)
 {
 	size_t new_handle = next_handle++;
-	window_schedule_t *sched = calloc(sizeof *sched, 1);
+	window_schedule_t *sched = calloc(1, sizeof *sched);
 	if (sched == NULL) {
 		return new_handle;
 	}
