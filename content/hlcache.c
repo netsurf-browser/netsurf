@@ -826,7 +826,7 @@ nserror hlcache_handle_abort(hlcache_handle *handle)
 		if (clone == NULL)
 			return NSERROR_NOMEM;
 
-		entry = calloc(sizeof(struct hlcache_entry), 1);
+		entry = calloc(1, sizeof(struct hlcache_entry));
 
 		if (entry == NULL) {
 			content_destroy(clone);

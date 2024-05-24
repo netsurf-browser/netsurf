@@ -3600,8 +3600,8 @@ llcache_object_snapshot(llcache_object *object,	llcache_object **snapshot)
 	}
 
 	if (object->num_headers > 0) {
-		newobj->headers = calloc(sizeof(llcache_header),
-				object->num_headers);
+		newobj->headers = calloc(object->num_headers,
+				sizeof(llcache_header));
 		if (newobj->headers == NULL) {
 			llcache_object_destroy(newobj);
 			return NSERROR_NOMEM;
