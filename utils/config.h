@@ -43,6 +43,7 @@ char *strndup(const char *s, size_t n);
 #endif
 
 #if ((defined(_GNU_SOURCE) ||			\
+     (defined(__GLIBC_PREREQ) && __GLIBC_PREREQ(2,38)) || \
       defined(__APPLE__) ||			\
       defined(__HAIKU__) ||			\
       defined(__NetBSD__) ||			\
@@ -75,6 +76,7 @@ char *strcasestr(const char *haystack, const char *needle);
  *  UnixLib if building for RISC OS.
  */
 #if ((defined(_GNU_SOURCE) && !defined(__APPLE__)) ||	\
+     (defined(__GLIBC_PREREQ) && __GLIBC_PREREQ(2,38)) || \
      defined(__riscos__) || \
      defined(NetBSD_v8))
 #define HAVE_STRCHRNUL
