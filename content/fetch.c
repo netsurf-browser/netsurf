@@ -726,7 +726,7 @@ fetch_multipart_data_new_kv(struct fetch_multipart_data **list,
 
 	assert(list);
 
-	newdata = calloc(sizeof(*newdata), 1);
+	newdata = calloc(1, sizeof(*newdata));
 
 	if (newdata == NULL) {
 		return NSERROR_NOMEM;
