@@ -1261,7 +1261,7 @@ void nsurl__calc_hash(nsurl *url)
  * Check that a hostname is valid
  *
  * Valid hostnames are valid DNS names.  This means they must consist only of
- * the ASCII characters a-z A-Z 0-9 '.' or '-'.
+ * the ASCII characters a-z A-Z 0-9 '.', '_', or '-'.
  *
  * \param host	The hostname to check
  * \return NSERROR_OK if the hostname is valid
@@ -1273,7 +1273,7 @@ static nserror nsurl__check_host_valid(lwc_string *host)
 
 	while (nchrs--) {
 		const char ch = *chptr++;
-		if (!isalnum(ch) && !(ch == '.' || ch == '-')) {
+		if (!isalnum(ch) && !(ch == '.' || ch == '-' || ch == '_')) {
 			/* Not alphanumeric dot or dash */
 			return NSERROR_INVALID;
 		}
@@ -1337,7 +1337,7 @@ nserror nsurl_create(const char * const url_s, nsurl **url)
 			nsurl__components_destroy(&c);
 			return NSERROR_BAD_URL;
 		}
-		/* host names must be a-z 0-9 hyphen and dot only */
+		/* host names must be a-z, 0-9, hyphen, underscore, and dot only */
 		if (nsurl__check_host_valid(c.host) != NSERROR_OK) {
 			nsurl__components_destroy(&c);
 			return NSERROR_BAD_URL;
