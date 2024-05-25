@@ -4,7 +4,7 @@
 #
 # NetSurf Library, tool and browser development support script
 #
-# Copyright 2013-2017 Vincent Sanders <vince@netsurf-browser.org>
+# Copyright 2013-2024 Vincent Sanders <vince@netsurf-browser.org>
 # Released under the MIT Licence
 #
 # This script allows NetSurf and its libraries to be built without
@@ -170,38 +170,33 @@ ns-package-install()
 # Setup environment
 ###############################################################################
 
-# find which command used to find everything else on path
-if [ -x /usr/bin/which ]; then
-    WHICH_CMD=/usr/bin/which
-else
-    WHICH_CMD=/bin/which
-fi
-
 # environment parameters
 
 # The system doing the building
 if [ "x${BUILD}" = "x" ]; then
-    BUILD_CC=$(${WHICH_CMD} cc)
+    BUILD_CC=$(command -v cc)
     if [ $? -eq 0 ];then
-        BUILD=$(cc -dumpmachine)
+        BUILD=$(${BUILD_CC} -dumpmachine)
     else
        echo "Unable to locate a compiler. Perhaps run ns-package-install"
        return 1
     fi
 fi
 
-# Get the host build if unset
+# work out the host compiler to use
 if [ "x${HOST}" = "x" ]; then
+    # no host ABI set so host is the same as build unless a target ABI is set
     if [ "x${TARGET_ABI}" = "x" ]; then
         HOST=${BUILD}
     else
         HOST=${TARGET_ABI}
     fi
 else
+    # attempt to find host tools with the specificed ABI
     HOST_CC_LIST="/opt/netsurf/${HOST}/cross/bin/${HOST}-cc /opt/netsurf/${HOST}/cross/bin/${HOST}-gcc ${HOST}-cc ${HOST}-gcc"
     for HOST_CC_V in $(echo ${HOST_CC_LIST});do
-        HOST_CC=$(${WHICH_CMD} ${HOST_CC_V})
-        if [ "x${HOST_CC}" != "x" ];then
+        HOST_CC=$(command -v ${HOST_CC_V})
+        if [ $? -eq 0 ];then
             break
         fi
     done
