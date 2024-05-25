@@ -141,7 +141,15 @@ else
     NS_GTK_GEN="gtk+ 2 toolkit library, librsvg2 library"
 fi
 
-# Generic OS package install
+ns-generic-install()
+{
+    echo "Unable to determine OS packaging system in use."
+    echo "Please ensure development packages are installed for:"
+    echo ${NS_DEV_GEN}"," ${NS_TOOL_GEN}"," ${NS_GTK_GEN}
+}
+
+
+# OS package install
 #  looks for package managers and tries to use them if present
 ns-package-install()
 {
@@ -160,9 +168,7 @@ ns-package-install()
     elif [ -x "/usr/sbin/pkg" ]; then
         ns-freebsdpkg-install
     else
-        echo "Unable to determine OS packaging system in use."
-        echo "Please ensure development packages are installed for:"
-        echo ${NS_DEV_GEN}"," ${NS_TOOL_GEN}"," ${NS_GTK_GEN}
+	ns-generic-install
     fi
 }
 
