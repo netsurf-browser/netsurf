@@ -1263,6 +1263,9 @@ void nsurl__calc_hash(nsurl *url)
  * Valid hostnames are valid DNS names.  This means they must consist only of
  * the ASCII characters a-z A-Z 0-9 '.', '_', or '-'.
  *
+ * Unfortunately we also need to deal with IPv6 literals which are constrained
+ * but strange.  Surrounded by '[' and ']' there are hex digits and colons
+ *
  * \param host	The hostname to check
  * \return NSERROR_OK if the hostname is valid
  */
@@ -1270,6 +1273,20 @@ static nserror nsurl__check_host_valid(lwc_string *host)
 {
 	const char *chptr = lwc_string_data(host);
 	size_t nchrs = lwc_string_length(host);
+
+	if (*chptr == '[' && chptr[nchrs-1] == ']') {
+		/* Treat this as an IPv6 Literal */
+		chptr++;
+		nchrs -= 2;
+		while (nchrs--) {
+			const char ch = *chptr++;
+			if (!isxdigit(ch) && ch != ':') {
+				/* Not hex digit or colon */
+				return NSERROR_INVALID;
+			}
+		}
+		return NSERROR_OK;
+	}
 
 	while (nchrs--) {
 		const char ch = *chptr++;
