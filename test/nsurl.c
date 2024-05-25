@@ -161,7 +161,7 @@ static const struct test_pairs create_tests[] = {
 	{ "http://%7a%7A/", "http://zz/" },
 
 	/* bad escape */
-	{ "http://%1g%G0/", "http://%1g%g0/" },
+	{ "http://%1g%G0/", NULL },
 
 	{ "    http://www.ns-b.org/",		"http://www.ns-b.org/" },
 	{ "http://www.ns-b.org/    ",		"http://www.ns-b.org/" },
