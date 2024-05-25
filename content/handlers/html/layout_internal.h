@@ -280,7 +280,7 @@ static inline bool lh__box_size_cross_is_auto(
 		return css_computed_height(b->style,
 				&length, &unit) == CSS_HEIGHT_AUTO;
 	} else {
-		return css_computed_width(b->style,
+		return css_computed_width_static(b->style,
 				&length, &unit) == CSS_WIDTH_AUTO;
 	}
 }
@@ -451,7 +451,7 @@ static inline void layout_find_dimensions(
 		css_fixed value = 0;
 		css_unit unit = CSS_UNIT_PX;
 
-		wtype = css_computed_width(style, &value, &unit);
+		wtype = css_computed_width_static(style, &value, &unit);
 
 		if (wtype == CSS_WIDTH_SET) {
 			if (unit == CSS_UNIT_PCT) {

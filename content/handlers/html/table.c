@@ -852,7 +852,7 @@ table_calculate_column_types(const css_unit_ctx *unit_len_ctx, struct box *table
 					col[i].positioned = false;
 				}
 
-				type = css_computed_width(cell->style, &value, &unit);
+				type = css_computed_width_static(cell->style, &value, &unit);
 
 				/* fixed width takes priority over any other width type */
 				if (col[i].type != COLUMN_WIDTH_FIXED &&
@@ -919,7 +919,7 @@ table_calculate_column_types(const css_unit_ctx *unit_len_ctx, struct box *table
 				if (!unknown_columns)
 					continue;
 
-				type = css_computed_width(cell->style, &value, &unit);
+				type = css_computed_width_static(cell->style, &value, &unit);
 
 				/* if cell is fixed width, and all spanned columns are fixed
 				 * or unknown width, split extra width among unknown columns */

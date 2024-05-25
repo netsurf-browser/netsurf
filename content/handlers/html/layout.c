@@ -402,7 +402,7 @@ static void layout_minmax_table(struct box *table,
 	}
 
 	/* fixed width takes priority, unless it is too narrow */
-	wtype = css_computed_width(table->style, &value, &unit);
+	wtype = css_computed_width_static(table->style, &value, &unit);
 	if (wtype == CSS_WIDTH_SET && unit != CSS_UNIT_PCT) {
 		int width = FIXTOINT(css_unit_len2device_px(
 					table->style,
@@ -670,7 +670,7 @@ layout_minmax_line(struct box *first,
 		assert(b->style);
 
 		/* calculate box width */
-		wtype = css_computed_width(b->style, &value, &unit);
+		wtype = css_computed_width_static(b->style, &value, &unit);
 		bs = css_computed_box_sizing(block->style);
 		if (wtype == CSS_WIDTH_SET) {
 			if (unit == CSS_UNIT_PCT) {
@@ -900,7 +900,7 @@ static void layout_minmax_block(
 		return;
 
 	if (block->style != NULL) {
-		wtype = css_computed_width(block->style, &width, &wunit);
+		wtype = css_computed_width_static(block->style, &width, &wunit);
 		htype = css_computed_height(block->style, &height, &hunit);
 		bs = css_computed_box_sizing(block->style);
 	}
@@ -1707,7 +1707,7 @@ bool layout_table(
 	}
 
 	/* find specified table width, or available width if auto-width */
-	wtype = css_computed_width(style, &value, &unit);
+	wtype = css_computed_width_static(style, &value, &unit);
 	if (wtype == CSS_WIDTH_SET) {
 		if (unit == CSS_UNIT_PCT) {
 			table_width = FPCT_OF_INT_TOINT(value, available_width);
@@ -3711,7 +3711,7 @@ bool layout_block_context(
 				css_fixed width = 0;
 				css_unit unit = CSS_UNIT_PX;
 
-				wtype = css_computed_width(box->style, &width,
+				wtype = css_computed_width_static(box->style, &width,
 						&unit);
 
 				if (wtype == CSS_WIDTH_AUTO) {
@@ -3840,7 +3840,7 @@ bool layout_block_context(
 				css_fixed width = 0;
 				css_unit unit = CSS_UNIT_PX;
 
-				wtype = css_computed_width(box->style,
+				wtype = css_computed_width_static(box->style,
 						&width, &unit);
 
 				x0 = cx;

@@ -1212,7 +1212,7 @@ box_image(dom_node *n,
 	ok = html_fetch_object(content, url, box, image_types, false);
 	nsurl_unref(url);
 
-	wtype = css_computed_width(box->style, &value, &wunit);
+	wtype = css_computed_width_static(box->style, &value, &wunit);
 	htype = css_computed_height(box->style, &value, &hunit);
 
 	if (wtype == CSS_WIDTH_SET &&

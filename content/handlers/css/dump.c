@@ -1782,7 +1782,7 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	}
 
 	/* width */
-	val = css_computed_width(style, &len1, &unit1);
+	val = css_computed_width_static(style, &len1, &unit1);
 	switch (val) {
 	case CSS_WIDTH_AUTO:
 		fprintf(stream, "width: auto ");
