@@ -26,9 +26,6 @@
 
 #define AUTO INT_MIN
 
-/* Fixed point percentage (a) of an integer (b), to an integer */
-#define FPCT_OF_INT_TOINT(a, b) (FIXTOINT(FDIV((a * b), F_100)))
-
 /**
  * Layout a block formatting context.
  *
