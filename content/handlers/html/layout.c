@@ -259,15 +259,13 @@ static void layout_minmax_table(struct box *table,
 		const html_content *content)
 {
 	unsigned int i, j;
+	int width;
 	int border_spacing_h = 0;
 	int table_min = 0, table_max = 0;
 	int extra_fixed = 0;
 	float extra_frac = 0;
 	struct column *col;
 	struct box *row_group, *row, *cell;
-	enum css_width_e wtype;
-	css_fixed value = 0;
-	css_unit unit = CSS_UNIT_PX;
 
 	/* check if the widths have already been calculated */
 	if (table->max_width != UNKNOWN_MAX_WIDTH)
@@ -402,12 +400,8 @@ static void layout_minmax_table(struct box *table,
 	}
 
 	/* fixed width takes priority, unless it is too narrow */
-	wtype = css_computed_width_static(table->style, &value, &unit);
-	if (wtype == CSS_WIDTH_SET && unit != CSS_UNIT_PCT) {
-		int width = FIXTOINT(css_unit_len2device_px(
-					table->style,
-					&content->unit_len_ctx,
-					value, unit));
+	if (css_computed_width(table->style, &content->unit_len_ctx,
+			-1, &width) == CSS_WIDTH_SET) {
 		if (table_min < width)
 			table_min = width;
 		if (table_max < width)
