@@ -2019,15 +2019,16 @@ static struct textarea *treeview__create_textarea(
 
 /* Exported interface, documented in treeview.h */
 nserror
-treeview_create(treeview **tree,
+treeview_create(treeview **treeout,
 		const struct treeview_callback_table *callbacks,
 		int n_fields,
 		struct treeview_field_desc fields[],
 		struct core_window *cw,
 		treeview_flags flags)
 {
+	treeview *tree;
 	nserror error;
-	int i;
+	int fldidx;
 
 	assert(callbacks != NULL);
 
@@ -2036,85 +2037,91 @@ treeview_create(treeview **tree,
 	assert(fields[n_fields - 1].flags & TREE_FLAG_DEFAULT);
 	assert(n_fields >= 2);
 
-	*tree = malloc(sizeof(struct treeview));
-	if (*tree == NULL) {
+	tree = malloc(sizeof(struct treeview));
+	if (tree == NULL) {
 		return NSERROR_NOMEM;
 	}
 
-	(*tree)->fields = malloc(sizeof(struct treeview_field) * n_fields);
-	if ((*tree)->fields == NULL) {
-		free(*tree);
+	tree->fields = malloc(sizeof(struct treeview_field) * n_fields);
+	if (tree->fields == NULL) {
+		free(tree);
 		return NSERROR_NOMEM;
 	}
 
-	error = treeview_create_node_root(&((*tree)->root));
+	error = treeview_create_node_root(&(tree->root));
 	if (error != NSERROR_OK) {
-		free((*tree)->fields);
-		free(*tree);
+		free(tree->fields);
+		free(tree);
 		return error;
 	}
 
-	(*tree)->field_width = 0;
-	for (i = 0; i < n_fields; i++) {
-		struct treeview_field *f = &((*tree)->fields[i]);
+	tree->field_width = 0;
+	for (fldidx = 0; fldidx < n_fields; fldidx++) {
+		struct treeview_field *f = &(tree->fields[fldidx]);
 
-		f->flags = fields[i].flags;
-		f->field = lwc_string_ref(fields[i].field);
-		f->value.data = lwc_string_data(fields[i].field);
-		f->value.len = lwc_string_length(fields[i].field);
+		f->flags = fields[fldidx].flags;
+		f->field = lwc_string_ref(fields[fldidx].field);
+		f->value.data = lwc_string_data(fields[fldidx].field);
+		f->value.len = lwc_string_length(fields[fldidx].field);
 
-		guit->layout->width(&plot_style_odd.text, f->value.data,
-				    f->value.len, &(f->value.width));
+		guit->layout->width(&plot_style_odd.text,
+				    f->value.data,
+				    f->value.len,
+				    &(f->value.width));
 
-		if (f->flags & TREE_FLAG_SHOW_NAME)
-			if ((*tree)->field_width < f->value.width)
-				(*tree)->field_width = f->value.width;
+		if (f->flags & TREE_FLAG_SHOW_NAME) {
+			if (tree->field_width < f->value.width) {
+				tree->field_width = f->value.width;
+			}
+		}
 	}
 
-	(*tree)->field_width += tree_g.step_width;
+	tree->field_width += tree_g.step_width;
 
-	(*tree)->callbacks = callbacks;
-	(*tree)->n_fields = n_fields - 1;
+	tree->callbacks = callbacks;
+	tree->n_fields = n_fields - 1;
 
-	(*tree)->drag.type = TV_DRAG_NONE;
-	(*tree)->drag.start_node = NULL;
-	(*tree)->drag.start.x = 0;
-	(*tree)->drag.start.y = 0;
-	(*tree)->drag.start.node_y = 0;
-	(*tree)->drag.start.node_h = 0;
-	(*tree)->drag.prev.x = 0;
-	(*tree)->drag.prev.y = 0;
-	(*tree)->drag.prev.node_y = 0;
-	(*tree)->drag.prev.node_h = 0;
+	tree->drag.type = TV_DRAG_NONE;
+	tree->drag.start_node = NULL;
+	tree->drag.start.x = 0;
+	tree->drag.start.y = 0;
+	tree->drag.start.node_y = 0;
+	tree->drag.start.node_h = 0;
+	tree->drag.prev.x = 0;
+	tree->drag.prev.y = 0;
+	tree->drag.prev.node_y = 0;
+	tree->drag.prev.node_h = 0;
 
-	(*tree)->move.root = NULL;
-	(*tree)->move.target = NULL;
-	(*tree)->move.target_pos = TV_TARGET_NONE;
+	tree->move.root = NULL;
+	tree->move.target = NULL;
+	tree->move.target_pos = TV_TARGET_NONE;
 
-	(*tree)->edit.textarea = NULL;
-	(*tree)->edit.node = NULL;
+	tree->edit.textarea = NULL;
+	tree->edit.node = NULL;
 
 	if (flags & TREEVIEW_SEARCHABLE) {
-		(*tree)->search.textarea = treeview__create_textarea(
-				*tree, 600, tree_g.line_height,
+		tree->search.textarea = treeview__create_textarea(
+				tree, 600, tree_g.line_height,
 				nscolours[NSCOLOUR_TEXT_INPUT_BG],
 				nscolours[NSCOLOUR_TEXT_INPUT_BG],
 				nscolours[NSCOLOUR_TEXT_INPUT_FG],
 				plot_style_odd.text,
 				treeview_textarea_search_callback);
-		if ((*tree)->search.textarea == NULL) {
-			treeview_destroy(*tree);
+		if (tree->search.textarea == NULL) {
+			treeview_destroy(tree);
 			return NSERROR_NOMEM;
 		}
 	} else {
-		(*tree)->search.textarea = NULL;
+		tree->search.textarea = NULL;
 	}
-	(*tree)->search.active = false;
-	(*tree)->search.search = false;
+	tree->search.active = false;
+	tree->search.search = false;
 
-	(*tree)->flags = flags;
+	tree->flags = flags;
 
-	(*tree)->cw_h = cw;
+	tree->cw_h = cw;
+
+	*treeout = tree;
 
 	return NSERROR_OK;
 }
