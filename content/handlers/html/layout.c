@@ -1036,11 +1036,11 @@ static void layout_minmax_block(
 		enum css_min_width_e min_type;
 		css_unit unit = CSS_UNIT_PX;
 		css_fixed value = 0;
+		int width;
 
-		if (wtype == CSS_WIDTH_SET && wunit != CSS_UNIT_PCT) {
-			min = max = FIXTOINT(
-					css_unit_len2device_px(block->style,
-					&content->unit_len_ctx, width, wunit));
+		if (css_computed_width(block->style, &content->unit_len_ctx,
+				-1, &width) == CSS_WIDTH_SET) {
+			min = max = width;
 			using_max_border_box = border_box;
 			using_min_border_box = border_box;
 		}
