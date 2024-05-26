@@ -1616,7 +1616,6 @@ bool layout_table(
 	struct box **row_span_cell;
 	struct column *col;
 	const css_computed_style *style = table->style;
-	enum css_width_e wtype;
 	enum css_height_e htype;
 	css_fixed value = 0;
 	css_unit unit = CSS_UNIT_PX;
@@ -1694,17 +1693,8 @@ bool layout_table(
 	}
 
 	/* find specified table width, or available width if auto-width */
-	wtype = css_computed_width_static(style, &value, &unit);
-	if (wtype == CSS_WIDTH_SET) {
-		if (unit == CSS_UNIT_PCT) {
-			table_width = FPCT_OF_INT_TOINT(value, available_width);
-		} else {
-			table_width =
-				FIXTOINT(css_unit_len2device_px(
-						style, &content->unit_len_ctx,
-						value, unit));
-		}
-
+	if (css_computed_width(style, &content->unit_len_ctx,
+			available_width, &table_width) == CSS_WIDTH_SET) {
 		/* specified width includes border */
 		table_width -= table->border[LEFT].width +
 				table->border[RIGHT].width;
