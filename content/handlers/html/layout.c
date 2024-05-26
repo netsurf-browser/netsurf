@@ -663,35 +663,28 @@ layout_minmax_line(struct box *first,
 		/* inline replaced, 10.3.2 and 10.6.2 */
 		assert(b->style);
 
-		/* calculate box width */
-		wtype = css_computed_width_static(b->style, &value, &unit);
 		bs = css_computed_box_sizing(block->style);
-		if (wtype == CSS_WIDTH_SET) {
-			if (unit == CSS_UNIT_PCT) {
-				width = AUTO;
-			} else {
-				width = FIXTOINT(css_unit_len2device_px(
-						b->style,
-						&content->unit_len_ctx,
-						value, unit));
 
-				if (bs == CSS_BOX_SIZING_BORDER_BOX) {
-					fixed = frac = 0;
-					calculate_mbp_width(&content->unit_len_ctx,
-							block->style, LEFT,
-							false, true, true,
-							&fixed, &frac);
-					calculate_mbp_width(&content->unit_len_ctx,
-							block->style, RIGHT,
-							false, true, true,
-							&fixed, &frac);
-					if (width < fixed) {
-						width = fixed;
-					}
+		/* calculate box width */
+		wtype = css_computed_width(b->style,
+				&content->unit_len_ctx, -1, &width);
+		if (wtype == CSS_WIDTH_SET) {
+			if (bs == CSS_BOX_SIZING_BORDER_BOX) {
+				fixed = frac = 0;
+				calculate_mbp_width(&content->unit_len_ctx,
+						block->style, LEFT,
+						false, true, true,
+						&fixed, &frac);
+				calculate_mbp_width(&content->unit_len_ctx,
+						block->style, RIGHT,
+						false, true, true,
+						&fixed, &frac);
+				if (width < fixed) {
+					width = fixed;
 				}
-				if (width < 0)
-					width = 0;
 			}
+			if (width < 0)
+				width = 0;
 		} else {
 			width = AUTO;
 		}
