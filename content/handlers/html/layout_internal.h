@@ -447,28 +447,12 @@ static inline void layout_find_dimensions(
 	unsigned int i;
 
 	if (width) {
-		enum css_width_e wtype;
-		css_fixed value = 0;
-		css_unit unit = CSS_UNIT_PX;
-
-		wtype = css_computed_width_static(style, &value, &unit);
-
-		if (wtype == CSS_WIDTH_SET) {
-			if (unit == CSS_UNIT_PCT) {
-				*width = FPCT_OF_INT_TOINT(
-						value, available_width);
-			} else {
-				*width = FIXTOINT(css_unit_len2device_px(
-						style, unit_len_ctx,
-						value, unit));
-			}
-		} else {
-			*width = AUTO;
-		}
-
-		if (*width != AUTO) {
+		if (css_computed_width(style, unit_len_ctx,
+				available_width, width) == CSS_WIDTH_SET) {
 			layout_handle_box_sizing(unit_len_ctx, box,
 					available_width, true, width);
+		} else {
+			*width = AUTO;
 		}
 	}
 
