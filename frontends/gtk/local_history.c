@@ -199,8 +199,7 @@ nsgtk_local_history_init(struct browser_window *bw,
 		return res;
 	}
 
-	res = local_history_init(ncwin->core.cb_table,
-				 (struct core_window *)ncwin,
+	res = local_history_init((struct core_window *)ncwin,
 				 bw,
 				 &ncwin->session);
 	if (res != NSERROR_OK) {

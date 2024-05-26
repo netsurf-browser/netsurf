@@ -236,7 +236,6 @@ struct page_info_entry pi__entries[PI_ENTRY__COUNT] = {
  * The page info window structure.
  */
 struct page_info {
-	const struct core_window_callback_table *cw_t;
 	struct core_window *cw_h;
 
 	struct browser_window *bw;
@@ -531,15 +530,13 @@ static nserror page_info__layout(
 
 	pi->width = max_x;
 	pi->height = cur_y;
-	return pi->cw_t->update_size(pi->cw_h, max_x, cur_y);
+	return guit->corewindow->set_extent(pi->cw_h, max_x, cur_y);
 }
 
 /* Exported interface documented in desktop/page_info.h */
-nserror page_info_create(
-		const struct core_window_callback_table *cw_t,
-		struct core_window *cw_h,
-		struct browser_window *bw,
-		struct page_info **pi_out)
+nserror page_info_create(struct core_window *cw_h,
+			 struct browser_window *bw,
+			 struct page_info **pi_out)
 {
 	struct page_info *pi;
 	nserror err;
@@ -549,7 +546,6 @@ nserror page_info_create(
 		return NSERROR_NOMEM;
 	}
 
-	pi->cw_t = cw_t;
 	pi->cw_h = cw_h;
 
 	memcpy(pi->entries, pi__entries, sizeof(pi__entries));
@@ -800,11 +796,10 @@ nserror page_info_mouse_action(
 					.y0 = cur_y,
 					.y1 = cur_y + height,
 				};
-				pi->cw_t->get_window_dimensions(
-						pi->cw_h, &w, &h);
+				guit->corewindow->get_dimensions(pi->cw_h, &w, &h);
 				r.x1 = (pi->width > w) ? pi->width : w;
 
-				pi->cw_t->invalidate(pi->cw_h, &r);
+				guit->corewindow->invalidate(pi->cw_h, &r);
 			}
 			entry->u.item.hover = hovering;
 			cur_y += height;

@@ -293,8 +293,7 @@ nserror ami_history_local_present(struct gui_window *gw)
 		return res;
 	}
 
-	res = local_history_init(ncwin->core.cb_table,
-				 (struct core_window *)ncwin,
+	res = local_history_init((struct core_window *)ncwin,
 				 ami_gui_get_browser_window(gw),
 				 &ncwin->session);
 	if (res != NSERROR_OK) {

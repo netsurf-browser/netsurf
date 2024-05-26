@@ -66,6 +66,15 @@ struct netsurf_table {
 	struct gui_window_table *window;
 
 	/**
+	 * Core window table.
+	 *
+	 * Provides all operations which affect core ui windows of a frontend.
+	 *
+	 * The table is optional and may be NULL which does nothing.
+	 */
+	struct core_window_table *corewindow;
+
+	/**
 	 * Download table.
 	 *
 	 * operations table for the download windows.

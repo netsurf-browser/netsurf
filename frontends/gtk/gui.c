@@ -65,6 +65,7 @@
 #include "gtk/toolbar_items.h"
 #include "gtk/scaffolding.h"
 #include "gtk/window.h"
+#include "gtk/corewindow.h"
 #include "gtk/schedule.h"
 #include "gtk/selection.h"
 #include "gtk/search.h"
@@ -1184,6 +1185,7 @@ int main(int argc, char** argv)
 	struct netsurf_table nsgtk_table = {
 		.misc = nsgtk_misc_table,
 		.window = nsgtk_window_table,
+		.corewindow = nsgtk_core_window_table,
 		.clipboard = nsgtk_clipboard_table,
 		.download = nsgtk_download_table,
 		.fetch = nsgtk_fetch_table,

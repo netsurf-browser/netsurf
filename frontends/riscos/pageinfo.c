@@ -197,10 +197,9 @@ ro_pageinfo_init(struct browser_window *bw,
 		return res;
 	}
 
-	res = page_info_create(ncwin->core.cb_table,
-				 (struct core_window *)ncwin,
-				 bw,
-				 &ncwin->pgi);
+	res = page_info_create((struct core_window *)ncwin,
+			       bw,
+			       &ncwin->pgi);
 	if (res != NSERROR_OK) {
 		free(ncwin);
 		return res;

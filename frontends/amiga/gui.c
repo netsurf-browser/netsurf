@@ -161,6 +161,7 @@
 #include "amiga/selectmenu.h"
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
+#include "amiga/corewindow.h"
 
 #define AMINS_SCROLLERPEN NUMDRIPENS
 #define NSA_KBD_SCROLL_PX 10
@@ -6541,6 +6542,7 @@ int main(int argc, char** argv)
 	struct netsurf_table amiga_table = {
 		.misc = &amiga_misc_table,
 		.window = &amiga_window_table,
+		.corewindow = amiga_core_window_table,
 		.clipboard = amiga_clipboard_table,
 		.download = amiga_download_table,
 		.fetch = &amiga_fetch_table,

@@ -248,7 +248,6 @@ struct treeview {
 
 	const struct treeview_callback_table *callbacks; /**< For node events */
 
-	const struct core_window_callback_table *cw_t; /**< Window cb table */
 	struct core_window *cw_h; /**< Core window handle */
 };
 
@@ -355,8 +354,8 @@ static inline void treeview__cw_invalidate_area(
 		const struct treeview *tree,
 		const struct rect *r)
 {
-	if (tree->cw_t != NULL) {
-		tree->cw_t->invalidate(tree->cw_h, r);
+	if (tree->cw_h != NULL) {
+		guit->corewindow->invalidate(tree->cw_h, r);
 	}
 }
 
@@ -369,14 +368,14 @@ static inline void treeview__cw_invalidate_area(
 static inline void treeview__cw_full_redraw(
 		const struct treeview *tree)
 {
-	if (tree->cw_t != NULL) {
+	if (tree->cw_h != NULL) {
 		static const struct rect r = {
 			.x0 = 0,
 			.y0 = 0,
 			.x1 = REDRAW_MAX,
 			.y1 = REDRAW_MAX,
 		};
-		tree->cw_t->invalidate(tree->cw_h, &r);
+		guit->corewindow->invalidate(tree->cw_h, &r);
 	}
 }
 
@@ -406,9 +405,10 @@ static inline void treeview__cw_update_size(
 	const struct treeview *tree,
 	int width, int height)
 {
-	if (tree->cw_t != NULL) {
-		tree->cw_t->update_size(tree->cw_h, width,
-				height + treeview__get_search_height(tree));
+	if (tree->cw_h != NULL) {
+		guit->corewindow->set_extent(tree->cw_h,
+				     width,
+				     height + treeview__get_search_height(tree));
 	}
 }
 
@@ -428,9 +428,8 @@ static inline void treeview__cw_scroll_top(
 		.y1 = tree_g.line_height,
 	};
 
-	cw_helper_scroll_visible(tree->cw_t, tree->cw_h, &r);
+	cw_helper_scroll_visible(tree->cw_h, &r);
 }
-
 
 /**
  * Corewindow callback wrapper: Get window viewport dimensions
@@ -443,8 +442,8 @@ static inline void treeview__cw_get_window_dimensions(
 	const struct treeview *tree,
 	int *width, int *height)
 {
-	if (tree->cw_t != NULL) {
-		tree->cw_t->get_window_dimensions(tree->cw_h, width, height);
+	if (tree->cw_h != NULL) {
+		guit->corewindow->get_dimensions(tree->cw_h, width, height);
 	}
 }
 
@@ -459,8 +458,8 @@ static inline void treeview__cw_drag_status(
 	const struct treeview *tree,
 	core_window_drag_status ds)
 {
-	if (tree->cw_t != NULL) {
-		tree->cw_t->drag_status(tree->cw_h, ds);
+	if (tree->cw_h != NULL) {
+		guit->corewindow->drag_status(tree->cw_h, ds);
 	}
 }
 
@@ -606,7 +605,7 @@ static inline void treeview__cw_scroll_to_node(
 
 	r.y1 += r.y0; /* Apply the Y offset to the second Y coordinate */
 
-	cw_helper_scroll_visible(tree->cw_t, tree->cw_h, &r);
+	cw_helper_scroll_visible(tree->cw_h, &r);
 }
 
 
@@ -2024,14 +2023,12 @@ treeview_create(treeview **tree,
 		const struct treeview_callback_table *callbacks,
 		int n_fields,
 		struct treeview_field_desc fields[],
-		const struct core_window_callback_table *cw_t,
 		struct core_window *cw,
 		treeview_flags flags)
 {
 	nserror error;
 	int i;
 
-	assert((cw_t == NULL && cw == NULL) || (cw_t != NULL && cw != NULL));
 	assert(callbacks != NULL);
 
 	assert(fields != NULL);
@@ -2117,7 +2114,6 @@ treeview_create(treeview **tree,
 
 	(*tree)->flags = flags;
 
-	(*tree)->cw_t = cw_t;
 	(*tree)->cw_h = cw;
 
 	return NSERROR_OK;
@@ -2126,18 +2122,14 @@ treeview_create(treeview **tree,
 
 /* Exported interface, documented in treeview.h */
 nserror
-treeview_cw_attach(treeview *tree,
-		   const struct core_window_callback_table *cw_t,
-		   struct core_window *cw)
+treeview_cw_attach(treeview *tree, struct core_window *cw)
 {
-	assert(cw_t != NULL);
 	assert(cw != NULL);
 
-	if (tree->cw_t != NULL || tree->cw_h != NULL) {
+	if (tree->cw_h != NULL) {
 		NSLOG(netsurf, INFO, "Treeview already attached.");
 		return NSERROR_UNKNOWN;
 	}
-	tree->cw_t = cw_t;
 	tree->cw_h = cw;
 
 	return NSERROR_OK;
@@ -2147,7 +2139,6 @@ treeview_cw_attach(treeview *tree,
 /* Exported interface, documented in treeview.h */
 nserror treeview_cw_detach(treeview *tree)
 {
-	tree->cw_t = NULL;
 	tree->cw_h = NULL;
 
 	treeview__search_cancel(tree, true);

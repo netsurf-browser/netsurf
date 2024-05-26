@@ -24,6 +24,8 @@
 #include "amiga/gui.h" /* need to know the size of ami_generic_window :( */
 #include "amiga/plotters.h"
 
+extern struct core_window_table *amiga_core_window_table;
+
 /**
  * BOOPSI objects
  */
@@ -81,9 +83,6 @@ struct ami_corewindow {
 
 		/** drag status set by core */
 		core_window_drag_status drag_status;
-
-		/** table of callbacks for core window operations */
-		struct core_window_callback_table *cb_table;
 
 		/**
 		 * callback to draw on drawable area of Amiga core window

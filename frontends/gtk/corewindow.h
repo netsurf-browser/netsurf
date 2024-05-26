@@ -21,6 +21,8 @@
 
 #include "netsurf/core_window.h"
 
+extern struct core_window_table *nsgtk_core_window_table;
+
 /**
  * nsgtk core window mouse state
  */
@@ -46,10 +48,10 @@ struct nsgtk_corewindow {
 	/* private variables */
 	/** Input method */
 	GtkIMContext *input_method;
-	/** table of callbacks for core window operations */
-	struct core_window_callback_table *cb_table;
+
 	/** mouse state */
 	struct nsgtk_corewindow_mouse mouse_state;
+
 	/** drag status set by core */
 	core_window_drag_status drag_status;
 

@@ -1324,7 +1324,7 @@ nserror hotlist_init(
 
 	/* Create the hotlist treeview */
 	err = treeview_create(&hl_ctx.tree, &hl_tree_cb_t,
-			HL_N_FIELDS, hl_ctx.fields, NULL, NULL,
+			HL_N_FIELDS, hl_ctx.fields, NULL,
 			TREEVIEW_SEARCHABLE);
 	if (err != NSERROR_OK) {
 		free(hl_ctx.save_path);
@@ -1351,13 +1351,12 @@ nserror hotlist_init(
 
 
 /* Exported interface, documented in hotlist.h */
-nserror hotlist_manager_init(struct core_window_callback_table *cw_t,
-		void *core_window_handle)
+nserror hotlist_manager_init(void *core_window_handle)
 {
 	nserror err;
 
 	/* Create the hotlist treeview */
-	err = treeview_cw_attach(hl_ctx.tree, cw_t, core_window_handle);
+	err = treeview_cw_attach(hl_ctx.tree, core_window_handle);
 	if (err != NSERROR_OK) {
 		return err;
 	}

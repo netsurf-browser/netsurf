@@ -962,14 +962,16 @@ ro_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
 }
 
 
-struct core_window_callback_table ro_cw_cb_table = {
+struct core_window_table ro_cw_cb_table = {
 	.invalidate = ro_cw_invalidate,
-	.update_size = ro_cw_update_size,
+	.set_extent = ro_cw_update_size,
 	.set_scroll = ro_cw_set_scroll,
 	.get_scroll = ro_cw_get_scroll,
-	.get_window_dimensions = ro_cw_get_window_dimensions,
+	.get_dimensions = ro_cw_get_window_dimensions,
 	.drag_status = ro_cw_drag_status
 };
+
+struct core_window_table *riscos_core_window_table = &ro_cw_cb_table;
 
 /**
  * dummy toolbar click callback
@@ -1004,9 +1006,6 @@ ro_corewindow_init(struct ro_corewindow *ro_cw,
 		   theme_style tb_style,
 		   const char *tb_help)
 {
-	/* setup the core window callback table */
-	ro_cw->cb_table = &ro_cw_cb_table;
-
 	/* start with the content area being as small as possible */
 	ro_cw->content_width = -1;
 	ro_cw->content_height = -1;

@@ -390,6 +390,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	struct netsurf_table win32_table = {
 		.misc = &win32_misc_table,
 		.window = win32_window_table,
+		.corewindow = win32_core_window_table,
 		.clipboard = win32_clipboard_table,
 		.download = win32_download_table,
 		.fetch = win32_fetch_table,

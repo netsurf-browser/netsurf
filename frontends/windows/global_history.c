@@ -143,8 +143,7 @@ static nserror nsw32_global_history_init(HINSTANCE hInstance)
 		return res;
 	}
 
-	res = global_history_init(ncwin->core.cb_table,
-				  (struct core_window *)ncwin);
+	res = global_history_init((struct core_window *)ncwin);
 	if (res != NSERROR_OK) {
 		free(ncwin);
 		return res;

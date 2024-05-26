@@ -72,6 +72,8 @@
 #include "riscos/help.h"
 #include "riscos/query.h"
 #include "riscos/window.h"
+#include "riscos/toolbar.h"
+#include "riscos/corewindow.h"
 #include "riscos/iconbar.h"
 #include "riscos/local_history.h"
 #include "riscos/global_history.h"
@@ -84,7 +86,6 @@
 #include "riscos/ucstables.h"
 #include "riscos/filetype.h"
 #include "riscos/font.h"
-#include "riscos/toolbar.h"
 #include "riscos/content-handlers/artworks.h"
 #include "riscos/content-handlers/draw.h"
 #include "riscos/content-handlers/sprite.h"
@@ -2433,6 +2434,7 @@ int main(int argc, char** argv)
 	struct netsurf_table riscos_table = {
 		.misc = &riscos_misc_table,
 		.window = riscos_window_table,
+		.corewindow = riscos_core_window_table,
 		.clipboard = riscos_clipboard_table,
 		.download = riscos_download_table,
 		.fetch = &riscos_fetch_table,

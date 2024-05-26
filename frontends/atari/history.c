@@ -36,11 +36,10 @@ struct atari_global_history_s atari_global_history;
 /* Setup Atari Treeview Callbacks: */
 
 static nserror
-atari_global_history_init_phase2(struct core_window *cw,
-				 struct core_window_callback_table *cb_t)
+atari_global_history_init_phase2(struct core_window *cw)
 {
 	NSLOG(netsurf, INFO, "cw %p", cw);
-	return(global_history_init(cb_t, cw));
+	return(global_history_init(cw));
 }
 
 static void atari_global_history_finish(struct core_window *cw)

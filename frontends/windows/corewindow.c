@@ -503,14 +503,16 @@ nsw32_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
 }
 
 
-struct core_window_callback_table nsw32_cw_cb_table = {
+struct core_window_table nsw32_cw_cb_table = {
 	.invalidate = nsw32_cw_invalidate_area,
-	.update_size = nsw32_cw_update_size,
+	.set_extent = nsw32_cw_update_size,
 	.set_scroll = nsw32_cw_set_scroll,
 	.get_scroll = nsw32_cw_get_scroll,
-	.get_window_dimensions = nsw32_cw_get_window_dimensions,
+	.get_dimensions = nsw32_cw_get_window_dimensions,
 	.drag_status = nsw32_cw_drag_status
 };
+
+struct core_window_table *win32_core_window_table = &nsw32_cw_cb_table;
 
 /* exported function documented nsw32/corewindow.h */
 nserror
@@ -521,7 +523,6 @@ nsw32_corewindow_init(HINSTANCE hInstance,
 	DWORD dwStyle;
 
 	/* setup the core window callback table */
-	nsw32_cw->cb_table = &nsw32_cw_cb_table;
 	nsw32_cw->drag_status = CORE_WINDOW_DRAG_NONE;
 
 	/* start with the content area being as small as possible */

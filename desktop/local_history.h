@@ -25,7 +25,6 @@
 #include "utils/errors.h"
 #include "netsurf/mouse.h"
 
-struct core_window_callback_table;
 struct redraw_context;
 struct nsurl;
 struct rect;
@@ -47,8 +46,7 @@ struct browser_window;
  * \param[out] session The created local history session context.
  * \return NSERROR_OK on success and session set, appropriate error code otherwise
  */
-nserror local_history_init(struct core_window_callback_table *cw_t,
-			   void *core_window_handle,
+nserror local_history_init(void *core_window_handle,
 			   struct browser_window *bw,
 			   struct local_history_session **session);
 

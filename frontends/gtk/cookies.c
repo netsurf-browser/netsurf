@@ -292,8 +292,7 @@ static nserror nsgtk_cookies_init(void)
 		return res;
 	}
 
-	res = cookie_manager_init(ncwin->core.cb_table,
-				  (struct core_window *)ncwin);
+	res = cookie_manager_init((struct core_window *)ncwin);
 	if (res != NSERROR_OK) {
 		free(ncwin);
 		return res;

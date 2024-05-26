@@ -192,14 +192,16 @@ fb_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
 }
 
 
-struct core_window_callback_table fb_cw_cb_table = {
+struct core_window_table fb_cw_cb_table = {
 	.invalidate = fb_cw_invalidate,
-	.update_size = fb_cw_update_size,
+	.set_extent = fb_cw_update_size,
 	.set_scroll = fb_cw_set_scroll,
 	.get_scroll = fb_cw_get_scroll,
-	.get_window_dimensions = fb_cw_get_window_dimensions,
+	.get_dimensions = fb_cw_get_window_dimensions,
 	.drag_status = fb_cw_drag_status
 };
+
+struct core_window_table *framebuffer_core_window_table = &fb_cw_cb_table;
 
 /* exported function documented fb/corewindow.h */
 nserror fb_corewindow_init(fbtk_widget_t *parent, struct fb_corewindow *fb_cw)
@@ -209,7 +211,6 @@ nserror fb_corewindow_init(fbtk_widget_t *parent, struct fb_corewindow *fb_cw)
 	furniture_width = nsoption_int(fb_furniture_size);
 
 	/* setup the core window callback table */
-	fb_cw->cb_table = &fb_cw_cb_table;
 	fb_cw->drag_status = CORE_WINDOW_DRAG_NONE;
 
 	/* container window */

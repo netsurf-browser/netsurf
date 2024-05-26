@@ -232,9 +232,7 @@ nserror nsgtk_page_info(struct browser_window *bw)
 		return res;
 	}
 
-	res = page_info_create(ncwin->core.cb_table,
-			(struct core_window *)ncwin,
-			bw, &ncwin->pi);
+	res = page_info_create((struct core_window *)ncwin, bw, &ncwin->pi);
 	if (res != NSERROR_OK) {
 		g_object_unref(G_OBJECT(ncwin->dlg));
 		free(ncwin);

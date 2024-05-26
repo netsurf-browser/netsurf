@@ -47,8 +47,7 @@ const char *tree_hotlist_path;
 struct atari_hotlist hl;
 
 /* Setup Atari Treeview Callbacks: */
-static nserror atari_hotlist_init_phase2(struct core_window *cw,
-					 struct core_window_callback_table * default_callbacks);
+static nserror atari_hotlist_init_phase2(struct core_window *cw);
 static void atari_hotlist_finish(struct core_window *cw);
 static void atari_hotlist_keypress(struct core_window *cw,
 				   uint32_t ucs4);
@@ -69,11 +68,10 @@ static struct atari_treeview_callbacks atari_hotlist_treeview_callbacks = {
 	.gemtk_user_func = handle_event
 };
 
-static nserror atari_hotlist_init_phase2(struct core_window *cw,
-					 struct core_window_callback_table *cb_t)
+static nserror atari_hotlist_init_phase2(struct core_window *cw)
 {
 	NSLOG(netsurf, INFO, "cw:%p", cw);
-	return hotlist_manager_init(cb_t, cw);
+	return hotlist_manager_init(cw);
 }
 
 static void atari_hotlist_finish(struct core_window *cw)

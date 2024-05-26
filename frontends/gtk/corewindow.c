@@ -718,20 +718,20 @@ nsgtk_cw_drag_status(struct core_window *cw, core_window_drag_status ds)
 /**
  * core window callback table for nsgtk
  */
-static struct core_window_callback_table nsgtk_cw_cb_table = {
+static struct core_window_table nsgtk_cw_cb_table = {
 	.invalidate = nsgtk_cw_invalidate_area,
-	.update_size = nsgtk_cw_update_size,
+	.set_extent = nsgtk_cw_update_size,
 	.set_scroll = nsgtk_cw_set_scroll,
 	.get_scroll = nsgtk_cw_get_scroll,
-	.get_window_dimensions = nsgtk_cw_get_window_dimensions,
+	.get_dimensions = nsgtk_cw_get_window_dimensions,
 	.drag_status = nsgtk_cw_drag_status
 };
 
+struct core_window_table *nsgtk_core_window_table = &nsgtk_cw_cb_table;
 
 /* exported function documented gtk/corewindow.h */
 nserror nsgtk_corewindow_init(struct nsgtk_corewindow *nsgtk_cw)
 {
-	nsgtk_cw->cb_table = &nsgtk_cw_cb_table;
 	nsgtk_cw->drag_status = CORE_WINDOW_DRAG_NONE;
 
 	/* input method setup */

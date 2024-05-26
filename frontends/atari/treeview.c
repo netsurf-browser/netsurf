@@ -531,15 +531,16 @@ atari_treeview_drag_status(struct core_window *cw, core_window_drag_status ds)
 /**
  * Declare Core Window Callbacks:
  */
-static struct core_window_callback_table cw_t = {
+static struct core_window_table cw_t = {
 	.invalidate = atari_treeview_invalidate_area,
-	.update_size = atari_treeview_update_size,
+	.set_extent = atari_treeview_update_size,
 	.set_scroll = atari_treeview_set_scroll,
 	.get_scroll = atari_treeview_get_scroll,
-	.get_window_dimensions = atari_treeview_get_window_dimensions,
+	.get_dimensions = atari_treeview_get_window_dimensions,
 	.drag_status = atari_treeview_drag_status
 };
 
+struct core_window_table *atari_core_window_table = &cw_t;
 
 /* exported interface documented in atari/treeview.h */
 struct core_window *
@@ -586,7 +587,7 @@ atari_treeview_create(GUIWIN *win, struct atari_treeview_callbacks * callbacks,
 	/* event handlers of the treeview: */
 	/* It would be more simple to not pass around the callbacks */
 	/* but the treeview constructor requires them for initialization...  */
-	nserror err = tv->io->init_phase2((struct core_window *)tv, &cw_t);
+	nserror err = tv->io->init_phase2((struct core_window *)tv);
 	if (err != NSERROR_OK) {
 		free(tv);
 		tv = NULL;

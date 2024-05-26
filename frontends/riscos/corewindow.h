@@ -31,6 +31,8 @@
 
 #include "netsurf/core_window.h"
 
+extern struct core_window_table *riscos_core_window_table;
+
 /**
  * ro core window state
  */
@@ -53,9 +55,6 @@ struct ro_corewindow {
         /** drag status set by core */
         core_window_drag_status drag_status;
 
-        /** table of callbacks for core window operations */
-        struct core_window_callback_table *cb_table;
-	
         /**
          * callback to draw on drawable area of ro core window
          *

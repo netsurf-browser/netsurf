@@ -257,10 +257,9 @@ nserror ami_pageinfo_open(struct browser_window *bw, ULONG left, ULONG top)
 		return res;
 	}
 
-	res = page_info_create(ncwin->core.cb_table,
-					  (struct core_window *)ncwin,
-					  bw,
-					  &ncwin->pi);
+	res = page_info_create((struct core_window *)ncwin,
+			       bw,
+			       &ncwin->pi);
 
 	if (res != NSERROR_OK) {
 		ami_utf8_free(ncwin->core.wintitle);

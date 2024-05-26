@@ -36,8 +36,7 @@ struct atari_cookie_manager_s atari_cookie_manager;
 
 
 /* Setup Atari Treeview Callbacks: */
-static nserror atari_cookie_manager_init_phase2(struct core_window *cw,
-				struct core_window_callback_table * default_callbacks);
+static nserror atari_cookie_manager_init_phase2(struct core_window *cw);
 static void atari_cookie_manager_finish(struct core_window *cw);
 static void atari_cookie_manager_keypress(struct core_window *cw,
 												uint32_t ucs4);
@@ -60,11 +59,10 @@ static struct atari_treeview_callbacks atari_cookie_manager_treeview_callbacks =
 
 
 static nserror
-atari_cookie_manager_init_phase2(struct core_window *cw,
-                                 struct core_window_callback_table *cb_t)
+atari_cookie_manager_init_phase2(struct core_window *cw)
 {
 	NSLOG(netsurf, INFO, "cw %p", cw);
-	return(cookie_manager_init(cb_t, cw));
+	return(cookie_manager_init(cw));
 }
 
 

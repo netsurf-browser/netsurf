@@ -147,8 +147,7 @@ static nserror nsw32_hotlist_init(HINSTANCE hInstance)
 		return res;
 	}
 
-	res = hotlist_manager_init(ncwin->core.cb_table,
-			   (struct core_window *)ncwin);
+	res = hotlist_manager_init((struct core_window *)ncwin);
 	if (res != NSERROR_OK) {
 		free(ncwin);
 		return res;

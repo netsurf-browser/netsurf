@@ -36,7 +36,6 @@ struct page_info;
 struct core_window;
 struct browser_window;
 struct redraw_context;
-struct core_window_callback_table;
 
 /**
  * Initialise the page_info module.
@@ -59,17 +58,14 @@ nserror page_info_fini(void);
  * It can be destroyed before the browser window is destroyed by calling
  * \ref page_info_destroy.
  *
- * \param[in]  cw_t    Callback table for the containing core_window.
  * \param[in]  cw_h    Handle for the containing core_window.
  * \param[in]  bw      Browser window to show page info for.
  * \param[out] pi_out  The created page info window handle.
  * \return NSERROR_OK on success, appropriate error code otherwise.
  */
-nserror page_info_create(
-		const struct core_window_callback_table *cw_t,
-		struct core_window *cw_h,
-		struct browser_window *bw,
-		struct page_info **pi_out);
+nserror page_info_create(struct core_window *cw_h,
+			 struct browser_window *bw,
+			 struct page_info **pi_out);
 
 /**
  * Destroy a page info corewindow.

@@ -33,6 +33,7 @@
 #include "netsurf/browser_window.h"
 #include "netsurf/layout.h"
 #include "netsurf/window.h"
+#include "netsurf/treeview.h"
 #include "netsurf/clipboard.h"
 #include "netsurf/fetch.h"
 #include "netsurf/misc.h"
@@ -1107,6 +1108,7 @@ int main(int argc, char** argv)
     struct netsurf_table atari_table = {
 	.misc = &atari_misc_table,
 	.window = &atari_window_table,
+	.corewindow = atari_core_window_table,
 	.clipboard = &atari_clipboard_table,
 	.download = atari_download_table,
 	.fetch = &atari_fetch_table,

@@ -723,8 +723,7 @@ struct treeview_callback_table gh_tree_cb_t = {
 
 
 /* Exported interface, documented in global_history.h */
-nserror global_history_init(struct core_window_callback_table *cw_t,
-		void *core_window_handle)
+nserror global_history_init(void *core_window_handle)
 {
 	nserror err;
 
@@ -755,7 +754,7 @@ nserror global_history_init(struct core_window_callback_table *cw_t,
 	/* Create the global history treeview */
 	err = treeview_create(&gh_ctx.tree, &gh_tree_cb_t,
 			N_FIELDS, gh_ctx.fields,
-			cw_t, core_window_handle,
+			core_window_handle,
 			TREEVIEW_NO_MOVES | TREEVIEW_DEL_EMPTY_DIRS |
 			TREEVIEW_SEARCHABLE);
 	if (err != NSERROR_OK) {

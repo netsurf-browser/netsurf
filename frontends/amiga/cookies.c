@@ -385,7 +385,7 @@ nserror ami_cookies_present(const char *search_term)
 		return res;
 	}
 
-	res = cookie_manager_init(ncwin->core.cb_table, (struct core_window *)ncwin);
+	res = cookie_manager_init((struct core_window *)ncwin);
 	if (res != NSERROR_OK) {
 		ami_utf8_free(ncwin->core.wintitle);
 		DisposeObject(ncwin->core.objects[GID_CW_WIN]);

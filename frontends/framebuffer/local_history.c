@@ -160,8 +160,7 @@ fb_local_history_init(fbtk_widget_t *parent,
 		return res;
 	}
 
-	res = local_history_init(ncwin->core.cb_table,
-				 (struct core_window *)ncwin,
+	res = local_history_init((struct core_window *)ncwin,
 				 bw,
 				 &ncwin->session);
 	if (res != NSERROR_OK) {

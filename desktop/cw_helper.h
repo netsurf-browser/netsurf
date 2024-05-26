@@ -27,7 +27,6 @@
 
 struct rect;
 struct core_window;
-struct core_window_callback_table;
 
 /**
  * Scroll a core window to make the given rectangle visible.
@@ -37,9 +36,6 @@ struct core_window_callback_table;
  * \param[in] r     The rectangle to make visisble by scrolling.
  * \return NSERROR_OK on success or appropriate error code
  */
-nserror cw_helper_scroll_visible(
-		const struct core_window_callback_table *cw_t,
-		struct core_window *cw_h,
-		const struct rect *r);
+nserror cw_helper_scroll_visible(struct core_window *cw_h, const struct rect *r);
 
 #endif

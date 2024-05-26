@@ -788,8 +788,7 @@ struct treeview_callback_table cm_tree_cb_t = {
 
 
 /* Exported interface, documented in cookie_manager.h */
-nserror cookie_manager_init(struct core_window_callback_table *cw_t,
-		void *core_window_handle)
+nserror cookie_manager_init(void *core_window_handle)
 {
 	nserror err;
 
@@ -817,7 +816,7 @@ nserror cookie_manager_init(struct core_window_callback_table *cw_t,
 	/* Create the cookie manager treeview */
 	err = treeview_create(&cm_ctx.tree, &cm_tree_cb_t,
 			COOKIE_M_N_FIELDS, cm_ctx.fields,
-			cw_t, core_window_handle,
+			core_window_handle,
 			TREEVIEW_NO_MOVES |
 			TREEVIEW_DEL_EMPTY_DIRS |
 			TREEVIEW_SEARCHABLE);

@@ -55,6 +55,7 @@
 #include "framebuffer/fetch.h"
 #include "framebuffer/bitmap.h"
 #include "framebuffer/local_history.h"
+#include "framebuffer/corewindow.h"
 
 
 #define NSFB_TOOLBAR_DEFAULT_LAYOUT "blfsrutc"
@@ -2188,6 +2189,7 @@ main(int argc, char** argv)
 	struct netsurf_table framebuffer_table = {
 		.misc = &framebuffer_misc_table,
 		.window = &framebuffer_window_table,
+		.corewindow = framebuffer_core_window_table,
 		.clipboard = framebuffer_clipboard_table,
 		.fetch = framebuffer_fetch_table,
 		.utf8 = framebuffer_utf8_table,

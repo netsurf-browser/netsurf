@@ -21,6 +21,8 @@
 
 #include "netsurf/core_window.h"
 
+extern struct core_window_table *win32_core_window_table;
+
 /**
  * nsw32 core window state
  */
@@ -39,9 +41,6 @@ struct nsw32_corewindow {
 	
         /** drag status set by core */
         core_window_drag_status drag_status;
-
-        /** table of callbacks for core window operations */
-        struct core_window_callback_table *cb_table;
 	
         /**
          * callback to draw on drawable area of nsw32 core window

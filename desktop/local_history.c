@@ -49,7 +49,6 @@
  */
 struct local_history_session {
 	struct browser_window *bw;
-	struct core_window_callback_table *cw_t;
 	void *core_window_handle;
 	struct history_entry *cursor;
 };
@@ -302,15 +301,12 @@ local_history_scroll_to_cursor(struct local_history_session *session)
 	cursor.y1 = cursor.y0 + LOCAL_HISTORY_HEIGHT +
 			LOCAL_HISTORY_BOTTOM_MARGIN / 2;
 
-	return cw_helper_scroll_visible(session->cw_t,
-			session->core_window_handle,
-			&cursor);
+	return cw_helper_scroll_visible(session->core_window_handle, &cursor);
 }
 
 /* exported interface documented in desktop/local_history.h */
 nserror
-local_history_init(struct core_window_callback_table *cw_t,
-		   void *core_window_handle,
+local_history_init(void *core_window_handle,
 		   struct browser_window *bw,
 		   struct local_history_session **session)
 {
@@ -333,7 +329,6 @@ local_history_init(struct core_window_callback_table *cw_t,
 		return NSERROR_NOMEM;
 	}
 
-	nses->cw_t = cw_t;
 	nses->core_window_handle = core_window_handle;
 
 	local_history_set(nses, bw);
@@ -469,7 +464,7 @@ local_history_keypress(struct local_history_session *session, uint32_t key)
 			browser_window_history_go(session->bw, session->cursor,
 						  false);
 			local_history_scroll_to_cursor(session);
-			session->cw_t->invalidate(session->core_window_handle, NULL);
+			guit->corewindow->invalidate(session->core_window_handle, NULL);
 		}
 		/* We have handled this keypress */
 		return true;
@@ -478,7 +473,7 @@ local_history_keypress(struct local_history_session *session, uint32_t key)
 		if (session->cursor->back != NULL) {
 			session->cursor = session->cursor->back;
 			local_history_scroll_to_cursor(session);
-			session->cw_t->invalidate(session->core_window_handle, NULL);
+			guit->corewindow->invalidate(session->core_window_handle, NULL);
 		}
 		/* We have handled this keypress */
 		return true;
@@ -487,7 +482,7 @@ local_history_keypress(struct local_history_session *session, uint32_t key)
 		if (session->cursor->forward_pref != NULL) {
 			session->cursor = session->cursor->forward_pref;
 			local_history_scroll_to_cursor(session);
-			session->cw_t->invalidate(session->core_window_handle, NULL);
+			guit->corewindow->invalidate(session->core_window_handle, NULL);
 		}
 		/* We have handled this keypress */
 		return true;
@@ -509,7 +504,7 @@ local_history_keypress(struct local_history_session *session, uint32_t key)
 		}
 		/* We have handled this keypress */
 		local_history_scroll_to_cursor(session);
-		session->cw_t->invalidate(session->core_window_handle, NULL);
+		guit->corewindow->invalidate(session->core_window_handle, NULL);
 		return true;
 	case NS_KEY_UP:
 		/* Go to next sibling up, if there is one */
@@ -538,7 +533,7 @@ local_history_keypress(struct local_history_session *session, uint32_t key)
 		}
 		/* We have handled this keypress */
 		local_history_scroll_to_cursor(session);
-		session->cw_t->invalidate(session->core_window_handle, NULL);
+		guit->corewindow->invalidate(session->core_window_handle, NULL);
 		return true;
 	}
 	return false;
@@ -556,9 +551,9 @@ local_history_set(struct local_history_session *session,
 		assert(session->bw->history != NULL);
 		session->cursor = bw->history->current;
 
-		session->cw_t->update_size(session->core_window_handle,
-					   session->bw->history->width,
-					   session->bw->history->height);
+		guit->corewindow->set_extent(session->core_window_handle,
+					     session->bw->history->width,
+					     session->bw->history->height);
 		local_history_scroll_to_cursor(session);
 	}
 

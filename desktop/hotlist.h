@@ -25,7 +25,6 @@
 #include "utils/errors.h"
 #include "netsurf/mouse.h"
 
-struct core_window_callback_table;
 struct redraw_context;
 struct nsurl;
 struct rect;
@@ -47,9 +46,7 @@ struct rect;
  * \param save_path The path to save hotlist to, or NULL for read-only mode.
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror hotlist_init(
-		const char *load_path,
-		const char *save_path);
+nserror hotlist_init(const char *load_path, const char *save_path);
 
 /**
  * Initialise the hotlist manager.
@@ -58,12 +55,10 @@ nserror hotlist_init(
  *
  * The provided core window handle must be valid until hotlist_fini is called.
  *
- * \param cw_t Callback table for core_window containing the treeview
- * \param core_window_handle The handle in which the treeview is shown
+ * \param core_window_handle The handle in which the hotlist is shown
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror hotlist_manager_init(struct core_window_callback_table *cw_t,
-		void *core_window_handle);
+nserror hotlist_manager_init(void *core_window_handle);
 
 
 /**

@@ -25,7 +25,6 @@
 #include "utils/errors.h"
 #include "netsurf/mouse.h"
 
-struct core_window_callback_table;
 struct redraw_context;
 struct nsurl;
 struct rect;
@@ -38,12 +37,10 @@ struct rect;
  *
  * This must be called before any other global_history_* function.
  *
- * \param cw_t Callback table for core_window containing the treeview.
- * \param core_window_handle The core_window in which the treeview is shown.
+ * \param core_window_handle The core_window in which the global history is shown.
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror global_history_init(struct core_window_callback_table *cw_t,
-		void *core_window_handle);
+nserror global_history_init(void *core_window_handle);
 
 /**
  * Finalise the global history.

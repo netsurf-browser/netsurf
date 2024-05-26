@@ -586,7 +586,7 @@ nserror ami_hotlist_present(void)
 		return res;
 	}
 
-	res = hotlist_manager_init(ncwin->core.cb_table, (struct core_window *)ncwin);
+	res = hotlist_manager_init((struct core_window *)ncwin);
 	if (res != NSERROR_OK) {
 		ami_utf8_free(ncwin->core.wintitle);
 		DisposeObject(ncwin->core.objects[GID_CW_WIN]);

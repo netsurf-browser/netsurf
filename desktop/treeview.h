@@ -32,7 +32,6 @@
 
 struct redraw_context;
 struct core_window;
-struct core_window_callback_table;
 
 typedef struct treeview treeview;
 typedef struct treeview_node treeview_node;
@@ -189,9 +188,10 @@ nserror treeview_fini(void);
  */
 nserror treeview_create(treeview **tree,
 			const struct treeview_callback_table *callbacks,
-			int n_fields, struct treeview_field_desc fields[],
-			const struct core_window_callback_table *cw_t,
-			struct core_window *cw, treeview_flags flags);
+			int n_fields,
+			struct treeview_field_desc fields[],
+			struct core_window *cw,
+			treeview_flags flags);
 
 
 /**
@@ -204,9 +204,7 @@ nserror treeview_create(treeview **tree,
  * \param cw		The core_window in which the treeview is shown
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror treeview_cw_attach(treeview *tree,
-			   const struct core_window_callback_table *cw_t,
-			   struct core_window *cw);
+nserror treeview_cw_attach(treeview *tree, struct core_window *cw);
 
 
 /**

@@ -46,9 +46,11 @@ typedef enum {
 } core_window_drag_status;
 
 /**
- * Callbacks to achieve various core window functionality.
+ * Core user interface window function table.
+ *
+ * function table implementing core window operations
  */
-struct core_window_callback_table {
+struct core_window_table {
 	/**
 	 * Invalidate an area of a window.
 	 *
@@ -69,14 +71,14 @@ struct core_window_callback_table {
 	nserror (*invalidate)(struct core_window *cw, const struct rect *rect);
 
 	/**
-	 * Update the limits of the window
+	 * Update the logical extent of the window
 	 *
 	 * \param[in] cw the core window object
 	 * \param[in] width the width in px, or negative if don't care
 	 * \param[in] height the height in px, or negative if don't care
 	 * \return NSERROR_OK on success or appropriate error code
 	 */
-	nserror (*update_size)(struct core_window *cw, int width, int height);
+	nserror (*set_extent)(struct core_window *cw, int width, int height);
 
 	/**
 	 * Scroll the window to given scroll offsets
@@ -110,7 +112,7 @@ struct core_window_callback_table {
 	 * \param[out] height to be set to viewport height in px
 	 * \return NSERROR_OK on success or appropriate error code
 	 */
-	nserror (*get_window_dimensions)(const struct core_window *cw,
+	nserror (*get_dimensions)(const struct core_window *cw,
 			int *width, int *height);
 
 	/**

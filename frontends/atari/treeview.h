@@ -22,7 +22,7 @@
 #include "atari/gui.h"
 #include "atari/gemtk/gemtk.h"
 
-struct core_window_callback_table;
+extern struct core_window_table *atari_core_window_table;
 
 /**
  * Default AES Window widgets for a treeview window, can be passed to
@@ -50,7 +50,7 @@ struct atari_treeview_window;
  */
 
 /** \todo atari add drag_status callback */
-typedef nserror (*atari_treeview_init2_callback)(struct core_window *cw, struct core_window_callback_table * default_callbacks);
+typedef nserror (*atari_treeview_init2_callback)(struct core_window *cw);
 typedef void (*atari_treeview_finish_callback)(struct core_window *cw);
 typedef void (*atari_treeview_keypress_callback)(struct core_window *cw, uint32_t ucs4);
 typedef void (*atari_treeview_mouse_action_callback)(struct core_window *cw, browser_mouse_state mouse, int x, int y);
