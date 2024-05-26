@@ -33,7 +33,6 @@
 #include "netsurf/browser_window.h"
 #include "netsurf/layout.h"
 #include "netsurf/window.h"
-#include "netsurf/treeview.h"
 #include "netsurf/clipboard.h"
 #include "netsurf/fetch.h"
 #include "netsurf/misc.h"
@@ -67,6 +66,7 @@
 #include "atari/filetype.h"
 #include "atari/bitmap.h"
 #include "atari/font.h"
+#include "atari/treeview.h"
 #include "cflib.h"
 
 static bool atari_quit = false;
