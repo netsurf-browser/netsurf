@@ -688,6 +688,25 @@ static bool idna__is_ace(const char *label, size_t len)
 	return false;
 }
 
+/* This is the maximum length of a full DNS name */
+#define FQDN_MAX 256
+
+/* A "no action" action for FQDN_APPEND */
+#define NO_ACTION (void)0
+
+#define FQDN_APPEND(s, len, action)                                            \
+	do {                                                                   \
+		if ((FQDN_MAX - fqdn_len) <= len) {                            \
+			/* Not enough room to append this element */           \
+			action;                                                \
+			return NSERROR_BAD_URL;                                \
+		} else {                                                       \
+			strncpy(fqdn_p, s, len);                               \
+			fqdn_p += len;                                         \
+			fqdn_len += len;                                       \
+			action;                                                \
+		}                                                              \
+	} while (0)
 
 /* exported interface documented in idna.h */
 nserror
@@ -696,7 +715,7 @@ idna_encode(const char *host, size_t len, char **ace_host, size_t *ace_len)
 	nserror error;
 	int32_t *ucs4_host;
 	size_t label_len, output_len, ucs4_len, fqdn_len = 0;
-	char fqdn[256];
+	char fqdn[FQDN_MAX];
 	char *output, *fqdn_p = fqdn;
 
 	label_len = idna__host_label_length(host, len);
@@ -728,10 +747,7 @@ idna_encode(const char *host, size_t len, char **ace_host, size_t *ace_len)
 			if (error != NSERROR_OK) {
 				return error;
 			}
-			strncpy(fqdn_p, output, output_len);
-			free(output);
-			fqdn_p += output_len;
-			fqdn_len += output_len;
+			FQDN_APPEND(output, output_len, free(output));
 		} else {
 			/* This is already a DNS-valid ASCII string */
 			if ((idna__is_ace(host, label_len) == true) &&
@@ -740,14 +756,10 @@ idna_encode(const char *host, size_t len, char **ace_host, size_t *ace_len)
 				      "Cannot verify ACE label %s", host);
 				return NSERROR_BAD_URL;
 			}
-			strncpy(fqdn_p, host, label_len);
-			fqdn_p += label_len;
-			fqdn_len += label_len;
+			FQDN_APPEND(host, label_len, NO_ACTION);
 		}
 
-		*fqdn_p = '.';
-		fqdn_p++;
-		fqdn_len++;
+		FQDN_APPEND(".", 1, NO_ACTION);
 
 		host += label_len;
 		if ((*host == '\0') || (*host == ':')) {
@@ -775,7 +787,7 @@ idna_decode(const char *ace_host, size_t ace_len, char **host, size_t *host_len)
 	nserror error;
 	int32_t *ucs4_host;
 	size_t label_len, output_len, ucs4_len, fqdn_len = 0;
-	char fqdn[256];
+	char fqdn[FQDN_MAX];
 	char *output, *fqdn_p = fqdn;
 
 	label_len = idna__host_label_length(ace_host, ace_len);
@@ -801,21 +813,13 @@ idna_decode(const char *ace_host, size_t ace_len, char **host, size_t *host_len)
 			if (error != NSERROR_OK) {
 				return error;
 			}
-
-			memcpy(fqdn_p, output, output_len);
-			free(output);
-			fqdn_p += output_len;
-			fqdn_len += output_len;
+			FQDN_APPEND(output, output_len, free(output));
 		} else {
 			/* Not ACE */
-			memcpy(fqdn_p, ace_host, label_len);
-			fqdn_p += label_len;
-			fqdn_len += label_len;
+			FQDN_APPEND(ace_host, label_len, NO_ACTION);
 		}
 
-		*fqdn_p = '.';
-		fqdn_p++;
-		fqdn_len++;
+		FQDN_APPEND(".", 1, NO_ACTION);
 
 		ace_host += label_len;
 		if ((*ace_host == '\0') || (*ace_host == ':')) {
