@@ -280,7 +280,7 @@ static inline bool lh__box_size_cross_is_auto(
 		return css_computed_height(b->style,
 				&length, &unit) == CSS_HEIGHT_AUTO;
 	} else {
-		return css_computed_width_static(b->style,
+		return css_computed_width(b->style,
 				&length, &unit) == CSS_WIDTH_AUTO;
 	}
 }
@@ -447,7 +447,7 @@ static inline void layout_find_dimensions(
 	unsigned int i;
 
 	if (width) {
-		if (css_computed_width(style, unit_len_ctx,
+		if (css_computed_width_px(style, unit_len_ctx,
 				available_width, width) == CSS_WIDTH_SET) {
 			layout_handle_box_sizing(unit_len_ctx, box,
 					available_width, true, width);

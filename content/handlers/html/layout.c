@@ -400,7 +400,7 @@ static void layout_minmax_table(struct box *table,
 	}
 
 	/* fixed width takes priority, unless it is too narrow */
-	if (css_computed_width(table->style, &content->unit_len_ctx,
+	if (css_computed_width_px(table->style, &content->unit_len_ctx,
 			-1, &width) == CSS_WIDTH_SET) {
 		if (table_min < width)
 			table_min = width;
@@ -666,7 +666,7 @@ layout_minmax_line(struct box *first,
 		bs = css_computed_box_sizing(block->style);
 
 		/* calculate box width */
-		wtype = css_computed_width(b->style,
+		wtype = css_computed_width_px(b->style,
 				&content->unit_len_ctx, -1, &width);
 		if (wtype == CSS_WIDTH_SET) {
 			if (bs == CSS_BOX_SIZING_BORDER_BOX) {
@@ -887,7 +887,7 @@ static void layout_minmax_block(
 		return;
 
 	if (block->style != NULL) {
-		wtype = css_computed_width_static(block->style, &width, &wunit);
+		wtype = css_computed_width(block->style, &width, &wunit);
 		htype = css_computed_height(block->style, &height, &hunit);
 		bs = css_computed_box_sizing(block->style);
 	}
@@ -1038,7 +1038,7 @@ static void layout_minmax_block(
 		css_fixed value = 0;
 		int width;
 
-		if (css_computed_width(block->style, &content->unit_len_ctx,
+		if (css_computed_width_px(block->style, &content->unit_len_ctx,
 				-1, &width) == CSS_WIDTH_SET) {
 			min = max = width;
 			using_max_border_box = border_box;
@@ -1693,7 +1693,7 @@ bool layout_table(
 	}
 
 	/* find specified table width, or available width if auto-width */
-	if (css_computed_width(style, &content->unit_len_ctx,
+	if (css_computed_width_px(style, &content->unit_len_ctx,
 			available_width, &table_width) == CSS_WIDTH_SET) {
 		/* specified width includes border */
 		table_width -= table->border[LEFT].width +
@@ -3688,7 +3688,7 @@ bool layout_block_context(
 				css_fixed width = 0;
 				css_unit unit = CSS_UNIT_PX;
 
-				wtype = css_computed_width_static(box->style, &width,
+				wtype = css_computed_width(box->style, &width,
 						&unit);
 
 				if (wtype == CSS_WIDTH_AUTO) {
@@ -3817,7 +3817,7 @@ bool layout_block_context(
 				css_fixed width = 0;
 				css_unit unit = CSS_UNIT_PX;
 
-				wtype = css_computed_width_static(box->style,
+				wtype = css_computed_width(box->style,
 						&width, &unit);
 
 				x0 = cx;
