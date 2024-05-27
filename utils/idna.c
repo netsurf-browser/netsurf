@@ -701,7 +701,7 @@ static bool idna__is_ace(const char *label, size_t len)
 			action;                                                \
 			return NSERROR_BAD_URL;                                \
 		} else {                                                       \
-			strncpy(fqdn_p, s, len);                               \
+			memcpy(fqdn_p, s, len);                                \
 			fqdn_p += len;                                         \
 			fqdn_len += len;                                       \
 			action;                                                \
