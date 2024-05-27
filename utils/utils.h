@@ -49,6 +49,10 @@
 #ifndef max
 #define max(x,y) (((x)>(y))?(x):(y))
 #endif
+
+#ifndef clamp
+#define clamp(x,low,high) (min(max((x),(low)),(high)))
+#endif
 #endif
 
 /* Windows does not have POSIX mkdir so work around that */
