@@ -926,6 +926,7 @@ static nserror nsurl__create_from_section(const char * const url_s,
 				/* valid idna encoding */
 				if (lwc_intern_string(host, host_len,
 						&url->host) != lwc_error_ok) {
+					free(host);
 					return NSERROR_NOMEM;
 				}
 				free(host);
