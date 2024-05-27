@@ -949,7 +949,7 @@ static nserror nsgtk_setup(int argc, char** argv, char **respath)
 		      resource_filename);
 		free(resource_filename);
 	}
-	search_web_select_provider(nsoption_int(search_provider));
+	search_web_select_provider(nsoption_charp(search_web_provider));
 
 	/* Default favicon */
 	res = nsgdk_pixbuf_new_from_resname("favicon.png", &favicon_pixbuf);

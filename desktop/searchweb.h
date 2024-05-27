@@ -86,34 +86,34 @@ nserror search_web_get_provider_bitmap(struct bitmap **bitmap_out);
 /**
  * Change the currently selected web search provider.
  *
- * \param selection Index of the search provider to select or -1 to
+ * \param selection Name of the search provider to select or NULL to
  *                  reselect the current provider
  * \return NSERROR_OK on success or appropriate error code.
  */
-nserror search_web_select_provider(int selection);
+nserror search_web_select_provider(const char *selection);
 
 
 /**
  * Iterate the search providers, returning their names.
  *
- * \param from Index to start iteration from.  Use 0 to begin iteration.
+ * \param from Index to start iteration from.  Use -1 to begin iteration.
  *             Use the value returned from search_web_iterate_providers to
  *             continue an iteration.
  * \param name Pointer to fill in with the search provider name requested.
  * \return -1 if there are no more, otherwise the iterator for the next item.
  *
  * \verbatim
- *     ssize_t iter;
+ *     ssize_t iter = -1;
  *     const char *name;
  *     ...
- *     for (iter = search_web_iterate_providers(0, &name);
- *          iter != -1;
- *          iter = search_web_iterate_providers(iter, &name)) {
+ *     iter = search_web_iterate_providers(iter, &name);
+ *     while(iter !=-1) {
  *         do_something_with(name);
+ *         iter = search_web_iterate_providers(iter, &name);
  *     }
  * \endverbatim
  */
-ssize_t search_web_iterate_providers(ssize_t from, const char **name);
+ssize_t search_web_iterate_providers(ssize_t iter, const char **name);
 
 
 /**

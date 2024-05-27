@@ -830,15 +830,33 @@ TOGGLEBUTTON_SIGNALS(checkUrlSearch, search_url_bar)
 G_MODULE_EXPORT void
 nsgtk_preferences_comboSearch_changed(GtkComboBox *widget, struct ppref *priv)
 {
-	int provider;
+	gboolean set;
+	GtkTreeIter iter;
+	GtkTreeModel* model;
+	gchar* provider;
+	const char* defprovider;
 
-	provider = gtk_combo_box_get_active(widget);
+	set = gtk_combo_box_get_active_iter(GTK_COMBO_BOX(widget), &iter);
+	if (!set) {
+		return;
+	}
 
-	/* set the option */
-	nsoption_set_int(search_provider, provider);
+	model = gtk_combo_box_get_model(GTK_COMBO_BOX(widget));
+	gtk_tree_model_get(model, &iter, 0, &provider,  -1);
 
 	/* set search provider */
 	search_web_select_provider(provider);
+
+	/* set to default option if the default provider is selected */
+	if ((search_web_iterate_providers(-1, &defprovider) != -1) &&
+	    (strcmp(provider, defprovider) == 0)) {
+		free(provider);
+		/* use default option */
+		provider = NULL;
+	}
+
+	/* set the option which takes owership of the provider allocation */
+	nsoption_set_charp(search_web_provider, provider);
 }
 
 G_MODULE_EXPORT void
@@ -846,20 +864,29 @@ nsgtk_preferences_comboSearch_realize(GtkWidget *widget, struct ppref *priv)
 {
 	int iter;
 	const char *name;
-	int provider = nsoption_int(search_provider);
+	const char *provider;
+	int provider_idx = 0;
 
-	if (priv->search_providers != NULL) {
-		gtk_list_store_clear(priv->search_providers);
-		for (iter = search_web_iterate_providers(0, &name);
-		     iter != -1;
-		     iter = search_web_iterate_providers(iter, &name)) {
-			gtk_list_store_insert_with_values(priv->search_providers,
-							  NULL, -1,
-							  0, name, -1);
+	if (priv->search_providers == NULL) {
+		return;
+	}
+	gtk_list_store_clear(priv->search_providers);
+
+	provider = nsoption_charp(search_web_provider);
+
+	iter = search_web_iterate_providers(-1, &name);
+	while (iter != -1) {
+		gtk_list_store_insert_with_values(priv->search_providers,
+						  NULL, -1,
+						  0, name, -1);
+		if ((provider != NULL) && (strcmp(name, provider) == 0)) {
+			provider_idx = iter;
 		}
+		iter = search_web_iterate_providers(iter, &name);
 	}
 
-	gtk_combo_box_set_active(GTK_COMBO_BOX(widget), provider);
+
+	gtk_combo_box_set_active(GTK_COMBO_BOX(widget), provider_idx);
 }
 
 
@@ -1003,4 +1030,3 @@ GtkWidget* nsgtk_preferences(struct browser_window *bw, GtkWindow *parent)
 
 	return GTK_WIDGET(priv->dialog);
 }
-

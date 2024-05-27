@@ -1474,7 +1474,7 @@ void ami_gui_opts_open(void)
 											GA_RelVerify, TRUE,
 											CHOOSER_PopUp, TRUE,
 											CHOOSER_Labels, websearch_list,
-											CHOOSER_Selected, nsoption_int(search_provider),
+											CHOOSER_Selected, nsoption_charp(search_web_provider),
 											CHOOSER_MaxLabels, 40,
 										ChooserEnd,
 										CHILD_Label, LabelObj,
@@ -2009,8 +2009,8 @@ static void ami_gui_opts_use(bool save)
 	if(old_tab_always_show != nsoption_bool(tab_always_show))
 		ami_gui_tabs_toggle_all();
 	
-	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_SEARCH_PROV],(ULONG *)&nsoption_int(search_provider));
-	search_web_select_provider(nsoption_int(search_provider));
+	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_SEARCH_PROV],(char *)nsoption_charp(search_web_provider));
+	search_web_select_provider(nsoption_charp(search_web_provider));
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_CLIPBOARD],(ULONG *)&data);
 	if (data) {

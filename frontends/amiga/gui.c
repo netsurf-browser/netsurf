@@ -1456,7 +1456,7 @@ static void gui_init2(int argc, char** argv)
 
 	hotlist_init(nsoption_charp(hotlist_file),
 			nsoption_charp(hotlist_file));
-	search_web_select_provider(nsoption_int(search_provider));
+	search_web_select_provider(nsoption_charp(search_web_provider));
 
 	if (notalreadyrunning && 
 	    (nsoption_bool(startup_no_window) == false))
