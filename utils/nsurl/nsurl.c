@@ -356,7 +356,15 @@ nserror nsurl_get_utf8(const nsurl *url, char **url_s, size_t *url_l)
 	err = idna_decode(lwc_string_data(host), lwc_string_length(host),
 			&idna_host, &idna_host_len);
 	if (err != NSERROR_OK) {
-		goto cleanup;
+		/* Fall back to non-IDNA */
+		idna_host_len = lwc_string_length(host);
+		idna_host = malloc(idna_host_len + 1);
+		if (idna_host == NULL) {
+			err = NSERROR_NOMEM;
+			goto cleanup;
+		}
+		memcpy(idna_host, lwc_string_data(host), idna_host_len);
+		idna_host[idna_host_len] = '\0';
 	}
 
 	err = nsurl_get(url,
