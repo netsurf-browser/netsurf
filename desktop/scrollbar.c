@@ -562,11 +562,11 @@ void scrollbar_set(struct scrollbar *s, int value, bool bar_pos)
 bool scrollbar_scroll(struct scrollbar *s, int change)
 {
 	int well_length;
-	int old_offset = s->offset;
+	int old_offset;
 	struct scrollbar_msg_data msg;
 
-	if (change == 0 || s->full_size <= s->visible_size) {
-		/* zero scroll step, or unscrollable */
+	if (s == NULL || change == 0 || s->full_size <= s->visible_size) {
+		/* scrollbar not present, zero scroll step, or unscrollable */
 		return false;
 	}
 
@@ -594,6 +594,7 @@ bool scrollbar_scroll(struct scrollbar *s, int change)
 	}
 
 	/* Get new offset */
+	old_offset = s->offset;
 	if (s->offset + change > s->full_size - s->visible_size) {
 		s->offset = s->full_size - s->visible_size;
 	} else if (s->offset + change < 0) {

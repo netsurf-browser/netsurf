@@ -2403,7 +2403,6 @@ browser_window_scroll_at_point_internal(struct browser_window *bw,
 					int x, int y,
 					int scrx, int scry)
 {
-	bool handled_scroll = false;
 	assert(bw != NULL);
 
 	/* Handle (i)frame scroll offset (core-managed browser windows only) */
@@ -2443,18 +2442,9 @@ browser_window_scroll_at_point_internal(struct browser_window *bw,
 		return true;
 	}
 
-	/* Try to scroll this window, if scroll not already handled */
-	if (handled_scroll == false) {
-		if (bw->scroll_y && scrollbar_scroll(bw->scroll_y, scry)) {
-			handled_scroll = true;
-		}
-
-		if (bw->scroll_x && scrollbar_scroll(bw->scroll_x, scrx)) {
-			handled_scroll = true;
-		}
-	}
-
-	return handled_scroll;
+	/* Try to scroll this window */
+	return scrollbar_scroll(bw->scroll_y, scry) |
+		scrollbar_scroll(bw->scroll_x, scrx);
 }
 
 
