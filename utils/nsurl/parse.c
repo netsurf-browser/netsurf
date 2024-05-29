@@ -1281,7 +1281,7 @@ static nserror nsurl__check_host_valid(lwc_string *host)
 		nchrs -= 2;
 		while (nchrs--) {
 			const char ch = *chptr++;
-			if (!isxdigit(ch) && ch != ':') {
+			if (!ascii_is_hex(ch) && ch != ':') {
 				/* Not hex digit or colon */
 				return NSERROR_INVALID;
 			}
@@ -1291,7 +1291,7 @@ static nserror nsurl__check_host_valid(lwc_string *host)
 
 	while (nchrs--) {
 		const char ch = *chptr++;
-		if (!isalnum(ch) && !(ch == '.' || ch == '-' || ch == '_')) {
+		if (!ascii_is_alphanumerical(ch) && !(ch == '.' || ch == '-' || ch == '_')) {
 			/* Not alphanumeric dot or dash */
 			return NSERROR_INVALID;
 		}
