@@ -1,7 +1,7 @@
 Quick Build Steps for NetSurf
 =============================
 
-Last Updated: 21st January 2020
+Last Updated: 28th May 2024
 
 This document provides steps for building NetSurf.
 
@@ -30,13 +30,27 @@ Grab a temporary env.sh
 Install any packages you need
 -----------------------------
 
-Installs all packages required to build NetSurf and the NetSurf project
-libraries.
+The package install helper installs all packages required to build NetSurf
+  and the NetSurf project libraries. By *default* no libraries for a graphical
+  toolkit are installed.
 
      $ ns-package-install
 
+If NetSurf is to be built to target a graphical toolkit the development
+  packages for that toolkit can be installed by setting the TARGET_TOOLKIT
+  variable to one of framebuffer, gtk2, gtk3 or qt6
+
+     $ TARGET_TOOLKIT=qt6 ns-package-install
+
 If your package manager is not supported, you will have to install third
   party packages manually.
+
+
+Update the environment settings after package installation
+----------------------------------------------------------
+
+     $ unset HOST
+     $ source env.sh
 
 
 Get the NetSurf project source code from Git
@@ -50,8 +64,8 @@ Local copies may be easily obtained with the ns-clone command.
      $ ns-clone
 
 
-Build and install our project libraries
----------------------------------------
+Build and install NetSurf project libraries
+-------------------------------------------
 
 Updates NetSurf project library sources to latest, builds and installs them.
 

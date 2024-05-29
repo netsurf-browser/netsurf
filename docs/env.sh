@@ -16,6 +16,8 @@
 #   HOST sets the target architecture for library builds
 #   BUILD sets the building machines architecture
 #   TARGET_WORKSPACE is the workspace directory to keep the sandboxes
+#   TARGET_TOOLKIT controls development package installs
+#                  can be unset or one of framebuffer, gtk2, gtk3, qt6
 #
 # The use of HOST and BUILD here is directly comprable to the GCC
 #   usage as described at:
@@ -26,18 +28,12 @@
 # OS Package installation
 ###############################################################################
 
-# deb packages for dpkg based systems
-NS_DEV_DEB="build-essential pkg-config git gperf libcurl3-dev libpng-dev libjpeg-dev"
-NS_TOOL_DEB="flex bison libhtml-parser-perl"
-if [ "x${NETSURF_GTK_MAJOR}" = "x3" ]; then
-    NS_GTK_DEB="libgtk-3-dev librsvg2-dev"
-else
-    NS_GTK_DEB="libgtk2.0-dev librsvg2-dev"
-fi
 
+# deb packages for dpkg based systems
 # apt get commandline to install necessary dev packages
-ns-apt-get-install()
+ns_apt_get_install()
 {
+    NS_DEV_DEB="build-essential pkg-config git gperf libcurl3-dev libexpat1-dev libpng-dev libjpeg-dev"
     LIBCURL_OPENSSL_CONFLICTS="$(/usr/bin/apt-cache show libcurl4-openssl-dev | grep Conflicts | grep -o libssl1.0-dev)"
     if [ "x${LIBCURL_OPENSSL_CONFLICTS}" != "x" ]; then
         NS_DEV_DEB="${NS_DEV_DEB} libssl-dev"
@@ -46,106 +42,163 @@ ns-apt-get-install()
     else
         NS_DEV_DEB="${NS_DEV_DEB} libssl-dev"
     fi
-    sudo apt-get install $(echo ${NS_DEV_DEB} ${NS_TOOL_DEB} ${NS_GTK_DEB})
+
+    NS_TOOL_DEB="flex bison libhtml-parser-perl"
+
+    case "${TARGET_TOOLKIT}" in
+	gtk2)
+	    NS_TK_DEB="libgtk2.0-dev librsvg2-dev"
+	    ;;
+	gtk3)
+	    NS_TK_DEB="libgtk-3-dev librsvg2-dev"
+	    ;;
+	qt6)
+	    NS_TK_DEB="qt6-base-dev-tools qt6-base-dev"
+	    ;;
+	framebuffer)
+	    NS_TK_DEB="libfreetype-dev libsdl1.2-compat-dev libxcb-util-dev libxcb-icccm4-dev libxcb-image0-dev libxcb-keysyms1-dev"
+	    ;;
+	*)
+	    NS_TK_DEB=""
+	    ;;
+    esac
+
+    sudo apt-get install --no-install-recommends $(echo ${NS_DEV_DEB} ${NS_TOOL_DEB} ${NS_TK_DEB})
 }
 
 
 # packages for yum installer RPM based systems (tested on fedora 20)
-NS_DEV_YUM_RPM="git gcc pkgconfig expat-devel openssl-devel gperf libcurl-devel perl-Digest-MD5-File libjpeg-devel libpng-devel"
-NS_TOOL_YUM_RPM="flex bison"
-if [ "x${NETSURF_GTK_MAJOR}" = "x3" ]; then
-    NS_GTK_YUM_RPM="gtk3-devel librsvg2-devel"
-else
-    NS_GTK_YUM_RPM="gtk2-devel librsvg2-devel"
-fi
-
 # yum commandline to install necessary dev packages
-ns-yum-install()
+ns_yum_install()
 {
-    sudo yum -y install $(echo ${NS_DEV_YUM_RPM} ${NS_TOOL_YUM_RPM} ${NS_GTK_YUM_RPM})
+    NS_DEV_YUM_RPM="git gcc pkgconfig expat-devel openssl-devel gperf libcurl-devel perl-Digest-MD5-File libjpeg-devel libpng-devel"
+
+    NS_TOOL_YUM_RPM="flex bison"
+
+    case "${TARGET_TOOLKIT}" in
+	gtk2)
+	    NS_TK_YUM_RPM="gtk2-devel librsvg2-devel"
+	    ;;
+	gtk3)
+	    NS_TK_YUM_RPM="gtk3-devel librsvg2-devel"
+	    ;;
+	*)
+	    NS_TK_YUM_RPM=""
+	    ;;
+    esac
+
+    sudo yum -y install $(echo ${NS_DEV_YUM_RPM} ${NS_TOOL_YUM_RPM} ${NS_TK_YUM_RPM})
 }
 
 
 # packages for dnf installer RPM based systems (tested on fedora 25)
-NS_DEV_DNF_RPM="java-1.8.0-openjdk-headless gcc clang pkgconfig libcurl-devel libjpeg-devel expat-devel libpng-devel openssl-devel gperf perl-HTML-Parser"
-NS_TOOL_DNF_RPM="git flex bison ccache screen"
-if [ "x${NETSURF_GTK_MAJOR}" = "x3" ]; then
-    NS_GTK_DNF_RPM="gtk3-devel"
-else
-    NS_GTK_DNF_RPM="gtk2-devel"
-fi
-
 # dnf commandline to install necessary dev packages
-ns-dnf-install()
+ns_dnf_install()
 {
-    sudo dnf install $(echo ${NS_DEV_DNF_RPM} ${NS_TOOL_DNF_RPM} ${NS_GTK_DNF_RPM})
+    NS_DEV_DNF_RPM="java-1.8.0-openjdk-headless gcc clang pkgconfig libcurl-devel libjpeg-devel expat-devel libpng-devel openssl-devel gperf perl-HTML-Parser"
+
+    NS_TOOL_DNF_RPM="git flex bison ccache screen"
+
+    case "${TARGET_TOOLKIT}" in
+	gtk2)
+	    NS_TK_DNF_RPM="gtk2-devel"
+	    ;;
+	gtk3)
+	    NS_TK_DNF_RPM="gtk3-devel"
+	    ;;
+	*)
+	    NS_TK_DNF_RPM=""
+	    ;;
+    esac
+
+    sudo dnf install $(echo ${NS_DEV_DNF_RPM} ${NS_TOOL_DNF_RPM} ${NS_TK_DNF_RPM})
 }
 
 
 # packages for zypper installer RPM based systems (tested on openSUSE leap 42)
-NS_DEV_ZYP_RPM="java-1_8_0-openjdk-headless gcc clang pkgconfig libcurl-devel libjpeg-devel libexpat-devel libpng-devel openssl-devel gperf perl-HTML-Parser"
-NS_TOOL_ZYP_RPM="git flex bison gperf ccache screen"
-if [ "x${NETSURF_GTK_MAJOR}" = "x3" ]; then
-    NS_GTK_ZYP_RPM="gtk3-devel"
-else
-    NS_GTK_ZYP_RPM="gtk2-devel"
-fi
-
 # zypper commandline to install necessary dev packages
-ns-zypper-install()
+ns_zypper_install()
 {
-    sudo zypper install -y $(echo ${NS_DEV_ZYP_RPM} ${NS_TOOL_ZYP_RPM} ${NS_GTK_ZYP_RPM})
+    NS_DEV_ZYP_RPM="java-1_8_0-openjdk-headless gcc clang pkgconfig libcurl-devel libjpeg-devel libexpat-devel libpng-devel openssl-devel gperf perl-HTML-Parser"
+
+    NS_TOOL_ZYP_RPM="git flex bison gperf ccache screen"
+
+    case "${TARGET_TOOLKIT}" in
+	gtk2)
+	    NS_TK_ZYP_RPM="gtk2-devel"
+	    ;;
+	gtk3)
+	    NS_TK_ZYP_RPM="gtk3-devel"
+	    ;;
+	*)
+	    NS_TK_ZYP_RPM=""
+	    ;;
+    esac
+
+    sudo zypper install -y $(echo ${NS_DEV_ZYP_RPM} ${NS_TOOL_ZYP_RPM} ${NS_TK_ZYP_RPM})
 }
 
 
 # Packages for Haiku install
-
-# Haiku secondary arch suffix:
-# empty for primary (gcc2 on x86) or "_x86" for gcc4 secondary.
-HA=_x86
-
-NS_DEV_HPKG="devel:libcurl${HA} devel:libpng${HA} devel:libjpeg${HA} devel:libcrypto${HA} devel:libiconv${HA} devel:libexpat${HA} cmd:pkg_config${HA} cmd:gperf html_parser"
-
 # pkgman commandline to install necessary dev packages
-ns-pkgman-install()
+ns_pkgman_install()
 {
+    # Haiku secondary arch suffix:
+    # empty for primary (gcc2 on x86) or "_x86" for gcc4 secondary.
+    HA=_x86
+
+    NS_DEV_HPKG="devel:libcurl${HA} devel:libpng${HA} devel:libjpeg${HA} devel:libcrypto${HA} devel:libiconv${HA} devel:libexpat${HA} cmd:pkg_config${HA} cmd:gperf html_parser"
+
     pkgman install $(echo ${NS_DEV_HPKG})
 }
 
 
 # MAC OS X
-NS_DEV_MACPORT="git expat openssl curl libjpeg-turbo libpng"
-
-ns-macport-install()
+ns_macport_install()
 {
+    NS_DEV_MACPORT="git expat openssl curl libjpeg-turbo libpng"
+
     PATH=/opt/local/bin:/opt/local/sbin:$PATH sudo /opt/local/bin/port install $(echo ${NS_DEV_MACPORT})
 }
 
 
 # packages for FreeBSD install
-NS_DEV_FREEBSDPKG="gmake curl"
-
 # FreeBSD package install
-ns-freebsdpkg-install()
+ns_freebsdpkg_install()
 {
+    NS_DEV_FREEBSDPKG="gmake curl"
     pkg install $(echo ${NS_DEV_FREEBSDPKG})
 }
 
 
 # generic for help text
-NS_DEV_GEN="git, gcc, pkgconfig, expat library, openssl library, libcurl, perl, perl MD5 digest, libjpeg library, libpng library"
-NS_TOOL_GEN="flex tool, bison tool"
-if [ "x${NETSURF_GTK_MAJOR}" = "x3" ]; then
-    NS_GTK_GEN="gtk+ 3 toolkit library, librsvg2 library"
-else
-    NS_GTK_GEN="gtk+ 2 toolkit library, librsvg2 library"
-fi
-
-ns-generic-install()
+ns_generic_install()
 {
+    NS_DEV_GEN="git, gcc, pkgconfig, expat library, openssl library, libcurl, perl, perl MD5 digest, libjpeg library, libpng library"
+
+    NS_TOOL_GEN="flex tool, bison tool"
+
+    case "${TARGET_TOOLKIT}" in
+	gtk2)
+	    NS_TK_GEN="gtk+ 2 toolkit library, librsvg2 library"
+	    ;;
+	gtk3)
+	    NS_TK_GEN="gtk+ 3 toolkit library, librsvg2 library"
+	    ;;
+	qt6)
+	    NS_TK_GEN="qt6 toolkit dev library"
+	    ;;
+	framebuffer)
+	    NS_TK_GEN="freetype2 dev library, SDL 1.2 compatible library"
+	    ;;
+	*)
+	    NS_TK_DEB=""
+	    ;;
+    esac
+
     echo "Unable to determine OS packaging system in use."
     echo "Please ensure development packages are installed for:"
-    echo ${NS_DEV_GEN}"," ${NS_TOOL_GEN}"," ${NS_GTK_GEN}
+    echo ${NS_DEV_GEN}"," ${NS_TOOL_GEN}"," ${NS_TK_GEN}
 }
 
 
@@ -154,21 +207,21 @@ ns-generic-install()
 ns-package-install()
 {
     if [ -x "/usr/bin/zypper" ]; then
-        ns-zypper-install
+        ns_zypper_install
     elif [ -x "/usr/bin/apt-get" ]; then
-        ns-apt-get-install
+        ns_apt_get_install
     elif [ -x "/usr/bin/dnf" ]; then
-        ns-dnf-install
+        ns_dnf_install
     elif [ -x "/usr/bin/yum" ]; then
-        ns-yum-install
+        ns_yum_install
     elif [ -x "/bin/pkgman" ]; then
-        ns-pkgman-install
+        ns_pkgman_install
     elif [ -x "/opt/local/bin/port" ]; then
-        ns-macport-install
+        ns_macport_install
     elif [ -x "/usr/sbin/pkg" ]; then
-        ns-freebsdpkg-install
+        ns_freebsdpkg_install
     else
-	ns-generic-install
+	ns_generic_install
     fi
 }
 
@@ -237,10 +290,20 @@ if [ "x${USE_CPUS}" = "x" ]; then
     USE_CPUS="-j${NCPUS}"
 fi
 
-# The GTK version to build for (either 2 or 3 currently)
-if [ "x${NETSURF_GTK_MAJOR}" = "x" ]; then
-    NETSURF_GTK_MAJOR=2
-fi
+# Setup GTK major version if required (either 2 or 3 currently)
+case "${TARGET_TOOLKIT}" in
+    gtk2)
+	NETSURF_GTK_MAJOR=2
+	;;
+    gtk3)
+	NETSURF_GTK_MAJOR=3
+	;;
+    *)
+	if [ "x${NETSURF_GTK_MAJOR}" = "x" ]; then
+	    NETSURF_GTK_MAJOR=2
+	fi
+	;;
+esac
 
 # report to user
 echo "BUILD=${BUILD}"
