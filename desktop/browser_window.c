@@ -2442,9 +2442,9 @@ browser_window_scroll_at_point_internal(struct browser_window *bw,
 		return true;
 	}
 
-	/* Try to scroll this window */
-	return scrollbar_scroll(bw->scroll_y, scry) |
-		scrollbar_scroll(bw->scroll_x, scrx);
+	/* Try to scroll this window. */
+	return (int)scrollbar_scroll(bw->scroll_y, scry) |
+		(int)scrollbar_scroll(bw->scroll_x, scrx);
 }
 
 
