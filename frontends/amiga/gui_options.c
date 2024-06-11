@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 - 2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2009 - 2024 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -238,6 +238,7 @@ struct ami_gui_opts_window {
 	struct List ditheroptslist;
 	struct List fontoptslist;
 #endif
+	int websearch_idx;
 };
 
 static BOOL ami_gui_opts_event(void *w);
@@ -360,7 +361,8 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	ditheropts[2] = (char *)ami_utf8_easy((char *)messages_get("High"));
 	ditheropts[3] = NULL;
 
-	websearch_list = ami_gui_opts_websearch();
+	websearch_idx = 0;
+	websearch_list = ami_gui_opts_websearch(&websearch_idx);
 
 	gadlab[GID_OPTS_HOMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("HomePageURL"));
 	gadlab[GID_OPTS_HOMEPAGE_DEFAULT] = (char *)ami_utf8_easy((char *)messages_get("HomePageDefault"));
@@ -1474,7 +1476,7 @@ void ami_gui_opts_open(void)
 											GA_RelVerify, TRUE,
 											CHOOSER_PopUp, TRUE,
 											CHOOSER_Labels, websearch_list,
-											CHOOSER_Selected, nsoption_charp(search_web_provider),
+											CHOOSER_Selected, websearch_idx,
 											CHOOSER_MaxLabels, 40,
 										ChooserEnd,
 										CHILD_Label, LabelObj,
@@ -1699,6 +1701,7 @@ void ami_gui_opts_open(void)
 static void ami_gui_opts_use(bool save)
 {
 	ULONG data, id = 0;
+	struct Node *tmp_node = NULL;
 	struct TextAttr *tattr;
 	char *dot;
 	bool rescan_fonts = false;
@@ -2009,7 +2012,17 @@ static void ami_gui_opts_use(bool save)
 	if(old_tab_always_show != nsoption_bool(tab_always_show))
 		ami_gui_tabs_toggle_all();
 	
-	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_SEARCH_PROV],(char *)nsoption_charp(search_web_provider));
+#ifdef __amigaos4__
+	GetAttr(CHOOSER_SelectedNode, gow->objects[GID_OPTS_SEARCH_PROV],(ULONG *)&tmp_node);
+	if(tmp_node != NULL) {
+		GetChooserNodeAttrs(tmp_node, CNA_Text, (ULONG *)&data);
+		nsoption_set_charp(search_web_provider, data);
+	}
+#else
+	GetAttr(CHOOSER_Selected, gow->objects[GID_OPTS_SEARCH_PROV],(ULONG *)&gow->websearch_idx);
+	/* TODO: convert back to string, only required OS<3.2 */
+#endif
+	
 	search_web_select_provider(nsoption_charp(search_web_provider));
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_CLIPBOARD],(ULONG *)&data);
@@ -2319,12 +2332,13 @@ static BOOL ami_gui_opts_event(void *w)
 	return FALSE;
 }
 
-struct List *ami_gui_opts_websearch(void)
+struct List *ami_gui_opts_websearch(int *idx)
 {
 	struct List *list;
 	struct Node *node;
 	const char *name;
 	int iter;
+	int i = 0;
 
 	list = malloc(sizeof(struct List));
 	NewList(list);
@@ -2336,6 +2350,10 @@ struct List *ami_gui_opts_websearch(void)
 		iter = search_web_iterate_providers(iter, &name)) {
 			node = AllocChooserNode(CNA_Text, name, TAG_DONE);
 			AddTail(list, node);
+			if((nsoption_charp(search_web_provider)) && (strcmp(name, nsoption_charp(search_web_provider)) == 0)) {
+				*idx = i;
+			}
+		i++;
 	}
 
 	return list;
