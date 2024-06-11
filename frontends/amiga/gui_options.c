@@ -361,7 +361,7 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	ditheropts[2] = (char *)ami_utf8_easy((char *)messages_get("High"));
 	ditheropts[3] = NULL;
 
-	websearch_idx = 0;
+	gow->websearch_idx = 0;
 	websearch_list = ami_gui_opts_websearch(&gow->websearch_idx);
 
 	gadlab[GID_OPTS_HOMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("HomePageURL"));
