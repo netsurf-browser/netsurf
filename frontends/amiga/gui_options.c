@@ -2016,7 +2016,7 @@ static void ami_gui_opts_use(bool save)
 	GetAttr(CHOOSER_SelectedNode, gow->objects[GID_OPTS_SEARCH_PROV],(ULONG *)&tmp_node);
 	if(tmp_node != NULL) {
 		GetChooserNodeAttrs(tmp_node, CNA_Text, (ULONG *)&data);
-		nsoption_set_charp(search_web_provider, data);
+		nsoption_set_charp(search_web_provider, (char *)data);
 	}
 #else
 	GetAttr(CHOOSER_Selected, gow->objects[GID_OPTS_SEARCH_PROV],(ULONG *)&gow->websearch_idx);
