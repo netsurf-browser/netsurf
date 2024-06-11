@@ -4910,7 +4910,7 @@ gui_window_create(struct browser_window *bw,
 											TAG_DONE);
 		AddTail(&g->shared->tab_list,g->tab_node);
 
-		g->shared->web_search_list = ami_gui_opts_websearch();
+		g->shared->web_search_list = ami_gui_opts_websearch(NULL);
 		g->shared->search_bm = NULL;
 
 		g->shared->tabs=1;

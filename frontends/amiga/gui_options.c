@@ -362,7 +362,7 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	ditheropts[3] = NULL;
 
 	websearch_idx = 0;
-	websearch_list = ami_gui_opts_websearch(&websearch_idx);
+	websearch_list = ami_gui_opts_websearch(&gow->websearch_idx);
 
 	gadlab[GID_OPTS_HOMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("HomePageURL"));
 	gadlab[GID_OPTS_HOMEPAGE_DEFAULT] = (char *)ami_utf8_easy((char *)messages_get("HomePageDefault"));
@@ -1476,7 +1476,7 @@ void ami_gui_opts_open(void)
 											GA_RelVerify, TRUE,
 											CHOOSER_PopUp, TRUE,
 											CHOOSER_Labels, websearch_list,
-											CHOOSER_Selected, websearch_idx,
+											CHOOSER_Selected, &gow->websearch_idx,
 											CHOOSER_MaxLabels, 40,
 										ChooserEnd,
 										CHILD_Label, LabelObj,
@@ -2350,8 +2350,10 @@ struct List *ami_gui_opts_websearch(int *idx)
 		iter = search_web_iterate_providers(iter, &name)) {
 			node = AllocChooserNode(CNA_Text, name, TAG_DONE);
 			AddTail(list, node);
-			if((nsoption_charp(search_web_provider)) && (strcmp(name, nsoption_charp(search_web_provider)) == 0)) {
-				*idx = i;
+			if(idx != NULL) {
+				if((nsoption_charp(search_web_provider)) && (strcmp(name, nsoption_charp(search_web_provider)) == 0)) {
+					*idx = i;
+				}
 			}
 		i++;
 	}
