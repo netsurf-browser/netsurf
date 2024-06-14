@@ -2015,7 +2015,7 @@ static void ami_gui_opts_use(bool save)
 #ifdef __amigaos4__
 	GetAttr(CHOOSER_SelectedNode, gow->objects[GID_OPTS_SEARCH_PROV],(ULONG *)&tmp_node);
 	if(tmp_node != NULL) {
-		GetChooserNodeAttrs(tmp_node, CNA_Text, (ULONG *)&data);
+		GetChooserNodeAttrs(tmp_node, CNA_Text, (ULONG *)&data, TAG_DONE);
 		nsoption_set_charp(search_web_provider, (char *)data);
 	}
 #else

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2020 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2024 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -2921,8 +2921,19 @@ static BOOL ami_gui_event(void *w)
 					break;
 
 					case GID_SEARCH_ICON:
-						GetAttr(CHOOSER_Selected, gwin->objects[GID_SEARCH_ICON], (ULONG *)&storage);
-						search_web_select_provider(storage);
+#ifdef __amigaos4__
+					{
+						char *prov = NULL;
+						GetAttr(CHOOSER_SelectedNode, gwin->objects[GID_SEARCH_ICON],(ULONG *)&storage);
+						if(storage != NULL) {
+							GetChooserNodeAttrs((struct Node *)storage, CNA_Text, (ULONG *)&prov, TAG_DONE);
+							nsoption_set_charp(search_web_provider, prov);
+						}
+					}
+#else
+					/* TODO: Fix for OS<3.2 */
+#endif
+						search_web_select_provider(nsoption_charp(search_web_provider));
 					break;
 
 					case GID_SEARCHSTRING:
