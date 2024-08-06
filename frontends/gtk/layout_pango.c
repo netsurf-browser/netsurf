@@ -46,7 +46,7 @@ static inline void nsfont_pango_check(void)
 		NSLOG(netsurf, INFO, "Creating nsfont_pango_context.");
 		nsfont_pango_context = gdk_pango_context_get();
 	}
-	
+
 	if (nsfont_pango_layout == NULL) {
 		NSLOG(netsurf, INFO, "Creating nsfont_pango_layout.");
 		nsfont_pango_layout = pango_layout_new(nsfont_pango_context);
@@ -74,7 +74,7 @@ nsfont_width(const plot_font_style_t *fstyle,
 		*width = 0;
 		return NSERROR_OK;
 	}
-	
+
 	nsfont_pango_check();
 
 	desc = nsfont_style_to_description(fstyle);
@@ -88,7 +88,7 @@ nsfont_width(const plot_font_style_t *fstyle,
 	NSLOG(netsurf, DEEPDEBUG,
 	      "fstyle: %p string:\"%.*s\", length: %" PRIsizet ", width: %dpx",
 	      fstyle, (int)length, string, length, *width);
-	 
+
 
 	return NSERROR_OK;
 }
@@ -127,7 +127,7 @@ nsfont_position_in_string(const plot_font_style_t *fstyle,
 	pango_layout_set_text(nsfont_pango_layout, string, length);
 
 	if (pango_layout_xy_to_index(nsfont_pango_layout,
-				     x * PANGO_SCALE, 
+				     x * PANGO_SCALE,
 				     0, &index, 0) == FALSE) {
 		index = length;
 	}
@@ -137,6 +137,10 @@ nsfont_position_in_string(const plot_font_style_t *fstyle,
 	*char_offset = index;
 	*actual_x = PANGO_PIXELS(pos.x);
 
+	NSLOG(netsurf, DEEPDEBUG,
+	      "fstyle: %p string:\"%.*s\", length: %" PRIsizet ", "
+	      "search_x: %dpx, offset: %" PRIsizet ", actual_x: %dpx",
+	      fstyle, (int)length, string, length, x, *char_offset, *actual_x);
 	return NSERROR_OK;
 }
 
@@ -198,7 +202,7 @@ nsfont_split(const plot_font_style_t *fstyle,
 	/* Obtain the second line of the layout (if there is one) */
 	line = pango_layout_get_line_readonly(layout, 1);
 	if (line != NULL) {
-		/* Pango split the text. The line's start_index indicates the 
+		/* Pango split the text. The line's start_index indicates the
 		 * start of the character after the line break. */
 		index = line->start_index;
 	}
@@ -210,6 +214,10 @@ nsfont_split(const plot_font_style_t *fstyle,
 	/* Obtain the pixel offset of the split character */
 	nsfont_width(fstyle, string, index, actual_x);
 
+	NSLOG(netsurf, DEEPDEBUG,
+	      "fstyle: %p string:\"%.*s\", length: %" PRIsizet ", "
+	      "split_x: %dpx, offset: %" PRIsizet ", actual_x: %dpx",
+	      fstyle, (int)length, string, length, x, *char_offset, *actual_x);
 	return NSERROR_OK;
 }
 
@@ -291,7 +299,7 @@ nsfont_style_to_description(const plot_font_style_t *fstyle)
 	pango_font_description_set_size(desc, size);
 
 	if (fstyle->flags & FONTF_SMALLCAPS) {
-		pango_font_description_set_variant(desc, 
+		pango_font_description_set_variant(desc,
 				PANGO_VARIANT_SMALL_CAPS);
 	} else {
 		pango_font_description_set_variant(desc, PANGO_VARIANT_NORMAL);
