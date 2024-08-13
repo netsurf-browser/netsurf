@@ -2917,7 +2917,6 @@ static BOOL ami_gui_event(void *w)
 
 					case GID_TOOLBARLAYOUT:
 						/* Need fixing: never gets here */
-						search_web_select_provider(-1);
 					break;
 
 					case GID_SEARCH_ICON:
@@ -2927,7 +2926,7 @@ static BOOL ami_gui_event(void *w)
 						GetAttr(CHOOSER_SelectedNode, gwin->objects[GID_SEARCH_ICON],(ULONG *)&storage);
 						if(storage != NULL) {
 							GetChooserNodeAttrs((struct Node *)storage, CNA_Text, (ULONG *)&prov, TAG_DONE);
-							nsoption_set_charp(search_web_provider, prov);
+							nsoption_set_charp(search_web_provider, (char *)strdup(prov));
 						}
 					}
 #else
@@ -4328,10 +4327,6 @@ void ami_gui_tabs_toggle_all(void)
 	} while((node = nnode));
 }
 
-static void ami_gui_search_ico_refresh(void *p)
-{
-	search_web_select_provider(-1);
-}
 
 /**
  * Count windows, and optionally tabs.
@@ -5444,8 +5439,6 @@ gui_window_create(struct browser_window *bw,
 		UnlockPubScreen(NULL,scrn);
 		locked_screen = FALSE;
 	}
-
-	ami_schedule(0, ami_gui_search_ico_refresh, NULL);
 
 	ScreenToFront(scrn);
 
