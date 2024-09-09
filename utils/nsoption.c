@@ -208,7 +208,7 @@ static void nsoption_validate(struct nsoption_s *opts, struct nsoption_s *defs)
 		opts[NSOPTION_curl_fetch_timeout].value.u = 60;
 	while (((opts[NSOPTION_curl_fetch_timeout].value.u *
 		 opts[NSOPTION_max_retried_fetches].value.u) > 60) &&
-		(opts[NSOPTION_max_retried_fetches].value.u > 1))
+	       (opts[NSOPTION_max_retried_fetches].value.u > 1))
 		opts[NSOPTION_max_retried_fetches].value.u--;
 
 	/* We ignore the result because we can't fail to validate. Yay */
@@ -278,69 +278,48 @@ nsoption_is_set(const struct nsoption_s *opts,
 }
 
 /**
- * Output choices to file stream
+ * Output an option value into a file stream, in plain text format.
  *
+ * @param option The option to output the value of.
  * @param fp The file stream to write to.
- * @param opts The options table to write.
- * @param defs The default value table to compare with.
- * @param all Output all entries not just ones changed from defaults
+ * @return The number of bytes written to string or -1 on error
  */
-static nserror
-nsoption_output(FILE *fp,
-		struct nsoption_s *opts,
-		struct nsoption_s *defs,
-		bool all)
+static size_t nsoption_output_value_file(struct nsoption_s *option, void *ctx)
 {
-	unsigned int entry; /* index to option being output */
+	FILE *fp = ctx;
+	size_t slen = 0; /* length added to stream */
 	colour rgbcolour; /* RRGGBB */
 
-	for (entry = 0; entry < NSOPTION_LISTEND; entry++) {
-		if ((all == false) &&
-		    (nsoption_is_set(opts, defs, entry) == false)) {
-			continue;
-		}
+	switch (option->type) {
+	case OPTION_BOOL:
+		slen = fprintf(fp, "%s:%c\n", option->key, option->value.b ? '1' : '0');
+		break;
 
-		switch (opts[entry].type) {
-		case OPTION_BOOL:
-			fprintf(fp, "%s:%c\n",
-				opts[entry].key,
-				opts[entry].value.b ? '1' : '0');
-			break;
+	case OPTION_INTEGER:
+		slen = fprintf(fp, "%s:%i\n", option->key, option->value.i);
 
-		case OPTION_INTEGER:
-			fprintf(fp, "%s:%i\n",
-				opts[entry].key,
-				opts[entry].value.i);
+		break;
 
-			break;
+	case OPTION_UINT:
+		slen = fprintf(fp, "%s:%u\n", option->key, option->value.u);
+		break;
 
-		case OPTION_UINT:
-			fprintf(fp, "%s:%u\n",
-				opts[entry].key,
-				opts[entry].value.u);
-			break;
+	case OPTION_COLOUR:
+		rgbcolour = (((0x000000FF & option->value.c) << 16) |
+			     ((0x0000FF00 & option->value.c) << 0) |
+			     ((0x00FF0000 & option->value.c) >> 16));
+		slen = fprintf(fp, "%s:%06"PRIx32"\n", option->key, rgbcolour);
+		break;
 
-		case OPTION_COLOUR:
-			rgbcolour = (((0x000000FF & opts[entry].value.c) << 16) |
-				     ((0x0000FF00 & opts[entry].value.c) << 0) |
-				     ((0x00FF0000 & opts[entry].value.c) >> 16));
-			fprintf(fp, "%s:%06"PRIx32"\n",
-				opts[entry].key,
-				rgbcolour);
-
-			break;
-
-		case OPTION_STRING:
-			fprintf(fp, "%s:%s\n",
-				opts[entry].key,
-				((opts[entry].value.s == NULL) ||
-				 (*opts[entry].value.s == 0)) ? "" : opts[entry].value.s);
-
-			break;
-		}
+	case OPTION_STRING:
+		slen = fprintf(fp, "%s:%s\n",
+			       option->key,
+			       ((option->value.s == NULL) ||
+				(*option->value.s == 0)) ? "" : option->value.s);
+		break;
 	}
 
-	return NSERROR_OK;
+	return slen;
 }
 
 /**
@@ -388,12 +367,12 @@ nsoption_output_value_html(struct nsoption_s *option,
 		slen = snprintf(string + pos,
 				size - pos,
 				"<span style=\"font-family:Monospace;\">"
-					"#%06"PRIX32
+				"#%06"PRIX32
 				"</span> "
 				"<span style=\"background-color: #%06"PRIx32"; "
-					"border: 1px solid #%06"PRIx32"; "
-					"display: inline-block; "
-					"width: 1em; height: 1em;\">"
+				"border: 1px solid #%06"PRIx32"; "
+				"display: inline-block; "
+				"width: 1em; height: 1em;\">"
 				"</span>",
 				rgbcolour,
 				rgbcolour,
@@ -758,7 +737,51 @@ nsoption_read(const char *path, struct nsoption_s *opts)
 }
 
 
-/* exported interface documented in utils/nsoption.h */
+/*
+ * Generate options via callback.
+ *
+ * exported interface documented in utils/nsoption.h
+ */
+nserror
+nsoption_generate(nsoption_generate_cb *generate_cb,
+		  void *generate_ctx,
+		  enum nsoption_generate_flags flags,
+		  struct nsoption_s *opts,
+		  struct nsoption_s *defs)
+{
+	unsigned int entry; /* index to option being output */
+
+	/* check to see if global table selected */
+	if (opts == NULL) {
+		opts = nsoptions;
+	}
+
+	/* check to see if global table selected */
+	if (defs == NULL) {
+		defs = nsoptions_default;
+	}
+
+	if ((opts == NULL) || (defs == NULL)) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	for (entry = 0; entry < NSOPTION_LISTEND; entry++) {
+		if (((flags & NSOPTION_GENERATE_CHANGED) != 0) &&
+		    (nsoption_is_set(opts, defs, entry) == false)) {
+			continue;
+		}
+		generate_cb(opts + entry, generate_ctx);
+	}
+
+	return NSERROR_OK;
+}
+
+
+/*
+ * Write options that have changed from the defaults to a file.
+ *
+ * exported interface documented in utils/nsoption.h
+ */
 nserror
 nsoption_write(const char *path,
 	       struct nsoption_s *opts,
@@ -792,12 +815,17 @@ nsoption_write(const char *path,
 		return NSERROR_NOT_FOUND;
 	}
 
-	ret = nsoption_output(fp, opts, defs, false);
+	ret = nsoption_generate(nsoption_output_value_file,
+				fp,
+				NSOPTION_GENERATE_CHANGED,
+				opts,
+				defs);
 
 	fclose(fp);
 
 	return ret;
 }
+
 
 /* exported interface documented in utils/nsoption.h */
 nserror
@@ -815,7 +843,11 @@ nsoption_dump(FILE *outf, struct nsoption_s *opts)
 		return NSERROR_BAD_PARAMETER;
 	}
 
-	return nsoption_output(outf, opts, NULL, true);
+	return nsoption_generate(nsoption_output_value_file,
+				outf,
+				NSOPTION_GENERATE_ALL,
+				opts,
+				nsoptions_default);
 }
 
 

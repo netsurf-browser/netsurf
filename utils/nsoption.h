@@ -161,15 +161,34 @@ enum nsoption_e {
  */
 extern struct nsoption_s *nsoptions;
 
+
 /**
  * global default option table.
  */
 extern struct nsoption_s *nsoptions_default;
 
+
 /**
  * default setting callback.
  */
 typedef nserror(nsoption_set_default_t)(struct nsoption_s *defaults);
+
+
+/**
+ * option generate callback
+ */
+typedef size_t(nsoption_generate_cb)(struct nsoption_s *option, void *ctx);
+
+
+/**
+ * flags to control option output in the generate call
+ */
+enum nsoption_generate_flags {
+	/** Generate output for all options */
+	NSOPTION_GENERATE_ALL = 0,
+	/** Generate output for options which differ from the default */
+	NSOPTION_GENERATE_CHANGED = 1,
+};
 
 
 /**
@@ -204,6 +223,21 @@ nserror nsoption_finalise(struct nsoption_s *opts, struct nsoption_s *defs);
  * @return The error status
  */
 nserror nsoption_read(const char *path, struct nsoption_s *opts);
+
+
+/**
+ * Generate options via acallback.
+ *
+ * iterates options controlled by flags calling a method for each matched option.
+ *
+ * @param cb Function called for each option to be output.
+ * @param ctx The context for the callback.
+ * @param flags Flags controlling option matching.
+ * @param opts The options table to enerate values from or NULL to use global.
+ * @param defs The default table to use or NULL to use global.
+ * @return The error status.
+ */
+nserror nsoption_generate(nsoption_generate_cb *cb, void *ctx, enum nsoption_generate_flags flags, struct nsoption_s *opts, struct nsoption_s *defs);
 
 
 /**
