@@ -599,7 +599,7 @@ static inline void treeview__cw_scroll_to_node(
 		.x0 = 0,
 		.y0 = treeview_node_y(tree, node),
 		.x1 = 1,
-		.y1 = ((node->type == TREE_NODE_ENTRY) ?
+		.y1 = (((node != NULL) && (node->type == TREE_NODE_ENTRY)) ?
 		       node->height : tree_g.line_height),
 	};
 
