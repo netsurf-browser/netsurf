@@ -2146,6 +2146,8 @@ static BOOL ami_gui_opts_event(void *w)
 			break;
 
 			case WMHI_GADGETHELP:
+#ifdef __amigaos4__
+				/* FIXME: this is firing on OS3.2 without HELP being pressed */
 				if((result & WMHI_GADGETMASK) == 0) {
 					/* Pointer not over our window */
 					ami_help_open(AMI_HELP_MAIN, ami_gui_get_screen());
@@ -2153,6 +2155,7 @@ static BOOL ami_gui_opts_event(void *w)
 					/* TODO: Make this sensitive to the tab the user is currently on */
 					ami_help_open(AMI_HELP_PREFS, ami_gui_get_screen());
 				}
+#endif
 			break;
 			
 			case WMHI_GADGETUP:
