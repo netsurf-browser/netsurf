@@ -10,7 +10,8 @@ NETSURF_USE_LIBICONV_PLUG := NO
 # Either this or NETSURF_USE_OPENSSL should be specified, not both.
 # libcurl must have been built against the same library.
 # Valid options: YES, NO
-NETSURF_USE_AMISSL := NO
+NETSURF_USE_OPENSSL := NO
+NETSURF_USE_AMISSL := YES
 
 # Enable NetSurf's use of librosprite for displaying RISC OS Sprites
 # Valid options: YES, NO, AUTO
@@ -37,11 +38,7 @@ NETSURF_FS_BACKING_STORE := YES
 CFLAGS += -fomit-frame-pointer
 
 # Target-specific
-ifeq ($(SUBTARGET),os3)
-  NETSURF_USE_OPENSSL := NO
-  NETSURF_USE_AMISSL := YES
-  NETSURF_FS_BACKING_STORE := YES
-else
-  CFLAGS += -gstabs
-endif
-
+# ifneq ($(SUBTARGET),os3)
+# Debug use only
+#   CFLAGS += -gstabs
+# endif
