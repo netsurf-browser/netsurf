@@ -38,7 +38,7 @@ NETSURF_FS_BACKING_STORE := YES
 CFLAGS += -fomit-frame-pointer
 
 # Target-specific
-# ifneq ($(SUBTARGET),os3)
-# Debug use only
-#   CFLAGS += -gstabs
-# endif
+ifneq ($(SUBTARGET),os3)
+  # Debug use only
+  CFLAGS += -gstabs
+endif
