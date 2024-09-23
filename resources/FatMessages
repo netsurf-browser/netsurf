@@ -1560,16 +1560,25 @@ zh_CN.all.TryAgain:重试
 # =======================
 #
 en.all.FetchErrorTitle:Error occurred fetching page
+fr.all.FetchErrorTitle:Problème rencontré lors de la récupération de la page
 it.all.FetchErrorTitle:Errore durante il recupero della pagina
 zh_CN.all.FetchErrorTitle:获取页面时发生错误
 
 en.all.FetchErrorDescription:An error occurred when connecting to %s
+fr.all.FetchErrorDescription:Une erreur s'est produite lors de la connexion à %s
 it.all.FetchErrorDescription:Si è verificato un errore durante la connessione a %s
 zh_CN.all.FetchErrorDescription:连接到 %s 时发生错误
 
 # Generic fetcher failure (really a programming error)
-en.all.FetchFailedToFinish:The fetcher for this request failed to complete
+en.all.FetchFailedToFinish:The fetch for this request failed to complete
+fr.all.FetchFailedToFinish:La recherche de cette requête n’a pas réussi
 zh_CN.all.FetchFailedToFinish:无法完成此请求的提取程序
+
+en.all.FetchErrorCode:Error code
+fr.all.FetchErrorCode:Code d'erreur
+
+en.all.FetchFile:fetching file
+fr.all.FetchFile:récupérer le fichier
 
 
 # SSL certificate viewer

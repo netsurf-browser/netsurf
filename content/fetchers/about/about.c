@@ -40,6 +40,7 @@
 #include "utils/corestrings.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
+#include "utils/messages.h"
 
 #include "content/fetch.h"
 #include "content/fetchers.h"
@@ -242,7 +243,9 @@ bool fetch_about_srverror(struct fetch_about_context *ctx)
 	if (fetch_about_send_header(ctx, "Content-Type: text/plain"))
 		return false;
 
-	res = fetch_about_ssenddataf(ctx, "Server error 500");
+	res = fetch_about_ssenddataf(ctx, "%s 500 %s",
+				     messages_get("FetchErrorCode"),
+				     messages_get("HTTP500"));
 	if (res != NSERROR_OK) {
 		return false;
 	}
@@ -498,7 +501,7 @@ static bool fetch_about_about_handler(struct fetch_about_context *ctx)
 	fetch_set_http_code(ctx->fetchh, 200);
 
 	/* content type */
-	if (fetch_about_send_header(ctx, "Content-Type: text/html"))
+	if (fetch_about_send_header(ctx, "Content-Type: text/html; charset=utf-8"))
 		goto fetch_about_config_handler_aborted;
 
 	res = fetch_about_ssenddataf(ctx,
@@ -546,16 +549,30 @@ static bool
 fetch_about_404_handler(struct fetch_about_context *ctx)
 {
 	nserror res;
+	const char *title;
 
 	/* content is going to return 404 */
 	fetch_set_http_code(ctx->fetchh, 404);
 
 	/* content type */
-	if (fetch_about_send_header(ctx, "Content-Type: text/plain; charset=utf-8")) {
+	if (fetch_about_send_header(ctx,
+			"Content-Type: text/html; charset=utf-8")) {
 		return false;
 	}
 
-	res = fetch_about_ssenddataf(ctx, "Unknown page: %s", nsurl_access(ctx->url));
+	title = messages_get("HTTP404");
+	res = fetch_about_ssenddataf(ctx,
+		"<html>\n<head>\n"
+		"<title>%s</title>\n"
+		"<link rel=\"stylesheet\" type=\"text/css\" "
+		"href=\"resource:internal.css\">\n"
+		"</head>\n"
+		"<body class=\"ns-even-bg ns-even-fg ns-border\" id =\"fetcherror\">\n"
+		"<h1 class=\"ns-border ns-odd-fg-bad\">%s</h1>\n"
+		"<p>%s %d %s %s</p>\n"
+		"</body>\n</html>\n",
+		title, title, messages_get("FetchErrorCode"), 404,
+		messages_get("FetchFile"),nsurl_access(ctx->url));
 	if (res != NSERROR_OK) {
 		return false;
 	}

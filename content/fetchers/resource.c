@@ -229,16 +229,26 @@ static bool fetch_resource_notfound_handler(struct fetch_resource_context *ctx)
 	fetch_set_http_code(ctx->fetchh, code);
 
 	/* content type */
-	if (fetch_resource_send_header(ctx, "Content-Type: text/html"))
+	if (fetch_resource_send_header(ctx, "Content-Type: text/html; charset=utf-8"))
 		goto fetch_resource_notfound_handler_aborted;
 
 	snprintf(key, sizeof key, "HTTP%03d", code);
 	title = messages_get(key);
 
-	snprintf(buffer, sizeof buffer, "<html><head><title>%s</title></head>"
-			"<body><h1>%s</h1>"
-			"<p>Error %d while fetching file %s</p></body></html>",
-			title, title, code, nsurl_access(ctx->url));
+	snprintf(buffer, sizeof buffer,
+		 "<html><head>"
+		 "<title>%s</title>"
+		 "<link rel=\"stylesheet\" type=\"text/css\" "
+		 "href=\"resource:internal.css\">\n"
+		 "</head>"
+		 "<body class=\"ns-even-bg ns-even-fg ns-border\" "
+		 "id =\"fetcherror\">\n"
+		 "<h1 class=\"ns-border ns-odd-fg-bad\">%s</h1>\n"
+		 "<p>%s %d %s %s</p>\n"
+		 "</body>\n</html>\n",
+		 title, title,
+		 messages_get("FetchErrorCode"), code,
+		 messages_get("FetchFile"), nsurl_access(ctx->url));
 
 	msg.type = FETCH_DATA;
 	msg.data.header_or_data.buf = (const uint8_t *) buffer;
