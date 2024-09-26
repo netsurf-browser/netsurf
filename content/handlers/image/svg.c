@@ -158,7 +158,7 @@ static void svg_reformat(struct content *c, int width, int height)
  */
 
 static bool
-svg_redraw_internal(struct content *c,
+svg_redraw_internal(svg_content *svg,
 		    int x,
 		    int y,
 		    int width,
@@ -168,7 +168,6 @@ svg_redraw_internal(struct content *c,
 		    float scale,
 		    colour background_colour)
 {
-	svg_content *svg = (svg_content *) c;
 	float transform[6];
 	struct svgtiny_diagram *diagram = svg->diagram;
 	int px, py;
@@ -179,24 +178,40 @@ svg_redraw_internal(struct content *c,
 
 	assert(diagram);
 
-	transform[0] = (float) width / (float) c->width;
+	transform[0] = (float) width / (float) svg->base.width;
 	transform[1] = 0;
 	transform[2] = 0;
-	transform[3] = (float) height / (float) c->height;
+	transform[3] = (float) height / (float) svg->base.height;
 	transform[4] = x;
 	transform[5] = y;
 
-#define BGR(c) ((c) == svgtiny_TRANSPARENT ? NS_TRANSPARENT :		\
-		((svgtiny_RED((c))) |					\
+#define BGR(c) (((svgtiny_RED((c))) |					\
 		 (svgtiny_GREEN((c)) << 8) |				\
 		 (svgtiny_BLUE((c)) << 16)))
 
 	for (i = 0; i != diagram->shape_count; i++) {
 		if (diagram->shape[i].path) {
+			/* stroke style */
+			if (diagram->shape[i].stroke == svgtiny_TRANSPARENT) {
+				pstyle.stroke_type = PLOT_OP_TYPE_NONE;
+				pstyle.stroke_colour = NS_TRANSPARENT;
+			} else {
+				pstyle.stroke_type = PLOT_OP_TYPE_SOLID;
+				pstyle.stroke_colour = BGR(diagram->shape[i].stroke);
+			}
 			pstyle.stroke_width = plot_style_int_to_fixed(
 					diagram->shape[i].stroke_width);
-			pstyle.stroke_colour = BGR(diagram->shape[i].stroke);
-			pstyle.fill_colour = BGR(diagram->shape[i].fill);
+
+			/* fill style */
+			if (diagram->shape[i].fill == svgtiny_TRANSPARENT) {
+				pstyle.fill_type = PLOT_OP_TYPE_NONE;
+				pstyle.fill_colour = NS_TRANSPARENT;
+			} else {
+				pstyle.fill_type = PLOT_OP_TYPE_SOLID;
+				pstyle.fill_colour = BGR(diagram->shape[i].fill);
+			}
+
+			/* draw the path */
 			res = ctx->plot->path(ctx,
 					&pstyle,
 					diagram->shape[i].path,
@@ -235,15 +250,59 @@ svg_redraw_internal(struct content *c,
 }
 
 
+static bool
+svg_redraw_tiled_internal(svg_content *svg,
+			  struct content_redraw_data *data,
+			  const struct rect *clip,
+			  const struct redraw_context *ctx)
+{
+	/* Tiled redraw required.  SVG repeats to extents of clip
+	 * rectangle, in x, y or both directions */
+	int x, y, x0, y0, x1, y1;
+
+	x = x0 = data->x;
+	y = y0 = data->y;
+
+	/* Find the redraw boundaries to loop within */
+	if (data->repeat_x) {
+		for (; x0 > clip->x0; x0 -= data->width);
+		x1 = clip->x1;
+	} else {
+		x1 = x + 1;
+	}
+	if (data->repeat_y) {
+		for (; y0 > clip->y0; y0 -= data->height);
+		y1 = clip->y1;
+	} else {
+		y1 = y + 1;
+	}
+
+	/* Repeatedly plot the SVG across the area */
+	for (y = y0; y < y1; y += data->height) {
+		for (x = x0; x < x1; x += data->width) {
+			if (!svg_redraw_internal(svg, x, y,
+						 data->width, data->height,
+						 clip, ctx, data->scale,
+						 data->background_colour)) {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+
 /**
  * Redraw a CONTENT_SVG.
  */
-
-static bool svg_redraw(struct content *c, struct content_redraw_data *data,
-		const struct rect *clip, const struct redraw_context *ctx)
+static bool
+svg_redraw(struct content *c,
+	   struct content_redraw_data *data,
+	   const struct rect *clip,
+	   const struct redraw_context *ctx)
 {
-	int x = data->x;
-	int y = data->y;
+	svg_content *svg = (svg_content *)c;
 
 	if ((data->width <= 0) && (data->height <= 0)) {
 		/* No point trying to plot SVG if it does not occupy a valid
@@ -253,45 +312,13 @@ static bool svg_redraw(struct content *c, struct content_redraw_data *data,
 
 	if ((data->repeat_x == false) && (data->repeat_y == false)) {
 		/* Simple case: SVG is not tiled */
-		return svg_redraw_internal(c, x, y,
+		return svg_redraw_internal(svg, data->x, data->y,
 				data->width, data->height,
 				clip, ctx, data->scale,
 				data->background_colour);
-	} else {
-		/* Tiled redraw required.  SVG repeats to extents of clip
-		 * rectangle, in x, y or both directions */
-		int x0, y0, x1, y1;
-
-		/* Find the redraw boundaries to loop within */
-		x0 = x;
-		if (data->repeat_x) {
-			for (; x0 > clip->x0; x0 -= data->width);
-			x1 = clip->x1;
-		} else {
-			x1 = x + 1;
-		}
-		y0 = y;
-		if (data->repeat_y) {
-			for (; y0 > clip->y0; y0 -= data->height);
-			y1 = clip->y1;
-		} else {
-			y1 = y + 1;
-		}
-
-		/* Repeatedly plot the SVG across the area */
-		for (y = y0; y < y1; y += data->height) {
-			for (x = x0; x < x1; x += data->width) {
-				if (!svg_redraw_internal(c, x, y,
-						data->width, data->height,
-						clip, ctx, data->scale,
-						data->background_colour)) {
-					return false;
-				}
-			}
-		}
 	}
 
-	return true;
+	return svg_redraw_tiled_internal(svg, data, clip, ctx);
 }
 
 
