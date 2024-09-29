@@ -120,7 +120,7 @@ struct content_handler {
 	 *
 	 * \param c The content being redrawn
 	 * \param start_idx The start index of the text region to be redrawn
-	 * \param end_idx The end index of teh text region to be redrawn
+	 * \param end_idx The end index of the text region to be redrawn
 	 * \return NSERROR_OK on success else error code
 	 */
 	nserror (*textselection_redraw)(struct content *c, unsigned start_idx, unsigned end_idx);

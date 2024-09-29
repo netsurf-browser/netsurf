@@ -178,7 +178,7 @@ webp_cache_convert(struct content *c)
  *  demand.
  *
  * \param c The webp content object
- * \return true on successful processing of teh webp content else false
+ * \return true on successful processing of the webp content else false
  */
 static bool webp_convert(struct content *c)
 {

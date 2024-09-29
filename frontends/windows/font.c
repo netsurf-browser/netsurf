@@ -303,7 +303,7 @@ win32_font_split(const plot_font_style_t *style,
 	nserror res;
 	int c_off;
 
-	/* get the offset into teh string on the proposed position */
+	/* get the offset into the string on the proposed position */
 	res = win32_font_position(style, string, length, x, offset, actual_x);
 	if (res != NSERROR_OK) {
 		return res;
