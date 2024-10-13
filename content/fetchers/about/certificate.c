@@ -891,7 +891,7 @@ format_certificate_name(struct fetch_about_context *ctx,
 
 	if (cert_name->province != NULL) {
 		res = fetch_about_ssenddataf(ctx,
-				 "<tr><th>Privince</th><td>%s</td></tr>\n",
+				 "<tr><th>Province</th><td>%s</td></tr>\n",
 				 cert_name->province);
 		if (res != NSERROR_OK) {
 			return res;
