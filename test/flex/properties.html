@@ -1,0 +1,139 @@
+<html>
+<head>
+<style>
+div {
+	border: 0.5em solid green;
+	margin: 1em;
+}
+p {
+	border: 0.25em solid blue;
+	padding: 1em;
+	margin: 1px;
+}
+</style>
+</head>
+<body>
+Single line
+<div style="display: flex; background: red;">
+  <p style="background: yellow;">Hi!</p>
+</div>
+Single line
+<div style="display: flex; background: red;">
+  <p style="background: yellow; width: 30em;">Hi!</p>
+  <p style="background: yellow; width:  7em;">Hi!</p>
+  <p style="background: yellow; width:  7em;">Hi!</p>
+</div>
+Single line (auto margin)
+<div style="display: flex; background: red;">
+  <p style="background: yellow; width: 30em;">Hi!</p>
+  <p style="background: yellow; width:  7em;">Hi!</p>
+  <p style="background: yellow; width:  7em; margin-left: auto;">Hi!</p>
+</div>
+Single line (flex-grow)
+<div style="display: flex; background: red;">
+  <p style="background: yellow; width: 30em; flex-grow: 1;">Hi!</p>
+  <p style="background: yellow; width:  7em; flex-grow: 1;">Hi!</p>
+  <p style="background: yellow; width:  7em; flex-grow: 1;">Hi!</p>
+</div>
+Single line (flex-grow, auto margin)
+<div style="display: flex; background: red;">
+  <p style="background: yellow; width: 30em; flex-grow: 1;">Hi!</p>
+  <p style="background: yellow; width:  7em; flex-grow: 1;">Hi!</p>
+  <p style="background: yellow; width:  7em; flex-grow: 1; margin-left: auto;">Hi!</p>
+</div>
+Single line
+<div style="display: flex; background: red;">
+  <p style="background: yellow;">Hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello.</p>
+</div>
+Single line
+<div style="display: flex; background: red;">
+  <p style="background: yellow;">Hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello.</p>
+  <p style="background: yellow;">Hellohello hellohello hellohello hellohello hellohello hellohello hellohello hellohello hellohello hellohello.</p>
+</div>
+Single line (width:100%)
+<div style="display: flex; background: red;">
+  <p style="background: yellow; width: 100%;">Hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello.</p>
+  <p style="background: yellow; width: 100%;">Hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello.</p>
+</div>
+Single line
+<div style="display: flex; background: red;">
+  <p style="background: yellow;">Heeelllllllllllllllllllllllllllllllllooooooooooooooooooo.</p>
+  <p style="background: yellow;">Heeelllllllllllllllllllllllllllllllllooooooooooooooooooo.</p>
+</div>
+Single line (reversed)
+<div style="display: flex; background: red; flex-direction: row-reverse;">
+  <p style="background: yellow;">Heeelllllllllllllllllllllllllllllllllooooooooooooooooooo.</p>
+  <p style="background: yellow;">Heeelllllllllllllllllllllllllllllllllooooooooooooooooooo.</p>
+</div>
+Single line (width:100%;)
+<div style="display: flex; background: red;">
+  <p style="background: yellow; width: 100%;">Heeelllllllllllllllllllllllllllllllllooooooooooooooooooo.</p>
+  <p style="background: yellow; width: 100%;">Heeelllllllllllllllllllllllllllllllllooooooooooooooooooo.</p>
+</div>
+Wrap
+<div style="display: flex; flex-wrap: wrap; background: red;">
+  <p style="background: yellow;">Hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello.</p>
+  <p style="background: yellow;">Hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello.</p>
+</div>
+Wrap (width:100%)
+<div style="display: flex; flex-wrap: wrap; background: red;">
+  <p style="background: yellow; width: 100%;">Hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello.</p>
+  <p style="background: yellow; width: 100%;">Hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello.</p>
+</div>
+Wrap
+<div style="display: flex; flex-wrap: wrap; background: red;">
+  <p style="background: yellow;">1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1</p>
+  <p style="background: yellow;">2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2</p>
+  <p style="background: yellow;">3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3</p>
+  <p style="background: yellow;">4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4</p>
+  <p style="background: yellow;">5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5</p>
+  <p style="background: yellow;">6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6</p>
+  <p style="background: yellow;">7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7</p>
+</div>
+Wrap-Reverse
+<div style="display: flex; flex-wrap: wrap-reverse; background: red;">
+  <p style="background: yellow;">1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1</p>
+  <p style="background: yellow;">2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2</p>
+  <p style="background: yellow;">3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3</p>
+  <p style="background: yellow;">4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4</p>
+  <p style="background: yellow;">5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5</p>
+  <p style="background: yellow;">6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6</p>
+  <p style="background: yellow;">7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7</p>
+</div>
+Row-Reverse
+<div style="display: flex; flex-direction: row-reverse; flex-wrap: wrap; background: red;">
+  <p style="background: yellow;">1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1</p>
+  <p style="background: yellow;">2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2</p>
+  <p style="background: yellow;">3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3</p>
+  <p style="background: yellow;">4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4</p>
+  <p style="background: yellow;">5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5</p>
+  <p style="background: yellow;">6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6</p>
+  <p style="background: yellow;">7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7</p>
+</div>
+Column
+<div style="display: flex; flex-direction: column; flex-wrap: wrap; background: red; height: 400px">
+  <p style="background: yellow; width:200px;">1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1</p>
+  <p style="background: yellow; width:200px;">2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2</p>
+  <p style="background: yellow; height:100px; width:200px;">3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3</p>
+  <p style="background: yellow; height:100px; width:200px;">4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4</p>
+  <p style="background: yellow;">5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5<span style="display:block;margin:0 0 0 auto;width:1em;background:cyan;text-align:center;">!</span></p>
+  <p style="background: yellow; height:100px; width:200px;">6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 </p>
+  <p style="background: yellow; height:100px;">7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7</p>
+</div>
+Column
+<div style="display: flex; flex-direction: column; flex-wrap: wrap; background: red; height: 360px">
+  <p style="background: yellow;">1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1</p>
+  <p style="background: yellow;">2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2</p>
+</div>
+Column
+<div style="display: flex; flex-direction: column; flex-wrap: wrap; background: red;">
+  <p style="background: yellow; width:200px;">1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1</p>
+  <p style="background: yellow; width:200px;">2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2</p>
+  <p style="background: yellow; height:100px; width:200px;">3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3</p>
+  <p style="background: yellow; height:100px; width:200px;">4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4</p>
+  <p style="background: yellow;">5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5<span style="display:block;margin:0 0 0 auto;width:1em;background:cyan;text-align:center;">!</span></p>
+  <p style="background: yellow; height:100px; width:200px;">6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 </p>
+  <p style="background: yellow; height:100px;">7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7</p>
+</div>
+</body>
+</html>

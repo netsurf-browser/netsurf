@@ -1,0 +1,189 @@
+<html>
+<head>
+<style>
+body {
+	margin: 1em auto;
+	width: 20%;
+}
+div.test {
+	display: flex;
+	border: 1px solid red;
+	margin-bottom: 1em;
+}
+div.test > *{
+	flex-shrink: 2;
+}
+div.multi-line {
+	flex-wrap: wrap;
+}
+div.col {
+	flex-direction: column;
+}
+div p {
+	padding: 0;
+	margin: 0;
+	border: 1px solid cyan;
+}
+</style>
+</head>
+<body>
+
+<h2>Plain</h2>
+
+<div class="test">
+	<p>
+		Simple
+	</p>
+	<p>
+		This has a lot of text. This has a lot of text.
+		This has a lot of text. This has a lot of text.
+		This has a lot of text. This has a lot of text.
+		This has a lot of text. This has a lot of text.
+	</p>
+	<p>
+		test
+	</p>
+</div>
+
+<div class="test">
+	<p>
+		Simple simple simple simple simple simple
+		simple simple simple simple simple simple.
+	</p>
+	<p>
+		This has a lot of text. This has a lot of text.
+		This has a lot of text. This has a lot of text.
+		This has a lot of text. This has a lot of text.
+	</p>
+	<p>
+		Test test test test test test test test test test
+		test test test test test test test test test test.
+	</p>
+</div>
+
+<div class="test">
+	<p>
+		Simple
+	</p>
+	<p>
+		Centre
+	</p>
+	<p>
+		Test
+	</p>
+</div>
+
+<h2>Multi-line</h2>
+
+<div class="test multi-line">
+	<p>
+		Simple
+	</p>
+	<p>
+		2
+	</p>
+	<p>
+		This has a lot of text. This has a lot of text.
+		This has a lot of text. This has a lot of text.
+		This has a lot of text. This has a lot of text.
+		This has a lot of text. This has a lot of text.
+	</p>
+	<p>
+		test
+	</p>
+</div>
+
+<div class="test multi-line">
+	<p>
+		Simple simple simple simple simple simple
+		simple simple simple simple simple simple.
+	</p>
+	<p>
+		This has a lot of text. This has a lot of text.
+		This has a lot of text. This has a lot of text.
+		This has a lot of text. This has a lot of text.
+	</p>
+	<p>
+		Test test test test test test test test test test
+		test test test test test test test test test test.
+	</p>
+</div>
+
+<div class="test multi-line">
+	<p>
+		Simple
+	</p>
+	<p>
+		Centre
+	</p>
+	<p>
+		Test
+	</p>
+</div>
+
+<h2>Column</h2>
+
+<div class="test multi-line col">
+	<p>
+		Simple
+	</p>
+	<p>
+		This has a lot of text. This has a lot of text.
+		This has a lot of text. This has a lot of text.
+		This has a lot of text. This has a lot of text.
+		This has a lot of text. This has a lot of text.
+	</p>
+	<p>
+		test
+	</p>
+</div>
+
+<div class="test multi-line col">
+	<p>
+		Simple simple simple simple simple simple
+		simple simple simple simple simple simple.
+	</p>
+	<p>
+		This has a lot of text. This has a lot of text.
+		This has a lot of text. This has a lot of text.
+		This has a lot of text. This has a lot of text.
+	</p>
+	<p>
+		Test test test test test test test test test test
+		test test test test test test test test test test.
+	</p>
+</div>
+
+<div class="test multi-line col">
+	<p>Simple</p>
+	<p>Centre</p>
+	<p>Test</p>
+	<p>Simple</p>
+	<p>Centre</p>
+	<p>Test</p>
+	<p>Simple</p>
+	<p>Centre</p>
+	<p>Test</p>
+	<p>Simple</p>
+	<p>Centre</p>
+	<p>Test</p>
+</div>
+
+<div class="test multi-line col" style="height:7em;">
+	<p>Simple</p>
+	<p>Centre</p>
+	<p>Test</p>
+	<p>Simple</p>
+	<p>Centre</p>
+	<p>Test</p>
+	<p>Simple</p>
+	<p>Centre</p>
+	<p>Test</p>
+	<p>Simple</p>
+	<p>Centre</p>
+	<p>Test</p>
+</div>
+
+
+</body>
+</html>
