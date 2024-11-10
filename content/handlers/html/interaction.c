@@ -43,6 +43,7 @@
 #include "netsurf/keypress.h"
 #include "content/hlcache.h"
 #include "content/textsearch.h"
+#include "desktop/browser_history.h"
 #include "desktop/frames.h"
 #include "desktop/scrollbar.h"
 #include "desktop/selection.h"
@@ -570,11 +571,13 @@ struct mouse_action_state {
 		const char *status; /**< status text */
 		browser_pointer_shape pointer; /**< pointer shape */
 		enum {
-		      ACTION_NONE,
+		      ACTION_NONE, /**< default of no action */
 		      ACTION_NOSEND, /**< do not send status and pointer message */
-		      ACTION_SUBMIT,
-		      ACTION_GO,
-		      ACTION_JS,
+		      ACTION_SUBMIT, /**< submit form */
+		      ACTION_NAVIGATE, /**< navigate to link url */
+		      ACTION_JS, /**< execute link as script */
+		      ACTION_BACK, /**< navigate back in history */
+		      ACTION_FORWARD, /**< navigate forward in history */
 		} action;
 	} result;
 
@@ -1153,13 +1156,26 @@ link_mouse_action(html_content *html,
 		if (is_javascript_navigate_url(mas->link.url)) {
 			mas->result.action = ACTION_JS;
 		} else {
-			mas->result.action = ACTION_GO;
+			mas->result.action = ACTION_NAVIGATE;
 		}
 	}
 
 	return NSERROR_OK;
 }
 
+
+static nserror
+default_mouse_action_focus(html_content *html, browser_mouse_state mouse)
+{
+	if (mouse && mouse < BROWSER_MOUSE_MOD_1) {
+		/* ensure key presses still act on the browser window */
+		union html_focus_owner fo;
+		fo.self = true;
+		html_set_focus(html, HTML_FOCUS_SELF, fo, true, 0, 0, 0, NULL);
+	}
+
+	return NSERROR_OK;
+}
 
 
 /**
@@ -1173,148 +1189,131 @@ default_mouse_action(html_content *html,
 		  struct mouse_action_state *mas)
 {
 	struct content *c = (struct content *)html;
-	bool done = false;
 
 	/* frame resizing */
 	if (browser_window_frame_resize_start(bw, mouse, x, y, &mas->result.pointer)) {
 		if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2)) {
 			mas->result.status = messages_get("FrameDrag");
 		}
-		done = true;
+		return default_mouse_action_focus(html, mouse);
 	}
 
-	/* if clicking in the main page, remove the selection from any
-	 * text areas */
-	if (!done) {
-		union html_selection_owner sel_owner;
-		bool click;
-		click = mouse & (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_PRESS_2 |
-				 BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2 |
-				 BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2);
+	/* clicking in the main page removes the selection from any text areas.
+	 */
+	union html_selection_owner sel_owner;
+	bool click;
+	click = mouse & (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_PRESS_2 |
+			 BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2 |
+			 BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2);
 
-		if (click && html->focus_type != HTML_FOCUS_SELF) {
-			union html_focus_owner fo;
-			fo.self = true;
-			html_set_focus(html, HTML_FOCUS_SELF, fo,
-				       true, 0, 0, 0, NULL);
-		}
-		if (click && html->selection_type != HTML_SELECTION_SELF) {
-			sel_owner.none = true;
-			html_set_selection(html, HTML_SELECTION_NONE,
-					   sel_owner, true);
-		}
-
-		if (mas->text.box) {
-			int pixel_offset;
-			size_t idx;
-			plot_font_style_t fstyle;
-
-			font_plot_style_from_css(&html->unit_len_ctx,
-						 mas->text.box->style,
-						 &fstyle);
-
-			guit->layout->position(&fstyle,
-					       mas->text.box->text,
-					       mas->text.box->length,
-					       x - mas->text.box_x,
-					       &idx,
-					       &pixel_offset);
-
-			if (selection_click(html->sel,
-					    html->bw,
-					    mouse,
-					    mas->text.box->byte_offset + idx)) {
-				/* key presses must be directed at the
-				 * main browser window, paste text
-				 * operations ignored */
-				html_drag_type drag_type;
-				union html_drag_owner drag_owner;
-
-				if (selection_dragging(html->sel)) {
-					drag_type = HTML_DRAG_SELECTION;
-					drag_owner.no_owner = true;
-					html_set_drag_type(html,
-							   drag_type,
-							   drag_owner,
-							   NULL);
-					mas->result.status = messages_get("Selecting");
-				}
-
-				done = true;
-			}
-
-		} else if (mouse & BROWSER_MOUSE_PRESS_1) {
-			sel_owner.none = true;
-			selection_clear(html->sel, true);
-		}
-
-		if (selection_active(html->sel)) {
-			sel_owner.none = false;
-			html_set_selection(html,
-					   HTML_SELECTION_SELF,
-					   sel_owner,
-					   true);
-		} else if (click &&
-			   html->selection_type != HTML_SELECTION_NONE) {
-			sel_owner.none = true;
-			html_set_selection(html,
-					   HTML_SELECTION_NONE,
-					   sel_owner,
-					   true);
-		}
-	}
-
-	if (!done) {
-		union content_msg_data msg_data;
-		if (mas->title) {
-			mas->result.status = mas->title;
-		}
-
-		if (mouse & BROWSER_MOUSE_DRAG_1) {
-			if (mouse & BROWSER_MOUSE_MOD_2) {
-				msg_data.dragsave.type = CONTENT_SAVE_COMPLETE;
-				msg_data.dragsave.content = NULL;
-				content_broadcast(c,
-						  CONTENT_MSG_DRAGSAVE,
-						  &msg_data);
-			} else {
-				if (mas->drag_candidate == NULL) {
-					browser_window_page_drag_start(bw,
-								       x, y);
-				} else {
-					html_box_drag_start(mas->drag_candidate,
-							    x, y);
-				}
-				mas->result.pointer = BROWSER_POINTER_MOVE;
-			}
-		} else if (mouse & BROWSER_MOUSE_DRAG_2) {
-			if (mouse & BROWSER_MOUSE_MOD_2) {
-				msg_data.dragsave.type = CONTENT_SAVE_SOURCE;
-				msg_data.dragsave.content = NULL;
-				content_broadcast(c,
-						  CONTENT_MSG_DRAGSAVE,
-						  &msg_data);
-			} else {
-				if (mas->drag_candidate == NULL) {
-					browser_window_page_drag_start(bw,
-								       x, y);
-				} else {
-					html_box_drag_start(mas->drag_candidate,
-							    x, y);
-				}
-				mas->result.pointer = BROWSER_POINTER_MOVE;
-			}
-		}
-	}
-
-	if (mouse && mouse < BROWSER_MOUSE_MOD_1) {
-		/* ensure key presses still act on the browser window */
+	if (click && html->focus_type != HTML_FOCUS_SELF) {
 		union html_focus_owner fo;
 		fo.self = true;
 		html_set_focus(html, HTML_FOCUS_SELF, fo, true, 0, 0, 0, NULL);
 	}
+	if (click && html->selection_type != HTML_SELECTION_SELF) {
+		sel_owner.none = true;
+		html_set_selection(html, HTML_SELECTION_NONE, sel_owner, true);
+	}
 
-	return NSERROR_OK;
+	if (mas->text.box) {
+		int pixel_offset;
+		size_t idx;
+		plot_font_style_t fstyle;
+
+		font_plot_style_from_css(&html->unit_len_ctx,
+					 mas->text.box->style,
+					 &fstyle);
+
+		guit->layout->position(&fstyle,
+				       mas->text.box->text,
+				       mas->text.box->length,
+				       x - mas->text.box_x,
+				       &idx,
+				       &pixel_offset);
+
+		if (selection_click(html->sel,
+				    html->bw,
+				    mouse,
+				    mas->text.box->byte_offset + idx)) {
+			/* key presses must be directed at the
+			 * main browser window, paste text
+			 * operations ignored */
+			html_drag_type drag_type;
+			union html_drag_owner drag_owner;
+
+			if (selection_dragging(html->sel)) {
+				drag_type = HTML_DRAG_SELECTION;
+				drag_owner.no_owner = true;
+				html_set_drag_type(html,
+						   drag_type,
+						   drag_owner,
+						   NULL);
+				mas->result.status = messages_get("Selecting");
+			}
+
+			if (selection_active(html->sel)) {
+				sel_owner.none = false;
+				html_set_selection(html, HTML_SELECTION_SELF,
+						   sel_owner, true);
+			} else if (click && html->selection_type != HTML_SELECTION_NONE) {
+				sel_owner.none = true;
+				html_set_selection(html, HTML_SELECTION_NONE,
+						   sel_owner, true);
+			}
+
+			return default_mouse_action_focus(html, mouse);
+		}
+
+	} else if (mouse & BROWSER_MOUSE_PRESS_1) {
+		sel_owner.none = true;
+		selection_clear(html->sel, true);
+	}
+
+	if (selection_active(html->sel)) {
+		sel_owner.none = false;
+		html_set_selection(html, HTML_SELECTION_SELF, sel_owner, true);
+	} else if (click && html->selection_type != HTML_SELECTION_NONE) {
+		sel_owner.none = true;
+		html_set_selection(html, HTML_SELECTION_NONE, sel_owner, true);
+	}
+
+	if (mas->title) {
+		mas->result.status = mas->title;
+	}
+
+	if (mouse & BROWSER_MOUSE_DRAG_1) {
+		if (mouse & BROWSER_MOUSE_MOD_2) {
+			union content_msg_data msg_data;
+			msg_data.dragsave.type = CONTENT_SAVE_COMPLETE;
+			msg_data.dragsave.content = NULL;
+			content_broadcast(c, CONTENT_MSG_DRAGSAVE, &msg_data);
+		} else {
+			if (mas->drag_candidate == NULL) {
+				browser_window_page_drag_start(bw, x, y);
+			} else {
+				html_box_drag_start(mas->drag_candidate, x, y);
+			}
+			mas->result.pointer = BROWSER_POINTER_MOVE;
+		}
+	} else if (mouse & BROWSER_MOUSE_DRAG_2) {
+		if (mouse & BROWSER_MOUSE_MOD_2) {
+			union content_msg_data msg_data;
+			msg_data.dragsave.type = CONTENT_SAVE_SOURCE;
+			msg_data.dragsave.content = NULL;
+			content_broadcast(c, CONTENT_MSG_DRAGSAVE, &msg_data);
+		} else {
+			if (mas->drag_candidate == NULL) {
+				browser_window_page_drag_start(bw, x, y);
+			} else {
+				html_box_drag_start(mas->drag_candidate, x, y);
+			}
+			mas->result.pointer = BROWSER_POINTER_MOVE;
+		}
+	}
+
+
+	return default_mouse_action_focus(html, mouse);
 }
 
 
@@ -1344,7 +1343,11 @@ mouse_action_drag_none(html_content *html,
 		return res;
 	}
 
-	if (mas.scroll.bar) {
+	if (mouse & BROWSER_MOUSE_CLICK_4) {
+		mas.result.action = ACTION_BACK;
+	} else if (mouse & BROWSER_MOUSE_CLICK_5) {
+		mas.result.action = ACTION_FORWARD;
+	} else if (mas.scroll.bar) {
 		mas.result.status = scrollbar_mouse_status_to_message(
 				scrollbar_mouse_action(mas.scroll.bar,
 						       mouse,
@@ -1414,7 +1417,7 @@ mouse_action_drag_none(html_content *html,
 				  mas.gadget.control);
 		break;
 
-	case ACTION_GO:
+	case ACTION_NAVIGATE:
 		res = browser_window_navigate(
 				browser_window_find_target(bw,
 							   mas.link.target,
@@ -1435,6 +1438,14 @@ mouse_action_drag_none(html_content *html,
 				  lwc_string_length(path));
 			lwc_string_unref(path);
 		}
+		break;
+
+	case ACTION_BACK:
+		res = browser_window_history_back(bw, false);
+		break;
+
+	case ACTION_FORWARD:
+		res = browser_window_history_forward(bw, false);
 		break;
 
 	case ACTION_NOSEND:

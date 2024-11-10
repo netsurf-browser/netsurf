@@ -28,8 +28,17 @@
 #define _NETSURF_MOUSE_H_
 
 /**
- * Mouse state.	1 is primary mouse button (e.g. Select on RISC OS).
- *		2 is secondary mouse button (e.g. Adjust on RISC OS).
+ * Mouse state:
+ *   1 is primary mouse button.
+ *     Select on RISC OS, Left button on GTK/QT/win32
+ *   2 is auxillary mouse button.
+ *     Adjust on RISC OS, Middle button on GTK/QT/win32
+ *   3 is secondary mouse button.
+ *     Menu on RISC OS, right button on GTK/QT/win32
+ *   4 is fourth button.
+ *     Not present on RISC OS, back on GTK/QT/win32
+ *   5 is fifth button.
+ *     Not present on RISC OS, forwards on GTK/QT/win32
  *
  * \note click meaning is different for different front ends. On RISC
  *       OS, it is standard to act on press, so a click is fired at
@@ -46,43 +55,57 @@ typedef enum browser_mouse_state {
 	 */
 	BROWSER_MOUSE_HOVER = 0,
 
-	/** button 1 pressed */
+	/** primary button pressed */
 	BROWSER_MOUSE_PRESS_1 = (1 <<  0),
-	/** button 2 pressed */
+	/** auxillary button pressed */
 	BROWSER_MOUSE_PRESS_2 = (1 <<  1),
+	/** secondary button pressed */
+	BROWSER_MOUSE_PRESS_3 = (1 <<  2),
+	/** fourth button pressed */
+	BROWSER_MOUSE_PRESS_4 = (1 <<  3),
+	/** fifth button pressed */
+	BROWSER_MOUSE_PRESS_5 = (1 <<  4),
 
 	/** button 1 clicked. */
-	BROWSER_MOUSE_CLICK_1 = (1 <<  2),
+	BROWSER_MOUSE_CLICK_1 = (1 <<  5),
 	/** button 2 clicked. */
-	BROWSER_MOUSE_CLICK_2 = (1 <<  3),
+	BROWSER_MOUSE_CLICK_2 = (1 <<  6),
+	/** button 3 clicked. */
+	BROWSER_MOUSE_CLICK_3 = (1 <<  7),
+	/** button 4 clicked. */
+	BROWSER_MOUSE_CLICK_4 = (1 <<  8),
+	/** button 5 clicked. */
+	BROWSER_MOUSE_CLICK_5 = (1 <<  9),
 
 	/** button double clicked */
-	BROWSER_MOUSE_DOUBLE_CLICK = (1 << 4),
+	BROWSER_MOUSE_DOUBLE_CLICK = (1 << 10),
 	/** button triple clicked */
-	BROWSER_MOUSE_TRIPLE_CLICK = (1 << 5),
+	BROWSER_MOUSE_TRIPLE_CLICK = (1 << 11),
 
 	/** start of button 1 drag */
-	BROWSER_MOUSE_DRAG_1 = (1 << 6),
+	BROWSER_MOUSE_DRAG_1 = (1 << 12),
 	/** start of button 2 drag */
-	BROWSER_MOUSE_DRAG_2 = (1 << 7),
+	BROWSER_MOUSE_DRAG_2 = (1 << 13),
 
 	/** a drag operation was started and a mouse button is still pressed */
-	BROWSER_MOUSE_DRAG_ON = (1 << 8),
+	BROWSER_MOUSE_DRAG_ON = (1 << 14),
 
 	/** during button 1 drag */
-	BROWSER_MOUSE_HOLDING_1 = (1 << 9),
+	BROWSER_MOUSE_HOLDING_1 = (1 << 15),
 	/** during button 2 drag */
-	BROWSER_MOUSE_HOLDING_2 = (1 << 10),
+	BROWSER_MOUSE_HOLDING_2 = (1 << 16),
 
 	/** 1st modifier key pressed (eg. Shift) */
-	BROWSER_MOUSE_MOD_1 = (1 << 11),
+	BROWSER_MOUSE_MOD_1 = (1 << 17),
 	/** 2nd modifier key pressed (eg. Ctrl) */
-	BROWSER_MOUSE_MOD_2 = (1 << 12),
+	BROWSER_MOUSE_MOD_2 = (1 << 18),
 	/** 3rd modifier key pressed (eg. Alt) */
-	BROWSER_MOUSE_MOD_3 = (1 << 13),
+	BROWSER_MOUSE_MOD_3 = (1 << 19),
+	/** 4th modifier key pressed (eg. Meta) */
+	BROWSER_MOUSE_MOD_4 = (1 << 20),
 
 	/** pointer leaving window */
-	BROWSER_MOUSE_LEAVE = (1 << 14),
+	BROWSER_MOUSE_LEAVE = (1 << 21),
 } browser_mouse_state;
 
 
