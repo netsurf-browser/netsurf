@@ -352,6 +352,14 @@ nsgtk_window_button_press_event(GtkWidget *widget,
 					       g->mouse.pressed_y);
 		return TRUE;
 
+	case 8: /* Back button */
+		g->mouse.state = BROWSER_MOUSE_PRESS_4;
+		break;
+
+	case 9: /* Forward button */
+		g->mouse.state = BROWSER_MOUSE_PRESS_5;
+		break;
+
 	default:
 		return FALSE;
 	}
@@ -367,6 +375,8 @@ nsgtk_window_button_press_event(GtkWidget *widget,
 		g->mouse.state |= BROWSER_MOUSE_MOD_1;
 	if (event->state & GDK_CONTROL_MASK)
 		g->mouse.state |= BROWSER_MOUSE_MOD_2;
+	if (event->state & GDK_MOD1_MASK)
+		g->mouse.state |= BROWSER_MOUSE_MOD_3;
 
 	/* Record where we pressed, for use when determining whether to start
 	 * a drag in motion notify events. */
@@ -388,20 +398,6 @@ nsgtk_window_button_release_event(GtkWidget *widget,
 				  gpointer data)
 {
 	struct gui_window *g = data;
-	bool shift = event->state & GDK_SHIFT_MASK;
-	bool ctrl = event->state & GDK_CONTROL_MASK;
-
-	switch (event->button) {
-	case 8:
-		nsgtk_toolbar_item_activate(g->toolbar, BACK_BUTTON);
-		break;
-	case 9:
-		nsgtk_toolbar_item_activate(g->toolbar, FORWARD_BUTTON);
-		break;
-	default:
-		NSLOG(netsurf, DEBUG, "event button %d", event->button);
-		break;
-	}
 
 	/* If the mouse state is PRESS then we are waiting for a release to emit
 	 * a click event, otherwise just reset the state to nothing */
@@ -409,15 +405,33 @@ nsgtk_window_button_release_event(GtkWidget *widget,
 		g->mouse.state ^= (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1);
 	} else if (g->mouse.state & BROWSER_MOUSE_PRESS_2) {
 		g->mouse.state ^= (BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2);
+	} else if (g->mouse.state & BROWSER_MOUSE_PRESS_3) {
+		g->mouse.state ^= (BROWSER_MOUSE_PRESS_3 | BROWSER_MOUSE_CLICK_3);
+	} else if (g->mouse.state & BROWSER_MOUSE_PRESS_4) {
+		g->mouse.state ^= (BROWSER_MOUSE_PRESS_4 | BROWSER_MOUSE_CLICK_4);
+	} else if (g->mouse.state & BROWSER_MOUSE_PRESS_5) {
+		g->mouse.state ^= (BROWSER_MOUSE_PRESS_5 | BROWSER_MOUSE_CLICK_5);
 	}
 
 	/* Handle modifiers being removed */
-	if (g->mouse.state & BROWSER_MOUSE_MOD_1 && !shift)
+	if (g->mouse.state & BROWSER_MOUSE_MOD_1 &&
+	    !(event->state & GDK_SHIFT_MASK)) {
 		g->mouse.state ^= BROWSER_MOUSE_MOD_1;
-	if (g->mouse.state & BROWSER_MOUSE_MOD_2 && !ctrl)
+	}
+	if (g->mouse.state & BROWSER_MOUSE_MOD_2 &&
+	    !(event->state & GDK_CONTROL_MASK)) {
 		g->mouse.state ^= BROWSER_MOUSE_MOD_2;
+	}
+	if (g->mouse.state & BROWSER_MOUSE_MOD_3 &&
+	    !(event->state & GDK_MOD1_MASK)) {
+		g->mouse.state ^= BROWSER_MOUSE_MOD_2;
+	}
 
-	if (g->mouse.state & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) {
+	if (g->mouse.state & (BROWSER_MOUSE_CLICK_1 |
+			      BROWSER_MOUSE_CLICK_2 |
+			      BROWSER_MOUSE_CLICK_3 |
+			      BROWSER_MOUSE_CLICK_4 |
+			      BROWSER_MOUSE_CLICK_5)) {
 		browser_window_mouse_click(g->bw, g->mouse.state, event->x, event->y);
 	} else {
 		browser_window_mouse_track(g->bw, 0, event->x, event->y);
