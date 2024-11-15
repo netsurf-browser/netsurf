@@ -1476,7 +1476,7 @@ void ami_gui_opts_open(void)
 											GA_RelVerify, TRUE,
 											CHOOSER_PopUp, TRUE,
 											CHOOSER_Labels, websearch_list,
-											CHOOSER_Selected, &gow->websearch_idx,
+											CHOOSER_Selected, gow->websearch_idx,
 											CHOOSER_MaxLabels, 40,
 										ChooserEnd,
 										CHILD_Label, LabelObj,
