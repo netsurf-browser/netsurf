@@ -1704,6 +1704,7 @@ static void ami_gui_opts_use(bool save)
 	struct Node *tmp_node = NULL;
 	struct TextAttr *tattr;
 	char *dot;
+	char *label = NULL;
 	bool rescan_fonts = false;
 	bool old_tab_always_show;
 
@@ -2015,8 +2016,8 @@ static void ami_gui_opts_use(bool save)
 #ifdef __amigaos4__
 	GetAttr(CHOOSER_SelectedNode, gow->objects[GID_OPTS_SEARCH_PROV],(ULONG *)&tmp_node);
 	if(tmp_node != NULL) {
-		GetChooserNodeAttrs(tmp_node, CNA_Text, (ULONG *)&data, TAG_DONE);
-		nsoption_set_charp(search_web_provider, (char *)data);
+		GetChooserNodeAttrs(tmp_node, CNA_Text, (ULONG *)&label, TAG_DONE);
+		nsoption_set_charp(search_web_provider, strdup((char *)label));
 	}
 #else
 	GetAttr(CHOOSER_Selected, gow->objects[GID_OPTS_SEARCH_PROV],(ULONG *)&gow->websearch_idx);
