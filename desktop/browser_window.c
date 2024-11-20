@@ -4340,6 +4340,10 @@ browser_window_find_target(struct browser_window *bw,
 	hlcache_handle *c;
 	int rdepth;
 	nserror error;
+	int flags = BW_CREATE_HISTORY | BW_CREATE_CLONE;
+
+	if (nsoption_bool(foreground_new))
+		flags |= BW_CREATE_FOREGROUND;
 
 	/* use the base target if we don't have one */
 	c = bw->current_content;
@@ -4381,13 +4385,8 @@ browser_window_find_target(struct browser_window *bw,
 		 * OR
 		 * - button_2 opens in new tab and the link target is "_blank"
 		 */
-		error = browser_window_create(BW_CREATE_TAB |
-					      BW_CREATE_HISTORY |
-					      BW_CREATE_CLONE,
-					      NULL,
-					      NULL,
-					      bw,
-					      &bw_target);
+		flags |= BW_CREATE_TAB;
+		error = browser_window_create(flags, NULL, NULL, bw, &bw_target);
 		if (error != NSERROR_OK) {
 			return bw;
 		}
@@ -4408,12 +4407,7 @@ browser_window_find_target(struct browser_window *bw,
 		 * - button_2 doesn't open in new tabs and the link target is
 		 *   "_blank"
 		 */
-		error = browser_window_create(BW_CREATE_HISTORY |
-					      BW_CREATE_CLONE,
-					      NULL,
-					      NULL,
-					      bw,
-					      &bw_target);
+		error = browser_window_create(flags, NULL, NULL, bw, &bw_target);
 		if (error != NSERROR_OK) {
 			return bw;
 		}
@@ -4447,11 +4441,7 @@ browser_window_find_target(struct browser_window *bw,
 	if (!nsoption_bool(target_blank))
 		return bw;
 
-	error = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY,
-				      NULL,
-				      NULL,
-				      bw,
-				      &bw_target);
+	error = browser_window_create(flags, NULL, NULL, bw, &bw_target);
 	if (error != NSERROR_OK) {
 		return bw;
 	}

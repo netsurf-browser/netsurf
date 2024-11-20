@@ -220,11 +220,16 @@ NSOPTION_UINT(curl_fetch_timeout, 30)
 /** Suppress debug output from cURL. */
 NSOPTION_BOOL(suppress_curl_debug, true)
 
+/******** appearnce of new browser views ********/
+
 /** Whether to allow target="_blank" */
 NSOPTION_BOOL(target_blank, true)
 
-/** Whether second mouse button opens in new tab */
+/** auxillary (second) mouse button opens in new tab */
 NSOPTION_BOOL(button_2_tab, true)
+
+/** control if new view (window or tab) opens in foreground */
+NSOPTION_BOOL(foreground_new, false)
 
 /******** PDF / Print options ********/
 
