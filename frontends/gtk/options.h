@@ -50,9 +50,6 @@ NSOPTION_INTEGER(history_age, 0)
 /* show urls in local history browser */
 NSOPTION_BOOL(hover_urls, false)
 
-/* bring new tabs to front */
-NSOPTION_BOOL(focus_new, false)
-
 /* new tabs are blank instead of homepage */
 NSOPTION_BOOL(new_blank, false)
 

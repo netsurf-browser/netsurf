@@ -833,13 +833,8 @@ gui_window_create(struct browser_window *bw,
 		  gui_window_create_flags flags)
 {
 	struct gui_window *g; /* what is being created to return */
-	bool open_in_background = !(nsoption_bool(focus_new));
+	bool open_in_background = !(flags & GW_CREATE_FOREGROUND);
 	GtkBuilder* tab_builder;
-
-	/* If there is a foreground request, override user preference */
-	if (flags & GW_CREATE_FOREGROUND)
-		open_in_background = false;
-
 	nserror res;
 
 	res = nsgtk_builder_new_from_resname("tabcontents", &tab_builder);

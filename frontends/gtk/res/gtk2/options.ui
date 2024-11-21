@@ -742,14 +742,14 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkCheckButton" id="checkFocusNew">
+                              <object class="GtkCheckButton" id="checkForegroundNew">
                                 <property name="label" translatable="yes">preferencesTabsSwitch</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">False</property>
                                 <property name="draw_indicator">True</property>
-                                <signal name="toggled" handler="nsgtk_preferences_checkFocusNew_toggled" swapped="no"/>
-                                <signal name="realize" handler="nsgtk_preferences_checkFocusNew_realize" swapped="no"/>
+                                <signal name="toggled" handler="nsgtk_preferences_checkForegroundNew_toggled" swapped="no"/>
+                                <signal name="realize" handler="nsgtk_preferences_checkForegroundNew_realize" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="expand">True</property>

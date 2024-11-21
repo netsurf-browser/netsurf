@@ -717,7 +717,7 @@ nsgtk_preferences_checkShowSingleTab_realize(GtkWidget *widget,
 }
 
 /* switch to newly opened tabs immediately */
-TOGGLEBUTTON_SIGNALS(checkFocusNew, focus_new)
+TOGGLEBUTTON_SIGNALS(checkForegroundNew, foreground_new)
 
 /* newly opened tabs are blank */
 TOGGLEBUTTON_SIGNALS(checkNewBlank, new_blank)
