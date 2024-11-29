@@ -273,6 +273,7 @@ struct gui_window_2 {
 	char *restrict svbuffer;
 	char *restrict status;
 	char *restrict wintitle;
+	char icontitle[24];
 	char *restrict helphints[GID_LAST];
 	browser_mouse_state prev_mouse_state;
 	struct timeval lastclick;
@@ -3195,8 +3196,17 @@ static BOOL ami_gui_event(void *w)
 				amiga_icon_superimpose_favicon_internal(gwin->gw->favicon,
 					gwin->dobj);
 				HideWindow(gwin->win);
+				if(strlen(gwin->wintitle) > 23) {
+					strncpy(gwin->icontitle, gwin->wintitle, 20);
+					gwin->icontitle[20] = '.';
+					gwin->icontitle[21] = '.';
+					gwin->icontitle[22] = '.';
+					gwin->icontitle[23] = '\0';
+				} else {
+					strlcpy(gwin->icontitle, gwin->wintitle, 23);
+				}
 				gwin->appicon = AddAppIcon((ULONG)gwin->objects[OID_MAIN],
-									(ULONG)gwin, gwin->win->Title, appport,
+									(ULONG)gwin, gwin->icontitle, appport,
 									0, gwin->dobj, NULL);
 
 				cur_gw = NULL;
