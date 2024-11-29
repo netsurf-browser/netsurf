@@ -4025,7 +4025,7 @@ static bool ami_gui_hotlist_add(void *userdata, int level, int item,
 	if(item > AMI_GUI_TOOLBAR_MAX) return false;
 	if(is_folder == true) return false;
 
-	if(utf8_from_local_encoding(title,
+	if(utf8_to_local_encoding(title,
 		(strlen(title) < NSA_MAX_HOTLIST_BUTTON_LEN) ? strlen(title) : NSA_MAX_HOTLIST_BUTTON_LEN,
 		&utf8title) != NSERROR_OK)
 		return false;
