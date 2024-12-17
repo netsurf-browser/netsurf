@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2011,2024 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -18,18 +18,19 @@
 
 #include "testament.h"
 
-/* Release revisions are prepended with 6000 so the version numbers below
+/* Release revisions are suffixed with 00001 so the version numbers below
  * are same as NetSurf numbering.
- * CI builds use themselves as the revision.
- * This means releases have a higher revision than CI builds, and stops
+ * CI builds use NetSurf revision + 0 + build number
+ * (the 0 will need to be removed when CI builds get up to five digits)
+ * This means releases and CI builds increment as expected, and stops
  * problems created by "0" not being a valid AmigaOS revision number.
  */
 #define NETSURF_VERSION_MAJOR "3"
 #define NETSURF_VERSION_MINOR_EXTERNAL "12"
 #if defined(CI_BUILD)
-#define NETSURF_VERSION_MINOR CI_BUILD
+#define NETSURF_VERSION_MINOR NETSURF_VERSION_MINOR_EXTERNAL "0" CI_BUILD
 #else
-#define NETSURF_VERSION_MINOR "6000" NETSURF_VERSION_MINOR_EXTERNAL
+#define NETSURF_VERSION_MINOR NETSURF_VERSION_MINOR_EXTERNAL "00001"
 #endif
 
 static const __attribute__((used)) char *verstag = "\0$VER: NetSurf " NETSURF_VERSION_MAJOR "." NETSURF_VERSION_MINOR " (" WT_COMPILEDATE ")\0";
