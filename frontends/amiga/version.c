@@ -18,7 +18,7 @@
 
 #include "testament.h"
 
-/* Release revisions are suffixed with 00001 so the version numbers below
+/* Release revisions are suffixed with 99999 so the version numbers below
  * are same as NetSurf numbering.
  * CI builds use NetSurf revision + 0 + build number
  * (the 0 will need to be removed when CI builds get up to five digits)
@@ -30,7 +30,7 @@
 #if defined(CI_BUILD)
 #define NETSURF_VERSION_MINOR NETSURF_VERSION_MINOR_EXTERNAL "0" CI_BUILD
 #else
-#define NETSURF_VERSION_MINOR NETSURF_VERSION_MINOR_EXTERNAL "00001"
+#define NETSURF_VERSION_MINOR NETSURF_VERSION_MINOR_EXTERNAL "99999"
 #endif
 
 static const __attribute__((used)) char *verstag = "\0$VER: NetSurf " NETSURF_VERSION_MAJOR "." NETSURF_VERSION_MINOR " (" WT_COMPILEDATE ")\0";
