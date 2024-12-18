@@ -345,6 +345,8 @@ nserror nsurl_get_utf8(const nsurl *url, char **url_s, size_t *url_l)
 	size_t scheme_len;
 	char *path = NULL;
 	size_t path_len;
+	char *url_out; /* url string */
+	char *url_cur; /* url cursor */
 
 	assert(url != NULL);
 
@@ -381,16 +383,24 @@ nserror nsurl_get_utf8(const nsurl *url, char **url_s, size_t *url_l)
 		goto cleanup;
 	}
 
-	*url_l = scheme_len + idna_host_len + path_len + 1; /* +1 for \0 */
-	*url_s = malloc(*url_l);
-
-	if (*url_s == NULL) {
+	/* allocate space for output url string allowing for terminator */
+	url_out = url_cur = malloc(scheme_len + idna_host_len + path_len + 1);
+	if (url_out == NULL) {
 		err = NSERROR_NOMEM;
 		goto cleanup;
 	}
 
-	snprintf(*url_s, *url_l, "%s%s%s", scheme, idna_host, path);
+	/* copy the three parts into output buffer and null terminate */
+	memcpy(url_cur, scheme, scheme_len);
+	url_cur += scheme_len;
+	memcpy(url_cur, idna_host, idna_host_len);
+	url_cur += idna_host_len;
+	memcpy(url_cur, path, path_len);
+	url_cur += path_len;
+	*url_cur = 0;
 
+	*url_l = url_cur - url_out;
+	*url_s = url_out;
 	err = NSERROR_OK;
 
 cleanup:

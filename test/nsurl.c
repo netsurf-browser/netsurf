@@ -1312,6 +1312,7 @@ START_TEST(nsurl_get_utf8_test)
 	const struct test_pairs *tst = &utf8_tests[_i];
 	char *utf8out;
 	size_t utf8out_len;
+	size_t tstres_len;
 
 	/* not testing create, this should always succeed */
 	err = nsurl_create(tst->test, &url);
@@ -1320,6 +1321,11 @@ START_TEST(nsurl_get_utf8_test)
 	err = nsurl_get_utf8(url, &utf8out, &utf8out_len);
 	ck_assert(err == NSERROR_OK);
 
+	/* ensure length is correct */
+	tstres_len = strlen(tst->res);
+	ck_assert_uint_eq(tstres_len, utf8out_len);
+
+	/* ensure string matches */
 	ck_assert_str_eq(utf8out, tst->res);
 
 	free(utf8out);
