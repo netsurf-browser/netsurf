@@ -1,7 +1,6 @@
-Google|www.google.com|https://www.google.com/search?q=%s|https://www.google.com/favicon.ico|
+DuckDuckGo|www.duckduckgo.com|https://www.duckduckgo.com/html/?q=%s|https://www.duckduckgo.com/favicon.ico|fixme:Their ico upsets the current implementation
 Yahoo|search.yahoo.com|https://search.yahoo.com/search?p=%s|https://www.yahoo.com/favicon.ico|
 Bing|www.bing.com|https://www.bing.com/search?q=%s|https://www.bing.com/favicon.ico|
-DuckDuckGo|www.duckduckgo.com|https://www.duckduckgo.com/html/?q=%s|https://www.duckduckgo.com/favicon.ico|fixme:Their ico upsets the current implementation
 Wikipedia|en.wikipedia.org|https://en.wikipedia.org/w/index.php?title=Special%3ASearch&search=%s|https://en.wikipedia.org/favicon.ico|
 BBC News|search.bbc.co.uk|https://search.bbc.co.uk/search?q=%s&tab=ns|https://www.bbc.co.uk/favicon.ico|
 Ubuntu Packages|packages.ubuntu.com|https://packages.ubuntu.com/search?keywords=%s|https://packages.ubuntu.com/favicon.ico|
@@ -15,3 +14,4 @@ Amazon|www.amazon.com|https://www.amazon.com/s/ref=nb_ss_gw?field-keywords=%s|ht
 Ebay|www.ebay.com|https://www.ebay.com/sch/i.html?_nkw=%s|https://www.ebay.com/favicon.ico|
 IMDB|www.imdb.com|https://www.imdb.com/find?q=%s|https://www.imdb.com/favicon.ico|
 Stract|stract.com|https://stract.com/search?q=%s|https://stract.com/favicon.ico|
+Google|www.google.com|https://www.google.com/search?q=%s|https://www.google.com/favicon.ico|

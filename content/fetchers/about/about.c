@@ -60,6 +60,7 @@
 #include "query_privacy.h"
 #include "query_timeout.h"
 #include "atestament.h"
+#include "websearch.h"
 
 typedef bool (*fetch_about_handler)(struct fetch_about_context *);
 
@@ -255,6 +256,20 @@ bool fetch_about_srverror(struct fetch_about_context *ctx)
 	return true;
 }
 
+
+/* exported interface documented in about/private.h */
+bool fetch_about_redirect(struct fetch_about_context *ctx, const char *target)
+{
+	fetch_msg msg;
+
+	/* content is going to return redirect */
+	fetch_set_http_code(ctx->fetchh, 302);
+
+	msg.type = FETCH_REDIRECT;
+	msg.data.redirect = target;
+
+	return fetch_about_send_callback(&msg, ctx);
+}
 
 /**
  * Handler to generate about scheme credits page.
@@ -479,6 +494,14 @@ struct about_handlers about_handler_list[] = {
 		SLEN("query/fetcherror"),
 		NULL,
 		fetch_about_query_fetcherror_handler,
+		true
+	},
+	{
+		/* web search using the configured provider */
+		"websearch",
+		SLEN("websearch"),
+		NULL,
+		fetch_about_websearch_handler,
 		true
 	}
 };

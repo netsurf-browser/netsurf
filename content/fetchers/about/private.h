@@ -74,4 +74,10 @@ struct nsurl *fetch_about_get_url(struct fetch_about_context *ctx);
  */
 const struct fetch_multipart_data *fetch_about_get_multipart(struct fetch_about_context *ctx);
 
+
+/**
+ * cause a 302 redirect to target
+ */
+bool fetch_about_redirect(struct fetch_about_context *ctx, const char *target);
+
 #endif

@@ -14,7 +14,8 @@ S_FETCHER_ABOUT := \
 	query_fetcherror.c \
 	query_privacy.c \
 	query_timeout.c \
-	testament.c
+	testament.c \
+	websearch.c
 
 # The following files depend on the testament
 content/fetchers/about/testament.c: testament $(OBJROOT)/testament.h
