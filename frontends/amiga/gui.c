@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2024 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -4386,19 +4386,6 @@ void ami_gui_adjust_scale(struct gui_window *gw, float adjustment)
 	ami_schedule_redraw(gw->shared, true);
 }
 
-void ami_gui_switch_to_new_tab(struct gui_window_2 *gwin)
-{
-	if(nsoption_bool(new_tab_is_active) == true) return;
-
-	/* Switch to the just-opened tab (if new_tab_is_active, we already did!) */
-	RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_TABS],
-							gwin->win, NULL,
-							CLICKTAB_CurrentNode, gwin->last_new_tab,
-							TAG_DONE);
-
-	ami_switch_tab(gwin, false);
-}
-
 nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
 {
 	nsurl *url;
@@ -4408,7 +4395,7 @@ nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
 	error = nsurl_create(nsoption_charp(homepage_url), &url);
 	if (error == NSERROR_OK) {
 		error = browser_window_create(BW_CREATE_HISTORY |
-					      BW_CREATE_TAB,
+					      BW_CREATE_TAB | BW_CREATE_FOREGROUND,
 					      url,
 					      NULL,
 					      gwin->gw->bw,
@@ -4419,8 +4406,6 @@ nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
 		amiga_warn_user(messages_get_errorcode(error), 0);
 		return error;
 	}
-
-	ami_gui_switch_to_new_tab(gwin);
 
 	return NSERROR_OK;
 }
@@ -4842,7 +4827,7 @@ gui_window_create(struct browser_window *bw,
 							CLICKTAB_Labels, &g->shared->tab_list,
 							TAG_DONE);
 
-		if(nsoption_bool(new_tab_is_active)) {
+		if(flags & GW_CREATE_FOREGROUND) {
 			RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],
 							g->shared->win, NULL,
 							CLICKTAB_Current, g->tab,
@@ -4856,7 +4841,7 @@ gui_window_create(struct browser_window *bw,
 
 		g->shared->next_tab++;
 
-		if(nsoption_bool(new_tab_is_active)) ami_switch_tab(g->shared,false);
+		if(flags & GW_CREATE_FOREGROUND) ami_switch_tab(g->shared,false);
 
 		ami_update_buttons(g->shared);
 		ami_schedule(0, ami_gui_refresh_favicon, g->shared);

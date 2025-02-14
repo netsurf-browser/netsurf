@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010, 2016 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -303,16 +303,18 @@ RXHOOKF(rx_open)
 				      NULL,
 				      NULL);
 		} else {
+			int flags = BW_CREATE_TAB;
+			if(cmd->ac_ArgList[6]) {
+				flags |= BW_CREATE_FOREGROUND;
+			}
 			browser_window_create(BW_CREATE_HISTORY |
-				      BW_CREATE_TAB,
+				      flags,
 				      url,
 				      NULL,
 				      ami_gui_get_browser_window(gw),
 				      NULL);
 
-			if(cmd->ac_ArgList[6]) {
-				ami_gui_switch_to_new_tab(ami_gui_get_gui_window_2(gw));
-			}
+
 		}
 	}
 	else if(cmd->ac_ArgList[1])

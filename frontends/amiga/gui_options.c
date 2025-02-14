@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 - 2024 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2009 - 2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -1351,7 +1351,7 @@ void ami_gui_opts_open(void)
       	              						GA_ID, GID_OPTS_TAB_ACTIVE,
          	        	   					GA_RelVerify, TRUE,
          	     	      					GA_Text, gadlab[GID_OPTS_TAB_ACTIVE],
-         	     	      					GA_Selected, !nsoption_bool(new_tab_is_active),
+         	     	      					GA_Selected, !nsoption_bool(foreground_new),
             	    					CheckBoxEnd,
 										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_LAST] = CheckBoxObj,
       	              						GA_ID, GID_OPTS_TAB_LAST,
@@ -1975,9 +1975,9 @@ static void ami_gui_opts_use(bool save)
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_ACTIVE],(ULONG *)&data);
 	if (data) {
-		nsoption_set_bool(new_tab_is_active, false);
+		nsoption_set_bool(foreground_new, false);
 	} else {
-		nsoption_set_bool(new_tab_is_active, true);
+		nsoption_set_bool(foreground_new, true);
 	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_LAST],(ULONG *)&data);

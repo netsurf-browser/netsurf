@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 - 2020 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -37,7 +37,6 @@ NSOPTION_BOOL(clipboard_write_utf8, false)
 NSOPTION_BOOL(truecolour_mouse_pointers, false)
 NSOPTION_BOOL(os_mouse_pointers, true)
 NSOPTION_BOOL(use_openurl_lib, false)
-NSOPTION_BOOL(new_tab_is_active, false)
 NSOPTION_BOOL(new_tab_last, false)
 NSOPTION_BOOL(tab_close_warn, true)
 NSOPTION_BOOL(tab_always_show, false)

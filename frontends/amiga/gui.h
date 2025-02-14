@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2019 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -165,11 +165,6 @@ struct Screen *ami_gui_get_screen(void);
  * @return String to use as the screen's titlebar text.
  */
 STRPTR ami_gui_get_screen_title(void);
-
-/**
- * Switch to the most-recently-opened tab
- */
-void ami_gui_switch_to_new_tab(struct gui_window_2 *gwin);
 
 /**
  * Add a window to the NetSurf window list (to enable event processing)
