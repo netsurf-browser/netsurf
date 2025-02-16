@@ -102,14 +102,8 @@ void nsgtk_throbber_finalise(void)
 /* exported interface documented in gtk/throbber.h */
 nserror nsgtk_throbber_get_frame(int frame, GdkPixbuf **pixbuf)
 {
-	nserror res = NSERROR_OK;
-
-	/* ensure initialisation */
 	if (nsgtk_throbber == NULL) {
-		res = nsgtk_throbber_init();
-	}
-	if (res != NSERROR_OK) {
-		return res;
+		return NSERROR_INIT_FAILED;
 	}
 
 	/* ensure frame in range */

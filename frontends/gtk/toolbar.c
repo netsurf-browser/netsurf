@@ -2853,17 +2853,16 @@ debugboxtree_button_clicked_cb(GtkWidget *widget, gpointer data)
 		nsgtk_warning("Error saving box tree dump.",
 			      "Unable to open file for writing.");
 		unlink(fname);
-		return TRUE;
+
+	} else {
+		bw = tb->get_bw(tb->get_ctx);
+
+		browser_window_debug_dump(bw, f, CONTENT_DEBUG_RENDER);
+
+		fclose(f);
+
+		nsgtk_viewfile("Box Tree Debug", "boxtree", fname);
 	}
-
-	bw = tb->get_bw(tb->get_ctx);
-
-	browser_window_debug_dump(bw, f, CONTENT_DEBUG_RENDER);
-
-	fclose(f);
-
-	nsgtk_viewfile("Box Tree Debug", "boxtree", fname);
-
 	g_free(fname);
 
 	return TRUE;
@@ -2898,17 +2897,16 @@ debugdomtree_button_clicked_cb(GtkWidget *widget, gpointer data)
 		nsgtk_warning("Error saving box tree dump.",
 			      "Unable to open file for writing.");
 		unlink(fname);
-		return TRUE;
+
+	} else {
+		bw = tb->get_bw(tb->get_ctx);
+
+		browser_window_debug_dump(bw, f, CONTENT_DEBUG_DOM);
+
+		fclose(f);
+
+		nsgtk_viewfile("DOM Tree Debug", "domtree", fname);
 	}
-
-	bw = tb->get_bw(tb->get_ctx);
-
-	browser_window_debug_dump(bw, f, CONTENT_DEBUG_DOM);
-
-	fclose(f);
-
-	nsgtk_viewfile("DOM Tree Debug", "domtree", fname);
-
 	g_free(fname);
 
 	return TRUE;

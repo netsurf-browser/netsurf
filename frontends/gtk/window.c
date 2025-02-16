@@ -424,7 +424,7 @@ nsgtk_window_button_release_event(GtkWidget *widget,
 	}
 	if (g->mouse.state & BROWSER_MOUSE_MOD_3 &&
 	    !(event->state & GDK_MOD1_MASK)) {
-		g->mouse.state ^= BROWSER_MOUSE_MOD_2;
+		g->mouse.state ^= BROWSER_MOUSE_MOD_3;
 	}
 
 	if (g->mouse.state & (BROWSER_MOUSE_CLICK_1 |

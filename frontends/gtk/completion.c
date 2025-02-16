@@ -153,6 +153,10 @@ nsgtk_completion_connect_signals(GtkEntry *entry,
 	struct nsgtk_completion_ctx *cb_ctx;
 
 	cb_ctx = calloc(1, sizeof(struct nsgtk_completion_ctx));
+	if (cb_ctx == NULL) {
+		return NSERROR_NOMEM;
+	}
+
 	cb_ctx->get_bw = get_bw;
 	cb_ctx->get_bw_ctx = get_bw_ctx;
 
