@@ -351,7 +351,13 @@ search_web_omni(const char *term,
 		}
 	}
 
-	/* must be initialised */
+	/* ensure providers are initialised */
+	if (search_web_ctx.providers == NULL) {
+		ret = search_web_init(NULL);
+		if (ret != NSERROR_OK) {
+			return ret;
+		}
+	}
 	if (search_web_ctx.providers == NULL) {
 		return NSERROR_INIT_FAILED;
 	}
