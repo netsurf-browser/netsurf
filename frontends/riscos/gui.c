@@ -56,6 +56,7 @@
 #include "netsurf/url_db.h"
 #include "desktop/save_complete.h"
 #include "desktop/hotlist.h"
+#include "desktop/searchweb.h"
 #include "content/backing_store.h"
 
 #include "riscos/gui.h"
@@ -1204,6 +1205,10 @@ static nserror gui_init(int argc, char** argv)
 	NETSURF_DIR = strdup(nsdir_temp);
 	if (!NETSURF_DIR)
 		die("Failed duplicating NetSurf directory string");
+
+        /* web search engine */
+	search_web_init("NetSurf:Resources.SearchEngines");
+	search_web_select_provider(nsoption_charp(search_web_provider));
 
 	/* Initialise filename allocator */
 	filename_initialise();
