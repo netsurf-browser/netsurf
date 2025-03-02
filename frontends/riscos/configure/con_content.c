@@ -46,7 +46,7 @@ bool ro_gui_options_content_initialise(wimp_w w)
 	ro_gui_set_icon_selected_state(w, CONTENT_BLOCK_ADVERTISEMENTS,
                                        nsoption_bool(block_advertisements));
 	ro_gui_set_icon_selected_state(w, CONTENT_BLOCK_POPUPS,
-                                       nsoption_bool(block_popups));
+                                       nsoption_bool(disable_popups));
 	ro_gui_set_icon_selected_state(w, CONTENT_BLOCK_CSS,
                                        !nsoption_bool(author_level_css));
 	ro_gui_set_icon_selected_state(w, CONTENT_TARGET_BLANK,
@@ -91,7 +91,7 @@ bool ro_gui_options_content_ok(wimp_w w)
 	nsoption_set_bool(block_advertisements,
 			  ro_gui_get_icon_selected_state(w, CONTENT_BLOCK_ADVERTISEMENTS));
 
-	nsoption_set_bool(block_popups,
+	nsoption_set_bool(disable_popups,
 			  ro_gui_get_icon_selected_state(w, CONTENT_BLOCK_POPUPS));
 	nsoption_set_bool(author_level_css,
 			  !ro_gui_get_icon_selected_state(w, CONTENT_BLOCK_CSS));

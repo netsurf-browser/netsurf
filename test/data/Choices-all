@@ -20,6 +20,7 @@ disc_cache_path:
 disc_cache_size:1073741824
 disc_cache_age:28
 block_advertisements:0
+disable_popups:0
 do_not_track:0
 send_referer:1
 foreground_images:1
@@ -104,7 +105,6 @@ downloads_directory:/home/vince
 url_file:/home/vince/.netsurf/URLs
 show_single_tab:1
 button_type:1
-disable_popups:0
 history_age:0
 hover_urls:0
 new_blank:0

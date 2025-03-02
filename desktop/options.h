@@ -104,6 +104,9 @@ NSOPTION_INTEGER(disc_cache_age, 28)
 /** Whether to block advertisements */
 NSOPTION_BOOL(block_advertisements, false)
 
+/** Control popups e.g. noniteractive opening windows with window.open */
+NSOPTION_BOOL(disable_popups, false)
+
 /** Disable website tracking, see	                
  * http://www.w3.org/Submission/2011/SUBM-web-tracking-protection-20110224/#dnt-uas */
 NSOPTION_BOOL(do_not_track, false)
