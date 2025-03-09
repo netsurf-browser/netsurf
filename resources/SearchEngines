@@ -15,3 +15,5 @@ Ebay|www.ebay.com|https://www.ebay.com/sch/i.html?_nkw=%s|https://www.ebay.com/f
 IMDB|www.imdb.com|https://www.imdb.com/find?q=%s|https://www.imdb.com/favicon.ico|
 Stract|stract.com|https://stract.com/search?q=%s|https://stract.com/favicon.ico|
 Google|www.google.com|https://www.google.com/search?q=%s|https://www.google.com/favicon.ico|
+Ecosia|www.ecosia.org|https://www.ecosia.org/search?q=%s|https://www.ecosia.org/favicon.ico|
+Qwant|www.qwant.com|https://www.qwant.com/?t=web&q=%s|https://www.qwant.com/favicon.ico|
