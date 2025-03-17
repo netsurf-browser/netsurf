@@ -20,6 +20,7 @@ http://www.netsurf-browser.org
 @{" Keyboard controls    " link Keyboard}
 
 @{" Optimising for speed " link Speed}
+@{" Logging              " link Logging}
 
 @{" Credits              " link Contact}
 @endnode
@@ -395,6 +396,15 @@ Deselect @{b}Higher quality scaling@{ub}, this will be very slow if not done in 
 @{lindent 2}* In @{"Options" link Options}, increase redraw_tile_size_x/y (increasing this value uses more graphics mem)@{lindent 0}
 
 @{lindent 2}* In @{"Options" link Options}, set font_antialiasing:0@{lindent 0}
+@endnode
+
+@node Logging "Logging"
+By default, some logs may be sent to a Shell output window.
+
+To suppress these;
+
+@{lindent 2}* In @{"Options" link Options}, set log_filter:level:CRITICAL@{lindent 0}
+
 @endnode
 
 @node contact "Credits"
