@@ -99,7 +99,7 @@ S_FRONTEND :=			\
 	throbber.c url_bar.c)						\
 	$(addprefix configure/,con_cache.c con_connect.c con_content.c	\
 	con_fonts.c con_home.c con_image.c con_inter.c con_language.c	\
-	con_secure.c con_theme.c)
+	con_secure.c con_theme.c con_search.c)
 
 # This is the final source build list
 # Note this is deliberately *not* expanded here as common and image

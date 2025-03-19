@@ -117,6 +117,9 @@ void ro_gui_configure_initialise(void)
 	ro_gui_configure_register("con_secure",
 			ro_gui_options_security_initialise,
 			ro_gui_wimp_event_finalise);
+	ro_gui_configure_register("con_search",
+			ro_gui_options_search_initialise,
+			ro_gui_wimp_event_finalise);
 
 	/* translate the icons */
 	if (!ro_gui_configure_translate())

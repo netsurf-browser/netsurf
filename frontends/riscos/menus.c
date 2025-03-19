@@ -38,6 +38,7 @@
 #include "utils/messages.h"
 #include "utils/utf8.h"
 #include "desktop/cookie_manager.h"
+#include "desktop/searchweb.h"
 
 #include "riscos/dialog.h"
 #include "riscos/configure.h"
@@ -101,7 +102,7 @@ wimp_w current_menu_window;
 /** Icon that owns the current menu (only valid for popup menus) */
 static wimp_i current_menu_icon;
 /** The available menus */
-wimp_menu *image_quality_menu, *proxy_type_menu, *languages_menu;
+wimp_menu *image_quality_menu, *proxy_type_menu, *languages_menu, *search_provider_menu;
 
 /* the values given in PRM 3-157 for how to check menus/windows are
  * incorrect so we use a hack of checking if the sub-menu has bit 0
@@ -112,6 +113,74 @@ wimp_menu *image_quality_menu, *proxy_type_menu, *languages_menu;
 /**
  * Create menu structures.
  */
+
+/**
+ * create a search provider menu.
+ *
+ * The menu is limited to 40 entries which ought to be sufficient
+ */
+static wimp_menu *ro_gui_menu_init_search_provider(void)
+{
+	static struct ns_menu search_provider_definition = {
+		"SearchProvider", {
+			{ "searchprovider00", NO_ACTION, 0 },
+			{ "searchprovider01", NO_ACTION, 0 },
+			{ "searchprovider02", NO_ACTION, 0 },
+			{ "searchprovider03", NO_ACTION, 0 },
+			{ "searchprovider04", NO_ACTION, 0 },
+			{ "searchprovider05", NO_ACTION, 0 },
+			{ "searchprovider06", NO_ACTION, 0 },
+			{ "searchprovider07", NO_ACTION, 0 },
+			{ "searchprovider08", NO_ACTION, 0 },
+			{ "searchprovider09", NO_ACTION, 0 },
+			{ "searchprovider10", NO_ACTION, 0 },
+			{ "searchprovider11", NO_ACTION, 0 },
+			{ "searchprovider12", NO_ACTION, 0 },
+			{ "searchprovider13", NO_ACTION, 0 },
+			{ "searchprovider14", NO_ACTION, 0 },
+			{ "searchprovider15", NO_ACTION, 0 },
+			{ "searchprovider16", NO_ACTION, 0 },
+			{ "searchprovider17", NO_ACTION, 0 },
+			{ "searchprovider18", NO_ACTION, 0 },
+			{ "searchprovider19", NO_ACTION, 0 },
+			{ "searchprovider20", NO_ACTION, 0 },
+			{ "searchprovider21", NO_ACTION, 0 },
+			{ "searchprovider22", NO_ACTION, 0 },
+			{ "searchprovider23", NO_ACTION, 0 },
+			{ "searchprovider24", NO_ACTION, 0 },
+			{ "searchprovider25", NO_ACTION, 0 },
+			{ "searchprovider26", NO_ACTION, 0 },
+			{ "searchprovider27", NO_ACTION, 0 },
+			{ "searchprovider28", NO_ACTION, 0 },
+			{ "searchprovider29", NO_ACTION, 0 },
+			{ "searchprovider30", NO_ACTION, 0 },
+			{ "searchprovider31", NO_ACTION, 0 },
+			{ "searchprovider32", NO_ACTION, 0 },
+			{ "searchprovider33", NO_ACTION, 0 },
+			{ "searchprovider34", NO_ACTION, 0 },
+			{ "searchprovider35", NO_ACTION, 0 },
+			{ "searchprovider36", NO_ACTION, 0 },
+			{ "searchprovider37", NO_ACTION, 0 },
+			{ "searchprovider38", NO_ACTION, 0 },
+			{ "searchprovider39", NO_ACTION, 0 },
+			{ NULL, 0, 0 }
+		}
+	};
+	ssize_t iter = -1;
+	const char *name;
+	unsigned int provider = 0;
+
+	iter = search_web_iterate_providers(iter, &name);
+	while ((iter != -1) &&
+	       (search_provider_definition.entries[provider].text != NULL)) {
+		messages_add_key_value(search_provider_definition.entries[provider].text, name);
+		provider++;
+		iter = search_web_iterate_providers(iter, &name);
+	}
+	search_provider_definition.entries[provider].text = NULL;
+
+	return ro_gui_menu_define_menu(&search_provider_definition);
+}
 
 void ro_gui_menu_init(void)
 {
@@ -196,6 +265,8 @@ void ro_gui_menu_init(void)
 		}
 	};
 	languages_menu = ro_gui_menu_define_menu(&lang_definition);
+
+	search_provider_menu = ro_gui_menu_init_search_provider();
 }
 
 

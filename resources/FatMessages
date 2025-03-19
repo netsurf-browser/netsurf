@@ -8211,6 +8211,13 @@ it.all.con_memory:Memoria
 nl.all.con_memory:Geheugen
 zh_CN.all.con_memory:内存
 
+en.all.con_search:Search
+de.all.con_search:Suchen
+fr.all.con_search:Recherche
+it.all.con_search:Cerca
+nl.all.con_search:Zoeken
+zh_CN.all.con_search:查找
+
 en.all.con_secure:Security
 de.all.con_secure:Sicherheit
 fr.all.con_secure:Sécurité
