@@ -96,6 +96,7 @@ process_line(struct hash_table *hash, uint8_t *ln, int lnlen)
 	uint8_t *key;
 	uint8_t *value;
 	uint8_t *colon;
+	nserror res;
 
 	key = ln; /* set key to start of line */
 	value = ln + lnlen; /* set value to end of line */
@@ -125,12 +126,12 @@ process_line(struct hash_table *hash, uint8_t *ln, int lnlen)
 	*colon = 0;  /* terminate key */
 	value = colon + 1;
 
-	if (hash_add(hash, (char *)key, (char *)value) == false) {
+	res = hash_add(hash, (char *)key, (char *)value);
+	if (res != NSERROR_OK) {
 		NSLOG(netsurf, INFO,
 		      "Unable to add %s:%s to hash table", ln, value);
-		return NSERROR_INVALID;
 	}
-	return NSERROR_OK;
+	return res;
 }
 
 
@@ -300,18 +301,18 @@ void hash_destroy(struct hash_table *ht)
 
 
 /* exported interface documented in utils/hashtable.h */
-bool hash_add(struct hash_table *ht, const char *key, const char *value)
+nserror hash_add(struct hash_table *ht, const char *key, const char *value)
 {
 	unsigned int h, c, v;
 	struct hash_entry *e;
 
 	if (ht == NULL || key == NULL || value == NULL)
-		return false;
+		return NSERROR_BAD_PARAMETER;
 
 	e = malloc(sizeof(struct hash_entry));
 	if (e == NULL) {
 		NSLOG(netsurf, INFO, "Not enough memory for hash entry.");
-		return false;
+		return NSERROR_NOMEM;
 	}
 
 	h = hash_string_fnv(key, &(e->key_length));
@@ -323,7 +324,7 @@ bool hash_add(struct hash_table *ht, const char *key, const char *value)
 		NSLOG(netsurf, INFO,
 		      "Not enough memory for string duplication.");
 		free(e);
-		return false;
+		return NSERROR_NOMEM;
 	}
 	memcpy(e->pairing, key, e->key_length + 1);
 	memcpy(e->pairing + e->key_length + 1, value, v + 1);
@@ -331,7 +332,7 @@ bool hash_add(struct hash_table *ht, const char *key, const char *value)
 	e->next = ht->chain[c];
 	ht->chain[c] = e;
 
-	return true;
+	return NSERROR_OK;
 }
 
 

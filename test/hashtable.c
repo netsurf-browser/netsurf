@@ -159,7 +159,7 @@ END_TEST
 START_TEST(hashtable_negative_test)
 {
 	struct hash_table *ht;
-	bool added;
+	nserror ret;
 	const char *res;
 
 	/* create hash */
@@ -167,8 +167,8 @@ START_TEST(hashtable_negative_test)
 	ck_assert(ht != NULL);
 
 	/* add entry */
-	added = hash_add(ht, "cow", "moo");
-	ck_assert(added == true);
+	ret = hash_add(ht, "cow", "moo");
+	ck_assert(ret == NSERROR_OK);
 
 	res = hash_get(ht, "sheep");
 	ck_assert(res == NULL);
@@ -187,7 +187,7 @@ END_TEST
 START_TEST(hashtable_positive_test)
 {
 	struct hash_table *ht;
-	bool added;
+	nserror ret;
 	const char *res;
 
 	/* create hash */
@@ -195,8 +195,8 @@ START_TEST(hashtable_positive_test)
 	ck_assert(ht != NULL);
 
 	/* add entry */
-	added = hash_add(ht, "cow", "moo");
-	ck_assert(added == true);
+	ret = hash_add(ht, "cow", "moo");
+	ck_assert(ret == NSERROR_OK);
 
 	res = hash_get(ht, "cow");
 	ck_assert(res != NULL);

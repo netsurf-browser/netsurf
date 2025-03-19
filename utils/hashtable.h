@@ -64,10 +64,10 @@ void hash_destroy(struct hash_table *ht);
  * \param  ht	  The hash table context to add the key/value pair to.
  * \param  key	  The key to associate the value with.  A copy is made.
  * \param  value  The value to associate the key with.  A copy is made.
- * \return true if the add succeeded, false otherwise.  (Failure most likely
+ * \return NSERROR_OK if the add succeeded else error code. (Failure most likely
  *	   indicates insufficent memory to make copies of the key and value.
  */
-bool hash_add(struct hash_table *ht, const char *key, const char *value);
+nserror hash_add(struct hash_table *ht, const char *key, const char *value);
 
 /**
  * Looks up a the value associated with with a key from a specific hash table.
