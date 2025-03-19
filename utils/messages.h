@@ -65,6 +65,16 @@ nserror messages_add_from_file(const char *path);
 nserror messages_add_from_inline(const uint8_t *data, size_t data_size);
 
 /**
+ * Add a single message.
+ *
+ * The message is merged with any previously loaded messages.
+ *
+ * \return NSERROR_OK on success or error code on faliure.
+
+ */
+nserror messages_add_key_value(const char *key, const char *value);
+
+/**
  * Fast lookup of a message by key from the standard Messages hash.
  *
  * \param  key  key of message

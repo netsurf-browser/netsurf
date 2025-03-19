@@ -202,6 +202,21 @@ nserror messages_add_from_inline(const uint8_t *data, size_t size)
 
 
 /* exported interface documented in messages.h */
+nserror messages_add_key_value(const char *key, const char *value)
+{
+	/* ensure the hash table is initialised */
+	if (messages_hash == NULL) {
+		messages_hash = messages_create_ctx(HASH_SIZE);
+	}
+	if (messages_hash == NULL) {
+		NSLOG(netsurf, INFO, "Unable to create hash table");
+		return NSERROR_NOMEM;
+	}
+	return hash_add(messages_hash, key, value);
+}
+
+
+/* exported interface documented in messages.h */
 char *messages_get_buff(const char *key, ...)
 {
 	const char *msg_fmt;
