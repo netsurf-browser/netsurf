@@ -133,7 +133,7 @@ nserror nscolour_update(void)
 {
 	nserror res;
 
-	res = nscolour__get("Window", "WindowText", 16, 16,
+	res = nscolour__get("Canvas", "CanvasText", 16, 16,
 			&nscolours[NSCOLOUR_WIN_EVEN_BG],
 			&nscolours[NSCOLOUR_WIN_EVEN_BG_HOVER],
 			&nscolours[NSCOLOUR_WIN_EVEN_FG],
@@ -146,7 +146,7 @@ nserror nscolour_update(void)
 		return res;
 	}
 
-	res = nscolour__get("Window", "WindowText", 15, 16,
+	res = nscolour__get("Canvas", "CanvasText", 15, 16,
 			&nscolours[NSCOLOUR_WIN_ODD_BG],
 			&nscolours[NSCOLOUR_WIN_ODD_BG_HOVER],
 			&nscolours[NSCOLOUR_WIN_ODD_FG],
@@ -172,7 +172,7 @@ nserror nscolour_update(void)
 		return res;
 	}
 
-	res = ns_system_colour_char("Scrollbar",
+	res = ns_system_colour_char("Canvas",
 			&nscolours[NSCOLOUR_SCROLL_WELL]);
 	if (res != NSERROR_OK) {
 		return res;
