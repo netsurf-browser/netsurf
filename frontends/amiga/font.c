@@ -35,6 +35,8 @@
 static ULONG ami_devicedpi = 72;
 static ULONG ami_xdpi = 72;
 
+struct ami_font_functions *ami_nsfont = NULL;
+
 ULONG ami_font_dpi_get_devicedpi(void)
 {
 	return (ami_xdpi << 16) | ami_devicedpi;

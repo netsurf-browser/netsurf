@@ -79,6 +79,7 @@
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
 #include "amiga/schedule.h"
+#include "amiga/version.h"
 
 #ifdef __amigaos4__
 static struct Menu *restrict gui_menu = NULL;
@@ -88,9 +89,6 @@ struct ami_menu_data *gui_menu_data[AMI_MENU_AREXX_MAX + 1];
 
 static bool ami_menu_check_toggled = false;
 static bool menu_quit = false;
-
-const char * const netsurf_version;
-const char * const verdate;
 
 static nserror ami_menu_scan(struct ami_menu_data **md);
 void ami_menu_arexx_scan(struct ami_menu_data **md);

@@ -55,7 +55,7 @@ struct ami_font_functions {
 			ULONG x, ULONG y, bool aa);
 };
 
-const struct ami_font_functions *ami_nsfont;
+extern struct ami_font_functions *ami_nsfont;
 
 extern struct gui_layout_table *ami_layout_table;
 
