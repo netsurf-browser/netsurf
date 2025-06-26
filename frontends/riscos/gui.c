@@ -286,6 +286,34 @@ set_colour_from_wimp(struct nsoption_s *opts,
  */
 static nserror set_defaults(struct nsoption_s *defaults)
 {
+	int idx;
+	static const struct {
+		enum nsoption_e option;
+		wimp_colour wcol;
+		colour c;
+	} sys_colour_map[]= {
+		{ NSOPTION_sys_colour_AccentColor, wimp_COLOUR_CREAM, 0x00dddddd },
+		{ NSOPTION_sys_colour_AccentColorText, wimp_COLOUR_BLACK, 0x00000000 },
+		{ NSOPTION_sys_colour_ActiveText, wimp_COLOUR_BLACK, 0x00000000 },
+		{ NSOPTION_sys_colour_ButtonBorder, wimp_COLOUR_VERY_LIGHT_GREY,0x00aa0000 },
+		{ NSOPTION_sys_colour_ButtonFace, wimp_COLOUR_VERY_LIGHT_GREY, 0x00aaaaaa },
+		{ NSOPTION_sys_colour_ButtonText,  wimp_COLOUR_BLACK, 0x00000000 },
+		{ NSOPTION_sys_colour_Canvas, wimp_COLOUR_VERY_LIGHT_GREY, 0x00aaaaaa },
+		{ NSOPTION_sys_colour_CanvasText, wimp_COLOUR_BLACK, 0x00000000 },
+		{ NSOPTION_sys_colour_Field, wimp_COLOUR_WHITE, 0x00ffffff },
+		{ NSOPTION_sys_colour_FieldText, wimp_COLOUR_BLACK, 0x00000000 },
+		{ NSOPTION_sys_colour_GrayText, wimp_COLOUR_MID_LIGHT_GREY, 0x00777777 },
+		{ NSOPTION_sys_colour_Highlight, wimp_COLOUR_BLACK, 0x00ee0000 },
+		{ NSOPTION_sys_colour_HighlightText, wimp_COLOUR_WHITE, 0x00ffffff },
+		{ NSOPTION_sys_colour_LinkText, wimp_COLOUR_BLACK, 0x00ee0000 },
+		{ NSOPTION_sys_colour_Mark, wimp_COLOUR_VERY_LIGHT_GREY,0x00eeeeee },
+		{ NSOPTION_sys_colour_MarkText, wimp_COLOUR_BLACK, 0x00000000},
+		{ NSOPTION_sys_colour_SelectedItem, wimp_COLOUR_MID_LIGHT_GREY, 0x00777777 },
+		{ NSOPTION_sys_colour_SelectedItemText, wimp_COLOUR_BLACK, 0x00000000 },
+		{ NSOPTION_sys_colour_VisitedText, wimp_COLOUR_BLACK, 0x00000000 },
+		{ NSOPTION_LISTEND, 0, 0},
+	};
+
 	/* Set defaults for absent option strings */
 	nsoption_setnull_charp(ca_bundle, strdup("<NetSurf$CABundle>"));
 	nsoption_setnull_charp(cookie_file, strdup("NetSurf:Cookies"));
@@ -310,35 +338,13 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	nsoption_set_int(treeview_font_size, 12 * 10);
 
 	/* set default system colours for riscos ui */
-	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_ActiveBorder, 0x00000000);
-	set_colour_from_wimp(defaults, wimp_COLOUR_CREAM, NSOPTION_sys_colour_ActiveCaption, 0x00dddddd);
-	set_colour_from_wimp(defaults, wimp_COLOUR_VERY_LIGHT_GREY, NSOPTION_sys_colour_AppWorkspace, 0x00eeeeee);
-	set_colour_from_wimp(defaults, wimp_COLOUR_VERY_LIGHT_GREY, NSOPTION_sys_colour_Background, 0x00aa0000);/* \TODO -- Check */
-	set_colour_from_wimp(defaults, wimp_COLOUR_VERY_LIGHT_GREY, NSOPTION_sys_colour_ButtonFace, 0x00aaaaaa);
-	set_colour_from_wimp(defaults, wimp_COLOUR_DARK_GREY, NSOPTION_sys_colour_ButtonHighlight, 0x00cccccc);/* \TODO -- Check */
-	set_colour_from_wimp(defaults, wimp_COLOUR_MID_DARK_GREY, NSOPTION_sys_colour_ButtonShadow, 0x00bbbbbb);
-	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_ButtonText, 0x00000000);
-	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_CaptionText, 0x00000000);
-	set_colour_from_wimp(defaults, wimp_COLOUR_MID_LIGHT_GREY, NSOPTION_sys_colour_GrayText, 0x00777777);/* \TODO -- Check */
-	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_Highlight, 0x00ee0000);
-	set_colour_from_wimp(defaults, wimp_COLOUR_WHITE, NSOPTION_sys_colour_HighlightText, 0x00000000);
-	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_InactiveBorder, 0x00000000);
-	set_colour_from_wimp(defaults, wimp_COLOUR_LIGHT_GREY, NSOPTION_sys_colour_InactiveCaption, 0x00ffffff);
-	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_InactiveCaptionText, 0x00cccccc);
-	set_colour_from_wimp(defaults, wimp_COLOUR_CREAM, NSOPTION_sys_colour_InfoBackground, 0x00aaaaaa);
-	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_InfoText, 0x00000000);
-	set_colour_from_wimp(defaults, wimp_COLOUR_WHITE, NSOPTION_sys_colour_Menu, 0x00aaaaaa);
-	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_MenuText, 0x00000000);
-	set_colour_from_wimp(defaults, wimp_COLOUR_LIGHT_GREY, NSOPTION_sys_colour_Scrollbar, 0x00aaaaaa);/* \TODO -- Check */
-	set_colour_from_wimp(defaults, wimp_COLOUR_MID_DARK_GREY, NSOPTION_sys_colour_ThreeDDarkShadow, 0x00555555);
-	set_colour_from_wimp(defaults, wimp_COLOUR_VERY_LIGHT_GREY, NSOPTION_sys_colour_ThreeDFace, 0x00dddddd);
-	set_colour_from_wimp(defaults, wimp_COLOUR_WHITE, NSOPTION_sys_colour_ThreeDHighlight, 0x00aaaaaa);
-	set_colour_from_wimp(defaults, wimp_COLOUR_WHITE, NSOPTION_sys_colour_ThreeDLightShadow, 0x00999999);
-	set_colour_from_wimp(defaults, wimp_COLOUR_MID_DARK_GREY, NSOPTION_sys_colour_ThreeDShadow, 0x00777777);
-	set_colour_from_wimp(defaults, wimp_COLOUR_VERY_LIGHT_GREY, NSOPTION_sys_colour_Window, 0x00aaaaaa);
-	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_WindowFrame, 0x00000000);
-	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_WindowText, 0x00000000);
-
+	for (idx = 0; sys_colour_map[idx].option != NSOPTION_LISTEND; idx++) {
+		set_colour_from_wimp(defaults,
+				     sys_colour_map[idx].wcol,
+				     sys_colour_map[idx].option,
+				     sys_colour_map[idx].c);
+	}
+	
 	return NSERROR_OK;
 }
 
