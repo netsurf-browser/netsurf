@@ -929,44 +929,83 @@ static UWORD ami_system_colour_scrollbar_fgpen(struct DrawInfo *drinfo)
 }
 
 /**
- * set option from pen
+ * convert an amiga pen to a netsurf colour
  */
-static nserror
-colour_option_from_pen(UWORD pen,
-			   enum nsoption_e option,
-			   struct Screen *screen,
-			   colour def_colour)
+static colour
+nscolour_from_pen(struct Screen *screen, UWORD pen, colour sel_colour)
 {
 	ULONG colr[3];
 	struct DrawInfo *drinfo;
 
-	if((option < NSOPTION_SYS_COLOUR_START) ||
-	   (option > NSOPTION_SYS_COLOUR_END) ||
-	   (nsoptions[option].type != OPTION_COLOUR)) {
-		return NSERROR_BAD_PARAMETER;
-	}
+	drinfo = GetScreenDrawInfo(screen);
 
-	if(screen != NULL) {
-		drinfo = GetScreenDrawInfo(screen);
-		if(drinfo != NULL) {
-
-			if(pen == AMINS_SCROLLERPEN) pen = ami_system_colour_scrollbar_fgpen(drinfo);
-
-			/* Get the colour of the pen being used for "pen" */
-			GetRGB32(screen->ViewPort.ColorMap, drinfo->dri_Pens[pen], 1, (ULONG *)&colr);
-
-			/* convert it to a color */
-			def_colour = ((colr[0] & 0xff000000) >> 24) |
-				((colr[1] & 0xff000000) >> 16) |
-				((colr[2] & 0xff000000) >> 8);
-
-			FreeScreenDrawInfo(screen, drinfo);
+	if (drinfo != NULL) {
+		if (pen == AMINS_SCROLLERPEN) {
+			pen = ami_system_colour_scrollbar_fgpen(drinfo);
 		}
-	}
 
-	if (nsoptions_default[option].value.c == nsoptions[option].value.c)
-		nsoptions[option].value.c = def_colour;
-	nsoptions_default[option].value.c = def_colour;
+		/* Get the colour of the pen being used for "pen" */
+		GetRGB32(screen->ViewPort.ColorMap,
+			 drinfo->dri_Pens[pen],
+			 1,
+			 (ULONG *)&colr);
+
+		/* convert it to a color */
+		sel_colour = ((colr[0] & 0xff000000) >> 24) |
+			((colr[1] & 0xff000000) >> 16) |
+			((colr[2] & 0xff000000) >> 8);
+
+		FreeScreenDrawInfo(screen, drinfo);
+	}
+	return sel_colour;
+}
+
+
+/**
+ * set system colour options from amiga pen
+ */
+static nserror system_colours_from_pen(struct Screen *screen)
+{
+        #define MAP_SIZE (19)
+	int mapidx;
+	colour sel_colour;
+	struct pcm {
+		enum nsoption_e option;
+		UWORD pen;
+		colour def_colour;
+	};
+	struct pcm pen_colour_map[MAP_SIZE] = {
+		{NSOPTION_sys_colour_AccentColor, FILLPEN, 0x00000000},
+		{NSOPTION_sys_colour_AccentColorText, TEXTPEN, 0x00000000},
+		{NSOPTION_sys_colour_ActiveText, TEXTPEN, 0x00000000},
+		{NSOPTION_sys_colour_ButtonBorder, FILLPEN, 0x00000000},
+		{NSOPTION_sys_colour_ButtonFace, FOREGROUNDPEN, 0x00aaaaaa},
+		{NSOPTION_sys_colour_ButtonText, TEXTPEN, 0x00000000},
+		{NSOPTION_sys_colour_Canvas, BACKGROUNDPEN, 0x00aaaaaa},
+		{NSOPTION_sys_colour_CanvasText, TEXTPEN, 0x00000000},
+		{NSOPTION_sys_colour_Field, BACKGROUNDPEN, 0x00aaaaaa},
+		{NSOPTION_sys_colour_FieldText, TEXTPEN, 0x00000000},
+		{NSOPTION_sys_colour_GrayText, DISABLEDTEXTPEN, 0x00777777},
+		{NSOPTION_sys_colour_Highlight, SELECTPEN, 0x00ee0000},
+		{NSOPTION_sys_colour_HighlightText, SELECTTEXTPEN, 0x00000000},
+		{NSOPTION_sys_colour_LinkText, TEXTPEN, 0x00000000},
+		{NSOPTION_sys_colour_Mark, FILLPEN, 0x00000000},
+		{NSOPTION_sys_colour_MarkText, TEXTPEN, 0x00000000},
+		{NSOPTION_sys_colour_SelectedItem, FILLPEN, 0x00000000},
+		{NSOPTION_sys_colour_SelectedItemText, TEXTPEN, 0x00000000},
+		{NSOPTION_sys_colour_VisitedText, TEXTPEN, 0x00000000},
+	};
+	struct pcm *entry;
+
+	for (mapidx=0; mapidx < MAP_SIZE; mapidx++) {
+		entry = &pen_colour_map[mapidx];
+		sel_colour = nscolour_from_pen(screen, entry->pen, entry->def_colour);
+
+		if (nsoptions_default[entry->option].value.c == nsoptions[entry->option].value.c) {
+			nsoptions[entry->option].value.c = sel_colour;
+		}
+		nsoptions_default[entry->option].value.c = sel_colour;
+	}
 
 	return NSERROR_OK;
 }
@@ -1017,34 +1056,8 @@ static void ami_set_screen_defaults(struct Screen *screen)
 	nsoption_default_set_int(redraw_tile_size_y, screen->Height);
 
 	/* set system colours for amiga ui */
-	colour_option_from_pen(FILLPEN, NSOPTION_sys_colour_ActiveBorder, screen, 0x00000000);
-	colour_option_from_pen(FILLPEN, NSOPTION_sys_colour_ActiveCaption, screen, 0x00dddddd);
-	colour_option_from_pen(BACKGROUNDPEN, NSOPTION_sys_colour_AppWorkspace, screen, 0x00eeeeee);
-	colour_option_from_pen(BACKGROUNDPEN, NSOPTION_sys_colour_Background, screen, 0x00aa0000);
-	colour_option_from_pen(FOREGROUNDPEN, NSOPTION_sys_colour_ButtonFace, screen, 0x00aaaaaa);
-	colour_option_from_pen(FORESHINEPEN, NSOPTION_sys_colour_ButtonHighlight, screen, 0x00cccccc);
-	colour_option_from_pen(FORESHADOWPEN, NSOPTION_sys_colour_ButtonShadow, screen, 0x00bbbbbb);
-	colour_option_from_pen(TEXTPEN, NSOPTION_sys_colour_ButtonText, screen, 0x00000000);
-	colour_option_from_pen(FILLTEXTPEN, NSOPTION_sys_colour_CaptionText, screen, 0x00000000);
-	colour_option_from_pen(DISABLEDTEXTPEN, NSOPTION_sys_colour_GrayText, screen, 0x00777777);
-	colour_option_from_pen(SELECTPEN, NSOPTION_sys_colour_Highlight, screen, 0x00ee0000);
-	colour_option_from_pen(SELECTTEXTPEN, NSOPTION_sys_colour_HighlightText, screen, 0x00000000);
-	colour_option_from_pen(INACTIVEFILLPEN, NSOPTION_sys_colour_InactiveBorder, screen, 0x00000000);
-	colour_option_from_pen(INACTIVEFILLPEN, NSOPTION_sys_colour_InactiveCaption, screen, 0x00ffffff);
-	colour_option_from_pen(INACTIVEFILLTEXTPEN, NSOPTION_sys_colour_InactiveCaptionText, screen, 0x00cccccc);
-	colour_option_from_pen(BACKGROUNDPEN, NSOPTION_sys_colour_InfoBackground, screen, 0x00aaaaaa);/* This is wrong, HelpHint backgrounds are pale yellow but doesn't seem to be a DrawInfo pen defined for it. */
-	colour_option_from_pen(TEXTPEN, NSOPTION_sys_colour_InfoText, screen, 0x00000000);
-	colour_option_from_pen(MENUBACKGROUNDPEN, NSOPTION_sys_colour_Menu, screen, 0x00aaaaaa);
-	colour_option_from_pen(MENUTEXTPEN, NSOPTION_sys_colour_MenuText, screen, 0x00000000);
-	colour_option_from_pen(AMINS_SCROLLERPEN, NSOPTION_sys_colour_Scrollbar, screen, 0x00aaaaaa);
-	colour_option_from_pen(FORESHADOWPEN, NSOPTION_sys_colour_ThreeDDarkShadow, screen, 0x00555555);
-	colour_option_from_pen(FOREGROUNDPEN, NSOPTION_sys_colour_ThreeDFace, screen, 0x00dddddd);
-	colour_option_from_pen(FORESHINEPEN, NSOPTION_sys_colour_ThreeDHighlight, screen, 0x00aaaaaa);
-	colour_option_from_pen(HALFSHINEPEN, NSOPTION_sys_colour_ThreeDLightShadow, screen, 0x00999999);
-	colour_option_from_pen(HALFSHADOWPEN, NSOPTION_sys_colour_ThreeDShadow, screen, 0x00777777);
-	colour_option_from_pen(BACKGROUNDPEN, NSOPTION_sys_colour_Window, screen, 0x00aaaaaa);
-	colour_option_from_pen(INACTIVEFILLPEN, NSOPTION_sys_colour_WindowFrame, screen, 0x00000000);
-	colour_option_from_pen(TEXTPEN, NSOPTION_sys_colour_WindowText, screen, 0x00000000);
+	system_colours_from_pen(screen);
+
 #else
 	nsoption_default_set_int(redraw_tile_size_x, 100);
 	nsoption_default_set_int(redraw_tile_size_y, 100);
