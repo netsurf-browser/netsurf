@@ -12,7 +12,7 @@ cookie_file:/home/vince/.netsurf/Cookies
 cookie_jar:/home/vince/.netsurf/Cookies
 homepage_url:about:welcome
 core_select_menu:1
-sys_colour_ActiveBorder:0d00d0
+sys_colour_Canvas:0d00d0
 downloads_directory:/home/vince
 url_file:/home/vince/.netsurf/URLs
 show_single_tab:1
