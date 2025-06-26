@@ -557,6 +557,33 @@ process_cmdline(int argc, char** argv)
  */
 static nserror set_defaults(struct nsoption_s *defaults)
 {
+	int idx;
+	static const struct {
+		enum nsoption_e nsc;
+		colour c;
+	} sys_colour_defaults[]= {
+		{ NSOPTION_sys_colour_AccentColor, 0x00666666},
+		{ NSOPTION_sys_colour_AccentColorText, 0x00ffffff},
+		{ NSOPTION_sys_colour_ActiveText, 0x000000ee},
+		{ NSOPTION_sys_colour_ButtonBorder, 0x00aaaaaa},
+		{ NSOPTION_sys_colour_ButtonFace, 0x00dddddd},
+		{ NSOPTION_sys_colour_ButtonText, 0x00000000},
+		{ NSOPTION_sys_colour_Canvas, 0x00aaaaaa},
+		{ NSOPTION_sys_colour_CanvasText, 0x00000000},
+		{ NSOPTION_sys_colour_Field, 0x00f1f1f1},
+		{ NSOPTION_sys_colour_FieldText, 0x00000000},
+		{ NSOPTION_sys_colour_GrayText, 0x00777777},
+		{ NSOPTION_sys_colour_Highlight, 0x00ee0000},
+		{ NSOPTION_sys_colour_HighlightText, 0x00000000},
+		{ NSOPTION_sys_colour_LinkText, 0x00ee0000},
+		{ NSOPTION_sys_colour_Mark, 0x0000ffff},
+		{ NSOPTION_sys_colour_MarkText, 0x00000000},
+		{ NSOPTION_sys_colour_SelectedItem, 0x00e48435},
+		{ NSOPTION_sys_colour_SelectedItemText, 0x00ffffff},
+		{ NSOPTION_sys_colour_VisitedText, 0x008b1a55},
+		{ NSOPTION_LISTEND, 0},
+	};
+
 	/* Set defaults for absent option strings */
 	nsoption_setnull_charp(cookie_file, strdup("~/.netsurf/Cookies"));
 	nsoption_setnull_charp(cookie_jar, strdup("~/.netsurf/Cookies"));
@@ -568,35 +595,9 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	}
 
 	/* set system colours for framebuffer ui */
-	nsoption_set_colour(sys_colour_ActiveBorder, 0x00000000);
-	nsoption_set_colour(sys_colour_ActiveCaption, 0x00ddddcc);
-	nsoption_set_colour(sys_colour_AppWorkspace, 0x00eeeeee);
-	nsoption_set_colour(sys_colour_Background, 0x00aa0000);
-	nsoption_set_colour(sys_colour_ButtonFace, 0x00dddddd);
-	nsoption_set_colour(sys_colour_ButtonHighlight, 0x00cccccc);
-	nsoption_set_colour(sys_colour_ButtonShadow, 0x00bbbbbb);
-	nsoption_set_colour(sys_colour_ButtonText, 0x00000000);
-	nsoption_set_colour(sys_colour_CaptionText, 0x00000000);
-	nsoption_set_colour(sys_colour_GrayText, 0x00777777);
-	nsoption_set_colour(sys_colour_Highlight, 0x00ee0000);
-	nsoption_set_colour(sys_colour_HighlightText, 0x00000000);
-	nsoption_set_colour(sys_colour_InactiveBorder, 0x00000000);
-	nsoption_set_colour(sys_colour_InactiveCaption, 0x00ffffff);
-	nsoption_set_colour(sys_colour_InactiveCaptionText, 0x00cccccc);
-	nsoption_set_colour(sys_colour_InfoBackground, 0x00aaaaaa);
-	nsoption_set_colour(sys_colour_InfoText, 0x00000000);
-	nsoption_set_colour(sys_colour_Menu, 0x00aaaaaa);
-	nsoption_set_colour(sys_colour_MenuText, 0x00000000);
-	nsoption_set_colour(sys_colour_Scrollbar, 0x00aaaaaa);
-	nsoption_set_colour(sys_colour_ThreeDDarkShadow, 0x00555555);
-	nsoption_set_colour(sys_colour_ThreeDFace, 0x00dddddd);
-	nsoption_set_colour(sys_colour_ThreeDHighlight, 0x00aaaaaa);
-	nsoption_set_colour(sys_colour_ThreeDLightShadow, 0x00999999);
-	nsoption_set_colour(sys_colour_ThreeDShadow, 0x00777777);
-	nsoption_set_colour(sys_colour_Window, 0x00aaaaaa);
-	nsoption_set_colour(sys_colour_WindowFrame, 0x00000000);
-	nsoption_set_colour(sys_colour_WindowText, 0x00000000);
-
+	for (idx=0; sys_colour_defaults[idx].nsc != NSOPTION_LISTEND; idx++) {
+		defaults[sys_colour_defaults[idx].nsc].value.c = sys_colour_defaults[idx].c;
+	}
 	return NSERROR_OK;
 }
 

@@ -928,6 +928,8 @@ static UWORD ami_system_colour_scrollbar_fgpen(struct DrawInfo *drinfo)
 
 }
 
+#ifdef __amigaos4__
+
 /**
  * convert an amiga pen to a netsurf colour
  */
@@ -1009,6 +1011,8 @@ static nserror system_colours_from_pen(struct Screen *screen)
 
 	return NSERROR_OK;
 }
+
+#endif /* __amigaos4__ */
 
 /* exported interface documented in amiga/gui.h */
 STRPTR ami_gui_get_screen_title(void)
