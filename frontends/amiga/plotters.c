@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-09, 2012-13 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -85,8 +85,6 @@ struct gui_globals {
 	struct MinList *shared_pens;
 	bool managed_pen_list;
 	bool palette_mapped;
-	ULONG apen;
-	ULONG open;
 	LONG apen_num;
 	LONG open_num;
 	int width;  /* size of bm and    */
@@ -243,8 +241,6 @@ struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit
 		}
 	}
 
-	gg->apen = 0x00000000;
-	gg->open = 0x00000000;
 	gg->apen_num = -1;
 	gg->open_num = -1;
 
@@ -321,8 +317,6 @@ void ami_clearclipreg(struct gui_globals *gg)
 	gg->rect.MaxX = scrn->Width-1;
 	gg->rect.MaxY = scrn->Height-1;
 
-	gg->apen = 0x00000000;
-	gg->open = 0x00000000;
 	gg->apen_num = -1;
 	gg->open_num = -1;
 }
@@ -373,8 +367,6 @@ void ami_plot_release_pens(struct MinList *shared_pens)
 
 static void ami_plot_setapen(struct gui_globals *glob, struct RastPort *rp, ULONG colr)
 {
-	if(glob->apen == colr) return;
-
 #ifdef __amigaos4__
 	if(glob->palette_mapped == false) {
 		SetRPAttrs(rp, RPTAG_APenColor,
@@ -386,14 +378,10 @@ static void ami_plot_setapen(struct gui_globals *glob, struct RastPort *rp, ULON
 		LONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
 		if((pen != -1) && (pen != glob->apen_num)) SetAPen(rp, pen);
 	}
-
-	glob->apen = colr;
 }
 
 static void ami_plot_setopen(struct gui_globals *glob, struct RastPort *rp, ULONG colr)
 {
-	if(glob->open == colr) return;
-
 #ifdef __amigaos4__
 	if(glob->palette_mapped == false) {
 		SetRPAttrs(rp, RPTAG_OPenColor,
@@ -405,8 +393,6 @@ static void ami_plot_setopen(struct gui_globals *glob, struct RastPort *rp, ULON
 		LONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
 		if((pen != -1) && (pen != glob->open_num)) SetOPen(rp, pen);
 	}
-
-	glob->open = colr;
 }
 
 void ami_plot_clear_bbox(struct RastPort *rp, struct IBox *bbox)
