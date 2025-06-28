@@ -11,7 +11,7 @@ jobs:
       matrix:
         os:
           - ubuntu-22.04
-          - ubuntu-20.04
+          - ubuntu-24.04
         compiler:
           # The NetSurf build system can't find LLVM AR (it looks for it
           # in /usr/lib instead of /usr/bin:
