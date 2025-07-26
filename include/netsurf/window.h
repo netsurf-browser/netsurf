@@ -299,10 +299,10 @@ struct gui_window_table {
 	 * Place the caret in a browser window.
 	 *
 	 * \param  g	   window with caret
-	 * \param  x	   coordinates of caret
-	 * \param  y	   coordinates of caret
+	 * \param  x	   document relative x coordinate of caret
+	 * \param  y	   document relative y coordinate of caret
 	 * \param  height  height of caret
-	 * \param  clip	   clip rectangle, or NULL if none
+	 * \param  clip	   document relative clip rectangle, or NULL if none
 	 */
 	void (*place_caret)(struct gui_window *g, int x, int y, int height, const struct rect *clip);
 

@@ -73,6 +73,8 @@
 #include "monkey/options.h"
 #elif defined(nswin32)
 #include "windows/options.h"
+#elif defined(nsqt)
+#include "qt/options.h"
 #endif
 
 #undef NSOPTION_BOOL
@@ -146,6 +148,8 @@ enum nsoption_e {
 #include "monkey/options.h"
 #elif defined(nswin32)
 #include "windows/options.h"
+#elif defined(nsqt)
+#include "qt/options.h"
 #endif
 	NSOPTION_LISTEND /* end of list */
 };

@@ -1,0 +1,67 @@
+<RCC>
+    <qresource prefix="/">
+	<file>adblock.css</file>
+	<file>default.css</file>
+	<file>internal.css</file>
+	<file>quirks.css</file>
+        <file>languages</file>
+	<file>netsurf.png</file>
+	<file>favicon.png</file>
+	<file alias="throbber1.png">throbber/throbber1.png</file>
+	<file alias="throbber2.png">throbber/throbber2.png</file>
+	<file alias="throbber3.png">throbber/throbber3.png</file>
+	<file alias="throbber4.png">throbber/throbber4.png</file>
+	<file alias="throbber5.png">throbber/throbber5.png</file>
+	<file alias="throbber6.png">throbber/throbber6.png</file>
+	<file alias="throbber7.png">throbber/throbber7.png</file>
+	<file alias="throbber8.png">throbber/throbber8.png</file>
+	<file alias="local-history.png">icons/local-history.png</file>
+	<file>icons/arrow-l.png</file>
+	<file>icons/content.png</file>
+	<file>icons/directory2.png</file>
+	<file>icons/directory.png</file>
+	<file>icons/hotlist-add.png</file>
+	<file>icons/hotlist-rmv.png</file>
+	<file>icons/search.png</file>
+	<file>icons/page-info-insecure.png</file>
+	<file>icons/page-info-internal.png</file>
+	<file>icons/page-info-local.png</file>
+	<file>icons/page-info-secure.png</file>
+	<file>icons/page-info-warning.png</file>
+	<file alias="credits.html">en/credits.html</file>
+	<file alias="licence.html">en/licence.html</file>
+	<file alias="welcome.html">en/welcome.html</file>
+	<file alias="Messages">en/Messages</file>
+    </qresource>
+    <qresource prefix="/" lang="nl">
+	<file alias="credits.html">nl/credits.html</file>
+	<file alias="licence.html">nl/licence.html</file>
+	<file alias="welcome.html">nl/welcome.html</file>
+        <file alias="Messages">nl/Messages</file>
+    </qresource>
+    <qresource prefix="/" lang="de">
+	<file alias="welcome.html">de/welcome.html</file>
+        <file alias="Messages">de/Messages</file>
+    </qresource>
+    <qresource prefix="/" lang="fr">
+	<file alias="credits.html">fr/credits.html</file>
+	<file alias="licence.html">fr/licence.html</file>
+	<file alias="welcome.html">fr/welcome.html</file>
+        <file alias="Messages">fr/Messages</file>
+    </qresource>
+    <qresource prefix="/" lang="it">
+	<file alias="credits.html">it/credits.html</file>
+	<file alias="licence.html">it/licence.html</file>
+	<file alias="welcome.html">it/welcome.html</file>
+        <file alias="Messages">it/Messages</file>
+    </qresource>
+    <qresource prefix="/" lang="ja">
+	<file alias="welcome.html">ja/welcome.html</file>
+    </qresource>
+    <qresource prefix="/" lang="zh_CN">
+	<file alias="credits.html">zh_CN/credits.html</file>
+	<file alias="licence.html">zh_CN/licence.html</file>
+	<file alias="welcome.html">zh_CN/welcome.html</file>
+        <file alias="Messages">zh_CN/Messages</file>
+    </qresource>
+</RCC>

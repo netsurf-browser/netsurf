@@ -1,0 +1,326 @@
+# NetSurf ISO 639 language and region code list
+#
+# language code (used in accept header): ISO Language name: Endonym
+#
+# In 2024 there are over 8billion people. Therefore 0.01% of the population is
+# aproximately a million people. This list generally contains only living
+# languages with at least that number of users.
+#
+# The inclusion or exclusion of a language (and region) selection is purely to
+# keep the list managable for the NetSurf UI language selection. The list
+# contents are not influenced by any other criteria.
+#
+# Mostly ordered by total number of speakers to 0.4% (~30 million) then
+# alphabeticly by code.
+#
+# https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes
+# https://www.localeplanet.com/icu/
+
+en:English:English
+en-001:English (World):English (World)
+en-150:English (Europe):English (Europe)
+en-AU:English (Australia):English (Australia)
+en-BZ:English (Belize):English (Belize)
+en-CA:English (Canada):English (Canada)
+en-GB:English (United Kingdom):English (United Kingdom)
+en-IE:English (Ireland):English (Ireland)
+en-JM:English (Jamaica):English (Jamaica)
+en-NZ:English (New Zealand):English (New Zealand)
+en-PH:English (Philippines):English (Philippines)
+en-TT:English (Trinidad & Tobago):English (Trinidad & Tobago)
+en-US:English (United States):English (United States)
+en-ZA:English (South Africa):English (South Africa)
+en-ZW:English (Zimbabwe):English (Zimbabwe)
+es:Spanish:español
+es-419:Spanish (Latin America):español (Latinoamérica)
+es-AR:Spanish (Argentina):español (Argentina)
+es-BO:Spanish (Bolivia):español (Bolivia)
+es-BR:Spanish (Brazil):español (Brasil)
+es-BZ:Spanish (Belize):español (Belice)
+es-CL:Spanish (Chile):español (Chile)
+es-CO:Spanish (Colombia):español (Colombia)
+es-CR:Spanish (Costa Rica):español (Costa Rica)
+es-CU:Spanish (Cuba):español (Cuba)
+es-DO:Spanish (Dominican Republic):español (República Dominicana)
+es-EA:Spanish (Ceuta & Melilla):español (Ceuta y Melilla)
+es-EC:Spanish (Ecuador):español (Ecuador)
+es-ES:Spanish (Spain):español (España)
+es-GQ:Spanish (Equatorial Guinea):español (Guinea Ecuatorial)
+es-GT:Spanish (Guatemala):español (Guatemala)
+es-HN:Spanish (Honduras):español (Honduras)
+es-IC:Spanish (Canary Islands):español (Canarias)
+es-MX:Spanish (Mexico):español (México)
+es-NI:Spanish (Nicaragua):español (Nicaragua)
+es-PA:Spanish (Panama):español (Panamá)
+es-PE:Spanish (Peru):español (Perú)
+es-PH:Spanish (Philippines):español (Filipinas)
+es-PR:Spanish (Puerto Rico):español (Puerto Rico)
+es-PY:Spanish (Paraguay):español (Paraguay)
+es-SV:Spanish (El Salvador):español (El Salvador)
+es-US:Spanish (United States):español (Estados Unidos)
+es-UY:Spanish (Uruguay):español (Uruguay)
+es-VE:Spanish (Venezuela):español (Venezuela)
+fr:French:français
+fr-BE:French (Belgium):français (Belgique)
+fr-BF:French (Burkina Faso):français (Burkina Faso)
+fr-BI:French (Burundi):français (Burundi)
+fr-BJ:French (Benin):français (Bénin)
+fr-BL:French (St Barthélemy):français (Saint-Barthélemy)
+fr-CA:French (Canada):français (Canada)
+fr-CD:French (Congo - Kinshasa):français (Congo-Kinshasa)
+fr-CF:French (Central African Republic):français (République centrafricaine)
+fr-CG:French (Congo - Brazzaville):français (Congo-Brazzaville)
+fr-CH:French (Switzerland):français (Suisse)
+fr-CI:French (Côte d’Ivoire):français (Côte d’Ivoire)
+fr-CM:French (Cameroon):français (Cameroun)
+fr-DJ:French (Djibouti):français (Djibouti)
+fr-DZ:French (Algeria):français (Algérie)
+fr-FR:French (France):français (France)
+fr-GA:French (Gabon):français (Gabon)
+fr-GF:French (French Guiana):français (Guyane française)
+fr-GN:French (Guinea):français (Guinée)
+fr-GP:French (Guadeloupe):français (Guadeloupe)
+fr-GQ:French (Equatorial Guinea):français (Guinée équatoriale)
+fr-HT:French (Haiti):français (Haïti)
+fr-KM:French (Comoros):français (Comores)
+fr-LU:French (Luxembourg):français (Luxembourg)
+fr-MA:French (Morocco):français (Maroc)
+fr-MC:French (Monaco):français (Monaco)
+fr-MF:French (St Martin):français (Saint-Martin)
+fr-MG:French (Madagascar):français (Madagascar)
+fr-ML:French (Mali):français (Mali)
+fr-MQ:French (Martinique):français (Martinique)
+fr-MR:French (Mauritania):français (Mauritanie)
+fr-MU:French (Mauritius):français (Maurice)
+fr-NC:French (New Caledonia):français (Nouvelle-Calédonie)
+fr-NE:French (Niger):français (Niger)
+fr-PF:French (French Polynesia):français (Polynésie française)
+fr-PM:French (St Pierre & Miquelon):français (Saint-Pierre-et-Miquelon)
+fr-RE:French (Réunion):français (La Réunion)
+fr-RW:French (Rwanda):français (Rwanda)
+fr-SC:French (Seychelles):français (Seychelles)
+fr-SN:French (Senegal):français (Sénégal)
+fr-SY:French (Syria):français (Syrie)
+fr-TD:French (Chad):français (Tchad)
+fr-TG:French (Togo):français (Togo)
+fr-TN:French (Tunisia):français (Tunisie)
+fr-VU:French (Vanuatu):français (Vanuatu)
+fr-WF:French (Wallis & Futuna):français (Wallis-et-Futuna)
+fr-YT:French (Mayotte):français (Mayotte)
+de:German:Deutsch
+de-AT:German (Austria):Deutsch (Österreich)
+de-CH:German (Switzerland):Deutsch (Schweiz)
+de-DE:German (Germany):Deutsch (Deutschland)
+de-LI:German (Liechtenstein):Deutsch (Liechtenstein)
+de-LU:German (Luxembourg):Deutsch (Luxemburg)
+it:Italian:italiano
+it-CH:Italian (Switzerland):italiano (Svizzera)
+it-IT:Italian (Italy):italiano (Italia)
+it-SM:Italian (San Marino):italiano (San Marino)
+it-VA:Italian (Vatican City):italiano (Città del Vaticano)
+zh:Chinese:中文
+zh-CN:Chinese (Simplified, China):中文（简体，中国）
+zh-HK:Chinese (Simplified, Hong Kong SAR China):中文（简体，中国香港特别行政区）
+zh-SG:Chinese (Simplified, Singapore):中文（简体，新加坡）
+zh-TW:Chinese (Traditional, Taiwan):中文（繁體，台灣）
+hi:Hindi:हिन्दी
+ar:Arabic:العربية
+ar-AE:Arabic (United Arab Emirates):العربية (الإمارات العربية المتحدة)
+ar-BH:Arabic (Bahrain):العربية (البحرين)
+ar-DZ:Arabic (Algeria):العربية (الجزائر)
+ar-EG:Arabic (Egypt):العربية (مصر)
+ar-IQ:Arabic (Iraq):العربية (العراق)
+ar-JO:Arabic (Jordan):العربية (الأردن)
+ar-KW:Arabic (Kuwait):العربية (الكويت)
+ar-LB:Arabic (Lebanon):العربية (لبنان)
+ar-LY:Arabic (Libya):العربية (ليبيا)
+ar-MA:Arabic (Morocco):العربية (المغرب)
+ar-OM:Arabic (Oman):العربية (عُمان)
+ar-QA:Arabic (Qatar):العربية (قطر)
+ar-SA:Arabic (Saudi Arabia):العربية (المملكة العربية السعودية)
+ar-SY:Arabic (Syria):العربية (سوريا)
+ar-TN:Arabic (Tunisia):العربية (تونس)
+ar-YE:Arabic (Yemen):العربية (اليمن)
+bn:Bengali:বাংলা
+pt:Portuguese:português
+pt-BR:Portuguese (Brazil):português (Brasil)
+pt-PT:Portuguese (Portugal):português (Portugal)
+pt-ST:Portuguese (São Tomé & Príncipe):português (São Tomé e Príncipe)
+ru:Russian:русский
+ru-BY:Russian (Belarus):русский (Беларусь)
+ru-KZ:Russian (Kazakhstan):русский (Казахстан)
+ru-MD:Russian (Moldova):русский (Молдова)
+ru-RU:Russian (Russia):русский (Россия)
+ru-UA:Russian (Ukraine):русский (Украина)
+ur:Urdu:اُردُو
+id:Indonesian:bahasa Indonesia
+ja:Japanese:日本語
+mr:Marathi:मराठी
+te:Telugu:తెలుగు
+tr:Turkish:Türkçe
+ha:Hausa:هَرْشٜن هَوْس
+ta:Tamil:தமிழ்
+yue:Cantonese:粵語
+yue-Hans:Cantonese (Simplified):粤语 (简体)
+yue-Hans-CN:Cantonese (Simplified, China):粤语 (简体，中华人民共和国)
+yue-Hant:Cantonese (Traditional):粵語 (繁體)
+yue-Hant-HK:Cantonese (Traditional, Hong Kong SAR China):粵語 (繁體，中華人民共和國香港特別行政區)
+sw:Swahili:Kiswahili
+vi:Vietnamese:Tiếng Việt
+tl:Tagalog:Wikang Tagalog
+pa:Punjabi:ਪੰਜਾਬੀ
+pa-Arab:Punjabi (Arabic):پنجابی (عربی)
+pa-Arab-PK:Punjabi (Arabic, Pakistan):پنجابی (عربی, پاکستان)
+pa-Guru:Punjabi (Gurmukhi):ਪੰਜਾਬੀ (ਗੁਰਮੁਖੀ)
+pa-Guru-IN:Punjabi (Gurmukhi, India):ਪੰਜਾਬੀ (ਗੁਰਮੁਖੀ, ਭਾਰਤ)
+ko:Korean:한국어
+ko-KP:Korean (North Korea):한국어(조선민주주의인민공화국)
+ko-KR:Korean (South Korea):한국어(대한민국)
+fa:Persian:فارسی
+fa-AF:Persian (Afghanistan):فارسی (افغانستان)
+fa-IR:Persian (Iran):فارسی (ایران)
+jv:Javanese:ꦧꦱꦗꦮ
+gu:Gujarati:ગુજરાતી
+th:Thai:ภาษาไทย
+th-TH:Thai (Thailand):ไทย (ไทย)
+am:Amharic:አማርኛ
+kn:Kannada:ಕನ್ನಡ
+om:Oromo:Oromoo
+pl:Polish:polski
+nl:Dutch:Nederlands
+nl-AW:Dutch (Aruba):Nederlands (Aruba)
+nl-BE:Dutch (Belgium):Nederlands (België)
+nl-BQ:Dutch (Caribbean Netherlands):Nederlands (Caribisch Nederland)
+nl-CW:Dutch (Curaçao):Nederlands (Curaçao)
+nl-NL:Dutch (Netherlands):Nederlands (Nederland)
+nl-SR:Dutch (Suriname):Nederlands (Suriname)
+nl-SX:Dutch (Sint Maarten):Nederlands (Sint-Maarten)
+
+aa:Afar:Qafaraf
+ab:Abkhaz:Аҧсуа (Apsua)
+af:Afrikaans:Afrikaans
+an:Aragonese:Aragonés
+as:Assamese:অসমীয়া
+av:Avaric:Авар мацӏ
+az:Azerbaijani:azərbaycan
+ba:Bashkir:Башҡорт теле
+be:Belarusian:беларуская
+bg:Bulgarian:български
+bi:Bislama:Bislama
+bm:Bambara:bamanakan
+bo:Tibetan:བོད་སྐད་
+br:Breton:brezhoneg
+bs:Bosnian:bosanski
+ca:Catalan:català
+ce:Chechen:нохчийн
+ch:Chamorro:Finuʼ Chamorro
+co:Corsican:Corsu
+cr:Cree:ᓀᐦᐃᔭᐁᐧᐃᐧᐣ
+cs:Czech:čeština
+cv:Chuvash:Чӑвашла (Çăvaşla)
+cy:Welsh:Cymraeg
+da:Danish:dansk
+dv:Dhivehi:ދިވެހި
+dz:Dzongkha:རྫོང་ཁ་
+ee:Ewe:Eʋegbe
+el:Greek:Ελληνικά
+eo:Esperanto:esperanto
+et:Estonian:eesti
+eu:Basque:euskara
+ff:Fulah:Pulaar
+fi:Finnish:suomi
+fo:Faroese:føroyskt
+fur:Friulian:furlan
+fy:Western Frisian:Frysk
+ga:Irish:Gaeilge
+gd:Scottish Gaelic:Gàidhlig
+gl:Galician:galego
+gn:Guarani:Avañe'ẽ
+gv:Manx:Gaelg
+he:Hebrew:עברית
+hsb:Upper Sorbian:hornjoserbšćina
+hr:Croatian:hrvatski
+ht:Haitian:Kreyòl ayisyen
+hu:Hungarian:magyar
+hy:Armenian:հայերեն
+ig:Igbo:Igbo
+ii:Sichuan:Yi
+is:Icelandic:íslenska
+ka:Georgian:ქართული
+kg:Kongo:Kikongo
+ki:Kikuyu:Gikuyu
+kk:Kazakh:қазақ тілі
+kl:Kalaallisut:kalaallisut
+km:Khmer:ខ្មែរ
+kok:Konkani:कोंकणी
+kr:Kanuri:كَنُرِيِه
+ks:Kashmiri:کٲشُر
+ku:Kurdish:کوردی
+kw:Cornish:kernewek
+ky:Kyrgyz:кыргызча
+lb:Luxembourgish:Lëtzebuergesch
+lg:Ganda:Luganda
+li:Limburgan:Lèmburgs
+ln:Lingala:lingála
+lo:Lao:ລາວ
+lt:Lithuanian:lietuvių
+lu:Luba-Katanga:Tshiluba
+lv:Latvian:latviešu
+mg:Malagasy:Malagasy
+mk:Macedonian:македонски
+mk-MK:Macedonian (Macedonia):македонски (Македонија)
+ml:Malayalam:മലയാളം
+mn:Mongolian:монгол
+ms:Malay:Melayu
+mt:Maltese:Malti
+my:Burmese:မြန်မာ
+nd:North Ndebele:isiNdebele
+ne:Nepali:नेपाली
+ng:Ndonga:Ndonga
+nb:Norwegian Bokmål:norsk bokmål
+nn:Norwegian Nynorsk:nynorsk
+no:Norwegian:Norsk
+nr:South Ndebele:isiNdebele
+ny:Chichewa:Chichewa
+or:Odia:ଓଡ଼ିଆ
+os:Ossetic:ирон
+ps:Pashto:پښتو
+qu:Quechua:Runasimi
+rm:Romansh:rumantsch
+rn:Rundi:Ikirundi
+ro:Romanian:română
+ro-MD:Romanian (Moldova):română (Republica Moldova)
+ro-RO:Romanian (Romania):română (România)
+sc:Sardinian:Sardu
+sd:Sindhi:سنڌي
+sg:Sango:Sängö
+si:Sinhala:සිංහල
+sk:Slovak:slovenčina
+sl:Slovenian:slovenščina
+so:Somali:Soomaali
+sq:Albanian:shqip
+sr:Serbian:српски
+ss:Swati:siSwati
+st:Southern Sotho:Sesotho
+su:Sundanese:basa Sunda
+sv:Swedish:svenska
+sv-AX:Swedish (Åland Islands):svenska (Åland)
+sv-FI:Swedish (Finland):svenska (Finland)
+sv-SE:Swedish (Sweden):svenska (Sverige)
+tg:Tajik:тоҷикӣ
+ti:Tigrinya:ትግርኛ
+tk:Turkmen:Түркменче
+tn:Tswana:Setswana
+ts:Tsonga:Xitsonga
+tt:Tatar:Татар теле
+tw:Twi:Twi
+ug:Uyghur:ئۇيغۇرچە
+uk:Ukrainian:українська
+uz:Uzbek:o‘zbek
+ve:Venda:Tshivenḓa
+wo:Wolof:Wolof
+xh:Xhosa:isiXhosa
+yo:Yoruba:Èdè Yorùbá
+yo-BJ:Yoruba (Benin):Èdè Yorùbá (Orílɛ́ède Bɛ̀nɛ̀)
+yo-NG:Yoruba (Nigeria):Èdè Yorùbá (Orílẹ́ède Nàìjíríà)
+zu:Zulu:isiZulu

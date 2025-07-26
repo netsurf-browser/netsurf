@@ -216,6 +216,18 @@ struct plotter_table {
 	 * Path plot consisting of cubic Bezier curves. Line and fill colour is
 	 *  controlled by the plot style.
 	 *
+	 * The transform to apply is affine (meaning it omits the three
+	 * projection factor parameters from the standard 3x3 matrix assumining
+	 * default values)
+	 *
+	 * +--------------+--------------+--------------+
+	 * | transform[0] | transform[1] |      0.0     |
+	 * +--------------+--------------+--------------+
+	 * | transform[2] | transform[3] |      0.0     |
+	 * +--------------+--------------+--------------+
+	 * | transform[4] | transform[5] |      1.0     |
+	 * +--------------+--------------+--------------+
+	 *
 	 * \param ctx The current redraw context.
 	 * \param pstyle Style controlling the path plot.
 	 * \param p elements of path

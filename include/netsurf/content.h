@@ -182,8 +182,8 @@ bool content_scaled_redraw(struct hlcache_handle *h, int width, int height, cons
 /**
  * Retrieve the URL associated with a high level cache handle
  *
- * \param handle  The handle to inspect
- * \return  Pointer to URL.
+ * \param handle The handle to inspect
+ * \return URL object without reference or NULL if not available.
  */
 struct nsurl *hlcache_handle_get_url(const struct hlcache_handle *handle);
 

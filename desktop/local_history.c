@@ -417,9 +417,7 @@ local_history_mouse_action(struct local_history_session *session,
 		new_window = false;
 	}
 
-	browser_window_history_go(session->bw, entry, new_window);
-
-	return NSERROR_OK;
+	return browser_window_history_go(session->bw, entry, new_window);
 }
 
 /**

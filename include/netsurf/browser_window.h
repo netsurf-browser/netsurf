@@ -154,6 +154,12 @@ struct browser_window_features {
 	/** URL of a link or NULL. */
 	struct nsurl *link;
 
+	/** link title text */
+	char *link_title;
+
+	/** link title text length */
+	size_t link_title_length;
+
 	/** Object at position or NULL. */
 	struct hlcache_handle *object;
 

@@ -251,7 +251,7 @@ nserror llcache_handle_invalidate_cache_data(llcache_handle *handle);
  * Retrieve the post-redirect URL of a low-level cache object
  *
  * \param handle  Handle to retrieve URL from
- * \return Post-redirect URL of cache object
+ * \return Post-redirect URL of cache object or NULL if no object
  */
 nsurl *llcache_handle_get_url(const llcache_handle *handle);
 

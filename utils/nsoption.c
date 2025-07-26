@@ -80,6 +80,8 @@ static struct nsoption_s defaults[] = {
 #include "monkey/options.h"
 #elif defined(nswin32)
 #include "windows/options.h"
+#elif defined(nsqt)
+#include "qt/options.h"
 #endif
 	{ NULL, 0, OPTION_INTEGER, { 0 } }
 };

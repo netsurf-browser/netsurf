@@ -3457,12 +3457,12 @@ it.all.HistLocalNS:Mostra cronologia locale
 nl.all.HistLocalNS:Toon venstergeschiedenis
 zh_CN.all.HistLocalNS:显示本地历史记录
 
-en.ami.ShowCookiesNS:Show cookies
-de.ami.ShowCookiesNS:Cookies verwalten
-fr.ami.ShowCookiesNS:Afficher les cookies
-it.ami.ShowCookiesNS:Mostra cookie
-nl.ami.ShowCookiesNS:Toon cookies
-zh_CN.ami.ShowCookiesNS:显示 Cookies
+en.all.ShowCookiesNS:Show cookies
+de.all.ShowCookiesNS:Cookies verwalten
+fr.all.ShowCookiesNS:Afficher les cookies
+it.all.ShowCookiesNS:Mostra cookie
+nl.all.ShowCookiesNS:Toon cookies
+zh_CN.all.ShowCookiesNS:显示 Cookies
 
 en.all.FindTextNS:Find text...
 de.all.FindTextNS:Suchen...
@@ -3568,14 +3568,15 @@ de.all.Link:Link
 fr.all.Link:Lien
 it.all.Link:Link
 nl.all.Link:Koppeling
-en.all.LinkNewTab:Open in new tab
+
+en.all.LinkNewTab:Open link in new tab
 de.all.LinkNewTab:Öffnen in Tab
 fr.all.LinkNewTab:Ouvrir dans un nouvel onglet
 it.all.LinkNewTab:Apri in nuova scheda
 nl.all.LinkNewTab:Open in nieuw tabblad
 zh_CN.all.LinkNewTab:打开新标签页
 
-en.all.LinkNewWin:Open in new window
+en.all.LinkNewWin:Open link in new window
 de.all.LinkNewWin:Öffnen in Fenster
 fr.all.LinkNewWin:Ouvrir dans une nouvelle fenêtre
 it.all.LinkNewWin:Apri in nuova finestra
@@ -8141,6 +8142,167 @@ fr.ami.PageInfoInternal:Interne
 it.ami.PageInfoInternal:Interno
 zh_CN.ami.PageInfoInternal:内部
 
+# QT
+# ================
+#
+
+# action entries
+
+en.qt.Bookmarks:Bookmarks
+de.qt.Bookmarks:Lesezeichen
+fr.qt.Bookmarks:Signets
+it.qt.Bookmarks:Segnalibri
+nl.qt.Bookmarks:Bladwijzers
+zh_CN.qt.Bookmarks:书签
+
+en.qt.ManageBookmarks:Manage bookmarks
+de.qt.ManageBookmarks:Lesezeichen anzeigen
+fr.qt.ManageBookmarks:Afficher les marque-pages
+it.qt.ManageBookmarks:Mostra segnalibri
+nl.qt.ManageBookmarks:Bladwijzers beheren
+zh_CN.qt.ManageBookmarks:显示书签
+
+en.qt.AddBookmark:Bookmark this page
+de.qt.AddBookmark:Lesezeichen hinzufügen
+fr.qt.AddBookmark:Ajouter un marque-page
+it.qt.AddBookmark:Aggiungi ai segnalibri
+nl.qt.AddBookmark:Aan bladwijzers toevoegen
+zh_CN.qt.AddBookmark:添加到书签
+
+en.qt.EditBookmark:Edit this bookmark
+de.qt.EditBookmark:Bearbeiten Sie dieses Lesezeichen
+fr.qt.EditBookmark:Modifier ce signet
+it.qt.EditBookmark:Modifica questo segnalibro
+nl.qt.EditBookmark:Bewerk deze bladwijzer
+zh_CN.qt.EditBookmark:编辑此书签
+
+en.qt.PageInfo:Page Information
+fr.qt.PageInfo:Information
+it.qt.PageInfo:Informazioni
+nl.qt.PageInfo:Informatie
+zh_CN.qt.PageInfo:信息
+
+en.qt.PageScale:Page scale
+de.qt.PageScale:Ansicht skalieren
+fr.qt.PageScale:Zoom
+it.qt.PageScale:Scala
+nl.qt.PageScale:Zoomen
+zh_CN.qt.PageScale:缩放视图
+
+en.qt.PageScaleReset:Reset page scale
+de.qt.PageScaleReset:Normalgröße
+fr.qt.PageScaleReset:Taille Normale
+it.qt.PageScaleReset:Dimensione normale
+nl.qt.PageScaleReset:Originele grootte
+zh_CN.qt.PageScaleReset:正常大小
+
+en.qt.PageScaleReduce:Reduce page scale
+de.qt.PageScaleReduce:Herausz_oomen
+fr.qt.PageScaleReduce:Zoom arrière
+it.qt.PageScaleReduce:Diminuisci zoom
+nl.qt.PageScaleReduce:Uitzoomen
+zh_CN.qt.PageScaleReduce:缩小
+
+en.qt.PageScaleReduceShort:-
+
+en.qt.PageScaleIncrease:Increase page scale
+de.qt.PageScaleIncrease:Hereinzoomen
+fr.qt.PageScaleIncrease:Zoom avant
+it.qt.PageScaleIncrease:Aumenta zoom
+nl.qt.PageScaleIncrease:Inzoomen
+zh_CN.qt.PageScaleIncrease:放大
+
+en.qt.PageScaleIncreaseShort:+
+
+en.qt.PageSave:Save Page
+
+en.qt.LinkBookmark:Bookmark Link
+de.qt.LinkBookmark:Link als Bookmark
+fr.qt.LinkBookmark:Marquer le lien
+it.qt.LinkBookmark:Aggiungi ai segnalibri
+nl.qt.LinkBookmark:Bladwijzer voor de koppeling maken
+zh_CN.qt.LinkBookmark:书签链接
+
+en.qt.LinkSave:Save Link
+de.qt.LinkSavelink:Link speichern..
+fr.qt.LinkSavelink:Enregistrer le lien
+it.qt.LinkSavelink:Salva link
+nl.qt.LinkSavelink:Koppeling opslaan als...
+zh_CN.qt.LinkSavelink:保存链接
+
+en.qt.LinkCopy:Copy link address
+de.qt.LinkCopy:Linkadresse kopieren
+fr.qt.LinkCopy:Copier le lien
+it.qt.LinkCopy:Copia indirizzo link
+nl.qt.LinkCopy:Koppelingslocatie kopiëren
+zh_CN.qt.LinkCopy:复制链接位置
+
+en.qt.ImageNewTab:Open image in new tab
+
+en.qt.ImageSave:Save image as
+
+en.qt.ImageCopy:Copy image link
+
+en.qt.ObjectSave:Save object as
+
+en.qt.ObjectCopy:Copy object link
+
+en.qt.SearchProviderFor:Search %s for "%s"
+
+en.qt.ColourSelection:Page Colour Selection
+
+en.qt.ColourSelectionAutomatic:Automatic
+
+en.qt.ColourSelectionLight:Light
+
+en.qt.ColourSelectionDark:Dark
+
+en.qt.ColourSelectionManual:Manual system colours
+
+# menu entries
+
+en.qt.MoreTools:More tools
+de.qt.MoreTools:Weitere tools
+fr.qt.MoreTools:Outils
+it.qt.MoreTools:Strumenti
+nl.qt.MoreTools:Extra
+zh_CN.qt.MoreTools:工具
+
+en.qt.Help:Help
+es.qt.Help:Ayuda
+de.qt.Help:Hilfe
+fr.qt.Help:Aide
+it.qt.Help:Aiuto
+nl.qt.Help:Hulp
+zh_CN.qt.Help:帮助
+
+en.qt.PageSource:Page Source
+de.qt.PageSource:Quelltext anzeigen
+fr.qt.PageSource:Code source de la page
+it.qt.PageSource:Mostra sorgente
+nl.qt.PageSource:Pagina_bron
+zh_CN.qt.PageSource:页面源代码
+
+en.qt.DebugRender:Toggle debug rendering
+de.qt.DebugRender:Toggle debug rendering
+fr.qt.DebugRender:Basculer déb_ogage de rendu
+it.qt.DebugRender:Inverti debug del rendering
+nl.qt.DebugRender:Debug-weergave aan/uit
+zh_CN.qt.DebugRender:切换调试渲染
+
+en.qt.DebugBoxTree:Debug box tree
+de.qt.DebugBoxTree:Debug box tree
+fr.qt.DebugBoxTree:Déboguer l’arbre d’em_boîtement
+it.qt.DebugBoxTree:Debug box tree
+nl.qt.DebugBoxTree:Box-boom debuggen
+zh_CN.qt.DebugBoxTree:调试边框树
+
+en.qt.DebugDomTree:Debug DOM tree
+de.qt.DebugDomTree:Debug DOM tree
+fr.qt.DebugDomTree:Déboguer l’arbre DOM
+it.qt.DebugDomTree:Debug albero DOM
+nl.qt.DebugDomTree:DOM-boom debuggen
+zh_CN.qt.DebugDomTree:调试 DOM 树
 
 # Configuration tokens
 # ====================
@@ -8655,6 +8817,14 @@ it.ami.EnableCSS:Attiva CSS
 nl.ami.EnableCSS:CSS ingeschakeld
 zh_CN.ami.EnableCSS:启用 CSS
 
+# default page scale label
+en.all.DefaultScale:Default page scaling
+de.all.DefaultScale:Standardmäßige Seitenskalierung
+fr.all.DefaultScale:Zoom de page par défaut
+it.all.DefaultScale:Scala della pagina predefinita
+nl.all.DefaultScale:Standaard paginaschaal
+zh_CN.all.DefaultScale:默认页面比例
+
 # Fonts tab
 #
 
@@ -8798,12 +8968,16 @@ zh_CN.all.Duration:缓存磁盘的时长
 # Tabs
 #
 
-en.ami.Tabs:Tabs
-de.ami.Tabs:Tabs
-fr.ami.Tabs:Onglets
-it.ami.Tabs:Schede
-nl.ami.Tabs:Tabbladen
-zh_CN.ami.Tabs:标签页
+en.all.Tabs:Tabs
+de.all.Tabs:Tabs
+fr.all.Tabs:Onglets
+it.all.Tabs:Schede
+nl.all.Tabs:Tabbladen
+zh_CN.all.Tabs:标签页
+
+en.all.TabLinkOpen:Open links in tabs instead of new windows
+
+en.all.TabSwitchNew:When a new tab is opened immediately switch to it
 
 en.all.TabbedBrowsing:Tabbed browsing
 de.all.TabbedBrowsing:Registernavigation (Tabs)
@@ -8812,19 +8986,19 @@ it.all.TabbedBrowsing:Navigazione a schede
 nl.all.TabbedBrowsing:Browsen met tabbladen
 zh_CN.all.TabbedBrowsing:标签页式浏览
 
-en.all.TabActive:Open new tabs in background
-de.all.TabActive:Neuen Tab im Hintergrund öffnen
-fr.all.TabActive:Ouvrir les nouveaux onglets en arrière plan
-it.all.TabActive:Apri le nuove schede in sottofondo
-nl.all.TabActive:Open nieuwe tabbladen in de achtergrond
-zh_CN.all.TabActive:在后台中打开新标签页
+en.ami.TabActive:Open new tabs in background
+de.ami.TabActive:Neuen Tab im Hintergrund öffnen
+fr.ami.TabActive:Ouvrir les nouveaux onglets en arrière plan
+it.ami.TabActive:Apri le nuove schede in sottofondo
+nl.ami.TabActive:Open nieuwe tabbladen in de achtergrond
+zh_CN.ami.TabActive:在后台中打开新标签页
 
-en.all.TabMiddle:Middle mouse button opens tabs
-de.all.TabMiddle:Mittlere Maustaste öffnet Tab
-fr.all.TabMiddle:Le bouton du milieu de la souris ouvre un onglet
-it.all.TabMiddle:Usa tasto centrale del mouse per aprire le schede
-nl.all.TabMiddle:Middelste muisknop opent een nieuw tabblad
-zh_CN.all.TabMiddle:鼠标中键点击 URL，并在新标签页中打开
+en.ami.TabMiddle:Middle mouse button opens tabs
+de.ami.TabMiddle:Mittlere Maustaste öffnet Tab
+fr.ami.TabMiddle:Le bouton du milieu de la souris ouvre un onglet
+it.ami.TabMiddle:Usa tasto centrale del mouse per aprire le schede
+nl.ami.TabMiddle:Middelste muisknop opent een nieuw tabblad
+zh_CN.ami.TabMiddle:鼠标中键点击 URL，并在新标签页中打开
 
 en.all.TabLast:Open new tabs after all existing tabs
 de.all.TabLast:Neue Tabs hinter letztem öffnen

@@ -817,38 +817,40 @@ static nserror treeview__search_walk_cb(
 {
 	struct treeview_search_walk_data *sw = ctx;
 
+	/* only entry nodes can be searched */
 	if (n->type != TREE_NODE_ENTRY) {
 		return NSERROR_OK;
 	}
 
+	/* empty string will never match */
 	if (sw->len == 0) {
 		n->flags &= ~TV_NFLAGS_MATCHED;
-	} else {
-		struct treeview_node_entry *entry =
-				(struct treeview_node_entry *)n;
-		bool matched = false;
+		return NSERROR_OK;
+	}
 
-		for (int i = 0; i < sw->tree->n_fields; i++) {
-			struct treeview_field *ef = &(sw->tree->fields[i + 1]);
-			if (ef->flags & TREE_FLAG_SEARCHABLE) {
-				if (strcasestr(entry->fields[i].value.data,
-						sw->text) != NULL) {
-					matched = true;
-					break;
-				}
+	struct treeview_node_entry *entry = (struct treeview_node_entry *)n;
+	bool matched = false;
+
+	for (int i = 0; i < sw->tree->n_fields; i++) {
+		struct treeview_field *ef = &(sw->tree->fields[i + 1]);
+		if (ef->flags & TREE_FLAG_SEARCHABLE) {
+			if (strcasestr(entry->fields[i].value.data,
+				       sw->text) != NULL) {
+				matched = true;
+				break;
 			}
 		}
+	}
 
-		if (!matched && strcasestr(n->text.data, sw->text) != NULL) {
-			matched = true;
-		}
+	if (!matched && strcasestr(n->text.data, sw->text) != NULL) {
+		matched = true;
+	}
 
-		if (matched) {
-			n->flags |= TV_NFLAGS_MATCHED;
-			sw->window_height += n->height;
-		} else {
-			n->flags &= ~TV_NFLAGS_MATCHED;
-		}
+	if (matched) {
+		n->flags |= TV_NFLAGS_MATCHED;
+		sw->window_height += n->height;
+	} else {
+		n->flags &= ~TV_NFLAGS_MATCHED;
 	}
 
 	return NSERROR_OK;
@@ -4930,6 +4932,9 @@ nserror treeview_set_search_string(
 	if (string == NULL || strlen(string) == 0) {
 		tree->search.active = false;
 		tree->search.search = false;
+		if (!textarea_set_text(tree->search.textarea, "")) {
+			return NSERROR_UNKNOWN;
+		}
 		return treeview__search(tree, "", 0);
 	}
 

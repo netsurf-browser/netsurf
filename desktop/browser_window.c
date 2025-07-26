@@ -3002,6 +3002,8 @@ browser_window_get_features(struct browser_window *bw,
 {
 	/* clear the features structure to empty values */
 	data->link = NULL;
+	data->link_title = NULL;
+	data->link_title_length = 0;
 	data->object = NULL;
 	data->main = NULL;
 	data->form_features = CTX_FORM_NONE;

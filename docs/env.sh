@@ -29,7 +29,6 @@
 ###############################################################################
 
 
-# deb packages for dpkg based systems
 # apt get commandline to install necessary dev packages
 ns_apt_get_install()
 {
