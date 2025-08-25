@@ -269,6 +269,39 @@ case ${TARGET} in
 	;;
 
 
+    "qt")
+	case ${HOST} in
+	    "x86_64-linux-gnu")
+		;;
+
+	    "arm-linux-gnueabihf")
+		;;
+
+	    "aarch64-linux-gnu")
+		;;
+
+	    amd64-unknown-openbsd*)
+		MAKE=gmake
+		;;
+
+	    x86_64-unknown-freebsd*)
+		MAKE=gmake
+		;;
+
+	    *)
+		echo "Target \"${TARGET}\" cannot be built on \"${HOST}\""
+		exit 1
+		;;
+
+	esac
+
+	IDENTIFIER="${HOST}-${IDENTIFIER}"
+	OLD_IDENTIFIER="${HOST}-${OLD_IDENTIFIER}"
+	PKG_SRC=qt
+	PKG_SFX=
+	;;
+
+
     "framebuffer")
 	case ${HOST} in
 	    "x86_64-linux-gnu")
