@@ -482,17 +482,21 @@ ami_bitmap(struct gui_globals *glob, int x, int y, int width, int height, struct
 #endif
 	{
 		ULONG tag, tag_data, minterm = 0xc0;
-		
+
+#ifdef __amigaos4__		
 		if (glob->palette_mapped == false) {
 			tag = BLITA_UseSrcAlpha;
 			tag_data = !amiga_bitmap_get_opaque(bitmap);
 			minterm = 0xc0;
 		} else {
+#endif
 			tag = BLITA_MaskPlane;
 			if ((tag_data = (ULONG)ami_bitmap_get_mask(bitmap, width, height, tbm)))
 				minterm = MINTERM_SRCMASK;
-		}
+
 #ifdef __amigaos4__
+		}
+
 		BltBitMapTags(BLITA_Width,width,
 						BLITA_Height,height,
 						BLITA_Source,tbm,
@@ -505,7 +509,7 @@ ami_bitmap(struct gui_globals *glob, int x, int y, int width, int height, struct
 						tag, tag_data,
 						TAG_DONE);
 #else
-		if (tag_data) {
+		if(tag_data && (tag == BLITA_MaskPlane)) {
 			BltMaskBitMapRastPort(tbm, 0, 0, glob->rp, x, y, width, height, minterm, tag_data);
 		} else {
 			BltBitMapRastPort(tbm, 0, 0, glob->rp, x, y, width, height, 0xc0);
@@ -549,17 +553,19 @@ HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage 
 #endif
 			{
 				ULONG tag, tag_data, minterm = 0xc0;
-		
+#ifdef __amigaos4__
 				if(bfbm->palette_mapped == false) {
 					tag = BLITA_UseSrcAlpha;
 					tag_data = TRUE;
 					minterm = 0xc0;
 				} else {
+#endif
 					tag = BLITA_MaskPlane;
 					if((tag_data = (ULONG)bfbm->mask))
 						minterm = MINTERM_SRCMASK;
-				}
 #ifdef __amigaos4__
+				}
+
 				BltBitMapTags(BLITA_Width, bfbm->width,
 					BLITA_Height, bfbm->height,
 					BLITA_Source, bfbm->bm,
@@ -572,7 +578,7 @@ HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage 
 					tag, tag_data,
 					TAG_DONE);
 #else
-				if(tag_data) {
+				if(tag_data && (tag == BLITA_MaskPlane)) {
 					BltMaskBitMapRastPort(bfbm->bm, 0, 0, rp, xf, yf,
 						bfbm->width, bfbm->height, minterm, tag_data);
 				} else {
