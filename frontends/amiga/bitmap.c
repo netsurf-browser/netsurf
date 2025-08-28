@@ -216,6 +216,12 @@ void amiga_bitmap_destroy(void *bitmap)
 
 	if(bm)
 	{
+		if(bm->drawhandle) {
+			/* TODO: This (also) needs releasing when the image is no longer displayed... */
+			ReleaseDrawHandle(bm->drawhandle);
+			bm->drawhandle = NULL;
+		}
+		
 		if((bm->nativebm)) { // && (bm->native == AMI_NSBM_TRUECOLOUR)) {
 			ami_rtg_freebitmap(bm->nativebm);
 		}
@@ -231,7 +237,6 @@ void amiga_bitmap_destroy(void *bitmap)
 		} else
 #endif
 		{
-			if(bm->drawhandle) ReleaseDrawHandle(bm->drawhandle);
 			ami_memory_clear_free(bm->pixdata);
 		}
 
@@ -244,7 +249,7 @@ void amiga_bitmap_destroy(void *bitmap)
 		bm->drawhandle = NULL;
 		bm->url = NULL;
 		bm->title = NULL;
-	
+
 		ami_memory_itempool_free(pool_bitmap, bm, sizeof(struct bitmap));
 		bm = NULL;
 	}
@@ -477,12 +482,16 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 					dithermode = DITHERMODE_FS;
 				}
 
+				/* Release the previous drawhandle */
+				if(bitmap->drawhandle) ReleaseDrawHandle(bitmap->drawhandle);
+
 				bitmap->drawhandle = ObtainDrawHandle(
 					NULL,
 					&rp,
 					scrn->ViewPort.ColorMap,
 					GGFX_DitherMode, dithermode,
 					TAG_DONE);
+
 				if(bitmap->drawhandle) {
 					APTR ddh = CreateDirectDrawHandle(bitmap->drawhandle,
 											bitmap->width, bitmap->height,
@@ -490,8 +499,6 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 
 					DirectDrawTrueColor(ddh, (ULONG *)amiga_bitmap_get_buffer(bitmap), 0, 0, TAG_DONE);
 					DeleteDirectDrawHandle(ddh);
-					ReleaseDrawHandle(bitmap->drawhandle);
-					bitmap->drawhandle = NULL;
 				}
 			} else {
 				if(guigfx_warned == false) {
