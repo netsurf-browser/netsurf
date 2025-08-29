@@ -6621,11 +6621,12 @@ int main(int argc, char** argv)
 
 #ifdef __amigaos4__
 	amiga_plugin_hack_init();
+#endif
 
-	/* DataTypes loader needs datatypes.library v45,
-	 * but for some reason that's not in OS3.9.
-	 * Skip it to ensure it isn't causing other problems. */
-	ret = amiga_datatypes_init();
+#ifdef WITH_AMIGA_DATATYPES
+	/* DataTypes loader needs datatypes.library v45 */
+	if(DataTypesBase->lib_Version >= 45)
+		ret = amiga_datatypes_init();
 #endif
 
 	/* user options setup */
