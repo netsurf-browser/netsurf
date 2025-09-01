@@ -297,7 +297,7 @@ case ${TARGET} in
 
 	IDENTIFIER="${HOST}-${IDENTIFIER}"
 	OLD_IDENTIFIER="${HOST}-${OLD_IDENTIFIER}"
-	PKG_SRC=qt
+	PKG_SRC=nsqt
 	PKG_SFX=
 	;;
 
@@ -493,7 +493,7 @@ ${MAKE} -j ${PARALLEL} -k CI_BUILD=${BUILD_NUMBER} ATARIARCH=${ATARIARCH} Q=
 ${MAKE} -k CI_BUILD=${BUILD_NUMBER} ATARIARCH=${ATARIARCH} PACKAGER="NetSurf Developers <support@netsurf-browser.org>" Q= package
 
 if [ ! -f "${PKG_SRC}${PKG_SFX}" ]; then
-    # unable to find package file
+    echo "unable to find package file:${PKG_SRC}${PKG_SFX}"
     exit 1
 fi
 
