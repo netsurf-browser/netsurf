@@ -1,5 +1,5 @@
 /*
- * Copyright 2008, 2009, 2012, 2016 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -78,10 +78,11 @@ struct bitmap {
 	int nativebmheight;
 	PLANEPTR native_mask;
 	Object *dto;
-	APTR drawhandle;
 	struct nsurl *url;   /* temporary storage space */
 	char *title; /* temporary storage space */
 	ULONG *icondata; /* for appicons */
+	colour bg; /* alpha blended */
+	APTR drawhandle; /* guigfx */
 };
 
 enum {
@@ -103,6 +104,7 @@ struct vertex {
 		VTX(3, DX + DW, DY,      SX + SW, SY); \
 		VTX(4, DX,      DY + DH, SX,      SY + SH); \
 		VTX(5, DX + DW, DY + DH, SX + SW, SY + SH);
+#define BLEND_ALPHA(A,B,C) (UBYTE)((255 - A) * C) + (A * B)
 
 static APTR pool_bitmap = NULL;
 static bool guigfx_warned = false;
@@ -145,11 +147,11 @@ void *amiga_bitmap_create(int width, int height, enum gui_bitmap_flags flags)
 	bitmap->nativebmwidth = 0;
 	bitmap->nativebmheight = 0;
 	bitmap->native_mask = NULL;
-	bitmap->drawhandle = NULL;
 	bitmap->url = NULL;
 	bitmap->title = NULL;
 	bitmap->icondata = NULL;
 	bitmap->native = AMI_NSBM_NONE;
+	bitmap->drawhandle = NULL;
 
 	return bitmap;
 }
@@ -216,17 +218,13 @@ void amiga_bitmap_destroy(void *bitmap)
 
 	if(bm)
 	{
-		if(bm->drawhandle) {
-			/* TODO: This (also) needs releasing when the image is no longer displayed... */
-			ReleaseDrawHandle(bm->drawhandle);
-			bm->drawhandle = NULL;
-		}
-		
 		if((bm->nativebm)) { // && (bm->native == AMI_NSBM_TRUECOLOUR)) {
 			ami_rtg_freebitmap(bm->nativebm);
 		}
 
 		if(bm->native_mask) FreeRaster(bm->native_mask, bm->width, bm->height);
+
+		if(bm->drawhandle) ReleaseDrawHandle(bm->drawhandle);
 
 #ifdef __amigaos4__
 		if(nsoption_bool(use_extmem) == true) {
@@ -246,7 +244,6 @@ void amiga_bitmap_destroy(void *bitmap)
 		bm->pixdata = NULL;
 		bm->nativebm = NULL;
 		bm->native_mask = NULL;
-		bm->drawhandle = NULL;
 		bm->url = NULL;
 		bm->title = NULL;
 
@@ -292,10 +289,8 @@ void amiga_bitmap_modified(void *bitmap)
 #endif
 
 	if(bm->nativebm) ami_rtg_freebitmap(bm->nativebm);
-	if(bm->drawhandle) ReleaseDrawHandle(bm->drawhandle);
 	if(bm->native_mask) FreeRaster(bm->native_mask, bm->width, bm->height);
 	bm->nativebm = NULL;
-	bm->drawhandle = NULL;
 	bm->native_mask = NULL;
 	bm->native = AMI_NSBM_NONE;
 }
@@ -437,19 +432,112 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 	return bm;
 }
 
+static inline struct BitMap *ami_bitmap_get_guigfx(struct bitmap *bitmap,
+			int width, int height, struct BitMap *restrict friendbm, int type, colour bg)
+{
+	struct BitMap *restrict tbm = NULL;
+	struct Screen *scrn = ami_gui_get_screen();
+
+	if(type == AMI_NSBM_TRUECOLOUR) {
+		tbm = ami_rtg_allocbitmap(bitmap->width, bitmap->height, 32, 0,
+									friendbm, AMI_BITMAP_FORMAT);
+		if(tbm == NULL) return NULL;
+	} else {
+		tbm = ami_rtg_allocbitmap(width, height,
+									8, 0, friendbm, AMI_BITMAP_FORMAT);
+		if(tbm == NULL) return NULL;
+	}
+	
+	if(GuiGFXBase != NULL) {
+		struct RastPort rp;
+		InitRastPort(&rp);
+		rp.BitMap = tbm;
+		ULONG dithermode = DITHERMODE_NONE;
+
+		if(nsoption_int(dither_quality) == 1) {
+			dithermode = DITHERMODE_EDD;
+		} else if(nsoption_int(dither_quality) == 2) {
+			dithermode = DITHERMODE_FS;
+		}
+
+		APTR picture = MakePicture(amiga_bitmap_get_buffer(bitmap), bitmap->width, bitmap->height,
+										GGFX_PixelFormat, PIXFMT_0RGB_32,
+										GGFX_AlphaPresent, !bitmap->opaque,
+										GGFX_Independent, TRUE,
+										GGFX_DestWidth, width,
+										GGFX_DestHeight, height,
+										TAG_DONE);
+
+		if(picture == NULL) {
+			amiga_warn_user("BMConvErr", NULL);
+		}
+
+#ifdef __amigaos4__
+		/* Alpha-blend the image to the provided background colour.
+		 * This appears to be using an inverted alpha on OS3
+		 */
+		if((!bitmap->opaque) && (bg != NS_TRANSPARENT)) {
+			DoPictureMethod(picture, PICMTHD_TINTALPHA, colour_rb_swap(bg), TAG_DONE);
+		}
+#endif
+
+		if(bitmap->drawhandle) ReleaseDrawHandle(bitmap->drawhandle);
+
+		APTR drawhandle = ObtainDrawHandle(
+			NULL,
+			&rp,
+			scrn->ViewPort.ColorMap,
+			GGFX_DitherMode, dithermode,
+			TAG_DONE);
+
+		if(drawhandle) {
+			DrawPicture(drawhandle, picture, 0, 0, TAG_DONE);
+			bitmap->drawhandle = drawhandle;
+		}
+		
+		DeletePicture(picture);
+		
+	} else {
+		if(guigfx_warned == false) {
+			amiga_warn_user("BMConvErr", NULL);
+			guigfx_warned = true;
+		}
+	}
+
+	if(((type == AMI_NSBM_TRUECOLOUR) && (nsoption_int(cache_bitmaps) == 2)) ||
+			((type == AMI_NSBM_PALETTEMAPPED) && (((bitmap->width == width) &&
+			(bitmap->height == height) && (nsoption_int(cache_bitmaps) == 2)) ||
+			(nsoption_int(cache_bitmaps) >= 1)))) {
+		bitmap->nativebm = tbm;
+		bitmap->nativebmwidth = width;
+		bitmap->nativebmheight = height;
+		bitmap->native = type;
+		bitmap->bg = bg;
+	}
+
+	return tbm;
+}
+
 static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
-			int width, int height, struct BitMap *restrict friendbm, int type)
+			int width, int height, struct BitMap *restrict friendbm, int type, colour bg)
 {
 	struct BitMap *restrict tbm = NULL;
 	struct Screen *scrn = ami_gui_get_screen();
 
 	if(bitmap->nativebm)
 	{
-		if((bitmap->nativebmwidth == width) && (bitmap->nativebmheight == height)) {
+#ifndef __amigaos4__
+		BOOL nativebmalphablend = ((bitmap->bg == bg) || bitmap->opaque);
+#else
+		/* No pre-blend alpha on OS4 */
+		BOOL nativebmalphablend = TRUE;
+#endif
+		if((bitmap->nativebmwidth == width) && (bitmap->nativebmheight == height) && nativebmalphablend)
+		{
 			tbm = bitmap->nativebm;
 			return tbm;
 		} else if((bitmap->nativebmwidth == bitmap->width) &&
-				(bitmap->nativebmheight == bitmap->height)) { // >= width/height ?
+				(bitmap->nativebmheight == bitmap->height) && nativebmalphablend) { // >= width/height ?
 			tbm = bitmap->nativebm;
 		} else {
 			if(bitmap->nativebm) amiga_bitmap_modified(bitmap);
@@ -457,6 +545,13 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 	}
 
 	if(tbm == NULL) {
+		/* If palette mapped or OS3, use guigfx */
+#ifdef __amigaos4__
+		if(type == AMI_NSBM_PALETTEMAPPED)
+#endif
+			return ami_bitmap_get_guigfx(bitmap, width, height, friendbm, type, bg);
+
+
 		if(type == AMI_NSBM_TRUECOLOUR) {
 			tbm = ami_rtg_allocbitmap(bitmap->width, bitmap->height, 32, 0,
 										friendbm, AMI_BITMAP_FORMAT);
@@ -465,47 +560,6 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 			ami_rtg_writepixelarray(amiga_bitmap_get_buffer(bitmap),
 										tbm, bitmap->width, bitmap->height,
 										bitmap->width * 4, AMI_BITMAP_FORMAT);
-		} else {
-			tbm = ami_rtg_allocbitmap(width, height,
-										8, 0, friendbm, AMI_BITMAP_FORMAT);
-			if(tbm == NULL) return NULL;
-
-			if(GuiGFXBase != NULL) {
-				struct RastPort rp;
-				InitRastPort(&rp);
-				rp.BitMap = tbm;
-				ULONG dithermode = DITHERMODE_NONE;
-
-				if(nsoption_int(dither_quality) == 1) {
-					dithermode = DITHERMODE_EDD;
-				} else if(nsoption_int(dither_quality) == 2) {
-					dithermode = DITHERMODE_FS;
-				}
-
-				/* Release the previous drawhandle */
-				if(bitmap->drawhandle) ReleaseDrawHandle(bitmap->drawhandle);
-
-				bitmap->drawhandle = ObtainDrawHandle(
-					NULL,
-					&rp,
-					scrn->ViewPort.ColorMap,
-					GGFX_DitherMode, dithermode,
-					TAG_DONE);
-
-				if(bitmap->drawhandle) {
-					APTR ddh = CreateDirectDrawHandle(bitmap->drawhandle,
-											bitmap->width, bitmap->height,
-											width, height, NULL);
-
-					DirectDrawTrueColor(ddh, (ULONG *)amiga_bitmap_get_buffer(bitmap), 0, 0, TAG_DONE);
-					DeleteDirectDrawHandle(ddh);
-				}
-			} else {
-				if(guigfx_warned == false) {
-					amiga_warn_user("BMConvErr", NULL);
-					guigfx_warned = true;
-				}
-			}
 		}
 
 		if(((type == AMI_NSBM_TRUECOLOUR) && (nsoption_int(cache_bitmaps) == 2)) ||
@@ -513,21 +567,16 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 				(bitmap->height == height) && (nsoption_int(cache_bitmaps) == 2)) ||
 				(nsoption_int(cache_bitmaps) >= 1)))) {
 			bitmap->nativebm = tbm;
-			if(type == AMI_NSBM_TRUECOLOUR) {
-				bitmap->nativebmwidth = bitmap->width;
-				bitmap->nativebmheight = bitmap->height;
-			} else {
-				bitmap->nativebmwidth = width;
-				bitmap->nativebmheight = height;
-			}
+			bitmap->nativebmwidth = bitmap->width;
+			bitmap->nativebmheight = bitmap->height;
 			bitmap->native = type;
 		}
-
-		if(type == AMI_NSBM_PALETTEMAPPED)
-			return tbm;
 	}
 
 	if((bitmap->width != width) || (bitmap->height != height)) {
+		if((bitmap->nativebmwidth == width) && (bitmap->nativebmheight == height))
+			return bitmap->nativebm;
+
 		struct BitMap *restrict scaledbm;
 		struct BitScaleArgs bsa;
 		int depth = 32;
@@ -613,6 +662,7 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 			bitmap->nativebmwidth = width;
 			bitmap->nativebmheight = height;
 			bitmap->native = type;
+			bitmap->bg = bg;
 		}
 	}
 
@@ -621,13 +671,13 @@ static inline struct BitMap *ami_bitmap_get_generic(struct bitmap *bitmap,
 
 
 static inline struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,
-			int width, int height, struct BitMap *friendbm)
+			int width, int height, struct BitMap *friendbm, colour bg)
 {
 	if((bitmap->native != AMI_NSBM_NONE) && (bitmap->native != AMI_NSBM_TRUECOLOUR)) {
 		amiga_bitmap_modified(bitmap);
 	}
 
-	return ami_bitmap_get_generic(bitmap, width, height, friendbm, AMI_NSBM_TRUECOLOUR);
+	return ami_bitmap_get_generic(bitmap, width, height, friendbm, AMI_NSBM_TRUECOLOUR, bg);
 }
 
 PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width,
@@ -661,24 +711,24 @@ PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width,
 }
 
 static inline struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
-					int width, int height, struct BitMap *friendbm)
+					int width, int height, struct BitMap *friendbm, colour bg)
 {
 	if((bitmap->native != AMI_NSBM_NONE) && (bitmap->native != AMI_NSBM_PALETTEMAPPED)) {
 		amiga_bitmap_modified(bitmap);
 	}
 
-	return ami_bitmap_get_generic(bitmap, width, height, friendbm, AMI_NSBM_PALETTEMAPPED);
+	return ami_bitmap_get_generic(bitmap, width, height, friendbm, AMI_NSBM_PALETTEMAPPED, bg);
 }
 
-struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
-				int width, int height, bool palette_mapped, struct BitMap *friendbm)
+struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap, int width, int height,
+					bool palette_mapped, struct BitMap *friendbm, colour bg)
 {
 	if(bitmap == NULL) return NULL;
 
 	if(__builtin_expect(palette_mapped == true, 0)) {
-		return ami_bitmap_get_palettemapped(bitmap, width, height, friendbm);
+		return ami_bitmap_get_palettemapped(bitmap, width, height, friendbm, bg);
 	} else {
-		return ami_bitmap_get_truecolour(bitmap, width, height, friendbm);
+		return ami_bitmap_get_truecolour(bitmap, width, height, friendbm, bg);
 	}
 }
 

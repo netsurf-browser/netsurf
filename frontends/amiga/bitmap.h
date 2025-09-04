@@ -1,5 +1,5 @@
 /*
- * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -35,8 +35,8 @@ struct bitmap;
 struct nsurl;
 struct gui_globals;
 
-struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
-				int width, int height, bool palette_mapped, struct BitMap *friendbm);
+struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap, int width, int height,
+				bool palette_mapped, struct BitMap *friendbm, colour bg);
 PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width,
 				int height, struct BitMap *n_bm);
 

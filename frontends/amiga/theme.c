@@ -183,7 +183,7 @@ void ami_theme_throbber_setup(void)
 
 	bm = ami_bitmap_from_datatype(throbberfile);
 	throbber = ami_bitmap_get_native(bm, bitmap_get_width(bm), bitmap_get_height(bm),
-		ami_plot_screen_is_palettemapped(), NULL);
+		ami_plot_screen_is_palettemapped(), NULL, nsoption_colour(sys_colour_ButtonFace));
 
 	throbber_nsbm = bm;
 }

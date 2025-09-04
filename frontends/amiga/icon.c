@@ -49,6 +49,7 @@
 #include "content/content_protected.h"
 #include "content/content_factory.h"
 #include "desktop/gui_internal.h"
+#include "utils/nsoption.h"
 
 #include "amiga/os3support.h"
 #include "amiga/bitmap.h"
@@ -407,7 +408,7 @@ void amiga_icon_superimpose_favicon_internal(struct hlcache_handle *icon, struct
 	if(format != IDFMT_DIRECTMAPPED) return;
 #ifdef __amigaos4__
 	if ((icon != NULL) && (content_get_bitmap(icon) != NULL)) {
-		bm = ami_bitmap_get_native(content_get_bitmap(icon), 16, 16, false, NULL);
+		bm = ami_bitmap_get_native(content_get_bitmap(icon), 16, 16, false, NULL, nsoption_colour(sys_colour_ButtonFace));
 	}
 
 	if(bm) {
@@ -528,7 +529,8 @@ struct DiskObject *amiga_icon_from_bitmap(struct bitmap *bm)
 	if(bm)
 	{
 		bitmap = ami_bitmap_get_native(bm, THUMBNAIL_WIDTH,
-									THUMBNAIL_HEIGHT, false, NULL);
+									THUMBNAIL_HEIGHT, false, NULL,
+									nsoption_colour(sys_colour_ButtonFace));
 		icondata = malloc(THUMBNAIL_WIDTH * 4 * THUMBNAIL_HEIGHT);
 		ami_bitmap_set_icondata(bm, icondata);
 

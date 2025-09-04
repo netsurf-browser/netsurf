@@ -146,7 +146,7 @@ struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit
 #else
  	bitmap_set_format(&(bitmap_fmt_t) {
 		.layout = BITMAP_LAYOUT_ARGB8888,
-		.pma = true,
+		.pma = false,
 	});
    	
  	NSLOG(netsurf, INFO, "Set bitmap format to 0xAARRGGBB (native endian) (PMA)");
@@ -432,7 +432,7 @@ static void ami_arc_gfxlib(struct RastPort *rp, int x, int y, int radius, int an
 /**
  */
 static nserror
-ami_bitmap(struct gui_globals *glob, int x, int y, int width, int height, struct bitmap *bitmap)
+ami_bitmap(struct gui_globals *glob, int x, int y, int width, int height, struct bitmap *bitmap, colour bg)
 {
 	NSLOG(plot, DEEPDEBUG, "[ami_plotter] Entered ami_bitmap()");
 	struct Screen *scrn = ami_gui_get_screen();
@@ -449,7 +449,7 @@ ami_bitmap(struct gui_globals *glob, int x, int y, int width, int height, struct
 		return NSERROR_OK;
 	}
 
-	tbm = ami_bitmap_get_native(bitmap, width, height, glob->palette_mapped, glob->rp->BitMap);
+	tbm = ami_bitmap_get_native(bitmap, width, height, glob->palette_mapped, glob->rp->BitMap, bg);
 	if (!tbm) {
 		return NSERROR_OK;
 	}
@@ -481,7 +481,7 @@ ami_bitmap(struct gui_globals *glob, int x, int y, int width, int height, struct
 	} else
 #endif
 	{
-		ULONG tag, tag_data, minterm = 0xc0;
+		ULONG tag = TAG_IGNORE, tag_data, minterm = 0xc0;
 
 #ifdef __amigaos4__		
 		if (glob->palette_mapped == false) {
@@ -509,6 +509,7 @@ ami_bitmap(struct gui_globals *glob, int x, int y, int width, int height, struct
 						tag, tag_data,
 						TAG_DONE);
 #else
+
 		if(tag_data && (tag == BLITA_MaskPlane)) {
 			BltMaskBitMapRastPort(tbm, 0, 0, glob->rp, x, y, width, height, minterm, tag_data);
 		} else {
@@ -552,7 +553,7 @@ HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage 
 			} else
 #endif
 			{
-				ULONG tag, tag_data, minterm = 0xc0;
+				ULONG tag = TAG_IGNORE, tag_data, minterm = 0xc0;
 #ifdef __amigaos4__
 				if(bfbm->palette_mapped == false) {
 					tag = BLITA_UseSrcAlpha;
@@ -586,7 +587,7 @@ HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage 
 						bfbm->width, bfbm->height, minterm);
 				}
 #endif
-			}			
+			}		
 		}
 	}
 }
@@ -1047,7 +1048,7 @@ ami_bitmap_tile(const struct redraw_context *ctx,
 	}
 
 	if (!(repeat_x || repeat_y)) {
-		return ami_bitmap(glob, x, y, width, height, bitmap);
+		return ami_bitmap(glob, x, y, width, height, bitmap, bg);
 	}
 
 	/* If it is a one pixel transparent image, we are wasting our time */
@@ -1057,7 +1058,7 @@ ami_bitmap_tile(const struct redraw_context *ctx,
 		return NSERROR_OK;
 	}
 
-	tbm = ami_bitmap_get_native(bitmap, width, height, glob->palette_mapped, glob->rp->BitMap);
+	tbm = ami_bitmap_get_native(bitmap, width, height, glob->palette_mapped, glob->rp->BitMap, bg);
 	if (!tbm) {
 		return NSERROR_OK;
 	}
