@@ -104,7 +104,6 @@ struct vertex {
 		VTX(3, DX + DW, DY,      SX + SW, SY); \
 		VTX(4, DX,      DY + DH, SX,      SY + SH); \
 		VTX(5, DX + DW, DY + DH, SX + SW, SY + SH);
-#define BLEND_ALPHA(A,B,C) (UBYTE)((255 - A) * C) + (A * B)
 
 static APTR pool_bitmap = NULL;
 static bool guigfx_warned = false;
@@ -225,6 +224,7 @@ void amiga_bitmap_destroy(void *bitmap)
 		if(bm->native_mask) FreeRaster(bm->native_mask, bm->width, bm->height);
 
 		if(bm->drawhandle) ReleaseDrawHandle(bm->drawhandle);
+		bm->drawhandle = NULL;
 
 #ifdef __amigaos4__
 		if(nsoption_bool(use_extmem) == true) {
@@ -460,6 +460,14 @@ static inline struct BitMap *ami_bitmap_get_guigfx(struct bitmap *bitmap,
 			dithermode = DITHERMODE_FS;
 		}
 
+		if(nsoption_bool(invert_alpha)) {
+			/* invert alpha */
+			unsigned char *bmbuffer = amiga_bitmap_get_buffer(bitmap);
+			for(int i = 0; i < (bitmap->width * bitmap->height * 4); i+=4) {
+				bmbuffer[i] = 255 - bmbuffer[i];
+			}
+		}
+
 		APTR picture = MakePicture(amiga_bitmap_get_buffer(bitmap), bitmap->width, bitmap->height,
 										GGFX_PixelFormat, PIXFMT_0RGB_32,
 										GGFX_AlphaPresent, !bitmap->opaque,
@@ -468,31 +476,38 @@ static inline struct BitMap *ami_bitmap_get_guigfx(struct bitmap *bitmap,
 										GGFX_DestHeight, height,
 										TAG_DONE);
 
+		if(nsoption_bool(invert_alpha)) {
+			/* invert alpha */
+			unsigned char *bmbuffer = amiga_bitmap_get_buffer(bitmap);
+			for(int i = 0; i < (bitmap->width * bitmap->height * 4); i+=4) {
+				bmbuffer[i] = 255 - bmbuffer[i];
+			}
+		}
+
 		if(picture == NULL) {
 			amiga_warn_user("BMConvErr", NULL);
 		}
 
-#ifdef __amigaos4__
+//#ifdef __amigaos4__
 		/* Alpha-blend the image to the provided background colour.
 		 * This appears to be using an inverted alpha on OS3
 		 */
 		if((!bitmap->opaque) && (bg != NS_TRANSPARENT)) {
 			DoPictureMethod(picture, PICMTHD_TINTALPHA, colour_rb_swap(bg), TAG_DONE);
 		}
-#endif
+//#endif
 
 		if(bitmap->drawhandle) ReleaseDrawHandle(bitmap->drawhandle);
-
-		APTR drawhandle = ObtainDrawHandle(
+		
+		bitmap->drawhandle = ObtainDrawHandle(
 			NULL,
 			&rp,
 			scrn->ViewPort.ColorMap,
 			GGFX_DitherMode, dithermode,
 			TAG_DONE);
 
-		if(drawhandle) {
-			DrawPicture(drawhandle, picture, 0, 0, TAG_DONE);
-			bitmap->drawhandle = drawhandle;
+		if(bitmap->drawhandle) {
+			DrawPicture(bitmap->drawhandle, picture, 0, 0, TAG_DONE);
 		}
 		
 		DeletePicture(picture);

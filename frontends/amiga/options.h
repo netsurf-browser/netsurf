@@ -101,9 +101,18 @@ NSOPTION_INTEGER(local_codeset, 0)
 /* Use ExtMem */
 NSOPTION_BOOL(use_extmem, true)
 
+/* Don't invert alpha channel (guigfx) */
+NSOPTION_BOOL(invert_alpha, false)
+
 #else
 /** Options relevant for OS3 only **/
 
 NSOPTION_BOOL(friend_bitmap, false)
+
+/* Invert alpha channel (guigfx)
+ * Workaround for guigfx/render bug
+ */
+NSOPTION_BOOL(invert_alpha, true)
+
 #endif
 

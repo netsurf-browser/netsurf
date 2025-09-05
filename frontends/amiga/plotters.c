@@ -146,7 +146,7 @@ struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit
 #else
  	bitmap_set_format(&(bitmap_fmt_t) {
 		.layout = BITMAP_LAYOUT_ARGB8888,
-		.pma = false,
+		.pma = true,
 	});
    	
  	NSLOG(netsurf, INFO, "Set bitmap format to 0xAARRGGBB (native endian) (PMA)");
