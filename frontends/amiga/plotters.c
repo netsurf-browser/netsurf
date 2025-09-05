@@ -535,9 +535,11 @@ HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage 
 	/* tile down and across to extents  (msg->Bounds.MinX)*/
 	for (xf = -bfbm->offsetx; xf < msg->Bounds.MaxX; xf += bfbm->width) {
 		for (yf = -bfbm->offsety; yf < msg->Bounds.MaxY; yf += bfbm->height) {
+
 #ifdef __amigaos4__
 			if(__builtin_expect((GfxBase->LibNode.lib_Version >= 53) &&
-				(bfbm->palette_mapped == false), 1)) {
+					(bfbm->palette_mapped == false), 1)) {
+
 				CompositeTags(COMPOSITE_Src_Over_Dest, bfbm->bm, rp->BitMap,
 					COMPTAG_Flags, COMPFLAG_IgnoreDestAlpha,
 					COMPTAG_DestX, msg->Bounds.MinX,
@@ -561,32 +563,73 @@ HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage 
 					minterm = 0xc0;
 				} else {
 #endif
-					tag = BLITA_MaskPlane;
 					if((tag_data = (ULONG)bfbm->mask))
+						tag = BLITA_MaskPlane;
 						minterm = MINTERM_SRCMASK;
 #ifdef __amigaos4__
 				}
+#endif
 
-				BltBitMapTags(BLITA_Width, bfbm->width,
-					BLITA_Height, bfbm->height,
+				/* Ensure we blit the correct part of the BitMap and don't go out of bounds */
+				uint32_t h = bfbm->height;
+				uint32_t w = bfbm->width;
+				uint32_t sx = 0;
+				uint32_t sy = 0;
+				int32_t dx = xf;
+				int32_t dy = yf;
+
+				if((dx < msg->Bounds.MinX) && ((dx + w) < msg->Bounds.MinX))
+					continue;
+
+				if((dy < msg->Bounds.MinY) && ((dy + h) < msg->Bounds.MinY))
+					continue;		
+					
+
+				if((dx < msg->Bounds.MinX) && ((dx + w) >= msg->Bounds.MinX)) {
+					sx = (msg->Bounds.MinX - dx);
+					dx = msg->Bounds.MinX;
+					w -= sx;
+				}
+				if((dx + w) > msg->Bounds.MaxX) {
+					w -= (dx + w - msg->Bounds.MaxX - 1);
+				}
+
+				if((dy < msg->Bounds.MinY) && ((dy + h) >= msg->Bounds.MinY)) {
+					sy = (msg->Bounds.MinY - dy);
+					dy = msg->Bounds.MinY;
+					h -= sy;
+				}
+				if((dy + h) > msg->Bounds.MaxY) {
+					h -= (dy + h - msg->Bounds.MaxY - 1);
+				}
+#ifdef __amigaos4__
+				BltBitMapTags(BLITA_Width, w,
+					BLITA_Height, h,
 					BLITA_Source, bfbm->bm,
-					BLITA_Dest, rp,
-					BLITA_DestX, xf,
-					BLITA_DestY, yf,
+					BLITA_SrcX, sx,
+					BLITA_SrcY, sy,
+					BLITA_Dest, rp->BitMap,
+					BLITA_DestX, dx,
+					BLITA_DestY, dy,
 					BLITA_SrcType, BLITT_BITMAP,
-					BLITA_DestType, BLITT_RASTPORT,
+					BLITA_DestType, BLITT_BITMAP,
 					BLITA_Minterm, minterm,
 					tag, tag_data,
 					TAG_DONE);
 #else
 				if(tag_data && (tag == BLITA_MaskPlane)) {
-					BltMaskBitMapRastPort(bfbm->bm, 0, 0, rp, xf, yf,
-						bfbm->width, bfbm->height, minterm, tag_data);
+					/* Layer hook mustn't use the RastPort, so copy it and NULL the Layer pointer */
+					struct RastPort rpc;
+					CopyMem(rp, &rpc, sizeof(struct RastPort));
+					rpc.Layer = NULL;
+					BltMaskBitMapRastPort(bfbm->bm, sx, sy, &rpc, dx, dy,
+						w, h, minterm, tag_data);
 				} else {
-					BltBitMapRastPort(bfbm->bm, 0, 0, rp, xf, yf,
-						bfbm->width, bfbm->height, minterm);
+					BltBitMap(bfbm->bm, sx, sy, rp->BitMap, dx, dy,
+						w, h, 0xc0, 0xff, NULL);
 				}
 #endif
+
 			}		
 		}
 	}
