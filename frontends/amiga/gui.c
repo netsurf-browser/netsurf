@@ -1874,28 +1874,32 @@ static void ami_update_quals(struct gui_window_2 *gwin)
 /* exported interface documented in amiga/gui.h */
 nserror ami_gui_get_space_box(Object *obj, struct IBox **bbox)
 {
+	struct IBox *ib = AllocVec(sizeof(struct IBox), MEMF_PRIVATE);
+	if(ib == NULL) return NSERROR_NOMEM;
 #ifdef __amigaos4__
 	if(LIB_IS_AT_LEAST((struct Library *)SpaceBase, 53, 6)) {
-		*bbox = malloc(sizeof(struct IBox));
-		if(*bbox == NULL) return NSERROR_NOMEM;
-		GetAttr(SPACE_RenderBox, obj, (ULONG *)*bbox);
+		GetAttr(SPACE_RenderBox, obj, (ULONG *)ib);
 	} else
 #endif
 	{
-		GetAttr(SPACE_AreaBox, obj, (ULONG *)bbox);
+		struct IBox *t_ib;
+		GetAttr(SPACE_AreaBox, obj, (ULONG *)t_ib);
+		if(t_ib == NULL) {
+			FreeVec(ib);
+			return NSERROR_NOMEM;
+		}
+		/* Create a copy so this works the same as the newer SPACE_RenderBox */
+		CopyMem(t_ib, ib, sizeof(struct IBox));
 	}
 
+	*bbox = ib;
 	return NSERROR_OK;
 }
 
 /* exported interface documented in amiga/gui.h */
 void ami_gui_free_space_box(struct IBox *bbox)
 {
-#ifdef __amigaos4__
-	if(LIB_IS_AT_LEAST((struct Library *)SpaceBase, 53, 6)) {
-		free(bbox);
-	}
-#endif
+	FreeVec(bbox);
 }
 
 static bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin,
@@ -1926,8 +1930,10 @@ bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *restrict x, int *res
 		ns_x = (ULONG)(mouse_x - bbox->Left);
 		ns_y = (ULONG)(mouse_y - bbox->Top);
 
-		if((ns_x < 0) || (ns_x > bbox->Width) || (ns_y < 0) || (ns_y > bbox->Height))
+		if((ns_x < 0) || (ns_x > bbox->Width) || (ns_y < 0) || (ns_y > bbox->Height)) {
+			ami_gui_free_space_box(bbox);
 			return false;
+		}
 
 		ami_gui_free_space_box(bbox);
 	} else {
