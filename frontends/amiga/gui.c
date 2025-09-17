@@ -1883,13 +1883,10 @@ nserror ami_gui_get_space_box(Object *obj, struct IBox **bbox)
 #endif
 	{
 		struct IBox *t_ib;
-		GetAttr(SPACE_AreaBox, obj, (ULONG *)t_ib);
+		GetAttr(SPACE_AreaBox, obj, (ULONG *)&t_ib);
 		if(t_ib == NULL) {
-			/* Dummy values */
-			ib->Left = 0;
-			ib->Top = 0;
-			ib->Width = 0;
-			ib->Height = 0;
+			FreeVec(ib);
+			return NSERROR_NOMEM;
 		} else {
 			/* Create a copy so this works the same as the newer SPACE_RenderBox */
 			CopyMem(t_ib, ib, sizeof(struct IBox));
