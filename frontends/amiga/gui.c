@@ -1885,11 +1885,15 @@ nserror ami_gui_get_space_box(Object *obj, struct IBox **bbox)
 		struct IBox *t_ib;
 		GetAttr(SPACE_AreaBox, obj, (ULONG *)t_ib);
 		if(t_ib == NULL) {
-			FreeVec(ib);
-			return NSERROR_NOMEM;
+			/* Dummy values */
+			ib->Left = 0;
+			ib->Top = 0;
+			ib->Width = 0;
+			ib->Height = 0;
+		} else {
+			/* Create a copy so this works the same as the newer SPACE_RenderBox */
+			CopyMem(t_ib, ib, sizeof(struct IBox));
 		}
-		/* Create a copy so this works the same as the newer SPACE_RenderBox */
-		CopyMem(t_ib, ib, sizeof(struct IBox));
 	}
 
 	*bbox = ib;
@@ -1899,7 +1903,7 @@ nserror ami_gui_get_space_box(Object *obj, struct IBox **bbox)
 /* exported interface documented in amiga/gui.h */
 void ami_gui_free_space_box(struct IBox *bbox)
 {
-	FreeVec(bbox);
+	if(bbox != NULL) FreeVec(bbox);
 }
 
 static bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin,
