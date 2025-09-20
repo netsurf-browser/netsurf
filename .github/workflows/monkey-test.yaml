@@ -37,6 +37,7 @@ jobs:
                librsvg2-dev
                llvm
                pkg-config
+               python3-pyasyncore
                wbritish # Needed for `/usr/share/dict/words`, used by test
 
     - name: ccache
