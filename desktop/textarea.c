@@ -1087,7 +1087,7 @@ static bool textarea_reflow_multiline(struct textarea *ta,
 
 				continue;
 
-			} else if (len - b_off > 0) {
+			} else if (b_off < len) {
 				/* soft wrapped, find last space (if any) */
 				for (space = text + b_off; space > text;
 						space--) {
