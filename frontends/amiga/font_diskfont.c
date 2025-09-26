@@ -41,6 +41,7 @@
 
 static plot_font_style_t *prev_fstyle = NULL;
 static struct TextFont *prev_font = NULL;
+static struct RastPort *prev_rp = NULL;
 static struct RastPort temp_rp;
 static UBYTE style_set = 0;
 
@@ -90,7 +91,8 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 
 	if((prev_fstyle != NULL) && (prev_font != NULL) &&
 		(fstyle->family == prev_fstyle->family) &&
-		(fstyle->size == prev_fstyle->size)) {
+		(fstyle->size == prev_fstyle->size) &&
+		(rp == prev_rp)) {
 			/* Current font is correct, just SoftStyle it */
 			NSLOG(netsurf, INFO, "Applying SoftStyle to current font");
 			SetSoftStyle(rp, tattr.ta_Style, style_set);
@@ -116,6 +118,8 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 		memcpy(prev_fstyle, fstyle, sizeof(plot_font_style_t));
 		prev_font = bmfont;
 	}
+	
+	prev_rp = rp;
 
 	return bmfont;
 }
