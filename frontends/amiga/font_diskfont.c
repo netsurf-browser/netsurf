@@ -116,14 +116,13 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 	if((bmfont = OpenDiskFont(&tattr))) {
 		SetRPAttrs(rp, RPTAG_Font, bmfont, TAG_DONE);
 		style_set = AskSoftStyle(rp);
-	}
-
-	if(prev_fstyle != NULL) {
-		memcpy(prev_fstyle, fstyle, sizeof(plot_font_style_t));
+		prev_rp = rp;
 		prev_font = bmfont;
+
+		if(prev_fstyle != NULL) {
+			memcpy(prev_fstyle, fstyle, sizeof(plot_font_style_t));
+		}
 	}
-	
-	prev_rp = rp;
 
 	return bmfont;
 }
