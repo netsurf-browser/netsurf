@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 - 2016 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -50,14 +50,6 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 	char *fontname;
 	char font[MAX_FONT_NAME_SIZE];
 
-	if((prev_fstyle != NULL) && (prev_font != NULL) &&
-		(fstyle->family == prev_fstyle->family) &&
-		(fstyle->size == prev_fstyle->size) &&
-		(fstyle->flags == prev_fstyle->flags) &&
-		(fstyle->weight == prev_fstyle->weight)) {
-		return prev_font;
-	}
-
 	if(rp == NULL) return NULL;
 
 	tattr.ta_Flags = 0;
@@ -94,6 +86,15 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 
 	if (fstyle->weight >= 700)
 		tattr.ta_Style |= FSF_BOLD;
+
+	if((prev_fstyle != NULL) && (prev_font != NULL) &&
+		(fstyle->family == prev_fstyle->family) &&
+		(fstyle->size == prev_fstyle->size)) {
+			/* Current font is correct, just SoftStyle it */
+			NSLOG(netsurf, INFO, "Applying SoftStyle to current font");
+			SetSoftStyle(rp, tattr.ta_Style, AskSoftStyle(rp));
+			return prev_font;
+	}
 
 	snprintf(font, MAX_FONT_NAME_SIZE, "%s.font", fontname);
 	tattr.ta_Name = font;
