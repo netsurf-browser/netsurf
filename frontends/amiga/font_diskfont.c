@@ -91,8 +91,12 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 
 	if((prev_fstyle != NULL) && (prev_font != NULL) &&
 		(fstyle->family == prev_fstyle->family) &&
-		(fstyle->size == prev_fstyle->size) &&
-		(rp == prev_rp)) {
+		(fstyle->size == prev_fstyle->size)) {
+			 if(rp != prev_rp) {
+				 /* We have the correct font open, but it isn't set here */
+				 SetRPAttrs(rp, RPTAG_Font, prev_font, TAG_DONE);
+				 prev_rp = rp;
+			 }
 			/* Current font is correct, just SoftStyle it */
 			NSLOG(netsurf, INFO, "Applying SoftStyle to current font");
 			SetSoftStyle(rp, tattr.ta_Style, style_set);
