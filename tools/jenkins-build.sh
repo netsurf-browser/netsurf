@@ -515,6 +515,43 @@ ${SHAR256SUM} "${PKG_SRC}${PKG_SFX}" > ${PKG_SRC}.sha256
 
 ############ Package artifact deployment ################
 
+# retry_scp <src> <destination>
+# scp but retries with backoff if command fails
+retry_scp()
+{
+    scp_retries=10
+    scp_backoff=10
+    scp_res=0
+    scp "${1}" "${2}" || scp_res=$?
+    while [ ${scp_res} -ne 0 -a ${scp_retries} -gt 1 ]; do
+	scp_retries=$(( ${scp_retries} - 1 ))
+	scp_delay=$(( ( 10 - ${scp_retries} ) * ${scp_backoff} ))
+	echo "Retrying scp in ${scp_delay} seconds"
+	sleep ${scp_delay}
+	scp "${1}" "${2}" || scp_res=$?
+    done
+    return ${scp_res}
+}
+
+# retry_ssh <destination> <command>
+# retry ssh command until success or timeout
+retry_ssh()
+{
+    SSH_DEFAUT_RETRIES=10
+    ssh_retries=5
+    ssh_backoff=${SSH_DEFAUT_RETRIES}
+    ssh_res=0
+    ssh "${1}" "${2}" || ssh_res=$?
+    while [ ${ssh_res} -ne 0 -a ${ssh_retries} -gt 1 ]; do
+	ssh_retries=$(( ${ssh_retries} - 1 ))
+	ssh_delay=$(( ( ${SSH_DEFAUT_RETRIES} - ${ssh_retries} ) * ${ssh_backoff} ))
+	echo "Retrying ssh in ${ssh_delay} seconds"
+	sleep ${ssh_delay}
+	ssh "${1}" "${2}" || ssh_res=$?
+    done
+    return ${ssh_res}
+}
+
 #destination for package artifacts
 DESTDIR=/srv/ci.netsurf-browser.org/html/builds/${TARGET}/
 
@@ -523,7 +560,7 @@ OLD_ARTIFACT_TARGETS=""
 
 for SUFFIX in "${PKG_SFX}" .md5 .sha256;do
     # copy the file to the output - always use scp as it works local or remote
-    scp "${PKG_SRC}${SUFFIX}" netsurf@ci.netsurf-browser.org:${DESTDIR}/${NEW_ARTIFACT_TARGET}${SUFFIX}
+    retry_scp "${PKG_SRC}${SUFFIX}" "netsurf@ci.netsurf-browser.org:${DESTDIR}/${NEW_ARTIFACT_TARGET}${SUFFIX}"
 
     # remove the local file artifact
     rm -f "${PKG_SRC}${SUFFIX}"
@@ -535,7 +572,7 @@ done
 ############ Expired package artifact removal and latest linking ##############
 
 
-ssh netsurf@ci.netsurf-browser.org "rm -f ${OLD_ARTIFACT_TARGETS}"
+retry_ssh netsurf@ci.netsurf-browser.org "rm -f ${OLD_ARTIFACT_TARGETS}"
 if [ ${UPDATE_LATEST} = "yes" ]; then
-    ssh netsurf@ci.netsurf-browser.org "rm -f ${DESTDIR}/LATEST && echo "${NEW_ARTIFACT_TARGET}${PKG_SFX}" > ${DESTDIR}/LATEST"
+    retry_ssh netsurf@ci.netsurf-browser.org "rm -f ${DESTDIR}/LATEST && echo "${NEW_ARTIFACT_TARGET}${PKG_SFX}" > ${DESTDIR}/LATEST"
 fi
