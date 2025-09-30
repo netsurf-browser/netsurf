@@ -54,7 +54,14 @@ MAKE=make
 # NetSurf version number haiku needs it for package name
 NETSURF_VERSION="3.11"
 
+# should the "latest" link be updated
 UPDATE_LATEST=yes
+
+# number of retries for scp commands
+SCP_DEFAULT_RETRIES=5
+
+# number of retries for ssh commands
+SSH_DEFAUT_RETRIES=5
 
 # Ensure the combination of target and toolchain works and set build
 #   specific parameters too
@@ -519,15 +526,16 @@ ${SHAR256SUM} "${PKG_SRC}${PKG_SFX}" > ${PKG_SRC}.sha256
 # scp but retries with backoff if command fails
 retry_scp()
 {
-    scp_retries=10
+    scp_retries=${SCP_DEFAULT_RETRIES}
     scp_backoff=10
     scp_res=0
     scp "${1}" "${2}" || scp_res=$?
     while [ ${scp_res} -ne 0 -a ${scp_retries} -gt 1 ]; do
 	scp_retries=$(( ${scp_retries} - 1 ))
-	scp_delay=$(( ( 10 - ${scp_retries} ) * ${scp_backoff} ))
+	scp_delay=$(( ( ${SCP_DEFAULT_RETRIES} - ${scp_retries} ) * ${scp_backoff} ))
 	echo "Retrying scp in ${scp_delay} seconds"
 	sleep ${scp_delay}
+        scp_res=0
 	scp "${1}" "${2}" || scp_res=$?
     done
     return ${scp_res}
@@ -537,9 +545,8 @@ retry_scp()
 # retry ssh command until success or timeout
 retry_ssh()
 {
-    SSH_DEFAUT_RETRIES=10
-    ssh_retries=5
-    ssh_backoff=${SSH_DEFAUT_RETRIES}
+    ssh_retries=${SSH_DEFAUT_RETRIES}
+    ssh_backoff=10
     ssh_res=0
     ssh "${1}" "${2}" || ssh_res=$?
     while [ ${ssh_res} -ne 0 -a ${ssh_retries} -gt 1 ]; do
@@ -547,6 +554,7 @@ retry_ssh()
 	ssh_delay=$(( ( ${SSH_DEFAUT_RETRIES} - ${ssh_retries} ) * ${ssh_backoff} ))
 	echo "Retrying ssh in ${ssh_delay} seconds"
 	sleep ${ssh_delay}
+        ssh_res=0
 	ssh "${1}" "${2}" || ssh_res=$?
     done
     return ${ssh_res}
