@@ -710,7 +710,7 @@ static bool parse_glyph_data(struct parse_context *ctx, char c,
 			(c == '.' || c == '#')) {
 		if (ctx->data.in_gd.e[glyph] == NULL) {
 			ctx->data.in_gd.e[glyph] =
-					calloc(sizeof(struct glyph_entry), 1);
+				calloc(1, sizeof(struct glyph_entry));
 			if (ctx->data.in_gd.e[glyph] == NULL) {
 				LOG(LOG_ERROR, "  Couldn't allocate memory for "
 						"glyph entry\n");
@@ -1023,7 +1023,7 @@ static bool load_font(const char *path, struct font_data **data)
 		return false;
 	}
 
-	d = calloc(sizeof(struct font_data), 1);
+	d = calloc(1, sizeof(struct font_data));
 	if (d == NULL) {
 		LOG(LOG_ERROR, "Couldn't allocate memory for font data\n");
 		fclose(fp);

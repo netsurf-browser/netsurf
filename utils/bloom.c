@@ -58,7 +58,7 @@ struct bloom_filter {
 
 struct bloom_filter *bloom_create(size_t size)
 {
-	struct bloom_filter *r = calloc(sizeof(*r) + size, 1);
+	struct bloom_filter *r = calloc(1, sizeof(*r) + size);
         
 	if (r == NULL)
 		return NULL;

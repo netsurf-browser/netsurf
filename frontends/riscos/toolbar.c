@@ -225,7 +225,7 @@ struct toolbar *ro_toolbar_create(struct theme_descriptor *descriptor,
 
 	/* Allocate memory for the bar and link it into the list of bars. */
 
-	toolbar = calloc(sizeof(struct toolbar), 1);
+	toolbar = calloc(1, sizeof(struct toolbar));
 	if (toolbar == NULL) {
 		NSLOG(netsurf, INFO, "No memory for malloc()");
 		ro_warn_user("NoMemory", 0);
