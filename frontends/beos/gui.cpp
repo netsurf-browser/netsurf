@@ -1177,6 +1177,7 @@ int gui_init_replicant(int argc, char** argv)
 	struct netsurf_table beos_table = {
 		&beos_misc_table,
 		beos_window_table,
+		NULL, /* corewindow */
 		beos_download_table,
 		beos_clipboard_table,
                 &beos_fetch_table,
