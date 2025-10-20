@@ -92,6 +92,11 @@ case ${TARGET} in
     "haiku")
 	case ${HOST} in
 	    "i586-pc-haiku")
+		# 32bit x86 (gcc) abi
+		;;
+
+	    "x86_64-unknown-haiku")
+		# 64bit x86 (gcc) abi
 		;;
 
 	    *)
