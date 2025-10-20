@@ -1054,9 +1054,11 @@ void die(const char * const error)
 static struct gui_fetch_table beos_fetch_table = {
 	fetch_filetype,
 	gui_get_resource_url,
-	NULL, // ???
+	NULL, // get_resource_data
 	NULL, // release_resource_data
 	NULL, // fetch_mimetype
+	NULL, // socket open
+	NULL, // socket close
 };
 
 static struct gui_misc_table beos_misc_table = {
