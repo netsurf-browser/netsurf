@@ -38,7 +38,7 @@ extern "C" {
 #include <private/interface/ColumnListView.h>
 #include <private/interface/ColumnTypes.h>
 #include <GroupLayoutBuilder.h>
-#include <NetworkCookieJar.h>
+#include <private/netservices/NetworkCookieJar.h>
 #include <OutlineListView.h>
 #include <ScrollView.h>
 #include <StringView.h>
