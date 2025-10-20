@@ -51,9 +51,6 @@ ATARIARCH=68020-60
 # make tool
 MAKE=make
 
-# NetSurf version number haiku needs it for package name
-NETSURF_VERSION="3.11"
-
 # should the "latest" link be updated
 UPDATE_LATEST=yes
 
@@ -90,13 +87,18 @@ case ${TARGET} in
 	;;
 
     "haiku")
+	# NetSurf version number haiku needs it for package name
+	NETSURF_VERSION="3.12"
+
 	case ${HOST} in
 	    "i586-pc-haiku")
-		# 32bit x86 (gcc) abi
+	    # 32bit x86 (gcc) abi
+		PKG_SRC="netsurf_x86-${NETSURF_VERSION}-1-x86_gcc2"
 		;;
 
 	    "x86_64-unknown-haiku")
 		# 64bit x86 (gcc) abi
+		PKG_SRC="netsurf-${NETSURF_VERSION}-1-x86_64"
 		;;
 
 	    *)
@@ -106,7 +108,6 @@ case ${TARGET} in
 
 	esac
 
-	PKG_SRC="netsurf_x86-${NETSURF_VERSION}-1-x86_gcc2"
 	PKG_SFX=.hpkg
 	;;
 

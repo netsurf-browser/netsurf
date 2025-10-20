@@ -56,7 +56,7 @@ summary	"A multi-platform web browser"\n\
 description	"Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser for RISC OS, UNIX-like platforms (including Linux), Mac OS X, and more.Whether you want to check your webmail, read the news or post to discussion forums, NetSurf is your lightweight gateway to the world wide web. Actively developed, NetSurf is continually evolving and improving."\n\
 vendor	"NetSurf"\n\
 packager	"$(PACKAGER)"\n\
-copyrights	{\n\t"2003-2018 The NetSurf Browser project"\n}\n\
+copyrights	{\n\t"2003-2025 The NetSurf Browser project"\n}\n\
 licenses	{\n\t"GNU GPL v2"\n}\n\
 urls	{\n\t"http://www.netsurf-browser.org/"\n}\n\
 source-urls	{\n\t"http://download.netsurf-browser.org/netsurf/releases/source/netsurf-$(VERSION_MAJ).$(VERSION_MIN)-src.tar.gz"\n}\n\
