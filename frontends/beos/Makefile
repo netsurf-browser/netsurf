@@ -24,10 +24,10 @@ COMMON_WARNFLAGS += -Wno-multichar
 
 # compiler flags
 CFLAGS += -std=c99 -Dnsbeos -D_BSD_SOURCE -D_POSIX_C_SOURCE -Drestrict="" -g
-CFLAGS += -I$(PREFIX)/include
+CFLAGS += -I$(PREFIX)/include -I/boot/system/develop/headers/private/netservices
 
 CXXFLAGS += -Dnsbeos -D_BSD_SOURCE -D_POSIX_C_SOURCE -Drestrict="" -g
-CXXFLAGS += -I$(PREFIX)/include
+CXXFLAGS += -I$(PREFIX)/include -I/boot/system/develop/headers/private/netservices
 
 VERSION_FULL := $(shell sed -n '/_version.*=.*"/{s/.*"\(.*\)".*/\1/;p;}' desktop/version.c))
 VERSION_MAJ := $(shell sed -n '/_major/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
