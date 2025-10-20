@@ -460,49 +460,117 @@ set_colour_from_ui(struct nsoption_s *opts,
 }
 
 /**
- * Set option defaults for framebuffer frontend
+ * Set option defaults for beos frontend
  *
  * @param defaults The option table to update.
  * @return error status.
  */
-static nserror set_defaults(struct nsoption_s *defaults)
+static nserror set_option_defaults(struct nsoption_s *defaults)
 {
 	/* set system colours for beos ui */
-	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_ActiveBorder, 0x00000000);
-	set_colour_from_ui(defaults, B_WINDOW_TAB_COLOR, NSOPTION_sys_colour_ActiveCaption, 0x00dddddd);
-	set_colour_from_ui(defaults, B_PANEL_BACKGROUND_COLOR, NSOPTION_sys_colour_AppWorkspace, 0x00eeeeee);
-	set_colour_from_ui(defaults, B_DESKTOP_COLOR, NSOPTION_sys_colour_Background, 0x00aa0000);
-	set_colour_from_ui(defaults, B_CONTROL_BACKGROUND_COLOR, NSOPTION_sys_colour_ButtonFace, 0x00aaaaaa);
-	set_colour_from_ui(defaults, B_CONTROL_HIGHLIGHT_COLOR, NSOPTION_sys_colour_ButtonHighlight, 0x00cccccc);
-	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_ButtonShadow, 0x00bbbbbb);
-	set_colour_from_ui(defaults, B_CONTROL_TEXT_COLOR, NSOPTION_sys_colour_ButtonText, 0x00000000);
-	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_CaptionText, 0x00000000);
-	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_GrayText, 0x00777777);
-	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_Highlight, 0x00ee0000);
-	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_HighlightText, 0x00000000);
-	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_InactiveBorder, 0x00000000);
-	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_InactiveCaption, 0x00ffffff);
-	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_InactiveCaptionText, 0x00cccccc);
-	set_colour_from_ui(defaults, B_TOOL_TIP_BACKGROUND_COLOR, NSOPTION_sys_colour_InfoBackground, 0x00aaaaaa);
-	set_colour_from_ui(defaults, B_TOOL_TIP_TEXT_COLOR, NSOPTION_sys_colour_InfoText, 0x00000000);
-	set_colour_from_ui(defaults, B_MENU_BACKGROUND_COLOR, NSOPTION_sys_colour_Menu, 0x00aaaaaa);
-	set_colour_from_ui(defaults, B_MENU_ITEM_TEXT_COLOR, NSOPTION_sys_colour_MenuText, 0x00000000);
-	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_Scrollbar, 0x00aaaaaa);
-	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_ThreeDDarkShadow, 0x00555555);
-	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_ThreeDFace, 0x00dddddd);
-	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_ThreeDHighlight, 0x00aaaaaa);
-	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_ThreeDLightShadow, 0x00999999);
-	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_ThreeDShadow, 0x00777777);
-	set_colour_from_ui(defaults, B_DOCUMENT_BACKGROUND_COLOR, NSOPTION_sys_colour_Window, 0x00aaaaaa);
-	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_WindowFrame, 0x00000000);
-	set_colour_from_ui(defaults, B_DOCUMENT_TEXT_COLOR, NSOPTION_sys_colour_WindowText, 0x00000000);
+	struct {
+		color_which ui;
+		colour dflt;
+		enum nsoption_e option;
+	} entries[] = {
+		{
+			B_DOCUMENT_TEXT_COLOR,
+			0x00000000,
+			NSOPTION_sys_colour_AccentColor
+		}, {
+			B_CONTROL_HIGHLIGHT_COLOR,
+			0x00000000,
+			NSOPTION_sys_colour_AccentColorText
+		}, {
+			B_SHINE_COLOR,
+			0x00000000,
+			NSOPTION_sys_colour_ActiveText
+		}, {
+			B_CONTROL_BORDER_COLOR,
+			0x00000000,
+			NSOPTION_sys_colour_ButtonBorder
+		}, {
+			B_CONTROL_BACKGROUND_COLOR,
+			0x00aaaaaa,
+			NSOPTION_sys_colour_ButtonFace
+		}, {
+			B_CONTROL_TEXT_COLOR,
+			0x00000000,
+			NSOPTION_sys_colour_ButtonText
+		}, {
+			B_DOCUMENT_BACKGROUND_COLOR,
+			0x00aaaaaa,
+			NSOPTION_sys_colour_Canvas
+		}, {
+			B_DOCUMENT_TEXT_COLOR,
+			0x00000000,
+			NSOPTION_sys_colour_CanvasText
+		}, {
+			B_CONTROL_BACKGROUND_COLOR,
+			0x00000000,
+			NSOPTION_sys_colour_Field
+		}, {
+			B_CONTROL_TEXT_COLOR,
+			0x00000000,
+			NSOPTION_sys_colour_FieldText
+		}, {
+			NOCOL,
+			0x00777777,
+			NSOPTION_sys_colour_GrayText
+		}, {
+			NOCOL,
+			0x00ee0000,
+			NSOPTION_sys_colour_Highlight
+		}, {
+			NOCOL,
+			0x00000000,
+			NSOPTION_sys_colour_HighlightText
+		}, {
+			B_LINK_TEXT_COLOR,
+			0x00000000,
+			NSOPTION_sys_colour_LinkText
+		}, {
+			B_CONTROL_MARK_COLOR,
+			0x00000000,
+			NSOPTION_sys_colour_Mark
+		}, {
+			B_CONTROL_TEXT_COLOR,
+			0x00000000,
+			NSOPTION_sys_colour_MarkText
+		}, {
+			B_TOOL_TIP_BACKGROUND_COLOR,
+			0x00000000,
+			NSOPTION_sys_colour_SelectedItem
+		}, {
+			B_TOOL_TIP_TEXT_COLOR,
+			0x00000000,
+			NSOPTION_sys_colour_SelectedItemText
+		}, {
+			B_LINK_VISITED_COLOR,
+			0x00000000,
+			NSOPTION_sys_colour_VisitedText
+		}, {
+			NOCOL,
+			0x00000000,
+			NSOPTION_LISTEND
+		},
+	};
+
+	int idx;
+
+	for (idx=0; entries[idx].option != NSOPTION_LISTEND; idx++) {
+		set_colour_from_ui(defaults,
+				   entries[idx].ui,
+				   entries[idx].option,
+				   entries[idx].dflt);
+	}
 
 	return NSERROR_OK;
 }
 
 void nsbeos_update_system_ui_colors(void)
 {
-	set_defaults(nsoptions);
+	set_option_defaults(nsoptions);
 }
 
 /**
@@ -1042,7 +1110,7 @@ int main(int argc, char** argv)
 	nslog_init(nslog_stream_configure, &argc, argv);
 
 	/* user options setup */
-	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	ret = nsoption_init(set_option_defaults, &nsoptions, &nsoptions_default);
 	if (ret != NSERROR_OK) {
 		die("Options failed to initialise");
 	}
@@ -1134,7 +1202,7 @@ int gui_init_replicant(int argc, char** argv)
 
 	// FIXME: use options as readonly for replicants
 	/* user options setup */
-	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	ret = nsoption_init(set_option_defaults, &nsoptions, &nsoptions_default);
 	if (ret != NSERROR_OK) {
 		// FIXME: must not die when in replicant!
 		die("Options failed to initialise");
