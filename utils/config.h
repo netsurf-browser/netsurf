@@ -82,8 +82,9 @@ char *strcasestr(const char *haystack, const char *needle);
  *  UnixLib if building for RISC OS.
  */
 #if ((defined(_GNU_SOURCE) && !defined(__APPLE__)) ||	\
-     defined(NS_NEW_GLIBC) || \
-     defined(__riscos__) || \
+     defined(NS_NEW_GLIBC) ||				\
+     defined(__riscos__) ||				\
+     defined(__HAIKU__) ||				\
      defined(NetBSD_v8))
 #define HAVE_STRCHRNUL
 #else
