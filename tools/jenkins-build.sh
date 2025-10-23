@@ -112,6 +112,8 @@ case ${TARGET} in
 
 	esac
 
+	IDENTIFIER="${HOST}-${IDENTIFIER}"
+	OLD_IDENTIFIER="${HOST}-${OLD_IDENTIFIER}"
 	PKG_SFX=.hpkg
 	;;
 
