@@ -60,6 +60,9 @@ SCP_DEFAULT_RETRIES=5
 # number of retries for ssh commands
 SSH_DEFAUT_RETRIES=5
 
+# use rsync instead of scp
+USE_RSYNC=0
+
 # Ensure the combination of target and toolchain works and set build
 #   specific parameters too
 case ${TARGET} in
@@ -89,6 +92,7 @@ case ${TARGET} in
     "haiku")
 	# NetSurf version number haiku needs it for package name
 	NETSURF_VERSION="3.12"
+	USE_RSYNC=1
 
 	case ${HOST} in
 	    "i586-pc-haiku")
@@ -535,15 +539,25 @@ retry_scp()
     scp_retries=${SCP_DEFAULT_RETRIES}
     scp_backoff=10
     scp_res=0
-    scp "${1}" "${2}" || scp_res=$?
+    if [ ${USE_RSYNC} -ne 0 ]; then
+	rsync -avzPh -e"ssh" "${1}" "${2}" || scp_res=$?
+    else
+	scp "${1}" "${2}" || scp_res=$?
+    fi
+
     while [ ${scp_res} -ne 0 -a ${scp_retries} -gt 1 ]; do
 	scp_retries=$(( ${scp_retries} - 1 ))
 	scp_delay=$(( ( ${SCP_DEFAULT_RETRIES} - ${scp_retries} ) * ${scp_backoff} ))
 	echo "Retrying scp in ${scp_delay} seconds"
 	sleep ${scp_delay}
         scp_res=0
-	scp "${1}" "${2}" || scp_res=$?
+	if [ ${USE_RSYNC} -ne 0 ]; then
+	    rsync -avzPh -e"ssh" "${1}" "${2}" || scp_res=$?
+	else
+	    scp "${1}" "${2}" || scp_res=$?
+	fi
     done
+
     return ${scp_res}
 }
 
