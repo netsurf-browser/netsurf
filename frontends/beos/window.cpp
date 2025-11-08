@@ -40,6 +40,7 @@ extern "C" {
 #include "utils/utf8.h"
 #include "utils/utils.h"
 #include "utils/nsurl.h"
+#include "netsurf/inttypes.h"
 #include "netsurf/content_type.h"
 #include "netsurf/browser_window.h"
 #include "netsurf/mouse.h"
@@ -681,7 +682,7 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 	BRect updateRect;
 	struct rect clip;
 
-	struct redraw_context ctx = { true, true, &nsbeos_plotters };
+	struct redraw_context ctx = { true, true, &nsbeos_plotters, NULL};
 
 	assert(g);
 	assert(g->bw);
@@ -761,8 +762,8 @@ void nsbeos_window_keypress_event(BView *view, gui_window *g, BMessage *event)
 	if (!numbytes)
 		numbytes = strlen(bytes);
 
-	NSLOG(netsurf, INFO, "mods 0x%08lx key %ld raw %ld byte[0] %d", mods,
-	      key, raw_char, buff[0]);
+	NSLOG(netsurf, INFO, "mods 0x%08"PRIx32" key %"PRIu32" raw %"PRIu32" byte[0] %d",
+	      mods, key, raw_char, buff[0]);
 
 	char byte;
 	if (numbytes == 1) {
@@ -813,6 +814,7 @@ void nsbeos_window_keypress_event(BView *view, gui_window *g, BMessage *event)
 				*/
 				case 0:
 					nskey = (uint32_t)0;
+					break;
 				default:
 					nskey = (uint32_t)raw_char;
 					/*if (simple_p)

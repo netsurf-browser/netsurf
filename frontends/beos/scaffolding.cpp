@@ -878,6 +878,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			// FALL THROUGH
 			// handle refs
 		}
+		fallthrough;
 		case B_REFS_RECEIVED:
 		{
 			int32 i;
@@ -1027,7 +1028,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		case BROWSER_NAVIGATE_RELOAD_ALL:
 		case 'relo':
 			reloadAll = true;
-			// FALLTHRU
+			fallthrough;
 		case BROWSER_NAVIGATE_RELOAD:
 			browser_window_reload(bw, reloadAll);
 			break;

@@ -36,6 +36,7 @@ extern "C" {
 #include "utils/log.h"
 #include "utils/nsoption.h"
 #include "utils/nsurl.h"
+#include "netsurf/inttypes.h"
 #include "netsurf/layout.h"
 }
 
@@ -204,7 +205,7 @@ static nserror beos_font_position(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
-	NSLOG(netsurf, DEEPDEBUG, "(, '%s', %d, %d, , )", string, length, x);
+	NSLOG(netsurf, DEEPDEBUG, "(, '%s', %"PRIsizet", %d, , )", string, length, x);
 
 	int index;
 	BFont font;
@@ -261,7 +262,7 @@ static nserror beos_font_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
-	NSLOG(netsurf, DEEPDEBUG, "(, '%s', %d, %d, , )", string, length, x);
+	NSLOG(netsurf, DEEPDEBUG, "(, '%s', %"PRIsizet", %d, , )", string, length, x);
 	int index = 0;
 	BFont font;
 

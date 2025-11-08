@@ -25,6 +25,7 @@
 extern "C" {
 #include "utils/errors.h"
 #include "beos/schedule.h"
+#include "netsurf/inttypes.h"
 #include "netsurf/content_type.h"
 #include "netsurf/browser_window.h"
 
@@ -122,7 +123,7 @@ schedule_run(void)
 	int32 i;
 
 	NSLOG(schedule, DEBUG,
-	      "Checking %ld callbacks to for deadline.",
+	      "Checking %"PRId32" callbacks to for deadline.",
 	      callbacks->CountItems());
 
 	/* Run all the callbacks which made it this far. */
