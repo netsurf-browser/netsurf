@@ -207,7 +207,7 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 		}
 	}
 
-	NSLOG(netsurf, INFO, "fetch_rsrc: 0x%08"PRIx32", %"PRId32", '%s'\n",
+	NSLOG(netsurf, INFO, "fetch_rsrc: 0x%08" PRIx32 ", %" PRId32 ", '%s'\n",
 	      type, id, c->name);
 
 	bool found;

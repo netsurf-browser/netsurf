@@ -762,7 +762,8 @@ void nsbeos_window_keypress_event(BView *view, gui_window *g, BMessage *event)
 	if (!numbytes)
 		numbytes = strlen(bytes);
 
-	NSLOG(netsurf, INFO, "mods 0x%08"PRIx32" key %"PRIu32" raw %"PRIu32" byte[0] %d",
+	NSLOG(netsurf, INFO,
+	      "mods 0x%08" PRIx32 " key %" PRIu32 " raw %" PRIu32 " byte[0] %d",
 	      mods, key, raw_char, buff[0]);
 
 	char byte;

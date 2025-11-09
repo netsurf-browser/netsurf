@@ -66,6 +66,7 @@ extern "C" {
 #include "netsurf/browser_window.h"
 #include "netsurf/form.h"
 #include "netsurf/keypress.h"
+#include "netsurf/inttypes.h"
 #include "desktop/browser_history.h"
 #include "desktop/version.h"
 #include "desktop/searchweb.h"
@@ -855,7 +856,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 	bool reloadAll = false;
 
 	NSLOG(netsurf, INFO,
-	      "nsbeos_scaffolding_dispatch_event() what = 0x%08lx",
+	      "nsbeos_scaffolding_dispatch_event() what = 0x%08" PRIx32,
 	      message->what);
 	switch (message->what) {
 		case B_QUIT_REQUESTED:

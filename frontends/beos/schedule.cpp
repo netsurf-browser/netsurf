@@ -123,7 +123,7 @@ schedule_run(void)
 	int32 i;
 
 	NSLOG(schedule, DEBUG,
-	      "Checking %"PRId32" callbacks to for deadline.",
+	      "Checking %" PRId32 " callbacks to for deadline.",
 	      callbacks->CountItems());
 
 	/* Run all the callbacks which made it this far. */
