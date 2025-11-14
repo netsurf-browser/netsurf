@@ -4727,8 +4727,7 @@ gui_window_create(struct browser_window *bw,
 {
 	struct gui_window *g = NULL;
 	ULONG offset = 0;
-	ULONG curx = nsoption_int(window_x), cury = nsoption_int(window_y);
-	ULONG curw = nsoption_int(window_width), curh = nsoption_int(window_height);
+	struct Window *ref = NULL;
 	char nav_west[100],nav_west_s[100],nav_west_g[100];
 	char nav_east[100],nav_east_s[100],nav_east_g[100];
 	char stop[100],stop_s[100],stop_g[100];
@@ -4750,22 +4749,9 @@ gui_window_create(struct browser_window *bw,
 	if (nsoption_bool(kiosk_mode)) flags &= ~GW_CREATE_TAB;
 	if (nsoption_bool(resize_with_contents)) idcmp_sizeverify = 0;
 
-	/* Offset the new window by titlebar + 1 as per AmigaOS style guide.
-	 * If we don't have a clone window we offset by all windows open. */
-	offset = scrn->WBorTop + scrn->Font->ta_YSize + 1;
-
 	if(existing) {
-		curx = existing->shared->win->LeftEdge;
-		cury = existing->shared->win->TopEdge + offset;
-		curw = existing->shared->win->Width;
-		curh = existing->shared->win->Height;
-	} else {
-		if(nsoption_bool(kiosk_mode) == false) {
-			cury += offset * ami_gui_count_windows(0, NULL);
-		}
+		ref = existing->shared->win;
 	}
-
-	if(curh > (scrn->Height - cury)) curh = scrn->Height - cury;
 
 	g = calloc(1, sizeof(struct gui_window));
 
@@ -5096,10 +5082,6 @@ gui_window_create(struct browser_window *bw,
 			WA_DragBar, TRUE,
 			WA_CloseGadget, TRUE,
 			WA_SizeGadget, TRUE,
-			WA_Top,cury,
-			WA_Left,curx,
-			WA_Width,curw,
-			WA_Height,curh,
 			WA_PubScreen,scrn,
 			WA_ReportMouse,TRUE,
 			refresh_mode, TRUE,
@@ -5111,6 +5093,8 @@ gui_window_create(struct browser_window *bw,
 				IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
 				IDCMP_REFRESHWINDOW |
 				IDCMP_ACTIVEWINDOW | IDCMP_EXTENDEDMOUSE,
+			WINDOW_Position, WPOS_FULLSCREEN,
+			WINDOW_RefWindow, ref,
 			WINDOW_IconifyGadget, iconifygadget,
 			WINDOW_MenuStrip, menu,
 			WINDOW_MenuUserData, WGUD_HOOK,
@@ -5383,6 +5367,9 @@ gui_window_create(struct browser_window *bw,
 	g->shared->win = (struct Window *)RA_OpenWindow(g->shared->objects[OID_MAIN]);
 
 	NSLOG(netsurf, INFO, "Window opened, adding border gadgets");
+
+	/* Clear the reference window pointer to ensure it doesn't get used later */
+	SetAttrs(g->shared->objects[OID_MAIN], WINDOW_RefWindow, NULL, TAG_DONE);
 
 	if(!g->shared->win)
 	{
