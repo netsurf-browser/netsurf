@@ -5093,7 +5093,7 @@ gui_window_create(struct browser_window *bw,
 				IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
 				IDCMP_REFRESHWINDOW |
 				IDCMP_ACTIVEWINDOW | IDCMP_EXTENDEDMOUSE,
-			WINDOW_Position, WPOS_TOPLEFT,
+			WINDOW_Position, WPOS_FULLSCREEN,
 			WINDOW_RefWindow, ref,
 			WINDOW_IconifyGadget, iconifygadget,
 			WINDOW_MenuStrip, menu,
