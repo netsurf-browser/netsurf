@@ -92,7 +92,6 @@ enum {
 	M_PREFS,
 	 M_PREDIT,
 	 M_BAR_S1,
-	 M_SNAPSHOT,
 	 M_PRSAVE,
 	/* ARexx menu */
 	M_AREXX,

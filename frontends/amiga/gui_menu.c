@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2024 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2017-2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -458,17 +458,6 @@ HOOKF(void, ami_menu_item_hotlist_entries, APTR, window, struct IntuiMessage *)
 HOOKF(void, ami_menu_item_settings_edit, APTR, window, struct IntuiMessage *)
 {
 	ami_gui_opts_open();
-}
-
-HOOKF(void, ami_menu_item_settings_snapshot, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	nsoption_set_int(window_x, ami_gui2_get_window(gwin)->LeftEdge);
-	nsoption_set_int(window_y, ami_gui2_get_window(gwin)->TopEdge);
-	nsoption_set_int(window_width, ami_gui2_get_window(gwin)->Width);
-	nsoption_set_int(window_height, ami_gui2_get_window(gwin)->Height);
 }
 
 HOOKF(void, ami_menu_item_settings_save, APTR, window, struct IntuiMessage *)
@@ -1045,8 +1034,6 @@ static void ami_init_menulabs(struct ami_menu_data **md)
 	ami_menu_alloc_item(md, M_PREDIT,   NM_ITEM, "SettingsEdit", NULL, "TBImages:list_prefs",
 			ami_menu_item_settings_edit, NULL, 0);
 	ami_menu_alloc_item(md, M_BAR_S1,   NM_ITEM, NM_BARLABEL,    NULL, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, M_SNAPSHOT, NM_ITEM, "SnapshotWindow",NULL, "TBImages:list_hold",
-			ami_menu_item_settings_snapshot, NULL, 0);
 	ami_menu_alloc_item(md, M_PRSAVE,   NM_ITEM, "SettingsSave", NULL, "TBImages:list_use",
 			ami_menu_item_settings_save, NULL, 0);
 

@@ -5093,7 +5093,7 @@ gui_window_create(struct browser_window *bw,
 				IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
 				IDCMP_REFRESHWINDOW |
 				IDCMP_ACTIVEWINDOW | IDCMP_EXTENDEDMOUSE,
-			WINDOW_Position, WPOS_FULLSCREEN,
+			WINDOW_Position, WPOS_TOPLEFT,
 			WINDOW_RefWindow, ref,
 			WINDOW_IconifyGadget, iconifygadget,
 			WINDOW_MenuStrip, menu,
@@ -5105,6 +5105,10 @@ gui_window_create(struct browser_window *bw,
 			WINDOW_SharedPort, sport,
 			WINDOW_BuiltInScroll, TRUE,
 			WINDOW_GadgetHelp, TRUE,
+#ifdef __amigaos4__
+			WINDOW_UniqueID, "NS_MAIN_WIN",
+			WINDOW_PopupGadget, TRUE,
+#endif
 			WINDOW_UserData, g->shared,
   			WINDOW_ParentGroup, g->shared->objects[GID_MAIN] = LayoutVObj,
 				LAYOUT_DeferLayout, defer_layout,
