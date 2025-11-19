@@ -1034,11 +1034,6 @@ static void ami_set_screen_defaults(struct Screen *screen)
 	int top = (screen->Height / 2) - (height / 2);
 	int left = (screen->Width / 2) - (width / 2);
 
-	nsoption_default_set_int(hotlist_window_ypos, top);
-	nsoption_default_set_int(hotlist_window_xpos, left);
-	nsoption_default_set_int(hotlist_window_xsize, width);
-	nsoption_default_set_int(hotlist_window_ysize, height);
-
 #ifdef __amigaos4__
 	nsoption_default_set_int(redraw_tile_size_x, screen->Width);
 	nsoption_default_set_int(redraw_tile_size_y, screen->Height);

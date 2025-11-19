@@ -1,5 +1,5 @@
 /*
- * Copyright 2008, 2009, 2017 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -67,8 +67,6 @@ enum {
 	  AMI_HOTLIST_M_COLLAPSE_FOLDERS,
 	  AMI_HOTLIST_M_COLLAPSE_LINKS,
 	 AMI_HOTLIST_M_BAR_P2,
-	 AMI_HOTLIST_M_SNAPSHOT,
-	 AMI_HOTLIST_M_BAR_P3,
 	 AMI_HOTLIST_M_CLOSE,
 	/* Edit menu */
 	AMI_HOTLIST_M_EDIT,
@@ -354,17 +352,6 @@ HOOKF(void, ami_hotlist_menu_item_project_collapse_links, APTR, window, struct I
 	hotlist_contract(false);
 }
 
-HOOKF(void, ami_hotlist_menu_item_project_snapshot, APTR, window, struct IntuiMessage *)
-{
-	struct ami_corewindow *ami_cw;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&ami_cw);
-
-	nsoption_set_int(hotlist_window_ypos, ami_cw->win->TopEdge);
-	nsoption_set_int(hotlist_window_xpos, ami_cw->win->LeftEdge);
-	nsoption_set_int(hotlist_window_xsize, ami_cw->win->Width);
-	nsoption_set_int(hotlist_window_ysize, ami_cw->win->Height);
-}
-
 HOOKF(void, ami_hotlist_menu_item_project_close, APTR, window, struct IntuiMessage *)
 {
 	struct ami_corewindow *ami_cw;
@@ -427,9 +414,6 @@ static void ami_hotlist_menulabs(struct ami_menu_data **md)
 	ami_menu_alloc_item(md, AMI_HOTLIST_M_COLLAPSE_LINKS,   NM_SUB, "Links", NULL, NULL,
 		ami_hotlist_menu_item_project_collapse_links, NULL, 0);
 	ami_menu_alloc_item(md, AMI_HOTLIST_M_BAR_P2, NM_ITEM, NM_BARLABEL, NULL, NULL, NULL, NULL, 0);
-	ami_menu_alloc_item(md, AMI_HOTLIST_M_SNAPSHOT,   NM_ITEM, "SnapshotWindow", NULL, "TBImages:list_hold",
-		ami_hotlist_menu_item_project_snapshot, NULL, 0);
-	ami_menu_alloc_item(md, AMI_HOTLIST_M_BAR_P3, NM_ITEM, NM_BARLABEL, NULL, NULL, NULL, NULL, 0);
 	ami_menu_alloc_item(md, AMI_HOTLIST_M_CLOSE,   NM_ITEM, "CloseWindow", "K", "TBImages:list_cancel",
 		ami_hotlist_menu_item_project_close, NULL, 0);
 
@@ -475,18 +459,14 @@ ami_hotlist_create_window(struct ami_hotlist_window *hotlist_win)
 	}
 
 	ami_cw->objects[GID_CW_WIN] = WindowObj,
-  	    WA_ScreenTitle, ami_gui_get_screen_title(),
-       	WA_Title, ami_cw->wintitle,
-       	WA_Activate, TRUE,
-       	WA_DepthGadget, TRUE,
-       	WA_DragBar, TRUE,
-       	WA_CloseGadget, TRUE,
-       	WA_SizeGadget, TRUE,
+		WA_ScreenTitle, ami_gui_get_screen_title(),
+		WA_Title, ami_cw->wintitle,
+		WA_Activate, TRUE,
+		WA_DepthGadget, TRUE,
+		WA_DragBar, TRUE,
+		WA_CloseGadget, TRUE,
+		WA_SizeGadget, TRUE,
 		WA_SizeBRight, TRUE,
-		WA_Top, nsoption_int(hotlist_window_ypos),
-		WA_Left, nsoption_int(hotlist_window_xpos),
-		WA_Width, nsoption_int(hotlist_window_xsize),
-		WA_Height, nsoption_int(hotlist_window_ysize),
 		WA_PubScreen, ami_gui_get_screen(),
 		WA_ReportMouse, TRUE,
 		refresh_mode, TRUE,
@@ -503,6 +483,10 @@ ami_hotlist_create_window(struct ami_hotlist_window *hotlist_win)
 		WINDOW_MenuStrip, ami_hotlist_menu_create(hotlist_win),
 		WINDOW_MenuUserData, WGUD_HOOK,
 		WINDOW_IconifyGadget, FALSE,
+#ifdef __amigaos4__
+		WINDOW_UniqueID, "NS_HOTLIST_WIN",
+		WINDOW_PopupGadget, TRUE,
+#endif
 		WINDOW_Position, WPOS_CENTERSCREEN,
 		WINDOW_ParentGroup, ami_cw->objects[GID_CW_MAIN] = LayoutVObj,
 			LAYOUT_AddChild, ami_cw->objects[GID_CW_DRAW] = SpaceObj,
