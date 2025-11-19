@@ -235,6 +235,8 @@ ami_history_local_create_window(struct ami_history_local_window *history_local_w
 				GA_ID, GID_CW_DRAW,
 				SPACE_Transparent, TRUE,
 				SPACE_BevelStyle, BVS_DISPLAY,
+				SPACE_MinWidth, 50,
+				SPACE_MinHeight, 50,
 				GA_RelVerify, TRUE,
    			SpaceEnd,
 		EndGroup,

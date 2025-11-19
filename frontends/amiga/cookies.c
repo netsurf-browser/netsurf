@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2017-2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -316,6 +316,8 @@ ami_cookies_create_window(struct ami_cookie_window *cookie_win)
 				GA_ID, GID_CW_DRAW,
 				SPACE_Transparent, TRUE,
 				SPACE_BevelStyle, BVS_DISPLAY,
+				SPACE_MinWidth, 50,
+				SPACE_MinHeight, 16,
 				GA_RelVerify, TRUE,
    			SpaceEnd,
 		EndGroup,

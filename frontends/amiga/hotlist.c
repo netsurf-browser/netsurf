@@ -493,6 +493,8 @@ ami_hotlist_create_window(struct ami_hotlist_window *hotlist_win)
 				GA_ID, GID_CW_DRAW,
 				SPACE_Transparent, TRUE,
 				SPACE_BevelStyle, BVS_DISPLAY,
+				SPACE_MinWidth, 50,
+				SPACE_MinHeight, 16,
 				GA_RelVerify, TRUE,
    			SpaceEnd,
 		EndGroup,
