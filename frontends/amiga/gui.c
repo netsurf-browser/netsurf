@@ -2154,7 +2154,8 @@ static bool ami_gui_hscroll_add(struct gui_window_2 *gwin)
 	IDoMethod(gwin->objects[GID_HSCROLLLAYOUT], LM_ADDCHILD,
 			gwin->win, gwin->objects[GID_HSCROLL], attrs);
 #else
-	SetAttrs(gwin->objects[GID_HSCROLLLAYOUT],
+	SetGadgetAttrs((struct Gadget *)gwin->objects[GID_HSCROLLLAYOUT],
+			gwin->win, NULL,
 			LAYOUT_AddChild, gwin->objects[GID_HSCROLL], TAG_MORE, &attrs);
 #endif
 	return true;
@@ -2169,7 +2170,9 @@ static bool ami_gui_hscroll_remove(struct gui_window_2 *gwin)
 	IDoMethod(gwin->objects[GID_HSCROLLLAYOUT], LM_REMOVECHILD,
 			gwin->win, gwin->objects[GID_HSCROLL]);
 #else
-	SetAttrs(gwin->objects[GID_HSCROLLLAYOUT], LAYOUT_RemoveChild, gwin->objects[GID_HSCROLL], TAG_DONE);
+	SetGadgetAttrs((struct Gadget *)gwin->objects[GID_HSCROLLLAYOUT],
+			gwin->win, NULL,
+			LAYOUT_RemoveChild, gwin->objects[GID_HSCROLL], TAG_DONE);
 #endif
 
 	gwin->objects[GID_HSCROLL] = NULL;
@@ -2199,7 +2202,8 @@ static bool ami_gui_vscroll_add(struct gui_window_2 *gwin)
 	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_ADDCHILD,
 			gwin->win, gwin->objects[GID_VSCROLL], attrs);
 #else
-	SetAttrs(gwin->objects[GID_VSCROLLLAYOUT],
+	SetGadgetAttrs((struct Gadget *)gwin->objects[GID_VSCROLLLAYOUT],
+			gwin->win, NULL,
 			LAYOUT_AddChild, gwin->objects[GID_VSCROLL], TAG_MORE, &attrs);
 #endif
 	return true;
@@ -2214,7 +2218,9 @@ static bool ami_gui_vscroll_remove(struct gui_window_2 *gwin)
 	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_REMOVECHILD,
 			gwin->win, gwin->objects[GID_VSCROLL]);
 #else
-	SetAttrs(gwin->objects[GID_VSCROLLLAYOUT], LAYOUT_RemoveChild, gwin->objects[GID_VSCROLL], TAG_DONE);
+	SetGadgetAttrs((struct Gadget *)gwin->objects[GID_VSCROLLLAYOUT],
+			gwin->win, NULL,
+			LAYOUT_RemoveChild, gwin->objects[GID_VSCROLL], TAG_DONE);
 #endif
 
 	gwin->objects[GID_VSCROLL] = NULL;
@@ -2314,7 +2320,8 @@ static void ami_gui_console_log_add(struct gui_window *g)
 	IDoMethod(g->shared->objects[GID_LOGLAYOUT], LM_ADDCHILD,
 			g->shared->win, g->shared->objects[GID_LOG], NULL);
 #else
-	SetAttrs(g->shared->objects[GID_LOGLAYOUT],
+	SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_LOGLAYOUT],
+		g->shared->win, NULL,
 		LAYOUT_AddChild, g->shared->objects[GID_LOG], TAG_MORE, &attrs);
 #endif
 
@@ -2334,7 +2341,8 @@ static void ami_gui_console_log_remove(struct gui_window *g)
 	IDoMethod(g->shared->objects[GID_LOGLAYOUT], LM_REMOVECHILD,
 			g->shared->win, g->shared->objects[GID_LOG]);
 #else
-	SetAttrs(g->shared->objects[GID_LOGLAYOUT],
+	SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_LOGLAYOUT],
+		g->shared->win, NULL,
 		LAYOUT_RemoveChild, g->shared->objects[GID_LOG], TAG_DONE);
 #endif
 
@@ -4146,9 +4154,11 @@ static void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 				gwin->win, gwin->objects[GID_HOTLISTSEPBAR], NULL);
 
 #else
-		SetAttrs(gwin->objects[GID_HOTLISTLAYOUT],
+		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_HOTLISTLAYOUT],
+			gwin->win, NULL,
 			LAYOUT_AddChild, gwin->objects[GID_HOTLIST], TAG_MORE, &attrs);
-		SetAttrs(gwin->objects[GID_HOTLISTLAYOUT],
+		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_HOTLISTLAYOUT],
+			gwin->win, NULL,
 			LAYOUT_AddChild, gwin->objects[GID_HOTLISTSEPBAR], TAG_DONE);
 #endif
 
@@ -4195,9 +4205,11 @@ static void ami_gui_hotlist_toolbar_remove(struct gui_window_2 *gwin)
 	IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_REMOVECHILD,
 			gwin->win, gwin->objects[GID_HOTLISTSEPBAR]);
 #else
-	SetAttrs(gwin->objects[GID_HOTLISTLAYOUT],
+	SetGadgetAttrs((struct Gadget *)gwin->objects[GID_HOTLISTLAYOUT],
+		gwin->win, NULL,
 		LAYOUT_RemoveChild, gwin->objects[GID_HOTLIST], TAG_DONE);
-	SetAttrs(gwin->objects[GID_HOTLISTLAYOUT],
+	SetGadgetAttrs((struct Gadget *)gwin->objects[GID_HOTLISTLAYOUT],
+		gwin->win, NULL,
 		LAYOUT_RemoveChild, gwin->objects[GID_HOTLISTSEPBAR], TAG_DONE);
 #endif
 	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
@@ -4297,9 +4309,11 @@ static void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_ADDCHILD,
 				gwin->win, gwin->objects[GID_ADDTAB], attrs);
 #else
-		SetAttrs(gwin->objects[GID_TABLAYOUT],
+		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_TABLAYOUT],
+				gwin->win, NULL,
 				LAYOUT_AddChild, gwin->objects[GID_TABS], TAG_DONE);
-		SetAttrs(gwin->objects[GID_TABLAYOUT],
+		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_TABLAYOUT],
+				gwin->win, NULL,
 				LAYOUT_AddChild, gwin->objects[GID_ADDTAB], TAG_MORE, &attrs);
 #endif
 	} else {
@@ -4310,9 +4324,11 @@ static void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_REMOVECHILD,
 				gwin->win, gwin->objects[GID_ADDTAB]);
 #else
-		SetAttrs(gwin->objects[GID_TABLAYOUT],
+		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_TABLAYOUT],
+				gwin->win, NULL,
 				LAYOUT_RemoveChild, gwin->objects[GID_TABS], TAG_DONE);
-		SetAttrs(gwin->objects[GID_TABLAYOUT],
+		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_TABLAYOUT],
+				gwin->win, NULL,
 				LAYOUT_RemoveChild, gwin->objects[GID_ADDTAB], TAG_DONE);
 #endif
 

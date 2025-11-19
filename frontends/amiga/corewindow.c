@@ -457,7 +457,7 @@ ami_cw_toggle_scrollbar(struct ami_corewindow *ami_cw, bool vert, bool visible)
 #ifdef __amigaos4__
 			IDoMethod(layout, LM_ADDCHILD, ami_cw->win, scroller, NULL);
 #else
-			SetAttrs(layout, LAYOUT_AddChild, scroller, TAG_DONE);
+			SetGadgetAttrs((struct Gadget *)layout, ami_cw->win, NULL, LAYOUT_AddChild, scroller, TAG_DONE);
 #endif
 		}
 	} else {
@@ -469,7 +469,7 @@ ami_cw_toggle_scrollbar(struct ami_corewindow *ami_cw, bool vert, bool visible)
 #ifdef __amigaos4__
 			IDoMethod(layout, LM_REMOVECHILD, ami_cw->win, scroller);
 #else
-			SetAttrs(layout, LAYOUT_RemoveChild, scroller, TAG_DONE);
+			SetGadgetAttrs((struct Gadget *)layout, ami_cw->win, NULL, LAYOUT_RemoveChild, scroller, TAG_DONE);
 #endif
 		}
 	}
