@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2017-2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -199,13 +199,13 @@ ami_history_local_create_window(struct ami_history_local_window *history_local_w
 	}
 
 	ami_cw->objects[GID_CW_WIN] = WindowObj,
-  	    WA_ScreenTitle, ami_gui_get_screen_title(),
-       	WA_Title, ami_cw->wintitle,
-       	WA_Activate, TRUE,
-       	WA_DepthGadget, TRUE,
-       	WA_DragBar, TRUE,
-       	WA_CloseGadget, TRUE,
-       	WA_SizeGadget, TRUE,
+		WA_ScreenTitle, ami_gui_get_screen_title(),
+		WA_Title, ami_cw->wintitle,
+		WA_Activate, TRUE,
+		WA_DepthGadget, TRUE,
+		WA_DragBar, TRUE,
+		WA_CloseGadget, TRUE,
+		WA_SizeGadget, TRUE,
 		WA_SizeBRight, TRUE,
 		WA_Width, 100,
 		WA_Height, 100,
@@ -225,6 +225,10 @@ ami_history_local_create_window(struct ami_history_local_window *history_local_w
 //		WINDOW_MenuStrip, NULL,
 		WINDOW_MenuUserData, WGUD_HOOK,
 		WINDOW_IconifyGadget, FALSE,
+#ifdef __amigaos4__
+		WINDOW_UniqueID, "NS_HISTORY_LOCAL_WIN",
+		WINDOW_PopupGadget, TRUE,
+#endif
 		WINDOW_Position, WPOS_CENTERSCREEN,
 		WINDOW_ParentGroup, ami_cw->objects[GID_CW_MAIN] = LayoutVObj,
 			LAYOUT_AddChild, ami_cw->objects[GID_CW_DRAW] = SpaceObj,
