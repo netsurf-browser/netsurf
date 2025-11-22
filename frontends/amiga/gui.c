@@ -2493,17 +2493,19 @@ static void gui_window_set_icon(struct gui_window *g, struct hlcache_handle *ico
 		if(bm)
 		{
 			ULONG tag, tag_data, minterm;
-
+#ifdef __amigaos4__
 			if(ami_plot_screen_is_palettemapped() == false) {
 				tag = BLITA_UseSrcAlpha;
 				tag_data = !amiga_bitmap_get_opaque(icon_bitmap);
 				minterm = 0xc0;
 			} else {
 				tag = BLITA_MaskPlane;
+#endif
 				tag_data = (ULONG)ami_bitmap_get_mask(icon_bitmap, 16, 16, bm);
 				minterm = MINTERM_SRCMASK;
+#ifdef __amigaos4__
 			}
-
+#endif
 			if(ami_gui_get_space_box((Object *)g->shared->objects[GID_ICON], &bbox) != NSERROR_OK) {
 				amiga_warn_user("NoMemory", "");
 				return;
@@ -2527,7 +2529,7 @@ static void gui_window_set_icon(struct gui_window *g, struct hlcache_handle *ico
 						tag, tag_data,
 						TAG_DONE);
 #else
-			if(tag_data) {
+			if(!amiga_bitmap_get_opaque(icon_bitmap)) {
 				BltMaskBitMapRastPort(bm, 0, 0, g->shared->win->RPort,
 							bbox->Left, bbox->Top, 16, 16, minterm, tag_data);
 			} else {
