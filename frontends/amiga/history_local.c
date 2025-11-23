@@ -313,11 +313,9 @@ nserror ami_history_local_present(struct gui_window *gw)
 					     &width,
 					     &height);
 
-	/*TODO: Adjust these to account for window borders */
-
 	SetAttrs(ncwin->core.objects[GID_CW_WIN],
-		WA_Width, width,
-		WA_Height, height,
+		WA_InnerWidth, width,
+		WA_InnerHeight, height,
 		TAG_DONE);
 
 	ncwin->gw = gw;
