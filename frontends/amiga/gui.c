@@ -4022,13 +4022,17 @@ void ami_gui_update_hotlist_button(struct gui_window_2 *gwin)
 	if(nsurl_create(url, &nsurl) == NSERROR_OK) {
 		if(hotlist_has_url(nsurl)) {
 			RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_FAVE], gwin->win, NULL,
-				BUTTON_RenderImage, gwin->objects[GID_FAVE_RMV], TAG_DONE);
+				BUTTON_RenderImage, gwin->objects[GID_FAVE_RMV],
+				GA_HintInfo, gwin->helphints[GID_FAVE_RMV],
+				TAG_DONE);
 
 			if (gwin->gw->favicon)
 				ami_gui_cache_favicon(nsurl, content_get_bitmap(gwin->gw->favicon));
 		} else {
 			RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_FAVE], gwin->win, NULL,
-				BUTTON_RenderImage, gwin->objects[GID_FAVE_ADD], TAG_DONE);
+				BUTTON_RenderImage, gwin->objects[GID_FAVE_ADD],
+				GA_HintInfo, gwin->helphints[GID_FAVE_ADD],
+				TAG_DONE);
 		}
 		
 		nsurl_unref(nsurl);
@@ -4947,6 +4951,9 @@ gui_window_create(struct browser_window *bw,
 		g->shared->helphints[GID_PAGEINFO_SECURE_BM] = ami_utf8_easy(messages_get("PageInfoSecure"));
 		g->shared->helphints[GID_PAGEINFO_WARNING_BM] = ami_utf8_easy(messages_get("PageInfoWarning"));
 		g->shared->helphints[GID_PAGEINFO_INTERNAL_BM] = ami_utf8_easy(messages_get("PageInfoInternal"));
+
+		g->shared->helphints[GID_FAVE_ADD] = ami_utf8_easy(messages_get("HelpToolbarHotlistStar"));
+		g->shared->helphints[GID_FAVE_RMV] = ami_utf8_easy(messages_get("HelpToolbarHotlistStarLit"));
 
 		ami_get_theme_filename(nav_west, "theme_nav_west", false);
 		ami_get_theme_filename(nav_west_s, "theme_nav_west_s", false);

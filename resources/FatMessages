@@ -8114,6 +8114,10 @@ it.ami.HelpToolbarAddTab:Apri una nuova scheda
 nl.ami.HelpToolbarAddTab:Tabblad toevoegen\nLMB: Een nieuwe leeg tabblad wordt geopend
 zh_CN.ami.HelpToolbarAddTab:添加标签页\n鼠标左键：添加新的空白标签页
 
+en.ami.HelpToolbarHotlistStar:Add the current page to the hotlist
+
+en.ami.HelpToolbarHotlistStarLit:Remove the current page from the hotlist
+
 en.ami.PageInfo:Page info
 fr.ami.PageInfo:Information sur la page
 
