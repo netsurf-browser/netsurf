@@ -292,6 +292,8 @@ ami_cookies_create_window(struct ami_cookie_window *cookie_win)
 		WA_SizeBRight, TRUE,
 		WA_PubScreen, ami_gui_get_screen(),
 		WA_ReportMouse, TRUE,
+		WA_Width, 50,
+		WA_Height, 100,
 		refresh_mode, TRUE,
 		WA_IDCMP, IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 				IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
