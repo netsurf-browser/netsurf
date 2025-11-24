@@ -316,7 +316,7 @@ void ami_plot_ra_set_pen_list(struct gui_globals *gg, struct MinList *pen_list)
 
 void ami_clearclipreg(struct gui_globals *gg)
 {
-	struct Region *reg = NULL;
+	struct Region *reg = NewRegion();;
 
 	gg->rect.MinX = 0;
 	gg->rect.MinY = 0;
@@ -324,7 +324,7 @@ void ami_clearclipreg(struct gui_globals *gg)
 	gg->rect.MaxY = gg->height-1;
 
 	OrRectRegion(reg, &gg->rect);
-	reg = InstallClipRegion(gg->rp->Layer,NULL);
+	reg = InstallClipRegion(gg->rp->Layer, reg);
 	if(reg) DisposeRegion(reg);
 
 	gg->apen_num = -1;
