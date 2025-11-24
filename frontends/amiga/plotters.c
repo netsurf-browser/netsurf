@@ -316,7 +316,7 @@ void ami_plot_ra_set_pen_list(struct gui_globals *gg, struct MinList *pen_list)
 
 void ami_clearclipreg(struct gui_globals *gg)
 {
-	struct Region *reg = NewRegion();;
+	struct Region *reg = NewRegion();
 
 	gg->rect.MinX = 0;
 	gg->rect.MinY = 0;
@@ -593,7 +593,12 @@ HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage 
 
 				if((dy < msg->Bounds.MinY) && ((dy + h) < msg->Bounds.MinY))
 					continue;		
-					
+			
+				if((dx > msg->Bounds.MaxX) && ((dx + w) > msg->Bounds.MaxX))
+					continue;
+
+				if((dy > msg->Bounds.MaxY) && ((dy + h) > msg->Bounds.MaxY))
+					continue;			
 
 				if((dx < msg->Bounds.MinX) && ((dx + w) >= msg->Bounds.MinX)) {
 					sx = (msg->Bounds.MinX - dx);
