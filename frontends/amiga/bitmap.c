@@ -460,7 +460,7 @@ static inline struct BitMap *ami_bitmap_get_guigfx(struct bitmap *bitmap,
 			dithermode = DITHERMODE_FS;
 		}
 
-		if(nsoption_bool(invert_alpha)) {
+		if((!bitmap->opaque) && nsoption_bool(invert_alpha)) {
 			/* invert alpha */
 			unsigned char *bmbuffer = amiga_bitmap_get_buffer(bitmap);
 			for(int i = 0; i < (bitmap->width * bitmap->height * 4); i+=4) {
@@ -476,7 +476,7 @@ static inline struct BitMap *ami_bitmap_get_guigfx(struct bitmap *bitmap,
 										GGFX_DestHeight, height,
 										TAG_DONE);
 
-		if(nsoption_bool(invert_alpha)) {
+		if((!bitmap->opaque) && nsoption_bool(invert_alpha)) {
 			/* invert alpha */
 			unsigned char *bmbuffer = amiga_bitmap_get_buffer(bitmap);
 			for(int i = 0; i < (bitmap->width * bitmap->height * 4); i+=4) {
@@ -488,14 +488,12 @@ static inline struct BitMap *ami_bitmap_get_guigfx(struct bitmap *bitmap,
 			amiga_warn_user("BMConvErr", NULL);
 		}
 
-//#ifdef __amigaos4__
 		/* Alpha-blend the image to the provided background colour.
 		 * This appears to be using an inverted alpha on OS3
 		 */
 		if((!bitmap->opaque) && (bg != NS_TRANSPARENT)) {
 			DoPictureMethod(picture, PICMTHD_TINTALPHA, colour_rb_swap(bg), TAG_DONE);
 		}
-//#endif
 
 		if(bitmap->drawhandle) ReleaseDrawHandle(bitmap->drawhandle);
 		
