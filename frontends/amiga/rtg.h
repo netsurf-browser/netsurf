@@ -30,8 +30,12 @@ struct BitMap *ami_rtg_allocbitmap(ULONG width, ULONG height, ULONG depth,
 	ULONG flags, struct BitMap *friend, RGBFTYPE format);
 void ami_rtg_freebitmap(struct BitMap *bm);
 
-/* WritePixelArray wrapper.  This isn't entirely (at all) equivalent to p96WPA */
+/* WritePixelArray wrapper */
 void ami_rtg_writepixelarray(UBYTE *pixdata, struct BitMap *bm,
+	ULONG width, ULONG height, ULONG bpr, ULONG format);
+
+/* ReadPixelArray wrapper */
+void ami_rtg_readpixelarray(struct BitMap *bm, UBYTE **pixdata,
 	ULONG width, ULONG height, ULONG bpr, ULONG format);
 #endif
 

@@ -67,3 +67,29 @@ void ami_rtg_writepixelarray(UBYTE *pixdata, struct BitMap *bm,
 	}
 }
 
+void ami_rtg_readpixelarray(struct BitMap *bm, UBYTE **pixdata,
+	ULONG width, ULONG height, ULONG bpr, ULONG format)
+{
+	struct RastPort trp;
+
+	InitRastPort(&trp);
+	trp.BitMap = bm;
+
+	/* This requires P96 or gfx.lib v54 currently */
+	if(P96Base == NULL) {
+#ifdef __amigaos4__
+		if(GfxBase->LibNode.lib_Version >= 54) {
+			ReadPixelArray(&trp, 0, 0, *pixdata, 0, 0, bpr, PIXF_A8R8G8B8, width, height);
+		}
+#endif
+	} else {
+		struct RenderInfo ri;
+
+		ri.Memory = *pixdata;
+		ri.BytesPerRow = bpr;
+		ri.RGBFormat = format;
+
+		p96ReadPixelArray((struct RenderInfo *)&ri, 0, 0, &trp, 0, 0, width, height);
+	}
+}
+

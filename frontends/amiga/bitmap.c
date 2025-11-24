@@ -755,7 +755,6 @@ void ami_bitmap_fini(void)
 
 static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *content)
 {
-#ifdef __amigaos4__
 	NSLOG(netsurf, INFO, "Entering bitmap_render");
 
 	int plot_width;
@@ -778,27 +777,14 @@ static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *conte
 
 	content_scaled_redraw(content, plot_width, plot_height, &ctx);
 
-	BltBitMapTags(	BLITA_SrcX, 0,
-					BLITA_SrcY, 0,
-					BLITA_Width, bitmap->width,
-					BLITA_Height, bitmap->height,
-					BLITA_Source, ami_plot_ra_get_bitmap(bm_globals),
-					BLITA_SrcType, BLITT_BITMAP,
-					BLITA_Dest, amiga_bitmap_get_buffer(bitmap),
-					BLITA_DestType, BLITT_ARGB32,
-					BLITA_DestBytesPerRow, 4 * bitmap->width,
-					BLITA_DestX, 0,
-					BLITA_DestY, 0,
-					TAG_DONE);
+	ami_rtg_readpixelarray(ami_plot_ra_get_bitmap(bm_globals), &bitmap->pixdata,
+							bitmap->width, bitmap->height, 4 * bitmap->width, AMI_BITMAP_FORMAT);
 
 	/**\todo In theory we should be able to move the bitmap to our native area
 		to try to avoid re-conversion (at the expense of memory) */
 
 	ami_plot_ra_free(bm_globals);
 	amiga_bitmap_set_opaque(bitmap, true);
-#else
-#warning FIXME for OS3 (in current state none of bitmap_render can work!)
-#endif
 
 	return NSERROR_OK;
 }
