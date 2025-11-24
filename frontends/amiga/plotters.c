@@ -241,6 +241,9 @@ struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit
 		}
 	}
 
+	/* Set clipping area to full bitmap */
+	ami_clearclipreg(gg);
+
 	gg->apen_num = -1;
 	gg->open_num = -1;
 
@@ -263,7 +266,14 @@ void ami_plot_ra_free(struct gui_globals *gg)
 	}
 
 	if(gg->rp) {
-		if(gg->rp->Layer != NULL) DeleteLayer(0, gg->rp->Layer);
+		if(gg->rp->Layer != NULL) {
+			/* Remove the clip region */
+			struct Region *reg = InstallClipRegion(gg->rp->Layer,NULL);
+			if(reg) DisposeRegion(reg);	
+			
+			/* Delete the layer */	
+			DeleteLayer(0, gg->rp->Layer);
+		}
 		free(gg->rp->TmpRas);
 		free(gg->rp->AreaInfo);
 		free(gg->rp);
@@ -307,15 +317,15 @@ void ami_plot_ra_set_pen_list(struct gui_globals *gg, struct MinList *pen_list)
 void ami_clearclipreg(struct gui_globals *gg)
 {
 	struct Region *reg = NULL;
-	struct Screen *scrn = ami_gui_get_screen();
-
-	reg = InstallClipRegion(gg->rp->Layer,NULL);
-	if(reg) DisposeRegion(reg);
 
 	gg->rect.MinX = 0;
 	gg->rect.MinY = 0;
-	gg->rect.MaxX = scrn->Width-1;
-	gg->rect.MaxY = scrn->Height-1;
+	gg->rect.MaxX = gg->width-1;
+	gg->rect.MaxY = gg->height-1;
+
+	OrRectRegion(reg, &gg->rect);
+	reg = InstallClipRegion(gg->rp->Layer,NULL);
+	if(reg) DisposeRegion(reg);
 
 	gg->apen_num = -1;
 	gg->open_num = -1;
