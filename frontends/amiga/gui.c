@@ -6174,21 +6174,22 @@ static void gui_window_new_content(struct gui_window *g)
 static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 		const struct rect *rect)
 {
+#ifdef __amigaos4__
 	g->shared->drag_op = type;
 	if(rect) g->shared->ptr_lock = ami_ns_rect_to_ibox(g->shared, rect);
 
 	if(type == GDRAGGING_NONE)
 	{
-#ifdef __amigaos4__
 		SetWindowAttrs(g->shared->win, WA_GrabFocus, 0,
 			WA_MouseLimits, NULL, TAG_DONE);
-#endif
+
 		if(g->shared->ptr_lock)
 		{
 			free(g->shared->ptr_lock);
 			g->shared->ptr_lock = NULL;
 		}
 	}
+#endif
 	return true;
 }
 
