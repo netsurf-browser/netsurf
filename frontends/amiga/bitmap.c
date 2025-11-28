@@ -223,6 +223,9 @@ void amiga_bitmap_destroy(void *bitmap)
 
 		if(bm->native_mask) FreeRaster(bm->native_mask, bm->width, bm->height);
 
+		if(bm->drawhandle) ReleaseDrawHandle(bm->drawhandle);
+		bm->drawhandle = NULL;
+
 #ifdef __amigaos4__
 		if(nsoption_bool(use_extmem) == true) {
 			ami_schedule(-1, amiga_bitmap_unmap_buffer, bm);
@@ -491,6 +494,8 @@ static inline struct BitMap *ami_bitmap_get_guigfx(struct bitmap *bitmap,
 		if((!bitmap->opaque) && (bg != NS_TRANSPARENT)) {
 			DoPictureMethod(picture, PICMTHD_TINTALPHA, colour_rb_swap(bg), TAG_DONE);
 		}
+
+		if(bitmap->drawhandle) ReleaseDrawHandle(bitmap->drawhandle);
 		
 		bitmap->drawhandle = ObtainDrawHandle(
 			NULL,
@@ -501,7 +506,6 @@ static inline struct BitMap *ami_bitmap_get_guigfx(struct bitmap *bitmap,
 
 		if(bitmap->drawhandle) {
 			DrawPicture(bitmap->drawhandle, picture, 0, 0, TAG_DONE);
-			ReleaseDrawHandle(bitmap->drawhandle);
 		}
 		
 		DeletePicture(picture);
