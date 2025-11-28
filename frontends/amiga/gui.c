@@ -1028,22 +1028,12 @@ STRPTR ami_gui_get_screen_title(void)
 
 static void ami_set_screen_defaults(struct Screen *screen)
 {
-	/* various window size/position defaults */
-	int width = screen->Width / 2;
-	int height = screen->Height / 2;
-	int top = (screen->Height / 2) - (height / 2);
-	int left = (screen->Width / 2) - (width / 2);
-
-#ifdef __amigaos4__
 	nsoption_default_set_int(redraw_tile_size_x, screen->Width);
 	nsoption_default_set_int(redraw_tile_size_y, screen->Height);
 
+#ifdef __amigaos4__
 	/* set system colours for amiga ui */
 	system_colours_from_pen(screen);
-
-#else
-	nsoption_default_set_int(redraw_tile_size_x, 100);
-	nsoption_default_set_int(redraw_tile_size_y, 100);
 #endif
 }
 
