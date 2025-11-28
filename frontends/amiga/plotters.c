@@ -535,121 +535,6 @@ ami_bitmap(struct gui_globals *glob, int x, int y, int width, int height, struct
 	return NSERROR_OK;
 }
 
-
-HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage *)
-{
-	int xf,yf;
-	struct bfbitmap *bfbm = (struct bfbitmap *)hook->h_Data;
-	struct Screen *scrn = ami_gui_get_screen();
-
-	/* tile down and across to extents  (msg->Bounds.MinX)*/
-	for (xf = -bfbm->offsetx; xf < msg->Bounds.MaxX; xf += bfbm->width) {
-		for (yf = -bfbm->offsety; yf < msg->Bounds.MaxY; yf += bfbm->height) {
-
-#ifdef __amigaos4__
-			if(__builtin_expect((GfxBase->LibNode.lib_Version >= 53) &&
-					(bfbm->palette_mapped == false), 1)) {
-
-				CompositeTags(COMPOSITE_Src_Over_Dest, bfbm->bm, rp->BitMap,
-					COMPTAG_Flags, COMPFLAG_IgnoreDestAlpha,
-					COMPTAG_DestX, msg->Bounds.MinX,
-					COMPTAG_DestY, msg->Bounds.MinY,
-					COMPTAG_DestWidth, msg->Bounds.MaxX - msg->Bounds.MinX + 1,
-					COMPTAG_DestHeight, msg->Bounds.MaxY - msg->Bounds.MinY + 1,
-					COMPTAG_SrcWidth, bfbm->width,
-					COMPTAG_SrcHeight, bfbm->height,
-					COMPTAG_OffsetX, xf,
-					COMPTAG_OffsetY, yf,
-					COMPTAG_FriendBitMap, scrn->RastPort.BitMap,
-					TAG_DONE);
-			} else
-#endif
-			{
-				ULONG tag = TAG_IGNORE, tag_data, minterm = 0xc0;
-#ifdef __amigaos4__
-				if(bfbm->palette_mapped == false) {
-					tag = BLITA_UseSrcAlpha;
-					tag_data = TRUE;
-					minterm = 0xc0;
-				} else {
-#endif
-					if((tag_data = (ULONG)bfbm->mask))
-						tag = BLITA_MaskPlane;
-						minterm = MINTERM_SRCMASK;
-#ifdef __amigaos4__
-				}
-#endif
-
-				/* Ensure we blit the correct part of the BitMap and don't go out of bounds */
-				uint32_t h = bfbm->height;
-				uint32_t w = bfbm->width;
-				uint32_t sx = 0;
-				uint32_t sy = 0;
-				int32_t dx = xf;
-				int32_t dy = yf;
-
-				if((dx < msg->Bounds.MinX) && ((dx + w) < msg->Bounds.MinX))
-					continue;
-
-				if((dy < msg->Bounds.MinY) && ((dy + h) < msg->Bounds.MinY))
-					continue;		
-			
-				if((dx > msg->Bounds.MaxX) && ((dx + w) > msg->Bounds.MaxX))
-					continue;
-
-				if((dy > msg->Bounds.MaxY) && ((dy + h) > msg->Bounds.MaxY))
-					continue;			
-
-				if((dx < msg->Bounds.MinX) && ((dx + w) >= msg->Bounds.MinX)) {
-					sx = (msg->Bounds.MinX - dx);
-					dx = msg->Bounds.MinX;
-					w -= sx;
-				}
-				if((dx + w) > msg->Bounds.MaxX) {
-					w -= (dx + w - msg->Bounds.MaxX - 1);
-				}
-
-				if((dy < msg->Bounds.MinY) && ((dy + h) >= msg->Bounds.MinY)) {
-					sy = (msg->Bounds.MinY - dy);
-					dy = msg->Bounds.MinY;
-					h -= sy;
-				}
-				if((dy + h) > msg->Bounds.MaxY) {
-					h -= (dy + h - msg->Bounds.MaxY - 1);
-				}
-#ifdef __amigaos4__
-				BltBitMapTags(BLITA_Width, w,
-					BLITA_Height, h,
-					BLITA_Source, bfbm->bm,
-					BLITA_SrcX, sx,
-					BLITA_SrcY, sy,
-					BLITA_Dest, rp->BitMap,
-					BLITA_DestX, dx,
-					BLITA_DestY, dy,
-					BLITA_SrcType, BLITT_BITMAP,
-					BLITA_DestType, BLITT_BITMAP,
-					BLITA_Minterm, minterm,
-					tag, tag_data,
-					TAG_DONE);
-#else
-				if(tag_data && (tag == BLITA_MaskPlane)) {
-					/* Layer hook mustn't use the RastPort, so copy it and NULL the Layer pointer */
-					struct RastPort rpc;
-					CopyMem(rp, &rpc, sizeof(struct RastPort));
-					rpc.Layer = NULL;
-					BltMaskBitMapRastPort(bfbm->bm, sx, sy, &rpc, dx, dy,
-						w, h, minterm, tag_data);
-				} else {
-					BltBitMap(bfbm->bm, sx, sy, rp->BitMap, dx, dy,
-						w, h, 0xc0, 0xff, NULL);
-				}
-#endif
-
-			}		
-		}
-	}
-}
-
 static void ami_bezier(struct bez_point *restrict a, struct bez_point *restrict b,
 				struct bez_point *restrict c, struct bez_point *restrict d,
 				float t, struct bez_point *restrict p) {
@@ -1092,8 +977,6 @@ ami_bitmap_tile(const struct redraw_context *ctx,
 {
 	int xf,yf,xm,ym,oy,ox;
 	struct BitMap *tbm = NULL;
-	struct Hook *bfh = NULL;
-	struct bfbitmap bfbm;
 	bool repeat_x = (flags & BITMAPF_REPEAT_X);
 	bool repeat_y = (flags & BITMAPF_REPEAT_Y);
 
@@ -1120,6 +1003,8 @@ ami_bitmap_tile(const struct redraw_context *ctx,
 	if (!tbm) {
 		return NSERROR_OK;
 	}
+	
+	struct Screen *scrn = ami_gui_get_screen();
 
 	ox = x;
 	oy = y;
@@ -1151,40 +1036,72 @@ ami_bitmap_tile(const struct redraw_context *ctx,
 		yf = y + height;
 		ym = y;
 	}
+	
+	/* tile down and across to extents */
+	for (x = -ox; x <= xf; x += width) {
+		for (y = -oy; y <= yf; y += height) {
+
 #ifdef __amigaos4__
-	if(amiga_bitmap_get_opaque(bitmap)) {
-		bfh = CreateBackFillHook(BFHA_BitMap,tbm,
-							BFHA_Width,width,
-							BFHA_Height,height,
-							BFHA_OffsetX,ox,
-							BFHA_OffsetY,oy,
-							TAG_DONE);
-	} else
+			if(__builtin_expect((GfxBase->LibNode.lib_Version >= 53) &&
+					(glob>palette_mapped == false), 1)) {
+
+				CompositeTags(COMPOSITE_Src_Over_Dest, tbm, glob->rp->BitMap,
+					COMPTAG_Flags, COMPFLAG_IgnoreDestAlpha,
+					COMPTAG_DestX, xm,
+					COMPTAG_DestY, ym,
+					COMPTAG_DestWidth, xf - xm + 1,
+					COMPTAG_DestHeight, xf - xm + 1,
+					COMPTAG_SrcWidth, width,
+					COMPTAG_SrcHeight, height,
+					COMPTAG_OffsetX, x,
+					COMPTAG_OffsetY, y,
+					COMPTAG_FriendBitMap, scrn->RastPort.BitMap,
+					TAG_DONE);
+			} else
 #endif
-	{
-		bfbm.bm = tbm;
-		bfbm.width = width;
-		bfbm.height = height;
-		bfbm.offsetx = ox;
-		bfbm.offsety = oy;
-		bfbm.mask = ami_bitmap_get_mask(bitmap, width, height, tbm);
-		bfbm.palette_mapped = glob->palette_mapped;
-		bfh = calloc(1, sizeof(struct Hook));
-		bfh->h_Entry = (HOOKFUNC)ami_bitmap_tile_hook;
-		bfh->h_SubEntry = 0;
-		bfh->h_Data = &bfbm;
+			{
+				ULONG tag = TAG_IGNORE, tag_data, minterm = 0xc0;
+#ifdef __amigaos4__
+				if(glob->palette_mapped == false) {
+					tag = BLITA_UseSrcAlpha;
+					tag_data = TRUE;
+					minterm = 0xc0;
+				} else {
+#endif
+					if(tag_data = (ULONG)ami_bitmap_get_mask(bitmap, width, height, tbm)) {
+						tag = BLITA_MaskPlane;
+						minterm = MINTERM_SRCMASK;
+					}
+#ifdef __amigaos4__
+				}
+#endif
+
+#ifdef __amigaos4__
+				BltBitMapTags(BLITA_Width, width,
+					BLITA_Height, height,
+					BLITA_Source, tbm,
+					BLITA_SrcX, 0,
+					BLITA_SrcY, 0,
+					BLITA_Dest, glob->rp,
+					BLITA_DestX, x,
+					BLITA_DestY, y,
+					BLITA_SrcType, BLITT_BITMAP,
+					BLITA_DestType, BLITT_RASTPORT,
+					BLITA_Minterm, minterm,
+					tag, tag_data,
+					TAG_DONE);
+#else
+				if(tag_data && (tag == BLITA_MaskPlane)) {
+					BltMaskBitMapRastPort(tbm, 0, 0, glob->rp, x, y,
+						width, height, minterm, tag_data);
+				} else {
+					BltBitMapRastPort(tbm, 0, 0, glob->rp, x, y,
+						width, height, 0xc0);
+				}
+#endif
+			}
+		}
 	}
-
-	InstallLayerHook(glob->rp->Layer,bfh);
-	EraseRect(glob->rp,xm,ym,xf,yf);
-	InstallLayerHook(glob->rp->Layer,LAYERS_NOBACKFILL);
-
-#ifdef __amigaos4__
-	if (amiga_bitmap_get_opaque(bitmap)) {
-		DeleteBackFillHook(bfh);
-	} else
-#endif
-		free(bfh);
 
 	if ((ami_bitmap_is_nativebm(bitmap, tbm) == false)) {
 		/**\todo is this logic logical? */
