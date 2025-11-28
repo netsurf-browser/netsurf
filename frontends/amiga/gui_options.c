@@ -2341,15 +2341,13 @@ struct List *ami_gui_opts_websearch(int *idx)
 	struct List *list;
 	struct Node *node;
 	const char *name;
-	int iter;
 	int i = 0;
+	int iter;
 
 	list = malloc(sizeof(struct List));
 	NewList(list);
 
-	if (nsoption_charp(search_engines_file) == NULL) return list;
-
-	for (iter = search_web_iterate_providers(0, &name);
+	for (iter = search_web_iterate_providers(-1, &name);
 		iter != -1;
 		iter = search_web_iterate_providers(iter, &name)) {
 			node = AllocChooserNode(CNA_Text, name, TAG_DONE);
