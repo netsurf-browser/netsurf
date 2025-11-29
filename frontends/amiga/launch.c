@@ -82,7 +82,7 @@ static void ami_openurl_free_list(struct MinList *list)
 			nnode=(struct ami_protocol *)GetSucc((struct Node *)node);
 
 			Remove((struct Node *)node);
-			if (node->protocol) lwc_string_unref(node->protocol);
+			lwc_string_unref(node->protocol);
 			free(node);
 			node = NULL;
 		}while((node=nnode));
