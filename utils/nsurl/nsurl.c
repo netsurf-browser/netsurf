@@ -641,9 +641,7 @@ nserror nsurl_replace_query(const nsurl *url, const char *query,
 	/* Create NetSurf URL object */
 	*new_url = malloc(sizeof(nsurl) + length + 1); /* Add 1 for \0 */
 	if (*new_url == NULL) {
-		if (query_len > 0) {
-			lwc_string_unref(lwc_query);
-		}
+		lwc_string_unref(lwc_query);
 		return NSERROR_NOMEM;
 	}
 

@@ -137,29 +137,14 @@ void nsurl__calc_hash(nsurl *url);
  */
 static inline void nsurl__components_destroy(struct nsurl_components *c)
 {
-	if (c->scheme)
-		lwc_string_unref(c->scheme);
-
-	if (c->username)
-		lwc_string_unref(c->username);
-
-	if (c->password)
-		lwc_string_unref(c->password);
-
-	if (c->host)
-		lwc_string_unref(c->host);
-
-	if (c->port)
-		lwc_string_unref(c->port);
-
-	if (c->path)
-		lwc_string_unref(c->path);
-
-	if (c->query)
-		lwc_string_unref(c->query);
-
-	if (c->fragment)
-		lwc_string_unref(c->fragment);
+	lwc_string_unref(c->scheme);
+	lwc_string_unref(c->username);
+	lwc_string_unref(c->password);
+	lwc_string_unref(c->host);
+	lwc_string_unref(c->port);
+	lwc_string_unref(c->path);
+	lwc_string_unref(c->query);
+	lwc_string_unref(c->fragment);
 }
 
 #endif

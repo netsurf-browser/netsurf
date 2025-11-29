@@ -41,10 +41,8 @@ nserror corestrings_fini(void)
 {
 #define CORESTRING_LWC_VALUE(NAME,VALUE)				\
 	do {								\
-		if (corestring_lwc_##NAME != NULL) {			\
-			lwc_string_unref(corestring_lwc_##NAME);	\
-			corestring_lwc_##NAME = NULL;			\
-		}							\
+		lwc_string_unref(corestring_lwc_##NAME);		\
+		corestring_lwc_##NAME = NULL;				\
 	} while (0)
 
 #define CORESTRING_DOM_VALUE(NAME,VALUE)				\

@@ -49,9 +49,7 @@ typedef struct http_directive {
 static void http_destroy_directive(http_directive *self)
 {
 	lwc_string_unref(self->name);
-	if (self->value != NULL) {
-		lwc_string_unref(self->value);
-	}
+	lwc_string_unref(self->value);
 	free(self);
 }
 
@@ -90,9 +88,7 @@ static nserror http__parse_directive(const char **input,
 
 	directive = malloc(sizeof(*directive));
 	if (directive == NULL) {
-		if (value != NULL) {
-			lwc_string_unref(value);
-		}
+		lwc_string_unref(value);
 		lwc_string_unref(name);
 		return NSERROR_NOMEM;
 	}
@@ -189,9 +185,7 @@ static bool check_duplicates(const http_directive *directives)
 		result &= (count(directives, name) == 1);
 
 		lwc_string_unref(name);
-		if (value != NULL) {
-			lwc_string_unref(value);
-		}
+		lwc_string_unref(value);
 	} while (key != NULL);
 
 	return result;
@@ -290,9 +284,7 @@ nserror http_parse_cache_control(const char *header_value,
 			corestring_lwc_no_cache, &value_str);
 	if (error == NSERROR_OK) {
 		no_cache = true;
-		if (value_str != NULL) {
-			lwc_string_unref(value_str);
-		}
+		lwc_string_unref(value_str);
 	}
 
 	/* Find no-store */
@@ -300,9 +292,7 @@ nserror http_parse_cache_control(const char *header_value,
 			corestring_lwc_no_store, &value_str);
 	if (error == NSERROR_OK) {
 		no_store = true;
-		if (value_str != NULL) {
-			lwc_string_unref(value_str);
-		}
+		lwc_string_unref(value_str);
 	}
 
 	http_directive_list_destroy(directives);
