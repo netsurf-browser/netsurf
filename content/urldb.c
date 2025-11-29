@@ -2715,9 +2715,7 @@ static void urldb_destroy_path_node_content(struct path_data *node)
 		nsurl_unref(node->url);
 	}
 
-	if (node->scheme != NULL) {
-		lwc_string_unref(node->scheme);
-	}
+	lwc_string_unref(node->scheme);
 
 	free(node->segment);
 	for (i = 0; i < node->frag_cnt; i++)
@@ -3046,8 +3044,7 @@ nserror urldb_load(const char *filename)
 			}
 			nsurl_unref(nsurl);
 			lwc_string_unref(scheme_lwc);
-			if (fragment_lwc != NULL)
-				lwc_string_unref(fragment_lwc);
+			lwc_string_unref(fragment_lwc);
 
 			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 				break;
@@ -3215,8 +3212,7 @@ bool urldb_add_url(nsurl *url)
 	}
 
 	lwc_string_unref(scheme);
-	if (fragment != NULL)
-		lwc_string_unref(fragment);
+	lwc_string_unref(fragment);
 
 	return (p != NULL);
 }

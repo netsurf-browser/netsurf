@@ -100,10 +100,8 @@ static lwc_string *textplain_default_charset;
  */
 static void textplain_fini(void)
 {
-	if (textplain_default_charset != NULL) {
-		lwc_string_unref(textplain_default_charset);
-		textplain_default_charset = NULL;
-	}
+	lwc_string_unref(textplain_default_charset);
+	textplain_default_charset = NULL;
 }
 
 

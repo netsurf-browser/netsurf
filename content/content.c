@@ -976,20 +976,12 @@ content__free_rfc5988_link(struct content_rfc5988_link *link)
 
 	next = link->next;
 
-	lwc_string_unref(link->rel);
 	nsurl_unref(link->href);
-	if (link->hreflang != NULL) {
-		lwc_string_unref(link->hreflang);
-	}
-	if (link->type != NULL) {
-		lwc_string_unref(link->type);
-	}
-	if (link->media != NULL) {
-		lwc_string_unref(link->media);
-	}
-	if (link->sizes != NULL) {
-		lwc_string_unref(link->sizes);
-	}
+	lwc_string_unref(link->rel);
+	lwc_string_unref(link->hreflang);
+	lwc_string_unref(link->type);
+	lwc_string_unref(link->media);
+	lwc_string_unref(link->sizes);
 	free(link);
 
 	return next;

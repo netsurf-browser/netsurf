@@ -686,8 +686,7 @@ fetch_about_setup(struct fetch *fetchh,
 		}
 	}
 
-	if (path != NULL)
-		lwc_string_unref(path);
+	lwc_string_unref(path);
 
 	ctx->fetchh = fetchh;
 	ctx->url = nsurl_ref(url);

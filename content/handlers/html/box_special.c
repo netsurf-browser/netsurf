@@ -715,9 +715,7 @@ box_a(dom_node *n,
 		if (err == DOM_NO_ERR) {
 			/* name replaces existing id
 			 * TODO: really? */
-			if (box->id != NULL)
-				lwc_string_unref(box->id);
-
+			lwc_string_unref(box->id);
 			box->id = lwc_name;
 		}
 	}
