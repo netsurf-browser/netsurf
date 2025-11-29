@@ -652,8 +652,7 @@ static nserror cookie_manager_init_entry_fields(void)
 
 error:
 	for (i = 0; i < COOKIE_M_N_FIELDS; i++)
-		if (cm_ctx.fields[i].field != NULL)
-			lwc_string_unref(cm_ctx.fields[i].field);
+		lwc_string_unref(cm_ctx.fields[i].field);
 
 	return NSERROR_UNKNOWN;
 }
@@ -858,13 +857,11 @@ nserror cookie_manager_fini(void)
 
 	/* Free cookie manager treeview entry fields */
 	for (i = 0; i < COOKIE_M_N_FIELDS; i++)
-		if (cm_ctx.fields[i].field != NULL)
-			lwc_string_unref(cm_ctx.fields[i].field);
+		lwc_string_unref(cm_ctx.fields[i].field);
 
 	/* Free cookie manager treeview common entry values */
 	for (i = 0; i < COOKIE_M_N_VALUES; i++)
-		if (cm_ctx.values[i].value != NULL)
-			free((void *) cm_ctx.values[i].value);
+		free((void *) cm_ctx.values[i].value);
 
 	err = treeview_fini();
 	if (err != NSERROR_OK) {

@@ -1252,8 +1252,7 @@ static nserror hotlist_initialise_entry_fields(void)
 
 error:
 	for (i = 0; i < HL_N_FIELDS; i++)
-		if (hl_ctx.fields[i].field != NULL)
-			lwc_string_unref(hl_ctx.fields[i].field);
+		lwc_string_unref(hl_ctx.fields[i].field);
 
 	return NSERROR_UNKNOWN;
 }
@@ -1412,8 +1411,7 @@ nserror hotlist_fini(void)
 
 	/* Free hotlist treeview entry fields */
 	for (i = 0; i < HL_N_FIELDS; i++)
-		if (hl_ctx.fields[i].field != NULL)
-			lwc_string_unref(hl_ctx.fields[i].field);
+		lwc_string_unref(hl_ctx.fields[i].field);
 
 	err = treeview_fini();
 	if (err != NSERROR_OK) {

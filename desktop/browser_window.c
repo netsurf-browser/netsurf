@@ -1905,9 +1905,7 @@ nserror browser_window_destroy_internal(struct browser_window *bw)
 
 	/* These simply free memory, so are safe here */
 
-	if (bw->frag_id != NULL) {
-		lwc_string_unref(bw->frag_id);
-	}
+	lwc_string_unref(bw->frag_id);
 
 	browser_window_history_destroy(bw);
 
@@ -3399,9 +3397,7 @@ browser_window_navigate(struct browser_window *bw,
 		return error;
 	}
 
-	if (bw->frag_id != NULL) {
-		lwc_string_unref(bw->frag_id);
-	}
+	lwc_string_unref(bw->frag_id);
 	bw->frag_id = NULL;
 
 	if (nsurl_has_component(url, NSURL_FRAGMENT)) {
@@ -3821,9 +3817,7 @@ browser_window__navigate_internal(struct browser_window *bw,
 		lwc_string_unref(path);
 		return navigate_internal_query_fetcherror(bw, params);
 	}
-	if (path != NULL) {
-		lwc_string_unref(path);
-	}
+	lwc_string_unref(path);
 
 	/* Fall through to a normal about: fetch */
 
@@ -4762,9 +4756,7 @@ nserror browser_window_show_cookies(
 
 	err = guit->misc->present_cookies(string);
 
-	if (host != NULL) {
-		lwc_string_unref(host);
-	}
+	lwc_string_unref(host);
 	return err;
 }
 
