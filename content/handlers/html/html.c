@@ -1284,15 +1284,11 @@ static void html_destroy(struct content *c)
 		html->select_ctx = NULL;
 	}
 
-	if (html->universal != NULL) {
-		lwc_string_unref(html->universal);
-		html->universal = NULL;
-	}
+	lwc_string_unref(html->universal);
+	html->universal = NULL;
 
-	if (html->media.prefers_color_scheme != NULL) {
-		lwc_string_unref(html->media.prefers_color_scheme);
-		html->media.prefers_color_scheme = NULL;
-	}
+	lwc_string_unref(html->media.prefers_color_scheme);
+	html->media.prefers_color_scheme = NULL;
 
 	/* Free stylesheets */
 	html_css_free_stylesheets(html);

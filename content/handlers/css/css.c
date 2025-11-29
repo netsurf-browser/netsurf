@@ -175,14 +175,12 @@ nscss_create(const content_handler *handler,
 			nscss_content_done, result);
 	if (error != NSERROR_OK) {
 		content_broadcast_error(&result->base, NSERROR_NOMEM, NULL);
-		if (charset_value != NULL)
-			lwc_string_unref(charset_value);
+		lwc_string_unref(charset_value);
 		free(result);
 		return error;
 	}
 
-	if (charset_value != NULL)
-		lwc_string_unref(charset_value);
+	lwc_string_unref(charset_value);
 
 	*c = (struct content *) result;
 

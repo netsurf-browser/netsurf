@@ -459,8 +459,7 @@ hlcache_llcache_callback(llcache_handle *handle,
 			 * prohibited, we must migrate the retrieval context. */
 			error = hlcache_migrate_ctx(ctx, effective_type);
 
-			if (effective_type != NULL)
-				lwc_string_unref(effective_type);
+			lwc_string_unref(effective_type);
 		}
 
 		/* No need to report that we need data:
@@ -496,10 +495,7 @@ hlcache_llcache_callback(llcache_handle *handle,
 		if (error == NSERROR_OK || error == NSERROR_NOT_FOUND) {
 			error = hlcache_migrate_ctx(ctx, effective_type);
 
-			if (effective_type != NULL) {
-				lwc_string_unref(effective_type);
-			}
-
+			lwc_string_unref(effective_type);
 			return error;
 		}
 

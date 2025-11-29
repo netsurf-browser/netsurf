@@ -497,9 +497,7 @@ fetch_start(nsurl *url,
 						post_urlenc, post_multipart,
 						headers);
 	if (fetch->fetcher_handle == NULL) {
-
-		if (fetch->host != NULL)
-			lwc_string_unref(fetch->host);
+		lwc_string_unref(fetch->host);
 
 		if (fetch->url != NULL)
 			nsurl_unref(fetch->url);
@@ -574,9 +572,7 @@ void fetch_free(struct fetch *f)
 	if (f->referer != NULL) {
 		nsurl_unref(f->referer);
 	}
-	if (f->host != NULL) {
-		lwc_string_unref(f->host);
-	}
+	lwc_string_unref(f->host);
 	free(f);
 }
 

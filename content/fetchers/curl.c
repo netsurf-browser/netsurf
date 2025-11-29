@@ -547,9 +547,7 @@ fetch_curl_setup(struct fetch *parent_fetch,
 #undef APPEND
 
 failed:
-	if (fetch->host != NULL)
-		lwc_string_unref(fetch->host);
-
+	lwc_string_unref(fetch->host);
 	nsurl_unref(fetch->url);
 	fetch_curl_free_postdata(fetch->postdata);
 	curl_slist_free_all(fetch->headers);
