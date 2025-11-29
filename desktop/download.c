@@ -271,8 +271,7 @@ void download_context_destroy(download_context *ctx)
 {
 	llcache_handle_release(ctx->llcache);
 
-	if (ctx->mime_type != NULL)
-		lwc_string_unref(ctx->mime_type);
+	lwc_string_unref(ctx->mime_type);
 
 	free(ctx->filename);
 

@@ -569,9 +569,7 @@ nserror page_info_create(struct core_window *cw_h,
 /* Exported interface documented in desktop/page_info.h */
 nserror page_info_destroy(struct page_info *pi)
 {
-	if (pi->domain != NULL) {
-		lwc_string_unref(pi->domain);
-	}
+	lwc_string_unref(pi->domain);
 	free(pi);
 	return NSERROR_OK;
 }
@@ -581,9 +579,7 @@ nserror page_info_set(struct page_info *pgi, struct browser_window *bw)
 {
 	nserror res;
 
-	if (pgi->domain != NULL) {
-		lwc_string_unref(pgi->domain);
-	}
+	lwc_string_unref(pgi->domain);
 
 	res = page_info__create_from_bw(pgi, bw);
 	if (res == NSERROR_OK) {

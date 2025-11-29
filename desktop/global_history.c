@@ -580,8 +580,7 @@ static nserror global_history_initialise_entry_fields(void)
 
 error:
 	for (i = 0; i < N_FIELDS; i++)
-		if (gh_ctx.fields[i].field != NULL)
-			lwc_string_unref(gh_ctx.fields[i].field);
+		lwc_string_unref(gh_ctx.fields[i].field);
 
 	return NSERROR_UNKNOWN;
 }
@@ -811,8 +810,7 @@ nserror global_history_fini(void)
 
 	/* Free global history treeview entry fields */
 	for (i = 0; i < N_FIELDS; i++)
-		if (gh_ctx.fields[i].field != NULL)
-			lwc_string_unref(gh_ctx.fields[i].field);
+		lwc_string_unref(gh_ctx.fields[i].field);
 
 	err = treeview_fini();
 	if (err != NSERROR_OK) {
