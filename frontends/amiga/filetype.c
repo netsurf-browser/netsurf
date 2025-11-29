@@ -168,10 +168,10 @@ static void ami_mime_entry_free(void *nso)
 {
 	struct ami_mime_entry *mimeentry = (struct ami_mime_entry *)nso;
 
-	if(mimeentry->mimetype) lwc_string_unref(mimeentry->mimetype);
-	if(mimeentry->datatype) lwc_string_unref(mimeentry->datatype);
-	if(mimeentry->filetype) lwc_string_unref(mimeentry->filetype);
-	if(mimeentry->plugincmd) lwc_string_unref(mimeentry->plugincmd);
+	lwc_string_unref(mimeentry->mimetype);
+	lwc_string_unref(mimeentry->datatype);
+	lwc_string_unref(mimeentry->filetype);
+	lwc_string_unref(mimeentry->plugincmd);
 }
 
 nserror ami_mime_init(const char *mimefile)

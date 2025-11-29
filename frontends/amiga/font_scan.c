@@ -455,10 +455,8 @@ void ami_font_scan_fini(lwc_string **glypharray)
 
 	for(i=0x0000; i<=0xffff; i++)
 	{
-		if(glypharray[i]) {
-			lwc_string_unref(glypharray[i]);
-			glypharray[i] = NULL;
-		}
+		lwc_string_unref(glypharray[i]);
+		glypharray[i] = NULL;
 	}
 }
 
