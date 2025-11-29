@@ -47,9 +47,7 @@ typedef struct http_directive {
 static void http_destroy_directive(http_directive *self)
 {
 	lwc_string_unref(self->name);
-	if (self->value != NULL) {
-		lwc_string_unref(self->value);
-	}
+	lwc_string_unref(self->value);
 	free(self);
 }
 
@@ -88,9 +86,7 @@ static nserror http__parse_directive(const char **input,
 
 	directive = malloc(sizeof(*directive));
 	if (directive == NULL) {
-		if (value != NULL) {
-			lwc_string_unref(value);
-		}
+		lwc_string_unref(value);
 		lwc_string_unref(name);
 		return NSERROR_NOMEM;
 	}
@@ -187,9 +183,7 @@ static bool check_duplicates(const http_directive *directives)
 		result &= (count(directives, name) == 1);
 
 		lwc_string_unref(name);
-		if (value != NULL) {
-			lwc_string_unref(value);
-		}
+		lwc_string_unref(value);
 	} while (key != NULL);
 
 	return result;
