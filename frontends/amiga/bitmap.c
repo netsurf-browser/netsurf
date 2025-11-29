@@ -472,8 +472,8 @@ static inline struct BitMap *ami_bitmap_get_guigfx(struct bitmap *bitmap,
 										GGFX_PixelFormat, PIXFMT_0RGB_32,
 										GGFX_AlphaPresent, !bitmap->opaque,
 										GGFX_Independent, TRUE,
-										//GGFX_DestWidth, width,
-										//GGFX_DestHeight, height,
+										GGFX_DestWidth, width,
+										GGFX_DestHeight, height,
 										TAG_DONE);
 
 		if((!bitmap->opaque) && nsoption_bool(invert_alpha)) {
@@ -486,10 +486,6 @@ static inline struct BitMap *ami_bitmap_get_guigfx(struct bitmap *bitmap,
 
 		if(picture == NULL) {
 			amiga_warn_user("BMConvErr", NULL);
-		}
-
-		if((bitmap->width != width) || (bitmap->height != height)) {
-			DoPictureMethod(picture, PICMTHD_SCALE, width, height, TAG_DONE);
 		}
 
 		/* Alpha-blend the image to the provided background colour.
