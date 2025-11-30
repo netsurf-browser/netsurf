@@ -753,7 +753,6 @@ void ami_bitmap_fini(void)
 
 static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *content)
 {
-#ifdef __amigaos4__
 	NSLOG(netsurf, INFO, "Entering bitmap_render");
 
 	int plot_width;
@@ -784,9 +783,7 @@ static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *conte
 
 	ami_plot_ra_free(bm_globals);
 	amiga_bitmap_set_opaque(bitmap, true);
-#else
-#warning FIXME: Disabled on OS3 as it is causing system crash when CSS is enabled
-#endif
+
 	return NSERROR_OK;
 }
 
