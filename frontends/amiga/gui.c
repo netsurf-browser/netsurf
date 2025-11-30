@@ -4996,13 +4996,25 @@ gui_window_create(struct browser_window *bw,
 					BITMAP_Masking, TRUE,
 					BitMapEnd;
 
-		g->shared->objects[GID_CLOSETAB_BM] = BitMapObj,
+		if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase,54,27)) {
+#ifdef __amigaos4__
+			struct DrawInfo *dri = GetScreenDrawInfo(scrn);
+			g->shared->objects[GID_CLOSETAB_BM] = NewObject(NULL, "sysiclass",
+									SYSIA_Which, TABCLOSEIMAGE,
+									SYSIA_DrawInfo, dri,
+									TAG_DONE);
+
+			FreeScreenDrawInfo(scrn, dri);
+#endif
+		} else {
+			g->shared->objects[GID_CLOSETAB_BM] = BitMapObj,
 					BITMAP_SourceFile, closetab,
 					BITMAP_SelectSourceFile, closetab_s,
 					BITMAP_DisabledSourceFile, closetab_g,
 					BITMAP_Screen, scrn,
 					BITMAP_Masking, TRUE,
 					BitMapEnd;
+		}
 
 		g->shared->objects[GID_PAGEINFO_INSECURE_BM] = BitMapObj,
 					BITMAP_SourceFile, pi_insecure,
