@@ -439,12 +439,12 @@ static inline struct BitMap *ami_bitmap_get_guigfx(struct bitmap *bitmap,
 	struct Screen *scrn = ami_gui_get_screen();
 
 	if(type == AMI_NSBM_TRUECOLOUR) {
-		tbm = ami_rtg_allocbitmap(bitmap->width, bitmap->height, 32, 0,
-									friendbm, AMI_BITMAP_FORMAT);
+		tbm = ami_rtg_allocbitmap(width, height, 32, 0,
+			friendbm, AMI_BITMAP_FORMAT);
 		if(tbm == NULL) return NULL;
 	} else {
 		tbm = ami_rtg_allocbitmap(width, height,
-									8, 0, friendbm, AMI_BITMAP_FORMAT);
+			8, 0, friendbm, AMI_BITMAP_FORMAT);
 		if(tbm == NULL) return NULL;
 	}
 	
