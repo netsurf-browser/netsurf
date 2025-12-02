@@ -139,7 +139,6 @@ enum
 	GID_OPTS_DLDIR,
 	GID_OPTS_TAB_ACTIVE,
 	GID_OPTS_TAB_2,
-	GID_OPTS_TAB_LAST,
 	GID_OPTS_TAB_ALWAYS,
 	GID_OPTS_TAB_CLOSE,
 	GID_OPTS_SEARCH_PROV,
@@ -413,7 +412,6 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	gadlab[GID_OPTS_DLDIR] = (char *)ami_utf8_easy((char *)messages_get("DownloadDir"));
 	gadlab[GID_OPTS_TAB_ACTIVE] = (char *)ami_utf8_easy((char *)messages_get("TabActive"));
 	gadlab[GID_OPTS_TAB_2] = (char *)ami_utf8_easy((char *)messages_get("TabMiddle"));
-	gadlab[GID_OPTS_TAB_LAST] = (char *)ami_utf8_easy((char *)messages_get("TabLast"));
 	gadlab[GID_OPTS_TAB_ALWAYS] = (char *)ami_utf8_easy((char *)messages_get("TabAlways"));
 	gadlab[GID_OPTS_TAB_CLOSE] = (char *)ami_utf8_easy((char *)messages_get("TabClose"));
 	gadlab[GID_OPTS_SEARCH_PROV] = (char *)ami_utf8_easy((char *)messages_get("SearchProvider"));
@@ -1353,12 +1351,6 @@ void ami_gui_opts_open(void)
          	     	      					GA_Text, gadlab[GID_OPTS_TAB_ACTIVE],
          	     	      					GA_Selected, !nsoption_bool(foreground_new),
             	    					CheckBoxEnd,
-										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_LAST] = CheckBoxObj,
-      	              						GA_ID, GID_OPTS_TAB_LAST,
-         	           						GA_RelVerify, TRUE,
-         	           						GA_Text, gadlab[GID_OPTS_TAB_LAST],
-         	           						GA_Selected, nsoption_bool(new_tab_last),
-            	    					CheckBoxEnd,
 										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_2] = CheckBoxObj,
       	              						GA_ID, GID_OPTS_TAB_2,
          	           						GA_RelVerify, TRUE,
@@ -1978,13 +1970,6 @@ static void ami_gui_opts_use(bool save)
 		nsoption_set_bool(foreground_new, false);
 	} else {
 		nsoption_set_bool(foreground_new, true);
-	}
-
-	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_LAST],(ULONG *)&data);
-	if (data) {
-		nsoption_set_bool(new_tab_last, true);
-	} else {
-		nsoption_set_bool(new_tab_last, false);
 	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_2],(ULONG *)&data);

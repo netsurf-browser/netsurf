@@ -4810,15 +4810,11 @@ gui_window_create(struct browser_window *bw,
 								TNA_CloseGadget, TRUE,
 								TAG_DONE);
 
-		if(nsoption_bool(new_tab_last)) {
-			AddTail(&g->shared->tab_list, g->tab_node);
-		} else {
-			struct Node *insert_after = existing->tab_node;
+		struct Node *insert_after = existing->tab_node;
 
-			if(g->shared->last_new_tab)
-				insert_after = g->shared->last_new_tab;
-			Insert(&g->shared->tab_list, g->tab_node, insert_after);
-		}
+		if(g->shared->last_new_tab)
+			insert_after = g->shared->last_new_tab;
+		Insert(&g->shared->tab_list, g->tab_node, insert_after);
 
 		g->shared->last_new_tab = g->tab_node;
 
