@@ -53,8 +53,6 @@
 #include "amiga/rtg.h"
 #include "amiga/utf8.h"
 
-HOOKF(void, ami_bitmap_tile_hook, struct RastPort *, rp, struct BackFillMessage *);
-
 struct bfbitmap {
 	struct BitMap *bm;
 	ULONG width;
@@ -1043,14 +1041,14 @@ ami_bitmap_tile(const struct redraw_context *ctx,
 
 #ifdef __amigaos4__
 			if(__builtin_expect((GfxBase->LibNode.lib_Version >= 53) &&
-					(glob>palette_mapped == false), 1)) {
+					(glob->palette_mapped == false), 1)) {
 
 				CompositeTags(COMPOSITE_Src_Over_Dest, tbm, glob->rp->BitMap,
 					COMPTAG_Flags, COMPFLAG_IgnoreDestAlpha,
-					COMPTAG_DestX, xm,
-					COMPTAG_DestY, ym,
-					COMPTAG_DestWidth, xf - xm + 1,
-					COMPTAG_DestHeight, xf - xm + 1,
+					COMPTAG_DestX, glob->rect.MinX,
+					COMPTAG_DestY, glob->rect.MinY,
+					COMPTAG_DestWidth, glob->rect.MaxX - glob->rect.MinX + 1,
+					COMPTAG_DestHeight, glob->rect.MaxY - glob->rect.MinY + 1,
 					COMPTAG_SrcWidth, width,
 					COMPTAG_SrcHeight, height,
 					COMPTAG_OffsetX, x,
@@ -1068,7 +1066,7 @@ ami_bitmap_tile(const struct redraw_context *ctx,
 					minterm = 0xc0;
 				} else {
 #endif
-					if(tag_data = (ULONG)ami_bitmap_get_mask(bitmap, width, height, tbm)) {
+					if((tag_data = (ULONG)ami_bitmap_get_mask(bitmap, width, height, tbm))) {
 						tag = BLITA_MaskPlane;
 						minterm = MINTERM_SRCMASK;
 					}
