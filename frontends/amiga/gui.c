@@ -225,7 +225,7 @@ enum
 	GID_FAVE_RMV,
 	GID_CLOSETAB,
 	GID_CLOSETAB_BM,
-	GID_ADDTAB_BM,
+	GID_ADDTAB_HINT,
 	GID_TABS,
 	GID_TABS_FLAG,
 	GID_SEARCHSTRING,
@@ -4915,7 +4915,7 @@ gui_window_create(struct browser_window *bw,
 			translate_escape_chars(messages_get("HelpToolbarURL"));
 		g->shared->helphints[GID_SEARCHSTRING] =
 			translate_escape_chars(messages_get("HelpToolbarWebSearch"));
-		g->shared->helphints[GID_ADDTAB_BM] =
+		g->shared->helphints[GID_ADDTAB_HINT] =
 			translate_escape_chars(messages_get("HelpToolbarAddTab"));
 
 		g->shared->helphints[GID_PAGEINFO_INSECURE_BM] = ami_utf8_easy(messages_get("PageInfoInsecure"));
@@ -4965,14 +4965,6 @@ gui_window_create(struct browser_window *bw,
 
 		g->shared->objects[GID_FAVE_RMV] = BitMapObj,
 					BITMAP_SourceFile, unfave,
-					BITMAP_Screen, scrn,
-					BITMAP_Masking, TRUE,
-					BitMapEnd;
-
-		g->shared->objects[GID_ADDTAB_BM] = BitMapObj,
-					BITMAP_SourceFile, addtab,
-					BITMAP_SelectSourceFile, addtab_s,
-					BITMAP_DisabledSourceFile, addtab_g,
 					BITMAP_Screen, scrn,
 					BITMAP_Masking, TRUE,
 					BitMapEnd;
@@ -5031,10 +5023,7 @@ gui_window_create(struct browser_window *bw,
                 /* add a new tab tab */
                 g->shared->new_tab_tab = AllocClickTabNode(
 						TNA_Text, "+",
-#if 0
-						TNA_Image, g->shared->objects[GID_ADDTAB_BM],
-#endif
-						TNA_HintInfo, g->shared->helphints[GID_ADDTAB_BM],
+						TNA_HintInfo, g->shared->helphints[GID_ADDTAB_HINT],
 						TAG_DONE);
                 AddTail(&g->shared->tab_list, g->shared->new_tab_tab);
 
@@ -5562,7 +5551,6 @@ static void gui_window_destroy(struct gui_window *g)
 
 	/* These aren't freed by the above.
 	 * TODO: nav_west etc need freeing too? */
-	DisposeObject(g->shared->objects[GID_ADDTAB_BM]);
 	DisposeObject(g->shared->objects[GID_CLOSETAB_BM]);
 	DisposeObject(g->shared->objects[GID_TABS_FLAG]);
 	DisposeObject(g->shared->objects[GID_FAVE_ADD]);
