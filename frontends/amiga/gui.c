@@ -225,7 +225,6 @@ enum
 	GID_FAVE_RMV,
 	GID_CLOSETAB,
 	GID_CLOSETAB_BM,
-	GID_ADDTAB,
 	GID_ADDTAB_BM,
 	GID_TABS,
 	GID_TABS_FLAG,
@@ -254,6 +253,7 @@ struct gui_window_2 {
 	ULONG tabs;
 	ULONG next_tab;
 	struct Node *last_new_tab;
+	struct Node *new_tab_tab;
 	struct Hook scrollerhook;
 	browser_mouse_state mouse_state;
 	browser_mouse_state key_state;
@@ -2879,16 +2879,17 @@ static BOOL ami_gui_event(void *w)
 
 							browser_window_destroy(closedgw->bw);
 						} else {
-							ami_switch_tab(gwin, true);
+							GetAttr(CLICKTAB_CurrentNode, (Object *)gwin->objects[GID_TABS], (ULONG *)&tabnode);
+							if(tabnode != gwin->new_tab_tab) {
+								ami_switch_tab(gwin, true);
+							} else {
+								ami_gui_new_blank_tab(gwin);
+							}
 						}
 					break;
 
 					case GID_CLOSETAB:
 						browser_window_destroy(gwin->gw->bw);
-					break;
-
-					case GID_ADDTAB:
-						ami_gui_new_blank_tab(gwin);
 					break;
 
 					case GID_URL:
@@ -4268,47 +4269,30 @@ static void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 					CLICKTAB_LabelTruncate, TRUE,
 					CLICKTAB_CloseImage, gwin->objects[GID_CLOSETAB_BM],
 					CLICKTAB_FlagImage, gwin->objects[GID_TABS_FLAG],
+#ifdef __amigaos4__
+					CLICKTAB_EvenSize, FALSE,
+#endif
 					ClickTabEnd;
 
-		gwin->objects[GID_ADDTAB] = ButtonObj,
-					GA_ID, GID_ADDTAB,
-					GA_RelVerify, TRUE,
-					GA_HintInfo, gwin->helphints[GID_ADDTAB],
-					GA_Text, "+",
-					BUTTON_RenderImage, gwin->objects[GID_ADDTAB_BM],
-					ButtonEnd;
 #ifdef __amigaos4__
 		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_ADDCHILD,
 				gwin->win, gwin->objects[GID_TABS], NULL);
-
-		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_ADDCHILD,
-				gwin->win, gwin->objects[GID_ADDTAB], attrs);
 #else
 		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_TABLAYOUT],
 				gwin->win, NULL,
 				LAYOUT_AddChild, gwin->objects[GID_TABS], TAG_DONE);
-		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_TABLAYOUT],
-				gwin->win, NULL,
-				LAYOUT_AddChild, gwin->objects[GID_ADDTAB], TAG_MORE, &attrs);
 #endif
 	} else {
 #ifdef __amigaos4__
 		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_REMOVECHILD,
 				gwin->win, gwin->objects[GID_TABS]);
-
-		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_REMOVECHILD,
-				gwin->win, gwin->objects[GID_ADDTAB]);
 #else
 		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_TABLAYOUT],
 				gwin->win, NULL,
 				LAYOUT_RemoveChild, gwin->objects[GID_TABS], TAG_DONE);
-		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_TABLAYOUT],
-				gwin->win, NULL,
-				LAYOUT_RemoveChild, gwin->objects[GID_ADDTAB], TAG_DONE);
 #endif
 
 		gwin->objects[GID_TABS] = NULL;
-		gwin->objects[GID_ADDTAB] = NULL;
 	}
 
 	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
@@ -4908,6 +4892,7 @@ gui_window_create(struct browser_window *bw,
 											TAG_DONE);
 		AddTail(&g->shared->tab_list,g->tab_node);
 
+
 		g->shared->web_search_list = ami_gui_opts_websearch(&ws_idx);
 		g->shared->search_bm = NULL;
 
@@ -4930,7 +4915,7 @@ gui_window_create(struct browser_window *bw,
 			translate_escape_chars(messages_get("HelpToolbarURL"));
 		g->shared->helphints[GID_SEARCHSTRING] =
 			translate_escape_chars(messages_get("HelpToolbarWebSearch"));
-		g->shared->helphints[GID_ADDTAB] =
+		g->shared->helphints[GID_ADDTAB_BM] =
 			translate_escape_chars(messages_get("HelpToolbarAddTab"));
 
 		g->shared->helphints[GID_PAGEINFO_INSECURE_BM] = ami_utf8_easy(messages_get("PageInfoInsecure"));
@@ -5043,6 +5028,16 @@ gui_window_create(struct browser_window *bw,
 					BitMapEnd;
 
 
+                /* add a new tab tab */
+                g->shared->new_tab_tab = AllocClickTabNode(
+						TNA_Text, "+",
+#if 0
+						TNA_Image, g->shared->objects[GID_ADDTAB_BM],
+#endif
+						TNA_HintInfo, g->shared->helphints[GID_ADDTAB_BM],
+						TAG_DONE);
+                AddTail(&g->shared->tab_list, g->shared->new_tab_tab);
+
 		if(ClickTabBase->lib_Version < 53)
 		{
 			addtabclosegadget = LAYOUT_AddChild;
@@ -5059,13 +5054,6 @@ gui_window_create(struct browser_window *bw,
 					CLICKTAB_Labels,&g->shared->tab_list,
 					CLICKTAB_LabelTruncate,TRUE,
 					ClickTabEnd;
-
-			g->shared->objects[GID_ADDTAB] = ButtonObj,
-					GA_ID, GID_ADDTAB,
-					GA_RelVerify, TRUE,
-					GA_Text, "+",
-					BUTTON_RenderImage, g->shared->objects[GID_ADDTAB_BM],
-					ButtonEnd;
 		}
 		else
 		{
@@ -5286,10 +5274,6 @@ gui_window_create(struct browser_window *bw,
 
 					addtabclosegadget, g->shared->objects[GID_TABS],
 					CHILD_CacheDomain,FALSE,
-
-					addtabclosegadget, g->shared->objects[GID_ADDTAB],
-					CHILD_WeightedWidth,0,
-					CHILD_WeightedHeight,0,
 				LayoutEnd,
 				CHILD_WeightedHeight,0,
 				LAYOUT_AddChild, LayoutVObj,
@@ -5480,7 +5464,7 @@ static void ami_gui_close_tabs(struct gui_window_2 *gwin, bool other_tabs)
 								TNA_UserData,&gw,
 								TAG_DONE);
 
-			if((other_tabs == false) || (gwin->gw != gw)) {
+			if(gw &&((other_tabs == false) || (gwin->gw != gw))) {
 				browser_window_destroy(gw->bw);
 			}
 		} while((tab=ntab));
@@ -5607,6 +5591,7 @@ static void gui_window_destroy(struct gui_window *g)
 	free(g->shared->wintitle);
 	ami_utf8_free(g->shared->status);
 	free(g->shared->svbuffer);
+	FreeClickTabNode(g->shared->new_tab_tab);
 
 	for(gid = 0; gid < GID_LAST; gid++)
 		ami_utf8_free(g->shared->helphints[gid]);
@@ -5627,7 +5612,6 @@ static void gui_window_destroy(struct gui_window *g)
 
 	win_destroyed = true;
 }
-
 
 static void ami_redraw_callback(void *p)
 {
