@@ -628,6 +628,8 @@ void ami_gui_opts_open(void)
 		tab_always_show_disabled = TRUE;
 	}
 
+	BOOL outline_fonts = !nsoption_bool(bitmap_fonts);
+
 	fontsans.ta_Name = ASPrintf("%s.font", nsoption_charp(font_sans));
 	fontserif.ta_Name = ASPrintf("%s.font", nsoption_charp(font_serif));
 	fontmono.ta_Name = ASPrintf("%s.font", nsoption_charp(font_mono));
@@ -1147,8 +1149,8 @@ void ami_gui_opts_open(void)
 										GA_ID, GID_OPTS_FONT_SANS,
 										GA_RelVerify, TRUE,
 										GETFONT_TextAttr, &fontsans,
-										GETFONT_OTagOnly, TRUE,
-										GETFONT_ScalableOnly, TRUE,
+										GETFONT_OTagOnly, outline_fonts,
+										GETFONT_ScalableOnly, outline_fonts,
 									GetFontEnd,
 									CHILD_Label, LabelObj,
 										LABEL_Text, gadlab[GID_OPTS_FONT_SANS],
@@ -1157,8 +1159,8 @@ void ami_gui_opts_open(void)
 										GA_ID, GID_OPTS_FONT_SERIF,
 										GA_RelVerify, TRUE,
 										GETFONT_TextAttr, &fontserif,
-										GETFONT_OTagOnly, TRUE,
-										GETFONT_ScalableOnly, TRUE,
+										GETFONT_OTagOnly, outline_fonts,
+										GETFONT_ScalableOnly, outline_fonts,
 									GetFontEnd,
 									CHILD_Label, LabelObj,
 										LABEL_Text, gadlab[GID_OPTS_FONT_SERIF],
@@ -1167,8 +1169,8 @@ void ami_gui_opts_open(void)
 										GA_ID, GID_OPTS_FONT_MONO,
 										GA_RelVerify, TRUE,
 										GETFONT_TextAttr, &fontmono,
-										GETFONT_OTagOnly, TRUE,
-										GETFONT_ScalableOnly, TRUE,
+										GETFONT_OTagOnly, outline_fonts,
+										GETFONT_ScalableOnly, outline_fonts,
 										GETFONT_FixedWidthOnly, TRUE,
 									GetFontEnd,
 									CHILD_Label, LabelObj,
@@ -1178,8 +1180,8 @@ void ami_gui_opts_open(void)
 										GA_ID, GID_OPTS_FONT_CURSIVE,
 										GA_RelVerify, TRUE,
 										GETFONT_TextAttr, &fontcursive,
-										GETFONT_OTagOnly, TRUE,
-										GETFONT_ScalableOnly, TRUE,
+										GETFONT_OTagOnly, outline_fonts,
+										GETFONT_ScalableOnly, outline_fontsE,
 									GetFontEnd,
 									CHILD_Label, LabelObj,
 										LABEL_Text, gadlab[GID_OPTS_FONT_CURSIVE],
@@ -1188,8 +1190,8 @@ void ami_gui_opts_open(void)
 										GA_ID, GID_OPTS_FONT_FANTASY,
 										GA_RelVerify, TRUE,
 										GETFONT_TextAttr, &fontfantasy,
-										GETFONT_OTagOnly, TRUE,
-										GETFONT_ScalableOnly, TRUE,
+										GETFONT_OTagOnly, outline_fonts,
+										GETFONT_ScalableOnly, outline_fonts,
 									GetFontEnd,
 									CHILD_Label, LabelObj,
 										LABEL_Text, gadlab[GID_OPTS_FONT_FANTASY],
