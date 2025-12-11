@@ -1121,7 +1121,6 @@ void ami_gui_opts_open(void)
 											INTEGER_Minimum, 20,
 											INTEGER_Maximum, 200,
 											INTEGER_Arrows, TRUE,
-											GA_Disabled, nsoption_bool(bitmap_fonts),
 										IntegerEnd,
 										CHILD_WeightedWidth, 0,
 										CHILD_Label, LabelObj,
@@ -1181,7 +1180,7 @@ void ami_gui_opts_open(void)
 										GA_RelVerify, TRUE,
 										GETFONT_TextAttr, &fontcursive,
 										GETFONT_OTagOnly, outline_fonts,
-										GETFONT_ScalableOnly, outline_fontsE,
+										GETFONT_ScalableOnly, outline_fonts,
 									GetFontEnd,
 									CHILD_Label, LabelObj,
 										LABEL_Text, gadlab[GID_OPTS_FONT_CURSIVE],
@@ -1267,14 +1266,12 @@ void ami_gui_opts_open(void)
 											GA_Disabled, TRUE,
 #endif
             	    					CheckBoxEnd,
-#ifndef __amigaos4__
 										LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_BITMAP] = CheckBoxObj,
       	              						GA_ID, GID_OPTS_FONT_BITMAP,
          	           						GA_RelVerify, TRUE,
          	           						GA_Text, gadlab[GID_OPTS_FONT_BITMAP],
          	           						GA_Selected, nsoption_bool(bitmap_fonts),
             	    					CheckBoxEnd,
-#endif
 									LayoutEnd,
 								LayoutEnd,
 								CHILD_WeightedHeight, 0,
@@ -1919,16 +1916,33 @@ static void ami_gui_opts_use(bool save)
 		nsoption_set_bool(font_antialiasing, false);
 	}
 
-#ifndef __amigaos4__
 	GetAttr(GA_Selected, gow->objects[GID_OPTS_FONT_BITMAP], (ULONG *)&data);
 	ami_font_fini();
 
+#ifndef __amigaos4__
 	if((nsoption_bool(bitmap_fonts) == true) && (data == false)) {
 		nsoption_set_charp(font_sans, (char *)strdup("CGTriumvirate"));
 		nsoption_set_charp(font_serif, (char *)strdup("CGTimes"));
 		nsoption_set_charp(font_mono, (char *)strdup("LetterGothic"));
 		nsoption_set_charp(font_cursive, (char *)strdup("CGTriumvirate"));
 		nsoption_set_charp(font_fantasy, (char *)strdup("CGTimes"));
+	}
+#else
+	if((nsoption_bool(bitmap_fonts) == true) && (data == false)) {
+		nsoption_set_charp(font_sans, (char *)strdup("DejaVu Sans"));
+		nsoption_set_charp(font_serif, (char *)strdup("DejaVu Serif"));
+		nsoption_set_charp(font_mono, (char *)strdup("DejaVu Sans Mono"));
+		nsoption_set_charp(font_cursive, (char *)strdup("DejaVu Sans"));
+		nsoption_set_charp(font_fantasy, (char *)strdup("DejaVu Serif"));
+	}
+#endif
+	
+	if((nsoption_bool(bitmap_fonts) == false) && (data == true)) {
+		nsoption_set_charp(font_sans, (char *)strdup("helvetica"));
+		nsoption_set_charp(font_serif, (char *)strdup("times"));
+		nsoption_set_charp(font_mono, (char *)strdup("topaz"));
+		nsoption_set_charp(font_cursive, (char *)strdup("garnet"));
+		nsoption_set_charp(font_fantasy, (char *)strdup("emerald"));
 	}
 
 	if(data) {
@@ -1937,7 +1951,6 @@ static void ami_gui_opts_use(bool save)
 		nsoption_set_bool(bitmap_fonts, false);
 	}
 	ami_font_init();
-#endif
 
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_CACHE_MEM],(ULONG *)&nsoption_int(memory_cache_size));
 	nsoption_set_int(memory_cache_size, nsoption_int(memory_cache_size) * 1048576);

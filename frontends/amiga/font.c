@@ -52,12 +52,6 @@ void ami_font_setdevicedpi(int id)
 	DisplayInfoHandle dih;
 	struct DisplayInfo dinfo;
 
-	if(nsoption_bool(bitmap_fonts) == true) {
-		NSLOG(netsurf, INFO,
-		      "WARNING: Using diskfont.library for text. Forcing DPI to 72.");
-		nsoption_set_int(screen_ydpi, 72);
-	}
-
 	ULONG ydpi = nsoption_int(screen_ydpi);
 	ULONG xdpi = nsoption_int(screen_ydpi);
 	browser_set_dpi(nsoption_int(screen_ydpi));

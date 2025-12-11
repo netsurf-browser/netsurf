@@ -105,7 +105,8 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 
 	snprintf(font, MAX_FONT_NAME_SIZE, "%s.font", fontname);
 	tattr.ta_Name = font;
-	tattr.ta_YSize = fstyle->size / PLOT_STYLE_SCALE;
+	ULONG fsize = fstyle->size * nsoption_int(screen_ydpi) / 72;
+	tattr.ta_YSize = fsize / PLOT_STYLE_SCALE;
 	NSLOG(netsurf, INFO, "font: %s/%d", tattr.ta_Name, tattr.ta_YSize);
 
 	if(prev_font != NULL) {
