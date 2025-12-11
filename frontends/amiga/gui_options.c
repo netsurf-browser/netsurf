@@ -236,6 +236,7 @@ struct ami_gui_opts_window {
 	struct List nativebmoptslist;
 	struct List ditheroptslist;
 	struct List fontoptslist;
+	struct List fontenginelist;
 #endif
 	int websearch_idx;
 };
@@ -248,6 +249,41 @@ static const struct ami_win_event_table ami_guiopts_table = {
 	ami_gui_opts_close,
 };
 
+/* Default fonts */
+static struct TextAttr default_bm_font_SANS =    { "helvetica", 0, 0, 0 };
+static struct TextAttr default_bm_font_SERIF =   { "times",     0, 0, 0 };
+static struct TextAttr default_bm_font_MONO =    { "topaz",     0, 0, 0 };
+static struct TextAttr default_bm_font_CURSIVE = { "garnet",    0, 0, 0 };
+static struct TextAttr default_bm_font_FANTASY = { "emerald",   0, 0, 0 };
+
+#ifdef __amigaos4__
+static struct TextAttr default_cg_font_SANS =    { "DejaVu Sans",      0, 0, 0 };
+static struct TextAttr default_cg_font_SERIF =   { "DejaVu Serif",     0, 0, 0 };
+static struct TextAttr default_cg_font_MONO =    { "DejaVu Sans Mono", 0, 0, 0 };
+static struct TextAttr default_cg_font_CURSIVE = { "DejaVu Sans",      0, 0, 0 };
+static struct TextAttr default_cg_font_FANTASY = { "DejaVu Serif",     0, 0, 0 };
+#else
+static struct TextAttr default_cg_font_SANS =    { "CGTriumvirate", 0, 0, 0 };
+static struct TextAttr default_cg_font_SERIF =   { "CGTimes",       0, 0, 0 };
+static struct TextAttr default_cg_font_MONO =    { "LetterGothic",  0, 0, 0 };
+static struct TextAttr default_cg_font_CURSIVE = { "CGTriumvirate", 0, 0, 0 };
+static struct TextAttr default_cg_font_FANTASY = { "CGTimes",       0, 0, 0 };
+#endif
+
+#define AMI_GUI_OPTS_REFRESH_FONT_BM(TYPE) RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_FONT_##TYPE], \
+								gow->win, NULL, \
+								GETFONT_TextAttr, &default_bm_font_##TYPE, \
+								GETFONT_OTagOnly, FALSE, \
+								GETFONT_ScalableOnly, FALSE, \
+								TAG_DONE)
+
+#define AMI_GUI_OPTS_REFRESH_FONT_CG(TYPE) RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_FONT_##TYPE], \
+								gow->win, NULL, \
+								GETFONT_TextAttr, &default_cg_font_##TYPE, \
+								GETFONT_OTagOnly, TRUE, \
+								GETFONT_ScalableOnly, TRUE, \
+								TAG_DONE)
+
 static struct ami_gui_opts_window *gow = NULL;
 
 static CONST_STRPTR tabs[OPTS_MAX_TABS];
@@ -257,6 +293,7 @@ static CONST_STRPTR proxyopts[OPTS_MAX_PROXY];
 static CONST_STRPTR nativebmopts[OPTS_MAX_NATIVEBM];
 static CONST_STRPTR ditheropts[OPTS_MAX_DITHER];
 static CONST_STRPTR fontopts[6];
+static CONST_STRPTR fontengines[3];
 static CONST_STRPTR gadlab[OPTS_LAST];
 static CONST_STRPTR helphints[OPTS_LAST];
 static struct List *websearch_list;
@@ -319,6 +356,23 @@ static void ami_gui_opts_free_list(struct List *list, int type)
 }
 #endif
 
+static void ami_gui_opts_set_default_fonts(struct ami_gui_opts_window *gow, BOOL outline)
+{
+	if(outline) {
+		AMI_GUI_OPTS_REFRESH_FONT_CG(SANS);
+		AMI_GUI_OPTS_REFRESH_FONT_CG(SERIF);
+		AMI_GUI_OPTS_REFRESH_FONT_CG(MONO);
+		AMI_GUI_OPTS_REFRESH_FONT_CG(CURSIVE);
+		AMI_GUI_OPTS_REFRESH_FONT_CG(FANTASY);
+	} else {
+		AMI_GUI_OPTS_REFRESH_FONT_BM(SANS);
+		AMI_GUI_OPTS_REFRESH_FONT_BM(SERIF);
+		AMI_GUI_OPTS_REFRESH_FONT_BM(MONO);
+		AMI_GUI_OPTS_REFRESH_FONT_BM(CURSIVE);
+		AMI_GUI_OPTS_REFRESH_FONT_BM(FANTASY);		
+	}
+}
+
 static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 {
 	tabs[0] = (char *)ami_utf8_easy((char *)messages_get("con_general"));
@@ -361,6 +415,10 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	ditheropts[2] = (char *)ami_utf8_easy((char *)messages_get("High"));
 	ditheropts[3] = NULL;
 
+	fontengines[0] = (char *)ami_utf8_easy((char *)messages_get("FontEngineBullet"));
+	fontengines[1] = (char *)ami_utf8_easy((char *)messages_get("FontEngineDiskfont"));
+	fontengines[2] = NULL;
+	
 	gow->websearch_idx = 0;
 	websearch_list = ami_gui_opts_websearch(&gow->websearch_idx);
 
@@ -405,7 +463,7 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	gadlab[GID_OPTS_FONT_SIZE] = (char *)ami_utf8_easy((char *)messages_get("Default"));
 	gadlab[GID_OPTS_FONT_MINSIZE] = (char *)ami_utf8_easy((char *)messages_get("Minimum"));
 	gadlab[GID_OPTS_FONT_ANTIALIASING] = (char *)ami_utf8_easy((char *)messages_get("FontAntialiasing"));
-	gadlab[GID_OPTS_FONT_BITMAP] = (char *)ami_utf8_easy((char *)messages_get("FontBitmap"));
+	gadlab[GID_OPTS_FONT_BITMAP] = (char *)ami_utf8_easy((char *)messages_get("FontEngine"));
 	gadlab[GID_OPTS_CACHE_MEM] = (char *)ami_utf8_easy((char *)messages_get("Size"));
 	gadlab[GID_OPTS_CACHE_DISC] = (char *)ami_utf8_easy((char *)messages_get("Size"));
 	gadlab[GID_OPTS_OVERWRITE] = (char *)ami_utf8_easy((char *)messages_get("ConfirmOverwrite"));
@@ -481,7 +539,7 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	fontopts[3] = gadlab[GID_OPTS_FONT_CURSIVE];
 	fontopts[4] = gadlab[GID_OPTS_FONT_FANTASY];
 	fontopts[5] = NULL;
-
+	
 #ifndef __amigaos4__
 	ami_gui_opts_array_to_list(&gow->clicktablist, tabs, NSA_LIST_CLICKTAB);
 	ami_gui_opts_array_to_list(&gow->screenoptslist, screenopts, NSA_LIST_RADIO);
@@ -490,6 +548,7 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	ami_gui_opts_array_to_list(&gow->nativebmoptslist, nativebmopts, NSA_LIST_CHOOSER);
 	ami_gui_opts_array_to_list(&gow->ditheroptslist, ditheropts, NSA_LIST_CHOOSER);
 	ami_gui_opts_array_to_list(&gow->fontoptslist, fontopts, NSA_LIST_CHOOSER);
+	ami_gui_opts_array_to_list(&gow->fontenginelist, fontengines, NSA_LIST_CHOOSER);
 #endif
 }
 
@@ -1271,13 +1330,21 @@ void ami_gui_opts_open(void)
 											GA_Disabled, TRUE,
 #endif
             	    					CheckBoxEnd,
-										LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_BITMAP] = CheckBoxObj,
-      	              						GA_ID, GID_OPTS_FONT_BITMAP,
-         	           						GA_RelVerify, TRUE,
-         	           						GA_Text, gadlab[GID_OPTS_FONT_BITMAP],
-         	           						GA_Selected, nsoption_bool(bitmap_fonts),
-         	           						GA_HintInfo, helphints[GID_OPTS_FONT_BITMAP],
-            	    					CheckBoxEnd,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_BITMAP] = ChooserObj,
+											GA_ID, GID_OPTS_FONT_BITMAP,
+											GA_RelVerify, TRUE,
+											GA_HintInfo, helphints[GID_OPTS_FONT_BITMAP],
+											CHOOSER_PopUp, TRUE,
+#ifdef __amigaos4__
+											CHOOSER_LabelArray, fontengines,
+#else
+											CHOOSER_Labels, &gow->fontenginelist,
+#endif
+											CHOOSER_Selected, nsoption_bool(bitmap_fonts),
+										ChooserEnd,
+										CHILD_Label, LabelObj,
+											LABEL_Text, gadlab[GID_OPTS_FONT_BITMAP],
+										LabelEnd,
 									LayoutEnd,
 								LayoutEnd,
 								CHILD_WeightedHeight, 0,
@@ -1922,34 +1989,8 @@ static void ami_gui_opts_use(bool save)
 		nsoption_set_bool(font_antialiasing, false);
 	}
 
-	GetAttr(GA_Selected, gow->objects[GID_OPTS_FONT_BITMAP], (ULONG *)&data);
+	GetAttr(CHOOSER_Selected, gow->objects[GID_OPTS_FONT_BITMAP], (ULONG *)&data);
 	ami_font_fini();
-
-#ifndef __amigaos4__
-	if((nsoption_bool(bitmap_fonts) == true) && (data == false)) {
-		nsoption_set_charp(font_sans, (char *)strdup("CGTriumvirate"));
-		nsoption_set_charp(font_serif, (char *)strdup("CGTimes"));
-		nsoption_set_charp(font_mono, (char *)strdup("LetterGothic"));
-		nsoption_set_charp(font_cursive, (char *)strdup("CGTriumvirate"));
-		nsoption_set_charp(font_fantasy, (char *)strdup("CGTimes"));
-	}
-#else
-	if((nsoption_bool(bitmap_fonts) == true) && (data == false)) {
-		nsoption_set_charp(font_sans, (char *)strdup("DejaVu Sans"));
-		nsoption_set_charp(font_serif, (char *)strdup("DejaVu Serif"));
-		nsoption_set_charp(font_mono, (char *)strdup("DejaVu Sans Mono"));
-		nsoption_set_charp(font_cursive, (char *)strdup("DejaVu Sans"));
-		nsoption_set_charp(font_fantasy, (char *)strdup("DejaVu Serif"));
-	}
-#endif
-	
-	if((nsoption_bool(bitmap_fonts) == false) && (data == true)) {
-		nsoption_set_charp(font_sans, (char *)strdup("helvetica"));
-		nsoption_set_charp(font_serif, (char *)strdup("times"));
-		nsoption_set_charp(font_mono, (char *)strdup("topaz"));
-		nsoption_set_charp(font_cursive, (char *)strdup("garnet"));
-		nsoption_set_charp(font_fantasy, (char *)strdup("emerald"));
-	}
 
 	if(data) {
 		nsoption_set_bool(bitmap_fonts, true);
@@ -2153,8 +2194,8 @@ static BOOL ami_gui_opts_event(void *w)
 			break;
 
 			case WMHI_GADGETHELP:
-#ifdef __amigaos4__
-				/* FIXME: this is firing on OS3.2 without HELP being pressed */
+#if 0
+				/* FIXME: this is firing on OS3.2 and OS4 without HELP being pressed */
 				if((result & WMHI_GADGETMASK) == 0) {
 					/* Pointer not over our window */
 					ami_help_open(AMI_HELP_MAIN, ami_gui_get_screen());
@@ -2325,13 +2366,16 @@ static BOOL ami_gui_opts_event(void *w)
 						IDoMethod(gow->objects[GID_OPTS_FONT_FANTASY],
 						GFONT_REQUEST,gow->win);
 					break;
-#if 0
-					/* TODO: Immediately toggle the default fonts on the display */
+
 					case GID_OPTS_FONT_BITMAP:
-						RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_DPI_Y],
-							gow->win, NULL, GA_Disabled, code, TAG_DONE);
+						GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_FONT_BITMAP],(ULONG *)&data);
+						if(data) {
+							ami_gui_opts_set_default_fonts(gow, FALSE);
+						} else {
+							ami_gui_opts_set_default_fonts(gow, TRUE);
+						}
 					break;
-#endif
+
 					case GID_OPTS_DLDIR:
 						IDoMethod(gow->objects[GID_OPTS_DLDIR],
 						GFILE_REQUEST,gow->win);

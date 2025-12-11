@@ -8918,12 +8918,11 @@ it.ami.FontAntialiasing:Usa anti-aliasing (quando possibile)
 nl.ami.FontAntialiasing:Anti-aliasing (indien mogelijk) gebruiken
 zh_CN.ami.FontAntialiasing:使用抗锯齿处理方式（如果可能）
 
-en.ami.FontBitmap:Allow bitmap fonts
-de.ami.FontBitmap:Bitmap Fonts zulassen
-fr.ami.FontBitmap:Autoriser les polices de caractères bitmap
-it.ami.FontBitmap:Permetti font bitmap 
-nl.ami.FontBitmap:Allow bitmap fonts
-zh_CN.ami.FontBitmap:允许使用点阵字体
+en.ami.FontEngine:Font engine
+
+en.ami.FontEngineDiskfont:Bitmap (Diskfont)
+
+en.ami.FontEngineBullet:Outline (BulletAPI) [Recommended]
 
 # Font scanning
 en.ami.FontScanning:Scanning fonts...
@@ -9313,3 +9312,9 @@ nl.all.SetPassword:Stel wachtwoord in
 #fr.gtk.gtkToolBarTitle:Personaliser la barre d’outils
 #it.gtk.gtkToolBarTitle:Pulsanti della barra strumenti
 #nl.gtk.gtkToolBarTitle:Werkbalk aanpassen
+#en.ami.FontBitmap:Allow bitmap fonts
+#de.ami.FontBitmap:Bitmap Fonts zulassen
+#fr.ami.FontBitmap:Autoriser les polices de caractères bitmap
+#it.ami.FontBitmap:Permetti font bitmap 
+#nl.ami.FontBitmap:Allow bitmap fonts
+#zh_CN.ami.FontBitmap:允许使用点阵字体
