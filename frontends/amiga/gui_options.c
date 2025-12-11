@@ -2325,7 +2325,8 @@ static BOOL ami_gui_opts_event(void *w)
 						IDoMethod(gow->objects[GID_OPTS_FONT_FANTASY],
 						GFONT_REQUEST,gow->win);
 					break;
-#ifndef __amigaos4__
+#if 0
+					/* TODO: Immediately toggle the default fonts on the display */
 					case GID_OPTS_FONT_BITMAP:
 						RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_DPI_Y],
 							gow->win, NULL, GA_Disabled, code, TAG_DONE);
