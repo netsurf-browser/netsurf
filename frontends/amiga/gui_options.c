@@ -250,24 +250,24 @@ static const struct ami_win_event_table ami_guiopts_table = {
 };
 
 /* Default fonts */
-static struct TextAttr default_bm_font_SANS =    { "helvetica", 0, 0, 0 };
-static struct TextAttr default_bm_font_SERIF =   { "times",     0, 0, 0 };
-static struct TextAttr default_bm_font_MONO =    { "topaz",     0, 0, 0 };
-static struct TextAttr default_bm_font_CURSIVE = { "garnet",    0, 0, 0 };
-static struct TextAttr default_bm_font_FANTASY = { "emerald",   0, 0, 0 };
+static struct TextAttr default_bm_font_SANS =    { "helvetica.font", 0, 0, 0 };
+static struct TextAttr default_bm_font_SERIF =   { "times.font",     0, 0, 0 };
+static struct TextAttr default_bm_font_MONO =    { "topaz.font",     0, 0, 0 };
+static struct TextAttr default_bm_font_CURSIVE = { "garnet.font",    0, 0, 0 };
+static struct TextAttr default_bm_font_FANTASY = { "emerald.font",   0, 0, 0 };
 
 #ifdef __amigaos4__
-static struct TextAttr default_cg_font_SANS =    { "DejaVu Sans",      0, 0, 0 };
-static struct TextAttr default_cg_font_SERIF =   { "DejaVu Serif",     0, 0, 0 };
-static struct TextAttr default_cg_font_MONO =    { "DejaVu Sans Mono", 0, 0, 0 };
-static struct TextAttr default_cg_font_CURSIVE = { "DejaVu Sans",      0, 0, 0 };
-static struct TextAttr default_cg_font_FANTASY = { "DejaVu Serif",     0, 0, 0 };
+static struct TextAttr default_cg_font_SANS =    { "DejaVu Sans.font",      0, 0, 0 };
+static struct TextAttr default_cg_font_SERIF =   { "DejaVu Serif.font",     0, 0, 0 };
+static struct TextAttr default_cg_font_MONO =    { "DejaVu Sans Mono.font", 0, 0, 0 };
+static struct TextAttr default_cg_font_CURSIVE = { "DejaVu Sans.font",      0, 0, 0 };
+static struct TextAttr default_cg_font_FANTASY = { "DejaVu Serif.font",     0, 0, 0 };
 #else
-static struct TextAttr default_cg_font_SANS =    { "CGTriumvirate", 0, 0, 0 };
-static struct TextAttr default_cg_font_SERIF =   { "CGTimes",       0, 0, 0 };
-static struct TextAttr default_cg_font_MONO =    { "LetterGothic",  0, 0, 0 };
-static struct TextAttr default_cg_font_CURSIVE = { "CGTriumvirate", 0, 0, 0 };
-static struct TextAttr default_cg_font_FANTASY = { "CGTimes",       0, 0, 0 };
+static struct TextAttr default_cg_font_SANS =    { "CGTriumvirate.font", 0, 0, 0 };
+static struct TextAttr default_cg_font_SERIF =   { "CGTimes.font",       0, 0, 0 };
+static struct TextAttr default_cg_font_MONO =    { "LetterGothic.font",  0, 0, 0 };
+static struct TextAttr default_cg_font_CURSIVE = { "CGTriumvirate.font", 0, 0, 0 };
+static struct TextAttr default_cg_font_FANTASY = { "CGTimes.font",       0, 0, 0 };
 #endif
 
 #define AMI_GUI_OPTS_REFRESH_FONT_BM(TYPE) RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_FONT_##TYPE], \
@@ -583,6 +583,7 @@ static void ami_gui_opts_free(struct ami_gui_opts_window *gow)
 	ami_gui_opts_free_list(&gow->nativebmoptslist, NSA_LIST_CHOOSER);
 	ami_gui_opts_free_list(&gow->ditheroptslist, NSA_LIST_CHOOSER);
 	ami_gui_opts_free_list(&gow->fontoptslist, NSA_LIST_CHOOSER);
+	ami_gui_opts_free_list(&gow->fontenginelist, NSA_LIST_CHOOSER);
 #endif
 }
 
