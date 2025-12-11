@@ -8118,6 +8118,8 @@ en.ami.HelpToolbarHotlistStar:Add the current page to the hotlist
 
 en.ami.HelpToolbarHotlistStarLit:Remove the current page from the hotlist
 
+en.ami.HelpPrefsFontBitmap:Use bitmap fonts engine.\nWhen deselected, the outline font engine will be used (recommended on fast machines).\nToggling this will reset the fonts to defaults.
+
 en.ami.PageInfo:Page info
 fr.ami.PageInfo:Information sur la page
 

@@ -258,6 +258,7 @@ static CONST_STRPTR nativebmopts[OPTS_MAX_NATIVEBM];
 static CONST_STRPTR ditheropts[OPTS_MAX_DITHER];
 static CONST_STRPTR fontopts[6];
 static CONST_STRPTR gadlab[OPTS_LAST];
+static CONST_STRPTR helphints[OPTS_LAST];
 static struct List *websearch_list;
 
 #ifndef __amigaos4__
@@ -471,6 +472,8 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	gadlab[GRP_OPTS_SCALING] = (char *)ami_utf8_easy((char *)messages_get("Scaling"));
 	gadlab[GRP_OPTS_APPEARANCE] = (char *)ami_utf8_easy((char *)messages_get("Appearance"));
 	gadlab[GRP_OPTS_ADVANCED] = (char *)ami_utf8_easy((char *)messages_get("con_advanced"));
+	
+	helphints[GID_OPTS_FONT_BITMAP] = (char *)translate_escape_chars((char *)messages_get("HelpPrefsFontBitmap"));
 
 	fontopts[0] = gadlab[GID_OPTS_FONT_SANS];
 	fontopts[1] = gadlab[GID_OPTS_FONT_SERIF];
@@ -494,9 +497,11 @@ static void ami_gui_opts_free(struct ami_gui_opts_window *gow)
 {
 	int i;
 
-	for(i = 0; i < OPTS_LAST; i++)
+	for(i = 0; i < OPTS_LAST; i++) {
 		if(gadlab[i]) free((APTR)gadlab[i]);
-
+		if(helphints[i]) ami_utf8_free((APTR)helphints[i]);
+	}
+	
 	for(i = 0; i < OPTS_MAX_TABS; i++)
 		if(tabs[i]) free((APTR)tabs[i]);
 
@@ -1271,6 +1276,7 @@ void ami_gui_opts_open(void)
          	           						GA_RelVerify, TRUE,
          	           						GA_Text, gadlab[GID_OPTS_FONT_BITMAP],
          	           						GA_Selected, nsoption_bool(bitmap_fonts),
+         	           						GA_HintInfo, helphints[GID_OPTS_FONT_BITMAP],
             	    					CheckBoxEnd,
 									LayoutEnd,
 								LayoutEnd,
