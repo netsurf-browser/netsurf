@@ -574,7 +574,7 @@ static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPo
 
 	if (*char2 < 0x0020) skip_c2 = true;
 #ifndef __amigaos4__
-	if((strcmp(ofont->olf_EngineName, "bullet") == 0) && (*char1 == 0x0020)) return (emwidth / 3);
+	if(*char1 == 0x0020) return (emwidth / 3);
 #endif
 
 #ifdef __amigaos4__
@@ -686,7 +686,7 @@ static inline int32 ami_font_width_glyph(struct OutlineFont *ofont,
 
 	if (*char2 < 0x0020) skip_c2 = true;
 #ifndef __amigaos4__
-	if((strcmp(ofont->olf_EngineName, "bullet") == 0) && (*char1 == 0x0020)) return (emwidth / 3);
+	if(*char1 == 0x0020) return (emwidth / 3);
 #endif
 
 	long_char_1 = amiga_nsfont_decode_surrogate(char1);
