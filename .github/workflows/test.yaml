@@ -3,39 +3,6 @@ name: "test"
 on: [push]
 
 jobs:
-  push:
-    name: '${{ matrix.toolchain }}'
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        toolchain:
-          - arm-riscos-gnueabi
-          - arm-unknown-riscos
-          - i686-w64-mingw32
-          - m5475-atari-mint
-          - m68k-atari-mint
-          - m68k-unknown-amigaos
-          - ppc-amigaos
-          - x86_64-w64-mingw32
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v5
-      with:
-        fetch-depth: 1
-
-    - name: Create
-      run: touch ${{ matrix.toolchain }}.txt
-
-    # Can't avoid `upload-artifact` zipping the tarball
-    # https://github.com/actions/upload-artifact/issues/426
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ matrix.toolchain }}
-        path: ${{ matrix.toolchain }}.txt
-        compression-level: 0 # Avoid pointless recompression
   pull:
     name: '${{ matrix.toolchain }}'
     runs-on: ubuntu-24.04
@@ -62,10 +29,7 @@ jobs:
       uses: actions/download-artifact@v7
       with:
         name: ${{ matrix.toolchain }}
-        compression-level: 0 # Avoid pointless recompression
+        repository: netsurf/toolchains
 
     - name: Check ls
-      run: ls -l ${{ matrix.toolchain }}.txt
-
-    - name: Check cat
-      run: cat ${{ matrix.toolchain }}.txt
+      run: ls -l ${{ matrix.toolchain }}.tar.gz
