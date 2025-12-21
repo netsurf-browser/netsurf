@@ -4,9 +4,25 @@
 ##
 
 ifneq ($(HOST),windows)
-  # Set Mingw defaults
-  GCCSDK_INSTALL_ENV ?= /opt/netsurf/i686-w64-mingw32/env
-  GCCSDK_INSTALL_CROSSBIN ?= /opt/netsurf/i686-w64-mingw32/cross/bin
+  # Cross-build for Windows
+
+  # Search for the toolchain install locations if we haven't been told
+  # The search order prefers x86_64 over i686
+  ifeq ($(origin GCCSDK_INSTALL_ENV),undefined)
+    ifneq ($(realpath /opt/netsurf/x86_64-w64-mingw32/env),)
+      GCCSDK_INSTALL_ENV := /opt/netsurf/x86_64-w64-mingw32/env
+    else
+      GCCSDK_INSTALL_ENV := /opt/netsurf/i686-w64-mingw32/env
+    endif
+  endif
+
+  ifeq ($(origin GCCSDK_INSTALL_CROSSBIN),undefined)
+    ifneq ($(realpath /opt/netsurf/x86_64-w64-mingw32/env),)
+      GCCSDK_INSTALL_CROSSBIN := /opt/netsurf/x86_64-w64-mingw32/cross/bin
+    else
+      GCCSDK_INSTALL_CROSSBIN := /opt/netsurf/i686-w64-mingw32/cross/bin
+    endif
+  endif
 
   CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
   WINDRES := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*windres)
