@@ -370,7 +370,7 @@ case "$BUILD_TARGET" in
                 ;;
             *-atari-mint)
                 # tools required to build the browser for atari
-                NS_TOOLS=""
+                NS_TOOLS="nsgenbind"
                 # libraries required for the atari frontend
                 NS_FRONTEND_LIBS=""
                 ;;
