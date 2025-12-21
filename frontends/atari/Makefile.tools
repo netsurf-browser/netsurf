@@ -9,8 +9,25 @@ else
   ifeq ($(HOST),mint)
     PKG_CONFIG := pkg-config
   else
-    GCCSDK_INSTALL_ENV ?= /opt/netsurf/m68k-atari-mint/env
-    GCCSDK_INSTALL_CROSSBIN ?= /opt/netsurf/m68k-atari-mint/cross/bin
+    # Cross-build
+
+    # Search for the toolchain install locations if we haven't been told
+    # The search order prefers m68k over m5475
+    ifeq ($(origin GCCSDK_INSTALL_ENV),undefined)
+      ifneq ($(realpath /opt/netsurf/m68k-atari-mint/env),)
+        GCCSDK_INSTALL_ENV := /opt/netsurf/m68k-atari-mint/env
+      else
+        GCCSDK_INSTALL_ENV := /opt/netsurf/m5475-atari-mint/env
+      endif
+    endif
+
+    ifeq ($(origin GCCSDK_INSTALL_CROSSBIN),undefined)
+      ifneq ($(realpath /opt/netsurf/m68k-atari-mint/env),)
+        GCCSDK_INSTALL_CROSSBIN := /opt/netsurf/m68k-atari-mint/cross/bin
+      else
+        GCCSDK_INSTALL_CROSSBIN := /opt/netsurf/m5475-atari-mint/cross/bin
+      endif
+    endif
 
     CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
 
