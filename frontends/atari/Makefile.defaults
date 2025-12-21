@@ -39,10 +39,6 @@ NETSURF_USE_ATARI_VDI_FONT := NO
 # Valid options: YES, NO
 NETSURF_USE_ATARI_8BPP_SUPPORT := NO
 
-# Configure the CPU target
-# Valid options: 68000, 68020-60, 5475 (coldfire)
-ATARIARCH = 68020-60
-
 # enable optimizations
 # -O2 is currently broken with m68000 / m68020-60 builds
 CFLAGS += -O3
