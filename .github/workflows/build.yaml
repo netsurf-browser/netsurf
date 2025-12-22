@@ -61,7 +61,7 @@ jobs:
         TARGET_WORKSPACE: "${{ github.workspace }}/projects" # Same as "$(pwd)/projects"
       run: |
           source docs/env.sh
-          ns-clone -d -s
+          ns-clone -d -s -b ${GITHUB_REF_NAME}
           ns-make-tools install
           ns-make-libs install
 
@@ -241,7 +241,7 @@ jobs:
         echo "USE_CPUS=$USE_CPUS"
 
         echo "Cloning libs..."
-        ns-clone -d -s
+        ns-clone -d -s -b ${GITHUB_REF_NAME}
         echo "Building and installing tools..."
         ns-make-tools install
         echo "Building and installing libs..."
