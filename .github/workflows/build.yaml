@@ -58,8 +58,8 @@ jobs:
       env:
         CC: ${{ matrix.compiler.CC }}
         CXX: ${{ matrix.compiler.CXX }}
+        TARGET_WORKSPACE: "${{ github.workspace }}/projects" # Same as "$(pwd)/projects"
       run: |
-          export TARGET_WORKSPACE="$(pwd)/projects"
           source docs/env.sh
           ns-clone -d -s
           ns-make-tools install
@@ -79,8 +79,8 @@ jobs:
       env:
         CC: ${{ matrix.compiler.CC }}
         CXX: ${{ matrix.compiler.CXX }}
+        TARGET_WORKSPACE: "${{ github.workspace }}/projects" # Same as "$(pwd)/projects"
       run: |
-          export TARGET_WORKSPACE="$(pwd)/projects"
           source docs/env.sh
           make test
 
@@ -88,8 +88,8 @@ jobs:
       env:
         CC: ${{ matrix.compiler.CC }}
         CXX: ${{ matrix.compiler.CXX }}
+        TARGET_WORKSPACE: "${{ github.workspace }}/projects" # Same as "$(pwd)/projects"
       run: |
-          export TARGET_WORKSPACE="$(pwd)/projects"
           source docs/env.sh
           make -j"$(nproc)" TARGET=gtk
 
@@ -97,8 +97,8 @@ jobs:
       env:
         CC: ${{ matrix.compiler.CC }}
         CXX: ${{ matrix.compiler.CXX }}
+        TARGET_WORKSPACE: "${{ github.workspace }}/projects" # Same as "$(pwd)/projects"
       run: |
-          export TARGET_WORKSPACE="$(pwd)/projects"
           source docs/env.sh
           make -j"$(nproc)" TARGET=monkey
 
@@ -106,8 +106,8 @@ jobs:
       env:
         CC: ${{ matrix.compiler.CC }}
         CXX: ${{ matrix.compiler.CXX }}
+        TARGET_WORKSPACE: "${{ github.workspace }}/projects" # Same as "$(pwd)/projects"
       run: |
-          export TARGET_WORKSPACE="$(pwd)/projects"
           source docs/env.sh
           make -j"$(nproc)" TARGET=framebuffer
 
