@@ -426,6 +426,7 @@ ns-clone()
 {
     SHALLOW=""
     SKIP=""
+    BRANCH=""
     while [ $# -gt 0 ]
     do
         case "$1" in
@@ -434,6 +435,9 @@ ns-clone()
                                 ;;
             -s | --shallow) SHALLOW="--depth 1"
                             shift
+                            ;;
+            -b | --branch) BRANCH="$2"
+                            shift 2
                             ;;
             -*) echo "Error: Unknown option: $1" >&2
                 exit 1
@@ -447,11 +451,22 @@ ns-clone()
     mkdir -p ${TARGET_WORKSPACE}
     for REPO in $(echo ${NS_BUILDSYSTEM} ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_RISCOS_LIBS} ${NS_TOOLS} ${BUILD_TARGET}) ; do
         [ "x${REPO}" != "x${SKIP}" ] || continue
-        echo -n "     GIT: Cloning ${REPO}: "
+        echo -n "     GIT: Cloning '${REPO}'; "
         if [ -f ${TARGET_WORKSPACE}/${REPO}/.git/config ]; then
             echo "Repository already present"
         else
-            (cd ${TARGET_WORKSPACE} && git clone ${SHALLOW} ${NS_GIT}/${REPO}.git; )
+            if [ "x${BRANCH}" != "x" ]; then
+                if (cd ${TARGET_WORKSPACE} && git clone ${SHALLOW} -b ${BRANCH} ${NS_GIT}/${REPO}.git 2>/dev/null); then
+                    echo "got branch '${BRANCH}'"
+                    continue
+                fi
+            fi
+            if (cd ${TARGET_WORKSPACE} && git clone ${SHALLOW} ${NS_GIT}/${REPO}.git); then
+                echo "default branch"
+            else
+                echo "failure"
+                return 1
+            fi
         fi
     done
 
