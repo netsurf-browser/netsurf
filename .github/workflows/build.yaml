@@ -3,8 +3,9 @@ name: "Linux Build"
 on: [push]
 
 jobs:
-  linux:
-    name: '${{ matrix.os }}: ${{ matrix.compiler.vendor }}'
+  # Native linux builds
+  native:
+    name: 'Native: ${{ matrix.os }}: ${{ matrix.compiler.vendor }}'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -109,3 +110,182 @@ jobs:
           export TARGET_WORKSPACE="$(pwd)/projects"
           source docs/env.sh
           make -j"$(nproc)" TARGET=framebuffer
+
+  # Cross compile using toolchains built in the toolchains repo.
+  cross:
+    name: 'Cross: ${{ matrix.build.toolchain }}' # ATM toolchain unique across builds
+    runs-on: ubuntu-24.04 # Matches toolchains workflow
+    strategy:
+      fail-fast: false
+      matrix:
+        build:
+          - { toolchain: arm-riscos-gnueabi,   frontend: riscos,   pkg-file: netsurf.zip }
+          - { toolchain: arm-unknown-riscos,   frontend: riscos,   pkg-file: netsurf.zip }
+          - { toolchain: i686-w64-mingw32,     frontend: windows,  pkg-file: netsurf-installer.exe }
+          - { toolchain: m5475-atari-mint,     frontend: atari,    pkg-file: nsv4e.zip }
+          - { toolchain: m68k-atari-mint,      frontend: atari,    pkg-file: ns020.zip }
+          - { toolchain: m68k-unknown-amigaos, frontend: amigaos3, pkg-file: NetSurf_Amiga/netsurf.lha }
+          - { toolchain: ppc-amigaos,          frontend: amiga,    pkg-file: NetSurf_Amiga/netsurf.lha }
+          - { toolchain: x86_64-w64-mingw32,   frontend: windows,  pkg-file: netsurf-installer.exe }
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 1
+
+    - name: apt-get install packages
+      run: sudo apt-get update -qq &&
+           sudo apt-get install --no-install-recommends -y
+               bison
+               build-essential
+               ccache
+               check
+               clang
+               flex
+               git
+               gperf
+               jlha-utils
+               libcurl4-openssl-dev
+               libgtk-3-dev
+               libhtml-parser-perl
+               libjpeg-dev
+               libpng-dev
+               librsvg2-dev
+               llvm
+               nsis
+               pkg-config
+
+    - name: ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ${{ github.job }}-${{ matrix.build.toolchain }}
+        max-size: 128M
+
+    # look for toolchain for this branch name first, then default to master
+    - name: Download toolchain
+      run: |
+        set -e
+        
+        TOOLCHAIN_NAME="${{ matrix.build.toolchain }}"
+        BRANCH_NAME="${{ github.ref_name }}"
+        
+        # Function to try downloading toolchain from a specific tag
+        download_toolchain() {
+          local ref="$1"
+          local download_url="https://github.com/netsurf-browser/toolchains/releases/download/${ref}/${TOOLCHAIN_NAME}.tar.gz"
+          
+          echo "Trying to download toolchain from ref: $ref"
+          echo "URL: $download_url"
+          
+          if curl -f -L -o "${TOOLCHAIN_NAME}.tar.gz" "$download_url"; then
+            echo "Got toolchain with ref: $ref"
+            return 0
+          else
+            echo "Failed to download toolchain with ref: $ref"
+            return 1
+          fi
+        }
+        
+        # Try branch-specific toolchain first
+        safe_branch=$(echo "$BRANCH_NAME" | sed 's/[^a-zA-Z0-9._-]/-/g')
+        branch_tag="gh-${safe_branch}-unstable"
+        
+        if download_toolchain "$branch_tag"; then
+          echo "Downloaded branch-specific toolchain"
+        elif download_toolchain "gh-master-unstable"; then
+          echo "Downloaded fallback master toolchain"
+        else
+          echo "Failed to download any toolchain variant"
+          exit 1
+        fi
+
+    - name: Install toolchain
+      run: |
+        echo "Installing toolchain: ${{ matrix.build.toolchain }}"
+        sudo tar -xzf "${{ matrix.build.toolchain }}.tar.gz" -C /
+        rm "${{ matrix.build.toolchain }}.tar.gz"
+        ls -la /opt/netsurf/
+
+    - name: Build and install project libs
+      env:
+        HOST: "${{ matrix.build.toolchain }}"
+        TARGET_WORKSPACE: "${{ github.workspace }}/projects" # Same as "$(pwd)/projects"
+        Q:
+      run: |
+        echo "HOST=$HOST"
+        echo "TARGET_WORKSPACE=$TARGET_WORKSPACE"
+        
+        echo "Looking for cross-compiler tools..."
+        echo "Expected path: /opt/netsurf/${HOST}/cross/bin/"
+        if [ -f "/opt/netsurf/${HOST}/cross/bin/${HOST}-gcc" ]; then
+          echo "Found: /opt/netsurf/${HOST}/cross/bin/${HOST}-gcc"
+          echo "Testing if it's executable:"
+          /opt/netsurf/${HOST}/cross/bin/${HOST}-gcc --version || echo "Failed to execute gcc --version"
+          echo "Testing dumpmachine output:"
+          /opt/netsurf/${HOST}/cross/bin/${HOST}-gcc -dumpmachine || echo "Failed to execute gcc -dumpmachine"
+        else
+          echo "NOT FOUND: /opt/netsurf/${HOST}/cross/bin/${HOST}-gcc"
+        fi
+        
+        echo "Sourcing env.sh with error checking..."
+        set -e  # Exit on any error
+        if ! source docs/env.sh; then
+          echo "env.sh failed with exit code $?"
+          exit 1
+        fi
+        echo "env.sh sourced successfully"
+        echo "BUILD=$BUILD"
+        echo "HOST=$HOST"
+        echo "TARGET_WORKSPACE=$TARGET_WORKSPACE"
+        echo "USE_CPUS=$USE_CPUS"
+
+        echo "Cloning libs..."
+        ns-clone -d -s
+        echo "Building and installing tools..."
+        ns-make-tools install
+        echo "Building and installing libs..."
+        ns-make-libs install
+
+    - name: Build NetSurf
+      env:
+        HOST: "${{ matrix.build.toolchain }}"
+        TARGET_WORKSPACE: "${{ github.workspace }}/projects" # Same as "$(pwd)/projects"
+      run: |
+        set -e
+        if ! source docs/env.sh; then
+          echo "env.sh failed with exit code $?"
+          exit 1
+        fi
+        echo "env.sh sourced successfully"
+        echo "BUILD=$BUILD"
+        echo "HOST=$HOST"
+        echo "TARGET_WORKSPACE=$TARGET_WORKSPACE"
+        echo "USE_CPUS=$USE_CPUS"
+        make -j"$(nproc)" TARGET=${{ matrix.build.frontend }} Q=
+
+    - name: Make package
+      env:
+        HOST: "${{ matrix.build.toolchain }}"
+        TARGET_WORKSPACE: "${{ github.workspace }}/projects" # Same as "$(pwd)/projects"
+      run: |
+        set -e
+        if ! source docs/env.sh; then
+          echo "env.sh failed with exit code $?"
+          exit 1
+        fi
+        echo "env.sh sourced successfully"
+        echo "BUILD=$BUILD"
+        echo "HOST=$HOST"
+        echo "TARGET_WORKSPACE=$TARGET_WORKSPACE"
+        echo "USE_CPUS=$USE_CPUS"
+        make package TARGET=${{ matrix.build.frontend }} Q=
+
+    # Can't avoid `upload-artifact` zipping the package
+    # https://github.com/actions/upload-artifact/issues/426
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.build.toolchain }}-${{ matrix.build.frontend }}
+        path: ${{ matrix.build.pkg-file }}
+        compression-level: 0 # Avoid pointless recompression
