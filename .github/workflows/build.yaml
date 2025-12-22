@@ -205,7 +205,8 @@ jobs:
         echo "Installing toolchain: ${{ matrix.build.toolchain }}"
         sudo tar -xzf "${{ matrix.build.toolchain }}.tar.gz" -C /
         rm "${{ matrix.build.toolchain }}.tar.gz"
-        ls -la /opt/netsurf/
+        echo "Toolchain testament:"
+        cat /opt/netsurf/${{ matrix.build.toolchain }}/BUILD_INFO.txt
 
     - name: Build and install project libs
       env:
