@@ -674,10 +674,16 @@ bool print_document(struct gui_window *g, const char *filename)
 			NSLOG(netsurf, INFO,
 			      "redrawing area: [(%d, %d), (%d, %d)]", b.x0,
 			      b.y0, b.x1, b.y1);
-			clip.x0 = (b.x0 - ro_plot_origin_x) / 2;
-			clip.y0 = (ro_plot_origin_y - b.y1) / 2;
-			clip.x1 = (b.x1 - ro_plot_origin_x) / 2;
-			clip.y1 = (ro_plot_origin_y - b.y0) / 2;
+
+			ro_plot_clip_rect.x0 = b.x0 - ro_plot_origin_x;
+			ro_plot_clip_rect.y0 = ro_plot_origin_y - b.y0;
+			ro_plot_clip_rect.x1 = b.x1 - ro_plot_origin_x;
+			ro_plot_clip_rect.y1 = ro_plot_origin_y - b.y1;
+
+			clip.x0 = (ro_plot_clip_rect.x0    ) / 2; /* left   */
+			clip.y0 = (ro_plot_clip_rect.y1    ) / 2; /* top    */
+			clip.x1 = (ro_plot_clip_rect.x1 + 1) / 2; /* right  */
+			clip.y1 = (ro_plot_clip_rect.y0 + 1) / 2; /* bottom */
 
 			data.x = 0;
 			data.y = 0;
