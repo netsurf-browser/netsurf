@@ -344,6 +344,10 @@ case "$BUILD_TARGET" in
         NS_INTERNAL_LIBS="libwapcaplet libparserutils"
         ;;
 
+    libsvgtiny)
+        NS_INTERNAL_LIBS="libwapcaplet libparserutils libhubbub libdom"
+        ;;
+
     netsurf)
         # internal libraries all frontends require (order is important)
         NS_INTERNAL_LIBS="libwapcaplet libparserutils libhubbub libdom libcss libnsgif libnsbmp libutf8proc libnsutils libnspsl libnslog"
