@@ -18,6 +18,7 @@
 #   TARGET_WORKSPACE is the workspace directory to keep the sandboxes
 #   TARGET_TOOLKIT controls development package installs
 #                  can be unset or one of framebuffer, gtk2, gtk3, qt6
+#   REPO_BASE_URI sets the base address to git clone from
 #
 # The use of HOST and BUILD here is directly comprable to the GCC
 #   usage as described at:
@@ -321,7 +322,7 @@ export NETSURF_GTK_MAJOR
 MAKE=make
 
 # NetSurf GIT repositories
-NS_GIT="git://git.netsurf-browser.org"
+NS_GIT="${REPO_BASE_URI:-git://git.netsurf-browser.org}"
 
 # Buildsystem: everything depends on this
 NS_BUILDSYSTEM="buildsystem"
