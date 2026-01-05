@@ -43,6 +43,8 @@ jobs:
         max-size: 128M
 
     - name: Build and install project libs
+      env:
+        REPO_BASE_URI: https://github.com/netsurf-browser
       run: |
           export TARGET_WORKSPACE="$(pwd)/projects"
           source docs/env.sh
