@@ -32,7 +32,7 @@
 # apt get commandline to install necessary dev packages
 ns_apt_get_install()
 {
-    NS_DEV_DEB="build-essential pkg-config git gperf libcurl3-dev libexpat1-dev libpng-dev libjpeg-dev"
+    NS_DEV_DEB="build-essential pkg-config git gperf libcurl3-dev libexpat1-dev libpng-dev libjpeg-dev libutf8proc-dev"
     LIBCURL_OPENSSL_CONFLICTS="$(/usr/bin/apt-cache show libcurl4-openssl-dev | grep Conflicts | grep -o libssl1.0-dev)"
     if [ "x${LIBCURL_OPENSSL_CONFLICTS}" != "x" ]; then
         NS_DEV_DEB="${NS_DEV_DEB} libssl-dev"
@@ -173,7 +173,7 @@ ns_freebsdpkg_install()
 # generic for help text
 ns_generic_install()
 {
-    NS_DEV_GEN="git, gcc, pkgconfig, expat library, openssl library, libcurl, perl, perl MD5 digest, libjpeg library, libpng library"
+    NS_DEV_GEN="git, gcc, pkgconfig, expat library, openssl library, libcurl, libutf8proc, perl, perl MD5 digest, libjpeg library, libpng library"
 
     NS_TOOL_GEN="flex tool, bison tool"
 
@@ -350,7 +350,7 @@ case "$BUILD_TARGET" in
 
     netsurf)
         # internal libraries all frontends require (order is important)
-        NS_INTERNAL_LIBS="libwapcaplet libparserutils libhubbub libdom libcss libnsgif libnsbmp libutf8proc libnsutils libnspsl libnslog"
+        NS_INTERNAL_LIBS="libwapcaplet libparserutils libhubbub libdom libcss libnsgif libnsbmp libnsutils libnspsl libnslog"
 
         # add target specific libraries
         case "${HOST}" in

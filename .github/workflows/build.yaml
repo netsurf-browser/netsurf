@@ -44,6 +44,7 @@ jobs:
                libjpeg-dev
                libpng-dev
                librsvg2-dev
+               libutf8proc-dev
                llvm
                pkg-config
                wbritish # Needed for `/usr/share/dict/words`, used by test

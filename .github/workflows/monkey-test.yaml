@@ -35,6 +35,7 @@ jobs:
                libjpeg-dev
                libpng-dev
                librsvg2-dev
+               libutf8proc-dev
                llvm
                pkg-config
                python3-pyasyncore
