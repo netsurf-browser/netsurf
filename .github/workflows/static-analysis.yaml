@@ -33,6 +33,7 @@ jobs:
                libjpeg-dev
                libpng-dev
                librsvg2-dev
+               libutf8proc-dev
                pkg-config
 
     - name: ccache
