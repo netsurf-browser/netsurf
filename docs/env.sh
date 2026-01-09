@@ -406,6 +406,10 @@ case "$BUILD_TARGET" in
                 ;;
         esac
         ;;
+
+    libpencil)
+        NS_FRONTEND_LIBS="librufl"
+        ;;
 esac
 
 export MAKE
