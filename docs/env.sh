@@ -371,7 +371,7 @@ case "$BUILD_TARGET" in
                 # tools required to build the browser for RISC OS
                 NS_TOOLS="nsgenbind"
                 # libraries required for the risc os target abi
-                NS_FRONTEND_LIBS="libsvgtiny librufl libpencil librosprite"
+                NS_FRONTEND_LIBS="libsvgtiny librufl libpencil"
                 ;;
             *-atari-mint)
                 # tools required to build the browser for atari
@@ -403,7 +403,7 @@ case "$BUILD_TARGET" in
                 # default tools required to build the browser
                 NS_TOOLS="nsgenbind"
                 # default additional internal libraries
-                NS_FRONTEND_LIBS="libsvgtiny libnsfb"
+                NS_FRONTEND_LIBS="libsvgtiny libnsfb librosprite"
                 ;;
         esac
         ;;
