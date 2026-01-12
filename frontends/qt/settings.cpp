@@ -585,7 +585,7 @@ void PrivacySettings::categoryApply()
 class NetworkSettings:public AbstractSettingsCategory
 {
 public:
-	NetworkSettings(QWidget *parent);
+	NetworkSettings(QWidget *parent=nullptr);
 
 	const char *categoryName() { return "Network"; }
 	void categoryRealize();
@@ -718,7 +718,7 @@ void NetworkSettings::categoryApply()
 	nsoption_set_int(max_cached_fetch_handles, m_fetchers_cached->value());
 }
 
-NetworkSettings::NetworkSettings(QWidget *parent=nullptr)
+NetworkSettings::NetworkSettings(QWidget *parent)
 	: AbstractSettingsCategory(parent),
 	  m_proxylayout(new QFormLayout),
 	  m_hostport(new QWidget),
