@@ -2019,9 +2019,9 @@ nserror fetch_curl_register(void)
 		goto curl_multi_setopt_failed;				\
 	}
 
-		SETOPT(CURLMOPT_MAXCONNECTS, maxconnects);
-		SETOPT(CURLMOPT_MAX_TOTAL_CONNECTIONS, maxconnects);
-		SETOPT(CURLMOPT_MAX_HOST_CONNECTIONS, nsoption_int(max_fetchers_per_host));
+		SETOPT(CURLMOPT_MAXCONNECTS, (long)maxconnects);
+		SETOPT(CURLMOPT_MAX_TOTAL_CONNECTIONS, (long)maxconnects);
+		SETOPT(CURLMOPT_MAX_HOST_CONNECTIONS, (long)nsoption_int(max_fetchers_per_host));
 	}
 #endif
 
@@ -2056,13 +2056,13 @@ nserror fetch_curl_register(void)
 	SETOPT(CURLOPT_WRITEFUNCTION, fetch_curl_data);
 	SETOPT(CURLOPT_HEADERFUNCTION, fetch_curl_header);
 	SETOPT(NSCURLOPT_PROGRESS_FUNCTION, fetch_curl_progress);
-	SETOPT(CURLOPT_NOPROGRESS, 0);
+	SETOPT(CURLOPT_NOPROGRESS, 0L);
 	SETOPT(CURLOPT_USERAGENT, user_agent_string());
 	SETOPT(CURLOPT_ENCODING, "gzip");
 	SETOPT(CURLOPT_LOW_SPEED_LIMIT, 1L);
 	SETOPT(CURLOPT_LOW_SPEED_TIME, 180L);
 	SETOPT(CURLOPT_NOSIGNAL, 1L);
-	SETOPT(CURLOPT_CONNECTTIMEOUT, nsoption_uint(curl_fetch_timeout));
+	SETOPT(CURLOPT_CONNECTTIMEOUT, (long)nsoption_uint(curl_fetch_timeout));
 	SETOPT(CURLOPT_OPENSOCKETFUNCTION, fetch_curl_socket_open);
 	SETOPT(CURLOPT_CLOSESOCKETFUNCTION, fetch_curl_socket_close);
 
