@@ -1,13 +1,23 @@
 # -*- mode: makefile-gmake -*-
 ##
-## tool setup for the fltk target
+## tool setup for the qt target
 ##
 
 # use native package config
 PKG_CONFIG := pkg-config
 
+ifeq ($(HOST),openbsd)
+# Meta object compiler
+MOC := /usr/local/lib/qt6/libexec/moc
+
+# Resource compiler
+RCC := /usr/local/lib/qt6/libexec/rcc
+
+else
 # Meta object compiler
 MOC := /usr/lib/qt6/libexec/moc
 
 # Resource compiler
 RCC := /usr/lib/qt6/libexec/rcc
+
+endif

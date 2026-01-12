@@ -30,65 +30,61 @@ else
     HOST := riscos
   endif
 endif
-ifeq ($(HOST),riscos)
-  # Build happening on RO platform, default target is RO backend
-  ifeq ($(TARGET),)
-    TARGET := riscos
-  endif
-endif
 
 ifeq ($(HOST),BeOS)
   HOST := beos
 endif
+
 ifeq ($(HOST),Haiku)
   # Haiku implements the BeOS API
   HOST := beos
 endif
-ifeq ($(HOST),beos)
-    # Build happening on BeOS platform, default target is BeOS backend
-    ifeq ($(TARGET),)
-      TARGET := beos
-    endif
-    ifeq ($(TARGET),haiku)
-      override TARGET := beos
-    endif
-endif
 
 ifeq ($(HOST),AmigaOS)
   HOST := amiga
-  ifeq ($(TARGET),)
-    TARGET := amiga
-  endif
 endif
 
 ifeq ($(HOST),FreeMiNT)
   HOST := mint
-endif
-ifeq ($(HOST),mint)
-  ifeq ($(TARGET),)
-    TARGET := atari
-  endif
 endif
 
 ifeq ($(findstring MINGW,$(HOST)),MINGW)
   # MSYS' uname reports the likes of "MINGW32_NT-6.0"
   HOST := windows
 endif
-ifeq ($(HOST),windows)
-  ifeq ($(TARGET),)
-    TARGET := windows
-  endif
+
+ifeq ($(HOST),OpenBSD)
+  HOST := openbsd
 endif
 
 # Setup (sub)targets
 
-# empty default sub target
-SUBTARGET=
-
-# Default target is GTK 3 backend
 ifeq ($(TARGET),)
-  override TARGET := gtk
-  SUBTARGET = 3
+  ifeq ($(HOST),riscos)
+    # Build happening on RO platform, default target is riscos backend
+    TARGET := riscos
+    SUBTARGET=
+  else ifeq ($(HOST),beos)
+    # Build happening on BeOS platform, default target is beos backend
+    TARGET := beos
+    SUBTARGET=
+  else ifeq ($(HOST),amiga)
+    # Build happening on AmigaOS platform, default target is amiga backend
+    TARGET := amiga
+    SUBTARGET=
+  else ifeq ($(HOST),mint)
+    # Build happening on FreeMiNT platform, default target is atari backend
+    TARGET := atari
+    SUBTARGET=
+  else ifeq ($(HOST),windows)
+    # Build happening on Windows platform, default target is windows backend
+    TARGET := windows
+    SUBTARGET=
+  else
+    # Default target is GTK 3 backend
+    override TARGET := gtk
+    SUBTARGET = 3
+  endif
 else
   ifeq ($(TARGET),gtk)
     # unspecified gtk is gtk3
@@ -107,6 +103,11 @@ else
         ifeq ($(TARGET),amigaos3)
           override TARGET := amiga
           SUBTARGET = os3
+        else
+          ifeq ($(TARGET),haiku)
+            override TARGET := beos
+            SUBTARGET=
+          endif
         endif
       endif
     endif
