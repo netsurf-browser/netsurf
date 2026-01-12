@@ -96,7 +96,7 @@ static char *accept_language_from_selection(const QList<QByteArray> &selected)
 class GeneralSettings: public AbstractSettingsCategory
 {
 public:
-	GeneralSettings(QWidget *parent);
+	GeneralSettings(QWidget *parent=nullptr);
 	const char *categoryName() { return messages_get("General"); }
 	void categoryRealize();
 	void categoryApply();
@@ -105,7 +105,7 @@ private:
 };
 
 
-GeneralSettings::GeneralSettings(QWidget *parent=nullptr)
+GeneralSettings::GeneralSettings(QWidget *parent)
 	: AbstractSettingsCategory(parent),
 	  m_enablejavascript(new QCheckBox)
 {
@@ -156,7 +156,7 @@ void GeneralSettings::categoryApply()
 class HomeSettings: public AbstractSettingsCategory
 {
 public:
-	HomeSettings(QWidget *parent);
+	HomeSettings(QWidget *parent=nullptr);
 
 	const char *categoryName() { return messages_get("Home"); }
 	void categoryRealize();
@@ -178,7 +178,7 @@ void HomeSettings::categoryApply()
 	}
 }
 
-HomeSettings::HomeSettings(QWidget *parent=nullptr)
+HomeSettings::HomeSettings(QWidget *parent)
 	: AbstractSettingsCategory(parent),
 	  m_homeurl(new QLineEdit)
 {
@@ -199,7 +199,7 @@ HomeSettings::HomeSettings(QWidget *parent=nullptr)
 class AppearanceSettings: public AbstractSettingsCategory
 {
 public:
-	AppearanceSettings(QWidget *parent);
+	AppearanceSettings(QWidget *parent=nullptr);
 	const char *categoryName() { return "Appearance"; }
 	void categoryRealize();
 	void categoryApply();
@@ -210,7 +210,7 @@ private:
 	QComboBox *m_zoom;
 };
 
-AppearanceSettings::AppearanceSettings(QWidget *parent=nullptr)
+AppearanceSettings::AppearanceSettings(QWidget *parent)
 	: AbstractSettingsCategory(parent),
 	  m_opentab(new QCheckBox),
 	  m_switchnew(new QCheckBox),
@@ -317,7 +317,7 @@ void AppearanceSettings::categoryApply()
 class LanguageSettings: public AbstractSettingsCategory
 {
 public:
-	LanguageSettings(QWidget *parent);
+	LanguageSettings(QWidget *parent=nullptr);
 	const char *categoryName() { return "Language"; }
 	void categoryRealize();
 	void categoryApply();
@@ -325,7 +325,7 @@ private:
 	NS_ListSelection *m_pagelang;
 };
 
-LanguageSettings::LanguageSettings(QWidget *parent=nullptr)
+LanguageSettings::LanguageSettings(QWidget *parent)
 	: AbstractSettingsCategory(parent),
 	  m_pagelang(new NS_ListSelection)
 {
@@ -429,7 +429,7 @@ void LanguageSettings::categoryApply()
 class SearchSettings: public AbstractSettingsCategory
 {
 public:
-	SearchSettings(QWidget *parent);
+	SearchSettings(QWidget *parent=nullptr);
 	const char *categoryName() { return "Search"; }
 	void categoryRealize();
 	void categoryApply();
@@ -437,7 +437,7 @@ private:
 	QComboBox *m_provider; /**< web search provider */
 };
 
-SearchSettings::SearchSettings(QWidget *parent=nullptr)
+SearchSettings::SearchSettings(QWidget *parent)
 	: AbstractSettingsCategory(parent),
 	  m_provider(new QComboBox)
 {
@@ -485,7 +485,7 @@ void SearchSettings::categoryApply()
 class PrivacySettings: public AbstractSettingsCategory
 {
 public:
-	PrivacySettings(QWidget *parent);
+	PrivacySettings(QWidget *parent=nullptr);
 	const char *categoryName() { return messages_get("Privacy"); }
 	void categoryRealize();
 	void categoryApply();
@@ -496,7 +496,7 @@ private:
 	QCheckBox *m_enablereferral;
 };
 
-PrivacySettings::PrivacySettings(QWidget *parent=nullptr)
+PrivacySettings::PrivacySettings(QWidget *parent)
 	: AbstractSettingsCategory(parent),
 	  m_preventpopups(new QCheckBox),
 	  m_hideadverts(new QCheckBox),
