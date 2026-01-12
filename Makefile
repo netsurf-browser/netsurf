@@ -99,8 +99,8 @@ else
   COMMON_WARNFLAGS += -Wimplicit-fallthrough
 endif
 
-# deal with chaging warning flags for different platforms
-ifeq ($(HOST),OpenBSD)
+# deal with changing warning flags for different platforms
+ifeq ($(HOST),openbsd)
   # OpenBSD headers are not compatible with redundant declaration warning
   COMMON_WARNFLAGS += -Wno-redundant-decls
 else

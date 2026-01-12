@@ -14,7 +14,7 @@ testament $(OBJROOT)/testament.h:
 
 
 # lib png build compiler flags
-ifeq ($(HOST),OpenBSD)
+ifeq ($(HOST),openbsd)
     BUILD_LIBPNG_CFLAGS += $(shell $(PKG_CONFIG) --cflags libpng)
     BUILD_LIBPNG_LDFLAGS += $(shell $(PKG_CONFIG) --libs libpng)
 else

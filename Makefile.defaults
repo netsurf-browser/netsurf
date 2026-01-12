@@ -148,7 +148,7 @@ ifeq ($(HOST),macosx)
 endif
 
 # Configuration overrides for OpenBSD
-ifeq ($(HOST),OpenBSD)
+ifeq ($(HOST),openbsd)
     NETSURF_USE_LIBICONV_PLUG := NO
     NETSURF_USE_HARU_PDF := NO
 endif

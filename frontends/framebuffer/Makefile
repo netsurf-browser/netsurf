@@ -71,7 +71,7 @@ MESSAGES_TARGET=$(FRONTEND_RESOURCES_DIR)
 #   - the default set on freebsd already has them enabled
 #   - openbsd does not require the default source flags
 ifneq ($(HOST),FreeBSD)
-  ifneq ($(HOST),OpenBSD)
+  ifneq ($(HOST),openbsd)
     CFLAGS += -D_POSIX_C_SOURCE=200809L \
 	      -D_XOPEN_SOURCE=700 \
 	      -D_BSD_SOURCE \
