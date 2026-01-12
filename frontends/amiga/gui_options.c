@@ -19,6 +19,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
+
 #include <proto/exec.h>
 #include <proto/graphics.h>
 #include <proto/intuition.h>
@@ -66,6 +67,8 @@
 #include "desktop/searchweb.h"
 #include "netsurf/window.h"
 
+#include "amiga/os3support.h"
+#include "amiga/misc.h"
 #include "amiga/file.h"
 #include "amiga/font.h"
 #include "amiga/font_bullet.h"

@@ -2903,9 +2903,10 @@ static BOOL ami_gui_event(void *w)
 #ifdef __amigaos4__
 					{
 						char *prov = NULL;
-						GetAttr(CHOOSER_SelectedNode, gwin->objects[GID_SEARCH_ICON],(ULONG *)&storage);
-						if(storage != NULL) {
-							GetChooserNodeAttrs((struct Node *)storage, CNA_Text, (ULONG *)&prov, TAG_DONE);
+						struct Node *chooser_node = NULL;
+						GetAttr(CHOOSER_SelectedNode, gwin->objects[GID_SEARCH_ICON],(ULONG *)chooser_node);
+						if(chooser_node != NULL) {
+							GetChooserNodeAttrs(chooser_node, CNA_Text, (ULONG *)&prov, TAG_DONE);
 							nsoption_set_charp(search_web_provider, (char *)strdup(prov));
 						}
 					}
@@ -3529,7 +3530,7 @@ void ami_get_msg(void)
 		 * are in use, so we add 1. */
 
 		if (waitselect(max_fd + 1, &read_fd_set, &write_fd_set, &except_fd_set,
-				NULL, (unsigned int *)&signalmask) != -1) {
+				NULL, (ULONG *)&signalmask) != -1) {
 			signal = signalmask;
 		} else {
 			NSLOG(netsurf, INFO, "waitselect() returned error");
@@ -4677,7 +4678,6 @@ gui_window_create(struct browser_window *bw,
 		gui_window_create_flags flags)
 {
 	struct gui_window *g = NULL;
-	ULONG offset = 0;
 	struct Window *ref = NULL;
 	char nav_west[100],nav_west_s[100],nav_west_g[100];
 	char nav_east[100],nav_east_s[100],nav_east_g[100];
