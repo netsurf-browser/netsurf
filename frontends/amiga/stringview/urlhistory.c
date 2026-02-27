@@ -92,14 +92,15 @@ static bool URLHistoryFound(nsurl *url, const struct url_data *data)
 
 	if ( node )
 	{
-		STRPTR urladd = (STRPTR) ALLOCVEC_SHARED( strlen ( nsurl_access(url) ) + 1);
+    const char *u = nsurl_access(url);
+    STRPTR urladd = (STRPTR) ALLOCVEC_SHARED(strlen(u) + 1);
 
-		if ( urladd )
-		{
-			strcpy(urladd, nsurl_access(url));
-			node->ln_Name = urladd;
-			AddTail( &PageList, node );
-		}
+    if (urladd)
+    {
+      strcpy(urladd, u);
+      node->ln_Name = urladd;
+      AddTail(&PageList, node);
+    }
 		else
 		{
 			FreeVec(node);
