@@ -136,7 +136,7 @@ void ami_theme_init(void)
 	char themefile[1024];
 	BPTR lock = 0;
 
-	strcpy(themefile,nsoption_charp(theme));
+	strlcpy(themefile, nsoption_charp(theme), sizeof(themefile));
 	AddPart(themefile,"Theme",100);
 
 	lock = Lock(themefile,ACCESS_READ);
@@ -144,7 +144,7 @@ void ami_theme_init(void)
 	if(!lock)
 	{
 		amiga_warn_user("ThemeApplyErr",nsoption_charp(theme));
-		strcpy(themefile,"PROGDIR:Resources/Themes/Default/Theme");
+		strlcpy(themefile, "PROGDIR:Resources/Themes/Default/Theme", sizeof(themefile));
 		nsoption_set_charp(theme, (char *)strdup("PROGDIR:Resources/Themes/Default"));
 	}
 	else
