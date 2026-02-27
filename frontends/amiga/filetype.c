@@ -19,6 +19,7 @@
 #include "amiga/os3support.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <proto/icon.h>
 #include <proto/dos.h>
@@ -55,6 +56,17 @@ enum
 	AMI_MIME_PLUGINCMD
 };
 
+static BOOL ami_ends_with(const char *s, size_t slen, const char *suffix)
+{
+	size_t suflen = strlen(suffix);
+
+	if (slen < suflen) {
+		return FALSE;
+	}
+
+	return (strcmp(s + slen - suflen, suffix) == 0) ? TRUE : FALSE;
+}
+
 const char *fetch_filetype(const char *unix_path)
 {
 	static char mimetype[50];
@@ -62,13 +74,14 @@ const char *fetch_filetype(const char *unix_path)
 	struct DataType *dtn;
 	BOOL found = FALSE;
 	lwc_string *lwc_mimetype;
+  size_t plen = strlen(unix_path);
 
 	/* First, check if we appear to have an icon.
 	   We'll just do a filename check here for quickness, although the
 	   first word ought to be checked against WB_DISKMAGIC really. */
 
-	if(strncmp(unix_path + strlen(unix_path) - 5, ".info", 5) == 0) {
-		strcpy(mimetype,"image/x-amiga-icon");
+	if((plen >= 5) && (strcmp(unix_path + plen - 5, ".info") == 0)) {
+		strlcpy(mimetype, "image/x-amiga-icon", sizeof(mimetype));
 		found = TRUE;
 	}
 
@@ -82,7 +95,7 @@ const char *fetch_filetype(const char *unix_path)
 			STRPTR ttype = NULL;
 			ttype = FindToolType(dobj->do_ToolTypes, "MIMETYPE");
 			if(ttype) {
-				strcpy(mimetype,ttype);
+				strlcpy(mimetype, ttype, sizeof(mimetype));
 				found = TRUE;
 			}
 			FreeDiskObject(dobj);
@@ -96,7 +109,7 @@ const char *fetch_filetype(const char *unix_path)
 		if ((lock = Lock(unix_path, ACCESS_READ))) {
 			if ((dtn = ObtainDataTypeA (DTST_FILE, (APTR)lock, NULL))) {
 				if(ami_mime_from_datatype(dtn, &lwc_mimetype, NULL)) {
-					strcpy(mimetype, lwc_string_data(lwc_mimetype));
+					strlcpy(mimetype, lwc_string_data(lwc_mimetype), sizeof(mimetype));
 					found = TRUE;
 					ReleaseDataType(dtn);
 				}
@@ -113,27 +126,27 @@ const char *fetch_filetype(const char *unix_path)
 
 	if((!found) || (strcmp("text/plain", mimetype) == 0))
 	{
-		if((strncmp(unix_path + strlen(unix_path) - 4, ".css", 4) == 0) ||
-			(strncmp(unix_path + strlen(unix_path) - 4, ",f79", 4) == 0))
-		{
-			strcpy(mimetype,"text/css");
-			found = TRUE;
-		}
+		if(ami_ends_with(unix_path, plen, ".css") ||
+      ami_ends_with(unix_path, plen, ",f79"))
+    {
+      strlcpy(mimetype, "text/css", sizeof(mimetype));
+      found = TRUE;
+    }
 
-		if((strncmp(unix_path + strlen(unix_path) - 4, ".htm", 4) == 0) ||
-			(strncmp(unix_path + strlen(unix_path) - 5, ".html", 5) == 0) ||
-			(strncmp(unix_path + strlen(unix_path) - 4, ",faf", 4) == 0))
-		{
-			strcpy(mimetype,"text/html");
-			found = TRUE;
-		}
-		if(strncmp(unix_path + strlen(unix_path) - 3, ".js", 3) == 0) {
-			strcpy(mimetype,"application/javascript");
-			found = TRUE;
-		}
+		if(ami_ends_with(unix_path, plen, ".htm") ||
+      ami_ends_with(unix_path, plen, ".html") ||
+      ami_ends_with(unix_path, plen, ",faf"))
+    {
+      strlcpy(mimetype, "text/html", sizeof(mimetype));
+      found = TRUE;
+    }
+		if(ami_ends_with(unix_path, plen, ".js")) {
+      strlcpy(mimetype, "application/javascript", sizeof(mimetype));
+      found = TRUE;
+    }
 	}
 
-	if(!found) strcpy(mimetype,"text/plain"); /* If all else fails */
+	if(!found) strlcpy(mimetype, "text/plain", sizeof(mimetype)); /* If all else fails */
 
 	return mimetype;
 }
@@ -389,43 +402,43 @@ static APTR ami_mime_guess_add_datatype(struct DataType *dt, lwc_string **lwc_mi
 		case GID_DOCUMENT:
 			if(strcmp("ascii", dt_name_lwr)==0)
 			{
-				strcpy(mimetype,"text/plain");
+				strlcpy(mimetype, "text/plain", sizeof(mimetype));
 			}
 			else
 			{
-				sprintf(mimetype,"text/%s", dt_name_lwr);
+				snprintf(mimetype, sizeof(mimetype), "text/%s", dt_name_lwr);
 			}
 		break;
 		case GID_SOUND:
 		case GID_INSTRUMENT:
 		case GID_MUSIC:
-			sprintf(mimetype,"audio/%s", dt_name_lwr);
+			snprintf(mimetype, sizeof(mimetype), "audio/%s", dt_name_lwr);
 		break;
 		case GID_PICTURE:
 			if(strcmp("sprite", dt_name_lwr)==0)
 			{
-				strcpy(mimetype,"image/x-riscos-sprite");
+				strlcpy(mimetype, "image/x-riscos-sprite", sizeof(mimetype));
 			}
 			else
 			{
-				sprintf(mimetype,"image/%s", dt_name_lwr);
+				snprintf(mimetype, sizeof(mimetype), "image/%s", dt_name_lwr);
 			}
 		break;
 		case GID_ANIMATION:
 		case GID_MOVIE:
-			sprintf(mimetype,"video/%s", dt_name_lwr);
+			snprintf(mimetype, sizeof(mimetype), "video/%s", dt_name_lwr);
 		break;
 		case GID_SYSTEM:
 		default:
 			if(strcmp("directory", dt_name_lwr)==0)
 			{
-				strcpy(mimetype,"application/x-netsurf-directory");
+				strlcpy(mimetype, "application/x-netsurf-directory", sizeof(mimetype));
 			}
 			else if(strcmp("binary", dt_name_lwr)==0)
 			{
-				strcpy(mimetype,"application/octet-stream");
+				strlcpy(mimetype, "application/octet-stream", sizeof(mimetype));
 			}
-			else sprintf(mimetype,"application/%s", dt_name_lwr);
+			else snprintf(mimetype, sizeof(mimetype), "application/%s", dt_name_lwr);
 		break;
 	}
 
