@@ -20,6 +20,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <math.h>
 
 #include <proto/intuition.h>
@@ -74,7 +75,22 @@ enum
 };
 
 static Object *arexx_obj = NULL;
-STATIC char result[100];
+
+#define RX_RESULT_MAX 4096
+STATIC char result[RX_RESULT_MAX];
+
+static void rx_set_result(struct ARexxCmd *cmd, const char *s)
+{
+	if (s == NULL) s = "";
+	snprintf(result, sizeof(result), "%s", s);
+	cmd->ac_Result = result;
+}
+
+static void rx_set_result_int(struct ARexxCmd *cmd, int v)
+{
+	snprintf(result, sizeof(result), "%d", v);
+	cmd->ac_Result = result;
+}
 
 #ifdef __amigaos4__
 #define RXHOOKF(func) static VOID func(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
@@ -403,14 +419,12 @@ RXHOOKF(rx_geturl)
 
 	if(gw && ami_gui_get_browser_window(gw))
 	{
-		strcpy(result, nsurl_access(browser_window_access_url(ami_gui_get_browser_window(gw))));
+		rx_set_result(cmd, nsurl_access(browser_window_access_url(ami_gui_get_browser_window(gw))));
 	}
 	else
 	{
-		strcpy(result,"");
+		rx_set_result(cmd,"");
 	}
-
-	cmd->ac_Result = result;
 }
 
 RXHOOKF(rx_gettitle)
@@ -425,16 +439,14 @@ RXHOOKF(rx_gettitle)
 	if(gw)
 	{
 		if(ami_gui2_get_tabs(ami_gui_get_gui_window_2(gw)) > 1)
-			strcpy(result, ami_gui_get_tab_title(gw));
+			rx_set_result(cmd, ami_gui_get_tab_title(gw));
 		else
-			strcpy(result, ami_gui_get_win_title(gw));
+			rx_set_result(cmd, ami_gui_get_win_title(gw));
 	}
 	else
 	{
-		strcpy(result,"");
+		rx_set_result(cmd,"");
 	}
-
-	cmd->ac_Result = result;
 }
 
 RXHOOKF(rx_version)
@@ -447,27 +459,27 @@ RXHOOKF(rx_version)
 		{
 			if((netsurf_version_major > *(int *)cmd->ac_ArgList[0]) || ((netsurf_version_minor >= *(int *)cmd->ac_ArgList[1]) && (netsurf_version_major == *(int *)cmd->ac_ArgList[0])))
 			{
-				strcpy(result,"1");
+				rx_set_result(cmd,"1");
 			}
 			else
 			{
-				strcpy(result,"0");
+				rx_set_result(cmd,"0");
 			}
 		}
 		else if(cmd->ac_ArgList[0])
 		{
 			if((netsurf_version_major >= *(int *)cmd->ac_ArgList[0]))
 			{
-				strcpy(result,"1");
+				rx_set_result(cmd,"1");
 			}
 			else
 			{
-				strcpy(result,"0");
+				rx_set_result(cmd,"0");
 			}
 		}
 		else
 		{
-			strcpy(result,netsurf_version);
+			rx_set_result(cmd,netsurf_version);
 		}
 	}
 	else
@@ -476,31 +488,29 @@ RXHOOKF(rx_version)
 		{
 			if((netsurf_version_major > *(int *)cmd->ac_ArgList[0]) || ((atoi(wt_revid) >= *(int *)cmd->ac_ArgList[1]) && (netsurf_version_major == *(int *)cmd->ac_ArgList[0])))
 			{
-				strcpy(result,"1");
+				rx_set_result(cmd,"1");
 			}
 			else
 			{
-				strcpy(result,"0");
+				rx_set_result(cmd,"0");
 			}
 		}
 		else if(cmd->ac_ArgList[0])
 		{
 			if((netsurf_version_major >= *(int *)cmd->ac_ArgList[0]))
 			{
-				strcpy(result,"1");
+				rx_set_result(cmd,"1");
 			}
 			else
 			{
-				strcpy(result,"0");
+				rx_set_result(cmd,"0");
 			}
 		}
 		else
 		{
-			strcpy(result,verarexx);
+			rx_set_result(cmd,verarexx);
 		}
 	}
-
-	cmd->ac_Result = result;
 }
 
 RXHOOKF(rx_pubscreen)
@@ -509,14 +519,12 @@ RXHOOKF(rx_pubscreen)
 
 	if(nsoption_charp(pubscreen_name) == NULL)
 	{
-		strcpy(result,"NetSurf");
+		rx_set_result(cmd,"NetSurf");
 	}
 	else
 	{
-		strcpy(result, nsoption_charp(pubscreen_name));
+		rx_set_result(cmd, nsoption_charp(pubscreen_name));
 	}
-
-	cmd->ac_Result = result;
 }
 
 RXHOOKF(rx_back)
@@ -602,9 +610,8 @@ RXHOOKF(rx_windows)
 
 	windows = ami_gui_count_windows(window, &tabs);
 
-	if(cmd->ac_ArgList[0]) sprintf(result, "%d", tabs);
-		else sprintf(result, "%d", windows);
-	cmd->ac_Result = result;
+	if(cmd->ac_ArgList[0]) rx_set_result_int(cmd, tabs);
+		else rx_set_result_int(cmd, windows);
 }
 
 RXHOOKF(rx_active)
@@ -646,9 +653,8 @@ RXHOOKF(rx_active)
 		tab = ami_find_tab_bw(gwin, ami_gui_get_browser_window(gw));
 	}
 
-	if(cmd->ac_ArgList[0]) sprintf(result, "%d", tab);
-		else sprintf(result, "%d", window);
-	cmd->ac_Result = result;
+	if(cmd->ac_ArgList[0]) rx_set_result_int(cmd, tab);
+		else rx_set_result_int(cmd, window);
 }
 
 RXHOOKF(rx_close)
