@@ -6357,30 +6357,62 @@ static char *ami_gui_get_user_dir(STRPTR current_user)
 		}
 	}
 
-	if(LIB_IS_AT_LEAST((struct Library *)DOSBase, 51, 96)) {
-#ifdef __amigaos4__
-		struct InfoData *infodata = AllocDosObject(DOS_INFODATA, 0);
-		if(infodata == NULL) {
-			ami_misc_fatal_error("Failed to allocate memory");
-			FreeVec(current_user);
-			return NULL;
-		}
-		GetDiskInfoTags(GDI_StringNameInput, users_dir,
-					GDI_InfoData, infodata,
-					TAG_DONE);
-		if(infodata->id_DiskState == ID_DISKSTATE_WRITE_PROTECTED) {
-			FreeDosObject(DOS_INFODATA, infodata);
-			ami_misc_fatal_error("User directory MUST be on a writeable volume");
-			FreeVec(current_user);
-			return NULL;
-		}
-		FreeDosObject(DOS_INFODATA, infodata);
-#else
-#warning FIXME for OS3 and older OS4
-#endif
-	} else {
-//TODO: check volume write status using old API
-	}
+  if(LIB_IS_AT_LEAST((struct Library *)DOSBase, 51, 96)) {
+  #ifdef __amigaos4__
+    struct InfoData *infodata = AllocDosObject(DOS_INFODATA, 0);
+    if(infodata == NULL) {
+      ami_misc_fatal_error("Failed to allocate memory");
+      FreeVec(current_user);
+      return NULL;
+    }
+    GetDiskInfoTags(GDI_StringNameInput, users_dir,
+          GDI_InfoData, infodata,
+          TAG_DONE);
+    if(infodata->id_DiskState == ID_DISKSTATE_WRITE_PROTECTED) {
+      FreeDosObject(DOS_INFODATA, infodata);
+      ami_misc_fatal_error("User directory MUST be on a writeable volume");
+      FreeVec(current_user);
+      return NULL;
+    }
+    FreeDosObject(DOS_INFODATA, infodata);
+  #else
+    /* OS3 and older: test writability by creating a temporary file */
+    {
+      char testfile[1024];
+      BPTR fh;
+  
+      strlcpy(testfile, users_dir, sizeof(testfile));
+      AddPart(testfile, ".netsurf_write_test", sizeof(testfile));
+  
+      fh = Open(testfile, MODE_NEWFILE);
+      if(fh != 0) {
+        Close(fh);
+        DeleteFile(testfile);
+      } else {
+        ami_misc_fatal_error("User directory MUST be on a writeable volume");
+        FreeVec(current_user);
+        return NULL;
+      }
+    }
+  #endif
+  } else {
+    /* Older DOS: same pragmatic write test */
+    char testfile[1024];
+    BPTR fh;
+  
+    strlcpy(testfile, users_dir, sizeof(testfile));
+    AddPart(testfile, ".netsurf_write_test", sizeof(testfile));
+  
+    fh = Open(testfile, MODE_NEWFILE);
+    if(fh != 0) {
+      Close(fh);
+      DeleteFile(testfile);
+    } else {
+      ami_misc_fatal_error("User directory MUST be on a writeable volume");
+      FreeVec(current_user);
+      return NULL;
+    }
+  }
 
 	int len = strlen(current_user);
 	len += strlen(users_dir);
