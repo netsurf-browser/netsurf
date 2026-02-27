@@ -19,6 +19,7 @@
 #ifndef AMIGA_THEME_H
 #define AMIGA_THEME_H
 
+#include <stddef.h>
 #include "netsurf/mouse.h"
 
 struct gui_window_2;
@@ -29,7 +30,7 @@ struct gui_window;
 #define AMI_LASTPOINTER AMI_GUI_POINTER_DRAG
 
 void ami_theme_init(void);
-void ami_get_theme_filename(char *filename, const char *themestring, bool protocol);
+void ami_get_theme_filename(char *filename, size_t filename_size, const char *themestring, bool protocol);
 
 int ami_theme_throbber_get_width(void);
 int ami_theme_throbber_get_height(void);

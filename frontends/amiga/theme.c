@@ -175,7 +175,7 @@ void ami_theme_throbber_setup(void)
 	char throbberfile[1024];
 	struct bitmap *bm;
 
-	ami_get_theme_filename(throbberfile,"theme_throbber",false);
+	ami_get_theme_filename(throbberfile, sizeof(throbberfile), "theme_throbber", false);
 	throbber_frames=atoi(messages_get("theme_throbber_frames"));
 	if(throbber_frames == 0) throbber_frames = 1;
 	throbber_update_interval = atoi(messages_get("theme_throbber_delay"));
@@ -195,21 +195,26 @@ void ami_theme_throbber_free(void)
 	throbber = NULL;
 }
 
-void ami_get_theme_filename(char *filename, const char *themestring, bool protocol)
+void ami_get_theme_filename(char *filename, size_t filename_size, const char *themestring, bool protocol)
 {
-	if(protocol)
-		strcpy(filename,"file:///");
-	else
-		strcpy(filename,"");
+	if (filename == NULL || filename_size == 0) {
+		return;
+	}
+
+	if(protocol) {
+		strlcpy(filename, "file:///", filename_size);
+	} else {
+		filename[0] = '\0';
+	}
 
 	if(messages_get(themestring)[0] == '*')
 	{
-		strncat(filename,messages_get(themestring)+1,100);
+		strlcat(filename, messages_get(themestring) + 1, filename_size);
 	}
 	else
 	{
-		strcat(filename, nsoption_charp(theme));
-		AddPart(filename, messages_get(themestring), 100);
+		strlcat(filename, nsoption_charp(theme), filename_size);
+		AddPart(filename, messages_get(themestring), filename_size);
 	}
 }
 
@@ -301,7 +306,7 @@ void ami_init_mouse_pointers(void)
 
 #ifdef __amigaos4__
 		if(nsoption_bool(truecolour_mouse_pointers)) {
-			ami_get_theme_filename((char *)&ptrfname,ptrs32[i], false);
+			ami_get_theme_filename((char *)&ptrfname, sizeof(ptrfname), ptrs32[i], false);
 			if((dobj = GetIconTags(ptrfname,ICONGETA_UseFriendBitMap,TRUE,TAG_DONE))) {
 				if(IconControl(dobj, ICONCTRLA_GetImageDataFormat, &format, TAG_DONE)) {
 					if(IDFMT_DIRECTMAPPED == format) {
@@ -350,7 +355,7 @@ void ami_init_mouse_pointers(void)
 
 		if(!mouseptrobj[i])
 		{
-			ami_get_theme_filename(ptrfname,ptrs[i], false);
+			ami_get_theme_filename(ptrfname, sizeof(ptrfname), ptrs[i], false);
 			if((ptrfile = Open(ptrfname,MODE_OLDFILE)))
 			{
 				int mx,my;
