@@ -1838,7 +1838,11 @@ int ami_gui_get_quals(Object *win_obj)
 #ifdef __amigaos4__
 	GetAttr(WINDOW_Qualifier, win_obj, (uint32 *)&quals);
 #else
-#warning qualifier needs fixing for OS3
+	struct InputEvent *ie = NULL;
+	GetAttr(WINDOW_InputEvent, win_obj, (ULONG *)&ie);
+	if (ie != NULL) {
+		quals = ie->ie_Qualifier;
+	}
 #endif
 
 	if(quals & NSA_QUAL_SHIFT) {
