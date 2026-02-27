@@ -217,8 +217,9 @@ static BOOL ami_print_readunit(CONST_STRPTR filename, char name[],
 										case ID_PDEV:
 											if (ReadChunkBytes(iff, &pdev, sizeof(pdev)) == sizeof(pdev))
 											{
-												if (pdev.pd_UnitName[0])
-													strcpy(name,pdev.pd_UnitName);
+												if (pdev.pd_UnitName[0]) {
+													strlcpy(name, pdev.pd_UnitName, namesize);
+												}
 											}
 											break;
 										default:
