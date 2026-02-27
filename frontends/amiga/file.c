@@ -63,7 +63,7 @@ HOOKF(ULONG, ami_file_asl_mime_hook, struct FileRequester *, fr, struct AnchorPa
 
 	if(msg->ap_Info.fib_DirEntryType > 0) return(TRUE);
 
-	strcpy(fname,fr->fr_Drawer);
+	strlcpy(fname, fr->fr_Drawer, sizeof(fname));
 	AddPart(fname, msg->ap_Info.fib_FileName,1024);
 
   	mt = strdup(fetch_filetype(fname));
