@@ -134,7 +134,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 
 	if(gui && (!IsListEmpty(ami_gui_get_download_list(gui)) &&
 		(dw->dln = (struct dlnode *)FindName(ami_gui_get_download_list(gui), url)))) {
-		strcpy(dw->fname, dw->dln->filename);
+		strlcpy(dw->fname, (dw->dln->filename != NULL) ? dw->dln->filename : "", 1024);
 		free(dw->dln->node.ln_Name);
 		dw->dln->node.ln_Name = NULL;
 	}
