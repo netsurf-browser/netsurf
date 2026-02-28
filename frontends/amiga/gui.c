@@ -5550,7 +5550,8 @@ static void gui_window_destroy(struct gui_window *g)
 	ami_gui_hotlist_toolbar_free(g->shared, &g->shared->hotlist_toolbar_list);
 
 	/* These aren't freed by the above.
-	 * TODO: nav_west etc need freeing too? */
+	 * Note: toolbar button render images (BitMapObj in BUTTON_RenderImage) are disposed
+	 * along with their parent ButtonObj, so nav_* source files do not need separate freeing. */
 	DisposeObject(g->shared->objects[GID_CLOSETAB_BM]);
 	DisposeObject(g->shared->objects[GID_TABS_FLAG]);
 	DisposeObject(g->shared->objects[GID_FAVE_ADD]);
