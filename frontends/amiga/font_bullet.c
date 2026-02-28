@@ -98,7 +98,11 @@ static const uint16 sc_table[] = {
 		0x0153, 0x0276, /* oe */
 
 #if 0
-/* TODO: fill in the non-small caps character ids for these */
+/*
+ * Disabled: This table maps base codepoints to "small caps"/modifier glyph codepoints.
+ * For the entries below the base codepoint mapping is ambiguous or font-dependent.
+ * Keep disabled until a reliable mapping/source is defined.
+ */
 		0x0000, 0x1D03, /* barred b */
 		0x0000, 0x0281, /* inverted r */
 		0x0000, 0x1D19, /* reversed r */
