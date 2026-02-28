@@ -1599,11 +1599,15 @@ static void gui_init2(int argc, char** argv)
 		}
 		else
 		{
-/* TODO: Specify icon when run from Shell */
+			ULONG noicon = TAG_IGNORE;
+
+			if (nsoption_bool(hide_docky_icon))
+				noicon = REGAPP_NoIcon;
+
 			ami_appid = RegisterApplication(messages_get("NetSurf"),
 				REGAPP_URLIdentifier, "netsurf-browser.org",
 				REGAPP_FileName, argv[0],
-				REGAPP_NoIcon, TRUE,
+				noicon, TRUE,
 				REGAPP_HasPrefsWindow, TRUE,
 				REGAPP_CanCreateNewDocs, TRUE,
 				REGAPP_UniqueApplication, TRUE,
