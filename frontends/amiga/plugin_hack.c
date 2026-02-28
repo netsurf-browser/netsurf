@@ -194,9 +194,7 @@ nserror amiga_plugin_hack_open(struct content *c, struct browser_window *bw,
 
 	if(c)
 	{
-		/* TODO: Do we need valid dimensions at this point? */
-		c->width = 0;
-		c->height = 0;
+		/* Width/height will be set via reformat(); do not force 0x0 here. */
 	}
 
 	return NSERROR_OK;
