@@ -509,14 +509,17 @@ static bool ami_ctxmenu_history(int direction, struct gui_window_2 *gwin, const 
 
 	history_root = (Object *)IDoMethod(ami_gui2_get_ctxmenu_history(gwin, direction), MM_FINDID, 0, AMI_CTX_ID_HISTORY);
 
+	STRPTR title_lc = ami_utf8_easy((char *)browser_window_history_entry_get_title(entry));
+
 	IDoMethod(history_root, OM_ADDMEMBER, MStrip,
-							MA_Type, T_ITEM,
-							/* TODO: MA_Label should be in local charset */
-							MA_Label, browser_window_history_entry_get_title(entry),
-							MA_ID, id,
-							MA_Image, NULL,
-							MA_UserData, &ctxmenu_item_hook[id],
-						MEnd);
+		MA_Type, T_ITEM,
+		MA_Label, title_lc ? title_lc : (STRPTR)"",
+		MA_ID, id,
+		MA_Image, NULL,
+		MA_UserData, &ctxmenu_item_hook[id],
+	MEnd);
+
+	if(title_lc) ami_utf8_free(title_lc);
 
 	ami_gui2_set_ctxmenu_history_tmp(gwin, ami_gui2_get_ctxmenu_history_tmp(gwin) + 1);
 
