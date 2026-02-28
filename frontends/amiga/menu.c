@@ -203,7 +203,31 @@ void ami_menu_free_glyphs(void)
 #endif
 }
 
-static int ami_menu_calc_item_width(struct ami_menu_data **md, int j, struct RastPort *rp)
+static bool ami_menu_item_has_submenu(struct ami_menu_data **md, int j, int max)
+{
+	int k;
+
+	if (md[j] == NULL) return false;
+	if (md[j]->menutype != NM_ITEM) return false;
+
+	for (k = j + 1; k < max; k++) {
+		if (md[k] == NULL) continue;
+		if (md[k]->menutype == NM_IGNORE) continue;
+
+		if (md[k]->menutype == NM_SUB) {
+			return true;
+		}
+
+		/* next item/title -> submenu block (if any) is over */
+		if (md[k]->menutype == NM_ITEM || md[k]->menutype == NM_TITLE) {
+			break;
+		}
+	}
+
+	return false;
+}
+
+static int ami_menu_calc_item_width(struct ami_menu_data **md, int j, int max, struct RastPort *rp)
 {
 	int space_width = TextLength(rp, " ", 1);
 	int item_size;
@@ -214,8 +238,7 @@ static int ami_menu_calc_item_width(struct ami_menu_data **md, int j, struct Ras
 	if(md[j]->menukey) {
 		item_size += TextLength(rp, md[j]->menukey, 1);
 		item_size += menu_glyph_width[NSA_GLYPH_AMIGAKEY];
-		/**TODO: take account of the size of other imagery too
-		 */
+		/* account for submenu glyph width */
 	} else {
 		/* assume worst case - it doesn't really matter if we make menus wider */
 		item_size += TextLength(rp, "M", 1);
@@ -224,6 +247,11 @@ static int ami_menu_calc_item_width(struct ami_menu_data **md, int j, struct Ras
 
 	if(md[j]->menuicon) {
 		item_size += 16;
+	}
+
+	if (ami_menu_item_has_submenu(md, j, max)) {
+		item_size += space_width;
+		item_size += menu_glyph_width[NSA_GLYPH_SUBMENU];
 	}
 
 	return item_size;
@@ -336,7 +364,7 @@ static struct Menu *ami_menu_layout_gt(struct ami_menu_data **md, int max)
 			do {
 				if(md[j]->menulab != NM_BARLABEL) {
 					if(md[j]->menutype == NM_ITEM) {
-						int item_size = ami_menu_calc_item_width(md, j, rp);
+						int item_size = ami_menu_calc_item_width(md, j, max, rp);
 						if(item_size > txtlen) {
 							txtlen = item_size;
 						}
