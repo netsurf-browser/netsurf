@@ -2284,12 +2284,14 @@ static void ami_gui_console_log_add(struct gui_window *g)
 	attrs[1].ti_Data = 0;
 
 	g->shared->objects[GID_LOG] = ListBrowserObj,
-					GA_ID, GID_LOG,
-					LISTBROWSER_ColumnInfo, g->logcolumns,
-					LISTBROWSER_ColumnTitles, TRUE,
-					LISTBROWSER_Labels, &g->loglist,
-					LISTBROWSER_Striping, LBS_ROWS,
-				ListBrowserEnd;
+			GA_ID, GID_LOG,
+	#ifdef __amigaos4__
+			LISTBROWSER_ColumnInfo, g->logcolumns,
+			LISTBROWSER_ColumnTitles, TRUE,
+	#endif
+			LISTBROWSER_Labels, &g->loglist,
+			LISTBROWSER_Striping, LBS_ROWS,
+	ListBrowserEnd;
 
 #ifdef __amigaos4__
 	IDoMethod(g->shared->objects[GID_LOGLAYOUT], LM_ADDCHILD,
@@ -4762,7 +4764,7 @@ gui_window_create(struct browser_window *bw,
 				LBCIA_Separator, TRUE,
 		TAG_DONE);
 #else
-	/**\TODO write OS3-compatible version */
+	g->logcolumns = NULL; /* OS3: no ColumnInfo, single-column log list */
 #endif
 
 	if((flags & GW_CREATE_TAB) && existing)
@@ -5524,9 +5526,9 @@ static void gui_window_destroy(struct gui_window *g)
 			ami_toggletabbar(g->shared, false);
 
 		FreeListBrowserList(&g->loglist);
-#ifdef __amigaos4__
-		FreeLBColumnInfo(g->logcolumns);
-#endif
+		#ifdef __amigaos4__
+			if(g->logcolumns) FreeLBColumnInfo(g->logcolumns);
+		#endif
 
 		if(g->tabtitle) free(g->tabtitle);
 		free(g);
@@ -5567,7 +5569,7 @@ static void gui_window_destroy(struct gui_window *g)
 
 	FreeListBrowserList(&g->loglist);
 #ifdef __amigaos4__
-	FreeLBColumnInfo(g->logcolumns);
+	if(g->logcolumns) FreeLBColumnInfo(g->logcolumns);
 #endif
 
 	free(g->shared->wintitle);
