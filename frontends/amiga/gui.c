@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2026 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -5036,12 +5036,12 @@ gui_window_create(struct browser_window *bw,
 					BitMapEnd;
 
 
-                /* add a new tab tab */
-                g->shared->new_tab_tab = AllocClickTabNode(
-						TNA_Text, "+",
-						TNA_HintInfo, g->shared->helphints[GID_ADDTAB_HINT],
-						TAG_DONE);
-                AddTail(&g->shared->tab_list, g->shared->new_tab_tab);
+		/* add a new tab tab */
+		g->shared->new_tab_tab = AllocClickTabNode(
+				TNA_Text, "+",
+				TNA_HintInfo, g->shared->helphints[GID_ADDTAB_HINT],
+				TAG_DONE);
+		AddTail(&g->shared->tab_list, g->shared->new_tab_tab);
 
 		if(ClickTabBase->lib_Version < 53)
 		{
@@ -5522,9 +5522,9 @@ static void gui_window_destroy(struct gui_window *g)
 
 		GetAttr(CLICKTAB_CurrentNode, g->shared->objects[GID_TABS], (ULONG *)&ptab);
 
-		if(ptab == g->tab_node) {
+		if((ptab == g->tab_node) || (ptab == g->shared->new_tab_tab)) {
 			ptab = GetSucc(g->tab_node);
-			if(!ptab) ptab = GetPred(g->tab_node);
+			if((ptab == NULL) || (ptab == g->shared->new_tab_tab)) ptab = GetPred(g->tab_node);
 		}
 
 		Remove(g->tab_node);
