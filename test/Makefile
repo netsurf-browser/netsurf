@@ -181,7 +181,7 @@ $$(TESTROOT)/$(1): $$(sort $$(addprefix $$(TESTROOT)/,$$(subst /,_,$$(patsubst %
 
 $(1)_test:$$(TESTROOT)/$(1)
 	$$(VQ)echo "RUN TEST: $(1)"
-	$$(Q)LD_LIBRARY_PATH=$$(TESTROOT)/ $$(TESTROOT)/$(1)
+	$$(Q)LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$$(TESTROOT)/ $$(TESTROOT)/$(1)
 
 TESTSOURCES += $$($(1)_SRCS)
 
