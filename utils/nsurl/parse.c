@@ -895,6 +895,17 @@ static nserror nsurl__create_from_section(const char * const url_s,
 					/* Scheme is http, and port is default
 					 * (80) */
 					flags |= NSURL_F_NO_PORT;
+				} else if (url->scheme != NULL &&
+						url->scheme_type ==
+						NSURL_SCHEME_HTTPS &&
+						length -
+						(colon - pegs->at + skip) == 3 &&
+						*sec_start == '4' &&
+						*(sec_start + 1) == '4' &&
+						*(sec_start + 2) == '3') {
+					/* Scheme is https, and port is default
+					 * (443) */
+					flags |= NSURL_F_NO_PORT;
 				}
 
 				if (length <= (colon - pegs->at + skip)) {

@@ -114,6 +114,13 @@ static const struct test_pairs create_tests[] = {
 	{ "http://user:pass@www.ns-b.org:80/hello",
 	  "http://user:pass@www.ns-b.org/hello" },
 
+	{ "https://www.ns-b.org:443/",
+	  "https://www.ns-b.org/" },
+	{ "https://user@www.ns-b.org:443/hello",
+	  "https://user@www.ns-b.org/hello" },
+	{ "https://user:pass@www.ns-b.org:443/hello",
+	  "https://user:pass@www.ns-b.org/hello" },
+
 	{ "http://www.ns-b.org:/",
 	  "http://www.ns-b.org/" },
 	{ "http://///////////www.ns-b.org:/",
