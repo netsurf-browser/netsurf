@@ -52,7 +52,7 @@ struct ami_font_functions {
 
 	ULONG (*text)(struct RastPort *rp, const char *string,
 			ULONG length, const plot_font_style_t *fstyle,
-			ULONG x, ULONG y, bool aa);
+			int x, int y, bool aa);
 };
 
 extern struct ami_font_functions *ami_nsfont;

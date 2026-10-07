@@ -749,7 +749,7 @@ static const uint16 *ami_font_translate_smallcaps(uint16 *utf16char)
 }
 
 static ULONG amiga_nsfont_text(struct RastPort *rp, const char *string, ULONG length,
-			const plot_font_style_t *fstyle, ULONG dx, ULONG dy, bool aa)
+			const plot_font_style_t *fstyle, int dx, int dy, bool aa)
 {
 	uint16 *restrict utf16 = NULL, *restrict outf16 = NULL;
 	uint16 *restrict utf16charsc = 0, *restrict utf16nextsc = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 - 2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2026 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -37,11 +37,12 @@
 #include "amiga/plotters.h"
 #include "amiga/utf8.h"
 
+#include <stdio.h>
+
 #define MAX_FONT_NAME_SIZE 33
 
 static plot_font_style_t *prev_fstyle = NULL;
 static struct TextFont *prev_font = NULL;
-static struct RastPort *prev_rp = NULL;
 static struct RastPort temp_rp;
 static UBYTE style_set = 0;
 
@@ -51,6 +52,7 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 	struct TextAttr tattr;
 	char *fontname;
 	char font[MAX_FONT_NAME_SIZE];
+	UBYTE requested_style = FS_NORMAL;
 
 	if(rp == NULL) return NULL;
 
@@ -77,53 +79,61 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 			return NULL;
 		break;
 	}
-
+	
 	tattr.ta_Style = FS_NORMAL;
 
 	if (fstyle->flags & FONTF_OBLIQUE)
-		tattr.ta_Style = FSF_ITALIC;
+		requested_style = FSF_ITALIC;
 
 	if (fstyle->flags & FONTF_ITALIC)
-		tattr.ta_Style = FSF_ITALIC;
+		requested_style = FSF_ITALIC;
 
 	if (fstyle->weight >= 700)
-		tattr.ta_Style |= FSF_BOLD;
+		requested_style |= FSF_BOLD;
 
 	if((prev_fstyle != NULL) && (prev_font != NULL) &&
 		(fstyle->family == prev_fstyle->family) &&
 		(fstyle->size == prev_fstyle->size)) {
-			 if(rp != prev_rp) {
+			 if(rp->Font != prev_font) {
 				 /* We have the correct font open, but it isn't set here */
 				 SetRPAttrs(rp, RPTAG_Font, prev_font, TAG_DONE);
-				 prev_rp = rp;
 			 }
 			/* Current font is correct, just SoftStyle it */
 			NSLOG(netsurf, INFO, "Applying SoftStyle to current font");
-			SetSoftStyle(rp, tattr.ta_Style, style_set);
+			SetSoftStyle(rp, requested_style, style_set);
 			return prev_font;
 	}
 
-	snprintf(font, MAX_FONT_NAME_SIZE, "%s.font", fontname);
+	if(fontname != NULL) {
+		snprintf(font, MAX_FONT_NAME_SIZE, "%s.font", fontname);
+	} else {
+		strlcpy(font, "topaz.font", MAX_FONT_NAME_SIZE);
+	}
+	
 	tattr.ta_Name = font;
 	ULONG fsize = fstyle->size * nsoption_int(screen_ydpi) / 72;
 	tattr.ta_YSize = fsize / PLOT_STYLE_SCALE;
 	NSLOG(netsurf, INFO, "font: %s/%d", tattr.ta_Name, tattr.ta_YSize);
 
-	if(prev_font != NULL) {
-		CloseFont(prev_font);
-		prev_font = NULL;
-	}
-
 	if((bmfont = OpenDiskFont(&tattr))) {
 		SetRPAttrs(rp, RPTAG_Font, bmfont, TAG_DONE);
-		style_set = AskSoftStyle(rp);
-		prev_rp = rp;
+		SetSoftStyle(rp, requested_style, style_set);
 		prev_font = bmfont;
 
 		if(prev_fstyle != NULL) {
 			memcpy(prev_fstyle, fstyle, sizeof(plot_font_style_t));
 		}
+	} else {
+		/* Fall back to system-wide default font */
+		SetRPAttrs(rp, RPTAG_Font, GfxBase->DefaultFont, TAG_DONE);
 	}
+	
+	if(prev_font != NULL) {
+		CloseFont(prev_font);
+		prev_font = NULL;
+	}
+	
+	prev_font = bmfont;
 
 	return bmfont;
 }
@@ -183,6 +193,9 @@ static nserror amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyl
 	char *localtext = NULL;
 	UWORD co = 0;
 
+	if(x < 0) x = 0;
+	if(x > 32767) x = 32767;
+
 	bmfont = ami_font_bm_open(&temp_rp, fstyle);
 	if(bmfont == NULL) return NSERROR_INVALID;
 
@@ -190,10 +203,10 @@ static nserror amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyl
 		return NSERROR_INVALID;
 	}
 
-	co = TextFit(&temp_rp, localtext, (UWORD)strlen(localtext),
+	co = TextFit(&temp_rp, localtext, strlen(localtext),
 						&extent, NULL, 1, x, 32767);
 	*char_offset = ami_font_bm_convert_local_to_utf8_offset(string, length, co);
-	*actual_x = extent.te_Extent.MaxX;
+	*actual_x = extent.te_Width;
 
 	free(localtext);
 
@@ -231,7 +244,11 @@ static nserror amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 	struct TextExtent extent;
 	UWORD co, offset;
 	char *charp;
-	char *localtext;
+	char *localtext = NULL;
+	ULONG len_localtext;
+
+	if(x < 0) x = 0;
+	if(x > 32767) x = 32767;
 
 	struct TextFont *bmfont = ami_font_bm_open(&temp_rp, fstyle);
 	if(bmfont == NULL) return NSERROR_INVALID;
@@ -240,8 +257,16 @@ static nserror amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 		return NSERROR_INVALID;
 	}
 
-	offset = TextFit(&temp_rp, localtext, (UWORD)strlen(localtext),
+	len_localtext = strlen(localtext);
+
+	offset = TextFit(&temp_rp, localtext, len_localtext,
 				&extent, NULL, 1, (UWORD)x, 32767);
+
+	if(offset == length) {
+		*char_offset = length;
+		*actual_x = TextLength(&temp_rp, localtext, offset);
+		return NSERROR_OK;
+	}
 
 	co = offset;
 	charp = localtext + co;
@@ -255,17 +280,17 @@ static nserror amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 	if(co == 0) {
 		co = offset;
 		charp = localtext + co;
-		while((*charp != ' ') && (co < strlen(localtext))) {
+		while((*charp != ' ') && (co < len_localtext)) {
 			charp++;
 			co++;
 		}
 	}
 	
-	if((co > 0) && (co < strlen(localtext))) {
+	if((co > 0) && (co < len_localtext)) {
 		*actual_x = TextLength(&temp_rp, localtext, co);
 		*char_offset = ami_font_bm_convert_local_to_utf8_offset(string, length, co);
 	} else {
-		*actual_x = x;
+		*actual_x = TextLength(&temp_rp, localtext, offset);
 		*char_offset = length;
 	}
 
@@ -275,7 +300,7 @@ static nserror amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 }
 
 static ULONG amiga_bm_nsfont_text(struct RastPort *rp, const char *string, ULONG length,
-			const plot_font_style_t *fstyle, ULONG dx, ULONG dy, bool aa)
+			const plot_font_style_t *fstyle, int dx, int dy, bool aa)
 {
 	if(!string || string[0]=='\0') return 0;
 	if(!length) return 0;
