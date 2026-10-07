@@ -100,6 +100,7 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 			 }
 			/* Current font is correct, just SoftStyle it */
 			NSLOG(netsurf, INFO, "Applying SoftStyle to current font");
+			style_set = AskSoftStyle(rp);
 			SetSoftStyle(rp, requested_style, style_set);
 			return prev_font;
 	}
@@ -117,8 +118,8 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 
 	if((bmfont = OpenDiskFont(&tattr))) {
 		SetRPAttrs(rp, RPTAG_Font, bmfont, TAG_DONE);
+		style_set = AskSoftStyle(rp);
 		SetSoftStyle(rp, requested_style, style_set);
-		prev_font = bmfont;
 
 		if(prev_fstyle != NULL) {
 			memcpy(prev_fstyle, fstyle, sizeof(plot_font_style_t));
@@ -126,6 +127,7 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 	} else {
 		/* Fall back to system-wide default font */
 		SetRPAttrs(rp, RPTAG_Font, GfxBase->DefaultFont, TAG_DONE);
+		return GfxBase->DefaultFont;
 	}
 	
 	if(prev_font != NULL) {
@@ -262,9 +264,10 @@ static nserror amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 	offset = TextFit(&temp_rp, localtext, len_localtext,
 				&extent, NULL, 1, (UWORD)x, 32767);
 
-	if(offset == length) {
+	if(offset == len_localtext) {
 		*char_offset = length;
 		*actual_x = TextLength(&temp_rp, localtext, offset);
+		free(localtext);
 		return NSERROR_OK;
 	}
 
