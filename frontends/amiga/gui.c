@@ -292,6 +292,13 @@ struct gui_window_2 {
 	gui_pointer_shape mouse_pointer;
 	struct Menu *imenu; /* Intuition menu */
 	bool closed; /* Window has been closed (via menu) */
+<<<<<<< Updated upstream
+=======
+	bool redraw_scheduled;
+#ifndef __amigaos4__
+	struct HintInfo hi;
+#endif
+>>>>>>> Stashed changes
 };
 
 struct gui_window
@@ -4853,6 +4860,8 @@ gui_window_create(struct browser_window *bw,
 		return NULL;
 	}
 
+	g->shared->redraw_scheduled = false;
+
 	g->shared->shared_pens = ami_AllocMinList();
 
 	g->shared->scrollerhook.h_Entry = (void *)ami_scroller_hook;
@@ -5621,6 +5630,8 @@ static void ami_redraw_callback(void *p)
 {
 	struct gui_window_2 *gwin = (struct gui_window_2 *)p;
 
+	gwin->redraw_scheduled = false;
+
 	if(gwin->redraw_required) {
 		ami_do_redraw(gwin);
 	}
@@ -5646,12 +5657,17 @@ void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw)
 	int ms = 1;
 
 	if(full_redraw) gwin->redraw_required = true;
-	ami_schedule(ms, ami_redraw_callback, gwin);
+	
+	if (gwin->redraw_scheduled == false) {
+		ami_schedule(ms, ami_redraw_callback, gwin);
+		gwin->redraw_scheduled = true;
+	}
 }
 
 static void ami_schedule_redraw_remove(struct gui_window_2 *gwin)
 {
 	ami_schedule(-1, ami_redraw_callback, gwin);
+	gwin->redraw_scheduled = false;
 }
 
 static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw)
