@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2026 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -80,11 +80,14 @@ struct gui_globals {
 	APTR areabuf;
 	APTR tmprasbuf;
 	struct Rectangle rect;
+	struct Region *reg;
 	struct MinList *shared_pens;
 	bool managed_pen_list;
 	bool palette_mapped;
 	LONG apen_num;
 	LONG open_num;
+	ULONG apen_colr;
+	ULONG open_colr;
 	int width;  /* size of bm and    */
 	int height; /* associated memory */
 };
@@ -223,7 +226,7 @@ struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit
 	gg->rp->TmpRas = malloc(sizeof(struct TmpRas));
 	if((!gg->tmprasbuf) || (!gg->rp->TmpRas))	amiga_warn_user("NoMemory","");
 
-	InitTmpRas(gg->rp->TmpRas, gg->tmprasbuf, width*height);
+	InitTmpRas(gg->rp->TmpRas, gg->tmprasbuf, width * height);
 
 	gg->shared_pens = NULL;
 	gg->managed_pen_list = false;
@@ -240,10 +243,13 @@ struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit
 	}
 
 	/* Set clipping area to full bitmap */
+	gg->reg = NULL;
 	ami_clearclipreg(gg);
 
 	gg->apen_num = -1;
+	gg->apen_colr = NS_TRANSPARENT;
 	gg->open_num = -1;
+	gg->open_colr = NS_TRANSPARENT;
 
 	init_layers_count++;
 	NSLOG(netsurf, INFO, "Layer initialised (total: %d)",
@@ -258,6 +264,12 @@ void ami_plot_ra_free(struct gui_globals *gg)
 
 	if(init_layers_count < 0) return;
 
+	if(gg->managed_pen_list == true) {
+		ami_plot_release_pens(gg->shared_pens);
+		free(gg->shared_pens);
+		gg->shared_pens = NULL;
+	}
+
 	if((init_layers_count == 0) && (pool_pens != NULL)) {
 		ami_memory_itempool_delete(pool_pens);
 		pool_pens = NULL;
@@ -265,9 +277,12 @@ void ami_plot_ra_free(struct gui_globals *gg)
 
 	if(gg->rp) {
 		if(gg->rp->Layer != NULL) {
+			ami_clearclipreg(gg);
 			/* Remove the clip region */
 			struct Region *reg = InstallClipRegion(gg->rp->Layer,NULL);
-			if(reg) DisposeRegion(reg);	
+			if(reg) DisposeRegion(reg);
+			if(gg->reg) DisposeRegion(gg->reg);
+			gg->reg = NULL;
 			
 			/* Delete the layer */	
 			DeleteLayer(0, gg->rp->Layer);
@@ -281,12 +296,6 @@ void ami_plot_ra_free(struct gui_globals *gg)
 	free(gg->areabuf);
 	DisposeLayerInfo(gg->layerinfo);
 	if(gg->bm) ami_rtg_freebitmap(gg->bm);
-
-	if(gg->managed_pen_list == true) {
-		ami_plot_release_pens(gg->shared_pens);
-		free(gg->shared_pens);
-		gg->shared_pens = NULL;
-	}
 
 	free(gg);
 }
@@ -314,16 +323,21 @@ void ami_plot_ra_set_pen_list(struct gui_globals *gg, struct MinList *pen_list)
 
 void ami_clearclipreg(struct gui_globals *gg)
 {
-	struct Region *reg = NewRegion();
 
 	gg->rect.MinX = 0;
 	gg->rect.MinY = 0;
 	gg->rect.MaxX = gg->width-1;
 	gg->rect.MaxY = gg->height-1;
 
-	OrRectRegion(reg, &gg->rect);
-	reg = InstallClipRegion(gg->rp->Layer, reg);
-	if(reg) DisposeRegion(reg);
+	if(__builtin_expect(gg->reg == NULL, 0)) {
+		gg->reg = NewRegion();
+	} else {
+		ClearRegion(gg->reg);
+	}
+	
+	OrRectRegion(gg->reg, &gg->rect);
+	
+	gg->reg = InstallClipRegion(gg->rp->Layer, gg->reg);
 
 	gg->apen_num = -1;
 	gg->open_num = -1;
@@ -374,33 +388,43 @@ void ami_plot_release_pens(struct MinList *shared_pens)
 }
 
 static void ami_plot_setapen(struct gui_globals *glob, struct RastPort *rp, ULONG colr)
-{
+{	
 #ifdef __amigaos4__
 	if(glob->palette_mapped == false) {
+		if(glob->apen_colr == colr) return;
 		SetRPAttrs(rp, RPTAG_APenColor,
 			ns_color_to_nscss(colr),
 			TAG_DONE);
 	} else
 #endif
 	{
+		if (glob->apen_num != -1 && glob->apen_colr == colr) return;
 		LONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
 		if((pen != -1) && (pen != glob->apen_num)) SetAPen(rp, pen);
+		if(glob->shared_pens != NULL) glob->apen_num = pen;
 	}
+	
+	glob->apen_colr = colr;
 }
 
 static void ami_plot_setopen(struct gui_globals *glob, struct RastPort *rp, ULONG colr)
 {
 #ifdef __amigaos4__
 	if(glob->palette_mapped == false) {
+		if(glob->open_colr == colr) return;
 		SetRPAttrs(rp, RPTAG_OPenColor,
 			ns_color_to_nscss(colr),
 			TAG_DONE);
 	} else
 #endif
 	{
+		if (glob->open_num != -1 && glob->open_colr == colr) return;
 		LONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
 		if((pen != -1) && (pen != glob->open_num)) SetOPen(rp, pen);
+		if(glob->shared_pens != NULL) glob->open_num = pen;
 	}
+	
+	glob->open_colr = colr;
 }
 
 void ami_plot_clear_bbox(struct RastPort *rp, struct IBox *bbox)
@@ -560,25 +584,31 @@ static nserror
 ami_clip(const struct redraw_context *ctx, const struct rect *clip)
 {
 	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
-	struct Region *reg = NULL;
 
 	NSLOG(plot, DEEPDEBUG, "[ami_plotter] Entered ami_clip()");
 
-	if (glob->rp->Layer) {
-		reg = NewRegion();
+	if( (glob->rect.MinX == clip->x0) &&
+		(glob->rect.MinY == clip->y0) &&
+		(glob->rect.MaxX == clip->x1-1) &&
+		(glob->rect.MaxY == clip->y1-1) ) {
+			return NSERROR_OK;
+		}
 
+	if (glob->rp->Layer) {
 		glob->rect.MinX = clip->x0;
 		glob->rect.MinY = clip->y0;
 		glob->rect.MaxX = clip->x1-1;
 		glob->rect.MaxY = clip->y1-1;
 
-		OrRectRegion(reg,&glob->rect);
-
-		reg = InstallClipRegion(glob->rp->Layer,reg);
-
-		if(reg) {
-			DisposeRegion(reg);
+		if(__builtin_expect(glob->reg == NULL, 0)) {
+			glob->reg = NewRegion();
+		} else {
+			ClearRegion(glob->reg);
 		}
+
+		OrRectRegion(glob->reg, &glob->rect);
+
+		glob->reg = InstallClipRegion(glob->rp->Layer, glob->reg);
 	}
 
 	return NSERROR_OK;
@@ -790,6 +820,7 @@ ami_polygon(const struct redraw_context *ctx,
 		   unsigned int n)
 {
 	NSLOG(plot, DEEPDEBUG, "[ami_plotter] Entered ami_polygon()");
+	if(n < 2) return NSERROR_OK;
 
 	struct gui_globals *glob = (struct gui_globals *)ctx->priv;
 
@@ -797,11 +828,15 @@ ami_polygon(const struct redraw_context *ctx,
 
 	if (AreaMove(glob->rp,p[0],p[1]) == -1) {
 		NSLOG(netsurf, INFO, "AreaMove: vector list full");
+		AreaEnd(glob->rp);
+		return NSERROR_OK;
 	}
 
 	for (uint32 k = 1; k < n; k++) {
 		if (AreaDraw(glob->rp,p[k*2],p[(k*2)+1]) == -1) {
 			NSLOG(netsurf, INFO, "AreaDraw: vector list full");
+			AreaEnd(glob->rp);
+			return NSERROR_OK;
 		}
 	}
 
@@ -1008,7 +1043,7 @@ ami_bitmap_tile(const struct redraw_context *ctx,
 	oy = y;
 
 	/* get left most tile position */
-	for (; ox > 0; ox -= width)
+	for (; ox > 0; ox -= width);
 
 	/* get top most tile position */
 	for (; oy > 0; oy -= height);
@@ -1021,20 +1056,33 @@ ami_bitmap_tile(const struct redraw_context *ctx,
 	}
 	if (repeat_x) {
 		xf = glob->rect.MaxX;
-		xm = glob->rect.MinX;
 	} else {
 		xf = x + width;
-		xm = x;
 	}
 
 	if (repeat_y) {
 		yf = glob->rect.MaxY;
-		ym = glob->rect.MinY;
 	} else {
 		yf = y + height;
-		ym = y;
 	}
 	
+	ULONG tag = TAG_IGNORE, tag_data, minterm = 0xc0;
+	
+#ifdef __amigaos4__
+	if(glob->palette_mapped == false) {
+		tag = BLITA_UseSrcAlpha;
+		tag_data = TRUE;
+		minterm = 0xc0;
+	} else {
+#endif
+		if((tag_data = (ULONG)ami_bitmap_get_mask(bitmap, width, height, tbm))) {
+			tag = BLITA_MaskPlane;
+			minterm = MINTERM_SRCMASK;
+		}
+#ifdef __amigaos4__
+	}
+#endif
+
 	/* tile down and across to extents */
 	for (x = -ox; x <= xf; x += width) {
 		for (y = -oy; y <= yf; y += height) {
@@ -1058,22 +1106,6 @@ ami_bitmap_tile(const struct redraw_context *ctx,
 			} else
 #endif
 			{
-				ULONG tag = TAG_IGNORE, tag_data, minterm = 0xc0;
-#ifdef __amigaos4__
-				if(glob->palette_mapped == false) {
-					tag = BLITA_UseSrcAlpha;
-					tag_data = TRUE;
-					minterm = 0xc0;
-				} else {
-#endif
-					if((tag_data = (ULONG)ami_bitmap_get_mask(bitmap, width, height, tbm))) {
-						tag = BLITA_MaskPlane;
-						minterm = MINTERM_SRCMASK;
-					}
-#ifdef __amigaos4__
-				}
-#endif
-
 #ifdef __amigaos4__
 				BltBitMapTags(BLITA_Width, width,
 					BLITA_Height, height,
