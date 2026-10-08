@@ -292,13 +292,10 @@ struct gui_window_2 {
 	gui_pointer_shape mouse_pointer;
 	struct Menu *imenu; /* Intuition menu */
 	bool closed; /* Window has been closed (via menu) */
-<<<<<<< Updated upstream
-=======
 	bool redraw_scheduled;
 #ifndef __amigaos4__
 	struct HintInfo hi;
 #endif
->>>>>>> Stashed changes
 };
 
 struct gui_window

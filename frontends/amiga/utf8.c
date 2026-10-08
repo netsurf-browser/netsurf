@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2021 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2026 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -31,6 +31,17 @@
 #include "netsurf/utf8.h"
 
 #include "amiga/utf8.h"
+
+bool ami_utf8_is_ascii(const char *string, size_t length)
+{
+	size_t l = 0;
+
+	while(++l < length){
+		if(string[l] & 0x80) return false;
+	}
+
+	return true;
+}
 
 static nserror ami_utf8_codesets(const char *string, size_t len, char **result, bool to_local)
 {
@@ -88,6 +99,12 @@ nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 
 nserror utf8_to_local_encoding(const char *string, size_t len, char **result)
 {
+	/* If it is wholly ASCII then no conversion required */
+	if(ami_utf8_is_ascii(string, len)) {
+		*result = strndup(string, len);
+		return NSERROR_OK;
+	}
+
 	if(__builtin_expect((CodesetsBase == NULL), 0)) {
 		nserror err = NSERROR_NOMEM;
 		char *local_charset = ASPrintf("%s//IGNORE", nsoption_charp(local_charset));
@@ -126,7 +143,6 @@ char *ami_to_utf8_easy(const char *string)
 		return strdup(string);
 	}
 }
-
 
 static struct gui_utf8_table utf8_table = {
 	.utf8_to_local = utf8_to_local_encoding,

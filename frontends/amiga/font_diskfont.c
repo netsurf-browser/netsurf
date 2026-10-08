@@ -157,19 +157,23 @@ static nserror amiga_bm_nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
-	char *localtext = NULL;
+	char *localtext = string;
+	bool is_ascii = ami_utf8_is_ascii(string, length);
 
 	*width = length;
 
 	struct TextFont *bmfont = ami_font_bm_open(&temp_rp, fstyle);
 	if(bmfont == NULL) return NSERROR_INVALID;
 
-	if(utf8_to_local_encoding(string, length, &localtext) != NSERROR_OK) {
-		return NSERROR_INVALID;
+	if(is_ascii == false) {
+		if(utf8_to_local_encoding(string, length, &localtext) != NSERROR_OK) {
+			return NSERROR_INVALID;
+		}
 	}
 
 	*width = TextLength(&temp_rp, localtext, (UWORD)strlen(localtext));
-	free(localtext);
+
+	if(is_ascii == false) free(localtext);
 
 	return NSERROR_OK;
 }
@@ -192,7 +196,8 @@ static nserror amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyl
 {
 	struct TextExtent extent;
 	struct TextFont *bmfont;
-	char *localtext = NULL;
+	char *localtext = string;
+	bool is_ascii = ami_utf8_is_ascii(string, length);
 	UWORD co = 0;
 
 	if(x < 0) x = 0;
@@ -201,13 +206,20 @@ static nserror amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyl
 	bmfont = ami_font_bm_open(&temp_rp, fstyle);
 	if(bmfont == NULL) return NSERROR_INVALID;
 
-	if(utf8_to_local_encoding(string, length, &localtext) != NSERROR_OK) {
-		return NSERROR_INVALID;
+	if(is_ascii == false) {
+		if(utf8_to_local_encoding(string, length, &localtext) != NSERROR_OK) {
+			return NSERROR_INVALID;
+		}
+
+		co = TextFit(&temp_rp, localtext, strlen(localtext),
+						&extent, NULL, 1, x, 32767);
+		*char_offset = ami_font_bm_convert_local_to_utf8_offset(string, length, co);
+
+		free(localtext);
+	} else {
+		*char_offset = TextFit(&temp_rp, localtext, length, &extent, NULL, 1, x, 32767);
 	}
 
-	co = TextFit(&temp_rp, localtext, strlen(localtext),
-						&extent, NULL, 1, x, 32767);
-	*char_offset = ami_font_bm_convert_local_to_utf8_offset(string, length, co);
 	*actual_x = extent.te_Width;
 
 	free(localtext);
@@ -246,8 +258,9 @@ static nserror amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 	struct TextExtent extent;
 	UWORD co, offset;
 	char *charp;
-	char *localtext = NULL;
-	ULONG len_localtext;
+	char *localtext = string;
+	size_t len_localtext = length;
+	bool is_ascii = ami_utf8_is_ascii(string, length);
 
 	if(x < 0) x = 0;
 	if(x > 32767) x = 32767;
@@ -255,11 +268,13 @@ static nserror amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 	struct TextFont *bmfont = ami_font_bm_open(&temp_rp, fstyle);
 	if(bmfont == NULL) return NSERROR_INVALID;
 
-	if(utf8_to_local_encoding(string, length, &localtext) != NSERROR_OK) {
-		return NSERROR_INVALID;
-	}
+	if(is_ascii == false) {
+		if(utf8_to_local_encoding(string, length, &localtext) != NSERROR_OK) {
+			return NSERROR_INVALID;
+		}
 
-	len_localtext = strlen(localtext);
+		len_localtext = strlen(localtext);
+	}
 
 	offset = TextFit(&temp_rp, localtext, len_localtext,
 				&extent, NULL, 1, (UWORD)x, 32767);
@@ -273,7 +288,6 @@ static nserror amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 
 	co = offset;
 	charp = localtext + co;
-	
 
 	while((*charp != ' ') && (co > 0)) {
 		charp--;
@@ -291,13 +305,17 @@ static nserror amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 	
 	if((co > 0) && (co < len_localtext)) {
 		*actual_x = TextLength(&temp_rp, localtext, co);
-		*char_offset = ami_font_bm_convert_local_to_utf8_offset(string, length, co);
+		if(is_ascii == false) {
+			*char_offset = ami_font_bm_convert_local_to_utf8_offset(string, length, co);
+		} else {
+			*char_offset = co;
+		}
 	} else {
 		*actual_x = TextLength(&temp_rp, localtext, offset);
 		*char_offset = length;
 	}
 
-	free(localtext);
+	if(is_ascii == false) free(localtext);
 
 	return NSERROR_OK;
 }
@@ -310,13 +328,21 @@ static ULONG amiga_bm_nsfont_text(struct RastPort *rp, const char *string, ULONG
 	if(rp == NULL) return 0;
 
 	struct TextFont *bmfont = ami_font_bm_open(rp, fstyle);
-	char *localtext = NULL;
+	char *localtext = string;
+	bool is_ascii = ami_utf8_is_ascii(string, length);
+	ULONG len_localtext = length;
+
 	if(bmfont == NULL) return 0;
-	if(utf8_to_local_encoding(string, length, &localtext) == NSERROR_OK) {
-		Move(rp, dx, dy);
-		Text(rp, localtext, (UWORD)strlen(localtext));
-		free(localtext);
+
+	if(is_ascii == false) {
+		if(utf8_to_local_encoding(string, length, &localtext) != NSERROR_OK) return 0;
+		len_localtext = strlen(localtext);
 	}
+
+	Move(rp, dx, dy);
+	Text(rp, localtext, len_localtext);
+
+	if(is_ascii == false) free(localtext);
 
 	return 0;
 }

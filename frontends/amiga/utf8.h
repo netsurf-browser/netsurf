@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008,2026 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -27,5 +27,8 @@ char *ami_to_utf8_easy(const char *string);
 
 nserror utf8_from_local_encoding(const char *string, size_t len, char **result);
 nserror utf8_to_local_encoding(const char *string, size_t len, char **result);
+
+/* Check if a string only contains ASCII characters */
+bool ami_utf8_is_ascii(const char *string, size_t length);
 
 #endif
