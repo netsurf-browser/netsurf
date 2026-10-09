@@ -217,14 +217,16 @@ void amiga_bitmap_destroy(void *bitmap)
 
 	if(bm)
 	{
+		if(bm->drawhandle) {
+			if(GuiGFXBase != NULL) ReleaseDrawHandle(bm->drawhandle);
+			bm->drawhandle = NULL;
+		}
+		
 		if((bm->nativebm)) { // && (bm->native == AMI_NSBM_TRUECOLOUR)) {
 			ami_rtg_freebitmap(bm->nativebm);
 		}
 
 		if(bm->native_mask) FreeRaster(bm->native_mask, bm->width, bm->height);
-
-		if(bm->drawhandle) ReleaseDrawHandle(bm->drawhandle);
-		bm->drawhandle = NULL;
 
 #ifdef __amigaos4__
 		if(nsoption_bool(use_extmem) == true) {

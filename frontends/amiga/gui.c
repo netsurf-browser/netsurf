@@ -3986,10 +3986,6 @@ static void gui_quit(void)
 
 	ami_clipboard_free();
 	ami_gui_resources_free();
-
-	NSLOG(netsurf, INFO, "Closing screen");
-	ami_gui_close_screen(scrn, locked_screen, FALSE);
-	if(nsscreentitle) FreeVec(nsscreentitle);
 }
 
 char *ami_gui_get_cache_favicon_name(nsurl *url, bool only_if_avail)
@@ -6730,6 +6726,10 @@ int main(int argc, char** argv)
 
 	netsurf_exit();
 
+	NSLOG(netsurf, INFO, "Closing screen");
+	ami_gui_close_screen(scrn, locked_screen, FALSE);
+	if(nsscreentitle) FreeVec(nsscreentitle);
+	
 	nsoption_finalise(nsoptions, nsoptions_default);
 	ami_nsoption_free();
 	free(current_user_dir);
