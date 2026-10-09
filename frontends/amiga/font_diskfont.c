@@ -25,6 +25,7 @@
 #include <proto/graphics.h>
 #include <proto/utility.h>
 
+#include <graphics/gfxbase.h>
 #include <graphics/rpattr.h>
 
 #include "utils/log.h"
