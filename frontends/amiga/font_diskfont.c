@@ -140,11 +140,11 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 	return bmfont;
 }
 
-static size_t ami_font_bm_convert_local_to_utf8_offset(const char *utf8string, size_t length, UWORD offset)
+static size_t ami_font_bm_convert_local_to_utf8_offset(const char *utf8string, size_t length, ULONG offset)
 {
 	size_t chr = 0;
 
-	for(UWORD i = 0; i < offset; i++) {
+	for(ULONG i = 0; i < offset; i++) {
 		chr = utf8_next(utf8string, length, chr);
 		if(chr > length) return length;
 	}
@@ -159,6 +159,7 @@ static nserror amiga_bm_nsfont_width(const plot_font_style_t *fstyle,
 {
 	char *localtext = string;
 	bool is_ascii = ami_utf8_is_ascii(string, length);
+	size_t len_localtext = length;
 
 	*width = length;
 
@@ -169,9 +170,10 @@ static nserror amiga_bm_nsfont_width(const plot_font_style_t *fstyle,
 		if(utf8_to_local_encoding(string, length, &localtext) != NSERROR_OK) {
 			return NSERROR_INVALID;
 		}
+		len_localtext = strlen(localtext);
 	}
 
-	*width = TextLength(&temp_rp, localtext, (UWORD)strlen(localtext));
+	*width = TextLength(&temp_rp, localtext, len_localtext);
 
 	if(is_ascii == false) free(localtext);
 
@@ -198,7 +200,7 @@ static nserror amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyl
 	struct TextFont *bmfont;
 	char *localtext = string;
 	bool is_ascii = ami_utf8_is_ascii(string, length);
-	UWORD co = 0;
+	ULONG co = 0;
 
 	if(x < 0) x = 0;
 	if(x > 32767) x = 32767;
@@ -221,8 +223,6 @@ static nserror amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyl
 	}
 
 	*actual_x = extent.te_Width;
-
-	free(localtext);
 
 	return NSERROR_OK;
 }
@@ -256,7 +256,7 @@ static nserror amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 		int x, size_t *char_offset, int *actual_x)
 {
 	struct TextExtent extent;
-	UWORD co, offset;
+	ULONG co, offset;
 	char *charp;
 	char *localtext = string;
 	size_t len_localtext = length;
@@ -277,12 +277,12 @@ static nserror amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 	}
 
 	offset = TextFit(&temp_rp, localtext, len_localtext,
-				&extent, NULL, 1, (UWORD)x, 32767);
+				&extent, NULL, 1, x, 32767);
 
 	if(offset == len_localtext) {
 		*char_offset = length;
 		*actual_x = TextLength(&temp_rp, localtext, offset);
-		free(localtext);
+		if(is_ascii == false) free(localtext);
 		return NSERROR_OK;
 	}
 
