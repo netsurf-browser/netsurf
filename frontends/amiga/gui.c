@@ -5817,8 +5817,6 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 		ami_gui_window_update_box_deferred(gwin->gw, false);
 	}
 
-	ami_update_buttons(gwin);
-
 	gwin->oldh = hcurrent;
 	gwin->oldv = vcurrent;
 
