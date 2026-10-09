@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 - 2016 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2026 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -81,10 +81,9 @@ static void ami_schedule_remove_timer_event(struct nscallback *nscb)
 static nserror ami_schedule_add_timer_event(struct nscallback *nscb, int t)
 {
 	struct TimeVal tv;
-	ULONG time_us = t * 1000; /* t converted to µs */
 
-	tv.Seconds = time_us / 1000000;
-	tv.Microseconds = time_us % 1000000;
+	tv.Seconds = t / 1000;
+	tv.Microseconds = (t % 1000) * 1000;
 
 	GetSysTime(&nscb->tv);
 	AddTime(&nscb->tv, &tv); // now contains time when event occurs (for debug and heap sorting)
